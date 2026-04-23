@@ -569,6 +569,35 @@ the pick exactly as it was called.
 
 Every locked play is recorded with its odds, book, unit size, star rating, regime, qualityProxy, wallet profile, and **V8 scoring breakdown** (`v8Scoring`) at time of lock. After games finish, results are automatically graded and profit/loss tracked. Performance is broken down by star tier to validate whether higher-conviction plays outperform.
 
+### Vault Quant Score v1 (shadow-mode, no UI)
+
+As of 2026-04-20 every `sharp_action_positions` doc also carries a hidden
+1.0–5.0 per-position score under the `vault_*` field prefix. Two validated
+axes:
+
+1. **Winners margin (`vault_winnerMargin`)** — unique CONFIRMED/FLAT
+   sport-winner wallets on this position's side minus opposing. Monotonic in
+   live data: Δ≥+2 → 75% WR, Δ≤−2 → 0% WR.
+2. **Quality margin T=30 (`vault_qualityMargin`)** — unique wallets with
+   `v8_walletContribution ≥ 30` on my side minus opposing. Strongest single
+   correlation in V8_CONTRIBUTION_EDGE (ρ=0.365 with flat ROI).
+
+The composite `vault_quantScore` ∈ {1.0, 1.5, …, 5.0} and `vault_quantLabel`
+∈ {ELITE, STRONG, SOLID, DEVELOPING, MUTED} are written but not read by any
+UI component. Backfill on 679 positions shows a clean 60.0% / 41.8% WR gap
+between the top (4-5★) and bottom (1-1.5★) tier buckets. Full report:
+[`VAULT_QUANT_VALIDATION.md`](./VAULT_QUANT_VALIDATION.md).
+
+Refresh cadence:
+- Live positions rescored on the existing 2h `writeSharpActions` cron.
+- Historical positions rescored daily via `backfill-vault-quant.yml` (the
+  whitelist shifts as wallets enter/exit CONFIRMED/FLAT).
+
+Formula definitions live in two synced helpers — any edit must touch both:
+- `scripts/writeSharpActions.js` → `computeVaultQuantSignals` + `computeVaultQuantScore`
+- `scripts/backfillVaultQuant.js` → same helpers (re-implementation reads
+  the grouped position set from Firestore rather than `walletDetails`)
+
 ---
 
 ## Part 2: Technical Reference (For Developers)

@@ -285,6 +285,95 @@ function computeGameWPS(gamePositions, v8Norm) {
   };
 }
 
+// ── Vault Quant Score v1 (shadow-mode; hidden from UI) ───────────────────────
+//
+// Two validated axes from V8_DAILY_PNL + V8_CONTRIBUTION_EDGE, fused into a
+// single per-position 1.0–5.0 score for Sharp Vault cards.
+//
+//   Axis 1 — Winners margin (Δ_winner)
+//     Unique CONFIRMED/FLAT sport-winner wallets on MY side − on opposing side.
+//     Live monotonic ladder (N=73 picks, 5 days):
+//       Δ≥+2 → 75% WR / +79% ROI   |   Δ=0  → 38% WR / −38% ROI
+//       Δ=+1 → 48% WR / −9% ROI    |   Δ=-1 → 25% WR / −64% ROI
+//                                  |   Δ≤-2 → 0%  WR / −100% ROI
+//
+//   Axis 2 — Quality-contribution margin at T=30 (Δ_quality)
+//     Unique wallets with contribution ≥ 30 on MY side − opposing side.
+//     Strongest single correlation in V8_CONTRIBUTION_EDGE:
+//       ρ(margin, won) = 0.304   ρ(margin, flat ROI) = 0.365
+//       margin ≥ +3 → 57% WR / +36% ROI
+//       margin ≤  0 → 14% WR / −83% ROI
+//
+//   Score = base(Δ_winner) + adj(Δ_quality), clamped [1.0, 5.0], rounded 0.5.
+//   Hard rules:
+//     Δ_winner ≤ −2              → score = 1.0 (0% WR live, never promote)
+//     Δ_winner ≥ +2 AND Δ_q ≥ +1 → score = 5.0 (both elite signals agree)
+//
+// Stored under `vault_*` fields. No UI reads these yet — 2-day shadow window
+// before we wire the card render.
+function computeVaultQuantSignals(walletDetails, mySide, sport, walletProfiles) {
+  if (!walletDetails || !mySide) return null;
+  // T=30 quality margin (broader population, correlation-leading cut).
+  let qualityForT30 = 0, qualityAgT30 = 0;
+  for (const d of walletDetails) {
+    if ((d.contribution ?? 0) < 30) continue;
+    if (d.side === mySide) qualityForT30++;
+    else if (d.side) qualityAgT30++;
+  }
+  const qualityMargin = qualityForT30 - qualityAgT30;
+
+  // Winners margin (whitelisted CONFIRMED/FLAT only — validated ladder).
+  const winnersFor = new Set();
+  const winnersAg = new Set();
+  for (const d of walletDetails) {
+    const short = String(d.wallet || '').slice(-6);
+    const tier = walletProfiles?.get(short)?.bySport?.[sport]?.whitelistTier || null;
+    if (tier !== 'CONFIRMED' && tier !== 'FLAT') continue;
+    if (d.side === mySide) winnersFor.add(short);
+    else if (d.side) winnersAg.add(short);
+  }
+  const winnerForW = winnersFor.size;
+  const winnerAgW = winnersAg.size;
+  const winnerMargin = winnerForW - winnerAgW;
+
+  return { qualityForT30, qualityAgT30, qualityMargin, winnerForW, winnerAgW, winnerMargin };
+}
+
+function computeVaultQuantScore(sig) {
+  if (!sig) return null;
+  const { winnerMargin, qualityMargin } = sig;
+
+  let base;
+  if (winnerMargin >= 2) base = 4.5;
+  else if (winnerMargin === 1) base = 3.5;
+  else if (winnerMargin === 0) base = 2.5;
+  else if (winnerMargin === -1) base = 1.5;
+  else base = 1.0; // ≤ -2
+
+  let adj;
+  if (qualityMargin >= 3) adj = 0.5;
+  else if (qualityMargin >= 1) adj = 0.0;
+  else if (qualityMargin === 0) adj = -0.5;
+  else adj = -1.0; // negative quality margin
+
+  let score = Math.max(1.0, Math.min(5.0, base + adj));
+  score = Math.round(score * 2) / 2;
+
+  // Hard rules (live-validated edges).
+  if (winnerMargin <= -2) score = 1.0;
+  if (winnerMargin >= 2 && qualityMargin >= 1) score = 5.0;
+
+  const label = score >= 5.0 ? 'ELITE'
+    : score >= 4.0 ? 'STRONG'
+    : score >= 3.0 ? 'SOLID'
+    : score >= 2.0 ? 'DEVELOPING'
+    : 'MUTED';
+
+  return { score, label };
+}
+
+const VAULT_QUANT_VERSION = 1;
+
 async function main() {
   const db = initFirebase();
   const date = todayStr();
@@ -298,6 +387,17 @@ async function main() {
   const excludedRaw = loadJSON('sharp_intel_excluded_wallets.json') || {};
   const excludedArr = Array.isArray(excludedRaw.excluded) ? excludedRaw.excluded : [];
   const excludedSet = new Set(excludedArr.map(w => (w || '').toLowerCase()));
+
+  // Phase 2 wallet whitelist — needed for Vault Quant Score winners margin.
+  // Keyed by walletShort (last 6 chars), same as doc id in Firestore.
+  const walletProfiles = new Map();
+  try {
+    const profilesSnap = await db.collection('sharpWalletProfiles').get();
+    profilesSnap.forEach(d => walletProfiles.set(d.id, d.data()));
+    console.log(`Loaded ${walletProfiles.size} sharpWalletProfiles for vault quant scoring`);
+  } catch (err) {
+    console.warn('WARNING: failed to load sharpWalletProfiles — vault_* fields will be null:', err.message);
+  }
 
   const posFiles = [
     { data: sharpPositions, mkt: 'ML' },
@@ -441,6 +541,10 @@ async function main() {
           const wps = gameWPSCache[gmKey] || {};
           const myDetail = wps.walletDetails?.find(d => d.wallet === pos.wallet.slice(-6) && d.side === pos.side);
 
+          // Vault Quant Score v1 — two-axis shadow score (hidden; writes only).
+          const vaultSignals = computeVaultQuantSignals(wps.walletDetails, pos.side, sport, walletProfiles);
+          const vaultScore = computeVaultQuantScore(vaultSignals);
+
           positions.push({
             date,
             sport,
@@ -511,6 +615,18 @@ async function main() {
             // Per-position convenience flags for easy filtering
             v8_onConsensusSide: wps.consensusSide ? pos.side === wps.consensusSide : null,
             v8_qualifiedContribution: myDetail ? (myDetail.contribution ?? 0) >= 50 : null,
+            // Vault Quant Score v1 — side-aware two-axis score (hidden; shadow mode).
+            // Winners margin (primary) + T=30 quality margin (secondary). See
+            // computeVaultQuantScore() header for the validated ladder.
+            vault_quantScore: vaultScore?.score ?? null,
+            vault_quantLabel: vaultScore?.label ?? null,
+            vault_quantVersion: VAULT_QUANT_VERSION,
+            vault_winnerForW: vaultSignals?.winnerForW ?? null,
+            vault_winnerAgW: vaultSignals?.winnerAgW ?? null,
+            vault_winnerMargin: vaultSignals?.winnerMargin ?? null,
+            vault_qualityForT30: vaultSignals?.qualityForT30 ?? null,
+            vault_qualityAgT30: vaultSignals?.qualityAgT30 ?? null,
+            vault_qualityMargin: vaultSignals?.qualityMargin ?? null,
             status: 'PENDING',
             result: null,
             gradedAt: null,
@@ -577,6 +693,17 @@ async function main() {
             v8_maxContribFor: pos.v8_maxContribFor,
             v8_onConsensusSide: pos.v8_onConsensusSide,
             v8_qualifiedContribution: pos.v8_qualifiedContribution,
+            // Vault Quant Score v1 — backfill onto graded docs so we can
+            // retro-validate the ladder against real W/L outcomes.
+            vault_quantScore: pos.vault_quantScore,
+            vault_quantLabel: pos.vault_quantLabel,
+            vault_quantVersion: pos.vault_quantVersion,
+            vault_winnerForW: pos.vault_winnerForW,
+            vault_winnerAgW: pos.vault_winnerAgW,
+            vault_winnerMargin: pos.vault_winnerMargin,
+            vault_qualityForT30: pos.vault_qualityForT30,
+            vault_qualityAgT30: pos.vault_qualityAgT30,
+            vault_qualityMargin: pos.vault_qualityMargin,
           };
           batch.update(ref, v8Patch);
           batchOps++;
@@ -626,6 +753,16 @@ async function main() {
           v8_maxContribFor: pos.v8_maxContribFor,
           v8_onConsensusSide: pos.v8_onConsensusSide,
           v8_qualifiedContribution: pos.v8_qualifiedContribution,
+          // Vault Quant Score v1 — refresh on every cycle for PENDING docs.
+          vault_quantScore: pos.vault_quantScore,
+          vault_quantLabel: pos.vault_quantLabel,
+          vault_quantVersion: pos.vault_quantVersion,
+          vault_winnerForW: pos.vault_winnerForW,
+          vault_winnerAgW: pos.vault_winnerAgW,
+          vault_winnerMargin: pos.vault_winnerMargin,
+          vault_qualityForT30: pos.vault_qualityForT30,
+          vault_qualityAgT30: pos.vault_qualityAgT30,
+          vault_qualityMargin: pos.vault_qualityMargin,
         };
         if (pos.entryLine != null) updatePayload.entryLine = pos.entryLine;
         if (pos.spreadLine != null && !data.spreadLine) updatePayload.spreadLine = pos.spreadLine;

@@ -1,0 +1,36 @@
+name: Backfill Vault Quant Score
+
+# Re-scores every sharp_action_positions doc (pending + graded) with the
+# latest sharpWalletProfiles whitelist. Graded retro-scores shift as wallets
+# enter/exit CONFIRMED/FLAT tiers, so we need a daily recompute to keep the
+# retro-validation ladder accurate.
+#
+# The 2-hour writeSharpActions cron refreshes vault_* on live positions only
+# (it doesn't touch docs that weren't in today's JSON feeds).
+
+on:
+  schedule:
+    - cron: '15 12 * * *'   # 12:15 UTC daily (after grading settles)
+  workflow_dispatch:
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Backfill vault quant scores
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: node scripts/backfillVaultQuant.js --write
