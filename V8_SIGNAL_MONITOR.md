@@ -1,6 +1,6 @@
 # V8.3 Sizing-Signal Monitor
 
-Generated: 4/23/2026, 5:07:27 AM ET · V8 cutover: 2026-04-18
+Generated: 4/23/2026, 10:18:57 AM ET · V8 cutover: 2026-04-18
 
 Full graded sample: **N=73  WR=46.6%  flatROI=-5.3%  wtdROI=-7.6%**
 
