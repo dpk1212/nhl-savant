@@ -243,13 +243,13 @@ V8 stars are wallet-only, but the production system still depends on lock/shadow
 
 | Category | Count | % |
 |---|---|---|
-| Total Written | 76 | 100% |
-| LOCKED (direct) | 52 | 68.4% |
-| Promoted (SHADOW→LOCKED) | 12 | 15.8% |
-| Rejected (stayed SHADOW) | 8 | 10.5% |
+| Total Written | 78 | 100% |
+| LOCKED (direct) | 53 | 67.9% |
+| Promoted (SHADOW→LOCKED) | 13 | 16.7% |
+| Rejected (stayed SHADOW) | 8 | 10.3% |
 | Superseded (side flipped) | 2 | 2.6% |
-| Muted | 11 | 14.5% |
-| Cancelled | 1 | 1.3% |
+| Muted | 11 | 14.1% |
+| Cancelled | 2 | 2.6% |
 
 ---
 
