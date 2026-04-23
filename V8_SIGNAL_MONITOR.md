@@ -1,8 +1,8 @@
 # V8.3 Sizing-Signal Monitor
 
-Generated: 4/22/2026, 10:15:40 AM ET · V8 cutover: 2026-04-18
+Generated: 4/23/2026, 5:07:27 AM ET · V8 cutover: 2026-04-18
 
-Full graded sample: **N=60  WR=45.0%  flatROI=-5.2%  wtdROI=-9.3%**
+Full graded sample: **N=73  WR=46.6%  flatROI=-5.3%  wtdROI=-7.6%**
 
 This report tracks every signal V8.3 currently acts on AND every sub-rule we've explicitly deferred. When a deferred subset crosses its re-evaluation threshold (noted per row), it's a candidate for a V8.x follow-up.
 
@@ -11,34 +11,34 @@ This report tracks every signal V8.3 currently acts on AND every sub-rule we've 
 ### CLEAR_MOVE regime (V8.2 · flat +0.5u)
 | Subset | N | WR | flat ROI | wtd ROI |
 |---|---|---|---|---|
-| regime = CLEAR_MOVE | 13 | 61.5% | +9.6% | +27.7% |
-| regime ≠ CLEAR_MOVE | 47 | 40.4% | -9.2% | -21.4% |
+| regime = CLEAR_MOVE | 16 | 68.8% | +20.8% | +35.6% |
+| regime ≠ CLEAR_MOVE | 57 | 40.4% | -12.6% | -24.1% |
 
 ### meanBase_F — wallet-crew caliber (V8.3 · ±0.25u, regime-agnostic)
 | Subset | N | WR | flat ROI | wtd ROI |
 |---|---|---|---|---|
-| meanBase_F ≥ 55  (+0.25u) | 23 | 56.5% | +6.7% | -13.6% |
-| meanBase_F 50–55 (neutral) | 13 | 46.2% | -12.6% | -6.7% |
-| meanBase_F < 50  (−0.25u) | 24 | 33.3% | -12.6% | -5.9% |
+| meanBase_F ≥ 55  (+0.25u) | 27 | 51.9% | -2.0% | -14.1% |
+| meanBase_F 50–55 (neutral) | 17 | 52.9% | -2.6% | -3.8% |
+| meanBase_F < 50  (−0.25u) | 29 | 37.9% | -9.8% | -3.0% |
 
 ### NEAR_START × maxRoiN_F — elite for-side wallet (V8.3 · ±0.25u, NEAR_START only)
 | Subset | N | WR | flat ROI | wtd ROI |
 |---|---|---|---|---|
-| NEAR_START + maxRoiN_F ≥ 70  (+0.25u) | 19 | 47.4% | +5.1% | -6.3% |
-| NEAR_START + maxRoiN_F 50–70 (−0.25u) | 14 | 35.7% | -2.4% | -11.6% |
+| NEAR_START + maxRoiN_F ≥ 70  (+0.25u) | 20 | 45.0% | -0.2% | -12.3% |
+| NEAR_START + maxRoiN_F 50–70 (−0.25u) | 20 | 40.0% | -6.0% | -13.4% |
 | NEAR_START + maxRoiN_F < 50  (neutral) | 1 | 100.0% | +27.8% | +27.8% |
 
 ## 2. Deferred candidates (re-evaluate when N crosses threshold)
 
 | Candidate rule | Current subset | N | WR | flat ROI | Promote when |
 |---|---|---|---|---|---|
-| +0.25u elite-of-elite (stack on top of V8.3) | `maxRoiN_F ≥ 70 AND meanBase_F ≥ 55` | 15 | 53.3% | +1.8% | N ≥ 15 AND flat ROI ≥ +30% |
-| NBA NEAR_START fade (−0.5u or hard-block) | `regime = NEAR_START AND sport = NBA` | 17 | 35.3% | -1.0% | N ≥ 20 AND WR < 40% |
+| +0.25u elite-of-elite (stack on top of V8.3) | `maxRoiN_F ≥ 70 AND meanBase_F ≥ 55` | 16 | 56.3% | +7.4% | N ≥ 15 AND flat ROI ≥ +30% |
+| NBA NEAR_START fade (−0.5u or hard-block) | `regime = NEAR_START AND sport = NBA` | 20 | 40.0% | -1.1% | N ≥ 20 AND WR < 40% |
 | +0.25u contribTier = STANDARD in CLEAR_MOVE | `regime = CLEAR_MOVE AND contribTier = STANDARD` | 6 | 66.7% | +28.5% | N ≥ 10 |
-| +0.25u contribTier = STANDARD in NEAR_START | `regime = NEAR_START AND contribTier = STANDARD` | 7 | 57.1% | +3.3% | N ≥ 10 |
-| +0.25u Δcontribution sweet spot | `dContrib ∈ (50, 100]` | 17 | 64.7% | +47.9% | N ≥ 15 AND flat ROI ≥ +30% |
-| MUTE auto-suppress | `contribTier = MUTE` | 1 | 100.0% | +475.0% | N ≥ 10 AND flat ROI ≤ −20% |
-| stars ≥ 4 standalone bonus | `stars ≥ 4 AND not CLEAR_MOVE (to isolate star effect)` | 13 | 30.8% | -29.1% | N ≥ 15 AND flat ROI ≥ +20% — if this stays weak, keep rejected |
+| +0.25u contribTier = STANDARD in NEAR_START | `regime = NEAR_START AND contribTier = STANDARD` | 8 | 50.0% | -9.6% | N ≥ 10 |
+| +0.25u Δcontribution sweet spot | `dContrib ∈ (50, 100]` | 22 | 59.1% | +32.3% | N ≥ 15 AND flat ROI ≥ +30% |
+| MUTE auto-suppress | `contribTier = MUTE` | 2 | 100.0% | +283.0% | N ≥ 10 AND flat ROI ≤ −20% |
+| stars ≥ 4 standalone bonus | `stars ≥ 4 AND not CLEAR_MOVE (to isolate star effect)` | 14 | 28.6% | -34.2% | N ≥ 15 AND flat ROI ≥ +20% — if this stays weak, keep rejected |
 
 ## 3. Stacked V8.3 bonus · in-sample performance by net bonus
 
@@ -46,25 +46,25 @@ What would each tier of the stacked bonus have looked like on graded V8 picks?
 
 | Net bonus / condition | N | WR | flat ROI | wtd ROI |
 |---|---|---|---|---|
-| +0.75u | 4 | 75.0% | +29.8% | +8.2% |
-| +0.50u (CM + mean neutral) | 3 | 66.7% | +15.6% | +36.0% |
+| +0.75u | 5 | 80.0% | +42.0% | +34.7% |
+| +0.50u (CM + mean neutral) | 4 | 75.0% | +18.1% | +32.1% |
 | +0.50u (NEAR_START + both positive) | 11 | 54.5% | +9.4% | -4.4% |
-| +0.25u (CM + weak wallets) | 6 | 50.0% | -6.9% | +33.7% |
-| +0.25u (NEAR_START one positive) | 12 | 41.7% | -4.1% | -13.6% |
+| +0.25u (CM + weak wallets) | 7 | 57.1% | +7.1% | +40.1% |
+| +0.25u (NEAR_START one positive) | 16 | 31.3% | -28.1% | -37.8% |
 | +0.25u (other regime + mean ≥ 55) | 4 | 50.0% | -6.6% | -58.5% |
-| 0u (neutral) | 11 | 45.5% | +2.4% | -10.8% |
-| −0.25u (weak wallets, no NS) | 6 | 16.7% | -60.8% | -91.3% |
-| −0.25u (NEAR_START one negative) | 12 | 58.3% | +26.7% | +30.5% |
-| −0.50u (worst case) | 7 | 14.3% | -17.9% | -47.7% |
+| 0u (neutral) | 15 | 40.0% | -11.2% | -24.6% |
+| −0.25u (weak wallets, no NS) | 8 | 12.5% | -70.6% | -93.6% |
+| −0.25u (NEAR_START one negative) | 16 | 50.0% | +6.8% | +10.9% |
+| −0.50u (worst case) | 9 | 33.3% | +0.1% | -18.2% |
 
 ## 4. Regime baselines (context)
 
 | Regime | N | WR | flat ROI | wtd ROI |
 |---|---|---|---|---|
-| CLEAR_MOVE | 13 | 61.5% | +9.6% | +27.7% |
-| NEAR_START | 34 | 44.1% | +2.7% | -5.3% |
-| SMALL_MOVE | 7 | 42.9% | -22.8% | -62.2% |
-| NO_MOVE | 6 | 16.7% | -60.8% | -80.7% |
+| CLEAR_MOVE | 16 | 68.8% | +20.8% | +35.6% |
+| NEAR_START | 41 | 43.9% | -2.3% | -10.0% |
+| SMALL_MOVE | 9 | 44.4% | -17.2% | -50.5% |
+| NO_MOVE | 7 | 14.3% | -66.4% | -83.1% |
 
 ---
 *Auto-generated by `scripts/signalAcrossFullSample.js` (daily). See `STAR_RATING_SYSTEM.md` §V8.3 for the live sizing rules.*
