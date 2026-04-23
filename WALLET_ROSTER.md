@@ -1,6 +1,6 @@
 # Sharp Wallet Roster
 
-Generated: 4/23/2026, 4:51:34 AM ET · V8 cutover: 2026-04-18
+Generated: 4/23/2026, 6:19:24 AM ET · V8 cutover: 2026-04-18
 
 Every sharp wallet we have V8-era data on, sorted by combined conviction score. This is the **full roster** (no minimum-bets filter) — noisy at the tail, but that's the point for a tracking dataset. Verdict column reflects the ≥3-bet threshold.
 
@@ -25,7 +25,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 52aeeb | CONFIRMED_WINNER | ELITE | 30 | 10 | 70% | +51.3% | +5.13 | 24 | 37.5% | +43.3% | +272527 | 61.9 | 40.8 | 2.5% |
 | bc3532 | CONFIRMED_WINNER | ELITE | 144 | 5 | 60% | +90.7% | +4.54 | 7 | 57.1% | +165.4% | +244793 | 79.2 | 77.5 | 9.2% |
 | b05143 | CONFIRMED_WINNER | ELITE | 101 | 7 | 57.1% | +18.2% | +1.28 | 17 | 64.7% | +28.4% | +195895 | 58.4 | 44.8 | 2.9% |
-| 5c32f2 | CONFIRMED_WINNER | ELITE | 51 | 3 | 100% | +186.7% | +5.60 | 5 | 60% | +60.3% | +132424 | 57.6 | 36.3 | 2.1% |
+| 5c32f2 | CONFIRMED_WINNER | ELITE | 52 | 3 | 100% | +186.7% | +5.60 | 6 | 66.7% | +60.5% | +134245 | 57.6 | 36.3 | 2.1% |
 | 12ad50 | CONFIRMED_WINNER | ELITE | 78 | 4 | 75% | +43.5% | +1.74 | 6 | 83.3% | +31.9% | +120413 | 58.1 | 49.3 | 3.3% |
 | 6bd96a | CONFIRMED_WINNER | ELITE | 28 | 8 | 75% | +89.5% | +7.16 | 3 | 66.7% | +107.6% | +61207 | 66.8 | 51 | 3.6% |
 | 4edc5b | CONFIRMED_WINNER | ELITE | 115 | 4 | 50% | +44.7% | +1.79 | 9 | 77.8% | +7.4% | +32358 | 73.4 | 83.1 | 12.4% |
@@ -124,7 +124,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 52aeeb | 10 | +51.3% | 24 | +43.3% | +272527 | 61.9 | 2.5% |
 | bc3532 | 5 | +90.7% | 7 | +165.4% | +244793 | 79.2 | 9.2% |
 | b05143 | 7 | +18.2% | 17 | +28.4% | +195895 | 58.4 | 2.9% |
-| 5c32f2 | 3 | +186.7% | 5 | +60.3% | +132424 | 57.6 | 2.1% |
+| 5c32f2 | 3 | +186.7% | 6 | +60.5% | +134245 | 57.6 | 2.1% |
 | 12ad50 | 4 | +43.5% | 6 | +31.9% | +120413 | 58.1 | 3.3% |
 | 6bd96a | 8 | +89.5% | 3 | +107.6% | +61207 | 66.8 | 3.6% |
 | 4edc5b | 4 | +44.7% | 9 | +7.4% | +32358 | 73.4 | 12.4% |
