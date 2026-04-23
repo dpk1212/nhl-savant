@@ -225,6 +225,21 @@ Fix: `meetsThreshold` for ML, Spread, and Total now accepts EITHER:
 
 If only the whitelist gate fires, `isLocked` is set true (regardless of regime) so the sync `useEffect` actually runs. `syncPickToFirebase`'s whitelist promotion path then keeps `lockStage` in sync, and the locked-list card renders the side as a normal LOCKED play with `promotedBy = 'whitelist'`. This finally aligns the renderer with the back-end promotion rules and is the change that lets pure margin plays surface.
 
+### v5.6 — Muted Plays Excluded From Performance + Persistent Mute Styling Post-Grade (2026-04-22)
+
+A muted side (`health.status === 'MUTED'`) had two bugs after grading:
+
+1. **It counted toward record / win-rate / ROI / Profit-Over-Time.** A play we explicitly told the user to stand down on (e.g. Red Sox 2026-04-22 ML, muted with `below_lock_range`) was still tallied as a -1u loss in the Pick Performance card and dragged the equity curve down. The system was effectively grading itself on plays it had already disqualified.
+2. **It rendered as a normal locked LOSS card.** `isMuted` and `isCancelled` in `LockedPickCard` were both gated by `&& !isGraded`, so the moment the result landed the amber/orange WEAKENING styling vanished and the card was indistinguishable from a real loss.
+
+Fix touches three places, all in `src/pages/SharpFlow.jsx`:
+
+- **`tallySides()`** and **`loadAllTimePnL().processSide()`** now treat `health.status === 'MUTED'` exactly like `CANCELLED` / `superseded` / `SHADOW` for the purposes of `pnl.pregame` totals, the by-conviction-tier `byStars` buckets, and the `cancelled` flag stamped on each pushed `pick`.
+- **`SharpFlowProfitChart`** filters out `pick.cancelled` picks before walking the cumulative profit curve.
+- **`LockedPickCard`** drops the `&& !isGraded` gate on `isMuted` / `isCancelled`. A muted graded card now keeps the orange accent, opacity 0.6, "WEAKENING" badge, struck-through `1u`, an amber `MUTED · LOSS` (or `· WIN`) outcome chip, and `0.00u` profit text. The sync side stamp and stored `health` are unchanged — this is purely a render + aggregation fix.
+
+Cache key bumped from `sharpFlow_pnl_v12` → `sharpFlow_pnl_v13` so existing browser sessions force a refresh of the totals.
+
 ### Promotion Path Summary (post-v5.5)
 
 For a side to LOCK and appear in `Locked Picks — Today`, it now passes through:

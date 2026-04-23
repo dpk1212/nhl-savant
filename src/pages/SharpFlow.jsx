@@ -1862,7 +1862,12 @@ function tallySides(snap) {
     if (data.sides) {
       for (const sideData of Object.values(data.sides)) {
         if (sideData.status !== 'COMPLETED') continue;
-        if (sideData.superseded || sideData.health?.status === 'CANCELLED' || sideData.lockStage === 'SHADOW') continue;
+        // v5.6: MUTED plays are excluded from totals exactly like CANCELLED — a
+        // muted play is one we explicitly told the user to stand down on (health
+        // signal degraded post-lock), so its outcome must not pollute win-rate,
+        // ROI, or PnL graphs. Cards keep showing the muted state post-grade for
+        // historical context (see LockedPickCard isMuted gate).
+        if (sideData.superseded || sideData.health?.status === 'CANCELLED' || sideData.health?.status === 'MUTED' || sideData.lockStage === 'SHADOW') continue;
         const u = sideData.peak?.units || sideData.lock?.units || 1;
         totalUnits += u;
         const profit = sideData.result?.profit ?? 0;
@@ -1921,7 +1926,7 @@ function estimateStarsFromSnap(snap) {
 
 async function loadAllTimePnL() {
   try {
-    const cacheKey = 'sharpFlow_pnl_v12';
+    const cacheKey = 'sharpFlow_pnl_v13';
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
       const { data, ts } = JSON.parse(cached);
@@ -1950,7 +1955,12 @@ async function loadAllTimePnL() {
       const mt = data._marketType || data.marketType || 'ml';
       const isPostDeploy = data.date >= STARS_LIVE_DATE;
       const processSide = (sd) => {
-        const isCancelled = !!(sd.superseded || sd.health?.status === 'CANCELLED' || sd.lockStage === 'SHADOW');
+        // v5.6: treat MUTED the same as CANCELLED for tallying purposes — both
+        // mean "the live signal told us to stand down before tip", so the graded
+        // outcome should not count toward record / ROI / PnL graphs. The pick
+        // is still pushed into `picks` with cancelled=true so individual cards
+        // still render the muted styling and the historical outcome.
+        const isCancelled = !!(sd.superseded || sd.health?.status === 'CANCELLED' || sd.health?.status === 'MUTED' || sd.lockStage === 'SHADOW');
         const bestSnap = sd.peak || sd.lock;
         const lockSnap = sd.lock || bestSnap;
         const s = bestSnap?.stars ?? estimateStarsFromSnap(bestSnap);
@@ -3850,8 +3860,15 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   const isLoss = outcome === 'LOSS';
 
   const healthStatus = health?.status || 'ACTIVE';
-  const isMuted = healthStatus === 'MUTED' && !isGraded;
-  const isCancelled = healthStatus === 'CANCELLED' && !isGraded;
+  // v5.6: keep MUTED/CANCELLED visual state even after the pick is graded.
+  // Previously these flags flipped off once the result landed, which made a
+  // muted losing play (e.g. Red Sox 2026-04-22) look identical to a normal
+  // locked loss in the post-game card. Keeping the flag on preserves the
+  // amber accent + WEAKENING badge so users can see the system told them to
+  // stand down. Performance totals already exclude these (tallySides /
+  // loadAllTimePnL / SharpFlowProfitChart all skip cancelled === true).
+  const isMuted = healthStatus === 'MUTED';
+  const isCancelled = healthStatus === 'CANCELLED';
   const healthReasons = health?.reasons || [];
 
   const accentColor = isCancelled ? B.red : isMuted ? '#F59E0B' : isGraded ? (isWin ? B.green : isLoss ? B.red : B.gold) : B.green;
@@ -4009,7 +4026,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
             <span style={{ ...T.label, fontWeight: 700, color: isCancelled ? B.textMuted : B.text, textDecoration: isCancelled ? 'line-through' : 'none' }}>{team}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            {isCancelled ? (
+            {isCancelled || (isMuted && isGraded) ? (
               <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
                 <span style={{ textDecoration: 'line-through' }}>{units}u</span> 0u @ {fmtO(odds)} · {book}
               </span>
@@ -4019,17 +4036,34 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
               </span>
             )}
             {isGraded ? (
-              <span style={{
-                ...T.micro, fontWeight: 800, padding: '0.15rem 0.45rem', borderRadius: '4px',
-                color: isWin ? '#fff' : isLoss ? '#fff' : B.textSec,
-                background: isWin ? 'linear-gradient(135deg, #10B981, #059669)' : isLoss ? 'linear-gradient(135deg, #EF4444, #DC2626)' : 'rgba(255,255,255,0.06)',
-              }}>{outcome}</span>
+              isMuted ? (
+                // v5.6: show outcome for context but de-emphasize — this play
+                // was muted before tip, so the result is informational only and
+                // does not contribute to PnL.
+                <span style={{
+                  ...T.micro, fontWeight: 700, padding: '0.15rem 0.45rem', borderRadius: '4px',
+                  color: B.textMuted, background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(245,158,11,0.25)',
+                  letterSpacing: '0.04em',
+                }}>MUTED · {outcome}</span>
+              ) : (
+                <span style={{
+                  ...T.micro, fontWeight: 800, padding: '0.15rem 0.45rem', borderRadius: '4px',
+                  color: isWin ? '#fff' : isLoss ? '#fff' : B.textSec,
+                  background: isWin ? 'linear-gradient(135deg, #10B981, #059669)' : isLoss ? 'linear-gradient(135deg, #EF4444, #DC2626)' : 'rgba(255,255,255,0.06)',
+                }}>{outcome}</span>
+              )
             ) : (
               <span style={{ ...T.micro, fontWeight: 700, color: B.gold, padding: '0.15rem 0.45rem', borderRadius: '4px', background: B.goldDim }}>PENDING</span>
             )}
-            {isGraded && (
+            {isGraded && !isMuted && (
               <span style={{ ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'", color: isWin ? B.green : isLoss ? B.red : B.textSec }}>
                 {isWin ? '+' : isLoss ? '' : ''}{(profit || 0).toFixed(2)}u
+              </span>
+            )}
+            {isGraded && isMuted && (
+              <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: B.textMuted }}>
+                0.00u
               </span>
             )}
             {!isGraded && gameTime && (
@@ -6644,7 +6678,12 @@ const SharpFlowProfitChart = memo(function SharpFlowProfitChart({ picks }) {
 
   const chartData = useMemo(() => {
     if (!picks || picks.length === 0) return [];
-    const completed = picks.filter(p => p.status === 'COMPLETED' && p.outcome);
+    // v5.6: exclude cancelled/muted/superseded picks from the cumulative
+    // profit curve. `pick.cancelled` is set by loadAllTimePnL → processSide
+    // whenever the side was MUTED, CANCELLED, superseded, or never left
+    // SHADOW. Counting those would inflate or deflate the equity curve with
+    // outcomes the system explicitly told users to skip.
+    const completed = picks.filter(p => p.status === 'COMPLETED' && p.outcome && !p.cancelled);
     if (completed.length === 0) return [];
 
     const filtered = completed.filter(p => {
