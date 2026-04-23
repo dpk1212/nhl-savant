@@ -54,15 +54,15 @@ Every game with sharp positions is scored using the **V8 wallet-contribution sta
 
 The raw score is mapped to a **0.5–5.0 star rating** using fixed percentile thresholds. A play becomes visible (SHADOW) when it meets the star + invested gates, and is **LOCKED IN** when either the market regime confirms OR a **STRONG contribution tier** fires (see "Contribution-Tier Promotion" below).
 
-**SHADOW gate (minimum to write to Firebase at all):**
+**SHADOW / LOCKED renderer gate (minimum to even call `syncPickToFirebase`):**
 
-| Market | Star Threshold | Min Invested (baseline) | Min Invested (STRONG/STANDARD contribTier) | Min Wallets |
-|--------|---------------|--------------------------|---------------------------------------------|-------------|
-| **Moneyline** | >= 2.5 stars | **$5,000** | **$2,500** | — |
-| **Spread** | >= 2.5 stars | **$5,000** | **$2,500** | **2 wallets** |
-| **Total (O/U)** | >= 2.5 stars | **$5,000** | **$2,500** | **2 wallets** |
+| Market | Legacy gate | Whitelist-margin gate (v5.5, 2026-04-22) | Min Invested floor (back-end) |
+|--------|-------------|-------------------------------------------|-------------------------------|
+| **Moneyline** | `stars >= 2.5 && consensusInvested >= $10K` | `stars >= 1.0 && consensusInvested >= $10K && decideLockStage(...).promotedBy === 'whitelist'` | $5K (baseline), $2.5K (STRONG/STANDARD contribTier) |
+| **Spread**    | `stars >= 2.5 && (≥2 wallets OR whaleOverride) && conInvested >= $10K` | `stars >= 1.0 && conInvested >= $10K && whitelist promo` | $5K / $2.5K |
+| **Total (O/U)** | `stars >= 2.5 && (≥2 wallets OR whaleOverride) && conInvested >= $10K` | `stars >= 1.0 && conInvested >= $10K && whitelist promo` | $5K / $2.5K |
 
-The $2,500 relaxed floor is enabled by `minInvestedFloor(contribTier)` so picks with a strong qualified-sharp signal aren't rejected for modest aggregate dollars. **No bet is EVER written to Firebase unless these minimums are met.** This is enforced at the lock-decision level in `SharpFlow.jsx`.
+A side passes the renderer gate if **either** the legacy or the whitelist-margin column is satisfied. The `$2,500` relaxed floor inside the back-end is enabled by `minInvestedFloor(contribTier)` so picks with a strong qualified-sharp signal aren't rejected for modest aggregate dollars. **No bet is EVER written to Firebase unless both the renderer gate AND the invested floor are met.** Both are enforced in `SharpFlow.jsx` (`SharpPositionCard` and `syncPickToFirebase` respectively).
 
 **LOCKED promotion (two paths, additive):**
 
@@ -188,6 +188,53 @@ These stamp on create, on peak update, and on any SHADOW → LOCKED transition s
 Δ is the dominant v8 predictor across every regime with sample (CLEAR_MOVE **+127.5%** spread, NEAR_START **+133.9%** spread where fmean goes negative). Δ ≥ +1 buckets all earn their promotion; Δ ≤ −1 buckets all justify the MUTE/CANCEL kill.
 
 **Monitoring.** `scripts/v8DailyPnL.js` now slices all graded V8 picks by `walletVerdict` and `walletDelta` in both the single-factor section and the 2-way cross sections (`Wallet verdict × regime`, `Wallet verdict × sport`, `Wallet verdict × stars`), and the new verdict is included in the 3-way cluster pool. The nightly `sharpWalletProfiles` rebuild (`exportWalletProfiles.js`) churns whitelist membership in and out as each new graded day lands, so the layer self-corrects as wallets rise and fade.
+
+### v5.2 — Stale-Health Self-Heal (2026-04-22)
+
+When the v5 promotion path went live, several picks already in Firebase carried a `health.status === 'MUTED'` with reasons of `whitelist_fade_weak` / `whitelist_fade_strong` from earlier evaluations whose Δ stamps were since corrected. The UI was reading those stale `health` blocks directly, so picks that *currently* show a positive Δ were still rendered as muted.
+
+Two-prong fix shipped:
+
+1. **UI-side reconciliation** — the locked-list builder in `SharpFlow.jsx` now reads `health` through a guard that resets `status` back to `'ACTIVE'` when (a) the stored reasons are *only* `whitelist_fade_*`, (b) the pick's *current* `v8_walletConsensusVerdict` is `LEAN_FOR` / `STRONG_FOR` / `NEUTRAL`, and (c) `v8_walletConsensusMuteTriggered === false && v8_walletConsensusCancelTriggered === false`. Non-whitelist health reasons (`opp_side_stronger`, `wps_dropped`, `side_flipped`, …) are preserved untouched.
+2. **Backfill-side write reconciliation** — `scripts/backfillWalletConsensus.js` now actively resets `health` to `{ status: 'ACTIVE', reasons: [] }` whenever it detects the same stale-only-whitelist-reason pattern, even when the pick's `v8_walletConsensusVersion` is already at the current version. This means re-running the script idempotently cleans up legacy state without requiring a version bump.
+
+### v5.3 — Live-vs-Stored Δ Drift Restamp (2026-04-22)
+
+`syncPickToFirebase` (and the spread/total variants) only re-stamped wallet-consensus fields when *stars rose* (peak update path), *EV broke a new max*, or **WHITELIST_CONSENSUS_VERSION** was bumped. Neither caught the most common live-pick mutation: a new whitelisted sharp arrives (or an existing one flips sides) **after peak**, which leaves Δ frozen at the peak-time wallet set.
+
+Fix: every sync function now performs a final "live vs stored" Δ drift check before returning `no_change`. If `liveWc.delta`, `liveWc.verdict`, or the mute/cancel flags differ from what Firebase has, the side is restamped and `lastAction = 'consensus_drift_restamp'`. Cost is one extra `setDoc` per drifted side, only on actual mismatches; the page-load and 15-min fetch sync pipelines now propagate fade/promote signals as they happen.
+
+### v5.4 — All-Sides Drift + Whitelist Side-Creation + FADING Badge (2026-04-22)
+
+v5.3 only restamped the side passed *into* the sync (the live consensus side). When consensus *flipped* to a brand-new side (Oilers becomes today's consensus while the Firebase doc still has only a Ducks side from yesterday's peak), `syncPickToFirebase` was called with `side="home"`, the new-side branch returned `no_change`, and the orphaned Ducks side was *never touched* — its Δ stayed frozen and the late-arriving NHL WINNER fading the pick never propagated to mute it.
+
+Three fixes shipped:
+
+1. **`restampDriftedSides()` helper** — every sync now refreshes Δ on **every non-superseded side**, not just the consensus side. Pulls from the same `v8Scoring.walletDetails` (which contains both sides' wallets each tagged with the wallet's actual bet side), runs `computeWalletConsensus` per side, and patches any drift in a single `setDoc`. Ran from both the existing-side branch *and* the new-side branch (before the side-creation gate).
+2. **Whitelist side-creation override** — the new-side gate previously required `stars > existingBestStars` to add a side. That blocked a NHL/MLB WINNER on the OTHER side from ever creating a fresh pick if its raw V8 score was below the existing peak (Oilers 2★ vs Ducks 2.5★ peak). The gate now also allows side creation when `decideLockStage` returns `promotedBy === 'whitelist'` for the new side, and supersedes any existing locked sides (which are then rendered as `CANCELLED` with reason `side_flipped`). Action recorded as `side_added_whitelist`.
+3. **FADING header badge** — the verified-sharps card header showed `· N {SPORT} FADING` only when `agCount > forCount`. That hid the fade signal in the common 1-for / 1-against case (e.g. Stars/Wild with af1697 on Stars and fcc12b on Wild) where the header read `1 NBA WINNER` while the list rendered two winner badges total. Now shows `FADING` whenever any winner is on the opposite side, so the header total matches what's visible in the list.
+
+### v5.5 — Renderer-Side Whitelist Margin Override (2026-04-22)
+
+The shadow/lock decision tree had two layers that needed the v5 baseStars≥1.0 lowering: (a) `decideLockStage` (fixed in v5) and (b) the renderer-side `meetsThreshold` gate at the top of `SharpPositionCard` that decides whether to even *call* `syncPickToFirebase`. The v5 work missed (b), so a 1-2★ margin play with a sport WINNER on its side never made it to Firebase at all — the doc was never created and the whitelist promotion path inside the sync function literally never got a chance to fire. The Dodgers ML 4/22 case (1 sharp, $48.6K, 1 MLB WINNER, 2★ LEAN) was invisible to the system for that reason.
+
+Fix: `meetsThreshold` for ML, Spread, and Total now accepts EITHER:
+
+1. **Legacy gate** — `stars >= 2.5 && consensusInvested >= $10K` (and the existing 2-wallet/whale rule for spread/total).
+2. **Whitelist-margin gate** — `stars >= 1.0 && consensusInvested >= $10K && decideLockStage(...).promotedBy === 'whitelist'` for the same side.
+
+If only the whitelist gate fires, `isLocked` is set true (regardless of regime) so the sync `useEffect` actually runs. `syncPickToFirebase`'s whitelist promotion path then keeps `lockStage` in sync, and the locked-list card renders the side as a normal LOCKED play with `promotedBy = 'whitelist'`. This finally aligns the renderer with the back-end promotion rules and is the change that lets pure margin plays surface.
+
+### Promotion Path Summary (post-v5.5)
+
+For a side to LOCK and appear in `Locked Picks — Today`, it now passes through:
+
+1. **Renderer gate (`meetsThreshold`)** — Legacy 2.5★/$10K **OR** Whitelist 1.0★/$10K (Δ≥+1, agW=0).
+2. **`syncPickToFirebase` invested floor** — `totalInvested ≥ minInvestedFloor(contribTier)` (`$2.5K` STRONG/STANDARD, else `$5K`).
+3. **`decideLockStage`** — LOCKED via regime (`CLEAR_MOVE`/`NEAR_START`) **OR** contribution (STRONG tier) **OR** whitelist (Δ≥+1 + agW=0 + baseStars≥1.0).
+4. **Drift restamp** — every page-load + 15-min fetch reconciles every non-superseded side's Δ against live `walletDetails`. Late-arriving sport WINNERs fade an existing locked side (MUTE/CANCEL via Δ ≤ −1) or create+supersede a new side (whitelist promotion of the OTHER side).
+
+If the side fails (1) or (2) it is invisible to Firebase. If it fails (3) it stays `SHADOW`. If (4) reverses the picture, the existing pick is muted/cancelled or superseded by a new whitelist-promoted side without waiting for a peak update.
 
 ### Unit Sizing
 

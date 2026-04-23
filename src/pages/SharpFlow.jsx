@@ -4558,10 +4558,28 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   // rendered list.
   const isExtremeOdds = pinnProb != null && pinnProb >= 0.95;
   if (isExtremeOdds) return null;
-  const meetsThreshold = sr.stars >= 2.5 && consensusInvested >= 10000;
+  // v5.5: legacy gate kept the system from ever creating a Firebase doc for
+  // a sub-2.5★ play, which meant the whitelist promotion path inside
+  // syncPickToFirebase (gated at baseStars≥1.0) literally never ran on
+  // 1-2★ margin plays. The Dodgers ML 4/22 case (1 sharp, $48.6K, 1 MLB
+  // WINNER, 2★ LEAN) was invisible to the system for that reason. We now
+  // also accept a sub-2.5★ side when decideLockStage says it would be
+  // promoted via whitelist (Δ≥+1, agW=0, baseStars≥1.0). This is the
+  // renderer-side companion to the syncPickToFirebase-side override
+  // shipped in v5.4.
+  const mlWhitelistPromo = sr?.v8Scoring && consensusSide && gd.sport
+    ? decideLockStage(sr.regime, sr.v8Scoring, consensusSide, gd.sport, sr.stars).promotedBy === 'whitelist'
+    : false;
+  const meetsLegacy = sr.stars >= 2.5 && consensusInvested >= 10000;
+  const meetsWhitelist = mlWhitelistPromo && sr.stars >= 1.0 && consensusInvested >= 10000;
+  const meetsThreshold = meetsLegacy || meetsWhitelist;
   const hasRegimeMove = sr.regime === 'CLEAR_MOVE' || sr.regime === 'NEAR_START';
-  const isLocked = meetsThreshold && hasRegimeMove;
-  const isShadow = meetsThreshold && !hasRegimeMove;
+  // Treat whitelist-qualified sides as LOCKED even without a regime move —
+  // syncPickToFirebase's whitelist promotion path will keep the lockStage
+  // in sync, but the renderer needs to mark it locked so the sync useEffect
+  // actually fires (it gates on isLocked || isShadow).
+  const isLocked = (meetsLegacy && hasRegimeMove) || meetsWhitelist;
+  const isShadow = meetsLegacy && !hasRegimeMove;
   const lockType = isLocked ? (isGameLive ? 'LIVE' : 'PREGAME') : null;
 
   const units = isLocked ? calculateUnits(sr.stars, cGrade.penalty, betOdds, computeRegimeBonus(sr.regime, sr.v8Scoring, consensusSide, gd.sport)) : 0;
@@ -4770,12 +4788,20 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     && (spreadSharpFeatures.conWalletCount || 0) === 1
     && (spreadSharpFeatures.conTotalInvested || 0) >= 25000
     && spreadGameData?.positions?.some(p => p.side === spreadConsensusSide && (p.sportPnl || 0) >= 500000);
-  const spreadMeetsThreshold = spreadSr && spreadSr.stars >= 2.5
+  // v5.5: whitelist-eligible margin override (see ML gate above for context).
+  const spreadWhitelistPromo = spreadSr?.v8Scoring && spreadConsensusSide && gd.sport
+    ? decideLockStage(spreadSr.regime, spreadSr.v8Scoring, spreadConsensusSide, gd.sport, spreadSr.stars).promotedBy === 'whitelist'
+    : false;
+  const spreadMeetsLegacy = spreadSr && spreadSr.stars >= 2.5
     && ((spreadSharpFeatures?.conWalletCount || 0) >= 2 || spreadWhaleOverride)
     && (spreadSharpFeatures?.conTotalInvested || 0) >= 10000;
+  const spreadMeetsWhitelist = spreadSr && spreadWhitelistPromo
+    && spreadSr.stars >= 1.0
+    && (spreadSharpFeatures?.conTotalInvested || 0) >= 10000;
+  const spreadMeetsThreshold = spreadMeetsLegacy || spreadMeetsWhitelist;
   const spreadHasRegime = spreadSr && (spreadSr.regime === 'CLEAR_MOVE' || spreadSr.regime === 'NEAR_START');
-  const isSpreadLocked = spreadMeetsThreshold && spreadHasRegime;
-  const isSpreadShadow = spreadMeetsThreshold && !spreadHasRegime;
+  const isSpreadLocked = (spreadMeetsLegacy && spreadHasRegime) || spreadMeetsWhitelist;
+  const isSpreadShadow = spreadMeetsLegacy && !spreadHasRegime;
   const spreadUnits = (isSpreadLocked || isSpreadShadow) ? calculateSpreadTotalUnits(spreadSr.stars, 0, spreadBetOdds, computeRegimeBonus(spreadSr.regime, spreadSr.v8Scoring, spreadConsensusSide, gd.sport)) : 0;
 
   useEffect(() => {
@@ -4906,12 +4932,20 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     && (totalSharpFeatures.conWalletCount || 0) === 1
     && (totalSharpFeatures.conTotalInvested || 0) >= 25000
     && totalGameData?.positions?.some(p => p.side === totalConsensusSide && (p.sportPnl || 0) >= 500000);
-  const totalMeetsThreshold = totalSr && totalSr.stars >= 2.5
+  // v5.5: whitelist-eligible margin override (see ML gate above for context).
+  const totalWhitelistPromo = totalSr?.v8Scoring && totalConsensusSide && gd.sport
+    ? decideLockStage(totalSr.regime, totalSr.v8Scoring, totalConsensusSide, gd.sport, totalSr.stars).promotedBy === 'whitelist'
+    : false;
+  const totalMeetsLegacy = totalSr && totalSr.stars >= 2.5
     && ((totalSharpFeatures?.conWalletCount || 0) >= 2 || totalWhaleOverride)
     && (totalSharpFeatures?.conTotalInvested || 0) >= 10000;
+  const totalMeetsWhitelist = totalSr && totalWhitelistPromo
+    && totalSr.stars >= 1.0
+    && (totalSharpFeatures?.conTotalInvested || 0) >= 10000;
+  const totalMeetsThreshold = totalMeetsLegacy || totalMeetsWhitelist;
   const totalHasRegime = totalSr && (totalSr.regime === 'CLEAR_MOVE' || totalSr.regime === 'NEAR_START');
-  const isTotalLocked = totalMeetsThreshold && totalHasRegime;
-  const isTotalShadow = totalMeetsThreshold && !totalHasRegime;
+  const isTotalLocked = (totalMeetsLegacy && totalHasRegime) || totalMeetsWhitelist;
+  const isTotalShadow = totalMeetsLegacy && !totalHasRegime;
   const totalUnits = (isTotalLocked || isTotalShadow) ? calculateSpreadTotalUnits(totalSr.stars, 0, totalBetOdds, computeRegimeBonus(totalSr.regime, totalSr.v8Scoring, totalConsensusSide, gd.sport)) : 0;
 
   useEffect(() => {
