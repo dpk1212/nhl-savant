@@ -2230,30 +2230,82 @@ function useMarketData() {
   const [walletProfiles, setWalletProfiles] = useState(null); // Map<walletShort, profile>
   const [loading, setLoading] = useState(true);
 
+  // v6.3 live refresh — the fetch-polymarket.yml workflow ships a new
+  // scanSharpPositions snapshot every ~8 min. Without a poller, open
+  // tabs would sit on stale Sharp Intel until the user reloaded. We
+  // refetch all market-JSON sources every 8 min; the 5 position/market
+  // streams that actually drive Sharp Intel get a fresh snapshot, while
+  // slow-moving sources (whale_profiles, sports_sharps) ride along
+  // cheaply. Refresh pauses when the tab is hidden to save bandwidth.
   useEffect(() => {
-    const cb = `?t=${Date.now()}`;
-    Promise.all([
-      fetch(`${import.meta.env.BASE_URL}polymarket_data.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch(`${import.meta.env.BASE_URL}kalshi_data.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch(`${import.meta.env.BASE_URL}whale_profiles.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch(`${import.meta.env.BASE_URL}pinnacle_history.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch(`${import.meta.env.BASE_URL}sharp_positions.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch(`${import.meta.env.BASE_URL}sports_sharps.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch(`${import.meta.env.BASE_URL}sharp_spread_positions.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch(`${import.meta.env.BASE_URL}sharp_total_positions.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch(`${import.meta.env.BASE_URL}sharp_intel_excluded_wallets.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
-    ]).then(([p, k, wp, ph, sp, ss, sprP, totP, excl]) => {
-      setPolyData(p);
-      setKalshiData(k);
-      setWhaleProfiles(wp);
-      setPinnacleHistory(ph);
-      setSharpPositions(sp);
-      setSportsSharps(ss);
-      setSpreadPositions(sprP);
-      setTotalPositions(totP);
-      setIntelExcludedWallets(excl);
-      setLoading(false);
-    });
+    let cancelled = false;
+
+    const loadAll = async ({ initial = false } = {}) => {
+      const cb = `?t=${Date.now()}`;
+      try {
+        const [p, k, wp, ph, sp, ss, sprP, totP, excl] = await Promise.all([
+          fetch(`${import.meta.env.BASE_URL}polymarket_data.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(`${import.meta.env.BASE_URL}kalshi_data.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(`${import.meta.env.BASE_URL}whale_profiles.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(`${import.meta.env.BASE_URL}pinnacle_history.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(`${import.meta.env.BASE_URL}sharp_positions.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(`${import.meta.env.BASE_URL}sports_sharps.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(`${import.meta.env.BASE_URL}sharp_spread_positions.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(`${import.meta.env.BASE_URL}sharp_total_positions.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(`${import.meta.env.BASE_URL}sharp_intel_excluded_wallets.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
+        ]);
+        if (cancelled) return;
+        if (p)    setPolyData(p);
+        if (k)    setKalshiData(k);
+        if (wp)   setWhaleProfiles(wp);
+        if (ph)   setPinnacleHistory(ph);
+        if (sp)   setSharpPositions(sp);
+        if (ss)   setSportsSharps(ss);
+        if (sprP) setSpreadPositions(sprP);
+        if (totP) setTotalPositions(totP);
+        if (excl) setIntelExcludedWallets(excl);
+        if (initial) setLoading(false);
+        if (!initial && sp) {
+          const scannedAt = sp?.scannedAt ? new Date(sp.scannedAt).toISOString() : '—';
+          console.log(`[SharpFlow] live refresh @ ${new Date().toISOString()} (scan@${scannedAt})`);
+        }
+      } catch (err) {
+        if (initial) setLoading(false);
+        console.warn('[SharpFlow] live refresh failed:', err?.message || err);
+      }
+    };
+
+    loadAll({ initial: true });
+
+    const REFRESH_MS = 8 * 60 * 1000;
+    let timer = null;
+    const start = () => {
+      if (timer) return;
+      timer = setInterval(() => {
+        if (document.visibilityState === 'visible') loadAll({ initial: false });
+      }, REFRESH_MS);
+    };
+    const stop = () => {
+      if (!timer) return;
+      clearInterval(timer);
+      timer = null;
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        loadAll({ initial: false });
+        start();
+      } else {
+        stop();
+      }
+    };
+    start();
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      cancelled = true;
+      stop();
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, []);
 
   // Phase 2: fetch sharpWalletProfiles once per session and populate the
