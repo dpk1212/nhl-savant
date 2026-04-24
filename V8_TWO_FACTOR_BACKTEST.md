@@ -1,6 +1,6 @@
 # V8 Two-Factor Floor Backtest
 
-Generated: 2026-04-24T14:46:23.034Z
+Generated: 2026-04-24T18:09:43.849Z
 
 **Sample:** 74 graded, non-superseded sides across sharpFlowPicks / sharpFlowSpreads / sharpFlowTotals with walletDetails available.
 
@@ -88,6 +88,22 @@ Current ACTIVE-at-grade lock cohort: **N=59, WR=44.1%, ROI=-15.8%, -9.34u**
 | **Δw+1** | — | — | — | — | -62% | +36% | -68% |
 | **Δw+2** | — | — | — | — | — | +53% | -24% |
 | **Δw+3** | — | — | — | — | — | — | +75% |
+
+## Badge tier backtest — current vs proposed
+
+Current (v6.1) SUPER = `Δw ≥ +2`, TOP = `Δw ≥ +1`. Proposal: tighten TOP to `Δw ≥ +2 ∧ Δq = +1` and SUPER to `Δw ≥ +2 ∧ Δq ≥ +2` — no badge for `Δw ≤ +1` (they still lock but unbranded).
+
+| Cohort | N | W-L-P | WR% | ROI% | u P/L |
+|---|---|---|---|---|---|
+| CURRENT SUPER | 25 | 19-6-0 | 76.0% | +45.2% | +11.29u |
+| CURRENT TOP (Δw=+1) | 18 | 7-11-0 | 38.9% | -25.7% | -4.63u |
+| PROPOSED SUPER (Δw≥2 ∧ Δq≥2) | 23 | 18-5-0 | 78.3% | +49.5% | +11.38u |
+| PROPOSED TOP   (Δw≥2 ∧ Δq=1) | 2 | 1-1-0 | 50.0% | -4.5% | -0.09u |
+| PROPOSED TOP   (Δw≥2 ∧ Δq≤1) | 2 | 1-1-0 | 50.0% | -4.5% | -0.09u |
+| WOULD-LOSE BADGE (Δw=1 ∧ Δq=1) | 5 | 1-4-0 | 20.0% | -61.8% | -3.09u |
+| WOULD-LOSE BADGE (Δw=1 ∧ Δq≥2) | 13 | 6-7-0 | 46.2% | -11.8% | -1.54u |
+| WOULD-LOSE BADGE (Δw=1 ∧ Δq≤0) | 0 | 0-0-0 | 0.0% | +0.0% | +0.00u |
+
 
 ## By sport — candidates B / C / D / E
 

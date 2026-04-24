@@ -1232,17 +1232,32 @@ function qualityBonus(v8Scoring, sideKey) {
 //
 // Single source of truth: the same stamped values drive UI, ranking
 // reports, and attribution. No snapshot OR'ing; no regime/fmean fork.
-// v6 TOP PICK tiers — two-factor. User spec (2026-04-20):
-//   SUPER TOP PICK (filled gold)   : Δ_winner ≥ +2
-//   TOP PICK       (outlined gold) : Δ_winner ≥ +1  (excluding SUPER)
-// Δ_quality is reflected in the star/unit, not the badge.
+// v6.2 TOP PICK tiers — two-factor tightened. User spec (2026-04-24),
+// data-driven via V8_TWO_FACTOR_BACKTEST.md (Badge tier backtest).
+//
+// Rationale. In the N=74 backtest the Δw=+1 cohort (today's TOP PICK
+// threshold) goes 7-11 (WR 38.9%, flat ROI −25.7%, −4.63u). The 1/1
+// sub-cell is 1-4 (WR 20.0%, ROI −61.8%). So Δw=+1 plays have no edge
+// worth branding. Δw ≥ +2 meanwhile is 19-6 (WR 76.0%, ROI +45.2%),
+// and the Δw≥+2 ∧ Δq≥+2 subcohort is 18-5 (WR 78.3%, ROI +49.5%).
+//
+// New rules:
+//   SUPER TOP PICK (filled gold)   : Δw ≥ +2  AND  Δq ≥ +2
+//   TOP PICK       (outlined gold) : Δw ≥ +2  AND  (not SUPER, i.e. Δq ≤ +1)
+//   NO BADGE                        : Δw ≤ +1  (may still LOCK via Floor G,
+//                                                just no gold ribbon)
+//
+// The "2/1" TOP cohort is tiny in current sample (N=2) but is preserved
+// as a tier so that Δw≥+2 picks always earn at least a regular badge;
+// it will fill in as the sample grows.
 function evaluateTopPickTier(peak, lock, sideKey, promotedRegime = null, walletDelta = null, walletAgW = null, qualityMargin = null) {
   const regime = peak?.regime ?? lock?.regime ?? promotedRegime ?? null;
   const v8 = peak?.v8Scoring ?? lock?.v8Scoring ?? null;
   const meanBaseF = computeMeanBaseF(v8, sideKey);
-  const delta = typeof walletDelta === 'number' ? walletDelta : null;
-  const isSuperTopPick = delta != null && delta >= 2;
-  const isTopPick = isSuperTopPick || (delta != null && delta >= 1);
+  const dw = typeof walletDelta === 'number' ? walletDelta : null;
+  const dq = typeof qualityMargin === 'number' ? qualityMargin : null;
+  const isSuperTopPick = dw != null && dq != null && dw >= 2 && dq >= 2;
+  const isTopPick = isSuperTopPick || (dw != null && dw >= 2);
   return { isTopPick, isSuperTopPick, regime, meanBaseF, qualityMargin };
 }
 
@@ -9542,9 +9557,10 @@ export default function SharpFlow() {
                           walletConsensusQualityMargin: sd.v8_walletConsensusQualityMargin ?? null,
                           walletConsensusQualityForT30: sd.v8_walletConsensusQualityForT30 ?? null,
                           walletConsensusQualityAgT30: sd.v8_walletConsensusQualityAgT30 ?? null,
-                          // v6 TOP PICK tiers (two-factor):
-                          //   Δ_winner ≥ +2 → SUPER TOP PICK (gold filled)
-                          //   Δ_winner ≥ +1 → TOP PICK       (gold outlined)
+                          // v6.2 TOP PICK tiers (two-factor, tightened):
+                          //   Δw ≥ +2 AND Δq ≥ +2 → SUPER TOP PICK (gold filled)
+                          //   Δw ≥ +2            → TOP PICK       (gold outlined)
+                          //   Δw ≤ +1            → no badge (may still LOCK)
                           ...evaluateTopPickTier(
                             peak,
                             lock,

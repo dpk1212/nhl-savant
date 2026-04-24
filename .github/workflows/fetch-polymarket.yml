@@ -2,7 +2,11 @@ name: Fetch Market Data (Polymarket + Kalshi)
 
 on:
   schedule:
-    - cron: '*/15 * * * *'
+    # Every 8 minutes. Doubled Odds API credits (50K/mo, 2026-04-24)
+    # support this cadence: ~180 calls/day → ~5.4K/mo, well under quota.
+    # Drives snapshotPinnacle + scanSharpPositions + updateClosingOdds,
+    # so Sharp Intel / SharpFlow picks refresh on an 8-minute heartbeat.
+    - cron: '*/8 * * * *'
   workflow_dispatch:
 
 jobs:

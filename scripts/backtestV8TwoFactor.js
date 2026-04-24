@@ -369,6 +369,49 @@ function bucket(v, min, max) {
     md += '| ' + row.join(' | ') + ' |\n';
   }
 
+  // ── Badge-tier backtest: compare current vs proposed TOP PICK cuts ───────
+  //
+  // Current (v6.1) badge rules:
+  //   SUPER TOP PICK = Δw ≥ +2
+  //   TOP PICK       = Δw ≥ +1  (excluding super)
+  //
+  // Proposed tightening — user hypothesis is that Δw = +1 and Δq = +1 (lock
+  // floor) is too thin to justify a badge. Badges should require Δw ≥ +2.
+  //
+  //   PROPOSED SUPER = Δw ≥ +2 AND Δq ≥ +2
+  //   PROPOSED TOP   = Δw ≥ +2 AND Δq  = +1
+  //   NO BADGE       = Δw ≤ +1  (still locks if Δw ≥ +1 AND Δq ≥ +1, just no gold)
+  const BADGE_CUTS = [
+    { id: 'cur_super',   label: 'CURRENT SUPER',              test: r => r.dw >= 2 },
+    { id: 'cur_top',     label: 'CURRENT TOP (Δw=+1)',        test: r => r.dw === 1 },
+    { id: 'prop_super',  label: 'PROPOSED SUPER (Δw≥2 ∧ Δq≥2)', test: r => r.dw >= 2 && r.dq >= 2 },
+    { id: 'prop_top',    label: 'PROPOSED TOP   (Δw≥2 ∧ Δq=1)', test: r => r.dw >= 2 && r.dq === 1 },
+    { id: 'prop_top_b',  label: 'PROPOSED TOP   (Δw≥2 ∧ Δq≤1)', test: r => r.dw >= 2 && r.dq <= 1 },
+    { id: 'drop_11',     label: 'WOULD-LOSE BADGE (Δw=1 ∧ Δq=1)', test: r => r.dw === 1 && r.dq === 1 },
+    { id: 'drop_12plus', label: 'WOULD-LOSE BADGE (Δw=1 ∧ Δq≥2)', test: r => r.dw === 1 && r.dq >= 2 },
+    { id: 'drop_10',     label: 'WOULD-LOSE BADGE (Δw=1 ∧ Δq≤0)', test: r => r.dw === 1 && r.dq <= 0 },
+  ];
+  console.log('\n──────────────────────────────────────────────────────────────');
+  console.log('            BADGE TIER BACKTEST');
+  console.log('──────────────────────────────────────────────────────────────');
+  const badgeResults = [];
+  for (const c of BADGE_CUTS) {
+    const cohort = rows.filter(c.test);
+    const r = evalCohort(cohort);
+    badgeResults.push({ ...c, ...r });
+    console.log(
+      `  ${c.label.padEnd(38)}  N=${String(r.n).padStart(3)}  ${String(r.wins).padStart(2)}-${String(r.losses).padStart(2)}-${String(r.pushes).padStart(1)}   WR=${r.wr.toFixed(1).padStart(5)}%   ROI=${(r.roi >= 0 ? '+' : '') + r.roi.toFixed(1).padStart(5)}%   ${(r.pnl >= 0 ? '+' : '') + r.pnl.toFixed(2)}u`
+    );
+  }
+
+  md += '\n## Badge tier backtest — current vs proposed\n\n';
+  md += 'Current (v6.1) SUPER = `Δw ≥ +2`, TOP = `Δw ≥ +1`. Proposal: tighten TOP to `Δw ≥ +2 ∧ Δq = +1` and SUPER to `Δw ≥ +2 ∧ Δq ≥ +2` — no badge for `Δw ≤ +1` (they still lock but unbranded).\n\n';
+  md += '| Cohort | N | W-L-P | WR% | ROI% | u P/L |\n|---|---|---|---|---|---|\n';
+  for (const br of badgeResults) {
+    md += `| ${br.label} | ${br.n} | ${br.wins}-${br.losses}-${br.pushes} | ${br.wr.toFixed(1)}% | ${br.roi >= 0 ? '+' : ''}${br.roi.toFixed(1)}% | ${br.pnl >= 0 ? '+' : ''}${br.pnl.toFixed(2)}u |\n`;
+  }
+  md += '\n';
+
   md += '\n## By sport — candidates B / C / D / E\n\n';
   for (const floorId of ['B', 'C', 'D', 'E']) {
     const f = FLOORS.find(x => x.id === floorId);
