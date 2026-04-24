@@ -1006,13 +1006,20 @@ function computeWalletConsensus(walletDetails, sport, sideKey) {
 
   const cfg = result.sportConfig;
 
-  // v6 MUTE / CANCEL policy — pure Δ-driven. See evaluatePickHealth for
-  // the full four-rule engine. We surface lockAction here so the
-  // stamping + backfill layers stay consistent with live evaluation.
+  // v6.3 MUTE / CANCEL policy — pure Δ-driven, lock-floor symmetric.
+  // See evaluatePickHealth for the full engine. We surface lockAction
+  // here so the stamping + backfill layers stay consistent with live
+  // evaluation.
   //
-  //   CANCEL: Δ_winner ≤ −2                (strong profitable-winner dissent)
-  //   MUTE:   Δ_winner = −1                 OR
-  //           (Δ_quality ≤ −3 AND Δ_winner ≤ 0)   (quality collapse)
+  // Lock floor is `Δw ≥ +1 AND Δq ≥ +1` (Floor G). Once a pick is locked,
+  // any later decay BELOW that floor should downgrade it — otherwise a
+  // pick locked at Δw=+2 that fades to Δw=0 sits alive at full units
+  // even though we would not lock it in that state today (reported by
+  // user 2026-04-24, the Rockets ML case).
+  //
+  //   CANCEL: Δ_winner ≤ −2                 (strong profitable-winner dissent)
+  //   MUTE:   Δ_winner ≤ 0                  (proven-winner margin below lock floor)
+  //   MUTE:   Δ_quality ≤ 0  (Δw ≥ +1)      (quality margin below lock floor)
   const dw = delta;
   const dq = result.qualityMargin;
   if (dw <= -2) {
@@ -1020,7 +1027,11 @@ function computeWalletConsensus(walletDetails, sport, sideKey) {
     else if (cfg.mute) result.lockAction = 'MUTE';
     return result;
   }
-  if (dw === -1 || (dq <= -3 && dw <= 0)) {
+  if (dw <= 0) {
+    if (cfg.mute) result.lockAction = 'MUTE';
+    return result;
+  }
+  if (dq <= 0) {
     if (cfg.mute) result.lockAction = 'MUTE';
     return result;
   }
@@ -1037,16 +1048,24 @@ function computeWalletConsensus(walletDetails, sport, sideKey) {
   return result;
 }
 
-// v6 Two-Factor Health Engine. Purely Δ-driven — no more WPS / sideFlipped /
-// opp-dominance gates. Four rules in precedence order:
+// v6.3 Two-Factor Health Engine. Purely Δ-driven — no more WPS /
+// sideFlipped / opp-dominance gates. Rules in precedence order, all
+// symmetric to the lock floor (Δw ≥ +1 AND Δq ≥ +1). If a locked pick
+// decays below the floor on either axis, it mutes.
 //
-//   CANCEL  (Δ_winner ≤ −2)                    reason: 'winners_killed'
-//   MUTE    (Δ_winner = −1)                    reason: 'winners_faded'
-//   MUTE    (Δ_quality ≤ −3 AND Δ_winner ≤ 0)  reason: 'quality_faded'
+//   CANCEL  (Δ_winner ≤ −2)                 reason: 'winners_killed'
+//   MUTE    (Δ_winner = −1)                 reason: 'winners_faded'
+//   MUTE    (Δ_winner = 0)                  reason: 'winners_below_floor'
+//   MUTE    (Δ_winner ≥ +1 AND Δ_quality ≤ 0) reason: 'quality_below_floor'
 //   ACTIVE  otherwise
 //
-// WPS flip / opp-side dominance are retained in the returned `reasons` as
-// diagnostic tags only — they never change status anymore. Gated by
+// Rationale (user report 2026-04-24): a pick locked at Δw=+2 / Δq=+2
+// that fades to Δw=0 / Δq=+1 used to sit ACTIVE at full units even
+// though Sharp Intel showed "TRACKING — 1 of 2 signals" on the same
+// game. Below-floor on EITHER axis now mutes.
+//
+// WPS flip / opp-side dominance are retained in the returned `reasons`
+// as diagnostic tags only — they never change status anymore. Gated by
 // `timeToGame <= 5` to match legacy "too close to flip" behavior.
 function evaluatePickHealth({
   currentWPS,
@@ -1087,10 +1106,21 @@ function evaluatePickHealth({
         walletDelta: dw, qualityMargin: dq,
       };
     }
-    if (dq <= -3 && dw <= 0) {
+    if (dw === 0) {
+      // v6.3 — proven-winner margin evaporated. Pick would not lock in
+      // this state today; mute so size + styling reflect that.
       return {
         status: 'MUTED',
-        reasons: ['quality_faded', ...diagnostic],
+        reasons: ['winners_below_floor', ...diagnostic],
+        currentStars, wpsDelta,
+        walletDelta: dw, qualityMargin: dq,
+      };
+    }
+    if (dw >= 1 && dq <= 0) {
+      // v6.3 — winner margin ok but quality margin failed the floor.
+      return {
+        status: 'MUTED',
+        reasons: ['quality_below_floor', ...diagnostic],
         currentStars, wpsDelta,
         walletDelta: dw, qualityMargin: dq,
       };
@@ -3957,10 +3987,14 @@ const MiniSparkline = memo(function MiniSparkline({ points, width = 140, height 
 // V6 rateStars removed — replaced by rateStarsV7 defined above (unified for ML + spread/total)
 
 const HEALTH_REASON_LABELS = {
-  // v6 two-factor reasons (primary triggers)
-  winners_killed: 'Proven winners now strongly against this pick (Δw ≤ −2)',
-  winners_faded:  'A proven winner flipped off this pick (Δw = −1)',
-  quality_faded:  'Quality wallets collapsed to the other side (Δq ≤ −3)',
+  // v6.3 two-factor reasons (primary triggers) — all symmetric to the
+  // lock floor Δw ≥ +1 AND Δq ≥ +1. Anything below floor on either axis
+  // mutes; Δw ≤ −2 cancels.
+  winners_killed:       'Proven winners now strongly against this pick (Δw ≤ −2)',
+  winners_faded:        'A proven winner flipped off this pick (Δw = −1)',
+  winners_below_floor:  'Proven-winner margin dropped below lock floor (Δw = 0)',
+  quality_below_floor:  'Quality-wallet margin dropped below lock floor (Δq ≤ 0)',
+  quality_faded:        'Quality wallets collapsed to the other side (Δq ≤ −3)',
   // diagnostic-only reasons (never mute/cancel on their own in v6)
   wps_flipped_diag:        'Wallet-count flipped (diagnostic only)',
   opp_side_stronger_diag:  'Opposing side gaining WPS (diagnostic only)',
@@ -4291,9 +4325,9 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                       : 'linear-gradient(135deg, #10B981, #059669)',
                     border: `1px solid ${isCancelled ? 'rgba(239,68,68,0.3)' : isMuted ? 'rgba(245,158,11,0.4)' : isWin ? 'rgba(16,185,129,0.4)' : isLoss ? 'rgba(239,68,68,0.4)' : 'rgba(16,185,129,0.4)'}`,
                     fontFeatureSettings: "'tnum'",
-                    textDecoration: isCancelled ? 'line-through' : 'none',
+                    textDecoration: (isCancelled || isMuted) ? 'line-through' : 'none',
                   }}>
-                    {isCancelled ? `${ut.icon} ${units}u → 0u` : `${ut.icon} ${units}u`}
+                    {(isCancelled || isMuted) ? `${ut.icon} ${units}u → 0u` : `${ut.icon} ${units}u`}
                   </span>
                   {evEdge > 0 && (
                     <span style={{ ...T.body, fontWeight: 900, color: B.green, padding: '0.2rem 0.6rem', borderRadius: '5px', background: B.greenDim }}>
@@ -4394,12 +4428,20 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                 <span style={{ ...T.micro, color: B.textSec }}>Risk</span>
-                <span style={{ ...T.micro, fontWeight: 800, color: B.text, fontFeatureSettings: "'tnum'" }}>{units}u</span>
+                <span style={{
+                  ...T.micro, fontWeight: 800,
+                  color: (isMuted || isCancelled) && !isGraded ? B.textMuted : B.text,
+                  fontFeatureSettings: "'tnum'",
+                  textDecoration: (isMuted || isCancelled) && !isGraded ? 'line-through' : 'none',
+                }}>{units}u</span>
+                {(isMuted || isCancelled) && !isGraded && (
+                  <span style={{ ...T.micro, fontWeight: 900, color: isCancelled ? B.red : '#F59E0B', fontFeatureSettings: "'tnum'" }}>→ 0u</span>
+                )}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                 <span style={{ ...T.micro, color: B.textSec }}>{isGraded ? 'Result' : 'To Win'}</span>
-                <span style={{ ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'", color: isGraded ? (isWin ? B.green : isLoss ? B.red : B.textSec) : B.green }}>
-                  {isGraded ? `${isWin ? '+' : isLoss ? '' : ''}${(profit || 0).toFixed(2)}u` : `+${potentialWin.toFixed(2)}u`}
+                <span style={{ ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'", color: isGraded ? (isWin ? B.green : isLoss ? B.red : B.textSec) : ((isMuted || isCancelled) ? B.textMuted : B.green) }}>
+                  {isGraded ? `${isWin ? '+' : isLoss ? '' : ''}${(profit || 0).toFixed(2)}u` : `+${((isMuted || isCancelled) ? 0 : potentialWin).toFixed(2)}u`}
                 </span>
               </div>
               <span style={{
@@ -9541,7 +9583,7 @@ export default function SharpFlow() {
                             const muteNow = !!sd.v8_walletConsensusMuteTriggered;
                             const cancelNow = !!sd.v8_walletConsensusCancelTriggered;
                             const reasons = Array.isArray(stored.reasons) ? stored.reasons : [];
-                            const TWO_FACTOR_REASONS = new Set(['winners_killed', 'winners_faded', 'quality_faded', 'whitelist_fade_weak', 'whitelist_fade_strong']);
+                            const TWO_FACTOR_REASONS = new Set(['winners_killed', 'winners_faded', 'winners_below_floor', 'quality_below_floor', 'quality_faded', 'whitelist_fade_weak', 'whitelist_fade_strong']);
                             const onlyTwoFactorReasons = reasons.length > 0 && reasons.every(r => TWO_FACTOR_REASONS.has(r));
                             if (stored.status && stored.status !== 'ACTIVE' && !muteNow && !cancelNow && onlyTwoFactorReasons) {
                               return { status: 'ACTIVE', reasons: [] };

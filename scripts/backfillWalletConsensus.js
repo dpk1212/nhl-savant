@@ -152,13 +152,19 @@ function computeWalletConsensus(walletDetails, sport, sideKey, profiles) {
   const { delta, verdict } = classifyDelta(forW, agW);
   result.forW = forW; result.agW = agW; result.delta = delta; result.verdict = verdict;
 
-  // v6 lockAction — pure Δ-driven (mirrors SharpFlow.jsx)
+  // v6.3 lockAction — pure Δ-driven, lock-floor symmetric (mirrors SharpFlow.jsx)
+  //   CANCEL: Δw ≤ −2
+  //   MUTE:   Δw ≤ 0                (below lock floor on winner axis)
+  //   MUTE:   Δw ≥ +1 AND Δq ≤ 0    (below lock floor on quality axis)
+  //   PROMOTE: Δw ≥ +1 AND Δq ≥ +1  (Floor G)
   const dw = delta;
   const dq = result.qualityMargin;
   if (dw <= -2) {
     if (cfg.cancel) result.lockAction = 'CANCEL';
     else if (cfg.mute) result.lockAction = 'MUTE';
-  } else if (dw === -1 || (dq <= -3 && dw <= 0)) {
+  } else if (dw <= 0) {
+    if (cfg.mute) result.lockAction = 'MUTE';
+  } else if (dq <= 0) {
     if (cfg.mute) result.lockAction = 'MUTE';
   } else if (dw >= 1 && dq >= 1 && cfg.promote) {
     result.promotionEligible = true;
@@ -191,13 +197,14 @@ function buildStampFields(wc, sport, baseStars, promotedBy) {
 }
 
 // Reconcile stored health against live Δ's.
-// v6 four-rule engine — returns { status, reasons } or null to keep stored as-is.
+// v6.3 engine — lock-floor symmetric. Returns { status, reasons } or null
+// to keep stored as-is. Matches evaluatePickHealth in SharpFlow.jsx.
 function reconcileHealth(stored, wc) {
   const dw = wc.delta;
   const dq = wc.qualityMargin;
   const storedStatus = stored?.status || 'ACTIVE';
   const storedReasons = Array.isArray(stored?.reasons) ? stored.reasons : [];
-  const TWO_FACTOR_REASONS = new Set(['winners_killed', 'winners_faded', 'quality_faded', 'whitelist_fade_weak', 'whitelist_fade_strong']);
+  const TWO_FACTOR_REASONS = new Set(['winners_killed', 'winners_faded', 'winners_below_floor', 'quality_below_floor', 'quality_faded', 'whitelist_fade_weak', 'whitelist_fade_strong']);
   const onlyTwoFactor = storedReasons.length > 0 && storedReasons.every(r => TWO_FACTOR_REASONS.has(r));
 
   // Rule 1: live Δw ≤ −2 → CANCELLED (winners_killed)
@@ -207,15 +214,26 @@ function reconcileHealth(stored, wc) {
   }
   // Rule 2: live Δw = −1 → MUTED (winners_faded)
   if (dw === -1) {
-    if (storedStatus !== 'MUTED') return { status: 'MUTED', reasons: ['winners_faded'] };
+    if (storedStatus !== 'MUTED' || !storedReasons.includes('winners_faded')) {
+      return { status: 'MUTED', reasons: ['winners_faded'] };
+    }
     return null;
   }
-  // Rule 3: live Δq ≤ −3 AND Δw ≤ 0 → MUTED (quality_faded)
-  if (dq <= -3 && dw <= 0) {
-    if (storedStatus !== 'MUTED') return { status: 'MUTED', reasons: ['quality_faded'] };
+  // Rule 3: live Δw = 0 → MUTED (winners_below_floor) — v6.3
+  if (dw === 0) {
+    if (storedStatus !== 'MUTED' || !storedReasons.includes('winners_below_floor')) {
+      return { status: 'MUTED', reasons: ['winners_below_floor'] };
+    }
     return null;
   }
-  // Rule 4: nothing triggers mute/cancel — if stored carries only two-factor
+  // Rule 4: live Δw ≥ +1 AND Δq ≤ 0 → MUTED (quality_below_floor) — v6.3
+  if (dw >= 1 && dq <= 0) {
+    if (storedStatus !== 'MUTED' || !storedReasons.includes('quality_below_floor')) {
+      return { status: 'MUTED', reasons: ['quality_below_floor'] };
+    }
+    return null;
+  }
+  // Rule 5: nothing triggers mute/cancel — if stored carries only two-factor
   // reasons, flip back to ACTIVE.
   if (storedStatus !== 'ACTIVE' && onlyTwoFactor) {
     return { status: 'ACTIVE', reasons: [] };
