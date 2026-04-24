@@ -4117,16 +4117,10 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                 <span>{isSuperTopPick ? 'SUPER TOP PICK' : 'TOP PICK'}</span>
               </span>
             )}
-            {/* v6 hero chips — proven-winner + quality-wallet counts in plain English. */}
-            {(walletConsensusDelta != null || walletConsensusQualityMargin != null) && !superseded && renderHeroChips({
-              dw: walletConsensusDelta ?? 0,
-              dq: walletConsensusQualityMargin ?? 0,
-              forW: walletConsensusForW ?? 0,
-              agW: walletConsensusAgW ?? 0,
-              qForT: walletConsensusQualityForT30 ?? 0,
-              qAgT: walletConsensusQualityAgT30 ?? 0,
-              sport,
-            })}
+            {/* v6.1 — hero chips removed from header. The narrative + LOCK
+                CRITERIA block below carry the winner/quality story in full
+                sentences; chips duplicated the signal and crowded the header
+                on mobile. Helper retained for possible reuse elsewhere. */}
             <span style={{
               ...T.micro, fontWeight: 800, letterSpacing: '0.04em',
               padding: '0.15rem 0.5rem', borderRadius: '5px',
@@ -5347,16 +5341,10 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
             })}
             <span style={{ marginLeft: '0.15rem' }}>{sr.label}</span>
           </span>
-          {/* v6 hero chips — proven-winner + quality-wallet counts in plain English. */}
-          {sr?.v8Scoring && (sr.v8Scoring.deltaWinner != null || sr.v8Scoring.deltaQuality != null) && renderHeroChips({
-            dw: sr.v8Scoring.deltaWinner ?? 0,
-            dq: sr.v8Scoring.deltaQuality ?? 0,
-            forW: sr.v8Scoring.forW ?? 0,
-            agW: sr.v8Scoring.agW ?? 0,
-            qForT: sr.v8Scoring.qualityForT30 ?? 0,
-            qAgT: sr.v8Scoring.qualityAgT30 ?? 0,
-            sport: gd.sport,
-          })}
+          {/* v6.1 — hero chips removed from header. The narrative + LOCK
+              CRITERIA block below carry the winner/quality story in full
+              sentences; chips duplicated the signal and crowded the header
+              on mobile. */}
         </div>
       </div>
 
