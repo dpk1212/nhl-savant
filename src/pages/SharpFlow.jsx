@@ -317,12 +317,19 @@ function computeSharpFeatures(positions, consensusSide) {
   };
 }
 
+// v6 Two-Factor ML unit ladder — stars are the two-factor Vault Star.
+// Floor-pick minimum: 0.75u. Elite: 3.0u. Sub-floor picks (stars < 3.5)
+// return 0 because they can't lock per Floor G. consensusPenalty /
+// regimeBonus are kept as no-ops so legacy callers don't error, but
+// sizing is driven entirely by stars now.
 function calculateUnits(stars, consensusPenalty = 0, odds = null, regimeBonus = 0) {
-  let units = stars >= 5 ? 3.0 : stars >= 4.5 ? 2.5 : stars >= 4 ? 2.0
-            : stars >= 3.5 ? 1.5 : 1.0;
-  units += consensusPenalty;
-  units += regimeBonus;   // V8.2: CLEAR_MOVE bonus applied before odds caps
-  units = Math.min(Math.max(units, 0.5), 3);
+  let units;
+  if (stars >= 5.0) units = 3.00;
+  else if (stars >= 4.5) units = 2.00;
+  else if (stars >= 4.0) units = 1.25;
+  else if (stars >= 3.5) units = 0.75;
+  else units = 0;
+  if (units === 0) return 0;
   if (odds != null && odds >= 200) units = Math.min(units, 0.5);
   else if (odds != null && odds >= 151) units = Math.min(units, 1.0);
   else if (odds != null && odds >= 100) units = Math.min(units, 2.0);
@@ -534,7 +541,27 @@ function percentileOf(sortedArr, val) {
   return (count / sortedArr.length) * 100;
 }
 
-function rateStarsV8({ positions, consensusSide, v8Norm, pinnMoveSize = 0, timeToGame = null, lockOdds = null, pinnCurrentOdds = null }) {
+// v6 Two-Factor Vault Star.
+// Δw (winner margin, whitelist-gated) sets the base rung.
+// Δq (quality margin at T=30 contribution) adjusts ±0.5, with a hard
+// quality-collapse floor. Elite is Δw≥+3 OR (Δw≥+2 AND Δq≥+1).
+// See V8_TWO_FACTOR_BACKTEST.md for the pre-ship validation.
+function vaultStarFromDeltas(dw, dq) {
+  if (dw >= 3 || (dw >= 2 && dq >= 1)) return 5.0;
+  let base;
+  if (dw <= -2) base = 1.0;
+  else if (dw === -1) base = 1.5;
+  else if (dw === 0) base = 2.5;
+  else if (dw === 1) base = 3.5;
+  else base = 4.5; // dw === 2 but dq < 1
+  let adj = 0;
+  if (dq <= -2) adj = -1.0;
+  else if (dq <= 0) adj = -0.5;
+  else if (dq >= 3) adj = 0.5;
+  return Math.max(1.0, Math.min(5.0, base + adj));
+}
+
+function rateStarsV8({ positions, consensusSide, v8Norm, pinnMoveSize = 0, timeToGame = null, lockOdds = null, pinnCurrentOdds = null, sport = null }) {
   if (!v8Norm || !positions || positions.length === 0) {
     return {
       stars: 1, rawScore: 0, effectiveScore: 0,
@@ -670,31 +697,31 @@ function rateStarsV8({ positions, consensusSide, v8Norm, pinnMoveSize = 0, timeT
     }
   }
 
-  // Star conversion from WalletPlayScore using percentile-based thresholds
-  // Single-wallet structural cap: max 2.5 stars unless whale-override (max 3.5)
+  // v6 Two-Factor Star — Δ_winner + Δ_quality@T30 are the sole drivers
+  // of the star rating now. walletPlayScore / breadth / concentration
+  // are kept on v8Scoring for diagnostics only. If the profile cache
+  // hasn't loaded yet (dw=0 artifact), or we have no sport context, we
+  // fall back to the Δ_quality-only rung so Sharp Intel never silently
+  // renders every card as 2.5★.
+  const wc = computeWalletConsensus(walletDetails, sport, consensusSide);
+  const deltaWinner = wc.delta;
+  const deltaQuality = wc.qualityMargin;
+  const vaultStar = (sport && WALLET_PROFILES_CACHE)
+    ? vaultStarFromDeltas(deltaWinner, deltaQuality)
+    : null;
+
   let stars;
-  if (walletCountFor <= 1) {
-    const isWhaleOverride = conWallets.length === 1 && conWallets[0] &&
-      (conWallets[0].invested || 0) >= 25000 &&
-      (conWallets[0].sportPnl ?? ss[conWallets[0].wallet]?.sportPnlTotal ?? 0) >= 500000;
-    if (isWhaleOverride) {
-      console.log('[V8] Whale override fired:', conWallets[0].wallet?.slice(-6), 'invested:', conWallets[0].invested);
-      stars = Math.min(3.5, walletPlayScore >= V8_STAR_THRESHOLDS.p95 ? 3.5
-        : walletPlayScore >= V8_STAR_THRESHOLDS.p88 ? 3
-        : walletPlayScore >= V8_STAR_THRESHOLDS.p78 ? 2.5 : 2);
-    } else {
-      stars = Math.min(2.5, walletPlayScore >= V8_STAR_THRESHOLDS.p78 ? 2.5
-        : walletPlayScore >= V8_STAR_THRESHOLDS.p65 ? 2
-        : walletPlayScore >= V8_STAR_THRESHOLDS.p50 ? 1.5 : 1);
-    }
+  if (vaultStar != null) {
+    stars = vaultStar;
   } else {
-    stars = walletPlayScore >= V8_STAR_THRESHOLDS.p98 ? 5
-      : walletPlayScore >= V8_STAR_THRESHOLDS.p95 ? 4.5
-      : walletPlayScore >= V8_STAR_THRESHOLDS.p88 ? 4
-      : walletPlayScore >= V8_STAR_THRESHOLDS.p78 ? 3.5
-      : walletPlayScore >= V8_STAR_THRESHOLDS.p65 ? 3
-      : walletPlayScore >= V8_STAR_THRESHOLDS.p50 ? 2.5
-      : walletPlayScore >= V8_STAR_THRESHOLDS.p30 ? 2 : 1;
+    // Cache-not-ready fallback: derive a conservative star from Δ_quality
+    // alone (whitelist-independent). A later sync will overwrite with the
+    // true two-factor star once profiles populate.
+    if (deltaQuality >= 3) stars = 3.0;
+    else if (deltaQuality >= 1) stars = 2.5;
+    else if (deltaQuality === 0) stars = 2.0;
+    else if (deltaQuality === -1) stars = 1.5;
+    else stars = 1.0;
   }
 
   const labels = {
@@ -721,6 +748,14 @@ function rateStarsV8({ positions, consensusSide, v8Norm, pinnMoveSize = 0, timeT
     walletCountFor,
     walletCountAgainst: oppWallets.length,
     walletDetails,
+    // v6 two-factor fields — the source of truth for Sharp Intel stars/units
+    deltaWinner,
+    deltaQuality,
+    vaultStar,
+    qualityForT30: wc.qualityForT30,
+    qualityAgT30: wc.qualityAgT30,
+    forW: wc.forW,
+    agW: wc.agW,
   };
 
   return {
@@ -800,8 +835,13 @@ const WHITELIST_INTERVENTION = {
   CBB: { bonus: true, mute: true, cancel: true, promote: true },
   NFL: { bonus: true, mute: true, cancel: true, promote: true },
 };
-// v5 = LEAN_FOR (Δ=+1) now promotion-eligible with agW=0 + star gate 1.5→1.0
-const WHITELIST_CONSENSUS_VERSION = 5;
+// v6 = Two-Factor overhaul. Δ_winner + Δ_quality@T30 are now the sole
+// drivers of stars/units/lock/mute/cancel for Sharp Intel. Floor G
+// (Δw≥+1 AND Δq≥+1) is the only promotion path. WPS/regime/contribTier
+// downgraded to diagnostic-only. See V8_TWO_FACTOR_BACKTEST.md for the
+// pre-ship validation (74 picks, +43 ROI-points lift vs V8).
+const WHITELIST_CONSENSUS_VERSION = 6;
+const QUALITY_CONTRIB_CUT = 30;   // T=30 — validated by V8_CONTRIBUTION_EDGE
 
 // Module-level cache of sharpWalletProfiles, keyed by walletShort (last 6
 // chars of address). Populated by a React effect in useMarketData; read
@@ -835,16 +875,39 @@ function classifyDelta(forW, agW) {
 
 // Main wallet-consensus helper. Returns a stable shape that feeds
 // decideLockStage / computeRegimeBonus / evaluatePickHealth / attribution.
+//
+// v6 (Two-Factor Overhaul): returns BOTH winner margin (Δ_winner =
+// forW − agW, whitelist-tier gated) AND quality margin (Δ_quality =
+// qualityForT30 − qualityAgT30 at contribution ≥ QUALITY_CONTRIB_CUT).
+// Both drive stars, units, locks, mutes, and cancels.
+//
 // Safe to call with missing data — returns a NEUTRAL / no-action result.
 function computeWalletConsensus(walletDetails, sport, sideKey) {
   const result = {
     forW: 0, agW: 0, delta: 0, verdict: 'NEUTRAL',
+    qualityForT30: 0, qualityAgT30: 0, qualityMargin: 0,
     unitBonus: 0, lockAction: null, promotionEligible: false,
     sportConfig: WHITELIST_INTERVENTION[sport] || { bonus: false, mute: false, cancel: false, promote: false },
     enabled: !!WHITELIST_INTERVENTION[sport],
     sport: sport || null,
   };
   if (!Array.isArray(walletDetails) || !sport || !sideKey) return result;
+
+  // Quality margin is whitelist-independent — contribution ≥ T30 is itself
+  // the quality filter. Compute it even when the profile cache hasn't
+  // loaded yet so Δq never silently stamps as 0.
+  let qFor = 0, qAg = 0;
+  for (const d of walletDetails) {
+    if ((d?.contribution ?? 0) < QUALITY_CONTRIB_CUT) continue;
+    if (d.side === sideKey) qFor++;
+    else if (d.side) qAg++;
+  }
+  result.qualityForT30 = qFor;
+  result.qualityAgT30 = qAg;
+  result.qualityMargin = qFor - qAg;
+
+  // Winner margin requires profile cache. If not ready, return with
+  // quality populated but delta=0 — the stamping layer will re-run later.
   if (!WALLET_PROFILES_CACHE) return result;
 
   let forW = 0, agW = 0;
@@ -859,137 +922,114 @@ function computeWalletConsensus(walletDetails, sport, sideKey) {
 
   const cfg = result.sportConfig;
 
-  // Option A: negative actions override positive. If FADE_* → suppress
-  // bonus and promotion, set lockAction per cfg.
-  if (verdict === 'FADE_STRONG') {
+  // v6 MUTE / CANCEL policy — pure Δ-driven. See evaluatePickHealth for
+  // the full four-rule engine. We surface lockAction here so the
+  // stamping + backfill layers stay consistent with live evaluation.
+  //
+  //   CANCEL: Δ_winner ≤ −2                (strong profitable-winner dissent)
+  //   MUTE:   Δ_winner = −1                 OR
+  //           (Δ_quality ≤ −3 AND Δ_winner ≤ 0)   (quality collapse)
+  const dw = delta;
+  const dq = result.qualityMargin;
+  if (dw <= -2) {
     if (cfg.cancel) result.lockAction = 'CANCEL';
-    else if (cfg.mute) result.lockAction = 'MUTE'; // MUTE fallback where CANCEL disabled
+    else if (cfg.mute) result.lockAction = 'MUTE';
     return result;
   }
-  if (verdict === 'FADE_WEAK') {
+  if (dw === -1 || (dq <= -3 && dw <= 0)) {
     if (cfg.mute) result.lockAction = 'MUTE';
     return result;
   }
 
-  // Positive side: bonus + promotion eligibility.
-  //
-  // STRONG_FOR (Δ≥+2) bonus bumped 0.25→0.50 in v4. LEAN_FOR (Δ=+1) is
-  // promotion-eligible as of v5 — 2026-04-22 backtest showed Δ=+1 hit 70%
-  // WR / +31% flat ROI (N=10), essentially matching Δ≥+2 WR. The +0.10u
-  // bonus stays smaller to reflect the narrower ROI edge, but we want to
-  // actually PLAY these picks rather than let them sit in SHADOW.
-  //
-  // Promotion purity guardrail: `agW === 0` required for both tiers. Mixed
-  // cases (e.g. Δ=+1 from forW=2, agW=1) keep the unit bonus but do not
-  // promote — they still have documented profitable-wallet dissent.
-  if (verdict === 'STRONG_FOR') {
-    if (cfg.bonus) result.unitBonus = 0.50;
-    result.promotionEligible = cfg.promote && agW === 0;
-    return result;
+  // v6 PROMOTION — Floor G (backtest-validated). Δw ≥ +1 AND Δq ≥ +1.
+  // unitBonus is no longer summed into sizing — sizing is derived from
+  // the two-factor star directly. Retained here only so legacy callers
+  // and ranking reports read a consistent value (0 always).
+  if (dw >= 1 && dq >= 1 && cfg.promote) {
+    result.promotionEligible = true;
   }
-  if (verdict === 'LEAN_FOR') {
-    if (cfg.bonus) result.unitBonus = 0.10;
-    result.promotionEligible = cfg.promote && agW === 0;
-    return result;
-  }
+  result.unitBonus = 0;
 
   return result;
 }
 
+// v6 Two-Factor Health Engine. Purely Δ-driven — no more WPS / sideFlipped /
+// opp-dominance gates. Four rules in precedence order:
+//
+//   CANCEL  (Δ_winner ≤ −2)                    reason: 'winners_killed'
+//   MUTE    (Δ_winner = −1)                    reason: 'winners_faded'
+//   MUTE    (Δ_quality ≤ −3 AND Δ_winner ≤ 0)  reason: 'quality_faded'
+//   ACTIVE  otherwise
+//
+// WPS flip / opp-side dominance are retained in the returned `reasons` as
+// diagnostic tags only — they never change status anymore. Gated by
+// `timeToGame <= 5` to match legacy "too close to flip" behavior.
 function evaluatePickHealth({
-  currentWPS,        // WPS of the LOCKED side (not the current consensusSide)
-  oppSideWPS,        // WPS of the side OPPOSITE the locked side
+  currentWPS,
+  oppSideWPS,
   lockWPS,
-  sideFlipped,       // true iff wallet-count consensusSide != lockedSide
+  sideFlipped,
   flipBeatThreshold,
   timeToGame,
   currentStars,
-  // Phase 2: wallet-consensus trigger (stand-alone — fires regardless of WPS)
-  walletConsensus,   // computeWalletConsensus(...) result, or null
+  walletConsensus,
 }) {
-  if (currentWPS == null) return { status: 'ACTIVE', reasons: [], currentStars: currentStars || 0, wpsDelta: 0 };
+  const wpsDelta = (currentWPS != null && lockWPS != null) ? currentWPS - lockWPS : 0;
+  const diagnostic = [];
+  // Diagnostic-only tags (never mute/cancel on their own in v6)
+  if (sideFlipped) diagnostic.push('wps_flipped_diag');
+  if (oppSideWPS != null && currentWPS != null && oppSideWPS - currentWPS >= OPP_MUTE_GAP) {
+    diagnostic.push('opp_side_stronger_diag');
+  }
 
-  // ── Whitelist fade trigger (Phase 2) — runs BEFORE WPS checks so a
-  // strong wallet fade fires even if WPS is holding up. Stand-alone per spec.
-  // Gated by timeToGame to mirror the existing "too close for flip" behavior.
   const tooCloseForWhitelist = timeToGame != null && timeToGame <= 5;
-  if (walletConsensus?.lockAction && !tooCloseForWhitelist) {
-    const reason = walletConsensus.verdict === 'FADE_STRONG' ? 'whitelist_fade_strong' : 'whitelist_fade_weak';
-    if (walletConsensus.lockAction === 'CANCEL') {
+  const dw = walletConsensus?.delta ?? 0;
+  const dq = walletConsensus?.qualityMargin ?? 0;
+
+  if (!tooCloseForWhitelist) {
+    if (dw <= -2) {
       return {
         status: 'CANCELLED',
-        reasons: [reason],
-        currentStars, wpsDelta: lockWPS != null ? currentWPS - lockWPS : 0,
-        walletDelta: walletConsensus.delta,
+        reasons: ['winners_killed', ...diagnostic],
+        currentStars, wpsDelta,
+        walletDelta: dw, qualityMargin: dq,
       };
     }
-    if (walletConsensus.lockAction === 'MUTE') {
+    if (dw === -1) {
       return {
         status: 'MUTED',
-        reasons: [reason],
-        currentStars, wpsDelta: lockWPS != null ? currentWPS - lockWPS : 0,
-        walletDelta: walletConsensus.delta,
-      };
-    }
-  }
-
-  const wpsDelta = lockWPS != null ? currentWPS - lockWPS : 0;
-  const tooCloseForFlip = timeToGame != null && timeToGame <= 20;
-  const threshold = flipBeatThreshold ?? lockWPS ?? currentWPS;
-
-  // ── Opposing-side dominance check (runs regardless of wallet-count flip) ──
-  // If the opposite side's WPS has eclipsed the ratcheting flip threshold AND
-  // is materially stronger than the locked side right now, treat it as a flip
-  // even when the naive wallet-count consensus hasn't tipped.
-  if (!tooCloseForFlip && oppSideWPS != null) {
-    const oppDelta = oppSideWPS - currentWPS;
-
-    // Hard cancel: opp beat the ratchet AND is clearly stronger now
-    if (oppSideWPS > threshold && oppDelta >= OPP_CANCEL_GAP) {
-      return {
-        status: 'CANCELLED',
-        reasons: [sideFlipped ? 'side_flipped' : 'opp_side_dominates'],
+        reasons: ['winners_faded', ...diagnostic],
         currentStars, wpsDelta,
-        newSideWPS: oppSideWPS,
-        flipBeatThreshold: threshold,
+        walletDelta: dw, qualityMargin: dq,
       };
     }
-
-    // Soft mute: opp is above lock range and materially stronger, but hasn't
-    // cleared the ratchet yet. Advisory — user/system keep the pick visible.
-    if (oppSideWPS > LOCK_RANGE_WPS && oppDelta >= OPP_MUTE_GAP) {
+    if (dq <= -3 && dw <= 0) {
       return {
         status: 'MUTED',
-        reasons: ['opp_side_stronger'],
+        reasons: ['quality_faded', ...diagnostic],
         currentStars, wpsDelta,
-        newSideWPS: oppSideWPS,
-        flipBeatThreshold: threshold,
+        walletDelta: dw, qualityMargin: dq,
       };
     }
   }
 
-  // ── Classic sideFlipped fallback (keeps legacy reason codes when wallet
-  // consensus tipped but opp-dominance checks didn't fire) ──
-  if (sideFlipped && !tooCloseForFlip) {
-    if (currentWPS < LOCK_RANGE_WPS) {
-      return { status: 'MUTED', reasons: ['flip_rejected', 'below_lock_range'], currentStars, wpsDelta };
-    }
-    return { status: 'ACTIVE', reasons: ['flip_rejected'], currentStars, wpsDelta };
-  }
-
-  if (currentWPS >= LOCK_RANGE_WPS) {
-    return { status: 'ACTIVE', reasons: [], currentStars, wpsDelta };
-  }
-
-  return { status: 'MUTED', reasons: ['below_lock_range'], currentStars, wpsDelta };
+  return {
+    status: 'ACTIVE',
+    reasons: diagnostic,
+    currentStars, wpsDelta,
+    walletDelta: dw, qualityMargin: dq,
+  };
 }
 
+// v6 Two-Factor spread/total ladder. Floor 0.5u, elite 2.0u.
 function calculateSpreadTotalUnits(stars, consensusPenalty = 0, odds = null, regimeBonus = 0) {
-  let units = stars >= 5 ? 2.0 : stars >= 4.5 ? 1.5 : stars >= 4 ? 1.25
-            : stars >= 3.5 ? 1.0 : stars >= 3 ? 0.75 : 0.5;
-  units += consensusPenalty;
-  units += regimeBonus;   // V8.2: CLEAR_MOVE bonus applied before odds caps
-  units = Math.min(Math.max(units, 0.5), 2);
+  let units;
+  if (stars >= 5.0) units = 2.00;
+  else if (stars >= 4.5) units = 1.25;
+  else if (stars >= 4.0) units = 0.75;
+  else if (stars >= 3.5) units = 0.50;
+  else units = 0;
+  if (units === 0) return 0;
   if (odds != null && odds >= 200) units = Math.min(units, 0.5);
   else if (odds != null && odds >= 151) units = Math.min(units, 0.75);
   else if (odds != null && odds >= 100) units = Math.min(units, 1.0);
@@ -1030,29 +1070,18 @@ function classifyContributionTier(v8Scoring, sideKey) {
 }
 
 // Single source of truth for lockStage + who promoted it.
-// Three promotion paths, in precedence order:
-//   1. regime      — CLEAR_MOVE or NEAR_START
-//   2. contribution — STRONG contribTier (V8.1)
-//   3. whitelist   — Phase 2: STRONG_FOR or LEAN_FOR wallet consensus with guardrails
-// Whitelist-promotion guardrails (v5, universal):
-//   - verdict ∈ { STRONG_FOR (Δ≥+2), LEAN_FOR (Δ=+1) }
-//   - agW === 0 (pure consensus — no profitable dissent, enforced inside
-//     computeWalletConsensus via promotionEligible)
-//   - baseStars >= 1.0 (minimal V8 merit floor — lowered from 1.5 on
-//     2026-04-22; the whitelist IS the primary merit signal, we only keep
-//     a floor to filter outright noise picks)
-//   - sportConfig.promote === true (universal across all sports)
-//   - Pick wouldn't otherwise lock (enforced by precedence ordering above)
+//
+// v6 Floor G: the only promotion path is Δ_winner ≥ +1 AND Δ_quality ≥ +1.
+// Regime / contribTier / WPS are retained as diagnostic fields only — they
+// do NOT promote picks anymore. Backtest on 74 graded V8 picks validated
+// this cohort at 60.5% WR / +15.5% ROI vs V8 baseline at 44.1% / −15.8%.
+// See V8_TWO_FACTOR_BACKTEST.md.
 function decideLockStage(regime, v8Scoring, sideKey, sport = null, baseStars = 0) {
-  const hasRegime = regime === 'CLEAR_MOVE' || regime === 'NEAR_START';
   const contribTier = classifyContributionTier(v8Scoring, sideKey);
-  if (hasRegime) return { stage: 'LOCKED', contribTier, promotedBy: 'regime' };
-  if (contribTier === 'STRONG') return { stage: 'LOCKED', contribTier, promotedBy: 'contribution' };
-  if (sport && baseStars >= 1.0) {
-    const wc = computeWalletConsensus(v8Scoring?.walletDetails, sport, sideKey);
-    if (wc.promotionEligible) {
-      return { stage: 'LOCKED', contribTier, promotedBy: 'whitelist' };
-    }
+  if (!sport) return { stage: 'SHADOW', contribTier, promotedBy: null };
+  const wc = computeWalletConsensus(v8Scoring?.walletDetails, sport, sideKey);
+  if (wc.promotionEligible) {
+    return { stage: 'LOCKED', contribTier, promotedBy: 'two-factor-floor' };
   }
   return { stage: 'SHADOW', contribTier, promotedBy: null };
 }
@@ -1119,15 +1148,18 @@ function qualityBonus(v8Scoring, sideKey) {
 //
 // Single source of truth: the same stamped values drive UI, ranking
 // reports, and attribution. No snapshot OR'ing; no regime/fmean fork.
-function evaluateTopPickTier(peak, lock, sideKey, promotedRegime = null, walletDelta = null, walletAgW = null) {
+// v6 TOP PICK tiers — two-factor. User spec (2026-04-20):
+//   SUPER TOP PICK (filled gold)   : Δ_winner ≥ +2
+//   TOP PICK       (outlined gold) : Δ_winner ≥ +1  (excluding SUPER)
+// Δ_quality is reflected in the star/unit, not the badge.
+function evaluateTopPickTier(peak, lock, sideKey, promotedRegime = null, walletDelta = null, walletAgW = null, qualityMargin = null) {
   const regime = peak?.regime ?? lock?.regime ?? promotedRegime ?? null;
   const v8 = peak?.v8Scoring ?? lock?.v8Scoring ?? null;
   const meanBaseF = computeMeanBaseF(v8, sideKey);
   const delta = typeof walletDelta === 'number' ? walletDelta : null;
-  const agW = typeof walletAgW === 'number' ? walletAgW : null;
   const isSuperTopPick = delta != null && delta >= 2;
-  const isTopPick = isSuperTopPick || (delta === 1 && (agW === 0 || agW == null));
-  return { isTopPick, isSuperTopPick, regime, meanBaseF };
+  const isTopPick = isSuperTopPick || (delta != null && delta >= 1);
+  return { isTopPick, isSuperTopPick, regime, meanBaseF, qualityMargin };
 }
 
 // V8.3 — NEAR_START elite-wallet modifier (regime-specific).
@@ -1147,22 +1179,11 @@ function nearStartMaxRoiBonus(regime, v8Scoring, sideKey) {
   return 0;   // <50 has only N=1 — stay neutral
 }
 
-// V8.3 — composed sizing delta applied before the [0.5, MAX] clamp and
-// odds-based caps.  Signals:
-//  - market confirmation (regime)
-//  - for-side wallet crew caliber (meanBase_F)
-//  - NEAR_START elite-wallet presence (maxRoiN_F, NEAR_START only)
-//  - Phase 2: whitelist wallet consensus (STRONG_FOR +0.25, LEAN_FOR +0.10)
-// Max positive stack = +1.00 (CLEAR_MOVE + meanBase_F≥55 + STRONG_FOR)
-// Max negative stack = -0.50 (meanBase_F < 50 + NEAR_START toxic)
-// Negative wallet consensus (FADE_*) returns unitBonus = 0 (suppressed per
-// Option A); the lockAction is handled by evaluatePickHealth.
-function computeRegimeBonus(regime, v8Scoring, sideKey, sport = null) {
-  const wc = sport ? computeWalletConsensus(v8Scoring?.walletDetails, sport, sideKey) : null;
-  return clearMoveSizeBonus(regime)
-       + qualityBonus(v8Scoring, sideKey)
-       + nearStartMaxRoiBonus(regime, v8Scoring, sideKey)
-       + (wc?.unitBonus || 0);
+// v6: sizing is derived entirely from the two-factor star. This helper is
+// retained for legacy callers and always returns 0 now. Regime / meanBase_F
+// / NEAR_START-maxRoi / whitelist-bonus stacking is gone.
+function computeRegimeBonus(_regime, _v8Scoring, _sideKey, _sport = null) {
+  return 0;
 }
 
 // Phase 2: stamp wallet-consensus attribution fields on a sideData object.
@@ -1183,11 +1204,18 @@ function stampWalletConsensus(target, v8Scoring, sideKey, sport, baseStars, prom
   target.v8_walletConsensusAgW = wc.agW;
   target.v8_walletConsensusDelta = wc.delta;
   target.v8_walletConsensusVerdict = wc.verdict;
-  target.v8_walletConsensusStarBonus = wc.unitBonus; // historical field name; carries unit bonus
+  target.v8_walletConsensusStarBonus = wc.unitBonus;
   target.v8_walletConsensusMuteTriggered = wc.lockAction === 'MUTE';
   target.v8_walletConsensusCancelTriggered = wc.lockAction === 'CANCEL';
-  target.v8_walletConsensusPromotionTriggered = promotedBy === 'whitelist';
+  target.v8_walletConsensusPromotionTriggered = promotedBy === 'two-factor-floor' || promotedBy === 'whitelist';
   target.v8_walletConsensusBaseStars = baseStars || 0;
+  // v6 two-factor fields
+  target.v8_walletConsensusQualityForT30 = wc.qualityForT30;
+  target.v8_walletConsensusQualityAgT30 = wc.qualityAgT30;
+  target.v8_walletConsensusQualityMargin = wc.qualityMargin;
+  target.v8_vaultStar = (wc.forW || wc.agW || wc.qualityMargin !== 0)
+    ? vaultStarFromDeltas(wc.delta, wc.qualityMargin)
+    : null;
 }
 
 // Phase 2: true if the existing side is missing a stamp or has a stale one.
@@ -1273,7 +1301,7 @@ function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet
   };
   if (lockStage === 'LOCKED') {
     base.promotedBy = promotedBy;
-    if (promotedBy === 'contribution' || promotedBy === 'whitelist') {
+    if (promotedBy === 'two-factor-floor' || promotedBy === 'contribution' || promotedBy === 'whitelist') {
       base.promotedAt = now;
       base.promotedRegime = regime || null;
     }
@@ -1452,7 +1480,7 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
     // side is the play, even if its raw V8 score is lower.
     const newSideDecision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
     const newSideHasWhitelistPromo =
-      newSideDecision.stage === 'LOCKED' && newSideDecision.promotedBy === 'whitelist';
+      newSideDecision.stage === 'LOCKED' && (newSideDecision.promotedBy === 'two-factor-floor' || newSideDecision.promotedBy === 'whitelist');
 
     if (stars <= existingBestStars && !newSideHasWhitelistPromo) {
       const originalSide = existingSides.find(([, sd]) => sd.lock && !sd.superseded)?.[0];
@@ -1543,7 +1571,7 @@ function buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, ev
   };
   if (lockStage === 'LOCKED') {
     base.promotedBy = promotedBy;
-    if (promotedBy === 'contribution' || promotedBy === 'whitelist') {
+    if (promotedBy === 'two-factor-floor' || promotedBy === 'contribution' || promotedBy === 'whitelist') {
       base.promotedAt = now;
       base.promotedRegime = regime || null;
     }
@@ -1666,7 +1694,7 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
     // v5.4: whitelist-promotion override on side creation gate.
     const newSideDecision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
     const newSideHasWhitelistPromo =
-      newSideDecision.stage === 'LOCKED' && newSideDecision.promotedBy === 'whitelist';
+      newSideDecision.stage === 'LOCKED' && (newSideDecision.promotedBy === 'two-factor-floor' || newSideDecision.promotedBy === 'whitelist');
 
     if (stars <= existingBestStars && !newSideHasWhitelistPromo) {
       const originalSide = existingSides.find(([, sd]) => sd.lock && !sd.superseded)?.[0];
@@ -1800,7 +1828,7 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
     // v5.4: whitelist-promotion override on side creation gate.
     const newSideDecision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
     const newSideHasWhitelistPromo =
-      newSideDecision.stage === 'LOCKED' && newSideDecision.promotedBy === 'whitelist';
+      newSideDecision.stage === 'LOCKED' && (newSideDecision.promotedBy === 'two-factor-floor' || newSideDecision.promotedBy === 'whitelist');
 
     if (stars <= existingBestStars && !newSideHasWhitelistPromo) {
       const originalSide = existingSides.find(([, sd]) => sd.lock && !sd.superseded)?.[0];
@@ -3830,6 +3858,14 @@ const MiniSparkline = memo(function MiniSparkline({ points, width = 140, height 
 // V6 rateStars removed — replaced by rateStarsV7 defined above (unified for ML + spread/total)
 
 const HEALTH_REASON_LABELS = {
+  // v6 two-factor reasons (primary triggers)
+  winners_killed: 'Proven winners now strongly against this pick (Δw ≤ −2)',
+  winners_faded:  'A proven winner flipped off this pick (Δw = −1)',
+  quality_faded:  'Quality wallets collapsed to the other side (Δq ≤ −3)',
+  // diagnostic-only reasons (never mute/cancel on their own in v6)
+  wps_flipped_diag:        'Wallet-count flipped (diagnostic only)',
+  opp_side_stronger_diag:  'Opposing side gaining WPS (diagnostic only)',
+  // legacy labels retained so historical cards still render copy
   below_lock_range: 'Score dropped below lock range',
   side_flipped: 'Sharps flipped to other side',
   flip_rejected: 'Flip rejected — threshold not met',
@@ -3841,7 +3877,7 @@ const HEALTH_REASON_LABELS = {
 };
 
 const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
-  const { team, away, home, sport, stars, lockStars, units, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, lockEV, criteriaMet, criteria, consensusStrength, pinnacleOdds, marketType, line, superseded, health, isTopPick: isTopPickPre, isSuperTopPick: isSuperTopPickPre, walletConsensusDelta, walletConsensusForW, walletConsensusAgW } = pick;
+  const { team, away, home, sport, stars, lockStars, units, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, lockEV, criteriaMet, criteria, consensusStrength, pinnacleOdds, marketType, line, superseded, health, isTopPick: isTopPickPre, isSuperTopPick: isSuperTopPickPre, walletConsensusDelta, walletConsensusForW, walletConsensusAgW, walletConsensusQualityMargin, walletConsensusQualityForT30, walletConsensusQualityAgT30 } = pick;
   const [expanded, setExpanded] = useState(false);
   const ss = sportStyle(sport);
   const starDelta = (lockStars != null && stars != null) ? stars - lockStars : 0;
@@ -3976,8 +4012,8 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
               <span
                 title={
                   isSuperTopPick
-                    ? `${walletConsensusForW ?? '?'} profitable ${sport} wallets backing, ${walletConsensusAgW ?? 0} against (Δ=+${walletConsensusDelta ?? 2})`
-                    : `${walletConsensusForW ?? 1} profitable ${sport} wallet backing, 0 against (Δ=+1)`
+                    ? `${walletConsensusForW ?? '?'} proven ${sport} winners backing, ${walletConsensusAgW ?? 0} against (Δw=+${walletConsensusDelta ?? 2}, Δq=${(walletConsensusQualityMargin ?? 0) >= 0 ? '+' : ''}${walletConsensusQualityMargin ?? 0})`
+                    : `${walletConsensusForW ?? 1} proven ${sport} winner backing, ${walletConsensusAgW ?? 0} against (Δw=+${walletConsensusDelta ?? 1}, Δq=${(walletConsensusQualityMargin ?? 0) >= 0 ? '+' : ''}${walletConsensusQualityMargin ?? 0})`
                 }
                 style={{
                   ...T.micro, fontWeight: 900, letterSpacing: '0.06em',
@@ -3994,7 +4030,30 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                 }}
               >
                 {isSuperTopPick ? <Zap size={9} strokeWidth={3} fill="#fff" /> : <TrendingUp size={9} strokeWidth={3} />}
-                <span>TOP PICK</span>
+                <span>{isSuperTopPick ? 'SUPER TOP PICK' : 'TOP PICK'}</span>
+              </span>
+            )}
+            {/* v6 two-factor Δ chips — always on so users see the drivers */}
+            {(walletConsensusDelta != null || walletConsensusQualityMargin != null) && !superseded && (
+              <span
+                title={`Δw = proven-winner margin (for − against, whitelist-gated) · Δq = quality margin at T30 contribution`}
+                style={{
+                  ...T.micro, fontWeight: 800, letterSpacing: '0.04em',
+                  padding: '0.1rem 0.35rem', borderRadius: '4px',
+                  color: B.textSec,
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  display: 'flex', alignItems: 'center', gap: '0.25rem',
+                  fontSize: '0.55rem',
+                }}
+              >
+                <span style={{ color: (walletConsensusDelta ?? 0) > 0 ? B.green : (walletConsensusDelta ?? 0) < 0 ? B.red : B.textMuted }}>
+                  Δw {(walletConsensusDelta ?? 0) >= 0 ? '+' : ''}{walletConsensusDelta ?? 0}
+                </span>
+                <span style={{ color: B.textMuted }}>·</span>
+                <span style={{ color: (walletConsensusQualityMargin ?? 0) > 0 ? B.green : (walletConsensusQualityMargin ?? 0) < 0 ? B.red : B.textMuted }}>
+                  Δq {(walletConsensusQualityMargin ?? 0) >= 0 ? '+' : ''}{walletConsensusQualityMargin ?? 0}
+                </span>
               </span>
             )}
             <span style={{
@@ -4555,7 +4614,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const oppSharpFeatures = computeSharpFeatures(gd.positions, oppSide);
   const oppSr = rateStarsV8({
     positions: gd.positions, consensusSide: oppSide, v8Norm,
-    pinnMoveSize: 0, timeToGame: null,
+    pinnMoveSize: 0, timeToGame: null, sport: gd.sport,
   });
   const oppPeakStars = oppSr.stars;
 
@@ -4585,6 +4644,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     timeToGame: commenceTime ? (commenceTime - Date.now()) / 60000 : null,
     lockOdds: lockOddsRef.current,
     pinnCurrentOdds,
+    sport: gd.sport,
   });
   // Align with the allPosGames counter (8336): skip only truly extreme odds
   // (pinnProb >= 0.95). Previously a stricter 0.85 cap here hid cards that
@@ -4601,19 +4661,17 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   // promoted via whitelist (Δ≥+1, agW=0, baseStars≥1.0). This is the
   // renderer-side companion to the syncPickToFirebase-side override
   // shipped in v5.4.
-  const mlWhitelistPromo = sr?.v8Scoring && consensusSide && gd.sport
-    ? decideLockStage(sr.regime, sr.v8Scoring, consensusSide, gd.sport, sr.stars).promotedBy === 'whitelist'
+  // v6 Two-Factor Lock Gate: Floor G (Δw≥+1 AND Δq≥+1) is the sole
+  // promotion path. We keep the $10k invested floor and demote regime /
+  // star thresholds / legacy sub-paths to nothing. isShadow = meets
+  // invest floor but doesn't yet clear the two-factor gate.
+  const twoFactorFloor = sr?.v8Scoring && consensusSide && gd.sport
+    ? decideLockStage(sr.regime, sr.v8Scoring, consensusSide, gd.sport, sr.stars).promotedBy === 'two-factor-floor'
     : false;
-  const meetsLegacy = sr.stars >= 2.5 && consensusInvested >= 10000;
-  const meetsWhitelist = mlWhitelistPromo && sr.stars >= 1.0 && consensusInvested >= 10000;
-  const meetsThreshold = meetsLegacy || meetsWhitelist;
-  const hasRegimeMove = sr.regime === 'CLEAR_MOVE' || sr.regime === 'NEAR_START';
-  // Treat whitelist-qualified sides as LOCKED even without a regime move —
-  // syncPickToFirebase's whitelist promotion path will keep the lockStage
-  // in sync, but the renderer needs to mark it locked so the sync useEffect
-  // actually fires (it gates on isLocked || isShadow).
-  const isLocked = (meetsLegacy && hasRegimeMove) || meetsWhitelist;
-  const isShadow = meetsLegacy && !hasRegimeMove;
+  const meetsInvest = consensusInvested >= 10000;
+  const meetsThreshold = meetsInvest && sr.stars >= 3.5;
+  const isLocked = twoFactorFloor && meetsInvest;
+  const isShadow = meetsInvest && !twoFactorFloor && sr.stars >= 2.5;
   const lockType = isLocked ? (isGameLive ? 'LIVE' : 'PREGAME') : null;
 
   const units = isLocked ? calculateUnits(sr.stars, cGrade.penalty, betOdds, computeRegimeBonus(sr.regime, sr.v8Scoring, consensusSide, gd.sport)) : 0;
@@ -4816,26 +4874,21 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     pinnMoveSize: spreadPinnMoveSize,
     timeToGame: commenceTime ? (commenceTime - Date.now()) / 60000 : null,
     lockOdds: null, pinnCurrentOdds: spreadPinnOdds,
+    sport: gd.sport,
   }) : null;
 
   const spreadWhaleOverride = spreadSharpFeatures
     && (spreadSharpFeatures.conWalletCount || 0) === 1
     && (spreadSharpFeatures.conTotalInvested || 0) >= 25000
     && spreadGameData?.positions?.some(p => p.side === spreadConsensusSide && (p.sportPnl || 0) >= 500000);
-  // v5.5: whitelist-eligible margin override (see ML gate above for context).
-  const spreadWhitelistPromo = spreadSr?.v8Scoring && spreadConsensusSide && gd.sport
-    ? decideLockStage(spreadSr.regime, spreadSr.v8Scoring, spreadConsensusSide, gd.sport, spreadSr.stars).promotedBy === 'whitelist'
+  // v6 Two-Factor spread lock gate — identical policy to ML.
+  const spreadTwoFactorFloor = spreadSr?.v8Scoring && spreadConsensusSide && gd.sport
+    ? decideLockStage(spreadSr.regime, spreadSr.v8Scoring, spreadConsensusSide, gd.sport, spreadSr.stars).promotedBy === 'two-factor-floor'
     : false;
-  const spreadMeetsLegacy = spreadSr && spreadSr.stars >= 2.5
-    && ((spreadSharpFeatures?.conWalletCount || 0) >= 2 || spreadWhaleOverride)
-    && (spreadSharpFeatures?.conTotalInvested || 0) >= 10000;
-  const spreadMeetsWhitelist = spreadSr && spreadWhitelistPromo
-    && spreadSr.stars >= 1.0
-    && (spreadSharpFeatures?.conTotalInvested || 0) >= 10000;
-  const spreadMeetsThreshold = spreadMeetsLegacy || spreadMeetsWhitelist;
-  const spreadHasRegime = spreadSr && (spreadSr.regime === 'CLEAR_MOVE' || spreadSr.regime === 'NEAR_START');
-  const isSpreadLocked = (spreadMeetsLegacy && spreadHasRegime) || spreadMeetsWhitelist;
-  const isSpreadShadow = spreadMeetsLegacy && !spreadHasRegime;
+  const spreadMeetsInvest = (spreadSharpFeatures?.conTotalInvested || 0) >= 10000;
+  const spreadMeetsThreshold = spreadSr && spreadMeetsInvest && spreadSr.stars >= 3.5;
+  const isSpreadLocked = !!spreadSr && spreadTwoFactorFloor && spreadMeetsInvest;
+  const isSpreadShadow = !!spreadSr && spreadMeetsInvest && !spreadTwoFactorFloor && spreadSr.stars >= 2.5;
   const spreadUnits = (isSpreadLocked || isSpreadShadow) ? calculateSpreadTotalUnits(spreadSr.stars, 0, spreadBetOdds, computeRegimeBonus(spreadSr.regime, spreadSr.v8Scoring, spreadConsensusSide, gd.sport)) : 0;
 
   useEffect(() => {
@@ -4960,26 +5013,21 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     pinnMoveSize: totalPinnMoveSize,
     timeToGame: commenceTime ? (commenceTime - Date.now()) / 60000 : null,
     lockOdds: null, pinnCurrentOdds: totalPinnOdds,
+    sport: gd.sport,
   }) : null;
 
   const totalWhaleOverride = totalSharpFeatures
     && (totalSharpFeatures.conWalletCount || 0) === 1
     && (totalSharpFeatures.conTotalInvested || 0) >= 25000
     && totalGameData?.positions?.some(p => p.side === totalConsensusSide && (p.sportPnl || 0) >= 500000);
-  // v5.5: whitelist-eligible margin override (see ML gate above for context).
-  const totalWhitelistPromo = totalSr?.v8Scoring && totalConsensusSide && gd.sport
-    ? decideLockStage(totalSr.regime, totalSr.v8Scoring, totalConsensusSide, gd.sport, totalSr.stars).promotedBy === 'whitelist'
+  // v6 Two-Factor totals lock gate — identical policy to ML/spread.
+  const totalTwoFactorFloor = totalSr?.v8Scoring && totalConsensusSide && gd.sport
+    ? decideLockStage(totalSr.regime, totalSr.v8Scoring, totalConsensusSide, gd.sport, totalSr.stars).promotedBy === 'two-factor-floor'
     : false;
-  const totalMeetsLegacy = totalSr && totalSr.stars >= 2.5
-    && ((totalSharpFeatures?.conWalletCount || 0) >= 2 || totalWhaleOverride)
-    && (totalSharpFeatures?.conTotalInvested || 0) >= 10000;
-  const totalMeetsWhitelist = totalSr && totalWhitelistPromo
-    && totalSr.stars >= 1.0
-    && (totalSharpFeatures?.conTotalInvested || 0) >= 10000;
-  const totalMeetsThreshold = totalMeetsLegacy || totalMeetsWhitelist;
-  const totalHasRegime = totalSr && (totalSr.regime === 'CLEAR_MOVE' || totalSr.regime === 'NEAR_START');
-  const isTotalLocked = (totalMeetsLegacy && totalHasRegime) || totalMeetsWhitelist;
-  const isTotalShadow = totalMeetsLegacy && !totalHasRegime;
+  const totalMeetsInvest = (totalSharpFeatures?.conTotalInvested || 0) >= 10000;
+  const totalMeetsThreshold = totalSr && totalMeetsInvest && totalSr.stars >= 3.5;
+  const isTotalLocked = !!totalSr && totalTwoFactorFloor && totalMeetsInvest;
+  const isTotalShadow = !!totalSr && totalMeetsInvest && !totalTwoFactorFloor && totalSr.stars >= 2.5;
   const totalUnits = (isTotalLocked || isTotalShadow) ? calculateSpreadTotalUnits(totalSr.stars, 0, totalBetOdds, computeRegimeBonus(totalSr.regime, totalSr.v8Scoring, totalConsensusSide, gd.sport)) : 0;
 
   useEffect(() => {
@@ -5143,6 +5191,29 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
             })}
             <span style={{ marginLeft: '0.15rem' }}>{sr.label}</span>
           </span>
+          {/* v6 two-factor Δ chips — always on so users see the primary drivers */}
+          {sr?.v8Scoring && (sr.v8Scoring.deltaWinner != null || sr.v8Scoring.deltaQuality != null) && (
+            <span
+              title="Δw = proven winner margin (for − against, sport-specific whitelist). Δq = quality margin (contribution ≥ 30). Both must be ≥ +1 to lock."
+              style={{
+                ...T.micro, fontWeight: 800, letterSpacing: '0.04em',
+                padding: '0.15rem 0.4rem', borderRadius: '4px',
+                color: B.textSec,
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                display: 'flex', alignItems: 'center', gap: '0.3rem',
+                fontSize: '0.55rem',
+              }}
+            >
+              <span style={{ color: (sr.v8Scoring.deltaWinner ?? 0) > 0 ? B.green : (sr.v8Scoring.deltaWinner ?? 0) < 0 ? B.red : B.textMuted }}>
+                Δw {(sr.v8Scoring.deltaWinner ?? 0) >= 0 ? '+' : ''}{sr.v8Scoring.deltaWinner ?? 0}
+              </span>
+              <span style={{ color: B.textMuted }}>·</span>
+              <span style={{ color: (sr.v8Scoring.deltaQuality ?? 0) > 0 ? B.green : (sr.v8Scoring.deltaQuality ?? 0) < 0 ? B.red : B.textMuted }}>
+                Δq {(sr.v8Scoring.deltaQuality ?? 0) >= 0 ? '+' : ''}{sr.v8Scoring.deltaQuality ?? 0}
+              </span>
+            </span>
+          )}
         </div>
       </div>
 
@@ -9006,7 +9077,7 @@ export default function SharpFlow() {
                   const oWalletPct = (cWallets + oWallets) > 0 ? (oWallets / (cWallets + oWallets)) * 100 : 50;
                   const oSr = rateStarsV8({
                     positions: gd.positions, consensusSide: oSide, v8Norm,
-                    pinnMoveSize: 0, timeToGame: null,
+                    pinnMoveSize: 0, timeToGame: null, sport,
                   });
 
                   const sortFlowGame = gameFlowMap?.[`${sport}_${key}`];
@@ -9021,7 +9092,7 @@ export default function SharpFlow() {
                   const sortWalletPct = (cWallets + oWallets) > 0 ? (cWallets / (cWallets + oWallets)) * 100 : 50;
                   const sr = rateStarsV8({
                     positions: gd.positions, consensusSide: cSide, v8Norm,
-                    pinnMoveSize: 0, timeToGame: null,
+                    pinnMoveSize: 0, timeToGame: null, sport,
                   });
 
                   if (sortBy === 'locked') continue;
@@ -9182,19 +9253,18 @@ export default function SharpFlow() {
                           health: (() => {
                             if (sd.superseded) return { status: 'CANCELLED', reasons: ['side_flipped'] };
                             const stored = sd.health || { status: 'ACTIVE', reasons: [] };
-                            // v5.2 self-heal: if the current wallet-consensus stamp
-                            // no longer implies MUTE/CANCEL but stored health is
-                            // still carrying a stale whitelist_* reason from an
-                            // older stamp (pre-backfill), reconcile to ACTIVE.
-                            // Non-whitelist reasons (opp_side_stronger, side_flipped,
-                            // wps_dropped, etc.) are preserved untouched.
-                            const verdict = sd.v8_walletConsensusVerdict;
+                            // v6 self-heal: if the stored health carries only
+                            // v6 two-factor reasons (winners_*/quality_faded)
+                            // or legacy whitelist_* reasons, but the live Δ
+                            // stamp no longer triggers mute/cancel, reconcile
+                            // to ACTIVE so old muted picks unstick once
+                            // sharps arrive on our side.
                             const muteNow = !!sd.v8_walletConsensusMuteTriggered;
                             const cancelNow = !!sd.v8_walletConsensusCancelTriggered;
                             const reasons = Array.isArray(stored.reasons) ? stored.reasons : [];
-                            const onlyWhitelistReasons = reasons.length > 0 && reasons.every(r => r === 'whitelist_fade_weak' || r === 'whitelist_fade_strong');
-                            const positiveVerdict = verdict === 'LEAN_FOR' || verdict === 'STRONG_FOR' || verdict === 'NEUTRAL';
-                            if (stored.status && stored.status !== 'ACTIVE' && !muteNow && !cancelNow && positiveVerdict && onlyWhitelistReasons) {
+                            const TWO_FACTOR_REASONS = new Set(['winners_killed', 'winners_faded', 'quality_faded', 'whitelist_fade_weak', 'whitelist_fade_strong']);
+                            const onlyTwoFactorReasons = reasons.length > 0 && reasons.every(r => TWO_FACTOR_REASONS.has(r));
+                            if (stored.status && stored.status !== 'ACTIVE' && !muteNow && !cancelNow && onlyTwoFactorReasons) {
                               return { status: 'ACTIVE', reasons: [] };
                             }
                             return stored;
@@ -9205,12 +9275,12 @@ export default function SharpFlow() {
                           walletConsensusVerdict: sd.v8_walletConsensusVerdict ?? null,
                           walletConsensusForW: sd.v8_walletConsensusForW ?? null,
                           walletConsensusAgW: sd.v8_walletConsensusAgW ?? null,
-                          // V8.5: TOP PICK tier now driven by wallet-consensus Δ
-                          // stamped on the side doc (v8_walletConsensus*).
-                          //   Δ ≥ +2         → SUPER TOP PICK (gold filled)
-                          //   Δ = +1, agW=0  → TOP PICK       (gold outlined)
-                          // See evaluateTopPickTier() for the rationale and
-                          // the 2026-04-22 predictor-shootout anchor data.
+                          walletConsensusQualityMargin: sd.v8_walletConsensusQualityMargin ?? null,
+                          walletConsensusQualityForT30: sd.v8_walletConsensusQualityForT30 ?? null,
+                          walletConsensusQualityAgT30: sd.v8_walletConsensusQualityAgT30 ?? null,
+                          // v6 TOP PICK tiers (two-factor):
+                          //   Δ_winner ≥ +2 → SUPER TOP PICK (gold filled)
+                          //   Δ_winner ≥ +1 → TOP PICK       (gold outlined)
                           ...evaluateTopPickTier(
                             peak,
                             lock,
@@ -9218,6 +9288,7 @@ export default function SharpFlow() {
                             sd.promotedRegime,
                             sd.v8_walletConsensusDelta,
                             sd.v8_walletConsensusAgW,
+                            sd.v8_walletConsensusQualityMargin,
                           ),
                         });
                       }

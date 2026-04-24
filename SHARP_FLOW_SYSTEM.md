@@ -1,5 +1,32 @@
 # Sharp Flow — Whale Intel & Sharp Tracker System
 
+> **ACTIVE SYSTEM — V6 Two-Factor Overhaul (2026-04-20).**
+>
+> Sharp Intel game cards and Locked Picks are driven by **Δ_winner** and
+> **Δ_quality**. All other signals (WPS, regime, contribTier, breadth,
+> concentration, meanBase_F) are **diagnostic-only** and do not influence
+> stars, units, locks, mutes, or cancels.
+>
+> See [STAR_RATING_SYSTEM.md](STAR_RATING_SYSTEM.md) for the full V6 spec
+> and [V8_TWO_FACTOR_BACKTEST.md](V8_TWO_FACTOR_BACKTEST.md) for the
+> pre-ship validation (74 graded V8 picks, +43 ROI-point lift vs V8).
+
+## V6 cheat sheet
+
+| Layer | Rule |
+|---|---|
+| **Lock** | Δ_winner ≥ +1 AND Δ_quality ≥ +1 → LOCKED; else SHADOW |
+| **Cancel** | Δ_winner ≤ −2 → CANCELLED (`winners_killed`) |
+| **Mute** | Δ_winner = −1 → MUTED (`winners_faded`); or Δ_quality ≤ −3 AND Δ_winner ≤ 0 → MUTED (`quality_faded`) |
+| **Star** | two-factor Vault Star (see STAR_RATING_SYSTEM.md) |
+| **Units (ML)** | 5.0→3.00u · 4.5→2.00u · 4.0→1.25u · 3.5→0.75u · else 0 |
+| **Units (SPR/TOT)** | 5.0→2.00u · 4.5→1.25u · 4.0→0.75u · 3.5→0.50u · else 0 |
+| **TOP PICK** | Δ_winner ≥ +1 (outlined gold) |
+| **SUPER TOP PICK** | Δ_winner ≥ +2 (filled gold) |
+| **Firestore fields** | `v8_walletConsensus{Delta,QualityMargin,QualityForT30,QualityAgT30,Verdict,MuteTriggered,CancelTriggered,PromotionTriggered}`, `v8_vaultStar`, `v8_walletConsensusVersion = 6` |
+
+---
+
 ## Part 1: How It Works (For Bettors)
 
 ### What is Sharp Flow?

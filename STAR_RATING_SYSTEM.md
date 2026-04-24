@@ -1,8 +1,122 @@
-# Sharp Flow — Star Rating V8 (Wallet-Contribution System)
+# Sharp Flow — Star Rating V6 (Two-Factor Vault Star)
+
+> **Active system — deployed 2026-04-20.** All Sharp Intel game cards and
+> Locked Picks use this. Backtested on 74 graded V8 picks before ship; see
+> [V8_TWO_FACTOR_BACKTEST.md](V8_TWO_FACTOR_BACKTEST.md).
+
+## Overview — the two signals that matter
+
+After a full-sample predictor shoot-out on V8 history, only two factors
+separated winners from losers at statistical significance:
+
+1. **Δ_winner** — unique whitelisted (CONFIRMED / FLAT) `{SPORT}` wallets
+   supporting the pick minus unique whitelisted wallets opposing it.
+2. **Δ_quality** — wallets with `contribution ≥ 30` on the pick side minus
+   the same on the other side (whitelist-independent quality filter).
+
+Every other V8 signal (regime, WPS, breadth, concentration, meanBase_F,
+maxRoi_F, contribTier) was non-separating or noisy. They are retained on
+the pick document as **diagnostic-only** fields.
+
+## Promotion floor — Floor G (backtest-validated)
+
+```
+Δ_winner ≥ +1  AND  Δ_quality ≥ +1   →   LOCKED
+anything else                         →   SHADOW
+```
+
+Backtest cohort (74 graded V8 picks): **43 locked, 26-17, 60.5% WR,
++15.5% ROI, +6.66u**. Previous V8 gate: 59 locked, 44.1% WR, −15.8% ROI,
+−9.34u. Floor G is a +43 ROI-point swing at similar volume.
+
+## Two-Factor Vault Star
+
+`dw = Δ_winner`, `dq = Δ_quality`:
+
+```
+Elite rule:
+  dw ≥ +3                 →  5.0★
+  (dw ≥ +2 AND dq ≥ +1)   →  5.0★
+
+Base from dw:
+  dw ≤ −2  →  1.0★
+  dw = −1  →  1.5★
+  dw =  0  →  2.5★
+  dw = +1  →  3.5★
+  dw = +2  →  4.5★   (falls back here if dq < +1)
+
+Quality adjustment to the base:
+  dq ≤ −2  →  −1.0
+  dq ≤  0  →  −0.5
+  dq ∈ [+1, +2]  →  0
+  dq ≥ +3  →  +0.5
+```
+
+Star floor 1.0, ceiling 5.0. Star rating is the **display** layer; the lock
+decision uses the raw (dw, dq) thresholds directly so adjustments can't
+block a legitimate Δw≥+1 promotion.
+
+## Unit ladder (stars → units)
+
+```
+ML:            5.0→3.00u | 4.5→2.00u | 4.0→1.25u | 3.5→0.75u | <3.5→0u
+Spread/Total:  5.0→2.00u | 4.5→1.25u | 4.0→0.75u | 3.5→0.50u | <3.5→0u
+
+Odds caps (applied after ladder):
+  ≥ +200   → cap 0.5u
+  +151..+199 → cap 1.0u (ML) / 0.75u (spread/total)
+  +100..+150 → cap 2.0u (ML) / 1.0u (spread/total)
+```
+
+## Health engine — four rules
+
+In `evaluatePickHealth` the live Δ values determine status:
+
+```
+Δ_winner ≤ −2                      →  CANCELLED  (reason: winners_killed)
+Δ_winner = −1                      →  MUTED      (reason: winners_faded)
+Δ_quality ≤ −3 AND Δ_winner ≤ 0    →  MUTED      (reason: quality_faded)
+otherwise                           →  ACTIVE
+```
+
+WPS flip and opp-side dominance are retained as diagnostic tags
+(`wps_flipped_diag`, `opp_side_stronger_diag`) but never change status
+on their own in v6.
+
+## TOP PICK badges
+
+```
+Δ_winner ≥ +2  →  SUPER TOP PICK  (filled gold, glow)
+Δ_winner ≥ +1  →  TOP PICK        (outlined gold)
+```
+
+Δ_quality is reflected in the star/unit, not the badge.
+
+## Firestore stamp (v6)
+
+Every side doc carries:
+
+```
+v8_walletConsensusVersion: 6
+v8_walletConsensusForW / AgW / Delta / Verdict
+v8_walletConsensusQualityForT30 / QualityAgT30 / QualityMargin
+v8_walletConsensusMuteTriggered / CancelTriggered / PromotionTriggered
+v8_vaultStar   (two-factor Vault Star)
+```
+
+Backfill / restamp is handled by `scripts/backfillWalletConsensus.js`.
+
+---
+
+# Legacy V8 star rating (archived 2026-04-20)
+
+> The sections below describe the V7/V8 walletPlayScore star system that
+> preceded the two-factor overhaul. Retained here for historical context
+> only — the code paths are no longer active.
 
 ## Overview
 
-The star rating is the **single source of truth** for every decision in Sharp Flow:
+The star rating was the **single source of truth** for every decision in Sharp Flow:
 - Whether a play gets **locked** (auto-tracked)
 - How many **units** to risk
 - How it's **categorized** in performance tracking
