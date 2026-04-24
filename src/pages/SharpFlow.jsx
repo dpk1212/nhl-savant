@@ -1085,14 +1085,11 @@ function evaluatePickHealth({
     diagnostic.push('opp_side_stronger_diag');
   }
 
-  // v6.5 — Lock-in window. At T-15 the pick is cemented: no new mutes /
-  // cancels fire, and the locked-picks UI will additionally restore any
-  // existing v6 mute back to ACTIVE (see locked-picks builder) so the play
-  // rides into kickoff at its peak recommendation. Previously this window
-  // was T-5 which let late-cycle Δw decay (e.g. Celtics 7:10 ET game muted
-  // ~T-30 when one whitelisted wallet flipped) flatten plays at the worst
-  // possible moment.
-  const tooCloseForWhitelist = timeToGame != null && timeToGame <= 15;
+  // Original T-5 jitter window — keeps very-close-to-tipoff data noise from
+  // generating spurious last-second mutes. The actual "lock-in" freeze is
+  // enforced at the SYNC layer (writes stop at T-15) so by the time we get
+  // here inside T-15, the stored health no longer changes regardless.
+  const tooCloseForWhitelist = timeToGame != null && timeToGame <= 5;
   const dw = walletConsensus?.delta ?? 0;
   const dq = walletConsensus?.qualityMargin ?? 0;
 
@@ -5005,7 +5002,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
 
   useEffect(() => {
     if ((!isLocked && !isShadow) || isGameLive || !commenceTime || !onPickSynced) return;
-    if (Date.now() >= commenceTime - 5 * 60 * 1000) return;
+    if (Date.now() >= commenceTime - 15 * 60 * 1000) return;
     if (lastSyncedSide.current && consensusSide !== lastSyncedSide.current) {
       lastSyncedStars.current = null;
       lockStarsRef.current = null;
@@ -5142,7 +5139,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     const healthSide = lockedSideRef.current || consensusSide;
     if (onHealthSynced) onHealthSynced(docId, healthSide, mlHealth);
     if (isGameLive) return;
-    if (Date.now() >= commenceTime - 5 * 60 * 1000) return;
+    if (Date.now() >= commenceTime - 15 * 60 * 1000) return;
     if (lastHealthRef.current === mlHealth.status) return;
     lastHealthRef.current = mlHealth.status;
     syncPickHealth({ docId, collection: 'sharpFlowPicks', side: healthSide, health: mlHealth });
@@ -5218,7 +5215,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
 
   useEffect(() => {
     if ((!isSpreadLocked && !isSpreadShadow) || isGameLive || !commenceTime || !onPickSynced || !spreadConsensusSide) return;
-    if (Date.now() >= commenceTime - 5 * 60 * 1000) return;
+    if (Date.now() >= commenceTime - 15 * 60 * 1000) return;
     if (lastSyncedSpreadStars.current !== null && spreadSr.stars <= lastSyncedSpreadStars.current && !isSpreadLocked) return;
     const date = gameDate(commenceTime);
     syncSpreadPickToFirebase({
@@ -5285,7 +5282,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     const docId = `${date}_${gd.sport}_${gd.key}_spread`;
     if (onHealthSynced) onHealthSynced(docId, spreadConsensusSide, spreadHealth);
     if (isGameLive) return;
-    if (Date.now() >= commenceTime - 5 * 60 * 1000) return;
+    if (Date.now() >= commenceTime - 15 * 60 * 1000) return;
     if (lastSpreadHealthRef.current === spreadHealth.status) return;
     lastSpreadHealthRef.current = spreadHealth.status;
     syncPickHealth({ docId, collection: 'sharpFlowSpreads', side: spreadConsensusSide, health: spreadHealth });
@@ -5357,7 +5354,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
 
   useEffect(() => {
     if ((!isTotalLocked && !isTotalShadow) || isGameLive || !commenceTime || !onPickSynced || !totalConsensusSide) return;
-    if (Date.now() >= commenceTime - 5 * 60 * 1000) return;
+    if (Date.now() >= commenceTime - 15 * 60 * 1000) return;
     if (lastSyncedTotalStars.current !== null && totalSr.stars <= lastSyncedTotalStars.current && !isTotalLocked) return;
     const date = gameDate(commenceTime);
     syncTotalPickToFirebase({
@@ -5426,7 +5423,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     const docId = `${date}_${gd.sport}_${gd.key}_total`;
     if (onHealthSynced) onHealthSynced(docId, totalConsensusSide, totalHealth);
     if (isGameLive) return;
-    if (Date.now() >= commenceTime - 5 * 60 * 1000) return;
+    if (Date.now() >= commenceTime - 15 * 60 * 1000) return;
     if (lastTotalHealthRef.current === totalHealth.status) return;
     lastTotalHealthRef.current = totalHealth.status;
     syncPickHealth({ docId, collection: 'sharpFlowTotals', side: totalConsensusSide, health: totalHealth });
@@ -9654,13 +9651,6 @@ export default function SharpFlow() {
                         const lockStars = lock.stars || 0;
                         const marketTypeKey = doc.marketType || 'ml';
                         const cardOdds = lockOddsValid ? lock.odds : (peak.odds || lock.odds || 0);
-                        // v6.5 — Lock-in window. Once we're within 15 minutes
-                        // of tipoff (or the game is live), the play is cemented
-                        // at its peak recommendation. Restore any v6 mute back
-                        // to ACTIVE and skip the live-Δ downsize so the card
-                        // shows the locked-in size we'd want to bet.
-                        const minsToGame = doc.commenceTime ? (doc.commenceTime - Date.now()) / 60000 : null;
-                        const inLockInWindow = minsToGame != null && minsToGame <= 15;
                         // v6 self-healed health.
                         const healthResolved = (() => {
                           if (sd.superseded) return { status: 'CANCELLED', reasons: ['side_flipped'] };
@@ -9670,26 +9660,20 @@ export default function SharpFlow() {
                           const reasons = Array.isArray(stored.reasons) ? stored.reasons : [];
                           const TWO_FACTOR_REASONS = new Set(['winners_killed', 'winners_faded', 'winners_below_floor', 'quality_below_floor', 'quality_faded', 'whitelist_fade_weak', 'whitelist_fade_strong']);
                           const onlyTwoFactorReasons = reasons.length > 0 && reasons.every(r => TWO_FACTOR_REASONS.has(r));
-                          // v6.5: lock-in window restores MUTED v6 picks even
-                          // when the live Δ-stamp still flags muteTriggered.
-                          // CANCELLED stays cancelled — Δw ≤ -2 is a confirmed
-                          // kill, not just decay.
-                          if (inLockInWindow && stored.status === 'MUTED' && onlyTwoFactorReasons) {
-                            return { status: 'ACTIVE', reasons: [] };
-                          }
                           if (stored.status && stored.status !== 'ACTIVE' && !muteNow && !cancelNow && onlyTwoFactorReasons) {
                             return { status: 'ACTIVE', reasons: [] };
                           }
                           return stored;
                         })();
-                        // v6.4 — recompute stars/units LIVE from current Δw/Δq.
-                        // Pending picks ride the live ladder; graded picks
-                        // keep peak values so realized PnL stays locked to
-                        // what the system recommended at lock time. v6.5 —
-                        // inside the lock-in window we also use peak so the
-                        // card snaps back to the original max recommendation.
+                        // v6.4 — recompute stars/units LIVE from stored Δw/Δq.
+                        // The stored deltas naturally freeze at T-15 because
+                        // syncPickToFirebase stops writing then (v6.5), so
+                        // inside the lock-in window the "live" recompute is
+                        // effectively the T-15 snapshot. Graded picks keep
+                        // peak values so realized PnL stays locked to what
+                        // the system recommended at lock time.
                         const isGradedSide = sd.status === 'COMPLETED' && !!sd.result?.outcome;
-                        const sizing = (isGradedSide || inLockInWindow)
+                        const sizing = isGradedSide
                           ? { liveStars: peakStars, liveUnits: peakUnits, isDownsized: false }
                           : computeLiveSizing({
                               peakStars,
@@ -9699,7 +9683,7 @@ export default function SharpFlow() {
                               liveDw: sd.v8_walletConsensusDelta ?? null,
                               liveDq: sd.v8_walletConsensusQualityMargin ?? null,
                             });
-                        const displayStars = (isGradedSide || inLockInWindow) ? peakStars : sizing.liveStars;
+                        const displayStars = isGradedSide ? peakStars : sizing.liveStars;
                         const displayUnits = sizing.liveUnits;
                         // Realized PnL uses peak (the recommendation the system
                         // committed to at lock time). Live decay is a display

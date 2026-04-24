@@ -201,8 +201,8 @@ function buildStampFields(wc, sport, baseStars, promotedBy) {
 // to keep stored as-is. Matches evaluatePickHealth in SharpFlow.jsx.
 //
 // v6.5 — adds an optional `commenceTime` (ms epoch). Inside the T-15 lock-in
-// window, mute/cancel decisions are suppressed and any v6 mute is restored
-// to ACTIVE so the play rides into kickoff at its peak recommendation.
+// window the stored health is FROZEN: no new mute/cancel decisions are
+// written, no restorations happen. Whatever was stored at T-15 stays.
 function reconcileHealth(stored, wc, commenceTime = null) {
   const dw = wc.delta;
   const dq = wc.qualityMargin;
@@ -211,17 +211,11 @@ function reconcileHealth(stored, wc, commenceTime = null) {
   const TWO_FACTOR_REASONS = new Set(['winners_killed', 'winners_faded', 'winners_below_floor', 'quality_below_floor', 'quality_faded', 'whitelist_fade_weak', 'whitelist_fade_strong']);
   const onlyTwoFactor = storedReasons.length > 0 && storedReasons.every(r => TWO_FACTOR_REASONS.has(r));
 
+  // v6.5 — Lock-in freeze. Inside T-15, health is committed: skip every
+  // rule below. The stored status (whether MUTED, CANCELLED, or ACTIVE)
+  // rides into kickoff exactly as it stood at the boundary.
   const minsToGame = commenceTime ? (commenceTime - Date.now()) / 60000 : null;
-  const inLockInWindow = minsToGame != null && minsToGame <= 15;
-
-  // v6.5 — lock-in window: restore v6 mutes to ACTIVE; do not initiate any
-  // new mute/cancel. CANCELLED stays cancelled (those are confirmed kills).
-  if (inLockInWindow) {
-    if (storedStatus === 'MUTED' && onlyTwoFactor) {
-      return { status: 'ACTIVE', reasons: [] };
-    }
-    return null;
-  }
+  if (minsToGame != null && minsToGame <= 15) return null;
 
   // Rule 1: live Δw ≤ −2 → CANCELLED (winners_killed)
   if (dw <= -2) {
