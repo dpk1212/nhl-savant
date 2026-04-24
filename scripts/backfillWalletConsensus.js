@@ -199,13 +199,29 @@ function buildStampFields(wc, sport, baseStars, promotedBy) {
 // Reconcile stored health against live Δ's.
 // v6.3 engine — lock-floor symmetric. Returns { status, reasons } or null
 // to keep stored as-is. Matches evaluatePickHealth in SharpFlow.jsx.
-function reconcileHealth(stored, wc) {
+//
+// v6.5 — adds an optional `commenceTime` (ms epoch). Inside the T-15 lock-in
+// window, mute/cancel decisions are suppressed and any v6 mute is restored
+// to ACTIVE so the play rides into kickoff at its peak recommendation.
+function reconcileHealth(stored, wc, commenceTime = null) {
   const dw = wc.delta;
   const dq = wc.qualityMargin;
   const storedStatus = stored?.status || 'ACTIVE';
   const storedReasons = Array.isArray(stored?.reasons) ? stored.reasons : [];
   const TWO_FACTOR_REASONS = new Set(['winners_killed', 'winners_faded', 'winners_below_floor', 'quality_below_floor', 'quality_faded', 'whitelist_fade_weak', 'whitelist_fade_strong']);
   const onlyTwoFactor = storedReasons.length > 0 && storedReasons.every(r => TWO_FACTOR_REASONS.has(r));
+
+  const minsToGame = commenceTime ? (commenceTime - Date.now()) / 60000 : null;
+  const inLockInWindow = minsToGame != null && minsToGame <= 15;
+
+  // v6.5 — lock-in window: restore v6 mutes to ACTIVE; do not initiate any
+  // new mute/cancel. CANCELLED stays cancelled (those are confirmed kills).
+  if (inLockInWindow) {
+    if (storedStatus === 'MUTED' && onlyTwoFactor) {
+      return { status: 'ACTIVE', reasons: [] };
+    }
+    return null;
+  }
 
   // Rule 1: live Δw ≤ −2 → CANCELLED (winners_killed)
   if (dw <= -2) {
@@ -285,7 +301,9 @@ async function loadAllDates() {
           const fields = buildStampFields(wc, sport, baseStars, promotedBy);
 
           const stored = side.health || null;
-          const healthDelta = reconcileHealth(stored, wc);
+          // v6.5 — pass commenceTime so the T-15 lock-in window is honored
+          // by the backfill too. doc.commenceTime is stored as ms epoch.
+          const healthDelta = reconcileHealth(stored, wc, d.commenceTime ?? null);
 
           const stale = (side.v8_walletConsensusVersion ?? 0) < WHITELIST_CONSENSUS_VERSION;
           if (!stale && !healthDelta) { skippedAlreadyFresh++; continue; }

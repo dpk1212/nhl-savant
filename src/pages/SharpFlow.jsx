@@ -1085,7 +1085,14 @@ function evaluatePickHealth({
     diagnostic.push('opp_side_stronger_diag');
   }
 
-  const tooCloseForWhitelist = timeToGame != null && timeToGame <= 5;
+  // v6.5 — Lock-in window. At T-15 the pick is cemented: no new mutes /
+  // cancels fire, and the locked-picks UI will additionally restore any
+  // existing v6 mute back to ACTIVE (see locked-picks builder) so the play
+  // rides into kickoff at its peak recommendation. Previously this window
+  // was T-5 which let late-cycle Δw decay (e.g. Celtics 7:10 ET game muted
+  // ~T-30 when one whitelisted wallet flipped) flatten plays at the worst
+  // possible moment.
+  const tooCloseForWhitelist = timeToGame != null && timeToGame <= 15;
   const dw = walletConsensus?.delta ?? 0;
   const dq = walletConsensus?.qualityMargin ?? 0;
 
@@ -9647,6 +9654,13 @@ export default function SharpFlow() {
                         const lockStars = lock.stars || 0;
                         const marketTypeKey = doc.marketType || 'ml';
                         const cardOdds = lockOddsValid ? lock.odds : (peak.odds || lock.odds || 0);
+                        // v6.5 — Lock-in window. Once we're within 15 minutes
+                        // of tipoff (or the game is live), the play is cemented
+                        // at its peak recommendation. Restore any v6 mute back
+                        // to ACTIVE and skip the live-Δ downsize so the card
+                        // shows the locked-in size we'd want to bet.
+                        const minsToGame = doc.commenceTime ? (doc.commenceTime - Date.now()) / 60000 : null;
+                        const inLockInWindow = minsToGame != null && minsToGame <= 15;
                         // v6 self-healed health.
                         const healthResolved = (() => {
                           if (sd.superseded) return { status: 'CANCELLED', reasons: ['side_flipped'] };
@@ -9656,18 +9670,26 @@ export default function SharpFlow() {
                           const reasons = Array.isArray(stored.reasons) ? stored.reasons : [];
                           const TWO_FACTOR_REASONS = new Set(['winners_killed', 'winners_faded', 'winners_below_floor', 'quality_below_floor', 'quality_faded', 'whitelist_fade_weak', 'whitelist_fade_strong']);
                           const onlyTwoFactorReasons = reasons.length > 0 && reasons.every(r => TWO_FACTOR_REASONS.has(r));
+                          // v6.5: lock-in window restores MUTED v6 picks even
+                          // when the live Δ-stamp still flags muteTriggered.
+                          // CANCELLED stays cancelled — Δw ≤ -2 is a confirmed
+                          // kill, not just decay.
+                          if (inLockInWindow && stored.status === 'MUTED' && onlyTwoFactorReasons) {
+                            return { status: 'ACTIVE', reasons: [] };
+                          }
                           if (stored.status && stored.status !== 'ACTIVE' && !muteNow && !cancelNow && onlyTwoFactorReasons) {
                             return { status: 'ACTIVE', reasons: [] };
                           }
                           return stored;
                         })();
                         // v6.4 — recompute stars/units LIVE from current Δw/Δq.
-                        // Pending picks ride the live ladder (Δw/Δq rise → more
-                        // units, Δw/Δq fall → fewer units). Graded picks keep
-                        // peak values so realized PnL stays locked to what the
-                        // system recommended at lock time.
+                        // Pending picks ride the live ladder; graded picks
+                        // keep peak values so realized PnL stays locked to
+                        // what the system recommended at lock time. v6.5 —
+                        // inside the lock-in window we also use peak so the
+                        // card snaps back to the original max recommendation.
                         const isGradedSide = sd.status === 'COMPLETED' && !!sd.result?.outcome;
-                        const sizing = isGradedSide
+                        const sizing = (isGradedSide || inLockInWindow)
                           ? { liveStars: peakStars, liveUnits: peakUnits, isDownsized: false }
                           : computeLiveSizing({
                               peakStars,
@@ -9677,7 +9699,7 @@ export default function SharpFlow() {
                               liveDw: sd.v8_walletConsensusDelta ?? null,
                               liveDq: sd.v8_walletConsensusQualityMargin ?? null,
                             });
-                        const displayStars = isGradedSide ? peakStars : sizing.liveStars;
+                        const displayStars = (isGradedSide || inLockInWindow) ? peakStars : sizing.liveStars;
                         const displayUnits = sizing.liveUnits;
                         // Realized PnL uses peak (the recommendation the system
                         // committed to at lock time). Live decay is a display
