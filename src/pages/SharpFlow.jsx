@@ -1150,6 +1150,31 @@ function calculateSpreadTotalUnits(stars, consensusPenalty = 0, odds = null, reg
   return units;
 }
 
+// v6.4 — Live stars/units on the locked-pick card.
+//
+// The card stores peak.stars and peak.units (the state at the pick's
+// strongest moment). But stars & units are just a function of Δw/Δq
+// through vaultStarFromDeltas + the unit ladder — so we should drive them
+// off the LIVE Δw/Δq every render, not the frozen peak. That's the whole
+// thing. If Δ decays, stars drop, units drop.
+//
+// Graded picks keep peak values so realized PnL stays consistent with
+// the recommendation the system actually made at lock time.
+function computeLiveSizing({ peakStars, peakUnits, marketType, oddsForLadder, liveDw, liveDq }) {
+  if (liveDw == null || liveDq == null || peakStars == null) {
+    return { liveStars: peakStars, liveUnits: peakUnits || 0, isDownsized: false };
+  }
+  const liveStars = vaultStarFromDeltas(liveDw, liveDq);
+  const ladder = (marketType === 'spread' || marketType === 'total') ? calculateSpreadTotalUnits : calculateUnits;
+  const liveUnitsRaw = ladder(liveStars, 0, oddsForLadder);
+  const liveUnits = Math.round(liveUnitsRaw * 100) / 100;
+  return {
+    liveStars,
+    liveUnits,
+    isDownsized: liveStars < peakStars,
+  };
+}
+
 // ─── Sharp Flow Locked Picks — Firebase ───────────────────────────────────────
 
 function todayET() {
@@ -4062,7 +4087,7 @@ const HEALTH_REASON_LABELS = {
 };
 
 const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
-  const { team, away, home, sport, stars, lockStars, units, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, lockEV, criteriaMet, criteria, consensusStrength, pinnacleOdds, marketType, line, superseded, health, isTopPick: isTopPickPre, isSuperTopPick: isSuperTopPickPre, walletConsensusDelta, walletConsensusForW, walletConsensusAgW, walletConsensusQualityMargin, walletConsensusQualityForT30, walletConsensusQualityAgT30 } = pick;
+  const { team, away, home, sport, stars, peakStars, lockStars, units, peakUnits, isDownsized, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, lockEV, criteriaMet, criteria, consensusStrength, pinnacleOdds, marketType, line, superseded, health, isTopPick: isTopPickPre, isSuperTopPick: isSuperTopPickPre, walletConsensusDelta, walletConsensusForW, walletConsensusAgW, walletConsensusQualityMargin, walletConsensusQualityForT30, walletConsensusQualityAgT30 } = pick;
   const [expanded, setExpanded] = useState(false);
   const ss = sportStyle(sport);
   const starDelta = (lockStars != null && stars != null) ? stars - lockStars : 0;
@@ -4092,7 +4117,13 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   const isCancelled = healthStatus === 'CANCELLED';
   const healthReasons = health?.reasons || [];
 
-  const accentColor = isCancelled ? B.red : isMuted ? '#F59E0B' : isGraded ? (isWin ? B.green : isLoss ? B.red : B.gold) : B.green;
+  // v6.4 — DOWNSIZED is a display overlay on ACTIVE (not a health status).
+  // A DOWNSIZED pick is still "on" but at 50%+ cut size because the live
+  // vault-star dropped ≥ 1.0 below peak. Never shows while graded, muted,
+  // cancelled, or superseded (those have their own visual treatments).
+  const showDownsize = !!isDownsized && !isGraded && !isMuted && !isCancelled && !superseded;
+  const DOWNSIZE_AMBER = '#D4AF37'; // gold/amber — less severe than #F59E0B (mute)
+  const accentColor = isCancelled ? B.red : isMuted ? '#F59E0B' : showDownsize ? DOWNSIZE_AMBER : isGraded ? (isWin ? B.green : isLoss ? B.red : B.gold) : B.green;
   const teamShort = team?.split(' ').pop() || team;
   const awayShort = away?.split(' ').pop() || away;
   const homeShort = home?.split(' ').pop() || home;
@@ -4188,6 +4219,19 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
             {isMuted && !isCancelled && (
               <Badge color="#F59E0B" bg="rgba(245,158,11,0.12)">WEAKENING</Badge>
             )}
+            {showDownsize && (
+              <span
+                title={`Sharps are thinning. Live vault-star ${stars != null ? stars.toFixed(1) : '—'}★ (was ${peakStars != null ? peakStars.toFixed(1) : '—'}★ at peak). Units follow the live Δw/Δq ladder.`}
+                style={{
+                  ...T.micro, fontWeight: 800, letterSpacing: '0.04em',
+                  padding: '0.15rem 0.45rem', borderRadius: '4px',
+                  color: DOWNSIZE_AMBER, background: 'rgba(212,175,55,0.12)',
+                  border: '1px solid rgba(212,175,55,0.35)',
+                }}
+              >
+                DOWNSIZED {peakStars}★→{stars}★
+              </span>
+            )}
             <span style={{ ...T.body, fontWeight: 700, color: isCancelled ? B.textMuted : B.text, textDecoration: isCancelled ? 'line-through' : 'none' }}>
               {away} <span style={{ color: B.textMuted, fontWeight: 400 }}>vs</span> {home}
             </span>
@@ -4253,7 +4297,13 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             {isCancelled || (isMuted && isGraded) ? (
               <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
-                <span style={{ textDecoration: 'line-through' }}>{units}u</span> 0u @ {fmtO(odds)} · {book}
+                <span style={{ textDecoration: 'line-through' }}>{peakUnits ?? units}u</span> 0u @ {fmtO(odds)} · {book}
+              </span>
+            ) : showDownsize ? (
+              <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
+                <span style={{ textDecoration: 'line-through', color: B.textMuted }}>{peakUnits}u</span>
+                {' '}<span style={{ color: DOWNSIZE_AMBER, fontWeight: 800 }}>{units}u</span>
+                {' '}@ {fmtO(odds)} · {book}
               </span>
             ) : (
               <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
@@ -4480,19 +4530,28 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                 <span style={{ ...T.micro, color: B.textSec }}>Risk</span>
-                <span style={{
-                  ...T.micro, fontWeight: 800,
-                  color: (isMuted || isCancelled) && !isGraded ? B.textMuted : B.text,
-                  fontFeatureSettings: "'tnum'",
-                  textDecoration: (isMuted || isCancelled) && !isGraded ? 'line-through' : 'none',
-                }}>{units}u</span>
-                {(isMuted || isCancelled) && !isGraded && (
-                  <span style={{ ...T.micro, fontWeight: 900, color: isCancelled ? B.red : '#F59E0B', fontFeatureSettings: "'tnum'" }}>→ 0u</span>
+                {showDownsize ? (
+                  <>
+                    <span style={{ ...T.micro, fontWeight: 700, color: B.textMuted, fontFeatureSettings: "'tnum'", textDecoration: 'line-through' }}>{peakUnits}u</span>
+                    <span style={{ ...T.micro, fontWeight: 900, color: DOWNSIZE_AMBER, fontFeatureSettings: "'tnum'" }}>→ {units}u</span>
+                  </>
+                ) : (
+                  <>
+                    <span style={{
+                      ...T.micro, fontWeight: 800,
+                      color: (isMuted || isCancelled) && !isGraded ? B.textMuted : B.text,
+                      fontFeatureSettings: "'tnum'",
+                      textDecoration: (isMuted || isCancelled) && !isGraded ? 'line-through' : 'none',
+                    }}>{units}u</span>
+                    {(isMuted || isCancelled) && !isGraded && (
+                      <span style={{ ...T.micro, fontWeight: 900, color: isCancelled ? B.red : '#F59E0B', fontFeatureSettings: "'tnum'" }}>→ 0u</span>
+                    )}
+                  </>
                 )}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                 <span style={{ ...T.micro, color: B.textSec }}>{isGraded ? 'Result' : 'To Win'}</span>
-                <span style={{ ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'", color: isGraded ? (isWin ? B.green : isLoss ? B.red : B.textSec) : ((isMuted || isCancelled) ? B.textMuted : B.green) }}>
+                <span style={{ ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'", color: isGraded ? (isWin ? B.green : isLoss ? B.red : B.textSec) : ((isMuted || isCancelled) ? B.textMuted : showDownsize ? DOWNSIZE_AMBER : B.green) }}>
                   {isGraded ? `${isWin ? '+' : isLoss ? '' : ''}${(profit || 0).toFixed(2)}u` : `+${((isMuted || isCancelled) ? 0 : potentialWin).toFixed(2)}u`}
                 </span>
               </div>
@@ -9582,16 +9641,60 @@ export default function SharpFlow() {
                         const lock = sd.lock || {};
                         const stars = peak.stars || lock.stars || 0;
                         if (stars < 2.5) continue;
-                        const units = peak.units || lock.units || 1;
-                        const profit = sd.result?.outcome === 'WIN' ? (sd.result?.profit || 0) : sd.result?.outcome === 'LOSS' ? -(units) : 0;
+                        const peakUnits = peak.units || lock.units || 1;
+                        const peakStars = stars;
                         const lockOddsValid = lock.odds && Math.abs(lock.odds) <= 400;
                         const lockStars = lock.stars || 0;
+                        const marketTypeKey = doc.marketType || 'ml';
+                        const cardOdds = lockOddsValid ? lock.odds : (peak.odds || lock.odds || 0);
+                        // v6 self-healed health.
+                        const healthResolved = (() => {
+                          if (sd.superseded) return { status: 'CANCELLED', reasons: ['side_flipped'] };
+                          const stored = sd.health || { status: 'ACTIVE', reasons: [] };
+                          const muteNow = !!sd.v8_walletConsensusMuteTriggered;
+                          const cancelNow = !!sd.v8_walletConsensusCancelTriggered;
+                          const reasons = Array.isArray(stored.reasons) ? stored.reasons : [];
+                          const TWO_FACTOR_REASONS = new Set(['winners_killed', 'winners_faded', 'winners_below_floor', 'quality_below_floor', 'quality_faded', 'whitelist_fade_weak', 'whitelist_fade_strong']);
+                          const onlyTwoFactorReasons = reasons.length > 0 && reasons.every(r => TWO_FACTOR_REASONS.has(r));
+                          if (stored.status && stored.status !== 'ACTIVE' && !muteNow && !cancelNow && onlyTwoFactorReasons) {
+                            return { status: 'ACTIVE', reasons: [] };
+                          }
+                          return stored;
+                        })();
+                        // v6.4 — recompute stars/units LIVE from current Δw/Δq.
+                        // Pending picks ride the live ladder (Δw/Δq rise → more
+                        // units, Δw/Δq fall → fewer units). Graded picks keep
+                        // peak values so realized PnL stays locked to what the
+                        // system recommended at lock time.
+                        const isGradedSide = sd.status === 'COMPLETED' && !!sd.result?.outcome;
+                        const sizing = isGradedSide
+                          ? { liveStars: peakStars, liveUnits: peakUnits, isDownsized: false }
+                          : computeLiveSizing({
+                              peakStars,
+                              peakUnits,
+                              marketType: marketTypeKey,
+                              oddsForLadder: cardOdds,
+                              liveDw: sd.v8_walletConsensusDelta ?? null,
+                              liveDq: sd.v8_walletConsensusQualityMargin ?? null,
+                            });
+                        const displayStars = isGradedSide ? peakStars : sizing.liveStars;
+                        const displayUnits = sizing.liveUnits;
+                        // Realized PnL uses peak (the recommendation the system
+                        // committed to at lock time). Live decay is a display
+                        // advisory for picks you haven't placed yet.
+                        const profit = sd.result?.outcome === 'WIN' ? (sd.result?.profit || 0) : sd.result?.outcome === 'LOSS' ? -(peakUnits) : 0;
                         allLockedArr.push({
                           key: `${docId}:${sideKey}`,
                           team: sd.team || sideKey,
                           away: doc.away || '', home: doc.home || '',
-                          sport: docSport, stars, lockStars, units,
-                          odds: lockOddsValid ? lock.odds : (peak.odds || lock.odds || 0),
+                          sport: docSport,
+                          stars: displayStars,
+                          peakStars,
+                          lockStars,
+                          units: displayUnits,
+                          peakUnits,
+                          isDownsized: sizing.isDownsized,
+                          odds: cardOdds,
                           book: lockOddsValid ? (lock.book || peak.book || '') : (peak.book || lock.book || ''),
                           peakAt: peak.updatedAt || lock.lockedAt,
                           lockedAt: lock.lockedAt || null,
@@ -9620,28 +9723,10 @@ export default function SharpFlow() {
                             return cs;
                           })(),
                           pinnacleOdds: peak.pinnacleOdds || lock.pinnacleOdds || null,
-                          marketType: doc.marketType || 'ml',
+                          marketType: marketTypeKey,
                           line: peak.line || lock.line || null,
                           superseded: !!sd.superseded,
-                          health: (() => {
-                            if (sd.superseded) return { status: 'CANCELLED', reasons: ['side_flipped'] };
-                            const stored = sd.health || { status: 'ACTIVE', reasons: [] };
-                            // v6 self-heal: if the stored health carries only
-                            // v6 two-factor reasons (winners_*/quality_faded)
-                            // or legacy whitelist_* reasons, but the live Δ
-                            // stamp no longer triggers mute/cancel, reconcile
-                            // to ACTIVE so old muted picks unstick once
-                            // sharps arrive on our side.
-                            const muteNow = !!sd.v8_walletConsensusMuteTriggered;
-                            const cancelNow = !!sd.v8_walletConsensusCancelTriggered;
-                            const reasons = Array.isArray(stored.reasons) ? stored.reasons : [];
-                            const TWO_FACTOR_REASONS = new Set(['winners_killed', 'winners_faded', 'winners_below_floor', 'quality_below_floor', 'quality_faded', 'whitelist_fade_weak', 'whitelist_fade_strong']);
-                            const onlyTwoFactorReasons = reasons.length > 0 && reasons.every(r => TWO_FACTOR_REASONS.has(r));
-                            if (stored.status && stored.status !== 'ACTIVE' && !muteNow && !cancelNow && onlyTwoFactorReasons) {
-                              return { status: 'ACTIVE', reasons: [] };
-                            }
-                            return stored;
-                          })(),
+                          health: healthResolved,
                           // V8.3 Phase 2 — wallet consensus attribution (stamped by syncPickToFirebase).
                           // These flow into the PROVEN CONSENSUS UI badge on Δ ≥ +2 picks.
                           walletConsensusDelta: sd.v8_walletConsensusDelta ?? null,
