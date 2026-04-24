@@ -1,12 +1,41 @@
 name: Rank Today's Locked Picks
 
+# v6.3 — auto-refreshing (Δw × Δq) win-matrix + today's-picks ranking.
+#
+# Every hour at :30 past we:
+#   1. Rebuild WIN_MATRIX.md + public/win_matrix.json from every graded
+#      pick in sharpFlowPicks/Spreads/Totals (74 picks as of 2026-04-24,
+#      recomputed against the LIVE sharpWalletProfiles whitelist).
+#   2. Rank today's locked picks and annotate each with its (Δw,Δq)
+#      cell's historical WR% / ROI% — so you can instantly see
+#      whether a pick sits in an ELITE, PROFITABLE, THIN, or BLEEDER
+#      cell before it settles.
+#   3. Commit both artifacts to main and upload as a workflow artifact.
+#
+# Runs on :30 to avoid racing the fetch-polymarket hourly job that
+# kicks off at :00 — the matrix + ranking reflect whatever state
+# sharpFlowPicks was in at :30, which is 3-4 scan cycles into the
+# fetch loop.
 on:
+  schedule:
+    - cron: '30 * * * *'
   workflow_dispatch:
+
+concurrency:
+  group: rank-today-locks
+  cancel-in-progress: false
 
 jobs:
   rank:
-    name: Rank today's locked picks by V8.1 + V8.2 wallet consensus
+    name: Rebuild win matrix + rank today's locked picks
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+      FIREBASE_CLIENT_EMAIL:    ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+      FIREBASE_PRIVATE_KEY:     ${{ secrets.FIREBASE_PRIVATE_KEY }}
 
     steps:
       - name: Checkout repository
@@ -21,31 +50,70 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Rank today's locked picks
-        env:
-          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
-          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+      - name: Rebuild (Δw × Δq) win matrix
         run: |
           echo "════════════════════════════════════════════════════════════════"
-          echo "  TODAY'S LOCKED PICKS — V8.1 CONFIDENCE + V8.2 WALLET CONSENSUS"
+          echo "  WIN MATRIX — full (Δw × Δq) cross-tab"
+          echo "  Time: $(TZ='America/New_York' date '+%Y-%m-%d %I:%M %p ET')"
+          echo "════════════════════════════════════════════════════════════════"
+          node scripts/winMatrix.js | tee win-matrix.log
+
+      - name: Rank today's locked picks (annotated with matrix cells)
+        run: |
+          echo "════════════════════════════════════════════════════════════════"
+          echo "  TODAY'S LOCKED PICKS — V8.1 + (Δw × Δq) historical cell"
           echo "  Time: $(TZ='America/New_York' date '+%Y-%m-%d %I:%M %p ET')"
           echo "════════════════════════════════════════════════════════════════"
           node scripts/rankTodayLocks.js | tee today-locks-ranked.txt
 
-      - name: Upload ranking artifact
+      - name: Commit WIN_MATRIX.md + win_matrix.json
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add WIN_MATRIX.md public/win_matrix.json
+          if git diff --staged --quiet; then
+            echo "--- no matrix changes this run ---"
+          else
+            git commit -m "Auto-update: WIN_MATRIX [$(date +'%Y-%m-%d %H:%M')]"
+            for attempt in 1 2 3; do
+              if git pull --rebase -X theirs origin main && git push origin main; then
+                echo "--- main push succeeded (attempt $attempt) ---"
+                break
+              fi
+              echo "--- main push attempt $attempt failed, retrying ---"
+              sleep 2
+            done
+          fi
+
+      - name: Upload ranking artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: today-locks-ranked
-          path: today-locks-ranked.txt
+          name: rank-today-locks-${{ github.run_id }}
+          path: |
+            today-locks-ranked.txt
+            win-matrix.log
+            WIN_MATRIX.md
+            public/win_matrix.json
           retention-days: 14
 
       - name: Write to job summary
         run: |
           {
-            echo "## Today's Locked Picks — V8.1 + V8.2 Ranking"
+            echo "# Rank Today's Locked Picks"
+            echo ""
+            echo "Generated $(TZ='America/New_York' date '+%Y-%m-%d %I:%M %p ET')"
+            echo ""
+            echo "## Today's picks, annotated with (Δw × Δq) cell"
             echo ""
             echo '```'
             cat today-locks-ranked.txt
+            echo '```'
+            echo ""
+            echo "## Full win matrix"
+            echo ""
+            echo "See [WIN_MATRIX.md](../../blob/main/WIN_MATRIX.md) for the full cross-tab."
+            echo ""
+            echo '```'
+            tail -80 win-matrix.log
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"

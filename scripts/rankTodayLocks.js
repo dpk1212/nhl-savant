@@ -13,6 +13,46 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = join(__dirname, '..');
+
+// v6 Two-Factor constants — kept in lockstep with src/pages/SharpFlow.jsx
+// so we compute Δw / Δq the same way the live system does.
+const QUALITY_CONTRIB_CUT = 30;
+
+// Load the win-matrix the companion script (scripts/winMatrix.js) produces.
+// Running rankTodayLocks.js right after winMatrix.js in the same workflow
+// guarantees these two views are in sync (same whitelist snapshot, same
+// T=30 cut, same clamped ±3 axes).
+function loadWinMatrix() {
+  const p = join(REPO_ROOT, 'public', 'win_matrix.json');
+  if (!existsSync(p)) return null;
+  try { return JSON.parse(readFileSync(p, 'utf8')); }
+  catch { return null; }
+}
+function clampAxis(v, buckets) {
+  const lo = buckets[0], hi = buckets[buckets.length - 1];
+  if (v <= lo) return lo;
+  if (v >= hi) return hi;
+  return v;
+}
+function cellKey(dw, dq, matrix) {
+  if (!matrix) return null;
+  const cw = clampAxis(dw, matrix.config.dwBuckets);
+  const cq = clampAxis(dq, matrix.config.dqBuckets);
+  return `${cw >= 0 ? '+' : ''}${cw},${cq >= 0 ? '+' : ''}${cq}`;
+}
+function lookupCell(dw, dq, matrix, sport = null) {
+  if (!matrix) return null;
+  const key = cellKey(dw, dq, matrix);
+  if (!key) return null;
+  const sportCells = sport ? matrix.cells.bySport?.[sport] || {} : null;
+  const allCells   = matrix.cells.all || {};
+  return {
+    key,
+    all:   allCells[key]   || null,
+    sport: sportCells?.[key] || null,
+  };
+}
 
 if (!admin.apps.length) {
   const sakPath = join(__dirname, '../serviceAccountKey.json');
@@ -204,6 +244,18 @@ async function loadToday() {
         const cls = classifyDelta(last.wlForW, last.wlAgW);
         last.wlDelta = cls.delta;
         last.wlVerdict = cls.verdict;
+
+        // v6 two-factor quality margin — exactly mirrors computeWalletConsensus
+        // in SharpFlow.jsx: count wallets (either side) with contribution ≥ 30.
+        let qFor30 = 0, qAg30 = 0;
+        for (const row of wd) {
+          if ((row?.contribution ?? 0) < QUALITY_CONTRIB_CUT) continue;
+          if (row.side === consensusSide) qFor30 += 1;
+          else if (row.side) qAg30 += 1;
+        }
+        last.qForT30 = qFor30;
+        last.qAgT30  = qAg30;
+        last.qualityMargin = qFor30 - qAg30;
         // Preserve the stamped values too (source of truth for what's in Firebase)
         last.wlStampedDelta = side.v8_walletConsensusDelta ?? null;
         last.wlStampedVerdict = side.v8_walletConsensusVerdict ?? null;
@@ -236,17 +288,42 @@ function padWithMark(value, mark, width) {
 
 (async () => {
   const rows = await loadToday();
-  console.log(`\n=== Today's Locked Picks ranked by V8.1 + live-edge markers (${today}) ===\n`);
+  const matrix = loadWinMatrix();
+  console.log(`\n=== Today's Locked Picks ranked by V8.1 + (Δw × Δq) historical cell (${today}) ===\n`);
+  if (matrix) {
+    const sample = matrix.sample || {};
+    const dr = sample.dateRange || [];
+    console.log(`Historical matrix:  N=${sample.gradedWithWalletDetails ?? '—'}  range=${dr[0] || '—'} … ${dr[1] || '—'}  generated=${matrix.generatedAt}`);
+    console.log(`(see WIN_MATRIX.md for the full cross-tab; cell = clamp(Δw,±3) × clamp(Δq,±3))\n`);
+  } else {
+    console.log('[warn] public/win_matrix.json not found — run scripts/winMatrix.js first to get cell annotations.\n');
+  }
   if (!rows.length) {
     console.log('No locked picks found for today.');
     process.exit(0);
   }
 
+  // Attach the historical cell to each row so we can both print it inline
+  // and group by it in the rollup below.
+  rows.forEach(r => {
+    r._cell = matrix ? lookupCell(r.wlDelta ?? 0, r.qualityMargin ?? 0, matrix, r.sport) : null;
+  });
+
   // Header
   console.log(
-    'RK | Edges | Tier       | Pick                                         | ★   | u    | Odds   | mgn   | Δctrb  | maxRoi | meanB  | wΔ (For/Ag) | Verdict     | Regime        | Top% | PromotedBy'
+    'RK | Edges | Tier       | Pick                                         | ★   | u    | Odds   | Δw/Δq  | Cell All (N,WR,ROI)    | Cell Sport (N,WR,ROI)  | mgn   | Δctrb  | maxRoi | meanB  | Verdict     | Regime        | PromotedBy'
   );
-  console.log('-'.repeat(210));
+  console.log('-'.repeat(240));
+
+  function cellLabel(c) {
+    if (!c) return '—'.padEnd(22);
+    const n  = `N=${c.n}`;
+    const wr = c.wr == null ? '—' : `${c.wr.toFixed(0)}%`;
+    const roi = (c.n >= (matrix?.config?.minNForRoi ?? 3) && c.roi != null)
+      ? `${c.roi >= 0 ? '+' : ''}${c.roi.toFixed(0)}%`
+      : '—';
+    return `${n} ${c.w}-${c.l} ${wr} ${roi}`.padEnd(22);
+  }
 
   rows.forEach((r, i) => {
     const mk = r._mk;
@@ -258,18 +335,86 @@ function padWithMark(value, mark, width) {
     const dctrb = padWithMark(dctrbRaw, mk.dctrb, 6);
     const maxRoi = padWithMark((r.maxRoiN_F ?? 0).toFixed(0), mk.maxRoi, 6);
     const meanB  = padWithMark((r.meanBase_F ?? 0).toFixed(0), mk.meanBase, 6);
-    const wDeltaRaw = `${r.wlDelta >= 0 ? '+' : ''}${r.wlDelta ?? 0} (${r.wlForW ?? 0}/${r.wlAgW ?? 0})`;
-    const wDelta = padWithMark(wDeltaRaw, mk.wDelta, 11);
+    const dwdq = `${r.wlDelta >= 0 ? '+' : ''}${r.wlDelta ?? 0}/${r.qualityMargin >= 0 ? '+' : ''}${r.qualityMargin ?? 0}`.padEnd(7);
+    const cellAll   = cellLabel(r._cell?.all);
+    const cellSport = cellLabel(r._cell?.sport);
     const verdict = (r.wlVerdict ?? '—').padEnd(11);
     const regime = `${r.regime || '—'}${mk.regime}`.padEnd(13);
-    const top = r.topShare != null ? (r.topShare * 100).toFixed(0) + '%' : '—';
     const prom = r.promotedBy ?? '—';
 
     console.log(
       `${String(i + 1).padStart(2)} | ${edgesCol} | ${tier} | ${pick} | ${String(r.stars).padEnd(3)} | ${String(r.units).padEnd(4)} | ${(r.odds >= 0 ? '+' : '') + r.odds}`.padEnd(104) +
-        `| ${mgn.padEnd(5)} | ${dctrb} | ${maxRoi} | ${meanB} | ${wDelta} | ${verdict} | ${regime} | ${top.padEnd(4)} | ${prom}`
+        `| ${dwdq} | ${cellAll} | ${cellSport} | ${mgn.padEnd(5)} | ${dctrb} | ${maxRoi} | ${meanB} | ${verdict} | ${regime} | ${prom}`
     );
   });
+
+  // ── (Δw × Δq) cell rollup — where are today's picks living on the matrix? ──
+  if (matrix) {
+    const byCell = new Map();
+    for (const r of rows) {
+      const key = r._cell?.key || 'unknown';
+      if (!byCell.has(key)) byCell.set(key, []);
+      byCell.get(key).push(r);
+    }
+    const ordered = [...byCell.entries()].sort((a, b) => {
+      const ca = matrix.cells.all[a[0]] || {};
+      const cb = matrix.cells.all[b[0]] || {};
+      const roiA = ca.roi == null ? -999 : ca.roi;
+      const roiB = cb.roi == null ? -999 : cb.roi;
+      if (roiA !== roiB) return roiB - roiA;
+      return (cb.n || 0) - (ca.n || 0);
+    });
+    console.log(`\n── Today's picks placed on the (Δw × Δq) matrix (sorted by cell ROI%) ──`);
+    for (const [key, picks] of ordered) {
+      const c = matrix.cells.all[key];
+      const hdr = c
+        ? `  [${key}]  N=${c.n}  ${c.w}-${c.l}${c.p ? `-${c.p}` : ''}  WR=${c.wr == null ? '—' : c.wr.toFixed(0) + '%'}  ROI=${c.n >= (matrix.config.minNForRoi ?? 3) && c.roi != null ? (c.roi >= 0 ? '+' : '') + c.roi.toFixed(0) + '%' : '—'}`
+        : `  [${key}]  no historical data in this cell`;
+      console.log(hdr);
+      for (const r of picks) {
+        const units = (r.units ?? 0).toFixed(2);
+        const cs = r._cell?.sport;
+        const sportNote = cs && cs.n >= (matrix.config.minNForRoi ?? 3)
+          ? `    · ${r.sport}-only cell: N=${cs.n} ${cs.w}-${cs.l} WR=${cs.wr == null ? '—' : cs.wr.toFixed(0) + '%'} ROI=${cs.roi != null ? (cs.roi >= 0 ? '+' : '') + cs.roi.toFixed(0) + '%' : '—'}`
+          : cs && cs.n > 0
+            ? `    · ${r.sport}-only cell: N=${cs.n} ${cs.w}-${cs.l} (too small for ROI)`
+            : '';
+        console.log(`      ${r.sport} ${r.market} ${r.team}  ${r.stars}★ ${units}u  @ ${r.odds >= 0 ? '+' : ''}${r.odds}  Δw/Δq=${r.wlDelta >= 0 ? '+' : ''}${r.wlDelta}/${r.qualityMargin >= 0 ? '+' : ''}${r.qualityMargin}${sportNote}`);
+      }
+    }
+
+    // Short color-coded read: which picks landed in elite / profitable /
+    // breakeven / money-loser cells per the matrix?
+    const elite = [], profitable = [], breakeven = [], bleeder = [];
+    for (const r of rows) {
+      const c = r._cell?.all;
+      if (!c) continue;
+      if (c.n < (matrix.config.minNForRoi ?? 3)) { breakeven.push(r); continue; }
+      if ((c.roi ?? 0) >= 50 && (c.wr ?? 0) >= 75) elite.push(r);
+      else if ((c.roi ?? 0) >= 15) profitable.push(r);
+      else if ((c.roi ?? 0) > -15) breakeven.push(r);
+      else bleeder.push(r);
+    }
+    function fmtPick(r) {
+      return `${r.sport} ${r.market} ${r.team}  Δw/Δq=${r.wlDelta >= 0 ? '+' : ''}${r.wlDelta}/${r.qualityMargin >= 0 ? '+' : ''}${r.qualityMargin}  u=${(r.units ?? 0).toFixed(2)}`;
+    }
+    if (elite.length) {
+      console.log(`\n  ELITE CELL (historical ROI ≥ +50%, WR ≥ 75%): ${elite.length}`);
+      elite.forEach(r => console.log(`    ★ ${fmtPick(r)}`));
+    }
+    if (profitable.length) {
+      console.log(`\n  PROFITABLE CELL (historical ROI ≥ +15%): ${profitable.length}`);
+      profitable.forEach(r => console.log(`    + ${fmtPick(r)}`));
+    }
+    if (breakeven.length) {
+      console.log(`\n  UNKNOWN / THIN CELL (N < 3 or ROI ∈ [−15%, +15%]): ${breakeven.length}`);
+      breakeven.forEach(r => console.log(`    ? ${fmtPick(r)}`));
+    }
+    if (bleeder.length) {
+      console.log(`\n  BLEEDER CELL (historical ROI < −15%): ${bleeder.length}`);
+      bleeder.forEach(r => console.log(`    ! ${fmtPick(r)}`));
+    }
+  }
 
   // ── Phase 2 — Whitelist winner consensus roll-up ──────────────────────
   const strongFor = rows.filter(r => (r.wlDelta ?? 0) >= 2);
@@ -341,7 +486,15 @@ function padWithMark(value, mark, width) {
     });
   }
 
-  console.log('\nLegend — Edges column counts ★ markers below (higher = more confirmed-live edges stacked):');
+  console.log('\nLegend:');
+  console.log('  Δw/Δq       = live whitelist winner margin / quality (T=30) margin for this pick');
+  console.log('  Cell All    = historical (N · W-L · WR% · ROI%) for this Δw/Δq cell across ALL sports');
+  console.log('  Cell Sport  = same cell restricted to this pick\'s sport (often much thinner)');
+  console.log('                — ROI hidden when N < 3 (cell too thin to trust)');
+  console.log('                — axes clamped at ±3 (Δw+3 = Δw ≥ +3; Δw-3 = Δw ≤ −3)');
+  console.log('                — see WIN_MATRIX.md for the full cross-tab');
+  console.log('');
+  console.log('Edge markers (★ = confirmed winning bucket; ! = confirmed losing bucket):');
   console.log('  ★ Tier       = contribTier = STRONG  (game-level V8.1 sweet spot)');
   console.log('  ★ mgn        = contribMargin = +1    (§6a: +42% flat ROI, 3/3 positive days)');
   console.log('  ★ Δctrb      = Σfor − Σag ∈ (50, 100]  (§6a: +71.8% flat ROI, 2/2 positive days)');
@@ -357,13 +510,12 @@ function padWithMark(value, mark, width) {
   console.log('  ! Tier       = LEAN');
   console.log('  ! wΔ         = whitelisted consensus Δ ≤ −1  (profitable sharps fading our side → MUTE/CANCEL)');
   console.log('');
-  console.log('  Rows are sorted by (Edges ★ count DESC, Warns ! count ASC, raw V8 score DESC).');
-  console.log('  "Top%" column is concentration — lower = broader wallet agreement.');
+  console.log('Rows are sorted by (Edges ★ count DESC, Warns ! count ASC, raw V8 score DESC).');
   console.log('');
-  console.log('Share-confidence rule of thumb:');
-  console.log('  • 4+ edges, 0 warns → top-tier shareable lock / unit-bumped pick');
-  console.log('  • 3 edges, 0 warns → confident share');
-  console.log('  • 2 edges with STRONG or CLEAR_MOVE → standard share');
-  console.log('  • Any row with warns ≥ 2 → consider SHADOW only regardless of edges');
+  console.log('Share-confidence rule of thumb (combine the edge count with the cell):');
+  console.log('  • Cell ROI ≥ +50% AND WR ≥ 75%       → ELITE — top-tier share, consider unit bump');
+  console.log('  • Cell ROI ≥ +15%                    → PROFITABLE — confident share');
+  console.log('  • Cell N < 3 or ROI ∈ [−15%, +15%]   → UNKNOWN/THIN — wait or share with caveat');
+  console.log('  • Cell ROI < −15%                    → BLEEDER — SHADOW only, regardless of edge count');
   process.exit(0);
 })();
