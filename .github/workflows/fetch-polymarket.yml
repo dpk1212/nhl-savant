@@ -1,19 +1,42 @@
 name: Fetch Market Data (Polymarket + Kalshi)
 
+# ─── Scheduling note (2026-04-24) ──────────────────────────────────────────
+# GitHub Actions cron is unreliable at sub-15-min cadence — runs are silently
+# queued and dropped under load. Audit of `*/8 * * * *` on this repo showed
+# actual schedule firings only every ~55-65 min (most runs in the UI were
+# workflow_dispatch catch-ups).
+#
+# Fix: trigger once per hour on a reliable cadence and run the fast
+# Firebase-writing scripts (fetch + snapshot + scanSharpPositions +
+# updateClosingOdds) 6× internally with ~8-min spacing. Build + deploy
+# run once at the end, after all data cycles.
+#
+# Effective cadence for Sharp Intel / SharpFlow picks: ~8 min.
+# Odds API budget: ~180 calls/day at 6 cycles × 24 hours × ~1-2 calls/cycle,
+# well under the 50K/mo doubled quota.
 on:
   schedule:
-    # Every 8 minutes. Doubled Odds API credits (50K/mo, 2026-04-24)
-    # support this cadence: ~180 calls/day → ~5.4K/mo, well under quota.
-    # Drives snapshotPinnacle + scanSharpPositions + updateClosingOdds,
-    # so Sharp Intel / SharpFlow picks refresh on an 8-minute heartbeat.
-    - cron: '*/8 * * * *'
+    - cron: '0 * * * *'
   workflow_dispatch:
+
+concurrency:
+  group: fetch-polymarket
+  cancel-in-progress: false
 
 jobs:
   fetch-market-data:
     runs-on: ubuntu-latest
+    timeout-minutes: 58
     permissions:
       contents: write
+    env:
+      VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+      VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+      VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+      VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+      VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+      VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -30,30 +53,63 @@ jobs:
         run: |
           echo "ODDS_API_KEY=${{ secrets.ODDS_API_KEY }}" >> .env
 
-      - name: Fetch Polymarket data
-        run: node scripts/fetchPolymarketData.js
+      # ─── Fast-cycle loop: 6 iterations × ~8 min apart ────────────────────
+      # Each iteration runs the Firebase-writing scripts that drive Sharp
+      # Intel. We do NOT commit/build/deploy inside the loop — that happens
+      # once at the very end so we avoid 6 GH Pages deploys per hour.
+      #
+      # Iteration timing (minutes into the run):
+      #   i=1 t≈0    i=2 t≈8    i=3 t≈16
+      #   i=4 t≈24   i=5 t≈32   i=6 t≈40
+      #
+      # Remaining budget (~18 min) covers audit + commit + build + deploy.
+      - name: Fetch cycle loop (6× at 8-min cadence)
+        run: |
+          set +e
+          # Target cycle cadence = 480s (8 min). We measure elapsed time
+          # per cycle and sleep only the remainder, so the start-to-start
+          # gap is a true 8 min even when scripts run long.
+          target_interval=480
+          for i in 1 2 3 4 5 6; do
+            cycle_start=$(date +%s)
+            echo ""
+            echo "════════════════════════════════════════════════════════════"
+            echo "### Fetch cycle $i/6 — $(date -u +%H:%M:%S) UTC"
+            echo "════════════════════════════════════════════════════════════"
 
-      - name: Fetch Kalshi data
-        run: node scripts/fetchKalshiData.js
+            echo "--- fetchPolymarketData ---"
+            node scripts/fetchPolymarketData.js || echo "polymarket failed (cycle $i)"
 
-      - name: Snapshot Pinnacle lines
-        run: node scripts/snapshotPinnacle.js
+            echo "--- fetchKalshiData ---"
+            node scripts/fetchKalshiData.js || echo "kalshi failed (cycle $i)"
 
-      - name: Scan sharp positions
-        run: node scripts/scanSharpPositions.js
+            echo "--- snapshotPinnacle ---"
+            node scripts/snapshotPinnacle.js || echo "pinnacle failed (cycle $i)"
 
-      - name: Audit market data
-        run: node scripts/auditMarketData.js
+            echo "--- scanSharpPositions ---"
+            node scripts/scanSharpPositions.js || echo "scan failed (cycle $i)"
 
-      - name: Update closing odds for pending picks
-        run: node scripts/updateClosingOdds.js
-        env:
-          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
-          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
-          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
-          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+            echo "--- updateClosingOdds ---"
+            node scripts/updateClosingOdds.js || echo "closingOdds failed (cycle $i)"
+
+            cycle_elapsed=$(( $(date +%s) - cycle_start ))
+            echo "### Cycle $i took ${cycle_elapsed}s"
+            if [ "$i" -lt 6 ]; then
+              remain=$(( target_interval - cycle_elapsed ))
+              if [ "$remain" -gt 0 ]; then
+                echo "--- sleeping ${remain}s until next cycle ---"
+                sleep "$remain"
+              else
+                echo "--- cycle overran target; running next cycle immediately ---"
+              fi
+            fi
+          done
+          set -e
+          echo ""
+          echo "### All 6 fetch cycles complete — $(date -u +%H:%M:%S) UTC"
+
+      - name: Audit market data (final)
+        run: node scripts/auditMarketData.js || true
 
       - name: Commit market data if changed
         run: |
@@ -85,12 +141,6 @@ jobs:
 
       - name: Build site
         env:
-          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
-          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
-          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
-          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
           VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }}
         run: npm run build
 
