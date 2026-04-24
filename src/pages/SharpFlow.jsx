@@ -561,6 +561,90 @@ function vaultStarFromDeltas(dw, dq) {
   return Math.max(1.0, Math.min(5.0, base + adj));
 }
 
+// v6 Hero chips — human-readable rendering of the two-factor signal that
+// actually drives stars, locks, mutes, and cancels. Replaces the cryptic
+// `Δw / Δq` pills with plain-English counts and state-appropriate color.
+// All math stays in the tooltip so quants can still read the exact deltas.
+function renderHeroChips({ dw, dq, forW, agW, qForT, qAgT, sport }) {
+  const sportLabel = (sport || '').toString().toUpperCase() || 'SPORT';
+  const dwNum = Number.isFinite(dw) ? dw : 0;
+  const dqNum = Number.isFinite(dq) ? dq : 0;
+  const forNum = Number.isFinite(forW) ? forW : 0;
+  const agNum  = Number.isFinite(agW)  ? agW  : 0;
+  const qForNum = Number.isFinite(qForT) ? qForT : 0;
+  const qAgNum  = Number.isFinite(qAgT)  ? qAgT  : 0;
+
+  const tooltip =
+    `Winners margin Δw=${dwNum >= 0 ? '+' : ''}${dwNum} (${forNum} for · ${agNum} against) · ` +
+    `Quality margin Δq=${dqNum >= 0 ? '+' : ''}${dqNum} at T30 contribution (${qForNum} for · ${qAgNum} against). ` +
+    `Lock floor: Δw ≥ +1 AND Δq ≥ +1.`;
+
+  const chipBase = {
+    ...T.micro,
+    fontWeight: 800,
+    letterSpacing: '0.04em',
+    padding: '0.15rem 0.45rem',
+    borderRadius: '4px',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.2rem',
+    fontSize: '0.56rem',
+    whiteSpace: 'nowrap',
+  };
+  const againstStyle = {
+    color: B.textMuted,
+    fontWeight: 500,
+    marginLeft: '0.2rem',
+    fontSize: '0.54rem',
+  };
+
+  // ── Red / negative states — single chip telling the fade story.
+  if (dwNum <= -2) {
+    return (
+      <span title={tooltip} style={{ ...chipBase, color: B.red, background: B.redDim, border: '1px solid rgba(239,68,68,0.3)' }}>
+        {Math.abs(dwNum)} {sportLabel} WINNERS AGAINST · KILLED
+      </span>
+    );
+  }
+  if (dwNum === -1) {
+    return (
+      <span title={tooltip} style={{ ...chipBase, color: B.red, background: B.redDim, border: '1px solid rgba(239,68,68,0.3)' }}>
+        1 {sportLabel} WINNER FADED OFF
+      </span>
+    );
+  }
+  if (dqNum <= -3 && dwNum <= 0) {
+    return (
+      <span title={tooltip} style={{ ...chipBase, color: B.red, background: B.redDim, border: '1px solid rgba(239,68,68,0.3)' }}>
+        QUALITY WALLETS FADED
+      </span>
+    );
+  }
+
+  // ── Positive / neutral — two chips: Winners + Quality.
+  const winnersActive = dwNum >= 1;
+  const qualityActive = dqNum >= 1;
+  const winnersStyle = winnersActive
+    ? { color: B.green, background: B.greenDim, border: '1px solid rgba(16,185,129,0.25)' }
+    : { color: B.textMuted, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' };
+  const qualityStyle = qualityActive
+    ? { color: B.green, background: B.greenDim, border: '1px solid rgba(16,185,129,0.25)' }
+    : { color: B.textMuted, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' };
+
+  return (
+    <>
+      <span title={tooltip} style={{ ...chipBase, ...winnersStyle }}>
+        <span>{forNum} {sportLabel} WINNER{forNum !== 1 ? 'S' : ''}</span>
+        {agNum > 0 && <span style={againstStyle}>· {agNum} against</span>}
+      </span>
+      <span title={tooltip} style={{ ...chipBase, ...qualityStyle }}>
+        <span>{qForNum} QUALITY WALLET{qForNum !== 1 ? 'S' : ''}</span>
+        {qAgNum > 0 && <span style={againstStyle}>· {qAgNum} against</span>}
+      </span>
+    </>
+  );
+}
+
 function rateStarsV8({ positions, consensusSide, v8Norm, pinnMoveSize = 0, timeToGame = null, lockOdds = null, pinnCurrentOdds = null, sport = null }) {
   if (!v8Norm || !positions || positions.length === 0) {
     return {
@@ -4033,29 +4117,16 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                 <span>{isSuperTopPick ? 'SUPER TOP PICK' : 'TOP PICK'}</span>
               </span>
             )}
-            {/* v6 two-factor Δ chips — always on so users see the drivers */}
-            {(walletConsensusDelta != null || walletConsensusQualityMargin != null) && !superseded && (
-              <span
-                title={`Δw = proven-winner margin (for − against, whitelist-gated) · Δq = quality margin at T30 contribution`}
-                style={{
-                  ...T.micro, fontWeight: 800, letterSpacing: '0.04em',
-                  padding: '0.1rem 0.35rem', borderRadius: '4px',
-                  color: B.textSec,
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  display: 'flex', alignItems: 'center', gap: '0.25rem',
-                  fontSize: '0.55rem',
-                }}
-              >
-                <span style={{ color: (walletConsensusDelta ?? 0) > 0 ? B.green : (walletConsensusDelta ?? 0) < 0 ? B.red : B.textMuted }}>
-                  Δw {(walletConsensusDelta ?? 0) >= 0 ? '+' : ''}{walletConsensusDelta ?? 0}
-                </span>
-                <span style={{ color: B.textMuted }}>·</span>
-                <span style={{ color: (walletConsensusQualityMargin ?? 0) > 0 ? B.green : (walletConsensusQualityMargin ?? 0) < 0 ? B.red : B.textMuted }}>
-                  Δq {(walletConsensusQualityMargin ?? 0) >= 0 ? '+' : ''}{walletConsensusQualityMargin ?? 0}
-                </span>
-              </span>
-            )}
+            {/* v6 hero chips — proven-winner + quality-wallet counts in plain English. */}
+            {(walletConsensusDelta != null || walletConsensusQualityMargin != null) && !superseded && renderHeroChips({
+              dw: walletConsensusDelta ?? 0,
+              dq: walletConsensusQualityMargin ?? 0,
+              forW: walletConsensusForW ?? 0,
+              agW: walletConsensusAgW ?? 0,
+              qForT: walletConsensusQualityForT30 ?? 0,
+              qAgT: walletConsensusQualityAgT30 ?? 0,
+              sport,
+            })}
             <span style={{
               ...T.micro, fontWeight: 800, letterSpacing: '0.04em',
               padding: '0.15rem 0.5rem', borderRadius: '5px',
@@ -4222,9 +4293,64 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                   )}
                 </div>
               </div>
-              <div style={{ ...T.micro, color: B.textSec, lineHeight: 1.5, marginTop: '0.15rem' }}>
-                {sharpCount || '—'} sharp bettor{sharpCount !== 1 ? 's' : ''} invested <span style={{ color: B.gold, fontWeight: 700 }}>{totalInvested ? fmtV(totalInvested) : '—'}</span> on {teamShort}{avgBet ? ` (avg ${fmtV(avgBet)}/bet)` : ''}.{criteria?.pinnacleConfirms ? ` Pinnacle confirmed the play at lock.` : ''}{evEdge > 0 ? ` +${evEdge}% EV edge at ${book}.` : ''}
-              </div>
+              {(() => {
+                // v6 narrative — lead with proven winners + quality wallets (what actually
+                // drives the lock). When the pick is muted/cancelled we invert the lead
+                // to surface the fade story. Avg-bet metric drops to a secondary caption.
+                const forW = walletConsensusForW ?? 0;
+                const agW  = walletConsensusAgW  ?? 0;
+                const qFor = walletConsensusQualityForT30 ?? 0;
+                const dw   = walletConsensusDelta ?? 0;
+                const sportUp = (sport || '').toUpperCase();
+                const marketNoun = marketType === 'spread' ? 'the spread' : marketType === 'total' ? 'the total' : 'ML';
+                const pinnSuffix = criteria?.pinnacleConfirms ? ` Pinnacle confirmed the play at lock.` : '';
+                const evSuffix = evEdge > 0 ? ` +${evEdge}% EV edge at ${book}.` : '';
+
+                let lead;
+                if (isCancelled) {
+                  lead = (
+                    <>
+                      <span style={{ color: B.red, fontWeight: 700 }}>Signal killed</span> on {teamShort} {marketNoun}: {Math.abs(dw)} proven {sportUp} winner{Math.abs(dw) !== 1 ? 's' : ''} now against this pick.{pinnSuffix}
+                    </>
+                  );
+                } else if (isMuted) {
+                  lead = (
+                    <>
+                      <span style={{ color: '#F59E0B', fontWeight: 700 }}>Signal fading</span> on {teamShort} {marketNoun}: {agW > 0 ? <>{agW} proven {sportUp} winner{agW !== 1 ? 's' : ''} flipped off, {forW} still backing.</> : <>quality wallets collapsed to the other side.</>}
+                    </>
+                  );
+                } else if (forW > 0) {
+                  lead = (
+                    <>
+                      <span style={{ color: B.gold, fontWeight: 700 }}>{forW} proven {sportUp} winner{forW !== 1 ? 's' : ''}</span> backing {teamShort} {marketNoun}
+                      {qFor > 0 ? <> with <span style={{ color: B.green, fontWeight: 700 }}>{qFor} quality wallet{qFor !== 1 ? 's' : ''}</span> confirming.</> : '.'}
+                      {totalInvested ? <> Combined <span style={{ color: B.gold, fontWeight: 700 }}>{fmtV(totalInvested)}</span> invested.</> : ''}
+                      {pinnSuffix}{evSuffix}
+                    </>
+                  );
+                } else {
+                  lead = (
+                    <>
+                      {sharpCount || '—'} sharp bettor{(sharpCount || 0) !== 1 ? 's' : ''} backing {teamShort} {marketNoun}
+                      {totalInvested ? <>, combined <span style={{ color: B.gold, fontWeight: 700 }}>{fmtV(totalInvested)}</span> invested.</> : '.'}
+                      {pinnSuffix}{evSuffix}
+                    </>
+                  );
+                }
+
+                return (
+                  <>
+                    <div style={{ ...T.micro, color: B.textSec, lineHeight: 1.5, marginTop: '0.15rem' }}>
+                      {lead}
+                    </div>
+                    {avgBet ? (
+                      <div style={{ ...T.micro, fontSize: '0.56rem', color: B.textMuted, marginTop: '0.25rem', letterSpacing: '0.03em' }}>
+                        avg {fmtV(avgBet)}/bet
+                      </div>
+                    ) : null}
+                  </>
+                );
+              })()}
             </div>
 
             {/* Bet line: team + fair value | locked odds + book */}
@@ -4276,19 +4402,49 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
               </span>
             </div>
 
-            {/* Confidence tags */}
+            {/* v6 pill strip — primary pill uses verified-winner count when
+                available; DOMINANT/STRONG consensus grade demoted to the
+                diagnostics caption below. */}
             <div style={{
               display: 'flex', gap: '0.5rem', flexWrap: 'wrap',
               marginTop: '0.625rem', paddingTop: '0.5rem',
               borderTop: `1px solid ${isGraded ? (isWin ? 'rgba(16,185,129,0.15)' : isLoss ? 'rgba(239,68,68,0.12)' : 'rgba(212,175,55,0.12)') : 'rgba(16,185,129,0.15)'}`,
             }}>
-              {sharpCount && <span style={{ ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px', background: B.goldDim, color: B.gold, fontWeight: 600 }}>{sharpCount} sharp bettor{sharpCount !== 1 ? 's' : ''}</span>}
+              {(() => {
+                const forW = walletConsensusForW ?? 0;
+                const sportUp = (sport || '').toUpperCase();
+                if (forW > 0) {
+                  return (
+                    <span style={{ ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px', background: B.greenDim, color: B.green, fontWeight: 700 }}>
+                      {forW} {sportUp} WINNER{forW !== 1 ? 'S' : ''}
+                    </span>
+                  );
+                }
+                if (sharpCount) {
+                  return (
+                    <span style={{ ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px', background: B.goldDim, color: B.gold, fontWeight: 600 }}>
+                      {sharpCount} sharp bettor{sharpCount !== 1 ? 's' : ''}
+                    </span>
+                  );
+                }
+                return null;
+              })()}
               {totalInvested && <span style={{ ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px', background: 'rgba(255,255,255,0.04)', color: B.textSec }}>{fmtV(totalInvested)} invested</span>}
               {criteria?.pinnacleConfirms && <span style={{ ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px', background: B.greenDim, color: B.green, fontWeight: 600 }}>✓ Pinnacle confirms</span>}
-              {consensusStrength?.grade && <span style={{ ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px', fontWeight: 600, background: (consensusStrength.grade === 'DOMINANT' || consensusStrength.grade === 'STRONG') ? B.greenDim : B.goldDim, color: (consensusStrength.grade === 'DOMINANT' || consensusStrength.grade === 'STRONG') ? B.green : B.gold }}>{consensusStrength.grade} ({consensusStrength.moneyPct}%)</span>}
               {evEdge > 0 && <span style={{ ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px', background: B.greenDim, color: B.green, fontWeight: 700 }}>+{evEdge}% edge</span>}
               {clvPct != null && <span style={{ ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px', fontWeight: 700, fontFeatureSettings: "'tnum'", color: clvPositive ? B.green : liveCLV < 0 ? B.red : B.textMuted, background: clvPositive ? B.greenDim : liveCLV < 0 ? B.redDim : 'rgba(255,255,255,0.04)' }}>CLV {clvPositive ? '+' : ''}{clvPct}%</span>}
             </div>
+            {/* Diagnostics caption — consensus grade demoted here since it no
+                longer gates the lock under v6. */}
+            {consensusStrength?.grade && (
+              <div style={{
+                ...T.micro, fontSize: '0.56rem', color: B.textMuted,
+                marginTop: '0.4rem', letterSpacing: '0.04em', textTransform: 'lowercase',
+              }}>
+                <span style={{ opacity: 0.7 }}>diagnostics · </span>
+                <span>sharp money {consensusStrength.moneyPct}% ({consensusStrength.grade.toLowerCase()})</span>
+              </div>
+            )}
           </div>
 
           {/* Lock-In Criteria */}
@@ -5191,29 +5347,16 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
             })}
             <span style={{ marginLeft: '0.15rem' }}>{sr.label}</span>
           </span>
-          {/* v6 two-factor Δ chips — always on so users see the primary drivers */}
-          {sr?.v8Scoring && (sr.v8Scoring.deltaWinner != null || sr.v8Scoring.deltaQuality != null) && (
-            <span
-              title="Δw = proven winner margin (for − against, sport-specific whitelist). Δq = quality margin (contribution ≥ 30). Both must be ≥ +1 to lock."
-              style={{
-                ...T.micro, fontWeight: 800, letterSpacing: '0.04em',
-                padding: '0.15rem 0.4rem', borderRadius: '4px',
-                color: B.textSec,
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                display: 'flex', alignItems: 'center', gap: '0.3rem',
-                fontSize: '0.55rem',
-              }}
-            >
-              <span style={{ color: (sr.v8Scoring.deltaWinner ?? 0) > 0 ? B.green : (sr.v8Scoring.deltaWinner ?? 0) < 0 ? B.red : B.textMuted }}>
-                Δw {(sr.v8Scoring.deltaWinner ?? 0) >= 0 ? '+' : ''}{sr.v8Scoring.deltaWinner ?? 0}
-              </span>
-              <span style={{ color: B.textMuted }}>·</span>
-              <span style={{ color: (sr.v8Scoring.deltaQuality ?? 0) > 0 ? B.green : (sr.v8Scoring.deltaQuality ?? 0) < 0 ? B.red : B.textMuted }}>
-                Δq {(sr.v8Scoring.deltaQuality ?? 0) >= 0 ? '+' : ''}{sr.v8Scoring.deltaQuality ?? 0}
-              </span>
-            </span>
-          )}
+          {/* v6 hero chips — proven-winner + quality-wallet counts in plain English. */}
+          {sr?.v8Scoring && (sr.v8Scoring.deltaWinner != null || sr.v8Scoring.deltaQuality != null) && renderHeroChips({
+            dw: sr.v8Scoring.deltaWinner ?? 0,
+            dq: sr.v8Scoring.deltaQuality ?? 0,
+            forW: sr.v8Scoring.forW ?? 0,
+            agW: sr.v8Scoring.agW ?? 0,
+            qForT: sr.v8Scoring.qualityForT30 ?? 0,
+            qAgT: sr.v8Scoring.qualityAgT30 ?? 0,
+            sport: gd.sport,
+          })}
         </div>
       </div>
 
@@ -5258,9 +5401,68 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
               )}
             </div>
           </div>
-          <div style={{ ...T.micro, color: B.textSec, lineHeight: 1.5, marginTop: '0.15rem' }}>
-            {consensusWalletCount} sharp bettor{consensusWalletCount !== 1 ? 's have' : ' has'} invested <span style={{ color: B.gold, fontWeight: 700 }}>{fmtVol(consensusInvestedAmt)}</span> on {consensusShort} (avg <span style={{ fontWeight: 700 }}>{fmtVol(consensusAvgBet)}</span>/bet) with a combined <span style={{ color: B.green, fontWeight: 700 }}>+{fmtVol(consensusLifetimePnl)}</span> sports P&L.{pinnConfirms ? ` Pinnacle's line confirms the play.` : ''}{hasEV ? ` +${evEdge}% EV edge at ${bestBook}.` : ''}
-          </div>
+          {(() => {
+            // v6 narrative — proven winners + quality wallets lead the sentence,
+            // with P&L as secondary color. Mute/cancel states invert to signal-fading
+            // copy. Avg-bet metric drops into a small secondary caption.
+            const v8 = sr?.v8Scoring;
+            const forW = v8?.forW ?? 0;
+            const agW  = v8?.agW ?? 0;
+            const qFor = v8?.qualityForT30 ?? 0;
+            const dw   = v8?.deltaWinner ?? 0;
+            const sportUp = (gd.sport || '').toUpperCase();
+            const hStat = mlHealth?.status || 'ACTIVE';
+            const isMutedLive = hStat === 'MUTED';
+            const isCancelledLive = hStat === 'CANCELLED';
+            const pinnSuffix = pinnConfirms ? ` Pinnacle confirms the play.` : '';
+            const evSuffix = hasEV ? ` +${evEdge}% EV edge at ${bestBook}.` : '';
+
+            let lead;
+            if (isCancelledLive) {
+              lead = (
+                <>
+                  <span style={{ color: B.red, fontWeight: 700 }}>Signal killed</span> on {consensusShort} ML: {Math.abs(dw)} proven {sportUp} winner{Math.abs(dw) !== 1 ? 's' : ''} now against this pick.{pinnSuffix}
+                </>
+              );
+            } else if (isMutedLive) {
+              lead = (
+                <>
+                  <span style={{ color: '#F59E0B', fontWeight: 700 }}>Signal fading</span> on {consensusShort} ML: {agW > 0 ? <>{agW} proven {sportUp} winner{agW !== 1 ? 's' : ''} flipped off, {forW} still backing.</> : <>quality wallets collapsed to the other side.</>}
+                </>
+              );
+            } else if (forW > 0) {
+              lead = (
+                <>
+                  <span style={{ color: B.gold, fontWeight: 700 }}>{forW} proven {sportUp} winner{forW !== 1 ? 's' : ''}</span> backing {consensusShort} ML
+                  {qFor > 0 ? <> with <span style={{ color: B.green, fontWeight: 700 }}>{qFor} quality wallet{qFor !== 1 ? 's' : ''}</span> confirming.</> : '.'}
+                  {consensusLifetimePnl ? <> Combined <span style={{ color: B.green, fontWeight: 700 }}>+{fmtVol(consensusLifetimePnl)}</span> sports P&L.</> : ''}
+                  {pinnSuffix}{evSuffix}
+                </>
+              );
+            } else {
+              lead = (
+                <>
+                  {consensusWalletCount} sharp bettor{consensusWalletCount !== 1 ? 's' : ''} backing {consensusShort} ML
+                  {consensusInvestedAmt ? <>, <span style={{ color: B.gold, fontWeight: 700 }}>{fmtVol(consensusInvestedAmt)}</span> invested.</> : '.'}
+                  {consensusLifetimePnl ? <> Combined <span style={{ color: B.green, fontWeight: 700 }}>+{fmtVol(consensusLifetimePnl)}</span> sports P&L.</> : ''}
+                  {pinnSuffix}{evSuffix}
+                </>
+              );
+            }
+
+            return (
+              <>
+                <div style={{ ...T.micro, color: B.textSec, lineHeight: 1.5, marginTop: '0.15rem' }}>
+                  {lead}
+                </div>
+                {consensusAvgBet ? (
+                  <div style={{ ...T.micro, fontSize: '0.56rem', color: B.textMuted, marginTop: '0.25rem', letterSpacing: '0.03em' }}>
+                    avg {fmtVol(consensusAvgBet)}/bet across {consensusWalletCount} wallet{consensusWalletCount !== 1 ? 's' : ''}
+                  </div>
+                ) : null}
+              </>
+            );
+          })()}
         </div>
 
         {/* Middle: The actual bet */}
@@ -5339,127 +5541,208 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
           marginTop: '0.625rem', paddingTop: '0.5rem',
           borderTop: `1px solid ${isActionable ? 'rgba(16,185,129,0.15)' : 'rgba(212,175,55,0.12)'}`,
         }}>
-          <span style={{
-            ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
-            background: B.goldDim, color: B.gold, fontWeight: 600,
-          }}>
-            {consensusWalletCount} sharp bettor{consensusWalletCount !== 1 ? 's' : ''}
-          </span>
-          <span style={{
-            ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
-            background: 'rgba(255,255,255,0.04)', color: B.textSec,
-          }}>
-            {fmtVol(consensusInvestedAmt)} invested
-          </span>
-          {pinnConfirms && (
-            <span style={{
-              ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
-              background: B.greenDim, color: B.green, fontWeight: 600,
-            }}>
-              ✓ Pinnacle confirms
-            </span>
-          )}
-          {pinnMoved && !pinnConfirms && (
-            <span style={{
-              ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
-              background: B.redDim, color: B.red, fontWeight: 600,
-            }}>
-              ✗ Pinnacle opposes
-            </span>
-          )}
-          <span style={{
-            ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
-            fontWeight: 600,
-            background: cGrade.color === B.green ? B.greenDim : cGrade.color === B.gold ? B.goldDim : B.redDim,
-            color: cGrade.color,
-          }}>
-            {cGrade.label} ({Math.round(cGrade.score)}%)
-          </span>
-          {hasEV && (
-            <span style={{
-              ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
-              background: B.greenDim, color: B.green, fontWeight: 700,
-            }}>
-              +{evEdge}% edge
-            </span>
-          )}
-          {rlmActive && (
-            <span style={{
-              ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
-              background: 'rgba(99,102,241,0.12)', color: '#818CF8', fontWeight: 700,
-            }}>
-              RLM +{flowTicketDiv.toFixed(0)}pt
-            </span>
-          )}
-          {sharpFeatures.concentration > 0.8 && (
-            <span style={{
-              ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
-              background: 'rgba(239,68,68,0.08)', color: '#F87171', fontWeight: 600,
-            }}>
-              {(sharpFeatures.concentration * 100).toFixed(0)}% 1-wallet
-            </span>
-          )}
-          {sharpFeatures.counterSharpScore >= 3 && (
-            <span style={{
-              ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
-              background: 'rgba(239,68,68,0.08)', color: '#F87171', fontWeight: 600,
-            }}>
-              Counter-sharp
-            </span>
-          )}
+          {/* v6 pill strip — kept pills are the ones users actually act on.
+              DOMINANT/STRONG consensus grade and RLM flag demoted to the
+              diagnostics caption below since they no longer gate anything. */}
+          {(() => {
+            const v8 = sr?.v8Scoring;
+            const forW = v8?.forW ?? 0;
+            const sportUp = (gd.sport || '').toUpperCase();
+            const primaryLabel = forW > 0
+              ? `${forW} ${sportUp} WINNER${forW !== 1 ? 'S' : ''}`
+              : `${consensusWalletCount} sharp bettor${consensusWalletCount !== 1 ? 's' : ''}`;
+            const primaryBg  = forW > 0 ? B.greenDim : B.goldDim;
+            const primaryCol = forW > 0 ? B.green   : B.gold;
+            return (
+              <>
+                <span style={{
+                  ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
+                  background: primaryBg, color: primaryCol, fontWeight: 700,
+                }}>
+                  {primaryLabel}
+                </span>
+                <span style={{
+                  ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
+                  background: 'rgba(255,255,255,0.04)', color: B.textSec,
+                }}>
+                  {fmtVol(consensusInvestedAmt)} invested
+                </span>
+                {pinnConfirms && (
+                  <span style={{
+                    ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
+                    background: B.greenDim, color: B.green, fontWeight: 600,
+                  }}>
+                    ✓ Pinnacle confirms
+                  </span>
+                )}
+                {pinnMoved && !pinnConfirms && (
+                  <span style={{
+                    ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
+                    background: B.redDim, color: B.red, fontWeight: 600,
+                  }}>
+                    ✗ Pinnacle opposes
+                  </span>
+                )}
+                {hasEV && (
+                  <span style={{
+                    ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
+                    background: B.greenDim, color: B.green, fontWeight: 700,
+                  }}>
+                    +{evEdge}% edge
+                  </span>
+                )}
+                {sharpFeatures.concentration > 0.8 && (
+                  <span style={{
+                    ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
+                    background: 'rgba(239,68,68,0.08)', color: '#F87171', fontWeight: 600,
+                  }}>
+                    {(sharpFeatures.concentration * 100).toFixed(0)}% 1-wallet
+                  </span>
+                )}
+                {sharpFeatures.counterSharpScore >= 3 && (
+                  <span style={{
+                    ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
+                    background: 'rgba(239,68,68,0.08)', color: '#F87171', fontWeight: 600,
+                  }}>
+                    Counter-sharp
+                  </span>
+                )}
+              </>
+            );
+          })()}
         </div>
+        {/* Diagnostics caption — consensus grade + RLM live here now, dimmed
+            to communicate "context, not a gate". The v6 gate is the 2/2
+            criteria block above. */}
+        {(cGrade?.label || rlmActive) && (
+          <div style={{
+            ...T.micro, fontSize: '0.56rem', color: B.textMuted,
+            marginTop: '0.4rem', letterSpacing: '0.04em', textTransform: 'lowercase',
+          }}>
+            <span style={{ opacity: 0.7 }}>diagnostics · </span>
+            {cGrade?.label && <span>sharp money {Math.round(cGrade.score)}% ({cGrade.label.toLowerCase()})</span>}
+            {cGrade?.label && rlmActive && <span> · </span>}
+            {rlmActive && <span>line move +{flowTicketDiv.toFixed(0)}pt (reverse)</span>}
+          </div>
+        )}
       </div>
 
-      {/* ─── Lock-In Criteria Checklist ─── */}
-      <div style={{
-        margin: '0.5rem 0.875rem 0', padding: '0.5rem 0.625rem',
-        borderRadius: '8px',
-        background: isLocked
-          ? 'linear-gradient(135deg, rgba(16,185,129,0.06) 0%, rgba(16,185,129,0.02) 100%)'
-          : isShadow
-          ? 'linear-gradient(135deg, rgba(212,175,55,0.06) 0%, rgba(212,175,55,0.02) 100%)'
-          : 'rgba(255,255,255,0.02)',
-        border: `1px solid ${isLocked ? 'rgba(16,185,129,0.25)' : isShadow ? 'rgba(212,175,55,0.25)' : B.borderSubtle}`,
-      }}>
-        <div style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          marginBottom: '0.375rem',
-        }}>
-          <span style={{ ...T.micro, color: isLocked ? B.green : isShadow ? B.gold : B.textMuted, fontWeight: 700 }}>
-            {isLocked ? `PLAY LOCKED — ${sr.stars >= 4.5 ? '★★★★★ ELITE' : sr.stars >= 3.5 ? '★★★★ STRONG' : sr.stars >= 3 ? '★★★ SOLID' : '★★½ SOLID'}` : isShadow ? `TRACKING — Awaiting Line Move` : `LOCK-IN CRITERIA (${criteriaMet}/6)`}
-          </span>
-          <span style={{
-            ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'",
-            color: criteriaMet >= 5 ? B.green : criteriaMet >= 4 ? B.green : criteriaMet >= 3 ? B.gold : B.textMuted,
+      {/* ─── v6 Lock Criteria (Two-Factor Gate) ───
+          Replaces the legacy 6-item checklist. Under v6 the only things that
+          gate a lock are Δw ≥ +1 AND Δq ≥ +1. The old criteria (Pinnacle /
+          EV / line movement / etc) still surface as pills under the narrative
+          — they're supporting evidence, not gates. */}
+      {(() => {
+        const v8 = sr?.v8Scoring;
+        const dw = v8?.deltaWinner ?? 0;
+        const dq = v8?.deltaQuality ?? 0;
+        const winMet = dw >= 1;
+        const qMet   = dq >= 1;
+        const metCount = (winMet ? 1 : 0) + (qMet ? 1 : 0);
+        const sportLabel = (gd.sport || '').toString().toUpperCase();
+        const healthStatus = mlHealth?.status || 'ACTIVE';
+        const isMutedLive = healthStatus === 'MUTED';
+        const isCancelledLive = healthStatus === 'CANCELLED';
+
+        let title, titleColor, borderGlow, bgGlow;
+        if (isCancelledLive) {
+          title = 'PICK CANCELLED — winners against';
+          titleColor = B.red;
+          borderGlow = 'rgba(239,68,68,0.3)';
+          bgGlow = 'linear-gradient(135deg, rgba(239,68,68,0.06) 0%, rgba(239,68,68,0.02) 100%)';
+        } else if (isMutedLive) {
+          title = 'PICK MUTED — signal fading';
+          titleColor = B.red;
+          borderGlow = 'rgba(239,68,68,0.25)';
+          bgGlow = 'linear-gradient(135deg, rgba(239,68,68,0.05) 0%, rgba(239,68,68,0.02) 100%)';
+        } else if (isLocked) {
+          const starLbl = sr.stars >= 4.5 ? '★★★★★ ELITE'
+            : sr.stars >= 3.5 ? '★★★★ STRONG'
+            : sr.stars >= 3 ? '★★★ SOLID'
+            : '★★½ SOLID';
+          title = `PLAY LOCKED — ${starLbl}`;
+          titleColor = B.green;
+          borderGlow = 'rgba(16,185,129,0.25)';
+          bgGlow = 'linear-gradient(135deg, rgba(16,185,129,0.06) 0%, rgba(16,185,129,0.02) 100%)';
+        } else if (metCount === 1) {
+          title = 'TRACKING — 1 of 2 signals';
+          titleColor = B.gold;
+          borderGlow = 'rgba(212,175,55,0.25)';
+          bgGlow = 'linear-gradient(135deg, rgba(212,175,55,0.06) 0%, rgba(212,175,55,0.02) 100%)';
+        } else {
+          title = 'LOCK CRITERIA';
+          titleColor = B.textMuted;
+          borderGlow = B.borderSubtle;
+          bgGlow = 'rgba(255,255,255,0.02)';
+        }
+
+        const Row = ({ met, label, deltaVal, hint }) => (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '0.4rem',
+            padding: '0.25rem 0',
           }}>
-            {criteriaMet}/6
-          </span>
-        </div>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
-          gap: '0.25rem',
-        }}>
-          {criteria.map(c => (
-            <div key={c.id} style={{
-              display: 'flex', alignItems: 'center', gap: '0.25rem',
-              padding: '0.15rem 0',
+            {met
+              ? <CheckCircle size={13} color={B.green} strokeWidth={2.5} />
+              : <Circle size={13} color={B.textMuted} strokeWidth={1.5} />
+            }
+            <span style={{
+              ...T.micro, fontSize: '0.625rem',
+              color: met ? B.green : B.textSec,
+              fontWeight: met ? 700 : 500,
             }}>
-              {c.met
-                ? <CheckCircle size={11} color={B.green} strokeWidth={2.5} />
-                : <Circle size={11} color={B.textMuted} strokeWidth={1.5} />
-              }
-              <span style={{
-                ...T.micro, fontSize: '0.5625rem',
-                color: c.met ? B.green : B.textMuted,
-                fontWeight: c.met ? 700 : 400,
-              }}>
-                {c.label}
+              {label}
+            </span>
+            <span style={{
+              ...T.micro, fontSize: '0.6rem', fontFeatureSettings: "'tnum'",
+              color: met ? B.green : deltaVal < 0 ? B.red : B.textMuted,
+              fontWeight: 800,
+              marginLeft: 'auto',
+              display: 'inline-flex', alignItems: 'baseline', gap: '0.3rem',
+            }}>
+              <span>{deltaVal >= 0 ? '+' : ''}{deltaVal}</span>
+              <span style={{ color: B.textSubtle, fontWeight: 400, fontSize: '0.54rem' }}>{hint}</span>
+            </span>
+          </div>
+        );
+
+        return (
+          <div style={{
+            margin: '0.5rem 0.875rem 0', padding: '0.5rem 0.75rem',
+            borderRadius: '8px',
+            background: bgGlow,
+            border: `1px solid ${borderGlow}`,
+          }}>
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              marginBottom: '0.3rem',
+            }}>
+              <span style={{ ...T.micro, color: titleColor, fontWeight: 800, letterSpacing: '0.04em' }}>
+                {title}
               </span>
+              {!isCancelledLive && !isMutedLive && (
+                <span style={{
+                  ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'",
+                  color: metCount === 2 ? B.green : metCount === 1 ? B.gold : B.textMuted,
+                }}>
+                  {metCount}/2
+                </span>
+              )}
             </div>
-          ))}
-        </div>
-      </div>
+            <Row
+              met={winMet}
+              label={`Proven ${sportLabel || 'sport'} winners backing`}
+              deltaVal={dw}
+              hint="needs ≥ +1"
+            />
+            <Row
+              met={qMet}
+              label="Quality wallets backing"
+              deltaVal={dq}
+              hint="needs ≥ +1"
+            />
+          </div>
+        );
+      })()}
 
       {/* ── Market Tab Strip ── */}
       {(() => {
@@ -6513,17 +6796,10 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
             {showWallets ? <ChevronUp size={12} color={B.gold} /> : <ChevronDown size={12} color={B.gold} />}
+            {/* v6 — the hero chip up top already carries the winner/fading story.
+                This toggle stays as a plain affordance to expand the wallet list. */}
             <span style={{ ...T.micro, color: B.gold, fontWeight: 700 }}>
-              {uniqueWallets} VERIFIED SHARP{uniqueWallets !== 1 ? 'S' : ''}
-              {sportWinnerForCount > 0 && (
-                <span style={{ color: B.gold, fontWeight: 900 }}> · {sportWinnerForCount} {gd.sport} WINNER{sportWinnerForCount !== 1 ? 'S' : ''}</span>
-              )}
-              {/* v5.4: always show FADING when any winner is on the opposite side. Previous gate (`> forCount`)
-                  hid the fade signal in the common 1-for / 1-against case (Stars/Wild), making the header look
-                  like it was undercounting NHL WINNERS visible in the list below. */}
-              {sportWinnerAgCount > 0 && (
-                <span style={{ color: B.red, fontWeight: 900 }}> · {sportWinnerAgCount} {gd.sport} FADING</span>
-              )}
+              {showWallets ? 'HIDE' : 'VIEW'} {uniqueWallets} SHARP {uniqueWallets !== 1 ? 'WALLETS' : 'WALLET'}
             </span>
           </div>
           <span style={{ ...T.micro, color: B.textSec }}>
