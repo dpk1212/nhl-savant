@@ -1,6 +1,6 @@
 # Non-LOCKED edge audit — do maxRoiN_F / meanBase_F deserve their own promotion path?
 
-Generated: 4/24/2026, 9:50:55 AM ET · V8 cutover: 2026-04-18
+Generated: 4/24/2026, 10:14:15 AM ET · V8 cutover: 2026-04-18
 
 ## Baseline — all graded V8-era game sides
 
