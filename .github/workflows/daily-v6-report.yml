@@ -1,0 +1,58 @@
+name: V6 Daily Master Report
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 8:45 AM ET daily, after grading / wallet-profile refresh jobs have had time to settle.
+    - cron: '45 12 * * *'
+
+jobs:
+  report:
+    name: Generate V6 Daily Master Report
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate V6 master report
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: |
+          echo "════════════════════════════════════════════════════════════════"
+          echo "  V6 DAILY MASTER REPORT"
+          echo "  Time: $(TZ='America/New_York' date '+%Y-%m-%d %I:%M %p ET')"
+          echo "════════════════════════════════════════════════════════════════"
+          node scripts/dailyV6Report.js
+
+      - name: Commit report
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add DAILY_V6_REPORT.md
+          git diff --quiet && git diff --staged --quiet || (
+            git commit -m "Auto-update: V6 Daily Master Report [$(TZ='America/New_York' date +'%Y-%m-%d')]" &&
+            git stash --include-untracked &&
+            git pull --rebase origin main &&
+            git stash pop || true &&
+            for i in 1 2 3; do
+              git push && break
+              echo "Push attempt $i failed, retrying..."
+              sleep 2
+              git pull --rebase origin main
+            done
+          )
+
