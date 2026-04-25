@@ -1,6 +1,6 @@
 # V8 Goldilocks Deep Dive
 
-_Generated 2026-04-25T13:08:21.090Z_
+_Generated 2026-04-25T13:43:15.538Z_
 
 ## 0. Sample & Baseline
 
