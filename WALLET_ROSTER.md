@@ -1,6 +1,6 @@
 # Sharp Wallet Roster
 
-Generated: 4/26/2026, 4:14:31 AM ET · V8 cutover: 2026-04-18
+Generated: 4/26/2026, 5:51:53 AM ET · V8 cutover: 2026-04-18
 
 Every sharp wallet we have V8-era data on, sorted by combined conviction score. This is the **full roster** (no minimum-bets filter) — noisy at the tail, but that's the point for a tracking dataset. Verdict column reflects the ≥3-bet threshold.
 
@@ -32,7 +32,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | a6c56e | CONFIRMED_WINNER | ELITE | 14 | 8 | 62.5% | +28.1% | +2.25 | 11 | 63.6% | +6.4% | +46658 | 53.1 | 23.7 | 1.5% |
 | dfa240 | CONFIRMED_WINNER | ELITE | 400 | 9 | 66.7% | +29.1% | +2.62 | 20 | 60% | +47.5% | +34614 | 37.4 | 50.4 | 3.6% |
 | 2e8da5 | CONFIRMED_WINNER | ELITE | 323 | 5 | 80% | +49.6% | +2.48 | 14 | 71.4% | +14.4% | +34390 | 56.9 | 72.7 | 7.4% |
-| 769c38 | CONFIRMED_WINNER | ELITE | — | 3 | 100% | +122.3% | +3.67 | 12 | 58.3% | +11.3% | +13680 | 86.3 | 86 | 14.3% |
+| 769c38 | CONFIRMED_WINNER | ELITE | 531 | 3 | 100% | +122.3% | +3.67 | 13 | 61.5% | +12.4% | +15380 | 86.3 | 86 | 14.3% |
 | 4edc5b | CONFIRMED_WINNER | ELITE | 115 | 4 | 50% | +44.7% | +1.79 | 9 | 77.8% | +7.4% | +32358 | 73.4 | 83.1 | 12.4% |
 | a1684d | CONFIRMED_WINNER | ELITE | 322 | 3 | 100% | +77.4% | +2.32 | 4 | 75% | +58.4% | +4790 | 55.2 | 69.8 | 6.6% |
 | cce0fd | CONFIRMED_WINNER | ELITE | 161 | 3 | 66.7% | +8.8% | +0.26 | 6 | 83.3% | +27.4% | +9290 | 36.7 | 17.2 | 1.1% |
@@ -147,7 +147,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | a6c56e | 8 | +28.1% | 11 | +6.4% | +46658 | 53.1 | 1.5% |
 | dfa240 | 9 | +29.1% | 20 | +47.5% | +34614 | 37.4 | 3.6% |
 | 2e8da5 | 5 | +49.6% | 14 | +14.4% | +34390 | 56.9 | 7.4% |
-| 769c38 | 3 | +122.3% | 12 | +11.3% | +13680 | 86.3 | 14.3% |
+| 769c38 | 3 | +122.3% | 13 | +12.4% | +15380 | 86.3 | 14.3% |
 | 4edc5b | 4 | +44.7% | 9 | +7.4% | +32358 | 73.4 | 12.4% |
 | a1684d | 3 | +77.4% | 4 | +58.4% | +4790 | 55.2 | 6.6% |
 | cce0fd | 3 | +8.8% | 6 | +27.4% | +9290 | 36.7 | 1.1% |

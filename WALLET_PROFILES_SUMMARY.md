@@ -1,10 +1,10 @@
 # Wallet Profiles Summary
 
-Generated: 4/26/2026, 4:14:31 AM ET · V8 cutover: 2026-04-18 · whitelistVersion: 1
+Generated: 4/26/2026, 5:51:53 AM ET · V8 cutover: 2026-04-18 · whitelistVersion: 1
 
 Monitoring artifact for the nightly `sharpWalletProfiles` rebuild. Shows how many wallets qualify for each whitelist tier per sport, who the top performers are, and what changed since the last run.
 
-**Population**: 109 wallets · 482 graded picks · 1091 graded positions.
+**Population**: 109 wallets · 482 graded picks · 1092 graded positions.
 
 ## Population by verdict
 
@@ -49,7 +49,7 @@ Minimum 2 bets per sport. Precedence: CONFIRMED > FLAT > WR50. "FLAT-or-better" 
 |---|---|---|---|---|---|---|---|---|
 | 1 | 799fad | CONFIRMED | 2 | 100% | +283% | +5.66 | +104.7% | +513563 |
 | 2 | 6bd96a | FLAT | 2 | 50% | +187.5% | +3.75 | -100% | -211500 |
-| 3 | 769c38 | CONFIRMED | 3 | 100% | +122.3% | +3.67 | +12.3% | +14180 |
+| 3 | 769c38 | CONFIRMED | 3 | 100% | +122.3% | +3.67 | +13.4% | +15880 |
 | 4 | 78e8f1 | CONFIRMED | 3 | 66.7% | +111.7% | +3.35 | +88% | +162204 |
 | 5 | 5c32f2 | CONFIRMED | 2 | 50% | +107.5% | +2.15 | +33.9% | +22228 |
 | 6 | cdb33b | CONFIRMED | 4 | 50% | +100% | +4.00 | +56.3% | +39043 |
