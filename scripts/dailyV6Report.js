@@ -1,31 +1,54 @@
 /**
- * dailyV6Report.js — Sharp Intel v6 master daily report.
+ * dailyV6Report.js — Sharp Intel v6 master daily report (truthful build).
  *
- * One-stop consolidated report of every v6-era metric:
+ * Source of truth:
+ *   - Reads the FINAL state of every graded side as it was shipped to users.
+ *   - Inclusion rule MIRRORS the live Pick Performance dashboard
+ *     (`loadAllTimePnL` → `processSide`):
  *
- *   §1. Sample summary
- *   §2. Daily PnL by lock-floor cohort (Δw × Δq buckets)
- *   §3. v8 Vault-Star bucket performance — the "hidden field"
- *       (5★ / 4.5★ are the elite tier we lock at peak units)
- *   §4. Sharp Vault hidden-star performance from sharp_action_positions.v8_stars
- *   §5. Full (Δw × Δq) win matrix + cohort cross-tabs
- *   §6. Wallet roster growth (per-sport snapshot + daily cumulative)
- *   §7. Wallet winners descriptives (cohort summary, quartiles, archetypes)
+ *       NOT superseded
+ *       AND health.status ≠ 'MUTED'
+ *       AND health.status ≠ 'CANCELLED'
+ *       AND lockStage ≠ 'SHADOW'
+ *       AND peak.stars ≥ 2.5
  *
- * Single Firestore pass: loads sharpWalletProfiles + every graded side
- * from sharpFlow{Picks,Spreads,Totals} once, then computes everything
- * in memory. Replaces the need to chain winMatrix / walletGrowthReport /
- * walletWinnersDescriptives / sharpVaultV8Analysis as separate jobs.
+ *   - PnL = peak.units (matches what the dashboard headline / chart show).
+ *   - Cohort tags (1/1, 2/2, MUTE Δw=0, etc.) come from the FROZEN stamps
+ *     on the side doc:
  *
- * Mirrors the live SharpFlow.jsx engine:
- *   - WHITELIST_CONSENSUS_VERSION = 6
- *   - QUALITY_CONTRIB_CUT         = 30
- *   - vaultStarFromDeltas         (identical formula)
+ *       v8_walletConsensusDelta            (Δw at last write before T-15)
+ *       v8_walletConsensusQualityMargin    (Δq at last write; falls back to
+ *                                           contribution-based recompute on
+ *                                           older docs — Δq is a property of
+ *                                           the frozen positions and does
+ *                                           not drift with the whitelist.)
+ *       v8_vaultStar                       (frozen vault-star)
  *
- * v8_vaultStar is recomputed against the LIVE sharpWalletProfiles
- * snapshot for every graded side — same approach as winMatrix.js — so
- * yesterday's grades reflect today's whitelist (eliminates drift from
- * tier promotions/demotions that happened after the pick locked).
+ *   - NOTHING is recomputed against today's `sharpWalletProfiles`. We can't
+ *     time-travel and re-bet the past. The previous version of this report
+ *     did exactly that and as a result silently dropped picks whose backing
+ *     wallets had been demoted post-lock — survivorship bias that made the
+ *     headline look ~+24u when the dashboard said -18u.
+ *
+ *   - Δq fallback: when v8_walletConsensusQualityMargin is missing on an
+ *     older doc, we recompute Δq from `peak.v8Scoring.walletDetails` using
+ *     the frozen `contribution ≥ 30` cut. This produces the SAME number
+ *     the engine wrote at the time because contribution doesn't change.
+ *
+ *   - Δw fallback: there is none. If the frozen winner-margin stamp is
+ *     missing (≈5% of the v6-era sample), the row is included in §1 totals
+ *     but bucketed as `Uncategorized` in cohort tables. We do not recompute
+ *     Δw against today's whitelist because that is the bug we just removed.
+ *
+ * Sections:
+ *   §1. Sample summary — reconciles to the dashboard
+ *   §2. Daily PnL by lock-floor cohort (FROZEN deltas)
+ *   §3. Vault-Star bucket performance (FROZEN v8_vaultStar)
+ *   §4. Sharp Vault hidden-star performance (sharp_action_positions)
+ *   §5. Full (Δw × Δq) win matrix using FROZEN stamps
+ *   §6. RECONCILIATION & ANOMALIES — engine self-check
+ *   §7. Wallet roster growth & profitability
+ *   §8. Wallet winners — descriptive stats
  *
  * Output: DAILY_V6_REPORT.md
  *
@@ -64,7 +87,6 @@ const MIN_BETS = MIN_BETS_ARG ? parseInt(MIN_BETS_ARG.split('=')[1], 10) : 2;
 
 const V6_CUTOVER  = '2026-04-18'; // first day with v8Scoring.walletDetails
 const QUALITY_CUT = 30;
-const WHITELIST_TIERS = new Set(['CONFIRMED', 'FLAT']);
 const PICK_COLS = [
   ['sharpFlowPicks',   'ML'],
   ['sharpFlowSpreads', 'SPREAD'],
@@ -84,15 +106,10 @@ const STAR_BUCKETS = [
   { label: '3.5★ (LOCK FLR)',  min: 3.5, max: 3.5 },
   { label: '3.0★',             min: 3.0, max: 3.0 },
   { label: '2.5★',             min: 2.5, max: 2.5 },
-  { label: '≤2.0★ (DEEP MUTE)', min: 1.0, max: 2.0 },
+  { label: '≤2.0★',            min: 1.0, max: 2.0 },
 ];
 
 // ── Tiny helpers ────────────────────────────────────────────────────────────
-const americanToDecimal = (o) => (o > 0 ? 1 + o / 100 : 1 + 100 / Math.abs(o));
-const flatProfit = (odds, won) => {
-  if (odds == null) return won ? 0.91 : -1;
-  return won ? americanToDecimal(odds) - 1 : -1;
-};
 const sign = (v, d = 1) => (v == null || Number.isNaN(v) ? '—' : (v >= 0 ? '+' : '') + v.toFixed(d));
 const fmtPct = (v, d = 1) => (v == null || Number.isNaN(v) ? '—' : `${v.toFixed(d)}%`);
 const fmtSignPct = (v, d = 1) => (v == null || Number.isNaN(v) ? '—' : `${sign(v, d)}%`);
@@ -123,71 +140,47 @@ function dayDiff(d1, d2) {
   const b = new Date(d2 + 'T00:00:00Z').getTime();
   return Math.round((b - a) / 86400000);
 }
+function clampDelta(v, lo, hi) { return v <= lo ? lo : (v >= hi ? hi : v); }
 
-// ── v6 Two-Factor Vault Star (mirror SharpFlow.jsx) ────────────────────────
-function vaultStarFromDeltas(dw, dq) {
-  if (dw >= 3 || (dw >= 2 && dq >= 1)) return 5.0;
-  let base;
-  if (dw <= -2)      base = 1.0;
-  else if (dw === -1) base = 1.5;
-  else if (dw === 0)  base = 2.5;
-  else if (dw === 1)  base = 3.5;
-  else                base = 4.5; // dw === 2 but dq < 1
-  let adj = 0;
-  if (dq <= -2)      adj = -1.0;
-  else if (dq <= 0)  adj = -0.5;
-  else if (dq >= 3)  adj = 0.5;
-  return Math.max(1.0, Math.min(5.0, base + adj));
-}
-
-// Recompute Δw / Δq for one side against the LIVE sharpWalletProfiles
-// snapshot. Mirrors winMatrix.js / SharpFlow.jsx::computeWalletConsensus.
-function computeDeltas(walletDetails, sideKey, sport, profiles) {
-  if (!Array.isArray(walletDetails) || !sideKey) {
-    return { dw: 0, dq: 0, forW: 0, agW: 0, qFor: 0, qAg: 0, hadDetails: false };
-  }
-  const forSet = new Set();
-  const agSet  = new Set();
-  for (const d of walletDetails) {
-    if (!d?.wallet || !d?.side) continue;
-    const shortId = String(d.wallet).slice(-6);
-    const tier = profiles.get(shortId)?.bySport?.[sport]?.whitelistTier;
-    if (!WHITELIST_TIERS.has(tier)) continue;
-    if (d.side === sideKey) forSet.add(shortId);
-    else                    agSet.add(shortId);
-  }
+// Δq fallback ONLY (not Δw — Δw must come from frozen stamp).
+// `walletDetails` is itself frozen on the doc; contribution doesn't change,
+// so this gives the same answer the engine wrote at the time.
+function qualityMarginFromWalletDetails(walletDetails, sideKey) {
+  if (!Array.isArray(walletDetails) || !sideKey) return null;
   let qFor = 0, qAg = 0;
   for (const d of walletDetails) {
     if ((d?.contribution ?? 0) < QUALITY_CUT) continue;
+    if (!d?.side) continue;
     if (d.side === sideKey) qFor++;
-    else if (d.side)        qAg++;
+    else                    qAg++;
   }
-  return {
-    forW: forSet.size, agW: agSet.size, dw: forSet.size - agSet.size,
-    qFor, qAg, dq: qFor - qAg,
-    hadDetails: walletDetails.length > 0,
-  };
-}
-
-function clampDelta(v, lo, hi) { return v <= lo ? lo : (v >= hi ? hi : v); }
-function cellKey(dw, dq) {
-  const cw = clampDelta(dw, DW_BUCKETS[0], DW_BUCKETS[DW_BUCKETS.length - 1]);
-  const cq = clampDelta(dq, DQ_BUCKETS[0], DQ_BUCKETS[DQ_BUCKETS.length - 1]);
-  return `${cw >= 0 ? '+' : ''}${cw},${cq >= 0 ? '+' : ''}${cq}`;
+  return qFor - qAg;
 }
 
 // ── Main load ──────────────────────────────────────────────────────────────
 //
-// Returns:
-//   profiles   Map<shortId, profile>
-//   pickRows   array of one-row-per-graded-side records:
-//                { date, sport, market, sideKey, dw, dq, vaultStar,
-//                  outcome ('WIN'|'LOSS'|'PUSH'), flatPnl, odds }
-//   walletBets array of one-row-per-(wallet × graded-game):
-//                { date, sport, market, wallet, invested, won, flat,
-//                  dollarPnl }
-//   meta       { totalSidesScanned, gradedSidesUsable, dateMin, dateMax,
-//                ungraded, missingDeltas }
+// Returns one row per *graded* side from the three sharpFlow collections
+// since v6 cutover. Every row carries:
+//
+//   Inclusion fields (the dashboard's processSide rule):
+//     superseded, lockStage, healthStatus, peakStars, peakUnits
+//     inDashboard ← derived bool, true iff we'd render the pick on the page
+//
+//   Frozen v6 stamps:
+//     dwFrozen      — v8_walletConsensusDelta (winner margin)
+//     dqFrozen      — v8_walletConsensusQualityMargin OR fallback recompute
+//                     from walletDetails (contribution ≥ 30); null only if
+//                     walletDetails missing entirely
+//     vaultStar     — v8_vaultStar (frozen)
+//     dwSource/dqSource — 'frozen' | 'recomputed_from_wallet_details' |
+//                          'missing'
+//
+//   Outcome:
+//     outcome   — WIN | LOSS | PUSH
+//     profitU   — peak-unit PnL credit/debit (matches dashboard math)
+//     odds
+//
+// Wallet bets array (per wallet × graded game) feeds §7/§8 only.
 async function loadEverything() {
   const profSnap = await db.collection('sharpWalletProfiles').get();
   const profiles = new Map();
@@ -196,7 +189,6 @@ async function loadEverything() {
   const pickRows   = [];
   const walletBets = [];
   let totalSidesScanned = 0;
-  let gradedSidesUsable = 0;
   let dateMin = null, dateMax = null;
 
   for (const [col, market] of PICK_COLS) {
@@ -207,8 +199,8 @@ async function loadEverything() {
       const sport = d.sport || 'UNK';
       const date  = d.date;
 
-      // Identify the winning side once per game (so we can credit
-      // wallet bets that landed on either side).
+      // Identify the winning side once per game so we can credit wallet
+      // bets that landed on either side (used by §7/§8 only).
       let winningSide = null;
       for (const sk of Object.keys(sides)) {
         const oc = sides[sk]?.result?.outcome;
@@ -216,43 +208,80 @@ async function loadEverything() {
         if (oc === 'LOSS' && OPPOSITE[sk]) { winningSide = OPPOSITE[sk]; break; }
       }
 
-      // Per-side rows for matrix / vault-star analysis.
       for (const [sideKey, side] of Object.entries(sides)) {
         totalSidesScanned += 1;
-        if (side.superseded) continue;
+
         const oc = side?.result?.outcome;
         if (oc !== 'WIN' && oc !== 'LOSS' && oc !== 'PUSH') continue;
+
         const peak = side.peak || side.lock || {};
-        const wd = peak?.v8Scoring?.walletDetails || [];
-        if (!wd.length) continue;
-        const { dw, dq, hadDetails } = computeDeltas(wd, sideKey, sport, profiles);
-        if (!hadDetails) continue;
+        const peakStars = peak?.stars ?? 0;
+        const peakUnits = peak?.units || 1;
 
         const odds = side?.lock?.lockOdds ?? side?.peak?.peakOdds
                   ?? side?.lock?.odds     ?? side?.peak?.odds ?? null;
-        const won = oc === 'WIN';
-        const flat = oc === 'PUSH' ? 0 : flatProfit(odds, won);
-        const vaultStar = vaultStarFromDeltas(dw, dq);
 
-        gradedSidesUsable += 1;
+        // === DASHBOARD INCLUSION RULE ===
+        const superseded   = !!side.superseded;
+        const lockStage    = side.lockStage || null;
+        const healthStatus = side.health?.status || null;
+        const cancelled    = superseded
+                          || healthStatus === 'CANCELLED'
+                          || healthStatus === 'MUTED'
+                          || lockStage === 'SHADOW';
+        const inDashboard  = !cancelled && peakStars >= 2.5;
+
+        // === FROZEN v6 STAMPS ===
+        const dwFrozen = (side.v8_walletConsensusDelta != null) ? Number(side.v8_walletConsensusDelta) : null;
+        let   dqFrozen = (side.v8_walletConsensusQualityMargin != null) ? Number(side.v8_walletConsensusQualityMargin) : null;
+        let   dqSource = dqFrozen != null ? 'frozen' : 'missing';
+        const wd = peak?.v8Scoring?.walletDetails;
+        if (dqFrozen == null && Array.isArray(wd) && wd.length) {
+          const recomputed = qualityMarginFromWalletDetails(wd, sideKey);
+          if (recomputed != null) {
+            dqFrozen = recomputed;
+            dqSource = 'recomputed_from_wallet_details';
+          }
+        }
+        const dwSource = dwFrozen != null ? 'frozen' : 'missing';
+        const vaultStar = (side.v8_vaultStar != null) ? Number(side.v8_vaultStar) : null;
+
+        // === DASHBOARD-CONSISTENT PnL (peak units) ===
+        let profitU = 0;
+        if (oc === 'WIN')  profitU = (side.result?.profit || 0);
+        else if (oc === 'LOSS') profitU = -peakUnits;
+        // PUSH → 0
+
+        // === FLAT-1u PnL (cohort EV lens) ===
+        const flatProfit = (() => {
+          if (oc === 'PUSH') return 0;
+          if (oc === 'WIN') {
+            if (odds == null) return 0.91;
+            return odds > 0 ? odds / 100 : 100 / Math.abs(odds);
+          }
+          return -1;
+        })();
+
         if (date) {
           if (!dateMin || date < dateMin) dateMin = date;
           if (!dateMax || date > dateMax) dateMax = date;
         }
 
         pickRows.push({
+          docId: doc.id,
           date, sport, market, sideKey,
-          dw, dq, vaultStar,
-          outcome: oc, flatPnl: flat, odds,
+          superseded, lockStage, healthStatus,
+          peakStars, peakUnits, odds,
+          inDashboard, cancelled,
+          dwFrozen, dqFrozen, dwSource, dqSource, vaultStar,
+          outcome: oc, profitU, flatProfit,
         });
       }
 
-      // Per-wallet rows for roster / descriptives. Only games with a
-      // resolved winning side contribute — pushes are skipped because
-      // there's no "won/lost" on this dimension.
+      // Per-wallet rows for §7 / §8 — same as before.
       if (winningSide) {
         const seen = new Set();
-        for (const [sideKey, side] of Object.entries(sides)) {
+        for (const [, side] of Object.entries(sides)) {
           const peak = side.peak || side.lock;
           const wd = peak?.v8Scoring?.walletDetails;
           if (!Array.isArray(wd)) continue;
@@ -262,12 +291,13 @@ async function loadEverything() {
             if (seen.has(dedupe)) continue;
             seen.add(dedupe);
             const betSide = sides[w.side];
-            const betOdds = betSide?.peak?.odds ?? betSide?.lock?.odds ?? peak.odds ?? 0;
+            const betOdds = betSide?.peak?.odds ?? betSide?.lock?.odds ?? peak?.odds ?? 0;
             const won = w.side === winningSide ? 1 : 0;
-            const flat = flatProfit(betOdds, won === 1);
+            const dec = betOdds === 0 ? 1.91 : (betOdds > 0 ? 1 + betOdds / 100 : 1 + 100 / Math.abs(betOdds));
+            const flat = won === 1 ? (dec - 1) : -1;
             const invested = Number(w.invested ?? 0);
             walletBets.push({
-              gameKey: doc.id, date, sport, market,
+              gameKey: doc.id, date: d.date, sport, market,
               wallet: w.wallet, invested,
               won, flat, dollarPnl: invested * flat,
             });
@@ -279,26 +309,35 @@ async function loadEverything() {
 
   return {
     profiles, pickRows, walletBets,
-    meta: { totalSidesScanned, gradedSidesUsable, dateMin, dateMax },
+    meta: { totalSidesScanned, dateMin, dateMax },
   };
 }
 
-// ── Cohort definitions (lock-floor framing) ────────────────────────────────
+// ── Cohort definitions (match SharpFlow.jsx lock floor) ────────────────────
 const COHORTS = [
   { id: 'super_top',  label: 'SUPER TOP (Δw≥+2 ∧ Δq≥+2)',          f: (dw, dq) => dw >= 2 && dq >= 2 },
   { id: 'top',        label: 'TOP (Δw≥+2 ∧ Δq≤+1)',                f: (dw, dq) => dw >= 2 && dq <= 1 },
   { id: 'floor_b',    label: 'FLOOR-B (Δw=+1 ∧ Δq≥+2)',            f: (dw, dq) => dw === 1 && dq >= 2 },
   { id: 'floor_a',    label: 'FLOOR-A (Δw=+1 ∧ Δq=+1)',            f: (dw, dq) => dw === 1 && dq === 1 },
   { id: 'sub_floor',  label: 'SUB-FLOOR (Δw=+1 ∧ Δq≤0)',           f: (dw, dq) => dw === 1 && dq <= 0 },
-  { id: 'mute_zero',  label: 'MUTE Δw=0  (winners flat)',          f: (dw)     => dw === 0 },
-  { id: 'mute_neg',   label: 'MUTE Δw≤−1 (winners fading/killed)', f: (dw)     => dw <= -1 },
+  { id: 'mute_zero',  label: 'STALE Δw=0 (winners flat)',          f: (dw)     => dw === 0 },
+  { id: 'mute_neg',   label: 'STALE Δw≤−1 (winners fading/killed)',f: (dw)     => dw <= -1 },
 ];
-const LOCK_COHORT_IDS = new Set(['super_top', 'top', 'floor_b', 'floor_a']); // what we'd actually lock
+const LOCK_COHORT_IDS = new Set(['super_top', 'top', 'floor_b', 'floor_a']);
 
-function emptyAgg() { return { n: 0, w: 0, l: 0, p: 0, pnl: 0 }; }
+function cohortFor(dw, dq) {
+  if (dw == null) return null;
+  for (const c of COHORTS) {
+    if (c.f(dw, dq)) return c.id;
+  }
+  return null;
+}
+
+function emptyAgg() { return { n: 0, w: 0, l: 0, p: 0, profitU: 0, flatU: 0 }; }
 function pushAgg(a, row) {
   a.n  += 1;
-  a.pnl += (row.flatPnl || 0);
+  a.profitU += (row.profitU || 0);
+  a.flatU   += (row.flatProfit || 0);
   if (row.outcome === 'WIN')  a.w += 1;
   else if (row.outcome === 'LOSS') a.l += 1;
   else if (row.outcome === 'PUSH') a.p += 1;
@@ -306,10 +345,10 @@ function pushAgg(a, row) {
 function finalizeAgg(a) {
   const wlTotal = a.w + a.l;
   const wr = wlTotal === 0 ? null : (a.w / wlTotal) * 100;
-  const roi = a.n === 0 ? null : (a.pnl / a.n) * 100;
-  return { ...a, wr, roi };
+  return { ...a, wr };
 }
 
+// ── Sharp Vault loader (unchanged from prior version) ──────────────────────
 async function loadSharpVaultRows() {
   const snap = await db.collection(VAULT_COLLECTION)
     .where('status', '==', 'GRADED')
@@ -319,8 +358,6 @@ async function loadSharpVaultRows() {
   for (const doc of snap.docs) {
     const d = doc.data();
     if (!d.date || d.date < V6_CUTOVER) continue;
-    // Match SHARP_VAULT_V8_REPORT: vaultQualified=false is shadow-only and
-    // should not be included in the Sharp Vault win-rate audit.
     if (d.vaultQualified === false) continue;
     if (d.result !== 'WIN' && d.result !== 'LOSS') continue;
     const invested = Number(d.size ?? d.invested ?? 0);
@@ -378,7 +415,13 @@ function vaultStarBand(row) {
   const sports    = [...new Set(pickRows.map(r => r.sport))].sort();
   const markets   = [...new Set(pickRows.map(r => r.market))].sort();
   const vaultSports = [...new Set(vaultRows.map(r => r.sport))].sort();
-  console.log(`  ${profiles.size} wallet profiles · ${meta.gradedSidesUsable} graded sides usable (of ${meta.totalSidesScanned} scanned) · ${walletBets.length} wallet-bets · ${allDates.length} graded dates · ${vaultRows.length} Sharp Vault hidden-star positions`);
+
+  // The SHIPPED set = what the dashboard counts. Everything below pivots
+  // around this set. Picks dropped from the shipped set still appear in
+  // §6 anomaly counts but never contribute PnL.
+  const shippedRows = pickRows.filter(r => r.inDashboard);
+
+  console.log(`  ${profiles.size} wallet profiles · ${shippedRows.length} shipped sides (of ${pickRows.length} graded · ${meta.totalSidesScanned} scanned) · ${walletBets.length} wallet-bets · ${allDates.length} graded dates · ${vaultRows.length} Sharp Vault hidden-star positions`);
 
   const nowET = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
   const out = [];
@@ -386,19 +429,27 @@ function vaultStarBand(row) {
   out.push('');
   out.push(`_Auto-generated **${nowET} ET** by \`scripts/dailyV6Report.js\`. Do not edit by hand._`);
   out.push('');
-  out.push(`v6 cutover: **${V6_CUTOVER}** · whitelist source: live \`sharpWalletProfiles\` (${profiles.size} profiles, tiers \`CONFIRMED\` + \`FLAT\`) · quality cut: contribution ≥ ${QUALITY_CUT}.`);
+  out.push(`**Source of truth: this report mirrors the live Pick Performance dashboard.** Inclusion = \`lockStage ≠ SHADOW ∧ ¬superseded ∧ health ∉ {MUTED, CANCELLED} ∧ peak.stars ≥ 2.5\`. PnL is in **peak units** (the size shipped to users). Cohort tags (1/1, 2/2, …) come from frozen \`v8_walletConsensus*\` stamps written at last sync before the T-15 freeze. Nothing is recomputed against today's whitelist.`);
+  out.push('');
+  out.push(`v6 cutover: **${V6_CUTOVER}** · whitelist source: live \`sharpWalletProfiles\` (${profiles.size} profiles — display only) · quality cut: contribution ≥ ${QUALITY_CUT}.`);
   out.push('');
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // §1. SAMPLE SUMMARY
+  // §1. SAMPLE SUMMARY (reconciles to dashboard)
   // ═══════════════════════════════════════════════════════════════════════════
   out.push('---');
   out.push('## §1. Sample summary');
   out.push('');
   out.push(mdHeader(['Metric', 'Value']));
   out.push(`| Graded sides scanned | ${meta.totalSidesScanned} |`);
-  out.push(`| Graded sides w/ walletDetails | **${meta.gradedSidesUsable}** |`);
-  out.push(`| Wallet-bets observed | ${walletBets.length} |`);
+  out.push(`| Graded sides w/ outcome | ${pickRows.length} |`);
+  out.push(`| **SHIPPED (matches dashboard)** | **${shippedRows.length}** |`);
+  out.push(`| · of which lockStage = LOCKED | ${shippedRows.filter(r => r.lockStage === 'LOCKED').length} |`);
+  out.push(`| · of which lockStage = null/other | ${shippedRows.filter(r => r.lockStage !== 'LOCKED').length} |`);
+  out.push(`| · with frozen Δw stamp | ${shippedRows.filter(r => r.dwSource === 'frozen').length} |`);
+  out.push(`| · with frozen Δq stamp | ${shippedRows.filter(r => r.dqSource === 'frozen').length} |`);
+  out.push(`| · Δq recomputed from walletDetails (contribution-only) | ${shippedRows.filter(r => r.dqSource === 'recomputed_from_wallet_details').length} |`);
+  out.push(`| · uncategorized (no Δw stamp) | ${shippedRows.filter(r => r.dwFrozen == null).length} |`);
   out.push(`| Sharp Vault hidden-star positions | ${vaultRows.length} |`);
   out.push(`| Unique wallets observed | ${new Set(walletBets.map(b => b.wallet)).size} |`);
   out.push(`| Graded date range | ${meta.dateMin || '—'} … ${meta.dateMax || '—'} |`);
@@ -406,123 +457,143 @@ function vaultStarBand(row) {
   out.push(`| Markets represented | ${markets.join(', ') || '—'} |`);
   out.push('');
 
-  // Top-line: total v6 PnL across the whole sample, broken by lock-eligible
-  // vs everything else — i.e. "if we'd actually played the system".
-  const lockable = pickRows.filter(r => COHORTS.find(c => LOCK_COHORT_IDS.has(c.id) && c.f(r.dw, r.dq)));
-  const lockAgg = finalizeAgg(lockable.reduce((a, r) => { pushAgg(a, r); return a; }, emptyAgg()));
-  const allAgg  = finalizeAgg(pickRows.reduce((a, r) => { pushAgg(a, r); return a; }, emptyAgg()));
-  out.push(mdHeader(['Cohort', 'N', 'W-L-P', 'WR%', 'flat ROI', 'flat P/L (u)']));
-  out.push(`| **All graded sides** | ${allAgg.n} | ${allAgg.w}-${allAgg.l}-${allAgg.p} | ${fmtPct(allAgg.wr)} | ${fmtSignPct(allAgg.roi)} | ${sign(allAgg.pnl, 2)} |`);
-  out.push(`| **Lock-eligible (Δw≥+1 ∧ Δq≥+1) — what v6 plays** | ${lockAgg.n} | ${lockAgg.w}-${lockAgg.l}-${lockAgg.p} | ${fmtPct(lockAgg.wr)} | ${fmtSignPct(lockAgg.roi)} | ${sign(lockAgg.pnl, 2)} |`);
+  // Headline reconciliation: what we'd see on the dashboard.
+  const allGradedAgg = finalizeAgg(pickRows.reduce((a, r) => { pushAgg(a, r); return a; }, emptyAgg()));
+  const shippedAgg   = finalizeAgg(shippedRows.reduce((a, r) => { pushAgg(a, r); return a; }, emptyAgg()));
+  const lockableShipped = shippedRows.filter(r => r.dwFrozen != null && r.dqFrozen != null && r.dwFrozen >= 1 && r.dqFrozen >= 1);
+  const lockableAgg = finalizeAgg(lockableShipped.reduce((a, r) => { pushAgg(a, r); return a; }, emptyAgg()));
+  out.push(mdHeader(['Cohort', 'N', 'W-L-P', 'WR%', 'PnL (peak units)', 'PnL (flat 1u)']));
+  out.push(`| All graded sides | ${allGradedAgg.n} | ${allGradedAgg.w}-${allGradedAgg.l}-${allGradedAgg.p} | ${fmtPct(allGradedAgg.wr)} | ${sign(allGradedAgg.profitU, 2)}u | ${sign(allGradedAgg.flatU, 2)}u |`);
+  out.push(`| **SHIPPED (dashboard-equivalent)** | **${shippedAgg.n}** | **${shippedAgg.w}-${shippedAgg.l}-${shippedAgg.p}** | **${fmtPct(shippedAgg.wr)}** | **${sign(shippedAgg.profitU, 2)}u** | **${sign(shippedAgg.flatU, 2)}u** |`);
+  out.push(`| · of shipped, frozen Δw≥+1 ∧ Δq≥+1 | ${lockableAgg.n} | ${lockableAgg.w}-${lockableAgg.l}-${lockableAgg.p} | ${fmtPct(lockableAgg.wr)} | ${sign(lockableAgg.profitU, 2)}u | ${sign(lockableAgg.flatU, 2)}u |`);
   out.push('');
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // §2. DAILY PnL BY (Δw × Δq) COHORT
+  // §2. DAILY PnL BY (Δw × Δq) COHORT — frozen stamps, peak units
   // ═══════════════════════════════════════════════════════════════════════════
   out.push('---');
-  out.push('## §2. Daily PnL by (Δw × Δq) lock-floor cohort');
+  out.push('## §2. Daily PnL by (frozen Δw × Δq) cohort');
   out.push('');
-  out.push('Each graded date split by its picks\' lock-floor cohort. **LOCK** column = picks that the v6 engine would have actually locked (super top + top + floor-A + floor-B). Cumulative running total is on the rightmost column.');
+  out.push('Every column counts only **shipped** picks (the dashboard set). Cohort tag is the **frozen** Δw / Δq at last write before the T-15 freeze. Picks lacking a Δw stamp are lumped into `Uncat`. PnL in peak units. Cumulative running PnL is on the rightmost column.');
   out.push('');
   out.push(mdHeader([
     'Date',
     'TOTAL N · WR · PnL',
-    'LOCK (Δw≥+1 ∧ Δq≥+1)',
+    'LOCK (1/1+) PnL',
     'SUPER TOP',
     'TOP',
-    'FLOOR-A (1,1)',
-    'FLOOR-B (1,≥2)',
+    'FLOOR-A (1/1)',
+    'FLOOR-B (1/≥2)',
     'SUB-FLOOR',
-    'MUTE Δw=0',
-    'MUTE Δw≤−1',
-    'Cum LOCK PnL',
+    'STALE Δw=0',
+    'STALE Δw≤−1',
+    'Uncat',
+    'Cum Total PnL',
   ]));
-  let cumLockPnl = 0;
+  let cumTotalPnl = 0;
   for (const date of allDates) {
-    const day = pickRows.filter(r => r.date === date);
+    const day = shippedRows.filter(r => r.date === date);
+    if (!day.length) continue;
     const totalAgg = finalizeAgg(day.reduce((a, r) => { pushAgg(a, r); return a; }, emptyAgg()));
+    cumTotalPnl += (totalAgg.profitU || 0);
+
     const cohortAggs = {};
     for (const co of COHORTS) {
-      const slice = day.filter(r => co.f(r.dw, r.dq));
+      const slice = day.filter(r => r.dwFrozen != null && co.f(r.dwFrozen, r.dqFrozen ?? 0));
       cohortAggs[co.id] = finalizeAgg(slice.reduce((a, r) => { pushAgg(a, r); return a; }, emptyAgg()));
     }
-    const lockSlice = day.filter(r => LOCK_COHORT_IDS.has((COHORTS.find(c => c.f(r.dw, r.dq)) || {}).id));
-    const lockAggDay = finalizeAgg(lockSlice.reduce((a, r) => { pushAgg(a, r); return a; }, emptyAgg()));
-    cumLockPnl += (lockAggDay.pnl || 0);
+    const uncat = day.filter(r => r.dwFrozen == null);
+    const uncatAgg = finalizeAgg(uncat.reduce((a, r) => { pushAgg(a, r); return a; }, emptyAgg()));
 
-    const cell = (a) => a.n === 0 ? '—' : `${a.n} · ${fmtPct(a.wr, 0)} · ${sign(a.pnl, 2)}u`;
-    out.push(`| ${date} | ${cell(totalAgg)} | **${cell(lockAggDay)}** | ${cell(cohortAggs.super_top)} | ${cell(cohortAggs.top)} | ${cell(cohortAggs.floor_a)} | ${cell(cohortAggs.floor_b)} | ${cell(cohortAggs.sub_floor)} | ${cell(cohortAggs.mute_zero)} | ${cell(cohortAggs.mute_neg)} | ${sign(cumLockPnl, 2)}u |`);
+    const lockSlice = day.filter(r => {
+      if (r.dwFrozen == null) return false;
+      const co = cohortFor(r.dwFrozen, r.dqFrozen ?? 0);
+      return co && LOCK_COHORT_IDS.has(co);
+    });
+    const lockDayAgg = finalizeAgg(lockSlice.reduce((a, r) => { pushAgg(a, r); return a; }, emptyAgg()));
+
+    const cell = (a) => a.n === 0 ? '—' : `${a.n} · ${fmtPct(a.wr, 0)} · ${sign(a.profitU, 2)}u`;
+    out.push(`| ${date} | ${cell(totalAgg)} | **${cell(lockDayAgg)}** | ${cell(cohortAggs.super_top)} | ${cell(cohortAggs.top)} | ${cell(cohortAggs.floor_a)} | ${cell(cohortAggs.floor_b)} | ${cell(cohortAggs.sub_floor)} | ${cell(cohortAggs.mute_zero)} | ${cell(cohortAggs.mute_neg)} | ${cell(uncatAgg)} | ${sign(cumTotalPnl, 2)}u |`);
   }
   out.push('');
-  out.push('### Cohort cumulative roll-up');
+  out.push('### Cohort cumulative roll-up — shipped picks only');
   out.push('');
-  out.push(mdHeader(['Cohort', 'N', 'W-L-P', 'WR%', 'flat ROI%', 'flat P/L (u)']));
+  out.push(mdHeader(['Cohort', 'N', 'W-L-P', 'WR%', 'PnL (peak units)', 'PnL (flat 1u)']));
   for (const co of COHORTS) {
-    const slice = pickRows.filter(r => co.f(r.dw, r.dq));
+    const slice = shippedRows.filter(r => r.dwFrozen != null && co.f(r.dwFrozen, r.dqFrozen ?? 0));
     const a = finalizeAgg(slice.reduce((acc, r) => { pushAgg(acc, r); return acc; }, emptyAgg()));
     if (a.n === 0) { out.push(`| ${co.label} | 0 | — | — | — | — |`); continue; }
     const isLock = LOCK_COHORT_IDS.has(co.id) ? '**' : '';
-    out.push(`| ${isLock}${co.label}${isLock} | ${a.n} | ${a.w}-${a.l}-${a.p} | ${fmtPct(a.wr)} | ${fmtSignPct(a.roi)} | ${sign(a.pnl, 2)} |`);
+    out.push(`| ${isLock}${co.label}${isLock} | ${a.n} | ${a.w}-${a.l}-${a.p} | ${fmtPct(a.wr)} | ${sign(a.profitU, 2)}u | ${sign(a.flatU, 2)}u |`);
+  }
+  const uncatAll = shippedRows.filter(r => r.dwFrozen == null);
+  if (uncatAll.length) {
+    const a = finalizeAgg(uncatAll.reduce((acc, r) => { pushAgg(acc, r); return acc; }, emptyAgg()));
+    out.push(`| Uncategorized (no Δw stamp) | ${a.n} | ${a.w}-${a.l}-${a.p} | ${fmtPct(a.wr)} | ${sign(a.profitU, 2)}u | ${sign(a.flatU, 2)}u |`);
   }
   out.push('');
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // §3. v8 VAULT-STAR BUCKET PERFORMANCE — the "hidden field"
+  // §3. FROZEN VAULT-STAR BUCKET PERFORMANCE
   // ═══════════════════════════════════════════════════════════════════════════
   out.push('---');
-  out.push('## §3. v8 Vault-Star bucket performance (the hidden `v8_vaultStar` field)');
+  out.push('## §3. Frozen Vault-Star bucket performance');
   out.push('');
-  out.push('Every graded side bucketed by its `v8_vaultStar` value (recomputed from `vaultStarFromDeltas(Δw, Δq)` against the LIVE whitelist). 5★ and 4.5★ are the elite cohort the engine sizes to peak units — this section tells you whether they\'re actually earning that spot.');
+  out.push('Shipped picks bucketed by their frozen `v8_vaultStar` value (or by `peak.stars` when v8_vaultStar wasn\'t stamped). PnL in peak units.');
   out.push('');
   out.push(mdHeader([
-    'Vault-Star bucket', 'N', 'W-L-P', 'WR%', 'flat ROI%', 'flat P/L (u)', 'Avg odds',
+    'Vault-Star bucket', 'N', 'W-L-P', 'WR%', 'PnL (peak u)', 'PnL (flat 1u)', 'Avg odds',
   ]));
   for (const b of STAR_BUCKETS) {
-    const slice = pickRows.filter(r => r.vaultStar >= b.min && r.vaultStar <= b.max);
+    const slice = shippedRows.filter(r => {
+      const s = r.vaultStar != null ? r.vaultStar : r.peakStars;
+      return s != null && s >= b.min && s <= b.max;
+    });
     const a = finalizeAgg(slice.reduce((acc, r) => { pushAgg(acc, r); return acc; }, emptyAgg()));
     if (a.n === 0) { out.push(`| ${b.label} | 0 | — | — | — | — | — |`); continue; }
     const oddsSlice = slice.map(r => r.odds).filter(v => v != null);
     const avgOdds = oddsSlice.length ? (oddsSlice.reduce((s, v) => s + v, 0) / oddsSlice.length) : null;
-    out.push(`| ${b.label} | ${a.n} | ${a.w}-${a.l}-${a.p} | ${fmtPct(a.wr)} | ${fmtSignPct(a.roi)} | ${sign(a.pnl, 2)} | ${avgOdds == null ? '—' : sign(avgOdds, 0)} |`);
+    out.push(`| ${b.label} | ${a.n} | ${a.w}-${a.l}-${a.p} | ${fmtPct(a.wr)} | ${sign(a.profitU, 2)}u | ${sign(a.flatU, 2)}u | ${avgOdds == null ? '—' : sign(avgOdds, 0)} |`);
   }
   out.push('');
 
-  // Per-sport vault-star table for the elite buckets only — answers
-  // "are 5★ NHL picks earning their stars vs MLB vs NBA?"
   out.push('### Elite (≥4.5★) by sport');
   out.push('');
-  out.push(mdHeader(['Sport', 'N', 'W-L-P', 'WR%', 'flat ROI%', 'flat P/L (u)']));
+  out.push(mdHeader(['Sport', 'N', 'W-L-P', 'WR%', 'PnL (peak u)', 'PnL (flat 1u)']));
   for (const sport of sports) {
-    const slice = pickRows.filter(r => r.sport === sport && r.vaultStar >= 4.5);
+    const slice = shippedRows.filter(r => {
+      const s = r.vaultStar != null ? r.vaultStar : r.peakStars;
+      return r.sport === sport && s != null && s >= 4.5;
+    });
     const a = finalizeAgg(slice.reduce((acc, r) => { pushAgg(acc, r); return acc; }, emptyAgg()));
     if (a.n === 0) { out.push(`| ${sport.toUpperCase()} | 0 | — | — | — | — |`); continue; }
-    out.push(`| ${sport.toUpperCase()} | ${a.n} | ${a.w}-${a.l}-${a.p} | ${fmtPct(a.wr)} | ${fmtSignPct(a.roi)} | ${sign(a.pnl, 2)} |`);
+    out.push(`| ${sport.toUpperCase()} | ${a.n} | ${a.w}-${a.l}-${a.p} | ${fmtPct(a.wr)} | ${sign(a.profitU, 2)}u | ${sign(a.flatU, 2)}u |`);
   }
   out.push('');
 
-  // Daily vault-star band timeline — quick visual on whether the elite
-  // buckets are carrying or dragging on any given day.
   out.push('### Daily Vault-Star PnL band');
   out.push('');
-  out.push('Per-day flat PnL split into three bands — `5★` (peak units), `4.5–4.0★` (heavy units), `≤3.5★` (sub-elite). Use this to spot days where the elite tier dominated vs days where the floor tier carried.');
+  out.push('Per-day peak-unit PnL split into three star bands.');
   out.push('');
   out.push(mdHeader(['Date', '5★ N · PnL', '4.5–4.0★ N · PnL', '≤3.5★ N · PnL', 'TOTAL PnL']));
   for (const date of allDates) {
-    const day = pickRows.filter(r => r.date === date);
-    const tier1 = day.filter(r => r.vaultStar >= 5.0);
-    const tier2 = day.filter(r => r.vaultStar >= 4.0 && r.vaultStar < 5.0);
-    const tier3 = day.filter(r => r.vaultStar < 4.0);
+    const day = shippedRows.filter(r => r.date === date);
+    if (!day.length) continue;
+    const starOf = (r) => r.vaultStar != null ? r.vaultStar : (r.peakStars ?? 0);
+    const tier1 = day.filter(r => starOf(r) >= 5.0);
+    const tier2 = day.filter(r => starOf(r) >= 4.0 && starOf(r) < 5.0);
+    const tier3 = day.filter(r => starOf(r) <  4.0);
     const a1 = finalizeAgg(tier1.reduce((a, r) => { pushAgg(a, r); return a; }, emptyAgg()));
     const a2 = finalizeAgg(tier2.reduce((a, r) => { pushAgg(a, r); return a; }, emptyAgg()));
     const a3 = finalizeAgg(tier3.reduce((a, r) => { pushAgg(a, r); return a; }, emptyAgg()));
-    const tot = (a1.pnl || 0) + (a2.pnl || 0) + (a3.pnl || 0);
-    const cell = (a) => a.n === 0 ? '—' : `${a.n} · ${sign(a.pnl, 2)}u`;
+    const tot = (a1.profitU || 0) + (a2.profitU || 0) + (a3.profitU || 0);
+    const cell = (a) => a.n === 0 ? '—' : `${a.n} · ${sign(a.profitU, 2)}u`;
     out.push(`| ${date} | ${cell(a1)} | ${cell(a2)} | ${cell(a3)} | ${sign(tot, 2)}u |`);
   }
   out.push('');
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // §4. SHARP VAULT HIDDEN-STAR PERFORMANCE
+  // §4. SHARP VAULT HIDDEN-STAR PERFORMANCE (separate analysis)
   // ═══════════════════════════════════════════════════════════════════════════
   out.push('---');
   out.push('## §4. Sharp Vault hidden-star performance (`sharp_action_positions.v8_stars`)');
@@ -571,12 +642,12 @@ function vaultStarBand(row) {
   out.push('');
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // §5. FULL (Δw × Δq) WIN MATRIX
+  // §5. FROZEN (Δw × Δq) WIN MATRIX — shipped picks only
   // ═══════════════════════════════════════════════════════════════════════════
   out.push('---');
-  out.push('## §5. Full (Δ_winner × Δ_quality) win matrix');
+  out.push('## §5. Frozen Δw × Δq win matrix — shipped picks');
   out.push('');
-  out.push(`Cell format: \`N · W-L-P · WR% · ROI%\`. Extreme axes (±3) are clamped. ROI% hidden when N < ${MIN_N_FOR_ROI}. **Lock floor: Δw ≥ +1 ∧ Δq ≥ +1.**`);
+  out.push(`Shipped picks only. Frozen \`v8_walletConsensusDelta\` (rows) × frozen \`v8_walletConsensusQualityMargin\` (columns). Cell format: \`N · W-L-P · WR% · ROI%\` (peak-units ROI). Extreme axes (±3) clamped. ROI hidden when N < ${MIN_N_FOR_ROI}. **Lock floor: Δw ≥ +1 ∧ Δq ≥ +1.**`);
   out.push('');
   function buildMatrix(rows) {
     const cells = {};
@@ -584,7 +655,10 @@ function vaultStarBand(row) {
       cells[`${w >= 0 ? '+' : ''}${w},${q >= 0 ? '+' : ''}${q}`] = emptyAgg();
     }
     for (const r of rows) {
-      const k = cellKey(r.dw, r.dq);
+      if (r.dwFrozen == null) continue;
+      const cw = clampDelta(r.dwFrozen, DW_BUCKETS[0], DW_BUCKETS[DW_BUCKETS.length - 1]);
+      const cq = clampDelta(r.dqFrozen ?? 0, DQ_BUCKETS[0], DQ_BUCKETS[DQ_BUCKETS.length - 1]);
+      const k = `${cw >= 0 ? '+' : ''}${cw},${cq >= 0 ? '+' : ''}${cq}`;
       pushAgg(cells[k], r);
     }
     return cells;
@@ -601,32 +675,120 @@ function vaultStarBand(row) {
         const c = finalizeAgg(cells[k]);
         if (c.n === 0) { row.push('—'); continue; }
         const wrStr  = c.wr  == null ? '—' : `${c.wr.toFixed(0)}%`;
-        const roiStr = c.n >= MIN_N_FOR_ROI && c.roi != null ? ` \`${sign(c.roi, 0)}%\`` : '';
+        const roi = c.n ? (c.profitU / c.n) * 100 : null;
+        const roiStr = c.n >= MIN_N_FOR_ROI && roi != null ? ` \`${sign(roi, 0)}%\`` : '';
         row.push(`N=${c.n} · ${c.w}-${c.l}${c.p ? `-${c.p}` : ''} · ${wrStr}${roiStr}`);
       }
       out.push('| ' + row.join(' | ') + ' |');
     }
     out.push('');
   }
-  mdMatrix('All markets', buildMatrix(pickRows), pickRows.length);
+  const shippedWithDw = shippedRows.filter(r => r.dwFrozen != null);
+  mdMatrix('All markets', buildMatrix(shippedWithDw), shippedWithDw.length);
   for (const sport of sports) {
-    const slice = pickRows.filter(r => r.sport === sport);
+    const slice = shippedWithDw.filter(r => r.sport === sport);
     if (!slice.length) continue;
     mdMatrix(`Sport — ${sport.toUpperCase()}`, buildMatrix(slice), slice.length);
   }
   for (const market of markets) {
-    const slice = pickRows.filter(r => r.market === market);
+    const slice = shippedWithDw.filter(r => r.market === market);
     if (!slice.length) continue;
     mdMatrix(`Market — ${market}`, buildMatrix(slice), slice.length);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // §6. WALLET ROSTER GROWTH & PROFITABILITY
+  // §6. RECONCILIATION & ANOMALIES — engine self-check
   // ═══════════════════════════════════════════════════════════════════════════
   out.push('---');
-  out.push('## §6. Wallet roster growth & profitability');
+  out.push('## §6. Reconciliation & anomalies — engine self-check');
   out.push('');
-  out.push(`"Tracked in sport X" = a wallet has placed **≥ ${MIN_BETS} bets** in X within the sample. "Profitable" = cumulative flat PnL > 0. Source: \`v8Scoring.walletDetails\` on every graded v6-era game.`);
+  out.push('Where the live engine\'s **shipped state** disagrees with what the **frozen v6 stamps** say it should have shipped. Read these as bug indicators: each row is a side where the system either left a stale lock on the board or muted a pick that the v6 floor said was lockable. PnL is in peak units (the actual cost / benefit to users).');
+  out.push('');
+
+  // Anomaly classes.
+  const stale = shippedRows.filter(r =>
+    r.dwFrozen != null && r.dqFrozen != null &&
+    !(r.dwFrozen >= 1 && r.dqFrozen >= 1)
+  );
+  const overMute = pickRows.filter(r =>
+    !r.inDashboard && r.cancelled &&
+    r.dwFrozen != null && r.dqFrozen != null &&
+    r.dwFrozen >= 1 && r.dqFrozen >= 1
+  );
+  const shadowStrong = pickRows.filter(r =>
+    r.lockStage === 'SHADOW' && !r.superseded &&
+    r.dwFrozen != null && r.dqFrozen != null &&
+    r.dwFrozen >= 2 && r.dqFrozen >= 2 &&
+    (r.outcome === 'WIN' || r.outcome === 'LOSS' || r.outcome === 'PUSH')
+  );
+  const highStarLowDw = shippedRows.filter(r =>
+    (r.peakStars >= 4.0) && r.dwFrozen != null && r.dwFrozen <= 0
+  );
+
+  const anomalyAgg = (rows) => finalizeAgg(rows.reduce((a, r) => { pushAgg(a, r); return a; }, emptyAgg()));
+
+  out.push('### §6a. Anomaly counts');
+  out.push('');
+  out.push(mdHeader(['Anomaly', 'N', 'W-L-P', 'WR%', 'PnL (peak u)', 'Read as']));
+  const aStale = anomalyAgg(stale);
+  out.push(`| **Stale lock** — shipped LOCKED/ACTIVE, frozen Δw/Δq below floor | ${aStale.n} | ${aStale.w}-${aStale.l}-${aStale.p} | ${fmtPct(aStale.wr)} | ${sign(aStale.profitU, 2)}u | engine left a sub-floor pick on the board |`);
+  const aOverMute = anomalyAgg(overMute);
+  out.push(`| **Over-mute** — muted/cancelled by engine, frozen Δw≥+1 ∧ Δq≥+1 | ${aOverMute.n} | ${aOverMute.w}-${aOverMute.l}-${aOverMute.p} | ${fmtPct(aOverMute.wr)} | ${sign(aOverMute.profitU, 2)}u | engine killed a play that satisfied the floor |`);
+  const aShadow = anomalyAgg(shadowStrong);
+  out.push(`| **Shadow-strong** — stayed SHADOW even though frozen Δw≥+2 ∧ Δq≥+2 | ${aShadow.n} | ${aShadow.w}-${aShadow.l}-${aShadow.p} | ${fmtPct(aShadow.wr)} | ${sign(aShadow.profitU, 2)}u | engine never promoted a SUPER TOP-eligible pick |`);
+  const aStarsNoDw = anomalyAgg(highStarLowDw);
+  out.push(`| **Stars without margin** — peak stars ≥ 4.0★, frozen Δw ≤ 0 | ${aStarsNoDw.n} | ${aStarsNoDw.w}-${aStarsNoDw.l}-${aStarsNoDw.p} | ${fmtPct(aStarsNoDw.wr)} | ${sign(aStarsNoDw.profitU, 2)}u | star math diverged from delta math |`);
+  out.push('');
+
+  // Stale lock bucket breakdown — which sub-floor cohorts contributed.
+  out.push('### §6b. Stale-lock cohort breakdown');
+  out.push('');
+  out.push('Of every shipped pick whose frozen deltas fall **below** the v6 lock floor, which cohort did it land in?');
+  out.push('');
+  out.push(mdHeader(['Cohort (frozen)', 'N', 'W-L-P', 'WR%', 'PnL (peak u)']));
+  for (const co of COHORTS.filter(c => !LOCK_COHORT_IDS.has(c.id))) {
+    const slice = stale.filter(r => co.f(r.dwFrozen, r.dqFrozen));
+    const a = anomalyAgg(slice);
+    if (!a.n) continue;
+    out.push(`| ${co.label} | ${a.n} | ${a.w}-${a.l}-${a.p} | ${fmtPct(a.wr)} | ${sign(a.profitU, 2)}u |`);
+  }
+  out.push('');
+
+  // Daily stale-lock cost — useful to spot whether bug is intermittent.
+  out.push('### §6c. Daily stale-lock PnL drag');
+  out.push('');
+  out.push('Per-day cost of stale locks (the picks the engine left on the board even though their frozen Δw / Δq dropped below the lock floor). Compare to the day\'s shipped PnL.');
+  out.push('');
+  out.push(mdHeader(['Date', 'Shipped N · PnL', 'Stale-lock N · PnL', 'Stale share of shipped PnL']));
+  for (const date of allDates) {
+    const day = shippedRows.filter(r => r.date === date);
+    if (!day.length) continue;
+    const dayAgg = anomalyAgg(day);
+    const dayStale = anomalyAgg(stale.filter(r => r.date === date));
+    const share = dayAgg.profitU !== 0 ? `${(dayStale.profitU / dayAgg.profitU * 100).toFixed(0)}%` : '—';
+    out.push(`| ${date} | ${dayAgg.n} · ${sign(dayAgg.profitU, 2)}u | ${dayStale.n} · ${sign(dayStale.profitU, 2)}u | ${share} |`);
+  }
+  out.push('');
+
+  // Top stale-lock examples for inspection.
+  out.push('### §6d. Top stale-lock examples (worst peak-unit losses)');
+  out.push('');
+  out.push('Last 20 graded sides where engine state and frozen deltas disagree most painfully. Useful for pulling individual docs and walking the audit.');
+  out.push('');
+  out.push(mdHeader(['Date', 'Doc', 'Side', 'Stage / Health', 'Stars · Units', 'Δw / Δq (frozen)', 'Outcome', 'PnL']));
+  const staleSorted = [...stale].sort((a, b) => (a.profitU || 0) - (b.profitU || 0)).slice(0, 20);
+  for (const r of staleSorted) {
+    out.push(`| ${r.date} | \`${r.docId}\` | ${r.sideKey} | ${r.lockStage || '—'} / ${r.healthStatus || '—'} | ${r.peakStars?.toFixed?.(1) || '—'}★ · ${r.peakUnits}u | ${sign(r.dwFrozen, 0)} / ${sign(r.dqFrozen, 0)} | ${r.outcome} | ${sign(r.profitU, 2)}u |`);
+  }
+  out.push('');
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // §7. WALLET ROSTER GROWTH & PROFITABILITY (unchanged math)
+  // ═══════════════════════════════════════════════════════════════════════════
+  out.push('---');
+  out.push('## §7. Wallet roster growth & profitability');
+  out.push('');
+  out.push(`"Tracked in sport X" = a wallet has placed **≥ ${MIN_BETS} bets** in X within the v6-era sample. "Profitable" = cumulative flat PnL > 0. Source: \`v8Scoring.walletDetails\` on every graded v6-era game (every side, not just the shipped set).`);
   out.push('');
 
   function summarizeWallets(rows) {
@@ -652,9 +814,8 @@ function vaultStarBand(row) {
     return wallets;
   }
 
-  // Per-sport snapshot.
   const sportSnapshots = {};
-  out.push('### §6a. Per-sport wallet snapshot');
+  out.push('### §7a. Per-sport wallet snapshot');
   out.push('');
   out.push(mdHeader(['Sport', 'Total wallets seen', `Tracked (≥${MIN_BETS})`, 'Profitable', '% prof', 'WR ≥ 50%', 'WR ≥ 60%', 'WR ≥ 70%']));
   for (const sport of sports) {
@@ -675,8 +836,7 @@ function vaultStarBand(row) {
   out.push(`| **ALL (any sport)** | **${new Set(walletBets.map(b => b.wallet)).size}** | **${trAll.length}** | **${prAll.length}** | **${trAll.length ? (prAll.length / trAll.length * 100).toFixed(0) : '—'}%** | **${trAll.filter(w => w.wr >= 50).length}** | **${trAll.filter(w => w.wr >= 60).length}** | **${trAll.filter(w => w.wr >= 70).length}** |`);
   out.push('');
 
-  // Daily roster growth.
-  out.push('### §6b. Daily roster growth (cumulative through each date)');
+  out.push('### §7b. Daily roster growth (cumulative through each date)');
   out.push('');
   out.push(`Format: \`tracked (profitable)\`. For each date D, recompute the roster using every bet up to and including D.`);
   out.push('');
@@ -699,8 +859,7 @@ function vaultStarBand(row) {
   }
   out.push('');
 
-  // Top profitable wallets per sport.
-  out.push('### §6c. Top 10 profitable wallets by sport');
+  out.push('### §7c. Top 10 profitable wallets by sport');
   out.push('');
   for (const sport of sports) {
     const { tracked } = sportSnapshots[sport];
@@ -716,10 +875,10 @@ function vaultStarBand(row) {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // §7. WALLET WINNERS DESCRIPTIVES
+  // §8. WALLET WINNERS DESCRIPTIVES
   // ═══════════════════════════════════════════════════════════════════════════
   out.push('---');
-  out.push('## §7. Wallet winners — descriptive stats');
+  out.push('## §8. Wallet winners — descriptive stats');
   out.push('');
   out.push(`Every (wallet × sport) row where the wallet has ≥ ${MIN_BETS} bets in the sport AND flat PnL > 0. A wallet can appear in multiple sports.`);
   out.push('');
@@ -762,8 +921,7 @@ function vaultStarBand(row) {
   const winnerRows = [];
   for (const sport of sports) winnerRows.push(...buildWalletSportRows(walletBets, sport).filter(r => r.flatPnl > 0));
 
-  // §7a — Per-sport winner cohort summary.
-  out.push('### §7a. Winner cohort summary by sport');
+  out.push('### §8a. Winner cohort summary by sport');
   out.push('');
   out.push(mdHeader(['Sport', 'Winners', 'Σ bets', 'Σ invested', 'Σ $PnL', 'Mean WR%', 'Mean N', 'Mean avg $', 'Mean bets/day', 'Mean flat ROI']));
   for (const sport of sports) {
@@ -792,10 +950,9 @@ function vaultStarBand(row) {
   }
   out.push('');
 
-  // §7b — Quartile distribution of winners.
-  out.push('### §7b. Winner cohort — quartile distribution');
+  out.push('### §8b. Winner cohort — quartile distribution');
   out.push('');
-  out.push('Spread across every winning (wallet × sport) row. Tells you the typical winner profile vs the outliers.');
+  out.push('Spread across every winning (wallet × sport) row.');
   out.push('');
   const metrics = [
     ['N (bets)',       winnerRows.map(r => r.n),          (v) => v.toFixed(1)],
@@ -818,10 +975,9 @@ function vaultStarBand(row) {
   }
   out.push('');
 
-  // §7c — Cadence archetypes.
-  out.push('### §7c. Winner cadence archetypes');
+  out.push('### §8c. Winner cadence archetypes');
   out.push('');
-  out.push('Where do our winners cluster? Snipers fire rarely but big; volume bettors grind everything. Tells you which trade-frequency profile actually pays.');
+  out.push('Where do our winners cluster? Snipers fire rarely but big; volume bettors grind everything.');
   out.push('');
   const archetype = (r) => {
     if (r.n <= 3)  return 'Sniper (≤3 bets)';
@@ -849,7 +1005,7 @@ function vaultStarBand(row) {
   // ─── Footer ────────────────────────────────────────────────────────────────
   out.push('---');
   out.push('');
-  out.push(`_Driven by \`scripts/dailyV6Report.js\` · regenerates daily via \`.github/workflows/daily-v6-report.yml\` · WHITELIST_CONSENSUS_VERSION = 6 · QUALITY_CONTRIB_CUT = ${QUALITY_CUT}_`);
+  out.push(`_Driven by \`scripts/dailyV6Report.js\` · regenerates daily via \`.github/workflows/daily-v6-report.yml\` · WHITELIST_CONSENSUS_VERSION = 6 · QUALITY_CONTRIB_CUT = ${QUALITY_CUT} · inclusion mirrors live Pick Performance dashboard · cohort tags from frozen v6 stamps_`);
   out.push('');
 
   const outPath = join(REPO_ROOT, 'DAILY_V6_REPORT.md');
@@ -860,24 +1016,14 @@ function vaultStarBand(row) {
   console.log('\n═══════════════════════════════════════════════════════════');
   console.log(`  SHARP INTEL v6 — DAILY MASTER REPORT (${nowET} ET)`);
   console.log('═══════════════════════════════════════════════════════════');
-  console.log(`Sample: ${meta.gradedSidesUsable} graded sides · ${walletBets.length} wallet-bets · ${allDates.length} dates (${meta.dateMin} → ${meta.dateMax})`);
-  console.log(`All sides:    N=${allAgg.n}  WR=${fmtPct(allAgg.wr)}  flatROI=${fmtSignPct(allAgg.roi)}  PnL=${sign(allAgg.pnl, 2)}u`);
-  console.log(`Lock-eligible: N=${lockAgg.n}  WR=${fmtPct(lockAgg.wr)}  flatROI=${fmtSignPct(lockAgg.roi)}  PnL=${sign(lockAgg.pnl, 2)}u`);
-  console.log('\nVault-Star buckets:');
-  for (const b of STAR_BUCKETS) {
-    const slice = pickRows.filter(r => r.vaultStar >= b.min && r.vaultStar <= b.max);
-    const a = finalizeAgg(slice.reduce((acc, r) => { pushAgg(acc, r); return acc; }, emptyAgg()));
-    console.log(`  ${b.label.padEnd(18)} N=${String(a.n).padStart(3)}  WR=${fmtPct(a.wr).padStart(6)}  ROI=${fmtSignPct(a.roi).padStart(7)}  PnL=${sign(a.pnl, 2).padStart(7)}u`);
-  }
-  console.log('\nLock-floor cohorts:');
-  for (const co of COHORTS) {
-    const slice = pickRows.filter(r => co.f(r.dw, r.dq));
-    const a = finalizeAgg(slice.reduce((acc, r) => { pushAgg(acc, r); return acc; }, emptyAgg()));
-    const tag = LOCK_COHORT_IDS.has(co.id) ? '★' : ' ';
-    console.log(`  ${tag} ${co.label.padEnd(45)} N=${String(a.n).padStart(3)}  WR=${fmtPct(a.wr).padStart(6)}  ROI=${fmtSignPct(a.roi).padStart(7)}  PnL=${sign(a.pnl, 2).padStart(7)}u`);
-  }
-  console.log('\nWallet roster:');
-  console.log(`  Tracked (≥${MIN_BETS}): ${trAll.length}   Profitable: ${prAll.length}   WR≥60: ${trAll.filter(w => w.wr >= 60).length}`);
+  console.log(`Sample:   scanned=${meta.totalSidesScanned}  graded=${pickRows.length}  shipped=${shippedRows.length}  dates=${allDates.length} (${meta.dateMin} → ${meta.dateMax})`);
+  console.log(`SHIPPED (= dashboard):  N=${shippedAgg.n}  ${shippedAgg.w}-${shippedAgg.l}-${shippedAgg.p}  WR=${fmtPct(shippedAgg.wr)}  PnL_peak=${sign(shippedAgg.profitU, 2)}u  PnL_flat=${sign(shippedAgg.flatU, 2)}u`);
+  console.log(`Lock-frozen subset:     N=${lockableAgg.n}  ${lockableAgg.w}-${lockableAgg.l}-${lockableAgg.p}  WR=${fmtPct(lockableAgg.wr)}  PnL_peak=${sign(lockableAgg.profitU, 2)}u  PnL_flat=${sign(lockableAgg.flatU, 2)}u`);
+  console.log('\nAnomalies:');
+  console.log(`  Stale lock              N=${stale.length}    PnL=${sign(aStale.profitU, 2)}u`);
+  console.log(`  Over-mute               N=${overMute.length}    PnL=${sign(aOverMute.profitU, 2)}u (would-have)`);
+  console.log(`  Shadow-strong           N=${shadowStrong.length}    PnL=${sign(aShadow.profitU, 2)}u (would-have)`);
+  console.log(`  Stars without margin    N=${highStarLowDw.length}    PnL=${sign(aStarsNoDw.profitU, 2)}u`);
   console.log('\nSharp Vault hidden stars:');
   console.log(`  4★+ positions: ${vaultElite.n}   WR=${fmtPct(vaultElite.wr)}   $ROI=${fmtSignPct(vaultElite.dollarRoi)}   PnL=${fmtMoneyShort(vaultElite.pnl)}`);
 
