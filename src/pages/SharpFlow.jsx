@@ -1006,20 +1006,26 @@ function computeWalletConsensus(walletDetails, sport, sideKey) {
 
   const cfg = result.sportConfig;
 
-  // v6.3 MUTE / CANCEL policy — pure Δ-driven, lock-floor symmetric.
+  // v6.6 MUTE / CANCEL / PROMOTE policy — pure Δ-driven, hybrid floor.
   // See evaluatePickHealth for the full engine. We surface lockAction
   // here so the stamping + backfill layers stay consistent with live
   // evaluation.
   //
-  // Lock floor is `Δw ≥ +1 AND Δq ≥ +1` (Floor G). Once a pick is locked,
-  // any later decay BELOW that floor should downgrade it — otherwise a
-  // pick locked at Δw=+2 that fades to Δw=0 sits alive at full units
-  // even though we would not lock it in that state today (reported by
-  // user 2026-04-24, the Rockets ML case).
+  // Hybrid floor (2026-04-27, post-88-pick edge analysis):
+  //   PROMOTE  : Δw ≥ +1 AND Δq ≥ +1 AND Δw+Δq ≥ +3
+  //   MUTE     : Δw=+1 ∧ Δq=+1 (sum=+2, the bleeder cohort)
   //
-  //   CANCEL: Δ_winner ≤ −2                 (strong profitable-winner dissent)
-  //   MUTE:   Δ_winner ≤ 0                  (proven-winner margin below lock floor)
-  //   MUTE:   Δ_quality ≤ 0  (Δw ≥ +1)      (quality margin below lock floor)
+  // Backtest on 88 shipped picks: the legacy 1/+1 floor delivered +5.04u
+  // peak / +16.8% flat ROI on 53 picks. The hybrid floor delivers +8.01u
+  // peak / +26.0% flat ROI on 45 picks (+59% more peak PnL on 15% fewer
+  // picks). The dropped cell — 1/+1 — went 3-5 (37.5% WR, −35% flat ROI,
+  // −2.97u peak). Symmetric mute on later decay to 1/+1 keeps the engine
+  // honest if a stronger lock fades into the bleeder zone.
+  //
+  //   CANCEL: Δ_winner ≤ −2                       (strong profitable-winner dissent)
+  //   MUTE:   Δ_winner ≤ 0                        (proven-winner margin below floor)
+  //   MUTE:   Δ_quality ≤ 0  (Δw ≥ +1)            (quality margin below floor)
+  //   MUTE:   Δw=+1 ∧ Δq=+1 (sum below hybrid)    (winner+quality both at min)
   const dw = delta;
   const dq = result.qualityMargin;
   if (dw <= -2) {
@@ -1035,12 +1041,16 @@ function computeWalletConsensus(walletDetails, sport, sideKey) {
     if (cfg.mute) result.lockAction = 'MUTE';
     return result;
   }
+  if (dw + dq < 3) {
+    if (cfg.mute) result.lockAction = 'MUTE';
+    return result;
+  }
 
-  // v6 PROMOTION — Floor G (backtest-validated). Δw ≥ +1 AND Δq ≥ +1.
+  // v6.6 PROMOTION — Hybrid floor. Δw ≥ +1 AND Δq ≥ +1 AND Δw+Δq ≥ +3.
   // unitBonus is no longer summed into sizing — sizing is derived from
   // the two-factor star directly. Retained here only so legacy callers
   // and ranking reports read a consistent value (0 always).
-  if (dw >= 1 && dq >= 1 && cfg.promote) {
+  if (dw >= 1 && dq >= 1 && (dw + dq) >= 3 && cfg.promote) {
     result.promotionEligible = true;
   }
   result.unitBonus = 0;
@@ -1048,15 +1058,16 @@ function computeWalletConsensus(walletDetails, sport, sideKey) {
   return result;
 }
 
-// v6.3 Two-Factor Health Engine. Purely Δ-driven — no more WPS /
+// v6.6 Two-Factor Health Engine. Purely Δ-driven — no more WPS /
 // sideFlipped / opp-dominance gates. Rules in precedence order, all
-// symmetric to the lock floor (Δw ≥ +1 AND Δq ≥ +1). If a locked pick
-// decays below the floor on either axis, it mutes.
+// symmetric to the hybrid lock floor (Δw ≥ +1 AND Δq ≥ +1 AND Δw+Δq ≥ +3).
+// If a locked pick decays below the floor on any axis it mutes.
 //
-//   CANCEL  (Δ_winner ≤ −2)                 reason: 'winners_killed'
-//   MUTE    (Δ_winner = −1)                 reason: 'winners_faded'
-//   MUTE    (Δ_winner = 0)                  reason: 'winners_below_floor'
-//   MUTE    (Δ_winner ≥ +1 AND Δ_quality ≤ 0) reason: 'quality_below_floor'
+//   CANCEL  (Δ_winner ≤ −2)                       reason: 'winners_killed'
+//   MUTE    (Δ_winner = −1)                       reason: 'winners_faded'
+//   MUTE    (Δ_winner = 0)                        reason: 'winners_below_floor'
+//   MUTE    (Δ_winner ≥ +1 AND Δ_quality ≤ 0)     reason: 'quality_below_floor'
+//   MUTE    (Δw ≥ +1 ∧ Δq ≥ +1 ∧ Δw+Δq < +3)      reason: 'sum_below_floor'  ← hybrid
 //   ACTIVE  otherwise
 //
 // Rationale (user report 2026-04-24): a pick locked at Δw=+2 / Δq=+2
@@ -1125,6 +1136,16 @@ function evaluatePickHealth({
       return {
         status: 'MUTED',
         reasons: ['quality_below_floor', ...diagnostic],
+        currentStars, wpsDelta,
+        walletDelta: dw, qualityMargin: dq,
+      };
+    }
+    if (dw >= 1 && dq >= 1 && (dw + dq) < 3) {
+      // v6.6 — both axes positive but the bleeder 1/+1 cohort: sum=+2,
+      // below the hybrid floor's sum≥+3 requirement.
+      return {
+        status: 'MUTED',
+        reasons: ['sum_below_floor', ...diagnostic],
         currentStars, wpsDelta,
         walletDelta: dw, qualityMargin: dq,
       };
@@ -1214,11 +1235,15 @@ function classifyContributionTier(v8Scoring, sideKey) {
 
 // Single source of truth for lockStage + who promoted it.
 //
-// v6 Floor G: the only promotion path is Δ_winner ≥ +1 AND Δ_quality ≥ +1.
+// v6.6 Hybrid Floor: the only promotion path is
+//   Δ_winner ≥ +1 AND Δ_quality ≥ +1 AND Δw+Δq ≥ +3.
 // Regime / contribTier / WPS are retained as diagnostic fields only — they
-// do NOT promote picks anymore. Backtest on 74 graded V8 picks validated
-// this cohort at 60.5% WR / +15.5% ROI vs V8 baseline at 44.1% / −15.8%.
-// See V8_TWO_FACTOR_BACKTEST.md.
+// do NOT promote picks anymore. The original Floor G (1/+1, no sum gate)
+// validated at 60.5% WR / +15.5% ROI on the V8 backtest. The 88-pick post-
+// ship audit (2026-04-27) showed the 1/+1 sub-cell going 3-5 (37.5% WR,
+// −35% flat ROI) — the only floor cohort below break-even. Adding the
+// `Δw+Δq ≥ +3` clause drops just that cohort and lifts the floor to
+// 57.8% WR / +26.0% flat ROI on 45 picks. See `v6-edge-analysis` canvas.
 function decideLockStage(regime, v8Scoring, sideKey, sport = null, baseStars = 0) {
   const contribTier = classifyContributionTier(v8Scoring, sideKey);
   if (!sport) return { stage: 'SHADOW', contribTier, promotedBy: null };

@@ -322,13 +322,14 @@ function addToCells(cells, dw, dq, outcome, flatProfit) {
     return { n, w, l, p, wr, roi, pnl };
   }
   const cohorts = [
-    { label: 'Super Top (Δw ≥ +2 ∧ Δq ≥ +2)',        f: (w, q) => w >= 2 && q >= 2 },
-    { label: 'Top      (Δw ≥ +2 ∧ Δq ≤ +1)',         f: (w, q) => w >= 2 && q <= 1 },
-    { label: 'Floor G  (Δw ≥ +1 ∧ Δq ≥ +1) — lock',  f: (w, q) => w >= 1 && q >= 1 },
-    { label: 'Sub-Floor G (Δw = +1 ∧ Δq = +1)',      f: (w, q) => w === 1 && q === 1 },
-    { label: 'Δw = +1 ∧ Δq ≥ +2',                    f: (w, q) => w === 1 && q >= 2 },
-    { label: 'Δw = 0  (winners flat) — MUTE',        f: (w)    => w === 0 },
-    { label: 'Δw ≤ −1 (winners fading) — MUTE/CNL',  f: (w)    => w <= -1 },
+    { label: 'Super Top (Δw ≥ +2 ∧ Δq ≥ +2)',                          f: (w, q) => w >= 2 && q >= 2 },
+    { label: 'Top      (Δw ≥ +2 ∧ Δq ≤ +1)',                           f: (w, q) => w >= 2 && q <= 1 },
+    { label: 'Hybrid Floor (Δw ≥ +1 ∧ Δq ≥ +1 ∧ Δw+Δq ≥ +3) — lock',   f: (w, q) => w >= 1 && q >= 1 && (w + q) >= 3 },
+    { label: 'Floor G  (Δw ≥ +1 ∧ Δq ≥ +1) — historical, pre-v6.6',    f: (w, q) => w >= 1 && q >= 1 },
+    { label: 'Bleeder (Δw = +1 ∧ Δq = +1) — MUTED in v6.6',             f: (w, q) => w === 1 && q === 1 },
+    { label: 'Δw = +1 ∧ Δq ≥ +2  (kept by hybrid)',                    f: (w, q) => w === 1 && q >= 2 },
+    { label: 'Δw = 0  (winners flat) — MUTE',                          f: (w)    => w === 0 },
+    { label: 'Δw ≤ −1 (winners fading) — MUTE/CNL',                    f: (w)    => w <= -1 },
   ];
   for (const co of cohorts) {
     const r = cohort(co.f);

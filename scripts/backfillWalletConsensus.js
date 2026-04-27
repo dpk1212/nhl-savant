@@ -152,11 +152,12 @@ function computeWalletConsensus(walletDetails, sport, sideKey, profiles) {
   const { delta, verdict } = classifyDelta(forW, agW);
   result.forW = forW; result.agW = agW; result.delta = delta; result.verdict = verdict;
 
-  // v6.3 lockAction — pure Δ-driven, lock-floor symmetric (mirrors SharpFlow.jsx)
-  //   CANCEL: Δw ≤ −2
-  //   MUTE:   Δw ≤ 0                (below lock floor on winner axis)
-  //   MUTE:   Δw ≥ +1 AND Δq ≤ 0    (below lock floor on quality axis)
-  //   PROMOTE: Δw ≥ +1 AND Δq ≥ +1  (Floor G)
+  // v6.6 lockAction — pure Δ-driven, hybrid floor (mirrors SharpFlow.jsx)
+  //   CANCEL : Δw ≤ −2
+  //   MUTE   : Δw ≤ 0                                (winner axis below floor)
+  //   MUTE   : Δw ≥ +1 AND Δq ≤ 0                    (quality axis below floor)
+  //   MUTE   : Δw=+1 ∧ Δq=+1 (Δw+Δq < 3)             (1/+1 bleeder cohort, hybrid)
+  //   PROMOTE: Δw ≥ +1 AND Δq ≥ +1 AND Δw+Δq ≥ +3
   const dw = delta;
   const dq = result.qualityMargin;
   if (dw <= -2) {
@@ -166,7 +167,9 @@ function computeWalletConsensus(walletDetails, sport, sideKey, profiles) {
     if (cfg.mute) result.lockAction = 'MUTE';
   } else if (dq <= 0) {
     if (cfg.mute) result.lockAction = 'MUTE';
-  } else if (dw >= 1 && dq >= 1 && cfg.promote) {
+  } else if (dw + dq < 3) {
+    if (cfg.mute) result.lockAction = 'MUTE';
+  } else if (dw >= 1 && dq >= 1 && (dw + dq) >= 3 && cfg.promote) {
     result.promotionEligible = true;
   }
   return result;
@@ -208,7 +211,7 @@ function reconcileHealth(stored, wc, commenceTime = null) {
   const dq = wc.qualityMargin;
   const storedStatus = stored?.status || 'ACTIVE';
   const storedReasons = Array.isArray(stored?.reasons) ? stored.reasons : [];
-  const TWO_FACTOR_REASONS = new Set(['winners_killed', 'winners_faded', 'winners_below_floor', 'quality_below_floor', 'quality_faded', 'whitelist_fade_weak', 'whitelist_fade_strong']);
+  const TWO_FACTOR_REASONS = new Set(['winners_killed', 'winners_faded', 'winners_below_floor', 'quality_below_floor', 'sum_below_floor', 'quality_faded', 'whitelist_fade_weak', 'whitelist_fade_strong']);
   const onlyTwoFactor = storedReasons.length > 0 && storedReasons.every(r => TWO_FACTOR_REASONS.has(r));
 
   // v6.5 — Lock-in freeze. Inside T-15, health is committed: skip every
@@ -243,7 +246,16 @@ function reconcileHealth(stored, wc, commenceTime = null) {
     }
     return null;
   }
-  // Rule 5: nothing triggers mute/cancel — if stored carries only two-factor
+  // Rule 5: live Δw ≥ +1 ∧ Δq ≥ +1 ∧ Δw+Δq < +3 → MUTED (sum_below_floor) — v6.6
+  // The 1/+1 bleeder cohort. Hybrid floor refused promotion in this state and
+  // any earlier lock that decayed into it should mute symmetrically.
+  if (dw >= 1 && dq >= 1 && (dw + dq) < 3) {
+    if (storedStatus !== 'MUTED' || !storedReasons.includes('sum_below_floor')) {
+      return { status: 'MUTED', reasons: ['sum_below_floor'] };
+    }
+    return null;
+  }
+  // Rule 6: nothing triggers mute/cancel — if stored carries only two-factor
   // reasons, flip back to ACTIVE.
   if (storedStatus !== 'ACTIVE' && onlyTwoFactor) {
     return { status: 'ACTIVE', reasons: [] };
