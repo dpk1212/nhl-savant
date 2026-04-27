@@ -9676,20 +9676,17 @@ export default function SharpFlow() {
                         const lockStars = lock.stars || 0;
                         const marketTypeKey = doc.marketType || 'ml';
                         const cardOdds = lockOddsValid ? lock.odds : (peak.odds || lock.odds || 0);
-                        // v6 self-healed health.
-                        const healthResolved = (() => {
-                          if (sd.superseded) return { status: 'CANCELLED', reasons: ['side_flipped'] };
-                          const stored = sd.health || { status: 'ACTIVE', reasons: [] };
-                          const muteNow = !!sd.v8_walletConsensusMuteTriggered;
-                          const cancelNow = !!sd.v8_walletConsensusCancelTriggered;
-                          const reasons = Array.isArray(stored.reasons) ? stored.reasons : [];
-                          const TWO_FACTOR_REASONS = new Set(['winners_killed', 'winners_faded', 'winners_below_floor', 'quality_below_floor', 'quality_faded', 'whitelist_fade_weak', 'whitelist_fade_strong']);
-                          const onlyTwoFactorReasons = reasons.length > 0 && reasons.every(r => TWO_FACTOR_REASONS.has(r));
-                          if (stored.status && stored.status !== 'ACTIVE' && !muteNow && !cancelNow && onlyTwoFactorReasons) {
-                            return { status: 'ACTIVE', reasons: [] };
-                          }
-                          return stored;
-                        })();
+                        // v6.6 — health is engine-truth. evaluatePickHealth
+                        // is the single source of truth for ACTIVE / MUTED /
+                        // CANCELLED under the hybrid floor. Earlier code self-
+                        // healed any "two-factor" mute back to ACTIVE; that
+                        // override pre-dates v6 and was actively un-muting
+                        // valid Δw≤0 / sum-below-floor mutes (e.g. the
+                        // 2026-04-27 VGK ML pick that decayed 2/+2 → 0/0).
+                        // Now we honor whatever evaluatePickHealth wrote.
+                        const healthResolved = sd.superseded
+                          ? { status: 'CANCELLED', reasons: ['side_flipped'] }
+                          : (sd.health || { status: 'ACTIVE', reasons: [] });
                         // v6.4 — recompute stars/units LIVE from stored Δw/Δq.
                         // The stored deltas naturally freeze at T-15 because
                         // syncPickToFirebase stops writing then (v6.5), so
