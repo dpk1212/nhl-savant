@@ -1,8 +1,8 @@
 # Win Matrix — (Δ_winner × Δ_quality) cross-tab
 
-_Auto-generated 2026-04-27T20:39:10.404Z by `scripts/winMatrix.js`. Do not edit by hand._
+_Auto-generated 2026-04-27T22:12:56.539Z by `scripts/winMatrix.js`. Do not edit by hand._
 
-**Sample:** 132 graded, non-superseded sides with walletDetails available (of 753 scanned).
+**Sample:** 132 graded, non-superseded sides with walletDetails available (of 756 scanned).
 
 **Date range:** 2026-04-18 … 2026-04-26
 
@@ -106,9 +106,10 @@ Current live lock floor (SharpFlow v6.3): **Δw ≥ +1 AND Δq ≥ +1**. Current
 |---|---|---|---|---|---|
 | Super Top (Δw ≥ +2 ∧ Δq ≥ +2) | 33 | 22-10-1 | 68.8% | +45.3% | +14.96u |
 | Top      (Δw ≥ +2 ∧ Δq ≤ +1) | 7 | 5-2-0 | 71.4% | +42.2% | +2.95u |
-| Floor G  (Δw ≥ +1 ∧ Δq ≥ +1) — lock | 71 | 46-24-1 | 65.7% | +34.0% | +24.14u |
-| Sub-Floor G (Δw = +1 ∧ Δq = +1) | 12 | 8-4-0 | 66.7% | +29.9% | +3.59u |
-| Δw = +1 ∧ Δq ≥ +2 | 19 | 11-8-0 | 57.9% | +13.9% | +2.64u |
+| Hybrid Floor (Δw ≥ +1 ∧ Δq ≥ +1 ∧ Δw+Δq ≥ +3) — lock | 59 | 38-20-1 | 65.5% | +34.8% | +20.55u |
+| Floor G  (Δw ≥ +1 ∧ Δq ≥ +1) — historical, pre-v6.6 | 71 | 46-24-1 | 65.7% | +34.0% | +24.14u |
+| Bleeder (Δw = +1 ∧ Δq = +1) — MUTED in v6.6 | 12 | 8-4-0 | 66.7% | +29.9% | +3.59u |
+| Δw = +1 ∧ Δq ≥ +2  (kept by hybrid) | 19 | 11-8-0 | 57.9% | +13.9% | +2.64u |
 | Δw = 0  (winners flat) — MUTE | 37 | 10-27-0 | 27.0% | -46.2% | -17.09u |
 | Δw ≤ −1 (winners fading) — MUTE/CNL | 22 | 6-16-0 | 27.3% | -56.1% | -12.35u |
 
