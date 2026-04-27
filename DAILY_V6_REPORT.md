@@ -1,6 +1,6 @@
 # Sharp Intel v6 — Daily Master Report
 
-_Auto-generated **4/27/2026, 4:48:15 AM ET** by `scripts/dailyV6Report.js`. Do not edit by hand._
+_Auto-generated **4/27/2026, 10:50:21 AM ET** by `scripts/dailyV6Report.js`. Do not edit by hand._
 
 v6 cutover: **2026-04-18** · whitelist source: live `sharpWalletProfiles` (114 profiles, tiers `CONFIRMED` + `FLAT`) · quality cut: contribution ≥ 30.
 
@@ -9,7 +9,7 @@ v6 cutover: **2026-04-18** · whitelist source: live `sharpWalletProfiles` (114 
 
 | Metric | Value |
 |---|---|
-| Graded sides scanned | 153 |
+| Graded sides scanned | 154 |
 | Graded sides w/ walletDetails | **132** |
 | Wallet-bets observed | 571 |
 | Sharp Vault hidden-star positions | 895 |
