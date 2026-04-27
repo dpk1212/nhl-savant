@@ -5008,14 +5008,21 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   // promoted via whitelist (Δ≥+1, agW=0, baseStars≥1.0). This is the
   // renderer-side companion to the syncPickToFirebase-side override
   // shipped in v5.4.
-  // v6 Two-Factor Lock Gate: Floor G (Δw≥+1 AND Δq≥+1) is the sole
-  // promotion path. We keep the $10k invested floor and demote regime /
-  // star thresholds / legacy sub-paths to nothing. isShadow = meets
-  // invest floor but doesn't yet clear the two-factor gate.
-  const twoFactorFloor = sr?.v8Scoring && consensusSide && gd.sport
-    ? decideLockStage(sr.regime, sr.v8Scoring, consensusSide, gd.sport, sr.stars).promotedBy === 'two-factor-floor'
-    : false;
-  const meetsInvest = consensusInvested >= 10000;
+  // v6.6 Two-Factor Lock Gate: Hybrid Floor (Δw≥+1 ∧ Δq≥+1 ∧ Δw+Δq≥+3)
+  // is the sole promotion path. The dollar floor is delegated to the
+  // engine's `minInvestedFloor(contribTier)` ($2.5k STRONG/STANDARD,
+  // $5k LEAN) — the same gate `syncPickToFirebase` enforces on write.
+  // The previous renderer-side hard $10k gate was stricter than the
+  // engine and silently blocked locks (e.g. 4/27 TEX ML at $3.4k with
+  // Δw=+2 / Δq=+3 / contribTier=STRONG): `isLocked` and `isShadow`
+  // both went false, the sync useEffect returned early, and
+  // syncPickToFirebase never ran.
+  const decision = sr?.v8Scoring && consensusSide && gd.sport
+    ? decideLockStage(sr.regime, sr.v8Scoring, consensusSide, gd.sport, sr.stars)
+    : null;
+  const twoFactorFloor = decision?.promotedBy === 'two-factor-floor';
+  const minInvForSide = minInvestedFloor(decision?.contribTier);
+  const meetsInvest = consensusInvested >= minInvForSide;
   const meetsThreshold = meetsInvest && sr.stars >= 3.5;
   const isLocked = twoFactorFloor && meetsInvest;
   const isShadow = meetsInvest && !twoFactorFloor && sr.stars >= 2.5;
@@ -5228,11 +5235,15 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     && (spreadSharpFeatures.conWalletCount || 0) === 1
     && (spreadSharpFeatures.conTotalInvested || 0) >= 25000
     && spreadGameData?.positions?.some(p => p.side === spreadConsensusSide && (p.sportPnl || 0) >= 500000);
-  // v6 Two-Factor spread lock gate — identical policy to ML.
-  const spreadTwoFactorFloor = spreadSr?.v8Scoring && spreadConsensusSide && gd.sport
-    ? decideLockStage(spreadSr.regime, spreadSr.v8Scoring, spreadConsensusSide, gd.sport, spreadSr.stars).promotedBy === 'two-factor-floor'
-    : false;
-  const spreadMeetsInvest = (spreadSharpFeatures?.conTotalInvested || 0) >= 10000;
+  // v6.6 Two-Factor spread lock gate — identical policy to ML. Dollar
+  // floor delegated to engine `minInvestedFloor(contribTier)` so the
+  // renderer can't be stricter than the engine (see ML gate above).
+  const spreadDecision = spreadSr?.v8Scoring && spreadConsensusSide && gd.sport
+    ? decideLockStage(spreadSr.regime, spreadSr.v8Scoring, spreadConsensusSide, gd.sport, spreadSr.stars)
+    : null;
+  const spreadTwoFactorFloor = spreadDecision?.promotedBy === 'two-factor-floor';
+  const spreadMinInv = minInvestedFloor(spreadDecision?.contribTier);
+  const spreadMeetsInvest = (spreadSharpFeatures?.conTotalInvested || 0) >= spreadMinInv;
   const spreadMeetsThreshold = spreadSr && spreadMeetsInvest && spreadSr.stars >= 3.5;
   const isSpreadLocked = !!spreadSr && spreadTwoFactorFloor && spreadMeetsInvest;
   const isSpreadShadow = !!spreadSr && spreadMeetsInvest && !spreadTwoFactorFloor && spreadSr.stars >= 2.5;
@@ -5367,11 +5378,14 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     && (totalSharpFeatures.conWalletCount || 0) === 1
     && (totalSharpFeatures.conTotalInvested || 0) >= 25000
     && totalGameData?.positions?.some(p => p.side === totalConsensusSide && (p.sportPnl || 0) >= 500000);
-  // v6 Two-Factor totals lock gate — identical policy to ML/spread.
-  const totalTwoFactorFloor = totalSr?.v8Scoring && totalConsensusSide && gd.sport
-    ? decideLockStage(totalSr.regime, totalSr.v8Scoring, totalConsensusSide, gd.sport, totalSr.stars).promotedBy === 'two-factor-floor'
-    : false;
-  const totalMeetsInvest = (totalSharpFeatures?.conTotalInvested || 0) >= 10000;
+  // v6.6 Two-Factor totals lock gate — identical policy to ML/spread.
+  // Dollar floor delegated to engine `minInvestedFloor(contribTier)`.
+  const totalDecision = totalSr?.v8Scoring && totalConsensusSide && gd.sport
+    ? decideLockStage(totalSr.regime, totalSr.v8Scoring, totalConsensusSide, gd.sport, totalSr.stars)
+    : null;
+  const totalTwoFactorFloor = totalDecision?.promotedBy === 'two-factor-floor';
+  const totalMinInv = minInvestedFloor(totalDecision?.contribTier);
+  const totalMeetsInvest = (totalSharpFeatures?.conTotalInvested || 0) >= totalMinInv;
   const totalMeetsThreshold = totalSr && totalMeetsInvest && totalSr.stars >= 3.5;
   const isTotalLocked = !!totalSr && totalTwoFactorFloor && totalMeetsInvest;
   const isTotalShadow = !!totalSr && totalMeetsInvest && !totalTwoFactorFloor && totalSr.stars >= 2.5;
