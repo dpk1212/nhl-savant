@@ -1,0 +1,58 @@
+name: V6 Full Analysis (deep diagnostic)
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 9:00 AM ET daily — runs after V6 daily report (8:45 ET) so the deep
+    # diagnostic reflects the same final-locked sample.
+    - cron: '0 13 * * *'
+
+jobs:
+  analyze:
+    name: Generate V6 Full Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate V6 full analysis
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: |
+          echo "════════════════════════════════════════════════════════════════"
+          echo "  V6 FULL ANALYSIS — deep diagnostic"
+          echo "  Time: $(TZ='America/New_York' date '+%Y-%m-%d %I:%M %p ET')"
+          echo "════════════════════════════════════════════════════════════════"
+          node scripts/v6FullAnalysis.js
+
+      - name: Commit analysis
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add V6_FULL_ANALYSIS.md
+          git diff --quiet && git diff --staged --quiet || (
+            git commit -m "Auto-update: V6 Full Analysis [$(TZ='America/New_York' date +'%Y-%m-%d')]" &&
+            git stash --include-untracked &&
+            git pull --rebase origin main &&
+            git stash pop || true &&
+            for i in 1 2 3; do
+              git push && break
+              echo "Push attempt $i failed, retrying..."
+              sleep 2
+              git pull --rebase origin main
+            done
+          )
