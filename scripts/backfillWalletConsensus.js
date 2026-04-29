@@ -103,20 +103,37 @@ function classifyDelta(forW, agW) {
   return { delta, verdict };
 }
 
-// v6 two-factor Vault star — MUST match src/pages/SharpFlow.jsx.
+// v7.0 two-factor Vault star — MUST match src/pages/SharpFlow.jsx.
+// Σ-driven ladder (see V6_FULL_ANALYSIS, ρ(Δw+Δq, flat ROI)=+0.319 ✓).
 function vaultStarFromDeltas(dw, dq) {
-  if (dw >= 3 || (dw >= 2 && dq >= 1)) return 5.0;
+  if (dw >= 1 && dq >= 1) {
+    const sum = dw + dq;
+    if (sum >= 6) return 5.0;
+    if (sum === 5) return 4.5;
+    if (sum === 4) return 4.0;
+    if (sum === 3) return 3.5;
+    return 2.5;
+  }
   let base;
   if (dw <= -2) base = 1.0;
   else if (dw === -1) base = 1.5;
   else if (dw === 0) base = 2.5;
-  else if (dw === 1) base = 3.5;
-  else base = 4.5;
+  else base = 3.0;
   let adj = 0;
-  if (dq <= -2) adj = -1.0;
-  else if (dq <= 0) adj = -0.5;
-  else if (dq >= 3) adj = 0.5;
+  if (dq <= -2) adj = -0.5;
+  else if (dq <= 0) adj = -0.25;
   return Math.max(1.0, Math.min(5.0, base + adj));
+}
+
+// v7.0 lock-tier classifier — mirrors SharpFlow.jsx::lockTierFromDeltas.
+function lockTierFromDeltas(dw, dq) {
+  if (!Number.isFinite(dw) || !Number.isFinite(dq)) return 'MUTED';
+  if (dw < 1 || dq < 1) return 'MUTED';
+  const sum = dw + dq;
+  if (sum >= 7) return 'ELITE';
+  if (sum >= 5) return 'LOCKED';
+  if (sum >= 3) return 'LEAN';
+  return 'MUTED';
 }
 
 function computeWalletConsensus(walletDetails, sport, sideKey, profiles) {
@@ -179,6 +196,7 @@ function buildStampFields(wc, sport, baseStars, promotedBy) {
   const vaultStar = (wc.forW || wc.agW || wc.qualityMargin !== 0)
     ? vaultStarFromDeltas(wc.delta, wc.qualityMargin)
     : null;
+  const lockTier = lockTierFromDeltas(wc.delta, wc.qualityMargin);
   return {
     v8_walletConsensusVersion: WHITELIST_CONSENSUS_VERSION,
     v8_walletConsensusSport: sport || null,
@@ -196,6 +214,7 @@ function buildStampFields(wc, sport, baseStars, promotedBy) {
     v8_walletConsensusQualityAgT30: wc.qualityAgT30,
     v8_walletConsensusQualityMargin: wc.qualityMargin,
     v8_vaultStar: vaultStar,
+    v8_lockTier: lockTier,
   };
 }
 

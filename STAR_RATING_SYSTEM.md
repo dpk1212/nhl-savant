@@ -1,7 +1,65 @@
-# Sharp Flow — Star Rating V6 (Two-Factor Vault Star)
+# Sharp Flow — Star Rating V7.0 (Σ-driven, LEAN tier)
 
-> **Active system — deployed 2026-04-20.** All Sharp Intel game cards and
-> Locked Picks use this. Backtested on 74 graded V8 picks before ship; see
+> **Active system — v7.0 deployed 2026-04-29.** Replaces the v6.6 Hybrid
+> Floor. All Sharp Intel game cards and Locked Picks use this. Driven by
+> the V6 Full Analysis (`V6_FULL_ANALYSIS.md`, N=104, 4/18–4/28).
+>
+> Earlier system docs are kept inline below for change-history; the
+> active rules are in **§v7.0 floor + ladder** at the top.
+
+## §v7.0 floor + ladder (active 2026-04-29)
+
+```
+Lock floor:   Δw ≥ +1  AND  Δq ≥ +1  AND  Δw+Δq ≥ +5
+LEAN tier:    Δw ≥ +1  AND  Δq ≥ +1  AND  Δw+Δq ∈ {3, 4}     ← tracked, 0u
+MUTED:        otherwise (handled by health engine)
+
+Sub-tiers inside the lock floor:
+  ELITE  (Σ ≥ +7)   →  5.0★   ML 4.0u   S+T 2.5u
+  LOCKED (Σ = +6)   →  5.0★   ML 3.0u   S+T 2.0u
+  LOCKED (Σ = +5)   →  4.5★   ML 2.0u   S+T 1.5u
+  LEAN   (Σ = +4)   →  4.0★   0u  (display only)
+  LEAN   (Σ = +3)   →  3.5★   0u  (display only)
+```
+
+LEAN picks would have locked under the v6.6 Σ ≥ +3 floor but fall short
+of the v7.0 Σ ≥ +5 lock floor. They render in the Locked Picks list
+with a blue **LEAN · TRACK ONLY** badge replacing the unit chip and a
+0u stake — visible enough to monitor cohort regression but never debit
+the bankroll.
+
+### Why Σ ≥ +5
+
+Source: `V6_FULL_ANALYSIS.md` (N=104, 11 graded days).
+
+```
+ρ(Δw+Δq, flat ROI) = +0.319  ✓ p<.01
+
+Σ ≥ +3 (v6.6 floor) :  N=72   WR 51.4%  flat ROI +12.8%  peak +2.4u
+Σ ≥ +5 (v7.0 floor) :  N=31   WR 61.3%  flat ROI +35.2%  peak +5.8u   t≈1.95
+Σ ≥ +6              :  N=20   WR 65.0%  flat ROI +42.8%  peak +7.9u
+Σ ≥ +7              :  N=11   WR 72.7%  flat ROI +59.0%  peak +6.2u
+```
+
+Σ ≥ +5 is the first cumulative cohort to clear t = 1.96 on the flat-PnL
+t-test. Σ ∈ {3, 4} is directionally flat (-7% to -29% flat ROI) so we
+mute it from sizing but keep it in view as LEAN.
+
+### v7.0 ladder rationale
+
+Ladder B (calibrated). The ELITE bonus on Σ ≥ +7 honors the Path-1 audit
+(+9.4u peak, 11-5, 68.8% WR). The 4.5★ S+T bump from 1.25u → 1.50u
+matches the cohort cell edge. Bayesian half-Kelly on the Σ ≥ +5 cohort
+sits at ~9–10% bankroll; ladder B uses about half of that to cushion
+sample size.
+
+---
+
+## Legacy v6.6 (kept for change-history)
+
+> Active 2026-04-20 → 2026-04-29. Replaced by v7.0.
+
+> Backtested on 74 graded V8 picks before ship; see
 > [V8_TWO_FACTOR_BACKTEST.md](V8_TWO_FACTOR_BACKTEST.md).
 
 ## Overview — the two signals that matter
@@ -104,7 +162,7 @@ on their own in v6.
 
 Δ_quality is reflected in the star/unit, not the badge.
 
-## Firestore stamp (v6)
+## Firestore stamp (v7.0)
 
 Every side doc carries:
 
@@ -113,8 +171,16 @@ v8_walletConsensusVersion: 6
 v8_walletConsensusForW / AgW / Delta / Verdict
 v8_walletConsensusQualityForT30 / QualityAgT30 / QualityMargin
 v8_walletConsensusMuteTriggered / CancelTriggered / PromotionTriggered
-v8_vaultStar   (two-factor Vault Star)
+v8_vaultStar   (Σ-driven Vault Star, v7.0 ladder)
+v8_lockTier    (NEW v7.0: ELITE | LOCKED | LEAN | MUTED)
 ```
+
+`lockStage` in Firestore stays binary (`LOCKED` / `SHADOW`) — every pick
+that passes the v6.6 base (`Δw≥+1 ∧ Δq≥+1 ∧ Σ≥+3`) writes as LOCKED so
+LEANs flow into the Locked Picks list. The renderer derives the live
+sub-tier (ELITE / LOCKED / LEAN) from current Δw/Δq via
+`lockTierFromDeltas` so the badge stays honest if signals decay between
+sync and tipoff.
 
 Backfill / restamp is handled by `scripts/backfillWalletConsensus.js`.
 

@@ -322,17 +322,25 @@ function computeSharpFeatures(positions, consensusSide) {
 // return 0 because they can't lock per Floor G. consensusPenalty /
 // regimeBonus are kept as no-ops so legacy callers don't error, but
 // sizing is driven entirely by stars now.
-function calculateUnits(stars, consensusPenalty = 0, odds = null, regimeBonus = 0) {
+// v7.0 ML unit ladder — calibrated to V6_FULL_ANALYSIS cohort edge.
+//   ELITE  (Σ ≥ +7) → 4.0u  (was 3.0★ ladder; bumped to honor +9.4u peak Path-1)
+//   5.0★   (Σ ≥ +6) → 3.0u
+//   4.5★   (Σ = +5) → 2.0u
+//   4.0★, 3.5★      → 0u when lockTier === 'LEAN' (display-only)
+// Legacy ladder retained for callers that don't pass lockTier (graded picks etc.).
+function calculateUnits(stars, consensusPenalty = 0, odds = null, regimeBonus = 0, lockTier = null) {
+  if (lockTier === 'LEAN') return 0;
   let units;
-  if (stars >= 5.0) units = 3.00;
-  else if (stars >= 4.5) units = 2.00;
-  else if (stars >= 4.0) units = 1.25;
-  else if (stars >= 3.5) units = 0.75;
+  if (lockTier === 'ELITE') units = 4.00;
+  else if (stars >= 5.0)   units = 3.00;
+  else if (stars >= 4.5)   units = 2.00;
+  else if (stars >= 4.0)   units = 1.25;
+  else if (stars >= 3.5)   units = 0.75;
   else units = 0;
   if (units === 0) return 0;
-  if (odds != null && odds >= 200) units = Math.min(units, 0.5);
-  else if (odds != null && odds >= 151) units = Math.min(units, 1.0);
-  else if (odds != null && odds >= 100) units = Math.min(units, 2.0);
+  if (odds != null && odds >= 200) units = Math.min(units, lockTier === 'ELITE' ? 1.0 : 0.5);
+  else if (odds != null && odds >= 151) units = Math.min(units, lockTier === 'ELITE' ? 2.0 : 1.0);
+  else if (odds != null && odds >= 100) units = Math.min(units, lockTier === 'ELITE' ? 3.0 : 2.0);
   return units;
 }
 
@@ -546,19 +554,69 @@ function percentileOf(sortedArr, val) {
 // Δq (quality margin at T=30 contribution) adjusts ±0.5, with a hard
 // quality-collapse floor. Elite is Δw≥+3 OR (Δw≥+2 AND Δq≥+1).
 // See V8_TWO_FACTOR_BACKTEST.md for the pre-ship validation.
+// v7.0 Σ-driven Vault star ladder (2026-04-29). Replaces the v6.6 path-
+// based ladder where Δw ≥ +3 or (Δw=+2 ∧ Δq≥+1) maxed out at 5.0★.
+//
+// The V6 Full Analysis (`V6_FULL_ANALYSIS.md`, N=104, 4/18–4/28) showed:
+//   - ρ(Δw+Δq, flat ROI) = +0.319 ✓ p<.01 — Σ is a real predictor.
+//   - Σ ≥ +5 is the first cumulative cohort to clear t = 1.96 on the flat-
+//     PnL t-test (+35.2% flat ROI, 61.3% WR on N=31).
+//   - Σ ∈ {+3, +4} is directionally flat (the 1/+1 bleeder is muted by
+//     the health engine; the rest hover near break-even).
+//   - Σ ≥ +6 is the elite tier (+42.8% flat ROI, 65% WR on N=20).
+//
+// New ladder (Δw ≥ +1 ∧ Δq ≥ +1 baseline):
+//   Σ ≥ +6  → 5.0★            (LOCKED · 3.0u ML / 2.0u S+T  · ELITE bonus
+//                               in `calculateUnits` when Σ ≥ +7)
+//   Σ = +5  → 4.5★            (LOCKED · 2.0u ML / 1.5u S+T)
+//   Σ = +4  → 4.0★            (LEAN — display only, 0u; tier overrides ladder)
+//   Σ = +3  → 3.5★            (LEAN — display only, 0u)
+//   Σ = +2  → 2.5★            (1/1 cell — already MUTED by health engine)
+//
+// Below the v6.6 base (one or both deltas ≤ 0), the legacy diagnostic
+// ladder is retained so the muted-state UI reads intuitively. These
+// stars never ship with units regardless of value.
 function vaultStarFromDeltas(dw, dq) {
-  if (dw >= 3 || (dw >= 2 && dq >= 1)) return 5.0;
+  if (dw >= 1 && dq >= 1) {
+    const sum = dw + dq;
+    if (sum >= 6) return 5.0;
+    if (sum === 5) return 4.5;
+    if (sum === 4) return 4.0;
+    if (sum === 3) return 3.5;
+    return 2.5;
+  }
   let base;
   if (dw <= -2) base = 1.0;
   else if (dw === -1) base = 1.5;
   else if (dw === 0) base = 2.5;
-  else if (dw === 1) base = 3.5;
-  else base = 4.5; // dw === 2 but dq < 1
+  else base = 3.0;
   let adj = 0;
-  if (dq <= -2) adj = -1.0;
-  else if (dq <= 0) adj = -0.5;
-  else if (dq >= 3) adj = 0.5;
+  if (dq <= -2) adj = -0.5;
+  else if (dq <= 0) adj = -0.25;
   return Math.max(1.0, Math.min(5.0, base + adj));
+}
+
+// v7.0 lock-tier classifier. Sole source of truth for whether a pick
+// renders as LOCKED (ship at full size), LEAN (track but bet 0u), or
+// MUTED (legacy mute path). Mirrors `vaultStarFromDeltas` 1-for-1.
+//
+//   ELITE  : Δw ≥ +1 ∧ Δq ≥ +1 ∧ Δw+Δq ≥ +7    (Path-1 elite cell)
+//   LOCKED : Δw ≥ +1 ∧ Δq ≥ +1 ∧ Δw+Δq ∈ {5,6} (full ladder size)
+//   LEAN   : Δw ≥ +1 ∧ Δq ≥ +1 ∧ Δw+Δq ∈ {3,4} (tracked, 0u)
+//   MUTED  : everything else (the (1,1) bleeder + below-base deltas)
+//
+// LEAN is a UI-only state — picks here still write `lockStage='LOCKED'`
+// to Firestore so they appear in the Locked Picks list with a LEAN
+// badge replacing the unit chip. The health engine continues to mute
+// the (1,1) cell + Δw ≤ 0 / Δq ≤ 0 cohorts unchanged.
+function lockTierFromDeltas(dw, dq) {
+  if (!Number.isFinite(dw) || !Number.isFinite(dq)) return 'MUTED';
+  if (dw < 1 || dq < 1) return 'MUTED';
+  const sum = dw + dq;
+  if (sum >= 7) return 'ELITE';
+  if (sum >= 5) return 'LOCKED';
+  if (sum >= 3) return 'LEAN';
+  return 'MUTED';
 }
 
 // v6 Hero chips — human-readable rendering of the two-factor signal that
@@ -577,7 +635,7 @@ function renderHeroChips({ dw, dq, forW, agW, qForT, qAgT, sport }) {
   const tooltip =
     `Winners margin Δw=${dwNum >= 0 ? '+' : ''}${dwNum} (${forNum} for · ${agNum} against) · ` +
     `Quality margin Δq=${dqNum >= 0 ? '+' : ''}${dqNum} at T30 contribution (${qForNum} for · ${qAgNum} against). ` +
-    `Lock floor: Δw ≥ +1 AND Δq ≥ +1.`;
+    `Lock floor (v7.0): Δw+Δq ≥ +5 with both axes ≥ +1. Δw+Δq ∈ {3,4} renders as LEAN (tracked, 0u).`;
 
   const chipBase = {
     ...T.micro,
@@ -1160,18 +1218,25 @@ function evaluatePickHealth({
   };
 }
 
-// v6 Two-Factor spread/total ladder. Floor 0.5u, elite 2.0u.
-function calculateSpreadTotalUnits(stars, consensusPenalty = 0, odds = null, regimeBonus = 0) {
+// v7.0 Spread/Total unit ladder. Mirrors `calculateUnits` shape:
+//   ELITE  (Σ ≥ +7) → 2.5u
+//   5.0★   (Σ ≥ +6) → 2.0u
+//   4.5★   (Σ = +5) → 1.5u  (bumped from 1.25u — calibrated to cohort edge)
+//   4.0★, 3.5★      → 0u when lockTier === 'LEAN'
+// Legacy ladder kept for graded picks (peak.units already frozen).
+function calculateSpreadTotalUnits(stars, consensusPenalty = 0, odds = null, regimeBonus = 0, lockTier = null) {
+  if (lockTier === 'LEAN') return 0;
   let units;
-  if (stars >= 5.0) units = 2.00;
-  else if (stars >= 4.5) units = 1.25;
-  else if (stars >= 4.0) units = 0.75;
-  else if (stars >= 3.5) units = 0.50;
+  if (lockTier === 'ELITE') units = 2.50;
+  else if (stars >= 5.0)   units = 2.00;
+  else if (stars >= 4.5)   units = 1.50;
+  else if (stars >= 4.0)   units = 0.75;
+  else if (stars >= 3.5)   units = 0.50;
   else units = 0;
   if (units === 0) return 0;
-  if (odds != null && odds >= 200) units = Math.min(units, 0.5);
-  else if (odds != null && odds >= 151) units = Math.min(units, 0.75);
-  else if (odds != null && odds >= 100) units = Math.min(units, 1.0);
+  if (odds != null && odds >= 200) units = Math.min(units, lockTier === 'ELITE' ? 0.75 : 0.5);
+  else if (odds != null && odds >= 151) units = Math.min(units, lockTier === 'ELITE' ? 1.25 : 0.75);
+  else if (odds != null && odds >= 100) units = Math.min(units, lockTier === 'ELITE' ? 1.75 : 1.0);
   return units;
 }
 
@@ -1187,15 +1252,17 @@ function calculateSpreadTotalUnits(stars, consensusPenalty = 0, odds = null, reg
 // the recommendation the system actually made at lock time.
 function computeLiveSizing({ peakStars, peakUnits, marketType, oddsForLadder, liveDw, liveDq }) {
   if (liveDw == null || liveDq == null || peakStars == null) {
-    return { liveStars: peakStars, liveUnits: peakUnits || 0, isDownsized: false };
+    return { liveStars: peakStars, liveUnits: peakUnits || 0, isDownsized: false, liveTier: null };
   }
   const liveStars = vaultStarFromDeltas(liveDw, liveDq);
+  const liveTier  = lockTierFromDeltas(liveDw, liveDq);
   const ladder = (marketType === 'spread' || marketType === 'total') ? calculateSpreadTotalUnits : calculateUnits;
-  const liveUnitsRaw = ladder(liveStars, 0, oddsForLadder);
+  const liveUnitsRaw = ladder(liveStars, 0, oddsForLadder, 0, liveTier);
   const liveUnits = Math.round(liveUnitsRaw * 100) / 100;
   return {
     liveStars,
     liveUnits,
+    liveTier,
     isDownsized: liveStars < peakStars,
   };
 }
@@ -1233,25 +1300,37 @@ function classifyContributionTier(v8Scoring, sideKey) {
   return 'LEAN';
 }
 
-// Single source of truth for lockStage + who promoted it.
+// Single source of truth for lockStage + who promoted it + which v7.0
+// sub-tier the pick currently sits in (ELITE / LOCKED / LEAN / MUTED).
 //
-// v6.6 Hybrid Floor: the only promotion path is
-//   Δ_winner ≥ +1 AND Δ_quality ≥ +1 AND Δw+Δq ≥ +3.
-// Regime / contribTier / WPS are retained as diagnostic fields only — they
-// do NOT promote picks anymore. The original Floor G (1/+1, no sum gate)
-// validated at 60.5% WR / +15.5% ROI on the V8 backtest. The 88-pick post-
-// ship audit (2026-04-27) showed the 1/+1 sub-cell going 3-5 (37.5% WR,
-// −35% flat ROI) — the only floor cohort below break-even. Adding the
-// `Δw+Δq ≥ +3` clause drops just that cohort and lifts the floor to
-// 57.8% WR / +26.0% flat ROI on 45 picks. See `v6-edge-analysis` canvas.
+// Write threshold (Δw ≥ +1 ∧ Δq ≥ +1 ∧ Δw+Δq ≥ +3) is unchanged from
+// v6.6 — every qualifying pick still flows into the Locked Picks list
+// so it can be tracked. What changes in v7.0 is the SIZING tier:
+//
+//   ELITE  (Σ ≥ +7)  → max ladder + ELITE bonus (4.0u ML / 2.5u S+T)
+//   LOCKED (Σ ∈ 5,6) → standard ladder (3.0u/2.0u ML, 2.0u/1.5u S+T)
+//   LEAN   (Σ ∈ 3,4) → tracked but 0u ("would-have-locked under v6.6
+//                       but didn't clear the v7.0 Σ ≥ +5 lock floor")
+//   MUTED  (Σ < +3 OR Δw ≤ 0 OR Δq ≤ 0) — handled by health engine.
+//
+// Rationale (V6_FULL_ANALYSIS, N=104, 4/18–4/28). Σ ≥ +5 is the first
+// cumulative cohort to clear t = 1.96 on the flat-PnL t-test (+35.2%
+// flat ROI on N=31). Σ ∈ {3,4} is directionally flat (-7% / -28.8%
+// flat ROI). Raising the lock floor from Σ ≥ +3 to Σ ≥ +5 drops the
+// negative-EV mass while keeping the +0.319 Δw+Δq correlation intact.
+// LEAN preserves visibility on the {3,4} cohort so we can monitor
+// edge regression without bleeding bankroll.
 function decideLockStage(regime, v8Scoring, sideKey, sport = null, baseStars = 0) {
   const contribTier = classifyContributionTier(v8Scoring, sideKey);
-  if (!sport) return { stage: 'SHADOW', contribTier, promotedBy: null };
+  if (!sport) return { stage: 'SHADOW', contribTier, promotedBy: null, dw: 0, dq: 0, lockTier: 'MUTED' };
   const wc = computeWalletConsensus(v8Scoring?.walletDetails, sport, sideKey);
+  const dw = wc.delta || 0;
+  const dq = wc.qualityMargin || 0;
+  const lockTier = lockTierFromDeltas(dw, dq);
   if (wc.promotionEligible) {
-    return { stage: 'LOCKED', contribTier, promotedBy: 'two-factor-floor' };
+    return { stage: 'LOCKED', contribTier, promotedBy: 'two-factor-floor', dw, dq, lockTier };
   }
-  return { stage: 'SHADOW', contribTier, promotedBy: null };
+  return { stage: 'SHADOW', contribTier, promotedBy: null, dw, dq, lockTier };
 }
 
 // Minimum dollars behind a side to even consider writing the pick.
@@ -1399,6 +1478,10 @@ function stampWalletConsensus(target, v8Scoring, sideKey, sport, baseStars, prom
   target.v8_vaultStar = (wc.forW || wc.agW || wc.qualityMargin !== 0)
     ? vaultStarFromDeltas(wc.delta, wc.qualityMargin)
     : null;
+  // v7.0 — frozen lock-tier so reports can filter cohorts (LOCKED vs LEAN
+  // vs ELITE) without recomputing from Δ's. UI still derives liveTier from
+  // current Δ's so the badge stays honest if signals decay.
+  target.v8_lockTier = lockTierFromDeltas(wc.delta, wc.qualityMargin);
 }
 
 // Phase 2: true if the existing side is missing a stamp or has a stale one.
@@ -4116,7 +4199,7 @@ const HEALTH_REASON_LABELS = {
 };
 
 const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
-  const { team, away, home, sport, stars, peakStars, lockStars, units, peakUnits, isDownsized, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, lockEV, criteriaMet, criteria, consensusStrength, pinnacleOdds, marketType, line, superseded, health, isTopPick: isTopPickPre, isSuperTopPick: isSuperTopPickPre, walletConsensusDelta, walletConsensusForW, walletConsensusAgW, walletConsensusQualityMargin, walletConsensusQualityForT30, walletConsensusQualityAgT30 } = pick;
+  const { team, away, home, sport, stars, peakStars, lockStars, units, peakUnits, isDownsized, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, lockEV, criteriaMet, criteria, consensusStrength, pinnacleOdds, marketType, line, superseded, health, lockTier, isTopPick: isTopPickPre, isSuperTopPick: isSuperTopPickPre, walletConsensusDelta, walletConsensusForW, walletConsensusAgW, walletConsensusQualityMargin, walletConsensusQualityForT30, walletConsensusQualityAgT30 } = pick;
   const [expanded, setExpanded] = useState(false);
   const ss = sportStyle(sport);
   const starDelta = (lockStars != null && stars != null) ? stars - lockStars : 0;
@@ -4146,13 +4229,23 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   const isCancelled = healthStatus === 'CANCELLED';
   const healthReasons = health?.reasons || [];
 
+  // v7.0 — LEAN is a display tier (NOT a health status). LEAN picks
+  // would have locked under the v6.6 sum ≥ +3 floor but fall short of
+  // the v7.0 sum ≥ +5 lock floor. They are tracked in the Locked Picks
+  // list with a LEAN badge replacing the unit chip and a 0u stake.
+  // Live engine sets liveTier; graded picks (lockTier === null) keep
+  // their peak units as actually shipped at lock time.
+  const isLean  = lockTier === 'LEAN' && !isGraded;
+  const isElite = lockTier === 'ELITE';
+
   // v6.4 — DOWNSIZED is a display overlay on ACTIVE (not a health status).
   // A DOWNSIZED pick is still "on" but at 50%+ cut size because the live
   // vault-star dropped ≥ 1.0 below peak. Never shows while graded, muted,
   // cancelled, or superseded (those have their own visual treatments).
-  const showDownsize = !!isDownsized && !isGraded && !isMuted && !isCancelled && !superseded;
+  const showDownsize = !!isDownsized && !isGraded && !isMuted && !isCancelled && !superseded && !isLean;
   const DOWNSIZE_AMBER = '#D4AF37'; // gold/amber — less severe than #F59E0B (mute)
-  const accentColor = isCancelled ? B.red : isMuted ? '#F59E0B' : showDownsize ? DOWNSIZE_AMBER : isGraded ? (isWin ? B.green : isLoss ? B.red : B.gold) : B.green;
+  const LEAN_BLUE     = '#60A5FA'; // light-blue — distinct from gold (top pick) and amber (mute)
+  const accentColor = isCancelled ? B.red : isMuted ? '#F59E0B' : isLean ? LEAN_BLUE : showDownsize ? DOWNSIZE_AMBER : isGraded ? (isWin ? B.green : isLoss ? B.red : B.gold) : B.green;
   const teamShort = team?.split(' ').pop() || team;
   const awayShort = away?.split(' ').pop() || away;
   const homeShort = home?.split(' ').pop() || home;
@@ -4189,9 +4282,11 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   return (
     <div style={{
       borderRadius: '12px', overflow: 'hidden', position: 'relative',
-      opacity: isCancelled ? 0.4 : isMuted ? 0.6 : superseded ? 0.55 : 1,
+      opacity: isCancelled ? 0.4 : isMuted ? 0.6 : superseded ? 0.55 : isLean ? 0.85 : 1,
       background: superseded
         ? `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`
+        : isLean
+        ? `linear-gradient(135deg, rgba(96,165,250,0.04) 0%, ${B.card} 30%, ${B.cardAlt} 100%)`
         : isTopPick && !isMuted && !isCancelled
         ? `linear-gradient(135deg, rgba(212,175,55,0.06) 0%, ${B.card} 30%, ${B.cardAlt} 100%)`
         : `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
@@ -4201,12 +4296,14 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
         ? '1px solid rgba(245,158,11,0.35)'
         : superseded
         ? `1px solid rgba(239,68,68,0.3)`
+        : isLean
+        ? '1px solid rgba(96,165,250,0.30)'
         : isSuperTopPick
         ? '1px solid rgba(212,175,55,0.6)'
         : isTopPick
         ? '1px solid rgba(212,175,55,0.45)'
         : `1px solid ${isGraded ? (isWin ? 'rgba(16,185,129,0.2)' : isLoss ? 'rgba(239,68,68,0.2)' : B.border) : 'rgba(16,185,129,0.18)'}`,
-      boxShadow: isCancelled || isMuted || superseded ? 'none'
+      boxShadow: isCancelled || isMuted || superseded || isLean ? 'none'
         : isSuperTopPick
         ? '0 0 24px rgba(212,175,55,0.18), 0 0 48px rgba(212,175,55,0.06)'
         : isTopPick
@@ -4218,6 +4315,8 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
         ? 'linear-gradient(90deg, transparent, #EF4444, #F87171, #EF4444, transparent)'
         : isMuted
         ? 'linear-gradient(90deg, transparent, #F59E0B, #FBBF24, #F59E0B, transparent)'
+        : isLean
+        ? 'linear-gradient(90deg, transparent, #60A5FA, #93C5FD, #60A5FA, transparent)'
         : isTopPick
         ? 'linear-gradient(90deg, transparent, #D4AF37, #F5D060, #D4AF37, transparent)'
         : `linear-gradient(90deg, transparent, ${accentColor}, transparent)` }} />
@@ -4247,6 +4346,19 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
             )}
             {isMuted && !isCancelled && (
               <Badge color="#F59E0B" bg="rgba(245,158,11,0.12)">WEAKENING</Badge>
+            )}
+            {isLean && !isMuted && !isCancelled && !superseded && (
+              <span
+                title={`LEAN — Δw+Δq = ${(walletConsensusDelta ?? 0) + (walletConsensusQualityMargin ?? 0)} (Δw=${walletConsensusDelta ?? 0}, Δq=${walletConsensusQualityMargin ?? 0}). Tracked but not bet — picks below the v7.0 lock floor (Σ ≥ +5) display here at 0u so we monitor edge regression without bleeding bankroll.`}
+                style={{
+                  ...T.micro, fontWeight: 800, letterSpacing: '0.05em',
+                  padding: '0.15rem 0.5rem', borderRadius: '4px',
+                  color: LEAN_BLUE, background: 'rgba(96,165,250,0.12)',
+                  border: '1px solid rgba(96,165,250,0.35)',
+                }}
+              >
+                LEAN · TRACK ONLY
+              </span>
             )}
             {showDownsize && (
               <span
@@ -4327,6 +4439,10 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
             {isCancelled || (isMuted && isGraded) ? (
               <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
                 <span style={{ textDecoration: 'line-through' }}>{peakUnits ?? units}u</span> 0u @ {fmtO(odds)} · {book}
+              </span>
+            ) : isLean ? (
+              <span style={{ ...T.micro, color: LEAN_BLUE, fontFeatureSettings: "'tnum'", fontWeight: 700 }}>
+                LEAN · 0u @ {fmtO(odds)} · {book}
               </span>
             ) : showDownsize ? (
               <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
@@ -4432,33 +4548,37 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
               ? 'linear-gradient(135deg, rgba(239,68,68,0.08) 0%, rgba(239,68,68,0.02) 100%)'
               : isMuted
               ? 'linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(245,158,11,0.02) 100%)'
+              : isLean
+              ? 'linear-gradient(135deg, rgba(96,165,250,0.08) 0%, rgba(96,165,250,0.02) 100%)'
               : isGraded
               ? (isWin ? 'linear-gradient(135deg, rgba(16,185,129,0.10) 0%, rgba(16,185,129,0.02) 100%)' : isLoss ? 'linear-gradient(135deg, rgba(239,68,68,0.10) 0%, rgba(239,68,68,0.02) 100%)' : 'linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(212,175,55,0.02) 100%)')
               : 'linear-gradient(135deg, rgba(16,185,129,0.10) 0%, rgba(16,185,129,0.02) 100%)',
-            border: `1px solid ${isCancelled ? 'rgba(239,68,68,0.25)' : isMuted ? 'rgba(245,158,11,0.25)' : isGraded ? (isWin ? 'rgba(16,185,129,0.25)' : isLoss ? 'rgba(239,68,68,0.25)' : B.goldBorder) : 'rgba(16,185,129,0.25)'}`,
+            border: `1px solid ${isCancelled ? 'rgba(239,68,68,0.25)' : isMuted ? 'rgba(245,158,11,0.25)' : isLean ? 'rgba(96,165,250,0.25)' : isGraded ? (isWin ? 'rgba(16,185,129,0.25)' : isLoss ? 'rgba(239,68,68,0.25)' : B.goldBorder) : 'rgba(16,185,129,0.25)'}`,
           }}>
             {/* Narrative + unit badge */}
             <div style={{ marginBottom: '0.625rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
                 <span style={{ ...T.label, fontWeight: 800, color: accentColor }}>
-                  {isCancelled ? 'CANCELLED' : isMuted ? 'WEAKENING' : isGraded ? (isWin ? 'WINNING BET' : isLoss ? 'LOSING BET' : 'PUSH') : 'LOCKED BET'}
+                  {isCancelled ? 'CANCELLED' : isMuted ? 'WEAKENING' : isLean ? 'LEAN · TRACKED' : isGraded ? (isWin ? 'WINNING BET' : isLoss ? 'LOSING BET' : 'PUSH') : 'LOCKED BET'}
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                   <span style={{
-                    ...T.body, fontWeight: 900, color: isCancelled ? B.textMuted : '#fff',
+                    ...T.body, fontWeight: 900, color: isCancelled ? B.textMuted : isLean ? LEAN_BLUE : '#fff',
                     padding: '0.2rem 0.6rem', borderRadius: '5px',
                     background: isCancelled
                       ? 'linear-gradient(135deg, rgba(239,68,68,0.15), rgba(239,68,68,0.08))'
                       : isMuted
                       ? 'linear-gradient(135deg, #F59E0B, #D97706)'
+                      : isLean
+                      ? 'rgba(96,165,250,0.12)'
                       : isGraded
                       ? (isWin ? 'linear-gradient(135deg, #10B981, #059669)' : isLoss ? 'linear-gradient(135deg, #EF4444, #DC2626)' : 'linear-gradient(135deg, #64748B, #475569)')
                       : 'linear-gradient(135deg, #10B981, #059669)',
-                    border: `1px solid ${isCancelled ? 'rgba(239,68,68,0.3)' : isMuted ? 'rgba(245,158,11,0.4)' : isWin ? 'rgba(16,185,129,0.4)' : isLoss ? 'rgba(239,68,68,0.4)' : 'rgba(16,185,129,0.4)'}`,
+                    border: `1px solid ${isCancelled ? 'rgba(239,68,68,0.3)' : isMuted ? 'rgba(245,158,11,0.4)' : isLean ? 'rgba(96,165,250,0.35)' : isWin ? 'rgba(16,185,129,0.4)' : isLoss ? 'rgba(239,68,68,0.4)' : 'rgba(16,185,129,0.4)'}`,
                     fontFeatureSettings: "'tnum'",
                     textDecoration: (isCancelled || isMuted) ? 'line-through' : 'none',
                   }}>
-                    {(isCancelled || isMuted) ? `${ut.icon} ${units}u → 0u` : `${ut.icon} ${units}u`}
+                    {isLean ? '0u · TRACK' : (isCancelled || isMuted) ? `${ut.icon} ${units}u → 0u` : `${ut.icon} ${units}u`}
                   </span>
                   {evEdge > 0 && (
                     <span style={{ ...T.body, fontWeight: 900, color: B.green, padding: '0.2rem 0.6rem', borderRadius: '5px', background: B.greenDim }}>
@@ -4491,6 +4611,13 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                   lead = (
                     <>
                       <span style={{ color: '#F59E0B', fontWeight: 700 }}>Signal fading</span> on {teamShort} {marketNoun}: {agW > 0 ? <>{agW} proven {sportUp} winner{agW !== 1 ? 's' : ''} flipped off, {forW} still backing.</> : <>quality wallets collapsed to the other side.</>}
+                    </>
+                  );
+                } else if (isLean) {
+                  const sumLive = (walletConsensusDelta ?? 0) + (walletConsensusQualityMargin ?? 0);
+                  lead = (
+                    <>
+                      <span style={{ color: LEAN_BLUE, fontWeight: 700 }}>Below lock floor</span> — {forW} proven {sportUp} winner{forW !== 1 ? 's' : ''} backing {teamShort} {marketNoun} but Δw+Δq = {sumLive >= 0 ? '+' : ''}{sumLive} (need ≥ +5 to lock). Tracking at 0u.{pinnSuffix}
                     </>
                   );
                 } else if (forW > 0) {
@@ -4559,7 +4686,9 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                 <span style={{ ...T.micro, color: B.textSec }}>Risk</span>
-                {showDownsize ? (
+                {isLean ? (
+                  <span style={{ ...T.micro, fontWeight: 900, color: LEAN_BLUE, fontFeatureSettings: "'tnum'" }}>0u (LEAN)</span>
+                ) : showDownsize ? (
                   <>
                     <span style={{ ...T.micro, fontWeight: 700, color: B.textMuted, fontFeatureSettings: "'tnum'", textDecoration: 'line-through' }}>{peakUnits}u</span>
                     <span style={{ ...T.micro, fontWeight: 900, color: DOWNSIZE_AMBER, fontFeatureSettings: "'tnum'" }}>→ {units}u</span>
@@ -4580,8 +4709,8 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                 <span style={{ ...T.micro, color: B.textSec }}>{isGraded ? 'Result' : 'To Win'}</span>
-                <span style={{ ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'", color: isGraded ? (isWin ? B.green : isLoss ? B.red : B.textSec) : ((isMuted || isCancelled) ? B.textMuted : showDownsize ? DOWNSIZE_AMBER : B.green) }}>
-                  {isGraded ? `${isWin ? '+' : isLoss ? '' : ''}${(profit || 0).toFixed(2)}u` : `+${((isMuted || isCancelled) ? 0 : potentialWin).toFixed(2)}u`}
+                <span style={{ ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'", color: isGraded ? (isWin ? B.green : isLoss ? B.red : B.textSec) : (isLean ? LEAN_BLUE : (isMuted || isCancelled) ? B.textMuted : showDownsize ? DOWNSIZE_AMBER : B.green) }}>
+                  {isGraded ? `${isWin ? '+' : isLoss ? '' : ''}${(profit || 0).toFixed(2)}u` : `+${((isLean || isMuted || isCancelled) ? 0 : potentialWin).toFixed(2)}u`}
                 </span>
               </div>
               <span style={{
@@ -5027,8 +5156,9 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const isLocked = twoFactorFloor && meetsInvest;
   const isShadow = meetsInvest && !twoFactorFloor && sr.stars >= 2.5;
   const lockType = isLocked ? (isGameLive ? 'LIVE' : 'PREGAME') : null;
+  const lockTier = decision?.lockTier || 'MUTED';
 
-  const units = isLocked ? calculateUnits(sr.stars, cGrade.penalty, betOdds, computeRegimeBonus(sr.regime, sr.v8Scoring, consensusSide, gd.sport)) : 0;
+  const units = isLocked ? calculateUnits(sr.stars, cGrade.penalty, betOdds, computeRegimeBonus(sr.regime, sr.v8Scoring, consensusSide, gd.sport), lockTier) : 0;
   const ut = unitTier(units);
   const potentialWin = isLocked ? profitFromOdds(betOdds, units) : 0;
 
@@ -5247,7 +5377,8 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const spreadMeetsThreshold = spreadSr && spreadMeetsInvest && spreadSr.stars >= 3.5;
   const isSpreadLocked = !!spreadSr && spreadTwoFactorFloor && spreadMeetsInvest;
   const isSpreadShadow = !!spreadSr && spreadMeetsInvest && !spreadTwoFactorFloor && spreadSr.stars >= 2.5;
-  const spreadUnits = (isSpreadLocked || isSpreadShadow) ? calculateSpreadTotalUnits(spreadSr.stars, 0, spreadBetOdds, computeRegimeBonus(spreadSr.regime, spreadSr.v8Scoring, spreadConsensusSide, gd.sport)) : 0;
+  const spreadLockTier = spreadDecision?.lockTier || 'MUTED';
+  const spreadUnits = (isSpreadLocked || isSpreadShadow) ? calculateSpreadTotalUnits(spreadSr.stars, 0, spreadBetOdds, computeRegimeBonus(spreadSr.regime, spreadSr.v8Scoring, spreadConsensusSide, gd.sport), spreadLockTier) : 0;
 
   useEffect(() => {
     if ((!isSpreadLocked && !isSpreadShadow) || isGameLive || !commenceTime || !onPickSynced || !spreadConsensusSide) return;
@@ -5389,7 +5520,8 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const totalMeetsThreshold = totalSr && totalMeetsInvest && totalSr.stars >= 3.5;
   const isTotalLocked = !!totalSr && totalTwoFactorFloor && totalMeetsInvest;
   const isTotalShadow = !!totalSr && totalMeetsInvest && !totalTwoFactorFloor && totalSr.stars >= 2.5;
-  const totalUnits = (isTotalLocked || isTotalShadow) ? calculateSpreadTotalUnits(totalSr.stars, 0, totalBetOdds, computeRegimeBonus(totalSr.regime, totalSr.v8Scoring, totalConsensusSide, gd.sport)) : 0;
+  const totalLockTier = totalDecision?.lockTier || 'MUTED';
+  const totalUnits = (isTotalLocked || isTotalShadow) ? calculateSpreadTotalUnits(totalSr.stars, 0, totalBetOdds, computeRegimeBonus(totalSr.regime, totalSr.v8Scoring, totalConsensusSide, gd.sport), totalLockTier) : 0;
 
   useEffect(() => {
     if ((!isTotalLocked && !isTotalShadow) || isGameLive || !commenceTime || !onPickSynced || !totalConsensusSide) return;
@@ -5703,8 +5835,44 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
           )}
         </div>
 
-        {/* Unit sizing + risk/reward when locked */}
-        {isLocked && (
+        {/* Unit sizing + risk/reward when locked. v7.0: LEAN tier renders
+            here too (it's a "would-have-locked" pick under v6.6 that
+            falls below the Σ ≥ +5 floor) but with a distinct blue band
+            and 0u sizing so the user sees the pick is tracked, not bet. */}
+        {isLocked && lockTier === 'LEAN' && (
+          <div style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            marginTop: '0.625rem', padding: '0.375rem 0.5rem',
+            borderRadius: '6px',
+            background: 'rgba(96,165,250,0.06)',
+            border: '1px solid rgba(96,165,250,0.20)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+              <span style={{ ...T.micro, color: B.textSec }}>Risk</span>
+              <span style={{ ...T.micro, fontWeight: 900, color: '#60A5FA', fontFeatureSettings: "'tnum'" }}>
+                0u (LEAN)
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+              <span style={{ ...T.micro, color: B.textSec }}>Status</span>
+              <span style={{ ...T.micro, fontWeight: 800, color: '#60A5FA', fontFeatureSettings: "'tnum'" }}>
+                TRACK ONLY
+              </span>
+            </div>
+            <span
+              title={`LEAN — Δw+Δq below the v7.0 lock floor (need ≥ +5). Pick is monitored at 0u so we measure its edge without bleeding bankroll.`}
+              style={{
+                ...T.micro, fontWeight: 800, color: '#60A5FA',
+                padding: '0.1rem 0.35rem', borderRadius: '4px',
+                background: 'rgba(96,165,250,0.12)',
+                border: '1px solid rgba(96,165,250,0.30)',
+              }}
+            >
+              SHADOW BET
+            </span>
+          </div>
+        )}
+        {isLocked && lockTier !== 'LEAN' && (
           <div style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             marginTop: '0.625rem', padding: '0.375rem 0.5rem',
@@ -5826,22 +5994,27 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
         )}
       </div>
 
-      {/* ─── v6 Lock Criteria (Two-Factor Gate) ───
-          Replaces the legacy 6-item checklist. Under v6 the only things that
-          gate a lock are Δw ≥ +1 AND Δq ≥ +1. The old criteria (Pinnacle /
-          EV / line movement / etc) still surface as pills under the narrative
-          — they're supporting evidence, not gates. */}
+      {/* ─── v7.0 Lock Criteria (Σ-driven gate) ───
+          v7.0 raises the lock floor to Δw+Δq ≥ +5 (was Σ ≥ +3 in v6.6).
+          Picks at Σ ∈ {3, 4} would have locked under v6.6 but now display
+          as LEAN — tracked at 0u so we monitor cohort regression without
+          bleeding bankroll. Pinnacle / EV / line movement still surface
+          as supporting pills below the narrative. */}
       {(() => {
         const v8 = sr?.v8Scoring;
         const dw = v8?.deltaWinner ?? 0;
         const dq = v8?.deltaQuality ?? 0;
+        const sum = dw + dq;
         const winMet = dw >= 1;
         const qMet   = dq >= 1;
-        const metCount = (winMet ? 1 : 0) + (qMet ? 1 : 0);
+        const sumMet = winMet && qMet && sum >= 5;
+        const metCount = (winMet ? 1 : 0) + (qMet ? 1 : 0) + (sumMet ? 1 : 0);
         const sportLabel = (gd.sport || '').toString().toUpperCase();
         const healthStatus = mlHealth?.status || 'ACTIVE';
         const isMutedLive = healthStatus === 'MUTED';
         const isCancelledLive = healthStatus === 'CANCELLED';
+        const isLeanLive = isLocked && lockTier === 'LEAN' && !isMutedLive && !isCancelledLive;
+        const isEliteLive = isLocked && lockTier === 'ELITE' && !isMutedLive && !isCancelledLive;
 
         let title, titleColor, borderGlow, bgGlow;
         if (isCancelledLive) {
@@ -5854,17 +6027,32 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
           titleColor = B.red;
           borderGlow = 'rgba(239,68,68,0.25)';
           bgGlow = 'linear-gradient(135deg, rgba(239,68,68,0.05) 0%, rgba(239,68,68,0.02) 100%)';
-        } else if (isLocked) {
+        } else if (isEliteLive) {
+          title = `PLAY LOCKED — ★★★★★ ELITE (Σ=+${sum})`;
+          titleColor = B.green;
+          borderGlow = 'rgba(16,185,129,0.35)';
+          bgGlow = 'linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(16,185,129,0.02) 100%)';
+        } else if (isLocked && !isLeanLive) {
           const starLbl = sr.stars >= 4.5 ? '★★★★★ ELITE'
             : sr.stars >= 3.5 ? '★★★★ STRONG'
             : sr.stars >= 3 ? '★★★ SOLID'
             : '★★½ SOLID';
-          title = `PLAY LOCKED — ${starLbl}`;
+          title = `PLAY LOCKED — ${starLbl} (Σ=+${sum})`;
           titleColor = B.green;
           borderGlow = 'rgba(16,185,129,0.25)';
           bgGlow = 'linear-gradient(135deg, rgba(16,185,129,0.06) 0%, rgba(16,185,129,0.02) 100%)';
+        } else if (isLeanLive) {
+          title = `LEAN — TRACKED at 0u (Σ=+${sum}, need ≥ +5)`;
+          titleColor = '#60A5FA';
+          borderGlow = 'rgba(96,165,250,0.30)';
+          bgGlow = 'linear-gradient(135deg, rgba(96,165,250,0.06) 0%, rgba(96,165,250,0.02) 100%)';
+        } else if (winMet && qMet) {
+          title = 'TRACKING — 2 of 3 signals';
+          titleColor = B.gold;
+          borderGlow = 'rgba(212,175,55,0.25)';
+          bgGlow = 'linear-gradient(135deg, rgba(212,175,55,0.06) 0%, rgba(212,175,55,0.02) 100%)';
         } else if (metCount === 1) {
-          title = 'TRACKING — 1 of 2 signals';
+          title = 'TRACKING — 1 of 3 signals';
           titleColor = B.gold;
           borderGlow = 'rgba(212,175,55,0.25)';
           bgGlow = 'linear-gradient(135deg, rgba(212,175,55,0.06) 0%, rgba(212,175,55,0.02) 100%)';
@@ -5921,9 +6109,9 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
               {!isCancelledLive && !isMutedLive && (
                 <span style={{
                   ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'",
-                  color: metCount === 2 ? B.green : metCount === 1 ? B.gold : B.textMuted,
+                  color: metCount === 3 ? B.green : metCount === 2 ? (isLeanLive ? '#60A5FA' : B.gold) : metCount === 1 ? B.gold : B.textMuted,
                 }}>
-                  {metCount}/2
+                  {metCount}/3
                 </span>
               )}
             </div>
@@ -5938,6 +6126,12 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
               label="Quality wallets backing"
               deltaVal={dq}
               hint="needs ≥ +1"
+            />
+            <Row
+              met={sumMet}
+              label="Combined edge (Δw + Δq)"
+              deltaVal={sum}
+              hint="needs ≥ +5 (v7.0)"
             />
           </div>
         );
@@ -5966,18 +6160,24 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
             return (
               <div style={{
                 padding: '0.5rem 0.625rem', borderRadius: '8px', marginBottom: '0.5rem',
-                background: isSpreadLocked
+                background: isSpreadLocked && spreadLockTier === 'LEAN'
+                  ? 'linear-gradient(135deg, rgba(96,165,250,0.06) 0%, rgba(96,165,250,0.02) 100%)'
+                  : isSpreadLocked
                   ? 'linear-gradient(135deg, rgba(16,185,129,0.06) 0%, rgba(16,185,129,0.02) 100%)'
                   : isSpreadShadow
                   ? 'linear-gradient(135deg, rgba(212,175,55,0.06) 0%, rgba(212,175,55,0.02) 100%)'
                   : 'rgba(255,255,255,0.02)',
-                border: `1px solid ${isSpreadLocked ? 'rgba(16,185,129,0.25)' : isSpreadShadow ? 'rgba(212,175,55,0.25)' : B.borderSubtle}`,
+                border: `1px solid ${isSpreadLocked && spreadLockTier === 'LEAN' ? 'rgba(96,165,250,0.30)' : isSpreadLocked ? 'rgba(16,185,129,0.25)' : isSpreadShadow ? 'rgba(212,175,55,0.25)' : B.borderSubtle}`,
               }}>
                 {(isSpreadLocked || isSpreadShadow) && spreadSr ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.375rem' }}>
                     <span style={{ fontSize: '1rem' }}>{'★'.repeat(Math.floor(spreadSr.stars))}{spreadSr.stars % 1 ? '½' : ''}</span>
-                    <span style={{ ...T.micro, fontWeight: 700, color: isSpreadLocked ? B.green : B.gold }}>{isSpreadLocked ? 'SPREAD LOCK' : 'SPREAD TRACKING'} — {spreadConsensuTeam} {spreadLine > 0 ? '+' : ''}{spreadLine}</span>
-                    <span style={{ ...T.micro, color: B.textSec, marginLeft: 'auto' }}>{spreadUnits}u @ {fmtOdds(spreadBetOdds)}</span>
+                    <span style={{ ...T.micro, fontWeight: 700, color: isSpreadLocked && spreadLockTier === 'LEAN' ? '#60A5FA' : isSpreadLocked ? B.green : B.gold }}>
+                      {isSpreadLocked && spreadLockTier === 'LEAN' ? 'SPREAD LEAN' : isSpreadLocked ? 'SPREAD LOCK' : 'SPREAD TRACKING'} — {spreadConsensuTeam} {spreadLine > 0 ? '+' : ''}{spreadLine}
+                    </span>
+                    <span style={{ ...T.micro, color: B.textSec, marginLeft: 'auto' }}>
+                      {isSpreadLocked && spreadLockTier === 'LEAN' ? <span style={{ color: '#60A5FA', fontWeight: 700 }}>0u · TRACK</span> : <>{spreadUnits}u @ {fmtOdds(spreadBetOdds)}</>}
+                    </span>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
@@ -6325,18 +6525,24 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
             return (
               <div style={{
                 padding: '0.5rem 0.625rem', borderRadius: '8px', marginBottom: '0.5rem',
-                background: isTotalLocked
+                background: isTotalLocked && totalLockTier === 'LEAN'
+                  ? 'linear-gradient(135deg, rgba(96,165,250,0.06) 0%, rgba(96,165,250,0.02) 100%)'
+                  : isTotalLocked
                   ? 'linear-gradient(135deg, rgba(16,185,129,0.06) 0%, rgba(16,185,129,0.02) 100%)'
                   : isTotalShadow
                   ? 'linear-gradient(135deg, rgba(212,175,55,0.06) 0%, rgba(212,175,55,0.02) 100%)'
                   : 'rgba(255,255,255,0.02)',
-                border: `1px solid ${isTotalLocked ? 'rgba(16,185,129,0.25)' : isTotalShadow ? 'rgba(212,175,55,0.25)' : B.borderSubtle}`,
+                border: `1px solid ${isTotalLocked && totalLockTier === 'LEAN' ? 'rgba(96,165,250,0.30)' : isTotalLocked ? 'rgba(16,185,129,0.25)' : isTotalShadow ? 'rgba(212,175,55,0.25)' : B.borderSubtle}`,
               }}>
                 {(isTotalLocked || isTotalShadow) && totalSr ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.375rem' }}>
                     <span style={{ fontSize: '1rem' }}>{'★'.repeat(Math.floor(totalSr.stars))}{totalSr.stars % 1 ? '½' : ''}</span>
-                    <span style={{ ...T.micro, fontWeight: 700, color: isTotalLocked ? B.green : B.gold }}>{isTotalLocked ? 'TOTAL LOCK' : 'TOTAL TRACKING'} — {totalConsensusSide === 'over' ? 'Over' : 'Under'} {totalLine}</span>
-                    <span style={{ ...T.micro, color: B.textSec, marginLeft: 'auto' }}>{totalUnits}u @ {fmtOdds(totalBetOdds)}</span>
+                    <span style={{ ...T.micro, fontWeight: 700, color: isTotalLocked && totalLockTier === 'LEAN' ? '#60A5FA' : isTotalLocked ? B.green : B.gold }}>
+                      {isTotalLocked && totalLockTier === 'LEAN' ? 'TOTAL LEAN' : isTotalLocked ? 'TOTAL LOCK' : 'TOTAL TRACKING'} — {totalConsensusSide === 'over' ? 'Over' : 'Under'} {totalLine}
+                    </span>
+                    <span style={{ ...T.micro, color: B.textSec, marginLeft: 'auto' }}>
+                      {isTotalLocked && totalLockTier === 'LEAN' ? <span style={{ color: '#60A5FA', fontWeight: 700 }}>0u · TRACK</span> : <>{totalUnits}u @ {fmtOdds(totalBetOdds)}</>}
+                    </span>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
@@ -9710,7 +9916,7 @@ export default function SharpFlow() {
                         // the system recommended at lock time.
                         const isGradedSide = sd.status === 'COMPLETED' && !!sd.result?.outcome;
                         const sizing = isGradedSide
-                          ? { liveStars: peakStars, liveUnits: peakUnits, isDownsized: false }
+                          ? { liveStars: peakStars, liveUnits: peakUnits, isDownsized: false, liveTier: null }
                           : computeLiveSizing({
                               peakStars,
                               peakUnits,
@@ -9721,6 +9927,7 @@ export default function SharpFlow() {
                             });
                         const displayStars = isGradedSide ? peakStars : sizing.liveStars;
                         const displayUnits = sizing.liveUnits;
+                        const liveTier = sizing.liveTier;
                         // Realized PnL uses peak (the recommendation the system
                         // committed to at lock time). Live decay is a display
                         // advisory for picks you haven't placed yet.
@@ -9736,6 +9943,7 @@ export default function SharpFlow() {
                           units: displayUnits,
                           peakUnits,
                           isDownsized: sizing.isDownsized,
+                          lockTier: liveTier,
                           odds: cardOdds,
                           book: lockOddsValid ? (lock.book || peak.book || '') : (peak.book || lock.book || ''),
                           peakAt: peak.updatedAt || lock.lockedAt,
