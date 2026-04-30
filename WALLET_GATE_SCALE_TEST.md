@@ -1,0 +1,233 @@
+# WALLET-GATE SCALE TEST — does the tier signal lift EVERY Σ bucket?
+
+Generated: 4/30/2026, 5:20:25 PM ET · sample 90 picks · 2026-04-18 → 2026-04-30 (13 days)
+
+**The right question.** Forget cell-level absolute WR. The question is: when we apply a wallet-tier gate INSIDE a Σ bucket, do the IN-gate picks consistently outperform the OUT-gate picks? If yes (in 4+ of 5 Σ buckets), the gate is real signal that scales across the floor. If no (mixed up/down across buckets), it's sample noise.
+
+**Lens.** Point-in-time tiers (L2, validated in `WALLET_PREDICTIVENESS_BACKTEST.md`).
+
+**Sample.** Every shipped side since v6 cutover with `Δw ≥ +1 ∧ Δq ≥ +1` (the v7 matrix-entry cone).
+
+---
+## §1. Σ bucket inventory (raw — no gate)
+
+| Σ | N | W-L | WR | Flat ROI | Net flat |
+|---|---|---|---|---|---|
+| Σ=3 | 16 | 10-6 | 62.5% | +23.0% | +3.68u |
+| Σ=4 | 19 | 7-12 | 36.8% | -35.0% | -6.65u |
+| Σ=5 | 10 | 7-3 | 70.0% | +79.8% | +7.98u |
+| Σ=6 | 9 | 4-5 | 44.4% | -16.1% | -1.45u |
+| Σ≥7 | 21 | 14-7 | 66.7% | +30.4% | +6.39u |
+
+---
+## §2. Per-gate × per-Σ lift matrix
+
+For each (gate, Σ) cell: `IN-gate WR vs OUT-gate WR`. Lift_WR = WR_in − WR_out (positive = gate selects winners). Lift_ROI = flat ROI_in − flat ROI_out.
+A gate that lifts in **all 5 buckets** is real signal that scales. Mixed up/down → noise.
+
+### `G_CONF` — CONFIRMED_for ≥ 1
+
+| Σ | N total | IN-gate (n / WR / ROI) | OUT-gate (n / WR / ROI) | Lift_WR (pp) | Lift_ROI (pp) | z-test p |
+|---|---|---|---|---|---|---|
+| Σ=3 | 16 | 14 / 64.3% / +24.4% | 2 / 50.0% / +13.0% | +14.3 | +11.4% | 0.696 |
+| Σ=4 | 19 | 14 / 28.6% / -52.9% | 5 / 60.0% / +15.3% | -31.4 | -68.3% | 0.211 |
+| Σ=5 | 10 | 9 / 66.7% / +73.1% | 1 / 100.0% / +140.0% | -33.3 | -66.9% | — |
+| Σ=6 | 9 | 8 / 50.0% / -5.6% | 1 / 0.0% / -100.0% | +50.0 | +94.4% | — |
+| Σ≥7 | 21 | 13 / 69.2% / +44.2% | 8 / 62.5% / +8.1% | +6.7 | +36.1% | 0.751 |
+| **Pooled** | **90** | **lift_WR (weighted)** | | **-3.7 pp** | **-8.0%** | (positive in **2/3** buckets) |
+
+### `G_NETCONF` — (CONF_for − CONF_ag) ≥ +1
+
+| Σ | N total | IN-gate (n / WR / ROI) | OUT-gate (n / WR / ROI) | Lift_WR (pp) | Lift_ROI (pp) | z-test p |
+|---|---|---|---|---|---|---|
+| Σ=3 | 16 | 12 / 66.7% / +28.2% | 4 / 50.0% / +7.5% | +16.7 | +20.7% | 0.551 |
+| Σ=4 | 19 | 12 / 33.3% / -45.1% | 7 / 42.9% / -17.6% | -9.5 | -27.5% | 0.678 |
+| Σ=5 | 10 | 8 / 62.5% / +22.8% | 2 / 100.0% / +307.5% | -37.5 | -284.7% | 0.301 |
+| Σ=6 | 9 | 7 / 57.1% / +7.9% | 2 / 0.0% / -100.0% | +57.1 | +107.9% | 0.151 |
+| Σ≥7 | 21 | 12 / 66.7% / +37.9% | 9 / 66.7% / +20.5% | +0.0 | +17.3% | 1.000 |
+| **Pooled** | **90** | **lift_WR (weighted)** | | **+3.6 pp** | **-27.4%** | (positive in **2/5** buckets) |
+
+### `G_NOFLAT` — CONF_for ≥ 1 ∧ FLAT_for = 0
+
+| Σ | N total | IN-gate (n / WR / ROI) | OUT-gate (n / WR / ROI) | Lift_WR (pp) | Lift_ROI (pp) | z-test p |
+|---|---|---|---|---|---|---|
+| Σ=3 | 16 | 11 / 63.6% / +21.8% | 5 / 60.0% / +25.6% | +3.6 | -3.8% | 0.889 |
+| Σ=4 | 19 | 2 / 50.0% / -33.3% | 17 / 35.3% / -35.2% | +14.7 | +1.8% | 0.683 |
+| Σ=5 | 10 | 2 / 100.0% / +78.8% | 8 / 62.5% / +80.0% | +37.5 | -1.2% | 0.301 |
+| Σ=6 | 9 | n=0 | 9 / 44.4% / -16.1% | — | — | — |
+| Σ≥7 | 21 | 1 / 100.0% / +315.0% | 20 / 65.0% / +16.2% | +35.0 | +298.8% | — |
+| **Pooled** | **90** | **lift_WR (weighted)** | | **+9.6 pp** | **-2.7%** | (positive in **3/3** buckets) |
+
+### `G_HC` — HC_for ≥ 1 ∧ HC_ag = 0  (HC dominance)
+
+| Σ | N total | IN-gate (n / WR / ROI) | OUT-gate (n / WR / ROI) | Lift_WR (pp) | Lift_ROI (pp) | z-test p |
+|---|---|---|---|---|---|---|
+| Σ=3 | 16 | 3 / 100.0% / +79.1% | 13 / 53.8% / +10.1% | +46.2 | +69.0% | 0.137 |
+| Σ=4 | 19 | 6 / 50.0% / -21.4% | 13 / 30.8% / -41.3% | +19.2 | +19.9% | 0.419 |
+| Σ=5 | 10 | 2 / 100.0% / +78.8% | 8 / 62.5% / +80.0% | +37.5 | -1.2% | 0.301 |
+| Σ=6 | 9 | 3 / 100.0% / +88.1% | 6 / 16.7% / -68.2% | +83.3 | +156.3% | 0.018 |
+| Σ≥7 | 21 | 10 / 80.0% / +65.4% | 11 / 54.5% / -1.4% | +25.5 | +66.8% | 0.217 |
+| **Pooled** | **90** | **lift_WR (weighted)** | | **+34.7 pp** | **+60.9%** | (positive in **5/5** buckets) |
+
+### `G_PURITY` — HC dominance OR pure CONFIRMED
+
+| Σ | N total | IN-gate (n / WR / ROI) | OUT-gate (n / WR / ROI) | Lift_WR (pp) | Lift_ROI (pp) | z-test p |
+|---|---|---|---|---|---|---|
+| Σ=3 | 16 | 12 / 66.7% / +28.7% | 4 / 50.0% / +6.0% | +16.7 | +22.6% | 0.551 |
+| Σ=4 | 19 | 6 / 50.0% / -21.4% | 13 / 30.8% / -41.3% | +19.2 | +19.9% | 0.419 |
+| Σ=5 | 10 | 2 / 100.0% / +78.8% | 8 / 62.5% / +80.0% | +37.5 | -1.2% | 0.301 |
+| Σ=6 | 9 | 3 / 100.0% / +88.1% | 6 / 16.7% / -68.2% | +83.3 | +156.3% | 0.018 |
+| Σ≥7 | 21 | 10 / 80.0% / +65.4% | 11 / 54.5% / -1.4% | +25.5 | +66.8% | 0.217 |
+| **Pooled** | **90** | **lift_WR (weighted)** | | **+27.1 pp** | **+46.2%** | (positive in **5/5** buckets) |
+
+### `G_NETCONF_OR_HC` — (CONF_for−CONF_ag) ≥ +1 OR HC dominance
+
+| Σ | N total | IN-gate (n / WR / ROI) | OUT-gate (n / WR / ROI) | Lift_WR (pp) | Lift_ROI (pp) | z-test p |
+|---|---|---|---|---|---|---|
+| Σ=3 | 16 | 13 / 69.2% / +34.0% | 3 / 33.3% / -24.7% | +35.9 | +58.7% | 0.247 |
+| Σ=4 | 19 | 12 / 33.3% / -45.1% | 7 / 42.9% / -17.6% | -9.5 | -27.5% | 0.678 |
+| Σ=5 | 10 | 8 / 62.5% / +22.8% | 2 / 100.0% / +307.5% | -37.5 | -284.7% | 0.301 |
+| Σ=6 | 9 | 7 / 57.1% / +7.9% | 2 / 0.0% / -100.0% | +57.1 | +107.9% | 0.151 |
+| Σ≥7 | 21 | 12 / 66.7% / +37.9% | 9 / 66.7% / +20.5% | +0.0 | +17.3% | 1.000 |
+| **Pooled** | **90** | **lift_WR (weighted)** | | **+8.7 pp** | **-16.9%** | (positive in **2/5** buckets) |
+
+---
+## §3. Gate-comparison summary
+
+Which gate produces the most consistent and largest lift across Σ buckets?
+
+| Gate | Buckets w/ positive lift | Avg lift_WR (pp) | Avg lift_ROI (pp) | Verdict |
+|---|---|---|---|---|
+| `G_CONF` | 2/3 | -3.7 pp | -8.0% | **NOISE — does not scale** |
+| `G_NETCONF` | 2/5 | +3.6 pp | -27.4% | **NOISE — does not scale** |
+| `G_NOFLAT` | 3/3 | +9.6 pp | -2.7% | **SCALES — strong** |
+| `G_HC` | 5/5 | +34.7 pp | +60.9% | **SCALES — strong** |
+| `G_PURITY` | 5/5 | +27.1 pp | +46.2% | **SCALES — strong** |
+| `G_NETCONF_OR_HC` | 2/5 | +8.7 pp | -16.9% | **NOISE — does not scale** |
+
+---
+## §4. Per-sport replication — does the best gate scale ACROSS sports too?
+
+Picking the gate with the most positive buckets in §3 and replicating per sport. If a gate truly scales, it should lift in every sport AND every Σ.
+
+### `G_CONF` — CONFIRMED_for ≥ 1
+
+| Sport | Σ | N | IN n/WR/ROI | OUT n/WR/ROI | Lift_WR | Lift_ROI |
+|---|---|---|---|---|---|---|
+| MLB | Σ=3 | 8 | 7/57.1%/+11% | 1/100.0%/+126% | -42.9 | -114.8% |
+| MLB | Σ=4 | 10 | 8/12.5%/-75% | 2/0.0%/-100% | +12.5 | +25.5% |
+| MLB | Σ=5 | 5 | 5/80.0%/+59% | n=0 | — | — |
+| MLB | Σ=6 | 4 | 4/50.0%/-7% | n=0 | — | — |
+| MLB | Σ≥7 | 2 | 1/0.0%/-100% | 1/100.0%/+65% | -100.0 | -164.5% |
+| NBA | Σ=3 | 4 | 4/50.0%/-13% | n=0 | — | — |
+| NBA | Σ=4 | 9 | 6/50.0%/-24% | 3/100.0%/+92% | -50.0 | -116.4% |
+| NBA | Σ=5 | 3 | 3/66.7%/+154% | n=0 | — | — |
+| NBA | Σ=6 | 5 | 4/50.0%/-4% | 1/0.0%/-100% | +50.0 | +95.7% |
+| NBA | Σ≥7 | 17 | 11/72.7%/+50% | 6/50.0%/-15% | +22.7 | +65.1% |
+| NHL | Σ=3 | 4 | 3/100.0%/+105% | 1/0.0%/-100% | +100.0 | +205.1% |
+| NHL | Σ=5 | 2 | 1/0.0%/-100% | 1/100.0%/+140% | -100.0 | -240.0% |
+| NHL | Σ≥7 | 2 | 1/100.0%/+120% | 1/100.0%/+88% | +0.0 | +31.5% |
+
+### `G_NETCONF` — (CONF_for − CONF_ag) ≥ +1
+
+| Sport | Σ | N | IN n/WR/ROI | OUT n/WR/ROI | Lift_WR | Lift_ROI |
+|---|---|---|---|---|---|---|
+| MLB | Σ=3 | 8 | 6/50.0%/-4% | 2/100.0%/+115% | -50.0 | -119.2% |
+| MLB | Σ=4 | 10 | 7/14.3%/-71% | 3/0.0%/-100% | +14.3 | +29.1% |
+| MLB | Σ=5 | 5 | 5/80.0%/+59% | n=0 | — | — |
+| MLB | Σ=6 | 4 | 4/50.0%/-7% | n=0 | — | — |
+| MLB | Σ≥7 | 2 | 1/0.0%/-100% | 1/100.0%/+65% | -100.0 | -164.5% |
+| NBA | Σ=3 | 4 | 3/66.7%/+16% | 1/0.0%/-100% | +66.7 | +116.1% |
+| NBA | Σ=4 | 9 | 5/60.0%/-9% | 4/75.0%/+44% | -15.0 | -53.2% |
+| NBA | Σ=5 | 3 | 2/50.0%/-7% | 1/100.0%/+475% | -50.0 | -481.5% |
+| NBA | Σ=6 | 5 | 3/66.7%/+28% | 2/0.0%/-100% | +66.7 | +127.6% |
+| NBA | Σ≥7 | 17 | 11/72.7%/+50% | 6/50.0%/-15% | +22.7 | +65.1% |
+| NHL | Σ=3 | 4 | 3/100.0%/+105% | 1/0.0%/-100% | +100.0 | +205.1% |
+| NHL | Σ=5 | 2 | 1/0.0%/-100% | 1/100.0%/+140% | -100.0 | -240.0% |
+| NHL | Σ≥7 | 2 | n=0 | 2/100.0%/+104% | — | — |
+
+### `G_NOFLAT` — CONF_for ≥ 1 ∧ FLAT_for = 0
+
+| Sport | Σ | N | IN n/WR/ROI | OUT n/WR/ROI | Lift_WR | Lift_ROI |
+|---|---|---|---|---|---|---|
+| MLB | Σ=3 | 8 | 6/50.0%/-4% | 2/100.0%/+115% | -50.0 | -119.2% |
+| MLB | Σ=4 | 10 | 1/0.0%/-100% | 9/11.1%/-77% | -11.1 | -22.7% |
+| MLB | Σ=5 | 5 | 2/100.0%/+79% | 3/66.7%/+46% | +33.3 | +32.8% |
+| MLB | Σ=6 | 4 | n=0 | 4/50.0%/-7% | — | — |
+| MLB | Σ≥7 | 2 | n=0 | 2/50.0%/-18% | — | — |
+| NBA | Σ=3 | 4 | 3/66.7%/+16% | 1/0.0%/-100% | +66.7 | +116.1% |
+| NBA | Σ=4 | 9 | 1/100.0%/+33% | 8/62.5%/+12% | +37.5 | +21.1% |
+| NBA | Σ=5 | 3 | n=0 | 3/66.7%/+154% | — | — |
+| NBA | Σ=6 | 5 | n=0 | 5/40.0%/-23% | — | — |
+| NBA | Σ≥7 | 17 | 1/100.0%/+315% | 16/62.5%/+9% | +37.5 | +305.6% |
+| NHL | Σ=3 | 4 | 2/100.0%/+109% | 2/50.0%/-1% | +50.0 | +109.6% |
+| NHL | Σ=5 | 2 | n=0 | 2/50.0%/+20% | — | — |
+| NHL | Σ≥7 | 2 | n=0 | 2/100.0%/+104% | — | — |
+
+### `G_HC` — HC_for ≥ 1 ∧ HC_ag = 0  (HC dominance)
+
+| Sport | Σ | N | IN n/WR/ROI | OUT n/WR/ROI | Lift_WR | Lift_ROI |
+|---|---|---|---|---|---|---|
+| MLB | Σ=3 | 8 | 2/100.0%/+105% | 6/50.0%/-1% | +50.0 | +105.2% |
+| MLB | Σ=4 | 10 | 3/33.3%/-32% | 7/0.0%/-100% | +33.3 | +68.0% |
+| MLB | Σ=5 | 5 | 2/100.0%/+79% | 3/66.7%/+46% | +33.3 | +32.8% |
+| MLB | Σ=6 | 4 | 2/100.0%/+86% | 2/0.0%/-100% | +100.0 | +186.3% |
+| MLB | Σ≥7 | 2 | n=0 | 2/50.0%/-18% | — | — |
+| NBA | Σ=3 | 4 | 1/100.0%/+28% | 3/33.3%/-27% | +66.7 | +54.8% |
+| NBA | Σ=4 | 9 | 3/66.7%/-11% | 6/66.7%/+27% | +0.0 | -38.0% |
+| NBA | Σ=5 | 3 | n=0 | 3/66.7%/+154% | — | — |
+| NBA | Σ=6 | 5 | 1/100.0%/+92% | 4/25.0%/-52% | +75.0 | +144.0% |
+| NBA | Σ≥7 | 17 | 10/80.0%/+65% | 7/42.9%/-27% | +37.1 | +92.3% |
+| NHL | Σ=3 | 4 | n=0 | 4/75.0%/+54% | — | — |
+| NHL | Σ=5 | 2 | n=0 | 2/50.0%/+20% | — | — |
+| NHL | Σ≥7 | 2 | n=0 | 2/100.0%/+104% | — | — |
+
+### `G_PURITY` — HC dominance OR pure CONFIRMED
+
+| Sport | Σ | N | IN n/WR/ROI | OUT n/WR/ROI | Lift_WR | Lift_ROI |
+|---|---|---|---|---|---|---|
+| MLB | Σ=3 | 8 | 7/57.1%/+11% | 1/100.0%/+126% | -42.9 | -114.8% |
+| MLB | Σ=4 | 10 | 3/33.3%/-32% | 7/0.0%/-100% | +33.3 | +68.0% |
+| MLB | Σ=5 | 5 | 2/100.0%/+79% | 3/66.7%/+46% | +33.3 | +32.8% |
+| MLB | Σ=6 | 4 | 2/100.0%/+86% | 2/0.0%/-100% | +100.0 | +186.3% |
+| MLB | Σ≥7 | 2 | n=0 | 2/50.0%/-18% | — | — |
+| NBA | Σ=3 | 4 | 3/66.7%/+16% | 1/0.0%/-100% | +66.7 | +116.1% |
+| NBA | Σ=4 | 9 | 3/66.7%/-11% | 6/66.7%/+27% | +0.0 | -38.0% |
+| NBA | Σ=5 | 3 | n=0 | 3/66.7%/+154% | — | — |
+| NBA | Σ=6 | 5 | 1/100.0%/+92% | 4/25.0%/-52% | +75.0 | +144.0% |
+| NBA | Σ≥7 | 17 | 10/80.0%/+65% | 7/42.9%/-27% | +37.1 | +92.3% |
+| NHL | Σ=3 | 4 | 2/100.0%/+109% | 2/50.0%/-1% | +50.0 | +109.6% |
+| NHL | Σ=5 | 2 | n=0 | 2/50.0%/+20% | — | — |
+| NHL | Σ≥7 | 2 | n=0 | 2/100.0%/+104% | — | — |
+
+### `G_NETCONF_OR_HC` — (CONF_for−CONF_ag) ≥ +1 OR HC dominance
+
+| Sport | Σ | N | IN n/WR/ROI | OUT n/WR/ROI | Lift_WR | Lift_ROI |
+|---|---|---|---|---|---|---|
+| MLB | Σ=3 | 8 | 7/57.1%/+11% | 1/100.0%/+126% | -42.9 | -114.8% |
+| MLB | Σ=4 | 10 | 7/14.3%/-71% | 3/0.0%/-100% | +14.3 | +29.1% |
+| MLB | Σ=5 | 5 | 5/80.0%/+59% | n=0 | — | — |
+| MLB | Σ=6 | 4 | 4/50.0%/-7% | n=0 | — | — |
+| MLB | Σ≥7 | 2 | 1/0.0%/-100% | 1/100.0%/+65% | -100.0 | -164.5% |
+| NBA | Σ=3 | 4 | 3/66.7%/+16% | 1/0.0%/-100% | +66.7 | +116.1% |
+| NBA | Σ=4 | 9 | 5/60.0%/-9% | 4/75.0%/+44% | -15.0 | -53.2% |
+| NBA | Σ=5 | 3 | 2/50.0%/-7% | 1/100.0%/+475% | -50.0 | -481.5% |
+| NBA | Σ=6 | 5 | 3/66.7%/+28% | 2/0.0%/-100% | +66.7 | +127.6% |
+| NBA | Σ≥7 | 17 | 11/72.7%/+50% | 6/50.0%/-15% | +22.7 | +65.1% |
+| NHL | Σ=3 | 4 | 3/100.0%/+105% | 1/0.0%/-100% | +100.0 | +205.1% |
+| NHL | Σ=5 | 2 | 1/0.0%/-100% | 1/100.0%/+140% | -100.0 | -240.0% |
+| NHL | Σ≥7 | 2 | n=0 | 2/100.0%/+104% | — | — |
+
+---
+## §5. Decision
+
+**A gate scales** if it produces a positive WR lift in 4+/5 Σ buckets AND the pooled lift is ≥ +3pp WR. Below that bar, treat as cell-level noise — do not deploy.
+
+See §3 verdict column for the call. Take only gates labelled "SCALES" forward to v7.1 sizing/lock-rule changes.
+
+---
+## §6. Caveats
+
+- Sample is short (13 days). Per-Σ-bucket Ns are small; per-(Σ, sport) cells are tiny. The matrix is most reliable when patterns are **directionally consistent** rather than statistically significant in each cell.
+- Gates we test are not orthogonal — `G_PURITY` ⊃ `G_NOFLAT`, `G_NETCONF_OR_HC` ⊃ `G_NETCONF`, etc. The "best" gate is the simplest one that scales.
+- If a gate "scales" but the pooled lift is small (<+3pp WR), it is real but weak signal — treat as a sizing tilt, not a binary lock filter.
