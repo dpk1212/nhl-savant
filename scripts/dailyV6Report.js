@@ -267,6 +267,15 @@ async function loadEverything() {
           if (!dateMax || date > dateMax) dateMax = date;
         }
 
+        // v7.1 — frozen HC dominance fields. Older docs (pre-v7.1 stamp)
+        // do NOT have these and we leave them null. The §9 cohort table
+        // partitions accordingly so we don't false-credit historical picks.
+        const hcDominant = (side.v8_hcDominant != null) ? !!side.v8_hcDominant : null;
+        const hcConfFor  = (side.v8_hcConfFor != null) ? Number(side.v8_hcConfFor) : null;
+        const hcConfAg   = (side.v8_hcConfAg != null) ? Number(side.v8_hcConfAg) : null;
+        const systemVersion = side.v8_systemVersion || null;
+        const promotedBy = side.promotedBy || null;
+
         pickRows.push({
           docId: doc.id,
           date, sport, market, sideKey,
@@ -274,6 +283,7 @@ async function loadEverything() {
           peakStars, peakUnits, odds,
           inDashboard, cancelled,
           dwFrozen, dqFrozen, dwSource, dqSource, vaultStar,
+          hcDominant, hcConfFor, hcConfAg, systemVersion, promotedBy,
           outcome: oc, profitU, flatProfit,
         });
       }
@@ -1002,10 +1012,82 @@ function vaultStarBand(row) {
   }
   out.push('');
 
+  // ─── §9. v7.1 HC dominance cohort monitoring ─────────────────────────────
+  // Live monitor for the v7.1 HC-dominance feature (LOCK floor lowered for
+  // Σ ∈ {3,4} when (HC_for ≥ 1) ∧ (HC_ag = 0); units sized at 1.5×).
+  // Cohort partition: HC vs non-HC × Σ bucket × system version.
+  out.push('## §9. v7.1 HC dominance cohort');
+  out.push('');
+  out.push('Tracks the live performance of the v7.1 HC-dominance gate. Picks must be `inDashboard` and have a frozen `v8_hcDominant` stamp (i.e. stamped under v7.1). HC_PROMOTED rows are picks promoted out of LEAN (Σ ∈ {3,4}) by HC dominance — the new edge surface.');
+  out.push('');
+  const v71Rows = pickRows.filter(r => r.inDashboard && r.systemVersion === '7.1' && r.hcDominant !== null);
+  if (!v71Rows.length) {
+    out.push('_No v7.1-stamped picks in the sample yet. Re-run after the next slate completes._');
+    out.push('');
+  } else {
+    const aggCohort = (rows) => {
+      const n = rows.length;
+      const w = rows.filter(r => r.outcome === 'WIN').length;
+      const l = rows.filter(r => r.outcome === 'LOSS').length;
+      const p = rows.filter(r => r.outcome === 'PUSH').length;
+      const wr = n ? (100 * w / Math.max(1, w + l)) : null;
+      const profitU = rows.reduce((a, b) => a + (b.profitU || 0), 0);
+      const flatU   = rows.reduce((a, b) => a + (b.flatProfit || 0), 0);
+      const flatRoi = n ? (100 * flatU / n) : null;
+      return { n, w, l, p, wr, profitU, flatU, flatRoi };
+    };
+    out.push('### §9a. HC vs non-HC by Σ bucket (v7.1 only)');
+    out.push('');
+    out.push(mdHeader(['Σ bucket', 'HC dominant', 'N', 'W-L-P', 'WR%', 'PnL_peak', 'PnL_flat', 'flat ROI%']));
+    const sumOf = (r) => (r.dwFrozen ?? 0) + (r.dqFrozen ?? 0);
+    const buckets = [
+      { label: '3',     pred: r => sumOf(r) === 3 },
+      { label: '4',     pred: r => sumOf(r) === 4 },
+      { label: '5',     pred: r => sumOf(r) === 5 },
+      { label: '6',     pred: r => sumOf(r) === 6 },
+      { label: '≥7',    pred: r => sumOf(r) >= 7 },
+    ];
+    for (const b of buckets) {
+      for (const hc of [true, false]) {
+        const rows = v71Rows.filter(r => b.pred(r) && r.hcDominant === hc);
+        const a = aggCohort(rows);
+        out.push(`| ${b.label} | ${hc ? 'YES' : 'NO'} | ${a.n} | ${a.w}-${a.l}-${a.p} | ${fmtPct(a.wr)} | ${sign(a.profitU, 2)}u | ${sign(a.flatU, 2)}u | ${fmtSignPct(a.flatRoi)} |`);
+      }
+    }
+    out.push('');
+    out.push('### §9b. HC_PROMOTED cohort (Σ ∈ {3,4}, lifted out of LEAN by HC)');
+    out.push('');
+    const hcPromoted = v71Rows.filter(r => r.promotedBy === 'hc-dominance');
+    const hcAll      = v71Rows.filter(r => r.hcDominant);
+    const hcSig5     = v71Rows.filter(r => r.hcDominant && (r.dwFrozen ?? 0) + (r.dqFrozen ?? 0) >= 5);
+    out.push(mdHeader(['Cohort', 'N', 'W-L-P', 'WR%', 'PnL_peak', 'PnL_flat', 'flat ROI%']));
+    for (const [label, rows] of [
+      ['HC_PROMOTED (Σ ∈ {3,4})', hcPromoted],
+      ['HC ∧ Σ ≥ +5',             hcSig5],
+      ['All HC dominant',          hcAll],
+    ]) {
+      const a = aggCohort(rows);
+      out.push(`| ${label} | ${a.n} | ${a.w}-${a.l}-${a.p} | ${fmtPct(a.wr)} | ${sign(a.profitU, 2)}u | ${sign(a.flatU, 2)}u | ${fmtSignPct(a.flatRoi)} |`);
+    }
+    out.push('');
+    out.push('### §9c. HC dominance per sport');
+    out.push('');
+    out.push(mdHeader(['Sport', 'HC_PROMOTED N', 'WR%', 'flat ROI%', 'All HC N', 'WR%', 'flat ROI%']));
+    const sports = [...new Set(v71Rows.map(r => r.sport))].sort();
+    for (const sp of sports) {
+      const promo = aggCohort(hcPromoted.filter(r => r.sport === sp));
+      const all   = aggCohort(hcAll.filter(r => r.sport === sp));
+      out.push(`| ${sp} | ${promo.n} | ${fmtPct(promo.wr)} | ${fmtSignPct(promo.flatRoi)} | ${all.n} | ${fmtPct(all.wr)} | ${fmtSignPct(all.flatRoi)} |`);
+    }
+    out.push('');
+    out.push(`_v7.1 picks since cutover: **${v71Rows.length}** (HC dominant: ${hcAll.length} · HC promoted: ${hcPromoted.length})_`);
+    out.push('');
+  }
+
   // ─── Footer ────────────────────────────────────────────────────────────────
   out.push('---');
   out.push('');
-  out.push(`_Driven by \`scripts/dailyV6Report.js\` · regenerates daily via \`.github/workflows/daily-v6-report.yml\` · WHITELIST_CONSENSUS_VERSION = 6 · QUALITY_CONTRIB_CUT = ${QUALITY_CUT} · inclusion mirrors live Pick Performance dashboard · cohort tags from frozen v6 stamps_`);
+  out.push(`_Driven by \`scripts/dailyV6Report.js\` · regenerates daily via \`.github/workflows/daily-v6-report.yml\` · WHITELIST_CONSENSUS_VERSION = 7 (v7.1) · QUALITY_CONTRIB_CUT = ${QUALITY_CUT} · inclusion mirrors live Pick Performance dashboard · cohort tags from frozen v6/v7.1 stamps_`);
   out.push('');
 
   const outPath = join(REPO_ROOT, 'DAILY_V6_REPORT.md');

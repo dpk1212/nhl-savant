@@ -322,13 +322,18 @@ function computeSharpFeatures(positions, consensusSide) {
 // return 0 because they can't lock per Floor G. consensusPenalty /
 // regimeBonus are kept as no-ops so legacy callers don't error, but
 // sizing is driven entirely by stars now.
-// v7.0 ML unit ladder — calibrated to V6_FULL_ANALYSIS cohort edge.
-//   ELITE  (Σ ≥ +7) → 4.0u  (was 3.0★ ladder; bumped to honor +9.4u peak Path-1)
-//   5.0★   (Σ ≥ +6) → 3.0u
-//   4.5★   (Σ = +5) → 2.0u
-//   4.0★, 3.5★      → 0u when lockTier === 'LEAN' (display-only)
-// Legacy ladder retained for callers that don't pass lockTier (graded picks etc.).
-function calculateUnits(stars, consensusPenalty = 0, odds = null, regimeBonus = 0, lockTier = null) {
+// v7.1 ML unit ladder — calibrated to V6_FULL_ANALYSIS cohort edge with
+// HC-dominance multiplier added.
+//   ELITE  (Σ ≥ +7) → 4.0u   ×1.5 if HC-dominant → capped 4.5u
+//   5.0★   (Σ ≥ +6) → 3.0u   ×1.5 if HC-dominant → capped 3.0u
+//   4.5★   (Σ = +5) → 2.0u   ×1.5 if HC-dominant → 3.0u
+//   4.0★, 3.5★      → 0u when lockTier === 'LEAN' (LEAN beats HC, always 0)
+//                        when lockTier === 'LOCKED' (HC-promoted Σ ∈ 3,4):
+//                        Σ=4 → 1.25u → ×1.5 = 1.88u
+//                        Σ=3 → 0.75u → ×1.5 = 1.13u
+// Legacy ladder retained for callers that don't pass lockTier or hcDominant.
+function calculateUnits(stars, consensusPenalty = 0, odds = null, regimeBonus = 0,
+                       lockTier = null, hcDominant = false, opts = {}) {
   if (lockTier === 'LEAN') return 0;
   let units;
   if (lockTier === 'ELITE') units = 4.00;
@@ -341,7 +346,14 @@ function calculateUnits(stars, consensusPenalty = 0, odds = null, regimeBonus = 
   if (odds != null && odds >= 200) units = Math.min(units, lockTier === 'ELITE' ? 1.0 : 0.5);
   else if (odds != null && odds >= 151) units = Math.min(units, lockTier === 'ELITE' ? 2.0 : 1.0);
   else if (odds != null && odds >= 100) units = Math.min(units, lockTier === 'ELITE' ? 3.0 : 2.0);
-  return units;
+  // v7.1 HC multiplier — gated by cutover + kill-switch + HC dominance.
+  // Applied AFTER the favorite/dog clamp so heavy favorites still respect
+  // their cap, just at the upper bound.
+  if (hcDominant && isV71Eligible(opts.pickDate)) {
+    const cap = lockTier === 'ELITE' ? V7_1_HC_CAP_ML_ELITE : V7_1_HC_CAP_ML_NON;
+    units = Math.min(units * V7_1_HC_MULT, cap);
+  }
+  return Math.round(units * 100) / 100;
 }
 
 function unitTier(units) {
@@ -596,26 +608,35 @@ function vaultStarFromDeltas(dw, dq) {
   return Math.max(1.0, Math.min(5.0, base + adj));
 }
 
-// v7.0 lock-tier classifier. Sole source of truth for whether a pick
+// v7.1 lock-tier classifier. Sole source of truth for whether a pick
 // renders as LOCKED (ship at full size), LEAN (track but bet 0u), or
-// MUTED (legacy mute path). Mirrors `vaultStarFromDeltas` 1-for-1.
+// MUTED. v7.1 adds the HC-dominance promotion: a Σ ∈ {3,4} pick that
+// has at least one high-conviction CONFIRMED wallet backing AND zero
+// HC-CONFIRMED dissent earns LOCKED status, sized via the HC multiplier.
 //
-//   ELITE  : Δw ≥ +1 ∧ Δq ≥ +1 ∧ Δw+Δq ≥ +7    (Path-1 elite cell)
-//   LOCKED : Δw ≥ +1 ∧ Δq ≥ +1 ∧ Δw+Δq ∈ {5,6} (full ladder size)
-//   LEAN   : Δw ≥ +1 ∧ Δq ≥ +1 ∧ Δw+Δq ∈ {3,4} (tracked, 0u)
+//   ELITE  : Δw ≥ +1 ∧ Δq ≥ +1 ∧ Δw+Δq ≥ +7
+//   LOCKED : Σ ≥ +5  OR  (Σ ∈ {3,4} ∧ hcDominant)
+//   LEAN   : Σ ∈ {3,4} ∧ ¬hcDominant
 //   MUTED  : everything else (the (1,1) bleeder + below-base deltas)
 //
+// `opts.pickDate` gates the HC-promotion branch by V7_1_CUTOVER_DATE so
+// historic picks never see the LEAN→LOCKED promotion even if they
+// happen to have HC dominance. hcDominant defaults to false so legacy
+// callers that don't pass it get the v7.0 ladder for free.
+//
 // LEAN is a UI-only state — picks here still write `lockStage='LOCKED'`
-// to Firestore so they appear in the Locked Picks list with a LEAN
-// badge replacing the unit chip. The health engine continues to mute
-// the (1,1) cell + Δw ≤ 0 / Δq ≤ 0 cohorts unchanged.
-function lockTierFromDeltas(dw, dq) {
+// to Firestore (via promotionEligible) so they appear in the Locked
+// Picks list with a LEAN badge replacing the unit chip. The health
+// engine continues to mute the (1,1) cell + Δw ≤ 0 / Δq ≤ 0 cohorts.
+function lockTierFromDeltas(dw, dq, hcDominant = false, opts = {}) {
   if (!Number.isFinite(dw) || !Number.isFinite(dq)) return 'MUTED';
   if (dw < 1 || dq < 1) return 'MUTED';
   const sum = dw + dq;
   if (sum >= 7) return 'ELITE';
   if (sum >= 5) return 'LOCKED';
-  if (sum >= 3) return 'LEAN';
+  if (sum >= 3) {
+    return (isV71Eligible(opts.pickDate) && hcDominant) ? 'LOCKED' : 'LEAN';
+  }
   return 'MUTED';
 }
 
@@ -982,8 +1003,43 @@ const WHITELIST_INTERVENTION = {
 // (Δw≥+1 AND Δq≥+1) is the only promotion path. WPS/regime/contribTier
 // downgraded to diagnostic-only. See V8_TWO_FACTOR_BACKTEST.md for the
 // pre-ship validation (74 picks, +43 ROI-points lift vs V8).
-const WHITELIST_CONSENSUS_VERSION = 6;
+//
+// v7.1 — bump 6 → 7. HC-dominance fields (v8_hcConfFor / v8_hcConfAg /
+// v8_hcDominant), v8_systemVersion, v8_topPick / v8_superTopPick are
+// now stamped. needsConsensusRestamp() picks up the new version on next
+// sync so every active doc re-stamps once after deploy.
+const WHITELIST_CONSENSUS_VERSION = 7;
 const QUALITY_CONTRIB_CUT = 30;   // T=30 — validated by V8_CONTRIBUTION_EDGE
+
+// ─── v7.1 HC Dominance constants ─────────────────────────────────────
+// Source: WALLET_GATE_SCALE_TEST.md — only gate that produced positive
+// WR lift in 5/5 Σ buckets (avg +34.7pp WR / +60.9pp flat ROI).
+//
+//   HC_DOMINANCE := (HC_for ≥ 1) ∧ (HC_ag = 0)
+//     where HC = whitelistTier === 'CONFIRMED' AND sizeRatio ≥ HC_RATIO
+//
+// HC dominance promotes Σ ∈ {3,4} from LEAN → LOCKED, multiplies units
+// by V7_1_HC_MULT (capped at the cap constants below), and drives the
+// SUPER TOP PICK badge. Stars and the Δw/Δq math are UNCHANGED.
+//
+// Gated by V7_1_CUTOVER_DATE — picks dated before cutover keep v7.0
+// ladder/floor/badges so historic Firestore docs don't change behavior.
+const HC_RATIO = 1.5;
+const V7_1_CUTOVER_DATE = '2026-04-30';   // YYYY-MM-DD ET — picks dated < this stay on v7.0 logic
+const V7_1_HC_DOMINANCE_ENABLED = true;   // master kill-switch — flip to false to revert without redeploy
+const V7_1_HC_MULT          = 1.5;
+const V7_1_HC_CAP_ML_ELITE  = 4.5;        // never exceed 4.5u ML even with HC bump
+const V7_1_HC_CAP_ML_NON    = 3.0;
+const V7_1_HC_CAP_ST_ELITE  = 3.0;        // spreads/totals
+const V7_1_HC_CAP_ST_NON    = 1.75;
+
+// True if this pick should run v7.1 logic. Both the date gate AND the
+// kill-switch must be true. Used by every v7.1-aware function.
+function isV71Eligible(pickDate) {
+  if (!V7_1_HC_DOMINANCE_ENABLED) return false;
+  if (typeof pickDate !== 'string') return false;
+  return pickDate >= V7_1_CUTOVER_DATE;
+}
 
 // Module-level cache of sharpWalletProfiles, keyed by walletShort (last 6
 // chars of address). Populated by a React effect in useMarketData; read
@@ -1028,6 +1084,10 @@ function computeWalletConsensus(walletDetails, sport, sideKey) {
   const result = {
     forW: 0, agW: 0, delta: 0, verdict: 'NEUTRAL',
     qualityForT30: 0, qualityAgT30: 0, qualityMargin: 0,
+    // v7.1 — HC dominance fields. Populated alongside forW/agW. See
+    // WALLET_GATE_SCALE_TEST.md §3 for why HC dominance is the only
+    // wallet-tier gate that produced positive lift in 5/5 Σ buckets.
+    hcConfFor: 0, hcConfAg: 0, hcDominant: false,
     unitBonus: 0, lockAction: null, promotionEligible: false,
     sportConfig: WHITELIST_INTERVENTION[sport] || { bonus: false, mute: false, cancel: false, promote: false },
     enabled: !!WHITELIST_INTERVENTION[sport],
@@ -1052,15 +1112,29 @@ function computeWalletConsensus(walletDetails, sport, sideKey) {
   // quality populated but delta=0 — the stamping layer will re-run later.
   if (!WALLET_PROFILES_CACHE) return result;
 
-  let forW = 0, agW = 0;
+  // Single pass: compute forW/agW (whitelist-gated CONFIRMED+FLAT) AND
+  // HC counts (CONFIRMED-only at sizeRatio ≥ HC_RATIO).
+  let forW = 0, agW = 0, hcF = 0, hcA = 0;
   for (const d of walletDetails) {
     if (!d?.wallet) continue;
     if (!isWhitelistedForSport(d.wallet, sport)) continue;
-    if (d.side === sideKey) forW++;
+    const isFor = d.side === sideKey;
+    if (isFor) forW++;
     else if (d.side) agW++;
+    // HC = CONFIRMED tier ∧ sizeRatio ≥ HC_RATIO. Look up the profile tier
+    // directly so FLAT wallets (also returned by isWhitelistedForSport)
+    // don't count toward HC. Profile shape: profile.bySport[sport].whitelistTier.
+    const profile = getWalletProfile(d.wallet);
+    const tier = profile?.bySport?.[sport]?.whitelistTier ?? null;
+    if (tier === 'CONFIRMED' && (d.sizeRatio ?? 0) >= HC_RATIO) {
+      if (isFor) hcF++;
+      else if (d.side) hcA++;
+    }
   }
   const { delta, verdict } = classifyDelta(forW, agW);
   result.forW = forW; result.agW = agW; result.delta = delta; result.verdict = verdict;
+  result.hcConfFor = hcF; result.hcConfAg = hcA;
+  result.hcDominant = hcF >= 1 && hcA === 0;
 
   const cfg = result.sportConfig;
 
@@ -1224,7 +1298,8 @@ function evaluatePickHealth({
 //   4.5★   (Σ = +5) → 1.5u  (bumped from 1.25u — calibrated to cohort edge)
 //   4.0★, 3.5★      → 0u when lockTier === 'LEAN'
 // Legacy ladder kept for graded picks (peak.units already frozen).
-function calculateSpreadTotalUnits(stars, consensusPenalty = 0, odds = null, regimeBonus = 0, lockTier = null) {
+function calculateSpreadTotalUnits(stars, consensusPenalty = 0, odds = null, regimeBonus = 0,
+                                   lockTier = null, hcDominant = false, opts = {}) {
   if (lockTier === 'LEAN') return 0;
   let units;
   if (lockTier === 'ELITE') units = 2.50;
@@ -1237,7 +1312,12 @@ function calculateSpreadTotalUnits(stars, consensusPenalty = 0, odds = null, reg
   if (odds != null && odds >= 200) units = Math.min(units, lockTier === 'ELITE' ? 0.75 : 0.5);
   else if (odds != null && odds >= 151) units = Math.min(units, lockTier === 'ELITE' ? 1.25 : 0.75);
   else if (odds != null && odds >= 100) units = Math.min(units, lockTier === 'ELITE' ? 1.75 : 1.0);
-  return units;
+  // v7.1 HC multiplier (spreads/totals).
+  if (hcDominant && isV71Eligible(opts.pickDate)) {
+    const cap = lockTier === 'ELITE' ? V7_1_HC_CAP_ST_ELITE : V7_1_HC_CAP_ST_NON;
+    units = Math.min(units * V7_1_HC_MULT, cap);
+  }
+  return Math.round(units * 100) / 100;
 }
 
 // v6.4 — Live stars/units on the locked-pick card.
@@ -1250,20 +1330,21 @@ function calculateSpreadTotalUnits(stars, consensusPenalty = 0, odds = null, reg
 //
 // Graded picks keep peak values so realized PnL stays consistent with
 // the recommendation the system actually made at lock time.
-function computeLiveSizing({ peakStars, peakUnits, marketType, oddsForLadder, liveDw, liveDq }) {
+function computeLiveSizing({ peakStars, peakUnits, marketType, oddsForLadder,
+                              liveDw, liveDq, liveHcDominant = false, pickDate = null }) {
   if (liveDw == null || liveDq == null || peakStars == null) {
     return { liveStars: peakStars, liveUnits: peakUnits || 0, isDownsized: false, liveTier: null };
   }
   const liveStars = vaultStarFromDeltas(liveDw, liveDq);
-  const liveTier  = lockTierFromDeltas(liveDw, liveDq);
+  const liveTier  = lockTierFromDeltas(liveDw, liveDq, liveHcDominant, { pickDate });
   const ladder = (marketType === 'spread' || marketType === 'total') ? calculateSpreadTotalUnits : calculateUnits;
-  const liveUnitsRaw = ladder(liveStars, 0, oddsForLadder, 0, liveTier);
+  const liveUnitsRaw = ladder(liveStars, 0, oddsForLadder, 0, liveTier, liveHcDominant, { pickDate });
   const liveUnits = Math.round(liveUnitsRaw * 100) / 100;
   return {
     liveStars,
     liveUnits,
     liveTier,
-    isDownsized: liveStars < peakStars,
+    isDownsized: liveStars < peakStars || liveUnits < (peakUnits || 0),
   };
 }
 
@@ -1320,17 +1401,27 @@ function classifyContributionTier(v8Scoring, sideKey) {
 // negative-EV mass while keeping the +0.319 Δw+Δq correlation intact.
 // LEAN preserves visibility on the {3,4} cohort so we can monitor
 // edge regression without bleeding bankroll.
-function decideLockStage(regime, v8Scoring, sideKey, sport = null, baseStars = 0) {
+function decideLockStage(regime, v8Scoring, sideKey, sport = null, baseStars = 0, pickDate = null) {
   const contribTier = classifyContributionTier(v8Scoring, sideKey);
-  if (!sport) return { stage: 'SHADOW', contribTier, promotedBy: null, dw: 0, dq: 0, lockTier: 'MUTED' };
+  if (!sport) {
+    return { stage: 'SHADOW', contribTier, promotedBy: null, dw: 0, dq: 0,
+             lockTier: 'MUTED', hcDominant: false };
+  }
   const wc = computeWalletConsensus(v8Scoring?.walletDetails, sport, sideKey);
   const dw = wc.delta || 0;
   const dq = wc.qualityMargin || 0;
-  const lockTier = lockTierFromDeltas(dw, dq);
+  const hcDominant = !!wc.hcDominant;
+  const lockTier = lockTierFromDeltas(dw, dq, hcDominant, { pickDate });
   if (wc.promotionEligible) {
-    return { stage: 'LOCKED', contribTier, promotedBy: 'two-factor-floor', dw, dq, lockTier };
+    // v7.1 — distinguish HC-dominance promotions from standard Σ ≥ +5
+    // promotions so the daily report and analytics can partition the
+    // cohorts. Σ ∈ {3,4} promoted-via-HC are uniquely flagged.
+    const promotedBy = (lockTier === 'LOCKED' && (dw + dq) <= 4 && hcDominant && isV71Eligible(pickDate))
+      ? 'hc-dominance'
+      : 'two-factor-floor';
+    return { stage: 'LOCKED', contribTier, promotedBy, dw, dq, lockTier, hcDominant };
   }
-  return { stage: 'SHADOW', contribTier, promotedBy: null, dw, dq, lockTier };
+  return { stage: 'SHADOW', contribTier, promotedBy: null, dw, dq, lockTier, hcDominant };
 }
 
 // Minimum dollars behind a side to even consider writing the pick.
@@ -1413,10 +1504,27 @@ function qualityBonus(v8Scoring, sideKey) {
 // The "2/1" TOP cohort is tiny in current sample (N=2) but is preserved
 // as a tier so that Δw≥+2 picks always earn at least a regular badge;
 // it will fill in as the sample grows.
-function evaluateTopPickTier(peak, lock, sideKey, promotedRegime = null, walletDelta = null, walletAgW = null, qualityMargin = null) {
+function evaluateTopPickTier(peak, lock, sideKey, promotedRegime = null,
+                             walletDelta = null, walletAgW = null, qualityMargin = null,
+                             side = null, pickDate = null) {
   const regime = peak?.regime ?? lock?.regime ?? promotedRegime ?? null;
   const v8 = peak?.v8Scoring ?? lock?.v8Scoring ?? null;
   const meanBaseF = computeMeanBaseF(v8, sideKey);
+  // v7.1 — when stamped fields are present and pick is post-cutover,
+  // read directly from them. Picks that haven't re-stamped yet (or are
+  // pre-cutover) fall back to the legacy Δw ≥ +2 path so historic UI
+  // views are unchanged.
+  if (side && isV71Eligible(pickDate)
+      && (side.v8_topPick !== undefined || side.v8_superTopPick !== undefined)) {
+    return {
+      isTopPick:      !!side.v8_topPick,
+      isSuperTopPick: !!side.v8_superTopPick,
+      regime,
+      meanBaseF,
+      qualityMargin,
+    };
+  }
+  // Legacy v7.0 path — preserved for historic picks. UNCHANGED from v7.0.
   const dw = typeof walletDelta === 'number' ? walletDelta : null;
   const dq = typeof qualityMargin === 'number' ? qualityMargin : null;
   const isSuperTopPick = dw != null && dq != null && dw >= 2 && dq >= 2;
@@ -1456,7 +1564,7 @@ function computeRegimeBonus(_regime, _v8Scoring, _sideKey, _sport = null) {
 // `isWhitelistedForSport`, which silently stamps forW=0/agW=0/NEUTRAL onto
 // live locked picks. To avoid poisoning the doc, skip stamping entirely
 // until the cache is ready; a later sync will stamp with real values.
-function stampWalletConsensus(target, v8Scoring, sideKey, sport, baseStars, promotedBy) {
+function stampWalletConsensus(target, v8Scoring, sideKey, sport, baseStars, promotedBy, pickDate = null) {
   if (!WALLET_PROFILES_CACHE) return;
   const wc = computeWalletConsensus(v8Scoring?.walletDetails, sport, sideKey);
   target.v8_walletConsensusVersion = WHITELIST_CONSENSUS_VERSION;
@@ -1469,7 +1577,8 @@ function stampWalletConsensus(target, v8Scoring, sideKey, sport, baseStars, prom
   target.v8_walletConsensusStarBonus = wc.unitBonus;
   target.v8_walletConsensusMuteTriggered = wc.lockAction === 'MUTE';
   target.v8_walletConsensusCancelTriggered = wc.lockAction === 'CANCEL';
-  target.v8_walletConsensusPromotionTriggered = promotedBy === 'two-factor-floor' || promotedBy === 'whitelist';
+  target.v8_walletConsensusPromotionTriggered =
+    promotedBy === 'two-factor-floor' || promotedBy === 'whitelist' || promotedBy === 'hc-dominance';
   target.v8_walletConsensusBaseStars = baseStars || 0;
   // v6 two-factor fields
   target.v8_walletConsensusQualityForT30 = wc.qualityForT30;
@@ -1478,10 +1587,23 @@ function stampWalletConsensus(target, v8Scoring, sideKey, sport, baseStars, prom
   target.v8_vaultStar = (wc.forW || wc.agW || wc.qualityMargin !== 0)
     ? vaultStarFromDeltas(wc.delta, wc.qualityMargin)
     : null;
-  // v7.0 — frozen lock-tier so reports can filter cohorts (LOCKED vs LEAN
-  // vs ELITE) without recomputing from Δ's. UI still derives liveTier from
-  // current Δ's so the badge stays honest if signals decay.
-  target.v8_lockTier = lockTierFromDeltas(wc.delta, wc.qualityMargin);
+  // v7.1 — HC dominance + cohort labels + system version stamp.
+  // Pre-cutover picks get v8_systemVersion: '7.0' so the daily report
+  // can keep them in their legacy cohort. Post-cutover picks get '7.1'.
+  target.v8_hcConfFor    = wc.hcConfFor;
+  target.v8_hcConfAg     = wc.hcConfAg;
+  target.v8_hcDominant   = wc.hcDominant;
+  target.v8_systemVersion = isV71Eligible(pickDate) ? '7.1' : '7.0';
+  // v7.1 frozen lock-tier (HC-aware). UI still recomputes from live Δs.
+  const liveTier = lockTierFromDeltas(wc.delta, wc.qualityMargin, wc.hcDominant, { pickDate });
+  target.v8_lockTier = liveTier;
+  // v7.1 — TOP / SUPER badge stamps. Derived strictly from the lock
+  // decision + HC dominance. Post-cutover only (so historic UI views
+  // keep the legacy Δw ≥ +2 badge logic via evaluateTopPickTier
+  // fallback).
+  const isShipped = liveTier === 'LOCKED' || liveTier === 'ELITE';
+  target.v8_topPick      = isShipped && (wc.delta + wc.qualityMargin) >= 5;
+  target.v8_superTopPick = isShipped && wc.hcDominant && isV71Eligible(pickDate);
 }
 
 // Phase 2: true if the existing side is missing a stamp or has a stale one.
@@ -1506,7 +1628,7 @@ function needsConsensusRestamp(existingSide) {
 // regime/v8Scoring args reflect the CURRENT consensus side; for OTHER
 // sides we fall back to that side's stored peak.regime/v8Scoring so
 // decideLockStage produces a reasonable promotedBy label.
-async function restampDriftedSides({ ref, sides, currentSideKey, sport, regime, v8Scoring, currentStars }) {
+async function restampDriftedSides({ ref, sides, currentSideKey, sport, regime, v8Scoring, currentStars, pickDate = null }) {
   if (!WALLET_PROFILES_CACHE) return null;
   if (!v8Scoring?.walletDetails) return null;
 
@@ -1522,19 +1644,23 @@ async function restampDriftedSides({ ref, sides, currentSideKey, sport, regime, 
       stored.v8_walletConsensusDelta !== liveWc.delta ||
       stored.v8_walletConsensusVerdict !== liveWc.verdict ||
       !!stored.v8_walletConsensusMuteTriggered !== (liveWc.lockAction === 'MUTE') ||
-      !!stored.v8_walletConsensusCancelTriggered !== (liveWc.lockAction === 'CANCEL');
+      !!stored.v8_walletConsensusCancelTriggered !== (liveWc.lockAction === 'CANCEL') ||
+      // v7.1 — also restamp when HC dominance state has flipped or when
+      // we're upgrading a doc to consensus version 7 for the first time.
+      !!stored.v8_hcDominant !== !!liveWc.hcDominant ||
+      (stored.v8_walletConsensusVersion ?? 0) < WHITELIST_CONSENSUS_VERSION;
     if (!drifted) continue;
 
     const isCurrent = sideKey === currentSideKey;
     const sideStars = isCurrent ? (currentStars || 0) : (stored.peak?.stars || stored.lock?.stars || 0);
     const sideRegime = isCurrent ? regime : (stored.peak?.regime || stored.lock?.regime || null);
     const sideV8 = isCurrent ? v8Scoring : (stored.peak?.v8Scoring || v8Scoring);
-    const decision = decideLockStage(sideRegime, sideV8, sideKey, sport, sideStars);
+    const decision = decideLockStage(sideRegime, sideV8, sideKey, sport, sideStars, pickDate);
     const patch = {};
     // Always stamp from the LIVE walletDetails (v8Scoring), not the side's
     // stored peak.v8Scoring.walletDetails — that snapshot is what we're
     // trying to reconcile away from.
-    stampWalletConsensus(patch, v8Scoring, sideKey, sport, sideStars, decision.promotedBy);
+    stampWalletConsensus(patch, v8Scoring, sideKey, sport, sideStars, decision.promotedBy, pickDate);
     updates[sideKey] = patch;
     touched++;
   }
@@ -1544,7 +1670,7 @@ async function restampDriftedSides({ ref, sides, currentSideKey, sport, regime, 
   return { touched };
 }
 
-function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile, regime, qualityProxy, v8Scoring, sport = null) {
+function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile, regime, qualityProxy, v8Scoring, sport = null, pickDate = null) {
   const now = Date.now();
   const tier = unitTier(units).label;
   const snapshot = { odds, book, pinnacleOdds, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units, unitTier: tier, consensusStrength, stars: stars || 0 };
@@ -1553,7 +1679,7 @@ function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet
   if (regime) snapshot.regime = regime;
   if (qualityProxy != null) snapshot.qualityProxy = qualityProxy;
   if (v8Scoring) snapshot.v8Scoring = v8Scoring;
-  const { stage: lockStage, contribTier, promotedBy } = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
+  const { stage: lockStage, contribTier, promotedBy } = decideLockStage(regime, v8Scoring, side, sport, stars || 0, pickDate);
   const base = {
     team,
     lock: { ...snapshot, lockedAt: now },
@@ -1567,12 +1693,12 @@ function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet
   };
   if (lockStage === 'LOCKED') {
     base.promotedBy = promotedBy;
-    if (promotedBy === 'two-factor-floor' || promotedBy === 'contribution' || promotedBy === 'whitelist') {
+    if (promotedBy === 'two-factor-floor' || promotedBy === 'contribution' || promotedBy === 'whitelist' || promotedBy === 'hc-dominance') {
       base.promotedAt = now;
       base.promotedRegime = regime || null;
     }
   }
-  stampWalletConsensus(base, v8Scoring, side, sport, stars || 0, promotedBy);
+  stampWalletConsensus(base, v8Scoring, side, sport, stars || 0, promotedBy, pickDate);
   return base;
 }
 
@@ -1594,7 +1720,7 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
     const existing = await getDoc(ref);
 
     if (!existing.exists()) {
-      const sideData = buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile, regime, qualityProxy, v8Scoring, sport);
+      const sideData = buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile, regime, qualityProxy, v8Scoring, sport, date);
       await setDoc(ref, {
         date, sport, gameKey, away, home, commenceTime: commenceTime || null,
         lockType: 'PREGAME',
@@ -1611,6 +1737,9 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
     const data = existing.data();
     if (data.status === 'COMPLETED') return { docId, action: 'no_change' };
     const sides = data.sides || {};
+    // v7.1 — every downstream branch needs the persisted pick date so
+    // pre-cutover docs stay on v7.0 logic even when re-stamped today.
+    const pickDate = data.date || date;
 
     if (sides[side]) {
       if (sides[side].status === 'COMPLETED') return { docId, action: 'no_change' };
@@ -1623,11 +1752,20 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
 
       const currentPeak = sides[side].peak?.units || 0;
       const currentPeakStars = sides[side].peak?.stars || 0;
-      // V8.2: units now carry the CLEAR_MOVE regime bonus from calculateUnits().
-      // The old starDelta topPickBonus was removed — it rarely fired and regime
-      // is already reflected in unit sizing.
-      const bumpedUnits = Math.min(Math.max(units, 0.5), 3);
-      if (isReflip || bumpedUnits > currentPeak || stars > currentPeakStars) {
+      // v7.1 LEAN sizing fix + HC ceiling. Compute decision FIRST so we
+      // know whether to (a) collapse units to 0 (LEAN), (b) raise the
+      // ceiling to 4.5 (ELITE+HC), or (c) keep the legacy 3.0 ceiling.
+      const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0, pickDate);
+      const isLean = decision.lockTier === 'LEAN';
+      const clampCeiling = (decision.lockTier === 'ELITE' && decision.hcDominant && isV71Eligible(pickDate))
+        ? V7_1_HC_CAP_ML_ELITE
+        : 3.0;
+      const bumpedUnits = isLean ? 0 : Math.min(Math.max(units, 0.5), clampCeiling);
+      // Allow peak to DECREASE when transitioning into LEAN — otherwise the
+      // monotonic max-rule would freeze peak.units at the previous non-LEAN
+      // value and we'd ship LEAN picks at the old unit size.
+      const peakShouldWrite = isReflip || isLean || bumpedUnits > currentPeak || stars > currentPeakStars;
+      if (peakShouldWrite) {
         const tier = unitTier(bumpedUnits).label;
         const peakData = { odds, book, pinnacleOdds, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units: bumpedUnits, unitTier: tier, consensusStrength, stars: stars || 0, updatedAt: Date.now() };
         if (opposition) peakData.opposition = opposition;
@@ -1637,7 +1775,6 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
         if (v8Scoring) peakData.v8Scoring = v8Scoring;
         const mergeData = { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: isReflip ? 'side_reflipped' : 'peak_updated' };
         if (evIsNewMax) { mergeData.sides[side].maxEV = currentEV; mergeData.sides[side].maxEVAt = Date.now(); }
-        const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
         mergeData.sides[side].contribTier = decision.contribTier || null;
         const shouldPromote = sides[side].lockStage === 'SHADOW' && decision.stage === 'LOCKED';
         if (shouldPromote) {
@@ -1648,7 +1785,7 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
           if (!mergeData.sides[side].lock) mergeData.sides[side].lock = {};
           mergeData.sides[side].lock.regime = regime;
         }
-        stampWalletConsensus(mergeData.sides[side], v8Scoring, side, sport, stars || 0, decision.promotedBy);
+        stampWalletConsensus(mergeData.sides[side], v8Scoring, side, sport, stars || 0, decision.promotedBy, pickDate);
         if (isReflip) {
           mergeData.sides[side].superseded = false;
           mergeData.sides[side].supersededAt = null;
@@ -1662,7 +1799,7 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
             if (!mergeData.sides[side].lock) mergeData.sides[side].lock = {};
             mergeData.sides[side].lock.regime = regime;
           }
-          stampWalletConsensus(mergeData.sides[side], v8Scoring, side, sport, stars || 0, decision.promotedBy);
+          stampWalletConsensus(mergeData.sides[side], v8Scoring, side, sport, stars || 0, decision.promotedBy, pickDate);
           for (const [otherSide] of Object.entries(sides)) {
             if (otherSide === side) continue;
             if (!mergeData.sides[otherSide]) mergeData.sides[otherSide] = {};
@@ -1675,10 +1812,9 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
       }
 
       {
-        const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
         if (sides[side].lockStage === 'SHADOW' && decision.stage === 'LOCKED') {
           const promotedPatch = { lockStage: 'LOCKED', promotedAt: Date.now(), promotedRegime: regime, promotedBy: decision.promotedBy, contribTier: decision.contribTier || null, lock: { regime } };
-          stampWalletConsensus(promotedPatch, v8Scoring, side, sport, stars || 0, decision.promotedBy);
+          stampWalletConsensus(promotedPatch, v8Scoring, side, sport, stars || 0, decision.promotedBy, pickDate);
           await setDoc(ref, {
             sides: { [side]: promotedPatch },
             lastWriteAt: Date.now(), lastAction: 'promoted',
@@ -1690,8 +1826,7 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
       if (evIsNewMax) {
         const patch = { maxEV: currentEV, maxEVAt: Date.now() };
         if (needsConsensusRestamp(sides[side])) {
-          const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
-          stampWalletConsensus(patch, v8Scoring, side, sport, stars || 0, decision.promotedBy);
+          stampWalletConsensus(patch, v8Scoring, side, sport, stars || 0, decision.promotedBy, pickDate);
         }
         await setDoc(ref, {
           sides: { [side]: patch },
@@ -1704,9 +1839,8 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
       // cache is now loaded, write an attribution-only patch so already-
       // locked stable picks pick up their wallet-consensus fields.
       if (needsConsensusRestamp(sides[side])) {
-        const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
         const patch = {};
-        stampWalletConsensus(patch, v8Scoring, side, sport, stars || 0, decision.promotedBy);
+        stampWalletConsensus(patch, v8Scoring, side, sport, stars || 0, decision.promotedBy, pickDate);
         if (Object.keys(patch).length) {
           await setDoc(ref, {
             sides: { [side]: patch },
@@ -1717,7 +1851,7 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
       }
 
       // v5.4: drift-restamp ALL non-superseded sides (incl. current).
-      const restamp = await restampDriftedSides({ ref, sides, currentSideKey: side, sport, regime, v8Scoring, currentStars: stars || 0 });
+      const restamp = await restampDriftedSides({ ref, sides, currentSideKey: side, sport, regime, v8Scoring, currentStars: stars || 0, pickDate });
       if (restamp) return { docId, action: 'consensus_drift_restamp' };
 
       return { docId, action: 'no_change' };
@@ -1735,7 +1869,7 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
     // to refresh the existing side's Δ stamp from live walletDetails.
     // Otherwise an Oilers-side render with af1697 onboard would never
     // touch the orphaned Ducks side and Ducks Δ would stay frozen.
-    await restampDriftedSides({ ref, sides, currentSideKey: side, sport, regime, v8Scoring, currentStars: stars || 0 });
+    await restampDriftedSides({ ref, sides, currentSideKey: side, sport, regime, v8Scoring, currentStars: stars || 0, pickDate });
 
     // v5.4: allow a NEW side with whitelist promotion eligibility
     // (Δ ≥ +1, agW = 0, baseStars ≥ 1.0) to supersede an existing locked
@@ -1744,15 +1878,15 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
     // for: "find these plays and play them." When sharps with proven
     // sport-specific edges arrive on the OTHER side after peak, the new
     // side is the play, even if its raw V8 score is lower.
-    const newSideDecision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
+    const newSideDecision = decideLockStage(regime, v8Scoring, side, sport, stars || 0, pickDate);
     const newSideHasWhitelistPromo =
-      newSideDecision.stage === 'LOCKED' && (newSideDecision.promotedBy === 'two-factor-floor' || newSideDecision.promotedBy === 'whitelist');
+      newSideDecision.stage === 'LOCKED' && (newSideDecision.promotedBy === 'two-factor-floor' || newSideDecision.promotedBy === 'whitelist' || newSideDecision.promotedBy === 'hc-dominance');
 
     if (stars <= existingBestStars && !newSideHasWhitelistPromo) {
       const originalSide = existingSides.find(([, sd]) => sd.lock && !sd.superseded)?.[0];
       return { docId, action: 'no_change', originalSide };
     }
-    const sideData = buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile, regime, qualityProxy, v8Scoring, sport);
+    const sideData = buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile, regime, qualityProxy, v8Scoring, sport, pickDate);
     const newWPS = v8Scoring?.walletPlayScore ?? null;
     const action = newSideHasWhitelistPromo && stars <= existingBestStars ? 'side_added_whitelist' : 'side_added';
     const mergePayload = { sides: { [side]: sideData }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: action };
@@ -1815,7 +1949,7 @@ async function syncPickHealth({ docId, collection: colName, side, health }) {
 
 // ─── Spread/Total Firebase Sync ───────────────────────────────────────────────
 
-function buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring, sport = null) {
+function buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring, sport = null, pickDate = null) {
   const now = Date.now();
   const tier = unitTier(units).label;
   const snapshot = { odds, book, pinnacleOdds, line, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units, unitTier: tier, consensusStrength, stars: stars || 0 };
@@ -1823,7 +1957,7 @@ function buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, ev
   if (regime) snapshot.regime = regime;
   if (qualityProxy != null) snapshot.qualityProxy = qualityProxy;
   if (v8Scoring) snapshot.v8Scoring = v8Scoring;
-  const { stage: lockStage, contribTier, promotedBy } = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
+  const { stage: lockStage, contribTier, promotedBy } = decideLockStage(regime, v8Scoring, side, sport, stars || 0, pickDate);
   const base = {
     team,
     lock: { ...snapshot, lockedAt: now },
@@ -1837,12 +1971,12 @@ function buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, ev
   };
   if (lockStage === 'LOCKED') {
     base.promotedBy = promotedBy;
-    if (promotedBy === 'two-factor-floor' || promotedBy === 'contribution' || promotedBy === 'whitelist') {
+    if (promotedBy === 'two-factor-floor' || promotedBy === 'contribution' || promotedBy === 'whitelist' || promotedBy === 'hc-dominance') {
       base.promotedAt = now;
       base.promotedRegime = regime || null;
     }
   }
-  stampWalletConsensus(base, v8Scoring, side, sport, stars || 0, promotedBy);
+  stampWalletConsensus(base, v8Scoring, side, sport, stars || 0, promotedBy, pickDate);
   return base;
 }
 
@@ -1863,7 +1997,7 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
     const existing = await getDoc(ref);
 
     if (!existing.exists()) {
-      const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring, sport);
+      const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring, sport, date);
       await setDoc(ref, {
         date, sport, gameKey, away, home, commenceTime: commenceTime || null,
         marketType: 'spread', lockType: 'PREGAME',
@@ -1878,15 +2012,22 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
     const data = existing.data();
     if (data.status === 'COMPLETED') return { docId, action: 'no_change' };
     const sides = data.sides || {};
+    const pickDate = data.date || date;
 
     if (sides[side]) {
       if (sides[side].status === 'COMPLETED') return { docId, action: 'no_change' };
       const needsCsPatch = consensusStrength?.moneyPct != null && sides[side].lock?.consensusStrength?.moneyPct == null;
       const currentPeak = sides[side].peak?.units || 0;
       const currentPeakStars = sides[side].peak?.stars || 0;
-      // V8.2: units already include CLEAR_MOVE bonus; old starDelta topPickBonus removed.
-      const bumpedUnits = Math.min(Math.max(units, 0.5), 2);
-      if (bumpedUnits > currentPeak || stars > currentPeakStars) {
+      // v7.1 LEAN sizing fix + HC ceiling for spreads.
+      const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0, pickDate);
+      const isLean = decision.lockTier === 'LEAN';
+      const clampCeiling = (decision.lockTier === 'ELITE' && decision.hcDominant && isV71Eligible(pickDate))
+        ? V7_1_HC_CAP_ST_ELITE
+        : 2.0;
+      const bumpedUnits = isLean ? 0 : Math.min(Math.max(units, 0.5), clampCeiling);
+      const peakShouldWrite = isLean || bumpedUnits > currentPeak || stars > currentPeakStars;
+      if (peakShouldWrite) {
         const tier = unitTier(bumpedUnits).label;
         const peakData = { odds, book, pinnacleOdds, line, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units: bumpedUnits, unitTier: tier, consensusStrength, stars: stars || 0, updatedAt: Date.now() };
         if (walletProfile) peakData.walletProfile = walletProfile;
@@ -1895,7 +2036,6 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
         if (v8Scoring) peakData.v8Scoring = v8Scoring;
         const mergeObj = { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'peak_updated' };
         if (needsCsPatch) mergeObj.sides[side].lock = { ...sides[side].lock, consensusStrength };
-        const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
         mergeObj.sides[side].contribTier = decision.contribTier || null;
         const shouldPromote = sides[side].lockStage === 'SHADOW' && decision.stage === 'LOCKED';
         if (shouldPromote) {
@@ -1906,15 +2046,14 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
           if (!mergeObj.sides[side].lock) mergeObj.sides[side].lock = {};
           mergeObj.sides[side].lock.regime = regime;
         }
-        stampWalletConsensus(mergeObj.sides[side], v8Scoring, side, sport, stars || 0, decision.promotedBy);
+        stampWalletConsensus(mergeObj.sides[side], v8Scoring, side, sport, stars || 0, decision.promotedBy, pickDate);
         await setDoc(ref, mergeObj, { merge: true });
         return { docId, action: shouldPromote ? 'promoted' : 'peak_updated' };
       }
       {
-        const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
         if (sides[side].lockStage === 'SHADOW' && decision.stage === 'LOCKED') {
           const promotedPatch = { lockStage: 'LOCKED', promotedAt: Date.now(), promotedRegime: regime, promotedBy: decision.promotedBy, contribTier: decision.contribTier || null, lock: { regime } };
-          stampWalletConsensus(promotedPatch, v8Scoring, side, sport, stars || 0, decision.promotedBy);
+          stampWalletConsensus(promotedPatch, v8Scoring, side, sport, stars || 0, decision.promotedBy, pickDate);
           await setDoc(ref, {
             sides: { [side]: promotedPatch },
             lastWriteAt: Date.now(), lastAction: 'promoted',
@@ -1925,24 +2064,22 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
       if (needsCsPatch) {
         const patch = { lock: { consensusStrength }, peak: { ...sides[side].peak, consensusStrength } };
         if (needsConsensusRestamp(sides[side])) {
-          const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
-          stampWalletConsensus(patch, v8Scoring, side, sport, stars || 0, decision.promotedBy);
+          stampWalletConsensus(patch, v8Scoring, side, sport, stars || 0, decision.promotedBy, pickDate);
         }
         await setDoc(ref, { sides: { [side]: patch }, lastWriteAt: Date.now() }, { merge: true });
         return { docId, action: 'cs_patched' };
       }
       // Phase 2 backfill (spreads).
       if (needsConsensusRestamp(sides[side])) {
-        const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
         const patch = {};
-        stampWalletConsensus(patch, v8Scoring, side, sport, stars || 0, decision.promotedBy);
+        stampWalletConsensus(patch, v8Scoring, side, sport, stars || 0, decision.promotedBy, pickDate);
         if (Object.keys(patch).length) {
           await setDoc(ref, { sides: { [side]: patch }, lastWriteAt: Date.now(), lastAction: 'consensus_backfill' }, { merge: true });
           return { docId, action: 'consensus_backfill' };
         }
       }
       // v5.4: drift-restamp ALL non-superseded sides (spreads).
-      const restamp = await restampDriftedSides({ ref, sides, currentSideKey: side, sport, regime, v8Scoring, currentStars: stars || 0 });
+      const restamp = await restampDriftedSides({ ref, sides, currentSideKey: side, sport, regime, v8Scoring, currentStars: stars || 0, pickDate });
       if (restamp) return { docId, action: 'consensus_drift_restamp' };
       return { docId, action: 'no_change' };
     }
@@ -1955,18 +2092,18 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
     }, 0);
 
     // v5.4: refresh existing side stamps even if we don't create the new side.
-    await restampDriftedSides({ ref, sides, currentSideKey: side, sport, regime, v8Scoring, currentStars: stars || 0 });
+    await restampDriftedSides({ ref, sides, currentSideKey: side, sport, regime, v8Scoring, currentStars: stars || 0, pickDate });
 
     // v5.4: whitelist-promotion override on side creation gate.
-    const newSideDecision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
+    const newSideDecision = decideLockStage(regime, v8Scoring, side, sport, stars || 0, pickDate);
     const newSideHasWhitelistPromo =
-      newSideDecision.stage === 'LOCKED' && (newSideDecision.promotedBy === 'two-factor-floor' || newSideDecision.promotedBy === 'whitelist');
+      newSideDecision.stage === 'LOCKED' && (newSideDecision.promotedBy === 'two-factor-floor' || newSideDecision.promotedBy === 'whitelist' || newSideDecision.promotedBy === 'hc-dominance');
 
     if (stars <= existingBestStars && !newSideHasWhitelistPromo) {
       const originalSide = existingSides.find(([, sd]) => sd.lock && !sd.superseded)?.[0];
       return { docId, action: 'no_change', originalSide };
     }
-    const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring, sport);
+    const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring, sport, pickDate);
     const action = newSideHasWhitelistPromo && stars <= existingBestStars ? 'side_added_whitelist' : 'side_added';
     const mergePayload = { sides: { [side]: sideData }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: action };
     for (const [existingSide] of existingSides) {
@@ -1997,7 +2134,7 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
     const existing = await getDoc(ref);
 
     if (!existing.exists()) {
-      const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring, sport);
+      const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring, sport, date);
       await setDoc(ref, {
         date, sport, gameKey, away, home, commenceTime: commenceTime || null,
         marketType: 'total', lockType: 'PREGAME',
@@ -2012,15 +2149,22 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
     const data = existing.data();
     if (data.status === 'COMPLETED') return { docId, action: 'no_change' };
     const sides = data.sides || {};
+    const pickDate = data.date || date;
 
     if (sides[side]) {
       if (sides[side].status === 'COMPLETED') return { docId, action: 'no_change' };
       const needsCsPatch = consensusStrength?.moneyPct != null && sides[side].lock?.consensusStrength?.moneyPct == null;
       const currentPeak = sides[side].peak?.units || 0;
       const currentPeakStars = sides[side].peak?.stars || 0;
-      // V8.2: units already include CLEAR_MOVE bonus; old starDelta topPickBonus removed.
-      const bumpedUnits = Math.min(Math.max(units, 0.5), 2);
-      if (bumpedUnits > currentPeak || stars > currentPeakStars) {
+      // v7.1 LEAN sizing fix + HC ceiling for totals.
+      const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0, pickDate);
+      const isLean = decision.lockTier === 'LEAN';
+      const clampCeiling = (decision.lockTier === 'ELITE' && decision.hcDominant && isV71Eligible(pickDate))
+        ? V7_1_HC_CAP_ST_ELITE
+        : 2.0;
+      const bumpedUnits = isLean ? 0 : Math.min(Math.max(units, 0.5), clampCeiling);
+      const peakShouldWrite = isLean || bumpedUnits > currentPeak || stars > currentPeakStars;
+      if (peakShouldWrite) {
         const tier = unitTier(bumpedUnits).label;
         const peakData = { odds, book, pinnacleOdds, line, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units: bumpedUnits, unitTier: tier, consensusStrength, stars: stars || 0, updatedAt: Date.now() };
         if (walletProfile) peakData.walletProfile = walletProfile;
@@ -2029,7 +2173,6 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
         if (v8Scoring) peakData.v8Scoring = v8Scoring;
         const mergeObj = { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'peak_updated' };
         if (needsCsPatch) mergeObj.sides[side].lock = { ...sides[side].lock, consensusStrength };
-        const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
         mergeObj.sides[side].contribTier = decision.contribTier || null;
         const shouldPromote = sides[side].lockStage === 'SHADOW' && decision.stage === 'LOCKED';
         if (shouldPromote) {
@@ -2040,15 +2183,14 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
           if (!mergeObj.sides[side].lock) mergeObj.sides[side].lock = {};
           mergeObj.sides[side].lock.regime = regime;
         }
-        stampWalletConsensus(mergeObj.sides[side], v8Scoring, side, sport, stars || 0, decision.promotedBy);
+        stampWalletConsensus(mergeObj.sides[side], v8Scoring, side, sport, stars || 0, decision.promotedBy, pickDate);
         await setDoc(ref, mergeObj, { merge: true });
         return { docId, action: shouldPromote ? 'promoted' : 'peak_updated' };
       }
       {
-        const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
         if (sides[side].lockStage === 'SHADOW' && decision.stage === 'LOCKED') {
           const promotedPatch = { lockStage: 'LOCKED', promotedAt: Date.now(), promotedRegime: regime, promotedBy: decision.promotedBy, contribTier: decision.contribTier || null, lock: { regime } };
-          stampWalletConsensus(promotedPatch, v8Scoring, side, sport, stars || 0, decision.promotedBy);
+          stampWalletConsensus(promotedPatch, v8Scoring, side, sport, stars || 0, decision.promotedBy, pickDate);
           await setDoc(ref, {
             sides: { [side]: promotedPatch },
             lastWriteAt: Date.now(), lastAction: 'promoted',
@@ -2059,24 +2201,22 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
       if (needsCsPatch) {
         const patch = { lock: { consensusStrength }, peak: { ...sides[side].peak, consensusStrength } };
         if (needsConsensusRestamp(sides[side])) {
-          const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
-          stampWalletConsensus(patch, v8Scoring, side, sport, stars || 0, decision.promotedBy);
+          stampWalletConsensus(patch, v8Scoring, side, sport, stars || 0, decision.promotedBy, pickDate);
         }
         await setDoc(ref, { sides: { [side]: patch }, lastWriteAt: Date.now() }, { merge: true });
         return { docId, action: 'cs_patched' };
       }
       // Phase 2 backfill (totals).
       if (needsConsensusRestamp(sides[side])) {
-        const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
         const patch = {};
-        stampWalletConsensus(patch, v8Scoring, side, sport, stars || 0, decision.promotedBy);
+        stampWalletConsensus(patch, v8Scoring, side, sport, stars || 0, decision.promotedBy, pickDate);
         if (Object.keys(patch).length) {
           await setDoc(ref, { sides: { [side]: patch }, lastWriteAt: Date.now(), lastAction: 'consensus_backfill' }, { merge: true });
           return { docId, action: 'consensus_backfill' };
         }
       }
       // v5.4: drift-restamp ALL non-superseded sides (totals).
-      const restamp = await restampDriftedSides({ ref, sides, currentSideKey: side, sport, regime, v8Scoring, currentStars: stars || 0 });
+      const restamp = await restampDriftedSides({ ref, sides, currentSideKey: side, sport, regime, v8Scoring, currentStars: stars || 0, pickDate });
       if (restamp) return { docId, action: 'consensus_drift_restamp' };
       return { docId, action: 'no_change' };
     }
@@ -2089,18 +2229,18 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
     }, 0);
 
     // v5.4: refresh existing side stamps even if we don't create the new side.
-    await restampDriftedSides({ ref, sides, currentSideKey: side, sport, regime, v8Scoring, currentStars: stars || 0 });
+    await restampDriftedSides({ ref, sides, currentSideKey: side, sport, regime, v8Scoring, currentStars: stars || 0, pickDate });
 
     // v5.4: whitelist-promotion override on side creation gate.
-    const newSideDecision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
+    const newSideDecision = decideLockStage(regime, v8Scoring, side, sport, stars || 0, pickDate);
     const newSideHasWhitelistPromo =
-      newSideDecision.stage === 'LOCKED' && (newSideDecision.promotedBy === 'two-factor-floor' || newSideDecision.promotedBy === 'whitelist');
+      newSideDecision.stage === 'LOCKED' && (newSideDecision.promotedBy === 'two-factor-floor' || newSideDecision.promotedBy === 'whitelist' || newSideDecision.promotedBy === 'hc-dominance');
 
     if (stars <= existingBestStars && !newSideHasWhitelistPromo) {
       const originalSide = existingSides.find(([, sd]) => sd.lock && !sd.superseded)?.[0];
       return { docId, action: 'no_change', originalSide };
     }
-    const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring, sport);
+    const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring, sport, pickDate);
     const action = newSideHasWhitelistPromo && stars <= existingBestStars ? 'side_added_whitelist' : 'side_added';
     const mergePayload = { sides: { [side]: sideData }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: action };
     for (const [existingSide] of existingSides) {
@@ -4199,7 +4339,13 @@ const HEALTH_REASON_LABELS = {
 };
 
 const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
-  const { team, away, home, sport, stars, peakStars, lockStars, units, peakUnits, isDownsized, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, lockEV, criteriaMet, criteria, consensusStrength, pinnacleOdds, marketType, line, superseded, health, lockTier, isTopPick: isTopPickPre, isSuperTopPick: isSuperTopPickPre, walletConsensusDelta, walletConsensusForW, walletConsensusAgW, walletConsensusQualityMargin, walletConsensusQualityForT30, walletConsensusQualityAgT30 } = pick;
+  const { team, away, home, sport, stars, peakStars, lockStars, units, peakUnits, isDownsized, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, lockEV, criteriaMet, criteria, consensusStrength, pinnacleOdds, marketType, line, superseded, health, lockTier, isTopPick: isTopPickPre, isSuperTopPick: isSuperTopPickPre, walletConsensusDelta, walletConsensusForW, walletConsensusAgW, walletConsensusQualityMargin, walletConsensusQualityForT30, walletConsensusQualityAgT30, hcDominant, hcConfFor, hcConfAg, systemVersion, promotedBy } = pick;
+  // v7.1 — render the gold "HC ×1.5" chip only when the pick is post-cutover
+  // AND HC-dominant. Pre-cutover picks never see the chip even if they
+  // happen to satisfy the HC predicate.
+  const showHcChip = !!hcDominant && systemVersion === '7.1';
+  // v7.1 — "PROMOTED · HC" tooltip for picks promoted out of LEAN by HC.
+  const wasHcPromoted = promotedBy === 'hc-dominance';
   const [expanded, setExpanded] = useState(false);
   const ss = sportStyle(sport);
   const starDelta = (lockStars != null && stars != null) ? stars - lockStars : 0;
@@ -4580,6 +4726,22 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                   }}>
                     {isLean ? '0u · TRACK' : (isCancelled || isMuted) ? `${ut.icon} ${units}u → 0u` : `${ut.icon} ${units}u`}
                   </span>
+                  {/* v7.1 — HC ×1.5 chip. Indicates that high-conviction CONFIRMED
+                      wallets are backing this side with no HC dissent, sizing the
+                      pick at 1.5× ladder. Hidden on graded picks (we already
+                      committed at the 1.5x size — the chip is forward-looking). */}
+                  {showHcChip && !isGraded && !isLean && (
+                    <span style={{
+                      ...T.micro, fontWeight: 900, color: B.gold,
+                      padding: '0.2rem 0.45rem', borderRadius: '5px',
+                      background: B.goldDim,
+                      border: `1px solid ${B.goldBorder}`,
+                      letterSpacing: '0.04em',
+                    }}
+                    title={`High-conviction CONFIRMED dominance: ${hcConfFor} for · ${hcConfAg} against.${wasHcPromoted ? ' Promoted out of LEAN by HC dominance.' : ''} Units sized at 1.5× the standard ladder.`}>
+                      HC ×1.5
+                    </span>
+                  )}
                   {evEdge > 0 && (
                     <span style={{ ...T.body, fontWeight: 900, color: B.green, padding: '0.2rem 0.6rem', borderRadius: '5px', background: B.greenDim }}>
                       +{evEdge}% EV
@@ -4621,12 +4783,18 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                     </>
                   );
                 } else if (forW > 0) {
+                  // v7.1 — when this pick was promoted out of LEAN by HC dominance,
+                  // surface that explicitly so users see why a Σ ∈ {3,4} pick is
+                  // shipping at full size with the HC ×1.5 chip.
+                  const hcSuffix = wasHcPromoted
+                    ? ` Promoted out of LEAN by ${hcConfFor} high-conviction CONFIRMED winner${hcConfFor !== 1 ? 's' : ''} (no HC dissent) — sized at 1.5×.`
+                    : (showHcChip ? ` ${hcConfFor} high-conviction CONFIRMED winner${hcConfFor !== 1 ? 's' : ''} backing — sized at 1.5×.` : '');
                   lead = (
                     <>
                       <span style={{ color: B.gold, fontWeight: 700 }}>{forW} proven {sportUp} winner{forW !== 1 ? 's' : ''}</span> backing {teamShort} {marketNoun}
                       {qFor > 0 ? <> with <span style={{ color: B.green, fontWeight: 700 }}>{qFor} quality wallet{qFor !== 1 ? 's' : ''}</span> confirming.</> : '.'}
                       {totalInvested ? <> Combined <span style={{ color: B.gold, fontWeight: 700 }}>{fmtV(totalInvested)}</span> invested.</> : ''}
-                      {pinnSuffix}{evSuffix}
+                      {pinnSuffix}{evSuffix}{hcSuffix}
                     </>
                   );
                 } else {
@@ -5146,10 +5314,17 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   // Δw=+2 / Δq=+3 / contribTier=STRONG): `isLocked` and `isShadow`
   // both went false, the sync useEffect returned early, and
   // syncPickToFirebase never ran.
+  // v7.1 — pickDate must be threaded into decideLockStage / calculateUnits
+  // so the HC-dominance branch is gated by V7_1_CUTOVER_DATE. Use
+  // gameDate(commenceTime) (ET-normalized), matching the date stamped on
+  // the Firestore doc by the sync layer.
+  const pickDate = commenceTime ? gameDate(commenceTime) : null;
   const decision = sr?.v8Scoring && consensusSide && gd.sport
-    ? decideLockStage(sr.regime, sr.v8Scoring, consensusSide, gd.sport, sr.stars)
+    ? decideLockStage(sr.regime, sr.v8Scoring, consensusSide, gd.sport, sr.stars, pickDate)
     : null;
-  const twoFactorFloor = decision?.promotedBy === 'two-factor-floor';
+  // v7.1 — accept either Σ ≥ +5 (legacy) OR HC-dominance promotion as a
+  // valid lock floor. Both produce decision.stage === 'LOCKED'.
+  const twoFactorFloor = decision?.promotedBy === 'two-factor-floor' || decision?.promotedBy === 'hc-dominance';
   const minInvForSide = minInvestedFloor(decision?.contribTier);
   const meetsInvest = consensusInvested >= minInvForSide;
   const meetsThreshold = meetsInvest && sr.stars >= 3.5;
@@ -5157,8 +5332,11 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const isShadow = meetsInvest && !twoFactorFloor && sr.stars >= 2.5;
   const lockType = isLocked ? (isGameLive ? 'LIVE' : 'PREGAME') : null;
   const lockTier = decision?.lockTier || 'MUTED';
+  const hcDominant = !!decision?.hcDominant;
 
-  const units = isLocked ? calculateUnits(sr.stars, cGrade.penalty, betOdds, computeRegimeBonus(sr.regime, sr.v8Scoring, consensusSide, gd.sport), lockTier) : 0;
+  const units = isLocked
+    ? calculateUnits(sr.stars, cGrade.penalty, betOdds, computeRegimeBonus(sr.regime, sr.v8Scoring, consensusSide, gd.sport), lockTier, hcDominant, { pickDate })
+    : 0;
   const ut = unitTier(units);
   const potentialWin = isLocked ? profitFromOdds(betOdds, units) : 0;
 
@@ -5368,17 +5546,21 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   // v6.6 Two-Factor spread lock gate — identical policy to ML. Dollar
   // floor delegated to engine `minInvestedFloor(contribTier)` so the
   // renderer can't be stricter than the engine (see ML gate above).
+  const spreadPickDate = commenceTime ? gameDate(commenceTime) : null;
   const spreadDecision = spreadSr?.v8Scoring && spreadConsensusSide && gd.sport
-    ? decideLockStage(spreadSr.regime, spreadSr.v8Scoring, spreadConsensusSide, gd.sport, spreadSr.stars)
+    ? decideLockStage(spreadSr.regime, spreadSr.v8Scoring, spreadConsensusSide, gd.sport, spreadSr.stars, spreadPickDate)
     : null;
-  const spreadTwoFactorFloor = spreadDecision?.promotedBy === 'two-factor-floor';
+  const spreadTwoFactorFloor = spreadDecision?.promotedBy === 'two-factor-floor' || spreadDecision?.promotedBy === 'hc-dominance';
   const spreadMinInv = minInvestedFloor(spreadDecision?.contribTier);
   const spreadMeetsInvest = (spreadSharpFeatures?.conTotalInvested || 0) >= spreadMinInv;
   const spreadMeetsThreshold = spreadSr && spreadMeetsInvest && spreadSr.stars >= 3.5;
   const isSpreadLocked = !!spreadSr && spreadTwoFactorFloor && spreadMeetsInvest;
   const isSpreadShadow = !!spreadSr && spreadMeetsInvest && !spreadTwoFactorFloor && spreadSr.stars >= 2.5;
   const spreadLockTier = spreadDecision?.lockTier || 'MUTED';
-  const spreadUnits = (isSpreadLocked || isSpreadShadow) ? calculateSpreadTotalUnits(spreadSr.stars, 0, spreadBetOdds, computeRegimeBonus(spreadSr.regime, spreadSr.v8Scoring, spreadConsensusSide, gd.sport), spreadLockTier) : 0;
+  const spreadHcDominant = !!spreadDecision?.hcDominant;
+  const spreadUnits = (isSpreadLocked || isSpreadShadow)
+    ? calculateSpreadTotalUnits(spreadSr.stars, 0, spreadBetOdds, computeRegimeBonus(spreadSr.regime, spreadSr.v8Scoring, spreadConsensusSide, gd.sport), spreadLockTier, spreadHcDominant, { pickDate: spreadPickDate })
+    : 0;
 
   useEffect(() => {
     if ((!isSpreadLocked && !isSpreadShadow) || isGameLive || !commenceTime || !onPickSynced || !spreadConsensusSide) return;
@@ -5511,17 +5693,21 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     && totalGameData?.positions?.some(p => p.side === totalConsensusSide && (p.sportPnl || 0) >= 500000);
   // v6.6 Two-Factor totals lock gate — identical policy to ML/spread.
   // Dollar floor delegated to engine `minInvestedFloor(contribTier)`.
+  const totalPickDate = commenceTime ? gameDate(commenceTime) : null;
   const totalDecision = totalSr?.v8Scoring && totalConsensusSide && gd.sport
-    ? decideLockStage(totalSr.regime, totalSr.v8Scoring, totalConsensusSide, gd.sport, totalSr.stars)
+    ? decideLockStage(totalSr.regime, totalSr.v8Scoring, totalConsensusSide, gd.sport, totalSr.stars, totalPickDate)
     : null;
-  const totalTwoFactorFloor = totalDecision?.promotedBy === 'two-factor-floor';
+  const totalTwoFactorFloor = totalDecision?.promotedBy === 'two-factor-floor' || totalDecision?.promotedBy === 'hc-dominance';
   const totalMinInv = minInvestedFloor(totalDecision?.contribTier);
   const totalMeetsInvest = (totalSharpFeatures?.conTotalInvested || 0) >= totalMinInv;
   const totalMeetsThreshold = totalSr && totalMeetsInvest && totalSr.stars >= 3.5;
   const isTotalLocked = !!totalSr && totalTwoFactorFloor && totalMeetsInvest;
   const isTotalShadow = !!totalSr && totalMeetsInvest && !totalTwoFactorFloor && totalSr.stars >= 2.5;
   const totalLockTier = totalDecision?.lockTier || 'MUTED';
-  const totalUnits = (isTotalLocked || isTotalShadow) ? calculateSpreadTotalUnits(totalSr.stars, 0, totalBetOdds, computeRegimeBonus(totalSr.regime, totalSr.v8Scoring, totalConsensusSide, gd.sport), totalLockTier) : 0;
+  const totalHcDominant = !!totalDecision?.hcDominant;
+  const totalUnits = (isTotalLocked || isTotalShadow)
+    ? calculateSpreadTotalUnits(totalSr.stars, 0, totalBetOdds, computeRegimeBonus(totalSr.regime, totalSr.v8Scoring, totalConsensusSide, gd.sport), totalLockTier, totalHcDominant, { pickDate: totalPickDate })
+    : 0;
 
   useEffect(() => {
     if ((!isTotalLocked && !isTotalShadow) || isGameLive || !commenceTime || !onPickSynced || !totalConsensusSide) return;
@@ -9924,6 +10110,11 @@ export default function SharpFlow() {
                               oddsForLadder: cardOdds,
                               liveDw: sd.v8_walletConsensusDelta ?? null,
                               liveDq: sd.v8_walletConsensusQualityMargin ?? null,
+                              // v7.1 — thread HC dominance and pick date so the
+                              // live ladder matches the v7.1 rule for new picks
+                              // and the legacy v7.0 ladder for historic picks.
+                              liveHcDominant: !!sd.v8_hcDominant,
+                              pickDate: doc.date ?? null,
                             });
                         const displayStars = isGradedSide ? peakStars : sizing.liveStars;
                         const displayUnits = sizing.liveUnits;
@@ -9986,10 +10177,13 @@ export default function SharpFlow() {
                           walletConsensusQualityMargin: sd.v8_walletConsensusQualityMargin ?? null,
                           walletConsensusQualityForT30: sd.v8_walletConsensusQualityForT30 ?? null,
                           walletConsensusQualityAgT30: sd.v8_walletConsensusQualityAgT30 ?? null,
-                          // v6.2 TOP PICK tiers (two-factor, tightened):
-                          //   Δw ≥ +2 AND Δq ≥ +2 → SUPER TOP PICK (gold filled)
-                          //   Δw ≥ +2            → TOP PICK       (gold outlined)
-                          //   Δw ≤ +1            → no badge (may still LOCK)
+                          // v7.1 TOP PICK tiers — read from stamped fields when
+                          // the pick is post-cutover and has been stamped under
+                          // consensus version 7. Pre-cutover picks fall through
+                          // to the legacy Δw ≥ +2 path.
+                          //   v7.1 SUPER TOP PICK = LOCKED ∧ HC dominance
+                          //   v7.1 TOP PICK       = LOCKED ∧ Σ ≥ +5
+                          //   v7.0 (legacy)       = Δw ≥ +2 (super if Δq ≥ +2)
                           ...evaluateTopPickTier(
                             peak,
                             lock,
@@ -9998,7 +10192,17 @@ export default function SharpFlow() {
                             sd.v8_walletConsensusDelta,
                             sd.v8_walletConsensusAgW,
                             sd.v8_walletConsensusQualityMargin,
+                            sd,
+                            doc.date ?? null,
                           ),
+                          // v7.1 — surface HC dominance + promotion path on the
+                          // card so the UI can render the gold "HC ×1.5" chip
+                          // and "PROMOTED · HC" tooltip.
+                          hcDominant: !!sd.v8_hcDominant,
+                          hcConfFor: sd.v8_hcConfFor ?? 0,
+                          hcConfAg:  sd.v8_hcConfAg ?? 0,
+                          systemVersion: sd.v8_systemVersion || '7.0',
+                          promotedBy: sd.promotedBy || null,
                         });
                       }
                     }
