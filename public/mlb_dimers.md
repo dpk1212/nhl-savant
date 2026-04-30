@@ -53,7 +53,7 @@
 
 # MLB Predictions - 🟢 Updated Live
 
-MLB predictions for every game, built on data. See win probabilities and market insights for the moneyline, run line, and total. Strictly by the numbers—no guesswork. On 4/30, the Pirates have the highest win probability at 66%.
+MLB predictions for every game, built on data. See win probabilities and market insights for the moneyline, run line, and total. Strictly by the numbers—no guesswork. On 4/30, the Pirates have the highest win probability at 67%.
 
 [![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-left.svg) Start your FREE 3-Day trial of Dimers Pro ![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-right.svg)](https://www.dimers.com/subscription)
 
@@ -63,49 +63,51 @@ Apr 30 2026
 \\
 ![Tigers](https://cdn.ciphersports.io/images/MLB/official/DET.svg)\\
 \\
-Tigers  F. Valdez \\
+Tigers \\
 \\
-47% \\
+0 \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
-\\
-+116\\
+42% \\
 \\
 ![Braves](https://cdn.ciphersports.io/images/MLB/official/ATL.svg)\\
 \\
-Braves  B. Elder \\
+Braves \\
 \\
-53% \\
+0 \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+58% \\
 \\
--119\\
+3 Out\\
 \\
-MLB \\
+LIVE\\
 \\
-See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_37_atl_det) [Apr 30, 12:35 PM ET\\
+Top 1st\\
+\\
+In-Play Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_37_atl_det) [Apr 30, 12:35 PM ET\\
 \\
 ![Cardinals](https://cdn.ciphersports.io/images/MLB/official/STL.svg)\\
 \\
 Cardinals  H. Dobbins \\
 \\
-35% \\
+33% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-+203\\
++215\\
 \\
 ![Pirates](https://cdn.ciphersports.io/images/MLB/official/PIT.svg)\\
 \\
 Pirates  P. Skenes \\
 \\
-65% \\
+67% \\
 \\
-![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--194\\
+-219\\
 \\
-MLB \\
+STARTS\\
+\\
+9 mins \\
 \\
 See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_37_pit_stl) [Apr 30, 12:35 PM ET\\
 \\
@@ -115,9 +117,9 @@ Astros  L. McCullers \\
 \\
 45% \\
 \\
-![bet365](https://cdn.ciphersports.io/images/bookmaker-logos/bet365-icon.svg)\\
+![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
-+110\\
++117\\
 \\
 ![Orioles](https://cdn.ciphersports.io/images/MLB/official/BAL.svg)\\
 \\
@@ -125,11 +127,13 @@ Orioles  B. Young \\
 \\
 55% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
--109\\
+-122\\
 \\
-MLB \\
+STARTS\\
+\\
+9 mins \\
 \\
 See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_37_bal_hou) [Apr 30, 12:40 PM ET\\
 \\
@@ -141,7 +145,7 @@ Rockies  M. Lorenzen \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-+153\\
++148\\
 \\
 ![Reds](https://cdn.ciphersports.io/images/MLB/official/CIN.svg)\\
 \\
@@ -151,9 +155,11 @@ Reds  A. Abbott \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--155\\
+-149\\
 \\
-MLB \\
+STARTS\\
+\\
+14 mins \\
 \\
 See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_37_cin_col) [Apr 30, 1:05 PM ET\\
 \\
@@ -173,11 +179,13 @@ Phillies  A. Painter \\
 \\
 56% \\
 \\
-![FanDuel](https://cdn.ciphersports.io/images/bookmaker-logos/fanduel-icon.svg)\\
+![BetRivers](https://cdn.ciphersports.io/images/bookmaker-logos/bet-rivers-icon-1.svg)\\
 \\
--132\\
+-134\\
 \\
-MLB \\
+STARTS\\
+\\
+39 mins \\
 \\
 See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_37_phi_sf) [Apr 30, 1:10 PM ET\\
 \\
@@ -185,23 +193,25 @@ See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_37_phi_sf
 \\
 Nationals  M. Mikolas \\
 \\
-35% \\
+36% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
-+183\\
++170\\
 \\
 ![Mets](https://cdn.ciphersports.io/images/MLB/official/NYM.svg)\\
 \\
 Mets  F. Peralta \\
 \\
-65% \\
+64% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--189\\
+-172\\
 \\
-MLB \\
+STARTS\\
+\\
+44 mins \\
 \\
 See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_37_nym_wsh) [Apr 30, 1:40 PM ET\\
 \\
@@ -209,21 +219,21 @@ See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_37_nym_ws
 \\
 D-Backs  M. Soroka \\
 \\
-47% \\
+48% \\
 \\
-![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-+117\\
++115\\
 \\
 ![Brewers](https://cdn.ciphersports.io/images/MLB/official/MIL.svg)\\
 \\
 Brewers  B. Woodruff \\
 \\
-53% \\
+52% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
--116\\
+-117\\
 \\
 MLB \\
 \\
@@ -233,21 +243,21 @@ See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_37_mil_ar
 \\
 Royals  N. Cameron \\
 \\
-46% \\
+47% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
-+119\\
++117\\
 \\
 ![Athletics](https://cdn.ciphersports.io/images/MLB/official/ATH.svg)\\
 \\
 Athletics  J. Springs \\
 \\
-54% \\
+53% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--120\\
+-114\\
 \\
 MLB \\
 \\
@@ -257,17 +267,17 @@ See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_37_ath_kc
 \\
 Blue Jays  K. Gausman \\
 \\
-55% \\
+54% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
--121\\
+-122\\
 \\
 ![Twins](https://cdn.ciphersports.io/images/MLB/official/MIN.svg)\\
 \\
 Twins  B. Ober \\
 \\
-45% \\
+46% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
@@ -493,13 +503,13 @@ How to claim
 
 Dimers’ MLB predictions are powered by a simulation-based model that plays out each game thousands of times, inning by inning. From those simulations, we estimate each team’s chances of winning.
 
-On Thursday, the Pirates lead all win probabilities with a 66% chance of beating the Cardinals at PNC Park. The Mets and Reds also rank among the leading moneyline favorites.
+On Thursday, the Pirates lead all win probabilities with a 67% chance of beating the Cardinals at PNC Park. The Mets and Reds also rank among the leading moneyline favorites.
 
 | Team | Prob. | Opponent | First pitch (ET) |
 | --- | --- | --- | --- |
-| Pirates | 66% | vs. Cardinals | 12:35pm |
-| Mets | 66% | vs. Nationals | 1:10pm |
-| Reds | 61% | vs. Rockies | 12:40pm |
+| Pirates | 67% | vs. Cardinals | 12:35pm |
+| Mets | 64% | vs. Nationals | 1:10pm |
+| Reds | 60% | vs. Rockies | 12:40pm |
 
 ## MLB predictions today: data-driven outcomes for every game
 

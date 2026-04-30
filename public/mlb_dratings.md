@@ -34,42 +34,50 @@ Close
 
 # MLB Baseball Predictions
 
-Updated 59 sec ago
+Updated 40 sec ago
 
 All ConferencesALNL
 
-- [Upcoming](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1777552847944#scroll-upcoming)
-- [Completed](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1777552847944#scroll-completed)
-- [Season](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1777552847944#scroll-season)
-- [Simulation](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1777552847944#scroll-simulation)
-- [Methodology](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1777552847944#scroll-methodology)
-- [Related](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1777552847944#scroll-related)
+- [Upcoming](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1777566329959#scroll-upcoming)
+- [In Progress](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1777566329959#scroll-in-progress)
+- [Completed](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1777566329959#scroll-completed)
+- [Season](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1777566329959#scroll-season)
+- [Simulation](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1777566329959#scroll-simulation)
+- [Methodology](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1777566329959#scroll-methodology)
+- [Related](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1777566329959#scroll-related)
 
 ## Upcoming Games for April 30, 2026
 
-[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1777552847944#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1777552847944#)
+[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1777566329959#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1777566329959#)
 
 | Time | Teams | Pitchers | Win | Best<br>ML | Best<br>Spread | Runs | Total<br>Runs | Best<br>O/U | Bet<br>Value<br>#### Bet Value<br>We use three different graphics to describe Bet Value within a matchup.<br>[More on Bet Value](https://www.dratings.com/a-quick-primer-on-bet-value/) Close | More Details |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| [04/30/2026\<br>\<br>12:15 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/c344b55b-9f7f-531b-8cfa-718c9b07e382) | [Detroit Tigers](https://www.dratings.com/teams/mlb-baseball-ratings/8-detroit-tigers)(15-15)<br>[Atlanta Braves](https://www.dratings.com/teams/mlb-baseball-ratings/16-atlanta-braves)(21-9) | Framber Valdez<br>Bryce Elder | 47.2%<br>52.8% | +115<br>-120<br>+115<br>-114 | +1½-185<br>-1½+170<br>+1½-190<br>-1½+170 | 3.99<br>4.28 | 8.27 | o8½-110<br>u8½+100<br>o8-120<br>u8½-110 | Volatility Bet Value Active |  |
-| [04/30/2026\<br>\<br>12:35 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/832f4901-eefb-5b45-ba56-8b15ac8a34db) | [St. Louis Cardinals](https://www.dratings.com/teams/mlb-baseball-ratings/25-st--louis-cardinals)(16-13)<br>[Pittsburgh Pirates](https://www.dratings.com/teams/mlb-baseball-ratings/24-pittsburgh-pirates)(16-14) | Hunter Dobbins<br>Paul Skenes | 35.8%<br>64.2% | +194<br>-210<br>+190<br>-205 | +1½-114<br>-1½+103<br>+1½-125<br>-1½+105 | 3.03<br>4.52 | 7.55 | o7-119<br>u7½-120<br>o7-120<br>u7½-120 |  |  |
-| [04/30/2026\<br>\<br>12:35 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/f427f52f-2d83-5553-9301-eccf5b0674a3) | [Houston Astros](https://www.dratings.com/teams/mlb-baseball-ratings/11-houston-astros)(11-19)<br>[Baltimore Orioles](https://www.dratings.com/teams/mlb-baseball-ratings/1-baltimore-orioles)(14-15) | Peter Lambert<br>Chris Bassitt | 46.1%<br>53.9% | +110<br>-116<br>+110<br>-118 | +1½-180<br>-1½+160 | 4.88<br>5.30 | 10.18 | o9+103<br>u9-115<br>o9+100<br>u9+100 | Volatility Bet Value Active |  |
-| [04/30/2026\<br>\<br>12:35 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/5d555b24-4b03-500a-970e-abe032fa9573) | [San Francisco Giants](https://www.dratings.com/teams/mlb-baseball-ratings/30-san-francisco-giants)(13-16)<br>[Philadelphia Phillies](https://www.dratings.com/teams/mlb-baseball-ratings/19-philadelphia-phillies)(10-19) | Logan Webb<br>Cristopher Sánchez | 40.4%<br>59.6% | +122<br>-135<br>+125<br>-134 | +1½-182<br>-1½+159<br>+1½-175<br>-1½+160 | 3.31<br>4.33 | 7.64 | o6½-128<br>u6½+108<br>o6½-125<br>u6½+105 |  |  |
-| [04/30/2026\<br>\<br>12:40 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/ff03fbeb-6057-54aa-8c5d-6120857bef0d) | [Colorado Rockies](https://www.dratings.com/teams/mlb-baseball-ratings/27-colorado-rockies)(13-17)<br>[Cincinnati Reds](https://www.dratings.com/teams/mlb-baseball-ratings/22-cincinnati-reds)(19-10) | Michael Lorenzen<br>Andrew Abbott | 33.8%<br>66.2% | +155<br>-159<br>+152<br>-164 | +1½-137<br>-1½+122<br>+1½-135<br>-1½+120 | 3.63<br>5.31 | 8.94 | o9-105<br>u9-106<br>o9+100<br>u9-115 | Volatility Bet Value Active |  |
-| [04/30/2026\<br>\<br>01:10 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/b9d7c200-79ec-5e01-a8e0-6d77c3c519bc) | [Washington Nationals](https://www.dratings.com/teams/mlb-baseball-ratings/20-washington-nationals)(13-17)<br>[New York Mets](https://www.dratings.com/teams/mlb-baseball-ratings/18-new-york-mets)(10-19) | Miles Mikolas<br>Freddy Peralta | 32.9%<br>67.1% | +182<br>-195<br>+180<br>-200 | +1½-115<br>-1½+106<br>+1½-120<br>-1½+100 | 3.32<br>5.08 | 8.40 | o8+104<br>u8-116<br>o7½-115<br>u7½+100 |  |  |
-| [04/30/2026\<br>\<br>01:40 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/c5587604-6275-5a08-bb3e-3a69eaec209c) | [Arizona Diamondbacks](https://www.dratings.com/teams/mlb-baseball-ratings/26-arizona-diamondbacks)(15-13)<br>[Milwaukee Brewers](https://www.dratings.com/teams/mlb-baseball-ratings/23-milwaukee-brewers)(15-13) | Michael Soroka<br>Brandon Woodruff | 40.7%<br>59.3% | +109<br>-116<br>+110<br>-118 | +1½-200<br>-1½+180<br>+1½-200<br>-1½+175 | 3.30<br>4.27 | 7.57 | o7½-106<br>u7½-105<br>o7½-115<br>u7½-105 |  |  |
-| [04/30/2026\<br>\<br>03:05 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/952e00e2-a8e3-5dff-8960-f1c59970e05c) | [Kansas City Royals](https://www.dratings.com/teams/mlb-baseball-ratings/9-kansas-city-royals)(12-17)<br>[Oakland Athletics](https://www.dratings.com/teams/mlb-baseball-ratings/13-oakland-athletics)(15-14) | Noah Cameron<br>Jeffrey Springs | 48.6%<br>51.4% | +112<br>-120<br>+111<br>-118 | +1½-180<br>-1½+162<br>+1½-170<br>-1½+155 | 4.00<br>4.15 | 8.15 | o9½-115<br>u10-111<br>o9½-115<br>u9½-105 |  |  |
-| [04/30/2026\<br>\<br>03:35 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/0efad607-09bb-55cb-9af8-88edd6a3d5c1) | [Houston Astros](https://www.dratings.com/teams/mlb-baseball-ratings/11-houston-astros)(11-19)<br>[Baltimore Orioles](https://www.dratings.com/teams/mlb-baseball-ratings/1-baltimore-orioles)(14-15) | Lance McCullers Jr.<br>Brandon Young | 41.1%<br>58.9% | +115<br>-127<br>+115<br>-125 | +1½-180<br>-1½+165 | 4.88<br>5.82 | 10.70 | o9-105<br>u9-115<br>o9-105<br>u9-115 |  |  |
-| [04/30/2026\<br>\<br>05:35 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/164e1370-e85a-51b4-8497-1fbb0f318a66) | [San Francisco Giants](https://www.dratings.com/teams/mlb-baseball-ratings/30-san-francisco-giants)(13-16)<br>[Philadelphia Phillies](https://www.dratings.com/teams/mlb-baseball-ratings/19-philadelphia-phillies)(10-19) | Adrian Houser<br>Andrew Painter | 44.2%<br>55.8% | +132<br>-140<br>+135<br>-141 | +1½-175<br>-1½+160<br>+1½-175<br>-1½+155 | 4.10<br>4.71 | 8.81 | o7-103<br>u7-111<br>o7-105<br>u7-115 |  |  |
-| [04/30/2026\<br>\<br>07:40 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/92e71304-1e5c-5db5-bfe5-a782ea930580) | [Toronto Blue Jays](https://www.dratings.com/teams/mlb-baseball-ratings/5-toronto-blue-jays)(13-16)<br>[Minnesota Twins](https://www.dratings.com/teams/mlb-baseball-ratings/10-minnesota-twins)(13-17) | Kevin Gausman<br>Bailey Ober | 56.5%<br>43.5% | -125<br>+118<br>-128<br>+120 | -1½+136<br>+1½-150<br>-1½+130<br>+1½-145 | 4.32<br>3.64 | 7.96 | o7½-112<br>u8-115<br>o8-105<br>u8-115 |  |  |
+| [04/30/2026\<br>\<br>12:35 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/832f4901-eefb-5b45-ba56-8b15ac8a34db) | [St. Louis Cardinals](https://www.dratings.com/teams/mlb-baseball-ratings/25-st--louis-cardinals)(17-13)<br>[Pittsburgh Pirates](https://www.dratings.com/teams/mlb-baseball-ratings/24-pittsburgh-pirates)(16-15) | Hunter Dobbins<br>Paul Skenes | 36.3%<br>63.7% | +210<br>-222<br>+205<br>-225 | +1½+100<br>-1½-103<br>+1½-110<br>-1½-110 | 3.07<br>4.50 | 7.57 | o7-105<br>u7+100<br>o7-105<br>u7-115 | Volatility Bet Value Active |  |
+| [04/30/2026\<br>\<br>12:35 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/f427f52f-2d83-5553-9301-eccf5b0674a3) | [Houston Astros](https://www.dratings.com/teams/mlb-baseball-ratings/11-houston-astros)(11-19)<br>[Baltimore Orioles](https://www.dratings.com/teams/mlb-baseball-ratings/1-baltimore-orioles)(14-15) | Peter Lambert<br>Chris Bassitt | 46.2%<br>53.8% | +121<br>-127<br>+116<br>-124 | +1½-169<br>-1½+155<br>+1½-174<br>-1½+160 | 4.49<br>4.88 | 9.37 | o9-115<br>u9+103<br>o9-105<br>u9-105 |  |  |
+| [04/30/2026\<br>\<br>12:35 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/5d555b24-4b03-500a-970e-abe032fa9573) | [San Francisco Giants](https://www.dratings.com/teams/mlb-baseball-ratings/30-san-francisco-giants)(13-16)<br>[Philadelphia Phillies](https://www.dratings.com/teams/mlb-baseball-ratings/19-philadelphia-phillies)(10-19) | Logan Webb<br>Cristopher Sánchez | 40.2%<br>59.8% | +136<br>-146<br>+140<br>-148 | +1½-170<br>-1½+150<br>+1½-165<br>-1½+150 | 3.16<br>4.18 | 7.34 | o7-110<br>u7-108<br>o7-110<br>u7-110 |  |  |
+| [04/30/2026\<br>\<br>12:40 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/ff03fbeb-6057-54aa-8c5d-6120857bef0d) | [Colorado Rockies](https://www.dratings.com/teams/mlb-baseball-ratings/27-colorado-rockies)(14-17)<br>[Cincinnati Reds](https://www.dratings.com/teams/mlb-baseball-ratings/22-cincinnati-reds)(19-11) | Michael Lorenzen<br>Andrew Abbott | 38.2%<br>61.8% | +141<br>-149<br>+140<br>-146 | +1½-145<br>-1½+137<br>+1½-150<br>-1½+135 | 3.86<br>5.10 | 8.96 | o9+102<br>u9-108<br>o9-105<br>u9-110 |  |  |
+| [04/30/2026\<br>\<br>01:10 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/b9d7c200-79ec-5e01-a8e0-6d77c3c519bc) | [Washington Nationals](https://www.dratings.com/teams/mlb-baseball-ratings/20-washington-nationals)(14-17)<br>[New York Mets](https://www.dratings.com/teams/mlb-baseball-ratings/18-new-york-mets)(10-20) | Miles Mikolas<br>Freddy Peralta | 33.9%<br>66.1% | +168<br>-178<br>+165<br>-178 | +1½-128<br>-1½+116<br>+1½-130<br>-1½+110 | 3.37<br>5.03 | 8.40 | o7½-109<br>u8-113<br>o8+100<br>u8-115 |  |  |
+| [04/30/2026\<br>\<br>01:40 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/c5587604-6275-5a08-bb3e-3a69eaec209c) | [Arizona Diamondbacks](https://www.dratings.com/teams/mlb-baseball-ratings/26-arizona-diamondbacks)(16-13)<br>[Milwaukee Brewers](https://www.dratings.com/teams/mlb-baseball-ratings/23-milwaukee-brewers)(15-14) | Michael Soroka<br>Brandon Woodruff | 44.3%<br>55.7% | +114<br>-124<br>+113<br>-120 | +1½-196<br>-1½+174<br>+1½-195<br>-1½+175 | 3.38<br>3.97 | 7.35 | o7½+110<br>u7+106<br>o7½+105<br>u7½-120 |  |  |
+| [04/30/2026\<br>\<br>03:05 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/952e00e2-a8e3-5dff-8960-f1c59970e05c) | [Kansas City Royals](https://www.dratings.com/teams/mlb-baseball-ratings/9-kansas-city-royals)(12-18)<br>[Oakland Athletics](https://www.dratings.com/teams/mlb-baseball-ratings/13-oakland-athletics)(16-14) | Noah Cameron<br>Jeffrey Springs | 48.6%<br>51.4% | +111<br>-120<br>+111<br>-118 | +1½-180<br>-1½+160<br>+1½-170<br>-1½+155 | 4.41<br>4.56 | 8.97 | o9½-108<br>u9½-105<br>o9½-105<br>u9½-110 |  |  |
+| [04/30/2026\<br>\<br>03:35 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/0efad607-09bb-55cb-9af8-88edd6a3d5c1) | [Houston Astros](https://www.dratings.com/teams/mlb-baseball-ratings/11-houston-astros)(11-19)<br>[Baltimore Orioles](https://www.dratings.com/teams/mlb-baseball-ratings/1-baltimore-orioles)(14-15) | Lance McCullers Jr.<br>Brandon Young | 41.2%<br>58.8% | +115<br>-120<br>+114<br>-120 | +1½-180<br>-1½+164<br>+1½-175<br>-1½+165 | 4.89<br>5.81 | 10.70 | o9-110<br>u9+101<br>o9-115<br>u9+100 |  |  |
+| [04/30/2026\<br>\<br>05:35 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/164e1370-e85a-51b4-8497-1fbb0f318a66) | [San Francisco Giants](https://www.dratings.com/teams/mlb-baseball-ratings/30-san-francisco-giants)(13-16)<br>[Philadelphia Phillies](https://www.dratings.com/teams/mlb-baseball-ratings/19-philadelphia-phillies)(10-19) | Adrian Houser<br>Andrew Painter | 44.0%<br>56.0% | +138<br>-140<br>+135<br>-144 | +1½-164<br>-1½+160<br>+1½-175<br>-1½+155 | 3.65<br>4.28 | 7.93 | o7-110<br>u7-101<br>o7-110<br>u7-110 | All Bet Values Active |  |
+| [04/30/2026\<br>\<br>07:40 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/92e71304-1e5c-5db5-bfe5-a782ea930580) | [Toronto Blue Jays](https://www.dratings.com/teams/mlb-baseball-ratings/5-toronto-blue-jays)(14-16)<br>[Minnesota Twins](https://www.dratings.com/teams/mlb-baseball-ratings/10-minnesota-twins)(13-18) | Kevin Gausman<br>Bailey Ober | 57.2%<br>42.8% | -127<br>+118<br>-128<br>+120 | -1½+135<br>+1½-147<br>-1½+130<br>+1½-145 | 4.36<br>3.60 | 7.96 | o7½-110<br>u7½-101<br>o7½-105<br>u7½-105 |  |  |
 
 Games for Apr 29, 2026
 
 [Games for May 1, 2026](https://www.dratings.com/predictor/mlb-baseball-predictions/upcoming/2#scroll-upcoming)
 
+## Games In Progress
+
+[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1777566329959#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1777566329959#)
+
+| Time | Teams | Orig.<br>Win % | Closing<br>ML | Closing<br>Spread | Orig. Total<br>Runs | Closing<br>O/U | Period | Current<br>Score |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| [04/30/2026\<br>\<br>12:15 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/c344b55b-9f7f-531b-8cfa-718c9b07e382) | Detroit Tigers (15-16)<br>Atlanta Braves (22-9) | 46.9%<br>53.1% | +112<br>-120<br>+113<br>-120 | +1½-185<br>-1½+167<br>+1½-185<br>-1½+170 | 8.27 | o8½-125<br>u9-110<br>o9+100<br>u9-120 | 1st <br>BOT | 0<br>0 |
+
 ## Completed Games
 
-[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1777552847944#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1777552847944#)
+[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1777566329959#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1777566329959#)
 
 | Time | Teams | Win | Best<br>ML | Best<br>Spread | Final<br>Runs | Sportsbook<br>Log Loss | DRatings<br>Log Loss |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -96,7 +104,7 @@ Games for Apr 29, 2026
 
 Time PeriodLast 24 HoursLast WeekLast MonthThis SeasonAll Time
 
-[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1777552847944#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1777552847944#)
+[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1777566329959#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1777566329959#)
 
 |  | Games | Record (Pct) | No Pick | Log Loss<br>#### Log Loss<br>Log loss is used to determine the accuracy of a model.<br>[More on Log Loss](https://www.dratings.com/explaining-log-loss/) Close | +/- |
 | --- | --- | --- | --- | --- | --- |
