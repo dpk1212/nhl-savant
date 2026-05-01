@@ -8597,8 +8597,99 @@ export default function SharpFlow() {
       }
     }
 
+    // ── Vault HC Margin (premium-tier badging, client-side mirror) ──────────
+    // Mirrors scripts/writeSharpActions.js → computeVaultHcSignals so the UI
+    // surfaces HC +1 / HC +2+ badges on Today's Action cards every ~8 min
+    // (live JSON refresh) without waiting for the 2-hour Firestore write.
+    // HC = whitelistTier === 'CONFIRMED' AND sizeRatio ≥ HC_RATIO.
+    //
+    // Group positions by (sport, gameKey, marketType) once, dedupe each
+    // wallet's bet on each side (max invested wins), then for each position
+    // count HC backers vs HC faders relative to its side.
+    const allGameMarketGroups = new Map();
+    const posFilesForHc = [
+      { data: sharpPositions, mkt: 'ML' },
+      { data: spreadPositions, mkt: 'SPREAD' },
+      { data: totalPositions, mkt: 'TOTAL' },
+    ];
+    for (const { data: posData, mkt } of posFilesForHc) {
+      if (!posData) continue;
+      for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'NFL']) {
+        const sportGames = posData[sport] || {};
+        for (const [gameKey, gd] of Object.entries(sportGames)) {
+          if (!gd.positions) continue;
+          const groupKey = `${sport}|${gameKey}|${mkt}`;
+          // Dedupe by wallet+side, keep max invested.
+          const seen = new Map();
+          for (const pos of gd.positions) {
+            if (!pos.wallet || !pos.side) continue;
+            const k = `${pos.wallet.toLowerCase()}|${pos.side}`;
+            const cur = seen.get(k);
+            if (!cur || (pos.invested || 0) > (cur.invested || 0)) seen.set(k, pos);
+          }
+          const details = [];
+          for (const p of seen.values()) {
+            const avgBet = p.avgSportBet || 0;
+            const sizeRatio = avgBet > 0 ? (p.invested || 0) / avgBet : 0;
+            details.push({
+              wallet: p.wallet,
+              walletShort: String(p.wallet).slice(-6),
+              side: p.side,
+              sizeRatio,
+            });
+          }
+          allGameMarketGroups.set(groupKey, { sport, details });
+        }
+      }
+    }
+    const hcCountsByGroup = new Map(); // groupKey|side → { hcConfFor, hcConfAg }
+    for (const [groupKey, { sport, details }] of allGameMarketGroups) {
+      // Count CONFIRMED + sizeRatio ≥ HC_RATIO wallets per side.
+      const sideHcCounts = new Map();
+      for (const d of details) {
+        const tier = getWalletProfile(d.walletShort)?.bySport?.[sport]?.whitelistTier;
+        if (tier !== 'CONFIRMED') continue;
+        if (d.sizeRatio < HC_RATIO) continue;
+        sideHcCounts.set(d.side, (sideHcCounts.get(d.side) || 0) + 1);
+      }
+      // For each side that appears in details, compute hcConfFor/Ag.
+      const sidesSeen = new Set(details.map(d => d.side).filter(Boolean));
+      for (const mySide of sidesSeen) {
+        let hcConfFor = sideHcCounts.get(mySide) || 0;
+        let hcConfAg = 0;
+        for (const [s, n] of sideHcCounts) {
+          if (s !== mySide) hcConfAg += n;
+        }
+        hcCountsByGroup.set(`${groupKey}|${mySide}`, { hcConfFor, hcConfAg });
+      }
+    }
+    // Stamp HC fields on every actionPosition (drives badges + auto-pin sort).
+    for (const ap of actionPositions) {
+      const sport = ap.sport;
+      const groupKey = `${sport}|${ap.gameKey}|${ap.marketType}`;
+      const sideKey = `${groupKey}|${ap.side}`;
+      const counts = hcCountsByGroup.get(sideKey) || { hcConfFor: 0, hcConfAg: 0 };
+      const hcMargin = counts.hcConfFor - counts.hcConfAg;
+      let hcTier = null;
+      if (hcMargin >= 2) hcTier = 'HC_DOMINANT';
+      else if (hcMargin === 1) hcTier = 'HC_STANDARD';
+      else if (hcMargin <= -1) hcTier = 'HC_FADE';
+      // isHcWallet — this wallet itself qualifies as HC on its side.
+      const myAvgBet = ap.avgSportBet || 0;
+      const mySizeRatio = myAvgBet > 0 ? (ap.invested || 0) / myAvgBet : 0;
+      const myTier = getWalletProfile(String(ap.wallet).slice(-6))?.bySport?.[sport]?.whitelistTier || null;
+      const isHcWallet = myTier === 'CONFIRMED' && mySizeRatio >= HC_RATIO;
+      ap.vault_hcConfFor = counts.hcConfFor;
+      ap.vault_hcConfAg = counts.hcConfAg;
+      ap.vault_hcMargin = hcMargin;
+      ap.vault_hcTier = hcTier;
+      ap.vault_isHcWallet = isHcWallet;
+    }
+
     return { entries, todayPositions, convergences, activeCount, combinedPnl, actionPositions };
-  }, [sportsSharps, sharpPositions, spreadPositions, totalPositions, intelExcludedSet, polyData, pinnacleHistory]);
+    // walletProfiles is intentionally in deps so vaultData re-computes once the
+    // sharpWalletProfiles cache populates — this drives HC badge availability.
+  }, [sportsSharps, sharpPositions, spreadPositions, totalPositions, intelExcludedSet, polyData, pinnacleHistory, walletProfiles]);
 
   if (loading || authLoading || subLoading) {
     return (
@@ -8806,6 +8897,15 @@ export default function SharpFlow() {
                 roi: (a, b) => (b.displayRoi || 0) - (a.displayRoi || 0),
                 conviction: (a, b) => (b.betMultiplier || 0) - (a.betMultiplier || 0),
               };
+              // HC priority — premium HC +2+ pins first, HC +1 next, everything
+              // else last. Within each tier we fall back to the chosen sort mode.
+              // HC_FADE (HC margin ≤ −1) is intentionally NOT pinned — those are
+              // positions where proven HC sharps are betting the OTHER side.
+              const hcRank = (p) => {
+                if (p.vault_hcTier === 'HC_DOMINANT') return 0;
+                if (p.vault_hcTier === 'HC_STANDARD') return 1;
+                return 2;
+              };
               const now = Date.now();
               const MAX_GAME_MS = 6 * 60 * 60 * 1000;
               const enriched = (actionPositions || []).map(p => {
@@ -8820,13 +8920,21 @@ export default function SharpFlow() {
 
               const pregameCount = enriched.filter(p => !p._isLive).length;
               const liveCount = enriched.filter(p => p._isLive).length;
+              const hcDomCount = enriched.filter(p => p.vault_hcTier === 'HC_DOMINANT').length;
+              const hcStdCount = enriched.filter(p => p.vault_hcTier === 'HC_STANDARD').length;
 
               let filtered = [...enriched];
               if (actionStatusFilter === 'PREGAME') filtered = filtered.filter(p => !p._isLive);
               else if (actionStatusFilter === 'LIVE') filtered = filtered.filter(p => p._isLive);
               if (actionSportFilter !== 'ALL') filtered = filtered.filter(p => p.sport === actionSportFilter);
               if (actionMarketFilter !== 'ALL') filtered = filtered.filter(p => p.marketType === actionMarketFilter);
-              const sorted = filtered.sort(actionSortFns[actionSortMode] || actionSortFns.size);
+              const baseSort = actionSortFns[actionSortMode] || actionSortFns.size;
+              // HC tier ALWAYS dominates user-selected sort — premium signal
+              // wins over size / ROI / conviction. Within tier: chosen mode.
+              const sorted = filtered.sort((a, b) => {
+                const r = hcRank(a) - hcRank(b);
+                return r !== 0 ? r : baseSort(a, b);
+              });
 
               const sportCounts = {};
               const mktCounts = {};
@@ -8850,7 +8958,7 @@ export default function SharpFlow() {
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem',
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                       <div style={{ width: '3px', height: '14px', borderRadius: '2px', background: B.green }} />
                       <span style={{ ...T.label, color: B.green, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                         Today's Action
@@ -8860,6 +8968,27 @@ export default function SharpFlow() {
                           ...T.micro, padding: '0.1rem 0.4rem', borderRadius: '4px',
                           background: B.greenDim, color: B.green, fontWeight: 800,
                         }}>{sorted.length}</span>
+                      )}
+                      {/* Premium HC tier counters — surfaced inline so users
+                          immediately know whether the Vault has any HC +1 / +2
+                          plays today. Auto-pinned to the front of the feed. */}
+                      {hcDomCount > 0 && (
+                        <span title="Positions on a side with proven HC margin ≥ +2 — strongest signal we've validated; auto-pinned to top" style={{
+                          ...T.micro, padding: '0.1rem 0.45rem', borderRadius: '4px',
+                          color: '#1a1a1a',
+                          background: `linear-gradient(135deg, ${B.gold} 0%, #F5D77B 100%)`,
+                          border: `1px solid ${B.gold}`,
+                          boxShadow: '0 0 8px rgba(212,175,55,0.35)',
+                          fontWeight: 900, letterSpacing: '0.04em',
+                        }}>★★ HC +2 · {hcDomCount}</span>
+                      )}
+                      {hcStdCount > 0 && (
+                        <span title="Positions on a side with proven HC margin = +1 — auto-pinned after HC +2 plays" style={{
+                          ...T.micro, padding: '0.1rem 0.45rem', borderRadius: '4px',
+                          color: B.gold, background: 'rgba(212,175,55,0.14)',
+                          border: `1px solid ${B.gold}66`,
+                          fontWeight: 800, letterSpacing: '0.04em',
+                        }}>★ HC +1 · {hcStdCount}</span>
                       )}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
@@ -9007,14 +9136,36 @@ export default function SharpFlow() {
                         const totalStr = p.marketType === 'TOTAL' && totalDisplayLine != null ? ` ${totalDisplayLine}` : '';
                         const teamDisplay = `${p.teamName}${lineStr}${totalStr}`;
                         const isHighConviction = p.betMultiplier >= 3;
-                        const boxAccentColor = hasEV ? B.green : isHighConviction ? B.gold : tc.accent;
-                        const boxBg = hasEV
-                          ? 'linear-gradient(135deg, rgba(16,185,129,0.10) 0%, rgba(16,185,129,0.02) 100%)'
-                          : isHighConviction
-                            ? 'linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(212,175,55,0.02) 100%)'
-                            : `linear-gradient(135deg, ${tc.bg} 0%, rgba(255,255,255,0.01) 100%)`;
-                        const boxBorder = hasEV ? 'rgba(16,185,129,0.25)' : isHighConviction ? 'rgba(212,175,55,0.2)' : B.borderSubtle;
-                        const boxLabel = hasEV ? 'EV OPPORTUNITY' : isHighConviction ? 'HIGH CONVICTION' : 'SHARP POSITION';
+                        // Vault HC Margin tier — overrides HIGH CONVICTION /
+                        // SHARP POSITION when present. HC_DOMINANT (margin ≥ +2)
+                        // gets premium platinum-gold treatment with glow ring;
+                        // HC_STANDARD (margin = +1) gets a gold outline. See
+                        // computeVaultHcSignals() for the full classification.
+                        const isHcDominant = p.vault_hcTier === 'HC_DOMINANT';
+                        const isHcStandard = p.vault_hcTier === 'HC_STANDARD';
+                        const isHcFade = p.vault_hcTier === 'HC_FADE';
+                        const isHcTier = isHcDominant || isHcStandard;
+                        const boxAccentColor = isHcTier ? B.gold : hasEV ? B.green : isHighConviction ? B.gold : tc.accent;
+                        const boxBg = isHcDominant
+                          ? 'linear-gradient(135deg, rgba(212,175,55,0.18) 0%, rgba(212,175,55,0.04) 100%)'
+                          : isHcStandard
+                            ? 'linear-gradient(135deg, rgba(212,175,55,0.11) 0%, rgba(212,175,55,0.02) 100%)'
+                            : hasEV
+                              ? 'linear-gradient(135deg, rgba(16,185,129,0.10) 0%, rgba(16,185,129,0.02) 100%)'
+                              : isHighConviction
+                                ? 'linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(212,175,55,0.02) 100%)'
+                                : `linear-gradient(135deg, ${tc.bg} 0%, rgba(255,255,255,0.01) 100%)`;
+                        const boxBorder = isHcDominant
+                          ? 'rgba(212,175,55,0.55)'
+                          : isHcStandard
+                            ? 'rgba(212,175,55,0.35)'
+                            : hasEV ? 'rgba(16,185,129,0.25)' : isHighConviction ? 'rgba(212,175,55,0.2)' : B.borderSubtle;
+                        const hcMarginNum = p.vault_hcMargin ?? 0;
+                        const boxLabel = isHcDominant
+                          ? `PROVEN HC +${hcMarginNum}`
+                          : isHcStandard
+                            ? 'PROVEN HC +1'
+                            : hasEV ? 'EV OPPORTUNITY' : isHighConviction ? 'HIGH CONVICTION' : 'SHARP POSITION';
 
                         const pinnConfirmsPlay = (() => {
                           if (!pinnGame) return false;
@@ -9027,17 +9178,36 @@ export default function SharpFlow() {
                           return impliedProb(curOdds) > impliedProb(openOdds);
                         })();
 
+                        // Card-level premium treatment for HC tiers — gold
+                        // outline + soft glow ring around the entire card so
+                        // these positions are unmistakable in a long feed.
+                        const cardBorder = isHcDominant
+                          ? '1.5px solid rgba(212,175,55,0.60)'
+                          : isHcStandard
+                            ? '1px solid rgba(212,175,55,0.40)'
+                            : `1px solid ${isLocked ? 'rgba(99,102,241,0.35)' : hasEV ? `${B.green}35` : B.borderSubtle}`;
+                        const cardBoxShadow = isHcDominant
+                          ? '0 0 24px rgba(212,175,55,0.20), inset 0 0 0 1px rgba(212,175,55,0.25)'
+                          : isHcStandard
+                            ? '0 0 12px rgba(212,175,55,0.12)'
+                            : 'none';
+                        const topAccentBar = isHcTier
+                          ? `linear-gradient(90deg, transparent 0%, ${B.gold}cc 25%, ${B.gold} 50%, ${B.gold}cc 75%, transparent 100%)`
+                          : isLocked
+                            ? 'linear-gradient(90deg, transparent 0%, rgba(99,102,241,0.5) 30%, rgba(99,102,241,0.9) 50%, rgba(99,102,241,0.5) 70%, transparent 100%)'
+                            : `linear-gradient(90deg, transparent 0%, ${boxAccentColor}88 30%, ${boxAccentColor} 50%, ${boxAccentColor}88 70%, transparent 100%)`;
+
                         return (
                           <div key={`${cardKey}_${idx}`} style={{
                             borderRadius: '14px', overflow: 'hidden',
                             background: `linear-gradient(145deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
-                            border: `1px solid ${isLocked ? 'rgba(99,102,241,0.35)' : hasEV ? `${B.green}35` : B.borderSubtle}`,
+                            border: cardBorder,
+                            boxShadow: cardBoxShadow,
+                            transition: 'box-shadow 0.3s ease',
                           }}>
                             <div style={{
-                              height: '3px',
-                              background: isLocked
-                                ? 'linear-gradient(90deg, transparent 0%, rgba(99,102,241,0.5) 30%, rgba(99,102,241,0.9) 50%, rgba(99,102,241,0.5) 70%, transparent 100%)'
-                                : `linear-gradient(90deg, transparent 0%, ${boxAccentColor}88 30%, ${boxAccentColor} 50%, ${boxAccentColor}88 70%, transparent 100%)`,
+                              height: isHcDominant ? '4px' : '3px',
+                              background: topAccentBar,
                             }} />
 
                             {/* ── Header: Matchup + Sport + Badges ── */}
@@ -9051,7 +9221,38 @@ export default function SharpFlow() {
                                   {p.away} <span style={{ color: B.textMuted, fontWeight: 400 }}>vs</span> {p.home}
                                 </span>
                               </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                                {/* PROVEN HC chip — premium gold marker for
+                                    positions on a side with HC margin ≥ +1.
+                                    Strongest single edge we've validated. */}
+                                {isHcDominant && (
+                                  <span title={`${p.vault_hcConfFor} proven CONFIRMED-tier whales sized 1.5×+ on this side, ${p.vault_hcConfAg} on the other`} style={{
+                                    ...T.micro, fontWeight: 900, padding: '0.2rem 0.55rem', borderRadius: '5px',
+                                    color: '#1a1a1a',
+                                    background: `linear-gradient(135deg, ${B.gold} 0%, #F5D77B 100%)`,
+                                    border: `1px solid ${B.gold}`,
+                                    boxShadow: '0 0 10px rgba(212,175,55,0.45)',
+                                    letterSpacing: '0.04em', textTransform: 'uppercase',
+                                    display: 'inline-flex', alignItems: 'center', gap: '0.2rem',
+                                  }}>★★ HC +{hcMarginNum}</span>
+                                )}
+                                {isHcStandard && (
+                                  <span title={`${p.vault_hcConfFor} proven CONFIRMED-tier whale sized 1.5×+ on this side, 0 on the other`} style={{
+                                    ...T.micro, fontWeight: 800, padding: '0.18rem 0.5rem', borderRadius: '5px',
+                                    color: B.gold, background: 'rgba(212,175,55,0.14)',
+                                    border: `1px solid ${B.gold}66`,
+                                    letterSpacing: '0.04em', textTransform: 'uppercase',
+                                    display: 'inline-flex', alignItems: 'center', gap: '0.2rem',
+                                  }}>★ HC +1</span>
+                                )}
+                                {isHcFade && (
+                                  <span title={`${p.vault_hcConfAg} proven HC sharp${p.vault_hcConfAg !== 1 ? 's' : ''} on the other side — fade flag`} style={{
+                                    ...T.micro, fontWeight: 700, padding: '0.15rem 0.45rem', borderRadius: '5px',
+                                    color: B.red, background: 'rgba(239,68,68,0.10)',
+                                    border: '1px solid rgba(239,68,68,0.30)',
+                                    letterSpacing: '0.04em', textTransform: 'uppercase',
+                                  }}>HC FADE {p.vault_hcMargin}</span>
+                                )}
                                 <Badge color={tc.color} bg={tc.bg}>{p.tier}</Badge>
                                 {rankGroup && (
                                   <span style={{

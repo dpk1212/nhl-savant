@@ -339,6 +339,50 @@ function computeVaultQuantSignals(walletDetails, mySide, sport, walletProfiles) 
   return { qualityForT30, qualityAgT30, qualityMargin, winnerForW, winnerAgW, winnerMargin };
 }
 
+// ── Vault HC Margin (premium-tier badging on Sharp Vault cards) ─────────────
+//
+// Game-side HC (High-Conviction) margin is the strongest single edge we've
+// validated — see WALLET_HC_MARGIN_ANALYSIS.md and §12 of the daily V6 report.
+// HC = whitelistTier === 'CONFIRMED' AND sizeRatio ≥ HC_RATIO. We stamp
+// HC counts + margin onto every Sharp Vault position so the UI can render
+// premium gold-outline badges (HC +1 / HC +2+) and auto-pin those positions
+// to the top of Today's Action.
+//
+// vault_hcTier:
+//   'HC_DOMINANT'  → margin ≥ +2  (premium gold + glow ring)
+//   'HC_STANDARD'  → margin = +1  (gold outline)
+//   'HC_FADE'      → margin ≤ -1  (proven HC sharps on the OTHER side)
+//   null            → no HC backing on either side
+//
+// vault_isHcWallet is true when THIS specific wallet is itself an HC backer
+// (CONFIRMED + sizeRatio ≥ HC_RATIO) on the side it bet.
+const HC_RATIO = 1.5;
+
+function computeVaultHcSignals(walletDetails, mySide, sport, walletProfiles, myWalletShort) {
+  const out = { hcConfFor: 0, hcConfAg: 0, hcMargin: 0, hcTier: null, isHcWallet: false };
+  if (!Array.isArray(walletDetails) || !mySide || !sport) return out;
+  let hcConfFor = 0, hcConfAg = 0, isHcWallet = false;
+  for (const d of walletDetails) {
+    const short = String(d.wallet || '').slice(-6);
+    const tier = walletProfiles?.get(short)?.bySport?.[sport]?.whitelistTier || null;
+    if (tier !== 'CONFIRMED') continue;
+    const sr = d.sizeRatio ?? 0;
+    if (sr < HC_RATIO) continue;
+    if (d.side === mySide) {
+      hcConfFor++;
+      if (myWalletShort && short === myWalletShort) isHcWallet = true;
+    } else if (d.side) {
+      hcConfAg++;
+    }
+  }
+  const hcMargin = hcConfFor - hcConfAg;
+  let hcTier = null;
+  if (hcMargin >= 2) hcTier = 'HC_DOMINANT';
+  else if (hcMargin === 1) hcTier = 'HC_STANDARD';
+  else if (hcMargin <= -1) hcTier = 'HC_FADE';
+  return { hcConfFor, hcConfAg, hcMargin, hcTier, isHcWallet };
+}
+
 function computeVaultQuantScore(sig) {
   if (!sig) return null;
   const { winnerMargin, qualityMargin } = sig;
@@ -544,6 +588,10 @@ async function main() {
           // Vault Quant Score v1 — two-axis shadow score (hidden; writes only).
           const vaultSignals = computeVaultQuantSignals(wps.walletDetails, pos.side, sport, walletProfiles);
           const vaultScore = computeVaultQuantScore(vaultSignals);
+          // Vault HC Margin — premium tier signal that drives Sharp Vault gold
+          // outline badging + auto-pin sort. See computeVaultHcSignals() header.
+          const myShort = pos.wallet.slice(-6);
+          const vaultHc = computeVaultHcSignals(wps.walletDetails, pos.side, sport, walletProfiles, myShort);
 
           positions.push({
             date,
@@ -627,6 +675,12 @@ async function main() {
             vault_qualityForT30: vaultSignals?.qualityForT30 ?? null,
             vault_qualityAgT30: vaultSignals?.qualityAgT30 ?? null,
             vault_qualityMargin: vaultSignals?.qualityMargin ?? null,
+            // Vault HC Margin (premium-tier badging) — see computeVaultHcSignals().
+            vault_hcConfFor: vaultHc.hcConfFor,
+            vault_hcConfAg: vaultHc.hcConfAg,
+            vault_hcMargin: vaultHc.hcMargin,
+            vault_hcTier: vaultHc.hcTier,
+            vault_isHcWallet: vaultHc.isHcWallet,
             status: 'PENDING',
             result: null,
             gradedAt: null,
@@ -704,6 +758,13 @@ async function main() {
             vault_qualityForT30: pos.vault_qualityForT30,
             vault_qualityAgT30: pos.vault_qualityAgT30,
             vault_qualityMargin: pos.vault_qualityMargin,
+            // Vault HC Margin — backfill onto graded docs so retro-analysis
+            // and reports can query graded positions by HC tier directly.
+            vault_hcConfFor: pos.vault_hcConfFor,
+            vault_hcConfAg: pos.vault_hcConfAg,
+            vault_hcMargin: pos.vault_hcMargin,
+            vault_hcTier: pos.vault_hcTier,
+            vault_isHcWallet: pos.vault_isHcWallet,
           };
           batch.update(ref, v8Patch);
           batchOps++;
@@ -763,6 +824,13 @@ async function main() {
           vault_qualityForT30: pos.vault_qualityForT30,
           vault_qualityAgT30: pos.vault_qualityAgT30,
           vault_qualityMargin: pos.vault_qualityMargin,
+          // Vault HC Margin — refresh on every cycle for PENDING docs so the
+          // UI sees the latest HC counts as more whales pile in pre-game.
+          vault_hcConfFor: pos.vault_hcConfFor,
+          vault_hcConfAg: pos.vault_hcConfAg,
+          vault_hcMargin: pos.vault_hcMargin,
+          vault_hcTier: pos.vault_hcTier,
+          vault_isHcWallet: pos.vault_isHcWallet,
         };
         if (pos.entryLine != null) updatePayload.entryLine = pos.entryLine;
         if (pos.spreadLine != null && !data.spreadLine) updatePayload.spreadLine = pos.spreadLine;

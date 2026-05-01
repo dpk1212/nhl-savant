@@ -1,8 +1,13 @@
 name: Write Sharp Actions to Firebase
 
+# Cadence note (2026-05-01): tightened from every 2h to hourly so Firestore-
+# stamped vault_hc* fields stay close to live JSON refreshes (~8 min cycle on
+# fetch-polymarket). The Sharp Vault UI computes HC margin client-side from
+# JSON for sub-cycle freshness; this job persists the same fields to
+# Firestore for analytics + downstream reports (daily V6 report, backfills).
 on:
   schedule:
-    - cron: '30 */2 * * *'
+    - cron: '15 * * * *'
   workflow_dispatch:
 
 jobs:
