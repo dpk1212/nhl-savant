@@ -41,14 +41,21 @@
  *     Δw against today's whitelist because that is the bug we just removed.
  *
  * Sections:
- *   §1. Sample summary — reconciles to the dashboard
- *   §2. Daily PnL by lock-floor cohort (FROZEN deltas)
- *   §3. Vault-Star bucket performance (FROZEN v8_vaultStar)
- *   §4. Sharp Vault hidden-star performance (sharp_action_positions)
- *   §5. Full (Δw × Δq) win matrix using FROZEN stamps
- *   §6. RECONCILIATION & ANOMALIES — engine self-check
- *   §7. Wallet roster growth & profitability
- *   §8. Wallet winners — descriptive stats
+ *   §1.  Sample summary — reconciles to the dashboard
+ *   §2.  Daily PnL by lock-floor cohort (FROZEN deltas)
+ *   §3.  Vault-Star bucket performance (FROZEN v8_vaultStar)
+ *   §4.  Sharp Vault hidden-star performance (sharp_action_positions)
+ *   §5.  Full (Δw × Δq) win matrix using FROZEN stamps
+ *   §6.  RECONCILIATION & ANOMALIES — engine self-check
+ *   §7.  Wallet roster growth & profitability
+ *   §8.  Wallet winners — descriptive stats
+ *   §9.  v7.1 HC dominance cohort (frozen v8_hcDominant)
+ *   §10. v7.2 HC-margin tier cohort (frozen v7.2 stamps)
+ *   §11. v7.3 HC-margin floor + MUTE override cohort (frozen v7.3 stamps)
+ *   §12. HC-margin universal monitor — 3d/7d/all-time × sport × Σ × HC matrix
+ *        (full graded set; rebuilds the v7.3 thesis check daily)
+ *   §13. Proven-wallet roster growth & HC tracking — snapshot, drift,
+ *        deltas, funnel, HC density, bubble pipeline
  *
  * Output: DAILY_V6_REPORT.md
  *
@@ -87,6 +94,7 @@ const MIN_BETS = MIN_BETS_ARG ? parseInt(MIN_BETS_ARG.split('=')[1], 10) : 2;
 
 const V6_CUTOVER  = '2026-04-18'; // first day with v8Scoring.walletDetails
 const QUALITY_CUT = 30;
+const HC_RATIO    = 1.5;          // HC = CONFIRMED tier ∧ sizeRatio ≥ HC_RATIO
 const PICK_COLS = [
   ['sharpFlowPicks',   'ML'],
   ['sharpFlowSpreads', 'SPREAD'],
@@ -279,6 +287,18 @@ async function loadEverything() {
         const systemVersion = side.v8_systemVersion || null;
         const promotedBy = side.promotedBy || null;
 
+        // Lightweight walletDetails stash for §12 hcMargin recompute.
+        // We only keep wallet/side/sizeRatio — enough to reconstruct
+        // hcConfFor/hcConfAg given a point-in-time tier lens. Roughly
+        // 60 bytes per entry × 20 wallets × 240 picks = ~300KB; fine.
+        const wdLite = Array.isArray(wd)
+          ? wd.filter(w => w?.wallet && w?.side).map(w => ({
+              wallet: w.wallet,
+              side: w.side,
+              sizeRatio: Number(w.sizeRatio ?? 0),
+            }))
+          : null;
+
         pickRows.push({
           docId: doc.id,
           date, sport, market, sideKey,
@@ -288,6 +308,7 @@ async function loadEverything() {
           dwFrozen, dqFrozen, dwSource, dqSource, vaultStar,
           hcDominant, hcConfFor, hcConfAg, hcMargin, systemVersion, promotedBy,
           outcome: oc, profitU, flatProfit,
+          walletDetailsLite: wdLite,
         });
       }
 
@@ -320,8 +341,31 @@ async function loadEverything() {
     }
   }
 
+  // Source B — graded position rows (dollar ROI from sharp_action_positions).
+  // Used by §13 to reconstruct the proven-winner roster (CONFIRMED requires
+  // both flat-positive in Source A and dollar-positive in Source B).
+  const positionRows = [];
+  const posSnap = await db.collection(VAULT_COLLECTION).where('status', '==', 'GRADED').get();
+  for (const doc of posSnap.docs) {
+    const d = doc.data();
+    if (!d.wallet) continue;
+    if (!d.date || d.date < V6_CUTOVER) continue;
+    const invested = Number(d.invested ?? d.size ?? 0);
+    const settledPnl = Number(d.settledPnl ?? d.positionPnl ?? 0);
+    if (invested <= 0) continue;
+    const walletShort = d.walletShort || String(d.wallet).slice(-6).toLowerCase();
+    positionRows.push({
+      date: d.date,
+      sport: d.sport || 'UNK',
+      market: d.marketType || null,
+      wallet: walletShort,
+      invested,
+      settledPnl,
+    });
+  }
+
   return {
-    profiles, pickRows, walletBets,
+    profiles, pickRows, walletBets, positionRows,
     meta: { totalSidesScanned, dateMin, dateMax },
   };
 }
@@ -359,6 +403,240 @@ function finalizeAgg(a) {
   const wlTotal = a.w + a.l;
   const wr = wlTotal === 0 ? null : (a.w / wlTotal) * 100;
   return { ...a, wr };
+}
+
+// Build a point-in-time tier lens from Source-A wallet bets and Source-B
+// positions. Mirrors `walletHcMarginAnalysisFull.js` — events are walked
+// chronologically and each (wallet, sport) records when it first crossed
+// each tier threshold (CONFIRMED, FLAT, WR50). `tierAsOf(canonical, sport,
+// date)` returns the wallet's tier as it would have been on that date.
+//
+// CONFIRMED requires both flat-positive in Source A AND dollar-positive in
+// Source B with ≥ MIN_BETS in each. FLAT requires only flat-positive in
+// Source A. WR50 is leading-indicator (≥ MIN_BETS, win-rate ≥ 50%).
+function buildTierLens(walletBets, positionRows, profiles) {
+  // Address joining — Source A uses walletShort (last 6 chars), Source B
+  // can use walletShort directly. Build a key map so both sources collapse
+  // onto the same canonical id.
+  const walletKeyToCanonical = new Map();
+  for (const [key, p] of profiles) {
+    const full = p.walletAddress || null;
+    walletKeyToCanonical.set(key, full || key);
+    if (full) {
+      walletKeyToCanonical.set(full, full);
+      walletKeyToCanonical.set(full.slice(-6).toLowerCase(), full);
+    }
+  }
+  const canonicalize = (k) => walletKeyToCanonical.get(k) || k;
+
+  const events = [];
+  for (const b of walletBets) {
+    if (!b.sport || !b.wallet) continue;
+    events.push({ date: b.date || '', sport: b.sport, canonical: canonicalize(b.wallet), source: 'A', payload: b });
+  }
+  for (const p of positionRows) {
+    if (!p.sport || !p.wallet) continue;
+    events.push({ date: p.date || '', sport: p.sport, canonical: canonicalize(p.wallet), source: 'B', payload: p });
+  }
+  events.sort((x, y) => x.date.localeCompare(y.date));
+
+  const stat = new Map();
+  const getStat = (c, s) => {
+    const k = `${c}|${s}`;
+    let st = stat.get(k);
+    if (!st) {
+      st = { aN: 0, aWins: 0, aFlatPnl: 0, bN: 0, bInvested: 0, bPnl: 0, firstWR50: null, firstFlat: null, firstConfirmed: null };
+      stat.set(k, st);
+    }
+    return st;
+  };
+  for (const e of events) {
+    const s = getStat(e.canonical, e.sport);
+    if (e.source === 'A') {
+      s.aN += 1;
+      s.aWins += (e.payload.won || 0);
+      s.aFlatPnl += (e.payload.flat ?? 0);
+    } else {
+      s.bN += 1;
+      s.bInvested += (e.payload.invested || 0);
+      s.bPnl += (e.payload.settledPnl || 0);
+    }
+    const aMet  = s.aN >= 2 && s.aFlatPnl > 0;
+    const aWr50 = s.aN >= 2 && (s.aWins / s.aN) >= 0.5;
+    const bMet  = s.bN >= 2 && s.bInvested > 0 && (s.bPnl / s.bInvested) > 0;
+    if (aMet && bMet && !s.firstConfirmed) s.firstConfirmed = e.date;
+    if (aMet         && !s.firstFlat)      s.firstFlat      = e.date;
+    if (aWr50        && !s.firstWR50)      s.firstWR50      = e.date;
+  }
+  function tierAsOf(walletKey, sport, date) {
+    const k = `${canonicalize(walletKey)}|${sport}`;
+    const s = stat.get(k);
+    if (!s) return null;
+    if (s.firstConfirmed && s.firstConfirmed <= date) return 'CONFIRMED';
+    if (s.firstFlat      && s.firstFlat      <= date) return 'FLAT';
+    if (s.firstWR50      && s.firstWR50      <= date) return 'WR50';
+    return null;
+  }
+  return { tierAsOf };
+}
+
+// Recompute hcMargin / hcConfFor / hcConfAg for every pick row using the
+// point-in-time tier lens. Writes to `r.hcMarginEffective` (and the
+// matching for/ag counters) — does NOT mutate the originally stamped
+// `r.hcMargin`/`hcConfFor`/`hcConfAg` so §10/§11 stay backed by frozen
+// stamps only. §12 uses the effective field so the universe is the full
+// graded sample, not just v7.1+ stamped picks.
+function annotateEffectiveHcMargin(pickRows, lens) {
+  for (const r of pickRows) {
+    if (r.hcMargin != null) {
+      r.hcMarginEffective = r.hcMargin;
+      r.hcConfForEffective = r.hcConfFor;
+      r.hcConfAgEffective = r.hcConfAg;
+      r.hcMarginSource = 'frozen';
+      continue;
+    }
+    if (!Array.isArray(r.walletDetailsLite) || !r.sideKey) {
+      r.hcMarginEffective = null;
+      r.hcConfForEffective = null;
+      r.hcConfAgEffective = null;
+      r.hcMarginSource = 'missing';
+      continue;
+    }
+    let cFor = 0, cAg = 0;
+    for (const w of r.walletDetailsLite) {
+      const tier = lens.tierAsOf(w.wallet, r.sport, r.date);
+      if (tier !== 'CONFIRMED') continue;
+      if (w.sizeRatio < HC_RATIO) continue;
+      if (w.side === r.sideKey) cFor += 1;
+      else                      cAg += 1;
+    }
+    r.hcConfForEffective = cFor;
+    r.hcConfAgEffective  = cAg;
+    r.hcMarginEffective  = cFor - cAg;
+    r.hcMarginSource     = 'recomputed_from_wallet_details';
+  }
+}
+
+// Module-level cohort aggregator used by §10 / §11 / §12. (Originally
+// scoped inside §10; promoted so §11 and §12 can share without dup.)
+function aggC(rows) {
+  if (!rows.length) return { n: 0, wins: 0, losses: 0, wr: null, flatRoi: null, flatPnl: 0, peakPnl: 0 };
+  const wins = rows.filter(r => r.outcome === 'WIN').length;
+  const flat = rows.reduce((s, r) => s + (r.flatProfit ?? 0), 0);
+  const peak = rows.reduce((s, r) => s + (r.profitU ?? 0), 0);
+  return { n: rows.length, wins, losses: rows.length - wins, wr: wins / rows.length * 100, flatRoi: (flat / rows.length) * 100, flatPnl: flat, peakPnl: peak };
+}
+
+// ── HC-margin monitor helpers (§12) ────────────────────────────────────────
+//
+// Σ buckets mirror the v7.3 lock matrix. Σ ≤ 0 / Σ = 1 / Σ = 2 are NEW v7.3
+// floor cohorts; Σ = 3..6 / Σ ≥ 7 are the established ladder.
+const SIGMA_BUCKET_ORDER = ['Σ≤0', 'Σ=1', 'Σ=2', 'Σ=3', 'Σ=4', 'Σ=5', 'Σ=6', 'Σ≥7'];
+function sigmaBucketLabel(sum) {
+  if (sum == null || Number.isNaN(sum)) return null;
+  if (sum <= 0) return 'Σ≤0';
+  if (sum === 1) return 'Σ=1';
+  if (sum === 2) return 'Σ=2';
+  if (sum === 3) return 'Σ=3';
+  if (sum === 4) return 'Σ=4';
+  if (sum === 5) return 'Σ=5';
+  if (sum === 6) return 'Σ=6';
+  return 'Σ≥7';
+}
+
+// Filter a row set to a date window. asOfDate defaults to today (ET);
+// `days` is inclusive of asOfDate (3-day = today + 2 prior calendar days).
+function rowsInWindow(rows, days, asOfDate) {
+  if (!days) return rows;
+  const end = new Date(asOfDate + 'T00:00:00Z');
+  const start = new Date(end.getTime() - (days - 1) * 86400000);
+  const startStr = start.toISOString().slice(0, 10);
+  return rows.filter(r => r.date >= startStr && r.date <= asOfDate);
+}
+
+// Two-proportion z-test on independent samples. Returns p-value or null
+// when the sample is too thin for a stable approximation.
+function zTestTwoProportions(xA, nA, xB, nB) {
+  if (nA < 5 || nB < 5) return null;
+  const pA = xA / nA, pB = xB / nB;
+  const pPool = (xA + xB) / (nA + nB);
+  const se = Math.sqrt(pPool * (1 - pPool) * (1 / nA + 1 / nB));
+  if (!Number.isFinite(se) || se === 0) return null;
+  const z = (pA - pB) / se;
+  // Two-sided normal-CDF approximation (Abramowitz & Stegun 26.2.17).
+  const absZ = Math.abs(z);
+  const t = 1 / (1 + 0.2316419 * absZ);
+  const d = 0.3989422804 * Math.exp(-absZ * absZ / 2);
+  const cdf = 1 - d * t * (0.319381530 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
+  return Math.min(1, Math.max(0, 2 * (1 - cdf)));
+}
+
+// HC margin tier classifier — maps a row to one of three buckets, using
+// the ENGINE-EFFECTIVE hc margin (frozen if v7.1+ stamped, otherwise
+// recomputed from walletDetails via the point-in-time tier lens). This
+// lets §12 see the FULL graded sample, not just v7.1+ stamped picks.
+function hcMarginTier(row) {
+  const m = row.hcMarginEffective;
+  if (m == null) return null;
+  if (m <= 0) return '≤0';
+  if (m === 1) return '+1';
+  return '≥+2';
+}
+
+// Build the Σ × HC matrix for a row set. Returns
+//   { sigmaBuckets: [{ bucket, total: {n,wr,roi}, byTier: {≤0,+1,≥+2}, lift: {wr, roi, p} }, ... ],
+//     pooled: { in: {...}, out: {...}, lift: {wr, roi, p} } }
+function buildHcSigmaMatrix(rows) {
+  const eligible = rows.filter(r =>
+    r.hcMarginEffective != null
+    && (r.outcome === 'WIN' || r.outcome === 'LOSS')
+  );
+  const aggCellRows = (rs) => {
+    const wins = rs.filter(r => r.outcome === 'WIN').length;
+    const flat = rs.reduce((s, r) => s + (r.flatProfit ?? 0), 0);
+    return {
+      n: rs.length,
+      wins,
+      losses: rs.length - wins,
+      wr: rs.length ? wins / rs.length * 100 : null,
+      flatRoi: rs.length ? (flat / rs.length) * 100 : null,
+      flatPnl: flat,
+    };
+  };
+  const sigmaBuckets = [];
+  let pooledIn = [], pooledOut = [];
+  for (const sb of SIGMA_BUCKET_ORDER) {
+    const sbRows = eligible.filter(r => sigmaBucketLabel((r.dwFrozen ?? 0) + (r.dqFrozen ?? 0)) === sb);
+    const total = aggCellRows(sbRows);
+    const byTier = {
+      '≤0':  aggCellRows(sbRows.filter(r => hcMarginTier(r) === '≤0')),
+      '+1':  aggCellRows(sbRows.filter(r => hcMarginTier(r) === '+1')),
+      '≥+2': aggCellRows(sbRows.filter(r => hcMarginTier(r) === '≥+2')),
+    };
+    const inRows  = sbRows.filter(r => r.hcMarginEffective >= 1);
+    const outRows = sbRows.filter(r => r.hcMarginEffective <= 0);
+    const inAgg  = aggCellRows(inRows);
+    const outAgg = aggCellRows(outRows);
+    const lift = {
+      wr:  (inAgg.wr != null && outAgg.wr != null) ? inAgg.wr - outAgg.wr : null,
+      roi: (inAgg.flatRoi != null && outAgg.flatRoi != null) ? inAgg.flatRoi - outAgg.flatRoi : null,
+      p:   zTestTwoProportions(inAgg.wins, inAgg.n, outAgg.wins, outAgg.n),
+    };
+    sigmaBuckets.push({ bucket: sb, total, byTier, in: inAgg, out: outAgg, lift });
+    pooledIn = pooledIn.concat(inRows);
+    pooledOut = pooledOut.concat(outRows);
+  }
+  const inP  = aggCellRows(pooledIn);
+  const outP = aggCellRows(pooledOut);
+  const pooled = {
+    in: inP, out: outP,
+    lift: {
+      wr:  (inP.wr != null && outP.wr != null) ? inP.wr - outP.wr : null,
+      roi: (inP.flatRoi != null && outP.flatRoi != null) ? inP.flatRoi - outP.flatRoi : null,
+      p:   zTestTwoProportions(inP.wins, inP.n, outP.wins, outP.n),
+    },
+  };
+  return { sigmaBuckets, pooled, totalEligible: eligible.length };
 }
 
 // ── Sharp Vault loader (unchanged from prior version) ──────────────────────
@@ -421,7 +699,14 @@ function vaultStarBand(row) {
 // ── Main ────────────────────────────────────────────────────────────────────
 (async () => {
   console.log('Loading sharpWalletProfiles + every graded v6-era pick…');
-  const { profiles, pickRows, walletBets, meta } = await loadEverything();
+  const { profiles, pickRows, walletBets, positionRows, meta } = await loadEverything();
+  console.log('Building point-in-time tier lens for HC margin recompute…');
+  const tierLens = buildTierLens(walletBets, positionRows, profiles);
+  annotateEffectiveHcMargin(pickRows, tierLens);
+  const stampedHc = pickRows.filter(r => r.hcMarginSource === 'frozen').length;
+  const recomputedHc = pickRows.filter(r => r.hcMarginSource === 'recomputed_from_wallet_details').length;
+  const missingHc = pickRows.filter(r => r.hcMarginSource === 'missing').length;
+  console.log(`  HC margin coverage: ${stampedHc} frozen · ${recomputedHc} recomputed · ${missingHc} missing (no walletDetails)`);
   console.log('Loading Sharp Vault hidden-star positions…');
   const vaultRows = await loadSharpVaultRows();
   const allDates  = [...new Set(pickRows.map(r => r.date))].sort();
@@ -434,7 +719,7 @@ function vaultStarBand(row) {
   // §6 anomaly counts but never contribute PnL.
   const shippedRows = pickRows.filter(r => r.inDashboard);
 
-  console.log(`  ${profiles.size} wallet profiles · ${shippedRows.length} shipped sides (of ${pickRows.length} graded · ${meta.totalSidesScanned} scanned) · ${walletBets.length} wallet-bets · ${allDates.length} graded dates · ${vaultRows.length} Sharp Vault hidden-star positions`);
+  console.log(`  ${profiles.size} wallet profiles · ${shippedRows.length} shipped sides (of ${pickRows.length} graded · ${meta.totalSidesScanned} scanned) · ${walletBets.length} wallet-bets · ${positionRows.length} Source-B positions · ${allDates.length} graded dates · ${vaultRows.length} Sharp Vault hidden-star positions`);
 
   const nowET = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
   const out = [];
@@ -1112,13 +1397,6 @@ function vaultStarBand(row) {
     out.push('');
     const sigmaBucket = (sum) => sum <= 2 ? 'Σ=2' : sum === 3 ? 'Σ=3' : sum === 4 ? 'Σ=4' : sum === 5 ? 'Σ=5' : sum === 6 ? 'Σ=6' : 'Σ≥7';
     const SIGMA_ORDER = ['Σ=2', 'Σ=3', 'Σ=4', 'Σ=5', 'Σ=6', 'Σ≥7'];
-    const aggC = (rows) => {
-      if (!rows.length) return { n: 0, wins: 0, losses: 0, wr: null, flatRoi: null, flatPnl: 0, peakPnl: 0 };
-      const wins = rows.filter(r => r.outcome === 'WIN').length;
-      const flat = rows.reduce((s, r) => s + (r.flatProfit ?? 0), 0);
-      const peak = rows.reduce((s, r) => s + (r.profitU ?? 0), 0);
-      return { n: rows.length, wins, losses: rows.length - wins, wr: wins / rows.length * 100, flatRoi: (flat / rows.length) * 100, flatPnl: flat, peakPnl: peak };
-    };
 
     out.push('### §10a. v7.2 HC margin tier × Σ bucket');
     out.push('');
@@ -1245,10 +1523,416 @@ function vaultStarBand(row) {
     out.push('');
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // §12. HC-MARGIN UNIVERSAL MONITOR — the v7.3 core finding, refreshed daily
+  // ═══════════════════════════════════════════════════════════════════════════
+  //
+  // This section is THE live monitor for the v7.3 thesis: "HC margin ≥ +1
+  // unilaterally lifts WR/ROI at every Σ bucket". We rebuild that table
+  // every day across three windows (3-day rolling / 7-day rolling /
+  // all-time since v6 cutover) × every sport × the full Σ × HC matrix.
+  //
+  // Universe: every graded side in the v6+ sample (LOCKED + LEAN + SHADOW
+  // + MUTED + CANCELLED — i.e. NOT filtered on inDashboard). This mirrors
+  // WALLET_HC_MARGIN_ANALYSIS_FULL — the universe we used to justify v7.3.
+  // We need the rejected picks because the whole point of the override is
+  // that the engine was rejecting picks the HC margin was telling us to
+  // play.
+  //
+  // Lift = WR(HC_m ≥ +1) − WR(HC_m ≤ 0) within each Σ bucket. Two-prop
+  // z-test p-value annotates each cell so we can see when a cohort
+  // crosses statistical significance.
+  out.push('---');
+  out.push('## §12. HC-margin universal monitor (v7.3 core finding)');
+  out.push('');
+  out.push('Live re-run of the analysis that drove v7.3. Universe = **every graded side since v6 cutover** (`LOCKED + LEAN + SHADOW + MUTED + CANCELLED`). This mirrors `WALLET_HC_MARGIN_ANALYSIS_FULL`. Cell format: `N · WR · flat ROI`. Lift = `WR(HC_m≥+1) − WR(HC_m≤0)` with two-prop z-test p-value.');
+  out.push('');
+  out.push(`HC margin source split: **${stampedHc}** frozen (v7.1+ stamps) · **${recomputedHc}** recomputed via point-in-time tier lens · **${missingHc}** uncategorised (no walletDetails). Recompute uses the same CONFIRMED + sizeRatio ≥ ${HC_RATIO} rule the live engine applies.`);
+  out.push('');
+  const hcUniverse = pickRows.filter(r =>
+    !r.superseded
+    && r.hcMarginEffective != null
+    && (r.outcome === 'WIN' || r.outcome === 'LOSS')
+  );
+  const asOf = meta.dateMax;
+  const WINDOWS = [
+    { id: 'd3',   label: '3-day',    days: 3 },
+    { id: 'd7',   label: '7-day',    days: 7 },
+    { id: 'all',  label: 'All-time', days: null },
+  ];
+  const fmtCell = (a) => a.n ? `${a.n} · ${fmtPct(a.wr)} · ${fmtSignPct(a.flatRoi)}` : '—';
+  const fmtLift = (lift) => {
+    if (lift.wr == null) return '—';
+    const wrLbl  = `${(lift.wr  >= 0 ? '+' : '')}${lift.wr.toFixed(1)}pp`;
+    const roiLbl = lift.roi == null ? '—' : `${(lift.roi >= 0 ? '+' : '')}${lift.roi.toFixed(1)}%`;
+    const pLbl   = lift.p == null ? 'p=—' : (lift.p < 0.001 ? 'p<0.001' : `p=${lift.p.toFixed(3)}`);
+    const sig    = lift.p != null && lift.p < 0.05 ? ' ★' : '';
+    return `WR ${wrLbl} · ROI ${roiLbl} · ${pLbl}${sig}`;
+  };
+
+  function renderHcMatrix(rows, header) {
+    const m = buildHcSigmaMatrix(rows);
+    out.push(header);
+    out.push('');
+    if (m.totalEligible === 0) {
+      out.push('_No eligible picks (rows need a frozen `v8_hcMargin` stamp). v7.1+ stamps this; older docs do not._');
+      out.push('');
+      return;
+    }
+    out.push(mdHeader(['HC_m \\ Σ', ...SIGMA_BUCKET_ORDER, 'TOTAL']));
+    const margins = [
+      ['≤0', (b) => b.byTier['≤0']],
+      ['+1', (b) => b.byTier['+1']],
+      ['≥+2', (b) => b.byTier['≥+2']],
+    ];
+    for (const [label, getCell] of margins) {
+      const row = [`**HC_m ${label}**`];
+      for (const sb of SIGMA_BUCKET_ORDER) {
+        const bucket = m.sigmaBuckets.find(x => x.bucket === sb);
+        row.push(fmtCell(getCell(bucket)));
+      }
+      // TOTAL across Σ for this HC margin band.
+      const totRows = rows.filter(r => {
+        if (r.outcome !== 'WIN' && r.outcome !== 'LOSS') return false;
+        if (r.hcMarginEffective == null) return false;
+        if (label === '≤0') return r.hcMarginEffective <= 0;
+        if (label === '+1') return r.hcMarginEffective === 1;
+        return r.hcMarginEffective >= 2;
+      });
+      const tWins = totRows.filter(r => r.outcome === 'WIN').length;
+      const tFlat = totRows.reduce((s, r) => s + (r.flatProfit ?? 0), 0);
+      const tWr = totRows.length ? tWins / totRows.length * 100 : null;
+      const tRoi = totRows.length ? (tFlat / totRows.length) * 100 : null;
+      row.push(totRows.length ? `${totRows.length} · ${fmtPct(tWr)} · ${fmtSignPct(tRoi)}` : '—');
+      out.push('| ' + row.join(' | ') + ' |');
+    }
+    out.push('');
+    // Lift table per Σ.
+    out.push('**Lift per Σ (HC_m ≥ +1 vs HC_m ≤ 0):**');
+    out.push('');
+    out.push(mdHeader(['Σ bucket', 'N (HC≥+1)', 'WR (HC≥+1)', 'ROI (HC≥+1)', 'N (HC≤0)', 'WR (HC≤0)', 'ROI (HC≤0)', 'Lift']));
+    for (const sb of SIGMA_BUCKET_ORDER) {
+      const bucket = m.sigmaBuckets.find(x => x.bucket === sb);
+      if (!bucket) continue;
+      const inA  = bucket.in;
+      const outA = bucket.out;
+      if (inA.n === 0 && outA.n === 0) continue;
+      out.push(`| ${sb} | ${inA.n} | ${fmtPct(inA.wr)} | ${fmtSignPct(inA.flatRoi)} | ${outA.n} | ${fmtPct(outA.wr)} | ${fmtSignPct(outA.flatRoi)} | ${fmtLift(bucket.lift)} |`);
+    }
+    out.push(`| **POOLED** | **${m.pooled.in.n}** | **${fmtPct(m.pooled.in.wr)}** | **${fmtSignPct(m.pooled.in.flatRoi)}** | **${m.pooled.out.n}** | **${fmtPct(m.pooled.out.wr)}** | **${fmtSignPct(m.pooled.out.flatRoi)}** | **${fmtLift(m.pooled.lift)}** |`);
+    out.push('');
+  }
+
+  // §12a — All sports pooled, three windows
+  out.push('### §12a. All sports pooled');
+  out.push('');
+  for (const w of WINDOWS) {
+    const slice = rowsInWindow(hcUniverse, w.days, asOf);
+    renderHcMatrix(slice, `#### ${w.label}${w.days ? ` (≤ ${w.days} calendar days through ${asOf})` : ` (${V6_CUTOVER} → ${asOf})`}`);
+  }
+
+  // §12b — Per-sport breakouts at every window (collapsed if N is too thin)
+  for (const sport of sports) {
+    out.push(`### §12${(['b','c','d','e','f','g'][sports.indexOf(sport)] || 'x')}. ${sport.toUpperCase()}`);
+    out.push('');
+    const sportRows = hcUniverse.filter(r => r.sport === sport);
+    for (const w of WINDOWS) {
+      const slice = rowsInWindow(sportRows, w.days, asOf);
+      renderHcMatrix(slice, `#### ${sport.toUpperCase()} · ${w.label}${w.days ? ` (≤ ${w.days} days through ${asOf})` : ''}`);
+    }
+  }
+
+  // §12 footer — leading-indicator interpretation
+  out.push('### §12 — How to read');
+  out.push('');
+  out.push('- **Lift positive across every Σ bucket** = the v7.3 thesis is holding. The HC margin override + Σ ≤ 2 floor lowering are earning their keep at every part of the ladder.');
+  out.push('- **Lift collapses (or flips) on a single Σ** = that bucket has either drifted (genuine signal decay) or is hostage to small-N variance. Cross-check the N column before reacting.');
+  out.push('- **`★`** marks p < 0.05 (two-prop z-test). Sub-significant cells are still useful directionally but should not by themselves trigger a v7.x revision.');
+  out.push('- **3-day window**: leading-indicator. If HC lift goes negative in the 3-day across multiple sports, raise alarm.');
+  out.push('- **7-day window**: trend lens. Filters single-day variance; a 7-day collapse is a real signal.');
+  out.push('- **All-time**: thesis check. Should match `WALLET_HC_MARGIN_ANALYSIS_FULL` within minor sample drift.');
+  out.push('');
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // §13. PROVEN-WALLET GROWTH & TRACKING DESCRIPTIVES
+  // ═══════════════════════════════════════════════════════════════════════════
+  //
+  // The Δ_winner signal is only as good as the proven-winner roster behind
+  // it. This section answers: how fast is the roster growing per sport,
+  // are we converting eligibles into proven, and is HC backing density
+  // healthy enough that the v7.3 floor lowering stays meaningful?
+  //
+  // Definitions (mirror exportWalletProfiles.js exactly):
+  //   • CONFIRMED — flat ROI > 0 in Source A (walletDetails) AND dollar
+  //                 ROI > 0 in Source B (sharp_action_positions).
+  //   • FLAT      — flat ROI > 0 in Source A only.
+  //   • Proven    — CONFIRMED + FLAT (drives Δ_winner).
+  //   • HC bet    — wallet flagged CONFIRMED with sizeRatio ≥ 1.5 on the
+  //                 specific game (see HC_RATIO in SharpFlow.jsx).
+  //
+  // Source-B positions are loaded into `positionRows` by loadEverything().
+  out.push('---');
+  out.push('## §13. Proven-wallet roster growth & HC tracking');
+  out.push('');
+  out.push('"Proven wallet" = whitelist tier `CONFIRMED` or `FLAT` in the same sense the live engine uses (`exportWalletProfiles.js` → `sharpWalletProfiles.bySport`). Sports inherit independent rosters: a wallet can be CONFIRMED in NBA and absent from NHL. `walletBets` come from `v8Scoring.walletDetails` on every graded v6-era pick (Source A); `positionRows` come from `sharp_action_positions` (Source B).');
+  out.push('');
+
+  // ── Wallet aggregator (mirrors walletProvenGrowthBySport.js) ─────────────
+  function aggregateBySport(walletBetsArg, positionsArg, sport, asOfDate) {
+    const out = new Map();
+    for (const b of walletBetsArg) {
+      if (b.sport !== sport) continue;
+      if (asOfDate && b.date > asOfDate) continue;
+      const r = out.get(b.wallet) || { wallet: b.wallet, picksN: 0, picksWins: 0, flatPnl: 0, posN: 0, posInvested: 0, posPnl: 0 };
+      r.picksN += 1;
+      r.picksWins += b.won;
+      r.flatPnl += (b.flat ?? 0);
+      out.set(b.wallet, r);
+    }
+    for (const p of positionsArg) {
+      if (p.sport !== sport) continue;
+      if (asOfDate && p.date > asOfDate) continue;
+      const r = out.get(p.wallet) || { wallet: p.wallet, picksN: 0, picksWins: 0, flatPnl: 0, posN: 0, posInvested: 0, posPnl: 0 };
+      r.posN += 1;
+      r.posInvested += p.invested;
+      r.posPnl += (p.settledPnl || 0);
+      out.set(p.wallet, r);
+    }
+    return out;
+  }
+  function classifyTier(rec, minBets = MIN_BETS) {
+    const flatRoi = rec.picksN >= minBets ? (rec.flatPnl / rec.picksN) * 100 : null;
+    const dollarRoi = rec.posN >= minBets && rec.posInvested > 0 ? (rec.posPnl / rec.posInvested) * 100 : null;
+    const wr = rec.picksN >= minBets ? (rec.picksWins / rec.picksN) * 100 : null;
+    const flatOk = flatRoi != null && flatRoi > 0;
+    const dollarOk = dollarRoi != null && dollarRoi > 0;
+    const wr50Ok = wr != null && wr >= 50;
+    if (flatOk && dollarOk) return 'CONFIRMED';
+    if (flatOk) return 'FLAT';
+    if (wr50Ok) return 'WR50';
+    return null;
+  }
+  function provenCounts(map) {
+    let confirmed = 0, flat = 0, wr50 = 0, none = 0;
+    for (const rec of map.values()) {
+      const t = classifyTier(rec);
+      if (t === 'CONFIRMED') confirmed++;
+      else if (t === 'FLAT') flat++;
+      else if (t === 'WR50') wr50++;
+      else none++;
+    }
+    return { confirmed, flat, wr50, none, proven: confirmed + flat, total: map.size };
+  }
+
+  // §13a — Current proven-winner roster snapshot per sport
+  out.push('### §13a. Current proven-winner roster (snapshot)');
+  out.push('');
+  out.push(`Roster as of **${asOf}** — wallets with ≥${MIN_BETS} bets in the sport.`);
+  out.push('');
+  out.push(mdHeader(['Sport', 'Wallets seen', `Eligible (≥${MIN_BETS})`, 'CONFIRMED', 'FLAT', 'Proven (C+F)', 'WR50 only', 'Conv %']));
+  const snapshot = {};
+  let provenAllSports = 0;
+  for (const sport of sports) {
+    const map = aggregateBySport(walletBets, positionRows, sport, null);
+    const c = provenCounts(map);
+    const eligible = [...map.values()].filter(r => r.picksN >= MIN_BETS).length;
+    const conv = c.total > 0 ? (c.proven / c.total * 100).toFixed(1) : '—';
+    snapshot[sport] = { map, counts: c, eligible };
+    provenAllSports += c.proven;
+    out.push(`| ${sport.toUpperCase()} | ${c.total} | ${eligible} | ${c.confirmed} | ${c.flat} | **${c.proven}** | ${c.wr50} | ${conv}% |`);
+  }
+  out.push(`| **ALL** | **—** | **—** | **—** | **—** | **${provenAllSports}** | **—** | **—** |`);
+  out.push('');
+
+  // §13b — Live whitelist drift check (script vs sharpWalletProfiles)
+  out.push('### §13b. Live whitelist drift check');
+  out.push('');
+  out.push('Live `sharpWalletProfiles` is what the engine reads at lock time. Drift between script reconstruction (above) and live should be ≤ 1 day of position data — otherwise `exportWalletProfiles.js` is stale.');
+  out.push('');
+  const liveWhitelist = {};
+  for (const [, rec] of profiles) {
+    for (const [sport, sportRec] of Object.entries(rec.bySport || {})) {
+      if (!liveWhitelist[sport]) liveWhitelist[sport] = { CONFIRMED: 0, FLAT: 0, WR50: 0 };
+      const t = sportRec.whitelistTier;
+      if (t === 'CONFIRMED') liveWhitelist[sport].CONFIRMED++;
+      else if (t === 'FLAT') liveWhitelist[sport].FLAT++;
+      else if (t === 'WR50') liveWhitelist[sport].WR50++;
+    }
+  }
+  out.push(mdHeader(['Sport', 'CONFIRMED (live · script)', 'FLAT (live · script)', 'WR50 (live · script)', 'Drift']));
+  for (const sport of sports) {
+    const live = liveWhitelist[sport] || { CONFIRMED: 0, FLAT: 0, WR50: 0 };
+    const c = snapshot[sport].counts;
+    const drift = (live.CONFIRMED - c.confirmed) + (live.FLAT - c.flat);
+    const driftLbl = drift === 0 ? 'in sync' : drift > 0 ? `+${drift} live` : `${drift} live`;
+    out.push(`| ${sport.toUpperCase()} | ${live.CONFIRMED} · ${c.confirmed} | ${live.FLAT} · ${c.flat} | ${live.WR50} · ${c.wr50} | ${driftLbl} |`);
+  }
+  out.push('');
+
+  // §13c — Proven roster growth: 3d / 7d / 30d / all-time deltas per sport
+  out.push('### §13c. Roster growth — 3d / 7d / 30d / all-time deltas');
+  out.push('');
+  out.push(`Each cell is **net growth** in proven (CONFIRMED + FLAT) wallets in that window, with the absolute count at the start (\`+Δ from N\`). Negative = wallets demoted. Window endpoint = ${asOf}.`);
+  out.push('');
+  function provenAtDate(sport, asOfDate) {
+    const m = aggregateBySport(walletBets, positionRows, sport, asOfDate);
+    return provenCounts(m).proven;
+  }
+  function dateNDaysAgo(n) {
+    const t = new Date(asOf + 'T00:00:00Z');
+    return new Date(t.getTime() - n * 86400000).toISOString().slice(0, 10);
+  }
+  const growthWindows = [
+    { id: 'd3',  label: '3-day',  days: 3 },
+    { id: 'd7',  label: '7-day',  days: 7 },
+    { id: 'd30', label: '30-day', days: 30 },
+  ];
+  out.push(mdHeader(['Sport', ...growthWindows.map(w => w.label), 'All-time (since cutover)']));
+  for (const sport of sports) {
+    const cells = [sport.toUpperCase()];
+    const today = provenAtDate(sport, asOf);
+    for (const w of growthWindows) {
+      const baseDate = dateNDaysAgo(w.days);
+      const base = baseDate < V6_CUTOVER ? 0 : provenAtDate(sport, baseDate);
+      const delta = today - base;
+      const sgn = delta >= 0 ? '+' : '';
+      cells.push(`${sgn}${delta} from ${base}`);
+    }
+    cells.push(`+${today} from 0`);
+    out.push(`| ${cells.join(' | ')} |`);
+  }
+  out.push('');
+  out.push('A flat 7-day delta on a sport with healthy slate density = either the bubble pipeline has stalled (no wallets approaching the bar) or our cohort has saturated. Check §13d for the funnel diagnostic.');
+  out.push('');
+
+  // §13d — Pipeline funnel — where each sport leaks
+  out.push('### §13d. Pipeline funnel — where each sport leaks');
+  out.push('');
+  out.push('Wallets surviving each gate, in order. The biggest %-drop tells you the bottleneck. Gates:');
+  out.push('');
+  out.push('1. **Seen** — placed ≥ 1 bet in the sport (any source)');
+  out.push(`2. **Eligible** — ≥ ${MIN_BETS} graded picks in Source A (required for FLAT/CONFIRMED)`);
+  out.push('3. **Flat-OK** — eligible AND flat ROI > 0 (becomes FLAT or better)');
+  out.push(`4. **$-OK** — Flat-OK AND ≥${MIN_BETS} positions with dollar ROI > 0 (CONFIRMED)`);
+  out.push('5. **Promoted** — final whitelisted = CONFIRMED + FLAT');
+  out.push('');
+  out.push(mdHeader(['Sport', '1·Seen', '2·Eligible (% of Seen)', '3·Flat-OK (% of Elig)', '4·$-OK (% of Flat)', '5·Promoted', 'Bottleneck']));
+  for (const sport of sports) {
+    const map = snapshot[sport].map;
+    const seen = map.size;
+    const eligible = [...map.values()].filter(r => r.picksN >= MIN_BETS).length;
+    const flatOk   = [...map.values()].filter(r => r.picksN >= MIN_BETS && (r.flatPnl / r.picksN) > 0).length;
+    const dollarOk = [...map.values()].filter(r => r.picksN >= MIN_BETS && (r.flatPnl / r.picksN) > 0
+                                                    && r.posN >= MIN_BETS && r.posInvested > 0 && (r.posPnl / r.posInvested) > 0).length;
+    const promoted = snapshot[sport].counts.proven;
+    const drops = [
+      { gate: 'sample (Seen→Eligible)', drop: seen > 0 ? 1 - eligible / seen : 0 },
+      { gate: 'edge (Eligible→Flat-OK)', drop: eligible > 0 ? 1 - flatOk / eligible : 0 },
+      { gate: 'data (Flat-OK→Promoted)', drop: flatOk > 0 ? 1 - promoted / flatOk : 0 },
+    ];
+    const worst = drops.reduce((a, b) => b.drop > a.drop ? b : a);
+    const cellPct = (n, base) => base > 0 ? `${n} (${(n / base * 100).toFixed(0)}%)` : `${n} (—)`;
+    out.push(`| ${sport.toUpperCase()} | ${seen} | ${cellPct(eligible, seen)} | ${cellPct(flatOk, eligible)} | ${cellPct(dollarOk, flatOk)} | **${promoted}** | ${worst.gate} ${(worst.drop * 100).toFixed(0)}% |`);
+  }
+  out.push('');
+
+  // §13e — HC backing density on shipped picks (the fuel for HC margin)
+  out.push('### §13e. HC backing density (the fuel for v7.3 HC margin)');
+  out.push('');
+  out.push('Every v7.x promotion is gated on `HC_m ≥ +1`, which requires at least one CONFIRMED wallet sized at `≥ 1.5×` average on the for-side. This table shows the share of shipped picks that *had any HC backing*, by sport, in each window. If HC density falls toward zero in a sport, the v7.3 floor cohorts (Σ=1, Σ=2 locks; HC rescues) will simply stop firing there.');
+  out.push('');
+  function hcDensitySummary(rows) {
+    const elig = rows.filter(r => r.hcConfForEffective != null);
+    const withHc = elig.filter(r => (r.hcConfForEffective ?? 0) >= 1);
+    const margin1Plus = elig.filter(r => (r.hcMarginEffective ?? -99) >= 1);
+    const margin2Plus = elig.filter(r => (r.hcMarginEffective ?? -99) >= 2);
+    return {
+      n: elig.length,
+      anyHc: withHc.length,
+      m1: margin1Plus.length,
+      m2: margin2Plus.length,
+      anyHcPct: elig.length ? (withHc.length / elig.length) * 100 : null,
+      m1Pct: elig.length ? (margin1Plus.length / elig.length) * 100 : null,
+      m2Pct: elig.length ? (margin2Plus.length / elig.length) * 100 : null,
+    };
+  }
+  out.push(mdHeader(['Sport', 'Window', 'Picks (with HC stamp)', 'Any HC for-side', 'HC_m ≥ +1', 'HC_m ≥ +2']));
+  for (const sport of sports) {
+    const sportRows = pickRows.filter(r => r.sport === sport && r.inDashboard && !r.superseded);
+    for (const w of WINDOWS) {
+      const slice = rowsInWindow(sportRows, w.days, asOf);
+      const d = hcDensitySummary(slice);
+      out.push(`| ${sport.toUpperCase()} | ${w.label} | ${d.n} | ${d.anyHc} (${fmtPct(d.anyHcPct)}) | ${d.m1} (${fmtPct(d.m1Pct)}) | ${d.m2} (${fmtPct(d.m2Pct)}) |`);
+    }
+  }
+  out.push('');
+  out.push('Pooled across sports:');
+  out.push('');
+  out.push(mdHeader(['Window', 'Picks (with HC stamp)', 'Any HC for-side', 'HC_m ≥ +1', 'HC_m ≥ +2']));
+  const allShipped = pickRows.filter(r => r.inDashboard && !r.superseded);
+  for (const w of WINDOWS) {
+    const slice = rowsInWindow(allShipped, w.days, asOf);
+    const d = hcDensitySummary(slice);
+    out.push(`| ${w.label} | ${d.n} | ${d.anyHc} (${fmtPct(d.anyHcPct)}) | ${d.m1} (${fmtPct(d.m1Pct)}) | ${d.m2} (${fmtPct(d.m2Pct)}) |`);
+  }
+  out.push('');
+
+  // §13f — Bubble wallets (next-up graduations) per sport
+  out.push('### §13f. Bubble wallets — next-up graduations');
+  out.push('');
+  out.push('Wallets currently NOT promoted but close. Two flavors:');
+  out.push('');
+  out.push(`- **One-bet-away** — won the only bet, needs one more positive bet to clear ≥${MIN_BETS}.`);
+  out.push(`- **Just-under** — has ≥${MIN_BETS} bets but flat ROI is between −10% and 0% (one win flips them).`);
+  out.push('');
+  for (const sport of sports) {
+    const map = snapshot[sport].map;
+    const oneBet = [...map.values()].filter(r => r.picksN === 1 && r.picksWins === 1)
+      .sort((a, b) => b.flatPnl - a.flatPnl).slice(0, 6);
+    const justUnder = [...map.values()].filter(r => r.picksN >= MIN_BETS).map(r => {
+      const fr = (r.flatPnl / r.picksN) * 100;
+      return { ...r, flatRoi: fr };
+    }).filter(r => r.flatRoi > -10 && r.flatRoi <= 0)
+      .sort((a, b) => b.flatRoi - a.flatRoi).slice(0, 6);
+    if (oneBet.length === 0 && justUnder.length === 0) continue;
+    out.push(`#### ${sport.toUpperCase()}`);
+    out.push('');
+    if (oneBet.length) {
+      out.push(`**One-bet-away** (${oneBet.length})`);
+      out.push('');
+      out.push(mdHeader(['wallet', 'picksN', 'flat PnL', 'pos N', 'pos $ROI']));
+      for (const r of oneBet) {
+        const dr = r.posN > 0 && r.posInvested > 0 ? `${(r.posPnl / r.posInvested * 100).toFixed(0)}%` : '—';
+        out.push(`| \`${r.wallet.slice(0, 8)}…\` | ${r.picksN} | ${sign(r.flatPnl, 2)} | ${r.posN} | ${dr} |`);
+      }
+      out.push('');
+    }
+    if (justUnder.length) {
+      out.push(`**Just-under** (${justUnder.length})`);
+      out.push('');
+      out.push(mdHeader(['wallet', 'picksN', 'WR', 'flat ROI', 'pos N', 'pos $ROI']));
+      for (const r of justUnder) {
+        const wr = (r.picksWins / r.picksN * 100).toFixed(0);
+        const dr = r.posN > 0 && r.posInvested > 0 ? `${(r.posPnl / r.posInvested * 100).toFixed(0)}%` : '—';
+        out.push(`| \`${r.wallet.slice(0, 8)}…\` | ${r.picksN} | ${wr}% | ${sign(r.flatRoi)}% | ${r.posN} | ${dr} |`);
+      }
+      out.push('');
+    }
+  }
+
+  // §13 footer — interpretation
+  out.push('### §13 — How to read');
+  out.push('');
+  out.push('- **Roster growth flat in 7-day** + **funnel bottleneck = `data`** → re-run `exportWalletProfiles.js`. The flat-positive wallets are stuck at FLAT because Source-B coverage hasn\'t caught up. CONFIRMED gate is data-bound, not skill-bound.');
+  out.push('- **Roster growth flat in 7-day** + **funnel bottleneck = `sample`** → wallets aren\'t reaching `≥' + MIN_BETS + '` reps fast enough. This is a slate-density problem; consider a soft `MIN_BETS = 1` shadow lane to surface bubble wallets earlier.');
+  out.push('- **Roster shrank** (negative delta) → a previously CONFIRMED wallet just dropped flat-positive (lost a recent bet). Variance, not failure — but worth noting if a sport loses ≥3 in a week.');
+  out.push('- **HC density on a sport drops below ~30%** → v7.3 promotions there will starve. Either the proven roster needs more CONFIRMED-tier wallets sizing aggressively, or the HC_RATIO (1.5) needs a sport-specific tune.');
+  out.push('');
+
   // ─── Footer ────────────────────────────────────────────────────────────────
   out.push('---');
   out.push('');
-  out.push(`_Driven by \`scripts/dailyV6Report.js\` · regenerates daily via \`.github/workflows/daily-v6-report.yml\` · WHITELIST_CONSENSUS_VERSION = 9 (v7.3) · QUALITY_CONTRIB_CUT = ${QUALITY_CUT} · inclusion mirrors live Pick Performance dashboard · cohort tags from frozen v6/v7.1/v7.2/v7.3 stamps_`);
+  out.push(`_Driven by \`scripts/dailyV6Report.js\` · regenerates daily via \`.github/workflows/daily-v6-report.yml\` · WHITELIST_CONSENSUS_VERSION = 9 (v7.3) · QUALITY_CONTRIB_CUT = ${QUALITY_CUT} · inclusion mirrors live Pick Performance dashboard · cohort tags from frozen v6/v7.1/v7.2/v7.3 stamps · §12 HC universal monitor (3d/7d/all-time × sport) · §12 universe = full graded set (LOCKED+LEAN+SHADOW+MUTED+CANCELLED) · §13 proven-wallet roster mirrors \`exportWalletProfiles.js\`_`);
   out.push('');
 
   const outPath = join(REPO_ROOT, 'DAILY_V6_REPORT.md');
