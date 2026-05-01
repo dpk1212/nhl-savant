@@ -267,12 +267,15 @@ async function loadEverything() {
           if (!dateMax || date > dateMax) dateMax = date;
         }
 
-        // v7.1 — frozen HC dominance fields. Older docs (pre-v7.1 stamp)
-        // do NOT have these and we leave them null. The §9 cohort table
-        // partitions accordingly so we don't false-credit historical picks.
+        // v7.1/v7.2 — frozen HC dominance + margin fields. Older docs
+        // (pre-v7.1 stamp) do NOT have these and we leave them null. §9/§10
+        // cohort tables partition accordingly so we don't false-credit
+        // historical picks.
         const hcDominant = (side.v8_hcDominant != null) ? !!side.v8_hcDominant : null;
         const hcConfFor  = (side.v8_hcConfFor != null) ? Number(side.v8_hcConfFor) : null;
         const hcConfAg   = (side.v8_hcConfAg != null) ? Number(side.v8_hcConfAg) : null;
+        const hcMargin   = (side.v8_hcMargin != null) ? Number(side.v8_hcMargin)
+          : (hcConfFor != null && hcConfAg != null ? (hcConfFor - hcConfAg) : null);
         const systemVersion = side.v8_systemVersion || null;
         const promotedBy = side.promotedBy || null;
 
@@ -283,7 +286,7 @@ async function loadEverything() {
           peakStars, peakUnits, odds,
           inDashboard, cancelled,
           dwFrozen, dqFrozen, dwSource, dqSource, vaultStar,
-          hcDominant, hcConfFor, hcConfAg, systemVersion, promotedBy,
+          hcDominant, hcConfFor, hcConfAg, hcMargin, systemVersion, promotedBy,
           outcome: oc, profitU, flatProfit,
         });
       }
@@ -1084,10 +1087,100 @@ function vaultStarBand(row) {
     out.push('');
   }
 
+  // ─── §10. v7.2 HC-margin tiered cohort monitoring ─────────────────────────
+  // Mirrors §9's structure but partitions by HC_margin tier (the v7.2
+  // continuous quality dial) instead of binary HC_DOM. Three tiers:
+  //   HC_m ≤0  baseline (no upsize)
+  //   HC_m =+1 standard HC tier (×1.5 multiplier)
+  //   HC_m ≥+2 SUPER HC tier (×1.75 multiplier — proven 9-1 cohort)
+  // Source backtest: WALLET_HC_MARGIN_ANALYSIS.md.
+  const v72Rows = pickRows.filter(r =>
+    r.systemVersion === '7.2' && r.inDashboard && !r.superseded
+    && (r.outcome === 'WIN' || r.outcome === 'LOSS') && r.hcMargin != null
+  );
+  if (v72Rows.length === 0) {
+    out.push('---');
+    out.push('## §10. v7.2 HC-margin tier cohort');
+    out.push('');
+    out.push(`_No v7.2-stamped picks in the sample yet (cutover ${ '2026-05-01'}). §10 will populate as v7.2 picks accumulate._`);
+    out.push('');
+  } else {
+    out.push('---');
+    out.push('## §10. v7.2 HC-margin tier cohort');
+    out.push('');
+    out.push('Tracks the live performance of the v7.2 HC-margin tiered gate (replaces v7.1 binary HC_DOM). Picks must be `inDashboard` and have a frozen `v8_hcMargin` stamp under v7.2.');
+    out.push('');
+    const sigmaBucket = (sum) => sum <= 2 ? 'Σ=2' : sum === 3 ? 'Σ=3' : sum === 4 ? 'Σ=4' : sum === 5 ? 'Σ=5' : sum === 6 ? 'Σ=6' : 'Σ≥7';
+    const SIGMA_ORDER = ['Σ=2', 'Σ=3', 'Σ=4', 'Σ=5', 'Σ=6', 'Σ≥7'];
+    const aggC = (rows) => {
+      if (!rows.length) return { n: 0, wins: 0, losses: 0, wr: null, flatRoi: null, flatPnl: 0, peakPnl: 0 };
+      const wins = rows.filter(r => r.outcome === 'WIN').length;
+      const flat = rows.reduce((s, r) => s + (r.flatProfit ?? 0), 0);
+      const peak = rows.reduce((s, r) => s + (r.profitU ?? 0), 0);
+      return { n: rows.length, wins, losses: rows.length - wins, wr: wins / rows.length * 100, flatRoi: (flat / rows.length) * 100, flatPnl: flat, peakPnl: peak };
+    };
+
+    out.push('### §10a. v7.2 HC margin tier × Σ bucket');
+    out.push('');
+    out.push('| HC_m \\ Σ | ' + SIGMA_ORDER.join(' | ') + ' | TOTAL |');
+    out.push('|---|' + SIGMA_ORDER.map(() => '---').join('|') + '|---|');
+    const margins = [
+      ['≤0', r => r.hcMargin <= 0],
+      ['+1', r => r.hcMargin === 1],
+      ['≥+2', r => r.hcMargin >= 2],
+    ];
+    for (const [label, pred] of margins) {
+      const rowCells = [`**HC_m ${label}**`];
+      const filtered = v72Rows.filter(pred);
+      for (const sb of SIGMA_ORDER) {
+        const rs = filtered.filter(r => sigmaBucket((r.dwFrozen ?? 0) + (r.dqFrozen ?? 0)) === sb);
+        const a = aggC(rs);
+        rowCells.push(a.n ? `${a.n} · ${fmtPct(a.wr)} · ${fmtSignPct(a.flatRoi)}` : '—');
+      }
+      const tot = aggC(filtered);
+      rowCells.push(tot.n ? `${tot.n} · ${fmtPct(tot.wr)} · ${fmtSignPct(tot.flatRoi)} · ${(tot.flatPnl >= 0 ? '+' : '')}${tot.flatPnl.toFixed(2)}u` : '—');
+      out.push('| ' + rowCells.join(' | ') + ' |');
+    }
+    out.push('');
+
+    out.push('### §10b. v7.2 promotion-source cohorts (out of LEAN / Σ=2)');
+    out.push('');
+    out.push('| Source | N | W-L | WR | flat ROI | flat PnL | peak PnL |');
+    out.push('|---|---|---|---|---|---|---|');
+    const sources = [
+      ['v72-hc-margin (Σ ∈ {3,4})', r => r.promotedBy === 'v72-hc-margin'],
+      ['v72-sigma2-lock (Σ=2 ∧ HC_m≥+2)', r => r.promotedBy === 'v72-sigma2-lock'],
+      ['v72-sigma2-lean (Σ=2 ∧ HC_m=+1)', r => r.promotedBy === 'v72-sigma2-lean'],
+      ['two-factor-floor (Σ ≥ +5)', r => r.promotedBy === 'two-factor-floor'],
+    ];
+    for (const [label, pred] of sources) {
+      const a = aggC(v72Rows.filter(pred));
+      if (!a.n) { out.push(`| ${label} | 0 | — | — | — | — | — |`); continue; }
+      out.push(`| ${label} | ${a.n} | ${a.wins}-${a.losses} | ${fmtPct(a.wr)} | ${fmtSignPct(a.flatRoi)} | ${(a.flatPnl >= 0 ? '+' : '')}${a.flatPnl.toFixed(2)}u | ${(a.peakPnl >= 0 ? '+' : '')}${a.peakPnl.toFixed(2)}u |`);
+    }
+    out.push('');
+
+    out.push('### §10c. SUPER-HC (HC_m ≥ +2) vs STANDARD (HC_m = +1) head-to-head');
+    out.push('');
+    out.push('| Cohort | N | W-L | WR | flat ROI | flat PnL | peak PnL |');
+    out.push('|---|---|---|---|---|---|---|');
+    const superHc = v72Rows.filter(r => r.hcMargin >= 2);
+    const stdHc   = v72Rows.filter(r => r.hcMargin === 1);
+    const noHc    = v72Rows.filter(r => r.hcMargin <= 0);
+    for (const [label, rs] of [['HC_m ≥+2 (SUPER ×1.75)', superHc], ['HC_m =+1 (STANDARD ×1.5)', stdHc], ['HC_m ≤0 (no upsize)', noHc]]) {
+      const a = aggC(rs);
+      if (!a.n) { out.push(`| ${label} | 0 | — | — | — | — | — |`); continue; }
+      out.push(`| ${label} | ${a.n} | ${a.wins}-${a.losses} | ${fmtPct(a.wr)} | ${fmtSignPct(a.flatRoi)} | ${(a.flatPnl >= 0 ? '+' : '')}${a.flatPnl.toFixed(2)}u | ${(a.peakPnl >= 0 ? '+' : '')}${a.peakPnl.toFixed(2)}u |`);
+    }
+    out.push('');
+    out.push(`_v7.2 picks since cutover: **${v72Rows.length}** · SUPER-HC: ${superHc.length} · STANDARD-HC: ${stdHc.length} · no-HC: ${noHc.length}_`);
+    out.push('');
+  }
+
   // ─── Footer ────────────────────────────────────────────────────────────────
   out.push('---');
   out.push('');
-  out.push(`_Driven by \`scripts/dailyV6Report.js\` · regenerates daily via \`.github/workflows/daily-v6-report.yml\` · WHITELIST_CONSENSUS_VERSION = 7 (v7.1) · QUALITY_CONTRIB_CUT = ${QUALITY_CUT} · inclusion mirrors live Pick Performance dashboard · cohort tags from frozen v6/v7.1 stamps_`);
+  out.push(`_Driven by \`scripts/dailyV6Report.js\` · regenerates daily via \`.github/workflows/daily-v6-report.yml\` · WHITELIST_CONSENSUS_VERSION = 8 (v7.2) · QUALITY_CONTRIB_CUT = ${QUALITY_CUT} · inclusion mirrors live Pick Performance dashboard · cohort tags from frozen v6/v7.1/v7.2 stamps_`);
   out.push('');
 
   const outPath = join(REPO_ROOT, 'DAILY_V6_REPORT.md');
