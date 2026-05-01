@@ -322,7 +322,7 @@ function computeSharpFeatures(positions, consensusSide) {
 // return 0 because they can't lock per Floor G. consensusPenalty /
 // regimeBonus are kept as no-ops so legacy callers don't error, but
 // sizing is driven entirely by stars now.
-// v7.2 ML unit ladder — HC-margin tiered. The ×1.5 v7.1 multiplier
+// v7.2/v7.3 ML unit ladder — HC-margin tiered. The ×1.5 v7.1 multiplier
 // stays for HC_m=+1 picks; HC_m≥+2 graduates to ×1.75 (the SUPER-HC
 // cohort: 9-1 / +7.65u net / +76.5% ROI in WALLET_HC_MARGIN_ANALYSIS).
 //
@@ -334,14 +334,15 @@ function computeSharpFeatures(positions, consensusSide) {
 //                            ×1.75 → 3.5u
 //   4.0★   (Σ = +4) → 1.25u  ×1.5 → 1.88u  /  ×1.75 → 2.19u
 //   3.5★   (Σ = +3) → 0.75u  ×1.5 → 1.13u  /  ×1.75 → 1.31u
-//   <3.5★  (Σ = +2) → 0.5u   ONLY when lockTier === 'LOCKED' AND HC_m ≥ +2
-//                                  (the v7.2 Σ=2 lock floor)
+//   <3.5★  (Σ = +2) → 0.5u   when LOCKED AND HC_m ≥ +1 (v7.3 lock floor)
+//   <3.5★  (Σ = +1) → 0.5u   when LOCKED AND HC_m ≥ +1 (v7.3 lock floor)
 //   <3.5★  any other  → 0
 // Legacy v7.1 path retained for picks dated < V7_2_CUTOVER_DATE.
 function calculateUnits(stars, consensusPenalty = 0, odds = null, regimeBonus = 0,
                        lockTier = null, hcDominant = false, opts = {}) {
   if (lockTier === 'LEAN') return 0;
   const v72 = isV72Eligible(opts.pickDate);
+  const v73 = isV73Eligible(opts.pickDate);
   const hcMargin = Number.isFinite(opts.hcMargin)
     ? opts.hcMargin
     : (hcDominant ? 1 : 0);
@@ -353,9 +354,16 @@ function calculateUnits(stars, consensusPenalty = 0, odds = null, regimeBonus = 
   else if (stars >= 4.5)   units = 2.00;
   else if (stars >= 4.0)   units = 1.25;
   else if (stars >= 3.5)   units = 0.75;
+  // v7.3 — Σ ∈ {1, 2} ∧ HC_m ≥ +1 lock floor + the "rescued from MUTE"
+  // cohort (Σ ≥ +3 with dw=0 or dq=0 — vaultStarFromDeltas returns
+  // ≤ 2.75★ for these). Without an explicit floor the unit ladder
+  // would zero out the new v7.3 lock cohort.
+  else if (lockTier === 'LOCKED' && v73 && hcMargin >= 1) {
+    units = sum === 1 ? V7_3_SIGMA1_LOCK_UNITS_ML : V7_3_SIGMA2_LOCK_UNITS_ML;
+  }
   // v7.2 — Σ=2 ∧ HC_m ≥ +2 ships at a 0.5u floor even though stars < 3.5
-  // (the Σ=2 cell didn't generate stars under v7.1). Without this
-  // override the unit ladder would zero out the new lock cohort.
+  // (the Σ=2 cell didn't generate stars under v7.1). Retained for the
+  // (currently empty) date window where v7.2 is on but v7.3 is off.
   else if (lockTier === 'LOCKED' && v72 && sum === 2 && hcMargin >= 2) {
     units = V7_2_SIGMA2_LOCK_UNITS_ML;
   }
@@ -656,21 +664,41 @@ function vaultStarFromDeltas(dw, dq) {
 // Picks list with a LEAN badge replacing the unit chip. The health
 // engine continues to mute the (1,1) cell + Δw ≤ 0 / Δq ≤ 0 cohorts.
 //
-// v7.2 (2026-05-01+):
+// v7.3 (2026-04-30+) — HC margin floor lowering. HC_m ≥ +1 promotes
+// Σ ∈ {1, 2} to LOCK (was MUTED for Σ=1, LEAN for Σ=2 ∧ HC_m=+1 under v7.2),
+// and dw=0 ∨ dq=0 ∧ HC_m ≥ +1 picks bypass the v6.6 hybrid floor entirely
+// (the "rescued from MUTE" cohort).
+//
+// v7.2 (2026-04-30+):
 //   Σ=2 ∧ HC_m ≥ +2  → LOCKED (NEW — was MUTED)
-//   Σ=2 ∧ HC_m  = +1 → LEAN   (NEW — was MUTED)
+//   Σ=2 ∧ HC_m  = +1 → LEAN   (superseded by v7.3 LOCK)
 //   Σ ∈ {3,4} ∧ HC_m ≥ +1 → LOCKED (looser than v7.1 HC_DOM gate)
 //
 // v7.1 (2026-04-30 ≤ d < 2026-05-01): Σ ∈ {3,4} ∧ hcDominant → LOCKED
 // v7.0 (d < 2026-04-30): no HC promotion at all
 function lockTierFromDeltas(dw, dq, hcDominant = false, opts = {}) {
   if (!Number.isFinite(dw) || !Number.isFinite(dq)) return 'MUTED';
-  if (dw < 1 || dq < 1) return 'MUTED';
   const sum = dw + dq;
   const hcMargin = Number.isFinite(opts.hcMargin)
     ? opts.hcMargin
     : (hcDominant ? 1 : 0);
-  // v7.2 — Σ=2 promotion (NEW). Below the legacy Σ ≥ +3 hybrid floor.
+  const v73 = isV73Eligible(opts.pickDate);
+
+  // v7.3 — HC margin floor override. HC_m ≥ +1 ∧ both axes ≥ 0 ∧ Σ ≥ +1
+  // routes to LOCKED regardless of the v6.6 hybrid floor (which requires
+  // dw ≥ +1 ∧ dq ≥ +1 ∧ Σ ≥ +3). Captures:
+  //   • Σ=1: (dw=1, dq=0) or (dw=0, dq=1) — the new floor
+  //   • Σ=2: (dw=1, dq=1) — graduates v7.2 LEAN to LOCK
+  //   • Σ≥3 with dw=0 OR dq=0 — the "rescued from MUTE" cohort
+  // CANCEL still fires through computeWalletConsensus / evaluatePickHealth
+  // when dw ≤ −2; dw = −1 (winners_faded) also still mutes (too strong a fade).
+  if (v73 && hcMargin >= 1 && dw >= 0 && dq >= 0 && sum >= 1) {
+    if (sum >= 7) return 'ELITE';
+    return 'LOCKED';
+  }
+
+  if (dw < 1 || dq < 1) return 'MUTED';
+  // v7.2 — Σ=2 promotion (legacy LEAN path, only reachable if v7.3 didn't fire).
   if (sum === 2 && isV72Eligible(opts.pickDate)) {
     if (hcMargin >= 2) return 'LOCKED';
     if (hcMargin >= 1) return 'LEAN';
@@ -1054,7 +1082,7 @@ const WHITELIST_INTERVENTION = {
 // v8_hcDominant), v8_systemVersion, v8_topPick / v8_superTopPick are
 // now stamped. needsConsensusRestamp() picks up the new version on next
 // sync so every active doc re-stamps once after deploy.
-const WHITELIST_CONSENSUS_VERSION = 8;   // bumped 7 → 8 for v7.2 HC-margin tiered + Σ=2 promotion
+const WHITELIST_CONSENSUS_VERSION = 9;   // bumped 8 → 9 for v7.3 HC-margin floor lowering (Σ=1/Σ=2) + MUTE override
 const QUALITY_CONTRIB_CUT = 30;   // T=30 — validated by V8_CONTRIBUTION_EDGE
 
 // ─── v7.1 HC Dominance constants ─────────────────────────────────────
@@ -1135,18 +1163,79 @@ function isV72Eligible(pickDate) {
   return pickDate >= V7_2_CUTOVER_DATE;
 }
 
+// v7.3 (2026-04-30) — HC margin floor lowering + MUTE override.
+//
+// Source: WALLET_HC_MARGIN_ANALYSIS_FULL.md, full-universe analysis on
+// N=141 graded sides since v7 cutover. HC margin (HC_for − HC_ag, where
+// HC = CONFIRMED ∧ sizeRatio ≥ 1.5) is the universal quality dial:
+//
+//   1. MUTED ∧ HC_m ≥ +1  : 11-2 (84.6% WR, +85% flat ROI, +8.51u net)
+//                           p = 0.006 (significant). The health engine
+//                           is over-muting profitable picks.
+//                           → HC_m ≥ +1 OVERRIDES the dw≤0 / dq≤0 /
+//                             sum<3 mutes. CANCEL (dw≤−2) is unchanged
+//                             (CANCELLED ∧ HC_m≥+1 sample is N=2).
+//
+//   2. Σ=2 ∧ HC_m ≥ +1    : 8-3 (63% WR, +37% flat ROI, +2.96u net)
+//                           → graduate from LEAN → LOCK. Was a v7.2 LEAN.
+//
+//   3. Σ=1 ∧ HC_m ≥ +1    : 1-1 (50% WR, −3% flat ROI, n=2 — small)
+//                           Consistent with the universal HC-margin lift
+//                           signal: vs Σ=1 ∧ HC_m≤0 (22% WR, −59% ROI)
+//                           the HC backing produces +27.8 pp WR /
+//                           +55.7% ROI. Ship at 0.5u floor.
+//
+// v7.3 lock matrix (replaces / extends v7.2 at the lock floor):
+//
+//        HC_m ≤ 0         HC_m = +1            HC_m ≥ +2
+//   Σ=1  SHADOW           LOCK 0.5u (NEW)      LOCK 0.5u (NEW)
+//   Σ=2  SHADOW           LOCK 0.5u (NEW)      LOCK 0.5u
+//   Σ=3  LEAN             LOCK base ×1.5       LOCK base ×1.75
+//   Σ=4  LEAN             LOCK base ×1.5       LOCK base ×1.75
+//   Σ=5  LOCK base        LOCK base ×1.5       LOCK base ×1.75
+//   Σ=6  LOCK base        LOCK base ×1.5       LOCK base ×1.75
+//   Σ≥7  LOCK ELITE       LOCK ELITE ×1.5      LOCK ELITE ×1.75
+//
+// MUTE override matrix (post-lock decay):
+//
+//   dw=−1  (winners_faded)        → MUTE (unchanged — too strong a fade)
+//   dw= 0  (winners_below_floor)  → MUTE unless HC_m ≥ +1 (v7.3 ACTIVE)
+//   dq≤ 0  (quality_below_floor)  → MUTE unless HC_m ≥ +1 (v7.3 ACTIVE)
+//   sum<3  (sum_below_floor)      → MUTE unless HC_m ≥ +1 (v7.3 ACTIVE)
+//   dw≤−2  (winners_killed)       → CANCEL (unchanged)
+//
+// Gated by V7_3_CUTOVER_DATE — picks dated before cutover keep v7.2
+// behaviour so historic Firestore docs don't change.
+const V7_3_CUTOVER_DATE = '2026-04-30';   // YYYY-MM-DD ET — same day as v7.2 cutover
+const V7_3_HC_OVERRIDES_ENABLED = true;   // master kill-switch
+const V7_3_SIGMA1_LOCK_UNITS_ML = 0.5;    // Σ=1 ∧ HC_m ≥ +1 lock floor (ML)
+const V7_3_SIGMA1_LOCK_UNITS_ST = 0.5;    // Σ=1 ∧ HC_m ≥ +1 lock floor (S+T)
+const V7_3_SIGMA2_LOCK_UNITS_ML = 0.5;    // Σ=2 ∧ HC_m  = +1 lock floor (ML, was LEAN under v7.2)
+const V7_3_SIGMA2_LOCK_UNITS_ST = 0.5;    // Σ=2 ∧ HC_m  = +1 lock floor (S+T)
+
+// True if this pick should run v7.3 logic. v7.3 supersedes v7.2 (same
+// cutover date 2026-04-30 by design — flip both at once).
+function isV73Eligible(pickDate) {
+  if (!V7_3_HC_OVERRIDES_ENABLED) return false;
+  if (typeof pickDate !== 'string') return false;
+  return pickDate >= V7_3_CUTOVER_DATE;
+}
+
 // Set of promotedBy values that count as a legitimate ship to the locked
 // picks list. Includes v7.0 floor sources and every v7.x HC variant. Sync
 // + restamp paths use this so newly-added promotion sources flow through
 // without per-callsite edits.
 const PROMOTED_BY_FLOORS = new Set([
-  'two-factor-floor',         // Σ ≥ +5 (legacy v7.0 / v7.1 / v7.2)
+  'two-factor-floor',         // Σ ≥ +5 (legacy v7.0 / v7.1 / v7.2 / v7.3)
   'contribution',             // legacy contrib-tier path
   'whitelist',                // legacy whitelist path
   'hc-dominance',             // v7.1 HC_DOM (Σ ∈ {3,4})
   'v72-hc-margin',            // v7.2 HC_margin ≥ +1 (Σ ∈ {3,4})
   'v72-sigma2-lock',          // v7.2 Σ=2 ∧ HC_m ≥ +2 (NEW lock)
-  'v72-sigma2-lean',          // v7.2 Σ=2 ∧ HC_m  = +1 (NEW lean)
+  'v72-sigma2-lean',          // v7.2 Σ=2 ∧ HC_m  = +1 (NEW lean — superseded by v7.3 LOCK)
+  'v73-sigma1-hc',            // v7.3 Σ=1 ∧ HC_m ≥ +1 (NEW lock floor)
+  'v73-sigma2-hc',            // v7.3 Σ=2 ∧ HC_m ≥ +1 (graduates v7.2 LEAN to LOCK)
+  'v73-hc-rescue',            // v7.3 dw=0 OR dq=0 ∧ HC_m ≥ +1 (rescued from MUTE)
 ]);
 function isPromotedBy(promotedBy) {
   return PROMOTED_BY_FLOORS.has(promotedBy);
@@ -1191,7 +1280,12 @@ function classifyDelta(forW, agW) {
 // Both drive stars, units, locks, mutes, and cancels.
 //
 // Safe to call with missing data — returns a NEUTRAL / no-action result.
-function computeWalletConsensus(walletDetails, sport, sideKey) {
+//
+// `pickDate` is optional. When provided, gates the v7.3 HC-margin MUTE
+// override (HC_m ≥ +1 suppresses the dw≤0 / dq≤0 / sum<3 mutes; CANCEL
+// at dw ≤ −2 still fires unconditionally). Pre-cutover picks see the
+// legacy v6.6 hybrid floor.
+function computeWalletConsensus(walletDetails, sport, sideKey, pickDate = null) {
   const result = {
     forW: 0, agW: 0, delta: 0, verdict: 'NEUTRAL',
     qualityForT30: 0, qualityAgT30: 0, qualityMargin: 0,
@@ -1269,32 +1363,58 @@ function computeWalletConsensus(walletDetails, sport, sideKey) {
   //   MUTE:   Δ_winner ≤ 0                        (proven-winner margin below floor)
   //   MUTE:   Δ_quality ≤ 0  (Δw ≥ +1)            (quality margin below floor)
   //   MUTE:   Δw=+1 ∧ Δq=+1 (sum below hybrid)    (winner+quality both at min)
+  //
+  // v7.3 — HC margin overrides every MUTE except CANCEL and dw=−1
+  // (winners_faded). HC_m ≥ +1 keeps the pick promotion-eligible even
+  // when dw=0, dq=0, or sum<3.
   const dw = delta;
   const dq = result.qualityMargin;
+  const hcMargin = hcF - hcA;
+  const v73HcOverride = isV73Eligible(pickDate) && hcMargin >= 1;
+
   if (dw <= -2) {
     if (cfg.cancel) result.lockAction = 'CANCEL';
     else if (cfg.mute) result.lockAction = 'MUTE';
     return result;
   }
   if (dw <= 0) {
-    if (cfg.mute) result.lockAction = 'MUTE';
-    return result;
+    // v7.3 — HC margin rescues the dw=0 cohort. dw=−1 still mutes
+    // (winners actively flipped off; too strong a fade to override).
+    if (v73HcOverride && dw === 0) {
+      // fall through to the v7.3 promotion check below
+    } else {
+      if (cfg.mute) result.lockAction = 'MUTE';
+      return result;
+    }
   }
   if (dq <= 0) {
-    if (cfg.mute) result.lockAction = 'MUTE';
-    return result;
+    if (v73HcOverride) {
+      // fall through to the v7.3 promotion check below
+    } else {
+      if (cfg.mute) result.lockAction = 'MUTE';
+      return result;
+    }
   }
   if (dw + dq < 3) {
-    if (cfg.mute) result.lockAction = 'MUTE';
-    return result;
+    if (v73HcOverride) {
+      // fall through to the v7.3 promotion check below
+    } else {
+      if (cfg.mute) result.lockAction = 'MUTE';
+      return result;
+    }
   }
 
   // v6.6 PROMOTION — Hybrid floor. Δw ≥ +1 AND Δq ≥ +1 AND Δw+Δq ≥ +3.
+  // v7.3 PROMOTION — additionally HC_m ≥ +1 ∧ dw ≥ 0 ∧ dq ≥ 0 ∧ sum ≥ +1.
   // unitBonus is no longer summed into sizing — sizing is derived from
   // the two-factor star directly. Retained here only so legacy callers
   // and ranking reports read a consistent value (0 always).
-  if (dw >= 1 && dq >= 1 && (dw + dq) >= 3 && cfg.promote) {
-    result.promotionEligible = true;
+  if (cfg.promote) {
+    if (dw >= 1 && dq >= 1 && (dw + dq) >= 3) {
+      result.promotionEligible = true;
+    } else if (v73HcOverride && dw >= 0 && dq >= 0 && (dw + dq) >= 1) {
+      result.promotionEligible = true;
+    }
   }
   result.unitBonus = 0;
 
@@ -1330,6 +1450,7 @@ function evaluatePickHealth({
   timeToGame,
   currentStars,
   walletConsensus,
+  pickDate = null,
 }) {
   const wpsDelta = (currentWPS != null && lockWPS != null) ? currentWPS - lockWPS : 0;
   const diagnostic = [];
@@ -1346,6 +1467,13 @@ function evaluatePickHealth({
   const tooCloseForWhitelist = timeToGame != null && timeToGame <= 5;
   const dw = walletConsensus?.delta ?? 0;
   const dq = walletConsensus?.qualityMargin ?? 0;
+  // v7.3 — HC margin overrides the dw=0 / dq≤0 / sum<3 mutes. CANCEL
+  // (dw ≤ −2) and dw=−1 (winners_faded) still fire unconditionally;
+  // those are too-strong negative signals to override on N=2 evidence.
+  // Source: WALLET_HC_MARGIN_ANALYSIS_FULL.md §2 — MUTED ∧ HC_m ≥ +1
+  // cohort went 11-2 (84.6% WR, +85% ROI, p=0.006).
+  const hcMargin = (walletConsensus?.hcConfFor || 0) - (walletConsensus?.hcConfAg || 0);
+  const v73HcOverride = isV73Eligible(pickDate) && hcMargin >= 1;
 
   if (!tooCloseForWhitelist) {
     if (dw <= -2) {
@@ -1364,7 +1492,7 @@ function evaluatePickHealth({
         walletDelta: dw, qualityMargin: dq,
       };
     }
-    if (dw === 0) {
+    if (dw === 0 && !v73HcOverride) {
       // v6.3 — proven-winner margin evaporated. Pick would not lock in
       // this state today; mute so size + styling reflect that.
       return {
@@ -1374,7 +1502,7 @@ function evaluatePickHealth({
         walletDelta: dw, qualityMargin: dq,
       };
     }
-    if (dw >= 1 && dq <= 0) {
+    if (dw >= 1 && dq <= 0 && !v73HcOverride) {
       // v6.3 — winner margin ok but quality margin failed the floor.
       return {
         status: 'MUTED',
@@ -1383,7 +1511,7 @@ function evaluatePickHealth({
         walletDelta: dw, qualityMargin: dq,
       };
     }
-    if (dw >= 1 && dq >= 1 && (dw + dq) < 3) {
+    if (dw >= 1 && dq >= 1 && (dw + dq) < 3 && !v73HcOverride) {
       // v6.6 — both axes positive but the bleeder 1/+1 cohort: sum=+2,
       // below the hybrid floor's sum≥+3 requirement.
       return {
@@ -1395,25 +1523,35 @@ function evaluatePickHealth({
     }
   }
 
+  // v7.3 — when the override fires, surface it as a diagnostic so the
+  // UI can render the "RESCUED · HC" chip and the daily report can
+  // tally the cohort.
+  const reasons = [...diagnostic];
+  if (v73HcOverride && (dw === 0 || dq <= 0 || (dw + dq) < 3)) {
+    reasons.push('v73_hc_rescue');
+  }
+
   return {
     status: 'ACTIVE',
-    reasons: diagnostic,
+    reasons,
     currentStars, wpsDelta,
     walletDelta: dw, qualityMargin: dq,
   };
 }
 
-// v7.2 Spread/Total unit ladder — HC margin tiered, mirrors calculateUnits.
+// v7.2/v7.3 Spread/Total unit ladder — HC margin tiered, mirrors calculateUnits.
 //   ELITE  (Σ ≥ +7) → 2.5u   ×1.5 → 3.75 capped 3.5u  /  ×1.75 → 4.38 capped 3.5u
 //   5.0★   (Σ ≥ +6) → 2.0u   ×1.5 → 3.0u capped 2.0u  /  ×1.75 → 3.5u capped 2.0u
 //   4.5★   (Σ = +5) → 1.5u   ×1.5 → 2.25 capped 2.0u  /  ×1.75 → 2.63 capped 2.0u
 //   4.0★, 3.5★      → 0u when lockTier === 'LEAN'
-//   <3.5★  (Σ = +2)  → 0.25u   ONLY when LOCK ∧ HC_m ≥ +2 (Σ=2 lock floor)
+//   <3.5★  (Σ ∈ {1,2}) → 0.5u  when LOCK ∧ HC_m ≥ +1 (v7.3 lock floor)
+//   <3.5★  (Σ = +2)    → 0.25u  legacy v7.2 LOCK ∧ HC_m ≥ +2 path
 // Legacy v7.1/v7.0 paths preserved for pre-cutover picks.
 function calculateSpreadTotalUnits(stars, consensusPenalty = 0, odds = null, regimeBonus = 0,
                                    lockTier = null, hcDominant = false, opts = {}) {
   if (lockTier === 'LEAN') return 0;
   const v72 = isV72Eligible(opts.pickDate);
+  const v73 = isV73Eligible(opts.pickDate);
   const hcMargin = Number.isFinite(opts.hcMargin)
     ? opts.hcMargin
     : (hcDominant ? 1 : 0);
@@ -1425,6 +1563,10 @@ function calculateSpreadTotalUnits(stars, consensusPenalty = 0, odds = null, reg
   else if (stars >= 4.5)   units = 1.50;
   else if (stars >= 4.0)   units = 0.75;
   else if (stars >= 3.5)   units = 0.50;
+  // v7.3 — Σ ∈ {1, 2} ∧ HC_m ≥ +1 lock floor + Σ ≥ +3 rescue (S+T).
+  else if (lockTier === 'LOCKED' && v73 && hcMargin >= 1) {
+    units = sum === 1 ? V7_3_SIGMA1_LOCK_UNITS_ST : V7_3_SIGMA2_LOCK_UNITS_ST;
+  }
   else if (lockTier === 'LOCKED' && v72 && sum === 2 && hcMargin >= 2) {
     units = V7_2_SIGMA2_LOCK_UNITS_ST;
   }
@@ -1539,36 +1681,60 @@ function decideLockStage(regime, v8Scoring, sideKey, sport = null, baseStars = 0
     return { stage: 'SHADOW', contribTier, promotedBy: null, dw: 0, dq: 0,
              lockTier: 'MUTED', hcDominant: false, hcMargin: 0 };
   }
-  const wc = computeWalletConsensus(v8Scoring?.walletDetails, sport, sideKey);
+  const wc = computeWalletConsensus(v8Scoring?.walletDetails, sport, sideKey, pickDate);
   const dw = wc.delta || 0;
   const dq = wc.qualityMargin || 0;
   const hcDominant = !!wc.hcDominant;
   const hcMargin = (wc.hcConfFor || 0) - (wc.hcConfAg || 0);
+  const sum = dw + dq;
   const lockTier = lockTierFromDeltas(dw, dq, hcDominant, { pickDate, hcMargin });
-  // v7.2 — Σ=2 bypass. wc.promotionEligible requires Σ ≥ +3 (the v6.6
-  // hybrid floor); Σ=2 picks with HC_m ≥ +2 (LOCK) or HC_m = +1 (LEAN)
-  // need a separate path. We re-create the WHITELIST_INTERVENTION
-  // cfg.promote check inline so we don't accidentally promote disabled
-  // sports.
+  // v7.2/v7.3 — bypasses for cohorts whose lock decision sits outside
+  // wc.promotionEligible (which still requires the v6.6 hybrid floor by
+  // default; v7.3 also accepts dw ≥ 0 ∧ dq ≥ 0 ∧ Σ ≥ +1 when HC_m ≥ +1).
+  // We re-create the WHITELIST_INTERVENTION cfg.promote check inline so
+  // we don't accidentally promote disabled sports.
   const v72 = isV72Eligible(pickDate);
+  const v73 = isV73Eligible(pickDate);
   const sport_cfg = WHITELIST_INTERVENTION[sport];
-  const v72Sigma2Lock = v72 && sport_cfg?.promote
-    && dw >= 1 && dq >= 1 && (dw + dq) === 2 && hcMargin >= 2;
-  const v72Sigma2Lean = v72 && sport_cfg?.promote
-    && dw >= 1 && dq >= 1 && (dw + dq) === 2 && hcMargin === 1;
-  if (wc.promotionEligible || v72Sigma2Lock || v72Sigma2Lean) {
+  // v7.3 — Σ=1 ∧ HC_m ≥ +1 lock floor (NEW).
+  const v73Sigma1HC = v73 && sport_cfg?.promote
+    && hcMargin >= 1 && dw >= 0 && dq >= 0 && sum === 1;
+  // v7.3 — Σ=2 ∧ HC_m ≥ +1 lock (graduates v7.2 LEAN to LOCK).
+  const v73Sigma2HC = v73 && sport_cfg?.promote
+    && hcMargin >= 1 && dw >= 0 && dq >= 0 && sum === 2;
+  // v7.3 — "rescued from MUTE" cohort: Σ ≥ +3 but with dw=0 OR dq=0.
+  const v73HcRescue = v73 && sport_cfg?.promote
+    && hcMargin >= 1 && dw >= 0 && dq >= 0 && sum >= 3 && (dw === 0 || dq === 0);
+  // v7.2 LEAN bypass — only fires when v7.3 isn't promoting (which it
+  // does for the same cell). Retained for the kill-switch path.
+  const v72Sigma2Lock = v72 && !v73 && sport_cfg?.promote
+    && dw >= 1 && dq >= 1 && sum === 2 && hcMargin >= 2;
+  const v72Sigma2Lean = v72 && !v73 && sport_cfg?.promote
+    && dw >= 1 && dq >= 1 && sum === 2 && hcMargin === 1;
+
+  const promoted = wc.promotionEligible
+    || v73Sigma1HC || v73Sigma2HC || v73HcRescue
+    || v72Sigma2Lock || v72Sigma2Lean;
+
+  if (promoted) {
     // Distinguish promotion sources so the daily report can partition
     // the cohorts cleanly:
-    //   v72-sigma2-lock : Σ=2 ∧ HC_m ≥ +2  (NEW lock floor)
-    //   v72-sigma2-lean : Σ=2 ∧ HC_m  = +1 (NEW LEAN floor)
+    //   v73-sigma1-hc   : Σ=1 ∧ HC_m ≥ +1 (v7.3 NEW lock floor)
+    //   v73-sigma2-hc   : Σ=2 ∧ HC_m ≥ +1 (v7.3 graduation from LEAN)
+    //   v73-hc-rescue   : Σ ≥ +3 ∧ HC_m ≥ +1 ∧ (dw=0 ∨ dq=0)
+    //   v72-sigma2-lock : Σ=2 ∧ HC_m ≥ +2  (v7.2 only — pre-v7.3 window)
+    //   v72-sigma2-lean : Σ=2 ∧ HC_m  = +1 (v7.2 only — superseded by v7.3)
     //   v72-hc-margin   : Σ ∈ {3,4} ∧ HC_m ≥ +1 under v7.2
     //   hc-dominance    : Σ ∈ {3,4} ∧ HC_DOM under v7.1 (legacy)
     //   two-factor-floor: Σ ≥ +5 (unchanged across versions)
     let promotedBy;
-    if (v72Sigma2Lock) promotedBy = 'v72-sigma2-lock';
+    if (v73Sigma1HC) promotedBy = 'v73-sigma1-hc';
+    else if (v73Sigma2HC) promotedBy = 'v73-sigma2-hc';
+    else if (v73HcRescue) promotedBy = 'v73-hc-rescue';
+    else if (v72Sigma2Lock) promotedBy = 'v72-sigma2-lock';
     else if (v72Sigma2Lean) promotedBy = 'v72-sigma2-lean';
-    else if (lockTier === 'LOCKED' && (dw + dq) <= 4 && v72 && hcMargin >= 1) promotedBy = 'v72-hc-margin';
-    else if (lockTier === 'LOCKED' && (dw + dq) <= 4 && hcDominant && isV71Eligible(pickDate)) promotedBy = 'hc-dominance';
+    else if (lockTier === 'LOCKED' && sum <= 4 && v72 && hcMargin >= 1) promotedBy = 'v72-hc-margin';
+    else if (lockTier === 'LOCKED' && sum <= 4 && hcDominant && isV71Eligible(pickDate)) promotedBy = 'hc-dominance';
     else promotedBy = 'two-factor-floor';
     return { stage: 'LOCKED', contribTier, promotedBy, dw, dq, lockTier, hcDominant, hcMargin };
   }
@@ -1719,7 +1885,7 @@ function computeRegimeBonus(_regime, _v8Scoring, _sideKey, _sport = null) {
 // until the cache is ready; a later sync will stamp with real values.
 function stampWalletConsensus(target, v8Scoring, sideKey, sport, baseStars, promotedBy, pickDate = null) {
   if (!WALLET_PROFILES_CACHE) return;
-  const wc = computeWalletConsensus(v8Scoring?.walletDetails, sport, sideKey);
+  const wc = computeWalletConsensus(v8Scoring?.walletDetails, sport, sideKey, pickDate);
   target.v8_walletConsensusVersion = WHITELIST_CONSENSUS_VERSION;
   target.v8_walletConsensusSport = sport || null;
   target.v8_walletConsensusEnabled = !!WHITELIST_INTERVENTION[sport];
@@ -1730,10 +1896,7 @@ function stampWalletConsensus(target, v8Scoring, sideKey, sport, baseStars, prom
   target.v8_walletConsensusStarBonus = wc.unitBonus;
   target.v8_walletConsensusMuteTriggered = wc.lockAction === 'MUTE';
   target.v8_walletConsensusCancelTriggered = wc.lockAction === 'CANCEL';
-  target.v8_walletConsensusPromotionTriggered =
-    promotedBy === 'two-factor-floor' || promotedBy === 'whitelist'
-      || promotedBy === 'hc-dominance' || promotedBy === 'v72-hc-margin'
-      || promotedBy === 'v72-sigma2-lock' || promotedBy === 'v72-sigma2-lean';
+  target.v8_walletConsensusPromotionTriggered = isPromotedBy(promotedBy);
   target.v8_walletConsensusBaseStars = baseStars || 0;
   // v6 two-factor fields
   target.v8_walletConsensusQualityForT30 = wc.qualityForT30;
@@ -1742,25 +1905,31 @@ function stampWalletConsensus(target, v8Scoring, sideKey, sport, baseStars, prom
   target.v8_vaultStar = (wc.forW || wc.agW || wc.qualityMargin !== 0)
     ? vaultStarFromDeltas(wc.delta, wc.qualityMargin)
     : null;
-  // v7.1/v7.2 — HC dominance + margin + cohort labels + system version.
+  // v7.1/v7.2/v7.3 — HC dominance + margin + cohort labels + system version.
   // Pre-cutover picks get v8_systemVersion: '7.0' (or '7.1' for the
-  // 1-day window); post-V7_2 picks get '7.2'. Daily report partitions
-  // cohorts by this stamp + promotedBy.
+  // 1-day window); post-V7_2 picks get '7.2'; post-V7_3 picks get '7.3'.
+  // Daily report partitions cohorts by this stamp + promotedBy.
   target.v8_hcConfFor    = wc.hcConfFor;
   target.v8_hcConfAg     = wc.hcConfAg;
   target.v8_hcDominant   = wc.hcDominant;
   target.v8_hcMargin     = (wc.hcConfFor || 0) - (wc.hcConfAg || 0);
+  const v73Active = isV73Eligible(pickDate);
   const v72Active = isV72Eligible(pickDate);
-  target.v8_systemVersion = v72Active ? '7.2'
+  target.v8_systemVersion = v73Active ? '7.3'
+    : v72Active ? '7.2'
     : isV71Eligible(pickDate) ? '7.1'
     : '7.0';
-  // v7.2 frozen lock-tier (HC-margin aware). UI still recomputes from live Δs.
+  // v7.2/v7.3 frozen lock-tier (HC-margin aware). UI still recomputes from live Δs.
   const liveTier = lockTierFromDeltas(wc.delta, wc.qualityMargin, wc.hcDominant, {
     pickDate,
     hcMargin: target.v8_hcMargin,
   });
   target.v8_lockTier = liveTier;
-  // v7.2 TOP / SUPER badge stamps:
+  // v7.3 — record whether this side was rescued from a v6.6/v7.2 mute by HC margin.
+  target.v8_v73HcRescue = v73Active && target.v8_hcMargin >= 1
+    && (wc.delta === 0 || wc.qualityMargin <= 0 || (wc.delta + wc.qualityMargin) < 3)
+    && wc.delta >= 0 && wc.qualityMargin >= 0;
+  // v7.2/v7.3 TOP / SUPER badge stamps:
   //   TOP PICK       = any LOCKED / ELITE side that's actually shipping
   //   SUPER TOP PICK = HC_m ≥ +2 ON TOP OF LOCK (the proven 9-1 / +77% ROI cohort)
   // v7.1 fallback (1-day window) keeps the HC_DOM-based SUPER definition.
@@ -1809,7 +1978,7 @@ async function restampDriftedSides({ ref, sides, currentSideKey, sport, regime, 
     if (!stored) continue;
     if (stored.status === 'COMPLETED') continue;
     if (stored.superseded) continue;
-    const liveWc = computeWalletConsensus(v8Scoring.walletDetails, sport, sideKey);
+    const liveWc = computeWalletConsensus(v8Scoring.walletDetails, sport, sideKey, pickDate);
     const drifted =
       stored.v8_walletConsensusDelta !== liveWc.delta ||
       stored.v8_walletConsensusVerdict !== liveWc.verdict ||
@@ -4536,28 +4705,36 @@ const HEALTH_REASON_LABELS = {
 };
 
 const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
-  const { team, away, home, sport, stars, peakStars, lockStars, units, peakUnits, isDownsized, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, lockEV, criteriaMet, criteria, consensusStrength, pinnacleOdds, marketType, line, superseded, health, lockTier, isTopPick: isTopPickPre, isSuperTopPick: isSuperTopPickPre, walletConsensusDelta, walletConsensusForW, walletConsensusAgW, walletConsensusQualityMargin, walletConsensusQualityForT30, walletConsensusQualityAgT30, hcDominant, hcConfFor, hcConfAg, hcMargin, systemVersion, promotedBy } = pick;
-  // v7.1/v7.2 — render the gold "HC ×N" chip when the pick is post-cutover
+  const { team, away, home, sport, stars, peakStars, lockStars, units, peakUnits, isDownsized, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, lockEV, criteriaMet, criteria, consensusStrength, pinnacleOdds, marketType, line, superseded, health, lockTier, isTopPick: isTopPickPre, isSuperTopPick: isSuperTopPickPre, walletConsensusDelta, walletConsensusForW, walletConsensusAgW, walletConsensusQualityMargin, walletConsensusQualityForT30, walletConsensusQualityAgT30, hcDominant, hcConfFor, hcConfAg, hcMargin, systemVersion, promotedBy, v73HcRescue } = pick;
+  // v7.1/v7.2/v7.3 — render the gold "HC ×N" chip when the pick is post-cutover
   // AND has HC backing. Pre-cutover picks never see the chip.
-  // v7.2 SUPER tier (HC margin ≥ +2): chip reads "HC ×1.75"
-  // v7.2 STANDARD (HC margin = +1): chip reads "HC ×1.5"
+  // v7.2/v7.3 SUPER tier (HC margin ≥ +2): chip reads "HC ×1.75"
+  // v7.2/v7.3 STANDARD (HC margin = +1): chip reads "HC ×1.5"
   // v7.1 (legacy): chip reads "HC ×1.5" when hcDominant
   const hcMarginVal = Number.isFinite(hcMargin)
     ? hcMargin
     : ((hcConfFor || 0) - (hcConfAg || 0));
+  const isV73Pick = systemVersion === '7.3';
   const isV72Pick = systemVersion === '7.2';
   const isV71Pick = systemVersion === '7.1';
-  const isHcSuper = isV72Pick && hcMarginVal >= 2;
-  const isHcStandard = (isV72Pick && hcMarginVal === 1)
+  const isHcSuper = (isV73Pick || isV72Pick) && hcMarginVal >= 2;
+  const isHcStandard = ((isV73Pick || isV72Pick) && hcMarginVal === 1)
     || (isV71Pick && !!hcDominant);
   const showHcChip = isHcSuper || isHcStandard;
   const hcChipMult = isHcSuper ? '1.75' : '1.5';
-  // v7.1/v7.2 — "PROMOTED · HC" tooltip for picks promoted out of LEAN by HC.
+  // v7.1/v7.2/v7.3 — "PROMOTED · HC" tooltip for picks promoted by HC margin.
   const wasHcPromoted = promotedBy === 'hc-dominance'
     || promotedBy === 'v72-hc-margin'
     || promotedBy === 'v72-sigma2-lock'
-    || promotedBy === 'v72-sigma2-lean';
-  const wasSigma2Promoted = promotedBy === 'v72-sigma2-lock' || promotedBy === 'v72-sigma2-lean';
+    || promotedBy === 'v72-sigma2-lean'
+    || promotedBy === 'v73-sigma1-hc'
+    || promotedBy === 'v73-sigma2-hc'
+    || promotedBy === 'v73-hc-rescue';
+  const wasSigma2Promoted = promotedBy === 'v72-sigma2-lock'
+    || promotedBy === 'v72-sigma2-lean'
+    || promotedBy === 'v73-sigma2-hc';
+  const wasSigma1Promoted = promotedBy === 'v73-sigma1-hc';
+  const wasHcRescued = promotedBy === 'v73-hc-rescue' || !!v73HcRescue;
   const [expanded, setExpanded] = useState(false);
   const ss = sportStyle(sport);
   const starDelta = (lockStars != null && stars != null) ? stars - lockStars : 0;
@@ -4959,6 +5136,39 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                       HC ×{hcChipMult}
                     </span>
                   )}
+                  {/* v7.3 RESCUED chip — fired on the cohort the v6.6 health
+                      engine would have muted (dw=0 / dq=0 / sum<3) but HC
+                      margin ≥ +1 saved. WALLET_HC_MARGIN_ANALYSIS_FULL: this
+                      cohort went 11-2, +85% ROI, p=0.006. */}
+                  {wasHcRescued && !isGraded && !isLean && (
+                    <span style={{
+                      ...T.micro, fontWeight: 900, color: '#10B981',
+                      padding: '0.2rem 0.45rem', borderRadius: '5px',
+                      background: 'rgba(16,185,129,0.18)',
+                      border: '1px solid rgba(16,185,129,0.45)',
+                      letterSpacing: '0.04em',
+                    }}
+                    title={`v7.3 RESCUED — HC margin +${hcMarginVal} overrode the v6.6 health-engine MUTE. The dw=0 / dq=0 / sum<3 cohort with HC backing went 11-2 (+85% ROI, p=0.006) on N=141 graded sides since v7 cutover.`}>
+                      RESCUED
+                    </span>
+                  )}
+                  {/* v7.3 Σ=1 / Σ=2 floor lock indicator — picks below the
+                      v6.6 hybrid floor (Σ ≥ +3) ship at a 0.5u floor when
+                      HC margin ≥ +1 backs them. */}
+                  {(wasSigma1Promoted || wasSigma2Promoted) && !isGraded && !isLean && (
+                    <span style={{
+                      ...T.micro, fontWeight: 900, color: '#60A5FA',
+                      padding: '0.2rem 0.45rem', borderRadius: '5px',
+                      background: 'rgba(96,165,250,0.18)',
+                      border: '1px solid rgba(96,165,250,0.45)',
+                      letterSpacing: '0.04em',
+                    }}
+                    title={wasSigma1Promoted
+                      ? `v7.3 Σ=1 floor lock: HC margin +${hcMarginVal} promoted this pick to a 0.5u floor below the v6.6 hybrid floor (Σ ≥ +3). Conservative sizing reflects the marginal sample evidence.`
+                      : `v7.3 Σ=2 floor lock: HC margin +${hcMarginVal} promoted this pick to a 0.5u floor (was a v7.2 LEAN at HC_m=+1).`}>
+                      Σ={wasSigma1Promoted ? '1' : '2'} FLOOR
+                    </span>
+                  )}
                   {evEdge > 0 && (
                     <span style={{ ...T.body, fontWeight: 900, color: B.green, padding: '0.2rem 0.6rem', borderRadius: '5px', background: B.greenDim }}>
                       +{evEdge}% EV
@@ -4999,21 +5209,27 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                       <span style={{ color: LEAN_BLUE, fontWeight: 700 }}>Below lock floor</span> — {forW} proven {sportUp} winner{forW !== 1 ? 's' : ''} backing {teamShort} {marketNoun} but Δw+Δq = {sumLive >= 0 ? '+' : ''}{sumLive} (need ≥ +5 to lock). Tracking at 0u.{pinnSuffix}
                     </>
                   );
-                } else if (forW > 0) {
-                  // v7.1/v7.2 — when this pick was promoted out of LEAN by HC,
-                  // surface that explicitly so users see why a low-Σ pick is
-                  // shipping at full (or upsized) size. v7.2 SUPER tier
-                  // additionally highlights the ×1.75 multiplier and the
-                  // SUPER cohort's 9-1 / +77% ROI track record.
+                } else if (forW > 0 || wasHcRescued || wasSigma1Promoted || wasSigma2Promoted) {
+                  // v7.1/v7.2/v7.3 — when this pick was promoted out of LEAN /
+                  // MUTE by HC, surface that explicitly so users see why a
+                  // low-Σ pick is shipping. v7.3 introduces three new sources:
+                  //   • v73-sigma1-hc : Σ=1 ∧ HC_m ≥ +1 (NEW lock floor)
+                  //   • v73-sigma2-hc : Σ=2 ∧ HC_m ≥ +1 (graduated from LEAN)
+                  //   • v73-hc-rescue : Σ ≥ +3 ∧ HC_m ≥ +1 ∧ (dw=0 ∨ dq=0)
+                  //                     — rescued from a v6.6 mute.
                   const multTxt = isHcSuper ? '1.75' : '1.5';
-                  const hcSuffix = wasSigma2Promoted
-                    ? ` LEAN-floor lock: Σ=2 promoted by HC margin +${hcMarginVal} (${hcConfFor} HC for · ${hcConfAg} HC against)${isHcSuper ? ` — sized at 0.5u via ×1.75 SUPER tier.` : ` — tracking at 0u (LEAN).`}`
+                  const hcSuffix = wasSigma1Promoted
+                    ? ` v7.3 Σ=1 lock: HC margin +${hcMarginVal} (${hcConfFor} HC for · ${hcConfAg} HC against) backed promotion to a 0.5u floor — only ship below the v6.6 hybrid floor when proven-winner conviction is unanimous.`
+                    : wasSigma2Promoted
+                    ? ` v7.3 Σ=2 lock: promoted by HC margin +${hcMarginVal} (${hcConfFor} HC for · ${hcConfAg} HC against) — 0.5u floor.`
+                    : wasHcRescued
+                    ? ` RESCUED from MUTE by HC margin +${hcMarginVal} (${hcConfFor} high-conviction CONFIRMED winner${hcConfFor !== 1 ? 's' : ''}${hcConfAg > 0 ? `, ${hcConfAg} HC dissent` : ', no HC dissent'}) — full v7.2 ladder × ${multTxt}× would have muted under v6.6.`
                     : wasHcPromoted
                     ? ` Promoted out of LEAN by HC margin +${hcMarginVal} (${hcConfFor} high-conviction CONFIRMED winner${hcConfFor !== 1 ? 's' : ''}${hcConfAg > 0 ? `, ${hcConfAg} HC dissent` : ', no HC dissent'}) — sized at ${multTxt}×.`
                     : (showHcChip ? ` ${hcConfFor} high-conviction CONFIRMED winner${hcConfFor !== 1 ? 's' : ''} backing — sized at ${multTxt}×.` : '');
                   lead = (
                     <>
-                      <span style={{ color: B.gold, fontWeight: 700 }}>{forW} proven {sportUp} winner{forW !== 1 ? 's' : ''}</span> backing {teamShort} {marketNoun}
+                      <span style={{ color: B.gold, fontWeight: 700 }}>{forW || hcConfFor} proven {sportUp} winner{(forW || hcConfFor) !== 1 ? 's' : ''}</span> backing {teamShort} {marketNoun}
                       {qFor > 0 ? <> with <span style={{ color: B.green, fontWeight: 700 }}>{qFor} quality wallet{qFor !== 1 ? 's' : ''}</span> confirming.</> : '.'}
                       {totalInvested ? <> Combined <span style={{ color: B.gold, fontWeight: 700 }}>{fmtV(totalInvested)}</span> invested.</> : ''}
                       {pinnSuffix}{evSuffix}{hcSuffix}
@@ -5544,15 +5760,10 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const decision = sr?.v8Scoring && consensusSide && gd.sport
     ? decideLockStage(sr.regime, sr.v8Scoring, consensusSide, gd.sport, sr.stars, pickDate)
     : null;
-  // v7.1/v7.2 — accept Σ ≥ +5 (legacy), HC-dominance (v7.1), HC-margin
-  // ≥+1 (v7.2 Σ∈{3,4}), Σ=2 ∧ HC_m ≥ +2 lock (v7.2 NEW), or Σ=2 ∧ HC_m
-  // = +1 lean (v7.2 NEW) as valid lock-floor promotions. All produce
-  // decision.stage === 'LOCKED' (LEAN ships at 0u with the LEAN badge).
-  const twoFactorFloor = decision?.promotedBy === 'two-factor-floor'
-    || decision?.promotedBy === 'hc-dominance'
-    || decision?.promotedBy === 'v72-hc-margin'
-    || decision?.promotedBy === 'v72-sigma2-lock'
-    || decision?.promotedBy === 'v72-sigma2-lean';
+  // v7.1/v7.2/v7.3 — accept any registered floor source as a valid
+  // lock-floor promotion (single source of truth: PROMOTED_BY_FLOORS).
+  // All produce decision.stage === 'LOCKED' (LEAN ships at 0u).
+  const twoFactorFloor = isPromotedBy(decision?.promotedBy);
   const minInvForSide = minInvestedFloor(decision?.contribTier);
   const meetsInvest = consensusInvested >= minInvForSide;
   const meetsThreshold = meetsInvest && sr.stars >= 3.5;
@@ -5687,8 +5898,11 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const lockedSideStars = sideFlipped ? oppSr.stars : sr.stars;
   const mlLockedSideKey = lockedSideRef.current || consensusSide;
   const mlLockedV8 = sideFlipped ? oppSr?.v8Scoring : sr?.v8Scoring;
+  // v7.3 — derive pickDate from commenceTime so v7.3 HC overrides apply
+  // to live computeWalletConsensus + evaluatePickHealth calls.
+  const mlPickDate = commenceTime ? gameDate(commenceTime) : null;
   const mlWalletConsensus = wasEverLocked
-    ? computeWalletConsensus(mlLockedV8?.walletDetails, gd.sport, mlLockedSideKey)
+    ? computeWalletConsensus(mlLockedV8?.walletDetails, gd.sport, mlLockedSideKey, mlPickDate)
     : null;
   const mlHealth = wasEverLocked ? evaluatePickHealth({
     currentWPS: lockedSideWPS,
@@ -5699,6 +5913,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     timeToGame: commenceTime ? (commenceTime - Date.now()) / 60000 : null,
     currentStars: lockedSideStars,
     walletConsensus: mlWalletConsensus,
+    pickDate: mlPickDate,
   }) : { status: 'ACTIVE', reasons: [], currentStars: sr.stars, wpsDelta: 0 };
 
   const lastHealthRef = useRef(null);
@@ -5780,11 +5995,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const spreadDecision = spreadSr?.v8Scoring && spreadConsensusSide && gd.sport
     ? decideLockStage(spreadSr.regime, spreadSr.v8Scoring, spreadConsensusSide, gd.sport, spreadSr.stars, spreadPickDate)
     : null;
-  const spreadTwoFactorFloor = spreadDecision?.promotedBy === 'two-factor-floor'
-    || spreadDecision?.promotedBy === 'hc-dominance'
-    || spreadDecision?.promotedBy === 'v72-hc-margin'
-    || spreadDecision?.promotedBy === 'v72-sigma2-lock'
-    || spreadDecision?.promotedBy === 'v72-sigma2-lean';
+  const spreadTwoFactorFloor = isPromotedBy(spreadDecision?.promotedBy);
   const spreadMinInv = minInvestedFloor(spreadDecision?.contribTier);
   const spreadMeetsInvest = (spreadSharpFeatures?.conTotalInvested || 0) >= spreadMinInv;
   const spreadMeetsThreshold = spreadSr && spreadMeetsInvest && spreadSr.stars >= 3.5;
@@ -5846,8 +6057,9 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
 
   // ─── Spread Pick Health Evaluation ────────────────────────────────────────
   const spreadWasEverLocked = isSpreadLocked || lastSyncedSpreadStars.current != null || lockSpreadStarsRef.current != null;
+  const spreadPickDateLive = commenceTime ? gameDate(commenceTime) : null;
   const spreadWalletConsensus = spreadWasEverLocked && spreadSr
-    ? computeWalletConsensus(spreadSr.v8Scoring?.walletDetails, gd.sport, spreadConsensusSide)
+    ? computeWalletConsensus(spreadSr.v8Scoring?.walletDetails, gd.sport, spreadConsensusSide, spreadPickDateLive)
     : null;
   const spreadHealth = spreadWasEverLocked && spreadSr ? evaluatePickHealth({
     currentWPS: spreadSr.walletPlayScore,
@@ -5858,6 +6070,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     timeToGame: commenceTime ? (commenceTime - Date.now()) / 60000 : null,
     currentStars: spreadSr.stars,
     walletConsensus: spreadWalletConsensus,
+    pickDate: spreadPickDateLive,
   }) : { status: 'ACTIVE', reasons: [], currentStars: spreadSr?.stars || 0, wpsDelta: 0 };
 
   const lastSpreadHealthRef = useRef(null);
@@ -5933,11 +6146,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const totalDecision = totalSr?.v8Scoring && totalConsensusSide && gd.sport
     ? decideLockStage(totalSr.regime, totalSr.v8Scoring, totalConsensusSide, gd.sport, totalSr.stars, totalPickDate)
     : null;
-  const totalTwoFactorFloor = totalDecision?.promotedBy === 'two-factor-floor'
-    || totalDecision?.promotedBy === 'hc-dominance'
-    || totalDecision?.promotedBy === 'v72-hc-margin'
-    || totalDecision?.promotedBy === 'v72-sigma2-lock'
-    || totalDecision?.promotedBy === 'v72-sigma2-lean';
+  const totalTwoFactorFloor = isPromotedBy(totalDecision?.promotedBy);
   const totalMinInv = minInvestedFloor(totalDecision?.contribTier);
   const totalMeetsInvest = (totalSharpFeatures?.conTotalInvested || 0) >= totalMinInv;
   const totalMeetsThreshold = totalSr && totalMeetsInvest && totalSr.stars >= 3.5;
@@ -6001,8 +6210,9 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
 
   // ─── Total Pick Health Evaluation ─────────────────────────────────────────
   const totalWasEverLocked = isTotalLocked || lastSyncedTotalStars.current != null || lockTotalStarsRef.current != null;
+  const totalPickDateLive = commenceTime ? gameDate(commenceTime) : null;
   const totalWalletConsensus = totalWasEverLocked && totalSr
-    ? computeWalletConsensus(totalSr.v8Scoring?.walletDetails, gd.sport, totalConsensusSide)
+    ? computeWalletConsensus(totalSr.v8Scoring?.walletDetails, gd.sport, totalConsensusSide, totalPickDateLive)
     : null;
   const totalHealth = totalWasEverLocked && totalSr ? evaluatePickHealth({
     currentWPS: totalSr.walletPlayScore,
@@ -6013,6 +6223,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     timeToGame: commenceTime ? (commenceTime - Date.now()) / 60000 : null,
     currentStars: totalSr.stars,
     walletConsensus: totalWalletConsensus,
+    pickDate: totalPickDateLive,
   }) : { status: 'ACTIVE', reasons: [], currentStars: totalSr?.stars || 0, wpsDelta: 0 };
 
   const lastTotalHealthRef = useRef(null);
@@ -10444,10 +10655,10 @@ export default function SharpFlow() {
                             sd,
                             doc.date ?? null,
                           ),
-                          // v7.1/v7.2 — surface HC dominance + margin +
+                          // v7.1/v7.2/v7.3 — surface HC dominance + margin +
                           // promotion path on the card so the UI can render
                           // the gold "HC ×1.5" / "HC ×1.75" chip and the
-                          // "PROMOTED · HC" / "Σ=2 LEAN→LOCK" tooltips.
+                          // "PROMOTED · HC" / "Σ=2 LEAN→LOCK" / "RESCUED" tooltips.
                           hcDominant: !!sd.v8_hcDominant,
                           hcConfFor: sd.v8_hcConfFor ?? 0,
                           hcConfAg:  sd.v8_hcConfAg ?? 0,
@@ -10456,6 +10667,7 @@ export default function SharpFlow() {
                             : ((sd.v8_hcConfFor || 0) - (sd.v8_hcConfAg || 0)),
                           systemVersion: sd.v8_systemVersion || '7.0',
                           promotedBy: sd.promotedBy || null,
+                          v73HcRescue: !!sd.v8_v73HcRescue,
                         });
                       }
                     }

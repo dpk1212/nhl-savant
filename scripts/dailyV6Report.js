@@ -1177,10 +1177,78 @@ function vaultStarBand(row) {
     out.push('');
   }
 
+  // ─── §11. v7.3 HC-margin floor + MUTE override cohort ─────────────────────
+  // Tracks the v7.3 promotion sources (sigma1-hc, sigma2-hc, hc-rescue) so
+  // we can validate the analysis findings on real shipped samples:
+  //   • WALLET_HC_MARGIN_ANALYSIS_FULL §2: MUTED ∧ HC_m ≥ +1 → 11-2 / +85% ROI
+  //     → v73-hc-rescue cohort proves the override out (or doesn't).
+  //   • WALLET_HC_MARGIN_ANALYSIS_FULL §4: Σ=2 ∧ HC_m ≥ +1 → +37% ROI
+  //     → v73-sigma2-hc proves the floor lower out.
+  //   • Σ=1 ∧ HC_m ≥ +1 → 50% / −3% (n=2, marginal)
+  //     → v73-sigma1-hc tracked at 0.5u floor.
+  const v73Rows = pickRows.filter(r =>
+    r.systemVersion === '7.3' && r.inDashboard && !r.superseded
+    && (r.outcome === 'WIN' || r.outcome === 'LOSS') && r.hcMargin != null
+  );
+  if (v73Rows.length === 0) {
+    out.push('## §11. v7.3 HC-margin floor + MUTE override cohort');
+    out.push('');
+    out.push('_No v7.3-stamped picks in the sample yet (cutover 2026-04-30). §11 will populate as v7.3 picks accumulate._');
+    out.push('');
+  } else {
+    out.push('## §11. v7.3 HC-margin floor + MUTE override cohort');
+    out.push('');
+    out.push('Tracks the live performance of the v7.3 floor lowering (Σ ∈ {1, 2} ∧ HC_m ≥ +1 → LOCK) and the MUTE override (HC_m ≥ +1 suppresses dw=0 / dq=0 / sum<3 mutes; CANCEL still fires). Picks must be `inDashboard` with `v8_systemVersion === \'7.3\'`.');
+    out.push('');
+
+    out.push('### §11a. v7.3 promotion-source cohorts');
+    out.push('');
+    out.push('| Promotion source | N | W-L | WR | flat ROI | flat PnL | peak PnL |');
+    out.push('|---|---|---|---|---|---|---|');
+    const v73Cohorts = [
+      ['v73-sigma1-hc (Σ=1 ∧ HC_m ≥ +1)', r => r.promotedBy === 'v73-sigma1-hc'],
+      ['v73-sigma2-hc (Σ=2 ∧ HC_m ≥ +1)', r => r.promotedBy === 'v73-sigma2-hc'],
+      ['v73-hc-rescue (Σ ≥ +3 ∧ dw=0 ∨ dq=0)', r => r.promotedBy === 'v73-hc-rescue'],
+      ['v72-hc-margin (Σ ∈ {3,4})',           r => r.promotedBy === 'v72-hc-margin'],
+      ['v72-sigma2-lock (Σ=2 ∧ HC_m ≥ +2)',   r => r.promotedBy === 'v72-sigma2-lock'],
+      ['two-factor-floor (Σ ≥ +5)',           r => r.promotedBy === 'two-factor-floor'],
+    ];
+    for (const [label, pred] of v73Cohorts) {
+      const rs = v73Rows.filter(pred);
+      const a = aggC(rs);
+      if (!a.n) { out.push(`| ${label} | 0 | — | — | — | — | — |`); continue; }
+      out.push(`| ${label} | ${a.n} | ${a.wins}-${a.losses} | ${fmtPct(a.wr)} | ${fmtSignPct(a.flatRoi)} | ${(a.flatPnl >= 0 ? '+' : '')}${a.flatPnl.toFixed(2)}u | ${(a.peakPnl >= 0 ? '+' : '')}${a.peakPnl.toFixed(2)}u |`);
+    }
+    out.push('');
+
+    out.push('### §11b. v7.3 vs prior versions head-to-head');
+    out.push('');
+    out.push('| Cohort | N | W-L | WR | flat ROI | flat PnL | peak PnL |');
+    out.push('|---|---|---|---|---|---|---|');
+    const v73NewFloor = v73Rows.filter(r =>
+      r.promotedBy === 'v73-sigma1-hc' || r.promotedBy === 'v73-sigma2-hc' || r.promotedBy === 'v73-hc-rescue'
+    );
+    const v73Established = v73Rows.filter(r =>
+      r.promotedBy === 'v72-hc-margin' || r.promotedBy === 'v72-sigma2-lock'
+        || r.promotedBy === 'hc-dominance' || r.promotedBy === 'two-factor-floor'
+    );
+    for (const [label, rs] of [
+      ['v7.3 NEW (sigma1 + sigma2 + rescue)', v73NewFloor],
+      ['v7.3 ESTABLISHED (Σ≥3 ∧ HC_m≥+1, Σ≥+5)', v73Established],
+    ]) {
+      const a = aggC(rs);
+      if (!a.n) { out.push(`| ${label} | 0 | — | — | — | — | — |`); continue; }
+      out.push(`| ${label} | ${a.n} | ${a.wins}-${a.losses} | ${fmtPct(a.wr)} | ${fmtSignPct(a.flatRoi)} | ${(a.flatPnl >= 0 ? '+' : '')}${a.flatPnl.toFixed(2)}u | ${(a.peakPnl >= 0 ? '+' : '')}${a.peakPnl.toFixed(2)}u |`);
+    }
+    out.push('');
+    out.push(`_v7.3 picks since cutover: **${v73Rows.length}** · NEW v7.3 promotions: ${v73NewFloor.length} · established floor: ${v73Established.length}_`);
+    out.push('');
+  }
+
   // ─── Footer ────────────────────────────────────────────────────────────────
   out.push('---');
   out.push('');
-  out.push(`_Driven by \`scripts/dailyV6Report.js\` · regenerates daily via \`.github/workflows/daily-v6-report.yml\` · WHITELIST_CONSENSUS_VERSION = 8 (v7.2) · QUALITY_CONTRIB_CUT = ${QUALITY_CUT} · inclusion mirrors live Pick Performance dashboard · cohort tags from frozen v6/v7.1/v7.2 stamps_`);
+  out.push(`_Driven by \`scripts/dailyV6Report.js\` · regenerates daily via \`.github/workflows/daily-v6-report.yml\` · WHITELIST_CONSENSUS_VERSION = 9 (v7.3) · QUALITY_CONTRIB_CUT = ${QUALITY_CUT} · inclusion mirrors live Pick Performance dashboard · cohort tags from frozen v6/v7.1/v7.2/v7.3 stamps_`);
   out.push('');
 
   const outPath = join(REPO_ROOT, 'DAILY_V6_REPORT.md');
