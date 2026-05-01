@@ -1102,7 +1102,7 @@ function vaultStarBand(row) {
     out.push('---');
     out.push('## §10. v7.2 HC-margin tier cohort');
     out.push('');
-    out.push(`_No v7.2-stamped picks in the sample yet (cutover ${ '2026-05-01'}). §10 will populate as v7.2 picks accumulate._`);
+    out.push(`_No v7.2-stamped picks in the sample yet (cutover 2026-04-30). §10 will populate as v7.2 picks accumulate._`);
     out.push('');
   } else {
     out.push('---');

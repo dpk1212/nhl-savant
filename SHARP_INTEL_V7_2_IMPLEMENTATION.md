@@ -1,7 +1,7 @@
 # SHARP_INTEL_V7_2_IMPLEMENTATION
 ## Code-level work order — what changed, where, and why
 
-**Cutover.** 2026-05-01 ET (`V7_2_CUTOVER_DATE`).
+**Cutover.** 2026-04-30 ET (`V7_2_CUTOVER_DATE`) — flipped to today's slate.
 **Status.** Live. All edits in `nhl-savant/src/pages/SharpFlow.jsx` and `nhl-savant/scripts/dailyV6Report.js`.
 **Backtest.** `WALLET_HC_MARGIN_ANALYSIS.md`.
 **Replaces.** v7.1 (`SHARP_INTEL_V7_1_IMPLEMENTATION.md`).
@@ -23,7 +23,7 @@ No data deletion. Historic Firestore docs are untouched — `v8_systemVersion` s
 ## New constants (`SharpFlow.jsx`)
 
 ```js
-const V7_2_CUTOVER_DATE              = '2026-05-01';
+const V7_2_CUTOVER_DATE              = '2026-04-30';   // today's slate onward
 const V7_2_HC_MARGIN_TIERED_ENABLED  = true;       // master kill-switch
 const V7_2_HC_M1_MULT                = 1.5;        // HC_margin = +1
 const V7_2_HC_M2_MULT                = 1.75;      // HC_margin ≥ +2 SUPER

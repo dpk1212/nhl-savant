@@ -1113,7 +1113,7 @@ function isV71Eligible(pickDate) {
 //
 // Gated by V7_2_CUTOVER_DATE — picks dated before cutover keep v7.1
 // behaviour so historic Firestore docs don't change.
-const V7_2_CUTOVER_DATE = '2026-05-01';   // YYYY-MM-DD ET
+const V7_2_CUTOVER_DATE = '2026-04-30';   // YYYY-MM-DD ET — flipped to today's slate
 const V7_2_HC_MARGIN_TIERED_ENABLED = true;   // master kill-switch
 const V7_2_HC_M1_MULT = 1.5;              // HC_margin = +1
 const V7_2_HC_M2_MULT = 1.75;             // HC_margin ≥ +2 (super tier)

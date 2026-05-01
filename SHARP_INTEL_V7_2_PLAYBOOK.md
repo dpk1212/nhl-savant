@@ -1,7 +1,7 @@
 # SHARP_INTEL_V7_2_PLAYBOOK
 ## HC-margin tiered locks + Σ=2 promotion
 
-**Status.** Live 2026-05-01.
+**Status.** Live 2026-04-30 (today's slate onward).
 **Replaces.** `SHARP_INTEL_V7_1_PLAYBOOK.md` (binary HC_DOM gate).
 **Backtest.** `WALLET_HC_MARGIN_ANALYSIS.md` (N=89 picks, 12 days, Apr 18–Apr 29).
 
@@ -107,7 +107,7 @@ Picks shipping with the HC ×1.75 chip will also carry the SUPER ribbon.
 
 | Date | What changes |
 |---|---|
-| **2026-05-01 ET (cutover)** | All picks dated ≥ 2026-05-01 run v7.2 logic. Older picks keep v7.1/v7.0. |
+| **2026-04-30 ET (cutover)** | All picks dated ≥ 2026-04-30 run v7.2 logic. Older picks keep v7.1/v7.0. v7.1 had a one-day window (2026-04-30 only) which is now superseded — any 2026-04-30 picks already locked under v7.1 will live-recompute to v7.2 on next render and re-stamp on next sync (`v8_systemVersion: '7.2'`). |
 | Per-pick gate | `isV72Eligible(pickDate)` requires both date ≥ cutover AND `V7_2_HC_MARGIN_TIERED_ENABLED === true` |
 | Kill switch | Flip `V7_2_HC_MARGIN_TIERED_ENABLED = false` in `SharpFlow.jsx` to revert without redeploy |
 | Stamp version | `v8_walletConsensusVersion = 8` (was 7). `restampDriftedSides` will refresh active docs once after deploy. |
