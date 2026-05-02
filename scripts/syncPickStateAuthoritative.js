@@ -22,7 +22,7 @@
  *     no debouncing — if dw flipped to -2 this cycle, the pick is CANCELLED
  *     this cycle.
  *   • v7.4 — single floor display contract (post-2026-05-02 picks):
- *       LOCK iff (HC_m ≥ +1 ∧ dw,dq ≥ 0)  OR  (Σ ≥ 5 ∧ dw,dq ≥ +1).
+ *       LOCK iff HC_m ≥ +1  OR  (Σ ≥ 5 ∧ dw,dq ≥ +1).
  *     Anything else (including the v7.3 LEAN cohort and v6.6 Σ ∈ {3,4})
  *     gets lockStage='SHADOW' written back so the locked-list display gate
  *     hides them automatically. Recovery is instant: a SHADOW side that
@@ -67,11 +67,12 @@ const V6_CUTOVER = '2026-04-18';
 const V7_1_CUTOVER_DATE = '2026-04-30';
 const V7_2_CUTOVER_DATE = '2026-04-30';
 const V7_3_CUTOVER_DATE = '2026-04-30';
-// v7.4 — single floor display contract. (HC_m ≥ +1 ∧ dw,dq ≥ 0) OR
+// v7.4 — single floor display contract. (HC_m ≥ +1) OR
 // (Σ ≥ 5 ∧ dw,dq ≥ +1) → LOCKED. Anything else → SHADOW. dw ≤ -2 still
 // CANCELS. LEAN tier eliminated entirely. Server cron writes lockStage
 // every cycle so the doc state is always in lock-step with live data
-// pre-T-15.
+// pre-T-15. HC route is GOLDEN STANDARD: HC margin alone passes the
+// floor regardless of dw/dq (no money-split or quality-margin guards).
 const V7_4_CUTOVER_DATE = '2026-05-02';
 const V7_4_SIGMA_FLOOR = 5;
 const V7_4_HC_MARGIN_FLOOR = 1;
@@ -111,11 +112,17 @@ const isV73Eligible = (d) => d && d >= V7_3_CUTOVER_DATE;
 const isV74Eligible = (d) => d && d >= V7_4_CUTOVER_DATE;
 
 // v7.4 single-floor gate. Mirror of SharpFlow.jsx::meetsV74Floor.
+//
+// HC GOLDEN STANDARD (2026-05-02): HC margin ≥ +1 alone passes the floor —
+// no dw/dq guards. A confirmed-tier proven winner sized at ≥1.5× their
+// normal bet on this side, with zero confirmed sharps oversized on the
+// other side, is the strongest single signal in the system. dw ≤ -2 still
+// cancels through evaluateBaseHealth as a safety net.
 function meetsV74Floor(dw, dq, hcMargin) {
   if (!Number.isFinite(dw) || !Number.isFinite(dq)) return false;
   const hc = Number.isFinite(hcMargin) ? hcMargin : 0;
   const sum = dw + dq;
-  const hcRoute  = hc >= V7_4_HC_MARGIN_FLOOR && dw >= 0 && dq >= 0;
+  const hcRoute  = hc >= V7_4_HC_MARGIN_FLOOR;
   const sumRoute = dw >= 1 && dq >= 1 && sum >= V7_4_SIGMA_FLOOR;
   return hcRoute || sumRoute;
 }

@@ -1233,12 +1233,19 @@ function isV73Eligible(pickDate) {
 
 // ─── v7.4 — single-floor display contract ────────────────────────────────
 // The canonical lock/display gate. A pick gets locked AND displayed iff:
-//   (a) HC route:  HC_m ≥ +1 ∧ dw ≥ 0 ∧ dq ≥ 0      ← high-conviction
+//   (a) HC route:  HC_m ≥ +1                          ← golden standard
 //   (b) Sum route: dw ≥ +1 ∧ dq ≥ +1 ∧ Σ ≥ +5         ← classic two-factor
 // Anything else is SHADOW (not displayed) — including the v7.3 LEAN cohort
 // (Σ ∈ {3,4} without HC) and the legacy v6.6 hybrid floor (Σ ≥ 3 with both
 // axes ≥ 1) which previously surfaced as "TRACK ONLY" cards. dw ≤ -2 still
 // CANCELS (kept as a hard fade signal).
+//
+// 2026-05-02 — HC route relaxed: dw/dq guards removed. HC margin ≥ +1
+// alone is sufficient. A confirmed-tier proven winner sized at ≥1.5×
+// their normal bet on this side (with zero confirmed sharps oversized
+// on the other side) is the strongest single signal we have. Money
+// split is irrelevant; quality margin (T30 mid-tier flicker) and a
+// 0 winner margin (small-N early-day cohort) no longer block HC picks.
 //
 // Drives:
 //   • decideLockStage         — write-time gate (LEAN bypasses removed)
@@ -1264,11 +1271,25 @@ function isV74Eligible(pickDate) {
 }
 
 // Single source of truth for the v7.4 lock gate.
+//
+// HC GOLDEN STANDARD (2026-05-02 update): HC margin ≥ +1 alone passes the
+// floor — no dw/dq guards. Rationale: a confirmed-tier proven winner sized
+// at ≥1.5× their normal bet on this side, with zero confirmed-tier sharps
+// oversized on the other side, is the strongest single signal in the
+// system. Don't let a -3 quality margin (T30 mid-tier wallet flicker) or
+// a 0 winner margin (small-N early-day cohort) block a pick the most
+// trusted sharps are clearly backing. Money split is irrelevant once HC
+// margin tips. dw ≤ -2 (winners_killed) still cancels via evaluatePickHealth
+// as a safety net, so an HC lock that gets actively dissented by 2+ proven
+// winners still gets pulled.
+//
+// Sum route remains for picks WITHOUT HC dominance: needs the broader
+// wallet-margin sum Σ ≥ +5 with both axes positive.
 function meetsV74Floor(dw, dq, hcMargin) {
   if (!Number.isFinite(dw) || !Number.isFinite(dq)) return false;
   const hcM = Number.isFinite(hcMargin) ? hcMargin : 0;
   const sum = dw + dq;
-  const hcRoute  = hcM >= V7_4_HC_MARGIN_FLOOR && dw >= 0 && dq >= 0;
+  const hcRoute  = hcM >= V7_4_HC_MARGIN_FLOOR;
   const sumRoute = dw >= 1 && dq >= 1 && sum >= V7_4_SIGMA_FLOOR;
   return hcRoute || sumRoute;
 }
@@ -1305,7 +1326,7 @@ const PROMOTED_BY_FLOORS = new Set([
   'v73-sigma1-hc',            // v7.3 Σ=1 ∧ HC_m ≥ +1 (NEW lock floor)
   'v73-sigma2-hc',            // v7.3 Σ=2 ∧ HC_m ≥ +1 (graduates v7.2 LEAN to LOCK)
   'v73-hc-rescue',            // v7.3 dw=0 OR dq=0 ∧ HC_m ≥ +1 (rescued from MUTE)
-  'v74-hc-margin',            // v7.4 HC_m ≥ +1 ∧ dw,dq ≥ 0  — single HC route
+  'v74-hc-margin',            // v7.4 HC_m ≥ +1                — golden-standard HC route (no dw/dq guard)
 ]);
 function isPromotedBy(promotedBy) {
   return PROMOTED_BY_FLOORS.has(promotedBy);
@@ -1787,12 +1808,12 @@ function decideLockStage(regime, v8Scoring, sideKey, sport = null, baseStars = 0
   const v74 = isV74Eligible(pickDate);
   const sport_cfg = WHITELIST_INTERVENTION[sport];
 
-  // v7.4 — single floor. The HC route + Σ ≥ 5 sum route are the ONLY
-  // paths to LOCKED. All v7.x LEAN bypasses (sigma1-hc, sigma2-hc,
-  // hc-rescue, sigma2-lean, sigma2-lock) collapse into either qualifying
-  // for the HC route or being SHADOW. wc.promotionEligible already uses
-  // Σ ≥ 5 for v7.4-eligible picks (computeWalletConsensus tightens the
-  // floor automatically), so we just evaluate the gate once here.
+  // v7.4 — single floor. HC route (HC margin ≥ +1, golden standard) +
+  // Σ ≥ 5 sum route are the ONLY paths to LOCKED. HC route has no dw/dq
+  // guards as of 2026-05-02 — see meetsV74Floor for rationale. All v7.x
+  // LEAN bypasses (sigma1-hc, sigma2-hc, hc-rescue, sigma2-lean,
+  // sigma2-lock) collapse into either qualifying for the HC route or
+  // being SHADOW.
   if (v74) {
     if (!sport_cfg?.promote) {
       return { stage: 'SHADOW', contribTier, promotedBy: null, dw, dq, lockTier, hcDominant, hcMargin };
@@ -1800,13 +1821,13 @@ function decideLockStage(regime, v8Scoring, sideKey, sport = null, baseStars = 0
     if (!meetsV74Floor(dw, dq, hcMargin)) {
       return { stage: 'SHADOW', contribTier, promotedBy: null, dw, dq, lockTier, hcDominant, hcMargin };
     }
-    const hcRoute = hcMargin >= V7_4_HC_MARGIN_FLOOR && dw >= 0 && dq >= 0;
+    // Classifier: prefer the strongest qualifying path.
+    //   • Σ ≥ V7_4_SIGMA_FLOOR with both axes positive → two-factor-floor
+    //   • Otherwise the pick passed via HC margin → v74-hc-margin
     let promotedBy;
-    if (sum >= V7_4_ELITE_SIGMA && dw >= 1 && dq >= 1) promotedBy = 'two-factor-floor';
-    else if (dw >= 1 && dq >= 1 && sum >= V7_4_SIGMA_FLOOR) promotedBy = 'two-factor-floor';
-    else if (hcRoute && hcMargin >= 2) promotedBy = 'v74-hc-margin';
-    else if (hcRoute) promotedBy = 'v74-hc-margin';
-    else promotedBy = 'two-factor-floor';
+    const sumRoute = dw >= 1 && dq >= 1 && sum >= V7_4_SIGMA_FLOOR;
+    if (sumRoute) promotedBy = 'two-factor-floor';
+    else promotedBy = 'v74-hc-margin';
     return { stage: 'LOCKED', contribTier, promotedBy, dw, dq, lockTier, hcDominant, hcMargin };
   }
 
