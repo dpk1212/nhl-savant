@@ -2376,6 +2376,14 @@ async function syncPregameSnapshot({ docId, side, snapshot }) {
 
 // ─── Pick Health Sync (independent of peak sync) ──────────────────────────────
 
+// v7.4 — server cron is authoritative. If the cron wrote within this many
+// ms, the browser defers and skips its own health write to avoid clobbering
+// fresh canonical state with the browser's (potentially stale) data
+// snapshot. Cron runs every ~8 min, so this guard window covers 7-of-8
+// minutes — only the last ~1 min of each cron cycle is browser-eligible
+// (and even then, the cron will overwrite again on its next cycle).
+const V7_4_CRON_DEFER_WINDOW_MS = 7 * 60 * 1000;
+
 async function syncPickHealth({ docId, collection: colName, side, health }) {
   try {
     const ref = doc(db, colName, docId);
@@ -2389,6 +2397,18 @@ async function syncPickHealth({ docId, collection: colName, side, health }) {
         .find(([, sd]) => sd.lock && !sd.superseded);
       if (!original) return;
       targetSide = original[0];
+    }
+    // v7.4 — defer to recent cron writes. The cron's syncedBy stamp on
+    // health.{} marks server-authored writes; if the doc was last touched
+    // by the cron within the defer window, the browser skips so the
+    // cron's canonical view wins.
+    if (isV74Eligible(data.date)) {
+      const sd = data.sides?.[targetSide];
+      const lastSync = data.lastSyncAt || sd?.health?.evaluatedAt || 0;
+      const wasCron = sd?.health?.syncedBy === 'server-cron';
+      if (wasCron && lastSync && (Date.now() - lastSync) < V7_4_CRON_DEFER_WINDOW_MS) {
+        return; // cron-fresh — leave it alone
+      }
     }
     await setDoc(ref, {
       sides: { [targetSide]: { health: { ...health, evaluatedAt: Date.now() } } },
