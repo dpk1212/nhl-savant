@@ -1,10 +1,10 @@
 # Wallet Profiles Summary
 
-Generated: 5/2/2026, 4:19:58 AM ET · V8 cutover: 2026-04-18 · whitelistVersion: 1
+Generated: 5/2/2026, 5:56:40 AM ET · V8 cutover: 2026-04-18 · whitelistVersion: 1
 
 Monitoring artifact for the nightly `sharpWalletProfiles` rebuild. Shows how many wallets qualify for each whitelist tier per sport, who the top performers are, and what changed since the last run.
 
-**Population**: 136 wallets · 970 graded picks · 2346 graded positions.
+**Population**: 136 wallets · 970 graded picks · 2347 graded positions.
 
 ## Population by verdict
 

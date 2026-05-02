@@ -1,6 +1,6 @@
 # Sharp Wallet Roster
 
-Generated: 5/2/2026, 4:19:58 AM ET · V8 cutover: 2026-04-18
+Generated: 5/2/2026, 5:56:40 AM ET · V8 cutover: 2026-04-18
 
 Every sharp wallet we have V8-era data on, sorted by combined conviction score. This is the **full roster** (no minimum-bets filter) — noisy at the tail, but that's the point for a tracking dataset. Verdict column reflects the ≥3-bet threshold.
 
@@ -153,7 +153,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | fcc12b | CONFIRMED_BLEEDER | ELITE | 136 | 36 | 47.2% | -10.4% | -3.73 | 73 | 52.1% | -14.2% | -520292 | 44.8 | 27 | 1.7% |
 | 12192c | CONFIRMED_BLEEDER | ELITE | 30 | 22 | 50% | -0.8% | -0.18 | 57 | 40.4% | -17.4% | -603475 | 62.6 | 44.6 | 2.9% |
 | 7a9723 | CONFIRMED_BLEEDER | ELITE | 32 | 19 | 42.1% | -25.1% | -4.76 | 39 | 43.6% | -19.7% | -619783 | 71 | 56 | 4.3% |
-| cd2f63 | CONFIRMED_BLEEDER | ELITE | 196 | 132 | 41.7% | -16.7% | -22.11 | 331 | 45.9% | -25.9% | -540128 | 65 | 69.5 | 6.5% |
+| cd2f63 | CONFIRMED_BLEEDER | ELITE | 196 | 132 | 41.7% | -16.7% | -22.11 | 332 | 45.8% | -25.9% | -541638 | 65 | 69.5 | 6.5% |
 
 ---
 ## Confirmed winners (≥3 bets in both sources, positive in both)
@@ -212,7 +212,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | fcc12b | 36 | -10.4% | 73 | -14.2% | -520292 | 44.8 | 1.7% |
 | 12192c | 22 | -0.8% | 57 | -17.4% | -603475 | 62.6 | 2.9% |
 | 7a9723 | 19 | -25.1% | 39 | -19.7% | -619783 | 71 | 4.3% |
-| cd2f63 | 132 | -16.7% | 331 | -25.9% | -540128 | 65 | 6.5% |
+| cd2f63 | 132 | -16.7% | 332 | -25.9% | -541638 | 65 | 6.5% |
 
 ---
 ## Data model (for Firebase sync)
