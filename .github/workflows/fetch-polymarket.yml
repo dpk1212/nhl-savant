@@ -39,6 +39,13 @@ jobs:
       VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
       VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
       VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }}
+      # Server-side Firestore admin creds — needed by writeSharpActions and
+      # syncPickStateAuthoritative inside the cycle loop. Without these the
+      # browser-driven pick health sync was the only path keeping picks
+      # in lock-step with live wallet state, which broke any time nobody had
+      # the dashboard open (root cause of 2026-05-01 stale-state audit).
+      FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+      FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
 
     steps:
       - uses: actions/checkout@v4
@@ -108,6 +115,21 @@ jobs:
 
             echo "--- scanSharpPositions ---"
             node scripts/scanSharpPositions.js || echo "scan failed (cycle $i)"
+
+            # ── Firestore-side pipeline ─────────────────────────────────────
+            # writeSharpActions persists the just-scanned positions (with
+            # vault_hc* fields) to sharp_action_positions. Then
+            # syncPickStateAuthoritative recomputes every today's LOCKED/LEAN
+            # pick's health/tier from those positions and writes the canonical
+            # state to sharpFlowPicks/Spreads/Totals. This is the server-side
+            # mirror of the browser's syncPickHealth — it runs whether or not
+            # anyone has the dashboard open, so picks stay current with the
+            # 8-min fetch cadence right up to T-15 freeze.
+            echo "--- writeSharpActions ---"
+            node scripts/writeSharpActions.js || echo "writeSharpActions failed (cycle $i)"
+
+            echo "--- syncPickStateAuthoritative ---"
+            node scripts/syncPickStateAuthoritative.js || echo "syncPickState failed (cycle $i)"
 
             echo "--- updateClosingOdds ---"
             node scripts/updateClosingOdds.js || echo "closingOdds failed (cycle $i)"
