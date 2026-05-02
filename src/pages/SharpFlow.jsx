@@ -1691,11 +1691,23 @@ function computeLiveSizing({ peakStars, peakUnits, marketType, oddsForLadder,
   const ladder = (marketType === 'spread' || marketType === 'total') ? calculateSpreadTotalUnits : calculateUnits;
   const liveUnitsRaw = ladder(liveStars, 0, oddsForLadder, 0, liveTier, liveHcDominant, { pickDate, hcMargin, sum });
   const liveUnits = Math.round(liveUnitsRaw * 100) / 100;
+  // v7.4 — DOWNSIZED suppression for picks still inside the lock floor.
+  // Under v7.4 the contract is binary: a pick is either LOCKED (passes
+  // HC ≥ +1 OR Σ ≥ 5 with positive axes) or SHADOW (hidden). Half-star
+  // slides between cycles inside the lock zone (e.g. Σ 5→4 with HC=+1
+  // still locked) are normal consensus flicker, NOT weakness — surfacing
+  // them as "DOWNSIZED 4.5★→4★" makes a clean HC-route lock read like a
+  // degrading pick. Suppress the badge while the pick still passes the
+  // v7.4 floor; if it falls below, lockStage flips to SHADOW and the
+  // pick is hidden anyway, so the badge becomes moot.
+  const v74StillLocked = isV74Eligible(pickDate)
+    && meetsV74Floor(liveDw, liveDq, hcMargin);
+  const rawDownsized = liveStars < peakStars || liveUnits < (peakUnits || 0);
   return {
     liveStars,
     liveUnits,
     liveTier,
-    isDownsized: liveStars < peakStars || liveUnits < (peakUnits || 0),
+    isDownsized: rawDownsized && !v74StillLocked,
   };
 }
 
@@ -3091,12 +3103,19 @@ function useMarketData() {
     };
   }, []);
 
-  // Phase 2: fetch sharpWalletProfiles once per session and populate the
-  // module-level cache so computeWalletConsensus / getWalletProfile can
-  // resolve whitelist tiers synchronously. Keyed by walletShort (doc id).
+  // Phase 2: fetch sharpWalletProfiles and populate the module-level cache
+  // so computeWalletConsensus / getWalletProfile can resolve whitelist
+  // tiers synchronously. Keyed by walletShort (doc id).
+  //
+  // v7.4 — refresh on the same 8-min cadence as the position JSONs (was
+  // once per session). The whitelist tier promotions/demotions land via
+  // the daily wallet-classifier cron, so a tab open through that boundary
+  // would see stale tiers and either count a freshly-CONFIRMED sharp
+  // wrong or keep counting a demoted one. Reload on visibilitychange too
+  // so tab-back-after-an-hour doesn't render stale lock decisions.
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    const loadProfiles = async () => {
       try {
         const snap = await getDocs(collection(db, 'sharpWalletProfiles'));
         if (cancelled) return;
@@ -3108,8 +3127,28 @@ function useMarketData() {
       } catch (err) {
         console.warn('[walletProfiles] fetch failed:', err.message);
       }
-    })();
-    return () => { cancelled = true; };
+    };
+    loadProfiles();
+    const REFRESH_MS = 8 * 60 * 1000;
+    let timer = null;
+    const start = () => {
+      if (timer) return;
+      timer = setInterval(() => {
+        if (document.visibilityState === 'visible') loadProfiles();
+      }, REFRESH_MS);
+    };
+    const stop = () => { if (timer) { clearInterval(timer); timer = null; } };
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') { loadProfiles(); start(); }
+      else stop();
+    };
+    start();
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      cancelled = true;
+      stop();
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, []);
 
   return { polyData, kalshiData, whaleProfiles, pinnacleHistory, sharpPositions, spreadPositions, totalPositions, sportsSharps, intelExcludedWallets, walletProfiles, loading };
@@ -8870,7 +8909,17 @@ export default function SharpFlow() {
     // sharpWalletProfiles cache populates — this drives HC badge availability.
   }, [sportsSharps, sharpPositions, spreadPositions, totalPositions, intelExcludedSet, polyData, pinnacleHistory, walletProfiles]);
 
-  if (loading || authLoading || subLoading) {
+  // v7.4 — block render until ALL fetch sources are loaded. The lock-state
+  // pipeline (decideLockStage / computeWalletConsensus) reads wallet
+  // whitelist tiers from the module-level cache populated by the
+  // sharpWalletProfiles Firestore fetch. If we render before that fetch
+  // resolves, every wallet looks tier=null → CONFIRMED sharps don't get
+  // counted → dw=0 → cards flash MUTED/WEAKENING for half a second before
+  // the second render flips them to ACTIVE. That two-step flip is what
+  // causes the "card says weakening but Firebase says HC=+1" mismatch.
+  // Gating on walletProfiles being non-null kills the race; the splash
+  // stays up until every input the lock decision reads is in memory.
+  if (loading || authLoading || subLoading || walletProfiles == null) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', color: B.textSec }}>
         <div style={{ textAlign: 'center' }}>

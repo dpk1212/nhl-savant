@@ -128,8 +128,17 @@ jobs:
             echo "--- writeSharpActions ---"
             node scripts/writeSharpActions.js || echo "writeSharpActions failed (cycle $i)"
 
+            # syncPickStateAuthoritative is the canonical Firestore writer
+            # for v7.4 lockStage / health / dw / dq / HC margin. Failure here
+            # leaves the dashboard rendering against stale Firestore (cards
+            # show old WEAKENING/MUTED state vs JSON's new ACTIVE state).
+            # If it fails inline, the sync-pick-state-on-deploy.yml workflow
+            # fires on the gh-pages push at the bottom of this cycle and
+            # re-runs it as a safety net within ~30s.
             echo "--- syncPickStateAuthoritative ---"
-            node scripts/syncPickStateAuthoritative.js || echo "syncPickState failed (cycle $i)"
+            if ! node scripts/syncPickStateAuthoritative.js; then
+              echo "::warning::syncPickStateAuthoritative failed inline (cycle $i) — will retry via sync-pick-state-on-deploy workflow after gh-pages push"
+            fi
 
             echo "--- updateClosingOdds ---"
             node scripts/updateClosingOdds.js || echo "closingOdds failed (cycle $i)"
