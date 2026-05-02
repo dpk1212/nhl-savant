@@ -420,15 +420,26 @@ exports.updateBetResults = onSchedule({
                 market: "MONEYLINE",
                 side: sideUpper,
               });
-              const units = sideData.peak?.units || sideData.lock?.units || 1;
+              // ?? not || — LEAN/0u plays correctly persist as 0 instead of
+              // falling through to the legacy `1` unit fallback that turned
+              // every LEAN loss into a -1u PnL hit.
+              const units = sideData.peak?.units ?? sideData.lock?.units ?? 0;
               const odds = sideData.peak?.odds || sideData.lock?.odds || 0;
-              const profit = calculateProfit(outcome, odds, units);
+              // LEAN tracking plays carry units=0 and contribute 0 PnL even
+              // when the underlying ticket would have lost. Tagged so the UI
+              // can render them with MUTED-style chrome instead of a normal
+              // win/loss row.
+              const isTracked = !units || sideData.lockStage === "LEAN" ||
+                sideData.v8_lockTier === "LEAN";
+              const profit = isTracked ? 0 :
+                calculateProfit(outcome, odds, units);
               const team = sideData.team || side;
 
               updates[`sides.${side}.status`] = "COMPLETED";
               updates[`sides.${side}.result.outcome`] = outcome;
               updates[`sides.${side}.result.profit`] =
                 parseFloat(profit.toFixed(2));
+              updates[`sides.${side}.result.tracked`] = isTracked;
               updates[`sides.${side}.result.gradedAt`] =
                 admin.firestore.FieldValue.serverTimestamp();
 
@@ -601,14 +612,18 @@ exports.updateBetResults = onSchedule({
                 side: sideUpper,
                 line: line,
               });
-              const units = sideData.peak?.units || sideData.lock?.units || 1;
+              const units = sideData.peak?.units ?? sideData.lock?.units ?? 0;
               const odds = sideData.peak?.odds || sideData.lock?.odds || 0;
-              const profit = calculateProfit(outcome, odds, units);
+              const isTracked = !units || sideData.lockStage === "LEAN" ||
+                sideData.v8_lockTier === "LEAN";
+              const profit = isTracked ? 0 :
+                calculateProfit(outcome, odds, units);
 
               updates[`sides.${side}.status`] = "COMPLETED";
               updates[`sides.${side}.result.outcome`] = outcome;
               updates[`sides.${side}.result.profit`] =
                 parseFloat(profit.toFixed(2));
+              updates[`sides.${side}.result.tracked`] = isTracked;
               updates[`sides.${side}.result.gradedAt`] =
                 admin.firestore.FieldValue.serverTimestamp();
 
@@ -736,14 +751,18 @@ exports.updateBetResults = onSchedule({
                 side: sideUpper,
                 line: line,
               });
-              const units = sideData.peak?.units || sideData.lock?.units || 1;
+              const units = sideData.peak?.units ?? sideData.lock?.units ?? 0;
               const odds = sideData.peak?.odds || sideData.lock?.odds || 0;
-              const profit = calculateProfit(outcome, odds, units);
+              const isTracked = !units || sideData.lockStage === "LEAN" ||
+                sideData.v8_lockTier === "LEAN";
+              const profit = isTracked ? 0 :
+                calculateProfit(outcome, odds, units);
 
               updates[`sides.${side}.status`] = "COMPLETED";
               updates[`sides.${side}.result.outcome`] = outcome;
               updates[`sides.${side}.result.profit`] =
                 parseFloat(profit.toFixed(2));
+              updates[`sides.${side}.result.tracked`] = isTracked;
               updates[`sides.${side}.result.gradedAt`] =
                 admin.firestore.FieldValue.serverTimestamp();
 

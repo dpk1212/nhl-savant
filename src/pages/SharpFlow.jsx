@@ -2668,7 +2668,17 @@ function tallySides(snap) {
         // ROI, or PnL graphs. Cards keep showing the muted state post-grade for
         // historical context (see LockedPickCard isMuted gate).
         if (sideData.superseded || sideData.health?.status === 'CANCELLED' || sideData.health?.status === 'MUTED' || sideData.lockStage === 'SHADOW') continue;
-        const u = sideData.peak?.units || sideData.lock?.units || 1;
+        // LEAN / 0u tracking plays grade as displays-only — they NEVER bet
+        // money. Exclude from W-L-P record, ROI, totalUnits, totalProfit.
+        // The result.tracked flag (set by the Cloud Function grader v2)
+        // is the canonical signal; legacy graded picks fall back to the
+        // unit/lockStage/v8 tier signals so they retroactively get the
+        // same treatment.
+        const u = sideData.peak?.units ?? sideData.lock?.units ?? 0;
+        const isTrackedOnly = sideData.result?.tracked === true
+          || u === 0 || sideData.lockStage === 'LEAN'
+          || sideData.v8_lockTier === 'LEAN';
+        if (isTrackedOnly) continue;
         totalUnits += u;
         const profit = sideData.result?.profit ?? 0;
         if (sideData.result?.outcome === 'WIN') { wins++; totalProfit += profit; }
@@ -2677,7 +2687,8 @@ function tallySides(snap) {
       }
     } else {
       if (data.status !== 'COMPLETED') return;
-      const u = data.units || 1;
+      const u = data.units ?? 0;
+      if (!u) return;
       totalUnits += u;
       const profit = data.result?.profit ?? 0;
       if (data.result?.outcome === 'WIN') { wins++; totalProfit += profit; }
@@ -2760,14 +2771,19 @@ async function loadAllTimePnL() {
         // outcome should not count toward record / ROI / PnL graphs. The pick
         // is still pushed into `picks` with cancelled=true so individual cards
         // still render the muted styling and the historical outcome.
-        const isCancelled = !!(sd.superseded || sd.health?.status === 'CANCELLED' || sd.health?.status === 'MUTED' || sd.lockStage === 'SHADOW');
+        // LEAN / 0u tracking plays get the same treatment — they were
+        // explicitly tracked-only and never bet, so they don't pollute PnL.
+        const u = sd.peak?.units ?? sd.lock?.units ?? 0;
+        const isTrackedOnly = sd.result?.tracked === true
+          || u === 0 || sd.lockStage === 'LEAN'
+          || sd.v8_lockTier === 'LEAN';
+        const isCancelled = !!(sd.superseded || sd.health?.status === 'CANCELLED' || sd.health?.status === 'MUTED' || sd.lockStage === 'SHADOW' || isTrackedOnly);
         const bestSnap = sd.peak || sd.lock;
         const lockSnap = sd.lock || bestSnap;
         const s = bestSnap?.stars ?? estimateStarsFromSnap(bestSnap);
         const key = starBucket(s);
         if (!byStars[key]) byStars[key] = emptyBucket();
         if (!isCancelled) byStars[key].totalPicks++;
-        const u = bestSnap?.units || 1;
         if (sd.status === 'COMPLETED' && !isCancelled) {
           byStars[key].totalUnits += u;
           if (sd.result?.outcome === 'WIN') { byStars[key].wins++; byStars[key].totalProfit += (sd.result?.profit || 0); }
@@ -2780,10 +2796,12 @@ async function loadAllTimePnL() {
           const lkEV = lockSnap?.evEdge ?? null;
           const pkEV = bestSnap?.evEdge ?? null;
           const regime = bestSnap?.regime || lockSnap?.regime || null;
-          const pick = { date: data.date, sport: data.sport || 'NHL', marketType: mt, stars: pickStars, lockStars: lkStars, lockEV: lkEV, peakEV: pkEV, units: u, status: sd.status || 'PENDING', outcome: null, profit: 0, clv: null, cancelled: isCancelled, regime };
+          const pick = { date: data.date, sport: data.sport || 'NHL', marketType: mt, stars: pickStars, lockStars: lkStars, lockEV: lkEV, peakEV: pkEV, units: u, status: sd.status || 'PENDING', outcome: null, profit: 0, clv: null, cancelled: isCancelled, tracked: isTrackedOnly, regime };
           if (sd.status === 'COMPLETED') {
             pick.outcome = sd.result?.outcome || null;
-            if (sd.result?.outcome === 'WIN') { pick.profit = sd.result?.profit || 0; }
+            // Tracked-only LEAN picks always grade at 0u PnL regardless of W/L.
+            if (isTrackedOnly) { pick.profit = 0; }
+            else if (sd.result?.outcome === 'WIN') { pick.profit = sd.result?.profit || 0; }
             else if (sd.result?.outcome === 'LOSS') { pick.profit = -u; }
             if (sd.result?.clv != null) pick.clv = sd.result.clv;
           }
@@ -4705,7 +4723,7 @@ const HEALTH_REASON_LABELS = {
 };
 
 const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
-  const { team, away, home, sport, stars, peakStars, lockStars, units, peakUnits, isDownsized, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, lockEV, criteriaMet, criteria, consensusStrength, pinnacleOdds, marketType, line, superseded, health, lockTier, isTopPick: isTopPickPre, isSuperTopPick: isSuperTopPickPre, walletConsensusDelta, walletConsensusForW, walletConsensusAgW, walletConsensusQualityMargin, walletConsensusQualityForT30, walletConsensusQualityAgT30, hcDominant, hcConfFor, hcConfAg, hcMargin, systemVersion, promotedBy, v73HcRescue } = pick;
+  const { team, away, home, sport, stars, peakStars, lockStars, units, peakUnits, isDownsized, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, lockEV, criteriaMet, criteria, consensusStrength, pinnacleOdds, marketType, line, superseded, health, lockTier, trackedOnly, isTopPick: isTopPickPre, isSuperTopPick: isSuperTopPickPre, walletConsensusDelta, walletConsensusForW, walletConsensusAgW, walletConsensusQualityMargin, walletConsensusQualityForT30, walletConsensusQualityAgT30, hcDominant, hcConfFor, hcConfAg, hcMargin, systemVersion, promotedBy, v73HcRescue } = pick;
   // v7.1/v7.2/v7.3 — render the gold "HC ×N" chip when the pick is post-cutover
   // AND has HC backing. Pre-cutover picks never see the chip.
   // v7.2/v7.3 SUPER tier (HC margin ≥ +2): chip reads "HC ×1.75"
@@ -4773,6 +4791,16 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   const isLean  = lockTier === 'LEAN' && !isGraded;
   const isElite = lockTier === 'ELITE';
 
+  // v7.4 fix — graded LEAN/0u tracked-only picks. The card still shows
+  // the W/L outcome (informational — "would have won/lost") but the unit
+  // chip reads 0u, the PnL reads 0.00u, and the visual treatment matches
+  // graded MUTED picks (amber/blue accent, dimmed) so they never read
+  // as a normal -1u loss line. Source of truth: the `trackedOnly` flag
+  // computed by the locked-list builder, which honors result.tracked
+  // from the Cloud Function grader plus the legacy unit/lockStage/v8
+  // signals for picks graded before the grader fix.
+  const isTrackedGrade = isGraded && !!trackedOnly;
+
   // v6.4 — DOWNSIZED is a display overlay on ACTIVE (not a health status).
   // A DOWNSIZED pick is still "on" but at 50%+ cut size because the live
   // vault-star dropped ≥ 1.0 below peak. Never shows while graded, muted,
@@ -4780,7 +4808,9 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   const showDownsize = !!isDownsized && !isGraded && !isMuted && !isCancelled && !superseded && !isLean;
   const DOWNSIZE_AMBER = '#D4AF37'; // gold/amber — less severe than #F59E0B (mute)
   const LEAN_BLUE     = '#60A5FA'; // light-blue — distinct from gold (top pick) and amber (mute)
-  const accentColor = isCancelled ? B.red : isMuted ? '#F59E0B' : isLean ? LEAN_BLUE : showDownsize ? DOWNSIZE_AMBER : isGraded ? (isWin ? B.green : isLoss ? B.red : B.gold) : B.green;
+  // Graded LEAN picks adopt the LEAN-blue palette so their card chrome
+  // reads "tracked, no money at risk" instead of normal win/loss colors.
+  const accentColor = isCancelled ? B.red : isMuted ? '#F59E0B' : isTrackedGrade ? LEAN_BLUE : isLean ? LEAN_BLUE : showDownsize ? DOWNSIZE_AMBER : isGraded ? (isWin ? B.green : isLoss ? B.red : B.gold) : B.green;
   const teamShort = team?.split(' ').pop() || team;
   const awayShort = away?.split(' ').pop() || away;
   const homeShort = home?.split(' ').pop() || home;
@@ -4817,10 +4847,10 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   return (
     <div style={{
       borderRadius: '12px', overflow: 'hidden', position: 'relative',
-      opacity: isCancelled ? 0.4 : isMuted ? 0.6 : superseded ? 0.55 : isLean ? 0.85 : 1,
+      opacity: isCancelled ? 0.4 : isMuted ? 0.6 : superseded ? 0.55 : (isLean || isTrackedGrade) ? 0.65 : 1,
       background: superseded
         ? `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`
-        : isLean
+        : (isLean || isTrackedGrade)
         ? `linear-gradient(135deg, rgba(96,165,250,0.04) 0%, ${B.card} 30%, ${B.cardAlt} 100%)`
         : isTopPick && !isMuted && !isCancelled
         ? `linear-gradient(135deg, rgba(212,175,55,0.06) 0%, ${B.card} 30%, ${B.cardAlt} 100%)`
@@ -4831,14 +4861,14 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
         ? '1px solid rgba(245,158,11,0.35)'
         : superseded
         ? `1px solid rgba(239,68,68,0.3)`
-        : isLean
+        : (isLean || isTrackedGrade)
         ? '1px solid rgba(96,165,250,0.30)'
         : isSuperTopPick
         ? '1px solid rgba(212,175,55,0.6)'
         : isTopPick
         ? '1px solid rgba(212,175,55,0.45)'
         : `1px solid ${isGraded ? (isWin ? 'rgba(16,185,129,0.2)' : isLoss ? 'rgba(239,68,68,0.2)' : B.border) : 'rgba(16,185,129,0.18)'}`,
-      boxShadow: isCancelled || isMuted || superseded || isLean ? 'none'
+      boxShadow: isCancelled || isMuted || superseded || isLean || isTrackedGrade ? 'none'
         : isSuperTopPick
         ? '0 0 24px rgba(212,175,55,0.18), 0 0 48px rgba(212,175,55,0.06)'
         : isTopPick
@@ -4850,7 +4880,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
         ? 'linear-gradient(90deg, transparent, #EF4444, #F87171, #EF4444, transparent)'
         : isMuted
         ? 'linear-gradient(90deg, transparent, #F59E0B, #FBBF24, #F59E0B, transparent)'
-        : isLean
+        : (isLean || isTrackedGrade)
         ? 'linear-gradient(90deg, transparent, #60A5FA, #93C5FD, #60A5FA, transparent)'
         : isTopPick
         ? 'linear-gradient(90deg, transparent, #D4AF37, #F5D060, #D4AF37, transparent)'
@@ -4881,6 +4911,19 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
             )}
             {isMuted && !isCancelled && (
               <Badge color="#F59E0B" bg="rgba(245,158,11,0.12)">WEAKENING</Badge>
+            )}
+            {isTrackedGrade && !isMuted && !isCancelled && !superseded && (
+              <span
+                title={`LEAN tracked-only — system explicitly recommended 0u (Δw+Δq fell short of the lock floor at lock time). The W/L outcome is informational; no money was at risk and no PnL is recorded.`}
+                style={{
+                  ...T.micro, fontWeight: 800, letterSpacing: '0.05em',
+                  padding: '0.15rem 0.5rem', borderRadius: '4px',
+                  color: LEAN_BLUE, background: 'rgba(96,165,250,0.12)',
+                  border: '1px solid rgba(96,165,250,0.35)',
+                }}
+              >
+                TRACKED · LEAN
+              </span>
             )}
             {isLean && !isMuted && !isCancelled && !superseded && (
               <span
@@ -4975,6 +5018,10 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
               <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
                 <span style={{ textDecoration: 'line-through' }}>{peakUnits ?? units}u</span> 0u @ {fmtO(odds)} · {book}
               </span>
+            ) : isTrackedGrade ? (
+              <span style={{ ...T.micro, color: LEAN_BLUE, fontFeatureSettings: "'tnum'", fontWeight: 700 }}>
+                LEAN · 0u @ {fmtO(odds)} · {book}
+              </span>
             ) : isLean ? (
               <span style={{ ...T.micro, color: LEAN_BLUE, fontFeatureSettings: "'tnum'", fontWeight: 700 }}>
                 LEAN · 0u @ {fmtO(odds)} · {book}
@@ -5001,6 +5048,16 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                   border: '1px solid rgba(245,158,11,0.25)',
                   letterSpacing: '0.04em',
                 }}>MUTED · {outcome}</span>
+              ) : isTrackedGrade ? (
+                // v7.4 fix: graded LEAN tracked-only play. Show outcome for
+                // context with the LEAN-blue palette so it never reads as a
+                // normal win/loss row. PnL still renders "0.00u" below.
+                <span style={{
+                  ...T.micro, fontWeight: 700, padding: '0.15rem 0.45rem', borderRadius: '4px',
+                  color: LEAN_BLUE, background: 'rgba(96,165,250,0.10)',
+                  border: '1px solid rgba(96,165,250,0.30)',
+                  letterSpacing: '0.04em',
+                }}>TRACKED · {outcome}</span>
               ) : (
                 <span style={{
                   ...T.micro, fontWeight: 800, padding: '0.15rem 0.45rem', borderRadius: '4px',
@@ -5011,13 +5068,13 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
             ) : (
               <span style={{ ...T.micro, fontWeight: 700, color: B.gold, padding: '0.15rem 0.45rem', borderRadius: '4px', background: B.goldDim }}>PENDING</span>
             )}
-            {isGraded && !isMuted && (
+            {isGraded && !isMuted && !isTrackedGrade && (
               <span style={{ ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'", color: isWin ? B.green : isLoss ? B.red : B.textSec }}>
                 {isWin ? '+' : isLoss ? '' : ''}{(profit || 0).toFixed(2)}u
               </span>
             )}
-            {isGraded && isMuted && (
-              <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: B.textMuted }}>
+            {isGraded && (isMuted || isTrackedGrade) && (
+              <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: isTrackedGrade ? LEAN_BLUE : B.textMuted }}>
                 0.00u
               </span>
             )}
@@ -5094,26 +5151,26 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
             <div style={{ marginBottom: '0.625rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
                 <span style={{ ...T.label, fontWeight: 800, color: accentColor }}>
-                  {isCancelled ? 'CANCELLED' : isMuted ? 'WEAKENING' : isLean ? 'LEAN · TRACKED' : isGraded ? (isWin ? 'WINNING BET' : isLoss ? 'LOSING BET' : 'PUSH') : 'LOCKED BET'}
+                  {isCancelled ? 'CANCELLED' : isMuted ? 'WEAKENING' : isTrackedGrade ? `TRACKED · ${isWin ? 'WIN' : isLoss ? 'LOSS' : 'PUSH'} (0u)` : isLean ? 'LEAN · TRACKED' : isGraded ? (isWin ? 'WINNING BET' : isLoss ? 'LOSING BET' : 'PUSH') : 'LOCKED BET'}
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                   <span style={{
-                    ...T.body, fontWeight: 900, color: isCancelled ? B.textMuted : isLean ? LEAN_BLUE : '#fff',
+                    ...T.body, fontWeight: 900, color: isCancelled ? B.textMuted : (isLean || isTrackedGrade) ? LEAN_BLUE : '#fff',
                     padding: '0.2rem 0.6rem', borderRadius: '5px',
                     background: isCancelled
                       ? 'linear-gradient(135deg, rgba(239,68,68,0.15), rgba(239,68,68,0.08))'
                       : isMuted
                       ? 'linear-gradient(135deg, #F59E0B, #D97706)'
-                      : isLean
+                      : (isLean || isTrackedGrade)
                       ? 'rgba(96,165,250,0.12)'
                       : isGraded
                       ? (isWin ? 'linear-gradient(135deg, #10B981, #059669)' : isLoss ? 'linear-gradient(135deg, #EF4444, #DC2626)' : 'linear-gradient(135deg, #64748B, #475569)')
                       : 'linear-gradient(135deg, #10B981, #059669)',
-                    border: `1px solid ${isCancelled ? 'rgba(239,68,68,0.3)' : isMuted ? 'rgba(245,158,11,0.4)' : isLean ? 'rgba(96,165,250,0.35)' : isWin ? 'rgba(16,185,129,0.4)' : isLoss ? 'rgba(239,68,68,0.4)' : 'rgba(16,185,129,0.4)'}`,
+                    border: `1px solid ${isCancelled ? 'rgba(239,68,68,0.3)' : isMuted ? 'rgba(245,158,11,0.4)' : (isLean || isTrackedGrade) ? 'rgba(96,165,250,0.35)' : isWin ? 'rgba(16,185,129,0.4)' : isLoss ? 'rgba(239,68,68,0.4)' : 'rgba(16,185,129,0.4)'}`,
                     fontFeatureSettings: "'tnum'",
                     textDecoration: (isCancelled || isMuted) ? 'line-through' : 'none',
                   }}>
-                    {isLean ? '0u · TRACK' : (isCancelled || isMuted) ? `${ut.icon} ${units}u → 0u` : `${ut.icon} ${units}u`}
+                    {(isLean || isTrackedGrade) ? '0u · TRACK' : (isCancelled || isMuted) ? `${ut.icon} ${units}u → 0u` : `${ut.icon} ${units}u`}
                   </span>
                   {/* v7.1/v7.2 — HC chip. Indicates high-conviction CONFIRMED
                       wallets backing this side. v7.2 SUPER tier (HC_m ≥ +2)
@@ -10730,8 +10787,20 @@ export default function SharpFlow() {
                         const lock = sd.lock || {};
                         const stars = peak.stars || lock.stars || 0;
                         if (stars < 2.5) continue;
-                        const peakUnits = peak.units || lock.units || 1;
+                        // ?? not || — preserve peak.units = 0 (LEAN tracking
+                        // plays). Falsy-or fallback to 1 was the bug behind
+                        // every LEAN graded pick rendering as a -1u loss.
+                        const peakUnits = peak.units ?? lock.units ?? 0;
                         const peakStars = stars;
+                        // True iff this side was a tracked-only LEAN play —
+                        // either the Cloud Function grader stamped tracked=true
+                        // (post-fix), or the side's units/stage/lockTier still
+                        // tell us so for legacy graded picks. Such picks render
+                        // with MUTED-style chrome and contribute 0 PnL.
+                        const isTrackedOnly = sd.result?.tracked === true
+                          || peakUnits === 0
+                          || sd.lockStage === 'LEAN'
+                          || sd.v8_lockTier === 'LEAN';
                         const lockOddsValid = lock.odds && Math.abs(lock.odds) <= 400;
                         const lockStars = lock.stars || 0;
                         const marketTypeKey = doc.marketType || 'ml';
@@ -10782,8 +10851,13 @@ export default function SharpFlow() {
                         const liveTier = sizing.liveTier;
                         // Realized PnL uses peak (the recommendation the system
                         // committed to at lock time). Live decay is a display
-                        // advisory for picks you haven't placed yet.
-                        const profit = sd.result?.outcome === 'WIN' ? (sd.result?.profit || 0) : sd.result?.outcome === 'LOSS' ? -(peakUnits) : 0;
+                        // advisory for picks you haven't placed yet. LEAN /
+                        // tracked-only picks always realize 0u PnL — they were
+                        // never bet, so the W/L outcome is informational only.
+                        const profit = isTrackedOnly
+                          ? 0
+                          : sd.result?.outcome === 'WIN' ? (sd.result?.profit || 0)
+                          : sd.result?.outcome === 'LOSS' ? -(peakUnits) : 0;
                         allLockedArr.push({
                           key: `${docId}:${sideKey}`,
                           team: sd.team || sideKey,
@@ -10829,6 +10903,12 @@ export default function SharpFlow() {
                           line: peak.line || lock.line || null,
                           superseded: !!sd.superseded,
                           health: healthResolved,
+                          // True when this side was a LEAN / 0u tracked-only
+                          // play. The card renderer uses this to apply MUTED
+                          // styling and a "TRACKED" badge instead of WIN/LOSS
+                          // chrome. Wins and losses on tracked picks are
+                          // informational; they contribute 0u to PnL.
+                          trackedOnly: isTrackedOnly,
                           // V8.3 Phase 2 — wallet consensus attribution (stamped by syncPickToFirebase).
                           // These flow into the PROVEN CONSENSUS UI badge on Δ ≥ +2 picks.
                           walletConsensusDelta: sd.v8_walletConsensusDelta ?? null,
