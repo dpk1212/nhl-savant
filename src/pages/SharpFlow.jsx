@@ -683,6 +683,16 @@ function lockTierFromDeltas(dw, dq, hcDominant = false, opts = {}) {
     ? opts.hcMargin
     : (hcDominant ? 1 : 0);
   const v73 = isV73Eligible(opts.pickDate);
+  const v74 = isV74Eligible(opts.pickDate);
+
+  // v7.4 — single floor: HC ≥ +1 ∧ dw,dq ≥ 0  OR  Σ ≥ 5 ∧ dw,dq ≥ +1.
+  // Anything else returns MUTED (no LEAN tier under v7.4 — picks below
+  // the floor get hidden via lockStage='SHADOW' written by the cron).
+  if (v74) {
+    if (sum >= V7_4_ELITE_SIGMA && dw >= 1 && dq >= 1) return 'ELITE';
+    if (meetsV74Floor(dw, dq, hcMargin)) return 'LOCKED';
+    return 'MUTED';
+  }
 
   // v7.3 — HC margin floor override. HC_m ≥ +1 ∧ both axes ≥ 0 ∧ Σ ≥ +1
   // routes to LOCKED regardless of the v6.6 hybrid floor (which requires
@@ -1221,6 +1231,65 @@ function isV73Eligible(pickDate) {
   return pickDate >= V7_3_CUTOVER_DATE;
 }
 
+// ─── v7.4 — single-floor display contract ────────────────────────────────
+// The canonical lock/display gate. A pick gets locked AND displayed iff:
+//   (a) HC route:  HC_m ≥ +1 ∧ dw ≥ 0 ∧ dq ≥ 0      ← high-conviction
+//   (b) Sum route: dw ≥ +1 ∧ dq ≥ +1 ∧ Σ ≥ +5         ← classic two-factor
+// Anything else is SHADOW (not displayed) — including the v7.3 LEAN cohort
+// (Σ ∈ {3,4} without HC) and the legacy v6.6 hybrid floor (Σ ≥ 3 with both
+// axes ≥ 1) which previously surfaced as "TRACK ONLY" cards. dw ≤ -2 still
+// CANCELS (kept as a hard fade signal).
+//
+// Drives:
+//   • decideLockStage         — write-time gate (LEAN bypasses removed)
+//   • lockTierFromDeltas      — never returns LEAN under v7.4
+//   • evaluatePickHealth      — picks below floor mute (or stay SHADOW)
+//   • locked-list display     — hides any side that doesn't currently meet
+//                               the floor pre-T-15 (server cron + browser
+//                               recompute keep the doc state in lock-step)
+//   • syncPickStateAuthoritative — authoritative every-cycle re-evaluation
+//
+// Re-evaluated every fetch cycle (~8 min) until T-15 freeze. Pre-T-15 a
+// pick can transition LOCKED↔SHADOW↔CANCELLED freely with live data.
+const V7_4_CUTOVER_DATE = '2026-05-02';
+const V7_4_FLOOR_ENABLED = true;
+const V7_4_SIGMA_FLOOR  = 5;             // sum route requires Σ ≥ this
+const V7_4_HC_MARGIN_FLOOR = 1;          // HC route requires HC_m ≥ this
+const V7_4_ELITE_SIGMA  = 7;             // ELITE tier (max units) gate
+
+function isV74Eligible(pickDate) {
+  if (!V7_4_FLOOR_ENABLED) return false;
+  if (typeof pickDate !== 'string') return false;
+  return pickDate >= V7_4_CUTOVER_DATE;
+}
+
+// Single source of truth for the v7.4 lock gate.
+function meetsV74Floor(dw, dq, hcMargin) {
+  if (!Number.isFinite(dw) || !Number.isFinite(dq)) return false;
+  const hcM = Number.isFinite(hcMargin) ? hcMargin : 0;
+  const sum = dw + dq;
+  const hcRoute  = hcM >= V7_4_HC_MARGIN_FLOOR && dw >= 0 && dq >= 0;
+  const sumRoute = dw >= 1 && dq >= 1 && sum >= V7_4_SIGMA_FLOOR;
+  return hcRoute || sumRoute;
+}
+
+// True iff the pick should display in the locked-picks list right now.
+// Honors v7.4 for post-cutover dates; pre-cutover picks fall through to
+// the previous (LEAN-permissive) display rules so historical context
+// stays intact.
+function passesV74DisplayGate({ pickDate, dw, dq, hcMargin, dwLock, dqLock, hcMarginLock, isGraded }) {
+  if (!isV74Eligible(pickDate)) return true;
+  if (isGraded) return true;
+  // Use live values when available; fall back to lock-time stamps so picks
+  // that recently degraded are still identifiable for audit trails.
+  const liveDw = Number.isFinite(dw) ? dw : (dwLock ?? null);
+  const liveDq = Number.isFinite(dq) ? dq : (dqLock ?? null);
+  const liveHc = Number.isFinite(hcMargin) ? hcMargin : (hcMarginLock ?? 0);
+  if (liveDw == null || liveDq == null) return false;
+  if (liveDw <= -2) return true;        // CANCELLED stays visible (with toggle)
+  return meetsV74Floor(liveDw, liveDq, liveHc);
+}
+
 // Set of promotedBy values that count as a legitimate ship to the locked
 // picks list. Includes v7.0 floor sources and every v7.x HC variant. Sync
 // + restamp paths use this so newly-added promotion sources flow through
@@ -1236,6 +1305,7 @@ const PROMOTED_BY_FLOORS = new Set([
   'v73-sigma1-hc',            // v7.3 Σ=1 ∧ HC_m ≥ +1 (NEW lock floor)
   'v73-sigma2-hc',            // v7.3 Σ=2 ∧ HC_m ≥ +1 (graduates v7.2 LEAN to LOCK)
   'v73-hc-rescue',            // v7.3 dw=0 OR dq=0 ∧ HC_m ≥ +1 (rescued from MUTE)
+  'v74-hc-margin',            // v7.4 HC_m ≥ +1 ∧ dw,dq ≥ 0  — single HC route
 ]);
 function isPromotedBy(promotedBy) {
   return PROMOTED_BY_FLOORS.has(promotedBy);
@@ -1406,11 +1476,15 @@ function computeWalletConsensus(walletDetails, sport, sideKey, pickDate = null) 
 
   // v6.6 PROMOTION — Hybrid floor. Δw ≥ +1 AND Δq ≥ +1 AND Δw+Δq ≥ +3.
   // v7.3 PROMOTION — additionally HC_m ≥ +1 ∧ dw ≥ 0 ∧ dq ≥ 0 ∧ sum ≥ +1.
+  // v7.4 PROMOTION — Σ floor tightens to ≥ +5 (was +3 under v6.6/v7.3).
+  // The HC route is unchanged. Removes the LEAN cohort from being eligible.
   // unitBonus is no longer summed into sizing — sizing is derived from
   // the two-factor star directly. Retained here only so legacy callers
   // and ranking reports read a consistent value (0 always).
   if (cfg.promote) {
-    if (dw >= 1 && dq >= 1 && (dw + dq) >= 3) {
+    const v74 = isV74Eligible(pickDate);
+    const sumFloor = v74 ? V7_4_SIGMA_FLOOR : 3;
+    if (dw >= 1 && dq >= 1 && (dw + dq) >= sumFloor) {
       result.promotionEligible = true;
     } else if (v73HcOverride && dw >= 0 && dq >= 0 && (dw + dq) >= 1) {
       result.promotionEligible = true;
@@ -1474,6 +1548,7 @@ function evaluatePickHealth({
   // cohort went 11-2 (84.6% WR, +85% ROI, p=0.006).
   const hcMargin = (walletConsensus?.hcConfFor || 0) - (walletConsensus?.hcConfAg || 0);
   const v73HcOverride = isV73Eligible(pickDate) && hcMargin >= 1;
+  const v74 = isV74Eligible(pickDate);
 
   if (!tooCloseForWhitelist) {
     if (dw <= -2) {
@@ -1511,9 +1586,11 @@ function evaluatePickHealth({
         walletDelta: dw, qualityMargin: dq,
       };
     }
-    if (dw >= 1 && dq >= 1 && (dw + dq) < 3 && !v73HcOverride) {
-      // v6.6 — both axes positive but the bleeder 1/+1 cohort: sum=+2,
-      // below the hybrid floor's sum≥+3 requirement.
+    // v7.4 — single-floor sum mute. Σ floor is +5 (was +3 under v6.6).
+    // HC route still passes via v73HcOverride. Picks below v7.4 floor
+    // mute so the locked-list display gate hides them.
+    const sumFloor = v74 ? V7_4_SIGMA_FLOOR : 3;
+    if (dw >= 1 && dq >= 1 && (dw + dq) < sumFloor && !v73HcOverride) {
       return {
         status: 'MUTED',
         reasons: ['sum_below_floor', ...diagnostic],
@@ -1527,7 +1604,7 @@ function evaluatePickHealth({
   // UI can render the "RESCUED · HC" chip and the daily report can
   // tally the cohort.
   const reasons = [...diagnostic];
-  if (v73HcOverride && (dw === 0 || dq <= 0 || (dw + dq) < 3)) {
+  if (v73HcOverride && (dw === 0 || dq <= 0 || (dw + dq) < (v74 ? V7_4_SIGMA_FLOOR : 3))) {
     reasons.push('v73_hc_rescue');
   }
 
@@ -1695,7 +1772,32 @@ function decideLockStage(regime, v8Scoring, sideKey, sport = null, baseStars = 0
   // we don't accidentally promote disabled sports.
   const v72 = isV72Eligible(pickDate);
   const v73 = isV73Eligible(pickDate);
+  const v74 = isV74Eligible(pickDate);
   const sport_cfg = WHITELIST_INTERVENTION[sport];
+
+  // v7.4 — single floor. The HC route + Σ ≥ 5 sum route are the ONLY
+  // paths to LOCKED. All v7.x LEAN bypasses (sigma1-hc, sigma2-hc,
+  // hc-rescue, sigma2-lean, sigma2-lock) collapse into either qualifying
+  // for the HC route or being SHADOW. wc.promotionEligible already uses
+  // Σ ≥ 5 for v7.4-eligible picks (computeWalletConsensus tightens the
+  // floor automatically), so we just evaluate the gate once here.
+  if (v74) {
+    if (!sport_cfg?.promote) {
+      return { stage: 'SHADOW', contribTier, promotedBy: null, dw, dq, lockTier, hcDominant, hcMargin };
+    }
+    if (!meetsV74Floor(dw, dq, hcMargin)) {
+      return { stage: 'SHADOW', contribTier, promotedBy: null, dw, dq, lockTier, hcDominant, hcMargin };
+    }
+    const hcRoute = hcMargin >= V7_4_HC_MARGIN_FLOOR && dw >= 0 && dq >= 0;
+    let promotedBy;
+    if (sum >= V7_4_ELITE_SIGMA && dw >= 1 && dq >= 1) promotedBy = 'two-factor-floor';
+    else if (dw >= 1 && dq >= 1 && sum >= V7_4_SIGMA_FLOOR) promotedBy = 'two-factor-floor';
+    else if (hcRoute && hcMargin >= 2) promotedBy = 'v74-hc-margin';
+    else if (hcRoute) promotedBy = 'v74-hc-margin';
+    else promotedBy = 'two-factor-floor';
+    return { stage: 'LOCKED', contribTier, promotedBy, dw, dq, lockTier, hcDominant, hcMargin };
+  }
+
   // v7.3 — Σ=1 ∧ HC_m ≥ +1 lock floor (NEW).
   const v73Sigma1HC = v73 && sport_cfg?.promote
     && hcMargin >= 1 && dw >= 0 && dq >= 0 && sum === 1;
@@ -10783,6 +10885,26 @@ export default function SharpFlow() {
                       const docSport = doc.sport || 'NHL';
                       for (const [sideKey, sd] of Object.entries(doc.sides || {})) {
                         if (sd.lockStage === 'SHADOW' || sd.superseded) continue;
+                        // v7.4 single-floor display gate. For post-cutover
+                        // picks, only render sides that currently pass the
+                        // floor (HC ≥ +1 OR Σ ≥ 5). Graded picks always
+                        // render (so historical results are visible).
+                        // CANCELLED picks (dw ≤ -2) also pass through here
+                        // and are toggled on by the existing "Show
+                        // cancelled" UI button.
+                        const sdGraded = sd.status === 'COMPLETED' && !!sd.result?.outcome;
+                        if (!passesV74DisplayGate({
+                          pickDate: doc.date,
+                          dw: sd.v8_walletConsensusDelta,
+                          dq: sd.v8_walletConsensusQualityMargin,
+                          hcMargin: Number.isFinite(sd.v8_hcMargin)
+                            ? sd.v8_hcMargin
+                            : ((sd.v8_hcConfFor || 0) - (sd.v8_hcConfAg || 0)),
+                          dwLock: sd.lock?.v8Scoring?.delta,
+                          dqLock: sd.lock?.v8Scoring?.qualityMargin,
+                          hcMarginLock: sd.lock?.v8Scoring?.hcMargin,
+                          isGraded: sdGraded,
+                        })) continue;
                         const peak = sd.peak || sd.lock || {};
                         const lock = sd.lock || {};
                         const stars = peak.stars || lock.stars || 0;

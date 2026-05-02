@@ -17,12 +17,18 @@
  *
  * BEHAVIOUR (the contract):
  *   • Every cycle is independent. Live consensus is recomputed from current
- *     sharp_action_positions; the canonical state is whatever the v7.3
+ *     sharp_action_positions; the canonical state is whatever the v7.4
  *     ladder says about *right now*. No hysteresis, no confirmation counts,
  *     no debouncing — if dw flipped to -2 this cycle, the pick is CANCELLED
  *     this cycle.
+ *   • v7.4 — single floor display contract (post-2026-05-02 picks):
+ *       LOCK iff (HC_m ≥ +1 ∧ dw,dq ≥ 0)  OR  (Σ ≥ 5 ∧ dw,dq ≥ +1).
+ *     Anything else (including the v7.3 LEAN cohort and v6.6 Σ ∈ {3,4})
+ *     gets lockStage='SHADOW' written back so the locked-list display gate
+ *     hides them automatically. Recovery is instant: a SHADOW side that
+ *     re-crosses the floor flips back to lockStage='LOCKED' the same cycle.
  *   • Status, lockTier, units, HC margin, and stamps are all free to flip
- *     in any direction (ACTIVE↔MUTED↔CANCELLED↔ACTIVE, LEAN↔LOCKED↔ELITE,
+ *     in any direction (ACTIVE↔MUTED↔CANCELLED↔ACTIVE, SHADOW↔LOCKED↔ELITE,
  *     up or down on units) up until T-15. Cancel is *not* sticky pre-T-15.
  *   • HC rescue freshness re-evaluates every cycle: if a pick was promoted
  *     via v73-hc-rescue and live HC margin drops < +1 (with v6.6 floor
@@ -61,6 +67,15 @@ const V6_CUTOVER = '2026-04-18';
 const V7_1_CUTOVER_DATE = '2026-04-30';
 const V7_2_CUTOVER_DATE = '2026-04-30';
 const V7_3_CUTOVER_DATE = '2026-04-30';
+// v7.4 — single floor display contract. (HC_m ≥ +1 ∧ dw,dq ≥ 0) OR
+// (Σ ≥ 5 ∧ dw,dq ≥ +1) → LOCKED. Anything else → SHADOW. dw ≤ -2 still
+// CANCELS. LEAN tier eliminated entirely. Server cron writes lockStage
+// every cycle so the doc state is always in lock-step with live data
+// pre-T-15.
+const V7_4_CUTOVER_DATE = '2026-05-02';
+const V7_4_SIGMA_FLOOR = 5;
+const V7_4_HC_MARGIN_FLOOR = 1;
+const V7_4_ELITE_SIGMA = 7;
 
 // v7.3 unit floors for HC-promoted sub-Σ-3 picks.
 const V7_3_SIGMA1_LOCK_UNITS_ML = 0.5;
@@ -93,6 +108,17 @@ const TARGET_DATE = dateArg ? dateArg.split('=')[1] : new Date().toISOString().s
 const isV71Eligible = (d) => d && d >= V7_1_CUTOVER_DATE;
 const isV72Eligible = (d) => d && d >= V7_2_CUTOVER_DATE;
 const isV73Eligible = (d) => d && d >= V7_3_CUTOVER_DATE;
+const isV74Eligible = (d) => d && d >= V7_4_CUTOVER_DATE;
+
+// v7.4 single-floor gate. Mirror of SharpFlow.jsx::meetsV74Floor.
+function meetsV74Floor(dw, dq, hcMargin) {
+  if (!Number.isFinite(dw) || !Number.isFinite(dq)) return false;
+  const hc = Number.isFinite(hcMargin) ? hcMargin : 0;
+  const sum = dw + dq;
+  const hcRoute  = hc >= V7_4_HC_MARGIN_FLOOR && dw >= 0 && dq >= 0;
+  const sumRoute = dw >= 1 && dq >= 1 && sum >= V7_4_SIGMA_FLOOR;
+  return hcRoute || sumRoute;
+}
 
 function vaultStarFromDeltas(dw, dq) {
   if (dw >= 1 && dq >= 1) {
@@ -119,6 +145,12 @@ function lockTierFromDeltas(dw, dq, hcDominant, opts = {}) {
   const sum = dw + dq;
   const hcMargin = Number.isFinite(opts.hcMargin) ? opts.hcMargin : (hcDominant ? 1 : 0);
   const v73 = isV73Eligible(opts.pickDate);
+  const v74 = isV74Eligible(opts.pickDate);
+  if (v74) {
+    if (sum >= V7_4_ELITE_SIGMA && dw >= 1 && dq >= 1) return 'ELITE';
+    if (meetsV74Floor(dw, dq, hcMargin)) return 'LOCKED';
+    return 'MUTED';
+  }
   if (v73 && hcMargin >= 1 && dw >= 0 && dq >= 0 && sum >= 1) {
     if (sum >= 7) return 'ELITE';
     return 'LOCKED';
@@ -138,15 +170,18 @@ function lockTierFromDeltas(dw, dq, hcDominant, opts = {}) {
 }
 
 // Mirrors evaluatePickHealth's mute/cancel ladder (without the diagnostic-
-// only flags that don't change status). Cancel hysteresis applied separately.
+// only flags that don't change status). v7.4 picks use Σ≥5 as the sum
+// floor (was Σ≥3 under v6.6); HC route stays as is.
 function evaluateBaseHealth({ dw, dq, hcMargin, pickDate }) {
   const v73HcOverride = isV73Eligible(pickDate) && hcMargin >= 1;
+  const v74 = isV74Eligible(pickDate);
+  const sumFloor = v74 ? V7_4_SIGMA_FLOOR : 3;
   if (dw <= -2) return { status: 'CANCELLED', reason: 'winners_killed' };
   if (dw === -1) return { status: 'MUTED', reason: 'winners_faded' };
   if (dw === 0 && !v73HcOverride) return { status: 'MUTED', reason: 'winners_below_floor' };
   if (dw >= 1 && dq <= 0 && !v73HcOverride) return { status: 'MUTED', reason: 'quality_below_floor' };
-  if (dw >= 1 && dq >= 1 && (dw + dq) < 3 && !v73HcOverride) return { status: 'MUTED', reason: 'sum_below_floor' };
-  if (v73HcOverride && (dw === 0 || dq <= 0 || (dw + dq) < 3)) {
+  if (dw >= 1 && dq >= 1 && (dw + dq) < sumFloor && !v73HcOverride) return { status: 'MUTED', reason: 'sum_below_floor' };
+  if (v73HcOverride && (dw === 0 || dq <= 0 || (dw + dq) < sumFloor)) {
     return { status: 'ACTIVE', reason: 'v73_hc_rescue' };
   }
   return { status: 'ACTIVE', reason: null };
@@ -309,9 +344,14 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force 
   const sport = pick.sport;
   const lockStage = sd.lockStage || null;
   const currentStatus = sd.health?.status || sd.status || pick.status || null;
+  const v74 = isV74Eligible(pickDate);
 
-  // Gate: only LOCKED/LEAN sides matter (SHADOW sides aren't shipping money).
-  if (lockStage !== 'LOCKED' && lockStage !== 'LEAN') {
+  // Gate: SHADOW sides are usually skipped (they're not shipping money).
+  // But under v7.4 we ALSO process SHADOW sides that have prior lock data,
+  // so a recovered pick can re-promote LOCKED → SHADOW → LOCKED in lock-step
+  // with live data each cycle (pre-T-15).
+  const isReprommotable = v74 && lockStage === 'SHADOW' && (sd.lock || sd.peak);
+  if (lockStage !== 'LOCKED' && lockStage !== 'LEAN' && !isReprommotable) {
     return { skipped: true, reason: 'not_locked_or_lean' };
   }
   // Gate: never touch graded/completed picks.
@@ -374,6 +414,33 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force 
     odds: sd.peak?.odds ?? sd.lock?.odds ?? null,
   });
 
+  // ─── v7.4 lockStage promote/demote ────────────────────────────────────
+  // Single-floor display contract. Every cycle, recompute whether the pick
+  // currently passes (HC ≥ +1 OR Σ ≥ 5 with positive axes). If yes →
+  // lockStage='LOCKED'. If no → lockStage='SHADOW' (hidden). If dw ≤ -2 →
+  // also flip to SHADOW (the CANCELLED health flag keeps it surfaceable
+  // via the "Show cancelled" toggle).
+  let appliedLockStage = lockStage;
+  let lockStageReason = null;
+  if (v74) {
+    const passesFloor = meetsV74Floor(live.delta, live.qualityMargin, live.hcMargin);
+    if (passesFloor) {
+      if (lockStage !== 'LOCKED') {
+        appliedLockStage = 'LOCKED';
+        lockStageReason = 'v74_floor_recovered';
+      } else {
+        appliedLockStage = 'LOCKED';
+      }
+    } else {
+      if (lockStage !== 'SHADOW') {
+        appliedLockStage = 'SHADOW';
+        lockStageReason = appliedStatus === 'CANCELLED' ? 'v74_cancelled' : 'v74_below_floor';
+      } else {
+        appliedLockStage = 'SHADOW';
+      }
+    }
+  }
+
   // What the doc currently has stamped (so we can detect a real change).
   const stampedStatus = sd.health?.status || null;
   const stampedTier = sd.v8_lockTier || null;
@@ -381,6 +448,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force 
   const stampedDq = sd.v8_walletConsensusQualityMargin;
   const stampedHc = sd.v8_hcMargin;
   const stampedConsVer = sd.v8_walletConsensusVersion;
+  const stampedLockStage = sd.lockStage || null;
 
   // Build the patch — only write fields that actually changed (or stale).
   const patch = {};
@@ -438,6 +506,17 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force 
     && (live.delta === 0 || live.qualityMargin <= 0 || (live.delta + live.qualityMargin) < 3)
     && live.delta >= 0 && live.qualityMargin >= 0;
 
+  // v7.4 — write canonical lockStage every cycle for v7.4 picks.
+  if (v74) {
+    patch.lockStage = appliedLockStage;
+    if (lockStageReason) {
+      patch.lockStageLastChange = { reason: lockStageReason, at: now, dw: live.delta, dq: live.qualityMargin, hcMargin: live.hcMargin };
+    }
+    if (stampedLockStage !== appliedLockStage) {
+      changes.push(`lockStage: ${stampedLockStage || '∅'} → ${appliedLockStage}${lockStageReason ? ` (${lockStageReason})` : ''}`);
+    }
+  }
+
   if (stampedConsVer !== WHITELIST_CONSENSUS_VERSION) {
     changes.push(`consVer: ${stampedConsVer ?? '∅'} → ${WHITELIST_CONSENSUS_VERSION}`);
   }
@@ -458,7 +537,11 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force 
     expectedReason: appliedReason,
     expectedTier: liveTier,
     expectedUnits: liveUnits,
+    expectedLockStage: appliedLockStage,
+    lockStageReason,
     hcRescueDemoted,
+    v74Demoted: v74 && stampedLockStage === 'LOCKED' && appliedLockStage === 'SHADOW',
+    v74Promoted: v74 && stampedLockStage === 'SHADOW' && appliedLockStage === 'LOCKED',
   };
 }
 
@@ -497,6 +580,8 @@ async function main() {
     wrote: 0,
     hc_rescue_demoted: 0,
     status_changes: 0,
+    v74_demoted_to_shadow: 0,
+    v74_promoted_to_locked: 0,
     no_change: 0,
   };
   const changeLog = [];
@@ -527,6 +612,8 @@ async function main() {
           continue;
         }
         if (result.hcRescueDemoted) stats.hc_rescue_demoted++;
+        if (result.v74Demoted) stats.v74_demoted_to_shadow++;
+        if (result.v74Promoted) stats.v74_promoted_to_locked++;
         if (result.changes.some(c => c.startsWith('status:'))) stats.status_changes++;
         stats.wrote++;
         changeLog.push({
@@ -534,6 +621,7 @@ async function main() {
           team: sd.peak?.team || (sideKey === 'away' ? pick.away : sideKey === 'home' ? pick.home : sideKey),
           changes: result.changes,
           live: result.live,
+          expectedLockStage: result.expectedLockStage,
           expected: { status: result.expectedStatus, reason: result.expectedReason, tier: result.expectedTier, units: result.expectedUnits },
         });
         // Build write payload — always merge: true on the side.
@@ -557,16 +645,27 @@ async function main() {
   for (const c of changeLog) {
     console.log(`\n${c.sport} ${c.col.replace('sharpFlow', '').toUpperCase()} ${c.team} (${c.docId} / ${c.side})`);
     console.log(`  Live:     dw=${c.live.delta} dq=${c.live.qualityMargin} HC_m=${c.live.hcMargin} (HC ${c.live.hcConfFor}/${c.live.hcConfAg})`);
-    console.log(`  Expected: status=${c.expected.status}${c.expected.reason ? ` · ${c.expected.reason}` : ''} tier=${c.expected.tier} units=${c.expected.units}`);
+    console.log(`  Expected: lockStage=${c.expectedLockStage || '∅'} · status=${c.expected.status}${c.expected.reason ? ` · ${c.expected.reason}` : ''} tier=${c.expected.tier} units=${c.expected.units}`);
     console.log(`  Changes:  ${c.changes.join(', ')}`);
   }
 
-  // Apply writes (unless dry run).
+  // Apply writes (unless dry run). Merge per-side patches into a single
+  // payload per docId — Firestore batches keep only the LAST set() on a
+  // given ref, so two sides of the same pick (home + away) would clobber
+  // each other unless we coalesce up front.
   if (!DRY_RUN) {
     for (const [col, writes] of collectionWrites) {
+      const merged = new Map(); // docId → coalesced payload
+      for (const w of writes) {
+        const cur = merged.get(w.docId) || { sides: {}, lastSyncAt: 0 };
+        Object.assign(cur.sides, w.payload.sides || {});
+        if ((w.payload.lastSyncAt || 0) > cur.lastSyncAt) cur.lastSyncAt = w.payload.lastSyncAt;
+        merged.set(w.docId, cur);
+      }
+      const docPayloads = [...merged.entries()].map(([docId, payload]) => ({ docId, payload }));
       const BATCH_SIZE = 400;
-      for (let i = 0; i < writes.length; i += BATCH_SIZE) {
-        const chunk = writes.slice(i, i + BATCH_SIZE);
+      for (let i = 0; i < docPayloads.length; i += BATCH_SIZE) {
+        const chunk = docPayloads.slice(i, i + BATCH_SIZE);
         const batch = db.batch();
         for (const w of chunk) {
           const ref = db.collection(col).doc(w.docId);
@@ -574,7 +673,9 @@ async function main() {
         }
         await batch.commit();
       }
-      console.log(`\nWrote ${writes.length} sides to ${col}`);
+      const sideCount = writes.length;
+      const docCount = docPayloads.length;
+      console.log(`\nWrote ${sideCount} side(s) across ${docCount} doc(s) to ${col}`);
     }
   }
 
@@ -587,6 +688,8 @@ async function main() {
   console.log(`  Wrote canonical state:    ${stats.wrote}`);
   console.log(`    of which status flips:  ${stats.status_changes}`);
   console.log(`    HC rescue demoted:      ${stats.hc_rescue_demoted}`);
+  console.log(`    v7.4 → SHADOW (hidden): ${stats.v74_demoted_to_shadow}`);
+  console.log(`    v7.4 → LOCKED (shown):  ${stats.v74_promoted_to_locked}`);
   console.log(`\n${DRY_RUN ? '[DRY RUN] No writes performed.' : 'Done.'}\n`);
 }
 
