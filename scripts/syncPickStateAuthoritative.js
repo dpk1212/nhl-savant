@@ -15,30 +15,33 @@
  * back. Last-write-wins; the browser sync continues to write too — they
  * apply identical logic so they agree.
  *
- * FIXES included beyond the audit findings:
- *   1. Forces v8_walletConsensusVersion = 9 restamp on every cycle for any
- *      post-cutover pick (kills the Lightning consVer=6 stuck-on-v6 bug).
- *   2. Cancel hysteresis: dw <= -3 cancels instantly, dw == -2 requires 2
- *      consecutive cycles (cancelConfirmCount on the side doc). Single-cycle
- *      flickers no longer kill 5★ ELITE plays (Magic ML on 2026-05-01).
- *   3. HC rescue freshness: when promotedBy='v73-hc-rescue' and live HC
- *      margin < +1 AND v6.6 floor would otherwise mute, demote the side
- *      to LEAN at 0u (no longer ships money on a stale rescue).
- *   4. Stale-mute repair: if doc says MUTED but live state passes the v6.6
- *      floor (or v7.3 HC override), restamp to ACTIVE.
+ * BEHAVIOUR (the contract):
+ *   • Every cycle is independent. Live consensus is recomputed from current
+ *     sharp_action_positions; the canonical state is whatever the v7.3
+ *     ladder says about *right now*. No hysteresis, no confirmation counts,
+ *     no debouncing — if dw flipped to -2 this cycle, the pick is CANCELLED
+ *     this cycle.
+ *   • Status, lockTier, units, HC margin, and stamps are all free to flip
+ *     in any direction (ACTIVE↔MUTED↔CANCELLED↔ACTIVE, LEAN↔LOCKED↔ELITE,
+ *     up or down on units) up until T-15. Cancel is *not* sticky pre-T-15.
+ *   • HC rescue freshness re-evaluates every cycle: if a pick was promoted
+ *     via v73-hc-rescue and live HC margin drops < +1 (with v6.6 floor
+ *     failing), it demotes that same cycle. If HC recovers, it re-promotes.
+ *   • Always restamps v8_walletConsensusVersion = 9 (kills the Lightning
+ *     consVer=6 stuck-on-v6 bug seen in the 2026-05-01 audit).
  *
- * T-15 freeze: writes are skipped when now >= commenceTime - 15 min, exactly
- * matching the browser's freeze window so the doc state is a stable record
- * of what was true at lock-in time.
+ * T-15 freeze is the ONLY gate. Once now >= commenceTime - 15 min, writes
+ * are skipped so the doc state is a stable record at lock-in time. Same
+ * window the browser uses, so client and server agree on the cutoff.
  *
  * Usage:
  *   node scripts/syncPickStateAuthoritative.js                    # today
  *   node scripts/syncPickStateAuthoritative.js --date=2026-05-02
  *   node scripts/syncPickStateAuthoritative.js --dry-run          # log only
- *   node scripts/syncPickStateAuthoritative.js --repair --force   # bypass T-15
+ *   node scripts/syncPickStateAuthoritative.js --force            # bypass T-15
  *                                                                   freeze (one-shot
  *                                                                   fix for stuck
- *                                                                   stale state)
+ *                                                                   post-freeze state)
  */
 
 import 'dotenv/config';
@@ -75,17 +78,13 @@ const V7_2_HC_CAP_ML_NON   = 3.5;
 const V7_2_HC_CAP_ST_ELITE = 3.5;
 const V7_2_HC_CAP_ST_NON   = 2.0;
 
-// Cancel hysteresis (NEW — fix for the May 1 Magic ML flicker-cancel).
-const CANCEL_INSTANT_THRESHOLD = -3;   // dw ≤ -3 cancels on a single sample
-const CANCEL_CONFIRM_REQUIRED = 2;     // dw = -2 requires N samples in a row
-
 // T-15 freeze window (matches browser).
 const T_MINUS_15_MIN_MS = 15 * 60 * 1000;
 
-// CLI args.
+// CLI args. --force is the only override; it bypasses the T-15 freeze for
+// one-shot fixes of state that got stuck post-freeze in an old broken cycle.
 const argv = process.argv.slice(2);
 const DRY_RUN = argv.includes('--dry-run');
-const REPAIR_MODE = argv.includes('--repair');
 const FORCE = argv.includes('--force');
 const dateArg = argv.find(a => a.startsWith('--date='));
 const TARGET_DATE = dateArg ? dateArg.split('=')[1] : new Date().toISOString().slice(0, 10);
@@ -305,7 +304,7 @@ function buildPositionGroupsFromFirestore(positions) {
 }
 
 // ── Main sync logic per side ───────────────────────────────────────────────
-function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, repairMode, force }) {
+function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force }) {
   const pickDate = pick.date || TARGET_DATE;
   const sport = pick.sport;
   const lockStage = sd.lockStage || null;
@@ -319,9 +318,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, repair
   if (pick.status === 'COMPLETED' || currentStatus === 'COMPLETED') {
     return { skipped: true, reason: 'completed' };
   }
-  // Gate: T-15 freeze (skip in normal mode; honour --force in repair mode).
-  const commenceTime = pick.commenceTime ? new Date(pick.commenceTime).getTime?.() || pick.commenceTime : null;
-  // Firestore Timestamp may serialize differently; defensively coerce.
+  // Gate: T-15 freeze. Once we're inside 15 min of commenceTime the doc is
+  // a record of what was true at lock-in time and never moves again. --force
+  // overrides for one-shot stuck-state repairs only.
   let ct = null;
   if (pick.commenceTime != null) {
     if (typeof pick.commenceTime === 'number') ct = pick.commenceTime;
@@ -330,10 +329,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, repair
     else if (pick.commenceTime instanceof Date) ct = pick.commenceTime.getTime();
     else if (typeof pick.commenceTime === 'string') ct = new Date(pick.commenceTime).getTime();
   }
-  if (ct != null && now >= ct - T_MINUS_15_MIN_MS) {
-    if (!(repairMode && force)) {
-      return { skipped: true, reason: 'within_t_minus_15' };
-    }
+  if (ct != null && now >= ct - T_MINUS_15_MIN_MS && !force) {
+    return { skipped: true, reason: 'within_t_minus_15' };
   }
 
   // Reconstruct live consensus.
@@ -345,56 +342,22 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, repair
     pickDate,
   });
 
-  // Cancel hysteresis (NEW — fix for flicker-cancels).
-  // Read existing confirm count to track consecutive bad samples.
-  const prevConfirmCount = sd.cancelConfirmCount || 0;
-  let newConfirmCount = 0;
+  // No hysteresis. Whatever evaluateBaseHealth says this cycle is what we
+  // write. dw <= -2 cancels immediately. ACTIVE↔MUTED↔CANCELLED↔ACTIVE all
+  // free to flip in any direction every 8 min until T-15.
   let appliedStatus = baseHealth.status;
   let appliedReason = baseHealth.reason;
-  let cancelDeferred = false;
-  if (baseHealth.status === 'CANCELLED') {
-    if (live.delta <= CANCEL_INSTANT_THRESHOLD) {
-      // Strong negative signal — cancel immediately.
-      appliedStatus = 'CANCELLED';
-      newConfirmCount = 0;
-    } else {
-      // Soft negative (dw == -2) — require N consecutive samples.
-      newConfirmCount = prevConfirmCount + 1;
-      if (newConfirmCount >= CANCEL_CONFIRM_REQUIRED) {
-        appliedStatus = 'CANCELLED';
-        newConfirmCount = 0;
-      } else {
-        // Defer cancel: leave previous status intact (or fall back to MUTED
-        // with a "pending_cancel" diagnostic so UI can warn).
-        appliedStatus = currentStatus === 'CANCELLED' ? 'CANCELLED' : 'MUTED';
-        appliedReason = 'pending_cancel';
-        cancelDeferred = true;
-      }
-    }
-  }
 
-  // CANCEL is sticky (once applied, never reverse — design constraint).
-  // If the doc was already CANCELLED but live state has improved, leave it
-  // CANCELLED unless --repair is explicitly asked for cancel reversal.
-  if (currentStatus === 'CANCELLED' && appliedStatus !== 'CANCELLED') {
-    if (!(repairMode && force)) {
-      // Keep cancelled — don't reverse.
-      return { skipped: true, reason: 'previously_cancelled_sticky', live };
-    }
-    // Repair mode + force → allow reversal back to live status.
-  }
-
-  // HC rescue freshness (NEW — fix for stale v73-hc-rescue).
-  // If the pick was promoted via v73-hc-rescue at lock and live HC margin
-  // has dropped below +1, demote to LEAN at 0u (not full mute, since we
-  // committed via the rescue path; but stop shipping money on a stale HC).
+  // HC rescue freshness — re-evaluated every cycle. If the pick was lock-in
+  // promoted via v73-hc-rescue and live HC margin has dropped below +1 with
+  // the v6.6 floor failing, demote to MUTED this cycle (UI shows "RESCUE
+  // EXPIRED"). If HC recovers next cycle, baseHealth.reason==='v73_hc_rescue'
+  // and the pick re-promotes to ACTIVE automatically.
   const promotedBy = sd.promotedBy || null;
   let hcRescueDemoted = false;
   if (promotedBy === 'v73-hc-rescue' && live.hcMargin < 1
       && (live.delta === 0 || live.qualityMargin <= 0 || (live.delta + live.qualityMargin) < 3)
       && live.delta > -2) {
-    // Demote: status MUTED, but flagged as a former rescue so UI can show
-    // "RESCUE EXPIRED" instead of just "WEAKENING".
     appliedStatus = 'MUTED';
     appliedReason = 'v73_hc_rescue_expired';
     hcRescueDemoted = true;
@@ -424,13 +387,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, repair
   let wroteAnything = false;
   const changes = [];
 
-  // Health status / reasons (always write — health is the most critical
-  // field for the UI's lock display).
+  // Health status / reasons — always overwritten with the current cycle's
+  // truth. UI reads `health.status` to decide lock display state.
   const reasons = [];
   if (appliedReason) reasons.push(appliedReason);
-  if (hcRescueDemoted) reasons.push('v73_hc_rescue_expired');
-  if (cancelDeferred) reasons.push('pending_cancel_confirm');
-  // Diagnostic-only signals (kept for the existing UI badges).
+  // Preserve diagnostic-only badge signals from prior cycles (they don't
+  // change status but the UI uses them for chip rendering).
   if (sd.health?.reasons) {
     for (const r of sd.health.reasons) {
       if (['wps_flipped_diag', 'opp_side_stronger_diag'].includes(r) && !reasons.includes(r)) {
@@ -452,13 +414,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, repair
     changes.push(`status: ${stampedStatus || '∅'} → ${appliedStatus}`);
   }
 
-  // Cancel confirm count (write back so next cycle knows).
-  if (newConfirmCount !== prevConfirmCount) {
-    patch.cancelConfirmCount = newConfirmCount;
-    if (newConfirmCount > 0) changes.push(`cancelConfirm: ${prevConfirmCount} → ${newConfirmCount}`);
-  } else if (prevConfirmCount > 0 && newConfirmCount === 0) {
-    // Reset stored count.
-    patch.cancelConfirmCount = 0;
+  // Strip any leftover hysteresis counter from older script versions so the
+  // doc shape stays clean.
+  if (sd.cancelConfirmCount != null) {
+    patch.cancelConfirmCount = admin.firestore.FieldValue.delete();
   }
 
   // v8_walletConsensusVersion + delta + quality + HC restamp.
@@ -487,8 +446,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, repair
   if (stampedHc !== live.hcMargin) changes.push(`HC_m: ${stampedHc ?? '∅'} → ${live.hcMargin}`);
   if (stampedTier && stampedTier !== liveTier) changes.push(`tier: ${stampedTier} → ${liveTier}`);
 
-  wroteAnything = changes.length > 0 || stampedStatus !== appliedStatus
-    || (newConfirmCount !== prevConfirmCount);
+  wroteAnything = changes.length > 0 || stampedStatus !== appliedStatus;
 
   return {
     skipped: false,
@@ -500,7 +458,6 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, repair
     expectedReason: appliedReason,
     expectedTier: liveTier,
     expectedUnits: liveUnits,
-    cancelDeferred,
     hcRescueDemoted,
   };
 }
@@ -509,7 +466,7 @@ async function main() {
   const db = initFirebase();
   const now = Date.now();
   console.log(`\n=== syncPickStateAuthoritative — ${TARGET_DATE} ===`);
-  console.log(`Mode: ${DRY_RUN ? 'DRY RUN (no writes)' : 'WRITE'}${REPAIR_MODE ? ' · REPAIR' : ''}${FORCE ? ' · FORCE (bypass T-15)' : ''}`);
+  console.log(`Mode: ${DRY_RUN ? 'DRY RUN (no writes)' : 'WRITE'}${FORCE ? ' · FORCE (bypass T-15)' : ''}`);
   console.log(`now=${new Date(now).toISOString()}\n`);
 
   // Load wallet profiles.
@@ -537,9 +494,7 @@ async function main() {
     skipped_not_locked: 0,
     skipped_completed: 0,
     skipped_t15: 0,
-    skipped_cancelled_sticky: 0,
     wrote: 0,
-    cancel_deferred: 0,
     hc_rescue_demoted: 0,
     status_changes: 0,
     no_change: 0,
@@ -559,20 +514,18 @@ async function main() {
         const group = groups.get(groupKey) || [];
         const result = reconcileSide({
           sd, side: sideKey, pick, mkt, group, walletProfiles, now,
-          repairMode: REPAIR_MODE, force: FORCE,
+          force: FORCE,
         });
         if (result.skipped) {
           if (result.reason === 'not_locked_or_lean') stats.skipped_not_locked++;
           else if (result.reason === 'completed') stats.skipped_completed++;
           else if (result.reason === 'within_t_minus_15') stats.skipped_t15++;
-          else if (result.reason === 'previously_cancelled_sticky') stats.skipped_cancelled_sticky++;
           continue;
         }
         if (!result.wrote) {
           stats.no_change++;
           continue;
         }
-        if (result.cancelDeferred) stats.cancel_deferred++;
         if (result.hcRescueDemoted) stats.hc_rescue_demoted++;
         if (result.changes.some(c => c.startsWith('status:'))) stats.status_changes++;
         stats.wrote++;
@@ -630,11 +583,9 @@ async function main() {
   console.log(`  Skipped (not locked/lean):${stats.skipped_not_locked}`);
   console.log(`  Skipped (completed):      ${stats.skipped_completed}`);
   console.log(`  Skipped (T-15 freeze):    ${stats.skipped_t15}`);
-  console.log(`  Skipped (cancel sticky):  ${stats.skipped_cancelled_sticky}`);
   console.log(`  No change needed:         ${stats.no_change}`);
   console.log(`  Wrote canonical state:    ${stats.wrote}`);
   console.log(`    of which status flips:  ${stats.status_changes}`);
-  console.log(`    cancel deferred (hyst): ${stats.cancel_deferred}`);
   console.log(`    HC rescue demoted:      ${stats.hc_rescue_demoted}`);
   console.log(`\n${DRY_RUN ? '[DRY RUN] No writes performed.' : 'Done.'}\n`);
 }
