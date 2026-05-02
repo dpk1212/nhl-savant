@@ -1,13 +1,198 @@
-# Sharp Flow — Star Rating V7.0 (Σ-driven, LEAN tier)
+# Sharp Flow — Star Rating V7.4 (Single Floor Display Contract)
 
-> **Active system — v7.0 deployed 2026-04-29.** Replaces the v6.6 Hybrid
-> Floor. All Sharp Intel game cards and Locked Picks use this. Driven by
-> the V6 Full Analysis (`V6_FULL_ANALYSIS.md`, N=104, 4/18–4/28).
+> **Active system — v7.4 deployed 2026-05-02.** Replaces v7.0 / v7.1 /
+> v7.2 / v7.3 (change history preserved below). Every locked pick on
+> the dashboard right now is gated by **one rule, no exceptions**.
 >
-> Earlier system docs are kept inline below for change-history; the
-> active rules are in **§v7.0 floor + ladder** at the top.
+> See [SHARP_FLOW_SYSTEM.md](SHARP_FLOW_SYSTEM.md) for the architecture
+> (server cron, browser display gate, race-condition guards) that
+> enforces this contract end-to-end every ~8 minutes until T-15.
 
-## §v7.0 floor + ladder (active 2026-04-29)
+## §v7.4 the contract
+
+```
+A pick LOCKS and DISPLAYS in the Locked Picks list iff:
+
+   (a)  HC route   :  HC_m ≥ +1   ∧   Δw ≥ 0   ∧   Δq ≥ 0
+   (b)  Sum route  :  Δw ≥ +1     ∧   Δq ≥ +1   ∧   Δw + Δq ≥ +5
+
+Anything else                       →  lockStage = 'SHADOW'  (HIDDEN)
+Δw ≤ −2                             →  lockStage = 'SHADOW'  +
+                                       health.status = 'CANCELLED'
+                                       (visible behind the
+                                       "Show cancelled" toggle)
+```
+
+**HC_m** = `hcConfFor − hcConfAg` where each side counts unique
+`whitelistTier === 'CONFIRMED'` wallets whose bet on this pick is
+≥ 1.5× their average sport bet (the high-conviction sizing ratio).
+
+**Δw** = unique whitelisted (CONFIRMED + FLAT) wallets for the pick
+minus those against. **Δq** = unique wallets with `contribution ≥ 30`
+for the pick minus those against. (Both metrics are recomputed live
+each cycle from `sharp_action_positions`.)
+
+The LEAN tier is **gone**. The legacy v6.6 Σ=3,4 cohort and the v7.3
+HC-rescue cohort are **gone from the locked-picks list** under v7.4 —
+they collapse into either the HC route (if HC_m ≥ +1 with both axes
+≥ 0) or SHADOW (everything else). The dashboard now shows **only**
+plays that pass the one rule above.
+
+### v7.4 sub-tiers and unit ladder
+
+```
+ELITE      (Σ ≥ +7  ∧  Δw ≥ +1 ∧ Δq ≥ +1)        ML 4.0u    S+T 2.5u
+LOCKED Σ6  (Σ = +6  ∧  Δw ≥ +1 ∧ Δq ≥ +1)        ML 3.0u    S+T 2.0u
+LOCKED Σ5  (Σ = +5  ∧  Δw ≥ +1 ∧ Δq ≥ +1)        ML 2.0u    S+T 1.5u
+LOCKED HC  (HC_m ≥ +1 ∧ Δw ≥ 0 ∧ Δq ≥ 0)         per HC ladder below
+
+HC ladder (kept from v7.2/v7.3 — only fires for the HC route):
+   HC_m ≥ +2                  ×1.75 multiplier (capped ML 3.5u, S+T 2.0u)
+   HC_m  = +1                 ×1.50 multiplier (capped ML 3.5u, S+T 2.0u)
+
+   Floor units before HC multiplier:
+     stars ≥ 5.0    base 3.0u  (4.0u in ELITE)
+     stars ≥ 4.5    base 2.0u
+     stars ≥ 4.0    base 1.25u
+     stars ≥ 3.5    base 0.75u
+     Σ ∈ {1, 2}     base 0.5u   (HC route, low-Σ floor)
+
+Favorite clamp (after HC multiplier, before output):
+   odds ≥ +200       max 0.5u (1.0u for ELITE)
+   odds ≥ +151       max 1.0u (2.0u for ELITE)
+   odds ≥ +100       max 2.0u (3.0u for ELITE)
+```
+
+### v7.4 health ladder (every cycle, recomputed from live consensus)
+
+```
+Δw ≤ −2                                    →  CANCELLED  (winners_killed)
+Δw =  −1                                   →  MUTED      (winners_faded)
+Δw =   0  (without HC route)               →  MUTED      (winners_below_floor)
+Δw ≥ +1 ∧ Δq ≤ 0  (without HC route)       →  MUTED      (quality_below_floor)
+Δw ≥ +1 ∧ Δq ≥ +1 ∧ Σ < 5 (without HC)     →  MUTED      (sum_below_floor)
+HC route fires (HC_m ≥ +1 ∧ Δw ≥ 0 ∧ Δq ≥ 0):
+   ACTIVE — even when Δq = 0 or Σ < 5      →  ACTIVE     (v73_hc_rescue tag)
+otherwise                                  →  ACTIVE
+```
+
+The cron writes `lockStage='SHADOW'` whenever `health.status ∈ {MUTED,
+CANCELLED}` AND the pick fails the v7.4 floor — so the locked-picks
+display gate hides it automatically. If a pick recovers above the
+floor on a subsequent cycle, the cron flips `lockStage='SHADOW' →
+'LOCKED'` and `health.status='ACTIVE'` in the same cycle. **Pre-T-15
+the state is purely a function of right-now data, not lock-time data.**
+
+### Why this contract
+
+Source: `WALLET_HC_MARGIN_ANALYSIS_FULL.md`, `V6_FULL_ANALYSIS.md`,
+all-picks backtest (N≈220 graded since v7.0 cutover).
+
+The **HC route** isolates the strongest single signal we've found —
+high-conviction CONFIRMED wallet dominance (HC_m ≥ +1, no dissent).
+This cohort runs **74% WR / +44% flat ROI** all-time across all sports,
+holds up at every Σ from 1 through 7+, and is the only sub-cohort
+that meaningfully outperforms when Δq < 0. It collapses every prior
+HC bypass (v7.1 HC_DOM, v7.2 HC margin tiered, v7.3 sigma1/2/rescue)
+into one gate.
+
+The **sum route** preserves the v7.0 statistical floor (Σ ≥ +5 was
+the first cumulative cohort to clear t = 1.96 on the flat-PnL t-test).
+Σ ∈ {3, 4} without HC — the legacy LEAN cohort — runs flat-to-negative
+(−7% to −29% flat ROI) and is no longer surfaced.
+
+Everything below the contract is hidden. No "tracked-only" cards, no
+"weakening" cards, no exceptions. The user has one consistent question
+to answer when they open the page: **"is this a play or not?"** —
+not "what tier am I supposed to read this as?"
+
+### Cutover behaviour
+
+Picks dated < `2026-05-02` keep their original v6.6 / v7.0 / v7.1 /
+v7.2 / v7.3 lock state and tier (so historical Firestore docs and
+graded outcomes don't change). Picks dated ≥ `2026-05-02` use v7.4
+exclusively. The constants live at the top of `SharpFlow.jsx`
+(`V7_4_CUTOVER_DATE = '2026-05-02'`, `V7_4_FLOOR_ENABLED = true`,
+`V7_4_SIGMA_FLOOR = 5`, `V7_4_HC_MARGIN_FLOOR = 1`,
+`V7_4_ELITE_SIGMA = 7`) and are mirrored in
+`scripts/syncPickStateAuthoritative.js`.
+
+---
+
+## §v7.3 (deprecated by v7.4 — change history)
+
+> Active 2026-04-30 → 2026-05-02. Folded into v7.4's HC route.
+
+```
+Lock floor (kept from v7.0):  Δw ≥ +1 ∧ Δq ≥ +1 ∧ Σ ≥ +5
+HC margin overrides (NEW):    HC_m ≥ +1 ∧ Δw ≥ 0 ∧ Δq ≥ 0
+                              extends LOCK to:
+                                Σ = +1 (sigma1-hc)
+                                Σ = +2 (sigma2-hc — supersedes v7.2 LEAN)
+                                Σ ≥ +3 with Δw=0 OR Δq=0 (hc-rescue)
+LEAN tier (kept from v7.0):   Σ ∈ {3, 4} without HC — tracked, 0u
+```
+
+The HC margin overrides sat on top of v7.0 / v7.2 floors and let
+high-conviction CONFIRMED dominance promote picks that would have
+otherwise muted. v7.4 generalises this — every pick with HC_m ≥ +1
+and both axes ≥ 0 LOCKS regardless of Σ. The promotion sources
+(`v73-sigma1-hc`, `v73-sigma2-hc`, `v73-hc-rescue`) collapse into
+v7.4's single `v74-hc-margin` source.
+
+```
+Σ=1 ∧ HC_m ≥ +1 lock units:    ML 0.5u    S+T 0.5u
+Σ=2 ∧ HC_m ≥ +1 lock units:    ML 0.5u    S+T 0.5u
+Σ ≥ +3 ∧ HC_m ≥ +1 rescue:     normal lock ladder × HC multiplier
+```
+
+---
+
+## §v7.2 (deprecated by v7.3 — change history)
+
+> Active 2026-04-30 → 2026-04-30 (one day, superseded same day).
+
+Introduced the **HC margin tiered** unit multiplier replacing the
+v7.1 binary HC_DOM ×1.5:
+
+```
+HC_m ≥ +2     ×1.75 multiplier  (caps: ML 3.5u non-elite / 4.5u elite,
+                                       S+T 2.0u non-elite / 3.5u elite)
+HC_m  = +1    ×1.50 multiplier  (same caps as above)
+Σ = 2 ∧ HC_m ≥ +2  → LOCK at 0.5u (new lock cohort, replaces v7.1 noise)
+Σ = 2 ∧ HC_m  = +1 → LEAN at 0u   (superseded by v7.3 sigma2-hc lock)
+Σ ∈ {3, 4} ∧ HC_m ≥ +1 → LOCK    (dropped the HC_DOM purity requirement)
+```
+
+Source: `WALLET_HC_MARGIN_ANALYSIS.md` — HC_m ≥ +1 cohort at 78%
+WR / +52% ROI across the v7.0 sample window.
+
+---
+
+## §v7.1 (deprecated by v7.2 — change history)
+
+> Active 2026-04-30 → 2026-04-30 (one day).
+
+Introduced the **HC dominance** unit multiplier and Σ ∈ {3, 4} lock
+override:
+
+```
+HC_DOM = (hcConfFor ≥ 1) AND (hcConfAg = 0)
+
+If HC_DOM:
+   units × 1.5  (capped ML 3.0u / S+T 1.75u non-elite,
+                       ML 4.5u / S+T 3.0u elite)
+   Σ ∈ {3, 4} → LOCK at the standard lock ladder (else LEAN)
+```
+
+Source: `WALLET_PREDICTIVENESS_PLAYBOOK.md` — HC dominance cohort
+at 75% WR / +50% ROI across N=20 picks.
+
+---
+
+## §v7.0 (deprecated by v7.1 — change history)
+
+> Active 2026-04-29 → 2026-04-30. Replaced the v6.6 Hybrid Floor.
 
 ```
 Lock floor:   Δw ≥ +1  AND  Δq ≥ +1  AND  Δw+Δq ≥ +5
@@ -23,12 +208,12 @@ Sub-tiers inside the lock floor:
 ```
 
 LEAN picks would have locked under the v6.6 Σ ≥ +3 floor but fall short
-of the v7.0 Σ ≥ +5 lock floor. They render in the Locked Picks list
+of the v7.0 Σ ≥ +5 lock floor. They rendered in the Locked Picks list
 with a blue **LEAN · TRACK ONLY** badge replacing the unit chip and a
 0u stake — visible enough to monitor cohort regression but never debit
-the bankroll.
+the bankroll. **Removed in v7.4.**
 
-### Why Σ ≥ +5
+### Why Σ ≥ +5 (kept as the v7.4 sum route)
 
 Source: `V6_FULL_ANALYSIS.md` (N=104, 11 graded days).
 
@@ -43,15 +228,18 @@ Source: `V6_FULL_ANALYSIS.md` (N=104, 11 graded days).
 
 Σ ≥ +5 is the first cumulative cohort to clear t = 1.96 on the flat-PnL
 t-test. Σ ∈ {3, 4} is directionally flat (-7% to -29% flat ROI) so we
-mute it from sizing but keep it in view as LEAN.
+muted it from sizing under v7.0 (LEAN, 0u) — and **dropped it from the
+display entirely under v7.4** because tracked-only cards added cognitive
+overhead without changing decisions.
 
-### v7.0 ladder rationale
+### v7.0 ladder rationale (still drives v7.4 unit ladder)
 
 Ladder B (calibrated). The ELITE bonus on Σ ≥ +7 honors the Path-1 audit
 (+9.4u peak, 11-5, 68.8% WR). The 4.5★ S+T bump from 1.25u → 1.50u
 matches the cohort cell edge. Bayesian half-Kelly on the Σ ≥ +5 cohort
 sits at ~9–10% bankroll; ladder B uses about half of that to cushion
-sample size.
+sample size. v7.4 keeps this ladder for the sum route and adds the
+v7.2 HC multiplier (×1.5 / ×1.75) for the HC route.
 
 ---
 

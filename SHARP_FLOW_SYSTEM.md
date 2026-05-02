@@ -1,29 +1,214 @@
 # Sharp Flow — Whale Intel & Sharp Tracker System
 
-> **ACTIVE SYSTEM — V6 Two-Factor Overhaul (2026-04-20).**
+> **ACTIVE SYSTEM — v7.4 Single Floor Display Contract (2026-05-02).**
 >
-> Sharp Intel game cards and Locked Picks are driven by **Δ_winner** and
-> **Δ_quality**. All other signals (WPS, regime, contribTier, breadth,
-> concentration, meanBase_F) are **diagnostic-only** and do not influence
-> stars, units, locks, mutes, or cancels.
+> The Locked Picks list shows **only** plays that pass one rule:
+> **(HC_m ≥ +1 ∧ Δw ≥ 0 ∧ Δq ≥ 0) OR (Σ ≥ +5 ∧ Δw ≥ +1 ∧ Δq ≥ +1)**.
+> Anything else is `lockStage='SHADOW'` (HIDDEN). `Δw ≤ −2` is
+> `SHADOW + CANCELLED` (toggleable). The state is recomputed from
+> live data **every ~8 minutes until T-15**, so what you see is always
+> what's true right now.
 >
-> See [STAR_RATING_SYSTEM.md](STAR_RATING_SYSTEM.md) for the full V6 spec
-> and [V8_TWO_FACTOR_BACKTEST.md](V8_TWO_FACTOR_BACKTEST.md) for the
-> pre-ship validation (74 graded V8 picks, +43 ROI-point lift vs V8).
+> See [STAR_RATING_SYSTEM.md](STAR_RATING_SYSTEM.md) for the full v7.4
+> spec, the unit ladder, and the change history (v6.6 → v7.0 → v7.1
+> → v7.2 → v7.3 → v7.4).
 
-## V6 cheat sheet
+## v7.4 cheat sheet
 
 | Layer | Rule |
 |---|---|
-| **Lock** | Δ_winner ≥ +1 AND Δ_quality ≥ +1 → LOCKED; else SHADOW |
-| **Cancel** | Δ_winner ≤ −2 → CANCELLED (`winners_killed`) |
-| **Mute** | Δ_winner = −1 → MUTED (`winners_faded`); or Δ_quality ≤ −3 AND Δ_winner ≤ 0 → MUTED (`quality_faded`) |
-| **Star** | two-factor Vault Star (see STAR_RATING_SYSTEM.md) |
-| **Units (ML)** | 5.0→3.00u · 4.5→2.00u · 4.0→1.25u · 3.5→0.75u · else 0 |
-| **Units (SPR/TOT)** | 5.0→2.00u · 4.5→1.25u · 4.0→0.75u · 3.5→0.50u · else 0 |
-| **TOP PICK** | Δ_winner ≥ +1 (outlined gold) |
-| **SUPER TOP PICK** | Δ_winner ≥ +2 (filled gold) |
-| **Firestore fields** | `v8_walletConsensus{Delta,QualityMargin,QualityForT30,QualityAgT30,Verdict,MuteTriggered,CancelTriggered,PromotionTriggered}`, `v8_vaultStar`, `v8_walletConsensusVersion = 6` |
+| **Lock (HC route)** | `HC_m ≥ +1 ∧ Δw ≥ 0 ∧ Δq ≥ 0` → LOCKED at HC ladder |
+| **Lock (Sum route)** | `Δw ≥ +1 ∧ Δq ≥ +1 ∧ Σ ≥ +5` → LOCKED at standard ladder |
+| **ELITE** | `Σ ≥ +7 ∧ Δw ≥ +1 ∧ Δq ≥ +1` → max ladder |
+| **Cancel** | `Δw ≤ −2` → SHADOW + `health.status='CANCELLED'` (`winners_killed`) |
+| **Mute (Δw fade)** | `Δw = −1` → MUTED (`winners_faded`) |
+| **Mute (Δw=0 no HC)** | `Δw = 0 ∧ ¬HC` → MUTED (`winners_below_floor`) |
+| **Mute (Δq fail no HC)** | `Δw ≥ 1 ∧ Δq ≤ 0 ∧ ¬HC` → MUTED (`quality_below_floor`) |
+| **Mute (Σ<5 no HC)** | `Δw ≥ 1 ∧ Δq ≥ 1 ∧ Σ < 5 ∧ ¬HC` → MUTED (`sum_below_floor`) |
+| **Display gate** | `lockStage='LOCKED' ∧ health.status='ACTIVE' ∧ live state passes floor` |
+| **Recompute cadence** | Server cron every ~8 min until T-15 freeze; browser defers ≤7 min |
+| **Star** | Two-factor Vault Star (see STAR_RATING_SYSTEM.md §v7.4) |
+| **Units (ML)** | ELITE 4.0u · 5.0★ 3.0u · 4.5★ 2.0u · 4.0★ 1.25u · 3.5★ 0.75u · HC route Σ ∈ {1,2} 0.5u · else 0 |
+| **Units (SPR/TOT)** | ELITE 2.5u · 5.0★ 2.0u · 4.5★ 1.5u · 4.0★ 0.75u · 3.5★ 0.5u · HC route Σ ∈ {1,2} 0.5u · else 0 |
+| **HC multiplier** | HC_m ≥ +2: ×1.75 · HC_m = +1: ×1.5 (capped ML 3.5/4.5u, S+T 2.0/3.5u) |
+| **Favorite clamp** | odds ≥ +200: max 0.5u (ELITE 1.0) · ≥ +151: max 1.0u (2.0) · ≥ +100: max 2.0u (3.0) |
+| **TOP PICK badge** | `Δ_winner ≥ +1` (outlined gold) — diagnostic only, doesn't gate display |
+| **SUPER TOP PICK badge** | `Δ_winner ≥ +2` (filled gold) — diagnostic only |
+| **HC ×1.5 chip** | `HC_m = +1` (Sharp Vault) — premium gold outline |
+| **HC ×1.75 chip** | `HC_m ≥ +2` (Sharp Vault) — premium gold glow |
+| **Firestore fields** | `lockStage`, `lockStageLastChange{reason,dw,dq,hcMargin,at}`, `v8_walletConsensus{Delta,QualityMargin,QualityForT30,QualityAgT30,...}`, `v8_hcConfFor`, `v8_hcConfAg`, `v8_hcMargin`, `v8_hcDominant`, `v8_lockTier`, `v8_v73HcRescue`, `v8_vaultStar`, `v8_walletConsensusVersion = 9`, `health.{status,reasons,syncedBy}`, `lastSyncAt` |
+
+---
+
+## v7.4 architecture — how the contract is enforced
+
+### Three layers, one source of truth
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  LAYER 1 — LIVE WALLET DATA                                         │
+│                                                                     │
+│  Polymarket on-chain → scanSharpPositions.js → writeSharpActions.js │
+│  → Firestore collection sharp_action_positions (refreshed ~every    │
+│  8 min by .github/workflows/fetch-polymarket.yml)                   │
+└────────────────────────────┬────────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  LAYER 2 — AUTHORITATIVE SERVER CRON (the boss)                     │
+│                                                                     │
+│  scripts/syncPickStateAuthoritative.js                              │
+│    runs every ~8 min inside fetch-polymarket.yml                    │
+│    1. computeWalletConsensus(group, side, sport, walletProfiles)    │
+│       → live Δw, Δq, HC margin, HC dominance                        │
+│    2. evaluateBaseHealth({dw, dq, hcMargin, pickDate})              │
+│       → ACTIVE / MUTED / CANCELLED                                  │
+│    3. lockTierFromDeltas(dw, dq, hcDominant, {pickDate, hcMargin})  │
+│       → LOCKED / ELITE / MUTED  (no LEAN under v7.4)                │
+│    4. meetsV74Floor(dw, dq, hcMargin)                               │
+│       → if true:  lockStage='LOCKED' (promote SHADOW → LOCKED)      │
+│       → if false: lockStage='SHADOW' (demote LOCKED → SHADOW)       │
+│    5. Writes canonical state back to sharpFlowPicks/Spreads/Totals  │
+│       with health.syncedBy='server-cron' + lockStageLastChange      │
+│       audit stamp + lastSyncAt                                      │
+│                                                                     │
+│  Idempotent — re-running with no data change writes 0 fields.       │
+│  Honors a T-15 freeze: writes are skipped once now ≥                │
+│  commenceTime − 15 min so the lock-in snapshot stays stable.        │
+└────────────────────────────┬────────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  LAYER 3 — BROWSER (the read-mostly client)                         │
+│                                                                     │
+│  src/pages/SharpFlow.jsx                                            │
+│    • Reads sharpFlowPicks/Spreads/Totals + sharpWalletProfiles +    │
+│      polymarket_data.json                                           │
+│    • Locked Picks list filter chains:                               │
+│        if (sd.lockStage === 'SHADOW' || sd.superseded) skip;        │
+│        if (!passesV74DisplayGate({dw, dq, hcMargin, ...})) skip;    │
+│      → defensive client-side gate, hides any side that doesn't      │
+│        currently pass the floor (covers the brief window between    │
+│        cron writes when the doc may still hold stale state)         │
+│    • Browser writes are NARROW:                                     │
+│        - Promote SHADOW → LOCKED (one-way, when first crossing)     │
+│        - peak.{} updates (monotonic max — units, stars, EV)         │
+│        - syncPickHealth({health}) — DEFERS for ≤7 min after a       │
+│          server-cron write (V7_4_CRON_DEFER_WINDOW_MS)              │
+│      → cron always wins ties, browser never overwrites fresh        │
+│        canonical state                                              │
+│    • LockedPickCard renders units, stars, badges, hero chips,       │
+│      promotion narration, HC chips, etc. — pure read of stamped     │
+│      Firestore fields                                               │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### What runs and when
+
+| Cadence | Job | What it does |
+|---|---|---|
+| Every 8 min (× 6/hour) | `.github/workflows/fetch-polymarket.yml` cycle 1–6 | `fetchPolymarketData → fetchKalshiData → snapshotPinnacle → scanSharpPositions → writeSharpActions → syncPickStateAuthoritative → updateClosingOdds → auditMarketData → git commit/pull/push → npm run build → gh-pages deploy` |
+| Hourly schedule | `.github/workflows/fetch-polymarket.yml` | Re-launches the 6-cycle loop |
+| Daily 08:30 ET | `.github/workflows/daily-v6-report.yml` | Rebuilds `DAILY_V6_REPORT.md` (PnL, cohorts, HC margin, growth) |
+| Daily evening | `.github/workflows/rank-today-locks.yml` | Rebuilds `TOP_PICKS.md` ranking |
+| Per-bet outcome | Firebase Cloud Function `updateBetResults` | Grades sides at game completion (LEAN/0u → tracked, no PnL impact) |
+| Browser tick (every 30s while page open) | React `useEffect` in `SharpFlow.jsx` | Re-evaluate locks against latest data; defers to recent cron writes |
+
+### Cycle by cycle: what happens to one pick
+
+```
+T-2h00m  •  decideLockStage runs (browser or cron) and the pick first
+            crosses the v7.4 floor → Firestore writes
+              lockStage = 'LOCKED'
+              promotedBy = 'v74-hc-margin'  (or 'two-factor-floor')
+              lock.{}, peak.{}, contribTier, v8_walletConsensus*
+
+T-1h52m  •  fetch cycle 2 — live consensus shifts: Δw drops 2 → 1, HC
+            margin holds at +2 → still passes HC route → cron writes
+              lockStage = 'LOCKED' (no change)
+              health.status = 'ACTIVE'
+              v8_lockTier = 'LOCKED'
+              v8_walletConsensusDelta = 1   (restamped)
+
+T-1h44m  •  fetch cycle 3 — live consensus shifts again: Δw = 0,
+            Δq = -1, HC = +2 → HC route requires Δq ≥ 0, fails →
+              lockStage = 'SHADOW'  (DEMOTED — disappears from list)
+              lockStageLastChange = {reason: 'v74_below_floor',
+                                     dw:0, dq:-1, hcMargin:2, at:...}
+              health.status = 'MUTED' (sum_below_floor)
+
+T-1h36m  •  fetch cycle 4 — Δq recovers to 0 → HC route fires again →
+              lockStage = 'LOCKED'  (RE-PROMOTED — reappears in list)
+              lockStageLastChange = {reason: 'v74_floor_recovered',
+                                     dw:0, dq:0, hcMargin:2, at:...}
+              health.status = 'ACTIVE' + reasons:['v73_hc_rescue']
+
+T-15m    •  T-15 FREEZE — cron starts skipping this pick. Whatever
+            state was written at the last pre-T-15 cycle is the
+            permanent lock-in. Browser also stops writing for it.
+
+T+game   •  Firebase Cloud Function updateBetResults grades the pick
+            at game completion. peak.units determines stake; tracked
+            picks (units = 0 / lockStage = 'LEAN' legacy) get
+            result.tracked = true and 0 PnL impact.
+```
+
+### The race-condition guards (why the screenshot bug is fixed)
+
+The 2026-05-02 incident: a screenshot showed Texas Rangers as `LEAN ·
+TRACK ONLY` and three Celtics legs as `WEAKENING` even though the
+server cron had just written canonical v7.4 state minutes earlier.
+Root cause was two layers of stale code racing:
+
+1. **Old fetch workflow** (started before the v7.4 push) was still
+   running OLD cron code that didn't know about v7.4, so it wrote
+   stale `lockStage='LOCKED'` over the fresh `'SHADOW'` writes. **Fix:**
+   manually cancel the stale workflow; the next-scheduled workflow
+   checks out the latest commit.
+
+2. **Old browser bundle** (last gh-pages deploy was the day before)
+   served pre-v7.4 JS to the user. That bundle's `decideLockStage`
+   re-promoted the SHADOW pick back to LOCKED on every regime
+   re-evaluation. **Fix:** the new fetch workflow's build/deploy step
+   ships the new bundle; meanwhile the cron's authoritative writes
+   eventually win.
+
+3. **Browser-driven `syncPickHealth`** could overwrite fresh cron
+   writes with the browser's data snapshot if both ran within seconds
+   of each other. **Fix:** v7.4 added a `V7_4_CRON_DEFER_WINDOW_MS`
+   (7 min) — `syncPickHealth` checks `sd.health.syncedBy === 'server-cron'`
+   and `(Date.now() − lastSyncAt) < window`; if true, the browser
+   bails and lets the cron's view stand.
+
+4. **Firestore batch clobber** — when both sides of the same pick
+   doc (e.g. `phi_bos` home + away) needed updates in the same cron
+   run, the second `batch.set()` on the same doc ref overwrote the
+   first (Firestore semantics: last write wins). **Fix:** the cron now
+   coalesces per-side patches into a single payload per docId before
+   committing.
+
+All four guards are in place as of 2026-05-02. The architecture is
+**cron-authoritative, browser-defensive** — the cron writes the truth,
+the browser displays it, and the display gate hides anything stale.
+
+### What you should see right now
+
+Open the Locked Picks page. For every visible card, the pick's live
+state must currently satisfy:
+
+- **Either** `HC_m ≥ +1 ∧ Δw ≥ 0 ∧ Δq ≥ 0`
+- **Or**     `Σ ≥ +5 ∧ Δw ≥ +1 ∧ Δq ≥ +1`
+
+If you see a `LEAN · TRACK ONLY` or `WEAKENING` card on a today-dated
+pick (`pickDate ≥ 2026-05-02`), something's wrong — either you're
+viewing a stale browser bundle (hard refresh), the cron workflow is
+mid-cycle (wait ~5 min), or there's a regression to file. The
+defensive client-side gate (`passesV74DisplayGate` in `SharpFlow.jsx`)
+should hide it within the next render even if Firestore is briefly
+stale.
+
+For graded picks (yesterday and earlier), the original lock state and
+units are preserved — historical PnL never re-grades.
 
 ---
 
