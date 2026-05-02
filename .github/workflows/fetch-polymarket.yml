@@ -172,6 +172,7 @@ jobs:
               # peaceiris/actions-gh-pages does — we just inline it so it
               # can run inside the loop.
               echo "--- deploying dist → gh-pages ---"
+              deploy_ok=0
               (
                 cd dist
                 # CNAME is already copied by Vite from public/.
@@ -182,8 +183,23 @@ jobs:
                     commit -q -m "Deploy cycle $i [$(date -u +'%Y-%m-%d %H:%M:%S UTC')]"
                 git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GH_REPO}.git" \
                     HEAD:gh-pages
-              ) && echo "--- gh-pages push succeeded ---" \
+              ) && { echo "--- gh-pages push succeeded ---"; deploy_ok=1; } \
                 || echo "--- gh-pages push failed (cycle $i) ---"
+
+              # POST-DEPLOY SYNC SAFETY NET — re-run syncPickStateAuthoritative
+              # right after the deploy lands. The inline run earlier in this
+              # cycle is the primary; this catches the case where it failed
+              # (Firestore hiccup, transient throttle) so the dashboard the
+              # user loads against the just-published JSON sees Firestore
+              # state from the SAME cycle, not the previous one.
+              # Idempotent — if the primary run already wrote the canonical
+              # state, this run sees no changes and exits clean.
+              if [ "$deploy_ok" -eq 1 ]; then
+                echo "--- syncPickStateAuthoritative (post-deploy safety net) ---"
+                if ! node scripts/syncPickStateAuthoritative.js; then
+                  echo "::warning::syncPickStateAuthoritative POST-DEPLOY also failed (cycle $i) — Firestore may be stale relative to deployed JSON until next cycle"
+                fi
+              fi
             else
               echo "--- build failed (cycle $i), skipping deploy ---"
             fi
