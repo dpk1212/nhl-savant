@@ -1,6 +1,6 @@
 # Sharp Intel v6 — Daily Master Report
 
-_Auto-generated **5/3/2026, 6:43:40 AM ET** by `scripts/dailyV6Report.js`. Do not edit by hand._
+_Auto-generated **5/3/2026, 10:00:58 AM ET** by `scripts/dailyV6Report.js`. Do not edit by hand._
 
 **Source of truth: this report mirrors the live Pick Performance dashboard.** Inclusion = `lockStage ≠ SHADOW ∧ ¬superseded ∧ health ∉ {MUTED, CANCELLED} ∧ peak.stars ≥ 2.5`. PnL is in **peak units** (the size shipped to users). Cohort tags (1/1, 2/2, …) come from frozen `v8_walletConsensus*` stamps written at last sync before the T-15 freeze. Nothing is recomputed against today's whitelist.
 
@@ -11,7 +11,7 @@ v6 cutover: **2026-04-18** · whitelist source: live `sharpWalletProfiles` (140 
 
 | Metric | Value |
 |---|---|
-| Graded sides scanned | 286 |
+| Graded sides scanned | 288 |
 | Graded sides w/ outcome | 278 |
 | **SHIPPED (matches dashboard)** | **124** |
 | · of which lockStage = LOCKED | 122 |
@@ -20,7 +20,7 @@ v6 cutover: **2026-04-18** · whitelist source: live `sharpWalletProfiles` (140 
 | · with frozen Δq stamp | 59 |
 | · Δq recomputed from walletDetails (contribution-only) | 59 |
 | · uncategorized (no Δw stamp) | 5 |
-| Sharp Vault hidden-star positions | 1532 |
+| Sharp Vault hidden-star positions | 1531 |
 | Unique wallets observed | 115 |
 | Graded date range | 2026-04-18 … 2026-05-02 |
 | Sports represented | MLB, NBA, NHL |
@@ -125,10 +125,10 @@ This is the Sharp Vault-only check from the hidden `v8_stars` field on individua
 | 5★ | 96 | 56-40 | 58.3% | $10.42M | $311.9K | +3.0% |
 | 4★ | 256 | 126-130 | 49.2% | $21.94M | $25.9K | +0.1% |
 | 3★ | 515 | 269-246 | 52.2% | $40.73M | $102.1K | +0.3% |
-| 2★ | 534 | 262-272 | 49.1% | $35.56M | -$847.2K | -2.4% |
+| 2★ | 533 | 262-271 | 49.2% | $35.53M | -$826.6K | -2.3% |
 | <2★ | 131 | 57-74 | 43.5% | $6.37M | $103.8K | +1.6% |
 | **4★+ combined** | **352** | **182-170** | **51.7%** | **$32.36M** | **$337.9K** | **+1.0%** |
-| **<4★ combined** | **1180** | **588-592** | **49.8%** | **$82.66M** | **-$641.3K** | **-0.8%** |
+| **<4★ combined** | **1179** | **588-591** | **49.9%** | **$82.62M** | **-$620.7K** | **-0.8%** |
 
 ### §4b. 5★ / 4★ hidden-star performance by sport
 
