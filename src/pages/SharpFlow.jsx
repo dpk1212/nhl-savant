@@ -3033,6 +3033,88 @@ async function toggleUserPick(uid, date, gameKey, pickData) {
 
 // ─── Data Loading ─────────────────────────────────────────────────────────────
 
+// QUALIFIED-WALLET FILTER (2026-05-03) — Sharp Intel cards display ONLY
+// positions/dollars belonging to whitelisted wallets (CONFIRMED + FLAT
+// per sport, the same set that drives the dw lock math). The whitelist
+// graduated from a small experimental list to a large enough roster
+// that the user wants every visible aggregate (sharp count, $ totals,
+// money-split %, P&L sums, wallet detail list, card sort order, and
+// the consensus-side determination itself) restricted to it. Wallets
+// outside the whitelist (WR50 — losing track record in this sport, or
+// untracked) get dropped here so nothing downstream sees them.
+//
+// Applied once at the JSON-load layer. Re-aggregates summary so the
+// money-split bars, totals, and consensus side reflect the filtered set.
+// Games with zero qualifying positions get dropped entirely (no card).
+//
+// Side-effect on lock math: dq (qualityForT30 − qualityAgT30) was
+// computed from "any T30+ contributor regardless of whitelist tier"
+// inside computeWalletConsensus. After this filter, dq counts only
+// "T30+ contributor AND whitelisted" — a slight tightening. forW/agW,
+// HC margin, hcDominant are unaffected (they already filtered to
+// whitelisted/CONFIRMED wallets only).
+const SHARP_INTEL_SPORTS = new Set(['NHL', 'CBB', 'MLB', 'NBA', 'NFL']);
+function filterToQualifiedWallets(rawData, profilesMap) {
+  if (!rawData) return null;
+  if (!profilesMap || profilesMap.size === 0) return null;
+  const out = {};
+  for (const [k, v] of Object.entries(rawData)) {
+    // Pass-through non-sport keys (scannedAt, walletsScanned, mmExcluded, etc.)
+    if (!SHARP_INTEL_SPORTS.has(k)) {
+      out[k] = v;
+      continue;
+    }
+    const sport = k;
+    if (typeof v !== 'object' || v === null) {
+      out[k] = v;
+      continue;
+    }
+    const filteredSport = {};
+    for (const [gameKey, gd] of Object.entries(v)) {
+      if (!gd || typeof gd !== 'object' || !Array.isArray(gd.positions)) continue;
+      const positions = gd.positions.filter(p => {
+        const short = String(p?.wallet || '').slice(-6).toLowerCase();
+        if (!short) return false;
+        const profile = profilesMap.get(short);
+        const tier = profile?.bySport?.[sport]?.whitelistTier;
+        return tier === 'CONFIRMED' || tier === 'FLAT';
+      });
+      if (positions.length === 0) continue;
+      // Re-aggregate summary from the filtered positions so the money
+      // bars, totals, and consensus side all reflect the qualified set.
+      // Detect total-market (sides over/under) vs ML/spread (away/home).
+      const isTotal = positions.some(p => p.side === 'over' || p.side === 'under');
+      let summary;
+      if (isTotal) {
+        summary = { sharpOver: 0, sharpUnder: 0, overInvested: 0, underInvested: 0 };
+        for (const p of positions) {
+          const inv = p.invested || 0;
+          if (p.side === 'over') { summary.sharpOver++; summary.overInvested += inv; }
+          else if (p.side === 'under') { summary.sharpUnder++; summary.underInvested += inv; }
+        }
+        summary.consensus = summary.overInvested > summary.underInvested ? 'over'
+                          : summary.underInvested > summary.overInvested ? 'under'
+                          : null;
+        summary.totalInvested = summary.overInvested + summary.underInvested;
+      } else {
+        summary = { sharpAway: 0, sharpHome: 0, awayInvested: 0, homeInvested: 0 };
+        for (const p of positions) {
+          const inv = p.invested || 0;
+          if (p.side === 'away') { summary.sharpAway++; summary.awayInvested += inv; }
+          else if (p.side === 'home') { summary.sharpHome++; summary.homeInvested += inv; }
+        }
+        summary.consensus = summary.awayInvested > summary.homeInvested ? 'away'
+                          : summary.homeInvested > summary.awayInvested ? 'home'
+                          : null;
+        summary.totalInvested = summary.awayInvested + summary.homeInvested;
+      }
+      filteredSport[gameKey] = { ...gd, positions, summary };
+    }
+    out[sport] = filteredSport;
+  }
+  return out;
+}
+
 function useMarketData() {
   const [polyData, setPolyData] = useState(null);
   const [kalshiData, setKalshiData] = useState(null);
@@ -3172,7 +3254,31 @@ function useMarketData() {
     };
   }, []);
 
-  return { polyData, kalshiData, whaleProfiles, pinnacleHistory, sharpPositions, spreadPositions, totalPositions, sportsSharps, intelExcludedWallets, walletProfiles, loading };
+  // Apply qualified-wallet filter ONCE here so every downstream
+  // consumer (cards, sharpStats, vault convergences, locked-list
+  // builders) sees the same filtered view. Returns null until both
+  // the position JSON and walletProfiles cache are loaded; existing
+  // null-safe access patterns throughout the consumer handle that.
+  const qualifiedSharpPositions = useMemo(
+    () => filterToQualifiedWallets(sharpPositions, walletProfiles),
+    [sharpPositions, walletProfiles]
+  );
+  const qualifiedSpreadPositions = useMemo(
+    () => filterToQualifiedWallets(spreadPositions, walletProfiles),
+    [spreadPositions, walletProfiles]
+  );
+  const qualifiedTotalPositions = useMemo(
+    () => filterToQualifiedWallets(totalPositions, walletProfiles),
+    [totalPositions, walletProfiles]
+  );
+
+  return {
+    polyData, kalshiData, whaleProfiles, pinnacleHistory,
+    sharpPositions: qualifiedSharpPositions,
+    spreadPositions: qualifiedSpreadPositions,
+    totalPositions: qualifiedTotalPositions,
+    sportsSharps, intelExcludedWallets, walletProfiles, loading,
+  };
 }
 
 function buildGameData(polyData, kalshiData) {
