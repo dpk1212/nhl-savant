@@ -1,6 +1,6 @@
 # Wallet Profiles Summary
 
-Generated: 5/3/2026, 4:45:10 AM ET · V8 cutover: 2026-04-18 · whitelistVersion: 1
+Generated: 5/3/2026, 6:01:38 AM ET · V8 cutover: 2026-04-18 · whitelistVersion: 1
 
 Monitoring artifact for the nightly `sharpWalletProfiles` rebuild. Shows how many wallets qualify for each whitelist tier per sport, who the top performers are, and what changed since the last run.
 
