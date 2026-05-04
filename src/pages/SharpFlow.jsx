@@ -11104,7 +11104,13 @@ export default function SharpFlow() {
                         const peak = sd.peak || sd.lock || {};
                         const lock = sd.lock || {};
                         const stars = peak.stars || lock.stars || 0;
-                        if (stars < 2.5) continue;
+                        // Pre-v7.4 legacy: hide low-star picks. Under v7.4 the
+                        // canonical display gate is passesV74DisplayGate (above);
+                        // a pick passing the HC route can legitimately stamp
+                        // 2.25★ (dw=0 ∧ dq=0 ∧ HC≥+1 — strongest single signal,
+                        // small base) and must still render. Skip the old gate
+                        // when the v7.4 contract owns the decision.
+                        if (!isV74Eligible(doc.date) && stars < 2.5) continue;
                         // ?? not || — preserve peak.units = 0 (LEAN tracking
                         // plays). Falsy-or fallback to 1 was the bug behind
                         // every LEAN graded pick rendering as a -1u loss.
