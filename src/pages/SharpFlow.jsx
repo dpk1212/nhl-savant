@@ -621,24 +621,49 @@ function percentileOf(sortedArr, val) {
 // Below the v6.6 base (one or both deltas ≤ 0), the legacy diagnostic
 // ladder is retained so the muted-state UI reads intuitively. These
 // stars never ship with units regardless of value.
-function vaultStarFromDeltas(dw, dq) {
+function vaultStarFromDeltas(dw, dq, hcMargin = 0, pickDate = null) {
+  // Base star from dw/dq alone (legacy behaviour, unchanged for non-v7.4 picks).
+  let baseStar;
   if (dw >= 1 && dq >= 1) {
     const sum = dw + dq;
-    if (sum >= 6) return 5.0;
-    if (sum === 5) return 4.5;
-    if (sum === 4) return 4.0;
-    if (sum === 3) return 3.5;
-    return 2.5;
+    if (sum >= 6) baseStar = 5.0;
+    else if (sum === 5) baseStar = 4.5;
+    else if (sum === 4) baseStar = 4.0;
+    else if (sum === 3) baseStar = 3.5;
+    else baseStar = 2.5;
+  } else {
+    let base;
+    if (dw <= -2) base = 1.0;
+    else if (dw === -1) base = 1.5;
+    else if (dw === 0) base = 2.5;
+    else base = 3.0;
+    let adj = 0;
+    if (dq <= -2) adj = -0.5;
+    else if (dq <= 0) adj = -0.25;
+    baseStar = Math.max(1.0, Math.min(5.0, base + adj));
   }
-  let base;
-  if (dw <= -2) base = 1.0;
-  else if (dw === -1) base = 1.5;
-  else if (dw === 0) base = 2.5;
-  else base = 3.0;
-  let adj = 0;
-  if (dq <= -2) adj = -0.5;
-  else if (dq <= 0) adj = -0.25;
-  return Math.max(1.0, Math.min(5.0, base + adj));
+  // v7.4 HC star floor — after the qualified-wallet filter shrunk the
+  // universe to proven winners only, dw=0/dq=0 with HC=+2 isn't "no
+  // signal", it's "every proven-winner HC sharp who took an oversized
+  // swing took it on this side, and zero on the other." Let HC margin
+  // drive the star rating directly so unit sizing reflects the real
+  // strength of the signal instead of being shrunk by a 0 sum.
+  //
+  //   HC ≥ +3  → 5.0★ floor (max)
+  //   HC = +2  → 4.5★ floor
+  //   HC = +1  → 3.5★ floor
+  //
+  // Final star = max(baseStar, hcFloor). Picks with strong dw+dq AND
+  // strong HC keep their already-high baseStar; picks where HC is the
+  // primary signal (e.g., HC route lock on a 0/0 sum) get sized by HC.
+  // HC multipliers (1.5×/1.75×) still apply on top in calculateUnits
+  // and clamp at the existing caps (V7_2_HC_CAP_*).
+  const hc = Number.isFinite(hcMargin) ? hcMargin : 0;
+  if (isV74Eligible(pickDate) && hc >= 1) {
+    const hcFloor = hc >= 3 ? 5.0 : hc >= 2 ? 4.5 : 3.5;
+    return Math.max(baseStar, hcFloor);
+  }
+  return baseStar;
 }
 
 // v7.1 lock-tier classifier. Sole source of truth for whether a pick
@@ -808,7 +833,7 @@ function renderHeroChips({ dw, dq, forW, agW, qForT, qAgT, sport }) {
   );
 }
 
-function rateStarsV8({ positions, consensusSide, v8Norm, pinnMoveSize = 0, timeToGame = null, lockOdds = null, pinnCurrentOdds = null, sport = null }) {
+function rateStarsV8({ positions, consensusSide, v8Norm, pinnMoveSize = 0, timeToGame = null, lockOdds = null, pinnCurrentOdds = null, sport = null, pickDate = null }) {
   if (!v8Norm || !positions || positions.length === 0) {
     return {
       stars: 1, rawScore: 0, effectiveScore: 0,
@@ -950,11 +975,12 @@ function rateStarsV8({ positions, consensusSide, v8Norm, pinnMoveSize = 0, timeT
   // hasn't loaded yet (dw=0 artifact), or we have no sport context, we
   // fall back to the Δ_quality-only rung so Sharp Intel never silently
   // renders every card as 2.5★.
-  const wc = computeWalletConsensus(walletDetails, sport, consensusSide);
+  const wc = computeWalletConsensus(walletDetails, sport, consensusSide, pickDate);
   const deltaWinner = wc.delta;
   const deltaQuality = wc.qualityMargin;
+  const wcHcMargin = (wc.hcConfFor || 0) - (wc.hcConfAg || 0);
   const vaultStar = (sport && WALLET_PROFILES_CACHE)
-    ? vaultStarFromDeltas(deltaWinner, deltaQuality)
+    ? vaultStarFromDeltas(deltaWinner, deltaQuality, wcHcMargin, pickDate)
     : null;
 
   let stars;
@@ -1703,10 +1729,10 @@ function computeLiveSizing({ peakStars, peakUnits, marketType, oddsForLadder,
   if (liveDw == null || liveDq == null || peakStars == null) {
     return { liveStars: peakStars, liveUnits: peakUnits || 0, isDownsized: false, liveTier: null };
   }
-  const liveStars = vaultStarFromDeltas(liveDw, liveDq);
   const hcMargin = Number.isFinite(liveHcMargin)
     ? liveHcMargin
     : (liveHcDominant ? 1 : 0);
+  const liveStars = vaultStarFromDeltas(liveDw, liveDq, hcMargin, pickDate);
   const sum = liveDw + liveDq;
   const liveTier = lockTierFromDeltas(liveDw, liveDq, liveHcDominant, { pickDate, hcMargin });
   const ladder = (marketType === 'spread' || marketType === 'total') ? calculateSpreadTotalUnits : calculateUnits;
@@ -2037,8 +2063,9 @@ function stampWalletConsensus(target, v8Scoring, sideKey, sport, baseStars, prom
   target.v8_walletConsensusQualityForT30 = wc.qualityForT30;
   target.v8_walletConsensusQualityAgT30 = wc.qualityAgT30;
   target.v8_walletConsensusQualityMargin = wc.qualityMargin;
-  target.v8_vaultStar = (wc.forW || wc.agW || wc.qualityMargin !== 0)
-    ? vaultStarFromDeltas(wc.delta, wc.qualityMargin)
+  const stampHcMargin = (wc.hcConfFor || 0) - (wc.hcConfAg || 0);
+  target.v8_vaultStar = (wc.forW || wc.agW || wc.qualityMargin !== 0 || stampHcMargin >= 1)
+    ? vaultStarFromDeltas(wc.delta, wc.qualityMargin, stampHcMargin, pickDate)
     : null;
   // v7.1/v7.2/v7.3 — HC dominance + margin + cohort labels + system version.
   // Pre-cutover picks get v8_systemVersion: '7.0' (or '7.1' for the
@@ -6039,9 +6066,13 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     ? polyPoints[polyPoints.length - 1] > polyPoints[0]
     : polyPoints[polyPoints.length - 1] < polyPoints[0]);
   const oppSharpFeatures = computeSharpFeatures(gd.positions, oppSide);
+  // pickDate threaded into rateStarsV8 so vaultStarFromDeltas can apply
+  // the v7.4 HC star floor (HC margin drives stars directly when dw+dq
+  // is weak, e.g., HC=+2 with dw=0/dq=0 → 4.5★ instead of 2.25★).
+  const pickDate = commenceTime ? gameDate(commenceTime) : null;
   const oppSr = rateStarsV8({
     positions: gd.positions, consensusSide: oppSide, v8Norm,
-    pinnMoveSize: 0, timeToGame: null, sport: gd.sport,
+    pinnMoveSize: 0, timeToGame: null, sport: gd.sport, pickDate,
   });
   const oppPeakStars = oppSr.stars;
 
@@ -6072,6 +6103,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     lockOdds: lockOddsRef.current,
     pinnCurrentOdds,
     sport: gd.sport,
+    pickDate,
   });
   // Align with the allPosGames counter (8336): skip only truly extreme odds
   // (pinnProb >= 0.95). Previously a stricter 0.85 cap here hid cards that
@@ -6097,11 +6129,9 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   // Δw=+2 / Δq=+3 / contribTier=STRONG): `isLocked` and `isShadow`
   // both went false, the sync useEffect returned early, and
   // syncPickToFirebase never ran.
-  // v7.1 — pickDate must be threaded into decideLockStage / calculateUnits
-  // so the HC-dominance branch is gated by V7_1_CUTOVER_DATE. Use
-  // gameDate(commenceTime) (ET-normalized), matching the date stamped on
-  // the Firestore doc by the sync layer.
-  const pickDate = commenceTime ? gameDate(commenceTime) : null;
+  // pickDate computed earlier (threaded into rateStarsV8 + decideLockStage
+  // + calculateUnits so v7.x cutover gates fire correctly). ET-normalized
+  // via gameDate(commenceTime), matching what the sync layer stamps.
   const decision = sr?.v8Scoring && consensusSide && gd.sport
     ? decideLockStage(sr.regime, sr.v8Scoring, consensusSide, gd.sport, sr.stars, pickDate)
     : null;
@@ -6327,6 +6357,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     timeToGame: commenceTime ? (commenceTime - Date.now()) / 60000 : null,
     lockOdds: null, pinnCurrentOdds: spreadPinnOdds,
     sport: gd.sport,
+    pickDate,
   }) : null;
 
   const spreadWhaleOverride = spreadSharpFeatures
@@ -6479,6 +6510,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     timeToGame: commenceTime ? (commenceTime - Date.now()) / 60000 : null,
     lockOdds: null, pinnCurrentOdds: totalPinnOdds,
     sport: gd.sport,
+    pickDate,
   }) : null;
 
   const totalWhaleOverride = totalSharpFeatures
@@ -10951,9 +10983,10 @@ export default function SharpFlow() {
                   const oInv = oSide === 'away' ? (ss.awayInvested || 0) : (ss.homeInvested || 0);
                   const oMoneyPct = ss.totalInvested > 0 ? (oInv / ss.totalInvested) * 100 : 50;
                   const oWalletPct = (cWallets + oWallets) > 0 ? (oWallets / (cWallets + oWallets)) * 100 : 50;
+                  const sortPickDate = ct ? gameDate(ct) : null;
                   const oSr = rateStarsV8({
                     positions: gd.positions, consensusSide: oSide, v8Norm,
-                    pinnMoveSize: 0, timeToGame: null, sport,
+                    pinnMoveSize: 0, timeToGame: null, sport, pickDate: sortPickDate,
                   });
 
                   const sortFlowGame = gameFlowMap?.[`${sport}_${key}`];
@@ -10968,7 +11001,7 @@ export default function SharpFlow() {
                   const sortWalletPct = (cWallets + oWallets) > 0 ? (cWallets / (cWallets + oWallets)) * 100 : 50;
                   const sr = rateStarsV8({
                     positions: gd.positions, consensusSide: cSide, v8Norm,
-                    pinnMoveSize: 0, timeToGame: null, sport,
+                    pinnMoveSize: 0, timeToGame: null, sport, pickDate: sortPickDate,
                   });
 
                   if (sortBy === 'locked') continue;

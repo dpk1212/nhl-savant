@@ -127,24 +127,35 @@ function meetsV74Floor(dw, dq, hcMargin) {
   return hcRoute || sumRoute;
 }
 
-function vaultStarFromDeltas(dw, dq) {
+function vaultStarFromDeltas(dw, dq, hcMargin = 0, pickDate = null) {
+  let baseStar;
   if (dw >= 1 && dq >= 1) {
     const sum = dw + dq;
-    if (sum >= 6) return 5.0;
-    if (sum === 5) return 4.5;
-    if (sum === 4) return 4.0;
-    if (sum === 3) return 3.5;
-    return 2.5;
+    if (sum >= 6) baseStar = 5.0;
+    else if (sum === 5) baseStar = 4.5;
+    else if (sum === 4) baseStar = 4.0;
+    else if (sum === 3) baseStar = 3.5;
+    else baseStar = 2.5;
+  } else {
+    let base;
+    if (dw <= -2) base = 1.0;
+    else if (dw === -1) base = 1.5;
+    else if (dw === 0) base = 2.5;
+    else base = 3.0;
+    let adj = 0;
+    if (dq <= -2) adj = -0.5;
+    else if (dq <= 0) adj = -0.25;
+    baseStar = Math.max(1.0, Math.min(5.0, base + adj));
   }
-  let base;
-  if (dw <= -2) base = 1.0;
-  else if (dw === -1) base = 1.5;
-  else if (dw === 0) base = 2.5;
-  else base = 3.0;
-  let adj = 0;
-  if (dq <= -2) adj = -0.5;
-  else if (dq <= 0) adj = -0.25;
-  return Math.max(1.0, Math.min(5.0, base + adj));
+  // v7.4 HC star floor — mirror SharpFlow.jsx::vaultStarFromDeltas. HC
+  // margin drives the star rating directly when dw+dq is weak so units
+  // reflect signal strength after the qualified-wallet filter.
+  const hc = Number.isFinite(hcMargin) ? hcMargin : 0;
+  if (isV74Eligible(pickDate) && hc >= 1) {
+    const hcFloor = hc >= 3 ? 5.0 : hc >= 2 ? 4.5 : 3.5;
+    return Math.max(baseStar, hcFloor);
+  }
+  return baseStar;
 }
 
 function lockTierFromDeltas(dw, dq, hcDominant, opts = {}) {
@@ -410,8 +421,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force 
     hcRescueDemoted = true;
   }
 
-  // Compute live tier / units.
-  const liveStars = vaultStarFromDeltas(live.delta, live.qualityMargin);
+  // Compute live tier / units. vaultStarFromDeltas now applies the v7.4
+  // HC star floor (HC ≥ +1 drives stars when dw+dq is weak), so units
+  // computed downstream reflect HC-dominant signal strength directly.
+  const liveStars = vaultStarFromDeltas(live.delta, live.qualityMargin, live.hcMargin, pickDate);
   const liveTier = lockTierFromDeltas(live.delta, live.qualityMargin, live.hcDominant, {
     pickDate, hcMargin: live.hcMargin,
   });
