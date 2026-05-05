@@ -40,22 +40,23 @@
  *     but bucketed as `Uncategorized` in cohort tables. We do not recompute
  *     Δw against today's whitelist because that is the bug we just removed.
  *
- * Sections:
- *   §1.  Sample summary — reconciles to the dashboard
- *   §2.  Daily PnL by lock-floor cohort (FROZEN deltas)
- *   §3.  Vault-Star bucket performance (FROZEN v8_vaultStar)
- *   §4.  Sharp Vault hidden-star performance (sharp_action_positions)
- *   §5.  Full (Δw × Δq) win matrix using FROZEN stamps
- *   §6.  RECONCILIATION & ANOMALIES — engine self-check
- *   §7.  Wallet roster growth & profitability
- *   §8.  Wallet winners — descriptive stats
- *   §9.  v7.1 HC dominance cohort (frozen v8_hcDominant)
- *   §10. v7.2 HC-margin tier cohort (frozen v7.2 stamps)
- *   §11. v7.3 HC-margin floor + MUTE override cohort (frozen v7.3 stamps)
- *   §12. HC-margin universal monitor — 3d/7d/all-time × sport × Σ × HC matrix
- *        (full graded set; rebuilds the v7.3 thesis check daily)
- *   §13. Proven-wallet roster growth & HC tracking — snapshot, drift,
- *        deltas, funnel, HC density, bubble pipeline
+ * Sections (post-2026-05-05 simplification — at the user's direction):
+ *   §1. Yesterday's picks — every shipped side from the most recent slate
+ *       with HC margin / Δw / Δq / outcome / peak-unit profit. This is the
+ *       "what happened last night" board.
+ *   §2. 3-day / 7-day / all-time cohort rollups partitioned by HC margin,
+ *       Δw (winner margin) and Δq (quality margin). N · W-L-P · WR · PnL.
+ *   §3. Edge-over-time chart — daily cumulative peak-unit PnL split by HC
+ *       margin bucket. Answers "is HC margin creating more winners?"
+ *   §4. Wallet roster growth & profitability  (formerly §7).
+ *   §5. Proven-wallet roster growth & HC tracking — snapshot, drift,
+ *       deltas, funnel, HC density, bubble pipeline (formerly §13).
+ *
+ * Everything else from the legacy report (frozen Δw×Δq cohorts, vault-star
+ * buckets, hidden-star performance, anomaly self-check, v7.1/v7.2/v7.3
+ * tracking, HC universal monitor) was retired by the user — they wanted a
+ * tighter daily that focuses on "did the picks work?" plus the wallet
+ * roster growth/tracking telemetry that drives Δ_winner.
  *
  * Output: DAILY_V6_REPORT.md
  *
@@ -93,6 +94,10 @@ const MIN_BETS_ARG = argv.find(a => a.startsWith('--min-bets='));
 const MIN_BETS = MIN_BETS_ARG ? parseInt(MIN_BETS_ARG.split('=')[1], 10) : 2;
 
 const V6_CUTOVER  = '2026-04-18'; // first day with v8Scoring.walletDetails
+// HC margin was launched at v7.1 cutover. Pre-cutover picks have no
+// HC margin (the feature didn't exist). We only show / aggregate HC
+// metrics from this date forward — no retro-fitting backwards.
+const HC_CUTOVER  = '2026-04-30';
 const QUALITY_CUT = 30;
 const HC_RATIO    = 1.5;          // HC = CONFIRMED tier ∧ sizeRatio ≥ HC_RATIO
 const PICK_COLS = [
@@ -302,6 +307,14 @@ async function loadEverything() {
         pickRows.push({
           docId: doc.id,
           date, sport, market, sideKey,
+          // Display fields for the daily picks table — captured so the
+          // renderer can show "Pick" without re-reading Firestore. `team`
+          // is what was shipped (post-flip if applicable); `away`/`home`
+          // identify the matchup; `commenceTime` lets us show local time.
+          team: side.team || null,
+          away: d.away || null,
+          home: d.home || null,
+          commenceTime: d.commenceTime || null,
           superseded, lockStage, healthStatus,
           peakStars, peakUnits, odds,
           inDashboard, cancelled,
@@ -727,364 +740,236 @@ function vaultStarBand(row) {
   out.push('');
   out.push(`_Auto-generated **${nowET} ET** by \`scripts/dailyV6Report.js\`. Do not edit by hand._`);
   out.push('');
-  out.push(`**Source of truth: this report mirrors the live Pick Performance dashboard.** Inclusion = \`lockStage ≠ SHADOW ∧ ¬superseded ∧ health ∉ {MUTED, CANCELLED} ∧ peak.stars ≥ 2.5\`. PnL is in **peak units** (the size shipped to users). Cohort tags (1/1, 2/2, …) come from frozen \`v8_walletConsensus*\` stamps written at last sync before the T-15 freeze. Nothing is recomputed against today's whitelist.`);
+  out.push(`**Source of truth: this report mirrors the live Pick Performance dashboard.** Inclusion = \`lockStage ≠ SHADOW ∧ ¬superseded ∧ health ∉ {MUTED, CANCELLED} ∧ peak.stars ≥ 2.5\`. PnL is in **peak units** (the size shipped to users). HC margin / Δw / Δq are the **frozen** stamps written at last sync before the T-15 freeze. HC margin only existed from the v7.1 launch (**${HC_CUTOVER}**); pre-launch picks have no HC value (no retro-fitting). Nothing is recomputed against today's whitelist.`);
   out.push('');
-  out.push(`v6 cutover: **${V6_CUTOVER}** · whitelist source: live \`sharpWalletProfiles\` (${profiles.size} profiles — display only) · quality cut: contribution ≥ ${QUALITY_CUT}.`);
+  out.push(`v6 cutover: **${V6_CUTOVER}** · whitelist source: live \`sharpWalletProfiles\` (${profiles.size} profiles — drives §5 roster snapshot only) · quality cut: contribution ≥ ${QUALITY_CUT} · HC = CONFIRMED tier ∧ sizeRatio ≥ ${HC_RATIO}.`);
   out.push('');
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // §1. SAMPLE SUMMARY (reconciles to dashboard)
+  // §1. YESTERDAY'S PICKS — every shipped side from the most recent slate
   // ═══════════════════════════════════════════════════════════════════════════
+  //
+  // "Yesterday" = calendar yesterday in ET if it has shipped picks; otherwise
+  // we fall back to the most recent date with shipped picks (covers off-days
+  // and the case where the report runs late/early enough that yesterday's
+  // slate is still ungraded). The user wants a "what happened last night"
+  // board: every pick we shipped, with the engine's frozen HC / Δw / Δq
+  // stamps, the result, and peak-unit PnL.
   out.push('---');
-  out.push('## §1. Sample summary');
+  out.push('## §1. Yesterday\'s picks');
   out.push('');
-  out.push(mdHeader(['Metric', 'Value']));
-  out.push(`| Graded sides scanned | ${meta.totalSidesScanned} |`);
-  out.push(`| Graded sides w/ outcome | ${pickRows.length} |`);
-  out.push(`| **SHIPPED (matches dashboard)** | **${shippedRows.length}** |`);
-  out.push(`| · of which lockStage = LOCKED | ${shippedRows.filter(r => r.lockStage === 'LOCKED').length} |`);
-  out.push(`| · of which lockStage = null/other | ${shippedRows.filter(r => r.lockStage !== 'LOCKED').length} |`);
-  out.push(`| · with frozen Δw stamp | ${shippedRows.filter(r => r.dwSource === 'frozen').length} |`);
-  out.push(`| · with frozen Δq stamp | ${shippedRows.filter(r => r.dqSource === 'frozen').length} |`);
-  out.push(`| · Δq recomputed from walletDetails (contribution-only) | ${shippedRows.filter(r => r.dqSource === 'recomputed_from_wallet_details').length} |`);
-  out.push(`| · uncategorized (no Δw stamp) | ${shippedRows.filter(r => r.dwFrozen == null).length} |`);
-  out.push(`| Sharp Vault hidden-star positions | ${vaultRows.length} |`);
-  out.push(`| Unique wallets observed | ${new Set(walletBets.map(b => b.wallet)).size} |`);
-  out.push(`| Graded date range | ${meta.dateMin || '—'} … ${meta.dateMax || '—'} |`);
-  out.push(`| Sports represented | ${sports.join(', ') || '—'} |`);
-  out.push(`| Markets represented | ${markets.join(', ') || '—'} |`);
-  out.push('');
-
-  // Headline reconciliation: what we'd see on the dashboard.
-  const allGradedAgg = finalizeAgg(pickRows.reduce((a, r) => { pushAgg(a, r); return a; }, emptyAgg()));
-  const shippedAgg   = finalizeAgg(shippedRows.reduce((a, r) => { pushAgg(a, r); return a; }, emptyAgg()));
-  const lockableShipped = shippedRows.filter(r => r.dwFrozen != null && r.dqFrozen != null && r.dwFrozen >= 1 && r.dqFrozen >= 1);
-  const lockableAgg = finalizeAgg(lockableShipped.reduce((a, r) => { pushAgg(a, r); return a; }, emptyAgg()));
-  out.push(mdHeader(['Cohort', 'N', 'W-L-P', 'WR%', 'PnL (peak units)', 'PnL (flat 1u)']));
-  out.push(`| All graded sides | ${allGradedAgg.n} | ${allGradedAgg.w}-${allGradedAgg.l}-${allGradedAgg.p} | ${fmtPct(allGradedAgg.wr)} | ${sign(allGradedAgg.profitU, 2)}u | ${sign(allGradedAgg.flatU, 2)}u |`);
-  out.push(`| **SHIPPED (dashboard-equivalent)** | **${shippedAgg.n}** | **${shippedAgg.w}-${shippedAgg.l}-${shippedAgg.p}** | **${fmtPct(shippedAgg.wr)}** | **${sign(shippedAgg.profitU, 2)}u** | **${sign(shippedAgg.flatU, 2)}u** |`);
-  out.push(`| · of shipped, frozen Δw≥+1 ∧ Δq≥+1 | ${lockableAgg.n} | ${lockableAgg.w}-${lockableAgg.l}-${lockableAgg.p} | ${fmtPct(lockableAgg.wr)} | ${sign(lockableAgg.profitU, 2)}u | ${sign(lockableAgg.flatU, 2)}u |`);
-  out.push('');
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // §2. DAILY PnL BY (Δw × Δq) COHORT — frozen stamps, peak units
-  // ═══════════════════════════════════════════════════════════════════════════
-  out.push('---');
-  out.push('## §2. Daily PnL by (frozen Δw × Δq) cohort');
-  out.push('');
-  out.push('Every column counts only **shipped** picks (the dashboard set). Cohort tag is the **frozen** Δw / Δq at last write before the T-15 freeze. Picks lacking a Δw stamp are lumped into `Uncat`. PnL in peak units. Cumulative running PnL is on the rightmost column.');
-  out.push('');
-  out.push(mdHeader([
-    'Date',
-    'TOTAL N · WR · PnL',
-    'LOCK (1/1+) PnL',
-    'SUPER TOP',
-    'TOP',
-    'FLOOR-A (1/1)',
-    'FLOOR-B (1/≥2)',
-    'SUB-FLOOR',
-    'STALE Δw=0',
-    'STALE Δw≤−1',
-    'Uncat',
-    'Cum Total PnL',
-  ]));
-  let cumTotalPnl = 0;
-  for (const date of allDates) {
-    const day = shippedRows.filter(r => r.date === date);
-    if (!day.length) continue;
-    const totalAgg = finalizeAgg(day.reduce((a, r) => { pushAgg(a, r); return a; }, emptyAgg()));
-    cumTotalPnl += (totalAgg.profitU || 0);
-
-    const cohortAggs = {};
-    for (const co of COHORTS) {
-      const slice = day.filter(r => r.dwFrozen != null && co.f(r.dwFrozen, r.dqFrozen ?? 0));
-      cohortAggs[co.id] = finalizeAgg(slice.reduce((a, r) => { pushAgg(a, r); return a; }, emptyAgg()));
-    }
-    const uncat = day.filter(r => r.dwFrozen == null);
-    const uncatAgg = finalizeAgg(uncat.reduce((a, r) => { pushAgg(a, r); return a; }, emptyAgg()));
-
-    const lockSlice = day.filter(r => {
-      if (r.dwFrozen == null) return false;
-      const co = cohortFor(r.dwFrozen, r.dqFrozen ?? 0);
-      return co && LOCK_COHORT_IDS.has(co);
-    });
-    const lockDayAgg = finalizeAgg(lockSlice.reduce((a, r) => { pushAgg(a, r); return a; }, emptyAgg()));
-
-    const cell = (a) => a.n === 0 ? '—' : `${a.n} · ${fmtPct(a.wr, 0)} · ${sign(a.profitU, 2)}u`;
-    out.push(`| ${date} | ${cell(totalAgg)} | **${cell(lockDayAgg)}** | ${cell(cohortAggs.super_top)} | ${cell(cohortAggs.top)} | ${cell(cohortAggs.floor_a)} | ${cell(cohortAggs.floor_b)} | ${cell(cohortAggs.sub_floor)} | ${cell(cohortAggs.mute_zero)} | ${cell(cohortAggs.mute_neg)} | ${cell(uncatAgg)} | ${sign(cumTotalPnl, 2)}u |`);
-  }
-  out.push('');
-  out.push('### Cohort cumulative roll-up — shipped picks only');
-  out.push('');
-  out.push(mdHeader(['Cohort', 'N', 'W-L-P', 'WR%', 'PnL (peak units)', 'PnL (flat 1u)']));
-  for (const co of COHORTS) {
-    const slice = shippedRows.filter(r => r.dwFrozen != null && co.f(r.dwFrozen, r.dqFrozen ?? 0));
-    const a = finalizeAgg(slice.reduce((acc, r) => { pushAgg(acc, r); return acc; }, emptyAgg()));
-    if (a.n === 0) { out.push(`| ${co.label} | 0 | — | — | — | — |`); continue; }
-    const isLock = LOCK_COHORT_IDS.has(co.id) ? '**' : '';
-    out.push(`| ${isLock}${co.label}${isLock} | ${a.n} | ${a.w}-${a.l}-${a.p} | ${fmtPct(a.wr)} | ${sign(a.profitU, 2)}u | ${sign(a.flatU, 2)}u |`);
-  }
-  const uncatAll = shippedRows.filter(r => r.dwFrozen == null);
-  if (uncatAll.length) {
-    const a = finalizeAgg(uncatAll.reduce((acc, r) => { pushAgg(acc, r); return acc; }, emptyAgg()));
-    out.push(`| Uncategorized (no Δw stamp) | ${a.n} | ${a.w}-${a.l}-${a.p} | ${fmtPct(a.wr)} | ${sign(a.profitU, 2)}u | ${sign(a.flatU, 2)}u |`);
-  }
-  out.push('');
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // §3. FROZEN VAULT-STAR BUCKET PERFORMANCE
-  // ═══════════════════════════════════════════════════════════════════════════
-  out.push('---');
-  out.push('## §3. Frozen Vault-Star bucket performance');
-  out.push('');
-  out.push('Shipped picks bucketed by their frozen `v8_vaultStar` value (or by `peak.stars` when v8_vaultStar wasn\'t stamped). PnL in peak units.');
-  out.push('');
-  out.push(mdHeader([
-    'Vault-Star bucket', 'N', 'W-L-P', 'WR%', 'PnL (peak u)', 'PnL (flat 1u)', 'Avg odds',
-  ]));
-  for (const b of STAR_BUCKETS) {
-    const slice = shippedRows.filter(r => {
-      const s = r.vaultStar != null ? r.vaultStar : r.peakStars;
-      return s != null && s >= b.min && s <= b.max;
-    });
-    const a = finalizeAgg(slice.reduce((acc, r) => { pushAgg(acc, r); return acc; }, emptyAgg()));
-    if (a.n === 0) { out.push(`| ${b.label} | 0 | — | — | — | — | — |`); continue; }
-    const oddsSlice = slice.map(r => r.odds).filter(v => v != null);
-    const avgOdds = oddsSlice.length ? (oddsSlice.reduce((s, v) => s + v, 0) / oddsSlice.length) : null;
-    out.push(`| ${b.label} | ${a.n} | ${a.w}-${a.l}-${a.p} | ${fmtPct(a.wr)} | ${sign(a.profitU, 2)}u | ${sign(a.flatU, 2)}u | ${avgOdds == null ? '—' : sign(avgOdds, 0)} |`);
-  }
-  out.push('');
-
-  out.push('### Elite (≥4.5★) by sport');
-  out.push('');
-  out.push(mdHeader(['Sport', 'N', 'W-L-P', 'WR%', 'PnL (peak u)', 'PnL (flat 1u)']));
-  for (const sport of sports) {
-    const slice = shippedRows.filter(r => {
-      const s = r.vaultStar != null ? r.vaultStar : r.peakStars;
-      return r.sport === sport && s != null && s >= 4.5;
-    });
-    const a = finalizeAgg(slice.reduce((acc, r) => { pushAgg(acc, r); return acc; }, emptyAgg()));
-    if (a.n === 0) { out.push(`| ${sport.toUpperCase()} | 0 | — | — | — | — |`); continue; }
-    out.push(`| ${sport.toUpperCase()} | ${a.n} | ${a.w}-${a.l}-${a.p} | ${fmtPct(a.wr)} | ${sign(a.profitU, 2)}u | ${sign(a.flatU, 2)}u |`);
-  }
-  out.push('');
-
-  out.push('### Daily Vault-Star PnL band');
-  out.push('');
-  out.push('Per-day peak-unit PnL split into three star bands.');
-  out.push('');
-  out.push(mdHeader(['Date', '5★ N · PnL', '4.5–4.0★ N · PnL', '≤3.5★ N · PnL', 'TOTAL PnL']));
-  for (const date of allDates) {
-    const day = shippedRows.filter(r => r.date === date);
-    if (!day.length) continue;
-    const starOf = (r) => r.vaultStar != null ? r.vaultStar : (r.peakStars ?? 0);
-    const tier1 = day.filter(r => starOf(r) >= 5.0);
-    const tier2 = day.filter(r => starOf(r) >= 4.0 && starOf(r) < 5.0);
-    const tier3 = day.filter(r => starOf(r) <  4.0);
-    const a1 = finalizeAgg(tier1.reduce((a, r) => { pushAgg(a, r); return a; }, emptyAgg()));
-    const a2 = finalizeAgg(tier2.reduce((a, r) => { pushAgg(a, r); return a; }, emptyAgg()));
-    const a3 = finalizeAgg(tier3.reduce((a, r) => { pushAgg(a, r); return a; }, emptyAgg()));
-    const tot = (a1.profitU || 0) + (a2.profitU || 0) + (a3.profitU || 0);
-    const cell = (a) => a.n === 0 ? '—' : `${a.n} · ${sign(a.profitU, 2)}u`;
-    out.push(`| ${date} | ${cell(a1)} | ${cell(a2)} | ${cell(a3)} | ${sign(tot, 2)}u |`);
-  }
-  out.push('');
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // §4. SHARP VAULT HIDDEN-STAR PERFORMANCE (separate analysis)
-  // ═══════════════════════════════════════════════════════════════════════════
-  out.push('---');
-  out.push('## §4. Sharp Vault hidden-star performance (`sharp_action_positions.v8_stars`)');
-  out.push('');
-  out.push('This is the Sharp Vault-only check from the hidden `v8_stars` field on individual `sharp_action_positions`. It excludes `vaultQualified=false` shadow rows and includes only graded WIN/LOSS positions since the v6 cutover.');
-  out.push('');
-  out.push('### §4a. Hidden-star win rates');
-  out.push('');
-  out.push(mdHeader(['Hidden star band', 'N', 'W-L', 'WR%', 'Total invested', 'Total PnL', '$ ROI']));
-  const vaultBands = ['5★', '4★', '3★', '2★', '<2★'];
-  for (const band of vaultBands) {
-    const slice = vaultRows.filter(r => vaultStarBand(r) === band);
-    const a = finalizeVaultAgg(slice.reduce((acc, r) => { pushVaultAgg(acc, r); return acc; }, emptyVaultAgg()));
-    if (!a.n) { out.push(`| ${band} | 0 | — | — | — | — | — |`); continue; }
-    out.push(`| ${band} | ${a.n} | ${a.w}-${a.l} | ${fmtPct(a.wr)} | ${fmtMoneyShort(a.invested)} | ${fmtMoneyShort(a.pnl)} | ${fmtSignPct(a.dollarRoi)} |`);
-  }
-  const vaultElite = finalizeVaultAgg(vaultRows.filter(r => r.hiddenStars >= 4.0).reduce((acc, r) => { pushVaultAgg(acc, r); return acc; }, emptyVaultAgg()));
-  const vaultNonElite = finalizeVaultAgg(vaultRows.filter(r => r.hiddenStars < 4.0).reduce((acc, r) => { pushVaultAgg(acc, r); return acc; }, emptyVaultAgg()));
-  out.push(`| **4★+ combined** | **${vaultElite.n}** | **${vaultElite.w}-${vaultElite.l}** | **${fmtPct(vaultElite.wr)}** | **${fmtMoneyShort(vaultElite.invested)}** | **${fmtMoneyShort(vaultElite.pnl)}** | **${fmtSignPct(vaultElite.dollarRoi)}** |`);
-  out.push(`| **<4★ combined** | **${vaultNonElite.n}** | **${vaultNonElite.w}-${vaultNonElite.l}** | **${fmtPct(vaultNonElite.wr)}** | **${fmtMoneyShort(vaultNonElite.invested)}** | **${fmtMoneyShort(vaultNonElite.pnl)}** | **${fmtSignPct(vaultNonElite.dollarRoi)}** |`);
-  out.push('');
-
-  out.push('### §4b. 5★ / 4★ hidden-star performance by sport');
-  out.push('');
-  out.push(mdHeader(['Sport', '5★ N · WR · $ROI · PnL', '4★ N · WR · $ROI · PnL', '4★+ combined']));
-  const vaultCell = (rows) => {
-    const a = finalizeVaultAgg(rows.reduce((acc, r) => { pushVaultAgg(acc, r); return acc; }, emptyVaultAgg()));
-    if (!a.n) return '—';
-    return `${a.n} · ${fmtPct(a.wr, 0)} · ${fmtSignPct(a.dollarRoi, 0)} · ${fmtMoneyShort(a.pnl)}`;
-  };
-  for (const sport of vaultSports) {
-    const bySport = vaultRows.filter(r => r.sport === sport);
-    out.push(`| ${sport.toUpperCase()} | ${vaultCell(bySport.filter(r => vaultStarBand(r) === '5★'))} | ${vaultCell(bySport.filter(r => vaultStarBand(r) === '4★'))} | **${vaultCell(bySport.filter(r => r.hiddenStars >= 4.0))}** |`);
-  }
-  out.push('');
-
-  out.push('### §4c. Daily 4★+ Sharp Vault timeline');
-  out.push('');
-  out.push(mdHeader(['Date', '4★+ N', 'W-L', 'WR%', '$ ROI', 'PnL']));
-  for (const date of [...new Set(vaultRows.map(r => r.date))].sort()) {
-    const slice = vaultRows.filter(r => r.date === date && r.hiddenStars >= 4.0);
-    const a = finalizeVaultAgg(slice.reduce((acc, r) => { pushVaultAgg(acc, r); return acc; }, emptyVaultAgg()));
-    if (!a.n) continue;
-    out.push(`| ${date} | ${a.n} | ${a.w}-${a.l} | ${fmtPct(a.wr)} | ${fmtSignPct(a.dollarRoi)} | ${fmtMoneyShort(a.pnl)} |`);
-  }
-  out.push('');
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // §5. FROZEN (Δw × Δq) WIN MATRIX — shipped picks only
-  // ═══════════════════════════════════════════════════════════════════════════
-  out.push('---');
-  out.push('## §5. Frozen Δw × Δq win matrix — shipped picks');
-  out.push('');
-  out.push(`Shipped picks only. Frozen \`v8_walletConsensusDelta\` (rows) × frozen \`v8_walletConsensusQualityMargin\` (columns). Cell format: \`N · W-L-P · WR% · ROI%\` (peak-units ROI). Extreme axes (±3) clamped. ROI hidden when N < ${MIN_N_FOR_ROI}. **Lock floor: Δw ≥ +1 ∧ Δq ≥ +1.**`);
-  out.push('');
-  function buildMatrix(rows) {
-    const cells = {};
-    for (const w of DW_BUCKETS) for (const q of DQ_BUCKETS) {
-      cells[`${w >= 0 ? '+' : ''}${w},${q >= 0 ? '+' : ''}${q}`] = emptyAgg();
-    }
-    for (const r of rows) {
-      if (r.dwFrozen == null) continue;
-      const cw = clampDelta(r.dwFrozen, DW_BUCKETS[0], DW_BUCKETS[DW_BUCKETS.length - 1]);
-      const cq = clampDelta(r.dqFrozen ?? 0, DQ_BUCKETS[0], DQ_BUCKETS[DQ_BUCKETS.length - 1]);
-      const k = `${cw >= 0 ? '+' : ''}${cw},${cq >= 0 ? '+' : ''}${cq}`;
-      pushAgg(cells[k], r);
-    }
-    return cells;
-  }
-  function mdMatrix(title, cells, n) {
-    out.push(`### ${title} (N = ${n})`);
+  const yesterdayET = (() => {
+    const oneDayAgo = new Date(Date.now() - 86400000)
+      .toLocaleDateString('en-CA', { timeZone: 'America/New_York' }); // YYYY-MM-DD
+    const datesWithShips = new Set(shippedRows.map(r => r.date));
+    if (datesWithShips.has(oneDayAgo)) return oneDayAgo;
+    // Fallback: most recent shipped date.
+    const sorted = [...datesWithShips].sort();
+    return sorted[sorted.length - 1] || null;
+  })();
+  const yRows = yesterdayET
+    ? shippedRows
+        .filter(r => r.date === yesterdayET)
+        .sort((a, b) => {
+          if (a.sport !== b.sport) return a.sport.localeCompare(b.sport);
+          if (a.market !== b.market) return a.market.localeCompare(b.market);
+          return (a.docId || '').localeCompare(b.docId || '');
+        })
+    : [];
+  if (!yRows.length) {
+    out.push('_No shipped picks on the most recent slate yet._');
     out.push('');
-    out.push('| | ' + DQ_BUCKETS.map(q => `**Δq${q >= 0 ? '+' : ''}${q}**`).join(' | ') + ' |');
-    out.push('|---|' + DQ_BUCKETS.map(() => '---').join('|') + '|');
-    for (const w of DW_BUCKETS) {
-      const row = [`**Δw${w >= 0 ? '+' : ''}${w}**`];
-      for (const q of DQ_BUCKETS) {
-        const k = `${w >= 0 ? '+' : ''}${w},${q >= 0 ? '+' : ''}${q}`;
-        const c = finalizeAgg(cells[k]);
-        if (c.n === 0) { row.push('—'); continue; }
-        const wrStr  = c.wr  == null ? '—' : `${c.wr.toFixed(0)}%`;
-        const roi = c.n ? (c.profitU / c.n) * 100 : null;
-        const roiStr = c.n >= MIN_N_FOR_ROI && roi != null ? ` \`${sign(roi, 0)}%\`` : '';
-        row.push(`N=${c.n} · ${c.w}-${c.l}${c.p ? `-${c.p}` : ''} · ${wrStr}${roiStr}`);
-      }
-      out.push('| ' + row.join(' | ') + ' |');
+  } else {
+    const yAgg = finalizeAgg(yRows.reduce((a, r) => { pushAgg(a, r); return a; }, emptyAgg()));
+    out.push(`Slate: **${yesterdayET}** · ${yAgg.n} shipped sides.`);
+    out.push('');
+    out.push(mdHeader(['N', 'W-L-P', 'WR%', 'PnL (peak u)', 'PnL (flat 1u)']));
+    out.push(`| ${yAgg.n} | ${yAgg.w}-${yAgg.l}-${yAgg.p} | ${fmtPct(yAgg.wr)} | ${sign(yAgg.profitU, 2)}u | ${sign(yAgg.flatU, 2)}u |`);
+    out.push('');
+    out.push(mdHeader([
+      'Sport', 'Market', 'Matchup', 'Pick',
+      'Stars · Units', 'HC', 'Δw', 'Δq', 'Σ',
+      'Odds', 'Result', 'PnL (peak u)',
+    ]));
+    for (const r of yRows) {
+      const matchup = r.away && r.home ? `${r.away} @ ${r.home}` : '—';
+      const pick = r.team || r.sideKey || '—';
+      // HC margin was launched at the v7.1 cutover (2026-04-30). Use the
+      // frozen `v8_hcMargin` stamp only — we do NOT retro-fit a value onto
+      // pre-cutover picks because HC margin literally didn't exist then.
+      const hc = r.hcMargin == null ? '—' : sign(r.hcMargin, 0);
+      const dw = r.dwFrozen == null ? '—' : sign(r.dwFrozen, 0);
+      const dq = r.dqFrozen == null ? '—' : sign(r.dqFrozen, 0);
+      const sumVal = (r.dwFrozen != null && r.dqFrozen != null) ? r.dwFrozen + r.dqFrozen : null;
+      const sm = sumVal == null ? '—' : sign(sumVal, 0);
+      const stars = `${(r.peakStars || 0).toFixed(1)}★ · ${(r.peakUnits || 0).toFixed(2)}u`;
+      const oddsStr = r.odds == null ? '—' : (r.odds > 0 ? `+${r.odds}` : `${r.odds}`);
+      const resultStr = r.outcome === 'WIN' ? '**W**' : r.outcome === 'LOSS' ? 'L' : 'P';
+      out.push(`| ${r.sport} | ${r.market} | ${matchup} | ${pick} | ${stars} | ${hc} | ${dw} | ${dq} | ${sm} | ${oddsStr} | ${resultStr} | ${sign(r.profitU, 2)}u |`);
     }
     out.push('');
   }
-  const shippedWithDw = shippedRows.filter(r => r.dwFrozen != null);
-  mdMatrix('All markets', buildMatrix(shippedWithDw), shippedWithDw.length);
-  for (const sport of sports) {
-    const slice = shippedWithDw.filter(r => r.sport === sport);
-    if (!slice.length) continue;
-    mdMatrix(`Sport — ${sport.toUpperCase()}`, buildMatrix(slice), slice.length);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // §2. 3-DAY / 7-DAY / ALL-TIME COHORT ROLLUPS
+  //     — partitioned by HC margin, Δw, Δq
+  // ═══════════════════════════════════════════════════════════════════════════
+  //
+  // HC margin only existed from the v7.1 cutover (HC_CUTOVER = 2026-04-30)
+  // onward. Pre-cutover picks have no HC stamp because the feature didn't
+  // exist — we deliberately do NOT retro-fit one. So the HC sub-table runs
+  // on the **post-HC-launch slice only**, while the Δw / Δq sub-tables
+  // continue to span the full v6-era sample (those signals existed since
+  // 2026-04-18).
+  out.push('---');
+  out.push('## §2. 3-day / 7-day / all-time cohort rollups');
+  out.push('');
+  out.push('Shipped picks only. PnL in **peak units** (size we actually bet) and flat 1u (cohort EV lens). All margins are the engine\'s frozen stamps (`v8_hcMargin`, `v8_walletConsensusDelta`, `v8_walletConsensusQualityMargin`).');
+  out.push('');
+  out.push(`**HC margin sub-tables** are scoped to picks dated ≥ ${HC_CUTOVER} (the v7.1 launch — when HC margin became a real engine signal). Pre-launch picks are excluded from HC analysis since the feature didn't exist for them. Δw / Δq sub-tables span the full v6-era sample (≥ ${V6_CUTOVER}). Empty buckets are dropped.`);
+  out.push('');
+
+  const HC_BUCKETS = [
+    { label: 'HC ≥ +3',    f: hc => hc != null && hc >= 3 },
+    { label: 'HC = +2',    f: hc => hc === 2 },
+    { label: 'HC = +1',    f: hc => hc === 1 },
+    { label: 'HC = 0',     f: hc => hc === 0 },
+    { label: 'HC ≤ −1',    f: hc => hc != null && hc <= -1 },
+  ];
+  const DELTA_BUCKETS = [
+    { label: '≥ +3',    f: v => v != null && v >= 3 },
+    { label: '+2',      f: v => v === 2 },
+    { label: '+1',      f: v => v === 1 },
+    { label: '0',       f: v => v === 0 },
+    { label: '−1',      f: v => v === -1 },
+    { label: '≤ −2',    f: v => v != null && v <= -2 },
+    { label: 'missing', f: v => v == null },
+  ];
+
+  function rollupTable(rows, buckets, getValue) {
+    const lines = [mdHeader(['Bucket', 'N', 'W-L-P', 'WR%', 'PnL (peak u)', 'PnL (flat 1u)'])];
+    for (const b of buckets) {
+      const slice = rows.filter(r => b.f(getValue(r)));
+      if (!slice.length) continue;
+      const a = finalizeAgg(slice.reduce((acc, r) => { pushAgg(acc, r); return acc; }, emptyAgg()));
+      lines.push(`| ${b.label} | ${a.n} | ${a.w}-${a.l}-${a.p} | ${fmtPct(a.wr)} | ${sign(a.profitU, 2)}u | ${sign(a.flatU, 2)}u |`);
+    }
+    return lines;
   }
-  for (const market of markets) {
-    const slice = shippedWithDw.filter(r => r.market === market);
-    if (!slice.length) continue;
-    mdMatrix(`Market — ${market}`, buildMatrix(slice), slice.length);
+
+  // Horizon = trailing N graded dates (referenced from the latest shipped
+  // date, not "today" — the report only knows about graded slates).
+  function horizonRows(daysBack) {
+    if (daysBack == null) return shippedRows;
+    const refDate = allDates[allDates.length - 1];
+    if (!refDate) return [];
+    const cutoff = new Date(refDate + 'T00:00:00Z');
+    cutoff.setUTCDate(cutoff.getUTCDate() - (daysBack - 1));
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+    return shippedRows.filter(r => r.date >= cutoffStr && r.date <= refDate);
+  }
+
+  const horizons = [
+    { sub: '§2a', label: '3-day',    rows: horizonRows(3)    },
+    { sub: '§2b', label: '7-day',    rows: horizonRows(7)    },
+    { sub: '§2c', label: 'All-time', rows: horizonRows(null) },
+  ];
+  for (const h of horizons) {
+    const total = finalizeAgg(h.rows.reduce((a, r) => { pushAgg(a, r); return a; }, emptyAgg()));
+    // HC sub-table runs on the post-HC-launch slice only.
+    const hcRows = h.rows.filter(r => r.date >= HC_CUTOVER);
+    const hcTotal = finalizeAgg(hcRows.reduce((a, r) => { pushAgg(a, r); return a; }, emptyAgg()));
+    out.push(`### ${h.sub}. ${h.label}`);
+    out.push('');
+    out.push(`Total: **${total.n}** shipped · ${total.w}-${total.l}-${total.p} · WR ${fmtPct(total.wr)} · PnL ${sign(total.profitU, 2)}u (peak) / ${sign(total.flatU, 2)}u (flat).`);
+    out.push('');
+    out.push(`**By HC margin** _(picks dated ≥ ${HC_CUTOVER}, N = ${hcTotal.n})_`);
+    out.push('');
+    if (!hcTotal.n) {
+      out.push('_No HC-era picks in this window._');
+      out.push('');
+    } else {
+      rollupTable(hcRows, HC_BUCKETS, r => r.hcMargin).forEach(line => out.push(line));
+      out.push('');
+    }
+    out.push('**By Δw (winner margin)**');
+    out.push('');
+    rollupTable(h.rows, DELTA_BUCKETS, r => r.dwFrozen).forEach(line => out.push(line));
+    out.push('');
+    out.push('**By Δq (quality margin)**');
+    out.push('');
+    rollupTable(h.rows, DELTA_BUCKETS, r => r.dqFrozen).forEach(line => out.push(line));
+    out.push('');
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // §6. RECONCILIATION & ANOMALIES — engine self-check
+  // §3. EDGE OVER TIME — daily cumulative peak-unit PnL by HC bucket
+  // ═══════════════════════════════════════════════════════════════════════════
+  //
+  // This is the chart that answers "is HC margin creating winners?" — a
+  // rising HC ≥ +1 line that diverges above HC = 0 / All is the v7.4
+  // thesis being validated. Scoped to dates ≥ HC_CUTOVER because HC margin
+  // didn't exist before then. The "All shipped (HC era)" line is the
+  // post-launch baseline so the comparison is apples-to-apples.
+  out.push('---');
+  out.push('## §3. Edge over time — is HC margin creating winners?');
+  out.push('');
+  out.push(`Daily cumulative peak-unit PnL since the HC margin launch (**${HC_CUTOVER}**). The \`HC ≥ +1\` line is the golden-standard cohort. The \`HC = 0\` line is the no-HC-signal control. The \`All shipped (HC era)\` line is every shipped pick from the same date range — the apples-to-apples baseline. Watch the spread.`);
+  out.push('');
+
+  // Build the cumulative series — only post-HC-launch dates qualify.
+  const chartDates = allDates.filter(d => d >= HC_CUTOVER);
+  let cHc = 0, cFlat = 0, cAll = 0;
+  const lineHc = [], lineFlat = [], lineAll = [];
+  const dailySeries = [];
+  for (const d of chartDates) {
+    const day = shippedRows.filter(r => r.date === d);
+    const dayHcSum   = day.filter(r => r.hcMargin != null && r.hcMargin >= 1).reduce((a, r) => a + (r.profitU || 0), 0);
+    const dayFlatSum = day.filter(r => r.hcMargin === 0).reduce((a, r) => a + (r.profitU || 0), 0);
+    const dayAllSum  = day.reduce((a, r) => a + (r.profitU || 0), 0);
+    cHc   += dayHcSum;
+    cFlat += dayFlatSum;
+    cAll  += dayAllSum;
+    lineHc.push(cHc.toFixed(2));
+    lineFlat.push(cFlat.toFixed(2));
+    lineAll.push(cAll.toFixed(2));
+    dailySeries.push({ date: d, hc: cHc, flat: cFlat, all: cAll });
+  }
+
+  if (chartDates.length) {
+    out.push('```mermaid');
+    out.push('xychart-beta');
+    out.push(`    title "Cumulative peak-unit PnL — HC era (${HC_CUTOVER}+)"`);
+    out.push(`    x-axis [${chartDates.map(d => `"${d.slice(5)}"`).join(', ')}]`);
+    out.push('    y-axis "PnL (peak u)"');
+    out.push(`    line "HC ≥ +1" [${lineHc.join(', ')}]`);
+    out.push(`    line "HC = 0"  [${lineFlat.join(', ')}]`);
+    out.push(`    line "All (HC era)" [${lineAll.join(', ')}]`);
+    out.push('```');
+    out.push('');
+
+    // Companion table — readable on any renderer.
+    out.push('Daily cumulative table (peak units, HC era only):');
+    out.push('');
+    out.push(mdHeader(['Date', 'HC ≥ +1 (cum)', 'HC = 0 (cum)', 'All shipped (cum)']));
+    for (const r of dailySeries) {
+      out.push(`| ${r.date} | ${sign(r.hc, 2)}u | ${sign(r.flat, 2)}u | ${sign(r.all, 2)}u |`);
+    }
+    out.push('');
+  } else {
+    out.push(`_No graded dates since HC launch (${HC_CUTOVER}) yet._`);
+    out.push('');
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // (legacy §1–§6 block deleted 2026-05-05 per user — narrowed to picks-board
+  //  + cohort rollups + edge chart + wallet/tracking growth.)
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════════
+  // §4. WALLET ROSTER GROWTH & PROFITABILITY (formerly §7 — unchanged math)
   // ═══════════════════════════════════════════════════════════════════════════
   out.push('---');
-  out.push('## §6. Reconciliation & anomalies — engine self-check');
-  out.push('');
-  out.push('Where the live engine\'s **shipped state** disagrees with what the **frozen v6 stamps** say it should have shipped. Read these as bug indicators: each row is a side where the system either left a stale lock on the board or muted a pick that the v6 floor said was lockable. PnL is in peak units (the actual cost / benefit to users).');
-  out.push('');
-
-  // Anomaly classes.
-  const stale = shippedRows.filter(r =>
-    r.dwFrozen != null && r.dqFrozen != null &&
-    !(r.dwFrozen >= 1 && r.dqFrozen >= 1)
-  );
-  const overMute = pickRows.filter(r =>
-    !r.inDashboard && r.cancelled &&
-    r.dwFrozen != null && r.dqFrozen != null &&
-    r.dwFrozen >= 1 && r.dqFrozen >= 1
-  );
-  const shadowStrong = pickRows.filter(r =>
-    r.lockStage === 'SHADOW' && !r.superseded &&
-    r.dwFrozen != null && r.dqFrozen != null &&
-    r.dwFrozen >= 2 && r.dqFrozen >= 2 &&
-    (r.outcome === 'WIN' || r.outcome === 'LOSS' || r.outcome === 'PUSH')
-  );
-  const highStarLowDw = shippedRows.filter(r =>
-    (r.peakStars >= 4.0) && r.dwFrozen != null && r.dwFrozen <= 0
-  );
-
-  const anomalyAgg = (rows) => finalizeAgg(rows.reduce((a, r) => { pushAgg(a, r); return a; }, emptyAgg()));
-
-  out.push('### §6a. Anomaly counts');
-  out.push('');
-  out.push(mdHeader(['Anomaly', 'N', 'W-L-P', 'WR%', 'PnL (peak u)', 'Read as']));
-  const aStale = anomalyAgg(stale);
-  out.push(`| **Stale lock** — shipped LOCKED/ACTIVE, frozen Δw/Δq below floor | ${aStale.n} | ${aStale.w}-${aStale.l}-${aStale.p} | ${fmtPct(aStale.wr)} | ${sign(aStale.profitU, 2)}u | engine left a sub-floor pick on the board |`);
-  const aOverMute = anomalyAgg(overMute);
-  out.push(`| **Over-mute** — muted/cancelled by engine, frozen Δw≥+1 ∧ Δq≥+1 | ${aOverMute.n} | ${aOverMute.w}-${aOverMute.l}-${aOverMute.p} | ${fmtPct(aOverMute.wr)} | ${sign(aOverMute.profitU, 2)}u | engine killed a play that satisfied the floor |`);
-  const aShadow = anomalyAgg(shadowStrong);
-  out.push(`| **Shadow-strong** — stayed SHADOW even though frozen Δw≥+2 ∧ Δq≥+2 | ${aShadow.n} | ${aShadow.w}-${aShadow.l}-${aShadow.p} | ${fmtPct(aShadow.wr)} | ${sign(aShadow.profitU, 2)}u | engine never promoted a SUPER TOP-eligible pick |`);
-  const aStarsNoDw = anomalyAgg(highStarLowDw);
-  out.push(`| **Stars without margin** — peak stars ≥ 4.0★, frozen Δw ≤ 0 | ${aStarsNoDw.n} | ${aStarsNoDw.w}-${aStarsNoDw.l}-${aStarsNoDw.p} | ${fmtPct(aStarsNoDw.wr)} | ${sign(aStarsNoDw.profitU, 2)}u | star math diverged from delta math |`);
-  out.push('');
-
-  // Stale lock bucket breakdown — which sub-floor cohorts contributed.
-  out.push('### §6b. Stale-lock cohort breakdown');
-  out.push('');
-  out.push('Of every shipped pick whose frozen deltas fall **below** the v6 lock floor, which cohort did it land in?');
-  out.push('');
-  out.push(mdHeader(['Cohort (frozen)', 'N', 'W-L-P', 'WR%', 'PnL (peak u)']));
-  for (const co of COHORTS.filter(c => !LOCK_COHORT_IDS.has(c.id))) {
-    const slice = stale.filter(r => co.f(r.dwFrozen, r.dqFrozen));
-    const a = anomalyAgg(slice);
-    if (!a.n) continue;
-    out.push(`| ${co.label} | ${a.n} | ${a.w}-${a.l}-${a.p} | ${fmtPct(a.wr)} | ${sign(a.profitU, 2)}u |`);
-  }
-  out.push('');
-
-  // Daily stale-lock cost — useful to spot whether bug is intermittent.
-  out.push('### §6c. Daily stale-lock PnL drag');
-  out.push('');
-  out.push('Per-day cost of stale locks (the picks the engine left on the board even though their frozen Δw / Δq dropped below the lock floor). Compare to the day\'s shipped PnL.');
-  out.push('');
-  out.push(mdHeader(['Date', 'Shipped N · PnL', 'Stale-lock N · PnL', 'Stale share of shipped PnL']));
-  for (const date of allDates) {
-    const day = shippedRows.filter(r => r.date === date);
-    if (!day.length) continue;
-    const dayAgg = anomalyAgg(day);
-    const dayStale = anomalyAgg(stale.filter(r => r.date === date));
-    const share = dayAgg.profitU !== 0 ? `${(dayStale.profitU / dayAgg.profitU * 100).toFixed(0)}%` : '—';
-    out.push(`| ${date} | ${dayAgg.n} · ${sign(dayAgg.profitU, 2)}u | ${dayStale.n} · ${sign(dayStale.profitU, 2)}u | ${share} |`);
-  }
-  out.push('');
-
-  // Top stale-lock examples for inspection.
-  out.push('### §6d. Top stale-lock examples (worst peak-unit losses)');
-  out.push('');
-  out.push('Last 20 graded sides where engine state and frozen deltas disagree most painfully. Useful for pulling individual docs and walking the audit.');
-  out.push('');
-  out.push(mdHeader(['Date', 'Doc', 'Side', 'Stage / Health', 'Stars · Units', 'Δw / Δq (frozen)', 'Outcome', 'PnL']));
-  const staleSorted = [...stale].sort((a, b) => (a.profitU || 0) - (b.profitU || 0)).slice(0, 20);
-  for (const r of staleSorted) {
-    out.push(`| ${r.date} | \`${r.docId}\` | ${r.sideKey} | ${r.lockStage || '—'} / ${r.healthStatus || '—'} | ${r.peakStars?.toFixed?.(1) || '—'}★ · ${r.peakUnits}u | ${sign(r.dwFrozen, 0)} / ${sign(r.dqFrozen, 0)} | ${r.outcome} | ${sign(r.profitU, 2)}u |`);
-  }
-  out.push('');
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // §7. WALLET ROSTER GROWTH & PROFITABILITY (unchanged math)
-  // ═══════════════════════════════════════════════════════════════════════════
-  out.push('---');
-  out.push('## §7. Wallet roster growth & profitability');
+  out.push('## §4. Wallet roster growth & profitability');
   out.push('');
   out.push(`"Tracked in sport X" = a wallet has placed **≥ ${MIN_BETS} bets** in X within the v6-era sample. "Profitable" = cumulative flat PnL > 0. Source: \`v8Scoring.walletDetails\` on every graded v6-era game (every side, not just the shipped set).`);
   out.push('');
@@ -1113,7 +998,7 @@ function vaultStarBand(row) {
   }
 
   const sportSnapshots = {};
-  out.push('### §7a. Per-sport wallet snapshot');
+  out.push('### §4a. Per-sport wallet snapshot');
   out.push('');
   out.push(mdHeader(['Sport', 'Total wallets seen', `Tracked (≥${MIN_BETS})`, 'Profitable', '% prof', 'WR ≥ 50%', 'WR ≥ 60%', 'WR ≥ 70%']));
   for (const sport of sports) {
@@ -1134,7 +1019,7 @@ function vaultStarBand(row) {
   out.push(`| **ALL (any sport)** | **${new Set(walletBets.map(b => b.wallet)).size}** | **${trAll.length}** | **${prAll.length}** | **${trAll.length ? (prAll.length / trAll.length * 100).toFixed(0) : '—'}%** | **${trAll.filter(w => w.wr >= 50).length}** | **${trAll.filter(w => w.wr >= 60).length}** | **${trAll.filter(w => w.wr >= 70).length}** |`);
   out.push('');
 
-  out.push('### §7b. Daily roster growth (cumulative through each date)');
+  out.push('### §4b. Daily roster growth (cumulative through each date)');
   out.push('');
   out.push(`Format: \`tracked (profitable)\`. For each date D, recompute the roster using every bet up to and including D.`);
   out.push('');
@@ -1157,7 +1042,7 @@ function vaultStarBand(row) {
   }
   out.push('');
 
-  out.push('### §7c. Top 10 profitable wallets by sport');
+  out.push('### §4c. Top 10 profitable wallets by sport');
   out.push('');
   for (const sport of sports) {
     const { tracked } = sportSnapshots[sport];
@@ -1173,488 +1058,7 @@ function vaultStarBand(row) {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // §8. WALLET WINNERS DESCRIPTIVES
-  // ═══════════════════════════════════════════════════════════════════════════
-  out.push('---');
-  out.push('## §8. Wallet winners — descriptive stats');
-  out.push('');
-  out.push(`Every (wallet × sport) row where the wallet has ≥ ${MIN_BETS} bets in the sport AND flat PnL > 0. A wallet can appear in multiple sports.`);
-  out.push('');
-
-  function buildWalletSportRows(rows, sport) {
-    const slice = rows.filter(b => b.sport === sport);
-    const byWallet = new Map();
-    for (const b of slice) {
-      if (!byWallet.has(b.wallet)) byWallet.set(b.wallet, []);
-      byWallet.get(b.wallet).push(b);
-    }
-    const out = [];
-    for (const [wallet, bs] of byWallet) {
-      const n = bs.length;
-      if (n < MIN_BETS) continue;
-      const wins = bs.filter(b => b.won === 1).length;
-      const sizes = bs.map(b => b.invested || 0);
-      const sortedSizes = [...sizes].sort((a, b) => a - b);
-      const avgSize = sizes.reduce((a, b) => a + b, 0) / n;
-      const maxSize = Math.max(...sizes);
-      const invested = sizes.reduce((a, b) => a + b, 0);
-      const dollarPnl = bs.reduce((a, b) => a + (b.dollarPnl || 0), 0);
-      const flatPnl = bs.reduce((a, b) => a + (b.flat || 0), 0);
-      const flatRoi = (flatPnl / n) * 100;
-      const dollarRoi = invested > 0 ? (dollarPnl / invested) * 100 : null;
-      const dates = [...new Set(bs.map(b => b.date))].sort();
-      const span = dayDiff(dates[0], dates[dates.length - 1]) + 1;
-      const betsPerDay = n / span;
-      out.push({
-        wallet, sport,
-        n, wins, losses: n - wins, wr: (wins / n) * 100,
-        avgSize, medSize: quantile(sortedSizes, 0.5), maxSize, invested,
-        dollarPnl, dollarRoi, flatPnl, flatRoi,
-        firstDate: dates[0], lastDate: dates[dates.length - 1],
-        daysActive: dates.length, span, betsPerDay,
-      });
-    }
-    return out;
-  }
-  const winnerRows = [];
-  for (const sport of sports) winnerRows.push(...buildWalletSportRows(walletBets, sport).filter(r => r.flatPnl > 0));
-
-  out.push('### §8a. Winner cohort summary by sport');
-  out.push('');
-  out.push(mdHeader(['Sport', 'Winners', 'Σ bets', 'Σ invested', 'Σ $PnL', 'Mean WR%', 'Mean N', 'Mean avg $', 'Mean bets/day', 'Mean flat ROI']));
-  for (const sport of sports) {
-    const w = winnerRows.filter(r => r.sport === sport);
-    if (!w.length) { out.push(`| ${sport.toUpperCase()} | 0 | — | — | — | — | — | — | — | — |`); continue; }
-    const sumN = w.reduce((a, b) => a + b.n, 0);
-    const sumInv = w.reduce((a, b) => a + b.invested, 0);
-    const sumPnl = w.reduce((a, b) => a + b.dollarPnl, 0);
-    const meanWr = w.reduce((a, b) => a + b.wr, 0) / w.length;
-    const meanN = sumN / w.length;
-    const meanSize = w.reduce((a, b) => a + b.avgSize, 0) / w.length;
-    const meanBpd = w.reduce((a, b) => a + b.betsPerDay, 0) / w.length;
-    const meanRoi = w.reduce((a, b) => a + b.flatRoi, 0) / w.length;
-    out.push(`| ${sport.toUpperCase()} | ${w.length} | ${sumN} | ${fmtMoneyShort(sumInv)} | ${fmtMoneyShort(sumPnl)} | ${meanWr.toFixed(1)}% | ${meanN.toFixed(1)} | ${fmtMoneyShort(meanSize)} | ${meanBpd.toFixed(2)} | ${fmtSignPct(meanRoi)} |`);
-  }
-  if (winnerRows.length) {
-    const sumN = winnerRows.reduce((a, b) => a + b.n, 0);
-    const sumInv = winnerRows.reduce((a, b) => a + b.invested, 0);
-    const sumPnl = winnerRows.reduce((a, b) => a + b.dollarPnl, 0);
-    const meanWr = winnerRows.reduce((a, b) => a + b.wr, 0) / winnerRows.length;
-    const meanN = sumN / winnerRows.length;
-    const meanSize = winnerRows.reduce((a, b) => a + b.avgSize, 0) / winnerRows.length;
-    const meanBpd = winnerRows.reduce((a, b) => a + b.betsPerDay, 0) / winnerRows.length;
-    const meanRoi = winnerRows.reduce((a, b) => a + b.flatRoi, 0) / winnerRows.length;
-    out.push(`| **ALL** | **${winnerRows.length}** | **${sumN}** | **${fmtMoneyShort(sumInv)}** | **${fmtMoneyShort(sumPnl)}** | **${meanWr.toFixed(1)}%** | **${meanN.toFixed(1)}** | **${fmtMoneyShort(meanSize)}** | **${meanBpd.toFixed(2)}** | **${fmtSignPct(meanRoi)}** |`);
-  }
-  out.push('');
-
-  out.push('### §8b. Winner cohort — quartile distribution');
-  out.push('');
-  out.push('Spread across every winning (wallet × sport) row.');
-  out.push('');
-  const metrics = [
-    ['N (bets)',       winnerRows.map(r => r.n),          (v) => v.toFixed(1)],
-    ['WR %',           winnerRows.map(r => r.wr),         (v) => v.toFixed(1) + '%'],
-    ['Flat ROI %',     winnerRows.map(r => r.flatRoi),    (v) => fmtSignPct(v)],
-    ['$ ROI %',        winnerRows.map(r => r.dollarRoi).filter(v => v != null), (v) => fmtSignPct(v)],
-    ['Avg bet ($)',    winnerRows.map(r => r.avgSize),    fmtMoneyShort],
-    ['Median bet ($)', winnerRows.map(r => r.medSize),    fmtMoneyShort],
-    ['Max bet ($)',    winnerRows.map(r => r.maxSize),    fmtMoneyShort],
-    ['Σ invested',     winnerRows.map(r => r.invested),   fmtMoneyShort],
-    ['$ PnL',          winnerRows.map(r => r.dollarPnl),  fmtMoneyShort],
-    ['Days active',    winnerRows.map(r => r.daysActive), (v) => v.toFixed(1)],
-    ['Span (days)',    winnerRows.map(r => r.span),       (v) => v.toFixed(1)],
-    ['Bets / day',     winnerRows.map(r => r.betsPerDay), (v) => v.toFixed(2)],
-  ];
-  out.push(mdHeader(['Metric', 'Min', 'Q25', 'Median', 'Q75', 'Max', 'Mean']));
-  for (const [name, vals, fmt] of metrics) {
-    const d = distrib(vals);
-    out.push(`| ${name} | ${d.min == null ? '—' : fmt(d.min)} | ${d.q25 == null ? '—' : fmt(d.q25)} | ${d.median == null ? '—' : fmt(d.median)} | ${d.q75 == null ? '—' : fmt(d.q75)} | ${d.max == null ? '—' : fmt(d.max)} | ${d.mean == null ? '—' : fmt(d.mean)} |`);
-  }
-  out.push('');
-
-  out.push('### §8c. Winner cadence archetypes');
-  out.push('');
-  out.push('Where do our winners cluster? Snipers fire rarely but big; volume bettors grind everything.');
-  out.push('');
-  const archetype = (r) => {
-    if (r.n <= 3)  return 'Sniper (≤3 bets)';
-    if (r.n <= 6)  return 'Sharp (4–6 bets)';
-    if (r.n <= 10) return 'Grinder (7–10 bets)';
-    return 'Volume (>10 bets)';
-  };
-  const order = ['Sniper (≤3 bets)', 'Sharp (4–6 bets)', 'Grinder (7–10 bets)', 'Volume (>10 bets)'];
-  const buckets = new Map(order.map(k => [k, []]));
-  for (const r of winnerRows) buckets.get(archetype(r)).push(r);
-  out.push(mdHeader(['Archetype', 'Winners', 'Σ bets', 'Mean WR%', 'Mean flat ROI', 'Mean avg $', 'Mean bets/day', 'Σ $ PnL']));
-  for (const k of order) {
-    const rs = buckets.get(k);
-    if (!rs.length) { out.push(`| ${k} | 0 | — | — | — | — | — | — |`); continue; }
-    const sumN = rs.reduce((a, b) => a + b.n, 0);
-    const mWr = rs.reduce((a, b) => a + b.wr, 0) / rs.length;
-    const mRoi = rs.reduce((a, b) => a + b.flatRoi, 0) / rs.length;
-    const mSize = rs.reduce((a, b) => a + b.avgSize, 0) / rs.length;
-    const mBpd = rs.reduce((a, b) => a + b.betsPerDay, 0) / rs.length;
-    const sumPnl = rs.reduce((a, b) => a + b.dollarPnl, 0);
-    out.push(`| ${k} | ${rs.length} | ${sumN} | ${mWr.toFixed(1)}% | ${fmtSignPct(mRoi)} | ${fmtMoneyShort(mSize)} | ${mBpd.toFixed(2)} | ${fmtMoneyShort(sumPnl)} |`);
-  }
-  out.push('');
-
-  // ─── §9. v7.1 HC dominance cohort monitoring ─────────────────────────────
-  // Live monitor for the v7.1 HC-dominance feature (LOCK floor lowered for
-  // Σ ∈ {3,4} when (HC_for ≥ 1) ∧ (HC_ag = 0); units sized at 1.5×).
-  // Cohort partition: HC vs non-HC × Σ bucket × system version.
-  out.push('## §9. v7.1 HC dominance cohort');
-  out.push('');
-  out.push('Tracks the live performance of the v7.1 HC-dominance gate. Picks must be `inDashboard` and have a frozen `v8_hcDominant` stamp (i.e. stamped under v7.1). HC_PROMOTED rows are picks promoted out of LEAN (Σ ∈ {3,4}) by HC dominance — the new edge surface.');
-  out.push('');
-  const v71Rows = pickRows.filter(r => r.inDashboard && r.systemVersion === '7.1' && r.hcDominant !== null);
-  if (!v71Rows.length) {
-    out.push('_No v7.1-stamped picks in the sample yet. Re-run after the next slate completes._');
-    out.push('');
-  } else {
-    const aggCohort = (rows) => {
-      const n = rows.length;
-      const w = rows.filter(r => r.outcome === 'WIN').length;
-      const l = rows.filter(r => r.outcome === 'LOSS').length;
-      const p = rows.filter(r => r.outcome === 'PUSH').length;
-      const wr = n ? (100 * w / Math.max(1, w + l)) : null;
-      const profitU = rows.reduce((a, b) => a + (b.profitU || 0), 0);
-      const flatU   = rows.reduce((a, b) => a + (b.flatProfit || 0), 0);
-      const flatRoi = n ? (100 * flatU / n) : null;
-      return { n, w, l, p, wr, profitU, flatU, flatRoi };
-    };
-    out.push('### §9a. HC vs non-HC by Σ bucket (v7.1 only)');
-    out.push('');
-    out.push(mdHeader(['Σ bucket', 'HC dominant', 'N', 'W-L-P', 'WR%', 'PnL_peak', 'PnL_flat', 'flat ROI%']));
-    const sumOf = (r) => (r.dwFrozen ?? 0) + (r.dqFrozen ?? 0);
-    const buckets = [
-      { label: '3',     pred: r => sumOf(r) === 3 },
-      { label: '4',     pred: r => sumOf(r) === 4 },
-      { label: '5',     pred: r => sumOf(r) === 5 },
-      { label: '6',     pred: r => sumOf(r) === 6 },
-      { label: '≥7',    pred: r => sumOf(r) >= 7 },
-    ];
-    for (const b of buckets) {
-      for (const hc of [true, false]) {
-        const rows = v71Rows.filter(r => b.pred(r) && r.hcDominant === hc);
-        const a = aggCohort(rows);
-        out.push(`| ${b.label} | ${hc ? 'YES' : 'NO'} | ${a.n} | ${a.w}-${a.l}-${a.p} | ${fmtPct(a.wr)} | ${sign(a.profitU, 2)}u | ${sign(a.flatU, 2)}u | ${fmtSignPct(a.flatRoi)} |`);
-      }
-    }
-    out.push('');
-    out.push('### §9b. HC_PROMOTED cohort (Σ ∈ {3,4}, lifted out of LEAN by HC)');
-    out.push('');
-    const hcPromoted = v71Rows.filter(r => r.promotedBy === 'hc-dominance');
-    const hcAll      = v71Rows.filter(r => r.hcDominant);
-    const hcSig5     = v71Rows.filter(r => r.hcDominant && (r.dwFrozen ?? 0) + (r.dqFrozen ?? 0) >= 5);
-    out.push(mdHeader(['Cohort', 'N', 'W-L-P', 'WR%', 'PnL_peak', 'PnL_flat', 'flat ROI%']));
-    for (const [label, rows] of [
-      ['HC_PROMOTED (Σ ∈ {3,4})', hcPromoted],
-      ['HC ∧ Σ ≥ +5',             hcSig5],
-      ['All HC dominant',          hcAll],
-    ]) {
-      const a = aggCohort(rows);
-      out.push(`| ${label} | ${a.n} | ${a.w}-${a.l}-${a.p} | ${fmtPct(a.wr)} | ${sign(a.profitU, 2)}u | ${sign(a.flatU, 2)}u | ${fmtSignPct(a.flatRoi)} |`);
-    }
-    out.push('');
-    out.push('### §9c. HC dominance per sport');
-    out.push('');
-    out.push(mdHeader(['Sport', 'HC_PROMOTED N', 'WR%', 'flat ROI%', 'All HC N', 'WR%', 'flat ROI%']));
-    const sports = [...new Set(v71Rows.map(r => r.sport))].sort();
-    for (const sp of sports) {
-      const promo = aggCohort(hcPromoted.filter(r => r.sport === sp));
-      const all   = aggCohort(hcAll.filter(r => r.sport === sp));
-      out.push(`| ${sp} | ${promo.n} | ${fmtPct(promo.wr)} | ${fmtSignPct(promo.flatRoi)} | ${all.n} | ${fmtPct(all.wr)} | ${fmtSignPct(all.flatRoi)} |`);
-    }
-    out.push('');
-    out.push(`_v7.1 picks since cutover: **${v71Rows.length}** (HC dominant: ${hcAll.length} · HC promoted: ${hcPromoted.length})_`);
-    out.push('');
-  }
-
-  // ─── §10. v7.2 HC-margin tiered cohort monitoring ─────────────────────────
-  // Mirrors §9's structure but partitions by HC_margin tier (the v7.2
-  // continuous quality dial) instead of binary HC_DOM. Three tiers:
-  //   HC_m ≤0  baseline (no upsize)
-  //   HC_m =+1 standard HC tier (×1.5 multiplier)
-  //   HC_m ≥+2 SUPER HC tier (×1.75 multiplier — proven 9-1 cohort)
-  // Source backtest: WALLET_HC_MARGIN_ANALYSIS.md.
-  const v72Rows = pickRows.filter(r =>
-    r.systemVersion === '7.2' && r.inDashboard && !r.superseded
-    && (r.outcome === 'WIN' || r.outcome === 'LOSS') && r.hcMargin != null
-  );
-  if (v72Rows.length === 0) {
-    out.push('---');
-    out.push('## §10. v7.2 HC-margin tier cohort');
-    out.push('');
-    out.push(`_No v7.2-stamped picks in the sample yet (cutover 2026-04-30). §10 will populate as v7.2 picks accumulate._`);
-    out.push('');
-  } else {
-    out.push('---');
-    out.push('## §10. v7.2 HC-margin tier cohort');
-    out.push('');
-    out.push('Tracks the live performance of the v7.2 HC-margin tiered gate (replaces v7.1 binary HC_DOM). Picks must be `inDashboard` and have a frozen `v8_hcMargin` stamp under v7.2.');
-    out.push('');
-    const sigmaBucket = (sum) => sum <= 2 ? 'Σ=2' : sum === 3 ? 'Σ=3' : sum === 4 ? 'Σ=4' : sum === 5 ? 'Σ=5' : sum === 6 ? 'Σ=6' : 'Σ≥7';
-    const SIGMA_ORDER = ['Σ=2', 'Σ=3', 'Σ=4', 'Σ=5', 'Σ=6', 'Σ≥7'];
-
-    out.push('### §10a. v7.2 HC margin tier × Σ bucket');
-    out.push('');
-    out.push('| HC_m \\ Σ | ' + SIGMA_ORDER.join(' | ') + ' | TOTAL |');
-    out.push('|---|' + SIGMA_ORDER.map(() => '---').join('|') + '|---|');
-    const margins = [
-      ['≤0', r => r.hcMargin <= 0],
-      ['+1', r => r.hcMargin === 1],
-      ['≥+2', r => r.hcMargin >= 2],
-    ];
-    for (const [label, pred] of margins) {
-      const rowCells = [`**HC_m ${label}**`];
-      const filtered = v72Rows.filter(pred);
-      for (const sb of SIGMA_ORDER) {
-        const rs = filtered.filter(r => sigmaBucket((r.dwFrozen ?? 0) + (r.dqFrozen ?? 0)) === sb);
-        const a = aggC(rs);
-        rowCells.push(a.n ? `${a.n} · ${fmtPct(a.wr)} · ${fmtSignPct(a.flatRoi)}` : '—');
-      }
-      const tot = aggC(filtered);
-      rowCells.push(tot.n ? `${tot.n} · ${fmtPct(tot.wr)} · ${fmtSignPct(tot.flatRoi)} · ${(tot.flatPnl >= 0 ? '+' : '')}${tot.flatPnl.toFixed(2)}u` : '—');
-      out.push('| ' + rowCells.join(' | ') + ' |');
-    }
-    out.push('');
-
-    out.push('### §10b. v7.2 promotion-source cohorts (out of LEAN / Σ=2)');
-    out.push('');
-    out.push('| Source | N | W-L | WR | flat ROI | flat PnL | peak PnL |');
-    out.push('|---|---|---|---|---|---|---|');
-    const sources = [
-      ['v72-hc-margin (Σ ∈ {3,4})', r => r.promotedBy === 'v72-hc-margin'],
-      ['v72-sigma2-lock (Σ=2 ∧ HC_m≥+2)', r => r.promotedBy === 'v72-sigma2-lock'],
-      ['v72-sigma2-lean (Σ=2 ∧ HC_m=+1)', r => r.promotedBy === 'v72-sigma2-lean'],
-      ['two-factor-floor (Σ ≥ +5)', r => r.promotedBy === 'two-factor-floor'],
-    ];
-    for (const [label, pred] of sources) {
-      const a = aggC(v72Rows.filter(pred));
-      if (!a.n) { out.push(`| ${label} | 0 | — | — | — | — | — |`); continue; }
-      out.push(`| ${label} | ${a.n} | ${a.wins}-${a.losses} | ${fmtPct(a.wr)} | ${fmtSignPct(a.flatRoi)} | ${(a.flatPnl >= 0 ? '+' : '')}${a.flatPnl.toFixed(2)}u | ${(a.peakPnl >= 0 ? '+' : '')}${a.peakPnl.toFixed(2)}u |`);
-    }
-    out.push('');
-
-    out.push('### §10c. SUPER-HC (HC_m ≥ +2) vs STANDARD (HC_m = +1) head-to-head');
-    out.push('');
-    out.push('| Cohort | N | W-L | WR | flat ROI | flat PnL | peak PnL |');
-    out.push('|---|---|---|---|---|---|---|');
-    const superHc = v72Rows.filter(r => r.hcMargin >= 2);
-    const stdHc   = v72Rows.filter(r => r.hcMargin === 1);
-    const noHc    = v72Rows.filter(r => r.hcMargin <= 0);
-    for (const [label, rs] of [['HC_m ≥+2 (SUPER ×1.75)', superHc], ['HC_m =+1 (STANDARD ×1.5)', stdHc], ['HC_m ≤0 (no upsize)', noHc]]) {
-      const a = aggC(rs);
-      if (!a.n) { out.push(`| ${label} | 0 | — | — | — | — | — |`); continue; }
-      out.push(`| ${label} | ${a.n} | ${a.wins}-${a.losses} | ${fmtPct(a.wr)} | ${fmtSignPct(a.flatRoi)} | ${(a.flatPnl >= 0 ? '+' : '')}${a.flatPnl.toFixed(2)}u | ${(a.peakPnl >= 0 ? '+' : '')}${a.peakPnl.toFixed(2)}u |`);
-    }
-    out.push('');
-    out.push(`_v7.2 picks since cutover: **${v72Rows.length}** · SUPER-HC: ${superHc.length} · STANDARD-HC: ${stdHc.length} · no-HC: ${noHc.length}_`);
-    out.push('');
-  }
-
-  // ─── §11. v7.3 HC-margin floor + MUTE override cohort ─────────────────────
-  // Tracks the v7.3 promotion sources (sigma1-hc, sigma2-hc, hc-rescue) so
-  // we can validate the analysis findings on real shipped samples:
-  //   • WALLET_HC_MARGIN_ANALYSIS_FULL §2: MUTED ∧ HC_m ≥ +1 → 11-2 / +85% ROI
-  //     → v73-hc-rescue cohort proves the override out (or doesn't).
-  //   • WALLET_HC_MARGIN_ANALYSIS_FULL §4: Σ=2 ∧ HC_m ≥ +1 → +37% ROI
-  //     → v73-sigma2-hc proves the floor lower out.
-  //   • Σ=1 ∧ HC_m ≥ +1 → 50% / −3% (n=2, marginal)
-  //     → v73-sigma1-hc tracked at 0.5u floor.
-  const v73Rows = pickRows.filter(r =>
-    r.systemVersion === '7.3' && r.inDashboard && !r.superseded
-    && (r.outcome === 'WIN' || r.outcome === 'LOSS') && r.hcMargin != null
-  );
-  if (v73Rows.length === 0) {
-    out.push('## §11. v7.3 HC-margin floor + MUTE override cohort');
-    out.push('');
-    out.push('_No v7.3-stamped picks in the sample yet (cutover 2026-04-30). §11 will populate as v7.3 picks accumulate._');
-    out.push('');
-  } else {
-    out.push('## §11. v7.3 HC-margin floor + MUTE override cohort');
-    out.push('');
-    out.push('Tracks the live performance of the v7.3 floor lowering (Σ ∈ {1, 2} ∧ HC_m ≥ +1 → LOCK) and the MUTE override (HC_m ≥ +1 suppresses dw=0 / dq=0 / sum<3 mutes; CANCEL still fires). Picks must be `inDashboard` with `v8_systemVersion === \'7.3\'`.');
-    out.push('');
-
-    out.push('### §11a. v7.3 promotion-source cohorts');
-    out.push('');
-    out.push('| Promotion source | N | W-L | WR | flat ROI | flat PnL | peak PnL |');
-    out.push('|---|---|---|---|---|---|---|');
-    const v73Cohorts = [
-      ['v73-sigma1-hc (Σ=1 ∧ HC_m ≥ +1)', r => r.promotedBy === 'v73-sigma1-hc'],
-      ['v73-sigma2-hc (Σ=2 ∧ HC_m ≥ +1)', r => r.promotedBy === 'v73-sigma2-hc'],
-      ['v73-hc-rescue (Σ ≥ +3 ∧ dw=0 ∨ dq=0)', r => r.promotedBy === 'v73-hc-rescue'],
-      ['v72-hc-margin (Σ ∈ {3,4})',           r => r.promotedBy === 'v72-hc-margin'],
-      ['v72-sigma2-lock (Σ=2 ∧ HC_m ≥ +2)',   r => r.promotedBy === 'v72-sigma2-lock'],
-      ['two-factor-floor (Σ ≥ +5)',           r => r.promotedBy === 'two-factor-floor'],
-    ];
-    for (const [label, pred] of v73Cohorts) {
-      const rs = v73Rows.filter(pred);
-      const a = aggC(rs);
-      if (!a.n) { out.push(`| ${label} | 0 | — | — | — | — | — |`); continue; }
-      out.push(`| ${label} | ${a.n} | ${a.wins}-${a.losses} | ${fmtPct(a.wr)} | ${fmtSignPct(a.flatRoi)} | ${(a.flatPnl >= 0 ? '+' : '')}${a.flatPnl.toFixed(2)}u | ${(a.peakPnl >= 0 ? '+' : '')}${a.peakPnl.toFixed(2)}u |`);
-    }
-    out.push('');
-
-    out.push('### §11b. v7.3 vs prior versions head-to-head');
-    out.push('');
-    out.push('| Cohort | N | W-L | WR | flat ROI | flat PnL | peak PnL |');
-    out.push('|---|---|---|---|---|---|---|');
-    const v73NewFloor = v73Rows.filter(r =>
-      r.promotedBy === 'v73-sigma1-hc' || r.promotedBy === 'v73-sigma2-hc' || r.promotedBy === 'v73-hc-rescue'
-    );
-    const v73Established = v73Rows.filter(r =>
-      r.promotedBy === 'v72-hc-margin' || r.promotedBy === 'v72-sigma2-lock'
-        || r.promotedBy === 'hc-dominance' || r.promotedBy === 'two-factor-floor'
-    );
-    for (const [label, rs] of [
-      ['v7.3 NEW (sigma1 + sigma2 + rescue)', v73NewFloor],
-      ['v7.3 ESTABLISHED (Σ≥3 ∧ HC_m≥+1, Σ≥+5)', v73Established],
-    ]) {
-      const a = aggC(rs);
-      if (!a.n) { out.push(`| ${label} | 0 | — | — | — | — | — |`); continue; }
-      out.push(`| ${label} | ${a.n} | ${a.wins}-${a.losses} | ${fmtPct(a.wr)} | ${fmtSignPct(a.flatRoi)} | ${(a.flatPnl >= 0 ? '+' : '')}${a.flatPnl.toFixed(2)}u | ${(a.peakPnl >= 0 ? '+' : '')}${a.peakPnl.toFixed(2)}u |`);
-    }
-    out.push('');
-    out.push(`_v7.3 picks since cutover: **${v73Rows.length}** · NEW v7.3 promotions: ${v73NewFloor.length} · established floor: ${v73Established.length}_`);
-    out.push('');
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // §12. HC-MARGIN UNIVERSAL MONITOR — the v7.3 core finding, refreshed daily
-  // ═══════════════════════════════════════════════════════════════════════════
-  //
-  // This section is THE live monitor for the v7.3 thesis: "HC margin ≥ +1
-  // unilaterally lifts WR/ROI at every Σ bucket". We rebuild that table
-  // every day across three windows (3-day rolling / 7-day rolling /
-  // all-time since v6 cutover) × every sport × the full Σ × HC matrix.
-  //
-  // Universe: every graded side in the v6+ sample (LOCKED + LEAN + SHADOW
-  // + MUTED + CANCELLED — i.e. NOT filtered on inDashboard). This mirrors
-  // WALLET_HC_MARGIN_ANALYSIS_FULL — the universe we used to justify v7.3.
-  // We need the rejected picks because the whole point of the override is
-  // that the engine was rejecting picks the HC margin was telling us to
-  // play.
-  //
-  // Lift = WR(HC_m ≥ +1) − WR(HC_m ≤ 0) within each Σ bucket. Two-prop
-  // z-test p-value annotates each cell so we can see when a cohort
-  // crosses statistical significance.
-  out.push('---');
-  out.push('## §12. HC-margin universal monitor (v7.3 core finding)');
-  out.push('');
-  out.push('Live re-run of the analysis that drove v7.3. Universe = **every graded side since v6 cutover** (`LOCKED + LEAN + SHADOW + MUTED + CANCELLED`). This mirrors `WALLET_HC_MARGIN_ANALYSIS_FULL`. Cell format: `N · WR · flat ROI`. Lift = `WR(HC_m≥+1) − WR(HC_m≤0)` with two-prop z-test p-value.');
-  out.push('');
-  out.push(`HC margin source split: **${stampedHc}** frozen (v7.1+ stamps) · **${recomputedHc}** recomputed via point-in-time tier lens · **${missingHc}** uncategorised (no walletDetails). Recompute uses the same CONFIRMED + sizeRatio ≥ ${HC_RATIO} rule the live engine applies.`);
-  out.push('');
-  const hcUniverse = pickRows.filter(r =>
-    !r.superseded
-    && r.hcMarginEffective != null
-    && (r.outcome === 'WIN' || r.outcome === 'LOSS')
-  );
-  const asOf = meta.dateMax;
-  const WINDOWS = [
-    { id: 'd3',   label: '3-day',    days: 3 },
-    { id: 'd7',   label: '7-day',    days: 7 },
-    { id: 'all',  label: 'All-time', days: null },
-  ];
-  const fmtCell = (a) => a.n ? `${a.n} · ${fmtPct(a.wr)} · ${fmtSignPct(a.flatRoi)}` : '—';
-  const fmtLift = (lift) => {
-    if (lift.wr == null) return '—';
-    const wrLbl  = `${(lift.wr  >= 0 ? '+' : '')}${lift.wr.toFixed(1)}pp`;
-    const roiLbl = lift.roi == null ? '—' : `${(lift.roi >= 0 ? '+' : '')}${lift.roi.toFixed(1)}%`;
-    const pLbl   = lift.p == null ? 'p=—' : (lift.p < 0.001 ? 'p<0.001' : `p=${lift.p.toFixed(3)}`);
-    const sig    = lift.p != null && lift.p < 0.05 ? ' ★' : '';
-    return `WR ${wrLbl} · ROI ${roiLbl} · ${pLbl}${sig}`;
-  };
-
-  function renderHcMatrix(rows, header) {
-    const m = buildHcSigmaMatrix(rows);
-    out.push(header);
-    out.push('');
-    if (m.totalEligible === 0) {
-      out.push('_No eligible picks (rows need a frozen `v8_hcMargin` stamp). v7.1+ stamps this; older docs do not._');
-      out.push('');
-      return;
-    }
-    out.push(mdHeader(['HC_m \\ Σ', ...SIGMA_BUCKET_ORDER, 'TOTAL']));
-    const margins = [
-      ['≤0', (b) => b.byTier['≤0']],
-      ['+1', (b) => b.byTier['+1']],
-      ['≥+2', (b) => b.byTier['≥+2']],
-    ];
-    for (const [label, getCell] of margins) {
-      const row = [`**HC_m ${label}**`];
-      for (const sb of SIGMA_BUCKET_ORDER) {
-        const bucket = m.sigmaBuckets.find(x => x.bucket === sb);
-        row.push(fmtCell(getCell(bucket)));
-      }
-      // TOTAL across Σ for this HC margin band.
-      const totRows = rows.filter(r => {
-        if (r.outcome !== 'WIN' && r.outcome !== 'LOSS') return false;
-        if (r.hcMarginEffective == null) return false;
-        if (label === '≤0') return r.hcMarginEffective <= 0;
-        if (label === '+1') return r.hcMarginEffective === 1;
-        return r.hcMarginEffective >= 2;
-      });
-      const tWins = totRows.filter(r => r.outcome === 'WIN').length;
-      const tFlat = totRows.reduce((s, r) => s + (r.flatProfit ?? 0), 0);
-      const tWr = totRows.length ? tWins / totRows.length * 100 : null;
-      const tRoi = totRows.length ? (tFlat / totRows.length) * 100 : null;
-      row.push(totRows.length ? `${totRows.length} · ${fmtPct(tWr)} · ${fmtSignPct(tRoi)}` : '—');
-      out.push('| ' + row.join(' | ') + ' |');
-    }
-    out.push('');
-    // Lift table per Σ.
-    out.push('**Lift per Σ (HC_m ≥ +1 vs HC_m ≤ 0):**');
-    out.push('');
-    out.push(mdHeader(['Σ bucket', 'N (HC≥+1)', 'WR (HC≥+1)', 'ROI (HC≥+1)', 'N (HC≤0)', 'WR (HC≤0)', 'ROI (HC≤0)', 'Lift']));
-    for (const sb of SIGMA_BUCKET_ORDER) {
-      const bucket = m.sigmaBuckets.find(x => x.bucket === sb);
-      if (!bucket) continue;
-      const inA  = bucket.in;
-      const outA = bucket.out;
-      if (inA.n === 0 && outA.n === 0) continue;
-      out.push(`| ${sb} | ${inA.n} | ${fmtPct(inA.wr)} | ${fmtSignPct(inA.flatRoi)} | ${outA.n} | ${fmtPct(outA.wr)} | ${fmtSignPct(outA.flatRoi)} | ${fmtLift(bucket.lift)} |`);
-    }
-    out.push(`| **POOLED** | **${m.pooled.in.n}** | **${fmtPct(m.pooled.in.wr)}** | **${fmtSignPct(m.pooled.in.flatRoi)}** | **${m.pooled.out.n}** | **${fmtPct(m.pooled.out.wr)}** | **${fmtSignPct(m.pooled.out.flatRoi)}** | **${fmtLift(m.pooled.lift)}** |`);
-    out.push('');
-  }
-
-  // §12a — All sports pooled, three windows
-  out.push('### §12a. All sports pooled');
-  out.push('');
-  for (const w of WINDOWS) {
-    const slice = rowsInWindow(hcUniverse, w.days, asOf);
-    renderHcMatrix(slice, `#### ${w.label}${w.days ? ` (≤ ${w.days} calendar days through ${asOf})` : ` (${V6_CUTOVER} → ${asOf})`}`);
-  }
-
-  // §12b — Per-sport breakouts at every window (collapsed if N is too thin)
-  for (const sport of sports) {
-    out.push(`### §12${(['b','c','d','e','f','g'][sports.indexOf(sport)] || 'x')}. ${sport.toUpperCase()}`);
-    out.push('');
-    const sportRows = hcUniverse.filter(r => r.sport === sport);
-    for (const w of WINDOWS) {
-      const slice = rowsInWindow(sportRows, w.days, asOf);
-      renderHcMatrix(slice, `#### ${sport.toUpperCase()} · ${w.label}${w.days ? ` (≤ ${w.days} days through ${asOf})` : ''}`);
-    }
-  }
-
-  // §12 footer — leading-indicator interpretation
-  out.push('### §12 — How to read');
-  out.push('');
-  out.push('- **Lift positive across every Σ bucket** = the v7.3 thesis is holding. The HC margin override + Σ ≤ 2 floor lowering are earning their keep at every part of the ladder.');
-  out.push('- **Lift collapses (or flips) on a single Σ** = that bucket has either drifted (genuine signal decay) or is hostage to small-N variance. Cross-check the N column before reacting.');
-  out.push('- **`★`** marks p < 0.05 (two-prop z-test). Sub-significant cells are still useful directionally but should not by themselves trigger a v7.x revision.');
-  out.push('- **3-day window**: leading-indicator. If HC lift goes negative in the 3-day across multiple sports, raise alarm.');
-  out.push('- **7-day window**: trend lens. Filters single-day variance; a 7-day collapse is a real signal.');
-  out.push('- **All-time**: thesis check. Should match `WALLET_HC_MARGIN_ANALYSIS_FULL` within minor sample drift.');
-  out.push('');
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // §13. PROVEN-WALLET GROWTH & TRACKING DESCRIPTIVES
+  // §5. PROVEN-WALLET GROWTH & TRACKING DESCRIPTIVES (formerly §13)
   // ═══════════════════════════════════════════════════════════════════════════
   //
   // The Δ_winner signal is only as good as the proven-winner roster behind
@@ -1672,7 +1076,7 @@ function vaultStarBand(row) {
   //
   // Source-B positions are loaded into `positionRows` by loadEverything().
   out.push('---');
-  out.push('## §13. Proven-wallet roster growth & HC tracking');
+  out.push('## §5. Proven-wallet roster growth & HC tracking');
   out.push('');
   out.push('"Proven wallet" = whitelist tier `CONFIRMED` or `FLAT` in the same sense the live engine uses (`exportWalletProfiles.js` → `sharpWalletProfiles.bySport`). Sports inherit independent rosters: a wallet can be CONFIRMED in NBA and absent from NHL. `walletBets` come from `v8Scoring.walletDetails` on every graded v6-era pick (Source A); `positionRows` come from `sharp_action_positions` (Source B).');
   out.push('');
@@ -1725,7 +1129,18 @@ function vaultStarBand(row) {
   }
 
   // §13a — Current proven-winner roster snapshot per sport
-  out.push('### §13a. Current proven-winner roster (snapshot)');
+  // `asOf` and `WINDOWS` were previously declared in old §12 (HC universal
+  // monitor). After §12 was retired in the 2026-05-05 rewrite we redeclare
+  // them here so the §5 wallet-roster routines (snapshot, growth deltas,
+  // HC density) keep referencing the latest graded slate and the same
+  // 3-day / 7-day / all-time windows.
+  const asOf = meta.dateMax;
+  const WINDOWS = [
+    { id: 'd3',  label: '3-day',    days: 3 },
+    { id: 'd7',  label: '7-day',    days: 7 },
+    { id: 'all', label: 'All-time', days: null },
+  ];
+  out.push('### §5a. Current proven-winner roster (snapshot)');
   out.push('');
   out.push(`Roster as of **${asOf}** — wallets with ≥${MIN_BETS} bets in the sport.`);
   out.push('');
@@ -1745,7 +1160,7 @@ function vaultStarBand(row) {
   out.push('');
 
   // §13b — Live whitelist drift check (script vs sharpWalletProfiles)
-  out.push('### §13b. Live whitelist drift check');
+  out.push('### §5b. Live whitelist drift check');
   out.push('');
   out.push('Live `sharpWalletProfiles` is what the engine reads at lock time. Drift between script reconstruction (above) and live should be ≤ 1 day of position data — otherwise `exportWalletProfiles.js` is stale.');
   out.push('');
@@ -1770,7 +1185,7 @@ function vaultStarBand(row) {
   out.push('');
 
   // §13c — Proven roster growth: 3d / 7d / 30d / all-time deltas per sport
-  out.push('### §13c. Roster growth — 3d / 7d / 30d / all-time deltas');
+  out.push('### §5c. Roster growth — 3d / 7d / 30d / all-time deltas');
   out.push('');
   out.push(`Each cell is **net growth** in proven (CONFIRMED + FLAT) wallets in that window, with the absolute count at the start (\`+Δ from N\`). Negative = wallets demoted. Window endpoint = ${asOf}.`);
   out.push('');
@@ -1806,7 +1221,7 @@ function vaultStarBand(row) {
   out.push('');
 
   // §13d — Pipeline funnel — where each sport leaks
-  out.push('### §13d. Pipeline funnel — where each sport leaks');
+  out.push('### §5d. Pipeline funnel — where each sport leaks');
   out.push('');
   out.push('Wallets surviving each gate, in order. The biggest %-drop tells you the bottleneck. Gates:');
   out.push('');
@@ -1837,7 +1252,7 @@ function vaultStarBand(row) {
   out.push('');
 
   // §13e — HC backing density on shipped picks (the fuel for HC margin)
-  out.push('### §13e. HC backing density (the fuel for v7.3 HC margin)');
+  out.push('### §5e. HC backing density (the fuel for v7.3 HC margin)');
   out.push('');
   out.push('Every v7.x promotion is gated on `HC_m ≥ +1`, which requires at least one CONFIRMED wallet sized at `≥ 1.5×` average on the for-side. This table shows the share of shipped picks that *had any HC backing*, by sport, in each window. If HC density falls toward zero in a sport, the v7.3 floor cohorts (Σ=1, Σ=2 locks; HC rescues) will simply stop firing there.');
   out.push('');
@@ -1878,7 +1293,7 @@ function vaultStarBand(row) {
   out.push('');
 
   // §13f — Bubble wallets (next-up graduations) per sport
-  out.push('### §13f. Bubble wallets — next-up graduations');
+  out.push('### §5f. Bubble wallets — next-up graduations');
   out.push('');
   out.push('Wallets currently NOT promoted but close. Two flavors:');
   out.push('');
@@ -1920,8 +1335,8 @@ function vaultStarBand(row) {
     }
   }
 
-  // §13 footer — interpretation
-  out.push('### §13 — How to read');
+  // §5 footer — interpretation
+  out.push('### §5 — How to read');
   out.push('');
   out.push('- **Roster growth flat in 7-day** + **funnel bottleneck = `data`** → re-run `exportWalletProfiles.js`. The flat-positive wallets are stuck at FLAT because Source-B coverage hasn\'t caught up. CONFIRMED gate is data-bound, not skill-bound.');
   out.push('- **Roster growth flat in 7-day** + **funnel bottleneck = `sample`** → wallets aren\'t reaching `≥' + MIN_BETS + '` reps fast enough. This is a slate-density problem; consider a soft `MIN_BETS = 1` shadow lane to surface bubble wallets earlier.');
@@ -1932,27 +1347,24 @@ function vaultStarBand(row) {
   // ─── Footer ────────────────────────────────────────────────────────────────
   out.push('---');
   out.push('');
-  out.push(`_Driven by \`scripts/dailyV6Report.js\` · regenerates daily via \`.github/workflows/daily-v6-report.yml\` · WHITELIST_CONSENSUS_VERSION = 9 (v7.3) · QUALITY_CONTRIB_CUT = ${QUALITY_CUT} · inclusion mirrors live Pick Performance dashboard · cohort tags from frozen v6/v7.1/v7.2/v7.3 stamps · §12 HC universal monitor (3d/7d/all-time × sport) · §12 universe = full graded set (LOCKED+LEAN+SHADOW+MUTED+CANCELLED) · §13 proven-wallet roster mirrors \`exportWalletProfiles.js\`_`);
+  out.push(`_Driven by \`scripts/dailyV6Report.js\` · regenerates daily via \`.github/workflows/daily-v6-report.yml\` · QUALITY_CONTRIB_CUT = ${QUALITY_CUT} · HC = CONFIRMED ∧ sizeRatio ≥ ${HC_RATIO} · inclusion mirrors live Pick Performance dashboard · §1–§3 use shipped picks · §4–§5 wallet/tracking growth mirror \`exportWalletProfiles.js\`_`);
   out.push('');
 
   const outPath = join(REPO_ROOT, 'DAILY_V6_REPORT.md');
   writeFileSync(outPath, out.join('\n'));
   console.log(`\nWrote ${outPath}  (${out.length} lines)`);
 
-  // Console summary.
+  // Console summary — kept lean now that the report itself is lean.
+  const shippedAgg = finalizeAgg(shippedRows.reduce((a, r) => { pushAgg(a, r); return a; }, emptyAgg()));
   console.log('\n═══════════════════════════════════════════════════════════');
   console.log(`  SHARP INTEL v6 — DAILY MASTER REPORT (${nowET} ET)`);
   console.log('═══════════════════════════════════════════════════════════');
   console.log(`Sample:   scanned=${meta.totalSidesScanned}  graded=${pickRows.length}  shipped=${shippedRows.length}  dates=${allDates.length} (${meta.dateMin} → ${meta.dateMax})`);
   console.log(`SHIPPED (= dashboard):  N=${shippedAgg.n}  ${shippedAgg.w}-${shippedAgg.l}-${shippedAgg.p}  WR=${fmtPct(shippedAgg.wr)}  PnL_peak=${sign(shippedAgg.profitU, 2)}u  PnL_flat=${sign(shippedAgg.flatU, 2)}u`);
-  console.log(`Lock-frozen subset:     N=${lockableAgg.n}  ${lockableAgg.w}-${lockableAgg.l}-${lockableAgg.p}  WR=${fmtPct(lockableAgg.wr)}  PnL_peak=${sign(lockableAgg.profitU, 2)}u  PnL_flat=${sign(lockableAgg.flatU, 2)}u`);
-  console.log('\nAnomalies:');
-  console.log(`  Stale lock              N=${stale.length}    PnL=${sign(aStale.profitU, 2)}u`);
-  console.log(`  Over-mute               N=${overMute.length}    PnL=${sign(aOverMute.profitU, 2)}u (would-have)`);
-  console.log(`  Shadow-strong           N=${shadowStrong.length}    PnL=${sign(aShadow.profitU, 2)}u (would-have)`);
-  console.log(`  Stars without margin    N=${highStarLowDw.length}    PnL=${sign(aStarsNoDw.profitU, 2)}u`);
-  console.log('\nSharp Vault hidden stars:');
-  console.log(`  4★+ positions: ${vaultElite.n}   WR=${fmtPct(vaultElite.wr)}   $ROI=${fmtSignPct(vaultElite.dollarRoi)}   PnL=${fmtMoneyShort(vaultElite.pnl)}`);
+  if (yesterdayET) {
+    const yAgg = finalizeAgg(yRows.reduce((a, r) => { pushAgg(a, r); return a; }, emptyAgg()));
+    console.log(`Yesterday (${yesterdayET}): N=${yAgg.n}  ${yAgg.w}-${yAgg.l}-${yAgg.p}  WR=${fmtPct(yAgg.wr)}  PnL_peak=${sign(yAgg.profitU, 2)}u`);
+  }
 
   process.exit(0);
 })().catch(e => { console.error(e); process.exit(1); });
