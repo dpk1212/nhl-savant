@@ -38,6 +38,17 @@ export const AGS_FEATURES = [
 // ────────────────────────────────────────────────────────────────────────
 export const AGS_LOCK_FLOOR = 5.0;        // rescue route (route C): AGS ≥ +5 → LOCK
 export const AGS_MUTE_FLOOR = -1.0;       // confirmation gate (route B): AGS < -1 → MUTE
+// v7.5 — Δw=+1 confirmation floor. The Σ ≥ +5 sum route was retired
+// (2026-05-05) because Δq (quality margin) is too sparse to be meaningful
+// once we filter walletDetails to whitelist-only wallets. Δw=+1 alone is
+// thin signal but a positive aggregate over the proven wallet stack
+// (AGS ≥ +3, "STRONG" tier) is enough confirmation to ship. The
+// AGS_MIN_PROVEN_WALLETS guard still applies so a single wallet z-spike
+// can't drive a Δw=+1 lock.
+//   • AGS ≥ +5 → AGS rescue route (locks regardless of Δw, requires Δw > -2)
+//   • AGS ≥ +3 → Δw=+1 confirmation route (this constant)
+//   • AGS < -1 → confirmation gate veto on otherwise-locking sides
+export const AGS_DW1_FLOOR = 3.0;
 // Rescue requires ≥AGS_MIN_PROVEN_WALLETS proven wallets in walletDetails
 // (anti thin-sample noise). Lowered from 3 → 2 (2026-05-05) because MLB/NHL
 // stacks routinely show genuine signal with only 2 proven wallets backing —

@@ -58,6 +58,8 @@ import { dirname, join } from 'path';
 
 import {
   AGS_FALLBACK_CALIBRATION,
+  AGS_DW1_FLOOR,
+  AGS_LOCK_FLOOR,
   AGS_MIN_PROVEN_WALLETS,
   aggregateSideProven,
   agsSizeMultiplier,
@@ -77,16 +79,31 @@ const V6_CUTOVER = '2026-04-18';
 const V7_1_CUTOVER_DATE = '2026-04-30';
 const V7_2_CUTOVER_DATE = '2026-04-30';
 const V7_3_CUTOVER_DATE = '2026-04-30';
-// v7.4 — single floor display contract. (HC_m ≥ +1) OR
-// (Σ ≥ 5 ∧ dw,dq ≥ +1) → LOCKED. Anything else → SHADOW. dw ≤ -2 still
-// CANCELS. LEAN tier eliminated entirely. Server cron writes lockStage
-// every cycle so the doc state is always in lock-step with live data
-// pre-T-15. HC route is GOLDEN STANDARD: HC margin alone passes the
-// floor regardless of dw/dq (no money-split or quality-margin guards).
+// v7.4 — single floor display contract.
+//
+// Original v7.4 floor (2026-05-02): HC_m ≥ +1  OR  (Σ ≥ 5 ∧ dw,dq ≥ +1).
+//
+// v7.5 update (2026-05-05) — Σ route retired. Δq (quality margin) is too
+// sparse to gate on now that walletDetails is filtered to whitelist-only,
+// so the Σ route effectively never fires. Replaced with two Δw-driven
+// routes that lean on AGS as the "is the aggregate proven-wallet stack
+// actually positive?" check:
+//
+//   Route HC (golden standard): HC_m ≥ +1   → LOCK
+//   Route Δw≥2:                  Δw ≥ +2     → LOCK
+//   Route Δw=1+AGS:              Δw ≥ +1 ∧ AGS ≥ AGS_DW1_FLOOR (+3)
+//                                with ≥ AGS_MIN_PROVEN_WALLETS proven  → LOCK
+//   Route AGS rescue (existing): AGS ≥ AGS_LOCK_FLOOR (+5) ∧ Δw > -2
+//                                with ≥ AGS_MIN_PROVEN_WALLETS proven  → LOCK
+//
+// Anything else → SHADOW (hidden). dw ≤ -2 still CANCELS. LEAN tier
+// eliminated entirely. The Σ_FLOOR / ELITE_SIGMA constants are retained
+// for legacy display strings and pre-cutover backfill, but no longer
+// gate any v7.5+ pick.
 const V7_4_CUTOVER_DATE = '2026-05-02';
-const V7_4_SIGMA_FLOOR = 5;
+const V7_4_SIGMA_FLOOR = 5;            // legacy — pre-v7.5 sum route
 const V7_4_HC_MARGIN_FLOOR = 1;
-const V7_4_ELITE_SIGMA = 7;
+const V7_4_ELITE_SIGMA = 7;            // legacy — see lockTierFromDeltas for v7.5 ELITE definition
 
 // v7.3 unit floors for HC-promoted sub-Σ-3 picks.
 const V7_3_SIGMA1_LOCK_UNITS_ML = 0.5;
@@ -121,23 +138,36 @@ const isV72Eligible = (d) => d && d >= V7_2_CUTOVER_DATE;
 const isV73Eligible = (d) => d && d >= V7_3_CUTOVER_DATE;
 const isV74Eligible = (d) => d && d >= V7_4_CUTOVER_DATE;
 
-// v7.4 single-floor gate. Mirror of SharpFlow.jsx::meetsV74Floor.
+// v7.5 lock-floor gate. Mirror of SharpFlow.jsx::meetsV74Floor.
+// (Function name kept as meetsV74Floor for compatibility with all
+// callers — the logic inside is the v7.5 3-route definition.)
 //
-// HC GOLDEN STANDARD (2026-05-02): HC margin ≥ +1 alone passes the floor —
-// no dw/dq guards. A confirmed-tier proven winner sized at ≥1.5× their
-// normal bet on this side, with zero confirmed sharps oversized on the
-// other side, is the strongest single signal in the system. dw ≤ -2 still
-// cancels through evaluateBaseHealth as a safety net.
-function meetsV74Floor(dw, dq, hcMargin) {
-  if (!Number.isFinite(dw) || !Number.isFinite(dq)) return false;
+// Three routes to LOCKED, all dq-free:
+//   • HC golden standard: HC_m ≥ +1
+//   • Δw≥2:               winner margin alone is strong enough
+//   • Δw=1+AGS:           weaker winner margin needs AGS ≥ AGS_DW1_FLOOR
+//                         confirmation + AGS_MIN_PROVEN_WALLETS guard
+//
+// AGS rescue (route C, AGS ≥ AGS_LOCK_FLOOR with Δw > -2) is NOT folded
+// in here — it lives in reconcileSide's agsRescuePrecheck so the rescue
+// reason can be tagged in promotedBy / lockStageLastChange separately.
+//
+// dw ≤ -2 still cancels through evaluateBaseHealth as a safety net.
+function meetsV74Floor(dw, hcMargin, ags = null, agsProvenTotal = null) {
+  if (!Number.isFinite(dw)) return false;
   const hc = Number.isFinite(hcMargin) ? hcMargin : 0;
-  const sum = dw + dq;
-  const hcRoute  = hc >= V7_4_HC_MARGIN_FLOOR;
-  const sumRoute = dw >= 1 && dq >= 1 && sum >= V7_4_SIGMA_FLOOR;
-  return hcRoute || sumRoute;
+  if (hc >= V7_4_HC_MARGIN_FLOOR) return true;
+  if (dw >= 2) return true;
+  if (dw >= 1
+      && Number.isFinite(ags)
+      && ags >= AGS_DW1_FLOOR
+      && (agsProvenTotal == null || agsProvenTotal >= AGS_MIN_PROVEN_WALLETS)) {
+    return true;
+  }
+  return false;
 }
 
-function vaultStarFromDeltas(dw, dq, hcMargin = 0, pickDate = null) {
+function vaultStarFromDeltas(dw, dq, hcMargin = 0, pickDate = null, ags = null) {
   let baseStar;
   if (dw >= 1 && dq >= 1) {
     const sum = dw + dq;
@@ -157,26 +187,47 @@ function vaultStarFromDeltas(dw, dq, hcMargin = 0, pickDate = null) {
     else if (dq <= 0) adj = -0.25;
     baseStar = Math.max(1.0, Math.min(5.0, base + adj));
   }
-  // v7.4 HC star floor — mirror SharpFlow.jsx::vaultStarFromDeltas. HC
-  // margin drives the star rating directly when dw+dq is weak so units
-  // reflect signal strength after the qualified-wallet filter.
+  // v7.4/v7.5 — star floors per lock route. Mirror SharpFlow.jsx.
+  // The Σ-based ladder above produces too-low stars for dq=0 picks, but
+  // under v7.5 those picks lock via HC, Δw≥2, or Δw=1+AGS routes — so
+  // we floor the star rating to match the route that locks the pick.
+  const v74 = isV74Eligible(pickDate);
   const hc = Number.isFinite(hcMargin) ? hcMargin : 0;
-  if (isV74Eligible(pickDate) && hc >= 1) {
-    const hcFloor = hc >= 3 ? 5.0 : hc >= 2 ? 4.5 : 3.5;
-    return Math.max(baseStar, hcFloor);
+  if (v74) {
+    // HC route star floor (existing).
+    if (hc >= 1) {
+      const hcFloor = hc >= 3 ? 5.0 : hc >= 2 ? 4.5 : 3.5;
+      baseStar = Math.max(baseStar, hcFloor);
+    }
+    // Δw route star floor (NEW v7.5).
+    if (dw >= 4) baseStar = Math.max(baseStar, 5.0);
+    else if (dw >= 3) baseStar = Math.max(baseStar, 4.5);
+    else if (dw >= 2) baseStar = Math.max(baseStar, 4.0);
+    // Δw=1+AGS route star floor (NEW v7.5).
+    if (dw === 1 && Number.isFinite(ags) && ags >= AGS_DW1_FLOOR) {
+      baseStar = Math.max(baseStar, 3.5);
+    }
   }
-  return baseStar;
+  return Math.max(1.0, Math.min(5.0, baseStar));
 }
 
 function lockTierFromDeltas(dw, dq, hcDominant, opts = {}) {
   if (!Number.isFinite(dw) || !Number.isFinite(dq)) return 'MUTED';
   const sum = dw + dq;
   const hcMargin = Number.isFinite(opts.hcMargin) ? opts.hcMargin : (hcDominant ? 1 : 0);
+  const ags = Number.isFinite(opts.ags) ? opts.ags : null;
+  const agsProvenTotal = Number.isFinite(opts.agsProvenTotal) ? opts.agsProvenTotal : null;
   const v73 = isV73Eligible(opts.pickDate);
   const v74 = isV74Eligible(opts.pickDate);
   if (v74) {
-    if (sum >= V7_4_ELITE_SIGMA && dw >= 1 && dq >= 1) return 'ELITE';
-    if (meetsV74Floor(dw, dq, hcMargin)) return 'LOCKED';
+    // v7.5 ELITE — strongest signals only:
+    //   • HC ≥ +3                          (golden standard, 3+ wallets oversized)
+    //   • Δw ≥ +3                           (winner margin alone is dominant)
+    //   • Δw ≥ +2 ∧ AGS ≥ AGS_LOCK_FLOOR    (winner + strong aggregate)
+    if (hcMargin >= 3) return 'ELITE';
+    if (dw >= 3) return 'ELITE';
+    if (dw >= 2 && Number.isFinite(ags) && ags >= AGS_LOCK_FLOOR) return 'ELITE';
+    if (meetsV74Floor(dw, hcMargin, ags, agsProvenTotal)) return 'LOCKED';
     return 'MUTED';
   }
   if (v73 && hcMargin >= 1 && dw >= 0 && dq >= 0 && sum >= 1) {
@@ -197,16 +248,54 @@ function lockTierFromDeltas(dw, dq, hcDominant, opts = {}) {
   return 'MUTED';
 }
 
-// Mirrors evaluatePickHealth's mute/cancel ladder (without the diagnostic-
-// only flags that don't change status). v7.4 picks use Σ≥5 as the sum
-// floor (was Σ≥3 under v6.6); HC route stays as is.
-function evaluateBaseHealth({ dw, dq, hcMargin, pickDate }) {
+// Mirrors evaluatePickHealth's mute/cancel ladder. v7.5 picks (post-2026-05-05)
+// drop all Δq-based mutes — Δq is too sparse to gate on once walletDetails
+// is filtered to whitelist-only wallets. New mute reasons:
+//
+//   • winners_killed    — dw ≤ -2 (CANCEL, unchanged)
+//   • winners_faded     — dw = -1 (MUTE, unchanged, no override)
+//   • winners_below_floor — dw =  0 with no HC/AGS override (MUTE)
+//   • dw1_no_ags_support — dw =  1 but neither HC ≥ +1, AGS rescue,
+//                          nor Δw=1+AGS confirmation route firing (MUTE)
+//   • dw ≥ 2            — always ACTIVE (passes new floor by Δw≥2 route)
+//
+// Pre-v7.5 picks retain the legacy Σ-based dq mutes so historical
+// state stays accurate.
+function evaluateBaseHealth({ dw, dq, hcMargin, pickDate, ags = null, agsProvenTotal = null }) {
   const v73HcOverride = isV73Eligible(pickDate) && hcMargin >= 1;
   const v74 = isV74Eligible(pickDate);
-  const sumFloor = v74 ? V7_4_SIGMA_FLOOR : 3;
+  const agsRescueOverride = v74
+    && Number.isFinite(ags)
+    && (agsProvenTotal == null || agsProvenTotal >= AGS_MIN_PROVEN_WALLETS)
+    && meetsAgsLockFloor(ags, agsProvenTotal)
+    && dw > -2;
+  const dw1AgsSupport = v74
+    && Number.isFinite(ags)
+    && ags >= AGS_DW1_FLOOR
+    && (agsProvenTotal == null || agsProvenTotal >= AGS_MIN_PROVEN_WALLETS);
+  const muteOverride = v73HcOverride || agsRescueOverride;
+
   if (dw <= -2) return { status: 'CANCELLED', reason: 'winners_killed' };
   if (dw === -1) return { status: 'MUTED', reason: 'winners_faded' };
-  if (dw === 0 && !v73HcOverride) return { status: 'MUTED', reason: 'winners_below_floor' };
+  if (dw === 0 && !muteOverride) return { status: 'MUTED', reason: 'winners_below_floor' };
+
+  if (v74) {
+    // v7.5 — no Δq mutes. Δw=1 needs HC, AGS rescue, or Δw=1+AGS support.
+    if (dw === 1 && !v73HcOverride && !agsRescueOverride && !dw1AgsSupport) {
+      return { status: 'MUTED', reason: 'dw1_no_ags_support' };
+    }
+    if (muteOverride && (dw === 0 || dw === 1)) {
+      // Tag rescue source so the UI can surface it.
+      return {
+        status: 'ACTIVE',
+        reason: agsRescueOverride && !v73HcOverride ? 'ags_rescue' : 'v73_hc_rescue',
+      };
+    }
+    return { status: 'ACTIVE', reason: null };
+  }
+
+  // pre-v7.4 / pre-v7.5 — legacy Σ + Δq mutes.
+  const sumFloor = 3;
   if (dw >= 1 && dq <= 0 && !v73HcOverride) return { status: 'MUTED', reason: 'quality_below_floor' };
   if (dw >= 1 && dq >= 1 && (dw + dq) < sumFloor && !v73HcOverride) return { status: 'MUTED', reason: 'sum_below_floor' };
   if (v73HcOverride && (dw === 0 || dq <= 0 || (dw + dq) < sumFloor)) {
@@ -402,6 +491,257 @@ function buildPositionGroupsFromFirestore(positions) {
   return groups;
 }
 
+// ── Game metadata sources (commenceTime + odds) ────────────────────────────
+// For NEWLY CREATED pick docs (no browser sync ever ran), we need
+// commenceTime and current odds. Browser-facing JSON files are the same
+// data the UI reads, so we mirror that.
+function loadGameMetadata() {
+  const meta = new Map(); // key: `${sport}|${gameKey}` → { commenceTime, away, home, mlOdds: { away, home }, spread, total }
+  try {
+    const poly = JSON.parse(readFileSync(join(PUBLIC, 'polymarket_data.json'), 'utf8'));
+    for (const sport of ['NBA', 'MLB', 'NHL', 'CBB']) {
+      const games = poly[sport] || {};
+      for (const [gk, g] of Object.entries(games)) {
+        const key = `${sport}|${gk}`;
+        const cur = meta.get(key) || {};
+        // polymarket `commence` / `polyGameTime` is an ISO string.
+        const ctRaw = g.commence || g.polyGameTime || null;
+        if (ctRaw) {
+          const ms = new Date(ctRaw).getTime();
+          if (Number.isFinite(ms)) cur.commenceTime = ms;
+        }
+        cur.away = g.awayTeam || cur.away || null;
+        cur.home = g.homeTeam || cur.home || null;
+        cur.polyAwayProb = typeof g.awayProb === 'number' ? g.awayProb : null;
+        cur.polyHomeProb = typeof g.homeProb === 'number' ? g.homeProb : null;
+        meta.set(key, cur);
+      }
+    }
+  } catch (e) {
+    console.warn('[meta] polymarket_data.json unreadable:', e.message);
+  }
+  try {
+    const pinn = JSON.parse(readFileSync(join(PUBLIC, 'pinnacle_history.json'), 'utf8'));
+    for (const sport of ['NBA', 'MLB', 'NHL', 'CBB']) {
+      const games = pinn[sport] || {};
+      for (const [gk, g] of Object.entries(games)) {
+        const key = `${sport}|${gk}`;
+        const cur = meta.get(key) || {};
+        const cT = g.opener?.t ?? g.current?.t ?? null;
+        if (cT && !cur.commenceTime) cur.commenceTime = cT * 1000;
+        if (g.current) {
+          cur.mlOdds = { away: g.current.away, home: g.current.home };
+        } else if (g.opener) {
+          cur.mlOdds = { away: g.opener.away, home: g.opener.home };
+        }
+        meta.set(key, cur);
+      }
+    }
+  } catch (e) {
+    console.warn('[meta] pinnacle_history.json unreadable:', e.message);
+  }
+  return meta;
+}
+
+// Convert a sharp_action_positions doc into a walletDetails entry the
+// way the browser writes it into peak.v8Scoring.walletDetails. This
+// shape is what aggregateSideProven + computeAgs expect.
+function positionToWalletDetail(p) {
+  return {
+    wallet: p.walletShort || (p.wallet || '').slice(-6).toLowerCase(),
+    side: p.side,
+    invested: Number(p.invested || 0),
+    contribution: Number(p.v8_walletContribution || 0),
+    walletBase: Number(p.v8_walletBase || 0),
+    roi: Number(p.sportROI || 0),
+    pnl: Number(p.sportPnlTotal || p.totalPnl || 0),
+    sizeRatio: Number(p.v8_sizeRatio || (p.avgSportBet > 0 ? p.invested / p.avgSportBet : 0)),
+    convictionMult: Number(p.v8_convictionMult || 0),
+    rank: p.leaderboardRank ?? null,
+    roiNorm: Number(p.v8_walletRoiNorm || 0),
+    pnlNorm: Number(p.v8_walletPnlNorm || 0),
+    rankNorm: Number(p.v8_walletRankNorm || 0),
+    topShare: Number(p.v8_topShare || 0),
+    contribTier: 'TBD',
+  };
+}
+
+// ── Auto-create missing locked-pick docs ───────────────────────────────────
+// Architectural fix (2026-05-05): the cron only UPDATES existing pick
+// docs; if a side first qualified for the floor when no browser was
+// open, it never got written. This pass scans every (sport|gameKey|mkt)
+// group of sharp_action_positions and, for any side that passes the
+// v7.5 floor without an existing doc, builds + writes a minimal pick
+// doc so subsequent reconcileSide() calls (next cycle) can take over.
+//
+// Build is intentionally minimal: lockStage='LOCKED' so reconcileSide
+// processes it, peak.v8Scoring.walletDetails so AGS can compute, and
+// enough top-level metadata (date/sport/gameKey/teams/commenceTime) for
+// the dashboard to render. Browser-driven syncs will enrich any other
+// fields (criteria, evEdge, etc.) the next time a user opens the page.
+async function createMissingLockedPicks({
+  db, groups, walletProfiles, agsCalibration, isProvenFn,
+  existingDocIds, gameMeta, now, dryRun, force,
+}) {
+  const created = []; // { col, docId, side, route, dw, hcMargin, ags, agsTotal }
+  const skipped = []; // { reason, ... }
+  const writes = new Map(); // col → [{ docId, payload }]
+  const PREGAME_BUFFER_MS = 5 * 60 * 1000;
+
+  for (const [groupKey, positions] of groups.entries()) {
+    const [sport, gameKey, marketType] = groupKey.split('|');
+    const col = marketType === 'SPREAD' ? 'sharpFlowSpreads'
+      : marketType === 'TOTAL' ? 'sharpFlowTotals'
+      : 'sharpFlowPicks';
+    const docId = `${TARGET_DATE}_${sport}_${gameKey}`;
+    if (existingDocIds.has(`${col}|${docId}`)) continue; // already in Firestore
+
+    const meta = gameMeta.get(`${sport}|${gameKey}`);
+    if (!meta) {
+      skipped.push({ docId, col, reason: 'no_metadata' });
+      continue;
+    }
+    if (!meta.commenceTime) {
+      skipped.push({ docId, col, reason: 'no_commenceTime' });
+      continue;
+    }
+    if (!force && now >= meta.commenceTime - PREGAME_BUFFER_MS) {
+      skipped.push({ docId, col, reason: 'past_pregame_window' });
+      continue;
+    }
+
+    const sides = marketType === 'TOTAL' ? ['over', 'under'] : ['away', 'home'];
+    const newSides = {};
+    for (const side of sides) {
+      const live = computeWalletConsensus(positions, side, sport, walletProfiles);
+      // Quick-skip: no whitelist activity at all on this side.
+      if (live.forW === 0 && live.agW === 0 && live.hcConfFor === 0 && live.hcConfAg === 0) continue;
+
+      // Build walletDetails for AGS.
+      const walletDetails = positions.map(positionToWalletDetail);
+      const agg = aggregateSideProven(walletDetails, side, sport, isProvenFn);
+      const agsRes = agg ? computeAgs(agg, agsCalibration) : null;
+      const agsValue = agsRes && Number.isFinite(agsRes.ags) ? agsRes.ags : null;
+      const agsProvenTotal = agsRes ? (agsRes.provenForCount || 0) + (agsRes.provenAgCount || 0) : 0;
+
+      // Safety net — never auto-create a CANCELLED side. dw ≤ -2 always
+      // takes precedence regardless of HC/AGS routes (winners_killed).
+      if (live.delta <= -2) {
+        skipped.push({ docId, side, reason: 'winners_killed' });
+        continue;
+      }
+      const passesV74 = meetsV74Floor(live.delta, live.hcMargin, agsValue, agsProvenTotal);
+      const agsRescue = !passesV74 && agsValue != null && live.delta > -2
+        && agsProvenTotal >= AGS_MIN_PROVEN_WALLETS
+        && meetsAgsLockFloor(agsValue, agsProvenTotal);
+      if (!passesV74 && !agsRescue) continue;
+      // AGS confirmation gate — don't auto-create a LOCKED side that the
+      // gate would immediately demote. Mirrors syncPickStateAuthoritative
+      // reconcileSide's failsAgsConfirmationGate path.
+      if (agsValue != null
+          && agsProvenTotal >= AGS_MIN_PROVEN_WALLETS
+          && failsAgsConfirmationGate(agsValue)) {
+        skipped.push({ docId, side, reason: 'ags_quality_veto', ags: agsValue });
+        continue;
+      }
+
+      // Identify the route for promotedBy stamping.
+      let promotedBy;
+      if (!passesV74) promotedBy = 'ags-rescue';
+      else if (live.hcMargin >= 1) promotedBy = 'v74-hc-margin';
+      else if (live.delta >= 2) promotedBy = 'v75-dw2';
+      else promotedBy = 'v75-dw1-ags';
+
+      // Stars + units (frozen at creation; reconcileSide overwrites live).
+      const peakStars = vaultStarFromDeltas(live.delta, live.qualityMargin, live.hcMargin, TARGET_DATE, agsValue);
+      const peakTier = lockTierFromDeltas(live.delta, live.qualityMargin, live.hcDominant, {
+        pickDate: TARGET_DATE, hcMargin: live.hcMargin, ags: agsValue, agsProvenTotal,
+      });
+      const finalTier = (agsRescue && peakTier === 'MUTED') ? 'LOCKED' : peakTier;
+      const ladder = (marketType === 'SPREAD' || marketType === 'TOTAL') ? calculateSpreadTotalUnits : calculateUnits;
+      const odds = marketType === 'ML'
+        ? (side === 'home' ? meta.mlOdds?.home : meta.mlOdds?.away)
+        : null;
+      let peakUnits = ladder(peakStars, finalTier, live.hcDominant, {
+        pickDate: TARGET_DATE, hcMargin: live.hcMargin,
+        sum: live.delta + live.qualityMargin, odds: odds ?? null,
+      });
+      // Apply AGS sizing multiplier for the frozen peak.
+      if (agsValue != null && peakUnits > 0) {
+        const m = agsSizeMultiplier(agsValue);
+        if (m !== 1.0) peakUnits = Math.max(0.01, Math.round(peakUnits * m * 100) / 100);
+      }
+
+      // Determine team label for the side.
+      let team;
+      if (marketType === 'TOTAL') team = side === 'over' ? 'OVER' : 'UNDER';
+      else team = side === 'home' ? meta.home : meta.away;
+
+      newSides[side] = {
+        team: team || side,
+        lockStage: 'LOCKED',
+        promotedBy,
+        promotedAt: now,
+        promotedRegime: 'PREGAME',
+        contribTier: agsValue != null && agsValue >= AGS_LOCK_FLOOR ? 'LOCK'
+          : agsValue != null && agsValue >= AGS_DW1_FLOOR ? 'STRONG'
+          : 'NEUTRAL',
+        peak: {
+          team: team || side,
+          odds: odds ?? null,
+          book: 'pinnacle',
+          pinnacleOdds: odds ?? null,
+          stars: peakStars,
+          units: peakUnits,
+          v8Scoring: { walletDetails, consensusSide: side },
+          updatedAt: now,
+        },
+        lock: { regime: 'PREGAME', odds: odds ?? null },
+        // Flag so we know this came from the cron auto-create path.
+        cronCreated: true,
+        cronCreatedAt: now,
+      };
+      created.push({
+        col, docId, side, route: promotedBy,
+        dw: live.delta, hcMargin: live.hcMargin,
+        ags: agsValue, agsTotal: agsProvenTotal,
+        peakStars, peakUnits, team,
+      });
+    }
+    if (Object.keys(newSides).length === 0) continue;
+
+    const docPayload = {
+      date: TARGET_DATE,
+      sport,
+      gameKey,
+      away: meta.away,
+      home: meta.home,
+      commenceTime: meta.commenceTime,
+      lockType: 'PREGAME',
+      sides: newSides,
+      status: 'PENDING',
+      result: { awayScore: null, homeScore: null, winner: null },
+      source: 'cron-auto-create',
+      createdAt: now,
+      lastSyncAt: now,
+    };
+    if (!writes.has(col)) writes.set(col, []);
+    writes.get(col).push({ docId, payload: docPayload });
+  }
+
+  if (!dryRun) {
+    for (const [col, items] of writes) {
+      const batch = db.batch();
+      for (const w of items) {
+        batch.set(db.collection(col).doc(w.docId), w.payload, { merge: true });
+      }
+      await batch.commit();
+    }
+  }
+
+  return { created, skipped, writes };
+}
+
 // ── Main sync logic per side ───────────────────────────────────────────────
 function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force, agsCalibration, isProvenFn }) {
   const pickDate = pick.date || TARGET_DATE;
@@ -439,11 +779,30 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
 
   // Reconstruct live consensus.
   const live = computeWalletConsensus(group, side, sport, walletProfiles);
+
+  // ─── AGS (AggregateScore) — compute FIRST so it can feed every gate ──
+  // Reads frozen walletDetails[] from peak.v8Scoring (fall back to lock.v8Scoring),
+  // filters to whitelist-proven (CONFIRMED + FLAT), aggregates, z-scores, sums.
+  // v7.5: AGS feeds meetsV74Floor (Δw=1+AGS route), evaluateBaseHealth
+  // (dw1_no_ags_support mute), vaultStarFromDeltas (Δw=1+AGS star floor),
+  // lockTierFromDeltas (ELITE definition), AND the AGS rescue precheck
+  // below. So we hoisted it from after the tier compute up to here.
+  let agsResult = null;
+  const wd = sd.peak?.v8Scoring?.walletDetails || sd.lock?.v8Scoring?.walletDetails || null;
+  if (Array.isArray(wd) && wd.length > 0 && agsCalibration && isProvenFn) {
+    const agg = aggregateSideProven(wd, side, pick.sport, isProvenFn);
+    if (agg) agsResult = computeAgs(agg, agsCalibration);
+  }
+  const agsValueLive = agsResult && Number.isFinite(agsResult.ags) ? agsResult.ags : null;
+  const agsTotalProven = agsResult ? (agsResult.provenForCount || 0) + (agsResult.provenAgCount || 0) : 0;
+
   const baseHealth = evaluateBaseHealth({
     dw: live.delta,
     dq: live.qualityMargin,
     hcMargin: live.hcMargin,
     pickDate,
+    ags: agsValueLive,
+    agsProvenTotal: agsTotalProven,
   });
 
   // No hysteresis. Whatever evaluateBaseHealth says this cycle is what we
@@ -468,12 +827,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     hcRescueDemoted = true;
   }
 
-  // Compute live tier / units. vaultStarFromDeltas now applies the v7.4
-  // HC star floor (HC ≥ +1 drives stars when dw+dq is weak), so units
-  // computed downstream reflect HC-dominant signal strength directly.
-  let liveStars = vaultStarFromDeltas(live.delta, live.qualityMargin, live.hcMargin, pickDate);
+  // Compute live tier / units. v7.5: vaultStarFromDeltas now applies HC,
+  // Δw≥2, and Δw=1+AGS star floors so units reflect whichever route is
+  // locking the pick (not just the deltas-based Σ ladder).
+  let liveStars = vaultStarFromDeltas(live.delta, live.qualityMargin, live.hcMargin, pickDate, agsValueLive);
   let liveTier = lockTierFromDeltas(live.delta, live.qualityMargin, live.hcDominant, {
-    pickDate, hcMargin: live.hcMargin,
+    pickDate, hcMargin: live.hcMargin, ags: agsValueLive, agsProvenTotal: agsTotalProven,
   });
   const liveLadder = (mkt === 'SPREAD' || mkt === 'TOTAL') ? calculateSpreadTotalUnits : calculateUnits;
   let liveUnits = liveLadder(liveStars, liveTier, live.hcDominant, {
@@ -481,30 +840,17 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     odds: sd.peak?.odds ?? sd.lock?.odds ?? null,
   });
 
-  // ─── AGS (AggregateScore) ─────────────────────────────────────────────
-  // Reads frozen walletDetails[] from peak.v8Scoring (fall back to lock.v8Scoring),
-  // filters to whitelist-proven (CONFIRMED + FLAT), aggregates, z-scores, sums.
-  let agsResult = null;
-  const wd = sd.peak?.v8Scoring?.walletDetails || sd.lock?.v8Scoring?.walletDetails || null;
-  if (Array.isArray(wd) && wd.length > 0 && agsCalibration && isProvenFn) {
-    const agg = aggregateSideProven(wd, side, pick.sport, isProvenFn);
-    if (agg) agsResult = computeAgs(agg, agsCalibration);
-  }
-
   // Phase 3 rescue precheck — AGS qualifies the side for a LOCK independent
-  // of HC/Σ when AGS ≥ AGS_LOCK_FLOOR with ≥ AGS_MIN_PROVEN_WALLETS proven
-  // wallets and dw > -2 (we never lock a CANCELLED side). When the rescue
-  // applies AND the existing v7.4 floor is failing, we upgrade liveTier to
-  // 'LOCKED' and compute units off a LOCK-equivalent star floor (4.0★ →
-  // 1.25u ML / 0.75u ST baseline before the AGS multiplier). This is the
-  // "Lakers UNDER" case from the diagnostic.
-  const agsTotalProven = agsResult ? (agsResult.provenForCount || 0) + (agsResult.provenAgCount || 0) : 0;
+  // of the v7.5 deltas-based floor when AGS ≥ AGS_LOCK_FLOOR with
+  // ≥ AGS_MIN_PROVEN_WALLETS proven wallets and dw > -2. Note this is
+  // distinct from the Δw=1+AGS route inside meetsV74Floor: rescue fires
+  // even when Δw ≤ 0 (as long as Δw > -2), the dw1 route requires Δw ≥ +1.
   const agsRescuePrecheck = v74
     && !!agsResult
     && live.delta > -2
     && agsTotalProven >= AGS_MIN_PROVEN_WALLETS
     && meetsAgsLockFloor(agsResult.ags, agsTotalProven)
-    && !meetsV74Floor(live.delta, live.qualityMargin, live.hcMargin);
+    && !meetsV74Floor(live.delta, live.hcMargin, agsValueLive, agsTotalProven);
   if (agsRescuePrecheck && (liveTier === 'MUTED' || liveTier === 'LEAN')) {
     liveTier = 'LOCKED';
     liveStars = Math.max(liveStars, 4.0);
@@ -542,27 +888,42 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   let lockStageReason = null;
   let agsRescued = false;
   if (v74) {
-    const passesV74 = meetsV74Floor(live.delta, live.qualityMargin, live.hcMargin);
-    // agsRescuePrecheck above already verified AGS ≥ floor + min wallets +
-    // dw > -2 + v7.4 floor failing — reuse here so the two routes stay in
-    // lockstep with the tier/units override.
-    const passesAgs = agsRescuePrecheck;
-    const passesFloor = passesV74 || passesAgs;
-    if (passesFloor) {
-      if (lockStage !== 'LOCKED') {
-        appliedLockStage = 'LOCKED';
-        lockStageReason = passesV74 ? 'v74_floor_recovered' : 'ags_rescue';
-      } else {
-        appliedLockStage = 'LOCKED';
-      }
-      // AGS rescue takes credit only when v7.4 floor is failing on its own.
-      agsRescued = !passesV74 && passesAgs;
-    } else {
+    // CANCELLED short-circuit — dw ≤ -2 (winners_killed) always SHADOWs,
+    // even when the HC route would otherwise pass the floor. The CANCELLED
+    // status flag keeps the pick surfaceable via the "Show cancelled"
+    // toggle on the dashboard. Without this, an HC ≥ +1 lock that gets
+    // dissented by 2+ proven winners stays LOCKED in Firestore even
+    // though we explicitly cancel it in evaluateBaseHealth.
+    if (appliedStatus === 'CANCELLED') {
       if (lockStage !== 'SHADOW') {
         appliedLockStage = 'SHADOW';
-        lockStageReason = appliedStatus === 'CANCELLED' ? 'v74_cancelled' : 'v74_below_floor';
+        lockStageReason = 'v74_cancelled';
       } else {
         appliedLockStage = 'SHADOW';
+      }
+    } else {
+      const passesV74 = meetsV74Floor(live.delta, live.hcMargin, agsValueLive, agsTotalProven);
+      // agsRescuePrecheck above already verified AGS ≥ AGS_LOCK_FLOOR + min
+      // wallets + dw > -2 + v7.5 deltas floor failing — reuse here so the
+      // two routes stay in lockstep with the tier/units override.
+      const passesAgs = agsRescuePrecheck;
+      const passesFloor = passesV74 || passesAgs;
+      if (passesFloor) {
+        if (lockStage !== 'LOCKED') {
+          appliedLockStage = 'LOCKED';
+          lockStageReason = passesV74 ? 'v74_floor_recovered' : 'ags_rescue';
+        } else {
+          appliedLockStage = 'LOCKED';
+        }
+        // AGS rescue takes credit only when v7.5 deltas floor fails on its own.
+        agsRescued = !passesV74 && passesAgs;
+      } else {
+        if (lockStage !== 'SHADOW') {
+          appliedLockStage = 'SHADOW';
+          lockStageReason = 'v74_below_floor';
+        } else {
+          appliedLockStage = 'SHADOW';
+        }
       }
     }
   }
@@ -808,6 +1169,7 @@ async function main() {
   // Load today's pick docs.
   const collections = ['sharpFlowPicks', 'sharpFlowSpreads', 'sharpFlowTotals'];
   const collectionWrites = new Map(); // colName → [{ docId, sideKey, patch }]
+  const existingDocIds = new Set();   // `${col}|${docId}` of every existing pick (for create-missing pass)
   const stats = {
     examined: 0,
     skipped_not_locked: 0,
@@ -819,6 +1181,7 @@ async function main() {
     v74_demoted_to_shadow: 0,
     v74_promoted_to_locked: 0,
     no_change: 0,
+    created_missing: 0,
   };
   const changeLog = [];
 
@@ -826,6 +1189,7 @@ async function main() {
     const snap = await db.collection(col).where('date', '==', TARGET_DATE).get();
     for (const docSnap of snap.docs) {
       const pick = { _id: docSnap.id, ...docSnap.data() };
+      existingDocIds.add(`${col}|${pick._id}`);
       const mkt = col === 'sharpFlowSpreads' ? 'SPREAD' : col === 'sharpFlowTotals' ? 'TOTAL' : 'ML';
       const sides = pick.sides || {};
       for (const [sideKey, sd] of Object.entries(sides)) {
@@ -916,6 +1280,32 @@ async function main() {
     }
   }
 
+  // ── Create-missing pass ────────────────────────────────────────────────
+  // Scan every (sport|gameKey|mkt) group of sharp_action_positions and
+  // write a fresh pick doc for any side that passes the v7.5 floor but
+  // doesn't have an existing doc. Closes the "browser-only writer" gap.
+  const gameMeta = loadGameMetadata();
+  console.log(`\n── Create-missing pass ──`);
+  console.log(`  Loaded metadata for ${gameMeta.size} games (commenceTime + odds source)`);
+  const cm = await createMissingLockedPicks({
+    db, groups, walletProfiles, agsCalibration, isProvenFn,
+    existingDocIds, gameMeta, now,
+    dryRun: DRY_RUN, force: FORCE,
+  });
+  stats.created_missing = cm.created.length;
+  if (cm.created.length === 0) {
+    console.log(`  No missing locked picks to create.`);
+  } else {
+    for (const c of cm.created) {
+      const agsLabel = c.ags != null ? c.ags.toFixed(2) : '∅';
+      console.log(`  + ${c.col.replace('sharpFlow', '').toUpperCase()} ${c.docId} / ${c.side} (${c.team}) — route=${c.route}  Δw=${c.dw} HC=${c.hcMargin} AGS=${agsLabel} stars=${c.peakStars} units=${c.peakUnits}u`);
+    }
+  }
+  if (cm.skipped.length > 0) {
+    const reasonCounts = cm.skipped.reduce((m, s) => { m[s.reason] = (m[s.reason] || 0) + 1; return m; }, {});
+    console.log(`  Skipped: ${Object.entries(reasonCounts).map(([r, n]) => `${r}=${n}`).join(', ')}`);
+  }
+
   console.log(`\n── Summary ──`);
   console.log(`  Sides examined:           ${stats.examined}`);
   console.log(`  Skipped (not locked/lean):${stats.skipped_not_locked}`);
@@ -927,6 +1317,7 @@ async function main() {
   console.log(`    HC rescue demoted:      ${stats.hc_rescue_demoted}`);
   console.log(`    v7.4 → SHADOW (hidden): ${stats.v74_demoted_to_shadow}`);
   console.log(`    v7.4 → LOCKED (shown):  ${stats.v74_promoted_to_locked}`);
+  console.log(`  Created-missing pass:     ${stats.created_missing} new pick doc(s)`);
   console.log(`\n${DRY_RUN ? '[DRY RUN] No writes performed.' : 'Done.'}\n`);
 }
 
