@@ -51,6 +51,9 @@
  *   §4. Wallet roster growth & profitability  (formerly §7).
  *   §5. Proven-wallet roster growth & HC tracking — snapshot, drift,
  *       deltas, funnel, HC density, bubble pipeline (formerly §13).
+ *   §6. Daily proven-wallet performance — yesterday's bets, the rolling
+ *       leaderboard ($ PnL ranked, 3d / 7d / all-time), active streaks,
+ *       and daily volume by sport. Operational lens on §5's roster.
  *
  * Everything else from the legacy report (frozen Δw×Δq cohorts, vault-star
  * buckets, hidden-star performance, anomaly self-check, v7.1/v7.2/v7.3
@@ -1344,10 +1347,246 @@ function vaultStarBand(row) {
   out.push('- **HC density on a sport drops below ~30%** → v7.3 promotions there will starve. Either the proven roster needs more CONFIRMED-tier wallets sizing aggressively, or the HC_RATIO (1.5) needs a sport-specific tune.');
   out.push('');
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // §6. DAILY PROVEN-WALLET PERFORMANCE
+  // ═══════════════════════════════════════════════════════════════════════════
+  //
+  // §5 told us "is the proven roster growing?". §6 is the operational lens:
+  // "of the proven roster *we already have*, who's actually winning right
+  // now, what are they betting on, and how often?".
+  //
+  // Universe = `walletBets` filtered to (wallet, sport) pairs currently on
+  // the proven list (CONFIRMED ∪ FLAT, the same definition that drives
+  // Δ_winner). A wallet proven in NBA but not NHL is included for NBA
+  // bets only. "Currently on the proven list" is computed as-of the
+  // latest graded slate (`asOf` = meta.dateMax) so the leaderboard rolls
+  // forward each day.
+  out.push('---');
+  out.push('## §6. Daily proven-wallet performance');
+  out.push('');
+  out.push('Who on the proven roster is actually printing — yesterday\'s bets, the rolling leaderboard (`$ PnL`-ranked), current streaks, and per-sport volume. **Proven** = `CONFIRMED` ∪ `FLAT` per sport (the same gate that drives Δ_winner). A wallet only counts in a sport where it\'s on that sport\'s proven list.');
+  out.push('');
+
+  // ── Build "currently proven" roster: wallet → Map<sport, tier> ─────────────
+  const provenRoster = new Map();
+  for (const sport of sports) {
+    const sm = aggregateBySport(walletBets, positionRows, sport, asOf);
+    for (const [wallet, rec] of sm) {
+      const tier = classifyTier(rec);
+      if (tier === 'CONFIRMED' || tier === 'FLAT') {
+        if (!provenRoster.has(wallet)) provenRoster.set(wallet, new Map());
+        provenRoster.get(wallet).set(sport, tier);
+      }
+    }
+  }
+
+  // Game metadata lookup (away/home from pickRows) so §6a shows readable
+  // "X @ Y" labels instead of the raw doc id. pickRows has multiple sides
+  // per game; we just need the first one for matchup labels.
+  const gameMeta = new Map();
+  for (const r of pickRows) {
+    if (!gameMeta.has(r.docId) && r.away && r.home) {
+      gameMeta.set(r.docId, { away: r.away, home: r.home });
+    }
+  }
+  function matchupLabel(b) {
+    const g = gameMeta.get(b.gameKey);
+    return g ? `${g.away} @ ${g.home}` : (b.gameKey || '—');
+  }
+
+  // ── Common helpers (reused across §6 sub-sections) ────────────────────────
+  function isProvenBet(b) {
+    const sportTiers = provenRoster.get(b.wallet);
+    return !!(sportTiers && sportTiers.has(b.sport));
+  }
+  function provenWalletBets(daysBack, refDate) {
+    let cutoffStr = null;
+    if (daysBack && refDate) {
+      const cutoff = new Date(refDate + 'T00:00:00Z');
+      cutoff.setUTCDate(cutoff.getUTCDate() - (daysBack - 1));
+      cutoffStr = cutoff.toISOString().slice(0, 10);
+    }
+    return walletBets.filter(b => {
+      if (!isProvenBet(b)) return false;
+      if (cutoffStr && b.date < cutoffStr) return false;
+      return true;
+    });
+  }
+  function summarizeBets(bets) {
+    const n = bets.length;
+    if (!n) return null;
+    const wins = bets.filter(b => b.won === 1).length;
+    const losses = n - wins;
+    const wr = (wins / n) * 100;
+    const flatPnl = bets.reduce((s, b) => s + (b.flat ?? 0), 0);
+    const flatRoi = (flatPnl / n) * 100;
+    const invested = bets.reduce((s, b) => s + (b.invested ?? 0), 0);
+    const dollarPnl = bets.reduce((s, b) => s + (b.dollarPnl ?? 0), 0);
+    const dollarRoi = invested > 0 ? (dollarPnl / invested) * 100 : null;
+    const dates = [...new Set(bets.map(b => b.date))].sort();
+    const span = dates.length ? dayDiff(dates[0], dates[dates.length - 1]) + 1 : 0;
+    const betsPerDay = span > 0 ? n / span : null;
+    return {
+      n, wins, losses, wr,
+      flatPnl, flatRoi,
+      invested, dollarPnl, dollarRoi,
+      daysActive: dates.length, span, betsPerDay,
+    };
+  }
+  function computeStreak(bets) {
+    if (!bets.length) return { type: null, length: 0, lastDate: null };
+    const sorted = [...bets].sort((a, b) =>
+      a.date.localeCompare(b.date) || (a.gameKey || '').localeCompare(b.gameKey || '')
+    );
+    const last = sorted[sorted.length - 1];
+    const lastResult = last.won === 1 ? 'W' : 'L';
+    let length = 0;
+    for (let i = sorted.length - 1; i >= 0; i--) {
+      const r = sorted[i].won === 1 ? 'W' : 'L';
+      if (r !== lastResult) break;
+      length++;
+    }
+    return { type: lastResult, length, lastDate: last.date };
+  }
+
+  // ── §6a. Yesterday's proven-wallet bets ────────────────────────────────────
+  out.push('### §6a. Yesterday\'s proven-wallet bets');
+  out.push('');
+  const yProvenBets = walletBets
+    .filter(b => yesterdayET && b.date === yesterdayET && isProvenBet(b))
+    .sort((a, b) => (b.dollarPnl ?? 0) - (a.dollarPnl ?? 0));
+  if (!yProvenBets.length) {
+    out.push(`_No proven-wallet bets on ${yesterdayET || 'the most recent slate'}._`);
+    out.push('');
+  } else {
+    const totalAgg = summarizeBets(yProvenBets);
+    const distinctWallets = new Set(yProvenBets.map(b => b.wallet)).size;
+    out.push(`Slate: **${yesterdayET}** · ${yProvenBets.length} bets · ${distinctWallets} distinct proven wallets · WR ${fmtPct(totalAgg.wr, 0)} · $ vol ${fmtMoneyShort(totalAgg.invested)} · $ PnL ${fmtMoneyShort(totalAgg.dollarPnl)}.`);
+    out.push('');
+    out.push(mdHeader([
+      'Wallet', 'Sport', 'Market', 'Game',
+      '$ size', 'Result', '$ PnL',
+    ]));
+    for (const b of yProvenBets) {
+      const tier = provenRoster.get(b.wallet)?.get(b.sport) || '';
+      const walletLbl = `\`${b.wallet.slice(0, 10)}…\` (${tier})`;
+      const result = b.won === 1 ? '**W**' : 'L';
+      out.push(`| ${walletLbl} | ${b.sport.toUpperCase()} | ${b.market} | ${matchupLabel(b)} | ${fmtMoneyShort(b.invested)} | ${result} | ${fmtMoneyShort(b.dollarPnl)} |`);
+    }
+    out.push('');
+  }
+
+  // ── §6b. Proven-wallet leaderboard (3-day / 7-day / all-time) ─────────────
+  out.push('### §6b. Proven-wallet leaderboard');
+  out.push('');
+  out.push('Top 15 proven `(wallet × sport)` pairs per sport per horizon, ranked by **$ PnL** (the dollar-ROI lens). The 3-day board is the "who\'s on form right now" lens; the 7-day filters single-day variance; all-time is the proven-roster reference.');
+  out.push('');
+  const horizons6 = [
+    { sub: '§6b-1', label: '3-day',    days: 3    },
+    { sub: '§6b-2', label: '7-day',    days: 7    },
+    { sub: '§6b-3', label: 'All-time', days: null },
+  ];
+  for (const h of horizons6) {
+    const winBets = provenWalletBets(h.days, asOf);
+    out.push(`#### ${h.sub}. ${h.label}`);
+    out.push('');
+    if (!winBets.length) {
+      out.push('_No proven-wallet bets in this window._');
+      out.push('');
+      continue;
+    }
+    const groups = new Map();
+    for (const b of winBets) {
+      const k = `${b.wallet}__${b.sport}`;
+      if (!groups.has(k)) groups.set(k, []);
+      groups.get(k).push(b);
+    }
+    for (const sport of sports) {
+      const sportRows = [];
+      for (const [k, bs] of groups) {
+        const [wallet, sp] = k.split('__');
+        if (sp !== sport) continue;
+        const s = summarizeBets(bs);
+        const streak = computeStreak(bs);
+        sportRows.push({
+          wallet, sport: sp,
+          tier: provenRoster.get(wallet)?.get(sp) || '',
+          ...s, streak,
+        });
+      }
+      if (!sportRows.length) continue;
+      sportRows.sort((a, b) => (b.dollarPnl ?? 0) - (a.dollarPnl ?? 0));
+      const top = sportRows.slice(0, 15);
+      out.push(`**${sport.toUpperCase()}** — ${sportRows.length} active proven wallets`);
+      out.push('');
+      out.push(mdHeader(['#', 'Wallet', 'Tier', 'Bets', 'WR%', 'Bets/day', 'Flat PnL (u)', 'Flat ROI', '$ vol', '$ PnL', '$ ROI', 'Streak']));
+      top.forEach((r, i) => {
+        const streakStr = r.streak.length === 0 ? '—' : `${r.streak.length}${r.streak.type}`;
+        const bpd = r.betsPerDay == null ? '—' : r.betsPerDay.toFixed(1);
+        out.push(`| ${i + 1} | \`${r.wallet.slice(0, 10)}…\` | ${r.tier} | ${r.n} | ${fmtPct(r.wr, 0)} | ${bpd} | ${sign(r.flatPnl, 2)} | ${fmtSignPct(r.flatRoi, 0)} | ${fmtMoneyShort(r.invested)} | ${fmtMoneyShort(r.dollarPnl)} | ${fmtSignPct(r.dollarRoi, 0)} | ${streakStr} |`);
+      });
+      out.push('');
+    }
+  }
+
+  // ── §6c. Active streaks ────────────────────────────────────────────────────
+  out.push('### §6c. Active streaks (≥3 in a row, last bet within 3 days)');
+  out.push('');
+  out.push('Proven `(wallet × sport)` pairs currently riding a 3-or-more-bet run with their most recent bet inside the last 3 calendar days. Hot-hand monitor — and the same surface for cold streaks worth fading.');
+  out.push('');
+  const recentCutoffStr = (() => {
+    const c = new Date(asOf + 'T00:00:00Z');
+    c.setUTCDate(c.getUTCDate() - 3);
+    return c.toISOString().slice(0, 10);
+  })();
+  const streakRows = [];
+  for (const [wallet, sportTiers] of provenRoster) {
+    for (const [sport, tier] of sportTiers) {
+      const bs = walletBets.filter(b => b.wallet === wallet && b.sport === sport);
+      if (bs.length < 3) continue;
+      const st = computeStreak(bs);
+      if (st.length < 3) continue;
+      if (st.lastDate < recentCutoffStr) continue;
+      const s = summarizeBets(bs);
+      streakRows.push({ wallet, sport, tier, streak: st, ...s });
+    }
+  }
+  streakRows.sort((a, b) =>
+    b.streak.length - a.streak.length ||
+    ((b.dollarPnl ?? 0) - (a.dollarPnl ?? 0))
+  );
+  if (!streakRows.length) {
+    out.push('_No proven wallets currently on a 3+ run with a bet in the last 3 days._');
+    out.push('');
+  } else {
+    out.push(mdHeader(['Wallet', 'Sport', 'Tier', 'Streak', 'Last bet', 'All-time bets', 'WR%', '$ PnL', '$ ROI']));
+    for (const r of streakRows) {
+      out.push(`| \`${r.wallet.slice(0, 10)}…\` | ${r.sport.toUpperCase()} | ${r.tier} | **${r.streak.length}${r.streak.type}** | ${r.streak.lastDate} | ${r.n} | ${fmtPct(r.wr, 0)} | ${fmtMoneyShort(r.dollarPnl)} | ${fmtSignPct(r.dollarRoi, 0)} |`);
+    }
+    out.push('');
+  }
+
+  // ── §6d. Daily proven-wallet volume (last 14 graded days) ─────────────────
+  out.push('### §6d. Daily proven-wallet volume (trailing 14 graded days)');
+  out.push('');
+  out.push('Per-day bet count, $ volume, and $ PnL from proven wallets only. Helps spot slate-density swings — a spike in one sport\'s volume = the proven cohort sees something on that night\'s board.');
+  out.push('');
+  const last14 = allDates.slice(-14);
+  out.push(mdHeader(['Date', 'TOTAL N · $vol · $PnL', ...sports.map(s => `${s.toUpperCase()} N · $vol · $PnL`)]));
+  for (const date of last14) {
+    const day = walletBets.filter(b => b.date === date && isProvenBet(b));
+    const cell = (rows) => rows.length
+      ? `${rows.length} · ${fmtMoneyShort(rows.reduce((s, b) => s + (b.invested || 0), 0))} · ${fmtMoneyShort(rows.reduce((s, b) => s + (b.dollarPnl || 0), 0))}`
+      : '—';
+    const sportCells = sports.map(s => cell(day.filter(b => b.sport === s)));
+    out.push(`| ${date} | ${cell(day)} | ${sportCells.join(' | ')} |`);
+  }
+  out.push('');
+
   // ─── Footer ────────────────────────────────────────────────────────────────
   out.push('---');
   out.push('');
-  out.push(`_Driven by \`scripts/dailyV6Report.js\` · regenerates daily via \`.github/workflows/daily-v6-report.yml\` · QUALITY_CONTRIB_CUT = ${QUALITY_CUT} · HC = CONFIRMED ∧ sizeRatio ≥ ${HC_RATIO} · inclusion mirrors live Pick Performance dashboard · §1–§3 use shipped picks · §4–§5 wallet/tracking growth mirror \`exportWalletProfiles.js\`_`);
+  out.push(`_Driven by \`scripts/dailyV6Report.js\` · regenerates daily via \`.github/workflows/daily-v6-report.yml\` · QUALITY_CONTRIB_CUT = ${QUALITY_CUT} · HC = CONFIRMED ∧ sizeRatio ≥ ${HC_RATIO} · inclusion mirrors live Pick Performance dashboard · §1–§3 use shipped picks · §4–§5 wallet/tracking growth mirror \`exportWalletProfiles.js\` · §6 daily proven-wallet board uses today's roster (CONFIRMED ∪ FLAT) as-of ${asOf}_`);
   out.push('');
 
   const outPath = join(REPO_ROOT, 'DAILY_V6_REPORT.md');
