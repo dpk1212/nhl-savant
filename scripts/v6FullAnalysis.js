@@ -13,13 +13,17 @@
  *   AND outcome ∈ {WIN, LOSS, PUSH}
  *
  * For each shipped+graded side we extract every signal the engine had at
- * lock time (frozen v8_walletConsensus* + peak.* fields) and run:
+ * lock time (frozen v8_walletConsensus* + v8_hc* + peak.* fields) and run:
  *
  *   §1.  Sample summary + power analysis (does this N let us detect edge?)
- *   §2.  Univariate signal analysis — Δw / Δq / Δw+Δq / Δw·Δq
- *   §3.  Bivariate Δw × Δq matrix with Wilson 95% CIs and significance flags
- *   §4.  Wallet-quality contribution thresholds (T = 30, 40, 50, 60, 70)
- *        — counts, margins, continuous Δcontribution
+ *   §2.  Univariate signal analysis — Δw, HC margin, Δw+HC sum.  Δq dropped
+ *        per directive (irrelevant once we restrict to proven wallets).
+ *   §3.  Bivariate HC × Δw matrix (post-cutover only) with Wilson 95% CIs,
+ *        plus row/col marginals and v7.4 lock-zone anatomy.
+ *   §4.  Proven-wallet feature predictors — even without HC/Δw, can the
+ *        characteristics of the qualified-roster wallets on each side
+ *        (count, W−L net, flatPnl, avg ROI, sport rank, top-quartile
+ *        share) predict the winner?  Ranks features by |ρ(·, flat ROI)|.
  *   §5.  Star tier analysis (frozen peak.stars × outcome)
  *   §6.  Odds-bucket interaction
  *   §7.  Market split (ML / SPREAD / TOTAL)
@@ -62,13 +66,21 @@ const db = admin.firestore();
 
 // ── Config ─────────────────────────────────────────────────────────────────
 const V6_CUTOVER  = '2026-04-18';
-const QUALITY_CONTRIB_CUTS = [30, 40, 50, 60, 70];
+// HC margin only existed from v7.1 cutover (2026-04-30). Pre-cutover picks
+// have no HC stamp and we DO NOT retro-fit. Any HC analytic in this report
+// is scoped to picks dated >= HC_CUTOVER only.
+const HC_CUTOVER  = '2026-04-30';
 const PICK_COLS = [
   ['sharpFlowPicks',   'ML'],
   ['sharpFlowSpreads', 'SPREAD'],
   ['sharpFlowTotals',  'TOTAL'],
 ];
 const MIN_N_FOR_ROI = 3;
+// Proven roster = CONFIRMED ∪ FLAT per sport (the "qualified wallet" gate
+// the dashboard now uses). WR50 is excluded by design — user's directive:
+// "we only use proven winners now".
+const PROVEN_TIERS = new Set(['CONFIRMED', 'FLAT']);
+const TOP_QUARTILE_FRAC = 0.25;
 const ODDS_BUCKETS = [
   { id: 'h_fav',     label: '−400+',       min: -1e9, max: -301 },
   { id: 'b_fav',     label: '−300/−201',   min: -300, max: -201 },
@@ -259,9 +271,117 @@ function fmtSummary(s) {
   return `N=${s.n} · ${s.w}-${s.l} · WR ${wr}${ci} · ${sign(s.pu)}u peak · ${sign(s.fl)}u flat (${fmtSignPct(100 * s.flatRoi)})`;
 }
 
+// ── Wallet profile loader ─────────────────────────────────────────────────
+//
+// Builds `walletProfiles: Map<walletShort, profile>` and a per-sport ranked
+// proven-wallet roster sorted by `picks.flatRoi`. The ranking lets us
+// answer "is this wallet in the top quartile of proven wallets in NBA?"
+// without re-sorting per pick.
+//
+// `provenRanksBySport[sport]` is a Map<walletShort, { rank, totalProven,
+//   isTopQuartile, flatRoi, n }> for every wallet that's CONFIRMED or
+// FLAT in that sport. Rank is 1-indexed (1 = best flatRoi).
+async function loadWalletProfiles() {
+  const snap = await db.collection('sharpWalletProfiles').get();
+  const profiles = new Map();
+  for (const d of snap.docs) profiles.set(d.id, d.data());
+
+  const provenRanksBySport = new Map();
+  const sports = new Set();
+  for (const p of profiles.values()) {
+    if (p?.bySport) for (const s of Object.keys(p.bySport)) sports.add(s);
+  }
+  for (const sport of sports) {
+    const eligible = [];
+    for (const [wallet, p] of profiles) {
+      const rec = p?.bySport?.[sport];
+      if (!rec) continue;
+      if (!PROVEN_TIERS.has(rec.whitelistTier)) continue;
+      eligible.push({
+        wallet,
+        flatRoi: rec.picks?.flatRoi ?? 0,
+        n:       rec.picks?.n ?? 0,
+        wins:    rec.picks?.wins ?? 0,
+        losses:  rec.picks?.losses ?? 0,
+        flatPnl: rec.picks?.flatPnl ?? 0,
+        tier:    rec.whitelistTier,
+        wr:      rec.picks?.wr ?? 0,
+        latestLbRank: p?.latestLbRank ?? null,
+      });
+    }
+    eligible.sort((a, b) => b.flatRoi - a.flatRoi || b.flatPnl - a.flatPnl);
+    const totalProven = eligible.length;
+    const topCutoff = Math.max(1, Math.ceil(totalProven * TOP_QUARTILE_FRAC));
+    const m = new Map();
+    eligible.forEach((e, i) => {
+      m.set(e.wallet, {
+        ...e,
+        rank: i + 1,
+        totalProven,
+        isTopQuartile: (i + 1) <= topCutoff,
+      });
+    });
+    provenRanksBySport.set(sport, m);
+  }
+  return { profiles, provenRanksBySport };
+}
+
+// Per-pick proven-wallet aggregates. Walks `walletDetails` and partitions
+// proven wallets (CONFIRMED ∪ FLAT in this pick's sport) by side. Returns
+// per-side and delta features.
+//
+// `For` = wallets that backed the pick's side (sideKey).
+// `Ag`  = wallets that backed the opposite side (the "shadow" side).
+function computeProvenWalletAggregates(walletDetails, sideKey, sport, ranksMap) {
+  if (!Array.isArray(walletDetails) || !ranksMap) return null;
+  const f = { count: 0, wlNet: 0, flatPnl: 0, sumRoi: 0, bestRank: null,
+              topQ: 0, totalN: 0, walletList: [] };
+  const a = { count: 0, wlNet: 0, flatPnl: 0, sumRoi: 0, bestRank: null,
+              topQ: 0, totalN: 0, walletList: [] };
+
+  for (const w of walletDetails) {
+    if (!w?.wallet || !w?.side) continue;
+    const r = ranksMap.get(w.wallet);
+    if (!r) continue;                              // not proven in this sport
+    const bucket = (w.side === sideKey) ? f : a;
+    bucket.count   += 1;
+    bucket.wlNet   += (r.wins - r.losses);
+    bucket.flatPnl += r.flatPnl;
+    bucket.sumRoi  += r.flatRoi;
+    bucket.totalN  += r.n;
+    if (r.isTopQuartile) bucket.topQ += 1;
+    if (bucket.bestRank == null || r.rank < bucket.bestRank) bucket.bestRank = r.rank;
+    bucket.walletList.push({ wallet: w.wallet, rank: r.rank, flatRoi: r.flatRoi });
+  }
+
+  const avgRoi = (b) => b.count > 0 ? b.sumRoi / b.count : 0;
+  const topShare = (b) => b.count > 0 ? b.topQ / b.count : 0;
+
+  return {
+    forCount: f.count, agCount: a.count,
+    dCount:   f.count - a.count,
+    forWlNet: f.wlNet, agWlNet: a.wlNet,
+    dWlNet:   f.wlNet - a.wlNet,
+    forFlatPnl: f.flatPnl, agFlatPnl: a.flatPnl,
+    dFlatPnl:   f.flatPnl - a.flatPnl,
+    forAvgRoi: avgRoi(f), agAvgRoi: avgRoi(a),
+    dAvgRoi:   avgRoi(f) - avgRoi(a),
+    forBestRank: f.bestRank, agBestRank: a.bestRank,
+    // Better rank = lower number. dBestRank > 0 means the For side has a
+    // BETTER (lower-numbered) best rank than Ag side.
+    dBestRank: (f.bestRank != null && a.bestRank != null)
+      ? (a.bestRank - f.bestRank)
+      : null,
+    forTopQShare: topShare(f), agTopQShare: topShare(a),
+    dTopQShare:   topShare(f) - topShare(a),
+    forTopQCount: f.topQ, agTopQCount: a.topQ,
+    dTopQCount:   f.topQ - a.topQ,
+  };
+}
+
 // ── Main load — adapted from dailyV6Report.loadEverything but with full
 //    feature extraction for downstream analysis. ────────────────────────────
-async function loadPicks() {
+async function loadPicks(provenRanksBySport) {
   const rows = [];
   let scanned = 0;
   let dateMin = null, dateMax = null;
@@ -310,6 +430,17 @@ async function loadPicks() {
         const qFor30 = side.v8_walletConsensusQualityForT30 ?? null;
         const qAg30 = side.v8_walletConsensusQualityAgT30 ?? null;
 
+        // === Frozen HC stamps (v7.1+) ===
+        // hcMargin = hcConfFor − hcConfAg. Only valid for picks dated
+        // ≥ HC_CUTOVER (2026-04-30); pre-cutover docs have no HC stamp
+        // and we leave the field null. We do NOT retro-fit.
+        const hcDominant = (side.v8_hcDominant != null) ? !!side.v8_hcDominant : null;
+        const hcConfFor  = (side.v8_hcConfFor  != null) ? Number(side.v8_hcConfFor)  : null;
+        const hcConfAg   = (side.v8_hcConfAg   != null) ? Number(side.v8_hcConfAg)   : null;
+        const hcMarginRaw = (side.v8_hcMargin != null) ? Number(side.v8_hcMargin)
+          : (hcConfFor != null && hcConfAg != null ? (hcConfFor - hcConfAg) : null);
+        const hcMargin = (date && date >= HC_CUTOVER) ? hcMarginRaw : null;
+
         // === Lock-criteria signals (peak snapshot) ===
         const criteria = peak?.criteria || {};
         const evEdge   = peak?.evEdge ?? null;
@@ -322,15 +453,17 @@ async function loadPicks() {
         const consensusGrade = consensus.grade || null;
         const criteriaMet = peak?.criteriaMet ?? 0;
 
-        // === Wallet contribution per-threshold counts (qFor / qAg / margin) ===
+        // === Wallet details + contribution sums (lightweight — Δq cuts dropped) ===
+        // We retain the raw walletDetails handle for two purposes:
+        //   1. Δq fallback for legacy picks where v8_walletConsensusQualityMargin
+        //      stamp is missing (still useful for the §11 logistic baseline,
+        //      even though §3 / §4 no longer report Δq cuts).
+        //   2. Computing the new proven-wallet per-side aggregates below.
         const wd = peak?.v8Scoring?.walletDetails;
-        // Δq fallback when stamp missing — recompute from frozen walletDetails
-        // at contribution ≥ 30 (matches dailyV6Report).
         if (dqFrozen == null && Array.isArray(wd) && wd.length) {
           const recomputed = qualityMarginFromWalletDetails(wd, sideKey);
           if (recomputed != null) dqFrozen = recomputed;
         }
-        const contribByT = {};
         let sumContribFor = 0, sumContribAg = 0;
         if (Array.isArray(wd)) {
           for (const w of wd) {
@@ -338,17 +471,7 @@ async function loadPicks() {
             const c = w.contribution ?? 0;
             if (w.side === sideKey) sumContribFor += c;
             else                    sumContribAg += c;
-            for (const T of QUALITY_CONTRIB_CUTS) {
-              if (c >= T) {
-                if (!contribByT[T]) contribByT[T] = { qFor: 0, qAg: 0 };
-                if (w.side === sideKey) contribByT[T].qFor += 1;
-                else                    contribByT[T].qAg += 1;
-              }
-            }
           }
-        }
-        for (const T of QUALITY_CONTRIB_CUTS) {
-          if (!contribByT[T]) contribByT[T] = { qFor: 0, qAg: 0 };
         }
         const dContrib = sumContribFor - sumContribAg;
         const maxContribFor = Array.isArray(wd)
@@ -361,6 +484,11 @@ async function loadPicks() {
               return fw.reduce((s, w) => s + (w.walletBase ?? 0), 0) / fw.length;
             })()
           : 0;
+
+        // === NEW: Proven-wallet per-side aggregates (W/L, ROI, sport rank,
+        // top-quartile membership) — driven by sharpWalletProfiles roster.
+        const ranksMap = provenRanksBySport.get(sport) || null;
+        const provenAgg = computeProvenWalletAggregates(wd, sideKey, sport, ranksMap);
 
         // === PnL ===
         let profitU = 0;
@@ -385,8 +513,13 @@ async function loadPicks() {
           dwFrozen, dqFrozen, vaultStar, forW, agW, qFor30, qAg30,
           dwSum: (dwFrozen ?? 0) + (dqFrozen ?? 0),
           dwProd: (dwFrozen ?? 0) * (dqFrozen ?? 0),
-          // contribution thresholds
-          contribByT, sumContribFor, sumContribAg, dContrib, maxContribFor, meanBaseFor,
+          // frozen HC stamps (post-cutover only; null otherwise)
+          hcDominant, hcConfFor, hcConfAg, hcMargin,
+          dwHcSum: (dwFrozen != null && hcMargin != null) ? (dwFrozen + hcMargin) : null,
+          // contribution sums (Δq cuts dropped — see §4 rewrite)
+          sumContribFor, sumContribAg, dContrib, maxContribFor, meanBaseFor,
+          // proven-wallet per-side aggregates (new §4 input)
+          provenAgg,
           // criteria
           criteria, evEdge, regime, sharpCount, totalInvested,
           moneyPct, walletPct, consensusGrade, criteriaMet,
@@ -397,6 +530,27 @@ async function loadPicks() {
 
   return { rows, meta: { scanned, dateMin, dateMax } };
 }
+
+// ── Helpers used by the new §2 / §3 / §4 sections ─────────────────────────
+//
+// `picksHcEra(rows)` returns only picks dated >= HC_CUTOVER (i.e., picks that
+// could carry an HC stamp). Use this for any HC-axis analytic so we don't
+// dilute with pre-cutover rows where hcMargin is structurally null.
+function picksHcEra(rows) {
+  return rows.filter(p => p.date && p.date >= HC_CUTOVER);
+}
+
+// HC-margin bucket label.
+function hcBucketLabel(v) {
+  if (v == null) return null;
+  if (v <= -2) return 'HC ≤ −2';
+  if (v === -1) return 'HC = −1';
+  if (v === 0) return 'HC = 0';
+  if (v === 1) return 'HC = +1';
+  if (v === 2) return 'HC = +2';
+  return 'HC ≥ +3';
+}
+const HC_BUCKETS = ['HC ≤ −2', 'HC = −1', 'HC = 0', 'HC = +1', 'HC = +2', 'HC ≥ +3'];
 
 // ── Section builders ──────────────────────────────────────────────────────
 
@@ -476,14 +630,21 @@ function buildSection1(out, picks, meta) {
 }
 
 // ─── §2. Univariate signal analysis ────────────────────────────────────────
+//
+// Two pillars now: Δw (winner margin, full-sample) and HC margin (post-cutover
+// only). Δq buckets dropped per directive — quality margin is downstream of
+// the proven-wallet roster, which we already filter on, so Δq is double-
+// counting and adds no information once we restrict to proven wallets.
 function buildSection2(out, picks) {
-  sectionHeader(out, '§2. Univariate signal analysis', 'For each axis: bucket performance + Pearson/Spearman correlation with WIN and flat ROI.');
+  sectionHeader(out, '§2. Univariate signal analysis',
+    'For each axis: bucket performance + Pearson/Spearman correlation with WIN and flat ROI.');
 
-  // Δw alone
-  out.push('### §2a. Δw — winner margin (frozen)');
+  // ─── §2a. Δw alone — full sample ─────────────────────────────────────────
+  out.push('### §2a. Δw — winner margin (frozen, full sample)');
   out.push('');
   const dwBuckets = ['Δw ≤ −2', 'Δw = −1', 'Δw = 0', 'Δw = +1', 'Δw = +2', 'Δw ≥ +3'];
-  bucketTable(out, picks.filter(p => p.dwFrozen != null), p => {
+  const dwUniverse = picks.filter(p => p.dwFrozen != null);
+  bucketTable(out, dwUniverse, p => {
     const v = p.dwFrozen;
     if (v <= -2) return 'Δw ≤ −2';
     if (v === -1) return 'Δw = −1';
@@ -492,39 +653,36 @@ function buildSection2(out, picks) {
     if (v === 2) return 'Δw = +2';
     return 'Δw ≥ +3';
   }, dwBuckets);
-  const xs1 = picks.filter(p => p.dwFrozen != null);
-  const dwR = pearsonSig(xs1.map(p => p.dwFrozen), xs1.map(p => p.outcome === 'WIN' ? 1 : 0));
-  const dwRf = pearsonSig(xs1.map(p => p.dwFrozen), xs1.map(p => p.flatProfit));
+  const dwR  = pearsonSig(dwUniverse.map(p => p.dwFrozen), dwUniverse.map(p => p.outcome === 'WIN' ? 1 : 0));
+  const dwRf = pearsonSig(dwUniverse.map(p => p.dwFrozen), dwUniverse.map(p => p.flatProfit));
   out.push('');
-  out.push(`**Pearson ρ(Δw, WIN) = ${dwR.rho?.toFixed(3) ?? '—'}** ${dwR.sig}  ·  **ρ(Δw, flat ROI) = ${dwRf.rho?.toFixed(3) ?? '—'}** ${dwRf.sig}`);
+  out.push(`**Pearson ρ(Δw, WIN) = ${dwR.rho?.toFixed(3) ?? '—'}** ${dwR.sig}  ·  **ρ(Δw, flat ROI) = ${dwRf.rho?.toFixed(3) ?? '—'}** ${dwRf.sig}  (N=${dwUniverse.length})`);
 
-  // Δq alone
+  // ─── §2b. HC margin — post-cutover only ──────────────────────────────────
   out.push('');
-  out.push('### §2b. Δq — quality margin (frozen, contribution ≥ 30)');
+  out.push(`### §2b. HC margin — high-conviction proven-wallet margin (post-cutover ${HC_CUTOVER})`);
   out.push('');
-  const dqBuckets = ['Δq ≤ −2', 'Δq = −1', 'Δq = 0', 'Δq = +1', 'Δq = +2', 'Δq ≥ +3'];
-  bucketTable(out, picks.filter(p => p.dqFrozen != null), p => {
-    const v = p.dqFrozen;
-    if (v <= -2) return 'Δq ≤ −2';
-    if (v === -1) return 'Δq = −1';
-    if (v === 0) return 'Δq = 0';
-    if (v === 1) return 'Δq = +1';
-    if (v === 2) return 'Δq = +2';
-    return 'Δq ≥ +3';
-  }, dqBuckets);
-  const xs2 = picks.filter(p => p.dqFrozen != null);
-  const dqR = pearsonSig(xs2.map(p => p.dqFrozen), xs2.map(p => p.outcome === 'WIN' ? 1 : 0));
-  const dqRf = pearsonSig(xs2.map(p => p.dqFrozen), xs2.map(p => p.flatProfit));
+  out.push('HC = `hcConfFor − hcConfAg`. "High-conviction" wallets = `CONFIRMED` tier with `sizeRatio ≥ 1.5×` their own median bet. Pre-cutover picks have no HC stamp and are excluded from this analysis (no retro-fit).');
   out.push('');
-  out.push(`**Pearson ρ(Δq, WIN) = ${dqR.rho?.toFixed(3) ?? '—'}** ${dqR.sig}  ·  **ρ(Δq, flat ROI) = ${dqRf.rho?.toFixed(3) ?? '—'}** ${dqRf.sig}`);
+  const hcUniverse = picksHcEra(picks).filter(p => p.hcMargin != null);
+  bucketTable(out, hcUniverse, p => hcBucketLabel(p.hcMargin), HC_BUCKETS);
+  const hcR  = pearsonSig(hcUniverse.map(p => p.hcMargin), hcUniverse.map(p => p.outcome === 'WIN' ? 1 : 0));
+  const hcRf = pearsonSig(hcUniverse.map(p => p.hcMargin), hcUniverse.map(p => p.flatProfit));
+  out.push('');
+  out.push(`**Pearson ρ(HC, WIN) = ${hcR.rho?.toFixed(3) ?? '—'}** ${hcR.sig}  ·  **ρ(HC, flat ROI) = ${hcRf.rho?.toFixed(3) ?? '—'}** ${hcRf.sig}  (N=${hcUniverse.length})`);
+  out.push('');
+  out.push(`Spearman rank ρ(HC, flat ROI) = ${spearman(hcUniverse.map(p => p.hcMargin), hcUniverse.map(p => p.flatProfit))?.toFixed(3) ?? '—'}.`);
 
-  // Δw + Δq sum (the v6.6 hybrid input)
+  // ─── §2c. Δw + HC sum — combined scalar (post-cutover only) ───────────────
   out.push('');
-  out.push('### §2c. Δw + Δq — scalar sum (v6.6 hybrid floor input)');
+  out.push('### §2c. Δw + HC — combined scalar (post-cutover only)');
   out.push('');
-  const sumBuckets = ['Σ ≤ 0', 'Σ = +1', 'Σ = +2', 'Σ = +3', 'Σ = +4', 'Σ = +5', 'Σ ≥ +6'];
-  bucketTable(out, picks.filter(p => p.dwFrozen != null && p.dqFrozen != null), p => {
-    const v = p.dwSum;
+  out.push('Sum of the two axes the engine actually relies on. Captures the v7.4 lock-floor logic (`HC ≥ +1` OR `Σ ≥ +5`) in a single ranked predictor.');
+  out.push('');
+  const dwHcUniverse = picksHcEra(picks).filter(p => p.dwFrozen != null && p.hcMargin != null);
+  const dwHcBuckets = ['Σ ≤ 0', 'Σ = +1', 'Σ = +2', 'Σ = +3', 'Σ = +4', 'Σ = +5', 'Σ ≥ +6'];
+  bucketTable(out, dwHcUniverse, p => {
+    const v = p.dwHcSum;
     if (v <= 0) return 'Σ ≤ 0';
     if (v === 1) return 'Σ = +1';
     if (v === 2) return 'Σ = +2';
@@ -532,18 +690,17 @@ function buildSection2(out, picks) {
     if (v === 4) return 'Σ = +4';
     if (v === 5) return 'Σ = +5';
     return 'Σ ≥ +6';
-  }, sumBuckets);
-  const xs3 = picks.filter(p => p.dwFrozen != null && p.dqFrozen != null);
-  const sumR = pearsonSig(xs3.map(p => p.dwSum), xs3.map(p => p.outcome === 'WIN' ? 1 : 0));
-  const sumRf = pearsonSig(xs3.map(p => p.dwSum), xs3.map(p => p.flatProfit));
+  }, dwHcBuckets);
+  const sumR  = pearsonSig(dwHcUniverse.map(p => p.dwHcSum), dwHcUniverse.map(p => p.outcome === 'WIN' ? 1 : 0));
+  const sumRf = pearsonSig(dwHcUniverse.map(p => p.dwHcSum), dwHcUniverse.map(p => p.flatProfit));
   out.push('');
-  out.push(`**Pearson ρ(Δw+Δq, WIN) = ${sumR.rho?.toFixed(3) ?? '—'}** ${sumR.sig}  ·  **ρ(Σ, flat ROI) = ${sumRf.rho?.toFixed(3) ?? '—'}** ${sumRf.sig}`);
-  out.push('');
-  out.push(`Spearman rank ρ(Δw+Δq, flat ROI) = ${spearman(xs3.map(p => p.dwSum), xs3.map(p => p.flatProfit))?.toFixed(3) ?? '—'}.`);
+  out.push(`**Pearson ρ(Δw+HC, WIN) = ${sumR.rho?.toFixed(3) ?? '—'}** ${sumR.sig}  ·  **ρ(Σ, flat ROI) = ${sumRf.rho?.toFixed(3) ?? '—'}** ${sumRf.sig}  (N=${dwHcUniverse.length})`);
 
-  // Compare predictive power
+  // ─── §2d. Which axis is the strongest single predictor? ─────────────────
   out.push('');
   out.push('### §2d. Which axis is the strongest single predictor?');
+  out.push('');
+  out.push('Comparison restricted to the post-cutover sample where every axis has a value (so the rows are apples-to-apples). N = ' + dwHcUniverse.length + '.');
   out.push('');
   out.push('| Predictor | ρ(·, WIN) | ρ(·, flat ROI) | Spearman ρ | Verdict |');
   out.push('|---|---|---|---|---|');
@@ -553,37 +710,48 @@ function buildSection2(out, picks) {
     const r3 = spearman(vals, fs);
     out.push(`| ${label} | ${r1.rho?.toFixed(3) ?? '—'} ${r1.sig} | ${r2.rho?.toFixed(3) ?? '—'} ${r2.sig} | ${r3?.toFixed(3) ?? '—'} | ${Math.abs(r2.rho || 0) >= 0.2 ? 'meaningful' : 'weak'} |`);
   };
-  const ws = xs3.map(p => p.outcome === 'WIN' ? 1 : 0);
-  const fs = xs3.map(p => p.flatProfit);
-  cmpRow('Δw',                xs3.map(p => p.dwFrozen), ws, fs);
-  cmpRow('Δq',                xs3.map(p => p.dqFrozen), ws, fs);
-  cmpRow('Δw + Δq',           xs3.map(p => p.dwSum),    ws, fs);
-  cmpRow('Δw × Δq',           xs3.map(p => p.dwProd),   ws, fs);
-  cmpRow('peak.stars',        xs3.map(p => p.peakStars), ws, fs);
-  cmpRow('lock.stars',        xs3.map(p => p.lockStars), ws, fs);
+  const ws = dwHcUniverse.map(p => p.outcome === 'WIN' ? 1 : 0);
+  const fs = dwHcUniverse.map(p => p.flatProfit);
+  cmpRow('Δw',                dwHcUniverse.map(p => p.dwFrozen),  ws, fs);
+  cmpRow('HC margin',         dwHcUniverse.map(p => p.hcMargin),  ws, fs);
+  cmpRow('Δw + HC',           dwHcUniverse.map(p => p.dwHcSum),   ws, fs);
+  cmpRow('peak.stars',        dwHcUniverse.map(p => p.peakStars), ws, fs);
+  cmpRow('vault.star',        dwHcUniverse.map(p => p.vaultStar ?? 0), ws, fs);
+  cmpRow('lock.stars',        dwHcUniverse.map(p => p.lockStars), ws, fs);
 }
 
-// ─── §3. Bivariate Δw × Δq matrix ──────────────────────────────────────────
+// ─── §3. Bivariate Δw × HC matrix (post-cutover only) ─────────────────────
+//
+// Replaces the old Δw × Δq matrix. HC margin is the proven-wallet
+// conviction signal; Δw is the broader proven-roster directional signal.
+// They're conceptually orthogonal (HC = "do the BIG-stake proven wallets
+// agree?"; Δw = "does the proven roster as a whole lean my way?"), so the
+// 2D heatmap shows whether they reinforce, fight, or replicate each other.
 function buildSection3(out, picks) {
-  sectionHeader(out, '§3. Bivariate Δw × Δq matrix',
-    'Each cell: N · W-L · WR% · Wilson 95% CI · Peak ROI%. ★ flag = sig 95% one-sample t-test on flat PnL.');
+  sectionHeader(out, '§3. Bivariate HC × Δw matrix (post-cutover ' + HC_CUTOVER + ' only)',
+    'Each cell: N · W-L · WR% · Wilson 95% CI · flat ROI %. ★ flag = sig 95% one-sample t-test on flat PnL.');
 
+  const universe = picksHcEra(picks).filter(p => p.dwFrozen != null && p.hcMargin != null);
   const dwAxis = [-3, -2, -1, 0, 1, 2, 3];
-  const dqAxis = [-3, -2, -1, 0, 1, 2, 3];
-  const cellOf = (dw, dq) => picks.filter(p => {
-    if (p.dwFrozen == null || p.dqFrozen == null) return false;
+  const hcAxis = [-3, -2, -1, 0, 1, 2, 3];
+
+  const cellOf = (hc, dw) => universe.filter(p => {
+    const chc = Math.max(-3, Math.min(3, p.hcMargin));
     const cdw = Math.max(-3, Math.min(3, p.dwFrozen));
-    const cdq = Math.max(-3, Math.min(3, p.dqFrozen));
-    return cdw === dw && cdq === dq;
+    return chc === hc && cdw === dw;
   });
 
-  const headers = ['Δw \\ Δq', ...dqAxis.map(v => v <= -3 ? '≤ −3' : v >= 3 ? '≥ +3' : (v >= 0 ? '+' : '') + v)];
+  const lbl = v => v <= -3 ? '≤ −3' : v >= 3 ? '≥ +3' : (v >= 0 ? '+' : '') + v;
+
+  const headers = ['HC \\ Δw', ...dwAxis.map(lbl)];
+  out.push(`Universe N = ${universe.length} (post-cutover, both axes present).`);
+  out.push('');
   out.push('| ' + headers.join(' | ') + ' |');
   out.push('|' + headers.map(() => '---').join('|') + '|');
-  for (const dw of dwAxis) {
-    const row = [dw <= -3 ? '≤ −3' : dw >= 3 ? '≥ +3' : (dw >= 0 ? '+' : '') + dw];
-    for (const dq of dqAxis) {
-      const arr = cellOf(dw, dq);
+  for (const hc of hcAxis) {
+    const row = [lbl(hc)];
+    for (const dw of dwAxis) {
+      const arr = cellOf(hc, dw);
       if (!arr.length) {
         row.push('—');
       } else {
@@ -597,72 +765,272 @@ function buildSection3(out, picks) {
     }
     out.push('| ' + row.join(' | ') + ' |');
   }
+
+  // Marginal totals — collapse one axis at a time so we can see whether the
+  // diagonal effect is real or whether one axis is dominating.
+  out.push('');
+  out.push('### §3b. Row totals (HC fixed, Δw collapsed)');
+  out.push('');
+  bucketTable(out, universe, p => hcBucketLabel(p.hcMargin), HC_BUCKETS);
+
+  out.push('');
+  out.push('### §3c. Column totals (Δw fixed, HC collapsed)');
+  out.push('');
+  const dwBuckets = ['Δw ≤ −2', 'Δw = −1', 'Δw = 0', 'Δw = +1', 'Δw = +2', 'Δw ≥ +3'];
+  bucketTable(out, universe, p => {
+    const v = p.dwFrozen;
+    if (v <= -2) return 'Δw ≤ −2';
+    if (v === -1) return 'Δw = −1';
+    if (v === 0) return 'Δw = 0';
+    if (v === 1) return 'Δw = +1';
+    if (v === 2) return 'Δw = +2';
+    return 'Δw ≥ +3';
+  }, dwBuckets);
+
+  // Lock-floor zone — current v7.4 lock floor is HC ≥ +1 OR (Δw ≥ +1 ∧ Δq ≥ +1
+  // ∧ Σ ≥ 5). With Δq dropped, the practical lock-zone in HC-era is:
+  //   Tier-1: HC ≥ +1 (any Δw)
+  //   Tier-2: HC ≤ 0 ∧ Δw ≥ +2 (still strong winner-margin)
+  //   No-ship: HC ≤ 0 ∧ Δw ≤ +1
+  // The table below contrasts those three zones.
+  out.push('');
+  out.push('### §3d. Practical lock zones (v7.4 floor anatomy)');
+  out.push('');
+  const zoneFn = p => {
+    if (p.hcMargin >= 1) return 'Tier-1: HC ≥ +1';
+    if (p.dwFrozen >= 2) return 'Tier-2: HC ≤ 0 ∧ Δw ≥ +2';
+    return 'No-ship zone: HC ≤ 0 ∧ Δw ≤ +1';
+  };
+  bucketTable(out, universe, zoneFn,
+    ['Tier-1: HC ≥ +1', 'Tier-2: HC ≤ 0 ∧ Δw ≥ +2', 'No-ship zone: HC ≤ 0 ∧ Δw ≤ +1']);
 }
 
-// ─── §4. Wallet contribution thresholds (V8-style) ─────────────────────────
+// ─── §4. Proven-wallet feature predictors ─────────────────────────────────
+//
+// **NEW analysis (per user directive).** In the absence of HC margin / Δw,
+// can the *characteristics* of the proven wallets themselves on each side
+// predict the winner? For every pick we compute, restricted to wallets that
+// are CONFIRMED ∪ FLAT in the pick's sport (the "qualified roster"):
+//
+//   For-side / Against-side aggregates:
+//     count             — # of proven wallets on the side
+//     wlNet             — Σ(wins − losses) across proven wallets in this sport
+//     flatPnl           — Σ(flatPnl) across proven wallets in this sport (units)
+//     avgRoi            — mean of per-wallet flatRoi (%)
+//     bestRank          — best (lowest-#) sport rank on the side, where rank
+//                          is determined by sorting proven wallets in the
+//                          sport by flatRoi DESC
+//     topQ count/share  — # / fraction of side's wallets that are in the top
+//                          quartile of the sport's proven distribution
+//
+//   Per-pick deltas (For − Ag):
+//     dCount, dWlNet, dFlatPnl, dAvgRoi, dBestRank, dTopQCount, dTopQShare
+//
+// Each delta is scored univariate against WIN / flat ROI. Strongly-signed
+// deltas would mean: even without HC/Δw, *which* proven wallets are on
+// the side carries predictive information.
+//
+// Universe restriction: picks where `provenAgg` is non-null AND at least
+// one proven wallet appeared on the For OR Ag side (`forCount + agCount > 0`).
 function buildSection4(out, picks) {
-  sectionHeader(out, '§4. Wallet contribution thresholds — V8 contribution-edge style',
-    'Per-wallet `contribution = walletBase × convictionMult` (frozen on `peak.v8Scoring.walletDetails`). For each cut T we count qFor / qAg on the pick side and check predictive power.');
+  sectionHeader(out, '§4. Proven-wallet feature predictors',
+    'Even without HC / Δw, what do the *characteristics* of the proven wallets on each side tell us? Universe = `CONFIRMED ∪ FLAT` per sport. Δfeature = For-side − Against-side.');
 
-  for (const T of QUALITY_CONTRIB_CUTS) {
-    out.push('');
-    out.push(`### §4.${T} — Threshold T = ${T}`);
-    out.push('');
-    const havingT = picks.filter(p => p.contribByT && p.contribByT[T]);
-
-    // qFor count buckets
-    const qForBuckets = ['qFor = 0', 'qFor = 1', 'qFor = 2', 'qFor ≥ 3'];
-    out.push('**Count of qFor (high-contribution sharps on side):**');
-    out.push('');
-    bucketTable(out, havingT, p => {
-      const v = p.contribByT[T].qFor;
-      if (v === 0) return 'qFor = 0';
-      if (v === 1) return 'qFor = 1';
-      if (v === 2) return 'qFor = 2';
-      return 'qFor ≥ 3';
-    }, qForBuckets);
-    const r1 = pearsonSig(havingT.map(p => p.contribByT[T].qFor), havingT.map(p => p.outcome === 'WIN' ? 1 : 0));
-    const r2 = pearsonSig(havingT.map(p => p.contribByT[T].qFor), havingT.map(p => p.flatProfit));
-    out.push('');
-    out.push(`ρ(qFor, WIN) = ${r1.rho?.toFixed(3) ?? '—'} ${r1.sig}  ·  ρ(qFor, flat ROI) = ${r2.rho?.toFixed(3) ?? '—'} ${r2.sig}`);
-
-    // Margin buckets
-    out.push('');
-    out.push('**Margin (qFor − qAgainst):**');
-    out.push('');
-    const marginBuckets = ['margin ≤ 0', 'margin = +1', 'margin = +2', 'margin ≥ +3'];
-    bucketTable(out, havingT, p => {
-      const m = p.contribByT[T].qFor - p.contribByT[T].qAg;
-      if (m <= 0) return 'margin ≤ 0';
-      if (m === 1) return 'margin = +1';
-      if (m === 2) return 'margin = +2';
-      return 'margin ≥ +3';
-    }, marginBuckets);
-    const m1 = pearsonSig(havingT.map(p => p.contribByT[T].qFor - p.contribByT[T].qAg), havingT.map(p => p.outcome === 'WIN' ? 1 : 0));
-    const m2 = pearsonSig(havingT.map(p => p.contribByT[T].qFor - p.contribByT[T].qAg), havingT.map(p => p.flatProfit));
-    out.push('');
-    out.push(`ρ(margin, WIN) = ${m1.rho?.toFixed(3) ?? '—'} ${m1.sig}  ·  ρ(margin, flat ROI) = ${m2.rho?.toFixed(3) ?? '—'} ${m2.sig}`);
+  const universe = picks.filter(p =>
+    p.provenAgg && (p.provenAgg.forCount + p.provenAgg.agCount) > 0
+  );
+  if (!universe.length) {
+    out.push('No picks with proven-wallet aggregates available.');
+    return;
   }
+  out.push(`Universe N = ${universe.length} picks where ≥1 proven wallet appeared on either side.`);
+  out.push('');
 
-  // Continuous Δcontribution
+  // ── §4a. Δcount — how many more proven wallets on the For side? ─────────
+  out.push('### §4a. ΔCount — proven-wallet count differential');
   out.push('');
-  out.push('### §4.cont — Continuous Δcontribution (sumContrib_For − sumContrib_Against)');
+  out.push('Crude version: do we win more often when the proven roster is *more numerous* on our side?');
   out.push('');
-  const havingC = picks.filter(p => Number.isFinite(p.dContrib));
-  const dCs = havingC.map(p => p.dContrib).sort((a, b) => a - b);
-  const t1 = dCs[Math.floor(dCs.length / 3)];
-  const t2 = dCs[Math.floor(2 * dCs.length / 3)];
-  out.push(`Tercile cuts: low ≤ ${t1?.toFixed(1)} · mid ≤ ${t2?.toFixed(1)} · high > ${t2?.toFixed(1)}`);
+  bucketTable(out, universe, p => {
+    const d = p.provenAgg.dCount;
+    if (d <= -2) return 'Δcount ≤ −2 (heavy oppose)';
+    if (d === -1) return 'Δcount = −1';
+    if (d === 0) return 'Δcount = 0 (balanced)';
+    if (d === 1) return 'Δcount = +1';
+    if (d === 2) return 'Δcount = +2';
+    return 'Δcount ≥ +3 (heavy support)';
+  }, ['Δcount ≤ −2 (heavy oppose)', 'Δcount = −1', 'Δcount = 0 (balanced)',
+       'Δcount = +1', 'Δcount = +2', 'Δcount ≥ +3 (heavy support)']);
+  const dCountR  = pearsonSig(universe.map(p => p.provenAgg.dCount),
+                              universe.map(p => p.outcome === 'WIN' ? 1 : 0));
+  const dCountRf = pearsonSig(universe.map(p => p.provenAgg.dCount),
+                              universe.map(p => p.flatProfit));
   out.push('');
-  bucketTable(out, havingC, p => {
-    if (p.dContrib <= t1) return 'Low Δcontrib';
-    if (p.dContrib <= t2) return 'Mid Δcontrib';
-    return 'High Δcontrib';
-  }, ['Low Δcontrib', 'Mid Δcontrib', 'High Δcontrib']);
-  const cR = pearsonSig(havingC.map(p => p.dContrib), havingC.map(p => p.outcome === 'WIN' ? 1 : 0));
-  const cRf = pearsonSig(havingC.map(p => p.dContrib), havingC.map(p => p.flatProfit));
+  out.push(`**ρ(Δcount, WIN) = ${dCountR.rho?.toFixed(3) ?? '—'}** ${dCountR.sig}  ·  **ρ(Δcount, flat ROI) = ${dCountRf.rho?.toFixed(3) ?? '—'}** ${dCountRf.sig}`);
+
+  // ── §4b. ΔWlNet — sum-of-wins-minus-losses across the wallets on each side
   out.push('');
-  out.push(`ρ(Δcontrib, WIN) = ${cR.rho?.toFixed(3) ?? '—'} ${cR.sig}  ·  ρ(Δcontrib, flat ROI) = ${cRf.rho?.toFixed(3) ?? '—'} ${cRf.sig}`);
+  out.push('### §4b. ΔWlNet — sum-of-(wins − losses) across proven wallets on each side');
+  out.push('');
+  out.push('Each proven wallet brings its own historical W − L record (in this sport). ΔWlNet is `Σwl(For) − Σwl(Ag)`. A high ΔWlNet means the wallets backing our side have collectively won far more games over their tracked history than the wallets backing the opposing side.');
+  out.push('');
+  const wlVals = universe.map(p => p.provenAgg.dWlNet);
+  const wlSorted = [...wlVals].sort((a, b) => a - b);
+  const wlT1 = wlSorted[Math.floor(wlSorted.length / 5)];
+  const wlT2 = wlSorted[Math.floor(2 * wlSorted.length / 5)];
+  const wlT3 = wlSorted[Math.floor(3 * wlSorted.length / 5)];
+  const wlT4 = wlSorted[Math.floor(4 * wlSorted.length / 5)];
+  out.push(`Quintile cuts: ≤ ${wlT1?.toFixed(0)} · ≤ ${wlT2?.toFixed(0)} · ≤ ${wlT3?.toFixed(0)} · ≤ ${wlT4?.toFixed(0)} · > ${wlT4?.toFixed(0)}`);
+  out.push('');
+  bucketTable(out, universe, p => {
+    const v = p.provenAgg.dWlNet;
+    if (v <= wlT1) return 'Q1 (worst — heavy oppose)';
+    if (v <= wlT2) return 'Q2';
+    if (v <= wlT3) return 'Q3 (balanced)';
+    if (v <= wlT4) return 'Q4';
+    return 'Q5 (best — heavy support)';
+  }, ['Q1 (worst — heavy oppose)', 'Q2', 'Q3 (balanced)', 'Q4', 'Q5 (best — heavy support)']);
+  const wlR  = pearsonSig(wlVals, universe.map(p => p.outcome === 'WIN' ? 1 : 0));
+  const wlRf = pearsonSig(wlVals, universe.map(p => p.flatProfit));
+  out.push('');
+  out.push(`**ρ(ΔWlNet, WIN) = ${wlR.rho?.toFixed(3) ?? '—'}** ${wlR.sig}  ·  **ρ(ΔWlNet, flat ROI) = ${wlRf.rho?.toFixed(3) ?? '—'}** ${wlRf.sig}`);
+
+  // ── §4c. ΔFlatPnl — sum-of-flatPnL across the wallets on each side ──────
+  out.push('');
+  out.push('### §4c. ΔFlatPnl — sum-of-flatPnL across proven wallets on each side');
+  out.push('');
+  out.push('Same shape as §4b but using flatPnL (units) instead of W−L count. Captures which side has the *biggest cumulative-units winners* historically — slightly different from W−L because a 60%-WR low-volume wallet can have lower flatPnL than a 53%-WR high-volume wallet.');
+  out.push('');
+  const fpVals = universe.map(p => p.provenAgg.dFlatPnl);
+  const fpSorted = [...fpVals].sort((a, b) => a - b);
+  const fpT1 = fpSorted[Math.floor(fpSorted.length / 5)];
+  const fpT2 = fpSorted[Math.floor(2 * fpSorted.length / 5)];
+  const fpT3 = fpSorted[Math.floor(3 * fpSorted.length / 5)];
+  const fpT4 = fpSorted[Math.floor(4 * fpSorted.length / 5)];
+  out.push(`Quintile cuts (units): ≤ ${fpT1?.toFixed(2)} · ≤ ${fpT2?.toFixed(2)} · ≤ ${fpT3?.toFixed(2)} · ≤ ${fpT4?.toFixed(2)} · > ${fpT4?.toFixed(2)}`);
+  out.push('');
+  bucketTable(out, universe, p => {
+    const v = p.provenAgg.dFlatPnl;
+    if (v <= fpT1) return 'Q1';
+    if (v <= fpT2) return 'Q2';
+    if (v <= fpT3) return 'Q3';
+    if (v <= fpT4) return 'Q4';
+    return 'Q5';
+  }, ['Q1', 'Q2', 'Q3', 'Q4', 'Q5']);
+  const fpR  = pearsonSig(fpVals, universe.map(p => p.outcome === 'WIN' ? 1 : 0));
+  const fpRf = pearsonSig(fpVals, universe.map(p => p.flatProfit));
+  out.push('');
+  out.push(`**ρ(ΔFlatPnl, WIN) = ${fpR.rho?.toFixed(3) ?? '—'}** ${fpR.sig}  ·  **ρ(ΔFlatPnl, flat ROI) = ${fpRf.rho?.toFixed(3) ?? '—'}** ${fpRf.sig}`);
+
+  // ── §4d. ΔAvgRoi — average-of-flatRoi across the wallets on each side ────
+  out.push('');
+  out.push('### §4d. ΔAvgRoi — mean-of-flatRoi across proven wallets on each side');
+  out.push('');
+  out.push('Normalizes for volume: a side with 5 sharp wallets averaging +20% ROI scores higher than a side with 5 sharp wallets averaging +3% ROI, even if the W−L counts are similar. Pure quality lens.');
+  out.push('');
+  const arVals = universe.map(p => p.provenAgg.dAvgRoi);
+  const arSorted = [...arVals].sort((a, b) => a - b);
+  const arT1 = arSorted[Math.floor(arSorted.length / 5)];
+  const arT2 = arSorted[Math.floor(2 * arSorted.length / 5)];
+  const arT3 = arSorted[Math.floor(3 * arSorted.length / 5)];
+  const arT4 = arSorted[Math.floor(4 * arSorted.length / 5)];
+  out.push(`Quintile cuts (% ROI): ≤ ${arT1?.toFixed(1)} · ≤ ${arT2?.toFixed(1)} · ≤ ${arT3?.toFixed(1)} · ≤ ${arT4?.toFixed(1)} · > ${arT4?.toFixed(1)}`);
+  out.push('');
+  bucketTable(out, universe, p => {
+    const v = p.provenAgg.dAvgRoi;
+    if (v <= arT1) return 'Q1';
+    if (v <= arT2) return 'Q2';
+    if (v <= arT3) return 'Q3';
+    if (v <= arT4) return 'Q4';
+    return 'Q5';
+  }, ['Q1', 'Q2', 'Q3', 'Q4', 'Q5']);
+  const arR  = pearsonSig(arVals, universe.map(p => p.outcome === 'WIN' ? 1 : 0));
+  const arRf = pearsonSig(arVals, universe.map(p => p.flatProfit));
+  out.push('');
+  out.push(`**ρ(ΔAvgRoi, WIN) = ${arR.rho?.toFixed(3) ?? '—'}** ${arR.sig}  ·  **ρ(ΔAvgRoi, flat ROI) = ${arRf.rho?.toFixed(3) ?? '—'}** ${arRf.sig}`);
+
+  // ── §4e. Sport-rank comparison ──────────────────────────────────────────
+  out.push('');
+  out.push('### §4e. Sport-rank comparison — best rank on each side');
+  out.push('');
+  out.push('For each pick we look up the BEST (lowest-numbered) sport rank among proven wallets on each side. ΔBestRank > 0 = our side has a *better* (lower-numbered) top wallet than the opposite side.');
+  out.push('');
+  const haveRanks = universe.filter(p => p.provenAgg.dBestRank != null);
+  bucketTable(out, haveRanks, p => {
+    const d = p.provenAgg.dBestRank;
+    if (d <= -5) return 'ΔBestRank ≤ −5 (we have worse #1 by ≥5)';
+    if (d <= -1) return 'ΔBestRank ∈ [−4,−1]';
+    if (d === 0) return 'ΔBestRank = 0 (tied)';
+    if (d <= 4)  return 'ΔBestRank ∈ [+1,+4]';
+    return 'ΔBestRank ≥ +5 (we have better #1 by ≥5)';
+  }, ['ΔBestRank ≤ −5 (we have worse #1 by ≥5)', 'ΔBestRank ∈ [−4,−1]',
+       'ΔBestRank = 0 (tied)', 'ΔBestRank ∈ [+1,+4]',
+       'ΔBestRank ≥ +5 (we have better #1 by ≥5)']);
+  const brR  = pearsonSig(haveRanks.map(p => p.provenAgg.dBestRank),
+                          haveRanks.map(p => p.outcome === 'WIN' ? 1 : 0));
+  const brRf = pearsonSig(haveRanks.map(p => p.provenAgg.dBestRank),
+                          haveRanks.map(p => p.flatProfit));
+  out.push('');
+  out.push(`**ρ(ΔBestRank, WIN) = ${brR.rho?.toFixed(3) ?? '—'}** ${brR.sig}  ·  **ρ(ΔBestRank, flat ROI) = ${brRf.rho?.toFixed(3) ?? '—'}** ${brRf.sig}  (N=${haveRanks.length})`);
+
+  // ── §4f. Top-quartile share differential ────────────────────────────────
+  out.push('');
+  out.push(`### §4f. ΔTopQ share — fraction-of-side that's in the sport's top quartile`);
+  out.push('');
+  out.push(`Top quartile = top ${(TOP_QUARTILE_FRAC * 100).toFixed(0)}% of proven wallets in the sport, ranked by flatRoi. Δshare > 0 = our side is more concentrated in elite wallets than the opposite.`);
+  out.push('');
+  bucketTable(out, universe, p => {
+    const d = p.provenAgg.dTopQShare;
+    if (d <= -0.30) return 'Δshare ≤ −30 pp';
+    if (d <= -0.10) return 'Δshare ∈ [−30,−10] pp';
+    if (d <= 0.10)  return 'Δshare ≈ 0 (±10 pp)';
+    if (d <= 0.30)  return 'Δshare ∈ [+10,+30] pp';
+    return 'Δshare ≥ +30 pp';
+  }, ['Δshare ≤ −30 pp', 'Δshare ∈ [−30,−10] pp',
+       'Δshare ≈ 0 (±10 pp)', 'Δshare ∈ [+10,+30] pp', 'Δshare ≥ +30 pp']);
+  const tqR  = pearsonSig(universe.map(p => p.provenAgg.dTopQShare),
+                          universe.map(p => p.outcome === 'WIN' ? 1 : 0));
+  const tqRf = pearsonSig(universe.map(p => p.provenAgg.dTopQShare),
+                          universe.map(p => p.flatProfit));
+  out.push('');
+  out.push(`**ρ(ΔTopQShare, WIN) = ${tqR.rho?.toFixed(3) ?? '—'}** ${tqR.sig}  ·  **ρ(ΔTopQShare, flat ROI) = ${tqRf.rho?.toFixed(3) ?? '—'}** ${tqRf.sig}`);
+
+  // ── §4g. Predictor leaderboard — rank all the new features together ─────
+  out.push('');
+  out.push('### §4g. Predictor leaderboard — which proven-wallet feature is strongest?');
+  out.push('');
+  out.push('Apples-to-apples (same N for all rows). Sorted by |ρ(·, flat ROI)|.');
+  out.push('');
+  const ws = universe.map(p => p.outcome === 'WIN' ? 1 : 0);
+  const fs = universe.map(p => p.flatProfit);
+  const candidates = [
+    ['Δcount',         universe.map(p => p.provenAgg.dCount)],
+    ['ΔWlNet',         universe.map(p => p.provenAgg.dWlNet)],
+    ['ΔFlatPnl',       universe.map(p => p.provenAgg.dFlatPnl)],
+    ['ΔAvgRoi',        universe.map(p => p.provenAgg.dAvgRoi)],
+    ['ΔTopQShare',     universe.map(p => p.provenAgg.dTopQShare)],
+    ['ΔTopQCount',     universe.map(p => p.provenAgg.dTopQCount)],
+  ];
+  // ΔBestRank is computed only over rows where both sides have a proven
+  // wallet; we score it on its own restricted N for fairness.
+  const ranked = candidates.map(([name, vals]) => {
+    const r1 = pearsonSig(vals, ws);
+    const r2 = pearsonSig(vals, fs);
+    const r3 = spearman(vals, fs);
+    return { name, rho_win: r1.rho, win_sig: r1.sig, rho_roi: r2.rho, roi_sig: r2.sig, spear: r3 };
+  }).sort((a, b) => Math.abs(b.rho_roi || 0) - Math.abs(a.rho_roi || 0));
+  out.push('| Rank | Feature | ρ(·, WIN) | ρ(·, flat ROI) | Spearman ρ |');
+  out.push('|---|---|---|---|---|');
+  ranked.forEach((r, i) => {
+    out.push(`| ${i + 1} | **${r.name}** | ${r.rho_win?.toFixed(3) ?? '—'} ${r.win_sig} | ${r.rho_roi?.toFixed(3) ?? '—'} ${r.roi_sig} | ${r.spear?.toFixed(3) ?? '—'} |`);
+  });
+  out.push('');
+  // ΔBestRank reported separately because of its restricted N.
+  if (haveRanks.length) {
+    const br = pearsonSig(haveRanks.map(p => p.provenAgg.dBestRank),
+                          haveRanks.map(p => p.flatProfit));
+    out.push(`_(ΔBestRank uses N=${haveRanks.length} subset where both sides had a proven wallet — ρ(flat ROI) = ${br.rho?.toFixed(3) ?? '—'} ${br.sig}.)_`);
+  }
 }
 
 // ─── §5. Star tier analysis ────────────────────────────────────────────────
@@ -905,23 +1273,34 @@ function buildSection11(out, picks) {
   sectionHeader(out, '§11. Logistic regression — feature importance',
     'L2-regularized (λ=0.05) logistic regression with z-scored features. Coefficients ranked by absolute magnitude. Larger |β| ≈ stronger effect at fixed everything-else.');
 
+  // Δq dropped per directive ("q margin doesn't matter and we only use proven
+  // winners now"). HC margin and the new proven-wallet per-side aggregates
+  // are added — they're the variables that should actually drive sizing.
+  // Restricted to post-cutover universe so HC has a value for every row.
   const features = [
     { name: 'Δw',              get: p => p.dwFrozen ?? 0 },
-    { name: 'Δq',              get: p => p.dqFrozen ?? 0 },
+    { name: 'HC margin',       get: p => p.hcMargin ?? 0 },
+    { name: 'Δw + HC',         get: p => (p.dwFrozen ?? 0) + (p.hcMargin ?? 0) },
     { name: 'peak.stars',      get: p => p.peakStars ?? 0 },
+    { name: 'vault.star',      get: p => p.vaultStar ?? 0 },
     { name: 'evEdge',          get: p => p.evEdge ?? 0 },
     { name: 'moneyPct',        get: p => p.moneyPct ?? 0 },
     { name: 'walletPct',       get: p => p.walletPct ?? 0 },
     { name: 'sharpCount',      get: p => p.sharpCount ?? 0 },
     { name: 'log10(invested)', get: p => Math.log10(Math.max(1, p.totalInvested ?? 1)) },
     { name: 'criteriaMet',     get: p => p.criteriaMet ?? 0 },
-    { name: 'maxContribFor',   get: p => p.maxContribFor ?? 0 },
-    { name: 'meanBaseFor',     get: p => p.meanBaseFor ?? 0 },
-    { name: 'qFor@T50',        get: p => p.contribByT?.[50]?.qFor ?? 0 },
-    { name: 'margin@T50',      get: p => (p.contribByT?.[50]?.qFor ?? 0) - (p.contribByT?.[50]?.qAg ?? 0) },
+    // Proven-wallet per-side characteristics (new §4 features).
+    { name: 'pw.Δcount',       get: p => p.provenAgg?.dCount ?? 0 },
+    { name: 'pw.ΔWlNet',       get: p => p.provenAgg?.dWlNet ?? 0 },
+    { name: 'pw.ΔFlatPnl',     get: p => p.provenAgg?.dFlatPnl ?? 0 },
+    { name: 'pw.ΔAvgRoi',      get: p => p.provenAgg?.dAvgRoi ?? 0 },
+    { name: 'pw.ΔTopQShare',   get: p => p.provenAgg?.dTopQShare ?? 0 },
     { name: 'odds (American)', get: p => p.odds ?? 0 },
     { name: 'log(impliedProb)', get: p => Math.log(Math.max(0.01, p.impliedProb || 0.5)) },
   ];
+
+  // Restrict to HC-era picks (so HC margin is a real value, not 0-fill).
+  picks = picksHcEra(picks);
 
   // Drop picks missing any feature
   const usable = picks.filter(p => features.every(f => Number.isFinite(f.get(p))));
@@ -954,13 +1333,17 @@ function buildSection12(out, picks) {
   sectionHeader(out, '§12. Per-cohort sizing recommendation',
     'Bayesian posterior WR (Beta(5,5) prior) and half-Kelly stake at the cohort\'s median odds. Compares to current ladder.');
 
+  // Cohort definitions match the v7.4 lock-floor anatomy. HC-driven cohorts
+  // (Tier-1) are scoped to post-cutover; Δw-driven cohorts (Tier-2 / stale)
+  // use the full sample. Δq dropped per directive.
   const cohorts = [
-    { id: 'p1',  label: 'Path-1 (Δw ≥ +3 ∧ Δq ≥ +1)', f: p => p.dwFrozen != null && p.dwFrozen >= 3 && p.dqFrozen != null && p.dqFrozen >= 1 },
-    { id: 'p2',  label: 'Path-2 (Δw = +2 ∧ Δq ≥ +1)', f: p => p.dwFrozen === 2 && p.dqFrozen != null && p.dqFrozen >= 1 },
-    { id: 'fb',  label: 'Floor-B (Δw = +1 ∧ Δq ≥ +2)', f: p => p.dwFrozen === 1 && p.dqFrozen != null && p.dqFrozen >= 2 },
-    { id: 'fa',  label: 'Floor-A (Δw = +1 ∧ Δq = +1)  [MUTED v6.6]', f: p => p.dwFrozen === 1 && p.dqFrozen === 1 },
-    { id: 'sw0', label: 'Stale Δw = 0', f: p => p.dwFrozen === 0 },
-    { id: 'sw1', label: 'Stale Δw ≤ −1', f: p => p.dwFrozen != null && p.dwFrozen <= -1 },
+    { id: 't1hc2', label: 'Tier-1a HC ≥ +2 (post-cutover)',         f: p => p.hcMargin != null && p.hcMargin >= 2 },
+    { id: 't1hc1', label: 'Tier-1b HC = +1 (post-cutover)',         f: p => p.hcMargin === 1 },
+    { id: 't2',    label: 'Tier-2 HC ≤ 0 ∧ Δw ≥ +2 (HC era)',      f: p =>
+        p.date && p.date >= HC_CUTOVER && (p.hcMargin == null || p.hcMargin <= 0) && p.dwFrozen >= 2 },
+    { id: 'p1',    label: 'Δw ≥ +3 (full sample)',                  f: p => p.dwFrozen != null && p.dwFrozen >= 3 },
+    { id: 'sw0',   label: 'Stale Δw = 0',                            f: p => p.dwFrozen === 0 },
+    { id: 'sw1',   label: 'Stale Δw ≤ −1',                          f: p => p.dwFrozen != null && p.dwFrozen <= -1 },
   ];
 
   out.push('| Cohort | N | W-L | WR observed | Bayesian WR | Median odds | Half-Kelly stake | Current avg | Verdict |');
@@ -1034,19 +1417,20 @@ function buildSection13(out, picks) {
 function buildSection14(out, picks) {
   sectionHeader(out, '§14. Per-pick row-level detail (every shipped+graded pick)',
     'Sortable raw data behind every section. Use to spot-check individual decisions.');
-  out.push('| Date | Sport | Mkt | Side | ★ | u | Odds | Δw | Δq | Σ | qF₅₀ | qA₅₀ | Crit | EV | Outcome | Peak PnL |');
-  out.push('|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|');
+  out.push('| Date | Sport | Mkt | Side | ★ | u | Odds | Δw | HC | Δw+HC | pw.Δcnt | pw.ΔWl | EV | Outcome | Peak PnL |');
+  out.push('|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|');
   const sorted = [...picks].sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.docId || '').localeCompare(b.docId || ''));
   for (const p of sorted) {
     const oddsStr = p.odds == null ? '—' : (p.odds >= 0 ? '+' : '') + p.odds;
     const dw = p.dwFrozen ?? '—';
-    const dq = p.dqFrozen ?? '—';
-    const sum = (Number.isFinite(p.dwFrozen) && Number.isFinite(p.dqFrozen)) ? (p.dwFrozen + p.dqFrozen) : '—';
-    const qFor50 = p.contribByT?.[50]?.qFor ?? 0;
-    const qAg50 = p.contribByT?.[50]?.qAg ?? 0;
+    const hc = p.hcMargin ?? '—';
+    const sum = (Number.isFinite(p.dwFrozen) && Number.isFinite(p.hcMargin))
+      ? (p.dwFrozen + p.hcMargin) : '—';
+    const pwDcnt = p.provenAgg ? p.provenAgg.dCount : '—';
+    const pwDwl  = p.provenAgg ? p.provenAgg.dWlNet : '—';
     const ev = p.evEdge != null ? p.evEdge.toFixed(2) : '—';
     const outcome = p.outcome === 'WIN' ? 'W' : p.outcome === 'LOSS' ? 'L' : 'P';
-    out.push(`| ${p.date} | ${p.sport} | ${p.market} | ${p.sideKey} | ${p.peakStars.toFixed(1)} | ${(p.peakUnits || 0).toFixed(2)} | ${oddsStr} | ${dw} | ${dq} | ${sum} | ${qFor50} | ${qAg50} | ${p.criteriaMet ?? 0} | ${ev} | ${outcome} | ${sign(p.profitU)}u |`);
+    out.push(`| ${p.date} | ${p.sport} | ${p.market} | ${p.sideKey} | ${p.peakStars.toFixed(1)} | ${(p.peakUnits || 0).toFixed(2)} | ${oddsStr} | ${dw} | ${hc} | ${sum} | ${pwDcnt} | ${pwDwl} | ${ev} | ${outcome} | ${sign(p.profitU)}u |`);
   }
 }
 
@@ -1066,13 +1450,18 @@ function buildExec(picks, meta) {
     : total.flatTtest.mean > 0 ? '~ directionally positive but not significant'
     : '✗ overall sample is consistent with zero or negative true ROI';
 
-  // Cohort scan — what's working, what's bleeding
+  // Cohort scan — what's working, what's bleeding. v7.4 cohorts driven by
+  // HC margin and Δw (Δq dropped — proven-wallet filter renders it
+  // double-counting). Two hard tiers, plus a "no-ship" mute lens.
+  // HC-cohorts are scoped to post-HC_CUTOVER picks; Δw-only cohorts use the
+  // full sample.
   const cohorts = [
-    { id: 'p1',  label: 'Path-1 (Δw ≥ +3)',                f: p => p.dwFrozen != null && p.dwFrozen >= 3 },
-    { id: 'p2',  label: 'Path-2 (Δw = +2 ∧ Δq ≥ +1)',     f: p => p.dwFrozen === 2 && p.dqFrozen != null && p.dqFrozen >= 1 },
-    { id: 'fb',  label: 'Floor-B (Δw = +1 ∧ Δq ≥ +2)',    f: p => p.dwFrozen === 1 && p.dqFrozen != null && p.dqFrozen >= 2 },
-    { id: 'fa',  label: 'Floor-A (Δw = +1 ∧ Δq = +1) [MUTED v6.6]', f: p => p.dwFrozen === 1 && p.dqFrozen === 1 },
-    { id: 'sw',  label: 'Stale Δw ≤ 0',                    f: p => p.dwFrozen != null && p.dwFrozen <= 0 },
+    { id: 't1hc2', label: 'Tier-1a HC ≥ +2 (post-cutover)', f: p => p.hcMargin != null && p.hcMargin >= 2 },
+    { id: 't1hc1', label: 'Tier-1b HC = +1 (post-cutover)', f: p => p.hcMargin === 1 },
+    { id: 't2',    label: 'Tier-2 HC ≤ 0 ∧ Δw ≥ +2 (HC era)', f: p =>
+        p.date && p.date >= HC_CUTOVER && (p.hcMargin == null || p.hcMargin <= 0) && p.dwFrozen >= 2 },
+    { id: 'p1',    label: 'Δw ≥ +3 (full sample)',          f: p => p.dwFrozen != null && p.dwFrozen >= 3 },
+    { id: 'sw',    label: 'Stale Δw ≤ 0 (full sample)',     f: p => p.dwFrozen != null && p.dwFrozen <= 0 },
   ];
   const winners = [];
   const bleeders = [];
@@ -1086,13 +1475,24 @@ function buildExec(picks, meta) {
     if (s.flatTtest.t <= -1.645 && s.flatTtest.mean < 0) bleeders.push({ c, s });
   }
 
-  // Logistic-regression-style ranking — what feature would I bet on if I had to pick one?
-  const xs = picks.filter(p => p.dwFrozen != null && p.dqFrozen != null);
+  // HC margin signal (post-cutover only) — companion to Δw at the headline level.
+  const hcSig = (() => {
+    const xs = picks.filter(p => p.hcMargin != null);
+    if (!xs.length) return { rho: null, sig: '—', n: 0 };
+    const r = pearsonSig(xs.map(p => p.hcMargin), xs.map(p => p.flatProfit));
+    return { ...r, n: xs.length };
+  })();
+  const dwHcSig = (() => {
+    const xs = picks.filter(p => p.hcMargin != null && p.dwFrozen != null);
+    if (!xs.length) return { rho: null, sig: '—', n: 0 };
+    const r = pearsonSig(xs.map(p => p.dwHcSum), xs.map(p => p.flatProfit));
+    return { ...r, n: xs.length };
+  })();
 
   const lines = [];
   lines.push('## Executive summary');
   lines.push('');
-  lines.push(`**Sample:** ${total.n} shipped+graded picks · ${meta.dateMin} → ${meta.dateMax}`);
+  lines.push(`**Sample:** ${total.n} shipped+graded picks · ${meta.dateMin} → ${meta.dateMax}  (HC analyses scoped to post-cutover ${HC_CUTOVER}, ${hcSig.n} picks)`);
   lines.push(`**Headline:** ${total.w}-${total.l}-${picks.filter(p => p.outcome === 'PUSH').length} · WR ${fmtPct(100 * total.wr)} [${fmtPct(100 * total.wilsonCi[0], 1)}–${fmtPct(100 * total.wilsonCi[1], 1)}] vs 52.4% break-even · ${sign(total.fl)}u flat (${fmtSignPct(100 * total.flatRoi)}) · ${sign(total.pu)}u peak.`);
   lines.push(`**Overall t-test:** t = ${total.flatTtest.t.toFixed(2)} → ${total.flatTtest.sig}.`);
   lines.push('');
@@ -1100,7 +1500,13 @@ function buildExec(picks, meta) {
   lines.push('');
   lines.push('### Where IS the edge?');
   lines.push('');
-  lines.push(`The deltas are real signals: **ρ(Δw, flat ROI) = ${allDwSig.rho?.toFixed(3) ?? '—'} ${allDwSig.sig}** and **ρ(Δw+Δq, flat ROI) = ${sumSig.rho?.toFixed(3) ?? '—'} ${sumSig.sig}**. The overall sample loses because we ship picks across cohorts that have no edge. Cohort breakdown:`);
+  lines.push(`The two real engine-signals are **Δw** (proven-roster directional consensus) and **HC** (high-conviction-wallet margin, post-cutover). Univariate correlations:`);
+  lines.push('');
+  lines.push(`- **ρ(Δw, flat ROI) = ${allDwSig.rho?.toFixed(3) ?? '—'} ${allDwSig.sig}**  (full sample, N=${picks.filter(p => p.dwFrozen != null).length})`);
+  lines.push(`- **ρ(HC, flat ROI) = ${hcSig.rho?.toFixed(3) ?? '—'} ${hcSig.sig}**  (post-cutover, N=${hcSig.n})`);
+  lines.push(`- **ρ(Δw+HC, flat ROI) = ${dwHcSig.rho?.toFixed(3) ?? '—'} ${dwHcSig.sig}**  (post-cutover, N=${dwHcSig.n})`);
+  lines.push('');
+  lines.push(`Cohort breakdown:`);
   lines.push('');
   if (winners.length) {
     lines.push('**Winning cohorts (t ≥ 1.645 with positive mean):**');
@@ -1120,18 +1526,30 @@ function buildExec(picks, meta) {
   lines.push('');
   lines.push('### Action map');
   lines.push('');
-  if (summaries.p1) lines.push(`- **Path-1 (Δw ≥ +3)**: ship at maximum size, lift any plus-money cap. Bayesian posterior WR ≈ ${fmtPct(100 * bayesianWR(summaries.p1.s.w, summaries.p1.s.l))}; half-Kelly recommends ~${(100 * halfKelly(bayesianWR(summaries.p1.s.w, summaries.p1.s.l), -110)).toFixed(1)}% bankroll at −110.`);
-  if (summaries.p2) lines.push(`- **Path-2 (Δw = +2)**: bayesian WR ${fmtPct(100 * bayesianWR(summaries.p2.s.w, summaries.p2.s.l))} → half-Kelly = 0% at −110. **Demote off the 5★ tier.**`);
-  if (summaries.fb) lines.push(`- **Floor-B (Δw = +1 ∧ Δq ≥ +2)**: bayesian WR ${fmtPct(100 * bayesianWR(summaries.fb.s.w, summaries.fb.s.l))} → modest positive Kelly. Keep but don't oversize.`);
-  if (summaries.sw) lines.push(`- **Stale Δw ≤ 0**: −${fmtPct(-100 * summaries.sw.s.flatRoi)} flat ROI on ${summaries.sw.s.n} picks. Already addressed by the post-4/24 mute engine — should not re-appear.`);
-  lines.push(`- **Sample size:** at observed σ (${total.flatTtest.sd.toFixed(2)}u/pick), we need **~${Math.ceil((1.96 * total.flatTtest.sd / 0.05) ** 2)} graded picks** to validate a true +5% flat ROI at 95% confidence. We have ${total.n}. Cohort findings are provisional until N grows.`);
+  const actBayesKelly = (s, oddsLabel = '−110') => {
+    const bayes = bayesianWR(s.w, s.l);
+    const hk = halfKelly(bayes, -110);
+    return `Bayesian posterior WR ≈ ${fmtPct(100 * bayes)}, half-Kelly = **${(100 * hk).toFixed(1)}%** bankroll at ${oddsLabel}`;
+  };
+  if (summaries.t1hc2) lines.push(`- **Tier-1a (HC ≥ +2)** — N=${summaries.t1hc2.s.n}, WR ${fmtPct(100 * summaries.t1hc2.s.wr)}, flat ROI ${fmtSignPct(100 * summaries.t1hc2.s.flatRoi)}. ${actBayesKelly(summaries.t1hc2.s)} → **size aggressively**.`);
+  if (summaries.t1hc1) lines.push(`- **Tier-1b (HC = +1)** — N=${summaries.t1hc1.s.n}, WR ${fmtPct(100 * summaries.t1hc1.s.wr)}, flat ROI ${fmtSignPct(100 * summaries.t1hc1.s.flatRoi)}. ${actBayesKelly(summaries.t1hc1.s)}.`);
+  if (summaries.t2)    lines.push(`- **Tier-2 (HC ≤ 0 ∧ Δw ≥ +2, HC era)** — N=${summaries.t2.s.n}, WR ${fmtPct(100 * summaries.t2.s.wr)}, flat ROI ${fmtSignPct(100 * summaries.t2.s.flatRoi)}. Δw saves the pick when HC is silent.`);
+  if (summaries.p1)    lines.push(`- **Δw ≥ +3 (full sample)** — N=${summaries.p1.s.n}, WR ${fmtPct(100 * summaries.p1.s.wr)}, flat ROI ${fmtSignPct(100 * summaries.p1.s.flatRoi)}. ${actBayesKelly(summaries.p1.s)}.`);
+  if (summaries.sw)    lines.push(`- **Stale Δw ≤ 0 (full sample)** — ${fmtSignPct(100 * summaries.sw.s.flatRoi)} flat ROI on ${summaries.sw.s.n} picks. Already muted by v7.x; should not re-appear.`);
+  lines.push(`- **Sample size:** at observed σ (${total.flatTtest.sd.toFixed(2)}u/pick), we need **~${Math.ceil((1.96 * total.flatTtest.sd / 0.05) ** 2)} graded picks** to validate a true +5% flat ROI at 95% confidence. We have ${total.n}. Cohort findings — especially HC subsets — are provisional until N grows.`);
   return lines.join('\n');
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────
 async function main() {
+  console.log('[v6FullAnalysis] loading wallet profiles…');
+  const { profiles, provenRanksBySport } = await loadWalletProfiles();
+  const provenSummary = [...provenRanksBySport.entries()]
+    .map(([sport, m]) => `${sport}=${m.size}`).join(' · ');
+  console.log(`[v6FullAnalysis] ${profiles.size} wallet profiles · proven roster: ${provenSummary}`);
+
   console.log('[v6FullAnalysis] loading picks…');
-  const { rows, meta } = await loadPicks();
+  const { rows, meta } = await loadPicks(provenRanksBySport);
   console.log(`[v6FullAnalysis] N=${rows.length} shipped+graded picks (${meta.dateMin} → ${meta.dateMax})`);
 
   const out = [];
