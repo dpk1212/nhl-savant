@@ -1,340 +1,166 @@
 # Sharp Intel v6 — Daily Master Report
 
-_Auto-generated **5/5/2026, 8:48:52 AM ET** by `scripts/dailyV6Report.js`. Do not edit by hand._
+_Auto-generated **5/5/2026, 8:55:32 AM ET** by `scripts/dailyV6Report.js`. Do not edit by hand._
 
-**Source of truth: this report mirrors the live Pick Performance dashboard.** Inclusion = `lockStage ≠ SHADOW ∧ ¬superseded ∧ health ∉ {MUTED, CANCELLED} ∧ peak.stars ≥ 2.5`. PnL is in **peak units** (the size shipped to users). Cohort tags (1/1, 2/2, …) come from frozen `v8_walletConsensus*` stamps written at last sync before the T-15 freeze. Nothing is recomputed against today's whitelist.
+**Source of truth: this report mirrors the live Pick Performance dashboard.** Inclusion = `lockStage ≠ SHADOW ∧ ¬superseded ∧ health ∉ {MUTED, CANCELLED} ∧ peak.stars ≥ 2.5`. PnL is in **peak units** (the size shipped to users). HC margin / Δw / Δq are the **frozen** stamps written at last sync before the T-15 freeze. HC margin only existed from the v7.1 launch (**2026-04-30**); pre-launch picks have no HC value (no retro-fitting). Nothing is recomputed against today's whitelist.
 
-v6 cutover: **2026-04-18** · whitelist source: live `sharpWalletProfiles` (152 profiles — display only) · quality cut: contribution ≥ 30.
-
----
-## §1. Sample summary
-
-| Metric | Value |
-|---|---|
-| Graded sides scanned | 323 |
-| Graded sides w/ outcome | 317 |
-| **SHIPPED (matches dashboard)** | **136** |
-| · of which lockStage = LOCKED | 134 |
-| · of which lockStage = null/other | 2 |
-| · with frozen Δw stamp | 131 |
-| · with frozen Δq stamp | 71 |
-| · Δq recomputed from walletDetails (contribution-only) | 59 |
-| · uncategorized (no Δw stamp) | 5 |
-| Sharp Vault hidden-star positions | 1751 |
-| Unique wallets observed | 123 |
-| Graded date range | 2026-04-18 … 2026-05-04 |
-| Sports represented | MLB, NBA, NHL |
-| Markets represented | ML, SPREAD, TOTAL |
-
-| Cohort | N | W-L-P | WR% | PnL (peak units) | PnL (flat 1u) |
-|---|---|---|---|---|---|
-| All graded sides | 317 | 151-161-5 | 48.4% | -23.02u | -14.03u |
-| **SHIPPED (dashboard-equivalent)** | **136** | **62-72-2** | **46.3%** | **-17.18u** | **-9.99u** |
-| · of shipped, frozen Δw≥+1 ∧ Δq≥+1 | 95 | 49-45-1 | 52.1% | +0.93u | +6.38u |
+v6 cutover: **2026-04-18** · whitelist source: live `sharpWalletProfiles` (152 profiles — drives §5 roster snapshot only) · quality cut: contribution ≥ 30 · HC = CONFIRMED tier ∧ sizeRatio ≥ 1.5.
 
 ---
-## §2. Daily PnL by (frozen Δw × Δq) cohort
+## §1. Yesterday's picks
 
-Every column counts only **shipped** picks (the dashboard set). Cohort tag is the **frozen** Δw / Δq at last write before the T-15 freeze. Picks lacking a Δw stamp are lumped into `Uncat`. PnL in peak units. Cumulative running PnL is on the rightmost column.
+Slate: **2026-05-04** · 7 shipped sides.
 
-| Date | TOTAL N · WR · PnL | LOCK (1/1+) PnL | SUPER TOP | TOP | FLOOR-A (1/1) | FLOOR-B (1/≥2) | SUB-FLOOR | STALE Δw=0 | STALE Δw≤−1 | Uncat | Cum Total PnL |
+| N | W-L-P | WR% | PnL (peak u) | PnL (flat 1u) |
+|---|---|---|---|---|
+| 7 | 3-4-0 | 42.9% | +2.49u | -1.46u |
+
+| Sport | Market | Matchup | Pick | Stars · Units | HC | Δw | Δq | Σ | Odds | Result | PnL (peak u) |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 2026-04-18 | 12 · 50% · +2.67u | **4 · 75% · +2.56u** | 1 · 100% · +2.00u | 2 · 50% · +0.03u | — | 1 · 100% · +0.53u | — | 3 · 0% · -2.25u | — | 5 · 60% · +2.36u | +2.67u |
-| 2026-04-19 | 6 · 67% · +4.39u | **4 · 100% · +7.39u** | 4 · 100% · +7.39u | — | — | — | — | 2 · 0% · -3.00u | — | — | +7.06u |
-| 2026-04-20 | 16 · 50% · -3.21u | **7 · 57% · -0.59u** | 3 · 33% · -0.24u | — | 1 · 100% · +0.75u | 3 · 67% · -1.10u | — | 5 · 60% · -0.40u | 4 · 25% · -2.22u | — | +3.85u |
-| 2026-04-21 | 16 · 31% · -7.44u | **8 · 63% · +4.06u** | 6 · 67% · +5.03u | — | 1 · 100% · +0.53u | 1 · 0% · -1.50u | — | 5 · 0% · -8.75u | 3 · 0% · -2.75u | — | -3.59u |
-| 2026-04-22 | 8 · 50% · +1.13u | **4 · 50% · +0.99u** | 1 · 100% · +1.82u | — | 1 · 0% · -1.10u | 2 · 50% · +0.27u | — | 4 · 50% · +0.14u | — | — | -2.46u |
-| 2026-04-23 | 7 · 43% · -1.18u | **5 · 40% · -1.06u** | 1 · 0% · -1.75u | — | 1 · 0% · -1.35u | 3 · 67% · +2.04u | — | 2 · 50% · -0.12u | — | — | -3.64u |
-| 2026-04-24 | 6 · 80% · +3.08u | **4 · 75% · +2.08u** | 1 · 0% · -2.00u | 1 · 100% · +2.94u | 1 · 100% · +0.45u | 1 · 100% · +0.69u | — | 2 · 100% · +1.00u | — | — | -0.56u |
-| 2026-04-25 | 7 · 14% · -8.35u | **7 · 14% · -8.35u** | 3 · 0% · -8.00u | 1 · 100% · +2.40u | 1 · 0% · -0.75u | 2 · 0% · -2.00u | — | — | — | — | -8.91u |
-| 2026-04-26 | 10 · 50% · -2.04u | **10 · 50% · -2.04u** | 1 · 100% · +1.03u | 3 · 33% · -3.18u | 2 · 0% · -1.50u | 4 · 75% · +1.61u | — | — | — | — | -10.95u |
-| 2026-04-27 | 6 · 50% · -1.63u | **6 · 50% · -1.63u** | 4 · 50% · -1.66u | — | — | 2 · 50% · +0.03u | — | — | — | — | -12.58u |
-| 2026-04-28 | 10 · 40% · -3.19u | **10 · 40% · -3.19u** | 5 · 20% · -4.68u | 3 · 67% · +1.66u | — | 2 · 50% · -0.17u | — | — | — | — | -15.77u |
-| 2026-04-29 | 7 · 43% · +3.54u | **7 · 43% · +3.54u** | 3 · 100% · +5.54u | — | — | 4 · 0% · -2.00u | — | — | — | — | -12.23u |
-| 2026-04-30 | 5 · 50% · -0.48u | **3 · 100% · +1.02u** | 1 · 100% · +0.00u | — | — | 2 · 100% · +1.02u | — | 2 · 0% · -1.50u | — | — | -12.71u |
-| 2026-05-01 | 6 · 50% · -5.50u | **6 · 50% · -5.50u** | 2 · 0% · -5.00u | 1 · 100% · +0.00u | — | 3 · 67% · -0.50u | — | — | — | — | -18.21u |
-| 2026-05-02 | 2 · 50% · -1.93u | **2 · 50% · -1.93u** | — | — | 1 · 100% · +1.07u | 1 · 0% · -3.00u | — | — | — | — | -20.14u |
-| 2026-05-03 | 5 · 60% · +0.47u | **2 · 50% · -0.04u** | — | — | 2 · 50% · -0.04u | — | 1 · 100% · +0.58u | 2 · 50% · -0.07u | — | — | -19.67u |
-| 2026-05-04 | 7 · 43% · +2.49u | **6 · 50% · +3.62u** | 5 · 40% · +2.94u | — | 1 · 100% · +0.68u | — | — | — | 1 · 0% · -1.13u | — | -17.18u |
-
-### Cohort cumulative roll-up — shipped picks only
-
-| Cohort | N | W-L-P | WR% | PnL (peak units) | PnL (flat 1u) |
-|---|---|---|---|---|---|
-| **SUPER TOP (Δw≥+2 ∧ Δq≥+2)** | 41 | 21-20-0 | 51.2% | +2.42u | +5.85u |
-| **TOP (Δw≥+2 ∧ Δq≤+1)** | 11 | 7-4-0 | 63.6% | +3.85u | +3.03u |
-| **FLOOR-B (Δw=+1 ∧ Δq≥+2)** | 31 | 15-15-1 | 50.0% | -4.08u | -1.18u |
-| **FLOOR-A (Δw=+1 ∧ Δq=+1)** | 12 | 6-6-0 | 50.0% | -1.26u | -1.33u |
-| SUB-FLOOR (Δw=+1 ∧ Δq≤0) | 1 | 1-0-0 | 100.0% | +0.58u | +0.77u |
-| STALE Δw=0 (winners flat) | 27 | 8-18-1 | 30.8% | -14.95u | -11.09u |
-| STALE Δw≤−1 (winners fading/killed) | 8 | 1-7-0 | 12.5% | -6.10u | -5.94u |
-| Uncategorized (no Δw stamp) | 5 | 3-2-0 | 60.0% | +2.36u | -0.12u |
+| MLB | ML | Boston Red Sox @ Detroit Tigers | Detroit Tigers | 3.5★ · 1.13u | +1 | -1 | +0 | -1 | -199 | L | -1.13u |
+| NBA | ML | 76ers @ Knicks | 76ers | 5.0★ · 0.50u | -1 | +3 | +3 | +6 | +245 | L | -0.50u |
+| NBA | SPREAD | Timberwolves @ Spurs | Timberwolves | 5.0★ · 3.50u | +1 | +5 | +5 | +10 | -105 | **W** | +3.33u |
+| NBA | SPREAD | 76ers @ Knicks | 76ers | 4.0★ · 1.13u | +1 | +2 | +2 | +4 | -110 | L | -1.13u |
+| NBA | TOTAL | Timberwolves @ Spurs | Under 219.5 | 5.0★ · 3.50u | +1 | +3 | +3 | +6 | -102 | **W** | +3.24u |
+| NBA | TOTAL | 76ers @ Knicks | Under 213 | 5.0★ · 2.00u | +1 | +2 | +3 | +5 | -102 | L | -2.00u |
+| NHL | ML | Ducks @ Golden Knights | Golden Knights | 3.5★ · 1.13u | +1 | +1 | +1 | +2 | -165 | **W** | +0.68u |
 
 ---
-## §3. Frozen Vault-Star bucket performance
+## §2. 3-day / 7-day / all-time cohort rollups
 
-Shipped picks bucketed by their frozen `v8_vaultStar` value (or by `peak.stars` when v8_vaultStar wasn't stamped). PnL in peak units.
+Shipped picks only. PnL in **peak units** (size we actually bet) and flat 1u (cohort EV lens). All margins are the engine's frozen stamps (`v8_hcMargin`, `v8_walletConsensusDelta`, `v8_walletConsensusQualityMargin`).
 
-| Vault-Star bucket | N | W-L-P | WR% | PnL (peak u) | PnL (flat 1u) | Avg odds |
-|---|---|---|---|---|---|---|
-| 5.0★ (ELITE) | 34 | 16-18-0 | 47.1% | -9.20u | -5.91u | -81 |
-| 4.5★ | 9 | 5-4-0 | 55.6% | +2.40u | +2.13u | -45 |
-| 4.0★ | 18 | 9-8-1 | 52.9% | -1.12u | +1.95u | -79 |
-| 3.5★ (LOCK FLR) | 27 | 11-16-0 | 40.7% | -1.72u | -1.63u | +1 |
-| 3.0★ | 17 | 6-10-1 | 37.5% | -4.55u | -3.69u | -94 |
-| 2.5★ | 28 | 13-15-0 | 46.4% | -3.50u | -3.58u | -59 |
-| ≤2.0★ | 0 | — | — | — | — | — |
+**HC margin sub-tables** are scoped to picks dated ≥ 2026-04-30 (the v7.1 launch — when HC margin became a real engine signal). Pre-launch picks are excluded from HC analysis since the feature didn't exist for them. Δw / Δq sub-tables span the full v6-era sample (≥ 2026-04-18). Empty buckets are dropped.
 
-### Elite (≥4.5★) by sport
+### §2a. 3-day
 
-| Sport | N | W-L-P | WR% | PnL (peak u) | PnL (flat 1u) |
+Total: **14** shipped · 7-7-0 · WR 50.0% · PnL +1.03u (peak) / -0.86u (flat).
+
+**By HC margin** _(picks dated ≥ 2026-04-30, N = 14)_
+
+| Bucket | N | W-L-P | WR% | PnL (peak u) | PnL (flat 1u) |
 |---|---|---|---|---|---|
-| MLB | 10 | 4-6-0 | 40.0% | -5.73u | -2.76u |
-| NBA | 31 | 16-15-0 | 51.6% | -1.01u | -1.04u |
-| NHL | 2 | 1-1-0 | 50.0% | -0.06u | +0.02u |
+| HC = +1 | 13 | 7-6-0 | 53.8% | +1.53u | +0.14u |
+| HC ≤ −1 | 1 | 0-1-0 | 0.0% | -0.50u | -1.00u |
 
-### Daily Vault-Star PnL band
+**By Δw (winner margin)**
 
-Per-day peak-unit PnL split into three star bands.
+| Bucket | N | W-L-P | WR% | PnL (peak u) | PnL (flat 1u) |
+|---|---|---|---|---|---|
+| ≥ +3 | 3 | 2-1-0 | 66.7% | +6.07u | +0.93u |
+| +2 | 2 | 0-2-0 | 0.0% | -3.13u | -2.00u |
+| +1 | 6 | 4-2-0 | 66.7% | -0.71u | +1.25u |
+| 0 | 2 | 1-1-0 | 50.0% | -0.07u | -0.04u |
+| −1 | 1 | 0-1-0 | 0.0% | -1.13u | -1.00u |
 
-| Date | 5★ N · PnL | 4.5–4.0★ N · PnL | ≤3.5★ N · PnL | TOTAL PnL |
-|---|---|---|---|---|
-| 2026-04-18 | 2 · +2.75u | 3 · +2.11u | 7 · -2.19u | +2.67u |
-| 2026-04-19 | 1 · -2.00u | 2 · +4.97u | 3 · +1.42u | +4.39u |
-| 2026-04-20 | — | 2 · -3.50u | 14 · +0.29u | -3.21u |
-| 2026-04-21 | 1 · -3.00u | 4 · -2.00u | 11 · -2.44u | -7.44u |
-| 2026-04-22 | 1 · +0.77u | 1 · +1.82u | 6 · -1.46u | +1.13u |
-| 2026-04-23 | — | 2 · +0.04u | 5 · -1.22u | -1.18u |
-| 2026-04-24 | 2 · +0.94u | — | 4 · +2.14u | +3.08u |
-| 2026-04-25 | 4 · -5.60u | 1 · -1.25u | 2 · -1.50u | -8.35u |
-| 2026-04-26 | 4 · -2.15u | 3 · +2.11u | 3 · -2.00u | -2.04u |
-| 2026-04-27 | 4 · -1.66u | 1 · -0.75u | 1 · +0.78u | -1.63u |
-| 2026-04-28 | 8 · -3.02u | — | 2 · -0.17u | -3.19u |
-| 2026-04-29 | 2 · +2.70u | 1 · +2.84u | 4 · -2.00u | +3.54u |
-| 2026-04-30 | — | 3 · +1.02u | 2 · -1.50u | -0.48u |
-| 2026-05-01 | 1 · -3.00u | 2 · -2.00u | 3 · -0.50u | -5.50u |
-| 2026-05-02 | — | 1 · -3.00u | 1 · +1.07u | -1.93u |
-| 2026-05-03 | — | — | 5 · +0.47u | +0.47u |
-| 2026-05-04 | 4 · +4.07u | 1 · -1.13u | 2 · -0.45u | +2.49u |
+**By Δq (quality margin)**
+
+| Bucket | N | W-L-P | WR% | PnL (peak u) | PnL (flat 1u) |
+|---|---|---|---|---|---|
+| ≥ +3 | 5 | 2-3-0 | 40.0% | +1.07u | -1.07u |
+| +2 | 1 | 0-1-0 | 0.0% | -1.13u | -1.00u |
+| +1 | 4 | 3-1-0 | 75.0% | +1.71u | +1.48u |
+| 0 | 3 | 1-2-0 | 33.3% | -1.30u | -1.23u |
+| ≤ −2 | 1 | 1-0-0 | 100.0% | +0.68u | +0.96u |
+
+### §2b. 7-day
+
+Total: **42** shipped · 19-22-1 · WR 46.3% · PnL -4.60u (peak) / -3.89u (flat).
+
+**By HC margin** _(picks dated ≥ 2026-04-30, N = 25)_
+
+| Bucket | N | W-L-P | WR% | PnL (peak u) | PnL (flat 1u) |
+|---|---|---|---|---|---|
+| HC = +1 | 18 | 9-9-0 | 50.0% | -0.95u | +0.06u |
+| HC = 0 | 5 | 3-1-1 | 75.0% | -0.50u | +1.70u |
+| HC ≤ −1 | 2 | 0-2-0 | 0.0% | -3.50u | -2.00u |
+
+**By Δw (winner margin)**
+
+| Bucket | N | W-L-P | WR% | PnL (peak u) | PnL (flat 1u) |
+|---|---|---|---|---|---|
+| ≥ +3 | 7 | 3-4-0 | 42.9% | -0.08u | -1.79u |
+| +2 | 13 | 7-6-0 | 53.8% | +0.54u | +2.08u |
+| +1 | 17 | 8-8-1 | 50.0% | -2.36u | -1.15u |
+| 0 | 4 | 1-3-0 | 25.0% | -1.57u | -2.04u |
+| −1 | 1 | 0-1-0 | 0.0% | -1.13u | -1.00u |
+
+**By Δq (quality margin)**
+
+| Bucket | N | W-L-P | WR% | PnL (peak u) | PnL (flat 1u) |
+|---|---|---|---|---|---|
+| ≥ +3 | 17 | 6-10-1 | 37.5% | -4.39u | -5.00u |
+| +2 | 13 | 5-8-0 | 38.5% | -2.96u | -1.90u |
+| +1 | 8 | 6-2-0 | 75.0% | +3.37u | +3.28u |
+| 0 | 3 | 1-2-0 | 33.3% | -1.30u | -1.23u |
+| ≤ −2 | 1 | 1-0-0 | 100.0% | +0.68u | +0.96u |
+
+### §2c. All-time
+
+Total: **136** shipped · 62-72-2 · WR 46.3% · PnL -17.18u (peak) / -9.99u (flat).
+
+**By HC margin** _(picks dated ≥ 2026-04-30, N = 25)_
+
+| Bucket | N | W-L-P | WR% | PnL (peak u) | PnL (flat 1u) |
+|---|---|---|---|---|---|
+| HC = +1 | 18 | 9-9-0 | 50.0% | -0.95u | +0.06u |
+| HC = 0 | 5 | 3-1-1 | 75.0% | -0.50u | +1.70u |
+| HC ≤ −1 | 2 | 0-2-0 | 0.0% | -3.50u | -2.00u |
+
+**By Δw (winner margin)**
+
+| Bucket | N | W-L-P | WR% | PnL (peak u) | PnL (flat 1u) |
+|---|---|---|---|---|---|
+| ≥ +3 | 22 | 15-7-0 | 68.2% | +15.19u | +11.82u |
+| +2 | 30 | 13-17-0 | 43.3% | -8.92u | -2.94u |
+| +1 | 44 | 22-21-1 | 51.2% | -4.76u | -1.74u |
+| 0 | 27 | 8-18-1 | 30.8% | -14.95u | -11.09u |
+| −1 | 7 | 1-6-0 | 14.3% | -5.60u | -4.94u |
+| ≤ −2 | 1 | 0-1-0 | 0.0% | -0.50u | -1.00u |
+| missing | 5 | 3-2-0 | 60.0% | +2.36u | -0.12u |
+
+**By Δq (quality margin)**
+
+| Bucket | N | W-L-P | WR% | PnL (peak u) | PnL (flat 1u) |
+|---|---|---|---|---|---|
+| ≥ +3 | 51 | 24-25-2 | 49.0% | -4.52u | +0.95u |
+| +2 | 39 | 18-21-0 | 46.2% | -7.90u | -2.20u |
+| +1 | 31 | 14-17-0 | 45.2% | -2.88u | -4.24u |
+| 0 | 7 | 1-6-0 | 14.3% | -4.80u | -5.23u |
+| ≤ −2 | 2 | 1-1-0 | 50.0% | -0.32u | -0.04u |
+| missing | 6 | 4-2-0 | 66.7% | +3.24u | +0.77u |
 
 ---
-## §4. Sharp Vault hidden-star performance (`sharp_action_positions.v8_stars`)
+## §3. Edge over time — is HC margin creating winners?
 
-This is the Sharp Vault-only check from the hidden `v8_stars` field on individual `sharp_action_positions`. It excludes `vaultQualified=false` shadow rows and includes only graded WIN/LOSS positions since the v6 cutover.
+Daily cumulative peak-unit PnL since the HC margin launch (**2026-04-30**). The `HC ≥ +1` line is the golden-standard cohort. The `HC = 0` line is the no-HC-signal control. The `All shipped (HC era)` line is every shipped pick from the same date range — the apples-to-apples baseline. Watch the spread.
 
-### §4a. Hidden-star win rates
+```mermaid
+xychart-beta
+    title "Cumulative peak-unit PnL — HC era (2026-04-30+)"
+    x-axis ["04-30", "05-01", "05-02", "05-03", "05-04"]
+    y-axis "PnL (peak u)"
+    line "HC ≥ +1" [-0.48, -2.48, -4.41, -3.94, -0.95]
+    line "HC = 0"  [0.00, -0.50, -0.50, -0.50, -0.50]
+    line "All (HC era)" [-0.48, -5.98, -7.91, -7.44, -4.95]
+```
 
-| Hidden star band | N | W-L | WR% | Total invested | Total PnL | $ ROI |
-|---|---|---|---|---|---|---|
-| 5★ | 96 | 56-40 | 58.3% | $10.42M | $311.9K | +3.0% |
-| 4★ | 264 | 131-133 | 49.6% | $22.19M | $109.1K | +0.5% |
-| 3★ | 598 | 310-288 | 51.8% | $47.94M | -$707.2K | -1.5% |
-| 2★ | 637 | 314-323 | 49.3% | $40.71M | -$1.14M | -2.8% |
-| <2★ | 156 | 65-91 | 41.7% | $6.98M | $118.9K | +1.7% |
-| **4★+ combined** | **360** | **187-173** | **51.9%** | **$32.61M** | **$421.1K** | **+1.3%** |
-| **<4★ combined** | **1391** | **689-702** | **49.5%** | **$95.63M** | **-$1.73M** | **-1.8%** |
+Daily cumulative table (peak units, HC era only):
 
-### §4b. 5★ / 4★ hidden-star performance by sport
-
-| Sport | 5★ N · WR · $ROI · PnL | 4★ N · WR · $ROI · PnL | 4★+ combined |
+| Date | HC ≥ +1 (cum) | HC = 0 (cum) | All shipped (cum) |
 |---|---|---|---|
-| MLB | — | 7 · 43% · +17% · $30.3K | **7 · 43% · +17% · $30.3K** |
-| NBA | 96 · 58% · +3% · $311.9K | 241 · 50% · +1% · $114.6K | **337 · 52% · +1% · $426.6K** |
-| NHL | — | 16 · 50% · -2% · -$35.8K | **16 · 50% · -2% · -$35.8K** |
-
-### §4c. Daily 4★+ Sharp Vault timeline
-
-| Date | 4★+ N | W-L | WR% | $ ROI | PnL |
-|---|---|---|---|---|---|
-| 2026-04-18 | 11 | 3-8 | 27.3% | -20.6% | -$441.2K |
-| 2026-04-19 | 25 | 15-10 | 60.0% | -3.7% | -$71.4K |
-| 2026-04-20 | 9 | 5-4 | 55.6% | +37.1% | $265.5K |
-| 2026-04-21 | 37 | 15-22 | 40.5% | +3.5% | $133.9K |
-| 2026-04-22 | 30 | 16-14 | 53.3% | +1.2% | $35.5K |
-| 2026-04-23 | 14 | 9-5 | 64.3% | +35.0% | $449.0K |
-| 2026-04-24 | 30 | 12-18 | 40.0% | -19.3% | -$366.8K |
-| 2026-04-25 | 11 | 6-5 | 54.5% | -7.9% | -$84.6K |
-| 2026-04-26 | 50 | 27-23 | 54.0% | +1.2% | $44.6K |
-| 2026-04-27 | 15 | 7-8 | 46.7% | -17.9% | -$250.8K |
-| 2026-04-28 | 38 | 24-14 | 63.2% | +9.0% | $473.5K |
-| 2026-04-29 | 17 | 12-5 | 70.6% | +4.0% | $29.3K |
-| 2026-04-30 | 11 | 4-7 | 36.4% | -4.3% | -$25.1K |
-| 2026-05-01 | 16 | 7-9 | 43.8% | -16.0% | -$110.7K |
-| 2026-05-02 | 25 | 11-14 | 44.0% | -23.1% | -$392.4K |
-| 2026-05-03 | 13 | 9-4 | 69.2% | +24.7% | $649.5K |
-| 2026-05-04 | 2 | 1-1 | 50.0% | +15.8% | $8.7K |
-| 2026-05-05 | 6 | 4-2 | 66.7% | +37.8% | $74.5K |
+| 2026-04-30 | -0.48u | +0.00u | -0.48u |
+| 2026-05-01 | -2.48u | -0.50u | -5.98u |
+| 2026-05-02 | -4.41u | -0.50u | -7.91u |
+| 2026-05-03 | -3.94u | -0.50u | -7.44u |
+| 2026-05-04 | -0.95u | -0.50u | -4.95u |
 
 ---
-## §5. Frozen Δw × Δq win matrix — shipped picks
-
-Shipped picks only. Frozen `v8_walletConsensusDelta` (rows) × frozen `v8_walletConsensusQualityMargin` (columns). Cell format: `N · W-L-P · WR% · ROI%` (peak-units ROI). Extreme axes (±3) clamped. ROI hidden when N < 3. **Lock floor: Δw ≥ +1 ∧ Δq ≥ +1.**
-
-### All markets (N = 131)
-
-| | **Δq-3** | **Δq-2** | **Δq-1** | **Δq+0** | **Δq+1** | **Δq+2** | **Δq+3** |
-|---|---|---|---|---|---|---|---|
-| **Δw-3** | — | — | — | — | N=1 · 0-1 · 0% | — | — |
-| **Δw-2** | — | — | — | — | — | — | — |
-| **Δw-1** | N=1 · 0-1 · 0% | — | — | N=2 · 0-2 · 0% | N=3 · 1-2 · 33% `-57%` | N=1 · 0-1 · 0% | — |
-| **Δw+0** | N=1 · 1-0 · 100% | — | — | N=5 · 1-4 · 20% `-52%` | N=4 · 0-4 · 0% `-81%` | N=8 · 5-3 · 63% `-21%` | N=9 · 1-7-1 · 13% `-89%` |
-| **Δw+1** | — | — | — | N=1 · 1-0 · 100% | N=12 · 6-6 · 50% `-10%` | N=15 · 7-8 · 47% `-10%` | N=16 · 8-7-1 · 53% `-16%` |
-| **Δw+2** | — | — | — | — | N=9 · 5-4 · 56% `-4%` | N=11 · 4-7 · 36% `-25%` | N=10 · 4-6 · 40% `-58%` |
-| **Δw+3** | — | — | — | — | N=2 · 2-0 · 100% | N=4 · 2-2 · 50% `-21%` | N=16 · 11-5 · 69% `+74%` |
-
-### Sport — MLB (N = 44)
-
-| | **Δq-3** | **Δq-2** | **Δq-1** | **Δq+0** | **Δq+1** | **Δq+2** | **Δq+3** |
-|---|---|---|---|---|---|---|---|
-| **Δw-3** | — | — | — | — | — | — | — |
-| **Δw-2** | — | — | — | — | — | — | — |
-| **Δw-1** | — | — | — | N=1 · 0-1 · 0% | N=2 · 1-1 · 50% | — | — |
-| **Δw+0** | — | — | — | N=1 · 0-1 · 0% | N=2 · 0-2 · 0% | — | N=1 · 0-1 · 0% |
-| **Δw+1** | — | — | — | N=1 · 1-0 · 100% | N=4 · 0-4 · 0% `-84%` | N=9 · 5-4 · 56% `+4%` | N=4 · 1-3 · 25% `-125%` |
-| **Δw+2** | — | — | — | — | N=6 · 3-3 · 50% `-5%` | N=5 · 1-4 · 20% `-75%` | N=2 · 0-2 · 0% |
-| **Δw+3** | — | — | — | — | — | N=2 · 1-1 · 50% | N=4 · 4-0 · 100% `+156%` |
-
-### Sport — NBA (N = 69)
-
-| | **Δq-3** | **Δq-2** | **Δq-1** | **Δq+0** | **Δq+1** | **Δq+2** | **Δq+3** |
-|---|---|---|---|---|---|---|---|
-| **Δw-3** | — | — | — | — | N=1 · 0-1 · 0% | — | — |
-| **Δw-2** | — | — | — | — | — | — | — |
-| **Δw-1** | N=1 · 0-1 · 0% | — | — | N=1 · 0-1 · 0% | N=1 · 0-1 · 0% | N=1 · 0-1 · 0% | — |
-| **Δw+0** | N=1 · 1-0 · 100% | — | — | N=3 · 0-3 · 0% `-100%` | N=2 · 0-2 · 0% | N=8 · 5-3 · 63% `-21%` | N=5 · 0-4-1 · 0% `-120%` |
-| **Δw+1** | — | — | — | — | N=4 · 3-1 · 75% `+37%` | N=3 · 1-2 · 33% `-33%` | N=10 · 6-4 · 60% `+19%` |
-| **Δw+2** | — | — | — | — | N=1 · 0-1 · 0% | N=5 · 2-3 · 40% `-38%` | N=7 · 4-3 · 57% `+18%` |
-| **Δw+3** | — | — | — | — | N=2 · 2-0 · 100% | N=1 · 0-1 · 0% | N=12 · 7-5 · 58% `+47%` |
-
-### Sport — NHL (N = 18)
-
-| | **Δq-3** | **Δq-2** | **Δq-1** | **Δq+0** | **Δq+1** | **Δq+2** | **Δq+3** |
-|---|---|---|---|---|---|---|---|
-| **Δw-3** | — | — | — | — | — | — | — |
-| **Δw-2** | — | — | — | — | — | — | — |
-| **Δw-1** | — | — | — | — | — | — | — |
-| **Δw+0** | — | — | — | N=1 · 1-0 · 100% | — | — | N=3 · 1-2 · 33% `-35%` |
-| **Δw+1** | — | — | — | — | N=4 · 3-1 · 75% `+15%` | N=3 · 1-2 · 33% `-29%` | N=2 · 1-0-1 · 100% |
-| **Δw+2** | — | — | — | — | N=2 · 2-0 · 100% | N=1 · 1-0 · 100% | N=1 · 0-1 · 0% |
-| **Δw+3** | — | — | — | — | — | N=1 · 1-0 · 100% | — |
-
-### Market — ML (N = 73)
-
-| | **Δq-3** | **Δq-2** | **Δq-1** | **Δq+0** | **Δq+1** | **Δq+2** | **Δq+3** |
-|---|---|---|---|---|---|---|---|
-| **Δw-3** | — | — | — | — | N=1 · 0-1 · 0% | — | — |
-| **Δw-2** | — | — | — | — | — | — | — |
-| **Δw-1** | N=1 · 0-1 · 0% | — | — | N=1 · 0-1 · 0% | N=1 · 0-1 · 0% | N=1 · 0-1 · 0% | — |
-| **Δw+0** | — | — | — | N=2 · 0-2 · 0% | N=2 · 0-2 · 0% | N=2 · 1-1 · 50% | N=4 · 1-3 · 25% `-51%` |
-| **Δw+1** | — | — | — | N=1 · 1-0 · 100% | N=9 · 3-6 · 33% `-39%` | N=8 · 4-4 · 50% `-6%` | N=6 · 3-3 · 50% `-41%` |
-| **Δw+2** | — | — | — | — | N=7 · 4-3 · 57% `-6%` | N=7 · 3-4 · 43% `-9%` | N=3 · 0-3 · 0% `-233%` |
-| **Δw+3** | — | — | — | — | N=1 · 1-0 · 100% | N=3 · 2-1 · 67% `+38%` | N=13 · 9-4 · 69% `+56%` |
-
-### Market — SPREAD (N = 24)
-
-| | **Δq-3** | **Δq-2** | **Δq-1** | **Δq+0** | **Δq+1** | **Δq+2** | **Δq+3** |
-|---|---|---|---|---|---|---|---|
-| **Δw-3** | — | — | — | — | — | — | — |
-| **Δw-2** | — | — | — | — | — | — | — |
-| **Δw-1** | — | — | — | N=1 · 0-1 · 0% | N=1 · 0-1 · 0% | — | — |
-| **Δw+0** | N=1 · 1-0 · 100% | — | — | N=2 · 0-2 · 0% | — | N=2 · 1-1 · 50% | N=3 · 0-2-1 · 0% `-92%` |
-| **Δw+1** | — | — | — | — | N=1 · 1-0 · 100% | N=1 · 0-1 · 0% | N=4 · 1-3 · 25% `-64%` |
-| **Δw+2** | — | — | — | — | — | N=1 · 0-1 · 0% | N=5 · 3-2 · 60% `+28%` |
-| **Δw+3** | — | — | — | — | — | — | N=2 · 1-1 · 50% |
-
-### Market — TOTAL (N = 34)
-
-| | **Δq-3** | **Δq-2** | **Δq-1** | **Δq+0** | **Δq+1** | **Δq+2** | **Δq+3** |
-|---|---|---|---|---|---|---|---|
-| **Δw-3** | — | — | — | — | — | — | — |
-| **Δw-2** | — | — | — | — | — | — | — |
-| **Δw-1** | — | — | — | — | N=1 · 1-0 · 100% | — | — |
-| **Δw+0** | — | — | — | N=1 · 1-0 · 100% | N=2 · 0-2 · 0% | N=4 · 3-1 · 75% `+15%` | N=2 · 0-2 · 0% |
-| **Δw+1** | — | — | — | — | N=2 · 2-0 · 100% | N=6 · 3-3 · 50% `-10%` | N=6 · 4-1-1 · 80% `+42%` |
-| **Δw+2** | — | — | — | — | N=2 · 1-1 · 50% | N=3 · 1-2 · 33% `-34%` | N=2 · 1-1 · 50% |
-| **Δw+3** | — | — | — | — | N=1 · 1-0 · 100% | N=1 · 0-1 · 0% | N=1 · 1-0 · 100% |
-
----
-## §6. Reconciliation & anomalies — engine self-check
-
-Where the live engine's **shipped state** disagrees with what the **frozen v6 stamps** say it should have shipped. Read these as bug indicators: each row is a side where the system either left a stale lock on the board or muted a pick that the v6 floor said was lockable. PnL is in peak units (the actual cost / benefit to users).
-
-### §6a. Anomaly counts
-
-| Anomaly | N | W-L-P | WR% | PnL (peak u) | Read as |
-|---|---|---|---|---|---|
-| **Stale lock** — shipped LOCKED/ACTIVE, frozen Δw/Δq below floor | 35 | 9-25-1 | 26.5% | -21.35u | engine left a sub-floor pick on the board |
-| **Over-mute** — muted/cancelled by engine, frozen Δw≥+1 ∧ Δq≥+1 | 33 | 12-20-1 | 37.5% | -1.32u | engine killed a play that satisfied the floor |
-| **Shadow-strong** — stayed SHADOW even though frozen Δw≥+2 ∧ Δq≥+2 | 0 | 0-0-0 | — | +0.00u | engine never promoted a SUPER TOP-eligible pick |
-| **Stars without margin** — peak stars ≥ 4.0★, frozen Δw ≤ 0 | 8 | 1-7-0 | 12.5% | -10.00u | star math diverged from delta math |
-
-### §6b. Stale-lock cohort breakdown
-
-Of every shipped pick whose frozen deltas fall **below** the v6 lock floor, which cohort did it land in?
-
-| Cohort (frozen) | N | W-L-P | WR% | PnL (peak u) |
-|---|---|---|---|---|
-| SUB-FLOOR (Δw=+1 ∧ Δq≤0) | 1 | 1-0-0 | 100.0% | +0.58u |
-| STALE Δw=0 (winners flat) | 26 | 7-18-1 | 28.0% | -15.83u |
-| STALE Δw≤−1 (winners fading/killed) | 8 | 1-7-0 | 12.5% | -6.10u |
-
-### §6c. Daily stale-lock PnL drag
-
-Per-day cost of stale locks (the picks the engine left on the board even though their frozen Δw / Δq dropped below the lock floor). Compare to the day's shipped PnL.
-
-| Date | Shipped N · PnL | Stale-lock N · PnL | Stale share of shipped PnL |
-|---|---|---|---|
-| 2026-04-18 | 12 · +2.67u | 3 · -2.25u | -84% |
-| 2026-04-19 | 6 · +4.39u | 2 · -3.00u | -68% |
-| 2026-04-20 | 16 · -3.21u | 9 · -2.62u | 82% |
-| 2026-04-21 | 16 · -7.44u | 8 · -11.50u | 155% |
-| 2026-04-22 | 8 · +1.13u | 4 · +0.14u | 12% |
-| 2026-04-23 | 7 · -1.18u | 1 · -1.00u | 85% |
-| 2026-04-24 | 6 · +3.08u | 2 · +1.00u | 32% |
-| 2026-04-25 | 7 · -8.35u | 0 · +0.00u | 0% |
-| 2026-04-26 | 10 · -2.04u | 0 · +0.00u | 0% |
-| 2026-04-27 | 6 · -1.63u | 0 · +0.00u | 0% |
-| 2026-04-28 | 10 · -3.19u | 0 · +0.00u | 0% |
-| 2026-04-29 | 7 · +3.54u | 0 · +0.00u | 0% |
-| 2026-04-30 | 5 · -0.48u | 2 · -1.50u | 313% |
-| 2026-05-01 | 6 · -5.50u | 0 · +0.00u | 0% |
-| 2026-05-02 | 2 · -1.93u | 0 · +0.00u | 0% |
-| 2026-05-03 | 5 · +0.47u | 3 · +0.51u | 109% |
-| 2026-05-04 | 7 · +2.49u | 1 · -1.13u | -45% |
-
-### §6d. Top stale-lock examples (worst peak-unit losses)
-
-Last 20 graded sides where engine state and frozen deltas disagree most painfully. Useful for pulling individual docs and walking the audit.
-
-| Date | Doc | Side | Stage / Health | Stars · Units | Δw / Δq (frozen) | Outcome | PnL |
-|---|---|---|---|---|---|---|---|
-| 2026-04-21 | `2026-04-21_NBA_hou_lal` | away | LOCKED / ACTIVE | 5.0★ · 3u | +0 / +2 | LOSS | -3.00u |
-| 2026-04-19 | `2026-04-19_NBA_orl_det_spread` | home | LOCKED / ACTIVE | 5.0★ · 2u | +0 / +7 | LOSS | -2.00u |
-| 2026-04-21 | `2026-04-21_NBA_hou_lal_spread` | away | LOCKED / ACTIVE | 3.5★ · 1.75u | +0 / +0 | LOSS | -1.75u |
-| 2026-04-21 | `2026-04-21_NBA_por_sas_total` | over | LOCKED / ACTIVE | 4.0★ · 1.75u | +0 / +4 | LOSS | -1.75u |
-| 2026-04-20 | `2026-04-20_NHL_ana_edm` | away | LOCKED / ACTIVE | 4.0★ · 1.5u | +0 / +3 | LOSS | -1.50u |
-| 2026-04-21 | `2026-04-21_NBA_phi_bos_spread` | home | LOCKED / ACTIVE | 4.5★ · 1.5u | -1 / +1 | LOSS | -1.50u |
-| 2026-04-21 | `2026-04-21_NBA_phi_bos_total` | over | LOCKED / ACTIVE | 3.5★ · 1.5u | +0 / +4 | LOSS | -1.50u |
-| 2026-05-04 | `2026-05-04_MLB_bos_det` | home | LOCKED / ACTIVE | 3.5★ · 1.13u | -1 / +0 | LOSS | -1.13u |
-| 2026-04-19 | `2026-04-19_MLB_tbr_pit` | away | LOCKED / ACTIVE | 2.5★ · 1u | +0 / +1 | LOSS | -1.00u |
-| 2026-04-20 | `2026-04-20_NBA_atl_nyk` | home | LOCKED / ACTIVE | 3.0★ · 1u | -1 / -4 | LOSS | -1.00u |
-| 2026-04-20 | `2026-04-20_NBA_min_den` | home | LOCKED / ACTIVE | 3.0★ · 1u | -1 / +2 | LOSS | -1.00u |
-| 2026-04-22 | `2026-04-22_MLB_lad_sfg` | away | LOCKED / ACTIVE | 2.5★ · 1u | +0 / +1 | LOSS | -1.00u |
-| 2026-04-23 | `2026-04-23_MLB_cws_ari` | home | LOCKED / ACTIVE | 3.0★ · 1u | +0 / +3 | LOSS | -1.00u |
-| 2026-04-18 | `2026-04-18_NBA_hou_lal_spread` | away | LOCKED / ACTIVE | 3.5★ · 1u | +0 / +2 | LOSS | -1.00u |
-| 2026-04-21 | `2026-04-21_MLB_oak_sea` | home | LOCKED / — | 2.5★ · 0.75u | -1 / +1 | LOSS | -0.75u |
-| 2026-04-30 | `2026-04-30_NHL_edm_ana` | away | LOCKED / ACTIVE | 2.5★ · 0.75u | +0 / +3 | LOSS | -0.75u |
-| 2026-05-03 | `2026-05-03_NBA_orl_det` | away | LOCKED / ACTIVE | 4.0★ · 0.75u | +0 / +0 | LOSS | -0.75u |
-| 2026-04-20 | `2026-04-20_NBA_min_den_spread` | home | LOCKED / ACTIVE | 3.0★ · 0.75u | -1 / +0 | LOSS | -0.75u |
-| 2026-04-30 | `2026-04-30_NBA_den_min_spread` | away | LOCKED / ACTIVE | 2.5★ · 0.75u | +0 / +3 | LOSS | -0.75u |
-| 2026-04-18 | `2026-04-18_NBA_hou_lal_total` | over | LOCKED / ACTIVE | 3.0★ · 0.75u | +0 / +2 | LOSS | -0.75u |
-
----
-## §7. Wallet roster growth & profitability
+## §4. Wallet roster growth & profitability
 
 "Tracked in sport X" = a wallet has placed **≥ 2 bets** in X within the v6-era sample. "Profitable" = cumulative flat PnL > 0. Source: `v8Scoring.walletDetails` on every graded v6-era game (every side, not just the shipped set).
 
-### §7a. Per-sport wallet snapshot
+### §4a. Per-sport wallet snapshot
 
 | Sport | Total wallets seen | Tracked (≥2) | Profitable | % prof | WR ≥ 50% | WR ≥ 60% | WR ≥ 70% |
 |---|---|---|---|---|---|---|---|
@@ -343,7 +169,7 @@ Last 20 graded sides where engine state and frozen deltas disagree most painfull
 | NHL | 41 | 26 | 12 | 46% | 19 | 10 | 6 |
 | **ALL (any sport)** | **123** | **90** | **38** | **42%** | **50** | **24** | **12** |
 
-### §7b. Daily roster growth (cumulative through each date)
+### §4b. Daily roster growth (cumulative through each date)
 
 Format: `tracked (profitable)`. For each date D, recompute the roster using every bet up to and including D.
 
@@ -367,7 +193,7 @@ Format: `tracked (profitable)`. For each date D, recompute the roster using ever
 | 2026-05-03 | 86 (38) | 24 (8) | 75 (33) | 26 (12) |
 | 2026-05-04 | 90 (38) | 24 (9) | 76 (32) | 26 (12) |
 
-### §7c. Top 10 profitable wallets by sport
+### §4c. Top 10 profitable wallets by sport
 
 #### MLB
 
@@ -415,393 +241,11 @@ Format: `tracked (profitable)`. For each date D, recompute the roster using ever
 | 10 | 6b853d | 6 | 4 | 2 | 66.7% | +1.13 | +18.8% | $7.7K |
 
 ---
-## §8. Wallet winners — descriptive stats
-
-Every (wallet × sport) row where the wallet has ≥ 2 bets in the sport AND flat PnL > 0. A wallet can appear in multiple sports.
-
-### §8a. Winner cohort summary by sport
-
-| Sport | Winners | Σ bets | Σ invested | Σ $PnL | Mean WR% | Mean N | Mean avg $ | Mean bets/day | Mean flat ROI |
-|---|---|---|---|---|---|---|---|---|---|
-| MLB | 9 | 105 | $1.61M | $254.2K | 63.5% | 11.7 | $9.8K | 1.23 | +24.2% |
-| NBA | 32 | 292 | $6.64M | $2.45M | 67.4% | 9.1 | $23.8K | 1.11 | +58.7% |
-| NHL | 12 | 64 | $795.0K | $283.9K | 72.5% | 5.3 | $14.0K | 0.83 | +44.8% |
-| **ALL** | **53** | **461** | **$9.05M** | **$2.99M** | **67.9%** | **8.7** | **$19.2K** | **1.06** | **+49.7%** |
-
-### §8b. Winner cohort — quartile distribution
-
-Spread across every winning (wallet × sport) row.
-
-| Metric | Min | Q25 | Median | Q75 | Max | Mean |
-|---|---|---|---|---|---|---|
-| N (bets) | 2.0 | 4.0 | 6.0 | 10.0 | 36.0 | 8.7 |
-| WR % | 25.0% | 50.0% | 66.7% | 83.3% | 100.0% | 67.9% |
-| Flat ROI % | +1.3% | +20.0% | +33.2% | +68.8% | +283.0% | +49.7% |
-| $ ROI % | -41.9% | +15.0% | +41.4% | +79.7% | +170.5% | +49.3% |
-| Avg bet ($) | $10 | $3.8K | $12.8K | $29.8K | $110.5K | $19.2K |
-| Median bet ($) | $6 | $2.9K | $7.6K | $15.7K | $70.9K | $14.1K |
-| Max bet ($) | $18 | $7.1K | $27.6K | $83.0K | $324.7K | $55.0K |
-| Σ invested | $20 | $18.2K | $74.1K | $195.5K | $1.28M | $170.8K |
-| $ PnL | -$118.2K | $2.2K | $21.4K | $71.1K | $446.4K | $56.4K |
-| Days active | 1.0 | 3.0 | 4.0 | 7.0 | 16.0 | 5.2 |
-| Span (days) | 1.0 | 4.0 | 10.0 | 14.0 | 16.0 | 9.1 |
-| Bets / day | 0.29 | 0.56 | 0.78 | 1.40 | 3.27 | 1.06 |
-
-### §8c. Winner cadence archetypes
-
-Where do our winners cluster? Snipers fire rarely but big; volume bettors grind everything.
-
-| Archetype | Winners | Σ bets | Mean WR% | Mean flat ROI | Mean avg $ | Mean bets/day | Σ $ PnL |
-|---|---|---|---|---|---|---|---|
-| Sniper (≤3 bets) | 13 | 33 | 78.2% | +68.9% | $16.2K | 0.91 | $509.1K |
-| Sharp (4–6 bets) | 17 | 85 | 66.9% | +60.8% | $22.2K | 0.82 | $841.1K |
-| Grinder (7–10 bets) | 10 | 82 | 69.5% | +40.2% | $16.1K | 1.12 | $316.5K |
-| Volume (>10 bets) | 13 | 261 | 57.7% | +23.2% | $20.7K | 1.50 | $1.32M |
-
-## §9. v7.1 HC dominance cohort
-
-Tracks the live performance of the v7.1 HC-dominance gate. Picks must be `inDashboard` and have a frozen `v8_hcDominant` stamp (i.e. stamped under v7.1). HC_PROMOTED rows are picks promoted out of LEAN (Σ ∈ {3,4}) by HC dominance — the new edge surface.
-
-### §9a. HC vs non-HC by Σ bucket (v7.1 only)
-
-| Σ bucket | HC dominant | N | W-L-P | WR% | PnL_peak | PnL_flat | flat ROI% |
-|---|---|---|---|---|---|---|---|
-| 3 | YES | 0 | 0-0-0 | — | +0.00u | +0.00u | — |
-| 3 | NO | 0 | 0-0-0 | — | +0.00u | +0.00u | — |
-| 4 | YES | 0 | 0-0-0 | — | +0.00u | +0.00u | — |
-| 4 | NO | 1 | 1-0-0 | 100.0% | +0.00u | +1.98u | +198.0% |
-| 5 | YES | 0 | 0-0-0 | — | +0.00u | +0.00u | — |
-| 5 | NO | 0 | 0-0-0 | — | +0.00u | +0.00u | — |
-| 6 | YES | 0 | 0-0-0 | — | +0.00u | +0.00u | — |
-| 6 | NO | 0 | 0-0-0 | — | +0.00u | +0.00u | — |
-| ≥7 | YES | 0 | 0-0-0 | — | +0.00u | +0.00u | — |
-| ≥7 | NO | 0 | 0-0-0 | — | +0.00u | +0.00u | — |
-
-### §9b. HC_PROMOTED cohort (Σ ∈ {3,4}, lifted out of LEAN by HC)
-
-| Cohort | N | W-L-P | WR% | PnL_peak | PnL_flat | flat ROI% |
-|---|---|---|---|---|---|---|
-| HC_PROMOTED (Σ ∈ {3,4}) | 0 | 0-0-0 | — | +0.00u | +0.00u | — |
-| HC ∧ Σ ≥ +5 | 0 | 0-0-0 | — | +0.00u | +0.00u | — |
-| All HC dominant | 0 | 0-0-0 | — | +0.00u | +0.00u | — |
-
-### §9c. HC dominance per sport
-
-| Sport | HC_PROMOTED N | WR% | flat ROI% | All HC N | WR% | flat ROI% |
-|---|---|---|---|---|---|---|
-| NBA | 0 | — | — | 0 | — | — |
-
-_v7.1 picks since cutover: **1** (HC dominant: 0 · HC promoted: 0)_
-
----
-## §10. v7.2 HC-margin tier cohort
-
-_No v7.2-stamped picks in the sample yet (cutover 2026-04-30). §10 will populate as v7.2 picks accumulate._
-
-## §11. v7.3 HC-margin floor + MUTE override cohort
-
-Tracks the live performance of the v7.3 floor lowering (Σ ∈ {1, 2} ∧ HC_m ≥ +1 → LOCK) and the MUTE override (HC_m ≥ +1 suppresses dw=0 / dq=0 / sum<3 mutes; CANCEL still fires). Picks must be `inDashboard` with `v8_systemVersion === '7.3'`.
-
-### §11a. v7.3 promotion-source cohorts
-
-| Promotion source | N | W-L | WR | flat ROI | flat PnL | peak PnL |
-|---|---|---|---|---|---|---|
-| v73-sigma1-hc (Σ=1 ∧ HC_m ≥ +1) | 0 | — | — | — | — | — |
-| v73-sigma2-hc (Σ=2 ∧ HC_m ≥ +1) | 0 | — | — | — | — | — |
-| v73-hc-rescue (Σ ≥ +3 ∧ dw=0 ∨ dq=0) | 2 | 0-2 | 0.0% | -100.0% | -2.00u | -1.50u |
-| v72-hc-margin (Σ ∈ {3,4}) | 0 | — | — | — | — | — |
-| v72-sigma2-lock (Σ=2 ∧ HC_m ≥ +2) | 0 | — | — | — | — | — |
-| two-factor-floor (Σ ≥ +5) | 9 | 4-5 | 44.4% | -15.1% | -1.36u | -5.73u |
-
-### §11b. v7.3 vs prior versions head-to-head
-
-| Cohort | N | W-L | WR | flat ROI | flat PnL | peak PnL |
-|---|---|---|---|---|---|---|
-| v7.3 NEW (sigma1 + sigma2 + rescue) | 2 | 0-2 | 0.0% | -100.0% | -2.00u | -1.50u |
-| v7.3 ESTABLISHED (Σ≥3 ∧ HC_m≥+1, Σ≥+5) | 9 | 4-5 | 44.4% | -15.1% | -1.36u | -5.73u |
-
-_v7.3 picks since cutover: **23** · NEW v7.3 promotions: 2 · established floor: 9_
-
----
-## §12. HC-margin universal monitor (v7.3 core finding)
-
-Live re-run of the analysis that drove v7.3. Universe = **every graded side since v6 cutover** (`LOCKED + LEAN + SHADOW + MUTED + CANCELLED`). This mirrors `WALLET_HC_MARGIN_ANALYSIS_FULL`. Cell format: `N · WR · flat ROI`. Lift = `WR(HC_m≥+1) − WR(HC_m≤0)` with two-prop z-test p-value.
-
-HC margin source split: **91** frozen (v7.1+ stamps) · **216** recomputed via point-in-time tier lens · **10** uncategorised (no walletDetails). Recompute uses the same CONFIRMED + sizeRatio ≥ 1.5 rule the live engine applies.
-
-### §12a. All sports pooled
-
-#### 3-day (≤ 3 calendar days through 2026-05-04)
-
-| HC_m \ Σ | Σ≤0 | Σ=1 | Σ=2 | Σ=3 | Σ=4 | Σ=5 | Σ=6 | Σ≥7 | TOTAL |
-|---|---|---|---|---|---|---|---|---|---|
-| **HC_m ≤0** | 6 · 50.0% · +7.8% | 12 · 58.3% · +8.6% | 8 · 25.0% · -54.8% | 5 · 60.0% · +31.9% | 1 · 100.0% · +112.0% | — | 1 · 0.0% · -100.0% | — | 33 · 48.5% · -3.5% |
-| **HC_m +1** | 4 · 25.0% · -51.0% | 2 · 100.0% · +85.2% | 4 · 75.0% · +36.9% | — | 2 · 0.0% · -100.0% | 1 · 0.0% · -100.0% | 1 · 100.0% · +98.0% | 1 · 100.0% · +95.2% | 15 · 53.3% · +0.5% |
-| **HC_m ≥+2** | 1 · 0.0% · -100.0% | — | — | — | — | — | — | — | 1 · 0.0% · -100.0% |
-
-**Lift per Σ (HC_m ≥ +1 vs HC_m ≤ 0):**
-
-| Σ bucket | N (HC≥+1) | WR (HC≥+1) | ROI (HC≥+1) | N (HC≤0) | WR (HC≤0) | ROI (HC≤0) | Lift |
-|---|---|---|---|---|---|---|---|
-| Σ≤0 | 5 | 20.0% | -60.8% | 6 | 50.0% | +7.8% | WR -30.0pp · ROI -68.6% · p=0.303 |
-| Σ=1 | 2 | 100.0% | +85.2% | 12 | 58.3% | +8.6% | WR +41.7pp · ROI +76.6% · p=— |
-| Σ=2 | 4 | 75.0% | +36.9% | 8 | 25.0% | -54.8% | WR +50.0pp · ROI +91.7% · p=— |
-| Σ=3 | 0 | — | — | 5 | 60.0% | +31.9% | — |
-| Σ=4 | 2 | 0.0% | -100.0% | 1 | 100.0% | +112.0% | WR -100.0pp · ROI -212.0% · p=— |
-| Σ=5 | 1 | 0.0% | -100.0% | 0 | — | — | — |
-| Σ=6 | 1 | 100.0% | +98.0% | 1 | 0.0% | -100.0% | WR +100.0pp · ROI +198.0% · p=— |
-| Σ≥7 | 1 | 100.0% | +95.2% | 0 | — | — | — |
-| **POOLED** | **16** | **50.0%** | **-5.8%** | **33** | **48.5%** | **-3.5%** | **WR +1.5pp · ROI -2.3% · p=0.921** |
-
-#### 7-day (≤ 7 calendar days through 2026-05-04)
-
-| HC_m \ Σ | Σ≤0 | Σ=1 | Σ=2 | Σ=3 | Σ=4 | Σ=5 | Σ=6 | Σ≥7 | TOTAL |
-|---|---|---|---|---|---|---|---|---|---|
-| **HC_m ≤0** | 13 · 38.5% · -22.2% | 31 · 54.8% · +4.3% | 22 · 27.3% · -45.2% | 22 · 50.0% · -5.2% | 6 · 50.0% · +6.5% | 2 · 0.0% · -100.0% | 2 · 0.0% · -100.0% | 1 · 0.0% · -100.0% | 99 · 42.4% · -17.4% |
-| **HC_m +1** | 4 · 25.0% · -51.0% | 4 · 100.0% · +88.9% | 4 · 75.0% · +36.9% | 6 · 16.7% · -64.7% | 4 · 50.0% · +23.1% | 1 · 0.0% · -100.0% | 2 · 50.0% · -1.0% | 2 · 100.0% · +61.7% | 27 · 51.9% · +0.9% |
-| **HC_m ≥+2** | 1 · 0.0% · -100.0% | — | — | — | — | — | 1 · 100.0% · +89.3% | 1 · 100.0% · +95.2% | 3 · 66.7% · +28.2% |
-
-**Lift per Σ (HC_m ≥ +1 vs HC_m ≤ 0):**
-
-| Σ bucket | N (HC≥+1) | WR (HC≥+1) | ROI (HC≥+1) | N (HC≤0) | WR (HC≤0) | ROI (HC≤0) | Lift |
-|---|---|---|---|---|---|---|---|
-| Σ≤0 | 5 | 20.0% | -60.8% | 13 | 38.5% | -22.2% | WR -18.5pp · ROI -38.6% · p=0.457 |
-| Σ=1 | 4 | 100.0% | +88.9% | 31 | 54.8% | +4.3% | WR +45.2pp · ROI +84.6% · p=— |
-| Σ=2 | 4 | 75.0% | +36.9% | 22 | 27.3% | -45.2% | WR +47.7pp · ROI +82.1% · p=— |
-| Σ=3 | 6 | 16.7% | -64.7% | 22 | 50.0% | -5.2% | WR -33.3pp · ROI -59.4% · p=0.144 |
-| Σ=4 | 4 | 50.0% | +23.1% | 6 | 50.0% | +6.5% | WR +0.0pp · ROI +16.6% · p=— |
-| Σ=5 | 1 | 0.0% | -100.0% | 2 | 0.0% | -100.0% | WR +0.0pp · ROI +0.0% · p=— |
-| Σ=6 | 3 | 66.7% | +29.1% | 2 | 0.0% | -100.0% | WR +66.7pp · ROI +129.1% · p=— |
-| Σ≥7 | 3 | 100.0% | +72.9% | 1 | 0.0% | -100.0% | WR +100.0pp · ROI +172.9% · p=— |
-| **POOLED** | **30** | **53.3%** | **+3.7%** | **99** | **42.4%** | **-17.4%** | **WR +10.9pp · ROI +21.1% · p=0.293** |
-
-#### All-time (2026-04-18 → 2026-05-04)
-
-| HC_m \ Σ | Σ≤0 | Σ=1 | Σ=2 | Σ=3 | Σ=4 | Σ=5 | Σ=6 | Σ≥7 | TOTAL |
-|---|---|---|---|---|---|---|---|---|---|
-| **HC_m ≤0** | 28 · 32.1% · -37.8% | 57 · 49.1% · -7.3% | 50 · 38.0% · -26.7% | 36 · 47.2% · -10.5% | 23 · 39.1% · -18.0% | 9 · 55.6% · +22.9% | 6 · 16.7% · -4.2% | 4 · 25.0% · -52.3% | 213 · 41.8% · -17.1% |
-| **HC_m +1** | 6 · 50.0% · -14.8% | 7 · 71.4% · +38.8% | 6 · 66.7% · +29.6% | 10 · 30.0% · -38.0% | 7 · 57.1% · +16.4% | 2 · 0.0% · -100.0% | 5 · 80.0% · +47.8% | 5 · 100.0% · +53.1% | 48 · 58.3% · +8.3% |
-| **HC_m ≥+2** | 2 · 50.0% · -11.5% | 1 · 100.0% · +96.2% | 1 · 100.0% · +33.9% | 2 · 50.0% · +2.5% | 2 · 100.0% · +91.2% | 1 · 100.0% · +130.0% | 3 · 66.7% · +28.5% | 4 · 100.0% · +127.8% | 16 · 81.3% · +63.8% |
-
-**Lift per Σ (HC_m ≥ +1 vs HC_m ≤ 0):**
-
-| Σ bucket | N (HC≥+1) | WR (HC≥+1) | ROI (HC≥+1) | N (HC≤0) | WR (HC≤0) | ROI (HC≤0) | Lift |
-|---|---|---|---|---|---|---|---|
-| Σ≤0 | 8 | 50.0% | -14.0% | 28 | 32.1% | -37.8% | WR +17.9pp · ROI +23.8% · p=0.354 |
-| Σ=1 | 8 | 75.0% | +46.0% | 57 | 49.1% | -7.3% | WR +25.9pp · ROI +53.2% · p=0.170 |
-| Σ=2 | 7 | 71.4% | +30.2% | 50 | 38.0% | -26.7% | WR +33.4pp · ROI +57.0% · p=0.093 |
-| Σ=3 | 12 | 33.3% | -31.3% | 36 | 47.2% | -10.5% | WR -13.9pp · ROI -20.7% · p=0.401 |
-| Σ=4 | 9 | 66.7% | +33.0% | 23 | 39.1% | -18.0% | WR +27.5pp · ROI +51.0% · p=0.160 |
-| Σ=5 | 3 | 33.3% | -23.3% | 9 | 55.6% | +22.9% | WR -22.2pp · ROI -46.2% · p=— |
-| Σ=6 | 8 | 75.0% | +40.6% | 6 | 16.7% | -4.2% | WR +58.3pp · ROI +44.7% · p=0.031 ★ |
-| Σ≥7 | 9 | 100.0% | +86.3% | 4 | 25.0% | -52.3% | WR +75.0pp · ROI +138.6% · p=— |
-| **POOLED** | **64** | **64.1%** | **+22.2%** | **213** | **41.8%** | **-17.1%** | **WR +22.3pp · ROI +39.2% · p=0.002 ★** |
-
-### §12b. MLB
-
-#### MLB · 3-day (≤ 3 days through 2026-05-04)
-
-| HC_m \ Σ | Σ≤0 | Σ=1 | Σ=2 | Σ=3 | Σ=4 | Σ=5 | Σ=6 | Σ≥7 | TOTAL |
-|---|---|---|---|---|---|---|---|---|---|
-| **HC_m ≤0** | 5 · 40.0% · -18.6% | 12 · 58.3% · +8.6% | 7 · 28.6% · -48.3% | 3 · 66.7% · +16.4% | — | — | — | — | 27 · 48.1% · -10.3% |
-| **HC_m +1** | 1 · 0.0% · -100.0% | 1 · 100.0% · +76.9% | — | — | 1 · 0.0% · -100.0% | — | — | — | 3 · 33.3% · -41.0% |
-| **HC_m ≥+2** | — | — | — | — | — | — | — | — | — |
-
-**Lift per Σ (HC_m ≥ +1 vs HC_m ≤ 0):**
-
-| Σ bucket | N (HC≥+1) | WR (HC≥+1) | ROI (HC≥+1) | N (HC≤0) | WR (HC≤0) | ROI (HC≤0) | Lift |
-|---|---|---|---|---|---|---|---|
-| Σ≤0 | 1 | 0.0% | -100.0% | 5 | 40.0% | -18.6% | WR -40.0pp · ROI -81.4% · p=— |
-| Σ=1 | 1 | 100.0% | +76.9% | 12 | 58.3% | +8.6% | WR +41.7pp · ROI +68.3% · p=— |
-| Σ=2 | 0 | — | — | 7 | 28.6% | -48.3% | — |
-| Σ=3 | 0 | — | — | 3 | 66.7% | +16.4% | — |
-| Σ=4 | 1 | 0.0% | -100.0% | 0 | — | — | — |
-| **POOLED** | **3** | **33.3%** | **-41.0%** | **27** | **48.1%** | **-10.3%** | **WR -14.8pp · ROI -30.7% · p=—** |
-
-#### MLB · 7-day (≤ 7 days through 2026-05-04)
-
-| HC_m \ Σ | Σ≤0 | Σ=1 | Σ=2 | Σ=3 | Σ=4 | Σ=5 | Σ=6 | Σ≥7 | TOTAL |
-|---|---|---|---|---|---|---|---|---|---|
-| **HC_m ≤0** | 6 · 50.0% · -4.7% | 26 · 57.7% · +7.4% | 15 · 26.7% · -48.5% | 13 · 46.2% · -16.0% | — | 2 · 0.0% · -100.0% | — | — | 62 · 45.2% · -15.6% |
-| **HC_m +1** | 1 · 0.0% · -100.0% | 1 · 100.0% · +76.9% | — | 2 · 50.0% · +6.0% | 1 · 0.0% · -100.0% | — | — | — | 5 · 40.0% · -22.2% |
-| **HC_m ≥+2** | — | — | — | — | — | — | — | — | — |
-
-**Lift per Σ (HC_m ≥ +1 vs HC_m ≤ 0):**
-
-| Σ bucket | N (HC≥+1) | WR (HC≥+1) | ROI (HC≥+1) | N (HC≤0) | WR (HC≤0) | ROI (HC≤0) | Lift |
-|---|---|---|---|---|---|---|---|
-| Σ≤0 | 1 | 0.0% | -100.0% | 6 | 50.0% | -4.7% | WR -50.0pp · ROI -95.3% · p=— |
-| Σ=1 | 1 | 100.0% | +76.9% | 26 | 57.7% | +7.4% | WR +42.3pp · ROI +69.5% · p=— |
-| Σ=2 | 0 | — | — | 15 | 26.7% | -48.5% | — |
-| Σ=3 | 2 | 50.0% | +6.0% | 13 | 46.2% | -16.0% | WR +3.8pp · ROI +22.0% · p=— |
-| Σ=4 | 1 | 0.0% | -100.0% | 0 | — | — | — |
-| Σ=5 | 0 | — | — | 2 | 0.0% | -100.0% | — |
-| **POOLED** | **5** | **40.0%** | **-22.2%** | **62** | **45.2%** | **-15.6%** | **WR -5.2pp · ROI -6.6% · p=0.823** |
-
-#### MLB · All-time
-
-| HC_m \ Σ | Σ≤0 | Σ=1 | Σ=2 | Σ=3 | Σ=4 | Σ=5 | Σ=6 | Σ≥7 | TOTAL |
-|---|---|---|---|---|---|---|---|---|---|
-| **HC_m ≤0** | 11 · 45.5% · -10.5% | 39 · 53.8% · +1.9% | 23 · 26.1% · -48.5% | 18 · 44.4% · -19.3% | 9 · 22.2% · -52.9% | 3 · 33.3% · -20.0% | 1 · 0.0% · -100.0% | — | 104 · 41.3% · -20.6% |
-| **HC_m +1** | 1 · 0.0% · -100.0% | 4 · 50.0% · -1.8% | — | 6 · 50.0% · +3.3% | 1 · 0.0% · -100.0% | — | 3 · 100.0% · +80.3% | — | 15 · 53.3% · +3.6% |
-| **HC_m ≥+2** | — | — | — | 1 · 100.0% · +105.0% | — | — | — | 1 · 100.0% · +94.3% | 2 · 100.0% · +99.7% |
-
-**Lift per Σ (HC_m ≥ +1 vs HC_m ≤ 0):**
-
-| Σ bucket | N (HC≥+1) | WR (HC≥+1) | ROI (HC≥+1) | N (HC≤0) | WR (HC≤0) | ROI (HC≤0) | Lift |
-|---|---|---|---|---|---|---|---|
-| Σ≤0 | 1 | 0.0% | -100.0% | 11 | 45.5% | -10.5% | WR -45.5pp · ROI -89.5% · p=— |
-| Σ=1 | 4 | 50.0% | -1.8% | 39 | 53.8% | +1.9% | WR -3.8pp · ROI -3.7% · p=— |
-| Σ=2 | 0 | — | — | 23 | 26.1% | -48.5% | — |
-| Σ=3 | 7 | 57.1% | +17.9% | 18 | 44.4% | -19.3% | WR +12.7pp · ROI +37.2% · p=0.568 |
-| Σ=4 | 1 | 0.0% | -100.0% | 9 | 22.2% | -52.9% | WR -22.2pp · ROI -47.1% · p=— |
-| Σ=5 | 0 | — | — | 3 | 33.3% | -20.0% | — |
-| Σ=6 | 3 | 100.0% | +80.3% | 1 | 0.0% | -100.0% | WR +100.0pp · ROI +180.3% · p=— |
-| Σ≥7 | 1 | 100.0% | +94.3% | 0 | — | — | — |
-| **POOLED** | **17** | **58.8%** | **+14.9%** | **104** | **41.3%** | **-20.6%** | **WR +17.5pp · ROI +35.5% · p=0.178** |
-
-### §12c. NBA
-
-#### NBA · 3-day (≤ 3 days through 2026-05-04)
-
-| HC_m \ Σ | Σ≤0 | Σ=1 | Σ=2 | Σ=3 | Σ=4 | Σ=5 | Σ=6 | Σ≥7 | TOTAL |
-|---|---|---|---|---|---|---|---|---|---|
-| **HC_m ≤0** | — | — | — | 1 · 100.0% · +210.0% | — | — | 1 · 0.0% · -100.0% | — | 2 · 50.0% · +55.0% |
-| **HC_m +1** | 3 · 33.3% · -34.6% | 1 · 100.0% · +93.5% | 3 · 66.7% · +29.0% | — | 1 · 0.0% · -100.0% | 1 · 0.0% · -100.0% | 1 · 100.0% · +98.0% | 1 · 100.0% · +95.2% | 11 · 54.5% · +6.4% |
-| **HC_m ≥+2** | 1 · 0.0% · -100.0% | — | — | — | — | — | — | — | 1 · 0.0% · -100.0% |
-
-**Lift per Σ (HC_m ≥ +1 vs HC_m ≤ 0):**
-
-| Σ bucket | N (HC≥+1) | WR (HC≥+1) | ROI (HC≥+1) | N (HC≤0) | WR (HC≤0) | ROI (HC≤0) | Lift |
-|---|---|---|---|---|---|---|---|
-| Σ≤0 | 4 | 25.0% | -51.0% | 0 | — | — | — |
-| Σ=1 | 1 | 100.0% | +93.5% | 0 | — | — | — |
-| Σ=2 | 3 | 66.7% | +29.0% | 0 | — | — | — |
-| Σ=3 | 0 | — | — | 1 | 100.0% | +210.0% | — |
-| Σ=4 | 1 | 0.0% | -100.0% | 0 | — | — | — |
-| Σ=5 | 1 | 0.0% | -100.0% | 0 | — | — | — |
-| Σ=6 | 1 | 100.0% | +98.0% | 1 | 0.0% | -100.0% | WR +100.0pp · ROI +198.0% · p=— |
-| Σ≥7 | 1 | 100.0% | +95.2% | 0 | — | — | — |
-| **POOLED** | **12** | **50.0%** | **-2.5%** | **2** | **50.0%** | **+55.0%** | **WR +0.0pp · ROI -57.5% · p=—** |
-
-#### NBA · 7-day (≤ 7 days through 2026-05-04)
-
-| HC_m \ Σ | Σ≤0 | Σ=1 | Σ=2 | Σ=3 | Σ=4 | Σ=5 | Σ=6 | Σ≥7 | TOTAL |
-|---|---|---|---|---|---|---|---|---|---|
-| **HC_m ≤0** | 3 · 33.3% · -33.3% | 2 · 50.0% · +27.0% | 4 · 25.0% · -52.1% | 7 · 57.1% · +14.9% | 2 · 0.0% · -100.0% | — | 2 · 0.0% · -100.0% | 1 · 0.0% · -100.0% | 21 · 33.3% · -30.9% |
-| **HC_m +1** | 3 · 33.3% · -34.6% | 3 · 100.0% · +92.9% | 3 · 66.7% · +29.0% | 3 · 0.0% · -100.0% | 3 · 66.7% · +64.1% | 1 · 0.0% · -100.0% | 2 · 50.0% · -1.0% | 2 · 100.0% · +61.7% | 20 · 55.0% · +8.8% |
-| **HC_m ≥+2** | 1 · 0.0% · -100.0% | — | — | — | — | — | 1 · 100.0% · +89.3% | 1 · 100.0% · +95.2% | 3 · 66.7% · +28.2% |
-
-**Lift per Σ (HC_m ≥ +1 vs HC_m ≤ 0):**
-
-| Σ bucket | N (HC≥+1) | WR (HC≥+1) | ROI (HC≥+1) | N (HC≤0) | WR (HC≤0) | ROI (HC≤0) | Lift |
-|---|---|---|---|---|---|---|---|
-| Σ≤0 | 4 | 25.0% | -51.0% | 3 | 33.3% | -33.3% | WR -8.3pp · ROI -17.6% · p=— |
-| Σ=1 | 3 | 100.0% | +92.9% | 2 | 50.0% | +27.0% | WR +50.0pp · ROI +65.9% · p=— |
-| Σ=2 | 3 | 66.7% | +29.0% | 4 | 25.0% | -52.1% | WR +41.7pp · ROI +81.1% · p=— |
-| Σ=3 | 3 | 0.0% | -100.0% | 7 | 57.1% | +14.9% | WR -57.1pp · ROI -114.9% · p=— |
-| Σ=4 | 3 | 66.7% | +64.1% | 2 | 0.0% | -100.0% | WR +66.7pp · ROI +164.1% · p=— |
-| Σ=5 | 1 | 0.0% | -100.0% | 0 | — | — | — |
-| Σ=6 | 3 | 66.7% | +29.1% | 2 | 0.0% | -100.0% | WR +66.7pp · ROI +129.1% · p=— |
-| Σ≥7 | 3 | 100.0% | +72.9% | 1 | 0.0% | -100.0% | WR +100.0pp · ROI +172.9% · p=— |
-| **POOLED** | **23** | **56.5%** | **+11.3%** | **21** | **33.3%** | **-30.9%** | **WR +23.2pp · ROI +42.3% · p=0.123** |
-
-#### NBA · All-time
-
-| HC_m \ Σ | Σ≤0 | Σ=1 | Σ=2 | Σ=3 | Σ=4 | Σ=5 | Σ=6 | Σ≥7 | TOTAL |
-|---|---|---|---|---|---|---|---|---|---|
-| **HC_m ≤0** | 11 · 27.3% · -53.0% | 12 · 41.7% · -20.2% | 19 · 47.4% · -9.5% | 9 · 44.4% · -10.6% | 8 · 25.0% · -52.8% | 3 · 66.7% · +38.6% | 5 · 20.0% · +15.0% | 4 · 25.0% · -52.3% | 71 · 38.0% · -21.7% |
-| **HC_m +1** | 5 · 60.0% · +2.2% | 3 · 100.0% · +92.9% | 4 · 75.0% · +54.2% | 3 · 0.0% · -100.0% | 5 · 60.0% · +27.8% | 2 · 0.0% · -100.0% | 2 · 50.0% · -1.0% | 5 · 100.0% · +53.1% | 29 · 62.1% · +14.1% |
-| **HC_m ≥+2** | 2 · 50.0% · -11.5% | 1 · 100.0% · +96.2% | 1 · 100.0% · +33.9% | 1 · 0.0% · -100.0% | 1 · 100.0% · +99.0% | 1 · 100.0% · +130.0% | 3 · 66.7% · +28.5% | 3 · 100.0% · +139.0% | 13 · 76.9% · +56.8% |
-
-**Lift per Σ (HC_m ≥ +1 vs HC_m ≤ 0):**
-
-| Σ bucket | N (HC≥+1) | WR (HC≥+1) | ROI (HC≥+1) | N (HC≤0) | WR (HC≤0) | ROI (HC≤0) | Lift |
-|---|---|---|---|---|---|---|---|
-| Σ≤0 | 7 | 57.1% | -1.7% | 11 | 27.3% | -53.0% | WR +29.9pp · ROI +51.3% · p=0.205 |
-| Σ=1 | 4 | 100.0% | +93.7% | 12 | 41.7% | -20.2% | WR +58.3pp · ROI +113.9% · p=— |
-| Σ=2 | 5 | 80.0% | +50.2% | 19 | 47.4% | -9.5% | WR +32.6pp · ROI +59.7% · p=0.193 |
-| Σ=3 | 4 | 0.0% | -100.0% | 9 | 44.4% | -10.6% | WR -44.4pp · ROI -89.4% · p=— |
-| Σ=4 | 6 | 66.7% | +39.6% | 8 | 25.0% | -52.8% | WR +41.7pp · ROI +92.4% · p=0.119 |
-| Σ=5 | 3 | 33.3% | -23.3% | 3 | 66.7% | +38.6% | WR -33.3pp · ROI -62.0% · p=— |
-| Σ=6 | 5 | 60.0% | +16.7% | 5 | 20.0% | +15.0% | WR +40.0pp · ROI +1.7% · p=0.197 |
-| Σ≥7 | 8 | 100.0% | +85.3% | 4 | 25.0% | -52.3% | WR +75.0pp · ROI +137.6% · p=— |
-| **POOLED** | **42** | **66.7%** | **+27.3%** | **71** | **38.0%** | **-21.7%** | **WR +28.6pp · ROI +49.0% · p=0.003 ★** |
-
-### §12d. NHL
-
-#### NHL · 3-day (≤ 3 days through 2026-05-04)
-
-| HC_m \ Σ | Σ≤0 | Σ=1 | Σ=2 | Σ=3 | Σ=4 | Σ=5 | Σ=6 | Σ≥7 | TOTAL |
-|---|---|---|---|---|---|---|---|---|---|
-| **HC_m ≤0** | 1 · 100.0% · +140.0% | — | 1 · 0.0% · -100.0% | 1 · 0.0% · -100.0% | 1 · 100.0% · +112.0% | — | — | — | 4 · 50.0% · +13.0% |
-| **HC_m +1** | — | — | 1 · 100.0% · +60.6% | — | — | — | — | — | 1 · 100.0% · +60.6% |
-| **HC_m ≥+2** | — | — | — | — | — | — | — | — | — |
-
-**Lift per Σ (HC_m ≥ +1 vs HC_m ≤ 0):**
-
-| Σ bucket | N (HC≥+1) | WR (HC≥+1) | ROI (HC≥+1) | N (HC≤0) | WR (HC≤0) | ROI (HC≤0) | Lift |
-|---|---|---|---|---|---|---|---|
-| Σ≤0 | 0 | — | — | 1 | 100.0% | +140.0% | — |
-| Σ=2 | 1 | 100.0% | +60.6% | 1 | 0.0% | -100.0% | WR +100.0pp · ROI +160.6% · p=— |
-| Σ=3 | 0 | — | — | 1 | 0.0% | -100.0% | — |
-| Σ=4 | 0 | — | — | 1 | 100.0% | +112.0% | — |
-| **POOLED** | **1** | **100.0%** | **+60.6%** | **4** | **50.0%** | **+13.0%** | **WR +50.0pp · ROI +47.6% · p=—** |
-
-#### NHL · 7-day (≤ 7 days through 2026-05-04)
-
-| HC_m \ Σ | Σ≤0 | Σ=1 | Σ=2 | Σ=3 | Σ=4 | Σ=5 | Σ=6 | Σ≥7 | TOTAL |
-|---|---|---|---|---|---|---|---|---|---|
-| **HC_m ≤0** | 4 · 25.0% · -40.0% | 3 · 33.3% · -38.2% | 3 · 33.3% · -19.3% | 2 · 50.0% · -6.1% | 4 · 75.0% · +59.7% | — | — | — | 16 · 43.8% · -6.6% |
-| **HC_m +1** | — | — | 1 · 100.0% · +60.6% | 1 · 0.0% · -100.0% | — | — | — | — | 2 · 50.0% · -19.7% |
-| **HC_m ≥+2** | — | — | — | — | — | — | — | — | — |
-
-**Lift per Σ (HC_m ≥ +1 vs HC_m ≤ 0):**
-
-| Σ bucket | N (HC≥+1) | WR (HC≥+1) | ROI (HC≥+1) | N (HC≤0) | WR (HC≤0) | ROI (HC≤0) | Lift |
-|---|---|---|---|---|---|---|---|
-| Σ≤0 | 0 | — | — | 4 | 25.0% | -40.0% | — |
-| Σ=1 | 0 | — | — | 3 | 33.3% | -38.2% | — |
-| Σ=2 | 1 | 100.0% | +60.6% | 3 | 33.3% | -19.3% | WR +66.7pp · ROI +79.9% · p=— |
-| Σ=3 | 1 | 0.0% | -100.0% | 2 | 50.0% | -6.1% | WR -50.0pp · ROI -93.9% · p=— |
-| Σ=4 | 0 | — | — | 4 | 75.0% | +59.7% | — |
-| **POOLED** | **2** | **50.0%** | **-19.7%** | **16** | **43.8%** | **-6.6%** | **WR +6.3pp · ROI -13.1% · p=—** |
-
-#### NHL · All-time
-
-| HC_m \ Σ | Σ≤0 | Σ=1 | Σ=2 | Σ=3 | Σ=4 | Σ=5 | Σ=6 | Σ≥7 | TOTAL |
-|---|---|---|---|---|---|---|---|---|---|
-| **HC_m ≤0** | 6 · 16.7% · -60.0% | 6 · 33.3% · -41.0% | 8 · 50.0% · -5.3% | 9 · 55.6% · +7.2% | 6 · 83.3% · +80.7% | 3 · 66.7% · +50.0% | — | — | 38 · 50.0% · +1.3% |
-| **HC_m +1** | — | — | 2 · 50.0% · -19.7% | 1 · 0.0% · -100.0% | 1 · 100.0% · +75.8% | — | — | — | 4 · 50.0% · -15.9% |
-| **HC_m ≥+2** | — | — | — | — | 1 · 100.0% · +83.3% | — | — | — | 1 · 100.0% · +83.3% |
-
-**Lift per Σ (HC_m ≥ +1 vs HC_m ≤ 0):**
-
-| Σ bucket | N (HC≥+1) | WR (HC≥+1) | ROI (HC≥+1) | N (HC≤0) | WR (HC≤0) | ROI (HC≤0) | Lift |
-|---|---|---|---|---|---|---|---|
-| Σ≤0 | 0 | — | — | 6 | 16.7% | -60.0% | — |
-| Σ=1 | 0 | — | — | 6 | 33.3% | -41.0% | — |
-| Σ=2 | 2 | 50.0% | -19.7% | 8 | 50.0% | -5.3% | WR +0.0pp · ROI -14.4% · p=— |
-| Σ=3 | 1 | 0.0% | -100.0% | 9 | 55.6% | +7.2% | WR -55.6pp · ROI -107.2% · p=— |
-| Σ=4 | 2 | 100.0% | +79.5% | 6 | 83.3% | +80.7% | WR +16.7pp · ROI -1.1% · p=— |
-| Σ=5 | 0 | — | — | 3 | 66.7% | +50.0% | — |
-| **POOLED** | **5** | **60.0%** | **+3.9%** | **38** | **50.0%** | **+1.3%** | **WR +10.0pp · ROI +2.6% · p=0.674** |
-
-### §12 — How to read
-
-- **Lift positive across every Σ bucket** = the v7.3 thesis is holding. The HC margin override + Σ ≤ 2 floor lowering are earning their keep at every part of the ladder.
-- **Lift collapses (or flips) on a single Σ** = that bucket has either drifted (genuine signal decay) or is hostage to small-N variance. Cross-check the N column before reacting.
-- **`★`** marks p < 0.05 (two-prop z-test). Sub-significant cells are still useful directionally but should not by themselves trigger a v7.x revision.
-- **3-day window**: leading-indicator. If HC lift goes negative in the 3-day across multiple sports, raise alarm.
-- **7-day window**: trend lens. Filters single-day variance; a 7-day collapse is a real signal.
-- **All-time**: thesis check. Should match `WALLET_HC_MARGIN_ANALYSIS_FULL` within minor sample drift.
-
----
-## §13. Proven-wallet roster growth & HC tracking
+## §5. Proven-wallet roster growth & HC tracking
 
 "Proven wallet" = whitelist tier `CONFIRMED` or `FLAT` in the same sense the live engine uses (`exportWalletProfiles.js` → `sharpWalletProfiles.bySport`). Sports inherit independent rosters: a wallet can be CONFIRMED in NBA and absent from NHL. `walletBets` come from `v8Scoring.walletDetails` on every graded v6-era pick (Source A); `positionRows` come from `sharp_action_positions` (Source B).
 
-### §13a. Current proven-winner roster (snapshot)
+### §5a. Current proven-winner roster (snapshot)
 
 Roster as of **2026-05-04** — wallets with ≥2 bets in the sport.
 
@@ -812,7 +256,7 @@ Roster as of **2026-05-04** — wallets with ≥2 bets in the sport.
 | NHL | 59 | 26 | 10 | 2 | **12** | 7 | 20.3% |
 | **ALL** | **—** | **—** | **—** | **—** | **53** | **—** | **—** |
 
-### §13b. Live whitelist drift check
+### §5b. Live whitelist drift check
 
 Live `sharpWalletProfiles` is what the engine reads at lock time. Drift between script reconstruction (above) and live should be ≤ 1 day of position data — otherwise `exportWalletProfiles.js` is stale.
 
@@ -822,7 +266,7 @@ Live `sharpWalletProfiles` is what the engine reads at lock time. Drift between 
 | NBA | 22 · 22 | 10 · 10 | 13 · 13 | in sync |
 | NHL | 10 · 10 | 2 · 2 | 7 · 7 | in sync |
 
-### §13c. Roster growth — 3d / 7d / 30d / all-time deltas
+### §5c. Roster growth — 3d / 7d / 30d / all-time deltas
 
 Each cell is **net growth** in proven (CONFIRMED + FLAT) wallets in that window, with the absolute count at the start (`+Δ from N`). Negative = wallets demoted. Window endpoint = 2026-05-04.
 
@@ -834,7 +278,7 @@ Each cell is **net growth** in proven (CONFIRMED + FLAT) wallets in that window,
 
 A flat 7-day delta on a sport with healthy slate density = either the bubble pipeline has stalled (no wallets approaching the bar) or our cohort has saturated. Check §13d for the funnel diagnostic.
 
-### §13d. Pipeline funnel — where each sport leaks
+### §5d. Pipeline funnel — where each sport leaks
 
 Wallets surviving each gate, in order. The biggest %-drop tells you the bottleneck. Gates:
 
@@ -850,7 +294,7 @@ Wallets surviving each gate, in order. The biggest %-drop tells you the bottlene
 | NBA | 128 | 76 (59%) | 32 (42%) | 22 (69%) | **32** | edge (Eligible→Flat-OK) 58% |
 | NHL | 59 | 26 (44%) | 12 (46%) | 10 (83%) | **12** | sample (Seen→Eligible) 56% |
 
-### §13e. HC backing density (the fuel for v7.3 HC margin)
+### §5e. HC backing density (the fuel for v7.3 HC margin)
 
 Every v7.x promotion is gated on `HC_m ≥ +1`, which requires at least one CONFIRMED wallet sized at `≥ 1.5×` average on the for-side. This table shows the share of shipped picks that *had any HC backing*, by sport, in each window. If HC density falls toward zero in a sport, the v7.3 floor cohorts (Σ=1, Σ=2 locks; HC rescues) will simply stop firing there.
 
@@ -874,7 +318,7 @@ Pooled across sports:
 | 7-day | 42 | 26 (61.9%) | 24 (57.1%) | 2 (4.8%) |
 | All-time | 130 | 54 (41.5%) | 47 (36.2%) | 12 (9.2%) |
 
-### §13f. Bubble wallets — next-up graduations
+### §5f. Bubble wallets — next-up graduations
 
 Wallets currently NOT promoted but close. Two flavors:
 
@@ -948,7 +392,7 @@ Wallets currently NOT promoted but close. Two flavors:
 | `8a3782…` | 2 | 50% | -9.0% | 18 | 27% |
 | `f2d227…` | 2 | 50% | -9.0% | 7 | 33% |
 
-### §13 — How to read
+### §5 — How to read
 
 - **Roster growth flat in 7-day** + **funnel bottleneck = `data`** → re-run `exportWalletProfiles.js`. The flat-positive wallets are stuck at FLAT because Source-B coverage hasn't caught up. CONFIRMED gate is data-bound, not skill-bound.
 - **Roster growth flat in 7-day** + **funnel bottleneck = `sample`** → wallets aren't reaching `≥2` reps fast enough. This is a slate-density problem; consider a soft `MIN_BETS = 1` shadow lane to surface bubble wallets earlier.
@@ -957,4 +401,4 @@ Wallets currently NOT promoted but close. Two flavors:
 
 ---
 
-_Driven by `scripts/dailyV6Report.js` · regenerates daily via `.github/workflows/daily-v6-report.yml` · WHITELIST_CONSENSUS_VERSION = 9 (v7.3) · QUALITY_CONTRIB_CUT = 30 · inclusion mirrors live Pick Performance dashboard · cohort tags from frozen v6/v7.1/v7.2/v7.3 stamps · §12 HC universal monitor (3d/7d/all-time × sport) · §12 universe = full graded set (LOCKED+LEAN+SHADOW+MUTED+CANCELLED) · §13 proven-wallet roster mirrors `exportWalletProfiles.js`_
+_Driven by `scripts/dailyV6Report.js` · regenerates daily via `.github/workflows/daily-v6-report.yml` · QUALITY_CONTRIB_CUT = 30 · HC = CONFIRMED ∧ sizeRatio ≥ 1.5 · inclusion mirrors live Pick Performance dashboard · §1–§3 use shipped picks · §4–§5 wallet/tracking growth mirror `exportWalletProfiles.js`_
