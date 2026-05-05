@@ -14,6 +14,16 @@ import { collection, doc, setDoc, getDoc, getDocs, query, where, orderBy, delete
 import { db } from '../firebase/config';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
+import {
+  AGS_FALLBACK_CALIBRATION,
+  AGS_MIN_PROVEN_WALLETS,
+  AGS_TIER_META,
+  aggregateSideProven,
+  agsSizeMultiplier,
+  computeAgs,
+  failsAgsConfirmationGate,
+  meetsAgsLockFloor,
+} from '../lib/ags.js';
 
 // ─── Brand Design System ──────────────────────────────────────────────────────
 const B = {
@@ -1324,7 +1334,14 @@ function meetsV74Floor(dw, dq, hcMargin) {
 // Honors v7.4 for post-cutover dates; pre-cutover picks fall through to
 // the previous (LEAN-permissive) display rules so historical context
 // stays intact.
-function passesV74DisplayGate({ pickDate, dw, dq, hcMargin, dwLock, dqLock, hcMarginLock, isGraded }) {
+//
+// Phase 3 — also lets AGS-rescued picks through. Without this, a side
+// rescued by AGS (lockStage='LOCKED', promotedBy='ags-rescue') with
+// dw < 1 / dq < 1 / HC = 0 would fail meetsV74Floor and get hidden,
+// defeating the whole point of the rescue route. The rescue check uses
+// the FROZEN AGS stamp (`v8_ags`) plus the AGS_LOCK_FLOOR + min-wallet
+// guards from src/lib/ags.js.
+function passesV74DisplayGate({ pickDate, dw, dq, hcMargin, dwLock, dqLock, hcMarginLock, isGraded, agsValue, agsProvenTotal, promotedBy }) {
   if (!isV74Eligible(pickDate)) return true;
   if (isGraded) return true;
   // Use live values when available; fall back to lock-time stamps so picks
@@ -1334,7 +1351,16 @@ function passesV74DisplayGate({ pickDate, dw, dq, hcMargin, dwLock, dqLock, hcMa
   const liveHc = Number.isFinite(hcMargin) ? hcMargin : (hcMarginLock ?? 0);
   if (liveDw == null || liveDq == null) return false;
   if (liveDw <= -2) return true;        // CANCELLED stays visible (with toggle)
-  return meetsV74Floor(liveDw, liveDq, liveHc);
+  if (meetsV74Floor(liveDw, liveDq, liveHc)) return true;
+  // Phase 3 — AGS rescue path. Honor either the stamped promotedBy OR a
+  // live recompute of meetsAgsLockFloor. Either route is sufficient.
+  if (promotedBy === 'ags-rescue') return true;
+  if (Number.isFinite(agsValue) && liveDw > -2
+      && (agsProvenTotal == null || agsProvenTotal >= AGS_MIN_PROVEN_WALLETS)
+      && meetsAgsLockFloor(agsValue, agsProvenTotal)) {
+    return true;
+  }
+  return false;
 }
 
 // Set of promotedBy values that count as a legitimate ship to the locked
@@ -1353,6 +1379,7 @@ const PROMOTED_BY_FLOORS = new Set([
   'v73-sigma2-hc',            // v7.3 Σ=2 ∧ HC_m ≥ +1 (graduates v7.2 LEAN to LOCK)
   'v73-hc-rescue',            // v7.3 dw=0 OR dq=0 ∧ HC_m ≥ +1 (rescued from MUTE)
   'v74-hc-margin',            // v7.4 HC_m ≥ +1                — golden-standard HC route (no dw/dq guard)
+  'ags-rescue',               // Phase 3 — AGS ≥ AGS_LOCK_FLOOR rescue when v7.4 floor failing
 ]);
 function isPromotedBy(promotedBy) {
   return PROMOTED_BY_FLOORS.has(promotedBy);
@@ -1376,6 +1403,21 @@ function isWhitelistedForSport(walletShort, sport) {
   const p = getWalletProfile(walletShort);
   const tier = p?.bySport?.[sport]?.whitelistTier;
   return tier === 'CONFIRMED' || tier === 'FLAT';
+}
+
+// ── AGS calibration cache ────────────────────────────────────────────────
+// Loaded async at app boot from Firestore agsCalibration/current. Falls
+// back to AGS_FALLBACK_CALIBRATION (hardcoded last-known-good in
+// src/lib/ags.js) if Firestore is unreachable. Never blocks rendering —
+// stamping is a no-op when the cache is null.
+let AGS_CALIBRATION_CACHE = null;
+function setAgsCalibrationCache(cal) { AGS_CALIBRATION_CACHE = cal; }
+function getAgsCalibration() { return AGS_CALIBRATION_CACHE || AGS_FALLBACK_CALIBRATION; }
+
+// Adapter so the shared AGS module's aggregateSideProven can use the
+// already-loaded WALLET_PROFILES_CACHE without duplicating the lookup.
+function isProvenForAgs(walletShort, sport) {
+  return isWhitelistedForSport(walletShort, sport);
 }
 
 function classifyDelta(forW, agW) {
@@ -1572,6 +1614,9 @@ function evaluatePickHealth({
   currentStars,
   walletConsensus,
   pickDate = null,
+  agsValue = null,
+  agsProvenTotal = null,
+  lockStage = null,
 }) {
   const wpsDelta = (currentWPS != null && lockWPS != null) ? currentWPS - lockWPS : 0;
   const diagnostic = [];
@@ -1596,6 +1641,15 @@ function evaluatePickHealth({
   const hcMargin = (walletConsensus?.hcConfFor || 0) - (walletConsensus?.hcConfAg || 0);
   const v73HcOverride = isV73Eligible(pickDate) && hcMargin >= 1;
   const v74 = isV74Eligible(pickDate);
+  // Phase 3 — AGS rescue. AGS ≥ AGS_LOCK_FLOOR with ≥ AGS_MIN_PROVEN_WALLETS
+  // proven wallets and dw > -2 lifts the same dw=0/dq<0/sum<floor mutes.
+  // Mirrors syncPickStateAuthoritative.js so client + server agree.
+  const agsRescueOverride = v74
+    && Number.isFinite(agsValue)
+    && (agsProvenTotal == null || agsProvenTotal >= AGS_MIN_PROVEN_WALLETS)
+    && meetsAgsLockFloor(agsValue, agsProvenTotal)
+    && dw > -2;
+  const muteOverride = v73HcOverride || agsRescueOverride;
 
   if (!tooCloseForWhitelist) {
     if (dw <= -2) {
@@ -1614,7 +1668,7 @@ function evaluatePickHealth({
         walletDelta: dw, qualityMargin: dq,
       };
     }
-    if (dw === 0 && !v73HcOverride) {
+    if (dw === 0 && !muteOverride) {
       // v6.3 — proven-winner margin evaporated. Pick would not lock in
       // this state today; mute so size + styling reflect that.
       return {
@@ -1624,7 +1678,7 @@ function evaluatePickHealth({
         walletDelta: dw, qualityMargin: dq,
       };
     }
-    if (dw >= 1 && dq <= 0 && !v73HcOverride) {
+    if (dw >= 1 && dq <= 0 && !muteOverride) {
       // v6.3 — winner margin ok but quality margin failed the floor.
       return {
         status: 'MUTED',
@@ -1637,7 +1691,7 @@ function evaluatePickHealth({
     // HC route still passes via v73HcOverride. Picks below v7.4 floor
     // mute so the locked-list display gate hides them.
     const sumFloor = v74 ? V7_4_SIGMA_FLOOR : 3;
-    if (dw >= 1 && dq >= 1 && (dw + dq) < sumFloor && !v73HcOverride) {
+    if (dw >= 1 && dq >= 1 && (dw + dq) < sumFloor && !muteOverride) {
       return {
         status: 'MUTED',
         reasons: ['sum_below_floor', ...diagnostic],
@@ -1647,12 +1701,35 @@ function evaluatePickHealth({
     }
   }
 
-  // v7.3 — when the override fires, surface it as a diagnostic so the
-  // UI can render the "RESCUED · HC" chip and the daily report can
-  // tally the cohort.
+  // v7.3 / Phase 3 — when an override fires, surface it as a diagnostic
+  // so the UI can render the rescue chip and the daily report can tally
+  // the cohort. AGS rescue tag takes precedence when both apply.
   const reasons = [...diagnostic];
-  if (v73HcOverride && (dw === 0 || dq <= 0 || (dw + dq) < (v74 ? V7_4_SIGMA_FLOOR : 3))) {
-    reasons.push('v73_hc_rescue');
+  const baseRescueTag = (v73HcOverride && (dw === 0 || dq <= 0 || (dw + dq) < (v74 ? V7_4_SIGMA_FLOOR : 3)))
+    ? 'v73_hc_rescue' : null;
+  if (agsRescueOverride && !v73HcOverride) {
+    reasons.push('ags_rescue');
+  } else if (baseRescueTag) {
+    reasons.push(baseRescueTag);
+  }
+
+  // Phase 3 — AGS confirmation gate. Even when the side passes the
+  // headline floor (HC ≥ +1 OR Σ ≥ 5) the wallet stack can be
+  // contradicting: AGS < AGS_MUTE_FLOOR with ≥ AGS_MIN_PROVEN_WALLETS
+  // proven wallets demotes the side to MUTED. Only fires when we'd
+  // otherwise return ACTIVE on a LOCKED side — never gates a SHADOW
+  // pick (it's already hidden) and never overrides CANCELLED.
+  if (v74
+      && Number.isFinite(agsValue)
+      && (agsProvenTotal == null || agsProvenTotal >= AGS_MIN_PROVEN_WALLETS)
+      && lockStage === 'LOCKED'
+      && failsAgsConfirmationGate(agsValue)) {
+    return {
+      status: 'MUTED',
+      reasons: ['ags_quality_veto', ...reasons],
+      currentStars, wpsDelta,
+      walletDelta: dw, qualityMargin: dq,
+    };
   }
 
   return {
@@ -1725,9 +1802,10 @@ function calculateSpreadTotalUnits(stars, consensusPenalty = 0, odds = null, reg
 // the recommendation the system actually made at lock time.
 function computeLiveSizing({ peakStars, peakUnits, marketType, oddsForLadder,
                               liveDw, liveDq, liveHcDominant = false,
-                              liveHcMargin = null, pickDate = null }) {
+                              liveHcMargin = null, pickDate = null,
+                              liveAgs = null }) {
   if (liveDw == null || liveDq == null || peakStars == null) {
-    return { liveStars: peakStars, liveUnits: peakUnits || 0, isDownsized: false, liveTier: null };
+    return { liveStars: peakStars, liveUnits: peakUnits || 0, isDownsized: false, liveTier: null, agsTrim: null };
   }
   const hcMargin = Number.isFinite(liveHcMargin)
     ? liveHcMargin
@@ -1737,7 +1815,22 @@ function computeLiveSizing({ peakStars, peakUnits, marketType, oddsForLadder,
   const liveTier = lockTierFromDeltas(liveDw, liveDq, liveHcDominant, { pickDate, hcMargin });
   const ladder = (marketType === 'spread' || marketType === 'total') ? calculateSpreadTotalUnits : calculateUnits;
   const liveUnitsRaw = ladder(liveStars, 0, oddsForLadder, 0, liveTier, liveHcDominant, { pickDate, hcMargin, sum });
-  const liveUnits = Math.round(liveUnitsRaw * 100) / 100;
+  let liveUnits = Math.round(liveUnitsRaw * 100) / 100;
+
+  // Phase 2 — AGS sizing modifier. Multiplier is taken from the shared
+  // src/lib/ags.js table (1.0 ≥ +3, 0.85 ≥ 0, 0.65 ≥ -1, 0.5 below).
+  // Only applied when AGS is finite AND we're already shipping a positive
+  // unit count — never re-promotes a 0u pick.
+  let agsTrim = null;
+  if (Number.isFinite(liveAgs) && liveUnits > 0) {
+    const mult = agsSizeMultiplier(liveAgs);
+    if (mult !== 1.0) {
+      const before = liveUnits;
+      liveUnits = Math.max(0.01, Math.round(liveUnits * mult * 100) / 100);
+      agsTrim = { mult, before, after: liveUnits };
+    }
+  }
+
   // v7.4 — DOWNSIZED suppression for picks still inside the lock floor.
   // Under v7.4 the contract is binary: a pick is either LOCKED (passes
   // HC ≥ +1 OR Σ ≥ 5 with positive axes) or SHADOW (hidden). Half-star
@@ -1747,14 +1840,22 @@ function computeLiveSizing({ peakStars, peakUnits, marketType, oddsForLadder,
   // degrading pick. Suppress the badge while the pick still passes the
   // v7.4 floor; if it falls below, lockStage flips to SHADOW and the
   // pick is hidden anyway, so the badge becomes moot.
+  //
+  // Phase 2 — also suppress the DOWNSIZED badge when the only reason
+  // liveUnits < peakUnits is the AGS multiplier. The AGS chip already
+  // tells the user about the trim; a "DOWNSIZED" badge on top would
+  // duplicate the message and read as "the pick weakened" when really
+  // the wallet stack was always mixed.
   const v74StillLocked = isV74Eligible(pickDate)
     && meetsV74Floor(liveDw, liveDq, hcMargin);
+  const starOrLadderShrunk = liveStars < peakStars || liveUnitsRaw < (peakUnits || 0);
   const rawDownsized = liveStars < peakStars || liveUnits < (peakUnits || 0);
   return {
     liveStars,
     liveUnits,
     liveTier,
-    isDownsized: rawDownsized && !v74StillLocked,
+    isDownsized: rawDownsized && !v74StillLocked && starOrLadderShrunk,
+    agsTrim,
   };
 }
 
@@ -1835,26 +1936,44 @@ function decideLockStage(regime, v8Scoring, sideKey, sport = null, baseStars = 0
   const sport_cfg = WHITELIST_INTERVENTION[sport];
 
   // v7.4 — single floor. HC route (HC margin ≥ +1, golden standard) +
-  // Σ ≥ 5 sum route are the ONLY paths to LOCKED. HC route has no dw/dq
-  // guards as of 2026-05-02 — see meetsV74Floor for rationale. All v7.x
-  // LEAN bypasses (sigma1-hc, sigma2-hc, hc-rescue, sigma2-lean,
-  // sigma2-lock) collapse into either qualifying for the HC route or
-  // being SHADOW.
+  // Σ ≥ 5 sum route + AGS rescue route are the paths to LOCKED. HC route
+  // has no dw/dq guards as of 2026-05-02 — see meetsV74Floor for rationale.
+  // AGS rescue (Phase 3 of integration) requires AGS ≥ AGS_LOCK_FLOOR with
+  // ≥ AGS_MIN_PROVEN_WALLETS proven wallets and dw > -2. All v7.x LEAN
+  // bypasses (sigma1-hc, sigma2-hc, hc-rescue, sigma2-lean, sigma2-lock)
+  // collapse into either qualifying for the HC route or being SHADOW.
   if (v74) {
     if (!sport_cfg?.promote) {
       return { stage: 'SHADOW', contribTier, promotedBy: null, dw, dq, lockTier, hcDominant, hcMargin };
     }
-    if (!meetsV74Floor(dw, dq, hcMargin)) {
+    // AGS rescue precheck — read the live walletDetails and z-score against
+    // the active calibration. Falls back to the hardcoded snapshot if the
+    // calibration cache hasn't loaded yet.
+    let agsRescue = null;
+    if (Array.isArray(v8Scoring?.walletDetails) && v8Scoring.walletDetails.length > 0) {
+      const agg = aggregateSideProven(v8Scoring.walletDetails, sideKey, sport, isProvenForAgs);
+      if (agg) {
+        const ags = computeAgs(agg, getAgsCalibration());
+        const provenTotal = ags ? (ags.provenForCount + ags.provenAgCount) : 0;
+        if (ags && dw > -2 && provenTotal >= AGS_MIN_PROVEN_WALLETS && meetsAgsLockFloor(ags.ags, provenTotal)) {
+          agsRescue = ags;
+        }
+      }
+    }
+    const passesV74 = meetsV74Floor(dw, dq, hcMargin);
+    if (!passesV74 && !agsRescue) {
       return { stage: 'SHADOW', contribTier, promotedBy: null, dw, dq, lockTier, hcDominant, hcMargin };
     }
     // Classifier: prefer the strongest qualifying path.
     //   • Σ ≥ V7_4_SIGMA_FLOOR with both axes positive → two-factor-floor
-    //   • Otherwise the pick passed via HC margin → v74-hc-margin
+    //   • HC margin ≥ +1                              → v74-hc-margin
+    //   • AGS-only rescue (v7.4 floor failing)        → ags-rescue
     let promotedBy;
     const sumRoute = dw >= 1 && dq >= 1 && sum >= V7_4_SIGMA_FLOOR;
-    if (sumRoute) promotedBy = 'two-factor-floor';
-    else promotedBy = 'v74-hc-margin';
-    return { stage: 'LOCKED', contribTier, promotedBy, dw, dq, lockTier, hcDominant, hcMargin };
+    if (passesV74 && sumRoute) promotedBy = 'two-factor-floor';
+    else if (passesV74) promotedBy = 'v74-hc-margin';
+    else promotedBy = 'ags-rescue';
+    return { stage: 'LOCKED', contribTier, promotedBy, dw, dq, lockTier, hcDominant, hcMargin, agsRescued: !passesV74 };
   }
 
   // v7.3 — Σ=1 ∧ HC_m ≥ +1 lock floor (NEW).
@@ -2104,6 +2223,45 @@ function stampWalletConsensus(target, v8Scoring, sideKey, sport, baseStars, prom
   } else {
     target.v8_topPick      = isShipped && (wc.delta + wc.qualityMargin) >= 5;
     target.v8_superTopPick = isShipped && wc.hcDominant && isV71Eligible(pickDate);
+  }
+
+  // AGS (AggregateScore) — composite over six proven-wallet aggregates.
+  // Built from frozen walletDetails filtered to whitelist-proven wallets.
+  // Identical math to scripts/syncPickStateAuthoritative.js — both pull
+  // from src/lib/ags.js so client and server are bit-identical. Phase 3
+  // also stamps mutedBy='ags-quality-veto' when the gate would fire so
+  // the dashboard filter can hide quality-vetoed picks consistently
+  // across client and server writes.
+  const wd = v8Scoring?.walletDetails;
+  if (Array.isArray(wd) && wd.length > 0) {
+    const agg = aggregateSideProven(wd, sideKey, sport, isProvenForAgs);
+    if (agg) {
+      const ags = computeAgs(agg, getAgsCalibration());
+      if (ags) {
+        target.v8_ags = ags.ags;
+        target.v8_agsTier = ags.tier;
+        target.v8_agsQuintile = ags.quintile;
+        target.v8_agsComponents = ags.components;
+        target.v8_agsProvenForCount = ags.provenForCount;
+        target.v8_agsProvenAgCount = ags.provenAgCount;
+        target.v8_agsCalibrationSource = ags.calibrationSource || 'firestore';
+        target.v8_agsEvaluatedAt = Date.now();
+
+        // Phase 3 confirmation-gate stamp — mirrors syncPickStateAuthoritative.
+        // Only fires for v7.4 LOCKED sides where AGS < AGS_MUTE_FLOOR with
+        // ≥ AGS_MIN_PROVEN_WALLETS proven wallets. Cleared when not firing.
+        const provenTotal = ags.provenForCount + ags.provenAgCount;
+        const isLocked = liveTier === 'LOCKED' || liveTier === 'ELITE';
+        const v74 = isV74Eligible(pickDate);
+        if (v74 && isLocked && provenTotal >= AGS_MIN_PROVEN_WALLETS && wc.delta > -2 && failsAgsConfirmationGate(ags.ags)) {
+          target.mutedBy = 'ags-quality-veto';
+        } else {
+          // Always overwrite (rather than delete) so prior gate stamps clear
+          // cleanly. deleteField imported alongside the firestore helpers.
+          target.mutedBy = deleteField();
+        }
+      }
+    }
   }
 }
 
@@ -3243,6 +3401,9 @@ function useMarketData() {
   // would see stale tiers and either count a freshly-CONFIRMED sharp
   // wrong or keep counting a demoted one. Reload on visibilitychange too
   // so tab-back-after-an-hour doesn't render stale lock decisions.
+  //
+  // Also fetches the AGS calibration doc on the same cadence so the
+  // displayed AGS values track the daily-refreshed normalizers.
   useEffect(() => {
     let cancelled = false;
     const loadProfiles = async () => {
@@ -3256,6 +3417,25 @@ function useMarketData() {
         console.log(`[walletProfiles] Loaded ${m.size} profiles into Phase-2 cache`);
       } catch (err) {
         console.warn('[walletProfiles] fetch failed:', err.message);
+      }
+      // AGS calibration — small, fetched alongside profiles; falls back to
+      // hardcoded last-known-good if Firestore is unreachable.
+      try {
+        const calSnap = await getDoc(doc(db, 'agsCalibration', 'current'));
+        if (cancelled) return;
+        if (calSnap.exists()) {
+          const cal = calSnap.data();
+          if (cal && cal.normalizers) {
+            setAgsCalibrationCache({ ...cal, source: cal.source || 'firestore' });
+            console.log(`[agsCalibration] Loaded — sampleSize=${cal.sampleSize ?? '?'} computedAt=${cal.computedAt ?? '?'}`);
+          }
+        } else {
+          setAgsCalibrationCache(AGS_FALLBACK_CALIBRATION);
+          console.log('[agsCalibration] doc missing, using fallback calibration');
+        }
+      } catch (err) {
+        console.warn('[agsCalibration] fetch failed, using fallback:', err.message);
+        setAgsCalibrationCache(AGS_FALLBACK_CALIBRATION);
       }
     };
     loadProfiles();
@@ -5035,10 +5215,17 @@ const HEALTH_REASON_LABELS = {
   opp_side_stronger: 'Opposing side gaining conviction',
   whitelist_fade_weak:   'Sport winners leaning against this pick',
   whitelist_fade_strong: 'Sport winners strongly against this pick',
+  // Phase 3 — AGS-driven decisions surface as their own reasons so the
+  // dashboard chip explains *why* a pick is muted/active when AGS is
+  // overriding the headline floor.
+  ags_quality_veto:    'Wallet-stack score below confirmation gate (AGS < −1) — auto-muted',
+  ags_rescue:          'Wallet-stack score above lock floor (AGS ≥ +5) — auto-rescued',
+  v73_hc_rescue:       'HC margin override rescued this pick from the v6.6 mute floor',
+  sum_below_floor:     'Δw + Δq below the v7.4 lock floor (Σ < 5)',
 };
 
 const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
-  const { team, away, home, sport, stars, peakStars, lockStars, units, peakUnits, isDownsized, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, lockEV, criteriaMet, criteria, consensusStrength, pinnacleOdds, marketType, line, superseded, health, lockTier, trackedOnly, isTopPick: isTopPickPre, isSuperTopPick: isSuperTopPickPre, walletConsensusDelta, walletConsensusForW, walletConsensusAgW, walletConsensusQualityMargin, walletConsensusQualityForT30, walletConsensusQualityAgT30, hcDominant, hcConfFor, hcConfAg, hcMargin, systemVersion, promotedBy, v73HcRescue } = pick;
+  const { team, away, home, sport, stars, peakStars, lockStars, units, peakUnits, isDownsized, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, lockEV, criteriaMet, criteria, consensusStrength, pinnacleOdds, marketType, line, superseded, health, lockTier, trackedOnly, isTopPick: isTopPickPre, isSuperTopPick: isSuperTopPickPre, walletConsensusDelta, walletConsensusForW, walletConsensusAgW, walletConsensusQualityMargin, walletConsensusQualityForT30, walletConsensusQualityAgT30, hcDominant, hcConfFor, hcConfAg, hcMargin, systemVersion, promotedBy, v73HcRescue, agsValue, agsTier, agsQuintile, agsProvenForCount, agsProvenAgCount } = pick;
   // v7.1/v7.2/v7.3 — render the gold "HC ×N" chip when the pick is post-cutover
   // AND has HC backing. Pre-cutover picks never see the chip.
   // v7.2/v7.3 SUPER tier (HC margin ≥ +2): chip reads "HC ×1.75"
@@ -5506,6 +5693,26 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                       ? `SUPER HC (HC margin ≥ +2): ${hcConfFor} HC for · ${hcConfAg} HC against = +${hcMarginVal}.${wasHcPromoted ? ' Promoted out of LEAN by HC margin.' : ''} Units sized at 1.75× the standard ladder. (WALLET_HC_MARGIN_ANALYSIS: 9-1, +7.65u net, +76.5% ROI on N=10.)`
                       : `HC margin = +1: ${hcConfFor} HC for · ${hcConfAg} HC against.${wasHcPromoted ? ' Promoted out of LEAN by HC margin.' : ''} Units sized at 1.5× the standard ladder.`}>
                       HC ×{hcChipMult}
+                    </span>
+                  )}
+                  {/* AGS chip — Phase 1 read-only badge. Composite over six
+                      proven-wallet aggregate features (Δcount, Δcontrib sum,
+                      Δbest contrib, Δbest base, Δavg conviction, Δavg roiNorm).
+                      Historical bands: ≥+5 → 92.9% WR, ≥+3 → 73.7%, ≥0 → median
+                      cohort, <0 → fade zone. Sizing/lock decisions still come
+                      from HC + Σ until Phase 2/3 ship. */}
+                  {agsValue != null && Number.isFinite(agsValue) && AGS_TIER_META[agsTier] && (
+                    <span style={{
+                      ...T.micro, fontWeight: 800,
+                      padding: '0.2rem 0.45rem', borderRadius: '5px',
+                      color: AGS_TIER_META[agsTier].color,
+                      background: AGS_TIER_META[agsTier].bg,
+                      border: `1px solid ${AGS_TIER_META[agsTier].color}66`,
+                      letterSpacing: '0.04em',
+                      display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
+                    }}
+                    title={`AGS = ${agsValue >= 0 ? '+' : ''}${agsValue.toFixed(2)} — composite score over 6 proven-wallet aggregate features. Tier=${agsTier}${agsQuintile ? ` · Q${agsQuintile}` : ''}${agsProvenForCount != null ? ` · proven ${agsProvenForCount} for / ${agsProvenAgCount} ag` : ''}. Historical bands (V6 dashboard, N=104): AGS ≥ +5 → 92.9% WR · ≥ +3 → 73.7% · ≥ 0 → median · < 0 → fade zone. Phase 1: display only — does not change lock or sizing.`}>
+                      AGS {agsValue >= 0 ? '+' : ''}{agsValue.toFixed(1)}
                     </span>
                   )}
                   {/* v7.3 RESCUED chip — fired on the cohort the v6.6 health
@@ -6279,6 +6486,18 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const mlWalletConsensus = wasEverLocked
     ? computeWalletConsensus(mlLockedV8?.walletDetails, gd.sport, mlLockedSideKey, mlPickDate)
     : null;
+  // Phase 3 — pre-compute AGS for the locked ML side so evaluatePickHealth
+  // can apply the rescue + confirmation gate. Falls back gracefully when
+  // walletDetails or calibration is missing.
+  const mlAgs = (() => {
+    if (!wasEverLocked) return null;
+    const wd = mlLockedV8?.walletDetails;
+    if (!Array.isArray(wd) || wd.length === 0) return null;
+    const agg = aggregateSideProven(wd, mlLockedSideKey, gd.sport, isProvenForAgs);
+    if (!agg) return null;
+    return computeAgs(agg, getAgsCalibration());
+  })();
+  const mlAgsProvenTotal = mlAgs ? (mlAgs.provenForCount + mlAgs.provenAgCount) : null;
   const mlHealth = wasEverLocked ? evaluatePickHealth({
     currentWPS: lockedSideWPS,
     oppSideWPS: oppToLockWPS,
@@ -6289,6 +6508,9 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     currentStars: lockedSideStars,
     walletConsensus: mlWalletConsensus,
     pickDate: mlPickDate,
+    agsValue: mlAgs?.ags ?? null,
+    agsProvenTotal: mlAgsProvenTotal,
+    lockStage: lockedSideRef.current ? 'LOCKED' : null,
   }) : { status: 'ACTIVE', reasons: [], currentStars: sr.stars, wpsDelta: 0 };
 
   const lastHealthRef = useRef(null);
@@ -6437,6 +6659,15 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const spreadWalletConsensus = spreadWasEverLocked && spreadSr
     ? computeWalletConsensus(spreadSr.v8Scoring?.walletDetails, gd.sport, spreadConsensusSide, spreadPickDateLive)
     : null;
+  const spreadAgs = (() => {
+    if (!spreadWasEverLocked || !spreadSr) return null;
+    const wd = spreadSr.v8Scoring?.walletDetails;
+    if (!Array.isArray(wd) || wd.length === 0) return null;
+    const agg = aggregateSideProven(wd, spreadConsensusSide, gd.sport, isProvenForAgs);
+    if (!agg) return null;
+    return computeAgs(agg, getAgsCalibration());
+  })();
+  const spreadAgsProvenTotal = spreadAgs ? (spreadAgs.provenForCount + spreadAgs.provenAgCount) : null;
   const spreadHealth = spreadWasEverLocked && spreadSr ? evaluatePickHealth({
     currentWPS: spreadSr.walletPlayScore,
     lockWPS: lockSpreadWPSRef.current,
@@ -6447,6 +6678,9 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     currentStars: spreadSr.stars,
     walletConsensus: spreadWalletConsensus,
     pickDate: spreadPickDateLive,
+    agsValue: spreadAgs?.ags ?? null,
+    agsProvenTotal: spreadAgsProvenTotal,
+    lockStage: isSpreadLocked ? 'LOCKED' : null,
   }) : { status: 'ACTIVE', reasons: [], currentStars: spreadSr?.stars || 0, wpsDelta: 0 };
 
   const lastSpreadHealthRef = useRef(null);
@@ -6591,6 +6825,15 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const totalWalletConsensus = totalWasEverLocked && totalSr
     ? computeWalletConsensus(totalSr.v8Scoring?.walletDetails, gd.sport, totalConsensusSide, totalPickDateLive)
     : null;
+  const totalAgs = (() => {
+    if (!totalWasEverLocked || !totalSr) return null;
+    const wd = totalSr.v8Scoring?.walletDetails;
+    if (!Array.isArray(wd) || wd.length === 0) return null;
+    const agg = aggregateSideProven(wd, totalConsensusSide, gd.sport, isProvenForAgs);
+    if (!agg) return null;
+    return computeAgs(agg, getAgsCalibration());
+  })();
+  const totalAgsProvenTotal = totalAgs ? (totalAgs.provenForCount + totalAgs.provenAgCount) : null;
   const totalHealth = totalWasEverLocked && totalSr ? evaluatePickHealth({
     currentWPS: totalSr.walletPlayScore,
     lockWPS: lockTotalWPSRef.current,
@@ -6601,6 +6844,9 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     currentStars: totalSr.stars,
     walletConsensus: totalWalletConsensus,
     pickDate: totalPickDateLive,
+    agsValue: totalAgs?.ags ?? null,
+    agsProvenTotal: totalAgsProvenTotal,
+    lockStage: isTotalLocked ? 'LOCKED' : null,
   }) : { status: 'ACTIVE', reasons: [], currentStars: totalSr?.stars || 0, wpsDelta: 0 };
 
   const lastTotalHealthRef = useRef(null);
@@ -11122,6 +11368,9 @@ export default function SharpFlow() {
                         // and are toggled on by the existing "Show
                         // cancelled" UI button.
                         const sdGraded = sd.status === 'COMPLETED' && !!sd.result?.outcome;
+                        const agsProvenTotal = (sd.v8_agsProvenForCount != null && sd.v8_agsProvenAgCount != null)
+                          ? sd.v8_agsProvenForCount + sd.v8_agsProvenAgCount
+                          : null;
                         if (!passesV74DisplayGate({
                           pickDate: doc.date,
                           dw: sd.v8_walletConsensusDelta,
@@ -11133,6 +11382,9 @@ export default function SharpFlow() {
                           dqLock: sd.lock?.v8Scoring?.qualityMargin,
                           hcMarginLock: sd.lock?.v8Scoring?.hcMargin,
                           isGraded: sdGraded,
+                          agsValue: Number.isFinite(sd.v8_ags) ? sd.v8_ags : null,
+                          agsProvenTotal,
+                          promotedBy: sd.promotedBy || null,
                         })) continue;
                         const peak = sd.peak || sd.lock || {};
                         const lock = sd.lock || {};
@@ -11202,6 +11454,10 @@ export default function SharpFlow() {
                                 ? sd.v8_hcMargin
                                 : ((sd.v8_hcConfFor || 0) - (sd.v8_hcConfAg || 0)),
                               pickDate: doc.date ?? null,
+                              // Phase 2 — AGS sizing modifier. Stamped by the
+                              // server cron + the client stamper; null on
+                              // legacy picks or sides without proven wallets.
+                              liveAgs: Number.isFinite(sd.v8_ags) ? sd.v8_ags : null,
                             });
                         const displayStars = isGradedSide ? peakStars : sizing.liveStars;
                         const displayUnits = sizing.liveUnits;
@@ -11306,6 +11562,14 @@ export default function SharpFlow() {
                           systemVersion: sd.v8_systemVersion || '7.0',
                           promotedBy: sd.promotedBy || null,
                           v73HcRescue: !!sd.v8_v73HcRescue,
+                          // AGS — Phase 1: read-only badge. Stamped by
+                          // server cron + browser stamper; null on legacy
+                          // picks or when no proven wallets are present.
+                          agsValue: Number.isFinite(sd.v8_ags) ? sd.v8_ags : null,
+                          agsTier: sd.v8_agsTier || null,
+                          agsQuintile: Number.isFinite(sd.v8_agsQuintile) ? sd.v8_agsQuintile : null,
+                          agsProvenForCount: sd.v8_agsProvenForCount ?? null,
+                          agsProvenAgCount: sd.v8_agsProvenAgCount ?? null,
                         });
                       }
                     }

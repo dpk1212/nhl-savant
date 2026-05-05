@@ -307,6 +307,12 @@ async function loadEverything() {
             }))
           : null;
 
+        // AGS — Phase 1+ stamp. v8_ags lands on every side from the AGS
+        // cutover (2026-05-05) onward; older rows have no AGS and bucket
+        // as `Uncategorized` in the AGS rollup.
+        const agsValue = Number.isFinite(side.v8_ags) ? side.v8_ags : null;
+        const agsTier = side.v8_agsTier || null;
+
         pickRows.push({
           docId: doc.id,
           date, sport, market, sideKey,
@@ -323,6 +329,7 @@ async function loadEverything() {
           inDashboard, cancelled,
           dwFrozen, dqFrozen, dwSource, dqSource, vaultStar,
           hcDominant, hcConfFor, hcConfAg, hcMargin, systemVersion, promotedBy,
+          agsValue, agsTier,
           outcome: oc, profitU, flatProfit,
           walletDetailsLite: wdLite,
         });
@@ -848,6 +855,26 @@ function vaultStarBand(row) {
     { label: '≤ −2',    f: v => v != null && v <= -2 },
     { label: 'missing', f: v => v == null },
   ];
+  // AGS bucketing mirrors the cohort cutoffs in src/lib/ags.js.
+  // Bands are AGS-value thresholds (not quintile-relative), so they're
+  // stable across calibration refreshes — the chart reads the same way
+  // every day. Historical bands (V6 dashboard, N=104):
+  //   AGS ≥ +5  →  92.9% WR / +106% flat ROI    (LOCK / ELITE band)
+  //   AGS ≥ +3  →  73.7% WR /  +48% flat ROI    (STRONG band)
+  //   AGS ≥ 0   →  median band (sizing modifier 0.85x)
+  //   AGS < 0   →  fade band (sizing 0.65x at -1 to 0; gate at < -1)
+  const AGS_BUCKETS = [
+    { label: 'ELITE  (≥ +7)',  f: v => v != null && v >= 7 },
+    { label: 'LOCK   (+5 .. +7)', f: v => v != null && v >= 5 && v < 7 },
+    { label: 'STRONG (+3 .. +5)', f: v => v != null && v >= 3 && v < 5 },
+    { label: 'NEUT   (0 .. +3)', f: v => v != null && v >= 0 && v < 3 },
+    { label: 'WEAK   (−1 .. 0)', f: v => v != null && v >= -1 && v < 0 },
+    { label: 'FADE   (< −1)',   f: v => v != null && v < -1 },
+    { label: 'missing',         f: v => v == null },
+  ];
+  // AGS landed on 2026-05-05 — anything before that is "Uncategorized"
+  // in the AGS rollup. Mirrors HC_CUTOVER's role for the HC sub-table.
+  const AGS_CUTOVER = '2026-05-05';
 
   function rollupTable(rows, buckets, getValue) {
     const lines = [mdHeader(['Bucket', 'N', 'W-L-P', 'WR%', 'PnL (peak u)', 'PnL (flat 1u)'])];
@@ -903,6 +930,21 @@ function vaultStarBand(row) {
     out.push('');
     rollupTable(h.rows, DELTA_BUCKETS, r => r.dqFrozen).forEach(line => out.push(line));
     out.push('');
+
+    // AGS rollup — Phase 4 monitoring. Tracks whether the live AGS signal
+    // is holding out-of-sample. Scoped to picks dated ≥ AGS_CUTOVER since
+    // older rows have no AGS stamp. Empty buckets dropped by rollupTable.
+    const agsRows = h.rows.filter(r => r.date >= AGS_CUTOVER);
+    const agsTotal = finalizeAgg(agsRows.reduce((a, r) => { pushAgg(a, r); return a; }, emptyAgg()));
+    out.push(`**By AGS tier** _(picks dated ≥ ${AGS_CUTOVER}, N = ${agsTotal.n})_`);
+    out.push('');
+    if (!agsTotal.n) {
+      out.push('_No AGS-era picks in this window yet._');
+      out.push('');
+    } else {
+      rollupTable(agsRows, AGS_BUCKETS, r => r.agsValue).forEach(line => out.push(line));
+      out.push('');
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
