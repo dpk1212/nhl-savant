@@ -1803,16 +1803,41 @@ function calculateSpreadTotalUnits(stars, consensusPenalty = 0, odds = null, reg
 function computeLiveSizing({ peakStars, peakUnits, marketType, oddsForLadder,
                               liveDw, liveDq, liveHcDominant = false,
                               liveHcMargin = null, pickDate = null,
-                              liveAgs = null }) {
+                              liveAgs = null,
+                              liveAgsProvenFor = null,
+                              liveAgsProvenAg = null }) {
   if (liveDw == null || liveDq == null || peakStars == null) {
-    return { liveStars: peakStars, liveUnits: peakUnits || 0, isDownsized: false, liveTier: null, agsTrim: null };
+    return { liveStars: peakStars, liveUnits: peakUnits || 0, isDownsized: false, liveTier: null, agsTrim: null, agsRescue: false };
   }
   const hcMargin = Number.isFinite(liveHcMargin)
     ? liveHcMargin
     : (liveHcDominant ? 1 : 0);
-  const liveStars = vaultStarFromDeltas(liveDw, liveDq, hcMargin, pickDate);
+  let liveStars = vaultStarFromDeltas(liveDw, liveDq, hcMargin, pickDate);
   const sum = liveDw + liveDq;
-  const liveTier = lockTierFromDeltas(liveDw, liveDq, liveHcDominant, { pickDate, hcMargin });
+  let liveTier = lockTierFromDeltas(liveDw, liveDq, liveHcDominant, { pickDate, hcMargin });
+
+  // Phase 3 — AGS rescue tier upgrade. Mirrors syncPickStateAuthoritative.js
+  // (lines 502-515). When AGS ≥ AGS_LOCK_FLOOR with ≥ AGS_MIN_PROVEN_WALLETS
+  // proven wallets and dw > -2 AND the v7.4 deltas-based floor is failing,
+  // the AGS layer overrides the deltas-derived tier: liveTier flips to
+  // LOCKED and liveStars is floored at 4.0 (the rescue tier). Without
+  // this, the client's deltas-based ladder hands back MUTED-tier units
+  // (~0.75u for SPREAD) even though the AGS rescue path already stamped
+  // ACTIVE/LOCKED on the doc with v8_agsUnitsApplied of ~2.5u.
+  const agsProvenTotal = (Number(liveAgsProvenFor) || 0) + (Number(liveAgsProvenAg) || 0);
+  const v74PassesByDeltas = isV74Eligible(pickDate) && meetsV74Floor(liveDw, liveDq, hcMargin);
+  const agsRescue = isV74Eligible(pickDate)
+    && Number.isFinite(liveAgs)
+    && liveDw > -2
+    && agsProvenTotal >= AGS_MIN_PROVEN_WALLETS
+    && meetsAgsLockFloor(liveAgs, agsProvenTotal)
+    && !v74PassesByDeltas
+    && (liveTier === 'MUTED' || liveTier === 'LEAN');
+  if (agsRescue) {
+    liveTier = 'LOCKED';
+    liveStars = Math.max(liveStars, 4.0);
+  }
+
   const ladder = (marketType === 'spread' || marketType === 'total') ? calculateSpreadTotalUnits : calculateUnits;
   const liveUnitsRaw = ladder(liveStars, 0, oddsForLadder, 0, liveTier, liveHcDominant, { pickDate, hcMargin, sum });
   let liveUnits = Math.round(liveUnitsRaw * 100) / 100;
@@ -1846,16 +1871,21 @@ function computeLiveSizing({ peakStars, peakUnits, marketType, oddsForLadder,
   // tells the user about the trim; a "DOWNSIZED" badge on top would
   // duplicate the message and read as "the pick weakened" when really
   // the wallet stack was always mixed.
-  const v74StillLocked = isV74Eligible(pickDate)
-    && meetsV74Floor(liveDw, liveDq, hcMargin);
+  //
+  // Phase 3 — also suppress when the pick is being rescued by AGS. An
+  // AGS-rescue lock is by definition a play whose deltas-based stars
+  // are below peak (otherwise v7.4 would lock it on its own). The AGS
+  // chip already communicates "rescue tier"; a "DOWNSIZED" stamp on top
+  // would read as the pick weakening when it's actually being lifted.
   const starOrLadderShrunk = liveStars < peakStars || liveUnitsRaw < (peakUnits || 0);
   const rawDownsized = liveStars < peakStars || liveUnits < (peakUnits || 0);
   return {
     liveStars,
     liveUnits,
     liveTier,
-    isDownsized: rawDownsized && !v74StillLocked && starOrLadderShrunk,
+    isDownsized: rawDownsized && !v74PassesByDeltas && !agsRescue && starOrLadderShrunk,
     agsTrim,
+    agsRescue,
   };
 }
 
@@ -11458,6 +11488,12 @@ export default function SharpFlow() {
                               // server cron + the client stamper; null on
                               // legacy picks or sides without proven wallets.
                               liveAgs: Number.isFinite(sd.v8_ags) ? sd.v8_ags : null,
+                              // Phase 3 — proven-wallet counts so the AGS
+                              // rescue tier upgrade in computeLiveSizing can
+                              // gate on the AGS_MIN_PROVEN_WALLETS guard.
+                              // Stamped on the side by the same cron path.
+                              liveAgsProvenFor: Number.isFinite(sd.v8_agsProvenForCount) ? sd.v8_agsProvenForCount : null,
+                              liveAgsProvenAg: Number.isFinite(sd.v8_agsProvenAgCount) ? sd.v8_agsProvenAgCount : null,
                             });
                         const displayStars = isGradedSide ? peakStars : sizing.liveStars;
                         const displayUnits = sizing.liveUnits;
