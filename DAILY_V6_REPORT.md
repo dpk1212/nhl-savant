@@ -1,6 +1,6 @@
 # Sharp Intel v6 — Daily Master Report
 
-_Auto-generated **5/5/2026, 7:12:07 AM ET** by `scripts/dailyV6Report.js`. Do not edit by hand._
+_Auto-generated **5/5/2026, 8:48:52 AM ET** by `scripts/dailyV6Report.js`. Do not edit by hand._
 
 **Source of truth: this report mirrors the live Pick Performance dashboard.** Inclusion = `lockStage ≠ SHADOW ∧ ¬superseded ∧ health ∉ {MUTED, CANCELLED} ∧ peak.stars ≥ 2.5`. PnL is in **peak units** (the size shipped to users). Cohort tags (1/1, 2/2, …) come from frozen `v8_walletConsensus*` stamps written at last sync before the T-15 freeze. Nothing is recomputed against today's whitelist.
 
@@ -11,7 +11,7 @@ v6 cutover: **2026-04-18** · whitelist source: live `sharpWalletProfiles` (152 
 
 | Metric | Value |
 |---|---|
-| Graded sides scanned | 322 |
+| Graded sides scanned | 323 |
 | Graded sides w/ outcome | 317 |
 | **SHIPPED (matches dashboard)** | **136** |
 | · of which lockStage = LOCKED | 134 |
