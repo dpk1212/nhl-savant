@@ -1,6 +1,6 @@
 # Sharp Wallet Roster
 
-Generated: 5/5/2026, 1:39:35 AM ET · V8 cutover: 2026-04-18
+Generated: 5/5/2026, 5:06:06 AM ET · V8 cutover: 2026-04-18
 
 Every sharp wallet we have V8-era data on, sorted by combined conviction score. This is the **full roster** (no minimum-bets filter) — noisy at the tail, but that's the point for a tracking dataset. Verdict column reflects the ≥3-bet threshold.
 
@@ -116,7 +116,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | f09a15 | INCONCLUSIVE | ELITE | 50 | 0 | — | — | +0.00 | 2 | 0% | -100% | -795000 | — | — | — |
 | 8a3782 | MIXED_PICKS_BAD_$_GOOD | ELITE | 5 | 17 | 47.1% | -10.6% | -1.79 | 44 | 56.8% | +8.9% | +693498 | 94 | 90.2 | 20.2% |
 | 3033ee | MIXED_PICKS_BAD_$_GOOD | ELITE | 1 | 7 | 42.9% | -15.8% | -1.10 | 16 | 50% | +43.8% | +515039 | 72.9 | 54.9 | 4.2% |
-| f2d227 | MIXED_PICKS_BAD_$_GOOD | ELITE | 85 | 4 | 25% | -54.5% | -2.18 | 11 | 54.5% | +28% | +153414 | 58.1 | 42.8 | 2.7% |
+| f2d227 | MIXED_PICKS_BAD_$_GOOD | ELITE | 85 | 4 | 25% | -54.5% | -2.18 | 12 | 50% | +21.5% | +124073 | 58.1 | 42.8 | 2.7% |
 | c668b3 | MIXED_PICKS_BAD_$_GOOD | ELITE | 404 | 13 | 46.2% | -11.5% | -1.49 | 25 | 64% | +34.1% | +27820 | 17.9 | 17.6 | 1.2% |
 | 6b853d | MIXED_PICKS_BAD_$_GOOD | ELITE | 464 | 38 | 52.6% | -0.1% | -0.03 | 66 | 50% | +3.3% | +12247 | 26.6 | 42.5 | 2.8% |
 | 8c1eae | MIXED_PICKS_BAD_$_GOOD | ELITE | 282 | 20 | 50% | -7.9% | -1.58 | 65 | 53.8% | +15.6% | +22933 | 51.6 | 59.4 | 4.8% |
@@ -128,7 +128,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | d8e720 | POSITIONS_ONLY_NEGATIVE | PROVEN | — | 0 | — | — | +0.00 | 5 | 40% | -48% | -73 | — | — | — |
 | 8a4372 | POSITIONS_ONLY_NEGATIVE | ELITE | — | 0 | — | — | +0.00 | 4 | 50% | -7.3% | -1081 | — | — | — |
 | 85acbf | POSITIONS_ONLY_NEGATIVE | PROVEN | — | 0 | — | — | +0.00 | 3 | 0% | -100% | -3103 | — | — | — |
-| 8ec926 | POSITIONS_ONLY_NEGATIVE | ELITE | 437 | 2 | 50% | -3.7% | -0.07 | 18 | 33.3% | -41% | -8436 | 29.8 | 43.7 | 3% |
+| 8ec926 | POSITIONS_ONLY_NEGATIVE | ELITE | 437 | 2 | 50% | -3.7% | -0.07 | 19 | 36.8% | -31.8% | -7056 | 29.8 | 43.7 | 3% |
 | 4a752c | POSITIONS_ONLY_NEGATIVE | ELITE | 69 | 1 | 0% | -100% | -1.00 | 3 | 66.7% | -44.5% | -8555 | 59.8 | 42.9 | 2.8% |
 | ba8492 | POSITIONS_ONLY_NEGATIVE | PROVEN | — | 0 | — | — | +0.00 | 4 | 25% | -97% | -22922 | — | — | — |
 | 009373 | POSITIONS_ONLY_NEGATIVE | ELITE | 162 | 2 | 50% | -6.5% | -0.13 | 4 | 0% | -100% | -23986 | 67.9 | 85.4 | 13.4% |
