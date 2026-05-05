@@ -38,7 +38,13 @@ export const AGS_FEATURES = [
 // ────────────────────────────────────────────────────────────────────────
 export const AGS_LOCK_FLOOR = 5.0;        // rescue route (route C): AGS ≥ +5 → LOCK
 export const AGS_MUTE_FLOOR = -1.0;       // confirmation gate (route B): AGS < -1 → MUTE
-export const AGS_MIN_PROVEN_WALLETS = 3;  // rescue requires ≥3 proven wallets in walletDetails
+// Rescue requires ≥AGS_MIN_PROVEN_WALLETS proven wallets in walletDetails
+// (anti thin-sample noise). Lowered from 3 → 2 (2026-05-05) because MLB/NHL
+// stacks routinely show genuine signal with only 2 proven wallets backing —
+// e.g. Lakers SPREAD with AGS=+5.19 and 2 wallets FOR / 0 AGAINST is real
+// signal, not noise. The same guard still protects against single-wallet
+// z-spikes driving rescues.
+export const AGS_MIN_PROVEN_WALLETS = 2;
 
 // ────────────────────────────────────────────────────────────────────────
 // Last-known-good calibration — used as a fallback when Firestore
