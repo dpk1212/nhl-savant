@@ -130,7 +130,12 @@ const argv = process.argv.slice(2);
 const DRY_RUN = argv.includes('--dry-run');
 const FORCE = argv.includes('--force');
 const dateArg = argv.find(a => a.startsWith('--date='));
-const TARGET_DATE = dateArg ? dateArg.split('=')[1] : new Date().toISOString().slice(0, 10);
+// ET date — picks/positions are date-tagged in America/New_York, not UTC.
+// Without this, after ~8 PM ET we'd target tomorrow's date and find no
+// positions (positions are still being written under today's ET date).
+const TARGET_DATE = dateArg
+  ? dateArg.split('=')[1]
+  : new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 
 // ── Helpers (ported from SharpFlow.jsx) ─────────────────────────────────────
 const isV71Eligible = (d) => d && d >= V7_1_CUTOVER_DATE;
@@ -593,7 +598,14 @@ async function createMissingLockedPicks({
     const col = marketType === 'SPREAD' ? 'sharpFlowSpreads'
       : marketType === 'TOTAL' ? 'sharpFlowTotals'
       : 'sharpFlowPicks';
-    const docId = `${TARGET_DATE}_${sport}_${gameKey}`;
+    // docId convention MUST match the browser's syncPickToFirebase /
+    // syncSpreadPickToFirebase / syncTotalPickToFirebase paths, otherwise
+    // we'll write a duplicate doc with a different ID. ML uses no
+    // suffix; SPREAD appends "_spread"; TOTAL appends "_total".
+    const suffix = marketType === 'SPREAD' ? '_spread'
+      : marketType === 'TOTAL' ? '_total'
+      : '';
+    const docId = `${TARGET_DATE}_${sport}_${gameKey}${suffix}`;
     if (existingDocIds.has(`${col}|${docId}`)) continue; // already in Firestore
 
     const meta = gameMeta.get(`${sport}|${gameKey}`);
@@ -603,6 +615,15 @@ async function createMissingLockedPicks({
     }
     if (!meta.commenceTime) {
       skipped.push({ docId, col, reason: 'no_commenceTime' });
+      continue;
+    }
+    // CRITICAL: only create picks for games actually happening on TARGET_DATE
+    // (in ET). polymarket_data.json contains games for multiple days
+    // (today + tomorrow); without this guard we'd write tomorrow's
+    // games under today's date prefix.
+    const gameDateET = new Date(meta.commenceTime).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+    if (gameDateET !== TARGET_DATE) {
+      skipped.push({ docId, col, reason: 'game_not_target_date', gameDateET });
       continue;
     }
     if (!force && now >= meta.commenceTime - PREGAME_BUFFER_MS) {
