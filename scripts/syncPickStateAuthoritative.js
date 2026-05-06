@@ -718,6 +718,8 @@ async function createMissingLockedPicks({
           updatedAt: now,
         },
         lock: { regime: 'PREGAME', odds: odds ?? null },
+        // Canonical bet size — same source of truth used by grader and dashboard.
+        finalUnits: peakUnits,
         // Flag so we know this came from the cron auto-create path.
         cronCreated: true,
         cronCreatedAt: now,
@@ -1098,6 +1100,13 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     patch.v8_agsUnitsMult = agsUnitsMult;
     patch.v8_agsUnitsBase = liveUnitsPreAgs;
     patch.v8_agsUnitsApplied = liveUnits;
+    // CANONICAL bet size — single source of truth used by grader and
+    // dashboard. Overwritten every cycle pre-T-15; once T-15 freezes,
+    // the cron stops writing and the value sticks as the final lock size.
+    // The grader reads ONLY this; no peak.units / v8_agsUnitsApplied
+    // fallback chains, no AGS-multiplier divergence between live and
+    // graded display.
+    patch.finalUnits = liveUnits;
     const stampedAgs = sd.v8_ags;
     const agsValueChanged = stampedAgs == null
       || !Number.isFinite(stampedAgs)
@@ -1126,6 +1135,16 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       patch.v8_agsComponents = admin.firestore.FieldValue.delete();
       changes.push(`AGS: ${sd.v8_ags.toFixed(2)} → ∅ (no proven wallets)`);
     }
+    // No AGS computed (no proven wallets) — finalUnits == liveUnits with
+    // no AGS multiplier applied. Still the canonical bet size.
+    patch.finalUnits = liveUnits;
+  }
+  // finalUnits drift logging — flag any time the canonical bet size changes
+  // by ≥0.05u so cycle output makes the change visible.
+  if (Number.isFinite(sd.finalUnits) && Math.abs(sd.finalUnits - liveUnits) >= 0.05) {
+    changes.push(`finalUnits: ${sd.finalUnits}u → ${liveUnits}u`);
+  } else if (sd.finalUnits == null) {
+    changes.push(`finalUnits backfill: ${liveUnits}u`);
   }
 
   if (stampedConsVer !== WHITELIST_CONSENSUS_VERSION) {

@@ -420,10 +420,18 @@ exports.updateBetResults = onSchedule({
                 market: "MONEYLINE",
                 side: sideUpper,
               });
-              // ?? not || — LEAN/0u plays correctly persist as 0 instead of
-              // falling through to the legacy `1` unit fallback that turned
-              // every LEAN loss into a -1u PnL hit.
-              const units = sideData.peak?.units ?? sideData.lock?.units ?? 0;
+              // CANONICAL bet size. finalUnits is the single source of truth
+              // — written every cycle by the cron (syncPickStateAuthoritative
+              // .js) and frozen at T-15 when the cron stops writing. Always
+              // matches what the live card last displayed. Legacy docs
+              // (pre-finalUnits) fall back through v8_agsUnitsApplied →
+              // peak.units. ?? (not ||) so a legitimate 0u LEAN tracking
+              // play stays at 0u instead of cascading to peak.units.
+              const units = sideData.finalUnits
+                ?? sideData.v8_agsUnitsApplied
+                ?? sideData.peak?.units
+                ?? sideData.lock?.units
+                ?? 0;
               const odds = sideData.peak?.odds || sideData.lock?.odds || 0;
               // LEAN tracking plays carry units=0 and contribute 0 PnL even
               // when the underlying ticket would have lost. Tagged so the UI
@@ -612,7 +620,12 @@ exports.updateBetResults = onSchedule({
                 side: sideUpper,
                 line: line,
               });
-              const units = sideData.peak?.units ?? sideData.lock?.units ?? 0;
+              // CANONICAL bet size — see ML grader above for full notes.
+              const units = sideData.finalUnits
+                ?? sideData.v8_agsUnitsApplied
+                ?? sideData.peak?.units
+                ?? sideData.lock?.units
+                ?? 0;
               const odds = sideData.peak?.odds || sideData.lock?.odds || 0;
               const isTracked = !units || sideData.lockStage === "LEAN" ||
                 sideData.v8_lockTier === "LEAN";
@@ -751,7 +764,12 @@ exports.updateBetResults = onSchedule({
                 side: sideUpper,
                 line: line,
               });
-              const units = sideData.peak?.units ?? sideData.lock?.units ?? 0;
+              // CANONICAL bet size — see ML grader above for full notes.
+              const units = sideData.finalUnits
+                ?? sideData.v8_agsUnitsApplied
+                ?? sideData.peak?.units
+                ?? sideData.lock?.units
+                ?? 0;
               const odds = sideData.peak?.odds || sideData.lock?.odds || 0;
               const isTracked = !units || sideData.lockStage === "LEAN" ||
                 sideData.v8_lockTier === "LEAN";

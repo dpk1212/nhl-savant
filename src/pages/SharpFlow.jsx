@@ -11506,6 +11506,21 @@ export default function SharpFlow() {
                         // every LEAN graded pick rendering as a -1u loss.
                         const peakUnits = peak.units ?? lock.units ?? 0;
                         const peakStars = stars;
+                        // CANONICAL bet size. finalUnits is the single source
+                        // of truth — written every cycle by the cron and
+                        // frozen at T-15. Used for both LIVE display (past
+                        // T-15) and GRADED display so the user's risk/PnL
+                        // never changes from what they saw on the live card.
+                        // Falls back to v8_agsUnitsApplied → peakUnits only
+                        // for legacy docs that pre-date finalUnits.
+                        const finalUnitsRaw = sd.finalUnits
+                          ?? sd.v8_agsUnitsApplied
+                          ?? peakUnits;
+                        const finalUnits = (typeof finalUnitsRaw === 'number'
+                          && Number.isFinite(finalUnitsRaw)
+                          && finalUnitsRaw >= 0)
+                          ? finalUnitsRaw
+                          : peakUnits;
                         // True iff this side was a tracked-only LEAN play —
                         // either the Cloud Function grader stamped tracked=true
                         // (post-fix), or the side's units/stage/lockTier still
@@ -11539,7 +11554,7 @@ export default function SharpFlow() {
                         // the system recommended at lock time.
                         const isGradedSide = sd.status === 'COMPLETED' && !!sd.result?.outcome;
                         const sizing = isGradedSide
-                          ? { liveStars: peakStars, liveUnits: peakUnits, isDownsized: false, liveTier: null }
+                          ? { liveStars: peakStars, liveUnits: finalUnits, isDownsized: false, liveTier: null }
                           : computeLiveSizing({
                               peakStars,
                               peakUnits,
@@ -11581,7 +11596,7 @@ export default function SharpFlow() {
                         const profit = isTrackedOnly
                           ? 0
                           : sd.result?.outcome === 'WIN' ? (sd.result?.profit || 0)
-                          : sd.result?.outcome === 'LOSS' ? -(peakUnits) : 0;
+                          : sd.result?.outcome === 'LOSS' ? -(finalUnits) : 0;
                         allLockedArr.push({
                           key: `${docId}:${sideKey}`,
                           team: sd.team || sideKey,
