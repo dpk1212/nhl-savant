@@ -817,16 +817,21 @@ async function createMissingLockedPicks({
 
       // Build the rich peak fields the dashboard render reads. Without
       // these the card showed "Pistons null / 0 · pinnacle / $null".
+      //
+      // CRITICAL: only write fields whose values we actually have. Firestore
+      // setDoc({merge:true}) treats explicit null as "overwrite to null" —
+      // only undefined is skipped. If the browser already wrote
+      // peak.line=-3.5 / peak.odds=-105 and we then merge a payload with
+      // peak.line=null, we wipe out the good data. Build the snapshot from
+      // the always-present fields, then attach line/odds/pinnacleOdds only
+      // when non-null so the existing values survive a race.
       const peakStats = buildPeakStatsFromPositions(positions, side, isProvenFn, sport);
       const peakSnapshot = {
         team: team || side,
-        odds: odds ?? null,
         // 'Pinnacle' (capitalized) matches the browser's syncSpread/Total
         // path. Lowercase 'pinnacle' triggered "0 · pinnacle / Pistons null"
         // rendering on the dashboard before this fix.
         book: 'Pinnacle',
-        pinnacleOdds: odds ?? null,
-        line: line ?? null,
         stars: peakStars,
         units: peakUnits,
         unitTier: unitTierLabel(peakUnits),
@@ -854,6 +859,13 @@ async function createMissingLockedPicks({
         v8Scoring: { walletDetails, consensusSide: side },
         updatedAt: now,
       };
+      if (odds != null) {
+        peakSnapshot.odds = odds;
+        peakSnapshot.pinnacleOdds = odds;
+      }
+      if (line != null) {
+        peakSnapshot.line = line;
+      }
       newSides[side] = {
         team: team || side,
         lockStage: 'LOCKED',
@@ -914,9 +926,37 @@ async function createMissingLockedPicks({
   }
 
   if (!dryRun) {
+    // Race-safety: existingDocIds is a snapshot from the start of the run.
+    // Between then and now the browser may have created the doc with full
+    // peak data (line, odds, book, walletProfile, evEdge…). If we batch-set
+    // our payload over it, even with merge:true, any explicit null we write
+    // (e.g. peak.line=null when Pinnacle has no spread number for the game
+    // yet) will clobber the browser's good value — that's exactly the
+    // "delete → comes back perfect → later overwritten with null" bug.
+    //
+    // Per-doc fresh existence check closes the race. We pay one extra read
+    // per missing-pick candidate, which is cheap (handful per cycle).
     for (const [col, items] of writes) {
-      const batch = db.batch();
+      const filtered = [];
       for (const w of items) {
+        const ref = db.collection(col).doc(w.docId);
+        const cur = await ref.get();
+        if (cur.exists) {
+          // Browser (or another writer) beat us to it — leave it alone.
+          // Strip from `created` so the cron log doesn't lie about it.
+          for (let i = created.length - 1; i >= 0; i--) {
+            if (created[i].col === col && created[i].docId === w.docId) {
+              skipped.push({ docId: w.docId, col, side: created[i].side, reason: 'race_existed_at_write' });
+              created.splice(i, 1);
+            }
+          }
+          continue;
+        }
+        filtered.push(w);
+      }
+      if (filtered.length === 0) continue;
+      const batch = db.batch();
+      for (const w of filtered) {
         batch.set(db.collection(col).doc(w.docId), w.payload, { merge: true });
       }
       await batch.commit();
