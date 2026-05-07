@@ -18,7 +18,7 @@ import * as dotenv from 'dotenv';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { parseMLBDRatings } from '../src/utils/mlbDratingsParser.js';
 import { parseMLBDimers } from '../src/utils/mlbDimersParser.js';
 import { normalizeMLBTeam, fullTeamName } from '../src/utils/mlbTeamMap.js';
@@ -311,6 +311,20 @@ async function writePickToFirebase(pick, date) {
     return { betId, action: 'updated' };
   }
 
+  // First-write guard — if the game has already started by the time the
+  // model is recommending it for the first time, refuse to create a phantom
+  // bet. Post-commence "picks" are an artifact of in-game odds shifting (a
+  // 9-2 dog gets quoted at +230 and the EV calc lights up), but they were
+  // never actually displayed to users pre-commence so they must not be
+  // graded as if they were. This pairs with the JSON writer freeze below
+  // to enforce: displayed picks never change after commence, and only
+  // locked-and-displayed picks count toward performance.
+  const commenceMs = pick.commenceTime ? new Date(pick.commenceTime).getTime() : null;
+  if (commenceMs && Date.now() >= commenceMs) {
+    console.log(`   🚫 ${betId} commence time passed and no pre-commence pick exists — refusing to create phantom bet`);
+    return { betId, action: 'phantom_skipped' };
+  }
+
   await setDoc(ref, betData);
   return { betId, action: 'created' };
 }
@@ -373,6 +387,16 @@ async function writeEvalToFirebase(game, date) {
   const existing = await getDoc(ref);
   if (existing.exists() && existing.data()?.isLocked) {
     return;
+  }
+  // Same first-write guard as writePickToFirebase — once a game has
+  // commenced, never create a brand-new evaluation doc. Pre-commence
+  // evaluations can keep merging odds/model updates as long as they're not
+  // locked, but post-commence first-writes are phantom data.
+  if (!existing.exists()) {
+    const commenceMs = game.commenceTime ? new Date(game.commenceTime).getTime() : null;
+    if (commenceMs && Date.now() >= commenceMs) {
+      return;
+    }
   }
   await setDoc(ref, evalData, { merge: true });
 }
@@ -517,34 +541,118 @@ async function main() {
   console.log('│ STEP 5: WRITING JSON EXPORT                 │');
   console.log('└─────────────────────────────────────────────┘\n');
 
+  // ── Post-commence freeze ──────────────────────────────────────────────
+  // Once a game has started, the displayed pick must NEVER change. The
+  // model keeps re-evaluating each cycle against fresh odds, and post-game
+  // those odds reflect the score (e.g. a 9-2 loser quoted at +230) which
+  // makes the model think there's huge "+EV" on the wrong side. Without
+  // this freeze, the live picks card would diverge from the locked Firestore
+  // bet that's actually being graded — see the 2026-05-07 TEX@NYY incident
+  // where the morning rec (Yankees -142) was correctly graded as a WIN
+  // but the afternoon JSON cycle re-recommended Rangers +230 (post-game
+  // bogus EV) and the live page no longer matched bet history.
+  //
+  // Rule: if commenceTime <= now, the JSON pick MUST come from the locked
+  // Firestore mlb_bets doc, not from the current model output. If no locked
+  // doc exists for that game (model never picked it pre-commence), drop it
+  // entirely — there's no real bet to display.
+  const lockedBetsByMatchup = new Map();
+  try {
+    const lockedSnap = await getDocs(
+      query(collection(db, 'mlb_bets'), where('date', '==', date)),
+    );
+    lockedSnap.forEach(d => {
+      const b = d.data();
+      if (b.type === 'EVALUATION') return;
+      const key = `${(b.game?.awayCode || '').toLowerCase()}_${(b.game?.homeCode || '').toLowerCase()}`;
+      lockedBetsByMatchup.set(key, b);
+    });
+    console.log(`   🔒 Loaded ${lockedBetsByMatchup.size} locked Firestore bets for ${date}`);
+  } catch (err) {
+    console.warn(`   ⚠️  Could not load locked bets — post-commence freeze disabled: ${err.message}`);
+  }
+
+  const nowMs = Date.now();
+
+  const buildLivePick = (p) => ({
+    awayTeam: p.awayTeamFull,
+    homeTeam: p.homeTeamFull,
+    awayCode: p.awayTeam,
+    homeCode: p.homeTeam,
+    commenceTime: p.commenceTime,
+    pick: p.prediction.bestSide === 'away' ? p.awayTeamFull : p.homeTeamFull,
+    pickCode: p.prediction.bestSide === 'away' ? p.awayTeam : p.homeTeam,
+    side: p.prediction.bestSide,
+    odds: p.prediction.bestOdds,
+    book: p.prediction.bestBook,
+    units: p.units,
+    ev: Math.round(p.prediction.bestEV * 100) / 100,
+    grade: p.prediction.grade,
+    modelsAgree: p.prediction.modelsAgree,
+    confidence: p.prediction.confidence,
+    ensembleAwayProb: p.prediction.ensembleAwayProb,
+    ensembleHomeProb: p.prediction.ensembleHomeProb,
+    awayPitcher: p.prediction.awayPitcher,
+    homePitcher: p.prediction.homePitcher,
+    predictedTotal: p.prediction.predictedTotal,
+  });
+
+  const buildFrozenPick = (b) => ({
+    awayTeam: b.game?.awayTeam,
+    homeTeam: b.game?.homeTeam,
+    awayCode: b.game?.awayCode,
+    homeCode: b.game?.homeCode,
+    commenceTime: b.game?.commenceTime,
+    pick: b.bet?.pick,
+    pickCode: b.bet?.pickCode,
+    side: b.bet?.side,
+    odds: b.bet?.odds,
+    book: b.bet?.book,
+    units: b.bet?.units,
+    ev: b.prediction?.bestEV,
+    grade: b.prediction?.grade,
+    modelsAgree: b.prediction?.modelsAgree,
+    confidence: b.prediction?.confidence,
+    ensembleAwayProb: b.prediction?.ensembleAwayProb,
+    ensembleHomeProb: b.prediction?.ensembleHomeProb,
+    awayPitcher: b.game?.awayPitcher,
+    homePitcher: b.game?.homePitcher,
+    predictedTotal: b.prediction?.predictedTotal,
+    // Mark frozen explicitly so the UI / consumers know this is a post-
+    // commence locked snapshot and not the live model rec.
+    frozen: true,
+  });
+
+  const livePicks = picks
+    .filter(p => {
+      const ct = p.commenceTime ? new Date(p.commenceTime).getTime() : 0;
+      return ct > nowMs;
+    })
+    .map(buildLivePick);
+
+  const frozenPicks = [];
+  for (const b of lockedBetsByMatchup.values()) {
+    const ct = b.game?.commenceTime ? new Date(b.game.commenceTime).getTime() : 0;
+    if (!ct || ct > nowMs) continue;
+    frozenPicks.push(buildFrozenPick(b));
+  }
+
+  const exportedPicks = [...frozenPicks, ...livePicks];
+  const droppedPostCommence = picks.length - livePicks.length;
+  if (droppedPostCommence > 0) {
+    console.log(
+        `   🧊 Froze ${frozenPicks.length} post-commence pick(s) to Firestore lock state; `
+      + `dropped ${droppedPostCommence} live model rec(s) for already-started games`,
+    );
+  }
+
   const jsonExport = {
     date,
     lastUpdated: new Date().toISOString(),
     source: 'MLB_MODEL_V1',
     gamesEvaluated: evaluations.length,
-    picksCount: picks.length,
-    picks: picks.map(p => ({
-      awayTeam: p.awayTeamFull,
-      homeTeam: p.homeTeamFull,
-      awayCode: p.awayTeam,
-      homeCode: p.homeTeam,
-      commenceTime: p.commenceTime,
-      pick: p.prediction.bestSide === 'away' ? p.awayTeamFull : p.homeTeamFull,
-      pickCode: p.prediction.bestSide === 'away' ? p.awayTeam : p.homeTeam,
-      side: p.prediction.bestSide,
-      odds: p.prediction.bestOdds,
-      book: p.prediction.bestBook,
-      units: p.units,
-      ev: Math.round(p.prediction.bestEV * 100) / 100,
-      grade: p.prediction.grade,
-      modelsAgree: p.prediction.modelsAgree,
-      confidence: p.prediction.confidence,
-      ensembleAwayProb: p.prediction.ensembleAwayProb,
-      ensembleHomeProb: p.prediction.ensembleHomeProb,
-      awayPitcher: p.prediction.awayPitcher,
-      homePitcher: p.prediction.homePitcher,
-      predictedTotal: p.prediction.predictedTotal,
-    })),
+    picksCount: exportedPicks.length,
+    picks: exportedPicks,
     evaluations: evaluations.map(e => ({
       awayTeam: e.awayTeamFull,
       homeTeam: e.homeTeamFull,
