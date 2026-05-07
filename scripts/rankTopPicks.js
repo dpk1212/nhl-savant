@@ -104,6 +104,19 @@ function hcBucket(m) {
   return 'HC≥+2';
 }
 
+// AGS tier buckets — mirror agsTierFromValue() in src/lib/ags.js but with
+// label keys we can use as matrix indexes. Order matters for display.
+const AGS_TIER_BUCKETS = ['ELITE', 'LOCK', 'STRONG', 'NEUTRAL', 'WEAK', 'FADE'];
+function agsTierBucket(ags) {
+  if (ags == null || !Number.isFinite(ags)) return null;
+  if (ags >= 7) return 'ELITE';
+  if (ags >= 5) return 'LOCK';
+  if (ags >= 3) return 'STRONG';
+  if (ags >= 0) return 'NEUTRAL';
+  if (ags >= -3) return 'WEAK';
+  return 'FADE';
+}
+
 // ── Wallet-key canonicalizer ──────────────────────────────────────────────
 function buildCanonicalizer(profiles) {
   const map = new Map();
@@ -242,9 +255,18 @@ async function loadHistorical() {
             }))
           : null;
 
+        // AGS frozen stamp — only present on picks scored under v7.5+ (late
+        // April 2026 onward). Older rows will have null AGS and fall into
+        // the 'UNKNOWN' bucket which we exclude from the AGS matrix.
+        const agsFrozen = (side.v8_ags != null && Number.isFinite(side.v8_ags))
+          ? Number(side.v8_ags)
+          : null;
+        const agsTierFrozen = side.v8_agsTier ?? null;
+
         pickRows.push({
           docId: doc.id, date, sport, market, sideKey,
           dwFrozen, dqFrozen, hcStamped,
+          agsFrozen, agsTierFrozen,
           outcome: oc,
           flatProfit: flatProfit(odds, oc === 'WIN'),
           walletDetailsLite: wdLite,
@@ -370,6 +392,58 @@ function buildSigmaHcMatrix(pickRows) {
   return { all, bySport, totalEligible: eligible.length, sports };
 }
 
+// Build the historical AGS-tier-by-tier matrix. Each cell aggregates every
+// graded pick that landed in that AGS tier when it was scored. Mirrors
+// the v7.5 calibration sample documented in src/lib/ags.js header:
+//   AGS ≥ +7   →  ~100% WR / +172% ROI (ELITE, n=4 in original cal)
+//   AGS ≥ +5   →   ~93% WR / +106% ROI (LOCK, n=14)
+//   AGS ≥ +3   →   ~74% WR /  +48% ROI (STRONG, n=38)
+//
+// Unlike the (Σ × HC) matrix, AGS isn't recomputable from walletDetailsLite
+// because the underlying agg features need contribution / roiNorm / pnlNorm
+// numbers that we don't carry. So this matrix is restricted to picks whose
+// `v8_ags` was stamped at scoring time (v7.5+ era, ~late April 2026 onward).
+function buildAgsMatrix(pickRows) {
+  const eligible = pickRows.filter(r =>
+    r.agsFrozen != null
+    && Number.isFinite(r.agsFrozen)
+    && (r.outcome === 'WIN' || r.outcome === 'LOSS')
+  );
+  function aggCell(rows) {
+    if (!rows.length) return { n: 0, wins: 0, losses: 0, wr: null, flatRoi: null, flatPnl: 0, agsAvg: null };
+    const wins = rows.filter(r => r.outcome === 'WIN').length;
+    const flat = rows.reduce((s, r) => s + (r.flatProfit ?? 0), 0);
+    const agsSum = rows.reduce((s, r) => s + (r.agsFrozen ?? 0), 0);
+    return {
+      n: rows.length, wins, losses: rows.length - wins,
+      wr: rows.length ? wins / rows.length * 100 : null,
+      flatRoi: rows.length ? (flat / rows.length) * 100 : null,
+      flatPnl: flat,
+      agsAvg: rows.length ? agsSum / rows.length : null,
+    };
+  }
+  function build(rows) {
+    const out = {};
+    for (const tier of AGS_TIER_BUCKETS) {
+      out[tier] = aggCell(rows.filter(r => agsTierBucket(r.agsFrozen) === tier));
+    }
+    // Threshold cumulative cohorts — what the v7.5 calibration header reports.
+    out['AGS≥+7'] = aggCell(rows.filter(r => r.agsFrozen >= 7));
+    out['AGS≥+5'] = aggCell(rows.filter(r => r.agsFrozen >= 5));
+    out['AGS≥+3'] = aggCell(rows.filter(r => r.agsFrozen >= 3));
+    out['AGS≥0']  = aggCell(rows.filter(r => r.agsFrozen >= 0));
+    out['AGS<0']  = aggCell(rows.filter(r => r.agsFrozen < 0));
+    out['AGS<-1'] = aggCell(rows.filter(r => r.agsFrozen < -1));
+    out.ALL = aggCell(rows);
+    return out;
+  }
+  const all = build(eligible);
+  const bySport = {};
+  const sports = [...new Set(eligible.map(r => r.sport))].sort();
+  for (const s of sports) bySport[s] = build(eligible.filter(r => r.sport === s));
+  return { all, bySport, totalEligible: eligible.length, sports };
+}
+
 // ── Composite signal score (HC margin DOMINATES) ─────────────────────────
 //
 // Calibrated to §12 evidence base. HC margin is the strongest single
@@ -473,6 +547,17 @@ function loadTodayLocked(today, lens) {
           hcSource = 'recomputed_live';
         }
 
+        // AGS — the AggregateScore stamp written by syncPickStateAuthoritative
+        // every cycle. This is the proven-wallet quality signal used for
+        // both rescue (AGS ≥ AGS_LOCK_FLOOR) and the mute veto (AGS <
+        // AGS_MUTE_FLOOR). Surface it alongside HC / Σ / Δw so the ranker
+        // shows the COMPLETE quality picture, not just the consensus depth.
+        const ags = (side.v8_ags != null && Number.isFinite(side.v8_ags)) ? Number(side.v8_ags) : null;
+        const agsTier = side.v8_agsTier ?? null;
+        const agsForN = (side.v8_agsProvenForCount != null) ? Number(side.v8_agsProvenForCount) : null;
+        const agsAgN  = (side.v8_agsProvenAgCount  != null) ? Number(side.v8_agsProvenAgCount)  : null;
+        const agsUnitsMult = (side.v8_agsUnitsMult != null) ? Number(side.v8_agsUnitsMult) : null;
+
         out.push({
           docId: doc.id,
           sport: d.sport,
@@ -488,6 +573,7 @@ function loadTodayLocked(today, lens) {
           lockTier: side.v8_lockTier ?? null,
           dw, dq, sum: dw + dq,
           hcConfFor: hcF, hcConfAg: hcA, hcMargin: hcM, hcSource,
+          ags, agsTier, agsForN, agsAgN, agsUnitsMult,
           systemVersion: side.v8_systemVersion ?? null,
           promotedBy: side.promotedBy ?? null,
           v73HcRescue: !!side.v8_v73HcRescue,
@@ -523,6 +609,10 @@ function fmtCell(cell) {
   const matrix = buildSigmaHcMatrix(pickRows);
   console.log(`  Eligible historical rows: ${matrix.totalEligible} · sports: ${matrix.sports.join(', ')}`);
 
+  console.log('Building AGS-tier historical matrix…');
+  const agsMatrix = buildAgsMatrix(pickRows);
+  console.log(`  Eligible historical rows (with v8_ags stamp): ${agsMatrix.totalEligible} · sports: ${agsMatrix.sports.join(', ')}`);
+
   console.log(`\nLoading today's LOCKED picks (${today})…`);
   const todayPicks = await loadTodayLocked(today, lens);
   if (!todayPicks.length) {
@@ -542,6 +632,22 @@ function fmtCell(cell) {
     p.bandHcAll    = (matrix.all.ALL && matrix.all.ALL[hb]) || null;
     p.bandSigmaSport = (sportMatrix && sportMatrix[sb] && sportMatrix[sb].ALL) || null;
     p.bandHcSport    = (sportMatrix && sportMatrix.ALL && sportMatrix.ALL[hb]) || null;
+
+    // AGS tier cell — historical WR / ROI for the bucket this pick lives in.
+    const at = agsTierBucket(p.ags);
+    const agsSportMatrix = agsMatrix.bySport[p.sport] || null;
+    p.agsBucket = at;
+    p.agsCellAll   = at ? (agsMatrix.all[at] || null) : null;
+    p.agsCellSport = (at && agsSportMatrix) ? (agsSportMatrix[at] || null) : null;
+    // Cumulative cohort lookup — which "AGS ≥ X" floor does this pick clear?
+    p.agsCohortAll = (p.ags != null && Number.isFinite(p.ags))
+      ? (p.ags >= 7 ? agsMatrix.all['AGS≥+7']
+        : p.ags >= 5 ? agsMatrix.all['AGS≥+5']
+        : p.ags >= 3 ? agsMatrix.all['AGS≥+3']
+        : p.ags >= 0 ? agsMatrix.all['AGS≥0']
+        : p.ags >= -1 ? agsMatrix.all['AGS<0']
+        : agsMatrix.all['AGS<-1'])
+      : null;
   }
   todayPicks.sort((a, b) => b.score - a.score);
 
@@ -567,16 +673,20 @@ function fmtCell(cell) {
     pad('Δw', 4) + '| ' +
     pad('Δq', 4) + '| ' +
     pad('HC_m', 5) + '| ' +
+    pad('AGS', 7) + '| ' +
+    pad('AGS-N', 6) + '| ' +
     pad('Cell ALL (Σ×HC)', 22) + ' | ' +
     pad(`Cell ${'<sport>'} (Σ×HC)`, 22) + ' | ' +
     pad('promotedBy', 18)
   );
-  console.log('-'.repeat(170));
+  console.log('-'.repeat(190));
+  const fmtAgs = (a) => (a == null || !Number.isFinite(a)) ? '—' : (a >= 0 ? '+' : '') + a.toFixed(2);
   todayPicks.forEach((p, i) => {
     const sportTag = `[${p.sport}]`;
     const pickStr = `${sportTag} ${p.market} ${p.team}`;
     const cellAllLbl   = fmtCell(p.cellAll);
     const cellSportLbl = fmtCell(p.cellSport);
+    const agsNlbl = (p.agsForN == null && p.agsAgN == null) ? '—' : `${p.agsForN ?? 0}v${p.agsAgN ?? 0}`;
     console.log(
       padR(i + 1, 3) + ' | ' +
       padR(p.score, 6) + ' | ' +
@@ -588,6 +698,8 @@ function fmtCell(cell) {
       pad(sign(p.dw, 0), 4) + '| ' +
       pad(sign(p.dq, 0), 4) + '| ' +
       pad((p.hcMargin >= 0 ? '+' : '') + p.hcMargin, 5) + '| ' +
+      pad(fmtAgs(p.ags), 7) + '| ' +
+      pad(agsNlbl, 6) + '| ' +
       pad(cellAllLbl, 22) + ' | ' +
       pad(cellSportLbl, 22) + ' | ' +
       pad(p.promotedBy ?? '—', 18)
@@ -605,6 +717,20 @@ function fmtCell(cell) {
     console.log(`\n  #${i + 1}  [${p.sport}] ${p.market}  ${p.team}  @ ${p.odds >= 0 ? '+' : ''}${p.odds}  (${p.book})`);
     console.log(`         tier=${p.lockTier}  ${p.stars}★  ${p.units}u  · promotedBy=${p.promotedBy ?? '—'}  · score=${p.score}`);
     console.log(`         Σ=${sign(p.sum, 0)} (Δw=${sign(p.dw, 0)} · Δq=${sign(p.dq, 0)})  · HC_m=${(p.hcMargin >= 0 ? '+' : '') + p.hcMargin} (HC for=${p.hcConfFor} ag=${p.hcConfAg})  · HC source=${p.hcSource}`);
+    const agsLbl = (p.ags == null || !Number.isFinite(p.ags)) ? '—' : (p.ags >= 0 ? '+' : '') + p.ags.toFixed(2);
+    const agsTierLbl = p.agsTier ?? '—';
+    const agsCountLbl = (p.agsForN == null && p.agsAgN == null) ? '—' : `for=${p.agsForN ?? 0} ag=${p.agsAgN ?? 0}`;
+    const agsMultLbl = (p.agsUnitsMult != null && p.agsUnitsMult !== 1) ? ` · units×${p.agsUnitsMult.toFixed(2)}` : '';
+    console.log(`         AGS=${agsLbl} (tier=${agsTierLbl} · proven ${agsCountLbl}${agsMultLbl})`);
+    // Historical AGS-tier WR/ROI cohort this pick belongs to.
+    const agsTierBkt = p.agsBucket ?? '—';
+    const agsCellLbl   = fmtCell(p.agsCellAll);
+    const agsSportLbl  = fmtCell(p.agsCellSport);
+    const agsCohortLbl = fmtCell(p.agsCohortAll);
+    console.log(`         AGS historical (${agsMatrix.totalEligible} stamped graded rows):`);
+    console.log(`           • Tier ALL · ${agsTierBkt.padEnd(7)}        :  ${agsCellLbl}`);
+    console.log(`           • Tier ${p.sport.padEnd(3)} · ${agsTierBkt.padEnd(7)}        :  ${agsSportLbl}`);
+    console.log(`           • Cohort floor cleared          :  ${agsCohortLbl}`);
     console.log(`         Historical evidence (${matrix.totalEligible} graded rows, v6+):`);
     console.log(`           • Cell  ALL · ${sb} ∧ ${hb}     :  ${fmtCell(p.cellAll)}`);
     console.log(`           • Cell  ${p.sport.padEnd(3)} · ${sb} ∧ ${hb}     :  ${fmtCell(p.cellSport)}`);
@@ -652,6 +778,65 @@ function fmtCell(cell) {
     rows.forEach(p => console.log(`     · [${p.sport}] ${p.market} ${p.team}  Σ=${sign(p.sum, 0)}  HC_m=${p.hcMargin >= 0 ? '+' : ''}${p.hcMargin}  score=${p.score}`));
   }
 
+  // ── AGS tier rollup ──────────────────────────────────────────────────
+  // Two views: tier breakdown of today's picks, and the cumulative
+  // threshold ladder (AGS ≥ +7 / +5 / +3 / 0 / <0 / <-1) so you can see
+  // how today's picks stack against the v7.5 calibration cohorts.
+  console.log('\n══════════════════════════════════════════════════════════════════════════════');
+  console.log(`  AGS TIER ROLLUP — historical WR / ROI by AGS bucket  (n=${agsMatrix.totalEligible} stamped graded rows)`);
+  console.log('══════════════════════════════════════════════════════════════════════════════');
+  console.log('');
+  console.log('  AGS-TIER MATRIX (all sports pooled):');
+  console.log('  ' + pad('Tier', 9) + '| ' + pad('Range', 14) + '| ' + pad('N', 4) + '| ' + pad('W-L', 8) + '| ' + pad('WR%', 7) + '| ' + pad('flat ROI', 10) + '| ' + pad('avg AGS', 9));
+  console.log('  ' + '-'.repeat(70));
+  const tierRanges = {
+    ELITE:   '≥ +7',
+    LOCK:    '+5 … +7',
+    STRONG:  '+3 … +5',
+    NEUTRAL: '0 … +3',
+    WEAK:    '-3 … 0',
+    FADE:    '< -3',
+  };
+  for (const tier of AGS_TIER_BUCKETS) {
+    const c = agsMatrix.all[tier];
+    if (!c) continue;
+    const wl = c.n > 0 ? `${c.wins}-${c.losses}` : '—';
+    const wr = c.wr != null ? c.wr.toFixed(1) + '%' : '—';
+    const roi = c.flatRoi != null ? sign(c.flatRoi, 1) + '%' : '—';
+    const avgAgs = c.agsAvg != null ? sign(c.agsAvg, 2) : '—';
+    console.log('  ' + pad(tier, 9) + '| ' + pad(tierRanges[tier] || '—', 14) + '| ' + padR(c.n, 4) + '| ' + pad(wl, 8) + '| ' + pad(wr, 7) + '| ' + pad(roi, 10) + '| ' + pad(avgAgs, 9));
+  }
+  console.log('');
+  console.log('  CUMULATIVE THRESHOLD LADDER (matches v7.5 calibration header):');
+  console.log('  ' + pad('Threshold', 12) + '| ' + pad('N', 4) + '| ' + pad('W-L', 8) + '| ' + pad('WR%', 7) + '| ' + pad('flat ROI', 10));
+  console.log('  ' + '-'.repeat(56));
+  for (const cohortKey of ['AGS≥+7', 'AGS≥+5', 'AGS≥+3', 'AGS≥0', 'AGS<0', 'AGS<-1']) {
+    const c = agsMatrix.all[cohortKey];
+    if (!c) continue;
+    const wl = c.n > 0 ? `${c.wins}-${c.losses}` : '—';
+    const wr = c.wr != null ? c.wr.toFixed(1) + '%' : '—';
+    const roi = c.flatRoi != null ? sign(c.flatRoi, 1) + '%' : '—';
+    console.log('  ' + pad(cohortKey, 12) + '| ' + padR(c.n, 4) + '| ' + pad(wl, 8) + '| ' + pad(wr, 7) + '| ' + pad(roi, 10));
+  }
+  console.log('');
+  console.log('  TODAY\'S PICKS BY AGS TIER:');
+  for (const tier of AGS_TIER_BUCKETS) {
+    const rows = todayPicks.filter(p => p.agsBucket === tier);
+    if (!rows.length) continue;
+    const ref = agsMatrix.all[tier];
+    const refLbl = ref && ref.n > 0 ? `  (cohort historical: ${fmtCell(ref)})` : '';
+    console.log(`  ${tier} (${tierRanges[tier]}): ${rows.length} pick(s)${refLbl}`);
+    rows.forEach(p => {
+      const agsLbl = (p.ags >= 0 ? '+' : '') + p.ags.toFixed(2);
+      console.log(`     · [${p.sport}] ${p.market} ${p.team}  AGS=${agsLbl}  Σ=${sign(p.sum, 0)}  HC_m=${p.hcMargin >= 0 ? '+' : ''}${p.hcMargin}  score=${p.score}`);
+    });
+  }
+  const noAgs = todayPicks.filter(p => p.ags == null || !Number.isFinite(p.ags));
+  if (noAgs.length) {
+    console.log(`  NO AGS STAMP: ${noAgs.length} pick(s)  (older v6 docs without v8_ags written; will be backfilled by next cron cycle)`);
+    noAgs.forEach(p => console.log(`     · [${p.sport}] ${p.market} ${p.team}  Σ=${sign(p.sum, 0)}  HC_m=${p.hcMargin >= 0 ? '+' : ''}${p.hcMargin}  score=${p.score}`));
+  }
+
   // ── Persist a machine-readable snapshot ─────────────────────────────
   const publicDir = join(REPO_ROOT, 'public');
   if (!existsSync(publicDir)) mkdirSync(publicDir, { recursive: true });
@@ -671,11 +856,20 @@ function fmtCell(cell) {
       lockTier: p.lockTier, promotedBy: p.promotedBy, v73HcRescue: p.v73HcRescue,
       sum: p.sum, dw: p.dw, dq: p.dq,
       hcMargin: p.hcMargin, hcConfFor: p.hcConfFor, hcConfAg: p.hcConfAg, hcSource: p.hcSource,
+      ags: p.ags, agsTier: p.agsTier, agsBucket: p.agsBucket,
+      agsForN: p.agsForN, agsAgN: p.agsAgN, agsUnitsMult: p.agsUnitsMult,
       score: p.score,
       cellAll: p.cellAll, cellSport: p.cellSport,
       bandSigmaAll: p.bandSigmaAll, bandSigmaSport: p.bandSigmaSport,
       bandHcAll: p.bandHcAll, bandHcSport: p.bandHcSport,
+      agsCellAll: p.agsCellAll, agsCellSport: p.agsCellSport, agsCohortAll: p.agsCohortAll,
     })),
+    agsMatrix: {
+      all: agsMatrix.all,
+      bySport: agsMatrix.bySport,
+      totalEligible: agsMatrix.totalEligible,
+      sports: agsMatrix.sports,
+    },
   }, null, 2));
   console.log(`\nWrote ${outPath}`);
 
