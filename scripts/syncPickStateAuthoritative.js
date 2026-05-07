@@ -1478,8 +1478,50 @@ async function main() {
   const posSnap = await db.collection('sharp_action_positions')
     .where('date', '==', TARGET_DATE)
     .get();
-  const positions = [];
-  posSnap.forEach(d => positions.push({ _id: d.id, ...d.data() }));
+  const rawPositions = [];
+  posSnap.forEach(d => rawPositions.push({ _id: d.id, ...d.data() }));
+
+  // ── Stale-position freshness filter ────────────────────────────────────
+  // writeSharpActions doesn't delete positions when a wallet closes them
+  // (the scanner only reports OPEN positions, so a closed position simply
+  // disappears from subsequent scans without ever being marked closed in
+  // Firestore). That's how 52aeeb on cle_det/SPREAD/home shows up at
+  // updatedAt=6:04 PM (its last scan-of-record) while the wallet has
+  // since flipped to away — the home doc is a phantom that
+  // buildPeakStatsFromPositions would happily add into the proven-NBA
+  // total, double-counting the same wallet on both sides and inflating
+  // peak.totalInvested.
+  //
+  // Fix: filter to positions whose updatedAt is within the most recent
+  // scan window. We compute the max updatedAt across all loaded positions
+  // (the last writeSharpActions tick), then keep anything within 90s of
+  // that. 90s is bigger than a single batch's commit time but smaller
+  // than the 8-min cycle cadence, so we always keep "this cycle"
+  // positions and always drop "previous cycle" ones.
+  const tsMs = (p) => {
+    const ts = p.updatedAt;
+    if (!ts) return 0;
+    if (typeof ts.toMillis === 'function') return ts.toMillis();
+    if (typeof ts._seconds === 'number') return ts._seconds * 1000;
+    if (ts instanceof Date) return ts.getTime();
+    return 0;
+  };
+  const maxUpdatedMs = rawPositions.reduce((m, p) => Math.max(m, tsMs(p)), 0);
+  const FRESHNESS_WINDOW_MS = 90 * 1000;
+  let prunedStale = 0;
+  const positions = maxUpdatedMs > 0
+    ? rawPositions.filter(p => {
+        const t = tsMs(p);
+        if (t === 0) return true; // missing updatedAt — keep, can't judge
+        const fresh = t >= maxUpdatedMs - FRESHNESS_WINDOW_MS;
+        if (!fresh) prunedStale++;
+        return fresh;
+      })
+    : rawPositions;
+  if (prunedStale > 0) {
+    console.log(`  ↳ pruned ${prunedStale} stale position(s) outside ${FRESHNESS_WINDOW_MS/1000}s of latest scan (${new Date(maxUpdatedMs).toISOString()})`);
+  }
+
   const groups = buildPositionGroupsFromFirestore(positions);
   console.log(`Loaded ${positions.length} sharp_action_positions in ${groups.size} game-market clusters`);
 
