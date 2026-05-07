@@ -53,7 +53,7 @@
 
 # MLB Predictions - 🟢 Updated Live
 
-MLB predictions for every game, built on data. See win probabilities and market insights for the moneyline, run line, and total. Strictly by the numbers—no guesswork. On 5/7, the Cubs have the highest win probability at 63%.
+MLB predictions for every game, built on data. See win probabilities and market insights for the moneyline, run line, and total. Strictly by the numbers—no guesswork. On 5/7, the Cubs have the highest win probability at 62%.
 
 [![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-left.svg) Start your FREE 3-Day trial of Dimers Pro ![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-right.svg)](https://www.dimers.com/subscription)
 
@@ -63,49 +63,51 @@ May 7 2026
 \\
 ![Rangers](https://cdn.ciphersports.io/images/MLB/official/TEX.svg)\\
 \\
-Rangers  M. Gore \\
+Rangers \\
 \\
-43% \\
+0 \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
-\\
-+136\\
+42% \\
 \\
 ![Yankees](https://cdn.ciphersports.io/images/MLB/official/NYY.svg)\\
 \\
-Yankees  P. Blackburn \\
+Yankees \\
 \\
-57% \\
+0 \\
 \\
-![theScore Bet](https://cdn.ciphersports.io/images/bookmaker-images/thescorebet-icon.png)\\
+58% \\
 \\
--141\\
+3 Out\\
 \\
-MLB \\
+LIVE\\
 \\
-See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_44_nyy_tex) [May 7, 1:05 PM ET\\
+Top 1st\\
+\\
+In-Play Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_44_nyy_tex) [May 7, 1:05 PM ET\\
 \\
 ![Twins](https://cdn.ciphersports.io/images/MLB/official/MIN.svg)\\
 \\
 Twins  S. Richardson \\
 \\
-50% \\
+48% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-+104\\
++115\\
 \\
 ![Nationals](https://cdn.ciphersports.io/images/MLB/official/WSH.svg)\\
 \\
 Nationals  J. Irvin \\
 \\
-50% \\
+52% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
--106\\
+-117\\
 \\
-MLB \\
+STARTS\\
+\\
+8 mins \\
 \\
 See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_44_wsh_min) [May 7, 2:10 PM ET\\
 \\
@@ -113,21 +115,21 @@ See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_44_wsh_mi
 \\
 Guardians  S. Cecconi \\
 \\
-42% \\
+43% \\
 \\
-![BetRivers](https://cdn.ciphersports.io/images/bookmaker-logos/bet-rivers-icon-1.svg)\\
+![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
-+128\\
++127\\
 \\
 ![Royals](https://cdn.ciphersports.io/images/MLB/official/KC.svg)\\
 \\
 Royals  S. Lugo \\
 \\
-58% \\
+57% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--130\\
+-128\\
 \\
 MLB \\
 \\
@@ -137,7 +139,7 @@ See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_44_kc_cle
 \\
 Reds  R. Lowder \\
 \\
-37% \\
+38% \\
 \\
 ![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
@@ -147,11 +149,11 @@ Reds  R. Lowder \\
 \\
 Cubs  S. Imanaga \\
 \\
-63% \\
+62% \\
 \\
-![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--186\\
+-178\\
 \\
 MLB \\
 \\
@@ -165,7 +167,7 @@ Mets  C. Scott \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--136\\
+-139\\
 \\
 ![Rockies](https://cdn.ciphersports.io/images/MLB/official/COL.svg)\\
 \\
@@ -173,9 +175,9 @@ Rockies  J. Quintana \\
 \\
 41% \\
 \\
-![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-+133\\
++135\\
 \\
 MLB \\
 \\
@@ -185,21 +187,21 @@ See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_44_col_ny
 \\
 Pirates  M. Keller \\
 \\
-47% \\
+45% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--104\\
++106\\
 \\
 ![D-Backs](https://cdn.ciphersports.io/images/MLB/official/ARI.svg)\\
 \\
 D-Backs  Z. Gallen \\
 \\
-53% \\
+55% \\
 \\
-![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-+104\\
+-107\\
 \\
 MLB \\
 \\
@@ -213,7 +215,7 @@ Orioles  C. Povich \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-+114\\
++119\\
 \\
 ![Marlins](https://cdn.ciphersports.io/images/MLB/official/MIA.svg)\\
 \\
@@ -233,7 +235,7 @@ See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_44_mia_ba
 \\
 Athletics  J. Ginn \\
 \\
-45% \\
+46% \\
 \\
 ![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
@@ -243,11 +245,11 @@ Athletics  J. Ginn \\
 \\
 Phillies  A. Painter \\
 \\
-55% \\
+54% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--126\\
+-125\\
 \\
 MLB \\
 \\
@@ -257,21 +259,21 @@ See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_44_phi_at
 \\
 Rays  G. Jax \\
 \\
-47% \\
+48% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-+111\\
++105\\
 \\
 ![Red Sox](https://cdn.ciphersports.io/images/MLB/official/BOS.svg)\\
 \\
 Red Sox  J. Bennett \\
 \\
-53% \\
+52% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--112\\
+-107\\
 \\
 MLB \\
 \\
@@ -281,21 +283,21 @@ See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_44_bos_tb
 \\
 Cardinals  M. Liberatore \\
 \\
-39% \\
+40% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
-+154\\
++150\\
 \\
 ![Padres](https://cdn.ciphersports.io/images/MLB/official/SD.svg)\\
 \\
 Padres  M. King \\
 \\
-61% \\
+60% \\
 \\
-![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--156\\
+-153\\
 \\
 MLB \\
 \\
@@ -505,13 +507,13 @@ How to claim
 
 Dimers’ MLB predictions are powered by a simulation-based model that plays out each game thousands of times, inning by inning. From those simulations, we estimate each team’s chances of winning.
 
-On Thursday, the Cubs lead all win probabilities with a 63% chance of beating the Reds at Wrigley Field. The Padres and Mets also rank among the leading moneyline favorites.
+On Thursday, the Cubs lead all win probabilities with a 62% chance of beating the Reds at Wrigley Field. The Mets and Padres also rank among the leading moneyline favorites.
 
 | Team | Prob. | Opponent | First pitch (ET) |
 | --- | --- | --- | --- |
-| Cubs | 63% | vs. Reds | 2:20pm |
-| Padres | 62% | vs. Cardinals | 10:10pm |
-| Mets | 59% | @ Rockies | 3:10pm |
+| Cubs | 62% | vs. Reds | 2:20pm |
+| Mets | 60% | @ Rockies | 3:10pm |
+| Padres | 60% | vs. Cardinals | 10:10pm |
 
 ## MLB predictions today: data-driven outcomes for every game
 
