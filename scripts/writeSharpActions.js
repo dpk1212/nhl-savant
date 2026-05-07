@@ -772,6 +772,17 @@ async function main() {
           continue;
         }
         const updatePayload = {
+          // Wallet position size — these grow over the day as the whale
+          // adds to their position. If we don't refresh them, downstream
+          // consumers (sharp_action_positions readers, including the
+          // syncPickStateAuthoritative cron's buildPeakStatsFromPositions)
+          // see frozen-at-first-write dollar amounts and the locked card
+          // ends up showing stale totals (e.g. $57.8K instead of the
+          // actual $77.9K once a whale topped up). Always overwrite with
+          // the latest scan values for PENDING docs.
+          invested: pos.invested,
+          size: pos.size,
+          avgPrice: pos.avgPrice,
           curPrice: pos.curPrice,
           currentValue: pos.currentValue,
           positionPnl: pos.positionPnl,
