@@ -2392,9 +2392,30 @@ function needsConsensusRestamp(existingSide) {
 // regime/v8Scoring args reflect the CURRENT consensus side; for OTHER
 // sides we fall back to that side's stored peak.regime/v8Scoring so
 // decideLockStage produces a reasonable promotedBy label.
-async function restampDriftedSides({ ref, sides, currentSideKey, sport, regime, v8Scoring, currentStars, pickDate = null }) {
+async function restampDriftedSides({ ref, sides, currentSideKey, sport, regime, v8Scoring, currentStars, pickDate = null, lastSyncAt = null }) {
   if (!WALLET_PROFILES_CACHE) return null;
   if (!v8Scoring?.walletDetails) return null;
+
+  // v7.4 — server cron is authoritative. If the cron wrote v8_* stamps
+  // within V7_4_CRON_DEFER_WINDOW_MS (7 min), the browser's restamp
+  // would just clobber fresh canonical state with the browser's
+  // (potentially stale) walletDetails snapshot. This is the same defer
+  // pattern syncPickHealth uses (SHARP_FLOW_SYSTEM.md §race-condition
+  // guards #3) — extended here to close the last browser-write path
+  // that was bypassing the cron-authoritative contract.
+  //
+  // Detect cron-fresh by checking the SIDES for a server-cron syncedBy
+  // stamp (cron's reconcileSide writes health.syncedBy='server-cron'
+  // and createMissingLockedPicks writes source='cron-auto-create' on
+  // the sides). If any non-superseded side was last touched by the
+  // cron within the window, skip the restamp entirely. The cron will
+  // re-evaluate drift on its own next cycle (~8 min) anyway.
+  if (isV74Eligible(pickDate) && lastSyncAt && (Date.now() - lastSyncAt) < V7_4_CRON_DEFER_WINDOW_MS) {
+    const anyCronFresh = Object.values(sides || {}).some(sd =>
+      sd?.health?.syncedBy === 'server-cron' || sd?.cronCreated === true
+    );
+    if (anyCronFresh) return null; // cron-fresh — leave it alone
+  }
 
   const updates = {};
   let touched = 0;
@@ -2626,7 +2647,7 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
       }
 
       // v5.4: drift-restamp ALL non-superseded sides (incl. current).
-      const restamp = await restampDriftedSides({ ref, sides, currentSideKey: side, sport, regime, v8Scoring, currentStars: stars || 0, pickDate });
+      const restamp = await restampDriftedSides({ ref, sides, currentSideKey: side, sport, regime, v8Scoring, currentStars: stars || 0, pickDate, lastSyncAt: data.lastSyncAt || data.lastWriteAt || 0 });
       if (restamp) return { docId, action: 'consensus_drift_restamp' };
 
       return { docId, action: 'no_change' };
@@ -2644,7 +2665,7 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
     // to refresh the existing side's Δ stamp from live walletDetails.
     // Otherwise an Oilers-side render with af1697 onboard would never
     // touch the orphaned Ducks side and Ducks Δ would stay frozen.
-    await restampDriftedSides({ ref, sides, currentSideKey: side, sport, regime, v8Scoring, currentStars: stars || 0, pickDate });
+    await restampDriftedSides({ ref, sides, currentSideKey: side, sport, regime, v8Scoring, currentStars: stars || 0, pickDate, lastSyncAt: data.lastSyncAt || data.lastWriteAt || 0 });
 
     // v5.4: allow a NEW side with whitelist promotion eligibility
     // (Δ ≥ +1, agW = 0, baseStars ≥ 1.0) to supersede an existing locked
@@ -2882,7 +2903,7 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
         }
       }
       // v5.4: drift-restamp ALL non-superseded sides (spreads).
-      const restamp = await restampDriftedSides({ ref, sides, currentSideKey: side, sport, regime, v8Scoring, currentStars: stars || 0, pickDate });
+      const restamp = await restampDriftedSides({ ref, sides, currentSideKey: side, sport, regime, v8Scoring, currentStars: stars || 0, pickDate, lastSyncAt: data.lastSyncAt || data.lastWriteAt || 0 });
       if (restamp) return { docId, action: 'consensus_drift_restamp' };
       return { docId, action: 'no_change' };
     }
@@ -2895,7 +2916,7 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
     }, 0);
 
     // v5.4: refresh existing side stamps even if we don't create the new side.
-    await restampDriftedSides({ ref, sides, currentSideKey: side, sport, regime, v8Scoring, currentStars: stars || 0, pickDate });
+    await restampDriftedSides({ ref, sides, currentSideKey: side, sport, regime, v8Scoring, currentStars: stars || 0, pickDate, lastSyncAt: data.lastSyncAt || data.lastWriteAt || 0 });
 
     // v5.4: whitelist-promotion override on side creation gate.
     const newSideDecision = decideLockStage(regime, v8Scoring, side, sport, stars || 0, pickDate);
@@ -3027,7 +3048,7 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
         }
       }
       // v5.4: drift-restamp ALL non-superseded sides (totals).
-      const restamp = await restampDriftedSides({ ref, sides, currentSideKey: side, sport, regime, v8Scoring, currentStars: stars || 0, pickDate });
+      const restamp = await restampDriftedSides({ ref, sides, currentSideKey: side, sport, regime, v8Scoring, currentStars: stars || 0, pickDate, lastSyncAt: data.lastSyncAt || data.lastWriteAt || 0 });
       if (restamp) return { docId, action: 'consensus_drift_restamp' };
       return { docId, action: 'no_change' };
     }
@@ -3040,7 +3061,7 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
     }, 0);
 
     // v5.4: refresh existing side stamps even if we don't create the new side.
-    await restampDriftedSides({ ref, sides, currentSideKey: side, sport, regime, v8Scoring, currentStars: stars || 0, pickDate });
+    await restampDriftedSides({ ref, sides, currentSideKey: side, sport, regime, v8Scoring, currentStars: stars || 0, pickDate, lastSyncAt: data.lastSyncAt || data.lastWriteAt || 0 });
 
     // v5.4: whitelist-promotion override on side creation gate.
     const newSideDecision = decideLockStage(regime, v8Scoring, side, sport, stars || 0, pickDate);
