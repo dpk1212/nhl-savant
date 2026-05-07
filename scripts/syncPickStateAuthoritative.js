@@ -680,6 +680,64 @@ function positionToWalletDetail(p) {
   };
 }
 
+// ── Both-sides analytical sidecar ──────────────────────────────────────────
+// Pure read-only metric computation for a single market-side, used to
+// populate the doc-level `agsBothSides` analytical record (NOT inside the
+// `sides` map). Mirrors the AGS / consensus / HC-margin path the active
+// side uses, but never touches `sides[*]`, finalUnits, lockStage, status,
+// or any grading field — purely a documentation-grade snapshot of what
+// each side looked like at every cycle pre-T-15 so we can later analyze
+// "we picked side A; was side B actually the better play?"
+//
+// Returns null when there's zero whitelist activity for or against this
+// side (so we don't litter docs with empty {ags:null} stamps when the
+// scanner has no proven-wallet signal yet).
+function computeSideAnalytics(positions, side, sport, walletProfiles, agsCalibration, isProvenFn) {
+  if (!Array.isArray(positions) || positions.length === 0) return null;
+  const live = computeWalletConsensus(positions, side, sport, walletProfiles);
+  if (live.forW === 0 && live.agW === 0 && live.hcConfFor === 0 && live.hcConfAg === 0) {
+    return null;
+  }
+  const walletDetails = positions.map(positionToWalletDetail);
+  const agg = aggregateSideProven(walletDetails, side, sport, isProvenFn);
+  const agsRes = agg ? computeAgs(agg, agsCalibration) : null;
+  const out = {
+    ags: agsRes && Number.isFinite(agsRes.ags) ? agsRes.ags : null,
+    agsTier: agsRes ? (agsRes.tier ?? null) : null,
+    agsQuintile: agsRes ? (agsRes.quintile ?? null) : null,
+    agsProvenForCount: agsRes ? (agsRes.provenForCount || 0) : 0,
+    agsProvenAgCount: agsRes ? (agsRes.provenAgCount || 0) : 0,
+    agsComponents: agsRes ? (agsRes.components || null) : null,
+    dw: live.delta,
+    dq: live.qualityMargin,
+    hcMargin: live.hcMargin,
+    hcConfFor: live.hcConfFor,
+    hcConfAg: live.hcConfAg,
+    hcDominant: live.hcDominant,
+    walletForCount: live.forW,
+    walletAgCount: live.agW,
+  };
+  return out;
+}
+
+// Convenience wrapper: compute analytics for BOTH sides of a given market
+// at once and return a side-keyed record ready to merge as
+// `agsBothSides` on the pick doc. Returns null when both sides are
+// empty (nothing meaningful to record).
+function computeBothSidesAnalytics(positions, marketType, sport, walletProfiles, agsCalibration, isProvenFn) {
+  const sides = marketType === 'TOTAL' ? ['over', 'under'] : ['away', 'home'];
+  const out = {};
+  let any = false;
+  for (const side of sides) {
+    const stamp = computeSideAnalytics(positions, side, sport, walletProfiles, agsCalibration, isProvenFn);
+    if (stamp) {
+      out[side] = stamp;
+      any = true;
+    }
+  }
+  return any ? out : null;
+}
+
 // ── Auto-create missing locked-pick docs ───────────────────────────────────
 // Architectural fix (2026-05-05): the cron only UPDATES existing pick
 // docs; if a side first qualified for the floor when no browser was
@@ -907,6 +965,16 @@ async function createMissingLockedPicks({
     }
     if (Object.keys(newSides).length === 0) continue;
 
+    // Both-sides analytical sidecar — purely documentary. Lets us later
+    // analyze "we locked side A with AGS=+X; what was side B's AGS?"
+    // without rerunning calibration on historical positions. Lives on
+    // the doc top-level (NOT inside `sides`), is updated every cycle by
+    // the post-reconcile refresh pass below, and is never read by
+    // sizing / lock-promote / grader code paths.
+    const bothSidesAtCreate = computeBothSidesAnalytics(
+      positions, marketType, sport, walletProfiles, agsCalibration, isProvenFn,
+    );
+
     const docPayload = {
       date: TARGET_DATE,
       sport,
@@ -928,6 +996,9 @@ async function createMissingLockedPicks({
       createdAt: now,
       lastSyncAt: now,
     };
+    if (bothSidesAtCreate) {
+      docPayload.agsBothSides = { ...bothSidesAtCreate, updatedAt: now };
+    }
     if (!writes.has(col)) writes.set(col, []);
     writes.get(col).push({ docId, payload: docPayload });
   }
@@ -1541,8 +1612,23 @@ async function main() {
     v74_promoted_to_locked: 0,
     no_change: 0,
     created_missing: 0,
+    ags_both_sides_refreshed: 0,
   };
   const changeLog = [];
+
+  // Helper — extract commenceTime ms across all the storage shapes Firestore
+  // returns (Timestamp, number, _seconds, Date, ISO string). Identical to
+  // the path inside reconcileSide so the T-15 freeze gate matches per-side
+  // and per-doc behaviour exactly.
+  const commenceMs = (val) => {
+    if (val == null) return null;
+    if (typeof val === 'number') return val;
+    if (typeof val.toMillis === 'function') return val.toMillis();
+    if (typeof val._seconds === 'number') return val._seconds * 1000;
+    if (val instanceof Date) return val.getTime();
+    if (typeof val === 'string') return new Date(val).getTime();
+    return null;
+  };
 
   for (const col of collections) {
     const snap = await db.collection(col).where('date', '==', TARGET_DATE).get();
@@ -1594,6 +1680,35 @@ async function main() {
           },
         });
       }
+
+      // ── Both-sides analytical sidecar refresh ─────────────────────────
+      // Independent of reconcileSide. Documents both sides' AGS / HC
+      // margin / Δw / Δq into doc-level `agsBothSides` every cycle
+      // pre-T-15 so we can later analyze the side we DIDN'T pick. NEVER
+      // consulted by lock-promote / sizing / grader paths — purely an
+      // analytical record. Skipped post-T-15 (matches per-side freeze)
+      // and on graded picks (already final).
+      const ct = commenceMs(pick.commenceTime);
+      const isFrozen = ct != null && now >= ct - T_MINUS_15_MIN_MS && !FORCE;
+      const isCompleted = pick.status === 'COMPLETED';
+      if (!isFrozen && !isCompleted) {
+        const groupKey = `${pick.sport}|${pick.gameKey}|${mkt}`;
+        const group = groups.get(groupKey) || [];
+        const stamps = computeBothSidesAnalytics(
+          group, mkt, pick.sport, walletProfiles, agsCalibration, isProvenFn,
+        );
+        if (stamps) {
+          stats.ags_both_sides_refreshed++;
+          if (!collectionWrites.has(col)) collectionWrites.set(col, []);
+          collectionWrites.get(col).push({
+            docId: pick._id,
+            payload: {
+              agsBothSides: { ...stamps, updatedAt: now },
+              lastSyncAt: now,
+            },
+          });
+        }
+      }
     }
   }
 
@@ -1619,6 +1734,11 @@ async function main() {
       for (const w of writes) {
         const cur = merged.get(w.docId) || { sides: {}, lastSyncAt: 0 };
         Object.assign(cur.sides, w.payload.sides || {});
+        // Doc-level analytical sidecar — last-write wins across the cycle
+        // (each push from this cycle is computed from the same `groups`
+        // map so they're identical anyway, but be explicit so a future
+        // change to multi-pass writes doesn't silently drop the field).
+        if (w.payload.agsBothSides) cur.agsBothSides = w.payload.agsBothSides;
         if ((w.payload.lastSyncAt || 0) > cur.lastSyncAt) cur.lastSyncAt = w.payload.lastSyncAt;
         merged.set(w.docId, cur);
       }
@@ -1677,6 +1797,7 @@ async function main() {
   console.log(`    v7.4 → SHADOW (hidden): ${stats.v74_demoted_to_shadow}`);
   console.log(`    v7.4 → LOCKED (shown):  ${stats.v74_promoted_to_locked}`);
   console.log(`  Created-missing pass:     ${stats.created_missing} new pick doc(s)`);
+  console.log(`  agsBothSides refreshed:   ${stats.ags_both_sides_refreshed} doc(s) (analytical sidecar)`);
   console.log(`\n${DRY_RUN ? '[DRY RUN] No writes performed.' : 'Done.'}\n`);
 }
 
