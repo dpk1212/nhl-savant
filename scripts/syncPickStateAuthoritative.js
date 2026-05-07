@@ -1355,6 +1355,75 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     changes.push(`finalUnits backfill: ${liveUnits}u`);
   }
 
+  // ── Descriptive peak stats refresh (display-only, every cycle authoritative).
+  // Background: peak.{sharpCount, totalInvested, consensusStrength, walletProfile}
+  // are the fields the locked-pick card renders ("$77.9K · 100% Pistons ·
+  // 2 sharps backing"). Without this block they get frozen at lock-in
+  // time — and if the doc was created during a JSON-load race or before
+  // sharp_action_positions had been written for this game, those fields
+  // stamp as 0 / 0 / 50% / LEAN and never recover. The browser's
+  // peakShouldWrite gate only fires when units/stars rise, not when
+  // descriptive stats were initialized broken-empty.
+  //
+  // Mirrors the v8_* re-stamp contract — recompute from live positions
+  // every cycle pre-T-15 so the locked-pick card always shows current
+  // wallet-stack reality. Skipped when the live group is empty AND we
+  // have prior good data, so a hiccupping position scan never wipes a
+  // healthy peak. Lock-time snapshot is also backfilled when detected as
+  // broken-empty (totalInvested=0 ∧ sharpCount=0); legitimate frozen
+  // lock snapshots with real $$$ at lock-in are preserved untouched.
+  const groupHasPositions = Array.isArray(group) && group.length > 0;
+  const priorPeakHadMoney = (sd.peak?.totalInvested ?? 0) > 0;
+  const skipDescriptiveRefresh = !groupHasPositions && priorPeakHadMoney;
+  if (!skipDescriptiveRefresh) {
+    const peakStats = buildPeakStatsFromPositions(group || [], side, isProvenFn, sport);
+    const peakSharpCountChanged = (sd.peak?.sharpCount ?? 0) !== peakStats.sharpCount;
+    const peakInvestedChanged = (sd.peak?.totalInvested ?? 0) !== peakStats.totalInvested;
+    const peakMoneyPctChanged = (sd.peak?.consensusStrength?.moneyPct ?? 50) !== peakStats.consensusStrength.moneyPct;
+    const peakWalletPctChanged = (sd.peak?.consensusStrength?.walletPct ?? 50) !== peakStats.consensusStrength.walletPct;
+    const peakGradeChanged = (sd.peak?.consensusStrength?.grade || 'LEAN') !== peakStats.consensusStrength.grade;
+    const peakDrifted = peakSharpCountChanged || peakInvestedChanged
+      || peakMoneyPctChanged || peakWalletPctChanged || peakGradeChanged;
+    if (peakDrifted) {
+      patch.peak = {
+        ...(patch.peak || {}),
+        sharpCount: peakStats.sharpCount,
+        totalInvested: peakStats.totalInvested,
+        consensusStrength: peakStats.consensusStrength,
+        // Merge walletProfile — preserve any browser-written keys
+        // (e.g. proPnLSum) the cron doesn't compute itself.
+        walletProfile: { ...(sd.peak?.walletProfile || {}), ...peakStats.walletProfile },
+        updatedAt: now,
+      };
+      const beforeMoney = Math.round(sd.peak?.totalInvested || 0).toLocaleString();
+      const afterMoney = peakStats.totalInvested.toLocaleString();
+      const beforePct = sd.peak?.consensusStrength?.moneyPct ?? '∅';
+      const afterPct = peakStats.consensusStrength.moneyPct;
+      changes.push(
+          `peakStats: ${sd.peak?.sharpCount ?? '∅'}/$${beforeMoney}/${beforePct}% → `
+        + `${peakStats.sharpCount}/$${afterMoney}/${afterPct}%`,
+      );
+    }
+    // Lock backfill — only when stuck-empty (race condition at write time).
+    // True frozen lock snapshots (with real $$$ at lock-in) are preserved.
+    const lockStuckEmpty = (sd.lock?.totalInvested ?? 0) === 0
+      && (sd.lock?.sharpCount ?? 0) === 0
+      && peakStats.totalInvested > 0;
+    if (lockStuckEmpty) {
+      patch.lock = {
+        ...(patch.lock || {}),
+        sharpCount: peakStats.sharpCount,
+        totalInvested: peakStats.totalInvested,
+        consensusStrength: peakStats.consensusStrength,
+        walletProfile: { ...(sd.lock?.walletProfile || {}), ...peakStats.walletProfile },
+      };
+      changes.push(
+          `lockStats backfill: 0/$0/50% → `
+        + `${peakStats.sharpCount}/$${peakStats.totalInvested.toLocaleString()}/${peakStats.consensusStrength.moneyPct}%`,
+      );
+    }
+  }
+
   if (stampedConsVer !== WHITELIST_CONSENSUS_VERSION) {
     changes.push(`consVer: ${stampedConsVer ?? '∅'} → ${WHITELIST_CONSENSUS_VERSION}`);
   }
