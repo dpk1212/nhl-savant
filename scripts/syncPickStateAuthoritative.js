@@ -596,8 +596,15 @@ function unitTierLabel(units) {
 // → buildSideData / buildSpreadTotalSideData so the renderer never sees
 // undefined fields and the "$null / Pistons null" bug can't recur.
 function buildPeakStatsFromPositions(positions, side, isProvenFn, sport) {
-  const proven = positions.filter(p => p.side === side && isProvenFn(p.wallet, sport));
-  const opposing = positions.filter(p => p.side !== side && isProvenFn(p.wallet, sport));
+  // isProvenFn expects the SHORT form of the wallet (last-6 hex,
+  // lowercased) — that's the key shape walletProfiles is built with.
+  // Passing p.wallet (full address) silently misses every wallet and
+  // collapses totalInvested / sharpCount / consensusStrength to 0,
+  // which renders as "$null" / "—" on the dashboard. Mirrors the
+  // same shortOf() logic computeWalletConsensus already uses (line 398).
+  const shortOf = (p) => String(p.walletShort || p.wallet || '').slice(-6).toLowerCase();
+  const proven = positions.filter(p => p.side === side && isProvenFn(shortOf(p), sport));
+  const opposing = positions.filter(p => p.side !== side && isProvenFn(shortOf(p), sport));
   const conWalletCount = proven.length;
   const oppWalletCount = opposing.length;
   const totalInvested = proven.reduce((s, p) => s + (Number(p.invested) || 0), 0);
