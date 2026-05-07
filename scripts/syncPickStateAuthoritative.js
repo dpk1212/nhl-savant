@@ -539,6 +539,18 @@ function loadGameMetadata() {
         } else if (g.opener) {
           cur.mlOdds = { away: g.opener.away, home: g.opener.home };
         }
+        // Spread line + odds (Pinnacle opener — pinnacle_history doesn't
+        // track spreads over time the way it does ML). Populated for the
+        // cron's create-missing path so spread picks written without a
+        // browser session still have peak.line and peak.odds set.
+        if (g.spreadOpener) {
+          cur.spreadOpener = {
+            awayLine: g.spreadOpener.awayLine,
+            awayOdds: g.spreadOpener.awayOdds,
+            homeLine: g.spreadOpener.homeLine,
+            homeOdds: g.spreadOpener.homeOdds,
+          };
+        }
         meta.set(key, cur);
       }
     }
@@ -546,6 +558,96 @@ function loadGameMetadata() {
     console.warn('[meta] pinnacle_history.json unreadable:', e.message);
   }
   return meta;
+}
+
+// Mode-of value across positions on a side. Used to compute the consensus
+// line (entryLine) for SPREAD and TOTAL picks the cron auto-creates.
+// Returns null if no positions agree on a value.
+function consensusLine(positions, side) {
+  const counts = new Map(); // line → count
+  for (const p of positions) {
+    if (p.side !== side) continue;
+    const ln = p.entryLine ?? p.spreadLine ?? p.totalLine ?? null;
+    if (ln == null) continue;
+    counts.set(ln, (counts.get(ln) || 0) + 1);
+  }
+  if (counts.size === 0) return null;
+  let bestLine = null, bestCount = -1;
+  for (const [ln, c] of counts) {
+    if (c > bestCount) { bestLine = ln; bestCount = c; }
+  }
+  return bestLine;
+}
+
+// Mirror of src/pages/SharpFlow.jsx → unitTier(units). Lives here so the
+// cron's create-missing path can stamp peak.unitTier in the same shape
+// the browser writes (otherwise the dashboard renders "undefined").
+function unitTierLabel(units) {
+  if (units >= 2.5) return 'MAX';
+  if (units >= 1.5) return 'STRONG';
+  return 'STANDARD';
+}
+
+// Build the peak fields the dashboard render reads — sharpCount,
+// totalInvested, walletProfile, consensusStrength — from the proven
+// positions backing this side. The browser computes these from a much
+// richer client-side dataset; here we approximate from Firestore-stored
+// position records. Output shape mirrors src/pages/SharpFlow.jsx
+// → buildSideData / buildSpreadTotalSideData so the renderer never sees
+// undefined fields and the "$null / Pistons null" bug can't recur.
+function buildPeakStatsFromPositions(positions, side, isProvenFn, sport) {
+  const proven = positions.filter(p => p.side === side && isProvenFn(p.wallet, sport));
+  const opposing = positions.filter(p => p.side !== side && isProvenFn(p.wallet, sport));
+  const conWalletCount = proven.length;
+  const oppWalletCount = opposing.length;
+  const totalInvested = proven.reduce((s, p) => s + (Number(p.invested) || 0), 0);
+  const oppInvested = opposing.reduce((s, p) => s + (Number(p.invested) || 0), 0);
+  // Tier dominance — pick the highest tier present on the for side.
+  const tierRank = { ELITE: 3, STRONG: 2, MOD: 1, NEW: 0 };
+  let dominantTier = 'NEW';
+  for (const p of proven) {
+    const t = p.tier || 'NEW';
+    if ((tierRank[t] ?? -1) > (tierRank[dominantTier] ?? -1)) dominantTier = t;
+  }
+  // Money/wallet split — total of invested across both sides.
+  const totalMoney = totalInvested + oppInvested;
+  const totalWallets = conWalletCount + oppWalletCount;
+  const moneyPct = totalMoney > 0 ? Math.round((totalInvested / totalMoney) * 100) : 50;
+  const walletPct = totalWallets > 0 ? Math.round((conWalletCount / totalWallets) * 100) : 50;
+  let grade = 'LEAN';
+  if (moneyPct >= 80 && walletPct >= 75) grade = 'DOMINANT';
+  else if (moneyPct >= 65 && walletPct >= 60) grade = 'STRONG';
+  // Concentration — top wallet's share of for-side $$$. 1.0 = single wallet.
+  let topShare = 0;
+  if (totalInvested > 0) {
+    const top = Math.max(...proven.map(p => Number(p.invested) || 0));
+    topShare = top / totalInvested;
+  }
+  // Conviction — average sizeRatio (avg-bet vs the wallet's typical bet).
+  // Falls back to 1.0 when missing — the browser uses ~0.5–2.0 range.
+  let conviction = 0;
+  let sizeRatioSum = 0, sizeRatioN = 0;
+  for (const p of proven) {
+    const r = Number(p.betMultiplier ?? p.sizeRatio);
+    if (Number.isFinite(r) && r > 0) { sizeRatioSum += r; sizeRatioN++; }
+  }
+  if (sizeRatioN > 0) conviction = +(sizeRatioSum / sizeRatioN).toFixed(3);
+  return {
+    sharpCount: conWalletCount,
+    totalInvested: Math.round(totalInvested),
+    consensusStrength: { moneyPct, walletPct, grade },
+    walletProfile: {
+      dominantTier,
+      breadth: totalWallets > 0 ? +(conWalletCount / totalWallets).toFixed(3) : 0,
+      conWalletCount,
+      oppWalletCount,
+      sportSharpCount: conWalletCount,
+      concentration: +topShare.toFixed(3),
+      conviction,
+      consensusTier: grade,
+      counterSharpScore: 0,
+    },
+  };
 }
 
 // Convert a sharp_action_positions doc into a walletDetails entry the
@@ -680,9 +782,24 @@ async function createMissingLockedPicks({
       });
       const finalTier = (agsRescue && peakTier === 'MUTED') ? 'LOCKED' : peakTier;
       const ladder = (marketType === 'SPREAD' || marketType === 'TOTAL') ? calculateSpreadTotalUnits : calculateUnits;
-      const odds = marketType === 'ML'
-        ? (side === 'home' ? meta.mlOdds?.home : meta.mlOdds?.away)
-        : null;
+      // ── Pinnacle odds + line. ML uses live mlOdds; SPREAD uses the
+      // pinnacle opener (pinnacle_history doesn't track spreads over
+      // time); TOTAL falls back to -110 (no Pinnacle source for totals
+      // in pinnacle_history.json — browser sync writes the live retail
+      // book number, but the cron only has Pinnacle ML).
+      let odds = null;
+      let line = null;
+      if (marketType === 'ML') {
+        odds = side === 'home' ? meta.mlOdds?.home : meta.mlOdds?.away;
+      } else if (marketType === 'SPREAD') {
+        odds = side === 'home' ? meta.spreadOpener?.homeOdds : meta.spreadOpener?.awayOdds;
+        if (odds == null) odds = -110;
+        const openerLine = side === 'home' ? meta.spreadOpener?.homeLine : meta.spreadOpener?.awayLine;
+        line = consensusLine(positions, side) ?? openerLine ?? null;
+      } else if (marketType === 'TOTAL') {
+        odds = -110;
+        line = consensusLine(positions, side) ?? null;
+      }
       let peakUnits = ladder(peakStars, finalTier, live.hcDominant, {
         pickDate: TARGET_DATE, hcMargin: live.hcMargin,
         sum: live.delta + live.qualityMargin, odds: odds ?? null,
@@ -698,6 +815,45 @@ async function createMissingLockedPicks({
       if (marketType === 'TOTAL') team = side === 'over' ? 'OVER' : 'UNDER';
       else team = side === 'home' ? meta.home : meta.away;
 
+      // Build the rich peak fields the dashboard render reads. Without
+      // these the card showed "Pistons null / 0 · pinnacle / $null".
+      const peakStats = buildPeakStatsFromPositions(positions, side, isProvenFn, sport);
+      const peakSnapshot = {
+        team: team || side,
+        odds: odds ?? null,
+        // 'Pinnacle' (capitalized) matches the browser's syncSpread/Total
+        // path. Lowercase 'pinnacle' triggered "0 · pinnacle / Pistons null"
+        // rendering on the dashboard before this fix.
+        book: 'Pinnacle',
+        pinnacleOdds: odds ?? null,
+        line: line ?? null,
+        stars: peakStars,
+        units: peakUnits,
+        unitTier: unitTierLabel(peakUnits),
+        sharpCount: peakStats.sharpCount,
+        totalInvested: peakStats.totalInvested,
+        consensusStrength: peakStats.consensusStrength,
+        walletProfile: peakStats.walletProfile,
+        // We don't have live EV / criteria pipelines server-side; default
+        // these to neutral values so the dashboard's chip row renders
+        // (greyed) instead of breaking on undefined. Browser-driven
+        // updates (when totalInvested clears the floor) will overwrite
+        // with the real numbers.
+        evEdge: 0,
+        criteriaMet: 0,
+        criteria: {
+          invested10kPlus: peakStats.totalInvested >= 10000,
+          sharps3Plus: peakStats.sharpCount >= 3,
+          lineMovingWith: false,
+          pinnacleConfirms: false,
+          plusEV: false,
+          predMarketAligns: false,
+        },
+        regime: 'PREGAME',
+        qualityProxy: 0,
+        v8Scoring: { walletDetails, consensusSide: side },
+        updatedAt: now,
+      };
       newSides[side] = {
         team: team || side,
         lockStage: 'LOCKED',
@@ -707,19 +863,18 @@ async function createMissingLockedPicks({
         contribTier: agsValue != null && agsValue >= AGS_LOCK_FLOOR ? 'LOCK'
           : agsValue != null && agsValue >= AGS_DW1_FLOOR ? 'STRONG'
           : 'NEUTRAL',
-        peak: {
-          team: team || side,
-          odds: odds ?? null,
-          book: 'pinnacle',
-          pinnacleOdds: odds ?? null,
-          stars: peakStars,
-          units: peakUnits,
-          v8Scoring: { walletDetails, consensusSide: side },
-          updatedAt: now,
-        },
-        lock: { regime: 'PREGAME', odds: odds ?? null },
+        // peak + lock both stamped with the same snapshot. The render's
+        // lockOddsValid path reads lock.odds; if we only set peak the
+        // dashboard would still fall through to `cardOdds = 0` for the
+        // first cycle.
+        peak: peakSnapshot,
+        lock: { ...peakSnapshot, lockedAt: now },
+        maxEV: 0,
+        maxEVAt: now,
         // Canonical bet size — same source of truth used by grader and dashboard.
         finalUnits: peakUnits,
+        status: 'PENDING',
+        result: { outcome: null, profit: null, gradedAt: null },
         // Flag so we know this came from the cron auto-create path.
         cronCreated: true,
         cronCreatedAt: now,
@@ -741,6 +896,12 @@ async function createMissingLockedPicks({
       home: meta.home,
       commenceTime: meta.commenceTime,
       lockType: 'PREGAME',
+      // Doc-level marketType — mirrors the browser's syncSpread/Total
+      // payload. The dashboard's BetHistoryPanel and pick-card render
+      // both branch on marketType; missing field rendered as "?" before.
+      marketType: marketType === 'SPREAD' ? 'spread'
+        : marketType === 'TOTAL' ? 'total'
+        : 'ml',
       sides: newSides,
       status: 'PENDING',
       result: { awayScore: null, homeScore: null, winner: null },

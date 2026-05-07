@@ -11533,7 +11533,15 @@ export default function SharpFlow() {
                         const lockOddsValid = lock.odds && Math.abs(lock.odds) <= 400;
                         const lockStars = lock.stars || 0;
                         const marketTypeKey = doc.marketType || 'ml';
-                        const cardOdds = lockOddsValid ? lock.odds : (peak.odds || lock.odds || 0);
+                        // Odds fallback: lock.odds → peak.odds → closingOdds.
+                        // closingOdds is the authoritative Pinnacle close set
+                        // by updateClosingOdds.js every fetch cycle. The cron's
+                        // create-missing path may write sparse peak data
+                        // (line=null, odds=null) but closingOdds is always
+                        // populated post-T-15 — fall back to it so the card
+                        // never renders "0 · pinnacle".
+                        const cardOdds = lockOddsValid ? lock.odds
+                          : (peak.odds || lock.odds || sd.closingOdds || 0);
                         // v6.6 — health is engine-truth. evaluatePickHealth
                         // is the single source of truth for ACTIVE / MUTED /
                         // CANCELLED under the hybrid floor. Earlier code self-
@@ -11610,7 +11618,14 @@ export default function SharpFlow() {
                           isDownsized: sizing.isDownsized,
                           lockTier: liveTier,
                           odds: cardOdds,
-                          book: lockOddsValid ? (lock.book || peak.book || '') : (peak.book || lock.book || ''),
+                          // Default to 'Pinnacle' when neither peak nor lock
+                          // book is set — closingOdds is from Pinnacle, so
+                          // when we fell back to closingOdds the book label
+                          // should reflect that source instead of rendering
+                          // "0 · " (empty book).
+                          book: lockOddsValid
+                            ? (lock.book || peak.book || 'Pinnacle')
+                            : (peak.book || lock.book || (sd.closingOdds ? 'Pinnacle' : '')),
                           peakAt: peak.updatedAt || lock.lockedAt,
                           lockedAt: lock.lockedAt || null,
                           gameTime: doc.commenceTime,
@@ -11637,9 +11652,15 @@ export default function SharpFlow() {
                             }
                             return cs;
                           })(),
-                          pinnacleOdds: peak.pinnacleOdds || lock.pinnacleOdds || null,
+                          pinnacleOdds: peak.pinnacleOdds || lock.pinnacleOdds || sd.closingOdds || null,
                           marketType: marketTypeKey,
-                          line: peak.line || lock.line || null,
+                          // line fallback: peak.line → lock.line → closingLine.
+                          // Same rationale as cardOdds — cron-created spread/
+                          // total docs may have peak.line undefined, but
+                          // closingLine is stamped by updateClosingOdds.js so
+                          // the card renders the real spread/total instead of
+                          // "Pistons null".
+                          line: peak.line ?? lock.line ?? sd.closingLine ?? null,
                           superseded: !!sd.superseded,
                           health: healthResolved,
                           // True when this side was a LEAN / 0u tracked-only
