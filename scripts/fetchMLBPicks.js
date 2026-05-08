@@ -18,7 +18,7 @@ import * as dotenv from 'dotenv';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, deleteField } from 'firebase/firestore';
 import { parseMLBDRatings } from '../src/utils/mlbDratingsParser.js';
 import { parseMLBDimers } from '../src/utils/mlbDimersParser.js';
 import { normalizeMLBTeam, fullTeamName } from '../src/utils/mlbTeamMap.js';
@@ -294,21 +294,48 @@ async function writePickToFirebase(pick, date) {
     const ct = existingData.game?.commenceTime;
     const gameStart = ct ? new Date(ct).getTime() : null;
     const LOCK_BUFFER_MS = 5 * 60 * 1000;
-    const isLocked = gameStart && Date.now() >= gameStart - LOCK_BUFFER_MS;
+    const gameStarting = gameStart && Date.now() >= gameStart - LOCK_BUFFER_MS;
 
-    if (isLocked) {
+    if (gameStarting) {
       console.log(`   🔒 ${betId} odds locked (game starting) — skipping update`);
       return { betId, action: 'locked' };
     }
 
-    console.log(`   ℹ️  ${betId} already exists — updating odds + model data (pre-lock)`);
-    await setDoc(ref, {
+    // Pre-lock: refresh prediction / bet / pinnacle AND promote the doc
+    // to a tracked-and-grade-eligible bet. We can't only merge the
+    // model data here — if this doc was first written by
+    // writeEvalToFirebase (with type='EVALUATION', no isLocked), it
+    // would stay an evaluation forever even after the model upgrades it
+    // to a units>0 pick. That's the bug behind "live page shows 6 picks
+    // but only 3 of them are graded": the other 3 had stale EVALUATION
+    // markers from earlier same-day eval writes. Promotion is
+    // idempotent on already-locked docs (it just writes the same field
+    // values back), and `deleteField()` cleanly removes the legacy
+    // EVALUATION marker so the JSON writer's freeze and the Cloud
+    // Function grader both treat this as a real bet from now on.
+    console.log(`   ℹ️  ${betId} already exists — updating odds + promoting to tracked bet`);
+    const promotionPayload = {
       prediction: betData.prediction,
       bet: betData.bet,
       pinnacle: betData.pinnacle,
       lastUpdatedAt: Date.now(),
-    }, { merge: true });
-    return { betId, action: 'updated' };
+      // Promote to tracked bet (idempotent if already a bet).
+      type: deleteField(),
+      isLocked: true,
+      status: existingData.status || 'PENDING',
+      betStatus: 'BET_NOW',
+      source: existingData.source || 'MLB_MODEL_V1',
+      isMLBPick: true,
+      firstRecommendedAt: existingData.firstRecommendedAt || existingData.timestamp || Date.now(),
+      lockedAt: existingData.lockedAt || existingData.timestamp || Date.now(),
+    };
+    // Only initialize the result envelope if it doesn't already exist —
+    // otherwise we'd wipe an in-progress or completed grade.
+    if (!existingData.result) {
+      promotionPayload.result = betData.result;
+    }
+    await setDoc(ref, promotionPayload, { merge: true });
+    return { betId, action: existingData.isLocked ? 'updated' : 'promoted' };
   }
 
   // First-write guard — if the game has already started by the time the
@@ -563,7 +590,12 @@ async function main() {
     );
     lockedSnap.forEach(d => {
       const b = d.data();
+      // Only docs that have been promoted to tracked bets — Firestore
+      // is the source of truth for what's eligible to display + grade.
+      // Eval docs (type='EVALUATION', no isLocked) are analytical
+      // sidecar only and must never appear on the live picks page.
       if (b.type === 'EVALUATION') return;
+      if (b.isLocked !== true) return;
       const key = `${(b.game?.awayCode || '').toLowerCase()}_${(b.game?.homeCode || '').toLowerCase()}`;
       lockedBetsByMatchup.set(key, b);
     });
@@ -574,30 +606,12 @@ async function main() {
 
   const nowMs = Date.now();
 
-  const buildLivePick = (p) => ({
-    awayTeam: p.awayTeamFull,
-    homeTeam: p.homeTeamFull,
-    awayCode: p.awayTeam,
-    homeCode: p.homeTeam,
-    commenceTime: p.commenceTime,
-    pick: p.prediction.bestSide === 'away' ? p.awayTeamFull : p.homeTeamFull,
-    pickCode: p.prediction.bestSide === 'away' ? p.awayTeam : p.homeTeam,
-    side: p.prediction.bestSide,
-    odds: p.prediction.bestOdds,
-    book: p.prediction.bestBook,
-    units: p.units,
-    ev: Math.round(p.prediction.bestEV * 100) / 100,
-    grade: p.prediction.grade,
-    modelsAgree: p.prediction.modelsAgree,
-    confidence: p.prediction.confidence,
-    ensembleAwayProb: p.prediction.ensembleAwayProb,
-    ensembleHomeProb: p.prediction.ensembleHomeProb,
-    awayPitcher: p.prediction.awayPitcher,
-    homePitcher: p.prediction.homePitcher,
-    predictedTotal: p.prediction.predictedTotal,
-  });
-
-  const buildFrozenPick = (b) => ({
+  // Build a JSON pick from a Firestore locked bet. `frozen=true` for
+  // post-commence (game already started — display is a frozen snapshot
+  // of what was locked at commence). `frozen=false` for pre-commence
+  // (still live, but sourced from Firestore so the contract holds:
+  // display ↔ tracked bet ↔ graded bet).
+  const buildPickFromBet = (b, isFrozen) => ({
     awayTeam: b.game?.awayTeam,
     homeTeam: b.game?.homeTeam,
     awayCode: b.game?.awayCode,
@@ -618,33 +632,52 @@ async function main() {
     awayPitcher: b.game?.awayPitcher,
     homePitcher: b.game?.homePitcher,
     predictedTotal: b.prediction?.predictedTotal,
-    // Mark frozen explicitly so the UI / consumers know this is a post-
-    // commence locked snapshot and not the live model rec.
-    frozen: true,
+    frozen: !!isFrozen,
   });
 
-  const livePicks = picks
-    .filter(p => {
-      const ct = p.commenceTime ? new Date(p.commenceTime).getTime() : 0;
-      return ct > nowMs;
-    })
-    .map(buildLivePick);
+  // Live (pre-commence) picks — read DIRECTLY from Firestore locked
+  // bets, not from the raw model `picks` array. Step 4 above just
+  // promoted every model pick to a locked bet, so Firestore is now the
+  // authoritative source for "what should display". This enforces the
+  // contract: every pick the user sees on the live page IS a tracked
+  // bet that the grader will pick up. No more "shown but never graded".
+  const livePicks = [];
+  for (const b of lockedBetsByMatchup.values()) {
+    const ct = b.game?.commenceTime ? new Date(b.game.commenceTime).getTime() : 0;
+    if (!ct || ct <= nowMs) continue; // post-commence handled below
+    livePicks.push(buildPickFromBet(b, false));
+  }
 
+  // Post-commence frozen picks — same Firestore source, just stamped
+  // with `frozen: true` so the UI can render the lock chip.
   const frozenPicks = [];
   for (const b of lockedBetsByMatchup.values()) {
     const ct = b.game?.commenceTime ? new Date(b.game.commenceTime).getTime() : 0;
     if (!ct || ct > nowMs) continue;
-    frozenPicks.push(buildFrozenPick(b));
+    frozenPicks.push(buildPickFromBet(b, true));
+  }
+
+  // Diagnostic: how many model picks failed to make it into Firestore
+  // (and therefore won't display)? This should always be 0 — if it
+  // ever isn't, a Firestore write failed in Step 4 and the pick is
+  // missing from both display AND grading.
+  const lockedKeys = new Set(lockedBetsByMatchup.keys());
+  const droppedFromModel = picks.filter(p => {
+    const k = `${(p.awayTeam || '').toLowerCase()}_${(p.homeTeam || '').toLowerCase()}`;
+    return !lockedKeys.has(k);
+  });
+  if (droppedFromModel.length > 0) {
+    console.warn(
+      `   ⚠️  ${droppedFromModel.length} model pick(s) NOT in Firestore — display will miss them: `
+      + droppedFromModel.map(p => `${p.awayTeam}@${p.homeTeam}`).join(', '),
+    );
   }
 
   const exportedPicks = [...frozenPicks, ...livePicks];
-  const droppedPostCommence = picks.length - livePicks.length;
-  if (droppedPostCommence > 0) {
-    console.log(
-        `   🧊 Froze ${frozenPicks.length} post-commence pick(s) to Firestore lock state; `
-      + `dropped ${droppedPostCommence} live model rec(s) for already-started games`,
-    );
-  }
+  console.log(
+    `   📤 Exporting ${exportedPicks.length} pick(s): `
+    + `${frozenPicks.length} frozen (post-commence) + ${livePicks.length} live (pre-commence)`,
+  );
 
   const jsonExport = {
     date,
