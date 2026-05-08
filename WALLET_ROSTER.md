@@ -1,6 +1,6 @@
 # Sharp Wallet Roster
 
-Generated: 5/8/2026, 1:27:46 AM ET · V8 cutover: 2026-04-18
+Generated: 5/8/2026, 4:20:06 AM ET · V8 cutover: 2026-04-18
 
 Every sharp wallet we have V8-era data on, sorted by combined conviction score. This is the **full roster** (no minimum-bets filter) — noisy at the tail, but that's the point for a tracking dataset. Verdict column reflects the ≥3-bet threshold.
 
@@ -72,14 +72,14 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 7703d4 | MIXED_PICKS_GOOD_$_BAD | ELITE | 441 | 3 | 100% | +91.6% | +2.75 | 11 | 45.5% | -38.6% | -15945 | 13.2 | 16.6 | 1.2% |
 | 946418 | MIXED_PICKS_GOOD_$_BAD | ELITE | — | 6 | 66.7% | +10.1% | +0.60 | 8 | 62.5% | -12% | -1640 | 83.3 | 91.8 | 25.5% |
 | 30935c | MIXED_PICKS_GOOD_$_BAD | ELITE | — | 8 | 50% | +13.6% | +1.09 | 35 | 45.7% | -18% | -16605 | 38.4 | 57.4 | 4.7% |
-| 8ec926 | MIXED_PICKS_GOOD_$_BAD | ELITE | 396 | 3 | 66.7% | +1.2% | +0.04 | 46 | 41.3% | -19.4% | -14028 | 28.9 | 42.6 | 3% |
+| 8ec926 | MIXED_PICKS_GOOD_$_BAD | ELITE | 381 | 3 | 66.7% | +1.2% | +0.04 | 47 | 40.4% | -21.4% | -15864 | 28.9 | 42.6 | 3% |
 | 63fc82 | MIXED_PICKS_GOOD_$_BAD | ELITE | 380 | 11 | 63.6% | +25.1% | +2.76 | 41 | 48.8% | -8.7% | -57805 | 44.3 | 63.8 | 5.4% |
 | 981187 | MIXED_PICKS_GOOD_$_BAD | ELITE | 109 | 17 | 58.8% | +15.8% | +2.68 | 15 | 60% | -1.9% | -65640 | 71.6 | 67.8 | 6.3% |
 | 78e8f1 | MIXED_PICKS_GOOD_$_BAD | ELITE | 192 | 13 | 38.5% | +11.5% | +1.49 | 37 | 32.4% | -16.3% | -176381 | 68.3 | 71.1 | 7.5% |
 | 4c64aa | MIXED_PICKS_GOOD_$_BAD | ELITE | — | 43 | 55.8% | +2.8% | +1.19 | 90 | 48.9% | -21.1% | -295761 | 51.1 | 47.3 | 3.4% |
 | a6c56e | MIXED_PICKS_GOOD_$_BAD | ELITE | 15 | 9 | 66.7% | +35.6% | +3.20 | 20 | 55% | -24% | -354103 | 51.4 | 21.1 | 1.4% |
 | 59266e | MIXED_PICKS_GOOD_$_BAD | ELITE | 459 | 3 | 66.7% | +3.7% | +0.11 | 12 | 66.7% | -20.5% | -369776 | 17 | 24.4 | 1.5% |
-| bc3532 | MIXED_PICKS_GOOD_$_BAD | ELITE | 40 | 63 | 46% | +2.1% | +1.31 | 163 | 42.9% | -25.7% | -512057 | 65.7 | 68.1 | 6.5% |
+| bc3532 | MIXED_PICKS_GOOD_$_BAD | ELITE | 40 | 63 | 46% | +2.1% | +1.31 | 164 | 42.7% | -25.7% | -513252 | 65.7 | 68.1 | 6.5% |
 | 3102c3 | MIXED_PICKS_GOOD_$_BAD | ELITE | 66 | 6 | 33.3% | +12.5% | +0.75 | 7 | 0% | -100% | -672814 | 79.5 | 75.1 | 9.1% |
 | ec96a4 | INCONCLUSIVE | ELITE | 413 | 0 | — | — | +0.00 | 2 | 100% | +100% | +71648 | — | — | — |
 | fdd34f | INCONCLUSIVE | ELITE | 221 | 2 | 50% | -44.1% | -0.88 | 2 | 50% | +278.1% | +57288 | 46.4 | 41.5 | 2.7% |
