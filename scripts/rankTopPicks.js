@@ -584,6 +584,132 @@ function loadTodayLocked(today, lens) {
   })).then(arrs => arrs.flat());
 }
 
+// ── All-sides loader (for the bottom-of-report market-type breakdown) ────
+//
+// Loads every today doc's BOTH sides regardless of lockStage / superseded /
+// health / star floor. The user wants a complete view of where every market
+// stands on AGS / HC margin / Δw — not just locked picks. Sides with no
+// proven wallet activity AND no stamp data are still emitted (rendered as
+// "—") so the rendered table is exhaustive per market.
+//
+// For each pick doc we emit BOTH sides:
+//   1. Sides present in the `sides` map are emitted with full pick-time
+//      stamps (lockStage, health, peak, units, etc).
+//   2. Sides MISSING from `sides` (because they never qualified for a
+//      lock check, or only one side was scored) are synthesized from the
+//      doc-level `agsBothSides` analytical sidecar — same AGS / HC / Δw
+//      / Δq numbers the cron computes on every cycle for both sides.
+//      These synthesized rows are flagged lockStage='SHADOW' so the
+//      table makes clear they were never an active pick — but the user
+//      still sees the both-sides AGS comparison they asked for.
+async function loadAllSidesForToday(today) {
+  const out = [];
+  for (const [col, market] of PICK_COLS) {
+    const snap = await db.collection(col).where('date', '==', today).get();
+    for (const doc of snap.docs) {
+      const d = doc.data();
+      const sides = d.sides || {};
+      const expectedSides = market === 'TOTAL' ? ['over', 'under'] : ['away', 'home'];
+      const sidesPresent = new Set(Object.keys(sides));
+
+      // Pass 1: emit every side actually stored on the doc.
+      for (const [sideKey, side] of Object.entries(sides)) {
+        const peak = side.peak || side.lock || {};
+        const wd = peak?.v8Scoring?.walletDetails;
+
+        const dw = (side.v8_walletConsensusDelta != null) ? Number(side.v8_walletConsensusDelta) : null;
+        let dq  = (side.v8_walletConsensusQualityMargin != null) ? Number(side.v8_walletConsensusQualityMargin) : null;
+        if (dq == null && Array.isArray(wd)) {
+          let qFor = 0, qAg = 0;
+          for (const w of wd) {
+            if ((w?.contribution ?? 0) < QUALITY_CUT) continue;
+            if (!w?.side) continue;
+            if (w.side === sideKey) qFor++;
+            else                    qAg++;
+          }
+          dq = qFor - qAg;
+        }
+
+        const hcM = (side.v8_hcMargin != null) ? Number(side.v8_hcMargin) : null;
+        const hcF = (side.v8_hcConfFor != null) ? Number(side.v8_hcConfFor) : null;
+        const hcA = (side.v8_hcConfAg  != null) ? Number(side.v8_hcConfAg)  : null;
+
+        const ags = (side.v8_ags != null && Number.isFinite(side.v8_ags)) ? Number(side.v8_ags) : null;
+        const agsTier = side.v8_agsTier ?? null;
+        const agsForN = (side.v8_agsProvenForCount != null) ? Number(side.v8_agsProvenForCount) : null;
+        const agsAgN  = (side.v8_agsProvenAgCount  != null) ? Number(side.v8_agsProvenAgCount)  : null;
+
+        out.push({
+          docId: doc.id,
+          sport: d.sport,
+          market,
+          sideKey,
+          team: side.team,
+          away: d.away,
+          home: d.home,
+          stars: peak?.stars ?? 0,
+          units: side.finalUnits ?? peak?.units ?? 0,
+          odds: peak?.odds ?? 0,
+          lockStage: side.lockStage ?? null,
+          health: side.health?.status ?? null,
+          superseded: !!side.superseded,
+          dw, dq,
+          hcMargin: hcM, hcConfFor: hcF, hcConfAg: hcA,
+          ags, agsTier, agsForN, agsAgN,
+          fromAgsBothSides: false,
+        });
+      }
+
+      // Pass 2: for every expected side that's NOT in `sides`, synthesize
+      // a row from the doc-level `agsBothSides` analytical sidecar. This
+      // is what makes "both sides of every pick" actually show up — the
+      // cron writes agsBothSides every cycle for both away+home (or
+      // over+under), even when only one side ever qualified for a lock.
+      const both = d.agsBothSides || null;
+      if (both) {
+        for (const sideKey of expectedSides) {
+          if (sidesPresent.has(sideKey)) continue;
+          const stamp = both[sideKey];
+          if (!stamp) continue;
+          const teamLabel =
+            market === 'TOTAL' ? (sideKey === 'over' ? 'OVER' : 'UNDER')
+            : sideKey === 'home' ? d.home : d.away;
+          out.push({
+            docId: doc.id,
+            sport: d.sport,
+            market,
+            sideKey,
+            team: teamLabel,
+            away: d.away,
+            home: d.home,
+            stars: 0,
+            units: 0,
+            odds: 0,
+            // No `sides` entry = this side was never actively scored as
+            // a pick. SHADOW captures that semantic — it's the
+            // "documented but not promoted" state used elsewhere in the
+            // pipeline.
+            lockStage: 'SHADOW',
+            health: null,
+            superseded: false,
+            dw: stamp.dw ?? null,
+            dq: stamp.dq ?? null,
+            hcMargin: stamp.hcMargin ?? null,
+            hcConfFor: stamp.hcConfFor ?? null,
+            hcConfAg: stamp.hcConfAg ?? null,
+            ags: stamp.ags ?? null,
+            agsTier: stamp.agsTier ?? null,
+            agsForN: stamp.agsProvenForCount ?? null,
+            agsAgN: stamp.agsProvenAgCount ?? null,
+            fromAgsBothSides: true,
+          });
+        }
+      }
+    }
+  }
+  return out;
+}
+
 // ── Cell-evidence formatter ───────────────────────────────────────────────
 function fmtCell(cell) {
   if (!cell || cell.n === 0) return 'N=0  —';
@@ -837,6 +963,73 @@ function fmtCell(cell) {
     noAgs.forEach(p => console.log(`     · [${p.sport}] ${p.market} ${p.team}  Σ=${sign(p.sum, 0)}  HC_m=${p.hcMargin >= 0 ? '+' : ''}${p.hcMargin}  score=${p.score}`));
   }
 
+  // ── Per-market all-sides breakdown ────────────────────────────────────
+  // Every game-market's BOTH sides, regardless of lockStage / health, sorted
+  // by AGS desc within each market. This is the comprehensive view of where
+  // each market stands tonight on the three core consensus signals: AGS
+  // (quality-weighted), HC margin (high-conviction count), Δw (proven-winner
+  // depth). Sides with no proven activity render as "—".
+  console.log('\n══════════════════════════════════════════════════════════════════════════════');
+  console.log('  PER-MARKET BREAKDOWN — every side, sorted by AGS desc');
+  console.log('══════════════════════════════════════════════════════════════════════════════');
+  const allSides = await loadAllSidesForToday(today);
+  // Sort key: AGS desc (null AGS sinks to bottom), then HC margin desc, then Δw desc.
+  const sortKey = (a, b) => {
+    const aAgs = (a.ags == null || !Number.isFinite(a.ags)) ? -Infinity : a.ags;
+    const bAgs = (b.ags == null || !Number.isFinite(b.ags)) ? -Infinity : b.ags;
+    if (bAgs !== aAgs) return bAgs - aAgs;
+    const aHc = a.hcMargin ?? -Infinity;
+    const bHc = b.hcMargin ?? -Infinity;
+    if (bHc !== aHc) return bHc - aHc;
+    return (b.dw ?? -Infinity) - (a.dw ?? -Infinity);
+  };
+
+  const sideLabel = (r) => {
+    if (r.market === 'TOTAL') {
+      return r.sideKey === 'over' ? `[${r.sport}] OVER  ${r.away}@${r.home}` : `[${r.sport}] UNDER ${r.away}@${r.home}`;
+    }
+    const team = r.team || (r.sideKey === 'home' ? r.home : r.away);
+    const opp  = r.sideKey === 'home' ? r.away : r.home;
+    const tag = r.market === 'ML' ? 'ML' : 'SPRD';
+    return `[${r.sport}] ${tag} ${team} (vs ${opp})`;
+  };
+  const fmtNum = (v, d = 0) => (v == null || Number.isNaN(v)) ? '—' : (v >= 0 ? '+' : '') + Number(v).toFixed(d);
+  const fmtAgsCol = (v) => (v == null || !Number.isFinite(v)) ? '—' : (v >= 0 ? '+' : '') + v.toFixed(2);
+  const fmtN = (f, a) => (f == null && a == null) ? '—' : `${f ?? 0}v${a ?? 0}`;
+  const fmtState = (r) => {
+    if (r.superseded) return 'SUPERSEDED';
+    const parts = [];
+    if (r.lockStage) parts.push(r.lockStage);
+    if (r.health && r.health !== 'OK') parts.push(r.health);
+    return parts.length ? parts.join('/') : '—';
+  };
+
+  for (const market of ['ML', 'SPREAD', 'TOTAL']) {
+    const rows = allSides.filter(r => r.market === market).sort(sortKey);
+    if (!rows.length) {
+      console.log(`\n  ${market}: (no sides today)`);
+      continue;
+    }
+    console.log(`\n  ${market} — ${rows.length} side(s)`);
+    console.log('  ' + pad('Side', 42) + '| ' + pad('AGS', 7) + '| ' + pad('AGS Tier', 8) + '| ' + pad('AGS-N', 6) + '| ' + pad('HC_m', 5) + '| ' + pad('HC-N', 6) + '| ' + pad('Δw', 4) + '| ' + pad('Δq', 4) + '| ' + pad('★', 4) + '| ' + pad('u', 5) + '| ' + pad('State', 18));
+    console.log('  ' + '-'.repeat(130));
+    for (const r of rows) {
+      console.log(
+        '  ' + pad(sideLabel(r), 42) + '| ' +
+        pad(fmtAgsCol(r.ags), 7) + '| ' +
+        pad(r.agsTier ?? '—', 8) + '| ' +
+        pad(fmtN(r.agsForN, r.agsAgN), 6) + '| ' +
+        pad(fmtNum(r.hcMargin, 0), 5) + '| ' +
+        pad(fmtN(r.hcConfFor, r.hcConfAg), 6) + '| ' +
+        pad(fmtNum(r.dw, 0), 4) + '| ' +
+        pad(fmtNum(r.dq, 0), 4) + '| ' +
+        pad((r.stars ?? 0).toString(), 4) + '| ' +
+        pad((r.units ?? 0).toFixed(2), 5) + '| ' +
+        pad(fmtState(r), 18),
+      );
+    }
+  }
+
   // ── Persist a machine-readable snapshot ─────────────────────────────
   const publicDir = join(REPO_ROOT, 'public');
   if (!existsSync(publicDir)) mkdirSync(publicDir, { recursive: true });
@@ -869,6 +1062,14 @@ function fmtCell(cell) {
       bySport: agsMatrix.bySport,
       totalEligible: agsMatrix.totalEligible,
       sports: agsMatrix.sports,
+    },
+    // Per-market all-sides snapshot — every today doc's BOTH sides regardless
+    // of lockStage / health, with AGS / HC / Δw / Δq stamped fields. Sorted
+    // by AGS desc within each market. Mirrors the bottom console section.
+    perMarketSides: {
+      ML:     allSides.filter(r => r.market === 'ML').sort(sortKey).map(r => ({ docId: r.docId, sport: r.sport, sideKey: r.sideKey, team: r.team, away: r.away, home: r.home, ags: r.ags, agsTier: r.agsTier, agsForN: r.agsForN, agsAgN: r.agsAgN, hcMargin: r.hcMargin, hcConfFor: r.hcConfFor, hcConfAg: r.hcConfAg, dw: r.dw, dq: r.dq, stars: r.stars, units: r.units, lockStage: r.lockStage, health: r.health, superseded: r.superseded, fromAgsBothSides: r.fromAgsBothSides })),
+      SPREAD: allSides.filter(r => r.market === 'SPREAD').sort(sortKey).map(r => ({ docId: r.docId, sport: r.sport, sideKey: r.sideKey, team: r.team, away: r.away, home: r.home, ags: r.ags, agsTier: r.agsTier, agsForN: r.agsForN, agsAgN: r.agsAgN, hcMargin: r.hcMargin, hcConfFor: r.hcConfFor, hcConfAg: r.hcConfAg, dw: r.dw, dq: r.dq, stars: r.stars, units: r.units, lockStage: r.lockStage, health: r.health, superseded: r.superseded, fromAgsBothSides: r.fromAgsBothSides })),
+      TOTAL:  allSides.filter(r => r.market === 'TOTAL').sort(sortKey).map(r => ({ docId: r.docId, sport: r.sport, sideKey: r.sideKey, team: r.team, away: r.away, home: r.home, ags: r.ags, agsTier: r.agsTier, agsForN: r.agsForN, agsAgN: r.agsAgN, hcMargin: r.hcMargin, hcConfFor: r.hcConfFor, hcConfAg: r.hcConfAg, dw: r.dw, dq: r.dq, stars: r.stars, units: r.units, lockStage: r.lockStage, health: r.health, superseded: r.superseded, fromAgsBothSides: r.fromAgsBothSides })),
     },
   }, null, 2));
   console.log(`\nWrote ${outPath}`);
