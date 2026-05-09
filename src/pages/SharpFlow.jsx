@@ -3203,7 +3203,11 @@ function estimateStarsFromSnap(snap) {
 
 async function loadAllTimePnL() {
   try {
-    const cacheKey = 'sharpFlow_pnl_v13';
+    // v14 — pick projection now carries v8_topPick / v8_superTopPick /
+    // v8_lockTier / v8_systemVersion so the Performance dashboard's
+    // "Top Pick" filter matches the production-stamped badge instead of
+    // the legacy (peak.stars − lock.stars) ≥ 1.0 heuristic.
+    const cacheKey = 'sharpFlow_pnl_v14';
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
       const { data, ts } = JSON.parse(cached);
@@ -3262,7 +3266,21 @@ async function loadAllTimePnL() {
           const lkEV = lockSnap?.evEdge ?? null;
           const pkEV = bestSnap?.evEdge ?? null;
           const regime = bestSnap?.regime || lockSnap?.regime || null;
-          const pick = { date: data.date, sport: data.sport || 'NHL', marketType: mt, stars: pickStars, lockStars: lkStars, lockEV: lkEV, peakEV: pkEV, units: u, status: sd.status || 'PENDING', outcome: null, profit: 0, clv: null, cancelled: isCancelled, tracked: isTrackedOnly, regime };
+          // v14 — carry the V7.2+ stamped TOP PICK / lock-tier fields so
+          // the Performance dashboard's "Top Pick" filter can match the
+          // production badge logic instead of the legacy starDelta proxy.
+          // Pre-v7.1 docs have these undefined and the filter falls back
+          // to the legacy rule for backward compatibility.
+          const pick = {
+            date: data.date, sport: data.sport || 'NHL', marketType: mt,
+            stars: pickStars, lockStars: lkStars, lockEV: lkEV, peakEV: pkEV,
+            units: u, status: sd.status || 'PENDING', outcome: null, profit: 0,
+            clv: null, cancelled: isCancelled, tracked: isTrackedOnly, regime,
+            v8_topPick: sd.v8_topPick,
+            v8_superTopPick: sd.v8_superTopPick,
+            v8_lockTier: sd.v8_lockTier,
+            v8_systemVersion: sd.v8_systemVersion,
+          };
           if (sd.status === 'COMPLETED') {
             pick.outcome = sd.result?.outcome || null;
             // Tracked-only LEAN picks always grade at 0u PnL regardless of W/L.
@@ -9092,8 +9110,15 @@ export default function SharpFlow() {
       if (perfSport !== 'ALL' && p.sport !== perfSport) return false;
       if (perfMarket !== 'all' && (p.marketType || 'ml') !== perfMarket) return false;
       if (perfGrowth === 'topPick') {
-        const delta = (p.lockStars != null && p.stars != null) ? p.stars - p.lockStars : 0;
-        if (delta < 1.0) return false;
+        // v14 — TOP PICK filter now matches the V7.2+ production badge
+        // (v8_topPick stamp). Falls back to the legacy starDelta ≥ 1.0
+        // heuristic for pre-v7.1 picks where the stamp is absent.
+        if (p.v8_topPick !== undefined) {
+          if (!p.v8_topPick) return false;
+        } else {
+          const delta = (p.lockStars != null && p.stars != null) ? p.stars - p.lockStars : 0;
+          if (delta < 1.0) return false;
+        }
       } else if (perfGrowth === 'golden') {
         const delta = (p.lockStars != null && p.stars != null) ? p.stars - p.lockStars : 0;
         const evD = (p.peakEV != null && p.lockEV != null) ? p.peakEV - p.lockEV : 0;
@@ -11222,7 +11247,10 @@ export default function SharpFlow() {
                           if (!isFiltered) return raw;
                           return raw.filter(p => {
                             if (perfSport !== 'ALL' && p.sport !== perfSport) return false;
-                            if (perfGrowth === 'topPick') { const d = (p.lockStars != null ? p.stars - p.lockStars : 0); if (d < 1.0) return false; }
+                            if (perfGrowth === 'topPick') {
+                              if (p.v8_topPick !== undefined) { if (!p.v8_topPick) return false; }
+                              else { const d = (p.lockStars != null ? p.stars - p.lockStars : 0); if (d < 1.0) return false; }
+                            }
                             else if (perfGrowth === 'golden') { const d = (p.lockStars != null ? p.stars - p.lockStars : 0); const e = (p.peakEV != null && p.lockEV != null ? p.peakEV - p.lockEV : 0); if (d < 1.0 || e <= 0) return false; }
                             if (perfDateRange === 'all') return true;
                             const now = new Date();
@@ -11241,7 +11269,10 @@ export default function SharpFlow() {
                           const rawP = fp?.pregame ? (filteredPnL ? (allTimePnL?.picks || []).filter(p => {
                             if (perfSport !== 'ALL' && p.sport !== perfSport) return false;
                             if (perfMarket !== 'all' && (p.marketType || 'ml') !== perfMarket) return false;
-                            if (perfGrowth === 'topPick') { const d = (p.lockStars != null ? p.stars - p.lockStars : 0); if (d < 1.0) return false; }
+                            if (perfGrowth === 'topPick') {
+                              if (p.v8_topPick !== undefined) { if (!p.v8_topPick) return false; }
+                              else { const d = (p.lockStars != null ? p.stars - p.lockStars : 0); if (d < 1.0) return false; }
+                            }
                             else if (perfGrowth === 'golden') { const d = (p.lockStars != null ? p.stars - p.lockStars : 0); const e = (p.peakEV != null && p.lockEV != null ? p.peakEV - p.lockEV : 0); if (d < 1.0 || e <= 0) return false; }
                             if (perfDateRange === 'all') return true;
                             const now = new Date();
