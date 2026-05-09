@@ -1363,7 +1363,7 @@ function vaultStarBand(row) {
       out.push(mdHeader(['wallet', 'picksN', 'flat PnL', 'pos N', 'pos $ROI']));
       for (const r of oneBet) {
         const dr = r.posN > 0 && r.posInvested > 0 ? `${(r.posPnl / r.posInvested * 100).toFixed(0)}%` : '—';
-        out.push(`| \`${r.wallet.slice(0, 8)}…\` | ${r.picksN} | ${sign(r.flatPnl, 2)} | ${r.posN} | ${dr} |`);
+        out.push(`| \`...${r.wallet.slice(-4)}\` | ${r.picksN} | ${sign(r.flatPnl, 2)} | ${r.posN} | ${dr} |`);
       }
       out.push('');
     }
@@ -1374,7 +1374,7 @@ function vaultStarBand(row) {
       for (const r of justUnder) {
         const wr = (r.picksWins / r.picksN * 100).toFixed(0);
         const dr = r.posN > 0 && r.posInvested > 0 ? `${(r.posPnl / r.posInvested * 100).toFixed(0)}%` : '—';
-        out.push(`| \`${r.wallet.slice(0, 8)}…\` | ${r.picksN} | ${wr}% | ${sign(r.flatRoi)}% | ${r.posN} | ${dr} |`);
+        out.push(`| \`...${r.wallet.slice(-4)}\` | ${r.picksN} | ${wr}% | ${sign(r.flatRoi)}% | ${r.posN} | ${dr} |`);
       }
       out.push('');
     }
@@ -1511,7 +1511,7 @@ function vaultStarBand(row) {
     ]));
     for (const b of yProvenBets) {
       const tier = provenRoster.get(b.wallet)?.get(b.sport) || '';
-      const walletLbl = `\`${b.wallet.slice(0, 10)}…\` (${tier})`;
+      const walletLbl = `\`...${b.wallet.slice(-4)}\` (${tier})`;
       const result = b.won === 1 ? '**W**' : 'L';
       out.push(`| ${walletLbl} | ${b.sport.toUpperCase()} | ${b.market} | ${matchupLabel(b)} | ${fmtMoneyShort(b.invested)} | ${result} | ${fmtMoneyShort(b.dollarPnl)} |`);
     }
@@ -1565,7 +1565,7 @@ function vaultStarBand(row) {
       top.forEach((r, i) => {
         const streakStr = r.streak.length === 0 ? '—' : `${r.streak.length}${r.streak.type}`;
         const bpd = r.betsPerDay == null ? '—' : r.betsPerDay.toFixed(1);
-        out.push(`| ${i + 1} | \`${r.wallet.slice(0, 10)}…\` | ${r.tier} | ${r.n} | ${fmtPct(r.wr, 0)} | ${bpd} | ${sign(r.flatPnl, 2)} | ${fmtSignPct(r.flatRoi, 0)} | ${fmtMoneyShort(r.invested)} | ${fmtMoneyShort(r.dollarPnl)} | ${fmtSignPct(r.dollarRoi, 0)} | ${streakStr} |`);
+        out.push(`| ${i + 1} | \`...${r.wallet.slice(-4)}\` | ${r.tier} | ${r.n} | ${fmtPct(r.wr, 0)} | ${bpd} | ${sign(r.flatPnl, 2)} | ${fmtSignPct(r.flatRoi, 0)} | ${fmtMoneyShort(r.invested)} | ${fmtMoneyShort(r.dollarPnl)} | ${fmtSignPct(r.dollarRoi, 0)} | ${streakStr} |`);
       });
       out.push('');
     }
@@ -1603,7 +1603,7 @@ function vaultStarBand(row) {
   } else {
     out.push(mdHeader(['Wallet', 'Sport', 'Tier', 'Streak', 'Last bet', 'All-time bets', 'WR%', '$ PnL', '$ ROI']));
     for (const r of streakRows) {
-      out.push(`| \`${r.wallet.slice(0, 10)}…\` | ${r.sport.toUpperCase()} | ${r.tier} | **${r.streak.length}${r.streak.type}** | ${r.streak.lastDate} | ${r.n} | ${fmtPct(r.wr, 0)} | ${fmtMoneyShort(r.dollarPnl)} | ${fmtSignPct(r.dollarRoi, 0)} |`);
+      out.push(`| \`...${r.wallet.slice(-4)}\` | ${r.sport.toUpperCase()} | ${r.tier} | **${r.streak.length}${r.streak.type}** | ${r.streak.lastDate} | ${r.n} | ${fmtPct(r.wr, 0)} | ${fmtMoneyShort(r.dollarPnl)} | ${fmtSignPct(r.dollarRoi, 0)} |`);
     }
     out.push('');
   }

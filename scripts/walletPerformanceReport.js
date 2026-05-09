@@ -291,7 +291,7 @@ function walletAgg(bets) {
   out.push('');
   out.push(mdHeader(['#', 'Wallet', 'N', 'WR%', 'Invested ($)', 'Settled PnL ($)', 'Dollar ROI', 'Tier', 'LB Rank']));
   sortedByPnl.slice(0, 20).forEach((r, i) => {
-    out.push(`| ${i + 1} | ${r.walletShort || r.wallet.slice(0, 8)} | ${r.n} | ${r.wr.toFixed(1)}% | ${r.dollarInvested.toLocaleString(undefined, { maximumFractionDigits: 0 })} | ${sign(r.dollarPnl, 0)} | ${r.dollarRoi != null ? sign(r.dollarRoi) + '%' : '—'} | ${r.tier || '—'} | ${r.lbRank ?? '—'} |`);
+    out.push(`| ${i + 1} | \`...${(r.wallet || r.walletShort || '').slice(-4)}\` | ${r.n} | ${r.wr.toFixed(1)}% | ${r.dollarInvested.toLocaleString(undefined, { maximumFractionDigits: 0 })} | ${sign(r.dollarPnl, 0)} | ${r.dollarRoi != null ? sign(r.dollarRoi) + '%' : '—'} | ${r.tier || '—'} | ${r.lbRank ?? '—'} |`);
   });
   out.push('');
 
@@ -299,7 +299,7 @@ function walletAgg(bets) {
   out.push('');
   out.push(mdHeader(['#', 'Wallet', 'N', 'WR%', 'Invested ($)', 'Settled PnL ($)', 'Dollar ROI', 'Tier', 'LB Rank']));
   sortedByPnl.slice(-20).reverse().forEach((r, i) => {
-    out.push(`| ${i + 1} | ${r.walletShort || r.wallet.slice(0, 8)} | ${r.n} | ${r.wr.toFixed(1)}% | ${r.dollarInvested.toLocaleString(undefined, { maximumFractionDigits: 0 })} | ${sign(r.dollarPnl, 0)} | ${r.dollarRoi != null ? sign(r.dollarRoi) + '%' : '—'} | ${r.tier || '—'} | ${r.lbRank ?? '—'} |`);
+    out.push(`| ${i + 1} | \`...${(r.wallet || r.walletShort || '').slice(-4)}\` | ${r.n} | ${r.wr.toFixed(1)}% | ${r.dollarInvested.toLocaleString(undefined, { maximumFractionDigits: 0 })} | ${sign(r.dollarPnl, 0)} | ${r.dollarRoi != null ? sign(r.dollarRoi) + '%' : '—'} | ${r.tier || '—'} | ${r.lbRank ?? '—'} |`);
   });
   out.push('');
 
@@ -310,7 +310,7 @@ function walletAgg(bets) {
     out.push('');
     out.push(mdHeader(['#', 'Wallet', 'N', 'WR%', 'Invested ($)', 'PnL ($)', '$ ROI', 'Tier']));
     posHigh.forEach((r, i) => {
-      out.push(`| ${i + 1} | ${r.walletShort || r.wallet.slice(0, 8)} | ${r.n} | ${r.wr.toFixed(1)}% | ${r.dollarInvested.toLocaleString(undefined, { maximumFractionDigits: 0 })} | ${sign(r.dollarPnl, 0)} | ${r.dollarRoi != null ? sign(r.dollarRoi) + '%' : '—'} | ${r.tier || '—'} |`);
+      out.push(`| ${i + 1} | \`...${(r.wallet || r.walletShort || '').slice(-4)}\` | ${r.n} | ${r.wr.toFixed(1)}% | ${r.dollarInvested.toLocaleString(undefined, { maximumFractionDigits: 0 })} | ${sign(r.dollarPnl, 0)} | ${r.dollarRoi != null ? sign(r.dollarRoi) + '%' : '—'} | ${r.tier || '—'} |`);
     });
     out.push('');
   }
@@ -460,7 +460,7 @@ function walletAgg(bets) {
   both.sort((x, y) => y.a.flatRoi - x.a.flatRoi);
   out.push(mdHeader(['Wallet', 'A: N', 'A: WR%', 'A: Flat ROI', 'A: Flat PnL (u)', 'B: N', 'B: WR%', 'B: $ ROI', 'B: $ PnL', 'Tier']));
   both.forEach(r => {
-    out.push(`| ${r.walletShort || r.wallet.slice(0, 8)} | ${r.a.n} | ${r.a.wr.toFixed(1)}% | ${sign(r.a.flatRoi)}% | ${sign(r.a.flatPnl, 2)} | ${r.b.n} | ${r.b.wr.toFixed(1)}% | ${r.b.dollarRoi != null ? sign(r.b.dollarRoi) + '%' : '—'} | ${sign(r.b.dollarPnl, 0)} | ${r.b.tier || '—'} |`);
+    out.push(`| \`...${(r.wallet || r.walletShort || '').slice(-4)}\` | ${r.a.n} | ${r.a.wr.toFixed(1)}% | ${sign(r.a.flatRoi)}% | ${sign(r.a.flatPnl, 2)} | ${r.b.n} | ${r.b.wr.toFixed(1)}% | ${r.b.dollarRoi != null ? sign(r.b.dollarRoi) + '%' : '—'} | ${sign(r.b.dollarPnl, 0)} | ${r.b.tier || '—'} |`);
   });
   out.push('');
 
@@ -470,7 +470,7 @@ function walletAgg(bets) {
   out.push('### §5a. Confirmed winners (positive in BOTH sources, min 3 bets each)');
   out.push('');
   if (reliableWinners.length) {
-    reliableWinners.forEach(r => out.push(`- **${r.walletShort || r.wallet.slice(0, 8)}** · A: ${r.a.n} bets, ${sign(r.a.flatRoi)}% flat · B: ${r.b.n} bets, ${sign(r.b.dollarRoi)}% $ROI · tier=${r.b.tier || '—'}`));
+    reliableWinners.forEach(r => out.push(`- **\`...${(r.wallet || r.walletShort || '').slice(-4)}\`** · A: ${r.a.n} bets, ${sign(r.a.flatRoi)}% flat · B: ${r.b.n} bets, ${sign(r.b.dollarRoi)}% $ROI · tier=${r.b.tier || '—'}`));
   } else {
     out.push('_None — no wallet clears the bar in both sources at this sample size._');
   }
@@ -479,7 +479,7 @@ function walletAgg(bets) {
   out.push('### §5b. Confirmed bleeders (negative in BOTH sources, min 3 bets each)');
   out.push('');
   if (reliableLosers.length) {
-    reliableLosers.forEach(r => out.push(`- **${r.walletShort || r.wallet.slice(0, 8)}** · A: ${r.a.n} bets, ${sign(r.a.flatRoi)}% flat · B: ${r.b.n} bets, ${sign(r.b.dollarRoi)}% $ROI · tier=${r.b.tier || '—'}`));
+    reliableLosers.forEach(r => out.push(`- **\`...${(r.wallet || r.walletShort || '').slice(-4)}\`** · A: ${r.a.n} bets, ${sign(r.a.flatRoi)}% flat · B: ${r.b.n} bets, ${sign(r.b.dollarRoi)}% $ROI · tier=${r.b.tier || '—'}`));
   } else {
     out.push('_None._');
   }
