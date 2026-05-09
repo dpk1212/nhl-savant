@@ -67,9 +67,9 @@ Angels  J. Kochanowicz \\
 \\
 36% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
-+166\\
++163\\
 \\
 ![Blue Jays](https://cdn.ciphersports.io/images/MLB/official/TOR.svg)\\
 \\
@@ -77,9 +77,9 @@ Blue Jays  T. Yesavage \\
 \\
 64% \\
 \\
-![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--163\\
+-165\\
 \\
 MLB \\
 \\
@@ -89,21 +89,21 @@ See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_46_tor_la
 \\
 Athletics  A. Civale \\
 \\
-45% \\
+46% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
-+118\\
++117\\
 \\
 ![Orioles](https://cdn.ciphersports.io/images/MLB/official/BAL.svg)\\
 \\
 Orioles  S. Baz \\
 \\
-55% \\
+54% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--121\\
+-110\\
 \\
 MLB \\
 \\
@@ -113,7 +113,7 @@ See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_46_bal_at
 \\
 Nationals  Z. Littell \\
 \\
-39% \\
+40% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
@@ -123,7 +123,7 @@ Nationals  Z. Littell \\
 \\
 Marlins  J. Junk \\
 \\
-61% \\
+60% \\
 \\
 ![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
@@ -139,9 +139,9 @@ Astros  S. Arrighetti \\
 \\
 41% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
-+146\\
++144\\
 \\
 ![Reds](https://cdn.ciphersports.io/images/MLB/official/CIN.svg)\\
 \\
@@ -151,7 +151,7 @@ Reds  C. Burns \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--149\\
+-145\\
 \\
 MLB \\
 \\
@@ -161,21 +161,21 @@ See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_46_cin_ho
 \\
 Rays  N. Martinez \\
 \\
-42% \\
+43% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-+134\\
++132\\
 \\
 ![Red Sox](https://cdn.ciphersports.io/images/MLB/official/BOS.svg)\\
 \\
 Red Sox  P. Tolle \\
 \\
-58% \\
+57% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--136\\
+-134\\
 \\
 MLB \\
 \\
@@ -185,21 +185,21 @@ See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_46_bos_tb
 \\
 Rockies  K. Freeland \\
 \\
-37% \\
+38% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
-+175\\
++170\\
 \\
 ![Phillies](https://cdn.ciphersports.io/images/MLB/official/PHI.svg)\\
 \\
 Phillies  A. Nola \\
 \\
-63% \\
+62% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--177\\
+-168\\
 \\
 MLB \\
 \\
@@ -211,9 +211,9 @@ Twins  J. Ryan \\
 \\
 49% \\
 \\
-![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-+108\\
++109\\
 \\
 ![Guardians](https://cdn.ciphersports.io/images/MLB/official/CLE.svg)\\
 \\
@@ -233,21 +233,21 @@ See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_46_cle_mi
 \\
 Cubs  E. Cabrera \\
 \\
-56% \\
+55% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--126\\
+-124\\
 \\
 ![Rangers](https://cdn.ciphersports.io/images/MLB/official/TEX.svg)\\
 \\
 Rangers  J. Leiter \\
 \\
-44% \\
+45% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
-+124\\
++122\\
 \\
 MLB \\
 \\
@@ -261,7 +261,7 @@ Yankees  C. Schlittler \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--131\\
+-120\\
 \\
 ![Brewers](https://cdn.ciphersports.io/images/MLB/official/MIL.svg)\\
 \\
@@ -271,7 +271,7 @@ Brewers  K. Harrison \\
 \\
 ![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
-+133\\
++127\\
 \\
 MLB \\
 \\
@@ -285,7 +285,7 @@ Mariners  L. Castillo \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--124\\
+-118\\
 \\
 ![White Sox](https://cdn.ciphersports.io/images/MLB/official/CWS.svg)\\
 \\
@@ -295,7 +295,7 @@ White Sox  A. Kay \\
 \\
 ![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
-+122\\
++117\\
 \\
 MLB \\
 \\
@@ -305,21 +305,21 @@ See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_46_cws_se
 \\
 Tigers  B. Smith \\
 \\
-45% \\
+44% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-+129\\
++128\\
 \\
 ![Royals](https://cdn.ciphersports.io/images/MLB/official/KC.svg)\\
 \\
 Royals  M. Wacha \\
 \\
-55% \\
+56% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--130\\
+-132\\
 \\
 MLB \\
 \\
@@ -333,7 +333,7 @@ Mets  C. Holmes \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--111\\
+-106\\
 \\
 ![D-Backs](https://cdn.ciphersports.io/images/MLB/official/ARI.svg)\\
 \\
@@ -355,9 +355,9 @@ Cardinals  D. May \\
 \\
 44% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
-+130\\
++127\\
 \\
 ![Padres](https://cdn.ciphersports.io/images/MLB/official/SD.svg)\\
 \\
@@ -367,7 +367,7 @@ Padres  R. Vásquez \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--132\\
+-128\\
 \\
 MLB \\
 \\
@@ -379,9 +379,9 @@ Pirates  B. Ashcraft \\
 \\
 51% \\
 \\
-![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--108\\
+-105\\
 \\
 ![Giants](https://cdn.ciphersports.io/images/MLB/official/SF.svg)\\
 \\
@@ -389,9 +389,9 @@ Giants  L. Roupp \\
 \\
 49% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
-+105\\
++104\\
 \\
 MLB \\
 \\
@@ -401,21 +401,21 @@ See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_46_sf_pit
 \\
 Braves  S. Strider \\
 \\
-40% \\
+39% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-+156\\
++160\\
 \\
 ![Dodgers](https://cdn.ciphersports.io/images/MLB/official/LAD.svg)\\
 \\
 Dodgers  B. Snell \\
 \\
-60% \\
+61% \\
 \\
 ![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
--156\\
+-163\\
 \\
 MLB \\
 \\
@@ -505,6 +505,16 @@ $0 today • Cancel anytime
 
 ![logo](https://imgix.cosmicjs.com/d6a67810-474a-11ee-89ab-17371fc03105-swipe-logo.svg?auto=format,compress&w=20) Swipe across to view more offers
 
+![logo](https://imgix.cosmicjs.com/e878d130-26c9-11f1-9754-d7196a81e564-Novig_idUhBcMR4r_1.svg?auto=format,compress&h=200)
+
+FEATURED
+
+T&Cs apply.
+
+Claim Now
+
+How to claim
+
 ![logo](https://imgix.cosmicjs.com/551e6f30-4aa2-11ef-92a4-3171dcec0547-csb-on-dark-rgb.svg?auto=format,compress&h=200)
 
 RECOMMENDED
@@ -539,9 +549,21 @@ Claim now
 
 How to claim
 
+![logo](https://imgix.cosmicjs.com/db0f1470-12c2-11f1-9e28-d5fea3b8af7e-Kalshi-Light.png?auto=format,compress&h=200)
+
+HOTTEST
+
+T&Cs apply.
+
+Claim Now
+
+[Read review](https://www.dimers.com/prediction-betting/kalshi)
+
+How to claim
+
 ![logo](https://imgix.cosmicjs.com/0d0de820-132c-11f1-9e28-d5fea3b8af7e-Betmgm-Light.png?auto=format,compress&h=200)
 
-LIMITED-TIME
+RECOMMENDED
 
 T&Cs apply.
 
@@ -575,16 +597,6 @@ Claim Now
 
 How to claim
 
-![logo](https://imgix.cosmicjs.com/673e3170-1a24-11f1-912c-9d3f03b09963-OG-LOGO-1a-1.png?auto=format,compress&h=200)
-
-RECOMMENDED
-
-T&Cs apply.
-
-Claim Now
-
-How to claim
-
 ![logo](https://imgix.cosmicjs.com/3c1eebc0-401e-11ee-bfc4-cb12724541fa-Bet365-Primary-Logo.svg?auto=format,compress&h=200)
 
 TRENDING
@@ -597,15 +609,15 @@ Claim Now
 
 How to claim
 
-![logo](https://imgix.cosmicjs.com/1092c8d0-116c-11ef-911e-9f1d49670742-BetRivers-Big.png?auto=format,compress&h=200)
+![logo](https://imgix.cosmicjs.com/9d7e0a60-ceaa-11ef-ac4c-9fb95c248ff6-HorizontalPrimaryDark-1.png?auto=format,compress&h=200)
 
-NEW PLAYERS
+DFS & PICKS
 
 T&Cs apply.
 
-Claim now
+Claim Now
 
-[Read review](https://www.dimers.com/betting/betrivers-sportsbook)
+[Read review](https://www.dimers.com/dfs/betr)
 
 How to claim
 
