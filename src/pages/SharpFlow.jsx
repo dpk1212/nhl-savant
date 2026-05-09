@@ -2121,9 +2121,24 @@ function decideLockStage(regime, v8Scoring, sideKey, sport = null, baseStars = 0
 // Minimum dollars behind a side to even consider writing the pick.
 // Baseline $5k; relaxed to $2.5k when contribution tier is STRONG/STANDARD
 // (we trust the qualified-sharp signal even at lower aggregate volume).
+//
+// IMPORTANT — this floor is the LOCKED dollar gate. SHADOW writes use the
+// relaxed `minInvestedFloorShadow` below so the tracked-but-not-shipped
+// pool is wide enough to evaluate AGS / Δw / HC margin attribution.
 function minInvestedFloor(contribTier) {
   if (contribTier === 'STRONG' || contribTier === 'STANDARD') return 2500;
   return 5000;
+}
+
+// V8.6 — Relaxed dollar floor for SHADOW writes ONLY. The LOCKED path
+// continues to require `minInvestedFloor` ($5k / $2.5k). SHADOWs are
+// tracked-but-not-shipped picks that exist purely so AGS, Δw, HC margin,
+// and walletDetails are captured on a much wider sample. Lowering the
+// floor here ~5x expands the SHADOW pool without touching what we ship.
+//   $1k baseline, $500 when contrib tier is STRONG/STANDARD.
+function minInvestedFloorShadow(contribTier) {
+  if (contribTier === 'STRONG' || contribTier === 'STANDARD') return 500;
+  return 1000;
 }
 
 // V8.2 — CLEAR_MOVE sizing bonus.
@@ -2495,9 +2510,14 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
       return { docId, action: 'no_change' };
     }
     const contribTier = classifyContributionTier(v8Scoring, side);
-    const minInv = minInvestedFloor(contribTier);
+    // V8.6 — Sync layer enforces the SHADOW dollar floor only. The
+    // LOCKED dollar floor (`minInvestedFloor`) is enforced upstream at
+    // the `isLocked = twoFactorFloor && meetsInvest` check, so any
+    // LOCKED-intent caller already cleared the strict $5k/$2.5k bar.
+    // Using the shadow floor here lets relaxed-gate SHADOW writes land.
+    const minInv = minInvestedFloorShadow(contribTier);
     if ((totalInvested || 0) < minInv) {
-      console.warn(`[syncPickToFirebase] REJECTED ${docId}: totalInvested $${totalInvested} < $${minInv} minimum (contribTier=${contribTier})`);
+      console.warn(`[syncPickToFirebase] REJECTED ${docId}: totalInvested $${totalInvested} < $${minInv} shadow minimum (contribTier=${contribTier})`);
       return { docId, action: 'no_change' };
     }
 
@@ -2804,9 +2824,10 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
       return { docId, action: 'no_change' };
     }
     const contribTier = classifyContributionTier(v8Scoring, side);
-    const minInv = minInvestedFloor(contribTier);
+    // V8.6 — sync layer enforces SHADOW floor only (see syncPickToFirebase).
+    const minInv = minInvestedFloorShadow(contribTier);
     if ((totalInvested || 0) < minInv) {
-      console.warn(`[syncSpreadPickToFirebase] REJECTED ${docId}: totalInvested $${totalInvested} < $${minInv} minimum (contribTier=${contribTier})`);
+      console.warn(`[syncSpreadPickToFirebase] REJECTED ${docId}: totalInvested $${totalInvested} < $${minInv} shadow minimum (contribTier=${contribTier})`);
       return { docId, action: 'no_change' };
     }
     const ref = doc(db, 'sharpFlowSpreads', docId);
@@ -2949,9 +2970,10 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
       return { docId, action: 'no_change' };
     }
     const contribTier = classifyContributionTier(v8Scoring, side);
-    const minInv = minInvestedFloor(contribTier);
+    // V8.6 — sync layer enforces SHADOW floor only (see syncPickToFirebase).
+    const minInv = minInvestedFloorShadow(contribTier);
     if ((totalInvested || 0) < minInv) {
-      console.warn(`[syncTotalPickToFirebase] REJECTED ${docId}: totalInvested $${totalInvested} < $${minInv} minimum (contribTier=${contribTier})`);
+      console.warn(`[syncTotalPickToFirebase] REJECTED ${docId}: totalInvested $${totalInvested} < $${minInv} shadow minimum (contribTier=${contribTier})`);
       return { docId, action: 'no_change' };
     }
     const ref = doc(db, 'sharpFlowTotals', docId);
@@ -6491,10 +6513,16 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   // All produce decision.stage === 'LOCKED' (LEAN ships at 0u).
   const twoFactorFloor = isPromotedBy(decision?.promotedBy);
   const minInvForSide = minInvestedFloor(decision?.contribTier);
+  const minInvForSideShadow = minInvestedFloorShadow(decision?.contribTier);
   const meetsInvest = consensusInvested >= minInvForSide;
+  const meetsInvestShadow = consensusInvested >= minInvForSideShadow;
   const meetsThreshold = meetsInvest && sr.stars >= 3.5;
   const isLocked = twoFactorFloor && meetsInvest;
-  const isShadow = meetsInvest && !twoFactorFloor && sr.stars >= 2.5;
+  // V8.6 — SHADOW gate relaxed (stars ≥ 1.0 + minInvestedFloorShadow) so
+  // we capture AGS / Δw / HC margin / walletDetails on a much wider tracked
+  // sample. LOCKED path is untouched — `isLocked` still requires the strict
+  // `meetsInvest` and the v7.4/v7.5 floor.
+  const isShadow = meetsInvestShadow && !twoFactorFloor && sr.stars >= 1.0;
   const lockType = isLocked ? (isGameLive ? 'LIVE' : 'PREGAME') : null;
   const lockTier = decision?.lockTier || 'MUTED';
   const hcDominant = !!decision?.hcDominant;
@@ -6739,10 +6767,13 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     : null;
   const spreadTwoFactorFloor = isPromotedBy(spreadDecision?.promotedBy);
   const spreadMinInv = minInvestedFloor(spreadDecision?.contribTier);
+  const spreadMinInvShadow = minInvestedFloorShadow(spreadDecision?.contribTier);
   const spreadMeetsInvest = (spreadSharpFeatures?.conTotalInvested || 0) >= spreadMinInv;
+  const spreadMeetsInvestShadow = (spreadSharpFeatures?.conTotalInvested || 0) >= spreadMinInvShadow;
   const spreadMeetsThreshold = spreadSr && spreadMeetsInvest && spreadSr.stars >= 3.5;
   const isSpreadLocked = !!spreadSr && spreadTwoFactorFloor && spreadMeetsInvest;
-  const isSpreadShadow = !!spreadSr && spreadMeetsInvest && !spreadTwoFactorFloor && spreadSr.stars >= 2.5;
+  // V8.6 — SHADOW gate relaxed (mirror of ML).
+  const isSpreadShadow = !!spreadSr && spreadMeetsInvestShadow && !spreadTwoFactorFloor && spreadSr.stars >= 1.0;
   const spreadLockTier = spreadDecision?.lockTier || 'MUTED';
   const spreadHcDominant = !!spreadDecision?.hcDominant;
   const spreadHcMargin = spreadDecision?.hcMargin ?? 0;
@@ -6903,10 +6934,13 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     : null;
   const totalTwoFactorFloor = isPromotedBy(totalDecision?.promotedBy);
   const totalMinInv = minInvestedFloor(totalDecision?.contribTier);
+  const totalMinInvShadow = minInvestedFloorShadow(totalDecision?.contribTier);
   const totalMeetsInvest = (totalSharpFeatures?.conTotalInvested || 0) >= totalMinInv;
+  const totalMeetsInvestShadow = (totalSharpFeatures?.conTotalInvested || 0) >= totalMinInvShadow;
   const totalMeetsThreshold = totalSr && totalMeetsInvest && totalSr.stars >= 3.5;
   const isTotalLocked = !!totalSr && totalTwoFactorFloor && totalMeetsInvest;
-  const isTotalShadow = !!totalSr && totalMeetsInvest && !totalTwoFactorFloor && totalSr.stars >= 2.5;
+  // V8.6 — SHADOW gate relaxed (mirror of ML).
+  const isTotalShadow = !!totalSr && totalMeetsInvestShadow && !totalTwoFactorFloor && totalSr.stars >= 1.0;
   const totalLockTier = totalDecision?.lockTier || 'MUTED';
   const totalHcDominant = !!totalDecision?.hcDominant;
   const totalHcMargin = totalDecision?.hcMargin ?? 0;
