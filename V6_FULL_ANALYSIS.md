@@ -1,6 +1,6 @@
 # Sharp Intel v6 — Full Analysis
 
-_Auto-generated **5/9/2026, 9:26:10 AM ET** by `scripts/v6FullAnalysis.js`. Do not edit by hand._
+_Auto-generated **5/9/2026, 9:50:07 AM ET** by `scripts/v6FullAnalysis.js`. Do not edit by hand._
 
 **Inclusion mirrors live Pick Performance dashboard:** `lockStage ≠ SHADOW ∧ ¬superseded ∧ health ∉ {MUTED, CANCELLED} ∧ peak.stars ≥ 2.5`. PnL in **peak units** (the size shipped to users) and **flat 1u** (cohort EV lens). Cohort tags from frozen `v8_walletConsensus*` stamps written at last sync before T-15.
 
@@ -292,6 +292,238 @@ Apples-to-apples (same N for all rows). Sorted by |ρ(·, flat ROI)|.
 | 6 | **ΔTopQShare** | 0.311 ✓ p<.01 | 0.298 ✓ p<.01 | 0.344 |
 
 _(ΔBestRank uses N=37 subset where both sides had a proven wallet — ρ(flat ROI) = 0.333 ✓ p<.05.)_
+
+---
+
+## §AGS. Aggregate Score deep dive
+_Which of the six AGS inputs are pulling the weight, and is the composite earning its place vs. its parts?_
+
+### §AGS-0. What AGS is, in one paragraph
+
+AGS aggregates the proven-wallet (`CONFIRMED` ∪ `FLAT`) slice of `peak.v8Scoring.walletDetails[]` into 6 *delta* features (FOR-side minus AGAINST-side), z-scores each one against a daily-recomputed calibration, and **sums the z-scores**. Equal sign-weighted — no fitted coefficients. Thresholds: `AGS ≥ +5` rescues a lock (route C), `AGS ≥ +3` confirms a thin Δw=+1 lock (v7.5 route B), `AGS < -1` mutes an otherwise-locking side (confirmation gate). Sizing multiplier scales [0.5, 1.0]× over [-1, +5].
+
+**Active calibration**: source = `cron`, sampleSize = 112, dateRange = 2026-04-18 → 2026-05-08, computedAt = 2026-05-09T13:09:25.207Z.
+
+| Feature key | Family | Sign | Cal mean | Cal SD |
+|---|---|---|---|---|
+| `dCount` | TOTAL | + | 1.33 | 1.52 |
+| `dContribution` | TOTAL | + | 78.32 | 86.83 |
+| `dBestContrib` | CONCENTRATION | + | 39.99 | 47.69 |
+| `dBestWalletBase` | CONCENTRATION | + | 37.98 | 41.03 |
+| `dConvictionAvg` | BLENDED | + | 0.53 | 0.69 |
+| `dRoiNormAvg` | BLENDED | + | 33.36 | 40.36 |
+
+### §AGS-1. Coverage + distribution
+
+Computable on **112/147** shipped+graded rows (76%). The remaining rows lack a frozen `walletDetails[]` (older docs, or sides where no proven wallet appeared on either side).
+
+| Stat | AGS value |
+|---|---|
+| Min | -14.10 |
+| 20th pct | -4.23 |
+| 40th pct | -0.06 |
+| Median | 1.59 |
+| 60th pct | 2.63 |
+| 80th pct | 4.10 |
+| 90th pct | 5.28 |
+| Max | 8.23 |
+
+**Tier counts (boundaries set in `src/lib/ags.js → agsTierFromValue`):**
+
+| Tier | Range | N | Share |
+|---|---|---|---|
+| **ELITE** | ≥ +7 | 5 | 4.5% |
+| **LOCK** | +5..+7 | 10 | 8.9% |
+| **STRONG** | +3..+5 | 28 | 25.0% |
+| **NEUTRAL** | 0..+3 | 24 | 21.4% |
+| **WEAK** | −3..0 | 14 | 12.5% |
+| **FADE** | < −3 | 31 | 27.7% |
+
+### §AGS-2. AGS tier × outcome — does the ladder pay?
+
+If the AGS calibration is right, win-rate and flat ROI should rise monotonically up the tier ladder. Sample sizes inside FADE/ELITE will be thin — read the directional signal, not the point estimate.
+
+| Bucket | N | W-L-P | WR % [95% Wilson] | Flat ROI | Peak PnL | Flat t-stat |
+|---|---|---|---|---|---|---|
+| ELITE | 5 | 5-0-0 | 100.0% [57–100] | +156.9% | +10.2u | 1.94 ~ p<.10 |
+| LOCK | 10 | 9-1-0 | 90.0% [60–98] | +79.2% | +18.1u | 3.92 ✓ p<.01 |
+| STRONG | 28 | 19-9-0 | 67.9% [49–82] | +28.1% | +8.0u | 1.61 ✗ noise |
+| NEUTRAL | 24 | 13-11-0 | 54.2% [35–72] | +8.1% | -3.2u | 0.38 ✗ noise |
+| WEAK | 14 | 6-7-1 | 46.2% [23–71] | -1.8% | -5.1u | -0.06 ✗ noise |
+| FADE | 31 | 5-26-0 | 16.1% [7–33] | -67.6% | -28.2u | -4.95 ✓ p<.01 |
+
+### §AGS-3. Per-feature univariate predictive power
+
+Each of the 6 inputs evaluated on its own. `r(WIN)` and `r(ROI)` are the Pearson correlations against win-binary and flat profit; Spearman ρ is the rank-based version (robust to fat tails). The bucketed table partitions on the z-scored feature using the active calibration so a "z ≥ +1" row is exactly what the production AGS sees as a strongly positive contribution.
+
+#### `dCount` (TOTAL)
+
+r(WIN) = **0.415** ✓ p<.01 · r(ROI) = **0.492** ✓ p<.01 · Spearman ρ(ROI) = **0.425**.
+
+| Bucket | N | W-L-P | WR % [95% Wilson] | Flat ROI | Peak PnL | Flat t-stat |
+|---|---|---|---|---|---|---|
+| z < −1 (very negative) | 12 | 2-10-0 | 16.7% [5–45] | -70.1% | -11.7u | -3.44 ✓ p<.01 |
+| z ∈ [−1, 0) | 53 | 23-30-0 | 43.4% [31–57] | -17.6% | -19.3u | -1.32 ✗ noise |
+| z ∈ [0, +1) | 23 | 14-9-0 | 60.9% [41–78] | +16.3% | +6.9u | 0.80 ✗ noise |
+| z ≥ +1 (very positive) | 24 | 18-5-1 | 78.3% [58–90] | +76.6% | +23.8u | 2.86 ✓ p<.01 |
+
+#### `dContribution` (TOTAL)
+
+r(WIN) = **0.435** ✓ p<.01 · r(ROI) = **0.482** ✓ p<.01 · Spearman ρ(ROI) = **0.442**.
+
+| Bucket | N | W-L-P | WR % [95% Wilson] | Flat ROI | Peak PnL | Flat t-stat |
+|---|---|---|---|---|---|---|
+| z < −1 (very negative) | 20 | 4-16-0 | 20.0% [8–42] | -60.3% | -14.8u | -3.25 ✓ p<.01 |
+| z ∈ [−1, 0) | 37 | 15-22-0 | 40.5% [26–57] | -23.4% | -20.0u | -1.50 ✗ noise |
+| z ∈ [0, +1) | 41 | 27-13-1 | 67.5% [52–80] | +32.2% | +19.5u | 2.06 ✓ p<.05 |
+| z ≥ +1 (very positive) | 14 | 11-3-0 | 78.6% [52–92] | +84.7% | +15.1u | 2.18 ✓ p<.05 |
+
+#### `dBestContrib` (CONCENTRATION)
+
+r(WIN) = **0.429** ✓ p<.01 · r(ROI) = **0.371** ✓ p<.01 · Spearman ρ(ROI) = **0.398**.
+
+| Bucket | N | W-L-P | WR % [95% Wilson] | Flat ROI | Peak PnL | Flat t-stat |
+|---|---|---|---|---|---|---|
+| z < −1 (very negative) | 20 | 4-16-0 | 20.0% [8–42] | -60.3% | -15.4u | -3.25 ✓ p<.01 |
+| z ∈ [−1, 0) | 25 | 7-17-1 | 29.2% [15–49] | -29.5% | -19.7u | -1.28 ✗ noise |
+| z ∈ [0, +1) | 54 | 35-19-0 | 64.8% [51–76] | +29.2% | +20.1u | 1.92 ~ p<.10 |
+| z ≥ +1 (very positive) | 13 | 11-2-0 | 84.6% [58–96] | +61.5% | +14.7u | 3.01 ✓ p<.01 |
+
+#### `dBestWalletBase` (CONCENTRATION)
+
+r(WIN) = **0.424** ✓ p<.01 · r(ROI) = **0.358** ✓ p<.01 · Spearman ρ(ROI) = **0.388**.
+
+| Bucket | N | W-L-P | WR % [95% Wilson] | Flat ROI | Peak PnL | Flat t-stat |
+|---|---|---|---|---|---|---|
+| z < −1 (very negative) | 22 | 5-17-0 | 22.7% [10–43] | -54.4% | -15.1u | -2.92 ✓ p<.01 |
+| z ∈ [−1, 0) | 23 | 8-14-1 | 36.4% [20–57] | -20.1% | -12.6u | -0.84 ✗ noise |
+| z ∈ [0, +1) | 52 | 30-22-0 | 57.7% [44–70] | +19.5% | +5.7u | 1.20 ✗ noise |
+| z ≥ +1 (very positive) | 15 | 14-1-0 | 93.3% [70–99] | +72.1% | +21.8u | 5.18 ✓ p<.01 |
+
+#### `dConvictionAvg` (BLENDED)
+
+r(WIN) = **0.397** ✓ p<.01 · r(ROI) = **0.335** ✓ p<.01 · Spearman ρ(ROI) = **0.353**.
+
+| Bucket | N | W-L-P | WR % [95% Wilson] | Flat ROI | Peak PnL | Flat t-stat |
+|---|---|---|---|---|---|---|
+| z < −1 (very negative) | 18 | 3-15-0 | 16.7% [6–39] | -69.5% | -16.6u | -4.17 ✓ p<.01 |
+| z ∈ [−1, 0) | 26 | 8-17-1 | 32.0% [17–52] | -25.5% | -16.0u | -1.12 ✗ noise |
+| z ∈ [0, +1) | 53 | 36-17-0 | 67.9% [55–79] | +37.9% | +31.8u | 2.49 ✓ p<.05 |
+| z ≥ +1 (very positive) | 15 | 10-5-0 | 66.7% [42–85] | +22.6% | +0.6u | 0.95 ✗ noise |
+
+#### `dRoiNormAvg` (BLENDED)
+
+r(WIN) = **0.395** ✓ p<.01 · r(ROI) = **0.304** ✓ p<.01 · Spearman ρ(ROI) = **0.315**.
+
+| Bucket | N | W-L-P | WR % [95% Wilson] | Flat ROI | Peak PnL | Flat t-stat |
+|---|---|---|---|---|---|---|
+| z < −1 (very negative) | 22 | 6-15-1 | 28.6% [14–50] | -31.9% | -10.0u | -1.32 ✗ noise |
+| z ∈ [−1, 0) | 20 | 6-14-0 | 30.0% [15–52] | -40.2% | -17.0u | -1.84 ~ p<.10 |
+| z ∈ [0, +1) | 53 | 32-21-0 | 60.4% [47–72] | +21.4% | +19.1u | 1.36 ✗ noise |
+| z ≥ +1 (very positive) | 17 | 13-4-0 | 76.5% [53–90] | +47.5% | +7.7u | 2.26 ✓ p<.05 |
+
+#### §AGS-3 recap — features sorted by univariate predictive power (|Spearman ρ vs. ROI|)
+
+| Rank | Feature | Family | r(WIN) | r(ROI) | Spearman ρ |
+|---|---|---|---|---|---|
+| 1 | `dContribution` | TOTAL | 0.435 ✓ p<.01 | 0.482 ✓ p<.01 | 0.442 |
+| 2 | `dCount` | TOTAL | 0.415 ✓ p<.01 | 0.492 ✓ p<.01 | 0.425 |
+| 3 | `dBestContrib` | CONCENTRATION | 0.429 ✓ p<.01 | 0.371 ✓ p<.01 | 0.398 |
+| 4 | `dBestWalletBase` | CONCENTRATION | 0.424 ✓ p<.01 | 0.358 ✓ p<.01 | 0.388 |
+| 5 | `dConvictionAvg` | BLENDED | 0.397 ✓ p<.01 | 0.335 ✓ p<.01 | 0.353 |
+| 6 | `dRoiNormAvg` | BLENDED | 0.395 ✓ p<.01 | 0.304 ✓ p<.01 | 0.315 |
+
+### §AGS-4. Per-feature contribution to the AGS score itself
+
+A feature with mean |z| ≈ 0 contributes almost nothing to AGS in practice — even if it correlates with outcome, the calibration normalizes it down to silence. This is the "is the input even moving the dial" check. **Share of |AGS|** = mean |z| ÷ Σ mean |z|, the average percentage of the absolute AGS magnitude this feature accounts for.
+
+| Rank | Feature | Mean signed z | Mean &#124;z&#124; | Share of &#124;AGS&#124; | Verdict |
+|---|---|---|---|---|---|
+| 1 | `dBestWalletBase` | +0.000 | 0.853 | 17.5% | dominant |
+| 2 | `dRoiNormAvg` | -0.000 | 0.851 | 17.5% | dominant |
+| 3 | `dConvictionAvg` | -0.000 | 0.827 | 17.0% | dominant |
+| 4 | `dBestContrib` | -0.000 | 0.801 | 16.4% | dominant |
+| 5 | `dCount` | +0.000 | 0.780 | 16.0% | meaningful |
+| 6 | `dContribution` | +0.000 | 0.764 | 15.7% | meaningful |
+
+### §AGS-5. Pairwise feature correlation (Pearson r between z-scored features)
+
+Two features with |r| ≥ 0.7 are double-counting. Two with |r| ≤ 0.2 are orthogonal — keeping both adds genuine information. The composite design assumes mostly orthogonal inputs; this matrix is the audit.
+
+| | `dCount` | `dContribution` | `dBestContrib` | `dBestWalletBase` | `dConvictionAvg` | `dRoiNormAvg` |
+|---|---|---|---|---|---|---|
+| `dCount` | 1.000 | +0.918 ⚠ | +0.599 | +0.654 | +0.555 | +0.497 |
+| `dContribution` | +0.918 ⚠ | 1.000 | +0.750 ⚠ | +0.688 | +0.612 | +0.551 |
+| `dBestContrib` | +0.599 | +0.750 ⚠ | 1.000 | +0.896 ⚠ | +0.896 ⚠ | +0.812 ⚠ |
+| `dBestWalletBase` | +0.654 | +0.688 | +0.896 ⚠ | 1.000 | +0.843 ⚠ | +0.892 ⚠ |
+| `dConvictionAvg` | +0.555 | +0.612 | +0.896 ⚠ | +0.843 ⚠ | 1.000 | +0.832 ⚠ |
+| `dRoiNormAvg` | +0.497 | +0.551 | +0.812 ⚠ | +0.892 ⚠ | +0.832 ⚠ | 1.000 |
+
+_⚠ flags |r| ≥ 0.7 — those pairs are essentially the same signal._
+
+### §AGS-6. Drop-one ablation — what happens if we remove each feature?
+
+For each of the 6 inputs, recompute AGS as the **sum of the OTHER 5 z-scores** (each contribution preserved with its original sign), then evaluate three lenses. **The discriminative-power lens (Spearman ρ vs. outcome) is the cleanest** — a big drop in |ρ| means that feature carried marginal info the other five lacked. The cohort-matched lens compares apples-to-apples by holding cohort size fixed at the baseline lock-floor N. The same-threshold lens is included for transparency but read it with the caveat that removing a feature mechanically shrinks the cohort, so the surviving subset can look stronger purely from sample selection.
+
+**Baseline (full 6-feature AGS):** Spearman ρ(AGS, flat ROI) = **0.468**. At AGS ≥ +5 fires N=15, WR=93.3%, ROI=+105.1%. At AGS ≥ +3 fires N=43, WR=76.7%, ROI=+54.9%.
+
+| Feature dropped | ρ(5-feat AGS, ROI) | ρ drop vs full | Top-15 ROI (matched cohort) | Top-15 lift loss vs baseline | Same-threshold ≥+5 cell |
+|---|---|---|---|---|---|
+| `dCount` | +0.442 | −0.026 | WR=93%, ROI=+99.2% | +5.8pp | N=8, WR=100%, ROI=+133.5% |
+| `dContribution` | +0.462 | −0.006 | WR=93%, ROI=+99.3% | +5.8pp | N=8, WR=100%, ROI=+133.5% |
+| `dBestContrib` | +0.471 | +0.002 | WR=93%, ROI=+102.9% | +2.2pp | N=7, WR=100%, ROI=+139.7% |
+| `dBestWalletBase` | +0.470 | +0.002 | WR=100%, ROI=+117.8% | -12.7pp | N=8, WR=100%, ROI=+133.4% |
+| `dConvictionAvg` | +0.474 | +0.005 | WR=93%, ROI=+107.0% | -1.9pp | N=8, WR=100%, ROI=+133.4% |
+| `dRoiNormAvg` | +0.469 | +0.000 | WR=100%, ROI=+118.4% | -13.3pp | N=10, WR=100%, ROI=+125.9% |
+
+_Reading the **ρ drop** column: positive (`−0.0XX`) = dropping this feature **reduced** the AGS's ability to rank-order picks → the feature was carrying marginal info. Reading the **matched-cohort lift loss**: positive `+X pp` = the top-K of the 5-feature AGS earned LESS ROI than baseline → the feature was contributing positive lift._
+
+#### §AGS-6 recap — features ranked by marginal info (Spearman ρ drop)
+
+| Rank | Feature | ρ drop when removed | Matched-cohort lift loss | Verdict |
+|---|---|---|---|---|
+| 1 | `dCount` | −0.026 | +5.8pp | carries marginal info |
+| 2 | `dContribution` | −0.006 | +5.8pp | mild marginal info |
+| 3 | `dRoiNormAvg` | +0.000 | -13.3pp | redundant — other features cover it |
+| 4 | `dBestWalletBase` | +0.002 | -12.7pp | redundant — other features cover it |
+| 5 | `dBestContrib` | +0.002 | +2.2pp | redundant — other features cover it |
+| 6 | `dConvictionAvg` | +0.005 | -1.9pp | redundant — other features cover it |
+
+### §AGS-7. Multivariate logistic regression on the 6 z-scored features
+
+Fit `logit(P(WIN)) = α + Σ βᵢ · zᵢ` on the AGS sample. Standardized inputs ⇒ |β| is a fair cross-feature importance signal. AGS itself uses **equal sign-weighted** sums (β=+1 for every feature); a fitted β much larger or smaller than 1 indicates the equal-weight assumption may be off for that input.
+
+| Rank | Feature | Family | β (z-input) | |β| | Direction |
+|---|---|---|---|---|---|
+| 1 | `dCount` | TOTAL | +0.322 | 0.322 | positive ↑ |
+| 2 | `dContribution` | TOTAL | +0.299 | 0.299 | positive ↑ |
+| 3 | `dRoiNormAvg` | BLENDED | +0.215 | 0.215 | positive ↑ |
+| 4 | `dBestContrib` | CONCENTRATION | +0.201 | 0.201 | positive ↑ |
+| 5 | `dConvictionAvg` | BLENDED | +0.141 | 0.141 | positive ↑ |
+| 6 | `dBestWalletBase` | CONCENTRATION | +0.135 | 0.135 | positive ↑ |
+
+Intercept b = -0.017 · Final log-loss = 0.5640 · N = 112.
+
+### §AGS-8. Final ranked verdict — composite importance across all four lenses
+
+Each feature gets a 1..6 rank in each lens (1 = most important). The **composite rank** is the average — lower is better. A feature that ranks low across all four lenses is a clear candidate to drop or down-weight; a feature that ranks high across all four is the engine's real workhorse.
+
+| Composite rank | Feature | Family | Univariate (§AGS-3) | Score-mover (§AGS-4) | Drop-one (§AGS-6) | Logistic (§AGS-7) | Avg rank |
+|---|---|---|---|---|---|---|---|
+| 1 | `dCount` | TOTAL | #2 | #5 | #1 | #1 | 2.25 |
+| 2 | `dContribution` | TOTAL | #1 | #6 | #2 | #2 | 2.75 |
+| 3 | `dRoiNormAvg` | BLENDED | #6 | #2 | #3 | #3 | 3.50 |
+| 4 | `dBestWalletBase` | CONCENTRATION | #4 | #1 | #4 | #6 | 3.75 |
+| 5 | `dBestContrib` | CONCENTRATION | #3 | #4 | #5 | #4 | 4.00 |
+| 6 | `dConvictionAvg` | BLENDED | #5 | #3 | #6 | #5 | 4.75 |
+
+#### Plain-English summary
+
+- **Workhorse**: `dCount` (TOTAL) — ranks #2/#5/#1/#1 across the four lenses. Whatever else changes, this one stays.
+- **Weakest contributor**: `dConvictionAvg` (BLENDED) — composite avg rank 4.75. Strong candidate to down-weight or drop in v9.
+- **Redundant pairs (|r| ≥ 0.7)**: `dCount` ↔ `dContribution` (r=+0.92); `dContribution` ↔ `dBestContrib` (r=+0.75); `dBestContrib` ↔ `dBestWalletBase` (r=+0.90); `dBestContrib` ↔ `dConvictionAvg` (r=+0.90); `dBestContrib` ↔ `dRoiNormAvg` (r=+0.81); `dBestWalletBase` ↔ `dConvictionAvg` (r=+0.84); `dBestWalletBase` ↔ `dRoiNormAvg` (r=+0.89); `dConvictionAvg` ↔ `dRoiNormAvg` (r=+0.83). Each pair effectively double-counts the same signal in the composite.
+- **v9 simplification candidate**: only `dCount` carries marginal info (Spearman ρ drop > 0.01 when removed). The other 5 features add roughly nothing on top — a 2- or 3-feature composite would likely match the 6-feature AGS's discriminative power. **Don't remove them yet** — at N=112 we lack the power to distinguish "redundant in this sample" from "redundant in the population." Revisit once the sample doubles.
+- **Calibration source**: `cron`. Live calibration is loaded; the means/SDs above are this morning's.
 
 ---
 

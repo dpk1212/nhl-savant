@@ -24,6 +24,11 @@
  *        characteristics of the qualified-roster wallets on each side
  *        (count, W−L net, flatPnl, avg ROI, sport rank, top-quartile
  *        share) predict the winner?  Ranks features by |ρ(·, flat ROI)|.
+ *   §AGS. Aggregate Score deep dive — coverage, tier ladder, per-feature
+ *        univariate predictiveness, score-mover share, pairwise feature
+ *        correlation, drop-one ablation, multivariate logistic, and a
+ *        composite ranking telling you which of the 6 inputs is doing
+ *        the work and which are ballast.
  *   §5.  Star tier analysis (frozen peak.stars × outcome)
  *   §6.  Odds-bucket interaction
  *   §7.  Market split (ML / SPREAD / TOTAL)
@@ -44,6 +49,18 @@ import admin from 'firebase-admin';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+
+import {
+  AGS_FEATURES,
+  AGS_FALLBACK_CALIBRATION,
+  AGS_LOCK_FLOOR,
+  AGS_MUTE_FLOOR,
+  AGS_DW1_FLOOR,
+  AGS_MIN_PROVEN_WALLETS,
+  aggregateSideProven,
+  computeAgs,
+  agsTierFromValue,
+} from '../src/lib/ags.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..');
@@ -271,6 +288,25 @@ function fmtSummary(s) {
   return `N=${s.n} · ${s.w}-${s.l} · WR ${wr}${ci} · ${sign(s.pu)}u peak · ${sign(s.fl)}u flat (${fmtSignPct(100 * s.flatRoi)})`;
 }
 
+// ── AGS calibration loader ────────────────────────────────────────────────
+// Pulls the live `agsCalibration/current` doc from Firestore. Falls back
+// to the hardcoded last-known-good values in src/lib/ags.js when the cron
+// hasn't seeded yet or the doc is missing fields. The returned object has
+// the exact shape `computeAgs()` expects: `{ normalizers, quintiles,
+// thresholds, sampleSize, dateRange, computedAt, source }`.
+async function loadAgsCalibration() {
+  try {
+    const doc = await db.collection('agsCalibration').doc('current').get();
+    if (doc.exists) {
+      const data = doc.data();
+      if (data?.normalizers) return data;
+    }
+  } catch (e) {
+    // fall through
+  }
+  return AGS_FALLBACK_CALIBRATION;
+}
+
 // ── Wallet profile loader ─────────────────────────────────────────────────
 //
 // Builds `walletProfiles: Map<walletShort, profile>` and a per-sport ranked
@@ -490,6 +526,17 @@ async function loadPicks(provenRanksBySport) {
         const ranksMap = provenRanksBySport.get(sport) || null;
         const provenAgg = computeProvenWalletAggregates(wd, sideKey, sport, ranksMap);
 
+        // === NEW (AGS): retrospective AGS aggregate over proven wallets.
+        // Identical formula to production (`aggregateSideProven` in
+        // src/lib/ags.js). The §AGS section pulls every feature out of
+        // this aggregate and computes z-scored components downstream once
+        // the calibration is loaded in main(). Stashed raw here so we can
+        // do drop-one ablations and pairwise feature analysis.
+        const isProvenInSport = (walletShort, sp) => !!provenRanksBySport.get(sp)?.has(walletShort);
+        const agsAggRaw = (Array.isArray(wd) && wd.length)
+          ? aggregateSideProven(wd, sideKey, sport, isProvenInSport)
+          : null;
+
         // === PnL ===
         let profitU = 0;
         if (oc === 'WIN')  profitU = (side.result?.profit || 0);
@@ -520,6 +567,12 @@ async function loadPicks(provenRanksBySport) {
           sumContribFor, sumContribAg, dContrib, maxContribFor, meanBaseFor,
           // proven-wallet per-side aggregates (new §4 input)
           provenAgg,
+          // AGS raw aggregate (z-scored components attached post-load in main())
+          // and a handle to the raw walletDetails so AGS sub-feature work can
+          // re-aggregate at will. agsResult attached after calibration is loaded.
+          walletDetails: Array.isArray(wd) ? wd : null,
+          agsAggRaw,
+          agsResult: null,
           // criteria
           criteria, evEdge, regime, sharpCount, totalInvested,
           moneyPct, walletPct, consensusGrade, criteriaMet,
@@ -1031,6 +1084,380 @@ function buildSection4(out, picks) {
                           haveRanks.map(p => p.flatProfit));
     out.push(`_(ΔBestRank uses N=${haveRanks.length} subset where both sides had a proven wallet — ρ(flat ROI) = ${br.rho?.toFixed(3) ?? '—'} ${br.sig}.)_`);
   }
+}
+
+// ─── §AGS. Aggregate Score (AGS) deep dive ────────────────────────────────
+//
+// AGS = z-summed composite of 6 features computed from the proven-wallet
+// (CONFIRMED ∪ FLAT) slice of `peak.v8Scoring.walletDetails[]`. The six
+// features are defined in src/lib/ags.js → AGS_FEATURES and the active
+// calibration (means/SDs per feature) is loaded from
+// `agsCalibration/current` in Firestore (or the hardcoded fallback).
+//
+// This section answers two questions the user asked directly:
+//   (a) Is AGS earning its place in the lock/mute logic?
+//   (b) Of the six inputs, which are doing the work and which are ballast?
+//
+// Sub-sections:
+//   §AGS-1. Coverage + distribution + tier counts on the live sample
+//   §AGS-2. AGS tier × outcome (the "fire ladder")
+//   §AGS-3. Per-feature univariate predictive power (raw + z-scored)
+//   §AGS-4. Per-feature contribution to the AGS score itself (does it move?)
+//   §AGS-5. Pairwise feature correlation matrix (which inputs are redundant)
+//   §AGS-6. Drop-one ablation (recompute AGS leaving each feature out)
+//   §AGS-7. Multivariate logistic regression on the 6 z-scored features
+//   §AGS-8. Final ranked verdict + recommendations
+function buildSectionAgs(out, picks, meta) {
+  const cal = meta.agsCalibration;
+  const calSrc = cal?.source || (cal === AGS_FALLBACK_CALIBRATION ? 'fallback' : 'firestore');
+  sectionHeader(out, '§AGS. Aggregate Score deep dive',
+    'Which of the six AGS inputs are pulling the weight, and is the composite earning its place vs. its parts?');
+
+  out.push('### §AGS-0. What AGS is, in one paragraph');
+  out.push('');
+  out.push('AGS aggregates the proven-wallet (`CONFIRMED` ∪ `FLAT`) slice of `peak.v8Scoring.walletDetails[]` into 6 *delta* features (FOR-side minus AGAINST-side), z-scores each one against a daily-recomputed calibration, and **sums the z-scores**. Equal sign-weighted — no fitted coefficients. Thresholds: `AGS ≥ +5` rescues a lock (route C), `AGS ≥ +3` confirms a thin Δw=+1 lock (v7.5 route B), `AGS < -1` mutes an otherwise-locking side (confirmation gate). Sizing multiplier scales [0.5, 1.0]× over [-1, +5].');
+  out.push('');
+  out.push(`**Active calibration**: source = \`${calSrc}\`, sampleSize = ${cal?.sampleSize ?? 'n/a'}, dateRange = ${cal?.dateRange?.from || '?'} → ${cal?.dateRange?.to || '?'}, computedAt = ${cal?.computedAt || '?'}.`);
+  out.push('');
+  out.push('| Feature key | Family | Sign | Cal mean | Cal SD |');
+  out.push('|---|---|---|---|---|');
+  for (const f of AGS_FEATURES) {
+    const norm = cal?.normalizers?.[f.key];
+    out.push(`| \`${f.key}\` | ${f.family} | ${f.sign > 0 ? '+' : '−'} | ${norm?.mean?.toFixed(2) ?? '—'} | ${norm?.sd?.toFixed(2) ?? '—'} |`);
+  }
+
+  // Subset: rows where AGS could be computed retrospectively.
+  const agsRows = picks.filter(p => p?.agsResult?.ags != null && Number.isFinite(p.agsResult.ags));
+  if (agsRows.length < 10) {
+    out.push('');
+    out.push(`_AGS-eligible sample too small (${agsRows.length} rows). Need at least 10 to run the deep dive — exiting section._`);
+    return;
+  }
+
+  // ── §AGS-1. Coverage + distribution + tier counts ──────────────────────
+  out.push('');
+  out.push('### §AGS-1. Coverage + distribution');
+  out.push('');
+  const coveragePct = (agsRows.length / picks.length) * 100;
+  const agsValues = agsRows.map(p => p.agsResult.ags).sort((a, b) => a - b);
+  const q = (p) => agsValues[Math.floor((agsValues.length - 1) * p)];
+  out.push(`Computable on **${agsRows.length}/${picks.length}** shipped+graded rows (${coveragePct.toFixed(0)}%). The remaining rows lack a frozen \`walletDetails[]\` (older docs, or sides where no proven wallet appeared on either side).`);
+  out.push('');
+  out.push('| Stat | AGS value |');
+  out.push('|---|---|');
+  out.push(`| Min | ${agsValues[0].toFixed(2)} |`);
+  out.push(`| 20th pct | ${q(0.2).toFixed(2)} |`);
+  out.push(`| 40th pct | ${q(0.4).toFixed(2)} |`);
+  out.push(`| Median | ${q(0.5).toFixed(2)} |`);
+  out.push(`| 60th pct | ${q(0.6).toFixed(2)} |`);
+  out.push(`| 80th pct | ${q(0.8).toFixed(2)} |`);
+  out.push(`| 90th pct | ${q(0.9).toFixed(2)} |`);
+  out.push(`| Max | ${agsValues[agsValues.length - 1].toFixed(2)} |`);
+  out.push('');
+  out.push('**Tier counts (boundaries set in `src/lib/ags.js → agsTierFromValue`):**');
+  out.push('');
+  const tierOrder = ['ELITE', 'LOCK', 'STRONG', 'NEUTRAL', 'WEAK', 'FADE'];
+  const tierBound = { ELITE: '≥ +7', LOCK: '+5..+7', STRONG: '+3..+5', NEUTRAL: '0..+3', WEAK: '−3..0', FADE: '< −3' };
+  const tierCounts = Object.fromEntries(tierOrder.map(t => [t, 0]));
+  for (const r of agsRows) tierCounts[r.agsResult.tier] = (tierCounts[r.agsResult.tier] || 0) + 1;
+  out.push('| Tier | Range | N | Share |');
+  out.push('|---|---|---|---|');
+  for (const t of tierOrder) {
+    const n = tierCounts[t] || 0;
+    const share = (n / agsRows.length * 100).toFixed(1);
+    out.push(`| **${t}** | ${tierBound[t]} | ${n} | ${share}% |`);
+  }
+
+  // ── §AGS-2. Tier × outcome (the fire ladder) ───────────────────────────
+  out.push('');
+  out.push('### §AGS-2. AGS tier × outcome — does the ladder pay?');
+  out.push('');
+  out.push('If the AGS calibration is right, win-rate and flat ROI should rise monotonically up the tier ladder. Sample sizes inside FADE/ELITE will be thin — read the directional signal, not the point estimate.');
+  out.push('');
+  bucketTable(out, agsRows, p => p.agsResult.tier, tierOrder);
+
+  // ── §AGS-3. Per-feature univariate predictive power ────────────────────
+  // For each of the 6 features we report:
+  //   • raw Pearson r vs. WIN (binary outcome)
+  //   • Pearson r vs. flat profit per pick
+  //   • Spearman rank ρ vs. flat profit (robust to outliers)
+  //   • 4-bucket WR/ROI table on the z-scored feature (z<-1, z∈[-1,0),
+  //     z∈[0,1), z≥+1) — using the same cal mean/SD the production
+  //     formula uses, so this is exactly what AGS sees.
+  out.push('');
+  out.push('### §AGS-3. Per-feature univariate predictive power');
+  out.push('');
+  out.push('Each of the 6 inputs evaluated on its own. \`r(WIN)\` and \`r(ROI)\` are the Pearson correlations against win-binary and flat profit; Spearman ρ is the rank-based version (robust to fat tails). The bucketed table partitions on the z-scored feature using the active calibration so a "z ≥ +1" row is exactly what the production AGS sees as a strongly positive contribution.');
+  out.push('');
+  const wins = agsRows.map(p => p.outcome === 'WIN' ? 1 : 0);
+  const flats = agsRows.map(p => p.flatProfit);
+  const featureSummaries = [];
+  for (const f of AGS_FEATURES) {
+    const raw = agsRows.map(p => Number(p.agsAggRaw?.[f.key] ?? 0));
+    const zs  = agsRows.map(p => Number(p.agsResult?.components?.[f.key] ?? 0));
+    const rWin = pearsonSig(raw, wins);
+    const rRoi = pearsonSig(raw, flats);
+    const sRoi = spearman(raw, flats);
+    featureSummaries.push({
+      key: f.key, family: f.family,
+      rWin: rWin.rho, rWinSig: rWin.sig,
+      rRoi: rRoi.rho, rRoiSig: rRoi.sig,
+      sRoi,
+      meanZ: zs.reduce((s, v) => s + v, 0) / zs.length,
+      meanAbsZ: zs.reduce((s, v) => s + Math.abs(v), 0) / zs.length,
+    });
+    out.push(`#### \`${f.key}\` (${f.family})`);
+    out.push('');
+    out.push(`r(WIN) = **${rWin.rho?.toFixed(3) ?? '—'}** ${rWin.sig} · r(ROI) = **${rRoi.rho?.toFixed(3) ?? '—'}** ${rRoi.sig} · Spearman ρ(ROI) = **${sRoi?.toFixed(3) ?? '—'}**.`);
+    out.push('');
+    const zBucket = (z) => {
+      if (z < -1) return 'z < −1 (very negative)';
+      if (z < 0)  return 'z ∈ [−1, 0)';
+      if (z < 1)  return 'z ∈ [0, +1)';
+      return 'z ≥ +1 (very positive)';
+    };
+    bucketTable(out, agsRows, p => zBucket(Number(p.agsResult?.components?.[f.key] ?? 0)),
+      ['z < −1 (very negative)', 'z ∈ [−1, 0)', 'z ∈ [0, +1)', 'z ≥ +1 (very positive)']);
+    out.push('');
+  }
+
+  // Sorted recap by |Spearman ρ|
+  out.push('#### §AGS-3 recap — features sorted by univariate predictive power (|Spearman ρ vs. ROI|)');
+  out.push('');
+  out.push('| Rank | Feature | Family | r(WIN) | r(ROI) | Spearman ρ |');
+  out.push('|---|---|---|---|---|---|');
+  const sortedUni = [...featureSummaries].sort((a, b) => Math.abs(b.sRoi || 0) - Math.abs(a.sRoi || 0));
+  sortedUni.forEach((f, i) => {
+    out.push(`| ${i + 1} | \`${f.key}\` | ${f.family} | ${f.rWin?.toFixed(3) ?? '—'} ${f.rWinSig} | ${f.rRoi?.toFixed(3) ?? '—'} ${f.rRoiSig} | ${f.sRoi?.toFixed(3) ?? '—'} |`);
+  });
+
+  // ── §AGS-4. Per-feature contribution to AGS itself ─────────────────────
+  // "Does this feature actually MOVE the score?" Mean signed z gives the
+  // average pull; mean |z| gives the average magnitude. A feature with
+  // mean |z| ≈ 0 contributes almost nothing to AGS regardless of its
+  // theoretical importance — it's a dead input.
+  out.push('');
+  out.push('### §AGS-4. Per-feature contribution to the AGS score itself');
+  out.push('');
+  out.push('A feature with mean |z| ≈ 0 contributes almost nothing to AGS in practice — even if it correlates with outcome, the calibration normalizes it down to silence. This is the "is the input even moving the dial" check. **Share of |AGS|** = mean |z| ÷ Σ mean |z|, the average percentage of the absolute AGS magnitude this feature accounts for.');
+  out.push('');
+  const sumAbsZ = featureSummaries.reduce((s, f) => s + (f.meanAbsZ || 0), 0) || 1;
+  const contribRows = featureSummaries.map(f => ({
+    ...f,
+    share: (f.meanAbsZ / sumAbsZ) * 100,
+  })).sort((a, b) => b.meanAbsZ - a.meanAbsZ);
+  out.push('| Rank | Feature | Mean signed z | Mean &#124;z&#124; | Share of &#124;AGS&#124; | Verdict |');
+  out.push('|---|---|---|---|---|---|');
+  contribRows.forEach((f, i) => {
+    const verdict = f.meanAbsZ < 0.2 ? 'silent (<0.2)' : f.meanAbsZ < 0.5 ? 'mild' : f.meanAbsZ < 0.8 ? 'meaningful' : 'dominant';
+    out.push(`| ${i + 1} | \`${f.key}\` | ${sign(f.meanZ, 3)} | ${f.meanAbsZ.toFixed(3)} | ${f.share.toFixed(1)}% | ${verdict} |`);
+  });
+
+  // ── §AGS-5. Pairwise feature correlation matrix ────────────────────────
+  out.push('');
+  out.push('### §AGS-5. Pairwise feature correlation (Pearson r between z-scored features)');
+  out.push('');
+  out.push('Two features with |r| ≥ 0.7 are double-counting. Two with |r| ≤ 0.2 are orthogonal — keeping both adds genuine information. The composite design assumes mostly orthogonal inputs; this matrix is the audit.');
+  out.push('');
+  const featureCols = AGS_FEATURES.map(f => f.key);
+  const featureZArrs = Object.fromEntries(featureCols.map(k => [k,
+    agsRows.map(p => Number(p.agsResult?.components?.[k] ?? 0))]));
+  out.push('| | ' + featureCols.map(k => `\`${k}\``).join(' | ') + ' |');
+  out.push('|---|' + featureCols.map(() => '---').join('|') + '|');
+  for (const a of featureCols) {
+    const cells = featureCols.map(b => {
+      if (a === b) return '1.000';
+      const r = pearson(featureZArrs[a], featureZArrs[b]);
+      const tag = Math.abs(r) >= 0.7 ? ' ⚠' : '';
+      return `${r >= 0 ? '+' : ''}${r.toFixed(3)}${tag}`;
+    });
+    out.push(`| \`${a}\` | ${cells.join(' | ')} |`);
+  }
+  out.push('');
+  out.push('_⚠ flags |r| ≥ 0.7 — those pairs are essentially the same signal._');
+
+  // ── §AGS-6. Drop-one ablation ──────────────────────────────────────────
+  // For each feature, recompute AGS as the sum of the OTHER 5 z-scores
+  // (preserving each feature's sign). Then evaluate three lenses:
+  //   1. Discriminative power: Spearman ρ(ablated AGS, flat profit) — how
+  //      well does the 5-feature composite still rank picks by outcome?
+  //      Drop in |ρ| vs full-AGS = the marginal info that feature carried.
+  //   2. Cohort-matched lift: take the top-K rows ranked by ablated AGS
+  //      where K = baseline lock-floor N. ROI of that top-K vs baseline
+  //      ROI = the lift this feature was buying us at fixed cohort size.
+  //      (Avoids the cohort-shrink confound of a fixed-threshold cut.)
+  //   3. Same-threshold cohort: the raw drop-one-and-cut cell, included
+  //      for transparency but read with the caveat that fewer picks pass
+  //      the threshold which mechanically inflates the surviving subset.
+  out.push('');
+  out.push('### §AGS-6. Drop-one ablation — what happens if we remove each feature?');
+  out.push('');
+  out.push('For each of the 6 inputs, recompute AGS as the **sum of the OTHER 5 z-scores** (each contribution preserved with its original sign), then evaluate three lenses. **The discriminative-power lens (Spearman ρ vs. outcome) is the cleanest** — a big drop in |ρ| means that feature carried marginal info the other five lacked. The cohort-matched lens compares apples-to-apples by holding cohort size fixed at the baseline lock-floor N. The same-threshold lens is included for transparency but read it with the caveat that removing a feature mechanically shrinks the cohort, so the surviving subset can look stronger purely from sample selection.');
+  out.push('');
+  // Baseline.
+  const baselineLockArr = agsRows.filter(r => r.agsResult.ags >= AGS_LOCK_FLOOR);
+  const baselineConfArr = agsRows.filter(r => r.agsResult.ags >= AGS_DW1_FLOOR);
+  const sumStat = (arr) => {
+    if (!arr.length) return { n: 0, wr: null, roi: null };
+    const w = arr.filter(p => p.outcome === 'WIN').length;
+    const wrDen = arr.filter(p => p.outcome === 'WIN' || p.outcome === 'LOSS').length;
+    const roi = arr.reduce((s, p) => s + (p.flatProfit || 0), 0) / arr.length;
+    return { n: arr.length, wr: wrDen ? w / wrDen : null, roi };
+  };
+  const baselineLock = sumStat(baselineLockArr);
+  const baselineConf = sumStat(baselineConfArr);
+  const lockK = baselineLock.n;
+  const baselineFullSpear = spearman(agsRows.map(r => r.agsResult.ags), agsRows.map(r => r.flatProfit));
+  out.push(`**Baseline (full 6-feature AGS):** Spearman ρ(AGS, flat ROI) = **${baselineFullSpear?.toFixed(3) ?? '—'}**. At AGS ≥ +${AGS_LOCK_FLOOR} fires N=${baselineLock.n}, WR=${baselineLock.wr != null ? (baselineLock.wr*100).toFixed(1)+'%' : '—'}, ROI=${baselineLock.roi != null ? sign(baselineLock.roi*100, 1)+'%' : '—'}. At AGS ≥ +${AGS_DW1_FLOOR} fires N=${baselineConf.n}, WR=${baselineConf.wr != null ? (baselineConf.wr*100).toFixed(1)+'%' : '—'}, ROI=${baselineConf.roi != null ? sign(baselineConf.roi*100, 1)+'%' : '—'}.`);
+  out.push('');
+  out.push('| Feature dropped | ρ(5-feat AGS, ROI) | ρ drop vs full | Top-' + lockK + ' ROI (matched cohort) | Top-' + lockK + ' lift loss vs baseline | Same-threshold ≥+5 cell |');
+  out.push('|---|---|---|---|---|---|');
+  const ablationRows = [];
+  for (const f of AGS_FEATURES) {
+    const droppedAgs = agsRows.map(r => {
+      const comps = r.agsResult?.components || {};
+      let s = 0;
+      for (const ff of AGS_FEATURES) {
+        if (ff.key === f.key) continue;
+        s += ff.sign * Number(comps[ff.key] ?? 0);
+      }
+      return { row: r, agsAblated: s };
+    });
+    // 1. Discriminative power
+    const ablSpear = spearman(droppedAgs.map(d => d.agsAblated), droppedAgs.map(d => d.row.flatProfit));
+    const spearDrop = (baselineFullSpear != null && ablSpear != null) ? (Math.abs(baselineFullSpear) - Math.abs(ablSpear)) : null;
+    // 2. Cohort-matched lift (top-K by ablated AGS, K = baseline lock-floor N)
+    const sortedByAbl = [...droppedAgs].sort((a, b) => b.agsAblated - a.agsAblated);
+    const topK = sortedByAbl.slice(0, lockK).map(d => d.row);
+    const topKStat = sumStat(topK);
+    const matchedLiftLoss = (baselineLock.roi != null && topKStat.roi != null) ? (baselineLock.roi - topKStat.roi) * 100 : null;
+    // 3. Same-threshold (informational only)
+    const sameThrArr = droppedAgs.filter(d => d.agsAblated >= AGS_LOCK_FLOOR).map(d => d.row);
+    const sameThrStat = sumStat(sameThrArr);
+    ablationRows.push({
+      key: f.key, ablSpear, spearDrop,
+      topKStat, matchedLiftLoss,
+      sameThrStat,
+    });
+    const ablRoStr = ablSpear != null ? `${ablSpear >= 0 ? '+' : ''}${ablSpear.toFixed(3)}` : '—';
+    const dropStr = spearDrop != null ? `${spearDrop >= 0 ? '−' : '+'}${Math.abs(spearDrop).toFixed(3)}` : '—';
+    const topKCell = topKStat.n ? `WR=${(topKStat.wr*100).toFixed(0)}%, ROI=${sign(topKStat.roi*100, 1)}%` : '—';
+    const liftStr = matchedLiftLoss != null ? `${sign(matchedLiftLoss, 1)}pp` : '—';
+    const stCell = sameThrStat.n ? `N=${sameThrStat.n}, WR=${(sameThrStat.wr*100).toFixed(0)}%, ROI=${sign(sameThrStat.roi*100, 1)}%` : '—';
+    out.push(`| \`${f.key}\` | ${ablRoStr} | ${dropStr} | ${topKCell} | ${liftStr} | ${stCell} |`);
+  }
+  out.push('');
+  out.push('_Reading the **ρ drop** column: positive (`−0.0XX`) = dropping this feature **reduced** the AGS\'s ability to rank-order picks → the feature was carrying marginal info. Reading the **matched-cohort lift loss**: positive `+X pp` = the top-K of the 5-feature AGS earned LESS ROI than baseline → the feature was contributing positive lift._');
+  out.push('');
+  out.push('#### §AGS-6 recap — features ranked by marginal info (Spearman ρ drop)');
+  out.push('');
+  out.push('| Rank | Feature | ρ drop when removed | Matched-cohort lift loss | Verdict |');
+  out.push('|---|---|---|---|---|');
+  const ablSorted = [...ablationRows].sort((a, b) => (b.spearDrop || 0) - (a.spearDrop || 0));
+  ablSorted.forEach((r, i) => {
+    const verdict = (r.spearDrop || 0) > 0.02 ? 'carries marginal info' : (r.spearDrop || 0) > 0 ? 'mild marginal info' : 'redundant — other features cover it';
+    const dropStr = r.spearDrop != null ? `${r.spearDrop >= 0 ? '−' : '+'}${Math.abs(r.spearDrop).toFixed(3)}` : '—';
+    out.push(`| ${i + 1} | \`${r.key}\` | ${dropStr} | ${r.matchedLiftLoss != null ? sign(r.matchedLiftLoss, 1)+'pp' : '—'} | ${verdict} |`);
+  });
+
+  // ── §AGS-7. Multivariate logistic on z-scored features ─────────────────
+  out.push('');
+  out.push('### §AGS-7. Multivariate logistic regression on the 6 z-scored features');
+  out.push('');
+  out.push('Fit `logit(P(WIN)) = α + Σ βᵢ · zᵢ` on the AGS sample. Standardized inputs ⇒ |β| is a fair cross-feature importance signal. AGS itself uses **equal sign-weighted** sums (β=+1 for every feature); a fitted β much larger or smaller than 1 indicates the equal-weight assumption may be off for that input.');
+  out.push('');
+  // Build design matrix [n, 6] and y vector.
+  const X = agsRows.map(r => AGS_FEATURES.map(f => Number(r.agsResult?.components?.[f.key] ?? 0)));
+  const y = agsRows.map(r => r.outcome === 'WIN' ? 1 : 0);
+  const lr = logisticRegression(X, y, { lr: 0.05, iters: 4000, l2: 0.05 });
+  // Compute final log-loss on the training set so the reader can sanity-check fit.
+  const sigmoid = z => 1 / (1 + Math.exp(-Math.max(-30, Math.min(30, z))));
+  const eps = 1e-9;
+  let logLoss = 0;
+  for (let i = 0; i < X.length; i++) {
+    let z = lr.b;
+    for (let j = 0; j < lr.w.length; j++) z += lr.w[j] * X[i][j];
+    const p = sigmoid(z);
+    logLoss += -(y[i] * Math.log(p + eps) + (1 - y[i]) * Math.log(1 - p + eps));
+  }
+  logLoss /= Math.max(1, X.length);
+  // Sort betas by |β|.
+  const lrRows = AGS_FEATURES.map((f, i) => ({
+    key: f.key, family: f.family, beta: lr.w[i] ?? 0,
+  })).sort((a, b) => Math.abs(b.beta) - Math.abs(a.beta));
+  out.push('| Rank | Feature | Family | β (z-input) | |β| | Direction |');
+  out.push('|---|---|---|---|---|---|');
+  lrRows.forEach((r, i) => {
+    const dir = r.beta > 0.05 ? 'positive ↑' : r.beta < -0.05 ? 'negative ↓' : 'flat ≈ 0';
+    out.push(`| ${i + 1} | \`${r.key}\` | ${r.family} | ${sign(r.beta, 3)} | ${Math.abs(r.beta).toFixed(3)} | ${dir} |`);
+  });
+  out.push('');
+  out.push(`Intercept b = ${sign(lr.b, 3)} · Final log-loss = ${logLoss.toFixed(4)} · N = ${agsRows.length}.`);
+
+  // ── §AGS-8. Final ranked verdict ───────────────────────────────────────
+  // Combine all four importance lenses into one composite ranking. Each
+  // lens contributes a 1..6 rank (1 = most important); the composite is
+  // their average (lower = more important across lenses).
+  out.push('');
+  out.push('### §AGS-8. Final ranked verdict — composite importance across all four lenses');
+  out.push('');
+  out.push('Each feature gets a 1..6 rank in each lens (1 = most important). The **composite rank** is the average — lower is better. A feature that ranks low across all four lenses is a clear candidate to drop or down-weight; a feature that ranks high across all four is the engine\'s real workhorse.');
+  out.push('');
+  // Build per-lens rankings.
+  const rankBy = (arr, scoreFn) => {
+    const sorted = [...arr].sort((a, b) => scoreFn(b) - scoreFn(a));
+    const map = new Map();
+    sorted.forEach((r, i) => map.set(r.key, i + 1));
+    return map;
+  };
+  const uniRank   = rankBy(featureSummaries, f => Math.abs(f.sRoi || 0));
+  const moveRank  = rankBy(featureSummaries, f => f.meanAbsZ);
+  const ablRank   = rankBy(ablationRows,     r => r.spearDrop || 0);
+  const lrRank    = rankBy(lrRows,           r => Math.abs(r.beta));
+  const composite = AGS_FEATURES.map(f => {
+    const u = uniRank.get(f.key);
+    const m = moveRank.get(f.key);
+    const a = ablRank.get(f.key);
+    const l = lrRank.get(f.key);
+    const avg = (u + m + a + l) / 4;
+    return { key: f.key, family: f.family, u, m, a, l, avg };
+  }).sort((x, y) => x.avg - y.avg);
+  out.push('| Composite rank | Feature | Family | Univariate (§AGS-3) | Score-mover (§AGS-4) | Drop-one (§AGS-6) | Logistic (§AGS-7) | Avg rank |');
+  out.push('|---|---|---|---|---|---|---|---|');
+  composite.forEach((f, i) => {
+    out.push(`| ${i + 1} | \`${f.key}\` | ${f.family} | #${f.u} | #${f.m} | #${f.a} | #${f.l} | ${f.avg.toFixed(2)} |`);
+  });
+
+  // Plain-English conclusion.
+  out.push('');
+  out.push('#### Plain-English summary');
+  out.push('');
+  const top = composite[0];
+  const bot = composite[composite.length - 1];
+  const corrPairs = [];
+  for (let i = 0; i < featureCols.length; i++) {
+    for (let j = i + 1; j < featureCols.length; j++) {
+      const r = pearson(featureZArrs[featureCols[i]], featureZArrs[featureCols[j]]);
+      if (Math.abs(r) >= 0.7) corrPairs.push(`\`${featureCols[i]}\` ↔ \`${featureCols[j]}\` (r=${sign(r,2)})`);
+    }
+  }
+  out.push(`- **Workhorse**: \`${top.key}\` (${top.family}) — ranks #${top.u}/#${top.m}/#${top.a}/#${top.l} across the four lenses. Whatever else changes, this one stays.`);
+  out.push(`- **Weakest contributor**: \`${bot.key}\` (${bot.family}) — composite avg rank ${bot.avg.toFixed(2)}. Strong candidate to down-weight or drop in v9.`);
+  if (corrPairs.length) {
+    out.push(`- **Redundant pairs (|r| ≥ 0.7)**: ${corrPairs.join('; ')}. Each pair effectively double-counts the same signal in the composite.`);
+  } else {
+    out.push('- **No redundant pairs (|r| ≥ 0.7)** — every input carries some independent variance. The current 6-feature composite is well-orthogonalized.');
+  }
+  const silent = contribRows.filter(f => f.meanAbsZ < 0.2);
+  if (silent.length) {
+    out.push(`- **Silent inputs (mean |z| < 0.2)**: ${silent.map(f => `\`${f.key}\``).join(', ')}. These barely move the AGS score in practice — calibration is washing them out.`);
+  }
+  // v9 simplification suggestion — based on redundancy + univariate strength
+  const carriesInfo = ablationRows.filter(r => (r.spearDrop || 0) > 0.01).map(r => r.key);
+  if (carriesInfo.length && carriesInfo.length <= 3) {
+    out.push(`- **v9 simplification candidate**: only \`${carriesInfo.join('`, `')}\` ${carriesInfo.length === 1 ? 'carries' : 'carry'} marginal info (Spearman ρ drop > 0.01 when removed). The other ${6 - carriesInfo.length} features add roughly nothing on top — a 2- or 3-feature composite would likely match the 6-feature AGS\'s discriminative power. **Don't remove them yet** — at N=${agsRows.length} we lack the power to distinguish "redundant in this sample" from "redundant in the population." Revisit once the sample doubles.`);
+  }
+  out.push(`- **Calibration source**: \`${calSrc}\`. ${calSrc === 'fallback' ? '⚠ The cron-refreshed Firestore calibration is not available — values are from the last hardcoded snapshot. Re-running `scripts/computeAgsCalibration.js` will refresh.' : 'Live calibration is loaded; the means/SDs above are this morning\'s.'}`);
 }
 
 // ─── §5. Star tier analysis ────────────────────────────────────────────────
@@ -1552,6 +1979,24 @@ async function main() {
   const { rows, meta } = await loadPicks(provenRanksBySport);
   console.log(`[v6FullAnalysis] N=${rows.length} shipped+graded picks (${meta.dateMin} → ${meta.dateMax})`);
 
+  console.log('[v6FullAnalysis] loading AGS calibration…');
+  const agsCalibration = await loadAgsCalibration();
+  const calSrc = agsCalibration.source || (agsCalibration === AGS_FALLBACK_CALIBRATION ? 'fallback' : 'firestore');
+  console.log(`[v6FullAnalysis] AGS calibration: source=${calSrc}, sampleSize=${agsCalibration.sampleSize ?? 'n/a'}`);
+
+  // Stamp AGS retrospectively onto every row whose walletDetails support it.
+  let agsCovered = 0;
+  for (const r of rows) {
+    if (!r.agsAggRaw) continue;
+    const res = computeAgs(r.agsAggRaw, agsCalibration);
+    if (!res || !Number.isFinite(res.ags)) continue;
+    r.agsResult = res;
+    agsCovered += 1;
+  }
+  console.log(`[v6FullAnalysis] AGS computable on ${agsCovered}/${rows.length} rows`);
+  meta.agsCalibration = agsCalibration;
+  meta.agsCovered = agsCovered;
+
   const out = [];
   out.push('# Sharp Intel v6 — Full Analysis');
   out.push('');
@@ -1573,6 +2018,9 @@ async function main() {
   out.push('');
   out.push('---');
   buildSection4(out, rows);
+  out.push('');
+  out.push('---');
+  buildSectionAgs(out, rows, meta);
   out.push('');
   out.push('---');
   buildSection5(out, rows);
