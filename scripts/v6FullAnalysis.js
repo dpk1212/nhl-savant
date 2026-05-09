@@ -24,11 +24,20 @@
  *        characteristics of the qualified-roster wallets on each side
  *        (count, W−L net, flatPnl, avg ROI, sport rank, top-quartile
  *        share) predict the winner?  Ranks features by |ρ(·, flat ROI)|.
- *   §AGS. Aggregate Score deep dive — coverage, tier ladder, per-feature
- *        univariate predictiveness, score-mover share, pairwise feature
- *        correlation, drop-one ablation, multivariate logistic, and a
- *        composite ranking telling you which of the 6 inputs is doing
- *        the work and which are ballast.
+ *   §AGS. Aggregate Score deep dive (point-in-time / out-of-sample) —
+ *        coverage, tier ladder, per-feature univariate predictiveness,
+ *        score-mover share, pairwise feature correlation, drop-one
+ *        ablation, multivariate logistic, and a composite ranking telling
+ *        you which of the 6 inputs is doing the work and which are ballast.
+ *        Every AGS score in this section is computed under leakage-free
+ *        controls: PIT proven gate (chronological tier lens via
+ *        scripts/lib/pitTierLens.js — a wallet counts as proven only if
+ *        its FLAT/CONFIRMED threshold was crossed strictly BEFORE the
+ *        pick's date) and walk-forward calibration (mean/SD per feature
+ *        recomputed at each pick date from prior picks only). The §AGS-0a
+ *        sub-section shows the in-sample-vs-OOS deltas at the production
+ *        thresholds so you can see exactly how much of the prior fire
+ *        ladder was leakage.
  *   §5.  Star tier analysis (frozen peak.stars × outcome)
  *   §6.  Odds-bucket interaction
  *   §7.  Market split (ML / SPREAD / TOTAL)
@@ -61,6 +70,7 @@ import {
   computeAgs,
   agsTierFromValue,
 } from '../src/lib/ags.js';
+import { buildPitTierLens } from './lib/pitTierLens.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..');
@@ -415,10 +425,28 @@ function computeProvenWalletAggregates(walletDetails, sideKey, sport, ranksMap) 
   };
 }
 
+// Opposite-side mapping — used to credit a wallet's bet as a WIN on the
+// non-winning side as a LOSS on its mirror side (mirrors dailyV6Report).
+const OPPOSITE_SIDE = { home: 'away', away: 'home', over: 'under', under: 'over' };
+
+// Quick decimal-odds helper (mirrors dailyV6Report flatProfit). Used by
+// the Source-A walletBets builder so the PIT tier lens has the same
+// per-bet flat returns the production cohort lens uses.
+function flatPnlFromOddsAndOutcome(odds, won) {
+  if (won == null) return 0;
+  const dec = (odds == null || odds === 0)
+    ? 1.91
+    : (odds > 0 ? 1 + odds / 100 : 1 + 100 / Math.abs(odds));
+  return won ? dec - 1 : -1;
+}
+
 // ── Main load — adapted from dailyV6Report.loadEverything but with full
-//    feature extraction for downstream analysis. ────────────────────────────
+//    feature extraction for downstream analysis. Also builds Source-A
+//    walletBets (one row per wallet per graded pick) so the PIT tier
+//    lens has the chronological event stream it needs. ──────────────────────
 async function loadPicks(provenRanksBySport) {
   const rows = [];
+  const walletBets = [];   // Source A — for the PIT tier lens
   let scanned = 0;
   let dateMin = null, dateMax = null;
 
@@ -430,6 +458,36 @@ async function loadPicks(provenRanksBySport) {
       const sport = d.sport || 'UNK';
       const date  = d.date;
       const commenceTime = d.commenceTime || null;
+
+      // Identify the winning side once per game so we can credit each
+      // wallet's bet as W or L (mirrors dailyV6Report.loadEverything).
+      let winningSide = null;
+      for (const sk of Object.keys(sides)) {
+        const oc = sides[sk]?.result?.outcome;
+        if (oc === 'WIN')  { winningSide = sk; break; }
+        if (oc === 'LOSS' && OPPOSITE_SIDE[sk]) { winningSide = OPPOSITE_SIDE[sk]; break; }
+      }
+      if (winningSide && date) {
+        const seen = new Set();
+        for (const [, sideObj] of Object.entries(sides)) {
+          const peakObj = sideObj.peak || sideObj.lock;
+          const wdAny = peakObj?.v8Scoring?.walletDetails;
+          if (!Array.isArray(wdAny)) continue;
+          for (const w of wdAny) {
+            if (!w?.wallet || !w?.side) continue;
+            const dedupe = `${doc.id}_${w.wallet}`;
+            if (seen.has(dedupe)) continue;
+            seen.add(dedupe);
+            const betSide = sides[w.side];
+            const betOdds = betSide?.peak?.odds ?? betSide?.lock?.odds ?? peakObj?.odds ?? 0;
+            const won = w.side === winningSide ? 1 : 0;
+            walletBets.push({
+              date, sport, wallet: w.wallet, won,
+              flat: flatPnlFromOddsAndOutcome(betOdds, won),
+            });
+          }
+        }
+      }
 
       for (const [sideKey, side] of Object.entries(sides)) {
         scanned += 1;
@@ -581,7 +639,28 @@ async function loadPicks(provenRanksBySport) {
     }
   }
 
-  return { rows, meta: { scanned, dateMin, dateMax } };
+  return { rows, walletBets, meta: { scanned, dateMin, dateMax } };
+}
+
+// Source B — graded position rows from `sharp_action_positions`. Used
+// as the dollar-ROI confirmation half of the CONFIRMED tier rule.
+async function loadPositionRows() {
+  const rows = [];
+  const snap = await db.collection('sharp_action_positions').where('status', '==', 'GRADED').get();
+  for (const doc of snap.docs) {
+    const d = doc.data();
+    if (!d?.wallet || !d?.date || d.date < V6_CUTOVER) continue;
+    const invested = Number(d.invested ?? d.size ?? 0);
+    const settledPnl = Number(d.settledPnl ?? d.positionPnl ?? 0);
+    if (invested <= 0) continue;
+    rows.push({
+      date: d.date,
+      sport: d.sport || 'UNK',
+      wallet: d.walletShort || String(d.wallet).slice(-6).toLowerCase(),
+      invested, settledPnl,
+    });
+  }
+  return rows;
 }
 
 // ── Helpers used by the new §2 / §3 / §4 sections ─────────────────────────
@@ -1094,30 +1173,159 @@ function buildSection4(out, picks) {
 // calibration (means/SDs per feature) is loaded from
 // `agsCalibration/current` in Firestore (or the hardcoded fallback).
 //
-// This section answers two questions the user asked directly:
+// This section answers two questions:
 //   (a) Is AGS earning its place in the lock/mute logic?
 //   (b) Of the six inputs, which are doing the work and which are ballast?
 //
+// **All numbers below are point-in-time / out-of-sample.** Each pick is
+// scored using:
+//   • PIT proven gate: a wallet counts as "proven" only if it had crossed
+//     the FLAT or CONFIRMED threshold strictly BEFORE this pick's date,
+//     using the chronological-event tier lens (`scripts/lib/pitTierLens.js`).
+//   • Walk-forward calibration: feature means/SDs computed from picks
+//     strictly BEFORE this pick's date. Cold-start (prior N < 30) uses
+//     the live Firestore calibration as a stand-in.
+// The §AGS-0a leakage audit at the top compares these PIT-OOS numbers
+// against the in-sample-leaky version (today's tier + today's calibration)
+// so you can see exactly how much the leakage was inflating the in-sample
+// fire ladder.
+//
 // Sub-sections:
-//   §AGS-1. Coverage + distribution + tier counts on the live sample
-//   §AGS-2. AGS tier × outcome (the "fire ladder")
-//   §AGS-3. Per-feature univariate predictive power (raw + z-scored)
-//   §AGS-4. Per-feature contribution to the AGS score itself (does it move?)
-//   §AGS-5. Pairwise feature correlation matrix (which inputs are redundant)
-//   §AGS-6. Drop-one ablation (recompute AGS leaving each feature out)
-//   §AGS-7. Multivariate logistic regression on the 6 z-scored features
-//   §AGS-8. Final ranked verdict + recommendations
+//   §AGS-0a. Leakage audit — in-sample vs PIT-OOS side-by-side
+//   §AGS-1.  Coverage + distribution + tier counts (PIT-OOS)
+//   §AGS-2.  AGS tier × outcome (the "fire ladder", PIT-OOS)
+//   §AGS-3.  Per-feature univariate predictive power
+//   §AGS-4.  Per-feature contribution to the AGS score itself (does it move?)
+//   §AGS-5.  Pairwise feature correlation matrix (which inputs are redundant)
+//   §AGS-6.  Drop-one ablation (recompute AGS leaving each feature out)
+//   §AGS-7.  Multivariate logistic regression on the 6 z-scored features
+//   §AGS-8.  Final ranked verdict + recommendations
 function buildSectionAgs(out, picks, meta) {
   const cal = meta.agsCalibration;
   const calSrc = cal?.source || (cal === AGS_FALLBACK_CALIBRATION ? 'fallback' : 'firestore');
-  sectionHeader(out, '§AGS. Aggregate Score deep dive',
-    'Which of the six AGS inputs are pulling the weight, and is the composite earning its place vs. its parts?');
+  sectionHeader(out, '§AGS. Aggregate Score deep dive (point-in-time / out-of-sample)',
+    'Which of the six AGS inputs are pulling the weight, and is the composite earning its place vs. its parts? Numbers below are leakage-free (PIT proven gate + walk-forward calibration).');
 
   out.push('### §AGS-0. What AGS is, in one paragraph');
   out.push('');
   out.push('AGS aggregates the proven-wallet (`CONFIRMED` ∪ `FLAT`) slice of `peak.v8Scoring.walletDetails[]` into 6 *delta* features (FOR-side minus AGAINST-side), z-scores each one against a daily-recomputed calibration, and **sums the z-scores**. Equal sign-weighted — no fitted coefficients. Thresholds: `AGS ≥ +5` rescues a lock (route C), `AGS ≥ +3` confirms a thin Δw=+1 lock (v7.5 route B), `AGS < -1` mutes an otherwise-locking side (confirmation gate). Sizing multiplier scales [0.5, 1.0]× over [-1, +5].');
   out.push('');
-  out.push(`**Active calibration**: source = \`${calSrc}\`, sampleSize = ${cal?.sampleSize ?? 'n/a'}, dateRange = ${cal?.dateRange?.from || '?'} → ${cal?.dateRange?.to || '?'}, computedAt = ${cal?.computedAt || '?'}.`);
+  out.push(`**In-sample (live production) calibration**: source = \`${calSrc}\`, sampleSize = ${cal?.sampleSize ?? 'n/a'}, dateRange = ${cal?.dateRange?.from || '?'} → ${cal?.dateRange?.to || '?'}, computedAt = ${cal?.computedAt || '?'}. _This is what production scores against today; the §AGS-0a audit below shows how much its in-sample numbers diverge from the leakage-free walk-forward version._`);
+
+  // ── §AGS-0a. Leakage audit (in-sample vs PIT-OOS) ──────────────────────
+  // Two sources of leakage in the original §AGS analysis:
+  //   1. "Proven" gate uses today's tier (a wallet that earned CONFIRMED
+  //      last week was retroactively counted as proven for ALL their
+  //      historical picks). Fix: PIT lens — tier-as-of-pick-date, strictly
+  //      prior events only.
+  //   2. Calibration normalizers and thresholds were tuned on a sample
+  //      that overlaps with what we're now testing against. Fix: walk-
+  //      forward — score each pick against calibration computed from
+  //      strictly prior picks. Thresholds (+5/+3/-1) are still production
+  //      constants; we just measure their OOS lift.
+  // The audit table below shows the same fire ladder under both lenses.
+  out.push('');
+  out.push('### §AGS-0a. Leakage audit — in-sample vs point-in-time / out-of-sample');
+  out.push('');
+  out.push('Two sources of leakage existed in the prior version of this section: (1) a wallet was treated as "proven" if it currently has CONFIRMED/FLAT tier, even for picks made before it earned that status; (2) the AGS calibration normalizers (and the +5/+3/-1 thresholds tuned against them) were computed on data that overlaps with the test sample. The PIT/OOS pass replaces both: it uses a chronological tier lens (proven gate fires only on events strictly prior to the pick date) and walk-forward calibration (mean/SD per feature recomputed at each pick date from prior picks only, cold-started from live calibration when prior N < ' + meta.pitWalkMin + ').');
+  out.push('');
+  out.push(`Coverage: in-sample AGS computable on **${meta.agsCovered}** rows · PIT aggregate computable on **${meta.pitAggCovered}** rows (the proven wallet count drops because some wallets weren't yet proven on those early dates) · PIT walk-forward AGS computed on **${meta.pitAgsCovered}** rows (${meta.pitColdStartN} used the cold-start fallback calibration for the early dates).`);
+  out.push('');
+  out.push('Same rows, same outcomes — only the AGS scoring lens differs:');
+  out.push('');
+  // Cohort lift comparison at the production thresholds.
+  const cmpRows = picks.filter(p => p?.agsResult?.ags != null && p?.agsResultPit?.ags != null);
+  const isWin = (p) => p.outcome === 'WIN';
+  const fireStat = (arr) => {
+    const n = arr.length;
+    const w = arr.filter(isWin).length;
+    const wlDen = arr.filter(p => isWin(p) || p.outcome === 'LOSS').length;
+    const wr = wlDen ? (w / wlDen) * 100 : null;
+    const roi = n ? (arr.reduce((s, p) => s + (p.flatProfit || 0), 0) / n) * 100 : null;
+    return { n, wr, roi };
+  };
+  const tierBuckets = ['ELITE (≥+7)', 'LOCK (+5..+7)', 'STRONG (+3..+5)', 'NEUTRAL (0..+3)', 'WEAK (−3..0)', 'FADE (<−3)'];
+  const tierFromAgs = (a) => {
+    if (a == null) return null;
+    if (a >= 7) return tierBuckets[0];
+    if (a >= 5) return tierBuckets[1];
+    if (a >= 3) return tierBuckets[2];
+    if (a >= 0) return tierBuckets[3];
+    if (a >= -3) return tierBuckets[4];
+    return tierBuckets[5];
+  };
+  out.push('| Tier | In-sample N · WR · ROI | PIT-OOS N · WR · ROI | Δ ROI (OOS − in-sample) |');
+  out.push('|---|---|---|---|');
+  for (const tier of tierBuckets) {
+    const inArr  = cmpRows.filter(r => tierFromAgs(r.agsResult?.ags) === tier);
+    const oosArr = cmpRows.filter(r => tierFromAgs(r.agsResultPit?.ags) === tier);
+    const a = fireStat(inArr);
+    const b = fireStat(oosArr);
+    const fmtCell = (s) => s.n ? `${s.n} · ${s.wr != null ? s.wr.toFixed(0)+'%' : '—'} · ${s.roi != null ? sign(s.roi, 1)+'%' : '—'}` : '0 · — · —';
+    const dRoi = (a.roi != null && b.roi != null) ? (b.roi - a.roi) : null;
+    out.push(`| ${tier} | ${fmtCell(a)} | ${fmtCell(b)} | ${dRoi != null ? sign(dRoi, 1)+'pp' : '—'} |`);
+  }
+  out.push('');
+  out.push('Production-threshold lift (the rules that actually fire):');
+  out.push('');
+  out.push('| Floor | In-sample fire | PIT-OOS fire | Δ ROI (OOS − in-sample) |');
+  out.push('|---|---|---|---|');
+  const floors = [
+    ['AGS ≥ +5 (lock-floor route C)', AGS_LOCK_FLOOR],
+    ['AGS ≥ +3 (Δw=+1 confirm route B)', AGS_DW1_FLOOR],
+    ['AGS < −1 (mute veto)', AGS_MUTE_FLOOR],
+  ];
+  for (const [label, thresh] of floors) {
+    const isMute = label.includes('mute');
+    const inArr = cmpRows.filter(r => isMute ? (r.agsResult?.ags < thresh) : (r.agsResult?.ags >= thresh));
+    const oosArr = cmpRows.filter(r => isMute ? (r.agsResultPit?.ags < thresh) : (r.agsResultPit?.ags >= thresh));
+    const a = fireStat(inArr);
+    const b = fireStat(oosArr);
+    const fmtCell = (s) => s.n ? `N=${s.n}, WR=${s.wr?.toFixed(0) ?? '—'}%, ROI=${sign(s.roi, 1)}%` : 'N=0, —';
+    const dRoi = (a.roi != null && b.roi != null) ? (b.roi - a.roi) : null;
+    out.push(`| ${label} | ${fmtCell(a)} | ${fmtCell(b)} | ${dRoi != null ? sign(dRoi, 1)+'pp' : '—'} |`);
+  }
+  out.push('');
+  out.push('_Reading: a large negative Δ in the LOCK / STRONG rows = the in-sample numbers were optimistically inflated by leakage. A small Δ = the original analysis was directionally honest. The PIT-OOS numbers are what the engine would have produced if every pick had been scored at the moment it was made._');
+
+  // ── Holdout sub-cell — last 14 days only, PIT-OOS ─────────────────────
+  // The walk-forward calibration's cold-start phase uses the live
+  // calibration as a stand-in (early picks lack enough prior history).
+  // The "true" out-of-sample window is the more recent picks where the
+  // walk-forward calibration was computed entirely from prior data —
+  // here we slice to the last 14 calendar days as the cleanest holdout.
+  const allDates = [...new Set(picks.map(p => p.date).filter(Boolean))].sort();
+  if (allDates.length >= 14) {
+    const cutoffDate = allDates[allDates.length - 14];
+    const recentRows = cmpRows.filter(r => r.date && r.date >= cutoffDate);
+    if (recentRows.length >= 10) {
+      out.push('');
+      out.push(`#### §AGS-0a-recent. Last-14-days holdout (PIT-OOS, ${cutoffDate} → ${allDates[allDates.length - 1]}, N=${recentRows.length})`);
+      out.push('');
+      out.push('The cleanest out-of-sample window — every pick here was scored against a walk-forward calibration computed entirely from prior dates (no cold-start fallback in this slice).');
+      out.push('');
+      out.push('| Tier | N · WR · ROI |');
+      out.push('|---|---|');
+      for (const tier of tierBuckets) {
+        const arr = recentRows.filter(r => tierFromAgs(r.agsResultPit?.ags) === tier);
+        const s = fireStat(arr);
+        const fmtCell = (s) => s.n ? `${s.n} · ${s.wr != null ? s.wr.toFixed(0)+'%' : '—'} · ${s.roi != null ? sign(s.roi, 1)+'%' : '—'}` : '0 · — · —';
+        out.push(`| ${tier} | ${fmtCell(s)} |`);
+      }
+      out.push('');
+      out.push('| Floor | Fire (PIT-OOS, last 14d) |');
+      out.push('|---|---|');
+      for (const [label, thresh] of floors) {
+        const isMute = label.includes('mute');
+        const arr = recentRows.filter(r => isMute ? (r.agsResultPit?.ags < thresh) : (r.agsResultPit?.ags >= thresh));
+        const s = fireStat(arr);
+        const fmtCell = (s) => s.n ? `N=${s.n}, WR=${s.wr?.toFixed(0) ?? '—'}%, ROI=${sign(s.roi, 1)}%` : 'N=0, —';
+        out.push(`| ${label} | ${fmtCell(s)} |`);
+      }
+    }
+  }
+  out.push('');
+  out.push('#### Reference: in-sample calibration normalizers (used only as cold-start fallback during PIT walk-forward)');
   out.push('');
   out.push('| Feature key | Family | Sign | Cal mean | Cal SD |');
   out.push('|---|---|---|---|---|');
@@ -1126,8 +1334,8 @@ function buildSectionAgs(out, picks, meta) {
     out.push(`| \`${f.key}\` | ${f.family} | ${f.sign > 0 ? '+' : '−'} | ${norm?.mean?.toFixed(2) ?? '—'} | ${norm?.sd?.toFixed(2) ?? '—'} |`);
   }
 
-  // Subset: rows where AGS could be computed retrospectively.
-  const agsRows = picks.filter(p => p?.agsResult?.ags != null && Number.isFinite(p.agsResult.ags));
+  // Subset: rows where AGS could be computed retrospectively under PIT-OOS.
+  const agsRows = picks.filter(p => p?.agsResultPit?.ags != null && Number.isFinite(p.agsResultPit.ags));
   if (agsRows.length < 10) {
     out.push('');
     out.push(`_AGS-eligible sample too small (${agsRows.length} rows). Need at least 10 to run the deep dive — exiting section._`);
@@ -1139,9 +1347,9 @@ function buildSectionAgs(out, picks, meta) {
   out.push('### §AGS-1. Coverage + distribution');
   out.push('');
   const coveragePct = (agsRows.length / picks.length) * 100;
-  const agsValues = agsRows.map(p => p.agsResult.ags).sort((a, b) => a - b);
+  const agsValues = agsRows.map(p => p.agsResultPit.ags).sort((a, b) => a - b);
   const q = (p) => agsValues[Math.floor((agsValues.length - 1) * p)];
-  out.push(`Computable on **${agsRows.length}/${picks.length}** shipped+graded rows (${coveragePct.toFixed(0)}%). The remaining rows lack a frozen \`walletDetails[]\` (older docs, or sides where no proven wallet appeared on either side).`);
+  out.push(`PIT-OOS AGS computable on **${agsRows.length}/${picks.length}** shipped+graded rows (${coveragePct.toFixed(0)}%). Rows drop out for two reasons: missing frozen \`walletDetails[]\` (older docs), or no wallet on either side was yet proven on this pick's date under the strict-prior PIT lens.`);
   out.push('');
   out.push('| Stat | AGS value |');
   out.push('|---|---|');
@@ -1159,7 +1367,7 @@ function buildSectionAgs(out, picks, meta) {
   const tierOrder = ['ELITE', 'LOCK', 'STRONG', 'NEUTRAL', 'WEAK', 'FADE'];
   const tierBound = { ELITE: '≥ +7', LOCK: '+5..+7', STRONG: '+3..+5', NEUTRAL: '0..+3', WEAK: '−3..0', FADE: '< −3' };
   const tierCounts = Object.fromEntries(tierOrder.map(t => [t, 0]));
-  for (const r of agsRows) tierCounts[r.agsResult.tier] = (tierCounts[r.agsResult.tier] || 0) + 1;
+  for (const r of agsRows) tierCounts[r.agsResultPit.tier] = (tierCounts[r.agsResultPit.tier] || 0) + 1;
   out.push('| Tier | Range | N | Share |');
   out.push('|---|---|---|---|');
   for (const t of tierOrder) {
@@ -1174,7 +1382,7 @@ function buildSectionAgs(out, picks, meta) {
   out.push('');
   out.push('If the AGS calibration is right, win-rate and flat ROI should rise monotonically up the tier ladder. Sample sizes inside FADE/ELITE will be thin — read the directional signal, not the point estimate.');
   out.push('');
-  bucketTable(out, agsRows, p => p.agsResult.tier, tierOrder);
+  bucketTable(out, agsRows, p => p.agsResultPit.tier, tierOrder);
 
   // ── §AGS-3. Per-feature univariate predictive power ────────────────────
   // For each of the 6 features we report:
@@ -1193,8 +1401,8 @@ function buildSectionAgs(out, picks, meta) {
   const flats = agsRows.map(p => p.flatProfit);
   const featureSummaries = [];
   for (const f of AGS_FEATURES) {
-    const raw = agsRows.map(p => Number(p.agsAggRaw?.[f.key] ?? 0));
-    const zs  = agsRows.map(p => Number(p.agsResult?.components?.[f.key] ?? 0));
+    const raw = agsRows.map(p => Number(p.agsAggRawPit?.[f.key] ?? 0));
+    const zs  = agsRows.map(p => Number(p.agsResultPit?.components?.[f.key] ?? 0));
     const rWin = pearsonSig(raw, wins);
     const rRoi = pearsonSig(raw, flats);
     const sRoi = spearman(raw, flats);
@@ -1216,7 +1424,7 @@ function buildSectionAgs(out, picks, meta) {
       if (z < 1)  return 'z ∈ [0, +1)';
       return 'z ≥ +1 (very positive)';
     };
-    bucketTable(out, agsRows, p => zBucket(Number(p.agsResult?.components?.[f.key] ?? 0)),
+    bucketTable(out, agsRows, p => zBucket(Number(p.agsResultPit?.components?.[f.key] ?? 0)),
       ['z < −1 (very negative)', 'z ∈ [−1, 0)', 'z ∈ [0, +1)', 'z ≥ +1 (very positive)']);
     out.push('');
   }
@@ -1261,7 +1469,7 @@ function buildSectionAgs(out, picks, meta) {
   out.push('');
   const featureCols = AGS_FEATURES.map(f => f.key);
   const featureZArrs = Object.fromEntries(featureCols.map(k => [k,
-    agsRows.map(p => Number(p.agsResult?.components?.[k] ?? 0))]));
+    agsRows.map(p => Number(p.agsResultPit?.components?.[k] ?? 0))]));
   out.push('| | ' + featureCols.map(k => `\`${k}\``).join(' | ') + ' |');
   out.push('|---|' + featureCols.map(() => '---').join('|') + '|');
   for (const a of featureCols) {
@@ -1295,8 +1503,8 @@ function buildSectionAgs(out, picks, meta) {
   out.push('For each of the 6 inputs, recompute AGS as the **sum of the OTHER 5 z-scores** (each contribution preserved with its original sign), then evaluate three lenses. **The discriminative-power lens (Spearman ρ vs. outcome) is the cleanest** — a big drop in |ρ| means that feature carried marginal info the other five lacked. The cohort-matched lens compares apples-to-apples by holding cohort size fixed at the baseline lock-floor N. The same-threshold lens is included for transparency but read it with the caveat that removing a feature mechanically shrinks the cohort, so the surviving subset can look stronger purely from sample selection.');
   out.push('');
   // Baseline.
-  const baselineLockArr = agsRows.filter(r => r.agsResult.ags >= AGS_LOCK_FLOOR);
-  const baselineConfArr = agsRows.filter(r => r.agsResult.ags >= AGS_DW1_FLOOR);
+  const baselineLockArr = agsRows.filter(r => r.agsResultPit.ags >= AGS_LOCK_FLOOR);
+  const baselineConfArr = agsRows.filter(r => r.agsResultPit.ags >= AGS_DW1_FLOOR);
   const sumStat = (arr) => {
     if (!arr.length) return { n: 0, wr: null, roi: null };
     const w = arr.filter(p => p.outcome === 'WIN').length;
@@ -1307,7 +1515,7 @@ function buildSectionAgs(out, picks, meta) {
   const baselineLock = sumStat(baselineLockArr);
   const baselineConf = sumStat(baselineConfArr);
   const lockK = baselineLock.n;
-  const baselineFullSpear = spearman(agsRows.map(r => r.agsResult.ags), agsRows.map(r => r.flatProfit));
+  const baselineFullSpear = spearman(agsRows.map(r => r.agsResultPit.ags), agsRows.map(r => r.flatProfit));
   out.push(`**Baseline (full 6-feature AGS):** Spearman ρ(AGS, flat ROI) = **${baselineFullSpear?.toFixed(3) ?? '—'}**. At AGS ≥ +${AGS_LOCK_FLOOR} fires N=${baselineLock.n}, WR=${baselineLock.wr != null ? (baselineLock.wr*100).toFixed(1)+'%' : '—'}, ROI=${baselineLock.roi != null ? sign(baselineLock.roi*100, 1)+'%' : '—'}. At AGS ≥ +${AGS_DW1_FLOOR} fires N=${baselineConf.n}, WR=${baselineConf.wr != null ? (baselineConf.wr*100).toFixed(1)+'%' : '—'}, ROI=${baselineConf.roi != null ? sign(baselineConf.roi*100, 1)+'%' : '—'}.`);
   out.push('');
   out.push('| Feature dropped | ρ(5-feat AGS, ROI) | ρ drop vs full | Top-' + lockK + ' ROI (matched cohort) | Top-' + lockK + ' lift loss vs baseline | Same-threshold ≥+5 cell |');
@@ -1315,7 +1523,7 @@ function buildSectionAgs(out, picks, meta) {
   const ablationRows = [];
   for (const f of AGS_FEATURES) {
     const droppedAgs = agsRows.map(r => {
-      const comps = r.agsResult?.components || {};
+      const comps = r.agsResultPit?.components || {};
       let s = 0;
       for (const ff of AGS_FEATURES) {
         if (ff.key === f.key) continue;
@@ -1367,7 +1575,7 @@ function buildSectionAgs(out, picks, meta) {
   out.push('Fit `logit(P(WIN)) = α + Σ βᵢ · zᵢ` on the AGS sample. Standardized inputs ⇒ |β| is a fair cross-feature importance signal. AGS itself uses **equal sign-weighted** sums (β=+1 for every feature); a fitted β much larger or smaller than 1 indicates the equal-weight assumption may be off for that input.');
   out.push('');
   // Build design matrix [n, 6] and y vector.
-  const X = agsRows.map(r => AGS_FEATURES.map(f => Number(r.agsResult?.components?.[f.key] ?? 0)));
+  const X = agsRows.map(r => AGS_FEATURES.map(f => Number(r.agsResultPit?.components?.[f.key] ?? 0)));
   const y = agsRows.map(r => r.outcome === 'WIN' ? 1 : 0);
   const lr = logisticRegression(X, y, { lr: 0.05, iters: 4000, l2: 0.05 });
   // Compute final log-loss on the training set so the reader can sanity-check fit.
@@ -1457,7 +1665,8 @@ function buildSectionAgs(out, picks, meta) {
   if (carriesInfo.length && carriesInfo.length <= 3) {
     out.push(`- **v9 simplification candidate**: only \`${carriesInfo.join('`, `')}\` ${carriesInfo.length === 1 ? 'carries' : 'carry'} marginal info (Spearman ρ drop > 0.01 when removed). The other ${6 - carriesInfo.length} features add roughly nothing on top — a 2- or 3-feature composite would likely match the 6-feature AGS\'s discriminative power. **Don't remove them yet** — at N=${agsRows.length} we lack the power to distinguish "redundant in this sample" from "redundant in the population." Revisit once the sample doubles.`);
   }
-  out.push(`- **Calibration source**: \`${calSrc}\`. ${calSrc === 'fallback' ? '⚠ The cron-refreshed Firestore calibration is not available — values are from the last hardcoded snapshot. Re-running `scripts/computeAgsCalibration.js` will refresh.' : 'Live calibration is loaded; the means/SDs above are this morning\'s.'}`);
+  out.push(`- **In-sample calibration source**: \`${calSrc}\` (used as cold-start fallback for the first ${meta.pitColdStartN} of ${meta.pitAgsCovered} PIT rows where prior history was thin). ${calSrc === 'fallback' ? '⚠ The cron-refreshed Firestore calibration is not available — values are from the last hardcoded snapshot. Re-running `scripts/computeAgsCalibration.js` will refresh.' : 'Live calibration is loaded; the means/SDs above are this morning\'s.'}`);
+  out.push(`- **Look-ahead controls**: PIT proven gate (strict-prior-events tier lens) + walk-forward feature calibration (mean/SD per feature recomputed at each pick date from prior picks only, ${meta.pitColdStartN}/${meta.pitAgsCovered} cold-started). Production thresholds (+5/+3/-1) were tuned on overlapping data and are still treated as fixed constants here — the §AGS-0a leakage audit shows the true lift those thresholds deliver out-of-sample.`);
 }
 
 // ─── §5. Star tier analysis ────────────────────────────────────────────────
@@ -1976,15 +2185,24 @@ async function main() {
   console.log(`[v6FullAnalysis] ${profiles.size} wallet profiles · proven roster: ${provenSummary}`);
 
   console.log('[v6FullAnalysis] loading picks…');
-  const { rows, meta } = await loadPicks(provenRanksBySport);
-  console.log(`[v6FullAnalysis] N=${rows.length} shipped+graded picks (${meta.dateMin} → ${meta.dateMax})`);
+  const { rows, walletBets, meta } = await loadPicks(provenRanksBySport);
+  console.log(`[v6FullAnalysis] N=${rows.length} shipped+graded picks (${meta.dateMin} → ${meta.dateMax}), ${walletBets.length} wallet-bet events for PIT lens`);
 
-  console.log('[v6FullAnalysis] loading AGS calibration…');
+  console.log('[v6FullAnalysis] loading Source-B positions for PIT tier lens…');
+  const positionRows = await loadPositionRows();
+  console.log(`[v6FullAnalysis] ${positionRows.length} graded position rows`);
+
+  console.log('[v6FullAnalysis] building point-in-time tier lens (strict prior)…');
+  const lens = buildPitTierLens(walletBets, positionRows, profiles, { strict: true });
+
+  console.log('[v6FullAnalysis] loading AGS calibration (current snapshot, used as in-sample baseline)…');
   const agsCalibration = await loadAgsCalibration();
   const calSrc = agsCalibration.source || (agsCalibration === AGS_FALLBACK_CALIBRATION ? 'fallback' : 'firestore');
   console.log(`[v6FullAnalysis] AGS calibration: source=${calSrc}, sampleSize=${agsCalibration.sampleSize ?? 'n/a'}`);
 
-  // Stamp AGS retrospectively onto every row whose walletDetails support it.
+  // ── In-sample AGS pass (today's tier + today's calibration) ──────────
+  // Kept so the §AGS leakage-audit subsection can show how much the
+  // numbers move when we strip out look-ahead.
   let agsCovered = 0;
   for (const r of rows) {
     if (!r.agsAggRaw) continue;
@@ -1993,9 +2211,76 @@ async function main() {
     r.agsResult = res;
     agsCovered += 1;
   }
-  console.log(`[v6FullAnalysis] AGS computable on ${agsCovered}/${rows.length} rows`);
+  console.log(`[v6FullAnalysis] in-sample AGS computable on ${agsCovered}/${rows.length} rows`);
+
+  // ── PIT pass — re-aggregate every pick under the PIT proven gate ─────
+  // Same `aggregateSideProven` formula, but the `isProven` callback
+  // checks tier-as-of the pick's date (strictly prior events only).
+  const pitProvenFn = (walletShort, sport, date) => lens.isProvenAsOf(walletShort, sport, date);
+  let pitAggCovered = 0;
+  for (const r of rows) {
+    if (!Array.isArray(r.walletDetails) || !r.walletDetails.length) continue;
+    const agg = aggregateSideProven(r.walletDetails, r.sideKey, r.sport,
+      (w, s) => pitProvenFn(w, s, r.date));
+    if (!agg || (agg.forCount + agg.agCount) === 0) continue;
+    r.agsAggRawPit = agg;
+    pitAggCovered += 1;
+  }
+  console.log(`[v6FullAnalysis] PIT-proven aggregate computable on ${pitAggCovered}/${rows.length} rows`);
+
+  // ── Walk-forward calibration ─────────────────────────────────────────
+  // For each pick (in date order), build a calibration {mean, sd} per
+  // feature using ONLY rows strictly before this row's date that have a
+  // valid PIT aggregate. Cold-start (prior N < WALK_MIN) uses the live
+  // Firestore calibration as a stand-in. The PIT AGS for each row is
+  // then computed against THAT row's prior-only calibration.
+  const WALK_MIN = 30;
+  const sortedRows = [...rows].filter(r => r.agsAggRawPit).sort((a, b) =>
+    (a.date || '').localeCompare(b.date || ''));
+  // Pre-compute per-feature prefix sums for fast walk-forward (sorted by date).
+  // For each (date, feature), we need mean+sd of rows with date < D.
+  // Simpler approach: at each row index i, the prior universe is rows[0..i-1].
+  // We compute mean/sd lazily per row to keep code short; N≈140 → 140 × 6 ops.
+  let pitAgsCovered = 0;
+  let coldStartN = 0;
+  for (let i = 0; i < sortedRows.length; i++) {
+    const row = sortedRows[i];
+    const priorRows = [];
+    for (let j = 0; j < i; j++) {
+      const pj = sortedRows[j];
+      if (pj.date < row.date) priorRows.push(pj);
+    }
+    let calForRow;
+    if (priorRows.length < WALK_MIN) {
+      calForRow = agsCalibration;
+      coldStartN += 1;
+    } else {
+      const normalizers = {};
+      for (const f of AGS_FEATURES) {
+        const vals = priorRows.map(p => Number(p.agsAggRawPit?.[f.key] ?? 0));
+        const mean = vals.reduce((s, v) => s + v, 0) / vals.length;
+        const variance = vals.reduce((s, v) => s + (v - mean) ** 2, 0) / Math.max(1, vals.length - 1);
+        const sd = Math.sqrt(variance) || 1;
+        normalizers[f.key] = { mean, sd };
+      }
+      calForRow = { normalizers, source: 'walk-forward', sampleSize: priorRows.length };
+    }
+    const res = computeAgs(row.agsAggRawPit, calForRow);
+    if (res && Number.isFinite(res.ags)) {
+      row.agsResultPit = res;
+      row.agsCalSourceUsed = calForRow.source;
+      row.agsCalSampleUsed = calForRow.sampleSize ?? null;
+      pitAgsCovered += 1;
+    }
+  }
+  console.log(`[v6FullAnalysis] PIT walk-forward AGS computed on ${pitAgsCovered}/${sortedRows.length} rows (${coldStartN} used cold-start fallback calibration)`);
+
   meta.agsCalibration = agsCalibration;
   meta.agsCovered = agsCovered;
+  meta.pitAggCovered = pitAggCovered;
+  meta.pitAgsCovered = pitAgsCovered;
+  meta.pitColdStartN = coldStartN;
+  meta.pitWalkMin = WALK_MIN;
 
   const out = [];
   out.push('# Sharp Intel v6 — Full Analysis');
