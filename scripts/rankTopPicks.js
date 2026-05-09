@@ -558,6 +558,17 @@ function loadTodayLocked(today, lens) {
         const agsAgN  = (side.v8_agsProvenAgCount  != null) ? Number(side.v8_agsProvenAgCount)  : null;
         const agsUnitsMult = (side.v8_agsUnitsMult != null) ? Number(side.v8_agsUnitsMult) : null;
 
+        // Lightweight walletDetails stash so the top-wallet leaderboard
+        // section can name which top-10 wallets are backing each side
+        // without re-loading the doc.
+        const wdLite = Array.isArray(wd)
+          ? wd.filter(w => w?.wallet && w?.side).map(w => ({
+              wallet: w.wallet, side: w.side,
+              invested: Number(w.invested ?? 0),
+              sizeRatio: Number(w.sizeRatio ?? 0),
+            }))
+          : [];
+
         out.push({
           docId: doc.id,
           sport: d.sport,
@@ -577,6 +588,7 @@ function loadTodayLocked(today, lens) {
           systemVersion: side.v8_systemVersion ?? null,
           promotedBy: side.promotedBy ?? null,
           v73HcRescue: !!side.v8_v73HcRescue,
+          walletDetailsLite: wdLite,
         });
       }
     }
@@ -720,6 +732,163 @@ function fmtCell(cell) {
   return `${n} ${wl} ${wr} ${roi}`;
 }
 
+// ── Per-sport wallet leaderboard ─────────────────────────────────────────
+//
+// Objectively ranks every wallet WITHIN A SPORT using the metrics our
+// analyses validated as the strongest predictors of winners (see
+// V6_FULL_ANALYSIS.md §4 & §11):
+//
+//   WalletScore = flatRoi%   × min(1, n/MIN_VOL)   ← Source A primary
+//               + 0.5 × dollarRoi%                  ← Source B confirm
+//               + tierBonus  (CONFIRMED=+20, FLAT=+10, WR50=0)
+//               + recencyBonus (-10 if last bet > 30 days)
+//
+// Volume cap (MIN_VOL=5) protects against high-ROI tiny-sample wallets
+// dominating. Tier bonus rewards the production-quality threshold a
+// wallet has cleared. Recency penalty downweights wallets that have
+// gone quiet (cold streak / left the action).
+//
+// Returns { bySport: { 'NHL': [walletEntries sorted desc by score] } }
+const LEADERBOARD_MIN_VOL = 5;
+const LEADERBOARD_RECENCY_DAYS = 30;
+function buildWalletLeaderboardBySport(sourceABets, sourceBPositions, lens, todayStr) {
+  // Aggregate Source A per (wallet, sport).
+  const sourceAByWS = new Map();   // key = `${walletShort}|${sport}`
+  for (const b of sourceABets) {
+    if (!b?.wallet || !b?.sport) continue;
+    const k = `${b.wallet}|${b.sport}`;
+    let agg = sourceAByWS.get(k);
+    if (!agg) { agg = { n: 0, wins: 0, flatPnl: 0, lastDate: null }; sourceAByWS.set(k, agg); }
+    agg.n += 1;
+    agg.wins += (b.won || 0);
+    agg.flatPnl += (b.flat ?? 0);
+    if (!agg.lastDate || (b.date && b.date > agg.lastDate)) agg.lastDate = b.date;
+  }
+  // Aggregate Source B per (wallet, sport).
+  const sourceBByWS = new Map();
+  for (const p of sourceBPositions) {
+    if (!p?.wallet || !p?.sport) continue;
+    const k = `${p.wallet}|${p.sport}`;
+    let agg = sourceBByWS.get(k);
+    if (!agg) { agg = { bN: 0, invested: 0, dollarPnl: 0, lastDate: null }; sourceBByWS.set(k, agg); }
+    agg.bN += 1;
+    agg.invested += (p.invested || 0);
+    agg.dollarPnl += (p.settledPnl || 0);
+    if (!agg.lastDate || (p.date && p.date > agg.lastDate)) agg.lastDate = p.date;
+  }
+
+  // Union of (wallet, sport) keys across both sources.
+  const allKeys = new Set([...sourceAByWS.keys(), ...sourceBByWS.keys()]);
+  const todayMs = Date.parse(todayStr + 'T00:00:00Z');
+
+  // Per (wallet, sport), assemble the row + score.
+  // Eligibility: require ≥ MIN_LEADERBOARD_BETS bets in Source A. This
+  // filters out Source-B-only ghost wallets (positions tracked but
+  // never appeared in any walletDetails) which can't be cross-
+  // referenced to today's picks anyway, and matches the production
+  // proven-gate threshold (CONFIRMED requires ≥2 bets in BOTH sources).
+  const bySport = {};
+  for (const k of allKeys) {
+    const [walletShort, sport] = k.split('|');
+    const a = sourceAByWS.get(k) || { n: 0, wins: 0, flatPnl: 0, lastDate: null };
+    const b = sourceBByWS.get(k) || { bN: 0, invested: 0, dollarPnl: 0, lastDate: null };
+    if (a.n < MIN_BETS) continue;
+    const wr        = a.n ? (a.wins / a.n) * 100 : null;
+    const flatRoi   = a.n ? (a.flatPnl / a.n) * 100 : null;
+    const dollarRoi = b.invested > 0 ? (b.dollarPnl / b.invested) * 100 : null;
+    const tier      = lens.tierAsOf(walletShort, sport, todayStr) || 'untracked';
+    const tierBonus = tier === 'CONFIRMED' ? 20 : tier === 'FLAT' ? 10 : tier === 'WR50' ? 0 : -10;
+    const lastDate  = (a.lastDate && b.lastDate)
+      ? (a.lastDate > b.lastDate ? a.lastDate : b.lastDate)
+      : (a.lastDate || b.lastDate);
+    let recencyBonus = 0;
+    let daysSince = null;
+    if (lastDate) {
+      const lastMs = Date.parse(lastDate + 'T00:00:00Z');
+      daysSince = Math.max(0, Math.round((todayMs - lastMs) / 86400000));
+      if (daysSince > LEADERBOARD_RECENCY_DAYS) recencyBonus = -10;
+    }
+    // WalletScore — flatRoi weighted by sample size, plus dollar-ROI
+    // confirmation, plus tier and recency modifiers.
+    const volumeWeight = Math.min(1, a.n / LEADERBOARD_MIN_VOL);
+    const flatComponent   = (flatRoi != null) ? flatRoi * volumeWeight : 0;
+    const dollarComponent = (dollarRoi != null) ? 0.5 * dollarRoi : 0;
+    const score = flatComponent + dollarComponent + tierBonus + recencyBonus;
+    const row = {
+      walletShort, sport, tier,
+      n: a.n, wins: a.wins, losses: a.n - a.wins,
+      wr, flatPnl: a.flatPnl, flatRoi,
+      bN: b.bN, dollarInvested: b.invested, dollarPnl: b.dollarPnl, dollarRoi,
+      lastDate, daysSince,
+      score, scoreParts: { flatComponent, dollarComponent, tierBonus, recencyBonus, volumeWeight },
+    };
+    if (!bySport[sport]) bySport[sport] = [];
+    bySport[sport].push(row);
+  }
+  // Sort each sport's wallets by score desc.
+  for (const sport of Object.keys(bySport)) {
+    bySport[sport].sort((x, y) => y.score - x.score);
+  }
+  return { bySport };
+}
+
+// ── Today's wallet positions across every (locked + non-locked) side ──────
+//
+// Iterates every today pick doc and emits one row per (wallet, side)
+// that has a walletDetails entry. Used to (a) attach the "Today's
+// positions" column to the wallet leaderboard, (b) compute top-wallet
+// alignment, and (c) name top-10 backers in the per-pick evidence cards.
+async function loadTodayWalletPositions(today) {
+  const out = [];
+  for (const [col, market] of PICK_COLS) {
+    const snap = await db.collection(col).where('date', '==', today).get();
+    for (const doc of snap.docs) {
+      const d = doc.data();
+      const sides = d.sides || {};
+      for (const [sideKey, side] of Object.entries(sides)) {
+        const peak = side.peak || side.lock || {};
+        const wd = peak?.v8Scoring?.walletDetails;
+        if (!Array.isArray(wd)) continue;
+        const teamLabel = market === 'TOTAL'
+          ? (sideKey === 'over' ? `OVER ${peak?.line ?? ''}`.trim() : `UNDER ${peak?.line ?? ''}`.trim())
+          : (side.team || (sideKey === 'home' ? d.home : d.away));
+        const lockStage = side.lockStage ?? null;
+        const isLocked = lockStage === 'LOCKED' && !side.superseded
+          && side.health?.status !== 'CANCELLED' && side.health?.status !== 'MUTED';
+        for (const w of wd) {
+          if (!w?.wallet || !w?.side) continue;
+          out.push({
+            docId: doc.id,
+            sport: d.sport,
+            market,
+            sideKey: w.side,
+            team: w.side === sideKey ? teamLabel : null,  // resolved below
+            away: d.away,
+            home: d.home,
+            wallet: w.wallet,
+            invested: Number(w.invested ?? 0),
+            sizeRatio: Number(w.sizeRatio ?? 0),
+            lockStage,
+            isLocked,
+          });
+        }
+      }
+      // Backfill the team label for positions whose w.side ≠ the
+      // outer sideKey (the wallet bet the OTHER side of this pick doc).
+      for (const r of out) {
+        if (r.docId !== doc.id) continue;
+        if (r.team) continue;
+        if (market === 'TOTAL') {
+          r.team = r.sideKey === 'over' ? 'OVER' : 'UNDER';
+        } else {
+          r.team = r.sideKey === 'home' ? d.home : d.away;
+        }
+      }
+    }
+  }
+  return out;
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────
 (async () => {
   console.log(`Loading historical sample (${V6_CUTOVER}+) and tier lens…`);
@@ -739,12 +908,31 @@ function fmtCell(cell) {
   const agsMatrix = buildAgsMatrix(pickRows);
   console.log(`  Eligible historical rows (with v8_ags stamp): ${agsMatrix.totalEligible} · sports: ${agsMatrix.sports.join(', ')}`);
 
+  console.log('Building per-sport wallet leaderboard…');
+  const leaderboard = buildWalletLeaderboardBySport(sourceABets, sourceBPositions, lens, today);
+  const TOP_N_PER_SPORT = 10;
+  const topWalletsBySport = {};   // sport → Set<walletShort> for the top-N
+  for (const sport of Object.keys(leaderboard.bySport)) {
+    topWalletsBySport[sport] = new Set(leaderboard.bySport[sport].slice(0, TOP_N_PER_SPORT).map(r => r.walletShort));
+  }
+  console.log(`  ranked wallets in ${Object.keys(leaderboard.bySport).length} sport(s) · top-${TOP_N_PER_SPORT} sizes: ${Object.entries(topWalletsBySport).map(([s, set]) => `${s}=${set.size}`).join(' · ')}`);
+
   console.log(`\nLoading today's LOCKED picks (${today})…`);
   const todayPicks = await loadTodayLocked(today, lens);
   if (!todayPicks.length) {
     console.log('No LOCKED picks for today.');
     process.exit(0);
   }
+
+  console.log('Loading today\'s wallet positions for top-wallet attribution…');
+  const todayPositions = await loadTodayWalletPositions(today);
+  const todayPosByWallet = new Map();   // walletShort → [positions]
+  for (const p of todayPositions) {
+    const k = String(p.wallet);
+    if (!todayPosByWallet.has(k)) todayPosByWallet.set(k, []);
+    todayPosByWallet.get(k).push(p);
+  }
+  console.log(`  ${todayPositions.length} wallet positions across today's picks`);
 
   // Score + cell-lookup every pick.
   for (const p of todayPicks) {
@@ -865,6 +1053,28 @@ function fmtCell(cell) {
     console.log(`           • HC band ALL · ${hb} (any Σ)   :  ${fmtCell(p.bandHcAll)}`);
     console.log(`           • HC band ${p.sport.padEnd(3)} · ${hb} (any Σ)   :  ${fmtCell(p.bandHcSport)}`);
     if (p.v73HcRescue) console.log(`         · v7.3 RESCUED — HC margin overrode dw=0 / dq=0 / sum<3 mute (cohort: 11-2, +85% ROI, p=0.006)`);
+
+    // Top-10 wallet attribution — for the FOR side and the AG side of
+    // this pick, list which top-10 wallets (per this sport's leaderboard)
+    // are positioned on each side. Lets you see at a glance whether the
+    // proven roster is endorsing this side or the opposing side. Picks
+    // that have the proven leaderboard backing them stack the deck.
+    const topSet = topWalletsBySport[p.sport] || new Set();
+    if (Array.isArray(p.walletDetailsLite) && p.walletDetailsLite.length) {
+      const forBackers = p.walletDetailsLite.filter(w => w.side === p.sideKey && topSet.has(w.wallet));
+      const agBackers  = p.walletDetailsLite.filter(w => w.side !== p.sideKey && topSet.has(w.wallet));
+      const fmtBackerList = (list) => {
+        if (!list.length) return '(none in top-10)';
+        return list.map(w => {
+          const tag = w.sizeRatio >= 1.5 ? `[HC ${w.sizeRatio.toFixed(1)}×]` : '';
+          const dollar = w.invested > 0 ? ` $${(w.invested / 1000).toFixed(1)}K` : '';
+          return `...${w.wallet.slice(-4)}${dollar}${tag}`;
+        }).join(', ');
+      };
+      console.log(`         Top-10 ${p.sport} wallet backing:`);
+      console.log(`           • FOR (${p.sideKey}): ${forBackers.length}/${topSet.size} → ${fmtBackerList(forBackers)}`);
+      console.log(`           • AG  (other):     ${agBackers.length}/${topSet.size} → ${fmtBackerList(agBackers)}`);
+    }
   });
 
   // ── Cohort rollup ────────────────────────────────────────────────────
@@ -1030,6 +1240,137 @@ function fmtCell(cell) {
     }
   }
 
+  // ── Top wallets by sport — leaderboard + today's positions ──────────
+  //
+  // For each sport: rank every wallet that has any history in that sport
+  // by WalletScore, show the top 10 with their core stats, and inline the
+  // wallet's positions on tonight's picks (locked or not). Then a roll-up
+  // of "top-wallet alignment" — picks where ≥3 of the per-sport top-10
+  // wallets agree on the same side. This is the wallet-centric view of
+  // tonight's action: "where are the proven wallets putting their money."
+  console.log('\n══════════════════════════════════════════════════════════════════════════════');
+  console.log('  TOP WALLETS BY SPORT — leaderboard + today\'s positions');
+  console.log('══════════════════════════════════════════════════════════════════════════════');
+  console.log('  WalletScore = flatRoi × min(1, n/5) + 0.5 × $ROI + tierBonus + recencyBonus');
+  console.log('                tierBonus: CONFIRMED=+20, FLAT=+10, WR50=0, untracked=−10');
+  console.log('                recencyBonus: 0 if last bet ≤ 30d, else −10');
+  console.log('');
+
+  // (leaderboard + topWalletsBySport were built earlier so the per-pick
+  // evidence cards could already reference them — see top of main().)
+  // Show every sport that has any wallet history — not just the sports
+  // that have locked picks today — so the user can see the full
+  // proven-roster picture across NBA / NHL / MLB regardless.
+  const allSportsToShow = Object.keys(leaderboard.bySport).sort();
+
+  const fmtPosOne = (p) => {
+    // Compact "MARKET TEAM @odds (LOCKED?)" representation.
+    const lockTag = p.isLocked ? '★' : ' ';
+    const sizeTag = p.sizeRatio >= 1.5 ? `[HC ${p.sizeRatio.toFixed(1)}×]` : '';
+    const dollarTag = p.invested > 0 ? ` $${(p.invested / 1000).toFixed(1)}K` : '';
+    return `${lockTag}${p.market} ${p.team}${dollarTag}${sizeTag}`;
+  };
+
+  for (const sport of allSportsToShow) {
+    const rows = (leaderboard.bySport[sport] || []).slice(0, TOP_N_PER_SPORT);
+    console.log(`  [${sport}]  Top ${rows.length} wallets`);
+    if (!rows.length) {
+      console.log('         (no wallet history in this sport)');
+      console.log('');
+      continue;
+    }
+    console.log('  ' +
+      pad('RK', 3) + '| ' +
+      pad('Wallet', 9) + '| ' +
+      pad('Tier', 9) + '| ' +
+      pad('n', 4) + '| ' +
+      pad('W-L', 7) + '| ' +
+      pad('WR%', 6) + '| ' +
+      pad('flat ROI', 9) + '| ' +
+      pad('flat PnL', 9) + '| ' +
+      pad('$ ROI', 7) + '| ' +
+      pad('Last', 8) + '| ' +
+      pad('Score', 7) + '| Today');
+    console.log('  ' + '-'.repeat(170));
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      const walletLbl = `...${r.walletShort.slice(-4)}`;
+      const wlLbl = r.n ? `${r.wins}-${r.losses}` : '—';
+      const wrLbl = r.wr != null ? r.wr.toFixed(0) + '%' : '—';
+      const flatRoiLbl = r.flatRoi != null ? sign(r.flatRoi, 0) + '%' : '—';
+      const flatPnlLbl = sign(r.flatPnl, 1) + 'u';
+      const dollarRoiLbl = r.dollarRoi != null ? sign(r.dollarRoi, 0) + '%' : '—';
+      const lastLbl = r.daysSince != null ? `${r.daysSince}d` : '—';
+      const scoreLbl = sign(r.score, 1);
+      const positions = (todayPosByWallet.get(r.walletShort) || []).filter(p => p.sport === sport);
+      const todayLbl = positions.length
+        ? positions.slice(0, 3).map(fmtPosOne).join(', ') + (positions.length > 3 ? `, +${positions.length - 3} more` : '')
+        : '—';
+      console.log(
+        '  ' +
+        padR(i + 1, 3) + '| ' +
+        pad(walletLbl, 9) + '| ' +
+        pad(r.tier, 9) + '| ' +
+        padR(r.n, 4) + '| ' +
+        pad(wlLbl, 7) + '| ' +
+        pad(wrLbl, 6) + '| ' +
+        pad(flatRoiLbl, 9) + '| ' +
+        pad(flatPnlLbl, 9) + '| ' +
+        pad(dollarRoiLbl, 7) + '| ' +
+        pad(lastLbl, 8) + '| ' +
+        pad(scoreLbl, 7) + '| ' +
+        todayLbl,
+      );
+    }
+    console.log('');
+  }
+  console.log('  Legend: ★ = LOCKED today (shipped to users) · plain = present in walletDetails but pick not locked');
+  console.log('          [HC X.X×] = wallet bet at X.X× their typical size (high-conviction)');
+
+  // ── Top-wallet alignment — sides where ≥3 top-10 wallets agree ──────
+  //
+  // For each today's pick side, count how many wallets from that sport's
+  // top-10 are positioned on it. Sides with ≥3 alignment are surfaced
+  // as "consensus picks" — the engine's signal AND the wallet
+  // leaderboard agree.
+  console.log('\n══════════════════════════════════════════════════════════════════════════════');
+  console.log('  TOP-WALLET ALIGNMENT — today\'s sides where ≥3 top-10 wallets agree');
+  console.log('══════════════════════════════════════════════════════════════════════════════');
+  // Group today positions by (docId, sideKey), count distinct top-N wallets.
+  const alignBySide = new Map();   // key = `${docId}|${sideKey}` → { sport, market, team, away, home, wallets:Set, dollarTotal, isLocked }
+  for (const p of todayPositions) {
+    const topSet = topWalletsBySport[p.sport];
+    if (!topSet || !topSet.has(p.wallet)) continue;
+    const key = `${p.docId}|${p.sideKey}`;
+    let bucket = alignBySide.get(key);
+    if (!bucket) {
+      bucket = {
+        sport: p.sport, market: p.market, sideKey: p.sideKey,
+        team: p.team, away: p.away, home: p.home,
+        wallets: new Set(), dollarTotal: 0, isLocked: false,
+      };
+      alignBySide.set(key, bucket);
+    }
+    bucket.wallets.add(p.wallet);
+    bucket.dollarTotal += p.invested;
+    if (p.isLocked) bucket.isLocked = true;
+  }
+  const alignRows = [...alignBySide.values()]
+    .filter(b => b.wallets.size >= 3)
+    .sort((a, b) => b.wallets.size - a.wallets.size || b.dollarTotal - a.dollarTotal);
+  if (!alignRows.length) {
+    console.log('  (none — no side has ≥3 top-10 wallets aligned today)');
+  } else {
+    for (const r of alignRows) {
+      const matchupTag = r.market === 'TOTAL' ? `${r.away}@${r.home}` : `${r.away}@${r.home}`;
+      const lockTag = r.isLocked ? '★ LOCKED' : 'not locked';
+      const wList = [...r.wallets].slice(0, 6).map(w => `...${w.slice(-4)}`).join(', ');
+      const moreTag = r.wallets.size > 6 ? `, +${r.wallets.size - 6} more` : '';
+      console.log(`  • [${r.sport}] ${r.market} ${r.team} (${matchupTag}) — ${r.wallets.size} top-10 wallets, $${(r.dollarTotal / 1000).toFixed(1)}K total · ${lockTag}`);
+      console.log(`         backers: ${wList}${moreTag}`);
+    }
+  }
+
   // ── Persist a machine-readable snapshot ─────────────────────────────
   const publicDir = join(REPO_ROOT, 'public');
   if (!existsSync(publicDir)) mkdirSync(publicDir, { recursive: true });
@@ -1057,6 +1398,34 @@ function fmtCell(cell) {
       bandHcAll: p.bandHcAll, bandHcSport: p.bandHcSport,
       agsCellAll: p.agsCellAll, agsCellSport: p.agsCellSport, agsCohortAll: p.agsCohortAll,
     })),
+    walletLeaderboard: {
+      // Per-sport top-N wallet ranking + each wallet's positions on
+      // today's pick sides. WalletScore formula documented in the
+      // script header (rankTopPicks.js → buildWalletLeaderboardBySport).
+      topNPerSport: TOP_N_PER_SPORT,
+      bySport: Object.fromEntries(allSportsToShow.map(sport => [
+        sport,
+        (leaderboard.bySport[sport] || []).slice(0, TOP_N_PER_SPORT).map(r => ({
+          ...r,
+          todayPositions: (todayPosByWallet.get(r.walletShort) || [])
+            .filter(p => p.sport === sport)
+            .map(p => ({
+              docId: p.docId, market: p.market, sideKey: p.sideKey,
+              team: p.team, away: p.away, home: p.home,
+              invested: p.invested, sizeRatio: p.sizeRatio,
+              lockStage: p.lockStage, isLocked: p.isLocked,
+            })),
+        })),
+      ])),
+      alignmentHotSpots: alignRows.map(r => ({
+        sport: r.sport, market: r.market, sideKey: r.sideKey,
+        team: r.team, away: r.away, home: r.home,
+        topWalletCount: r.wallets.size,
+        wallets: [...r.wallets],
+        dollarTotal: r.dollarTotal,
+        isLocked: r.isLocked,
+      })),
+    },
     agsMatrix: {
       all: agsMatrix.all,
       bySport: agsMatrix.bySport,
