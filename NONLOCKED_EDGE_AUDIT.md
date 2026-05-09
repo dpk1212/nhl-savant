@@ -1,15 +1,15 @@
 # Non-LOCKED edge audit — do maxRoiN_F / meanBase_F deserve their own promotion path?
 
-Generated: 5/8/2026, 10:23:27 AM ET · V8 cutover: 2026-04-18
+Generated: 5/9/2026, 9:58:24 AM ET · V8 cutover: 2026-04-18
 
 ## Baseline — all graded V8-era game sides
 
 | Segment | N | WR | flat ROI | flat PnL |
 |---|---|---|---|---|
-| LOCKED | 204 | 48.5% | -5.3% | -10.78u |
+| LOCKED | 211 | 48.8% | -4.9% | -10.38u |
 | SHADOW | 123 | 49.6% | -5.5% | -6.75u |
 | UNPROMOTED | 5 | 60.0% | +22.7% | +1.13u |
-| **All** | 332 | 49.1% | -4.9% | -16.40u |
+| **All** | 339 | 49.3% | -4.7% | -16.00u |
 
 ---
 ## 1. Does the edge survive outside the LOCKED universe?
@@ -20,10 +20,10 @@ If the signal genuinely predicts winners, the rightmost "★" columns should bea
 
 | lockStage | both★ | maxRoi★ only | meanBase★ only | neither | stage total |
 |---|---|---|---|---|---|
-| **LOCKED** | N=106 · 48% · -8% · -8.4u | N=36 · 58% · +17% · +6.0u | N=24 · 29% · -44% · -10.6u | N=38 · 53% · +6% · +2.2u | **N=204 · 49% · -5% · -10.8u** |
+| **LOCKED** | N=107 · 49% · -7% · -7.3u | N=39 · 62% · +21% · +8.4u | N=25 · 28% · -47% · -11.6u | N=40 · 50% · +1% · +0.2u | **N=211 · 49% · -5% · -10.4u** |
 | **SHADOW** | N=52 · 42% · -18% · -9.2u | N=13 · 54% · +8% · +1.1u | N=28 · 50% · -6% · -1.6u | N=30 · 60% · +10% · +3.0u | **N=123 · 50% · -5% · -6.8u** |
 | **UNPROMOTED** | N=1 · 100% · +120% · +1.2u | — | — | N=4 · 50% · -2% · -0.1u | **N=5 · 60% · +23% · +1.1u** |
-| **ALL** | N=159 · 47% · -10% · -16.4u | N=49 · 57% · +14% · +7.1u | N=52 · 40% · -23% · -12.2u | N=72 · 56% · +7% · +5.1u | **N=332 · 49% · -5% · -16.4u** |
+| **ALL** | N=160 · 47% · -10% · -15.4u | N=52 · 60% · +18% · +9.4u | N=53 · 40% · -25% · -13.2u | N=74 · 54% · +4% · +3.1u | **N=339 · 49% · -5% · -16.0u** |
 
 ### SHADOW + UNPROMOTED pool (the candidate promotion universe)
 
@@ -70,6 +70,7 @@ Column **Prod** = our actual LOCKED book as of each date. Column **Prod + elite-
 | 2026-05-05 | N=5 · 40% · -40% · -2.00u | N=7 · 43% · -34% · -2.35u | +2 | -0.35u |
 | 2026-05-06 | N=4 · 75% · +39% · +1.56u | N=6 · 67% · +25% · +1.50u | +2 | -0.06u |
 | 2026-05-07 | N=2 · 100% · +91% · +1.83u | N=3 · 67% · +28% · +0.83u | +1 | -1.00u |
+| 2026-05-08 | N=7 · 57% · +6% · +0.39u | N=7 · 57% · +6% · +0.39u | +0 | +0.00u |
 | **Total delta** | — | — | **+94** picks | **-8.51u** |
 
 
@@ -93,7 +94,7 @@ The current promotion system uses two paths: **regime** (CLEAR_MOVE / NEAR_START
 ---
 ## 4. Today's live candidates for the elite-wallet path
 
-Currently-SHADOW or unpromoted sides on the board for 2026-05-08 that would promote if we shipped the new path:
+Currently-SHADOW or unpromoted sides on the board for 2026-05-09 that would promote if we shipped the new path:
 
 _None._
 
