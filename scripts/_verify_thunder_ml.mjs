@@ -1,0 +1,15 @@
+import 'dotenv/config';
+import admin from 'firebase-admin';
+import { readFileSync } from 'fs';
+if (!admin.apps.length) admin.initializeApp({ credential: admin.credential.cert(JSON.parse(readFileSync('serviceAccountKey.json', 'utf8'))) });
+const db = admin.firestore();
+const sd = (await db.collection('sharpFlowPicks').doc('2026-05-09_NBA_okc_lal').get()).data().sides.away;
+console.log('lockStage:', sd.lockStage, '· promotedBy:', sd.promotedBy);
+console.log('peak.stars/units/odds:', sd.peak.stars, '/', sd.peak.units, '/', sd.peak.odds);
+console.log('v8_walletConsensusDelta (Δw):', sd.v8_walletConsensusDelta);
+console.log('v8_hcMargin:', sd.v8_hcMargin);
+console.log('v8_ags / v8_agsTier:', sd.v8_ags, '/', sd.v8_agsTier);
+console.log('v8_lockTier:', sd.v8_lockTier);
+console.log('v8_topPick / v8_superTopPick:', sd.v8_topPick, '/', sd.v8_superTopPick);
+console.log('health.status:', sd.health?.status, '· syncedBy:', sd.health?.syncedBy);
+process.exit(0);

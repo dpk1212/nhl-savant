@@ -931,6 +931,51 @@ async function createMissingLockedPicks({
       if (line != null) {
         peakSnapshot.line = line;
       }
+      // v8_* stamps — required by the dashboard's passesV74DisplayGate
+      // for the side to render. Without these, a freshly auto-created
+      // side is invisible on the dashboard for ~8 minutes (until the
+      // next reconcile pass stamps them). Mirrors the reconcileSide
+      // canonical patch so create + reconcile produce identical state.
+      const v8Stamps = {
+        v8_walletConsensusVersion: WHITELIST_CONSENSUS_VERSION,
+        v8_walletConsensusForW: live.forW,
+        v8_walletConsensusAgW: live.agW,
+        v8_walletConsensusDelta: live.delta,
+        v8_walletConsensusQualityForT30: live.qualityForT30,
+        v8_walletConsensusQualityAgT30: live.qualityAgT30,
+        v8_walletConsensusQualityMargin: live.qualityMargin,
+        v8_hcConfFor: live.hcConfFor,
+        v8_hcConfAg: live.hcConfAg,
+        v8_hcMargin: live.hcMargin,
+        v8_hcDominant: live.hcDominant,
+        v8_lockTier: finalTier,
+      };
+      if (agsRes) {
+        v8Stamps.v8_ags = agsRes.ags;
+        v8Stamps.v8_agsTier = agsRes.tier;
+        v8Stamps.v8_agsQuintile = agsRes.quintile;
+        v8Stamps.v8_agsComponents = agsRes.components;
+        v8Stamps.v8_agsProvenForCount = agsRes.provenForCount;
+        v8Stamps.v8_agsProvenAgCount = agsRes.provenAgCount;
+        v8Stamps.v8_agsCalibrationSource = agsRes.calibrationSource || 'firestore';
+        v8Stamps.v8_agsEvaluatedAt = now;
+        v8Stamps.v8_agsUnitsMult = 1.0;
+        v8Stamps.v8_agsUnitsBase = peakUnits;
+        v8Stamps.v8_agsUnitsApplied = peakUnits;
+      }
+      // Health stamp — gives the dashboard a non-undefined health.status
+      // immediately. reconcileSide will overwrite next cycle (same shape).
+      const healthStamp = {
+        status: 'ACTIVE',
+        reasons: [],
+        walletDelta: live.delta,
+        qualityMargin: live.qualityMargin,
+        hcMargin: live.hcMargin,
+        ags: agsValue,
+        currentStars: peakStars,
+        evaluatedAt: now,
+        syncedBy: 'server-cron',
+      };
       newSides[side] = {
         team: team || side,
         lockStage: 'LOCKED',
@@ -955,6 +1000,8 @@ async function createMissingLockedPicks({
         // Flag so we know this came from the cron auto-create path.
         cronCreated: true,
         cronCreatedAt: now,
+        ...v8Stamps,
+        health: healthStamp,
       };
       created.push({
         col, docId, side, route: promotedBy,
@@ -1764,14 +1811,20 @@ async function main() {
   // each other unless we coalesce up front.
   if (!DRY_RUN) {
     for (const [col, writes] of collectionWrites) {
+      // Coalesce per-doc payloads. CRITICAL: we MUST NOT include `sides: {}`
+      // in the final payload when there are no per-side patches for a doc.
+      // Firestore's set({sides:{}}, {merge:true}) does NOT no-op the empty
+      // map — it WIPES the entire `sides` field. That's how every doc with
+      // an agsBothSides-only refresh ended up as a "ghost" (sides:{}) every
+      // single cron cycle. Verified empirically 2026-05-09.
       const merged = new Map(); // docId → coalesced payload
       for (const w of writes) {
-        const cur = merged.get(w.docId) || { sides: {}, lastSyncAt: 0 };
-        Object.assign(cur.sides, w.payload.sides || {});
-        // Doc-level analytical sidecar — last-write wins across the cycle
-        // (each push from this cycle is computed from the same `groups`
-        // map so they're identical anyway, but be explicit so a future
-        // change to multi-pass writes doesn't silently drop the field).
+        const cur = merged.get(w.docId) || { lastSyncAt: 0 };
+        if (w.payload.sides && Object.keys(w.payload.sides).length > 0) {
+          if (!cur.sides) cur.sides = {};
+          Object.assign(cur.sides, w.payload.sides);
+        }
+        // Doc-level analytical sidecar — last-write wins across the cycle.
         if (w.payload.agsBothSides) cur.agsBothSides = w.payload.agsBothSides;
         if ((w.payload.lastSyncAt || 0) > cur.lastSyncAt) cur.lastSyncAt = w.payload.lastSyncAt;
         merged.set(w.docId, cur);
