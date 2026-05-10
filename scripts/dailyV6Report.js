@@ -387,9 +387,29 @@ async function loadEverything() {
     });
   }
 
+  // Pipeline-health primitives for §5g (v2 promotion tracking).
+  // Cheap aggregation queries — Firestore charges 1 read per 1000 docs.
+  const [gradedAgg, pendingAgg] = await Promise.all([
+    db.collection(VAULT_COLLECTION).where('status', '==', 'GRADED').count().get(),
+    db.collection(VAULT_COLLECTION).where('status', '==', 'PENDING').count().get(),
+  ]);
+  const positionStatus = {
+    graded: gradedAgg.data().count,
+    pending: pendingAgg.data().count,
+  };
+
+  // Latest sharpWalletProfiles updatedAt — tells us how fresh the live
+  // engine's whitelist read is. Should be ≤ 2h old in steady state
+  // (grade-sharp-actions cron writes here every 2h).
+  let latestProfileUpdatedAt = null;
+  for (const [, p] of profiles) {
+    const ts = p?.updatedAt?._seconds || p?.updatedAt?.seconds;
+    if (ts && (!latestProfileUpdatedAt || ts > latestProfileUpdatedAt)) latestProfileUpdatedAt = ts;
+  }
+
   return {
     profiles, pickRows, walletBets, positionRows,
-    meta: { totalSidesScanned, dateMin, dateMax },
+    meta: { totalSidesScanned, dateMin, dateMax, positionStatus, latestProfileUpdatedAt },
   };
 }
 
@@ -1380,6 +1400,108 @@ function vaultStarBand(row) {
     }
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // §5g — v2 wallet-promotion pipeline tracking (shipped 2026-05-10)
+  // ─────────────────────────────────────────────────────────────────────────
+  // Monitors the Source-A vs Source-B mix in the live whitelist, the
+  // freshness of the underlying Source-B feed, and the per-sport churn
+  // attributable to the new B-only promotion path. Re-eval pinned for
+  // 2026-05-24 — see TWO_WEEK_REEVAL.md.
+  out.push('### §5g. v2 wallet-promotion pipeline (Source-A / Source-B mix)');
+  out.push('');
+  out.push('Live snapshot of the v2 promotion gate (shipped 2026-05-10, re-eval **2026-05-24**). Each FLAT-or-better wallet × sport pair is attributed to one of three paths via `sharpWalletProfiles[wallet].bySport[sport].whitelistSource`:');
+  out.push('');
+  out.push('- **A** — flat-positive on featured picks (Source A) only — the v1 gate');
+  out.push('- **A+B** — flat-positive in both sources (most reliable signal)');
+  out.push('- **B** — flat-positive on-chain only (NEW in v2 — the trial lift)');
+  out.push('');
+  out.push('Re-classified every 2h via `grade-sharp-actions` cron. Roll-back: set `B_ONLY_MIN_BETS = Infinity` in `scripts/exportWalletProfiles.js`.');
+  out.push('');
+
+  // ── Source mix per sport (live Firestore snapshot) ─────────────────
+  out.push('#### Source mix per sport (live Firestore)');
+  out.push('');
+  out.push(mdHeader(['Sport', 'A', 'A+B', 'B (new)', 'FLAT-or-better total', '% from B-only']));
+  let totA = 0, totAB = 0, totB = 0;
+  for (const sport of sports) {
+    let a = 0, ab = 0, b = 0;
+    for (const [, p] of profiles) {
+      const r = p.bySport?.[sport];
+      if (!r) continue;
+      if (r.whitelistTier !== 'CONFIRMED' && r.whitelistTier !== 'FLAT') continue;
+      if (r.whitelistSource === 'A')        a++;
+      else if (r.whitelistSource === 'A+B') ab++;
+      else if (r.whitelistSource === 'B')   b++;
+    }
+    totA += a; totAB += ab; totB += b;
+    const total = a + ab + b;
+    const pctB = total > 0 ? `${((b / total) * 100).toFixed(1)}%` : '—';
+    out.push(`| ${sport.toUpperCase()} | ${a} | ${ab} | **${b}** | ${total} | ${pctB} |`);
+  }
+  const totAll = totA + totAB + totB;
+  const pctBAll = totAll > 0 ? `${((totB / totAll) * 100).toFixed(1)}%` : '—';
+  out.push(`| **ALL** | **${totA}** | **${totAB}** | **${totB}** | **${totAll}** | **${pctBAll}** |`);
+  out.push('');
+
+  // ── Pipeline freshness (Source-B feed + profile rebuild lag) ───────
+  out.push('#### Pipeline freshness');
+  out.push('');
+  const ps = meta.positionStatus || { graded: '—', pending: '—' };
+  const profUpdatedTs = meta.latestProfileUpdatedAt;
+  const profUpdatedET = profUpdatedTs
+    ? new Date(profUpdatedTs * 1000).toLocaleString('en-US', { timeZone: 'America/New_York' })
+    : '—';
+  const lagMin = profUpdatedTs ? Math.round((Date.now() / 1000 - profUpdatedTs) / 60) : null;
+  const lagLabel = lagMin == null
+    ? '—'
+    : lagMin < 120 ? `${lagMin} min · OK`
+      : lagMin < 240 ? `${lagMin} min · within 2 cron cycles`
+        : `**${lagMin} min · STALE** — check grade-sharp-actions workflow`;
+  out.push(`- \`sharp_action_positions\` GRADED rows: **${ps.graded}**`);
+  out.push(`- \`sharp_action_positions\` PENDING rows: **${ps.pending}** ${ps.pending > 0 ? '(queued for next Grade Sharp Actions run)' : '(all caught up)'}`);
+  out.push(`- Latest \`sharpWalletProfiles\` rebuild: ${profUpdatedET} ET — ${lagLabel}`);
+  out.push('');
+  out.push('**Alarms**: pending > 200 OR rebuild lag > 4h → cron is lagging or failing — check `gh run list --workflow="Grade Sharp Actions"`.');
+  out.push('');
+
+  // ── B-only roster (top 10 per sport by B activity) ─────────────────
+  out.push('#### B-only roster — wallets currently promoted via Source B path only');
+  out.push('');
+  out.push('Wallets here would have been EXCLUDED under v1 (Source-A-only). Top by Source-B bet count per sport. The 2-week re-eval (2026-05-24) will compare these wallets\' realized lift against A-only and A+B cohorts.');
+  out.push('');
+  for (const sport of sports) {
+    const bRows = [];
+    for (const [, p] of profiles) {
+      const r = p.bySport?.[sport];
+      if (!r) continue;
+      if (r.whitelistSource !== 'B') continue;
+      if (r.whitelistTier !== 'CONFIRMED' && r.whitelistTier !== 'FLAT') continue;
+      bRows.push({
+        wallet: p.walletShort,
+        tier: r.whitelistTier,
+        n: r.positions?.n ?? 0,
+        flat: r.positions?.positionFlatRoi,
+        dollar: r.positions?.dollarRoi,
+      });
+    }
+    if (!bRows.length) {
+      out.push(`**${sport.toUpperCase()}** — _no B-only promotions._`);
+      out.push('');
+      continue;
+    }
+    bRows.sort((a, b) => b.n - a.n);
+    out.push(`**${sport.toUpperCase()}** — ${bRows.length} wallet${bRows.length === 1 ? '' : 's'} promoted via B`);
+    out.push('');
+    out.push(mdHeader(['wallet', 'tier', 'B_n', 'B_flat ROI', 'B_$ ROI']));
+    for (const r of bRows.slice(0, 10)) {
+      const flatStr = r.flat == null ? '—' : `${r.flat >= 0 ? '+' : ''}${r.flat}%`;
+      const dollarStr = r.dollar == null ? '—' : `${r.dollar >= 0 ? '+' : ''}${r.dollar}%`;
+      out.push(`| \`...${r.wallet.slice(-4)}\` | ${r.tier} | ${r.n} | ${flatStr} | ${dollarStr} |`);
+    }
+    if (bRows.length > 10) out.push(`| … | ${bRows.length - 10} more | | | |`);
+    out.push('');
+  }
+
   // §5 footer — interpretation
   out.push('### §5 — How to read');
   out.push('');
@@ -1387,6 +1509,8 @@ function vaultStarBand(row) {
   out.push('- **Roster growth flat in 7-day** + **funnel bottleneck = `sample`** → wallets aren\'t reaching `≥' + MIN_BETS + '` reps fast enough. This is a slate-density problem; consider a soft `MIN_BETS = 1` shadow lane to surface bubble wallets earlier.');
   out.push('- **Roster shrank** (negative delta) → a previously CONFIRMED wallet just dropped flat-positive (lost a recent bet). Variance, not failure — but worth noting if a sport loses ≥3 in a week.');
   out.push('- **HC density on a sport drops below ~30%** → v7.3 promotions there will starve. Either the proven roster needs more CONFIRMED-tier wallets sizing aggressively, or the HC_RATIO (1.5) needs a sport-specific tune.');
+  out.push('- **§5g B-only count drops sharply** → wallets are demoting off the B path (losing on-chain). Cross-check `WALLET_PROFILES_SUMMARY.md` churn section for the specific demotions.');
+  out.push('- **§5g pipeline freshness lag > 4h** → grade-sharp-actions cron is failing. Check `gh run list --workflow="Grade Sharp Actions"` and re-trigger if needed.');
   out.push('');
 
   // ═══════════════════════════════════════════════════════════════════════════
