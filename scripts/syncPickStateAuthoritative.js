@@ -1020,6 +1020,21 @@ async function createMissingLockedPicks({
         const ref = db.collection(col).doc(w.docId);
         const cur = await ref.get();
         if (cur.exists) {
+          // Ghost-doc recovery — if the doc exists but has zero live (non-
+          // superseded) sides, treat it as a missing-side candidate and
+          // let the merge:true write below repopulate sides. Without this,
+          // a doc that lost its side(s) to a writer race is permanently
+          // stranded with sides:{} and the LOCKED pick disappears from
+          // the dashboard for the rest of the day.
+          const cd = cur.data() || {};
+          const sideEntries = Object.entries(cd.sides || {});
+          const liveSides = sideEntries.filter(([, sd]) => sd && !sd.superseded);
+          const isGhost = cd.status !== 'COMPLETED' && liveSides.length === 0;
+          if (isGhost) {
+            console.warn(`  ↻ Ghost-doc recovery: ${col}/${w.docId} exists with 0 live sides — re-stamping`);
+            filtered.push(w);
+            continue;
+          }
           // Browser (or another writer) beat us to it — leave it alone.
           // Strip from `created` so the cron log doesn't lie about it.
           for (let i = created.length - 1; i >= 0; i--) {
@@ -1630,13 +1645,32 @@ async function main() {
     return null;
   };
 
+  // Track docs that exist but have NO live (non-superseded) sides — "ghost"
+  // docs. Without this guard, createMissingLockedPicks skips these docs
+  // (because the docId is in existingDocIds) and the cron can never recover
+  // them. Real-world incident 2026-05-09: Thunder ATS doc showed
+  // sides:{} after a writer race; the cron silently skipped it for hours
+  // and the LOCKED pick disappeared from the dashboard right before tip.
+  const ghostDocIds = new Set();
   for (const col of collections) {
     const snap = await db.collection(col).where('date', '==', TARGET_DATE).get();
     for (const docSnap of snap.docs) {
       const pick = { _id: docSnap.id, ...docSnap.data() };
-      existingDocIds.add(`${col}|${pick._id}`);
       const mkt = col === 'sharpFlowSpreads' ? 'SPREAD' : col === 'sharpFlowTotals' ? 'TOTAL' : 'ML';
       const sides = pick.sides || {};
+      // A doc is "ghost" if it has zero sides at all OR every side is
+      // superseded (and not COMPLETED — a graded pick can have only
+      // superseded sides legitimately). We let createMissingLockedPicks
+      // re-evaluate by NOT adding it to existingDocIds.
+      const sideEntries = Object.entries(sides);
+      const liveSides = sideEntries.filter(([, sd]) => sd && !sd.superseded);
+      const isGhost = pick.status !== 'COMPLETED' && liveSides.length === 0;
+      if (isGhost) {
+        ghostDocIds.add(`${col}|${pick._id}`);
+        console.warn(`  ⚠ GHOST doc detected: ${col}/${pick._id} (${sideEntries.length} side(s), 0 live) — will let createMissingLockedPicks rebuild`);
+      } else {
+        existingDocIds.add(`${col}|${pick._id}`);
+      }
       for (const [sideKey, sd] of Object.entries(sides)) {
         if (!sd) continue;
         stats.examined++;
