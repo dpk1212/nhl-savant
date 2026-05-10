@@ -1635,12 +1635,25 @@ async function main() {
   // total, double-counting the same wallet on both sides and inflating
   // peak.totalInvested.
   //
-  // Fix: filter to positions whose updatedAt is within the most recent
-  // scan window. We compute the max updatedAt across all loaded positions
-  // (the last writeSharpActions tick), then keep anything within 90s of
-  // that. 90s is bigger than a single batch's commit time but smaller
-  // than the 8-min cycle cadence, so we always keep "this cycle"
-  // positions and always drop "previous cycle" ones.
+  // 2026-05-10 — widened from 90s → 30 min. The original 90s window
+  // assumed every wallet gets re-scanned every cycle. In reality the
+  // Polymarket activity feed is rate-limited and noisy: wallets that
+  // didn't trade this cycle simply don't reappear in the new scan,
+  // even when they're still holding the same position. The 90s window
+  // was treating "scanner silence" as "wallet exited" and pruning
+  // legitimate live positions, which then demoted LOCKED picks to
+  // SHADOW pre-T-15 (Tampa Bay Rays / Toronto Blue Jays / COL-PHI /
+  // HOU-CIN incidents on 2026-05-10 all had this signature: forW
+  // collapsed because b19a27 + others were stale-pruned despite
+  // currently holding positions worth $20k–$269k each).
+  //
+  // 30 min ≈ 4 cron cycles, which is generous enough to ride out a
+  // wallet that goes 2-3 scans without showing up in the activity feed
+  // but still tight enough that an actually-closed position will fall
+  // out within ~half a game window. The proper fix is a per-wallet
+  // scan heartbeat in writeSharpActions so we can distinguish "wallet
+  // scanned, no position" (true exit) from "wallet not scanned"
+  // (presumed active) — see TODO_SCANNER_HEARTBEAT.md.
   const tsMs = (p) => {
     const ts = p.updatedAt;
     if (!ts) return 0;
@@ -1650,7 +1663,7 @@ async function main() {
     return 0;
   };
   const maxUpdatedMs = rawPositions.reduce((m, p) => Math.max(m, tsMs(p)), 0);
-  const FRESHNESS_WINDOW_MS = 90 * 1000;
+  const FRESHNESS_WINDOW_MS = 30 * 60 * 1000; // 30 min — see comment above (was 90s pre-2026-05-10)
   let prunedStale = 0;
   const positions = maxUpdatedMs > 0
     ? rawPositions.filter(p => {
@@ -1662,7 +1675,7 @@ async function main() {
       })
     : rawPositions;
   if (prunedStale > 0) {
-    console.log(`  ↳ pruned ${prunedStale} stale position(s) outside ${FRESHNESS_WINDOW_MS/1000}s of latest scan (${new Date(maxUpdatedMs).toISOString()})`);
+    console.log(`  ↳ pruned ${prunedStale} stale position(s) outside ${FRESHNESS_WINDOW_MS/60000}min of latest scan (${new Date(maxUpdatedMs).toISOString()})`);
   }
 
   const groups = buildPositionGroupsFromFirestore(positions);
