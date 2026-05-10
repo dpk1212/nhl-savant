@@ -1,16 +1,16 @@
 # Wallet Profiles Summary
 
-Generated: 5/10/2026, 4:50:49 AM ET · V8 cutover: 2026-04-18 · whitelistVersion: 1
+Generated: 5/10/2026, 6:11:16 AM ET · V8 cutover: 2026-04-18 · whitelistVersion: 1
 
 Monitoring artifact for the nightly `sharpWalletProfiles` rebuild. Shows how many wallets qualify for each whitelist tier per sport, who the top performers are, and what changed since the last run.
 
-**Population**: 171 wallets · 1240 graded picks · 4018 graded positions.
+**Population**: 173 wallets · 1240 graded picks · 4022 graded positions.
 
 ## Population by verdict
 
 | Verdict | Wallets |
 |---|---|
-| INCONCLUSIVE | 37 |
+| INCONCLUSIVE | 39 |
 | POSITIONS_ONLY_NEGATIVE | 31 |
 | CONFIRMED_WINNER | 27 |
 | CONFIRMED_BLEEDER | 26 |
@@ -24,8 +24,8 @@ Minimum 2 bets per sport. Precedence: CONFIRMED > FLAT > WR50. "FLAT-or-better" 
 
 | Sport | CONFIRMED | FLAT-or-better | WR50-only | Active (≥2 bets) | Any activity |
 |---|---|---|---|---|---|
-| MLB | 3 | 8 | 3 | 55 | 69 |
-| NBA | 23 | 35 | 18 | 135 | 149 |
+| MLB | 3 | 8 | 3 | 55 | 70 |
+| NBA | 23 | 35 | 18 | 135 | 150 |
 | NHL | 9 | 11 | 8 | 53 | 66 |
 
 ## Top FLAT-or-better wallets per sport
@@ -34,7 +34,7 @@ Minimum 2 bets per sport. Precedence: CONFIRMED > FLAT > WR50. "FLAT-or-better" 
 
 | # | Wallet | Tier | N | WR% | Flat ROI | Flat PnL (u) | $ ROI | $ PnL |
 |---|---|---|---|---|---|---|---|---|
-| 1 | c289a0 | FLAT | 3 | 100% | +95.6% | +2.87 | -19.5% | -4241 |
+| 1 | c289a0 | FLAT | 3 | 100% | +95.6% | +2.87 | -16.5% | -4241 |
 | 2 | dcafd2 | CONFIRMED | 10 | 70% | +33.2% | +3.32 | +8.4% | +13494 |
 | 3 | 63fc82 | FLAT | 11 | 63.6% | +25.1% | +2.76 | -22.5% | -176043 |
 | 4 | 981187 | FLAT | 8 | 62.5% | +20.7% | +1.65 | — | +0 |
