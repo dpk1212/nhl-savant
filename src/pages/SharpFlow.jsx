@@ -5479,18 +5479,34 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   // Graded LEAN picks adopt the LEAN-blue palette so their card chrome
   // reads "tracked, no money at risk" instead of normal win/loss colors.
   const accentColor = isCancelled ? B.red : isMuted ? '#F59E0B' : isTrackedGrade ? LEAN_BLUE : isLean ? LEAN_BLUE : showDownsize ? DOWNSIZE_AMBER : isGraded ? (isWin ? B.green : isLoss ? B.red : B.gold) : B.green;
-  // Defensive display label for TOTAL picks. The cron's older
-  // syncPickStateAuthoritative path stamped bare 'OVER'/'UNDER' without
-  // the line (since fixed in scripts/syncPickStateAuthoritative.js
-  // 2026-05-10), but already-written ghost docs from the early-morning
-  // grading cycles carry the bare label. Synthesize the proper
-  // "Over 212" string at render time so those docs display correctly
-  // without needing a Firestore backfill.
-  const displayTeam = (marketType === 'total'
-    && /^(OVER|UNDER)$/i.test((team || '').trim())
-    && line != null)
-    ? `${(team || '').charAt(0).toUpperCase()}${(team || '').slice(1).toLowerCase()} ${line}`
-    : team;
+  // Authoritative display label for TOTAL picks. We ALWAYS re-derive the
+  // label from `line` (which itself falls through peak.line → lock.line →
+  // closingLine in the upstream selector) instead of trusting whatever
+  // string is in `team`. Two real bugs this catches:
+  //
+  //   1. Bare "OVER" / "UNDER" stamped by the older cron path before the
+  //      2026-05-10 team-label fix (still in already-written docs).
+  //   2. Corrupted "Over 1" / "Under 1" baked in when consensusLine
+  //      picked up a Polymarket entryLine=1 placeholder at lock time
+  //      (NBA SAS/MIN total incident, 2026-05-10). Even after peak.line
+  //      gets refreshed to the real value, the team field stayed "Over 1"
+  //      and the old renderer trusted it verbatim.
+  //
+  // Strategy: extract the over/under direction from team (case-insensitive,
+  // tolerant of "Over X"/"OVER"/"over"), then combine with the live line
+  // when it's a plausible total. Fall back to bare direction when line is
+  // missing/garbage so the user at least sees "Over" instead of "Over 1".
+  const displayTeam = (() => {
+    if (marketType !== 'total') return team;
+    const tStr = (team || '').trim();
+    const m = tStr.match(/^(over|under)/i);
+    if (!m) return team;
+    const dir = m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase();
+    // Plausibility: every real total is ≥ 1.5 (NHL ~5, MLB ~7, NBA ~210).
+    // Reject the entryLine=1 garbage explicitly.
+    if (Number.isFinite(line) && line >= 1.5) return `${dir} ${line}`;
+    return dir;
+  })();
   const teamShort = displayTeam?.split(' ').pop() || displayTeam;
   const awayShort = away?.split(' ').pop() || away;
   const homeShort = home?.split(' ').pop() || home;

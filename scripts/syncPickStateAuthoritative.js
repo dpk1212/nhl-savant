@@ -563,12 +563,43 @@ function loadGameMetadata() {
 // Mode-of value across positions on a side. Used to compute the consensus
 // line (entryLine) for SPREAD and TOTAL picks the cron auto-creates.
 // Returns null if no positions agree on a value.
-function consensusLine(positions, side) {
+// Plausibility ranges by sport+market. Polymarket activity-feed entries
+// occasionally surface placeholder values (entryLine=1 most commonly), and
+// without a guard the cron will happily burn that into peak.line/lock.line
+// — which then renders as "Over 1" on the dashboard instead of the real
+// total. Real-world incident 2026-05-10 (NBA SAS/MIN total): one position
+// had entryLine=1, consensusLine returned 1, the cron stamped lock.line=1
+// and lock.team="Over 1", and the card showed "Over 1" until manually
+// repaired. Reject anything outside the plausible band before voting.
+const LINE_PLAUSIBILITY = {
+  TOTAL: {
+    NBA: { min: 150, max: 300 }, // typical 200-260
+    MLB: { min: 4,   max: 25  }, // typical 6.5-12.5
+    NHL: { min: 3,   max: 12  }, // typical 5-7
+    DEFAULT: { min: 1.5, max: 400 }, // catch-all that still rejects 1
+  },
+  SPREAD: {
+    DEFAULT: { min: -30, max: 30 }, // covers every NBA/NHL/MLB spread
+  },
+};
+function isPlausibleLine(ln, sport, marketType) {
+  if (!Number.isFinite(ln)) return false;
+  const mt = (marketType || '').toUpperCase();
+  const band = LINE_PLAUSIBILITY[mt]?.[(sport || '').toUpperCase()]
+    ?? LINE_PLAUSIBILITY[mt]?.DEFAULT;
+  if (!band) return true; // unknown market — trust whatever caller gave us
+  return ln >= band.min && ln <= band.max;
+}
+
+function consensusLine(positions, side, sport = null, marketType = null) {
   const counts = new Map(); // line → count
   for (const p of positions) {
     if (p.side !== side) continue;
     const ln = p.entryLine ?? p.spreadLine ?? p.totalLine ?? null;
     if (ln == null) continue;
+    // Sanity-gate per sport/market BEFORE voting so a single garbage
+    // entryLine=1 can't outvote a single legit line.
+    if ((sport || marketType) && !isPlausibleLine(ln, sport, marketType)) continue;
     counts.set(ln, (counts.get(ln) || 0) + 1);
   }
   if (counts.size === 0) return null;
@@ -860,10 +891,10 @@ async function createMissingLockedPicks({
         odds = side === 'home' ? meta.spreadOpener?.homeOdds : meta.spreadOpener?.awayOdds;
         if (odds == null) odds = -110;
         const openerLine = side === 'home' ? meta.spreadOpener?.homeLine : meta.spreadOpener?.awayLine;
-        line = consensusLine(positions, side) ?? openerLine ?? null;
+        line = consensusLine(positions, side, sport, 'SPREAD') ?? openerLine ?? null;
       } else if (marketType === 'TOTAL') {
         odds = -110;
-        line = consensusLine(positions, side) ?? null;
+        line = consensusLine(positions, side, sport, 'TOTAL') ?? null;
       }
       let peakUnits = ladder(peakStars, finalTier, live.hcDominant, {
         pickDate: TARGET_DATE, hcMargin: live.hcMargin,
@@ -876,16 +907,20 @@ async function createMissingLockedPicks({
       }
 
       // Determine team label for the side.
-      // Format MUST mirror the browser's syncTotalPickToFirebase
-      // (`Over ${line}` / `Under ${line}`). Before this match the cron
-      // wrote bare 'OVER'/'UNDER' (no line), which made auto-created
-      // total picks render as plain "OVER" on the dashboard while
-      // browser-created ones rendered as "Over 212". See LockedPickCard
-      // ({team}) — it renders this string verbatim.
+      //
+      // For TOTAL picks: write the canonical "Over <line>" form ONLY when
+      // line passes the per-sport plausibility check (real total, not a
+      // Polymarket entryLine=1 placeholder). When line is null/garbage,
+      // write the BARE 'Over'/'Under' label so LockedPickCard's defensive
+      // renderer can synthesize the display from peak.line / closingLine
+      // at render time. Burning "Over 1" into team here is a one-way
+      // corruption — the renderer trusts non-bare values verbatim.
       let team;
       if (marketType === 'TOTAL') {
         const tot = side === 'over' ? 'Over' : 'Under';
-        team = line != null ? `${tot} ${line}` : tot;
+        team = (line != null && isPlausibleLine(line, sport, 'TOTAL'))
+          ? `${tot} ${line}`
+          : tot;
       } else {
         team = side === 'home' ? meta.home : meta.away;
       }
