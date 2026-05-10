@@ -11675,8 +11675,22 @@ export default function SharpFlow() {
                         // peak values so realized PnL stays locked to what
                         // the system recommended at lock time.
                         const isGradedSide = sd.status === 'COMPLETED' && !!sd.result?.outcome;
+                        // For graded picks, prefer peakUnits when finalUnits
+                        // got zeroed by a pre-T-15 demote-to-MUTED cycle. The
+                        // canonical bet size is whatever was committed at lock
+                        // time (peak.units / lock.units) — that's also what
+                        // the grader uses to compute result.profit. If the
+                        // cron later wrote finalUnits=0 because the live tier
+                        // dropped to MUTED, the user STILL placed the bet at
+                        // peakUnits and was graded on peakUnits, so the
+                        // displayed unit risk must reflect that. Keeps the
+                        // locked-picks list in lockstep with the Performance
+                        // dashboard (which reads result.profit directly).
+                        const gradedDisplayUnits = (Number.isFinite(finalUnits) && finalUnits > 0)
+                          ? finalUnits
+                          : (Number.isFinite(peakUnits) && peakUnits > 0 ? peakUnits : finalUnits);
                         const sizing = isGradedSide
-                          ? { liveStars: peakStars, liveUnits: finalUnits, isDownsized: false, liveTier: null }
+                          ? { liveStars: peakStars, liveUnits: gradedDisplayUnits, isDownsized: false, liveTier: null }
                           : computeLiveSizing({
                               peakStars,
                               peakUnits,
@@ -11715,10 +11729,22 @@ export default function SharpFlow() {
                         // advisory for picks you haven't placed yet. LEAN /
                         // tracked-only picks always realize 0u PnL — they were
                         // never bet, so the W/L outcome is informational only.
+                        // PnL: trust the grader's stamped result.profit for
+                        // both WIN and LOSS — it was computed at grade time
+                        // from the lock-time bet size (lock.units). Re-deriving
+                        // -(finalUnits) for LOSS broke when the cron's pre-T-15
+                        // demote zeroed finalUnits but the bet still got
+                        // graded on the original size (Toronto BJ / COL-PHI /
+                        // HOU-CIN incident, 2026-05-10: dashboard showed
+                        // "0u LOSS 0.00u" while result.profit had the real
+                        // -1.13u / -0.64u losses stamped). Fall back to
+                        // -(finalUnits) only when result.profit is missing.
                         const profit = isTrackedOnly
                           ? 0
                           : sd.result?.outcome === 'WIN' ? (sd.result?.profit || 0)
-                          : sd.result?.outcome === 'LOSS' ? -(finalUnits) : 0;
+                          : sd.result?.outcome === 'LOSS' ? (
+                              Number.isFinite(sd.result?.profit) ? sd.result.profit : -(finalUnits)
+                            ) : 0;
                         allLockedArr.push({
                           key: `${docId}:${sideKey}`,
                           team: sd.team || sideKey,
