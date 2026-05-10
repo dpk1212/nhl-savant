@@ -2,14 +2,15 @@
  * exportWalletProfiles.js — build a full roster of every sharp wallet
  * we have data on, in a Firebase-ready shape.
  *
- * Inputs (same as walletPerformanceReport.js):
- *   - sharpFlow{Picks,Spreads,Totals} → v8Scoring.walletDetails[]
- *   - sharp_action_positions
+ * Inputs:
+ *   - sharpFlow{Picks,Spreads,Totals} → v8Scoring.walletDetails[]   (Source A)
+ *   - sharp_action_positions                                         (Source B)
  *
  * Outputs:
  *   - data/wallet-profiles.json  — full JSON keyed by walletShort, ready
  *     to upsert into a Firestore collection `sharpWalletProfiles`.
  *   - WALLET_ROSTER.md           — human-readable table of every wallet.
+ *   - WALLET_PROFILES_SUMMARY.md — per-sport tier counts + churn vs prior run.
  *
  * Firebase sync (opt-in):
  *   --write-firebase      Upsert all profiles into collection
@@ -19,6 +20,42 @@
  * Usage:
  *   node scripts/exportWalletProfiles.js                    # JSON + MD only
  *   node scripts/exportWalletProfiles.js --write-firebase   # also push
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ * PROMOTION POLICY  (whitelistVersion: 2 — shipped 2026-05-10)
+ * ─────────────────────────────────────────────────────────────────────
+ * This script runs every 2h via .github/workflows/grade-sharp-actions.yml
+ * (cron 0 3,5,7,9 * * * UTC). On every run it RE-CLASSIFIES ALL WALLETS
+ * FROM SCRATCH using the gates below and upserts the result into the
+ * `sharpWalletProfiles` collection that the live engine reads. The set
+ * of qualifying wallets therefore evolves continuously — promotions and
+ * demotions both happen automatically as bets settle.
+ *
+ * Per (wallet, sport), classifyWhitelistTier() resolves the tier as:
+ *
+ *   CONFIRMED — flat-positive (Source A OR B) AND $-positive (Source B)
+ *   FLAT      — flat-positive (Source A OR B)
+ *   WR50      — WR ≥ 50% (Source A OR B)
+ *   null      — none of the above (wallet not whitelisted in this sport)
+ *
+ * Where:
+ *   flatOkA   = picks.n      >= WHITELIST_MIN_BETS (2)  AND picks.flatRoi      > 0
+ *   flatOkB   = positions.n  >= B_ONLY_MIN_BETS    (5)  AND positions.positionFlatRoi > 0
+ *   dollarOk  = positions.n  >= WHITELIST_MIN_BETS (2)  AND positions.dollarRoi > 0
+ *   wr50OkA   = picks.n      >= WHITELIST_MIN_BETS (2)  AND picks.wr      >= 50
+ *   wr50OkB   = positions.n  >= B_ONLY_MIN_BETS    (5)  AND positions.wr  >= 50
+ *
+ * The Source-B-only paths (B_ONLY_MIN_BETS = 5) are NEW in v2. They let
+ * us promote sharps who never appear on a featured pick (the historical
+ * MLB/NHL coverage gap). The bar is intentionally higher (5 vs 2) since
+ * these wallets have no independent featured-pick verification.
+ *
+ * Audit fields (v2):
+ *   bySport[sport].whitelistSource    ∈ {'A', 'A+B', 'B', null}
+ *   profile.whitelistSourceBySport    map of all sports → source
+ *
+ * Re-evaluation pinned for 2026-05-24 — see TWO_WEEK_REEVAL.md.
+ * Roll-back path: set B_ONLY_MIN_BETS = Infinity (next cron reverts).
  */
 
 import 'dotenv/config';
@@ -506,9 +543,11 @@ function buildProfile(walletShort, pickBets, posBets) {
   const nowET = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
   out.push('# Sharp Wallet Roster');
   out.push('');
-  out.push(`Generated: ${nowET} ET · V8 cutover: ${V8_CUTOVER}`);
+  out.push(`Generated: ${nowET} ET · V8 cutover: ${V8_CUTOVER} · whitelistVersion: ${WHITELIST_VERSION}`);
   out.push('');
   out.push('Every sharp wallet we have V8-era data on, sorted by combined conviction score. This is the **full roster** (no minimum-bets filter) — noisy at the tail, but that\'s the point for a tracking dataset. Verdict column reflects the ≥3-bet threshold.');
+  out.push('');
+  out.push(`> **Promotion policy (v${WHITELIST_VERSION}, continuous gate)**: rebuilt every 2h via \`grade-sharp-actions\`. Tier = CONFIRMED if flat-positive in either source AND $-positive in B; FLAT if flat-positive in either source; WR50 if WR ≥ 50% in either source. Source A min ${WHITELIST_MIN_BETS} bets, Source-B-only min ${B_ONLY_MIN_BETS} bets. \`whitelistSource\` (A/A+B/B) attributes which path drove each promotion. Roll-back: set \`B_ONLY_MIN_BETS = Infinity\` in \`scripts/exportWalletProfiles.js\`.`);
   out.push('');
   const verdictCounts = {};
   Object.values(profiles).forEach(p => {
