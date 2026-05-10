@@ -23,20 +23,43 @@ Add new entries at the top with a one-line summary + `Re-eval by:` date.
   - NHL: 11 → 20 (+9, +82%, 45% from B-only)
   - NBA: 35 → 56 (+21, +60%, 37.5% from B-only)
 
+### Source A vs B overlap (audit run 2026-05-10)
+
+For the same wallet, the two sources are **not independent**:
+- `A ∩ B` = 75.0% of Source A is also in Source B (same economic bet
+  captured through both lenses)
+- `A \ B` = 25.0% of Source A has NO graded B position (mostly real
+  scrape gaps — `scanSharpPositions` ran at a different cadence than
+  the engine's lock-time wallet snapshot, not encoding mismatch)
+- `B \ A` = 76.2% of Source B is genuinely new (the v2 lift)
+
+Implication: when the v2 gate flags a wallet via the B path, the
+underlying B stats already contain the wallet's A bets. So a wallet
+with negative A but positive B looks like a "B rescue" but the
+B-positive signal is partly inflated by including the same losing
+A bets in its average. Re-eval should add a `B_independent` stat
+(B \ A only) to confirm the new-bet portion is the real driver.
+
 ### Re-eval checklist (run on / after 2026-05-24)
 
 1. **Pull the v2 cohort** — every wallet whose `bySport[sport].whitelistSource ∈ {B, A+B}`
    on or after 2026-05-10. (Snapshot the JSON first; the field is overwritten every 2h.)
-2. **Compare cohort outcomes** since trial start:
+2. **Compute B-independent stats** — per wallet, compute `positionFlatRoi`
+   restricted to `B \ A` tuples (positions whose `(walletShort, date,
+   gameKey, marketType, side)` does NOT appear in Source A). Compare to
+   the headline B stat to see how much of the v2 promotion was driven by
+   genuinely new bets vs. A-overlap.
+3. **Compare cohort outcomes** since trial start:
    - For each B-only wallet × sport, compute realized flat ROI on featured
      picks they appeared on AFTER promotion.
    - Compare to the A-only cohort over the same window.
    - Did B-only wallets behave like A-only sharps, or are they noise?
-3. **Pick-level lift on engine signals** — pull every LOCKED side shipped
+4. **Pick-level lift on engine signals** — pull every LOCKED side shipped
    2026-05-10 → 2026-05-24 and recompute Δw / HC / AGS with v1 gates
    (Source-A-only) vs v2 gates (current). Diff the win rate of the picks
    whose tier ranking *changed* because of the new wallets.
-4. **Decide**: keep, tighten (raise `B_ONLY_MIN_BETS`), restrict to a subset
+5. **Decide**: keep, tighten (raise `B_ONLY_MIN_BETS`, require
+   B-independent flat ROI > 0 instead of headline B), restrict to a subset
    of sports, or roll back.
 - Roll-back is a one-line revert in `scripts/exportWalletProfiles.js` —
   set `B_ONLY_MIN_BETS = Infinity` (or revert to v1 gate). The next
