@@ -137,6 +137,11 @@ async function loadPositions() {
     const walletShort = d.walletShort || String(d.wallet).slice(0, 6);
     // Vault/Shadow tier — treat missing field (pre-shadow docs) as VAULT.
     const vaultQualified = d.vaultQualified !== false;
+    // Per-position unit return — Source-B equivalent of Source A's `flat`.
+    // settledPnl is already (settledPrice - avgPrice) * sharesHeld, so dividing
+    // by `invested` (= avgPrice * sharesHeld) gives the unit return at the
+    // Polymarket entry price. Mean across positions = position-flat ROI.
+    const flat = invested > 0 ? settledPnl / invested : 0;
     rows.push({
       date: d.date,
       sport: d.sport,
@@ -146,6 +151,7 @@ async function loadPositions() {
       tier: d.tier,
       invested,
       settledPnl,
+      flat,
       avgPrice: d.avgPrice,
       won: settledPnl > 0 ? 1 : 0,
       sportROI: d.sportROI,
@@ -177,12 +183,19 @@ function positionsAgg(bets) {
   const wins = bets.filter(b => b.won === 1).length;
   const invested = bets.reduce((s, b) => s + b.invested, 0);
   const pnl = bets.reduce((s, b) => s + b.settledPnl, 0);
+  // Position-flat ROI: equally-weighted unit return per bet (Source-B mirror
+  // of Source A's `flatRoi`). Each `b.flat` is settledPnl/invested for that
+  // position, so the mean is what flat-betting one unit per Source-B bet
+  // would have returned at Polymarket prices.
+  const flatSum = bets.reduce((s, b) => s + (b.flat ?? 0), 0);
+  const positionFlatRoi = n ? +((flatSum / n) * 100).toFixed(1) : null;
   return {
     n, wins, losses: n - wins,
     wr: n ? +(wins / n * 100).toFixed(1) : 0,
     invested: Math.round(invested),
     settledPnl: Math.round(pnl),
     dollarRoi: invested > 0 ? +((pnl / invested) * 100).toFixed(1) : null,
+    positionFlatRoi,
   };
 }
 function median(arr) {
@@ -212,25 +225,67 @@ function verdict(picks, positions) {
 
 // ── Whitelist tier classification (see WALLET_WHITELIST_BACKTEST.md) ──
 // For each sport a wallet has activity in, assign one of:
-//   CONFIRMED — flat PnL > 0 in Source A AND dollar PnL > 0 in Source B
-//   FLAT      — flat PnL > 0 in Source A
-//   WR50      — WR ≥ 50% in Source A
+//   CONFIRMED — positive in BOTH a flat-equivalent ROI AND $ ROI
+//   FLAT      — positive flat-equivalent ROI
+//   WR50      — WR ≥ 50%
 //   null      — none of the above OR below MIN_BETS in that sport
-// Minimum-sample requirement of 2 bets in that sport matches the backtest
-// methodology.  Precedence: CONFIRMED > FLAT > WR50.
-const WHITELIST_MIN_BETS = 2;
-const WHITELIST_VERSION = 1;
+// Precedence: CONFIRMED > FLAT > WR50.
+//
+// v2 (2026-05-10) — Source-B-only promotion enabled (2-week trial).
+// Previously, FLAT/CONFIRMED required the wallet to have appeared on a
+// featured pick (Source A). Many active sharps in MLB/NHL never trigger
+// our featured-pick lookup but are profitable on-chain — they were
+// invisible to the engine. We now accept either source for the flat-ROI
+// and WR signals, with a stricter min-bets gate (B_ONLY_MIN_BETS = 5)
+// for Source-B-only paths since those wallets have no independent
+// featured-pick verification. Re-evaluate: 2026-05-24 — see
+// TWO_WEEK_REEVAL.md.
+const WHITELIST_MIN_BETS    = 2;   // Source A min (unchanged from v1)
+const B_ONLY_MIN_BETS       = 5;   // Source-B-only min (new in v2)
+const WHITELIST_VERSION     = 2;
 
-function classifyWhitelistTier(picksInSport, positionsInSport) {
+// Source-attribution helper. Returns 'A', 'B', or 'A+B' for audit/reporting.
+// Used to populate `bySport[sport].whitelistSource` so the 2-week re-eval
+// can isolate the lift attributable to the new Source-B-only path.
+function classifyWhitelistTierWithSource(picksInSport, positionsInSport) {
   const p = picksInSport || { n: 0 };
   const q = positionsInSport || { n: 0 };
-  const flatOk   = p.n >= WHITELIST_MIN_BETS && (p.flatRoi ?? 0) > 0;
-  const dollarOk = q.n >= WHITELIST_MIN_BETS && q.dollarRoi != null && q.dollarRoi > 0;
-  const wr50Ok   = p.n >= WHITELIST_MIN_BETS && (p.wr ?? 0) >= 50;
-  if (flatOk && dollarOk) return 'CONFIRMED';
-  if (flatOk) return 'FLAT';
-  if (wr50Ok) return 'WR50';
-  return null;
+
+  // Source A (featured-pick) signals — original v1 gates.
+  const flatOkA   = p.n >= WHITELIST_MIN_BETS && (p.flatRoi ?? 0) > 0;
+  const wr50OkA   = p.n >= WHITELIST_MIN_BETS && (p.wr ?? 0) >= 50;
+  // Source B (on-chain position) signals — flat-ROI uses positionFlatRoi
+  // (Polymarket unit return), WR uses settledPnl > 0 win rate, dollar-ROI
+  // is the existing $-weighted measure used for CONFIRMED.
+  const flatOkB   = q.n >= B_ONLY_MIN_BETS && (q.positionFlatRoi ?? 0) > 0;
+  const wr50OkB   = q.n >= B_ONLY_MIN_BETS && (q.wr ?? 0) >= 50;
+  const dollarOk  = q.n >= WHITELIST_MIN_BETS && q.dollarRoi != null && q.dollarRoi > 0;
+
+  // Tier resolution — CONFIRMED requires flat + dollar; flat can come from
+  // either source. Source-B-only also requires dollarRoi > 0 to claim
+  // CONFIRMED (so the bar stays "profitable two ways").
+  let tier = null;
+  if ((flatOkA || flatOkB) && dollarOk) tier = 'CONFIRMED';
+  else if (flatOkA || flatOkB)          tier = 'FLAT';
+  else if (wr50OkA || wr50OkB)          tier = 'WR50';
+
+  // Source attribution for the active flat/WR signal driving the tier.
+  let source = null;
+  if (tier === 'CONFIRMED' || tier === 'FLAT') {
+    if (flatOkA && flatOkB) source = 'A+B';
+    else if (flatOkA)       source = 'A';
+    else if (flatOkB)       source = 'B';
+  } else if (tier === 'WR50') {
+    if (wr50OkA && wr50OkB) source = 'A+B';
+    else if (wr50OkA)       source = 'A';
+    else if (wr50OkB)       source = 'B';
+  }
+  return { tier, source };
+}
+
+// Back-compat shim — callers that only need the tier string.
+function classifyWhitelistTier(picksInSport, positionsInSport) {
+  return classifyWhitelistTierWithSource(picksInSport, positionsInSport).tier;
 }
 
 // ── Build per-wallet profile ───────────────────────────────────────
@@ -248,7 +303,7 @@ function buildProfile(walletShort, pickBets, posBets) {
     const ps = posBets.filter(b => b.sport === sport);
     const picksInSport = picksAgg(pp);
     const positionsInSport = positionsAgg(ps);
-    const tier = classifyWhitelistTier(picksInSport, positionsInSport);
+    const { tier, source } = classifyWhitelistTierWithSource(picksInSport, positionsInSport);
     bySport[sport] = {
       picks: picksInSport,
       positions: positionsInSport,
@@ -257,7 +312,13 @@ function buildProfile(walletShort, pickBets, posBets) {
                           && positionsInSport.dollarRoi != null
                           && positionsInSport.dollarRoi > 0,
       isWR50:             picksInSport.n >= WHITELIST_MIN_BETS && picksInSport.wr >= 50,
+      // NEW (v2): Source-B-only signals — used to attribute the promotion path.
+      isPositionFlatProfitable: positionsInSport.n >= B_ONLY_MIN_BETS
+                                && (positionsInSport.positionFlatRoi ?? 0) > 0,
+      isWR50_B:                 positionsInSport.n >= B_ONLY_MIN_BETS
+                                && (positionsInSport.wr ?? 0) >= 50,
       whitelistTier:      tier,
+      whitelistSource:    source,   // 'A' | 'B' | 'A+B' | null  (v2)
     };
   }
   const byMarket = {};
@@ -317,6 +378,9 @@ function buildProfile(walletShort, pickBets, posBets) {
   const flatSports = [];
   const confirmedSports = [];
   const wr50Sports = [];
+  // NEW (v2) — per-sport map of which source path drove the active tier.
+  // { MLB: 'B', NBA: 'A+B', NHL: 'A' }. Lets us audit Source-B impact post-trial.
+  const whitelistSourceBySport = {};
   let topSport = null;
   let topFlatRoi = -Infinity;
   let topN = 0;
@@ -329,6 +393,7 @@ function buildProfile(walletShort, pickBets, posBets) {
     } else if (rec.whitelistTier === 'WR50') {
       wr50Sports.push(sport);
     }
+    if (rec.whitelistSource) whitelistSourceBySport[sport] = rec.whitelistSource;
     if (rec.picks.n >= WHITELIST_MIN_BETS) {
       const roi = rec.picks.flatRoi;
       if (roi > topFlatRoi || (roi === topFlatRoi && rec.picks.n > topN)) {
@@ -375,6 +440,9 @@ function buildProfile(walletShort, pickBets, posBets) {
     confirmedSports,
     wr50Sports,
     topSport,
+    // v2 (2026-05-10) — Source-B-only promotion attribution. Map: sport → 'A'|'B'|'A+B'.
+    // Empty when wallet has no qualifying tier in any sport.
+    whitelistSourceBySport,
     whitelistVersion: WHITELIST_VERSION,
     firstBetDate: firstDate,
     lastBetDate: lastDate,
@@ -598,6 +666,35 @@ function buildProfile(walletShort, pickBets, posBets) {
       else if (rec.whitelistTier === 'WR50') wr50Only++;
     }
     sum.push(`| ${sport} | ${confirmed} | ${flatOrBetter} | ${wr50Only} | ${active} | ${anyActivity} |`);
+  }
+  sum.push('');
+
+  // ── v2 promotion-source attribution (2026-05-10 trial) ──────────────
+  // Per-sport breakdown of which path drove each FLAT-or-better wallet:
+  //   A    = featured-pick flat ROI > 0 (legacy v1 path)
+  //   B    = on-chain flat ROI > 0, no Source A signal (NEW in v2)
+  //   A+B  = profitable in BOTH paths
+  // The "B (new)" column is the lift attributable to the Source-B-only
+  // expansion. Re-evaluate after 2026-05-24 — see TWO_WEEK_REEVAL.md.
+  sum.push('## Promotion source mix (v2 — Source-B-only trial)');
+  sum.push('');
+  sum.push(`Per-sport breakdown of how each FLAT-or-better wallet earned its tier. **B (new)** column counts wallets that would have been excluded under v1 (Source-A-only). Re-evaluate after 2026-05-24.`);
+  sum.push('');
+  sum.push('| Sport | A | A+B | B (new) | FLAT-or-better total | % from B-only |');
+  sum.push('|---|---|---|---|---|---|');
+  for (const sport of allSports) {
+    let a = 0, ab = 0, b = 0;
+    for (const p of list) {
+      const rec = p.bySport[sport];
+      if (!rec) continue;
+      if (rec.whitelistTier !== 'CONFIRMED' && rec.whitelistTier !== 'FLAT') continue;
+      if (rec.whitelistSource === 'A') a++;
+      else if (rec.whitelistSource === 'A+B') ab++;
+      else if (rec.whitelistSource === 'B') b++;
+    }
+    const total = a + ab + b;
+    const pctB = total > 0 ? +((b / total) * 100).toFixed(1) : 0;
+    sum.push(`| ${sport} | ${a} | ${ab} | ${b} | ${total} | ${pctB}% |`);
   }
   sum.push('');
 
