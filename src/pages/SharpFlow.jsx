@@ -5479,7 +5479,19 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   // Graded LEAN picks adopt the LEAN-blue palette so their card chrome
   // reads "tracked, no money at risk" instead of normal win/loss colors.
   const accentColor = isCancelled ? B.red : isMuted ? '#F59E0B' : isTrackedGrade ? LEAN_BLUE : isLean ? LEAN_BLUE : showDownsize ? DOWNSIZE_AMBER : isGraded ? (isWin ? B.green : isLoss ? B.red : B.gold) : B.green;
-  const teamShort = team?.split(' ').pop() || team;
+  // Defensive display label for TOTAL picks. The cron's older
+  // syncPickStateAuthoritative path stamped bare 'OVER'/'UNDER' without
+  // the line (since fixed in scripts/syncPickStateAuthoritative.js
+  // 2026-05-10), but already-written ghost docs from the early-morning
+  // grading cycles carry the bare label. Synthesize the proper
+  // "Over 212" string at render time so those docs display correctly
+  // without needing a Firestore backfill.
+  const displayTeam = (marketType === 'total'
+    && /^(OVER|UNDER)$/i.test((team || '').trim())
+    && line != null)
+    ? `${(team || '').charAt(0).toUpperCase()}${(team || '').slice(1).toLowerCase()} ${line}`
+    : team;
+  const teamShort = displayTeam?.split(' ').pop() || displayTeam;
   const awayShort = away?.split(' ').pop() || away;
   const homeShort = home?.split(' ').pop() || home;
   const otherTeam = teamShort === awayShort ? homeShort : awayShort;
@@ -5679,7 +5691,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
             <Lock size={10} color={accentColor} />
-            <span style={{ ...T.label, fontWeight: 700, color: isCancelled ? B.textMuted : B.text, textDecoration: isCancelled ? 'line-through' : 'none' }}>{team}</span>
+            <span style={{ ...T.label, fontWeight: 700, color: isCancelled ? B.textMuted : B.text, textDecoration: isCancelled ? 'line-through' : 'none' }}>{displayTeam}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             {isCancelled || (isMuted && isGraded) ? (

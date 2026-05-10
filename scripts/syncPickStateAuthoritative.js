@@ -876,9 +876,19 @@ async function createMissingLockedPicks({
       }
 
       // Determine team label for the side.
+      // Format MUST mirror the browser's syncTotalPickToFirebase
+      // (`Over ${line}` / `Under ${line}`). Before this match the cron
+      // wrote bare 'OVER'/'UNDER' (no line), which made auto-created
+      // total picks render as plain "OVER" on the dashboard while
+      // browser-created ones rendered as "Over 212". See LockedPickCard
+      // ({team}) — it renders this string verbatim.
       let team;
-      if (marketType === 'TOTAL') team = side === 'over' ? 'OVER' : 'UNDER';
-      else team = side === 'home' ? meta.home : meta.away;
+      if (marketType === 'TOTAL') {
+        const tot = side === 'over' ? 'Over' : 'Under';
+        team = line != null ? `${tot} ${line}` : tot;
+      } else {
+        team = side === 'home' ? meta.home : meta.away;
+      }
 
       // Build the rich peak fields the dashboard render reads. Without
       // these the card showed "Pistons null / 0 · pinnacle / $null".
