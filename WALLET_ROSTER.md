@@ -1,8 +1,10 @@
 # Sharp Wallet Roster
 
-Generated: 5/10/2026, 11:21:50 AM ET · V8 cutover: 2026-04-18
+Generated: 5/10/2026, 12:00:23 PM ET · V8 cutover: 2026-04-18 · whitelistVersion: 2
 
 Every sharp wallet we have V8-era data on, sorted by combined conviction score. This is the **full roster** (no minimum-bets filter) — noisy at the tail, but that's the point for a tracking dataset. Verdict column reflects the ≥3-bet threshold.
+
+> **Promotion policy (v2, continuous gate)**: rebuilt every 2h via `grade-sharp-actions`. Tier = CONFIRMED if flat-positive in either source AND $-positive in B; FLAT if flat-positive in either source; WR50 if WR ≥ 50% in either source. Source A min 2 bets, Source-B-only min 5 bets. `whitelistSource` (A/A+B/B) attributes which path drove each promotion. Roll-back: set `B_ONLY_MIN_BETS = Infinity` in `scripts/exportWalletProfiles.js`.
 
 **Roster breakdown by verdict:**
 
