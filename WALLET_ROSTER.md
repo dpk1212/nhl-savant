@@ -1,6 +1,6 @@
 # Sharp Wallet Roster
 
-Generated: 5/10/2026, 2:07:48 AM ET · V8 cutover: 2026-04-18
+Generated: 5/10/2026, 4:50:49 AM ET · V8 cutover: 2026-04-18
 
 Every sharp wallet we have V8-era data on, sorted by combined conviction score. This is the **full roster** (no minimum-bets filter) — noisy at the tail, but that's the point for a tracking dataset. Verdict column reflects the ≥3-bet threshold.
 
@@ -83,7 +83,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 78e8f1 | MIXED_PICKS_GOOD_$_BAD | ELITE | 192 | 14 | 35.7% | +3.5% | +0.49 | 39 | 30.8% | -23.4% | -276683 | 62.9 | 65.8 | 6.1% |
 | a6c56e | MIXED_PICKS_GOOD_$_BAD | ELITE | 15 | 9 | 66.7% | +35.6% | +3.20 | 20 | 55% | -24% | -354103 | 51.4 | 21.1 | 1.4% |
 | 59266e | MIXED_PICKS_GOOD_$_BAD | ELITE | 459 | 3 | 66.7% | +3.7% | +0.11 | 12 | 66.7% | -20.5% | -369776 | 17 | 24.4 | 1.5% |
-| bc3532 | MIXED_PICKS_GOOD_$_BAD | ELITE | 38 | 68 | 48.5% | +4.4% | +3.01 | 208 | 42.8% | -27.3% | -638132 | 65.3 | 63.6 | 6.7% |
+| bc3532 | MIXED_PICKS_GOOD_$_BAD | ELITE | 38 | 68 | 48.5% | +4.4% | +3.01 | 209 | 43.1% | -27.1% | -634607 | 65.3 | 63.6 | 6.7% |
 | ec96a4 | INCONCLUSIVE | ELITE | 413 | 0 | — | — | +0.00 | 2 | 100% | +100% | +71648 | — | — | — |
 | a8c991 | INCONCLUSIVE | ELITE | 40 | 0 | — | — | +0.00 | 2 | 100% | +112.8% | +53570 | — | — | — |
 | fdd34f | INCONCLUSIVE | ELITE | 221 | 2 | 50% | -44.1% | -0.88 | 2 | 50% | +278.1% | +57288 | 46.4 | 41.5 | 2.7% |
