@@ -12,21 +12,21 @@ May 11 2026
 \\
 Yankees  R. Weathers \\
 \\
-59% \\
+57% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--155\\
+-138\\
 \\
 ![Orioles](https://cdn.ciphersports.io/images/MLB/official/BAL.svg)\\
 \\
 Orioles  B. Young \\
 \\
-41% \\
+43% \\
 \\
 ![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
-+156\\
++138\\
 \\
 MLB \\
 \\
@@ -38,9 +38,9 @@ Rays  D. Rasmussen \\
 \\
 45% \\
 \\
-![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-+117\\
++116\\
 \\
 ![Blue Jays](https://cdn.ciphersports.io/images/MLB/official/TOR.svg)\\
 \\
@@ -48,9 +48,9 @@ Blue Jays  K. Gausman \\
 \\
 55% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
--119\\
+-117\\
 \\
 MLB \\
 \\
@@ -60,17 +60,17 @@ See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_48_tor_tb
 \\
 D-Backs  M. Soroka \\
 \\
-46% \\
+47% \\
 \\
 ![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
-+122\\
++117\\
 \\
 ![Rangers](https://cdn.ciphersports.io/images/MLB/official/TEX.svg)\\
 \\
 Rangers  N. Eovaldi \\
 \\
-54% \\
+53% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
@@ -88,7 +88,7 @@ Mariners  G. Kirby \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--134\\
+-137\\
 \\
 ![Astros](https://cdn.ciphersports.io/images/MLB/official/HOU.svg)\\
 \\
@@ -98,7 +98,7 @@ Astros  P. Lambert \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-+131\\
++133\\
 \\
 MLB \\
 \\
@@ -112,7 +112,7 @@ Giants  T. McDonald \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-+167\\
++168\\
 \\
 ![Dodgers](https://cdn.ciphersports.io/images/MLB/official/LAD.svg)\\
 \\
@@ -120,9 +120,9 @@ Dodgers  R. Sasaki \\
 \\
 63% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
--167\\
+-170\\
 \\
 MLB \\
 \\
@@ -212,13 +212,15 @@ $0 today • Cancel anytime
 
 ![logo](https://imgix.cosmicjs.com/d6a67810-474a-11ee-89ab-17371fc03105-swipe-logo.svg?auto=format,compress&w=20) Swipe across to view more offers
 
-![logo](https://imgix.cosmicjs.com/e878d130-26c9-11f1-9754-d7196a81e564-Novig_idUhBcMR4r_1.svg?auto=format,compress&h=200)
+![logo](https://imgix.cosmicjs.com/551e6f30-4aa2-11ef-92a4-3171dcec0547-csb-on-dark-rgb.svg?auto=format,compress&h=200)
 
-FEATURED
+RECOMMENDED
 
 T&Cs apply.
 
 Claim Now
+
+[Read review](https://www.dimers.com/betting/caesars-sportsbook)
 
 How to claim
 
@@ -232,15 +234,51 @@ Claim Now
 
 How to claim
 
-![logo](https://imgix.cosmicjs.com/db0f1470-12c2-11f1-9e28-d5fea3b8af7e-Kalshi-Light.png?auto=format,compress&h=200)
+![logo](https://imgix.cosmicjs.com/92be3e40-5ea9-11ef-ba22-5b7a9f51630c-HardRockBet-bigg.svg?auto=format,compress&h=200)
 
-HOTTEST
+NEW PLAYERS
+
+T&Cs apply.
+
+Claim now
+
+[Read review](https://www.dimers.com/betting/hardrock-sportsbook)
+
+How to claim
+
+![logo](https://imgix.cosmicjs.com/0d0de820-132c-11f1-9e28-d5fea3b8af7e-Betmgm-Light.png?auto=format,compress&h=200)
+
+LIMITED-TIME
+
+T&Cs apply.
+
+Claim now
+
+[Read review](https://www.dimers.com/betting/betmgm-sportsbook)
+
+How to claim
+
+![logo](https://imgix.cosmicjs.com/c5917820-16b6-11f1-a07f-ffa45b2cae93-Draftkings-TCIY-White.svg?auto=format,compress&h=200)
+
+FEATURED
+
+T&Cs apply.
+
+Claim now
+
+[Read review](https://www.dimers.com/betting/draftkings-sportsbook)
+
+How to claim
+
+![logo](https://imgix.cosmicjs.com/bcef7040-118f-11f1-bd1a-5344fff0f60b-fanduel.png?auto=format,compress&h=200)
+
+NEW PLAYERS
 
 T&Cs apply.
 
 Claim Now
 
-[Read review](https://www.dimers.com/prediction-betting/kalshi)
+[Read review](https://www.dimers.com/betting/fanduel-sportsbook)
 
 How to claim
 
@@ -254,51 +292,27 @@ Claim Now
 
 How to claim
 
-![logo](https://imgix.cosmicjs.com/7ad476b0-165d-11f1-aa13-035ae648be6f-P6_Linear_Logo_FullColor_OnDark.svg?auto=format,compress&h=200)
+![logo](https://imgix.cosmicjs.com/3c1eebc0-401e-11ee-bfc4-cb12724541fa-Bet365-Primary-Logo.svg?auto=format,compress&h=200)
 
-RECOMMENDED
+TRENDING
 
 T&Cs apply.
 
 Claim Now
 
-[Read review](https://www.dimers.com/dfs/draftkings-pick6)
+[Read review](https://www.dimers.com/betting/bet365-sportsbook)
 
 How to claim
 
-![logo](https://imgix.cosmicjs.com/b3d733a0-be6a-11ee-8229-0f62eab2dd82-Dabble-Rev.png?auto=format,compress&h=200)
+![logo](https://imgix.cosmicjs.com/1092c8d0-116c-11ef-911e-9f1d49670742-BetRivers-Big.png?auto=format,compress&h=200)
 
-NEW
+NEW PLAYERS
 
 T&Cs apply.
 
 Claim now
 
-[Read review](https://www.dimers.com/dfs/dabble-fantasy)
-
-How to claim
-
-![logo](https://imgix.cosmicjs.com/c143b440-9f94-11ee-a692-4378f7964dea-ParlayPlay.svg?auto=format,compress&h=200)
-
-RECOMMENDED
-
-T&Cs apply.
-
-Claim Now
-
-[Read review](https://www.dimers.com/dfs/parlayplay)
-
-How to claim
-
-![logo](https://imgix.cosmicjs.com/9d7e0a60-ceaa-11ef-ac4c-9fb95c248ff6-HorizontalPrimaryDark-1.png?auto=format,compress&h=200)
-
-DFS & PICKS
-
-T&Cs apply.
-
-Claim Now
-
-[Read review](https://www.dimers.com/dfs/betr)
+[Read review](https://www.dimers.com/betting/betrivers-sportsbook)
 
 How to claim
 
@@ -311,7 +325,7 @@ On Monday, the Dodgers lead all win probabilities with a 63% chance of beating t
 | Team | Prob. | Opponent | First pitch (ET) |
 | --- | --- | --- | --- |
 | Dodgers | 63% | vs. Giants | 10:10pm |
-| Yankees | 59% | @ Orioles | 6:35pm |
+| Yankees | 57% | @ Orioles | 6:35pm |
 | Blue Jays | 55% | vs. Rays | 7:07pm |
 
 ## MLB predictions today: data-driven outcomes for every game
