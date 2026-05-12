@@ -1,6 +1,6 @@
 # Sharp Intel v6 — Full Analysis
 
-_Auto-generated **5/12/2026, 8:30:21 AM ET** by `scripts/v6FullAnalysis.js`. Do not edit by hand._
+_Auto-generated **5/12/2026, 11:36:02 AM ET** by `scripts/v6FullAnalysis.js`. Do not edit by hand._
 
 **Inclusion mirrors live Pick Performance dashboard:** `lockStage ≠ SHADOW ∧ ¬superseded ∧ health ∉ {MUTED, CANCELLED} ∧ peak.stars ≥ 2.5`. PnL in **peak units** (the size shipped to users) and **flat 1u** (cohort EV lens). Cohort tags from frozen `v8_walletConsensus*` stamps written at last sync before T-15.
 
@@ -45,7 +45,7 @@ _Dashboard-truth filter (mirrors live Pick Performance)._
 | Metric | Value |
 |---|---|
 | Date range | 2026-04-18 … 2026-05-11 |
-| Sides scanned | 375 |
+| Sides scanned | 379 |
 | Shipped + graded | **165** |
 | W-L-P | 80-83-2 |
 | Win rate | **49.1%** [41.5%–56.7%] |
@@ -301,7 +301,7 @@ _Which of the six AGS inputs are pulling the weight, and is the composite earnin
 
 AGS aggregates the proven-wallet (`CONFIRMED` ∪ `FLAT`) slice of `peak.v8Scoring.walletDetails[]` into 6 *delta* features (FOR-side minus AGAINST-side), z-scores each one against a daily-recomputed calibration, and **sums the z-scores**. Equal sign-weighted — no fitted coefficients. Thresholds: `AGS ≥ +5` rescues a lock (route C), `AGS ≥ +3` confirms a thin Δw=+1 lock (v7.5 route B), `AGS < -1` mutes an otherwise-locking side (confirmation gate). Sizing multiplier scales [0.5, 1.0]× over [-1, +5].
 
-**In-sample (live production) calibration**: source = `cron`, sampleSize = 145, dateRange = 2026-04-18 → 2026-05-11, computedAt = 2026-05-12T10:12:18.113Z. _This is what production scores against today; the §AGS-0a audit below shows how much its in-sample numbers diverge from the leakage-free walk-forward version._
+**In-sample (live production) calibration**: source = `cron`, sampleSize = 145, dateRange = 2026-04-18 → 2026-05-11, computedAt = 2026-05-12T15:33:11.559Z. _This is what production scores against today; the §AGS-0a audit below shows how much its in-sample numbers diverge from the leakage-free walk-forward version._
 
 ### §AGS-0a. Leakage audit — in-sample vs point-in-time / out-of-sample
 
