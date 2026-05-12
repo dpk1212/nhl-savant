@@ -116,6 +116,17 @@ jobs:
             echo "--- scanSharpPositions ---"
             node scripts/scanSharpPositions.js || echo "scan failed (cycle $i)"
 
+            # ── Whitelist coverage layer (Phase 1: diagnostic-only) ──────────
+            # scanWhitelistedWallets cross-references the live promotion
+            # whitelist (sharpWalletProfiles) against what the main scanner
+            # just produced, and supplementally polls Polymarket for every
+            # promoted wallet that the main path missed. Phase 1 only writes
+            # public/whitelist_scan_diagnostics.json — sharp_positions*.json
+            # is NOT modified. Non-fatal: any failure here leaves the cycle
+            # exactly as the main scanner left it. Adds ~60s/cycle.
+            echo "--- scanWhitelistedWallets (Phase 1 diagnostic) ---"
+            node scripts/scanWhitelistedWallets.js || echo "whitelist scan failed (cycle $i — non-fatal, main scan unaffected)"
+
             # ── Firestore-side pipeline ─────────────────────────────────────
             # writeSharpActions persists the just-scanned positions (with
             # vault_hc* fields) to sharp_action_positions. Then
@@ -150,7 +161,8 @@ jobs:
             git add public/polymarket_data.json public/kalshi_data.json \
                     public/pinnacle_history.json public/sharp_positions.json \
                     public/sharp_spread_positions.json public/sharp_total_positions.json \
-                    public/sharp_intel_excluded_wallets.json 2>/dev/null || true
+                    public/sharp_intel_excluded_wallets.json \
+                    public/whitelist_scan_diagnostics.json 2>/dev/null || true
             if ! git diff --staged --quiet; then
               git commit -m "Auto-update: Market data [$(date +'%Y-%m-%d %H:%M') cycle $i]"
               for attempt in 1 2 3; do
