@@ -116,15 +116,18 @@ jobs:
             echo "--- scanSharpPositions ---"
             node scripts/scanSharpPositions.js || echo "scan failed (cycle $i)"
 
-            # ── Whitelist coverage layer (Phase 1: diagnostic-only) ──────────
+            # ── Whitelist coverage layer (Phase 2: recover + merge) ──────────
             # scanWhitelistedWallets cross-references the live promotion
             # whitelist (sharpWalletProfiles) against what the main scanner
             # just produced, and supplementally polls Polymarket for every
-            # promoted wallet that the main path missed. Phase 1 only writes
-            # public/whitelist_scan_diagnostics.json — sharp_positions*.json
-            # is NOT modified. Non-fatal: any failure here leaves the cycle
-            # exactly as the main scanner left it. Adds ~60s/cycle.
-            echo "--- scanWhitelistedWallets (Phase 1 diagnostic) ---"
+            # promoted wallet that the main path missed. Recovered positions
+            # are merged into sharp_positions*.json (atomic writes with
+            # JSON-parse verify) so the downstream writeSharpActions →
+            # sharp_action_positions pipeline picks them up unchanged. A
+            # per-cycle audit lands at public/whitelist_scan_diagnostics.json.
+            # Non-fatal: any failure here leaves the cycle exactly as the
+            # main scanner left it. Adds ~60s/cycle.
+            echo "--- scanWhitelistedWallets (Phase 2 recover + merge) ---"
             node scripts/scanWhitelistedWallets.js || echo "whitelist scan failed (cycle $i — non-fatal, main scan unaffected)"
 
             # ── Firestore-side pipeline ─────────────────────────────────────
