@@ -1388,7 +1388,7 @@ function passesV74DisplayGate({ pickDate, dw, dq, hcMargin, dwLock, dqLock, hcMa
   if (promotedBy === 'ags-rescue') return true;
   if (Number.isFinite(agsValue) && liveDw > -2
       && (agsProvenTotal == null || agsProvenTotal >= AGS_MIN_PROVEN_WALLETS)
-      && meetsAgsLockFloor(agsValue, agsProvenTotal)) {
+      && meetsAgsLockFloor(agsValue, agsProvenTotal, getAgsCalibration())) {
     return true;
   }
   return false;
@@ -1676,7 +1676,7 @@ function evaluatePickHealth({
   const agsRescueOverride = v74
     && Number.isFinite(agsValue)
     && (agsProvenTotal == null || agsProvenTotal >= AGS_MIN_PROVEN_WALLETS)
-    && meetsAgsLockFloor(agsValue, agsProvenTotal)
+    && meetsAgsLockFloor(agsValue, agsProvenTotal, getAgsCalibration())
     && dw > -2;
   // Δw=1+AGS support — AGS ≥ AGS_DW1_FLOOR (+3) with proven wallets is
   // enough to keep a Δw=1 pick ACTIVE. Mirror of meetsV74Floor's third route.
@@ -1882,7 +1882,7 @@ function computeLiveSizing({ peakStars, peakUnits, marketType, oddsForLadder,
     && Number.isFinite(liveAgs)
     && liveDw > -2
     && agsProvenTotal >= AGS_MIN_PROVEN_WALLETS
-    && meetsAgsLockFloor(liveAgs, agsProvenTotal)
+    && meetsAgsLockFloor(liveAgs, agsProvenTotal, getAgsCalibration())
     && !v74PassesByDeltas
     && (liveTier === 'MUTED' || liveTier === 'LEAN');
   if (agsRescue) {
@@ -1895,12 +1895,13 @@ function computeLiveSizing({ peakStars, peakUnits, marketType, oddsForLadder,
   let liveUnits = Math.round(liveUnitsRaw * 100) / 100;
 
   // Phase 2 — AGS sizing modifier. Multiplier is taken from the shared
-  // src/lib/ags.js table (1.0 ≥ +3, 0.85 ≥ 0, 0.65 ≥ -1, 0.5 below).
-  // Only applied when AGS is finite AND we're already shipping a positive
-  // unit count — never re-promotes a 0u pick.
+  // src/lib/ags.js table — calibration-aware quintile ladder as of
+  // 2026-05-13 (1.5× ≥ q90, 1.25× ≥ q80, 1.0× ≥ q60, 0.65× ≥ q40,
+  // 0.40× ≥ q20, 0.25× ≥ mute, 0.10× below). Crucially this can go
+  // ABOVE 1.0× for top-decile picks — never re-promotes a 0u pick.
   let agsTrim = null;
   if (Number.isFinite(liveAgs) && liveUnits > 0) {
-    const mult = agsSizeMultiplier(liveAgs);
+    const mult = agsSizeMultiplier(liveAgs, getAgsCalibration());
     if (mult !== 1.0) {
       const before = liveUnits;
       liveUnits = Math.max(0.01, Math.round(liveUnits * mult * 100) / 100);
@@ -2054,7 +2055,7 @@ function decideLockStage(regime, v8Scoring, sideKey, sport = null, baseStars = 0
       && Number.isFinite(agsValue)
       && dw > -2
       && agsProvenTotal != null && agsProvenTotal >= AGS_MIN_PROVEN_WALLETS
-      && meetsAgsLockFloor(agsValue, agsProvenTotal);
+      && meetsAgsLockFloor(agsValue, agsProvenTotal, getAgsCalibration());
     // Recompute the tier with AGS so the Δw=1+AGS / Δw≥2+AGS routes
     // get the right ELITE/LOCKED/MUTED label.
     const v74LockTier = lockTierFromDeltas(dw, dq, hcDominant, {

@@ -35,8 +35,18 @@ export const AGS_FEATURES = [
 // ────────────────────────────────────────────────────────────────────────
 // Decision thresholds — read by both client and server lock/health logic.
 // Tuned conservatively against the N=104 sample. Phase-3 rollout, not Phase-1.
+//
+// 2026-05-13: lock floor switched from static +5 to dynamic q50 (above
+// median) from the daily calibration. Empirically the +3..+5 band hits
+// 82% WR / +0.60u flat per pick at ~3x the throughput of the +5 floor —
+// the median is the right place to draw the line. `AGS_LOCK_FLOOR = 5.0`
+// is retained as (a) cold-start fallback when calibration lacks q50, and
+// (b) the "STRONG AGS" semantic threshold for the ELITE-tier inline check
+// and the LOCK badge in contribTier — both of which mean "AGS clears the
+// historical strong-signal bar," not "this pick gets locked."
 // ────────────────────────────────────────────────────────────────────────
-export const AGS_LOCK_FLOOR = 5.0;        // rescue route (route C): AGS ≥ +5 → LOCK
+export const AGS_LOCK_FLOOR = 5.0;        // legacy fallback + ELITE/STRONG-AGS label threshold
+export const AGS_ELITE_FLOOR = 5.0;       // alias — used by ELITE-tier inline checks
 export const AGS_MUTE_FLOOR = -1.0;       // confirmation gate (route B): AGS < -1 → MUTE
 // v7.5 — Δw=+1 confirmation floor. The Σ ≥ +5 sum route was retired
 // (2026-05-05) because Δq (quality margin) is too sparse to be meaningful
@@ -72,8 +82,12 @@ export const AGS_FALLBACK_CALIBRATION = Object.freeze({
     dConvictionAvg:  { mean: 0.51,  sd: 0.68 },
     dRoiNormAvg:     { mean: 32.79, sd: 40.63 },
   },
-  quintiles: { q20: -4.77, q40: -0.46, q60: 2.58, q80: 4.21, q90: 5.20 },
-  thresholds: { lockFloor: AGS_LOCK_FLOOR, muteFloor: AGS_MUTE_FLOOR },
+  // q60 is the active LOCK floor as of 2026-05-13. Historical fallback
+  // value (+2.58) preserved here so cold-start matches the last-known
+  // empirical 60th percentile from the N=104 sample. The daily
+  // calibration overwrites this with a fresh q60 on each run.
+  quintiles: { q20: -4.77, q40: -0.46, q50: 1.00, q60: 2.58, q80: 4.21, q90: 5.20 },
+  thresholds: { lockFloor: AGS_LOCK_FLOOR, eliteFloor: AGS_ELITE_FLOOR, muteFloor: AGS_MUTE_FLOOR },
   sampleSize: 104,
   dateRange: { from: '2026-04-18', to: '2026-05-04' },
   computedAt: '2026-05-05T18:00:00Z',
@@ -225,24 +239,83 @@ export function agsQuintileFromValue(ags, calibration = AGS_FALLBACK_CALIBRATION
 // ────────────────────────────────────────────────────────────────────────
 // Sizing multiplier — Phase 2 of integration. Multiplies the existing
 // peakUnits / liveUnits output of calculateUnits() / calculateSpreadTotalUnits().
-// Bounded to [0.5, 1.0]; AGS < AGS_MUTE_FLOOR is handled by the gate, not here.
+//
+// 2026-05-13: switched from a flat 4-band table capped at 1.0× to a
+// calibration-aware 7-band ladder that goes ABOVE 1.0× for top-decile
+// picks. This is the "AGS has more impact" lever — both upside (top-10%
+// gets +50%, top-20% gets +25%) and downside (sub-LOCK cuts are sharper:
+// q40..q60 is 0.65× vs old 0.85×, q20..q40 is 0.40× vs old 0.65×).
+//
+// Calibration-aware bands (when calibration provided):
+//   ≥ q90   → 1.50×  (ELITE BONUS — historically ~100% WR top-decile)
+//   ≥ q80   → 1.25×  (PREMIUM — captures the +3..+5 strong band)
+//   ≥ q60   → 1.00×  (FULL — LOCK floor and above)
+//   ≥ q40   → 0.65×  (REDUCED — sub-LOCK / neutral)
+//   ≥ q20   → 0.40×  (WEAK — historically anti-signal)
+//   ≥ mute  → 0.25×  (THIN — gate may fire, this is the fallback)
+//   < mute  → 0.10×  (FADE — gate should fire; never zero out)
+//
+// Legacy path (no calibration) preserves pre-2026-05-13 behavior so
+// callers that haven't been migrated yet keep their current sizing.
 // ────────────────────────────────────────────────────────────────────────
-export function agsSizeMultiplier(ags) {
+export function agsSizeMultiplier(ags, calibration = null) {
   if (ags == null || !Number.isFinite(ags)) return 1.0;
+
+  // Absolute floor — sizing must never reward a pick whose AGS is below
+  // the mute floor (-1), even if a sample's q20 sits much lower (e.g.
+  // q20 = -4.57 on the V6 sample). The confirmation gate should already
+  // be muting these; if a wallet-consensus override keeps it active,
+  // we ship at minimum stake while we wait for the gate to catch up.
+  if (ags < AGS_MUTE_FLOOR) return 0.10;
+
+  if (calibration && calibration.quintiles) {
+    const q = calibration.quintiles;
+    if (Number.isFinite(q.q90) && ags >= q.q90) return 1.50;
+    if (Number.isFinite(q.q80) && ags >= q.q80) return 1.25;
+    if (Number.isFinite(q.q60) && ags >= q.q60) return 1.00;
+    if (Number.isFinite(q.q40) && ags >= q.q40) return 0.65;
+    if (Number.isFinite(q.q20) && ags >= q.q20) return 0.40;
+    return 0.25; // mute floor .. q20 — last band before the absolute floor
+  }
+
+  // Legacy path — matches pre-2026-05-13 behavior exactly.
   if (ags >= 5) return 1.0;
   if (ags >= 3) return 1.0;
   if (ags >= 0) return 0.85;
   if (ags >= AGS_MUTE_FLOOR) return 0.65;
-  return 0.5; // gate should fire, but if not, never zero out the bet
+  return 0.5;
 }
 
 // ────────────────────────────────────────────────────────────────────────
 // Lock-floor and confirmation-gate predicates — used by sync script and UI.
 // ────────────────────────────────────────────────────────────────────────
-export function meetsAgsLockFloor(ags, provenWalletCount) {
+
+// Returns the live AGS lock floor — q60 (60th percentile) of the
+// calibration distribution, or the legacy AGS_LOCK_FLOOR constant if the
+// calibration doc is missing. q60 was chosen over q50 (median) after the
+// 2026-05-13 audit: q50 (≈+0.97 on the V6 cutover sample) sat in the 59%
+// WR / +0.06u-per-pick band, while q60 (≈+2.01) captures the 71% WR /
+// +0.41u-per-pick band — a meaningfully steeper edge per unit of volume.
+// Caller is responsible for passing the same calibration object that
+// drove the AGS value being gated — never mix calibrations.
+export function agsLockFloorFromCalibration(calibration) {
+  const cal = calibration && calibration.quintiles ? calibration : AGS_FALLBACK_CALIBRATION;
+  const q60 = cal.quintiles?.q60;
+  if (Number.isFinite(q60)) return q60;
+  // Fallback path — pre-2026-05-13 calibrations or cold start. Use the
+  // static AGS_LOCK_FLOOR (+5) so we never accidentally lock more
+  // aggressively than the legacy behavior without a real calibration.
+  return AGS_LOCK_FLOOR;
+}
+
+// `calibration` is optional for backward compat. When omitted, falls back
+// to the static AGS_LOCK_FLOOR (preserves pre-2026-05-13 behavior for any
+// caller that hasn't been migrated yet).
+export function meetsAgsLockFloor(ags, provenWalletCount, calibration = null) {
   if (ags == null || !Number.isFinite(ags)) return false;
   if (provenWalletCount != null && provenWalletCount < AGS_MIN_PROVEN_WALLETS) return false;
-  return ags >= AGS_LOCK_FLOOR;
+  const floor = calibration ? agsLockFloorFromCalibration(calibration) : AGS_LOCK_FLOOR;
+  return ags >= floor;
 }
 
 export function failsAgsConfirmationGate(ags) {

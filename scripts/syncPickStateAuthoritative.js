@@ -266,13 +266,13 @@ function lockTierFromDeltas(dw, dq, hcDominant, opts = {}) {
 //
 // Pre-v7.5 picks retain the legacy Σ-based dq mutes so historical
 // state stays accurate.
-function evaluateBaseHealth({ dw, dq, hcMargin, pickDate, ags = null, agsProvenTotal = null }) {
+function evaluateBaseHealth({ dw, dq, hcMargin, pickDate, ags = null, agsProvenTotal = null, agsCalibration = null }) {
   const v73HcOverride = isV73Eligible(pickDate) && hcMargin >= 1;
   const v74 = isV74Eligible(pickDate);
   const agsRescueOverride = v74
     && Number.isFinite(ags)
     && (agsProvenTotal == null || agsProvenTotal >= AGS_MIN_PROVEN_WALLETS)
-    && meetsAgsLockFloor(ags, agsProvenTotal)
+    && meetsAgsLockFloor(ags, agsProvenTotal, agsCalibration)
     && dw > -2;
   const dw1AgsSupport = v74
     && Number.isFinite(ags)
@@ -852,7 +852,7 @@ async function createMissingLockedPicks({
       const passesV74 = meetsV74Floor(live.delta, live.hcMargin, agsValue, agsProvenTotal);
       const agsRescue = !passesV74 && agsValue != null && live.delta > -2
         && agsProvenTotal >= AGS_MIN_PROVEN_WALLETS
-        && meetsAgsLockFloor(agsValue, agsProvenTotal);
+        && meetsAgsLockFloor(agsValue, agsProvenTotal, agsCalibration);
       if (!passesV74 && !agsRescue) continue;
       // AGS confirmation gate — don't auto-create a LOCKED side that the
       // gate would immediately demote. Mirrors syncPickStateAuthoritative
@@ -902,7 +902,7 @@ async function createMissingLockedPicks({
       });
       // Apply AGS sizing multiplier for the frozen peak.
       if (agsValue != null && peakUnits > 0) {
-        const m = agsSizeMultiplier(agsValue);
+        const m = agsSizeMultiplier(agsValue, agsCalibration);
         if (m !== 1.0) peakUnits = Math.max(0.01, Math.round(peakUnits * m * 100) / 100);
       }
 
@@ -1212,6 +1212,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     pickDate,
     ags: agsValueLive,
     agsProvenTotal: agsTotalProven,
+    agsCalibration,
   });
 
   // No hysteresis. Whatever evaluateBaseHealth says this cycle is what we
@@ -1258,7 +1259,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     && !!agsResult
     && live.delta > -2
     && agsTotalProven >= AGS_MIN_PROVEN_WALLETS
-    && meetsAgsLockFloor(agsResult.ags, agsTotalProven)
+    && meetsAgsLockFloor(agsResult.ags, agsTotalProven, agsCalibration)
     && !meetsV74Floor(live.delta, live.hcMargin, agsValueLive, agsTotalProven);
   if (agsRescuePrecheck && (liveTier === 'MUTED' || liveTier === 'LEAN')) {
     liveTier = 'LOCKED';
@@ -1276,7 +1277,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // explicit MUTE path.
   let agsUnitsMult = 1.0;
   if (agsResult && Number.isFinite(agsResult.ags) && liveUnits > 0) {
-    agsUnitsMult = agsSizeMultiplier(agsResult.ags);
+    agsUnitsMult = agsSizeMultiplier(agsResult.ags, agsCalibration);
     if (agsUnitsMult !== 1.0) {
       liveUnits = Math.max(0.01, Math.round(liveUnits * agsUnitsMult * 100) / 100);
     }

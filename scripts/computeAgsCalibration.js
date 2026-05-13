@@ -193,17 +193,26 @@ async function main() {
   const quintiles = {
     q20: quantile(agsValues, 0.20),
     q40: quantile(agsValues, 0.40),
+    q50: quantile(agsValues, 0.50),
     q60: quantile(agsValues, 0.60),
     q80: quantile(agsValues, 0.80),
     q90: quantile(agsValues, 0.90),
   };
-  console.log(`[ags-calibration]   quintiles: q20=${quintiles.q20.toFixed(2)}  q40=${quintiles.q40.toFixed(2)}  q60=${quintiles.q60.toFixed(2)}  q80=${quintiles.q80.toFixed(2)}  q90=${quintiles.q90.toFixed(2)}`);
+  console.log(`[ags-calibration]   quintiles: q20=${quintiles.q20.toFixed(2)}  q40=${quintiles.q40.toFixed(2)}  q50=${quintiles.q50.toFixed(2)}  q60=${quintiles.q60.toFixed(2)} (LOCK floor)  q80=${quintiles.q80.toFixed(2)} (PREMIUM 1.25x)  q90=${quintiles.q90.toFixed(2)} (ELITE 1.5x)`);
 
-  // 3. Build the calibration doc.
+  // 3. Build the calibration doc. `thresholds.lockFloor` is the dynamic
+  //    q60 (top-40%) lock floor — picks with AGS ≥ q60 are eligible for
+  //    the AGS rescue lock route. q50 (median) was evaluated and rejected
+  //    on 2026-05-13 because at-or-just-above-median picks land in the
+  //    59% WR / +0.06u-per-pick band; q60 captures the 71% WR /
+  //    +0.41u-per-pick band — much steeper edge per unit of volume.
+  //    The static AGS_LOCK_FLOOR constant lives on for the ELITE-tier
+  //    inline check + tier label ("STRONG AGS" semantically) and as a
+  //    cold-start fallback when q60 is missing.
   const doc = {
     normalizers,
     quintiles,
-    thresholds: { lockFloor: AGS_LOCK_FLOOR, muteFloor: AGS_MUTE_FLOOR },
+    thresholds: { lockFloor: quintiles.q60, eliteFloor: AGS_LOCK_FLOOR, muteFloor: AGS_MUTE_FLOOR },
     sampleSize: aggs.length,
     dateRange: { from: dateMin, to: dateMax },
     computedAt: new Date().toISOString(),
