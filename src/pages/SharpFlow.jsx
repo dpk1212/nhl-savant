@@ -4605,17 +4605,10 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   const isHcStandard = hcMarginVal === 1;
   const showHcChip   = isHcSuper || isHcStandard;
   const hcChipMult   = isHcSuper ? '1.75' : '1.5';
-  // Legacy "promoted by HC / Σ / rescue" flags — preserved on historical
-  // picks so old tooltips still surface meaningfully when reviewing
-  // pre-v9 attributions. Always false for picks promoted by AGS-U.
-  const wasHcPromoted = promotedBy === 'hc-dominance'
-    || promotedBy === 'v72-hc-margin'
-    || promotedBy === 'v72-sigma2-lock'
-    || promotedBy === 'v72-sigma2-lean'
-    || promotedBy === 'v73-sigma1-hc'
-    || promotedBy === 'v73-sigma2-hc'
-    || promotedBy === 'v73-hc-rescue'
-    || promotedBy === 'v74-hc-margin';
+  // Legacy promoted-by flags — only used on GRADED picks now (historical
+  // attribution chips). Live picks read pure AGS-U tier; we no longer
+  // surface a separate "rescued / Σ-floor / HC-promoted" treatment on
+  // them because the AGS-U ladder is the sole sizing route.
   const wasSigma2Promoted = promotedBy === 'v72-sigma2-lock'
     || promotedBy === 'v72-sigma2-lean'
     || promotedBy === 'v73-sigma2-hc';
@@ -5228,36 +5221,37 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                       AGS {agsValue >= 0 ? '+' : ''}{agsValue.toFixed(1)}
                     </span>
                   )}
-                  {/* Legacy v7.3 promotion chips — only fire on picks whose
-                      `promotedBy` was stamped under the pre-AGS-U Σ ladder
-                      (v73-hc-rescue / v73-sigma1-hc / v73-sigma2-hc). Under
-                      AGS-U v9 nothing is ever stamped with those values, so
-                      these only appear on legacy still-pending picks (≈ zero
-                      today). Kept for historical-attribution honesty. */}
-                  {wasHcRescued && !isGraded && !isLean && (
+                  {/* Legacy v7.3 promotion chips — DROPPED FROM LIVE
+                      PICKS. Under AGS-U v9 the AGS-U tier chip above is
+                      the single source of conviction; surfacing
+                      "RESCUED" / "Σ=1 FLOOR" / "Σ=2 FLOOR" on a live
+                      shipped pick was confusing because it implied a
+                      separate sizing route on top of the AGS-U ladder.
+                      We still render the chips on graded picks so
+                      historical attribution stays visible for legacy
+                      shipped picks. */}
+                  {wasHcRescued && isGraded && (
                     <span style={{
-                      ...T.micro, fontWeight: 900, color: '#10B981',
+                      ...T.micro, fontWeight: 800, color: B.textSec,
                       padding: '0.2rem 0.45rem', borderRadius: '5px',
-                      background: 'rgba(16,185,129,0.18)',
-                      border: '1px solid rgba(16,185,129,0.45)',
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(255,255,255,0.12)',
                       letterSpacing: '0.04em',
                     }}
-                    title={`Legacy v7.3 RESCUED — this pick was promoted by HC margin under the pre-AGS-U Σ ladder (pre-2026-05-15). Under AGS-U v9, the same data would be scored by the AGS chip above.`}>
-                      RESCUED
+                    title={`Historical attribution — this graded pick was promoted via the legacy pre-AGS-U "HC rescue" route (promotedBy=v73-hc-rescue or ags-rescue). Under AGS-U v9 today the same data is scored by the AGS chip above.`}>
+                      (legacy: rescued)
                     </span>
                   )}
-                  {(wasSigma1Promoted || wasSigma2Promoted) && !isGraded && !isLean && (
+                  {(wasSigma1Promoted || wasSigma2Promoted) && isGraded && (
                     <span style={{
-                      ...T.micro, fontWeight: 900, color: '#60A5FA',
+                      ...T.micro, fontWeight: 800, color: B.textSec,
                       padding: '0.2rem 0.45rem', borderRadius: '5px',
-                      background: 'rgba(96,165,250,0.18)',
-                      border: '1px solid rgba(96,165,250,0.45)',
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(255,255,255,0.12)',
                       letterSpacing: '0.04em',
                     }}
-                    title={wasSigma1Promoted
-                      ? `Legacy v7.3 Σ=1 floor lock — pre-AGS-U promotion route. Under v9 this side is scored by the AGS chip above.`
-                      : `Legacy v7.3 Σ=2 floor lock — pre-AGS-U promotion route. Under v9 this side is scored by the AGS chip above.`}>
-                      Σ={wasSigma1Promoted ? '1' : '2'} FLOOR
+                    title={`Historical attribution — graded under the legacy pre-AGS-U Σ-floor promotion route. Under AGS-U v9 the same data is scored by the AGS chip above.`}>
+                      (legacy: Σ={wasSigma1Promoted ? '1' : '2'} floor)
                     </span>
                   )}
                   {evEdge > 0 && (
@@ -5332,23 +5326,17 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                   // AGS-Unified v9 narrative — proven winners + (optionally)
                   // quality wallets lead the story. Sizing is owned by the
                   // AGS-U tier ladder (ELITE 2.0× · PREMIUM 1.5× · LOCK 1.1×
-                  // · LEAN 0.5× · WEAK 0.2× · FADE 0.0×) — we no longer
-                  // claim a separate HC ×1.5/×1.75 multiplier. HC dominance
-                  // is one of the AGS-U input features (HC ratio Δ) and
-                  // already shows on its own chip above.
-                  //
-                  // wasHcRescued / wasSigma1Promoted / wasSigma2Promoted
-                  // can only be true for legacy pre-AGS-U pending picks
-                  // (promotedBy ∈ {v73-hc-rescue, v73-sigma1-hc,
-                  // v73-sigma2-hc}); under v9 nothing stamps those values.
+                  // · LEAN 0.5× · WEAK 0.2× · FADE 0.0×). HC dominance is
+                  // one of the AGS-U input features (HC ratio Δ) and shows
+                  // on its own chip above. The legacy v7.3 rescue / Σ-floor
+                  // promotion tags are suppressed on live picks (they
+                  // implied a sizing route that no longer exists) and only
+                  // re-surface on graded picks as historical attribution.
                   const agsTxt = (agsValue != null && Number.isFinite(agsValue))
                     ? `${agsValue >= 0 ? '+' : ''}${agsValue.toFixed(2)}`
                     : null;
                   const agsSuffix = agsTxt
                     ? ` AGS-U ${agsTxt}${agsTier ? ` (${agsTier} tier)` : ''}.`
-                    : '';
-                  const legacySuffix = (wasHcRescued || wasSigma1Promoted || wasSigma2Promoted)
-                    ? ` Legacy v7.3 ${wasSigma1Promoted ? 'Σ=1' : wasSigma2Promoted ? 'Σ=2' : 'HC-rescue'} promotion — pre-AGS-U pick still pending grading.`
                     : '';
                   const hcSuffix = showHcChip
                     ? ` HC margin +${hcMarginVal} (${hcConfFor} high-conviction CONFIRMED ${hcConfFor !== 1 ? 'wallets' : 'wallet'}${hcConfAg > 0 ? `, ${hcConfAg} HC dissent` : ''}) feeds the AGS-U score.`
@@ -5358,7 +5346,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                       <span style={{ color: B.gold, fontWeight: 700 }}>{forW || hcConfFor} proven {sportUp} winner{(forW || hcConfFor) !== 1 ? 's' : ''}</span> backing {teamShort} {marketNoun}
                       {qFor > 0 ? <> with <span style={{ color: B.green, fontWeight: 700 }}>{qFor} quality wallet{qFor !== 1 ? 's' : ''}</span> confirming.</> : '.'}
                       {totalInvested ? <> Combined <span style={{ color: B.gold, fontWeight: 700 }}>{fmtV(totalInvested)}</span> invested.</> : ''}
-                      {pinnSuffix}{evSuffix}{agsSuffix}{hcSuffix}{legacySuffix}
+                      {pinnSuffix}{evSuffix}{agsSuffix}{hcSuffix}
                     </>
                   );
                 } else {
