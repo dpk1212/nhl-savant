@@ -7,6 +7,7 @@ GET THE APP
 - [NEWS](https://www.oddstrader.com/news/)
 - [PICKS](https://www.oddstrader.com/today/picks/)
 - [BETTING](https://www.oddstrader.com/betting/)
+- [PREAKNESS STAKES](https://www.oddstrader.com/preakness-stakes/)
 
 - [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldtoday.svg)Today](https://www.oddstrader.com/)
 - [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldBasketball.svg)NCAAB](https://www.oddstrader.com/ncaa-college-basketball/)
@@ -15,9 +16,9 @@ GET THE APP
 - [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldHockey.svg)NHL](https://www.oddstrader.com/nhl/)
 - [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldFootball.svg)NFL](https://www.oddstrader.com/nfl/)
 - [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldFootball.svg)NCAAF](https://www.oddstrader.com/ncaa-college-football/)
-- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldSoccer.svg)soccer](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1778780501053)
-- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldTennis.svg)tennis](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1778780501053)
-- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldMore.svg)other](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1778780501053)
+- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldSoccer.svg)soccer](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1778865684194)
+- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldTennis.svg)tennis](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1778865684194)
+- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldMore.svg)other](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1778865684194)
 
 NHL
 
@@ -49,7 +50,7 @@ TodayYesterday
 
 ![logo-NHL](https://otcdn.virginia.us-east-1.oddstrader.com/leagues/NHL.svg)
 
-NHLThu 05/14
+NHLSat 05/16
 
 [Opener](https://www.oddstrader.com/betting/)
 
@@ -68,11 +69,8 @@ NHLThu 05/14
 |     |     |     |     |     |     |     |     |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 05/147:00 PMGame 5: Tied 2-2<br>![](https://logos.oddstrader.com/logos-original/6432ba21-81ac-41aa-b925-7c3894f313ff-original.png?d=100x100)<br>Montreal<br>53-39-1<br>38%<br>+105BetOnline | +110 | +105 | +100 | +100 | +105 | +100 | +100 |
-| ![](https://logos.oddstrader.com/logos-original/123032e4-9790-4cf7-a998-d0823baa9c08-original.PNG?d=100x100)<br>Buffalo<br>56-35-1<br>62%<br>-115Heritage | -125 | -119 | -120 | -120 | -115 | -121 | -121 |
-
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 05/149:30 PMGame 7: VGK Leads 3-2<br>![](https://logos.oddstrader.com/logos-original/e3199119-49e3-4bf8-9f6f-bcf997eb1105-original.PNG?d=100x100)<br>Vegas<br>46-47<br>68%<br>-110Heritage | -111 | -114 | -115 | -115 | -110 | -116 | -116 |
-| ![](https://logos.oddstrader.com/logos-original/f36fb8a1-4957-4a00-8c46-1020504965c6-original.png?d=100x100)<br>Anaheim<br>49-44<br>32%<br>+354Bet105 | -103 | +100 | -105 | -105 | +100 | -104 | -104 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>SAT 05/168:00 PMGame 6: MTL Leads 3-2<br>![](https://logos.oddstrader.com/logos-original/123032e4-9790-4cf7-a998-d0823baa9c08-original.PNG?d=100x100)<br>Buffalo<br>56-36-1<br>0%<br>+140Bookmaker | +132 | +136 | +135 | +137 | +139 | +140 | +140 |
+| ![](https://logos.oddstrader.com/logos-original/6432ba21-81ac-41aa-b925-7c3894f313ff-original.png?d=100x100)<br>Montreal<br>54-39-1<br>100%<br>-155BetOnline | -150 | -155 | -155 | -163 | -155 | -160 | -160 |
 
 ## Best NHL Betting Odds and Spreads for Tonight’s Games
 
