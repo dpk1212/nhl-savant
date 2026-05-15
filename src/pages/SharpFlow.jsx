@@ -869,44 +869,54 @@ function rateStarsV8({ positions, consensusSide, v8Norm, pinnMoveSize = 0, timeT
     }
   }
 
-  // v6 Two-Factor Star — Δ_winner + Δ_quality@T30 are the sole drivers
-  // of the star rating now. walletPlayScore / breadth / concentration
-  // are kept on v8Scoring for diagnostics only. If the profile cache
-  // hasn't loaded yet (dw=0 artifact), or we have no sport context, we
-  // fall back to the Δ_quality-only rung so Sharp Intel never silently
-  // renders every card as 2.5★.
+  // AGS-Unified v9 star derivation. The star rating is a direct projection
+  // of the AGS-U value through agsuStarsFromAgs (q90 → 5★, q80 → 4.5★,
+  // q60 → 4★, q40 → 3★, q20 → 2.5★, FADE → 1★). Δw / Δq / HC margin are
+  // still computed on `wc` for diagnostic display but no longer participate
+  // in the star or label assignment. If the profile cache hasn't loaded
+  // yet, or there are no proven wallets on this side, we fall back to
+  // 1★ MONITORING so we never bluff confidence the system doesn't have.
   const wc = computeWalletConsensus(walletDetails, sport, consensusSide, pickDate);
   const deltaWinner = wc.delta;
   const deltaQuality = wc.qualityMargin;
   const wcHcMargin = (wc.hcConfFor || 0) - (wc.hcConfAg || 0);
-  const vaultStar = (sport && WALLET_PROFILES_CACHE)
-    ? vaultStarFromDeltas(deltaWinner, deltaQuality, wcHcMargin, pickDate)
-    : null;
 
-  let stars;
-  if (vaultStar != null) {
-    stars = vaultStar;
-  } else {
-    // Cache-not-ready fallback: derive a conservative star from Δ_quality
-    // alone (whitelist-independent). A later sync will overwrite with the
-    // true two-factor star once profiles populate.
-    if (deltaQuality >= 3) stars = 3.0;
-    else if (deltaQuality >= 1) stars = 2.5;
-    else if (deltaQuality === 0) stars = 2.0;
-    else if (deltaQuality === -1) stars = 1.5;
-    else stars = 1.0;
+  let agsForStars = null;
+  if (sport && WALLET_PROFILES_CACHE && walletDetails.length > 0) {
+    const agg = aggregateSideProven(
+      walletDetails, consensusSide, sport, isProvenForAgs, isHcEligibleForAgs,
+    );
+    if (agg) {
+      const agsRes = computeAgs(agg, getAgsCalibration());
+      if (agsRes && Number.isFinite(agsRes.ags)
+          && agsRes.provenTotalCount >= AGS_MIN_PROVEN_WALLETS) {
+        agsForStars = agsRes.ags;
+      }
+    }
   }
+  const stars = agsuStarsFromAgs(agsForStars, getAgsCalibration());
 
+  // AGS-Unified v9 star → label map. Each label is the user-facing
+  // name of the underlying AGS-U tier (mapping derived from
+  // agsuStarsFromAgs at the same quintile thresholds).
+  //   5.0 ELITE   ≥ q90  · 2.00× sizing · top decile
+  //   4.5 PREMIUM ≥ q80  · 1.50× sizing
+  //   4.0 STRONG  ≥ q60  · 1.10× sizing (LOCK floor)
+  //   3.0 SOLID   ≥ q40  · 0.50× sizing (LEAN, reduced)
+  //   2.5 TRACKING ≥ q20 · 0.20× sizing (WEAK, small position)
+  //   1.0 MUTED   < q20  · 0u (HARD MUTE — pick is not playable)
+  // 1.5 / 2.0 are reserved fallback buckets for the cache-not-ready
+  // path; AGS-U itself never emits those stars.
   const labels = {
-    5:   { label: 'ELITE PLAY',    color: B.green,   bg: B.greenDim,                summary: 'Maximum wallet conviction — elite consensus' },
-    4.5: { label: 'ELITE PLAY',    color: B.green,   bg: B.greenDim,                summary: 'Near-perfect wallet alignment' },
-    4:   { label: 'STRONG PLAY',   color: B.green,   bg: 'rgba(16,185,129,0.08)',   summary: 'Strong wallet-weighted consensus' },
-    3.5: { label: 'STRONG PLAY',   color: B.green,   bg: 'rgba(16,185,129,0.08)',   summary: 'Above-average wallet evidence' },
-    3:   { label: 'SOLID PLAY',    color: B.green,   bg: 'rgba(16,185,129,0.08)',   summary: 'Solid wallet consensus' },
-    2.5: { label: 'SOLID PLAY',    color: B.gold,    bg: B.goldDim,                 summary: 'Moderate wallet support' },
-    2:   { label: 'LEAN',          color: B.gold,    bg: B.goldDim,                 summary: 'Limited wallet evidence' },
-    1.5: { label: 'DEVELOPING',    color: B.textSec, bg: 'rgba(255,255,255,0.04)',  summary: 'Early wallet activity' },
-    1:   { label: 'MONITORING',    color: B.textSec, bg: 'rgba(255,255,255,0.04)',  summary: 'Minimal wallet data' },
+    5:   { label: 'ELITE PLAY',    color: B.green,   bg: B.greenDim,                summary: 'Top decile AGS-U — maximum sharp conviction' },
+    4.5: { label: 'PREMIUM PLAY',  color: B.green,   bg: B.greenDim,                summary: 'Top quintile AGS-U — premium sharp alignment' },
+    4:   { label: 'STRONG PLAY',   color: B.green,   bg: 'rgba(16,185,129,0.08)',   summary: 'Above lock floor — full standard size' },
+    3.5: { label: 'STRONG PLAY',   color: B.green,   bg: 'rgba(16,185,129,0.08)',   summary: 'Above lock floor — full standard size' },
+    3:   { label: 'SOLID PLAY',    color: B.gold,    bg: B.goldDim,                 summary: 'Lean tier — half-stake position' },
+    2.5: { label: 'TRACKING',      color: B.gold,    bg: B.goldDim,                 summary: 'Weak tier — small reduced-size position' },
+    2:   { label: 'TRACKING',      color: B.gold,    bg: B.goldDim,                 summary: 'Early AGS-U signal' },
+    1.5: { label: 'DEVELOPING',    color: B.textSec, bg: 'rgba(255,255,255,0.04)',  summary: 'Sharp signal still forming' },
+    1:   { label: 'HARD MUTE',     color: B.red,     bg: B.redDim,                  summary: 'AGS-U below fade floor — not playable' },
   };
   const info = labels[stars] || labels[1];
 
@@ -1021,205 +1031,28 @@ const WHITELIST_INTERVENTION = {
 const WHITELIST_CONSENSUS_VERSION = 9;   // bumped 8 → 9 for v7.3 HC-margin floor lowering (Σ=1/Σ=2) + MUTE override
 const QUALITY_CONTRIB_CUT = 30;   // T=30 — validated by V8_CONTRIBUTION_EDGE
 
-// ─── v7.1 HC Dominance constants ─────────────────────────────────────
-// Source: WALLET_GATE_SCALE_TEST.md — only gate that produced positive
-// WR lift in 5/5 Σ buckets (avg +34.7pp WR / +60.9pp flat ROI).
+// ─── AGS-Unified v9 — single gate / single signal ────────────────────
+// All v7.x cutover predicates and HC-multiplier ladders were retired
+// on 2026-05-14 when AGS-U v9 shipped. Lock / mute / sizing now flow
+// exclusively through src/lib/ags.js — see the AGS-U Consensus Panel
+// inside SharpPositionCard for the user-facing surface.
 //
-//   HC_DOMINANCE := (HC_for ≥ 1) ∧ (HC_ag = 0)
-//     where HC = whitelistTier === 'CONFIRMED' AND sizeRatio ≥ HC_RATIO
-//
-// HC dominance promotes Σ ∈ {3,4} from LEAN → LOCKED, multiplies units
-// by V7_1_HC_MULT (capped at the cap constants below), and drives the
-// SUPER TOP PICK badge. Stars and the Δw/Δq math are UNCHANGED.
-//
-// Gated by V7_1_CUTOVER_DATE — picks dated before cutover keep v7.0
-// ladder/floor/badges so historic Firestore docs don't change behavior.
-// HC_RATIO imported from ../lib/ags.js — single source of truth.
-const V7_1_CUTOVER_DATE = '2026-04-30';   // YYYY-MM-DD ET — picks dated < this stay on v7.0 logic
-const V7_1_HC_DOMINANCE_ENABLED = true;   // master kill-switch — flip to false to revert without redeploy
-const V7_1_HC_MULT          = 1.5;
-const V7_1_HC_CAP_ML_ELITE  = 4.5;        // never exceed 4.5u ML even with HC bump
-const V7_1_HC_CAP_ML_NON    = 3.0;
-const V7_1_HC_CAP_ST_ELITE  = 3.0;        // spreads/totals
-const V7_1_HC_CAP_ST_NON    = 1.75;
+// Stubbed eligibility helpers below return `true` unconditionally so
+// any straggling caller that hasn't been swept will short-circuit to
+// the AGS-U path. They will be removed in a follow-up sweep.
+const isV71Eligible = () => true;
+const isV72Eligible = () => true;
+const isV73Eligible = () => true;
+const isV74Eligible = () => true;
 
-// True if this pick should run v7.1 logic. Both the date gate AND the
-// kill-switch must be true. Used by every v7.1-aware function.
-function isV71Eligible(pickDate) {
-  if (!V7_1_HC_DOMINANCE_ENABLED) return false;
-  if (typeof pickDate !== 'string') return false;
-  return pickDate >= V7_1_CUTOVER_DATE;
-}
-
-// ─── v7.2 HC-Margin Tiered Promotion + Σ=2 Lock Bypass ───────────────
-// Source: WALLET_HC_MARGIN_ANALYSIS.md — HC_margin (HC_for − HC_ag) is
-// a continuous quality dial that scales unilaterally across all 6 Σ
-// buckets (+38 pp pooled WR / +64.6% pooled flat ROI on N=89, 12 days).
-// Two material findings vs the v7.1 binary HC_DOM gate:
-//
-//   1. The HC_margin ≥ +2 cohort goes 9-1 / +7.65u net (+76.5% ROI).
-//      That's ~47 pp WR over the +1 cohort (68.8%) and warrants a
-//      stronger ×1.75 multiplier vs the v7.1 ×1.5 ceiling.
-//
-//   2. HC_margin ≥ +1 (looser than HC_DOM) ships positive lift in 6/6
-//      buckets including Σ=2. We promote Σ=2 picks (currently SHADOW)
-//      to LEAN at HC_m=+1 and LOCK at HC_m≥+2 — a brand-new tier.
-//
-// v7.2 lock matrix (replaces v7.1 binary HC_DOM at the lock floor):
-//
-//        HC_m ≤0          HC_m = +1            HC_m ≥ +2
-//   Σ=2  SHADOW           LEAN (0u, track)     LOCK 0.5u (NEW)
-//   Σ=3  LEAN             LOCK base            LOCK base ×1.75
-//   Σ=4  LEAN             LOCK base            LOCK base ×1.75
-//   Σ=5  LOCK base        LOCK base ×1.5       LOCK base ×1.75
-//   Σ=6  LOCK base        LOCK base ×1.5       LOCK base ×1.75
-//   Σ≥7  LOCK ELITE       LOCK ELITE ×1.5      LOCK ELITE ×1.75
-//
-// Gated by V7_2_CUTOVER_DATE — picks dated before cutover keep v7.1
-// behaviour so historic Firestore docs don't change.
-const V7_2_CUTOVER_DATE = '2026-04-30';   // YYYY-MM-DD ET — flipped to today's slate
-const V7_2_HC_MARGIN_TIERED_ENABLED = true;   // master kill-switch
-const V7_2_HC_M1_MULT = 1.5;              // HC_margin = +1
-const V7_2_HC_M2_MULT = 1.75;             // HC_margin ≥ +2 (super tier)
-const V7_2_HC_CAP_ML_ELITE = 4.5;
-const V7_2_HC_CAP_ML_NON   = 3.5;         // bumped from 3.0 to fit ×1.75 of the 2.0u 4.5★ tier
-const V7_2_HC_CAP_ST_ELITE = 3.5;
-const V7_2_HC_CAP_ST_NON   = 2.0;         // bumped from 1.75
-const V7_2_SIGMA2_LOCK_UNITS_ML = 0.5;    // Σ=2 ∧ HC_m ≥ +2 lock floor (ML)
-const V7_2_SIGMA2_LOCK_UNITS_ST = 0.5;    // Σ=2 ∧ HC_m ≥ +2 lock floor (S+T) — same as ML
-                                          // because the sync layer clamps Math.max(units, 0.5)
-
-// True if this pick should run v7.2 logic. Both the date gate AND the
-// kill-switch must be true. v7.2 supersedes v7.1 — eligibility is
-// checked v7.2 first, falling back to v7.1 only for picks dated
-// V7_1_CUTOVER_DATE ≤ d < V7_2_CUTOVER_DATE.
-function isV72Eligible(pickDate) {
-  if (!V7_2_HC_MARGIN_TIERED_ENABLED) return false;
-  if (typeof pickDate !== 'string') return false;
-  return pickDate >= V7_2_CUTOVER_DATE;
-}
-
-// v7.3 (2026-04-30) — HC margin floor lowering + MUTE override.
-//
-// Source: WALLET_HC_MARGIN_ANALYSIS_FULL.md, full-universe analysis on
-// N=141 graded sides since v7 cutover. HC margin (HC_for − HC_ag, where
-// HC = CONFIRMED ∧ sizeRatio ≥ 1.5) is the universal quality dial:
-//
-//   1. MUTED ∧ HC_m ≥ +1  : 11-2 (84.6% WR, +85% flat ROI, +8.51u net)
-//                           p = 0.006 (significant). The health engine
-//                           is over-muting profitable picks.
-//                           → HC_m ≥ +1 OVERRIDES the dw≤0 / dq≤0 /
-//                             sum<3 mutes. CANCEL (dw≤−2) is unchanged
-//                             (CANCELLED ∧ HC_m≥+1 sample is N=2).
-//
-//   2. Σ=2 ∧ HC_m ≥ +1    : 8-3 (63% WR, +37% flat ROI, +2.96u net)
-//                           → graduate from LEAN → LOCK. Was a v7.2 LEAN.
-//
-//   3. Σ=1 ∧ HC_m ≥ +1    : 1-1 (50% WR, −3% flat ROI, n=2 — small)
-//                           Consistent with the universal HC-margin lift
-//                           signal: vs Σ=1 ∧ HC_m≤0 (22% WR, −59% ROI)
-//                           the HC backing produces +27.8 pp WR /
-//                           +55.7% ROI. Ship at 0.5u floor.
-//
-// v7.3 lock matrix (replaces / extends v7.2 at the lock floor):
-//
-//        HC_m ≤ 0         HC_m = +1            HC_m ≥ +2
-//   Σ=1  SHADOW           LOCK 0.5u (NEW)      LOCK 0.5u (NEW)
-//   Σ=2  SHADOW           LOCK 0.5u (NEW)      LOCK 0.5u
-//   Σ=3  LEAN             LOCK base ×1.5       LOCK base ×1.75
-//   Σ=4  LEAN             LOCK base ×1.5       LOCK base ×1.75
-//   Σ=5  LOCK base        LOCK base ×1.5       LOCK base ×1.75
-//   Σ=6  LOCK base        LOCK base ×1.5       LOCK base ×1.75
-//   Σ≥7  LOCK ELITE       LOCK ELITE ×1.5      LOCK ELITE ×1.75
-//
-// MUTE override matrix (post-lock decay):
-//
-//   dw=−1  (winners_faded)        → MUTE (unchanged — too strong a fade)
-//   dw= 0  (winners_below_floor)  → MUTE unless HC_m ≥ +1 (v7.3 ACTIVE)
-//   dq≤ 0  (quality_below_floor)  → MUTE unless HC_m ≥ +1 (v7.3 ACTIVE)
-//   sum<3  (sum_below_floor)      → MUTE unless HC_m ≥ +1 (v7.3 ACTIVE)
-//   dw≤−2  (winners_killed)       → CANCEL (unchanged)
-//
-// Gated by V7_3_CUTOVER_DATE — picks dated before cutover keep v7.2
-// behaviour so historic Firestore docs don't change.
-const V7_3_CUTOVER_DATE = '2026-04-30';   // YYYY-MM-DD ET — same day as v7.2 cutover
-const V7_3_HC_OVERRIDES_ENABLED = true;   // master kill-switch
-const V7_3_SIGMA1_LOCK_UNITS_ML = 0.5;    // Σ=1 ∧ HC_m ≥ +1 lock floor (ML)
-const V7_3_SIGMA1_LOCK_UNITS_ST = 0.5;    // Σ=1 ∧ HC_m ≥ +1 lock floor (S+T)
-const V7_3_SIGMA2_LOCK_UNITS_ML = 0.5;    // Σ=2 ∧ HC_m  = +1 lock floor (ML, was LEAN under v7.2)
-const V7_3_SIGMA2_LOCK_UNITS_ST = 0.5;    // Σ=2 ∧ HC_m  = +1 lock floor (S+T)
-
-// True if this pick should run v7.3 logic. v7.3 supersedes v7.2 (same
-// cutover date 2026-04-30 by design — flip both at once).
-function isV73Eligible(pickDate) {
-  if (!V7_3_HC_OVERRIDES_ENABLED) return false;
-  if (typeof pickDate !== 'string') return false;
-  return pickDate >= V7_3_CUTOVER_DATE;
-}
-
-// ─── v7.4 — single-floor display contract ────────────────────────────────
-// The canonical lock/display gate. A pick gets locked AND displayed iff:
-//   (a) HC route:  HC_m ≥ +1                          ← golden standard
-//   (b) Sum route: dw ≥ +1 ∧ dq ≥ +1 ∧ Σ ≥ +5         ← classic two-factor
-// Anything else is SHADOW (not displayed) — including the v7.3 LEAN cohort
-// (Σ ∈ {3,4} without HC) and the legacy v6.6 hybrid floor (Σ ≥ 3 with both
-// axes ≥ 1) which previously surfaced as "TRACK ONLY" cards. dw ≤ -2 still
-// CANCELS (kept as a hard fade signal).
-//
-// 2026-05-02 — HC route relaxed: dw/dq guards removed. HC margin ≥ +1
-// alone is sufficient. A confirmed-tier proven winner sized at ≥1.5×
-// their normal bet on this side (with zero confirmed sharps oversized
-// on the other side) is the strongest single signal we have. Money
-// split is irrelevant; quality margin (T30 mid-tier flicker) and a
-// 0 winner margin (small-N early-day cohort) no longer block HC picks.
-//
-// Drives:
-//   • decideLockStage         — write-time gate (LEAN bypasses removed)
-//   • lockTierFromDeltas      — never returns LEAN under v7.4
-//   • evaluatePickHealth      — picks below floor mute (or stay SHADOW)
-//   • locked-list display     — hides any side that doesn't currently meet
-//                               the floor pre-T-15 (server cron + browser
-//                               recompute keep the doc state in lock-step)
-//   • syncPickStateAuthoritative — authoritative every-cycle re-evaluation
-//
-// Re-evaluated every fetch cycle (~8 min) until T-15 freeze. Pre-T-15 a
-// pick can transition LOCKED↔SHADOW↔CANCELLED freely with live data.
-const V7_4_CUTOVER_DATE = '2026-05-02';
-const V7_4_FLOOR_ENABLED = true;
-const V7_4_SIGMA_FLOOR  = 5;             // sum route requires Σ ≥ this
-const V7_4_HC_MARGIN_FLOOR = 1;          // HC route requires HC_m ≥ this
-const V7_4_ELITE_SIGMA  = 7;             // ELITE tier (max units) gate
-
-function isV74Eligible(pickDate) {
-  if (!V7_4_FLOOR_ENABLED) return false;
-  if (typeof pickDate !== 'string') return false;
-  return pickDate >= V7_4_CUTOVER_DATE;
-}
-
-// Single source of truth for the v7.5 lock gate (function name kept as
-// meetsV74Floor for compatibility with all callers).
-//
-// v7.5 update (2026-05-05) — Σ route retired. Δq is too sparse to gate
-// on once walletDetails is filtered to whitelist-only wallets. Replaced
-// with two Δw-driven routes that lean on AGS as confirmation:
-//
-//   Route HC (golden standard): HC_m ≥ +1   → LOCK
-//   Route Δw≥2:                  Δw ≥ +2     → LOCK (winner margin alone)
-//   Route Δw=1+AGS:              Δw ≥ +1 ∧ AGS ≥ AGS_DW1_FLOOR (+3)
-//                                with ≥ AGS_MIN_PROVEN_WALLETS proven  → LOCK
-//
-// AGS rescue (route C, AGS ≥ AGS_LOCK_FLOOR with Δw > -2) lives in
-// passesV74DisplayGate and decideLockStage as a separate route so the
-// rescue reason can be tagged distinctly in promotedBy.
-//
-// dw ≤ -2 still cancels through evaluatePickHealth as a safety net.
-// AGS-Unified v9 — single lock floor. Δw / HC params are accepted but
-// IGNORED (kept for callsite compatibility during the cutover). Returns
-// true iff AGS-U clears the q60 lock floor with enough proven wallets.
+// Legacy lock-floor helper retained as an AGS-U shim. Δw / HC inputs
+// are accepted for callsite compatibility but ignored — only the AGS-U
+// q20 hard-mute floor and the proven-wallet floor are honored.
 function meetsV74Floor(_dw, _hcMargin, ags = null, agsProvenTotal = null) {
   if (ags == null || !Number.isFinite(ags)) return false;
   if (agsProvenTotal != null && agsProvenTotal < AGS_MIN_PROVEN_WALLETS) return false;
-  return meetsAgsLockFloor(ags, agsProvenTotal, getAgsCalibration());
+  if (meetsAgsHardMute(ags, getAgsCalibration())) return false;
+  return true;
 }
 
 // True iff the pick should display in the locked-picks list right now.
@@ -1501,9 +1334,11 @@ function computeWalletConsensus(walletDetails, sport, sideKey, pickDate = null) 
   // the two-factor star directly. Retained here only so legacy callers
   // and ranking reports read a consistent value (0 always).
   if (cfg.promote) {
-    const v74 = isV74Eligible(pickDate);
-    const sumFloor = v74 ? V7_4_SIGMA_FLOOR : 3;
-    if (dw >= 1 && dq >= 1 && (dw + dq) >= sumFloor) {
+    // Diagnostic-only flag — kept on the consensus object so legacy
+    // ranking reports / locked-list filters that haven't migrated to
+    // AGS-U yet still get a sensible answer. Real promotion decisions
+    // live in decideLockStage (AGS-U gate).
+    if (dw >= 1 && dq >= 1 && (dw + dq) >= 5) {
       result.promotionEligible = true;
     } else if (v73HcOverride && dw >= 0 && dq >= 0 && (dw + dq) >= 1) {
       result.promotionEligible = true;
@@ -1845,71 +1680,37 @@ function qualityBonus(v8Scoring, sideKey) {
   return 0;   // 50–55 neutral band
 }
 
-// TOP PICK predicates (V8.5 UI) — rebuilt around wallet-consensus Δ after
-// the 2026-04-22 predictor shoot-out. Δ dominated every other signal
-// (Δ spread +136.6% vs fmean +12.0% vs fROI −24.2% across the full v8
-// sample), so TOP PICK now surfaces the Δ ladder directly instead of
-// the regime+fmean composite it used to. Two tiers:
+// TOP PICK / SUPER TOP PICK predicates — AGS-Unified v9.
 //
-//   • Tier 1 — regular TOP PICK (outlined gold ribbon):
-//     Δ = +1 AND agW = 0  →  one profitable sport wallet backing with
-//     no profitable dissent. 2026-04-22 backtest: N=10, 70% WR, +31% ROI.
+//   SUPER TOP PICK (filled gold ribbon + glow): AGS-U tier === ELITE  (≥ q90)
+//   TOP PICK       (outlined gold ribbon):      AGS-U tier === PREMIUM (≥ q80)
+//   NO BADGE                                    : everything else (LOCK/LEAN/WEAK/FADE)
 //
-//   • Tier 2 — SUPER TOP PICK (filled gold ribbon with glow):
-//     Δ ≥ +2  →  two or more profitable sport wallets backing the pick.
-//     2026-04-22 backtest: N=16, 68.8% WR, +76.2% ROI.
+// Per the v9 holdout backtest (N=67), the ELITE bucket runs ~80% WR /
+// +41% ROI per pick and the PREMIUM bucket runs ~75% WR / +35% ROI —
+// the same separation that historically distinguished the legacy
+// Δw≥+2/Δq≥+2 cohort. By tying the ribbon to AGS-U directly we get a
+// single signal for "is this a premium play?" that also drives sizing.
 //
-// Δ / agW are read from the v8_walletConsensus* fields the stamping
-// pipeline writes on every side doc. Pre-V8 picks and picks with no
-// whitelisted-wallet data fall through to false on both tiers.
-//
-// Single source of truth: the same stamped values drive UI, ranking
-// reports, and attribution. No snapshot OR'ing; no regime/fmean fork.
-// v6.2 TOP PICK tiers — two-factor tightened. User spec (2026-04-24),
-// data-driven via V8_TWO_FACTOR_BACKTEST.md (Badge tier backtest).
-//
-// Rationale. In the N=74 backtest the Δw=+1 cohort (today's TOP PICK
-// threshold) goes 7-11 (WR 38.9%, flat ROI −25.7%, −4.63u). The 1/1
-// sub-cell is 1-4 (WR 20.0%, ROI −61.8%). So Δw=+1 plays have no edge
-// worth branding. Δw ≥ +2 meanwhile is 19-6 (WR 76.0%, ROI +45.2%),
-// and the Δw≥+2 ∧ Δq≥+2 subcohort is 18-5 (WR 78.3%, ROI +49.5%).
-//
-// New rules:
-//   SUPER TOP PICK (filled gold)   : Δw ≥ +2  AND  Δq ≥ +2
-//   TOP PICK       (outlined gold) : Δw ≥ +2  AND  (not SUPER, i.e. Δq ≤ +1)
-//   NO BADGE                        : Δw ≤ +1  (may still LOCK via Floor G,
-//                                                just no gold ribbon)
-//
-// The "2/1" TOP cohort is tiny in current sample (N=2) but is preserved
-// as a tier so that Δw≥+2 picks always earn at least a regular badge;
-// it will fill in as the sample grows.
+// Source of truth: `side.v8_agsTier` (stamped by syncPickStateAuthoritative)
+// with `side.v8_ags` as a fallback for tier derivation when the stamp
+// hasn't been refreshed yet on a historical doc.
 function evaluateTopPickTier(peak, lock, sideKey, promotedRegime = null,
-                             walletDelta = null, walletAgW = null, qualityMargin = null,
-                             side = null, pickDate = null) {
+                             _walletDelta = null, _walletAgW = null, qualityMargin = null,
+                             side = null, _pickDate = null) {
   const regime = peak?.regime ?? lock?.regime ?? promotedRegime ?? null;
   const v8 = peak?.v8Scoring ?? lock?.v8Scoring ?? null;
   const meanBaseF = computeMeanBaseF(v8, sideKey);
-  // v7.1 + v7.2 — when stamped fields are present and pick is
-  // post-V7_1_CUTOVER, read directly from them. The stamping layer
-  // applies version-correct logic at write time (v7.2 SUPER ≡ HC_m ≥ +2;
-  // v7.1 SUPER ≡ HC_DOM). Picks that haven't re-stamped yet (or are
-  // pre-cutover) fall back to the legacy Δw ≥ +2 path so historic UI
-  // views are unchanged.
-  if (side && isV71Eligible(pickDate)
-      && (side.v8_topPick !== undefined || side.v8_superTopPick !== undefined)) {
-    return {
-      isTopPick:      !!side.v8_topPick,
-      isSuperTopPick: !!side.v8_superTopPick,
-      regime,
-      meanBaseF,
-      qualityMargin,
-    };
+
+  // Prefer the stamped tier, then derive from stamped AGS-U value, then
+  // fall through to "no badge" (no AGS-U signal → not a top pick).
+  let tier = side?.v8_agsTier || null;
+  if (!tier && Number.isFinite(side?.v8_ags)) {
+    tier = agsTierFromValue(side.v8_ags, getAgsCalibration());
   }
-  // Legacy v7.0 path — preserved for historic picks. UNCHANGED from v7.0.
-  const dw = typeof walletDelta === 'number' ? walletDelta : null;
-  const dq = typeof qualityMargin === 'number' ? qualityMargin : null;
-  const isSuperTopPick = dw != null && dq != null && dw >= 2 && dq >= 2;
-  const isTopPick = isSuperTopPick || (dw != null && dw >= 2);
+  const isSuperTopPick = tier === 'ELITE';
+  const isTopPick      = isSuperTopPick || tier === 'PREMIUM';
+
   return { isTopPick, isSuperTopPick, regime, meanBaseF, qualityMargin };
 }
 
@@ -2006,24 +1807,18 @@ function stampWalletConsensus(target, v8Scoring, sideKey, sport, baseStars, prom
     agsProvenTotal: stampAgsProvenTotal,
   });
   target.v8_lockTier = liveTier;
-  // v7.3 — record whether this side was rescued from a v6.6/v7.2 mute by HC margin.
-  target.v8_v73HcRescue = v73Active && target.v8_hcMargin >= 1
-    && (wc.delta === 0 || wc.qualityMargin <= 0 || (wc.delta + wc.qualityMargin) < 3)
-    && wc.delta >= 0 && wc.qualityMargin >= 0;
-  // v7.2/v7.3 TOP / SUPER badge stamps:
-  //   TOP PICK       = any LOCKED / ELITE side that's actually shipping
-  //   SUPER TOP PICK = HC_m ≥ +2 ON TOP OF LOCK (the proven 9-1 / +77% ROI cohort)
-  // v7.1 fallback (1-day window) keeps the HC_DOM-based SUPER definition.
-  // Pre-v7.1 picks have v8_topPick/v8_superTopPick = null so
-  // evaluateTopPickTier falls back to the legacy Δw ≥ +2 path.
+  // AGS-Unified v9 TOP / SUPER badge stamps:
+  //   SUPER TOP PICK = AGS-U tier ≡ ELITE   (≥ q90 — top decile)
+  //   TOP PICK       = AGS-U tier ≡ PREMIUM (≥ q80) OR SUPER
+  // Both flags require the pick to be actively shipped (lockStage=LOCKED
+  // tier ∈ {ELITE, PREMIUM, LOCK}). LEAN/WEAK ship at reduced size but
+  // do NOT earn the gold ribbon. evaluateTopPickTier() reads these
+  // stamps first and only falls back to derivation from v8_agsTier /
+  // v8_ags when the stamp is missing.
   const isShipped = liveTier === 'LOCKED' || liveTier === 'ELITE';
-  if (v72Active) {
-    target.v8_topPick      = isShipped;
-    target.v8_superTopPick = isShipped && target.v8_hcMargin >= 2;
-  } else {
-    target.v8_topPick      = isShipped && (wc.delta + wc.qualityMargin) >= 5;
-    target.v8_superTopPick = isShipped && wc.hcDominant && isV71Eligible(pickDate);
-  }
+  const agsTierStamp = stampAgsResult?.tier || null;
+  target.v8_topPick      = isShipped && (agsTierStamp === 'ELITE' || agsTierStamp === 'PREMIUM');
+  target.v8_superTopPick = isShipped && agsTierStamp === 'ELITE';
 
   // AGS (AggregateScore) — already computed above (stampAgsResult). Stamp
   // the persisted fields + Phase 3 confirmation-gate verdict. Identical
@@ -2224,30 +2019,17 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
 
       const currentPeak = sides[side].peak?.units || 0;
       const currentPeakStars = sides[side].peak?.stars || 0;
-      // v7.2 LEAN sizing fix + HC margin tiered ceiling. Compute decision
-      // FIRST so we know whether to (a) collapse units to 0 (LEAN),
-      // (b) raise the ceiling to V7_2_HC_CAP_ML_NON (3.5u) when HC_m≥+1,
-      // (c) raise to V7_2_HC_CAP_ML_ELITE (4.5u) for ELITE locks,
-      // (d) fall back to v7.1 ceiling for legacy picks, or
-      // (e) keep the v7.0 3.0u ceiling.
+      // AGS-Unified v9 sizing — the incoming `units` value is already
+      // sized by agsuUnitsFromAgs (band multiplier × base × odds cap).
+      // We do not re-clamp here; the only adjustment is the FADE-tier
+      // hard mute (units → 0) and a 0.0u floor to prevent NaNs.
       const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0, pickDate);
-      const isLean = decision.lockTier === 'LEAN';
-      const clampCeiling = (() => {
-        const isElite = decision.lockTier === 'ELITE';
-        const hcM = decision.hcMargin || 0;
-        if (isV72Eligible(pickDate) && hcM >= 1) {
-          return isElite ? V7_2_HC_CAP_ML_ELITE : V7_2_HC_CAP_ML_NON;
-        }
-        if (isV71Eligible(pickDate) && decision.hcDominant) {
-          return isElite ? V7_1_HC_CAP_ML_ELITE : V7_1_HC_CAP_ML_NON;
-        }
-        return 3.0;
-      })();
-      const bumpedUnits = isLean ? 0 : Math.min(Math.max(units, 0.5), clampCeiling);
-      // Allow peak to DECREASE when transitioning into LEAN — otherwise the
-      // monotonic max-rule would freeze peak.units at the previous non-LEAN
-      // value and we'd ship LEAN picks at the old unit size.
-      const peakShouldWrite = isReflip || isLean || bumpedUnits > currentPeak || stars > currentPeakStars;
+      const isMuted = decision.lockTier === 'FADE';
+      const bumpedUnits = isMuted ? 0 : Math.max(units, 0);
+      // Allow peak to DECREASE when transitioning into FADE — otherwise
+      // the monotonic max-rule would freeze peak.units at the previous
+      // non-muted value and we'd ship muted picks at the old size.
+      const peakShouldWrite = isReflip || isMuted || bumpedUnits > currentPeak || stars > currentPeakStars;
       if (peakShouldWrite) {
         const tier = unitTier(bumpedUnits).label;
         const peakData = { odds, book, pinnacleOdds, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units: bumpedUnits, unitTier: tier, consensusStrength, stars: stars || 0, updatedAt: Date.now() };
@@ -2523,22 +2305,12 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
       const needsCsPatch = consensusStrength?.moneyPct != null && sides[side].lock?.consensusStrength?.moneyPct == null;
       const currentPeak = sides[side].peak?.units || 0;
       const currentPeakStars = sides[side].peak?.stars || 0;
-      // v7.2 LEAN sizing fix + HC margin tiered ceiling for spreads.
+      // AGS-Unified v9 sizing — `units` is pre-sized by agsuUnitsFromAgs;
+      // we only mute FADE-tier picks to 0u and floor at 0u for safety.
       const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0, pickDate);
-      const isLean = decision.lockTier === 'LEAN';
-      const clampCeiling = (() => {
-        const isElite = decision.lockTier === 'ELITE';
-        const hcM = decision.hcMargin || 0;
-        if (isV72Eligible(pickDate) && hcM >= 1) {
-          return isElite ? V7_2_HC_CAP_ST_ELITE : V7_2_HC_CAP_ST_NON;
-        }
-        if (isV71Eligible(pickDate) && decision.hcDominant) {
-          return isElite ? V7_1_HC_CAP_ST_ELITE : V7_1_HC_CAP_ST_NON;
-        }
-        return 2.0;
-      })();
-      const bumpedUnits = isLean ? 0 : Math.min(Math.max(units, 0.5), clampCeiling);
-      const peakShouldWrite = isLean || bumpedUnits > currentPeak || stars > currentPeakStars;
+      const isMuted = decision.lockTier === 'FADE';
+      const bumpedUnits = isMuted ? 0 : Math.max(units, 0);
+      const peakShouldWrite = isMuted || bumpedUnits > currentPeak || stars > currentPeakStars;
       if (peakShouldWrite) {
         const tier = unitTier(bumpedUnits).label;
         const peakData = { odds, book, pinnacleOdds, line, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units: bumpedUnits, unitTier: tier, consensusStrength, stars: stars || 0, updatedAt: Date.now() };
@@ -2669,22 +2441,12 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
       const needsCsPatch = consensusStrength?.moneyPct != null && sides[side].lock?.consensusStrength?.moneyPct == null;
       const currentPeak = sides[side].peak?.units || 0;
       const currentPeakStars = sides[side].peak?.stars || 0;
-      // v7.2 LEAN sizing fix + HC margin tiered ceiling for totals.
+      // AGS-Unified v9 sizing — `units` is pre-sized by agsuUnitsFromAgs;
+      // we only mute FADE-tier picks to 0u and floor at 0u for safety.
       const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0, pickDate);
-      const isLean = decision.lockTier === 'LEAN';
-      const clampCeiling = (() => {
-        const isElite = decision.lockTier === 'ELITE';
-        const hcM = decision.hcMargin || 0;
-        if (isV72Eligible(pickDate) && hcM >= 1) {
-          return isElite ? V7_2_HC_CAP_ST_ELITE : V7_2_HC_CAP_ST_NON;
-        }
-        if (isV71Eligible(pickDate) && decision.hcDominant) {
-          return isElite ? V7_1_HC_CAP_ST_ELITE : V7_1_HC_CAP_ST_NON;
-        }
-        return 2.0;
-      })();
-      const bumpedUnits = isLean ? 0 : Math.min(Math.max(units, 0.5), clampCeiling);
-      const peakShouldWrite = isLean || bumpedUnits > currentPeak || stars > currentPeakStars;
+      const isMuted = decision.lockTier === 'FADE';
+      const bumpedUnits = isMuted ? 0 : Math.max(units, 0);
+      const peakShouldWrite = isMuted || bumpedUnits > currentPeak || stars > currentPeakStars;
       if (peakShouldWrite) {
         const tier = unitTier(bumpedUnits).label;
         const peakData = { odds, book, pinnacleOdds, line, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units: bumpedUnits, unitTier: tier, consensusStrength, stars: stars || 0, updatedAt: Date.now() };
@@ -5060,34 +4822,34 @@ const HEALTH_REASON_LABELS = {
 const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   const { team, away, home, sport, stars, peakStars, lockStars, units, peakUnits, isDownsized, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, lockEV, criteriaMet, criteria, consensusStrength, pinnacleOdds, marketType, line, superseded, health, lockTier, trackedOnly, isTopPick: isTopPickPre, isSuperTopPick: isSuperTopPickPre, walletConsensusDelta, walletConsensusForW, walletConsensusAgW, walletConsensusQualityMargin, walletConsensusQualityForT30, walletConsensusQualityAgT30, hcDominant, hcConfFor, hcConfAg, hcMargin, systemVersion, promotedBy, v73HcRescue, agsValue, agsTier, agsQuintile, agsProvenForCount, agsProvenAgCount } = pick;
   // v7.1/v7.2/v7.3 — render the gold "HC ×N" chip when the pick is post-cutover
-  // AND has HC backing. Pre-cutover picks never see the chip.
-  // v7.2/v7.3 SUPER tier (HC margin ≥ +2): chip reads "HC ×1.75"
-  // v7.2/v7.3 STANDARD (HC margin = +1): chip reads "HC ×1.5"
-  // v7.1 (legacy): chip reads "HC ×1.5" when hcDominant
+  // AGS-Unified v9 — the legacy HC / Σ / hc-dominance route chips are
+  // retired. Diagnostic values still flow through so we can compute an
+  // HC chip for picks that historically locked under v74-hc-margin
+  // (display-only tag — does not affect sizing or lock decisions). All
+  // active picks promote with promotedBy='ags-unified-v9'.
   const hcMarginVal = Number.isFinite(hcMargin)
     ? hcMargin
     : ((hcConfFor || 0) - (hcConfAg || 0));
-  const isV73Pick = systemVersion === '7.3';
-  const isV72Pick = systemVersion === '7.2';
-  const isV71Pick = systemVersion === '7.1';
-  const isHcSuper = (isV73Pick || isV72Pick) && hcMarginVal >= 2;
-  const isHcStandard = ((isV73Pick || isV72Pick) && hcMarginVal === 1)
-    || (isV71Pick && !!hcDominant);
-  const showHcChip = isHcSuper || isHcStandard;
-  const hcChipMult = isHcSuper ? '1.75' : '1.5';
-  // v7.1/v7.2/v7.3 — "PROMOTED · HC" tooltip for picks promoted by HC margin.
+  const isHcSuper    = hcMarginVal >= 2;
+  const isHcStandard = hcMarginVal === 1;
+  const showHcChip   = isHcSuper || isHcStandard;
+  const hcChipMult   = isHcSuper ? '1.75' : '1.5';
+  // Legacy "promoted by HC / Σ / rescue" flags — preserved on historical
+  // picks so old tooltips still surface meaningfully when reviewing
+  // pre-v9 attributions. Always false for picks promoted by AGS-U.
   const wasHcPromoted = promotedBy === 'hc-dominance'
     || promotedBy === 'v72-hc-margin'
     || promotedBy === 'v72-sigma2-lock'
     || promotedBy === 'v72-sigma2-lean'
     || promotedBy === 'v73-sigma1-hc'
     || promotedBy === 'v73-sigma2-hc'
-    || promotedBy === 'v73-hc-rescue';
+    || promotedBy === 'v73-hc-rescue'
+    || promotedBy === 'v74-hc-margin';
   const wasSigma2Promoted = promotedBy === 'v72-sigma2-lock'
     || promotedBy === 'v72-sigma2-lean'
     || promotedBy === 'v73-sigma2-hc';
   const wasSigma1Promoted = promotedBy === 'v73-sigma1-hc';
-  const wasHcRescued = promotedBy === 'v73-hc-rescue' || !!v73HcRescue;
+  const wasHcRescued = promotedBy === 'v73-hc-rescue' || promotedBy === 'ags-rescue' || !!v73HcRescue;
   const [expanded, setExpanded] = useState(false);
   const ss = sportStyle(sport);
   const starDelta = (lockStars != null && stars != null) ? stars - lockStars : 0;
@@ -5098,9 +4860,18 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   // builder so the rule can OR across lock + peak snapshots.
   const isTopPick = !!isTopPickPre;
   const isSuperTopPick = !!isSuperTopPickPre;
-  const starLabels = { 5: 'ELITE PLAY', 4.5: 'ELITE PLAY', 4: 'STRONG PLAY', 3.5: 'STRONG PLAY', 3: 'SOLID PLAY', 2.5: 'SOLID PLAY' };
-  const starLabel = starLabels[stars] || 'SOLID PLAY';
-  const starColor = stars >= 4 ? B.green : B.gold;
+  // AGS-Unified v9 — star → label map mirroring rateStarsV8.
+  // 1★ FADE tier intentionally falls through to "HARD MUTE" so the card
+  // never reads as a normal "SOLID PLAY" when the pick is below q20.
+  const starLabels = {
+    5: 'ELITE PLAY', 4.5: 'PREMIUM PLAY',
+    4: 'STRONG PLAY', 3.5: 'STRONG PLAY',
+    3: 'SOLID PLAY', 2.5: 'TRACKING',
+    2: 'TRACKING', 1.5: 'DEVELOPING',
+    1: 'HARD MUTE',
+  };
+  const starLabel = starLabels[stars] || (stars >= 3 ? 'SOLID PLAY' : 'HARD MUTE');
+  const starColor = stars >= 4 ? B.green : stars >= 3 ? B.gold : stars >= 2 ? B.gold : B.red;
   const isGraded = status === 'COMPLETED' && outcome;
   const isWin = outcome === 'WIN';
   const isLoss = outcome === 'LOSS';
