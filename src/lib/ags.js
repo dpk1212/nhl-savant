@@ -1,119 +1,124 @@
-// AGS (AggregateScore) — single source of truth for both client (SharpFlow.jsx)
-// and server (scripts/syncPickStateAuthoritative.js, calibration jobs).
+// AGS-Unified v9 — single source of truth for client (SharpFlow.jsx) and
+// server (scripts/syncPickStateAuthoritative.js, calibration jobs).
 //
-// AGS is a composite score over six frozen per-side aggregate features
-// computed from `peak.v8Scoring.walletDetails[]` filtered to whitelist-proven
-// (CONFIRMED + FLAT) wallets. Each feature contributes sign·z(value), summed.
+// AGS-U is a composite z-score over five frozen per-side aggregate features
+// computed from `peak.v8Scoring.walletDetails[]`. Each feature contributes
+// sign·z(value), summed. The composite drives EVERY action — lock/mute,
+// sizing, tier label — so there is exactly one number per side that decides
+// what the system does. There are no parallel matrices, no special-case
+// route logic, no separate Δw / HC-margin gates.
 //
-// Validation history (whitelist-filtered, V6 cutover, dashboard-truth sample
-// N=104 graded picks 2026-04-18 → 2026-05-04):
-//   AGS ≥ +7  →  4-0   (100% WR, +172% flat ROI)   ← top of all V6
-//   AGS ≥ +5  →  13-1  ( 92.9% WR, +106% flat ROI)
-//   AGS ≥ +3  →  28-10 ( 73.7% WR,  +48% flat ROI)
-//   Q5 (top)  →  18-2  ( 90.0% WR)
-//   Q1 (bot)  →  4-17  ( 19.0% WR)   ← anti-signal
+// Feature design (chosen via L1 Lasso + Spearman + VIF on a 334-pick V6+
+// sample, holdout-validated):
 //
-// Caveat: tier-at-pick-time isn't stored, so we proxy with today's
-// `whitelistTier` from sharpWalletProfiles. This is far less leaky than
-// aggregating over WR50 / untracked wallets that the v8 engine writes into
-// walletDetails. Calibration is recomputed daily so normalizers track drift.
+//   COUNT consensus      → dCount        (proven wallet count margin)
+//   COUNT consensus (HC) → dHcCount      (HC-tier wallet count margin)
+//   INTENSITY            → dConvictionAvg (avg sizeRatio·convictionMult margin)
+//   INTENSITY (HC)       → dHcSizeRatio  (HC sizeRatio sum margin)
+//   DOMINANCE            → forContribShare (this side's share of total contribution)
+//
+// HC = CONFIRMED tier ∧ wallet sizeRatio ≥ 1.5×.
+//
+// Validation (HOLDOUT N=67, 2026-05-06 → 2026-05-14):
+//   AGS-U ≥ q60 (LOCK)    → 65-69% WR, +22-28% ROI/pick
+//   AGS-U ≥ q80 (PREMIUM) → 75% WR,  +35% ROI/pick
+//   AGS-U ≥ q90 (ELITE)   → 80% WR,  +41% ROI/pick
+//   AGS-U <  q20 (FADE)   → bottom-quintile cohort: 9% WR historically
+//                           → HARD MUTE (size = 0)
+//
+// Holdout vs current matrix on same 67-pick sample:
+//   Matrix all-shipped:    +5.93u  ( 8.9% ROI/pick)
+//   AGS-U aggressive sizing: +18.77u (24.0% ROI/unit, 100% volume preserved)
+//
+// Calibration is recomputed daily by scripts/computeAgsCalibration.js so the
+// quintile boundaries (q20/q40/q60/q80/q90) and per-feature normalizers
+// (mean/sd) track distribution drift.
 
 // ────────────────────────────────────────────────────────────────────────
-// Feature definitions — order matters only for display.
-// Sign is the direction the composite uses; all six are positive ρ in the
-// 2026-05-05 calibration. Signs are revisited daily in the calibration job.
+// Feature definitions — order is display-only.
+// All five features are positive ρ in the V6+ calibration. Signs are
+// re-validated daily; if a feature flips negative on a fresh sample the
+// calibration job logs a warning but does not auto-flip the sign.
 // ────────────────────────────────────────────────────────────────────────
 export const AGS_FEATURES = [
-  { key: 'dCount',          label: 'Δcount',         family: 'TOTAL',         sign: +1 },
-  { key: 'dContribution',   label: 'ΔcontribSum',    family: 'TOTAL',         sign: +1 },
-  { key: 'dBestContrib',    label: 'ΔbestContrib',   family: 'CONCENTRATION', sign: +1 },
-  { key: 'dBestWalletBase', label: 'ΔbestBase',      family: 'CONCENTRATION', sign: +1 },
-  { key: 'dConvictionAvg',  label: 'ΔavgConviction', family: 'BLENDED',       sign: +1 },
-  { key: 'dRoiNormAvg',     label: 'ΔavgRoiNorm',    family: 'BLENDED',       sign: +1 },
+  { key: 'dCount',           label: 'Δcount',         family: 'COUNT',     sign: +1 },
+  { key: 'dHcCount',         label: 'ΔHCcount',       family: 'COUNT_HC',  sign: +1 },
+  { key: 'dConvictionAvg',   label: 'ΔavgConviction', family: 'INTENSITY', sign: +1 },
+  { key: 'dHcSizeRatio',     label: 'ΔHCsizeRatio',   family: 'INTENSITY_HC', sign: +1 },
+  { key: 'forContribShare',  label: 'forShare',       family: 'DOMINANCE', sign: +1 },
 ];
 
-// ────────────────────────────────────────────────────────────────────────
-// Decision thresholds — read by both client and server lock/health logic.
-// Tuned conservatively against the N=104 sample. Phase-3 rollout, not Phase-1.
-//
-// 2026-05-13: lock floor switched from static +5 to dynamic q50 (above
-// median) from the daily calibration. Empirically the +3..+5 band hits
-// 82% WR / +0.60u flat per pick at ~3x the throughput of the +5 floor —
-// the median is the right place to draw the line. `AGS_LOCK_FLOOR = 5.0`
-// is retained as (a) cold-start fallback when calibration lacks q50, and
-// (b) the "STRONG AGS" semantic threshold for the ELITE-tier inline check
-// and the LOCK badge in contribTier — both of which mean "AGS clears the
-// historical strong-signal bar," not "this pick gets locked."
-// ────────────────────────────────────────────────────────────────────────
-export const AGS_LOCK_FLOOR = 5.0;        // legacy fallback + ELITE/STRONG-AGS label threshold
-export const AGS_ELITE_FLOOR = 5.0;       // alias — used by ELITE-tier inline checks
-export const AGS_MUTE_FLOOR = -1.0;       // confirmation gate (route B): AGS < -1 → MUTE
-// v7.5 — Δw=+1 confirmation floor. The Σ ≥ +5 sum route was retired
-// (2026-05-05) because Δq (quality margin) is too sparse to be meaningful
-// once we filter walletDetails to whitelist-only wallets. Δw=+1 alone is
-// thin signal but a positive aggregate over the proven wallet stack
-// (AGS ≥ +3, "STRONG" tier) is enough confirmation to ship. The
-// AGS_MIN_PROVEN_WALLETS guard still applies so a single wallet z-spike
-// can't drive a Δw=+1 lock.
-//   • AGS ≥ +5 → AGS rescue route (locks regardless of Δw, requires Δw > -2)
-//   • AGS ≥ +3 → Δw=+1 confirmation route (this constant)
-//   • AGS < -1 → confirmation gate veto on otherwise-locking sides
-export const AGS_DW1_FLOOR = 3.0;
-// Rescue requires ≥AGS_MIN_PROVEN_WALLETS proven wallets in walletDetails
-// (anti thin-sample noise). Lowered from 3 → 2 (2026-05-05) because MLB/NHL
-// stacks routinely show genuine signal with only 2 proven wallets backing —
-// e.g. Lakers SPREAD with AGS=+5.19 and 2 wallets FOR / 0 AGAINST is real
-// signal, not noise. The same guard still protects against single-wallet
-// z-spikes driving rescues.
+// HC eligibility threshold — wallet must be CONFIRMED tier AND have
+// sizeRatio ≥ HC_RATIO to count toward HC features. Mirrors the production
+// threshold in syncPickStateAuthoritative.js.
+export const HC_RATIO = 1.5;
+
+// Minimum proven-wallet count gate. Prevents single-wallet z-spikes from
+// driving locks. A pick with only 1 proven wallet has too little signal
+// for the composite to be trusted, regardless of how high its AGS-U is.
 export const AGS_MIN_PROVEN_WALLETS = 2;
+
+// Absolute (non-calibration) safety floor. AGS-U values below this trigger
+// HARD MUTE regardless of where calibration's q20 sits. Protects against
+// pathological calibration runs (e.g. tiny sample on cold start) that could
+// place q20 too low and accidentally permit toxic picks to ship.
+export const AGS_ABSOLUTE_MUTE_FLOOR = -3.0;
 
 // ────────────────────────────────────────────────────────────────────────
 // Last-known-good calibration — used as a fallback when Firestore
 // `agsCalibration/current` is unavailable (cron failed, cold start, etc.).
-// Refreshed by scripts/computeAgsCalibration.js daily. Values below come
-// from the 2026-05-05 N=104 V6 dashboard-filtered, whitelist-only run.
+// Refreshed by scripts/computeAgsCalibration.js on every run.
+//
+// Values below come from the AGS-U v9 backtest TRAIN set (N=267,
+// 2026-04-18 → 2026-05-06, V6+ universe with SHADOW included). The
+// quintile values are the SUMMED z-score boundaries (each feature
+// contributes ±~1, five features sum to ±~5).
 // ────────────────────────────────────────────────────────────────────────
 export const AGS_FALLBACK_CALIBRATION = Object.freeze({
   normalizers: {
-    dCount:          { mean: 1.28,  sd: 1.55 },
-    dContribution:   { mean: 75.06, sd: 89.13 },
-    dBestContrib:    { mean: 37.80, sd: 47.38 },
-    dBestWalletBase: { mean: 36.17, sd: 40.49 },
-    dConvictionAvg:  { mean: 0.51,  sd: 0.68 },
-    dRoiNormAvg:     { mean: 32.79, sd: 40.63 },
+    dCount:           { mean: 1.05, sd: 1.55 },
+    dHcCount:         { mean: 0.55, sd: 0.95 },
+    dConvictionAvg:   { mean: 0.50, sd: 0.70 },
+    dHcSizeRatio:     { mean: 1.00, sd: 2.00 },
+    forContribShare:  { mean: 0.60, sd: 0.28 },
   },
-  // q60 is the active LOCK floor as of 2026-05-13. Historical fallback
-  // value (+2.58) preserved here so cold-start matches the last-known
-  // empirical 60th percentile from the N=104 sample. The daily
-  // calibration overwrites this with a fresh q60 on each run.
-  quintiles: { q20: -4.77, q40: -0.46, q50: 1.00, q60: 2.58, q80: 4.21, q90: 5.20 },
-  thresholds: { lockFloor: AGS_LOCK_FLOOR, eliteFloor: AGS_ELITE_FLOOR, muteFloor: AGS_MUTE_FLOOR },
-  sampleSize: 104,
-  dateRange: { from: '2026-04-18', to: '2026-05-04' },
-  computedAt: '2026-05-05T18:00:00Z',
+  // Summed-z-score quintile boundaries. Five features summed.
+  quintiles: { q20: -2.60, q40: 0.20, q50: 0.50, q60: 1.00, q80: 2.40, q90: 3.55 },
+  // Action thresholds derived from the quintiles.
+  thresholds: {
+    hardMuteFloor: -2.60, // = q20 — hard mute below this AGS-U value
+    lockFloor:      1.00, // = q60 — full unit lock floor
+    premiumFloor:   2.40, // = q80 — 1.50× sizing
+    eliteFloor:     3.55, // = q90 — 2.00× sizing
+  },
+  sampleSize: 267,
+  dateRange: { from: '2026-04-18', to: '2026-05-06' },
+  computedAt: '2026-05-14T23:50:00Z',
   source: 'fallback-hardcoded',
 });
 
 // ────────────────────────────────────────────────────────────────────────
-// Whitelist-filtered side aggregator. Mirrors aggregateSide() in
-// scripts/_walletStackScore.mjs exactly — keep the math identical.
+// Whitelist-filtered side aggregator with HC subset.
 //
 // Args:
 //   walletDetails: peak.v8Scoring.walletDetails[] frozen at scoring time
 //   sideKey:       'home' | 'away' | 'over' | 'under' (the FOR side)
-//   sport:         e.g. 'NBA' / 'MLB' — used to look up tier per-sport
+//   sport:         e.g. 'NBA' / 'MLB' — used for tier lookup
 //   isProvenFn:    fn(walletShort, sport) => boolean
+//                  (true if wallet is CONFIRMED or FLAT for sport)
+//   isHcEligibleFn:fn(walletShort, sport) => boolean
+//                  (true if wallet is CONFIRMED for sport — strictly stricter
+//                   than isProvenFn). HC additionally requires
+//                   wallet.sizeRatio ≥ HC_RATIO. Optional: when omitted, all
+//                   HC features are 0 (back-compat for callers pre-v9).
 //
 // Returns null if no proven wallets are present on either side.
 // ────────────────────────────────────────────────────────────────────────
-export function aggregateSideProven(walletDetails, sideKey, sport, isProvenFn) {
+export function aggregateSideProven(walletDetails, sideKey, sport, isProvenFn, isHcEligibleFn = null) {
   if (!Array.isArray(walletDetails) || walletDetails.length === 0) return null;
 
   const empty = () => ({
-    count: 0, invested: 0, contribution: 0, walletBase: 0,
-    roi: 0, pnl: 0, sizeRatio: 0, conviction: 0,
-    bestRank: null, bestContrib: 0, bestWalletBase: 0,
-    sumRoiNorm: 0, sumPnlNorm: 0, sumRankNorm: 0,
+    count: 0, contribution: 0, sumConviction: 0, hcCount: 0, hcSumSizeRatio: 0,
   });
   const f = empty();
   const a = empty();
@@ -126,58 +131,44 @@ export function aggregateSideProven(walletDetails, sideKey, sport, isProvenFn) {
     if (!isProvenFn(w.wallet, sport)) continue;
     provenRaw += 1;
 
-    const b = (w.side === sideKey) ? f : a;
-    b.count        += 1;
-    b.invested     += Number(w.invested || 0);
-    b.contribution += Number(w.contribution || 0);
-    b.walletBase   += Number(w.walletBase || 0);
-    b.roi          += Number(w.roi || 0);
-    b.pnl          += Number(w.pnl || 0);
-    b.sizeRatio    += Number(w.sizeRatio || 0);
-    b.conviction   += Number(w.convictionMult || 0);
-    b.sumRoiNorm   += Number(w.roiNorm || 0);
-    b.sumPnlNorm   += Number(w.pnlNorm || 0);
-    b.sumRankNorm  += Number(w.rankNorm || 0);
+    const sideBucket = (w.side === sideKey) ? f : a;
+    const sizeRatio = Number(w.sizeRatio || 0);
+    sideBucket.count        += 1;
+    sideBucket.contribution += Number(w.contribution || 0);
+    sideBucket.sumConviction += Number(w.convictionMult || 0);
 
-    const r = Number(w.rank);
-    if (Number.isFinite(r) && (b.bestRank == null || r < b.bestRank)) b.bestRank = r;
-    const c = Number(w.contribution || 0);
-    if (c > b.bestContrib) b.bestContrib = c;
-    const wb = Number(w.walletBase || 0);
-    if (wb > b.bestWalletBase) b.bestWalletBase = wb;
+    // HC subset — CONFIRMED tier + sizeRatio ≥ HC_RATIO.
+    if (isHcEligibleFn && isHcEligibleFn(w.wallet, sport) && sizeRatio >= HC_RATIO) {
+      sideBucket.hcCount += 1;
+      sideBucket.hcSumSizeRatio += sizeRatio;
+    }
   }
 
   if ((f.count + a.count) === 0) return null;
 
   const avg = (x, n) => n > 0 ? x / n : 0;
+  const totalContribution = f.contribution + a.contribution;
+
   return {
     forCount: f.count,
-    agCount: a.count,
-    forInvested: f.invested,
-    agInvested: a.invested,
+    agCount:  a.count,
+    forContribution: f.contribution,
+    agContribution:  a.contribution,
     totalRaw,
     provenRaw,
 
-    dCount:          f.count - a.count,
-    dInvested:       f.invested - a.invested,
-    dContribution:   f.contribution - a.contribution,
-    dContribAvg:     avg(f.contribution, f.count) - avg(a.contribution, a.count),
-    dWalletBaseAvg:  avg(f.walletBase, f.count) - avg(a.walletBase, a.count),
-    dRoiAvg:         avg(f.roi, f.count) - avg(a.roi, a.count),
-    dPnlAvg:         avg(f.pnl, f.count) - avg(a.pnl, a.count),
-    dSizeRatioAvg:   avg(f.sizeRatio, f.count) - avg(a.sizeRatio, a.count),
-    dConvictionAvg:  avg(f.conviction, f.count) - avg(a.conviction, a.count),
-    dRoiNormAvg:     avg(f.sumRoiNorm, f.count) - avg(a.sumRoiNorm, a.count),
-    dPnlNormAvg:     avg(f.sumPnlNorm, f.count) - avg(a.sumPnlNorm, a.count),
-    dRankNormAvg:    avg(f.sumRankNorm, f.count) - avg(a.sumRankNorm, a.count),
-    dBestRank:       (f.bestRank != null && a.bestRank != null) ? (a.bestRank - f.bestRank) : 0,
-    dBestContrib:    f.bestContrib - a.bestContrib,
-    dBestWalletBase: f.bestWalletBase - a.bestWalletBase,
+    // The five AGS-U features. Order matches AGS_FEATURES.
+    dCount:           f.count - a.count,
+    dHcCount:         f.hcCount - a.hcCount,
+    dConvictionAvg:   avg(f.sumConviction, f.count) - avg(a.sumConviction, a.count),
+    dHcSizeRatio:     f.hcSumSizeRatio - a.hcSumSizeRatio,
+    forContribShare:  totalContribution > 0 ? f.contribution / totalContribution : 0.5,
   };
 }
 
 // ────────────────────────────────────────────────────────────────────────
-// computeAgs — z-score the six features and sum (with sign).
+// computeAgs — z-score the five features and sum (with sign).
+// Returns { ags, components, tier, quintile, ... } or null if agg missing.
 // ────────────────────────────────────────────────────────────────────────
 export function computeAgs(agg, calibration) {
   if (!agg) return null;
@@ -198,34 +189,41 @@ export function computeAgs(agg, calibration) {
   return {
     ags: total,
     components,
-    tier: agsTierFromValue(total),
+    tier: agsTierFromValue(total, cal),
     quintile: agsQuintileFromValue(total, cal),
     provenForCount: agg.forCount || 0,
-    provenAgCount: agg.agCount || 0,
+    provenAgCount:  agg.agCount  || 0,
     provenTotalCount: (agg.forCount || 0) + (agg.agCount || 0),
     provenRaw: agg.provenRaw || 0,
-    totalRaw: agg.totalRaw || 0,
+    totalRaw:  agg.totalRaw  || 0,
     calibrationSource: cal.source || (cal === AGS_FALLBACK_CALIBRATION ? 'fallback' : 'firestore'),
   };
 }
 
 // ────────────────────────────────────────────────────────────────────────
-// Tier mapping — used for the AGS badge in the UI and `v8_agsTier` in
-// Firestore. Boundaries are AGS thresholds, not quintile-relative.
+// Tier mapping — quintile-based. Used for the AGS-U badge in the UI and
+// `v8_agsTier` in Firestore. Six tiers map 1:1 onto sizing bands.
+//   ELITE   ≥ q90  (2.00×)
+//   PREMIUM ≥ q80  (1.50×)
+//   LOCK    ≥ q60  (1.10×)  ← lock floor
+//   LEAN    ≥ q40  (0.50×)
+//   WEAK    ≥ q20  (0.20×)
+//   FADE    < q20  (HARD MUTE — units = 0)
 // ────────────────────────────────────────────────────────────────────────
-export function agsTierFromValue(ags) {
+export function agsTierFromValue(ags, calibration = null) {
   if (ags == null || !Number.isFinite(ags)) return 'UNKNOWN';
-  if (ags >= 7) return 'ELITE';
-  if (ags >= 5) return 'LOCK';
-  if (ags >= 3) return 'STRONG';
-  if (ags >= 0) return 'NEUTRAL';
-  if (ags >= -3) return 'WEAK';
+  if (ags < AGS_ABSOLUTE_MUTE_FLOOR) return 'FADE';
+  const q = (calibration && calibration.quintiles) ? calibration.quintiles : AGS_FALLBACK_CALIBRATION.quintiles;
+  if (ags >= q.q90) return 'ELITE';
+  if (ags >= q.q80) return 'PREMIUM';
+  if (ags >= q.q60) return 'LOCK';
+  if (ags >= q.q40) return 'LEAN';
+  if (ags >= q.q20) return 'WEAK';
   return 'FADE';
 }
 
-// ────────────────────────────────────────────────────────────────────────
-// Quintile placement — relative to the active calibration's distribution.
-// ────────────────────────────────────────────────────────────────────────
+// Quintile placement (1..5) relative to active calibration distribution.
+// 1 = bottom 20%, 5 = top 20%.
 export function agsQuintileFromValue(ags, calibration = AGS_FALLBACK_CALIBRATION) {
   if (ags == null || !Number.isFinite(ags)) return null;
   const q = calibration.quintiles || AGS_FALLBACK_CALIBRATION.quintiles;
@@ -237,90 +235,72 @@ export function agsQuintileFromValue(ags, calibration = AGS_FALLBACK_CALIBRATION
 }
 
 // ────────────────────────────────────────────────────────────────────────
-// Sizing multiplier — Phase 2 of integration. Multiplies the existing
-// peakUnits / liveUnits output of calculateUnits() / calculateSpreadTotalUnits().
+// Sizing multiplier — calibration-aware 6-band aggressive ladder.
+// HARD MUTE below q20 (returns 0, NOT a token stake) — these picks are
+// historically sub-15% WR. Multiplier ladder validated against a
+// 67-pick holdout (turned +5.93u baseline into +18.77u with 100% volume).
 //
-// 2026-05-13: switched from a flat 4-band table capped at 1.0× to a
-// calibration-aware 7-band ladder that goes ABOVE 1.0× for top-decile
-// picks. This is the "AGS has more impact" lever — both upside (top-10%
-// gets +50%, top-20% gets +25%) and downside (sub-LOCK cuts are sharper:
-// q40..q60 is 0.65× vs old 0.85×, q20..q40 is 0.40× vs old 0.65×).
+//   ≥ q90     → 2.00×  (ELITE — top decile, ~80% WR historically)
+//   ≥ q80     → 1.50×  (PREMIUM — q80..q90 band, ~75% WR)
+//   ≥ q60     → 1.10×  (LOCK — full standard size, ~65-70% WR)
+//   ≥ q40     → 0.50×  (LEAN — half stake, neutral cohort)
+//   ≥ q20     → 0.20×  (WEAK — quarter stake, visible signal but small risk)
+//   <  q20    → 0.00×  (FADE — HARD MUTE; do not ship)
 //
-// Calibration-aware bands (when calibration provided):
-//   ≥ q90   → 1.50×  (ELITE BONUS — historically ~100% WR top-decile)
-//   ≥ q80   → 1.25×  (PREMIUM — captures the +3..+5 strong band)
-//   ≥ q60   → 1.00×  (FULL — LOCK floor and above)
-//   ≥ q40   → 0.65×  (REDUCED — sub-LOCK / neutral)
-//   ≥ q20   → 0.40×  (WEAK — historically anti-signal)
-//   ≥ mute  → 0.25×  (THIN — gate may fire, this is the fallback)
-//   < mute  → 0.10×  (FADE — gate should fire; never zero out)
-//
-// Legacy path (no calibration) preserves pre-2026-05-13 behavior so
-// callers that haven't been migrated yet keep their current sizing.
+// Calibration MUST be passed. The fallback calibration's quintiles will
+// be used if `calibration` is null (cold start / cron failure), so the
+// function never crashes — but production callers should always pass
+// a fresh calibration loaded from Firestore.
 // ────────────────────────────────────────────────────────────────────────
 export function agsSizeMultiplier(ags, calibration = null) {
-  if (ags == null || !Number.isFinite(ags)) return 1.0;
-
-  // Absolute floor — sizing must never reward a pick whose AGS is below
-  // the mute floor (-1), even if a sample's q20 sits much lower (e.g.
-  // q20 = -4.57 on the V6 sample). The confirmation gate should already
-  // be muting these; if a wallet-consensus override keeps it active,
-  // we ship at minimum stake while we wait for the gate to catch up.
-  if (ags < AGS_MUTE_FLOOR) return 0.10;
-
-  if (calibration && calibration.quintiles) {
-    const q = calibration.quintiles;
-    if (Number.isFinite(q.q90) && ags >= q.q90) return 1.50;
-    if (Number.isFinite(q.q80) && ags >= q.q80) return 1.25;
-    if (Number.isFinite(q.q60) && ags >= q.q60) return 1.00;
-    if (Number.isFinite(q.q40) && ags >= q.q40) return 0.65;
-    if (Number.isFinite(q.q20) && ags >= q.q20) return 0.40;
-    return 0.25; // mute floor .. q20 — last band before the absolute floor
-  }
-
-  // Legacy path — matches pre-2026-05-13 behavior exactly.
-  if (ags >= 5) return 1.0;
-  if (ags >= 3) return 1.0;
-  if (ags >= 0) return 0.85;
-  if (ags >= AGS_MUTE_FLOOR) return 0.65;
-  return 0.5;
+  if (ags == null || !Number.isFinite(ags)) return 0;
+  if (ags < AGS_ABSOLUTE_MUTE_FLOOR) return 0;
+  const q = (calibration && calibration.quintiles) ? calibration.quintiles : AGS_FALLBACK_CALIBRATION.quintiles;
+  if (Number.isFinite(q.q90) && ags >= q.q90) return 2.00;
+  if (Number.isFinite(q.q80) && ags >= q.q80) return 1.50;
+  if (Number.isFinite(q.q60) && ags >= q.q60) return 1.10;
+  if (Number.isFinite(q.q40) && ags >= q.q40) return 0.50;
+  if (Number.isFinite(q.q20) && ags >= q.q20) return 0.20;
+  return 0; // < q20 → HARD MUTE
 }
 
 // ────────────────────────────────────────────────────────────────────────
-// Lock-floor and confirmation-gate predicates — used by sync script and UI.
+// Lock and mute predicates. Single source of truth — no other gate
+// (v74 / v75 / ags-rescue / dw-1 / hc-margin) is consulted.
 // ────────────────────────────────────────────────────────────────────────
 
-// Returns the live AGS lock floor — q60 (60th percentile) of the
-// calibration distribution, or the legacy AGS_LOCK_FLOOR constant if the
-// calibration doc is missing. q60 was chosen over q50 (median) after the
-// 2026-05-13 audit: q50 (≈+0.97 on the V6 cutover sample) sat in the 59%
-// WR / +0.06u-per-pick band, while q60 (≈+2.01) captures the 71% WR /
-// +0.41u-per-pick band — a meaningfully steeper edge per unit of volume.
-// Caller is responsible for passing the same calibration object that
-// drove the AGS value being gated — never mix calibrations.
+// Returns the live LOCK floor — q60 of the calibration distribution.
 export function agsLockFloorFromCalibration(calibration) {
   const cal = calibration && calibration.quintiles ? calibration : AGS_FALLBACK_CALIBRATION;
   const q60 = cal.quintiles?.q60;
-  if (Number.isFinite(q60)) return q60;
-  // Fallback path — pre-2026-05-13 calibrations or cold start. Use the
-  // static AGS_LOCK_FLOOR (+5) so we never accidentally lock more
-  // aggressively than the legacy behavior without a real calibration.
-  return AGS_LOCK_FLOOR;
+  return Number.isFinite(q60) ? q60 : AGS_FALLBACK_CALIBRATION.quintiles.q60;
 }
 
-// `calibration` is optional for backward compat. When omitted, falls back
-// to the static AGS_LOCK_FLOOR (preserves pre-2026-05-13 behavior for any
-// caller that hasn't been migrated yet).
+// Returns the live HARD MUTE floor — q20 of the calibration distribution.
+// AGS-U values below this trigger size = 0 (no shipping), regardless of
+// any other signal. Bound below by the absolute safety floor so a
+// pathological calibration can't open the gate to FADE-tier picks.
+export function agsHardMuteFloorFromCalibration(calibration) {
+  const cal = calibration && calibration.quintiles ? calibration : AGS_FALLBACK_CALIBRATION;
+  const q20 = cal.quintiles?.q20;
+  const q20Effective = Number.isFinite(q20) ? q20 : AGS_FALLBACK_CALIBRATION.quintiles.q20;
+  return Math.max(q20Effective, AGS_ABSOLUTE_MUTE_FLOOR);
+}
+
+// True iff this pick clears the LOCK floor AND has enough proven wallets
+// to be a real signal (not a single-wallet z-spike).
 export function meetsAgsLockFloor(ags, provenWalletCount, calibration = null) {
   if (ags == null || !Number.isFinite(ags)) return false;
   if (provenWalletCount != null && provenWalletCount < AGS_MIN_PROVEN_WALLETS) return false;
-  const floor = calibration ? agsLockFloorFromCalibration(calibration) : AGS_LOCK_FLOOR;
-  return ags >= floor;
+  return ags >= agsLockFloorFromCalibration(calibration);
 }
 
-export function failsAgsConfirmationGate(ags) {
-  if (ags == null || !Number.isFinite(ags)) return false; // missing → don't gate
-  return ags < AGS_MUTE_FLOOR;
+// True iff this pick is in the FADE tier (hard mute zone). Used by the
+// sync script to force size = 0 even on picks that another override might
+// otherwise want to ship.
+export function meetsAgsHardMute(ags, calibration = null) {
+  if (ags == null || !Number.isFinite(ags)) return false;
+  return ags < agsHardMuteFloorFromCalibration(calibration);
 }
 
 // ────────────────────────────────────────────────────────────────────────
@@ -328,10 +308,27 @@ export function failsAgsConfirmationGate(ags) {
 // ────────────────────────────────────────────────────────────────────────
 export const AGS_TIER_META = {
   ELITE:   { label: 'ELITE',   color: '#16a34a', bg: 'rgba(22,163,74,0.15)',  short: 'ELITE'   },
-  LOCK:    { label: 'LOCK',    color: '#22c55e', bg: 'rgba(34,197,94,0.15)',  short: 'LOCK'    },
-  STRONG:  { label: 'STRONG',  color: '#84cc16', bg: 'rgba(132,204,22,0.15)', short: 'STRONG'  },
-  NEUTRAL: { label: 'NEUTRAL', color: '#facc15', bg: 'rgba(250,204,21,0.15)', short: 'NEUT'    },
+  PREMIUM: { label: 'PREMIUM', color: '#22c55e', bg: 'rgba(34,197,94,0.15)',  short: 'PREM'    },
+  LOCK:    { label: 'LOCK',    color: '#84cc16', bg: 'rgba(132,204,22,0.15)', short: 'LOCK'    },
+  LEAN:    { label: 'LEAN',    color: '#facc15', bg: 'rgba(250,204,21,0.15)', short: 'LEAN'    },
   WEAK:    { label: 'WEAK',    color: '#f97316', bg: 'rgba(249,115,22,0.15)', short: 'WEAK'    },
   FADE:    { label: 'FADE',    color: '#ef4444', bg: 'rgba(239,68,68,0.15)',  short: 'FADE'    },
   UNKNOWN: { label: '—',       color: '#6b7280', bg: 'rgba(107,114,128,0.10)', short: '—'      },
 };
+
+// ────────────────────────────────────────────────────────────────────────
+// DEPRECATED — kept as no-op exports so old call sites don't crash during
+// the v9 cutover. All decision logic now flows through agsSizeMultiplier
+// (which returns 0 for FADE-tier picks) and meetsAgsLockFloor / meetsAgsHardMute.
+// Remove these in a follow-up PR after no callers remain.
+// ────────────────────────────────────────────────────────────────────────
+export const AGS_LOCK_FLOOR  = 1.00; // legacy constant — use agsLockFloorFromCalibration instead
+export const AGS_MUTE_FLOOR  = -2.60; // legacy constant — use agsHardMuteFloorFromCalibration instead
+export const AGS_DW1_FLOOR   = null;  // route retired in v9
+export const AGS_ELITE_FLOOR = 3.55;  // legacy alias for q90 fallback
+
+export function failsAgsConfirmationGate(ags) {
+  // v9 semantics: failing the confirmation gate = below hard mute floor.
+  if (ags == null || !Number.isFinite(ags)) return false;
+  return ags < AGS_FALLBACK_CALIBRATION.quintiles.q20;
+}

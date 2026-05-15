@@ -58,68 +58,44 @@ import { dirname, join } from 'path';
 
 import {
   AGS_FALLBACK_CALIBRATION,
-  AGS_DW1_FLOOR,
-  AGS_LOCK_FLOOR,
   AGS_MIN_PROVEN_WALLETS,
+  HC_RATIO,
   aggregateSideProven,
   agsSizeMultiplier,
+  agsTierFromValue,
   computeAgs,
-  failsAgsConfirmationGate,
+  meetsAgsHardMute,
   meetsAgsLockFloor,
 } from '../src/lib/ags.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '../public');
 
-// ── Constants (mirror src/pages/SharpFlow.jsx — keep in sync) ───────────────
-const HC_RATIO = 1.5;
+// ── Constants ───────────────────────────────────────────────────────────────
+// AGS-Unified v9 — every gate (lock, mute, tier, sizing) reads ONLY from the
+// AGS-U composite + calibration quintiles. The legacy v7.x routes (HC margin,
+// Δw≥2, Δw=1+AGS, ags-rescue, Σ-floor, etc.) and their per-version cutover
+// constants are gone. The 5 features driving AGS-U live in src/lib/ags.js;
+// see that file for design rationale + holdout backtest evidence.
 const QUALITY_CONTRIB_CUT = 30;
 const WHITELIST_CONSENSUS_VERSION = 9;
-const V6_CUTOVER = '2026-04-18';
-const V7_1_CUTOVER_DATE = '2026-04-30';
-const V7_2_CUTOVER_DATE = '2026-04-30';
-const V7_3_CUTOVER_DATE = '2026-04-30';
-// v7.4 — single floor display contract.
-//
-// Original v7.4 floor (2026-05-02): HC_m ≥ +1  OR  (Σ ≥ 5 ∧ dw,dq ≥ +1).
-//
-// v7.5 update (2026-05-05) — Σ route retired. Δq (quality margin) is too
-// sparse to gate on now that walletDetails is filtered to whitelist-only,
-// so the Σ route effectively never fires. Replaced with two Δw-driven
-// routes that lean on AGS as the "is the aggregate proven-wallet stack
-// actually positive?" check:
-//
-//   Route HC (golden standard): HC_m ≥ +1   → LOCK
-//   Route Δw≥2:                  Δw ≥ +2     → LOCK
-//   Route Δw=1+AGS:              Δw ≥ +1 ∧ AGS ≥ AGS_DW1_FLOOR (+3)
-//                                with ≥ AGS_MIN_PROVEN_WALLETS proven  → LOCK
-//   Route AGS rescue (existing): AGS ≥ AGS_LOCK_FLOOR (+5) ∧ Δw > -2
-//                                with ≥ AGS_MIN_PROVEN_WALLETS proven  → LOCK
-//
-// Anything else → SHADOW (hidden). dw ≤ -2 still CANCELS. LEAN tier
-// eliminated entirely. The Σ_FLOOR / ELITE_SIGMA constants are retained
-// for legacy display strings and pre-cutover backfill, but no longer
-// gate any v7.5+ pick.
-const V7_4_CUTOVER_DATE = '2026-05-02';
-const V7_4_SIGMA_FLOOR = 5;            // legacy — pre-v7.5 sum route
-const V7_4_HC_MARGIN_FLOOR = 1;
-const V7_4_ELITE_SIGMA = 7;            // legacy — see lockTierFromDeltas for v7.5 ELITE definition
 
-// v7.3 unit floors for HC-promoted sub-Σ-3 picks.
-const V7_3_SIGMA1_LOCK_UNITS_ML = 0.5;
-const V7_3_SIGMA2_LOCK_UNITS_ML = 0.5;
-const V7_3_SIGMA1_LOCK_UNITS_ST = 0.5;
-const V7_3_SIGMA2_LOCK_UNITS_ST = 0.5;
-const V7_2_SIGMA2_LOCK_UNITS_ML = 0.5;
-const V7_2_SIGMA2_LOCK_UNITS_ST = 0.5;
+// Base unit sizing per market (multiplied by agsSizeMultiplier(ags) to get
+// final units). These are the LOCK-tier (q60..q80) defaults; ELITE/PREMIUM
+// scale up via the multiplier (≥ q90 → 2.00×, ≥ q80 → 1.50×) and
+// LEAN/WEAK scale down (≥ q40 → 0.50×, ≥ q20 → 0.20×, < q20 → 0).
+const BASE_UNITS_ML            = 2.50;
+const BASE_UNITS_SPREAD_TOTAL  = 1.50;
 
-// HC margin multipliers + caps (v7.2).
-const V7_2_HC_M1_MULT = 1.5;
-const V7_2_HC_M2_MULT = 1.75;
-const V7_2_HC_CAP_ML_ELITE = 4.5;
-const V7_2_HC_CAP_ML_NON   = 3.5;
-const V7_2_HC_CAP_ST_ELITE = 3.5;
-const V7_2_HC_CAP_ST_NON   = 2.0;
+// Odds caps — never bet too much on a long underdog (size relative to
+// expected drawdown matters more than EV alone). Applied after AGS sizing.
+function oddsCap(units, odds) {
+  if (!Number.isFinite(odds)) return units;
+  if (odds >= 200) return Math.min(units, 1.0);
+  if (odds >= 151) return Math.min(units, 1.5);
+  if (odds >= 100) return Math.min(units, 2.5);
+  return units;
+}
 
 // T-15 freeze window (matches browser).
 const T_MINUS_15_MIN_MS = 15 * 60 * 1000;
@@ -137,240 +113,72 @@ const TARGET_DATE = dateArg
   ? dateArg.split('=')[1]
   : new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 
-// ── Helpers (ported from SharpFlow.jsx) ─────────────────────────────────────
-const isV71Eligible = (d) => d && d >= V7_1_CUTOVER_DATE;
-const isV72Eligible = (d) => d && d >= V7_2_CUTOVER_DATE;
-const isV73Eligible = (d) => d && d >= V7_3_CUTOVER_DATE;
-const isV74Eligible = (d) => d && d >= V7_4_CUTOVER_DATE;
+// ── AGS-Unified v9 helpers ─────────────────────────────────────────────────
+// Every helper here reads ONLY the AGS-U composite + calibration. Δw,
+// HC margin, and Δq are computed for diagnostic stamping (so the v6
+// daily report can still slice cohorts by them) but they are never
+// consulted to make a lock/mute/sizing decision.
 
-// v7.5 lock-floor gate. Mirror of SharpFlow.jsx::meetsV74Floor.
-// (Function name kept as meetsV74Floor for compatibility with all
-// callers — the logic inside is the v7.5 3-route definition.)
-//
-// Three routes to LOCKED, all dq-free:
-//   • HC golden standard: HC_m ≥ +1
-//   • Δw≥2:               winner margin alone is strong enough
-//   • Δw=1+AGS:           weaker winner margin needs AGS ≥ AGS_DW1_FLOOR
-//                         confirmation + AGS_MIN_PROVEN_WALLETS guard
-//
-// AGS rescue (route C, AGS ≥ AGS_LOCK_FLOOR with Δw > -2) is NOT folded
-// in here — it lives in reconcileSide's agsRescuePrecheck so the rescue
-// reason can be tagged in promotedBy / lockStageLastChange separately.
-//
-// dw ≤ -2 still cancels through evaluateBaseHealth as a safety net.
-function meetsV74Floor(dw, hcMargin, ags = null, agsProvenTotal = null) {
-  if (!Number.isFinite(dw)) return false;
-  const hc = Number.isFinite(hcMargin) ? hcMargin : 0;
-  if (hc >= V7_4_HC_MARGIN_FLOOR) return true;
-  if (dw >= 2) return true;
-  if (dw >= 1
-      && Number.isFinite(ags)
-      && ags >= AGS_DW1_FLOOR
-      && (agsProvenTotal == null || agsProvenTotal >= AGS_MIN_PROVEN_WALLETS)) {
-    return true;
-  }
-  return false;
+// Stars from AGS-U value — quintile-based, monotone with composite.
+//   ≥ q90 → 5.0   (ELITE)
+//   ≥ q80 → 4.5   (PREMIUM)
+//   ≥ q60 → 4.0   (LOCK)
+//   ≥ q40 → 3.0   (LEAN)
+//   ≥ q20 → 2.5   (WEAK)
+//   <  q20 → 1.0  (FADE)
+function starsFromAgs(ags, calibration) {
+  if (ags == null || !Number.isFinite(ags)) return 1.0;
+  const q = (calibration && calibration.quintiles) ? calibration.quintiles : AGS_FALLBACK_CALIBRATION.quintiles;
+  if (ags >= q.q90) return 5.0;
+  if (ags >= q.q80) return 4.5;
+  if (ags >= q.q60) return 4.0;
+  if (ags >= q.q40) return 3.0;
+  if (ags >= q.q20) return 2.5;
+  return 1.0;
 }
 
-function vaultStarFromDeltas(dw, dq, hcMargin = 0, pickDate = null, ags = null) {
-  let baseStar;
-  if (dw >= 1 && dq >= 1) {
-    const sum = dw + dq;
-    if (sum >= 6) baseStar = 5.0;
-    else if (sum === 5) baseStar = 4.5;
-    else if (sum === 4) baseStar = 4.0;
-    else if (sum === 3) baseStar = 3.5;
-    else baseStar = 2.5;
-  } else {
-    let base;
-    if (dw <= -2) base = 1.0;
-    else if (dw === -1) base = 1.5;
-    else if (dw === 0) base = 2.5;
-    else base = 3.0;
-    let adj = 0;
-    if (dq <= -2) adj = -0.5;
-    else if (dq <= 0) adj = -0.25;
-    baseStar = Math.max(1.0, Math.min(5.0, base + adj));
-  }
-  // v7.4/v7.5 — star floors per lock route. Mirror SharpFlow.jsx.
-  // The Σ-based ladder above produces too-low stars for dq=0 picks, but
-  // under v7.5 those picks lock via HC, Δw≥2, or Δw=1+AGS routes — so
-  // we floor the star rating to match the route that locks the pick.
-  const v74 = isV74Eligible(pickDate);
-  const hc = Number.isFinite(hcMargin) ? hcMargin : 0;
-  if (v74) {
-    // HC route star floor (existing).
-    if (hc >= 1) {
-      const hcFloor = hc >= 3 ? 5.0 : hc >= 2 ? 4.5 : 3.5;
-      baseStar = Math.max(baseStar, hcFloor);
-    }
-    // Δw route star floor (NEW v7.5).
-    if (dw >= 4) baseStar = Math.max(baseStar, 5.0);
-    else if (dw >= 3) baseStar = Math.max(baseStar, 4.5);
-    else if (dw >= 2) baseStar = Math.max(baseStar, 4.0);
-    // Δw=1+AGS route star floor (NEW v7.5).
-    if (dw === 1 && Number.isFinite(ags) && ags >= AGS_DW1_FLOOR) {
-      baseStar = Math.max(baseStar, 3.5);
-    }
-  }
-  return Math.max(1.0, Math.min(5.0, baseStar));
+// Lock tier from AGS-U value. Wraps src/lib/ags::agsTierFromValue so the
+// label and cutoffs stay in lockstep with the client. Six tiers map 1:1 to
+// the agsSizeMultiplier sizing bands.
+function lockTierFromAgs(ags, calibration) {
+  return agsTierFromValue(ags, calibration);
 }
 
-function lockTierFromDeltas(dw, dq, hcDominant, opts = {}) {
-  if (!Number.isFinite(dw) || !Number.isFinite(dq)) return 'MUTED';
-  const sum = dw + dq;
-  const hcMargin = Number.isFinite(opts.hcMargin) ? opts.hcMargin : (hcDominant ? 1 : 0);
-  const ags = Number.isFinite(opts.ags) ? opts.ags : null;
-  const agsProvenTotal = Number.isFinite(opts.agsProvenTotal) ? opts.agsProvenTotal : null;
-  const v73 = isV73Eligible(opts.pickDate);
-  const v74 = isV74Eligible(opts.pickDate);
-  if (v74) {
-    // v7.5 ELITE — strongest signals only:
-    //   • HC ≥ +3                          (golden standard, 3+ wallets oversized)
-    //   • Δw ≥ +3                           (winner margin alone is dominant)
-    //   • Δw ≥ +2 ∧ AGS ≥ AGS_LOCK_FLOOR    (winner + strong aggregate)
-    if (hcMargin >= 3) return 'ELITE';
-    if (dw >= 3) return 'ELITE';
-    if (dw >= 2 && Number.isFinite(ags) && ags >= AGS_LOCK_FLOOR) return 'ELITE';
-    if (meetsV74Floor(dw, hcMargin, ags, agsProvenTotal)) return 'LOCKED';
-    return 'MUTED';
-  }
-  if (v73 && hcMargin >= 1 && dw >= 0 && dq >= 0 && sum >= 1) {
-    if (sum >= 7) return 'ELITE';
-    return 'LOCKED';
-  }
-  if (dw < 1 || dq < 1) return 'MUTED';
-  if (sum === 2 && isV72Eligible(opts.pickDate)) {
-    if (hcMargin >= 2) return 'LOCKED';
-    if (hcMargin >= 1) return 'LEAN';
-  }
-  if (sum >= 7) return 'ELITE';
-  if (sum >= 5) return 'LOCKED';
-  if (sum >= 3) {
-    if (isV72Eligible(opts.pickDate) && hcMargin >= 1) return 'LOCKED';
-    return (isV71Eligible(opts.pickDate) && hcDominant) ? 'LOCKED' : 'LEAN';
-  }
-  return 'MUTED';
-}
-
-// Mirrors evaluatePickHealth's mute/cancel ladder. v7.5 picks (post-2026-05-05)
-// drop all Δq-based mutes — Δq is too sparse to gate on once walletDetails
-// is filtered to whitelist-only wallets. New mute reasons:
+// Health status from AGS-U value.
+//   AGS-U missing                       → MUTED  (no_ags_signal)
+//   < AGS_MIN_PROVEN_WALLETS proven     → MUTED  (insufficient_proven_wallets)
+//   < q20 (calibrated hard mute floor)  → MUTED  (ags_hard_mute, "FADE" tier)
+//   else                                → ACTIVE
 //
-//   • winners_killed    — dw ≤ -2 (CANCEL, unchanged)
-//   • winners_faded     — dw = -1 (MUTE, unchanged, no override)
-//   • winners_below_floor — dw =  0 with no HC/AGS override (MUTE)
-//   • dw1_no_ags_support — dw =  1 but neither HC ≥ +1, AGS rescue,
-//                          nor Δw=1+AGS confirmation route firing (MUTE)
-//   • dw ≥ 2            — always ACTIVE (passes new floor by Δw≥2 route)
-//
-// Pre-v7.5 picks retain the legacy Σ-based dq mutes so historical
-// state stays accurate.
-function evaluateBaseHealth({ dw, dq, hcMargin, pickDate, ags = null, agsProvenTotal = null, agsCalibration = null }) {
-  const v73HcOverride = isV73Eligible(pickDate) && hcMargin >= 1;
-  const v74 = isV74Eligible(pickDate);
-  const agsRescueOverride = v74
-    && Number.isFinite(ags)
-    && (agsProvenTotal == null || agsProvenTotal >= AGS_MIN_PROVEN_WALLETS)
-    && meetsAgsLockFloor(ags, agsProvenTotal, agsCalibration)
-    && dw > -2;
-  const dw1AgsSupport = v74
-    && Number.isFinite(ags)
-    && ags >= AGS_DW1_FLOOR
-    && (agsProvenTotal == null || agsProvenTotal >= AGS_MIN_PROVEN_WALLETS);
-  const muteOverride = v73HcOverride || agsRescueOverride;
-
-  if (dw <= -2) return { status: 'CANCELLED', reason: 'winners_killed' };
-  if (dw === -1) return { status: 'MUTED', reason: 'winners_faded' };
-  if (dw === 0 && !muteOverride) return { status: 'MUTED', reason: 'winners_below_floor' };
-
-  if (v74) {
-    // v7.5 — no Δq mutes. Δw=1 needs HC, AGS rescue, or Δw=1+AGS support.
-    if (dw === 1 && !v73HcOverride && !agsRescueOverride && !dw1AgsSupport) {
-      return { status: 'MUTED', reason: 'dw1_no_ags_support' };
-    }
-    if (muteOverride && (dw === 0 || dw === 1)) {
-      // Tag rescue source so the UI can surface it.
-      return {
-        status: 'ACTIVE',
-        reason: agsRescueOverride && !v73HcOverride ? 'ags_rescue' : 'v73_hc_rescue',
-      };
-    }
-    return { status: 'ACTIVE', reason: null };
+// No CANCELLED state — the legacy `winners_killed` (Δw ≤ -2) was a proxy
+// for "the proven-wallet stack overwhelmingly opposes this side", which
+// AGS-U captures directly (any pick with strongly opposing wallets has
+// AGS-U ≪ q20 and trips the hard mute). One signal, one decision.
+function evaluateBaseHealth({ ags, agsProvenTotal, calibration }) {
+  if (ags == null || !Number.isFinite(ags)) {
+    return { status: 'MUTED', reason: 'no_ags_signal' };
   }
-
-  // pre-v7.4 / pre-v7.5 — legacy Σ + Δq mutes.
-  const sumFloor = 3;
-  if (dw >= 1 && dq <= 0 && !v73HcOverride) return { status: 'MUTED', reason: 'quality_below_floor' };
-  if (dw >= 1 && dq >= 1 && (dw + dq) < sumFloor && !v73HcOverride) return { status: 'MUTED', reason: 'sum_below_floor' };
-  if (v73HcOverride && (dw === 0 || dq <= 0 || (dw + dq) < sumFloor)) {
-    return { status: 'ACTIVE', reason: 'v73_hc_rescue' };
+  if (Number.isFinite(agsProvenTotal) && agsProvenTotal < AGS_MIN_PROVEN_WALLETS) {
+    return { status: 'MUTED', reason: 'insufficient_proven_wallets' };
+  }
+  if (meetsAgsHardMute(ags, calibration)) {
+    return { status: 'MUTED', reason: 'ags_hard_mute' };
   }
   return { status: 'ACTIVE', reason: null };
 }
 
-function calculateUnits(stars, lockTier, hcDominant, opts = {}) {
-  if (lockTier === 'LEAN' || lockTier === 'MUTED') return 0;
-  const v72 = isV72Eligible(opts.pickDate);
-  const v73 = isV73Eligible(opts.pickDate);
-  const hcMargin = Number.isFinite(opts.hcMargin) ? opts.hcMargin : (hcDominant ? 1 : 0);
-  const sum = Number.isFinite(opts.sum) ? opts.sum : null;
-  const odds = opts.odds;
-  let units;
-  if (lockTier === 'ELITE') units = 4.00;
-  else if (stars >= 5.0) units = 3.00;
-  else if (stars >= 4.5) units = 2.00;
-  else if (stars >= 4.0) units = 1.25;
-  else if (stars >= 3.5) units = 0.75;
-  else if (lockTier === 'LOCKED' && v73 && hcMargin >= 1) {
-    units = sum === 1 ? V7_3_SIGMA1_LOCK_UNITS_ML : V7_3_SIGMA2_LOCK_UNITS_ML;
-  } else if (lockTier === 'LOCKED' && v72 && sum === 2 && hcMargin >= 2) {
-    units = V7_2_SIGMA2_LOCK_UNITS_ML;
-  } else units = 0;
-  if (units === 0) return 0;
-  if (odds != null && odds >= 200) units = Math.min(units, lockTier === 'ELITE' ? 1.0 : 0.5);
-  else if (odds != null && odds >= 151) units = Math.min(units, lockTier === 'ELITE' ? 2.0 : 1.0);
-  else if (odds != null && odds >= 100) units = Math.min(units, lockTier === 'ELITE' ? 3.0 : 2.0);
-  if (v72 && hcMargin >= 2) {
-    const cap = lockTier === 'ELITE' ? V7_2_HC_CAP_ML_ELITE : V7_2_HC_CAP_ML_NON;
-    units = Math.min(units * V7_2_HC_M2_MULT, cap);
-  } else if (v72 && hcMargin >= 1) {
-    const cap = lockTier === 'ELITE' ? V7_2_HC_CAP_ML_ELITE : V7_2_HC_CAP_ML_NON;
-    units = Math.min(units * V7_2_HC_M1_MULT, cap);
-  }
-  return Math.round(units * 100) / 100;
-}
-
-function calculateSpreadTotalUnits(stars, lockTier, hcDominant, opts = {}) {
-  if (lockTier === 'LEAN' || lockTier === 'MUTED') return 0;
-  const v72 = isV72Eligible(opts.pickDate);
-  const v73 = isV73Eligible(opts.pickDate);
-  const hcMargin = Number.isFinite(opts.hcMargin) ? opts.hcMargin : (hcDominant ? 1 : 0);
-  const sum = Number.isFinite(opts.sum) ? opts.sum : null;
-  const odds = opts.odds;
-  let units;
-  if (lockTier === 'ELITE') units = 2.50;
-  else if (stars >= 5.0) units = 2.00;
-  else if (stars >= 4.5) units = 1.50;
-  else if (stars >= 4.0) units = 0.75;
-  else if (stars >= 3.5) units = 0.50;
-  else if (lockTier === 'LOCKED' && v73 && hcMargin >= 1) {
-    units = sum === 1 ? V7_3_SIGMA1_LOCK_UNITS_ST : V7_3_SIGMA2_LOCK_UNITS_ST;
-  } else if (lockTier === 'LOCKED' && v72 && sum === 2 && hcMargin >= 2) {
-    units = V7_2_SIGMA2_LOCK_UNITS_ST;
-  } else units = 0;
-  if (units === 0) return 0;
-  if (odds != null && odds >= 200) units = Math.min(units, lockTier === 'ELITE' ? 0.75 : 0.5);
-  else if (odds != null && odds >= 151) units = Math.min(units, lockTier === 'ELITE' ? 1.25 : 0.75);
-  else if (odds != null && odds >= 100) units = Math.min(units, lockTier === 'ELITE' ? 1.75 : 1.0);
-  if (v72 && hcMargin >= 2) {
-    const cap = lockTier === 'ELITE' ? V7_2_HC_CAP_ST_ELITE : V7_2_HC_CAP_ST_NON;
-    units = Math.min(units * V7_2_HC_M2_MULT, cap);
-  } else if (v72 && hcMargin >= 1) {
-    const cap = lockTier === 'ELITE' ? V7_2_HC_CAP_ST_ELITE : V7_2_HC_CAP_ST_NON;
-    units = Math.min(units * V7_2_HC_M1_MULT, cap);
-  }
-  return Math.round(units * 100) / 100;
+// Sizing — base × AGS-U sizing multiplier × odds cap.
+// AGS-U < q20 returns 0 via agsSizeMultiplier (HARD MUTE).
+// Same formula for ML, SPREAD, TOTAL — only the base differs.
+function unitsFromAgs(ags, marketType, odds, calibration) {
+  if (ags == null || !Number.isFinite(ags)) return 0;
+  const m = agsSizeMultiplier(ags, calibration);
+  if (m === 0) return 0;
+  const base = (marketType === 'SPREAD' || marketType === 'TOTAL')
+    ? BASE_UNITS_SPREAD_TOTAL
+    : BASE_UNITS_ML;
+  const capped = oddsCap(base * m, odds);
+  return Math.round(capped * 100) / 100;
 }
 
 // ── Wallet consensus reconstruction (mirrors UI computeWalletConsensus) ─────
@@ -461,6 +269,19 @@ function buildIsProvenFn(walletProfiles) {
     const profile = walletProfiles.get(key) || walletProfiles.get(key.toUpperCase());
     const tier = profile?.bySport?.[sport]?.whitelistTier;
     return tier === 'CONFIRMED' || tier === 'FLAT';
+  };
+}
+
+// HC eligibility — CONFIRMED tier only. The sizeRatio ≥ HC_RATIO threshold
+// is enforced inside aggregateSideProven. This is strictly stricter than
+// isProven (FLAT-tier wallets count toward proven aggregates but not toward
+// HC subset features).
+function buildIsHcEligibleFn(walletProfiles) {
+  return (walletShort, sport) => {
+    if (!walletShort || !sport) return false;
+    const key = String(walletShort).toLowerCase();
+    const profile = walletProfiles.get(key) || walletProfiles.get(key.toUpperCase());
+    return profile?.bySport?.[sport]?.whitelistTier === 'CONFIRMED';
   };
 }
 
@@ -723,14 +544,14 @@ function positionToWalletDetail(p) {
 // Returns null when there's zero whitelist activity for or against this
 // side (so we don't litter docs with empty {ags:null} stamps when the
 // scanner has no proven-wallet signal yet).
-function computeSideAnalytics(positions, side, sport, walletProfiles, agsCalibration, isProvenFn) {
+function computeSideAnalytics(positions, side, sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn) {
   if (!Array.isArray(positions) || positions.length === 0) return null;
   const live = computeWalletConsensus(positions, side, sport, walletProfiles);
   if (live.forW === 0 && live.agW === 0 && live.hcConfFor === 0 && live.hcConfAg === 0) {
     return null;
   }
   const walletDetails = positions.map(positionToWalletDetail);
-  const agg = aggregateSideProven(walletDetails, side, sport, isProvenFn);
+  const agg = aggregateSideProven(walletDetails, side, sport, isProvenFn, isHcEligibleFn);
   const agsRes = agg ? computeAgs(agg, agsCalibration) : null;
   const out = {
     ags: agsRes && Number.isFinite(agsRes.ags) ? agsRes.ags : null,
@@ -755,12 +576,12 @@ function computeSideAnalytics(positions, side, sport, walletProfiles, agsCalibra
 // at once and return a side-keyed record ready to merge as
 // `agsBothSides` on the pick doc. Returns null when both sides are
 // empty (nothing meaningful to record).
-function computeBothSidesAnalytics(positions, marketType, sport, walletProfiles, agsCalibration, isProvenFn) {
+function computeBothSidesAnalytics(positions, marketType, sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn) {
   const sides = marketType === 'TOTAL' ? ['over', 'under'] : ['away', 'home'];
   const out = {};
   let any = false;
   for (const side of sides) {
-    const stamp = computeSideAnalytics(positions, side, sport, walletProfiles, agsCalibration, isProvenFn);
+    const stamp = computeSideAnalytics(positions, side, sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn);
     if (stamp) {
       out[side] = stamp;
       any = true;
@@ -783,10 +604,10 @@ function computeBothSidesAnalytics(positions, marketType, sport, walletProfiles,
 // the dashboard to render. Browser-driven syncs will enrich any other
 // fields (criteria, evEdge, etc.) the next time a user opens the page.
 async function createMissingLockedPicks({
-  db, groups, walletProfiles, agsCalibration, isProvenFn,
+  db, groups, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn,
   existingDocIds, gameMeta, now, dryRun, force,
 }) {
-  const created = []; // { col, docId, side, route, dw, hcMargin, ags, agsTotal }
+  const created = []; // { col, docId, side, ags, agsTotal }
   const skipped = []; // { reason, ... }
   const writes = new Map(); // col → [{ docId, payload }]
   const PREGAME_BUFFER_MS = 5 * 60 * 1000;
@@ -836,48 +657,31 @@ async function createMissingLockedPicks({
       // Quick-skip: no whitelist activity at all on this side.
       if (live.forW === 0 && live.agW === 0 && live.hcConfFor === 0 && live.hcConfAg === 0) continue;
 
-      // Build walletDetails for AGS.
+      // Build walletDetails for AGS-U.
       const walletDetails = positions.map(positionToWalletDetail);
-      const agg = aggregateSideProven(walletDetails, side, sport, isProvenFn);
+      const agg = aggregateSideProven(walletDetails, side, sport, isProvenFn, isHcEligibleFn);
       const agsRes = agg ? computeAgs(agg, agsCalibration) : null;
       const agsValue = agsRes && Number.isFinite(agsRes.ags) ? agsRes.ags : null;
       const agsProvenTotal = agsRes ? (agsRes.provenForCount || 0) + (agsRes.provenAgCount || 0) : 0;
 
-      // Safety net — never auto-create a CANCELLED side. dw ≤ -2 always
-      // takes precedence regardless of HC/AGS routes (winners_killed).
-      if (live.delta <= -2) {
-        skipped.push({ docId, side, reason: 'winners_killed' });
+      // Single AGS-U gate. Must clear the SHIP floor (q20 = hard mute
+      // boundary) AND have ≥ AGS_MIN_PROVEN_WALLETS proven wallets.
+      // Sizing band (ELITE/PREMIUM/LOCK/LEAN/WEAK) determines stake.
+      // Anything below q20 (FADE) or below the proven-wallet floor is a
+      // hard mute — never auto-create.
+      if (agsValue == null) continue;
+      if (agsProvenTotal < AGS_MIN_PROVEN_WALLETS) {
+        skipped.push({ docId, side, reason: 'insufficient_proven_wallets', count: agsProvenTotal });
         continue;
       }
-      const passesV74 = meetsV74Floor(live.delta, live.hcMargin, agsValue, agsProvenTotal);
-      const agsRescue = !passesV74 && agsValue != null && live.delta > -2
-        && agsProvenTotal >= AGS_MIN_PROVEN_WALLETS
-        && meetsAgsLockFloor(agsValue, agsProvenTotal, agsCalibration);
-      if (!passesV74 && !agsRescue) continue;
-      // AGS confirmation gate — don't auto-create a LOCKED side that the
-      // gate would immediately demote. Mirrors syncPickStateAuthoritative
-      // reconcileSide's failsAgsConfirmationGate path.
-      if (agsValue != null
-          && agsProvenTotal >= AGS_MIN_PROVEN_WALLETS
-          && failsAgsConfirmationGate(agsValue)) {
-        skipped.push({ docId, side, reason: 'ags_quality_veto', ags: agsValue });
+      if (meetsAgsHardMute(agsValue, agsCalibration)) {
+        skipped.push({ docId, side, reason: 'ags_hard_mute', ags: agsValue });
         continue;
       }
 
-      // Identify the route for promotedBy stamping.
-      let promotedBy;
-      if (!passesV74) promotedBy = 'ags-rescue';
-      else if (live.hcMargin >= 1) promotedBy = 'v74-hc-margin';
-      else if (live.delta >= 2) promotedBy = 'v75-dw2';
-      else promotedBy = 'v75-dw1-ags';
-
-      // Stars + units (frozen at creation; reconcileSide overwrites live).
-      const peakStars = vaultStarFromDeltas(live.delta, live.qualityMargin, live.hcMargin, TARGET_DATE, agsValue);
-      const peakTier = lockTierFromDeltas(live.delta, live.qualityMargin, live.hcDominant, {
-        pickDate: TARGET_DATE, hcMargin: live.hcMargin, ags: agsValue, agsProvenTotal,
-      });
-      const finalTier = (agsRescue && peakTier === 'MUTED') ? 'LOCKED' : peakTier;
-      const ladder = (marketType === 'SPREAD' || marketType === 'TOTAL') ? calculateSpreadTotalUnits : calculateUnits;
+      const promotedBy = 'ags-unified-v9';
+      const finalTier = lockTierFromAgs(agsValue, agsCalibration);
+      const peakStars = starsFromAgs(agsValue, agsCalibration);
       // ── Pinnacle odds + line. ML uses live mlOdds; SPREAD uses the
       // pinnacle opener (pinnacle_history doesn't track spreads over
       // time); TOTAL falls back to -110 (no Pinnacle source for totals
@@ -896,15 +700,8 @@ async function createMissingLockedPicks({
         odds = -110;
         line = consensusLine(positions, side, sport, 'TOTAL') ?? null;
       }
-      let peakUnits = ladder(peakStars, finalTier, live.hcDominant, {
-        pickDate: TARGET_DATE, hcMargin: live.hcMargin,
-        sum: live.delta + live.qualityMargin, odds: odds ?? null,
-      });
-      // Apply AGS sizing multiplier for the frozen peak.
-      if (agsValue != null && peakUnits > 0) {
-        const m = agsSizeMultiplier(agsValue, agsCalibration);
-        if (m !== 1.0) peakUnits = Math.max(0.01, Math.round(peakUnits * m * 100) / 100);
-      }
+      const peakUnits = unitsFromAgs(agsValue, marketType, odds ?? null, agsCalibration);
+      const agsUnitsMult = agsSizeMultiplier(agsValue, agsCalibration);
 
       // Determine team label for the side.
       //
@@ -1004,8 +801,8 @@ async function createMissingLockedPicks({
         v8Stamps.v8_agsProvenAgCount = agsRes.provenAgCount;
         v8Stamps.v8_agsCalibrationSource = agsRes.calibrationSource || 'firestore';
         v8Stamps.v8_agsEvaluatedAt = now;
-        v8Stamps.v8_agsUnitsMult = 1.0;
-        v8Stamps.v8_agsUnitsBase = peakUnits;
+        v8Stamps.v8_agsUnitsMult = agsUnitsMult;
+        v8Stamps.v8_agsUnitsBase = (marketType === 'SPREAD' || marketType === 'TOTAL') ? BASE_UNITS_SPREAD_TOTAL : BASE_UNITS_ML;
         v8Stamps.v8_agsUnitsApplied = peakUnits;
       }
       // Health stamp — gives the dashboard a non-undefined health.status
@@ -1027,9 +824,7 @@ async function createMissingLockedPicks({
         promotedBy,
         promotedAt: now,
         promotedRegime: 'PREGAME',
-        contribTier: agsValue != null && agsValue >= AGS_LOCK_FLOOR ? 'LOCK'
-          : agsValue != null && agsValue >= AGS_DW1_FLOOR ? 'STRONG'
-          : 'NEUTRAL',
+        contribTier: finalTier,
         // peak + lock both stamped with the same snapshot. The render's
         // lockOddsValid path reads lock.odds; if we only set peak the
         // dashboard would still fall through to `cardOdds = 0` for the
@@ -1050,7 +845,6 @@ async function createMissingLockedPicks({
       };
       created.push({
         col, docId, side, route: promotedBy,
-        dw: live.delta, hcMargin: live.hcMargin,
         ags: agsValue, agsTotal: agsProvenTotal,
         peakStars, peakUnits, team,
       });
@@ -1064,7 +858,7 @@ async function createMissingLockedPicks({
     // the post-reconcile refresh pass below, and is never read by
     // sizing / lock-promote / grader code paths.
     const bothSidesAtCreate = computeBothSidesAnalytics(
-      positions, marketType, sport, walletProfiles, agsCalibration, isProvenFn,
+      positions, marketType, sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn,
     );
 
     const docPayload = {
@@ -1152,18 +946,16 @@ async function createMissingLockedPicks({
 }
 
 // ── Main sync logic per side ───────────────────────────────────────────────
-function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force, agsCalibration, isProvenFn }) {
+function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force, agsCalibration, isProvenFn, isHcEligibleFn }) {
   const pickDate = pick.date || TARGET_DATE;
   const sport = pick.sport;
   const lockStage = sd.lockStage || null;
   const currentStatus = sd.health?.status || sd.status || pick.status || null;
-  const v74 = isV74Eligible(pickDate);
 
-  // Gate: SHADOW sides are usually skipped (they're not shipping money).
-  // But under v7.4 we ALSO process SHADOW sides that have prior lock data,
-  // so a recovered pick can re-promote LOCKED → SHADOW → LOCKED in lock-step
-  // with live data each cycle (pre-T-15).
-  const isReprommotable = v74 && lockStage === 'SHADOW' && (sd.lock || sd.peak);
+  // Gate: SHADOW sides with prior lock data are still processed so a
+  // recovered pick can re-promote LOCKED → SHADOW → LOCKED in lock-step
+  // with live AGS-U each cycle (pre-T-15).
+  const isReprommotable = lockStage === 'SHADOW' && (sd.lock || sd.peak);
   if (lockStage !== 'LOCKED' && lockStage !== 'LEAN' && !isReprommotable) {
     return { skipped: true, reason: 'not_locked_or_lean' };
   }
@@ -1186,187 +978,77 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     return { skipped: true, reason: 'within_t_minus_15' };
   }
 
-  // Reconstruct live consensus.
+  // Reconstruct live wallet consensus — Δw / Δq / HC margin computed
+  // for diagnostic stamping ONLY. AGS-U is the sole decision input.
   const live = computeWalletConsensus(group, side, sport, walletProfiles);
 
-  // ─── AGS (AggregateScore) — compute FIRST so it can feed every gate ──
-  // Reads frozen walletDetails[] from peak.v8Scoring (fall back to lock.v8Scoring),
-  // filters to whitelist-proven (CONFIRMED + FLAT), aggregates, z-scores, sums.
-  // v7.5: AGS feeds meetsV74Floor (Δw=1+AGS route), evaluateBaseHealth
-  // (dw1_no_ags_support mute), vaultStarFromDeltas (Δw=1+AGS star floor),
-  // lockTierFromDeltas (ELITE definition), AND the AGS rescue precheck
-  // below. So we hoisted it from after the tier compute up to here.
+  // ─── AGS-U — recompute from current walletDetails every cycle ─────────
+  // Reads frozen walletDetails[] from peak.v8Scoring (fall back to
+  // lock.v8Scoring) and aggregates with the HC subset. Single composite
+  // drives status, lockStage, tier, and sizing — no other gate is consulted.
   let agsResult = null;
   const wd = sd.peak?.v8Scoring?.walletDetails || sd.lock?.v8Scoring?.walletDetails || null;
   if (Array.isArray(wd) && wd.length > 0 && agsCalibration && isProvenFn) {
-    const agg = aggregateSideProven(wd, side, pick.sport, isProvenFn);
+    const agg = aggregateSideProven(wd, side, pick.sport, isProvenFn, isHcEligibleFn);
     if (agg) agsResult = computeAgs(agg, agsCalibration);
   }
   const agsValueLive = agsResult && Number.isFinite(agsResult.ags) ? agsResult.ags : null;
   const agsTotalProven = agsResult ? (agsResult.provenForCount || 0) + (agsResult.provenAgCount || 0) : 0;
 
   const baseHealth = evaluateBaseHealth({
-    dw: live.delta,
-    dq: live.qualityMargin,
-    hcMargin: live.hcMargin,
-    pickDate,
     ags: agsValueLive,
     agsProvenTotal: agsTotalProven,
-    agsCalibration,
+    calibration: agsCalibration,
   });
 
   // No hysteresis. Whatever evaluateBaseHealth says this cycle is what we
-  // write. dw <= -2 cancels immediately. ACTIVE↔MUTED↔CANCELLED↔ACTIVE all
-  // free to flip in any direction every 8 min until T-15.
+  // write. ACTIVE ↔ MUTED is free to flip every cycle until T-15.
   let appliedStatus = baseHealth.status;
   let appliedReason = baseHealth.reason;
-  let mutedByAgs = false;
+  const mutedByAgs = appliedReason === 'ags_hard_mute';
 
-  // HC rescue freshness — re-evaluated every cycle. If the pick was lock-in
-  // promoted via v73-hc-rescue and live HC margin has dropped below +1 with
-  // the v6.6 floor failing, demote to MUTED this cycle (UI shows "RESCUE
-  // EXPIRED"). If HC recovers next cycle, baseHealth.reason==='v73_hc_rescue'
-  // and the pick re-promotes to ACTIVE automatically.
-  const promotedBy = sd.promotedBy || null;
-  let hcRescueDemoted = false;
-  if (promotedBy === 'v73-hc-rescue' && live.hcMargin < 1
-      && (live.delta === 0 || live.qualityMargin <= 0 || (live.delta + live.qualityMargin) < 3)
-      && live.delta > -2) {
-    appliedStatus = 'MUTED';
-    appliedReason = 'v73_hc_rescue_expired';
-    hcRescueDemoted = true;
-  }
+  // Compute tier / stars / units — all derived from the same AGS-U value.
+  const liveStars = starsFromAgs(agsValueLive, agsCalibration);
+  const liveTier = lockTierFromAgs(agsValueLive, agsCalibration);
+  const sideOdds = sd.peak?.odds ?? sd.lock?.odds ?? null;
+  const liveUnits = appliedStatus === 'ACTIVE'
+    ? unitsFromAgs(agsValueLive, mkt, sideOdds, agsCalibration)
+    : 0;
+  // Sizing-multiplier stamp (informational — equals liveUnits/baseUnits).
+  const agsUnitsMult = agsValueLive != null
+    ? agsSizeMultiplier(agsValueLive, agsCalibration)
+    : 0;
+  const liveUnitsPreAgs = (mkt === 'SPREAD' || mkt === 'TOTAL') ? BASE_UNITS_SPREAD_TOTAL : BASE_UNITS_ML;
 
-  // Compute live tier / units. v7.5: vaultStarFromDeltas now applies HC,
-  // Δw≥2, and Δw=1+AGS star floors so units reflect whichever route is
-  // locking the pick (not just the deltas-based Σ ladder).
-  let liveStars = vaultStarFromDeltas(live.delta, live.qualityMargin, live.hcMargin, pickDate, agsValueLive);
-  let liveTier = lockTierFromDeltas(live.delta, live.qualityMargin, live.hcDominant, {
-    pickDate, hcMargin: live.hcMargin, ags: agsValueLive, agsProvenTotal: agsTotalProven,
-  });
-  const liveLadder = (mkt === 'SPREAD' || mkt === 'TOTAL') ? calculateSpreadTotalUnits : calculateUnits;
-  let liveUnits = liveLadder(liveStars, liveTier, live.hcDominant, {
-    pickDate, hcMargin: live.hcMargin, sum: live.delta + live.qualityMargin,
-    odds: sd.peak?.odds ?? sd.lock?.odds ?? null,
-  });
-
-  // Phase 3 rescue precheck — AGS qualifies the side for a LOCK independent
-  // of the v7.5 deltas-based floor when AGS ≥ AGS_LOCK_FLOOR with
-  // ≥ AGS_MIN_PROVEN_WALLETS proven wallets and dw > -2. Note this is
-  // distinct from the Δw=1+AGS route inside meetsV74Floor: rescue fires
-  // even when Δw ≤ 0 (as long as Δw > -2), the dw1 route requires Δw ≥ +1.
-  const agsRescuePrecheck = v74
-    && !!agsResult
-    && live.delta > -2
-    && agsTotalProven >= AGS_MIN_PROVEN_WALLETS
-    && meetsAgsLockFloor(agsResult.ags, agsTotalProven, agsCalibration)
-    && !meetsV74Floor(live.delta, live.hcMargin, agsValueLive, agsTotalProven);
-  if (agsRescuePrecheck && (liveTier === 'MUTED' || liveTier === 'LEAN')) {
-    liveTier = 'LOCKED';
-    liveStars = Math.max(liveStars, 4.0);
-    liveUnits = liveLadder(liveStars, liveTier, live.hcDominant, {
-      pickDate, hcMargin: live.hcMargin, sum: live.delta + live.qualityMargin,
-      odds: sd.peak?.odds ?? sd.lock?.odds ?? null,
-    });
-  }
-
-  const liveUnitsPreAgs = liveUnits;
-  // Phase 2 — AGS sizing modifier. Multiplier table lives in src/lib/ags.js
-  // (1.0 ≥ +3, 0.85 ≥ 0, 0.65 ≥ -1, 0.5 below). Floor of 0.01u so we
-  // never silently disappear a play here — Phase 3's gate is the
-  // explicit MUTE path.
-  let agsUnitsMult = 1.0;
-  if (agsResult && Number.isFinite(agsResult.ags) && liveUnits > 0) {
-    agsUnitsMult = agsSizeMultiplier(agsResult.ags, agsCalibration);
-    if (agsUnitsMult !== 1.0) {
-      liveUnits = Math.max(0.01, Math.round(liveUnits * agsUnitsMult * 100) / 100);
-    }
-  }
-
-  // ─── v7.4 lockStage promote/demote (with Phase 3 AGS rescue route) ────
-  // Single-floor display contract. Every cycle, recompute whether the pick
-  // currently passes (HC ≥ +1 OR Σ ≥ 5 with positive axes, OR AGS ≥
-  // AGS_LOCK_FLOOR with ≥ AGS_MIN_PROVEN_WALLETS proven wallets). If yes →
-  // lockStage='LOCKED'. If no → lockStage='SHADOW' (hidden). If dw ≤ -2 →
-  // also flip to SHADOW (the CANCELLED health flag keeps it surfaceable
-  // via the "Show cancelled" toggle).
-  //
-  // The AGS rescue route is GATED on dw > -2 (we never lock a side that's
-  // simultaneously CANCELLED for cratered winners) and the proven-wallet
-  // count guard (a single high-z wallet shouldn't promote a thin pick).
+  // ─── lockStage promote/demote — single AGS-U gate ─────────────────────
+  // Ship floor is q20 (the hard-mute boundary). Picks above q20 with
+  // ≥ AGS_MIN_PROVEN_WALLETS proven wallets LOCK; sizing band (ELITE 2.00×
+  // → PREMIUM 1.50× → LOCK 1.10× → LEAN 0.50× → WEAK 0.20×) determines
+  // stake. This matches the backtest's 100% volume / +18.77u profile —
+  // LEAN/WEAK picks ship at reduced size rather than getting SHADOWed.
+  // < q20 (FADE) and insufficient-proven-wallets ⇒ SHADOW (hidden).
   let appliedLockStage = lockStage;
   let lockStageReason = null;
-  let agsRescued = false;
-  if (v74) {
-    // CANCELLED short-circuit — dw ≤ -2 (winners_killed) always SHADOWs,
-    // even when the HC route would otherwise pass the floor. The CANCELLED
-    // status flag keeps the pick surfaceable via the "Show cancelled"
-    // toggle on the dashboard. Without this, an HC ≥ +1 lock that gets
-    // dissented by 2+ proven winners stays LOCKED in Firestore even
-    // though we explicitly cancel it in evaluateBaseHealth.
-    if (appliedStatus === 'CANCELLED') {
-      if (lockStage !== 'SHADOW') {
-        appliedLockStage = 'SHADOW';
-        lockStageReason = 'v74_cancelled';
-      } else {
-        appliedLockStage = 'SHADOW';
-      }
+  const passesShipFloor = appliedStatus === 'ACTIVE'
+    && agsValueLive != null
+    && agsTotalProven >= AGS_MIN_PROVEN_WALLETS;
+  if (passesShipFloor) {
+    if (lockStage !== 'LOCKED') {
+      appliedLockStage = 'LOCKED';
+      lockStageReason = 'agsu_floor_recovered';
     } else {
-      const passesV74 = meetsV74Floor(live.delta, live.hcMargin, agsValueLive, agsTotalProven);
-      // agsRescuePrecheck above already verified AGS ≥ AGS_LOCK_FLOOR + min
-      // wallets + dw > -2 + v7.5 deltas floor failing — reuse here so the
-      // two routes stay in lockstep with the tier/units override.
-      const passesAgs = agsRescuePrecheck;
-      const passesFloor = passesV74 || passesAgs;
-      if (passesFloor) {
-        if (lockStage !== 'LOCKED') {
-          appliedLockStage = 'LOCKED';
-          lockStageReason = passesV74 ? 'v74_floor_recovered' : 'ags_rescue';
-        } else {
-          appliedLockStage = 'LOCKED';
-        }
-        // AGS rescue takes credit only when v7.5 deltas floor fails on its own.
-        agsRescued = !passesV74 && passesAgs;
-      } else {
-        if (lockStage !== 'SHADOW') {
-          appliedLockStage = 'SHADOW';
-          lockStageReason = 'v74_below_floor';
-        } else {
-          appliedLockStage = 'SHADOW';
-        }
-      }
+      appliedLockStage = 'LOCKED';
     }
-  }
-
-  // Phase 3 — AGS rescue (route C) + AGS confirmation gate (route B).
-  // Both routes are AGS-driven and read the same v8_ags value:
-  //
-  //   • RESCUE: when the v7.4 floor is failing but AGS ≥ AGS_LOCK_FLOOR
-  //     and ≥ AGS_MIN_PROVEN_WALLETS proven wallets are present, flip the
-  //     side from MUTED → ACTIVE. evaluateBaseHealth's "winners_below_floor"
-  //     etc. stamps would otherwise keep the side muted even though the
-  //     wallet stack is overwhelming.
-  //
-  //   • CONFIRMATION GATE: when the v7.4 floor passes (HC ≥ +1 OR Σ ≥ 5)
-  //     but AGS < AGS_MUTE_FLOOR (-1.0 by default), the wallet stack
-  //     contradicts the headline signal. Demote ACTIVE → MUTED with
-  //     reason 'ags-quality-veto' (mutedBy stamp) so the lock-page filter
-  //     hides the play. This catches Cavaliers-ML-style cases where the
-  //     HC chip pins a side but the proven-wallet aggregate is mediocre.
-  //
-  // dw ≤ -2 (CANCELLED) is never touched by either route — winners-killed
-  // is the strongest fade signal we have and dominates AGS.
-  if (v74 && agsResult && live.delta > -2) {
-    if (agsRescued && appliedStatus !== 'ACTIVE') {
-      appliedStatus = 'ACTIVE';
-      appliedReason = 'ags_rescue';
-    } else if (appliedLockStage === 'LOCKED'
-               && appliedStatus === 'ACTIVE'
-               && agsTotalProven >= AGS_MIN_PROVEN_WALLETS
-               && failsAgsConfirmationGate(agsResult.ags)) {
-      appliedStatus = 'MUTED';
-      appliedReason = 'ags_quality_veto';
-      mutedByAgs = true;
+  } else {
+    if (lockStage !== 'SHADOW') {
+      appliedLockStage = 'SHADOW';
+      lockStageReason = mutedByAgs
+        ? 'agsu_hard_mute'
+        : (appliedReason === 'insufficient_proven_wallets'
+            ? 'agsu_insufficient_wallets'
+            : 'agsu_no_signal');
+    } else {
+      appliedLockStage = 'SHADOW';
     }
   }
 
@@ -1441,34 +1123,30 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   patch.v8_hcMargin = live.hcMargin;
   patch.v8_hcDominant = live.hcDominant;
   patch.v8_lockTier = liveTier;
-  patch.v8_v73HcRescue = isV73Eligible(pickDate) && live.hcMargin >= 1
-    && (live.delta === 0 || live.qualityMargin <= 0 || (live.delta + live.qualityMargin) < 3)
-    && live.delta >= 0 && live.qualityMargin >= 0;
 
-  // v7.4 — write canonical lockStage every cycle for v7.4 picks.
-  if (v74) {
-    patch.lockStage = appliedLockStage;
-    if (lockStageReason) {
-      patch.lockStageLastChange = {
-        reason: lockStageReason, at: now,
-        dw: live.delta, dq: live.qualityMargin, hcMargin: live.hcMargin,
-        ags: agsResult?.ags ?? null,
-      };
-    }
-    if (stampedLockStage !== appliedLockStage) {
-      changes.push(`lockStage: ${stampedLockStage || '∅'} → ${appliedLockStage}${lockStageReason ? ` (${lockStageReason})` : ''}`);
-    }
-    // Stamp promotedBy = 'ags-rescue' on the side when AGS is the only
-    // route that qualified the lock. Drives the UI badge + the daily
-    // report cohort split. promotedBy is only updated on freshly rescued
-    // picks; we don't overwrite an existing v7.4 / HC promotion label.
-    if (agsRescued) {
-      const stampedPromotedBy = sd.promotedBy || null;
-      if (stampedPromotedBy !== 'ags-rescue') {
-        patch.promotedBy = 'ags-rescue';
-        changes.push(`promotedBy: ${stampedPromotedBy || '∅'} → ags-rescue (AGS=${agsResult.ags.toFixed(2)})`);
-      }
-    }
+  // AGS-Unified v9 — write canonical lockStage every cycle.
+  patch.lockStage = appliedLockStage;
+  if (lockStageReason) {
+    patch.lockStageLastChange = {
+      reason: lockStageReason, at: now,
+      ags: agsResult?.ags ?? null,
+      agsTier: agsResult?.tier ?? null,
+      provenTotal: agsTotalProven,
+      // Diagnostic-only — old gate inputs preserved for v6 report cohort
+      // analysis. NOT consulted for any decision.
+      dw: live.delta, dq: live.qualityMargin, hcMargin: live.hcMargin,
+    };
+  }
+  if (stampedLockStage !== appliedLockStage) {
+    changes.push(`lockStage: ${stampedLockStage || '∅'} → ${appliedLockStage}${lockStageReason ? ` (${lockStageReason})` : ''}`);
+  }
+  // Promotion route — every active LOCK in v9 is 'ags-unified-v9'. We
+  // overwrite stale legacy values (v74-hc-margin / v75-* / ags-rescue)
+  // exactly once on first-promote so historical picks migrate cleanly.
+  if (passesShipFloor && sd.promotedBy !== 'ags-unified-v9') {
+    const stampedPromotedBy = sd.promotedBy || null;
+    patch.promotedBy = 'ags-unified-v9';
+    changes.push(`promotedBy: ${stampedPromotedBy || '∅'} → ags-unified-v9 (AGS=${agsResult.ags.toFixed(2)})`);
   }
 
   // AGS stamp (Phase 1: read-only, no behavior change). Always overwritten
@@ -1504,13 +1182,11 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     const agsUnitsDrifted = !agsUnitsFieldsMissing
       && Math.abs((sd.v8_agsUnitsApplied || 0) - liveUnits) >= 0.05;
     if (agsValueChanged) {
-      const trim = agsUnitsMult !== 1.0 ? ` · units ${liveUnitsPreAgs}u → ${liveUnits}u (×${agsUnitsMult.toFixed(2)})` : '';
-      changes.push(`AGS: ${stampedAgs == null ? '∅' : stampedAgs.toFixed(2)} → ${agsResult.ags.toFixed(2)} (${agsResult.tier})${trim}`);
+      changes.push(`AGS-U: ${stampedAgs == null ? '∅' : stampedAgs.toFixed(2)} → ${agsResult.ags.toFixed(2)} (${agsResult.tier}, ×${agsUnitsMult.toFixed(2)} → ${liveUnits}u)`);
     } else if (agsUnitsFieldsMissing) {
-      const trim = agsUnitsMult !== 1.0 ? ` (${liveUnitsPreAgs}u → ${liveUnits}u, ×${agsUnitsMult.toFixed(2)})` : ' (×1.00, no trim)';
-      changes.push(`AGS units backfill${trim}`);
+      changes.push(`AGS-U units backfill (${liveUnits}u, ×${agsUnitsMult.toFixed(2)} of ${liveUnitsPreAgs}u base)`);
     } else if (agsUnitsDrifted) {
-      changes.push(`AGS units: ${liveUnitsPreAgs}u → ${liveUnits}u (×${agsUnitsMult.toFixed(2)})`);
+      changes.push(`AGS-U units: → ${liveUnits}u (×${agsUnitsMult.toFixed(2)} of ${liveUnitsPreAgs}u base)`);
     }
   } else {
     if (sd.v8_ags != null) {
@@ -1625,9 +1301,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     expectedUnits: liveUnits,
     expectedLockStage: appliedLockStage,
     lockStageReason,
-    hcRescueDemoted,
-    v74Demoted: v74 && stampedLockStage === 'LOCKED' && appliedLockStage === 'SHADOW',
-    v74Promoted: v74 && stampedLockStage === 'SHADOW' && appliedLockStage === 'LOCKED',
+    agsuDemoted: stampedLockStage === 'LOCKED' && appliedLockStage === 'SHADOW',
+    agsuPromoted: stampedLockStage === 'SHADOW' && appliedLockStage === 'LOCKED',
   };
 }
 
@@ -1644,12 +1319,16 @@ async function main() {
   profilesSnap.forEach(d => walletProfiles.set(d.id.toLowerCase(), d.data()));
   console.log(`Loaded ${walletProfiles.size} sharpWalletProfiles`);
 
-  // Load AGS calibration + build the proven-wallet predicate. AGS itself is
-  // Phase-1 read-only (stamp only, no decisions) — Phase 2/3 will hook into
-  // sizing/lock-floor.
+  // Load AGS-U calibration + build the proven / HC-eligible predicates.
+  // AGS-U is the SOLE decision input — drives lock/mute/sizing for every pick.
   const agsCalibration = await loadAgsCalibration(db);
   const isProvenFn = buildIsProvenFn(walletProfiles);
-  console.log(`AGS calibration: source=${agsCalibration.source} sampleSize=${agsCalibration.sampleSize ?? '?'} computedAt=${agsCalibration.computedAt ?? '?'}`);
+  const isHcEligibleFn = buildIsHcEligibleFn(walletProfiles);
+  console.log(`AGS-U calibration: source=${agsCalibration.source} sampleSize=${agsCalibration.sampleSize ?? '?'} computedAt=${agsCalibration.computedAt ?? '?'}`);
+  if (agsCalibration.quintiles) {
+    const q = agsCalibration.quintiles;
+    console.log(`AGS-U quintiles:   q20=${q.q20?.toFixed?.(2) ?? '?'}(MUTE) q60=${q.q60?.toFixed?.(2) ?? '?'}(LOCK) q80=${q.q80?.toFixed?.(2) ?? '?'}(PREMIUM) q90=${q.q90?.toFixed?.(2) ?? '?'}(ELITE)`);
+  }
 
   // Load today's positions (live wallet activity) from Firestore.
   // (Could also read from public/sharp_positions.json but Firestore stays
@@ -1727,10 +1406,10 @@ async function main() {
     skipped_completed: 0,
     skipped_t15: 0,
     wrote: 0,
-    hc_rescue_demoted: 0,
     status_changes: 0,
-    v74_demoted_to_shadow: 0,
-    v74_promoted_to_locked: 0,
+    agsu_demoted_to_shadow: 0,
+    agsu_promoted_to_locked: 0,
+    agsu_hard_muted: 0,
     no_change: 0,
     created_missing: 0,
     ags_both_sides_refreshed: 0,
@@ -1785,7 +1464,7 @@ async function main() {
         const result = reconcileSide({
           sd, side: sideKey, pick, mkt, group, walletProfiles, now,
           force: FORCE,
-          agsCalibration, isProvenFn,
+          agsCalibration, isProvenFn, isHcEligibleFn,
         });
         if (result.skipped) {
           if (result.reason === 'not_locked_or_lean') stats.skipped_not_locked++;
@@ -1797,9 +1476,9 @@ async function main() {
           stats.no_change++;
           continue;
         }
-        if (result.hcRescueDemoted) stats.hc_rescue_demoted++;
-        if (result.v74Demoted) stats.v74_demoted_to_shadow++;
-        if (result.v74Promoted) stats.v74_promoted_to_locked++;
+        if (result.agsuDemoted) stats.agsu_demoted_to_shadow++;
+        if (result.agsuPromoted) stats.agsu_promoted_to_locked++;
+        if (result.expectedReason === 'ags_hard_mute') stats.agsu_hard_muted++;
         if (result.changes.some(c => c.startsWith('status:'))) stats.status_changes++;
         stats.wrote++;
         changeLog.push({
@@ -1835,7 +1514,7 @@ async function main() {
         const groupKey = `${pick.sport}|${pick.gameKey}|${mkt}`;
         const group = groups.get(groupKey) || [];
         const stamps = computeBothSidesAnalytics(
-          group, mkt, pick.sport, walletProfiles, agsCalibration, isProvenFn,
+          group, mkt, pick.sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn,
         );
         if (stamps) {
           stats.ags_both_sides_refreshed++;
@@ -1913,7 +1592,7 @@ async function main() {
   console.log(`\n── Create-missing pass ──`);
   console.log(`  Loaded metadata for ${gameMeta.size} games (commenceTime + odds source)`);
   const cm = await createMissingLockedPicks({
-    db, groups, walletProfiles, agsCalibration, isProvenFn,
+    db, groups, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn,
     existingDocIds, gameMeta, now,
     dryRun: DRY_RUN, force: FORCE,
   });
@@ -1923,7 +1602,7 @@ async function main() {
   } else {
     for (const c of cm.created) {
       const agsLabel = c.ags != null ? c.ags.toFixed(2) : '∅';
-      console.log(`  + ${c.col.replace('sharpFlow', '').toUpperCase()} ${c.docId} / ${c.side} (${c.team}) — route=${c.route}  Δw=${c.dw} HC=${c.hcMargin} AGS=${agsLabel} stars=${c.peakStars} units=${c.peakUnits}u`);
+      console.log(`  + ${c.col.replace('sharpFlow', '').toUpperCase()} ${c.docId} / ${c.side} (${c.team}) — route=${c.route}  AGS-U=${agsLabel} (proven=${c.agsTotal})  stars=${c.peakStars} units=${c.peakUnits}u`);
     }
   }
   if (cm.skipped.length > 0) {
@@ -1939,9 +1618,9 @@ async function main() {
   console.log(`  No change needed:         ${stats.no_change}`);
   console.log(`  Wrote canonical state:    ${stats.wrote}`);
   console.log(`    of which status flips:  ${stats.status_changes}`);
-  console.log(`    HC rescue demoted:      ${stats.hc_rescue_demoted}`);
-  console.log(`    v7.4 → SHADOW (hidden): ${stats.v74_demoted_to_shadow}`);
-  console.log(`    v7.4 → LOCKED (shown):  ${stats.v74_promoted_to_locked}`);
+  console.log(`    AGS-U → SHADOW (hidden): ${stats.agsu_demoted_to_shadow}`);
+  console.log(`    AGS-U → LOCKED (shown):  ${stats.agsu_promoted_to_locked}`);
+  console.log(`    AGS-U hard mutes (q20):  ${stats.agsu_hard_muted}`);
   console.log(`  Created-missing pass:     ${stats.created_missing} new pick doc(s)`);
   console.log(`  agsBothSides refreshed:   ${stats.ags_both_sides_refreshed} doc(s) (analytical sidecar)`);
   console.log(`\n${DRY_RUN ? '[DRY RUN] No writes performed.' : 'Done.'}\n`);

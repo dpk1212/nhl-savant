@@ -1,10 +1,12 @@
-// computeAgsCalibration — daily job that refreshes the AGS calibration doc.
+// computeAgsCalibration — daily job that refreshes the AGS-Unified v9
+// calibration doc.
 //
 // Output: Firestore doc `agsCalibration/current` with shape:
 //   {
-//     normalizers: { dCount: { mean, sd }, dContribution: { mean, sd }, ... },
-//     quintiles: { q20, q40, q60, q80, q90 },
-//     thresholds: { lockFloor, muteFloor },
+//     normalizers: { dCount: { mean, sd }, dHcCount: { mean, sd }, ... },
+//     quintiles: { q20, q40, q50, q60, q80, q90 },
+//     thresholds: { hardMuteFloor (=q20), lockFloor (=q60),
+//                   premiumFloor (=q80), eliteFloor (=q90) },
 //     sampleSize: <int>,
 //     dateRange: { from: 'YYYY-MM-DD', to: 'YYYY-MM-DD' },
 //     computedAt: ISO timestamp,
@@ -12,13 +14,14 @@
 //   }
 //
 // Read by both scripts/syncPickStateAuthoritative.js and src/pages/SharpFlow.jsx
-// to drive AGS scoring of live picks. Falls back to AGS_FALLBACK_CALIBRATION
+// to drive AGS-U scoring of live picks. Falls back to AGS_FALLBACK_CALIBRATION
 // in src/lib/ags.js when this doc is unavailable.
 //
 // Sample = V6 cutover (2026-04-18+), dashboard-truth filter (peakStars ≥ 2.5
 // ∧ ¬SHADOW ∧ ¬MUTED ∧ ¬CANCELLED ∧ ¬superseded), graded picks only,
-// whitelist-filtered aggregates (CONFIRMED + FLAT only). Mirrors the math
-// of scripts/_walletStackScore.mjs exactly.
+// whitelist-filtered aggregates with HC subset (CONFIRMED tier ∧ sizeRatio
+// ≥ 1.5×). The 5 v9 features are computed by aggregateSideProven in
+// src/lib/ags.js — keep that file as the single source of truth.
 import 'dotenv/config';
 import admin from 'firebase-admin';
 import { readFileSync, existsSync } from 'fs';
@@ -27,8 +30,7 @@ import { dirname, join } from 'path';
 
 import {
   AGS_FEATURES,
-  AGS_LOCK_FLOOR,
-  AGS_MUTE_FLOOR,
+  AGS_ABSOLUTE_MUTE_FLOOR,
   aggregateSideProven,
 } from '../src/lib/ags.js';
 
@@ -84,11 +86,27 @@ function buildIsProvenFn(tiers) {
   };
 }
 
-// ── Sample loader (V6 dashboard-filtered, graded only) ─────────────────────
-async function loadHistoricalAggregates(isProvenFn) {
+// HC eligibility — CONFIRMED tier only (stricter than isProven). The
+// HC_RATIO sizeRatio threshold is enforced inside aggregateSideProven.
+function buildIsHcEligibleFn(tiers) {
+  return (walletShort, sport) => {
+    if (!walletShort) return false;
+    const t = tiers.get(walletShort)?.[sport];
+    return t === 'CONFIRMED';
+  };
+}
+
+// ── Sample loader ──────────────────────────────────────────────────────────
+// V6 cutover universe with full feature stack (walletDetails + outcome).
+// Includes BOTH SHIPPED and SHADOW picks — the AGS-U calibration must reflect
+// the full distribution the model will score against, not just the picks the
+// (now-retired) matrix happened to publish. Verified empirically: SHADOW
+// picks are 55% WR vs SHIPPED 50% WR (the matrix was over-filtering winners
+// out of the calibration), so excluding them biased q-thresholds upward.
+async function loadHistoricalAggregates(isProvenFn, isHcEligibleFn) {
   const aggs = [];
   let dateMin = null, dateMax = null;
-  let counts = { graded: 0, dashboard: 0, withDetails: 0, kept: 0 };
+  let counts = { graded: 0, withDetails: 0, kept: 0 };
 
   for (const [col] of PICK_COLS) {
     const snap = await db.collection(col).where('date', '>=', V6_CUTOVER).get();
@@ -103,22 +121,11 @@ async function loadHistoricalAggregates(isProvenFn) {
         counts.graded += 1;
 
         const peak = side.peak || side.lock || {};
-        const peakStars = peak?.stars ?? 0;
-        const lockStage = side.lockStage || null;
-        const healthStatus = side.health?.status || null;
-        const inDashboard = !side.superseded
-          && healthStatus !== 'CANCELLED'
-          && healthStatus !== 'MUTED'
-          && lockStage !== 'SHADOW'
-          && peakStars >= 2.5;
-        if (!inDashboard) continue;
-        counts.dashboard += 1;
-
         const wd = peak?.v8Scoring?.walletDetails;
         if (!Array.isArray(wd) || wd.length === 0) continue;
         counts.withDetails += 1;
 
-        const agg = aggregateSideProven(wd, sideKey, sport, isProvenFn);
+        const agg = aggregateSideProven(wd, sideKey, sport, isProvenFn, isHcEligibleFn);
         if (!agg || (agg.forCount + agg.agCount) === 0) continue;
         counts.kept += 1;
 
@@ -157,11 +164,12 @@ async function main() {
   console.log('[ags-calibration] loading wallet tiers…');
   const tiers = await loadWalletTiers();
   const isProvenFn = buildIsProvenFn(tiers);
+  const isHcEligibleFn = buildIsHcEligibleFn(tiers);
   console.log(`[ags-calibration]   tier map: ${tiers.size} wallets with profile records`);
 
-  console.log('[ags-calibration] loading historical sample (V6 cutover, dashboard-filtered, graded)…');
-  const { aggs, dateMin, dateMax, counts } = await loadHistoricalAggregates(isProvenFn);
-  console.log(`[ags-calibration]   counts: graded=${counts.graded}  dashboard=${counts.dashboard}  withDetails=${counts.withDetails}  kept=${counts.kept}`);
+  console.log('[ags-calibration] loading historical sample (V6 cutover, full universe, graded)…');
+  const { aggs, dateMin, dateMax, counts } = await loadHistoricalAggregates(isProvenFn, isHcEligibleFn);
+  console.log(`[ags-calibration]   counts: graded=${counts.graded}  withDetails=${counts.withDetails}  kept=${counts.kept}`);
   console.log(`[ags-calibration]   date range: ${dateMin} → ${dateMax}`);
 
   if (aggs.length < 30) {
@@ -198,26 +206,30 @@ async function main() {
     q80: quantile(agsValues, 0.80),
     q90: quantile(agsValues, 0.90),
   };
-  console.log(`[ags-calibration]   quintiles: q20=${quintiles.q20.toFixed(2)}  q40=${quintiles.q40.toFixed(2)}  q50=${quintiles.q50.toFixed(2)}  q60=${quintiles.q60.toFixed(2)} (LOCK floor)  q80=${quintiles.q80.toFixed(2)} (PREMIUM 1.25x)  q90=${quintiles.q90.toFixed(2)} (ELITE 1.5x)`);
+  console.log(`[ags-calibration]   quintiles:  q20=${quintiles.q20.toFixed(2)} (HARD MUTE floor)  q40=${quintiles.q40.toFixed(2)} (LEAN 0.50×)  q60=${quintiles.q60.toFixed(2)} (LOCK 1.10×)  q80=${quintiles.q80.toFixed(2)} (PREMIUM 1.50×)  q90=${quintiles.q90.toFixed(2)} (ELITE 2.00×)`);
 
-  // 3. Build the calibration doc. `thresholds.lockFloor` is the dynamic
-  //    q60 (top-40%) lock floor — picks with AGS ≥ q60 are eligible for
-  //    the AGS rescue lock route. q50 (median) was evaluated and rejected
-  //    on 2026-05-13 because at-or-just-above-median picks land in the
-  //    59% WR / +0.06u-per-pick band; q60 captures the 71% WR /
-  //    +0.41u-per-pick band — much steeper edge per unit of volume.
-  //    The static AGS_LOCK_FLOOR constant lives on for the ELITE-tier
-  //    inline check + tier label ("STRONG AGS" semantically) and as a
-  //    cold-start fallback when q60 is missing.
+  // 3. Build the v9 calibration doc. The four threshold values are the
+  //    bands that drive every action — there is no separate gate logic.
+  //    AGS-U values below q20 are HARD MUTED (size = 0). Values between
+  //    q20 and q60 ship at reduced size (LEAN/WEAK). Values ≥ q60 lock
+  //    at full or boosted units. `AGS_ABSOLUTE_MUTE_FLOOR` is exported
+  //    from src/lib/ags.js as a safety bound — q20 can never permit a
+  //    pick below it to ship even on a pathological calibration.
   const doc = {
     normalizers,
     quintiles,
-    thresholds: { lockFloor: quintiles.q60, eliteFloor: AGS_LOCK_FLOOR, muteFloor: AGS_MUTE_FLOOR },
+    thresholds: {
+      hardMuteFloor: Math.max(quintiles.q20, AGS_ABSOLUTE_MUTE_FLOOR),
+      lockFloor:     quintiles.q60,
+      premiumFloor:  quintiles.q80,
+      eliteFloor:    quintiles.q90,
+    },
     sampleSize: aggs.length,
     dateRange: { from: dateMin, to: dateMax },
     computedAt: new Date().toISOString(),
     durationMs: Date.now() - startedAt,
     source: 'cron',
+    schemaVersion: 'ags-unified-v9',
   };
 
   if (DRY_RUN) {
