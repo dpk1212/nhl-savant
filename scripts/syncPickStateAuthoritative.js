@@ -64,8 +64,10 @@ import {
   agsSizeMultiplier,
   agsTierFromValue,
   computeAgs,
+  computeAgsFromPositions,
   meetsAgsHardMute,
   meetsAgsLockFloor,
+  positionToWalletDetail,
 } from '../src/lib/ags.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -509,28 +511,10 @@ function buildPeakStatsFromPositions(positions, side, isProvenFn, sport) {
   };
 }
 
-// Convert a sharp_action_positions doc into a walletDetails entry the
-// way the browser writes it into peak.v8Scoring.walletDetails. This
-// shape is what aggregateSideProven + computeAgs expect.
-function positionToWalletDetail(p) {
-  return {
-    wallet: p.walletShort || (p.wallet || '').slice(-6).toLowerCase(),
-    side: p.side,
-    invested: Number(p.invested || 0),
-    contribution: Number(p.v8_walletContribution || 0),
-    walletBase: Number(p.v8_walletBase || 0),
-    roi: Number(p.sportROI || 0),
-    pnl: Number(p.sportPnlTotal || p.totalPnl || 0),
-    sizeRatio: Number(p.v8_sizeRatio || (p.avgSportBet > 0 ? p.invested / p.avgSportBet : 0)),
-    convictionMult: Number(p.v8_convictionMult || 0),
-    rank: p.leaderboardRank ?? null,
-    roiNorm: Number(p.v8_walletRoiNorm || 0),
-    pnlNorm: Number(p.v8_walletPnlNorm || 0),
-    rankNorm: Number(p.v8_walletRankNorm || 0),
-    topShare: Number(p.v8_topShare || 0),
-    contribTier: 'TBD',
-  };
-}
+// positionToWalletDetail is imported from src/lib/ags.js so the cron and
+// the UI share one definition of the position → walletDetail transform.
+// Any change to feature inputs (sizeRatio, convictionMult, contribution,
+// walletBase) MUST happen in src/lib/ags.js so both sides update together.
 
 // ── Both-sides analytical sidecar ──────────────────────────────────────────
 // Pure read-only metric computation for a single market-side, used to

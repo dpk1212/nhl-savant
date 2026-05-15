@@ -98,6 +98,86 @@ export const AGS_FALLBACK_CALIBRATION = Object.freeze({
 });
 
 // ────────────────────────────────────────────────────────────────────────
+// positionToWalletDetail — canonical 1:1 mapping from a sharp_action_positions
+// doc (or polled JSON entry of the same shape) into the walletDetails entry
+// that aggregateSideProven / computeAgs consume.
+//
+// CRITICAL: this is the ONE definition of how a raw position becomes a
+// walletDetail. The cron (scripts/syncPickStateAuthoritative.js) and the
+// UI (src/pages/SharpFlow.jsx) BOTH import this so they cannot drift.
+// Any change to feature inputs (sizeRatio, convictionMult, contribution,
+// walletBase) must happen here.
+//
+// Field rules:
+//   - wallet:         lower-6-hex of the wallet address (matches profile docIds)
+//   - side:           'home' | 'away' | 'over' | 'under'
+//   - invested:       raw $ on the position
+//   - sizeRatio:      invested / avgSportBet  (1 fallback when avgBet=0)
+//   - convictionMult: clamped log(sizeRatio) curve, range [0.70, 1.60]
+//   - contribution:   walletBase × convictionMult  (walletBase=50 stand-in
+//                     when v8_walletBase is not yet stamped — the cron
+//                     stamps the real percentile-derived walletBase on
+//                     subsequent cycles)
+// ────────────────────────────────────────────────────────────────────────
+export function positionToWalletDetail(p) {
+  if (!p) return null;
+  const wallet = p.walletShort
+    ? String(p.walletShort).toLowerCase()
+    : (p.wallet ? String(p.wallet).slice(-6).toLowerCase() : '');
+  const invested = Number(p.invested || 0);
+  const avgBet = Number(p.avgSportBet || 0);
+  // Prefer v8_sizeRatio (stamped by the cron on the first cycle); fall back
+  // to a live compute from invested / avgSportBet.
+  const sizeRatio = Number.isFinite(p.v8_sizeRatio) && p.v8_sizeRatio > 0
+    ? Number(p.v8_sizeRatio)
+    : (avgBet > 0 ? invested / avgBet : 1);
+  const convictionMult = Number.isFinite(p.v8_convictionMult) && p.v8_convictionMult > 0
+    ? Number(p.v8_convictionMult)
+    : Math.max(0.70, Math.min(1.60, 1 + 0.30 * Math.log(sizeRatio || 1)));
+  const walletBase = Number.isFinite(p.v8_walletBase) && p.v8_walletBase > 0
+    ? Number(p.v8_walletBase)
+    : 50;
+  const contribution = Number.isFinite(p.v8_walletContribution) && p.v8_walletContribution > 0
+    ? Number(p.v8_walletContribution)
+    : walletBase * convictionMult;
+  return {
+    wallet,
+    side: p.side,
+    invested,
+    walletBase,
+    sizeRatio,
+    convictionMult,
+    contribution,
+    roi: Number(p.sportROI || 0),
+    pnl: Number(p.sportPnlTotal || p.totalPnl || 0),
+    rank: p.leaderboardRank ?? null,
+    roiNorm: Number(p.v8_walletRoiNorm || 0),
+    pnlNorm: Number(p.v8_walletPnlNorm || 0),
+    rankNorm: Number(p.v8_walletRankNorm || 0),
+    topShare: Number(p.v8_topShare || 0),
+    contribTier: 'TBD',
+  };
+}
+
+// ────────────────────────────────────────────────────────────────────────
+// computeAgsFromPositions — end-to-end pipeline. Map → aggregate → compute.
+// Returns { ags, components, tier, quintile, ... } same shape as computeAgs
+// or null when there are no proven wallets present.
+//
+// This is the SINGLE function the UI (SharpFlow.jsx) and cron
+// (createMissingPicks, computeSideAnalytics) both call so that whatever
+// AGS-U value the UI displays on a card is the exact value the cron will
+// stamp on the matching pick doc when it next runs. There is no drift.
+// ────────────────────────────────────────────────────────────────────────
+export function computeAgsFromPositions(positions, sideKey, sport, calibration, isProvenFn, isHcEligibleFn = null) {
+  if (!Array.isArray(positions) || positions.length === 0) return null;
+  const walletDetails = positions.map(positionToWalletDetail).filter(Boolean);
+  const agg = aggregateSideProven(walletDetails, sideKey, sport, isProvenFn, isHcEligibleFn);
+  if (!agg) return null;
+  return computeAgs(agg, calibration);
+}
+
+// ────────────────────────────────────────────────────────────────────────
 // Whitelist-filtered side aggregator with HC subset.
 //
 // Args:

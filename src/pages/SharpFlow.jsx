@@ -23,8 +23,10 @@ import {
   agsSizeMultiplier,
   agsTierFromValue,
   computeAgs,
+  computeAgsFromPositions,
   meetsAgsHardMute,
   meetsAgsLockFloor,
+  positionToWalletDetail,
 } from '../lib/ags.js';
 
 // ─── Brand Design System ──────────────────────────────────────────────────────
@@ -914,17 +916,18 @@ function rateStarsV8({ positions, consensusSide, v8Norm, pinnMoveSize = 0, timeT
   const deltaQuality = wc.qualityMargin;
   const wcHcMargin = (wc.hcConfFor || 0) - (wc.hcConfAg || 0);
 
+  // AGS-U star derivation uses the SHARED computeAgsFromPositions helper
+  // (same path the cron's createMissingPicks + every-cycle refresh uses).
+  // Operating on raw positions instead of walletDetails ensures the star
+  // rating reflects the same number the cron will stamp on the doc.
   let agsForStars = null;
-  if (sport && WALLET_PROFILES_CACHE && walletDetails.length > 0) {
-    const agg = aggregateSideProven(
-      walletDetails, consensusSide, sport, isProvenForAgs, isHcEligibleForAgs,
+  if (sport && WALLET_PROFILES_CACHE && Array.isArray(positions) && positions.length > 0) {
+    const agsRes = computeAgsFromPositions(
+      positions, consensusSide, sport, getAgsCalibration(), isProvenForAgs, isHcEligibleForAgs,
     );
-    if (agg) {
-      const agsRes = computeAgs(agg, getAgsCalibration());
-      if (agsRes && Number.isFinite(agsRes.ags)
-          && agsRes.provenTotalCount >= AGS_MIN_PROVEN_WALLETS) {
-        agsForStars = agsRes.ags;
-      }
+    if (agsRes && Number.isFinite(agsRes.ags)
+        && agsRes.provenTotalCount >= AGS_MIN_PROVEN_WALLETS) {
+      agsForStars = agsRes.ags;
     }
   }
   const stars = agsuStarsFromAgs(agsForStars, getAgsCalibration());
@@ -5994,25 +5997,24 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
 
   // AGS-Unified v9 — compute AGS-U for the consensus side EARLY so it can
   // drive sizing, the top-right star badge, and the consensus panel from
-  // the same value. Without this hoist the badge and the panel were
-  // reading different paths and could disagree (e.g., panel renders
-  // "PLAY LOCKED — ELITE" while the corner badge still reads
-  // "★ HARD MUTE" because the live walletDetails decayed since lock time).
-  // The walletDetails source order is `originalLockedSide v8Scoring` (if
-  // available, frozen at lock time) → live `sr.v8Scoring.walletDetails`.
+  // the same value.
+  //
+  // SINGLE SOURCE OF TRUTH: this calls computeAgsFromPositions from
+  // src/lib/ags.js — the EXACT helper scripts/syncPickStateAuthoritative.js
+  // uses for createMissingPicks and the every-cycle AGS refresh. Same
+  // positions, same positionToWalletDetail mapping, same aggregateSideProven,
+  // same computeAgs. The UI cannot drift from the cron's math because both
+  // call the same function.
+  //
+  // The legacy path here built walletDetails from rateStarsV8's deduped /
+  // cross-side-netted positions — a DIFFERENT shape from what the cron
+  // sees, which is why ELITE/PREMIUM badges could appear on picks the
+  // cron's math actually scored as LOCK or FADE. That divergence is gone.
   const liveLockedSideKey = lockedSideRef.current || consensusSide;
-  const liveLockedV8 = (lockedSideRef.current && lockedSideRef.current !== consensusSide)
-    ? oppSr?.v8Scoring
-    : sr?.v8Scoring;
   const liveAgsCalibration = getAgsCalibration();
-  const liveAgs = (() => {
-    const v8src = liveLockedV8 || sr?.v8Scoring;
-    const wd = v8src?.walletDetails;
-    if (!Array.isArray(wd) || wd.length === 0) return null;
-    const agg = aggregateSideProven(wd, liveLockedSideKey, gd.sport, isProvenForAgs, isHcEligibleForAgs);
-    if (!agg) return null;
-    return computeAgs(agg, liveAgsCalibration);
-  })();
+  const liveAgs = (Array.isArray(gd.positions) && gd.positions.length > 0)
+    ? computeAgsFromPositions(gd.positions, liveLockedSideKey, gd.sport, liveAgsCalibration, isProvenForAgs, isHcEligibleForAgs)
+    : null;
   const liveAgsValue = Number.isFinite(liveAgs?.ags) ? liveAgs.ags : null;
   const liveAgsBadge = agsuBadgeFromAgs(liveAgsValue, liveAgsCalibration);
   const liveAgsTier  = liveAgsValue != null
@@ -6027,12 +6029,10 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   sr.color = liveAgsBadge.color;
   sr.bg    = liveAgsBadge.bg;
   if (oppSr) {
-    const oppV8 = oppSr.v8Scoring;
-    const oppAgg = oppV8?.walletDetails?.length
-      ? aggregateSideProven(oppV8.walletDetails, oppSide, gd.sport, isProvenForAgs, isHcEligibleForAgs)
+    const oppAgs = (Array.isArray(gd.positions) && gd.positions.length > 0)
+      ? computeAgsFromPositions(gd.positions, oppSide, gd.sport, liveAgsCalibration, isProvenForAgs, isHcEligibleForAgs)
       : null;
-    const oppAgsRes = oppAgg ? computeAgs(oppAgg, liveAgsCalibration) : null;
-    const oppAgsValue = Number.isFinite(oppAgsRes?.ags) ? oppAgsRes.ags : null;
+    const oppAgsValue = Number.isFinite(oppAgs?.ags) ? oppAgs.ags : null;
     const oppBadge = agsuBadgeFromAgs(oppAgsValue, liveAgsCalibration);
     oppSr.stars = oppBadge.stars;
     oppSr.label = oppBadge.label;
@@ -6382,11 +6382,9 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     : null;
   const spreadAgs = (() => {
     if (!spreadWasEverLocked || !spreadSr) return null;
-    const wd = spreadSr.v8Scoring?.walletDetails;
-    if (!Array.isArray(wd) || wd.length === 0) return null;
-    const agg = aggregateSideProven(wd, spreadConsensusSide, gd.sport, isProvenForAgs, isHcEligibleForAgs);
-    if (!agg) return null;
-    return computeAgs(agg, getAgsCalibration());
+    const pos = spreadGameData?.positions;
+    if (!Array.isArray(pos) || pos.length === 0) return null;
+    return computeAgsFromPositions(pos, spreadConsensusSide, gd.sport, getAgsCalibration(), isProvenForAgs, isHcEligibleForAgs);
   })();
   const spreadAgsProvenTotal = spreadAgs ? (spreadAgs.provenForCount + spreadAgs.provenAgCount) : null;
   const spreadHealth = spreadWasEverLocked && spreadSr ? evaluatePickHealth({
@@ -6551,11 +6549,9 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     : null;
   const totalAgs = (() => {
     if (!totalWasEverLocked || !totalSr) return null;
-    const wd = totalSr.v8Scoring?.walletDetails;
-    if (!Array.isArray(wd) || wd.length === 0) return null;
-    const agg = aggregateSideProven(wd, totalConsensusSide, gd.sport, isProvenForAgs, isHcEligibleForAgs);
-    if (!agg) return null;
-    return computeAgs(agg, getAgsCalibration());
+    const pos = totalGameData?.positions;
+    if (!Array.isArray(pos) || pos.length === 0) return null;
+    return computeAgsFromPositions(pos, totalConsensusSide, gd.sport, getAgsCalibration(), isProvenForAgs, isHcEligibleForAgs);
   })();
   const totalAgsProvenTotal = totalAgs ? (totalAgs.provenForCount + totalAgs.provenAgCount) : null;
   const totalHealth = totalWasEverLocked && totalSr ? evaluatePickHealth({
