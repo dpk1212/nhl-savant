@@ -4659,16 +4659,26 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   const isCancelled = healthStatus === 'CANCELLED';
   const healthReasons = health?.reasons || [];
 
-  // v9 (AGS-U): LEAN ships at 0.50× the base stake (≈0.8u ML, 0.5u
-  // SPREAD/TOTAL) — it is NOT a 0u tracked-only tier anymore. The cron
-  // stamps `finalUnits` per the sizing ladder; the display should
-  // render those units verbatim, never override them to 0u.
+  // AGS-Unified v9 tier flags. Every shipped tier gets its own flag so
+  // the hero label + unit chip + accent color tell the user exactly
+  // what stake fraction the AGS-U ladder assigned:
+  //
+  //   ELITE   ≥ q90  → 2.00× — gold "ELITE LOCK"
+  //   PREMIUM ≥ q80  → 1.50× — green "PREMIUM LOCK"
+  //   LOCK    ≥ q60  → 1.10× — green "LOCKED BET"
+  //   LEAN    ≥ q40  → 0.50× — blue   "LEAN · ½ STAKE"
+  //   WEAK    ≥ q20  → 0.20× — amber  "WEAK · TRACK"
+  //   FADE    < q20  → 0.00× — hard mute (caught upstream by health
+  //                            engine; renders as MUTED, not here)
   //
   // Historical (v6 / v7) graded picks that WERE shipped at 0u keep the
   // tracked-only treatment via `isTrackedGrade` below — that legacy
   // record is preserved so PnL doesn't shift retroactively.
-  const isLean  = lockTier === 'LEAN' && !isGraded;
-  const isElite = lockTier === 'ELITE';
+  const isElite   = lockTier === 'ELITE'   && !isGraded;
+  const isPremium = lockTier === 'PREMIUM' && !isGraded;
+  const isLock    = lockTier === 'LOCK'    && !isGraded;
+  const isLean    = lockTier === 'LEAN'    && !isGraded;
+  const isWeak    = lockTier === 'WEAK'    && !isGraded;
 
   // v7.4 fix — graded LEAN/0u tracked-only picks. The card still shows
   // the W/L outcome (informational — "would have won/lost") but the unit
@@ -4688,10 +4698,24 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   // so we no longer exclude them.
   const showDownsize = !!isDownsized && !isGraded && !isMuted && !isCancelled && !superseded;
   const DOWNSIZE_AMBER = '#D4AF37'; // gold/amber — less severe than #F59E0B (mute)
-  const LEAN_BLUE     = '#60A5FA'; // light-blue — distinct from gold (top pick) and amber (mute)
+  const LEAN_BLUE     = '#60A5FA'; // light-blue   — LEAN tier (0.50× ladder)
+  const WEAK_AMBER    = '#F59E0B'; // amber        — WEAK tier (0.20× ladder)
+  const ELITE_GOLD    = '#D4AF37'; // bold gold    — ELITE tier (2.00× ladder)
+  // Tier accent ordering (worst→best so each clobbers the prior in a
+  // ternary chain): CANCELLED > MUTED > TRACKED > FADE-class (none, we
+  // mute upstream) > WEAK > LEAN > LOCK (default green) > PREMIUM > ELITE.
   // Graded LEAN picks adopt the LEAN-blue palette so their card chrome
   // reads "tracked, no money at risk" instead of normal win/loss colors.
-  const accentColor = isCancelled ? B.red : isMuted ? '#F59E0B' : isTrackedGrade ? LEAN_BLUE : isLean ? LEAN_BLUE : showDownsize ? DOWNSIZE_AMBER : isGraded ? (isWin ? B.green : isLoss ? B.red : B.gold) : B.green;
+  const accentColor = isCancelled ? B.red
+    : isMuted ? '#F59E0B'
+    : isTrackedGrade ? LEAN_BLUE
+    : isElite ? ELITE_GOLD
+    : isPremium ? B.green
+    : isLean ? LEAN_BLUE
+    : isWeak ? WEAK_AMBER
+    : showDownsize ? DOWNSIZE_AMBER
+    : isGraded ? (isWin ? B.green : isLoss ? B.red : B.gold)
+    : B.green;
   // Authoritative display label for TOTAL picks. We ALWAYS re-derive the
   // label from `line` (which itself falls through peak.line → lock.line →
   // closingLine in the upstream selector) instead of trusting whatever
@@ -4836,7 +4860,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
             )}
             {isLean && !isMuted && !isCancelled && !superseded && (
               <span
-                title={`LEAN tier — AGS-U is between q40 and q60 (LOCK floor). Ships at 0.50× base stake under the AGS-U v9 sizing ladder.`}
+                title={`LEAN tier — AGS-U is between q40 (LEAN floor) and q60 (LOCK floor). Ships at 0.50× the base stake under the AGS-U v9 sizing ladder.`}
                 style={{
                   ...T.micro, fontWeight: 800, letterSpacing: '0.05em',
                   padding: '0.15rem 0.5rem', borderRadius: '4px',
@@ -4845,6 +4869,46 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                 }}
               >
                 LEAN · ½ STAKE
+              </span>
+            )}
+            {isWeak && !isMuted && !isCancelled && !superseded && (
+              <span
+                title={`WEAK tier — AGS-U is between q20 (hard mute floor) and q40 (LEAN floor). Ships at 0.20× the base stake under the AGS-U v9 sizing ladder. Just above the hard-mute line — exposure only, not a confident lock.`}
+                style={{
+                  ...T.micro, fontWeight: 800, letterSpacing: '0.05em',
+                  padding: '0.15rem 0.5rem', borderRadius: '4px',
+                  color: WEAK_AMBER, background: 'rgba(245,158,11,0.12)',
+                  border: '1px solid rgba(245,158,11,0.35)',
+                }}
+              >
+                WEAK · ⅕ STAKE
+              </span>
+            )}
+            {isElite && !isMuted && !isCancelled && !superseded && (
+              <span
+                title={`ELITE tier — AGS-U ≥ q90 (top decile). Ships at 2.00× the base stake under the AGS-U v9 sizing ladder.`}
+                style={{
+                  ...T.micro, fontWeight: 900, letterSpacing: '0.05em',
+                  padding: '0.15rem 0.5rem', borderRadius: '4px',
+                  color: '#fff', background: 'linear-gradient(135deg, #D4AF37 0%, #B8962E 100%)',
+                  border: '1px solid rgba(245,208,96,0.6)',
+                  boxShadow: '0 0 8px rgba(212,175,55,0.3)',
+                }}
+              >
+                ELITE · 2× STAKE
+              </span>
+            )}
+            {isPremium && !isMuted && !isCancelled && !superseded && (
+              <span
+                title={`PREMIUM tier — AGS-U ≥ q80. Ships at 1.50× the base stake under the AGS-U v9 sizing ladder.`}
+                style={{
+                  ...T.micro, fontWeight: 800, letterSpacing: '0.05em',
+                  padding: '0.15rem 0.5rem', borderRadius: '4px',
+                  color: B.green, background: B.greenDim,
+                  border: '1px solid rgba(16,185,129,0.35)',
+                }}
+              >
+                PREMIUM · 1½× STAKE
               </span>
             )}
             {showDownsize && (
@@ -5037,7 +5101,9 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
       {expanded && (
         <div style={{ borderTop: `1px solid ${B.border}` }}>
 
-          {/* Hero action box */}
+          {/* Hero action box — background tier-tinted under AGS-U v9 so the
+              whole panel reads as the AGS-U tier (ELITE gold · PREMIUM/LOCK
+              green · LEAN blue · WEAK amber · MUTED/CANCELLED red/amber). */}
           <div style={{
             margin: '0.75rem 0.875rem 0', padding: '0.75rem',
             borderRadius: '10px',
@@ -5045,22 +5111,46 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
               ? 'linear-gradient(135deg, rgba(239,68,68,0.08) 0%, rgba(239,68,68,0.02) 100%)'
               : isMuted
               ? 'linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(245,158,11,0.02) 100%)'
+              : isElite
+              ? 'linear-gradient(135deg, rgba(212,175,55,0.14) 0%, rgba(212,175,55,0.03) 100%)'
               : isLean
               ? 'linear-gradient(135deg, rgba(96,165,250,0.08) 0%, rgba(96,165,250,0.02) 100%)'
+              : isWeak
+              ? 'linear-gradient(135deg, rgba(245,158,11,0.10) 0%, rgba(245,158,11,0.02) 100%)'
               : isGraded
               ? (isWin ? 'linear-gradient(135deg, rgba(16,185,129,0.10) 0%, rgba(16,185,129,0.02) 100%)' : isLoss ? 'linear-gradient(135deg, rgba(239,68,68,0.10) 0%, rgba(239,68,68,0.02) 100%)' : 'linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(212,175,55,0.02) 100%)')
               : 'linear-gradient(135deg, rgba(16,185,129,0.10) 0%, rgba(16,185,129,0.02) 100%)',
-            border: `1px solid ${isCancelled ? 'rgba(239,68,68,0.25)' : isMuted ? 'rgba(245,158,11,0.25)' : isLean ? 'rgba(96,165,250,0.25)' : isGraded ? (isWin ? 'rgba(16,185,129,0.25)' : isLoss ? 'rgba(239,68,68,0.25)' : B.goldBorder) : 'rgba(16,185,129,0.25)'}`,
+            border: `1px solid ${isCancelled ? 'rgba(239,68,68,0.25)'
+              : isMuted ? 'rgba(245,158,11,0.25)'
+              : isElite ? 'rgba(212,175,55,0.40)'
+              : isLean ? 'rgba(96,165,250,0.25)'
+              : isWeak ? 'rgba(245,158,11,0.30)'
+              : isGraded ? (isWin ? 'rgba(16,185,129,0.25)' : isLoss ? 'rgba(239,68,68,0.25)' : B.goldBorder)
+              : 'rgba(16,185,129,0.25)'}`,
           }}>
             {/* Narrative + unit badge */}
             <div style={{ marginBottom: '0.625rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
                 <span style={{ ...T.label, fontWeight: 800, color: accentColor }}>
-                  {isCancelled ? 'CANCELLED' : isMuted ? 'WEAKENING' : isTrackedGrade ? `TRACKED · ${isWin ? 'WIN' : isLoss ? 'LOSS' : 'PUSH'} (0u)` : isLean ? 'LEAN · ½ STAKE' : isGraded ? (isWin ? 'WINNING BET' : isLoss ? 'LOSING BET' : 'PUSH') : 'LOCKED BET'}
+                  {isCancelled ? 'CANCELLED'
+                    : isMuted ? 'WEAKENING'
+                    : isTrackedGrade ? `TRACKED · ${isWin ? 'WIN' : isLoss ? 'LOSS' : 'PUSH'} (0u)`
+                    : isElite ? 'ELITE LOCK · 2× STAKE'
+                    : isPremium ? 'PREMIUM LOCK · 1½× STAKE'
+                    : isLean ? 'LEAN · ½ STAKE'
+                    : isWeak ? 'WEAK · ⅕ STAKE'
+                    : isGraded ? (isWin ? 'WINNING BET' : isLoss ? 'LOSING BET' : 'PUSH')
+                    : 'LOCKED BET'}
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                   <span style={{
-                    ...T.body, fontWeight: 900, color: isCancelled ? B.textMuted : isTrackedGrade ? LEAN_BLUE : isLean ? LEAN_BLUE : '#fff',
+                    ...T.body, fontWeight: 900,
+                    color: isCancelled ? B.textMuted
+                      : isTrackedGrade ? LEAN_BLUE
+                      : isElite ? '#fff'
+                      : isLean ? LEAN_BLUE
+                      : isWeak ? WEAK_AMBER
+                      : '#fff',
                     padding: '0.2rem 0.6rem', borderRadius: '5px',
                     background: isCancelled
                       ? 'linear-gradient(135deg, rgba(239,68,68,0.15), rgba(239,68,68,0.08))'
@@ -5068,14 +5158,28 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                       ? 'linear-gradient(135deg, #F59E0B, #D97706)'
                       : isTrackedGrade
                       ? 'rgba(96,165,250,0.12)'
+                      : isElite
+                      ? 'linear-gradient(135deg, #D4AF37 0%, #B8962E 100%)'
+                      : isPremium
+                      ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
                       : isLean
                       ? 'linear-gradient(135deg, rgba(96,165,250,0.30), rgba(96,165,250,0.15))'
+                      : isWeak
+                      ? 'linear-gradient(135deg, rgba(245,158,11,0.25), rgba(245,158,11,0.10))'
                       : isGraded
                       ? (isWin ? 'linear-gradient(135deg, #10B981, #059669)' : isLoss ? 'linear-gradient(135deg, #EF4444, #DC2626)' : 'linear-gradient(135deg, #64748B, #475569)')
                       : 'linear-gradient(135deg, #10B981, #059669)',
-                    border: `1px solid ${isCancelled ? 'rgba(239,68,68,0.3)' : isMuted ? 'rgba(245,158,11,0.4)' : (isLean || isTrackedGrade) ? 'rgba(96,165,250,0.45)' : isWin ? 'rgba(16,185,129,0.4)' : isLoss ? 'rgba(239,68,68,0.4)' : 'rgba(16,185,129,0.4)'}`,
+                    border: `1px solid ${isCancelled ? 'rgba(239,68,68,0.3)'
+                      : isMuted ? 'rgba(245,158,11,0.4)'
+                      : (isLean || isTrackedGrade) ? 'rgba(96,165,250,0.45)'
+                      : isWeak ? 'rgba(245,158,11,0.45)'
+                      : isElite ? 'rgba(245,208,96,0.6)'
+                      : isWin ? 'rgba(16,185,129,0.4)'
+                      : isLoss ? 'rgba(239,68,68,0.4)'
+                      : 'rgba(16,185,129,0.4)'}`,
                     fontFeatureSettings: "'tnum'",
                     textDecoration: (isCancelled || isMuted) ? 'line-through' : 'none',
+                    boxShadow: isElite ? '0 0 8px rgba(212,175,55,0.35)' : 'none',
                   }}>
                     {isTrackedGrade ? '0u · TRACK' : (isCancelled || isMuted) ? `${ut.icon} ${units}u → 0u` : `${ut.icon} ${units}u`}
                   </span>
@@ -5199,6 +5303,29 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                   lead = (
                     <>
                       <span style={{ color: LEAN_BLUE, fontWeight: 700 }}>LEAN tier · ½ stake</span> — {forW} proven {sportUp} winner{forW !== 1 ? 's' : ''} backing {teamShort} {marketNoun}{agsTxt ? <> at AGS-U <span style={{ color: LEAN_BLUE, fontWeight: 700 }}>{agsTxt}</span> (q40-q60 band)</> : null}. Ships at {units}u — half the standard LOCK-tier stake under the AGS-U v9 ladder.{pinnSuffix}
+                    </>
+                  );
+                } else if (isWeak) {
+                  // AGS-U v9: WEAK tier = AGS between q20 (hard mute floor)
+                  // and q40 (LEAN floor). Ships at 0.20× the base stake —
+                  // exposure only, just above the hard-mute line.
+                  const agsTxt = (agsValue != null && Number.isFinite(agsValue))
+                    ? `${agsValue >= 0 ? '+' : ''}${agsValue.toFixed(2)}`
+                    : null;
+                  lead = (
+                    <>
+                      <span style={{ color: WEAK_AMBER, fontWeight: 700 }}>WEAK tier · ⅕ stake</span> — AGS-U {agsTxt ? <span style={{ color: WEAK_AMBER, fontWeight: 700 }}>{agsTxt}</span> : 'low'} is in the q20-q40 band (just above the hard-mute floor). {forW} proven {sportUp} winner{forW !== 1 ? 's' : ''} {agW > 0 ? <>backing, {agW} against</> : <>backing</>} {teamShort} {marketNoun}. Shipping {units}u — minimum exposure, NOT a confident lock.{pinnSuffix}
+                    </>
+                  );
+                } else if (isElite) {
+                  // AGS-U v9: ELITE tier = AGS ≥ q90 (top decile).
+                  // Ships at 2.00× the base stake.
+                  const agsTxt = (agsValue != null && Number.isFinite(agsValue))
+                    ? `${agsValue >= 0 ? '+' : ''}${agsValue.toFixed(2)}`
+                    : null;
+                  lead = (
+                    <>
+                      <span style={{ color: ELITE_GOLD, fontWeight: 800 }}>ELITE tier · 2× stake</span> — {forW} proven {sportUp} winner{forW !== 1 ? 's' : ''} backing {teamShort} {marketNoun}{agsTxt ? <> at AGS-U <span style={{ color: ELITE_GOLD, fontWeight: 800 }}>{agsTxt}</span> (top decile, q90+)</> : null}. Shipping {units}u — full conviction.{pinnSuffix}{evSuffix}
                     </>
                   );
                 } else if (forW > 0 || wasHcRescued || wasSigma1Promoted || wasSigma2Promoted) {
@@ -5370,16 +5497,33 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
             )}
           </div>
 
-          {/* Lock-In Criteria */}
-          {criteriaList.length > 0 && (
+          {/* Lock-In Criteria — header tinted to live AGS-U tier so a WEAK
+              pick reads "WEAK · ⅕ STAKE" (amber) and a LEAN pick reads
+              "LEAN · ½ STAKE" (blue) instead of every shipped pick saying
+              "PLAY LOCKED — ★★★ SOLID" (green). The 6-criterion grid
+              below is a historical "lock-time conditions met" view; we
+              keep it for context but the BANNER is the AGS-U tier truth. */}
+          {criteriaList.length > 0 && (() => {
+            // Tier-driven banner. Falls back to "PLAY LOCKED" only when
+            // no AGS-U tier is available (legacy pre-v9 picks).
+            const tierBanner = isElite     ? { text: 'ELITE LOCK · ★★★★★ TOP DECILE', color: ELITE_GOLD, bg: 'rgba(212,175,55,0.10)', border: 'rgba(212,175,55,0.40)' }
+                             : isPremium   ? { text: 'PREMIUM LOCK · ★★★★ STRONG',   color: B.green,  bg: 'rgba(16,185,129,0.10)',  border: 'rgba(16,185,129,0.35)' }
+                             : isLock      ? { text: 'LOCKED · ★★★ SOLID',           color: B.green,  bg: 'rgba(16,185,129,0.06)',  border: 'rgba(16,185,129,0.25)' }
+                             : isLean      ? { text: 'LEAN · ½ STAKE',               color: LEAN_BLUE, bg: 'rgba(96,165,250,0.08)', border: 'rgba(96,165,250,0.30)' }
+                             : isWeak      ? { text: 'WEAK · ⅕ STAKE',               color: WEAK_AMBER, bg: 'rgba(245,158,11,0.10)', border: 'rgba(245,158,11,0.30)' }
+                             : isMuted     ? { text: 'MUTED · HARD STOP',            color: WEAK_AMBER, bg: 'rgba(245,158,11,0.10)', border: 'rgba(245,158,11,0.30)' }
+                             : isCancelled ? { text: 'CANCELLED',                    color: B.red,    bg: 'rgba(239,68,68,0.10)',   border: 'rgba(239,68,68,0.30)' }
+                             :               { text: `PLAY LOCKED — ${stars >= 4.5 ? '★★★★★ ELITE' : stars >= 3.5 ? '★★★★ STRONG' : '★★★ SOLID'}`,
+                                               color: B.green, bg: 'rgba(16,185,129,0.06)', border: 'rgba(16,185,129,0.25)' };
+            return (
             <div style={{
               margin: '0.5rem 0.875rem 0', padding: '0.5rem 0.625rem', borderRadius: '8px',
-              background: 'linear-gradient(135deg, rgba(16,185,129,0.06) 0%, rgba(16,185,129,0.02) 100%)',
-              border: '1px solid rgba(16,185,129,0.25)',
+              background: `linear-gradient(135deg, ${tierBanner.bg} 0%, transparent 100%)`,
+              border: `1px solid ${tierBanner.border}`,
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
-                <span style={{ ...T.micro, color: B.green, fontWeight: 700 }}>
-                  PLAY LOCKED — {stars >= 4.5 ? '★★★★★ ELITE' : stars >= 3.5 ? '★★★★ STRONG' : '★★★ SOLID'}
+                <span style={{ ...T.micro, color: tierBanner.color, fontWeight: 700 }}>
+                  {tierBanner.text}
                 </span>
                 <span style={{ ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'", color: metCount >= 4 ? B.green : B.gold }}>{metCount}/6</span>
               </div>
@@ -5392,7 +5536,8 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                 ))}
               </div>
             </div>
-          )}
+            );
+          })()}
 
           {/* Sharp Money Battle */}
           {consensusStrength?.moneyPct != null && (
