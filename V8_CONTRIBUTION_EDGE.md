@@ -1,9 +1,9 @@
 # V8 Contribution-Edge Map
 
-_Generated 2026-05-14T15:05:45.287Z_
+_Generated 2026-05-15T15:00:12.315Z_
 
-N = 349 picks (LOCKED=239, SHADOW=110)
-Baseline: WR 49.6% · flat ROI -4.2% · units-wtd ROI +2.4%
+N = 357 picks (LOCKED=246, SHADOW=111)
+Baseline: WR 48.7% · flat ROI -5.8% · units-wtd ROI -1.4%
 
 > Per-wallet signal: `contribution = walletBase × convictionMult` (quality × size, already stored in walletDetails).
 
@@ -12,48 +12,48 @@ Baseline: WR 49.6% · flat ROI -4.2% · units-wtd ROI +2.4%
 Hypothesis: more high-contribution sharps on side ⇒ higher WR / ROI.
 
 
-#### Threshold T = 30   |   ρ(qFor, won) = 0.073   ρ(qFor, flat ROI) = 0.068
+#### Threshold T = 30   |   ρ(qFor, won) = 0.082   ρ(qFor, flat ROI) = 0.076
 
 | Bucket | N | WR | flat ROI | wtd ROI |
 | --- | --- | --- | --- | --- |
 | qFor ≥ 0 | 1 | 0.0% | -100.0% | — |
-| qFor ≥ 1 | 78 | 50.0% | -6.2% | +5.7% |
-| qFor ≥ 2 | 120 | 47.5% | -8.3% | -10.0% |
-| qFor ≥ 3+ | 150 | 51.3% | +0.7% | +7.3% |
+| qFor ≥ 1 | 81 | 48.1% | -9.6% | -3.0% |
+| qFor ≥ 2 | 123 | 46.3% | -10.5% | -17.4% |
+| qFor ≥ 3+ | 152 | 51.3% | +0.6% | +6.5% |
 
-#### Threshold T = 40   |   ρ(qFor, won) = 0.083   ρ(qFor, flat ROI) = 0.067
+#### Threshold T = 40   |   ρ(qFor, won) = 0.084   ρ(qFor, flat ROI) = 0.070
 
 | Bucket | N | WR | flat ROI | wtd ROI |
 | --- | --- | --- | --- | --- |
 | qFor ≥ 0 | 10 | 40.0% | -26.8% | -0.6% |
-| qFor ≥ 1 | 111 | 50.5% | -4.4% | -0.8% |
-| qFor ≥ 2 | 114 | 50.0% | -3.4% | +12.2% |
+| qFor ≥ 1 | 116 | 49.1% | -6.9% | -7.9% |
+| qFor ≥ 2 | 117 | 48.7% | -5.9% | +4.6% |
 | qFor ≥ 3+ | 114 | 49.1% | -3.0% | -2.4% |
 
-#### Threshold T = 50   |   ρ(qFor, won) = 0.125   ρ(qFor, flat ROI) = 0.067
+#### Threshold T = 50   |   ρ(qFor, won) = 0.129   ρ(qFor, flat ROI) = 0.073
 
 | Bucket | N | WR | flat ROI | wtd ROI |
 | --- | --- | --- | --- | --- |
-| qFor ≥ 0 | 45 | 48.9% | -6.9% | -13.5% |
-| qFor ≥ 1 | 157 | 51.0% | -1.6% | +13.9% |
+| qFor ≥ 0 | 47 | 46.8% | -10.9% | -17.7% |
+| qFor ≥ 1 | 163 | 49.7% | -4.1% | +2.8% |
 | qFor ≥ 2 | 83 | 44.6% | -11.6% | -5.7% |
 | qFor ≥ 3+ | 64 | 53.1% | +0.9% | +2.1% |
 
-#### Threshold T = 60   |   ρ(qFor, won) = 0.203   ρ(qFor, flat ROI) = 0.110
+#### Threshold T = 60   |   ρ(qFor, won) = 0.203   ρ(qFor, flat ROI) = 0.112
 
 | Bucket | N | WR | flat ROI | wtd ROI |
 | --- | --- | --- | --- | --- |
-| qFor ≥ 0 | 105 | 45.7% | -12.8% | -15.9% |
-| qFor ≥ 1 | 151 | 53.0% | +2.9% | +18.4% |
+| qFor ≥ 0 | 108 | 44.4% | -15.2% | -21.0% |
+| qFor ≥ 1 | 156 | 51.9% | +0.8% | +10.5% |
 | qFor ≥ 2 | 50 | 52.0% | -3.0% | +0.7% |
 | qFor ≥ 3+ | 43 | 44.2% | -9.9% | -8.8% |
 
-#### Threshold T = 70   |   ρ(qFor, won) = 0.251   ρ(qFor, flat ROI) = 0.136
+#### Threshold T = 70   |   ρ(qFor, won) = 0.252   ρ(qFor, flat ROI) = 0.140
 
 | Bucket | N | WR | flat ROI | wtd ROI |
 | --- | --- | --- | --- | --- |
-| qFor ≥ 0 | 163 | 47.9% | -8.9% | -8.6% |
-| qFor ≥ 1 | 131 | 48.9% | -5.0% | +9.4% |
+| qFor ≥ 0 | 169 | 46.2% | -12.1% | -17.3% |
+| qFor ≥ 1 | 133 | 48.9% | -5.0% | +8.1% |
 | qFor ≥ 2 | 38 | 60.5% | +12.9% | +11.6% |
 | qFor ≥ 3+ | 17 | 47.1% | +8.2% | -5.9% |
 
@@ -62,48 +62,48 @@ Hypothesis: more high-contribution sharps on side ⇒ higher WR / ROI.
 Hypothesis: positive margin of high-contribution sharps ⇒ edge.
 
 
-#### Threshold T = 30   |   ρ(margin, won) = 0.149   ρ(margin, flat ROI) = 0.105
+#### Threshold T = 30   |   ρ(margin, won) = 0.154   ρ(margin, flat ROI) = 0.110
 
 | Bucket | N | WR | flat ROI | wtd ROI |
 | --- | --- | --- | --- | --- |
-| margin ≤ 0 | 36 | 41.7% | -23.5% | -24.1% |
-| margin +1 | 127 | 49.6% | -4.9% | +11.8% |
-| margin +2 | 96 | 53.1% | +1.8% | +4.0% |
-| margin ≥ +3 | 90 | 48.9% | -1.9% | +0.3% |
+| margin ≤ 0 | 38 | 39.5% | -27.5% | -32.9% |
+| margin +1 | 129 | 48.8% | -6.4% | +6.7% |
+| margin +2 | 98 | 52.0% | -0.3% | -1.0% |
+| margin ≥ +3 | 92 | 48.9% | -2.0% | -0.7% |
 
-#### Threshold T = 40   |   ρ(margin, won) = 0.117   ρ(margin, flat ROI) = 0.063
+#### Threshold T = 40   |   ρ(margin, won) = 0.116   ρ(margin, flat ROI) = 0.065
 
 | Bucket | N | WR | flat ROI | wtd ROI |
 | --- | --- | --- | --- | --- |
-| margin ≤ 0 | 56 | 48.2% | -1.7% | +11.6% |
-| margin +1 | 137 | 52.6% | +0.8% | +7.0% |
-| margin +2 | 92 | 47.8% | -8.8% | +6.9% |
+| margin ≤ 0 | 58 | 46.6% | -5.1% | +3.7% |
+| margin +1 | 140 | 52.1% | -0.0% | +4.2% |
+| margin +2 | 95 | 46.3% | -11.7% | -1.2% |
 | margin ≥ +3 | 64 | 46.9% | -10.7% | -10.0% |
 
-#### Threshold T = 50   |   ρ(margin, won) = 0.122   ρ(margin, flat ROI) = 0.040
+#### Threshold T = 50   |   ρ(margin, won) = 0.126   ρ(margin, flat ROI) = 0.047
 
 | Bucket | N | WR | flat ROI | wtd ROI |
 | --- | --- | --- | --- | --- |
-| margin ≤ 0 | 92 | 52.2% | +6.3% | +14.6% |
-| margin +1 | 156 | 51.9% | -0.2% | +9.6% |
+| margin ≤ 0 | 95 | 50.5% | +3.0% | +8.4% |
+| margin +1 | 161 | 50.9% | -2.1% | +1.8% |
 | margin +2 | 64 | 39.1% | -28.1% | -16.6% |
 | margin ≥ +3 | 37 | 51.4% | -6.1% | -1.1% |
 
-#### Threshold T = 60   |   ρ(margin, won) = 0.174   ρ(margin, flat ROI) = 0.063
+#### Threshold T = 60   |   ρ(margin, won) = 0.172   ρ(margin, flat ROI) = 0.065
 
 | Bucket | N | WR | flat ROI | wtd ROI |
 | --- | --- | --- | --- | --- |
-| margin ≤ 0 | 145 | 52.4% | +3.8% | +12.0% |
-| margin +1 | 141 | 48.2% | -7.8% | +4.8% |
+| margin ≤ 0 | 148 | 51.4% | +1.7% | +7.7% |
+| margin +1 | 146 | 47.3% | -9.6% | -1.9% |
 | margin +2 | 40 | 45.0% | -15.9% | -15.0% |
 | margin ≥ +3 | 23 | 47.8% | -12.5% | -4.9% |
 
-#### Threshold T = 70   |   ρ(margin, won) = 0.241   ρ(margin, flat ROI) = 0.099
+#### Threshold T = 70   |   ρ(margin, won) = 0.241   ρ(margin, flat ROI) = 0.103
 
 | Bucket | N | WR | flat ROI | wtd ROI |
 | --- | --- | --- | --- | --- |
-| margin ≤ 0 | 202 | 48.5% | -4.5% | +2.2% |
-| margin +1 | 108 | 50.0% | -5.6% | +3.1% |
+| margin ≤ 0 | 208 | 47.1% | -7.3% | -5.3% |
+| margin +1 | 110 | 50.0% | -5.6% | +1.9% |
 | margin +2 | 30 | 53.3% | -2.0% | -7.2% |
 | margin ≥ +3 | 9 | 55.6% | +11.0% | +31.3% |
 
@@ -116,8 +116,8 @@ Rows = # qFor (contrib ≥ 50) on side, Cols = # qAgainst. Each cell = N / WR / 
 
 | qFor \ qAgainst | 0 | 1 | 2 | 3 | 4 | 5 | 6 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | 39 / 51.3% / -3.1% | 6 / 33.3% / -31.7% | — | — | — | — | — |
-| 1 | 123 / 50.4% / -3.6% | 31 / 54.8% / +8.3% | 3 / 33.3% / -23.3% | — | — | — | — |
+| 0 | 40 / 50.0% / -5.5% | 6 / 33.3% / -31.7% | 1 / 0.0% / -100.0% | — | — | — | — |
+| 1 | 128 / 49.2% / -5.9% | 32 / 53.1% / +4.9% | 3 / 33.3% / -23.3% | — | — | — | — |
 | 2 | 51 / 35.3% / -33.7% | 26 / 53.8% / +1.8% | 5 / 80.0% / +46.6% | 1 / 100.0% / +475.0% | — | — | — |
 | 3 | 10 / 70.0% / +30.0% | 9 / 77.8% / +35.7% | 5 / 60.0% / +50.1% | 1 / 100.0% / +198.0% | 1 / 0.0% / -100.0% | 1 / 100.0% / +45.9% | — |
 | 4 | 5 / 60.0% / +17.1% | 4 / 0.0% / -100.0% | 3 / 0.0% / -100.0% | 2 / 100.0% / +58.6% | 3 / 33.3% / -15.3% | — | — |
@@ -134,8 +134,8 @@ Rows = # qFor (contrib ≥ 40) on side, Cols = # qAgainst. Each cell = N / WR / 
 | qFor \ qAgainst | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | 7 / 42.9% / -19.0% | 2 / 0.0% / -100.0% | 1 / 100.0% / +64.9% | — | — | — | — | — | — |
-| 1 | 81 / 49.4% / -7.3% | 27 / 59.3% / +15.1% | 3 / 0.0% / -100.0% | — | — | — | — | — | — |
-| 2 | 63 / 47.6% / -9.7% | 43 / 55.8% / +10.5% | 6 / 33.3% / -37.0% | 2 / 50.0% / -1.9% | — | — | — | — | — |
+| 1 | 84 / 48.8% / -8.4% | 28 / 57.1% / +10.9% | 3 / 0.0% / -100.0% | 1 / 0.0% / -100.0% | — | — | — | — | — |
+| 2 | 66 / 45.5% / -13.8% | 43 / 55.8% / +10.5% | 6 / 33.3% / -37.0% | 2 / 50.0% / -1.9% | — | — | — | — | — |
 | 3 | 26 / 46.2% / -10.6% | 22 / 45.5% / -12.5% | 6 / 83.3% / +61.0% | 3 / 66.7% / +131.2% | 1 / 0.0% / -100.0% | 1 / 100.0% / +45.9% | — | — | — |
 | 4 | 6 / 16.7% / -68.7% | 6 / 33.3% / -46.8% | 5 / 60.0% / +17.0% | 4 / 50.0% / +14.6% | 1 / 100.0% / +154.0% | 1 / 0.0% / -100.0% | — | — | 1 / 0.0% / -100.0% |
 | 5 | 6 / 83.3% / +38.3% | 4 / 50.0% / -5.0% | 5 / 40.0% / +3.0% | 2 / 50.0% / -4.5% | 1 / 0.0% / -100.0% | — | — | — | — |
@@ -146,25 +146,25 @@ Rows = # qFor (contrib ≥ 40) on side, Cols = # qAgainst. Each cell = N / WR / 
 
 No threshold. Sort all picks by Δ and cut into thirds.
 
-ρ(Δcontribution, won) = 0.011   |   ρ(Δcontribution, flat ROI) = -0.002
+ρ(Δcontribution, won) = 0.016   |   ρ(Δcontribution, flat ROI) = 0.003
 
 
 #### Terciles
 
 | Bucket | N | mean Δ | WR | flat ROI | wtd ROI |
 | --- | --- | --- | --- | --- | --- |
-| Low  (Δ ≤ 71.0) | 116 | 33.7 | 48.3% | -4.8% | +3.6% |
-| Mid  (71.7 .. 127.0) | 116 | 98.9 | 53.4% | +3.3% | +0.7% |
-| High (Δ ≥ 128.0) | 117 | 206.6 | 47.0% | -11.1% | +2.8% |
+| Low  (Δ ≤ 71.0) | 119 | 33.1 | 47.1% | -7.2% | -1.2% |
+| Mid  (71.7 .. 127.0) | 119 | 99.2 | 52.1% | +0.7% | -7.0% |
+| High (Δ ≥ 128.0) | 119 | 205.7 | 47.1% | -11.0% | +1.4% |
 
 #### Absolute Δcontribution cuts
 
 | Bucket | N | WR | flat ROI | wtd ROI |
 | --- | --- | --- | --- | --- |
-| Δ ≤ 0 (opposition matched/led) | 16 | 37.5% | -24.3% | -2.5% |
+| Δ ≤ 0 (opposition matched/led) | 17 | 35.3% | -28.8% | -6.2% |
 | 0 < Δ ≤ 50 | 48 | 58.3% | +10.2% | +5.8% |
-| 50 < Δ ≤ 100 | 112 | 48.2% | -2.2% | +6.2% |
-| Δ > 100 | 173 | 49.1% | -7.7% | +0.8% |
+| 50 < Δ ≤ 100 | 115 | 47.0% | -4.7% | +0.4% |
+| Δ > 100 | 177 | 48.6% | -8.7% | -3.0% |
 
 ## E. Proposed sizing tiers (derived from §A/B/C)
 
@@ -180,18 +180,18 @@ Rules (all use `contribution ≥ 50` wallet count):
 | Tier | N | WR | flat ROI | wtd ROI |
 | --- | --- | --- | --- | --- |
 | STRONG | 134 | 47.0% | -12.0% | -3.7% |
-| STANDARD | 123 | 50.4% | -3.6% | +4.9% |
-| LEAN | 79 | 54.4% | +6.6% | +16.7% |
-| MUTE | 13 | 38.5% | +4.7% | +3.4% |
+| STANDARD | 128 | 49.2% | -5.9% | -5.2% |
+| LEAN | 81 | 53.1% | +4.0% | +9.9% |
+| MUTE | 14 | 35.7% | -2.8% | -0.0% |
 
 #### Current V8 ★/units assigned within each proposed tier
 
 | Tier | N | mean ★ | mean units |
 | --- | --- | --- | --- |
 | STRONG | 134 | 3.98 | 1.68 |
-| STANDARD | 123 | 3.19 | 0.84 |
-| LEAN | 79 | 3.30 | 0.97 |
-| MUTE | 13 | 3.83 | 1.10 |
+| STANDARD | 128 | 3.24 | 0.93 |
+| LEAN | 81 | 3.32 | 1.01 |
+| MUTE | 14 | 3.84 | 1.06 |
 
 ## F. Every V8 pick tagged with proposed tier
 
@@ -549,3 +549,11 @@ Rules (all use `contribution ≥ 50` wallet count):
 | 2026-05-13 | MLB | TOTAL | under | 4 | 0.96 | -110 | 3 | 0 | 3 | 193.3 | STRONG | WIN |
 | 2026-05-13 | MLB | TOTAL | under | 5 | 3.5 | -110 | 2 | 0 | 2 | 209.5 | STRONG | LOSS |
 | 2026-05-13 | NBA | TOTAL | over | 5 | 3.5 | -101 | 0 | 0 | 0 | 142.0 | LEAN | WIN |
+| 2026-05-14 | MLB | ML | home | 4.5 | 4.5 | -167 | 1 | 0 | 1 | 136.2 | STANDARD | LOSS |
+| 2026-05-14 | MLB | ML | away | 4.5 | 3.5 | -102 | 1 | 1 | 0 | 55.0 | LEAN | LOSS |
+| 2026-05-14 | MLB | ML | home | 5 | 4.5 | -103 | 1 | 0 | 1 | 118.9 | STANDARD | LOSS |
+| 2026-05-14 | MLB | ML | home | 4 | 1.25 | +108 | 0 | 0 | 0 | 92.1 | LEAN | LOSS |
+| 2026-05-14 | NHL | ML | away | 4.5 | 1.95 | -114 | 1 | 0 | 1 | 174.1 | STANDARD | WIN |
+| 2026-05-14 | MLB | SPREAD | home | 4 | 0.49 | +138 | 0 | 2 | -2 | -86.4 | MUTE | LOSS |
+| 2026-05-14 | MLB | TOTAL | over | 3.5 | 0.49 | -110 | 1 | 0 | 1 | 63.7 | STANDARD | LOSS |
+| 2026-05-14 | NHL | TOTAL | under | 5 | 3.5 | -110 | 1 | 0 | 1 | 126.1 | STANDARD | LOSS |
