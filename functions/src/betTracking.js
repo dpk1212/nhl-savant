@@ -420,25 +420,25 @@ exports.updateBetResults = onSchedule({
                 market: "MONEYLINE",
                 side: sideUpper,
               });
-              // CANONICAL bet size. finalUnits is the single source of truth
-              // — written every cycle by the cron (syncPickStateAuthoritative
-              // .js) and frozen at T-15 when the cron stops writing. Always
-              // matches what the live card last displayed. Legacy docs
-              // (pre-finalUnits) fall back through v8_agsUnitsApplied →
-              // peak.units. ?? (not ||) so a legitimate 0u LEAN tracking
-              // play stays at 0u instead of cascading to peak.units.
+              // CANONICAL bet size under AGS-Unified v9: finalUnits is the
+              // single source of truth — written every cycle by the cron
+              // (syncPickStateAuthoritative.js) and frozen at T-15. It
+              // already encodes the AGS tier × sizing ladder (ELITE 2.0×,
+              // PREMIUM 1.5×, LOCK 1.1×, LEAN 0.5×, WEAK 0.2×, FADE 0.0×).
+              // Legacy docs (pre-finalUnits) fall back through
+              // v8_agsUnitsApplied → peak.units. ?? (not ||) so a hard-mute
+              // 0u play stays at 0u instead of cascading to peak.units.
               const units = sideData.finalUnits
                 ?? sideData.v8_agsUnitsApplied
                 ?? sideData.peak?.units
                 ?? sideData.lock?.units
                 ?? 0;
               const odds = sideData.peak?.odds || sideData.lock?.odds || 0;
-              // LEAN tracking plays carry units=0 and contribute 0 PnL even
-              // when the underlying ticket would have lost. Tagged so the UI
-              // can render them with MUTED-style chrome instead of a normal
-              // win/loss row.
-              const isTracked = !units || sideData.lockStage === "LEAN" ||
-                sideData.v8_lockTier === "LEAN";
+              // A play is "tracked" (0u, MUTED display) ONLY when AGS-U
+              // hard-muted it — i.e. cron stamped 0 units. Do NOT treat
+              // LEAN-tier or any other shipped tier as automatic tracked,
+              // because under v9 LEAN ships at 0.5× (non-zero) units.
+              const isTracked = !units;
               const profit = isTracked ? 0 :
                 calculateProfit(outcome, odds, units);
               const team = sideData.team || side;
@@ -621,14 +621,14 @@ exports.updateBetResults = onSchedule({
                 line: line,
               });
               // CANONICAL bet size — see ML grader above for full notes.
+              // AGS-U v9: tracked iff hard-muted (units=0), never by tier.
               const units = sideData.finalUnits
                 ?? sideData.v8_agsUnitsApplied
                 ?? sideData.peak?.units
                 ?? sideData.lock?.units
                 ?? 0;
               const odds = sideData.peak?.odds || sideData.lock?.odds || 0;
-              const isTracked = !units || sideData.lockStage === "LEAN" ||
-                sideData.v8_lockTier === "LEAN";
+              const isTracked = !units;
               const profit = isTracked ? 0 :
                 calculateProfit(outcome, odds, units);
 
@@ -765,14 +765,14 @@ exports.updateBetResults = onSchedule({
                 line: line,
               });
               // CANONICAL bet size — see ML grader above for full notes.
+              // AGS-U v9: tracked iff hard-muted (units=0), never by tier.
               const units = sideData.finalUnits
                 ?? sideData.v8_agsUnitsApplied
                 ?? sideData.peak?.units
                 ?? sideData.lock?.units
                 ?? 0;
               const odds = sideData.peak?.odds || sideData.lock?.odds || 0;
-              const isTracked = !units || sideData.lockStage === "LEAN" ||
-                sideData.v8_lockTier === "LEAN";
+              const isTracked = !units;
               const profit = isTracked ? 0 :
                 calculateProfit(outcome, odds, units);
 

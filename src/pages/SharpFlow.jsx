@@ -1777,7 +1777,17 @@ function stampWalletConsensus(target, v8Scoring, sideKey, sport, baseStars, prom
   target.v8_walletConsensusDelta = wc.delta;
   target.v8_walletConsensusVerdict = wc.verdict;
   target.v8_walletConsensusStarBonus = wc.unitBonus;
-  target.v8_walletConsensusMuteTriggered = wc.lockAction === 'MUTE';
+  // AGS-Unified v9: mute/cancel stamps now reflect the AGS-U hard-mute
+  // gate, NOT the legacy Δw/Δq lockAction. This keeps the
+  // restampDriftedSides drift detection aligned with the cron's actual
+  // mute decision (meetsAgsHardMute + proven floor) instead of the
+  // pre-v9 two-factor floor. wc.lockAction is preserved on the in-memory
+  // object for legacy diagnostic logging only — nothing reads it for
+  // user-visible decisions.
+  // Note: agsuMuteTriggered is filled in below once stampAgsValue is
+  // computed (AGS-U pipeline runs a few lines down). We default-stamp
+  // false here and overwrite when the AGS-U gate fires.
+  target.v8_walletConsensusMuteTriggered = false;
   target.v8_walletConsensusCancelTriggered = wc.lockAction === 'CANCEL';
   target.v8_walletConsensusPromotionTriggered = isPromotedBy(promotedBy);
   target.v8_walletConsensusBaseStars = baseStars || 0;
@@ -1830,12 +1840,22 @@ function stampWalletConsensus(target, v8Scoring, sideKey, sport, baseStars, prom
   // AGS-Unified v9 TOP / SUPER badge stamps:
   //   SUPER TOP PICK = AGS-U tier ≡ ELITE   (≥ q90 — top decile)
   //   TOP PICK       = AGS-U tier ≡ PREMIUM (≥ q80) OR SUPER
-  // Both flags require the pick to be actively shipped (lockStage=LOCKED
-  // tier ∈ {ELITE, PREMIUM, LOCK}). LEAN/WEAK ship at reduced size but
-  // do NOT earn the gold ribbon. evaluateTopPickTier() reads these
-  // stamps first and only falls back to derivation from v8_agsTier /
-  // v8_ags when the stamp is missing.
-  const isShipped = liveTier === 'LOCKED' || liveTier === 'ELITE';
+  // Both flags require the pick to ship at full size — tier ∈
+  // {ELITE, PREMIUM, LOCK}. LEAN/WEAK ship at reduced size but do NOT
+  // earn the gold ribbon. evaluateTopPickTier() reads these stamps
+  // first and only falls back to derivation from v8_agsTier / v8_ags
+  // when the stamp is missing.
+  //
+  // BUG FIX (AGS-U v9): the previous check was
+  // `liveTier === 'LOCKED' || liveTier === 'ELITE'`, but
+  // `lockTierFromDeltas` returns the canonical AGS-U tier strings
+  // ('ELITE' / 'PREMIUM' / 'LOCK' / 'LEAN' / 'WEAK' / 'FADE') — never
+  // 'LOCKED'. So PREMIUM-tier picks (q80-q90) silently failed the
+  // isShipped check and never earned the gold ribbon. Use the canonical
+  // set instead.
+  const isShipped = liveTier === 'ELITE'
+    || liveTier === 'PREMIUM'
+    || liveTier === 'LOCK';
   const agsTierStamp = stampAgsResult?.tier || null;
   target.v8_topPick      = isShipped && (agsTierStamp === 'ELITE' || agsTierStamp === 'PREMIUM');
   target.v8_superTopPick = isShipped && agsTierStamp === 'ELITE';
@@ -1857,13 +1877,18 @@ function stampWalletConsensus(target, v8Scoring, sideKey, sport, baseStars, prom
     // AGS-Unified v9 — hard mute stamp. Fires when AGS-U is in the FADE
     // tier (< q20) with enough proven wallets to trust the signal.
     // Cleared when not firing so stale gate stamps don't linger.
-    if (stampAgsProvenTotal >= AGS_MIN_PROVEN_WALLETS
-        && Number.isFinite(stampAgsValue)
-        && meetsAgsHardMute(stampAgsValue, getAgsCalibration())) {
+    const agsHardMuted = stampAgsProvenTotal >= AGS_MIN_PROVEN_WALLETS
+      && Number.isFinite(stampAgsValue)
+      && meetsAgsHardMute(stampAgsValue, getAgsCalibration());
+    if (agsHardMuted) {
       target.mutedBy = 'ags-hard-mute';
     } else {
       target.mutedBy = deleteField();
     }
+    // Overwrite the v8_walletConsensusMuteTriggered stamp with the
+    // AGS-U-canonical mute state so downstream drift detection +
+    // historical analysis read v9 truth, not legacy Δw/Δq.
+    target.v8_walletConsensusMuteTriggered = agsHardMuted;
   }
 }
 
@@ -1922,10 +1947,23 @@ async function restampDriftedSides({ ref, sides, currentSideKey, sport, regime, 
     if (stored.status === 'COMPLETED') continue;
     if (stored.superseded) continue;
     const liveWc = computeWalletConsensus(v8Scoring.walletDetails, sport, sideKey, pickDate);
+    // AGS-Unified v9 drift signal — compare against the AGS-U hard-mute
+    // gate, not the legacy Δw/Δq lockAction. stampWalletConsensus now
+    // writes v8_walletConsensusMuteTriggered as the AGS-U hard-mute
+    // boolean, so drift fires when the AGS-U gate would flip.
+    const liveAgg = aggregateSideProven(v8Scoring.walletDetails, sideKey, sport, isProvenForAgs, isHcEligibleForAgs);
+    const liveAgsRes = liveAgg ? computeAgs(liveAgg, getAgsCalibration()) : null;
+    const liveAgsValue = liveAgsRes?.ags ?? null;
+    const liveAgsProvenTotal = liveAgsRes
+      ? (liveAgsRes.provenForCount + liveAgsRes.provenAgCount)
+      : 0;
+    const liveAgsHardMuted = liveAgsProvenTotal >= AGS_MIN_PROVEN_WALLETS
+      && Number.isFinite(liveAgsValue)
+      && meetsAgsHardMute(liveAgsValue, getAgsCalibration());
     const drifted =
       stored.v8_walletConsensusDelta !== liveWc.delta ||
       stored.v8_walletConsensusVerdict !== liveWc.verdict ||
-      !!stored.v8_walletConsensusMuteTriggered !== (liveWc.lockAction === 'MUTE') ||
+      !!stored.v8_walletConsensusMuteTriggered !== liveAgsHardMuted ||
       !!stored.v8_walletConsensusCancelTriggered !== (liveWc.lockAction === 'CANCEL') ||
       // v7.1 — also restamp when HC dominance state has flipped or when
       // we're upgrading a doc to consensus version 7 for the first time.
@@ -2611,10 +2649,17 @@ function tallySides(snap) {
         // is the canonical signal; legacy graded picks fall back to the
         // unit/lockStage/v8 tier signals so they retroactively get the
         // same treatment.
-        const u = sideData.peak?.units ?? sideData.lock?.units ?? 0;
-        const isTrackedOnly = sideData.result?.tracked === true
-          || u === 0 || sideData.lockStage === 'LEAN'
-          || sideData.v8_lockTier === 'LEAN';
+        // AGS-U v9: prefer the cron-stamped finalUnits for tally math (it's
+        // the canonical staking unit the grader booked PnL against). Fall
+        // back to peak/lock for legacy docs. Tracked-only is the grader's
+        // explicit result.tracked flag — NOT a tier-based proxy, since v9
+        // LEAN ships at non-zero units.
+        const u = sideData.finalUnits
+          ?? sideData.v8_agsUnitsApplied
+          ?? sideData.peak?.units
+          ?? sideData.lock?.units
+          ?? 0;
+        const isTrackedOnly = sideData.result?.tracked === true;
         if (isTrackedOnly) continue;
         totalUnits += u;
         const profit = sideData.result?.profit ?? 0;
@@ -2714,10 +2759,14 @@ async function loadAllTimePnL() {
         // still render the muted styling and the historical outcome.
         // LEAN / 0u tracking plays get the same treatment — they were
         // explicitly tracked-only and never bet, so they don't pollute PnL.
-        const u = sd.peak?.units ?? sd.lock?.units ?? 0;
-        const isTrackedOnly = sd.result?.tracked === true
-          || u === 0 || sd.lockStage === 'LEAN'
-          || sd.v8_lockTier === 'LEAN';
+        // AGS-U v9: tracked iff grader stamped result.tracked === true. Tier
+        // is no longer a proxy (LEAN ships 0.5× under v9).
+        const u = sd.finalUnits
+          ?? sd.v8_agsUnitsApplied
+          ?? sd.peak?.units
+          ?? sd.lock?.units
+          ?? 0;
+        const isTrackedOnly = sd.result?.tracked === true;
         const isCancelled = !!(sd.superseded || sd.health?.status === 'CANCELLED' || sd.health?.status === 'MUTED' || sd.lockStage === 'SHADOW' || isTrackedOnly);
         const bestSnap = sd.peak || sd.lock;
         const lockSnap = sd.lock || bestSnap;
@@ -4908,12 +4957,14 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   const isCancelled = healthStatus === 'CANCELLED';
   const healthReasons = health?.reasons || [];
 
-  // v7.0 — LEAN is a display tier (NOT a health status). LEAN picks
-  // would have locked under the v6.6 sum ≥ +3 floor but fall short of
-  // the v7.0 sum ≥ +5 lock floor. They are tracked in the Locked Picks
-  // list with a LEAN badge replacing the unit chip and a 0u stake.
-  // Live engine sets liveTier; graded picks (lockTier === null) keep
-  // their peak units as actually shipped at lock time.
+  // v9 (AGS-U): LEAN ships at 0.50× the base stake (≈0.8u ML, 0.5u
+  // SPREAD/TOTAL) — it is NOT a 0u tracked-only tier anymore. The cron
+  // stamps `finalUnits` per the sizing ladder; the display should
+  // render those units verbatim, never override them to 0u.
+  //
+  // Historical (v6 / v7) graded picks that WERE shipped at 0u keep the
+  // tracked-only treatment via `isTrackedGrade` below — that legacy
+  // record is preserved so PnL doesn't shift retroactively.
   const isLean  = lockTier === 'LEAN' && !isGraded;
   const isElite = lockTier === 'ELITE';
 
@@ -4931,7 +4982,9 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   // A DOWNSIZED pick is still "on" but at 50%+ cut size because the live
   // vault-star dropped ≥ 1.0 below peak. Never shows while graded, muted,
   // cancelled, or superseded (those have their own visual treatments).
-  const showDownsize = !!isDownsized && !isGraded && !isMuted && !isCancelled && !superseded && !isLean;
+  // Under AGS-U v9, LEAN picks DO ship (0.50×) and can be downsized too,
+  // so we no longer exclude them.
+  const showDownsize = !!isDownsized && !isGraded && !isMuted && !isCancelled && !superseded;
   const DOWNSIZE_AMBER = '#D4AF37'; // gold/amber — less severe than #F59E0B (mute)
   const LEAN_BLUE     = '#60A5FA'; // light-blue — distinct from gold (top pick) and amber (mute)
   // Graded LEAN picks adopt the LEAN-blue palette so their card chrome
@@ -5068,7 +5121,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
             )}
             {isTrackedGrade && !isMuted && !isCancelled && !superseded && (
               <span
-                title={`LEAN tracked-only — system explicitly recommended 0u (Δw+Δq fell short of the lock floor at lock time). The W/L outcome is informational; no money was at risk and no PnL is recorded.`}
+                title={`TRACKED-ONLY — grader stamped result.tracked=true. Either the cron sized this play at 0u (AGS-U hard mute / FADE tier) or this is a legacy v6/v7 graded LEAN that shipped at 0u before AGS-U v9. The W/L outcome is informational; no money was at risk and no PnL is recorded.`}
                 style={{
                   ...T.micro, fontWeight: 800, letterSpacing: '0.05em',
                   padding: '0.15rem 0.5rem', borderRadius: '4px',
@@ -5076,12 +5129,12 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                   border: '1px solid rgba(96,165,250,0.35)',
                 }}
               >
-                TRACKED · LEAN
+                TRACKED
               </span>
             )}
             {isLean && !isMuted && !isCancelled && !superseded && (
               <span
-                title={`LEAN — Δw+Δq = ${(walletConsensusDelta ?? 0) + (walletConsensusQualityMargin ?? 0)} (Δw=${walletConsensusDelta ?? 0}, Δq=${walletConsensusQualityMargin ?? 0}). Tracked but not bet — picks below the v7.0 lock floor (Σ ≥ +5) display here at 0u so we monitor edge regression without bleeding bankroll.`}
+                title={`LEAN tier — AGS-U is between q40 and q60 (LOCK floor). Ships at 0.50× base stake under the AGS-U v9 sizing ladder.`}
                 style={{
                   ...T.micro, fontWeight: 800, letterSpacing: '0.05em',
                   padding: '0.15rem 0.5rem', borderRadius: '4px',
@@ -5089,7 +5142,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                   border: '1px solid rgba(96,165,250,0.35)',
                 }}
               >
-                LEAN · TRACK ONLY
+                LEAN · ½ STAKE
               </span>
             )}
             {showDownsize && (
@@ -5174,11 +5227,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
               </span>
             ) : isTrackedGrade ? (
               <span style={{ ...T.micro, color: LEAN_BLUE, fontFeatureSettings: "'tnum'", fontWeight: 700 }}>
-                LEAN · 0u @ {fmtO(odds)} · {book}
-              </span>
-            ) : isLean ? (
-              <span style={{ ...T.micro, color: LEAN_BLUE, fontFeatureSettings: "'tnum'", fontWeight: 700 }}>
-                LEAN · 0u @ {fmtO(odds)} · {book}
+                TRACKED · 0u @ {fmtO(odds)} · {book}
               </span>
             ) : showDownsize ? (
               <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
@@ -5305,26 +5354,28 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
             <div style={{ marginBottom: '0.625rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
                 <span style={{ ...T.label, fontWeight: 800, color: accentColor }}>
-                  {isCancelled ? 'CANCELLED' : isMuted ? 'WEAKENING' : isTrackedGrade ? `TRACKED · ${isWin ? 'WIN' : isLoss ? 'LOSS' : 'PUSH'} (0u)` : isLean ? 'LEAN · TRACKED' : isGraded ? (isWin ? 'WINNING BET' : isLoss ? 'LOSING BET' : 'PUSH') : 'LOCKED BET'}
+                  {isCancelled ? 'CANCELLED' : isMuted ? 'WEAKENING' : isTrackedGrade ? `TRACKED · ${isWin ? 'WIN' : isLoss ? 'LOSS' : 'PUSH'} (0u)` : isLean ? 'LEAN · ½ STAKE' : isGraded ? (isWin ? 'WINNING BET' : isLoss ? 'LOSING BET' : 'PUSH') : 'LOCKED BET'}
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                   <span style={{
-                    ...T.body, fontWeight: 900, color: isCancelled ? B.textMuted : (isLean || isTrackedGrade) ? LEAN_BLUE : '#fff',
+                    ...T.body, fontWeight: 900, color: isCancelled ? B.textMuted : isTrackedGrade ? LEAN_BLUE : isLean ? LEAN_BLUE : '#fff',
                     padding: '0.2rem 0.6rem', borderRadius: '5px',
                     background: isCancelled
                       ? 'linear-gradient(135deg, rgba(239,68,68,0.15), rgba(239,68,68,0.08))'
                       : isMuted
                       ? 'linear-gradient(135deg, #F59E0B, #D97706)'
-                      : (isLean || isTrackedGrade)
+                      : isTrackedGrade
                       ? 'rgba(96,165,250,0.12)'
+                      : isLean
+                      ? 'linear-gradient(135deg, rgba(96,165,250,0.30), rgba(96,165,250,0.15))'
                       : isGraded
                       ? (isWin ? 'linear-gradient(135deg, #10B981, #059669)' : isLoss ? 'linear-gradient(135deg, #EF4444, #DC2626)' : 'linear-gradient(135deg, #64748B, #475569)')
                       : 'linear-gradient(135deg, #10B981, #059669)',
-                    border: `1px solid ${isCancelled ? 'rgba(239,68,68,0.3)' : isMuted ? 'rgba(245,158,11,0.4)' : (isLean || isTrackedGrade) ? 'rgba(96,165,250,0.35)' : isWin ? 'rgba(16,185,129,0.4)' : isLoss ? 'rgba(239,68,68,0.4)' : 'rgba(16,185,129,0.4)'}`,
+                    border: `1px solid ${isCancelled ? 'rgba(239,68,68,0.3)' : isMuted ? 'rgba(245,158,11,0.4)' : (isLean || isTrackedGrade) ? 'rgba(96,165,250,0.45)' : isWin ? 'rgba(16,185,129,0.4)' : isLoss ? 'rgba(239,68,68,0.4)' : 'rgba(16,185,129,0.4)'}`,
                     fontFeatureSettings: "'tnum'",
                     textDecoration: (isCancelled || isMuted) ? 'line-through' : 'none',
                   }}>
-                    {(isLean || isTrackedGrade) ? '0u · TRACK' : (isCancelled || isMuted) ? `${ut.icon} ${units}u → 0u` : `${ut.icon} ${units}u`}
+                    {isTrackedGrade ? '0u · TRACK' : (isCancelled || isMuted) ? `${ut.icon} ${units}u → 0u` : `${ut.icon} ${units}u`}
                   </span>
                   {/* v7.1/v7.2 — HC chip. Indicates high-conviction CONFIRMED
                       wallets backing this side. v7.2 SUPER tier (HC_m ≥ +2)
@@ -5434,10 +5485,15 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                     </>
                   );
                 } else if (isLean) {
-                  const sumLive = (walletConsensusDelta ?? 0) + (walletConsensusQualityMargin ?? 0);
+                  // AGS-U v9: LEAN tier = AGS between q40 (LEAN floor) and
+                  // q60 (LOCK floor). Ships at 0.50× the base stake — half
+                  // the normal LOCK-tier size. NOT a 0u tracked play.
+                  const agsTxt = (agsValue != null && Number.isFinite(agsValue))
+                    ? `${agsValue >= 0 ? '+' : ''}${agsValue.toFixed(2)}`
+                    : null;
                   lead = (
                     <>
-                      <span style={{ color: LEAN_BLUE, fontWeight: 700 }}>Below lock floor</span> — {forW} proven {sportUp} winner{forW !== 1 ? 's' : ''} backing {teamShort} {marketNoun} but Δw+Δq = {sumLive >= 0 ? '+' : ''}{sumLive} (need ≥ +5 to lock). Tracking at 0u.{pinnSuffix}
+                      <span style={{ color: LEAN_BLUE, fontWeight: 700 }}>LEAN tier · ½ stake</span> — {forW} proven {sportUp} winner{forW !== 1 ? 's' : ''} backing {teamShort} {marketNoun}{agsTxt ? <> at AGS-U <span style={{ color: LEAN_BLUE, fontWeight: 700 }}>{agsTxt}</span> (q40-q60 band)</> : null}. Ships at {units}u — half the standard LOCK-tier stake under the AGS-U v9 ladder.{pinnSuffix}
                     </>
                   );
                 } else if (forW > 0 || wasHcRescued || wasSigma1Promoted || wasSigma2Promoted) {
@@ -5523,9 +5579,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                 <span style={{ ...T.micro, color: B.textSec }}>Risk</span>
-                {isLean ? (
-                  <span style={{ ...T.micro, fontWeight: 900, color: LEAN_BLUE, fontFeatureSettings: "'tnum'" }}>0u (LEAN)</span>
-                ) : showDownsize ? (
+                {showDownsize ? (
                   <>
                     <span style={{ ...T.micro, fontWeight: 700, color: B.textMuted, fontFeatureSettings: "'tnum'", textDecoration: 'line-through' }}>{peakUnits}u</span>
                     <span style={{ ...T.micro, fontWeight: 900, color: DOWNSIZE_AMBER, fontFeatureSettings: "'tnum'" }}>→ {units}u</span>
@@ -7153,7 +7207,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                       {isSpreadLocked && spreadLockTier === 'LEAN' ? 'SPREAD LEAN' : isSpreadLocked ? 'SPREAD LOCK' : 'SPREAD TRACKING'} — {spreadConsensuTeam} {spreadLine > 0 ? '+' : ''}{spreadLine}
                     </span>
                     <span style={{ ...T.micro, color: B.textSec, marginLeft: 'auto' }}>
-                      {isSpreadLocked && spreadLockTier === 'LEAN' ? <span style={{ color: '#60A5FA', fontWeight: 700 }}>0u · TRACK</span> : <>{spreadUnits}u @ {fmtOdds(spreadBetOdds)}</>}
+                      {spreadUnits}u @ {fmtOdds(spreadBetOdds)}
                     </span>
                   </div>
                 ) : (
@@ -7518,7 +7572,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                       {isTotalLocked && totalLockTier === 'LEAN' ? 'TOTAL LEAN' : isTotalLocked ? 'TOTAL LOCK' : 'TOTAL TRACKING'} — {totalConsensusSide === 'over' ? 'Over' : 'Under'} {totalLine}
                     </span>
                     <span style={{ ...T.micro, color: B.textSec, marginLeft: 'auto' }}>
-                      {isTotalLocked && totalLockTier === 'LEAN' ? <span style={{ color: '#60A5FA', fontWeight: 700 }}>0u · TRACK</span> : <>{totalUnits}u @ {fmtOdds(totalBetOdds)}</>}
+                      {totalUnits}u @ {fmtOdds(totalBetOdds)}
                     </span>
                   </div>
                 ) : (
@@ -11144,15 +11198,15 @@ export default function SharpFlow() {
                           && finalUnitsRaw >= 0)
                           ? finalUnitsRaw
                           : peakUnits;
-                        // True iff this side was a tracked-only LEAN play —
-                        // either the Cloud Function grader stamped tracked=true
-                        // (post-fix), or the side's units/stage/lockTier still
-                        // tell us so for legacy graded picks. Such picks render
-                        // with MUTED-style chrome and contribute 0 PnL.
-                        const isTrackedOnly = sd.result?.tracked === true
-                          || peakUnits === 0
-                          || sd.lockStage === 'LEAN'
-                          || sd.v8_lockTier === 'LEAN';
+                        // AGS-U v9: a side is "tracked-only" (0u, MUTED-style
+                        // chrome, 0 PnL) ONLY when the Cloud Function grader
+                        // explicitly stamped result.tracked === true. Under
+                        // AGS-U v9 LEAN-tier ships at 0.50× (non-zero) units
+                        // and MUST render at its cron-stamped finalUnits —
+                        // we no longer infer "tracked" from lockStage / tier
+                        // / zero-peak. Legacy graded picks already carry the
+                        // explicit tracked stamp from the v6/v7 grader.
+                        const isTrackedOnly = sd.result?.tracked === true;
                         const lockOddsValid = lock.odds && Math.abs(lock.odds) <= 400;
                         const lockStars = lock.stars || 0;
                         const marketTypeKey = doc.marketType || 'ml';
