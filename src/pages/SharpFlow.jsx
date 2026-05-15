@@ -6055,7 +6055,22 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   // sample. LOCKED path is untouched — `isLocked` still requires the strict
   // `meetsInvest` and the v7.4/v7.5 floor.
   const isShadow = meetsInvestShadow && !twoFactorFloor && sr.stars >= 1.0;
-  const lockType = isLocked ? (isGameLive ? 'LIVE' : 'PREGAME') : null;
+
+  // `isLocked` is the CLIENT-side AGS-U lock verdict. It drives the sync
+  // write (only fires when isLocked / isShadow is true and we're pre-T-15).
+  // `isLockedInFirestore` is what we use for every user-facing surface
+  // ("LOCKED IN" badge, Risk row, units pill, "PLAY LOCKED — TIER"
+  // banner). It is true only when the parent has observed an active
+  // locked side for this game in Firestore (originalLockedSide prop) or
+  // when our own sync has stamped lockedSideRef. This prevents the card
+  // from claiming "LOCKED IN — Risk 1.5u" for a game that is post-T-15
+  // and never got written, since once we cross T-15 the sync effect
+  // returns early and the doc is never created. The locked-picks page
+  // and the live card now share the same source of truth.
+  const isLockedInFirestore = isLocked
+    && (originalLockedSide === consensusSide
+        || lockedSideRef.current === consensusSide);
+  const lockType = isLockedInFirestore ? (isGameLive ? 'LIVE' : 'PREGAME') : null;
   const lockTier = decision?.lockTier || 'MUTED';
   const hcDominant = !!decision?.hcDominant;
   const hcMargin = decision?.hcMargin ?? 0;
@@ -6063,13 +6078,15 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
 
   // Units derive directly from the AGS-U value. agsuUnitsFromAgs applies
   // the 6-band sizing ladder + odds cap and returns 0 when ags is null
-  // or below the hard-mute floor — so non-AGS-U callsites (and stale
-  // wallet-cache states) automatically fall through to "Risk 0u".
-  const units = isLocked
+  // or below the hard-mute floor. We gate on `isLockedInFirestore` (not
+  // just the client-side `isLocked`) so we never claim "Risk 1.5u" for
+  // a pick that hasn't actually been stamped to Firestore — otherwise
+  // the live card and the locked-picks page would disagree.
+  const units = isLockedInFirestore
     ? calculateUnits(sr.stars, cGrade.penalty, betOdds, computeRegimeBonus(sr.regime, sr.v8Scoring, consensusSide, gd.sport), lockTier, hcDominant, { pickDate, hcMargin, sum: sumDelta, ags: liveAgsValue })
     : 0;
   const ut = unitTier(units);
-  const potentialWin = isLocked ? profitFromOdds(betOdds, units) : 0;
+  const potentialWin = isLockedInFirestore ? profitFromOdds(betOdds, units) : 0;
 
   useEffect(() => {
     if ((!isLocked && !isShadow) || isGameLive || !commenceTime || !onPickSynced) return;
@@ -6570,8 +6587,8 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   }, [totalWasEverLocked, totalHealth.status, totalSr?.walletPlayScore]);
 
   const isActionable = sr.isActionable;
-  const accentColor = isLocked ? B.green : isActionable ? B.green : B.gold;
-  const accentBorder = isLocked ? 'rgba(16,185,129,0.4)' : isActionable ? 'rgba(16,185,129,0.3)' : B.goldBorder;
+  const accentColor = isLockedInFirestore ? B.green : isActionable ? B.green : B.gold;
+  const accentBorder = isLockedInFirestore ? 'rgba(16,185,129,0.4)' : isActionable ? 'rgba(16,185,129,0.3)' : B.goldBorder;
 
   return (
     <div style={{
@@ -6615,7 +6632,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-          {isLocked && (
+          {isLockedInFirestore && (
             <span style={{
               ...T.micro, fontWeight: 900, letterSpacing: '0.04em',
               padding: '0.2rem 0.6rem', borderRadius: '5px',
@@ -6679,7 +6696,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
               {isActionable ? 'RECOMMENDED BET' : 'SHARP CONSENSUS'}
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-              {isLocked && (
+              {isLockedInFirestore && (
                 <span style={{
                   ...T.body, fontWeight: 900, color: '#fff',
                   padding: '0.2rem 0.6rem', borderRadius: '5px',
@@ -6812,7 +6829,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
             non-zero stake driven by the sizing band; the row below is
             shared across all tiers. The old "LEAN = 0u, tracked only"
             branch is retired — LEAN now ships at 0.5× (≈1.25u). */}
-        {isLocked && (
+        {isLockedInFirestore && (
           <div style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             marginTop: '0.625rem', padding: '0.375rem 0.5rem',
@@ -6987,12 +7004,12 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
           bannerColor = B.textSec;
           borderGlow  = B.borderSubtle;
           bgGlow      = 'rgba(255,255,255,0.02)';
-        } else if (isLocked && (liveTierLocal === 'ELITE' || liveTierLocal === 'PREMIUM' || liveTierLocal === 'LOCK')) {
+        } else if (isLockedInFirestore && (liveTierLocal === 'ELITE' || liveTierLocal === 'PREMIUM' || liveTierLocal === 'LOCK')) {
           bannerLabel = `PLAY LOCKED — ${liveTierLocal}`;
           bannerColor = meta.color;
           borderGlow  = meta.color + '40';
           bgGlow      = `linear-gradient(135deg, ${meta.bg} 0%, rgba(255,255,255,0.02) 100%)`;
-        } else if (isLocked && (liveTierLocal === 'LEAN' || liveTierLocal === 'WEAK')) {
+        } else if (isLockedInFirestore && (liveTierLocal === 'LEAN' || liveTierLocal === 'WEAK')) {
           bannerLabel = `TRACKING — ${liveTierLocal} (reduced size)`;
           bannerColor = meta.color;
           borderGlow  = meta.color + '40';
