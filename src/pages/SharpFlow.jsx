@@ -6011,6 +6011,14 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   // sees, which is why ELITE/PREMIUM badges could appear on picks the
   // cron's math actually scored as LOCK or FADE. That divergence is gone.
   const liveLockedSideKey = lockedSideRef.current || consensusSide;
+  // liveLockedV8 is the v8Scoring snapshot for the LOCKED-side view, kept
+  // for downstream consumers that still read walletDetails for live
+  // computeWalletConsensus (Δw / Δq / HC margin diagnostic display).
+  // AGS-U itself no longer reads this — it goes straight through
+  // computeAgsFromPositions on raw positions to match the cron.
+  const liveLockedV8 = (lockedSideRef.current && lockedSideRef.current !== consensusSide)
+    ? oppSr?.v8Scoring
+    : sr?.v8Scoring;
   const liveAgsCalibration = getAgsCalibration();
   const liveAgs = (Array.isArray(gd.positions) && gd.positions.length > 0)
     ? computeAgsFromPositions(gd.positions, liveLockedSideKey, gd.sport, liveAgsCalibration, isProvenForAgs, isHcEligibleForAgs)
