@@ -406,170 +406,15 @@ function profitFromOdds(odds, units) {
   return units * (100 / Math.abs(odds));
 }
 
-// ─── V7 Unified Star Rating (two-stage: lock + update) ───────────────────────
-
-function rateStarsV7({
-  evEdge = 0, pinnConfirms = false, pinnMovingWith = false,
-  pinnMovingAgainst = false, polyMovingWith = false,
-  breadth = 0, conviction = 0, concentration = 0,
-  counterSharpScore = 0, consensusTier = 'LEAN',
-  isRLM = false, ticketDivergence = 0,
-  sportSharpCount = 0, pinnProb = null,
-  dominantTier = null, conWalletCount = 0,
-  odds = null, sport = null,
-  moneyPct = 50, walletPct = 50,
-  sharpCount = 0, totalInvested = 0,
-  lockOdds = null,
-  pinnCurrentOdds = null,
-  pinnMoveSize = 0,
-  timeToGame = null,
-  oppSharpCount = 0,
-  lockRawScore = null,
-  lockStars = null,
-} = {}) {
-  const avgBet = sharpCount > 0 ? totalInvested / sharpCount : 0;
-  const avgBet_w = v7Winsorize(avgBet, V7_STATS.avgBet.lo, V7_STATS.avgBet.hi);
-  const invested_w = v7Winsorize(totalInvested, V7_STATS.invested.lo, V7_STATS.invested.hi);
-  const sc_capped = Math.min(sharpCount, 6);
-
-  const avgBet_z = v7Z(avgBet_w, V7_STATS.avgBet.mean, V7_STATS.avgBet.std);
-  const invested_z = v7Z(invested_w, V7_STATS.invested.mean, V7_STATS.invested.std);
-  const moneyPct_z = v7Z(moneyPct, V7_STATS.moneyPct.mean, V7_STATS.moneyPct.std);
-  const walletPct_z = v7Z(walletPct, V7_STATS.walletPct.mean, V7_STATS.walletPct.std);
-  const counterSharp_z = v7Z(counterSharpScore, V7_STATS.counter.mean, V7_STATS.counter.std);
-  const sharpCount_z = v7Z(sc_capped, V7_STATS.sharpCount.mean, V7_STATS.sharpCount.std);
-
-  // Two-sided features
-  const againstMoneyPct = 100 - moneyPct;
-  const moneyEdge = Math.log((moneyPct + 1) / (againstMoneyPct + 1));
-  const sharpEdgeVal = Math.log((sharpCount + 1) / (oppSharpCount + 1));
-  const mktDom = 0.6 * moneyEdge + 0.4 * sharpEdgeVal;
-
-  const moneyEdge_z = v7Z(moneyEdge, V7_STATS.moneyEdge.mean, V7_STATS.moneyEdge.std);
-  const mktDom_z = v7Z(mktDom, V7_STATS.mktDominance.mean, V7_STATS.mktDominance.std);
-  const againstSC_z = v7Z(Math.min(oppSharpCount, 6), V7_STATS.againstSC.mean, V7_STATS.againstSC.std);
-
-  const hasBothSides = oppSharpCount > 0 && sharpCount > 0;
-  const disagreement = hasBothSides && Math.sign(moneyEdge) !== Math.sign(sharpEdgeVal) ? 1 : 0;
-
-  const qp = v7QualityProxy({
-    moneyPct, sharpCount, avgBet, counterSharp: counterSharpScore,
-    pinnConfirms, lineMovingWith: pinnMovingWith, evEdge, sport, odds,
-  });
-  const qp_z = v7Z(qp, V7_STATS.qp.mean, V7_STATS.qp.std);
-
-  const contradictions = v7Contradictions({
-    moneyPct, counterSharp: counterSharpScore, sharpCount, evEdge, qp,
-  });
-
-  const pinnConditional = (pinnConfirms && qp >= 0) ? 1 : 0;
-  const evConditional = (evEdge > 0 && qp >= 0) ? 1 : 0;
-
-  // Live CLV computation
-  let liveCLV = null;
-  let liveCLV_z = null;
-  if (lockOdds != null && pinnCurrentOdds != null) {
-    const lockP = impliedProb(lockOdds);
-    const curP = impliedProb(pinnCurrentOdds);
-    if (lockP != null && curP != null && lockP !== curP) {
-      liveCLV = curP - lockP;
-      liveCLV_z = v7Z(liveCLV, V7_STATS.liveCLV.mean, V7_STATS.liveCLV.std);
-    }
-  }
-
-  // Regime detection
-  let regime = 'NO_MOVE';
-  if (timeToGame != null && timeToGame <= 60 && pinnMoveSize >= 0.01) {
-    regime = 'NEAR_START';
-  } else if (timeToGame != null && timeToGame <= 120 && pinnMoveSize >= 0.015) {
-    regime = 'NEAR_START';
-  } else if (pinnMoveSize >= 0.02) {
-    regime = 'CLEAR_MOVE';
-  } else if (pinnMoveSize > 0 && liveCLV_z != null) {
-    regime = 'SMALL_MOVE';
-  }
-
-  // CLV input blending based on regime
-  let clvInput = qp_z;
-  if (regime === 'SMALL_MOVE' && liveCLV_z != null) {
-    clvInput = 0.25 * qp_z + 0.75 * liveCLV_z;
-  } else if (regime === 'CLEAR_MOVE' && liveCLV_z != null) {
-    clvInput = 0.10 * qp_z + 0.90 * liveCLV_z;
-  } else if (regime === 'NEAR_START' && liveCLV_z != null) {
-    clvInput = liveCLV_z;
-  }
-
-  // Raw score: lock formula vs update formula (with two-sided overlay)
-  const hasLiveData = regime !== 'NO_MOVE' && liveCLV_z != null;
-  const rawScore = hasLiveData
-    ? 3.0 * moneyPct_z + 2.0 * clvInput + 1.5 * avgBet_z + 1.2 * invested_z
-      + 0.8 * sharpCount_z + 0.6 * pinnConditional + 0.4 * evConditional
-      - 2.5 * counterSharp_z - 1.5 * walletPct_z - 2.0 * contradictions
-      + 1.00 * moneyEdge_z + 0.40 * mktDom_z - 1.00 * disagreement
-    : 3.0 * moneyPct_z + 1.5 * avgBet_z + 1.2 * invested_z + 1.0 * qp_z
-      + 0.8 * sharpCount_z + 0.6 * pinnConditional + 0.4 * evConditional
-      - 2.5 * counterSharp_z - 1.5 * walletPct_z - 2.0 * contradictions
-      + 1.25 * moneyEdge_z + 0.50 * mktDom_z - 1.25 * disagreement - 0.50 * againstSC_z;
-
-  // Regime-aware update dampening (V7.1): dampen UPGRADES only, let downgrades pass through fully.
-  // Downgrades are warning signals — dampening them would mask real deterioration from the health system.
-  const REGIME_UPDATE_MULT = { NO_MOVE: 0.45, SMALL_MOVE: 0.65, CLEAR_MOVE: 1.00, NEAR_START: 1.10 };
-  const isUpdateContext = lockRawScore != null;
-  let effectiveScore = rawScore;
-  if (isUpdateContext && rawScore > lockRawScore) {
-    const mult = REGIME_UPDATE_MULT[regime] ?? 0.45;
-    effectiveScore = lockRawScore + mult * (rawScore - lockRawScore);
-  }
-
-  // Map effective score to stars using frozen thresholds (p75 = 3.5-star)
-  const t = V7_STATS.thresholds;
-  let stars = effectiveScore < t.p15 ? 1 : effectiveScore < t.p30 ? 2 : effectiveScore < t.p50 ? 2.5
-            : effectiveScore < t.p75 ? 3 : effectiveScore < t.p87 ? 3.5 : effectiveScore < t.p93 ? 4
-            : effectiveScore < t.p97 ? 4.5 : 5;
-
-  // Gates
-  if (stars >= 5 && (qp < 1 || contradictions >= 2)) stars = 4.5;
-  if (stars >= 4.5 && contradictions >= 2) stars = Math.min(stars, 4);
-  if (odds != null && odds >= 200) stars = Math.min(stars, 3);
-  else if (odds != null && odds >= 151) stars = Math.min(stars, 3.5);
-  if (sport === 'NBA' && odds != null && odds >= 100) stars = Math.min(stars, 3.5);
-
-  // Middle-tier two-sided gates
-  if (disagreement && stars >= 4 && qp < 2) stars = 3.5;
-  if (stars >= 2.5 && stars <= 3.5 && moneyEdge_z <= -0.50) {
-    stars = Math.max(1, stars - 0.5);
-  }
-  if (stars >= 2.5 && stars <= 3.5 && moneyEdge_z >= 0.75 && contradictions === 0) {
-    stars = Math.min(5, stars + 0.5);
-  }
-
-  // Regime-aware update caps (V7.1): prevent over-promotion in low-evidence regimes
-  if (isUpdateContext && lockStars != null) {
-    const eliteProfile = qp >= 2 && moneyEdge_z >= 0.5 && contradictions === 0;
-    if (regime === 'NO_MOVE' && !eliteProfile) {
-      stars = Math.min(stars, lockStars + 0.5);
-    }
-    if (regime === 'NEAR_START' && liveCLV != null && liveCLV < 0) {
-      stars = Math.min(stars, lockStars);
-    }
-  }
-
-  const labels = {
-    5:   { label: 'ELITE PLAY',    color: B.green,   bg: B.greenDim,                summary: 'Maximum conviction — all signals aligned' },
-    4.5: { label: 'ELITE PLAY',    color: B.green,   bg: B.greenDim,                summary: 'Near-perfect signal alignment' },
-    4:   { label: 'STRONG PLAY',   color: B.green,   bg: 'rgba(16,185,129,0.08)',   summary: 'Strong conviction — dominant consensus + confirming signals' },
-    3.5: { label: 'STRONG PLAY',   color: B.green,   bg: 'rgba(16,185,129,0.08)',   summary: 'Above-average conviction across multiple signals' },
-    3:   { label: 'SOLID PLAY',    color: B.green,   bg: 'rgba(16,185,129,0.08)',   summary: 'Strong consensus with confirming signals' },
-    2.5: { label: 'SOLID PLAY',    color: B.gold,    bg: B.goldDim,                 summary: 'Good consensus support — meets conviction threshold' },
-    2:   { label: 'LEAN',          color: B.gold,    bg: B.goldDim,                 summary: 'Moderate sharp interest — limited confirmation' },
-    1.5: { label: 'DEVELOPING',    color: B.textSec, bg: 'rgba(255,255,255,0.04)',  summary: 'Early sharp activity — watching for more signals' },
-    1:   { label: 'MONITORING',    color: B.textSec, bg: 'rgba(255,255,255,0.04)',  summary: 'Low activity — not yet actionable' },
-    0.5: { label: 'MONITORING',    color: B.textSec, bg: 'rgba(255,255,255,0.04)',  summary: 'Minimal data available' },
-  };
-  const info = labels[stars] || labels[1];
-
-  return { stars, rawScore, effectiveScore, ...info, isActionable: stars >= 3, regime, qualityProxy: qp, moneyEdge_z, mktDom_z, againstSC_z, disagreement, contradictions, liveCLV_z, regimeMultiplier: isUpdateContext ? (REGIME_UPDATE_MULT[regime] ?? 0.45) : null };
-}
+// V7 Unified Star Rating (rateStarsV7) — DELETED 2026-05-15. ~160 lines of
+// dead code, never called outside its own definition (last verified by
+// the AGS-U v9 legacy-gate audit). Replaced wholesale by rateStarsV8
+// (which now itself derives stars from AGS-U via agsuStarsFromAgs).
+// V7_STATS / v7Z / v7Winsorize / v7QualityProxy / v7Contradictions are
+// retained because rateStarsV8's internal CLV z-score still consumes
+// them; they are NOT decision gates.
+//
+// renderHeroChips — also deleted 2026-05-15 (never called).
 
 // ─── V8 Wallet-Contribution Star Rating ──────────────────────────────────────
 
@@ -600,172 +445,35 @@ function percentileOf(sortedArr, val) {
   return (count / sortedArr.length) * 100;
 }
 
-// v6 Two-Factor Vault Star.
-// Δw (winner margin, whitelist-gated) sets the base rung.
-// Δq (quality margin at T=30 contribution) adjusts ±0.5, with a hard
-// quality-collapse floor. Elite is Δw≥+3 OR (Δw≥+2 AND Δq≥+1).
-// See V8_TWO_FACTOR_BACKTEST.md for the pre-ship validation.
-// v7.0 Σ-driven Vault star ladder (2026-04-29). Replaces the v6.6 path-
-// based ladder where Δw ≥ +3 or (Δw=+2 ∧ Δq≥+1) maxed out at 5.0★.
-//
-// The V6 Full Analysis (`V6_FULL_ANALYSIS.md`, N=104, 4/18–4/28) showed:
-//   - ρ(Δw+Δq, flat ROI) = +0.319 ✓ p<.01 — Σ is a real predictor.
-//   - Σ ≥ +5 is the first cumulative cohort to clear t = 1.96 on the flat-
-//     PnL t-test (+35.2% flat ROI, 61.3% WR on N=31).
-//   - Σ ∈ {+3, +4} is directionally flat (the 1/+1 bleeder is muted by
-//     the health engine; the rest hover near break-even).
-//   - Σ ≥ +6 is the elite tier (+42.8% flat ROI, 65% WR on N=20).
-//
-// New ladder (Δw ≥ +1 ∧ Δq ≥ +1 baseline):
-//   Σ ≥ +6  → 5.0★            (LOCKED · 3.0u ML / 2.0u S+T  · ELITE bonus
-//                               in `calculateUnits` when Σ ≥ +7)
-//   Σ = +5  → 4.5★            (LOCKED · 2.0u ML / 1.5u S+T)
-//   Σ = +4  → 4.0★            (LEAN — display only, 0u; tier overrides ladder)
-//   Σ = +3  → 3.5★            (LEAN — display only, 0u)
-//   Σ = +2  → 2.5★            (1/1 cell — already MUTED by health engine)
-//
-// Below the v6.6 base (one or both deltas ≤ 0), the legacy diagnostic
-// ladder is retained so the muted-state UI reads intuitively. These
-// stars never ship with units regardless of value.
-// AGS-Unified v9 — stars are derived from AGS-U quintile placement.
-// Δw / Δq / HC inputs are accepted for callsite compatibility but
-// IGNORED. When AGS is null (e.g. mid-page render before walletDetails
-// loads) we fall back to a 1.0★ neutral so nothing renders as stronger
-// than the data warrants.
+// AGS-Unified v9 vault-star — stars are derived from AGS-U quintile
+// placement via agsuStarsFromAgs. Legacy Δw / Δq / HC / pickDate args
+// are accepted for callsite back-compat but IGNORED. When AGS is null
+// (mid-page render before walletDetails loads) we fall back to a 1.0★
+// neutral so nothing renders stronger than the data warrants.
 function vaultStarFromDeltas(_dw, _dq, _hcMargin = 0, _pickDate = null, ags = null) {
   return agsuStarsFromAgs(Number.isFinite(ags) ? ags : null, getAgsCalibration());
 }
 
-// v7.1 lock-tier classifier. Sole source of truth for whether a pick
-// renders as LOCKED (ship at full size), LEAN (track but bet 0u), or
-// MUTED. v7.1 adds the HC-dominance promotion: a Σ ∈ {3,4} pick that
-// has at least one high-conviction CONFIRMED wallet backing AND zero
-// HC-CONFIRMED dissent earns LOCKED status, sized via the HC multiplier.
+// AGS-Unified v9 lock-tier classifier — single source of truth for
+// tiering across the UI, the cron (syncPickStateAuthoritative.js), and
+// downstream reporting. Returns one of:
 //
-//   ELITE  : Δw ≥ +1 ∧ Δq ≥ +1 ∧ Δw+Δq ≥ +7
-//   LOCKED : Σ ≥ +5  OR  (Σ ∈ {3,4} ∧ hcDominant)
-//   LEAN   : Σ ∈ {3,4} ∧ ¬hcDominant
-//   MUTED  : everything else (the (1,1) bleeder + below-base deltas)
+//   ELITE   : AGS-U ≥ q90 (top decile)        — 2.00× sizing ladder
+//   PREMIUM : AGS-U ≥ q80                     — 1.50×
+//   LOCK    : AGS-U ≥ q60 (lock floor)        — 1.10×
+//   LEAN    : AGS-U ≥ q40 (½-stake band)      — 0.50×
+//   WEAK    : AGS-U ≥ q20                     — 0.20×
+//   FADE    : AGS-U <  q20 (hard mute)        — 0.00×  (meetsAgsHardMute)
 //
-// `opts.pickDate` gates the HC-promotion branch by cutover dates so
-// historic picks never see new promotions retroactively. hcDominant
-// defaults to false so legacy callers that don't pass it get the v7.0
-// ladder for free. `opts.hcMargin` (HC_for − HC_ag) is the v7.2
-// continuous quality dial — when not provided, falls back to the
-// binary hcDominant flag (which is hcMargin ≥ 1 ∧ hcAg = 0).
-//
-// LEAN is a UI-only state — picks here still write `lockStage='LOCKED'`
-// to Firestore (via promotionEligible) so they appear in the Locked
-// Picks list with a LEAN badge replacing the unit chip. The health
-// engine continues to mute the (1,1) cell + Δw ≤ 0 / Δq ≤ 0 cohorts.
-//
-// v7.3 (2026-04-30+) — HC margin floor lowering. HC_m ≥ +1 promotes
-// Σ ∈ {1, 2} to LOCK (was MUTED for Σ=1, LEAN for Σ=2 ∧ HC_m=+1 under v7.2),
-// and dw=0 ∨ dq=0 ∧ HC_m ≥ +1 picks bypass the v6.6 hybrid floor entirely
-// (the "rescued from MUTE" cohort).
-//
-// v7.2 (2026-04-30+):
-//   Σ=2 ∧ HC_m ≥ +2  → LOCKED (NEW — was MUTED)
-//   Σ=2 ∧ HC_m  = +1 → LEAN   (superseded by v7.3 LOCK)
-//   Σ ∈ {3,4} ∧ HC_m ≥ +1 → LOCKED (looser than v7.1 HC_DOM gate)
-//
-// v7.1 (2026-04-30 ≤ d < 2026-05-01): Σ ∈ {3,4} ∧ hcDominant → LOCKED
-// v7.0 (d < 2026-04-30): no HC promotion at all
-// AGS-Unified v9 — tier is derived from AGS-U quintile placement.
-// Δw / Δq / HC inputs are accepted for callsite compatibility but
-// IGNORED. Returns one of: ELITE / PREMIUM / LOCK / LEAN / WEAK / FADE
-// (mapped from agsTierFromValue). The legacy 'LOCKED' / 'MUTED' enum is
-// no longer produced — callers checking equality against those strings
-// should be updated to use the AGS-U tier names. For the 2026-05-14
-// cutover we map them as: ELITE/PREMIUM/LOCK → "LOCKED"-class behavior
-// at their own sizing tier; LEAN/WEAK → reduced sizing; FADE → MUTED.
+// Legacy Δw / Δq / hcDominant args are accepted for callsite back-compat
+// but IGNORED. The legacy 'LOCKED' / 'MUTED' enum is no longer produced;
+// callers comparing against those strings have been migrated — anything
+// new that needs "is this side shipping" should test
+// tier ∈ {ELITE, PREMIUM, LOCK} (full size) or
+// tier ∈ {ELITE, PREMIUM, LOCK, LEAN, WEAK} (any non-zero stake).
 function lockTierFromDeltas(_dw, _dq, _hcDominant = false, opts = {}) {
   const ags = Number.isFinite(opts.ags) ? opts.ags : null;
   return agsuLockTierFromAgs(ags, getAgsCalibration());
-}
-
-// v6 Hero chips — human-readable rendering of the two-factor signal that
-// actually drives stars, locks, mutes, and cancels. Replaces the cryptic
-// `Δw / Δq` pills with plain-English counts and state-appropriate color.
-// All math stays in the tooltip so quants can still read the exact deltas.
-function renderHeroChips({ dw, dq, forW, agW, qForT, qAgT, sport }) {
-  const sportLabel = (sport || '').toString().toUpperCase() || 'SPORT';
-  const dwNum = Number.isFinite(dw) ? dw : 0;
-  const dqNum = Number.isFinite(dq) ? dq : 0;
-  const forNum = Number.isFinite(forW) ? forW : 0;
-  const agNum  = Number.isFinite(agW)  ? agW  : 0;
-  const qForNum = Number.isFinite(qForT) ? qForT : 0;
-  const qAgNum  = Number.isFinite(qAgT)  ? qAgT  : 0;
-
-  const tooltip =
-    `Winners margin Δw=${dwNum >= 0 ? '+' : ''}${dwNum} (${forNum} for · ${agNum} against) · ` +
-    `Quality margin Δq=${dqNum >= 0 ? '+' : ''}${dqNum} at T30 contribution (${qForNum} for · ${qAgNum} against). ` +
-    `Lock floor (v7.0): Δw+Δq ≥ +5 with both axes ≥ +1. Δw+Δq ∈ {3,4} renders as LEAN (tracked, 0u).`;
-
-  const chipBase = {
-    ...T.micro,
-    fontWeight: 800,
-    letterSpacing: '0.04em',
-    padding: '0.15rem 0.45rem',
-    borderRadius: '4px',
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '0.2rem',
-    fontSize: '0.56rem',
-    whiteSpace: 'nowrap',
-  };
-  const againstStyle = {
-    color: B.textMuted,
-    fontWeight: 500,
-    marginLeft: '0.2rem',
-    fontSize: '0.54rem',
-  };
-
-  // ── Red / negative states — single chip telling the fade story.
-  if (dwNum <= -2) {
-    return (
-      <span title={tooltip} style={{ ...chipBase, color: B.red, background: B.redDim, border: '1px solid rgba(239,68,68,0.3)' }}>
-        {Math.abs(dwNum)} {sportLabel} WINNERS AGAINST · KILLED
-      </span>
-    );
-  }
-  if (dwNum === -1) {
-    return (
-      <span title={tooltip} style={{ ...chipBase, color: B.red, background: B.redDim, border: '1px solid rgba(239,68,68,0.3)' }}>
-        1 {sportLabel} WINNER FADED OFF
-      </span>
-    );
-  }
-  if (dqNum <= -3 && dwNum <= 0) {
-    return (
-      <span title={tooltip} style={{ ...chipBase, color: B.red, background: B.redDim, border: '1px solid rgba(239,68,68,0.3)' }}>
-        QUALITY WALLETS FADED
-      </span>
-    );
-  }
-
-  // ── Positive / neutral — two chips: Winners + Quality.
-  const winnersActive = dwNum >= 1;
-  const qualityActive = dqNum >= 1;
-  const winnersStyle = winnersActive
-    ? { color: B.green, background: B.greenDim, border: '1px solid rgba(16,185,129,0.25)' }
-    : { color: B.textMuted, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' };
-  const qualityStyle = qualityActive
-    ? { color: B.green, background: B.greenDim, border: '1px solid rgba(16,185,129,0.25)' }
-    : { color: B.textMuted, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' };
-
-  return (
-    <>
-      <span title={tooltip} style={{ ...chipBase, ...winnersStyle }}>
-        <span>{forNum} {sportLabel} WINNER{forNum !== 1 ? 'S' : ''}</span>
-        {agNum > 0 && <span style={againstStyle}>· {agNum} against</span>}
-      </span>
-      <span title={tooltip} style={{ ...chipBase, ...qualityStyle }}>
-        <span>{qForNum} QUALITY WALLET{qForNum !== 1 ? 'S' : ''}</span>
-        {qAgNum > 0 && <span style={againstStyle}>· {qAgNum} against</span>}
-      </span>
-    </>
-  );
 }
 
 function rateStarsV8({ positions, consensusSide, v8Norm, pinnMoveSize = 0, timeToGame = null, lockOdds = null, pinnCurrentOdds = null, sport = null, pickDate = null }) {
@@ -1285,30 +993,24 @@ function computeWalletConsensus(walletDetails, sport, sideKey, pickDate = null) 
 
   const cfg = result.sportConfig;
 
-  // v6.6 MUTE / CANCEL / PROMOTE policy — pure Δ-driven, hybrid floor.
-  // See evaluatePickHealth for the full engine. We surface lockAction
-  // here so the stamping + backfill layers stay consistent with live
-  // evaluation.
+  // LEGACY-DIAGNOSTIC ONLY — the Δw/Δq/HC ladder below sets
+  // result.lockAction so the in-memory wallet-consensus object still
+  // exposes a sensible MUTE/CANCEL/PROMOTE field for legacy callers
+  // (diagnostic logging, ranking reports, attribution narratives).
+  // It DOES NOT drive any user-visible decision under AGS-U v9:
+  //   - Live lock/mute decisions: decideLockStage + evaluatePickHealth
+  //     (both AGS-U-canonical, gated on meetsAgsHardMute +
+  //     AGS_MIN_PROVEN_WALLETS).
+  //   - Sizing: agsSizeMultiplier / agsuUnitsFromAgs.
+  //   - Persisted mute stamp (v8_walletConsensusMuteTriggered): now
+  //     overwritten in stampWalletConsensus from the AGS-U hard-mute
+  //     boolean, not from this lockAction value.
+  //   - Drift detection (restampDriftedSides): compares against the
+  //     AGS-U hard-mute boolean, not lockAction.
   //
-  // Hybrid floor (2026-04-27, post-88-pick edge analysis):
-  //   PROMOTE  : Δw ≥ +1 AND Δq ≥ +1 AND Δw+Δq ≥ +3
-  //   MUTE     : Δw=+1 ∧ Δq=+1 (sum=+2, the bleeder cohort)
-  //
-  // Backtest on 88 shipped picks: the legacy 1/+1 floor delivered +5.04u
-  // peak / +16.8% flat ROI on 53 picks. The hybrid floor delivers +8.01u
-  // peak / +26.0% flat ROI on 45 picks (+59% more peak PnL on 15% fewer
-  // picks). The dropped cell — 1/+1 — went 3-5 (37.5% WR, −35% flat ROI,
-  // −2.97u peak). Symmetric mute on later decay to 1/+1 keeps the engine
-  // honest if a stronger lock fades into the bleeder zone.
-  //
-  //   CANCEL: Δ_winner ≤ −2                       (strong profitable-winner dissent)
-  //   MUTE:   Δ_winner ≤ 0                        (proven-winner margin below floor)
-  //   MUTE:   Δ_quality ≤ 0  (Δw ≥ +1)            (quality margin below floor)
-  //   MUTE:   Δw=+1 ∧ Δq=+1 (sum below hybrid)    (winner+quality both at min)
-  //
-  // v7.3 — HC margin overrides every MUTE except CANCEL and dw=−1
-  // (winners_faded). HC_m ≥ +1 keeps the pick promotion-eligible even
-  // when dw=0, dq=0, or sum<3.
+  // The Δw/Δq/HC arithmetic below is preserved so historical pickets
+  // and any pre-v9 doc still in flight read the same lockAction value
+  // they would have read at lock time.
   const dw = delta;
   const dq = result.qualityMargin;
   const hcMargin = hcF - hcA;
@@ -5377,12 +5079,14 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                   }}>
                     {isTrackedGrade ? '0u · TRACK' : (isCancelled || isMuted) ? `${ut.icon} ${units}u → 0u` : `${ut.icon} ${units}u`}
                   </span>
-                  {/* v7.1/v7.2 — HC chip. Indicates high-conviction CONFIRMED
-                      wallets backing this side. v7.2 SUPER tier (HC_m ≥ +2)
-                      reads "HC ×1.75"; standard tier reads "HC ×1.5". Hidden on
-                      graded picks (we already committed at lock size — the chip
-                      is forward-looking). Hidden on LEAN (Σ=2 ∧ HC_m=+1)
-                      because the chip implies a unit multiplier and LEAN is 0u. */}
+                  {/* AGS-Unified v9 HC chip — high-conviction CONFIRMED
+                      wallets backing this side. Diagnostic-only: under v9,
+                      sizing is owned by the AGS-U tier ladder (ELITE 2.0×,
+                      PREMIUM 1.5×, LOCK 1.1×, LEAN 0.5×, WEAK 0.2×,
+                      FADE 0.0×). HC is one of the AGS-U input features but
+                      does NOT layer a separate multiplier on top. Hidden on
+                      graded picks (we already committed at lock size) and
+                      on tracked-only picks. */}
                   {showHcChip && !isGraded && !isLean && (
                     <span style={{
                       ...T.micro, fontWeight: 900, color: B.gold,
@@ -5393,17 +5097,19 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                       boxShadow: isHcSuper ? '0 0 8px rgba(212,175,55,0.45)' : 'none',
                     }}
                     title={isHcSuper
-                      ? `SUPER HC (HC margin ≥ +2): ${hcConfFor} HC for · ${hcConfAg} HC against = +${hcMarginVal}.${wasHcPromoted ? ' Promoted out of LEAN by HC margin.' : ''} Units sized at 1.75× the standard ladder. (WALLET_HC_MARGIN_ANALYSIS: 9-1, +7.65u net, +76.5% ROI on N=10.)`
-                      : `HC margin = +1: ${hcConfFor} HC for · ${hcConfAg} HC against.${wasHcPromoted ? ' Promoted out of LEAN by HC margin.' : ''} Units sized at 1.5× the standard ladder.`}>
-                      HC ×{hcChipMult}
+                      ? `HC margin +${hcMarginVal}: ${hcConfFor} high-conviction CONFIRMED wallet${hcConfFor !== 1 ? 's' : ''} for · ${hcConfAg} against. Strong proven-wallet conviction — one of the input features AGS-U v9 weighs when scoring this side.`
+                      : `HC margin +${hcMarginVal}: ${hcConfFor} high-conviction CONFIRMED wallet${hcConfFor !== 1 ? 's' : ''} for · ${hcConfAg} against. Proven-wallet conviction — one of the input features AGS-U v9 weighs when scoring this side.`}>
+                      HC +{hcMarginVal}
                     </span>
                   )}
-                  {/* AGS chip — Phase 1 read-only badge. Composite over six
-                      proven-wallet aggregate features (Δcount, Δcontrib sum,
-                      Δbest contrib, Δbest base, Δavg conviction, Δavg roiNorm).
-                      Historical bands: ≥+5 → 92.9% WR, ≥+3 → 73.7%, ≥0 → median
-                      cohort, <0 → fade zone. Sizing/lock decisions still come
-                      from HC + Σ until Phase 2/3 ship. */}
+                  {/* AGS-U v9 tier chip — composite over 5 L1-pruned features
+                      (proven count Δ, proven contribution Δ, HC ratio Δ,
+                      conviction Δ, ROI/PnL Δ). z-scored against the daily
+                      calibration distribution. Tier bands: ELITE ≥ q90,
+                      PREMIUM ≥ q80, LOCK ≥ q60, LEAN ≥ q40, WEAK ≥ q20,
+                      FADE < q20 (hard mute). Drives both display and the
+                      cron's actual lock/mute/sizing decisions — single
+                      source of truth. */}
                   {agsValue != null && Number.isFinite(agsValue) && AGS_TIER_META[agsTier] && (
                     <span style={{
                       ...T.micro, fontWeight: 800,
@@ -5414,14 +5120,16 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                       letterSpacing: '0.04em',
                       display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
                     }}
-                    title={`AGS = ${agsValue >= 0 ? '+' : ''}${agsValue.toFixed(2)} — composite score over 6 proven-wallet aggregate features. Tier=${agsTier}${agsQuintile ? ` · Q${agsQuintile}` : ''}${agsProvenForCount != null ? ` · proven ${agsProvenForCount} for / ${agsProvenAgCount} ag` : ''}. Historical bands (V6 dashboard, N=104): AGS ≥ +5 → 92.9% WR · ≥ +3 → 73.7% · ≥ 0 → median · < 0 → fade zone. Phase 1: display only — does not change lock or sizing.`}>
+                    title={`AGS-U = ${agsValue >= 0 ? '+' : ''}${agsValue.toFixed(2)} — composite z-score over 5 L1-pruned features (proven count Δ, proven contribution Δ, HC ratio Δ, conviction Δ, ROI/PnL Δ). Tier=${agsTier}${agsQuintile ? ` · Q${agsQuintile}` : ''}${agsProvenForCount != null ? ` · proven ${agsProvenForCount} for / ${agsProvenAgCount} against` : ''}. Sizing ladder: ELITE 2.0× · PREMIUM 1.5× · LOCK 1.1× · LEAN 0.5× · WEAK 0.2× · FADE 0.0× (hard mute). AGS-U v9 is the single source of truth for lock, mute, and sizing decisions.`}>
                       AGS {agsValue >= 0 ? '+' : ''}{agsValue.toFixed(1)}
                     </span>
                   )}
-                  {/* v7.3 RESCUED chip — fired on the cohort the v6.6 health
-                      engine would have muted (dw=0 / dq=0 / sum<3) but HC
-                      margin ≥ +1 saved. WALLET_HC_MARGIN_ANALYSIS_FULL: this
-                      cohort went 11-2, +85% ROI, p=0.006. */}
+                  {/* Legacy v7.3 promotion chips — only fire on picks whose
+                      `promotedBy` was stamped under the pre-AGS-U Σ ladder
+                      (v73-hc-rescue / v73-sigma1-hc / v73-sigma2-hc). Under
+                      AGS-U v9 nothing is ever stamped with those values, so
+                      these only appear on legacy still-pending picks (≈ zero
+                      today). Kept for historical-attribution honesty. */}
                   {wasHcRescued && !isGraded && !isLean && (
                     <span style={{
                       ...T.micro, fontWeight: 900, color: '#10B981',
@@ -5430,13 +5138,10 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                       border: '1px solid rgba(16,185,129,0.45)',
                       letterSpacing: '0.04em',
                     }}
-                    title={`v7.3 RESCUED — HC margin +${hcMarginVal} overrode the v6.6 health-engine MUTE. The dw=0 / dq=0 / sum<3 cohort with HC backing went 11-2 (+85% ROI, p=0.006) on N=141 graded sides since v7 cutover.`}>
+                    title={`Legacy v7.3 RESCUED — this pick was promoted by HC margin under the pre-AGS-U Σ ladder (pre-2026-05-15). Under AGS-U v9, the same data would be scored by the AGS chip above.`}>
                       RESCUED
                     </span>
                   )}
-                  {/* v7.3 Σ=1 / Σ=2 floor lock indicator — picks below the
-                      v6.6 hybrid floor (Σ ≥ +3) ship at a 0.5u floor when
-                      HC margin ≥ +1 backs them. */}
                   {(wasSigma1Promoted || wasSigma2Promoted) && !isGraded && !isLean && (
                     <span style={{
                       ...T.micro, fontWeight: 900, color: '#60A5FA',
@@ -5446,8 +5151,8 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                       letterSpacing: '0.04em',
                     }}
                     title={wasSigma1Promoted
-                      ? `v7.3 Σ=1 floor lock: HC margin +${hcMarginVal} promoted this pick to a 0.5u floor below the v6.6 hybrid floor (Σ ≥ +3). Conservative sizing reflects the marginal sample evidence.`
-                      : `v7.3 Σ=2 floor lock: HC margin +${hcMarginVal} promoted this pick to a 0.5u floor (was a v7.2 LEAN at HC_m=+1).`}>
+                      ? `Legacy v7.3 Σ=1 floor lock — pre-AGS-U promotion route. Under v9 this side is scored by the AGS chip above.`
+                      : `Legacy v7.3 Σ=2 floor lock — pre-AGS-U promotion route. Under v9 this side is scored by the AGS chip above.`}>
                       Σ={wasSigma1Promoted ? '1' : '2'} FLOOR
                     </span>
                   )}
@@ -5497,29 +5202,36 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                     </>
                   );
                 } else if (forW > 0 || wasHcRescued || wasSigma1Promoted || wasSigma2Promoted) {
-                  // v7.1/v7.2/v7.3 — when this pick was promoted out of LEAN /
-                  // MUTE by HC, surface that explicitly so users see why a
-                  // low-Σ pick is shipping. v7.3 introduces three new sources:
-                  //   • v73-sigma1-hc : Σ=1 ∧ HC_m ≥ +1 (NEW lock floor)
-                  //   • v73-sigma2-hc : Σ=2 ∧ HC_m ≥ +1 (graduated from LEAN)
-                  //   • v73-hc-rescue : Σ ≥ +3 ∧ HC_m ≥ +1 ∧ (dw=0 ∨ dq=0)
-                  //                     — rescued from a v6.6 mute.
-                  const multTxt = isHcSuper ? '1.75' : '1.5';
-                  const hcSuffix = wasSigma1Promoted
-                    ? ` v7.3 Σ=1 lock: HC margin +${hcMarginVal} (${hcConfFor} HC for · ${hcConfAg} HC against) backed promotion to a 0.5u floor — only ship below the v6.6 hybrid floor when proven-winner conviction is unanimous.`
-                    : wasSigma2Promoted
-                    ? ` v7.3 Σ=2 lock: promoted by HC margin +${hcMarginVal} (${hcConfFor} HC for · ${hcConfAg} HC against) — 0.5u floor.`
-                    : wasHcRescued
-                    ? ` RESCUED from MUTE by HC margin +${hcMarginVal} (${hcConfFor} high-conviction CONFIRMED winner${hcConfFor !== 1 ? 's' : ''}${hcConfAg > 0 ? `, ${hcConfAg} HC dissent` : ', no HC dissent'}) — full v7.2 ladder × ${multTxt}× would have muted under v6.6.`
-                    : wasHcPromoted
-                    ? ` Promoted out of LEAN by HC margin +${hcMarginVal} (${hcConfFor} high-conviction CONFIRMED winner${hcConfFor !== 1 ? 's' : ''}${hcConfAg > 0 ? `, ${hcConfAg} HC dissent` : ', no HC dissent'}) — sized at ${multTxt}×.`
-                    : (showHcChip ? ` ${hcConfFor} high-conviction CONFIRMED winner${hcConfFor !== 1 ? 's' : ''} backing — sized at ${multTxt}×.` : '');
+                  // AGS-Unified v9 narrative — proven winners + (optionally)
+                  // quality wallets lead the story. Sizing is owned by the
+                  // AGS-U tier ladder (ELITE 2.0× · PREMIUM 1.5× · LOCK 1.1×
+                  // · LEAN 0.5× · WEAK 0.2× · FADE 0.0×) — we no longer
+                  // claim a separate HC ×1.5/×1.75 multiplier. HC dominance
+                  // is one of the AGS-U input features (HC ratio Δ) and
+                  // already shows on its own chip above.
+                  //
+                  // wasHcRescued / wasSigma1Promoted / wasSigma2Promoted
+                  // can only be true for legacy pre-AGS-U pending picks
+                  // (promotedBy ∈ {v73-hc-rescue, v73-sigma1-hc,
+                  // v73-sigma2-hc}); under v9 nothing stamps those values.
+                  const agsTxt = (agsValue != null && Number.isFinite(agsValue))
+                    ? `${agsValue >= 0 ? '+' : ''}${agsValue.toFixed(2)}`
+                    : null;
+                  const agsSuffix = agsTxt
+                    ? ` AGS-U ${agsTxt}${agsTier ? ` (${agsTier} tier)` : ''}.`
+                    : '';
+                  const legacySuffix = (wasHcRescued || wasSigma1Promoted || wasSigma2Promoted)
+                    ? ` Legacy v7.3 ${wasSigma1Promoted ? 'Σ=1' : wasSigma2Promoted ? 'Σ=2' : 'HC-rescue'} promotion — pre-AGS-U pick still pending grading.`
+                    : '';
+                  const hcSuffix = showHcChip
+                    ? ` HC margin +${hcMarginVal} (${hcConfFor} high-conviction CONFIRMED ${hcConfFor !== 1 ? 'wallets' : 'wallet'}${hcConfAg > 0 ? `, ${hcConfAg} HC dissent` : ''}) feeds the AGS-U score.`
+                    : '';
                   lead = (
                     <>
                       <span style={{ color: B.gold, fontWeight: 700 }}>{forW || hcConfFor} proven {sportUp} winner{(forW || hcConfFor) !== 1 ? 's' : ''}</span> backing {teamShort} {marketNoun}
                       {qFor > 0 ? <> with <span style={{ color: B.green, fontWeight: 700 }}>{qFor} quality wallet{qFor !== 1 ? 's' : ''}</span> confirming.</> : '.'}
                       {totalInvested ? <> Combined <span style={{ color: B.gold, fontWeight: 700 }}>{fmtV(totalInvested)}</span> invested.</> : ''}
-                      {pinnSuffix}{evSuffix}{hcSuffix}
+                      {pinnSuffix}{evSuffix}{agsSuffix}{hcSuffix}{legacySuffix}
                     </>
                   );
                 } else {
