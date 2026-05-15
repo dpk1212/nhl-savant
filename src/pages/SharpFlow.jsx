@@ -366,6 +366,39 @@ function unitTier(units) {
   return { label: 'STANDARD', color: '#94A3B8', icon: '✓' };
 }
 
+// AGS-Unified v9 — single source of truth for the top-right star badge.
+// Maps an AGS-U value (or missing/insufficient signal) to a 4-tuple of
+// stars + label + label color + background. Every UI surface that talks
+// about "what tier is this pick" — top-right badge inside SharpPositionCard,
+// the locked-picks header in LockedPickCard, the AGS-U Consensus Panel
+// body banner — derives from this one function so they cannot disagree.
+//
+// Star → tier mapping is the same as agsuStarsFromAgs:
+//   5.0 ELITE    ≥ q90  · 2.00× sizing
+//   4.5 PREMIUM  ≥ q80  · 1.50× sizing
+//   4.0 LOCK     ≥ q60  · 1.10× sizing
+//   3.0 LEAN     ≥ q40  · 0.50× sizing
+//   2.5 WEAK     ≥ q20  · 0.20× sizing
+//   1.0 FADE     < q20  · 0u (hard mute)
+const AGSU_STAR_LABELS = {
+  5:   { label: 'ELITE PLAY',    color: B.green,   bg: B.greenDim,                summary: 'Top decile AGS-U — maximum sharp conviction' },
+  4.5: { label: 'PREMIUM PLAY',  color: B.green,   bg: B.greenDim,                summary: 'Top quintile AGS-U — premium sharp alignment' },
+  4:   { label: 'STRONG PLAY',   color: B.green,   bg: 'rgba(16,185,129,0.08)',   summary: 'Above lock floor — full standard size' },
+  3.5: { label: 'STRONG PLAY',   color: B.green,   bg: 'rgba(16,185,129,0.08)',   summary: 'Above lock floor — full standard size' },
+  3:   { label: 'SOLID PLAY',    color: B.gold,    bg: B.goldDim,                 summary: 'Lean tier — half-stake position' },
+  2.5: { label: 'TRACKING',      color: B.gold,    bg: B.goldDim,                 summary: 'Weak tier — small reduced-size position' },
+  2:   { label: 'TRACKING',      color: B.gold,    bg: B.goldDim,                 summary: 'Early AGS-U signal' },
+  1.5: { label: 'DEVELOPING',    color: B.textSec, bg: 'rgba(255,255,255,0.04)',  summary: 'Sharp signal still forming' },
+  1:   { label: 'HARD MUTE',     color: B.red,     bg: B.redDim,                  summary: 'AGS-U below fade floor — not playable' },
+};
+
+function agsuBadgeFromAgs(ags, calibration = null) {
+  const cal = calibration || getAgsCalibration();
+  const stars = agsuStarsFromAgs(Number.isFinite(ags) ? ags : null, cal);
+  const meta = AGSU_STAR_LABELS[stars] || AGSU_STAR_LABELS[1];
+  return { stars, ...meta };
+}
+
 function profitFromOdds(odds, units) {
   if (odds > 0) return units * (odds / 100);
   return units * (100 / Math.abs(odds));
@@ -896,29 +929,9 @@ function rateStarsV8({ positions, consensusSide, v8Norm, pinnMoveSize = 0, timeT
   }
   const stars = agsuStarsFromAgs(agsForStars, getAgsCalibration());
 
-  // AGS-Unified v9 star → label map. Each label is the user-facing
-  // name of the underlying AGS-U tier (mapping derived from
-  // agsuStarsFromAgs at the same quintile thresholds).
-  //   5.0 ELITE   ≥ q90  · 2.00× sizing · top decile
-  //   4.5 PREMIUM ≥ q80  · 1.50× sizing
-  //   4.0 STRONG  ≥ q60  · 1.10× sizing (LOCK floor)
-  //   3.0 SOLID   ≥ q40  · 0.50× sizing (LEAN, reduced)
-  //   2.5 TRACKING ≥ q20 · 0.20× sizing (WEAK, small position)
-  //   1.0 MUTED   < q20  · 0u (HARD MUTE — pick is not playable)
-  // 1.5 / 2.0 are reserved fallback buckets for the cache-not-ready
-  // path; AGS-U itself never emits those stars.
-  const labels = {
-    5:   { label: 'ELITE PLAY',    color: B.green,   bg: B.greenDim,                summary: 'Top decile AGS-U — maximum sharp conviction' },
-    4.5: { label: 'PREMIUM PLAY',  color: B.green,   bg: B.greenDim,                summary: 'Top quintile AGS-U — premium sharp alignment' },
-    4:   { label: 'STRONG PLAY',   color: B.green,   bg: 'rgba(16,185,129,0.08)',   summary: 'Above lock floor — full standard size' },
-    3.5: { label: 'STRONG PLAY',   color: B.green,   bg: 'rgba(16,185,129,0.08)',   summary: 'Above lock floor — full standard size' },
-    3:   { label: 'SOLID PLAY',    color: B.gold,    bg: B.goldDim,                 summary: 'Lean tier — half-stake position' },
-    2.5: { label: 'TRACKING',      color: B.gold,    bg: B.goldDim,                 summary: 'Weak tier — small reduced-size position' },
-    2:   { label: 'TRACKING',      color: B.gold,    bg: B.goldDim,                 summary: 'Early AGS-U signal' },
-    1.5: { label: 'DEVELOPING',    color: B.textSec, bg: 'rgba(255,255,255,0.04)',  summary: 'Sharp signal still forming' },
-    1:   { label: 'HARD MUTE',     color: B.red,     bg: B.redDim,                  summary: 'AGS-U below fade floor — not playable' },
-  };
-  const info = labels[stars] || labels[1];
+  // Star → label map is shared with the SharpPositionCard badge and the
+  // LockedPickCard summary via the module-level AGSU_STAR_LABELS table.
+  const info = AGSU_STAR_LABELS[stars] || AGSU_STAR_LABELS[1];
 
   const v8Scoring = {
     walletPlayScore: +walletPlayScore.toFixed(4),
@@ -5974,6 +5987,55 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const decision = sr?.v8Scoring && consensusSide && gd.sport
     ? decideLockStage(sr.regime, sr.v8Scoring, consensusSide, gd.sport, sr.stars, pickDate)
     : null;
+
+  // AGS-Unified v9 — compute AGS-U for the consensus side EARLY so it can
+  // drive sizing, the top-right star badge, and the consensus panel from
+  // the same value. Without this hoist the badge and the panel were
+  // reading different paths and could disagree (e.g., panel renders
+  // "PLAY LOCKED — ELITE" while the corner badge still reads
+  // "★ HARD MUTE" because the live walletDetails decayed since lock time).
+  // The walletDetails source order is `originalLockedSide v8Scoring` (if
+  // available, frozen at lock time) → live `sr.v8Scoring.walletDetails`.
+  const liveLockedSideKey = lockedSideRef.current || consensusSide;
+  const liveLockedV8 = (lockedSideRef.current && lockedSideRef.current !== consensusSide)
+    ? oppSr?.v8Scoring
+    : sr?.v8Scoring;
+  const liveAgsCalibration = getAgsCalibration();
+  const liveAgs = (() => {
+    const v8src = liveLockedV8 || sr?.v8Scoring;
+    const wd = v8src?.walletDetails;
+    if (!Array.isArray(wd) || wd.length === 0) return null;
+    const agg = aggregateSideProven(wd, liveLockedSideKey, gd.sport, isProvenForAgs, isHcEligibleForAgs);
+    if (!agg) return null;
+    return computeAgs(agg, liveAgsCalibration);
+  })();
+  const liveAgsValue = Number.isFinite(liveAgs?.ags) ? liveAgs.ags : null;
+  const liveAgsBadge = agsuBadgeFromAgs(liveAgsValue, liveAgsCalibration);
+  const liveAgsTier  = liveAgsValue != null
+    ? agsTierFromValue(liveAgsValue, liveAgsCalibration)
+    : 'FADE';
+
+  // Star + label come straight from AGS-U so the corner badge stays in
+  // lockstep with the AGS-U Consensus Panel body. The old rateStarsV8
+  // path (Δw / Δq / HC) is no longer consulted for display.
+  sr.stars = liveAgsBadge.stars;
+  sr.label = liveAgsBadge.label;
+  sr.color = liveAgsBadge.color;
+  sr.bg    = liveAgsBadge.bg;
+  if (oppSr) {
+    const oppV8 = oppSr.v8Scoring;
+    const oppAgg = oppV8?.walletDetails?.length
+      ? aggregateSideProven(oppV8.walletDetails, oppSide, gd.sport, isProvenForAgs, isHcEligibleForAgs)
+      : null;
+    const oppAgsRes = oppAgg ? computeAgs(oppAgg, liveAgsCalibration) : null;
+    const oppAgsValue = Number.isFinite(oppAgsRes?.ags) ? oppAgsRes.ags : null;
+    const oppBadge = agsuBadgeFromAgs(oppAgsValue, liveAgsCalibration);
+    oppSr.stars = oppBadge.stars;
+    oppSr.label = oppBadge.label;
+    oppSr.color = oppBadge.color;
+    oppSr.bg    = oppBadge.bg;
+  }
+
   // v7.1/v7.2/v7.3 — accept any registered floor source as a valid
   // lock-floor promotion (single source of truth: PROMOTED_BY_FLOORS).
   // All produce decision.stage === 'LOCKED' (LEAN ships at 0u).
@@ -5995,8 +6057,12 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const hcMargin = decision?.hcMargin ?? 0;
   const sumDelta = (decision?.dw ?? 0) + (decision?.dq ?? 0);
 
+  // Units derive directly from the AGS-U value. agsuUnitsFromAgs applies
+  // the 6-band sizing ladder + odds cap and returns 0 when ags is null
+  // or below the hard-mute floor — so non-AGS-U callsites (and stale
+  // wallet-cache states) automatically fall through to "Risk 0u".
   const units = isLocked
-    ? calculateUnits(sr.stars, cGrade.penalty, betOdds, computeRegimeBonus(sr.regime, sr.v8Scoring, consensusSide, gd.sport), lockTier, hcDominant, { pickDate, hcMargin, sum: sumDelta })
+    ? calculateUnits(sr.stars, cGrade.penalty, betOdds, computeRegimeBonus(sr.regime, sr.v8Scoring, consensusSide, gd.sport), lockTier, hcDominant, { pickDate, hcMargin, sum: sumDelta, ags: liveAgsValue })
     : 0;
   const ut = unitTier(units);
   const potentialWin = isLocked ? profitFromOdds(betOdds, units) : 0;
@@ -6116,25 +6182,18 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const lockedSideWPS = sideFlipped ? oppSr.walletPlayScore : sr.walletPlayScore;
   const oppToLockWPS  = sideFlipped ? sr.walletPlayScore    : oppSr.walletPlayScore;
   const lockedSideStars = sideFlipped ? oppSr.stars : sr.stars;
-  const mlLockedSideKey = lockedSideRef.current || consensusSide;
-  const mlLockedV8 = sideFlipped ? oppSr?.v8Scoring : sr?.v8Scoring;
+  const mlLockedSideKey = liveLockedSideKey;
+  const mlLockedV8 = liveLockedV8;
   // v7.3 — derive pickDate from commenceTime so v7.3 HC overrides apply
   // to live computeWalletConsensus + evaluatePickHealth calls.
   const mlPickDate = commenceTime ? gameDate(commenceTime) : null;
   const mlWalletConsensus = wasEverLocked
     ? computeWalletConsensus(mlLockedV8?.walletDetails, gd.sport, mlLockedSideKey, mlPickDate)
     : null;
-  // AGS-Unified v9 — compute per-side AGS-U for the consensus side regardless
-  // of lock state. Drives evaluatePickHealth (hard-mute gate) AND the
-  // consensus panel rendering for both locked and not-yet-locked picks.
-  const mlAgs = (() => {
-    const v8src = mlLockedV8 || sr?.v8Scoring;
-    const wd = v8src?.walletDetails;
-    if (!Array.isArray(wd) || wd.length === 0) return null;
-    const agg = aggregateSideProven(wd, mlLockedSideKey, gd.sport, isProvenForAgs, isHcEligibleForAgs);
-    if (!agg) return null;
-    return computeAgs(agg, getAgsCalibration());
-  })();
+  // mlAgs aliases the early-hoisted liveAgs computation (single source of
+  // truth — see comment block above `liveLockedSideKey`). Keeps the
+  // downstream code paths (health gate, consensus panel) unchanged.
+  const mlAgs = liveAgs;
   const mlAgsProvenTotal = mlAgs ? (mlAgs.provenForCount + mlAgs.provenAgCount) : null;
   const mlHealth = wasEverLocked ? evaluatePickHealth({
     currentWPS: lockedSideWPS,
