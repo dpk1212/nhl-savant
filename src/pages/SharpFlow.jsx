@@ -944,10 +944,14 @@ function rateStarsV8({ positions, consensusSide, v8Norm, pinnMoveSize = 0, timeT
     walletCountFor,
     walletCountAgainst: oppWallets.length,
     walletDetails,
-    // v6 two-factor fields — the source of truth for Sharp Intel stars/units
+    // v6 two-factor fields — diagnostic only under AGS-U v9. vaultStar
+    // is no longer derived here (it used to come from
+    // vaultStarFromDeltas, which is now AGS-U-driven); the v8Scoring
+    // shape is preserved with a null placeholder for backward
+    // compatibility with consumers that read this property.
     deltaWinner,
     deltaQuality,
-    vaultStar,
+    vaultStar: null,
     qualityForT30: wc.qualityForT30,
     qualityAgT30: wc.qualityAgT30,
     forW: wc.forW,
