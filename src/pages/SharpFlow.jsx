@@ -1034,7 +1034,7 @@ const QUALITY_CONTRIB_CUT = 30;   // T=30 — validated by V8_CONTRIBUTION_EDGE
 //
 // Gated by V7_1_CUTOVER_DATE — picks dated before cutover keep v7.0
 // ladder/floor/badges so historic Firestore docs don't change behavior.
-const HC_RATIO = 1.5;
+// HC_RATIO imported from ../lib/ags.js — single source of truth.
 const V7_1_CUTOVER_DATE = '2026-04-30';   // YYYY-MM-DD ET — picks dated < this stay on v7.0 logic
 const V7_1_HC_DOMINANCE_ENABLED = true;   // master kill-switch — flip to false to revert without redeploy
 const V7_1_HC_MULT          = 1.5;
@@ -6353,12 +6353,12 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const mlWalletConsensus = wasEverLocked
     ? computeWalletConsensus(mlLockedV8?.walletDetails, gd.sport, mlLockedSideKey, mlPickDate)
     : null;
-  // Phase 3 — pre-compute AGS for the locked ML side so evaluatePickHealth
-  // can apply the rescue + confirmation gate. Falls back gracefully when
-  // walletDetails or calibration is missing.
+  // AGS-Unified v9 — compute per-side AGS-U for the consensus side regardless
+  // of lock state. Drives evaluatePickHealth (hard-mute gate) AND the
+  // consensus panel rendering for both locked and not-yet-locked picks.
   const mlAgs = (() => {
-    if (!wasEverLocked) return null;
-    const wd = mlLockedV8?.walletDetails;
+    const v8src = mlLockedV8 || sr?.v8Scoring;
+    const wd = v8src?.walletDetails;
     if (!Array.isArray(wd) || wd.length === 0) return null;
     const agg = aggregateSideProven(wd, mlLockedSideKey, gd.sport, isProvenForAgs, isHcEligibleForAgs);
     if (!agg) return null;
@@ -6868,14 +6868,17 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
             </div>
           </div>
           {(() => {
-            // v6 narrative — proven winners + quality wallets lead the sentence,
-            // with P&L as secondary color. Mute/cancel states invert to signal-fading
-            // copy. Avg-bet metric drops into a small secondary caption.
+            // AGS-U narrative — proven winners + HC sharps lead the sentence,
+            // with P&L as secondary color. Mute/cancel states invert to
+            // signal-fading copy. Avg-bet metric drops into a small caption.
+            // Source: mlAgs.featureValues (computed once per render upstream)
+            // with v8Scoring as a fallback for pre-AGS-U cached docs.
+            const fv = mlAgs?.featureValues ?? null;
             const v8 = sr?.v8Scoring;
-            const forW = v8?.forW ?? 0;
-            const agW  = v8?.agW ?? 0;
-            const qFor = v8?.qualityForT30 ?? 0;
-            const dw   = v8?.deltaWinner ?? 0;
+            const forW = fv?.forCount ?? v8?.forW ?? 0;
+            const agW  = fv?.agCount  ?? v8?.agW  ?? 0;
+            const hcFor = fv?.forHcCount ?? 0;
+            const dCount = fv?.dCount ?? (forW - agW);
             const sportUp = (gd.sport || '').toUpperCase();
             const hStat = mlHealth?.status || 'ACTIVE';
             const isMutedLive = hStat === 'MUTED';
@@ -6887,20 +6890,20 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
             if (isCancelledLive) {
               lead = (
                 <>
-                  <span style={{ color: B.red, fontWeight: 700 }}>Signal killed</span> on {consensusShort} ML: {Math.abs(dw)} proven {sportUp} winner{Math.abs(dw) !== 1 ? 's' : ''} now against this pick.{pinnSuffix}
+                  <span style={{ color: B.red, fontWeight: 700 }}>Signal killed</span> on {consensusShort} ML: {Math.abs(dCount)} proven {sportUp} winner{Math.abs(dCount) !== 1 ? 's' : ''} now against this pick.{pinnSuffix}
                 </>
               );
             } else if (isMutedLive) {
               lead = (
                 <>
-                  <span style={{ color: '#F59E0B', fontWeight: 700 }}>Signal fading</span> on {consensusShort} ML: {agW > 0 ? <>{agW} proven {sportUp} winner{agW !== 1 ? 's' : ''} flipped off, {forW} still backing.</> : <>quality wallets collapsed to the other side.</>}
+                  <span style={{ color: '#F59E0B', fontWeight: 700 }}>Signal fading</span> on {consensusShort} ML: {agW > 0 ? <>{agW} proven {sportUp} winner{agW !== 1 ? 's' : ''} on the other side, {forW} still backing.</> : <>sharp money has collapsed off this side.</>}
                 </>
               );
             } else if (forW > 0) {
               lead = (
                 <>
                   <span style={{ color: B.gold, fontWeight: 700 }}>{forW} proven {sportUp} winner{forW !== 1 ? 's' : ''}</span> backing {consensusShort} ML
-                  {qFor > 0 ? <> with <span style={{ color: B.green, fontWeight: 700 }}>{qFor} quality wallet{qFor !== 1 ? 's' : ''}</span> confirming.</> : '.'}
+                  {hcFor > 0 ? <> with <span style={{ color: B.green, fontWeight: 700 }}>{hcFor} high-conviction sharp{hcFor !== 1 ? 's' : ''}</span> confirming.</> : '.'}
                   {consensusLifetimePnl ? <> Combined <span style={{ color: B.green, fontWeight: 700 }}>+{fmtVol(consensusLifetimePnl)}</span> sports P&L.</> : ''}
                   {pinnSuffix}{evSuffix}
                 </>
@@ -6970,44 +6973,12 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
           )}
         </div>
 
-        {/* Unit sizing + risk/reward when locked. v7.0: LEAN tier renders
-            here too (it's a "would-have-locked" pick under v6.6 that
-            falls below the Σ ≥ +5 floor) but with a distinct blue band
-            and 0u sizing so the user sees the pick is tracked, not bet. */}
-        {isLocked && lockTier === 'LEAN' && (
-          <div style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            marginTop: '0.625rem', padding: '0.375rem 0.5rem',
-            borderRadius: '6px',
-            background: 'rgba(96,165,250,0.06)',
-            border: '1px solid rgba(96,165,250,0.20)',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-              <span style={{ ...T.micro, color: B.textSec }}>Risk</span>
-              <span style={{ ...T.micro, fontWeight: 900, color: '#60A5FA', fontFeatureSettings: "'tnum'" }}>
-                0u (LEAN)
-              </span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-              <span style={{ ...T.micro, color: B.textSec }}>Status</span>
-              <span style={{ ...T.micro, fontWeight: 800, color: '#60A5FA', fontFeatureSettings: "'tnum'" }}>
-                TRACK ONLY
-              </span>
-            </div>
-            <span
-              title={`LEAN — Δw+Δq below the v7.0 lock floor (need ≥ +5). Pick is monitored at 0u so we measure its edge without bleeding bankroll.`}
-              style={{
-                ...T.micro, fontWeight: 800, color: '#60A5FA',
-                padding: '0.1rem 0.35rem', borderRadius: '4px',
-                background: 'rgba(96,165,250,0.12)',
-                border: '1px solid rgba(96,165,250,0.30)',
-              }}
-            >
-              SHADOW BET
-            </span>
-          </div>
-        )}
-        {isLocked && lockTier !== 'LEAN' && (
+        {/* Unit sizing + risk/reward when locked. Under AGS-U v9 every
+            shipped pick (ELITE / PREMIUM / LOCK / LEAN / WEAK) gets a
+            non-zero stake driven by the sizing band; the row below is
+            shared across all tiers. The old "LEAN = 0u, tracked only"
+            branch is retired — LEAN now ships at 0.5× (≈1.25u). */}
+        {isLocked && (
           <div style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             marginTop: '0.625rem', padding: '0.375rem 0.5rem',
@@ -7129,79 +7100,90 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
         )}
       </div>
 
-      {/* ─── v7.0 Lock Criteria (Σ-driven gate) ───
-          v7.0 raises the lock floor to Δw+Δq ≥ +5 (was Σ ≥ +3 in v6.6).
-          Picks at Σ ∈ {3, 4} would have locked under v6.6 but now display
-          as LEAN — tracked at 0u so we monitor cohort regression without
-          bleeding bankroll. Pinnacle / EV / line movement still surface
-          as supporting pills below the narrative. */}
+      {/* ─── AGS-U Consensus Panel ──────────────────────────────────────
+          One composite score (AGS-U) drives everything: lock decision,
+          unit sizing, mute/fade. The panel below surfaces the tier in
+          plain English at the top and lists three drivers the score is
+          built from:
+            1. Proven SPORT winners backing  (dCount feature)
+            2. High-conviction sharps confirming  (dHcCount feature)
+            3. Sharp money concentrated on this side  (forContribShare feature)
+          A 5-segment quintile bar on the right shows where this pick sits
+          versus the rolling V6+ calibration distribution — no jargon,
+          no Δw / Δq / Σ counters. */}
       {(() => {
-        const v8 = sr?.v8Scoring;
-        const dw = v8?.deltaWinner ?? 0;
-        const dq = v8?.deltaQuality ?? 0;
-        const sum = dw + dq;
-        const winMet = dw >= 1;
-        const qMet   = dq >= 1;
-        const sumMet = winMet && qMet && sum >= 5;
-        const metCount = (winMet ? 1 : 0) + (qMet ? 1 : 0) + (sumMet ? 1 : 0);
         const sportLabel = (gd.sport || '').toString().toUpperCase();
         const healthStatus = mlHealth?.status || 'ACTIVE';
         const isMutedLive = healthStatus === 'MUTED';
         const isCancelledLive = healthStatus === 'CANCELLED';
-        const isLeanLive = isLocked && lockTier === 'LEAN' && !isMutedLive && !isCancelledLive;
-        const isEliteLive = isLocked && lockTier === 'ELITE' && !isMutedLive && !isCancelledLive;
 
-        let title, titleColor, borderGlow, bgGlow;
+        const agsValue = Number.isFinite(mlAgs?.ags) ? mlAgs.ags : null;
+        const agsQuintile = mlAgs?.quintile ?? null;
+        const fv = mlAgs?.featureValues ?? null;
+        const dCount = fv?.dCount ?? 0;
+        const dHcCount = fv?.dHcCount ?? 0;
+        const forContribShare = Number.isFinite(fv?.forContribShare) ? fv.forContribShare : null;
+        const forCount = fv?.forCount ?? 0;
+        const agCount = fv?.agCount ?? 0;
+        const forHcCount = fv?.forHcCount ?? 0;
+        const totalProven = forCount + agCount;
+
+        const liveTierLocal = agsValue != null ? agsTierFromValue(agsValue, getAgsCalibration()) : 'UNKNOWN';
+        const meta = AGS_TIER_META[liveTierLocal] || AGS_TIER_META.UNKNOWN;
+
+        // Banner derivation.
+        //   • cancelled live      → red CANCELLED
+        //   • muted live          → red HARD MUTE
+        //   • locked + tier       → green PLAY LOCKED — TIER
+        //   • not locked + tier   → tier-colored TRACKING/SHARP CONSENSUS
+        //   • no AGS yet          → MONITORING (gold)
+        let bannerLabel, bannerColor, bgGlow, borderGlow;
         if (isCancelledLive) {
-          title = 'PICK CANCELLED — winners against';
-          titleColor = B.red;
-          borderGlow = 'rgba(239,68,68,0.3)';
-          bgGlow = 'linear-gradient(135deg, rgba(239,68,68,0.06) 0%, rgba(239,68,68,0.02) 100%)';
-        } else if (isMutedLive) {
-          title = 'PICK MUTED — signal fading';
-          titleColor = B.red;
-          borderGlow = 'rgba(239,68,68,0.25)';
-          bgGlow = 'linear-gradient(135deg, rgba(239,68,68,0.05) 0%, rgba(239,68,68,0.02) 100%)';
-        } else if (isEliteLive) {
-          title = `PLAY LOCKED — ★★★★★ ELITE (Σ=+${sum})`;
-          titleColor = B.green;
-          borderGlow = 'rgba(16,185,129,0.35)';
-          bgGlow = 'linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(16,185,129,0.02) 100%)';
-        } else if (isLocked && !isLeanLive) {
-          const starLbl = sr.stars >= 4.5 ? '★★★★★ ELITE'
-            : sr.stars >= 3.5 ? '★★★★ STRONG'
-            : sr.stars >= 3 ? '★★★ SOLID'
-            : '★★½ SOLID';
-          title = `PLAY LOCKED — ${starLbl} (Σ=+${sum})`;
-          titleColor = B.green;
-          borderGlow = 'rgba(16,185,129,0.25)';
-          bgGlow = 'linear-gradient(135deg, rgba(16,185,129,0.06) 0%, rgba(16,185,129,0.02) 100%)';
-        } else if (isLeanLive) {
-          title = `LEAN — TRACKED at 0u (Σ=+${sum}, need ≥ +5)`;
-          titleColor = '#60A5FA';
-          borderGlow = 'rgba(96,165,250,0.30)';
-          bgGlow = 'linear-gradient(135deg, rgba(96,165,250,0.06) 0%, rgba(96,165,250,0.02) 100%)';
-        } else if (winMet && qMet) {
-          title = 'TRACKING — 2 of 3 signals';
-          titleColor = B.gold;
-          borderGlow = 'rgba(212,175,55,0.25)';
-          bgGlow = 'linear-gradient(135deg, rgba(212,175,55,0.06) 0%, rgba(212,175,55,0.02) 100%)';
-        } else if (metCount === 1) {
-          title = 'TRACKING — 1 of 3 signals';
-          titleColor = B.gold;
-          borderGlow = 'rgba(212,175,55,0.25)';
-          bgGlow = 'linear-gradient(135deg, rgba(212,175,55,0.06) 0%, rgba(212,175,55,0.02) 100%)';
+          bannerLabel = 'PICK CANCELLED — winners against';
+          bannerColor = B.red;
+          borderGlow  = 'rgba(239,68,68,0.30)';
+          bgGlow      = 'linear-gradient(135deg, rgba(239,68,68,0.06) 0%, rgba(239,68,68,0.02) 100%)';
+        } else if (isMutedLive || liveTierLocal === 'FADE') {
+          bannerLabel = 'HARD MUTE — signal too weak to play';
+          bannerColor = B.red;
+          borderGlow  = 'rgba(239,68,68,0.25)';
+          bgGlow      = 'linear-gradient(135deg, rgba(239,68,68,0.05) 0%, rgba(239,68,68,0.02) 100%)';
+        } else if (agsValue == null) {
+          bannerLabel = 'MONITORING — gathering sharp signal';
+          bannerColor = B.textSec;
+          borderGlow  = B.borderSubtle;
+          bgGlow      = 'rgba(255,255,255,0.02)';
+        } else if (isLocked && (liveTierLocal === 'ELITE' || liveTierLocal === 'PREMIUM' || liveTierLocal === 'LOCK')) {
+          bannerLabel = `PLAY LOCKED — ${liveTierLocal}`;
+          bannerColor = meta.color;
+          borderGlow  = meta.color + '40';
+          bgGlow      = `linear-gradient(135deg, ${meta.bg} 0%, rgba(255,255,255,0.02) 100%)`;
+        } else if (isLocked && (liveTierLocal === 'LEAN' || liveTierLocal === 'WEAK')) {
+          bannerLabel = `TRACKING — ${liveTierLocal} (reduced size)`;
+          bannerColor = meta.color;
+          borderGlow  = meta.color + '40';
+          bgGlow      = `linear-gradient(135deg, ${meta.bg} 0%, rgba(255,255,255,0.02) 100%)`;
         } else {
-          title = 'LOCK CRITERIA';
-          titleColor = B.textMuted;
-          borderGlow = B.borderSubtle;
-          bgGlow = 'rgba(255,255,255,0.02)';
+          bannerLabel = `SHARP CONSENSUS — ${liveTierLocal}`;
+          bannerColor = meta.color;
+          borderGlow  = meta.color + '40';
+          bgGlow      = `linear-gradient(135deg, ${meta.bg} 0%, rgba(255,255,255,0.02) 100%)`;
         }
 
-        const Row = ({ met, label, deltaVal, hint }) => (
+        // Driver rows — three plain-English checks tied 1:1 to the AGS-U
+        // feature set. Thresholds chosen so the "met" check feels natural:
+        //   • dCount  ≥ +1   → proven backing edge
+        //   • dHcCount ≥ +1  → at least one HC sharp net-backing
+        //   • forContribShare ≥ 65% → money concentrated on this side
+        // These aren't gates (AGS-U is the gate); they're explanations.
+        const drv1Met = dCount >= 1;
+        const drv2Met = dHcCount >= 1;
+        const drv3Met = forContribShare != null && forContribShare >= 0.65;
+
+        const Driver = ({ met, label, detail }) => (
           <div style={{
             display: 'flex', alignItems: 'center', gap: '0.4rem',
-            padding: '0.25rem 0',
+            padding: '0.22rem 0',
           }}>
             {met
               ? <CheckCircle size={13} color={B.green} strokeWidth={2.5} />
@@ -7216,16 +7198,31 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
             </span>
             <span style={{
               ...T.micro, fontSize: '0.6rem', fontFeatureSettings: "'tnum'",
-              color: met ? B.green : deltaVal < 0 ? B.red : B.textMuted,
-              fontWeight: 800,
-              marginLeft: 'auto',
-              display: 'inline-flex', alignItems: 'baseline', gap: '0.3rem',
+              color: met ? B.green : B.textMuted,
+              fontWeight: 700, marginLeft: 'auto',
             }}>
-              <span>{deltaVal >= 0 ? '+' : ''}{deltaVal}</span>
-              <span style={{ color: B.textSubtle, fontWeight: 400, fontSize: '0.54rem' }}>{hint}</span>
+              {detail}
             </span>
           </div>
         );
+
+        // Quintile indicator — 5 segments, filled left-to-right by quintile.
+        // Cleanly conveys "where does this pick rank?" without exposing the
+        // raw z-score, which is meaningless to end users.
+        const QuintileBar = () => {
+          if (agsQuintile == null) return null;
+          return (
+            <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
+              {[1, 2, 3, 4, 5].map(i => (
+                <div key={i} style={{
+                  width: '8px', height: '10px', borderRadius: '1px',
+                  background: i <= agsQuintile ? meta.color : 'rgba(255,255,255,0.10)',
+                  opacity: i <= agsQuintile ? 1 : 0.4,
+                }} />
+              ))}
+            </div>
+          );
+        };
 
         return (
           <div style={{
@@ -7236,37 +7233,27 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
           }}>
             <div style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              marginBottom: '0.3rem',
+              marginBottom: '0.3rem', gap: '0.5rem',
             }}>
-              <span style={{ ...T.micro, color: titleColor, fontWeight: 800, letterSpacing: '0.04em' }}>
-                {title}
+              <span style={{ ...T.micro, color: bannerColor, fontWeight: 800, letterSpacing: '0.04em' }}>
+                {bannerLabel}
               </span>
-              {!isCancelledLive && !isMutedLive && (
-                <span style={{
-                  ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'",
-                  color: metCount === 3 ? B.green : metCount === 2 ? (isLeanLive ? '#60A5FA' : B.gold) : metCount === 1 ? B.gold : B.textMuted,
-                }}>
-                  {metCount}/3
-                </span>
-              )}
+              {!isCancelledLive && !isMutedLive && agsValue != null && <QuintileBar />}
             </div>
-            <Row
-              met={winMet}
+            <Driver
+              met={drv1Met}
               label={`Proven ${sportLabel || 'sport'} winners backing`}
-              deltaVal={dw}
-              hint="needs ≥ +1"
+              detail={`${forCount}–${agCount}`}
             />
-            <Row
-              met={qMet}
-              label="Quality wallets backing"
-              deltaVal={dq}
-              hint="needs ≥ +1"
+            <Driver
+              met={drv2Met}
+              label="High-conviction sharps confirming"
+              detail={forHcCount > 0 ? `${forHcCount} HC` : (totalProven > 0 ? '0 HC' : '—')}
             />
-            <Row
-              met={sumMet}
-              label="Combined edge (Δw + Δq)"
-              deltaVal={sum}
-              hint="needs ≥ +5 (v7.0)"
+            <Driver
+              met={drv3Met}
+              label="Money concentrated on this side"
+              detail={forContribShare != null ? `${Math.round(forContribShare * 100)}%` : '—'}
             />
           </div>
         );

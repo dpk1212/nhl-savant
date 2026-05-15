@@ -152,6 +152,8 @@ export function aggregateSideProven(walletDetails, sideKey, sport, isProvenFn, i
   return {
     forCount: f.count,
     agCount:  a.count,
+    forHcCount: f.hcCount,
+    agHcCount:  a.hcCount,
     forContribution: f.contribution,
     agContribution:  a.contribution,
     totalRaw,
@@ -197,6 +199,21 @@ export function computeAgs(agg, calibration) {
     provenRaw: agg.provenRaw || 0,
     totalRaw:  agg.totalRaw  || 0,
     calibrationSource: cal.source || (cal === AGS_FALLBACK_CALIBRATION ? 'fallback' : 'firestore'),
+
+    // Raw feature values — exposed so the UI can render plain-English
+    // "drivers" (proven backing / HC confirming / money concentration)
+    // without having to recompute aggregateSideProven downstream.
+    featureValues: {
+      dCount:          agg.dCount          || 0,
+      dHcCount:        agg.dHcCount        || 0,
+      dConvictionAvg:  agg.dConvictionAvg  || 0,
+      dHcSizeRatio:    agg.dHcSizeRatio    || 0,
+      forContribShare: Number.isFinite(agg.forContribShare) ? agg.forContribShare : 0.5,
+      forCount:        agg.forCount        || 0,
+      agCount:         agg.agCount         || 0,
+      forHcCount:      agg.forHcCount      || 0,
+      agHcCount:       agg.agHcCount       || 0,
+    },
   };
 }
 
