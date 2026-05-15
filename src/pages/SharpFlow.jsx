@@ -4683,13 +4683,43 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   // signals for picks graded before the grader fix.
   const isTrackedGrade = isGraded && !!trackedOnly;
 
-  // v6.4 — DOWNSIZED is a display overlay on ACTIVE (not a health status).
-  // A DOWNSIZED pick is still "on" but at 50%+ cut size because the live
-  // vault-star dropped ≥ 1.0 below peak. Never shows while graded, muted,
-  // cancelled, or superseded (those have their own visual treatments).
-  // Under AGS-U v9, LEAN picks DO ship (0.50×) and can be downsized too,
-  // so we no longer exclude them.
-  const showDownsize = !!isDownsized && !isGraded && !isMuted && !isCancelled && !superseded;
+  // AGS-Unified v9 DOWNSIZED gate — TIER-based, not unit-based.
+  //
+  // The legacy gate (`isDownsized = liveUnits < peakUnits`) was apples-
+  // to-oranges: peak.units is a monotonic high-water mark that often
+  // carries values from the pre-AGS-U sizing system (e.g. 3.0u from the
+  // old 3-unit clamp at lock time), while live units come from the
+  // AGS-U sizing ladder (band × base × odds-cap). That mismatch made
+  // PREMIUM-tier picks render with "↓ 3u → 2.5u" strikethroughs even
+  // though they're still top-quintile conviction — a contradiction the
+  // user (correctly) called out as broken.
+  //
+  // Under AGS-U v9 the only thing that matters for "did this pick get
+  // downgraded" is whether the AGS-U TIER itself stepped down meaning-
+  // fully. We derive peak's tier from peak.stars (proxy that stamps on
+  // every snapshot under both old + new sizing systems) and compare to
+  // live tier. The chip fires only when:
+  //   • Live tier dropped 2+ bands (e.g. ELITE → LOCK), or
+  //   • Live tier fell out of the lock tiers into LEAN/WEAK regardless
+  //     of how far it dropped (a meaningful conviction collapse).
+  // It is silent on 1-band drops within the top tiers (ELITE→PREMIUM,
+  // PREMIUM→LOCK) because those picks are still high-conviction and
+  // the tier ribbon already conveys the live conviction level.
+  const AGSU_TIER_RANK = { ELITE: 5, PREMIUM: 4, LOCK: 3, LEAN: 2, WEAK: 1, FADE: 0 };
+  const peakTierFromStars = peakStars == null
+    ? null
+    : peakStars >= 5.0 ? 'ELITE'
+    : peakStars >= 4.5 ? 'PREMIUM'
+    : peakStars >= 4.0 ? 'LOCK'
+    : peakStars >= 3.0 ? 'LEAN'
+    : peakStars >= 2.5 ? 'WEAK'
+    : 'FADE';
+  const liveTierForRank = lockTier;
+  const peakRank = AGSU_TIER_RANK[peakTierFromStars] ?? 0;
+  const liveRank = AGSU_TIER_RANK[liveTierForRank] ?? 0;
+  const meaningfulTierDrop = peakRank > 0 && liveRank > 0
+    && ( (peakRank - liveRank) >= 2 || (liveRank <= 2 && peakRank >= 3) );
+  const showDownsize = meaningfulTierDrop && !isGraded && !isMuted && !isCancelled && !superseded;
   const DOWNSIZE_AMBER = '#D4AF37'; // gold/amber — less severe than #F59E0B (mute)
   const LEAN_BLUE     = '#60A5FA'; // light-blue   — LEAN tier (0.50× ladder)
   const WEAK_AMBER    = '#F59E0B'; // amber        — WEAK tier (0.20× ladder)
@@ -4770,47 +4800,75 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   const metCount = criteriaMet || criteriaList.filter(c => c.met).length;
   const avgBet = (sharpCount && totalInvested) ? Math.round(totalInvested / sharpCount) : null;
 
+  // AGS-Unified v9 tier-color spine. Single source of truth for the
+  // tier-color stripe on the left edge of the card AND the top accent
+  // bar. Worst→best order so the most severe state wins ties.
+  const tierSpineColor =
+      isCancelled    ? '#EF4444'
+    : isMuted        ? '#F59E0B'
+    : isTrackedGrade ? LEAN_BLUE
+    : isElite        ? ELITE_GOLD
+    : isPremium      ? B.green
+    : isLock         ? B.green
+    : isLean         ? LEAN_BLUE
+    : isWeak         ? WEAK_AMBER
+    : superseded     ? '#EF4444'
+    : isTopPick      ? '#D4AF37'
+    : isGraded ? (isWin ? B.green : isLoss ? '#EF4444' : B.gold)
+    : B.green;
+  const tierSpineSoft =
+      isCancelled    ? 'rgba(239,68,68,0.35)'
+    : isMuted        ? 'rgba(245,158,11,0.35)'
+    : isTrackedGrade ? 'rgba(96,165,250,0.35)'
+    : isElite        ? 'rgba(212,175,55,0.50)'
+    : isPremium      ? 'rgba(16,185,129,0.40)'
+    : isLock         ? 'rgba(16,185,129,0.30)'
+    : isLean         ? 'rgba(96,165,250,0.35)'
+    : isWeak         ? 'rgba(245,158,11,0.40)'
+    : superseded     ? 'rgba(239,68,68,0.30)'
+    : isTopPick      ? 'rgba(212,175,55,0.45)'
+    : 'rgba(16,185,129,0.20)';
+
   return (
     <div style={{
       borderRadius: '12px', overflow: 'hidden', position: 'relative',
-      opacity: isCancelled ? 0.4 : isMuted ? 0.6 : superseded ? 0.55 : (isLean || isTrackedGrade) ? 0.65 : 1,
+      opacity: isCancelled ? 0.45 : isMuted ? 0.65 : superseded ? 0.55 : isTrackedGrade ? 0.7 : 1,
       background: superseded
         ? `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`
-        : (isLean || isTrackedGrade)
+        : isTrackedGrade
         ? `linear-gradient(135deg, rgba(96,165,250,0.04) 0%, ${B.card} 30%, ${B.cardAlt} 100%)`
+        : isElite
+        ? `linear-gradient(135deg, rgba(212,175,55,0.07) 0%, ${B.card} 30%, ${B.cardAlt} 100%)`
+        : isLean
+        ? `linear-gradient(135deg, rgba(96,165,250,0.04) 0%, ${B.card} 30%, ${B.cardAlt} 100%)`
+        : isWeak
+        ? `linear-gradient(135deg, rgba(245,158,11,0.04) 0%, ${B.card} 30%, ${B.cardAlt} 100%)`
         : isTopPick && !isMuted && !isCancelled
         ? `linear-gradient(135deg, rgba(212,175,55,0.06) 0%, ${B.card} 30%, ${B.cardAlt} 100%)`
         : `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
-      border: isCancelled
-        ? '1px solid rgba(239,68,68,0.4)'
-        : isMuted
-        ? '1px solid rgba(245,158,11,0.35)'
-        : superseded
-        ? `1px solid rgba(239,68,68,0.3)`
-        : (isLean || isTrackedGrade)
-        ? '1px solid rgba(96,165,250,0.30)'
-        : isSuperTopPick
-        ? '1px solid rgba(212,175,55,0.6)'
-        : isTopPick
-        ? '1px solid rgba(212,175,55,0.45)'
-        : `1px solid ${isGraded ? (isWin ? 'rgba(16,185,129,0.2)' : isLoss ? 'rgba(239,68,68,0.2)' : B.border) : 'rgba(16,185,129,0.18)'}`,
-      boxShadow: isCancelled || isMuted || superseded || isLean || isTrackedGrade ? 'none'
+      border: `1px solid ${tierSpineSoft}`,
+      boxShadow: isCancelled || isMuted || superseded || isTrackedGrade ? 'none'
+        : isElite
+        ? '0 0 24px rgba(212,175,55,0.22), 0 0 48px rgba(212,175,55,0.08)'
         : isSuperTopPick
         ? '0 0 24px rgba(212,175,55,0.18), 0 0 48px rgba(212,175,55,0.06)'
         : isTopPick
         ? '0 0 20px rgba(212,175,55,0.12), 0 0 40px rgba(212,175,55,0.04)'
         : isWin ? '0 0 16px rgba(16,185,129,0.04)' : isLoss ? '0 0 16px rgba(239,68,68,0.04)' : 'none',
     }}>
-      {/* Top accent */}
-      <div style={{ height: '3px', background: isCancelled
-        ? 'linear-gradient(90deg, transparent, #EF4444, #F87171, #EF4444, transparent)'
-        : isMuted
-        ? 'linear-gradient(90deg, transparent, #F59E0B, #FBBF24, #F59E0B, transparent)'
-        : (isLean || isTrackedGrade)
-        ? 'linear-gradient(90deg, transparent, #60A5FA, #93C5FD, #60A5FA, transparent)'
-        : isTopPick
-        ? 'linear-gradient(90deg, transparent, #D4AF37, #F5D060, #D4AF37, transparent)'
-        : `linear-gradient(90deg, transparent, ${accentColor}, transparent)` }} />
+      {/* Left tier-spine — 4px stripe in the AGS-U tier color so the
+          conviction tier is scannable at a glance when the cards are
+          stacked in a list. Replaces the legacy top accent that was
+          easy to miss. */}
+      <div style={{
+        position: 'absolute', top: 0, left: 0, bottom: 0, width: '4px',
+        background: `linear-gradient(180deg, ${tierSpineColor} 0%, ${tierSpineColor} 100%)`,
+        boxShadow: isElite ? `0 0 12px ${tierSpineColor}aa` : 'none',
+        pointerEvents: 'none',
+      }} />
+      {/* Top accent — kept thin (2px) so the left spine reads as the
+          primary tier marker. Color matches the spine. */}
+      <div style={{ height: '2px', background: `linear-gradient(90deg, transparent 0%, ${tierSpineColor} 50%, transparent 100%)`, opacity: 0.55 }} />
 
       {/* ─── Collapsed: compact summary ─── */}
       <div
@@ -4851,70 +4909,66 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                 TRACKED
               </span>
             )}
-            {isLean && !isMuted && !isCancelled && !superseded && (
+            {/* AGS-Unified v9 tier ribbon — the SOLE source of conviction
+                truth in the header. Exactly one tier renders per shipped
+                pick (ELITE/PREMIUM/LOCK/LEAN/WEAK), with tier-color +
+                tier-sized stake label + live AGS-U value inline. Order
+                checked worst→best so the strongest tier wins ties. */}
+            {!isMuted && !isCancelled && !superseded && !isTrackedGrade && (() => {
+              const agsTxt = (agsValue != null && Number.isFinite(agsValue))
+                ? `${agsValue >= 0 ? '+' : ''}${agsValue.toFixed(1)}`
+                : null;
+              const tierSpec = isElite   ? { label: 'ELITE',    stake: '2× STAKE',     color: '#fff',      bg: 'linear-gradient(135deg, #D4AF37 0%, #B8962E 100%)', border: 'rgba(245,208,96,0.6)', glow: '0 0 8px rgba(212,175,55,0.4)', fontWeight: 900, tipBand: '≥ q90 (top decile)' }
+                              : isPremium ? { label: 'PREMIUM',  stake: '1½× STAKE',    color: '#10B981',   bg: 'rgba(16,185,129,0.18)',                              border: 'rgba(16,185,129,0.45)', glow: 'none',                          fontWeight: 800, tipBand: '≥ q80' }
+                              : isLock    ? { label: 'LOCK',     stake: '1× STAKE',     color: '#10B981',   bg: 'rgba(16,185,129,0.10)',                              border: 'rgba(16,185,129,0.30)', glow: 'none',                          fontWeight: 800, tipBand: '≥ q60 (lock floor)' }
+                              : isLean    ? { label: 'LEAN',     stake: '½ STAKE',      color: LEAN_BLUE,   bg: 'rgba(96,165,250,0.14)',                              border: 'rgba(96,165,250,0.40)', glow: 'none',                          fontWeight: 800, tipBand: 'q40–q60' }
+                              : isWeak    ? { label: 'WEAK',     stake: '⅕ STAKE',      color: WEAK_AMBER,  bg: 'rgba(245,158,11,0.14)',                              border: 'rgba(245,158,11,0.40)', glow: 'none',                          fontWeight: 800, tipBand: 'q20–q40 (just above hard mute)' }
+                              : null;
+              if (!tierSpec) return null;
+              return (
+                <span
+                  title={`AGS-U v9 ${tierSpec.label} tier${agsTxt ? ` (AGS-U = ${agsTxt})` : ''} — ${tierSpec.tipBand}. Sizing ladder: ELITE 2.0× · PREMIUM 1.5× · LOCK 1.1× · LEAN 0.5× · WEAK 0.2× · FADE 0.0×.`}
+                  style={{
+                    ...T.micro, fontWeight: tierSpec.fontWeight, letterSpacing: '0.05em',
+                    padding: '0.2rem 0.55rem', borderRadius: '5px',
+                    color: tierSpec.color, background: tierSpec.bg,
+                    border: `1px solid ${tierSpec.border}`,
+                    boxShadow: tierSpec.glow,
+                    display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+                  }}
+                >
+                  <span>{tierSpec.label} · {tierSpec.stake}</span>
+                  {agsTxt && (
+                    <span style={{
+                      ...T.micro, fontWeight: 700, fontSize: '0.5rem',
+                      padding: '0.05rem 0.3rem', borderRadius: '3px',
+                      background: 'rgba(0,0,0,0.25)',
+                      color: tierSpec.color, opacity: 0.95,
+                      fontFeatureSettings: "'tnum'",
+                    }}>
+                      AGS {agsTxt}
+                    </span>
+                  )}
+                </span>
+              );
+            })()}
+            {showDownsize && peakTierFromStars && (
               <span
-                title={`LEAN tier — AGS-U is between q40 (LEAN floor) and q60 (LOCK floor). Ships at 0.50× the base stake under the AGS-U v9 sizing ladder.`}
+                title={`Conviction stepped down: peak ${peakTierFromStars} (${peakStars != null ? peakStars.toFixed(1) : '—'}★) → live ${liveTierForRank} (${stars != null ? stars.toFixed(1) : '—'}★). Live stake follows the AGS-U sizing ladder for the current tier.`}
                 style={{
-                  ...T.micro, fontWeight: 800, letterSpacing: '0.05em',
-                  padding: '0.15rem 0.5rem', borderRadius: '4px',
-                  color: LEAN_BLUE, background: 'rgba(96,165,250,0.12)',
-                  border: '1px solid rgba(96,165,250,0.35)',
+                  // Secondary visual: smaller + lower contrast so the
+                  // AGS-U tier ribbon owns the conviction story. Chip
+                  // fires ONLY on meaningful tier drops (≥2 bands OR
+                  // fell into LEAN/WEAK from a lock tier), never on
+                  // single-band transitions within the top tiers.
+                  ...T.micro, fontWeight: 700, letterSpacing: '0.04em',
+                  padding: '0.1rem 0.4rem', borderRadius: '3px',
+                  color: DOWNSIZE_AMBER, background: 'rgba(212,175,55,0.07)',
+                  border: '1px dashed rgba(212,175,55,0.30)',
+                  opacity: 0.85,
                 }}
               >
-                LEAN · ½ STAKE
-              </span>
-            )}
-            {isWeak && !isMuted && !isCancelled && !superseded && (
-              <span
-                title={`WEAK tier — AGS-U is between q20 (hard mute floor) and q40 (LEAN floor). Ships at 0.20× the base stake under the AGS-U v9 sizing ladder. Just above the hard-mute line — exposure only, not a confident lock.`}
-                style={{
-                  ...T.micro, fontWeight: 800, letterSpacing: '0.05em',
-                  padding: '0.15rem 0.5rem', borderRadius: '4px',
-                  color: WEAK_AMBER, background: 'rgba(245,158,11,0.12)',
-                  border: '1px solid rgba(245,158,11,0.35)',
-                }}
-              >
-                WEAK · ⅕ STAKE
-              </span>
-            )}
-            {isElite && !isMuted && !isCancelled && !superseded && (
-              <span
-                title={`ELITE tier — AGS-U ≥ q90 (top decile). Ships at 2.00× the base stake under the AGS-U v9 sizing ladder.`}
-                style={{
-                  ...T.micro, fontWeight: 900, letterSpacing: '0.05em',
-                  padding: '0.15rem 0.5rem', borderRadius: '4px',
-                  color: '#fff', background: 'linear-gradient(135deg, #D4AF37 0%, #B8962E 100%)',
-                  border: '1px solid rgba(245,208,96,0.6)',
-                  boxShadow: '0 0 8px rgba(212,175,55,0.3)',
-                }}
-              >
-                ELITE · 2× STAKE
-              </span>
-            )}
-            {isPremium && !isMuted && !isCancelled && !superseded && (
-              <span
-                title={`PREMIUM tier — AGS-U ≥ q80. Ships at 1.50× the base stake under the AGS-U v9 sizing ladder.`}
-                style={{
-                  ...T.micro, fontWeight: 800, letterSpacing: '0.05em',
-                  padding: '0.15rem 0.5rem', borderRadius: '4px',
-                  color: B.green, background: B.greenDim,
-                  border: '1px solid rgba(16,185,129,0.35)',
-                }}
-              >
-                PREMIUM · 1½× STAKE
-              </span>
-            )}
-            {showDownsize && (
-              <span
-                title={`Sharps are thinning. Live vault-star ${stars != null ? stars.toFixed(1) : '—'}★ (was ${peakStars != null ? peakStars.toFixed(1) : '—'}★ at peak). Units follow the live Δw/Δq ladder.`}
-                style={{
-                  ...T.micro, fontWeight: 800, letterSpacing: '0.04em',
-                  padding: '0.15rem 0.45rem', borderRadius: '4px',
-                  color: DOWNSIZE_AMBER, background: 'rgba(212,175,55,0.12)',
-                  border: '1px solid rgba(212,175,55,0.35)',
-                }}
-              >
-                DOWNSIZED {peakStars}★→{stars}★
+                ↓ {peakTierFromStars}→{liveTierForRank}
               </span>
             )}
             <span style={{ ...T.body, fontWeight: 700, color: isCancelled ? B.textMuted : B.text, textDecoration: isCancelled ? 'line-through' : 'none' }}>
@@ -4990,9 +5044,13 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
               </span>
             ) : showDownsize ? (
               <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
-                <span style={{ textDecoration: 'line-through', color: B.textMuted }}>{peakUnits}u</span>
-                {' '}<span style={{ color: DOWNSIZE_AMBER, fontWeight: 800 }}>{units}u</span>
+                <span style={{ color: DOWNSIZE_AMBER, fontWeight: 800 }}>{units}u</span>
                 {' '}@ {fmtO(odds)} · {book}
+                {peakTierFromStars && (
+                  <span style={{ marginLeft: '0.4rem', fontSize: '0.55rem', color: DOWNSIZE_AMBER, opacity: 0.85 }}>
+                    ↓ {peakTierFromStars}→{liveTierForRank}
+                  </span>
+                )}
               </span>
             ) : (
               <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
@@ -5404,25 +5462,34 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
               background: isGraded ? (isWin ? 'rgba(16,185,129,0.06)' : isLoss ? 'rgba(239,68,68,0.06)' : 'rgba(255,255,255,0.02)') : 'rgba(16,185,129,0.06)',
               border: `1px solid ${isGraded ? (isWin ? 'rgba(16,185,129,0.15)' : isLoss ? 'rgba(239,68,68,0.15)' : B.borderSubtle) : 'rgba(16,185,129,0.15)'}`,
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexWrap: 'wrap' }}>
                 <span style={{ ...T.micro, color: B.textSec }}>Risk</span>
-                {showDownsize ? (
-                  <>
-                    <span style={{ ...T.micro, fontWeight: 700, color: B.textMuted, fontFeatureSettings: "'tnum'", textDecoration: 'line-through' }}>{peakUnits}u</span>
-                    <span style={{ ...T.micro, fontWeight: 900, color: DOWNSIZE_AMBER, fontFeatureSettings: "'tnum'" }}>→ {units}u</span>
-                  </>
-                ) : (
-                  <>
-                    <span style={{
-                      ...T.micro, fontWeight: 800,
-                      color: (isMuted || isCancelled) && !isGraded ? B.textMuted : B.text,
-                      fontFeatureSettings: "'tnum'",
-                      textDecoration: (isMuted || isCancelled) && !isGraded ? 'line-through' : 'none',
-                    }}>{units}u</span>
-                    {(isMuted || isCancelled) && !isGraded && (
-                      <span style={{ ...T.micro, fontWeight: 900, color: isCancelled ? B.red : '#F59E0B', fontFeatureSettings: "'tnum'" }}>→ 0u</span>
-                    )}
-                  </>
+                {/* Live AGS-U-sized stake — always show the actual live
+                    unit count. Strikethrough/peak-unit comparison was
+                    removed because peak.units carries values from the
+                    pre-AGS-U sizing system (apples-to-oranges). The tier
+                    transition chip below conveys conviction drop. */}
+                <span style={{
+                  ...T.micro, fontWeight: 800,
+                  color: (isMuted || isCancelled) && !isGraded ? B.textMuted : B.text,
+                  fontFeatureSettings: "'tnum'",
+                  textDecoration: (isMuted || isCancelled) && !isGraded ? 'line-through' : 'none',
+                }}>{units}u</span>
+                {(isMuted || isCancelled) && !isGraded && (
+                  <span style={{ ...T.micro, fontWeight: 900, color: isCancelled ? B.red : '#F59E0B', fontFeatureSettings: "'tnum'" }}>→ 0u</span>
+                )}
+                {showDownsize && peakTierFromStars && (
+                  <span
+                    title={`Conviction stepped down from ${peakTierFromStars} (peak) to ${liveTierForRank} (live). The live stake follows the AGS-U sizing ladder for the current tier.`}
+                    style={{
+                      ...T.micro, fontWeight: 700, letterSpacing: '0.04em',
+                      padding: '0.05rem 0.35rem', borderRadius: '3px',
+                      color: DOWNSIZE_AMBER, background: 'rgba(212,175,55,0.08)',
+                      border: '1px dashed rgba(212,175,55,0.35)',
+                    }}
+                  >
+                    {peakTierFromStars} → {liveTierForRank}
+                  </span>
                 )}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
@@ -11153,6 +11220,19 @@ export default function SharpFlow() {
                           : sd.result?.outcome === 'LOSS' ? (
                               Number.isFinite(sd.result?.profit) ? sd.result.profit : -(finalUnits)
                             ) : 0;
+                        // AGS-U v9 tier resolution chain — every shipped
+                        // pick MUST resolve to a tier badge for the user.
+                        //   1) sizing.liveTier — computed live from
+                        //      sd.v8_ags + calibration in computeLiveSizing
+                        //   2) sd.v8_lockTier — last value stamped by the
+                        //      cron (used when live AGS-U is missing because
+                        //      the cron hasn't run for this side yet or the
+                        //      proven-wallet floor is short)
+                        //   3) null — only when both above are missing AND
+                        //      the pick is graded. Live picks should always
+                        //      get a tier via (1) or (2).
+                        const resolvedTier = liveTier
+                          ?? (typeof sd.v8_lockTier === 'string' ? sd.v8_lockTier : null);
                         allLockedArr.push({
                           key: `${docId}:${sideKey}`,
                           team: sd.team || sideKey,
@@ -11164,7 +11244,7 @@ export default function SharpFlow() {
                           units: displayUnits,
                           peakUnits,
                           isDownsized: sizing.isDownsized,
-                          lockTier: liveTier,
+                          lockTier: resolvedTier,
                           odds: cardOdds,
                           // Default to 'Pinnacle' when neither peak nor lock
                           // book is set — closingOdds is from Pinnacle, so
