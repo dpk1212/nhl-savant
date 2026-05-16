@@ -4827,6 +4827,15 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
     : isWeak         ? 'rgba(245,158,11,0.40)'
     : superseded     ? 'rgba(239,68,68,0.30)'
     : isTopPick      ? 'rgba(212,175,55,0.45)'
+    // Graded picks: border tints with the outcome so a stack of
+    // resolved cards reads at a glance — wins glow green, losses
+    // glow red. Pushes downstream from the default "always faint
+    // green" border that was making graded LOSS picks look identical
+    // to graded WIN picks (and made the whole tab feel "muted" vs
+    // the live tab).
+    : isGraded && isWin  ? 'rgba(16,185,129,0.30)'
+    : isGraded && isLoss ? 'rgba(239,68,68,0.30)'
+    : isGraded           ? 'rgba(212,175,55,0.25)'
     : 'rgba(16,185,129,0.20)';
 
   return (
@@ -4843,6 +4852,14 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
         ? `linear-gradient(135deg, rgba(96,165,250,0.04) 0%, ${B.card} 30%, ${B.cardAlt} 100%)`
         : isWeak
         ? `linear-gradient(135deg, rgba(245,158,11,0.04) 0%, ${B.card} 30%, ${B.cardAlt} 100%)`
+        // Graded picks get a very faint outcome wash — wins drift
+        // green, losses drift red — so the Yesterday tab reads with
+        // the same visual richness as the Live tab instead of all
+        // cards looking identical and "muted".
+        : isGraded && isWin
+        ? `linear-gradient(135deg, rgba(16,185,129,0.05) 0%, ${B.card} 35%, ${B.cardAlt} 100%)`
+        : isGraded && isLoss
+        ? `linear-gradient(135deg, rgba(239,68,68,0.04) 0%, ${B.card} 35%, ${B.cardAlt} 100%)`
         : isTopPick && !isMuted && !isCancelled
         ? `linear-gradient(135deg, rgba(212,175,55,0.06) 0%, ${B.card} 30%, ${B.cardAlt} 100%)`
         : `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
@@ -4910,30 +4927,39 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
               </span>
             )}
             {/* AGS-Unified v9 tier ribbon — the SOLE source of conviction
-                truth in the header. Exactly one tier renders per shipped
-                pick (ELITE/PREMIUM/LOCK/LEAN/WEAK), with tier-color +
-                tier-sized stake label + live AGS-U value inline. Order
-                checked worst→best so the strongest tier wins ties. */}
+                truth in the header. Drives directly from `lockTier` (not
+                the gated isElite/isPremium/etc flags) so GRADED picks
+                also retain their tier identity badge on the Yesterday
+                tab — knowing "this was a PREMIUM win" or "this was a
+                LEAN loss" is critical for retrospective analysis.
+                Suppressed only when the pick is genuinely off-state:
+                muted, cancelled, superseded by a reflip, or tracked-only
+                (LEAN-style 0u tracking grades render TRACKED instead).
+                For graded picks, the ribbon is slightly desaturated so
+                the WIN/LOSS outcome chip remains the dominant signal. */}
             {!isMuted && !isCancelled && !superseded && !isTrackedGrade && (() => {
               const agsTxt = (agsValue != null && Number.isFinite(agsValue))
                 ? `${agsValue >= 0 ? '+' : ''}${agsValue.toFixed(1)}`
                 : null;
-              const tierSpec = isElite   ? { label: 'ELITE',    stake: '2× STAKE',     color: '#fff',      bg: 'linear-gradient(135deg, #D4AF37 0%, #B8962E 100%)', border: 'rgba(245,208,96,0.6)', glow: '0 0 8px rgba(212,175,55,0.4)', fontWeight: 900, tipBand: '≥ q90 (top decile)' }
-                              : isPremium ? { label: 'PREMIUM',  stake: '1½× STAKE',    color: '#10B981',   bg: 'rgba(16,185,129,0.18)',                              border: 'rgba(16,185,129,0.45)', glow: 'none',                          fontWeight: 800, tipBand: '≥ q80' }
-                              : isLock    ? { label: 'LOCK',     stake: '1× STAKE',     color: '#10B981',   bg: 'rgba(16,185,129,0.10)',                              border: 'rgba(16,185,129,0.30)', glow: 'none',                          fontWeight: 800, tipBand: '≥ q60 (lock floor)' }
-                              : isLean    ? { label: 'LEAN',     stake: '½ STAKE',      color: LEAN_BLUE,   bg: 'rgba(96,165,250,0.14)',                              border: 'rgba(96,165,250,0.40)', glow: 'none',                          fontWeight: 800, tipBand: 'q40–q60' }
-                              : isWeak    ? { label: 'WEAK',     stake: '⅕ STAKE',      color: WEAK_AMBER,  bg: 'rgba(245,158,11,0.14)',                              border: 'rgba(245,158,11,0.40)', glow: 'none',                          fontWeight: 800, tipBand: 'q20–q40 (just above hard mute)' }
+              const tierSpec = lockTier === 'ELITE'   ? { label: 'ELITE',    stake: '2× STAKE',     color: '#fff',      bg: 'linear-gradient(135deg, #D4AF37 0%, #B8962E 100%)', border: 'rgba(245,208,96,0.6)', glow: '0 0 8px rgba(212,175,55,0.4)', fontWeight: 900, tipBand: '≥ q90 (top decile)' }
+                              : lockTier === 'PREMIUM' ? { label: 'PREMIUM',  stake: '1½× STAKE',    color: '#10B981',   bg: 'rgba(16,185,129,0.18)',                              border: 'rgba(16,185,129,0.45)', glow: 'none',                          fontWeight: 800, tipBand: '≥ q80' }
+                              : lockTier === 'LOCK'    ? { label: 'LOCK',     stake: '1× STAKE',     color: '#10B981',   bg: 'rgba(16,185,129,0.10)',                              border: 'rgba(16,185,129,0.30)', glow: 'none',                          fontWeight: 800, tipBand: '≥ q60 (lock floor)' }
+                              : lockTier === 'LEAN'    ? { label: 'LEAN',     stake: '½ STAKE',      color: LEAN_BLUE,   bg: 'rgba(96,165,250,0.14)',                              border: 'rgba(96,165,250,0.40)', glow: 'none',                          fontWeight: 800, tipBand: 'q40–q60' }
+                              : lockTier === 'WEAK'    ? { label: 'WEAK',     stake: '⅕ STAKE',      color: WEAK_AMBER,  bg: 'rgba(245,158,11,0.14)',                              border: 'rgba(245,158,11,0.40)', glow: 'none',                          fontWeight: 800, tipBand: 'q20–q40 (just above hard mute)' }
                               : null;
               if (!tierSpec) return null;
+              const ribbonOpacity = isGraded ? 0.78 : 1;
+              const ribbonGlow = isGraded ? 'none' : tierSpec.glow;
               return (
                 <span
-                  title={`AGS-U v9 ${tierSpec.label} tier${agsTxt ? ` (AGS-U = ${agsTxt})` : ''} — ${tierSpec.tipBand}. Sizing ladder: ELITE 2.0× · PREMIUM 1.5× · LOCK 1.1× · LEAN 0.5× · WEAK 0.2× · FADE 0.0×.`}
+                  title={`AGS-U v9 ${tierSpec.label} tier${agsTxt ? ` (AGS-U = ${agsTxt})` : ''} — ${tierSpec.tipBand}.${isGraded ? ' Outcome already graded.' : ''} Sizing ladder: ELITE 2.0× · PREMIUM 1.5× · LOCK 1.1× · LEAN 0.5× · WEAK 0.2× · FADE 0.0×.`}
                   style={{
                     ...T.micro, fontWeight: tierSpec.fontWeight, letterSpacing: '0.05em',
                     padding: '0.2rem 0.55rem', borderRadius: '5px',
                     color: tierSpec.color, background: tierSpec.bg,
                     border: `1px solid ${tierSpec.border}`,
-                    boxShadow: tierSpec.glow,
+                    boxShadow: ribbonGlow,
+                    opacity: ribbonOpacity,
                     display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
                   }}
                 >
