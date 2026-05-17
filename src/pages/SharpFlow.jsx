@@ -11891,7 +11891,7 @@ export default function SharpFlow() {
                                   <span style={{
                                     ...T.micro, fontWeight: 700, fontSize: '0.55rem', letterSpacing: '0.04em',
                                     padding: '0.2rem 0.5rem', borderRadius: '4px',
-                                    color: LEAN_BLUE, background: 'rgba(96,165,250,0.08)',
+                                    color: '#60A5FA', background: 'rgba(96,165,250,0.08)',
                                     border: '1px solid rgba(96,165,250,0.25)',
                                   }}>
                                     + {tierTotals.tracked} TRACKED-ONLY
@@ -12024,7 +12024,7 @@ export default function SharpFlow() {
                                           <span style={{
                                             ...T.micro, fontWeight: 700, fontSize: '0.5rem', letterSpacing: '0.05em',
                                             padding: '0.1rem 0.3rem', borderRadius: '3px',
-                                            color: LEAN_BLUE, background: 'rgba(96,165,250,0.08)',
+                                            color: '#60A5FA', background: 'rgba(96,165,250,0.08)',
                                           }}>
                                             +{tracked} TRK
                                           </span>
