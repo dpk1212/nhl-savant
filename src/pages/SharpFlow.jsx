@@ -1634,14 +1634,26 @@ function stampWalletConsensus(target, v8Scoring, sideKey, sport, baseStars, prom
 
     // AGS-Unified v9 — hard mute stamp. Fires when AGS-U is in the FADE
     // tier (< q20) with enough proven wallets to trust the signal.
-    // Cleared when not firing so stale gate stamps don't linger.
+    // Cleared (null, NOT deleteField) when not firing so stale gate
+    // stamps don't linger AND so this stamp can ride along on the
+    // create-path setDoc() call. Previously this used deleteField(),
+    // which Firestore rejects on a non-merge setDoc() with:
+    //   "Function setDoc() called with invalid data. deleteField()
+    //    cannot be used with set() unless you pass {merge:true}".
+    // That single sentinel was silently killing EVERY first-time
+    // pick write for the day — buildSideData → stampWalletConsensus
+    // → setDoc(ref, {...sideData}) — so any new card that crossed
+    // threshold during a session never reached sharpFlowPicks /
+    // sharpFlowSpreads / sharpFlowTotals. Downstream readers all
+    // already treat falsy mutedBy as "not muted" (`if (mutedBy)`),
+    // so swapping to explicit null is behavior-compatible.
     const agsHardMuted = stampAgsProvenTotal >= AGS_MIN_PROVEN_WALLETS
       && Number.isFinite(stampAgsValue)
       && meetsAgsHardMute(stampAgsValue, getAgsCalibration());
     if (agsHardMuted) {
       target.mutedBy = 'ags-hard-mute';
     } else {
-      target.mutedBy = deleteField();
+      target.mutedBy = null;
     }
     // Overwrite the v8_walletConsensusMuteTriggered stamp with the
     // AGS-U-canonical mute state so downstream drift detection +
