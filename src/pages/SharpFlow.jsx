@@ -4739,18 +4739,38 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   // builder so the rule can OR across lock + peak snapshots.
   const isTopPick = !!isTopPickPre;
   const isSuperTopPick = !!isSuperTopPickPre;
-  // AGS-Unified v9 — star → label map mirroring rateStarsV8.
-  // 1★ FADE tier intentionally falls through to "HARD MUTE" so the card
-  // never reads as a normal "SOLID PLAY" when the pick is below q20.
-  const starLabels = {
+  // ── UNIFIED TIER LANGUAGE ──────────────────────────────────────────
+  // The right-side rating chip, the top-left AGS pill, and the page-
+  // level AGS-U Tier Scorecard all speak the same vocabulary so the
+  // user can group picks by tier at a glance. When the cron has
+  // stamped a v8_agsTier we use it VERBATIM — same label, same color,
+  // same star count as the scorecard tile. Legacy star-bucket labels
+  // (PREMIUM PLAY / SOLID PLAY / TRACKING / etc.) are only used as a
+  // pre-cutover fallback for docs the v9 cron never re-stamped.
+  const tierMetaForCard = (agsTier && AGS_TIER_META[agsTier]) ? AGS_TIER_META[agsTier] : null;
+  const legacyStarLabels = {
     5: 'ELITE PLAY', 4.5: 'PREMIUM PLAY',
     4: 'STRONG PLAY', 3.5: 'STRONG PLAY',
     3: 'SOLID PLAY', 2.5: 'TRACKING',
     2: 'TRACKING', 1.5: 'DEVELOPING',
     1: 'HARD MUTE',
   };
-  const starLabel = starLabels[stars] || (stars >= 3 ? 'SOLID PLAY' : 'HARD MUTE');
-  const starColor = stars >= 4 ? B.green : stars >= 3 ? B.gold : stars >= 2 ? B.gold : B.red;
+  const starLabel = tierMetaForCard
+    ? tierMetaForCard.label
+    : (legacyStarLabels[stars] || (stars >= 3 ? 'SOLID PLAY' : 'HARD MUTE'));
+  const starColor = tierMetaForCard
+    ? tierMetaForCard.color
+    : (stars >= 4 ? B.green : stars >= 3 ? B.gold : stars >= 2 ? B.gold : B.red);
+  const starChipBg = tierMetaForCard
+    ? tierMetaForCard.bg
+    : (stars >= 4 ? B.greenDim : B.goldDim);
+  const starChipBorder = tierMetaForCard
+    ? `${tierMetaForCard.color}55`
+    : (stars >= 4 ? 'rgba(16,185,129,0.2)' : B.goldBorder);
+  // Display stars are tier-derived when a tier is present so the
+  // icons can't visually disagree with the label (a PREMIUM tier
+  // always shows ★★★★½, never four ★ with "PREMIUM" text).
+  const displayStars = tierMetaForCard ? starsFromAgsuTier(agsTier) : stars;
   const isGraded = status === 'COMPLETED' && outcome;
   const isWin = outcome === 'WIN';
   const isLoss = outcome === 'LOSS';
@@ -4917,16 +4937,18 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
 
   // AGS-Unified v9 tier-color spine. Single source of truth for the
   // tier-color stripe on the left edge of the card AND the top accent
-  // bar. Worst→best order so the most severe state wins ties.
+  // bar. Colors pull DIRECTLY from AGS_TIER_META so the card spine,
+  // the top-left tier ribbon, the right-side rating chip, AND the
+  // page-level AGS-U Tier Scorecard all share one palette. Previously
+  // a LEAN card had a blue spine while the LEAN scorecard tile was
+  // yellow — same tier, different colors, broke visual grouping.
+  // Worst→best order so the most severe state wins ties.
+  const spineTierMeta = AGS_TIER_META[lockTier] || null;
   const tierSpineColor =
       isCancelled    ? '#EF4444'
     : isMuted        ? '#F59E0B'
     : isTrackedGrade ? LEAN_BLUE
-    : isElite        ? ELITE_GOLD
-    : isPremium      ? B.green
-    : isLock         ? B.green
-    : isLean         ? LEAN_BLUE
-    : isWeak         ? WEAK_AMBER
+    : spineTierMeta  ? spineTierMeta.color
     : superseded     ? '#EF4444'
     : isTopPick      ? '#D4AF37'
     : isGraded ? (isWin ? B.green : isLoss ? '#EF4444' : B.gold)
@@ -4935,11 +4957,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
       isCancelled    ? 'rgba(239,68,68,0.35)'
     : isMuted        ? 'rgba(245,158,11,0.35)'
     : isTrackedGrade ? 'rgba(96,165,250,0.35)'
-    : isElite        ? 'rgba(212,175,55,0.50)'
-    : isPremium      ? 'rgba(16,185,129,0.40)'
-    : isLock         ? 'rgba(16,185,129,0.30)'
-    : isLean         ? 'rgba(96,165,250,0.35)'
-    : isWeak         ? 'rgba(245,158,11,0.40)'
+    : spineTierMeta  ? `${spineTierMeta.color}66`
     : superseded     ? 'rgba(239,68,68,0.30)'
     : isTopPick      ? 'rgba(212,175,55,0.45)'
     // Graded picks: border tints with the outcome so a stack of
@@ -5056,13 +5074,36 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
               const agsTxt = (agsValue != null && Number.isFinite(agsValue))
                 ? `${agsValue >= 0 ? '+' : ''}${agsValue.toFixed(1)}`
                 : null;
-              const tierSpec = lockTier === 'ELITE'   ? { label: 'ELITE',    stake: '2× STAKE',     color: '#fff',      bg: 'linear-gradient(135deg, #D4AF37 0%, #B8962E 100%)', border: 'rgba(245,208,96,0.6)', glow: '0 0 8px rgba(212,175,55,0.4)', fontWeight: 900, tipBand: '≥ q90 (top decile)' }
-                              : lockTier === 'PREMIUM' ? { label: 'PREMIUM',  stake: '1½× STAKE',    color: '#10B981',   bg: 'rgba(16,185,129,0.18)',                              border: 'rgba(16,185,129,0.45)', glow: 'none',                          fontWeight: 800, tipBand: '≥ q80' }
-                              : lockTier === 'LOCK'    ? { label: 'LOCK',     stake: '1× STAKE',     color: '#10B981',   bg: 'rgba(16,185,129,0.10)',                              border: 'rgba(16,185,129,0.30)', glow: 'none',                          fontWeight: 800, tipBand: '≥ q60 (lock floor)' }
-                              : lockTier === 'LEAN'    ? { label: 'LEAN',     stake: '½ STAKE',      color: LEAN_BLUE,   bg: 'rgba(96,165,250,0.14)',                              border: 'rgba(96,165,250,0.40)', glow: 'none',                          fontWeight: 800, tipBand: 'q40–q60' }
-                              : lockTier === 'WEAK'    ? { label: 'WEAK',     stake: '⅕ STAKE',      color: WEAK_AMBER,  bg: 'rgba(245,158,11,0.14)',                              border: 'rgba(245,158,11,0.40)', glow: 'none',                          fontWeight: 800, tipBand: 'q20–q40 (just above hard mute)' }
-                              : null;
-              if (!tierSpec) return null;
+              // Tier ribbon colors are pulled DIRECTLY from AGS_TIER_META
+              // so the ribbon, the right-side rating chip, and the
+              // page-level AGS-U Tier Scorecard all share one color
+              // palette (ELITE dark-green → PREMIUM green → LOCK lime →
+              // LEAN yellow → WEAK orange → FADE red). Previously each
+              // surface had its own ad-hoc color per tier (LEAN was
+              // blue here but yellow in the scorecard) which broke the
+              // visual grouping the user needs to scan picks fast.
+              const tierStakes = {
+                ELITE:   { stake: '2× STAKE',  tipBand: '≥ q90 (top decile)' },
+                PREMIUM: { stake: '1½× STAKE', tipBand: '≥ q80' },
+                LOCK:    { stake: '1× STAKE',  tipBand: '≥ q60 (lock floor)' },
+                LEAN:    { stake: '½ STAKE',   tipBand: 'q40–q60' },
+                WEAK:    { stake: '⅕ STAKE',   tipBand: 'q20–q40 (just above hard mute)' },
+              };
+              const tierMetaPalette = AGS_TIER_META[lockTier];
+              const tierStakeMeta = tierStakes[lockTier];
+              if (!tierMetaPalette || !tierStakeMeta) return null;
+              const tierSpec = {
+                label:   tierMetaPalette.label,
+                stake:   tierStakeMeta.stake,
+                color:   lockTier === 'ELITE' ? '#fff' : tierMetaPalette.color,
+                bg:      lockTier === 'ELITE'
+                          ? `linear-gradient(135deg, ${tierMetaPalette.color} 0%, ${tierMetaPalette.color}cc 100%)`
+                          : tierMetaPalette.bg,
+                border:  `${tierMetaPalette.color}80`,
+                glow:    lockTier === 'ELITE' ? `0 0 8px ${tierMetaPalette.color}66` : 'none',
+                fontWeight: lockTier === 'ELITE' ? 900 : 800,
+                tipBand: tierStakeMeta.tipBand,
+              };
               const ribbonOpacity = isGraded ? 0.78 : 1;
               const ribbonGlow = isGraded ? 'none' : tierSpec.glow;
               return (
@@ -5149,13 +5190,13 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
             <span style={{
               ...T.micro, fontWeight: 800, letterSpacing: '0.04em',
               padding: '0.15rem 0.5rem', borderRadius: '5px',
-              color: starColor, background: stars >= 4 ? B.greenDim : B.goldDim,
-              border: `1px solid ${stars >= 4 ? 'rgba(16,185,129,0.2)' : B.goldBorder}`,
+              color: starColor, background: starChipBg,
+              border: `1px solid ${starChipBorder}`,
               display: 'flex', alignItems: 'center', gap: '0.2rem',
             }}>
               {Array.from({ length: 5 }, (_, i) => {
-                const filled = i + 1 <= Math.floor(stars);
-                const half = !filled && i + 0.5 === stars;
+                const filled = i + 1 <= Math.floor(displayStars);
+                const half = !filled && i + 0.5 === displayStars;
                 return filled ? <span key={i} style={{ fontSize: '0.5rem', color: starColor, lineHeight: 1 }}>★</span>
                   : half ? <span key={i} style={{ position: 'relative', display: 'inline-block', fontSize: '0.5rem', lineHeight: 1, width: '0.5rem' }}><span style={{ color: 'rgba(255,255,255,0.15)' }}>★</span><span style={{ position: 'absolute', left: 0, top: 0, overflow: 'hidden', width: '50%', color: starColor }}>★</span></span>
                   : <span key={i} style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.15)', lineHeight: 1 }}>★</span>;
