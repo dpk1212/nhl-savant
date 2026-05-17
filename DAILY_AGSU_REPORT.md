@@ -1,6 +1,6 @@
 # AGS-Unified v9 — Daily Monitoring Report
 
-**Generated:** Sunday, May 17, 2026 at 8:21 AM ET
+**Generated:** Sunday, May 17, 2026 at 8:27 AM ET
 **AGS-U Cutover:** 2026-05-14  ·  **Days Live:** 3  ·  **Report Window:** cutover → 2026-05-17
 
 > Single source of truth for AGS-Unified v9 — replaces v6/v7/v8 dailies. Reads the FINAL state every graded side shipped at; never re-bets the past against today's calibration.
