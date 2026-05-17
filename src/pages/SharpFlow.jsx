@@ -2477,11 +2477,12 @@ function estimateStarsFromSnap(snap) {
 
 async function loadAllTimePnL() {
   try {
-    // v15 — pick projection now also carries v8_agsTier and the result
-    // bundle includes a per-AGS-U-tier breakdown (`byAgsTier`) windowed
-    // to picks on/after AGS_U_CUTOVER so the locked picks page can
-    // surface a calibration scorecard at the top of the list.
-    const cacheKey = 'sharpFlow_pnl_v15';
+    // v16 — byAgsTier tracks pendingPicks separately so the headline N
+    // on each tier tile equals W+L+P (graded count). Previously N
+    // counted all shipped picks including pending, which read as a
+    // math error to users ("3 (1-0)" looks like 3 ≠ 1+0). Pending
+    // and tracked counts now surface as their own contextual chips.
+    const cacheKey = 'sharpFlow_pnl_v16';
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
       const { data, ts } = JSON.parse(cached);
@@ -2509,8 +2510,13 @@ async function loadAllTimePnL() {
     // tracked LEAN's) into a parallel record-keeping bucket so the
     // headline numbers stay clean but volume is visible.
     const emptyTierBucket = () => ({
+      // Graded counts (W+L+P). `totalPicks` stays as the "all shipped
+      // live" sum (graded + pending) for back-compat, but the UI now
+      // reads `wins+losses+pushes` for the headline N so the record
+      // can never visually disagree with the count.
       wins: 0, losses: 0, pushes: 0, totalProfit: 0, totalUnits: 0,
-      totalPicks: 0, trackedPicks: 0, trackedWins: 0, trackedLosses: 0,
+      totalPicks: 0, pendingPicks: 0,
+      trackedPicks: 0, trackedWins: 0, trackedLosses: 0,
     });
     const byAgsTier = {
       ELITE:   emptyTierBucket(),
@@ -2585,6 +2591,10 @@ async function loadAllTimePnL() {
                   if (outcome === 'WIN')      tierBucket.trackedWins++;
                   else if (outcome === 'LOSS') tierBucket.trackedLosses++;
                 }
+              } else if (shippedLive) {
+                // Pending / not yet graded — kept separate so the
+                // headline tier record is always pure W-L-P arithmetic.
+                tierBucket.pendingPicks++;
               }
             }
           }
@@ -2656,6 +2666,7 @@ async function loadAllTimePnL() {
 
     for (const v of Object.values(byAgsTier)) {
       v.totalProfit = +v.totalProfit.toFixed(2);
+      v.gradedPicks = v.wins + v.losses + v.pushes;
       v.record = `${v.wins}-${v.losses}${v.pushes > 0 ? `-${v.pushes}` : ''}`;
       v.roi = v.totalUnits > 0 ? +((v.totalProfit / v.totalUnits) * 100).toFixed(1) : 0;
       v.trackedRecord = `${v.trackedWins}-${v.trackedLosses}`;
@@ -11748,15 +11759,16 @@ export default function SharpFlow() {
                     const activeSports = Object.keys(sportCounts).sort();
 
                     // ── AGS-U Tier Scorecard (post-cutover) ──────────────
-                    // Renders the live-money record / ROI / PnL bucketed
-                    // by the cron-stamped v8_agsTier so the user can see
-                    // at-a-glance which Q tiers are actually printing.
-                    // Tracked-only plays (FADE / 0u) are surfaced as a
-                    // small "+N tracked" badge so volume is visible
-                    // without polluting the headline ROI. Window starts
-                    // at AGS_U_CUTOVER — anything older was graded
-                    // under a different ladder and would be apples-to-
-                    // oranges.
+                    // Surfaces the cron-graded W-L / ROI / PnL bucketed
+                    // by v8_agsTier on every shipped live pick since
+                    // AGS_U_CUTOVER. Three counters per tier: GRADED
+                    // (W+L+P) drives the headline record + ROI; PENDING
+                    // (shipped live, not yet graded) and TRACKED (0u /
+                    // grader.tracked) surface as their own chips so the
+                    // big number can never visually disagree with the
+                    // record. The card spine, top-left ribbon, and
+                    // right-side rating chip on every lock card down
+                    // the page share this exact palette + vocabulary.
                     const TIER_DEFS = [
                       { key: 'ELITE',   size: '2.0×' },
                       { key: 'PREMIUM', size: '1.5×' },
@@ -11765,94 +11777,268 @@ export default function SharpFlow() {
                       { key: 'WEAK',    size: '0.2×' },
                     ];
                     const tierData = allTimePnL?.byAgsTier || null;
-                    const totalLiveShipped = tierData
-                      ? TIER_DEFS.reduce((s, t) => s + (tierData[t.key]?.totalPicks || 0), 0)
-                      : 0;
-                    const totalLiveProfit = tierData
-                      ? TIER_DEFS.reduce((s, t) => s + (tierData[t.key]?.totalProfit || 0), 0)
-                      : 0;
-                    const totalLiveUnits = tierData
-                      ? TIER_DEFS.reduce((s, t) => s + (tierData[t.key]?.totalUnits || 0), 0)
-                      : 0;
-                    const totalLiveWins = tierData
-                      ? TIER_DEFS.reduce((s, t) => s + (tierData[t.key]?.wins || 0), 0)
-                      : 0;
-                    const totalLiveLosses = tierData
-                      ? TIER_DEFS.reduce((s, t) => s + (tierData[t.key]?.losses || 0), 0)
-                      : 0;
-                    const overallRoi = totalLiveUnits > 0 ? (totalLiveProfit / totalLiveUnits) * 100 : 0;
+                    const tierTotals = tierData ? TIER_DEFS.reduce((acc, t) => {
+                      const b = tierData[t.key] || {};
+                      acc.graded  += (b.wins || 0) + (b.losses || 0) + (b.pushes || 0);
+                      acc.wins    += (b.wins || 0);
+                      acc.losses  += (b.losses || 0);
+                      acc.pushes  += (b.pushes || 0);
+                      acc.pending += (b.pendingPicks || 0);
+                      acc.tracked += (b.trackedPicks || 0);
+                      acc.profit  += (b.totalProfit || 0);
+                      acc.units   += (b.totalUnits || 0);
+                      return acc;
+                    }, { graded: 0, wins: 0, losses: 0, pushes: 0, pending: 0, tracked: 0, profit: 0, units: 0 })
+                      : { graded: 0, wins: 0, losses: 0, pushes: 0, pending: 0, tracked: 0, profit: 0, units: 0 };
+                    const overallRoi = tierTotals.units > 0 ? (tierTotals.profit / tierTotals.units) * 100 : 0;
                     const sinceDate = allTimePnL?.agsTierMeta?.since || AGS_U_CUTOVER;
-                    const showTierScorecard = lockedDay === 'today' && tierData && totalLiveShipped > 0;
+                    const showTierScorecard = lockedDay === 'today' && tierData && (tierTotals.graded > 0 || tierTotals.pending > 0);
+                    const overallProfitColor = tierTotals.profit > 0 ? B.green : tierTotals.profit < 0 ? B.red : B.textSec;
+                    const overallRoiColor    = overallRoi > 0 ? B.green : overallRoi < 0 ? B.red : B.textSec;
 
                     return (
                       <>
                         {showTierScorecard && (
                           <div style={{
-                            padding: '0.75rem 0.875rem',
-                            borderRadius: '8px',
-                            background: 'linear-gradient(135deg, rgba(212,175,55,0.07) 0%, rgba(212,175,55,0.01) 100%)',
+                            padding: '1rem 1.125rem 0.875rem',
+                            borderRadius: '12px',
+                            background: 'linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(15,23,42,0.6) 45%, rgba(15,23,42,0.85) 100%)',
                             border: `1px solid ${B.goldBorder}`,
-                            marginBottom: '0.75rem',
+                            boxShadow: '0 0 32px rgba(212,175,55,0.06), inset 0 1px 0 rgba(255,255,255,0.04)',
+                            marginBottom: '1rem',
+                            position: 'relative',
+                            overflow: 'hidden',
                           }}>
-                            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
-                              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', flexWrap: 'wrap' }}>
-                                <span style={{ ...T.label, fontWeight: 800, color: B.gold, letterSpacing: '0.04em' }}>AGS-U TIER SCORECARD</span>
-                                <span style={{ ...T.micro, color: B.textMuted }}>since {sinceDate} cutover · all sports</span>
+                            {/* Subtle top accent line */}
+                            <div style={{
+                              position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+                              background: 'linear-gradient(90deg, transparent 0%, rgba(212,175,55,0.6) 50%, transparent 100%)',
+                            }} />
+
+                            {/* Header — title + headline metrics */}
+                            <div style={{
+                              display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+                              gap: '1rem', marginBottom: '0.875rem', flexWrap: 'wrap',
+                            }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                  <span style={{
+                                    width: '6px', height: '6px', borderRadius: '50%', background: B.gold,
+                                    boxShadow: `0 0 8px ${B.gold}`,
+                                  }} />
+                                  <span style={{ ...T.label, fontWeight: 900, color: B.gold, letterSpacing: '0.12em', fontSize: '0.7rem' }}>
+                                    AGS-U TIER SCORECARD
+                                  </span>
+                                </div>
+                                <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.58rem', letterSpacing: '0.02em' }}>
+                                  Since {sinceDate} cutover · all sports · all markets
+                                </span>
                               </div>
-                              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.625rem' }}>
-                                <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.05em' }}>OVERALL</span>
-                                <span style={{ ...T.sub, fontWeight: 800, color: B.text, fontFeatureSettings: "'tnum'" }}>
-                                  {totalLiveShipped} <span style={{ color: B.textMuted, fontWeight: 600 }}>({totalLiveWins}-{totalLiveLosses})</span>
-                                </span>
-                                <span style={{ ...T.sub, fontWeight: 900, color: overallRoi >= 0 ? B.green : B.red, fontFeatureSettings: "'tnum'" }}>
-                                  {overallRoi >= 0 ? '+' : ''}{overallRoi.toFixed(1)}% ROI
-                                </span>
-                                <span style={{ ...T.sub, fontWeight: 900, color: totalLiveProfit >= 0 ? B.green : B.red, fontFeatureSettings: "'tnum'" }}>
-                                  {totalLiveProfit >= 0 ? '+' : ''}{totalLiveProfit.toFixed(2)}u
-                                </span>
+                              <div style={{
+                                display: 'flex', alignItems: 'flex-end', gap: '1.25rem',
+                              }}>
+                                {/* Record */}
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.1rem' }}>
+                                  <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.1em', fontSize: '0.55rem' }}>RECORD</span>
+                                  <span style={{
+                                    fontSize: '1.4rem', fontWeight: 900, color: B.text, lineHeight: 1,
+                                    fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                                  }}>
+                                    {tierTotals.wins}-{tierTotals.losses}{tierTotals.pushes > 0 ? `-${tierTotals.pushes}` : ''}
+                                  </span>
+                                </div>
+                                {/* ROI */}
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.1rem' }}>
+                                  <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.1em', fontSize: '0.55rem' }}>ROI</span>
+                                  <span style={{
+                                    fontSize: '1.4rem', fontWeight: 900, color: overallRoiColor, lineHeight: 1,
+                                    fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                                  }}>
+                                    {tierTotals.graded === 0 ? '—' : `${overallRoi >= 0 ? '+' : ''}${overallRoi.toFixed(1)}%`}
+                                  </span>
+                                </div>
+                                {/* PnL */}
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.1rem' }}>
+                                  <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.1em', fontSize: '0.55rem' }}>PROFIT</span>
+                                  <span style={{
+                                    fontSize: '1.4rem', fontWeight: 900, color: overallProfitColor, lineHeight: 1,
+                                    fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                                  }}>
+                                    {tierTotals.graded === 0 ? '—' : `${tierTotals.profit >= 0 ? '+' : ''}${tierTotals.profit.toFixed(2)}u`}
+                                  </span>
+                                </div>
                               </div>
                             </div>
+
+                            {/* Pending / tracked context strip — only renders if either is > 0 */}
+                            {(tierTotals.pending > 0 || tierTotals.tracked > 0) && (
+                              <div style={{
+                                display: 'flex', alignItems: 'center', gap: '0.5rem',
+                                marginBottom: '0.75rem', paddingBottom: '0.625rem',
+                                borderBottom: `1px solid ${B.borderSubtle}`,
+                              }}>
+                                {tierTotals.pending > 0 && (
+                                  <span style={{
+                                    ...T.micro, fontWeight: 700, fontSize: '0.55rem', letterSpacing: '0.04em',
+                                    padding: '0.2rem 0.5rem', borderRadius: '4px',
+                                    color: B.text, background: 'rgba(255,255,255,0.04)',
+                                    border: `1px solid ${B.borderSubtle}`,
+                                  }}>
+                                    + {tierTotals.pending} PENDING
+                                  </span>
+                                )}
+                                {tierTotals.tracked > 0 && (
+                                  <span style={{
+                                    ...T.micro, fontWeight: 700, fontSize: '0.55rem', letterSpacing: '0.04em',
+                                    padding: '0.2rem 0.5rem', borderRadius: '4px',
+                                    color: LEAN_BLUE, background: 'rgba(96,165,250,0.08)',
+                                    border: '1px solid rgba(96,165,250,0.25)',
+                                  }}>
+                                    + {tierTotals.tracked} TRACKED-ONLY
+                                  </span>
+                                )}
+                                <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>
+                                  not included in record / ROI
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Tier tiles */}
                             <div style={{
                               display: 'grid',
                               gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : `repeat(${TIER_DEFS.length}, 1fr)`,
-                              gap: '0.5rem',
+                              gap: '0.625rem',
                             }}>
                               {TIER_DEFS.map(t => {
                                 const b = tierData[t.key] || {};
                                 const tierMeta = AGS_TIER_META[t.key];
-                                const n = b.totalPicks || 0;
-                                const trk = b.trackedPicks || 0;
+                                const wins = b.wins || 0;
+                                const losses = b.losses || 0;
+                                const pushes = b.pushes || 0;
+                                const graded = wins + losses + pushes;
+                                const pending = b.pendingPicks || 0;
+                                const tracked = b.trackedPicks || 0;
                                 const profit = b.totalProfit || 0;
                                 const roi = b.roi || 0;
-                                const isEmpty = n === 0;
+                                const recordTxt = `${wins}-${losses}${pushes > 0 ? `-${pushes}` : ''}`;
+                                const hasGraded = graded > 0;
+                                const hasAnyActivity = graded > 0 || pending > 0 || tracked > 0;
                                 return (
                                   <div key={t.key} style={{
-                                    padding: '0.5rem 0.625rem',
-                                    borderRadius: '6px',
-                                    background: tierMeta.bg,
-                                    border: `1px solid ${tierMeta.color}55`,
-                                    opacity: isEmpty ? 0.4 : 1,
+                                    padding: '0.75rem 0.75rem 0.625rem',
+                                    borderRadius: '8px',
+                                    background: hasAnyActivity
+                                      ? `linear-gradient(180deg, ${tierMeta.bg} 0%, rgba(15,23,42,0.4) 100%)`
+                                      : 'rgba(255,255,255,0.015)',
+                                    border: `1px solid ${hasAnyActivity ? `${tierMeta.color}55` : B.borderSubtle}`,
+                                    boxShadow: hasGraded ? `inset 0 1px 0 ${tierMeta.color}22` : 'none',
+                                    opacity: hasAnyActivity ? 1 : 0.45,
                                     position: 'relative',
+                                    overflow: 'hidden',
                                   }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.25rem', marginBottom: '0.3rem' }}>
-                                      <span style={{ ...T.micro, fontWeight: 900, color: tierMeta.color, fontSize: '0.6rem', letterSpacing: '0.04em' }}>{tierMeta.label}</span>
-                                      <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem', fontWeight: 700 }}>{t.size}</span>
-                                    </div>
-                                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.3rem', lineHeight: 1.1 }}>
-                                      <span style={{ ...T.heading, fontWeight: 900, color: B.text, fontFeatureSettings: "'tnum'" }}>{n}</span>
-                                      <span style={{ ...T.sub, color: B.textSec, fontWeight: 700, fontFeatureSettings: "'tnum'" }}>{isEmpty ? '0-0' : b.record}</span>
-                                    </div>
-                                    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.25rem', marginTop: '0.25rem' }}>
-                                      <span style={{ ...T.micro, fontWeight: 800, color: isEmpty ? B.textMuted : roi >= 0 ? B.green : B.red, fontFeatureSettings: "'tnum'" }}>
-                                        {isEmpty ? '—' : `${roi >= 0 ? '+' : ''}${roi.toFixed(1)}%`}
+                                    {/* Tier accent stripe on the left */}
+                                    {hasAnyActivity && (
+                                      <div style={{
+                                        position: 'absolute', top: 0, bottom: 0, left: 0,
+                                        width: '3px', background: tierMeta.color,
+                                        boxShadow: `0 0 6px ${tierMeta.color}88`,
+                                      }} />
+                                    )}
+
+                                    {/* Tier name + stake */}
+                                    <div style={{
+                                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                      gap: '0.25rem', marginBottom: '0.5rem',
+                                    }}>
+                                      <span style={{
+                                        ...T.micro, fontWeight: 900, color: tierMeta.color,
+                                        fontSize: '0.65rem', letterSpacing: '0.06em',
+                                      }}>
+                                        {tierMeta.label}
                                       </span>
-                                      <span style={{ ...T.micro, fontWeight: 800, color: isEmpty ? B.textMuted : profit >= 0 ? B.green : B.red, fontFeatureSettings: "'tnum'" }}>
-                                        {isEmpty ? '' : `${profit >= 0 ? '+' : ''}${profit.toFixed(2)}u`}
+                                      <span style={{
+                                        ...T.micro, color: B.textMuted, fontSize: '0.55rem', fontWeight: 700,
+                                        padding: '0.1rem 0.3rem', borderRadius: '3px',
+                                        background: 'rgba(0,0,0,0.25)',
+                                      }}>
+                                        {t.size}
                                       </span>
                                     </div>
-                                    {trk > 0 && (
-                                      <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem', marginTop: '0.2rem', fontWeight: 600 }}>
-                                        +{trk} tracked
+
+                                    {/* Big record line — N = W+L+P always */}
+                                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem', lineHeight: 1 }}>
+                                      <span style={{
+                                        fontSize: '1.35rem', fontWeight: 900, color: B.text,
+                                        fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                                      }}>
+                                        {recordTxt}
+                                      </span>
+                                      {graded > 0 && (
+                                        <span style={{
+                                          ...T.micro, color: B.textMuted, fontWeight: 600,
+                                          fontSize: '0.55rem', letterSpacing: '0.04em',
+                                        }}>
+                                          {graded === 1 ? 'GAME' : 'GAMES'}
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    {/* ROI + PnL row */}
+                                    <div style={{
+                                      display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+                                      gap: '0.4rem', marginTop: '0.4rem',
+                                    }}>
+                                      <span style={{
+                                        ...T.sub, fontWeight: 900,
+                                        color: !hasGraded ? B.textMuted : roi > 0 ? B.green : roi < 0 ? B.red : B.textSec,
+                                        fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                                      }}>
+                                        {!hasGraded ? '—' : `${roi >= 0 ? '+' : ''}${roi.toFixed(1)}%`}
+                                      </span>
+                                      <span style={{
+                                        ...T.sub, fontWeight: 800,
+                                        color: !hasGraded ? B.textMuted : profit > 0 ? B.green : profit < 0 ? B.red : B.textSec,
+                                        fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                                      }}>
+                                        {!hasGraded ? '' : `${profit >= 0 ? '+' : ''}${profit.toFixed(2)}u`}
+                                      </span>
+                                    </div>
+
+                                    {/* Pending / tracked chips — only when present */}
+                                    {(pending > 0 || tracked > 0) && (
+                                      <div style={{
+                                        display: 'flex', flexWrap: 'wrap', gap: '0.25rem',
+                                        marginTop: '0.5rem', paddingTop: '0.4rem',
+                                        borderTop: `1px solid ${tierMeta.color}22`,
+                                      }}>
+                                        {pending > 0 && (
+                                          <span style={{
+                                            ...T.micro, fontWeight: 700, fontSize: '0.5rem', letterSpacing: '0.05em',
+                                            padding: '0.1rem 0.3rem', borderRadius: '3px',
+                                            color: B.textSec, background: 'rgba(255,255,255,0.04)',
+                                          }}>
+                                            +{pending} PEND
+                                          </span>
+                                        )}
+                                        {tracked > 0 && (
+                                          <span style={{
+                                            ...T.micro, fontWeight: 700, fontSize: '0.5rem', letterSpacing: '0.05em',
+                                            padding: '0.1rem 0.3rem', borderRadius: '3px',
+                                            color: LEAN_BLUE, background: 'rgba(96,165,250,0.08)',
+                                          }}>
+                                            +{tracked} TRK
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* Empty state */}
+                                    {!hasAnyActivity && (
+                                      <div style={{
+                                        ...T.micro, color: B.textMuted, fontSize: '0.55rem',
+                                        marginTop: '0.4rem', fontStyle: 'italic',
+                                      }}>
+                                        No picks yet
                                       </div>
                                     )}
                                   </div>
