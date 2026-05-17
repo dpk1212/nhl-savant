@@ -1,0 +1,65 @@
+name: AGS-Unified v9 Daily Report
+
+# Single canonical monitoring artifact for the AGS-U pipeline.
+# Replaces the v6/v7/v8 dailies as the source of truth for sharp-intel
+# performance, calibration, and operational health.
+#
+# Schedule: 8:30am ET every day (12:30 UTC). Tunable below.
+# Manual: trigger from the Actions tab "Run workflow" button — useful
+# when you want a fresh report after a hot-fix or before a slate.
+
+on:
+  workflow_dispatch:  # manual trigger ("Run workflow" button)
+  schedule:
+    - cron: '30 12 * * *'  # 8:30 AM ET (12:30 UTC) daily
+
+permissions:
+  contents: write  # needs write so the report commit can land
+
+jobs:
+  report:
+    name: Generate AGS-U Daily Report
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate AGS-U report
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: |
+          echo "════════════════════════════════════════════════════════════════"
+          echo "  AGS-UNIFIED v9 DAILY REPORT"
+          echo "  Time: $(TZ='America/New_York' date '+%Y-%m-%d %I:%M %p ET')"
+          echo "════════════════════════════════════════════════════════════════"
+          node scripts/dailyAgsUReport.js
+
+      - name: Commit report
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add DAILY_AGSU_REPORT.md
+          git diff --quiet && git diff --staged --quiet || (
+            git commit -m "Auto-update: AGS-U Daily Report [$(TZ='America/New_York' date +'%Y-%m-%d')]" &&
+            git stash --include-untracked &&
+            git pull --rebase origin main &&
+            git stash pop || true &&
+            for i in 1 2 3; do
+              git push && break
+              echo "Push attempt $i failed, retrying..."
+              sleep 2
+              git pull --rebase origin main
+            done
+          )
