@@ -1195,10 +1195,60 @@ function calculateSpreadTotalUnits(_stars, _consensusPenalty = 0, odds = null, _
 // agsuLockTierFromAgs. `isDownsized` fires only when the live AGS-U has
 // genuinely dropped vs the peak-unit baseline, so the UI badge tracks
 // real degradation rather than the legacy multi-route flicker.
+// Star projection from the cron-stamped AGS-U tier. Mirrors agsuStarsFromAgs
+// but takes the tier directly so the UI is invariant to calibration drift
+// between the cron's snapshot and whatever's in the browser cache. The
+// cron stamps the tier with the live Firestore calibration — that's the
+// number we shipped on, the number we sized at, and the number the user
+// sees on the card.
+function starsFromAgsuTier(tier) {
+  if (tier === 'ELITE') return 5.0;
+  if (tier === 'PREMIUM') return 4.5;
+  if (tier === 'LOCK') return 4.0;
+  if (tier === 'LEAN') return 3.0;
+  if (tier === 'WEAK') return 2.5;
+  return 1.0; // FADE / UNKNOWN / null
+}
+
 function computeLiveSizing({ peakStars, peakUnits, marketType, oddsForLadder,
                               liveAgs = null,
                               liveAgsProvenFor = null,
-                              liveAgsProvenAg = null }) {
+                              liveAgsProvenAg = null,
+                              // CRON-FIRST OVERRIDES — when the
+                              // syncPickStateAuthoritative cron has
+                              // stamped an authoritative tier + finalUnits
+                              // on this side, the UI MUST display those
+                              // exact values. They were computed with the
+                              // live Firestore calibration that the
+                              // grader and sizing engine actually use, so
+                              // any client-side recomputation (which can
+                              // run against stale fallback calibration
+                              // during the ~seconds between page mount
+                              // and the agsCalibration/current fetch
+                              // completing) is guaranteed to be a worse
+                              // approximation. Skip the live-derive path
+                              // entirely when these are present.
+                              cronTier = null,
+                              cronUnits = null }) {
+  // CRON-FIRST PATH. If the cron has stamped tier + finalUnits, mirror
+  // them directly. Stars derive from the tier (not from a recompute
+  // against the browser-cached calibration) so a deployed bundle with a
+  // stale AGS_FALLBACK_CALIBRATION never drags a LEAN pick down to WEAK
+  // (today's Cavs/Pistons total bug — calibration q40 drifted from the
+  // hardcoded fallback's +0.20 to Firestore's -0.08, so the UI
+  // recomputation classified ags=-0.027 as WEAK while the cron correctly
+  // stamped it as LEAN).
+  if (cronTier && cronUnits != null && Number.isFinite(cronUnits)) {
+    return {
+      liveStars: starsFromAgsuTier(cronTier),
+      liveUnits: cronUnits,
+      liveTier: cronTier,
+      isDownsized: cronUnits < (peakUnits || 0) && cronUnits > 0,
+      agsTrim: null, // The multiplier is already baked into cronUnits.
+      agsRescue: false,
+    };
+  }
+
   const cal = getAgsCalibration();
   const liveAgsForCalls = Number.isFinite(liveAgs) ? liveAgs : null;
   const agsProvenTotal = (Number(liveAgsProvenFor) || 0) + (Number(liveAgsProvenAg) || 0);
@@ -5752,7 +5802,19 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   );
 });
 
-const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile, onPickSynced, onHealthSynced, isMyPick, onToggleMyPick, canPickGames, gameFlowMap, spreadPositions, totalPositions, originalLockedSide, originalLockStars, originalLockWPS, originalFlipBeatThreshold, originalSpreadLockStars, originalSpreadLockWPS, originalTotalLockStars, originalTotalLockWPS, v8Norm }) {
+const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile, onPickSynced, onHealthSynced, isMyPick, onToggleMyPick, canPickGames, gameFlowMap, spreadPositions, totalPositions, originalLockedSide, originalLockStars, originalLockWPS, originalFlipBeatThreshold, originalSpreadLockStars, originalSpreadLockWPS, originalTotalLockStars, originalTotalLockWPS, v8Norm,
+  // CRON-FIRST OVERRIDES (per market). When the syncPickStateAuthoritative
+  // cron has stamped tier + finalUnits on the synced doc for this game/market,
+  // use those values verbatim instead of the client-side rateStarsV8 +
+  // decideLockStage + calculateSpreadTotalUnits chain. The client recompute
+  // can drift from the cron when the browser-cached AGS calibration is stale,
+  // which produces the "WEAK on lock card vs 5★ LOCK on live card" bug
+  // (Cavs/Pistons total, 2026-05-17). Cron-stamped values are derived from
+  // the live Firestore calibration that the grader and bankroll math use.
+  mlCronTier = null, mlCronUnits = null,
+  spreadCronTier = null, spreadCronUnits = null,
+  totalCronTier = null, totalCronUnits = null,
+}) {
   const [showWallets, setShowWallets] = useState(false);
   const [walletSideFilter, setWalletSideFilter] = useState('all');
   const [showSpreadWallets, setShowSpreadWallets] = useState(false);
@@ -6071,7 +6133,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     && (originalLockedSide === consensusSide
         || lockedSideRef.current === consensusSide);
   const lockType = isLockedInFirestore ? (isGameLive ? 'LIVE' : 'PREGAME') : null;
-  const lockTier = decision?.lockTier || 'MUTED';
+  const lockTierLive = decision?.lockTier || 'MUTED';
   const hcDominant = !!decision?.hcDominant;
   const hcMargin = decision?.hcMargin ?? 0;
   const sumDelta = (decision?.dw ?? 0) + (decision?.dq ?? 0);
@@ -6082,9 +6144,17 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   // just the client-side `isLocked`) so we never claim "Risk 1.5u" for
   // a pick that hasn't actually been stamped to Firestore — otherwise
   // the live card and the locked-picks page would disagree.
-  const units = isLockedInFirestore
-    ? calculateUnits(sr.stars, cGrade.penalty, betOdds, computeRegimeBonus(sr.regime, sr.v8Scoring, consensusSide, gd.sport), lockTier, hcDominant, { pickDate, hcMargin, sum: sumDelta, ags: liveAgsValue })
+  const unitsLive = isLockedInFirestore
+    ? calculateUnits(sr.stars, cGrade.penalty, betOdds, computeRegimeBonus(sr.regime, sr.v8Scoring, consensusSide, gd.sport), lockTierLive, hcDominant, { pickDate, hcMargin, sum: sumDelta, ags: liveAgsValue })
     : 0;
+  // CRON-FIRST: when the cron has stamped tier + finalUnits on the synced
+  // ML doc for this game, use those exactly. Falls back to the live derive
+  // when the cron hasn't stamped yet (pre-lock preview).
+  const lockTier = mlCronTier || lockTierLive;
+  const units = mlCronUnits != null ? mlCronUnits : unitsLive;
+  // Stars derive from the resolved tier so the ★★★ display matches the
+  // tier badge exactly (no LEAN-tier-with-5★ contradictions).
+  const renderedStars = mlCronTier ? starsFromAgsuTier(mlCronTier) : sr.stars;
   const ut = unitTier(units);
   const potentialWin = isLockedInFirestore ? profitFromOdds(betOdds, units) : 0;
 
@@ -6317,16 +6387,22 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const spreadMeetsInvest = (spreadSharpFeatures?.conTotalInvested || 0) >= spreadMinInv;
   const spreadMeetsInvestShadow = (spreadSharpFeatures?.conTotalInvested || 0) >= spreadMinInvShadow;
   const spreadMeetsThreshold = spreadSr && spreadMeetsInvest && spreadSr.stars >= 3.5;
-  const isSpreadLocked = !!spreadSr && spreadTwoFactorFloor && spreadMeetsInvest;
+  const isSpreadLockedRaw = !!spreadSr && spreadTwoFactorFloor && spreadMeetsInvest;
   // V8.6 — SHADOW gate relaxed (mirror of ML).
   const isSpreadShadow = !!spreadSr && spreadMeetsInvestShadow && !spreadTwoFactorFloor && spreadSr.stars >= 1.0;
-  const spreadLockTier = spreadDecision?.lockTier || 'MUTED';
+  const spreadLockTierLive = spreadDecision?.lockTier || 'MUTED';
   const spreadHcDominant = !!spreadDecision?.hcDominant;
   const spreadHcMargin = spreadDecision?.hcMargin ?? 0;
   const spreadSumDelta = (spreadDecision?.dw ?? 0) + (spreadDecision?.dq ?? 0);
-  const spreadUnits = (isSpreadLocked || isSpreadShadow)
-    ? calculateSpreadTotalUnits(spreadSr.stars, 0, spreadBetOdds, computeRegimeBonus(spreadSr.regime, spreadSr.v8Scoring, spreadConsensusSide, gd.sport), spreadLockTier, spreadHcDominant, { pickDate: spreadPickDate, hcMargin: spreadHcMargin, sum: spreadSumDelta })
+  const spreadUnitsLive = (isSpreadLockedRaw || isSpreadShadow)
+    ? calculateSpreadTotalUnits(spreadSr.stars, 0, spreadBetOdds, computeRegimeBonus(spreadSr.regime, spreadSr.v8Scoring, spreadConsensusSide, gd.sport), spreadLockTierLive, spreadHcDominant, { pickDate: spreadPickDate, hcMargin: spreadHcMargin, sum: spreadSumDelta })
     : 0;
+  // CRON-FIRST overrides (see ML / total comments above).
+  const spreadLockTier = spreadCronTier || spreadLockTierLive;
+  const spreadUnits = spreadCronUnits != null ? spreadCronUnits : spreadUnitsLive;
+  const isSpreadLocked = isSpreadLockedRaw
+    || (!!spreadCronTier && spreadCronTier !== 'FADE' && spreadCronTier !== 'UNKNOWN' && (spreadCronUnits ?? 0) > 0);
+  const spreadRenderedStars = spreadCronTier ? starsFromAgsuTier(spreadCronTier) : (spreadSr?.stars ?? 0);
 
   useEffect(() => {
     if ((!isSpreadLocked && !isSpreadShadow) || isGameLive || !commenceTime || !onPickSynced || !spreadConsensusSide) return;
@@ -6482,16 +6558,29 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const totalMeetsInvest = (totalSharpFeatures?.conTotalInvested || 0) >= totalMinInv;
   const totalMeetsInvestShadow = (totalSharpFeatures?.conTotalInvested || 0) >= totalMinInvShadow;
   const totalMeetsThreshold = totalSr && totalMeetsInvest && totalSr.stars >= 3.5;
-  const isTotalLocked = !!totalSr && totalTwoFactorFloor && totalMeetsInvest;
+  const isTotalLockedRaw = !!totalSr && totalTwoFactorFloor && totalMeetsInvest;
   // V8.6 — SHADOW gate relaxed (mirror of ML).
   const isTotalShadow = !!totalSr && totalMeetsInvestShadow && !totalTwoFactorFloor && totalSr.stars >= 1.0;
-  const totalLockTier = totalDecision?.lockTier || 'MUTED';
+  const totalLockTierLive = totalDecision?.lockTier || 'MUTED';
   const totalHcDominant = !!totalDecision?.hcDominant;
   const totalHcMargin = totalDecision?.hcMargin ?? 0;
   const totalSumDelta = (totalDecision?.dw ?? 0) + (totalDecision?.dq ?? 0);
-  const totalUnits = (isTotalLocked || isTotalShadow)
-    ? calculateSpreadTotalUnits(totalSr.stars, 0, totalBetOdds, computeRegimeBonus(totalSr.regime, totalSr.v8Scoring, totalConsensusSide, gd.sport), totalLockTier, totalHcDominant, { pickDate: totalPickDate, hcMargin: totalHcMargin, sum: totalSumDelta })
+  const totalUnitsLive = (isTotalLockedRaw || isTotalShadow)
+    ? calculateSpreadTotalUnits(totalSr.stars, 0, totalBetOdds, computeRegimeBonus(totalSr.regime, totalSr.v8Scoring, totalConsensusSide, gd.sport), totalLockTierLive, totalHcDominant, { pickDate: totalPickDate, hcMargin: totalHcMargin, sum: totalSumDelta })
     : 0;
+  // CRON-FIRST: when the cron has stamped tier + finalUnits on the synced
+  // total doc for this game, mirror those values verbatim. Live-derived
+  // values are only used as a pre-lock preview (no synced doc yet) or as
+  // a fallback when the cron hasn't run since the doc was created.
+  const totalLockTier = totalCronTier || totalLockTierLive;
+  const totalUnits = totalCronUnits != null ? totalCronUnits : totalUnitsLive;
+  // A pick is "locked" for display purposes when EITHER the live ladder
+  // says so OR the cron has stamped a non-FADE tier on the synced doc.
+  // The cron's tier is the authoritative shipped-ness signal: anything
+  // non-FADE with finalUnits > 0 was actually promoted.
+  const isTotalLocked = isTotalLockedRaw
+    || (!!totalCronTier && totalCronTier !== 'FADE' && totalCronTier !== 'UNKNOWN' && (totalCronUnits ?? 0) > 0);
+  const totalRenderedStars = totalCronTier ? starsFromAgsuTier(totalCronTier) : (totalSr?.stars ?? 0);
 
   useEffect(() => {
     if ((!isTotalLocked && !isTotalShadow) || isGameLive || !commenceTime || !onPickSynced || !totalConsensusSide) return;
@@ -6651,8 +6740,8 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
             display: 'flex', alignItems: 'center', gap: '0.2rem',
           }}>
             {Array.from({ length: 5 }, (_, i) => {
-              const filled = i + 1 <= Math.floor(sr.stars);
-              const half = !filled && i + 0.5 === sr.stars;
+              const filled = i + 1 <= Math.floor(renderedStars);
+              const half = !filled && i + 0.5 === renderedStars;
               return filled ? (
                 <span key={i} style={{ fontSize: '0.5rem', color: sr.color, lineHeight: 1 }}>★</span>
               ) : half ? (
@@ -7140,9 +7229,16 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
               }}>
                 {(isSpreadLocked || isSpreadShadow) && spreadSr ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.375rem' }}>
-                    <span style={{ fontSize: '1rem' }}>{'★'.repeat(Math.floor(spreadSr.stars))}{spreadSr.stars % 1 ? '½' : ''}</span>
-                    <span style={{ ...T.micro, fontWeight: 700, color: isSpreadLocked && spreadLockTier === 'LEAN' ? '#60A5FA' : isSpreadLocked ? B.green : B.gold }}>
-                      {isSpreadLocked && spreadLockTier === 'LEAN' ? 'SPREAD LEAN' : isSpreadLocked ? 'SPREAD LOCK' : 'SPREAD TRACKING'} — {spreadConsensuTeam} {spreadLine > 0 ? '+' : ''}{spreadLine}
+                    <span style={{ fontSize: '1rem' }}>{'★'.repeat(Math.floor(spreadRenderedStars))}{spreadRenderedStars % 1 ? '½' : ''}</span>
+                    <span style={{ ...T.micro, fontWeight: 700, color:
+                      isSpreadLocked && (spreadLockTier === 'ELITE' || spreadLockTier === 'PREMIUM') ? B.gold
+                      : isSpreadLocked && spreadLockTier === 'LOCK' ? B.green
+                      : isSpreadLocked && spreadLockTier === 'LEAN' ? '#60A5FA'
+                      : isSpreadLocked && spreadLockTier === 'WEAK' ? '#F59E0B'
+                      : isSpreadLocked ? B.green : B.gold }}>
+                      {isSpreadLocked && spreadLockTier && spreadLockTier !== 'MUTED' && spreadLockTier !== 'FADE' && spreadLockTier !== 'UNKNOWN'
+                        ? `SPREAD ${spreadLockTier}`
+                        : isSpreadLocked ? 'SPREAD LOCK' : 'SPREAD TRACKING'} — {spreadConsensuTeam} {spreadLine > 0 ? '+' : ''}{spreadLine}
                     </span>
                     <span style={{ ...T.micro, color: B.textSec, marginLeft: 'auto' }}>
                       {spreadUnits}u @ {fmtOdds(spreadBetOdds)}
@@ -7505,9 +7601,16 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
               }}>
                 {(isTotalLocked || isTotalShadow) && totalSr ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.375rem' }}>
-                    <span style={{ fontSize: '1rem' }}>{'★'.repeat(Math.floor(totalSr.stars))}{totalSr.stars % 1 ? '½' : ''}</span>
-                    <span style={{ ...T.micro, fontWeight: 700, color: isTotalLocked && totalLockTier === 'LEAN' ? '#60A5FA' : isTotalLocked ? B.green : B.gold }}>
-                      {isTotalLocked && totalLockTier === 'LEAN' ? 'TOTAL LEAN' : isTotalLocked ? 'TOTAL LOCK' : 'TOTAL TRACKING'} — {totalConsensusSide === 'over' ? 'Over' : 'Under'} {totalLine}
+                    <span style={{ fontSize: '1rem' }}>{'★'.repeat(Math.floor(totalRenderedStars))}{totalRenderedStars % 1 ? '½' : ''}</span>
+                    <span style={{ ...T.micro, fontWeight: 700, color:
+                      isTotalLocked && (totalLockTier === 'ELITE' || totalLockTier === 'PREMIUM') ? B.gold
+                      : isTotalLocked && totalLockTier === 'LOCK' ? B.green
+                      : isTotalLocked && totalLockTier === 'LEAN' ? '#60A5FA'
+                      : isTotalLocked && totalLockTier === 'WEAK' ? '#F59E0B'
+                      : isTotalLocked ? B.green : B.gold }}>
+                      {isTotalLocked && totalLockTier && totalLockTier !== 'MUTED' && totalLockTier !== 'FADE' && totalLockTier !== 'UNKNOWN'
+                        ? `TOTAL ${totalLockTier}`
+                        : isTotalLocked ? 'TOTAL LOCK' : 'TOTAL TRACKING'} — {totalConsensusSide === 'over' ? 'Over' : 'Under'} {totalLine}
                     </span>
                     <span style={{ ...T.micro, color: B.textSec, marginLeft: 'auto' }}>
                       {totalUnits}u @ {fmtOdds(totalBetOdds)}
@@ -11061,7 +11164,38 @@ export default function SharpFlow() {
                         const gdTotalSideEntry = gdTotalLock ? Object.entries(gdTotalLock.sides || {}).find(([, sd]) => sd.lock && !sd.superseded) : null;
                         const gdTotalLockStars = gdTotalSideEntry?.[1]?.lock?.stars ?? null;
                         const gdTotalLockWPS = gdTotalSideEntry?.[1]?.lock?.v8Scoring?.walletPlayScore ?? null;
-                        return <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} onHealthSynced={onHealthSynced} isMyPick={!!userPicks[gd.key]} onToggleMyPick={onToggleMyPick} canPickGames={!!(user && isPremium)} gameFlowMap={gameFlowMap} spreadPositions={spreadPositions} totalPositions={totalPositions} originalLockedSide={gdOriginalSide} originalLockStars={gdLockStars} originalLockWPS={gdLockWPS} originalFlipBeatThreshold={gdFlipBeatThreshold} originalSpreadLockStars={gdSpreadLockStars} originalSpreadLockWPS={gdSpreadLockWPS} originalTotalLockStars={gdTotalLockStars} originalTotalLockWPS={gdTotalLockWPS} v8Norm={v8Norm} />;
+                        // CRON-FIRST OVERRIDES — the syncPickStateAuthoritative
+                        // cron stamps the authoritative tier + finalUnits on
+                        // every locked side every cycle. The live game card
+                        // does its own AGS-U calculation from raw positions
+                        // (rateStarsV8 → decideLockStage → calculateSpreadTotalUnits)
+                        // which is a parallel reimplementation that can drift
+                        // from the cron when the browser-cached calibration
+                        // is stale. Pass the cron's values down so the card
+                        // can mirror them and only fall back to live derive
+                        // when the cron hasn't stamped yet.
+                        const gdMlCronSide = gdActiveSideEntry?.[1];
+                        const gdMlCronTier = (typeof gdMlCronSide?.v8_agsTier === 'string' && gdMlCronSide.v8_agsTier !== 'UNKNOWN')
+                          ? gdMlCronSide.v8_agsTier
+                          : (typeof gdMlCronSide?.v8_lockTier === 'string' ? gdMlCronSide.v8_lockTier : null);
+                        const gdMlCronUnits = Number.isFinite(gdMlCronSide?.finalUnits) ? gdMlCronSide.finalUnits
+                                            : Number.isFinite(gdMlCronSide?.v8_agsUnitsApplied) ? gdMlCronSide.v8_agsUnitsApplied
+                                            : null;
+                        const gdSpreadCronSide = gdSpreadSideEntry?.[1];
+                        const gdSpreadCronTier = (typeof gdSpreadCronSide?.v8_agsTier === 'string' && gdSpreadCronSide.v8_agsTier !== 'UNKNOWN')
+                          ? gdSpreadCronSide.v8_agsTier
+                          : (typeof gdSpreadCronSide?.v8_lockTier === 'string' ? gdSpreadCronSide.v8_lockTier : null);
+                        const gdSpreadCronUnits = Number.isFinite(gdSpreadCronSide?.finalUnits) ? gdSpreadCronSide.finalUnits
+                                                : Number.isFinite(gdSpreadCronSide?.v8_agsUnitsApplied) ? gdSpreadCronSide.v8_agsUnitsApplied
+                                                : null;
+                        const gdTotalCronSide = gdTotalSideEntry?.[1];
+                        const gdTotalCronTier = (typeof gdTotalCronSide?.v8_agsTier === 'string' && gdTotalCronSide.v8_agsTier !== 'UNKNOWN')
+                          ? gdTotalCronSide.v8_agsTier
+                          : (typeof gdTotalCronSide?.v8_lockTier === 'string' ? gdTotalCronSide.v8_lockTier : null);
+                        const gdTotalCronUnits = Number.isFinite(gdTotalCronSide?.finalUnits) ? gdTotalCronSide.finalUnits
+                                               : Number.isFinite(gdTotalCronSide?.v8_agsUnitsApplied) ? gdTotalCronSide.v8_agsUnitsApplied
+                                               : null;
+                        return <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} onHealthSynced={onHealthSynced} isMyPick={!!userPicks[gd.key]} onToggleMyPick={onToggleMyPick} canPickGames={!!(user && isPremium)} gameFlowMap={gameFlowMap} spreadPositions={spreadPositions} totalPositions={totalPositions} originalLockedSide={gdOriginalSide} originalLockStars={gdLockStars} originalLockWPS={gdLockWPS} originalFlipBeatThreshold={gdFlipBeatThreshold} originalSpreadLockStars={gdSpreadLockStars} originalSpreadLockWPS={gdSpreadLockWPS} originalTotalLockStars={gdTotalLockStars} originalTotalLockWPS={gdTotalLockWPS} v8Norm={v8Norm} mlCronTier={gdMlCronTier} mlCronUnits={gdMlCronUnits} spreadCronTier={gdSpreadCronTier} spreadCronUnits={gdSpreadCronUnits} totalCronTier={gdTotalCronTier} totalCronUnits={gdTotalCronUnits} />;
                       })}
                     </div>
                     {isFreeUser && <SharpFlowPaywall isMobile={isMobile} lockedCount={allPosGames.length > 1 ? allPosGames.length - 1 : 0} pnlData={allTimePnL} />}
@@ -11190,13 +11324,31 @@ export default function SharpFlow() {
                         const gradedDisplayUnits = (Number.isFinite(finalUnits) && finalUnits > 0)
                           ? finalUnits
                           : (Number.isFinite(peakUnits) && peakUnits > 0 ? peakUnits : finalUnits);
+                        // CRON-FIRST sizing. The cron stamps the
+                        // authoritative tier (`v8_agsTier`) and bet size
+                        // (`finalUnits`) every cycle using the live
+                        // Firestore calibration — that IS the sizing
+                        // decision the grader and bankroll math use. The
+                        // UI must mirror it exactly. computeLiveSizing
+                        // now short-circuits to these values when present
+                        // and only falls back to client recomputation
+                        // when the cron hasn't stamped yet (cold start /
+                        // no proven wallets / off-calendar pick).
+                        const cronTier = (typeof sd.v8_agsTier === 'string' && sd.v8_agsTier !== 'UNKNOWN')
+                          ? sd.v8_agsTier
+                          : (typeof sd.v8_lockTier === 'string' ? sd.v8_lockTier : null);
+                        const cronUnits = Number.isFinite(sd.finalUnits) ? sd.finalUnits
+                                        : Number.isFinite(sd.v8_agsUnitsApplied) ? sd.v8_agsUnitsApplied
+                                        : null;
                         const sizing = isGradedSide
-                          ? { liveStars: peakStars, liveUnits: gradedDisplayUnits, isDownsized: false, liveTier: null }
+                          ? { liveStars: peakStars, liveUnits: gradedDisplayUnits, isDownsized: false, liveTier: cronTier }
                           : computeLiveSizing({
                               peakStars,
                               peakUnits,
                               marketType: marketTypeKey,
                               oddsForLadder: cardOdds,
+                              cronTier,
+                              cronUnits,
                               liveDw: sd.v8_walletConsensusDelta ?? null,
                               liveDq: sd.v8_walletConsensusQualityMargin ?? null,
                               // v7.1/v7.2 — thread HC dominance, HC margin
@@ -11214,11 +11366,12 @@ export default function SharpFlow() {
                               // Phase 2 — AGS sizing modifier. Stamped by the
                               // server cron + the client stamper; null on
                               // legacy picks or sides without proven wallets.
+                              // Only consulted by the FALLBACK branch in
+                              // computeLiveSizing when cronTier/cronUnits
+                              // are missing — the cron-first path above
+                              // ignores it because the tier is already
+                              // resolved.
                               liveAgs: Number.isFinite(sd.v8_ags) ? sd.v8_ags : null,
-                              // Phase 3 — proven-wallet counts so the AGS
-                              // rescue tier upgrade in computeLiveSizing can
-                              // gate on the AGS_MIN_PROVEN_WALLETS guard.
-                              // Stamped on the side by the same cron path.
                               liveAgsProvenFor: Number.isFinite(sd.v8_agsProvenForCount) ? sd.v8_agsProvenForCount : null,
                               liveAgsProvenAg: Number.isFinite(sd.v8_agsProvenAgCount) ? sd.v8_agsProvenAgCount : null,
                             });
@@ -11248,17 +11401,21 @@ export default function SharpFlow() {
                             ) : 0;
                         // AGS-U v9 tier resolution chain — every shipped
                         // pick MUST resolve to a tier badge for the user.
-                        //   1) sizing.liveTier — computed live from
-                        //      sd.v8_ags + calibration in computeLiveSizing
-                        //   2) sd.v8_lockTier — last value stamped by the
-                        //      cron (used when live AGS-U is missing because
-                        //      the cron hasn't run for this side yet or the
-                        //      proven-wallet floor is short)
-                        //   3) null — only when both above are missing AND
-                        //      the pick is graded. Live picks should always
-                        //      get a tier via (1) or (2).
-                        const resolvedTier = liveTier
-                          ?? (typeof sd.v8_lockTier === 'string' ? sd.v8_lockTier : null);
+                        // Order of preference (most → least trustworthy):
+                        //   1) cronTier — `sd.v8_agsTier` if present,
+                        //      otherwise `sd.v8_lockTier`. Stamped by the
+                        //      syncPickStateAuthoritative cron every cycle
+                        //      pre-T-15 using the live Firestore
+                        //      calibration. THIS is the tier the grader
+                        //      and bankroll math use.
+                        //   2) sizing.liveTier — fallback client
+                        //      recomputation (cron hasn't stamped yet —
+                        //      cold start / no proven wallets).
+                        //   3) null — only when both are missing AND the
+                        //      pick is graded.
+                        const resolvedTier = cronTier
+                          ?? liveTier
+                          ?? null;
                         allLockedArr.push({
                           key: `${docId}:${sideKey}`,
                           team: sd.team || sideKey,

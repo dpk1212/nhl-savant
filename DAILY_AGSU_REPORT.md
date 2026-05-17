@@ -1,25 +1,30 @@
 # AGS-Unified v9 — Daily Monitoring Report
 
-**Generated:** Sunday, May 17, 2026 at 8:27 AM ET
-**AGS-U Cutover:** 2026-05-14  ·  **Days Live:** 3  ·  **Report Window:** cutover → 2026-05-17
+**Generated:** Sunday, May 17, 2026 at 9:09 AM ET
+**AGS-U cutover:** 2026-05-14 · **Days live:** 3
 
-> Single source of truth for AGS-Unified v9 — replaces v6/v7/v8 dailies. Reads the FINAL state every graded side shipped at; never re-bets the past against today's calibration.
+> **Scope.** Every row in this report comes from picks AGS-U v9 actually promoted (`promotedBy = ags-unified-v9`). Picks promoted by legacy v7/v8 routes are intentionally excluded — they'd contaminate the calibration story. Within the AGS-U pool, each pick is classified as one of two things:
+
+> - **🟢 LIVE SHIPPED** — `finalUnits > 0` (ELITE/PREMIUM/LOCK/LEAN/WEAK). Real money risked, real W-L-PnL.
+> - **⚪ TRACKED** — FADE tier, hard-muted to 0 units. Outcome graded for back-testing only; **excluded from W-L-PnL totals** (matches the dashboard's `loadAllTimePnL` math).
+
+> Headline tables show **LIVE** numbers. Tracked counts are surfaced in §11 and the per-pick table flags every TRACKED row.
 
 ## § 0 — Executive Summary & Alerts
 
 ### Alerts
 - 🟢 **No automated alerts firing.** Headline numbers are in the expected envelope.
 
-### Headline Numbers
+### Headline Numbers — LIVE shipped picks only
 
-| Window     | N    | W-L   | Win %  | ROI       | PnL (u)    | CLV       | Avg Stake | Sharpe-like |
-|------------|------|-------|--------|-----------|------------|-----------|-----------|-------------|
-| Yesterday  |    9 | 4-5 |  44.4% |     -0.9% |      -0.09 |    +1.05% |     1.12u |        0.70 |
-| Last 3 days |   19 | 10-9 |  52.6% |      5.7% |      +1.26 |    +0.19% |     1.17u |        0.05 |
-| Last 7 days |   19 | 10-9 |  52.6% |      5.7% |      +1.26 |    +0.19% |     1.17u |        0.05 |
-| All-time   |   19 | 10-9 |  52.6% |      5.7% |      +1.26 |    +0.19% |     1.17u |        0.05 |
+| Window     | Live N | W-L   | Win %  | ROI       | PnL (u)    | CLV       | Avg Stake | Sharpe-like | Tracked |
+|------------|--------|-------|--------|-----------|------------|-----------|-----------|-------------|---------|
+| Yesterday  |      6 | 4-2 |  66.7% |     14.0% |      +1.41 |    +1.05% |     1.68u |        0.70 | 3 (0-3) |
+| Last 3 days |     14 | 9-5 |  64.3% |     12.4% |      +2.76 |    +0.19% |     1.59u |        0.05 | 5 (1-4) |
+| Last 7 days |     14 | 9-5 |  64.3% |     12.4% |      +2.76 |    +0.19% |     1.59u |        0.05 | 5 (1-4) |
+| All-time   |     14 | 9-5 |  64.3% |     12.4% |      +2.76 |    +0.19% |     1.59u |        0.05 | 5 (1-4) |
 
-> **ROI** = profit / total stake. **Sharpe-like** = per-pick mean unit return ÷ sd × √N — higher = more consistent edge.
+> **Live N / W-L / ROI / PnL** match the dashboard exactly — tracked (FADE, 0u) picks are excluded. **Tracked** column = FADE-tier picks graded for back-testing only. **Sharpe-like** = per-pick mean unit return ÷ sd × √N.
 
 ## § 1 — AGS-U Tier Calibration
 
@@ -33,12 +38,12 @@ The whole point of AGS-U v9 is that higher tiers should win at higher rates AND 
 | PREMIUM  | q80–q90     | 1.50×   |    1 | 1-0    | 100.0% |    110.0% |      +2.75 |     +2.80 |     2.50u |
 | LOCK     | q60–q80     | 1.10×   |    5 | 2-3    |  40.0% |    -36.2% |      -4.00 |     +1.54 |     2.21u |
 | LEAN     | q40–q60     | 0.50×   |    1 | 1-0    | 100.0% |    110.4% |      +1.38 |     +0.50 |     1.25u |
-| WEAK     | q20–q40     | 0.20×   |    7 | 4-3    |  57.1% |     36.8% |      +1.38 |     -1.27 |     0.54u |
-| FADE     | < q20       | 0.00×   |    4 | 1-3    |  25.0% |         — |      -1.50 |     -3.69 |         — |
+| WEAK     | q20–q40     | 0.20×   |    6 | 4-2    |  66.7% |     36.8% |      +1.38 |     -1.27 |     0.63u |
+| FADE     | < q20       | 0.00×   |    0 | 0-0    |      — |         — |      +0.00 |     -3.69 |         — |
 
-**Monotonicity score** (n−1 max, fully ordered ELITE→FADE = -5, fully inverted = 5):
-- Win % across tiers: `-2` 🟡 partial — ladder mostly works but has noise
-- ROI across tiers:   `-1` 🟡 partial
+**Monotonicity score** (n−1 max, fully ordered ELITE→FADE = -4, fully inverted = 4):
+- Win % across tiers: `-1` 🟡 partial — ladder mostly works but has noise
+- ROI across tiers:   `0` 🟡 sizing not amplifying edge
 
 ## § 2 — AGS-U Quintile Calibration
 
@@ -46,13 +51,13 @@ Quintile bucketing of raw AGS-U values (Q5 = highest AGS-U). Independent check o
 
 | Quintile | N    | W-L    | Win %  | ROI       | PnL (u)    | Avg AGS-U | Implied (from odds) |
 |----------|------|--------|--------|-----------|------------|-----------|---------------------|
-| Q1       |    4 | 1-3    |  25.0% |         — |      -1.50 |     -3.69 |               56.5% |
-| Q2       |    7 | 4-3    |  57.1% |     36.8% |      +1.38 |     -1.27 |               49.4% |
+| Q1       |    0 | 0-0    |      — |         — |      +0.00 |     -3.69 |               56.5% |
+| Q2       |    6 | 4-2    |  66.7% |     36.8% |      +1.38 |     -1.27 |               49.4% |
 | Q3       |    1 | 1-0    | 100.0% |    110.4% |      +1.38 |     +0.50 |               44.6% |
 | Q4       |    5 | 2-3    |  40.0% |    -36.2% |      -4.00 |     +1.54 |               51.8% |
 | Q5       |    2 | 2-0    | 100.0% |     64.0% |      +4.00 |     +3.62 |               57.2% |
 
-**Spearman ρ (quintile vs realized win%):** 0.700  ·  monotonicity `2/4`
+**Spearman ρ (quintile vs realized win%):** 0.400  ·  monotonicity `1/3`
 
 ## § 3 — Univariate Feature Analysis
 
@@ -82,8 +87,8 @@ AGS-U is the composite, but HC margin is a single-feature signal we still track 
 | PREMIUM  | —            | —            | 1n 100.0% +110% | 1n 100.0% +110% |
 | LOCK     | 3n 33.3% -55% | 2n 50.0% -15% | —            | 5n 40.0% -36% |
 | LEAN     | —            | 1n 100.0% +110% | —            | 1n 100.0% +110% |
-| WEAK     | 3n 66.7% +110% | 4n 50.0% -61% | —            | 7n 57.1% +37% |
-| FADE     | 3n 33.3% —   | 1n 0.0% —    | —            | 4n 25.0% —   |
+| WEAK     | 2n 100.0% +110% | 4n 50.0% -61% | —            | 6n 66.7% +37% |
+| FADE     | —            | —            | —            | —            |
 
 ### Tier × Sport (all-time)
 
@@ -93,8 +98,8 @@ AGS-U is the composite, but HC margin is a single-feature signal we still track 
 | PREMIUM  | 1n 100.0% +110% | —              | —              | 1n 100.0% +110% |
 | LOCK     | 4n 25.0% -69%  | —              | 1n 100.0% +62% | 5n 40.0% -36%  |
 | LEAN     | 1n 100.0% +110% | —              | —              | 1n 100.0% +110% |
-| WEAK     | 3n 66.7% -38%  | 4n 50.0% +76%  | —              | 7n 57.1% +37%  |
-| FADE     | 2n 0.0% —      | 1n 100.0% —    | 1n 0.0% —      | 4n 25.0% —     |
+| WEAK     | 3n 66.7% -38%  | 3n 66.7% +76%  | —              | 6n 66.7% +37%  |
+| FADE     | —              | —              | —              | 0n — —         |
 
 ### Tier × Odds Band (all-time)
 
@@ -104,8 +109,8 @@ AGS-U is the composite, but HC margin is a single-feature signal we still track 
 | PREMIUM  | —             | —             | —             | 1n 100.0% +110% | —             |
 | LOCK     | —             | 1n 100.0% +57% | 2n 50.0% +1%  | 2n 0.0% -100% | —             |
 | LEAN     | —             | —             | —             | 1n 100.0% +110% | —             |
-| WEAK     | —             | —             | 5n 60.0% +68% | 2n 50.0% -50% | —             |
-| FADE     | —             | 2n 0.0% —     | 2n 50.0% —    | —             | —             |
+| WEAK     | —             | —             | 4n 75.0% +68% | 2n 50.0% -50% | —             |
+| FADE     | —             | —             | —             | —             | —             |
 
 ## § 5 — Calibration Reliability
 
@@ -118,10 +123,10 @@ Slice AGS-U into 6 bands and compare the AVERAGE IMPLIED PROBABILITY (from marke
 | +1.5 to 2.5      |    1 |       100.0% |       53.3% |     +46.7pp |     62.2% |
 | +0.5 to 1.5      |    3 |        33.3% |       53.3% |     -20.0pp |    -55.3% |
 | −0.5 to 0.5      |    3 |        66.7% |       44.0% |     +22.7pp |     39.1% |
-| < −0.5           |    9 |        44.4% |       53.9% |      -9.4pp |     13.8% |
+| < −0.5           |    4 |        75.0% |       53.9% |     +21.1pp |     68.4% |
 
 **Brier score (market-implied):** 0.2496 (lower = better; 0.25 = coin-flip prior).
-**Edge correlation (realized vs implied):** Spearman ρ = -0.086 (positive = bands aligned with market expectation; high positive = AGS-U is largely re-stating the favorite signal).
+**Edge correlation (realized vs implied):** Spearman ρ = 0.314 (positive = bands aligned with market expectation; high positive = AGS-U is largely re-stating the favorite signal).
 
 ## § 6 — Recent Picks (Last 20)
 
@@ -159,8 +164,7 @@ Does the AGS-U sizing ladder (ELITE 2× → WEAK 0.2×) actually capture more ed
 | PREMIUM  |    1 |        2.50 |      +2.75 |    110.0% |      +2.75 |          +1.100 |
 | LOCK     |    5 |       11.05 |      -4.00 |    -36.2% |      -0.80 |          -0.362 |
 | LEAN     |    1 |        1.25 |      +1.38 |    110.4% |      +1.38 |          +1.104 |
-| WEAK     |    7 |        3.75 |      +1.38 |     36.8% |      +0.20 |          +0.368 |
-| FADE     |    4 |        0.00 |      -1.50 |         — |      -0.38 |               — |
+| WEAK     |    6 |        3.75 |      +1.38 |     36.8% |      +0.23 |          +0.368 |
 
 > If **Per-unit Return** is materially higher for ELITE than for WEAK/LEAN, the ladder is justified. If they're within ~5%, the ladder is risking more capital for the same return per dollar.
 
@@ -170,16 +174,18 @@ Below-q20 AGS-U values are SHADOWed (never shipped). We can validate the floor b
 
 **Below-q20 SHADOWed picks that would have graded at a flat 1u stake:**
 
-- N: **27** · Win rate: **59.3%** · Flat-1u PnL: **+0.44u** · ROI: **1.6%**
+- N: **23** · Win rate: **56.5%** · Flat-1u PnL: **-0.70u** · ROI: **-3.0%**
 - Verdict: 🚨 Mute floor may be too aggressive — SHADOWed picks win at ≥52%.
 
 ## § 9 — Daily Trend (cumulative PnL)
 
-| Date       | N   | W-L   | Win %  | Daily PnL  | Cum PnL    | Cum Win % | Bar                  |
-|------------|-----|-------|--------|------------|------------|-----------|----------------------|
-| 2026-05-14 |   1 | 1-0   | 100.0% |      +1.71 |      +1.71 |    100.0% | ████████████████████ |
-| 2026-05-15 |   9 | 5-4   |  55.6% |      -0.36 |      +1.35 |     60.0% | ████████████████     |
-| 2026-05-16 |   9 | 4-5   |  44.4% |      -0.09 |      +1.26 |     52.6% | ███████████████      |
+| Date       | Live | W-L   | Win %  | Daily PnL  | Cum PnL    | Cum Win % | Trk | Bar                  |
+|------------|------|-------|--------|------------|------------|-----------|-----|----------------------|
+| 2026-05-14 |    1 | 1-0   | 100.0% |      +1.71 |      +1.71 |    100.0% |   0 | ████████████         |
+| 2026-05-15 |    7 | 4-3   |  57.1% |      -0.36 |      +1.35 |     62.5% |   2 | ██████████           |
+| 2026-05-16 |    6 | 4-2   |  66.7% |      +1.41 |      +2.76 |     64.3% |   3 | ████████████████████ |
+
+> **Live** = picks AGS-U shipped with units > 0 (matches dashboard). **Trk** = same-day FADE picks (0u, back-test only). Daily PnL and Win % cover Live picks only.
 
 > Bar length is proportional to absolute cumulative PnL. `█` = positive, `▓` = negative.
 
@@ -189,7 +195,7 @@ Below-q20 AGS-U values are SHADOWed (never shipped). We can validate the floor b
 |----------------------------------------------------------------|-------|----------------------------------------------------|
 | Graded picks with `tracked=true` AND `finalUnits > 0`         |     1 | 🚨 grader regression — see betTracking.js |
 | Graded picks with `tracked=true` AND `finalUnits == 0`        |     3 | 🟡 informational only — true tracked plays |
-| Live picks (not graded yet) with `finalUnits > 0`             |     1 | 🟢 picks queued for grading |
+| Live picks (not graded yet) with `finalUnits > 0`             |     3 | 🟢 picks queued for grading |
 | AGS-U promoted picks missing `v8_ags` value                   |     0 | 🟢 every pick has an AGS-U |
 | AGS-U promoted picks missing `agsTier`                        |     0 | 🟢 every pick has a tier |
 | Shipped picks with `provenWalletCount < 2`                    |     0 | 🟢 floor holding |

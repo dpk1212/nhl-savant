@@ -181,32 +181,30 @@ async function loadAllAgsuGradedPicks() {
         const lock = sd.lock || {};
         const peak = sd.peak || lock;
 
-        // Promotion: track FIRST date we ever saw an ags-unified-v9 promotion
-        // (regardless of grade status) so the report knows the cutover.
         if (sd.promotedBy === AGSU_PROMOTION_TAG && data.date && (!cutover || data.date < cutover)) {
           cutover = data.date;
         }
 
-        // For accounting we only include picks that:
-        //   1) are COMPLETED with a WIN/LOSS outcome (skip PUSH for ROI math),
-        //   2) were promoted under AGS-Unified v9 (so we're not mixing legacy
-        //      v7/v8 sizing into the AGS-U calibration story).
         if ((sd.status || data.status) !== 'COMPLETED') continue;
         const res = sd.result || data.result || {};
         if (!res.outcome) continue;
         if (sd.promotedBy !== AGSU_PROMOTION_TAG) continue;
 
         const won = res.outcome === 'WIN' ? 1 : res.outcome === 'LOSS' ? 0 : null;
-        if (won === null) continue; // skip PUSH from W/L math (still in volume count below if needed)
+        if (won === null) continue;
 
-        // CANONICAL bet size — what was actually shipped (grader source of truth).
         const units = sd.finalUnits ?? sd.v8_agsUnitsApplied ?? peak.units ?? lock.units ?? 0;
-        // Grader-stamped profit; fall back to compute when missing.
         const oddsForProfit = peak.odds || lock.odds || 0;
         const computedProfit = won
           ? (oddsForProfit < 0 ? units * (100 / Math.abs(oddsForProfit)) : units * (oddsForProfit / 100))
           : -units;
         const profit = Number.isFinite(res.profit) ? res.profit : computedProfit;
+        // TRACKED = pick was promoted by AGS-U but the live AGS-U evaluation
+        // hard-muted it (FADE tier → 0 units) so no money was at risk. These
+        // picks still get a W/L outcome from the grader for informational
+        // tracking, but they MUST NOT count toward the W-L-PnL headline —
+        // the dashboard's source of truth (`loadAllTimePnL` in SharpFlow.jsx)
+        // excludes them and so do we.
         const tracked = res.tracked === true || units === 0;
 
         const ags = Number.isFinite(sd.v8_ags) ? sd.v8_ags : null;
@@ -236,6 +234,11 @@ async function loadAllAgsuGradedPicks() {
           away: data.away || '',
           home: data.home || '',
           won, profit, units, tracked,
+          // Raw grader flag — used by the executive-summary regression alert.
+          // If `rawTracked === true` but `units > 0`, the grader's old
+          // LEAN-override bug has come back and PnL is being zeroed out
+          // on real bets. See betTracking.js comments.
+          rawTracked: res.tracked === true,
           lockOdds, peakOdds, oddsBand: oddsBand(peakOdds || lockOdds),
           lockStars: lock.stars || 0,
           peakStars: peak.stars || lock.stars || 0,
@@ -259,42 +262,58 @@ async function loadAllAgsuGradedPicks() {
 }
 
 // Aggregator — given an array of pick rows compute the headline stats.
+// Headline aggregator. Mirrors the dashboard's `loadAllTimePnL` math —
+// TRACKED picks (FADE tier, 0 units) are excluded from N / W-L / PnL /
+// ROI so the report's "Yesterday 4-2" matches what the UI shows.
+// Tracked count is returned separately for transparency.
 function aggregate(rows) {
-  const valid = rows.filter(r => Number.isFinite(r.profit));
-  const n = valid.length;
-  const w = valid.filter(r => r.won === 1).length;
-  const l = valid.filter(r => r.won === 0).length;
-  const profit = valid.reduce((s, r) => s + r.profit, 0);
-  const totalStake = valid.reduce((s, r) => s + (r.units || 0), 0);
+  const all = rows.filter(r => Number.isFinite(r.profit));
+  const tracked = all.filter(r => r.tracked);
+  const live = all.filter(r => !r.tracked);
+  const trackedN = tracked.length;
+  const trackedW = tracked.filter(r => r.won === 1).length;
+  const trackedL = tracked.filter(r => r.won === 0).length;
+  const n = live.length;
+  const w = live.filter(r => r.won === 1).length;
+  const l = live.filter(r => r.won === 0).length;
+  const profit = live.reduce((s, r) => s + r.profit, 0);
+  const totalStake = live.reduce((s, r) => s + (r.units || 0), 0);
   const realWinRate = n > 0 ? w / n : null;
   const roi = totalStake > 0 ? (profit / totalStake) * 100 : null;
   const flat = n > 0 ? profit / n : null;
   // CLV-based edge (proxy for true edge over closing line, when available).
-  const clvVals = valid.map(r => r.clv).filter(v => Number.isFinite(v));
+  // Use ALL graded picks (including tracked) for CLV — closing-line drift is
+  // a model-quality signal that doesn't depend on whether we sized the bet.
+  const clvVals = all.map(r => r.clv).filter(v => Number.isFinite(v));
   const avgClv = clvVals.length ? avg(clvVals) * 100 : null;
   // Variance of unit-normalized profit per pick — Sharpe-like signal quality.
-  const perUnitReturns = valid
+  const perUnitReturns = live
     .map(r => (r.units > 0 ? r.profit / r.units : null))
     .filter(v => v !== null);
   const sharpeLike = perUnitReturns.length > 2 && std(perUnitReturns) > 0
     ? (avg(perUnitReturns) / std(perUnitReturns)) * Math.sqrt(perUnitReturns.length)
     : null;
-  return { n, w, l, profit, totalStake, realWinRate, roi, flat, avgClv, sharpeLike };
+  return { n, w, l, profit, totalStake, realWinRate, roi, flat, avgClv, sharpeLike, trackedN, trackedW, trackedL };
 }
 
 // ── Section Builders ────────────────────────────────────────────────────
 
 function buildHeader(report, cutover) {
   const today = etToday();
-  const days = cutover
+  const daysLive = cutover
     ? Math.max(1, Math.floor((new Date(today) - new Date(cutover)) / 86400000))
     : null;
   report.push(`# AGS-Unified v9 — Daily Monitoring Report`);
   report.push('');
   report.push(`**Generated:** ${new Date().toLocaleString('en-US', { timeZone: 'America/New_York', dateStyle: 'full', timeStyle: 'short' })} ET`);
-  report.push(`**AGS-U Cutover:** ${cutover || '—'}  ·  **Days Live:** ${days ?? '—'}  ·  **Report Window:** cutover → ${today}`);
+  report.push(`**AGS-U cutover:** ${cutover || '— (no AGS-U promoted picks found)'} · **Days live:** ${daysLive ?? '—'}`);
   report.push('');
-  report.push(`> Single source of truth for AGS-Unified v9 — replaces v6/v7/v8 dailies. Reads the FINAL state every graded side shipped at; never re-bets the past against today's calibration.`);
+  report.push(`> **Scope.** Every row in this report comes from picks AGS-U v9 actually promoted (\`promotedBy = ags-unified-v9\`). Picks promoted by legacy v7/v8 routes are intentionally excluded — they'd contaminate the calibration story. Within the AGS-U pool, each pick is classified as one of two things:`);
+  report.push('');
+  report.push(`> - **🟢 LIVE SHIPPED** — \`finalUnits > 0\` (ELITE/PREMIUM/LOCK/LEAN/WEAK). Real money risked, real W-L-PnL.`);
+  report.push(`> - **⚪ TRACKED** — FADE tier, hard-muted to 0 units. Outcome graded for back-testing only; **excluded from W-L-PnL totals** (matches the dashboard's \`loadAllTimePnL\` math).`);
+  report.push('');
+  report.push(`> Headline tables show **LIVE** numbers. Tracked counts are surfaced in §11 and the per-pick table flags every TRACKED row.`);
   report.push('');
 }
 
@@ -315,10 +334,12 @@ function buildExecutiveSummary(report, rows, cutover) {
   } else if (last7.roi != null && last7.roi < -10) {
     alerts.push(`🟡 **7-day ROI ${last7.roi.toFixed(1)}%** — cold streak. Check §3 tier monotonicity to confirm it's not structural.`);
   }
-  // Alert: tracked count anomaly
-  const trackedShipped = rows.filter(r => r.tracked && r.units > 0).length;
-  if (trackedShipped > 0) {
-    alerts.push(`🚨 **${trackedShipped} graded picks marked \`tracked\` despite \`finalUnits > 0\`.** Grader regression — should be 0 after the 2026-05-17 betTracking.js LEAN fix. See §13.`);
+  // Alert: grader regression — raw `result.tracked === true` despite units > 0.
+  // This is the legacy LEAN-override bug fixed in betTracking.js on 2026-05-17.
+  // If it reappears, PnL is being zeroed out on real money picks.
+  const graderRegression = rows.filter(r => r.rawTracked && r.units > 0).length;
+  if (graderRegression > 0) {
+    alerts.push(`🚨 **${graderRegression} graded picks have \`result.tracked = true\` despite \`finalUnits > 0\`.** Grader regression — the legacy LEAN-override is back. PnL is being zeroed on real money. See \`functions/src/betTracking.js\`.`);
   }
   // Alert: no recent picks
   if (yest.n === 0 && last3.n === 0) {
@@ -334,18 +355,20 @@ function buildExecutiveSummary(report, rows, cutover) {
   report.push(`### Alerts`);
   for (const a of alerts) report.push(`- ${a}`);
   report.push('');
-  report.push(`### Headline Numbers`);
+  report.push(`### Headline Numbers — LIVE shipped picks only`);
   report.push('');
-  report.push(`| Window     | N    | W-L   | Win %  | ROI       | PnL (u)    | CLV       | Avg Stake | Sharpe-like |`);
-  report.push(`|------------|------|-------|--------|-----------|------------|-----------|-----------|-------------|`);
+  report.push(`| Window     | Live N | W-L   | Win %  | ROI       | PnL (u)    | CLV       | Avg Stake | Sharpe-like | Tracked |`);
+  report.push(`|------------|--------|-------|--------|-----------|------------|-----------|-----------|-------------|---------|`);
   for (const [label, agg] of [['Yesterday', yest], ['Last 3 days', last3], ['Last 7 days', last7], ['All-time', overall]]) {
-    report.push(`| ${label.padEnd(10)} | ${String(agg.n).padStart(4)} | ${agg.w}-${agg.l}`.padEnd(13)
+    const trackedCell = agg.trackedN > 0 ? `${agg.trackedN} (${agg.trackedW}-${agg.trackedL})` : '—';
+    report.push(`| ${label.padEnd(10)} | ${String(agg.n).padStart(6)} | ${agg.w}-${agg.l}`.padEnd(15)
       + ` | ${pct(agg.w, agg.n).padStart(6)} | ${(agg.roi != null ? agg.roi.toFixed(1)+'%' : '—').padStart(9)}`
       + ` | ${fmtSigned(agg.profit).padStart(10)} | ${(agg.avgClv != null ? fmtSigned(agg.avgClv, 2)+'%' : '—').padStart(9)}`
-      + ` | ${(agg.totalStake > 0 ? (agg.totalStake/agg.n).toFixed(2)+'u' : '—').padStart(9)} | ${(agg.sharpeLike != null ? agg.sharpeLike.toFixed(2) : '—').padStart(11)} |`);
+      + ` | ${(agg.totalStake > 0 ? (agg.totalStake/agg.n).toFixed(2)+'u' : '—').padStart(9)} | ${(agg.sharpeLike != null ? agg.sharpeLike.toFixed(2) : '—').padStart(11)}`
+      + ` | ${trackedCell.padStart(7)} |`);
   }
   report.push('');
-  report.push(`> **ROI** = profit / total stake. **Sharpe-like** = per-pick mean unit return ÷ sd × √N — higher = more consistent edge.`);
+  report.push(`> **Live N / W-L / ROI / PnL** match the dashboard exactly — tracked (FADE, 0u) picks are excluded. **Tracked** column = FADE-tier picks graded for back-testing only. **Sharpe-like** = per-pick mean unit return ÷ sd × √N.`);
   report.push('');
 }
 
@@ -636,9 +659,8 @@ function buildDailyTrend(report, rows) {
     return;
   }
   let cumProfit = 0, cumN = 0, cumW = 0;
-  report.push(`| Date       | N   | W-L   | Win %  | Daily PnL  | Cum PnL    | Cum Win % | Bar                  |`);
-  report.push(`|------------|-----|-------|--------|------------|------------|-----------|----------------------|`);
-  // Find max for bar scaling
+  report.push(`| Date       | Live | W-L   | Win %  | Daily PnL  | Cum PnL    | Cum Win % | Trk | Bar                  |`);
+  report.push(`|------------|------|-------|--------|------------|------------|-----------|-----|----------------------|`);
   let runningProfits = [];
   let rolling = 0;
   for (const d of dates) {
@@ -656,10 +678,12 @@ function buildDailyTrend(report, rows) {
     cumW += dayAgg.w;
     const barLen = Math.round((Math.abs(cumProfit) / maxAbs) * barWidth);
     const bar = cumProfit >= 0 ? '█'.repeat(barLen).padEnd(barWidth, ' ') : ' '.repeat(barWidth - barLen) + '▓'.repeat(barLen);
-    report.push(`| ${d} | ${String(dayAgg.n).padStart(3)} | ${(dayAgg.w+'-'+dayAgg.l).padEnd(5)}`
+    report.push(`| ${d} | ${String(dayAgg.n).padStart(4)} | ${(dayAgg.w+'-'+dayAgg.l).padEnd(5)}`
       + ` | ${pct(dayAgg.w, dayAgg.n).padStart(6)} | ${fmtSigned(dayAgg.profit).padStart(10)}`
-      + ` | ${fmtSigned(cumProfit).padStart(10)} | ${pct(cumW, cumN).padStart(9)} | ${bar} |`);
+      + ` | ${fmtSigned(cumProfit).padStart(10)} | ${pct(cumW, cumN).padStart(9)} | ${String(dayAgg.trackedN || 0).padStart(3)} | ${bar} |`);
   }
+  report.push('');
+  report.push(`> **Live** = picks AGS-U shipped with units > 0 (matches dashboard). **Trk** = same-day FADE picks (0u, back-test only). Daily PnL and Win % cover Live picks only.`);
   report.push('');
   report.push(`> Bar length is proportional to absolute cumulative PnL. \`█\` = positive, \`▓\` = negative.`);
   report.push('');

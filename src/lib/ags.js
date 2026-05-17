@@ -74,26 +74,33 @@ export const AGS_ABSOLUTE_MUTE_FLOOR = -3.0;
 // quintile values are the SUMMED z-score boundaries (each feature
 // contributes ±~1, five features sum to ±~5).
 // ────────────────────────────────────────────────────────────────────────
+// Refreshed 2026-05-17 against agsCalibration/current (Firestore). The
+// previous fallback was drifting hard from the live calibration — q40
+// was hardcoded at +0.20 while Firestore had recomputed it to -0.08, which
+// caused the UI to classify ags=-0.027 picks as WEAK while the cron
+// correctly stamped them LEAN (Cavs/Pistons total bug, 2026-05-17). Keep
+// this file in sync with Firestore whenever the calibration job's
+// quintiles drift >0.10 in any band, OR at least monthly.
 export const AGS_FALLBACK_CALIBRATION = Object.freeze({
   normalizers: {
-    dCount:           { mean: 1.05, sd: 1.55 },
-    dHcCount:         { mean: 0.55, sd: 0.95 },
-    dConvictionAvg:   { mean: 0.50, sd: 0.70 },
-    dHcSizeRatio:     { mean: 1.00, sd: 2.00 },
-    forContribShare:  { mean: 0.60, sd: 0.28 },
+    dCount:           { mean: 1.476, sd: 1.599 },
+    dHcCount:         { mean: 0.465, sd: 0.831 },
+    dConvictionAvg:   { mean: 0.539, sd: 0.561 },
+    dHcSizeRatio:     { mean: 1.580, sd: 5.431 },
+    forContribShare:  { mean: 0.812, sd: 0.249 },
   },
   // Summed-z-score quintile boundaries. Five features summed.
-  quintiles: { q20: -2.60, q40: 0.20, q50: 0.50, q60: 1.00, q80: 2.40, q90: 3.55 },
+  quintiles: { q20: -2.66, q40: -0.08, q50: 0.47, q60: 0.76, q80: 2.64, q90: 3.60 },
   // Action thresholds derived from the quintiles.
   thresholds: {
-    hardMuteFloor: -2.60, // = q20 — hard mute below this AGS-U value
-    lockFloor:      1.00, // = q60 — full unit lock floor
-    premiumFloor:   2.40, // = q80 — 1.50× sizing
-    eliteFloor:     3.55, // = q90 — 2.00× sizing
+    hardMuteFloor: -2.66, // = q20 — hard mute below this AGS-U value
+    lockFloor:      0.76, // = q60 — full unit lock floor
+    premiumFloor:   2.64, // = q80 — 1.50× sizing
+    eliteFloor:     3.60, // = q90 — 2.00× sizing
   },
-  sampleSize: 267,
-  dateRange: { from: '2026-04-18', to: '2026-05-06' },
-  computedAt: '2026-05-14T23:50:00Z',
+  sampleSize: 359,
+  dateRange: { from: '2026-04-18', to: '2026-05-15' },
+  computedAt: '2026-05-16T14:09:20Z',
   source: 'fallback-hardcoded',
 });
 
