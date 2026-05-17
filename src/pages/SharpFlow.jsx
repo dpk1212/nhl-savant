@@ -765,6 +765,12 @@ const QUALITY_CONTRIB_CUT = 30;   // T=30 — validated by V8_CONTRIBUTION_EDGE
 // exclusively through src/lib/ags.js — see the AGS-U Consensus Panel
 // inside SharpPositionCard for the user-facing surface.
 //
+// AGS_U_CUTOVER is the first date AGS-U v9 promoted picks live. Any
+// performance numbers shown for the AGS-U system itself MUST window
+// to picks on or after this date — pre-cutover picks were graded
+// under the legacy v7.x ladders and don't share the same tier math.
+const AGS_U_CUTOVER = '2026-05-14';
+//
 // Stubbed eligibility helpers below return `true` unconditionally so
 // any straggling caller that hasn't been swept will short-circuit to
 // the AGS-U path. They will be removed in a follow-up sweep.
@@ -2471,11 +2477,11 @@ function estimateStarsFromSnap(snap) {
 
 async function loadAllTimePnL() {
   try {
-    // v14 — pick projection now carries v8_topPick / v8_superTopPick /
-    // v8_lockTier / v8_systemVersion so the Performance dashboard's
-    // "Top Pick" filter matches the production-stamped badge instead of
-    // the legacy (peak.stars − lock.stars) ≥ 1.0 heuristic.
-    const cacheKey = 'sharpFlow_pnl_v14';
+    // v15 — pick projection now also carries v8_agsTier and the result
+    // bundle includes a per-AGS-U-tier breakdown (`byAgsTier`) windowed
+    // to picks on/after AGS_U_CUTOVER so the locked picks page can
+    // surface a calibration scorecard at the top of the list.
+    const cacheKey = 'sharpFlow_pnl_v15';
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
       const { data, ts } = JSON.parse(cached);
@@ -2496,6 +2502,24 @@ async function loadAllTimePnL() {
 
     const byStars = {};
     const picks = [];
+    // AGS-U tier scorecard, populated only from picks on/after AGS_U_CUTOVER.
+    // `live` rolls picks that actually shipped real money (units > 0,
+    // not tracked-only) into W-L / ROI / PnL totals. `tracked` rolls
+    // intentionally-tracked-only picks (FADE / 0u, or pre-AGS-U-grader
+    // tracked LEAN's) into a parallel record-keeping bucket so the
+    // headline numbers stay clean but volume is visible.
+    const emptyTierBucket = () => ({
+      wins: 0, losses: 0, pushes: 0, totalProfit: 0, totalUnits: 0,
+      totalPicks: 0, trackedPicks: 0, trackedWins: 0, trackedLosses: 0,
+    });
+    const byAgsTier = {
+      ELITE:   emptyTierBucket(),
+      PREMIUM: emptyTierBucket(),
+      LOCK:    emptyTierBucket(),
+      LEAN:    emptyTierBucket(),
+      WEAK:    emptyTierBucket(),
+      FADE:    emptyTierBucket(),
+    };
     const starBucket = (s) => s >= 4.5 ? 5 : s >= 3.5 ? 4 : s >= 2.5 ? 3 : s >= 1.5 ? 2 : 1;
     const emptyBucket = () => ({ wins: 0, losses: 0, pushes: 0, totalProfit: 0, totalUnits: 0, totalPicks: 0, label: '' });
     const STARS_LIVE_DATE = '2026-04-06';
@@ -2503,6 +2527,7 @@ async function loadAllTimePnL() {
       const data = d.data();
       const mt = data._marketType || data.marketType || 'ml';
       const isPostDeploy = data.date >= STARS_LIVE_DATE;
+      const isPostAgsuCutover = (data.date || '') >= AGS_U_CUTOVER;
       const processSide = (sd) => {
         // v5.6: treat MUTED the same as CANCELLED for tallying purposes — both
         // mean "the live signal told us to stand down before tip", so the graded
@@ -2531,6 +2556,38 @@ async function loadAllTimePnL() {
           if (sd.result?.outcome === 'WIN') { byStars[key].wins++; byStars[key].totalProfit += (sd.result?.profit || 0); }
           else if (sd.result?.outcome === 'LOSS') { byStars[key].losses++; byStars[key].totalProfit -= u; }
           else if (sd.result?.outcome === 'PUSH') { byStars[key].pushes++; }
+        }
+
+        // ─── AGS-U tier scorecard (post-cutover only) ─────────────
+        // Mirrors the dashboard / daily report's "live vs tracked"
+        // split exactly: live = real money shipped (units > 0, not
+        // grader-tracked-only); tracked = 0u/tracked plays kept
+        // separate so the headline tier ROI doesn't get diluted by
+        // intentionally-tracked picks.
+        if (isPostAgsuCutover) {
+          const cronTier = (typeof sd.v8_agsTier === 'string' && sd.v8_agsTier !== 'UNKNOWN')
+            ? sd.v8_agsTier
+            : (typeof sd.v8_lockTier === 'string' ? sd.v8_lockTier : null);
+          if (cronTier && byAgsTier[cronTier]) {
+            const tierBucket = byAgsTier[cronTier];
+            const shippedLive = u > 0 && !isTrackedOnly && !isCancelled;
+            if (shippedLive || isTrackedOnly) {
+              if (shippedLive) tierBucket.totalPicks++;
+              else tierBucket.trackedPicks++;
+              if (sd.status === 'COMPLETED') {
+                const outcome = sd.result?.outcome;
+                if (shippedLive) {
+                  tierBucket.totalUnits += u;
+                  if (outcome === 'WIN')      { tierBucket.wins++;   tierBucket.totalProfit += (sd.result?.profit || 0); }
+                  else if (outcome === 'LOSS'){ tierBucket.losses++; tierBucket.totalProfit -= u; }
+                  else if (outcome === 'PUSH'){ tierBucket.pushes++; }
+                } else {
+                  if (outcome === 'WIN')      tierBucket.trackedWins++;
+                  else if (outcome === 'LOSS') tierBucket.trackedLosses++;
+                }
+              }
+            }
+          }
         }
         const pickStars = isPostDeploy ? (bestSnap?.stars ?? 0) : s;
         if (pickStars >= 2.5) {
@@ -2597,7 +2654,15 @@ async function loadAllTimePnL() {
       v.roi = v.totalUnits > 0 ? +((v.totalProfit / v.totalUnits) * 100).toFixed(1) : 0;
     }
 
-    const result = { pregame: overall, all: overall, byStars, picks };
+    for (const v of Object.values(byAgsTier)) {
+      v.totalProfit = +v.totalProfit.toFixed(2);
+      v.record = `${v.wins}-${v.losses}${v.pushes > 0 ? `-${v.pushes}` : ''}`;
+      v.roi = v.totalUnits > 0 ? +((v.totalProfit / v.totalUnits) * 100).toFixed(1) : 0;
+      v.trackedRecord = `${v.trackedWins}-${v.trackedLosses}`;
+    }
+    const agsTierMeta = { since: AGS_U_CUTOVER };
+
+    const result = { pregame: overall, all: overall, byStars, byAgsTier, agsTierMeta, picks };
     try { sessionStorage.setItem(cacheKey, JSON.stringify({ data: result, ts: Date.now() })); } catch {}
     return result;
   } catch (err) {
@@ -7650,15 +7715,25 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
             const tSummary = totalGameData.summary;
             const overPos = tPos.filter(p => p.side === 'over');
             const underPos = tPos.filter(p => p.side === 'under');
-            const overW = new Set(overPos.map(p => p.wallet)).size;
-            const underW = new Set(underPos.map(p => p.wallet)).size;
-            const overInv = tSummary.overInvested || 0;
-            const underInv = tSummary.underInvested || 0;
+            // NET-after-dedup totals (matches the cron / sizing math
+            // exactly so the locked card and live card never disagree).
+            // The legacy raw-sum (tSummary.overInvested / underInvested)
+            // double-counts wallets that hedged both sides — produced
+            // today's $69.8K live vs $56.1K locked mismatch on the
+            // Cavs/Pistons total. computeSharpFeatures nets each wallet
+            // to its dominant side so a $10K-Over / $20K-Under wallet
+            // contributes $10K to Under (its true conviction), matching
+            // exactly what the cron stamps as peak.totalInvested.
+            const overSf = computeSharpFeatures(tPos, 'over');
+            const overW = overSf.conWalletCount;
+            const underW = overSf.oppWalletCount;
+            const overInv = overSf.conTotalInvested;
+            const underInv = overSf.oppTotalInv;
             const totalInv = overInv + underInv;
             const overPnl = overPos.reduce((s, p) => s + (p.totalPnl || 0), 0);
             const underPnl = underPos.reduce((s, p) => s + (p.totalPnl || 0), 0);
-            const overAvg = overPos.length > 0 ? overInv / overPos.length : 0;
-            const underAvg = underPos.length > 0 ? underInv / underPos.length : 0;
+            const overAvg = overW > 0 ? overInv / overW : 0;
+            const underAvg = underW > 0 ? underInv / underW : 0;
             const consSide = tSummary.consensus;
             const isOver = consSide === 'over';
             const moneyRatio = totalInv > 0 ? Math.round((Math.max(overInv, underInv) / totalInv) * 100) : 50;
@@ -8710,11 +8785,16 @@ export default function SharpFlow() {
 
   const pnlLoadedRef = useRef(false);
   useEffect(() => {
-    if ((showPerf || !isPremium) && !pnlLoadedRef.current) {
+    // Load the all-time P&L bundle as soon as the user lands on a
+    // surface that consumes it: the Performance tab, the free-user
+    // paywall (uses pregame totals), or the Locked Picks list (uses
+    // `byAgsTier` for the post-cutover Q-tier scorecard). One fetch
+    // serves them all; sessionStorage caches for 30 min.
+    if ((showPerf || !isPremium || sortBy === 'locked') && !pnlLoadedRef.current) {
       pnlLoadedRef.current = true;
       loadAllTimePnL().then(setAllTimePnL);
     }
-  }, [showPerf, isPremium]);
+  }, [showPerf, isPremium, sortBy]);
 
   const onPickSynced = useCallback((docId, side, snap, meta, action) => {
     setLockedPicks(prev => {
@@ -11625,8 +11705,121 @@ export default function SharpFlow() {
                     allLockedArr.forEach(p => { sportCounts[p.sport] = (sportCounts[p.sport] || 0) + 1; });
                     const sportColorMap = { NHL: '#D4AF37', MLB: '#E31837', NBA: '#FF8C00', CBB: '#FF6B35', NFL: '#4CAF50' };
                     const activeSports = Object.keys(sportCounts).sort();
+
+                    // ── AGS-U Tier Scorecard (post-cutover) ──────────────
+                    // Renders the live-money record / ROI / PnL bucketed
+                    // by the cron-stamped v8_agsTier so the user can see
+                    // at-a-glance which Q tiers are actually printing.
+                    // Tracked-only plays (FADE / 0u) are surfaced as a
+                    // small "+N tracked" badge so volume is visible
+                    // without polluting the headline ROI. Window starts
+                    // at AGS_U_CUTOVER — anything older was graded
+                    // under a different ladder and would be apples-to-
+                    // oranges.
+                    const TIER_DEFS = [
+                      { key: 'ELITE',   size: '2.0×' },
+                      { key: 'PREMIUM', size: '1.5×' },
+                      { key: 'LOCK',    size: '1.0×' },
+                      { key: 'LEAN',    size: '0.5×' },
+                      { key: 'WEAK',    size: '0.2×' },
+                    ];
+                    const tierData = allTimePnL?.byAgsTier || null;
+                    const totalLiveShipped = tierData
+                      ? TIER_DEFS.reduce((s, t) => s + (tierData[t.key]?.totalPicks || 0), 0)
+                      : 0;
+                    const totalLiveProfit = tierData
+                      ? TIER_DEFS.reduce((s, t) => s + (tierData[t.key]?.totalProfit || 0), 0)
+                      : 0;
+                    const totalLiveUnits = tierData
+                      ? TIER_DEFS.reduce((s, t) => s + (tierData[t.key]?.totalUnits || 0), 0)
+                      : 0;
+                    const totalLiveWins = tierData
+                      ? TIER_DEFS.reduce((s, t) => s + (tierData[t.key]?.wins || 0), 0)
+                      : 0;
+                    const totalLiveLosses = tierData
+                      ? TIER_DEFS.reduce((s, t) => s + (tierData[t.key]?.losses || 0), 0)
+                      : 0;
+                    const overallRoi = totalLiveUnits > 0 ? (totalLiveProfit / totalLiveUnits) * 100 : 0;
+                    const sinceDate = allTimePnL?.agsTierMeta?.since || AGS_U_CUTOVER;
+                    const showTierScorecard = lockedDay === 'today' && tierData && totalLiveShipped > 0;
+
                     return (
                       <>
+                        {showTierScorecard && (
+                          <div style={{
+                            padding: '0.75rem 0.875rem',
+                            borderRadius: '8px',
+                            background: 'linear-gradient(135deg, rgba(212,175,55,0.07) 0%, rgba(212,175,55,0.01) 100%)',
+                            border: `1px solid ${B.goldBorder}`,
+                            marginBottom: '0.75rem',
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+                              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                <span style={{ ...T.label, fontWeight: 800, color: B.gold, letterSpacing: '0.04em' }}>AGS-U TIER SCORECARD</span>
+                                <span style={{ ...T.micro, color: B.textMuted }}>since {sinceDate} cutover · all sports</span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.625rem' }}>
+                                <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.05em' }}>OVERALL</span>
+                                <span style={{ ...T.sub, fontWeight: 800, color: B.text, fontFeatureSettings: "'tnum'" }}>
+                                  {totalLiveShipped} <span style={{ color: B.textMuted, fontWeight: 600 }}>({totalLiveWins}-{totalLiveLosses})</span>
+                                </span>
+                                <span style={{ ...T.sub, fontWeight: 900, color: overallRoi >= 0 ? B.green : B.red, fontFeatureSettings: "'tnum'" }}>
+                                  {overallRoi >= 0 ? '+' : ''}{overallRoi.toFixed(1)}% ROI
+                                </span>
+                                <span style={{ ...T.sub, fontWeight: 900, color: totalLiveProfit >= 0 ? B.green : B.red, fontFeatureSettings: "'tnum'" }}>
+                                  {totalLiveProfit >= 0 ? '+' : ''}{totalLiveProfit.toFixed(2)}u
+                                </span>
+                              </div>
+                            </div>
+                            <div style={{
+                              display: 'grid',
+                              gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : `repeat(${TIER_DEFS.length}, 1fr)`,
+                              gap: '0.5rem',
+                            }}>
+                              {TIER_DEFS.map(t => {
+                                const b = tierData[t.key] || {};
+                                const tierMeta = AGS_TIER_META[t.key];
+                                const n = b.totalPicks || 0;
+                                const trk = b.trackedPicks || 0;
+                                const profit = b.totalProfit || 0;
+                                const roi = b.roi || 0;
+                                const isEmpty = n === 0;
+                                return (
+                                  <div key={t.key} style={{
+                                    padding: '0.5rem 0.625rem',
+                                    borderRadius: '6px',
+                                    background: tierMeta.bg,
+                                    border: `1px solid ${tierMeta.color}55`,
+                                    opacity: isEmpty ? 0.4 : 1,
+                                    position: 'relative',
+                                  }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.25rem', marginBottom: '0.3rem' }}>
+                                      <span style={{ ...T.micro, fontWeight: 900, color: tierMeta.color, fontSize: '0.6rem', letterSpacing: '0.04em' }}>{tierMeta.label}</span>
+                                      <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem', fontWeight: 700 }}>{t.size}</span>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.3rem', lineHeight: 1.1 }}>
+                                      <span style={{ ...T.heading, fontWeight: 900, color: B.text, fontFeatureSettings: "'tnum'" }}>{n}</span>
+                                      <span style={{ ...T.sub, color: B.textSec, fontWeight: 700, fontFeatureSettings: "'tnum'" }}>{isEmpty ? '0-0' : b.record}</span>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.25rem', marginTop: '0.25rem' }}>
+                                      <span style={{ ...T.micro, fontWeight: 800, color: isEmpty ? B.textMuted : roi >= 0 ? B.green : B.red, fontFeatureSettings: "'tnum'" }}>
+                                        {isEmpty ? '—' : `${roi >= 0 ? '+' : ''}${roi.toFixed(1)}%`}
+                                      </span>
+                                      <span style={{ ...T.micro, fontWeight: 800, color: isEmpty ? B.textMuted : profit >= 0 ? B.green : B.red, fontFeatureSettings: "'tnum'" }}>
+                                        {isEmpty ? '' : `${profit >= 0 ? '+' : ''}${profit.toFixed(2)}u`}
+                                      </span>
+                                    </div>
+                                    {trk > 0 && (
+                                      <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem', marginTop: '0.2rem', fontWeight: 600 }}>
+                                        +{trk} tracked
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
                           {[
                             { id: 'today', label: 'Today' },
