@@ -5570,8 +5570,15 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                 <span style={{ ...T.micro, color: B.textSec }}>{isGraded ? 'Result' : 'To Win'}</span>
-                <span style={{ ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'", color: isGraded ? (isWin ? B.green : isLoss ? B.red : B.textSec) : (isLean ? LEAN_BLUE : (isMuted || isCancelled) ? B.textMuted : showDownsize ? DOWNSIZE_AMBER : B.green) }}>
-                  {isGraded ? `${isWin ? '+' : isLoss ? '' : ''}${(profit || 0).toFixed(2)}u` : `+${((isLean || isMuted || isCancelled) ? 0 : potentialWin).toFixed(2)}u`}
+                <span style={{ ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'", color: isGraded ? (isWin ? B.green : isLoss ? B.red : B.textSec) : (isLean ? LEAN_BLUE : isWeak ? WEAK_AMBER : (isMuted || isCancelled) ? B.textMuted : showDownsize ? DOWNSIZE_AMBER : B.green) }}>
+                  {/* AGS-U v9 — LEAN (0.5×) and WEAK (0.2×) BOTH ship real
+                      money under the new ladder, so the legacy v7 force-
+                      to-0 on `isLean` was zeroing the payout calc on
+                      every LEAN ship (today's Cavs/Pistons total: 0.75u
+                      @ -110 should pay 0.68u, was reading "+0.00u"). Only
+                      MUTED (FADE) and CANCELLED truly have no money at
+                      risk. */}
+                  {isGraded ? `${isWin ? '+' : isLoss ? '' : ''}${(profit || 0).toFixed(2)}u` : `+${((isMuted || isCancelled) ? 0 : potentialWin).toFixed(2)}u`}
                 </span>
               </div>
               <span style={{
@@ -11416,6 +11423,43 @@ export default function SharpFlow() {
                         const resolvedTier = cronTier
                           ?? liveTier
                           ?? null;
+                        // LIVE-NOW descriptive stats. The cron stamps
+                        // peak.{sharpCount, totalInvested, consensusStrength}
+                        // every cycle, but it runs on a clock and lags the
+                        // raw position feed by a cycle or two — which
+                        // produced today's ugly mismatch: the live game
+                        // card showed 6 sharps / $69.8K while the locked
+                        // card (reading peak.*) showed 5 sharps / $56.1K
+                        // on the same Cavs/Pistons total. Same pick, same
+                        // side, different numbers because they were sampled
+                        // at different times.
+                        //
+                        // For PENDING picks, recompute the descriptive
+                        // chips from raw live positions so both cards
+                        // mirror reality. We keep peak.* as the fallback
+                        // for graded picks (where the live feed has
+                        // already churned past game time and the historical
+                        // snapshot is what we want to show) and for any
+                        // game whose positions haven't been polled this
+                        // session.
+                        //
+                        // The cron's finalUnits / v8_agsTier are NOT
+                        // overridden — sizing decisions belong to the
+                        // cron, descriptive chrome belongs to live data.
+                        const livePosSource = marketTypeKey === 'spread' ? spreadPositions
+                                            : marketTypeKey === 'total'  ? totalPositions
+                                            : sharpPositions;
+                        const liveGameData = livePosSource?.[docSport]?.[doc.gameKey];
+                        const liveSf = (liveGameData?.positions && !sdGraded)
+                          ? computeSharpFeatures(liveGameData.positions, sideKey)
+                          : null;
+                        const liveSharpCount = liveSf ? (liveSf.conWalletCount ?? null) : null;
+                        const liveTotalInvested = liveSf ? (liveSf.conTotalInvested ?? null) : null;
+                        const liveMoneyPct = liveSf && Number.isFinite(liveSf.conMoneyPct)
+                          ? Math.round(liveSf.conMoneyPct) : null;
+                        const liveWalletPct = liveSf && Number.isFinite(liveSf.conWalletPct)
+                          ? Math.round(liveSf.conWalletPct) : null;
+                        const liveConsensusGrade = liveSf?.consensusTier ?? null;
                         allLockedArr.push({
                           key: `${docId}:${sideKey}`,
                           team: sd.team || sideKey,
@@ -11446,23 +11490,37 @@ export default function SharpFlow() {
                           lockPinnOdds: peak.pinnacleOdds || lock.pinnacleOdds || null,
                           closingOdds: sd.closingOdds || null,
                           clv: sd.result?.clv ?? null,
-                          sharpCount: peak.sharpCount ?? lock.sharpCount ?? null,
-                          totalInvested: peak.totalInvested ?? lock.totalInvested ?? null,
+                          sharpCount: liveSharpCount ?? peak.sharpCount ?? lock.sharpCount ?? null,
+                          totalInvested: liveTotalInvested ?? peak.totalInvested ?? lock.totalInvested ?? null,
                           evEdge: peak.evEdge ?? lock.evEdge ?? null,
                           lockEV: lock.evEdge ?? null,
                           criteriaMet: peak.criteriaMet || lock.criteriaMet || 0,
                           criteria: peak.criteria || lock.criteria || null,
-                          consensusStrength: (() => {
-                            const cs = peak.consensusStrength || lock.consensusStrength || null;
-                            if (cs && cs.moneyPct == null) {
-                              const g = cs.grade || '';
-                              if (g === 'DOMINANT') return { ...cs, moneyPct: 85, walletPct: 75 };
-                              if (g === 'STRONG') return { ...cs, moneyPct: 70, walletPct: 65 };
-                              if (g === 'LEAN') return { ...cs, moneyPct: 58, walletPct: 55 };
-                              return { ...cs, moneyPct: 50, walletPct: 50 };
-                            }
-                            return cs;
-                          })(),
+                          consensusStrength: liveSf
+                            ? {
+                                moneyPct: liveMoneyPct ?? 50,
+                                walletPct: liveWalletPct ?? 50,
+                                grade: liveConsensusGrade || 'LEAN',
+                              }
+                            : (() => {
+                                const cs = peak.consensusStrength || lock.consensusStrength || null;
+                                if (cs && cs.moneyPct == null) {
+                                  const g = cs.grade || '';
+                                  if (g === 'DOMINANT') return { ...cs, moneyPct: 85, walletPct: 75 };
+                                  if (g === 'STRONG') return { ...cs, moneyPct: 70, walletPct: 65 };
+                                  if (g === 'LEAN') return { ...cs, moneyPct: 58, walletPct: 55 };
+                                  return { ...cs, moneyPct: 50, walletPct: 50 };
+                                }
+                                return cs;
+                              })(),
+                          // Snapshot-time numbers — surfaced separately so the
+                          // detail view can show "5 → 6 sharps since lock"
+                          // when conditions evolve, instead of silently
+                          // overwriting the lock-snapshot context.
+                          lockSharpCount: lock.sharpCount ?? null,
+                          lockTotalInvested: lock.totalInvested ?? null,
+                          peakSharpCount: peak.sharpCount ?? null,
+                          peakTotalInvested: peak.totalInvested ?? null,
                           pinnacleOdds: peak.pinnacleOdds || lock.pinnacleOdds || sd.closingOdds || null,
                           marketType: marketTypeKey,
                           // line fallback: peak.line → lock.line → closingLine.
