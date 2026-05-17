@@ -4867,9 +4867,19 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
     && ( (peakRank - liveRank) >= 2 || (liveRank <= 2 && peakRank >= 3) );
   const showDownsize = meaningfulTierDrop && !isGraded && !isMuted && !isCancelled && !superseded;
   const DOWNSIZE_AMBER = '#D4AF37'; // gold/amber — less severe than #F59E0B (mute)
-  const LEAN_BLUE     = '#60A5FA'; // light-blue   — LEAN tier (0.50× ladder)
-  const WEAK_AMBER    = '#F59E0B'; // amber        — WEAK tier (0.20× ladder)
-  const ELITE_GOLD    = '#D4AF37'; // bold gold    — ELITE tier (2.00× ladder)
+  // Tier accent colors are sourced from AGS_TIER_META so the lock
+  // card body (money bars, tier chips, tier transitions, narrative
+  // copy) speaks the same palette as the top-of-page AGS-U Tier
+  // Scorecard and the right-side rating chip. The legacy names
+  // (LEAN_BLUE / WEAK_AMBER / ELITE_GOLD) are kept so all existing
+  // usages don't have to be renamed — only their underlying value
+  // shifts: LEAN went blue → yellow, WEAK stays orange-family,
+  // ELITE went gold → AGS green. Previously the LEAN card had a
+  // yellow scorecard tile and yellow outer chips but a blue body,
+  // and the user (correctly) called that out as broken.
+  const LEAN_BLUE     = AGS_TIER_META.LEAN.color;  // #facc15 yellow — was #60A5FA
+  const WEAK_AMBER    = AGS_TIER_META.WEAK.color;  // #f97316 orange — was #F59E0B
+  const ELITE_GOLD    = AGS_TIER_META.ELITE.color; // #16a34a green  — was #D4AF37
   // Tier accent ordering (worst→best so each clobbers the prior in a
   // ternary chain): CANCELLED > MUTED > TRACKED > FADE-class (none, we
   // mute upstream) > WEAK > LEAN > LOCK (default green) > PREMIUM > ELITE.
@@ -4993,7 +5003,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
         : isElite
         ? `linear-gradient(135deg, rgba(212,175,55,0.07) 0%, ${B.card} 30%, ${B.cardAlt} 100%)`
         : isLean
-        ? `linear-gradient(135deg, rgba(96,165,250,0.04) 0%, ${B.card} 30%, ${B.cardAlt} 100%)`
+        ? `linear-gradient(135deg, rgba(250,204,21,0.04) 0%, ${B.card} 30%, ${B.cardAlt} 100%)`
         : isWeak
         ? `linear-gradient(135deg, rgba(245,158,11,0.04) 0%, ${B.card} 30%, ${B.cardAlt} 100%)`
         // Graded picks get a very faint outcome wash — wins drift
@@ -5063,7 +5073,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                 style={{
                   ...T.micro, fontWeight: 800, letterSpacing: '0.05em',
                   padding: '0.15rem 0.5rem', borderRadius: '4px',
-                  color: LEAN_BLUE, background: 'rgba(96,165,250,0.12)',
+                  color: '#60A5FA', background: 'rgba(96,165,250,0.12)',
                   border: '1px solid rgba(96,165,250,0.35)',
                 }}
               >
@@ -5263,11 +5273,14 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                 }}>MUTED · {outcome}</span>
               ) : isTrackedGrade ? (
                 // v7.4 fix: graded LEAN tracked-only play. Show outcome for
-                // context with the LEAN-blue palette so it never reads as a
-                // normal win/loss row. PnL still renders "0.00u" below.
+                // context with the tracking-blue palette so it never reads
+                // as a normal win/loss row. PnL still renders "0.00u" below.
+                // Explicit blue (not LEAN_BLUE constant) because LEAN_BLUE
+                // is now the AGS_TIER_META.LEAN yellow under the unified
+                // palette; tracked/0u plays keep their distinct blue signal.
                 <span style={{
                   ...T.micro, fontWeight: 700, padding: '0.15rem 0.45rem', borderRadius: '4px',
-                  color: LEAN_BLUE, background: 'rgba(96,165,250,0.10)',
+                  color: '#60A5FA', background: 'rgba(96,165,250,0.10)',
                   border: '1px solid rgba(96,165,250,0.30)',
                   letterSpacing: '0.04em',
                 }}>TRACKED · {outcome}</span>
@@ -5358,7 +5371,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
               : isElite
               ? 'linear-gradient(135deg, rgba(212,175,55,0.14) 0%, rgba(212,175,55,0.03) 100%)'
               : isLean
-              ? 'linear-gradient(135deg, rgba(96,165,250,0.08) 0%, rgba(96,165,250,0.02) 100%)'
+              ? 'linear-gradient(135deg, rgba(250,204,21,0.08) 0%, rgba(250,204,21,0.02) 100%)'
               : isWeak
               ? 'linear-gradient(135deg, rgba(245,158,11,0.10) 0%, rgba(245,158,11,0.02) 100%)'
               : isGraded
@@ -5367,7 +5380,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
             border: `1px solid ${isCancelled ? 'rgba(239,68,68,0.25)'
               : isMuted ? 'rgba(245,158,11,0.25)'
               : isElite ? 'rgba(212,175,55,0.40)'
-              : isLean ? 'rgba(96,165,250,0.25)'
+              : isLean ? 'rgba(250,204,21,0.30)'
               : isWeak ? 'rgba(245,158,11,0.30)'
               : isGraded ? (isWin ? 'rgba(16,185,129,0.25)' : isLoss ? 'rgba(239,68,68,0.25)' : B.goldBorder)
               : 'rgba(16,185,129,0.25)'}`,
@@ -5407,7 +5420,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                       : isPremium
                       ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
                       : isLean
-                      ? 'linear-gradient(135deg, rgba(96,165,250,0.30), rgba(96,165,250,0.15))'
+                      ? 'linear-gradient(135deg, rgba(250,204,21,0.30), rgba(250,204,21,0.15))'
                       : isWeak
                       ? 'linear-gradient(135deg, rgba(245,158,11,0.25), rgba(245,158,11,0.10))'
                       : isGraded
@@ -5415,7 +5428,8 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                       : 'linear-gradient(135deg, #10B981, #059669)',
                     border: `1px solid ${isCancelled ? 'rgba(239,68,68,0.3)'
                       : isMuted ? 'rgba(245,158,11,0.4)'
-                      : (isLean || isTrackedGrade) ? 'rgba(96,165,250,0.45)'
+                      : isLean ? 'rgba(250,204,21,0.50)'
+                      : isTrackedGrade ? 'rgba(96,165,250,0.45)'
                       : isWeak ? 'rgba(245,158,11,0.45)'
                       : isElite ? 'rgba(245,208,96,0.6)'
                       : isWin ? 'rgba(16,185,129,0.4)'
@@ -5764,7 +5778,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
             const tierBanner = isElite     ? { text: 'ELITE LOCK · ★★★★★ TOP DECILE', color: ELITE_GOLD, bg: 'rgba(212,175,55,0.10)', border: 'rgba(212,175,55,0.40)' }
                              : isPremium   ? { text: 'PREMIUM LOCK · ★★★★ STRONG',   color: B.green,  bg: 'rgba(16,185,129,0.10)',  border: 'rgba(16,185,129,0.35)' }
                              : isLock      ? { text: 'LOCKED · ★★★ SOLID',           color: B.green,  bg: 'rgba(16,185,129,0.06)',  border: 'rgba(16,185,129,0.25)' }
-                             : isLean      ? { text: 'LEAN · ½ STAKE',               color: LEAN_BLUE, bg: 'rgba(96,165,250,0.08)', border: 'rgba(96,165,250,0.30)' }
+                             : isLean      ? { text: 'LEAN · ½ STAKE',               color: LEAN_BLUE, bg: 'rgba(250,204,21,0.08)', border: 'rgba(250,204,21,0.40)' }
                              : isWeak      ? { text: 'WEAK · ⅕ STAKE',               color: WEAK_AMBER, bg: 'rgba(245,158,11,0.10)', border: 'rgba(245,158,11,0.30)' }
                              : isMuted     ? { text: 'MUTED · HARD STOP',            color: WEAK_AMBER, bg: 'rgba(245,158,11,0.10)', border: 'rgba(245,158,11,0.30)' }
                              : isCancelled ? { text: 'CANCELLED',                    color: B.red,    bg: 'rgba(239,68,68,0.10)',   border: 'rgba(239,68,68,0.30)' }
@@ -7343,13 +7357,13 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
               <div style={{
                 padding: '0.5rem 0.625rem', borderRadius: '8px', marginBottom: '0.5rem',
                 background: isSpreadLocked && spreadLockTier === 'LEAN'
-                  ? 'linear-gradient(135deg, rgba(96,165,250,0.06) 0%, rgba(96,165,250,0.02) 100%)'
+                  ? 'linear-gradient(135deg, rgba(250,204,21,0.06) 0%, rgba(250,204,21,0.02) 100%)'
                   : isSpreadLocked
                   ? 'linear-gradient(135deg, rgba(16,185,129,0.06) 0%, rgba(16,185,129,0.02) 100%)'
                   : isSpreadShadow
                   ? 'linear-gradient(135deg, rgba(212,175,55,0.06) 0%, rgba(212,175,55,0.02) 100%)'
                   : 'rgba(255,255,255,0.02)',
-                border: `1px solid ${isSpreadLocked && spreadLockTier === 'LEAN' ? 'rgba(96,165,250,0.30)' : isSpreadLocked ? 'rgba(16,185,129,0.25)' : isSpreadShadow ? 'rgba(212,175,55,0.25)' : B.borderSubtle}`,
+                border: `1px solid ${isSpreadLocked && spreadLockTier === 'LEAN' ? 'rgba(250,204,21,0.40)' : isSpreadLocked ? 'rgba(16,185,129,0.25)' : isSpreadShadow ? 'rgba(212,175,55,0.25)' : B.borderSubtle}`,
               }}>
                 {(isSpreadLocked || isSpreadShadow) && spreadSr ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.375rem' }}>
@@ -7715,13 +7729,13 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
               <div style={{
                 padding: '0.5rem 0.625rem', borderRadius: '8px', marginBottom: '0.5rem',
                 background: isTotalLocked && totalLockTier === 'LEAN'
-                  ? 'linear-gradient(135deg, rgba(96,165,250,0.06) 0%, rgba(96,165,250,0.02) 100%)'
+                  ? 'linear-gradient(135deg, rgba(250,204,21,0.06) 0%, rgba(250,204,21,0.02) 100%)'
                   : isTotalLocked
                   ? 'linear-gradient(135deg, rgba(16,185,129,0.06) 0%, rgba(16,185,129,0.02) 100%)'
                   : isTotalShadow
                   ? 'linear-gradient(135deg, rgba(212,175,55,0.06) 0%, rgba(212,175,55,0.02) 100%)'
                   : 'rgba(255,255,255,0.02)',
-                border: `1px solid ${isTotalLocked && totalLockTier === 'LEAN' ? 'rgba(96,165,250,0.30)' : isTotalLocked ? 'rgba(16,185,129,0.25)' : isTotalShadow ? 'rgba(212,175,55,0.25)' : B.borderSubtle}`,
+                border: `1px solid ${isTotalLocked && totalLockTier === 'LEAN' ? 'rgba(250,204,21,0.40)' : isTotalLocked ? 'rgba(16,185,129,0.25)' : isTotalShadow ? 'rgba(212,175,55,0.25)' : B.borderSubtle}`,
               }}>
                 {(isTotalLocked || isTotalShadow) && totalSr ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.375rem' }}>
@@ -11923,25 +11937,37 @@ export default function SharpFlow() {
                                 const recordTxt = `${wins}-${losses}${pushes > 0 ? `-${pushes}` : ''}`;
                                 const hasGraded = graded > 0;
                                 const hasAnyActivity = graded > 0 || pending > 0 || tracked > 0;
+                                // CRITICAL: do NOT tint the tile background
+                                // with the tier color. Tier color and
+                                // win/loss color are two different signals;
+                                // a winning WEAK pick on a red tile reads
+                                // as losing, a losing LOCK on a lime tile
+                                // reads as winning. Tier identity lives in
+                                // the left stripe + the tier-name text;
+                                // the tile body is a near-neutral dark
+                                // navy so the result numbers (green/red)
+                                // dominate the cell's color signal.
                                 return (
                                   <div key={t.key} style={{
                                     padding: '0.75rem 0.75rem 0.625rem',
+                                    paddingLeft: '0.875rem',
                                     borderRadius: '8px',
                                     background: hasAnyActivity
-                                      ? `linear-gradient(180deg, ${tierMeta.bg} 0%, rgba(15,23,42,0.4) 100%)`
+                                      ? 'linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(15,23,42,0.5) 100%)'
                                       : 'rgba(255,255,255,0.015)',
-                                    border: `1px solid ${hasAnyActivity ? `${tierMeta.color}55` : B.borderSubtle}`,
-                                    boxShadow: hasGraded ? `inset 0 1px 0 ${tierMeta.color}22` : 'none',
+                                    border: `1px solid ${hasAnyActivity ? `${tierMeta.color}33` : B.borderSubtle}`,
                                     opacity: hasAnyActivity ? 1 : 0.45,
                                     position: 'relative',
                                     overflow: 'hidden',
                                   }}>
-                                    {/* Tier accent stripe on the left */}
+                                    {/* Tier identity stripe — the SOLE
+                                        place the tier color appears as a
+                                        background on the tile. */}
                                     {hasAnyActivity && (
                                       <div style={{
                                         position: 'absolute', top: 0, bottom: 0, left: 0,
                                         width: '3px', background: tierMeta.color,
-                                        boxShadow: `0 0 6px ${tierMeta.color}88`,
+                                        boxShadow: `0 0 6px ${tierMeta.color}66`,
                                       }} />
                                     )}
 
