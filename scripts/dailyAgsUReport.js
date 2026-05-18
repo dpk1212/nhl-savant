@@ -698,7 +698,11 @@ function buildOperationalHealth(report, allRows) {
   const ungradedWithFinalUnits = allRows.filter(r => r.status !== 'COMPLETED' && r.units > 0);
   const missingAgs = allRows.filter(r => !Number.isFinite(r.ags));
   const missingTier = allRows.filter(r => !r.agsTier);
-  const lowProven = allRows.filter(r => r.provenTotal != null && r.provenTotal < 2 && r.units > 0);
+  // Informational only — single-wallet picks are now allowed to ship if
+  // their AGS-U composite crosses calibration thresholds (AGS-U v9 reset
+  // 2026-05-17). Sample-size adequacy is implicit in the population-wide
+  // calibration. No longer a "gate bypassed" alert.
+  const singleWalletShipped = allRows.filter(r => r.provenTotal != null && r.provenTotal === 1 && r.units > 0);
 
   report.push(`| Check                                                          | Count | Verdict                                            |`);
   report.push(`|----------------------------------------------------------------|-------|----------------------------------------------------|`);
@@ -707,7 +711,7 @@ function buildOperationalHealth(report, allRows) {
   report.push(`| Live picks (not graded yet) with \`finalUnits > 0\`             | ${String(ungradedWithFinalUnits.length).padStart(5)} | ${ungradedWithFinalUnits.length > 0 ? '🟢 picks queued for grading' : '🟡 no live shipped picks pending'} |`);
   report.push(`| AGS-U promoted picks missing \`v8_ags\` value                   | ${String(missingAgs.length).padStart(5)} | ${missingAgs.length === 0 ? '🟢 every pick has an AGS-U' : '🟡 some picks missing AGS-U — cron lag or stale doc'} |`);
   report.push(`| AGS-U promoted picks missing \`agsTier\`                        | ${String(missingTier.length).padStart(5)} | ${missingTier.length === 0 ? '🟢 every pick has a tier' : '🟡 some picks missing tier classification'} |`);
-  report.push(`| Shipped picks with \`provenWalletCount < 2\`                    | ${String(lowProven.length).padStart(5)} | ${lowProven.length === 0 ? '🟢 floor holding' : '🚨 picks bypassed AGS_MIN_PROVEN_WALLETS gate'} |`);
+  report.push(`| Single-wallet shipped picks (\`provenWalletCount == 1\`)       | ${String(singleWalletShipped.length).padStart(5)} | 🟡 informational — AGS-U calibration controls sample adequacy |`);
   report.push('');
 
   // Tracked-shipped detail (the bug we just fixed)

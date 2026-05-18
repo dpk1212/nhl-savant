@@ -53,10 +53,29 @@ export const AGS_FEATURES = [
 // threshold in syncPickStateAuthoritative.js.
 export const HC_RATIO = 1.5;
 
-// Minimum proven-wallet count gate. Prevents single-wallet z-spikes from
-// driving locks. A pick with only 1 proven wallet has too little signal
-// for the composite to be trusted, regardless of how high its AGS-U is.
-export const AGS_MIN_PROVEN_WALLETS = 2;
+// Minimum proven-wallet count required to compute a trustworthy AGS-U.
+//
+// AGS-U v9 design intent (2026-05-17 reset): the composite z-score is
+// THE single gate. Sample-size adequacy is implicit in the calibration —
+// every feature's mean/SD is computed across the live population of
+// wallet counts, so a single-wallet z-spike on light contributions
+// naturally falls below q60 because the population already includes
+// hundreds of similar 1-wallet sides. Adding a separate count floor
+// on top of that was a pre-AGS-U "second gate" that contradicted the
+// "one score, one calibration, one decision" promise and was silently
+// blocking real signals — e.g. on 2026-05-17 it rejected the Brewers
+// ML (3 sharps, $73K, AGS-U computed but never logged), the
+// Diamondbacks ML, the Phillies HC+2, and 9 other sides the cron
+// computed AGS-U for but never persisted, because the count-gate
+// fired before AGS-U got a vote.
+//
+// Floor of 1 keeps the absolute mathematical minimum (need ≥1 wallet
+// for any composite to mean anything) without imposing an arbitrary
+// "you must have 2 wallets to count" rule. The case n=0 still gates
+// naturally upstream — aggregateSideProven returns null with no
+// qualifying wallets, which makes computeAgs return null, which every
+// callsite already null-checks before deciding.
+export const AGS_MIN_PROVEN_WALLETS = 1;
 
 // Absolute (non-calibration) safety floor. AGS-U values below this trigger
 // HARD MUTE regardless of where calibration's q20 sits. Protects against

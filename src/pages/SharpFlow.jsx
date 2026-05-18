@@ -1660,6 +1660,59 @@ function stampWalletConsensus(target, v8Scoring, sideKey, sport, baseStars, prom
     // historical analysis read v9 truth, not legacy Δw/Δq.
     target.v8_walletConsensusMuteTriggered = agsHardMuted;
   }
+
+  // ── Health reconciliation (AGS-U v9) ─────────────────────────────────
+  // Every time the client stamps v8_* fields, write a coherent `health`
+  // block in the SAME doc update. Without this, a pick that was SHADOW
+  // earlier (when proven counts were below floor) and got promoted to
+  // LOCKED later in the day by the client (when wallets piled in) would
+  // keep its STALE `health.status: 'MUTED'` from the old cron cycle —
+  // because the cron's reconcileSide skips picks inside the T-15 freeze
+  // window, and there's no other code path that writes health.
+  //
+  // Real example caught 2026-05-17: Mets ML promoted to LOCKED at
+  // 1:19 PM (22 min before 1:41 PM game), but `health.evaluatedAt`
+  // remained pinned to 2026-05-12 with status=MUTED / reasons=
+  // ['insufficient_proven_wallets'] / ags=0.22 / provenTotal=1 — even
+  // though the v8_* fields stamped fresh values (ags=1.24, 5 proven).
+  // Pick graded WIN but tracked=true / profit=0u because finalUnits
+  // never got recomputed off the stale MUTED state. Same pattern hit
+  // the D-backs ML the same day.
+  //
+  // Mirrors the cron's patch.health shape so downstream readers see
+  // a single canonical schema regardless of which path last wrote.
+  const liveStarsForHealth = stampAgsResult?.tier === 'ELITE' ? 5.0
+    : stampAgsResult?.tier === 'PREMIUM' ? 4.5
+    : stampAgsResult?.tier === 'LOCK' ? 4.0
+    : stampAgsResult?.tier === 'LEAN' ? 3.0
+    : stampAgsResult?.tier === 'WEAK' ? 2.5
+    : 1.0;
+  const healthReasons = [];
+  let healthStatus = 'ACTIVE';
+  if (!Number.isFinite(stampAgsValue)) {
+    healthStatus = 'MUTED';
+    healthReasons.push('no_ags_signal');
+  } else if (stampAgsProvenTotal != null && stampAgsProvenTotal < AGS_MIN_PROVEN_WALLETS) {
+    healthStatus = 'MUTED';
+    healthReasons.push('insufficient_proven_wallets');
+  } else {
+    const cal = getAgsCalibration();
+    if (meetsAgsHardMute(stampAgsValue, cal)) {
+      healthStatus = 'MUTED';
+      healthReasons.push('ags_hard_mute');
+    }
+  }
+  target.health = {
+    status: healthStatus,
+    reasons: healthReasons,
+    currentStars: liveStarsForHealth,
+    walletDelta: wc.delta,
+    qualityMargin: wc.qualityMargin,
+    hcMargin: target.v8_hcMargin,
+    evaluatedAt: Date.now(),
+    syncedBy: 'client-stamp',
+    ags: Number.isFinite(stampAgsValue) ? stampAgsValue : null,
+  };
 }
 
 // Phase 2: true if the existing side is missing a stamp or has a stale one.
