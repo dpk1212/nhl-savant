@@ -12,21 +12,21 @@ May 19 2026
 \\
 Braves  M. Pérez \\
 \\
-52% \\
+54% \\
 \\
-![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--122\\
+-127\\
 \\
 ![Marlins](https://cdn.ciphersports.io/images/MLB/official/MIA.svg)\\
 \\
 Marlins  B. Garrett \\
 \\
-48% \\
+46% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
-+125\\
++127\\
 \\
 MLB \\
 \\
@@ -36,7 +36,7 @@ See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_56_mia_at
 \\
 Guardians  P. Messick \\
 \\
-54% \\
+55% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
@@ -46,11 +46,11 @@ Guardians  P. Messick \\
 \\
 Tigers  K. Montero \\
 \\
-46% \\
+45% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-+145\\
++148\\
 \\
 MLB \\
 \\
@@ -60,21 +60,21 @@ See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_56_det_cl
 \\
 Orioles  K. Bradish \\
 \\
-49% \\
+51% \\
 \\
-![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-+108\\
++101\\
 \\
 ![Rays](https://cdn.ciphersports.io/images/MLB/official/TB.svg)\\
 \\
 Rays  G. Jax \\
 \\
-51% \\
+49% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--108\\
+-104\\
 \\
 MLB \\
 \\
@@ -108,21 +108,21 @@ See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_56_phi_ci
 \\
 Mets  N. McLean \\
 \\
-56% \\
+55% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--127\\
+-126\\
 \\
 ![Nationals](https://cdn.ciphersports.io/images/MLB/official/WSH.svg)\\
 \\
 Nationals  F. Griffin \\
 \\
-44% \\
+45% \\
 \\
-![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-+127\\
++125\\
 \\
 MLB \\
 \\
@@ -134,9 +134,9 @@ Blue Jays  D. Cease \\
 \\
 45% \\
 \\
-![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-+122\\
++121\\
 \\
 ![Yankees](https://cdn.ciphersports.io/images/MLB/official/NYY.svg)\\
 \\
@@ -146,7 +146,7 @@ Yankees  W. Warren \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--125\\
+-122\\
 \\
 MLB \\
 \\
@@ -160,7 +160,7 @@ Astros  L. McCullers \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-+125\\
++121\\
 \\
 ![Twins](https://cdn.ciphersports.io/images/MLB/official/MIN.svg)\\
 \\
@@ -170,7 +170,7 @@ Twins  Z. Matthews \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--127\\
+-124\\
 \\
 MLB \\
 \\
@@ -194,7 +194,7 @@ Cubs  B. Brown \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-+105\\
++108\\
 \\
 MLB \\
 \\
@@ -208,7 +208,7 @@ Red Sox  Starter not available \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--118\\
+-120\\
 \\
 ![Royals](https://cdn.ciphersports.io/images/MLB/official/KC.svg)\\
 \\
@@ -216,9 +216,9 @@ Royals  B. Falter \\
 \\
 47% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
-+118\\
++117\\
 \\
 MLB \\
 \\
@@ -228,7 +228,7 @@ See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_56_kc_bos
 \\
 Pirates  M. Keller \\
 \\
-48% \\
+47% \\
 \\
 ![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
@@ -238,11 +238,11 @@ Pirates  M. Keller \\
 \\
 Cardinals  M. Liberatore \\
 \\
-52% \\
+53% \\
 \\
-![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--108\\
+-111\\
 \\
 MLB \\
 \\
@@ -256,7 +256,7 @@ Rangers  T. Alexander \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-+102\\
++101\\
 \\
 ![Rockies](https://cdn.ciphersports.io/images/MLB/official/COL.svg)\\
 \\
@@ -264,9 +264,9 @@ Rockies  S. Peralta \\
 \\
 50% \\
 \\
-![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--104\\
+-103\\
 \\
 MLB \\
 \\
@@ -278,7 +278,7 @@ Athletics  J. Lopez \\
 \\
 45% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
 +122\\
 \\
@@ -288,9 +288,9 @@ Angels  R. Detmers \\
 \\
 55% \\
 \\
-![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--122\\
+-125\\
 \\
 MLB \\
 \\
@@ -304,7 +304,7 @@ Giants  L. Roupp \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-+113\\
++111\\
 \\
 ![D-Backs](https://cdn.ciphersports.io/images/MLB/official/ARI.svg)\\
 \\
@@ -312,9 +312,9 @@ D-Backs  R. Nelson \\
 \\
 54% \\
 \\
-![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--113\\
+-115\\
 \\
 MLB \\
 \\
@@ -324,21 +324,21 @@ See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_56_ari_sf
 \\
 Dodgers  E. Sheehan \\
 \\
-59% \\
+58% \\
 \\
 ![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
--144\\
+-150\\
 \\
 ![Padres](https://cdn.ciphersports.io/images/MLB/official/SD.svg)\\
 \\
 Padres  G. Canning \\
 \\
-41% \\
+42% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-+146\\
++147\\
 \\
 MLB \\
 \\
@@ -352,7 +352,7 @@ White Sox  A. Kay \\
 \\
 ![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
-+138\\
++133\\
 \\
 ![Mariners](https://cdn.ciphersports.io/images/MLB/official/SEA.svg)\\
 \\
