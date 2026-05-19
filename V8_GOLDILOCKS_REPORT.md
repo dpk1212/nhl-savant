@@ -1,12 +1,12 @@
 # V8 Goldilocks Deep Dive
 
-_Generated 2026-05-18T16:02:25.853Z_
+_Generated 2026-05-19T15:57:34.496Z_
 
 ## 0. Sample & Baseline
 
-- Picks in sample: **401** (LOCKED=269, SHADOW=132)
+- Picks in sample: **416** (LOCKED=279, SHADOW=137)
 - V8 era start: 2026-04-18. Pre-V8 picks excluded — no walletDetails attached.
-- Baseline: WR **49.1%** · flat ROI **-5.1%** · units-wtd ROI **-0.6%**
+- Baseline: WR **48.8%** · flat ROI **-5.7%** · units-wtd ROI **-1.7%**
 
 
 ## 5. Every V8 Pick — Row-Level Detail
@@ -414,6 +414,21 @@ _Generated 2026-05-18T16:02:25.853Z_
 | 2026-05-17 | MLB | TOTAL | over | 5 | 2.5 | +107 | 0.19 | 1 | 0 | 1 | LOSS |
 | 2026-05-17 | MLB | TOTAL | under | 2.5 | 0.3 | -110 | — | 1 | 0 | 1 | WIN |
 | 2026-05-17 | NBA | TOTAL | under | 5 | 0.75 | -110 | 2.57 | 1 | 0 | 1 | LOSS |
+| 2026-05-18 | MLB | ML | home | 4.5 | 5 | -111 | -0.20 | 1 | 0 | 1 | WIN |
+| 2026-05-18 | MLB | ML | away | 4 | 2.5 | +120 | 0.34 | 1 | 0 | 1 | LOSS |
+| 2026-05-18 | MLB | ML | home | 3 | 1.25 | -118 | 0.28 | 0 | 0 | 0 | WIN |
+| 2026-05-18 | MLB | ML | home | 4 | 2.75 | -150 | -1.13 | 1 | 0 | 1 | LOSS |
+| 2026-05-18 | MLB | ML | home | 3 | 1.25 | +132 | 1.14 | 0 | 0 | 0 | WIN |
+| 2026-05-18 | MLB | ML | away | 3 | 0 | -129 | -2.59 | 0 | 0 | 0 | LOSS |
+| 2026-05-18 | MLB | ML | home | 1 | 0 | -198 | -4.16 | 0 | 2 | -2 | WIN |
+| 2026-05-18 | NBA | ML | home | 5 | 5 | -240 | 4.65 | 3 | 3 | 0 | LOSS |
+| 2026-05-18 | NHL | ML | home | 5 | 5 | -112 | 2.43 | 0 | 0 | 0 | LOSS |
+| 2026-05-18 | MLB | SPREAD | away | 1 | 0 | -165 | -2.10 | 0 | 0 | 0 | LOSS |
+| 2026-05-18 | NBA | SPREAD | home | 2.5 | 0 | -110 | 1.84 | 1 | 1 | 0 | LOSS |
+| 2026-05-18 | MLB | TOTAL | under | 1 | 0 | -106 | -2.10 | 0 | 0 | 0 | WIN |
+| 2026-05-18 | MLB | TOTAL | under | 1 | 0 | -104 | -2.01 | 1 | 0 | 1 | LOSS |
+| 2026-05-18 | NBA | TOTAL | under | 2.5 | 0 | -112 | 1.02 | 1 | 2 | -1 | LOSS |
+| 2026-05-18 | NHL | TOTAL | under | 4.5 | 2.25 | -110 | 1.24 | 0 | 0 | 0 | WIN |
 
 ## 3. Continuous Predictors — ρ vs outcomes
 
@@ -421,31 +436,31 @@ Side-aggregated signals that don't need a threshold. "Δ" = for-side minus again
 
 | Feature | ρ(·, won) | ρ(·, flat profit) |
 |---|---:|---:|
-| sumSize_delta | +0.153 | +0.131 |
-| meanConv_F | +0.130 | +0.124 |
-| sumSize_F | +0.110 | +0.109 |
-| countDelta | +0.136 | +0.092 |
-| walletCountAgainst | +0.097 | +0.069 |
-| meanBase_F | -0.098 | -0.067 |
-| walletCountFor | +0.077 | +0.062 |
-| sumRoiN_A | +0.037 | +0.046 |
-| againstSide | +0.030 | +0.041 |
-| sumInvest_delta | -0.078 | -0.038 |
-| meanBase_delta | -0.018 | -0.037 |
-| forSide | -0.083 | -0.036 |
-| netEdge | -0.059 | -0.031 |
-| topShare | +0.006 | -0.030 |
-| concPenalty | +0.012 | -0.027 |
-| walletPlayScore | -0.069 | -0.021 |
-| sumContrib_F | -0.011 | +0.018 |
-| breadthBonus | +0.007 | +0.016 |
-| maxRoiN_F | -0.036 | +0.011 |
-| sumContrib_delta | +0.002 | +0.010 |
-| sumRoiN_F | -0.041 | -0.008 |
-| maxRoiN_delta | +0.026 | -0.004 |
-| sumInvest_F | -0.029 | +0.004 |
-| sumRoiN_delta | +0.001 | -0.001 |
-| meanConv_delta | +0.064 | +0.001 |
+| sumSize_delta | +0.137 | +0.121 |
+| meanConv_F | +0.115 | +0.108 |
+| sumSize_F | +0.098 | +0.098 |
+| countDelta | +0.135 | +0.094 |
+| walletCountAgainst | +0.093 | +0.065 |
+| walletCountFor | +0.072 | +0.060 |
+| meanBase_F | -0.093 | -0.057 |
+| sumInvest_delta | -0.080 | -0.044 |
+| sumRoiN_A | +0.036 | +0.043 |
+| forSide | -0.090 | -0.040 |
+| againstSide | +0.031 | +0.038 |
+| netEdge | -0.061 | -0.030 |
+| meanBase_delta | -0.008 | -0.025 |
+| topShare | +0.019 | -0.024 |
+| walletPlayScore | -0.075 | -0.022 |
+| concPenalty | +0.028 | -0.019 |
+| breadthBonus | +0.006 | +0.016 |
+| maxRoiN_F | -0.041 | +0.014 |
+| sumContrib_F | -0.022 | +0.013 |
+| sumContrib_delta | -0.001 | +0.011 |
+| sumRoiN_F | -0.048 | -0.008 |
+| sumRoiN_delta | +0.004 | +0.007 |
+| maxRoiN_delta | +0.032 | +0.007 |
+| sumInvest_F | -0.033 | -0.005 |
+| meanConv_delta | +0.066 | +0.003 |
 ## 1. Qualified-Sharp Count Scan (H1)
 
 For each quality definition, we count qualified sharps on the pick side (qFor) and bucket picks by that count.
@@ -455,20 +470,20 @@ Higher counts should line up with higher WR and positive ROI if sharps-with-skin
 
 | Quality definition | ρ(qFor, won) | ρ(qFor, flat profit) |
 |---|---:|---:|
-| roiNorm≥70 & sizeRatio≥1 | +0.226 | +0.165 |
-| sizeRatio≥1 (roi any) | +0.202 | +0.157 |
-| convictionMult≥1 | +0.201 | +0.153 |
-| roiNorm≥50 & sizeRatio≥1.25 | +0.200 | +0.142 |
-| roiNorm≥60 & sizeRatio≥1.25 | +0.207 | +0.141 |
-| roiNorm≥60 & sizeRatio≥1 | +0.173 | +0.127 |
-| walletBase≥60 & sizeRatio≥1 | +0.223 | +0.126 |
-| roiNorm≥50 & sizeRatio≥1 | +0.157 | +0.124 |
-| invested≥$5k | +0.132 | +0.121 |
-| walletBase≥50 & sizeRatio≥1 | +0.156 | +0.110 |
-| contribution≥60 | +0.173 | +0.103 |
-| contribution≥50 | +0.130 | +0.083 |
-| rankNorm≥60 | +0.075 | +0.063 |
-| roiNorm≥50 (size any) | +0.056 | +0.028 |
+| roiNorm≥70 & sizeRatio≥1 | +0.225 | +0.166 |
+| sizeRatio≥1 (roi any) | +0.189 | +0.146 |
+| convictionMult≥1 | +0.188 | +0.142 |
+| roiNorm≥50 & sizeRatio≥1.25 | +0.193 | +0.139 |
+| roiNorm≥60 & sizeRatio≥1.25 | +0.200 | +0.138 |
+| walletBase≥60 & sizeRatio≥1 | +0.216 | +0.124 |
+| roiNorm≥60 & sizeRatio≥1 | +0.163 | +0.121 |
+| roiNorm≥50 & sizeRatio≥1 | +0.144 | +0.115 |
+| invested≥$5k | +0.122 | +0.112 |
+| walletBase≥50 & sizeRatio≥1 | +0.150 | +0.106 |
+| contribution≥60 | +0.159 | +0.094 |
+| contribution≥50 | +0.126 | +0.084 |
+| rankNorm≥60 | +0.074 | +0.064 |
+| roiNorm≥50 (size any) | +0.050 | +0.029 |
 
 ### Per-definition bucket tables
 
@@ -477,8 +492,8 @@ Higher counts should line up with higher WR and positive ROI if sharps-with-skin
 
 | Bucket | N | WR | flat ROI | units-wtd ROI |
 |---|---:|---:|---:|---:|
-| 0 qFor | 275 | 48.7% | -6.9% | -3.7% |
-| 1 qFor | 100 | 49.0% | -5.1% | +0.1% |
+| 0 qFor | 289 | 48.4% | -7.4% | -5.2% |
+| 1 qFor | 101 | 48.5% | -6.0% | +0.1% |
 | 2 qFor | 22 | 50.0% | +6.4% | -0.3% |
 | 3+ qFor | 4 | 75.0% | +56.5% | +98.7% |
 
@@ -486,80 +501,80 @@ Higher counts should line up with higher WR and positive ROI if sharps-with-skin
 
 | Bucket | N | WR | flat ROI | units-wtd ROI |
 |---|---:|---:|---:|---:|
-| 0 qFor | 106 | 44.3% | -15.8% | -23.5% |
-| 1 qFor | 168 | 50.6% | -3.8% | +2.6% |
-| 2 qFor | 66 | 43.9% | -16.6% | -2.5% |
-| 3+ qFor | 61 | 59.0% | +22.7% | +9.2% |
+| 0 qFor | 111 | 45.0% | -14.1% | -18.6% |
+| 1 qFor | 173 | 49.7% | -5.7% | +1.0% |
+| 2 qFor | 69 | 44.9% | -14.7% | +0.7% |
+| 3+ qFor | 63 | 57.1% | +18.8% | +0.8% |
 
 #### Quality: convictionMult≥1
 
 | Bucket | N | WR | flat ROI | units-wtd ROI |
 |---|---:|---:|---:|---:|
-| 0 qFor | 109 | 45.0% | -14.5% | -24.6% |
-| 1 qFor | 165 | 50.3% | -4.4% | +3.4% |
-| 2 qFor | 66 | 43.9% | -16.6% | -2.5% |
-| 3+ qFor | 61 | 59.0% | +22.7% | +9.2% |
+| 0 qFor | 114 | 45.6% | -12.9% | -19.9% |
+| 1 qFor | 170 | 49.4% | -6.4% | +1.8% |
+| 2 qFor | 69 | 44.9% | -14.7% | +0.7% |
+| 3+ qFor | 63 | 57.1% | +18.8% | +0.8% |
 
 #### Quality: roiNorm≥50 & sizeRatio≥1.25
 
 | Bucket | N | WR | flat ROI | units-wtd ROI |
 |---|---:|---:|---:|---:|
-| 0 qFor | 205 | 48.3% | -8.8% | -8.3% |
-| 1 qFor | 141 | 51.1% | +0.7% | +7.9% |
+| 0 qFor | 216 | 48.1% | -9.1% | -10.4% |
+| 1 qFor | 144 | 50.7% | -0.0% | +10.0% |
 | 2 qFor | 33 | 36.4% | -26.7% | -24.1% |
-| 3+ qFor | 22 | 63.6% | +25.3% | +27.8% |
+| 3+ qFor | 23 | 60.9% | +19.8% | +15.0% |
 
 #### Quality: roiNorm≥60 & sizeRatio≥1.25
 
 | Bucket | N | WR | flat ROI | units-wtd ROI |
 |---|---:|---:|---:|---:|
-| 0 qFor | 237 | 48.5% | -6.6% | -3.6% |
-| 1 qFor | 121 | 49.6% | -4.8% | -1.2% |
+| 0 qFor | 250 | 48.4% | -6.9% | -3.7% |
+| 1 qFor | 123 | 48.8% | -6.3% | -4.0% |
 | 2 qFor | 29 | 41.4% | -10.8% | -12.5% |
 | 3+ qFor | 14 | 71.4% | +30.4% | +39.8% |
-
-#### Quality: roiNorm≥60 & sizeRatio≥1
-
-| Bucket | N | WR | flat ROI | units-wtd ROI |
-|---|---:|---:|---:|---:|
-| 0 qFor | 216 | 49.5% | -4.8% | +0.9% |
-| 1 qFor | 133 | 47.4% | -9.8% | -7.1% |
-| 2 qFor | 35 | 45.7% | -0.2% | -4.6% |
-| 3+ qFor | 17 | 64.7% | +18.8% | +25.7% |
 
 #### Quality: walletBase≥60 & sizeRatio≥1
 
 | Bucket | N | WR | flat ROI | units-wtd ROI |
 |---|---:|---:|---:|---:|
-| 0 qFor | 226 | 48.7% | -4.8% | -5.0% |
-| 1 qFor | 140 | 49.3% | -7.0% | +4.2% |
+| 0 qFor | 237 | 48.5% | -5.2% | -6.0% |
+| 1 qFor | 144 | 48.6% | -8.3% | +2.5% |
 | 2 qFor | 27 | 48.1% | -11.3% | -16.6% |
 | 3+ qFor | 8 | 62.5% | +42.4% | +46.9% |
+
+#### Quality: roiNorm≥60 & sizeRatio≥1
+
+| Bucket | N | WR | flat ROI | units-wtd ROI |
+|---|---:|---:|---:|---:|
+| 0 qFor | 227 | 49.8% | -4.4% | +1.6% |
+| 1 qFor | 137 | 46.0% | -12.4% | -10.9% |
+| 2 qFor | 35 | 45.7% | -0.2% | -4.6% |
+| 3+ qFor | 17 | 64.7% | +18.8% | +25.7% |
 
 #### Quality: roiNorm≥50 & sizeRatio≥1
 
 | Bucket | N | WR | flat ROI | units-wtd ROI |
 |---|---:|---:|---:|---:|
-| 0 qFor | 180 | 49.4% | -7.4% | -2.1% |
-| 1 qFor | 154 | 50.0% | -1.3% | +3.7% |
+| 0 qFor | 188 | 50.0% | -6.3% | -2.2% |
+| 1 qFor | 160 | 48.8% | -3.8% | +3.1% |
 | 2 qFor | 38 | 36.8% | -26.1% | -26.7% |
-| 3+ qFor | 29 | 58.6% | +17.3% | +19.9% |
+| 3+ qFor | 30 | 56.7% | +13.4% | +10.1% |
 
 #### Quality: invested≥$5k
 
 | Bucket | N | WR | flat ROI | units-wtd ROI |
 |---|---:|---:|---:|---:|
-| 0 qFor | 52 | 42.3% | -20.3% | +1.1% |
-| 1 qFor | 190 | 48.4% | -8.1% | -5.3% |
-| 2 qFor | 85 | 49.4% | -4.6% | -8.4% |
-| 3+ qFor | 74 | 55.4% | +12.9% | +12.4% |
+| 0 qFor | 55 | 41.8% | -21.2% | +1.1% |
+| 1 qFor | 197 | 48.7% | -7.5% | -4.1% |
+| 2 qFor | 87 | 48.3% | -6.8% | -13.7% |
+| 3+ qFor | 77 | 54.5% | +11.0% | +11.2% |
 
 #### Quality: walletBase≥50 & sizeRatio≥1
 
 | Bucket | N | WR | flat ROI | units-wtd ROI |
 |---|---:|---:|---:|---:|
-| 0 qFor | 168 | 50.0% | -4.6% | -1.3% |
-| 1 qFor | 155 | 46.5% | -11.0% | -2.8% |
+| 0 qFor | 176 | 50.0% | -4.6% | -1.3% |
+| 1 qFor | 162 | 45.7% | -12.5% | -5.4% |
 | 2 qFor | 46 | 52.2% | +2.3% | -0.5% |
 | 3+ qFor | 32 | 53.1% | +10.6% | +6.9% |
 
@@ -567,37 +582,37 @@ Higher counts should line up with higher WR and positive ROI if sharps-with-skin
 
 | Bucket | N | WR | flat ROI | units-wtd ROI |
 |---|---:|---:|---:|---:|
-| 0 qFor | 131 | 47.3% | -9.6% | -14.4% |
-| 1 qFor | 170 | 50.0% | -3.2% | +9.3% |
-| 2 qFor | 56 | 53.6% | +0.9% | +0.8% |
-| 3+ qFor | 44 | 45.5% | -6.3% | -7.9% |
+| 0 qFor | 138 | 47.8% | -8.7% | -13.8% |
+| 1 qFor | 175 | 49.7% | -3.8% | +10.8% |
+| 2 qFor | 58 | 51.7% | -2.6% | -4.2% |
+| 3+ qFor | 45 | 44.4% | -8.4% | -12.9% |
 
 #### Quality: contribution≥50
 
 | Bucket | N | WR | flat ROI | units-wtd ROI |
 |---|---:|---:|---:|---:|
-| 0 qFor | 59 | 49.2% | -6.2% | -15.5% |
-| 1 qFor | 183 | 48.1% | -7.5% | -2.9% |
-| 2 qFor | 93 | 47.3% | -7.1% | +2.1% |
-| 3+ qFor | 66 | 54.5% | +5.6% | +4.2% |
+| 0 qFor | 62 | 48.4% | -8.3% | -21.2% |
+| 1 qFor | 191 | 48.2% | -7.4% | -0.0% |
+| 2 qFor | 95 | 47.4% | -6.6% | -0.3% |
+| 3+ qFor | 68 | 52.9% | +2.5% | +0.3% |
 
 #### Quality: rankNorm≥60
 
 | Bucket | N | WR | flat ROI | units-wtd ROI |
 |---|---:|---:|---:|---:|
-| 0 qFor | 75 | 52.0% | -1.1% | +1.4% |
-| 1 qFor | 170 | 44.1% | -16.9% | -20.3% |
-| 2 qFor | 103 | 54.4% | +7.0% | +26.9% |
-| 3+ qFor | 53 | 50.9% | +3.9% | +3.3% |
+| 0 qFor | 80 | 50.0% | -5.4% | -3.5% |
+| 1 qFor | 178 | 44.9% | -15.1% | -17.9% |
+| 2 qFor | 104 | 53.8% | +6.0% | +26.9% |
+| 3+ qFor | 54 | 50.0% | +1.9% | -1.3% |
 
 #### Quality: roiNorm≥50 (size any)
 
 | Bucket | N | WR | flat ROI | units-wtd ROI |
 |---|---:|---:|---:|---:|
-| 0 qFor | 38 | 50.0% | -7.9% | -34.3% |
-| 1 qFor | 162 | 51.2% | -2.2% | +9.1% |
-| 2 qFor | 111 | 49.5% | -0.7% | +3.1% |
-| 3+ qFor | 90 | 44.4% | -14.5% | -9.0% |
+| 0 qFor | 42 | 50.0% | -8.5% | -35.8% |
+| 1 qFor | 169 | 50.9% | -2.9% | +8.7% |
+| 2 qFor | 114 | 49.1% | -1.2% | +4.3% |
+| 3+ qFor | 91 | 44.0% | -15.5% | -11.8% |
 
 ## 2. Qualified-Margin Scan (H2)
 
@@ -607,102 +622,102 @@ Margin = qFor − qAgainst of qualified sharps under each definition. Bigger pos
 
 | Quality definition | ρ(margin, won) | ρ(margin, flat profit) |
 |---|---:|---:|
-| sizeRatio≥1 (roi any) | +0.229 | +0.152 |
-| convictionMult≥1 | +0.228 | +0.147 |
-| roiNorm≥70 & sizeRatio≥1 | +0.223 | +0.141 |
-| roiNorm≥60 & sizeRatio≥1.25 | +0.215 | +0.134 |
-| roiNorm≥50 & sizeRatio≥1.25 | +0.202 | +0.112 |
-| roiNorm≥60 & sizeRatio≥1 | +0.178 | +0.110 |
-| invested≥$5k | +0.113 | +0.099 |
-| roiNorm≥50 & sizeRatio≥1 | +0.168 | +0.096 |
-| walletBase≥60 & sizeRatio≥1 | +0.202 | +0.087 |
-| walletBase≥50 & sizeRatio≥1 | +0.171 | +0.086 |
-| contribution≥50 | +0.119 | +0.055 |
-| contribution≥60 | +0.137 | +0.050 |
-| rankNorm≥60 | +0.047 | +0.048 |
-| roiNorm≥50 (size any) | +0.085 | +0.044 |
+| roiNorm≥70 & sizeRatio≥1 | +0.226 | +0.145 |
+| sizeRatio≥1 (roi any) | +0.214 | +0.142 |
+| convictionMult≥1 | +0.213 | +0.137 |
+| roiNorm≥60 & sizeRatio≥1.25 | +0.215 | +0.137 |
+| roiNorm≥60 & sizeRatio≥1 | +0.177 | +0.112 |
+| roiNorm≥50 & sizeRatio≥1.25 | +0.195 | +0.111 |
+| roiNorm≥50 & sizeRatio≥1 | +0.159 | +0.093 |
+| invested≥$5k | +0.102 | +0.090 |
+| walletBase≥60 & sizeRatio≥1 | +0.198 | +0.090 |
+| walletBase≥50 & sizeRatio≥1 | +0.167 | +0.087 |
+| contribution≥50 | +0.119 | +0.060 |
+| roiNorm≥50 (size any) | +0.088 | +0.053 |
+| rankNorm≥60 | +0.050 | +0.050 |
+| contribution≥60 | +0.127 | +0.045 |
 
 ### Per-definition bucket tables
 
-
-#### Quality: sizeRatio≥1 (roi any)
-
-| Bucket | N | WR | flat ROI | units-wtd ROI |
-|---|---:|---:|---:|---:|
-| margin ≤ 0 | 153 | 45.8% | -9.8% | +0.7% |
-| margin +1 | 165 | 50.9% | -3.0% | -1.4% |
-| margin +2 | 46 | 47.8% | -9.5% | -4.1% |
-| margin ≥+3 | 37 | 56.8% | +10.6% | +4.0% |
-
-#### Quality: convictionMult≥1
-
-| Bucket | N | WR | flat ROI | units-wtd ROI |
-|---|---:|---:|---:|---:|
-| margin ≤ 0 | 156 | 46.2% | -9.0% | -0.5% |
-| margin +1 | 162 | 50.6% | -3.6% | -0.7% |
-| margin +2 | 46 | 47.8% | -9.5% | -4.1% |
-| margin ≥+3 | 37 | 56.8% | +10.6% | +4.0% |
 
 #### Quality: roiNorm≥70 & sizeRatio≥1
 
 | Bucket | N | WR | flat ROI | units-wtd ROI |
 |---|---:|---:|---:|---:|
-| margin ≤ 0 | 296 | 49.0% | -5.3% | -2.6% |
-| margin +1 | 87 | 48.3% | -7.2% | +2.0% |
+| margin ≤ 0 | 310 | 48.7% | -5.9% | -4.1% |
+| margin +1 | 88 | 47.7% | -8.2% | +2.0% |
 | margin +2 | 14 | 50.0% | -3.6% | -19.9% |
 | margin ≥+3 | 4 | 75.0% | +56.5% | +98.7% |
+
+#### Quality: sizeRatio≥1 (roi any)
+
+| Bucket | N | WR | flat ROI | units-wtd ROI |
+|---|---:|---:|---:|---:|
+| margin ≤ 0 | 161 | 46.0% | -9.5% | +3.0% |
+| margin +1 | 167 | 50.3% | -4.1% | -2.8% |
+| margin +2 | 50 | 48.0% | -9.2% | -4.4% |
+| margin ≥+3 | 38 | 55.3% | +7.7% | -2.5% |
+
+#### Quality: convictionMult≥1
+
+| Bucket | N | WR | flat ROI | units-wtd ROI |
+|---|---:|---:|---:|---:|
+| margin ≤ 0 | 164 | 46.3% | -8.8% | +1.8% |
+| margin +1 | 164 | 50.0% | -4.7% | -2.1% |
+| margin +2 | 50 | 48.0% | -9.2% | -4.4% |
+| margin ≥+3 | 38 | 55.3% | +7.7% | -2.5% |
 
 #### Quality: roiNorm≥60 & sizeRatio≥1.25
 
 | Bucket | N | WR | flat ROI | units-wtd ROI |
 |---|---:|---:|---:|---:|
-| margin ≤ 0 | 264 | 48.5% | -5.9% | -5.0% |
+| margin ≤ 0 | 279 | 48.0% | -6.9% | -6.6% |
 | margin +1 | 109 | 50.5% | -2.6% | +4.5% |
 | margin +2 | 22 | 45.5% | -10.1% | +8.7% |
 | margin ≥+3 | 6 | 66.7% | +5.7% | +3.9% |
-
-#### Quality: roiNorm≥50 & sizeRatio≥1.25
-
-| Bucket | N | WR | flat ROI | units-wtd ROI |
-|---|---:|---:|---:|---:|
-| margin ≤ 0 | 234 | 49.6% | -3.8% | -3.9% |
-| margin +1 | 132 | 48.5% | -5.7% | +1.8% |
-| margin +2 | 26 | 42.3% | -18.9% | -7.2% |
-| margin ≥+3 | 9 | 66.7% | +11.8% | +38.8% |
 
 #### Quality: roiNorm≥60 & sizeRatio≥1
 
 | Bucket | N | WR | flat ROI | units-wtd ROI |
 |---|---:|---:|---:|---:|
-| margin ≤ 0 | 250 | 49.2% | -4.7% | -0.5% |
-| margin +1 | 120 | 47.5% | -8.3% | -5.9% |
+| margin ≤ 0 | 263 | 49.0% | -5.0% | -1.6% |
+| margin +1 | 122 | 46.7% | -9.8% | -7.5% |
 | margin +2 | 21 | 52.4% | +0.1% | +12.0% |
 | margin ≥+3 | 10 | 60.0% | +13.9% | +15.5% |
 
-#### Quality: invested≥$5k
+#### Quality: roiNorm≥50 & sizeRatio≥1.25
 
 | Bucket | N | WR | flat ROI | units-wtd ROI |
 |---|---:|---:|---:|---:|
-| margin ≤ 0 | 114 | 50.9% | -4.5% | +13.7% |
-| margin +1 | 181 | 45.9% | -10.5% | -11.8% |
-| margin +2 | 70 | 50.0% | +1.4% | -7.2% |
-| margin ≥+3 | 36 | 58.3% | +7.8% | +19.2% |
+| margin ≤ 0 | 246 | 49.2% | -4.6% | -6.0% |
+| margin +1 | 135 | 48.1% | -6.4% | +1.5% |
+| margin +2 | 26 | 42.3% | -18.9% | -7.2% |
+| margin ≥+3 | 9 | 66.7% | +11.8% | +38.8% |
 
 #### Quality: roiNorm≥50 & sizeRatio≥1
 
 | Bucket | N | WR | flat ROI | units-wtd ROI |
 |---|---:|---:|---:|---:|
-| margin ≤ 0 | 217 | 50.2% | -2.9% | +3.8% |
-| margin +1 | 142 | 47.9% | -6.6% | -5.6% |
+| margin ≤ 0 | 228 | 50.0% | -3.4% | +1.2% |
+| margin +1 | 146 | 47.3% | -7.8% | -5.7% |
 | margin +2 | 30 | 40.0% | -25.7% | -20.5% |
 | margin ≥+3 | 12 | 66.7% | +25.9% | +50.3% |
+
+#### Quality: invested≥$5k
+
+| Bucket | N | WR | flat ROI | units-wtd ROI |
+|---|---:|---:|---:|---:|
+| margin ≤ 0 | 119 | 50.4% | -5.6% | +13.7% |
+| margin +1 | 186 | 46.2% | -9.6% | -10.3% |
+| margin +2 | 72 | 48.6% | -1.4% | -12.5% |
+| margin ≥+3 | 39 | 56.4% | +4.4% | +16.3% |
 
 #### Quality: walletBase≥60 & sizeRatio≥1
 
 | Bucket | N | WR | flat ROI | units-wtd ROI |
 |---|---:|---:|---:|---:|
-| margin ≤ 0 | 258 | 50.0% | -2.0% | +0.3% |
-| margin +1 | 121 | 47.1% | -11.6% | -2.7% |
+| margin ≤ 0 | 271 | 49.4% | -3.2% | -2.6% |
+| margin +1 | 123 | 47.2% | -11.5% | -1.6% |
 | margin +2 | 17 | 47.1% | -18.1% | -12.0% |
 | margin ≥+3 | 5 | 60.0% | +38.9% | +38.7% |
 
@@ -710,8 +725,8 @@ Margin = qFor − qAgainst of qualified sharps under each definition. Bigger pos
 
 | Bucket | N | WR | flat ROI | units-wtd ROI |
 |---|---:|---:|---:|---:|
-| margin ≤ 0 | 209 | 51.2% | +0.8% | +8.1% |
-| margin +1 | 143 | 44.1% | -16.9% | -15.8% |
+| margin ≤ 0 | 219 | 50.7% | -0.4% | +5.2% |
+| margin +1 | 148 | 43.9% | -17.1% | -15.1% |
 | margin +2 | 33 | 48.5% | -6.3% | -1.6% |
 | margin ≥+3 | 16 | 68.8% | +27.2% | +28.1% |
 
@@ -719,65 +734,65 @@ Margin = qFor − qAgainst of qualified sharps under each definition. Bigger pos
 
 | Bucket | N | WR | flat ROI | units-wtd ROI |
 |---|---:|---:|---:|---:|
-| margin ≤ 0 | 115 | 51.3% | +2.8% | +6.7% |
-| margin +1 | 178 | 49.4% | -4.7% | -2.9% |
-| margin +2 | 71 | 43.7% | -18.1% | -2.9% |
+| margin ≤ 0 | 119 | 50.4% | +0.6% | +3.9% |
+| margin +1 | 185 | 49.7% | -4.2% | -0.2% |
+| margin +2 | 75 | 42.7% | -19.4% | -9.4% |
 | margin ≥+3 | 37 | 51.4% | -6.1% | -1.1% |
-
-#### Quality: contribution≥60
-
-| Bucket | N | WR | flat ROI | units-wtd ROI |
-|---|---:|---:|---:|---:|
-| margin ≤ 0 | 175 | 53.1% | +4.6% | +9.9% |
-| margin +1 | 162 | 45.7% | -12.4% | -2.7% |
-| margin +2 | 41 | 46.3% | -13.2% | -14.2% |
-| margin ≥+3 | 23 | 47.8% | -12.5% | -4.9% |
-
-#### Quality: rankNorm≥60
-
-| Bucket | N | WR | flat ROI | units-wtd ROI |
-|---|---:|---:|---:|---:|
-| margin ≤ 0 | 141 | 50.4% | -6.3% | -7.0% |
-| margin +1 | 155 | 47.1% | -6.0% | -4.8% |
-| margin +2 | 77 | 50.6% | -2.0% | +16.2% |
-| margin ≥+3 | 28 | 50.0% | -1.8% | +2.1% |
 
 #### Quality: roiNorm≥50 (size any)
 
 | Bucket | N | WR | flat ROI | units-wtd ROI |
 |---|---:|---:|---:|---:|
-| margin ≤ 0 | 110 | 52.7% | +1.8% | +10.0% |
-| margin +1 | 151 | 47.7% | -8.1% | -2.1% |
-| margin +2 | 89 | 52.8% | +4.9% | +6.8% |
+| margin ≤ 0 | 117 | 51.3% | -1.4% | +1.6% |
+| margin +1 | 158 | 47.5% | -8.6% | -1.8% |
+| margin +2 | 90 | 53.3% | +6.3% | +8.2% |
 | margin ≥+3 | 51 | 39.2% | -28.2% | -17.9% |
+
+#### Quality: rankNorm≥60
+
+| Bucket | N | WR | flat ROI | units-wtd ROI |
+|---|---:|---:|---:|---:|
+| margin ≤ 0 | 146 | 49.3% | -8.5% | -9.0% |
+| margin +1 | 163 | 47.9% | -4.6% | -3.6% |
+| margin +2 | 79 | 49.4% | -4.5% | +10.1% |
+| margin ≥+3 | 28 | 50.0% | -1.8% | +2.1% |
+
+#### Quality: contribution≥60
+
+| Bucket | N | WR | flat ROI | units-wtd ROI |
+|---|---:|---:|---:|---:|
+| margin ≤ 0 | 183 | 53.0% | +4.2% | +9.6% |
+| margin +1 | 167 | 45.5% | -12.8% | -3.0% |
+| margin +2 | 43 | 44.2% | -17.2% | -19.8% |
+| margin ≥+3 | 23 | 47.8% | -12.5% | -4.9% |
 
 ## 4. Goldilocks Rule Mining (1-, 2-, 3-factor AND)
 
 Scans binary conditions and their 2-way + 3-way AND combinations. Ranked by mean flat ROI with ≥ min-N picks satisfied.
-Use this as a hint generator, not a backtest — with N=401 most rules are overfit.
+Use this as a hint generator, not a backtest — with N=416 most rules are overfit.
 
 ### Single-factor rules (N ≥ 3)
 
 | Rule | N | WR | flat ROI | wtd ROI |
 |---|---:|---:|---:|---:|
-| walletPlayScore≥3 | 77 | 54.5% | +10.7% | +11.2% |
-| regime=CLEAR_MOVE | 93 | 58.1% | +7.6% | +25.5% |
+| walletPlayScore≥3 | 78 | 53.8% | +9.3% | +7.7% |
+| regime=CLEAR_MOVE | 99 | 57.6% | +7.2% | +20.8% |
 | qFor(roi60+size1.25)≥2 | 43 | 51.2% | +2.6% | +10.3% |
-| walletPlayScore≥2 | 130 | 50.0% | +0.9% | +8.3% |
-| stars≥3.5 | 227 | 50.2% | -2.6% | +3.0% |
-| sumInvested_F≥$10k | 323 | 50.2% | -2.7% | -1.9% |
-| topShare≤0.5 | 165 | 49.1% | -3.0% | +5.0% |
-| qFor(roi50+size1)≥1 | 221 | 48.9% | -3.1% | +0.2% |
+| walletPlayScore≥2 | 132 | 49.2% | -0.7% | +3.9% |
 | qMargin(roi60+size1.25)≥1 | 137 | 50.4% | -3.5% | +5.2% |
-| walletCountFor≥3 | 194 | 49.0% | -3.7% | +3.8% |
-| maxRoiN_F≥70 | 226 | 49.1% | -4.2% | +4.1% |
-| concPenalty≤2.5 | 245 | 48.6% | -4.5% | +1.1% |
-| netEdge≥1 | 193 | 48.7% | -4.6% | -1.5% |
-| stars≥3 | 267 | 49.1% | -4.8% | +1.2% |
-| qFor(roi50+size1)≥2 | 67 | 46.3% | -7.3% | -5.4% |
-| walletCountAgainst=0 | 171 | 49.1% | -7.5% | -12.1% |
-| qMargin(roi50+size1)≥1 | 184 | 47.8% | -7.6% | -3.8% |
-| meanBase_F≥55 | 222 | 45.0% | -13.6% | -10.6% |
+| stars≥3.5 | 233 | 49.8% | -3.5% | +0.7% |
+| sumInvested_F≥$10k | 334 | 49.7% | -3.8% | -3.5% |
+| maxRoiN_F≥70 | 228 | 49.1% | -4.0% | +4.6% |
+| walletCountFor≥3 | 200 | 48.5% | -4.7% | +2.6% |
+| netEdge≥1 | 200 | 48.5% | -4.8% | -2.7% |
+| stars≥3 | 276 | 48.9% | -5.0% | -0.2% |
+| qFor(roi50+size1)≥1 | 228 | 47.8% | -5.3% | -1.5% |
+| topShare≤0.5 | 169 | 47.9% | -5.3% | +1.4% |
+| concPenalty≤2.5 | 250 | 48.0% | -5.4% | -1.3% |
+| walletCountAgainst=0 | 182 | 48.9% | -7.6% | -11.5% |
+| qMargin(roi50+size1)≥1 | 188 | 47.3% | -8.5% | -4.0% |
+| qFor(roi50+size1)≥2 | 68 | 45.6% | -8.7% | -9.1% |
+| meanBase_F≥55 | 226 | 45.1% | -13.3% | -9.9% |
 
 ### Top 2-factor AND rules (N ≥ 3, top 25)
 
@@ -785,29 +800,29 @@ Use this as a hint generator, not a backtest — with N=401 most rules are overf
 |---|---:|---:|---:|---:|
 | qFor(roi60+size1.25)≥2 ∧ walletPlayScore≥3 | 28 | 57.1% | +22.5% | +14.9% |
 | qFor(roi60+size1.25)≥2 ∧ regime=CLEAR_MOVE | 10 | 70.0% | +21.4% | +33.5% |
-| walletCountAgainst=0 ∧ regime=CLEAR_MOVE | 44 | 63.6% | +19.4% | +35.5% |
+| walletCountAgainst=0 ∧ regime=CLEAR_MOVE | 49 | 63.3% | +19.6% | +32.3% |
 | qFor(roi60+size1.25)≥2 ∧ stars≥3.5 | 34 | 58.8% | +19.1% | +16.4% |
 | qMargin(roi60+size1.25)≥1 ∧ regime=CLEAR_MOVE | 29 | 65.5% | +17.0% | +37.6% |
 | qFor(roi60+size1.25)≥2 ∧ walletPlayScore≥2 | 34 | 55.9% | +16.8% | +13.6% |
 | qFor(roi60+size1.25)≥2 ∧ walletCountAgainst=0 | 5 | 60.0% | +13.3% | +16.7% |
-| qFor(roi50+size1)≥2 ∧ walletPlayScore≥3 | 37 | 54.1% | +12.7% | +2.3% |
-| qFor(roi50+size1)≥1 ∧ regime=CLEAR_MOVE | 53 | 60.4% | +12.1% | +29.4% |
-| walletPlayScore≥3 ∧ stars≥3 | 73 | 54.8% | +11.4% | +11.6% |
-| walletPlayScore≥3 ∧ stars≥3.5 | 69 | 55.1% | +11.4% | +10.8% |
-| walletCountFor≥3 ∧ walletPlayScore≥3 | 77 | 54.5% | +10.7% | +11.2% |
-| walletPlayScore≥2 ∧ walletPlayScore≥3 | 77 | 54.5% | +10.7% | +11.2% |
-| walletPlayScore≥3 ∧ topShare≤0.5 | 77 | 54.5% | +10.7% | +11.2% |
-| walletPlayScore≥3 ∧ concPenalty≤2.5 | 77 | 54.5% | +10.7% | +11.2% |
 | qFor(roi60+size1.25)≥2 ∧ walletCountFor≥3 | 40 | 55.0% | +10.3% | +13.7% |
-| walletPlayScore≥3 ∧ netEdge≥1 | 76 | 53.9% | +10.2% | +10.9% |
+| walletPlayScore≥3 ∧ stars≥3 | 74 | 54.1% | +9.9% | +8.0% |
+| walletPlayScore≥3 ∧ stars≥3.5 | 70 | 54.3% | +9.8% | +7.2% |
+| qFor(roi50+size1)≥2 ∧ walletPlayScore≥3 | 38 | 52.6% | +9.7% | -3.9% |
 | qFor(roi60+size1.25)≥2 ∧ stars≥3 | 38 | 55.3% | +9.7% | +14.0% |
-| qFor(roi50+size1)≥1 ∧ walletPlayScore≥3 | 63 | 52.4% | +9.5% | +5.2% |
-| walletPlayScore≥3 ∧ regime=CLEAR_MOVE | 16 | 62.5% | +8.9% | +30.0% |
+| qFor(roi50+size1)≥1 ∧ regime=CLEAR_MOVE | 56 | 58.9% | +9.5% | +26.2% |
+| walletCountFor≥3 ∧ walletPlayScore≥3 | 78 | 53.8% | +9.3% | +7.7% |
+| walletPlayScore≥2 ∧ walletPlayScore≥3 | 78 | 53.8% | +9.3% | +7.7% |
+| walletPlayScore≥3 ∧ topShare≤0.5 | 78 | 53.8% | +9.3% | +7.7% |
+| walletPlayScore≥3 ∧ concPenalty≤2.5 | 78 | 53.8% | +9.3% | +7.7% |
 | qFor(roi60+size1.25)≥2 ∧ netEdge≥1 | 35 | 51.4% | +8.8% | +7.8% |
-| qMargin(roi50+size1)≥1 ∧ regime=CLEAR_MOVE | 44 | 59.1% | +8.8% | +27.6% |
-| walletPlayScore≥3 ∧ sumInvested_F≥$10k | 75 | 53.3% | +8.6% | +8.9% |
-| regime=CLEAR_MOVE ∧ sumInvested_F≥$10k | 69 | 59.4% | +8.3% | +20.4% |
+| walletPlayScore≥3 ∧ netEdge≥1 | 77 | 53.2% | +8.8% | +7.4% |
+| qMargin(roi50+size1)≥1 ∧ regime=CLEAR_MOVE | 46 | 58.7% | +8.2% | +31.2% |
+| qFor(roi50+size1)≥1 ∧ walletPlayScore≥3 | 64 | 51.6% | +7.8% | +1.2% |
 | qMargin(roi60+size1.25)≥1 ∧ walletPlayScore≥3 | 45 | 55.6% | +7.7% | +11.6% |
+| qFor(roi60+size1.25)≥2 ∧ maxRoiN_F≥70 | 41 | 53.7% | +7.6% | +12.5% |
+| qFor(roi60+size1.25)≥2 ∧ topShare≤0.5 | 38 | 52.6% | +7.6% | +10.6% |
+| regime=CLEAR_MOVE ∧ sumInvested_F≥$10k | 73 | 58.9% | +7.5% | +14.3% |
 
 ### Top 3-factor AND rules (N ≥ 3, top 25)
 
@@ -825,11 +840,11 @@ Use this as a hint generator, not a backtest — with N=401 most rules are overf
 | qFor(roi60+size1.25)≥2 ∧ walletPlayScore≥3 ∧ stars≥3.5 | 25 | 60.0% | +27.4% | +16.4% |
 | qFor(roi60+size1.25)≥2 ∧ qMargin(roi50+size1)≥1 ∧ stars≥3.5 | 32 | 62.5% | +26.5% | +25.1% |
 | qMargin(roi60+size1.25)≥1 ∧ walletPlayScore≥2 ∧ regime=CLEAR_MOVE | 17 | 70.6% | +25.5% | +45.8% |
-| qFor(roi50+size1)≥1 ∧ walletCountAgainst=0 ∧ regime=CLEAR_MOVE | 21 | 66.7% | +25.4% | +43.6% |
-| qMargin(roi50+size1)≥1 ∧ walletCountAgainst=0 ∧ regime=CLEAR_MOVE | 21 | 66.7% | +25.4% | +43.6% |
 | qMargin(roi60+size1.25)≥1 ∧ netEdge≥1 ∧ regime=CLEAR_MOVE | 20 | 70.0% | +24.9% | +43.8% |
 | qFor(roi60+size1.25)≥2 ∧ walletCountAgainst=0 ∧ meanBase_F≥55 | 3 | 66.7% | +24.1% | +39.2% |
 | qFor(roi60+size1.25)≥2 ∧ walletPlayScore≥3 ∧ meanBase_F≥55 | 20 | 60.0% | +23.5% | +16.0% |
+| qFor(roi50+size1)≥1 ∧ walletCountAgainst=0 ∧ regime=CLEAR_MOVE | 23 | 65.2% | +22.8% | +49.4% |
+| qMargin(roi50+size1)≥1 ∧ walletCountAgainst=0 ∧ regime=CLEAR_MOVE | 23 | 65.2% | +22.8% | +49.4% |
 | qFor(roi60+size1.25)≥2 ∧ walletCountFor≥3 ∧ stars≥3.5 | 33 | 60.6% | +22.7% | +17.6% |
 | qFor(roi60+size1.25)≥2 ∧ walletPlayScore≥3 ∧ stars≥3 | 26 | 57.7% | +22.5% | +15.3% |
 | qFor(roi50+size1)≥1 ∧ qFor(roi60+size1.25)≥2 ∧ walletPlayScore≥3 | 28 | 57.1% | +22.5% | +14.9% |
