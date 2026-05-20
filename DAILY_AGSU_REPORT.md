@@ -1,6 +1,6 @@
 # AGS-Unified v9 — Daily Monitoring Report
 
-**Generated:** Wednesday, May 20, 2026 at 9:02 AM ET
+**Generated:** Wednesday, May 20, 2026 at 12:07 PM ET
 **AGS-U cutover:** 2026-05-14 · **Days live:** 6
 
 > **Scope.** Every row in this report comes from picks AGS-U v9 actually promoted (`promotedBy = ags-unified-v9`). Picks promoted by legacy v7/v8 routes are intentionally excluded — they'd contaminate the calibration story. Within the AGS-U pool, each pick is classified as one of two things:
@@ -199,7 +199,7 @@ Below-q20 AGS-U values are SHADOWed (never shipped). We can validate the floor b
 |----------------------------------------------------------------|-------|----------------------------------------------------|
 | Graded picks with `tracked=true` AND `finalUnits > 0`         |     1 | 🚨 grader regression — see betTracking.js |
 | Graded picks with `tracked=true` AND `finalUnits == 0`        |     9 | 🟡 informational only — true tracked plays |
-| Live picks (not graded yet) with `finalUnits > 0`             |     2 | 🟢 picks queued for grading |
+| Live picks (not graded yet) with `finalUnits > 0`             |     5 | 🟢 picks queued for grading |
 | AGS-U promoted picks missing `v8_ags` value                   |     0 | 🟢 every pick has an AGS-U |
 | AGS-U promoted picks missing `agsTier`                        |     0 | 🟢 every pick has a tier |
 | Shipped picks with `provenWalletCount < 2`                    |     1 | 🚨 picks bypassed AGS_MIN_PROVEN_WALLETS gate |
@@ -214,30 +214,30 @@ Below-q20 AGS-U values are SHADOWed (never shipped). We can validate the floor b
 
 Live calibration document used by both the cron and the UI:
 
-- **Computed at:** 2026-05-19T16:03:30.841Z
+- **Computed at:** 2026-05-20T13:02:24.453Z
 - **Source / version:** cron
-- **Sample size:** 413
-- **Date range:** 2026-04-18 → 2026-05-18
+- **Sample size:** 429
+- **Date range:** 2026-04-18 → 2026-05-19
 
 **AGS-U quintile boundaries (summed-z space):**
 
 | Boundary | Value      |
 |----------|------------|
-| q20      |      -2.92 |
-| q40      |      -0.03 |
-| q50      |      +0.54 |
-| q60      |      +0.84 |
-| q80      |      +2.76 |
-| q90      |      +3.63 |
+| q20      |      -2.80 |
+| q40      |      -0.05 |
+| q50      |      +0.48 |
+| q60      |      +0.81 |
+| q80      |      +2.74 |
+| q90      |      +3.70 |
 
 **Feature normalizers (mean / sd):**
 
 | Feature           | Mean   | SD     |
 |-------------------|--------|--------|
-| Δcount            |   1.42 |   1.58 |
-| ΔHCcount          |   0.44 |   0.83 |
+| Δcount            |   1.43 |   1.57 |
+| ΔHCcount          |   0.45 |   0.83 |
 | ΔavgConviction    |   0.54 |   0.55 |
-| ΔHCsizeRatio      |   1.46 |   5.19 |
+| ΔHCsizeRatio      |   1.52 |   5.19 |
 | forShare          |   0.81 |   0.25 |
 
 ---
