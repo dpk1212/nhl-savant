@@ -2542,12 +2542,15 @@ function estimateStarsFromSnap(snap) {
 
 async function loadAllTimePnL() {
   try {
-    // v16 — byAgsTier tracks pendingPicks separately so the headline N
-    // on each tier tile equals W+L+P (graded count). Previously N
-    // counted all shipped picks including pending, which read as a
-    // math error to users ("3 (1-0)" looks like 3 ≠ 1+0). Pending
-    // and tracked counts now surface as their own contextual chips.
-    const cacheKey = 'sharpFlow_pnl_v16';
+    // v17 — picks now carry AGS-U context (v8_ags, v8_agsTier,
+    // v8_agsComponents, team labels, lock odds) so the new AGS-U
+    // Performance Dashboard can render a per-pick ledger with tier
+    // badge, AGS-U value, dominant feature, and proper sport/market
+    // filtering without an extra Firestore read. v16 byAgsTier
+    // tier counters (wins/losses/pushes/pending/tracked + roi) are
+    // preserved unchanged so the existing Locked-Picks-Today tier
+    // scorecard keeps working.
+    const cacheKey = 'sharpFlow_pnl_v17';
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
       const { data, ts } = JSON.parse(cached);
@@ -2684,6 +2687,18 @@ async function loadAllTimePnL() {
             v8_superTopPick: sd.v8_superTopPick,
             v8_lockTier: sd.v8_lockTier,
             v8_systemVersion: sd.v8_systemVersion,
+            // v17 — AGS-U context for the new Performance Dashboard ledger.
+            // null-safe; pre-cutover picks won't have these and the ledger
+            // filters them out via the AGS_U_CUTOVER date guard.
+            v8_ags: Number.isFinite(sd.v8_ags) ? sd.v8_ags : null,
+            v8_agsTier: typeof sd.v8_agsTier === 'string' ? sd.v8_agsTier : null,
+            v8_agsComponents: sd.v8_agsComponents || null,
+            team: sd.team || null,
+            away: data.away || null,
+            home: data.home || null,
+            oddsLock: Number.isFinite(sd.lock?.odds) ? sd.lock.odds
+                    : Number.isFinite(sd.peak?.odds) ? sd.peak.odds
+                    : null,
           };
           if (sd.status === 'COMPLETED') {
             pick.outcome = sd.result?.outcome || null;
@@ -8880,8 +8895,14 @@ export default function SharpFlow() {
   const [sortBy, setSortBy] = useState('stars');
   const [lockedPicks, setLockedPicks] = useState({});
   const [allTimePnL, setAllTimePnL] = useState(null);
-  const [showPerf, setShowPerf] = useState(false);
+  const [showPerf, setShowPerf] = useState(false); // V1 / pre-cutover archive — collapsed by default
   const [perfDateRange, setPerfDateRange] = useState('all');
+  // AGS-U Performance Dashboard (new primary view, post-2026-05-14 cutover)
+  const [showAgsuPerf, setShowAgsuPerf] = useState(true);
+  const [agsuDateRange, setAgsuDateRange] = useState('all');
+  const [agsuSport, setAgsuSport] = useState('ALL');
+  const [agsuMarket, setAgsuMarket] = useState('all');
+  const [agsCalDoc, setAgsCalDoc] = useState(null);
   const [lockedDay, setLockedDay] = useState('today');
   const [lockedStatusFilter, setLockedStatusFilter] = useState('all');
   const [lockedSort, setLockedSort] = useState('stars');
@@ -8921,11 +8942,24 @@ export default function SharpFlow() {
     // paywall (uses pregame totals), or the Locked Picks list (uses
     // `byAgsTier` for the post-cutover Q-tier scorecard). One fetch
     // serves them all; sessionStorage caches for 30 min.
-    if ((showPerf || !isPremium || sortBy === 'locked') && !pnlLoadedRef.current) {
+    if ((showPerf || showAgsuPerf || !isPremium || sortBy === 'locked') && !pnlLoadedRef.current) {
       pnlLoadedRef.current = true;
       loadAllTimePnL().then(setAllTimePnL);
     }
-  }, [showPerf, isPremium, sortBy]);
+  }, [showPerf, showAgsuPerf, isPremium, sortBy]);
+
+  // Load AGS-U calibration doc once for the Calibration Health card.
+  // Cached in component state; no need to refresh per-cycle since calibration
+  // only updates once per day via scripts/computeAgsCalibration.js.
+  const calLoadedRef = useRef(false);
+  useEffect(() => {
+    if ((showAgsuPerf || sortBy === 'locked') && !calLoadedRef.current) {
+      calLoadedRef.current = true;
+      getDoc(doc(db, 'agsCalibration', 'current'))
+        .then(snap => { if (snap.exists()) setAgsCalDoc(snap.data()); })
+        .catch(err => console.warn('cal load failed:', err.message));
+    }
+  }, [showAgsuPerf, sortBy]);
 
   const onPickSynced = useCallback((docId, side, snap, meta, action) => {
     setLockedPicks(prev => {
@@ -10925,7 +10959,693 @@ export default function SharpFlow() {
                 hint="Aggregate P&L of all tracked sharp bettors" />
             </div>
 
-            {/* ─── Pick Performance Tracker ─── */}
+            {/* ─── AGS-U Performance Dashboard (primary, since 2026-05-14 cutover) ─── */}
+            {(() => {
+              const hasData = allTimePnL && (allTimePnL.picks?.length > 0);
+
+              // ─── Filter AGS-U picks ────────────────────────────────────
+              // Only post-cutover, with v8_agsTier stamped. Apply UI filters
+              // for date range / sport / market on top.
+              const rawAgsuPicks = ((allTimePnL?.picks || []).filter(p => {
+                if (!p.date || p.date < AGS_U_CUTOVER) return false;
+                if (!p.v8_agsTier) return false;
+                if (p.cancelled) return false;
+                return true;
+              }));
+              const isAgsuFiltered = agsuDateRange !== 'all' || agsuSport !== 'ALL' || agsuMarket !== 'all';
+              const nowEt = new Date();
+              const todayEt = nowEt.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+              const yesterdayEt = new Date(nowEt.getTime() - 86400000).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+              const passesAgsuFilter = (p) => {
+                if (agsuSport !== 'ALL' && p.sport !== agsuSport) return false;
+                if (agsuMarket !== 'all' && (p.marketType || 'ml') !== agsuMarket) return false;
+                if (agsuDateRange === 'all') return true;
+                if (agsuDateRange === 'today') return p.date === todayEt;
+                if (agsuDateRange === 'yesterday') return p.date === yesterdayEt;
+                if (agsuDateRange === '7d') {
+                  const d = new Date(nowEt); d.setDate(d.getDate() - 7);
+                  return p.date >= d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+                }
+                return true;
+              };
+              const agsuPicks = rawAgsuPicks.filter(passesAgsuFilter);
+
+              // ─── Aggregate hero metrics from filtered picks ────────────
+              const liveGraded = agsuPicks.filter(p => !p.tracked && p.outcome && p.outcome !== 'PUSH');
+              const liveWins = liveGraded.filter(p => p.outcome === 'WIN').length;
+              const liveLosses = liveGraded.filter(p => p.outcome === 'LOSS').length;
+              const livePushes = agsuPicks.filter(p => !p.tracked && p.outcome === 'PUSH').length;
+              const livePending = agsuPicks.filter(p => !p.tracked && p.units > 0 && (!p.outcome || p.status !== 'COMPLETED')).length;
+              const trackedCount = agsuPicks.filter(p => p.tracked).length;
+              const totalUnitsLive = agsuPicks.filter(p => !p.tracked && p.outcome).reduce((s, p) => s + (p.units || 0), 0);
+              const totalProfitLive = agsuPicks.filter(p => !p.tracked && p.outcome).reduce((s, p) => s + (p.profit || 0), 0);
+              const totalGradedLive = liveWins + liveLosses + livePushes;
+              const liveWinPct = (liveWins + liveLosses) > 0 ? ((liveWins / (liveWins + liveLosses)) * 100) : 0;
+              const liveRoi = totalUnitsLive > 0 ? ((totalProfitLive / totalUnitsLive) * 100) : 0;
+              const recordTxt = `${liveWins}-${liveLosses}${livePushes > 0 ? `-${livePushes}` : ''}`;
+
+              // ─── CLV stats ─────────────────────────────────────────────
+              const clvPicks = agsuPicks.filter(p => p.clv != null && p.outcome);
+              const avgCLV = clvPicks.length > 0 ? clvPicks.reduce((s, p) => s + p.clv, 0) / clvPicks.length : null;
+              const beatClose = clvPicks.length > 0
+                ? Math.round((clvPicks.filter(p => p.clv > 0).length / clvPicks.length) * 100)
+                : null;
+
+              // ─── Per-tier breakdown from filtered picks ────────────────
+              const TIER_DEFS = [
+                { key: 'ELITE',   size: '2.00×' },
+                { key: 'PREMIUM', size: '1.50×' },
+                { key: 'LOCK',    size: '1.10×' },
+                { key: 'LEAN',    size: '0.50×' },
+                { key: 'WEAK',    size: '0.20×' },
+                { key: 'FADE',    size: '0' },
+              ];
+              const tierAgg = {};
+              for (const t of TIER_DEFS) tierAgg[t.key] = { wins:0, losses:0, pushes:0, units:0, profit:0, pending:0, tracked:0, sparkPnL:[] };
+              const sortedByDate = [...agsuPicks].sort((a,b) => (a.date||'').localeCompare(b.date||''));
+              for (const p of sortedByDate) {
+                const tier = p.v8_agsTier;
+                if (!tier || !tierAgg[tier]) continue;
+                const b = tierAgg[tier];
+                if (p.tracked) { b.tracked++; continue; }
+                if (!p.outcome) { if (p.units > 0) b.pending++; continue; }
+                if (p.outcome === 'WIN')  { b.wins++;   b.profit += (p.profit || 0); b.units += p.units; }
+                else if (p.outcome === 'LOSS'){ b.losses++; b.profit -= p.units;        b.units += p.units; }
+                else if (p.outcome === 'PUSH'){ b.pushes++; }
+                const last = b.sparkPnL.length > 0 ? b.sparkPnL[b.sparkPnL.length-1] : 0;
+                const inc = p.outcome === 'WIN' ? (p.profit || 0) : p.outcome === 'LOSS' ? -p.units : 0;
+                b.sparkPnL.push(last + inc);
+              }
+
+              // ─── Hero-strip cumulative profit sparkline (live only) ────
+              const heroSpark = [];
+              {
+                let acc = 0;
+                for (const p of sortedByDate) {
+                  if (p.tracked || !p.outcome) continue;
+                  acc += (p.outcome === 'WIN' ? (p.profit || 0) : p.outcome === 'LOSS' ? -p.units : 0);
+                  heroSpark.push(acc);
+                }
+              }
+              const heroWinRateSpark = [];
+              {
+                let w = 0, n = 0;
+                for (const p of sortedByDate) {
+                  if (p.tracked || !p.outcome) continue;
+                  if (p.outcome === 'WIN') w++;
+                  if (p.outcome === 'WIN' || p.outcome === 'LOSS') n++;
+                  if (n > 0) heroWinRateSpark.push(w / n);
+                }
+              }
+              const heroClvSpark = [];
+              {
+                let s = 0, c = 0;
+                for (const p of sortedByDate) {
+                  if (p.clv == null) continue;
+                  s += p.clv; c++;
+                  heroClvSpark.push(s / c);
+                }
+              }
+
+              // ─── Inline sparkline component (SVG) ──────────────────────
+              const Sparkline = ({ data, color, height = 18, width = 64, baseline = null }) => {
+                if (!data || data.length < 2) return <div style={{ height, width }} />;
+                const min = Math.min(...data, baseline ?? Infinity);
+                const max = Math.max(...data, baseline ?? -Infinity);
+                const range = Math.max(0.0001, max - min);
+                const points = data.map((v, i) => {
+                  const x = (i / (data.length - 1)) * width;
+                  const y = height - ((v - min) / range) * height;
+                  return `${x.toFixed(1)},${y.toFixed(1)}`;
+                }).join(' ');
+                const baselineY = baseline != null ? height - ((baseline - min) / range) * height : null;
+                const last = data[data.length - 1];
+                const lastY = height - ((last - min) / range) * height;
+                const lastX = width;
+                return (
+                  <svg width={width} height={height} style={{ overflow: 'visible' }}>
+                    {baselineY != null && (
+                      <line x1={0} y1={baselineY} x2={width} y2={baselineY}
+                        stroke="rgba(255,255,255,0.10)" strokeWidth="1" strokeDasharray="2,2" />
+                    )}
+                    <polyline fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" points={points} opacity="0.9" />
+                    <circle cx={lastX} cy={lastY} r={2} fill={color} />
+                  </svg>
+                );
+              };
+
+              const heroProfitColor = totalProfitLive > 0 ? B.green : totalProfitLive < 0 ? B.red : B.textSec;
+              const heroRoiColor = liveRoi > 0 ? B.green : liveRoi < 0 ? B.red : B.textSec;
+              const heroClvColor = avgCLV == null ? B.textMuted : avgCLV > 0 ? B.green : avgCLV < 0 ? B.red : B.textSec;
+
+              // ─── Recent picks ledger (last 20 graded/pending, newest first) ──
+              const ledgerRows = [...agsuPicks]
+                .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+                .slice(0, 20);
+              const featureLabels = {
+                dCount: 'Δcount',
+                dHcCount: 'ΔHCcount',
+                dConvictionAvg: 'ΔavgConv',
+                dHcSizeRatio: 'ΔHCsize',
+                forContribShare: 'forShare',
+              };
+              const topDriverOf = (p) => {
+                const c = p.v8_agsComponents || {};
+                let best = null, bestAbs = 0;
+                for (const k of Object.keys(featureLabels)) {
+                  const v = Number(c[k]);
+                  if (Number.isFinite(v) && Math.abs(v) > bestAbs) { best = k; bestAbs = Math.abs(v); }
+                }
+                if (!best) return null;
+                return { key: best, label: featureLabels[best], z: c[best] };
+              };
+
+              // ─── Calibration health card data ──────────────────────────
+              const calNormalizers = agsCalDoc?.normalizers || null;
+              const calQuintiles = agsCalDoc?.quintiles || null;
+              const calSampleN = agsCalDoc?.sampleSize ?? null;
+              // Cron writes `computedAt` as an ISO string and `dateRange` as { from, to }.
+              // Show calendar date (YYYY-MM-DD) for a clean display; fall back to raw.
+              const calDate = (() => {
+                const raw = agsCalDoc?.computedAt || agsCalDoc?.calibrationDate || null;
+                if (!raw) return null;
+                try {
+                  const d = new Date(raw);
+                  if (!Number.isFinite(d.getTime())) return raw;
+                  return d.toISOString().slice(0, 10);
+                } catch { return raw; }
+              })();
+              const calRangeTo = agsCalDoc?.dateRange?.to || null;
+              // Compute observed mean/SD of z-scores across post-cutover sample
+              const driftRows = ['dCount','dHcCount','dConvictionAvg','dHcSizeRatio','forContribShare'].map(key => {
+                const zs = rawAgsuPicks.map(p => Number(p.v8_agsComponents?.[key])).filter(Number.isFinite);
+                if (zs.length === 0) return { key, label: featureLabels[key], mean: null, sd: null, n: 0 };
+                const m = zs.reduce((a,b)=>a+b,0) / zs.length;
+                const v = zs.reduce((s,x)=>s+(x-m)*(x-m),0) / Math.max(1, zs.length-1);
+                return { key, label: featureLabels[key], mean: m, sd: Math.sqrt(v), n: zs.length };
+              });
+
+              return (
+                <div style={{ marginBottom: '1rem' }}>
+                  {/* ── Collapsed/expanded header ──────────────────── */}
+                  <button onClick={() => setShowAgsuPerf(p => !p)} style={{
+                    width: '100%',
+                    background: 'linear-gradient(135deg, rgba(212,175,55,0.06) 0%, rgba(21,25,35,0.95) 35%, rgba(26,31,46,0.85) 100%)',
+                    border: `1px solid ${B.goldBorder}`,
+                    borderRadius: showAgsuPerf ? '10px 10px 0 0' : '10px',
+                    padding: '0.75rem 1rem',
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: B.gold, boxShadow: `0 0 8px ${B.gold}` }} />
+                      <span style={{ ...T.micro, fontWeight: 900, color: B.gold, letterSpacing: '0.10em', textTransform: 'uppercase', fontSize: '0.7rem' }}>
+                        AGS-U Performance
+                      </span>
+                      <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.58rem', letterSpacing: '0.04em' }}>
+                        since {AGS_U_CUTOVER} cutover
+                      </span>
+                      {hasData && (
+                        <span style={{
+                          ...T.micro, fontWeight: 800, fontSize: '0.65rem',
+                          padding: '0.15rem 0.5rem', borderRadius: '4px',
+                          color: totalProfitLive >= 0 ? B.green : B.red,
+                          background: totalProfitLive >= 0 ? B.greenDim : B.redDim,
+                          fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                        }}>
+                          {recordTxt} · {(liveWinPct).toFixed(1)}% · {totalProfitLive >= 0 ? '+' : ''}{totalProfitLive.toFixed(2)}u
+                        </span>
+                      )}
+                    </div>
+                    {showAgsuPerf ? <ChevronUp size={14} color={B.textMuted} /> : <ChevronDown size={14} color={B.textMuted} />}
+                  </button>
+
+                  {/* ── Body ──────────────────────────────────────── */}
+                  {showAgsuPerf && (
+                    <div style={{
+                      background: 'linear-gradient(180deg, rgba(15,20,32,0.98) 0%, rgba(21,25,35,0.95) 100%)',
+                      border: `1px solid ${B.border}`,
+                      borderTop: 'none',
+                      borderRadius: '0 0 10px 10px',
+                      padding: '1rem',
+                      position: 'relative', overflow: 'hidden',
+                    }}>
+                      {/* Subtle top accent line */}
+                      <div style={{
+                        position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+                        background: 'linear-gradient(90deg, transparent 0%, rgba(212,175,55,0.5) 50%, transparent 100%)',
+                      }} />
+
+                      {/* ── Filters bar ──────────────────────── */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                        {[
+                          { id: 'today', label: 'Today' },
+                          { id: 'yesterday', label: 'Yesterday' },
+                          { id: '7d', label: '7D' },
+                          { id: 'all', label: 'Since Cutover' },
+                        ].map(opt => (
+                          <button key={opt.id} onClick={() => setAgsuDateRange(opt.id)} style={{
+                            padding: '0.2rem 0.55rem', borderRadius: '5px', cursor: 'pointer',
+                            ...T.micro, fontWeight: 700, fontSize: '0.6rem',
+                            border: agsuDateRange === opt.id ? `1px solid ${B.goldBorder}` : `1px solid ${B.border}`,
+                            background: agsuDateRange === opt.id ? `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)` : 'transparent',
+                            color: agsuDateRange === opt.id ? B.gold : B.textMuted,
+                            transition: 'all 0.2s ease',
+                          }}>{opt.label}</button>
+                        ))}
+                        <span style={{ width: '1px', height: '14px', background: B.border, margin: '0 0.125rem' }} />
+                        {[
+                          { id: 'ALL', label: 'ALL', color: B.gold },
+                          { id: 'MLB', label: 'MLB', color: '#E31837' },
+                          { id: 'NBA', label: 'NBA', color: '#FF8C00' },
+                          { id: 'NHL', label: 'NHL', color: '#D4AF37' },
+                          { id: 'CBB', label: 'CBB', color: '#FF6B35' },
+                        ].map(opt => (
+                          <button key={opt.id} onClick={() => setAgsuSport(opt.id)} style={{
+                            padding: '0.2rem 0.5rem', borderRadius: '5px', cursor: 'pointer',
+                            ...T.micro, fontWeight: 700, fontSize: '0.6rem',
+                            border: agsuSport === opt.id ? `1px solid ${opt.color}55` : `1px solid ${B.border}`,
+                            background: agsuSport === opt.id ? `${opt.color}18` : 'transparent',
+                            color: agsuSport === opt.id ? opt.color : B.textMuted,
+                            transition: 'all 0.2s ease',
+                          }}>{opt.label}</button>
+                        ))}
+                        <span style={{ width: '1px', height: '14px', background: B.border, margin: '0 0.125rem' }} />
+                        {[
+                          { id: 'all', label: 'All Markets' },
+                          { id: 'ml', label: 'ML' },
+                          { id: 'spread', label: 'Spread' },
+                          { id: 'total', label: 'Total' },
+                        ].map(opt => (
+                          <button key={opt.id} onClick={() => setAgsuMarket(opt.id)} style={{
+                            padding: '0.2rem 0.5rem', borderRadius: '5px', cursor: 'pointer',
+                            ...T.micro, fontWeight: 700, fontSize: '0.6rem',
+                            border: agsuMarket === opt.id ? `1px solid ${B.goldBorder}` : `1px solid ${B.border}`,
+                            background: agsuMarket === opt.id ? B.goldDim : 'transparent',
+                            color: agsuMarket === opt.id ? B.gold : B.textMuted,
+                            transition: 'all 0.2s ease',
+                          }}>{opt.label}</button>
+                        ))}
+                      </div>
+
+                      {!hasData && (
+                        <div style={{ textAlign: 'center', padding: '2rem' }}>
+                          <span style={{ ...T.label, color: B.textMuted }}>Loading AGS-U performance data…</span>
+                        </div>
+                      )}
+
+                      {hasData && (
+                        <>
+                          {/* ── Band 1: Hero strip (4 cards w/ sparklines) ── */}
+                          <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+                            gap: '0.625rem', marginBottom: '1rem',
+                          }}>
+                            {/* RECORD */}
+                            <div style={{
+                              padding: '0.75rem 0.875rem',
+                              borderRadius: '8px',
+                              background: 'linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(15,23,42,0.5) 100%)',
+                              border: `1px solid ${B.borderSubtle}`,
+                              position: 'relative',
+                            }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem' }}>
+                                <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.1em', fontSize: '0.55rem' }}>RECORD</span>
+                                <Sparkline data={heroWinRateSpark} color={B.gold} baseline={0.5} />
+                              </div>
+                              <div style={{
+                                fontSize: '1.6rem', fontWeight: 900, color: B.text, lineHeight: 1,
+                                fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                              }}>
+                                {recordTxt}
+                              </div>
+                              <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem', marginTop: '0.25rem' }}>
+                                {totalGradedLive} graded · {liveWinPct.toFixed(1)}%
+                              </div>
+                            </div>
+
+                            {/* ROI */}
+                            <div style={{
+                              padding: '0.75rem 0.875rem',
+                              borderRadius: '8px',
+                              background: 'linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(15,23,42,0.5) 100%)',
+                              border: `1px solid ${B.borderSubtle}`,
+                              position: 'relative',
+                            }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem' }}>
+                                <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.1em', fontSize: '0.55rem' }}>ROI</span>
+                                <Sparkline data={heroSpark} color={heroRoiColor} baseline={0} />
+                              </div>
+                              <div style={{
+                                fontSize: '1.6rem', fontWeight: 900, color: heroRoiColor, lineHeight: 1,
+                                fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                              }}>
+                                {totalGradedLive === 0 ? '—' : `${liveRoi >= 0 ? '+' : ''}${liveRoi.toFixed(1)}%`}
+                              </div>
+                              <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem', marginTop: '0.25rem' }}>
+                                {totalUnitsLive.toFixed(1)}u risked
+                              </div>
+                            </div>
+
+                            {/* PROFIT */}
+                            <div style={{
+                              padding: '0.75rem 0.875rem',
+                              borderRadius: '8px',
+                              background: 'linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(15,23,42,0.5) 100%)',
+                              border: `1px solid ${B.borderSubtle}`,
+                              position: 'relative',
+                            }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem' }}>
+                                <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.1em', fontSize: '0.55rem' }}>PROFIT</span>
+                                <Sparkline data={heroSpark} color={heroProfitColor} baseline={0} />
+                              </div>
+                              <div style={{
+                                fontSize: '1.6rem', fontWeight: 900, color: heroProfitColor, lineHeight: 1,
+                                fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                              }}>
+                                {totalGradedLive === 0 ? '—' : `${totalProfitLive >= 0 ? '+' : ''}${totalProfitLive.toFixed(2)}u`}
+                              </div>
+                              <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem', marginTop: '0.25rem' }}>
+                                {livePending > 0 ? `${livePending} pending` : trackedCount > 0 ? `${trackedCount} tracked` : 'all graded'}
+                              </div>
+                            </div>
+
+                            {/* CLV */}
+                            <div style={{
+                              padding: '0.75rem 0.875rem',
+                              borderRadius: '8px',
+                              background: 'linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(15,23,42,0.5) 100%)',
+                              border: `1px solid ${B.borderSubtle}`,
+                              position: 'relative',
+                            }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem' }}>
+                                <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.1em', fontSize: '0.55rem' }}>AVG CLV</span>
+                                <Sparkline data={heroClvSpark} color={heroClvColor} baseline={0} />
+                              </div>
+                              <div style={{
+                                fontSize: '1.6rem', fontWeight: 900, color: heroClvColor, lineHeight: 1,
+                                fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                              }}>
+                                {avgCLV == null ? '—' : `${avgCLV > 0 ? '+' : ''}${(avgCLV*100).toFixed(2)}%`}
+                              </div>
+                              <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem', marginTop: '0.25rem' }}>
+                                {beatClose == null ? '—' : `${beatClose}% beat close · ${clvPicks.length} picks`}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* ── Band 2: Refined tier matrix ── */}
+                          <div style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.1em', fontSize: '0.58rem', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
+                            By AGS-U Tier
+                          </div>
+                          <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : `repeat(${TIER_DEFS.length}, 1fr)`,
+                            gap: '0.5rem',
+                            marginBottom: '1rem',
+                          }}>
+                            {TIER_DEFS.map(t => {
+                              const b = tierAgg[t.key];
+                              const meta = AGS_TIER_META[t.key];
+                              const graded = b.wins + b.losses + b.pushes;
+                              const tierRoi = b.units > 0 ? (b.profit / b.units) * 100 : 0;
+                              const winPct = (b.wins + b.losses) > 0 ? (b.wins / (b.wins + b.losses)) * 100 : null;
+                              const hasActivity = graded > 0 || b.pending > 0 || b.tracked > 0;
+                              const profitColor = b.profit > 0 ? B.green : b.profit < 0 ? B.red : B.textSec;
+                              const roiColor = tierRoi > 0 ? B.green : tierRoi < 0 ? B.red : B.textSec;
+                              return (
+                                <div key={t.key} style={{
+                                  padding: '0.6rem 0.7rem 0.55rem 0.85rem',
+                                  borderRadius: '8px',
+                                  background: hasActivity
+                                    ? 'linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(15,23,42,0.5) 100%)'
+                                    : 'rgba(255,255,255,0.015)',
+                                  border: `1px solid ${hasActivity ? `${meta.color}33` : B.borderSubtle}`,
+                                  opacity: hasActivity ? 1 : 0.45,
+                                  position: 'relative', overflow: 'hidden',
+                                }}>
+                                  {hasActivity && (
+                                    <div style={{
+                                      position: 'absolute', top: 0, bottom: 0, left: 0,
+                                      width: '3px', background: meta.color, boxShadow: `0 0 6px ${meta.color}66`,
+                                    }} />
+                                  )}
+                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.25rem', marginBottom: '0.4rem' }}>
+                                    <span style={{ ...T.micro, fontWeight: 900, color: meta.color, fontSize: '0.62rem', letterSpacing: '0.06em' }}>
+                                      {meta.label}
+                                    </span>
+                                    <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem', fontWeight: 700, padding: '0.08rem 0.25rem', borderRadius: '3px', background: 'rgba(0,0,0,0.25)' }}>
+                                      {t.size}
+                                    </span>
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.3rem', lineHeight: 1 }}>
+                                    <span style={{ fontSize: '1.15rem', fontWeight: 900, color: B.text, fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums' }}>
+                                      {b.wins}-{b.losses}{b.pushes > 0 ? `-${b.pushes}` : ''}
+                                    </span>
+                                  </div>
+                                  {/* Win-pct bar */}
+                                  {winPct != null && (
+                                    <div style={{
+                                      height: '3px', borderRadius: '2px', background: 'rgba(255,255,255,0.06)',
+                                      overflow: 'hidden', position: 'relative', margin: '0.35rem 0 0.3rem',
+                                    }}>
+                                      <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: '1px', background: 'rgba(255,255,255,0.25)' }} />
+                                      <div style={{
+                                        height: '100%', width: `${winPct}%`, borderRadius: '2px',
+                                        background: winPct >= 50 ? `linear-gradient(90deg, ${B.green}, ${B.green}cc)` : `linear-gradient(90deg, ${B.red}, ${B.red}cc)`,
+                                      }} />
+                                    </div>
+                                  )}
+                                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.3rem', marginTop: '0.3rem' }}>
+                                    <span style={{ ...T.micro, fontWeight: 800, fontSize: '0.7rem', color: graded > 0 ? roiColor : B.textMuted, fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums' }}>
+                                      {graded === 0 ? '—' : `${tierRoi >= 0 ? '+' : ''}${tierRoi.toFixed(1)}%`}
+                                    </span>
+                                    <span style={{ ...T.micro, fontWeight: 800, fontSize: '0.7rem', color: graded > 0 ? profitColor : B.textMuted, fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums' }}>
+                                      {graded === 0 ? '' : `${b.profit >= 0 ? '+' : ''}${b.profit.toFixed(2)}u`}
+                                    </span>
+                                  </div>
+                                  {b.sparkPnL.length >= 2 && (
+                                    <div style={{ marginTop: '0.3rem' }}>
+                                      <Sparkline data={b.sparkPnL} color={meta.color} baseline={0} width={isMobile ? 100 : 90} height={16} />
+                                    </div>
+                                  )}
+                                  {(b.pending > 0 || b.tracked > 0) && (
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.2rem', marginTop: '0.35rem' }}>
+                                      {b.pending > 0 && (
+                                        <span style={{ ...T.micro, fontWeight: 700, fontSize: '0.48rem', letterSpacing: '0.05em', padding: '0.08rem 0.25rem', borderRadius: '3px', color: B.textSec, background: 'rgba(255,255,255,0.04)' }}>
+                                          +{b.pending} PEND
+                                        </span>
+                                      )}
+                                      {b.tracked > 0 && (
+                                        <span style={{ ...T.micro, fontWeight: 700, fontSize: '0.48rem', letterSpacing: '0.05em', padding: '0.08rem 0.25rem', borderRadius: '3px', color: '#60A5FA', background: 'rgba(96,165,250,0.08)' }}>
+                                          +{b.tracked} TRK
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {/* ── Band 5: Recent picks ledger + Calibration health ── */}
+                          <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: isMobile ? '1fr' : '1.6fr 1fr',
+                            gap: '0.75rem',
+                          }}>
+                            {/* Recent picks ledger */}
+                            <div style={{
+                              padding: '0.75rem 0.875rem',
+                              borderRadius: '8px',
+                              background: 'rgba(15,23,42,0.4)',
+                              border: `1px solid ${B.borderSubtle}`,
+                            }}>
+                              <div style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                marginBottom: '0.5rem', paddingBottom: '0.4rem', borderBottom: `1px solid ${B.borderSubtle}`,
+                              }}>
+                                <span style={{ ...T.micro, color: B.gold, fontWeight: 900, letterSpacing: '0.1em', fontSize: '0.58rem', textTransform: 'uppercase' }}>
+                                  Recent AGS-U Picks
+                                </span>
+                                <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>
+                                  {ledgerRows.length} of {agsuPicks.length}
+                                </span>
+                              </div>
+                              {ledgerRows.length === 0 && (
+                                <div style={{ ...T.micro, color: B.textMuted, padding: '1rem', textAlign: 'center', fontStyle: 'italic' }}>
+                                  No picks match current filters.
+                                </div>
+                              )}
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                {ledgerRows.map((p, i) => {
+                                  const meta = AGS_TIER_META[p.v8_agsTier] || AGS_TIER_META.UNKNOWN;
+                                  const drv = topDriverOf(p);
+                                  const isWin = p.outcome === 'WIN';
+                                  const isLoss = p.outcome === 'LOSS';
+                                  const isPending = !p.outcome;
+                                  const isTracked = p.tracked;
+                                  const profitColor = isWin ? B.green : isLoss ? B.red : B.textMuted;
+                                  const profitStr = isPending ? '—'
+                                                  : isTracked ? '0.00u'
+                                                  : `${p.profit >= 0 ? '+' : ''}${(p.profit || 0).toFixed(2)}u`;
+                                  return (
+                                    <div key={i} style={{
+                                      display: 'grid',
+                                      gridTemplateColumns: isMobile ? '46px 1fr 56px 56px' : '46px 1fr 70px 80px 70px',
+                                      alignItems: 'center', gap: '0.5rem',
+                                      padding: '0.35rem 0.5rem',
+                                      borderRadius: '5px',
+                                      background: 'rgba(255,255,255,0.015)',
+                                      borderLeft: `2px solid ${meta.color}`,
+                                    }}>
+                                      <span style={{ ...T.micro, fontWeight: 800, color: meta.color, fontSize: '0.58rem', letterSpacing: '0.04em' }}>
+                                        {meta.short}
+                                      </span>
+                                      <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                                        <div style={{ ...T.micro, color: B.text, fontWeight: 700, fontSize: '0.65rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                          {p.team || (p.away && p.home ? `${p.away} @ ${p.home}` : '—')}
+                                        </div>
+                                        <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>
+                                          {p.date} · {p.sport} · {(p.marketType || 'ml').toUpperCase()}
+                                        </div>
+                                      </div>
+                                      {!isMobile && (
+                                        <span style={{ ...T.micro, color: B.textSec, fontSize: '0.6rem', textAlign: 'right', fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums' }}>
+                                          {p.v8_ags != null ? `${p.v8_ags >= 0 ? '+' : ''}${p.v8_ags.toFixed(2)}` : '—'}
+                                        </span>
+                                      )}
+                                      <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem', textAlign: 'right', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        {drv ? `${drv.label} ${drv.z >= 0 ? '+' : ''}${drv.z.toFixed(1)}` : '—'}
+                                      </span>
+                                      <span style={{ ...T.micro, color: profitColor, fontSize: '0.65rem', fontWeight: 800, textAlign: 'right', fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums' }}>
+                                        {isPending ? <span style={{ color: B.textMuted }}>PEND</span>
+                                          : isTracked ? <span style={{ color: '#60A5FA' }}>TRK</span>
+                                          : profitStr}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            {/* Calibration health card */}
+                            <div style={{
+                              padding: '0.75rem 0.875rem',
+                              borderRadius: '8px',
+                              background: 'rgba(15,23,42,0.4)',
+                              border: `1px solid ${B.borderSubtle}`,
+                            }}>
+                              <div style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                marginBottom: '0.5rem', paddingBottom: '0.4rem', borderBottom: `1px solid ${B.borderSubtle}`,
+                              }}>
+                                <span style={{ ...T.micro, color: B.gold, fontWeight: 900, letterSpacing: '0.1em', fontSize: '0.58rem', textTransform: 'uppercase' }}>
+                                  Calibration Health
+                                </span>
+                                <span style={{
+                                  ...T.micro, fontSize: '0.5rem', fontWeight: 700,
+                                  padding: '0.1rem 0.3rem', borderRadius: '3px',
+                                  color: calNormalizers ? B.green : B.red,
+                                  background: calNormalizers ? B.greenDim : B.redDim,
+                                }}>
+                                  {calNormalizers ? 'LOADED' : 'FALLBACK'}
+                                </span>
+                              </div>
+                              {!calNormalizers && (
+                                <div style={{ ...T.micro, color: B.textMuted, fontStyle: 'italic', padding: '0.5rem 0' }}>
+                                  Firestore calibration doc unavailable; system using hard-coded fallback.
+                                </div>
+                              )}
+                              {calNormalizers && (
+                                <>
+                                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.35rem', marginBottom: '0.5rem' }}>
+                                    <div>
+                                      <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem', letterSpacing: '0.06em' }}>SAMPLE</div>
+                                      <div style={{ ...T.micro, color: B.text, fontWeight: 800, fontSize: '0.75rem', fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums' }}>
+                                        n = {calSampleN ?? '?'}
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem', letterSpacing: '0.06em' }}>LAST RUN</div>
+                                      <div style={{ ...T.micro, color: B.text, fontWeight: 800, fontSize: '0.62rem' }}>
+                                        {calDate || <span style={{ color: B.red }}>missing</span>}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {calQuintiles && (
+                                    <div style={{ marginBottom: '0.55rem' }}>
+                                      <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem', letterSpacing: '0.06em', marginBottom: '0.25rem' }}>AGS-U BOUNDARIES</div>
+                                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.25rem', fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums' }}>
+                                        {[
+                                          { k: 'q20', label: 'q20', color: AGS_TIER_META.WEAK.color },
+                                          { k: 'q40', label: 'q40', color: AGS_TIER_META.LEAN.color },
+                                          { k: 'q60', label: 'q60', color: AGS_TIER_META.LOCK.color },
+                                          { k: 'q80', label: 'q80', color: AGS_TIER_META.PREMIUM.color },
+                                          { k: 'q90', label: 'q90', color: AGS_TIER_META.ELITE.color },
+                                        ].map(q => (
+                                          <div key={q.k} style={{ textAlign: 'center', padding: '0.2rem 0.1rem', borderRadius: '3px', background: 'rgba(255,255,255,0.02)' }}>
+                                            <div style={{ ...T.micro, color: q.color, fontSize: '0.5rem', fontWeight: 800 }}>{q.label}</div>
+                                            <div style={{ ...T.micro, color: B.text, fontSize: '0.6rem', fontWeight: 700 }}>
+                                              {Number.isFinite(calQuintiles[q.k]) ? calQuintiles[q.k].toFixed(2) : '—'}
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  <div>
+                                    <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem', letterSpacing: '0.06em', marginBottom: '0.25rem' }}>
+                                      DRIFT — z-feature observed mean / SD (target 0 / 1)
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                      {driftRows.map(d => {
+                                        const meanDrift = d.mean != null && Math.abs(d.mean) > 0.5;
+                                        const sdDrift = d.sd != null && Math.abs(d.sd - 1) > 0.3;
+                                        const anyDrift = meanDrift || sdDrift;
+                                        return (
+                                          <div key={d.key} style={{
+                                            display: 'grid', gridTemplateColumns: '70px 1fr 1fr 18px', gap: '0.35rem',
+                                            alignItems: 'center', padding: '0.2rem 0.3rem',
+                                            borderRadius: '3px', background: anyDrift ? 'rgba(239,68,68,0.04)' : 'transparent',
+                                          }}>
+                                            <span style={{ ...T.micro, color: B.textSec, fontSize: '0.55rem', fontWeight: 700 }}>
+                                              {d.label}
+                                            </span>
+                                            <span style={{ ...T.micro, color: meanDrift ? B.red : B.text, fontSize: '0.55rem', textAlign: 'right', fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums' }}>
+                                              μ {d.mean == null ? '—' : d.mean.toFixed(2)}
+                                            </span>
+                                            <span style={{ ...T.micro, color: sdDrift ? B.red : B.text, fontSize: '0.55rem', textAlign: 'right', fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums' }}>
+                                              σ {d.sd == null ? '—' : d.sd.toFixed(2)}
+                                            </span>
+                                            <span style={{ textAlign: 'center', fontSize: '0.6rem' }}>
+                                              {anyDrift ? <span style={{ color: B.red }}>!</span> : <span style={{ color: B.green }}>·</span>}
+                                            </span>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Footer microcopy */}
+                          <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.75rem', fontSize: '0.55rem', opacity: 0.6, textAlign: 'right' }}>
+                            {agsuPicks.length} pick{agsuPicks.length === 1 ? '' : 's'} since {AGS_U_CUTOVER}{isAgsuFiltered ? ' · filtered' : ''}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* ─── Pre-Cutover Archive (legacy V1 — stars-based conviction era) ─── */}
             {(() => {
               const hasData = allTimePnL && (allTimePnL.picks?.length > 0);
               const fp = hasData ? (filteredPnL || { pregame: allTimePnL.pregame, byStars: allTimePnL.byStars }) : null;
@@ -10941,27 +11661,40 @@ export default function SharpFlow() {
               return (
                 <div style={{ marginBottom: '1rem' }}>
                   <button onClick={() => setShowPerf(p => !p)} style={{
-                    width: '100%', background: 'linear-gradient(135deg, rgba(21,25,35,0.95) 0%, rgba(26,31,46,0.8) 100%)',
-                    border: `1px solid ${B.goldBorder}`, borderRadius: '10px', padding: '0.75rem 1rem',
+                    width: '100%',
+                    // Neutral / muted styling — this is the archive, not the headline.
+                    // No gold border, no gold accent dot. Just a thin neutral chrome
+                    // so the user can drill in if they want, but the eye stays on the
+                    // AGS-U Performance Dashboard above.
+                    background: 'linear-gradient(135deg, rgba(21,25,35,0.6) 0%, rgba(26,31,46,0.4) 100%)',
+                    border: `1px solid ${B.borderSubtle}`,
+                    borderRadius: showPerf ? '8px 8px 0 0' : '8px',
+                    padding: '0.6rem 0.875rem',
                     cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    opacity: showPerf ? 1 : 0.85,
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-                      <BarChart3 size={15} color={B.gold} />
-                      <span style={{ ...T.micro, fontWeight: 800, color: B.gold, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                        Pick Performance
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                      <BarChart3 size={13} color={B.textMuted} />
+                      <span style={{ ...T.micro, fontWeight: 800, color: B.textSec, letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: '0.6rem' }}>
+                        Pre-Cutover Archive
+                      </span>
+                      <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem', letterSpacing: '0.03em' }}>
+                        legacy stars-based era · pre {AGS_U_CUTOVER}
                       </span>
                       {hasData ? (
                         <span style={{
-                          ...T.micro, fontWeight: 700, color: B.green, fontSize: '0.7rem',
-                          background: B.greenDim, padding: '0.15rem 0.5rem', borderRadius: '4px',
+                          ...T.micro, fontWeight: 700, color: B.textSec, fontSize: '0.62rem',
+                          background: 'rgba(255,255,255,0.03)', padding: '0.12rem 0.4rem', borderRadius: '3px',
+                          border: `1px solid ${B.borderSubtle}`,
+                          fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
                         }}>
                           {pnl.record} · {winPct}% · {pnl.totalProfit >= 0 ? '+' : ''}{pnl.totalProfit.toFixed(1)}u
                         </span>
                       ) : showPerf ? (
-                        <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.65rem' }}>Loading...</span>
+                        <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem' }}>Loading…</span>
                       ) : null}
                     </div>
-                    {showPerf ? <ChevronUp size={14} color={B.textMuted} /> : <ChevronDown size={14} color={B.textMuted} />}
+                    {showPerf ? <ChevronUp size={13} color={B.textMuted} /> : <ChevronDown size={13} color={B.textMuted} />}
                   </button>
 
                   {showPerf && !hasData && (
