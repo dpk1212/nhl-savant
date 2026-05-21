@@ -106,6 +106,16 @@ service cloud.firestore {
       allow read: if true;  // Client needs to read API keys
       allow write: if false;  // No writes from client
     }
+
+    // AGS-U calibration (normalizers + quintile boundaries + drift snapshot).
+    // The cron writes once per day via Admin SDK (bypasses rules); the
+    // client's Performance Dashboard reads /agsCalibration/current to power
+    // the Calibration Health card (sample size, freshness, q-boundaries,
+    // observed mean/SD drift per z-feature). No PII; safe to expose.
+    match /agsCalibration/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
     
     // User accounts - users can manage their own account
     match /users/{userId} {

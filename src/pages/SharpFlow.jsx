@@ -8,7 +8,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef, memo } from 'react';
 import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Activity, Zap, BarChart3, Eye, ArrowUpRight, ArrowDownRight, Minus, DollarSign, Workflow, Lock, CheckCircle, Circle, Clock, AlertTriangle } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ComposedChart, Bar, ReferenceDot, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ComposedChart, Bar, ReferenceDot, Cell, Area, AreaChart, ReferenceLine } from 'recharts';
 import { resolveOutcomeSide } from '../utils/teamNameMapper';
 import { collection, doc, setDoc, getDoc, getDocs, query, where, orderBy, deleteField } from 'firebase/firestore';
 import { db } from '../firebase/config';
@@ -8903,6 +8903,8 @@ export default function SharpFlow() {
   const [agsuSport, setAgsuSport] = useState('ALL');
   const [agsuMarket, setAgsuMarket] = useState('all');
   const [agsCalDoc, setAgsCalDoc] = useState(null);
+  const [showAgsuLedger, setShowAgsuLedger] = useState(true);
+  const [showAgsuProfit, setShowAgsuProfit] = useState(true);
   const [lockedDay, setLockedDay] = useState('today');
   const [lockedStatusFilter, setLockedStatusFilter] = useState('all');
   const [lockedSort, setLockedSort] = useState('stars');
@@ -11448,6 +11450,220 @@ export default function SharpFlow() {
                             })}
                           </div>
 
+                          {/* ── Band 4: Cumulative profit curve ──────────────────
+                              All AGS-U live picks rolled up into one equity curve,
+                              respecting the dashboard's date / sport / market
+                              filters. Excludes pending and tracked-only picks so
+                              the line reflects realized P/L only. Green gradient
+                              fill above the 0 reference line; muted below. */}
+                          {(() => {
+                            const realized = [...agsuPicks]
+                              .filter(p => !p.tracked && p.outcome && p.status === 'COMPLETED')
+                              .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+                            const curve = (() => {
+                              let cum = 0;
+                              return realized.map((p, i) => {
+                                cum += (p.profit || 0);
+                                return {
+                                  i: i + 1,
+                                  date: p.date,
+                                  dateLabel: (() => {
+                                    try { return new Date(p.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
+                                    catch { return p.date; }
+                                  })(),
+                                  cum: +cum.toFixed(2),
+                                  pickProfit: p.profit || 0,
+                                  team: p.team || (p.away && p.home ? `${p.away} @ ${p.home}` : '—'),
+                                  sport: p.sport,
+                                  tier: p.v8_agsTier,
+                                  ags: p.v8_ags,
+                                  outcome: p.outcome,
+                                };
+                              });
+                            })();
+                            const finalCum = curve.length > 0 ? curve[curve.length - 1].cum : 0;
+                            const isProfit = finalCum >= 0;
+                            const minCum = curve.length > 0 ? Math.min(0, ...curve.map(d => d.cum)) : 0;
+                            const maxCum = curve.length > 0 ? Math.max(0, ...curve.map(d => d.cum)) : 0;
+                            const peak = curve.reduce((acc, d) => d.cum > acc.cum ? d : acc, { cum: -Infinity, dateLabel: '—' });
+                            const trough = curve.reduce((acc, d) => d.cum < acc.cum ? d : acc, { cum: Infinity, dateLabel: '—' });
+                            const drawdown = peak.cum > -Infinity ? finalCum - peak.cum : 0;
+
+                            return (
+                              <div style={{ marginBottom: '1rem' }}>
+                                <button onClick={() => setShowAgsuProfit(p => !p)} style={{
+                                  width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                  padding: '0.5rem 0.75rem', borderRadius: '8px', cursor: 'pointer',
+                                  background: 'rgba(255,255,255,0.02)', border: `1px solid ${B.borderSubtle}`,
+                                  marginBottom: showAgsuProfit ? '0.5rem' : 0,
+                                }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <TrendingUp size={14} color={isProfit ? B.green : B.red} />
+                                    <span style={{ ...T.micro, fontWeight: 800, color: B.text, letterSpacing: '0.06em', fontSize: '0.62rem', textTransform: 'uppercase' }}>
+                                      Cumulative Profit
+                                    </span>
+                                    {curve.length > 0 && (
+                                      <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>
+                                        · {curve.length} graded
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    {curve.length > 0 && (
+                                      <span style={{
+                                        padding: '0.15rem 0.45rem', borderRadius: '4px',
+                                        fontSize: '0.65rem', fontWeight: 800,
+                                        color: isProfit ? B.green : B.red,
+                                        background: isProfit ? B.greenDim : B.redDim,
+                                        border: `1px solid ${isProfit ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)'}`,
+                                        fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                                      }}>
+                                        {isProfit ? '+' : ''}{finalCum.toFixed(2)}u
+                                      </span>
+                                    )}
+                                    {showAgsuProfit ? <ChevronUp size={13} color={B.textMuted} /> : <ChevronDown size={13} color={B.textMuted} />}
+                                  </div>
+                                </button>
+
+                                {showAgsuProfit && (
+                                  <div style={{
+                                    padding: '0.75rem 0.875rem 0.5rem',
+                                    borderRadius: '8px',
+                                    background: 'rgba(15,23,42,0.4)',
+                                    border: `1px solid ${B.borderSubtle}`,
+                                  }}>
+                                    {curve.length < 2 ? (
+                                      <div style={{ ...T.micro, color: B.textMuted, padding: '1.25rem 1rem', textAlign: 'center', fontStyle: 'italic' }}>
+                                        Need at least 2 graded picks to plot the equity curve.
+                                      </div>
+                                    ) : (
+                                      <>
+                                        {/* Mini stat strip above the chart */}
+                                        <div style={{
+                                          display: 'grid',
+                                          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+                                          gap: '0.4rem',
+                                          marginBottom: '0.6rem',
+                                        }}>
+                                          {[
+                                            { label: 'PEAK', value: `${peak.cum >= 0 ? '+' : ''}${peak.cum.toFixed(2)}u`, sub: peak.dateLabel, color: B.green },
+                                            { label: 'TROUGH', value: `${trough.cum >= 0 ? '+' : ''}${trough.cum.toFixed(2)}u`, sub: trough.dateLabel, color: B.red },
+                                            { label: 'CURRENT', value: `${finalCum >= 0 ? '+' : ''}${finalCum.toFixed(2)}u`, sub: curve[curve.length-1].dateLabel, color: isProfit ? B.green : B.red },
+                                            { label: 'DD FROM PEAK', value: `${drawdown >= 0 ? '+' : ''}${drawdown.toFixed(2)}u`, sub: `${curve.length} picks`, color: drawdown < 0 ? B.red : B.textSec },
+                                          ].map(s => (
+                                            <div key={s.label} style={{
+                                              padding: '0.4rem 0.5rem', borderRadius: '6px',
+                                              background: 'rgba(255,255,255,0.02)', border: `1px solid ${B.borderSubtle}`,
+                                            }}>
+                                              <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem', letterSpacing: '0.08em', fontWeight: 700 }}>{s.label}</div>
+                                              <div style={{ ...T.micro, color: s.color, fontSize: '0.85rem', fontWeight: 900, lineHeight: 1.1, fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums' }}>{s.value}</div>
+                                              <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.52rem', marginTop: '0.1rem' }}>{s.sub}</div>
+                                            </div>
+                                          ))}
+                                        </div>
+
+                                        {/* The chart */}
+                                        <ResponsiveContainer width="100%" height={isMobile ? 200 : 240}>
+                                          <AreaChart data={curve} margin={{ top: 8, right: 12, left: 0, bottom: 4 }}>
+                                            <defs>
+                                              <linearGradient id="agsuProfitGreen" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="0%" stopColor={B.green} stopOpacity={0.35} />
+                                                <stop offset="100%" stopColor={B.green} stopOpacity={0} />
+                                              </linearGradient>
+                                              <linearGradient id="agsuProfitRed" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="0%" stopColor={B.red} stopOpacity={0} />
+                                                <stop offset="100%" stopColor={B.red} stopOpacity={0.30} />
+                                              </linearGradient>
+                                            </defs>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                                            <XAxis
+                                              dataKey="dateLabel"
+                                              tick={{ fill: B.textMuted, fontSize: 10 }}
+                                              axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+                                              tickLine={false}
+                                              minTickGap={isMobile ? 25 : 40}
+                                            />
+                                            <YAxis
+                                              tick={{ fill: B.textMuted, fontSize: 10 }}
+                                              axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+                                              tickLine={false}
+                                              tickFormatter={(v) => `${v >= 0 ? '+' : ''}${v}u`}
+                                              domain={[Math.floor(minCum) - 1, Math.ceil(maxCum) + 1]}
+                                            />
+                                            <ReferenceLine y={0} stroke="rgba(255,255,255,0.2)" strokeDasharray="3 3" />
+                                            <Tooltip
+                                              cursor={{ stroke: 'rgba(255,255,255,0.15)', strokeWidth: 1 }}
+                                              content={({ active, payload }) => {
+                                                if (!active || !payload?.[0]) return null;
+                                                const d = payload[0].payload;
+                                                const meta = AGS_TIER_META[d.tier] || AGS_TIER_META.UNKNOWN;
+                                                return (
+                                                  <div style={{
+                                                    background: 'rgba(17,24,39,0.96)',
+                                                    border: `1px solid ${meta.color}55`,
+                                                    borderRadius: '8px',
+                                                    padding: '0.55rem 0.7rem',
+                                                    backdropFilter: 'blur(8px)',
+                                                    boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
+                                                    minWidth: 180,
+                                                  }}>
+                                                    <div style={{ fontSize: '0.6rem', color: B.textMuted, marginBottom: '0.3rem', display: 'flex', justifyContent: 'space-between' }}>
+                                                      <span>{d.dateLabel} · Pick #{d.i}</span>
+                                                      <span style={{ color: meta.color, fontWeight: 800 }}>{meta.short}</span>
+                                                    </div>
+                                                    <div style={{ fontSize: '0.85rem', fontWeight: 800, color: B.text, marginBottom: '0.2rem' }}>
+                                                      {d.team}
+                                                    </div>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', alignItems: 'baseline' }}>
+                                                      <span style={{ fontSize: '0.6rem', color: B.textMuted }}>
+                                                        {d.sport} · ags {d.ags != null ? `${d.ags >= 0 ? '+' : ''}${d.ags.toFixed(2)}` : '—'}
+                                                      </span>
+                                                      <span style={{
+                                                        fontSize: '0.7rem', fontWeight: 800,
+                                                        color: d.pickProfit > 0 ? B.green : d.pickProfit < 0 ? B.red : B.textSec,
+                                                        fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                                                      }}>
+                                                        {d.pickProfit >= 0 ? '+' : ''}{d.pickProfit.toFixed(2)}u
+                                                      </span>
+                                                    </div>
+                                                    <div style={{
+                                                      marginTop: '0.35rem', paddingTop: '0.3rem',
+                                                      borderTop: '1px solid rgba(255,255,255,0.08)',
+                                                      display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+                                                    }}>
+                                                      <span style={{ fontSize: '0.55rem', color: B.textMuted, letterSpacing: '0.06em' }}>CUMULATIVE</span>
+                                                      <span style={{
+                                                        fontSize: '0.85rem', fontWeight: 900,
+                                                        color: d.cum >= 0 ? B.green : B.red,
+                                                        fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                                                      }}>
+                                                        {d.cum >= 0 ? '+' : ''}{d.cum.toFixed(2)}u
+                                                      </span>
+                                                    </div>
+                                                  </div>
+                                                );
+                                              }}
+                                            />
+                                            <Area
+                                              type="monotone"
+                                              dataKey="cum"
+                                              stroke={isProfit ? B.green : B.red}
+                                              strokeWidth={2}
+                                              fill={`url(#${isProfit ? 'agsuProfitGreen' : 'agsuProfitRed'})`}
+                                              isAnimationActive={false}
+                                              dot={false}
+                                              activeDot={{ r: 4, fill: isProfit ? B.green : B.red, stroke: B.bg, strokeWidth: 2 }}
+                                            />
+                                          </AreaChart>
+                                        </ResponsiveContainer>
+                                      </>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
+
                           {/* ── Band 5: Recent picks ledger + Calibration health ── */}
                           <div style={{
                             display: 'grid',
@@ -11461,22 +11677,33 @@ export default function SharpFlow() {
                               background: 'rgba(15,23,42,0.4)',
                               border: `1px solid ${B.borderSubtle}`,
                             }}>
-                              <div style={{
-                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                marginBottom: '0.5rem', paddingBottom: '0.4rem', borderBottom: `1px solid ${B.borderSubtle}`,
-                              }}>
+                              <button
+                                onClick={() => setShowAgsuLedger(p => !p)}
+                                style={{
+                                  width: '100%',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                  marginBottom: showAgsuLedger ? '0.5rem' : 0,
+                                  paddingBottom: showAgsuLedger ? '0.4rem' : 0,
+                                  borderBottom: showAgsuLedger ? `1px solid ${B.borderSubtle}` : 'none',
+                                  background: 'transparent', border: 'none', cursor: 'pointer',
+                                }}
+                              >
                                 <span style={{ ...T.micro, color: B.gold, fontWeight: 900, letterSpacing: '0.1em', fontSize: '0.58rem', textTransform: 'uppercase' }}>
                                   Recent AGS-U Picks
                                 </span>
-                                <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>
-                                  {ledgerRows.length} of {agsuPicks.length}
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                  <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>
+                                    {ledgerRows.length} of {agsuPicks.length}
+                                  </span>
+                                  {showAgsuLedger ? <ChevronUp size={12} color={B.textMuted} /> : <ChevronDown size={12} color={B.textMuted} />}
                                 </span>
-                              </div>
-                              {ledgerRows.length === 0 && (
+                              </button>
+                              {showAgsuLedger && ledgerRows.length === 0 && (
                                 <div style={{ ...T.micro, color: B.textMuted, padding: '1rem', textAlign: 'center', fontStyle: 'italic' }}>
                                   No picks match current filters.
                                 </div>
                               )}
+                              {showAgsuLedger && (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                                 {ledgerRows.map((p, i) => {
                                   const meta = AGS_TIER_META[p.v8_agsTier] || AGS_TIER_META.UNKNOWN;
@@ -11527,6 +11754,7 @@ export default function SharpFlow() {
                                   );
                                 })}
                               </div>
+                              )}
                             </div>
 
                             {/* Calibration health card */}
