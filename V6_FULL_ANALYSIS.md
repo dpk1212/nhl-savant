@@ -1,6 +1,6 @@
 # Sharp Intel v6 — Full Analysis
 
-_Auto-generated **5/21/2026, 9:31:28 AM ET** by `scripts/v6FullAnalysis.js`. Do not edit by hand._
+_Auto-generated **5/21/2026, 12:11:25 PM ET** by `scripts/v6FullAnalysis.js`. Do not edit by hand._
 
 **Inclusion mirrors live Pick Performance dashboard:** `lockStage ≠ SHADOW ∧ ¬superseded ∧ health ∉ {MUTED, CANCELLED} ∧ peak.stars ≥ 2.5`. PnL in **peak units** (the size shipped to users) and **flat 1u** (cohort EV lens). Cohort tags from frozen `v8_walletConsensus*` stamps written at last sync before T-15.
 
@@ -45,7 +45,7 @@ _Dashboard-truth filter (mirrors live Pick Performance)._
 | Metric | Value |
 |---|---|
 | Date range | 2026-04-18 … 2026-05-20 |
-| Sides scanned | 525 |
+| Sides scanned | 529 |
 | Shipped + graded | **230** |
 | W-L-P | 111-117-2 |
 | Win rate | **48.7%** [42.3%–55.1%] |
@@ -301,7 +301,7 @@ _Which of the six AGS inputs are pulling the weight, and is the composite earnin
 
 AGS aggregates the proven-wallet (`CONFIRMED` ∪ `FLAT`) slice of `peak.v8Scoring.walletDetails[]` into 6 *delta* features (FOR-side minus AGAINST-side), z-scores each one against a daily-recomputed calibration, and **sums the z-scores**. Equal sign-weighted — no fitted coefficients. Thresholds: `AGS ≥ +5` rescues a lock (route C), `AGS ≥ +3` confirms a thin Δw=+1 lock (v7.5 route B), `AGS < -1` mutes an otherwise-locking side (confirmation gate). Sizing multiplier scales [0.5, 1.0]× over [-1, +5].
 
-**In-sample (live production) calibration**: source = `cron`, sampleSize = 429, dateRange = 2026-04-18 → 2026-05-19, computedAt = 2026-05-20T16:18:15.943Z. _This is what production scores against today; the §AGS-0a audit below shows how much its in-sample numbers diverge from the leakage-free walk-forward version._
+**In-sample (live production) calibration**: source = `cron`, sampleSize = 457, dateRange = 2026-04-18 → 2026-05-20, computedAt = 2026-05-21T16:02:12.324Z. _This is what production scores against today; the §AGS-0a audit below shows how much its in-sample numbers diverge from the leakage-free walk-forward version._
 
 ### §AGS-0a. Leakage audit — in-sample vs point-in-time / out-of-sample
 
@@ -317,14 +317,14 @@ Same rows, same outcomes — only the AGS scoring lens differs:
 | LOCK (+5..+7) | 0 · — · — | 0 · — · — | — |
 | STRONG (+3..+5) | 2 · 100% · +285.1% | 9 · 67% · +22.5% | -262.6pp |
 | NEUTRAL (0..+3) | 114 · 58% · +9.7% | 117 · 53% · +2.8% | -6.9pp |
-| WEAK (−3..0) | 59 · 41% · -18.6% | 53 · 40% · -20.3% | -1.8pp |
-| FADE (<−3) | 20 · 25% · -49.4% | 16 · 44% · +8.5% | +58.0pp |
+| WEAK (−3..0) | 57 · 41% · -18.2% | 53 · 40% · -20.3% | -2.1pp |
+| FADE (<−3) | 22 · 27% · -47.5% | 16 · 44% · +8.5% | +56.0pp |
 
 Production-threshold lift (the rules that actually fire):
 
 | Floor | In-sample fire | PIT-OOS fire | Δ ROI (OOS − in-sample) |
 |---|---|---|---|
-| AGS ≥ +5 (lock-floor route C) | N=72, WR=61%, ROI=+18.0% | N=101, WR=57%, ROI=+9.9% | -8.1pp |
+| AGS ≥ +5 (lock-floor route C) | N=74, WR=62%, ROI=+20.0% | N=101, WR=57%, ROI=+9.9% | -10.2pp |
 | AGS ≥ +3 (Δw=+1 confirm route B) | N=116, WR=58%, ROI=+14.5% | N=126, WR=54%, ROI=+4.2% | -10.2pp |
 | AGS < −1 (mute veto) | N=27, WR=26%, ROI=-52.4% | N=25, WR=48%, ROI=+13.8% | +66.3pp |
 
@@ -353,10 +353,10 @@ The cleanest out-of-sample window — every pick here was scored against a walk-
 
 | Feature key | Family | Sign | Cal mean | Cal SD |
 |---|---|---|---|---|
-| `dCount` | COUNT | + | 1.43 | 1.57 |
-| `dHcCount` | COUNT_HC | + | 0.45 | 0.83 |
-| `dConvictionAvg` | INTENSITY | + | 0.54 | 0.55 |
-| `dHcSizeRatio` | INTENSITY_HC | + | 1.52 | 5.19 |
+| `dCount` | COUNT | + | 1.41 | 1.54 |
+| `dHcCount` | COUNT_HC | + | 0.44 | 0.82 |
+| `dConvictionAvg` | INTENSITY | + | 0.55 | 0.54 |
+| `dHcSizeRatio` | INTENSITY_HC | + | 1.66 | 5.88 |
 | `forContribShare` | DOMINANCE | + | 0.81 | 0.25 |
 
 ### §AGS-1. Coverage + distribution
@@ -365,7 +365,7 @@ PIT-OOS AGS computable on **204/230** shipped+graded rows (89%). Rows drop out f
 
 | Stat | AGS value |
 |---|---|
-| Min | -9.56 |
+| Min | -9.65 |
 | 20th pct | -1.62 |
 | 40th pct | 0.68 |
 | Median | 1.05 |
@@ -382,8 +382,8 @@ PIT-OOS AGS computable on **204/230** shipped+graded rows (89%). Rows drop out f
 | **LOCK** | +5..+7 | 99 | 48.5% |
 | **STRONG** | +3..+5 | 0 | 0.0% |
 | **NEUTRAL** | 0..+3 | 0 | 0.0% |
-| **WEAK** | −3..0 | 41 | 20.1% |
-| **FADE** | < −3 | 24 | 11.8% |
+| **WEAK** | −3..0 | 40 | 19.6% |
+| **FADE** | < −3 | 25 | 12.3% |
 
 ### §AGS-2. AGS tier × outcome — does the ladder pay?
 
@@ -395,8 +395,8 @@ If the AGS calibration is right, win-rate and flat ROI should rise monotonically
 | LOCK | 99 | 50-49-0 | 50.5% [41–60] | -3.5% | -23.1u | -0.35 ✗ noise |
 | STRONG | 0 | — | — | — | — | — |
 | NEUTRAL | 0 | — | — | — | — | — |
-| WEAK | 41 | 14-26-1 | 35.0% [22–50] | -33.3% | -21.8u | -2.34 ✓ p<.05 |
-| FADE | 24 | 12-12-0 | 50.0% [31–69] | +18.6% | -5.6u | 0.63 ✗ noise |
+| WEAK | 40 | 14-25-1 | 35.9% [23–52] | -31.7% | -20.8u | -2.19 ✓ p<.05 |
+| FADE | 25 | 12-13-0 | 48.0% [30–67] | +13.8% | -6.6u | 0.48 ✗ noise |
 
 ### §AGS-3. Per-feature univariate predictive power
 
@@ -430,8 +430,8 @@ r(WIN) = **0.146** ✓ p<.05 · r(ROI) = **0.053** ✗ · Spearman ρ(ROI) = **0
 
 | Bucket | N | W-L-P | WR % [95% Wilson] | Flat ROI | Peak PnL | Flat t-stat |
 |---|---|---|---|---|---|---|
-| z < −1 (very negative) | 24 | 6-18-0 | 25.0% [12–45] | -31.3% | -21.4u | -1.10 ✗ noise |
-| z ∈ [−1, 0) | 54 | 28-25-1 | 52.8% [40–66] | +1.5% | -10.1u | 0.11 ✗ noise |
+| z < −1 (very negative) | 25 | 7-18-0 | 28.0% [14–48] | -27.1% | -20.6u | -0.98 ✗ noise |
+| z ∈ [−1, 0) | 53 | 27-25-1 | 51.9% [39–65] | +0.1% | -10.8u | 0.01 ✗ noise |
 | z ∈ [0, +1) | 102 | 51-50-1 | 50.5% [41–60] | -2.3% | +0.7u | -0.23 ✗ noise |
 | z ≥ +1 (very positive) | 24 | 12-12-0 | 50.0% [31–69] | -9.1% | -8.8u | -0.47 ✗ noise |
 
@@ -473,11 +473,11 @@ A feature with mean |z| ≈ 0 contributes almost nothing to AGS in practice — 
 
 | Rank | Feature | Mean signed z | Mean &#124;z&#124; | Share of &#124;AGS&#124; | Verdict |
 |---|---|---|---|---|---|
-| 1 | `dCount` | +0.217 | 0.793 | 32.7% | meaningful |
-| 2 | `dConvictionAvg` | +0.070 | 0.772 | 31.8% | meaningful |
-| 3 | `forContribShare` | +0.080 | 0.724 | 29.8% | meaningful |
+| 1 | `dCount` | +0.218 | 0.794 | 32.7% | meaningful |
+| 2 | `dConvictionAvg` | +0.067 | 0.775 | 31.9% | meaningful |
+| 3 | `forContribShare` | +0.078 | 0.724 | 29.8% | meaningful |
 | 4 | `dHcCount` | -0.090 | 0.090 | 3.7% | silent (<0.2) |
-| 5 | `dHcSizeRatio` | -0.049 | 0.049 | 2.0% | silent (<0.2) |
+| 5 | `dHcSizeRatio` | -0.047 | 0.047 | 1.9% | silent (<0.2) |
 
 ### §AGS-5. Pairwise feature correlation (Pearson r between z-scored features)
 
@@ -485,11 +485,11 @@ Two features with |r| ≥ 0.7 are double-counting. Two with |r| ≤ 0.2 are orth
 
 | | `dCount` | `dHcCount` | `dConvictionAvg` | `dHcSizeRatio` | `forContribShare` |
 |---|---|---|---|---|---|
-| `dCount` | 1.000 | +0.288 | +0.268 | +0.288 | +0.503 |
-| `dHcCount` | +0.288 | 1.000 | +0.126 | +1.000 ⚠ | +0.202 |
-| `dConvictionAvg` | +0.268 | +0.126 | 1.000 | +0.126 | +0.873 ⚠ |
-| `dHcSizeRatio` | +0.288 | +1.000 ⚠ | +0.126 | 1.000 | +0.202 |
-| `forContribShare` | +0.503 | +0.202 | +0.873 ⚠ | +0.202 | 1.000 |
+| `dCount` | 1.000 | +0.286 | +0.273 | +0.286 | +0.507 |
+| `dHcCount` | +0.286 | 1.000 | +0.131 | +1.000 ⚠ | +0.207 |
+| `dConvictionAvg` | +0.273 | +0.131 | 1.000 | +0.131 | +0.874 ⚠ |
+| `dHcSizeRatio` | +0.286 | +1.000 ⚠ | +0.131 | 1.000 | +0.207 |
+| `forContribShare` | +0.507 | +0.207 | +0.874 ⚠ | +0.207 | 1.000 |
 
 _⚠ flags |r| ≥ 0.7 — those pairs are essentially the same signal._
 
@@ -502,10 +502,10 @@ For each of the 6 inputs, recompute AGS as the **sum of the OTHER 5 z-scores** (
 | Feature dropped | ρ(5-feat AGS, ROI) | ρ drop vs full | Top-106 ROI (matched cohort) | Top-106 lift loss vs baseline | Same-threshold ≥+5 cell |
 |---|---|---|---|---|---|
 | `dCount` | +0.093 | −0.017 | WR=53%, ROI=+1.4% | +5.0pp | N=90, WR=53%, ROI=+1.8% |
-| `dHcCount` | +0.101 | −0.008 | WR=55%, ROI=+4.0% | +2.5pp | N=110, WR=54%, ROI=+2.6% |
-| `dConvictionAvg` | +0.071 | −0.038 | WR=50%, ROI=-5.9% | +12.3pp | N=77, WR=51%, ROI=-2.8% |
-| `dHcSizeRatio` | +0.106 | −0.003 | WR=55%, ROI=+4.0% | +2.5pp | N=109, WR=54%, ROI=+3.5% |
-| `forContribShare` | +0.111 | +0.002 | WR=57%, ROI=+7.3% | -0.9pp | N=63, WR=54%, ROI=+2.8% |
+| `dHcCount` | +0.101 | −0.009 | WR=55%, ROI=+4.0% | +2.5pp | N=110, WR=54%, ROI=+2.6% |
+| `dConvictionAvg` | +0.071 | −0.039 | WR=50%, ROI=-5.9% | +12.3pp | N=77, WR=51%, ROI=-2.8% |
+| `dHcSizeRatio` | +0.107 | −0.003 | WR=55%, ROI=+4.0% | +2.5pp | N=109, WR=54%, ROI=+3.5% |
+| `forContribShare` | +0.111 | +0.001 | WR=57%, ROI=+7.5% | -1.1pp | N=63, WR=54%, ROI=+2.8% |
 
 _Reading the **ρ drop** column: positive (`−0.0XX`) = dropping this feature **reduced** the AGS's ability to rank-order picks → the feature was carrying marginal info. Reading the **matched-cohort lift loss**: positive `+X pp` = the top-K of the 5-feature AGS earned LESS ROI than baseline → the feature was contributing positive lift._
 
@@ -513,11 +513,11 @@ _Reading the **ρ drop** column: positive (`−0.0XX`) = dropping this feature *
 
 | Rank | Feature | ρ drop when removed | Matched-cohort lift loss | Verdict |
 |---|---|---|---|---|
-| 1 | `dConvictionAvg` | −0.038 | +12.3pp | carries marginal info |
+| 1 | `dConvictionAvg` | −0.039 | +12.3pp | carries marginal info |
 | 2 | `dCount` | −0.017 | +5.0pp | mild marginal info |
-| 3 | `dHcCount` | −0.008 | +2.5pp | mild marginal info |
+| 3 | `dHcCount` | −0.009 | +2.5pp | mild marginal info |
 | 4 | `dHcSizeRatio` | −0.003 | +2.5pp | mild marginal info |
-| 5 | `forContribShare` | +0.002 | -0.9pp | redundant — other features cover it |
+| 5 | `forContribShare` | +0.001 | -1.1pp | redundant — other features cover it |
 
 ### §AGS-7. Multivariate logistic regression on the 6 z-scored features
 
@@ -525,13 +525,13 @@ Fit `logit(P(WIN)) = α + Σ βᵢ · zᵢ` on the AGS sample. Standardized inpu
 
 | Rank | Feature | Family | β (z-input) | |β| | Direction |
 |---|---|---|---|---|---|
-| 1 | `dConvictionAvg` | INTENSITY | +0.287 | 0.287 | positive ↑ |
+| 1 | `dConvictionAvg` | INTENSITY | +0.285 | 0.285 | positive ↑ |
 | 2 | `forContribShare` | DOMINANCE | -0.107 | 0.107 | negative ↓ |
 | 3 | `dCount` | COUNT | +0.077 | 0.077 | positive ↑ |
 | 4 | `dHcCount` | COUNT_HC | +0.021 | 0.021 | flat ≈ 0 |
 | 5 | `dHcSizeRatio` | INTENSITY_HC | +0.011 | 0.011 | flat ≈ 0 |
 
-Intercept b = -0.126 · Final log-loss = 0.6809 · N = 204.
+Intercept b = -0.125 · Final log-loss = 0.6809 · N = 204.
 
 ### §AGS-8. Final ranked verdict — composite importance across all four lenses
 
