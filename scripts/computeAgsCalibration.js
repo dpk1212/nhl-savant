@@ -30,6 +30,7 @@ import { dirname, join } from 'path';
 
 import {
   AGS_FEATURES,
+  AGS_WEIGHTS,
   AGS_ABSOLUTE_MUTE_FLOOR,
   aggregateSideProven,
 } from '../src/lib/ags.js';
@@ -186,14 +187,21 @@ async function main() {
     console.log(`[ags-calibration]   ${f.key.padEnd(18)} mean=${mean.toFixed(3)}  sd=${sd.toFixed(3)}  n=${n}`);
   }
 
-  // 2. Compute AGS for every historical row using the new normalizers,
-  //    then derive quintile boundaries.
+  // 2. Compute AGS for every historical row using the new normalizers and
+  //    the v10 logistic-regression weights (AGS_WEIGHTS), then derive
+  //    quintile boundaries from the resulting score distribution. This
+  //    MUST mirror computeAgs() in src/lib/ags.js exactly so that the
+  //    quintile cuts placed in Firestore line up with the live score
+  //    output. Any change to AGS_WEIGHTS over there will be reflected
+  //    here automatically via the imported constant.
   const agsValues = aggs.map(a => {
-    let total = 0;
+    let total = Number(AGS_WEIGHTS.intercept) || 0;
     for (const f of AGS_FEATURES) {
       const { mean, sd } = normalizers[f.key];
       if (!Number.isFinite(mean) || !Number.isFinite(sd) || sd === 0) continue;
-      total += f.sign * ((Number(a[f.key] || 0) - mean) / sd);
+      const z = (Number(a[f.key] || 0) - mean) / sd;
+      const w = Number(AGS_WEIGHTS[f.key]) || 0;
+      total += w * z;
     }
     return total;
   }).sort((a, b) => a - b);
@@ -229,7 +237,8 @@ async function main() {
     computedAt: new Date().toISOString(),
     durationMs: Date.now() - startedAt,
     source: 'cron',
-    schemaVersion: 'ags-unified-v9',
+    schemaVersion: 'ags-unified-v10',
+    weights: { ...AGS_WEIGHTS }, // record the model weights that produced these quintiles
   };
 
   if (DRY_RUN) {
