@@ -8902,7 +8902,6 @@ export default function SharpFlow() {
   const [agsuDateRange, setAgsuDateRange] = useState('all');
   const [agsuSport, setAgsuSport] = useState('ALL');
   const [agsuMarket, setAgsuMarket] = useState('all');
-  const [agsCalDoc, setAgsCalDoc] = useState(null);
   const [showAgsuLedger, setShowAgsuLedger] = useState(true);
   const [showAgsuProfit, setShowAgsuProfit] = useState(true);
   const [lockedDay, setLockedDay] = useState('today');
@@ -8950,18 +8949,6 @@ export default function SharpFlow() {
     }
   }, [showPerf, showAgsuPerf, isPremium, sortBy]);
 
-  // Load AGS-U calibration doc once for the Calibration Health card.
-  // Cached in component state; no need to refresh per-cycle since calibration
-  // only updates once per day via scripts/computeAgsCalibration.js.
-  const calLoadedRef = useRef(false);
-  useEffect(() => {
-    if ((showAgsuPerf || sortBy === 'locked') && !calLoadedRef.current) {
-      calLoadedRef.current = true;
-      getDoc(doc(db, 'agsCalibration', 'current'))
-        .then(snap => { if (snap.exists()) setAgsCalDoc(snap.data()); })
-        .catch(err => console.warn('cal load failed:', err.message));
-    }
-  }, [showAgsuPerf, sortBy]);
 
   const onPickSynced = useCallback((docId, side, snap, meta, action) => {
     setLockedPicks(prev => {
@@ -10966,14 +10953,31 @@ export default function SharpFlow() {
               const hasData = allTimePnL && (allTimePnL.picks?.length > 0);
 
               // ─── Filter AGS-U picks ────────────────────────────────────
-              // Only post-cutover, with v8_agsTier stamped. Apply UI filters
-              // for date range / sport / market on top.
-              const rawAgsuPicks = ((allTimePnL?.picks || []).filter(p => {
-                if (!p.date || p.date < AGS_U_CUTOVER) return false;
-                if (!p.v8_agsTier) return false;
-                if (p.cancelled) return false;
-                return true;
-              }));
+              // Only post-cutover. Mirrors the LP-scorecard's tier
+              // resolution exactly so the dashboard hero, tier matrix,
+              // and ledger all count the same set of picks — and the
+              // numbers match the cron-graded byAgsTier aggregation.
+              // Rule: prefer v8_agsTier if it's a known tier; if it's
+              // missing or 'UNKNOWN', fall back to v8_lockTier; if
+              // neither resolves to a known tier, the pick is excluded
+              // (the AGS-U system can't claim credit/blame for a pick
+              // it couldn't score). Resolved tier is stashed as
+              // _resolvedTier on a shallow-cloned object so we don't
+              // mutate the cached pick.
+              const resolveTier = (p) => {
+                if (typeof p.v8_agsTier === 'string' && p.v8_agsTier !== 'UNKNOWN' && AGS_TIER_META[p.v8_agsTier]) return p.v8_agsTier;
+                if (typeof p.v8_lockTier === 'string' && AGS_TIER_META[p.v8_lockTier]) return p.v8_lockTier;
+                return null;
+              };
+              const rawAgsuPicks = ((allTimePnL?.picks || [])
+                .map(p => {
+                  if (!p.date || p.date < AGS_U_CUTOVER) return null;
+                  if (p.cancelled) return null;
+                  const tier = resolveTier(p);
+                  if (!tier) return null;
+                  return { ...p, _resolvedTier: tier };
+                })
+                .filter(Boolean));
               const isAgsuFiltered = agsuDateRange !== 'all' || agsuSport !== 'ALL' || agsuMarket !== 'all';
               const nowEt = new Date();
               const todayEt = nowEt.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
@@ -11026,7 +11030,7 @@ export default function SharpFlow() {
               for (const t of TIER_DEFS) tierAgg[t.key] = { wins:0, losses:0, pushes:0, units:0, profit:0, pending:0, tracked:0, sparkPnL:[] };
               const sortedByDate = [...agsuPicks].sort((a,b) => (a.date||'').localeCompare(b.date||''));
               for (const p of sortedByDate) {
-                const tier = p.v8_agsTier;
+                const tier = p._resolvedTier;
                 if (!tier || !tierAgg[tier]) continue;
                 const b = tierAgg[tier];
                 if (p.tracked) { b.tracked++; continue; }
@@ -11121,31 +11125,6 @@ export default function SharpFlow() {
                 if (!best) return null;
                 return { key: best, label: featureLabels[best], z: c[best] };
               };
-
-              // ─── Calibration health card data ──────────────────────────
-              const calNormalizers = agsCalDoc?.normalizers || null;
-              const calQuintiles = agsCalDoc?.quintiles || null;
-              const calSampleN = agsCalDoc?.sampleSize ?? null;
-              // Cron writes `computedAt` as an ISO string and `dateRange` as { from, to }.
-              // Show calendar date (YYYY-MM-DD) for a clean display; fall back to raw.
-              const calDate = (() => {
-                const raw = agsCalDoc?.computedAt || agsCalDoc?.calibrationDate || null;
-                if (!raw) return null;
-                try {
-                  const d = new Date(raw);
-                  if (!Number.isFinite(d.getTime())) return raw;
-                  return d.toISOString().slice(0, 10);
-                } catch { return raw; }
-              })();
-              const calRangeTo = agsCalDoc?.dateRange?.to || null;
-              // Compute observed mean/SD of z-scores across post-cutover sample
-              const driftRows = ['dCount','dHcCount','dConvictionAvg','dHcSizeRatio','forContribShare'].map(key => {
-                const zs = rawAgsuPicks.map(p => Number(p.v8_agsComponents?.[key])).filter(Number.isFinite);
-                if (zs.length === 0) return { key, label: featureLabels[key], mean: null, sd: null, n: 0 };
-                const m = zs.reduce((a,b)=>a+b,0) / zs.length;
-                const v = zs.reduce((s,x)=>s+(x-m)*(x-m),0) / Math.max(1, zs.length-1);
-                return { key, label: featureLabels[key], mean: m, sd: Math.sqrt(v), n: zs.length };
-              });
 
               return (
                 <div style={{ marginBottom: '1rem' }}>
@@ -11475,7 +11454,7 @@ export default function SharpFlow() {
                                   pickProfit: p.profit || 0,
                                   team: p.team || (p.away && p.home ? `${p.away} @ ${p.home}` : '—'),
                                   sport: p.sport,
-                                  tier: p.v8_agsTier,
+                                  tier: p._resolvedTier,
                                   ags: p.v8_ags,
                                   outcome: p.outcome,
                                 };
@@ -11664,13 +11643,8 @@ export default function SharpFlow() {
                             );
                           })()}
 
-                          {/* ── Band 5: Recent picks ledger + Calibration health ── */}
-                          <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: isMobile ? '1fr' : '1.6fr 1fr',
-                            gap: '0.75rem',
-                          }}>
-                            {/* Recent picks ledger */}
+                          {/* ── Band 5: Recent picks ledger (full width) ── */}
+                          <div>
                             <div style={{
                               padding: '0.75rem 0.875rem',
                               borderRadius: '8px',
@@ -11706,7 +11680,7 @@ export default function SharpFlow() {
                               {showAgsuLedger && (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                                 {ledgerRows.map((p, i) => {
-                                  const meta = AGS_TIER_META[p.v8_agsTier] || AGS_TIER_META.UNKNOWN;
+                                  const meta = AGS_TIER_META[p._resolvedTier] || AGS_TIER_META.UNKNOWN;
                                   const drv = topDriverOf(p);
                                   const isWin = p.outcome === 'WIN';
                                   const isLoss = p.outcome === 'LOSS';
@@ -11757,108 +11731,6 @@ export default function SharpFlow() {
                               )}
                             </div>
 
-                            {/* Calibration health card */}
-                            <div style={{
-                              padding: '0.75rem 0.875rem',
-                              borderRadius: '8px',
-                              background: 'rgba(15,23,42,0.4)',
-                              border: `1px solid ${B.borderSubtle}`,
-                            }}>
-                              <div style={{
-                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                marginBottom: '0.5rem', paddingBottom: '0.4rem', borderBottom: `1px solid ${B.borderSubtle}`,
-                              }}>
-                                <span style={{ ...T.micro, color: B.gold, fontWeight: 900, letterSpacing: '0.1em', fontSize: '0.58rem', textTransform: 'uppercase' }}>
-                                  Calibration Health
-                                </span>
-                                <span style={{
-                                  ...T.micro, fontSize: '0.5rem', fontWeight: 700,
-                                  padding: '0.1rem 0.3rem', borderRadius: '3px',
-                                  color: calNormalizers ? B.green : B.red,
-                                  background: calNormalizers ? B.greenDim : B.redDim,
-                                }}>
-                                  {calNormalizers ? 'LOADED' : 'FALLBACK'}
-                                </span>
-                              </div>
-                              {!calNormalizers && (
-                                <div style={{ ...T.micro, color: B.textMuted, fontStyle: 'italic', padding: '0.5rem 0' }}>
-                                  Firestore calibration doc unavailable; system using hard-coded fallback.
-                                </div>
-                              )}
-                              {calNormalizers && (
-                                <>
-                                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.35rem', marginBottom: '0.5rem' }}>
-                                    <div>
-                                      <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem', letterSpacing: '0.06em' }}>SAMPLE</div>
-                                      <div style={{ ...T.micro, color: B.text, fontWeight: 800, fontSize: '0.75rem', fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums' }}>
-                                        n = {calSampleN ?? '?'}
-                                      </div>
-                                    </div>
-                                    <div>
-                                      <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem', letterSpacing: '0.06em' }}>LAST RUN</div>
-                                      <div style={{ ...T.micro, color: B.text, fontWeight: 800, fontSize: '0.62rem' }}>
-                                        {calDate || <span style={{ color: B.red }}>missing</span>}
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  {calQuintiles && (
-                                    <div style={{ marginBottom: '0.55rem' }}>
-                                      <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem', letterSpacing: '0.06em', marginBottom: '0.25rem' }}>AGS-U BOUNDARIES</div>
-                                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.25rem', fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums' }}>
-                                        {[
-                                          { k: 'q20', label: 'q20', color: AGS_TIER_META.WEAK.color },
-                                          { k: 'q40', label: 'q40', color: AGS_TIER_META.LEAN.color },
-                                          { k: 'q60', label: 'q60', color: AGS_TIER_META.LOCK.color },
-                                          { k: 'q80', label: 'q80', color: AGS_TIER_META.PREMIUM.color },
-                                          { k: 'q90', label: 'q90', color: AGS_TIER_META.ELITE.color },
-                                        ].map(q => (
-                                          <div key={q.k} style={{ textAlign: 'center', padding: '0.2rem 0.1rem', borderRadius: '3px', background: 'rgba(255,255,255,0.02)' }}>
-                                            <div style={{ ...T.micro, color: q.color, fontSize: '0.5rem', fontWeight: 800 }}>{q.label}</div>
-                                            <div style={{ ...T.micro, color: B.text, fontSize: '0.6rem', fontWeight: 700 }}>
-                                              {Number.isFinite(calQuintiles[q.k]) ? calQuintiles[q.k].toFixed(2) : '—'}
-                                            </div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  <div>
-                                    <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem', letterSpacing: '0.06em', marginBottom: '0.25rem' }}>
-                                      DRIFT — z-feature observed mean / SD (target 0 / 1)
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                                      {driftRows.map(d => {
-                                        const meanDrift = d.mean != null && Math.abs(d.mean) > 0.5;
-                                        const sdDrift = d.sd != null && Math.abs(d.sd - 1) > 0.3;
-                                        const anyDrift = meanDrift || sdDrift;
-                                        return (
-                                          <div key={d.key} style={{
-                                            display: 'grid', gridTemplateColumns: '70px 1fr 1fr 18px', gap: '0.35rem',
-                                            alignItems: 'center', padding: '0.2rem 0.3rem',
-                                            borderRadius: '3px', background: anyDrift ? 'rgba(239,68,68,0.04)' : 'transparent',
-                                          }}>
-                                            <span style={{ ...T.micro, color: B.textSec, fontSize: '0.55rem', fontWeight: 700 }}>
-                                              {d.label}
-                                            </span>
-                                            <span style={{ ...T.micro, color: meanDrift ? B.red : B.text, fontSize: '0.55rem', textAlign: 'right', fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums' }}>
-                                              μ {d.mean == null ? '—' : d.mean.toFixed(2)}
-                                            </span>
-                                            <span style={{ ...T.micro, color: sdDrift ? B.red : B.text, fontSize: '0.55rem', textAlign: 'right', fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums' }}>
-                                              σ {d.sd == null ? '—' : d.sd.toFixed(2)}
-                                            </span>
-                                            <span style={{ textAlign: 'center', fontSize: '0.6rem' }}>
-                                              {anyDrift ? <span style={{ color: B.red }}>!</span> : <span style={{ color: B.green }}>·</span>}
-                                            </span>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
-                                </>
-                              )}
-                            </div>
                           </div>
 
                           {/* Footer microcopy */}
@@ -12798,307 +12670,18 @@ export default function SharpFlow() {
                     const sportColorMap = { NHL: '#D4AF37', MLB: '#E31837', NBA: '#FF8C00', CBB: '#FF6B35', NFL: '#4CAF50' };
                     const activeSports = Object.keys(sportCounts).sort();
 
-                    // ── AGS-U Tier Scorecard (post-cutover) ──────────────
-                    // Surfaces the cron-graded W-L / ROI / PnL bucketed
-                    // by v8_agsTier on every shipped live pick since
-                    // AGS_U_CUTOVER. Three counters per tier: GRADED
-                    // (W+L+P) drives the headline record + ROI; PENDING
-                    // (shipped live, not yet graded) and TRACKED (0u /
-                    // grader.tracked) surface as their own chips so the
-                    // big number can never visually disagree with the
-                    // record. The card spine, top-left ribbon, and
-                    // right-side rating chip on every lock card down
-                    // the page share this exact palette + vocabulary.
-                    const TIER_DEFS = [
-                      { key: 'ELITE',   size: '2.0×' },
-                      { key: 'PREMIUM', size: '1.5×' },
-                      { key: 'LOCK',    size: '1.0×' },
-                      { key: 'LEAN',    size: '0.5×' },
-                      { key: 'WEAK',    size: '0.2×' },
-                    ];
-                    const tierData = allTimePnL?.byAgsTier || null;
-                    const tierTotals = tierData ? TIER_DEFS.reduce((acc, t) => {
-                      const b = tierData[t.key] || {};
-                      acc.graded  += (b.wins || 0) + (b.losses || 0) + (b.pushes || 0);
-                      acc.wins    += (b.wins || 0);
-                      acc.losses  += (b.losses || 0);
-                      acc.pushes  += (b.pushes || 0);
-                      acc.pending += (b.pendingPicks || 0);
-                      acc.tracked += (b.trackedPicks || 0);
-                      acc.profit  += (b.totalProfit || 0);
-                      acc.units   += (b.totalUnits || 0);
-                      return acc;
-                    }, { graded: 0, wins: 0, losses: 0, pushes: 0, pending: 0, tracked: 0, profit: 0, units: 0 })
-                      : { graded: 0, wins: 0, losses: 0, pushes: 0, pending: 0, tracked: 0, profit: 0, units: 0 };
-                    const overallRoi = tierTotals.units > 0 ? (tierTotals.profit / tierTotals.units) * 100 : 0;
-                    const sinceDate = allTimePnL?.agsTierMeta?.since || AGS_U_CUTOVER;
-                    const showTierScorecard = lockedDay === 'today' && tierData && (tierTotals.graded > 0 || tierTotals.pending > 0);
-                    const overallProfitColor = tierTotals.profit > 0 ? B.green : tierTotals.profit < 0 ? B.red : B.textSec;
-                    const overallRoiColor    = overallRoi > 0 ? B.green : overallRoi < 0 ? B.red : B.textSec;
+                    // ── AGS-U Tier Scorecard (REMOVED 2026-05-22) ─────────
+                    // The inline scorecard that previously lived here was
+                    // a duplicate of the new AGS-U Performance Dashboard
+                    // at the top of the page (see the "AGS-U PERFORMANCE"
+                    // section in the Whale Signals view). Tier numbers
+                    // surfaced here didn't match the dashboard's hero
+                    // because the two used different pick-resolution
+                    // rules. We retired this surface and made the
+                    // top-of-page dashboard the single source of truth.
 
                     return (
                       <>
-                        {showTierScorecard && (
-                          <div style={{
-                            padding: '1rem 1.125rem 0.875rem',
-                            borderRadius: '12px',
-                            background: 'linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(15,23,42,0.6) 45%, rgba(15,23,42,0.85) 100%)',
-                            border: `1px solid ${B.goldBorder}`,
-                            boxShadow: '0 0 32px rgba(212,175,55,0.06), inset 0 1px 0 rgba(255,255,255,0.04)',
-                            marginBottom: '1rem',
-                            position: 'relative',
-                            overflow: 'hidden',
-                          }}>
-                            {/* Subtle top accent line */}
-                            <div style={{
-                              position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
-                              background: 'linear-gradient(90deg, transparent 0%, rgba(212,175,55,0.6) 50%, transparent 100%)',
-                            }} />
-
-                            {/* Header — title + headline metrics */}
-                            <div style={{
-                              display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-                              gap: '1rem', marginBottom: '0.875rem', flexWrap: 'wrap',
-                            }}>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                  <span style={{
-                                    width: '6px', height: '6px', borderRadius: '50%', background: B.gold,
-                                    boxShadow: `0 0 8px ${B.gold}`,
-                                  }} />
-                                  <span style={{ ...T.label, fontWeight: 900, color: B.gold, letterSpacing: '0.12em', fontSize: '0.7rem' }}>
-                                    AGS-U TIER SCORECARD
-                                  </span>
-                                </div>
-                                <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.58rem', letterSpacing: '0.02em' }}>
-                                  Since {sinceDate} cutover · all sports · all markets
-                                </span>
-                              </div>
-                              <div style={{
-                                display: 'flex', alignItems: 'flex-end', gap: '1.25rem',
-                              }}>
-                                {/* Record */}
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.1rem' }}>
-                                  <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.1em', fontSize: '0.55rem' }}>RECORD</span>
-                                  <span style={{
-                                    fontSize: '1.4rem', fontWeight: 900, color: B.text, lineHeight: 1,
-                                    fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
-                                  }}>
-                                    {tierTotals.wins}-{tierTotals.losses}{tierTotals.pushes > 0 ? `-${tierTotals.pushes}` : ''}
-                                  </span>
-                                </div>
-                                {/* ROI */}
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.1rem' }}>
-                                  <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.1em', fontSize: '0.55rem' }}>ROI</span>
-                                  <span style={{
-                                    fontSize: '1.4rem', fontWeight: 900, color: overallRoiColor, lineHeight: 1,
-                                    fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
-                                  }}>
-                                    {tierTotals.graded === 0 ? '—' : `${overallRoi >= 0 ? '+' : ''}${overallRoi.toFixed(1)}%`}
-                                  </span>
-                                </div>
-                                {/* PnL */}
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.1rem' }}>
-                                  <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.1em', fontSize: '0.55rem' }}>PROFIT</span>
-                                  <span style={{
-                                    fontSize: '1.4rem', fontWeight: 900, color: overallProfitColor, lineHeight: 1,
-                                    fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
-                                  }}>
-                                    {tierTotals.graded === 0 ? '—' : `${tierTotals.profit >= 0 ? '+' : ''}${tierTotals.profit.toFixed(2)}u`}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Pending / tracked context strip — only renders if either is > 0 */}
-                            {(tierTotals.pending > 0 || tierTotals.tracked > 0) && (
-                              <div style={{
-                                display: 'flex', alignItems: 'center', gap: '0.5rem',
-                                marginBottom: '0.75rem', paddingBottom: '0.625rem',
-                                borderBottom: `1px solid ${B.borderSubtle}`,
-                              }}>
-                                {tierTotals.pending > 0 && (
-                                  <span style={{
-                                    ...T.micro, fontWeight: 700, fontSize: '0.55rem', letterSpacing: '0.04em',
-                                    padding: '0.2rem 0.5rem', borderRadius: '4px',
-                                    color: B.text, background: 'rgba(255,255,255,0.04)',
-                                    border: `1px solid ${B.borderSubtle}`,
-                                  }}>
-                                    + {tierTotals.pending} PENDING
-                                  </span>
-                                )}
-                                {tierTotals.tracked > 0 && (
-                                  <span style={{
-                                    ...T.micro, fontWeight: 700, fontSize: '0.55rem', letterSpacing: '0.04em',
-                                    padding: '0.2rem 0.5rem', borderRadius: '4px',
-                                    color: '#60A5FA', background: 'rgba(96,165,250,0.08)',
-                                    border: '1px solid rgba(96,165,250,0.25)',
-                                  }}>
-                                    + {tierTotals.tracked} TRACKED-ONLY
-                                  </span>
-                                )}
-                                <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>
-                                  not included in record / ROI
-                                </span>
-                              </div>
-                            )}
-
-                            {/* Tier tiles */}
-                            <div style={{
-                              display: 'grid',
-                              gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : `repeat(${TIER_DEFS.length}, 1fr)`,
-                              gap: '0.625rem',
-                            }}>
-                              {TIER_DEFS.map(t => {
-                                const b = tierData[t.key] || {};
-                                const tierMeta = AGS_TIER_META[t.key];
-                                const wins = b.wins || 0;
-                                const losses = b.losses || 0;
-                                const pushes = b.pushes || 0;
-                                const graded = wins + losses + pushes;
-                                const pending = b.pendingPicks || 0;
-                                const tracked = b.trackedPicks || 0;
-                                const profit = b.totalProfit || 0;
-                                const roi = b.roi || 0;
-                                const recordTxt = `${wins}-${losses}${pushes > 0 ? `-${pushes}` : ''}`;
-                                const hasGraded = graded > 0;
-                                const hasAnyActivity = graded > 0 || pending > 0 || tracked > 0;
-                                // CRITICAL: do NOT tint the tile background
-                                // with the tier color. Tier color and
-                                // win/loss color are two different signals;
-                                // a winning WEAK pick on a red tile reads
-                                // as losing, a losing LOCK on a lime tile
-                                // reads as winning. Tier identity lives in
-                                // the left stripe + the tier-name text;
-                                // the tile body is a near-neutral dark
-                                // navy so the result numbers (green/red)
-                                // dominate the cell's color signal.
-                                return (
-                                  <div key={t.key} style={{
-                                    padding: '0.75rem 0.75rem 0.625rem',
-                                    paddingLeft: '0.875rem',
-                                    borderRadius: '8px',
-                                    background: hasAnyActivity
-                                      ? 'linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(15,23,42,0.5) 100%)'
-                                      : 'rgba(255,255,255,0.015)',
-                                    border: `1px solid ${hasAnyActivity ? `${tierMeta.color}33` : B.borderSubtle}`,
-                                    opacity: hasAnyActivity ? 1 : 0.45,
-                                    position: 'relative',
-                                    overflow: 'hidden',
-                                  }}>
-                                    {/* Tier identity stripe — the SOLE
-                                        place the tier color appears as a
-                                        background on the tile. */}
-                                    {hasAnyActivity && (
-                                      <div style={{
-                                        position: 'absolute', top: 0, bottom: 0, left: 0,
-                                        width: '3px', background: tierMeta.color,
-                                        boxShadow: `0 0 6px ${tierMeta.color}66`,
-                                      }} />
-                                    )}
-
-                                    {/* Tier name + stake */}
-                                    <div style={{
-                                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                      gap: '0.25rem', marginBottom: '0.5rem',
-                                    }}>
-                                      <span style={{
-                                        ...T.micro, fontWeight: 900, color: tierMeta.color,
-                                        fontSize: '0.65rem', letterSpacing: '0.06em',
-                                      }}>
-                                        {tierMeta.label}
-                                      </span>
-                                      <span style={{
-                                        ...T.micro, color: B.textMuted, fontSize: '0.55rem', fontWeight: 700,
-                                        padding: '0.1rem 0.3rem', borderRadius: '3px',
-                                        background: 'rgba(0,0,0,0.25)',
-                                      }}>
-                                        {t.size}
-                                      </span>
-                                    </div>
-
-                                    {/* Big record line — N = W+L+P always */}
-                                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem', lineHeight: 1 }}>
-                                      <span style={{
-                                        fontSize: '1.35rem', fontWeight: 900, color: B.text,
-                                        fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
-                                      }}>
-                                        {recordTxt}
-                                      </span>
-                                      {graded > 0 && (
-                                        <span style={{
-                                          ...T.micro, color: B.textMuted, fontWeight: 600,
-                                          fontSize: '0.55rem', letterSpacing: '0.04em',
-                                        }}>
-                                          {graded === 1 ? 'GAME' : 'GAMES'}
-                                        </span>
-                                      )}
-                                    </div>
-
-                                    {/* ROI + PnL row */}
-                                    <div style={{
-                                      display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-                                      gap: '0.4rem', marginTop: '0.4rem',
-                                    }}>
-                                      <span style={{
-                                        ...T.sub, fontWeight: 900,
-                                        color: !hasGraded ? B.textMuted : roi > 0 ? B.green : roi < 0 ? B.red : B.textSec,
-                                        fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
-                                      }}>
-                                        {!hasGraded ? '—' : `${roi >= 0 ? '+' : ''}${roi.toFixed(1)}%`}
-                                      </span>
-                                      <span style={{
-                                        ...T.sub, fontWeight: 800,
-                                        color: !hasGraded ? B.textMuted : profit > 0 ? B.green : profit < 0 ? B.red : B.textSec,
-                                        fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
-                                      }}>
-                                        {!hasGraded ? '' : `${profit >= 0 ? '+' : ''}${profit.toFixed(2)}u`}
-                                      </span>
-                                    </div>
-
-                                    {/* Pending / tracked chips — only when present */}
-                                    {(pending > 0 || tracked > 0) && (
-                                      <div style={{
-                                        display: 'flex', flexWrap: 'wrap', gap: '0.25rem',
-                                        marginTop: '0.5rem', paddingTop: '0.4rem',
-                                        borderTop: `1px solid ${tierMeta.color}22`,
-                                      }}>
-                                        {pending > 0 && (
-                                          <span style={{
-                                            ...T.micro, fontWeight: 700, fontSize: '0.5rem', letterSpacing: '0.05em',
-                                            padding: '0.1rem 0.3rem', borderRadius: '3px',
-                                            color: B.textSec, background: 'rgba(255,255,255,0.04)',
-                                          }}>
-                                            +{pending} PEND
-                                          </span>
-                                        )}
-                                        {tracked > 0 && (
-                                          <span style={{
-                                            ...T.micro, fontWeight: 700, fontSize: '0.5rem', letterSpacing: '0.05em',
-                                            padding: '0.1rem 0.3rem', borderRadius: '3px',
-                                            color: '#60A5FA', background: 'rgba(96,165,250,0.08)',
-                                          }}>
-                                            +{tracked} TRK
-                                          </span>
-                                        )}
-                                      </div>
-                                    )}
-
-                                    {/* Empty state */}
-                                    {!hasAnyActivity && (
-                                      <div style={{
-                                        ...T.micro, color: B.textMuted, fontSize: '0.55rem',
-                                        marginTop: '0.4rem', fontStyle: 'italic',
-                                      }}>
-                                        No picks yet
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
                           {[
                             { id: 'today', label: 'Today' },
