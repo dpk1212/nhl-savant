@@ -15,9 +15,9 @@ GET THE APP
 - [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldHockey.svg)NHL](https://www.oddstrader.com/nhl/)
 - [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldFootball.svg)NFL](https://www.oddstrader.com/nfl/)
 - [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldFootball.svg)NCAAF](https://www.oddstrader.com/ncaa-college-football/)
-- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldSoccer.svg)soccer](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1779471843089)
-- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldTennis.svg)tennis](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1779471843089)
-- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldMore.svg)other](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1779471843089)
+- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldSoccer.svg)soccer](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1779555054645)
+- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldTennis.svg)tennis](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1779555054645)
+- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldMore.svg)other](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1779555054645)
 
 NHL
 
@@ -49,7 +49,7 @@ TodayYesterday
 
 ![logo-NHL](https://otcdn.virginia.us-east-1.oddstrader.com/leagues/NHL.svg)
 
-NHLFri 05/22
+NHLSat 05/23
 
 [Opener](https://www.oddstrader.com/betting/)
 
@@ -68,11 +68,11 @@ NHLFri 05/22
 |     |     |     |     |     |     |     |     |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>FRI 05/228:00 PMGame 2: VGK Leads 1-0<br>![](https://logos.oddstrader.com/logos-original/e3199119-49e3-4bf8-9f6f-bcf997eb1105-original.PNG?d=100x100)<br>Vegas<br>48-47<br>13%<br>+156BetOnline | +153 | +156 | +155 | +155 | +156 | +154 | +154 |
-| ![](https://logos.oddstrader.com/logos-original/8181bcbe-a16c-485a-9be0-bd09a24cff6b-original.PNG?d=100x100)<br>Colorado<br>63-29<br>87%<br>-125Bet105 | -175 | -178 | -185 | -180 | -174 | -179 | -179 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>SAT 05/237:00 PMGame 2: MTL Leads 1-0<br>![](https://logos.oddstrader.com/logos-original/6432ba21-81ac-41aa-b925-7c3894f313ff-original.png?d=100x100)<br>Montreal<br>56-40-1<br>25%<br>+182Bookmaker | +171 | +175 | +175 | +173 | +181 | +182 | +182 |
+| ![](https://logos.oddstrader.com/logos-original/2f371caa-925a-4a48-a5ed-7cc4c841cb4a-original.png?d=100x100)<br>Carolina<br>61-30<br>75%<br>-197Bet105 | -195 | -200 | -210 | -205 | -201 | -218 | -218 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>SAT 05/237:00 PMGame 2: MTL Leads 1-0<br>![](https://logos.oddstrader.com/logos-original/6432ba21-81ac-41aa-b925-7c3894f313ff-original.png?d=100x100)<br>Montreal<br>56-40-1<br>-<br>+179Heritage | +171 | +176 | +170 | +170 | +179 | +174 | +174 |
-| ![](https://logos.oddstrader.com/logos-original/2f371caa-925a-4a48-a5ed-7cc4c841cb4a-original.png?d=100x100)<br>Carolina<br>61-30<br>-<br>-197Bet105 | -195 | -202 | -205 | -200 | -199 | -208 | -208 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>SUN 05/248:00 PMGame 3: VGK Leads 2-0<br>![](https://logos.oddstrader.com/logos-original/8181bcbe-a16c-485a-9be0-bd09a24cff6b-original.PNG?d=100x100)<br>Colorado<br>63-30<br>100%<br>-134Bet105 | -143 | -136 | -140 | -138 | -136 | -145 | -145 |
+| ![](https://logos.oddstrader.com/logos-original/e3199119-49e3-4bf8-9f6f-bcf997eb1105-original.PNG?d=100x100)<br>Vegas<br>49-47<br>0%<br>+125Bookmaker | +126 | +120 | +120 | +117 | +124 | +125 | +125 |
 
 ## Best NHL Betting Odds and Spreads for Tonight’s Games
 
@@ -170,7 +170,7 @@ Look for short answers to common questions like how the puck line works or how t
 
 [![icon](https://otcdn.virginia.us-east-1.oddstrader.com/ot-app-icon.svg)Download the app](https://get-app.oddstrader.com/ot-app-link)
 
-Thinking...Generate
+What are the best available NHL odds?Generate
 
 ![BetStation](https://otcdn.virginia.us-east-1.oddstrader.com/otTurbo/assistant-logo.svg)
 
