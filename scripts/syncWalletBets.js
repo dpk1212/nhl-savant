@@ -64,8 +64,22 @@ const flatProfit = (odds, outcome) => {
 };
 
 // Doc id for a wallet-bet — stable across both sources so they merge.
+//
+// Firestore document IDs CANNOT contain '/' (it's parsed as a path
+// separator). MLB total markets occasionally produce gameKeys with
+// "o/u 8.5" embedded in them (a quirk of how the upstream data labels
+// over/under lines), which crashed the whole sync batch on 2026-05-20+.
+// We map any '/' to '-' and any control/path-illegal char to '_' to
+// keep the ID Firestore-safe while preserving readability. This change
+// is backward-compatible: previously-written IDs that contained no
+// slashes hash to the exact same string, so existing docs continue to
+// merge. The only IDs that change are the ones that were previously
+// failing to write at all (so there's nothing to orphan).
 function betDocId({ date, gameKey, market, side, walletShort }) {
-  return `${date}_${gameKey}_${market}_${side}_${walletShort}`;
+  const raw = `${date}_${gameKey}_${market}_${side}_${walletShort}`;
+  return raw
+    .replace(/\//g, '-')          // 'o/u' → 'o-u'
+    .replace(/[\x00-\x1f\x7f]/g, '_'); // strip control chars defensively
 }
 
 // ── Source B: sharp_action_positions ───────────────────────────────
