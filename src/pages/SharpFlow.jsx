@@ -8897,8 +8897,10 @@ export default function SharpFlow() {
   const [allTimePnL, setAllTimePnL] = useState(null);
   const [showPerf, setShowPerf] = useState(false); // V1 / pre-cutover archive — collapsed by default
   const [perfDateRange, setPerfDateRange] = useState('all');
-  // AGS-U Performance Dashboard (new primary view, post-2026-05-14 cutover)
-  const [showAgsuPerf, setShowAgsuPerf] = useState(true);
+  // AGS-U Performance Dashboard (new primary view, post-2026-05-14 cutover).
+  // Collapsed by default on page load — user can expand to drill into the
+  // monotonic-scoring performance breakdown.
+  const [showAgsuPerf, setShowAgsuPerf] = useState(false);
   const [agsuDateRange, setAgsuDateRange] = useState('all');
   const [agsuSport, setAgsuSport] = useState('ALL');
   const [agsuMarket, setAgsuMarket] = useState('all');
