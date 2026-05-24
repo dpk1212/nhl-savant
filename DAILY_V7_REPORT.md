@@ -1,15 +1,14 @@
 # V7 Diagnostic Report — Blame Assignment System
-**Generated**: 2026-05-23 ET | **Completed Picks**: 901 | **V7 Since**: 2026-04-06 | **Regime Since**: 2026-04-16
+**Generated**: 2026-05-24 ET | **Completed Picks**: 924 | **V7 Since**: 2026-04-06 | **Regime Since**: 2026-04-16
 
 ---
 
 ## 0. Intervention Triggers
 
-- **Star inversion: 4.5★ WR (80.0%) beats 5★ (37.0%) over 7 days**
-- **Model P/L trails flat P/L by 20.7u — sizing is amplifying losses**
-- **Upgraded picks WR (42%) trails unchanged (63%)**
-- **MAX tier (≥2.5u) losing 30.8u over 7 days**
-- **Signal disagreement picks at 20% WR (below 40%)**
+- **Star inversion: 4.5★ WR (85.7%) beats 5★ (34.5%) over 7 days**
+- **Model P/L trails flat P/L by 17.8u — sizing is amplifying losses**
+- **Upgraded picks WR (46%) trails unchanged (63%)**
+- **MAX tier (≥2.5u) losing 33.2u over 7 days**
 
 ---
 
@@ -19,19 +18,19 @@
 
 | Era | Picks | WR | Flat P/L | Flat ROI | Model P/L | Model ROI | Sizing Edge | Avg CLV |
 |---|---|---|---|---|---|---|---|---|
-| Post-Regime | 360 | 48.9% | -21.57u | -6.0% | -43.82u | -7.2% | -22.25u | 0.05% |
+| Post-Regime | 383 | 49.9% | -16.22u | -4.2% | -36.12u | -5.7% | -19.90u | 0.05% |
 | Pre-Regime | 280 | 50.0% | -28.60u | -10.2% | -50.56u | -12.9% | -21.96u | -0.37% |
-| V7 Era | 640 | 49.4% | -50.17u | -7.8% | -94.38u | -9.5% | -44.21u | -0.13% |
-| All Time | 901 | 51.9% | -47.17u | -5.2% | -81.82u | -5.7% | -34.65u | -0.25% |
+| V7 Era | 663 | 49.9% | -44.82u | -6.8% | -86.68u | -8.4% | -41.86u | -0.13% |
+| All Time | 924 | 52.3% | -41.82u | -4.5% | -74.12u | -5.0% | -32.30u | -0.25% |
 
 ### By Trend Window
 
 | Era | Picks | WR | Flat P/L | Flat ROI | Model P/L | Model ROI | Sizing Edge | Avg CLV |
 |---|---|---|---|---|---|---|---|---|
-| 3-Day | 42 | 47.6% | -4.66u | -11.1% | -19.60u | -25.5% | -14.94u | 0.56% |
-| 7-Day | 75 | 48.0% | -6.47u | -8.6% | -27.19u | -17.9% | -20.72u | 0.27% |
-| V7 Era | 640 | 49.4% | -50.17u | -7.8% | -94.38u | -9.5% | -44.21u | -0.13% |
-| All Time | 901 | 51.9% | -47.17u | -5.2% | -81.82u | -5.7% | -34.65u | -0.25% |
+| 3-Day | 55 | 52.7% | -0.07u | -0.1% | -14.53u | -16.4% | -14.46u | 0.31% |
+| 7-Day | 92 | 51.1% | -3.06u | -3.3% | -20.90u | -12.2% | -17.84u | 0.13% |
+| V7 Era | 663 | 49.9% | -44.82u | -6.8% | -86.68u | -8.4% | -41.86u | -0.13% |
+| All Time | 924 | 52.3% | -41.82u | -4.5% | -74.12u | -5.0% | -32.30u | -0.25% |
 
 ---
 
@@ -41,35 +40,35 @@ Factors ranked by signal persistence across time windows. Higher signal score = 
 
 | Rank | Factor | Signal Score | Persistence | 7-Day WR Mono | Post-Regime WR Mono | V7 Era WR Mono | All Time WR Mono | 7-Day Spread | Post-Regime Spread | V7 Era Spread | All Time Spread |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | Counter Sharp | 2.03 | 4/4 | 0 | 0 | 0 | 0 | 20.0% | 12.5% | 6.2% | 2.5% |
-| 2 | Total Invested | 2.02 | 4/4 | -1 | 0 | 2 | 2 | -6.6% | 1.4% | 13.3% | 9.7% |
-| 3 | Against Sharp Count | 1.66 | 4/4 | 2 | 0 | -1 | -2 | 6.7% | 0.0% | 1.6% | -8.1% |
-| 4 | Avg Bet Size | 1.19 | 4/4 | 0 | 0 | 2 | 2 | -20.0% | -2.8% | 3.1% | 1.9% |
-| 5 | Sharp Count | 0.07 | 4/4 | -2 | -2 | 2 | 2 | 6.7% | -2.7% | 7.0% | 6.3% |
-| 6 | Market Dominance | -0.85 | 4/4 | -2 | -2 | 0 | 0 | -20.0% | -13.8% | -7.8% | -4.2% |
-| 7 | Market Dom (z) | -0.85 | 4/4 | -2 | -2 | 0 | 0 | -20.0% | -13.8% | -7.8% | -4.2% |
-| 8 | Money % | -1.08 | 4/4 | -1 | 0 | 0 | 0 | 0.0% | -3.7% | -1.2% | -2.0% |
-| 9 | Money Edge | -1.11 | 4/4 | -1 | 0 | 1 | 0 | 0.0% | -2.8% | -0.8% | -2.0% |
-| 10 | Money Edge (z) | -1.11 | 4/4 | -1 | 0 | 1 | 0 | 0.0% | -2.8% | -0.8% | -2.0% |
-| 11 | Sharp Edge | -1.48 | 4/4 | -2 | 0 | 0 | 0 | -20.0% | -12.5% | 0.8% | 7.4% |
-| 12 | EV Edge | -1.70 | 4/4 | 0 | -1 | -2 | 0 | 0.0% | 1.4% | -12.5% | -8.0% |
+| 1 | Total Invested | 3.25 | 4/4 | 0 | 0 | 4 | 2 | -8.8% | 0.7% | 11.0% | 9.4% |
+| 2 | Against Sharp Count | 2.05 | 4/4 | 0 | 0 | 2 | 0 | 8.2% | 3.2% | 2.7% | -7.9% |
+| 3 | Money % | 0.82 | 4/4 | 0 | 1 | 1 | 0 | 23.7% | -3.4% | 5.4% | -0.3% |
+| 4 | Counter Sharp | 0.75 | 4/4 | -2 | 0 | 0 | 0 | 8.2% | 12.3% | 7.2% | 2.5% |
+| 5 | Avg Bet Size | 0.60 | 4/4 | 0 | 0 | 2 | 1 | -8.5% | -0.6% | 1.8% | 2.9% |
+| 6 | Sharp Count | 0.58 | 4/4 | 0 | 0 | 0 | 2 | 14.1% | -3.1% | 2.6% | 3.5% |
+| 7 | Money Edge | 0.33 | 4/4 | 0 | 2 | 2 | 0 | 23.7% | -3.4% | 5.6% | 0.3% |
+| 8 | Money Edge (z) | 0.33 | 4/4 | 0 | 2 | 2 | 0 | 23.7% | -3.4% | 5.6% | 0.3% |
+| 9 | Market Dominance | 0.23 | 4/4 | 0 | 0 | 0 | 0 | -3.0% | -13.7% | -8.6% | -4.1% |
+| 10 | Market Dom (z) | 0.23 | 4/4 | 0 | 0 | 0 | 0 | -3.0% | -13.7% | -8.6% | -4.1% |
+| 11 | EV Edge | -1.17 | 4/4 | 2 | 0 | -2 | -1 | 7.6% | 4.5% | -13.2% | -7.9% |
+| 12 | Sharp Edge | -1.53 | 4/4 | -2 | 0 | -2 | 0 | -18.8% | -12.3% | 1.1% | 6.8% |
 
-**Strongest surviving signal**: Counter Sharp (score: 2.03)
+**Strongest surviving signal**: Total Invested (score: 3.25)
 
 ---
 
 ## 2. What Is Misranked — Star Calibration
 
-### Post-Regime (n=360)
+### Post-Regime (n=383)
 
 | Stars | N | Avg Implied% | Expected WR | Actual WR | WR Delta | Flat ROI | Model ROI | Avg Units | Sizing Verdict |
 |---|---|---|---|---|---|---|---|---|---|
-| 5 | 106 | 54.0% | 54.0% | 49.1% | -4.9% | -11.5% | -11.5% | 2.79 | Overbet |
-| 4.5 | 35 | 51.6% | 51.6% | 57.1% | +5.5% | 14.3% | 10.0% | 2.64 | Underbet |
-| 4 | 58 | 53.5% | 53.5% | 48.3% | -5.2% | -9.8% | -8.6% | 1.49 | Overbet |
+| 5 | 111 | 54.1% | 54.1% | 48.6% | -5.4% | -12.5% | -12.1% | 2.79 | Overbet |
+| 4.5 | 37 | 52.2% | 52.2% | 59.5% | +7.3% | 17.0% | 13.9% | 2.60 | Underbet |
+| 4 | 61 | 53.2% | 53.2% | 50.8% | -2.4% | -3.8% | -0.4% | 1.48 | Fair |
 | 3.5 | 69 | 51.1% | 51.1% | 50.7% | -0.4% | 3.2% | 6.9% | 0.79 | Fair |
-| 3 | 37 | 53.4% | 53.4% | 43.2% | -10.1% | -13.4% | -18.9% | 1.04 | Overbet |
-| 2.5 | 50 | 52.1% | 52.1% | 46.0% | -6.1% | -9.3% | -21.5% | 0.67 | Overbet |
+| 3 | 45 | 53.3% | 53.3% | 48.9% | -4.4% | -2.5% | -9.4% | 0.99 | Fair |
+| 2.5 | 55 | 52.3% | 52.3% | 45.5% | -6.8% | -11.3% | -26.3% | 0.71 | Overbet |
 | 2 | 1 | 53.5% | 53.5% | 0.0% | -53.5% | -100.0% | -100.0% | 1.10 | Massively overbet |
 | 1 | 1 | 47.4% | 47.4% | 0.0% | -47.4% | -100.0% | -100.0% | 0.50 | Massively overbet |
 
@@ -77,15 +76,15 @@ Factors ranked by signal persistence across time windows. Higher signal score = 
 
 | Comparison | Higher WR | Lower WR | Delta | Status |
 |---|---|---|---|---|
-| 5★ vs 4.5★ | 49.1% | 57.1% | -8.0% | INVERTED |
-| 4.5★ vs 4★ | 57.1% | 48.3% | +8.8% | Correct |
-| 4★ vs 3.5★ | 48.3% | 50.7% | -2.4% | Flat |
-| 3.5★ vs 3★ | 50.7% | 43.2% | +7.5% | Correct |
-| 3★ vs 2.5★ | 43.2% | 46.0% | -2.8% | Flat |
-| 2.5★ vs 2★ | 46.0% | 0.0% | +46.0% | Correct |
+| 5★ vs 4.5★ | 48.6% | 59.5% | -10.9% | INVERTED |
+| 4.5★ vs 4★ | 59.5% | 50.8% | +8.7% | Correct |
+| 4★ vs 3.5★ | 50.8% | 50.7% | +0.1% | Correct |
+| 3.5★ vs 3★ | 50.7% | 48.9% | +1.8% | Correct |
+| 3★ vs 2.5★ | 48.9% | 45.5% | +3.4% | Correct |
+| 2.5★ vs 2★ | 45.5% | 0.0% | +45.5% | Correct |
 | 2★ vs 1★ | 0.0% | 0.0% | 0.0% | Flat |
 
-**Spearman rank correlation**: Stars vs Flat ROI: 0.595 | Stars vs WR: 0.833
+**Spearman rank correlation**: Stars vs Flat ROI: 0.548 | Stars vs WR: 0.738
 
 ### Pre-Regime (n=280)
 
@@ -111,16 +110,16 @@ Factors ranked by signal persistence across time windows. Higher signal score = 
 **Spearman rank correlation**: Stars vs Flat ROI: -0.486 | Stars vs WR: -0.314
 **RANKING LAYER IS MISCALIBRATED** — higher stars are not producing better ROI
 
-### V7 Era (n=640)
+### V7 Era (n=663)
 
 | Stars | N | Avg Implied% | Expected WR | Actual WR | WR Delta | Flat ROI | Model ROI | Avg Units | Sizing Verdict |
 |---|---|---|---|---|---|---|---|---|---|
-| 5 | 112 | 54.5% | 54.5% | 49.1% | -5.3% | -11.9% | -12.5% | 2.79 | Overbet |
-| 4.5 | 52 | 53.8% | 53.8% | 53.8% | +0.0% | 2.7% | -1.6% | 2.62 | Fair |
-| 4 | 117 | 54.4% | 54.4% | 50.4% | -4.0% | -7.3% | -8.5% | 1.71 | Overbet |
+| 5 | 117 | 54.5% | 54.5% | 48.7% | -5.8% | -12.7% | -13.0% | 2.79 | Overbet |
+| 4.5 | 54 | 54.1% | 54.1% | 55.6% | +1.5% | 5.0% | 1.4% | 2.59 | Fair |
+| 4 | 120 | 54.2% | 54.2% | 51.7% | -2.6% | -4.4% | -4.8% | 1.69 | Fair |
 | 3.5 | 122 | 53.6% | 53.6% | 50.8% | -2.7% | -4.1% | -5.7% | 1.18 | Fair |
-| 3 | 116 | 53.6% | 53.6% | 44.0% | -9.6% | -18.0% | -18.9% | 1.05 | Massively overbet |
-| 2.5 | 116 | 52.5% | 52.5% | 50.9% | -1.7% | -2.3% | -5.1% | 0.69 | Fair |
+| 3 | 124 | 53.6% | 53.6% | 46.0% | -7.6% | -13.7% | -15.6% | 1.03 | Overbet |
+| 2.5 | 121 | 52.6% | 52.6% | 50.4% | -2.2% | -3.4% | -8.3% | 0.70 | Fair |
 | 2 | 1 | 53.5% | 53.5% | 0.0% | -53.5% | -100.0% | -100.0% | 1.10 | Massively overbet |
 | 1 | 1 | 47.4% | 47.4% | 0.0% | -47.4% | -100.0% | -100.0% | 0.50 | Massively overbet |
 
@@ -128,26 +127,26 @@ Factors ranked by signal persistence across time windows. Higher signal score = 
 
 | Comparison | Higher WR | Lower WR | Delta | Status |
 |---|---|---|---|---|
-| 5★ vs 4.5★ | 49.1% | 53.8% | -4.7% | INVERTED |
-| 4.5★ vs 4★ | 53.8% | 50.4% | +3.4% | Correct |
-| 4★ vs 3.5★ | 50.4% | 50.8% | -0.4% | Flat |
-| 3.5★ vs 3★ | 50.8% | 44.0% | +6.8% | Correct |
-| 3★ vs 2.5★ | 44.0% | 50.9% | -6.9% | INVERTED |
-| 2.5★ vs 2★ | 50.9% | 0.0% | +50.9% | Correct |
+| 5★ vs 4.5★ | 48.7% | 55.6% | -6.9% | INVERTED |
+| 4.5★ vs 4★ | 55.6% | 51.7% | +3.9% | Correct |
+| 4★ vs 3.5★ | 51.7% | 50.8% | +0.9% | Correct |
+| 3.5★ vs 3★ | 50.8% | 46.0% | +4.8% | Correct |
+| 3★ vs 2.5★ | 46.0% | 50.4% | -4.4% | INVERTED |
+| 2.5★ vs 2★ | 50.4% | 0.0% | +50.4% | Correct |
 | 2★ vs 1★ | 0.0% | 0.0% | 0.0% | Flat |
 
-**Spearman rank correlation**: Stars vs Flat ROI: 0.548 | Stars vs WR: 0.548
+**Spearman rank correlation**: Stars vs Flat ROI: 0.548 | Stars vs WR: 0.690
 
-### All Time (n=901)
+### All Time (n=924)
 
 | Stars | N | Avg Implied% | Expected WR | Actual WR | WR Delta | Flat ROI | Model ROI | Avg Units | Sizing Verdict |
 |---|---|---|---|---|---|---|---|---|---|
-| 5 | 113 | 54.5% | 54.5% | 49.6% | -4.9% | -11.1% | -11.5% | 2.80 | Overbet |
-| 4.5 | 62 | 55.1% | 55.1% | 54.8% | -0.2% | 2.6% | -1.9% | 2.67 | Fair |
-| 4 | 170 | 55.3% | 55.3% | 52.4% | -2.9% | -4.8% | -4.4% | 1.91 | Fair |
+| 5 | 118 | 54.5% | 54.5% | 49.2% | -5.4% | -12.0% | -12.1% | 2.80 | Overbet |
+| 4.5 | 64 | 55.3% | 55.3% | 56.3% | +1.0% | 4.6% | 0.6% | 2.64 | Fair |
+| 4 | 173 | 55.1% | 55.1% | 53.2% | -2.0% | -2.8% | -2.3% | 1.90 | Fair |
 | 3.5 | 186 | 54.8% | 54.8% | 56.5% | +1.7% | 2.0% | 4.1% | 1.41 | Fair |
-| 3 | 197 | 54.8% | 54.8% | 47.7% | -7.1% | -13.0% | -12.2% | 1.17 | Overbet |
-| 2.5 | 153 | 53.8% | 53.8% | 52.3% | -1.5% | -3.5% | -5.0% | 0.71 | Fair |
+| 3 | 205 | 54.8% | 54.8% | 48.8% | -6.0% | -10.7% | -10.6% | 1.16 | Overbet |
+| 2.5 | 158 | 53.8% | 53.8% | 51.9% | -1.9% | -4.3% | -7.4% | 0.72 | Fair |
 | 2 | 1 | 53.5% | 53.5% | 0.0% | -53.5% | -100.0% | -100.0% | 1.10 | Massively overbet |
 | 1 | 1 | 47.4% | 47.4% | 0.0% | -47.4% | -100.0% | -100.0% | 0.50 | Massively overbet |
 
@@ -155,42 +154,42 @@ Factors ranked by signal persistence across time windows. Higher signal score = 
 
 | Comparison | Higher WR | Lower WR | Delta | Status |
 |---|---|---|---|---|
-| 5★ vs 4.5★ | 49.6% | 54.8% | -5.2% | INVERTED |
-| 4.5★ vs 4★ | 54.8% | 52.4% | +2.4% | Correct |
-| 4★ vs 3.5★ | 52.4% | 56.5% | -4.1% | INVERTED |
-| 3.5★ vs 3★ | 56.5% | 47.7% | +8.8% | Correct |
-| 3★ vs 2.5★ | 47.7% | 52.3% | -4.6% | INVERTED |
-| 2.5★ vs 2★ | 52.3% | 0.0% | +52.3% | Correct |
+| 5★ vs 4.5★ | 49.2% | 56.3% | -7.1% | INVERTED |
+| 4.5★ vs 4★ | 56.3% | 53.2% | +3.1% | Correct |
+| 4★ vs 3.5★ | 53.2% | 56.5% | -3.3% | INVERTED |
+| 3.5★ vs 3★ | 56.5% | 48.8% | +7.7% | Correct |
+| 3★ vs 2.5★ | 48.8% | 51.9% | -3.1% | INVERTED |
+| 2.5★ vs 2★ | 51.9% | 0.0% | +51.9% | Correct |
 | 2★ vs 1★ | 0.0% | 0.0% | 0.0% | Flat |
 
-**Spearman rank correlation**: Stars vs Flat ROI: 0.595 | Stars vs WR: 0.619
+**Spearman rank correlation**: Stars vs Flat ROI: 0.571 | Stars vs WR: 0.619
 
 
 ---
 
 ## 3. What Is Oversized — Sizing Attribution
 
-### Post-Regime (n=360)
+### Post-Regime (n=383)
 
 **Counterfactual P/L**
 
 | Scenario | P/L | ROI | vs Actual |
 |---|---|---|---|
-| Actual (model units) | -43.82u | -7.2% | — |
-| Flat 1.0u per pick | -21.57u | -6.0% | -22.25u |
-| Lock units only (no bumps) | -41.97u | — | -1.85u |
-| Units change only when stars change | -34.50u | — | -9.32u |
+| Actual (model units) | -36.12u | -5.7% | — |
+| Flat 1.0u per pick | -16.22u | -4.2% | -19.90u |
+| Lock units only (no bumps) | -32.54u | — | -3.58u |
+| Units change only when stars change | -25.59u | — | -10.53u |
 
 **Incremental Sizing Value by Star Bucket**
 
 | Stars | N | Avg Units | Flat ROI | Model ROI | Sizing Edge | Verdict |
 |---|---|---|---|---|---|---|
-| 5 | 106 | 2.79 | -11.5% | -11.5% | -21.62u | Sizing hurts |
-| 4.5 | 35 | 2.64 | 14.3% | 10.0% | +4.26u | Sizing helps |
-| 4 | 58 | 1.49 | -9.8% | -8.6% | -1.71u | Sizing hurts |
+| 5 | 111 | 2.79 | -12.5% | -12.1% | -23.59u | Sizing hurts |
+| 4.5 | 37 | 2.60 | 17.0% | 13.9% | +7.12u | Sizing helps |
+| 4 | 61 | 1.48 | -3.8% | -0.4% | +1.95u | Sizing helps |
 | 3.5 | 69 | 0.79 | 3.2% | 6.9% | +1.52u | Sizing helps |
-| 3 | 37 | 1.04 | -13.4% | -18.9% | -2.29u | Sizing hurts |
-| 2.5 | 50 | 0.67 | -9.3% | -21.5% | -2.59u | Sizing hurts |
+| 3 | 45 | 0.99 | -2.5% | -9.4% | -3.08u | Sizing hurts |
+| 2.5 | 55 | 0.71 | -11.3% | -26.3% | -4.00u | Sizing hurts |
 | 2 | 1 | 1.10 | -100.0% | -100.0% | -0.10u | Neutral |
 | 1 | 1 | 0.50 | -100.0% | -100.0% | +0.50u | Neutral |
 
@@ -198,12 +197,12 @@ Factors ranked by signal persistence across time windows. Higher signal score = 
 
 | Regime | N | WR | Flat ROI | Model ROI | Sizing Edge |
 |---|---|---|---|---|---|
-| NO_MOVE | 22 | 50.0% | -12.7% | 5.4% | +5.38u |
-| SMALL_MOVE | 60 | 40.0% | -23.6% | -26.8% | -12.18u |
-| CLEAR_MOVE | 102 | 57.8% | 7.2% | 11.1% | +13.25u |
-| NEAR_START | 142 | 43.7% | -11.2% | -17.2% | -23.33u |
+| NO_MOVE | 23 | 52.2% | -8.1% | 7.8% | +5.62u |
+| SMALL_MOVE | 67 | 41.8% | -21.2% | -22.0% | -10.11u |
+| CLEAR_MOVE | 106 | 57.5% | 7.7% | 11.2% | +13.56u |
+| NEAR_START | 149 | 45.0% | -9.2% | -16.6% | -25.28u |
 
-**12 picks had unit increases without star improvement**: P/L -12.77u, WR 33.3%
+**13 picks had unit increases without star improvement**: P/L -15.52u, WR 30.8%
 
 ### Pre-Regime (n=280)
 
@@ -238,27 +237,27 @@ Factors ranked by signal persistence across time windows. Higher signal score = 
 
 **5 picks had unit increases without star improvement**: P/L -3.93u, WR 40.0%
 
-### V7 Era (n=640)
+### V7 Era (n=663)
 
 **Counterfactual P/L**
 
 | Scenario | P/L | ROI | vs Actual |
 |---|---|---|---|
-| Actual (model units) | -94.38u | -9.5% | — |
-| Flat 1.0u per pick | -50.17u | -7.8% | -44.21u |
-| Lock units only (no bumps) | -71.64u | — | -22.74u |
-| Units change only when stars change | -82.88u | — | -11.50u |
+| Actual (model units) | -86.68u | -8.4% | — |
+| Flat 1.0u per pick | -44.82u | -6.8% | -41.86u |
+| Lock units only (no bumps) | -62.21u | — | -24.47u |
+| Units change only when stars change | -73.98u | — | -12.70u |
 
 **Incremental Sizing Value by Star Bucket**
 
 | Stars | N | Avg Units | Flat ROI | Model ROI | Sizing Edge | Verdict |
 |---|---|---|---|---|---|---|
-| 5 | 112 | 2.79 | -11.9% | -12.5% | -25.66u | Sizing hurts |
-| 4.5 | 52 | 2.62 | 2.7% | -1.6% | -3.56u | Sizing hurts |
-| 4 | 117 | 1.71 | -7.3% | -8.5% | -8.28u | Sizing hurts |
+| 5 | 117 | 2.79 | -12.7% | -13.0% | -27.63u | Sizing hurts |
+| 4.5 | 54 | 2.59 | 5.0% | 1.4% | -0.69u | Sizing hurts |
+| 4 | 120 | 1.69 | -4.4% | -4.8% | -4.61u | Sizing hurts |
 | 3.5 | 122 | 1.18 | -4.1% | -5.7% | -3.31u | Sizing hurts |
-| 3 | 116 | 1.05 | -18.0% | -18.9% | -2.08u | Sizing hurts |
-| 2.5 | 116 | 0.69 | -2.3% | -5.1% | -1.50u | Sizing hurts |
+| 3 | 124 | 1.03 | -13.7% | -15.6% | -2.88u | Sizing hurts |
+| 2.5 | 121 | 0.70 | -3.4% | -8.3% | -2.91u | Sizing hurts |
 | 2 | 1 | 1.10 | -100.0% | -100.0% | -0.10u | Neutral |
 | 1 | 1 | 0.50 | -100.0% | -100.0% | +0.50u | Neutral |
 
@@ -266,34 +265,34 @@ Factors ranked by signal persistence across time windows. Higher signal score = 
 
 | Regime | N | WR | Flat ROI | Model ROI | Sizing Edge |
 |---|---|---|---|---|---|
-| NO_MOVE | 270 | 49.3% | -11.7% | -12.2% | -14.63u |
-| SMALL_MOVE | 63 | 39.7% | -24.2% | -28.9% | -15.74u |
-| CLEAR_MOVE | 123 | 57.7% | 6.2% | 9.8% | +14.56u |
-| NEAR_START | 150 | 44.7% | -10.0% | -15.9% | -23.02u |
+| NO_MOVE | 271 | 49.4% | -11.3% | -11.9% | -14.40u |
+| SMALL_MOVE | 70 | 41.4% | -21.8% | -24.2% | -13.67u |
+| CLEAR_MOVE | 127 | 57.5% | 6.7% | 9.9% | +14.87u |
+| NEAR_START | 157 | 45.9% | -8.2% | -15.3% | -24.98u |
 
-**17 picks had unit increases without star improvement**: P/L -16.70u, WR 35.3%
+**18 picks had unit increases without star improvement**: P/L -19.45u, WR 33.3%
 
-### All Time (n=901)
+### All Time (n=924)
 
 **Counterfactual P/L**
 
 | Scenario | P/L | ROI | vs Actual |
 |---|---|---|---|
-| Actual (model units) | -81.82u | -5.7% | — |
-| Flat 1.0u per pick | -47.17u | -5.2% | -34.65u |
-| Lock units only (no bumps) | -67.76u | — | -14.06u |
-| Units change only when stars change | -72.67u | — | -9.15u |
+| Actual (model units) | -74.12u | -5.0% | — |
+| Flat 1.0u per pick | -41.82u | -4.5% | -32.30u |
+| Lock units only (no bumps) | -58.33u | — | -15.79u |
+| Units change only when stars change | -63.76u | — | -10.36u |
 
 **Incremental Sizing Value by Star Bucket**
 
 | Stars | N | Avg Units | Flat ROI | Model ROI | Sizing Edge | Verdict |
 |---|---|---|---|---|---|---|
-| 5 | 113 | 2.80 | -11.1% | -11.5% | -23.71u | Sizing hurts |
-| 4.5 | 62 | 2.67 | 2.6% | -1.9% | -4.73u | Sizing hurts |
-| 4 | 170 | 1.91 | -4.8% | -4.4% | -6.25u | Sizing hurts |
+| 5 | 118 | 2.80 | -12.0% | -12.1% | -25.69u | Sizing hurts |
+| 4.5 | 64 | 2.64 | 4.6% | 0.6% | -1.86u | Sizing hurts |
+| 4 | 173 | 1.90 | -2.8% | -2.3% | -2.59u | Sizing hurts |
 | 3.5 | 186 | 1.41 | 2.0% | 4.1% | +6.83u | Sizing helps |
-| 3 | 197 | 1.17 | -13.0% | -12.2% | -2.43u | Sizing hurts |
-| 2.5 | 153 | 0.71 | -3.5% | -5.0% | -0.15u | Neutral |
+| 3 | 205 | 1.16 | -10.7% | -10.6% | -3.22u | Sizing hurts |
+| 2.5 | 158 | 0.72 | -4.3% | -7.4% | -1.56u | Sizing hurts |
 | 2 | 1 | 1.10 | -100.0% | -100.0% | -0.10u | Neutral |
 | 1 | 1 | 0.50 | -100.0% | -100.0% | +0.50u | Neutral |
 
@@ -301,12 +300,12 @@ Factors ranked by signal persistence across time windows. Higher signal score = 
 
 | Regime | N | WR | Flat ROI | Model ROI | Sizing Edge |
 |---|---|---|---|---|---|
-| NO_MOVE | 531 | 53.7% | -5.4% | -4.1% | -5.08u |
-| SMALL_MOVE | 63 | 39.7% | -24.2% | -28.9% | -15.74u |
-| CLEAR_MOVE | 123 | 57.7% | 6.2% | 9.8% | +14.56u |
-| NEAR_START | 150 | 44.7% | -10.0% | -15.9% | -23.02u |
+| NO_MOVE | 532 | 53.8% | -5.2% | -4.0% | -4.85u |
+| SMALL_MOVE | 70 | 41.4% | -21.8% | -24.2% | -13.67u |
+| CLEAR_MOVE | 127 | 57.5% | 6.7% | 9.9% | +14.87u |
+| NEAR_START | 157 | 45.9% | -8.2% | -15.3% | -24.98u |
 
-**35 picks had unit increases without star improvement**: P/L -15.58u, WR 42.9%
+**36 picks had unit increases without star improvement**: P/L -18.33u, WR 41.7%
 
 
 ---
@@ -315,14 +314,14 @@ Factors ranked by signal persistence across time windows. Higher signal score = 
 
 ### Regime Performance
 
-**Post-Regime** (n=360)
+**Post-Regime** (n=383)
 
 | Regime | N | % | WR | Flat ROI | Model ROI | Avg CLV | Avg★ | Avg Units |
 |---|---|---|---|---|---|---|---|---|
-| NO_MOVE | 22 | 6.1% | 50.0% | -12.7% | 5.4% | 0.30% | 4.4 | 2.18 |
-| SMALL_MOVE | 60 | 16.7% | 40.0% | -23.6% | -26.8% | -0.05% | 4.0 | 1.64 |
-| CLEAR_MOVE | 102 | 28.3% | 57.8% | 7.2% | 11.1% | 0.07% | 4.1 | 1.82 |
-| NEAR_START | 142 | 39.4% | 43.7% | -11.2% | -17.2% | 0.14% | 3.8 | 1.60 |
+| NO_MOVE | 23 | 6.0% | 52.2% | -8.1% | 7.8% | 0.23% | 4.4 | 2.08 |
+| SMALL_MOVE | 67 | 17.5% | 41.8% | -21.2% | -22.0% | -0.13% | 4.0 | 1.65 |
+| CLEAR_MOVE | 106 | 27.7% | 57.5% | 7.7% | 11.2% | 0.16% | 4.0 | 1.83 |
+| NEAR_START | 149 | 38.9% | 45.0% | -9.2% | -16.6% | 0.13% | 3.7 | 1.57 |
 
 **Pre-Regime** (n=280)
 
@@ -333,54 +332,54 @@ Factors ranked by signal persistence across time windows. Higher signal score = 
 | CLEAR_MOVE | 21 | 7.5% | 57.1% | 1.5% | 4.0% | -0.34% | 3.9 | 1.94 |
 | NEAR_START | 8 | 2.9% | 62.5% | 10.1% | 9.0% | -1.02% | 3.3 | 1.56 |
 
-**V7 Era** (n=640)
+**V7 Era** (n=663)
 
 | Regime | N | % | WR | Flat ROI | Model ROI | Avg CLV | Avg★ | Avg Units |
 |---|---|---|---|---|---|---|---|---|
-| NO_MOVE | 270 | 42.2% | 49.3% | -11.7% | -12.2% | -0.33% | 3.4 | 1.40 |
-| SMALL_MOVE | 63 | 9.8% | 39.7% | -24.2% | -28.9% | 0.06% | 4.0 | 1.70 |
-| CLEAR_MOVE | 123 | 19.2% | 57.7% | 6.2% | 9.8% | -0.00% | 4.0 | 1.84 |
-| NEAR_START | 150 | 23.4% | 44.7% | -10.0% | -15.9% | 0.10% | 3.7 | 1.60 |
+| NO_MOVE | 271 | 40.9% | 49.4% | -11.3% | -11.9% | -0.34% | 3.4 | 1.40 |
+| SMALL_MOVE | 70 | 10.6% | 41.4% | -21.8% | -24.2% | -0.03% | 4.0 | 1.71 |
+| CLEAR_MOVE | 127 | 19.2% | 57.5% | 6.7% | 9.9% | 0.07% | 4.0 | 1.85 |
+| NEAR_START | 157 | 23.7% | 45.9% | -8.2% | -15.3% | 0.09% | 3.7 | 1.57 |
 
-**All Time** (n=901)
+**All Time** (n=924)
 
 | Regime | N | % | WR | Flat ROI | Model ROI | Avg CLV | Avg★ | Avg Units |
 |---|---|---|---|---|---|---|---|---|
-| NO_MOVE | 531 | 58.9% | 53.7% | -5.4% | -4.1% | -0.48% | 3.3 | 1.54 |
-| SMALL_MOVE | 63 | 7.0% | 39.7% | -24.2% | -28.9% | 0.06% | 4.0 | 1.70 |
-| CLEAR_MOVE | 123 | 13.7% | 57.7% | 6.2% | 9.8% | -0.00% | 4.0 | 1.84 |
-| NEAR_START | 150 | 16.6% | 44.7% | -10.0% | -15.9% | 0.10% | 3.7 | 1.60 |
+| NO_MOVE | 532 | 57.6% | 53.8% | -5.2% | -4.0% | -0.48% | 3.3 | 1.54 |
+| SMALL_MOVE | 70 | 7.6% | 41.4% | -21.8% | -24.2% | -0.03% | 4.0 | 1.71 |
+| CLEAR_MOVE | 127 | 13.7% | 57.5% | 6.7% | 9.9% | 0.07% | 4.0 | 1.85 |
+| NEAR_START | 157 | 17.0% | 45.9% | -8.2% | -15.3% | 0.09% | 3.7 | 1.57 |
 
 ### Board Composition
 
-**3-Day** (42 picks)
+**3-Day** (55 picks)
 
 | Sport | N | % | WR | Flat ROI |
 |---|---|---|---|---|
-| MLB | 29 | 69.0% | 44.8% | -15.6% |
-| NBA | 7 | 16.7% | 57.1% | 4.2% |
-| NHL | 6 | 14.3% | 50.0% | -7.3% |
+| MLB | 42 | 76.4% | 54.8% | 4.7% |
+| NBA | 6 | 10.9% | 16.7% | -66.5% |
+| NHL | 7 | 12.7% | 71.4% | 28.0% |
 
 | Odds Band | N | % | WR | Flat ROI |
 |---|---|---|---|---|
-| SLIGHT_FAV | 17 | 40.5% | 41.2% | -33.5% |
-| COIN_FLIP | 20 | 47.6% | 55.0% | 6.8% |
-| SLIGHT_DOG | 5 | 11.9% | 40.0% | -6.4% |
+| SLIGHT_FAV | 21 | 38.2% | 47.6% | -23.0% |
+| COIN_FLIP | 27 | 49.1% | 55.6% | 8.0% |
+| SLIGHT_DOG | 7 | 12.7% | 57.1% | 36.9% |
 
-**7-Day** (75 picks)
+**7-Day** (92 picks)
 
 | Sport | N | % | WR | Flat ROI |
 |---|---|---|---|---|
-| MLB | 52 | 69.3% | 50.0% | -4.4% |
-| NBA | 15 | 20.0% | 40.0% | -24.5% |
-| NHL | 8 | 10.7% | 50.0% | -6.6% |
+| MLB | 65 | 70.7% | 53.8% | 2.7% |
+| NBA | 17 | 18.5% | 35.3% | -33.4% |
+| NHL | 10 | 10.9% | 60.0% | 8.7% |
 
 | Odds Band | N | % | WR | Flat ROI |
 |---|---|---|---|---|
-| HEAVY_FAV | 2 | 2.7% | 50.0% | -30.8% |
-| SLIGHT_FAV | 21 | 28.0% | 42.9% | -30.7% |
-| COIN_FLIP | 43 | 57.3% | 48.8% | -5.3% |
-| SLIGHT_DOG | 9 | 12.0% | 55.6% | 32.1% |
+| HEAVY_FAV | 2 | 2.2% | 50.0% | -30.8% |
+| SLIGHT_FAV | 28 | 30.4% | 50.0% | -19.1% |
+| COIN_FLIP | 52 | 56.5% | 50.0% | -3.2% |
+| SLIGHT_DOG | 10 | 10.9% | 60.0% | 45.5% |
 
 
 ---
@@ -391,9 +390,9 @@ Factors ranked by signal persistence across time windows. Higher signal score = 
 
 | starBucket | CLEAR_MOVE (N/WR/ROI) | NEAR_START (N/WR/ROI) | SMALL_MOVE (N/WR/ROI) | NO_MOVE (N/WR/ROI) |
 |---|---|---|---|---|
-| 4.5-5★ | 55 / 65.5% / 16.2% | 51 / 45.1% / -9.1% | 23 / 39.1% / -32.7% | 27 / 40.7% / -28.8% |
-| 3.5-4★ | 40 / 45.0% / -18.1% | 47 / 55.3% / 13.5% | 31 / 41.9% / -18.0% | 105 / 52.4% / -8.2% |
-| 2.5-3★ | 28 / 60.7% / 21.2% | 50 / 36.0% / -29.5% | 8 / 37.5% / -14.1% | 138 / 48.6% / -11.0% |
+| 4.5-5★ | 56 / 64.3% / 14.1% | 52 / 46.2% / -7.3% | 27 / 40.7% / -31.7% | 27 / 40.7% / -28.8% |
+| 3.5-4★ | 41 / 46.3% / -14.8% | 47 / 55.3% / 13.5% | 32 / 43.8% / -13.5% | 106 / 52.8% / -7.2% |
+| 2.5-3★ | 30 / 60.0% / 22.0% | 56 / 39.3% / -23.9% | 10 / 40.0% / -13.9% | 138 / 48.6% / -11.0% |
 
 _Tells you whether stars only work in CLEAR_MOVE / certain environments._
 
@@ -401,9 +400,9 @@ _Tells you whether stars only work in CLEAR_MOVE / certain environments._
 
 | starBucket | MAX (N/WR/ROI) | STRONG (N/WR/ROI) | STANDARD (N/WR/ROI) |
 |---|---|---|---|
-| 4.5-5★ | 97 / 52.6% / -12.0% | 57 / 50.9% / 3.7% | 10 / 30.0% / -23.9% |
-| 3.5-4★ | 29 / 48.3% / -18.6% | 85 / 55.3% / -1.2% | 125 / 48.0% / -5.7% |
-| 2.5-3★ | 1 / 0.0% / -100.0% | 25 / 48.0% / -21.2% | 208 / 48.1% / -7.4% |
+| 4.5-5★ | 101 / 52.5% / -12.1% | 59 / 52.5% / 5.7% | 11 / 27.3% / -30.9% |
+| 3.5-4★ | 30 / 50.0% / -14.1% | 85 / 55.3% / -1.2% | 127 / 48.8% / -3.9% |
+| 2.5-3★ | 2 / 0.0% / -100.0% | 25 / 48.0% / -21.2% | 220 / 49.1% / -5.5% |
 
 _Tells you whether high-star plays are being oversized._
 
@@ -411,9 +410,9 @@ _Tells you whether high-star plays are being oversized._
 
 | starBucket | HEAVY_FAV (N/WR/ROI) | SLIGHT_FAV (N/WR/ROI) | COIN_FLIP (N/WR/ROI) | SLIGHT_DOG (N/WR/ROI) | LONG_DOG (N/WR/ROI) |
 |---|---|---|---|---|---|
-| 4.5-5★ | 17 / 82.4% / 5.8% | 34 / 50.0% / -19.6% | 90 / 47.8% / -7.0% | 17 / 47.1% / 12.4% | 6 / 16.7% / -34.2% |
-| 3.5-4★ | 17 / 82.4% / 8.3% | 59 / 54.2% / -12.5% | 133 / 48.1% / -5.9% | 22 / 40.9% / -1.9% | 8 / 25.0% / 9.1% |
-| 2.5-3★ | 11 / 72.7% / -3.0% | 73 / 53.4% / -12.0% | 110 / 44.5% / -12.8% | 32 / 43.8% / 5.8% | 8 / 25.0% / -5.6% |
+| 4.5-5★ | 17 / 82.4% / 5.8% | 38 / 52.6% / -15.5% | 93 / 47.3% / -8.0% | 17 / 47.1% / 12.4% | 6 / 16.7% / -34.2% |
+| 3.5-4★ | 17 / 82.4% / 8.3% | 59 / 54.2% / -12.5% | 135 / 48.9% / -4.3% | 23 / 43.5% / 3.6% | 8 / 25.0% / 9.1% |
+| 2.5-3★ | 11 / 72.7% / -3.0% | 77 / 54.5% / -10.2% | 118 / 44.9% / -12.1% | 33 / 45.5% / 10.7% | 8 / 25.0% / -5.6% |
 
 _Tells you whether certain star levels are broken only on coin flips or dogs._
 
@@ -421,9 +420,9 @@ _Tells you whether certain star levels are broken only on coin flips or dogs._
 
 | sport | CLEAR_MOVE (N/WR/ROI) | NEAR_START (N/WR/ROI) | SMALL_MOVE (N/WR/ROI) | NO_MOVE (N/WR/ROI) |
 |---|---|---|---|---|
-| MLB | 42 / 57.1% / 9.4% | 65 / 36.9% / -26.1% | 23 / 34.8% / -39.7% | 125 / 43.2% / -20.8% |
-| NBA | 60 / 53.3% / -7.2% | 69 / 49.3% / 0.5% | 24 / 50.0% / 0.3% | 75 / 52.0% / -8.0% |
-| NHL | 21 / 71.4% / 38.2% | 16 / 56.3% / 9.7% | 16 / 31.3% / -38.5% | 70 / 57.1% / 0.7% |
+| MLB | 45 / 57.8% / 12.9% | 71 / 39.4% / -22.1% | 28 / 39.3% / -31.0% | 126 / 43.7% / -19.9% |
+| NBA | 61 / 52.5% / -8.8% | 69 / 49.3% / 0.5% | 25 / 48.0% / -3.7% | 75 / 52.0% / -8.0% |
+| NHL | 21 / 71.4% / 38.2% | 17 / 58.8% / 14.5% | 17 / 35.3% / -33.4% | 70 / 57.1% / 0.7% |
 
 _Tells you where NO_MOVE or CLEAR_MOVE matters most._
 
@@ -431,9 +430,9 @@ _Tells you where NO_MOVE or CLEAR_MOVE matters most._
 
 | upgradeStatus | CLEAR_MOVE (N/WR/ROI) | NEAR_START (N/WR/ROI) | SMALL_MOVE (N/WR/ROI) | NO_MOVE (N/WR/ROI) |
 |---|---|---|---|---|
-| Upgraded | 71 / 59.2% / 4.6% | 67 / 47.8% / -2.8% | 38 / 39.5% / -23.8% | 101 / 49.5% / -15.7% |
-| Unchanged | 51 / 56.9% / 10.5% | 75 / 44.0% / -12.0% | 23 / 39.1% / -31.1% | 167 / 49.1% / -9.2% |
-| Downgraded | 1 / 0.0% / -100.0% | 8 / 25.0% / -52.1% | 2 / 50.0% / 49.0% | 2 / 50.0% / -10.0% |
+| Upgraded | 72 / 58.3% / 3.2% | 70 / 50.0% / 0.7% | 44 / 43.2% / -18.4% | 101 / 49.5% / -15.7% |
+| Unchanged | 52 / 57.7% / 13.5% | 76 / 43.4% / -13.2% | 24 / 37.5% / -34.0% | 168 / 49.4% / -8.6% |
+| Downgraded | 3 / 33.3% / -27.3% | 11 / 36.4% / -30.5% | 2 / 50.0% / 49.0% | 2 / 50.0% / -10.0% |
 
 _Tells you whether upgrades help only in supportive regimes._
 
@@ -442,33 +441,33 @@ _Tells you whether upgrades help only in supportive regimes._
 
 ## 6. Failure Diagnostics — Why Are We Losing Money?
 
-### 7-Day (n=75)
+### 7-Day (n=92)
 
 **Root cause analysis**:
 
-- **Bad Ranking**: Low-star picks (≤3★) WR 52% beating high-star (≥4★) WR 46%
-- **Bad Sizing**: Model P/L (-27.19u) trails flat P/L (-6.47u) by 20.72u — sizing is amplifying losses
-- **Overexposed at MAX**: 31 MAX-tier picks losing 30.8u (WR: 39%)
-- **Bad Upgrades**: 45 upgraded picks lost 27.7u total — upgrades are adding size to wrong picks
+- **Bad Sizing**: Model P/L (-20.90u) trails flat P/L (-3.06u) by 17.84u — sizing is amplifying losses
+- **Overexposed at MAX**: 34 MAX-tier picks losing 33.2u (WR: 38%)
+- **Bad Upgrades**: 52 upgraded picks lost 24.8u total — upgrades are adding size to wrong picks
+- **Favs Not Covering**: 30 fav picks at 50% WR but -19.8% flat ROI — winning but not enough to cover juice
 
-### Post-Regime (n=360)
-
-**Root cause analysis**:
-
-- **Bad Sizing**: Model P/L (-43.82u) trails flat P/L (-21.57u) by 22.25u — sizing is amplifying losses
-- **Overexposed at MAX**: 91 MAX-tier picks losing 32.6u (WR: 53%)
-- **Bad Upgrades**: 169 upgraded picks lost 17.0u total — upgrades are adding size to wrong picks
-- **Favs Not Covering**: 87 fav picks at 56% WR but -14.4% flat ROI — winning but not enough to cover juice
-
-### V7 Era (n=640)
+### Post-Regime (n=383)
 
 **Root cause analysis**:
 
-- **Bad Sizing**: Model P/L (-94.38u) trails flat P/L (-50.17u) by 44.21u — sizing is amplifying losses
-- **Bad Board Mix**: 42.2% of picks are NO_MOVE (WR: 49.3%, ROI: -11.7%)
-- **Overexposed at MAX**: 127 MAX-tier picks losing 61.7u (WR: 51%)
-- **Bad Upgrades**: 277 upgraded picks lost 51.7u total — upgrades are adding size to wrong picks
-- **Favs Not Covering**: 211 fav picks at 59% WR but -9.8% flat ROI — winning but not enough to cover juice
+- **Bad Sizing**: Model P/L (-36.12u) trails flat P/L (-16.22u) by 19.90u — sizing is amplifying losses
+- **Overexposed at MAX**: 97 MAX-tier picks losing 33.3u (WR: 53%)
+- **Bad Upgrades**: 179 upgraded picks lost 12.6u total — upgrades are adding size to wrong picks
+- **Favs Not Covering**: 95 fav picks at 58% WR but -11.4% flat ROI — winning but not enough to cover juice
+
+### V7 Era (n=663)
+
+**Root cause analysis**:
+
+- **Bad Sizing**: Model P/L (-86.68u) trails flat P/L (-44.82u) by 41.86u — sizing is amplifying losses
+- **Bad Board Mix**: 40.9% of picks are NO_MOVE (WR: 49.4%, ROI: -11.3%)
+- **Overexposed at MAX**: 133 MAX-tier picks losing 62.5u (WR: 51%)
+- **Bad Upgrades**: 287 upgraded picks lost 47.2u total — upgrades are adding size to wrong picks
+- **Favs Not Covering**: 219 fav picks at 59% WR but -8.7% flat ROI — winning but not enough to cover juice
 
 
 ---
@@ -481,57 +480,58 @@ _Regime system live since 2026-04-16_
 
 | Category | Count | % |
 |---|---|---|
-| Total Written | 605 | 100% |
-| LOCKED (direct) | 80 | 13.2% |
-| Promoted (SHADOW→LOCKED) | 307 | 50.7% |
-| Rejected (stayed SHADOW) | 157 | 26.0% |
-| Superseded (side flipped) | 56 | 9.3% |
-| Muted | 255 | 42.1% |
-| Cancelled | 21 | 3.5% |
+| Total Written | 646 | 100% |
+| LOCKED (direct) | 85 | 13.2% |
+| Promoted (SHADOW→LOCKED) | 333 | 51.5% |
+| Rejected (stayed SHADOW) | 161 | 24.9% |
+| Superseded (side flipped) | 62 | 9.6% |
+| Muted | 267 | 41.3% |
+| Cancelled | 21 | 3.3% |
 
 ### Promotion Rate by Regime
 
 | Regime | Written | Promoted | Promotion Rate |
 |---|---|---|---|
-| NO_MOVE | 39 | 16 | 41.0% |
-| SMALL_MOVE | 107 | 56 | 52.3% |
-| CLEAR_MOVE | 137 | 84 | 61.3% |
-| NEAR_START | 228 | 114 | 50.0% |
+| NO_MOVE | 39 | 15 | 38.5% |
+| SMALL_MOVE | 115 | 60 | 52.2% |
+| CLEAR_MOVE | 144 | 92 | 63.9% |
+| NEAR_START | 241 | 122 | 50.6% |
 
 ### Promoted vs Rejected — Graded Results
 
 | Group | N | WR | Flat ROI | Model ROI | Avg CLV | Avg★ |
 |---|---|---|---|---|---|---|
-| LOCKED | 357 | 48.7% | -6.3% | -7.6% | 0.05% | 3.9 |
+| LOCKED | 380 | 49.7% | -4.5% | -6.0% | 0.04% | 3.9 |
 | SHADOW (rejected) | 3 | 66.7% | 31.2% | 49.5% | 0.66% | 3.7 |
 
-**Regime filter NOT separating**: LOCKED WR (49%) ≤ SHADOW WR (67%)
+**Regime filter NOT separating**: LOCKED WR (50%) ≤ SHADOW WR (67%)
 
 ---
 
 ## 8. Pick Health (Mute/Cancel) Audit
 
-### 7-Day (n=75)
+### 7-Day (n=92)
 
 | Health | N | % | WR | Flat ROI | Model ROI | Avg CLV |
 |---|---|---|---|---|---|---|
-| ACTIVE | 71 | 94.7% | 49.3% | -5.8% | -17.4% | 0.31% |
-| MUTED | 4 | 5.3% | 25.0% | -59.4% | -51.2% | -0.49% |
+| ACTIVE | 86 | 93.5% | 51.2% | -3.3% | -14.2% | 0.18% |
+| MUTED | 6 | 6.5% | 50.0% | -3.5% | 76.8% | -0.62% |
 
 **Health Trigger Frequency**
 
 | Reason | N | WR |
 |---|---|---|
-| ags_hard_mute | 4 | 25.0% |
-| wps_flipped_diag | 1 | 0.0% |
+| ags_hard_mute | 6 | 50.0% |
+| wps_flipped_diag | 3 | 33.3% |
+| opp_side_stronger_diag | 1 | 0.0% |
 
-### Post-Regime (n=360)
+### Post-Regime (n=383)
 
 | Health | N | % | WR | Flat ROI | Model ROI | Avg CLV |
 |---|---|---|---|---|---|---|
-| ACTIVE | 280 | 77.8% | 47.5% | -6.9% | -12.2% | 0.09% |
-| MUTED | 69 | 19.2% | 53.6% | -3.0% | 16.3% | -0.10% |
-| CANCELLED | 11 | 3.1% | 54.5% | -2.8% | -10.4% | 0.16% |
+| ACTIVE | 301 | 78.6% | 48.5% | -5.3% | -10.8% | 0.08% |
+| MUTED | 71 | 18.5% | 54.9% | 0.2% | 20.0% | -0.12% |
+| CANCELLED | 11 | 2.9% | 54.5% | -2.8% | -10.4% | 0.16% |
 
 **Health Trigger Frequency**
 
@@ -539,25 +539,25 @@ _Regime system live since 2026-04-16_
 |---|---|---|
 | v73_hc_rescue | 21 | 52.4% |
 | ags_quality_veto | 18 | 66.7% |
-| wps_flipped_diag | 15 | 33.3% |
+| wps_flipped_diag | 17 | 35.3% |
 | winners_below_floor | 14 | 42.9% |
 | winners_faded | 12 | 66.7% |
-| opp_side_stronger_diag | 10 | 50.0% |
+| opp_side_stronger_diag | 11 | 45.5% |
 | winners_killed | 9 | 55.6% |
 | below_lock_range | 7 | 28.6% |
 | quality_below_floor | 7 | 57.1% |
-| ags_hard_mute | 4 | 25.0% |
+| ags_hard_mute | 6 | 50.0% |
 | whitelist_fade_weak | 3 | 66.7% |
 | sum_below_floor | 3 | 33.3% |
 | whitelist_fade_strong | 2 | 50.0% |
 | dw1_no_ags_support | 1 | 100.0% |
 
-### V7 Era (n=640)
+### V7 Era (n=663)
 
 | Health | N | % | WR | Flat ROI | Model ROI | Avg CLV |
 |---|---|---|---|---|---|---|
-| ACTIVE | 558 | 87.2% | 48.6% | -9.0% | -12.8% | -0.12% |
-| MUTED | 69 | 10.8% | 53.6% | -3.0% | 16.3% | -0.10% |
+| ACTIVE | 579 | 87.3% | 49.1% | -8.2% | -12.0% | -0.11% |
+| MUTED | 71 | 10.7% | 54.9% | 0.2% | 20.0% | -0.12% |
 | CANCELLED | 13 | 2.0% | 61.5% | 17.8% | 4.8% | -0.95% |
 
 **Health Trigger Frequency**
@@ -566,14 +566,14 @@ _Regime system live since 2026-04-16_
 |---|---|---|
 | v73_hc_rescue | 21 | 52.4% |
 | ags_quality_veto | 18 | 66.7% |
-| wps_flipped_diag | 15 | 33.3% |
+| wps_flipped_diag | 17 | 35.3% |
 | winners_below_floor | 14 | 42.9% |
 | winners_faded | 12 | 66.7% |
-| opp_side_stronger_diag | 10 | 50.0% |
+| opp_side_stronger_diag | 11 | 45.5% |
 | winners_killed | 9 | 55.6% |
 | below_lock_range | 7 | 28.6% |
 | quality_below_floor | 7 | 57.1% |
-| ags_hard_mute | 4 | 25.0% |
+| ags_hard_mute | 6 | 50.0% |
 | whitelist_fade_weak | 3 | 66.7% |
 | sum_below_floor | 3 | 33.3% |
 | opposition_building | 2 | 100.0% |
@@ -586,38 +586,38 @@ _Regime system live since 2026-04-16_
 
 ## 9. Drift & Calibration
 
-### 7-Day (n=75)
+### 7-Day (n=92)
 
 | Feature | Frozen Mean | Live Mean | Drift (σ) |
 |---|---|---|---|
-| moneyPct | 78.17 | 90.95 | 0.80 |
-| avgBet | 4162.25 | 8852.54 | 0.65 |
-| invested | 27502.21 | 19182.28 | 0.15 |
-| sharpCount | 5.64 | 1.72 | 1.16 ⚠️ |
-| counterSharp | 21.72 | 9.05 | 0.80 |
-| moneyEdge | 1.68 | 3.52 | 1.35 ⚠️ |
-| mktDominance | 1.55 | 2.43 | 0.98 |
+| moneyPct | 78.17 | 92.10 | 0.88 |
+| avgBet | 4162.25 | 8601.22 | 0.61 |
+| invested | 27502.21 | 17372.27 | 0.18 |
+| sharpCount | 5.64 | 1.59 | 1.20 ⚠️ |
+| counterSharp | 21.72 | 7.90 | 0.87 |
+| moneyEdge | 1.68 | 3.67 | 1.46 ⚠️ |
+| mktDominance | 1.55 | 2.51 | 1.06 ⚠️ |
 
-### Post-Regime (n=360)
-
-| Feature | Frozen Mean | Live Mean | Drift (σ) |
-|---|---|---|---|
-| moneyPct | 78.17 | 88.84 | 0.67 |
-| avgBet | 4162.25 | 16060.98 | 1.64 ⚠️ |
-| invested | 27502.21 | 39293.28 | 0.21 |
-| sharpCount | 5.64 | 2.27 | 0.99 |
-| counterSharp | 21.72 | 11.09 | 0.67 |
-| moneyEdge | 1.68 | 3.14 | 1.07 ⚠️ |
-| mktDominance | 1.55 | 2.23 | 0.75 |
-
-### V7 Era (n=640)
+### Post-Regime (n=383)
 
 | Feature | Frozen Mean | Live Mean | Drift (σ) |
 |---|---|---|---|
-| moneyPct | 78.17 | 85.83 | 0.48 |
-| avgBet | 4162.25 | 11447.24 | 1.00 ⚠️ |
-| invested | 27502.21 | 36236.74 | 0.15 |
-| sharpCount | 5.64 | 3.65 | 0.59 |
-| counterSharp | 21.72 | 14.00 | 0.48 |
-| moneyEdge | 1.68 | 2.63 | 0.70 |
-| mktDominance | 1.55 | 1.94 | 0.43 |
+| moneyPct | 78.17 | 89.23 | 0.70 |
+| avgBet | 4162.25 | 15513.97 | 1.57 ⚠️ |
+| invested | 27502.21 | 37520.12 | 0.18 |
+| sharpCount | 5.64 | 2.21 | 1.01 ⚠️ |
+| counterSharp | 21.72 | 10.72 | 0.69 |
+| moneyEdge | 1.68 | 3.20 | 1.11 ⚠️ |
+| mktDominance | 1.55 | 2.26 | 0.78 |
+
+### V7 Era (n=663)
+
+| Feature | Frozen Mean | Live Mean | Drift (σ) |
+|---|---|---|---|
+| moneyPct | 78.17 | 86.16 | 0.50 |
+| avgBet | 4162.25 | 11291.29 | 0.98 |
+| invested | 27502.21 | 35318.46 | 0.14 |
+| sharpCount | 5.64 | 3.56 | 0.61 |
+| counterSharp | 21.72 | 13.68 | 0.50 |
+| moneyEdge | 1.68 | 2.69 | 0.73 |
+| mktDominance | 1.55 | 1.97 | 0.46 |
