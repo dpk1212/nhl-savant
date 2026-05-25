@@ -1,9 +1,10 @@
-// computeAgsCalibration — daily job that refreshes the AGS-Unified v9
+// computeAgsCalibration — daily job that refreshes the AGS-Unified v11
 // calibration doc.
 //
 // Output: Firestore doc `agsCalibration/current` with shape:
 //   {
-//     normalizers: { dCount: { mean, sd }, dHcCount: { mean, sd }, ... },
+//     normalizers: { dCount: { mean, sd }, dHcSizeRatio: { mean, sd },
+//                    dSumRankNorm: { mean, sd }, dWinnerCtPreA: { mean, sd } },
 //     quintiles: { q20, q40, q50, q60, q80, q90 },
 //     thresholds: { hardMuteFloor (=q20), lockFloor (=q60),
 //                   premiumFloor (=q80), eliteFloor (=q90) },
@@ -17,11 +18,14 @@
 // to drive AGS-U scoring of live picks. Falls back to AGS_FALLBACK_CALIBRATION
 // in src/lib/ags.js when this doc is unavailable.
 //
-// Sample = V6 cutover (2026-04-18+), dashboard-truth filter (peakStars ≥ 2.5
-// ∧ ¬SHADOW ∧ ¬MUTED ∧ ¬CANCELLED ∧ ¬superseded), graded picks only,
-// whitelist-filtered aggregates with HC subset (CONFIRMED tier ∧ sizeRatio
-// ≥ 1.5×). The 5 v9 features are computed by aggregateSideProven in
-// src/lib/ags.js — keep that file as the single source of truth.
+// Sample = V6 cutover (2026-04-18+), graded picks only, whitelist-filtered
+// aggregates with HC subset (CONFIRMED tier ∧ sizeRatio ≥ 1.5×). The 4 v11
+// features are computed by aggregateSideProven in src/lib/ags.js — keep that
+// file as the single source of truth.
+//
+// v11 — dWinnerCtPreA requires walletStatsFn (top-level profile.picks lookup);
+// this job now passes that through aggregateSideProven for parity with the
+// live cron/UI scoring path.
 import 'dotenv/config';
 import admin from 'firebase-admin';
 import { readFileSync, existsSync } from 'fs';
@@ -63,9 +67,12 @@ const PICK_COLS = [
 
 const DRY_RUN = process.env.DRY_RUN === '1';
 
-// ── Wallet tier map ────────────────────────────────────────────────────────
-async function loadWalletTiers() {
-  const tiers = new Map(); // walletShort → { sport → tier }
+// ── Wallet tier + top-level pick aggregate map ──────────────────────────────
+// v11 — we now also persist `walletPicksAgg` (the top-level `profile.picks`
+// block) so the dWinnerCtPreA feature can resolve at calibration time.
+async function loadWalletData() {
+  const tiers = new Map();          // walletShort → { sport → tier }
+  const walletPicksAgg = new Map(); // walletShort → { n, flatRoi }
   const snap = await db.collection('sharpWalletProfiles').get();
   for (const d of snap.docs) {
     const p = d.data();
@@ -75,8 +82,14 @@ async function loadWalletTiers() {
       if (rec?.whitelistTier) map[sport] = rec.whitelistTier;
     }
     tiers.set(d.id, map);
+    if (p.picks) {
+      walletPicksAgg.set(d.id, {
+        picksN: Number(p.picks.n) || 0,
+        picksFlatRoi: Number(p.picks.flatRoi) || 0,
+      });
+    }
   }
-  return tiers;
+  return { tiers, walletPicksAgg };
 }
 
 function buildIsProvenFn(tiers) {
@@ -97,6 +110,12 @@ function buildIsHcEligibleFn(tiers) {
   };
 }
 
+// v11 — wallet's top-level profile.picks aggregate at scoring time. Drives
+// the dWinnerCtPreA feature.
+function buildWalletStatsFn(walletPicksAgg) {
+  return (walletShort) => walletPicksAgg.get(walletShort) || null;
+}
+
 // ── Sample loader ──────────────────────────────────────────────────────────
 // V6 cutover universe with full feature stack (walletDetails + outcome).
 // Includes BOTH SHIPPED and SHADOW picks — the AGS-U calibration must reflect
@@ -104,7 +123,7 @@ function buildIsHcEligibleFn(tiers) {
 // (now-retired) matrix happened to publish. Verified empirically: SHADOW
 // picks are 55% WR vs SHIPPED 50% WR (the matrix was over-filtering winners
 // out of the calibration), so excluding them biased q-thresholds upward.
-async function loadHistoricalAggregates(isProvenFn, isHcEligibleFn) {
+async function loadHistoricalAggregates(isProvenFn, isHcEligibleFn, walletStatsFn) {
   const aggs = [];
   let dateMin = null, dateMax = null;
   let counts = { graded: 0, withDetails: 0, kept: 0 };
@@ -126,7 +145,7 @@ async function loadHistoricalAggregates(isProvenFn, isHcEligibleFn) {
         if (!Array.isArray(wd) || wd.length === 0) continue;
         counts.withDetails += 1;
 
-        const agg = aggregateSideProven(wd, sideKey, sport, isProvenFn, isHcEligibleFn);
+        const agg = aggregateSideProven(wd, sideKey, sport, isProvenFn, isHcEligibleFn, walletStatsFn);
         if (!agg || (agg.forCount + agg.agCount) === 0) continue;
         counts.kept += 1;
 
@@ -162,14 +181,15 @@ async function main() {
   const startedAt = Date.now();
   console.log(`[ags-calibration] starting${DRY_RUN ? ' (DRY_RUN)' : ''}`);
 
-  console.log('[ags-calibration] loading wallet tiers…');
-  const tiers = await loadWalletTiers();
+  console.log('[ags-calibration] loading wallet tiers + top-level picks aggregate…');
+  const { tiers, walletPicksAgg } = await loadWalletData();
   const isProvenFn = buildIsProvenFn(tiers);
   const isHcEligibleFn = buildIsHcEligibleFn(tiers);
-  console.log(`[ags-calibration]   tier map: ${tiers.size} wallets with profile records`);
+  const walletStatsFn = buildWalletStatsFn(walletPicksAgg);
+  console.log(`[ags-calibration]   tier map: ${tiers.size} wallets · profile.picks: ${walletPicksAgg.size} wallets`);
 
   console.log('[ags-calibration] loading historical sample (V6 cutover, full universe, graded)…');
-  const { aggs, dateMin, dateMax, counts } = await loadHistoricalAggregates(isProvenFn, isHcEligibleFn);
+  const { aggs, dateMin, dateMax, counts } = await loadHistoricalAggregates(isProvenFn, isHcEligibleFn, walletStatsFn);
   console.log(`[ags-calibration]   counts: graded=${counts.graded}  withDetails=${counts.withDetails}  kept=${counts.kept}`);
   console.log(`[ags-calibration]   date range: ${dateMin} → ${dateMax}`);
 
@@ -237,7 +257,7 @@ async function main() {
     computedAt: new Date().toISOString(),
     durationMs: Date.now() - startedAt,
     source: 'cron',
-    schemaVersion: 'ags-unified-v10',
+    schemaVersion: 'ags-unified-v11',
     weights: { ...AGS_WEIGHTS }, // record the model weights that produced these quintiles
   };
 

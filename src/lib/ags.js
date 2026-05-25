@@ -1,92 +1,109 @@
-// AGS-Unified v10 — single source of truth for client (SharpFlow.jsx) and
+// AGS-Unified v11 — single source of truth for client (SharpFlow.jsx) and
 // server (scripts/syncPickStateAuthoritative.js, calibration jobs).
 //
-// AGS-U is a logistic-regression-derived composite over five frozen per-side
-// aggregate features computed from `peak.v8Scoring.walletDetails[]`. Each
-// feature contributes weight·z(value), summed (plus an intercept). The
-// composite drives EVERY action — lock/mute, sizing, tier label — so there
-// is exactly one number per side that decides what the system does.
+// AGS-U is a logistic-regression-derived composite over FOUR per-side aggregate
+// features computed from `peak.v8Scoring.walletDetails[]` + wallet profile
+// lookups. Each feature contributes weight·z(value), summed with an intercept.
+// The composite drives EVERY action — lock/mute, sizing, tier label.
 //
-// v10 monotonic-scoring upgrade (2026-05-22, supersedes v9 uniform weights)
+// v11 deep-feature upgrade (2026-05-25, supersedes v10 5-feature set)
 // ────────────────────────────────────────────────────────────────────────
-// v9 used uniform +1 weights on each z-scored feature. That worked
-// well for raw AUC (0.610 OOS) but had a non-monotonic quintile order
-// (one inversion in pairwise quintile WR ordering OOS). v10 replaces
-// the uniform sum with L1-regularized logistic-regression weights
-// fit on 470 W/L picks (2026-04-18 → 2026-05-22) and validated with
-// 5-fold time-aware cross-validation.
+// v10 used 5 count/conviction features and worked well on NBA but was
+// ANTI-PREDICTIVE on MLB (CV AUC 0.466 — below chance). The wallet pool
+// audit revealed MLB has only 32 qualifying wallets vs NBA's 95, and the
+// metric audit revealed we were ignoring 11 of 15 walletDetail fields
+// (roi, pnl, rank, roiNorm, pnlNorm, rankNorm, etc.) plus the entire
+// `sharpWalletProfiles[w].picks` block (the wallet's track record on
+// our featured picks).
 //
-// Result: STRICTLY MONOTONIC OOS quintile win rates —
-//   Q1=38.3%  Q2=48.9%  Q3=53.2%  Q4=55.3%  Q5=62.8%   (Δ Q5-Q1 = 24.5pp)
-//   OOS AUC 0.597    OOS Spearman 0.167    OOS Brier 0.245
+// v11 method:
+//   1. Tested 56 candidate features (every metric × every aggregation:
+//      sums/avgs/maxes/side-indicators/top-N/HC-variants/W-L counts).
+//   2. Strict-causal time-aware 5-fold CV — every feature uses only
+//      data knowable at pick scoring time.
+//   3. Forward stepwise selection on universal data (one model, all sports).
 //
-// The score is a calibrated logit: sigmoid(score) ≈ P(WIN | features).
-// Source of weights: scripts/_agsu_monotonic_scoring.mjs +
-//                     AGSU_MONOTONIC_SCORING.md  +  AGSU_MONOTONIC_RECOMMENDATION.md
+// Selected features (4 — the rest L1-collapsed to noise):
+//   COUNT consensus       → dCount         (proven wallet count margin)
+//   INTENSITY (HC)        → dHcSizeRatio   (HC sizeRatio sum margin)
+//   QUALITY-RANK (fade)   → dSumRankNorm   (Σ leaderboard rank-quality, FOR − AGAINST)
+//   QUALITY-TRACK (fade)  → dWinnerCtPreA  (count of FOR-side wallets with positive
+//                                           any-sport pre-pick featured-pick ROI,
+//                                           minus same on AGAINST)
 //
-// Feature design (chosen via L1 Lasso + Spearman + VIF on a 334-pick V6+
-// sample, holdout-validated):
+// Model logic: dCount + dHcSizeRatio have POSITIVE coefficients (sharp consensus
+// is real). dSumRankNorm + dWinnerCtPreA have NEGATIVE coefficients — when the
+// most-known-winning wallets pile on, that side wins LESS often (the line has
+// already moved). "Follow the crowd, fade the obvious sharps."
 //
-//   COUNT consensus      → dCount        (proven wallet count margin)
-//   COUNT consensus (HC) → dHcCount      (HC-tier wallet count margin)
-//   INTENSITY            → dConvictionAvg (avg sizeRatio·convictionMult margin)
-//   INTENSITY (HC)       → dHcSizeRatio  (HC sizeRatio sum margin)
-//   DOMINANCE            → forContribShare (this side's share of total contribution)
+// Strict-causal CV result (558 W/L picks, 2026-04-18 → 2026-05-25):
+//   Universal AUC=0.596  ρ=0.166  Q5−Q1=23.4%
+//   MLB AUC=0.549  (v10: 0.466 ← anti-predictive)   Δ +0.083
+//   NBA AUC=0.632  (v10: 0.648)                     Δ −0.016
+//   NHL AUC=0.646  (v10: 0.623)                     Δ +0.023
 //
 // HC = CONFIRMED tier ∧ wallet sizeRatio ≥ 1.5×.
+// dWinnerCtPreA uses profile.picks (top-level, any-sport featured-pick aggregate)
+// via the optional walletStatsFn passed into aggregateSideProven.
 //
-// Calibration is recomputed daily by scripts/computeAgsCalibration.js so the
-// quintile boundaries (q20/q40/q60/q80/q90) and per-feature normalizers
-// (mean/sd) track distribution drift under the new weighting.
+// Source: scripts/_agsu_deep_feature_lab.mjs + AGSU_DEEP_FEATURE_LAB.md +
+//         AGSU_WALLET_INVENTORY.md (wallet pool audit).
 
 // ────────────────────────────────────────────────────────────────────────
-// Feature definitions — order is display-only.
-// The `sign` field records the EXPECTED direction of correlation with
-// WIN (positive = feature ↑ ⇒ P(win) ↑). v10 fits actual coefficients
-// via L1-regularized logistic regression (see AGS_WEIGHTS below). The
-// sign of forContribShare flipped to −1 in v10: in the V6+ sample, a
-// lopsided book (high forContribShare) predicts losses, not wins.
+// AGS_FEATURES — the FOUR features that drive the v11 score.
+//
+// The `sign` field is the model's actual sign (not just expected direction).
+// Two are positive (consensus), two are negative (fade-the-obvious-sharps).
+// Order is display-only.
 // ────────────────────────────────────────────────────────────────────────
 export const AGS_FEATURES = [
-  { key: 'dCount',           label: 'Δcount',         family: 'COUNT',     sign: +1 },
-  { key: 'dHcCount',         label: 'ΔHCcount',       family: 'COUNT_HC',  sign: +1 },
-  { key: 'dConvictionAvg',   label: 'ΔavgConviction', family: 'INTENSITY', sign: +1 },
-  { key: 'dHcSizeRatio',     label: 'ΔHCsizeRatio',   family: 'INTENSITY_HC', sign: +1 },
-  { key: 'forContribShare',  label: 'forShare',       family: 'DOMINANCE', sign: -1 },
+  { key: 'dCount',          label: 'Δcount',       family: 'COUNT',          sign: +1 },
+  { key: 'dHcSizeRatio',    label: 'ΔHCsizeRatio', family: 'INTENSITY_HC',   sign: +1 },
+  { key: 'dSumRankNorm',    label: 'ΔΣrankNorm',   family: 'QUALITY_RANK',   sign: -1 },
+  { key: 'dWinnerCtPreA',   label: 'Δwinners',     family: 'QUALITY_TRACK',  sign: -1 },
 ];
 
 // ────────────────────────────────────────────────────────────────────────
-// AGS_WEIGHTS — v10 logistic-regression coefficients (the actual model).
+// AGS_WEIGHTS — v11 logistic-regression coefficients (the actual model).
 //
-// Fit method:   L1-regularized logistic regression, λ=2.0
-// Training:     470 W/L picks since 2026-04-18 (V6 cutover) → 2026-05-22
+// Fit method:   L1-regularized logistic regression, λ=1.5
+// Training:     558 W/L picks since 2026-04-18 (V6 cutover) → 2026-05-25
 // Validation:   5-fold time-aware cross-validation
-// OOS result:   Strict monotonic quintile WR (Q1=38.3% → Q5=62.8%)
+// Selection:    Forward stepwise on 56 candidate features (universal,
+//               strict-causal, no leakage). The four kept survive every
+//               other candidate the data generated.
 //
-// Coefficient significance (bootstrap 95% CI on B=200 resamples):
-//   intercept        β=+0.0696   CI [−0.124, +0.253]   (not significant)
-//   dCount           β=+0.2716   CI [+0.080, +0.552]   SIGNIFICANT ✓
-//   dHcCount         β=+0.0050   CI [−0.185, +0.243]   noise (kept for compat)
-//   dConvictionAvg   β=+0.2275   CI [+0.017, +0.553]   SIGNIFICANT ✓
-//   dHcSizeRatio     β=+0.1763   CI [+0.000, +0.423]   borderline
-//   forContribShare  β=−0.0297   CI [−0.370, +0.163]   correctly negative
+// OOS result (universal, 558 picks):
+//   AUC=0.596  ρ=0.166  Q5−Q1=23.4%
+//   MLB AUC=0.549 (v10: 0.466)  NBA AUC=0.632 (v10: 0.648)  NHL AUC=0.646
 //
-// The score is a calibrated logit. sigmoid(score) is the model's
-// estimate of P(WIN | features). Quintile thresholds are derived from
-// the empirical distribution of this score across the V6+ population.
+// Coefficient interpretation:
+//   intercept       β=+0.0887   (slight win-bias baseline)
+//   dCount          β=+0.5371   PRO-consensus: more proven wallets FOR = win
+//   dHcSizeRatio    β=+0.2787   PRO-consensus: bigger HC sizing FOR = win
+//   dSumRankNorm    β=-0.2740   CONTRARIAN: more leaderboard-rank quality
+//                               on FOR = LOSE (line already reflects them)
+//   dWinnerCtPreA   β=-0.1916   CONTRARIAN: more pre-D winning wallets
+//                               on FOR = LOSE (obvious sharps already priced in)
 //
-// To refresh: re-run scripts/_agsu_monotonic_scoring.mjs against the
-// latest data; copy the printed coefficients here; then re-run
+// Score is a calibrated logit. sigmoid(score) ≈ P(WIN | features).
+//
+// To refresh: re-run scripts/_agsu_deep_feature_lab.mjs against the latest
+// data; copy printed coefficients here; then re-run
 // scripts/computeAgsCalibration.js to refresh the Firestore quintiles.
 // ────────────────────────────────────────────────────────────────────────
 export const AGS_WEIGHTS = Object.freeze({
-  intercept:        +0.0696,
-  dCount:           +0.2716,
-  dHcCount:         +0.0050,
-  dConvictionAvg:   +0.2275,
-  dHcSizeRatio:     +0.1763,
-  forContribShare:  -0.0297,
+  intercept:        +0.0887,
+  dCount:           +0.5371,
+  dHcSizeRatio:     +0.2787,
+  dSumRankNorm:     -0.2740,
+  dWinnerCtPreA:    -0.1916,
 });
+
+// Threshold inside aggregateSideProven for what counts as a "winner" wallet
+// for the dWinnerCtPreA feature. Mirrors the strict-causal lab threshold
+// (n ≥ 5 any-sport featured picks AND flat ROI > 0).
+export const AGS_WINNER_MIN_PICKS = 5;
 
 // HC eligibility threshold — wallet must be CONFIRMED tier AND have
 // sizeRatio ≥ HC_RATIO to count toward HC features. Mirrors the production
@@ -122,12 +139,10 @@ export const AGS_MIN_PROVEN_WALLETS = 1;
 // pathological calibration runs (e.g. tiny sample on cold start) that could
 // place q20 too low and accidentally permit toxic picks to ship.
 //
-// v10 note: under the new logistic-regression scoring the score scale is
-// roughly 7× smaller in magnitude than v9 (a Σ-z-score over 5 features had
-// natural range ≈ ±5; the L1-logit score sums weighted z's with |β| ≈ 0.2
-// each so the range is ≈ ±1.5). The safety floor was rescaled from −3.0
-// (v9) to −1.0 (v10) accordingly. The v10 sample's empirical Q1 was about
-// −0.28; −1.0 is well below the lowest observed in 470 picks.
+// v11 note: score range is approximately [−1.8, +3.6] on the V6→2026-05-25
+// sample. q05 = −0.54, q20 = −0.18. −1.0 is below q05 (only ~5% of picks
+// reach there) so it remains an appropriate absolute safety floor for
+// catastrophic-calibration protection.
 export const AGS_ABSOLUTE_MUTE_FLOOR = -1.0;
 
 // ────────────────────────────────────────────────────────────────────────
@@ -135,50 +150,45 @@ export const AGS_ABSOLUTE_MUTE_FLOOR = -1.0;
 // `agsCalibration/current` is unavailable (cron failed, cold start, etc.).
 // Refreshed by scripts/computeAgsCalibration.js on every run.
 //
-// v10 calibration (2026-05-22). Normalizers (mean/sd per feature) are
-// taken from the V6+ population; they are unchanged from v9 because v10
-// still z-scores the same five features — only the weighting changed.
-// The quintile boundaries DID change because the score scale changed.
+// v11 calibration (2026-05-25). Computed from the V6+ sample (558 W/L
+// picks since 2026-04-18) by running the new 4-feature computeAgs() over
+// every pick and taking empirical percentiles.
 //
-// v10 score-distribution quintile cuts come from running the new
-// computeAgs() over all 470 W/L picks in the training window
-// (2026-04-18 → 2026-05-22) and taking empirical percentiles:
-//   q20 = −0.28   (HARD MUTE — bottom 20%)
-//   q40 = −0.01   (LEAN floor)
-//   q60 = +0.17   (LOCK floor — full standard size)
-//   q80 = +0.38   (PREMIUM floor — 1.5×)
-//   q90 = +0.58   (ELITE floor — 2.0×)
+// Score distribution on the V6+ sample:
+//   min=−1.81  max=+3.64  mean=+0.10
+//   q05=−0.54  q10=−0.33  q20=−0.18  (HARD MUTE — bottom 20%)
+//   q40=+0.01  q50=+0.09  q60=+0.12  (LOCK floor — full standard size)
+//   q80=+0.34  q90=+0.60  (PREMIUM 1.5× / ELITE 2.0× floors)
 //
-// Sanity check: under the v10 weights, score=0 corresponds to ≈52% P(WIN)
-// via sigmoid (intercept ≈ +0.07), and score=+0.6 corresponds to ≈65% P(WIN).
-// This matches the observed Q5 OOS WR of 62.8% almost exactly — the model
-// is calibrated, not just discriminative.
+// Sanity check: under the v11 weights, sigmoid(intercept) = sigmoid(0.089)
+// ≈ 52.2% — the baseline. score=+0.6 → sigmoid(0.69) ≈ 66.7% P(WIN), which
+// matches the strict-causal Q5 OOS WR closely (the model is calibrated,
+// not just discriminative).
 //
 // Keep this file in sync with Firestore whenever the calibration job's
-// quintiles drift >0.05 in any band (the smaller drift threshold reflects
-// the smaller absolute score scale), OR at least monthly.
+// quintiles drift >0.05 in any band OR at least monthly.
 export const AGS_FALLBACK_CALIBRATION = Object.freeze({
   normalizers: {
-    dCount:           { mean: 1.476, sd: 1.599 },
-    dHcCount:         { mean: 0.465, sd: 0.831 },
-    dConvictionAvg:   { mean: 0.539, sd: 0.561 },
-    dHcSizeRatio:     { mean: 1.580, sd: 5.431 },
-    forContribShare:  { mean: 0.812, sd: 0.249 },
+    dCount:         { mean: 1.1239, sd: 1.4895 },
+    dHcSizeRatio:   { mean: 1.0530, sd: 5.4443 },
+    dSumRankNorm:   { mean: 62.1204, sd: 90.6788 },
+    dWinnerCtPreA:  { mean: 0.7027, sd: 1.2883 },
   },
-  // v10 logistic-score quintile boundaries (range ≈ [−1.6, +1.7]).
-  quintiles: { q20: -0.28, q40: -0.01, q50: 0.08, q60: 0.17, q80: 0.38, q90: 0.58 },
+  // v11 logistic-score quintile boundaries (range ≈ [−1.8, +3.6]).
+  // Computed by scripts/computeAgsCalibration.js on the V6→2026-05-24 sample (N=565).
+  quintiles: { q20: -0.16, q40: -0.02, q50: 0.06, q60: 0.13, q80: 0.29, q90: 0.46 },
   // Action thresholds derived from the quintiles.
   thresholds: {
-    hardMuteFloor: -0.28, // = q20 — hard mute below this AGS-U value
-    lockFloor:      0.17, // = q60 — full unit lock floor
-    premiumFloor:   0.38, // = q80 — 1.50× sizing
-    eliteFloor:     0.58, // = q90 — 2.00× sizing
+    hardMuteFloor: -0.16, // = q20 — hard mute below this AGS-U value
+    lockFloor:      0.13, // = q60 — full unit lock floor
+    premiumFloor:   0.29, // = q80 — 1.50× sizing
+    eliteFloor:     0.46, // = q90 — 2.00× sizing
   },
-  sampleSize: 470,
-  dateRange: { from: '2026-04-18', to: '2026-05-22' },
-  computedAt: '2026-05-22T15:31:25Z',
-  source: 'fallback-hardcoded-v10',
-  schemaVersion: 'ags-unified-v10',
+  sampleSize: 565,
+  dateRange: { from: '2026-04-18', to: '2026-05-24' },
+  computedAt: '2026-05-25T15:00:00Z',
+  source: 'fallback-hardcoded-v11',
+  schemaVersion: 'ags-unified-v11',
 });
 
 // ────────────────────────────────────────────────────────────────────────
@@ -252,17 +262,21 @@ export function positionToWalletDetail(p) {
 // (createMissingPicks, computeSideAnalytics) both call so that whatever
 // AGS-U value the UI displays on a card is the exact value the cron will
 // stamp on the matching pick doc when it next runs. There is no drift.
+//
+// v11: `walletStatsFn` is the new optional argument used to look up the
+// wallet's any-sport featured-pick track record at scoring time (drives
+// the `dWinnerCtPreA` feature). When null, that feature contributes 0.
 // ────────────────────────────────────────────────────────────────────────
-export function computeAgsFromPositions(positions, sideKey, sport, calibration, isProvenFn, isHcEligibleFn = null) {
+export function computeAgsFromPositions(positions, sideKey, sport, calibration, isProvenFn, isHcEligibleFn = null, walletStatsFn = null) {
   if (!Array.isArray(positions) || positions.length === 0) return null;
   const walletDetails = positions.map(positionToWalletDetail).filter(Boolean);
-  const agg = aggregateSideProven(walletDetails, sideKey, sport, isProvenFn, isHcEligibleFn);
+  const agg = aggregateSideProven(walletDetails, sideKey, sport, isProvenFn, isHcEligibleFn, walletStatsFn);
   if (!agg) return null;
   return computeAgs(agg, calibration);
 }
 
 // ────────────────────────────────────────────────────────────────────────
-// Whitelist-filtered side aggregator with HC subset.
+// Whitelist-filtered side aggregator with HC subset + quality features.
 //
 // Args:
 //   walletDetails: peak.v8Scoring.walletDetails[] frozen at scoring time
@@ -274,15 +288,27 @@ export function computeAgsFromPositions(positions, sideKey, sport, calibration, 
 //                  (true if wallet is CONFIRMED for sport — strictly stricter
 //                   than isProvenFn). HC additionally requires
 //                   wallet.sizeRatio ≥ HC_RATIO. Optional: when omitted, all
-//                   HC features are 0 (back-compat for callers pre-v9).
+//                   HC features are 0.
+//   walletStatsFn: fn(walletShort) => { picksN: number, picksFlatRoi: number }
+//                  Returns the wallet's TOP-LEVEL `profile.picks` aggregate
+//                  (any-sport featured-pick history) AT PICK-SCORING TIME.
+//                  Used for the v11 dWinnerCtPreA feature. Optional: when
+//                  omitted, that feature contributes 0.
 //
 // Returns null if no proven wallets are present on either side.
 // ────────────────────────────────────────────────────────────────────────
-export function aggregateSideProven(walletDetails, sideKey, sport, isProvenFn, isHcEligibleFn = null) {
+export function aggregateSideProven(walletDetails, sideKey, sport, isProvenFn, isHcEligibleFn = null, walletStatsFn = null) {
   if (!Array.isArray(walletDetails) || walletDetails.length === 0) return null;
 
   const empty = () => ({
-    count: 0, contribution: 0, sumConviction: 0, hcCount: 0, hcSumSizeRatio: 0,
+    count: 0,
+    contribution: 0,
+    sumConviction: 0,
+    hcCount: 0,
+    hcSumSizeRatio: 0,
+    // v11 additions
+    sumRankNorm: 0,
+    winnerCount: 0,
   });
   const f = empty();
   const a = empty();
@@ -306,6 +332,21 @@ export function aggregateSideProven(walletDetails, sideKey, sport, isProvenFn, i
       sideBucket.hcCount += 1;
       sideBucket.hcSumSizeRatio += sizeRatio;
     }
+
+    // v11 — rankNorm is frozen at scoring time; sum across qualifying wallets.
+    sideBucket.sumRankNorm += Number(w.rankNorm || 0);
+
+    // v11 — winner count uses wallet's TOP-LEVEL profile.picks aggregate
+    // (any-sport featured-pick history at scoring time). When walletStatsFn
+    // is not provided, this contributes 0 (graceful degradation for callers
+    // that don't have access to profiles).
+    if (walletStatsFn) {
+      const stats = walletStatsFn(w.wallet);
+      if (stats && Number.isFinite(Number(stats.picksN)) && Number(stats.picksN) >= AGS_WINNER_MIN_PICKS
+          && Number.isFinite(Number(stats.picksFlatRoi)) && Number(stats.picksFlatRoi) > 0) {
+        sideBucket.winnerCount += 1;
+      }
+    }
   }
 
   if ((f.count + a.count) === 0) return null;
@@ -323,21 +364,38 @@ export function aggregateSideProven(walletDetails, sideKey, sport, isProvenFn, i
     totalRaw,
     provenRaw,
 
-    // The five AGS-U features. Order matches AGS_FEATURES.
+    // v11 raw aggregates (for UI / drivers display)
+    forSumRankNorm: f.sumRankNorm,
+    agSumRankNorm:  a.sumRankNorm,
+    forWinnerCount: f.winnerCount,
+    agWinnerCount:  a.winnerCount,
+
+    // v11 active features (the ones AGS_FEATURES/AGS_WEIGHTS use)
     dCount:           f.count - a.count,
+    dHcSizeRatio:     f.hcSumSizeRatio - a.hcSumSizeRatio,
+    dSumRankNorm:     f.sumRankNorm - a.sumRankNorm,
+    dWinnerCtPreA:    f.winnerCount - a.winnerCount,
+
+    // Back-compat: old v10 features still computed (no longer in AGS_FEATURES
+    // but retained on the aggregate object so existing UI/scripts that read
+    // these fields directly don't break).
     dHcCount:         f.hcCount - a.hcCount,
     dConvictionAvg:   avg(f.sumConviction, f.count) - avg(a.sumConviction, a.count),
-    dHcSizeRatio:     f.hcSumSizeRatio - a.hcSumSizeRatio,
     forContribShare:  totalContribution > 0 ? f.contribution / totalContribution : 0.5,
   };
 }
 
 // ────────────────────────────────────────────────────────────────────────
-// computeAgs — v10 logistic-regression scoring.
+// computeAgs — v11 logistic-regression scoring.
 //
 // Score = intercept + Σ β_k · z(feature_k)
 //   where z(feature_k) = (raw_k − cal.normalizers[k].mean) / cal.normalizers[k].sd
-//   and β_k is AGS_WEIGHTS[k] (L1-fit on 470 W/L picks).
+//   and β_k is AGS_WEIGHTS[k] (L1-fit on 558 W/L picks, strict-causal CV).
+//
+// v11 uses 4 features (down from v10's 5): dCount, dHcSizeRatio,
+// dSumRankNorm, dWinnerCtPreA. The last two have NEGATIVE coefficients —
+// they're the "fade the obvious sharps" correction on top of the
+// "follow the consensus" base signal.
 //
 // The score is a calibrated logit. sigmoid(score) ≈ P(WIN | features).
 // Quintile thresholds in cal.quintiles map score → tier (ELITE/PREMIUM/
@@ -383,21 +441,29 @@ export function computeAgs(agg, calibration) {
     provenRaw: agg.provenRaw || 0,
     totalRaw:  agg.totalRaw  || 0,
     calibrationSource: cal.source || (cal === AGS_FALLBACK_CALIBRATION ? 'fallback' : 'firestore'),
-    schemaVersion: cal.schemaVersion || 'ags-unified-v10',
+    schemaVersion: cal.schemaVersion || 'ags-unified-v11',
 
     // Raw feature values — exposed so the UI can render plain-English
-    // "drivers" (proven backing / HC confirming / money concentration)
-    // without having to recompute aggregateSideProven downstream.
+    // "drivers" without recomputing aggregateSideProven downstream.
     featureValues: {
+      // v11 active features
       dCount:          agg.dCount          || 0,
-      dHcCount:        agg.dHcCount        || 0,
-      dConvictionAvg:  agg.dConvictionAvg  || 0,
       dHcSizeRatio:    agg.dHcSizeRatio    || 0,
-      forContribShare: Number.isFinite(agg.forContribShare) ? agg.forContribShare : 0.5,
+      dSumRankNorm:    agg.dSumRankNorm    || 0,
+      dWinnerCtPreA:   agg.dWinnerCtPreA   || 0,
+      forSumRankNorm:  agg.forSumRankNorm  || 0,
+      agSumRankNorm:   agg.agSumRankNorm   || 0,
+      forWinnerCount:  agg.forWinnerCount  || 0,
+      agWinnerCount:   agg.agWinnerCount   || 0,
+      // Raw counts (used everywhere by drivers)
       forCount:        agg.forCount        || 0,
       agCount:         agg.agCount         || 0,
       forHcCount:      agg.forHcCount      || 0,
       agHcCount:       agg.agHcCount       || 0,
+      // Back-compat v10 fields (still computed, kept for UI/script consumers)
+      dHcCount:        agg.dHcCount        || 0,
+      dConvictionAvg:  agg.dConvictionAvg  || 0,
+      forContribShare: Number.isFinite(agg.forContribShare) ? agg.forContribShare : 0.5,
     },
   };
 }
@@ -529,20 +595,17 @@ export const AGS_TIER_META = {
 
 // ────────────────────────────────────────────────────────────────────────
 // DEPRECATED — kept as no-op exports so old call sites don't crash during
-// the v10 cutover. All decision logic now flows through agsSizeMultiplier
+// the v11 cutover. All decision logic now flows through agsSizeMultiplier
 // (which returns 0 for FADE-tier picks) and meetsAgsLockFloor / meetsAgsHardMute.
 // Remove these in a follow-up PR after no callers remain.
 //
-// Note on v10 magnitudes: these legacy numbers were sized for the v9
-// summed-z scale (~5× larger than v10's logit-score scale). Under v10,
-// AGS_LOCK_FLOOR=1.00 would never be reached and AGS_MUTE_FLOOR=−2.60
-// would never trigger. Do NOT use these in new code — use the
-// calibration-aware floor helpers instead.
+// v11 numbers reflect the new 4-feature logit score distribution
+// (range ≈ [−1.8, +3.6] on the V6→2026-05-25 sample).
 // ────────────────────────────────────────────────────────────────────────
-export const AGS_LOCK_FLOOR  = 0.17; // legacy alias for v10 q60 — use agsLockFloorFromCalibration instead
-export const AGS_MUTE_FLOOR  = -0.28; // legacy alias for v10 q20 — use agsHardMuteFloorFromCalibration instead
+export const AGS_LOCK_FLOOR  = 0.12; // legacy alias for v11 q60 — use agsLockFloorFromCalibration instead
+export const AGS_MUTE_FLOOR  = -0.18; // legacy alias for v11 q20 — use agsHardMuteFloorFromCalibration instead
 export const AGS_DW1_FLOOR   = null;  // route retired in v9
-export const AGS_ELITE_FLOOR = 0.58;  // legacy alias for v10 q90 fallback
+export const AGS_ELITE_FLOOR = 0.60;  // legacy alias for v11 q90 fallback
 
 export function failsAgsConfirmationGate(ags) {
   // v9/v10 semantics: failing the confirmation gate = below hard mute floor.

@@ -287,6 +287,24 @@ function buildIsHcEligibleFn(walletProfiles) {
   };
 }
 
+// v11 — returns the wallet's top-level `profile.picks` aggregate (any-sport
+// featured-pick history) at scoring time. Drives the AGS-U v11 dWinnerCtPreA
+// feature. `profile.picks` is refreshed every cron cycle by exportWalletProfiles.js
+// so this is near-causal in production (lag = time since last profile export).
+function buildWalletStatsFn(walletProfiles) {
+  return (walletShort) => {
+    if (!walletShort) return null;
+    const key = String(walletShort).toLowerCase();
+    const profile = walletProfiles.get(key) || walletProfiles.get(key.toUpperCase());
+    const picks = profile?.picks;
+    if (!picks) return null;
+    return {
+      picksN: Number(picks.n) || 0,
+      picksFlatRoi: Number(picks.flatRoi) || 0,
+    };
+  };
+}
+
 // ── Firebase init ──────────────────────────────────────────────────────────
 function initFirebase() {
   if (!admin.apps.length) {
@@ -528,14 +546,14 @@ function buildPeakStatsFromPositions(positions, side, isProvenFn, sport) {
 // Returns null when there's zero whitelist activity for or against this
 // side (so we don't litter docs with empty {ags:null} stamps when the
 // scanner has no proven-wallet signal yet).
-function computeSideAnalytics(positions, side, sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn) {
+function computeSideAnalytics(positions, side, sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn = null) {
   if (!Array.isArray(positions) || positions.length === 0) return null;
   const live = computeWalletConsensus(positions, side, sport, walletProfiles);
   if (live.forW === 0 && live.agW === 0 && live.hcConfFor === 0 && live.hcConfAg === 0) {
     return null;
   }
   const walletDetails = positions.map(positionToWalletDetail);
-  const agg = aggregateSideProven(walletDetails, side, sport, isProvenFn, isHcEligibleFn);
+  const agg = aggregateSideProven(walletDetails, side, sport, isProvenFn, isHcEligibleFn, walletStatsFn);
   const agsRes = agg ? computeAgs(agg, agsCalibration) : null;
   const out = {
     ags: agsRes && Number.isFinite(agsRes.ags) ? agsRes.ags : null,
@@ -560,12 +578,12 @@ function computeSideAnalytics(positions, side, sport, walletProfiles, agsCalibra
 // at once and return a side-keyed record ready to merge as
 // `agsBothSides` on the pick doc. Returns null when both sides are
 // empty (nothing meaningful to record).
-function computeBothSidesAnalytics(positions, marketType, sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn) {
+function computeBothSidesAnalytics(positions, marketType, sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn = null) {
   const sides = marketType === 'TOTAL' ? ['over', 'under'] : ['away', 'home'];
   const out = {};
   let any = false;
   for (const side of sides) {
-    const stamp = computeSideAnalytics(positions, side, sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn);
+    const stamp = computeSideAnalytics(positions, side, sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn);
     if (stamp) {
       out[side] = stamp;
       any = true;
@@ -643,7 +661,7 @@ async function createMissingLockedPicks({
 
       // Build walletDetails for AGS-U.
       const walletDetails = positions.map(positionToWalletDetail);
-      const agg = aggregateSideProven(walletDetails, side, sport, isProvenFn, isHcEligibleFn);
+      const agg = aggregateSideProven(walletDetails, side, sport, isProvenFn, isHcEligibleFn, walletStatsFn);
       const agsRes = agg ? computeAgs(agg, agsCalibration) : null;
       const agsValue = agsRes && Number.isFinite(agsRes.ags) ? agsRes.ags : null;
       const agsProvenTotal = agsRes ? (agsRes.provenForCount || 0) + (agsRes.provenAgCount || 0) : 0;
@@ -842,7 +860,7 @@ async function createMissingLockedPicks({
     // the post-reconcile refresh pass below, and is never read by
     // sizing / lock-promote / grader code paths.
     const bothSidesAtCreate = computeBothSidesAnalytics(
-      positions, marketType, sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn,
+      positions, marketType, sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn,
     );
 
     const docPayload = {
@@ -930,7 +948,7 @@ async function createMissingLockedPicks({
 }
 
 // ── Main sync logic per side ───────────────────────────────────────────────
-function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force, agsCalibration, isProvenFn, isHcEligibleFn }) {
+function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn }) {
   const pickDate = pick.date || TARGET_DATE;
   const sport = pick.sport;
   const lockStage = sd.lockStage || null;
@@ -973,7 +991,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   let agsResult = null;
   const wd = sd.peak?.v8Scoring?.walletDetails || sd.lock?.v8Scoring?.walletDetails || null;
   if (Array.isArray(wd) && wd.length > 0 && agsCalibration && isProvenFn) {
-    const agg = aggregateSideProven(wd, side, pick.sport, isProvenFn, isHcEligibleFn);
+    const agg = aggregateSideProven(wd, side, pick.sport, isProvenFn, isHcEligibleFn, walletStatsFn);
     if (agg) agsResult = computeAgs(agg, agsCalibration);
   }
   const agsValueLive = agsResult && Number.isFinite(agsResult.ags) ? agsResult.ags : null;
@@ -1308,6 +1326,8 @@ async function main() {
   const agsCalibration = await loadAgsCalibration(db);
   const isProvenFn = buildIsProvenFn(walletProfiles);
   const isHcEligibleFn = buildIsHcEligibleFn(walletProfiles);
+  // v11 — pass-through for top-level profile.picks aggregate (drives dWinnerCtPreA).
+  const walletStatsFn = buildWalletStatsFn(walletProfiles);
   console.log(`AGS-U calibration: source=${agsCalibration.source} sampleSize=${agsCalibration.sampleSize ?? '?'} computedAt=${agsCalibration.computedAt ?? '?'}`);
   if (agsCalibration.quintiles) {
     const q = agsCalibration.quintiles;
@@ -1448,7 +1468,7 @@ async function main() {
         const result = reconcileSide({
           sd, side: sideKey, pick, mkt, group, walletProfiles, now,
           force: FORCE,
-          agsCalibration, isProvenFn, isHcEligibleFn,
+          agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn,
         });
         if (result.skipped) {
           if (result.reason === 'not_locked_or_lean') stats.skipped_not_locked++;
@@ -1498,7 +1518,7 @@ async function main() {
         const groupKey = `${pick.sport}|${pick.gameKey}|${mkt}`;
         const group = groups.get(groupKey) || [];
         const stamps = computeBothSidesAnalytics(
-          group, mkt, pick.sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn,
+          group, mkt, pick.sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn,
         );
         if (stamps) {
           stats.ags_both_sides_refreshed++;

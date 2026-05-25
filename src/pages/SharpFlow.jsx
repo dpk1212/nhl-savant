@@ -631,7 +631,7 @@ function rateStarsV8({ positions, consensusSide, v8Norm, pinnMoveSize = 0, timeT
   let agsForStars = null;
   if (sport && WALLET_PROFILES_CACHE && Array.isArray(positions) && positions.length > 0) {
     const agsRes = computeAgsFromPositions(
-      positions, consensusSide, sport, getAgsCalibration(), isProvenForAgs, isHcEligibleForAgs,
+      positions, consensusSide, sport, getAgsCalibration(), isProvenForAgs, isHcEligibleForAgs, walletStatsForAgs,
     );
     if (agsRes && Number.isFinite(agsRes.ags)
         && agsRes.provenTotalCount >= AGS_MIN_PROVEN_WALLETS) {
@@ -878,6 +878,19 @@ function isProvenForAgs(walletShort, sport) {
 function isHcEligibleForAgs(walletShort, sport) {
   const p = getWalletProfile(walletShort);
   return p?.bySport?.[sport]?.whitelistTier === 'CONFIRMED';
+}
+
+// v11 — returns wallet's top-level profile.picks aggregate at scoring time.
+// Drives the dWinnerCtPreA feature. Production-side mirror of
+// buildWalletStatsFn in scripts/syncPickStateAuthoritative.js so the UI
+// computes the same AGS-U score the cron will stamp.
+function walletStatsForAgs(walletShort) {
+  const p = getWalletProfile(walletShort);
+  if (!p?.picks) return null;
+  return {
+    picksN: Number(p.picks.n) || 0,
+    picksFlatRoi: Number(p.picks.flatRoi) || 0,
+  };
 }
 
 // ─── AGS-Unified v9 helpers (UI-side) ────────────────────────────────────
@@ -1371,7 +1384,7 @@ function decideLockStage(_regime, v8Scoring, sideKey, sport = null, _baseStars =
   let agsTier = 'UNKNOWN';
   if (Array.isArray(v8Scoring?.walletDetails) && v8Scoring.walletDetails.length > 0) {
     const agg = aggregateSideProven(
-      v8Scoring.walletDetails, sideKey, sport, isProvenForAgs, isHcEligibleForAgs,
+      v8Scoring.walletDetails, sideKey, sport, isProvenForAgs, isHcEligibleForAgs, walletStatsForAgs,
     );
     if (agg) {
       const agsR = computeAgs(agg, getAgsCalibration());
@@ -1561,7 +1574,7 @@ function stampWalletConsensus(target, v8Scoring, sideKey, sport, baseStars, prom
   let stampAgsResult = null;
   const wdEarly = v8Scoring?.walletDetails;
   if (Array.isArray(wdEarly) && wdEarly.length > 0) {
-    const aggE = aggregateSideProven(wdEarly, sideKey, sport, isProvenForAgs, isHcEligibleForAgs);
+    const aggE = aggregateSideProven(wdEarly, sideKey, sport, isProvenForAgs, isHcEligibleForAgs, walletStatsForAgs);
     if (aggE) {
       stampAgsResult = computeAgs(aggE, getAgsCalibration());
       if (stampAgsResult) {
@@ -1774,7 +1787,7 @@ async function restampDriftedSides({ ref, sides, currentSideKey, sport, regime, 
     // gate, not the legacy Δw/Δq lockAction. stampWalletConsensus now
     // writes v8_walletConsensusMuteTriggered as the AGS-U hard-mute
     // boolean, so drift fires when the AGS-U gate would flip.
-    const liveAgg = aggregateSideProven(v8Scoring.walletDetails, sideKey, sport, isProvenForAgs, isHcEligibleForAgs);
+    const liveAgg = aggregateSideProven(v8Scoring.walletDetails, sideKey, sport, isProvenForAgs, isHcEligibleForAgs, walletStatsForAgs);
     const liveAgsRes = liveAgg ? computeAgs(liveAgg, getAgsCalibration()) : null;
     const liveAgsValue = liveAgsRes?.ags ?? null;
     const liveAgsProvenTotal = liveAgsRes
@@ -6293,7 +6306,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     : sr?.v8Scoring;
   const liveAgsCalibration = getAgsCalibration();
   const liveAgs = (Array.isArray(gd.positions) && gd.positions.length > 0)
-    ? computeAgsFromPositions(gd.positions, liveLockedSideKey, gd.sport, liveAgsCalibration, isProvenForAgs, isHcEligibleForAgs)
+    ? computeAgsFromPositions(gd.positions, liveLockedSideKey, gd.sport, liveAgsCalibration, isProvenForAgs, isHcEligibleForAgs, walletStatsForAgs)
     : null;
   const liveAgsValue = Number.isFinite(liveAgs?.ags) ? liveAgs.ags : null;
   const liveAgsBadge = agsuBadgeFromAgs(liveAgsValue, liveAgsCalibration);
@@ -6310,7 +6323,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   sr.bg    = liveAgsBadge.bg;
   if (oppSr) {
     const oppAgs = (Array.isArray(gd.positions) && gd.positions.length > 0)
-      ? computeAgsFromPositions(gd.positions, oppSide, gd.sport, liveAgsCalibration, isProvenForAgs, isHcEligibleForAgs)
+      ? computeAgsFromPositions(gd.positions, oppSide, gd.sport, liveAgsCalibration, isProvenForAgs, isHcEligibleForAgs, walletStatsForAgs)
       : null;
     const oppAgsValue = Number.isFinite(oppAgs?.ags) ? oppAgs.ags : null;
     const oppBadge = agsuBadgeFromAgs(oppAgsValue, liveAgsCalibration);
@@ -6678,7 +6691,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     if (!spreadWasEverLocked || !spreadSr) return null;
     const pos = spreadGameData?.positions;
     if (!Array.isArray(pos) || pos.length === 0) return null;
-    return computeAgsFromPositions(pos, spreadConsensusSide, gd.sport, getAgsCalibration(), isProvenForAgs, isHcEligibleForAgs);
+    return computeAgsFromPositions(pos, spreadConsensusSide, gd.sport, getAgsCalibration(), isProvenForAgs, isHcEligibleForAgs, walletStatsForAgs);
   })();
   const spreadAgsProvenTotal = spreadAgs ? (spreadAgs.provenForCount + spreadAgs.provenAgCount) : null;
   const spreadHealth = spreadWasEverLocked && spreadSr ? evaluatePickHealth({
@@ -6858,7 +6871,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     if (!totalWasEverLocked || !totalSr) return null;
     const pos = totalGameData?.positions;
     if (!Array.isArray(pos) || pos.length === 0) return null;
-    return computeAgsFromPositions(pos, totalConsensusSide, gd.sport, getAgsCalibration(), isProvenForAgs, isHcEligibleForAgs);
+    return computeAgsFromPositions(pos, totalConsensusSide, gd.sport, getAgsCalibration(), isProvenForAgs, isHcEligibleForAgs, walletStatsForAgs);
   })();
   const totalAgsProvenTotal = totalAgs ? (totalAgs.provenForCount + totalAgs.provenAgCount) : null;
   const totalHealth = totalWasEverLocked && totalSr ? evaluatePickHealth({
@@ -11112,9 +11125,12 @@ export default function SharpFlow() {
                 .slice(0, 20);
               const featureLabels = {
                 dCount: 'Δcount',
+                dHcSizeRatio: 'ΔHCsize',
+                dSumRankNorm: 'ΔΣrank',
+                dWinnerCtPreA: 'Δwinners',
+                // legacy v10 fields still present on historical picks
                 dHcCount: 'ΔHCcount',
                 dConvictionAvg: 'ΔavgConv',
-                dHcSizeRatio: 'ΔHCsize',
                 forContribShare: 'forShare',
               };
               const topDriverOf = (p) => {
