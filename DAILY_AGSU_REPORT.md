@@ -1,6 +1,6 @@
 # AGS-Unified v9 — Daily Monitoring Report
 
-**Generated:** Tuesday, May 26, 2026 at 11:21 AM ET
+**Generated:** Tuesday, May 26, 2026 at 12:26 PM ET
 **AGS-U cutover:** 2026-05-14 · **Days live:** 12
 
 > **Scope.** Every row in this report comes from picks AGS-U v9 actually promoted (`promotedBy = ags-unified-v9`). Picks promoted by legacy v7/v8 routes are intentionally excluded — they'd contaminate the calibration story. Within the AGS-U pool, each pick is classified as one of two things:
@@ -206,10 +206,10 @@ Below-q20 AGS-U values are SHADOWed (never shipped). We can validate the floor b
 |----------------------------------------------------------------|-------|----------------------------------------------------|
 | Graded picks with `tracked=true` AND `finalUnits > 0`         |     1 | 🚨 grader regression — see betTracking.js |
 | Graded picks with `tracked=true` AND `finalUnits == 0`        |    34 | 🟡 informational only — true tracked plays |
-| Live picks (not graded yet) with `finalUnits > 0`             |     6 | 🟢 picks queued for grading |
+| Live picks (not graded yet) with `finalUnits > 0`             |    12 | 🟢 picks queued for grading |
 | AGS-U promoted picks missing `v8_ags` value                   |     1 | 🟡 some picks missing AGS-U — cron lag or stale doc |
 | AGS-U promoted picks missing `agsTier`                        |     0 | 🟢 every pick has a tier |
-| Single-wallet shipped picks (`provenWalletCount == 1`)       |    38 | 🟡 informational — AGS-U calibration controls sample adequacy |
+| Single-wallet shipped picks (`provenWalletCount == 1`)       |    39 | 🟡 informational — AGS-U calibration controls sample adequacy |
 
 **Tracked-shipped detail (these are the picks the grader wrongly marked 0u):**
 
