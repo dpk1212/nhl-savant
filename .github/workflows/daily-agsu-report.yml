@@ -1,8 +1,13 @@
-name: AGS-Unified v9 Daily Report
+name: AGS-Unified Daily Report
 
 # Single canonical monitoring artifact for the AGS-U pipeline.
 # Replaces the v6/v7/v8 dailies as the source of truth for sharp-intel
 # performance, calibration, and operational health.
+#
+# The underlying script (`scripts/dailyAgsUReport.js`) imports the active
+# model surface (AGS_FEATURES, AGS_WEIGHTS, AGS_FALLBACK_CALIBRATION) at
+# runtime from `src/lib/ags.js`. When the model is bumped (v9 → v10 →
+# v11 → …) the report auto-tracks the new structure — no edits here needed.
 #
 # Schedule: 8:30am ET every day (12:30 UTC). Tunable below.
 # Manual: trigger from the Actions tab "Run workflow" button — useful
@@ -41,7 +46,7 @@ jobs:
           FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
         run: |
           echo "════════════════════════════════════════════════════════════════"
-          echo "  AGS-UNIFIED v9 DAILY REPORT"
+          echo "  AGS-UNIFIED DAILY REPORT"
           echo "  Time: $(TZ='America/New_York' date '+%Y-%m-%d %I:%M %p ET')"
           echo "════════════════════════════════════════════════════════════════"
           node scripts/dailyAgsUReport.js
