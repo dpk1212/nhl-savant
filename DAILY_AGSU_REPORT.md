@@ -1,6 +1,6 @@
 # AGS-Unified — Daily Monitoring Report
 
-**Generated:** Wednesday, May 27, 2026 at 7:35 AM ET
+**Generated:** Wednesday, May 27, 2026 at 9:03 AM ET
 **Active model:** `ags-unified-v11` · **AGS-U cutover:** 2026-05-14 · **Days live:** 13
 
 > **Scope.** Every row in this report comes from picks AGS-U actually promoted (`promotedBy = ags-unified-v9`). Picks promoted by legacy v7/v8 routes are excluded — they'd contaminate the calibration story. Within the AGS-U pool, each pick is classified as one of:
@@ -30,6 +30,45 @@ The composite scoring model — what every lock/mute/sizing decision is built on
 **Score range:** sigmoid(score) ≈ P(WIN | features). Score is summed weight·z(feature) plus intercept. **Tier ladder** uses calibration quintiles: ELITE ≥ q90 (2×), PREMIUM ≥ q80 (1.5×), LOCK ≥ q60 (1.1×), LEAN ≥ q40 (0.5×), WEAK ≥ q20 (0.2×), FADE < q20 (HARD MUTE 0×).
 
 > **2 PRO-CONSENSUS · 2 CONTRARIAN features.** Negative-β features fade-the-obvious-sharps: when known-winning wallets pile heavily on one side, that side WINS LESS often (the line has already moved). The model balances both effects.
+
+## § 0b — AGS-U Model Version Comparison
+
+How does the latest model (**ags-unified-v11**) compare against prior versions? Picks are tagged by the calibration that scored them — v11 by feature-signature (`dSumRankNorm` / `dWinnerCtPreA` present in components), earlier versions by pick date against the calibration-history cutover schedule below.
+
+### Headline performance by version
+
+| Version | Era                  | Days | Live N | Trk | W-L    | Win %  | ROI       | PnL (u)    | per-pick | AUC   | Brier (model) | Status   |
+|---------|----------------------|------|--------|-----|--------|--------|-----------|------------|----------|-------|---------------|----------|
+| v9      | 05-15 → 05-22        |    7 |     60 |  12 | 32-28  |  53.3% |     -9.0% |     -10.38 |    -0.17 | 0.549 |        0.3400 | ⚪ retired |
+| v10     | 05-22 → 05-25        |    3 |     62 |  14 | 30-32  |  48.4% |    -18.8% |     -19.42 |    -0.31 | 0.394 |        0.2804 | ⚪ retired |
+| v11     | 05-25 → present      |    3 |     37 |   7 | 23-14  |  62.2% |     15.2% |     +13.93 |    +0.38 | 0.590 |        0.2416 | 🟢 LIVE  |
+
+### v11 vs prior versions
+
+| Comparison         | ΔN     | ΔWin %    | ΔROI       | Δ per-pick (u)  | ΔAUC     | ΔBrier     | Verdict |
+|--------------------|--------|-----------|------------|-----------------|----------|------------|---------|
+| v11 − v9           |   -23 |    +8.8pp |    +24.2pp |          +0.549 |   +0.041 |    +0.0984 | 🟢 better |
+| v11 − v10          |   -25 |   +13.8pp |    +34.0pp |          +0.690 |   +0.196 |    +0.0388 | 🟢 better |
+
+> **ΔBrier > 0** means the newer model's Brier is LOWER (better probability calibration). All other Δ columns: positive = newer model is better. Verdict requires the newer model to dominate on 3 of 4 metrics (ROI / Win% / AUC / Brier).
+
+### Per-sport win rate × version
+
+| Version | MLB            | NBA            | NHL            | All           |
+|---------|----------------|----------------|----------------|---------------|
+| v9      | 40n 55.0% -3%  | 14n 50.0% -7%  | 6n 50.0% -46%  | 60n 53.3% -9% |
+| v10     | 50n 52.0% -4%  | 7n 14.3% -91%  | 5n 60.0% -9%   | 62n 48.4% -19% |
+| v11     | 29n 62.1% +14% | 4n 75.0% +37%  | 4n 50.0% -13%  | 37n 62.2% +15% |
+
+### Per-tier ROI × version (monotonicity check across model history)
+
+| Version | ELITE         | PREMIUM       | LOCK          | LEAN          | WEAK          | Monotonic?    |
+|---------|---------------|---------------|---------------|---------------|---------------|---------------|
+| v9      | 10n -25%      | 6n +10%       | 13n -32%      | 16n +24%      | 14n -6%       | 🟡 partial (0) |
+| v10     | 8n -13%       | 5n -69%       | 13n -25%      | 27n +4%       | 8n -1%        | 🟡 partial (0) |
+| v11     | 9n +20%       | 9n +11%       | 8n +13%       | 9n +50%       | 2n -100%      | 🟡 partial (0) |
+
+> Monotonicity score on tier-ROI vector (ELITE → WEAK). Fully sorted (each tier earns LESS than the one above) = -3 for 4-tier samples / -4 for full ladder. Fully inverted = +3/+4. A NEW model that flips the ladder from inverted → monotonic is the strongest evidence the redesign worked.
 
 ## § 0 — Executive Summary & Alerts
 
@@ -268,7 +307,7 @@ Below-q20 AGS-U values are SHADOWed (never shipped). Live q20 = **-0.150**. We v
 | Graded picks with `tracked=true` AND `finalUnits > 0`         |     1 | 🚨 grader regression — see betTracking.js |
 | Graded picks with `tracked=true` AND `finalUnits == 0`        |    38 | 🟡 informational only — true tracked plays |
 | LOCK+ tier picks with `finalUnits == 0` (sizing regression)   |     5 | 🚨 sizing regression — agsSizeMultiplier returning 0 for strong AGS-U |
-| Live picks (not graded yet) with `finalUnits > 0`             |     0 | 🟡 no live shipped picks pending |
+| Live picks (not graded yet) with `finalUnits > 0`             |     1 | 🟢 picks queued for grading |
 | AGS-U promoted picks missing `v8_ags` value                   |     1 | 🟡 some picks missing AGS-U — cron lag or stale doc |
 | AGS-U promoted picks missing `agsTier`                        |     0 | 🟢 every pick has a tier |
 | Single-wallet shipped picks (`provenWalletCount == 1`)       |    38 | 🟡 informational — AGS-U calibration controls sample adequacy |
@@ -328,11 +367,11 @@ The size of the qualifying-wallet pool per sport is the upstream cap on AGS-U si
 
 | sport | wallet records | CONFIRMED | FLAT | WR50 | NULL | qualifying (C+F+WR50) |
 |-------|----------------|-----------|------|------|------|------------------------|
-| MLB   |            106 |        23 |    7 |    3 |   73 |                     33 |
+| MLB   |            107 |        24 |    7 |    4 |   72 |                     35 |
 | NBA   |            191 |        50 |   24 |   23 |   94 |                     97 |
 | NHL   |             93 |        19 |    7 |   11 |   56 |                     37 |
 
-> ⚠ **MLB pool is < 50% of NBA pool** (33 vs 97). MLB AUC will be inherently capped by sample size. To meaningfully improve MLB further: broaden leaderboard ingestion or relax Source B threshold (`exportWalletProfiles.js`).
+> ⚠ **MLB pool is < 50% of NBA pool** (35 vs 97). MLB AUC will be inherently capped by sample size. To meaningfully improve MLB further: broaden leaderboard ingestion or relax Source B threshold (`exportWalletProfiles.js`).
 
 ---
 
