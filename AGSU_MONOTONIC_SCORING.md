@@ -1,8 +1,8 @@
 # AGS-U Monotonic Scoring Lab
 
-_Generated: 2026-05-22T15:31:25.417Z_
+_Generated: 2026-05-25T13:06:46.556Z_
 
-**Sample:** 470 W/L picks from 2026-04-18 → today.  Sports: MLB=218 · NBA=198 · NHL=54
+**Sample:** 558 W/L picks from 2026-04-18 → today.  Sports: MLB=283 · NHL=62 · NBA=213
 
 ---
 
@@ -44,16 +44,16 @@ Sorted by composite score (AUC + ρ + monotonicity + Q5−Q1 gap − Brier).
 
 | id | model | OOS AUC | OOS ρ | Brier | LogLoss | qMono | Q5−Q1 | dMono | strict-Q? | composite |
 |---|---|---|---|---|---|---|---|---|---|---|
-| **M2b** | L1_LOGIT λ=2.0 | 0.597 | 0.167 | 0.245 | 0.685 | 100% | 24.5% | 82% | ✅ | 1.014 |
-| **M3b** | EN_LOGIT l1=0.5 l2=2.0 | 0.595 | 0.165 | 0.245 | 0.686 | 100% | 24.5% | 91% | ✅ | 1.009 |
-| **M3** | EN_LOGIT  l1=1.0 l2=1.0 | 0.596 | 0.166 | 0.245 | 0.685 | 100% | 23.4% | 91% | ✅ | 1.000 |
-| **M2** | L1_LOGIT λ=1.0 | 0.595 | 0.164 | 0.245 | 0.686 | 100% | 23.4% | 93% | ✅ | 0.998 |
-| **M0** | UNIFORM (current) | 0.610 | 0.190 | 0.310 | 1.133 | 90% | 30.9% | 82% | — | 0.948 |
-| **M4b** | L1_LOGIT_INT λ=4.0 | 0.581 | 0.140 | 0.247 | 0.689 | 100% | 21.3% | 87% | ✅ | 0.936 |
-| **M2c** | L1_LOGIT λ=0.5 | 0.593 | 0.161 | 0.246 | 0.687 | 90% | 26.6% | 87% | — | 0.924 |
-| **M5** | L1_LOGIT + ISOTONIC λ=1.0 | 0.593 | 0.162 | 0.249 | 0.746 | 90% | 25.5% | 87% | — | 0.911 |
-| **M1** | L2_LOGIT λ=1.0 | 0.590 | 0.155 | 0.246 | 0.688 | 90% | 25.5% | 84% | — | 0.904 |
-| **M4** | L1_LOGIT_INT λ=2.0 | 0.577 | 0.133 | 0.248 | 0.690 | 90% | 23.4% | 76% | — | 0.846 |
+| **M5** | L1_LOGIT + ISOTONIC λ=1.0 | 0.571 | 0.123 | 0.251 | 0.739 | 100% | 17.5% | 91% | ✅ | 0.868 |
+| **M2b** | L1_LOGIT λ=2.0 | 0.580 | 0.136 | 0.247 | 0.689 | 90% | 22.0% | 78% | — | 0.838 |
+| **M3** | EN_LOGIT  l1=1.0 l2=1.0 | 0.575 | 0.128 | 0.248 | 0.690 | 90% | 21.1% | 82% | — | 0.816 |
+| **M2** | L1_LOGIT λ=1.0 | 0.574 | 0.127 | 0.248 | 0.691 | 90% | 21.1% | 82% | — | 0.813 |
+| **M3b** | EN_LOGIT l1=0.5 l2=2.0 | 0.572 | 0.125 | 0.248 | 0.691 | 90% | 21.1% | 80% | — | 0.809 |
+| **M1** | L2_LOGIT λ=1.0 | 0.568 | 0.118 | 0.249 | 0.693 | 90% | 22.0% | 71% | — | 0.807 |
+| **M2c** | L1_LOGIT λ=0.5 | 0.571 | 0.122 | 0.249 | 0.692 | 90% | 20.2% | 78% | — | 0.796 |
+| **M4b** | L1_LOGIT_INT λ=4.0 | 0.564 | 0.110 | 0.249 | 0.693 | 90% | 16.6% | 80% | — | 0.740 |
+| **M4** | L1_LOGIT_INT λ=2.0 | 0.556 | 0.097 | 0.251 | 0.698 | 90% | 14.8% | 78% | — | 0.700 |
+| **M0** | UNIFORM (current) | 0.577 | 0.134 | 0.332 | 1.222 | 70% | 24.6% | 80% | — | 0.576 |
 
 **Legend:** qMono = pairwise quintile monotonicity rate (50% = chance); Q5−Q1 = top-quintile vs bottom-quintile WR gap; dMono = same for deciles; strict-Q = all 5 quintile WRs strictly increasing.
 
@@ -61,116 +61,116 @@ Sorted by composite score (AUC + ρ + monotonicity + Q5−Q1 gap − Brier).
 
 | id | model | IS AUC | IS ρ | qMono | Q5−Q1 | strict-Q? |
 |---|---|---|---|---|---|---|
-| M2b | L1_LOGIT λ=2.0 | 0.616 | 0.199 | 90% | 31.9% | — |
-| M3b | EN_LOGIT l1=0.5 l2=2.0 | 0.615 | 0.197 | 90% | 31.9% | — |
-| M3 | EN_LOGIT  l1=1.0 l2=1.0 | 0.615 | 0.197 | 100% | 30.9% | ✅ |
-| M2 | L1_LOGIT λ=1.0 | 0.614 | 0.196 | 90% | 31.9% | — |
-| M0 | UNIFORM (current) | 0.610 | 0.189 | 80% | 31.9% | — |
-| M4b | L1_LOGIT_INT λ=4.0 | 0.626 | 0.216 | 90% | 33.0% | — |
-| M2c | L1_LOGIT λ=0.5 | 0.614 | 0.196 | 100% | 31.9% | ✅ |
-| M5 | L1_LOGIT + ISOTONIC λ=1.0 | 0.613 | 0.195 | 90% | 31.9% | — |
-| M1 | L2_LOGIT λ=1.0 | 0.615 | 0.197 | 100% | 30.9% | ✅ |
-| M4 | L1_LOGIT_INT λ=2.0 | 0.625 | 0.215 | 70% | 36.2% | — |
+| M5 | L1_LOGIT + ISOTONIC λ=1.0 | 0.604 | 0.181 | 100% | 26.4% | ✅ |
+| M2b | L1_LOGIT λ=2.0 | 0.604 | 0.181 | 90% | 26.4% | — |
+| M3 | EN_LOGIT  l1=1.0 l2=1.0 | 0.604 | 0.181 | 100% | 26.4% | ✅ |
+| M2 | L1_LOGIT λ=1.0 | 0.604 | 0.181 | 100% | 26.4% | ✅ |
+| M3b | EN_LOGIT l1=0.5 l2=2.0 | 0.604 | 0.181 | 100% | 26.4% | ✅ |
+| M1 | L2_LOGIT λ=1.0 | 0.604 | 0.182 | 100% | 28.2% | ✅ |
+| M2c | L1_LOGIT λ=0.5 | 0.604 | 0.181 | 100% | 26.4% | ✅ |
+| M4b | L1_LOGIT_INT λ=4.0 | 0.606 | 0.184 | 100% | 27.3% | ✅ |
+| M4 | L1_LOGIT_INT λ=2.0 | 0.604 | 0.181 | 100% | 27.3% | ✅ |
+| M0 | UNIFORM (current) | 0.577 | 0.135 | 70% | 26.4% | — |
 
 ---
 
-## Winner: **M2b — L1_LOGIT λ=2.0**
+## Winner: **M5 — L1_LOGIT + ISOTONIC λ=1.0**
 
-- OOS AUC: **0.597** (baseline UNIFORM: 0.610)
-- OOS Spearman ρ(score, win): **0.167**
-- OOS Brier: 0.245 (lower = better calibrated)
+- OOS AUC: **0.571** (baseline UNIFORM: 0.577)
+- OOS Spearman ρ(score, win): **0.123**
+- OOS Brier: 0.251 (lower = better calibrated)
 - OOS quintile monotonicity (pairwise): **100%**
-- OOS Q5 − Q1 win-rate gap: **24.5%**
+- OOS Q5 − Q1 win-rate gap: **17.5%**
 - Strict quintile monotonicity OOS: ✅ yes
 
 ### Final coefficients (refit on ALL 527 picks)
 
 | term | β |
 |---|---|
-| intercept | 0.0696 |
-| dCount | 0.2716 |
-| dHcCount | 0.0050 |
-| dConvictionAvg | 0.2275 |
-| dHcSizeRatio | 0.1763 |
-| forContribShare | -0.0297 |
+| intercept | 0.0866 |
+| dCount | 0.2059 |
+| dHcCount | 0.0770 |
+| dConvictionAvg | 0.0127 |
+| dHcSizeRatio | 0.2291 |
+| forContribShare | 0.0000 |
 
 ### Bootstrap 95% CIs on coefficients (B=200)
 
 | term | β̂ | 95% CI lo | 95% CI hi | sig? |
 |---|---|---|---|---|
-| intercept | 0.0649 | -0.1237 | 0.2528 | — |
-| dCount | 0.2886 | 0.0799 | 0.5521 | ✓ |
-| dHcCount | 0.0216 | -0.1853 | 0.2430 | — |
-| dConvictionAvg | 0.2641 | 0.0174 | 0.5527 | ✓ |
-| dHcSizeRatio | 0.1707 | 0.0000 | 0.4226 | — |
-| forContribShare | -0.0826 | -0.3696 | 0.1627 | — |
+| intercept | 0.0935 | -0.0895 | 0.2543 | — |
+| dCount | 0.1994 | 0.0000 | 0.4582 | — |
+| dHcCount | 0.0826 | -0.1348 | 0.3241 | — |
+| dConvictionAvg | 0.0229 | -0.2291 | 0.2776 | — |
+| dHcSizeRatio | 0.2366 | 0.0016 | 0.5326 | ✓ |
+| forContribShare | -0.0044 | -0.3127 | 0.3133 | — |
 
 ### Full-sample quintile WR (proof of monotonicity)
 
 | quintile | n | W | L | WR | score range |
 |---|---|---|---|---|---|
-| Q1 | 94 | 33 | 61 | **35.1%** | [-1.59, -0.28] |
-| Q2 | 94 | 49 | 45 | **52.1%** | [-0.27, -0.01] |
-| Q3 | 94 | 44 | 50 | **46.8%** | [-0.01, 0.17] |
-| Q4 | 94 | 54 | 40 | **57.4%** | [0.17, 0.38] |
-| Q5 | 94 | 63 | 31 | **67.0%** | [0.38, 1.67] |
+| Q1 | 111 | 43 | 68 | **38.7%** | [-1.10, -0.49] |
+| Q2 | 112 | 55 | 57 | **49.1%** | [-0.49, -0.01] |
+| Q3 | 111 | 57 | 54 | **51.4%** | [-0.01, 0.11] |
+| Q4 | 112 | 62 | 50 | **55.4%** | [0.12, 0.48] |
+| Q5 | 112 | 73 | 39 | **65.2%** | [0.48, 13.82] |
 
 ### Full-sample decile WR
 
 | decile | n | W | L | WR | score range |
 |---|---|---|---|---|---|
-| D1 | 47 | 15 | 32 | 31.9% | [-1.59, -0.45] |
-| D2 | 47 | 18 | 29 | 38.3% | [-0.45, -0.28] |
-| D3 | 47 | 22 | 25 | 46.8% | [-0.27, -0.04] |
-| D4 | 47 | 27 | 20 | 57.4% | [-0.04, -0.01] |
-| D5 | 47 | 19 | 28 | 40.4% | [-0.01, 0.09] |
-| D6 | 47 | 25 | 22 | 53.2% | [0.09, 0.17] |
-| D7 | 47 | 29 | 18 | 61.7% | [0.17, 0.25] |
-| D8 | 47 | 25 | 22 | 53.2% | [0.25, 0.38] |
-| D9 | 47 | 29 | 18 | 61.7% | [0.38, 0.58] |
-| D10 | 47 | 34 | 13 | 72.3% | [0.59, 1.67] |
+| D1 | 55 | 22 | 33 | 40.0% | [-1.10, -0.51] |
+| D2 | 56 | 21 | 35 | 37.5% | [-0.51, -0.49] |
+| D3 | 56 | 25 | 31 | 44.6% | [-0.49, -0.01] |
+| D4 | 56 | 30 | 26 | 53.6% | [-0.01, -0.01] |
+| D5 | 56 | 27 | 29 | 48.2% | [-0.01, 0.00] |
+| D6 | 55 | 30 | 25 | 54.5% | [0.00, 0.11] |
+| D7 | 56 | 31 | 25 | 55.4% | [0.12, 0.26] |
+| D8 | 56 | 31 | 25 | 55.4% | [0.26, 0.48] |
+| D9 | 56 | 34 | 22 | 60.7% | [0.48, 0.57] |
+| D10 | 56 | 39 | 17 | 69.6% | [0.57, 13.82] |
 
 ### OOS quintile WR (5-fold CV pooled)
 
 | quintile | n | W | L | WR |
 |---|---|---|---|---|
-| Q1 | 94 | 36 | 58 | **38.3%** |
-| Q2 | 94 | 46 | 48 | **48.9%** |
-| Q3 | 94 | 50 | 44 | **53.2%** |
-| Q4 | 94 | 52 | 42 | **55.3%** |
-| Q5 | 94 | 59 | 35 | **62.8%** |
+| Q1 | 111 | 49 | 62 | **44.1%** |
+| Q2 | 112 | 54 | 58 | **48.2%** |
+| Q3 | 111 | 56 | 55 | **50.5%** |
+| Q4 | 112 | 62 | 50 | **55.4%** |
+| Q5 | 112 | 69 | 43 | **61.6%** |
 
 ### Per-sport monotonicity (using full-sample winner)
 
 | sport | n | overall WR | AUC | ρ | qMono | Q-top − Q-bot |
 |---|---|---|---|---|---|---|
-| MLB | 218 | 49.1% | 0.526 | 0.044 | 70% | 3.4% |
-| NBA | 198 | 54.0% | 0.686 | 0.322 | 90% | 39.1% |
-| NHL | 54 | 53.7% | 0.641 | 0.242 | 100% | 25.9% |
+| MLB | 283 | 50.9% | 0.509 | 0.021 | 80% | 8.0% |
+| NHL | 62 | 53.2% | 0.621 | 0.205 | 100% | 16.1% |
+| NBA | 213 | 53.1% | 0.678 | 0.309 | 100% | 38.8% |
 
 ---
 
 ## Why the current UNIFORM scoring is wrong (compared to winner)
 
-- UNIFORM OOS AUC: 0.610   →   WINNER OOS AUC: 0.597   (Δ -0.013)
-- UNIFORM OOS ρ:   0.190   →   WINNER OOS ρ:   0.167   (Δ -0.023)
-- UNIFORM OOS Q5−Q1 gap: 30.9%   →   WINNER OOS Q5−Q1 gap: 24.5%
+- UNIFORM OOS AUC: 0.577   →   WINNER OOS AUC: 0.571   (Δ -0.006)
+- UNIFORM OOS ρ:   0.134   →   WINNER OOS ρ:   0.123   (Δ -0.011)
+- UNIFORM OOS Q5−Q1 gap: 24.6%   →   WINNER OOS Q5−Q1 gap: 17.5%
 - UNIFORM weights all 5 features equally, but `dHcCount` has near-zero individual signal and `forContribShare` should have a NEGATIVE weight (high `forContribShare` = lopsided book = picks correlate with losing).
 
 ## Drop-in JS replacement for `src/lib/ags.js` `computeAgs()`
 
 ```javascript
 // AGS-U v2 — Monotonic Scoring (statistically derived, validated OOS)
-// Source: scripts/_agsu_monotonic_scoring.mjs · 2026-05-22
-// Trained on 470 W/L picks since 2026-04-18.
+// Source: scripts/_agsu_monotonic_scoring.mjs · 2026-05-25
+// Trained on 558 W/L picks since 2026-04-18.
 //
 // Coefficients (logistic regression, L1-regularized):
-//   intercept              = 0.0696
-//   dCount                 = 0.2716
-//   dHcCount               = 0.0050
-//   dConvictionAvg         = 0.2275
-//   dHcSizeRatio           = 0.1763
-//   forContribShare        = -0.0297
+//   intercept              = 0.0866
+//   dCount                 = 0.2059
+//   dHcCount               = 0.0770
+//   dConvictionAvg         = 0.0127
+//   dHcSizeRatio           = 0.2291
+//   forContribShare        = 0.0000
 
 export function computeAgs(features, calibration) {
   // features = { dCount, dHcCount, dConvictionAvg, dHcSizeRatio, forContribShare }
@@ -179,12 +179,12 @@ export function computeAgs(features, calibration) {
     const c = calibration?.[k]; if (!c || !c.sd) return 0;
     return (Number(features[k] ?? 0) - Number(c.mean ?? 0)) / Number(c.sd);
   };
-  const score = 0.0696
-         +0.2716 * z('dCount')
-         +0.0050 * z('dHcCount')
-         +0.2275 * z('dConvictionAvg')
-         +0.1763 * z('dHcSizeRatio')
-         -0.0297 * z('forContribShare');
+  const score = 0.0866
+         +0.2059 * z('dCount')
+         +0.0770 * z('dHcCount')
+         +0.0127 * z('dConvictionAvg')
+         +0.2291 * z('dHcSizeRatio')
+         +0.0000 * z('forContribShare');
   return score;
 }
 
@@ -195,4 +195,4 @@ export function agsScoreToProb(score) {
 ```
 
 ---
-_Generated by `scripts/_agsu_monotonic_scoring.mjs` · 2026-05-22T15:31:25.417Z_
+_Generated by `scripts/_agsu_monotonic_scoring.mjs` · 2026-05-25T13:06:46.556Z_

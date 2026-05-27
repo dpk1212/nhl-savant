@@ -1075,23 +1075,220 @@ async function loadLiveCalibration() {
   return null;
 }
 
+// Read the agsCalibration history collection to derive the "model era" each
+// pick was scored under. Each history doc is keyed `history-YYYY-MM-DD`
+// where the date is the calibration's sample-window end; the calibration
+// itself becomes effective the NEXT day (when the cron next reads it). We
+// return one entry per unique schemaVersion, marking its first effective
+// date and its end date (= start of next version's effective date).
+async function loadModelEras() {
+  const snap = await db.collection('agsCalibration').get();
+  const entries = [];
+  snap.forEach(d => {
+    if (d.id === 'current') return;
+    const data = d.data();
+    if (!data?.schemaVersion) return;
+    const m = d.id.match(/^history-(\d{4}-\d{2}-\d{2})$/);
+    if (!m) return;
+    entries.push({ historyDate: m[1], schema: data.schemaVersion, computedAt: data.computedAt });
+  });
+  entries.sort((a, b) => a.historyDate.localeCompare(b.historyDate));
+  const seen = new Set();
+  const eras = [];
+  for (const e of entries) {
+    if (seen.has(e.schema)) continue;
+    seen.add(e.schema);
+    // Calibration written on day X (sample window ending X) becomes effective
+    // for picks scored on day X+1.
+    const next = new Date(e.historyDate + 'T00:00:00Z');
+    next.setUTCDate(next.getUTCDate() + 1);
+    eras.push({
+      version: e.schema,
+      effectiveFrom: next.toISOString().slice(0, 10),
+      effectiveTo: null,  // filled below
+    });
+  }
+  for (let i = 0; i < eras.length; i++) {
+    eras[i].effectiveTo = (i + 1 < eras.length) ? eras[i + 1].effectiveFrom : null;
+  }
+  return eras;
+}
+
+// Tag a pick row with the AGS-U model version that scored it. Priority:
+// 1. v11-specific feature signature in components (most authoritative —
+//    v11 introduced dSumRankNorm / dWinnerCtPreA, no prior version had them)
+// 2. Pick date vs the calibration-history effective-from dates
+function modelEraForPick(row, eras) {
+  const c = row.agsComponents;
+  if (c && (Number.isFinite(c.dSumRankNorm) || Number.isFinite(c.dWinnerCtPreA))) {
+    const v11Era = eras.find(e => /v11$/.test(e.version));
+    return v11Era ? v11Era.version : 'ags-unified-v11';
+  }
+  if (!row.date) return 'unknown';
+  let match = 'unknown';
+  for (const e of eras) {
+    if (row.date >= e.effectiveFrom) match = e.version;
+    else break;
+  }
+  return match;
+}
+
+function buildVersionComparison(report, rows, eras) {
+  report.push(`## § 0b — AGS-U Model Version Comparison`);
+  report.push('');
+  report.push(`How does the latest model (**${eras[eras.length-1]?.version ?? 'live'}**) compare against prior versions? Picks are tagged by the calibration that scored them — v11 by feature-signature (\`dSumRankNorm\` / \`dWinnerCtPreA\` present in components), earlier versions by pick date against the calibration-history cutover schedule below.`);
+  report.push('');
+
+  if (eras.length === 0) {
+    report.push(`_(no calibration history found — comparison unavailable)_`);
+    report.push('');
+    return;
+  }
+
+  // Tag every pick.
+  const tagged = rows.map(r => ({ ...r, _era: modelEraForPick(r, eras) }));
+  const versions = eras.map(e => e.version);
+
+  // Per-version summary stats.
+  report.push(`### Headline performance by version`);
+  report.push('');
+  report.push(`| Version | Era                  | Days | Live N | Trk | W-L    | Win %  | ROI       | PnL (u)    | per-pick | AUC   | Brier (model) | Status   |`);
+  report.push(`|---------|----------------------|------|--------|-----|--------|--------|-----------|------------|----------|-------|---------------|----------|`);
+  const stats = {};
+  for (let i = 0; i < eras.length; i++) {
+    const era = eras[i];
+    const eraRows = tagged.filter(r => r._era === era.version);
+    const agg = aggregate(eraRows);
+    const withAgs = eraRows.filter(r => Number.isFinite(r.ags) && r.won != null);
+    const auc = rocAuc(withAgs.map(r => r.ags), withAgs.map(r => r.won));
+    const brier = brierScore(withAgs.map(r => sigmoid(r.ags)), withAgs.map(r => r.won));
+    const perPick = agg.flat;
+    const endLabel = era.effectiveTo
+      ? era.effectiveTo.slice(5)  // MM-DD without year
+      : 'present';
+    const eraLabel = `${era.effectiveFrom.slice(5)} → ${endLabel}`;
+    const days = era.effectiveTo
+      ? Math.max(1, Math.floor((new Date(era.effectiveTo) - new Date(era.effectiveFrom)) / 86400000))
+      : Math.max(1, Math.floor((new Date(etToday()) - new Date(era.effectiveFrom)) / 86400000) + 1);
+    const isLive = !era.effectiveTo;
+    stats[era.version] = { agg, auc, brier, perPick, n: eraRows.length, days };
+    report.push(`| ${era.version.replace('ags-unified-', '').padEnd(7)} | ${eraLabel.padEnd(20)} | ${String(days).padStart(4)} | ${String(agg.n).padStart(6)} | ${String(agg.trackedN).padStart(3)} | ${(agg.w+'-'+agg.l).padEnd(6)} | ${pct(agg.w, agg.n).padStart(6)} | ${(agg.roi != null ? agg.roi.toFixed(1)+'%' : '—').padStart(9)} | ${fmtSigned(agg.profit).padStart(10)} | ${(perPick != null ? fmtSigned(perPick, 2) : '—').padStart(8)} | ${fmtN(auc, 3).padStart(5)} | ${fmtN(brier, 4).padStart(13)} | ${(isLive ? '🟢 LIVE' : '⚪ retired').padEnd(8)} |`);
+  }
+  report.push('');
+
+  // Pairwise improvement: latest vs each previous.
+  if (versions.length >= 2) {
+    const latest = versions[versions.length - 1];
+    const latestStats = stats[latest];
+    report.push(`### v${latest.replace('ags-unified-v', '')} vs prior versions`);
+    report.push('');
+    report.push(`| Comparison         | ΔN     | ΔWin %    | ΔROI       | Δ per-pick (u)  | ΔAUC     | ΔBrier     | Verdict |`);
+    report.push(`|--------------------|--------|-----------|------------|-----------------|----------|------------|---------|`);
+    for (let i = 0; i < versions.length - 1; i++) {
+      const prev = versions[i];
+      const ps = stats[prev];
+      const dN = latestStats.agg.n - ps.agg.n;
+      const dWin = (latestStats.agg.realWinRate != null && ps.agg.realWinRate != null) ? (latestStats.agg.realWinRate - ps.agg.realWinRate) * 100 : null;
+      const dRoi = (latestStats.agg.roi != null && ps.agg.roi != null) ? latestStats.agg.roi - ps.agg.roi : null;
+      const dPp = (latestStats.perPick != null && ps.perPick != null) ? latestStats.perPick - ps.perPick : null;
+      const dAuc = (latestStats.auc != null && ps.auc != null) ? latestStats.auc - ps.auc : null;
+      const dBrier = (latestStats.brier != null && ps.brier != null) ? ps.brier - latestStats.brier : null;  // positive Δ = improvement (lower brier is better)
+      // Verdict heuristic — count improvements in ROI / win / AUC / brier (each must be defined to count).
+      const signals = [];
+      if (dRoi != null) signals.push(dRoi >= 0 ? 1 : -1);
+      if (dWin != null) signals.push(dWin >= 0 ? 1 : -1);
+      if (dAuc != null) signals.push(dAuc >= 0 ? 1 : -1);
+      if (dBrier != null) signals.push(dBrier >= 0 ? 1 : -1);
+      const score = signals.reduce((a, b) => a + b, 0);
+      const verdict = signals.length === 0 ? '—'
+        : score >= signals.length - 1 ? '🟢 better'
+        : score <= -(signals.length - 1) ? '🚨 worse'
+        : '🟡 mixed';
+      const latestShort = latest.replace('ags-unified-', '');
+      const prevShort = prev.replace('ags-unified-', '');
+      const compLabel = `${latestShort} − ${prevShort}`;
+      report.push(`| ${compLabel.padEnd(18)} | ${(dN >= 0 ? '+' : '') + String(dN).padStart(5)} | ${(dWin != null ? fmtSigned(dWin, 1) + 'pp' : '—').padStart(9)} | ${(dRoi != null ? fmtSigned(dRoi, 1) + 'pp' : '—').padStart(10)} | ${(dPp != null ? fmtSigned(dPp, 3) : '—').padStart(15)} | ${(dAuc != null ? fmtSigned(dAuc, 3) : '—').padStart(8)} | ${(dBrier != null ? fmtSigned(dBrier, 4) : '—').padStart(10)} | ${verdict.padEnd(7)} |`);
+    }
+    report.push('');
+    report.push(`> **ΔBrier > 0** means the newer model's Brier is LOWER (better probability calibration). All other Δ columns: positive = newer model is better. Verdict requires the newer model to dominate on 3 of 4 metrics (ROI / Win% / AUC / Brier).`);
+    report.push('');
+  }
+
+  // Per-sport breakdown by version.
+  const sports = [...new Set(tagged.map(r => r.sport))].sort();
+  if (sports.length > 0 && versions.length > 1) {
+    report.push(`### Per-sport win rate × version`);
+    report.push('');
+    report.push(`| Version | ${sports.map(s => s.padEnd(14)).join(' | ')} | All           |`);
+    report.push(`|---------|${sports.map(() => '----------------').join('|')}|---------------|`);
+    for (const version of versions) {
+      const eraRows = tagged.filter(r => r._era === version);
+      const cells = sports.map(s => {
+        const a = aggregate(eraRows.filter(r => r.sport === s));
+        return a.n > 0 ? `${a.n}n ${pct(a.w, a.n)} ${a.roi != null ? (a.roi>=0?'+':'') + a.roi.toFixed(0)+'%' : '—'}` : '—';
+      });
+      const all = aggregate(eraRows);
+      const allCell = all.n > 0 ? `${all.n}n ${pct(all.w, all.n)} ${all.roi != null ? (all.roi>=0?'+':'') + all.roi.toFixed(0)+'%' : '—'}` : '—';
+      const short = version.replace('ags-unified-', '');
+      report.push(`| ${short.padEnd(7)} | ${cells.map(c => c.padEnd(14)).join(' | ')} | ${allCell.padEnd(13)} |`);
+    }
+    report.push('');
+  }
+
+  // Per-tier breakdown by version — answers "did each version's ELITE tier
+  // actually win more than its LEAN tier?"
+  if (versions.length > 1) {
+    report.push(`### Per-tier ROI × version (monotonicity check across model history)`);
+    report.push('');
+    report.push(`| Version | ELITE         | PREMIUM       | LOCK          | LEAN          | WEAK          | Monotonic?    |`);
+    report.push(`|---------|---------------|---------------|---------------|---------------|---------------|---------------|`);
+    for (const version of versions) {
+      const eraRows = tagged.filter(r => r._era === version);
+      const tierAgs = {};
+      for (const t of ['ELITE', 'PREMIUM', 'LOCK', 'LEAN', 'WEAK']) {
+        tierAgs[t] = aggregate(eraRows.filter(r => r.agsTier === t));
+      }
+      const cells = ['ELITE', 'PREMIUM', 'LOCK', 'LEAN', 'WEAK'].map(t => {
+        const a = tierAgs[t];
+        return a.n > 0 ? `${a.n}n ${a.roi != null ? (a.roi>=0?'+':'') + a.roi.toFixed(0)+'%' : '—'}` : '—';
+      });
+      const rois = ['ELITE', 'PREMIUM', 'LOCK', 'LEAN', 'WEAK']
+        .map(t => tierAgs[t].roi)
+        .filter(v => v != null);
+      const mono = rois.length >= 2 ? monoScore(rois) : null;
+      const monoLabel = mono == null ? '—'
+        : mono <= -(rois.length - 2) ? `🟢 mono (${mono})`
+        : mono >= (rois.length - 2) ? `🚨 inv (${mono})`
+        : `🟡 partial (${mono})`;
+      const short = version.replace('ags-unified-', '');
+      report.push(`| ${short.padEnd(7)} | ${cells.map(c => c.padEnd(13)).join(' | ')} | ${monoLabel.padEnd(13)} |`);
+    }
+    report.push('');
+    report.push(`> Monotonicity score on tier-ROI vector (ELITE → WEAK). Fully sorted (each tier earns LESS than the one above) = ${-3} for 4-tier samples / ${-4} for full ladder. Fully inverted = +3/+4. A NEW model that flips the ladder from inverted → monotonic is the strongest evidence the redesign worked.`);
+    report.push('');
+  }
+}
+
 // ── Main ─────────────────────────────────────────────────────────────────
 async function main() {
   console.log('AGS-U daily report — loading data...');
-  const [{ rows: agsuRows, cutover }, allRows, liveCal] = await Promise.all([
+  const [{ rows: agsuRows, cutover }, allRows, liveCal, modelEras] = await Promise.all([
     loadAllAgsuGradedPicks(),
     loadAllGradedAndShadowPicks(),
     loadLiveCalibration(),
+    loadModelEras(),
   ]);
   console.log(`  AGS-U graded picks:    ${agsuRows.length}`);
   console.log(`  All sides (any state): ${allRows.length}`);
   console.log(`  Cutover:               ${cutover}`);
   console.log(`  Active model schema:   ${liveCal?.schemaVersion || AGS_FALLBACK_CALIBRATION.schemaVersion}`);
   console.log(`  Active features:       [${ACTIVE_FEATURE_KEYS.join(', ')}]`);
+  console.log(`  Model eras detected:   ${modelEras.map(e => `${e.version}@${e.effectiveFrom}`).join(' | ')}`);
 
   const report = [];
   buildHeader(report, cutover, liveCal);
   buildActiveModelCard(report, liveCal);
+  buildVersionComparison(report, agsuRows, modelEras);
   buildExecutiveSummary(report, agsuRows, cutover);
   buildTierCalibration(report, agsuRows);
   buildQuintileCalibration(report, agsuRows);
