@@ -1,7 +1,7 @@
 # AGS-Unified — Daily Monitoring Report
 
-**Generated:** Wednesday, May 27, 2026 at 12:24 PM ET
-**Active model:** `ags-unified-v11` · **AGS-U cutover:** 2026-05-14 · **Days live:** 13
+**Generated:** Thursday, May 28, 2026 at 12:39 PM ET
+**Active model:** `ags-unified-v11` · **AGS-U cutover:** 2026-05-14 · **Days live:** 14
 
 > **Scope.** Every row in this report comes from picks AGS-U actually promoted (`promotedBy = ags-unified-v9`). Picks promoted by legacy v7/v8 routes are excluded — they'd contaminate the calibration story. Within the AGS-U pool, each pick is classified as one of:
 
@@ -15,7 +15,7 @@
 The composite scoring model — what every lock/mute/sizing decision is built on. Pulled at runtime from `src/lib/ags.js` so this report never drifts.
 
 **Schema version:** `ags-unified-v11`
-**Calibration source:** `cron` · sample N = 592 · range 2026-04-18 → 2026-05-25
+**Calibration source:** `cron` · sample N = 617 · range 2026-04-18 → 2026-05-26
 
 ### Features & coefficients (logistic-regression β on z-scored features)
 
@@ -41,14 +41,14 @@ How does the latest model (**ags-unified-v11**) compare against prior versions? 
 |---------|----------------------|------|--------|-----|--------|--------|-----------|------------|----------|-------|---------------|----------|
 | v9      | 05-15 → 05-22        |    7 |     60 |  12 | 32-28  |  53.3% |     -9.0% |     -10.38 |    -0.17 | 0.549 |        0.3400 | ⚪ retired |
 | v10     | 05-22 → 05-25        |    3 |     62 |  14 | 30-32  |  48.4% |    -18.8% |     -19.42 |    -0.31 | 0.394 |        0.2804 | ⚪ retired |
-| v11     | 05-25 → present      |    3 |     37 |   7 | 23-14  |  62.2% |     15.2% |     +13.93 |    +0.38 | 0.590 |        0.2416 | 🟢 LIVE  |
+| v11     | 05-25 → present      |    4 |     53 |  13 | 31-22  |  58.5% |      5.2% |      +6.23 |    +0.12 | 0.487 |        0.2559 | 🟢 LIVE  |
 
 ### v11 vs prior versions
 
 | Comparison         | ΔN     | ΔWin %    | ΔROI       | Δ per-pick (u)  | ΔAUC     | ΔBrier     | Verdict |
 |--------------------|--------|-----------|------------|-----------------|----------|------------|---------|
-| v11 − v9           |   -23 |    +8.8pp |    +24.2pp |          +0.549 |   +0.041 |    +0.0984 | 🟢 better |
-| v11 − v10          |   -25 |   +13.8pp |    +34.0pp |          +0.690 |   +0.196 |    +0.0388 | 🟢 better |
+| v11 − v9           |    -7 |    +5.2pp |    +14.2pp |          +0.291 |   -0.062 |    +0.0840 | 🟡 mixed |
+| v11 − v10          |    -9 |   +10.1pp |    +24.0pp |          +0.431 |   +0.093 |    +0.0244 | 🟢 better |
 
 > **ΔBrier > 0** means the newer model's Brier is LOWER (better probability calibration). All other Δ columns: positive = newer model is better. Verdict requires the newer model to dominate on 3 of 4 metrics (ROI / Win% / AUC / Brier).
 
@@ -58,7 +58,7 @@ How does the latest model (**ags-unified-v11**) compare against prior versions? 
 |---------|----------------|----------------|----------------|---------------|
 | v9      | 40n 55.0% -3%  | 14n 50.0% -7%  | 6n 50.0% -46%  | 60n 53.3% -9% |
 | v10     | 50n 52.0% -4%  | 7n 14.3% -91%  | 5n 60.0% -9%   | 62n 48.4% -19% |
-| v11     | 29n 62.1% +14% | 4n 75.0% +37%  | 4n 50.0% -13%  | 37n 62.2% +15% |
+| v11     | 44n 59.1% +4%  | 4n 75.0% +37%  | 5n 40.0% -33%  | 53n 58.5% +5% |
 
 ### Per-tier ROI × version (monotonicity check across model history)
 
@@ -66,23 +66,24 @@ How does the latest model (**ags-unified-v11**) compare against prior versions? 
 |---------|---------------|---------------|---------------|---------------|---------------|---------------|
 | v9      | 10n -25%      | 6n +10%       | 13n -32%      | 16n +24%      | 14n -6%       | 🟡 partial (0) |
 | v10     | 8n -13%       | 5n -69%       | 13n -25%      | 27n +4%       | 8n -1%        | 🟡 partial (0) |
-| v11     | 9n +20%       | 9n +11%       | 8n +13%       | 9n +50%       | 2n -100%      | 🟡 partial (0) |
+| v11     | 13n -1%       | 11n +1%       | 11n +26%      | 13n +40%      | 4n -78%       | 🟡 partial (2) |
 
 > Monotonicity score on tier-ROI vector (ELITE → WEAK). Fully sorted (each tier earns LESS than the one above) = -3 for 4-tier samples / -4 for full ladder. Fully inverted = +3/+4. A NEW model that flips the ladder from inverted → monotonic is the strongest evidence the redesign worked.
 
 ## § 0 — Executive Summary & Alerts
 
 ### Alerts
-- 🚨 **5 picks shipped at 0u despite AGS-U ≥ +0.10 and tier ∉ {FADE, WEAK}.** Sizing pipeline regression — see §10 for doc IDs. `v8_agsUnitsMult` should be > 0 for these.
+- 🚨 **All-time ROI -6.4% / 7-day -7.5%** — both negative ≥ 5%. AGS-U may be miscalibrated. Drill into §3 (tier ladder) and §10 (mute validation).
+- 🚨 **8 picks shipped at 0u despite AGS-U ≥ +0.10 and tier ∉ {FADE, WEAK}.** Sizing pipeline regression — see §10 for doc IDs. `v8_agsUnitsMult` should be > 0 for these.
 
 ### Headline Numbers — LIVE shipped picks only
 
 | Window     | Live N | W-L   | Win %  | ROI       | PnL (u)    | CLV       | Avg Stake | Sharpe-like | Tracked |
 |------------|--------|-------|--------|-----------|------------|-----------|-----------|-------------|---------|
-| Yesterday  |     18 | 12-6 |  66.7% |     33.4% |     +13.88 |    -0.49% |     2.31u |        1.03 | 4 (1-3) |
-| Last 3 days |     56 | 30-26 |  53.6% |      3.3% |      +3.98 |    +0.25% |     2.17u |       -0.16 | 14 (10-4) |
-| Last 7 days |    121 | 65-56 |  53.7% |     -3.4% |      -7.92 |    +0.38% |     1.94u |        0.02 | 24 (14-10) |
-| All-time   |    160 | 86-74 |  53.8% |     -4.5% |     -14.16 |    +0.24% |     1.96u |       -0.12 | 33 (15-18) |
+| Yesterday  |     16 | 8-8 |  50.0% |    -27.5% |      -7.70 |    -0.31% |     1.75u |       -0.62 | 6 (4-2) |
+| Last 3 days |     53 | 31-22 |  58.5% |      5.2% |      +6.23 |    -0.41% |     2.26u |        0.30 | 13 (7-6) |
+| Last 7 days |    127 | 67-60 |  52.8% |     -7.5% |     -18.25 |    +0.25% |     1.91u |       -0.26 | 29 (17-12) |
+| All-time   |    176 | 94-82 |  53.4% |     -6.4% |     -21.86 |    +0.18% |     1.94u |       -0.28 | 39 (19-20) |
 
 > **Live N / W-L / ROI / PnL** match the dashboard exactly — tracked (FADE, 0u) picks are excluded. **Tracked** column = FADE-tier picks graded for back-testing only. **Sharpe-like** = per-pick mean unit return ÷ sd × √N.
 
@@ -94,12 +95,12 @@ The whole point of AGS-U is that higher tiers should win at higher rates AND ear
 
 | Tier     | Band        | Ladder | N    | W-L    | Win %  | ROI       | PnL (u)    | Avg AGS-U | Avg Stake |
 |----------|-------------|--------|------|--------|--------|-----------|------------|-----------|-----------|
-| ELITE    | ≥ q90       | 2.00×   |   27 | 14-13  |  51.9% |     -4.7% |      -4.74 |     +3.05 |     3.73u |
-| PREMIUM  | q80–q90     | 1.50×   |   20 | 11-9   |  55.0% |     -6.6% |      -3.77 |     +1.15 |     2.84u |
-| LOCK     | q60–q80     | 1.10×   |   35 | 16-19  |  45.7% |    -17.4% |     -13.72 |     +0.72 |     2.25u |
-| LEAN     | q40–q60     | 0.50×   |   52 | 32-20  |  61.5% |     19.2% |     +11.69 |     +0.20 |     1.17u |
-| WEAK     | q20–q40     | 0.20×   |   24 | 12-12  |  50.0% |    -24.3% |      -3.79 |     -0.90 |     0.65u |
-| FADE     | < q20       | 0.00×   |    2 | 1-1    |  50.0% |     16.2% |      +0.17 |     -1.72 |     0.53u |
+| ELITE    | ≥ q90       | 2.00×   |   31 | 15-16  |  48.4% |    -11.0% |     -12.52 |     +2.68 |     3.67u |
+| PREMIUM  | q80–q90     | 1.50×   |   22 | 11-11  |  50.0% |    -11.0% |      -6.52 |     +1.05 |     2.70u |
+| LOCK     | q60–q80     | 1.10×   |   38 | 19-19  |  50.0% |    -12.1% |     -10.22 |     +0.67 |     2.23u |
+| LEAN     | q40–q60     | 0.50×   |   56 | 35-21  |  62.5% |     19.0% |     +12.34 |     +0.19 |     1.16u |
+| WEAK     | q20–q40     | 0.20×   |   26 | 13-13  |  50.0% |    -23.3% |      -3.86 |     -0.84 |     0.64u |
+| FADE     | < q20       | 0.00×   |    3 | 1-2    |  33.3% |    -47.0% |      -1.08 |     -1.53 |     0.77u |
 
 **Monotonicity score** (n−1 max, fully ordered ELITE→FADE = -5, fully inverted = 5):
 - Win % across tiers: `0` 🟡 random — calibration unclear
@@ -111,13 +112,13 @@ Quintile bucketing of raw AGS-U values (Q5 = highest AGS-U). Independent check o
 
 | Quintile | N    | W-L    | Win %  | ROI       | PnL (u)    | Avg AGS-U | Implied (from odds) | Calibrated P(WIN) |
 |----------|------|--------|--------|-----------|------------|-----------|---------------------|-------------------|
-| Q1       |    2 | 1-1    |  50.0% |     16.2% |      +0.17 |     -1.72 |               49.4% |             15.2% |
-| Q2       |   35 | 20-15  |  57.1% |      0.9% |      +0.23 |     -0.62 |               51.1% |             34.9% |
-| Q3       |   41 | 24-17  |  58.5% |     15.0% |      +7.67 |     +0.24 |               53.0% |             56.1% |
-| Q4       |   35 | 16-19  |  45.7% |    -17.4% |     -13.72 |     +0.72 |               53.0% |             67.3% |
-| Q5       |   47 | 25-22  |  53.2% |     -5.4% |      -8.51 |     +2.22 |               56.1% |             90.2% |
+| Q1       |    3 | 1-2    |  33.3% |    -47.0% |      -1.08 |     -1.53 |               50.1% |             17.8% |
+| Q2       |   37 | 21-16  |  56.8% |      0.6% |      +0.16 |     -0.60 |               51.0% |             35.5% |
+| Q3       |   45 | 27-18  |  60.0% |     15.1% |      +8.32 |     +0.23 |               53.5% |             55.7% |
+| Q4       |   38 | 19-19  |  50.0% |    -12.1% |     -10.22 |     +0.67 |               53.6% |             66.1% |
+| Q5       |   53 | 26-27  |  49.1% |    -11.0% |     -19.04 |     +1.98 |               55.5% |             87.9% |
 
-**Spearman ρ (quintile vs realized win%):** -0.100  ·  monotonicity `2/4`
+**Spearman ρ (quintile vs realized win%):** 0.100  ·  monotonicity `0/4`
 
 > **Calibrated P(WIN)** = sigmoid(avg AGS-U) — what the model would predict from each quintile's average score. Compare to **Win %** column: if model probability ≈ realized win rate, the score is well-calibrated as a probability and not just a discriminative ranker.
 
@@ -129,15 +130,15 @@ How well does AGS-U rank winners above losers, overall and per sport? **AUC ≥ 
 
 | N | AUC   | Spearman ρ | Pt-biserial r | Brier (model) | Brier (market) | Δ vs market |
 |---|-------|------------|---------------|---------------|----------------|-------------|
-| 192 | 0.509 | -0.031 | 0.073 | 0.2924 | 0.2459 | -0.0465 |
+| 214 | 0.491 | -0.054 | 0.063 | 0.2916 | 0.2436 | -0.0480 |
 
 ### Per sport
 
 | Sport | N    | AUC   | Spearman ρ | Top Q (Q5) WR | Bot Q (Q1) WR | Q5−Q1 gap |
 |-------|------|-------|------------|---------------|---------------|-----------|
-| MLB   |  140 | 0.480 |     -0.132 |         51.9% |             — |         — |
+| MLB   |  160 | 0.464 |     -0.141 |         46.9% |          0.0% | +46.9pp |
 | NBA   |   35 | 0.602 |      0.276 |         46.2% |          0.0% | +46.2pp |
-| NHL   |   17 | —     | —          | —             | —             | —         |
+| NHL   |   19 | —     | —          | —             | —             | —         |
 
 > **Reading this table:** the largest Q5−Q1 gap = the sport where AGS-U is doing the most work. Negative AUC (< 0.5) on a sport = the model is anti-predictive there and may need a per-sport coefficient set (see `scripts/_agsu_final_fit.mjs`).
 
@@ -147,10 +148,10 @@ Each active AGS-U feature scored on its own against W/L. **Corr(WIN)** should ma
 
 | Feature           | Family         | Sign | β       | N    | Mean   | SD     | Corr(WIN) | Sign OK? | Top-dec ROI | Bot-dec ROI | Lift   |
 |-------------------|----------------|------|---------|------|--------|--------|-----------|----------|-------------|-------------|--------|
-| Δcount            | COUNT          | +    |  +0.537 |  192 |   0.13 |   1.18 |    +0.015 | 🟢       |      -22.4% |      -12.6% | -9.8pp |
-| ΔHCsizeRatio      | INTENSITY_HC   | +    |  +0.279 |  192 |   0.22 |   1.36 |    -0.070 | 🚨 flipped |      -51.5% |      -16.7% | -34.8pp |
-| ΔΣrankNorm        | QUALITY_RANK   | −    |  -0.274 |   44 |   0.17 |   1.18 |    -0.168 | 🟢       |     -100.0% |       20.1% | -120.1pp |
-| Δwinners          | QUALITY_TRACK  | −    |  -0.192 |   44 |  -0.03 |   0.90 |    -0.053 | 🟢       |        5.2% |      -48.6% | +53.8pp |
+| Δcount            | COUNT          | +    |  +0.537 |  214 |   0.15 |   1.16 |    -0.019 | 🟡 weak  |      -34.4% |      -12.6% | -21.8pp |
+| ΔHCsizeRatio      | INTENSITY_HC   | +    |  +0.279 |  214 |   0.19 |   1.29 |    -0.074 | 🚨 flipped |      -52.4% |      -18.2% | -34.2pp |
+| ΔΣrankNorm        | QUALITY_RANK   | −    |  -0.274 |   66 |   0.18 |   1.14 |    -0.220 | 🟢       |      -35.1% |       31.3% | -66.3pp |
+| Δwinners          | QUALITY_TRACK  | −    |  -0.192 |   66 |   0.05 |   0.91 |    -0.050 | 🟢       |        3.3% |      -59.3% | +62.6pp |
 
 > **Sign OK?** column flags features where the empirical correlation disagrees with the model's coefficient sign — a model-vs-data mismatch worth investigating. Weak (|corr| < 0.03) is shown but rarely actionable.
 
@@ -158,9 +159,9 @@ Each active AGS-U feature scored on its own against W/L. **Corr(WIN)** should ma
 
 | Feature           | N (historical) | Mean   | Corr(WIN) | Top-dec ROI | Bot-dec ROI | Lift   |
 |-------------------|----------------|--------|-----------|-------------|-------------|--------|
-| ΔHCcount          |            181 |   0.11 |    -0.080 |      -65.0% |        4.6% | -69.7pp |
-| ΔavgConv          |            181 |  -0.05 |    +0.074 |        7.0% |      -32.5% | +39.4pp |
-| forShare          |            181 |   0.05 |    +0.135 |        9.4% |      -86.1% | +95.5pp |
+| ΔHCcount          |            186 |   0.11 |    -0.078 |      -65.0% |        4.6% | -69.7pp |
+| ΔavgConv          |            186 |  -0.05 |    +0.073 |        7.0% |      -32.5% | +39.4pp |
+| forShare          |            186 |   0.05 |    +0.134 |        9.4% |      -86.1% | +95.5pp |
 
 ## § 3a — Feature Contribution Attribution
 
@@ -168,10 +169,10 @@ Decomposes the average WINNER vs LOSER along each active feature's contribution 
 
 | Feature           | β        | Avg contrib (WIN) | Avg contrib (LOSS) | Δ (WIN − LOSS) | Verdict |
 |-------------------|----------|-------------------|--------------------|----------------|---------|
-| Δcount            |  +0.5371 |            +0.177 |             +0.216 |         -0.038 | 🚨 hurting |
-| ΔHCsizeRatio      |  +0.2787 |            +0.049 |             +0.106 |         -0.058 | 🚨 hurting |
-| ΔΣrankNorm        |  -0.2740 |            +0.012 |             -0.015 |         +0.027 | 🟢 helping |
-| Δwinners          |  -0.1916 |            +0.008 |             -0.004 |         +0.012 | 🟢 helping |
+| Δcount            |  +0.5371 |            +0.182 |             +0.235 |         -0.053 | 🚨 hurting |
+| ΔHCsizeRatio      |  +0.2787 |            +0.043 |             +0.101 |         -0.058 | 🚨 hurting |
+| ΔΣrankNorm        |  -0.2740 |            +0.008 |             -0.028 |         +0.036 | 🟢 helping |
+| Δwinners          |  -0.1916 |            +0.000 |             -0.010 |         +0.010 | 🟢 helping |
 
 > Contribution = β · z(feature). The sum across all features (plus intercept) is the AGS-U score. A feature is "helping" if its average contribution is higher on winners than losers — i.e. the feature is correctly orienting the score.
 
@@ -183,34 +184,34 @@ AGS-U is the composite, but HC margin is a single-feature signal we still track 
 
 | Tier     | HC ≤ 0       | HC = +1      | HC ≥ +2      | All          |
 |----------|--------------|--------------|--------------|--------------|
-| ELITE    | 9n 66.7% +6% | 10n 60.0% +24% | 8n 25.0% -52% | 27n 51.9% -5% |
-| PREMIUM  | 9n 55.6% +12% | 7n 57.1% -18% | 4n 50.0% -21% | 20n 55.0% -7% |
-| LOCK     | 21n 47.6% -7% | 11n 54.5% +1% | 3n 0.0% -100% | 35n 45.7% -17% |
-| LEAN     | 37n 62.2% +16% | 13n 61.5% +21% | 2n 50.0% +56% | 52n 61.5% +19% |
-| WEAK     | 9n 55.6% +33% | 15n 46.7% -50% | —            | 24n 50.0% -24% |
-| FADE     | 2n 50.0% +16% | —            | —            | 2n 50.0% +16% |
+| ELITE    | 11n 63.6% -1% | 11n 54.5% +15% | 9n 22.2% -56% | 31n 48.4% -11% |
+| PREMIUM  | 11n 45.5% -0% | 7n 57.1% -18% | 4n 50.0% -21% | 22n 50.0% -11% |
+| LOCK     | 22n 50.0% -3% | 13n 61.5% +7% | 3n 0.0% -100% | 38n 50.0% -12% |
+| LEAN     | 41n 63.4% +16% | 13n 61.5% +21% | 2n 50.0% +56% | 56n 62.5% +19% |
+| WEAK     | 10n 50.0% +21% | 16n 50.0% -44% | —            | 26n 50.0% -23% |
+| FADE     | 3n 33.3% -47% | —            | —            | 3n 33.3% -47% |
 
 ### Tier × Sport (all-time)
 
 | Tier     | MLB            | NBA            | NHL            | All          |
 |----------|----------------|----------------|----------------|--------------|
-| ELITE    | 13n 53.8% -1%  | 11n 45.5% -16% | 3n 66.7% +24%  | 27n 51.9% -5%  |
-| PREMIUM  | 14n 50.0% -6%  | 2n 50.0% -24%  | 4n 75.0% +2%   | 20n 55.0% -7%  |
-| LOCK     | 29n 48.3% -8%  | 4n 25.0% -63%  | 2n 50.0% -42%  | 35n 45.7% -17% |
-| LEAN     | 45n 64.4% +34% | 2n 50.0% -1%   | 5n 40.0% -74%  | 52n 61.5% +19% |
-| WEAK     | 18n 50.0% -48% | 5n 60.0% +73%  | 1n 0.0% -100%  | 24n 50.0% -24% |
-| FADE     | —              | 1n 0.0% -100%  | 1n 100.0% +63% | 2n 50.0% +16%  |
+| ELITE    | 17n 47.1% -13% | 11n 45.5% -16% | 3n 66.7% +24%  | 31n 48.4% -11% |
+| PREMIUM  | 15n 46.7% -7%  | 2n 50.0% -24%  | 5n 60.0% -16%  | 22n 50.0% -11% |
+| LOCK     | 32n 53.1% -2%  | 4n 25.0% -63%  | 2n 50.0% -42%  | 38n 50.0% -12% |
+| LEAN     | 49n 65.3% +33% | 2n 50.0% -1%   | 5n 40.0% -74%  | 56n 62.5% +19% |
+| WEAK     | 20n 50.0% -45% | 5n 60.0% +73%  | 1n 0.0% -100%  | 26n 50.0% -23% |
+| FADE     | 1n 0.0% -100%  | 1n 0.0% -100%  | 1n 100.0% +63% | 3n 33.3% -47%  |
 
 ### Tier × Odds Band (all-time)
 
 | Tier     | HEAVY_FAV     | MOD_FAV       | PICK_EM       | MOD_DOG       | LONG_DOG      |
 |----------|---------------|---------------|---------------|---------------|---------------|
-| ELITE    | 6n 100.0% +40% | 4n 25.0% -55% | 14n 50.0% +5% | 3n 0.0% -100% | —             |
-| PREMIUM  | 6n 66.7% +5%  | 4n 25.0% -65% | 7n 57.1% -7%  | 2n 100.0% +113% | 1n 0.0% -100% |
-| LOCK     | —             | 9n 66.7% -7%  | 19n 31.6% -38% | 4n 50.0% +9%  | 3n 66.7% +77% |
-| LEAN     | 2n 50.0% -52% | 16n 50.0% -20% | 25n 68.0% +41% | 8n 75.0% +81% | 1n 0.0% -100% |
-| WEAK     | —             | 1n 100.0% +56% | 15n 46.7% -23% | 7n 42.9% -50% | 1n 100.0% +160% |
-| FADE     | —             | 1n 100.0% +63% | 1n 0.0% -100% | —             | —             |
+| ELITE    | 6n 100.0% +40% | 6n 33.3% -49% | 14n 50.0% +5% | 5n 0.0% -100% | —             |
+| PREMIUM  | 6n 66.7% +5%  | 4n 25.0% -65% | 8n 50.0% -16% | 3n 66.7% +94% | 1n 0.0% -100% |
+| LOCK     | 1n 100.0% +24% | 10n 70.0% -2% | 20n 35.0% -33% | 4n 50.0% +9%  | 3n 66.7% +77% |
+| LEAN     | 3n 66.7% -27% | 18n 50.0% -21% | 26n 69.2% +43% | 8n 75.0% +81% | 1n 0.0% -100% |
+| WEAK     | —             | 1n 100.0% +56% | 17n 47.1% -22% | 7n 42.9% -50% | 1n 100.0% +160% |
+| FADE     | —             | 1n 100.0% +63% | 2n 0.0% -100% | —             | —             |
 
 ## § 5 — Calibration Reliability (band × realized)
 
@@ -218,15 +219,15 @@ Slice AGS-U into bands derived from the LIVE calibration and compare average imp
 
 | AGS-U Band       | N    | Realized Win | Model P(WIN) | Implied Win | Edge (R−I)  | ROI       |
 |------------------|------|--------------|--------------|-------------|-------------|-----------|
-| ≥ q90 (≥ +0.46)  |   59 |        54.2% |        78.2% |       54.0% |      +0.3pp |     -7.0% |
-| q80–q90          |   20 |        40.0% |        59.4% |       56.5% |     -16.5pp |    -25.3% |
-| q60–q80          |   25 |        52.0% |        55.0% |       54.7% |      -2.7pp |      9.4% |
-| q40–q60          |   33 |        60.6% |        51.2% |       52.2% |      +8.4pp |     23.7% |
-| q20–q40          |    5 |        40.0% |        48.1% |       49.9% |      -9.9pp |    -58.7% |
-| < q20 (< -0.16)  |   18 |        61.1% |        25.5% |       49.4% |     +11.7pp |      9.4% |
+| ≥ q90 (≥ +0.46)  |   63 |        52.4% |        77.0% |       53.9% |      -1.5pp |    -10.7% |
+| q80–q90          |   22 |        36.4% |        59.2% |       55.8% |     -19.5pp |    -29.5% |
+| q60–q80          |   28 |        57.1% |        54.9% |       55.3% |      +1.8pp |     14.8% |
+| q40–q60          |   37 |        62.2% |        51.3% |       52.9% |      +9.2pp |     22.8% |
+| q20–q40          |    8 |        37.5% |        47.9% |       50.3% |     -12.8pp |    -58.7% |
+| < q20 (< -0.16)  |   18 |        61.1% |        26.6% |       49.8% |     +11.3pp |      9.4% |
 
-**Brier — model:** 0.2924  ·  **Brier — market-implied:** 0.2459 (lower = better; 0.25 = coin-flip prior). Δ = -0.0465 (positive = model beats market).
-**Edge correlation (realized vs implied):** Spearman ρ = -0.657.
+**Brier — model:** 0.2916  ·  **Brier — market-implied:** 0.2436 (lower = better; 0.25 = coin-flip prior). Δ = -0.0480 (positive = model beats market).
+**Edge correlation (realized vs implied):** Spearman ρ = -0.486.
 
 ## § 6 — Recent Picks (Last 20)
 
@@ -234,26 +235,26 @@ Most-recent graded AGS-U picks. Use this to spot anomalies (high-AGS losers, low
 
 | Date       | Sport | Mkt    | Team / Side             | Odds  | Stake  | AGS-U  | Tier    | Quint | HCm  | Top Driver           | Outcome | PnL (u)    | CLV    |
 |------------|-------|--------|-------------------------|-------|--------|--------|---------|-------|------|----------------------|---------|------------|--------|
-| 2026-05-26 | NBA   | TOTAL  | Over 216                |  -115 |  3.00u |  +0.82 | ELITE   | Q5   |   +0 | Δcount +0.67         | WIN     |     +2.61u |  -1.7% |
-| 2026-05-26 | MLB   | TOTAL  | Over 8                  |  -104 |  0.75u |  +0.09 | LEAN    | Q3   |   +0 | Δcount -0.42         | LOSS    |     -0.75u |  +0.0% |
-| 2026-05-26 | MLB   | TOTAL  | Over 8                  |  -110 |  1.65u |  +0.18 | LOCK    | Q4   |   +0 | Δcount +0.31         | WIN     |     +1.50u |  +0.0% |
-| 2026-05-26 | NHL   | SPREAD | Golden Knights          |  -250 |  2.25u |  +0.41 | PREMIUM | Q5   |   +0 | Δcount +0.31         | WIN     |     +0.90u |  -0.5% |
-| 2026-05-26 | NBA   | SPREAD | Thunder                 |  -102 |  0.00u |  +0.32 | PREMIUM | Q5   |   +2 | ΔHCsizeRatio +0.86   | TRACKED |      0.00u |  +0.2% |
-| 2026-05-26 | MLB   | SPREAD | Kansas City Royals      |  +105 |  1.65u |  +0.15 | LOCK    | Q4   |   +0 | Δcount +0.31         | LOSS    |     -1.65u |  +0.0% |
-| 2026-05-26 | MLB   | SPREAD | Colorado Rockies        |  -101 |  0.00u |  +0.28 | LOCK    | Q4   |   +1 | Δcount +0.31         | TRACKED |      0.00u |      — |
-| 2026-05-26 | NHL   | ML     | Avalanche               |  -114 |  0.50u |  -0.08 | WEAK    | Q2   |   +0 | Δcount -0.42         | LOSS    |     -0.50u |  -0.2% |
-| 2026-05-26 | NBA   | ML     | Thunder                 |  -194 |  3.75u |  +0.47 | PREMIUM | Q5   |   +4 | ΔHCcount +0.91       | WIN     |     +1.93u |  -4.4% |
-| 2026-05-26 | MLB   | ML     | Washington Nationals    |  +116 |  2.50u |  +0.46 | PREMIUM | Q5   |   +0 | Δcount +0.31         | WIN     |     +2.90u |  +0.8% |
-| 2026-05-26 | MLB   | ML     | Baltimore Orioles       |  -105 |  3.75u |  +0.24 | LOCK    | Q4   |   +1 | Δcount +0.31         | WIN     |     +3.57u |  +0.5% |
-| 2026-05-26 | MLB   | ML     | St. Louis Cardinals     |  +180 |  0.00u |  -0.24 | FADE    | Q1   |   +1 | Δcount -0.78         | TRACKED |      0.00u |  -3.5% |
-| 2026-05-26 | MLB   | ML     | Athletics               |  -112 |  3.75u |  +0.50 | PREMIUM | Q5   |   +1 | Δcount +0.67         | LOSS    |     -3.75u |  +1.2% |
-| 2026-05-26 | MLB   | ML     | Philadelphia Phillies   |  -102 |  5.00u |  +0.56 | ELITE   | Q5   |   +1 | Δcount +0.67         | WIN     |     +4.90u |  +0.2% |
-| 2026-05-26 | MLB   | ML     | New York Yankees        |  -200 |  3.75u |  +0.46 | PREMIUM | Q5   |   +0 | Δcount +0.31         | WIN     |     +1.88u |  -0.8% |
-| 2026-05-26 | MLB   | ML     | Toronto Blue Jays       |  -122 |  1.25u |  +0.03 | LEAN    | Q3   |   +0 | Δcount -0.42         | WIN     |     +1.02u |  -1.0% |
-| 2026-05-26 | MLB   | ML     | Los Angeles Angels      |  +116 |  1.25u |  +0.03 | LEAN    | Q3   |   +0 | Δcount -0.42         | WIN     |     +1.45u |  -0.8% |
-| 2026-05-26 | MLB   | ML     | Colorado Rockies        |  +194 |  1.50u |  +0.14 | LOCK    | Q4   |   +0 | Δcount +0.31         | LOSS    |     -1.50u |  -1.8% |
-| 2026-05-26 | MLB   | ML     | New York Mets           |  +105 |  2.75u |  -0.03 | WEAK    | Q2   |   +1 | Δcount -0.78         | LOSS    |     -2.75u |  +1.0% |
-| 2026-05-26 | MLB   | ML     | Pittsburgh Pirates      |  -134 |  1.25u |  +0.09 | LEAN    | Q3   |   +0 | Δwinners +0.09       | WIN     |     +0.93u |  -0.4% |
+| 2026-05-27 | NHL   | TOTAL  | Over 5.5                |  -112 |  2.25u |  +0.31 | PREMIUM | Q5   |   +0 | Δcount +0.68         | LOSS    |     -2.25u |  -4.8% |
+| 2026-05-27 | MLB   | TOTAL  | Under 7                 |  +103 |  0.75u |  +0.10 | LEAN    | Q3   |   +0 | Δcount +0.32         | WIN     |     +0.77u |  +3.8% |
+| 2026-05-27 | MLB   | TOTAL  | Under 8.5               |  +104 |  1.65u |  +0.14 | LOCK    | Q4   |   +0 | Δcount +0.32         | WIN     |     +1.72u |  +0.0% |
+| 2026-05-27 | MLB   | TOTAL  | Under 7.5               |  -112 |  0.00u |  +0.46 | PREMIUM | Q5   |   +1 | Δcount +0.68         | TRACKED |      0.00u |  +0.0% |
+| 2026-05-27 | MLB   | TOTAL  | Under 8.5               |  +105 |  0.00u |  +0.15 | LOCK    | Q4   |   +0 | Δcount +0.32         | TRACKED |      0.00u |  +0.0% |
+| 2026-05-27 | NHL   | SPREAD | Canadiens               |  -194 |  0.00u |  +0.59 | ELITE   | Q5   |   +0 | Δcount +0.68         | TRACKED |      0.00u |  +0.5% |
+| 2026-05-27 | MLB   | SPREAD | Washington Nationals    |  -135 |  3.00u |  +0.66 | ELITE   | Q5   |   +0 | Δcount +0.68         | WIN     |     +2.22u |  +1.5% |
+| 2026-05-27 | MLB   | SPREAD | St. Louis Cardinals     |  -146 |  1.65u |  +0.18 | LOCK    | Q4   |   +1 | Δwinners +0.10       | WIN     |     +1.13u |  +0.3% |
+| 2026-05-27 | MLB   | SPREAD | Miami Marlins           |  -160 |  0.75u |  +0.09 | LEAN    | Q3   |   +0 | Δwinners +0.10       | WIN     |     +0.47u |  +1.0% |
+| 2026-05-27 | MLB   | SPREAD | Atlanta Braves          |  +150 |  2.50u |  +0.74 | ELITE   | Q5   |   +1 | Δcount +1.05         | LOSS    |     -2.50u |  -1.9% |
+| 2026-05-27 | MLB   | ML     | Cleveland Guardians     |  -190 |  1.25u |  +0.10 | LEAN    | Q3   |   +0 | ΔΣrankNorm +0.25     | WIN     |     +0.66u |  -1.8% |
+| 2026-05-27 | MLB   | ML     | Tampa Bay Rays          |  -126 |  5.00u |  +0.77 | ELITE   | Q5   |   +0 | Δcount +0.32         | LOSS    |     -5.00u |  +2.4% |
+| 2026-05-27 | MLB   | ML     | St. Louis Cardinals     |  +148 |  2.50u |  +0.64 | ELITE   | Q5   |   +2 | Δcount +0.68         | LOSS    |     -2.50u |  -3.1% |
+| 2026-05-27 | MLB   | ML     | Kansas City Royals      |  +135 |  0.50u |  +0.33 | PREMIUM | Q5   |   +0 | Δcount +0.32         | LOSS    |     -0.50u |  -0.4% |
+| 2026-05-27 | MLB   | ML     | Minnesota Twins         |  -108 |  1.25u |  -0.15 | FADE    | Q1   |   -1 | ΔΣrankNorm +0.23     | LOSS    |     -1.25u |  -0.2% |
+| 2026-05-27 | MLB   | ML     | Toronto Blue Jays       |  -154 |  0.00u |  -0.20 | FADE    | Q1   |   +0 | Δcount -0.41         | TRACKED |      0.00u |  -0.2% |
+| 2026-05-27 | MLB   | ML     | Los Angeles Angels      |  -104 |  0.50u |  -0.05 | WEAK    | Q2   |   +0 | Δcount +0.68         | LOSS    |     -0.50u |  +0.2% |
+| 2026-05-27 | MLB   | ML     | Texas Rangers           |  -144 |  1.25u |  +0.03 | LEAN    | Q3   |   -1 | Δcount -0.41         | LOSS    |     -1.25u |  -0.2% |
+| 2026-05-27 | MLB   | ML     | Los Angeles Dodgers     |  -420 |  2.75u |  +0.22 | LOCK    | Q4   |   +1 | ΔΣrankNorm +0.12     | WIN     |     +0.65u |  +0.0% |
+| 2026-05-27 | MLB   | ML     | Chicago Cubs            |  +105 |  0.00u |  -0.37 | FADE    | Q1   |   +0 | Δcount -0.78         | TRACKED |      0.00u |  -2.7% |
 
 ## § 7 — Sizing Audit
 
@@ -261,22 +262,22 @@ Does the AGS-U sizing ladder (ELITE 2× → WEAK 0.2×) actually capture more ed
 
 | Tier     | N    | Total Stake | PnL (u)    | ROI %     | PnL / pick | Per-unit Return |
 |----------|------|-------------|------------|-----------|------------|-----------------|
-| ELITE    |   27 |      100.75 |      -4.74 |     -4.7% |      -0.18 |          -0.047 |
-| PREMIUM  |   20 |       56.75 |      -3.77 |     -6.6% |      -0.19 |          -0.066 |
-| LOCK     |   35 |       78.75 |     -13.72 |    -17.4% |      -0.39 |          -0.174 |
-| LEAN     |   52 |       60.80 |     +11.69 |     19.2% |      +0.22 |          +0.192 |
-| WEAK     |   24 |       15.60 |      -3.79 |    -24.3% |      -0.16 |          -0.243 |
-| FADE     |    2 |        1.05 |      +0.17 |     16.2% |      +0.08 |          +0.162 |
+| ELITE    |   31 |      113.75 |     -12.52 |    -11.0% |      -0.40 |          -0.110 |
+| PREMIUM  |   22 |       59.50 |      -6.52 |    -11.0% |      -0.30 |          -0.110 |
+| LOCK     |   38 |       84.80 |     -10.22 |    -12.1% |      -0.27 |          -0.121 |
+| LEAN     |   56 |       64.80 |     +12.34 |     19.0% |      +0.22 |          +0.190 |
+| WEAK     |   26 |       16.60 |      -3.86 |    -23.3% |      -0.15 |          -0.233 |
+| FADE     |    3 |        2.30 |      -1.08 |    -47.0% |      -0.36 |          -0.470 |
 
 > If **Per-unit Return** is materially higher for ELITE than for WEAK/LEAN, the ladder is justified. If they're within ~5%, the ladder is risking more capital for the same return per dollar.
 
 ## § 8 — SHADOW / Hard-Mute Validation
 
-Below-q20 AGS-U values are SHADOWed (never shipped). Live q20 = **-0.150**. We validate the floor by looking at sides that WOULD HAVE GRADED if shipped — if they lose at >50%, the mute is working.
+Below-q20 AGS-U values are SHADOWed (never shipped). Live q20 = **-0.129**. We validate the floor by looking at sides that WOULD HAVE GRADED if shipped — if they lose at >50%, the mute is working.
 
 **Below-q20 SHADOWed picks that would have graded at a flat 1u stake:**
 
-- N: **55** · Win rate: **56.4%** · Flat-1u PnL: **+2.84u** · ROI: **5.2%**
+- N: **58** · Win rate: **56.9%** · Flat-1u PnL: **+3.39u** · ROI: **5.8%**
 - Verdict: 🚨 Mute floor may be too aggressive — SHADOWed picks win at ≥52%.
 
 ## § 9 — Daily Trend (cumulative PnL)
@@ -296,6 +297,7 @@ Below-q20 AGS-U values are SHADOWed (never shipped). Live q20 = **-0.150**. We v
 | 2026-05-24 |   19 | 7-12  |  36.8% |      -9.95 |     -28.09 |     51.2% |   7 | ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ |
 | 2026-05-25 |   19 | 11-8  |  57.9% |      +0.05 |     -28.04 |     52.1% |   3 | ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ |
 | 2026-05-26 |   18 | 12-6  |  66.7% |     +13.88 |     -14.16 |     53.8% |   4 |           ▓▓▓▓▓▓▓▓▓▓ |
+| 2026-05-27 |   16 | 8-8   |  50.0% |      -7.70 |     -21.86 |     53.4% |   6 |     ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ |
 
 > **Live** = picks AGS-U shipped with units > 0 (matches dashboard). **Trk** = same-day FADE picks (0u, back-test only). Daily PnL and Win % cover Live picks only.
 > Bar length is proportional to absolute cumulative PnL. `█` = positive, `▓` = negative.
@@ -305,12 +307,12 @@ Below-q20 AGS-U values are SHADOWed (never shipped). Live q20 = **-0.150**. We v
 | Check                                                          | Count | Verdict                                            |
 |----------------------------------------------------------------|-------|----------------------------------------------------|
 | Graded picks with `tracked=true` AND `finalUnits > 0`         |     1 | 🚨 grader regression — see betTracking.js |
-| Graded picks with `tracked=true` AND `finalUnits == 0`        |    38 | 🟡 informational only — true tracked plays |
-| LOCK+ tier picks with `finalUnits == 0` (sizing regression)   |     5 | 🚨 sizing regression — agsSizeMultiplier returning 0 for strong AGS-U |
-| Live picks (not graded yet) with `finalUnits > 0`             |    10 | 🟢 picks queued for grading |
+| Graded picks with `tracked=true` AND `finalUnits == 0`        |    45 | 🟡 informational only — true tracked plays |
+| LOCK+ tier picks with `finalUnits == 0` (sizing regression)   |     8 | 🚨 sizing regression — agsSizeMultiplier returning 0 for strong AGS-U |
+| Live picks (not graded yet) with `finalUnits > 0`             |     3 | 🟢 picks queued for grading |
 | AGS-U promoted picks missing `v8_ags` value                   |     1 | 🟡 some picks missing AGS-U — cron lag or stale doc |
 | AGS-U promoted picks missing `agsTier`                        |     0 | 🟢 every pick has a tier |
-| Single-wallet shipped picks (`provenWalletCount == 1`)       |    40 | 🟡 informational — AGS-U calibration controls sample adequacy |
+| Single-wallet shipped picks (`provenWalletCount == 1`)       |    41 | 🟡 informational — AGS-U calibration controls sample adequacy |
 
 **Tracked-shipped detail (these are the picks the grader wrongly marked 0u):**
 
@@ -327,37 +329,40 @@ Below-q20 AGS-U values are SHADOWed (never shipped). Live q20 = **-0.150**. We v
 | 2026-05-24_MLB_nym_mia_total        | MLB   | LOCK    |  +0.33 | WIN     |           +0.99u |
 | 2026-05-26_MLB_col_lad_spread       | MLB   | LOCK    |  +0.28 | LOSS    |           -1.00u |
 | 2026-05-26_NBA_sas_okc_spread       | NBA   | PREMIUM |  +0.32 | WIN     |           +0.98u |
+| 2026-05-27_NHL_car_mtl_spread       | NHL   | ELITE   |  +0.59 | LOSS    |           -1.00u |
+| 2026-05-27_MLB_chc_pit_total        | MLB   | LOCK    |  +0.15 | LOSS    |           -1.00u |
+| 2026-05-27_MLB_mia_tor_total        | MLB   | PREMIUM |  +0.46 | WIN     |           +0.89u |
 
 ## § 11 — Calibration Snapshot
 
 Live calibration document used by both the cron and the UI:
 
-- **Computed at:** 2026-05-26T16:34:47.866Z
+- **Computed at:** 2026-05-27T16:28:10.754Z
 - **Schema version:** `ags-unified-v11`
 - **Source:** cron
-- **Sample size:** 592
-- **Date range:** 2026-04-18 → 2026-05-25
+- **Sample size:** 617
+- **Date range:** 2026-04-18 → 2026-05-26
 - **Absolute mute floor:** -1.00 (safety bound below q20)
 
 **AGS-U quintile boundaries (logit-score space):**
 
 | Boundary | Value      | Action                |
 |----------|------------|-----------------------|
-| q20      |    -0.1500 | HARD MUTE floor       |
-| q40      |    -0.0167 | LEAN floor (0.5×)     |
-| q50      |    +0.0693 | 50th pctile           |
-| q60      |    +0.1341 | LOCK floor (1.10×)    |
-| q80      |    +0.3058 | PREMIUM floor (1.50×) |
-| q90      |    +0.4987 | ELITE floor (2.00×)   |
+| q20      |    -0.1287 | HARD MUTE floor       |
+| q40      |    -0.0176 | LEAN floor (0.5×)     |
+| q50      |    +0.0795 | 50th pctile           |
+| q60      |    +0.1252 | LOCK floor (1.10×)    |
+| q80      |    +0.2800 | PREMIUM floor (1.50×) |
+| q90      |    +0.4827 | ELITE floor (2.00×)   |
 
 **Feature normalizers (mean / sd) — z-scoring inputs to the model:**
 
 | Feature           | β        | Mean   | SD     |
 |-------------------|----------|--------|--------|
-| Δcount            |  +0.5371 |   1.15 |   1.48 |
-| ΔHCsizeRatio      |  +0.2787 |   1.36 |   5.54 |
-| ΔΣrankNorm        |  -0.2740 |  62.36 |  90.41 |
-| Δwinners          |  -0.1916 |   0.55 |   1.19 |
+| Δcount            |  +0.5371 |   1.13 |   1.47 |
+| ΔHCsizeRatio      |  +0.2787 |   1.33 |   5.51 |
+| ΔΣrankNorm        |  -0.2740 |  61.72 |  90.62 |
+| Δwinners          |  -0.1916 |   0.61 |   1.20 |
 
 > ✅ Calibration weights match `src/lib/ags.js` — no drift.
 
@@ -367,11 +372,11 @@ The size of the qualifying-wallet pool per sport is the upstream cap on AGS-U si
 
 | sport | wallet records | CONFIRMED | FLAT | WR50 | NULL | qualifying (C+F+WR50) |
 |-------|----------------|-----------|------|------|------|------------------------|
-| MLB   |            107 |        24 |    7 |    4 |   72 |                     35 |
+| MLB   |            107 |        22 |    9 |    3 |   73 |                     34 |
 | NBA   |            191 |        50 |   24 |   23 |   94 |                     97 |
-| NHL   |             93 |        19 |    7 |   11 |   56 |                     37 |
+| NHL   |             94 |        19 |    7 |   13 |   55 |                     39 |
 
-> ⚠ **MLB pool is < 50% of NBA pool** (35 vs 97). MLB AUC will be inherently capped by sample size. To meaningfully improve MLB further: broaden leaderboard ingestion or relax Source B threshold (`exportWalletProfiles.js`).
+> ⚠ **MLB pool is < 50% of NBA pool** (34 vs 97). MLB AUC will be inherently capped by sample size. To meaningfully improve MLB further: broaden leaderboard ingestion or relax Source B threshold (`exportWalletProfiles.js`).
 
 ---
 
