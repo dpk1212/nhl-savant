@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-05-31T23:43:12.526Z",
-  "elapsedSec": 120.4,
+  "scannedAt": "2026-05-31T23:53:15.910Z",
+  "elapsedSec": 129,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 12,
   "summary": {
     "total": 121,
     "coveredByMain": 11,
     "recovered": 4,
-    "recoveredPositions": 26,
+    "recoveredPositions": 28,
     "noPositions": 106,
     "apiError": 0,
     "addressNotFound": 0,
@@ -16,7 +16,7 @@
       "ml": 3,
       "spread": 2,
       "total": 0,
-      "dropped_shadow_gate": 21,
+      "dropped_shadow_gate": 23,
       "dropped_duplicate": 0
     }
   },
@@ -337,11 +337,11 @@
       "sports": "MLB,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
-      "positionsCount": 1,
+      "positionsCount": 2,
       "statsSource": "sports_sharps",
       "avgSportBet": 4366,
       "willPassShadowGate": 1,
-      "willDropAtShadowGate": 0,
+      "willDropAtShadowGate": 1,
       "positions": [
         {
           "sport": "MLB",
@@ -351,6 +351,15 @@
           "invested": 791,
           "entryLine": null,
           "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "kcr_cin",
+          "marketType": "total",
+          "side": "over",
+          "invested": 90,
+          "entryLine": 8.5,
+          "passesShadow": false
         }
       ]
     },
@@ -845,18 +854,18 @@
       "sports": "NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x84cfffc3f16dcc353094de30d4a45226eccd2f63",
-      "positionsCount": 23,
+      "positionsCount": 24,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 13424,
       "willPassShadowGate": 2,
-      "willDropAtShadowGate": 21,
+      "willDropAtShadowGate": 22,
       "positions": [
         {
           "sport": "NBA",
           "gameKey": "nyk_sas",
           "marketType": "spread",
           "side": "away",
-          "invested": 5943,
+          "invested": 6258,
           "entryLine": 4.5,
           "passesShadow": true
         },
@@ -865,7 +874,7 @@
           "gameKey": "nyk_sas",
           "marketType": "ml",
           "side": "home",
-          "invested": 7052,
+          "invested": 7583,
           "entryLine": null,
           "passesShadow": true
         },
@@ -892,7 +901,7 @@
           "gameKey": "nyk_sas",
           "marketType": "spread",
           "side": "home",
-          "invested": 526,
+          "invested": 706,
           "entryLine": -4.5,
           "passesShadow": false
         },
@@ -901,7 +910,7 @@
           "gameKey": "kcr_cin",
           "marketType": "ml",
           "side": "home",
-          "invested": 412,
+          "invested": 423,
           "entryLine": null,
           "passesShadow": false
         },
@@ -937,7 +946,7 @@
           "gameKey": "det_tbr",
           "marketType": "ml",
           "side": "away",
-          "invested": 209,
+          "invested": 216,
           "entryLine": null,
           "passesShadow": false
         },
@@ -951,6 +960,15 @@
           "passesShadow": false
         },
         {
+          "sport": "MLB",
+          "gameKey": "cws_min",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 139,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
           "sport": "NHL",
           "gameKey": "vgk_car",
           "marketType": "ml",
@@ -961,11 +979,11 @@
         },
         {
           "sport": "MLB",
-          "gameKey": "cws_min",
-          "marketType": "ml",
-          "side": "away",
-          "invested": 61,
-          "entryLine": null,
+          "gameKey": "kcr_cin",
+          "marketType": "total",
+          "side": "under",
+          "invested": 98,
+          "entryLine": 8.5,
           "passesShadow": false
         },
         {
@@ -1000,7 +1018,7 @@
           "gameKey": "nyk_sas",
           "marketType": "spread",
           "side": "home",
-          "invested": 27,
+          "invested": 47,
           "entryLine": -1.5,
           "passesShadow": false
         },
