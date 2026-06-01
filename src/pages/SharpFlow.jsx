@@ -6369,7 +6369,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     : sr.label;
   const chipColor  = cardTierMeta ? cardTierMeta.color : sr.color;
   const chipBg     = cardTierMeta ? cardTierMeta.bg    : sr.bg;
-  const chipBorder = cardTierMeta ? `${cardTierMeta.color}55` : (isActionable ? 'rgba(16,185,129,0.2)' : B.goldBorder);
+  const chipBorderCron = cardTierMeta ? `${cardTierMeta.color}55` : null;
   const ut = unitTier(units);
   const potentialWin = isLockedInFirestore ? profitFromOdds(betOdds, units) : 0;
 
@@ -6947,7 +6947,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
             ...T.micro, fontWeight: 800, letterSpacing: '0.04em',
             padding: '0.2rem 0.6rem', borderRadius: '5px',
             color: chipColor, background: chipBg,
-            border: `1px solid ${chipBorder}`,
+            border: `1px solid ${chipBorderCron || (isActionable ? 'rgba(16,185,129,0.2)' : B.goldBorder)}`,
             display: 'flex', alignItems: 'center', gap: '0.2rem',
           }}>
             {Array.from({ length: 5 }, (_, i) => {
