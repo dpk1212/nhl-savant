@@ -12049,7 +12049,16 @@ export default function SharpFlow() {
             })()}
 
             {/* ─── Sharp Positions Section ─── */}
-            {sharpStats.gamesWithPos > 0 && (() => {
+            {/* v12 fix: always render this section. The Locked Picks list
+                (sortBy === 'locked') lives inside it and pulls from Firestore,
+                NOT from live sharpPositions. Gating on gamesWithPos > 0 used
+                to hide the user's entire Locked Picks tab any time the live
+                position scanner came back empty (e.g. between cycles, or
+                when only the picks-creating sports had no live wallets that
+                cycle). The SharpPositionCards div below is already hidden
+                via inline style when sortBy === 'locked', so always-render
+                is safe. */}
+            {(() => {
               const allPosGames = [];
               const nowMs = Date.now();
               for (const sport of ['NHL', 'CBB', 'MLB', 'NBA']) {
@@ -12872,7 +12881,7 @@ export default function SharpFlow() {
               );
             })()}
 
-            {sharpStats.gamesWithPos === 0 && (
+            {sharpStats.gamesWithPos === 0 && sortBy !== 'locked' && sortBy !== 'myPicks' && (
               <div style={{
                 textAlign: 'center', padding: '3rem', borderRadius: '12px',
                 background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
