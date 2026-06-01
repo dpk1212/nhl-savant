@@ -1923,29 +1923,24 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
         const mergeData = { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: isReflip ? 'side_reflipped' : 'peak_updated' };
         if (evIsNewMax) { mergeData.sides[side].maxEV = currentEV; mergeData.sides[side].maxEVAt = Date.now(); }
         mergeData.sides[side].contribTier = decision.contribTier || null;
-        const shouldPromote = sides[side].lockStage === 'SHADOW' && decision.stage === 'LOCKED';
-        if (shouldPromote) {
-          mergeData.sides[side].lockStage = 'LOCKED';
-          mergeData.sides[side].promotedAt = Date.now();
-          mergeData.sides[side].promotedRegime = regime;
-          mergeData.sides[side].promotedBy = decision.promotedBy;
-          if (!mergeData.sides[side].lock) mergeData.sides[side].lock = {};
-          mergeData.sides[side].lock.regime = regime;
-        }
+        // v12 cleanup: lockStage / promotedBy / promotedAt / lock.regime are
+        // OWNED by the syncPickStateAuthoritative cron (which runs the v12
+        // gate every ~8 min). The browser must NOT promote SHADOW→LOCKED
+        // here — v9's decideLockStage doesn't see v12 score, so any UI-side
+        // promotion would re-lock picks that v12 demoted to FADE/SHADOW.
+        // Diagnostic-only stamp so we can see what the legacy v9 path would
+        // have decided.
+        mergeData.sides[side].lockStageV9 = decision.stage;
+        mergeData.sides[side].lockTierV9 = decision.lockTier || null;
         stampWalletConsensus(mergeData.sides[side], v8Scoring, side, sport, stars || 0, decision.promotedBy, pickDate);
         if (isReflip) {
           mergeData.sides[side].superseded = false;
           mergeData.sides[side].supersededAt = null;
           const reflipWPS = v8Scoring?.walletPlayScore ?? null;
           if (reflipWPS != null) mergeData.flipBeatThreshold = reflipWPS;
-          mergeData.sides[side].lockStage = decision.stage;
-          if (decision.stage === 'LOCKED') {
-            mergeData.sides[side].promotedAt = Date.now();
-            mergeData.sides[side].promotedRegime = regime;
-            mergeData.sides[side].promotedBy = decision.promotedBy;
-            if (!mergeData.sides[side].lock) mergeData.sides[side].lock = {};
-            mergeData.sides[side].lock.regime = regime;
-          }
+          // v12 cleanup: do NOT write lockStage/promotedBy on reflip — cron
+          // re-evaluates from frozen walletDetails and stamps authoritatively.
+          // We only clear `superseded` here and mark the other side superseded.
           stampWalletConsensus(mergeData.sides[side], v8Scoring, side, sport, stars || 0, decision.promotedBy, pickDate);
           for (const [otherSide] of Object.entries(sides)) {
             if (otherSide === side) continue;
@@ -1955,18 +1950,15 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
           }
         }
         await setDoc(ref, mergeData, { merge: true });
-        return { docId, action: isReflip ? 'side_reflipped' : shouldPromote ? 'promoted' : 'peak_updated' };
+        return { docId, action: isReflip ? 'side_reflipped' : 'peak_updated' };
       }
 
       {
+        // v12 cleanup: SHADOW→LOCKED promotion is cron-authoritative now.
+        // The browser used to fire a promotion patch here based on v9's
+        // decideLockStage, which clobbered v12 SHADOW decisions. Removed.
         if (sides[side].lockStage === 'SHADOW' && decision.stage === 'LOCKED') {
-          const promotedPatch = { lockStage: 'LOCKED', promotedAt: Date.now(), promotedRegime: regime, promotedBy: decision.promotedBy, contribTier: decision.contribTier || null, lock: { regime } };
-          stampWalletConsensus(promotedPatch, v8Scoring, side, sport, stars || 0, decision.promotedBy, pickDate);
-          await setDoc(ref, {
-            sides: { [side]: promotedPatch },
-            lastWriteAt: Date.now(), lastAction: 'promoted',
-          }, { merge: true });
-          return { docId, action: 'promoted' };
+          // No-op — cron will handle promotion based on v12 score > 0.
         }
       }
 
@@ -2203,28 +2195,19 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
         const mergeObj = { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'peak_updated' };
         if (needsCsPatch) mergeObj.sides[side].lock = { ...sides[side].lock, consensusStrength };
         mergeObj.sides[side].contribTier = decision.contribTier || null;
-        const shouldPromote = sides[side].lockStage === 'SHADOW' && decision.stage === 'LOCKED';
-        if (shouldPromote) {
-          mergeObj.sides[side].lockStage = 'LOCKED';
-          mergeObj.sides[side].promotedAt = Date.now();
-          mergeObj.sides[side].promotedRegime = regime;
-          mergeObj.sides[side].promotedBy = decision.promotedBy;
-          if (!mergeObj.sides[side].lock) mergeObj.sides[side].lock = {};
-          mergeObj.sides[side].lock.regime = regime;
-        }
+        // v12 cleanup: lockStage / promotedBy are cron-authoritative. Browser
+        // must NOT promote SHADOW→LOCKED — v9's decision doesn't see v12.
+        // Diagnostic-only sidecar so we can audit v9 vs v12 divergence.
+        mergeObj.sides[side].lockStageV9 = decision.stage;
+        mergeObj.sides[side].lockTierV9 = decision.lockTier || null;
         stampWalletConsensus(mergeObj.sides[side], v8Scoring, side, sport, stars || 0, decision.promotedBy, pickDate);
         await setDoc(ref, mergeObj, { merge: true });
-        return { docId, action: shouldPromote ? 'promoted' : 'peak_updated' };
+        return { docId, action: 'peak_updated' };
       }
       {
+        // v12 cleanup: SHADOW→LOCKED promotion is cron-authoritative now.
         if (sides[side].lockStage === 'SHADOW' && decision.stage === 'LOCKED') {
-          const promotedPatch = { lockStage: 'LOCKED', promotedAt: Date.now(), promotedRegime: regime, promotedBy: decision.promotedBy, contribTier: decision.contribTier || null, lock: { regime } };
-          stampWalletConsensus(promotedPatch, v8Scoring, side, sport, stars || 0, decision.promotedBy, pickDate);
-          await setDoc(ref, {
-            sides: { [side]: promotedPatch },
-            lastWriteAt: Date.now(), lastAction: 'promoted',
-          }, { merge: true });
-          return { docId, action: 'promoted' };
+          // No-op — cron will handle promotion based on v12 score > 0.
         }
       }
       if (needsCsPatch) {
@@ -2339,28 +2322,18 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
         const mergeObj = { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'peak_updated' };
         if (needsCsPatch) mergeObj.sides[side].lock = { ...sides[side].lock, consensusStrength };
         mergeObj.sides[side].contribTier = decision.contribTier || null;
-        const shouldPromote = sides[side].lockStage === 'SHADOW' && decision.stage === 'LOCKED';
-        if (shouldPromote) {
-          mergeObj.sides[side].lockStage = 'LOCKED';
-          mergeObj.sides[side].promotedAt = Date.now();
-          mergeObj.sides[side].promotedRegime = regime;
-          mergeObj.sides[side].promotedBy = decision.promotedBy;
-          if (!mergeObj.sides[side].lock) mergeObj.sides[side].lock = {};
-          mergeObj.sides[side].lock.regime = regime;
-        }
+        // v12 cleanup: lockStage / promotedBy are cron-authoritative. Browser
+        // must NOT promote SHADOW→LOCKED.
+        mergeObj.sides[side].lockStageV9 = decision.stage;
+        mergeObj.sides[side].lockTierV9 = decision.lockTier || null;
         stampWalletConsensus(mergeObj.sides[side], v8Scoring, side, sport, stars || 0, decision.promotedBy, pickDate);
         await setDoc(ref, mergeObj, { merge: true });
-        return { docId, action: shouldPromote ? 'promoted' : 'peak_updated' };
+        return { docId, action: 'peak_updated' };
       }
       {
+        // v12 cleanup: SHADOW→LOCKED promotion is cron-authoritative now.
         if (sides[side].lockStage === 'SHADOW' && decision.stage === 'LOCKED') {
-          const promotedPatch = { lockStage: 'LOCKED', promotedAt: Date.now(), promotedRegime: regime, promotedBy: decision.promotedBy, contribTier: decision.contribTier || null, lock: { regime } };
-          stampWalletConsensus(promotedPatch, v8Scoring, side, sport, stars || 0, decision.promotedBy, pickDate);
-          await setDoc(ref, {
-            sides: { [side]: promotedPatch },
-            lastWriteAt: Date.now(), lastAction: 'promoted',
-          }, { merge: true });
-          return { docId, action: 'promoted' };
+          // No-op — cron will handle promotion based on v12 score > 0.
         }
       }
       if (needsCsPatch) {
@@ -12285,21 +12258,32 @@ export default function SharpFlow() {
                         const agsProvenTotal = (sd.v8_agsProvenForCount != null && sd.v8_agsProvenAgCount != null)
                           ? sd.v8_agsProvenForCount + sd.v8_agsProvenAgCount
                           : null;
-                        if (!passesV74DisplayGate({
-                          pickDate: doc.date,
-                          dw: sd.v8_walletConsensusDelta,
-                          dq: sd.v8_walletConsensusQualityMargin,
-                          hcMargin: Number.isFinite(sd.v8_hcMargin)
-                            ? sd.v8_hcMargin
-                            : ((sd.v8_hcConfFor || 0) - (sd.v8_hcConfAg || 0)),
-                          dwLock: sd.lock?.v8Scoring?.delta,
-                          dqLock: sd.lock?.v8Scoring?.qualityMargin,
-                          hcMarginLock: sd.lock?.v8Scoring?.hcMargin,
-                          isGraded: sdGraded,
-                          agsValue: Number.isFinite(sd.v8_ags) ? sd.v8_ags : null,
-                          agsProvenTotal,
-                          promotedBy: sd.promotedBy || null,
-                        })) continue;
+                        // v12 cleanup: when the cron has stamped v8_agsV12,
+                        // v12 IS the authoritative gate. lockStage='LOCKED'
+                        // already means v12 score > 0 (cron enforces this).
+                        // The legacy passesV74DisplayGate checks v11 hard-
+                        // mute and v11 proven-wallet count, which are NOT
+                        // valid filters under v12 (e.g. Nationals 2026-06-01
+                        // is v12=0.987/ELITE but v11=-0.29/FADE — v11 gate
+                        // would hide our biggest pick of the day).
+                        const hasV12Stamp = Number.isFinite(sd.v8_agsV12);
+                        if (!hasV12Stamp) {
+                          if (!passesV74DisplayGate({
+                            pickDate: doc.date,
+                            dw: sd.v8_walletConsensusDelta,
+                            dq: sd.v8_walletConsensusQualityMargin,
+                            hcMargin: Number.isFinite(sd.v8_hcMargin)
+                              ? sd.v8_hcMargin
+                              : ((sd.v8_hcConfFor || 0) - (sd.v8_hcConfAg || 0)),
+                            dwLock: sd.lock?.v8Scoring?.delta,
+                            dqLock: sd.lock?.v8Scoring?.qualityMargin,
+                            hcMarginLock: sd.lock?.v8Scoring?.hcMargin,
+                            isGraded: sdGraded,
+                            agsValue: Number.isFinite(sd.v8_ags) ? sd.v8_ags : null,
+                            agsProvenTotal,
+                            promotedBy: sd.promotedBy || null,
+                          })) continue;
+                        }
                         const peak = sd.peak || sd.lock || {};
                         const lock = sd.lock || {};
                         const stars = peak.stars || lock.stars || 0;

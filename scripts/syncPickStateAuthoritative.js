@@ -1430,6 +1430,56 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     }
   }
 
+  // ── v12 peak/lock refresh (stars/units/unitTier/team) ───────────────────
+  // The browser's pre-v12 syncPickToFirebase wrote peak.stars/units/unitTier
+  // from v9's decideLockStage. When v12 disagrees (e.g. Nationals 2026-06-01
+  // is v12=ELITE/5u but v9 was FADE/0u with peak.stars=1), the UI's display
+  // gate / sizing fallbacks can hide or misrender the pick. Mirror cron's
+  // authoritative v12 values into peak/lock every cycle so legacy-created
+  // picks always render at their true v12 size. Skip COMPLETED picks (peak/
+  // lock are frozen-at-grade-time records the dashboard depends on).
+  if (pick.status !== 'COMPLETED' && agsV12Result && passesShipFloor) {
+    const v12Stars = starsFromTierV12(agsV12Result.tier);
+    const v12UnitTier = unitTierLabel(liveUnits);
+    const sideTeam = side === 'away'
+      ? pick.away
+      : side === 'home'
+        ? pick.home
+        : null;
+    const peakTeamCanonical = mkt === 'TOTAL'
+      ? (sd.peak?.team || (side === 'over' ? 'Over' : 'Under'))
+      : (sd.peak?.team || sideTeam || side);
+    const peakStarsDrifted = (sd.peak?.stars ?? 0) !== v12Stars;
+    const peakUnitsDrifted = Math.abs((sd.peak?.units ?? 0) - liveUnits) >= 0.05;
+    const peakTierDrifted = (sd.peak?.unitTier || null) !== v12UnitTier;
+    const peakTeamMissing = sd.peak?.team == null && peakTeamCanonical != null;
+    if (peakStarsDrifted || peakUnitsDrifted || peakTierDrifted || peakTeamMissing) {
+      patch.peak = {
+        ...(patch.peak || {}),
+        stars: v12Stars,
+        units: liveUnits,
+        unitTier: v12UnitTier,
+        team: peakTeamCanonical,
+        updatedAt: now,
+      };
+      changes.push(`v12 peak refresh: stars ${sd.peak?.stars ?? '∅'}→${v12Stars} · units ${sd.peak?.units ?? '∅'}→${liveUnits} · tier ${sd.peak?.unitTier ?? '∅'}→${v12UnitTier}`);
+    }
+    const lockStarsDrifted = (sd.lock?.stars ?? 0) !== v12Stars;
+    const lockUnitsDrifted = Math.abs((sd.lock?.units ?? 0) - liveUnits) >= 0.05;
+    const lockTierDrifted = (sd.lock?.unitTier || null) !== v12UnitTier;
+    const lockTeamMissing = sd.lock?.team == null && peakTeamCanonical != null;
+    if (lockStarsDrifted || lockUnitsDrifted || lockTierDrifted || lockTeamMissing) {
+      patch.lock = {
+        ...(patch.lock || {}),
+        stars: v12Stars,
+        units: liveUnits,
+        unitTier: v12UnitTier,
+        team: peakTeamCanonical,
+      };
+      changes.push(`v12 lock refresh: stars ${sd.lock?.stars ?? '∅'}→${v12Stars} · units ${sd.lock?.units ?? '∅'}→${liveUnits}`);
+    }
+  }
+
   if (stampedConsVer !== WHITELIST_CONSENSUS_VERSION) {
     changes.push(`consVer: ${stampedConsVer ?? '∅'} → ${WHITELIST_CONSENSUS_VERSION}`);
   }
