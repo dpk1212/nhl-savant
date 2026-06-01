@@ -1913,8 +1913,15 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
       // non-muted value and we'd ship muted picks at the old size.
       const peakShouldWrite = isReflip || isMuted || bumpedUnits > currentPeak || stars > currentPeakStars;
       if (peakShouldWrite) {
-        const tier = unitTier(bumpedUnits).label;
-        const peakData = { odds, book, pinnacleOdds, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units: bumpedUnits, unitTier: tier, consensusStrength, stars: stars || 0, updatedAt: Date.now() };
+        // v12 cleanup: peak.units / peak.unitTier / peak.stars are now
+        // cron-authoritative (syncPickStateAuthoritative refreshes them
+        // every cycle from v12). The browser used to compute these via
+        // v9's decideLockStage which OVERRIDES v12 (e.g. Nationals 2026-
+        // 06-01 was v12=ELITE/5u/5★ but v9 was FADE → browser stamped
+        // peak.units=0/stars=1 every position scan, undoing cron's
+        // refresh in seconds). Keep only the descriptive market-side
+        // fields the cron doesn't compute (odds / EV / criteria etc.).
+        const peakData = { odds, book, pinnacleOdds, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, consensusStrength, updatedAt: Date.now() };
         if (opposition) peakData.opposition = opposition;
         if (walletProfile) peakData.walletProfile = walletProfile;
         if (regime) peakData.regime = regime;
@@ -2186,8 +2193,9 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
       const bumpedUnits = isMuted ? 0 : Math.max(units, 0);
       const peakShouldWrite = isMuted || bumpedUnits > currentPeak || stars > currentPeakStars;
       if (peakShouldWrite) {
-        const tier = unitTier(bumpedUnits).label;
-        const peakData = { odds, book, pinnacleOdds, line, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units: bumpedUnits, unitTier: tier, consensusStrength, stars: stars || 0, updatedAt: Date.now() };
+        // v12 cleanup: units / unitTier / stars are cron-authoritative.
+        // See ML branch above for full rationale.
+        const peakData = { odds, book, pinnacleOdds, line, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, consensusStrength, updatedAt: Date.now() };
         if (walletProfile) peakData.walletProfile = walletProfile;
         if (regime) peakData.regime = regime;
         if (qualityProxy != null) peakData.qualityProxy = qualityProxy;
@@ -2195,9 +2203,6 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
         const mergeObj = { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'peak_updated' };
         if (needsCsPatch) mergeObj.sides[side].lock = { ...sides[side].lock, consensusStrength };
         mergeObj.sides[side].contribTier = decision.contribTier || null;
-        // v12 cleanup: lockStage / promotedBy are cron-authoritative. Browser
-        // must NOT promote SHADOW→LOCKED — v9's decision doesn't see v12.
-        // Diagnostic-only sidecar so we can audit v9 vs v12 divergence.
         mergeObj.sides[side].lockStageV9 = decision.stage;
         mergeObj.sides[side].lockTierV9 = decision.lockTier || null;
         stampWalletConsensus(mergeObj.sides[side], v8Scoring, side, sport, stars || 0, decision.promotedBy, pickDate);
@@ -2205,7 +2210,6 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
         return { docId, action: 'peak_updated' };
       }
       {
-        // v12 cleanup: SHADOW→LOCKED promotion is cron-authoritative now.
         if (sides[side].lockStage === 'SHADOW' && decision.stage === 'LOCKED') {
           // No-op — cron will handle promotion based on v12 score > 0.
         }
@@ -2313,8 +2317,9 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
       const bumpedUnits = isMuted ? 0 : Math.max(units, 0);
       const peakShouldWrite = isMuted || bumpedUnits > currentPeak || stars > currentPeakStars;
       if (peakShouldWrite) {
-        const tier = unitTier(bumpedUnits).label;
-        const peakData = { odds, book, pinnacleOdds, line, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units: bumpedUnits, unitTier: tier, consensusStrength, stars: stars || 0, updatedAt: Date.now() };
+        // v12 cleanup: units / unitTier / stars are cron-authoritative.
+        // See ML branch above for full rationale.
+        const peakData = { odds, book, pinnacleOdds, line, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, consensusStrength, updatedAt: Date.now() };
         if (walletProfile) peakData.walletProfile = walletProfile;
         if (regime) peakData.regime = regime;
         if (qualityProxy != null) peakData.qualityProxy = qualityProxy;
@@ -2322,8 +2327,6 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
         const mergeObj = { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'peak_updated' };
         if (needsCsPatch) mergeObj.sides[side].lock = { ...sides[side].lock, consensusStrength };
         mergeObj.sides[side].contribTier = decision.contribTier || null;
-        // v12 cleanup: lockStage / promotedBy are cron-authoritative. Browser
-        // must NOT promote SHADOW→LOCKED.
         mergeObj.sides[side].lockStageV9 = decision.stage;
         mergeObj.sides[side].lockTierV9 = decision.lockTier || null;
         stampWalletConsensus(mergeObj.sides[side], v8Scoring, side, sport, stars || 0, decision.promotedBy, pickDate);
