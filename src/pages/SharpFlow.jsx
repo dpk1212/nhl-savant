@@ -4879,17 +4879,20 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   const isCancelled = healthStatus === 'CANCELLED';
   const healthReasons = health?.reasons || [];
 
-  // AGS-Unified v9 tier flags. Every shipped tier gets its own flag so
+  // AGS-Unified v12 tier flags. Every shipped tier gets its own flag so
   // the hero label + unit chip + accent color tell the user exactly
-  // what stake fraction the AGS-U ladder assigned:
+  // what stake the v12 ladder assigned (cron is authoritative — these
+  // flags read v8_agsTier which is now v12-stamped):
   //
-  //   ELITE   ≥ q90  → 2.00× — gold "ELITE LOCK"
-  //   PREMIUM ≥ q80  → 1.50× — green "PREMIUM LOCK"
-  //   LOCK    ≥ q60  → 1.10× — green "LOCKED BET"
-  //   LEAN    ≥ q40  → 0.50× — blue   "LEAN · ½ STAKE"
-  //   WEAK    ≥ q20  → 0.20× — amber  "WEAK · TRACK"
-  //   FADE    < q20  → 0.00× — hard mute (caught upstream by health
-  //                            engine; renders as MUTED, not here)
+  //   ELITE   > v12 q80  → 5.00u — gold "ELITE LOCK · 5u"
+  //   PREMIUM > v12 q60  → 3.00u — green "PREMIUM LOCK · 3u"
+  //   LOCK    > v12 q40  → 1.00u — green "LOCKED · 1u"
+  //   LEAN    > v12 q20  → 0.50u — blue  "LEAN · 0.5u"
+  //   WEAK    > 0        → 0.25u — amber "WEAK · 0.25u"
+  //   FADE    ≤ 0        → 0.00u — hard mute (no bet; renders as MUTED)
+  //
+  // (Quintile boundaries are computed on positive-only scores — see
+  // src/lib/ags.js::agsV12TierFromValue + AGS_V12_FALLBACK_CALIBRATION.)
   //
   // Historical (v6 / v7) graded picks that WERE shipped at 0u keep the
   // tracked-only treatment via `isTrackedGrade` below — that legacy
@@ -5185,11 +5188,11 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
               // blue here but yellow in the scorecard) which broke the
               // visual grouping the user needs to scan picks fast.
               const tierStakes = {
-                ELITE:   { stake: '2× STAKE',  tipBand: '≥ q90 (top decile)' },
-                PREMIUM: { stake: '1½× STAKE', tipBand: '≥ q80' },
-                LOCK:    { stake: '1× STAKE',  tipBand: '≥ q60 (lock floor)' },
-                LEAN:    { stake: '½ STAKE',   tipBand: 'q40–q60' },
-                WEAK:    { stake: '⅕ STAKE',   tipBand: 'q20–q40 (just above hard mute)' },
+                ELITE:   { stake: '5u',     tipBand: '> v12 q80 (top quintile of positive scores)' },
+                PREMIUM: { stake: '3u',     tipBand: '> v12 q60' },
+                LOCK:    { stake: '1u',     tipBand: '> v12 q40' },
+                LEAN:    { stake: '0.5u',   tipBand: '> v12 q20' },
+                WEAK:    { stake: '0.25u',  tipBand: '> 0 (lowest positive)' },
               };
               const tierMetaPalette = AGS_TIER_META[lockTier];
               const tierStakeMeta = tierStakes[lockTier];
@@ -5473,10 +5476,10 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                   {isCancelled ? 'CANCELLED'
                     : isMuted ? 'WEAKENING'
                     : isTrackedGrade ? `TRACKED · ${isWin ? 'WIN' : isLoss ? 'LOSS' : 'PUSH'} (0u)`
-                    : isElite ? 'ELITE LOCK · 2× STAKE'
-                    : isPremium ? 'PREMIUM LOCK · 1½× STAKE'
-                    : isLean ? 'LEAN · ½ STAKE'
-                    : isWeak ? 'WEAK · ⅕ STAKE'
+                    : isElite ? 'ELITE LOCK · 5u'
+                    : isPremium ? 'PREMIUM LOCK · 3u'
+                    : isLean ? 'LEAN · 0.5u'
+                    : isWeak ? 'WEAK · 0.25u'
                     : isGraded ? (isWin ? 'WINNING BET' : isLoss ? 'LOSING BET' : 'PUSH')
                     : 'LOCKED BET'}
                 </span>
@@ -5856,11 +5859,11 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
           {criteriaList.length > 0 && (() => {
             // Tier-driven banner. Falls back to "PLAY LOCKED" only when
             // no AGS-U tier is available (legacy pre-v9 picks).
-            const tierBanner = isElite     ? { text: 'ELITE LOCK · ★★★★★ TOP DECILE', color: ELITE_GOLD, bg: 'rgba(212,175,55,0.10)', border: 'rgba(212,175,55,0.40)' }
-                             : isPremium   ? { text: 'PREMIUM LOCK · ★★★★ STRONG',   color: B.green,  bg: 'rgba(16,185,129,0.10)',  border: 'rgba(16,185,129,0.35)' }
-                             : isLock      ? { text: 'LOCKED · ★★★ SOLID',           color: B.green,  bg: 'rgba(16,185,129,0.06)',  border: 'rgba(16,185,129,0.25)' }
-                             : isLean      ? { text: 'LEAN · ½ STAKE',               color: LEAN_BLUE, bg: 'rgba(250,204,21,0.08)', border: 'rgba(250,204,21,0.40)' }
-                             : isWeak      ? { text: 'WEAK · ⅕ STAKE',               color: WEAK_AMBER, bg: 'rgba(245,158,11,0.10)', border: 'rgba(245,158,11,0.30)' }
+            const tierBanner = isElite     ? { text: 'ELITE LOCK · 5u · ★★★★★', color: ELITE_GOLD, bg: 'rgba(212,175,55,0.10)', border: 'rgba(212,175,55,0.40)' }
+                             : isPremium   ? { text: 'PREMIUM LOCK · 3u · ★★★★', color: B.green,  bg: 'rgba(16,185,129,0.10)',  border: 'rgba(16,185,129,0.35)' }
+                             : isLock      ? { text: 'LOCKED · 1u · ★★★',         color: B.green,  bg: 'rgba(16,185,129,0.06)',  border: 'rgba(16,185,129,0.25)' }
+                             : isLean      ? { text: 'LEAN · 0.5u',                color: LEAN_BLUE, bg: 'rgba(250,204,21,0.08)', border: 'rgba(250,204,21,0.40)' }
+                             : isWeak      ? { text: 'WEAK · 0.25u',               color: WEAK_AMBER, bg: 'rgba(245,158,11,0.10)', border: 'rgba(245,158,11,0.30)' }
                              : isMuted     ? { text: 'MUTED · HARD STOP',            color: WEAK_AMBER, bg: 'rgba(245,158,11,0.10)', border: 'rgba(245,158,11,0.30)' }
                              : isCancelled ? { text: 'CANCELLED',                    color: B.red,    bg: 'rgba(239,68,68,0.10)',   border: 'rgba(239,68,68,0.30)' }
                              :               { text: `PLAY LOCKED — ${stars >= 4.5 ? '★★★★★ ELITE' : stars >= 3.5 ? '★★★★ STRONG' : '★★★ SOLID'}`,
