@@ -6510,7 +6510,13 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     if (Date.now() >= commenceTime - 15 * 60 * 1000) return;
     if (lastHealthRef.current === mlHealth.status) return;
     lastHealthRef.current = mlHealth.status;
-    syncPickHealth({ docId, collection: 'sharpFlowPicks', side: healthSide, health: mlHealth });
+    // v12 cleanup: health is now cron-authoritative. The browser's
+    // evaluatePickHealth uses v11 ags + v11 hard-mute, which disagrees
+    // with v12 (e.g. Nationals 2026-06-01 v11=-0.29/FADE → ags_hard_mute,
+    // v12=0.987/ELITE → ACTIVE). Without this disable, the browser
+    // re-stamped MUTED+ags_hard_mute every render, making ELITE picks
+    // render as "WEAKENING" with an ags_hard_mute chip.
+    // syncPickHealth({ docId, collection: 'sharpFlowPicks', side: healthSide, health: mlHealth });
   }, [wasEverLocked, mlHealth.status, sr.walletPlayScore, oppSr.walletPlayScore]);
 
   // ─── Spread Position Lock Detection ───────────────────────────────────────
@@ -6686,7 +6692,8 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     if (Date.now() >= commenceTime - 15 * 60 * 1000) return;
     if (lastSpreadHealthRef.current === spreadHealth.status) return;
     lastSpreadHealthRef.current = spreadHealth.status;
-    syncPickHealth({ docId, collection: 'sharpFlowSpreads', side: spreadConsensusSide, health: spreadHealth });
+    // v12 cleanup: health is cron-authoritative. See ML branch above.
+    // syncPickHealth({ docId, collection: 'sharpFlowSpreads', side: spreadConsensusSide, health: spreadHealth });
   }, [spreadWasEverLocked, spreadHealth.status, spreadSr?.walletPlayScore]);
 
   // ─── Total (O/U) Position Lock Detection ───────────────────────────────────
@@ -6866,7 +6873,8 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     if (Date.now() >= commenceTime - 15 * 60 * 1000) return;
     if (lastTotalHealthRef.current === totalHealth.status) return;
     lastTotalHealthRef.current = totalHealth.status;
-    syncPickHealth({ docId, collection: 'sharpFlowTotals', side: totalConsensusSide, health: totalHealth });
+    // v12 cleanup: health is cron-authoritative. See ML branch above.
+    // syncPickHealth({ docId, collection: 'sharpFlowTotals', side: totalConsensusSide, health: totalHealth });
   }, [totalWasEverLocked, totalHealth.status, totalSr?.walletPlayScore]);
 
   const isActionable = sr.isActionable;
