@@ -1217,9 +1217,19 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // Phase 3 — explicit mutedBy / unmutedBy stamps so the dashboard can
   // distinguish AGS quality-veto mutes from the legacy dw/dq health
   // mutes. Cleared when the gate is no longer firing.
+  //
+  // v12 cleanup: ALSO clear any lingering legacy `ags-hard-mute` value
+  // written by the pre-v12 browser client-stamp path (the UI used to
+  // overwrite `mutedBy` from a V11 hard-mute computation, which has been
+  // removed but the stale string can still be sitting on a doc that
+  // hasn't been visited since v12 went live). Without this clear, a pick
+  // that v12 has un-muted to ELITE/5u still gets hidden by the UI's
+  // `mutedBy != null` filter — manifesting as "biggest pick of the day
+  // missing from the Locked Picks list".
+  const LEGACY_UI_MUTE_VALUES = new Set(['ags-quality-veto', 'ags-hard-mute']);
   if (mutedByAgs) {
     patch.mutedBy = 'ags-quality-veto';
-  } else if (sd.mutedBy === 'ags-quality-veto') {
+  } else if (LEGACY_UI_MUTE_VALUES.has(sd.mutedBy)) {
     patch.mutedBy = admin.firestore.FieldValue.delete();
   }
   if (stampedStatus !== appliedStatus) {
