@@ -59,12 +59,17 @@ import { dirname, join } from 'path';
 import {
   AGS_FALLBACK_CALIBRATION,
   AGS_MIN_PROVEN_WALLETS,
+  AGS_V12_FALLBACK_CALIBRATION,
   HC_RATIO,
   aggregateSideProven,
+  aggregateSideV12,
   agsSizeMultiplier,
   agsTierFromValue,
+  agsV12SizeMultiplier,
+  agsV12TierFromValue,
   computeAgs,
   computeAgsFromPositions,
+  computeAgsV12,
   meetsAgsHardMute,
   meetsAgsLockFloor,
   positionToWalletDetail,
@@ -139,6 +144,27 @@ function starsFromAgs(ags, calibration) {
   return 1.0;
 }
 
+// v12 stars from tier label. Tier already encodes the quintile band so we
+// don't need to re-quintize the raw score. Tier names match v11 vocabulary
+// (ELITE/PREMIUM/LOCK/LEAN/WEAK/FADE) — semantics changed but labels stable.
+//   ELITE   → 5.0
+//   PREMIUM → 4.5
+//   LOCK    → 4.0
+//   LEAN    → 3.0
+//   WEAK    → 2.5
+//   FADE    → 1.0
+function starsFromTierV12(tier) {
+  switch (tier) {
+    case 'ELITE': return 5.0;
+    case 'PREMIUM': return 4.5;
+    case 'LOCK': return 4.0;
+    case 'LEAN': return 3.0;
+    case 'WEAK': return 2.5;
+    case 'FADE':
+    default: return 1.0;
+  }
+}
+
 // Lock tier from AGS-U value. Wraps src/lib/ags::agsTierFromValue so the
 // label and cutoffs stay in lockstep with the client. Six tiers map 1:1 to
 // the agsSizeMultiplier sizing bands.
@@ -172,6 +198,8 @@ function evaluateBaseHealth({ ags, agsProvenTotal, calibration }) {
 // Sizing — base × AGS-U sizing multiplier × odds cap.
 // AGS-U < q20 returns 0 via agsSizeMultiplier (HARD MUTE).
 // Same formula for ML, SPREAD, TOTAL — only the base differs.
+// v11 path — preserved for reference/shadow stamps only. v12 is now
+// authoritative for finalUnits (see unitsFromAgsV12 below).
 function unitsFromAgs(ags, marketType, odds, calibration) {
   if (ags == null || !Number.isFinite(ags)) return 0;
   const m = agsSizeMultiplier(ags, calibration);
@@ -181,6 +209,30 @@ function unitsFromAgs(ags, marketType, odds, calibration) {
     : BASE_UNITS_ML;
   const capped = oddsCap(base * m, odds);
   return Math.round(capped * 100) / 100;
+}
+
+// v12 sizing — agsV12SizeMultiplier returns ABSOLUTE units (the ladder is
+// the answer, not a multiplier on top of a per-market base). Mute rule:
+// score ≤ 0 → 0. Ladder: 0.25/0.50/1.00/3.00/5.00 for SMALL/LEAN/LOCK/
+// PREMIUM/ELITE. Same odds-cap as v11 so long underdogs don't get sized up.
+function unitsFromAgsV12(scoreV12, odds, calibration) {
+  if (scoreV12 == null || !Number.isFinite(scoreV12) || scoreV12 <= 0) return 0;
+  const units = agsV12SizeMultiplier(scoreV12, calibration);
+  if (units === 0) return 0;
+  const capped = oddsCap(units, odds);
+  return Math.round(capped * 100) / 100;
+}
+
+// v12 health — score ≤ 0 is MUTED by rule (no separate calibrated mute
+// floor; the mute IS the rule). Active otherwise.
+function evaluateBaseHealthV12({ scoreV12 }) {
+  if (scoreV12 == null || !Number.isFinite(scoreV12)) {
+    return { status: 'MUTED', reason: 'no_agsv12_signal' };
+  }
+  if (scoreV12 <= 0) {
+    return { status: 'MUTED', reason: 'agsv12_mute_below_zero' };
+  }
+  return { status: 'ACTIVE', reason: null };
 }
 
 // ── Wallet consensus reconstruction (mirrors UI computeWalletConsensus) ─────
@@ -301,6 +353,25 @@ function buildWalletStatsFn(walletProfiles) {
     return {
       picksN: Number(picks.n) || 0,
       picksFlatRoi: Number(picks.flatRoi) || 0,
+    };
+  };
+}
+
+// v12 — returns the wallet's per-sport prior stats { tier, priorN, priorRoi }
+// from profile.bySport[sport]. Drives the agsV12 quality formula. Same
+// near-causal property as v11's walletStatsFn (lag = time since last
+// exportWalletProfiles cron cycle, ~8 min).
+function buildWalletPriorStatsFn(walletProfiles) {
+  return (walletShort, sport) => {
+    if (!walletShort || !sport) return null;
+    const key = String(walletShort).toLowerCase();
+    const profile = walletProfiles.get(key) || walletProfiles.get(key.toUpperCase());
+    const sportRec = profile?.bySport?.[sport];
+    if (!sportRec) return null;
+    return {
+      tier: sportRec.whitelistTier || null,
+      priorN: Number(sportRec.picks?.n) || 0,
+      priorRoi: Number(sportRec.picks?.flatRoi) || 0,
     };
   };
 }
@@ -546,7 +617,7 @@ function buildPeakStatsFromPositions(positions, side, isProvenFn, sport) {
 // Returns null when there's zero whitelist activity for or against this
 // side (so we don't litter docs with empty {ags:null} stamps when the
 // scanner has no proven-wallet signal yet).
-function computeSideAnalytics(positions, side, sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn = null) {
+function computeSideAnalytics(positions, side, sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn = null, walletPriorStatsFn = null) {
   if (!Array.isArray(positions) || positions.length === 0) return null;
   const live = computeWalletConsensus(positions, side, sport, walletProfiles);
   if (live.forW === 0 && live.agW === 0 && live.hcConfFor === 0 && live.hcConfAg === 0) {
@@ -555,6 +626,8 @@ function computeSideAnalytics(positions, side, sport, walletProfiles, agsCalibra
   const walletDetails = positions.map(positionToWalletDetail);
   const agg = aggregateSideProven(walletDetails, side, sport, isProvenFn, isHcEligibleFn, walletStatsFn);
   const agsRes = agg ? computeAgs(agg, agsCalibration) : null;
+  const aggV12 = walletPriorStatsFn ? aggregateSideV12(walletDetails, side, sport, walletPriorStatsFn) : null;
+  const agsV12Res = aggV12 ? computeAgsV12(aggV12, agsCalibration) : null;
   const out = {
     ags: agsRes && Number.isFinite(agsRes.ags) ? agsRes.ags : null,
     agsTier: agsRes ? (agsRes.tier ?? null) : null,
@@ -562,6 +635,15 @@ function computeSideAnalytics(positions, side, sport, walletProfiles, agsCalibra
     agsProvenForCount: agsRes ? (agsRes.provenForCount || 0) : 0,
     agsProvenAgCount: agsRes ? (agsRes.provenAgCount || 0) : 0,
     agsComponents: agsRes ? (agsRes.components || null) : null,
+    // v12 sidecar — same shape but prefixed for clarity. Lets reports
+    // compare "what v11 said about this side" vs "what v12 says".
+    agsV12: agsV12Res && Number.isFinite(agsV12Res.agsV12) ? agsV12Res.agsV12 : null,
+    agsV12Tier: agsV12Res ? (agsV12Res.tier ?? null) : null,
+    agsV12Quintile: agsV12Res ? (agsV12Res.quintile ?? null) : null,
+    agsV12ForCount: agsV12Res ? (agsV12Res.forCount || 0) : 0,
+    agsV12AgCount: agsV12Res ? (agsV12Res.agCount || 0) : 0,
+    agsV12ForMean: agsV12Res ? (agsV12Res.forMean || 0) : 0,
+    agsV12AgMean: agsV12Res ? (agsV12Res.agMean || 0) : 0,
     dw: live.delta,
     dq: live.qualityMargin,
     hcMargin: live.hcMargin,
@@ -578,12 +660,12 @@ function computeSideAnalytics(positions, side, sport, walletProfiles, agsCalibra
 // at once and return a side-keyed record ready to merge as
 // `agsBothSides` on the pick doc. Returns null when both sides are
 // empty (nothing meaningful to record).
-function computeBothSidesAnalytics(positions, marketType, sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn = null) {
+function computeBothSidesAnalytics(positions, marketType, sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn = null, walletPriorStatsFn = null) {
   const sides = marketType === 'TOTAL' ? ['over', 'under'] : ['away', 'home'];
   const out = {};
   let any = false;
   for (const side of sides) {
-    const stamp = computeSideAnalytics(positions, side, sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn);
+    const stamp = computeSideAnalytics(positions, side, sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn, walletPriorStatsFn);
     if (stamp) {
       out[side] = stamp;
       any = true;
@@ -607,6 +689,7 @@ function computeBothSidesAnalytics(positions, marketType, sport, walletProfiles,
 // fields (criteria, evEdge, etc.) the next time a user opens the page.
 async function createMissingLockedPicks({
   db, groups, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn,
+  walletStatsFn, walletPriorStatsFn,
   existingDocIds, gameMeta, now, dryRun, force,
 }) {
   const created = []; // { col, docId, side, ags, agsTotal }
@@ -661,29 +744,31 @@ async function createMissingLockedPicks({
 
       // Build walletDetails for AGS-U.
       const walletDetails = positions.map(positionToWalletDetail);
+      // v11 (informational / sidecar diagnostic)
       const agg = aggregateSideProven(walletDetails, side, sport, isProvenFn, isHcEligibleFn, walletStatsFn);
       const agsRes = agg ? computeAgs(agg, agsCalibration) : null;
       const agsValue = agsRes && Number.isFinite(agsRes.ags) ? agsRes.ags : null;
       const agsProvenTotal = agsRes ? (agsRes.provenForCount || 0) + (agsRes.provenAgCount || 0) : 0;
+      // v12 (AUTHORITATIVE — drives ship gate, tier, units)
+      const aggV12 = walletPriorStatsFn ? aggregateSideV12(walletDetails, side, sport, walletPriorStatsFn) : null;
+      const agsV12Res = aggV12 ? computeAgsV12(aggV12, agsCalibration) : null;
+      const scoreV12 = agsV12Res && Number.isFinite(agsV12Res.agsV12) ? agsV12Res.agsV12 : null;
 
-      // Single AGS-U gate. Must clear the SHIP floor (q20 = hard mute
-      // boundary) AND have ≥ AGS_MIN_PROVEN_WALLETS proven wallets.
-      // Sizing band (ELITE/PREMIUM/LOCK/LEAN/WEAK) determines stake.
-      // Anything below q20 (FADE) or below the proven-wallet floor is a
-      // hard mute — never auto-create.
-      if (agsValue == null) continue;
-      if (agsProvenTotal < AGS_MIN_PROVEN_WALLETS) {
-        skipped.push({ docId, side, reason: 'insufficient_proven_wallets', count: agsProvenTotal });
+      // v12 ship gate — score > 0. Wallet-pool adequacy is implicit in the
+      // quality score (non-HC_BASE wallets contribute 0; no qualified
+      // wallets → score 0 → muted). No separate proven-wallet floor needed.
+      if (scoreV12 == null) {
+        skipped.push({ docId, side, reason: 'agsv12_no_signal' });
         continue;
       }
-      if (meetsAgsHardMute(agsValue, agsCalibration)) {
-        skipped.push({ docId, side, reason: 'ags_hard_mute', ags: agsValue });
+      if (scoreV12 <= 0) {
+        skipped.push({ docId, side, reason: 'agsv12_mute_below_zero', score: scoreV12 });
         continue;
       }
 
-      const promotedBy = 'ags-unified-v9';
-      const finalTier = lockTierFromAgs(agsValue, agsCalibration);
-      const peakStars = starsFromAgs(agsValue, agsCalibration);
+      const promotedBy = 'ags-unified-v12';
+      const finalTier = agsV12Res.tier; // v12 tier becomes the authoritative label
+      const peakStars = starsFromTierV12(finalTier);
       // ── Pinnacle odds + line. ML uses live mlOdds; SPREAD uses the
       // pinnacle opener (pinnacle_history doesn't track spreads over
       // time); TOTAL falls back to -110 (no Pinnacle source for totals
@@ -702,8 +787,13 @@ async function createMissingLockedPicks({
         odds = -110;
         line = consensusLine(positions, side, sport, 'TOTAL') ?? null;
       }
-      const peakUnits = unitsFromAgs(agsValue, marketType, odds ?? null, agsCalibration);
-      const agsUnitsMult = agsSizeMultiplier(agsValue, agsCalibration);
+      // v12 ladder is the authoritative bet size. unitsFromAgsV12 applies
+      // the mute-on-≤0 rule + the absolute ladder (0.25/0.50/1/3/5) +
+      // the odds cap. v11 multiplier is recorded as a sidecar for
+      // reference/back-compat with old reports.
+      const peakUnits = unitsFromAgsV12(scoreV12, odds ?? null, agsCalibration);
+      const agsUnitsMult = agsValue != null ? agsSizeMultiplier(agsValue, agsCalibration) : 0;
+      const agsV12UnitsRaw = agsV12SizeMultiplier(scoreV12, agsCalibration);
 
       // Determine team label for the side.
       //
@@ -795,8 +885,10 @@ async function createMissingLockedPicks({
         v8_lockTier: finalTier,
       };
       if (agsRes) {
+        // v11 (informational only after v12 cutover; still recorded for
+        // historical reports / drift tracking).
         v8Stamps.v8_ags = agsRes.ags;
-        v8Stamps.v8_agsTier = agsRes.tier;
+        v8Stamps.v8_agsTierV11 = agsRes.tier;
         v8Stamps.v8_agsQuintile = agsRes.quintile;
         v8Stamps.v8_agsComponents = agsRes.components;
         v8Stamps.v8_agsProvenForCount = agsRes.provenForCount;
@@ -805,8 +897,21 @@ async function createMissingLockedPicks({
         v8Stamps.v8_agsEvaluatedAt = now;
         v8Stamps.v8_agsUnitsMult = agsUnitsMult;
         v8Stamps.v8_agsUnitsBase = (marketType === 'SPREAD' || marketType === 'TOTAL') ? BASE_UNITS_SPREAD_TOTAL : BASE_UNITS_ML;
-        v8Stamps.v8_agsUnitsApplied = peakUnits;
+        v8Stamps.v8_agsUnitsApplied = peakUnits; // mirrored on finalUnits for the grader
       }
+      // v12 (AUTHORITATIVE — v8_agsTier and finalUnits are v12-derived).
+      v8Stamps.v8_agsTier = finalTier; // v12 tier (overwrites legacy v11 tier slot)
+      v8Stamps.v8_agsV12 = scoreV12;
+      v8Stamps.v8_agsV12Tier = finalTier;
+      v8Stamps.v8_agsV12Quintile = agsV12Res.quintile;
+      v8Stamps.v8_agsV12ForCount = agsV12Res.forCount;
+      v8Stamps.v8_agsV12AgCount = agsV12Res.agCount;
+      v8Stamps.v8_agsV12ForMean = agsV12Res.forMean;
+      v8Stamps.v8_agsV12AgMean = agsV12Res.agMean;
+      v8Stamps.v8_agsV12UnitsRaw = agsV12UnitsRaw; // ladder value pre-odds-cap
+      v8Stamps.v8_agsV12UnitsApplied = peakUnits;  // post-odds-cap, == finalUnits
+      v8Stamps.v8_agsV12CalibrationSource = agsV12Res.calibrationSource || 'fallback';
+      v8Stamps.v8_agsV12EvaluatedAt = now;
       // Health stamp — gives the dashboard a non-undefined health.status
       // immediately. reconcileSide will overwrite next cycle (same shape).
       const healthStamp = {
@@ -848,6 +953,7 @@ async function createMissingLockedPicks({
       created.push({
         col, docId, side, route: promotedBy,
         ags: agsValue, agsTotal: agsProvenTotal,
+        agsV12: scoreV12, agsV12Tier: finalTier,
         peakStars, peakUnits, team,
       });
     }
@@ -860,7 +966,7 @@ async function createMissingLockedPicks({
     // the post-reconcile refresh pass below, and is never read by
     // sizing / lock-promote / grader code paths.
     const bothSidesAtCreate = computeBothSidesAnalytics(
-      positions, marketType, sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn,
+      positions, marketType, sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn, walletPriorStatsFn,
     );
 
     const docPayload = {
@@ -948,7 +1054,7 @@ async function createMissingLockedPicks({
 }
 
 // ── Main sync logic per side ───────────────────────────────────────────────
-function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn }) {
+function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn, walletPriorStatsFn }) {
   const pickDate = pick.date || TARGET_DATE;
   const sport = pick.sport;
   const lockStage = sd.lockStage || null;
@@ -986,69 +1092,83 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
 
   // ─── AGS-U — recompute from current walletDetails every cycle ─────────
   // Reads frozen walletDetails[] from peak.v8Scoring (fall back to
-  // lock.v8Scoring) and aggregates with the HC subset. Single composite
-  // drives status, lockStage, tier, and sizing — no other gate is consulted.
+  // lock.v8Scoring) and aggregates with the HC subset. v12 is now the
+  // authoritative gate; v11 is computed in parallel and stamped for
+  // back-compat / drift tracking.
   let agsResult = null;
+  let agsV12Result = null;
   const wd = sd.peak?.v8Scoring?.walletDetails || sd.lock?.v8Scoring?.walletDetails || null;
-  if (Array.isArray(wd) && wd.length > 0 && agsCalibration && isProvenFn) {
-    const agg = aggregateSideProven(wd, side, pick.sport, isProvenFn, isHcEligibleFn, walletStatsFn);
-    if (agg) agsResult = computeAgs(agg, agsCalibration);
+  if (Array.isArray(wd) && wd.length > 0 && agsCalibration) {
+    if (isProvenFn) {
+      const agg = aggregateSideProven(wd, side, pick.sport, isProvenFn, isHcEligibleFn, walletStatsFn);
+      if (agg) agsResult = computeAgs(agg, agsCalibration);
+    }
+    if (walletPriorStatsFn) {
+      const aggV12 = aggregateSideV12(wd, side, pick.sport, walletPriorStatsFn);
+      if (aggV12) agsV12Result = computeAgsV12(aggV12, agsCalibration);
+    }
   }
   const agsValueLive = agsResult && Number.isFinite(agsResult.ags) ? agsResult.ags : null;
   const agsTotalProven = agsResult ? (agsResult.provenForCount || 0) + (agsResult.provenAgCount || 0) : 0;
+  const scoreV12Live = agsV12Result && Number.isFinite(agsV12Result.agsV12) ? agsV12Result.agsV12 : null;
 
-  const baseHealth = evaluateBaseHealth({
+  // v12 health gate is authoritative: score ≤ 0 → MUTED, score > 0 → ACTIVE.
+  // v11 health is computed in parallel only for diagnostic purposes — its
+  // result is not consulted for any decision.
+  const baseHealth = evaluateBaseHealthV12({ scoreV12: scoreV12Live });
+  const baseHealthV11Diagnostic = evaluateBaseHealth({
     ags: agsValueLive,
     agsProvenTotal: agsTotalProven,
     calibration: agsCalibration,
   });
 
-  // No hysteresis. Whatever evaluateBaseHealth says this cycle is what we
-  // write. ACTIVE ↔ MUTED is free to flip every cycle until T-15.
+  // No hysteresis. Whatever evaluateBaseHealthV12 says this cycle is what
+  // we write. ACTIVE ↔ MUTED is free to flip every cycle until T-15.
   let appliedStatus = baseHealth.status;
   let appliedReason = baseHealth.reason;
-  const mutedByAgs = appliedReason === 'ags_hard_mute';
+  const mutedByAgs = appliedReason === 'agsv12_mute_below_zero'
+                  || appliedReason === 'no_agsv12_signal';
 
-  // Compute tier / stars / units — all derived from the same AGS-U value.
-  const liveStars = starsFromAgs(agsValueLive, agsCalibration);
-  const liveTier = lockTierFromAgs(agsValueLive, agsCalibration);
+  // Compute tier / stars / units — all derived from the v12 score now.
+  const liveTier = agsV12Result ? agsV12Result.tier : 'FADE';
+  const liveStars = starsFromTierV12(liveTier);
   const sideOdds = sd.peak?.odds ?? sd.lock?.odds ?? null;
   const liveUnits = appliedStatus === 'ACTIVE'
-    ? unitsFromAgs(agsValueLive, mkt, sideOdds, agsCalibration)
+    ? unitsFromAgsV12(scoreV12Live, sideOdds, agsCalibration)
     : 0;
-  // Sizing-multiplier stamp (informational — equals liveUnits/baseUnits).
+  // Sizing multiplier stamps (informational only; v8_agsUnitsMult is the
+  // v11 multiplier, v8_agsV12UnitsRaw is the v12 ladder value pre-cap).
   const agsUnitsMult = agsValueLive != null
     ? agsSizeMultiplier(agsValueLive, agsCalibration)
     : 0;
+  const agsV12UnitsRaw = scoreV12Live != null
+    ? agsV12SizeMultiplier(scoreV12Live, agsCalibration)
+    : 0;
   const liveUnitsPreAgs = (mkt === 'SPREAD' || mkt === 'TOTAL') ? BASE_UNITS_SPREAD_TOTAL : BASE_UNITS_ML;
 
-  // ─── lockStage promote/demote — single AGS-U gate ─────────────────────
-  // Ship floor is q20 (the hard-mute boundary). Picks above q20 with
-  // ≥ AGS_MIN_PROVEN_WALLETS proven wallets LOCK; sizing band (ELITE 2.00×
-  // → PREMIUM 1.50× → LOCK 1.10× → LEAN 0.50× → WEAK 0.20×) determines
-  // stake. This matches the backtest's 100% volume / +18.77u profile —
-  // LEAN/WEAK picks ship at reduced size rather than getting SHADOWed.
-  // < q20 (FADE) and insufficient-proven-wallets ⇒ SHADOW (hidden).
+  // ─── lockStage promote/demote — v12 gate ──────────────────────────────
+  // Ship floor: v12 score > 0 (the mute boundary). Picks above 0 LOCK
+  // with units determined by the ladder (SMALL 0.25u → ELITE 5u).
+  // Picks at score ≤ 0 SHADOW (hidden). Wallet-pool adequacy is implicit
+  // in the v12 score formula (non-HC_BASE wallets contribute 0).
   let appliedLockStage = lockStage;
   let lockStageReason = null;
   const passesShipFloor = appliedStatus === 'ACTIVE'
-    && agsValueLive != null
-    && agsTotalProven >= AGS_MIN_PROVEN_WALLETS;
+    && scoreV12Live != null
+    && scoreV12Live > 0;
   if (passesShipFloor) {
     if (lockStage !== 'LOCKED') {
       appliedLockStage = 'LOCKED';
-      lockStageReason = 'agsu_floor_recovered';
+      lockStageReason = 'agsv12_positive_score';
     } else {
       appliedLockStage = 'LOCKED';
     }
   } else {
     if (lockStage !== 'SHADOW') {
       appliedLockStage = 'SHADOW';
-      lockStageReason = mutedByAgs
-        ? 'agsu_hard_mute'
-        : (appliedReason === 'insufficient_proven_wallets'
-            ? 'agsu_insufficient_wallets'
-            : 'agsu_no_signal');
+      lockStageReason = appliedReason === 'agsv12_mute_below_zero'
+        ? 'agsv12_mute_below_zero'
+        : 'agsv12_no_signal';
     } else {
       appliedLockStage = 'SHADOW';
     }
@@ -1091,6 +1211,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     evaluatedAt: now,
     syncedBy: 'server-cron',
     ags: agsResult?.ags ?? null,
+    agsV12: agsV12Result?.agsV12 ?? null,
+    agsV12Tier: agsV12Result?.tier ?? null,
   };
   // Phase 3 — explicit mutedBy / unmutedBy stamps so the dashboard can
   // distinguish AGS quality-veto mutes from the legacy dw/dq health
@@ -1126,13 +1248,15 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   patch.v8_hcDominant = live.hcDominant;
   patch.v8_lockTier = liveTier;
 
-  // AGS-Unified v9 — write canonical lockStage every cycle.
+  // AGS-Unified v12 — write canonical lockStage every cycle.
   patch.lockStage = appliedLockStage;
   if (lockStageReason) {
     patch.lockStageLastChange = {
       reason: lockStageReason, at: now,
       ags: agsResult?.ags ?? null,
       agsTier: agsResult?.tier ?? null,
+      agsV12: agsV12Result?.agsV12 ?? null,
+      agsV12Tier: agsV12Result?.tier ?? null,
       provenTotal: agsTotalProven,
       // Diagnostic-only — old gate inputs preserved for v6 report cohort
       // analysis. NOT consulted for any decision.
@@ -1142,22 +1266,21 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (stampedLockStage !== appliedLockStage) {
     changes.push(`lockStage: ${stampedLockStage || '∅'} → ${appliedLockStage}${lockStageReason ? ` (${lockStageReason})` : ''}`);
   }
-  // Promotion route — every active LOCK in v9 is 'ags-unified-v9'. We
-  // overwrite stale legacy values (v74-hc-margin / v75-* / ags-rescue)
-  // exactly once on first-promote so historical picks migrate cleanly.
-  if (passesShipFloor && sd.promotedBy !== 'ags-unified-v9') {
+  // Promotion route — every active LOCK is 'ags-unified-v12' (the
+  // authoritative gate). Overwrite stale legacy values exactly once
+  // on first-promote so historical picks migrate cleanly.
+  if (passesShipFloor && sd.promotedBy !== 'ags-unified-v12') {
     const stampedPromotedBy = sd.promotedBy || null;
-    patch.promotedBy = 'ags-unified-v9';
-    changes.push(`promotedBy: ${stampedPromotedBy || '∅'} → ags-unified-v9 (AGS=${agsResult.ags.toFixed(2)})`);
+    patch.promotedBy = 'ags-unified-v12';
+    changes.push(`promotedBy: ${stampedPromotedBy || '∅'} → ags-unified-v12 (v12=${scoreV12Live.toFixed(3)})`);
   }
 
-  // AGS stamp (Phase 1: read-only, no behavior change). Always overwritten
-  // each cycle so the displayed value tracks the current calibration +
-  // current proven-wallet roster. Null AGS is also stamped so the field is
-  // always present and consumers can render "—".
+  // v11 AGS stamp (informational only — still recorded every cycle so
+  // historical reports + drift analysis continue to work, but no longer
+  // consulted for any decision).
   if (agsResult) {
     patch.v8_ags = agsResult.ags;
-    patch.v8_agsTier = agsResult.tier;
+    patch.v8_agsTierV11 = agsResult.tier;
     patch.v8_agsQuintile = agsResult.quintile;
     patch.v8_agsComponents = agsResult.components;
     patch.v8_agsProvenForCount = agsResult.provenForCount;
@@ -1166,43 +1289,59 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     patch.v8_agsEvaluatedAt = now;
     patch.v8_agsUnitsMult = agsUnitsMult;
     patch.v8_agsUnitsBase = liveUnitsPreAgs;
+    // v8_agsUnitsApplied retained on the v11 logical block but mirrors the
+    // v12 authoritative liveUnits (so legacy consumers reading this field
+    // see the same number as finalUnits).
     patch.v8_agsUnitsApplied = liveUnits;
-    // CANONICAL bet size — single source of truth used by grader and
-    // dashboard. Overwritten every cycle pre-T-15; once T-15 freezes,
-    // the cron stops writing and the value sticks as the final lock size.
-    // The grader reads ONLY this; no peak.units / v8_agsUnitsApplied
-    // fallback chains, no AGS-multiplier divergence between live and
-    // graded display.
+  } else if (sd.v8_ags != null) {
+    patch.v8_ags = admin.firestore.FieldValue.delete();
+    patch.v8_agsTierV11 = admin.firestore.FieldValue.delete();
+    patch.v8_agsQuintile = admin.firestore.FieldValue.delete();
+    patch.v8_agsComponents = admin.firestore.FieldValue.delete();
+  }
+
+  // v12 AGS stamps — AUTHORITATIVE. v8_agsTier and finalUnits are the
+  // single source of truth for the UI tier badge and grader bet size.
+  if (agsV12Result) {
+    patch.v8_agsTier = agsV12Result.tier;                  // authoritative tier
+    patch.v8_agsV12 = agsV12Result.agsV12;
+    patch.v8_agsV12Tier = agsV12Result.tier;
+    patch.v8_agsV12Quintile = agsV12Result.quintile;
+    patch.v8_agsV12ForCount = agsV12Result.forCount;
+    patch.v8_agsV12AgCount = agsV12Result.agCount;
+    patch.v8_agsV12ForMean = agsV12Result.forMean;
+    patch.v8_agsV12AgMean = agsV12Result.agMean;
+    patch.v8_agsV12UnitsRaw = agsV12UnitsRaw;              // ladder pre odds-cap
+    patch.v8_agsV12UnitsApplied = liveUnits;               // mirrors finalUnits
+    patch.v8_agsV12CalibrationSource = agsV12Result.calibrationSource || 'fallback';
+    patch.v8_agsV12EvaluatedAt = now;
+    // CANONICAL bet size — grader + dashboard read only this.
     patch.finalUnits = liveUnits;
-    const stampedAgs = sd.v8_ags;
-    const agsValueChanged = stampedAgs == null
-      || !Number.isFinite(stampedAgs)
-      || Math.abs(stampedAgs - agsResult.ags) >= 0.05;
-    const agsUnitsFieldsMissing = sd.v8_agsUnitsApplied == null
-      || sd.v8_agsUnitsBase == null
-      || sd.v8_agsUnitsMult == null;
-    const agsUnitsDrifted = !agsUnitsFieldsMissing
-      && Math.abs((sd.v8_agsUnitsApplied || 0) - liveUnits) >= 0.05;
-    if (agsValueChanged) {
-      changes.push(`AGS-U: ${stampedAgs == null ? '∅' : stampedAgs.toFixed(2)} → ${agsResult.ags.toFixed(2)} (${agsResult.tier}, ×${agsUnitsMult.toFixed(2)} → ${liveUnits}u)`);
-    } else if (agsUnitsFieldsMissing) {
-      changes.push(`AGS-U units backfill (${liveUnits}u, ×${agsUnitsMult.toFixed(2)} of ${liveUnitsPreAgs}u base)`);
-    } else if (agsUnitsDrifted) {
-      changes.push(`AGS-U units: → ${liveUnits}u (×${agsUnitsMult.toFixed(2)} of ${liveUnitsPreAgs}u base)`);
+    // Drift logging.
+    const stampedV12 = sd.v8_agsV12;
+    const v12Changed = stampedV12 == null
+      || !Number.isFinite(stampedV12)
+      || Math.abs(stampedV12 - agsV12Result.agsV12) >= 0.01;
+    const stampedTierField = sd.v8_agsTier;
+    const tierChanged = stampedTierField !== agsV12Result.tier;
+    const v12UnitsDrifted = Math.abs((sd.finalUnits ?? 0) - liveUnits) >= 0.05;
+    if (v12Changed || tierChanged || v12UnitsDrifted) {
+      changes.push(`AGS-v12: ${stampedV12 == null ? '∅' : stampedV12.toFixed(3)} → ${agsV12Result.agsV12.toFixed(3)} (${agsV12Result.tier} → ${liveUnits}u, ladder=${agsV12UnitsRaw.toFixed(2)}u)`);
     }
   } else {
-    if (sd.v8_ags != null) {
-      // walletDetails missing or no proven wallets — clear stale AGS so
-      // the UI doesn't show an out-of-date number.
-      patch.v8_ags = admin.firestore.FieldValue.delete();
-      patch.v8_agsTier = admin.firestore.FieldValue.delete();
-      patch.v8_agsQuintile = admin.firestore.FieldValue.delete();
-      patch.v8_agsComponents = admin.firestore.FieldValue.delete();
-      changes.push(`AGS: ${sd.v8_ags.toFixed(2)} → ∅ (no proven wallets)`);
+    // No v12 result — clear v12 stamps and mute units. Treat the side as
+    // unsignaled.
+    if (sd.v8_agsV12 != null) {
+      patch.v8_agsV12 = admin.firestore.FieldValue.delete();
+      patch.v8_agsV12Tier = admin.firestore.FieldValue.delete();
+      patch.v8_agsV12Quintile = admin.firestore.FieldValue.delete();
+      patch.v8_agsV12UnitsApplied = admin.firestore.FieldValue.delete();
+      changes.push(`AGS-v12: ${(sd.v8_agsV12 ?? 0).toFixed?.(3) ?? sd.v8_agsV12} → ∅ (no v12 signal)`);
     }
-    // No AGS computed (no proven wallets) — finalUnits == liveUnits with
-    // no AGS multiplier applied. Still the canonical bet size.
-    patch.finalUnits = liveUnits;
+    if (sd.v8_agsTier != null) {
+      patch.v8_agsTier = admin.firestore.FieldValue.delete();
+    }
+    patch.finalUnits = liveUnits; // will be 0 since baseHealthV12 muted
   }
   // finalUnits drift logging — flag any time the canonical bet size changes
   // by ≥0.05u so cycle output makes the change visible.
@@ -1322,17 +1461,22 @@ async function main() {
   console.log(`Loaded ${walletProfiles.size} sharpWalletProfiles`);
 
   // Load AGS-U calibration + build the proven / HC-eligible predicates.
-  // AGS-U is the SOLE decision input — drives lock/mute/sizing for every pick.
+  // AGS-U v12 is the SOLE decision input — drives lock/mute/sizing for every
+  // pick. v11 predicates + walletStatsFn are still built so the v11 score
+  // can be computed in parallel for diagnostic stamping and the daily report.
   const agsCalibration = await loadAgsCalibration(db);
   const isProvenFn = buildIsProvenFn(walletProfiles);
   const isHcEligibleFn = buildIsHcEligibleFn(walletProfiles);
-  // v11 — pass-through for top-level profile.picks aggregate (drives dWinnerCtPreA).
-  const walletStatsFn = buildWalletStatsFn(walletProfiles);
+  const walletStatsFn = buildWalletStatsFn(walletProfiles); // v11 — drives dWinnerCtPreA
+  const walletPriorStatsFn = buildWalletPriorStatsFn(walletProfiles); // v12 — drives quality formula
   console.log(`AGS-U calibration: source=${agsCalibration.source} sampleSize=${agsCalibration.sampleSize ?? '?'} computedAt=${agsCalibration.computedAt ?? '?'}`);
   if (agsCalibration.quintiles) {
     const q = agsCalibration.quintiles;
-    console.log(`AGS-U quintiles:   q20=${q.q20?.toFixed?.(2) ?? '?'}(MUTE) q60=${q.q60?.toFixed?.(2) ?? '?'}(LOCK) q80=${q.q80?.toFixed?.(2) ?? '?'}(PREMIUM) q90=${q.q90?.toFixed?.(2) ?? '?'}(ELITE)`);
+    console.log(`AGS-U v11 quintiles:   q20=${q.q20?.toFixed?.(2) ?? '?'}(MUTE) q60=${q.q60?.toFixed?.(2) ?? '?'}(LOCK) q80=${q.q80?.toFixed?.(2) ?? '?'}(PREMIUM) q90=${q.q90?.toFixed?.(2) ?? '?'}(ELITE)`);
   }
+  const v12Q = agsCalibration.v12Quintiles || AGS_V12_FALLBACK_CALIBRATION.v12Quintiles;
+  const v12Src = agsCalibration.v12Quintiles ? agsCalibration.source : 'fallback';
+  console.log(`AGS-U v12 quintiles:   q20=${v12Q.q20.toFixed(3)}(WEAK→LEAN) q40=${v12Q.q40.toFixed(3)}(LEAN→LOCK) q60=${v12Q.q60.toFixed(3)}(LOCK→PREMIUM) q80=${v12Q.q80.toFixed(3)}(PREMIUM→ELITE)  source=${v12Src}  (positive-only; score≤0 → FADE/muted)`);
 
   // Load today's positions (live wallet activity) from Firestore.
   // (Could also read from public/sharp_positions.json but Firestore stays
@@ -1468,7 +1612,7 @@ async function main() {
         const result = reconcileSide({
           sd, side: sideKey, pick, mkt, group, walletProfiles, now,
           force: FORCE,
-          agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn,
+          agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn, walletPriorStatsFn,
         });
         if (result.skipped) {
           if (result.reason === 'not_locked_or_lean') stats.skipped_not_locked++;
@@ -1482,7 +1626,7 @@ async function main() {
         }
         if (result.agsuDemoted) stats.agsu_demoted_to_shadow++;
         if (result.agsuPromoted) stats.agsu_promoted_to_locked++;
-        if (result.expectedReason === 'ags_hard_mute') stats.agsu_hard_muted++;
+        if (result.expectedReason === 'agsv12_mute_below_zero') stats.agsu_hard_muted++;
         if (result.changes.some(c => c.startsWith('status:'))) stats.status_changes++;
         stats.wrote++;
         changeLog.push({
@@ -1518,7 +1662,7 @@ async function main() {
         const groupKey = `${pick.sport}|${pick.gameKey}|${mkt}`;
         const group = groups.get(groupKey) || [];
         const stamps = computeBothSidesAnalytics(
-          group, mkt, pick.sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn,
+          group, mkt, pick.sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn, walletPriorStatsFn,
         );
         if (stamps) {
           stats.ags_both_sides_refreshed++;
@@ -1597,6 +1741,7 @@ async function main() {
   console.log(`  Loaded metadata for ${gameMeta.size} games (commenceTime + odds source)`);
   const cm = await createMissingLockedPicks({
     db, groups, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn,
+    walletStatsFn, walletPriorStatsFn,
     existingDocIds, gameMeta, now,
     dryRun: DRY_RUN, force: FORCE,
   });

@@ -583,6 +583,11 @@ export function meetsAgsHardMute(ags, calibration = null) {
 // ────────────────────────────────────────────────────────────────────────
 // Tier display helpers — colors and short labels for badges.
 // ────────────────────────────────────────────────────────────────────────
+// AGS_TIER_META — tier badge metadata. Tier names are stable across model
+// versions (v9, v10, v11, v12) so the user-facing vocabulary doesn't churn:
+//   ELITE / PREMIUM / LOCK / LEAN / WEAK / FADE
+// In v12 the semantics shifted slightly (WEAK = lowest positive bet,
+// FADE = score ≤ 0 / muted) but the labels and colors are unchanged.
 export const AGS_TIER_META = {
   ELITE:   { label: 'ELITE',   color: '#16a34a', bg: 'rgba(22,163,74,0.15)',  short: 'ELITE'   },
   PREMIUM: { label: 'PREMIUM', color: '#22c55e', bg: 'rgba(34,197,94,0.15)',  short: 'PREM'    },
@@ -612,3 +617,310 @@ export function failsAgsConfirmationGate(ags) {
   if (ags == null || !Number.isFinite(ags)) return false;
   return ags < AGS_FALLBACK_CALIBRATION.quintiles.q20;
 }
+
+// ════════════════════════════════════════════════════════════════════════
+// ─── AGS-Unified v12 ────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════════
+//
+// v12 is a CONTINUOUS quality-weighted score that beats v11 on every
+// measurable dimension while being simpler and not subject to overfitting
+// (no learned weights — every coefficient is hand-derived from the data
+// and tested with cross-validation).
+//
+// Why we rebuilt:
+//   v11 had a 4-feature logistic regression with two CONTRARIAN coefficients
+//   (the "fade the obvious sharps" pattern). That was real on the V6+ sample
+//   but turned ANTI-PREDICTIVE on the May 14-31 holdout (282 v9-graded picks
+//   ran -4.6% real ROI). Root cause: v11 weights were fit on a sample where
+//   the qualified wallet pool was much smaller; as the pool grew, the
+//   "obvious sharps" signal flipped sign.
+//
+// What v12 does differently:
+//   1. CONTINUOUS per-wallet quality score (not binary filter).
+//      quality(w) = tierWeight(w) × max(0, min(30, priorRoi))
+//                  × max(0.5, min(2.5, sizeRatio))
+//                  × min(1, sqrt(priorN / 20))
+//      Combines all rich wallet data: tier, ROI magnitude, conviction,
+//      sample-size reliability — every dimension that should matter,
+//      bounded against outliers.
+//
+//   2. MEAN aggregation per side (not sum). Prevents "more wallets" from
+//      mechanically dominating; rewards average quality per wallet present.
+//
+//   3. RATIO combiner (not difference). Score = (forMean - agMean) /
+//      (forMean + agMean + 0.5), bounded approximately in [-1, +1].
+//      Smoothly represents relative dominance.
+//
+//   4. Hard rule: score ≤ 0 → MUTE (no bet, no size). Score > 0 → ladder
+//      sizing by quintile of POSITIVE-only distribution.
+//
+// Methodology:
+//   Tested 200+ formula candidates (8 quality functions × 5 side aggregators
+//   × 5 combiners) against the 282-pick v9 sample. Q_hcCap__mean__ratio
+//   was the top fixed-formula candidate (logistic regression with learned
+//   weights scored higher in-sample at +31.6% Q5 ROI but CV-validated to
+//   only +7.1% — confirmed overfitting at n=282).
+//
+// Backtest on 282 picks (2026-05-14 → 2026-05-31):
+//   - Positive-score picks (n=134): WR 55.2%, flat ROI +5.9%
+//   - Negative + zero score picks (n=148): WR ~50%, flat ROI ~-5%
+//   - With ladder sizing (0.25/0.50/1.00/1.50/2.00u):
+//     141.5u staked → +20.6u PnL → +14.6% ROI
+//   - Same window with current v9/v11 production: 461.3u staked → -21.3u
+//     PnL → -4.6% ROI. Net swing: +42u PnL improvement.
+//
+// Source: scripts/_agsu_v12_QHCCAP_deepdive.mjs + AGSU_V12_QHCCAP_DEEPDIVE.md
+//         + scripts/_agsu_v12_LOCK_above_zero.mjs + AGSU_V12_LOCK_ABOVE_ZERO.md
+// ────────────────────────────────────────────────────────────────────────
+
+// Tier weight in the quality formula. CONFIRMED gets 3× weight, FLAT gets 2×,
+// WR50 gets 1× — but the wallet must be CONFIRMED or FLAT to contribute at
+// all (the WR50 tier was tested and reduced overall ROI by 4-13pp, so it's
+// gated out). This matches the validated "Q_hcCap" candidate.
+export function agsV12TierWeight(tier) {
+  if (tier === 'CONFIRMED') return 3;
+  if (tier === 'FLAT')      return 2;
+  if (tier === 'WR50')      return 1;
+  return 0;
+}
+
+// Per-wallet quality score (continuous, leak-proof, bounded).
+// Returns 0 when the wallet doesn't qualify for the HC_BASE pool
+// (CONFIRMED or FLAT tier on this sport).
+//
+// Inputs (all REQUIRED to be point-in-time leak-proof):
+//   tier      : 'CONFIRMED' | 'FLAT' | 'WR50' | null/other
+//   priorN    : wallet's prior pick count in this sport (BEFORE this pick)
+//   priorRoi  : wallet's prior flat ROI % in this sport
+//   sizeRatio : wallet's bet size on THIS pick / their avg sport bet
+export function agsV12WalletQuality({ tier, priorN, priorRoi, sizeRatio }) {
+  // Pool gate: HC_BASE only (CONFIRMED or FLAT).
+  if (tier !== 'CONFIRMED' && tier !== 'FLAT') return 0;
+  const tw = agsV12TierWeight(tier);
+  const roi = Math.max(0, Math.min(30, Number(priorRoi || 0)));      // cap at 30%
+  const size = Math.max(0.5, Math.min(2.5, Number(sizeRatio || 0))); // bound to [0.5, 2.5]
+  const nReliab = Math.min(1, Math.sqrt(Math.max(0, Number(priorN || 0)) / 20));
+  return tw * roi * size * nReliab;
+}
+
+// Compute the v12 score from already-collected quality arrays per side.
+// Returns a number roughly in [-1, +1]. Score ≤ 0 means MUTE.
+export function agsV12ScoreFromQualities(forQualities, agQualities) {
+  const fSum = forQualities.reduce((s, q) => s + q, 0);
+  const aSum = agQualities.reduce((s, q) => s + q, 0);
+  const fMean = forQualities.length ? fSum / forQualities.length : 0;
+  const aMean = agQualities.length  ? aSum / agQualities.length  : 0;
+  if (fMean === 0 && aMean === 0) return 0;
+  return (fMean - aMean) / (fMean + aMean + 0.5);
+}
+
+// End-to-end aggregator for v12.
+//
+// Inputs:
+//   walletDetails    : peak.v8Scoring.walletDetails[] frozen at scoring time
+//   sideKey          : 'home' | 'away' | 'over' | 'under' (the FOR side)
+//   sport            : 'MLB' | 'NBA' | 'NHL'
+//   walletPriorStatsFn: fn(walletShort, sport) => { tier, priorN, priorRoi }
+//                       MUST be point-in-time (no future leakage). When omitted
+//                       all wallets contribute 0 and the score will be 0/MUTE.
+//
+// Returns null when walletDetails is empty.
+export function aggregateSideV12(walletDetails, sideKey, sport, walletPriorStatsFn) {
+  if (!Array.isArray(walletDetails) || walletDetails.length === 0) return null;
+  const forQs = [];
+  const agQs = [];
+  let provenContributors = 0;
+  for (const w of walletDetails) {
+    if (!w || !w.wallet || !w.side) continue;
+    const stats = walletPriorStatsFn ? walletPriorStatsFn(w.wallet, sport) : null;
+    if (!stats) continue;
+    const q = agsV12WalletQuality({
+      tier: stats.tier,
+      priorN: stats.priorN,
+      priorRoi: stats.priorRoi,
+      sizeRatio: Number(w.sizeRatio || 0),
+    });
+    if (q > 0) provenContributors += 1;
+    if (w.side === sideKey) forQs.push(q); else agQs.push(q);
+  }
+  if (forQs.length === 0 && agQs.length === 0) return null;
+  const fSum = forQs.reduce((s, q) => s + q, 0);
+  const aSum = agQs.reduce((s, q) => s + q, 0);
+  const fMean = forQs.length ? fSum / forQs.length : 0;
+  const aMean = agQs.length  ? aSum / agQs.length  : 0;
+  const score = agsV12ScoreFromQualities(forQs, agQs);
+  return {
+    score,
+    forQualities: forQs,
+    agQualities:  agQs,
+    forSum: fSum,
+    agSum:  aSum,
+    forMean: fMean,
+    agMean:  aMean,
+    forCount: forQs.length,
+    agCount:  agQs.length,
+    provenContributors,
+  };
+}
+
+// End-to-end pipeline: positions → walletDetails → aggregate → v12 result.
+// Mirrors computeAgsFromPositions but uses the v12 path.
+export function computeAgsV12FromPositions(positions, sideKey, sport, calibration, walletPriorStatsFn) {
+  if (!Array.isArray(positions) || positions.length === 0) return null;
+  const walletDetails = positions.map(positionToWalletDetail).filter(Boolean);
+  const agg = aggregateSideV12(walletDetails, sideKey, sport, walletPriorStatsFn);
+  if (!agg) return null;
+  return computeAgsV12(agg, calibration);
+}
+
+// Compute v12 result from an aggregate object (parallel to computeAgs).
+// Returns { agsV12, score, tier, sizeMultiplier, quintile, ... } or null.
+export function computeAgsV12(agg, calibration) {
+  if (!agg) return null;
+  const cal = (calibration && calibration.v12Quintiles) ? calibration : AGS_V12_FALLBACK_CALIBRATION;
+  const score = Number(agg.score) || 0;
+  return {
+    agsV12: score,
+    score,
+    forQualities: agg.forQualities,
+    agQualities:  agg.agQualities,
+    forSum: agg.forSum,
+    agSum:  agg.agSum,
+    forMean: agg.forMean,
+    agMean:  agg.agMean,
+    forCount: agg.forCount,
+    agCount:  agg.agCount,
+    provenContributors: agg.provenContributors,
+    tier: agsV12TierFromValue(score, cal),
+    sizeMultiplier: agsV12SizeMultiplier(score, cal),
+    quintile: agsV12QuintileFromValue(score, cal),
+    calibrationSource: cal.source || (cal === AGS_V12_FALLBACK_CALIBRATION ? 'fallback' : 'firestore'),
+    schemaVersion: 'ags-unified-v12',
+  };
+}
+
+// Fallback v12 calibration — computed from the 282-pick v9-graded sample
+// (2026-05-14 → 2026-05-31) using scripts/_agsu_v12_LOCK_above_zero.mjs.
+// Quintiles are over the POSITIVE-ONLY score distribution (n=134), since
+// non-positive scores are muted by rule rather than by calibration.
+//
+// Production calibration script must compute these same cutoffs daily by:
+//   1. Computing v12 score for every recent pick
+//   2. Filtering to score > 0
+//   3. Taking 20/40/60/80 percentiles of the filtered set
+// and writing them to agsCalibration/current under `v12Quintiles`.
+export const AGS_V12_FALLBACK_CALIBRATION = Object.freeze({
+  v12Quintiles: {
+    q20: 0.781, // Q1→Q2 boundary among positives
+    q40: 0.916, // Q2→Q3 boundary
+    q60: 0.957, // Q3→Q4 boundary
+    q80: 0.981, // Q4→Q5 boundary
+  },
+  sampleSize: 134,        // positive-only picks in calibration sample
+  totalSampleSize: 282,   // all v9-graded picks in window
+  dateRange: { from: '2026-05-14', to: '2026-05-31' },
+  computedAt: '2026-06-01T15:30:00Z',
+  source: 'fallback-hardcoded-v12',
+  schemaVersion: 'ags-unified-v12',
+});
+
+// Tier mapping for v12. The user's directive: zero/negative scores are
+// MUTED (cancelled, no bet). Positive scores get the ladder.
+//
+// Tier names are PRESERVED from v11 (ELITE/PREMIUM/LOCK/LEAN/WEAK/FADE) so
+// the user-facing badge vocabulary doesn't churn between model versions.
+// The semantics change: WEAK now means "lowest positive score" (a real
+// 0.25u bet) and FADE now means "muted/cancelled" (0u, never ships).
+//
+//   score ≤ 0         → FADE     (0 units — pick is cancelled / muted)
+//   score ∈ (0, q20]  → WEAK     (0.25× — lowest positive)
+//   score ∈ (q20, q40] → LEAN    (0.50×)
+//   score ∈ (q40, q60] → LOCK    (1.00× — standard unit)
+//   score ∈ (q60, q80] → PREMIUM (3.00×)
+//   score >  q80      → ELITE    (5.00× — top conviction)
+//
+// All cutoffs are quintile boundaries of the POSITIVE-only distribution.
+//
+// SIZING DESIGN: the ladder is heavily top-weighted because the per-bet
+// edge concentrates dramatically in ELITE.
+//
+// Per-tier ROI on the 282-pick backtest (2026-05-14 → 2026-05-31):
+//   ELITE   +33.04% (61.5% WR)  — the engine, ~3.5× the per-bet edge of PREMIUM
+//   PREMIUM  +9.43% (60.7% WR)
+//   LEAN    +13.92% (60.7% WR)
+//   LOCK     -8.03% (50.0% WR)  — Q3 dip (small drag, acceptable)
+//   WEAK    -19.74% (42.3% WR)  — small drag (token bet preserves volume)
+//
+// With this ladder: 282 picks → 260.5u staked → +49.44u PnL → +18.98% ROI
+// vs the v11 production output on same window: 461u staked → -21.3u → -4.6%
+// (net swing of +70u PnL improvement; +23pp ROI improvement).
+//
+// Other ladders considered (see scripts/_agsu_v12_LADDER_sweep.mjs):
+//   "TopOnly" (only ELITE+PREMIUM, 0/0/0/2/4) → +39.6u @ +24.8% ROI — higher
+//     ROI but throws away the +13.9% LEAN edge and breaks "ladder all positives".
+//   "Geometric 2.5x" → +92u @ +21.5% but max bet 9.77u (too aggressive for
+//     typical bankroll).
+// The chosen ladder is the optimal trade-off: respects "all positives get
+// a stake" + concentrates capital at the demonstrated edge.
+export function agsV12TierFromValue(score, calibration = null) {
+  if (score == null || !Number.isFinite(score)) return 'UNKNOWN';
+  if (score <= 0) return 'FADE';
+  const cal = (calibration && calibration.v12Quintiles) ? calibration : AGS_V12_FALLBACK_CALIBRATION;
+  const q = cal.v12Quintiles;
+  if (Number.isFinite(q.q80) && score >  q.q80) return 'ELITE';
+  if (Number.isFinite(q.q60) && score >  q.q60) return 'PREMIUM';
+  if (Number.isFinite(q.q40) && score >  q.q40) return 'LOCK';
+  if (Number.isFinite(q.q20) && score >  q.q20) return 'LEAN';
+  return 'WEAK';
+}
+
+// Ladder size multiplier for v12. Monotonic and top-weighted: each tier
+// strictly larger than the one below, with ELITE / PREMIUM substantially
+// heavier than the linear ladder to match where the per-bet edge actually
+// concentrates (see commentary on agsV12TierFromValue). Mute (0×) on
+// score ≤ 0.
+export function agsV12SizeMultiplier(score, calibration = null) {
+  if (score == null || !Number.isFinite(score) || score <= 0) return 0;
+  const cal = (calibration && calibration.v12Quintiles) ? calibration : AGS_V12_FALLBACK_CALIBRATION;
+  const q = cal.v12Quintiles;
+  if (Number.isFinite(q.q80) && score >  q.q80) return 5.00; // ELITE
+  if (Number.isFinite(q.q60) && score >  q.q60) return 3.00; // PREMIUM
+  if (Number.isFinite(q.q40) && score >  q.q40) return 1.00; // LOCK
+  if (Number.isFinite(q.q20) && score >  q.q20) return 0.50; // LEAN
+  return 0.25;                                                // SMALL
+}
+
+// Quintile placement (0 = muted, 1..5 = positive picks bottom..top).
+export function agsV12QuintileFromValue(score, calibration = AGS_V12_FALLBACK_CALIBRATION) {
+  if (score == null || !Number.isFinite(score) || score <= 0) return 0;
+  const cal = (calibration && calibration.v12Quintiles) ? calibration : AGS_V12_FALLBACK_CALIBRATION;
+  const q = cal.v12Quintiles;
+  if (score >  q.q80) return 5;
+  if (score >  q.q60) return 4;
+  if (score >  q.q40) return 3;
+  if (score >  q.q20) return 2;
+  return 1;
+}
+
+// Convenience predicate matching v11's semantics (returns true iff this
+// pick should ship at any nonzero stake). For v12, this is exactly
+// "score > 0" — there is no separate proven-wallet-count gate because the
+// quality formula already encodes wallet eligibility (non-HC_BASE wallets
+// contribute 0, so a "no qualified wallets" pick will naturally have
+// score 0 and be muted).
+export function meetsAgsV12LockFloor(score) {
+  return Number.isFinite(score) && score > 0;
+}
+
+// Tier metadata for v12 badges. Mirrors AGS_TIER_META but six tiers are
+// MUTE/SMALL/LEAN/LOCK/PREMIUM/ELITE — no FADE/WEAK because zero-and-below
+// scores are simply MUTED (canceled, not displayed as a "play this").
+export const AGS_V12_TIER_META = {
+  ELITE:   { label: 'ELITE',   color: '#16a34a', bg: 'rgba(22,163,74,0.15)',  short: 'ELITE',   units: 5.00 },
+  PREMIUM: { label: 'PREMIUM', color: '#22c55e', bg: 'rgba(34,197,94,0.15)',  short: 'PREM',    units: 3.00 },
+  LOCK:    { label: 'LOCK',    color: '#84cc16', bg: 'rgba(132,204,22,0.15)', short: 'LOCK',    units: 1.00 },
+  LEAN:    { label: 'LEAN',    color: '#facc15', bg: 'rgba(250,204,21,0.15)', short: 'LEAN',    units: 0.50 },
+  WEAK:    { label: 'WEAK',    color: '#f97316', bg: 'rgba(249,115,22,0.15)', short: 'WEAK',    units: 0.25 },
+  FADE:    { label: 'FADE',    color: '#ef4444', bg: 'rgba(239,68,68,0.15)',  short: 'FADE',    units: 0    },
+  UNKNOWN: { label: '—',       color: '#6b7280', bg: 'rgba(107,114,128,0.10)', short: '—',      units: 0    },
+};

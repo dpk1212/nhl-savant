@@ -37,6 +37,8 @@ import {
   AGS_WEIGHTS,
   AGS_ABSOLUTE_MUTE_FLOOR,
   aggregateSideProven,
+  aggregateSideV12,
+  agsV12ScoreFromQualities,
 } from '../src/lib/ags.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -72,16 +74,26 @@ const DRY_RUN = process.env.DRY_RUN === '1';
 // block) so the dWinnerCtPreA feature can resolve at calibration time.
 async function loadWalletData() {
   const tiers = new Map();          // walletShort → { sport → tier }
-  const walletPicksAgg = new Map(); // walletShort → { n, flatRoi }
+  const walletPicksAgg = new Map(); // walletShort → { picksN, picksFlatRoi } (top-level any-sport)
+  // v12: per-sport prior stats { tier, priorN, priorRoi }. Built from
+  // profile.bySport[sport].picks (n + flatRoi) and bySport[sport].whitelistTier.
+  const walletPriorBySport = new Map(); // walletShort → { sport → { tier, priorN, priorRoi } }
   const snap = await db.collection('sharpWalletProfiles').get();
   for (const d of snap.docs) {
     const p = d.data();
     if (!p?.bySport) continue;
-    const map = {};
+    const tierMap = {};
+    const priorMap = {};
     for (const [sport, rec] of Object.entries(p.bySport)) {
-      if (rec?.whitelistTier) map[sport] = rec.whitelistTier;
+      if (rec?.whitelistTier) tierMap[sport] = rec.whitelistTier;
+      priorMap[sport] = {
+        tier: rec?.whitelistTier || null,
+        priorN: Number(rec?.picks?.n) || 0,
+        priorRoi: Number(rec?.picks?.flatRoi) || 0,
+      };
     }
-    tiers.set(d.id, map);
+    tiers.set(d.id, tierMap);
+    walletPriorBySport.set(d.id, priorMap);
     if (p.picks) {
       walletPicksAgg.set(d.id, {
         picksN: Number(p.picks.n) || 0,
@@ -89,7 +101,7 @@ async function loadWalletData() {
       });
     }
   }
-  return { tiers, walletPicksAgg };
+  return { tiers, walletPicksAgg, walletPriorBySport };
 }
 
 function buildIsProvenFn(tiers) {
@@ -116,6 +128,20 @@ function buildWalletStatsFn(walletPicksAgg) {
   return (walletShort) => walletPicksAgg.get(walletShort) || null;
 }
 
+// v12 — wallet's per-sport prior stats { tier, priorN, priorRoi } at scoring
+// time. Drives the agsV12 quality formula. Uses profile.bySport[sport].picks
+// (n + flatRoi) which is refreshed every cron cycle by exportWalletProfiles.
+// Near-causal in production; for calibration we use the current profile
+// snapshot (slight forward bias, same simplification as v11 calibration —
+// the distribution shape we need for quintile cuts is preserved).
+function buildWalletPriorStatsFn(walletPriorBySport) {
+  return (walletShort, sport) => {
+    if (!walletShort || !sport) return null;
+    const m = walletPriorBySport.get(walletShort);
+    return m ? (m[sport] || null) : null;
+  };
+}
+
 // ── Sample loader ──────────────────────────────────────────────────────────
 // V6 cutover universe with full feature stack (walletDetails + outcome).
 // Includes BOTH SHIPPED and SHADOW picks — the AGS-U calibration must reflect
@@ -123,10 +149,11 @@ function buildWalletStatsFn(walletPicksAgg) {
 // (now-retired) matrix happened to publish. Verified empirically: SHADOW
 // picks are 55% WR vs SHIPPED 50% WR (the matrix was over-filtering winners
 // out of the calibration), so excluding them biased q-thresholds upward.
-async function loadHistoricalAggregates(isProvenFn, isHcEligibleFn, walletStatsFn) {
-  const aggs = [];
+async function loadHistoricalAggregates(isProvenFn, isHcEligibleFn, walletStatsFn, walletPriorStatsFn) {
+  const aggs = [];     // v11 aggregates
+  const v12Scores = []; // v12 raw scores (one per pick)
   let dateMin = null, dateMax = null;
-  let counts = { graded: 0, withDetails: 0, kept: 0 };
+  let counts = { graded: 0, withDetails: 0, kept: 0, v12Kept: 0 };
 
   for (const [col] of PICK_COLS) {
     const snap = await db.collection(col).where('date', '>=', V6_CUTOVER).get();
@@ -145,19 +172,27 @@ async function loadHistoricalAggregates(isProvenFn, isHcEligibleFn, walletStatsF
         if (!Array.isArray(wd) || wd.length === 0) continue;
         counts.withDetails += 1;
 
+        // v11 aggregate (used for v11 normalizers + quintiles)
         const agg = aggregateSideProven(wd, sideKey, sport, isProvenFn, isHcEligibleFn, walletStatsFn);
-        if (!agg || (agg.forCount + agg.agCount) === 0) continue;
-        counts.kept += 1;
-
-        if (date) {
-          if (!dateMin || date < dateMin) dateMin = date;
-          if (!dateMax || date > dateMax) dateMax = date;
+        if (agg && (agg.forCount + agg.agCount) > 0) {
+          if (date) {
+            if (!dateMin || date < dateMin) dateMin = date;
+            if (!dateMax || date > dateMax) dateMax = date;
+          }
+          aggs.push(agg);
+          counts.kept += 1;
         }
-        aggs.push(agg);
+
+        // v12 score (used for v12 positive-only quintiles)
+        const aggV12 = aggregateSideV12(wd, sideKey, sport, walletPriorStatsFn);
+        if (aggV12 && Number.isFinite(aggV12.score)) {
+          v12Scores.push(aggV12.score);
+          counts.v12Kept += 1;
+        }
       }
     }
   }
-  return { aggs, dateMin, dateMax, counts };
+  return { aggs, v12Scores, dateMin, dateMax, counts };
 }
 
 // ── Stats helpers ──────────────────────────────────────────────────────────
@@ -181,16 +216,17 @@ async function main() {
   const startedAt = Date.now();
   console.log(`[ags-calibration] starting${DRY_RUN ? ' (DRY_RUN)' : ''}`);
 
-  console.log('[ags-calibration] loading wallet tiers + top-level picks aggregate…');
-  const { tiers, walletPicksAgg } = await loadWalletData();
+  console.log('[ags-calibration] loading wallet tiers + per-sport priors + top-level picks aggregate…');
+  const { tiers, walletPicksAgg, walletPriorBySport } = await loadWalletData();
   const isProvenFn = buildIsProvenFn(tiers);
   const isHcEligibleFn = buildIsHcEligibleFn(tiers);
   const walletStatsFn = buildWalletStatsFn(walletPicksAgg);
-  console.log(`[ags-calibration]   tier map: ${tiers.size} wallets · profile.picks: ${walletPicksAgg.size} wallets`);
+  const walletPriorStatsFn = buildWalletPriorStatsFn(walletPriorBySport);
+  console.log(`[ags-calibration]   tier map: ${tiers.size} wallets · profile.picks: ${walletPicksAgg.size} wallets · per-sport priors: ${walletPriorBySport.size} wallets`);
 
   console.log('[ags-calibration] loading historical sample (V6 cutover, full universe, graded)…');
-  const { aggs, dateMin, dateMax, counts } = await loadHistoricalAggregates(isProvenFn, isHcEligibleFn, walletStatsFn);
-  console.log(`[ags-calibration]   counts: graded=${counts.graded}  withDetails=${counts.withDetails}  kept=${counts.kept}`);
+  const { aggs, v12Scores, dateMin, dateMax, counts } = await loadHistoricalAggregates(isProvenFn, isHcEligibleFn, walletStatsFn, walletPriorStatsFn);
+  console.log(`[ags-calibration]   counts: graded=${counts.graded}  withDetails=${counts.withDetails}  v11-kept=${counts.kept}  v12-kept=${counts.v12Kept}`);
   console.log(`[ags-calibration]   date range: ${dateMin} → ${dateMax}`);
 
   if (aggs.length < 30) {
@@ -234,7 +270,27 @@ async function main() {
     q80: quantile(agsValues, 0.80),
     q90: quantile(agsValues, 0.90),
   };
-  console.log(`[ags-calibration]   quintiles:  q20=${quintiles.q20.toFixed(2)} (HARD MUTE floor)  q40=${quintiles.q40.toFixed(2)} (LEAN 0.50×)  q60=${quintiles.q60.toFixed(2)} (LOCK 1.10×)  q80=${quintiles.q80.toFixed(2)} (PREMIUM 1.50×)  q90=${quintiles.q90.toFixed(2)} (ELITE 2.00×)`);
+  console.log(`[ags-calibration]   v11 quintiles:  q20=${quintiles.q20.toFixed(2)} (HARD MUTE floor)  q40=${quintiles.q40.toFixed(2)} (LEAN 0.50×)  q60=${quintiles.q60.toFixed(2)} (LOCK 1.10×)  q80=${quintiles.q80.toFixed(2)} (PREMIUM 1.50×)  q90=${quintiles.q90.toFixed(2)} (ELITE 2.00×)`);
+
+  // 2b. v12 quintile boundaries — computed on the POSITIVE-only score
+  //     distribution (zero/negative scores are muted by rule, not by
+  //     calibration, so they don't belong in the quintile cuts).
+  const v12Positive = v12Scores.filter(s => s > 0).sort((a, b) => a - b);
+  const v12Neg = v12Scores.filter(s => s < 0).length;
+  const v12Zero = v12Scores.filter(s => s === 0).length;
+  let v12Quintiles = null;
+  if (v12Positive.length >= 25) { // need a real distribution; below 25 we hold the fallback
+    v12Quintiles = {
+      q20: quantile(v12Positive, 0.20),
+      q40: quantile(v12Positive, 0.40),
+      q60: quantile(v12Positive, 0.60),
+      q80: quantile(v12Positive, 0.80),
+    };
+    console.log(`[ags-calibration]   v12 quintiles (positives-only n=${v12Positive.length}):  q20=${v12Quintiles.q20.toFixed(3)} (WEAK→LEAN)  q40=${v12Quintiles.q40.toFixed(3)} (LEAN→LOCK)  q60=${v12Quintiles.q60.toFixed(3)} (LOCK→PREMIUM)  q80=${v12Quintiles.q80.toFixed(3)} (PREMIUM→ELITE)`);
+    console.log(`[ags-calibration]   v12 score-sign distribution: neg=${v12Neg}  zero=${v12Zero}  positive=${v12Positive.length}  total=${v12Scores.length}`);
+  } else {
+    console.warn(`[ags-calibration]   v12 positive sample too small (n=${v12Positive.length}) — omitting v12Quintiles from doc; fallback in src/lib/ags.js will be used.`);
+  }
 
   // 3. Build the v9 calibration doc. The four threshold values are the
   //    bands that drive every action — there is no separate gate logic.
@@ -257,9 +313,24 @@ async function main() {
     computedAt: new Date().toISOString(),
     durationMs: Date.now() - startedAt,
     source: 'cron',
-    schemaVersion: 'ags-unified-v11',
-    weights: { ...AGS_WEIGHTS }, // record the model weights that produced these quintiles
+    schemaVersion: 'ags-unified-v12', // v12 is now authoritative for sizing
+    weights: { ...AGS_WEIGHTS }, // v11 model weights that produced quintiles{}
   };
+
+  // v12 calibration block — read by the cron + UI to apply the ladder
+  // (0.25/0.50/1.00/3.00/5.00 units) to positive scores; non-positive
+  // scores are muted by rule. When v12Quintiles is omitted (sample too
+  // small), the fallback in src/lib/ags.js (AGS_V12_FALLBACK_CALIBRATION)
+  // is used by both readers.
+  if (v12Quintiles) {
+    doc.v12Quintiles = v12Quintiles;
+    doc.v12 = {
+      sampleSize: v12Positive.length,
+      totalSampleSize: v12Scores.length,
+      signDistribution: { negative: v12Neg, zero: v12Zero, positive: v12Positive.length },
+      computedAt: doc.computedAt,
+    };
+  }
 
   if (DRY_RUN) {
     console.log('[ags-calibration] DRY_RUN — would write:');
