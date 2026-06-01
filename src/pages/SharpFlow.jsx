@@ -6353,6 +6353,23 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   // Stars derive from the resolved tier so the ★★★ display matches the
   // tier badge exactly (no LEAN-tier-with-5★ contradictions).
   const renderedStars = mlCronTier ? starsFromAgsuTier(mlCronTier) : sr.stars;
+  // v12 chip meta. When the cron has stamped a v12 tier, the top-right
+  // rating chip should speak v12 vocabulary (ELITE / PREMIUM / LOCK /
+  // LEAN / WEAK / FADE with v12 colors) instead of the legacy
+  // rateStarsV8 label ("ELITE PLAY" / "STRONG PLAY" / etc.) which is a
+  // pure star-count bucket and disagrees with v12 on most picks. The
+  // recommended-units pill already mirrors mlCronUnits, so showing a
+  // v12-tier-aligned chip removes the "card says ELITE PLAY but
+  // recommended is 0.0u" contradiction the user has been seeing.
+  const cardTierMeta = mlCronTier && AGS_TIER_META[mlCronTier]
+    ? AGS_TIER_META[mlCronTier]
+    : null;
+  const chipLabel  = cardTierMeta
+    ? `${cardTierMeta.label} · ${Number(units || 0).toFixed(units >= 1 ? 1 : 2)}u`
+    : sr.label;
+  const chipColor  = cardTierMeta ? cardTierMeta.color : sr.color;
+  const chipBg     = cardTierMeta ? cardTierMeta.bg    : sr.bg;
+  const chipBorder = cardTierMeta ? `${cardTierMeta.color}55` : (isActionable ? 'rgba(16,185,129,0.2)' : B.goldBorder);
   const ut = unitTier(units);
   const potentialWin = isLockedInFirestore ? profitFromOdds(betOdds, units) : 0;
 
@@ -6929,25 +6946,25 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
           <span style={{
             ...T.micro, fontWeight: 800, letterSpacing: '0.04em',
             padding: '0.2rem 0.6rem', borderRadius: '5px',
-            color: sr.color, background: sr.bg,
-            border: `1px solid ${isActionable ? 'rgba(16,185,129,0.2)' : B.goldBorder}`,
+            color: chipColor, background: chipBg,
+            border: `1px solid ${chipBorder}`,
             display: 'flex', alignItems: 'center', gap: '0.2rem',
           }}>
             {Array.from({ length: 5 }, (_, i) => {
               const filled = i + 1 <= Math.floor(renderedStars);
               const half = !filled && i + 0.5 === renderedStars;
               return filled ? (
-                <span key={i} style={{ fontSize: '0.5rem', color: sr.color, lineHeight: 1 }}>★</span>
+                <span key={i} style={{ fontSize: '0.5rem', color: chipColor, lineHeight: 1 }}>★</span>
               ) : half ? (
                 <span key={i} style={{ position: 'relative', display: 'inline-block', fontSize: '0.5rem', lineHeight: 1, width: '0.5rem' }}>
                   <span style={{ color: 'rgba(255,255,255,0.15)' }}>★</span>
-                  <span style={{ position: 'absolute', left: 0, top: 0, overflow: 'hidden', width: '50%', color: sr.color }}>★</span>
+                  <span style={{ position: 'absolute', left: 0, top: 0, overflow: 'hidden', width: '50%', color: chipColor }}>★</span>
                 </span>
               ) : (
                 <span key={i} style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.15)', lineHeight: 1 }}>★</span>
               );
             })}
-            <span style={{ marginLeft: '0.15rem' }}>{sr.label}</span>
+            <span style={{ marginLeft: '0.15rem' }}>{chipLabel}</span>
           </span>
           {/* v6.1 — hero chips removed from header. The narrative + LOCK
               CRITERIA block below carry the winner/quality story in full
@@ -7258,7 +7275,15 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
         const forHcCount = fv?.forHcCount ?? 0;
         const totalProven = forCount + agCount;
 
-        const liveTierLocal = agsValue != null ? agsTierFromValue(agsValue, getAgsCalibration()) : 'UNKNOWN';
+        // v12 cron is authoritative for the banner tier. When the cron
+        // has stamped `mlCronTier` on this side's Firestore doc, mirror
+        // it verbatim so the banner says the same tier as the units
+        // pill ("PLAY LOCKED — PREMIUM · 3.0u") instead of disagreeing
+        // ("PLAY LOCKED — ELITE · 0.0u"). Falls back to the legacy
+        // v11 `agsTierFromValue` derivation only when no cron stamp is
+        // present (pre-T-15 preview / pre-cron-cutover archive).
+        const liveTierLocal = mlCronTier
+          || (agsValue != null ? agsTierFromValue(agsValue, getAgsCalibration()) : 'UNKNOWN');
         const meta = AGS_TIER_META[liveTierLocal] || AGS_TIER_META.UNKNOWN;
 
         // Banner derivation.
