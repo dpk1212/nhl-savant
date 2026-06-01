@@ -22,12 +22,36 @@ import {
   aggregateSideProven,
   agsSizeMultiplier,
   agsTierFromValue,
+  agsV12TierFromValue,
   computeAgs,
   computeAgsFromPositions,
+  computeAgsV12FromPositions,
   meetsAgsHardMute,
   meetsAgsLockFloor,
   positionToWalletDetail,
 } from '../lib/ags.js';
+
+// Browser-side mirror of scripts/syncPickStateAuthoritative.js::buildWalletPriorStatsFn
+// — feeds aggregateSideV12 the per-sport prior stats (whitelist tier,
+// historical pick count, flat ROI) that the v12 quality calc weighs. Used
+// by SharpPositionCard to compute a v12 tier for UNLOCKED game cards so
+// the chip/banner speak v12 vocabulary before the cron stamps the doc.
+// LOCKED cards continue to mirror the cron's authoritative v12 stamp.
+function buildWalletPriorStatsFnForUI(walletProfiles) {
+  if (!walletProfiles || typeof walletProfiles.get !== 'function') return null;
+  return (walletShort, sport) => {
+    if (!walletShort || !sport) return null;
+    const key = String(walletShort).toLowerCase();
+    const profile = walletProfiles.get(key) || walletProfiles.get(key.toUpperCase());
+    const sportRec = profile?.bySport?.[sport];
+    if (!sportRec) return null;
+    return {
+      tier: sportRec.whitelistTier || null,
+      priorN: Number(sportRec.picks?.n) || 0,
+      priorRoi: Number(sportRec.picks?.flatRoi) || 0,
+    };
+  };
+}
 
 // ─── Brand Design System ──────────────────────────────────────────────────────
 const B = {
@@ -6000,7 +6024,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   );
 });
 
-const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile, onPickSynced, onHealthSynced, isMyPick, onToggleMyPick, canPickGames, gameFlowMap, spreadPositions, totalPositions, originalLockedSide, originalLockStars, originalLockWPS, originalFlipBeatThreshold, originalSpreadLockStars, originalSpreadLockWPS, originalTotalLockStars, originalTotalLockWPS, v8Norm,
+const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile, onPickSynced, onHealthSynced, isMyPick, onToggleMyPick, canPickGames, gameFlowMap, spreadPositions, totalPositions, originalLockedSide, originalLockStars, originalLockWPS, originalFlipBeatThreshold, originalSpreadLockStars, originalSpreadLockWPS, originalTotalLockStars, originalTotalLockWPS, v8Norm, walletProfiles,
   // CRON-FIRST OVERRIDES (per market). When the syncPickStateAuthoritative
   // cron has stamped tier + finalUnits on the synced doc for this game/market,
   // use those values verbatim instead of the client-side rateStarsV8 +
@@ -6361,11 +6385,45 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   // recommended-units pill already mirrors mlCronUnits, so showing a
   // v12-tier-aligned chip removes the "card says ELITE PLAY but
   // recommended is 0.0u" contradiction the user has been seeing.
-  const cardTierMeta = mlCronTier && AGS_TIER_META[mlCronTier]
-    ? AGS_TIER_META[mlCronTier]
+  // Live v12 fallback for UNLOCKED game cards. When the cron hasn't
+  // stamped this side yet (because the pick isn't locked), recreate the
+  // v12 score in the browser using the same library function the cron
+  // calls. Inputs: gd.positions (from sharp_positions.json, the scanner's
+  // output — same data the cron sees in sharp_action_positions) +
+  // walletProfiles (loaded in the parent state from sharpWalletProfiles)
+  // + agsCalibration (the daily-refreshed Firestore doc). This keeps an
+  // unlocked Knights card from rendering "ELITE PLAY" when v12 would
+  // actually call it FADE — the user explicitly asked for v12 alignment
+  // on every card surface, not just locked ones. Memoized so the work
+  // happens once per (positions, sport, consensusSide) combo per render.
+  const liveV12Tier = useMemo(() => {
+    if (mlCronTier) return null; // cron is authoritative when present
+    if (!consensusSide || !Array.isArray(gd.positions) || gd.positions.length === 0) return null;
+    if (!walletProfiles || walletProfiles.size === 0) return null;
+    const walletPriorStatsFn = buildWalletPriorStatsFnForUI(walletProfiles);
+    if (!walletPriorStatsFn) return null;
+    const cal = getAgsCalibration();
+    if (!cal || !cal.v12Quintiles) return null;
+    try {
+      const res = computeAgsV12FromPositions(gd.positions, consensusSide, gd.sport, cal, walletPriorStatsFn);
+      return res?.tier && AGS_TIER_META[res.tier] ? res.tier : null;
+    } catch {
+      return null;
+    }
+  }, [mlCronTier, gd.positions, consensusSide, gd.sport, walletProfiles]);
+  // Effective v12 tier for this card: cron stamp wins, then live v12,
+  // then null (fall back to v11 sr.label).
+  const effectiveV12Tier = mlCronTier || liveV12Tier;
+  const cardTierMeta = effectiveV12Tier && AGS_TIER_META[effectiveV12Tier]
+    ? AGS_TIER_META[effectiveV12Tier]
     : null;
   const chipLabel  = cardTierMeta
-    ? `${cardTierMeta.label} · ${Number(units || 0).toFixed(units >= 1 ? 1 : 2)}u`
+    ? (mlCronTier
+        // Locked: show tier + the cron's actual sized units
+        ? `${cardTierMeta.label} · ${Number(units || 0).toFixed(units >= 1 ? 1 : 2)}u`
+        // Unlocked: show tier only (no units stamped yet; locking sets
+        // them via the v12 ladder)
+        : cardTierMeta.label)
     : sr.label;
   const chipColor  = cardTierMeta ? cardTierMeta.color : sr.color;
   const chipBg     = cardTierMeta ? cardTierMeta.bg    : sr.bg;
@@ -7275,14 +7333,15 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
         const forHcCount = fv?.forHcCount ?? 0;
         const totalProven = forCount + agCount;
 
-        // v12 cron is authoritative for the banner tier. When the cron
-        // has stamped `mlCronTier` on this side's Firestore doc, mirror
-        // it verbatim so the banner says the same tier as the units
-        // pill ("PLAY LOCKED — PREMIUM · 3.0u") instead of disagreeing
-        // ("PLAY LOCKED — ELITE · 0.0u"). Falls back to the legacy
-        // v11 `agsTierFromValue` derivation only when no cron stamp is
-        // present (pre-T-15 preview / pre-cron-cutover archive).
-        const liveTierLocal = mlCronTier
+        // v12 is authoritative for the banner tier. Priority:
+        //   1. mlCronTier — cron-stamped v12 on the locked Firestore doc.
+        //   2. effectiveV12Tier — browser-computed v12 (UNLOCKED cards).
+        //      Same library function the cron uses, fed gd.positions +
+        //      walletProfiles + calibration so the banner can't disagree
+        //      with what the cron will stamp once the pick locks.
+        //   3. legacy v11 agsTierFromValue — fallback when the v12 pipeline
+        //      can't run (no positions, no walletProfiles, no calibration).
+        const liveTierLocal = effectiveV12Tier
           || (agsValue != null ? agsTierFromValue(agsValue, getAgsCalibration()) : 'UNKNOWN');
         const meta = AGS_TIER_META[liveTierLocal] || AGS_TIER_META.UNKNOWN;
 
@@ -12284,7 +12343,7 @@ export default function SharpFlow() {
                         const gdTotalCronUnits = Number.isFinite(gdTotalCronSide?.finalUnits) ? gdTotalCronSide.finalUnits
                                                : Number.isFinite(gdTotalCronSide?.v8_agsUnitsApplied) ? gdTotalCronSide.v8_agsUnitsApplied
                                                : null;
-                        return <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} onHealthSynced={onHealthSynced} isMyPick={!!userPicks[gd.key]} onToggleMyPick={onToggleMyPick} canPickGames={!!(user && isPremium)} gameFlowMap={gameFlowMap} spreadPositions={spreadPositions} totalPositions={totalPositions} originalLockedSide={gdOriginalSide} originalLockStars={gdLockStars} originalLockWPS={gdLockWPS} originalFlipBeatThreshold={gdFlipBeatThreshold} originalSpreadLockStars={gdSpreadLockStars} originalSpreadLockWPS={gdSpreadLockWPS} originalTotalLockStars={gdTotalLockStars} originalTotalLockWPS={gdTotalLockWPS} v8Norm={v8Norm} mlCronTier={gdMlCronTier} mlCronUnits={gdMlCronUnits} spreadCronTier={gdSpreadCronTier} spreadCronUnits={gdSpreadCronUnits} totalCronTier={gdTotalCronTier} totalCronUnits={gdTotalCronUnits} />;
+                        return <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} onHealthSynced={onHealthSynced} isMyPick={!!userPicks[gd.key]} onToggleMyPick={onToggleMyPick} canPickGames={!!(user && isPremium)} gameFlowMap={gameFlowMap} spreadPositions={spreadPositions} totalPositions={totalPositions} originalLockedSide={gdOriginalSide} originalLockStars={gdLockStars} originalLockWPS={gdLockWPS} originalFlipBeatThreshold={gdFlipBeatThreshold} originalSpreadLockStars={gdSpreadLockStars} originalSpreadLockWPS={gdSpreadLockWPS} originalTotalLockStars={gdTotalLockStars} originalTotalLockWPS={gdTotalLockWPS} v8Norm={v8Norm} walletProfiles={walletProfiles} mlCronTier={gdMlCronTier} mlCronUnits={gdMlCronUnits} spreadCronTier={gdSpreadCronTier} spreadCronUnits={gdSpreadCronUnits} totalCronTier={gdTotalCronTier} totalCronUnits={gdTotalCronUnits} />;
                       })}
                     </div>
                     {isFreeUser && <SharpFlowPaywall isMobile={isMobile} lockedCount={allPosGames.length > 1 ? allPosGames.length - 1 : 0} pnlData={allTimePnL} />}
