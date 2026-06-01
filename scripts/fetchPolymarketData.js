@@ -642,6 +642,40 @@ async function run() {
 
     const bucket = out[sport];
 
+    // Write a skeleton entry FIRST so that transient Polymarket data-api
+    // failures (which are common — 408 timeouts on /live-volume, /trades,
+    // /prices-history are routine) never drop the entire game from the
+    // output file. Downstream consumers (scanSharpPositions, the UI, etc.)
+    // only need the matched (sport, key, teams, commence) tuple to know
+    // a game exists today; the enrichment fields (whales, priceHistory,
+    // marketProbs) are all optional and may be filled in by later cycles.
+    const [_awayRawSkeleton, _homeRawSkeleton] = teams;
+    bucket[key] = {
+      volume24h: Number(ev.volume_24hr ?? ev.volume ?? 0),
+      liveVolume: null,
+      awayMoneyPct: null,
+      homeMoneyPct: null,
+      awayTicketPct: null,
+      homeTicketPct: null,
+      tradeCount: 0,
+      sampleCash: 0,
+      priceMove1h: null,
+      priceHistory: null,
+      whales: null,
+      awayProb: null,
+      homeProb: null,
+      polySpread: null,
+      polyTotal: null,
+      awayTeam: _awayRawSkeleton,
+      homeTeam: _homeRawSkeleton,
+      eventId: id,
+      title: (title || '').substring(0, 80),
+      commence: commenceTimes[`${sport}:${key}`] || ev.startTime || null,
+      polyGameTime: ev.startTime || null,
+      polyGameDate: ev.eventDate || null,
+      enrichmentFailed: true,
+    };
+
     try {
       const live = await getLiveVolume(id);
       const trades = await getAllTrades(id);
@@ -875,9 +909,10 @@ async function run() {
         commence: commenceTimes[`${sport}:${key}`] || ev.startTime || null,
         polyGameTime: ev.startTime || null,
         polyGameDate: ev.eventDate || null,
+        enrichmentFailed: false,
       };
     } catch (e) {
-      console.warn(`Failed to enrich ${title}:`, e.message);
+      console.warn(`Failed to enrich ${title}:`, e.message, '(skeleton entry retained)');
     }
   }
 

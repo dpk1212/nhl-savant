@@ -8868,7 +8868,7 @@ export default function SharpFlow() {
   const [expandedActionCard, setExpandedActionCard] = useState(null);
   const [gameSort, setGameSort] = useState('time');
   const [signalType, setSignalType] = useState('upcoming');
-  const [sortBy, setSortBy] = useState('stars');
+  const [sortBy, setSortBy] = useState('locked');
   const [lockedPicks, setLockedPicks] = useState({});
   const [allTimePnL, setAllTimePnL] = useState(null);
   const [showPerf, setShowPerf] = useState(false); // V1 / pre-cutover archive — collapsed by default
