@@ -9148,7 +9148,12 @@ export default function SharpFlow() {
     return {
       trackedCount: cleanAddrs.size + supplementalCount,
       totalExcluded, mmExcluded, sportLosers: 0, noSport, supplementalCount,
-      gamesWithPos: sharpPositions ? Object.values(sharpPositions.NHL || {}).length + Object.values(sharpPositions.CBB || {}).length + Object.values(sharpPositions.NBA || {}).length : 0,
+      gamesWithPos: sharpPositions
+        ? Object.values(sharpPositions.NHL || {}).length
+          + Object.values(sharpPositions.CBB || {}).length
+          + Object.values(sharpPositions.NBA || {}).length
+          + Object.values(sharpPositions.MLB || {}).length
+        : 0,
       totalSharpPnl: cleanPnl + supplementalPnl,
       totalSharpInvested,
     };
