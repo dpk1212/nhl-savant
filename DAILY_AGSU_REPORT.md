@@ -1,7 +1,7 @@
 # AGS-Unified — Daily Monitoring Report
 
-**Generated:** Monday, June 1, 2026 at 8:36 AM ET
-**Active model:** `ags-unified-v11` · **AGS-U cutover:** 2026-05-14 · **Days live:** 18
+**Generated:** Monday, June 1, 2026 at 2:24 PM ET
+**Active model:** `ags-unified-v12` · **AGS-U cutover:** 2026-05-14 · **Days live:** 18
 
 > **Scope.** Every row in this report comes from picks AGS-U actually promoted (`promotedBy = ags-unified-v9`). Picks promoted by legacy v7/v8 routes are excluded — they'd contaminate the calibration story. Within the AGS-U pool, each pick is classified as one of:
 
@@ -14,8 +14,8 @@
 
 The composite scoring model — what every lock/mute/sizing decision is built on. Pulled at runtime from `src/lib/ags.js` so this report never drifts.
 
-**Schema version:** `ags-unified-v11`
-**Calibration source:** `cron` · sample N = 705 · range 2026-04-18 → 2026-05-30
+**Schema version:** `ags-unified-v12`
+**Calibration source:** `cron` · sample N = 725 · range 2026-04-18 → 2026-05-31
 
 ### Features & coefficients (logistic-regression β on z-scored features)
 
@@ -33,7 +33,7 @@ The composite scoring model — what every lock/mute/sizing decision is built on
 
 ## § 0b — AGS-U Model Version Comparison
 
-How does the latest model (**ags-unified-v11**) compare against prior versions? Picks are tagged by the calibration that scored them — v11 by feature-signature (`dSumRankNorm` / `dWinnerCtPreA` present in components), earlier versions by pick date against the calibration-history cutover schedule below.
+How does the latest model (**ags-unified-v12**) compare against prior versions? Picks are tagged by the calibration that scored them — v11 by feature-signature (`dSumRankNorm` / `dWinnerCtPreA` present in components), earlier versions by pick date against the calibration-history cutover schedule below.
 
 ### Headline performance by version
 
@@ -41,14 +41,16 @@ How does the latest model (**ags-unified-v11**) compare against prior versions? 
 |---------|----------------------|------|--------|-----|--------|--------|-----------|------------|----------|-------|---------------|----------|
 | v9      | 05-15 → 05-22        |    7 |     60 |  12 | 32-28  |  53.3% |     -9.0% |     -10.38 |    -0.17 | 0.549 |        0.3400 | ⚪ retired |
 | v10     | 05-22 → 05-25        |    3 |     62 |  14 | 30-32  |  48.4% |    -18.8% |     -19.42 |    -0.31 | 0.394 |        0.2804 | ⚪ retired |
-| v11     | 05-25 → present      |    8 |    111 |  22 | 61-50  |  55.0% |      2.8% |      +6.76 |    +0.06 | 0.444 |        0.2642 | 🟢 LIVE  |
+| v11     | 05-25 → 06-01        |    7 |    111 |  22 | 61-50  |  55.0% |      2.8% |      +6.76 |    +0.06 | 0.444 |        0.2642 | ⚪ retired |
+| v12     | 06-01 → present      |    1 |      0 |   0 | 0-0    |      — |         — |      +0.00 |        — |     — |             — | 🟢 LIVE  |
 
-### v11 vs prior versions
+### v12 vs prior versions
 
 | Comparison         | ΔN     | ΔWin %    | ΔROI       | Δ per-pick (u)  | ΔAUC     | ΔBrier     | Verdict |
 |--------------------|--------|-----------|------------|-----------------|----------|------------|---------|
-| v11 − v9           | +   51 |    +1.6pp |    +11.8pp |          +0.234 |   -0.105 |    +0.0758 | 🟡 mixed |
-| v11 − v10          | +   49 |    +6.6pp |    +21.6pp |          +0.374 |   +0.050 |    +0.0162 | 🟢 better |
+| v12 − v9           |   -60 |         — |          — |               — |        — |          — | —       |
+| v12 − v10          |   -62 |         — |          — |               — |        — |          — | —       |
+| v12 − v11          |  -111 |         — |          — |               — |        — |          — | —       |
 
 > **ΔBrier > 0** means the newer model's Brier is LOWER (better probability calibration). All other Δ columns: positive = newer model is better. Verdict requires the newer model to dominate on 3 of 4 metrics (ROI / Win% / AUC / Brier).
 
@@ -59,6 +61,7 @@ How does the latest model (**ags-unified-v11**) compare against prior versions? 
 | v9      | 40n 55.0% -3%  | 14n 50.0% -7%  | 6n 50.0% -46%  | 60n 53.3% -9% |
 | v10     | 50n 52.0% -4%  | 7n 14.3% -91%  | 5n 60.0% -9%   | 62n 48.4% -19% |
 | v11     | 96n 56.3% +4%  | 7n 71.4% +33%  | 8n 25.0% -59%  | 111n 55.0% +3% |
+| v12     | —              | —              | —              | —             |
 
 ### Per-tier ROI × version (monotonicity check across model history)
 
@@ -67,6 +70,7 @@ How does the latest model (**ags-unified-v11**) compare against prior versions? 
 | v9      | 10n -25%      | 6n +10%       | 13n -32%      | 16n +24%      | 14n -6%       | 🟡 partial (0) |
 | v10     | 8n -13%       | 5n -69%       | 13n -25%      | 27n +4%       | 8n -1%        | 🟡 partial (0) |
 | v11     | 22n +3%       | 26n -6%       | 24n +9%       | 25n +10%      | 13n +22%      | 🟡 partial (2) |
+| v12     | —             | —             | —             | —             | —             | —             |
 
 > Monotonicity score on tier-ROI vector (ELITE → WEAK). Fully sorted (each tier earns LESS than the one above) = -3 for 4-tier samples / -4 for full ladder. Fully inverted = +3/+4. A NEW model that flips the ladder from inverted → monotonic is the strongest evidence the redesign worked.
 
@@ -272,11 +276,11 @@ Does the AGS-U sizing ladder (ELITE 2× → WEAK 0.2×) actually capture more ed
 
 ## § 8 — SHADOW / Hard-Mute Validation
 
-Below-q20 AGS-U values are SHADOWed (never shipped). Live q20 = **-0.146**. We validate the floor by looking at sides that WOULD HAVE GRADED if shipped — if they lose at >50%, the mute is working.
+Below-q20 AGS-U values are SHADOWed (never shipped). Live q20 = **-0.155**. We validate the floor by looking at sides that WOULD HAVE GRADED if shipped — if they lose at >50%, the mute is working.
 
 **Below-q20 SHADOWed picks that would have graded at a flat 1u stake:**
 
-- N: **59** · Win rate: **55.9%** · Flat-1u PnL: **+2.39u** · ROI: **4.1%**
+- N: **55** · Win rate: **56.4%** · Flat-1u PnL: **+2.84u** · ROI: **5.2%**
 - Verdict: 🚨 Mute floor may be too aggressive — SHADOWed picks win at ≥52%.
 
 ## § 9 — Daily Trend (cumulative PnL)
@@ -344,32 +348,32 @@ Below-q20 AGS-U values are SHADOWed (never shipped). Live q20 = **-0.146**. We v
 
 Live calibration document used by both the cron and the UI:
 
-- **Computed at:** 2026-05-31T14:22:18.065Z
-- **Schema version:** `ags-unified-v11`
+- **Computed at:** 2026-06-01T16:15:35.627Z
+- **Schema version:** `ags-unified-v12`
 - **Source:** cron
-- **Sample size:** 705
-- **Date range:** 2026-04-18 → 2026-05-30
+- **Sample size:** 725
+- **Date range:** 2026-04-18 → 2026-05-31
 - **Absolute mute floor:** -1.00 (safety bound below q20)
 
 **AGS-U quintile boundaries (logit-score space):**
 
 | Boundary | Value      | Action                |
 |----------|------------|-----------------------|
-| q20      |    -0.1462 | HARD MUTE floor       |
-| q40      |    -0.0031 | LEAN floor (0.5×)     |
-| q50      |    +0.0638 | 50th pctile           |
-| q60      |    +0.1245 | LOCK floor (1.10×)    |
-| q80      |    +0.3056 | PREMIUM floor (1.50×) |
-| q90      |    +0.5388 | ELITE floor (2.00×)   |
+| q20      |    -0.1547 | HARD MUTE floor       |
+| q40      |    -0.0053 | LEAN floor (0.5×)     |
+| q50      |    +0.0642 | 50th pctile           |
+| q60      |    +0.1322 | LOCK floor (1.10×)    |
+| q80      |    +0.3171 | PREMIUM floor (1.50×) |
+| q90      |    +0.5333 | ELITE floor (2.00×)   |
 
 **Feature normalizers (mean / sd) — z-scoring inputs to the model:**
 
 | Feature           | β        | Mean   | SD     |
 |-------------------|----------|--------|--------|
-| Δcount            |  +0.5371 |   1.16 |   1.47 |
-| ΔHCsizeRatio      |  +0.2787 |   1.30 |   5.24 |
-| ΔΣrankNorm        |  -0.2740 |  62.72 |  90.90 |
-| Δwinners          |  -0.1916 |   0.50 |   1.14 |
+| Δcount            |  +0.5371 |   1.14 |   1.47 |
+| ΔHCsizeRatio      |  +0.2787 |   1.28 |   5.19 |
+| ΔΣrankNorm        |  -0.2740 |  61.93 |  91.21 |
+| Δwinners          |  -0.1916 |   0.48 |   1.13 |
 
 > ✅ Calibration weights match `src/lib/ags.js` — no drift.
 
