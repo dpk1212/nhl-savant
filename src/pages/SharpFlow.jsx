@@ -1601,13 +1601,20 @@ function stampWalletConsensus(target, v8Scoring, sideKey, sport, baseStars, prom
     : isV71Eligible(pickDate) ? '7.1'
     : '7.0';
   // v7.2/v7.3/v7.5 frozen lock-tier — AGS-aware (Δw=1+AGS route + ELITE).
+  //
+  // v12 NOTE: this is the V11-derived tier. The cron (syncPickStateAuthoritative)
+  // is authoritative for `v8_lockTier` in v12, deriving it from the v12 score
+  // (computeAgsV12 → agsV12TierFromValue). The browser can no longer clobber
+  // that field — we route the V11 computation to `v8_lockTierV11` for
+  // diagnostic / drift purposes. Pre-cron-touch picks will simply not have a
+  // v8_lockTier for ~8 min until the next cron cycle stamps it.
   const liveTier = lockTierFromDeltas(wc.delta, wc.qualityMargin, wc.hcDominant, {
     pickDate,
     hcMargin: target.v8_hcMargin,
     ags: stampAgsValue,
     agsProvenTotal: stampAgsProvenTotal,
   });
-  target.v8_lockTier = liveTier;
+  target.v8_lockTierV11 = liveTier;
   // AGS-Unified v9 TOP / SUPER badge stamps:
   //   SUPER TOP PICK = AGS-U tier ≡ ELITE   (≥ q90 — top decile)
   //   TOP PICK       = AGS-U tier ≡ PREMIUM (≥ q80) OR SUPER
@@ -1631,75 +1638,54 @@ function stampWalletConsensus(target, v8Scoring, sideKey, sport, baseStars, prom
   target.v8_topPick      = isShipped && (agsTierStamp === 'ELITE' || agsTierStamp === 'PREMIUM');
   target.v8_superTopPick = isShipped && agsTierStamp === 'ELITE';
 
-  // AGS (AggregateScore) — already computed above (stampAgsResult). Stamp
-  // the persisted fields + Phase 3 confirmation-gate verdict. Identical
-  // math to scripts/syncPickStateAuthoritative.js — both pull from
-  // src/lib/ags.js so client and server are bit-identical.
+  // AGS (AggregateScore) — already computed above (stampAgsResult).
+  //
+  // v12 NOTE: V11 stamps are now DIAGNOSTIC ONLY. The cron
+  // (syncPickStateAuthoritative + computeAgsV12) is the single source of
+  // truth for `v8_agsTier`, `health`, `mutedBy`, `finalUnits`, etc., all
+  // derived from the v12 score. The browser used to overwrite these from
+  // a V11 computation on every session, which clobbered the cron's v12
+  // values within seconds — manifesting as "v8_agsTier = FADE while
+  // v8_agsV12 = 0.987 / ELITE" mismatches in Firestore.
+  //
+  // Fix: stamp the V11 score + components into `v8_agsV11*` slots so
+  // historical reports + drift analysis still have V11 truth, but DO NOT
+  // touch the canonical fields (v8_agsTier, mutedBy, health) — those
+  // belong to the cron now.
   if (stampAgsResult) {
     target.v8_ags = stampAgsResult.ags;
-    target.v8_agsTier = stampAgsResult.tier;
+    target.v8_agsTierV11 = stampAgsResult.tier;
     target.v8_agsQuintile = stampAgsResult.quintile;
     target.v8_agsComponents = stampAgsResult.components;
     target.v8_agsProvenForCount = stampAgsResult.provenForCount;
     target.v8_agsProvenAgCount = stampAgsResult.provenAgCount;
     target.v8_agsCalibrationSource = stampAgsResult.calibrationSource || 'firestore';
     target.v8_agsEvaluatedAt = Date.now();
-
-    // AGS-Unified v9 — hard mute stamp. Fires when AGS-U is in the FADE
-    // tier (< q20) with enough proven wallets to trust the signal.
-    // Cleared (null, NOT deleteField) when not firing so stale gate
-    // stamps don't linger AND so this stamp can ride along on the
-    // create-path setDoc() call. Previously this used deleteField(),
-    // which Firestore rejects on a non-merge setDoc() with:
-    //   "Function setDoc() called with invalid data. deleteField()
-    //    cannot be used with set() unless you pass {merge:true}".
-    // That single sentinel was silently killing EVERY first-time
-    // pick write for the day — buildSideData → stampWalletConsensus
-    // → setDoc(ref, {...sideData}) — so any new card that crossed
-    // threshold during a session never reached sharpFlowPicks /
-    // sharpFlowSpreads / sharpFlowTotals. Downstream readers all
-    // already treat falsy mutedBy as "not muted" (`if (mutedBy)`),
-    // so swapping to explicit null is behavior-compatible.
-    const agsHardMuted = stampAgsProvenTotal >= AGS_MIN_PROVEN_WALLETS
+    // Diagnostic only — what V11's hard-mute gate would have said this
+    // tick. NOT consulted for any decision (v12 mute is `score ≤ 0`).
+    target.v8_walletConsensusMuteTriggered = (
+      stampAgsProvenTotal >= AGS_MIN_PROVEN_WALLETS
       && Number.isFinite(stampAgsValue)
-      && meetsAgsHardMute(stampAgsValue, getAgsCalibration());
-    if (agsHardMuted) {
-      target.mutedBy = 'ags-hard-mute';
-    } else {
-      target.mutedBy = null;
-    }
-    // Overwrite the v8_walletConsensusMuteTriggered stamp with the
-    // AGS-U-canonical mute state so downstream drift detection +
-    // historical analysis read v9 truth, not legacy Δw/Δq.
-    target.v8_walletConsensusMuteTriggered = agsHardMuted;
+      && meetsAgsHardMute(stampAgsValue, getAgsCalibration())
+    );
   }
 
-  // ── Health reconciliation (AGS-U v9) ─────────────────────────────────
-  // Every time the client stamps v8_* fields, write a coherent `health`
-  // block in the SAME doc update. Without this, a pick that was SHADOW
-  // earlier (when proven counts were below floor) and got promoted to
-  // LOCKED later in the day by the client (when wallets piled in) would
-  // keep its STALE `health.status: 'MUTED'` from the old cron cycle —
-  // because the cron's reconcileSide skips picks inside the T-15 freeze
-  // window, and there's no other code path that writes health.
+  // ── Health reconciliation — DISABLED in v12 ───────────────────────────
+  // Pre-v12 the browser wrote `target.health = {...}` here, computed from
+  // the V11 hard-mute gate (proven wallet floor + meetsAgsHardMute). That
+  // was needed because the V11 cron sometimes left stale `health.status`
+  // on picks promoted inside the T-15 freeze window.
   //
-  // Real example caught 2026-05-17: Mets ML promoted to LOCKED at
-  // 1:19 PM (22 min before 1:41 PM game), but `health.evaluatedAt`
-  // remained pinned to 2026-05-12 with status=MUTED / reasons=
-  // ['insufficient_proven_wallets'] / ags=0.22 / provenTotal=1 — even
-  // though the v8_* fields stamped fresh values (ags=1.24, 5 proven).
-  // Pick graded WIN but tracked=true / profit=0u because finalUnits
-  // never got recomputed off the stale MUTED state. Same pattern hit
-  // the D-backs ML the same day.
+  // In v12 the cron's reconcileSide writes a coherent `health` block
+  // every cycle from `evaluateBaseHealthV12({ scoreV12 })` (the
+  // authoritative `score ≤ 0 → MUTED` rule). The browser stamping V11
+  // health here would clobber the v12 health every session — e.g.
+  // setting `health.status = 'ACTIVE'` and `reasons = []` on a pick the
+  // cron just muted with `agsv12_mute_below_zero`.
   //
-  // Mirrors the cron's patch.health shape so downstream readers see
-  // a single canonical schema regardless of which path last wrote.
-  const liveStarsForHealth = stampAgsResult?.tier === 'ELITE' ? 5.0
-    : stampAgsResult?.tier === 'PREMIUM' ? 4.5
-    : stampAgsResult?.tier === 'LOCK' ? 4.0
-    : stampAgsResult?.tier === 'LEAN' ? 3.0
-    : stampAgsResult?.tier === 'WEAK' ? 2.5
-    : 1.0;
+  // We retain the V11 computation locally for diagnostic / display
+  // purposes only — but do NOT write it back to the doc. `target.health`
+  // is now cron-owned.
   const healthReasons = [];
   let healthStatus = 'ACTIVE';
   if (!Number.isFinite(stampAgsValue)) {
@@ -1715,10 +1701,12 @@ function stampWalletConsensus(target, v8Scoring, sideKey, sport, baseStars, prom
       healthReasons.push('ags_hard_mute');
     }
   }
-  target.health = {
+  // Diagnostic mirror — V11 health stamp kept on a sidecar field so
+  // historical reports + drift checks still have V11 truth available.
+  // Does NOT overwrite the cron-owned `health` block.
+  target.healthV11 = {
     status: healthStatus,
     reasons: healthReasons,
-    currentStars: liveStarsForHealth,
     walletDelta: wc.delta,
     qualityMargin: wc.qualityMargin,
     hcMargin: target.v8_hcMargin,
