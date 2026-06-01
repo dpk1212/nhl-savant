@@ -6502,20 +6502,16 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const lastHealthRef = useRef(null);
   useEffect(() => {
     if (!wasEverLocked || !commenceTime) return;
-    const date = gameDate(commenceTime);
-    const docId = `${date}_${gd.sport}_${gd.key}`;
-    const healthSide = lockedSideRef.current || consensusSide;
-    if (onHealthSynced) onHealthSynced(docId, healthSide, mlHealth);
-    if (isGameLive) return;
-    if (Date.now() >= commenceTime - 15 * 60 * 1000) return;
-    if (lastHealthRef.current === mlHealth.status) return;
-    lastHealthRef.current = mlHealth.status;
-    // v12 cleanup: health is now cron-authoritative. The browser's
-    // evaluatePickHealth uses v11 ags + v11 hard-mute, which disagrees
-    // with v12 (e.g. Nationals 2026-06-01 v11=-0.29/FADE → ags_hard_mute,
-    // v12=0.987/ELITE → ACTIVE). Without this disable, the browser
-    // re-stamped MUTED+ags_hard_mute every render, making ELITE picks
-    // render as "WEAKENING" with an ags_hard_mute chip.
+    // v12 cleanup: do NOT propagate the browser's v11-computed mlHealth
+    // into the parent's lockedPicks React state via onHealthSynced. The
+    // parent overwrites sd.health with mlHealth, which then renders the
+    // LockedPickCard as MUTED/WEAKENING+ags_hard_mute even when Firestore
+    // (cron-authoritative) has health=ACTIVE. The Firestore-loaded value
+    // from loadLockedPicks() is the truth.
+    // const date = gameDate(commenceTime);
+    // const docId = `${date}_${gd.sport}_${gd.key}`;
+    // const healthSide = lockedSideRef.current || consensusSide;
+    // if (onHealthSynced) onHealthSynced(docId, healthSide, mlHealth);
     // syncPickHealth({ docId, collection: 'sharpFlowPicks', side: healthSide, health: mlHealth });
   }, [wasEverLocked, mlHealth.status, sr.walletPlayScore, oppSr.walletPlayScore]);
 
@@ -6685,14 +6681,10 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const lastSpreadHealthRef = useRef(null);
   useEffect(() => {
     if (!spreadWasEverLocked || !commenceTime || !spreadConsensusSide) return;
-    const date = gameDate(commenceTime);
-    const docId = `${date}_${gd.sport}_${gd.key}_spread`;
-    if (onHealthSynced) onHealthSynced(docId, spreadConsensusSide, spreadHealth);
-    if (isGameLive) return;
-    if (Date.now() >= commenceTime - 15 * 60 * 1000) return;
-    if (lastSpreadHealthRef.current === spreadHealth.status) return;
-    lastSpreadHealthRef.current = spreadHealth.status;
-    // v12 cleanup: health is cron-authoritative. See ML branch above.
+    // v12 cleanup: see ML branch above for full rationale.
+    // const date = gameDate(commenceTime);
+    // const docId = `${date}_${gd.sport}_${gd.key}_spread`;
+    // if (onHealthSynced) onHealthSynced(docId, spreadConsensusSide, spreadHealth);
     // syncPickHealth({ docId, collection: 'sharpFlowSpreads', side: spreadConsensusSide, health: spreadHealth });
   }, [spreadWasEverLocked, spreadHealth.status, spreadSr?.walletPlayScore]);
 
@@ -6866,14 +6858,10 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const lastTotalHealthRef = useRef(null);
   useEffect(() => {
     if (!totalWasEverLocked || !commenceTime || !totalConsensusSide) return;
-    const date = gameDate(commenceTime);
-    const docId = `${date}_${gd.sport}_${gd.key}_total`;
-    if (onHealthSynced) onHealthSynced(docId, totalConsensusSide, totalHealth);
-    if (isGameLive) return;
-    if (Date.now() >= commenceTime - 15 * 60 * 1000) return;
-    if (lastTotalHealthRef.current === totalHealth.status) return;
-    lastTotalHealthRef.current = totalHealth.status;
-    // v12 cleanup: health is cron-authoritative. See ML branch above.
+    // v12 cleanup: see ML branch above for full rationale.
+    // const date = gameDate(commenceTime);
+    // const docId = `${date}_${gd.sport}_${gd.key}_total`;
+    // if (onHealthSynced) onHealthSynced(docId, totalConsensusSide, totalHealth);
     // syncPickHealth({ docId, collection: 'sharpFlowTotals', side: totalConsensusSide, health: totalHealth });
   }, [totalWasEverLocked, totalHealth.status, totalSr?.walletPlayScore]);
 
@@ -8951,7 +8939,25 @@ export default function SharpFlow() {
           if (sk !== side) updatedSides[sk] = { ...updatedSides[sk], superseded: true, supersededAt: Date.now() };
         }
       }
-      updatedSides[side] = { ...updatedSides[side], peak: snap, lock: updatedSides[side]?.lock || snap, team: snap.team };
+      // v12 cleanup: deep-merge peak/lock so the cron-stamped tier-driven
+      // fields (stars / units / unitTier / team) survive when the browser
+      // sends a descriptive-fields-only snap. Pre-v12 we did `peak: snap`
+      // which REPLACED the whole peak object, wiping cron's authoritative
+      // stars / units / unitTier and dropping the LockedPickCard back to
+      // peak.stars=undefined → "DEVELOPING" / no tier.
+      const prevSide = updatedSides[side] || {};
+      const prevPeak = prevSide.peak || {};
+      const prevLock = prevSide.lock || null;
+      const mergedPeak = { ...prevPeak, ...snap };
+      // If the snap omits stars/units/unitTier (post-v12 browser sync),
+      // prevPeak's cron-stamped values win. If snap explicitly provides
+      // them (legacy path), those win — matches the old replace behavior.
+      updatedSides[side] = {
+        ...prevSide,
+        peak: mergedPeak,
+        lock: prevLock || mergedPeak,
+        team: snap.team || prevSide.team,
+      };
       const docUpdate = { ...prevDoc, sides: updatedSides };
       if (meta) { docUpdate.sport = meta.sport; docUpdate.away = meta.away; docUpdate.home = meta.home; docUpdate.commenceTime = meta.commenceTime; if (meta.marketType) docUpdate.marketType = meta.marketType; }
       next[docId] = docUpdate;
