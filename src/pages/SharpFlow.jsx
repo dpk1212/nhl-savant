@@ -6265,6 +6265,42 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     sport: gd.sport,
     pickDate,
   });
+
+  // ─── V12-AWARE STAR OVERRIDE ──────────────────────────────────────────
+  // `sr` came back from rateStarsV8, which is the legacy V11 wallet-
+  // play-score star generator. It routinely returns 4 stars (and thus
+  // `isActionable=true`) for sides that AGS-U v12 has hard-muted
+  // (e.g. 2026-06-02 col_laa·away — cron stamped v12=0.000/FADE/0u/
+  // SHADOW, but rateStarsV8 returned 4 stars from the at-lock snapshot
+  // and the card rendered "RECOMMENDED BET · Risk 2.5u · MAX · 🔥"
+  // simultaneously with "HARD MUTE — signal too weak to play"). Every
+  // gate downstream — isActionable, calculateUnits, "RECOMMENDED BET"
+  // vs "SHARP CONSENSUS" header, accentColor, the units pill — reads
+  // `sr.stars` / `sr.isActionable`. So we resolve v12 once at the top
+  // and overwrite `sr` to match. v12-tier → star mapping comes from
+  // `starsFromAgsuTier` (ELITE 5.0, PREMIUM 4.5, LOCK 4.0, LEAN 3.0,
+  // WEAK 2.5, FADE 1.0), so the 2.5★ `isActionable` threshold is
+  // satisfied for WEAK and up, muted for FADE. Single source of
+  // truth. earlyV12Tier is also reused below as `liveV12Tier` for the
+  // tier-chip / banner so we don't compute v12 twice per render.
+  const earlyV12Tier = (() => {
+    if (mlCronTier && AGS_TIER_META[mlCronTier]) return mlCronTier;
+    if (!consensusSide || !Array.isArray(gd.positions) || gd.positions.length === 0) return null;
+    if (!walletProfiles || walletProfiles.size === 0) return null;
+    const walletPriorStatsFn = buildWalletPriorStatsFnForUI(walletProfiles);
+    if (!walletPriorStatsFn) return null;
+    const cal = getAgsCalibration();
+    if (!cal || !cal.v12Quintiles) return null;
+    try {
+      const res = computeAgsV12FromPositions(gd.positions, consensusSide, gd.sport, cal, walletPriorStatsFn);
+      return res?.tier && AGS_TIER_META[res.tier] ? res.tier : null;
+    } catch { return null; }
+  })();
+  if (earlyV12Tier) {
+    const v12Stars = starsFromAgsuTier(earlyV12Tier);
+    sr.stars = v12Stars;
+    sr.isActionable = v12Stars >= 2.5;
+  }
   // Align with the allPosGames counter (8336): skip only truly extreme odds
   // (pinnProb >= 0.95). Previously a stricter 0.85 cap here hid cards that
   // the counter still included, so the header count disagreed with the
@@ -6410,35 +6446,17 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   // recommended-units pill already mirrors mlCronUnits, so showing a
   // v12-tier-aligned chip removes the "card says ELITE PLAY but
   // recommended is 0.0u" contradiction the user has been seeing.
-  // Live v12 fallback for UNLOCKED game cards. When the cron hasn't
-  // stamped this side yet (because the pick isn't locked), recreate the
-  // v12 score in the browser using the same library function the cron
-  // calls. Inputs: gd.positions (from sharp_positions.json, the scanner's
-  // output — same data the cron sees in sharp_action_positions) +
-  // walletProfiles (loaded in the parent state from sharpWalletProfiles)
-  // + agsCalibration (the daily-refreshed Firestore doc). This keeps an
-  // unlocked Knights card from rendering "ELITE PLAY" when v12 would
-  // actually call it FADE — the user explicitly asked for v12 alignment
-  // on every card surface, not just locked ones. Memoized so the work
-  // happens once per (positions, sport, consensusSide) combo per render.
-  const liveV12Tier = useMemo(() => {
-    if (mlCronTier) return null; // cron is authoritative when present
-    if (!consensusSide || !Array.isArray(gd.positions) || gd.positions.length === 0) return null;
-    if (!walletProfiles || walletProfiles.size === 0) return null;
-    const walletPriorStatsFn = buildWalletPriorStatsFnForUI(walletProfiles);
-    if (!walletPriorStatsFn) return null;
-    const cal = getAgsCalibration();
-    if (!cal || !cal.v12Quintiles) return null;
-    try {
-      const res = computeAgsV12FromPositions(gd.positions, consensusSide, gd.sport, cal, walletPriorStatsFn);
-      return res?.tier && AGS_TIER_META[res.tier] ? res.tier : null;
-    } catch {
-      return null;
-    }
-  }, [mlCronTier, gd.positions, consensusSide, gd.sport, walletProfiles]);
-  // Effective v12 tier for this card: cron stamp wins, then live v12,
-  // then null (fall back to v11 sr.label).
-  const effectiveV12Tier = mlCronTier || liveV12Tier;
+  // The v12 tier was already resolved at the top of the component
+  // (earlyV12Tier — cron stamp first, then a browser computation via
+  // computeAgsV12FromPositions for unlocked cards). Reuse it so we
+  // never compute v12 twice per render, and so the tier on the chip /
+  // banner is guaranteed to match the tier that drove sr.stars + the
+  // sizing pill. Note: the old `liveV12Tier` was wrapped in useMemo
+  // and was declared *after* the `if (isExtremeOdds) return null` at
+  // line ~6273 — a latent rules-of-hooks violation that React would
+  // crash on if pinnProb crossed the 0.95 threshold mid-session. The
+  // top-of-component resolution removes that gun.
+  const effectiveV12Tier = earlyV12Tier;
   const cardTierMeta = effectiveV12Tier && AGS_TIER_META[effectiveV12Tier]
     ? AGS_TIER_META[effectiveV12Tier]
     : null;
