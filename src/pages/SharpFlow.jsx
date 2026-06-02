@@ -5197,9 +5197,18 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
               const tierMetaPalette = AGS_TIER_META[lockTier];
               const tierStakeMeta = tierStakes[lockTier];
               if (!tierMetaPalette || !tierStakeMeta) return null;
+              // v12: render the ACTUAL cron-stamped unit size, not the
+              // ladder default. Odds caps / regime trim can pull a
+              // PREMIUM pick down to 2.5u — the chip must reflect that
+              // truth or the user sees "PREMIUM · 3u" up top while the
+              // body line shows "2.5u @ +160".
+              const ribbonUnits = Number.isFinite(units) ? units : null;
+              const ribbonStake = ribbonUnits != null
+                ? `${ribbonUnits.toFixed(ribbonUnits >= 1 ? 1 : 2)}u`
+                : tierStakeMeta.stake;
               const tierSpec = {
                 label:   tierMetaPalette.label,
-                stake:   tierStakeMeta.stake,
+                stake:   ribbonStake,
                 color:   lockTier === 'ELITE' ? '#fff' : tierMetaPalette.color,
                 bg:      lockTier === 'ELITE'
                           ? `linear-gradient(135deg, ${tierMetaPalette.color} 0%, ${tierMetaPalette.color}cc 100%)`
@@ -5473,15 +5482,26 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
             <div style={{ marginBottom: '0.625rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
                 <span style={{ ...T.label, fontWeight: 800, color: accentColor }}>
-                  {isCancelled ? 'CANCELLED'
-                    : isMuted ? 'WEAKENING'
-                    : isTrackedGrade ? `TRACKED · ${isWin ? 'WIN' : isLoss ? 'LOSS' : 'PUSH'} (0u)`
-                    : isElite ? 'ELITE LOCK · 5u'
-                    : isPremium ? 'PREMIUM LOCK · 3u'
-                    : isLean ? 'LEAN · 0.5u'
-                    : isWeak ? 'WEAK · 0.25u'
-                    : isGraded ? (isWin ? 'WINNING BET' : isLoss ? 'LOSING BET' : 'PUSH')
-                    : 'LOCKED BET'}
+                  {(() => {
+                    // v12: render the tier label with the ACTUAL cron-stamped
+                    // unit size, not the ladder default. PREMIUM is nominally
+                    // 3u, but odds caps / regime trim can pull it down (e.g.
+                    // KCR/CIN ML 2026-06-01 was PREMIUM/2.5u — chip showed
+                    // "PREMIUM LOCK · 3u" while the body showed "2.5u @ +160",
+                    // confusing the user). One number across the whole card.
+                    const u = Number.isFinite(units) ? units : null;
+                    const fmt = u == null ? '' : ` · ${u.toFixed(u >= 1 ? 1 : 2)}u`;
+                    if (isCancelled) return 'CANCELLED';
+                    if (isMuted) return 'WEAKENING';
+                    if (isTrackedGrade) return `TRACKED · ${isWin ? 'WIN' : isLoss ? 'LOSS' : 'PUSH'} (0u)`;
+                    if (isElite)   return `ELITE LOCK${fmt}`;
+                    if (isPremium) return `PREMIUM LOCK${fmt}`;
+                    if (isLock)    return `LOCKED${fmt}`;
+                    if (isLean)    return `LEAN${fmt}`;
+                    if (isWeak)    return `WEAK${fmt}`;
+                    if (isGraded)  return isWin ? 'WINNING BET' : isLoss ? 'LOSING BET' : 'PUSH';
+                    return 'LOCKED BET';
+                  })()}
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                   <span style={{
@@ -5859,11 +5879,16 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
           {criteriaList.length > 0 && (() => {
             // Tier-driven banner. Falls back to "PLAY LOCKED" only when
             // no AGS-U tier is available (legacy pre-v9 picks).
-            const tierBanner = isElite     ? { text: 'ELITE LOCK · 5u · ★★★★★', color: ELITE_GOLD, bg: 'rgba(212,175,55,0.10)', border: 'rgba(212,175,55,0.40)' }
-                             : isPremium   ? { text: 'PREMIUM LOCK · 3u · ★★★★', color: B.green,  bg: 'rgba(16,185,129,0.10)',  border: 'rgba(16,185,129,0.35)' }
-                             : isLock      ? { text: 'LOCKED · 1u · ★★★',         color: B.green,  bg: 'rgba(16,185,129,0.06)',  border: 'rgba(16,185,129,0.25)' }
-                             : isLean      ? { text: 'LEAN · 0.5u',                color: LEAN_BLUE, bg: 'rgba(250,204,21,0.08)', border: 'rgba(250,204,21,0.40)' }
-                             : isWeak      ? { text: 'WEAK · 0.25u',               color: WEAK_AMBER, bg: 'rgba(245,158,11,0.10)', border: 'rgba(245,158,11,0.30)' }
+            // v12: same fix as the hero label — use cron-stamped `units`
+            // instead of the hardcoded ladder default so the criteria
+            // banner can't say "PREMIUM LOCK · 3u · ★★★★" when the bet
+            // is actually 2.5u.
+            const tBu = Number.isFinite(units) ? ` · ${units.toFixed(units >= 1 ? 1 : 2)}u` : '';
+            const tierBanner = isElite     ? { text: `ELITE LOCK${tBu} · ★★★★★`, color: ELITE_GOLD, bg: 'rgba(212,175,55,0.10)', border: 'rgba(212,175,55,0.40)' }
+                             : isPremium   ? { text: `PREMIUM LOCK${tBu} · ★★★★`, color: B.green,  bg: 'rgba(16,185,129,0.10)',  border: 'rgba(16,185,129,0.35)' }
+                             : isLock      ? { text: `LOCKED${tBu} · ★★★`,         color: B.green,  bg: 'rgba(16,185,129,0.06)',  border: 'rgba(16,185,129,0.25)' }
+                             : isLean      ? { text: `LEAN${tBu}`,                color: LEAN_BLUE, bg: 'rgba(250,204,21,0.08)', border: 'rgba(250,204,21,0.40)' }
+                             : isWeak      ? { text: `WEAK${tBu}`,                color: WEAK_AMBER, bg: 'rgba(245,158,11,0.10)', border: 'rgba(245,158,11,0.30)' }
                              : isMuted     ? { text: 'MUTED · HARD STOP',            color: WEAK_AMBER, bg: 'rgba(245,158,11,0.10)', border: 'rgba(245,158,11,0.30)' }
                              : isCancelled ? { text: 'CANCELLED',                    color: B.red,    bg: 'rgba(239,68,68,0.10)',   border: 'rgba(239,68,68,0.30)' }
                              :               { text: `PLAY LOCKED — ${stars >= 4.5 ? '★★★★★ ELITE' : stars >= 3.5 ? '★★★★ STRONG' : '★★★ SOLID'}`,
@@ -12299,17 +12324,30 @@ export default function SharpFlow() {
                       {(isFreeUser ? allPosGames.slice(0, 1) : allPosGames).map(gd => {
                         const gdDocId = `${todayET()}_${gd.sport}_${gd.key}`;
                         const gdLock = lockedPicks[gdDocId];
-                        const gdActiveSideEntry = gdLock ? Object.entries(gdLock.sides || {}).find(([, sd]) => sd.lock && !sd.superseded) : null;
+                        // v12: ONLY treat a side as "currently locked" when the
+                        // cron's lockStage === 'LOCKED'. The legacy filter
+                        // `sd.lock && !sd.superseded` was a stale snapshot —
+                        // the `.lock` sub-object is the SNAPSHOT taken at the
+                        // moment of original lock and stays on the doc forever
+                        // (used by the locked-picks list to render the "at-lock"
+                        // criteria grid). When v12 later demotes a pick to
+                        // SHADOW the `.lock` snapshot survives, so this filter
+                        // kept returning the side and the card incorrectly
+                        // rendered "LOCKED IN" + Risk pill for FADE/SHADOW
+                        // picks (e.g. NYM/SEA·away on 2026-06-01 evening,
+                        // v12=FADE/0u but UI showed "LOCKED IN · 0.00u").
+                        const isLiveLockedSide = ([, sd]) => sd && sd.lockStage === 'LOCKED' && !sd.superseded;
+                        const gdActiveSideEntry = gdLock ? Object.entries(gdLock.sides || {}).find(isLiveLockedSide) : null;
                         const gdOriginalSide = gdActiveSideEntry?.[0] || null;
                         const gdLockStars = gdActiveSideEntry?.[1]?.lock?.stars ?? null;
                         const gdLockWPS = gdActiveSideEntry?.[1]?.lock?.v8Scoring?.walletPlayScore ?? null;
                         const gdFlipBeatThreshold = gdLock?.flipBeatThreshold ?? null;
                         const gdSpreadLock = lockedPicks[`${gdDocId}_spread`];
-                        const gdSpreadSideEntry = gdSpreadLock ? Object.entries(gdSpreadLock.sides || {}).find(([, sd]) => sd.lock && !sd.superseded) : null;
+                        const gdSpreadSideEntry = gdSpreadLock ? Object.entries(gdSpreadLock.sides || {}).find(isLiveLockedSide) : null;
                         const gdSpreadLockStars = gdSpreadSideEntry?.[1]?.lock?.stars ?? null;
                         const gdSpreadLockWPS = gdSpreadSideEntry?.[1]?.lock?.v8Scoring?.walletPlayScore ?? null;
                         const gdTotalLock = lockedPicks[`${gdDocId}_total`];
-                        const gdTotalSideEntry = gdTotalLock ? Object.entries(gdTotalLock.sides || {}).find(([, sd]) => sd.lock && !sd.superseded) : null;
+                        const gdTotalSideEntry = gdTotalLock ? Object.entries(gdTotalLock.sides || {}).find(isLiveLockedSide) : null;
                         const gdTotalLockStars = gdTotalSideEntry?.[1]?.lock?.stars ?? null;
                         const gdTotalLockWPS = gdTotalSideEntry?.[1]?.lock?.v8Scoring?.walletPlayScore ?? null;
                         // CRON-FIRST OVERRIDES — the syncPickStateAuthoritative
