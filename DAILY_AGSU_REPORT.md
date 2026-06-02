@@ -1,6 +1,6 @@
 # AGS-Unified — Daily Monitoring Report
 
-**Generated:** Tuesday, June 2, 2026 at 7:19 AM ET
+**Generated:** Tuesday, June 2, 2026 at 1:03 PM ET
 **Active model:** `ags-unified-v12` · **AGS-U cutover:** 2026-05-14 · **Days live:** 19
 
 > **Scope.** Every row in this report comes from picks AGS-U actually promoted (`promotedBy = ags-unified-v9`). Picks promoted by legacy v7/v8 routes are excluded — they'd contaminate the calibration story. Within the AGS-U pool, each pick is classified as one of:
