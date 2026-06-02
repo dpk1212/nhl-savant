@@ -710,13 +710,27 @@ async function run() {
         }
       }
       if (isTotal) {
-        const pt = polyGame?.polyTotal;
-        const isGameTotal = pt && (pt.outcomes || []).some(o => /^over$/i.test(o));
-        if (isGameTotal) {
-          entryLine = pt.line;
+        // PRIMARY: parse the line from the wallet's OWN position title.
+        // A single Polymarket "event" lists many O/U sub-markets per
+        // game — full game, F5, alt-lines (O/U 4.5, 5.5, 7.5, 8.5, ...).
+        // Trusting polyGame.polyTotal.line first was the wrong call: it
+        // pulled whichever sub-market fetchPolymarketData happened to
+        // cache, NOT the line this specific wallet bet. Real incident
+        // 2026-06-02 wallet 491f30 (tex_stl Under at line 7.5): main
+        // scanner correctly stamped entryLine=7.5, this whitelist re-pass
+        // then OVERWROTE it with polyTotal.line=4.5 (cache pointed at an
+        // alt-line), and the UI shipped "Under 4.5 -110" — a price/line
+        // combo that's mathematically impossible as a game total.
+        // Mirrors scanSharpPositions.js → use the wallet's own title
+        // first (regex captures "O/U 7.5" → 7.5) and only fall back to
+        // polyTotal when the title carries no line.
+        const totalMatch = title.match(/(?:O\/U|Over|Under|Total)[^\d]*(\d+\.?\d*)/i);
+        if (totalMatch) {
+          entryLine = parseFloat(totalMatch[1]);
         } else {
-          const totalMatch = title.match(/(?:O\/U|Over|Under|Total)[^\d]*(\d+\.?\d*)/i);
-          if (totalMatch) entryLine = parseFloat(totalMatch[1]);
+          const pt = polyGame?.polyTotal;
+          const isGameTotal = pt && (pt.outcomes || []).some(o => /^over$/i.test(o));
+          if (isGameTotal) entryLine = pt.line;
         }
       }
 
