@@ -742,13 +742,26 @@ async function run() {
         }
 
         if (isTotal) {
-          const pt = polyGame?.polyTotal;
-          const isGameTotal = pt && (pt.outcomes || []).some(o => /^over$/i.test(o));
-          if (isGameTotal) {
-            entryLine = pt.line;
+          // PRIMARY: parse the line from the wallet's OWN position title.
+          // A single Polymarket "event" lists many O/U sub-markets per
+          // game — full game, F5, alt-lines (O/U 4.5, 5.5, 7.5, 8.5, 9.5,
+          // ...). fetchPolymarketData caches whichever O/U it sees first
+          // into polyGame.polyTotal, which is frequently NOT the line the
+          // sharp actually bet. The wallet's own position title is
+          // self-evident truth ("Detroit Tigers vs. Tampa Bay Rays: O/U
+          // 8.5" → 8.5) and is what AGS must score, what the UI must
+          // display, and what the grader must compare against the final
+          // score. Mirrors the spread branch which already parses from
+          // the position title first.
+          const titleTotalMatch = title.match(/(?:O\/U|Over|Under|Total)[^\d]*(\d+\.?\d*)/i);
+          if (titleTotalMatch) {
+            entryLine = parseFloat(titleTotalMatch[1]);
           } else {
-            const totalMatch = title.match(/(?:O\/U|Over|Under|Total)[^\d]*(\d+\.?\d*)/i);
-            if (totalMatch) entryLine = parseFloat(totalMatch[1]);
+            // FALLBACK: cached polyTotal — only when the position title
+            // lacks a line (rare; usually a stripped/abbreviated title).
+            const pt = polyGame?.polyTotal;
+            const isGameTotal = pt && (pt.outcomes || []).some(o => /^over$/i.test(o));
+            if (isGameTotal) entryLine = pt.line;
           }
         }
       }
