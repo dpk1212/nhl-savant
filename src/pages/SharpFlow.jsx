@@ -6394,7 +6394,17 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const meetsInvest = consensusInvested >= minInvForSide;
   const meetsInvestShadow = consensusInvested >= minInvForSideShadow;
   const meetsThreshold = meetsInvest && sr.stars >= 3.5;
-  const isLocked = twoFactorFloor && meetsInvest;
+  // v12: cron is authoritative — if AGS-U v12 has resolved this side as
+  // FADE (either cron-stamped or browser-recomputed via the same library
+  // function), it CANNOT be locked. decideLockStage / isPromotedBy / the
+  // legacy two-factor floor still return promotedBy='ags-unified-v9' for
+  // these sides (the v9 floor doesn't know about v12), so without this
+  // gate isLocked stays true → the in-card sync useEffect stamps
+  // lockedSideRef.current → isLockedInFirestore becomes true via the OR
+  // branch → "LOCKED IN" badge + Risk pill render on top of v12-FADE
+  // (2026-06-02 col_laa / sdp_phi). One line, kills the contradiction.
+  const isCronFadeMute = earlyV12Tier === 'FADE';
+  const isLocked = twoFactorFloor && meetsInvest && !isCronFadeMute;
   // V8.6 — SHADOW gate relaxed (stars ≥ 1.0 + minInvestedFloorShadow) so
   // we capture AGS / Δw / HC margin / walletDetails on a much wider tracked
   // sample. LOCKED path is untouched — `isLocked` still requires the strict
