@@ -4798,7 +4798,15 @@ const HEALTH_REASON_LABELS = {
 };
 
 const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
-  const { team, away, home, sport, stars, peakStars, lockStars, units, peakUnits, isDownsized, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, lockEV, criteriaMet, criteria, consensusStrength, pinnacleOdds, marketType, line, superseded, health, lockTier, trackedOnly, isTopPick: isTopPickPre, isSuperTopPick: isSuperTopPickPre, walletConsensusDelta, walletConsensusForW, walletConsensusAgW, walletConsensusQualityMargin, walletConsensusQualityForT30, walletConsensusQualityAgT30, hcDominant, hcConfFor, hcConfAg, hcMargin, systemVersion, promotedBy, v73HcRescue, agsValue, agsTier, agsQuintile, agsProvenForCount, agsProvenAgCount } = pick;
+  const { team, away, home, sport, stars, peakStars, lockStars, units, peakUnits, isDownsized, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, lockEV, criteriaMet, criteria, consensusStrength, pinnacleOdds, marketType, line, superseded, health, lockTier, trackedOnly, isTopPick: isTopPickPre, isSuperTopPick: isSuperTopPickPre, walletConsensusDelta, walletConsensusForW, walletConsensusAgW, walletConsensusQualityMargin, walletConsensusQualityForT30, walletConsensusQualityAgT30, hcDominant, hcConfFor, hcConfAg, hcMargin, systemVersion, promotedBy, v73HcRescue, agsValue, agsTier, agsQuintile, agsProvenForCount, agsProvenAgCount, agsValueV12, agsTierV12, agsQuintileV12 } = pick;
+  // v12 is authoritative when stamped — every chip/badge that renders an
+  // AGS number must speak v12 vocabulary (the lock-above-zero rule, the
+  // tier-bucket Qs, the score). The legacy `agsValue` / `agsTier` /
+  // `agsQuintile` stay available as a fallback for old graded docs that
+  // pre-date v12 stamping.
+  const agsValueDisplay   = agsValueV12 != null ? agsValueV12 : agsValue;
+  const agsTierDisplay    = agsTierV12 || agsTier;
+  const agsQuintileDisplay = agsQuintileV12 != null ? agsQuintileV12 : agsQuintile;
   // v7.1/v7.2/v7.3 — render the gold "HC ×N" chip when the pick is post-cutover
   // AGS-Unified v9 — the legacy HC / Σ / hc-dominance route chips are
   // retired. Diagnostic values still flow through so we can compute an
@@ -5176,8 +5184,9 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                 For graded picks, the ribbon is slightly desaturated so
                 the WIN/LOSS outcome chip remains the dominant signal. */}
             {!isMuted && !isCancelled && !superseded && !isTrackedGrade && (() => {
-              const agsTxt = (agsValue != null && Number.isFinite(agsValue))
-                ? `${agsValue >= 0 ? '+' : ''}${agsValue.toFixed(1)}`
+              // v12-first AGS for the chip (see destructure above).
+              const agsTxt = (agsValueDisplay != null && Number.isFinite(agsValueDisplay))
+                ? `${agsValueDisplay >= 0 ? '+' : ''}${agsValueDisplay.toFixed(2)}`
                 : null;
               // Tier ribbon colors are pulled DIRECTLY from AGS_TIER_META
               // so the ribbon, the right-side rating chip, and the
@@ -5222,7 +5231,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
               const ribbonGlow = isGraded ? 'none' : tierSpec.glow;
               return (
                 <span
-                  title={`AGS-U v9 ${tierSpec.label} tier${agsTxt ? ` (AGS-U = ${agsTxt})` : ''} — ${tierSpec.tipBand}.${isGraded ? ' Outcome already graded.' : ''} Sizing ladder: ELITE 2.0× · PREMIUM 1.5× · LOCK 1.1× · LEAN 0.5× · WEAK 0.2× · FADE 0.0×.`}
+                  title={`AGS-U v12 ${tierSpec.label} tier${agsTxt ? ` (v12 score = ${agsTxt})` : ''} — ${tierSpec.tipBand}.${isGraded ? ' Outcome already graded.' : ''} Sizing ladder: ELITE 5u · PREMIUM 3u · LOCK 1u · LEAN 0.5u · WEAK 0.25u · FADE 0u (muted).`}
                   style={{
                     ...T.micro, fontWeight: tierSpec.fontWeight, letterSpacing: '0.05em',
                     padding: '0.2rem 0.55rem', borderRadius: '5px',
@@ -5576,18 +5585,18 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                       FADE < q20 (hard mute). Drives both display and the
                       cron's actual lock/mute/sizing decisions — single
                       source of truth. */}
-                  {agsValue != null && Number.isFinite(agsValue) && AGS_TIER_META[agsTier] && (
+                  {agsValueDisplay != null && Number.isFinite(agsValueDisplay) && AGS_TIER_META[agsTierDisplay] && (
                     <span style={{
                       ...T.micro, fontWeight: 800,
                       padding: '0.2rem 0.45rem', borderRadius: '5px',
-                      color: AGS_TIER_META[agsTier].color,
-                      background: AGS_TIER_META[agsTier].bg,
-                      border: `1px solid ${AGS_TIER_META[agsTier].color}66`,
+                      color: AGS_TIER_META[agsTierDisplay].color,
+                      background: AGS_TIER_META[agsTierDisplay].bg,
+                      border: `1px solid ${AGS_TIER_META[agsTierDisplay].color}66`,
                       letterSpacing: '0.04em',
                       display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
                     }}
-                    title={`AGS-U = ${agsValue >= 0 ? '+' : ''}${agsValue.toFixed(2)} — composite z-score over 5 L1-pruned features (proven count Δ, proven contribution Δ, HC ratio Δ, conviction Δ, ROI/PnL Δ). Tier=${agsTier}${agsQuintile ? ` · Q${agsQuintile}` : ''}${agsProvenForCount != null ? ` · proven ${agsProvenForCount} for / ${agsProvenAgCount} against` : ''}. Sizing ladder: ELITE 2.0× · PREMIUM 1.5× · LOCK 1.1× · LEAN 0.5× · WEAK 0.2× · FADE 0.0× (hard mute). AGS-U v9 is the single source of truth for lock, mute, and sizing decisions.`}>
-                      AGS {agsValue >= 0 ? '+' : ''}{agsValue.toFixed(1)}
+                    title={`AGS-U v12 = ${agsValueDisplay >= 0 ? '+' : ''}${agsValueDisplay.toFixed(3)} — ratio of weighted "for" wallet quality to weighted "against" wallet quality over hcBase whitelisted wallets. Tier=${agsTierDisplay}${agsQuintileDisplay ? ` · Q${agsQuintileDisplay}` : ''}${agsProvenForCount != null ? ` · proven ${agsProvenForCount} for / ${agsProvenAgCount} against` : ''}. v12 quintile cutoffs (lock above zero): ELITE ≥ q80 · PREMIUM ≥ q60 · LOCK ≥ q40 · LEAN ≥ q20 · WEAK > 0 · FADE ≤ 0 (hard mute). Sizing ladder: ELITE 5u · PREMIUM 3u · LOCK 1u · LEAN 0.5u · WEAK 0.25u.`}>
+                      AGS {agsValueDisplay >= 0 ? '+' : ''}{agsValueDisplay.toFixed(2)}
                     </span>
                   )}
                   {/* Legacy v7.3 promotion chips — DROPPED FROM LIVE
@@ -12804,6 +12813,19 @@ export default function SharpFlow() {
                           agsQuintile: Number.isFinite(sd.v8_agsQuintile) ? sd.v8_agsQuintile : null,
                           agsProvenForCount: sd.v8_agsProvenForCount ?? null,
                           agsProvenAgCount: sd.v8_agsProvenAgCount ?? null,
+                          // v12 raw — single source of truth for the AGS
+                          // number rendered on the tier chip. Without this
+                          // we displayed `agsValue` (legacy v11) next to a
+                          // v12 tier label, producing rows like
+                          // "ELITE -0.4" (v11=-0.39, v12=0.99) and
+                          // "LOCK -0.1" (v11=-0.12, v12=0.97) that look
+                          // like negative-AGS picks shouldn't be locked
+                          // under the v12 lock-above-zero rule. They ARE
+                          // well above zero in v12 — the wrong number was
+                          // being shown.
+                          agsValueV12: Number.isFinite(sd.v8_agsV12) ? sd.v8_agsV12 : null,
+                          agsTierV12: sd.v8_agsV12Tier || null,
+                          agsQuintileV12: Number.isFinite(sd.v8_agsV12Quintile) ? sd.v8_agsV12Quintile : null,
                         });
                       }
                     }
