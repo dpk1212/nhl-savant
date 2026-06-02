@@ -2640,9 +2640,15 @@ async function loadAllTimePnL() {
         // separate so the headline tier ROI doesn't get diluted by
         // intentionally-tracked picks.
         if (isPostAgsuCutover) {
-          const cronTier = (typeof sd.v8_agsTier === 'string' && sd.v8_agsTier !== 'UNKNOWN')
-            ? sd.v8_agsTier
-            : (typeof sd.v8_lockTier === 'string' ? sd.v8_lockTier : null);
+          // v12-first: graded picks won't have v12 (only v11 was stamped
+          // at grade time) — fall through to v8_agsTier. Live picks now
+          // have v12 stamped by the cron and we want analytics to bucket
+          // them under their v12 tier (PREMIUM/LOCK/etc.) not the stale v11.
+          const cronTier = (typeof sd.v8_agsV12Tier === 'string' && sd.v8_agsV12Tier !== 'UNKNOWN')
+            ? sd.v8_agsV12Tier
+            : (typeof sd.v8_agsTier === 'string' && sd.v8_agsTier !== 'UNKNOWN')
+              ? sd.v8_agsTier
+              : (typeof sd.v8_lockTier === 'string' ? sd.v8_lockTier : null);
           if (cronTier && byAgsTier[cronTier]) {
             const tierBucket = byAgsTier[cronTier];
             const shippedLive = u > 0 && !isTrackedOnly && !isCancelled;
@@ -12397,27 +12403,28 @@ export default function SharpFlow() {
                         // is stale. Pass the cron's values down so the card
                         // can mirror them and only fall back to live derive
                         // when the cron hasn't stamped yet.
-                        const gdMlCronSide = gdActiveSideEntry?.[1];
-                        const gdMlCronTier = (typeof gdMlCronSide?.v8_agsTier === 'string' && gdMlCronSide.v8_agsTier !== 'UNKNOWN')
-                          ? gdMlCronSide.v8_agsTier
-                          : (typeof gdMlCronSide?.v8_lockTier === 'string' ? gdMlCronSide.v8_lockTier : null);
-                        const gdMlCronUnits = Number.isFinite(gdMlCronSide?.finalUnits) ? gdMlCronSide.finalUnits
-                                            : Number.isFinite(gdMlCronSide?.v8_agsUnitsApplied) ? gdMlCronSide.v8_agsUnitsApplied
+                        // v12-first tier resolution for the live game card
+                        // overrides — same fix applied to the Locked Picks
+                        // list above. The cron stamps BOTH v11 and v12 and
+                        // they can disagree; v12 is the authoritative ladder.
+                        const pickV12Tier = (side) => (typeof side?.v8_agsV12Tier === 'string' && side.v8_agsV12Tier !== 'UNKNOWN')
+                          ? side.v8_agsV12Tier
+                          : (typeof side?.v8_agsTier === 'string' && side.v8_agsTier !== 'UNKNOWN')
+                            ? side.v8_agsTier
+                            : (typeof side?.v8_lockTier === 'string' ? side.v8_lockTier : null);
+                        const pickV12Units = (side) => Number.isFinite(side?.finalUnits) ? side.finalUnits
+                                            : Number.isFinite(side?.v8_agsV12UnitsApplied) ? side.v8_agsV12UnitsApplied
+                                            : Number.isFinite(side?.v8_agsUnitsApplied) ? side.v8_agsUnitsApplied
                                             : null;
+                        const gdMlCronSide = gdActiveSideEntry?.[1];
+                        const gdMlCronTier = pickV12Tier(gdMlCronSide);
+                        const gdMlCronUnits = pickV12Units(gdMlCronSide);
                         const gdSpreadCronSide = gdSpreadSideEntry?.[1];
-                        const gdSpreadCronTier = (typeof gdSpreadCronSide?.v8_agsTier === 'string' && gdSpreadCronSide.v8_agsTier !== 'UNKNOWN')
-                          ? gdSpreadCronSide.v8_agsTier
-                          : (typeof gdSpreadCronSide?.v8_lockTier === 'string' ? gdSpreadCronSide.v8_lockTier : null);
-                        const gdSpreadCronUnits = Number.isFinite(gdSpreadCronSide?.finalUnits) ? gdSpreadCronSide.finalUnits
-                                                : Number.isFinite(gdSpreadCronSide?.v8_agsUnitsApplied) ? gdSpreadCronSide.v8_agsUnitsApplied
-                                                : null;
+                        const gdSpreadCronTier = pickV12Tier(gdSpreadCronSide);
+                        const gdSpreadCronUnits = pickV12Units(gdSpreadCronSide);
                         const gdTotalCronSide = gdTotalSideEntry?.[1];
-                        const gdTotalCronTier = (typeof gdTotalCronSide?.v8_agsTier === 'string' && gdTotalCronSide.v8_agsTier !== 'UNKNOWN')
-                          ? gdTotalCronSide.v8_agsTier
-                          : (typeof gdTotalCronSide?.v8_lockTier === 'string' ? gdTotalCronSide.v8_lockTier : null);
-                        const gdTotalCronUnits = Number.isFinite(gdTotalCronSide?.finalUnits) ? gdTotalCronSide.finalUnits
-                                               : Number.isFinite(gdTotalCronSide?.v8_agsUnitsApplied) ? gdTotalCronSide.v8_agsUnitsApplied
-                                               : null;
+                        const gdTotalCronTier = pickV12Tier(gdTotalCronSide);
+                        const gdTotalCronUnits = pickV12Units(gdTotalCronSide);
                         return <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} onHealthSynced={onHealthSynced} isMyPick={!!userPicks[gd.key]} onToggleMyPick={onToggleMyPick} canPickGames={!!(user && isPremium)} gameFlowMap={gameFlowMap} spreadPositions={spreadPositions} totalPositions={totalPositions} originalLockedSide={gdOriginalSide} originalLockStars={gdLockStars} originalLockWPS={gdLockWPS} originalFlipBeatThreshold={gdFlipBeatThreshold} originalSpreadLockStars={gdSpreadLockStars} originalSpreadLockWPS={gdSpreadLockWPS} originalTotalLockStars={gdTotalLockStars} originalTotalLockWPS={gdTotalLockWPS} v8Norm={v8Norm} walletProfiles={walletProfiles} mlCronTier={gdMlCronTier} mlCronUnits={gdMlCronUnits} spreadCronTier={gdSpreadCronTier} spreadCronUnits={gdSpreadCronUnits} totalCronTier={gdTotalCronTier} totalCronUnits={gdTotalCronUnits} />;
                       })}
                     </div>
@@ -12437,6 +12444,29 @@ export default function SharpFlow() {
                       const docSport = doc.sport || 'NHL';
                       for (const [sideKey, sd] of Object.entries(doc.sides || {})) {
                         if (sd.lockStage === 'SHADOW' || sd.superseded) continue;
+                        // v12 mute gate. When the cron has stamped v12 and
+                        // v12 says FADE (score ≤ q20 cutoff, units=0), the
+                        // side is muted under the new ladder regardless of
+                        // the legacy lockStage. The cron sometimes leaves
+                        // such picks at lockStage='LOCKED' from a pre-v12
+                        // promotion (promotedBy=ags-unified-v9) — surfacing
+                        // them here as "Locked Picks" with their old V11
+                        // tier label ("ELITE 0u +0.00") was the contradiction
+                        // the user flagged on sfg_mil / sdp_phi (2026-06-02).
+                        // Skip them entirely; v12=FADE means "do not bet".
+                        const sdGradedEarly = sd.status === 'COMPLETED' && !!sd.result?.outcome;
+                        if (!sdGradedEarly && sd.v8_agsV12Tier === 'FADE') continue;
+                        // Also skip un-graded sides that the health monitor
+                        // explicitly muted/cancelled AND that lack any v12
+                        // stamp — these have no defensible tier label
+                        // (cle_nyy_total over 2026-06-02 surfaced as
+                        // "WEAKENING · SOLID PLAY · 0.75u" with no tier at
+                        // all). Graded sides still flow through so historical
+                        // PnL keeps rendering.
+                        const healthStatusEarly = typeof sd.health === 'object' ? sd.health?.status : sd.health;
+                        if (!sdGradedEarly
+                            && (healthStatusEarly === 'MUTED' || healthStatusEarly === 'CANCELLED')
+                            && !Number.isFinite(sd.v8_agsV12)) continue;
                         // v7.4 single-floor display gate. For post-cutover
                         // picks, only render sides that currently pass the
                         // floor (HC ≥ +1 OR Σ ≥ 5). Graded picks always
@@ -12568,10 +12598,22 @@ export default function SharpFlow() {
                         // and only falls back to client recomputation
                         // when the cron hasn't stamped yet (cold start /
                         // no proven wallets / off-calendar pick).
-                        const cronTier = (typeof sd.v8_agsTier === 'string' && sd.v8_agsTier !== 'UNKNOWN')
-                          ? sd.v8_agsTier
-                          : (typeof sd.v8_lockTier === 'string' ? sd.v8_lockTier : null);
+                        // v12 tier-first resolution. The cron stamps BOTH
+                        // legacy v11 (`v8_agsTier`) and v12 (`v8_agsV12Tier`)
+                        // every cycle, and the two CAN disagree — e.g.
+                        // tex_stl_total·under on 2026-06-02 had
+                        // v11=LEAN/q3/+0.08 but v12=PREMIUM/q4/+0.98 and the
+                        // card was rendering "LEAN · 3.0u +0.98" (label v11,
+                        // units v12, AGS v12). Prefer v12 whenever it's
+                        // stamped so the label, units and AGS all reflect
+                        // the same scoring run.
+                        const cronTier = (typeof sd.v8_agsV12Tier === 'string' && sd.v8_agsV12Tier !== 'UNKNOWN')
+                          ? sd.v8_agsV12Tier
+                          : (typeof sd.v8_agsTier === 'string' && sd.v8_agsTier !== 'UNKNOWN')
+                            ? sd.v8_agsTier
+                            : (typeof sd.v8_lockTier === 'string' ? sd.v8_lockTier : null);
                         const cronUnits = Number.isFinite(sd.finalUnits) ? sd.finalUnits
+                                        : Number.isFinite(sd.v8_agsV12UnitsApplied) ? sd.v8_agsV12UnitsApplied
                                         : Number.isFinite(sd.v8_agsUnitsApplied) ? sd.v8_agsUnitsApplied
                                         : null;
                         const sizing = isGradedSide
