@@ -13,9 +13,9 @@
 - [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldHockey.svg)NHL](https://www.oddstrader.com/nhl/)
 - [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldFootball.svg)NFL](https://www.oddstrader.com/nfl/)
 - [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldFootball.svg)NCAAF](https://www.oddstrader.com/ncaa-college-football/)
-- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldSoccer.svg)soccer](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1780428951469)
-- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldTennis.svg)tennis](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1780428951469)
-- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldMore.svg)other](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1780428951469)
+- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldSoccer.svg)soccer](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1780515677076)
+- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldTennis.svg)tennis](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1780515677076)
+- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldMore.svg)other](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1780515677076)
 
 NHL
 
@@ -47,7 +47,7 @@ TodayYesterday
 
 ![logo-NHL](https://otcdn.virginia.us-east-1.oddstrader.com/leagues/NHL.svg)
 
-NHLTue 06/02
+NHLThu 06/04
 
 [Opener](https://www.oddstrader.com/betting/)
 
@@ -66,8 +66,8 @@ NHLTue 06/02
 |     |     |     |     |     |     |     |     |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>TUE 06/028:00 PMGame 1<br>![](https://logos.oddstrader.com/logos-original/e3199119-49e3-4bf8-9f6f-bcf997eb1105-original.PNG?d=100x100)<br>Vegas<br>51-47<br>18%<br>+137BetOnline | +132 | +137 | +130 | +133 | +131 | +129 | +129 |
-| ![](https://logos.oddstrader.com/logos-original/2f371caa-925a-4a48-a5ed-7cc4c841cb4a-original.png?d=100x100)<br>Carolina<br>65-30<br>82%<br>-145Heritage | -150 | -156 | -150 | -155 | -145 | -149 | -149 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 06/048:00 PMGame 2: VGK Leads 1-0<br>![](https://logos.oddstrader.com/logos-original/e3199119-49e3-4bf8-9f6f-bcf997eb1105-original.PNG?d=100x100)<br>Vegas<br>52-47<br>14%<br>+138BetOnline | +136 | +138 | +137 | +135 | +138 | +138 | +138 |
+| ![](https://logos.oddstrader.com/logos-original/2f371caa-925a-4a48-a5ed-7cc4c841cb4a-original.png?d=100x100)<br>Carolina<br>65-31<br>86%<br>-152Heritage | -155 | -157 | -157 | -160 | -152 | -158 | -158 |
 
 ## Best NHL Betting Odds and Spreads for Tonight’s Games
 
