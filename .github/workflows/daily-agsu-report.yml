@@ -4,10 +4,17 @@ name: AGS-Unified Daily Report
 # Replaces the v6/v7/v8 dailies as the source of truth for sharp-intel
 # performance, calibration, and operational health.
 #
-# The underlying script (`scripts/dailyAgsUReport.js`) imports the active
-# model surface (AGS_FEATURES, AGS_WEIGHTS, AGS_FALLBACK_CALIBRATION) at
-# runtime from `src/lib/ags.js`. When the model is bumped (v9 → v10 →
-# v11 → …) the report auto-tracks the new structure — no edits here needed.
+# The underlying script (`scripts/dailyAgsUReport.js`) imports BOTH model
+# surfaces (v11 logistic regression: AGS_FEATURES / AGS_WEIGHTS /
+# AGS_FALLBACK_CALIBRATION, and v12 wallet-quality: AGS_V12_FALLBACK_
+# CALIBRATION / agsV12TierFromValue / agsV12SizeMultiplier) at runtime
+# from `src/lib/ags.js`. When either model is bumped (v9 → v10 → v11 →
+# v12 → …) the report auto-tracks the new structure — no edits here needed.
+#
+# v12 PARALLEL SECTIONS rendered in addition to v11 (see scripts/
+# dailyAgsUReport.js header for the full list): §1b/§2b/§5b mirror the
+# v11 calibration sections for v12; §13 is a head-to-head and §14 audits
+# the v12 wallet-quality distribution.
 #
 # Schedule: 8:30am ET every day (12:30 UTC). Tunable below.
 # Manual: trigger from the Actions tab "Run workflow" button — useful
