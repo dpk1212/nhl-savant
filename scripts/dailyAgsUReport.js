@@ -89,6 +89,24 @@ const isAgsuPromotion = (tag) => typeof tag === 'string' && tag.startsWith(AGSU_
 // AGS-U sizing ladder multipliers (must match scripts/syncPickStateAuthoritative.js).
 const TIER_MULT = { ELITE: 2.00, PREMIUM: 1.50, LOCK: 1.10, LEAN: 0.50, WEAK: 0.20, FADE: 0.00 };
 const TIER_ORDER = ['ELITE', 'PREMIUM', 'LOCK', 'LEAN', 'WEAK', 'FADE'];
+
+// v12 ABSOLUTE units ladder (not a multiplier — see syncPickStateAuthoritative
+// `unitsFromAgsV12` and ags.js `agsV12SizeMultiplier`). After ladder lookup
+// the value is run through `oddsCap` (which clamps long underdogs down to
+// 2.5 / 1.5 / 1.0 at +100 / +151 / +200 thresholds), so the realised stake
+// can legitimately fall below the ladder target on +odds — that is NOT a
+// drift bug, it's the cap doing its job.
+const V12_TIER_UNITS = { ELITE: 5.00, PREMIUM: 3.00, LOCK: 1.00, LEAN: 0.50, WEAK: 0.25, FADE: 0.00 };
+// Maximum stake by american-odds band, mirroring oddsCap in
+// syncPickStateAuthoritative.js. Used by § 13 to distinguish legitimate
+// odds-cap clamping from a real sizing pipeline regression.
+function oddsCapForReport(units, odds) {
+  if (!Number.isFinite(odds)) return units;
+  if (odds >= 200) return Math.min(units, 1.0);
+  if (odds >= 151) return Math.min(units, 1.5);
+  if (odds >= 100) return Math.min(units, 2.5);
+  return units;
+}
 const TIER_QUINTILE_LABEL = {
   ELITE:   '≥ q90',
   PREMIUM: 'q80–q90',
@@ -254,10 +272,18 @@ async function loadAllAgsuGradedPicks() {
         const agsQuintile = Number.isFinite(sd.v8_agsQuintile) ? sd.v8_agsQuintile : null;
         const agsComponents = sd.v8_agsComponents || null;
         // v12 wallet-quality model stamps. Co-exist with v11 stamps during
-        // the transition so § 0b can compare v11 vs v12 rank power honestly.
+        // the transition so § 0b can compare v11 vs v12 rank power honestly,
+        // and § 13 can do an in-depth audit of v12 production behaviour.
         const agsV12 = Number.isFinite(sd.v8_agsV12) ? sd.v8_agsV12 : null;
         const agsV12Tier = sd.v8_agsV12Tier || null;
         const agsV12Quintile = Number.isFinite(sd.v8_agsV12Quintile) ? sd.v8_agsV12Quintile : null;
+        const agsV12UnitsApplied = Number.isFinite(sd.v8_agsV12UnitsApplied) ? sd.v8_agsV12UnitsApplied : null;
+        // Per-side wallet-quality means (when the cron stamps them; not all
+        // v12 implementations write these — guard accordingly).
+        const agsV12ForMean = Number.isFinite(sd.v8_agsV12ForMean) ? sd.v8_agsV12ForMean : null;
+        const agsV12AgMean = Number.isFinite(sd.v8_agsV12AgMean) ? sd.v8_agsV12AgMean : null;
+        const agsV12ForCount = Number.isFinite(sd.v8_agsV12ForCount) ? sd.v8_agsV12ForCount : null;
+        const agsV12AgCount = Number.isFinite(sd.v8_agsV12AgCount) ? sd.v8_agsV12AgCount : null;
         const provenFor = sd.v8_agsProvenForCount ?? null;
         const provenAg = sd.v8_agsProvenAgCount ?? null;
         const hcMargin = Number.isFinite(sd.v8_hcMargin)
@@ -287,7 +313,8 @@ async function loadAllAgsuGradedPicks() {
           lockStars: lock.stars || 0,
           peakStars: peak.stars || lock.stars || 0,
           ags, agsTier, agsQuintile, agsComponents,
-          agsV12, agsV12Tier, agsV12Quintile,
+          agsV12, agsV12Tier, agsV12Quintile, agsV12UnitsApplied,
+          agsV12ForMean, agsV12AgMean, agsV12ForCount, agsV12AgCount,
           provenFor, provenAg,
           provenTotal: (provenFor ?? 0) + (provenAg ?? 0),
           hcMargin,
@@ -1148,6 +1175,21 @@ function modelEraForPick(row, eras) {
   return match;
 }
 
+// Pick out the v12 effective-from date from the calibration-history eras.
+// Returns null if v12 hasn't shipped yet.
+function v12EffectiveFrom(eras) {
+  const e = eras.find(x => /v12/.test(x.version));
+  return e ? e.effectiveFrom : null;
+}
+
+// All AGSU-promoted rows that fell within the v12 production window
+// (date-only filter, ignores backfilled v12 stamps on older picks).
+function v12EraRows(rows, eras) {
+  const from = v12EffectiveFrom(eras);
+  if (!from) return [];
+  return rows.filter(r => r.date && r.date >= from);
+}
+
 function buildVersionComparison(report, rows, eras) {
   report.push(`## § 0b — AGS-U Model Version Comparison`);
   report.push('');
@@ -1294,6 +1336,338 @@ function buildVersionComparison(report, rows, eras) {
   }
 }
 
+// ── § 13 — V12 Deep Performance Monitor ─────────────────────────────────
+// Everything in this section is V12-ONLY and date-scoped to the v12 era
+// (so cron back-fill of v12 scores onto historical picks can't contaminate
+// production metrics). Sub-sections:
+//   A. Daily trajectory
+//   B. Tier × production scoreboard (with absolute-ladder drift)
+//   C. Sizing drift (per-pick) — only flags non-odds-cap discrepancies
+//   D. Per-sport × per-market matrix
+//   E. Score-band reliability (calibration on the v12 axis)
+//   F. Mute-rule effectiveness (counterfactual at flat 1u on FADE picks)
+//   G. V12 vs V11 tier disagreement on shared picks
+//   H. Wallet-quality audit (when per-side mean stamps exist)
+//   I. Recent v12 picks (last 20 shipped)
+function buildV12DeepMonitor(report, agsuRows, allRows, eras, liveCal) {
+  report.push(`## § 13 — V12 Deep Performance Monitor`);
+  report.push('');
+
+  const v12From = v12EffectiveFrom(eras);
+  if (!v12From) {
+    report.push(`_(v12 not yet in calibration history — section will populate when v12 ships)_`);
+    report.push('');
+    return;
+  }
+
+  const today = etToday();
+  const daysLive = Math.max(1, Math.floor((new Date(today) - new Date(v12From)) / 86400000) + 1);
+  const v12Rows = v12EraRows(agsuRows, eras);
+  const v12RowsAll = v12EraRows(allRows.filter(r => isAgsuPromotion(r.promotedBy)), eras);
+
+  report.push(`V12 went authoritative on **${v12From}** (${daysLive} day${daysLive === 1 ? '' : 's'} live). This section monitors v12 IN PRODUCTION — every metric is scoped to AGSU-promoted picks dated ≥ ${v12From}, so cron back-fill of v12 stamps onto historical v11-era picks cannot contaminate the numbers. Pool size: **${v12Rows.length}** graded picks · **${v12RowsAll.length}** sides total (graded + pending).`);
+  report.push('');
+
+  if (v12Rows.length === 0) {
+    report.push(`_(no graded v12-era picks yet)_`);
+    report.push('');
+    return;
+  }
+
+  // ── A. Daily trajectory ────────────────────────────────────────────
+  report.push(`### A. V12 daily trajectory`);
+  report.push('');
+  report.push(`Day-by-day production. **Evaluated** = AGSU picks made that day (graded + pending). **Live** = units > 0 and not tracked. **Muted** = FADE / 0u / tracked. **Cumulative PnL** is the running total of live PnL across v12's life.`);
+  report.push('');
+  const dates = [...new Set(v12RowsAll.map(r => r.date))].sort();
+  report.push(`| Date       | Evaluated | Live | Muted | W-L (live) | Win %  | Stake (u) | PnL (u)    | ROI       | Cum PnL    |`);
+  report.push(`|------------|-----------|------|-------|------------|--------|-----------|------------|-----------|------------|`);
+  let cumPnl = 0;
+  for (const d of dates) {
+    const dayAll = v12RowsAll.filter(r => r.date === d);
+    const dayGraded = v12Rows.filter(r => r.date === d);
+    const agg = aggregate(dayGraded);
+    const muted = dayGraded.filter(r => (r.units || 0) === 0 || r.tracked).length;
+    cumPnl += agg.profit;
+    report.push(`| ${d.padEnd(10)} | ${String(dayAll.length).padStart(9)} | ${String(agg.n).padStart(4)} | ${String(muted).padStart(5)} | ${(agg.w+'-'+agg.l).padEnd(10)} | ${pct(agg.w, agg.n).padStart(6)} | ${agg.totalStake.toFixed(2).padStart(9)} | ${fmtSigned(agg.profit).padStart(10)} | ${(agg.roi != null ? agg.roi.toFixed(1)+'%' : '—').padStart(9)} | ${fmtSigned(cumPnl).padStart(10)} |`);
+  }
+  report.push('');
+
+  // ── B. Production tier scoreboard ──────────────────────────────────
+  report.push(`### B. V12 production tier scoreboard`);
+  report.push('');
+  report.push(`Performance broken down by the v12 tier the cron stamped at lock. **Expected** is the absolute-ladder target before odds-cap; **Avg stake actual** is the realised average (lower is fine on positive odds because \`oddsCap\` clamps long underdogs). **Drift** = Avg stake − Expected. Drift > 0 or drift < –1.0u on negative odds is a sizing-pipeline regression.`);
+  report.push('');
+  report.push(`| Tier     | Ladder | N   | W-L    | Win %  | Avg AGS-v12 | Expected | Avg stake actual | Drift  | Total Stake | PnL (u)    | ROI       |`);
+  report.push(`|----------|--------|-----|--------|--------|-------------|----------|------------------|--------|-------------|------------|-----------|`);
+  const tierStats = {};
+  for (const tier of TIER_ORDER) {
+    const tierRows = v12Rows.filter(r => r.agsV12Tier === tier);
+    const agg = aggregate(tierRows);
+    tierStats[tier] = agg;
+    if (agg.n + agg.trackedN === 0) continue;
+    const avgScore = tierRows.length ? avg(tierRows.map(r => r.agsV12).filter(Number.isFinite)) : null;
+    const expected = V12_TIER_UNITS[tier];
+    const liveRows = tierRows.filter(r => (r.units || 0) > 0 && !r.tracked);
+    const avgStake = liveRows.length ? avg(liveRows.map(r => r.units)) : null;
+    const drift = (avgStake != null) ? avgStake - expected : null;
+    report.push(`| ${tier.padEnd(8)} | ${(expected.toFixed(2)+'u').padStart(6)} | ${String(agg.n + agg.trackedN).padStart(3)} | ${(agg.w+'-'+agg.l).padEnd(6)} | ${pct(agg.w, agg.n).padStart(6)} | ${(avgScore != null ? fmtSigned(avgScore, 3) : '—').padStart(11)} | ${(expected.toFixed(2)+'u').padStart(8)} | ${(avgStake != null ? avgStake.toFixed(2)+'u' : '—').padStart(16)} | ${(drift != null ? fmtSigned(drift, 2)+'u' : '—').padStart(6)} | ${agg.totalStake.toFixed(2).padStart(11)} | ${fmtSigned(agg.profit).padStart(10)} | ${(agg.roi != null ? agg.roi.toFixed(1)+'%' : '—').padStart(9)} |`);
+  }
+  report.push('');
+  // Monotonicity on positive tiers
+  const posTiers = ['ELITE', 'PREMIUM', 'LOCK', 'LEAN', 'WEAK'];
+  const rois = posTiers.map(t => tierStats[t].roi).filter(v => v != null);
+  const winRates = posTiers.map(t => tierStats[t].realWinRate).filter(v => v != null);
+  if (rois.length >= 2) {
+    const roiMono = monoScore(rois);
+    const winMono = monoScore(winRates);
+    const verdict = (m, n) => m <= -(n-2) ? '🟢 monotonic' : m >= (n-2) ? '🚨 inverted' : '🟡 partial';
+    report.push(`> **Monotonicity (positive tiers ELITE → WEAK).** ROI score \`${roiMono}\` ${verdict(roiMono, rois.length)} · Win-rate score \`${winMono}\` ${verdict(winMono, winRates.length)}. ELITE should out-earn PREMIUM should out-earn LOCK… If inverted, the v12 score is upside-down on this sample (sizing the wrong picks the most).`);
+    report.push('');
+  }
+
+  // ── C. Per-pick sizing drift (only flag non-odds-cap discrepancies) ─
+  const drifters = [];
+  for (const r of v12Rows) {
+    if (!r.agsV12Tier) continue;
+    const expected = V12_TIER_UNITS[r.agsV12Tier];
+    const expectedCapped = oddsCapForReport(expected, r.peakOdds);
+    const actual = r.units || 0;
+    const diff = actual - expectedCapped;
+    if (Math.abs(diff) >= 0.05) drifters.push({ r, expected, expectedCapped, actual, diff });
+  }
+  if (drifters.length > 0) {
+    report.push(`### C. V12 sizing drift (per-pick)`);
+    report.push('');
+    report.push(`🚨 **${drifters.length} picks deviate from the v12 ladder** by more than ±0.05u after applying the same odds-cap the production cron uses. Investigate \`unitsFromAgsV12\` in \`syncPickStateAuthoritative.js\` and re-stamp via the sync script.`);
+    report.push('');
+    report.push(`| Date       | Sport | Mkt    | Pick                    | Odds  | v12   | Tier     | Expected (cap) | Actual | Drift  |`);
+    report.push(`|------------|-------|--------|-------------------------|-------|-------|----------|----------------|--------|--------|`);
+    for (const d of drifters.slice(0, 25)) {
+      const r = d.r;
+      const teamLabel = `${r.team || r.sideKey || ''}`.substring(0, 23);
+      const oddsStr = r.peakOdds > 0 ? `+${r.peakOdds}` : `${r.peakOdds}`;
+      report.push(`| ${r.date.padEnd(10)} | ${(r.sport || '').padEnd(5)} | ${(r.marketType || '').padEnd(6)} | ${teamLabel.padEnd(23)} | ${oddsStr.padStart(5)} | ${fmtSigned(r.agsV12, 3).padStart(5)} | ${(r.agsV12Tier || '—').padEnd(8)} | ${(d.expectedCapped.toFixed(2)+'u').padStart(14)} | ${(d.actual.toFixed(2)+'u').padStart(6)} | ${fmtSigned(d.diff, 2).padStart(6)} |`);
+    }
+    if (drifters.length > 25) report.push(`| _… and ${drifters.length - 25} more_ |`);
+    report.push('');
+  } else {
+    report.push(`### C. V12 sizing drift (per-pick)`);
+    report.push('');
+    report.push(`🟢 **No sizing drift detected.** Every v12 pick's stamped \`finalUnits\` matches the ladder target after odds-cap, within ±0.05u tolerance.`);
+    report.push('');
+  }
+
+  // ── D. Per-sport × per-market matrix ──────────────────────────────
+  report.push(`### D. V12 performance by sport × market`);
+  report.push('');
+  report.push(`Where is v12 finding edge? Each cell shows \`N · Win% · ROI\` over LIVE picks (units > 0).`);
+  report.push('');
+  const sports = [...new Set(v12Rows.map(r => r.sport))].sort();
+  const markets = ['ML', 'SPREAD', 'TOTAL'];
+  report.push(`| Sport | ${markets.map(m => m.padEnd(20)).join(' | ')} | All                  |`);
+  report.push(`|-------|${markets.map(() => '----------------------').join('|')}|----------------------|`);
+  for (const sport of sports) {
+    const sportRows = v12Rows.filter(r => r.sport === sport);
+    const cells = markets.map(m => {
+      const a = aggregate(sportRows.filter(r => r.marketType === m));
+      if (a.n === 0) return '—';
+      return `${a.n}n · ${pct(a.w, a.n)} · ${a.roi != null ? (a.roi>=0?'+':'') + a.roi.toFixed(1)+'%' : '—'}`;
+    });
+    const all = aggregate(sportRows);
+    const allCell = all.n === 0 ? '—' : `${all.n}n · ${pct(all.w, all.n)} · ${all.roi != null ? (all.roi>=0?'+':'') + all.roi.toFixed(1)+'%' : '—'}`;
+    report.push(`| ${sport.padEnd(5)} | ${cells.map(c => c.padEnd(20)).join(' | ')} | ${allCell.padEnd(20)} |`);
+  }
+  // All sports row
+  const allCells = markets.map(m => {
+    const a = aggregate(v12Rows.filter(r => r.marketType === m));
+    if (a.n === 0) return '—';
+    return `${a.n}n · ${pct(a.w, a.n)} · ${a.roi != null ? (a.roi>=0?'+':'') + a.roi.toFixed(1)+'%' : '—'}`;
+  });
+  const overall = aggregate(v12Rows);
+  const overallCell = overall.n === 0 ? '—' : `${overall.n}n · ${pct(overall.w, overall.n)} · ${overall.roi != null ? (overall.roi>=0?'+':'') + overall.roi.toFixed(1)+'%' : '—'}`;
+  report.push(`| **All** | ${allCells.map(c => `**${c}**`.padEnd(20)).join(' | ')} | ${('**' + overallCell + '**').padEnd(20)} |`);
+  report.push('');
+
+  // ── E. Score-band reliability ─────────────────────────────────────
+  report.push(`### E. V12 score-band reliability`);
+  report.push('');
+  report.push(`Does v12 score actually predict outcomes? Picks bucketed by v12 score. **Realized** = win rate among graded picks in the band; **Implied** = average market implied probability. **Edge** = Realized − Implied (positive = v12 is finding mispricings the market doesn't).`);
+  report.push('');
+  const v12Bands = [
+    { label: '> 0.9 (strong)',   lo: 0.9,   hi: Infinity },
+    { label: '0.7 – 0.9',         lo: 0.7,   hi: 0.9 },
+    { label: '0.5 – 0.7',         lo: 0.5,   hi: 0.7 },
+    { label: '0.25 – 0.5',        lo: 0.25,  hi: 0.5 },
+    { label: '(0, 0.25]',         lo: 0,     hi: 0.25 },
+    { label: '≤ 0 (MUTE rule)',   lo: -Infinity, hi: 0 },
+  ];
+  report.push(`| v12 band         | N   | Live N | W-L    | Realized | Implied | Edge       | ROI (live)|`);
+  report.push(`|------------------|-----|--------|--------|----------|---------|------------|-----------|`);
+  for (const b of v12Bands) {
+    const bandRows = v12Rows.filter(r => {
+      if (!Number.isFinite(r.agsV12)) return false;
+      if (b.lo === -Infinity) return r.agsV12 <= b.hi;
+      if (b.hi === Infinity) return r.agsV12 > b.lo;
+      return r.agsV12 > b.lo && r.agsV12 <= b.hi;
+    });
+    if (bandRows.length === 0) continue;
+    const agg = aggregate(bandRows);
+    const n = bandRows.length;
+    const wins = bandRows.filter(r => r.won === 1).length;
+    const realized = n > 0 ? wins / n * 100 : null;
+    const impliedVals = bandRows.map(r => americanToImplied(r.lockOdds || r.peakOdds)).filter(Number.isFinite);
+    const implied = impliedVals.length ? avg(impliedVals) * 100 : null;
+    const edge = (realized != null && implied != null) ? realized - implied : null;
+    report.push(`| ${b.label.padEnd(16)} | ${String(n).padStart(3)} | ${String(agg.n).padStart(6)} | ${(agg.w+'-'+agg.l).padEnd(6)} | ${(realized != null ? realized.toFixed(1)+'%' : '—').padStart(8)} | ${(implied != null ? implied.toFixed(1)+'%' : '—').padStart(7)} | ${(edge != null ? (edge>=0?'+':'') + edge.toFixed(1)+'pp' : '—').padStart(10)} | ${(agg.roi != null ? agg.roi.toFixed(1)+'%' : '—').padStart(9)} |`);
+  }
+  report.push('');
+  report.push(`> The **MUTE band (≤ 0)** is what v12 chose NOT to ship. If those picks win at > ~52%, the mute rule is too aggressive and is throwing away edge. The mute audit in §F quantifies the dollar impact.`);
+  report.push('');
+
+  // ── F. Mute-rule effectiveness ────────────────────────────────────
+  const muted = v12Rows.filter(r => r.agsV12Tier === 'FADE' || (Number.isFinite(r.agsV12) && r.agsV12 <= 0));
+  if (muted.length > 0) {
+    report.push(`### F. V12 mute-rule effectiveness (counterfactual on FADE picks)`);
+    report.push('');
+    report.push(`v12 muted **${muted.length}** graded picks (score ≤ 0). If those had each been shipped at a flat 1u stake, this is what would have happened. The verdict tells you whether the mute rule is **saving money** (good) or **throwing away edge** (bad).`);
+    report.push('');
+    let cfPnl = 0;
+    let cfWins = 0;
+    let cfLosses = 0;
+    for (const r of muted) {
+      if (r.won == null) continue;
+      if (r.won === 1) cfWins++; else cfLosses++;
+      const odds = r.peakOdds || r.lockOdds;
+      const win = r.won === 1
+        ? (odds < 0 ? 100 / Math.abs(odds) : odds / 100)
+        : -1;
+      cfPnl += win;
+    }
+    const cfN = cfWins + cfLosses;
+    const cfWinRate = cfN > 0 ? cfWins / cfN * 100 : null;
+    const cfRoi = cfN > 0 ? cfPnl / cfN * 100 : null;
+    report.push(`| Metric                              | Value                |`);
+    report.push(`|-------------------------------------|----------------------|`);
+    report.push(`| Muted picks (graded)                | ${String(cfN).padStart(20)} |`);
+    report.push(`| Muted W-L                           | ${(cfWins+'-'+cfLosses).padStart(20)} |`);
+    report.push(`| Muted Win %                         | ${(cfWinRate != null ? cfWinRate.toFixed(1)+'%' : '—').padStart(20)} |`);
+    report.push(`| Flat-1u counterfactual PnL          | ${fmtSigned(cfPnl).padStart(20)} |`);
+    report.push(`| Flat-1u counterfactual ROI          | ${(cfRoi != null ? cfRoi.toFixed(1)+'%' : '—').padStart(20)} |`);
+    report.push('');
+    let verdict;
+    if (cfRoi == null) verdict = '_(insufficient sample)_';
+    else if (cfRoi < -3) verdict = `🟢 **MUTE IS SAVING MONEY.** Muted picks would have lost ${fmtSigned(cfPnl)}u at flat 1u — v12 correctly identified losers.`;
+    else if (cfRoi > 3) verdict = `🚨 **MUTE IS COSTING MONEY.** Muted picks would have earned ${fmtSigned(cfPnl)}u at flat 1u — v12 is throwing away edge. Loosen the wallet-quality threshold.`;
+    else verdict = `🟡 **Mute is approximately break-even** (±3% ROI). v12 is not destroying value on the muted pool, but it's also not capturing much either.`;
+    report.push(`**Verdict:** ${verdict}`);
+    report.push('');
+  }
+
+  // ── G. V12 vs V11 tier disagreement on shared picks ───────────────
+  // KNOWN LIMITATION: `syncPickStateAuthoritative.js` overwrites
+  // `v8_agsTier` with the v12 tier whenever v12 is the authoritative model.
+  // That means on v12-era picks `r.agsTier === r.agsV12Tier` by
+  // construction — the confusion matrix below is therefore ALWAYS 100%
+  // diagonal and is rendered only as a structural sanity check. To make
+  // this section analytically useful we'd need to re-derive the v11 tier
+  // from the still-stamped v11 score `r.ags` against the v11 quintile
+  // calibration (a future addition to liveCal export).
+  const shared = v12Rows.filter(r => Number.isFinite(r.ags) && Number.isFinite(r.agsV12) && r.agsTier && r.agsV12Tier);
+  if (shared.length > 0) {
+    report.push(`### G. V12 vs V11 tier comparison (shared picks)`);
+    report.push('');
+    const stampedAgreementOnly = shared.every(r => r.agsTier === r.agsV12Tier);
+    if (stampedAgreementOnly) {
+      report.push(`> 🟡 **Comparison degraded.** \`syncPickStateAuthoritative.js\` overwrites the Firestore \`v8_agsTier\` stamp with the v12 tier whenever v12 is authoritative. So on every v12-era pick the stamped v11 tier *equals* the v12 tier by construction — a true v11-vs-v12 confusion matrix would require re-deriving the v11 tier from the still-stamped v11 SCORE (\`v8_ags\`) against the v11 quintile calibration. Until the v11 quintile cal is plumbed into \`liveCal\`, this sub-section is intentionally suppressed to avoid showing a misleading 100% agreement.`);
+      report.push('');
+      // Show v11 vs v12 SCORE rank correlation instead — that IS unaffected
+      // by the tier overwrite, and tells us if the two models even sort picks
+      // the same way.
+      const v11Scores = shared.map(r => r.ags);
+      const v12Scores = shared.map(r => r.agsV12);
+      const rho = spearman(v11Scores, v12Scores);
+      report.push(`> **Spearman ρ (v11 score vs v12 score):** \`${fmtN(rho, 3)}\` on **${shared.length}** shared picks. ρ ≈ +1 = the two models rank the same picks the same way (so v12 isn't adding new sorting signal, just a new sizing rule). ρ < +0.5 = v12 is sorting picks materially differently from v11 — that's where the v12 wallet-quality formula actually changes which bets get the most stake.`);
+      report.push('');
+    } else {
+      const cols = TIER_ORDER;
+      report.push(`Confusion matrix on **${shared.length}** v12-era picks where both v11 and v12 stamped a tier.`);
+      report.push('');
+      report.push(`| v11 ↓ \\\\ v12 → | ${cols.map(c => c.padEnd(8)).join(' | ')} | Total |`);
+      report.push(`|----------------|${cols.map(() => '----------').join('|')}|-------|`);
+      for (const v11T of TIER_ORDER) {
+        const row = shared.filter(r => r.agsTier === v11T);
+        if (row.length === 0) continue;
+        const cells = cols.map(v12T => row.filter(r => r.agsV12Tier === v12T).length);
+        report.push(`| ${v11T.padEnd(14)} | ${cells.map(n => String(n).padStart(8)).join(' | ')} | ${String(row.length).padStart(5)} |`);
+      }
+      const totals = cols.map(c => shared.filter(r => r.agsV12Tier === c).length);
+      report.push(`| **Total**      | ${totals.map(n => String(n).padStart(8)).join(' | ')} | ${String(shared.length).padStart(5)} |`);
+      report.push('');
+      const agreed = shared.filter(r => r.agsTier === r.agsV12Tier).length;
+      const upgraded = shared.filter(r => TIER_ORDER.indexOf(r.agsV12Tier) < TIER_ORDER.indexOf(r.agsTier)).length;
+      const downgraded = shared.filter(r => TIER_ORDER.indexOf(r.agsV12Tier) > TIER_ORDER.indexOf(r.agsTier)).length;
+      const upgradedAgg = aggregate(shared.filter(r => TIER_ORDER.indexOf(r.agsV12Tier) < TIER_ORDER.indexOf(r.agsTier)));
+      const downgradedAgg = aggregate(shared.filter(r => TIER_ORDER.indexOf(r.agsV12Tier) > TIER_ORDER.indexOf(r.agsTier)));
+      const agreedAgg = aggregate(shared.filter(r => r.agsTier === r.agsV12Tier));
+      report.push(`> **Agreement** ${pct(agreed, shared.length)} · **v12 upgraded** ${pct(upgraded, shared.length)} · **v12 downgraded** ${pct(downgraded, shared.length)}.`);
+      report.push('');
+      report.push(`| Disagreement type | Live N | W-L | Win % | ROI       | PnL (u)    |`);
+      report.push(`|-------------------|--------|-----|-------|-----------|------------|`);
+      report.push(`| Agreed            | ${String(agreedAgg.n).padStart(6)} | ${(agreedAgg.w+'-'+agreedAgg.l).padEnd(3)} | ${pct(agreedAgg.w, agreedAgg.n).padStart(5)} | ${(agreedAgg.roi != null ? agreedAgg.roi.toFixed(1)+'%' : '—').padStart(9)} | ${fmtSigned(agreedAgg.profit).padStart(10)} |`);
+      report.push(`| v12 upgraded      | ${String(upgradedAgg.n).padStart(6)} | ${(upgradedAgg.w+'-'+upgradedAgg.l).padEnd(3)} | ${pct(upgradedAgg.w, upgradedAgg.n).padStart(5)} | ${(upgradedAgg.roi != null ? upgradedAgg.roi.toFixed(1)+'%' : '—').padStart(9)} | ${fmtSigned(upgradedAgg.profit).padStart(10)} |`);
+      report.push(`| v12 downgraded    | ${String(downgradedAgg.n).padStart(6)} | ${(downgradedAgg.w+'-'+downgradedAgg.l).padEnd(3)} | ${pct(downgradedAgg.w, downgradedAgg.n).padStart(5)} | ${(downgradedAgg.roi != null ? downgradedAgg.roi.toFixed(1)+'%' : '—').padStart(9)} | ${fmtSigned(downgradedAgg.profit).padStart(10)} |`);
+      report.push('');
+      report.push(`> **Reading this.** If "v12 upgraded" out-performs "v12 downgraded", v12 is making **good** discretionary calls vs v11. If the other way, v12's disagreements are systematically wrong and the wallet-quality formula needs work.`);
+      report.push('');
+    }
+  }
+
+  // ── H. Wallet-quality audit (per-side means, when available) ───────
+  const withMeans = v12Rows.filter(r => Number.isFinite(r.agsV12ForMean) && Number.isFinite(r.agsV12AgMean));
+  if (withMeans.length > 0) {
+    report.push(`### H. V12 wallet-quality audit (per-side means)`);
+    report.push('');
+    report.push(`v12's score is the per-side mean of \`Q = tierWeight × cappedROI × boundedSizeRatio × nReliab\` minus the AGAINST-side mean. This table shows how concentrated wallet quality is on each side.`);
+    report.push('');
+    const forMeanAvg = avg(withMeans.map(r => r.agsV12ForMean));
+    const agMeanAvg = avg(withMeans.map(r => r.agsV12AgMean));
+    const forCountAvg = avg(withMeans.map(r => r.agsV12ForCount || 0));
+    const agCountAvg = avg(withMeans.map(r => r.agsV12AgCount || 0));
+    report.push(`| Side    | Avg Q (mean)       | Avg # contributing wallets |`);
+    report.push(`|---------|--------------------|----------------------------|`);
+    report.push(`| FOR     | ${fmtSigned(forMeanAvg, 3).padStart(18)} | ${forCountAvg.toFixed(1).padStart(26)} |`);
+    report.push(`| AGAINST | ${fmtSigned(agMeanAvg, 3).padStart(18)} | ${agCountAvg.toFixed(1).padStart(26)} |`);
+    report.push('');
+    // One-sided warning
+    const oneSidedFor = withMeans.filter(r => (r.agsV12ForCount || 0) >= 3 && (r.agsV12AgCount || 0) === 0);
+    const oneSidedAg = withMeans.filter(r => (r.agsV12AgCount || 0) >= 3 && (r.agsV12ForCount || 0) === 0);
+    if (oneSidedFor.length > 0 || oneSidedAg.length > 0) {
+      report.push(`> 🟡 **One-sided wallet support.** ${oneSidedFor.length} picks had FOR-side wallets but zero AGAINST-side wallets · ${oneSidedAg.length} picks had AGAINST-side wallets but zero FOR-side. v12 is comfortable scoring these because the AGAINST mean defaults to 0, but they're high-variance bets — track separately.`);
+      report.push('');
+    }
+  }
+
+  // ── I. Recent v12 live picks ───────────────────────────────────────
+  const recentLive = v12Rows
+    .filter(r => (r.units || 0) > 0 && !r.tracked)
+    .sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0)
+    .slice(0, 20);
+  if (recentLive.length > 0) {
+    report.push(`### I. V12 recent live picks (last ${recentLive.length})`);
+    report.push('');
+    report.push(`| Date       | Sport | Mkt    | Pick                    | Odds  | v12   | Tier     | Stake | Outcome | PnL (u)    |`);
+    report.push(`|------------|-------|--------|-------------------------|-------|-------|----------|-------|---------|------------|`);
+    for (const r of recentLive) {
+      const teamLabel = `${r.team || r.sideKey || ''}`.substring(0, 23);
+      const oddsStr = r.peakOdds > 0 ? `+${r.peakOdds}` : `${r.peakOdds}`;
+      const outcome = r.won === 1 ? 'WIN' : r.won === 0 ? 'LOSS' : '—';
+      report.push(`| ${r.date.padEnd(10)} | ${(r.sport || '').padEnd(5)} | ${(r.marketType || '').padEnd(6)} | ${teamLabel.padEnd(23)} | ${oddsStr.padStart(5)} | ${(Number.isFinite(r.agsV12) ? fmtSigned(r.agsV12, 3) : '—').padStart(5)} | ${(r.agsV12Tier || '—').padEnd(8)} | ${((r.units||0).toFixed(2)+'u').padStart(5)} | ${outcome.padEnd(7)} | ${fmtSigned(r.profit).padStart(10)} |`);
+    }
+    report.push('');
+  }
+}
+
 // ── Main ─────────────────────────────────────────────────────────────────
 async function main() {
   console.log('AGS-U daily report — loading data...');
@@ -1329,6 +1703,7 @@ async function main() {
   buildOperationalHealth(report, allRows.filter(r => isAgsuPromotion(r.promotedBy)), agsuRows);
   buildCalibrationSnapshot(report, liveCal);
   await buildWalletPoolHealth(report);
+  buildV12DeepMonitor(report, agsuRows, allRows, modelEras, liveCal);
 
   report.push(`---`);
   report.push('');
