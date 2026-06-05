@@ -1,37 +1,40 @@
 # AGS-Unified — V12 Performance Monitor
 
-**Generated:** Thursday, June 4, 2026 at 5:37 PM ET
+**Generated:** Friday, June 5, 2026 at 9:04 AM ET
 
-**Active model:** `ags-unified-v12` · **V12 went live:** 2026-06-01 · **Days live:** 4
+**Active model:** `ags-unified-v12` · **V12 went live:** 2026-06-01 · **Days live:** 5
 
 > This report is a **CEO-grade monitor of V12 in production**. The only non-V12 section is § 2 (model version comparison), kept so you can see V12's results in the context of every prior model bump. Everything else — daily trajectory, tier scoreboard, score reliability, mute-rule audit, wallet-quality inputs, operational health — is **strictly V12-scoped** (pick date ≥ 2026-06-01) so cron back-fill of V12 stamps onto older picks can't contaminate the production numbers.
 
 ## § 1 — Executive Summary
 
-> 🟢 **V12 is currently WINNING.** Since going live on **2026-06-01** (4 days ago), V12 has evaluated **91** picks, shipped **42** for real money (46.2% ship rate), and muted the other **49**. On the shipped picks V12 has gone **22-20** (52.4% win), staked **78.75u**, and returned **+6.63u** at **+8.4% ROI**.
+> 🟡 **V12 is currently BREAK-EVEN.** Since going live on **2026-06-01** (5 days ago), V12 has evaluated **93** picks, shipped **50** for real money (53.8% ship rate), and muted the other **43**. On the shipped picks V12 has gone **26-24** (52.0% win), staked **98.25u**, and returned **+2.00u** at **+2.0% ROI**.
 
 ### Snapshot
 
 | Metric                              | Value                          |
 |-------------------------------------|--------------------------------|
-| Days V12 has been authoritative     |                              4 |
-| Picks V12 has evaluated             |                             91 |
-| Picks SHIPPED (units > 0)           |                             42 |
-| Picks MUTED (score ≤ 0, FADE)       |                             49 |
-| Ship rate                           |                          46.2% |
-| Live W-L                            |                          22-20 |
-| Live Win %                          |                          52.4% |
-| Live PnL (units)                    |                          +6.63 |
-| Live ROI                            |                          +8.4% |
-| Avg PnL / day                       |                         +1.66u |
+| Days V12 has been authoritative     |                              5 |
+| Picks V12 has evaluated             |                             93 |
+| Picks SHIPPED (units > 0)           |                             50 |
+| Picks MUTED (score ≤ 0, FADE)       |                             43 |
+| Ship rate                           |                          53.8% |
+| Live W-L                            |                          26-24 |
+| Live Win %                          |                          52.0% |
+| Live PnL (units)                    |                          +2.00 |
+| Live ROI                            |                          +2.0% |
+| Avg PnL / day                       |                         +0.40u |
 | Most recent action (2026-06-05)  |            0 live, 0-0, +0.00u |
 
 ### What's working
 
-- V12 is profitable at **8.4% ROI** across 42 live picks (+6.63u real PnL).
-- Mute rule is **saving money** — the 22 muted picks would have lost -2.52u at flat 1u (-11.5% counterfactual ROI). V12 correctly rejected losers.
-- V12 is generating **+1.66u/day** on average since launch.
-- **ML** is V12's strongest market: 25 live, 14-11, +22.5% ROI.
+- Mute rule is **saving money** — the 24 muted picks would have lost -2.54u at flat 1u (-10.6% counterfactual ROI). V12 correctly rejected losers.
+- V12 is generating **+0.40u/day** on average since launch.
+- **ML** is V12's strongest market: 31 live, 18-13, +29.9% ROI.
+
+### What to watch
+
+- 🟡 **TOTAL** market is bleeding under V12: 16 live, 6-10, -14.8% ROI, -7.14u.
 
 ## § 2 — Model Version Comparison (V9 → V10 → V11 → V12)
 
@@ -44,15 +47,15 @@ How does the latest model (**ags-unified-v12**) compare against prior versions? 
 | v9      | 05-15 → 05-22        |    7 |     60 |  12 | 32-28  |  53.3% |     -9.0% |     -10.38 |    -0.17 | 0.549 |        0.3400 | ⚪ retired |
 | v10     | 05-22 → 05-25        |    3 |     62 |  14 | 30-32  |  48.4% |    -18.8% |     -19.42 |    -0.31 | 0.394 |        0.2804 | ⚪ retired |
 | v11     | 05-25 → 06-01        |    7 |    111 |  22 | 61-50  |  55.0% |      2.8% |      +6.76 |    +0.06 | 0.444 |        0.2642 | ⚪ retired |
-| v12     | 06-01 → present      |    4 |     42 |  22 | 22-20  |  52.4% |      8.4% |      +6.63 |    +0.16 | 0.540 |             — | 🟢 LIVE  |
+| v12     | 06-01 → present      |    5 |     50 |  24 | 26-24  |  52.0% |      2.0% |      +2.00 |    +0.04 | 0.527 |             — | 🟢 LIVE  |
 
 ### v12 vs prior versions
 
 | Comparison         | ΔN     | ΔWin %    | ΔROI       | Δ per-pick (u)  | ΔAUC     | ΔBrier     | Verdict |
 |--------------------|--------|-----------|------------|-----------------|----------|------------|---------|
-| v12 − v9           |   -18 |    -1.0pp |    +17.4pp |          +0.331 |   -0.008 |          — | 🟡 mixed |
-| v12 − v10          |   -20 |    +4.0pp |    +27.2pp |          +0.471 |   +0.146 |          — | 🟢 better |
-| v12 − v11          |   -69 |    -2.6pp |     +5.6pp |          +0.097 |   +0.096 |          — | 🟡 mixed |
+| v12 − v9           |   -10 |    -1.3pp |    +11.0pp |          +0.213 |   -0.022 |          — | 🟡 mixed |
+| v12 − v10          |   -12 |    +3.6pp |    +20.8pp |          +0.353 |   +0.133 |          — | 🟢 better |
+| v12 − v11          |   -61 |    -3.0pp |     -0.8pp |          -0.021 |   +0.083 |          — | 🟡 mixed |
 
 > **ΔBrier > 0** means the newer model's Brier is LOWER (better probability calibration). All other Δ columns: positive = newer model is better. Verdict requires the newer model to dominate on 3 of 4 metrics (ROI / Win% / AUC / Brier).
 
@@ -63,7 +66,7 @@ How does the latest model (**ags-unified-v12**) compare against prior versions? 
 | v9      | 40n 55.0% -3%  | 14n 50.0% -7%  | 6n 50.0% -46%  | 60n 53.3% -9% |
 | v10     | 50n 52.0% -4%  | 7n 14.3% -91%  | 5n 60.0% -9%   | 62n 48.4% -19% |
 | v11     | 96n 56.3% +4%  | 7n 71.4% +33%  | 8n 25.0% -59%  | 111n 55.0% +3% |
-| v12     | 39n 51.3% +3%  | 2n 50.0% -2%   | 1n 100.0% +87% | 42n 52.4% +8% |
+| v12     | 46n 50.0% -3%  | 2n 50.0% -2%   | 2n 100.0% +86% | 50n 52.0% +2% |
 
 ### Per-tier ROI × version (monotonicity check across model history)
 
@@ -72,7 +75,7 @@ How does the latest model (**ags-unified-v12**) compare against prior versions? 
 | v9      | 10n -25%      | 6n +10%       | 13n -32%      | 16n +24%      | 14n -6%       | 🟡 partial (0) |
 | v10     | 8n -13%       | 5n -69%       | 13n -25%      | 27n +4%       | 8n -1%        | 🟡 partial (0) |
 | v11     | 22n +3%       | 26n -6%       | 24n +9%       | 25n +10%      | 13n +22%      | 🟡 partial (2) |
-| v12     | 7n +6%        | 12n +16%      | 11n -9%       | 7n +36%       | 4n -51%       | 🟡 partial (0) |
+| v12     | 11n -4%       | 12n +16%      | 12n -16%      | 8n +19%       | 6n -7%        | 🟡 partial (0) |
 
 > Monotonicity score on tier-ROI vector (ELITE → WEAK). Fully sorted (each tier earns LESS than the one above) = -3 for 4-tier samples / -4 for full ladder. Fully inverted = +3/+4. A NEW model that flips the ladder from inverted → monotonic is the strongest evidence the redesign worked.
 
@@ -105,12 +108,12 @@ Day-by-day production since V12 went live. **Evaluated** = picks V12 scored that
 | 2026-06-01 |        16 |    8 |     4 | 4-4        |  50.0% |     16.25 |      +2.14 |     13.2% |      +2.14 |
 | 2026-06-02 |        24 |   10 |    10 | 4-6        |  40.0% |     19.75 |      +1.95 |      9.9% |      +4.09 |
 | 2026-06-03 |        31 |   19 |     5 | 11-8       |  57.9% |     36.25 |      +0.82 |      2.3% |      +4.91 |
-| 2026-06-04 |        19 |    5 |     3 | 3-2        |  60.0% |      6.50 |      +1.72 |     26.5% |      +6.63 |
-| 2026-06-05 |         1 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |      +6.63 |
+| 2026-06-04 |        19 |   13 |     5 | 7-6        |  53.8% |     26.00 |      -2.91 |    -11.2% |      +2.00 |
+| 2026-06-05 |         3 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |      +2.00 |
 
-> **Trajectory.** 🟡 Last 3 days (5.9% ROI) is **-5.4pp worse** than the prior window (11.4%). Watch for further regression.
+> **Trajectory.** 🟡 Last 3 days (-3.4% ROI) is **-14.7pp worse** than the prior window (11.4%). Watch for further regression.
 
-> **Bottom line.** 4 days live, 42 live picks shipped, **+6.63u total PnL** at **+8.4% ROI**, averaging **+1.66u per day**.
+> **Bottom line.** 5 days live, 50 live picks shipped, **+2.00u total PnL** at **+2.0% ROI**, averaging **+0.40u per day**.
 
 ## § 5 — V12 By Tier (Where The Money Comes From)
 
@@ -120,12 +123,12 @@ V12 buckets every shipped pick into a tier (ELITE → WEAK) based on the score b
 
 | Tier     | Ladder | N   | W-L    | Win %  | Avg V12 score | Expected | Avg stake actual | Drift  | Total Stake | PnL (u)    | ROI       |
 |----------|--------|-----|--------|--------|---------------|----------|------------------|--------|-------------|------------|-----------|
-| ELITE    |  5.00u |   7 | 4-3    |  57.1% |        +0.987 |    5.00u |            4.29u | -0.71u |       30.00 |      +1.86 |      6.2% |
+| ELITE    |  5.00u |  11 | 6-5    |  54.5% |        +0.988 |    5.00u |            4.32u | -0.68u |       47.50 |      -1.67 |     -3.5% |
 | PREMIUM  |  3.00u |  12 | 7-5    |  58.3% |        +0.975 |    3.00u |            2.75u | -0.25u |       33.00 |      +5.20 |     15.8% |
-| LOCK     |  1.00u |  11 | 5-6    |  45.5% |        +0.959 |    1.00u |            1.00u | +0.00u |       11.00 |      -0.94 |     -8.5% |
-| LEAN     |  0.50u |   7 | 5-2    |  71.4% |        +0.890 |    0.50u |            0.50u | +0.00u |        3.50 |      +1.27 |     36.3% |
-| WEAK     |  0.25u |   4 | 1-3    |  25.0% |        +0.305 |    0.25u |            0.25u | +0.00u |        1.00 |      -0.51 |    -51.0% |
-| FADE     |  0.00u |  22 | 0-0    |      — |        -0.208 |    0.00u |                — |      — |        0.00 |      +0.00 |         — |
+| LOCK     |  1.00u |  12 | 5-7    |  41.7% |        +0.960 |    1.00u |            1.00u | +0.00u |       12.00 |      -1.94 |    -16.2% |
+| LEAN     |  0.50u |   8 | 5-3    |  62.5% |        +0.880 |    0.50u |            0.50u | +0.00u |        4.00 |      +0.77 |     19.3% |
+| WEAK     |  0.25u |   6 | 3-3    |  50.0% |        +0.323 |    0.25u |            0.25u | +0.00u |        1.50 |      -0.11 |     -7.3% |
+| FADE     |  0.00u |  24 | 0-0    |      — |        -0.191 |    0.00u |                — |      — |        0.00 |      +0.00 |         — |
 
 > **Ladder monotonicity** (positive tiers ELITE → WEAK only). ROI score `0` 🟡 partial · Win-rate score `0` 🟡 partial. **Partial — the ladder is in the right direction overall but has rough spots. Watch a few more days before reacting.**
 
@@ -139,12 +142,12 @@ V12 finds different amounts of edge in different sports and bet types. This grid
 
 | Sport | ML                     | SPREAD                 | TOTAL                  | All                    |
 |-------|------------------------|------------------------|------------------------|------------------------|
-| MLB   | 24n · 58.3% · +23.4%   | 1n · 100.0% · +83.0%   | 14n · 35.7% · -17.0%   | 39n · 51.3% · +3.1%    |
+| MLB   | 29n · 58.6% · +30.4%   | 2n · 50.0% · -69.5%    | 15n · 33.3% · -26.6%   | 46n · 50.0% · -2.7%    |
 | NBA   | 1n · 0.0% · -100.0%    | 1n · 100.0% · +96.0%   | —                      | 2n · 50.0% · -2.0%     |
-| NHL   | —                      | —                      | 1n · 100.0% · +87.0%   | 1n · 100.0% · +87.0%   |
-| **All** | **25n · 56.0% · +22.5%** | **2n · 100.0% · +85.6%** | **15n · 40.0% · -4.9%** | **42n · 52.4% · +8.4%** |
+| NHL   | 1n · 100.0% · +64.0%   | —                      | 1n · 100.0% · +87.0%   | 2n · 100.0% · +85.9%   |
+| **All** | **31n · 58.1% · +29.9%** | **3n · 66.7% · -62.9%** | **16n · 37.5% · -14.8%** | **50n · 52.0% · +2.0%** |
 
-> **V12's strongest sub-market:** MLB ML — 24 live, 14-10, +23.4% ROI, +7.95u PnL.
+> **V12's strongest sub-market:** MLB ML — 29 live, 17-12, +30.4% ROI, +13.16u PnL.
 
 ## § 7 — Does V12 Actually Predict Outcomes? (Score Reliability)
 
@@ -152,33 +155,34 @@ If V12's score is real signal — not just a number — then **higher scores sho
 
 | V12 score band     | N   | Live N | W-L    | Realized | Implied | Edge       | ROI (live)|
 |--------------------|-----|--------|--------|----------|---------|------------|-----------|
-| > 0.9 (strongest)  |  34 |     34 | 19-15  |    55.9% |   51.8% |     +4.1pp |      9.5% |
-| 0.7 – 0.9          |   3 |      3 | 2-1    |    66.7% |   58.9% |     +7.7pp |     11.3% |
+| > 0.9 (strongest)  |  39 |     39 | 21-18  |    53.8% |   51.7% |     +2.1pp |      2.8% |
+| 0.7 – 0.9          |   4 |      4 | 2-2    |    50.0% |   61.7% |    -11.7pp |    -16.5% |
+| 0.5 – 0.7          |   1 |      1 | 1-0    |   100.0% |   61.5% |    +38.5pp |     64.0% |
 | 0.25 – 0.5         |   2 |      2 | 1-1    |    50.0% |   58.7% |     -8.7pp |     -2.0% |
-| (0, 0.25]          |   2 |      2 | 0-2    |     0.0% |   60.3% |    -60.3pp |   -100.0% |
-| ≤ 0 (MUTED)        |  22 |      0 | 0-0    |    45.5% |   51.6% |     -6.1pp |         — |
+| (0, 0.25]          |   3 |      3 | 1-2    |    33.3% |   56.5% |    -23.1pp |    -34.7% |
+| ≤ 0 (MUTED)        |  24 |      0 | 0-0    |    45.8% |   52.0% |     -6.1pp |         — |
 
-> 🟢 **Strong-score band (> 0.9) wins 4.1pp more often than the market expects** — V12's high-confidence picks are real signal.
+> 🟡 **Strong-score band (> 0.9) edge is +2.1pp** — borderline. Larger sample needed before declaring V12's top tier as real alpha.
 
-> 🟢 **Mute band (≤ 0) actually wins only 45.5%** — V12 correctly identifies these as losers. The mute rule is justified.
+> 🟢 **Mute band (≤ 0) actually wins only 45.8%** — V12 correctly identifies these as losers. The mute rule is justified.
 
 ## § 8 — V12 Mute Rule: Saving Money or Throwing Away Edge?
 
-V12 muted **22** graded picks (any pick with score ≤ 0). This sub-section asks the most important question about V12: **were those rejections correct?**
+V12 muted **24** graded picks (any pick with score ≤ 0). This sub-section asks the most important question about V12: **were those rejections correct?**
 
 The audit is a counterfactual — if every muted pick had been shipped at a flat 1-unit stake (same risk per pick), what would the bottom line look like? If muting saved money, V12's rule is justified. If muting cost money, V12 is throwing away edge and the wallet-quality threshold should be loosened.
 
 | Metric                              | Value                |
 |-------------------------------------|----------------------|
-| Muted picks (graded)                |                   22 |
-| Muted W-L                           |                10-12 |
-| Muted Win %                         |                45.5% |
-| Counterfactual PnL at flat 1u       |                -2.52 |
-| Counterfactual ROI at flat 1u       |               -11.5% |
+| Muted picks (graded)                |                   24 |
+| Muted W-L                           |                11-13 |
+| Muted Win %                         |                45.8% |
+| Counterfactual PnL at flat 1u       |                -2.54 |
+| Counterfactual ROI at flat 1u       |               -10.6% |
 
 ### Verdict
 
-🟢 **THE MUTE RULE IS SAVING MONEY.** The picks V12 rejected would have lost **-2.52u** at a flat 1u stake — a counterfactual ROI of **-11.5%**. V12 is correctly identifying losers and refusing to ship them. **Keep the mute rule as-is.**
+🟢 **THE MUTE RULE IS SAVING MONEY.** The picks V12 rejected would have lost **-2.54u** at a flat 1u stake — a counterfactual ROI of **-10.6%**. V12 is correctly identifying losers and refusing to ship them. **Keep the mute rule as-is.**
 
 ## § 9 — How Different is V12 from V11? (Pick Selection)
 
@@ -188,10 +192,10 @@ The cleanest test is **Spearman rank correlation** between v11 score and V12 sco
 
 | Metric                              | Value                |
 |-------------------------------------|----------------------|
-| Shared graded picks                 |                   63 |
-| Spearman ρ (v11 vs V12 score)       |               -0.452 |
+| Shared graded picks                 |                   73 |
+| Spearman ρ (v11 vs V12 score)       |               -0.478 |
 
-> 🟢 **V12 actively disagrees with V11** — ρ = -0.452. The two models are ranking picks in nearly-opposite order. V12 is a fundamentally different bet-selection model, NOT a v11 tweak. If V12's results in § 2 are good, that disagreement is V12's whole edge.
+> 🟢 **V12 actively disagrees with V11** — ρ = -0.478. The two models are ranking picks in nearly-opposite order. V12 is a fundamentally different bet-selection model, NOT a v11 tweak. If V12's results in § 2 are good, that disagreement is V12's whole edge.
 
 > **Why this is the only honest V11-vs-V12 comparison here.** The Firestore `v8_agsTier` stamp is overwritten by V12 in production, so any tier-confusion-matrix comparison would be artificially 100% diagonal. The raw scores (`v8_ags` and `v8_agsV12`) are still distinct, so Spearman ρ on those is the cleanest signal.
 
@@ -199,12 +203,12 @@ The cleanest test is **Spearman rank correlation** between v11 score and V12 sco
 
 V12's score is the bounded difference of two averages: the mean wallet quality FOR the pick minus the mean wallet quality AGAINST it. Surfacing those raw inputs lets you see whether V12 is "looking at" the right things: does V12 ship picks because the FOR-side wallets are genuinely sharper, or because the AGAINST-side has no wallets at all (which can artificially inflate the score)?
 
-### Average per-side wallet quality (across 63 V12-era picks)
+### Average per-side wallet quality (across 73 V12-era picks)
 
 | Side    | Avg Q (mean)       | Avg # contributing wallets |
 |---------|--------------------|----------------------------|
-| FOR     |            +14.895 |                        2.3 |
-| AGAINST |             +3.647 |                        1.3 |
+| FOR     |            +17.800 |                        2.2 |
+| AGAINST |             +3.541 |                        1.2 |
 
 ### One-sided wallet support (high-variance picks)
 
@@ -218,7 +222,7 @@ V12's score is the bounded difference of two averages: the mean wallet quality F
 | Side    | min | p25 | p50 | p75 | max |
 |---------|-----|-----|-----|-----|-----|
 | FOR     |   1 |   1 |   2 |   3 |  11 |
-| AGAINST |   0 |   0 |   1 |   2 |   5 |
+| AGAINST |   0 |   1 |   1 |   2 |   5 |
 
 ## § 11 — Recent V12 Live Picks (Audit Trail)
 
@@ -227,10 +231,18 @@ The last 30 picks V12 actually shipped (units > 0). This is the audit trail — 
 | Date       | Sport | Mkt    | Pick                    | Odds  | V12   | Tier     | Stake | Outcome | PnL (u)    |
 |------------|-------|--------|-------------------------|-------|-------|----------|-------|---------|------------|
 | 2026-06-04 | MLB   | ML     | Baltimore Orioles       |  +104 | +0.923 | LEAN     | 0.50u | WIN     |      +0.52 |
+| 2026-06-04 | MLB   | ML     | Minnesota Twins         |  +102 | +0.966 | LOCK     | 1.00u | LOSS    |      -1.00 |
+| 2026-06-04 | MLB   | ML     | Arizona Diamondbacks    |  +118 | +0.994 | ELITE    | 2.50u | WIN     |      +2.95 |
+| 2026-06-04 | MLB   | ML     | Chicago Cubs            |  -142 | +0.992 | ELITE    | 5.00u | WIN     |      +3.52 |
+| 2026-06-04 | MLB   | ML     | Pittsburgh Pirates      |  -106 | +0.181 | WEAK     | 0.25u | WIN     |      +0.24 |
 | 2026-06-04 | MLB   | ML     | Philadelphia Phillies   |  -215 | +0.952 | LOCK     | 1.00u | WIN     |      +0.47 |
 | 2026-06-04 | MLB   | ML     | Milwaukee Brewers       |  -188 | +0.969 | LOCK     | 1.00u | LOSS    |      -1.00 |
+| 2026-06-04 | MLB   | ML     | Atlanta Braves          |  -250 | +0.805 | LEAN     | 0.50u | LOSS    |      -0.50 |
+| 2026-06-04 | NHL   | ML     | Hurricanes              |  -160 | +0.538 | WEAK     | 0.25u | WIN     |      +0.16 |
+| 2026-06-04 | MLB   | SPREAD | Los Angeles Dodgers     |  -111 | +0.993 | ELITE    | 5.00u | LOSS    |      -5.00 |
 | 2026-06-04 | MLB   | TOTAL  | Over 8.5                |  -110 | +0.962 | LOCK     | 1.00u | LOSS    |      -1.00 |
 | 2026-06-04 | MLB   | TOTAL  | Over 8.5                |  -110 | +0.974 | PREMIUM  | 3.00u | WIN     |      +2.73 |
+| 2026-06-04 | MLB   | TOTAL  | Under 7.5               |  -118 | +0.987 | ELITE    | 5.00u | LOSS    |      -5.00 |
 | 2026-06-03 | MLB   | ML     | Boston Red Sox          |  -152 | +0.881 | LEAN     | 0.50u | WIN     |      +0.33 |
 | 2026-06-03 | MLB   | ML     | Cleveland Guardians     |  +116 | +0.960 | LOCK     | 1.00u | WIN     |      +1.16 |
 | 2026-06-03 | MLB   | ML     | Detroit Tigers          |  +125 | +0.959 | LOCK     | 1.00u | WIN     |      +1.25 |
@@ -248,25 +260,17 @@ The last 30 picks V12 actually shipped (units > 0). This is the audit trail — 
 | 2026-06-03 | MLB   | TOTAL  | Over 8.5                |  -105 | +0.984 | ELITE    | 5.00u | LOSS    |      -5.00 |
 | 2026-06-03 | MLB   | TOTAL  | Over 7.5                |  -110 | +0.227 | WEAK     | 0.25u | LOSS    |      -0.25 |
 | 2026-06-03 | MLB   | TOTAL  | Under 8.5               |  +101 | +0.972 | PREMIUM  | 2.50u | WIN     |      +2.52 |
-| 2026-06-03 | MLB   | TOTAL  | Under 8.5               |  -110 | +0.983 | ELITE    | 5.00u | WIN     |      +4.55 |
-| 2026-06-03 | MLB   | TOTAL  | Under 8.5               |  +100 | +0.972 | PREMIUM  | 2.50u | LOSS    |      -2.50 |
-| 2026-06-02 | MLB   | ML     | New York Yankees        |  -219 | +0.139 | WEAK     | 0.25u | LOSS    |      -0.25 |
-| 2026-06-02 | MLB   | ML     | Detroit Tigers          |  +125 | +0.990 | ELITE    | 2.50u | WIN     |      +3.13 |
-| 2026-06-02 | MLB   | ML     | Miami Marlins           |  -102 | +0.939 | LEAN     | 0.50u | WIN     |      +0.49 |
-| 2026-06-02 | MLB   | ML     | Houston Astros          |  -112 | +0.968 | LOCK     | 1.00u | LOSS    |      -1.00 |
-| 2026-06-02 | MLB   | ML     | St. Louis Cardinals     |  -106 | +0.968 | LOCK     | 1.00u | LOSS    |      -1.00 |
-| 2026-06-02 | MLB   | ML     | Toronto Blue Jays       |  +102 | +0.988 | ELITE    | 2.50u | LOSS    |      -2.50 |
 
 ## § 12 — Operational Health (V12 pipeline sanity)
 
 | Check                                                          | Count | Verdict                                            |
 |----------------------------------------------------------------|-------|----------------------------------------------------|
 | Graded picks with `tracked=true` AND `finalUnits > 0`         |     1 | 🚨 grader regression — see betTracking.js |
-| Graded picks with `tracked=true` AND `finalUnits == 0`        |    85 | 🟡 informational only — true tracked plays |
+| Graded picks with `tracked=true` AND `finalUnits == 0`        |    87 | 🟡 informational only — true tracked plays |
 | LOCK+ tier picks with `finalUnits == 0` (sizing regression)   |    12 | 🚨 sizing regression — agsSizeMultiplier returning 0 for strong AGS-U |
-| Live picks (not graded yet) with `finalUnits > 0`             |     8 | 🟢 picks queued for grading |
+| Live picks (not graded yet) with `finalUnits > 0`             |     3 | 🟢 picks queued for grading |
 | AGS-U promoted picks missing `v8_ags` value                   |     1 | 🟡 some picks missing AGS-U — cron lag or stale doc |
-| AGS-U promoted picks missing `agsTier`                        |     3 | 🟡 some picks missing tier classification |
+| AGS-U promoted picks missing `agsTier`                        |     1 | 🟡 some picks missing tier classification |
 | Single-wallet shipped picks (`provenWalletCount == 1`)       |    63 | 🟡 informational — AGS-U calibration controls sample adequacy |
 
 **Tracked-shipped detail (these are the picks the grader wrongly marked 0u):**
@@ -323,11 +327,11 @@ The size of the qualifying-wallet pool per sport is the upstream cap on AGS-U si
 
 | sport | wallet records | CONFIRMED | FLAT | WR50 | NULL | qualifying (C+F+WR50) |
 |-------|----------------|-----------|------|------|------|------------------------|
-| MLB   |            119 |        28 |    9 |    8 |   74 |                     45 |
+| MLB   |            119 |        29 |    7 |    7 |   76 |                     43 |
 | NBA   |            194 |        50 |   23 |   22 |   99 |                     95 |
-| NHL   |             96 |        20 |    6 |   13 |   57 |                     39 |
+| NHL   |             97 |        22 |    6 |   12 |   57 |                     40 |
 
-> ⚠ **MLB pool is < 50% of NBA pool** (45 vs 95). MLB AUC will be inherently capped by sample size. To meaningfully improve MLB further: broaden leaderboard ingestion or relax Source B threshold (`exportWalletProfiles.js`).
+> ⚠ **MLB pool is < 50% of NBA pool** (43 vs 95). MLB AUC will be inherently capped by sample size. To meaningfully improve MLB further: broaden leaderboard ingestion or relax Source B threshold (`exportWalletProfiles.js`).
 
 ---
 
