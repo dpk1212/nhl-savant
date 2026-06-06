@@ -11197,34 +11197,43 @@ export default function SharpFlow() {
               }
 
               // ─── Hero-strip cumulative profit sparkline (live only) ────
-              const heroSpark = [];
-              {
-                let acc = 0;
+              // PER-DAY aggregation, not per-pick. Previously each pick was
+              // plotted as a separate equally-spaced point, which visually
+              // stretched busy days and compressed idle days — equity curve
+              // shape was distorted by pick volume rather than calendar time.
+              // Now: one anchor per day at end-of-day cumulative, in
+              // chronological order. Same time = same horizontal slot.
+              const heroSpark = (() => {
+                const acc = new Map();  // date -> end-of-day cum
+                let cum = 0;
                 for (const p of sortedByDate) {
                   if (p.tracked || !p.outcome) continue;
-                  acc += (p.outcome === 'WIN' ? (p.profit || 0) : p.outcome === 'LOSS' ? -p.units : 0);
-                  heroSpark.push(acc);
+                  cum += (p.outcome === 'WIN' ? (p.profit || 0) : p.outcome === 'LOSS' ? -p.units : 0);
+                  acc.set(p.date, cum);  // overwrite — last pick of the day wins
                 }
-              }
-              const heroWinRateSpark = [];
-              {
+                return [...acc.values()];
+              })();
+              const heroWinRateSpark = (() => {
+                const acc = new Map();
                 let w = 0, n = 0;
                 for (const p of sortedByDate) {
                   if (p.tracked || !p.outcome) continue;
                   if (p.outcome === 'WIN') w++;
                   if (p.outcome === 'WIN' || p.outcome === 'LOSS') n++;
-                  if (n > 0) heroWinRateSpark.push(w / n);
+                  if (n > 0) acc.set(p.date, w / n);
                 }
-              }
-              const heroClvSpark = [];
-              {
+                return [...acc.values()];
+              })();
+              const heroClvSpark = (() => {
+                const acc = new Map();
                 let s = 0, c = 0;
                 for (const p of sortedByDate) {
                   if (p.clv == null) continue;
                   s += p.clv; c++;
-                  heroClvSpark.push(s / c);
+                  acc.set(p.date, s / c);
                 }
-              }
+                return [...acc.values()];
+              })();
 
               // ─── Inline sparkline component (SVG) ──────────────────────
               const Sparkline = ({ data, color, height = 18, width = 64, baseline = null }) => {
@@ -11592,30 +11601,62 @@ export default function SharpFlow() {
                               the line reflects realized P/L only. Green gradient
                               fill above the 0 reference line; muted below. */}
                           {(() => {
+                            // ── PER-DAY equity curve ──────────────────────
+                            // Each day = one anchor point at end-of-day
+                            // cumulative profit, plotted at real calendar
+                            // time. Previously each pick was plotted on a
+                            // categorical axis, so a 10-pick day occupied
+                            // 10× the horizontal space of a 1-pick day —
+                            // visually distorting the equity curve into
+                            // long busy stretches and compressed quiet days.
+                            // The new shape honestly tracks daily bankroll
+                            // progress regardless of how many picks fired.
                             const realized = [...agsuPicks]
                               .filter(p => !p.tracked && p.outcome && p.status === 'COMPLETED')
                               .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
                             const curve = (() => {
+                              const byDate = new Map();
                               let cum = 0;
-                              return realized.map((p, i) => {
+                              for (const p of realized) {
                                 cum += (p.profit || 0);
-                                return {
-                                  i: i + 1,
-                                  date: p.date,
-                                  dateLabel: (() => {
-                                    try { return new Date(p.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
-                                    catch { return p.date; }
-                                  })(),
-                                  cum: +cum.toFixed(2),
-                                  pickProfit: p.profit || 0,
-                                  team: p.team || (p.away && p.home ? `${p.away} @ ${p.home}` : '—'),
-                                  sport: p.sport,
-                                  tier: p._resolvedTier,
-                                  ags: p.v8_ags,
-                                  outcome: p.outcome,
-                                };
-                              });
+                                const day = p.date;
+                                const existing = byDate.get(day);
+                                const pnl = p.profit || 0;
+                                const isWin = p.outcome === 'WIN';
+                                const isLoss = p.outcome === 'LOSS';
+                                if (!existing) {
+                                  let dateMs;
+                                  let dateLabel;
+                                  try {
+                                    dateMs = new Date(day + 'T12:00:00').getTime();
+                                    dateLabel = new Date(day + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                                  } catch {
+                                    dateMs = 0;
+                                    dateLabel = day;
+                                  }
+                                  byDate.set(day, {
+                                    date: day,
+                                    dateMs,
+                                    dateLabel,
+                                    picks: 1,
+                                    wins: isWin ? 1 : 0,
+                                    losses: isLoss ? 1 : 0,
+                                    dayPnl: pnl,
+                                    dayStake: p.units || 0,
+                                    cum: +cum.toFixed(2),
+                                  });
+                                } else {
+                                  existing.picks += 1;
+                                  if (isWin) existing.wins += 1;
+                                  if (isLoss) existing.losses += 1;
+                                  existing.dayPnl += pnl;
+                                  existing.dayStake += (p.units || 0);
+                                  existing.cum = +cum.toFixed(2);  // end-of-day cum
+                                }
+                              }
+                              return [...byDate.values()].sort((a, b) => a.dateMs - b.dateMs);
                             })();
+                            const totalPicks = realized.length;
                             const finalCum = curve.length > 0 ? curve[curve.length - 1].cum : 0;
                             const isProfit = finalCum >= 0;
                             const minCum = curve.length > 0 ? Math.min(0, ...curve.map(d => d.cum)) : 0;
@@ -11623,6 +11664,9 @@ export default function SharpFlow() {
                             const peak = curve.reduce((acc, d) => d.cum > acc.cum ? d : acc, { cum: -Infinity, dateLabel: '—' });
                             const trough = curve.reduce((acc, d) => d.cum < acc.cum ? d : acc, { cum: Infinity, dateLabel: '—' });
                             const drawdown = peak.cum > -Infinity ? finalCum - peak.cum : 0;
+                            // Best/worst single day (for at-a-glance context).
+                            const bestDay = curve.reduce((acc, d) => (acc == null || d.dayPnl > acc.dayPnl) ? d : acc, null);
+                            const worstDay = curve.reduce((acc, d) => (acc == null || d.dayPnl < acc.dayPnl) ? d : acc, null);
 
                             return (
                               <div style={{ marginBottom: '1rem' }}>
@@ -11639,7 +11683,7 @@ export default function SharpFlow() {
                                     </span>
                                     {curve.length > 0 && (
                                       <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>
-                                        · {curve.length} graded
+                                        · {totalPicks} graded · {curve.length} day{curve.length === 1 ? '' : 's'}
                                       </span>
                                     )}
                                   </div>
@@ -11669,7 +11713,7 @@ export default function SharpFlow() {
                                   }}>
                                     {curve.length < 2 ? (
                                       <div style={{ ...T.micro, color: B.textMuted, padding: '1.25rem 1rem', textAlign: 'center', fontStyle: 'italic' }}>
-                                        Need at least 2 graded picks to plot the equity curve.
+                                        Need at least 2 graded days to plot the equity curve.
                                       </div>
                                     ) : (
                                       <>
@@ -11684,7 +11728,7 @@ export default function SharpFlow() {
                                             { label: 'PEAK', value: `${peak.cum >= 0 ? '+' : ''}${peak.cum.toFixed(2)}u`, sub: peak.dateLabel, color: B.green },
                                             { label: 'TROUGH', value: `${trough.cum >= 0 ? '+' : ''}${trough.cum.toFixed(2)}u`, sub: trough.dateLabel, color: B.red },
                                             { label: 'CURRENT', value: `${finalCum >= 0 ? '+' : ''}${finalCum.toFixed(2)}u`, sub: curve[curve.length-1].dateLabel, color: isProfit ? B.green : B.red },
-                                            { label: 'DD FROM PEAK', value: `${drawdown >= 0 ? '+' : ''}${drawdown.toFixed(2)}u`, sub: `${curve.length} picks`, color: drawdown < 0 ? B.red : B.textSec },
+                                            { label: 'DD FROM PEAK', value: `${drawdown >= 0 ? '+' : ''}${drawdown.toFixed(2)}u`, sub: `${curve.length} day${curve.length === 1 ? '' : 's'} · ${totalPicks} picks`, color: drawdown < 0 ? B.red : B.textSec },
                                           ].map(s => (
                                             <div key={s.label} style={{
                                               padding: '0.4rem 0.5rem', borderRadius: '6px',
@@ -11712,11 +11756,18 @@ export default function SharpFlow() {
                                             </defs>
                                             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                                             <XAxis
-                                              dataKey="dateLabel"
+                                              dataKey="dateMs"
+                                              type="number"
+                                              scale="time"
+                                              domain={['dataMin', 'dataMax']}
                                               tick={{ fill: B.textMuted, fontSize: 10 }}
                                               axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
                                               tickLine={false}
                                               minTickGap={isMobile ? 25 : 40}
+                                              tickFormatter={(ms) => {
+                                                try { return new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
+                                                catch { return ''; }
+                                              }}
                                             />
                                             <YAxis
                                               tick={{ fill: B.textMuted, fontSize: 10 }}
@@ -11731,45 +11782,47 @@ export default function SharpFlow() {
                                               content={({ active, payload }) => {
                                                 if (!active || !payload?.[0]) return null;
                                                 const d = payload[0].payload;
-                                                const meta = AGS_TIER_META[d.tier] || AGS_TIER_META.UNKNOWN;
+                                                const dayRoi = d.dayStake > 0 ? (d.dayPnl / d.dayStake) * 100 : null;
+                                                const dayColor = d.dayPnl > 0 ? B.green : d.dayPnl < 0 ? B.red : B.textSec;
+                                                const cumColor = d.cum > 0 ? B.green : d.cum < 0 ? B.red : B.textSec;
                                                 return (
                                                   <div style={{
                                                     background: 'rgba(17,24,39,0.96)',
-                                                    border: `1px solid ${meta.color}55`,
+                                                    border: `1px solid ${dayColor}55`,
                                                     borderRadius: '8px',
                                                     padding: '0.55rem 0.7rem',
                                                     backdropFilter: 'blur(8px)',
                                                     boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
-                                                    minWidth: 180,
+                                                    minWidth: 200,
                                                   }}>
                                                     <div style={{ fontSize: '0.6rem', color: B.textMuted, marginBottom: '0.3rem', display: 'flex', justifyContent: 'space-between' }}>
-                                                      <span>{d.dateLabel} · Pick #{d.i}</span>
-                                                      <span style={{ color: meta.color, fontWeight: 800 }}>{meta.short}</span>
+                                                      <span style={{ color: B.text, fontWeight: 800, letterSpacing: '0.02em' }}>{d.dateLabel}</span>
+                                                      <span>{d.picks} pick{d.picks === 1 ? '' : 's'}</span>
                                                     </div>
-                                                    <div style={{ fontSize: '0.85rem', fontWeight: 800, color: B.text, marginBottom: '0.2rem' }}>
-                                                      {d.team}
-                                                    </div>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', alignItems: 'baseline' }}>
-                                                      <span style={{ fontSize: '0.6rem', color: B.textMuted }}>
-                                                        {d.sport} · ags {d.ags != null ? `${d.ags >= 0 ? '+' : ''}${d.ags.toFixed(2)}` : '—'}
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.25rem' }}>
+                                                      <span style={{ fontSize: '0.6rem', color: B.textMuted, letterSpacing: '0.04em' }}>
+                                                        {d.wins}-{d.losses}{dayRoi != null ? ` · ${dayRoi >= 0 ? '+' : ''}${dayRoi.toFixed(1)}% ROI` : ''}
                                                       </span>
                                                       <span style={{
-                                                        fontSize: '0.7rem', fontWeight: 800,
-                                                        color: d.pickProfit > 0 ? B.green : d.pickProfit < 0 ? B.red : B.textSec,
+                                                        fontSize: '0.8rem', fontWeight: 900,
+                                                        color: dayColor,
                                                         fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
                                                       }}>
-                                                        {d.pickProfit >= 0 ? '+' : ''}{d.pickProfit.toFixed(2)}u
+                                                        {d.dayPnl >= 0 ? '+' : ''}{d.dayPnl.toFixed(2)}u
                                                       </span>
+                                                    </div>
+                                                    <div style={{ fontSize: '0.55rem', color: B.textMuted, marginBottom: '0.4rem' }}>
+                                                      Risked {d.dayStake.toFixed(2)}u this day
                                                     </div>
                                                     <div style={{
                                                       marginTop: '0.35rem', paddingTop: '0.3rem',
                                                       borderTop: '1px solid rgba(255,255,255,0.08)',
                                                       display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
                                                     }}>
-                                                      <span style={{ fontSize: '0.55rem', color: B.textMuted, letterSpacing: '0.06em' }}>CUMULATIVE</span>
+                                                      <span style={{ fontSize: '0.55rem', color: B.textMuted, letterSpacing: '0.06em' }}>CUM THROUGH EOD</span>
                                                       <span style={{
                                                         fontSize: '0.85rem', fontWeight: 900,
-                                                        color: d.cum >= 0 ? B.green : B.red,
+                                                        color: cumColor,
                                                         fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
                                                       }}>
                                                         {d.cum >= 0 ? '+' : ''}{d.cum.toFixed(2)}u
@@ -11786,11 +11839,32 @@ export default function SharpFlow() {
                                               strokeWidth={2}
                                               fill={`url(#${isProfit ? 'agsuProfitGreen' : 'agsuProfitRed'})`}
                                               isAnimationActive={false}
-                                              dot={false}
+                                              dot={curve.length <= 60 ? { r: 2, fill: isProfit ? B.green : B.red, stroke: 'none' } : false}
                                               activeDot={{ r: 4, fill: isProfit ? B.green : B.red, stroke: B.bg, strokeWidth: 2 }}
                                             />
                                           </AreaChart>
                                         </ResponsiveContainer>
+                                        <div style={{
+                                          marginTop: '0.45rem',
+                                          fontSize: '0.55rem',
+                                          color: B.textMuted,
+                                          letterSpacing: '0.04em',
+                                          display: 'flex',
+                                          justifyContent: 'space-between',
+                                          gap: '0.5rem',
+                                          flexWrap: 'wrap',
+                                        }}>
+                                          <span>
+                                            One point per day · end-of-day cumulative profit · {totalPicks} graded pick{totalPicks === 1 ? '' : 's'} across {curve.length} day{curve.length === 1 ? '' : 's'}
+                                          </span>
+                                          {bestDay && worstDay && (
+                                            <span style={{ fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums' }}>
+                                              best <span style={{ color: B.green, fontWeight: 700 }}>+{bestDay.dayPnl.toFixed(2)}u</span> {bestDay.dateLabel}
+                                              {' · '}
+                                              worst <span style={{ color: B.red, fontWeight: 700 }}>{worstDay.dayPnl.toFixed(2)}u</span> {worstDay.dateLabel}
+                                            </span>
+                                          )}
+                                        </div>
                                       </>
                                     )}
                                   </div>
