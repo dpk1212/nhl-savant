@@ -1,23 +1,23 @@
 {
-  "scannedAt": "2026-06-07T09:55:09.450Z",
-  "elapsedSec": 112.3,
+  "scannedAt": "2026-06-07T10:04:38.341Z",
+  "elapsedSec": 121.6,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 17,
   "summary": {
     "total": 130,
-    "coveredByMain": 15,
-    "recovered": 21,
-    "recoveredPositions": 262,
+    "coveredByMain": 16,
+    "recovered": 20,
+    "recoveredPositions": 264,
     "noPositions": 94,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 29,
+      "ml": 28,
       "spread": 16,
-      "total": 19,
-      "dropped_shadow_gate": 191,
-      "dropped_duplicate": 7
+      "total": 20,
+      "dropped_shadow_gate": 192,
+      "dropped_duplicate": 8
     }
   },
   "perWallet": [
@@ -1837,24 +1837,7 @@
       "tier": "CONFIRMED",
       "name": "Tokidoki",
       "sports": "MLB",
-      "status": "RECOVERED_VIA_WHITELIST_SCAN",
-      "addr": "0x339a0e5aea39a7db5cea5b0003abab33c78c1eae",
-      "positionsCount": 1,
-      "statsSource": "sports_sharps",
-      "avgSportBet": 1510,
-      "willPassShadowGate": 1,
-      "willDropAtShadowGate": 0,
-      "positions": [
-        {
-          "sport": "MLB",
-          "gameKey": "bos_nyy",
-          "marketType": "ml",
-          "side": "away",
-          "invested": 3680,
-          "entryLine": null,
-          "passesShadow": true
-        }
-      ]
+      "status": "COVERED_BY_MAIN"
     },
     {
       "walletShort": "8e82c9",
@@ -2035,10 +2018,10 @@
       "sports": "MLB,NHL",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xe9076a87c5ed90ef16e6fe6529c943baeca0cff6",
-      "positionsCount": 3,
+      "positionsCount": 5,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 370,
-      "willPassShadowGate": 3,
+      "willPassShadowGate": 5,
       "willDropAtShadowGate": 0,
       "positions": [
         {
@@ -2046,8 +2029,17 @@
           "gameKey": "sas_nyk",
           "marketType": "ml",
           "side": "away",
-          "invested": 846,
+          "invested": 856,
           "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "NBA",
+          "gameKey": "sas_nyk",
+          "marketType": "total",
+          "side": "over",
+          "invested": 388,
+          "entryLine": 213.5,
           "passesShadow": true
         },
         {
@@ -2064,8 +2056,17 @@
           "gameKey": "sas_nyk",
           "marketType": "spread",
           "side": "away",
-          "invested": 78,
+          "invested": 98,
           "entryLine": -5.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "NBA",
+          "gameKey": "sas_nyk",
+          "marketType": "total",
+          "side": "over",
+          "invested": 97,
+          "entryLine": 214.5,
           "passesShadow": true
         }
       ]
@@ -2396,18 +2397,18 @@
       "sports": "NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x84cfffc3f16dcc353094de30d4a45226eccd2f63",
-      "positionsCount": 97,
+      "positionsCount": 98,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 12718,
       "willPassShadowGate": 9,
-      "willDropAtShadowGate": 88,
+      "willDropAtShadowGate": 89,
       "positions": [
         {
           "sport": "NBA",
           "gameKey": "sas_nyk",
           "marketType": "ml",
           "side": "home",
-          "invested": 72998,
+          "invested": 73111,
           "entryLine": null,
           "passesShadow": true
         },
@@ -2805,6 +2806,15 @@
           "side": "over",
           "invested": 100,
           "entryLine": 8.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "NBA",
+          "gameKey": "sas_nyk",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 100,
+          "entryLine": 1.5,
           "passesShadow": false
         },
         {
@@ -3546,7 +3556,7 @@
     {
       "walletShort": "fec67e",
       "tier": "CONFIRMED",
-      "name": "g452564g5g5",
+      "name": "NHLGuy",
       "sports": "NHL",
       "status": "SCANNED_NO_POSITIONS_TODAY",
       "addr": "0xe405483ff60ab58ce973479d3317045549fec67e"
