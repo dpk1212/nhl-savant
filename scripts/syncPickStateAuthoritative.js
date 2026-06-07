@@ -1083,6 +1083,35 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     else if (typeof pick.commenceTime === 'string') ct = new Date(pick.commenceTime).getTime();
   }
   if (ct != null && now >= ct - T_MINUS_15_MIN_MS && !force) {
+    // T-15 rescue stamp — the ONE thing we still do inside the freeze:
+    // ensure a LOCKED/LEAN side never reaches the grader with undefined
+    // finalUnits. If it did, betTracking.js computes `isTracked = !units`
+    // → the pick is silently marked tracked=true and contributes 0 to
+    // the bankroll. This is the root cause of the PIT@ATL bug — browser
+    // promoted the side at ~T-3min, cron never got a normal cycle to
+    // stamp finalUnits before T-15 hit, finalUnits stayed undefined.
+    //
+    // Contract: every side the grader will eventually see MUST have a
+    // numeric finalUnits stamp. A side with `agsV12Result === null` at
+    // freeze is a MUTED side by definition (no signal → no money) → 0u.
+    if ((lockStage === 'LOCKED' || lockStage === 'LEAN')
+        && (sd.finalUnits == null || !Number.isFinite(sd.finalUnits))) {
+      const rescuePatch = {
+        finalUnits: 0,
+        v8_agsTier: 'FADE',
+        v8_agsV12Tier: 'FADE',
+        v8_agsV12UnitsApplied: 0,
+        v8_agsUnitsApplied: 0,
+        _frozenFinalUnitsRescue: {
+          at: now,
+          reason: 'undefined_finalUnits_at_t_minus_15',
+          priorLockStage: lockStage,
+          priorAgsV12: sd.v8_agsV12 ?? null,
+        },
+      };
+      await pickRef.set({ sides: { [side]: rescuePatch }, lastWriteAt: now, lastAction: 'finalUnits_rescue_at_freeze' }, { merge: true });
+      return { skipped: true, reason: 'within_t_minus_15_rescued_finalUnits' };
+    }
     return { skipped: true, reason: 'within_t_minus_15' };
   }
 
@@ -1339,19 +1368,29 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       changes.push(`AGS-v12: ${stampedV12 == null ? '∅' : stampedV12.toFixed(3)} → ${agsV12Result.agsV12.toFixed(3)} (${agsV12Result.tier} → ${liveUnits}u, ladder=${agsV12UnitsRaw.toFixed(2)}u)`);
     }
   } else {
-    // No v12 result — clear v12 stamps and mute units. Treat the side as
-    // unsignaled.
+    // No v12 result for ANY reason (missing walletDetails, missing
+    // walletPriorStatsFn, aggregateSideV12 returned null, etc.). Treat
+    // the side as fully unsignaled and stamp a DETERMINISTIC mute so
+    // the grader never sees an undefined-units side later.
+    //
+    // CRITICAL: these stamps are unconditional. The previous version of
+    // this branch only cleared `v8_agsV12` if it already existed and
+    // only cleared `v8_agsTier` if it already existed — which meant a
+    // brand-new side that the browser promoted but the cron's v12 path
+    // failed on stayed in limbo (no v12 stamps, no tier, no
+    // finalUnits). That's the PIT@ATL bug. Belt-and-suspenders with the
+    // T-15 rescue stamp above.
+    patch.v8_agsTier = 'FADE';
+    patch.v8_agsV12Tier = 'FADE';
+    patch.v8_agsV12UnitsApplied = 0;
+    patch.finalUnits = 0;
     if (sd.v8_agsV12 != null) {
       patch.v8_agsV12 = admin.firestore.FieldValue.delete();
-      patch.v8_agsV12Tier = admin.firestore.FieldValue.delete();
       patch.v8_agsV12Quintile = admin.firestore.FieldValue.delete();
-      patch.v8_agsV12UnitsApplied = admin.firestore.FieldValue.delete();
-      changes.push(`AGS-v12: ${(sd.v8_agsV12 ?? 0).toFixed?.(3) ?? sd.v8_agsV12} → ∅ (no v12 signal)`);
+      changes.push(`AGS-v12: ${(sd.v8_agsV12 ?? 0).toFixed?.(3) ?? sd.v8_agsV12} → ∅ (no v12 signal — muted)`);
+    } else if (sd.v8_agsTier == null) {
+      changes.push(`AGS-v12: ∅ → ∅ (no signal — defensively muted to FADE/0u)`);
     }
-    if (sd.v8_agsTier != null) {
-      patch.v8_agsTier = admin.firestore.FieldValue.delete();
-    }
-    patch.finalUnits = liveUnits; // will be 0 since baseHealthV12 muted
   }
   // finalUnits drift logging — flag any time the canonical bet size changes
   // by ≥0.05u so cycle output makes the change visible.

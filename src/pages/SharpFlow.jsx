@@ -12453,7 +12453,21 @@ export default function SharpFlow() {
                         // rendered "LOCKED IN" + Risk pill for FADE/SHADOW
                         // picks (e.g. NYM/SEA·away on 2026-06-01 evening,
                         // v12=FADE/0u but UI showed "LOCKED IN · 0.00u").
-                        const isLiveLockedSide = ([, sd]) => sd && sd.lockStage === 'LOCKED' && !sd.superseded;
+                        // CRON-V12 SOURCE-OF-TRUTH GATE — see Locked Picks
+                        // loop below for full rationale. The live game
+                        // cards "LOCKED IN" badge / sizing must also
+                        // ONLY surface sides the cron has actually
+                        // evaluated under v12. Half-stamped sides
+                        // (browser-only lockStage='LOCKED' with no
+                        // finalUnits + no v12 eval) would otherwise
+                        // decorate the live card with a stale v11
+                        // tier — same root cause as the PIT@ATL bug.
+                        const isLiveLockedSide = ([, sd]) => sd
+                          && sd.lockStage === 'LOCKED'
+                          && !sd.superseded
+                          && sd.v8_agsV12EvaluatedAt != null
+                          && Number.isFinite(sd.finalUnits)
+                          && sd.health?.syncedBy === 'server-cron';
                         const gdActiveSideEntry = gdLock ? Object.entries(gdLock.sides || {}).find(isLiveLockedSide) : null;
                         const gdOriginalSide = gdActiveSideEntry?.[0] || null;
                         const gdLockStars = gdActiveSideEntry?.[1]?.lock?.stars ?? null;
@@ -12518,6 +12532,33 @@ export default function SharpFlow() {
                       const docSport = doc.sport || 'NHL';
                       for (const [sideKey, sd] of Object.entries(doc.sides || {})) {
                         if (sd.lockStage === 'SHADOW' || sd.superseded) continue;
+                        // ─── CRON-V12 SOURCE-OF-TRUTH GATE ────────────────
+                        // Locked Picks ONLY shows sides the cron has
+                        // actually evaluated under v12 logic. The signal:
+                        //   1. cron ran v12 → v8_agsV12EvaluatedAt stamped
+                        //   2. cron stamped a deterministic bet size →
+                        //      finalUnits is a finite number (0 or > 0)
+                        //   3. cron wrote the health block →
+                        //      health.syncedBy === 'server-cron'
+                        // Half-stamped sides (browser wrote lockStage +
+                        // v8_ags v11 fields on a side-flip but the cron
+                        // hit T-15 freeze before it could finish) are
+                        // INVISIBLE here. They have no v12 tier, no
+                        // finalUnits, and the grader marks them
+                        // tracked=true / 0u — so surfacing them as
+                        // "LOCKED · ELITE 2.25u" from a stale browser
+                        // v11 stamp is a lie. That's the PIT@ATL
+                        // Over 8 (2026-06-07) bug. Never again.
+                        //
+                        // Graded picks (status=COMPLETED + result.outcome)
+                        // bypass this gate so historical results keep
+                        // rendering regardless of stamp shape — the
+                        // ledger value is already frozen on result.profit.
+                        const sdAlreadyGradedGate = sd.status === 'COMPLETED' && !!sd.result?.outcome;
+                        const cronEvaluatedV12 = sd.v8_agsV12EvaluatedAt != null
+                          && Number.isFinite(sd.finalUnits)
+                          && sd.health?.syncedBy === 'server-cron';
+                        if (!sdAlreadyGradedGate && !cronEvaluatedV12) continue;
                         // v12 mute gate. When the cron has stamped v12 and
                         // v12 says FADE (score ≤ q20 cutoff, units=0), the
                         // side is muted under the new ladder regardless of
