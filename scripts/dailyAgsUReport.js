@@ -233,6 +233,271 @@ function monoScore(arr) {
 // Sigmoid (matches src/lib/ags::agsScoreToProb).
 const sigmoid = (z) => 1 / (1 + Math.exp(-Math.max(-30, Math.min(30, z))));
 
+// ── Extended statistical helpers (used by § 12 V12 Statistical Monitor) ─
+
+// Pearson product-moment correlation. Returns null when N<3 or sd=0.
+function pearson(x, y) {
+  if (x.length !== y.length || x.length < 3) return null;
+  const mx = avg(x), my = avg(y);
+  let num = 0, dx = 0, dy = 0;
+  for (let i = 0; i < x.length; i++) {
+    const a = x[i] - mx, b = y[i] - my;
+    num += a * b; dx += a * a; dy += b * b;
+  }
+  const den = Math.sqrt(dx * dy);
+  return den > 0 ? num / den : null;
+}
+
+// Linear regression y = a + b·x. Returns { slope, intercept, r2, rmse, n }.
+// r² here is identical to pearson(x,y)² (univariate case), included for
+// readability of the report ("predictive R²").
+function linRegR2(x, y) {
+  if (x.length !== y.length || x.length < 3) return null;
+  const r = pearson(x, y);
+  if (r == null) return null;
+  const mx = avg(x), my = avg(y);
+  const sx = std(x), sy = std(y);
+  const slope = sx > 0 ? r * (sy / sx) : 0;
+  const intercept = my - slope * mx;
+  let sse = 0;
+  for (let i = 0; i < x.length; i++) {
+    const yhat = intercept + slope * x[i];
+    sse += (y[i] - yhat) ** 2;
+  }
+  const rmse = Math.sqrt(sse / x.length);
+  return { slope, intercept, r2: r * r, rmse, n: x.length, r };
+}
+
+// Two-sample Kolmogorov-Smirnov statistic. Measures the maximum vertical
+// gap between the score CDFs of winners vs losers — larger ⇒ better
+// separation. Returns null when either group is empty.
+function ksStat(scoresPos, scoresNeg) {
+  if (!Array.isArray(scoresPos) || !Array.isArray(scoresNeg)) return null;
+  if (scoresPos.length === 0 || scoresNeg.length === 0) return null;
+  const all = [...scoresPos.map(s => ({ s, k: 1 })), ...scoresNeg.map(s => ({ s, k: 0 }))]
+    .sort((a, b) => a.s - b.s);
+  let cumPos = 0, cumNeg = 0;
+  const np = scoresPos.length, nn = scoresNeg.length;
+  let d = 0;
+  for (const p of all) {
+    if (p.k === 1) cumPos++; else cumNeg++;
+    const gap = Math.abs(cumPos / np - cumNeg / nn);
+    if (gap > d) d = gap;
+  }
+  return d;
+}
+
+// Sample skewness (Fisher–Pearson).
+function sampleSkew(arr) {
+  if (arr.length < 3) return null;
+  const m = avg(arr), s = std(arr);
+  if (s === 0) return 0;
+  const n = arr.length;
+  const sum = arr.reduce((acc, v) => acc + ((v - m) / s) ** 3, 0);
+  return (n / ((n - 1) * (n - 2))) * sum;
+}
+// Sample excess kurtosis (Fisher).
+function sampleKurt(arr) {
+  if (arr.length < 4) return null;
+  const m = avg(arr), s = std(arr);
+  if (s === 0) return 0;
+  const n = arr.length;
+  const sum = arr.reduce((acc, v) => acc + ((v - m) / s) ** 4, 0);
+  return ((n * (n + 1)) / ((n - 1) * (n - 2) * (n - 3))) * sum
+       - (3 * (n - 1) ** 2) / ((n - 2) * (n - 3));
+}
+
+// Linear-interpolated quantile on a *sorted* array.
+function quantile(sortedArr, q) {
+  if (!sortedArr.length) return null;
+  const i = (sortedArr.length - 1) * q;
+  const lo = Math.floor(i), hi = Math.ceil(i);
+  if (lo === hi) return sortedArr[lo];
+  return sortedArr[lo] + (sortedArr[hi] - sortedArr[lo]) * (i - lo);
+}
+
+// Deterministic LCG so bootstrap CIs reproduce identically across runs
+// for the same input — the report has to be diffable.
+function makeRng(seed = 0xC0FFEE) {
+  let state = seed >>> 0;
+  return () => {
+    state = (state * 1664525 + 1013904223) >>> 0;
+    return state / 0xFFFFFFFF;
+  };
+}
+
+// Bootstrap CI helper. `iters` resamples (with replacement) of `data`,
+// applies `statFn` to each, returns { mean, lo, hi, sd } for a given
+// confidence level (default 95%).
+function bootstrapCI(data, statFn, { iters = 1000, conf = 0.95, seed = 0xBEEF } = {}) {
+  if (!Array.isArray(data) || data.length < 3) return null;
+  const rng = makeRng(seed);
+  const n = data.length;
+  const samples = [];
+  for (let it = 0; it < iters; it++) {
+    const resample = new Array(n);
+    for (let i = 0; i < n; i++) resample[i] = data[(rng() * n) | 0];
+    const s = statFn(resample);
+    if (Number.isFinite(s)) samples.push(s);
+  }
+  if (samples.length < 10) return null;
+  samples.sort((a, b) => a - b);
+  const alpha = (1 - conf) / 2;
+  return {
+    mean: avg(samples),
+    sd: std(samples),
+    lo: quantile(samples, alpha),
+    hi: quantile(samples, 1 - alpha),
+    n: samples.length,
+  };
+}
+
+// ── Linear algebra helpers (used by § 17 Feature Lab multivariate OLS) ─
+// Small / dense routines, suitable for p ≤ ~12 and n ≤ ~1000 (we have
+// ~300 picks and ≤ 8 features at a time, so this is cheap).
+
+function transpose(A) {
+  const rows = A.length, cols = A[0].length;
+  const T = Array.from({ length: cols }, () => new Array(rows));
+  for (let i = 0; i < rows; i++)
+    for (let j = 0; j < cols; j++)
+      T[j][i] = A[i][j];
+  return T;
+}
+
+function matMul(A, B) {
+  const aRows = A.length, aCols = A[0].length, bCols = B[0].length;
+  const C = Array.from({ length: aRows }, () => new Array(bCols).fill(0));
+  for (let i = 0; i < aRows; i++) {
+    for (let k = 0; k < aCols; k++) {
+      const a = A[i][k];
+      for (let j = 0; j < bCols; j++) C[i][j] += a * B[k][j];
+    }
+  }
+  return C;
+}
+
+function matVec(A, v) {
+  const rows = A.length, cols = A[0].length;
+  const r = new Array(rows).fill(0);
+  for (let i = 0; i < rows; i++) {
+    let s = 0;
+    for (let j = 0; j < cols; j++) s += A[i][j] * v[j];
+    r[i] = s;
+  }
+  return r;
+}
+
+// Invert a square matrix via Gauss-Jordan with partial pivoting. Returns
+// null if the matrix is numerically singular (so callers can degrade
+// gracefully — typically means two features in the panel are collinear).
+function gaussJordanInverse(A) {
+  const n = A.length;
+  // Augment with identity → [A | I].
+  const M = A.map((row, i) => [
+    ...row,
+    ...Array.from({ length: n }, (_, j) => i === j ? 1 : 0),
+  ]);
+  for (let i = 0; i < n; i++) {
+    let pivot = i;
+    for (let k = i + 1; k < n; k++) {
+      if (Math.abs(M[k][i]) > Math.abs(M[pivot][i])) pivot = k;
+    }
+    if (pivot !== i) { const tmp = M[i]; M[i] = M[pivot]; M[pivot] = tmp; }
+    const div = M[i][i];
+    if (!Number.isFinite(div) || Math.abs(div) < 1e-12) return null;
+    for (let j = 0; j < 2 * n; j++) M[i][j] /= div;
+    for (let k = 0; k < n; k++) {
+      if (k === i) continue;
+      const f = M[k][i];
+      if (f === 0) continue;
+      for (let j = 0; j < 2 * n; j++) M[k][j] -= f * M[i][j];
+    }
+  }
+  return M.map(row => row.slice(n));
+}
+
+// Ordinary Least Squares: β = (X'X)^-1 X'y. X is n×p (each row a sample),
+// y is length n. Returns { beta, r2, adjR2, n, p, residSd } or null on
+// singular design. Add a column of 1s yourself if you want an intercept.
+function olsRegression(X, y) {
+  if (!Array.isArray(X) || !Array.isArray(y) || X.length === 0) return null;
+  if (X.length !== y.length) return null;
+  const n = X.length, p = X[0].length;
+  if (n <= p) return null;
+  const XT = transpose(X);
+  const XTX = matMul(XT, X);
+  const XTXinv = gaussJordanInverse(XTX);
+  if (!XTXinv) return null;
+  const XTy = matVec(XT, y);
+  const beta = matVec(XTXinv, XTy);
+  const yhat = matVec(X, beta);
+  const meanY = avg(y);
+  let ssRes = 0, ssTot = 0;
+  for (let i = 0; i < n; i++) {
+    ssRes += (y[i] - yhat[i]) ** 2;
+    ssTot += (y[i] - meanY) ** 2;
+  }
+  const r2 = ssTot > 0 ? 1 - ssRes / ssTot : 0;
+  // Adjusted R² accounts for free parameters — important when comparing
+  // models with different numbers of features.
+  const adjR2 = 1 - (1 - r2) * (n - 1) / Math.max(1, n - p - 1);
+  const residSd = Math.sqrt(ssRes / Math.max(1, n - p));
+  // Standard errors of β (diagonal of σ² (X'X)^-1).
+  const seBeta = new Array(p);
+  const sigma2 = ssRes / Math.max(1, n - p);
+  for (let i = 0; i < p; i++) {
+    const v = sigma2 * XTXinv[i][i];
+    seBeta[i] = v > 0 ? Math.sqrt(v) : 0;
+  }
+  return { beta, seBeta, r2, adjR2, n, p, residSd, yhat };
+}
+
+// Standardize a column (subtract mean, divide by sd). Used to make
+// multivariate β rankings interpretable as "standardized importance".
+function zScoreColumn(xs) {
+  const m = avg(xs);
+  const s = std(xs);
+  if (s === 0) return xs.map(() => 0);
+  return xs.map(v => (v - m) / s);
+}
+
+// Bucket-by-tercile aggregator (low/mid/high) of a continuous feature `xs`
+// alongside a binary outcome `wins` and a unit-return series `unitReturns`.
+// Returns three buckets each with N, win%, ROI.
+function tercileBuckets(xs, wins, unitReturns, units) {
+  if (xs.length < 6) return null;
+  const sorted = [...xs].sort((a, b) => a - b);
+  const lo = quantile(sorted, 1/3);
+  const hi = quantile(sorted, 2/3);
+  const buckets = { lo: [], mid: [], hi: [] };
+  for (let i = 0; i < xs.length; i++) {
+    const v = xs[i];
+    const key = v <= lo ? 'lo' : v <= hi ? 'mid' : 'hi';
+    buckets[key].push({ x: v, won: wins[i], pnl: unitReturns[i], stake: units[i] });
+  }
+  const summarize = (arr) => {
+    if (!arr.length) return { n: 0, w: 0, l: 0, roi: null, winPct: null };
+    const w = arr.filter(r => r.won === 1).length;
+    const l = arr.filter(r => r.won === 0).length;
+    const totalPnl = arr.reduce((s, r) => s + r.pnl, 0);
+    const totalStake = arr.reduce((s, r) => s + r.stake, 0);
+    return {
+      n: arr.length, w, l,
+      roi: totalStake > 0 ? (totalPnl / totalStake) * 100 : null,
+      winPct: (w + l) > 0 ? w / (w + l) : null,
+      lo: arr[0]?.x,
+      hi: arr[arr.length - 1]?.x,
+    };
+  };
+  return {
+    cuts: { lo, hi },
+    lo:  summarize(buckets.lo),
+    mid: summarize(buckets.mid),
+    hi:  summarize(buckets.hi),
+  };
+}
+
 // ── Data Loader ──────────────────────────────────────────────────────────
 async function loadAllAgsuGradedPicks() {
   const rows = [];
@@ -246,6 +511,13 @@ async function loadAllAgsuGradedPicks() {
         if (sd.superseded) continue;
         const lock = sd.lock || {};
         const peak = sd.peak || lock;
+        // walletDetails frozen at scoring time — the V12 score is derived
+        // directly from this array. peak preferred, lock fallback. Each
+        // entry: { wallet, side, sizeRatio, contribution, ... } where
+        // `wallet` is the lower-6-hex short id (matches sharpWalletProfiles
+        // docIds), `side` is 'home'|'away'|'over'|'under'.
+        const walletDetails = (peak.v8Scoring?.walletDetails || lock.v8Scoring?.walletDetails || [])
+          .filter(w => w && w.wallet && w.side);
 
         if (isAgsuPromotion(sd.promotedBy) && data.date && (!cutover || data.date < cutover)) {
           cutover = data.date;
@@ -326,6 +598,7 @@ async function loadAllAgsuGradedPicks() {
           status: sd.status,
           healthStatus: sd.health?.status || 'ACTIVE',
           schemaVersion,
+          walletDetails,
         });
       }
     }
@@ -1110,6 +1383,32 @@ async function loadAllGradedAndShadowPicks() {
     }
   }
   return rows;
+}
+
+// Load every sharp wallet profile keyed by lower-6-hex shortname — the
+// same id format used in walletDetails on each pick. Each value is the
+// raw profile doc data (whitelistTier, bySport.{MLB,NBA,NHL}.{picks,
+// positions, whitelistTier, ...}, etc.).
+//
+// Used by § 13 to enrich the wallet-influence table with current tier /
+// prior ROI / prior pick count for each wallet that drove a V12 pick.
+// Returns Map<walletShort, profileData>.
+async function loadWalletProfilesMap() {
+  const map = new Map();
+  try {
+    const snap = await db.collection('sharpWalletProfiles').get();
+    for (const d of snap.docs) {
+      // Profile docIds are the FULL wallet address; walletDetails uses
+      // lower-6-hex. Try both — prefer the data's `walletShort` field
+      // when present, otherwise compute from docId.
+      const data = d.data();
+      const short = (data?.walletShort
+        ? String(data.walletShort).toLowerCase()
+        : String(d.id).slice(-6).toLowerCase());
+      map.set(short, { ...data, _id: d.id, _short: short });
+    }
+  } catch (_) { /* swallow — section will degrade gracefully */ }
+  return map;
 }
 
 async function loadLiveCalibration() {
@@ -1947,6 +2246,923 @@ function buildV12RecentLivePicks(report, stats, n = 30) {
   report.push('');
 }
 
+// ── § 12 — V12 Statistical Monitor (predictive-power diagnostics) ──────
+//
+// Quantitative health check on the V12 score. Everything in this section
+// answers ONE question: "How well does our score actually predict the
+// thing we want to predict?" If V12's number is meaningful, you should
+// see strong discrimination (AUC > 0.55), meaningful rank correlation
+// with PnL, and stable AUC week-over-week. If the metrics decay, V12 is
+// losing its edge before the ROI numbers in § 1 visibly cross zero.
+//
+// Sub-sections:
+//   A. Discrimination — AUC, KS, Spearman, point-biserial
+//   B. Predictive R² — score vs unit-return regression
+//   C. Per-feature correlation — V12 inputs (forMean/agMean/counts/proven)
+//   D. Score distribution moments
+//   E. Per-sport discrimination
+//   F. Stability — rolling 7-day AUC across the V12 window
+//   G. Bootstrap 95% CI on overall V12 ROI
+function buildV12StatisticalMonitor(report, stats) {
+  report.push(`## § 12 — V12 Statistical Monitor (Predictive-Power Diagnostics)`);
+  report.push('');
+  report.push(`> **Why this section matters.** Win-rate and ROI tell you whether V12 made money. The numbers below tell you whether V12 deserves the credit — i.e. whether the score itself is genuinely separating winners from losers, or whether the realised PnL is just variance on a near-random gate. Track these week-over-week: if AUC drifts below 0.50, the score has lost its signal and the ROI line is about to follow.`);
+  report.push('');
+  if (!stats || stats.liveRows.length < 10) {
+    report.push(`_(need at least 10 graded V12 live picks for the stat tests; currently have ${stats?.liveRows.length ?? 0}.)_`);
+    report.push('');
+    return;
+  }
+
+  const live = stats.liveRows.filter(r => Number.isFinite(r.agsV12) && r.won != null);
+  const scores = live.map(r => r.agsV12);
+  const wins = live.map(r => r.won);
+  const units = live.map(r => r.units || 0);
+  const unitReturns = live.map(r => (r.units > 0 ? r.profit / r.units : 0));
+  const profits = live.map(r => r.profit);
+
+  // ────────────────────────────────────────────────────────────────────
+  // 12A — Discrimination metrics
+  // ────────────────────────────────────────────────────────────────────
+  const auc = rocAuc(scores, wins);
+  const spearmanScoreWon = spearman(scores, wins);
+  const spearmanScorePnl = spearman(scores, unitReturns);
+  const pb = pointBiserial(scores, wins);
+  const scoresWin = scores.filter((_, i) => wins[i] === 1);
+  const scoresLoss = scores.filter((_, i) => wins[i] === 0);
+  const ks = ksStat(scoresWin, scoresLoss);
+
+  report.push(`### 12A — Discrimination: does V12 actually separate winners from losers?`);
+  report.push('');
+  report.push(`Five different statistical lenses on the same question. Each one is computed only over **live shipped picks** (units > 0, tracked = false) that have a graded outcome.`);
+  report.push('');
+  report.push(`| Metric                                | Value    | Plain-English read                                                                 |`);
+  report.push(`|---------------------------------------|----------|------------------------------------------------------------------------------------|`);
+  report.push(`| AUC (ROC)                             | ${fmtN(auc, 3).padStart(8)} | 0.50 = coin flip · 0.55 = real edge · 0.60+ = strong · _interpret as P(score(win) > score(loss))_ |`);
+  report.push(`| KS statistic                          | ${fmtN(ks, 3).padStart(8)} | Max gap between win-score CDF and loss-score CDF. 0.15+ ⇒ meaningful separation     |`);
+  report.push(`| Spearman ρ(score, won)                | ${fmtSigned(spearmanScoreWon, 3).padStart(8)} | Rank-correlation of score and binary outcome. Above 0.10 = useful signal           |`);
+  report.push(`| Spearman ρ(score, unit-return)        | ${fmtSigned(spearmanScorePnl, 3).padStart(8)} | Higher score should mean higher per-unit return. Above 0.10 = useful signal        |`);
+  report.push(`| Point-biserial r(score, won)          | ${fmtSigned(pb, 3).padStart(8)} | Parametric cousin of Spearman ρ. Above 0.10 = useful signal                        |`);
+  report.push('');
+  const aucVerdict = auc == null ? '—'
+    : auc >= 0.60 ? '🟢 **Strong** — score is genuinely sorting outcomes'
+    : auc >= 0.55 ? '🟢 **Modest but real** — score has measurable edge'
+    : auc >= 0.52 ? '🟡 **Weak** — barely separating; close to a coin flip'
+    : auc >= 0.48 ? '🟠 **Random** — score is not predicting outcomes; PnL is variance, not edge'
+    : '🔴 **Anti-signal** — V12 is sorting in the WRONG direction. Investigate immediately.';
+  report.push(`> **AUC verdict:** ${aucVerdict}`);
+  report.push('');
+
+  // ────────────────────────────────────────────────────────────────────
+  // 12B — Predictive R² (score → per-pick unit return)
+  // ────────────────────────────────────────────────────────────────────
+  const regUnitReturn = linRegR2(scores, unitReturns);
+  const regWon = linRegR2(scores, wins);
+  const regProfit = linRegR2(scores, profits);
+  report.push(`### 12B — Predictive R² (regression of outcome on V12 score)`);
+  report.push('');
+  report.push(`How much of the variance in actual outcomes does the V12 score actually explain? R² is the canonical "% of variance explained" — but with binary/sparse outcomes, R² is structurally small. The slope and direction matter at least as much as the magnitude.`);
+  report.push('');
+  report.push(`| Target              | N    | slope (β)  | intercept  | R²     | r       | RMSE    | reads as                                                |`);
+  report.push(`|---------------------|------|------------|------------|--------|---------|---------|---------------------------------------------------------|`);
+  for (const [name, reg] of [['per-pick unit-return', regUnitReturn], ['won (binary)', regWon], ['per-pick PnL (u)', regProfit]]) {
+    if (!reg) { report.push(`| ${name.padEnd(19)} | —    | —          | —          | —      | —       | —       | not enough data                                          |`); continue; }
+    const dir = reg.slope > 0 ? 'positive (higher score ⇒ better outcome)' : reg.slope < 0 ? 'negative (higher score ⇒ WORSE outcome)' : 'flat';
+    report.push(`| ${name.padEnd(19)} | ${String(reg.n).padStart(4)} | ${fmtSigned(reg.slope, 4).padStart(10)} | ${fmtSigned(reg.intercept, 4).padStart(10)} | ${fmtN(reg.r2, 4).padStart(6)} | ${fmtSigned(reg.r, 3).padStart(7)} | ${fmtN(reg.rmse, 3).padStart(7)} | ${dir.padEnd(56)} |`);
+  }
+  report.push('');
+  report.push(`> Even a "small" R² of 0.02–0.05 is meaningful for sports picks — outcomes are 50%+ noise floor. The signs of the slopes and the direction of r are the primary check: if **slope < 0** on per-pick PnL, V12 is **anti-predictive** for sizing decisions and the ladder needs revisiting.`);
+  report.push('');
+
+  // ────────────────────────────────────────────────────────────────────
+  // 12C — Per-feature correlation (V12 inputs)
+  // ────────────────────────────────────────────────────────────────────
+  const withMeans = live.filter(r => Number.isFinite(r.agsV12ForMean) && Number.isFinite(r.agsV12AgMean));
+  report.push(`### 12C — Per-feature correlation (V12's actual inputs vs outcome)`);
+  report.push('');
+  report.push(`V12's score is built from four inputs per pick: the mean quality of FOR-side wallets, the mean quality of AGAINST-side wallets, the count of wallets on each side, and the count of \`proven\` (HC_BASE) wallets among them. We test each one independently — does it correlate with the outcome on its own? If a feature has near-zero correlation, V12 is paying for noise in that channel.`);
+  report.push('');
+  if (withMeans.length < 10) {
+    report.push(`_(only ${withMeans.length} picks have per-side wallet-quality means stamped — feature-level tests need ≥ 10. Section will fill in once more picks ship.)_`);
+    report.push('');
+  } else {
+    const featureSpecs = [
+      ['agsV12ForMean',   'mean Q of FOR-side wallets — higher should help'],
+      ['agsV12AgMean',    'mean Q of AGAINST-side wallets — higher should HURT (negative correlation expected)'],
+      ['agsV12ForCount',  'count of contributing FOR-side wallets'],
+      ['agsV12AgCount',   'count of contributing AGAINST-side wallets'],
+      ['provenFor',       'count of proven (HC_BASE) FOR wallets'],
+      ['provenAg',        'count of proven (HC_BASE) AGAINST wallets'],
+    ];
+    const ws = withMeans.map(r => r.won);
+    const ur = withMeans.map(r => (r.units > 0 ? r.profit / r.units : 0));
+    report.push(`| Feature           | N   | r(feature, won) | ρ(feature, won) | r(feature, unit-return) | ρ(feature, unit-return) | reads as                                                       |`);
+    report.push(`|-------------------|-----|-----------------|------------------|--------------------------|--------------------------|----------------------------------------------------------------|`);
+    for (const [key, meaning] of featureSpecs) {
+      const xs = withMeans.map(r => r[key]).filter(Number.isFinite);
+      if (xs.length < 10) {
+        report.push(`| ${key.padEnd(17)} | ${String(xs.length).padStart(3)} | —               | —                | —                        | —                        | not stamped on enough picks                                    |`);
+        continue;
+      }
+      const indices = withMeans.map((r, i) => Number.isFinite(r[key]) ? i : -1).filter(i => i >= 0);
+      const xv = indices.map(i => withMeans[i][key]);
+      const yv = indices.map(i => ws[i]);
+      const uv = indices.map(i => ur[i]);
+      const r_w = pearson(xv, yv);
+      const r_u = pearson(xv, uv);
+      const s_w = spearman(xv, yv);
+      const s_u = spearman(xv, uv);
+      report.push(`| ${key.padEnd(17)} | ${String(xv.length).padStart(3)} | ${fmtSigned(r_w, 3).padStart(15)} | ${fmtSigned(s_w, 3).padStart(16)} | ${fmtSigned(r_u, 3).padStart(24)} | ${fmtSigned(s_u, 3).padStart(24)} | ${meaning.padEnd(62)} |`);
+    }
+    report.push('');
+
+    // Tercile-bucket the strongest pair (forMean vs unit-return) for visual confirmation.
+    const xsFm = withMeans.map(r => r.agsV12ForMean);
+    const buckets = tercileBuckets(xsFm, ws, ur, withMeans.map(r => r.units || 0));
+    if (buckets) {
+      report.push(`#### Tercile breakdown — forMean vs realised ROI`);
+      report.push('');
+      report.push(`If \`agsV12ForMean\` is doing real work, the high-tercile bucket should out-perform the low-tercile bucket on ROI. If they're flat or inverted, the FOR-side mean is not the driver of edge.`);
+      report.push('');
+      report.push(`| Bucket            | range                  | N   | W-L     | Win %   | ROI       |`);
+      report.push(`|-------------------|------------------------|-----|---------|---------|-----------|`);
+      for (const [label, b] of [['LOW (≤ p33)', buckets.lo], ['MID (p33–p67)', buckets.mid], ['HIGH (> p67)', buckets.hi]]) {
+        const range = b.lo != null && b.hi != null ? `${fmtN(b.lo, 3)} … ${fmtN(b.hi, 3)}` : '—';
+        report.push(`| ${label.padEnd(17)} | ${range.padEnd(22)} | ${String(b.n).padStart(3)} | ${(b.w+'-'+b.l).padEnd(7)} | ${(b.winPct != null ? (b.winPct*100).toFixed(1)+'%' : '—').padStart(7)} | ${(b.roi != null ? (b.roi>=0?'+':'') + b.roi.toFixed(1)+'%' : '—').padStart(9)} |`);
+      }
+      report.push('');
+    }
+  }
+
+  // ────────────────────────────────────────────────────────────────────
+  // 12D — Score distribution moments
+  // ────────────────────────────────────────────────────────────────────
+  const sortedScores = [...scores].sort((a, b) => a - b);
+  const meanS = avg(scores);
+  const sdS = std(scores);
+  const skewS = sampleSkew(scores);
+  const kurtS = sampleKurt(scores);
+  report.push(`### 12D — Score distribution shape`);
+  report.push('');
+  report.push(`Distribution-level diagnostics on the V12 score itself. Big shifts in mean/sd day-over-day mean V12 is shipping a meaningfully different population of picks. Heavy skew or fat tails (high kurtosis) are warnings that a small number of extreme scores are doing all the work.`);
+  report.push('');
+  report.push(`| Stat              | Value     | reads as                                                       |`);
+  report.push(`|-------------------|-----------|----------------------------------------------------------------|`);
+  report.push(`| N (live picks)    | ${String(scores.length).padStart(9)} | live shipped & graded V12 picks                                 |`);
+  report.push(`| Mean              | ${fmtSigned(meanS, 4).padStart(9)} | average score across live picks                                 |`);
+  report.push(`| SD                | ${fmtN(sdS, 4).padStart(9)} | dispersion — higher SD ⇒ V12 ships a wider spread of conviction |`);
+  report.push(`| Skewness          | ${fmtSigned(skewS, 3).padStart(9)} | + = right tail (rare super-strong picks) · − = left tail        |`);
+  report.push(`| Excess kurtosis   | ${fmtSigned(kurtS, 3).padStart(9)} | 0 = normal · > 3 = fat tails (small N driving the ROI signal)    |`);
+  report.push(`| p10 / p50 / p90   | ${fmtSigned(quantile(sortedScores, 0.10), 3)} / ${fmtSigned(quantile(sortedScores, 0.50), 3)} / ${fmtSigned(quantile(sortedScores, 0.90), 3)} | bottom-decile / median / top-decile V12 score                   |`);
+  report.push(`| min / max         | ${fmtSigned(sortedScores[0], 3)} / ${fmtSigned(sortedScores[sortedScores.length-1], 3)} | extreme scores observed on live picks                            |`);
+  report.push('');
+
+  // ────────────────────────────────────────────────────────────────────
+  // 12E — Per-sport discrimination
+  // ────────────────────────────────────────────────────────────────────
+  const sports = [...new Set(live.map(r => r.sport).filter(Boolean))].sort();
+  report.push(`### 12E — Discrimination by sport`);
+  report.push('');
+  report.push(`AUC computed separately per sport — V12 may be sharp in one market and noise in another. Small-N sports are flagged with \`(N<20)\` so you don't over-react to early outcomes.`);
+  report.push('');
+  report.push(`| Sport | N    | W-L    | Win %   | ROI       | AUC    | ρ(score, won) | reads as                                  |`);
+  report.push(`|-------|------|--------|---------|-----------|--------|---------------|-------------------------------------------|`);
+  for (const sp of sports) {
+    const sub = live.filter(r => r.sport === sp);
+    const agg = aggregate(sub);
+    const ss = sub.map(r => r.agsV12);
+    const ww = sub.map(r => r.won);
+    const a = rocAuc(ss, ww);
+    const rho = spearman(ss, ww);
+    const flag = sub.length < 20 ? ' (N<20)' : '';
+    const verdict = a == null ? '—'
+      : a >= 0.58 ? 'strong'
+      : a >= 0.53 ? 'real'
+      : a >= 0.48 ? 'noise'
+      : 'anti-signal';
+    report.push(`| ${sp.padEnd(5)} | ${String(sub.length).padStart(4)} | ${(agg.w+'-'+agg.l).padEnd(6)} | ${pct(agg.w, agg.n).padStart(7)} | ${(agg.roi != null ? (agg.roi>=0?'+':'') + agg.roi.toFixed(1)+'%' : '—').padStart(9)} | ${fmtN(a, 3).padStart(6)} | ${fmtSigned(rho, 3).padStart(13)} | ${(verdict + flag).padEnd(41)} |`);
+  }
+  report.push('');
+
+  // ────────────────────────────────────────────────────────────────────
+  // 12F — Rolling 7-day AUC (stability over time)
+  // ────────────────────────────────────────────────────────────────────
+  report.push(`### 12F — Stability: rolling 7-day AUC across the V12 window`);
+  report.push('');
+  report.push(`Recompute AUC on a moving 7-day window. If recent windows are degrading (e.g. dropping from 0.58 → 0.50 → 0.45), V12's edge is decaying in real time. Each row anchors on the END date of its window.`);
+  report.push('');
+  const dates = [...new Set(live.map(r => r.date))].sort();
+  if (dates.length < 7) {
+    report.push(`_(need at least 7 calendar days of V12 picks for a rolling window; currently have ${dates.length}.)_`);
+    report.push('');
+  } else {
+    report.push(`| Window end | Days | N    | W-L    | Win %   | ROI       | AUC    |`);
+    report.push(`|------------|------|------|--------|---------|-----------|--------|`);
+    // Step every 1 day; if too many rows trim to most recent 14.
+    const windowDays = 7;
+    const allWindows = [];
+    for (let i = windowDays - 1; i < dates.length; i++) {
+      const endDate = dates[i];
+      const startDate = dates[Math.max(0, i - windowDays + 1)];
+      const win = live.filter(r => r.date >= startDate && r.date <= endDate);
+      if (win.length < 5) continue;
+      const ss = win.map(r => r.agsV12);
+      const ww = win.map(r => r.won);
+      const agg = aggregate(win);
+      allWindows.push({ endDate, startDate, n: win.length, w: agg.w, l: agg.l, roi: agg.roi, auc: rocAuc(ss, ww) });
+    }
+    const recent = allWindows.slice(-14);
+    for (const r of recent) {
+      report.push(`| ${r.endDate.padEnd(10)} | ${String(windowDays).padStart(4)} | ${String(r.n).padStart(4)} | ${(r.w+'-'+r.l).padEnd(6)} | ${pct(r.w, r.w + r.l).padStart(7)} | ${(r.roi != null ? (r.roi>=0?'+':'') + r.roi.toFixed(1)+'%' : '—').padStart(9)} | ${fmtN(r.auc, 3).padStart(6)} |`);
+    }
+    report.push('');
+    if (allWindows.length >= 3) {
+      const aucs = allWindows.map(w => w.auc).filter(Number.isFinite);
+      if (aucs.length >= 3) {
+        const firstHalf = aucs.slice(0, Math.floor(aucs.length / 2));
+        const secondHalf = aucs.slice(Math.floor(aucs.length / 2));
+        const delta = avg(secondHalf) - avg(firstHalf);
+        const trend = delta > 0.02 ? '🟢 **AUC is trending UP** — V12 is sharpening'
+                    : delta < -0.02 ? '🔴 **AUC is trending DOWN** — V12 is degrading; investigate quintile cutoffs and wallet pool drift'
+                    : '🟡 **AUC is roughly flat** — no meaningful drift, V12 holding steady';
+        report.push(`> ${trend} (${fmtN(avg(firstHalf), 3)} avg in first half → ${fmtN(avg(secondHalf), 3)} avg in second half · Δ = ${fmtSigned(delta, 3)})`);
+        report.push('');
+      }
+    }
+  }
+
+  // ────────────────────────────────────────────────────────────────────
+  // 12G — Bootstrap 95% CI on V12 ROI
+  // ────────────────────────────────────────────────────────────────────
+  report.push(`### 12G — Bootstrap 95% confidence intervals (1000 resamples)`);
+  report.push('');
+  report.push(`Resample the live V12 picks (with replacement, 1000 iterations) and recompute key stats on each resample. The 2.5th–97.5th percentiles give a 95% confidence band — anything narrower means we can be confident the metric isn't just luck; anything wider means current N is too low to claim a trend.`);
+  report.push('');
+  const pickLevel = live.map(r => ({ profit: r.profit, units: r.units || 0, won: r.won, score: r.agsV12 }));
+  const ciRoi = bootstrapCI(pickLevel, (resample) => {
+    const totalStake = resample.reduce((s, x) => s + x.units, 0);
+    const totalPnl = resample.reduce((s, x) => s + x.profit, 0);
+    return totalStake > 0 ? (totalPnl / totalStake) * 100 : NaN;
+  });
+  const ciWinPct = bootstrapCI(pickLevel, (resample) => {
+    const decided = resample.filter(x => x.won != null);
+    if (decided.length === 0) return NaN;
+    return (decided.filter(x => x.won === 1).length / decided.length) * 100;
+  });
+  const ciAuc = bootstrapCI(pickLevel, (resample) => {
+    const ss = resample.map(x => x.score).filter(Number.isFinite);
+    const ww = resample.map(x => x.won).filter(v => v != null);
+    if (ss.length !== ww.length || ss.length < 3) return NaN;
+    return rocAuc(ss, ww);
+  });
+  const ciFlat = bootstrapCI(pickLevel, (resample) => {
+    const ws = resample.filter(x => x.won != null);
+    if (ws.length === 0) return NaN;
+    const wins = ws.filter(x => x.won === 1).length;
+    const losses = ws.filter(x => x.won === 0).length;
+    return wins - losses;
+  });
+  report.push(`| Metric                       | Point estimate | 95% CI               | Reads as                                                  |`);
+  report.push(`|------------------------------|----------------|----------------------|-----------------------------------------------------------|`);
+  if (ciRoi)    report.push(`| ROI (%)                      | ${(stats.agg.roi != null ? (stats.agg.roi>=0?'+':'') + stats.agg.roi.toFixed(1)+'%' : '—').padStart(14)} | [${fmtSigned(ciRoi.lo, 1)}%, ${fmtSigned(ciRoi.hi, 1)}%]  | If CI crosses 0%, ROI is statistically indistinguishable from break-even |`);
+  if (ciWinPct) report.push(`| Win %                        | ${pct(stats.agg.w, stats.agg.n).padStart(14)} | [${fmtN(ciWinPct.lo, 1)}%, ${fmtN(ciWinPct.hi, 1)}%]  | Range you'd expect the long-run win rate to fall in            |`);
+  if (ciAuc)    report.push(`| AUC                          | ${fmtN(auc, 3).padStart(14)} | [${fmtN(ciAuc.lo, 3)}, ${fmtN(ciAuc.hi, 3)}]    | If CI lo ≤ 0.50, edge is not statistically established yet      |`);
+  if (ciFlat)   report.push(`| Wins − Losses                | ${(stats.agg.w - stats.agg.l).toString().padStart(14)} | [${ciFlat.lo.toFixed(0)}, ${ciFlat.hi.toFixed(0)}]      | Flat-bet hit count range                                       |`);
+  report.push('');
+  if (ciRoi) {
+    const includesZero = ciRoi.lo < 0 && ciRoi.hi > 0;
+    const fullyPositive = ciRoi.lo > 0;
+    const fullyNegative = ciRoi.hi < 0;
+    const verdict = fullyPositive ? '🟢 **ROI is statistically positive** (entire 95% CI > 0) — edge is established with current sample'
+                  : fullyNegative ? '🔴 **ROI is statistically negative** (entire 95% CI < 0) — losing is not variance, it is the expected outcome on V12 currently'
+                  : includesZero  ? '🟡 **ROI CI crosses zero** — current sample size cannot distinguish edge from break-even. Keep shipping picks and re-check'
+                  : '—';
+    report.push(`> ${verdict}`);
+    report.push('');
+  }
+}
+
+// ── § 13 — V12 Wallet Influence & Performance ───────────────────────────
+//
+// Two questions answered:
+//   1. Which wallets are most influencing the picks V12 ships?  (count of
+//      live-side appearances, share of total contribution)
+//   2. When a wallet appears on the FOR side of a V12 pick, how does that
+//      pick perform on average?  (per-wallet W-L, ROI, with min-N filter)
+//
+// Inputs: stats.liveRows (each row carries walletDetails frozen at scoring
+// time) and a walletProfilesMap loaded once at the top of main() so we can
+// enrich each wallet row with its current tier / prior ROI / prior N.
+function buildV12WalletInfluence(report, stats, walletProfiles) {
+  report.push(`## § 13 — V12 Wallet Influence & Performance`);
+  report.push('');
+  report.push(`> **Why this section matters.** V12 is built entirely on what the qualifying wallets do — the score is literally a difference of their mean qualities on each side of the pick. If 80% of our shipped picks are driven by the same 5 wallets, V12 is concentrated risk on those wallets' continued performance. This section names who they are and how they're doing.`);
+  report.push('');
+  if (!stats || stats.liveRows.length === 0) {
+    report.push(`_(no live V12 picks yet)_`);
+    report.push('');
+    return;
+  }
+  // Only consider picks whose FOR side we can identify (sideKey is the
+  // side we picked; walletDetails entries with side === sideKey are the
+  // wallets that informed the BUY decision).
+  const live = stats.liveRows.filter(r => r.walletDetails && r.walletDetails.length > 0 && r.won != null);
+  if (live.length === 0) {
+    report.push(`_(no V12 picks have walletDetails stamped yet — section will populate once peak.v8Scoring.walletDetails are being written to graded picks)_`);
+    report.push('');
+    return;
+  }
+
+  // Per-wallet accumulator. We track BOTH sides: appearances on FOR vs AG
+  // (so we can ALSO surface anti-signals from wallets that consistently
+  // bet the wrong side).
+  const W = new Map();  // walletShort -> { forN, agN, forWins, forLosses, forPnl, forStake, sizeRatios, sports, lastSeen }
+  for (const pick of live) {
+    for (const wd of pick.walletDetails) {
+      const w = wd.wallet;
+      if (!w) continue;
+      const rec = W.get(w) || {
+        wallet: w,
+        forN: 0, agN: 0,
+        forWins: 0, forLosses: 0,
+        forPnl: 0, forStake: 0,
+        sizeRatios: [],
+        sports: new Set(),
+        lastSeen: '',
+      };
+      rec.sports.add(pick.sport);
+      if (pick.date > rec.lastSeen) rec.lastSeen = pick.date;
+      if (wd.side === pick.sideKey) {
+        // Wallet was on the side V12 picked → they "influenced" this bet.
+        rec.forN += 1;
+        if (pick.won === 1) rec.forWins += 1;
+        else if (pick.won === 0) rec.forLosses += 1;
+        rec.forPnl += pick.profit;
+        rec.forStake += pick.units || 0;
+        if (Number.isFinite(wd.sizeRatio)) rec.sizeRatios.push(wd.sizeRatio);
+      } else {
+        rec.agN += 1;
+      }
+      W.set(w, rec);
+    }
+  }
+  const wallets = [...W.values()].map(r => ({
+    ...r,
+    sportsList: [...r.sports].sort(),
+    forWinPct: (r.forWins + r.forLosses) > 0 ? r.forWins / (r.forWins + r.forLosses) : null,
+    forRoi:    r.forStake > 0 ? (r.forPnl / r.forStake) * 100 : null,
+    avgSizeRatio: r.sizeRatios.length ? avg(r.sizeRatios) : null,
+  }));
+
+  // ────────────────────────────────────────────────────────────────────
+  // 13A — Overview / influence concentration
+  // ────────────────────────────────────────────────────────────────────
+  const totalForAppearances = wallets.reduce((s, r) => s + r.forN, 0);
+  const uniqueForWallets = wallets.filter(r => r.forN > 0).length;
+  const avgForPerPick = live.reduce((s, r) => s + r.walletDetails.filter(wd => wd.side === r.sideKey).length, 0) / live.length;
+  // Concentration: what fraction of FOR-side appearances come from the
+  // top-N wallets? Useful for spotting key-person risk in the wallet pool.
+  const sortedByForN = [...wallets].sort((a, b) => b.forN - a.forN);
+  const cumShare = (n) => {
+    const slice = sortedByForN.slice(0, n);
+    return slice.reduce((s, r) => s + r.forN, 0) / Math.max(1, totalForAppearances);
+  };
+  report.push(`### 13A — Influence overview`);
+  report.push('');
+  report.push(`| Metric                                       | Value                                                     |`);
+  report.push(`|----------------------------------------------|-----------------------------------------------------------|`);
+  report.push(`| Live V12 picks analysed                      | ${String(live.length).padStart(57)} |`);
+  report.push(`| Unique wallets ever on a FOR side            | ${String(uniqueForWallets).padStart(57)} |`);
+  report.push(`| Avg FOR-side wallets per pick                | ${avgForPerPick.toFixed(2).padStart(57)} |`);
+  report.push(`| Top-5 wallets' share of all FOR appearances  | ${(cumShare(5) * 100).toFixed(1).padStart(56)}% |`);
+  report.push(`| Top-10 wallets' share of all FOR appearances | ${(cumShare(10) * 100).toFixed(1).padStart(56)}% |`);
+  report.push(`| Top-20 wallets' share of all FOR appearances | ${(cumShare(20) * 100).toFixed(1).padStart(56)}% |`);
+  report.push('');
+  if (cumShare(5) > 0.50) {
+    report.push(`> 🟡 **Top-5 wallets drive over 50% of FOR-side influence.** Concentrated risk — if any one of these wallets goes cold or stops betting, V12's signal degrades materially. Section 13B names them.`);
+    report.push('');
+  } else if (cumShare(10) > 0.70) {
+    report.push(`> 🟡 **Top-10 wallets drive over 70% of FOR-side influence.** Moderately concentrated. Worth monitoring.`);
+    report.push('');
+  } else {
+    report.push(`> 🟢 **Influence is well-distributed** — no single wallet (or small cluster) dominates V12's picks.`);
+    report.push('');
+  }
+
+  // ────────────────────────────────────────────────────────────────────
+  // 13B — Top 20 most-influential wallets
+  // ────────────────────────────────────────────────────────────────────
+  report.push(`### 13B — Top 20 most-influential wallets (by # FOR-side appearances on V12 live picks)`);
+  report.push('');
+  report.push(`These are the wallets V12 is "listening to" the most. Each row also shows how the picks they were FOR have actually performed since V12 went live, plus their current whitelist tier / prior ROI from the wallet-profile snapshot.`);
+  report.push('');
+  report.push(`| Rank | Wallet  | Sports     | FOR# | AG#  | W-L    | Win %   | ROI       | PnL (u)   | Avg sizeR | Tier        | Prior ROI | Prior N | Last seen  |`);
+  report.push(`|------|---------|------------|------|------|--------|---------|-----------|-----------|-----------|-------------|-----------|---------|------------|`);
+  const top20 = sortedByForN.slice(0, 20);
+  for (let i = 0; i < top20.length; i++) {
+    const r = top20[i];
+    const profile = walletProfiles?.get(r.wallet);
+    // Aggregate prior stats across the sports we actually picked them on.
+    let tier = '—', priorRoi = null, priorN = null;
+    if (profile?.bySport) {
+      const pickedSports = r.sportsList.filter(sp => profile.bySport[sp]);
+      const sportData = pickedSports.map(sp => profile.bySport[sp]).filter(Boolean);
+      if (sportData.length > 0) {
+        // Use the highest-tier label across the sports they showed up in.
+        const tierOrder = { CONFIRMED: 4, FLAT: 3, WR50: 2, null: 1 };
+        const best = sportData.reduce((acc, sd) => (tierOrder[sd.whitelistTier] ?? 0) > (tierOrder[acc.whitelistTier] ?? 0) ? sd : acc);
+        tier = best.whitelistTier || '—';
+        // Aggregate prior N and prior ROI weighted by N across all sports
+        // they're profiled in (covers cross-sport bettors cleanly).
+        let totN = 0, totRoiN = 0;
+        for (const sd of sportData) {
+          const n = sd.picks?.n ?? 0;
+          const roi = sd.picks?.flatRoi ?? 0;
+          totN += n;
+          totRoiN += roi * n;
+        }
+        priorN = totN || null;
+        priorRoi = totN > 0 ? totRoiN / totN : null;
+      }
+    }
+    report.push(`| ${String(i+1).padStart(4)} | ${r.wallet.padEnd(7)} | ${r.sportsList.join(',').padEnd(10)} | ${String(r.forN).padStart(4)} | ${String(r.agN).padStart(4)} | ${(r.forWins+'-'+r.forLosses).padEnd(6)} | ${(r.forWinPct != null ? (r.forWinPct*100).toFixed(1)+'%' : '—').padStart(7)} | ${(r.forRoi != null ? (r.forRoi>=0?'+':'') + r.forRoi.toFixed(1)+'%' : '—').padStart(9)} | ${fmtSigned(r.forPnl).padStart(9)} | ${(r.avgSizeRatio != null ? r.avgSizeRatio.toFixed(2)+'×' : '—').padStart(9)} | ${tier.padEnd(11)} | ${(priorRoi != null ? (priorRoi>=0?'+':'') + priorRoi.toFixed(1)+'%' : '—').padStart(9)} | ${(priorN != null ? String(priorN) : '—').padStart(7)} | ${r.lastSeen.padEnd(10)} |`);
+  }
+  report.push('');
+
+  // ────────────────────────────────────────────────────────────────────
+  // 13C — Best performing wallets (min N filter)
+  // ────────────────────────────────────────────────────────────────────
+  const MIN_N = 10;
+  const eligible = wallets.filter(r => r.forN >= MIN_N && r.forRoi != null);
+  report.push(`### 13C — Best-performing wallets (ROI when on the FOR side; min ${MIN_N} appearances)`);
+  report.push('');
+  report.push(`Among wallets with at least **${MIN_N} FOR-side appearances** on live V12 picks, ranked by realised ROI. These are the wallets whose presence on a pick should give the most confidence going forward.`);
+  report.push('');
+  if (eligible.length === 0) {
+    report.push(`_(no wallet has reached ${MIN_N} FOR-side appearances yet — section will populate as picks accumulate)_`);
+    report.push('');
+  } else {
+    const best = [...eligible].sort((a, b) => b.forRoi - a.forRoi).slice(0, 15);
+    report.push(`| Rank | Wallet  | Sports     | FOR# | W-L    | Win %   | ROI        | PnL (u)   | Avg sizeR | Last seen  |`);
+    report.push(`|------|---------|------------|------|--------|---------|------------|-----------|-----------|------------|`);
+    for (let i = 0; i < best.length; i++) {
+      const r = best[i];
+      report.push(`| ${String(i+1).padStart(4)} | ${r.wallet.padEnd(7)} | ${r.sportsList.join(',').padEnd(10)} | ${String(r.forN).padStart(4)} | ${(r.forWins+'-'+r.forLosses).padEnd(6)} | ${(r.forWinPct != null ? (r.forWinPct*100).toFixed(1)+'%' : '—').padStart(7)} | ${(r.forRoi != null ? (r.forRoi>=0?'+':'') + r.forRoi.toFixed(1)+'%' : '—').padStart(10)} | ${fmtSigned(r.forPnl).padStart(9)} | ${(r.avgSizeRatio != null ? r.avgSizeRatio.toFixed(2)+'×' : '—').padStart(9)} | ${r.lastSeen.padEnd(10)} |`);
+    }
+    report.push('');
+
+    // ────────────────────────────────────────────────────────────────
+    // 13D — Worst performing wallets
+    // ────────────────────────────────────────────────────────────────
+    report.push(`### 13D — Worst-performing wallets (potential anti-signals; min ${MIN_N} appearances)`);
+    report.push('');
+    report.push(`Same filter, sorted ROI ascending. Wallets that consistently lose when they're on V12's FOR side. If any of these are appearing in §13B's top influencers, V12 is being dragged down by chronic losers — those wallets may need to be downgraded from the qualifying pool (see \`exportWalletProfiles.js\`).`);
+    report.push('');
+    const worst = [...eligible].sort((a, b) => a.forRoi - b.forRoi).slice(0, 15);
+    report.push(`| Rank | Wallet  | Sports     | FOR# | W-L    | Win %   | ROI        | PnL (u)   | Avg sizeR | Last seen  |`);
+    report.push(`|------|---------|------------|------|--------|---------|------------|-----------|-----------|------------|`);
+    for (let i = 0; i < worst.length; i++) {
+      const r = worst[i];
+      report.push(`| ${String(i+1).padStart(4)} | ${r.wallet.padEnd(7)} | ${r.sportsList.join(',').padEnd(10)} | ${String(r.forN).padStart(4)} | ${(r.forWins+'-'+r.forLosses).padEnd(6)} | ${(r.forWinPct != null ? (r.forWinPct*100).toFixed(1)+'%' : '—').padStart(7)} | ${(r.forRoi != null ? (r.forRoi>=0?'+':'') + r.forRoi.toFixed(1)+'%' : '—').padStart(10)} | ${fmtSigned(r.forPnl).padStart(9)} | ${(r.avgSizeRatio != null ? r.avgSizeRatio.toFixed(2)+'×' : '—').padStart(9)} | ${r.lastSeen.padEnd(10)} |`);
+    }
+    report.push('');
+
+    // Cross-check: are any losers in the top-20 influencers? That's a
+    // direct call-out for the model team.
+    const topInfluencerSet = new Set(top20.map(r => r.wallet));
+    const dragWallets = worst.filter(r => topInfluencerSet.has(r.wallet) && r.forRoi < -5);
+    if (dragWallets.length > 0) {
+      report.push(`> 🔴 **${dragWallets.length} wallet(s) appear in BOTH the top-20 most-influential list AND the worst-performers list with ROI < −5%.** They are actively dragging V12's results down while having heavy say in pick generation. Candidates: ${dragWallets.map(d => `\`${d.wallet}\` (FOR# ${d.forN}, ROI ${d.forRoi.toFixed(1)}%)`).join(', ')}.`);
+      report.push('');
+    }
+  }
+}
+
+// ── § 17 — AGS-U Full-History Feature Lab ──────────────────────────────
+//
+// Retrospective feature analysis on **every AGS-U promoted live pick
+// since cutover** (not just the V12 era). Two purposes:
+//   1. Identify which features actually moved the needle on win-rate and
+//      ROI — both individually (univariate) and in concert (multivariate
+//      OLS regression with standardized β rankings).
+//   2. Cross-reference the data-driven "best features" against what V12
+//      currently uses. Surface anything V12 is leaving on the table.
+//
+// We extract ~22 candidate features per pick from the stamps we already
+// hold in Firestore: V12 score itself, V12 wallet-quality means / counts,
+// proven-wallet margins, HC margin, lock-time line probability, CLV,
+// peak/lock stars, and a suite of derived metrics computed from the
+// frozen walletDetails (counts, size ratios, contributions on each side).
+//
+// Sub-sections:
+//   17A. Available feature panel
+//   17B. Univariate impact table (sorted by |r(unit-return)|)
+//   17C. Tercile-bucket ROI for the top features
+//   17D. Multicollinearity check (pairwise correlation matrix)
+//   17E. Multivariate OLS — standardized β rankings + multiple R²
+//   17F. V12 vs the data-driven best — what V12 ignores, what it weights right
+//   17G. Actionable recommendations
+//
+// IMPORTANT design notes:
+//   - Restricted to LIVE picks (units > 0, tracked=false) so analysis maps
+//     directly to real-money decisions.
+//   - Features that are absent on >40% of picks are still included in the
+//     univariate panel (per-feature N-aware) but excluded from the
+//     multivariate matrix (OLS needs a complete row).
+//   - Standardized β = OLS β on z-scored features → outcome. Lets you
+//     compare apples-to-apples across features with different scales.
+
+// Compute the full feature panel for a single pick. Missing values
+// surface as null, not 0 (the analysis is N-aware per feature).
+function extractFeaturesForPick(r) {
+  const wd = Array.isArray(r.walletDetails) ? r.walletDetails : [];
+  // Identify wallets on the FOR side using sideKey when present
+  // (handles 'home' / 'away' / 'over' / 'under' uniformly).
+  const forWds = wd.filter(w => w.side && w.side === r.sideKey);
+  const agWds  = wd.filter(w => w.side && w.side !== r.sideKey);
+  const sumFor = (key) => forWds.reduce((s, w) => s + (Number(w[key]) || 0), 0);
+  const sumAg  = (key) => agWds.reduce((s, w) => s + (Number(w[key]) || 0), 0);
+  const avgFor = (key) => forWds.length ? sumFor(key) / forWds.length : null;
+  const avgAg  = (key) => agWds.length  ? sumAg(key)  / agWds.length  : null;
+  const maxFor = (key) => forWds.length ? Math.max(...forWds.map(w => Number(w[key]) || 0)) : null;
+
+  const wdForCount = forWds.length || null;
+  const wdAgCount  = agWds.length || null;
+  const wdContribFor = sumFor('contribution');
+  const wdContribAg  = sumAg('contribution');
+  const wdContribTotal = wdContribFor + wdContribAg;
+
+  return {
+    // ── V12 stamps (back-filled on all picks)
+    agsV12:            Number.isFinite(r.agsV12) ? r.agsV12 : null,
+    agsV12ForMean:     Number.isFinite(r.agsV12ForMean) ? r.agsV12ForMean : null,
+    agsV12AgMean:      Number.isFinite(r.agsV12AgMean) ? r.agsV12AgMean : null,
+    qMargin:           (Number.isFinite(r.agsV12ForMean) && Number.isFinite(r.agsV12AgMean)) ? r.agsV12ForMean - r.agsV12AgMean : null,
+    agsV12ForCount:    Number.isFinite(r.agsV12ForCount) ? r.agsV12ForCount : null,
+    agsV12AgCount:     Number.isFinite(r.agsV12AgCount) ? r.agsV12AgCount : null,
+    countMargin:       (Number.isFinite(r.agsV12ForCount) && Number.isFinite(r.agsV12AgCount)) ? r.agsV12ForCount - r.agsV12AgCount : null,
+    // ── V11 / proven-pool stamps (universal across cutover)
+    ags:               Number.isFinite(r.ags) ? r.ags : null,
+    provenFor:         Number.isFinite(r.provenFor) ? r.provenFor : null,
+    provenAg:          Number.isFinite(r.provenAg) ? r.provenAg : null,
+    provenTotal:       Number.isFinite(r.provenTotal) ? r.provenTotal : null,
+    provenMargin:      (Number.isFinite(r.provenFor) && Number.isFinite(r.provenAg)) ? r.provenFor - r.provenAg : null,
+    hcMargin:          Number.isFinite(r.hcMargin) ? r.hcMargin : null,
+    // ── Line / market features
+    lockPinnProb:      Number.isFinite(r.lockPinnProb) ? r.lockPinnProb : null,
+    clv:               Number.isFinite(r.clv) ? r.clv : null,
+    peakStars:         Number.isFinite(r.peakStars) ? r.peakStars : null,
+    // ── Wallet-detail-derived (richer than agsV12*Count)
+    wdForCount,
+    wdAgCount,
+    wdForAvgSizeRatio: avgFor('sizeRatio'),
+    wdAgAvgSizeRatio:  avgAg('sizeRatio'),
+    wdSizeMargin:      (avgFor('sizeRatio') != null && avgAg('sizeRatio') != null) ? avgFor('sizeRatio') - avgAg('sizeRatio') : null,
+    wdContribFor,
+    wdContribAg,
+    wdContribMargin:   wdContribFor - wdContribAg,
+    wdMaxForContrib:   maxFor('contribution'),
+    wdMaxContribShare: wdContribTotal > 0 ? maxFor('contribution') / wdContribTotal : null,
+  };
+}
+
+// Human-readable label + plain-English meaning for every feature in the panel.
+const FEATURE_LAB_META = {
+  agsV12:            { label: 'agsV12',            meaning: 'V12 score itself — bounded wallet-quality differential' },
+  agsV12ForMean:     { label: 'V12 forMean',       meaning: 'Mean wallet quality (Q) of FOR-side proven wallets' },
+  agsV12AgMean:      { label: 'V12 agMean',        meaning: 'Mean wallet quality (Q) of AGAINST-side proven wallets' },
+  qMargin:           { label: 'qMargin',           meaning: 'forMean − agMean (raw difference, pre-bounding)' },
+  agsV12ForCount:    { label: 'V12 forCount',      meaning: 'Count of proven FOR-side wallets contributing to V12' },
+  agsV12AgCount:     { label: 'V12 agCount',       meaning: 'Count of proven AGAINST-side wallets' },
+  countMargin:       { label: 'countMargin',       meaning: 'forCount − agCount (signed wallet-count advantage)' },
+  ags:               { label: 'ags (v11)',         meaning: 'V11 logistic composite score — predecessor of V12' },
+  provenFor:         { label: 'provenFor',         meaning: 'Count of HC_BASE (CONFIRMED/FLAT) wallets FOR the pick' },
+  provenAg:          { label: 'provenAg',          meaning: 'Count of HC_BASE wallets AGAINST the pick' },
+  provenTotal:       { label: 'provenTotal',       meaning: 'Total HC_BASE wallets touching the game' },
+  provenMargin:      { label: 'provenMargin',      meaning: 'provenFor − provenAg' },
+  hcMargin:          { label: 'hcMargin',          meaning: 'High-conviction margin from v11 — signed conviction differential' },
+  lockPinnProb:      { label: 'lockPinnProb',      meaning: 'Pinnacle implied probability at lock time (the line itself)' },
+  clv:               { label: 'clv',               meaning: 'Closing line value — how far line moved in our favour' },
+  peakStars:         { label: 'peakStars',         meaning: 'Star rating at peak (heuristic conviction grade)' },
+  wdForCount:        { label: 'wd forCount',       meaning: 'Wallet-detail-derived FOR side count (any wallet, not just HC_BASE)' },
+  wdAgCount:         { label: 'wd agCount',        meaning: 'Wallet-detail-derived AGAINST side count' },
+  wdForAvgSizeRatio: { label: 'wd forAvgSize',     meaning: 'Avg sizeRatio of FOR-side wallets (size vs their own avg)' },
+  wdAgAvgSizeRatio:  { label: 'wd agAvgSize',      meaning: 'Avg sizeRatio of AGAINST-side wallets' },
+  wdSizeMargin:      { label: 'wd sizeMargin',     meaning: 'forAvgSize − agAvgSize (signed sizing advantage)' },
+  wdContribFor:      { label: 'wd contribFor',     meaning: 'Σ contribution (walletBase × convictionMult) on FOR side' },
+  wdContribAg:       { label: 'wd contribAg',      meaning: 'Σ contribution on AGAINST side' },
+  wdContribMargin:   { label: 'wd contribMargin',  meaning: 'forContrib − agContrib (total weighted-money advantage)' },
+  wdMaxForContrib:   { label: 'wd maxForContrib',  meaning: 'Max single-wallet contribution on FOR side' },
+  wdMaxContribShare: { label: 'wd maxShare',       meaning: 'Largest single contribution / total (concentration risk)' },
+};
+
+// What V12 actually uses today — so § 17F can call out anything else
+// that ranked highly but V12 ignores.
+const V12_ACTIVE_FEATURE_SET = new Set([
+  'agsV12', 'agsV12ForMean', 'agsV12AgMean', 'qMargin',
+  'agsV12ForCount', 'agsV12AgCount',
+]);
+
+function buildAgsFeatureLab(report, agsuRows) {
+  report.push(`## § 17 — AGS-U Full-History Feature Lab`);
+  report.push('');
+  report.push(`> **Why this section matters.** V12 makes a deliberate bet that **wallet-quality mean ratio** is the single best predictor of pick outcomes. This section tests that assumption against ~${agsuRows.length} graded AGS-U picks since cutover. For every plausible feature we have stamped on a pick, we measure how strongly it correlates with **winning** and with **per-unit PnL** — first individually, then in concert via multivariate regression. The closing sub-section (§17F) cross-references the data-driven top features against the ones V12 actually uses, so any signal V12 is leaving on the table is named explicitly.`);
+  report.push('');
+
+  const live = agsuRows.filter(r => !r.tracked && r.won != null && (r.units || 0) > 0);
+  if (live.length < 30) {
+    report.push(`_(need at least 30 graded live AGS-U picks for feature analysis; currently have ${live.length}.)_`);
+    report.push('');
+    return;
+  }
+
+  // Build the panel.
+  const panel = live.map(r => extractFeaturesForPick(r));
+  const wins = live.map(r => r.won);
+  const unitReturns = live.map(r => (r.units > 0 ? r.profit / r.units : 0));
+  const units = live.map(r => r.units || 0);
+  const featureNames = Object.keys(FEATURE_LAB_META);
+
+  // ────────────────────────────────────────────────────────────────────
+  // 17A — Feature panel coverage
+  // ────────────────────────────────────────────────────────────────────
+  report.push(`### 17A — Candidate feature panel & coverage`);
+  report.push('');
+  report.push(`We test ${featureNames.length} candidate features across ${live.length} live graded picks. "Coverage %" = share of picks where the feature is non-null (some features are only stamped on V12-era picks, some on lock time, etc.). Features below ~40% coverage are still tested univariately but **excluded from the multivariate regression** in §17E because OLS requires complete rows.`);
+  report.push('');
+  const coverage = {};
+  for (const k of featureNames) coverage[k] = panel.filter(p => p[k] != null && Number.isFinite(p[k])).length;
+  report.push(`| Feature              | Coverage          | Meaning                                                              |`);
+  report.push(`|----------------------|-------------------|----------------------------------------------------------------------|`);
+  for (const k of featureNames) {
+    const cov = coverage[k];
+    const pctStr = `${cov} / ${live.length} (${((cov/live.length)*100).toFixed(0)}%)`;
+    const v12flag = V12_ACTIVE_FEATURE_SET.has(k) ? ' 🟢' : '   ';
+    report.push(`| ${(FEATURE_LAB_META[k].label + v12flag).padEnd(20)} | ${pctStr.padEnd(17)} | ${FEATURE_LAB_META[k].meaning.padEnd(68)} |`);
+  }
+  report.push('');
+  report.push(`> 🟢 = feature is currently consumed by V12. All others are observed but unused.`);
+  report.push('');
+
+  // ────────────────────────────────────────────────────────────────────
+  // 17B — Univariate impact
+  // ────────────────────────────────────────────────────────────────────
+  const univariate = featureNames.map((key) => {
+    const indices = panel.map((p, i) => Number.isFinite(p[key]) ? i : -1).filter(i => i >= 0);
+    if (indices.length < 20) return null;
+    const xs = indices.map(i => panel[i][key]);
+    const ys = indices.map(i => wins[i]);
+    const us = indices.map(i => unitReturns[i]);
+    const r_won  = pearson(xs, ys);
+    const rho_won = spearman(xs, ys);
+    const pb_won = pointBiserial(xs, ys);
+    const r_pnl  = pearson(xs, us);
+    const rho_pnl = spearman(xs, us);
+    const aucForFeature = rocAuc(xs, ys);
+    return { key, label: FEATURE_LAB_META[key].label, n: xs.length, r_won, rho_won, pb_won, r_pnl, rho_pnl, auc: aucForFeature };
+  }).filter(Boolean);
+  // Rank by |r(unit-return)| — that's the strongest "this moves PnL" signal.
+  univariate.sort((a, b) => Math.abs(b.r_pnl ?? 0) - Math.abs(a.r_pnl ?? 0));
+
+  report.push(`### 17B — Univariate impact (each feature on its own)`);
+  report.push('');
+  report.push(`Each row tests one feature in isolation. Sorted by **|r(feature, unit-return)|** descending — i.e. the strongest correlations with per-unit profit are at the top. Use the **AUC** column for a clean "does this one feature beat a coin flip at separating winners from losers" read.`);
+  report.push('');
+  report.push(`| Rank | Feature              | N   | V12? | r(won)    | ρ(won)    | r(unit-ret) | ρ(unit-ret) | AUC    |`);
+  report.push(`|------|----------------------|-----|------|-----------|-----------|-------------|-------------|--------|`);
+  for (let i = 0; i < univariate.length; i++) {
+    const u = univariate[i];
+    const v12flag = V12_ACTIVE_FEATURE_SET.has(u.key) ? ' 🟢 ' : '    ';
+    report.push(`| ${String(i+1).padStart(4)} | ${u.label.padEnd(20)} | ${String(u.n).padStart(3)} | ${v12flag} | ${fmtSigned(u.r_won, 3).padStart(9)} | ${fmtSigned(u.rho_won, 3).padStart(9)} | ${fmtSigned(u.r_pnl, 3).padStart(11)} | ${fmtSigned(u.rho_pnl, 3).padStart(11)} | ${fmtN(u.auc, 3).padStart(6)} |`);
+  }
+  report.push('');
+  // Quick narrative on top 3.
+  const top3 = univariate.slice(0, 3);
+  const topNonV12 = univariate.find(u => !V12_ACTIVE_FEATURE_SET.has(u.key));
+  if (top3.length === 3) {
+    report.push(`> **Top 3 univariate features by PnL correlation:** ${top3.map(u => `\`${u.label}\` (r = ${fmtSigned(u.r_pnl, 3)})`).join(', ')}.`);
+    report.push('');
+  }
+  if (topNonV12 && Math.abs(topNonV12.r_pnl ?? 0) > 0.05) {
+    report.push(`> 🟡 **Highest-ranked feature NOT used by V12:** \`${topNonV12.label}\` — r(unit-ret) = ${fmtSigned(topNonV12.r_pnl, 3)}, AUC = ${fmtN(topNonV12.auc, 3)}. If this stays at the top of the table after another month of picks, V12 should be revised to incorporate it.`);
+    report.push('');
+  }
+
+  // ────────────────────────────────────────────────────────────────────
+  // 17C — Tercile-bucket ROI for top 5 features
+  // ────────────────────────────────────────────────────────────────────
+  report.push(`### 17C — Tercile-bucket ROI for the top 5 features`);
+  report.push('');
+  report.push(`Splits each feature into thirds (low / mid / high) and shows realised ROI in each bucket. If the feature is genuinely impactful, you should see a **monotonic ROI gradient** (high bucket > mid > low, or vice-versa). Flat or inverted bucket ROIs mean the correlation is noise.`);
+  report.push('');
+  for (const u of univariate.slice(0, 5)) {
+    const indices = panel.map((p, i) => Number.isFinite(p[u.key]) ? i : -1).filter(i => i >= 0);
+    const xs = indices.map(i => panel[i][u.key]);
+    const ys = indices.map(i => wins[i]);
+    const us = indices.map(i => unitReturns[i]);
+    const stakes = indices.map(i => units[i]);
+    const b = tercileBuckets(xs, ys, us, stakes);
+    if (!b) continue;
+    report.push(`#### \`${u.label}\` · r(unit-ret) = ${fmtSigned(u.r_pnl, 3)} · AUC = ${fmtN(u.auc, 3)}`);
+    report.push('');
+    report.push(`| Bucket            | range                    | N   | W-L     | Win %   | ROI       |`);
+    report.push(`|-------------------|--------------------------|-----|---------|---------|-----------|`);
+    for (const [labelB, bk] of [['LOW (≤ p33)', b.lo], ['MID (p33–p67)', b.mid], ['HIGH (> p67)', b.hi]]) {
+      const range = bk.lo != null && bk.hi != null ? `${fmtN(bk.lo, 3)} … ${fmtN(bk.hi, 3)}` : '—';
+      report.push(`| ${labelB.padEnd(17)} | ${range.padEnd(24)} | ${String(bk.n).padStart(3)} | ${(bk.w+'-'+bk.l).padEnd(7)} | ${(bk.winPct != null ? (bk.winPct*100).toFixed(1)+'%' : '—').padStart(7)} | ${(bk.roi != null ? (bk.roi>=0?'+':'') + bk.roi.toFixed(1)+'%' : '—').padStart(9)} |`);
+    }
+    report.push('');
+    const rois = [b.lo.roi, b.mid.roi, b.hi.roi].filter(v => v != null);
+    if (rois.length === 3) {
+      const monoUp = rois[0] < rois[1] && rois[1] < rois[2];
+      const monoDown = rois[0] > rois[1] && rois[1] > rois[2];
+      const flag = monoUp ? '🟢 strictly monotone UP (higher feature ⇒ higher ROI)'
+                 : monoDown ? '🔴 strictly monotone DOWN (higher feature ⇒ lower ROI — feature is INVERSE)'
+                 : '🟡 non-monotonic across buckets — correlation may be partially noise';
+      report.push(`> ${flag}`);
+      report.push('');
+    }
+  }
+
+  // ────────────────────────────────────────────────────────────────────
+  // 17D — Multicollinearity check
+  // ────────────────────────────────────────────────────────────────────
+  // Take top 8 features by univariate impact for the multivariate work.
+  const TOP_K = 8;
+  const topFeatures = univariate.slice(0, TOP_K);
+  report.push(`### 17D — Multicollinearity check (pairwise correlation among top ${TOP_K} features)`);
+  report.push('');
+  report.push(`Before running multivariate OLS, check whether the top features are measuring redundant things. **|r| > 0.85** is a red flag — the regression will inflate standard errors and β estimates become unstable. In that case, drop one of the pair before interpreting §17E.`);
+  report.push('');
+  // Build all complete-row indices for ALL top features simultaneously.
+  const completeIdx = panel.map((p, i) => topFeatures.every(f => Number.isFinite(p[f.key])) ? i : -1).filter(i => i >= 0);
+  if (completeIdx.length < 30) {
+    report.push(`_(only ${completeIdx.length} picks have ALL top ${TOP_K} features stamped — too few for stable multivariate analysis. Univariate panel above is still reliable.)_`);
+    report.push('');
+  } else {
+    // Pairwise correlation matrix
+    const cols = topFeatures.map(f => completeIdx.map(i => panel[i][f.key]));
+    const header = `| feat \\ feat | ${topFeatures.map(f => f.label.padEnd(14)).join(' | ')} |`;
+    const sep    = `|-------------|${topFeatures.map(() => '----------------').join('|')}|`;
+    report.push(header);
+    report.push(sep);
+    let maxPair = { r: 0, a: '', b: '' };
+    for (let i = 0; i < topFeatures.length; i++) {
+      const cells = topFeatures.map((_, j) => {
+        if (i === j) return ' 1.000        ';
+        const r = pearson(cols[i], cols[j]);
+        return (r == null ? '—' : fmtSigned(r, 3)).padStart(14);
+      });
+      if (i < topFeatures.length - 1) {
+        for (let j = i + 1; j < topFeatures.length; j++) {
+          const r = pearson(cols[i], cols[j]);
+          if (r != null && Math.abs(r) > Math.abs(maxPair.r)) maxPair = { r, a: topFeatures[i].label, b: topFeatures[j].label };
+        }
+      }
+      report.push(`| ${topFeatures[i].label.padEnd(11)} | ${cells.join(' | ')} |`);
+    }
+    report.push('');
+    if (Math.abs(maxPair.r) > 0.85) {
+      report.push(`> 🔴 **Strong collinearity detected:** \`${maxPair.a}\` and \`${maxPair.b}\` have r = ${fmtSigned(maxPair.r, 3)}. They're measuring nearly the same thing. The multivariate β estimates below will split credit between them unreliably; treat the looser of the two as a noise channel.`);
+      report.push('');
+    } else if (Math.abs(maxPair.r) > 0.65) {
+      report.push(`> 🟡 **Moderate collinearity:** \`${maxPair.a}\` ↔ \`${maxPair.b}\` r = ${fmtSigned(maxPair.r, 3)}. Multivariate β are still informative but the two features carry overlapping information.`);
+      report.push('');
+    } else {
+      report.push(`> 🟢 **No problematic collinearity** — max pairwise |r| = ${fmtN(Math.abs(maxPair.r), 3)} between \`${maxPair.a}\` and \`${maxPair.b}\`. Multivariate β are interpretable independently.`);
+      report.push('');
+    }
+
+    // ──────────────────────────────────────────────────────────────────
+    // 17E — Multivariate OLS regression
+    // ──────────────────────────────────────────────────────────────────
+    report.push(`### 17E — Multivariate OLS: standardized β for top ${TOP_K} features`);
+    report.push('');
+    report.push(`Regress **per-pick unit-return** on the z-scored top features simultaneously. The standardized **β** tells you "how much does a 1-σ change in this feature shift per-unit PnL, holding the others constant." Compare |β| across features to rank impact when controlling for the others — this is the multivariate sibling of the univariate r column above.`);
+    report.push('');
+    // Build the design matrix (standardized + intercept column).
+    const Y_unitRet = completeIdx.map(i => unitReturns[i]);
+    const Xstd = topFeatures.map(f => zScoreColumn(completeIdx.map(i => panel[i][f.key])));
+    // Add intercept column of 1s
+    const designMat = completeIdx.map((_, row) => [1, ...topFeatures.map((_, k) => Xstd[k][row])]);
+    const ols = olsRegression(designMat, Y_unitRet);
+    if (!ols) {
+      report.push(`_(OLS solve failed — design matrix is singular; likely collinear features. Re-check §17D.)_`);
+      report.push('');
+    } else {
+      const labels = ['(intercept)', ...topFeatures.map(f => f.label)];
+      const v12Flags = ['   ', ...topFeatures.map(f => V12_ACTIVE_FEATURE_SET.has(f.key) ? ' 🟢' : '   ')];
+      // Pack & rank by |β| (skip intercept).
+      const rows = ols.beta.map((b, i) => ({ label: labels[i], v12: v12Flags[i], beta: b, se: ols.seBeta[i], t: ols.seBeta[i] > 0 ? b / ols.seBeta[i] : null, idx: i }));
+      const intercept = rows[0];
+      const featRows = rows.slice(1).sort((a, b) => Math.abs(b.beta) - Math.abs(a.beta));
+      report.push(`**Model fit:** N = ${ols.n} picks · features = ${ols.p - 1} (+ intercept) · multiple R² = **${fmtN(ols.r2, 4)}** · adjusted R² = **${fmtN(ols.adjR2, 4)}** · residual sd = ${fmtN(ols.residSd, 3)}`);
+      report.push('');
+      report.push(`| Rank | Feature              | V12? | β (std)    | SE       | t-stat   | |β| rank |`);
+      report.push(`|------|----------------------|------|------------|----------|----------|----------|`);
+      for (let i = 0; i < featRows.length; i++) {
+        const r = featRows[i];
+        const tFlag = r.t != null
+          ? (Math.abs(r.t) >= 2 ? ' (sig.)' : Math.abs(r.t) >= 1.5 ? ' (~sig)' : '       ')
+          : '       ';
+        report.push(`| ${String(i+1).padStart(4)} | ${r.label.padEnd(20)} | ${r.v12} | ${fmtSigned(r.beta, 4).padStart(10)} | ${fmtN(r.se, 4).padStart(8)} | ${(fmtSigned(r.t, 2) + tFlag).padStart(8)} | ${String(i+1).padStart(8)} |`);
+      }
+      report.push(`| —    | ${intercept.label.padEnd(20)} | ${intercept.v12} | ${fmtSigned(intercept.beta, 4).padStart(10)} | ${fmtN(intercept.se, 4).padStart(8)} | ${(fmtSigned(intercept.t, 2)).padStart(8)} | —        |`);
+      report.push('');
+      report.push(`> **|t-stat| ≥ 2** ≈ p < 0.05 (roughly significant). \`(~sig)\` flags |t| ≥ 1.5 — suggestive but not conclusive at our sample size. A feature with a large univariate r but small multivariate β is being **explained away** by other features in the panel.`);
+      report.push('');
+
+      // ────────────────────────────────────────────────────────────────
+      // 17F — V12 vs the data-driven best
+      // ────────────────────────────────────────────────────────────────
+      report.push(`### 17F — V12 vs the data-driven best`);
+      report.push('');
+      report.push(`Cross-reference: of the top ${TOP_K} features by multivariate |β|, which does V12 actually use, and which does it ignore?`);
+      report.push('');
+      const usedByV12 = featRows.filter(r => topFeatures.find(f => f.label === r.label && V12_ACTIVE_FEATURE_SET.has(f.key)));
+      const ignoredByV12 = featRows.filter(r => topFeatures.find(f => f.label === r.label && !V12_ACTIVE_FEATURE_SET.has(f.key)));
+      const usedPct = featRows.length > 0 ? (usedByV12.length / featRows.length * 100).toFixed(0) : '—';
+      report.push(`- **${usedByV12.length} / ${featRows.length}** top multivariate features are inputs to V12 (${usedPct}%).`);
+      report.push(`- V12 consumes: ${usedByV12.length === 0 ? '_(none of the top features)_' : usedByV12.map(r => `\`${r.label}\` (β = ${fmtSigned(r.beta, 3)})`).join(', ')}`);
+      report.push(`- V12 IGNORES: ${ignoredByV12.length === 0 ? '_(none — V12 covers every top feature)_' : ignoredByV12.map(r => `\`${r.label}\` (β = ${fmtSigned(r.beta, 3)}, t = ${fmtSigned(r.t, 2)})`).join(', ')}`);
+      report.push('');
+
+      // Compare AUC of V12 score alone vs AUC of the multivariate fit.
+      const v12Scores = completeIdx.map(i => panel[i].agsV12).filter(Number.isFinite);
+      const v12Wins   = completeIdx.filter(i => Number.isFinite(panel[i].agsV12)).map(i => wins[i]);
+      const v12Auc    = v12Scores.length === v12Wins.length ? rocAuc(v12Scores, v12Wins) : null;
+      // Build predicted ŷ from the multivariate fit and use it as a "model score" to compute AUC vs wins.
+      const winsAligned = completeIdx.map(i => wins[i]);
+      const yhatRet = ols.yhat;  // predicted unit-return; rank-equivalent for AUC
+      const mvAuc = rocAuc(yhatRet, winsAligned);
+      report.push(`| Model                              | AUC    | reads as                                                         |`);
+      report.push(`|------------------------------------|--------|------------------------------------------------------------------|`);
+      report.push(`| V12 score alone                    | ${fmtN(v12Auc, 3).padStart(6)} | how well V12's single number sorts winners from losers           |`);
+      report.push(`| Multivariate OLS on top ${TOP_K} features | ${fmtN(mvAuc, 3).padStart(6)} | best AUC achievable by linearly combining the top features         |`);
+      report.push('');
+      report.push(`> ⚠ **Honesty caveat.** The multivariate AUC is **in-sample** — the model was fit on the same picks it's being scored against. Expect the true out-of-sample AUC to be lower by ~0.03–0.08, depending on how much of the gap is overfit. The point of this row is not to declare V12 "worse" but to flag the **maximum upside** still on the table; if even a haircutted out-of-sample version of the multivariate beats V12 by a clear margin, the feature set should be reconsidered.`);
+      report.push('');
+      if (v12Auc != null && mvAuc != null) {
+        const gap = mvAuc - v12Auc;
+        if (gap >= 0.04) {
+          report.push(`> 🟡 **AUC gap = +${gap.toFixed(3)}.** The multivariate combination of currently-stamped features achieves materially better discrimination than V12's single score. Adding the top non-V12 features into the model could lift AUC by ~${(gap * 100).toFixed(1)}pp.`);
+        } else if (gap >= 0.015) {
+          report.push(`> 🟢 **AUC gap = +${gap.toFixed(3)}.** Modest but real — extra features marginally improve discrimination. Worth tracking; revisit when sample doubles.`);
+        } else if (gap >= -0.015) {
+          report.push(`> 🟢 **AUC gap ≈ 0** — V12 is capturing essentially all the linear signal available in the panel. The remaining features are noise.`);
+        } else {
+          report.push(`> ⚠ **AUC gap = ${gap.toFixed(3)}** (multivariate WORSE than V12 alone). Likely overfitting noise — V12's simpler form is genuinely better. Don't add features.`);
+        }
+        report.push('');
+      }
+
+      // ────────────────────────────────────────────────────────────────
+      // 17G — Actionable recommendations
+      // ────────────────────────────────────────────────────────────────
+      report.push(`### 17G — Actionable recommendations`);
+      report.push('');
+      const recs = [];
+      // 1. Top non-V12 feature with both strong univariate signal AND multivariate signal
+      const candidates = featRows.filter(r => {
+        const matched = topFeatures.find(f => f.label === r.label);
+        return matched && !V12_ACTIVE_FEATURE_SET.has(matched.key) && Math.abs(r.t ?? 0) >= 1.5;
+      });
+      if (candidates.length > 0) {
+        recs.push(`Consider adding one or more of these features to V12: ${candidates.slice(0, 3).map(c => `\`${c.label}\` (β = ${fmtSigned(c.beta, 3)}, t = ${fmtSigned(c.t, 2)})`).join(', ')}. They have a real multivariate effect after controlling for V12's existing inputs.`);
+      }
+      // 2. V12 features with weak multivariate β — candidates for simplification
+      const weakV12 = featRows.filter(r => {
+        const matched = topFeatures.find(f => f.label === r.label);
+        return matched && V12_ACTIVE_FEATURE_SET.has(matched.key) && Math.abs(r.t ?? 0) < 0.8 && Math.abs(r.beta) < 0.01;
+      });
+      if (weakV12.length > 0) {
+        recs.push(`Inputs V12 currently uses but that show weak multivariate signal: ${weakV12.map(r => `\`${r.label}\``).join(', ')}. They may be contributing noise rather than information.`);
+      }
+      // 3. Sample size guidance
+      if (live.length < 500) {
+        recs.push(`Sample size is currently ${live.length} live picks — statistically meaningful but tight. Treat single-feature recommendations as provisional until N ≥ 500. The rankings will firm up as the daily cron accumulates more graded picks.`);
+      }
+      // 4. R² interpretation
+      if (ols.adjR2 < 0.02) {
+        recs.push(`Adjusted R² of ${ols.adjR2.toFixed(4)} confirms that **sports picks are dominated by variance** — no realistic linear combination of stamped features will explain more than a few percent of outcome variance. The value of V12 (or any future model) lies in capturing the small, persistent signal at the top of the score distribution, not in high R² explanation.`);
+      }
+      if (recs.length === 0) {
+        recs.push(`No high-confidence model-revision signal at current sample size. V12's feature selection is well-matched to what the data supports.`);
+      }
+      for (const rec of recs) report.push(`- ${rec}`);
+      report.push('');
+    }
+  }
+}
+
+// ── § 14 — V12 Deep Performance Monitor (legacy block, kept for backwards
+//   compatibility — slated for removal once the new monitor sections cover
+//   every chart we still rely on) ────────────────────────────────────────
+function buildV12DeepMonitorLegacy(report, agsuRows, allRows, eras, liveCal) {
+  // intentionally unused; the old buildV12DeepMonitor body remains below
+  // for grep-ability. Not invoked from main(). Remove in a follow-up PR.
+}
+
 // ── § 13 — V12 Deep Performance Monitor ─────────────────────────────────
 // Everything in this section is V12-ONLY and date-scoped to the v12 era
 // (so cron back-fill of v12 scores onto historical picks can't contaminate
@@ -2282,14 +3498,16 @@ function buildV12DeepMonitor(report, agsuRows, allRows, eras, liveCal) {
 // ── Main ─────────────────────────────────────────────────────────────────
 async function main() {
   console.log('AGS-U daily report — loading data...');
-  const [{ rows: agsuRows, cutover }, allRows, liveCal, modelEras] = await Promise.all([
+  const [{ rows: agsuRows, cutover }, allRows, liveCal, modelEras, walletProfiles] = await Promise.all([
     loadAllAgsuGradedPicks(),
     loadAllGradedAndShadowPicks(),
     loadLiveCalibration(),
     loadModelEras(),
+    loadWalletProfilesMap(),
   ]);
   console.log(`  AGS-U graded picks:    ${agsuRows.length}`);
   console.log(`  All sides (any state): ${allRows.length}`);
+  console.log(`  Wallet profiles:       ${walletProfiles.size}`);
   console.log(`  Cutover:               ${cutover}`);
   console.log(`  Active model schema:   ${liveCal?.schemaVersion || AGS_FALLBACK_CALIBRATION.schemaVersion}`);
   console.log(`  Active features:       [${ACTIVE_FEATURE_KEYS.join(', ')}]`);
@@ -2325,29 +3543,37 @@ async function main() {
   buildV12WalletQualityInputs(report, v12Stats);
   buildV12RecentLivePicks(report, v12Stats, 30);
 
-  // §§ 12-13 — Operational sanity. Same builder, but the call signature
-  // expects (allRows, agsuRows) — keep it on the AGSU subset so the
-  // pipeline-health checks scope to current model output.
-  // Re-number headings via in-place find/replace so the section numbers
-  // match the new running order (§12 ops health, §13 calibration).
+  // §§ 12-13 — NEW: statistical monitor + wallet influence (the focus
+  // of this section is "is the model's score genuinely predictive" and
+  // "who is actually driving our picks", per the spec request).
+  buildV12StatisticalMonitor(report, v12Stats);
+  buildV12WalletInfluence(report, v12Stats, walletProfiles);
+
+  // §§ 14-16 — Operational sanity + calibration + pool health. Same
+  // builders as before, but heading numbers shifted to make room for
+  // the new §12-13 statistical and wallet-influence sections above.
   const opsStart = report.length;
   buildOperationalHealth(report, allRowsAgsu, agsuRows);
-  // Re-label "## § 10 — Operational Health" → "## § 12 — Operational Health (V12 pipeline sanity)"
   for (let i = opsStart; i < report.length; i++) {
-    report[i] = report[i].replace(/^## § 10 — Operational Health/, '## § 12 — Operational Health (V12 pipeline sanity)');
+    report[i] = report[i].replace(/^## § 10 — Operational Health/, '## § 14 — Operational Health (V12 pipeline sanity)');
   }
 
   const calStart = report.length;
   buildCalibrationSnapshot(report, liveCal);
   for (let i = calStart; i < report.length; i++) {
-    report[i] = report[i].replace(/^## § 11 — Calibration Snapshot/, '## § 13 — Live Calibration Snapshot (V12 thresholds in use)');
+    report[i] = report[i].replace(/^## § 11 — Calibration Snapshot/, '## § 15 — Live Calibration Snapshot (V12 thresholds in use)');
   }
 
   const wpStart = report.length;
   await buildWalletPoolHealth(report);
   for (let i = wpStart; i < report.length; i++) {
-    report[i] = report[i].replace(/^## § 12 — Wallet Pool Health/, '## § 14 — Wallet Pool Health (V12 input supply)');
+    report[i] = report[i].replace(/^## § 12 — Wallet Pool Health/, '## § 16 — Wallet Pool Health (V12 input supply)');
   }
+
+  // § 17 — Full-history Feature Lab. Operates on ALL AGS-U promoted picks
+  // since cutover (not just V12-era) so we can compare what the data says
+  // about feature impact against what V12 currently uses.
+  buildAgsFeatureLab(report, agsuRows);
 
   report.push(`---`);
   report.push('');
