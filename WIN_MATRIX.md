@@ -1,12 +1,12 @@
 # Win Matrix — (Δ_winner × Δ_quality) cross-tab
 
-_Auto-generated 2026-06-08T07:12:46.012Z by `scripts/winMatrix.js`. Do not edit by hand._
+_Auto-generated 2026-06-08T12:14:08.221Z by `scripts/winMatrix.js`. Do not edit by hand._
 
-**Sample:** 866 graded, non-superseded sides with walletDetails available (of 1582 scanned).
+**Sample:** 866 graded, non-superseded sides with walletDetails available (of 1583 scanned).
 
 **Date range:** 2026-04-18 … 2026-06-07
 
-**Whitelist source:** live `sharpWalletProfiles` snapshot (231 profiles, tiers `CONFIRMED` + `FLAT`).
+**Whitelist source:** live `sharpWalletProfiles` snapshot (232 profiles, tiers `CONFIRMED` + `FLAT`).
 
 **Quality cut:** contribution ≥ 30.
 
