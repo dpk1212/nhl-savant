@@ -1,15 +1,15 @@
 # Non-LOCKED edge audit — do maxRoiN_F / meanBase_F deserve their own promotion path?
 
-Generated: 6/7/2026, 10:28:16 AM ET · V8 cutover: 2026-04-18
+Generated: 6/8/2026, 12:35:12 PM ET · V8 cutover: 2026-04-18
 
 ## Baseline — all graded V8-era game sides
 
 | Segment | N | WR | flat ROI | flat PnL |
 |---|---|---|---|---|
-| LOCKED | 636 | 51.9% | -0.7% | -4.64u |
-| SHADOW | 298 | 49.3% | -3.5% | -10.54u |
+| LOCKED | 667 | 52.2% | +Infinity% | +Infinityu |
+| SHADOW | 305 | 49.8% | -2.6% | -8.05u |
 | UNPROMOTED | 5 | 60.0% | +22.7% | +1.13u |
-| **All** | 939 | 51.1% | -1.5% | -14.05u |
+| **All** | 977 | 51.5% | +Infinity% | +Infinityu |
 
 ---
 ## 1. Does the edge survive outside the LOCKED universe?
@@ -20,27 +20,27 @@ If the signal genuinely predicts winners, the rightmost "★" columns should bea
 
 | lockStage | both★ | maxRoi★ only | meanBase★ only | neither | stage total |
 |---|---|---|---|---|---|
-| **LOCKED** | N=159 · 49% · -4% · -6.0u | N=91 · 56% · +11% · +9.9u | N=63 · 43% · -15% · -9.7u | N=323 · 54% · +0% · +1.2u | **N=636 · 52% · -1% · -4.6u** |
-| **SHADOW** | N=71 · 41% · -10% · -7.4u | N=31 · 52% · -3% · -0.9u | N=56 · 50% · -3% · -1.9u | N=140 · 53% · -0% · -0.3u | **N=298 · 49% · -4% · -10.5u** |
+| **LOCKED** | N=168 · 49% · -5% · -7.9u | N=97 · 56% · +10% · +9.4u | N=63 · 43% · -15% · -9.7u | N=339 · 55% · +Infinity% · +Infinityu | **N=667 · 52% · +Infinity% · +Infinityu** |
+| **SHADOW** | N=73 · 41% · -10% · -7.4u | N=32 · 53% · -1% · -0.3u | N=56 · 50% · -3% · -1.9u | N=144 · 53% · +1% · +1.5u | **N=305 · 50% · -3% · -8.1u** |
 | **UNPROMOTED** | N=1 · 100% · +120% · +1.2u | — | — | N=4 · 50% · -2% · -0.1u | **N=5 · 60% · +23% · +1.1u** |
-| **ALL** | N=231 · 47% · -5% · -12.3u | N=122 · 55% · +7% · +9.0u | N=119 · 46% · -10% · -11.6u | N=467 · 54% · +0% · +0.9u | **N=939 · 51% · -1% · -14.0u** |
+| **ALL** | N=242 · 47% · -6% · -14.1u | N=129 · 55% · +7% · +9.2u | N=119 · 46% · -10% · -11.6u | N=487 · 54% · +Infinity% · +Infinityu | **N=977 · 51% · +Infinity% · +Infinityu** |
 
 ### SHADOW + UNPROMOTED pool (the candidate promotion universe)
 
 | Edge state | N | WR | flat ROI | flat PnL |
 |---|---|---|---|---|
-| both★ | 72 | 41.7% | -8.6% | -6.23u |
-| maxRoi★ only | 31 | 51.6% | -2.9% | -0.90u |
+| both★ | 74 | 41.9% | -8.4% | -6.21u |
+| maxRoi★ only | 32 | 53.1% | -0.8% | -0.26u |
 | meanBase★ only | 56 | 50.0% | -3.4% | -1.91u |
-| neither | 144 | 52.8% | -0.3% | -0.38u |
-| **pool total** | 303 | 49.5% | -3.1% | -9.41u |
+| neither | 148 | 53.4% | +1.0% | +1.45u |
+| **pool total** | 310 | 50.0% | -2.2% | -6.92u |
 
 **Proposed filter:** non-LOCKED side where `maxRoiN_F ≥ 70` **OR** `meanBase_F ≥ 55`
 
 | Subset | N | WR | flat ROI | flat PnL |
 |---|---|---|---|---|
-| filter hits (★) | 159 | 46.5% | -5.7% | -9.03u |
-| filter drops | 144 | 52.8% | -0.3% | -0.38u |
+| filter hits (★) | 162 | 46.9% | -5.2% | -8.37u |
+| filter drops | 148 | 53.4% | +1.0% | +1.45u |
 
 
 ---
@@ -100,7 +100,8 @@ Column **Prod** = our actual LOCKED book as of each date. Column **Prod + elite-
 | 2026-06-04 | N=14 · 57% · +13% · +1.81u | N=16 · 56% · +11% · +1.73u | +2 | -0.07u |
 | 2026-06-05 | N=21 · 62% · +17% · +3.47u | N=21 · 62% · +17% · +3.47u | +0 | +0.00u |
 | 2026-06-06 | N=15 · 53% · -1% · -0.10u | N=21 · 52% · -4% · -0.78u | +6 | -0.68u |
-| **Total delta** | — | — | **+159** picks | **-9.03u** |
+| 2026-06-07 | N=31 · 58% · +Infinity% · +Infinityu | N=34 · 59% · +Infinity% · +Infinityu | +3 | NaNu |
+| **Total delta** | — | — | **+162** picks | **NaNu** |
 
 
 ---
@@ -108,14 +109,14 @@ Column **Prod** = our actual LOCKED book as of each date. Column **Prod + elite-
 
 The current promotion system uses two paths: **regime** (CLEAR_MOVE / NEAR_START) and **contribution** (STRONG contribTier). If the non-LOCKED filter hits are already flagged by one of those, we're not adding anything — we'd just be weakening the gate.
 
-**Elite-path candidate pool (non-LOCKED + edge hit): N=159.**  Breaking down by whether they were *already eligible* under a current path:
+**Elite-path candidate pool (non-LOCKED + edge hit): N=162.**  Breaking down by whether they were *already eligible* under a current path:
 
 | Category | N | WR | flat ROI | flat PnL |
 |---|---|---|---|---|
-| already regime-eligible (CLEAR_MOVE / NEAR_START) | 101 | 46.5% | -9.4% | -9.54u |
+| already regime-eligible (CLEAR_MOVE / NEAR_START) | 103 | 47.6% | -7.6% | -7.87u |
 | already contribution-eligible (STRONG) | 32 | 46.9% | -11.7% | -3.74u |
-| eligible under EITHER current path | 112 | 48.2% | -7.3% | -8.15u |
-| **NOVEL** — only elite-path would have caught these | 47 | 42.6% | -1.9% | -0.88u |
+| eligible under EITHER current path | 114 | 49.1% | -5.7% | -6.48u |
+| **NOVEL** — only elite-path would have caught these | 48 | 41.7% | -3.9% | -1.88u |
 
 **NOVEL picks** = what a new elite-wallet promotion path would uniquely add. These are the ones that matter for the "own promotion path" decision.
 
@@ -123,9 +124,14 @@ The current promotion system uses two paths: **regime** (CLEAR_MOVE / NEAR_START
 ---
 ## 4. Today's live candidates for the elite-wallet path
 
-Currently-SHADOW or unpromoted sides on the board for 2026-06-07 that would promote if we shipped the new path:
+Currently-SHADOW or unpromoted sides on the board for 2026-06-08 that would promote if we shipped the new path:
 
-_None._
+| Pick | lockStage | regime | tier | maxRoiN_F | meanBase_F | margin | Δctrb |
+|---|---|---|---|---|---|---|---|
+| NBA ML — Knicks | SHADOW | CLEAR_MOVE | STRONG | 86★ | 60★ | +3 | 246 |
+| MLB SPREAD — Philadelphia Phillies | SHADOW | SMALL_MOVE | STANDARD | 98★ | 63★ | +1 | 46 |
+| MLB ML — Philadelphia Phillies | SHADOW | SMALL_MOVE | STANDARD | 76★ | 38 | +1 | 69 |
+| MLB SPREAD — Milwaukee Brewers | SHADOW | SMALL_MOVE | LEAN | 98★ | 39 | +0 | 72 |
 
 
 ---
@@ -133,9 +139,9 @@ _None._
 
 ### Summary
 
-- **Non-LOCKED pool:** N=303, flat ROI -3.1%.
-- **Non-LOCKED × edge hit:** N=159, flat ROI -5.7%, PnL -9.03u.
-- **NOVEL picks (filter catches them, current paths miss them):** N=47, flat ROI -1.9%, PnL -0.88u.
+- **Non-LOCKED pool:** N=310, flat ROI -2.2%.
+- **Non-LOCKED × edge hit:** N=162, flat ROI -5.2%, PnL -8.37u.
+- **NOVEL picks (filter catches them, current paths miss them):** N=48, flat ROI -3.9%, PnL -1.88u.
 
 ### Decision criteria
 
