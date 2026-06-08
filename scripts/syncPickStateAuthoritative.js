@@ -1083,34 +1083,31 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     else if (typeof pick.commenceTime === 'string') ct = new Date(pick.commenceTime).getTime();
   }
   if (ct != null && now >= ct - T_MINUS_15_MIN_MS && !force) {
-    // T-15 rescue stamp — the ONE thing we still do inside the freeze:
-    // ensure a LOCKED/LEAN side never reaches the grader with undefined
-    // finalUnits. If it did, betTracking.js computes `isTracked = !units`
-    // → the pick is silently marked tracked=true and contributes 0 to
-    // the bankroll. This is the root cause of the PIT@ATL bug — browser
-    // promoted the side at ~T-3min, cron never got a normal cycle to
-    // stamp finalUnits before T-15 hit, finalUnits stayed undefined.
-    //
-    // Contract: every side the grader will eventually see MUST have a
-    // numeric finalUnits stamp. A side with `agsV12Result === null` at
-    // freeze is a MUTED side by definition (no signal → no money) → 0u.
+    // T-15 rescue stamp — surface the LOCKED/LEAN side with undefined
+    // finalUnits to the caller as a special return code; the caller
+    // owns the Firestore write (reconcileSide is intentionally NOT
+    // async so it can stay a pure compute function). The rescue patch
+    // forces finalUnits=0 + v8_agsTier='FADE' so the grader never sees
+    // an undefined-units side; that's the PIT@ATL bug.
     if ((lockStage === 'LOCKED' || lockStage === 'LEAN')
         && (sd.finalUnits == null || !Number.isFinite(sd.finalUnits))) {
-      const rescuePatch = {
-        finalUnits: 0,
-        v8_agsTier: 'FADE',
-        v8_agsV12Tier: 'FADE',
-        v8_agsV12UnitsApplied: 0,
-        v8_agsUnitsApplied: 0,
-        _frozenFinalUnitsRescue: {
-          at: now,
-          reason: 'undefined_finalUnits_at_t_minus_15',
-          priorLockStage: lockStage,
-          priorAgsV12: sd.v8_agsV12 ?? null,
+      return {
+        skipped: true,
+        reason: 'within_t_minus_15_needs_rescue',
+        rescuePatch: {
+          finalUnits: 0,
+          v8_agsTier: 'FADE',
+          v8_agsV12Tier: 'FADE',
+          v8_agsV12UnitsApplied: 0,
+          v8_agsUnitsApplied: 0,
+          _frozenFinalUnitsRescue: {
+            at: now,
+            reason: 'undefined_finalUnits_at_t_minus_15',
+            priorLockStage: lockStage,
+            priorAgsV12: sd.v8_agsV12 ?? null,
+          },
         },
       };
-      await pickRef.set({ sides: { [side]: rescuePatch }, lastWriteAt: now, lastAction: 'finalUnits_rescue_at_freeze' }, { merge: true });
-      return { skipped: true, reason: 'within_t_minus_15_rescued_finalUnits' };
     }
     return { skipped: true, reason: 'within_t_minus_15' };
   }
@@ -1717,6 +1714,21 @@ async function main() {
           if (result.reason === 'not_locked_or_lean') stats.skipped_not_locked++;
           else if (result.reason === 'completed') stats.skipped_completed++;
           else if (result.reason === 'within_t_minus_15') stats.skipped_t15++;
+          else if (result.reason === 'within_t_minus_15_needs_rescue') {
+            // T-15 rescue write — reconcileSide flagged an undefined
+            // finalUnits on a LOCKED/LEAN side at freeze. Stamp the
+            // deterministic 0u/FADE mute so the grader doesn't mark
+            // the pick tracked=true. See PIT@ATL bug 2026-06-07.
+            stats.skipped_t15++;
+            if (!DRY_RUN && result.rescuePatch) {
+              const ref = db.collection(col).doc(pick._id);
+              await ref.set(
+                { sides: { [sideKey]: result.rescuePatch }, lastWriteAt: now, lastAction: 'finalUnits_rescue_at_freeze' },
+                { merge: true },
+              );
+              console.warn(`  ↻ T-15 RESCUE: ${col}/${pick._id} ${sideKey} — forced finalUnits=0 + v8_agsTier=FADE (undefined at freeze)`);
+            }
+          }
           continue;
         }
         if (!result.wrote) {
