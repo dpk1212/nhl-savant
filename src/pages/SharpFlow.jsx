@@ -6064,6 +6064,97 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   );
 });
 
+// ════════════════════════════════════════════════════════════════════════
+// SharpPositionCard — v12 display state model
+// ════════════════════════════════════════════════════════════════════════
+//
+// Every visual cue on the live game card (header tier strip, action box
+// title, banner, units pill, accent color) derives from ONE value:
+// `displayState`. This eliminates the long-standing "LOCKED IN + WEAK
+// 0.0u + RECOMMENDED BET + HARD MUTE" contradiction users were seeing
+// when the legacy v11 `isLockedInFirestore` flag, v12 tier, and live
+// health gate disagreed on a render.
+//
+// State -> visual mapping:
+//   PLAY     — cron-stamped LOCK/PREMIUM/ELITE with finalUnits > 0.
+//              Emerald accent. Full bet rendering.
+//   TRACKING — cron-stamped WEAK/LEAN (0.25u/0.5u tracking-only stake).
+//              Amber accent. "TRACKING BET" headline.
+//   MUTED    — cron-stamped FADE or finalUnits === 0. Red accent.
+//              "SHARP CONSENSUS — not playable" headline.
+//   PREVIEW  — cron hasn't evaluated yet (browser-only / pre-lock).
+//              Gold accent. "AWAITING CRON v12 EVAL" headline. Browser
+//              still shows the v12-tier preview but doesn't claim a bet.
+//
+// Units derive from cron's `finalUnits` when present, otherwise from the
+// v12 ladder (PLAY tiers fall back via V12_LADDER, TRACKING tiers same;
+// MUTED is always 0; PREVIEW shows '—').
+const V12_LADDER = Object.freeze({
+  ELITE: 5.0, PREMIUM: 3.0, LOCK: 1.0, LEAN: 0.5, WEAK: 0.25, FADE: 0,
+});
+
+const AGS_V12_DISPLAY_META = Object.freeze({
+  PLAY: {
+    pill: 'PLAY',
+    headline: 'RECOMMENDED BET',
+    color:  AGS_TIER_META.PREMIUM.color,   // emerald
+    bg:     'rgba(34,197,94,0.08)',
+    bgSoft: 'rgba(34,197,94,0.03)',
+    border: 'rgba(34,197,94,0.22)',
+    bannerLabel: null,                     // header strip carries the state
+  },
+  TRACKING: {
+    pill: 'TRACKING',
+    headline: 'TRACKING BET (reduced size)',
+    color:  AGS_TIER_META.LEAN.color,      // amber
+    bg:     'rgba(250,204,21,0.08)',
+    bgSoft: 'rgba(250,204,21,0.03)',
+    border: 'rgba(250,204,21,0.22)',
+    bannerLabel: null,
+  },
+  MUTED: {
+    pill: 'MUTED',
+    headline: 'SHARP CONSENSUS — not playable',
+    color:  AGS_TIER_META.FADE.color,      // red
+    bg:     'rgba(239,68,68,0.06)',
+    bgSoft: 'rgba(239,68,68,0.02)',
+    border: 'rgba(239,68,68,0.20)',
+    bannerLabel: null,
+  },
+  PREVIEW: {
+    pill: 'MONITORING',
+    headline: 'MONITORING — awaiting cron lock',
+    color:  '#d4af37',                     // gold
+    bg:     'rgba(212,175,55,0.06)',
+    bgSoft: 'rgba(212,175,55,0.02)',
+    border: 'rgba(212,175,55,0.20)',
+    bannerLabel: null,
+  },
+});
+
+// Pure helper — derives the unified display state from cron stamps
+// (tier + units) plus the resolved browser-side v12 tier fallback.
+// Centralized so the ML / Spread / Total tabs can each derive their
+// own state from their own cron props without re-implementing the
+// logic.
+function deriveDisplayState({ cronTier, cronUnits, fallbackTier }) {
+  const tier = cronTier || fallbackTier || null;
+  // Cron hasn't seen this side yet → browser still has tier preview but
+  // we can't claim a bet (no finalUnits stamped). Show as PREVIEW.
+  if (cronTier == null) {
+    return { state: 'PREVIEW', tier, units: null };
+  }
+  // Cron explicitly muted: FADE tier OR finalUnits === 0.
+  if (cronTier === 'FADE' || cronUnits === 0) {
+    return { state: 'MUTED', tier: 'FADE', units: 0 };
+  }
+  const units = Number.isFinite(cronUnits) ? cronUnits : (V12_LADDER[cronTier] ?? 0);
+  if (cronTier === 'WEAK' || cronTier === 'LEAN') {
+    return { state: 'TRACKING', tier: cronTier, units };
+  }
+  return { state: 'PLAY', tier: cronTier, units };
+}
+
 const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile, onPickSynced, onHealthSynced, isMyPick, onToggleMyPick, canPickGames, gameFlowMap, spreadPositions, totalPositions, originalLockedSide, originalLockStars, originalLockWPS, originalFlipBeatThreshold, originalSpreadLockStars, originalSpreadLockWPS, originalTotalLockStars, originalTotalLockWPS, v8Norm, walletProfiles,
   // CRON-FIRST OVERRIDES (per market). When the syncPickStateAuthoritative
   // cron has stamped tier + finalUnits on the synced doc for this game/market,
@@ -6482,22 +6573,34 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   // crash on if pinnProb crossed the 0.95 threshold mid-session. The
   // top-of-component resolution removes that gun.
   const effectiveV12Tier = earlyV12Tier;
-  const cardTierMeta = effectiveV12Tier && AGS_TIER_META[effectiveV12Tier]
-    ? AGS_TIER_META[effectiveV12Tier]
-    : null;
-  const chipLabel  = cardTierMeta
-    ? (mlCronTier
-        // Locked: show tier + the cron's actual sized units
-        ? `${cardTierMeta.label} · ${Number(units || 0).toFixed(units >= 1 ? 1 : 2)}u`
-        // Unlocked: show tier only (no units stamped yet; locking sets
-        // them via the v12 ladder)
-        : cardTierMeta.label)
-    : sr.label;
-  const chipColor  = cardTierMeta ? cardTierMeta.color : sr.color;
-  const chipBg     = cardTierMeta ? cardTierMeta.bg    : sr.bg;
-  const chipBorderCron = cardTierMeta ? `${cardTierMeta.color}55` : null;
+  // NOTE: the legacy `chipLabel` / `chipColor` / `chipBg` / `chipBorderCron`
+  // derivations were removed when the header chip was replaced with the
+  // unified `displayMeta`-driven tier strip below. Visuals now read
+  // exclusively from `displayState`. Keeping `effectiveV12Tier` because
+  // both the consensus panel + `deriveDisplayState` PREVIEW fallback
+  // consume it.
   const ut = unitTier(units);
   const potentialWin = isLockedInFirestore ? profitFromOdds(betOdds, units) : 0;
+
+  // ─── UNIFIED v12 DISPLAY STATE (PLAY / TRACKING / MUTED / PREVIEW) ───
+  // Single source of truth that drives every visual cue on the card. The
+  // legacy gates (`isLockedInFirestore` / `isActionable` / live health
+  // status) routinely disagreed on a render — manifested as the
+  // "LOCKED IN + WEAK 0.0u + RECOMMENDED BET + HARD MUTE" stack the user
+  // was seeing. From here on, the header tier strip, action box title,
+  // accent color, and banner ALL read from `displayState` so they can't
+  // contradict each other. Cron stamps are authoritative; the browser
+  // fallback (`effectiveV12Tier`) only shows up as PREVIEW when the cron
+  // has not yet evaluated.
+  const displayML = deriveDisplayState({
+    cronTier: mlCronTier,
+    cronUnits: mlCronUnits,
+    fallbackTier: effectiveV12Tier,
+  });
+  const displayState = displayML.state;
+  const displayTier = displayML.tier;
+  const displayUnits = displayML.units;
+  const displayMeta = AGS_V12_DISPLAY_META[displayState];
 
   useEffect(() => {
     if ((!isLocked && !isShadow) || isGameLive || !commenceTime || !onPickSynced) return;
@@ -7009,26 +7112,31 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   }, [totalWasEverLocked, totalHealth.status, totalSr?.walletPlayScore]);
 
   const isActionable = sr.isActionable;
-  const accentColor = isLockedInFirestore ? B.green : isActionable ? B.green : B.gold;
-  const accentBorder = isLockedInFirestore ? 'rgba(16,185,129,0.4)' : isActionable ? 'rgba(16,185,129,0.3)' : B.goldBorder;
+  // Card-level accent driven by the same displayMeta as every other
+  // visual cue. Eliminates the "green LOCKED IN border around a card
+  // whose body says HARD MUTE" mismatch users were seeing.
+  const accentColor = displayMeta.color;
+  const accentBorder = displayMeta.border;
 
   return (
     <div style={{
       borderRadius: '12px', overflow: 'hidden',
       background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
       border: isMyPick ? '1px solid rgba(99,102,241,0.5)' : `1px solid ${accentBorder}`,
-      boxShadow: isMyPick ? '0 0 12px rgba(99,102,241,0.15)' : undefined,
+      boxShadow: isMyPick
+        ? '0 0 12px rgba(99,102,241,0.15)'
+        : `0 1px 12px ${accentColor}10`,
     }}>
-      {/* Top accent */}
+      {/* Top accent — subtle 2px hairline tinted by displayState. */}
       <div style={{
-        height: '3px',
-        background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)`,
+        height: '2px',
+        background: `linear-gradient(90deg, transparent 0%, ${accentColor}aa 25%, ${accentColor} 50%, ${accentColor}aa 75%, transparent 100%)`,
       }} />
 
       {/* ─── Header row ─── */}
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '0.875rem 1rem 0.375rem',
+        padding: '0.7rem 0.9rem 0.4rem', gap: '0.5rem',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
           <Badge color={ss.color} bg={ss.bg}>{ss.icon} {gd.sport}</Badge>
@@ -7053,92 +7161,103 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
             </span>
           )}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-          {isLockedInFirestore && (
-            <span style={{
-              ...T.micro, fontWeight: 900, letterSpacing: '0.04em',
-              padding: '0.2rem 0.6rem', borderRadius: '5px',
-              color: '#fff',
-              background: lockType === 'LIVE'
-                ? 'linear-gradient(135deg, #F59E0B, #D97706)'
-                : 'linear-gradient(135deg, #10B981, #059669)',
-              border: `1px solid ${lockType === 'LIVE' ? 'rgba(245,158,11,0.4)' : 'rgba(16,185,129,0.4)'}`,
-              display: 'flex', alignItems: 'center', gap: '0.25rem',
-              boxShadow: `0 0 8px ${lockType === 'LIVE' ? 'rgba(245,158,11,0.3)' : 'rgba(16,185,129,0.3)'}`,
-            }}>
-              <Lock size={10} /> {lockType === 'LIVE' ? 'LIVE LOCK' : 'LOCKED IN'}
-            </span>
-          )}
+        {/* ─── UNIFIED TIER STRIP ──────────────────────────────────────
+            Single pill that carries state + tier + units. Replaces the
+            old LOCKED IN pill + separate star chip combo. Color +
+            content driven by `displayMeta` (one source of truth — can't
+            disagree with the action box or banner below). */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
           <span style={{
-            ...T.micro, fontWeight: 800, letterSpacing: '0.04em',
-            padding: '0.2rem 0.6rem', borderRadius: '5px',
-            color: chipColor, background: chipBg,
-            border: `1px solid ${chipBorderCron || (isActionable ? 'rgba(16,185,129,0.2)' : B.goldBorder)}`,
-            display: 'flex', alignItems: 'center', gap: '0.2rem',
+            display: 'inline-flex', alignItems: 'center', gap: '0.45rem',
+            padding: '0.25rem 0.55rem 0.25rem 0.3rem',
+            borderRadius: '6px',
+            background: displayMeta.bg,
+            border: `1px solid ${displayMeta.border}`,
+            color: displayMeta.color,
+            fontFeatureSettings: "'tnum'",
           }}>
-            {Array.from({ length: 5 }, (_, i) => {
-              const filled = i + 1 <= Math.floor(renderedStars);
-              const half = !filled && i + 0.5 === renderedStars;
-              return filled ? (
-                <span key={i} style={{ fontSize: '0.5rem', color: chipColor, lineHeight: 1 }}>★</span>
-              ) : half ? (
-                <span key={i} style={{ position: 'relative', display: 'inline-block', fontSize: '0.5rem', lineHeight: 1, width: '0.5rem' }}>
-                  <span style={{ color: 'rgba(255,255,255,0.15)' }}>★</span>
-                  <span style={{ position: 'absolute', left: 0, top: 0, overflow: 'hidden', width: '50%', color: chipColor }}>★</span>
-                </span>
-              ) : (
-                <span key={i} style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.15)', lineHeight: 1 }}>★</span>
-              );
-            })}
-            <span style={{ marginLeft: '0.15rem' }}>{chipLabel}</span>
+            {/* State badge — PLAY / TRACKING / MUTED / EVALUATING */}
+            <span style={{
+              fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.08em',
+              padding: '0.18rem 0.4rem', borderRadius: '3px',
+              background: displayMeta.color, color: '#0a0a0a',
+              lineHeight: 1,
+            }}>
+              {displayState === 'PLAY' && lockType === 'LIVE' ? 'LIVE' : displayMeta.pill}
+            </span>
+            {/* Stars (tier visual) */}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.1rem' }}>
+              {Array.from({ length: 5 }, (_, i) => {
+                const filled = i + 1 <= Math.floor(renderedStars);
+                const half = !filled && i + 0.5 === renderedStars;
+                return filled ? (
+                  <span key={i} style={{ fontSize: '0.5rem', color: displayMeta.color, lineHeight: 1 }}>★</span>
+                ) : half ? (
+                  <span key={i} style={{ position: 'relative', display: 'inline-block', fontSize: '0.5rem', lineHeight: 1, width: '0.5rem' }}>
+                    <span style={{ color: 'rgba(255,255,255,0.15)' }}>★</span>
+                    <span style={{ position: 'absolute', left: 0, top: 0, overflow: 'hidden', width: '50%', color: displayMeta.color }}>★</span>
+                  </span>
+                ) : (
+                  <span key={i} style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.15)', lineHeight: 1 }}>★</span>
+                );
+              })}
+            </span>
+            {/* Tier label */}
+            <span style={{
+              fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.04em',
+              lineHeight: 1,
+            }}>
+              {displayTier || '—'}
+            </span>
+            {/* Units — omitted on PREVIEW (no stamp yet) and on MUTED
+                (always 0; redundant with the red FADE tier + MUTED pill). */}
+            {displayUnits != null && displayUnits > 0 && (
+              <span style={{
+                fontSize: '0.6rem', fontWeight: 700, opacity: 0.85,
+                lineHeight: 1,
+                paddingLeft: '0.35rem',
+                borderLeft: `1px solid ${displayMeta.color}40`,
+              }}>
+                {displayUnits >= 1 ? displayUnits.toFixed(1) : displayUnits.toFixed(2)}u
+              </span>
+            )}
           </span>
-          {/* v6.1 — hero chips removed from header. The narrative + LOCK
-              CRITERIA block below carry the winner/quality story in full
-              sentences; chips duplicated the signal and crowded the header
-              on mobile. */}
         </div>
       </div>
 
-      {/* ─── Action Box — always present, tells user what to do ─── */}
+      {/* ─── Action Box — driven by displayState ──────────────────────
+          Background, border, headline color all derive from displayMeta
+          so the action box reads as the same surface as the header tier
+          strip (one state, one color story). The duplicate units pill
+          is GONE — the tier strip above carries it. */}
       <div style={{
-        margin: '0.375rem 0.875rem 0', padding: '0.75rem',
+        margin: '0.375rem 0.875rem 0', padding: '0.625rem 0.75rem',
         borderRadius: '10px',
-        background: isActionable
-          ? 'linear-gradient(135deg, rgba(16,185,129,0.10) 0%, rgba(16,185,129,0.02) 100%)'
-          : `linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(212,175,55,0.02) 100%)`,
-        border: `1px solid ${isActionable ? 'rgba(16,185,129,0.25)' : B.goldBorder}`,
+        background: `linear-gradient(135deg, ${displayMeta.bg} 0%, ${displayMeta.bgSoft} 100%)`,
+        border: `1px solid ${displayMeta.border}`,
       }}>
-        {/* Top: Recommendation + narrative */}
-        <div style={{ marginBottom: '0.625rem' }}>
+        {/* Top: Recommendation headline + +EV (only premium signal kept here) */}
+        <div style={{ marginBottom: '0.5rem' }}>
           <div style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             marginBottom: '0.25rem',
           }}>
-            <span style={{ ...T.label, fontWeight: 800, color: isActionable ? B.green : B.gold }}>
-              {isActionable ? 'RECOMMENDED BET' : 'SHARP CONSENSUS'}
+            <span style={{
+              ...T.label, fontWeight: 800, color: displayMeta.color,
+              letterSpacing: '0.04em',
+            }}>
+              {displayMeta.headline}
             </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-              {isLockedInFirestore && (
-                <span style={{
-                  ...T.body, fontWeight: 900, color: '#fff',
-                  padding: '0.2rem 0.6rem', borderRadius: '5px',
-                  background: 'linear-gradient(135deg, #10B981, #059669)',
-                  border: '1px solid rgba(16,185,129,0.4)',
-                  fontFeatureSettings: "'tnum'",
-                }}>
-                  {ut.icon} {units.toFixed(1)}u
-                </span>
-              )}
-              {hasEV && (
-                <span style={{
-                  ...T.body, fontWeight: 900, color: B.green,
-                  padding: '0.2rem 0.6rem', borderRadius: '5px',
-                  background: B.greenDim,
-                }}>
-                  +{evEdge}% EV
-                </span>
-              )}
-            </div>
+            {hasEV && (
+              <span style={{
+                ...T.micro, fontWeight: 800, color: B.green,
+                padding: '0.18rem 0.45rem', borderRadius: '4px',
+                background: B.greenDim,
+                fontFeatureSettings: "'tnum'",
+              }}>
+                +{evEdge}% EV
+              </span>
+            )}
           </div>
           {(() => {
             // AGS-U narrative — proven winners + HC sharps lead the sentence,
@@ -7230,7 +7349,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
               <div style={{ width: '1px', height: '40px', background: B.borderSubtle }} />
               <div style={{ textAlign: 'right' }}>
                 <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.2rem' }}>
-                  {isActionable ? 'BET AT' : 'BEST PRICE'}
+                  {displayState === 'PLAY' ? 'BET AT' : displayState === 'TRACKING' ? 'TRACK AT' : 'BEST PRICE'}
                 </div>
                 <div style={{
                   ...T.heading, fontWeight: 900,
@@ -7246,37 +7365,38 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
           )}
         </div>
 
-        {/* Unit sizing + risk/reward when locked. Under AGS-U v9 every
-            shipped pick (ELITE / PREMIUM / LOCK / LEAN / WEAK) gets a
-            non-zero stake driven by the sizing band; the row below is
-            shared across all tiers. The old "LEAN = 0u, tracked only"
-            branch is retired — LEAN now ships at 0.5× (≈1.25u). */}
-        {isLockedInFirestore && (
+        {/* Risk / To Win — rendered only when displayState ships a real
+            stake (PLAY or TRACKING). Numbers come from `displayUnits`
+            (cron-stamped finalUnits, or v12 ladder fallback) so they
+            CANNOT disagree with the tier strip above. MUTED + PREVIEW
+            skip the row entirely instead of rendering "0.00u" noise. */}
+        {(displayState === 'PLAY' || displayState === 'TRACKING') && displayUnits != null && displayUnits > 0 && (
           <div style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            marginTop: '0.625rem', padding: '0.375rem 0.5rem',
+            marginTop: '0.5rem', padding: '0.35rem 0.5rem',
             borderRadius: '6px',
-            background: 'rgba(16,185,129,0.06)',
-            border: '1px solid rgba(16,185,129,0.15)',
+            background: displayMeta.bgSoft,
+            border: `1px solid ${displayMeta.border}`,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-              <span style={{ ...T.micro, color: B.textSec }}>Risk</span>
+              <span style={{ ...T.micro, color: B.textSec, letterSpacing: '0.04em' }}>RISK</span>
               <span style={{ ...T.micro, fontWeight: 800, color: B.text, fontFeatureSettings: "'tnum'" }}>
-                {units.toFixed(1)}u
+                {displayUnits >= 1 ? displayUnits.toFixed(1) : displayUnits.toFixed(2)}u
               </span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-              <span style={{ ...T.micro, color: B.textSec }}>To Win</span>
+              <span style={{ ...T.micro, color: B.textSec, letterSpacing: '0.04em' }}>TO WIN</span>
               <span style={{ ...T.micro, fontWeight: 800, color: B.green, fontFeatureSettings: "'tnum'" }}>
-                +{potentialWin.toFixed(2)}u
+                +{profitFromOdds(betOdds, displayUnits).toFixed(2)}u
               </span>
             </div>
             <span style={{
-              ...T.micro, fontWeight: 800, color: ut.color,
-              padding: '0.1rem 0.35rem', borderRadius: '4px',
-              background: ut.color === B.green ? B.greenDim : ut.color === B.gold ? B.goldDim : 'rgba(255,255,255,0.04)',
+              ...T.micro, fontWeight: 800, color: displayMeta.color,
+              padding: '0.1rem 0.4rem', borderRadius: '4px',
+              background: displayMeta.bg,
+              letterSpacing: '0.06em',
             }}>
-              {ut.icon} {ut.label}
+              {displayTier}
             </span>
           </div>
         )}
@@ -7284,8 +7404,8 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
         {/* Bottom: confidence factors */}
         <div style={{
           display: 'flex', gap: '0.5rem', flexWrap: 'wrap',
-          marginTop: '0.625rem', paddingTop: '0.5rem',
-          borderTop: `1px solid ${isActionable ? 'rgba(16,185,129,0.15)' : 'rgba(212,175,55,0.12)'}`,
+          marginTop: '0.5rem', paddingTop: '0.45rem',
+          borderTop: `1px solid ${displayMeta.border}`,
         }}>
           {/* v6 pill strip — kept pills are the ones users actually act on.
               DOMINANT/STRONG consensus grade and RLM flag demoted to the
@@ -7373,21 +7493,19 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
         )}
       </div>
 
-      {/* ─── AGS-U Consensus Panel ──────────────────────────────────────
-          One composite score (AGS-U) drives everything: lock decision,
-          unit sizing, mute/fade. The panel below surfaces the tier in
-          plain English at the top and lists three drivers the score is
-          built from:
-            1. Proven SPORT winners backing  (dCount feature)
-            2. High-conviction sharps confirming  (dHcCount feature)
-            3. Sharp money concentrated on this side  (forContribShare feature)
-          A 5-segment quintile bar on the right shows where this pick sits
-          versus the rolling V6+ calibration distribution — no jargon,
-          no Δw / Δq / Σ counters. */}
+      {/* ─── AGS-U Consensus Panel (compressed) ─────────────────────────
+          The verbose tier banner ("PLAY LOCKED — PREMIUM" / "HARD MUTE")
+          is GONE — the header tier strip carries state + tier + units in
+          a single accent. What stays:
+            • 3 driver rows (proven winners, HC sharps, money %)
+            • 5-segment quintile bar on the right showing rolling rank
+          Tightened to ~18px per row, ~6px quintile bar height, and the
+          surface uses `displayMeta` so it shares an accent with the rest
+          of the card instead of computing its own.
+            Source: mlAgs.featureValues (single render-side computation). */}
       {(() => {
         const sportLabel = (gd.sport || '').toString().toUpperCase();
         const healthStatus = mlHealth?.status || 'ACTIVE';
-        const isMutedLive = healthStatus === 'MUTED';
         const isCancelledLive = healthStatus === 'CANCELLED';
 
         const agsValue = Number.isFinite(mlAgs?.ags) ? mlAgs.ags : null;
@@ -7401,63 +7519,8 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
         const forHcCount = fv?.forHcCount ?? 0;
         const totalProven = forCount + agCount;
 
-        // v12 is authoritative for the banner tier. Priority:
-        //   1. mlCronTier — cron-stamped v12 on the locked Firestore doc.
-        //   2. effectiveV12Tier — browser-computed v12 (UNLOCKED cards).
-        //      Same library function the cron uses, fed gd.positions +
-        //      walletProfiles + calibration so the banner can't disagree
-        //      with what the cron will stamp once the pick locks.
-        //   3. legacy v11 agsTierFromValue — fallback when the v12 pipeline
-        //      can't run (no positions, no walletProfiles, no calibration).
-        const liveTierLocal = effectiveV12Tier
-          || (agsValue != null ? agsTierFromValue(agsValue, getAgsCalibration()) : 'UNKNOWN');
-        const meta = AGS_TIER_META[liveTierLocal] || AGS_TIER_META.UNKNOWN;
-
-        // Banner derivation.
-        //   • cancelled live      → red CANCELLED
-        //   • muted live          → red HARD MUTE
-        //   • locked + tier       → green PLAY LOCKED — TIER
-        //   • not locked + tier   → tier-colored TRACKING/SHARP CONSENSUS
-        //   • no AGS yet          → MONITORING (gold)
-        let bannerLabel, bannerColor, bgGlow, borderGlow;
-        if (isCancelledLive) {
-          bannerLabel = 'PICK CANCELLED — winners against';
-          bannerColor = B.red;
-          borderGlow  = 'rgba(239,68,68,0.30)';
-          bgGlow      = 'linear-gradient(135deg, rgba(239,68,68,0.06) 0%, rgba(239,68,68,0.02) 100%)';
-        } else if (isMutedLive || liveTierLocal === 'FADE') {
-          bannerLabel = 'HARD MUTE — signal too weak to play';
-          bannerColor = B.red;
-          borderGlow  = 'rgba(239,68,68,0.25)';
-          bgGlow      = 'linear-gradient(135deg, rgba(239,68,68,0.05) 0%, rgba(239,68,68,0.02) 100%)';
-        } else if (agsValue == null) {
-          bannerLabel = 'MONITORING — gathering sharp signal';
-          bannerColor = B.textSec;
-          borderGlow  = B.borderSubtle;
-          bgGlow      = 'rgba(255,255,255,0.02)';
-        } else if (isLockedInFirestore && (liveTierLocal === 'ELITE' || liveTierLocal === 'PREMIUM' || liveTierLocal === 'LOCK')) {
-          bannerLabel = `PLAY LOCKED — ${liveTierLocal}`;
-          bannerColor = meta.color;
-          borderGlow  = meta.color + '40';
-          bgGlow      = `linear-gradient(135deg, ${meta.bg} 0%, rgba(255,255,255,0.02) 100%)`;
-        } else if (isLockedInFirestore && (liveTierLocal === 'LEAN' || liveTierLocal === 'WEAK')) {
-          bannerLabel = `TRACKING — ${liveTierLocal} (reduced size)`;
-          bannerColor = meta.color;
-          borderGlow  = meta.color + '40';
-          bgGlow      = `linear-gradient(135deg, ${meta.bg} 0%, rgba(255,255,255,0.02) 100%)`;
-        } else {
-          bannerLabel = `SHARP CONSENSUS — ${liveTierLocal}`;
-          bannerColor = meta.color;
-          borderGlow  = meta.color + '40';
-          bgGlow      = `linear-gradient(135deg, ${meta.bg} 0%, rgba(255,255,255,0.02) 100%)`;
-        }
-
         // Driver rows — three plain-English checks tied 1:1 to the AGS-U
-        // feature set. Thresholds chosen so the "met" check feels natural:
-        //   • dCount  ≥ +1   → proven backing edge
-        //   • dHcCount ≥ +1  → at least one HC sharp net-backing
-        //   • forContribShare ≥ 65% → money concentrated on this side
-        // These aren't gates (AGS-U is the gate); they're explanations.
+        // feature set. Not gates; explanations of what made the score.
         const drv1Met = dCount >= 1;
         const drv2Met = dHcCount >= 1;
         const drv3Met = forContribShare != null && forContribShare >= 0.65;
@@ -7465,62 +7528,79 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
         const Driver = ({ met, label, detail }) => (
           <div style={{
             display: 'flex', alignItems: 'center', gap: '0.4rem',
-            padding: '0.22rem 0',
+            padding: '0.12rem 0',
+            minHeight: '18px',
           }}>
             {met
-              ? <CheckCircle size={13} color={B.green} strokeWidth={2.5} />
-              : <Circle size={13} color={B.textMuted} strokeWidth={1.5} />
+              ? <CheckCircle size={11} color={displayMeta.color} strokeWidth={2.5} />
+              : <Circle size={11} color={B.textMuted} strokeWidth={1.5} />
             }
             <span style={{
-              ...T.micro, fontSize: '0.625rem',
-              color: met ? B.green : B.textSec,
+              ...T.micro, fontSize: '0.62rem',
+              color: met ? B.text : B.textSec,
               fontWeight: met ? 700 : 500,
+              lineHeight: 1.1,
             }}>
               {label}
             </span>
             <span style={{
               ...T.micro, fontSize: '0.6rem', fontFeatureSettings: "'tnum'",
-              color: met ? B.green : B.textMuted,
+              color: met ? displayMeta.color : B.textMuted,
               fontWeight: 700, marginLeft: 'auto',
+              lineHeight: 1.1,
             }}>
               {detail}
             </span>
           </div>
         );
 
-        // Quintile indicator — 5 segments, filled left-to-right by quintile.
-        // Cleanly conveys "where does this pick rank?" without exposing the
-        // raw z-score, which is meaningless to end users.
+        // Quintile indicator — 5 segments, filled by quintile, accent
+        // sourced from displayMeta so it color-matches the header strip
+        // and action box. Slim 6px height to stay unobtrusive.
         const QuintileBar = () => {
           if (agsQuintile == null) return null;
           return (
             <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
               {[1, 2, 3, 4, 5].map(i => (
                 <div key={i} style={{
-                  width: '8px', height: '10px', borderRadius: '1px',
-                  background: i <= agsQuintile ? meta.color : 'rgba(255,255,255,0.10)',
-                  opacity: i <= agsQuintile ? 1 : 0.4,
+                  width: '7px', height: '6px', borderRadius: '1px',
+                  background: i <= agsQuintile ? displayMeta.color : 'rgba(255,255,255,0.08)',
+                  opacity: i <= agsQuintile ? 1 : 0.45,
                 }} />
               ))}
             </div>
           );
         };
 
+        // Mini caption: kept ultra-short, replaces the prior banner. It
+        // exists only to disambiguate the live health status (e.g. line
+        // cancellation) — the tier + state are already in the header.
+        let captionLabel = null;
+        let captionColor = B.textMuted;
+        if (isCancelledLive) {
+          captionLabel = 'PICK CANCELLED — winners against';
+          captionColor = B.red;
+        } else if (agsValue == null) {
+          captionLabel = 'GATHERING SHARP SIGNAL';
+          captionColor = B.textMuted;
+        }
+
         return (
           <div style={{
-            margin: '0.5rem 0.875rem 0', padding: '0.5rem 0.75rem',
+            margin: '0.5rem 0.875rem 0', padding: '0.45rem 0.65rem',
             borderRadius: '8px',
-            background: bgGlow,
-            border: `1px solid ${borderGlow}`,
+            background: displayMeta.bgSoft,
+            border: `1px solid ${displayMeta.border}`,
           }}>
             <div style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              marginBottom: '0.3rem', gap: '0.5rem',
+              marginBottom: '0.25rem', gap: '0.5rem',
+              minHeight: '12px',
             }}>
-              <span style={{ ...T.micro, color: bannerColor, fontWeight: 800, letterSpacing: '0.04em' }}>
-                {bannerLabel}
-              </span>
-              {!isCancelledLive && !isMutedLive && agsValue != null && <QuintileBar />}
+              {captionLabel
+                ? <span style={{ ...T.micro, fontSize: '0.55rem', color: captionColor, fontWeight: 800, letterSpacing: '0.05em' }}>{captionLabel}</span>
+                : <span style={{ ...T.micro, fontSize: '0.55rem', color: B.textMuted, fontWeight: 700, letterSpacing: '0.05em' }}>SHARP CONSENSUS</span>}
+              {agsValue != null && <QuintileBar />}
             </div>
             <Driver
               met={drv1Met}
@@ -8307,12 +8387,12 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
           const homeSide = consensusSide === 'home';
           const moneyRatio = totalInvested > 0 ? Math.round((Math.max(awayInvested, homeInvested) / totalInvested) * 100) : 50;
           const panelStyle = (isActive) => ({
-            flex: 1, padding: '0.625rem',
+            flex: 1, padding: '0.4rem 0.5rem',
             borderRadius: '8px',
             background: isActive
-              ? `linear-gradient(135deg, ${accentColor}12 0%, ${accentColor}04 100%)`
+              ? `linear-gradient(135deg, ${accentColor}10 0%, ${accentColor}03 100%)`
               : 'rgba(255,255,255,0.015)',
-            border: `1px solid ${isActive ? `${accentColor}40` : B.borderSubtle}`,
+            border: `1px solid ${isActive ? `${accentColor}33` : B.borderSubtle}`,
             position: 'relative',
             overflow: 'hidden',
           });
@@ -8322,7 +8402,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
               {isActive && (
                 <div style={{
                   position: 'absolute', top: 0, [align === 'left' ? 'left' : 'right']: 0,
-                  width: '3px', height: '100%',
+                  width: '2px', height: '100%',
                   background: accentColor,
                   borderRadius: align === 'left' ? '8px 0 0 8px' : '0 8px 8px 0',
                 }} />
@@ -8330,14 +8410,14 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
               <div style={{
                 display: 'flex', alignItems: 'center', gap: '0.3rem',
                 justifyContent: align === 'right' ? 'flex-end' : 'flex-start',
-                marginBottom: '0.5rem',
+                marginBottom: '0.3rem',
               }}>
                 {isActive && align === 'left' && (
                   <span style={{
-                    ...T.micro, fontSize: '0.5rem', fontWeight: 900,
-                    padding: '0.1rem 0.3rem', borderRadius: '3px',
+                    ...T.micro, fontSize: '0.46rem', fontWeight: 900,
+                    padding: '0.08rem 0.28rem', borderRadius: '3px',
                     color: '#fff', background: accentColor,
-                  }}>SHARP SIDE</span>
+                  }}>SHARP</span>
                 )}
                 <span style={{
                   ...T.sub, fontWeight: 900,
@@ -8347,32 +8427,38 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                 </span>
                 {isActive && align === 'right' && (
                   <span style={{
-                    ...T.micro, fontSize: '0.5rem', fontWeight: 900,
-                    padding: '0.1rem 0.3rem', borderRadius: '3px',
+                    ...T.micro, fontSize: '0.46rem', fontWeight: 900,
+                    padding: '0.08rem 0.28rem', borderRadius: '3px',
                     color: '#fff', background: accentColor,
-                  }}>SHARP SIDE</span>
+                  }}>SHARP</span>
                 )}
               </div>
 
               <div style={{
-                display: 'flex', flexDirection: 'column', gap: '0.375rem',
+                display: 'flex', flexDirection: 'column', gap: '0.2rem',
                 alignItems: align === 'right' ? 'flex-end' : 'flex-start',
               }}>
-                <div>
-                  <div style={{ ...T.heading, fontWeight: 900, color: isActive ? accentColor : B.textSec, fontFeatureSettings: "'tnum'" }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: align === 'right' ? 'flex-end' : 'flex-start' }}>
+                  <div style={{
+                    ...T.body, fontWeight: 900,
+                    color: isActive ? accentColor : B.textSec,
+                    fontFeatureSettings: "'tnum'", lineHeight: 1.1,
+                  }}>
                     {fmtVol(invested)}
                   </div>
-                  <div style={{ ...T.micro, color: B.textMuted }}>
+                  <div style={{ ...T.micro, fontSize: '0.55rem', color: B.textMuted, lineHeight: 1.15 }}>
                     {wallets} sharp{wallets !== 1 ? 's' : ''} · avg {fmtVol(avgBet)}
                   </div>
                 </div>
                 <div style={{
-                  ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'",
-                  padding: '0.15rem 0.4rem', borderRadius: '4px',
+                  ...T.micro, fontSize: '0.58rem',
+                  fontWeight: 700, fontFeatureSettings: "'tnum'",
+                  padding: '0.1rem 0.32rem', borderRadius: '4px',
                   color: pnl >= 0 ? B.green : B.red,
                   background: pnl >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
+                  lineHeight: 1.1,
                 }}>
-                  {pnl >= 0 ? '+' : ''}{fmtVol(pnl)} sports P&L
+                  {pnl >= 0 ? '+' : ''}{fmtVol(pnl)} P&L
                 </div>
               </div>
             </div>
@@ -8415,20 +8501,20 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                 ];
                 return (
                   <div style={{
-                    marginTop: '0.5rem', borderRadius: '8px', overflow: 'hidden',
+                    marginTop: '0.4rem', borderRadius: '8px', overflow: 'hidden',
                     border: `1px solid ${B.borderSubtle}`, background: 'rgba(255,255,255,0.02)',
                   }}>
                     <div style={{
                       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                      padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}`,
+                      padding: '0.3rem 0.55rem', borderBottom: `1px solid ${B.borderSubtle}`,
                     }}>
-                      <span style={{ ...T.micro, color: B.textMuted }}>Market Flow</span>
-                      <div style={{ display: 'flex', gap: '0.75rem' }}>
-                        <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700 }}>{awayShort}</span>
-                        <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700 }}>{homeShort}</span>
+                      <span style={{ ...T.micro, fontSize: '0.58rem', color: B.textMuted, letterSpacing: '0.04em' }}>MARKET FLOW</span>
+                      <div style={{ display: 'flex', gap: '0.7rem' }}>
+                        <span style={{ ...T.micro, fontSize: '0.58rem', color: B.textMuted, fontWeight: 700 }}>{awayShort}</span>
+                        <span style={{ ...T.micro, fontSize: '0.58rem', color: B.textMuted, fontWeight: 700 }}>{homeShort}</span>
                       </div>
                     </div>
-                    <div style={{ padding: '0.5rem 0.625rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div style={{ padding: '0.35rem 0.55rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
                       {bars.map(bar => {
                         const awayWins = bar.awayVal > bar.homeVal;
                         const homeWins = bar.homeVal > bar.awayVal;
@@ -8498,14 +8584,14 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
         {(pinnConsensusPoints.length >= 2 || polyPoints.length >= 2) && (
           <div style={{
             borderRadius: '8px', overflow: 'hidden',
-            border: `1px solid ${B.borderSubtle}`, marginBottom: '0.625rem',
+            border: `1px solid ${B.borderSubtle}`, marginBottom: '0.5rem',
             background: 'rgba(255,255,255,0.02)',
           }}>
-            <div style={{ padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}` }}>
-              <span style={{ ...T.micro, color: B.textMuted }}>Price Movement</span>
+            <div style={{ padding: '0.3rem 0.55rem', borderBottom: `1px solid ${B.borderSubtle}` }}>
+              <span style={{ ...T.micro, fontSize: '0.58rem', color: B.textMuted, letterSpacing: '0.04em' }}>PRICE MOVEMENT</span>
             </div>
             <div style={{
-              display: 'flex', gap: '0.75rem', padding: '0.5rem 0.625rem',
+              display: 'flex', gap: '0.65rem', padding: '0.4rem 0.55rem',
               flexWrap: 'wrap', alignItems: 'flex-start',
             }}>
               {pinnConsensusPoints.length >= 2 && (
@@ -8577,12 +8663,12 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
         {pinnGame && Object.keys(allBooks).length > 1 && (
           <div style={{
             borderRadius: '8px', background: 'rgba(255,255,255,0.02)',
-            border: `1px solid ${B.borderSubtle}`, marginBottom: '0.625rem',
+            border: `1px solid ${B.borderSubtle}`, marginBottom: '0.5rem',
             overflow: 'hidden',
           }}>
-            <div style={{ padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}` }}>
-              <span style={{ ...T.micro, color: B.textMuted }}>
-                Book Prices — {consensusShort} ML
+            <div style={{ padding: '0.3rem 0.55rem', borderBottom: `1px solid ${B.borderSubtle}` }}>
+              <span style={{ ...T.micro, fontSize: '0.58rem', color: B.textMuted, letterSpacing: '0.04em' }}>
+                BOOK PRICES — {consensusShort} ML
               </span>
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap' }}>
@@ -8598,17 +8684,18 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                   const isPinn = key === 'pinnacle';
                   return (
                     <div key={key} style={{
-                      flex: '1 1 auto', minWidth: '70px',
-                      padding: '0.4rem 0.5rem',
+                      flex: '1 1 auto', minWidth: '60px',
+                      padding: '0.3rem 0.4rem',
                       borderRight: `1px solid ${B.borderSubtle}`,
                       background: isBest ? B.greenDim : 'transparent',
                     }}>
-                      <div style={{ ...T.micro, color: isPinn ? B.gold : B.textMuted, fontWeight: isPinn ? 700 : 400 }}>
+                      <div style={{ ...T.micro, fontSize: '0.55rem', color: isPinn ? B.gold : B.textMuted, fontWeight: isPinn ? 700 : 400, lineHeight: 1.15 }}>
                         {book.name}
                       </div>
                       <div style={{
                         ...T.caption, fontWeight: 700,
                         color: isBest ? B.green : isPinn ? B.gold : B.text,
+                        lineHeight: 1.1,
                       }}>
                         {fmtOdds(odds)}
                       </div>
