@@ -7120,41 +7120,59 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
 
   return (
     <div style={{
-      borderRadius: '12px', overflow: 'hidden',
+      borderRadius: '12px', overflow: 'hidden', position: 'relative',
       background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
       border: isMyPick ? '1px solid rgba(99,102,241,0.5)' : `1px solid ${accentBorder}`,
       boxShadow: isMyPick
         ? '0 0 12px rgba(99,102,241,0.15)'
-        : `0 1px 12px ${accentColor}10`,
+        : `0 2px 16px ${accentColor}12, 0 1px 2px rgba(0,0,0,0.3)`,
     }}>
+      {/* Left-edge accent ribbon — state-colored ticket stub feel.
+          3px wide, full card height, soft top/bottom fade. */}
+      <div style={{
+        position: 'absolute', top: 0, left: 0, bottom: 0,
+        width: '3px',
+        background: `linear-gradient(180deg, transparent 0%, ${accentColor} 12%, ${accentColor} 88%, transparent 100%)`,
+        opacity: 0.85,
+      }} />
       {/* Top accent — subtle 2px hairline tinted by displayState. */}
       <div style={{
         height: '2px',
         background: `linear-gradient(90deg, transparent 0%, ${accentColor}aa 25%, ${accentColor} 50%, ${accentColor}aa 75%, transparent 100%)`,
       }} />
 
-      {/* ─── Header row ─── */}
+      {/* ─── Header row ──────────────────────────────────────────────
+          Two columns: left = sport badge + matchup + time-caption
+          stacked vertically so the time never wraps to its own row;
+          right = unified tier strip vertically centered. */}
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '0.7rem 0.9rem 0.4rem', gap: '0.5rem',
+        padding: '0.65rem 0.9rem 0.5rem', gap: '0.6rem',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <Badge color={ss.color} bg={ss.bg}>{ss.icon} {gd.sport}</Badge>
-          <span style={{ ...T.body, fontWeight: 700, color: B.text }}>
-            {gd.away} <span style={{ color: B.textMuted, fontWeight: 400 }}>vs</span> {gd.home}
-          </span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.18rem', minWidth: 0, flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', minWidth: 0 }}>
+            <Badge color={ss.color} bg={ss.bg}>{ss.icon} {gd.sport}</Badge>
+            <span style={{
+              ...T.body, fontWeight: 700, color: B.text,
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              minWidth: 0,
+            }}>
+              {gd.away} <span style={{ color: B.textMuted, fontWeight: 400 }}>vs</span> {gd.home}
+            </span>
+          </div>
           {gameTimeLabel && (
             <span style={{
-              ...T.micro, fontWeight: 700, padding: '0.15rem 0.45rem', borderRadius: '4px',
+              ...T.micro, fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.05em',
               fontFeatureSettings: "'tnum'",
+              alignSelf: 'flex-start',
               ...(isGameLive ? {
+                padding: '0.12rem 0.4rem', borderRadius: '4px',
                 color: '#fff', background: 'linear-gradient(135deg, #EF4444, #DC2626)',
                 animation: 'pulse 2s ease-in-out infinite',
               } : minsUntilStart <= 60 ? {
-                color: '#F59E0B', background: 'rgba(245,158,11,0.12)',
-                border: '1px solid rgba(245,158,11,0.25)',
+                color: '#F59E0B',
               } : {
-                color: B.textSec, background: 'rgba(255,255,255,0.04)',
+                color: B.textMuted,
               }),
             }}>
               {isGameLive ? '● LIVE' : gameTimeFormatted ? `${gameTimeFormatted} ET` : gameTimeLabel}
@@ -7185,23 +7203,33 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
             }}>
               {displayState === 'PLAY' && lockType === 'LIVE' ? 'LIVE' : displayMeta.pill}
             </span>
-            {/* Stars (tier visual) */}
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.1rem' }}>
-              {Array.from({ length: 5 }, (_, i) => {
-                const filled = i + 1 <= Math.floor(renderedStars);
-                const half = !filled && i + 0.5 === renderedStars;
-                return filled ? (
-                  <span key={i} style={{ fontSize: '0.5rem', color: displayMeta.color, lineHeight: 1 }}>★</span>
-                ) : half ? (
-                  <span key={i} style={{ position: 'relative', display: 'inline-block', fontSize: '0.5rem', lineHeight: 1, width: '0.5rem' }}>
-                    <span style={{ color: 'rgba(255,255,255,0.15)' }}>★</span>
-                    <span style={{ position: 'absolute', left: 0, top: 0, overflow: 'hidden', width: '50%', color: displayMeta.color }}>★</span>
-                  </span>
-                ) : (
-                  <span key={i} style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.15)', lineHeight: 1 }}>★</span>
-                );
-              })}
-            </span>
+            {/* Stars — derived from `displayTier` (the v12 tier we show
+                right next to them) instead of the legacy `renderedStars`
+                fallback. Was producing "MONITORING ★★★★★ FADE" on
+                PREVIEW cards because `renderedStars` fell back to the
+                v11 `sr.stars` 5-star bucket when no cron stamp was set.
+                ELITE=5 PREMIUM=4.5 LOCK=4 LEAN=3 WEAK=2.5 FADE=1. */}
+            {(() => {
+              const tierStars = starsFromAgsuTier(displayTier);
+              return (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.1rem' }}>
+                  {Array.from({ length: 5 }, (_, i) => {
+                    const filled = i + 1 <= Math.floor(tierStars);
+                    const half = !filled && i + 0.5 === tierStars;
+                    return filled ? (
+                      <span key={i} style={{ fontSize: '0.5rem', color: displayMeta.color, lineHeight: 1 }}>★</span>
+                    ) : half ? (
+                      <span key={i} style={{ position: 'relative', display: 'inline-block', fontSize: '0.5rem', lineHeight: 1, width: '0.5rem' }}>
+                        <span style={{ color: 'rgba(255,255,255,0.15)' }}>★</span>
+                        <span style={{ position: 'absolute', left: 0, top: 0, overflow: 'hidden', width: '50%', color: displayMeta.color }}>★</span>
+                      </span>
+                    ) : (
+                      <span key={i} style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.15)', lineHeight: 1 }}>★</span>
+                    );
+                  })}
+                </span>
+              );
+            })()}
             {/* Tier label */}
             <span style={{
               fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.04em',
@@ -7225,26 +7253,34 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
         </div>
       </div>
 
-      {/* ─── Action Box — driven by displayState ──────────────────────
-          Background, border, headline color all derive from displayMeta
-          so the action box reads as the same surface as the header tier
-          strip (one state, one color story). The duplicate units pill
-          is GONE — the tier strip above carries it. */}
+      {/* ─── Action Box — visual hero, single state surface ──────────
+          Layout pass redesigned for clarity:
+            • Headline only renders on non-PLAY states (PLAY's pill in
+              the tier strip is already the "RECOMMENDED BET" signal —
+              showing both was the #1 source of clutter).
+            • Narrative is the rich storytelling line; avg-bet caption is
+              gone (its info lives in the tag pills below).
+            • Bet display becomes the visual hero: bigger team name on
+              the left, bigger odds on the right, single book+price
+              caption underneath each side.
+            • Risk row drops the redundant TIER pill (already in strip
+              above). Just RISK / TO WIN with tabular alignment. */}
       <div style={{
-        margin: '0.375rem 0.875rem 0', padding: '0.625rem 0.75rem',
+        margin: '0.5rem 0.875rem 0', padding: '0.7rem 0.85rem',
         borderRadius: '10px',
         background: `linear-gradient(135deg, ${displayMeta.bg} 0%, ${displayMeta.bgSoft} 100%)`,
         border: `1px solid ${displayMeta.border}`,
       }}>
-        {/* Top: Recommendation headline + +EV (only premium signal kept here) */}
-        <div style={{ marginBottom: '0.5rem' }}>
+        {/* Headline ONLY for non-PLAY states. PLAY pick: skip — the
+            tier strip already carries the call to action. */}
+        {displayState !== 'PLAY' && (
           <div style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            marginBottom: '0.25rem',
+            marginBottom: '0.45rem',
           }}>
             <span style={{
               ...T.label, fontWeight: 800, color: displayMeta.color,
-              letterSpacing: '0.04em',
+              letterSpacing: '0.05em',
             }}>
               {displayMeta.headline}
             </span>
@@ -7259,145 +7295,142 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
               </span>
             )}
           </div>
-          {(() => {
-            // AGS-U narrative — proven winners + HC sharps lead the sentence,
-            // with P&L as secondary color. Mute/cancel states invert to
-            // signal-fading copy. Avg-bet metric drops into a small caption.
-            // Source: mlAgs.featureValues (computed once per render upstream)
-            // with v8Scoring as a fallback for pre-AGS-U cached docs.
-            const fv = mlAgs?.featureValues ?? null;
-            const v8 = sr?.v8Scoring;
-            const forW = fv?.forCount ?? v8?.forW ?? 0;
-            const agW  = fv?.agCount  ?? v8?.agW  ?? 0;
-            const hcFor = fv?.forHcCount ?? 0;
-            const dCount = fv?.dCount ?? (forW - agW);
-            const sportUp = (gd.sport || '').toUpperCase();
-            const hStat = mlHealth?.status || 'ACTIVE';
-            const isMutedLive = hStat === 'MUTED';
-            const isCancelledLive = hStat === 'CANCELLED';
-            const pinnSuffix = pinnConfirms ? ` Pinnacle confirms the play.` : '';
-            const evSuffix = hasEV ? ` +${evEdge}% EV edge at ${bestBook}.` : '';
+        )}
 
-            let lead;
-            if (isCancelledLive) {
-              lead = (
-                <>
-                  <span style={{ color: B.red, fontWeight: 700 }}>Signal killed</span> on {consensusShort} ML: {Math.abs(dCount)} proven {sportUp} winner{Math.abs(dCount) !== 1 ? 's' : ''} now against this pick.{pinnSuffix}
-                </>
-              );
-            } else if (isMutedLive) {
-              lead = (
-                <>
-                  <span style={{ color: '#F59E0B', fontWeight: 700 }}>Signal fading</span> on {consensusShort} ML: {agW > 0 ? <>{agW} proven {sportUp} winner{agW !== 1 ? 's' : ''} on the other side, {forW} still backing.</> : <>sharp money has collapsed off this side.</>}
-                </>
-              );
-            } else if (forW > 0) {
-              lead = (
-                <>
-                  <span style={{ color: B.gold, fontWeight: 700 }}>{forW} proven {sportUp} winner{forW !== 1 ? 's' : ''}</span> backing {consensusShort} ML
-                  {hcFor > 0 ? <> with <span style={{ color: B.green, fontWeight: 700 }}>{hcFor} high-conviction sharp{hcFor !== 1 ? 's' : ''}</span> confirming.</> : '.'}
-                  {consensusLifetimePnl ? <> Combined <span style={{ color: B.green, fontWeight: 700 }}>+{fmtVol(consensusLifetimePnl)}</span> sports P&L.</> : ''}
-                  {pinnSuffix}{evSuffix}
-                </>
-              );
-            } else {
-              lead = (
-                <>
-                  {consensusWalletCount} sharp bettor{consensusWalletCount !== 1 ? 's' : ''} backing {consensusShort} ML
-                  {consensusInvestedAmt ? <>, <span style={{ color: B.gold, fontWeight: 700 }}>{fmtVol(consensusInvestedAmt)}</span> invested.</> : '.'}
-                  {consensusLifetimePnl ? <> Combined <span style={{ color: B.green, fontWeight: 700 }}>+{fmtVol(consensusLifetimePnl)}</span> sports P&L.</> : ''}
-                  {pinnSuffix}{evSuffix}
-                </>
-              );
-            }
+        {/* Concise narrative — proven winners + HC + P&L in one tight
+            line. Cancel/mute states invert to fading copy. */}
+        {(() => {
+          const fv = mlAgs?.featureValues ?? null;
+          const v8 = sr?.v8Scoring;
+          const forW = fv?.forCount ?? v8?.forW ?? 0;
+          const agW  = fv?.agCount  ?? v8?.agW  ?? 0;
+          const hcFor = fv?.forHcCount ?? 0;
+          const dCount = fv?.dCount ?? (forW - agW);
+          const sportUp = (gd.sport || '').toUpperCase();
+          const hStat = mlHealth?.status || 'ACTIVE';
+          const isMutedLive = hStat === 'MUTED';
+          const isCancelledLive = hStat === 'CANCELLED';
 
-            return (
+          let lead;
+          if (isCancelledLive) {
+            lead = (
               <>
-                <div style={{ ...T.micro, color: B.textSec, lineHeight: 1.5, marginTop: '0.15rem' }}>
-                  {lead}
-                </div>
-                {consensusAvgBet ? (
-                  <div style={{ ...T.micro, fontSize: '0.56rem', color: B.textMuted, marginTop: '0.25rem', letterSpacing: '0.03em' }}>
-                    avg {fmtVol(consensusAvgBet)}/bet across {consensusWalletCount} wallet{consensusWalletCount !== 1 ? 's' : ''}
-                  </div>
-                ) : null}
+                <span style={{ color: B.red, fontWeight: 700 }}>Signal killed</span> · {Math.abs(dCount)} proven {sportUp} winner{Math.abs(dCount) !== 1 ? 's' : ''} now against
               </>
             );
-          })()}
-        </div>
+          } else if (isMutedLive) {
+            lead = (
+              <>
+                <span style={{ color: '#F59E0B', fontWeight: 700 }}>Signal fading</span> · {agW > 0 ? <>{agW} {sportUp} winner{agW !== 1 ? 's' : ''} now against, {forW} still backing</> : <>sharp money collapsed off this side</>}
+              </>
+            );
+          } else if (forW > 0) {
+            const segs = [];
+            segs.push(<span key="w" style={{ color: displayMeta.color, fontWeight: 700 }}>{forW} proven {sportUp} winner{forW !== 1 ? 's' : ''}</span>);
+            if (hcFor > 0) segs.push(<span key="hc"> · <span style={{ color: B.green, fontWeight: 700 }}>{hcFor} HC sharp{hcFor !== 1 ? 's' : ''}</span></span>);
+            if (consensusLifetimePnl) segs.push(<span key="pnl"> · <span style={{ color: B.green, fontWeight: 700 }}>+{fmtVol(consensusLifetimePnl)}</span> P&L</span>);
+            if (pinnConfirms) segs.push(<span key="pc"> · <span style={{ color: B.green, fontWeight: 700 }}>Pinn confirms</span></span>);
+            lead = <>{segs}</>;
+          } else {
+            const segs = [];
+            segs.push(<span key="b">{consensusWalletCount} sharp{consensusWalletCount !== 1 ? 's' : ''} backing</span>);
+            if (consensusInvestedAmt) segs.push(<span key="inv"> · <span style={{ color: displayMeta.color, fontWeight: 700 }}>{fmtVol(consensusInvestedAmt)}</span> invested</span>);
+            if (consensusLifetimePnl) segs.push(<span key="pnl"> · <span style={{ color: B.green, fontWeight: 700 }}>+{fmtVol(consensusLifetimePnl)}</span> P&L</span>);
+            lead = <>{segs}</>;
+          }
 
-        {/* Middle: The actual bet */}
-        <div style={{
-          display: 'grid', gridTemplateColumns: (bestRetail || consensusOdds) ? '1fr auto 1fr' : '1fr',
-          gap: '0.625rem', alignItems: 'center',
-        }}>
-          <div>
-            <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.2rem' }}>
-              {consensusWalletCount} sharp{consensusWalletCount !== 1 ? 's' : ''} backing
+          return (
+            <div style={{
+              ...T.micro, fontSize: '0.66rem', color: B.textSec,
+              lineHeight: 1.4, marginBottom: '0.55rem',
+            }}>
+              {lead}
             </div>
-            <div style={{ ...T.heading, fontWeight: 900, color: B.text }}>
+          );
+        })()}
+
+        {/* HERO BET DISPLAY — the visual centerpiece of the card.
+            Two columns: team (left, big) / price + book (right, big).
+            Single quiet "BET AT" / "TRACK AT" / "BEST PRICE" caption. */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: (bestRetail || consensusOdds) ? '1fr auto' : '1fr',
+          gap: '0.75rem', alignItems: 'center',
+        }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{
+              fontSize: '1.35rem', fontWeight: 900, color: B.text,
+              lineHeight: 1.1, letterSpacing: '-0.01em',
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            }}>
               {consensusShort} ML
             </div>
             {pinnProb && (
-              <div style={{ ...T.micro, color: B.textSec, marginTop: '0.15rem' }}>
-                Fair value: {fmtOdds(consensusOdds)} ({(pinnProb * 100).toFixed(1)}%)
+              <div style={{
+                ...T.micro, fontSize: '0.58rem', color: B.textMuted,
+                marginTop: '0.2rem', letterSpacing: '0.03em',
+                fontFeatureSettings: "'tnum'",
+              }}>
+                fair {fmtOdds(consensusOdds)} · {(pinnProb * 100).toFixed(0)}% implied
               </div>
             )}
           </div>
           {(bestRetail || consensusOdds) && (
-            <>
-              <div style={{ width: '1px', height: '40px', background: B.borderSubtle }} />
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.2rem' }}>
-                  {displayState === 'PLAY' ? 'BET AT' : displayState === 'TRACKING' ? 'TRACK AT' : 'BEST PRICE'}
-                </div>
-                <div style={{
-                  ...T.heading, fontWeight: 900,
-                  color: hasEV ? B.green : B.text,
-                }}>
-                  {fmtOdds(bestRetail || consensusOdds)}
-                </div>
-                <div style={{ ...T.micro, color: B.textSec, marginTop: '0.15rem' }}>
-                  {bestBook || 'Pinnacle'}
-                </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{
+                fontSize: '1.5rem', fontWeight: 900,
+                color: hasEV ? B.green : B.text,
+                lineHeight: 1, letterSpacing: '-0.02em',
+                fontFeatureSettings: "'tnum'",
+              }}>
+                {fmtOdds(bestRetail || consensusOdds)}
               </div>
-            </>
+              <div style={{
+                ...T.micro, fontSize: '0.58rem',
+                color: B.textMuted, marginTop: '0.25rem',
+                letterSpacing: '0.04em', textTransform: 'uppercase',
+              }}>
+                {bestBook || 'Pinnacle'} · {displayState === 'PLAY' ? 'bet at' : displayState === 'TRACKING' ? 'track at' : 'best price'}
+              </div>
+            </div>
           )}
         </div>
 
-        {/* Risk / To Win — rendered only when displayState ships a real
-            stake (PLAY or TRACKING). Numbers come from `displayUnits`
-            (cron-stamped finalUnits, or v12 ladder fallback) so they
-            CANNOT disagree with the tier strip above. MUTED + PREVIEW
-            skip the row entirely instead of rendering "0.00u" noise. */}
+        {/* RISK / TO WIN — PLAY/TRACKING only. No tier pill on the
+            right (already shown in the header tier strip above). */}
         {(displayState === 'PLAY' || displayState === 'TRACKING') && displayUnits != null && displayUnits > 0 && (
           <div style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            marginTop: '0.5rem', padding: '0.35rem 0.5rem',
-            borderRadius: '6px',
+            display: 'grid', gridTemplateColumns: '1fr 1fr',
+            marginTop: '0.6rem', padding: '0.45rem 0.65rem',
+            borderRadius: '7px',
             background: displayMeta.bgSoft,
             border: `1px solid ${displayMeta.border}`,
+            gap: '0.5rem',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-              <span style={{ ...T.micro, color: B.textSec, letterSpacing: '0.04em' }}>RISK</span>
-              <span style={{ ...T.micro, fontWeight: 800, color: B.text, fontFeatureSettings: "'tnum'" }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
+              <span style={{
+                ...T.micro, fontSize: '0.55rem', color: B.textMuted,
+                letterSpacing: '0.08em',
+              }}>RISK</span>
+              <span style={{
+                fontSize: '0.95rem', fontWeight: 900, color: B.text,
+                fontFeatureSettings: "'tnum'", lineHeight: 1,
+              }}>
                 {displayUnits >= 1 ? displayUnits.toFixed(1) : displayUnits.toFixed(2)}u
               </span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-              <span style={{ ...T.micro, color: B.textSec, letterSpacing: '0.04em' }}>TO WIN</span>
-              <span style={{ ...T.micro, fontWeight: 800, color: B.green, fontFeatureSettings: "'tnum'" }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', justifyContent: 'flex-end' }}>
+              <span style={{
+                ...T.micro, fontSize: '0.55rem', color: B.textMuted,
+                letterSpacing: '0.08em',
+              }}>TO WIN</span>
+              <span style={{
+                fontSize: '0.95rem', fontWeight: 900, color: B.green,
+                fontFeatureSettings: "'tnum'", lineHeight: 1,
+              }}>
                 +{profitFromOdds(betOdds, displayUnits).toFixed(2)}u
               </span>
             </div>
-            <span style={{
-              ...T.micro, fontWeight: 800, color: displayMeta.color,
-              padding: '0.1rem 0.4rem', borderRadius: '4px',
-              background: displayMeta.bg,
-              letterSpacing: '0.06em',
-            }}>
-              {displayTier}
-            </span>
           </div>
         )}
 
