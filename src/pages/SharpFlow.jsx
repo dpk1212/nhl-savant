@@ -9152,26 +9152,31 @@ export default function SharpFlow() {
   const [sortBy, setSortBy] = useState('locked');
   const [lockedPicks, setLockedPicks] = useState({});
   const [allTimePnL, setAllTimePnL] = useState(null);
-  const [showPerf, setShowPerf] = useState(false); // V1 / pre-cutover archive — collapsed by default
-  const [perfDateRange, setPerfDateRange] = useState('all');
-  // AGS-U Performance Dashboard (new primary view, post-2026-05-14 cutover).
-  // Collapsed by default on page load — user can expand to drill into the
-  // monotonic-scoring performance breakdown.
+  // AGS-U Performance Dashboard. One bar covers everything now:
+  // v12-LIVE is the default scope; the user can toggle to ALL-TIME inside
+  // the expanded body to surface every pick ever graded (legacy stars +
+  // v9 + v10 + v11 + v12). The standalone Pre-v12 archive bar was retired
+  // 2026-06-11 per UX feedback ("I want 1 bar only").
   const [showAgsuPerf, setShowAgsuPerf] = useState(false);
+  // 'v12' (default, the live model since 2026-06-01) | 'all' (every era).
+  const [agsuEraScope, setAgsuEraScope] = useState('v12');
   const [agsuDateRange, setAgsuDateRange] = useState('all');
   const [agsuSport, setAgsuSport] = useState('ALL');
-  const [agsuMarket, setAgsuMarket] = useState('all');
-  const [showAgsuLedger, setShowAgsuLedger] = useState(true);
-  const [showAgsuProfit, setShowAgsuProfit] = useState(true);
+  // agsuMarket state dropped 2026-06-11 with the lay-user facelift —
+  // ML/Spread/Total drilldowns lived in a third pill row that overwhelmed
+  // the filter bar without earning its keep. If a power-user request
+  // brings it back, this is where the state and the filter clause go.
+  // Sub-sections inside the dashboard — all collapsed by default so the
+  // first impression is clean (era pills + filters + 4 KPIs + curve only).
+  const [showAgsuLedger, setShowAgsuLedger] = useState(false);
+  const [showAgsuProfit, setShowAgsuProfit] = useState(false);
+  const [showAgsuTiers, setShowAgsuTiers] = useState(false);
   const [lockedDay, setLockedDay] = useState('today');
   const [lockedStatusFilter, setLockedStatusFilter] = useState('all');
   const [lockedSort, setLockedSort] = useState('stars');
   const [lockedSportFilter, setLockedSportFilter] = useState('All');
   const [lockedMarketFilter, setLockedMarketFilter] = useState('all');
   const [showCancelled, setShowCancelled] = useState(false);
-  const [perfSport, setPerfSport] = useState('ALL');
-  const [perfMarket, setPerfMarket] = useState('all');
-  const [perfGrowth, setPerfGrowth] = useState('all');
   const [picksLoaded, setPicksLoaded] = useState(false);
   const [userPicks, setUserPicks] = useState({});
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
@@ -9202,11 +9207,11 @@ export default function SharpFlow() {
     // paywall (uses pregame totals), or the Locked Picks list (uses
     // `byAgsTier` for the post-cutover Q-tier scorecard). One fetch
     // serves them all; sessionStorage caches for 30 min.
-    if ((showPerf || showAgsuPerf || !isPremium || sortBy === 'locked') && !pnlLoadedRef.current) {
+    if ((showAgsuPerf || !isPremium || sortBy === 'locked') && !pnlLoadedRef.current) {
       pnlLoadedRef.current = true;
       loadAllTimePnL().then(setAllTimePnL);
     }
-  }, [showPerf, showAgsuPerf, isPremium, sortBy]);
+  }, [showAgsuPerf, isPremium, sortBy]);
 
 
   const onPickSynced = useCallback((docId, side, snap, meta, action) => {
@@ -9271,75 +9276,6 @@ export default function SharpFlow() {
     });
     toggleUserPick(user.uid, todayET(), gameKey, isAdding ? pickData : null).catch(console.warn);
   }, [user?.uid, userPicks]);
-
-  const filteredPnL = useMemo(() => {
-    if (!allTimePnL) return null;
-    const rawPicks = allTimePnL.picks || [];
-    const now = new Date();
-    const todayStr = now.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-    const yesterdayD = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const yesterdayStr = yesterdayD.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-    let cutoff = null;
-    if (perfDateRange === 'today') cutoff = todayStr;
-    else if (perfDateRange === 'yesterday') cutoff = yesterdayStr;
-    else if (perfDateRange === '7d') {
-      const d = new Date(now); d.setDate(d.getDate() - 7);
-      cutoff = d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-    } else if (perfDateRange === '30d') {
-      const d = new Date(now); d.setDate(d.getDate() - 30);
-      cutoff = d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-    }
-    const filtered = rawPicks.filter(p => {
-      if (p.cancelled) return false;
-      if (perfSport !== 'ALL' && p.sport !== perfSport) return false;
-      if (perfMarket !== 'all' && (p.marketType || 'ml') !== perfMarket) return false;
-      if (perfGrowth === 'topPick') {
-        // v14 — TOP PICK filter now matches the V7.2+ production badge
-        // (v8_topPick stamp). Falls back to the legacy starDelta ≥ 1.0
-        // heuristic for pre-v7.1 picks where the stamp is absent.
-        if (p.v8_topPick !== undefined) {
-          if (!p.v8_topPick) return false;
-        } else {
-          const delta = (p.lockStars != null && p.stars != null) ? p.stars - p.lockStars : 0;
-          if (delta < 1.0) return false;
-        }
-      } else if (perfGrowth === 'golden') {
-        const delta = (p.lockStars != null && p.stars != null) ? p.stars - p.lockStars : 0;
-        const evD = (p.peakEV != null && p.lockEV != null) ? p.peakEV - p.lockEV : 0;
-        if (delta < 1.0 || evD <= 0) return false;
-      }
-      if (perfDateRange === 'today') return p.date === todayStr;
-      if (perfDateRange === 'yesterday') return p.date === yesterdayStr;
-      if (cutoff) return p.date >= cutoff;
-      return true;
-    });
-    const starBucket = (s) => s >= 4.5 ? 5 : s >= 3.5 ? 4 : s >= 2.5 ? 3 : s >= 1.5 ? 2 : 1;
-    const emptyBucket = () => ({ wins: 0, losses: 0, pushes: 0, totalProfit: 0, totalUnits: 0, totalPicks: 0 });
-    let wins = 0, losses = 0, pushes = 0, totalProfit = 0, totalUnits = 0;
-    const byStars = {};
-    for (const p of filtered) {
-      const key = starBucket(p.stars);
-      if (!byStars[key]) byStars[key] = emptyBucket();
-      byStars[key].totalPicks++;
-      if (p.status !== 'COMPLETED' && !p.outcome) continue;
-      if (!p.outcome) continue;
-      const u = p.units || 1;
-      totalUnits += u;
-      byStars[key].totalUnits += u;
-      if (p.outcome === 'WIN') { wins++; totalProfit += p.profit; byStars[key].wins++; byStars[key].totalProfit += p.profit; }
-      else if (p.outcome === 'LOSS') { losses++; totalProfit -= u; byStars[key].losses++; byStars[key].totalProfit -= u; }
-      else if (p.outcome === 'PUSH') { pushes++; byStars[key].pushes++; }
-    }
-    for (const v of Object.values(byStars)) {
-      v.totalProfit = +v.totalProfit.toFixed(2);
-      v.record = `${v.wins}-${v.losses}${v.pushes > 0 ? `-${v.pushes}` : ''}`;
-      v.roi = v.totalUnits > 0 ? +((v.totalProfit / v.totalUnits) * 100).toFixed(1) : 0;
-    }
-    return {
-      pregame: { wins, losses, pushes, totalProfit: +totalProfit.toFixed(2), totalUnits, record: `${wins}-${losses}${pushes > 0 ? `-${pushes}` : ''}` },
-      byStars,
-    };
-  }, [allTimePnL, perfDateRange, perfSport, perfMarket, perfGrowth]);
 
   const allGames = useMemo(
     () => (polyData || kalshiData) ? buildGameData(polyData, kalshiData) : [],
@@ -11251,22 +11187,31 @@ export default function SharpFlow() {
                 if (typeof p.v8_lockTier === 'string' && AGS_TIER_META[p.v8_lockTier]) return p.v8_lockTier;
                 return null;
               };
+              // Era-aware scope: 'v12' (live model only, the default) vs
+              // 'all' (every pick ever graded, including legacy-stars era
+              // before AGS-U existed). In v12 scope we require both the
+              // date guard and a cron-resolved AGS-U tier — anything that
+              // didn't get a v8_agsTier or v8_lockTier stamp is excluded
+              // because v12 can't honestly own picks it never scored. In
+              // 'all' scope we include every non-cancelled pick; legacy
+              // stars-era picks lacking an AGS-U tier are tagged 'LEGACY'
+              // so they're counted in the headline KPIs but skipped in
+              // the AGS-U tier breakdown (which has no bucket for them).
               const rawAgsuPicks = ((allTimePnL?.picks || [])
                 .map(p => {
-                  if (!p.date || p.date < V12_LAUNCH) return null;
-                  if (p.cancelled) return null;
+                  if (!p || !p.date || p.cancelled) return null;
+                  if (agsuEraScope === 'v12' && p.date < V12_LAUNCH) return null;
                   const tier = resolveTier(p);
-                  if (!tier) return null;
-                  return { ...p, _resolvedTier: tier };
+                  if (agsuEraScope === 'v12' && !tier) return null;
+                  return { ...p, _resolvedTier: tier || 'LEGACY' };
                 })
                 .filter(Boolean));
-              const isAgsuFiltered = agsuDateRange !== 'all' || agsuSport !== 'ALL' || agsuMarket !== 'all';
+              const isAgsuFiltered = agsuDateRange !== 'all' || agsuSport !== 'ALL';
               const nowEt = new Date();
               const todayEt = nowEt.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
               const yesterdayEt = new Date(nowEt.getTime() - 86400000).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
               const passesAgsuFilter = (p) => {
                 if (agsuSport !== 'ALL' && p.sport !== agsuSport) return false;
-                if (agsuMarket !== 'all' && (p.marketType || 'ml') !== agsuMarket) return false;
                 if (agsuDateRange === 'all') return true;
                 if (agsuDateRange === 'today') return p.date === todayEt;
                 if (agsuDateRange === 'yesterday') return p.date === yesterdayEt;
@@ -11292,12 +11237,13 @@ export default function SharpFlow() {
               const liveRoi = totalUnitsLive > 0 ? ((totalProfitLive / totalUnitsLive) * 100) : 0;
               const recordTxt = `${liveWins}-${liveLosses}${livePushes > 0 ? `-${livePushes}` : ''}`;
 
-              // ─── CLV stats ─────────────────────────────────────────────
-              const clvPicks = agsuPicks.filter(p => p.clv != null && p.outcome);
-              const avgCLV = clvPicks.length > 0 ? clvPicks.reduce((s, p) => s + p.clv, 0) / clvPicks.length : null;
-              const beatClose = clvPicks.length > 0
-                ? Math.round((clvPicks.filter(p => p.clv > 0).length / clvPicks.length) * 100)
-                : null;
+              // CLV stats removed from the hero strip 2026-06-11 (jargon
+              // for lay users). If we add a "Pro view" disclosure later,
+              // the same one-line computation belongs there:
+              //   avgCLV    = mean(p.clv) across {p : p.clv != null && p.outcome}
+              //   beatClose = share where p.clv > 0
+              // Right now the equity curve carries the trend story
+              // adequately and CLV doesn't need to be in front of every user.
 
               // ─── Per-tier breakdown from filtered picks ────────────────
               // v12 ladder — absolute units, not multipliers.
@@ -11326,75 +11272,13 @@ export default function SharpFlow() {
                 b.sparkPnL.push(last + inc);
               }
 
-              // ─── Hero-strip cumulative profit sparkline (live only) ────
-              // PER-DAY aggregation, not per-pick. Previously each pick was
-              // plotted as a separate equally-spaced point, which visually
-              // stretched busy days and compressed idle days — equity curve
-              // shape was distorted by pick volume rather than calendar time.
-              // Now: one anchor per day at end-of-day cumulative, in
-              // chronological order. Same time = same horizontal slot.
-              const heroSpark = (() => {
-                const acc = new Map();  // date -> end-of-day cum
-                let cum = 0;
-                for (const p of sortedByDate) {
-                  if (p.tracked || !p.outcome) continue;
-                  cum += (p.outcome === 'WIN' ? (p.profit || 0) : p.outcome === 'LOSS' ? -p.units : 0);
-                  acc.set(p.date, cum);  // overwrite — last pick of the day wins
-                }
-                return [...acc.values()];
-              })();
-              const heroWinRateSpark = (() => {
-                const acc = new Map();
-                let w = 0, n = 0;
-                for (const p of sortedByDate) {
-                  if (p.tracked || !p.outcome) continue;
-                  if (p.outcome === 'WIN') w++;
-                  if (p.outcome === 'WIN' || p.outcome === 'LOSS') n++;
-                  if (n > 0) acc.set(p.date, w / n);
-                }
-                return [...acc.values()];
-              })();
-              const heroClvSpark = (() => {
-                const acc = new Map();
-                let s = 0, c = 0;
-                for (const p of sortedByDate) {
-                  if (p.clv == null) continue;
-                  s += p.clv; c++;
-                  acc.set(p.date, s / c);
-                }
-                return [...acc.values()];
-              })();
-
-              // ─── Inline sparkline component (SVG) ──────────────────────
-              const Sparkline = ({ data, color, height = 18, width = 64, baseline = null }) => {
-                if (!data || data.length < 2) return <div style={{ height, width }} />;
-                const min = Math.min(...data, baseline ?? Infinity);
-                const max = Math.max(...data, baseline ?? -Infinity);
-                const range = Math.max(0.0001, max - min);
-                const points = data.map((v, i) => {
-                  const x = (i / (data.length - 1)) * width;
-                  const y = height - ((v - min) / range) * height;
-                  return `${x.toFixed(1)},${y.toFixed(1)}`;
-                }).join(' ');
-                const baselineY = baseline != null ? height - ((baseline - min) / range) * height : null;
-                const last = data[data.length - 1];
-                const lastY = height - ((last - min) / range) * height;
-                const lastX = width;
-                return (
-                  <svg width={width} height={height} style={{ overflow: 'visible' }}>
-                    {baselineY != null && (
-                      <line x1={0} y1={baselineY} x2={width} y2={baselineY}
-                        stroke="rgba(255,255,255,0.10)" strokeWidth="1" strokeDasharray="2,2" />
-                    )}
-                    <polyline fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" points={points} opacity="0.9" />
-                    <circle cx={lastX} cy={lastY} r={2} fill={color} />
-                  </svg>
-                );
-              };
-
+              // Sparkline data + inline component removed 2026-06-11 with the
+              // hero-card facelift. At 64×18 they were unreadable; the
+              // expanded equity curve carries trend now. Profit/ROI colors
+              // are still computed for the hero KPI text and for the equity
+              // curve area fill.
               const heroProfitColor = totalProfitLive > 0 ? B.green : totalProfitLive < 0 ? B.red : B.textSec;
               const heroRoiColor = liveRoi > 0 ? B.green : liveRoi < 0 ? B.red : B.textSec;
-              const heroClvColor = avgCLV == null ? B.textMuted : avgCLV > 0 ? B.green : avgCLV < 0 ? B.red : B.textSec;
 
               // ─── Recent picks ledger (last 20 graded/pending, newest first) ──
               const ledgerRows = [...agsuPicks]
@@ -11421,6 +11305,16 @@ export default function SharpFlow() {
                 return { key: best, label: featureLabels[best], z: c[best] };
               };
 
+              // Era-aware copy. v12 = live model, ALL-TIME = every era
+              // lumped (legacy stars + v9/10/11 + v12) for a "full house"
+              // record the user can drill into without it ever feeling
+              // hidden.
+              const isV12Scope = agsuEraScope === 'v12';
+              const eraLabel = isV12Scope ? 'AGS-U v12' : 'AGS-U · All Time';
+              const eraSinceLabel = isV12Scope
+                ? `since ${V12_LAUNCH}`
+                : 'every era · stars · v9 · v10 · v11 · v12';
+
               return (
                 <div style={{ marginBottom: '1rem' }}>
                   {/* ── Collapsed/expanded header ──────────────────── */}
@@ -11435,24 +11329,26 @@ export default function SharpFlow() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
                       <span style={{
                         width: '7px', height: '7px', borderRadius: '50%',
-                        background: B.green,
-                        boxShadow: `0 0 10px ${B.green}, 0 0 4px ${B.green}`,
-                        animation: 'pulse 2s ease-in-out infinite',
+                        background: isV12Scope ? B.green : B.textMuted,
+                        boxShadow: isV12Scope ? `0 0 10px ${B.green}, 0 0 4px ${B.green}` : 'none',
+                        animation: isV12Scope ? 'pulse 2s ease-in-out infinite' : 'none',
                       }} />
                       <span style={{ ...T.micro, fontWeight: 900, color: B.gold, letterSpacing: '0.10em', textTransform: 'uppercase', fontSize: '0.72rem' }}>
-                        AGS-U v12
+                        {eraLabel}
                       </span>
-                      <span style={{
-                        ...T.micro, fontWeight: 800, fontSize: '0.55rem',
-                        padding: '0.1rem 0.35rem', borderRadius: '3px',
-                        color: B.green, background: B.greenDim,
-                        letterSpacing: '0.08em', textTransform: 'uppercase',
-                        border: `1px solid ${B.green}33`,
-                      }}>
-                        LIVE
-                      </span>
+                      {isV12Scope && (
+                        <span style={{
+                          ...T.micro, fontWeight: 800, fontSize: '0.55rem',
+                          padding: '0.1rem 0.35rem', borderRadius: '3px',
+                          color: B.green, background: B.greenDim,
+                          letterSpacing: '0.08em', textTransform: 'uppercase',
+                          border: `1px solid ${B.green}33`,
+                        }}>
+                          LIVE
+                        </span>
+                      )}
                       <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.58rem', letterSpacing: '0.04em' }}>
-                        since {V12_LAUNCH}
+                        {eraSinceLabel}
                       </span>
                       {hasData && (
                         <span style={{
@@ -11485,16 +11381,82 @@ export default function SharpFlow() {
                         background: 'linear-gradient(90deg, transparent 0%, rgba(212,175,55,0.5) 50%, transparent 100%)',
                       }} />
 
-                      {/* ── Filters bar ──────────────────────── */}
+                      {/* ── Era toggle ──────────────────────────────
+                          Two pills the user can flip between. v12 is the
+                          default and what the page is "advertising"; All
+                          Time is one click away so historical data is
+                          accessible without ever feeling buried. This is
+                          the load-bearing UX for "one bar covers
+                          everything" — DON'T move it below the fold. */}
+                      <div style={{
+                        display: 'flex', alignItems: 'center', gap: '0.5rem',
+                        marginBottom: '0.875rem', flexWrap: 'wrap',
+                      }}>
+                        <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem', letterSpacing: '0.08em', fontWeight: 700 }}>
+                          ERA
+                        </span>
+                        <div style={{
+                          display: 'inline-flex',
+                          padding: '0.18rem', borderRadius: '7px',
+                          background: 'rgba(0,0,0,0.35)',
+                          border: `1px solid ${B.borderSubtle}`,
+                          gap: '0.15rem',
+                        }}>
+                          {[
+                            { id: 'v12', label: 'v12 LIVE', sub: 'since Jun 1' },
+                            { id: 'all', label: 'All Time', sub: 'every era' },
+                          ].map(opt => {
+                            const active = agsuEraScope === opt.id;
+                            return (
+                              <button key={opt.id} onClick={() => setAgsuEraScope(opt.id)} style={{
+                                padding: '0.3rem 0.65rem', borderRadius: '5px', cursor: 'pointer',
+                                border: 'none',
+                                background: active
+                                  ? (opt.id === 'v12'
+                                      ? `linear-gradient(135deg, ${B.greenDim} 0%, rgba(16,185,129,0.05) 100%)`
+                                      : `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)`)
+                                  : 'transparent',
+                                boxShadow: active ? 'inset 0 0 0 1px rgba(255,255,255,0.06)' : 'none',
+                                transition: 'all 0.2s ease',
+                                display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.05rem',
+                              }}>
+                                <span style={{
+                                  ...T.micro, fontWeight: 900, fontSize: '0.62rem',
+                                  color: active ? (opt.id === 'v12' ? B.green : B.gold) : B.textSec,
+                                  letterSpacing: '0.06em', textTransform: 'uppercase',
+                                }}>
+                                  {opt.label}
+                                </span>
+                                <span style={{
+                                  ...T.micro, fontWeight: 600, fontSize: '0.5rem',
+                                  color: active ? B.textSec : B.textMuted,
+                                  letterSpacing: '0.04em',
+                                }}>
+                                  {opt.sub}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* ── Filters bar (slim) ─────────────────────
+                          Trimmed for the lay-user facelift: dropped the
+                          Yesterday / Since-Cutover date pills (rarely
+                          used) and the entire markets row (drilling
+                          ML/Spread/Total is power-user terrain). Keep
+                          date pills and sport pills — the two filters
+                          everyone reaches for. Power-user knobs can
+                          come back behind a "Refine" disclosure later
+                          if there's actual demand. */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
                         {[
                           { id: 'today', label: 'Today' },
-                          { id: 'yesterday', label: 'Yesterday' },
                           { id: '7d', label: '7D' },
-                          { id: 'all', label: 'Since Cutover' },
+                          { id: 'all', label: 'All' },
                         ].map(opt => (
                           <button key={opt.id} onClick={() => setAgsuDateRange(opt.id)} style={{
-                            padding: '0.2rem 0.55rem', borderRadius: '5px', cursor: 'pointer',
+                            padding: '0.22rem 0.6rem', borderRadius: '5px', cursor: 'pointer',
                             ...T.micro, fontWeight: 700, fontSize: '0.6rem',
                             border: agsuDateRange === opt.id ? `1px solid ${B.goldBorder}` : `1px solid ${B.border}`,
                             background: agsuDateRange === opt.id ? `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)` : 'transparent',
@@ -11502,7 +11464,7 @@ export default function SharpFlow() {
                             transition: 'all 0.2s ease',
                           }}>{opt.label}</button>
                         ))}
-                        <span style={{ width: '1px', height: '14px', background: B.border, margin: '0 0.125rem' }} />
+                        <span style={{ width: '1px', height: '14px', background: B.border, margin: '0 0.25rem' }} />
                         {[
                           { id: 'ALL', label: 'ALL', color: B.gold },
                           { id: 'MLB', label: 'MLB', color: '#E31837' },
@@ -11511,27 +11473,11 @@ export default function SharpFlow() {
                           { id: 'CBB', label: 'CBB', color: '#FF6B35' },
                         ].map(opt => (
                           <button key={opt.id} onClick={() => setAgsuSport(opt.id)} style={{
-                            padding: '0.2rem 0.5rem', borderRadius: '5px', cursor: 'pointer',
+                            padding: '0.22rem 0.55rem', borderRadius: '5px', cursor: 'pointer',
                             ...T.micro, fontWeight: 700, fontSize: '0.6rem',
                             border: agsuSport === opt.id ? `1px solid ${opt.color}55` : `1px solid ${B.border}`,
                             background: agsuSport === opt.id ? `${opt.color}18` : 'transparent',
                             color: agsuSport === opt.id ? opt.color : B.textMuted,
-                            transition: 'all 0.2s ease',
-                          }}>{opt.label}</button>
-                        ))}
-                        <span style={{ width: '1px', height: '14px', background: B.border, margin: '0 0.125rem' }} />
-                        {[
-                          { id: 'all', label: 'All Markets' },
-                          { id: 'ml', label: 'ML' },
-                          { id: 'spread', label: 'Spread' },
-                          { id: 'total', label: 'Total' },
-                        ].map(opt => (
-                          <button key={opt.id} onClick={() => setAgsuMarket(opt.id)} style={{
-                            padding: '0.2rem 0.5rem', borderRadius: '5px', cursor: 'pointer',
-                            ...T.micro, fontWeight: 700, fontSize: '0.6rem',
-                            border: agsuMarket === opt.id ? `1px solid ${B.goldBorder}` : `1px solid ${B.border}`,
-                            background: agsuMarket === opt.id ? B.goldDim : 'transparent',
-                            color: agsuMarket === opt.id ? B.gold : B.textMuted,
                             transition: 'all 0.2s ease',
                           }}>{opt.label}</button>
                         ))}
@@ -11545,7 +11491,15 @@ export default function SharpFlow() {
 
                       {hasData && (
                         <>
-                          {/* ── Band 1: Hero strip (4 cards w/ sparklines) ── */}
+                          {/* ── Band 1: Hero KPIs (4 clean cards) ──
+                              Sparklines removed: at 64×18px they're noise,
+                              not signal. The equity curve below carries
+                              the trend story for users who care; the KPI
+                              row is now four big legible numbers — exactly
+                              what a lay user needs to answer "is it
+                              winning?" in 1 second. Also swapped AVG CLV
+                              (jargon) for WIN % (universal). CLV lives
+                              under the equity-curve disclosure now. */}
                           <div style={{
                             display: 'grid',
                             gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
@@ -11553,190 +11507,299 @@ export default function SharpFlow() {
                           }}>
                             {/* RECORD */}
                             <div style={{
-                              padding: '0.75rem 0.875rem',
+                              padding: '0.85rem 0.95rem',
                               borderRadius: '8px',
                               background: 'linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(15,23,42,0.5) 100%)',
                               border: `1px solid ${B.borderSubtle}`,
-                              position: 'relative',
                             }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem' }}>
-                                <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.1em', fontSize: '0.55rem' }}>RECORD</span>
-                                <Sparkline data={heroWinRateSpark} color={B.gold} baseline={0.5} />
+                              <div style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.1em', fontSize: '0.55rem', marginBottom: '0.3rem' }}>
+                                RECORD
                               </div>
                               <div style={{
-                                fontSize: '1.6rem', fontWeight: 900, color: B.text, lineHeight: 1,
+                                fontSize: '1.7rem', fontWeight: 900, color: B.text, lineHeight: 1,
                                 fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
                               }}>
                                 {recordTxt}
                               </div>
-                              <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem', marginTop: '0.25rem' }}>
-                                {totalGradedLive} graded · {liveWinPct.toFixed(1)}%
+                              <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem', marginTop: '0.3rem' }}>
+                                {totalGradedLive} graded
                               </div>
                             </div>
 
-                            {/* ROI */}
+                            {/* WIN % */}
                             <div style={{
-                              padding: '0.75rem 0.875rem',
+                              padding: '0.85rem 0.95rem',
                               borderRadius: '8px',
                               background: 'linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(15,23,42,0.5) 100%)',
                               border: `1px solid ${B.borderSubtle}`,
-                              position: 'relative',
                             }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem' }}>
-                                <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.1em', fontSize: '0.55rem' }}>ROI</span>
-                                <Sparkline data={heroSpark} color={heroRoiColor} baseline={0} />
+                              <div style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.1em', fontSize: '0.55rem', marginBottom: '0.3rem' }}>
+                                WIN %
                               </div>
                               <div style={{
-                                fontSize: '1.6rem', fontWeight: 900, color: heroRoiColor, lineHeight: 1,
+                                fontSize: '1.7rem', fontWeight: 900, color: liveWinPct >= 52.4 ? B.green : liveWinPct >= 50 ? B.textSec : B.red, lineHeight: 1,
                                 fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
                               }}>
-                                {totalGradedLive === 0 ? '—' : `${liveRoi >= 0 ? '+' : ''}${liveRoi.toFixed(1)}%`}
+                                {totalGradedLive === 0 ? '—' : `${liveWinPct.toFixed(1)}%`}
                               </div>
-                              <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem', marginTop: '0.25rem' }}>
-                                {totalUnitsLive.toFixed(1)}u risked
+                              <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem', marginTop: '0.3rem' }}>
+                                vs 52.4% breakeven
                               </div>
                             </div>
 
                             {/* PROFIT */}
                             <div style={{
-                              padding: '0.75rem 0.875rem',
+                              padding: '0.85rem 0.95rem',
                               borderRadius: '8px',
                               background: 'linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(15,23,42,0.5) 100%)',
                               border: `1px solid ${B.borderSubtle}`,
-                              position: 'relative',
                             }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem' }}>
-                                <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.1em', fontSize: '0.55rem' }}>PROFIT</span>
-                                <Sparkline data={heroSpark} color={heroProfitColor} baseline={0} />
+                              <div style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.1em', fontSize: '0.55rem', marginBottom: '0.3rem' }}>
+                                PROFIT
                               </div>
                               <div style={{
-                                fontSize: '1.6rem', fontWeight: 900, color: heroProfitColor, lineHeight: 1,
+                                fontSize: '1.7rem', fontWeight: 900, color: heroProfitColor, lineHeight: 1,
                                 fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
                               }}>
                                 {totalGradedLive === 0 ? '—' : `${totalProfitLive >= 0 ? '+' : ''}${totalProfitLive.toFixed(2)}u`}
                               </div>
-                              <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem', marginTop: '0.25rem' }}>
+                              <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem', marginTop: '0.3rem' }}>
                                 {livePending > 0 ? `${livePending} pending` : trackedCount > 0 ? `${trackedCount} tracked` : 'all graded'}
                               </div>
                             </div>
 
-                            {/* CLV */}
+                            {/* ROI */}
                             <div style={{
-                              padding: '0.75rem 0.875rem',
+                              padding: '0.85rem 0.95rem',
                               borderRadius: '8px',
                               background: 'linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(15,23,42,0.5) 100%)',
                               border: `1px solid ${B.borderSubtle}`,
-                              position: 'relative',
                             }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem' }}>
-                                <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.1em', fontSize: '0.55rem' }}>AVG CLV</span>
-                                <Sparkline data={heroClvSpark} color={heroClvColor} baseline={0} />
+                              <div style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.1em', fontSize: '0.55rem', marginBottom: '0.3rem' }}>
+                                ROI
                               </div>
                               <div style={{
-                                fontSize: '1.6rem', fontWeight: 900, color: heroClvColor, lineHeight: 1,
+                                fontSize: '1.7rem', fontWeight: 900, color: heroRoiColor, lineHeight: 1,
                                 fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
                               }}>
-                                {avgCLV == null ? '—' : `${avgCLV > 0 ? '+' : ''}${(avgCLV*100).toFixed(2)}%`}
+                                {totalGradedLive === 0 ? '—' : `${liveRoi >= 0 ? '+' : ''}${liveRoi.toFixed(1)}%`}
                               </div>
-                              <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem', marginTop: '0.25rem' }}>
-                                {beatClose == null ? '—' : `${beatClose}% beat close · ${clvPicks.length} picks`}
+                              <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem', marginTop: '0.3rem' }}>
+                                {totalUnitsLive.toFixed(1)}u risked
                               </div>
                             </div>
                           </div>
 
-                          {/* ── Band 2: Refined tier matrix ── */}
-                          <div style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.1em', fontSize: '0.58rem', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
-                            By AGS-U Tier
-                          </div>
-                          <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : `repeat(${TIER_DEFS.length}, 1fr)`,
-                            gap: '0.5rem',
-                            marginBottom: '1rem',
-                          }}>
-                            {TIER_DEFS.map(t => {
+                          {/* ── Band 2: Best/Worst tier highlight ──
+                              Two cards instead of six. The lay user sees
+                              at a glance which conviction bucket is
+                              actually paying off and which one is
+                              dragging. "Show all tiers" expands the
+                              original 6-card matrix for power users.
+                              Best/Worst are chosen by ROI among tiers
+                              with at least 5 graded picks (smaller
+                              samples are too noisy to crown a "best").
+                              If no tier clears the threshold yet, we
+                              fall back to the highest-volume tier so
+                              the user always sees a concrete answer. */}
+                          {(() => {
+                            const MIN_GRADED = 5;
+                            const tierStats = TIER_DEFS.map(t => {
                               const b = tierAgg[t.key];
-                              const meta = AGS_TIER_META[t.key];
                               const graded = b.wins + b.losses + b.pushes;
-                              const tierRoi = b.units > 0 ? (b.profit / b.units) * 100 : 0;
-                              const winPct = (b.wins + b.losses) > 0 ? (b.wins / (b.wins + b.losses)) * 100 : null;
-                              const hasActivity = graded > 0 || b.pending > 0 || b.tracked > 0;
-                              const profitColor = b.profit > 0 ? B.green : b.profit < 0 ? B.red : B.textSec;
-                              const roiColor = tierRoi > 0 ? B.green : tierRoi < 0 ? B.red : B.textSec;
+                              const tierRoi = b.units > 0 ? (b.profit / b.units) * 100 : null;
+                              return { key: t.key, size: t.size, b, graded, tierRoi };
+                            });
+                            const qualified = tierStats.filter(s => s.graded >= MIN_GRADED && s.tierRoi != null);
+                            const fallback = tierStats.filter(s => s.graded > 0)
+                              .sort((a, b) => b.graded - a.graded);
+                            const best = qualified.length > 0
+                              ? [...qualified].sort((a, b) => b.tierRoi - a.tierRoi)[0]
+                              : fallback[0];
+                            const worst = qualified.length > 1
+                              ? [...qualified].sort((a, b) => a.tierRoi - b.tierRoi)[0]
+                              : null;
+                            const TierHighlight = ({ slot, stat, fallbackMsg }) => {
+                              if (!stat) {
+                                return (
+                                  <div style={{
+                                    padding: '0.7rem 0.85rem', borderRadius: '8px',
+                                    background: 'rgba(255,255,255,0.015)',
+                                    border: `1px solid ${B.borderSubtle}`,
+                                  }}>
+                                    <div style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.1em', fontSize: '0.55rem', marginBottom: '0.3rem' }}>
+                                      {slot}
+                                    </div>
+                                    <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.62rem', fontStyle: 'italic' }}>
+                                      {fallbackMsg}
+                                    </div>
+                                  </div>
+                                );
+                              }
+                              const meta = AGS_TIER_META[stat.key] || { label: stat.key, color: B.gold };
+                              const slotIsBest = slot === 'BEST TIER';
+                              const headColor = slotIsBest ? B.green : B.red;
                               return (
-                                <div key={t.key} style={{
-                                  padding: '0.6rem 0.7rem 0.55rem 0.85rem',
-                                  borderRadius: '8px',
-                                  background: hasActivity
-                                    ? 'linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(15,23,42,0.5) 100%)'
-                                    : 'rgba(255,255,255,0.015)',
-                                  border: `1px solid ${hasActivity ? `${meta.color}33` : B.borderSubtle}`,
-                                  opacity: hasActivity ? 1 : 0.45,
+                                <div style={{
+                                  padding: '0.7rem 0.85rem', borderRadius: '8px',
+                                  background: 'linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(15,23,42,0.5) 100%)',
+                                  border: `1px solid ${meta.color}33`,
                                   position: 'relative', overflow: 'hidden',
                                 }}>
-                                  {hasActivity && (
-                                    <div style={{
-                                      position: 'absolute', top: 0, bottom: 0, left: 0,
-                                      width: '3px', background: meta.color, boxShadow: `0 0 6px ${meta.color}66`,
-                                    }} />
-                                  )}
-                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.25rem', marginBottom: '0.4rem' }}>
-                                    <span style={{ ...T.micro, fontWeight: 900, color: meta.color, fontSize: '0.62rem', letterSpacing: '0.06em' }}>
+                                  <div style={{
+                                    position: 'absolute', top: 0, bottom: 0, left: 0,
+                                    width: '3px', background: meta.color, boxShadow: `0 0 6px ${meta.color}66`,
+                                  }} />
+                                  <div style={{
+                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                    marginBottom: '0.4rem', gap: '0.4rem',
+                                  }}>
+                                    <span style={{ ...T.micro, color: headColor, fontWeight: 800, letterSpacing: '0.1em', fontSize: '0.55rem' }}>
+                                      {slot}
+                                    </span>
+                                    <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>
+                                      {stat.graded} graded
+                                    </span>
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                    <span style={{ ...T.micro, fontWeight: 900, color: meta.color, fontSize: '0.85rem', letterSpacing: '0.05em' }}>
                                       {meta.label}
                                     </span>
-                                    <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem', fontWeight: 700, padding: '0.08rem 0.25rem', borderRadius: '3px', background: 'rgba(0,0,0,0.25)' }}>
-                                      {t.size}
-                                    </span>
-                                  </div>
-                                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.3rem', lineHeight: 1 }}>
-                                    <span style={{ fontSize: '1.15rem', fontWeight: 900, color: B.text, fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums' }}>
-                                      {b.wins}-{b.losses}{b.pushes > 0 ? `-${b.pushes}` : ''}
-                                    </span>
-                                  </div>
-                                  {/* Win-pct bar */}
-                                  {winPct != null && (
-                                    <div style={{
-                                      height: '3px', borderRadius: '2px', background: 'rgba(255,255,255,0.06)',
-                                      overflow: 'hidden', position: 'relative', margin: '0.35rem 0 0.3rem',
+                                    <span style={{
+                                      fontSize: '1.15rem', fontWeight: 900, color: B.text, lineHeight: 1,
+                                      fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
                                     }}>
-                                      <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: '1px', background: 'rgba(255,255,255,0.25)' }} />
-                                      <div style={{
-                                        height: '100%', width: `${winPct}%`, borderRadius: '2px',
-                                        background: winPct >= 50 ? `linear-gradient(90deg, ${B.green}, ${B.green}cc)` : `linear-gradient(90deg, ${B.red}, ${B.red}cc)`,
-                                      }} />
-                                    </div>
-                                  )}
-                                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.3rem', marginTop: '0.3rem' }}>
-                                    <span style={{ ...T.micro, fontWeight: 800, fontSize: '0.7rem', color: graded > 0 ? roiColor : B.textMuted, fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums' }}>
-                                      {graded === 0 ? '—' : `${tierRoi >= 0 ? '+' : ''}${tierRoi.toFixed(1)}%`}
+                                      {stat.b.wins}-{stat.b.losses}{stat.b.pushes > 0 ? `-${stat.b.pushes}` : ''}
                                     </span>
-                                    <span style={{ ...T.micro, fontWeight: 800, fontSize: '0.7rem', color: graded > 0 ? profitColor : B.textMuted, fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums' }}>
-                                      {graded === 0 ? '' : `${b.profit >= 0 ? '+' : ''}${b.profit.toFixed(2)}u`}
+                                    <span style={{
+                                      ...T.micro, fontWeight: 800, fontSize: '0.85rem',
+                                      color: stat.tierRoi != null && stat.tierRoi >= 0 ? B.green : B.red,
+                                      fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                                    }}>
+                                      {stat.tierRoi == null ? '—' : `${stat.tierRoi >= 0 ? '+' : ''}${stat.tierRoi.toFixed(1)}%`}
                                     </span>
                                   </div>
-                                  {b.sparkPnL.length >= 2 && (
-                                    <div style={{ marginTop: '0.3rem' }}>
-                                      <Sparkline data={b.sparkPnL} color={meta.color} baseline={0} width={isMobile ? 100 : 90} height={16} />
-                                    </div>
-                                  )}
-                                  {(b.pending > 0 || b.tracked > 0) && (
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.2rem', marginTop: '0.35rem' }}>
-                                      {b.pending > 0 && (
-                                        <span style={{ ...T.micro, fontWeight: 700, fontSize: '0.48rem', letterSpacing: '0.05em', padding: '0.08rem 0.25rem', borderRadius: '3px', color: B.textSec, background: 'rgba(255,255,255,0.04)' }}>
-                                          +{b.pending} PEND
-                                        </span>
-                                      )}
-                                      {b.tracked > 0 && (
-                                        <span style={{ ...T.micro, fontWeight: 700, fontSize: '0.48rem', letterSpacing: '0.05em', padding: '0.08rem 0.25rem', borderRadius: '3px', color: '#60A5FA', background: 'rgba(96,165,250,0.08)' }}>
-                                          +{b.tracked} TRK
-                                        </span>
-                                      )}
-                                    </div>
-                                  )}
+                                  <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem', marginTop: '0.3rem' }}>
+                                    {stat.b.profit >= 0 ? '+' : ''}{stat.b.profit.toFixed(2)}u profit{isV12Scope && stat.size ? ` · ${stat.size}/play` : ''}
+                                  </div>
                                 </div>
                               );
-                            })}
-                          </div>
+                            };
+                            return (
+                              <div style={{ marginBottom: '0.875rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                  <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.1em', fontSize: '0.58rem', textTransform: 'uppercase' }}>
+                                    Tier Performance
+                                  </span>
+                                  <button onClick={() => setShowAgsuTiers(p => !p)} style={{
+                                    background: 'transparent', border: 'none', cursor: 'pointer',
+                                    display: 'flex', alignItems: 'center', gap: '0.3rem',
+                                    padding: '0.1rem 0.3rem',
+                                  }}>
+                                    <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem', letterSpacing: '0.05em' }}>
+                                      {showAgsuTiers ? 'HIDE ALL TIERS' : 'SHOW ALL TIERS'}
+                                    </span>
+                                    {showAgsuTiers ? <ChevronUp size={11} color={B.textMuted} /> : <ChevronDown size={11} color={B.textMuted} />}
+                                  </button>
+                                </div>
+                                <div style={{
+                                  display: 'grid',
+                                  gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+                                  gap: '0.5rem',
+                                }}>
+                                  <TierHighlight slot="BEST TIER" stat={best} fallbackMsg={`No tier has ≥${MIN_GRADED} graded picks yet`} />
+                                  <TierHighlight slot="WORST TIER" stat={worst} fallbackMsg={`Need ≥${MIN_GRADED} graded picks in ≥2 tiers`} />
+                                </div>
+
+                                {showAgsuTiers && (
+                                  <div style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : `repeat(${TIER_DEFS.length}, 1fr)`,
+                                    gap: '0.5rem', marginTop: '0.625rem',
+                                  }}>
+                                    {TIER_DEFS.map(t => {
+                                      const b = tierAgg[t.key];
+                                      const meta = AGS_TIER_META[t.key];
+                                      const graded = b.wins + b.losses + b.pushes;
+                                      const tierRoi = b.units > 0 ? (b.profit / b.units) * 100 : 0;
+                                      const winPct = (b.wins + b.losses) > 0 ? (b.wins / (b.wins + b.losses)) * 100 : null;
+                                      const hasActivity = graded > 0 || b.pending > 0 || b.tracked > 0;
+                                      const profitColor = b.profit > 0 ? B.green : b.profit < 0 ? B.red : B.textSec;
+                                      const roiColor = tierRoi > 0 ? B.green : tierRoi < 0 ? B.red : B.textSec;
+                                      return (
+                                        <div key={t.key} style={{
+                                          padding: '0.55rem 0.65rem 0.5rem 0.8rem',
+                                          borderRadius: '7px',
+                                          background: hasActivity
+                                            ? 'linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(15,23,42,0.5) 100%)'
+                                            : 'rgba(255,255,255,0.015)',
+                                          border: `1px solid ${hasActivity ? `${meta.color}33` : B.borderSubtle}`,
+                                          opacity: hasActivity ? 1 : 0.45,
+                                          position: 'relative', overflow: 'hidden',
+                                        }}>
+                                          {hasActivity && (
+                                            <div style={{
+                                              position: 'absolute', top: 0, bottom: 0, left: 0,
+                                              width: '3px', background: meta.color, boxShadow: `0 0 6px ${meta.color}66`,
+                                            }} />
+                                          )}
+                                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.25rem', marginBottom: '0.35rem' }}>
+                                            <span style={{ ...T.micro, fontWeight: 900, color: meta.color, fontSize: '0.6rem', letterSpacing: '0.06em' }}>
+                                              {meta.label}
+                                            </span>
+                                            {isV12Scope && (
+                                              <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem', fontWeight: 700, padding: '0.08rem 0.25rem', borderRadius: '3px', background: 'rgba(0,0,0,0.25)' }}>
+                                                {t.size}
+                                              </span>
+                                            )}
+                                          </div>
+                                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.3rem', lineHeight: 1 }}>
+                                            <span style={{ fontSize: '1.05rem', fontWeight: 900, color: B.text, fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums' }}>
+                                              {b.wins}-{b.losses}{b.pushes > 0 ? `-${b.pushes}` : ''}
+                                            </span>
+                                          </div>
+                                          {winPct != null && (
+                                            <div style={{
+                                              height: '3px', borderRadius: '2px', background: 'rgba(255,255,255,0.06)',
+                                              overflow: 'hidden', position: 'relative', margin: '0.3rem 0 0.25rem',
+                                            }}>
+                                              <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: '1px', background: 'rgba(255,255,255,0.25)' }} />
+                                              <div style={{
+                                                height: '100%', width: `${winPct}%`, borderRadius: '2px',
+                                                background: winPct >= 50 ? `linear-gradient(90deg, ${B.green}, ${B.green}cc)` : `linear-gradient(90deg, ${B.red}, ${B.red}cc)`,
+                                              }} />
+                                            </div>
+                                          )}
+                                          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.3rem', marginTop: '0.25rem' }}>
+                                            <span style={{ ...T.micro, fontWeight: 800, fontSize: '0.68rem', color: graded > 0 ? roiColor : B.textMuted, fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums' }}>
+                                              {graded === 0 ? '—' : `${tierRoi >= 0 ? '+' : ''}${tierRoi.toFixed(1)}%`}
+                                            </span>
+                                            <span style={{ ...T.micro, fontWeight: 800, fontSize: '0.68rem', color: graded > 0 ? profitColor : B.textMuted, fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums' }}>
+                                              {graded === 0 ? '' : `${b.profit >= 0 ? '+' : ''}${b.profit.toFixed(2)}u`}
+                                            </span>
+                                          </div>
+                                          {(b.pending > 0 || b.tracked > 0) && (
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.2rem', marginTop: '0.3rem' }}>
+                                              {b.pending > 0 && (
+                                                <span style={{ ...T.micro, fontWeight: 700, fontSize: '0.48rem', letterSpacing: '0.05em', padding: '0.08rem 0.25rem', borderRadius: '3px', color: B.textSec, background: 'rgba(255,255,255,0.04)' }}>
+                                                  +{b.pending} PEND
+                                                </span>
+                                              )}
+                                              {b.tracked > 0 && (
+                                                <span style={{ ...T.micro, fontWeight: 700, fontSize: '0.48rem', letterSpacing: '0.05em', padding: '0.08rem 0.25rem', borderRadius: '3px', color: '#60A5FA', background: 'rgba(96,165,250,0.08)' }}>
+                                                  +{b.tracked} TRK
+                                                </span>
+                                              )}
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
 
                           {/* ── Band 4: Cumulative profit curve ──────────────────
                               All AGS-U live picks rolled up into one equity curve,
@@ -12109,7 +12172,9 @@ export default function SharpFlow() {
 
                           {/* Footer microcopy */}
                           <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.75rem', fontSize: '0.55rem', opacity: 0.6, textAlign: 'right' }}>
-                            {agsuPicks.length} pick{agsuPicks.length === 1 ? '' : 's'} since {V12_LAUNCH}{isAgsuFiltered ? ' · filtered' : ''}
+                            {agsuPicks.length} pick{agsuPicks.length === 1 ? '' : 's'}
+                            {isV12Scope ? ` since ${V12_LAUNCH}` : ' across every era'}
+                            {isAgsuFiltered ? ' · filtered' : ''}
                           </div>
                         </>
                       )}
@@ -12119,175 +12184,9 @@ export default function SharpFlow() {
               );
             })()}
 
-            {/* ─── Pre-v12 Archive (everything before v12 launch, lumped) ─── */}
-            {(() => {
-              const hasData = allTimePnL && (allTimePnL.picks?.length > 0);
-
-              // Fresh aggregation: every graded pick dated strictly BEFORE
-              // V12_LAUNCH, regardless of which retired model graded it
-              // (stars / v9 / v10 / v11). Heterogeneous internally but
-              // displayed as a single lumped bucket per the user's request.
-              const archivePicks = (allTimePnL?.picks || []).filter(p =>
-                p && p.date && p.date < V12_LAUNCH && !p.cancelled
-              );
-              let arW = 0, arL = 0, arP = 0, arProfit = 0, arUnits = 0;
-              for (const p of archivePicks) {
-                if (!p.outcome) continue;
-                const u = p.units || 1;
-                arUnits += u;
-                if (p.outcome === 'WIN') { arW++; arProfit += (p.profit || 0); }
-                else if (p.outcome === 'LOSS') { arL++; arProfit -= u; }
-                else if (p.outcome === 'PUSH') { arP++; }
-              }
-              const archiveTotalGraded = arW + arL + arP;
-              const archiveRecord = `${arW}-${arL}${arP > 0 ? `-${arP}` : ''}`;
-              const archiveWinPct = archiveTotalGraded > 0
-                ? ((arW / (arW + arL || 1)) * 100).toFixed(1)
-                : '0.0';
-              const archiveRoi = arUnits > 0 ? ((arProfit / arUnits) * 100).toFixed(1) : '0.0';
-              const archiveProfit = +arProfit.toFixed(2);
-
-              return (
-                <div style={{ marginBottom: '1rem' }}>
-                  <button onClick={() => setShowPerf(p => !p)} style={{
-                    width: '100%',
-                    // Neutral / muted styling — this is the archive, not the headline.
-                    // No gold border, no gold accent dot. Just a thin neutral chrome
-                    // so the user can drill in if they want, but the eye stays on the
-                    // v12 LIVE bar above.
-                    background: 'linear-gradient(135deg, rgba(21,25,35,0.6) 0%, rgba(26,31,46,0.4) 100%)',
-                    border: `1px solid ${B.borderSubtle}`,
-                    borderRadius: showPerf ? '8px 8px 0 0' : '8px',
-                    padding: '0.6rem 0.875rem',
-                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    opacity: showPerf ? 1 : 0.85,
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-                      <BarChart3 size={13} color={B.textMuted} />
-                      <span style={{ ...T.micro, fontWeight: 800, color: B.textSec, letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: '0.6rem' }}>
-                        Pre-v12 Archive
-                      </span>
-                      <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem', letterSpacing: '0.03em' }}>
-                        every retired model · pre {V12_LAUNCH}
-                      </span>
-                      {hasData ? (
-                        <span style={{
-                          ...T.micro, fontWeight: 700, color: B.textSec, fontSize: '0.62rem',
-                          background: 'rgba(255,255,255,0.03)', padding: '0.12rem 0.4rem', borderRadius: '3px',
-                          border: `1px solid ${B.borderSubtle}`,
-                          fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
-                        }}>
-                          {archiveRecord} · {archiveWinPct}% · {archiveProfit >= 0 ? '+' : ''}{archiveProfit.toFixed(1)}u
-                        </span>
-                      ) : showPerf ? (
-                        <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem' }}>Loading…</span>
-                      ) : null}
-                    </div>
-                    {showPerf ? <ChevronUp size={13} color={B.textMuted} /> : <ChevronDown size={13} color={B.textMuted} />}
-                  </button>
-
-                  {showPerf && !hasData && (
-                    <div style={{
-                      background: 'linear-gradient(135deg, rgba(21,25,35,0.95) 0%, rgba(26,31,46,0.8) 100%)',
-                      border: `1px solid ${B.border}`, borderTop: 'none',
-                      borderRadius: '0 0 10px 10px', padding: '2rem',
-                      marginTop: '-1px', textAlign: 'center',
-                    }}>
-                      <span style={{ ...T.label, color: B.textMuted }}>Loading performance data...</span>
-                    </div>
-                  )}
-
-                  {showPerf && hasData && (
-                    <div style={{
-                      background: 'linear-gradient(135deg, rgba(21,25,35,0.95) 0%, rgba(26,31,46,0.8) 100%)',
-                      border: `1px solid ${B.border}`, borderTop: 'none',
-                      borderRadius: '0 0 10px 10px', padding: '1rem',
-                      marginTop: '-1px',
-                    }}>
-                      {/* Lumped-bucket top-line: record / win% / profit / ROI.
-                          No filters here — the archive is reference data. Active
-                          slate filters belong on the v12 LIVE bar above. */}
-                      <div style={{
-                        display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
-                        gap: '0.5rem', marginBottom: '1rem',
-                      }}>
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ ...T.heading, color: B.text, fontSize: '1.1rem' }}>{archiveRecord}</div>
-                          <div style={{ ...T.micro, color: B.textMuted }}>RECORD</div>
-                        </div>
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ ...T.heading, color: B.textSec, fontSize: '1.1rem' }}>{archiveWinPct}%</div>
-                          <div style={{ ...T.micro, color: B.textMuted }}>WIN RATE</div>
-                        </div>
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ ...T.heading, color: archiveProfit >= 0 ? B.green : B.red, fontSize: '1.1rem' }}>
-                            {archiveProfit >= 0 ? '+' : ''}{archiveProfit.toFixed(1)}u
-                          </div>
-                          <div style={{ ...T.micro, color: B.textMuted }}>PROFIT</div>
-                        </div>
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ ...T.heading, color: Number(archiveRoi) >= 0 ? B.green : B.red, fontSize: '1.1rem' }}>
-                            {Number(archiveRoi) >= 0 ? '+' : ''}{archiveRoi}%
-                          </div>
-                          <div style={{ ...T.micro, color: B.textMuted }}>ROI</div>
-                        </div>
-                      </div>
-
-                      <div style={{ borderTop: `1px solid ${B.border}`, paddingTop: '0.75rem' }}>
-                        <div style={{
-                          ...T.micro, color: B.textMuted, marginBottom: '0.65rem',
-                          fontSize: '0.55rem', lineHeight: 1.5,
-                        }}>
-                          Heterogeneous sample: legacy stars-based picks (pre-2026-05-14),
-                          AGS-U v9, v10, and v11 picks (2026-05-14 → 2026-05-31). Sizing
-                          ladders, gating rules, and scoring functions differ across these
-                          eras — the lumped record reflects three retired systems, not the
-                          live v12 model.
-                        </div>
-
-                        <SharpFlowProfitChart picks={archivePicks} />
-
-                        {/* Pre-v12 CLV snapshot */}
-                        {(() => {
-                          const clvPicks = archivePicks.filter(p => p.clv != null && p.outcome);
-                          if (clvPicks.length === 0) return null;
-                          const avgCLV = clvPicks.reduce((s, p) => s + p.clv, 0) / clvPicks.length;
-                          const clvPositive = clvPicks.filter(p => p.clv > 0).length;
-                          const clvPosRate = (clvPositive / clvPicks.length * 100).toFixed(0);
-                          return (
-                            <div style={{ borderTop: `1px solid ${B.border}`, paddingTop: '0.75rem', marginTop: '0.75rem' }}>
-                              <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.5rem', fontWeight: 700, letterSpacing: '0.06em' }}>
-                                CLV — CLOSING LINE VALUE
-                              </div>
-                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
-                                <div style={{ textAlign: 'center', padding: '0.5rem', borderRadius: '6px', background: 'rgba(255,255,255,0.02)' }}>
-                                  <div style={{ ...T.heading, fontSize: '1rem', color: avgCLV > 0 ? B.green : avgCLV < 0 ? B.red : B.text }}>
-                                    {avgCLV > 0 ? '+' : ''}{(avgCLV * 100).toFixed(1)}%
-                                  </div>
-                                  <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>AVG CLV</div>
-                                </div>
-                                <div style={{ textAlign: 'center', padding: '0.5rem', borderRadius: '6px', background: 'rgba(255,255,255,0.02)' }}>
-                                  <div style={{ ...T.heading, fontSize: '1rem', color: Number(clvPosRate) >= 50 ? B.green : B.red }}>
-                                    {clvPosRate}%
-                                  </div>
-                                  <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>BEAT CLOSE</div>
-                                </div>
-                                <div style={{ textAlign: 'center', padding: '0.5rem', borderRadius: '6px', background: 'rgba(255,255,255,0.02)' }}>
-                                  <div style={{ ...T.heading, fontSize: '1rem', color: B.text }}>
-                                    {clvPicks.length}
-                                  </div>
-                                  <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>CLV PICKS</div>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
+            {/* Pre-v12 Archive bar removed 2026-06-11. All historical data
+                is now reachable through the v12 dashboard's era toggle
+                (v12 LIVE ↔ All Time). One bar, one source of truth. */}
 
             {/* ─── Sharp Positions Section ─── */}
             {/* v12 fix: always render this section. The Locked Picks list
