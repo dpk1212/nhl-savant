@@ -5176,7 +5176,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
             )}
             {isTrackedGrade && !isMuted && !isCancelled && !superseded && (
               <span
-                title={`TRACKED-ONLY — grader stamped result.tracked=true. Either the cron sized this play at 0u (AGS-U hard mute / FADE tier) or this is a legacy v6/v7 graded LEAN that shipped at 0u before AGS-U v9. The W/L outcome is informational; no money was at risk and no PnL is recorded.`}
+                title={`TRACKED-ONLY — this side was logged but auto-sized at 0u (AGS-U hard mute / FADE tier), or it's a legacy v6/v7 graded LEAN that shipped at 0u before AGS-U v9. The W/L outcome is informational; no money was at risk and no PnL is recorded.`}
                 style={{
                   ...T.micro, fontWeight: 800, letterSpacing: '0.05em',
                   padding: '0.15rem 0.5rem', borderRadius: '4px',
@@ -6132,7 +6132,7 @@ const AGS_V12_DISPLAY_META = Object.freeze({
   },
   PREVIEW: {
     pill: 'MONITORING',
-    headline: 'MONITORING — awaiting cron lock',
+    headline: 'MONITORING — awaiting auto-lock',
     color:  '#d4af37',                     // gold
     bg:     'rgba(212,175,55,0.06)',
     bgSoft: 'rgba(212,175,55,0.02)',
@@ -11678,7 +11678,14 @@ export default function SharpFlow() {
                                     background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(15,23,42,0.55) 100%)',
                                     border: `1px solid ${B.borderSubtle}`,
                                     display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+                                    position: 'relative', overflow: 'hidden',
+                                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.025)',
                                   }}>
+                                    <div style={{
+                                      position: 'absolute', top: 0, left: 0, width: '30%', height: '1px',
+                                      background: `linear-gradient(90deg, ${B.gold} 0%, transparent 100%)`,
+                                      opacity: 0.35, pointerEvents: 'none',
+                                    }} />
                                     <div style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.12em', fontSize: '0.52rem' }}>
                                       RECORD
                                     </div>
@@ -11701,7 +11708,14 @@ export default function SharpFlow() {
                                     background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(15,23,42,0.55) 100%)',
                                     border: `1px solid ${B.borderSubtle}`,
                                     display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+                                    position: 'relative', overflow: 'hidden',
+                                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.025)',
                                   }}>
+                                    <div style={{
+                                      position: 'absolute', top: 0, left: 0, width: '30%', height: '1px',
+                                      background: `linear-gradient(90deg, ${B.gold} 0%, transparent 100%)`,
+                                      opacity: 0.35, pointerEvents: 'none',
+                                    }} />
                                     <div style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.12em', fontSize: '0.52rem' }}>
                                       WIN %
                                     </div>
@@ -11726,7 +11740,14 @@ export default function SharpFlow() {
                                     background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(15,23,42,0.55) 100%)',
                                     border: `1px solid ${B.borderSubtle}`,
                                     display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+                                    position: 'relative', overflow: 'hidden',
+                                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.025)',
                                   }}>
+                                    <div style={{
+                                      position: 'absolute', top: 0, left: 0, width: '30%', height: '1px',
+                                      background: `linear-gradient(90deg, ${B.gold} 0%, transparent 100%)`,
+                                      opacity: 0.35, pointerEvents: 'none',
+                                    }} />
                                     <div style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.12em', fontSize: '0.52rem' }}>
                                       ROI
                                     </div>
@@ -11801,7 +11822,7 @@ export default function SharpFlow() {
                               const roiPositive = stat.tierRoi != null && stat.tierRoi >= 0;
                               return (
                                 <div style={{
-                                  padding: isMobile ? '0.85rem 0.95rem' : '0.95rem 1.05rem 0.9rem 1.1rem',
+                                  padding: isMobile ? '0.95rem 1rem' : '1.05rem 1.15rem 1rem 1.2rem',
                                   borderRadius: '10px',
                                   background: `linear-gradient(140deg, ${headTint} 0%, rgba(255,255,255,0.018) 35%, rgba(15,23,42,0.55) 100%)`,
                                   border: `1px solid ${meta.color}33`,
@@ -11813,50 +11834,65 @@ export default function SharpFlow() {
                                     position: 'absolute', top: 0, bottom: 0, left: 0,
                                     width: '3px', background: meta.color, boxShadow: `0 0 8px ${meta.color}99`,
                                   }} />
-                                  {/* Slot eyebrow + tier-name caption + trend icon */}
+                                  {/* Gold corner glint — mirrors hero/support card device for unity */}
+                                  <div style={{
+                                    position: 'absolute', top: 0, left: 0, width: '35%', height: '1px',
+                                    background: `linear-gradient(90deg, ${B.gold} 0%, transparent 100%)`,
+                                    opacity: 0.4, pointerEvents: 'none',
+                                  }} />
+                                  {/* Eyebrow row — slot caption (left) + trend icon (right).
+                                      Tier label moves below the ROI hero so the eyebrow line
+                                      reads cleanly as "BEST / WORST" without competing
+                                      typography. */}
                                   <div style={{
                                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                    marginBottom: '0.55rem', gap: '0.5rem',
+                                    marginBottom: '0.5rem', gap: '0.5rem',
                                   }}>
-                                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', flexWrap: 'wrap', minWidth: 0 }}>
-                                      <span style={{ ...T.micro, color: headColor, fontWeight: 900, letterSpacing: '0.12em', fontSize: '0.52rem' }}>
-                                        {slot}
-                                      </span>
-                                      <span style={{ ...T.micro, color: meta.color, fontWeight: 800, fontSize: '0.58rem', letterSpacing: '0.06em' }}>
-                                        {meta.label}{isV12Scope && stat.size ? ` · ${stat.size}/play` : ''}
-                                      </span>
-                                    </div>
+                                    <span style={{ ...T.micro, color: headColor, fontWeight: 900, letterSpacing: '0.12em', fontSize: '0.55rem' }}>
+                                      ◆ {slot}
+                                    </span>
                                     {roiPositive
                                       ? <TrendingUp size={13} color={B.green} />
                                       : <TrendingDown size={13} color={B.red} />}
                                   </div>
                                   {/* HERO: ROI as the big number */}
                                   <div style={{
-                                    fontSize: isMobile ? '1.85rem' : '2.1rem',
+                                    fontSize: isMobile ? '1.95rem' : '2.2rem',
                                     fontWeight: 900, lineHeight: 1, letterSpacing: '-0.02em',
                                     color: roiPositive ? B.green : B.red,
                                     fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
                                   }}>
                                     {stat.tierRoi == null ? '—' : `${stat.tierRoi >= 0 ? '+' : ''}${stat.tierRoi.toFixed(1)}%`}
                                   </div>
-                                  {/* Sub-line: record · profit · graded */}
+                                  {/* Tier identity caption — first thing after the hero number */}
                                   <div style={{
-                                    display: 'flex', alignItems: 'baseline', gap: '0.4rem',
-                                    marginTop: '0.45rem', flexWrap: 'wrap',
+                                    ...T.micro, fontWeight: 800, fontSize: '0.6rem',
+                                    color: meta.color, letterSpacing: '0.08em',
+                                    marginTop: '0.4rem',
+                                  }}>
+                                    {meta.label}{isV12Scope && stat.size ? <span style={{ color: B.textMuted, fontWeight: 600, letterSpacing: '0.04em' }}> · {stat.size}u/play</span> : null}
+                                  </div>
+                                  {/* Sub-line: record · profit · graded.
+                                      Reformatted into a single rhythmic line with consistent
+                                      muted dot separators and matched type sizes — eliminates
+                                      the visual "squeeze" the previous version had. */}
+                                  <div style={{
+                                    display: 'flex', alignItems: 'baseline', gap: '0.45rem',
+                                    marginTop: '0.3rem', flexWrap: 'wrap',
                                     fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
                                   }}>
                                     <span style={{ ...T.micro, color: B.text, fontWeight: 800, fontSize: '0.7rem' }}>
                                       {stat.b.wins}-{stat.b.losses}{stat.b.pushes > 0 ? `-${stat.b.pushes}` : ''}
                                     </span>
-                                    <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: B.textSubtle }} />
+                                    <span style={{ ...T.micro, color: B.textSubtle, fontSize: '0.65rem' }}>·</span>
                                     <span style={{
                                       ...T.micro, fontWeight: 800, fontSize: '0.7rem',
                                       color: stat.b.profit >= 0 ? B.green : B.red,
                                     }}>
                                       {stat.b.profit >= 0 ? '+' : ''}{stat.b.profit.toFixed(2)}u
                                     </span>
-                                    <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: B.textSubtle }} />
-                                    <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem' }}>
+                                    <span style={{ ...T.micro, color: B.textSubtle, fontSize: '0.65rem' }}>·</span>
+                                    <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.62rem' }}>
                                       {stat.graded} graded
                                     </span>
                                   </div>
@@ -11865,9 +11901,22 @@ export default function SharpFlow() {
                             };
                             return (
                               <div style={{ marginBottom: '0.875rem' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                  <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.1em', fontSize: '0.58rem', textTransform: 'uppercase' }}>
-                                    Tier Performance
+                                {/* Unified section header — ◆ eyebrow on the left,
+                                    expand toggle on the right, and a hairline gold
+                                    rule beneath. Same device used by Equity Curve
+                                    and Recent Picks below so the dashboard reads as
+                                    one document, not three stacked widgets. */}
+                                <div style={{
+                                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                  marginBottom: '0.45rem', paddingBottom: '0.4rem',
+                                  borderBottom: `1px solid ${B.borderSubtle}`,
+                                  backgroundImage: `linear-gradient(90deg, ${B.gold}22 0%, transparent 60%)`,
+                                  backgroundRepeat: 'no-repeat',
+                                  backgroundSize: '100% 1px',
+                                  backgroundPosition: 'bottom left',
+                                }}>
+                                  <span style={{ ...T.micro, color: B.gold, fontWeight: 900, letterSpacing: '0.12em', fontSize: '0.58rem' }}>
+                                    ◆ TIER PERFORMANCE
                                   </span>
                                   <button onClick={() => setShowAgsuTiers(p => !p)} style={{
                                     background: 'transparent', border: 'none', cursor: 'pointer',
@@ -12065,36 +12114,35 @@ export default function SharpFlow() {
                             const fmt$ = (n) => `$${Math.round(n).toLocaleString('en-US')}`;
                             return (
                               <div style={{ marginBottom: '1rem' }}>
+                                {/* Unified section header — ◆ eyebrow + tier label +
+                                    +profit chip + chevron, with the gold hairline rule.
+                                    Bankroll context (e.g. "$10k → $12.6k") moved off the
+                                    header onto a caption beneath the chart so the row
+                                    stays calm and matches the TIER PERFORMANCE header
+                                    rhythm above. */}
                                 <button onClick={() => setShowAgsuProfit(p => !p)} style={{
                                   width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                  padding: '0.6rem 0.85rem', borderRadius: '9px', cursor: 'pointer',
-                                  background: isProfit
-                                    ? 'linear-gradient(135deg, rgba(16,185,129,0.05) 0%, rgba(255,255,255,0.02) 50%, rgba(15,23,42,0.5) 100%)'
-                                    : 'rgba(255,255,255,0.02)',
-                                  border: `1px solid ${isProfit ? 'rgba(16,185,129,0.20)' : B.borderSubtle}`,
+                                  padding: '0.5rem 0.4rem 0.5rem 0.1rem', borderRadius: 0, cursor: 'pointer',
+                                  background: 'transparent',
+                                  border: 'none',
+                                  borderBottom: `1px solid ${B.borderSubtle}`,
+                                  backgroundImage: `linear-gradient(90deg, ${B.gold}22 0%, transparent 60%)`,
+                                  backgroundRepeat: 'no-repeat',
+                                  backgroundSize: '100% 1px',
+                                  backgroundPosition: 'bottom left',
                                   marginBottom: showAgsuProfit ? '0.5rem' : 0,
                                   transition: 'all 0.2s ease',
                                 }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                                    <TrendingUp size={14} color={isProfit ? B.green : B.red} />
-                                    <span style={{ ...T.micro, fontWeight: 800, color: B.text, letterSpacing: '0.06em', fontSize: '0.62rem', textTransform: 'uppercase' }}>
-                                      Equity Curve
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flexWrap: 'wrap' }}>
+                                    <span style={{ ...T.micro, color: B.gold, fontWeight: 900, letterSpacing: '0.12em', fontSize: '0.58rem' }}>
+                                      ◆ EQUITY CURVE
                                     </span>
                                     {curve.length > 0 && (
-                                      <>
-                                        <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>
-                                          · {totalPicks} graded · {curve.length} day{curve.length === 1 ? '' : 's'}
-                                        </span>
-                                        <span style={{
-                                          ...T.micro, color: B.textSec, fontSize: '0.55rem',
-                                          padding: '0.1rem 0.35rem', borderRadius: '3px',
-                                          background: 'rgba(0,0,0,0.25)',
-                                          border: `1px solid ${B.borderSubtle}`,
-                                          fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
-                                        }}>
-                                          {fmt$(STARTING_BANKROLL)} → <span style={{ color: isProfit ? B.green : B.red, fontWeight: 800 }}>{fmt$(dollarsCurrent)}</span> @ $100/u
-                                        </span>
-                                      </>
+                                      <span style={{ ...T.micro, color: B.textSec, fontSize: '0.58rem', letterSpacing: '0.04em' }}>
+                                        <span style={{ color: B.text, fontWeight: 800 }}>{totalPicks}</span> graded
+                                        <span style={{ color: B.textSubtle, margin: '0 0.35rem' }}>·</span>
+                                        <span style={{ color: B.text, fontWeight: 800 }}>{curve.length}</span> day{curve.length === 1 ? '' : 's'}
+                                      </span>
                                     )}
                                   </div>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -12266,7 +12314,7 @@ export default function SharpFlow() {
                                           flexWrap: 'wrap',
                                         }}>
                                           <span>
-                                            One point per day · end-of-day cumulative profit · {totalPicks} graded pick{totalPicks === 1 ? '' : 's'} across {curve.length} day{curve.length === 1 ? '' : 's'}
+                                            One point per day · end-of-day cumulative profit
                                           </span>
                                           {bestDay && worstDay && (
                                             <span style={{ fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums' }}>
@@ -12275,6 +12323,24 @@ export default function SharpFlow() {
                                               worst <span style={{ color: B.red, fontWeight: 700 }}>{worstDay.dayPnl.toFixed(2)}u</span> {worstDay.dateLabel}
                                             </span>
                                           )}
+                                        </div>
+                                        {/* Bankroll translation — moved out of the section
+                                            header so the eyebrow stays clean. This anchor
+                                            line tells the lay reader what {finalCum}u
+                                            actually means in dollars at a stable $100/u. */}
+                                        <div style={{
+                                          marginTop: '0.4rem',
+                                          padding: '0.4rem 0.55rem',
+                                          borderRadius: '6px',
+                                          background: 'rgba(255,255,255,0.018)',
+                                          border: `1px dashed ${B.borderSubtle}`,
+                                          fontSize: '0.56rem', color: B.textSec,
+                                          letterSpacing: '0.04em',
+                                          fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                                        }}>
+                                          <span style={{ color: B.textMuted, marginRight: '0.4rem' }}>BANKROLL LENS</span>
+                                          {fmt$(STARTING_BANKROLL)} → <span style={{ color: isProfit ? B.green : B.red, fontWeight: 800 }}>{fmt$(dollarsCurrent)}</span>
+                                          <span style={{ color: B.textMuted, marginLeft: '0.4rem' }}>at a steady $100/unit stake</span>
                                         </div>
                                       </>
                                     )}
@@ -12286,29 +12352,40 @@ export default function SharpFlow() {
 
                           {/* ── Band 5: Recent picks ledger (full width) ── */}
                           <div>
+                            {/* Recent Picks bar — uses the same unified section-header
+                                pattern as TIER PERFORMANCE and EQUITY CURVE above
+                                (◆ eyebrow + count chip + gold hairline). The card
+                                background is dropped when collapsed so the row reads
+                                as a section header rather than a third heavy panel. */}
                             <div style={{
-                              padding: '0.75rem 0.875rem',
+                              padding: showAgsuLedger ? '0.75rem 0.875rem' : '0',
                               borderRadius: '8px',
-                              background: 'rgba(15,23,42,0.4)',
-                              border: `1px solid ${B.borderSubtle}`,
+                              background: showAgsuLedger ? 'rgba(15,23,42,0.4)' : 'transparent',
+                              border: showAgsuLedger ? `1px solid ${B.borderSubtle}` : 'none',
                             }}>
                               <button
                                 onClick={() => setShowAgsuLedger(p => !p)}
                                 style={{
                                   width: '100%',
                                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                  padding: showAgsuLedger ? '0 0 0.4rem' : '0.5rem 0.4rem 0.5rem 0.1rem',
+                                  backgroundColor: 'transparent',
+                                  border: 'none', cursor: 'pointer',
+                                  borderBottom: `1px solid ${B.borderSubtle}`,
+                                  backgroundImage: `linear-gradient(90deg, ${B.gold}22 0%, transparent 60%)`,
+                                  backgroundRepeat: 'no-repeat',
+                                  backgroundSize: '100% 1px',
+                                  backgroundPosition: 'bottom left',
                                   marginBottom: showAgsuLedger ? '0.5rem' : 0,
-                                  paddingBottom: showAgsuLedger ? '0.4rem' : 0,
-                                  borderBottom: showAgsuLedger ? `1px solid ${B.borderSubtle}` : 'none',
-                                  background: 'transparent', border: 'none', cursor: 'pointer',
+                                  transition: 'all 0.2s ease',
                                 }}
                               >
-                                <span style={{ ...T.micro, color: B.gold, fontWeight: 900, letterSpacing: '0.1em', fontSize: '0.58rem', textTransform: 'uppercase' }}>
-                                  Recent AGS-U Picks
+                                <span style={{ ...T.micro, color: B.gold, fontWeight: 900, letterSpacing: '0.12em', fontSize: '0.58rem' }}>
+                                  ◆ RECENT AGS-U PICKS
                                 </span>
                                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                  <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>
-                                    {ledgerRows.length} of {agsuPicks.length}
+                                  <span style={{ ...T.micro, color: B.textSec, fontSize: '0.58rem', letterSpacing: '0.04em' }}>
+                                    <span style={{ color: B.text, fontWeight: 800 }}>{ledgerRows.length}</span> of {agsuPicks.length}
                                   </span>
                                   {showAgsuLedger ? <ChevronUp size={12} color={B.textMuted} /> : <ChevronDown size={12} color={B.textMuted} />}
                                 </span>
@@ -13669,7 +13746,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
     { label: `Conviction-sized auto-locks · 5u → 0.25u ladder`, sub: 'ELITE plays at 5u, weak edges at 0.25u, fades muted' },
     { label: '200+ sharp wallets tracked nightly', sub: 'Verified profitable accounts, refreshed 4× per day' },
     { label: 'Pinnacle fair odds + best-retail EV scoring', sub: 'Every lock is graded against closing-line value' },
-    { label: 'Full audit trail · every pick, every day', sub: 'Cron-stamped grading, no cherry-picked highlights' },
+    { label: 'Full audit trail · every pick, every day', sub: 'Auto-graded each night, no cherry-picking, no edits' },
     { label: 'Live market flow · tickets, money, whale action', sub: 'Reverse line moves and conviction alerts as they happen' },
   ] : [
     { label: 'Verified sharp bettor tracking in real time', sub: '200+ profitable wallets refreshed nightly' },
@@ -13719,35 +13796,11 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
             wall. If the PnL feed hasn't loaded yet, we still
             show premium chrome but skip the bragging numbers. */}
         {v12Proof.ready ? (
-          <div style={{
-            marginBottom: isMobile ? '1.5rem' : '1.75rem',
-            padding: isMobile ? '1.1rem 1.1rem 1rem' : '1.25rem 1.3rem 1.15rem',
-            borderRadius: '12px',
-            background: v12Proof.isProfit
-              ? `linear-gradient(140deg, rgba(16,185,129,0.10) 0%, rgba(255,255,255,0.018) 35%, rgba(15,23,42,0.55) 100%)`
-              : `linear-gradient(140deg, rgba(239,68,68,0.10) 0%, rgba(255,255,255,0.018) 35%, rgba(15,23,42,0.55) 100%)`,
-            border: `1px solid ${v12Proof.isProfit ? 'rgba(16,185,129,0.28)' : 'rgba(239,68,68,0.28)'}`,
-            boxShadow: v12Proof.isProfit
-              ? '0 8px 28px -10px rgba(16,185,129,0.25), inset 0 1px 0 rgba(255,255,255,0.04)'
-              : '0 8px 28px -10px rgba(239,68,68,0.25), inset 0 1px 0 rgba(255,255,255,0.04)',
-            position: 'relative', overflow: 'hidden',
-          }}>
-            {/* Gold corner glint — same device as the dashboard PROFIT card */}
+          <div style={{ marginBottom: isMobile ? '1.5rem' : '1.75rem' }}>
+            {/* Section eyebrow — matches dashboard "since launch" telemetry row. */}
             <div style={{
-              position: 'absolute', top: 0, left: 0, width: '40%', height: '1px',
-              background: `linear-gradient(90deg, ${B.gold} 0%, transparent 100%)`,
-              opacity: 0.5, pointerEvents: 'none',
-            }} />
-            <div style={{
-              position: 'absolute', top: 0, left: 0, width: '1px', height: '40%',
-              background: `linear-gradient(180deg, ${B.gold} 0%, transparent 100%)`,
-              opacity: 0.5, pointerEvents: 'none',
-            }} />
-
-            {/* LIVE eyebrow */}
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap',
-              marginBottom: '0.8rem',
+              display: 'flex', alignItems: 'center', gap: '0.6rem',
+              marginBottom: '0.65rem', flexWrap: 'wrap',
             }}>
               <span style={{
                 display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
@@ -13765,76 +13818,151 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
                 </span>
               </span>
               <span style={{ ...T.micro, color: B.gold, fontWeight: 900, letterSpacing: '0.12em', fontSize: '0.58rem' }}>
-                AGS-U v12 PERFORMANCE
+                ◆ AGS-U v12 PERFORMANCE
               </span>
-              <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem', letterSpacing: '0.05em' }}>
-                · last {v12Proof.daysLive} day{v12Proof.daysLive === 1 ? '' : 's'} · {v12Proof.totalGraded} graded
+              <span style={{ ...T.micro, color: B.textSec, fontSize: '0.58rem', letterSpacing: '0.05em' }}>
+                <span style={{ color: B.text, fontWeight: 800 }}>{v12Proof.daysLive}</span> day{v12Proof.daysLive === 1 ? '' : 's'} live
+                <span style={{ color: B.textSubtle, margin: '0 0.4rem' }}>·</span>
+                <span style={{ color: B.text, fontWeight: 800 }}>{v12Proof.totalGraded}</span> graded
               </span>
             </div>
 
-            {/* The four-up hero stat strip — record · win% · profit · ROI */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
-              gap: isMobile ? '0.7rem' : '1.1rem',
-              alignItems: 'baseline',
-            }}>
-              <div>
+            {/* ── Unified hero card ─────────────────────────────
+                Exact same 1-feature + 3-supporting shape as the
+                dashboard PROFIT card. The PROFIT feature spans
+                ~half the row with a gradient hero number and a
+                $-on-$100/u translation; RECORD / WIN% / ROI sit
+                as three small supporting cards on the right with
+                matching chrome (same border tone, same corner
+                glints, same inset highlight). Free users see
+                this and the logged-in dashboard hero are the
+                same object. */}
+            {(() => {
+              const dollarsPerUnit = 100;
+              const dollarProfit = v12Proof.profit * dollarsPerUnit;
+              const dollarSign = dollarProfit >= 0 ? '+$' : '-$';
+              const dollarFmt = Math.abs(dollarProfit).toLocaleString('en-US', { maximumFractionDigits: 0 });
+              const profitGradient = v12Proof.isProfit
+                ? `linear-gradient(135deg, ${B.green} 0%, #34D399 100%)`
+                : `linear-gradient(135deg, ${B.red} 0%, #F87171 100%)`;
+              const heroBg = v12Proof.isProfit
+                ? `linear-gradient(140deg, rgba(16,185,129,0.10) 0%, rgba(255,255,255,0.018) 35%, rgba(15,23,42,0.55) 100%)`
+                : `linear-gradient(140deg, rgba(239,68,68,0.10) 0%, rgba(255,255,255,0.018) 35%, rgba(15,23,42,0.55) 100%)`;
+              const heroBorder = v12Proof.isProfit ? 'rgba(16,185,129,0.28)' : 'rgba(239,68,68,0.28)';
+              const heroShadow = v12Proof.isProfit
+                ? '0 8px 28px -10px rgba(16,185,129,0.25), inset 0 1px 0 rgba(255,255,255,0.04)'
+                : '0 8px 28px -10px rgba(239,68,68,0.25), inset 0 1px 0 rgba(255,255,255,0.04)';
+              const supportCard = (eyebrow, value, valueColor, sub) => (
                 <div style={{
-                  fontSize: isMobile ? '1.55rem' : '1.85rem', fontWeight: 900, lineHeight: 1,
-                  letterSpacing: '-0.02em', color: B.text,
-                  fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                  padding: '0.7rem 0.8rem',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(15,23,42,0.55) 100%)',
+                  border: `1px solid ${B.borderSubtle}`,
+                  display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+                  position: 'relative', overflow: 'hidden',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.025)',
                 }}>
-                  {v12Proof.record}
+                  {/* Gold corner glint — matches the hero card device, scaled down */}
+                  <div style={{
+                    position: 'absolute', top: 0, left: 0, width: '30%', height: '1px',
+                    background: `linear-gradient(90deg, ${B.gold} 0%, transparent 100%)`,
+                    opacity: 0.35, pointerEvents: 'none',
+                  }} />
+                  <div style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.12em', fontSize: '0.52rem' }}>
+                    {eyebrow}
+                  </div>
+                  <div style={{
+                    fontSize: isMobile ? '1.2rem' : '1.35rem', fontWeight: 900,
+                    color: valueColor, lineHeight: 1.1,
+                    fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                    letterSpacing: '-0.01em', marginTop: '0.35rem',
+                  }}>
+                    {value}
+                  </div>
+                  <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem', marginTop: '0.25rem' }}>
+                    {sub}
+                  </div>
                 </div>
-                <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.12em', marginTop: '0.3rem' }}>
-                  RECORD
-                </div>
-              </div>
-              <div>
+              );
+              return (
                 <div style={{
-                  fontSize: isMobile ? '1.55rem' : '1.85rem', fontWeight: 900, lineHeight: 1,
-                  letterSpacing: '-0.02em',
-                  color: v12Proof.winPct >= 52.4 ? B.green : v12Proof.winPct >= 50 ? B.textSec : B.red,
-                  fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                  display: 'grid',
+                  gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1.05fr) minmax(0, 1fr)',
+                  gap: '0.7rem',
                 }}>
-                  {v12Proof.winPct.toFixed(1)}%
+                  {/* PROFIT — feature card */}
+                  <div style={{
+                    position: 'relative', overflow: 'hidden',
+                    padding: isMobile ? '1.1rem 1.1rem 1rem' : '1.25rem 1.3rem 1.15rem',
+                    borderRadius: '12px',
+                    background: heroBg,
+                    border: `1px solid ${heroBorder}`,
+                    boxShadow: heroShadow,
+                  }}>
+                    {/* Gold corner glints */}
+                    <div style={{
+                      position: 'absolute', top: 0, left: 0, width: '40%', height: '1px',
+                      background: `linear-gradient(90deg, ${B.gold} 0%, transparent 100%)`,
+                      opacity: 0.5, pointerEvents: 'none',
+                    }} />
+                    <div style={{
+                      position: 'absolute', top: 0, left: 0, width: '1px', height: '40%',
+                      background: `linear-gradient(180deg, ${B.gold} 0%, transparent 100%)`,
+                      opacity: 0.5, pointerEvents: 'none',
+                    }} />
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
+                      <span style={{
+                        ...T.micro, color: B.gold, fontWeight: 900,
+                        letterSpacing: '0.12em', fontSize: '0.55rem',
+                      }}>
+                        ◆ TOTAL PROFIT · v12 ERA
+                      </span>
+                      {v12Proof.isProfit
+                        ? <TrendingUp size={13} color={B.green} />
+                        : <TrendingDown size={13} color={B.red} />}
+                    </div>
+                    <div style={{
+                      fontSize: isMobile ? '2.4rem' : '2.85rem',
+                      fontWeight: 900, lineHeight: 1, letterSpacing: '-0.02em',
+                      fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                      background: profitGradient,
+                      WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text',
+                    }}>
+                      {v12Proof.isProfit ? '+' : ''}{v12Proof.profit.toFixed(2)}u
+                    </div>
+                    <div style={{
+                      ...T.micro, color: B.textSec, fontSize: '0.68rem',
+                      marginTop: '0.4rem', letterSpacing: '0.02em',
+                      fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                    }}>
+                      ≈ <span style={{ color: B.text, fontWeight: 800 }}>{dollarSign}{dollarFmt}</span> if you wagered <span style={{ color: B.textMuted }}>$100/unit</span>
+                    </div>
+                  </div>
+
+                  {/* Supporting trio */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gap: '0.5rem',
+                  }}>
+                    {supportCard('RECORD', v12Proof.record, B.text, `${v12Proof.totalGraded} graded`)}
+                    {supportCard(
+                      'WIN %',
+                      `${v12Proof.winPct.toFixed(1)}%`,
+                      v12Proof.winPct >= 52.4 ? B.green : v12Proof.winPct >= 50 ? B.textSec : B.red,
+                      'breakeven 52.4%'
+                    )}
+                    {supportCard(
+                      'ROI',
+                      `${v12Proof.roi >= 0 ? '+' : ''}${v12Proof.roi.toFixed(1)}%`,
+                      v12Proof.roi >= 0 ? B.green : B.red,
+                      `${v12Proof.units.toFixed(1)}u risked`
+                    )}
+                  </div>
                 </div>
-                <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.12em', marginTop: '0.3rem' }}>
-                  WIN %
-                </div>
-              </div>
-              <div>
-                <div style={{
-                  fontSize: isMobile ? '1.7rem' : '2.05rem', fontWeight: 900, lineHeight: 1,
-                  letterSpacing: '-0.02em',
-                  fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
-                  background: v12Proof.isProfit
-                    ? `linear-gradient(135deg, ${B.green} 0%, #34D399 100%)`
-                    : `linear-gradient(135deg, ${B.red} 0%, #F87171 100%)`,
-                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}>
-                  {v12Proof.isProfit ? '+' : ''}{v12Proof.profit.toFixed(2)}u
-                </div>
-                <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.12em', marginTop: '0.3rem' }}>
-                  PROFIT
-                </div>
-              </div>
-              <div>
-                <div style={{
-                  fontSize: isMobile ? '1.55rem' : '1.85rem', fontWeight: 900, lineHeight: 1,
-                  letterSpacing: '-0.02em',
-                  color: v12Proof.roi >= 0 ? B.green : B.red,
-                  fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
-                }}>
-                  {v12Proof.roi >= 0 ? '+' : ''}{v12Proof.roi.toFixed(1)}%
-                </div>
-                <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.12em', marginTop: '0.3rem' }}>
-                  ROI
-                </div>
-              </div>
-            </div>
+              );
+            })()}
           </div>
         ) : (
           /* Fallback hero — premium chrome without bragging numbers */
@@ -13897,8 +14025,8 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
             ...T.body, color: B.textSec, margin: '0 auto', maxWidth: '540px', lineHeight: 1.7,
           }}>
             {v12Proof.ready
-              ? <>The numbers above are <span style={{ color: B.text, fontWeight: 700 }}>live v12 picks</span>, graded by cron every night.
-                  Sharp Flow surfaces the same locks in real time — sized, tagged, and ready to bet.</>
+              ? <>The numbers above are <span style={{ color: B.text, fontWeight: 700 }}>real picks</span>, auto-graded every night
+                  against closing lines. Sharp Flow surfaces the same locks in real time — sized, tagged, and ready to bet.</>
               : <>We track <span style={{ color: B.text, fontWeight: 700 }}>200+ verified sharp bettors</span>, score every pick by conviction,
                   and auto-size the locks. Every result is graded the same way the dashboard above shows it.</>}
           </p>
@@ -14084,7 +14212,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
           }}>
             <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem' }}>✓ 5 days free</span>
             <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem' }}>✓ Cancel anytime</span>
-            <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem' }}>✓ Cron-graded picks</span>
+            <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem' }}>✓ Auto-graded results</span>
           </div>
         </div>
       </div>
