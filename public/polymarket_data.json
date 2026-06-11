@@ -2,14 +2,14 @@
   "CBB": {},
   "NHL": {
     "vgk_car": {
-      "volume24h": 236966.58553199988,
-      "liveVolume": 241055.49595699995,
-      "awayMoneyPct": 42,
-      "homeMoneyPct": 58,
-      "awayTicketPct": 50.8,
-      "homeTicketPct": 49.2,
-      "tradeCount": 1832,
-      "sampleCash": 131310,
+      "volume24h": 240789.8188189998,
+      "liveVolume": 242985.57141099998,
+      "awayMoneyPct": 42.1,
+      "homeMoneyPct": 57.9,
+      "awayTicketPct": 51.1,
+      "homeTicketPct": 48.9,
+      "tradeCount": 1891,
+      "sampleCash": 132339,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -287,7 +287,7 @@
             34.5,
             34.5,
             34.5,
-            34.5,
+            35.5,
             35.5,
             35.5,
             35.5,
@@ -344,15 +344,186 @@
     }
   },
   "MLB": {
+    "atl_cws": {
+      "volume24h": 70615.80393600001,
+      "liveVolume": 73092.53526399998,
+      "awayMoneyPct": 78,
+      "homeMoneyPct": 22,
+      "awayTicketPct": 71.7,
+      "homeTicketPct": 28.3,
+      "tradeCount": 541,
+      "sampleCash": 37841,
+      "priceMove1h": 236.4,
+      "priceHistory": {
+        "points": [
+          50,
+          16,
+          50,
+          50,
+          50,
+          50,
+          11,
+          50,
+          10,
+          11,
+          10,
+          11,
+          37
+        ],
+        "open": 50,
+        "current": 37,
+        "high": 52.5,
+        "low": 9,
+        "change": -13
+      },
+      "whales": {
+        "count": 6,
+        "totalCash": 23179,
+        "largest": 10511,
+        "buyCount": 6,
+        "sellCount": 0,
+        "topTrades": [
+          {
+            "amount": 10511,
+            "side": "BUY",
+            "outcome": "Over",
+            "price": 52,
+            "ts": 1781188138000,
+            "wallet": "0x16bb9951a36fce71e2ef57890b786145e0ba8492",
+            "traderName": "SDTrading"
+          },
+          {
+            "amount": 5343,
+            "side": "BUY",
+            "outcome": "Over",
+            "price": 52,
+            "ts": 1781188248000,
+            "wallet": "0x16bb9951a36fce71e2ef57890b786145e0ba8492",
+            "traderName": "SDTrading"
+          },
+          {
+            "amount": 2814,
+            "side": "BUY",
+            "outcome": "Chicago White Sox",
+            "price": 47,
+            "ts": 1781160526000,
+            "wallet": "0x1eaf5d5f822dc5211c25b5839e5b7aa70f319bf0",
+            "traderName": "LYnetLY"
+          },
+          {
+            "amount": 2578,
+            "side": "BUY",
+            "outcome": "Over",
+            "price": 52,
+            "ts": 1781183320000,
+            "wallet": "0x16bb9951a36fce71e2ef57890b786145e0ba8492",
+            "traderName": "SDTrading"
+          },
+          {
+            "amount": 1333,
+            "side": "BUY",
+            "outcome": "Over",
+            "price": 78,
+            "ts": 1781184103000,
+            "wallet": "0x204f72f35326db932158cba6adff0b9a1da95e14",
+            "traderName": "swisstony"
+          },
+          {
+            "amount": 600,
+            "side": "BUY",
+            "outcome": "Chicago White Sox",
+            "price": 32,
+            "ts": 1781187010000,
+            "wallet": "0x57b144a10d9e14945e812cedae176534455d4b99",
+            "traderName": "ivanshih888"
+          }
+        ]
+      },
+      "awayProb": 37,
+      "homeProb": 63,
+      "polySpread": {
+        "line": -3.5,
+        "title": "Spread -3.5",
+        "outcomes": [
+          "Atlanta Braves",
+          "Chicago White Sox"
+        ],
+        "probs": [
+          22,
+          78
+        ],
+        "priceHistory": {
+          "points": [
+            50,
+            21.5,
+            21.5,
+            22,
+            22,
+            22,
+            22,
+            22,
+            22,
+            22,
+            22,
+            22,
+            22
+          ],
+          "open": 50,
+          "current": 22,
+          "change": -28
+        }
+      },
+      "polyTotal": {
+        "line": 1,
+        "title": "1st 5 Innings O/U 5.5",
+        "outcomes": [
+          "Over",
+          "Under"
+        ],
+        "probs": [
+          40.5,
+          59.5
+        ],
+        "priceHistory": {
+          "points": [
+            50,
+            50,
+            50,
+            50,
+            50,
+            50,
+            49,
+            50.5,
+            50,
+            50,
+            50,
+            50.5,
+            48.5,
+            40.5
+          ],
+          "open": 50,
+          "current": 40.5,
+          "change": -9.5
+        }
+      },
+      "awayTeam": "Atlanta Braves",
+      "homeTeam": "Chicago White Sox",
+      "eventId": "562086",
+      "title": "Atlanta Braves vs. Chicago White Sox",
+      "commence": "2026-06-11T23:41:00Z",
+      "polyGameTime": "2026-06-11T23:40:00Z",
+      "polyGameDate": "2026-06-11",
+      "enrichmentFailed": false
+    },
     "stl_nym": {
-      "volume24h": 68366.301996,
-      "liveVolume": 69982.015058,
-      "awayMoneyPct": 18.4,
-      "homeMoneyPct": 81.6,
-      "awayTicketPct": 60,
-      "homeTicketPct": 40,
-      "tradeCount": 375,
-      "sampleCash": 38419,
+      "volume24h": 69587.41004700001,
+      "liveVolume": 71575.171534,
+      "awayMoneyPct": 19.8,
+      "homeMoneyPct": 80.2,
+      "awayTicketPct": 60.5,
+      "homeTicketPct": 39.5,
+      "tradeCount": 387,
+      "sampleCash": 39108,
       "priceMove1h": 170,
       "priceHistory": {
         "points": [
@@ -362,13 +533,12 @@
           50,
           50,
           50,
+          10.5,
           50,
-          50,
-          11,
           11.5,
           11.5,
-          10,
-          19,
+          10.5,
+          9.5,
           27
         ],
         "open": 50,
@@ -458,8 +628,8 @@
           }
         ]
       },
-      "awayProb": 19,
-      "homeProb": 81,
+      "awayProb": 27,
+      "homeProb": 73,
       "polySpread": {
         "line": 1,
         "title": "1st 5 Innings Spread -1.5",
@@ -484,7 +654,7 @@
             40.5,
             40.5,
             40.5,
-            39.5,
+            38.5,
             39.5
           ],
           "open": 50,
@@ -500,8 +670,8 @@
           "Under"
         ],
         "probs": [
-          52.5,
-          47.5
+          54.5,
+          45.5
         ],
         "priceHistory": {
           "points": [
@@ -512,12 +682,10 @@
             50,
             50,
             50.5,
-            50,
-            50,
             50.5,
             50,
             50,
-            52,
+            50,
             54.5
           ],
           "open": 50,
@@ -535,14 +703,14 @@
       "enrichmentFailed": false
     },
     "ari_mia": {
-      "volume24h": 63685.23772100001,
-      "liveVolume": 67468.824325,
-      "awayMoneyPct": 38.1,
-      "homeMoneyPct": 61.9,
-      "awayTicketPct": 78.3,
-      "homeTicketPct": 21.7,
-      "tradeCount": 1279,
-      "sampleCash": 34196,
+      "volume24h": 67262.50693199999,
+      "liveVolume": 70766.09140699999,
+      "awayMoneyPct": 41.1,
+      "homeMoneyPct": 58.9,
+      "awayTicketPct": 77.6,
+      "homeTicketPct": 22.4,
+      "tradeCount": 1326,
+      "sampleCash": 38306,
       "priceMove1h": 247.1,
       "priceHistory": {
         "points": [
@@ -552,13 +720,12 @@
           50,
           50,
           50,
+          11,
           50,
           50,
-          50,
-          11.5,
-          11.5,
-          9,
-          21.5,
+          12,
+          10,
+          8.5,
           29.5
         ],
         "open": 50,
@@ -568,10 +735,10 @@
         "change": -20.5
       },
       "whales": {
-        "count": 9,
-        "totalCash": 12102,
+        "count": 11,
+        "totalCash": 14593,
         "largest": 5217,
-        "buyCount": 8,
+        "buyCount": 10,
         "sellCount": 1,
         "topTrades": [
           {
@@ -582,6 +749,15 @@
             "ts": 1781186662000,
             "wallet": "0x2117ae94a97d69b78cbc81b6680a62deb1955c26",
             "traderName": "Zzzz87"
+          },
+          {
+            "amount": 1920,
+            "side": "BUY",
+            "outcome": "Over",
+            "price": 52,
+            "ts": 1781189784000,
+            "wallet": "0x84cfffc3f16dcc353094de30d4a45226eccd2f63",
+            "traderName": "mooseborzoi"
           },
           {
             "amount": 1653,
@@ -629,6 +805,15 @@
             "traderName": "ivanshih888"
           },
           {
+            "amount": 571,
+            "side": "BUY",
+            "outcome": "Miami Marlins",
+            "price": 53,
+            "ts": 1781189865000,
+            "wallet": "0x53757615de1c42b83f893b79d4241a009dc2aeea",
+            "traderName": null
+          },
+          {
             "amount": 552,
             "side": "BUY",
             "outcome": "Over",
@@ -657,8 +842,8 @@
           }
         ]
       },
-      "awayProb": 46.5,
-      "homeProb": 53.5,
+      "awayProb": 29.5,
+      "homeProb": 70.5,
       "polySpread": {
         "line": 1,
         "title": "1st 5 Innings Spread -1.5",
@@ -679,9 +864,9 @@
             34.5,
             34.5,
             34.5,
-            34.5,
             33.5,
             33.5,
+            34,
             34,
             34.5,
             34.5
@@ -711,10 +896,8 @@
             50,
             50,
             50,
-            48.5,
-            50,
-            50,
-            50,
+            50.5,
+            50.5,
             50,
             50,
             53.5
@@ -734,15 +917,15 @@
       "enrichmentFailed": false
     },
     "chc_col": {
-      "volume24h": 50709.819509999965,
-      "liveVolume": 52026.732209999995,
-      "awayMoneyPct": 36.2,
-      "homeMoneyPct": 63.8,
-      "awayTicketPct": 68.2,
-      "homeTicketPct": 31.8,
-      "tradeCount": 600,
-      "sampleCash": 23954,
-      "priceMove1h": -12.5,
+      "volume24h": 51924.59221299995,
+      "liveVolume": 54440.53803199999,
+      "awayMoneyPct": 37.6,
+      "homeMoneyPct": 62.4,
+      "awayTicketPct": 66.5,
+      "homeTicketPct": 33.5,
+      "tradeCount": 641,
+      "sampleCash": 25113,
+      "priceMove1h": 518.8,
       "priceHistory": {
         "points": [
           50,
@@ -751,20 +934,19 @@
           50,
           50,
           50,
-          50,
+          8,
           50,
           8.5,
           8,
-          8.5,
           8,
-          7.5,
-          7
+          8,
+          49.5
         ],
         "open": 50,
-        "current": 7,
+        "current": 49.5,
         "high": 50.5,
         "low": 7,
-        "change": -43
+        "change": -0.5
       },
       "whales": {
         "count": 2,
@@ -793,8 +975,8 @@
           }
         ]
       },
-      "awayProb": 7.5,
-      "homeProb": 92.5,
+      "awayProb": 7,
+      "homeProb": 93,
       "polySpread": {
         "line": 1,
         "title": "1st 5 Innings Spread -1.5",
@@ -846,13 +1028,12 @@
             50,
             50,
             50,
+            51,
+            50.5,
+            50.5,
             50,
-            49,
-            48.5,
-            49.5,
             50,
-            50,
-            47.5,
+            65.5,
             65.5
           ],
           "open": 50,
@@ -870,14 +1051,14 @@
       "enrichmentFailed": false
     },
     "lad_pit": {
-      "volume24h": 45741.745875000015,
-      "liveVolume": 52375.11992700001,
-      "awayMoneyPct": 68.2,
-      "homeMoneyPct": 31.8,
-      "awayTicketPct": 63.8,
-      "homeTicketPct": 36.2,
-      "tradeCount": 448,
-      "sampleCash": 28458,
+      "volume24h": 51604.29821400001,
+      "liveVolume": 55012.509464,
+      "awayMoneyPct": 67.5,
+      "homeMoneyPct": 32.5,
+      "awayTicketPct": 60.6,
+      "homeTicketPct": 39.4,
+      "tradeCount": 495,
+      "sampleCash": 29665,
       "priceMove1h": 144.4,
       "priceHistory": {
         "points": [
@@ -887,13 +1068,12 @@
           50,
           50,
           50,
+          10.5,
           50,
-          50,
+          10.5,
+          10.5,
           9.5,
-          10.5,
-          10.5,
           9,
-          29.5,
           22
         ],
         "open": 50,
@@ -992,8 +1172,8 @@
           }
         ]
       },
-      "awayProb": 29.5,
-      "homeProb": 70.5,
+      "awayProb": 22,
+      "homeProb": 78,
       "polySpread": {
         "line": 1,
         "title": "1st 5 Innings Spread -1.5",
@@ -1011,12 +1191,12 @@
             27.5,
             27.5,
             27.5,
-            26,
             27,
             27,
             27,
             27,
             27,
+            26.5,
             26.5,
             26.5,
             26.5
@@ -1045,12 +1225,13 @@
             50,
             50,
             49.5,
-            51,
             50,
+            49,
             49.5,
             49.5,
             49.5,
             49.5,
+            50,
             57.5
           ],
           "open": 50,
@@ -1068,15 +1249,15 @@
       "enrichmentFailed": false
     },
     "min_det": {
-      "volume24h": 44752.08688899999,
-      "liveVolume": 50284.443472,
-      "awayMoneyPct": 25.4,
-      "homeMoneyPct": 74.6,
-      "awayTicketPct": 61.7,
-      "homeTicketPct": 38.3,
-      "tradeCount": 358,
-      "sampleCash": 27366,
-      "priceMove1h": 216.7,
+      "volume24h": 50246.26165999999,
+      "liveVolume": 51904.861955,
+      "awayMoneyPct": 27.2,
+      "homeMoneyPct": 72.8,
+      "awayTicketPct": 62.1,
+      "homeTicketPct": 37.9,
+      "tradeCount": 388,
+      "sampleCash": 28642,
+      "priceMove1h": 127.8,
       "priceHistory": {
         "points": [
           50,
@@ -1085,26 +1266,25 @@
           50,
           50,
           50,
-          50,
+          11.5,
           50,
           11.5,
           11.5,
-          9.5,
           9,
-          20.5,
-          28.5
+          9,
+          20.5
         ],
         "open": 50,
-        "current": 28.5,
+        "current": 20.5,
         "high": 50,
         "low": 9,
-        "change": -21.5
+        "change": -29.5
       },
       "whales": {
-        "count": 6,
-        "totalCash": 18485,
+        "count": 7,
+        "totalCash": 19085,
         "largest": 7865,
-        "buyCount": 5,
+        "buyCount": 6,
         "sellCount": 1,
         "topTrades": [
           {
@@ -1160,11 +1340,20 @@
             "ts": 1781181961000,
             "wallet": "0x53757615de1c42b83f893b79d4241a009dc2aeea",
             "traderName": null
+          },
+          {
+            "amount": 600,
+            "side": "BUY",
+            "outcome": "Over",
+            "price": 60,
+            "ts": 1781189851000,
+            "wallet": "0xa8e6ee700bc6bd1db9fde4be07802c4e3b6ad471",
+            "traderName": "0xA8E6ee700bC6bD1db9FDE4BE07802C4E3B6aD471-1780786669697"
           }
         ]
       },
-      "awayProb": 45.5,
-      "homeProb": 54.5,
+      "awayProb": 28.5,
+      "homeProb": 71.5,
       "polySpread": {
         "line": 1,
         "title": "1st 5 Innings Spread -2.5",
@@ -1185,12 +1374,11 @@
             50,
             26,
             38.5,
-            38.5,
-            27.5,
+            26.5,
+            24.5,
             26,
             26,
-            37,
-            28,
+            37.5,
             26.5
           ],
           "open": 50,
@@ -1206,8 +1394,8 @@
           "Under"
         ],
         "probs": [
-          50,
-          50
+          46.5,
+          53.5
         ],
         "priceHistory": {
           "points": [
@@ -1217,13 +1405,12 @@
             50,
             50,
             49.5,
-            50,
+            48,
             51,
             51,
             50,
             50,
-            50,
-            50,
+            46.5,
             46.5
           ],
           "open": 50,
@@ -1240,185 +1427,15 @@
       "polyGameDate": "2026-06-11",
       "enrichmentFailed": false
     },
-    "atl_cws": {
-      "volume24h": 37779.877604,
-      "liveVolume": 70985.99059999999,
-      "awayMoneyPct": 78.8,
-      "homeMoneyPct": 21.2,
-      "awayTicketPct": 74.6,
-      "homeTicketPct": 25.4,
-      "tradeCount": 496,
-      "sampleCash": 36586,
-      "priceMove1h": 236.4,
-      "priceHistory": {
-        "points": [
-          50,
-          16,
-          50,
-          50,
-          50,
-          50,
-          50,
-          50,
-          10,
-          11,
-          11,
-          11,
-          37
-        ],
-        "open": 50,
-        "current": 37,
-        "high": 52.5,
-        "low": 9,
-        "change": -13
-      },
-      "whales": {
-        "count": 6,
-        "totalCash": 23179,
-        "largest": 10511,
-        "buyCount": 6,
-        "sellCount": 0,
-        "topTrades": [
-          {
-            "amount": 10511,
-            "side": "BUY",
-            "outcome": "Over",
-            "price": 52,
-            "ts": 1781188138000,
-            "wallet": "0x16bb9951a36fce71e2ef57890b786145e0ba8492",
-            "traderName": "SDTrading"
-          },
-          {
-            "amount": 5343,
-            "side": "BUY",
-            "outcome": "Over",
-            "price": 52,
-            "ts": 1781188248000,
-            "wallet": "0x16bb9951a36fce71e2ef57890b786145e0ba8492",
-            "traderName": "SDTrading"
-          },
-          {
-            "amount": 2814,
-            "side": "BUY",
-            "outcome": "Chicago White Sox",
-            "price": 47,
-            "ts": 1781160526000,
-            "wallet": "0x1eaf5d5f822dc5211c25b5839e5b7aa70f319bf0",
-            "traderName": "LYnetLY"
-          },
-          {
-            "amount": 2578,
-            "side": "BUY",
-            "outcome": "Over",
-            "price": 52,
-            "ts": 1781183320000,
-            "wallet": "0x16bb9951a36fce71e2ef57890b786145e0ba8492",
-            "traderName": "SDTrading"
-          },
-          {
-            "amount": 1333,
-            "side": "BUY",
-            "outcome": "Over",
-            "price": 78,
-            "ts": 1781184103000,
-            "wallet": "0x204f72f35326db932158cba6adff0b9a1da95e14",
-            "traderName": "swisstony"
-          },
-          {
-            "amount": 600,
-            "side": "BUY",
-            "outcome": "Chicago White Sox",
-            "price": 32,
-            "ts": 1781187010000,
-            "wallet": "0x57b144a10d9e14945e812cedae176534455d4b99",
-            "traderName": "ivanshih888"
-          }
-        ]
-      },
-      "awayProb": 37,
-      "homeProb": 63,
-      "polySpread": {
-        "line": -3.5,
-        "title": "Spread -3.5",
-        "outcomes": [
-          "Atlanta Braves",
-          "Chicago White Sox"
-        ],
-        "probs": [
-          22,
-          78
-        ],
-        "priceHistory": {
-          "points": [
-            50,
-            21.5,
-            21.5,
-            21.5,
-            21.5,
-            22,
-            22,
-            22,
-            22,
-            22,
-            22,
-            22,
-            22
-          ],
-          "open": 50,
-          "current": 22,
-          "change": -28
-        }
-      },
-      "polyTotal": {
-        "line": 1,
-        "title": "1st 5 Innings O/U 5.5",
-        "outcomes": [
-          "Over",
-          "Under"
-        ],
-        "probs": [
-          40.5,
-          59.5
-        ],
-        "priceHistory": {
-          "points": [
-            50,
-            50,
-            50,
-            50,
-            50,
-            49.5,
-            50,
-            49.5,
-            50,
-            50,
-            50,
-            50.5,
-            40.5
-          ],
-          "open": 50,
-          "current": 40.5,
-          "change": -9.5
-        }
-      },
-      "awayTeam": "Atlanta Braves",
-      "homeTeam": "Chicago White Sox",
-      "eventId": "562086",
-      "title": "Atlanta Braves vs. Chicago White Sox",
-      "commence": "2026-06-11T23:41:00Z",
-      "polyGameTime": "2026-06-11T23:40:00Z",
-      "polyGameDate": "2026-06-11",
-      "enrichmentFailed": false
-    },
     "tex_kcr": {
-      "volume24h": 31168.634943999998,
-      "liveVolume": 33866.799251,
-      "awayMoneyPct": 63.5,
-      "homeMoneyPct": 36.5,
-      "awayTicketPct": 70.6,
-      "homeTicketPct": 29.4,
-      "tradeCount": 435,
-      "sampleCash": 17414,
+      "volume24h": 32753.518256999996,
+      "liveVolume": 65316.377737999996,
+      "awayMoneyPct": 34.9,
+      "homeMoneyPct": 65.1,
+      "awayTicketPct": 68.9,
+      "homeTicketPct": 31.1,
+      "tradeCount": 501,
+      "sampleCash": 33842,
       "priceMove1h": 252.9,
       "priceHistory": {
         "points": [
@@ -1428,13 +1445,12 @@
           50,
           50,
           50,
-          50,
+          10,
           50,
           10,
           10,
           10,
           8.5,
-          22,
           30
         ],
         "open": 50,
@@ -1444,12 +1460,21 @@
         "change": -20
       },
       "whales": {
-        "count": 4,
-        "totalCash": 3739,
-        "largest": 1959,
-        "buyCount": 4,
+        "count": 5,
+        "totalCash": 18226,
+        "largest": 14486,
+        "buyCount": 5,
         "sellCount": 0,
         "topTrades": [
+          {
+            "amount": 14486,
+            "side": "BUY",
+            "outcome": "Kansas City Royals",
+            "price": 52,
+            "ts": 1781188972000,
+            "wallet": "0x16bb9951a36fce71e2ef57890b786145e0ba8492",
+            "traderName": "SDTrading"
+          },
           {
             "amount": 1959,
             "side": "BUY",
@@ -1488,8 +1513,8 @@
           }
         ]
       },
-      "awayProb": 22,
-      "homeProb": 78,
+      "awayProb": 30,
+      "homeProb": 70,
       "polySpread": {
         "line": 1,
         "title": "1st 5 Innings Spread -1.5",
@@ -1508,13 +1533,13 @@
             38.5,
             38.5,
             38.5,
-            39.5,
+            40.5,
             40,
             39.5,
             39,
-            39,
             38.5,
-            36.5,
+            38.5,
+            36,
             36
           ],
           "open": 50,
@@ -1530,8 +1555,8 @@
           "Under"
         ],
         "probs": [
-          51,
-          49
+          50,
+          50
         ],
         "priceHistory": {
           "points": [
@@ -1540,18 +1565,18 @@
             50,
             50,
             50,
-            50,
-            48,
-            51.5,
             49.5,
             50,
+            51.5,
             50,
             50,
-            61.5
+            50,
+            50.5,
+            62.5
           ],
           "open": 50,
-          "current": 61.5,
-          "change": 11.5
+          "current": 62.5,
+          "change": 12.5
         }
       },
       "awayTeam": "Texas Rangers",
@@ -1564,15 +1589,15 @@
       "enrichmentFailed": false
     },
     "sea_bal": {
-      "volume24h": 20910.697732000008,
-      "liveVolume": 22194.101904,
-      "awayMoneyPct": 50.4,
-      "homeMoneyPct": 49.6,
-      "awayTicketPct": 50.9,
-      "homeTicketPct": 49.1,
-      "tradeCount": 330,
-      "sampleCash": 11180,
-      "priceMove1h": 215.8,
+      "volume24h": 22185.542884000013,
+      "liveVolume": 24283.885022,
+      "awayMoneyPct": 48.8,
+      "homeMoneyPct": 51.2,
+      "awayTicketPct": 48.3,
+      "homeTicketPct": 51.7,
+      "tradeCount": 373,
+      "sampleCash": 12264,
+      "priceMove1h": 233.3,
       "priceHistory": {
         "points": [
           50,
@@ -1581,12 +1606,12 @@
           50,
           50,
           50,
+          11,
           50,
-          50,
-          11.5,
+          12,
           11,
           11,
-          29.5,
+          9.5,
           30
         ],
         "open": 50,
@@ -1655,8 +1680,8 @@
           "Under"
         ],
         "probs": [
-          50.5,
-          49.5
+          49,
+          51
         ],
         "priceHistory": {
           "points": [
@@ -1666,13 +1691,12 @@
             50,
             50,
             50.5,
+            50,
+            51.5,
             49,
-            49.5,
-            49.5,
             50,
             50,
-            50.5,
-            51,
+            48.5,
             48.5
           ],
           "open": 50,
@@ -1692,14 +1716,14 @@
   },
   "NBA": {
     "nyk_sas": {
-      "volume24h": 1251810.1722380065,
-      "liveVolume": 1260969.4913509998,
-      "awayMoneyPct": 62.8,
-      "homeMoneyPct": 37.2,
-      "awayTicketPct": 71.3,
-      "homeTicketPct": 28.7,
+      "volume24h": 1260190.2352980063,
+      "liveVolume": 1266307.1454329996,
+      "awayMoneyPct": 63.2,
+      "homeMoneyPct": 36.8,
+      "awayTicketPct": 71.1,
+      "homeTicketPct": 28.9,
       "tradeCount": 3500,
-      "sampleCash": 364720,
+      "sampleCash": 367698,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -1713,7 +1737,7 @@
           36,
           36,
           36,
-          36,
+          36.5,
           36,
           36
         ],
@@ -1725,10 +1749,10 @@
       },
       "whales": {
         "count": 75,
-        "totalCash": 209158,
+        "totalCash": 210955,
         "largest": 36146,
-        "buyCount": 72,
-        "sellCount": 3,
+        "buyCount": 73,
+        "sellCount": 2,
         "topTrades": [
           {
             "amount": 36146,
@@ -1920,6 +1944,15 @@
             "traderName": "macrosteaks"
           },
           {
+            "amount": 2622,
+            "side": "BUY",
+            "outcome": "Knicks",
+            "price": 36,
+            "ts": 1781189745000,
+            "wallet": "0xfb64650bccbf4804c9db00b10abb7fb205db5e23",
+            "traderName": "mantre"
+          },
+          {
             "amount": 2094,
             "side": "BUY",
             "outcome": "Knicks",
@@ -1945,15 +1978,6 @@
             "ts": 1781163937000,
             "wallet": "0x4453886425fdbcc900525755515244a66659dd3b",
             "traderName": "MasonFree"
-          },
-          {
-            "amount": 1944,
-            "side": "SELL",
-            "outcome": "Knicks",
-            "price": 35,
-            "ts": 1781163984000,
-            "wallet": "0x4453886425fdbcc900525755515244a66659dd3b",
-            "traderName": "MasonFree"
           }
         ]
       },
@@ -1974,7 +1998,7 @@
           "points": [
             50,
             73,
-            49.5,
+            73,
             49.5,
             49.5,
             49.5,
@@ -1982,14 +2006,14 @@
             49.5,
             49.5,
             48.5,
-            49,
-            46,
             47.5,
-            44.5
+            49,
+            42,
+            45
           ],
           "open": 50,
-          "current": 44.5,
-          "change": -5.5
+          "current": 45,
+          "change": -5
         }
       },
       "polyTotal": {
@@ -2034,5 +2058,5 @@
       "enrichmentFailed": false
     }
   },
-  "updatedAt": "2026-06-11T14:40:07.569Z"
+  "updatedAt": "2026-06-11T14:57:35.925Z"
 }
