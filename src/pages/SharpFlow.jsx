@@ -794,6 +794,15 @@ const QUALITY_CONTRIB_CUT = 30;   // T=30 — validated by V8_CONTRIBUTION_EDGE
 // to picks on or after this date — pre-cutover picks were graded
 // under the legacy v7.x ladders and don't share the same tier math.
 const AGS_U_CUTOVER = '2026-05-14';
+
+// V12_LAUNCH is the first date AGS-U v12 was authoritative in production.
+// The public performance surface uses this — not AGS_U_CUTOVER — as the
+// "what is the model doing right now" boundary. Picks on or after this
+// date were scored by v12's wallet-quality formula and absolute-units
+// ladder (5/3/1/0.5/0.25u). Picks before this date were scored by v9,
+// v10, or v11 (retired logistic-regression models) or by the legacy
+// stars system and are bucketed into the archive view.
+const V12_LAUNCH = '2026-06-01';
 //
 // Stubbed eligibility helpers below return `true` unconditionally so
 // any straggling caller that hasn't been swept will short-circuit to
@@ -11244,7 +11253,7 @@ export default function SharpFlow() {
               };
               const rawAgsuPicks = ((allTimePnL?.picks || [])
                 .map(p => {
-                  if (!p.date || p.date < AGS_U_CUTOVER) return null;
+                  if (!p.date || p.date < V12_LAUNCH) return null;
                   if (p.cancelled) return null;
                   const tier = resolveTier(p);
                   if (!tier) return null;
@@ -11291,12 +11300,13 @@ export default function SharpFlow() {
                 : null;
 
               // ─── Per-tier breakdown from filtered picks ────────────────
+              // v12 ladder — absolute units, not multipliers.
               const TIER_DEFS = [
-                { key: 'ELITE',   size: '2.00×' },
-                { key: 'PREMIUM', size: '1.50×' },
-                { key: 'LOCK',    size: '1.10×' },
-                { key: 'LEAN',    size: '0.50×' },
-                { key: 'WEAK',    size: '0.20×' },
+                { key: 'ELITE',   size: '5.00u' },
+                { key: 'PREMIUM', size: '3.00u' },
+                { key: 'LOCK',    size: '1.00u' },
+                { key: 'LEAN',    size: '0.50u' },
+                { key: 'WEAK',    size: '0.25u' },
                 { key: 'FADE',    size: '0' },
               ];
               const tierAgg = {};
@@ -11423,12 +11433,26 @@ export default function SharpFlow() {
                     cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: B.gold, boxShadow: `0 0 8px ${B.gold}` }} />
-                      <span style={{ ...T.micro, fontWeight: 900, color: B.gold, letterSpacing: '0.10em', textTransform: 'uppercase', fontSize: '0.7rem' }}>
-                        AGS-U Performance
+                      <span style={{
+                        width: '7px', height: '7px', borderRadius: '50%',
+                        background: B.green,
+                        boxShadow: `0 0 10px ${B.green}, 0 0 4px ${B.green}`,
+                        animation: 'pulse 2s ease-in-out infinite',
+                      }} />
+                      <span style={{ ...T.micro, fontWeight: 900, color: B.gold, letterSpacing: '0.10em', textTransform: 'uppercase', fontSize: '0.72rem' }}>
+                        AGS-U v12
+                      </span>
+                      <span style={{
+                        ...T.micro, fontWeight: 800, fontSize: '0.55rem',
+                        padding: '0.1rem 0.35rem', borderRadius: '3px',
+                        color: B.green, background: B.greenDim,
+                        letterSpacing: '0.08em', textTransform: 'uppercase',
+                        border: `1px solid ${B.green}33`,
+                      }}>
+                        LIVE
                       </span>
                       <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.58rem', letterSpacing: '0.04em' }}>
-                        since {AGS_U_CUTOVER} cutover
+                        since {V12_LAUNCH}
                       </span>
                       {hasData && (
                         <span style={{
@@ -12085,7 +12109,7 @@ export default function SharpFlow() {
 
                           {/* Footer microcopy */}
                           <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.75rem', fontSize: '0.55rem', opacity: 0.6, textAlign: 'right' }}>
-                            {agsuPicks.length} pick{agsuPicks.length === 1 ? '' : 's'} since {AGS_U_CUTOVER}{isAgsuFiltered ? ' · filtered' : ''}
+                            {agsuPicks.length} pick{agsuPicks.length === 1 ? '' : 's'} since {V12_LAUNCH}{isAgsuFiltered ? ' · filtered' : ''}
                           </div>
                         </>
                       )}
@@ -12095,18 +12119,33 @@ export default function SharpFlow() {
               );
             })()}
 
-            {/* ─── Pre-Cutover Archive (legacy V1 — stars-based conviction era) ─── */}
+            {/* ─── Pre-v12 Archive (everything before v12 launch, lumped) ─── */}
             {(() => {
               const hasData = allTimePnL && (allTimePnL.picks?.length > 0);
-              const fp = hasData ? (filteredPnL || { pregame: allTimePnL.pregame, byStars: allTimePnL.byStars }) : null;
-              const pnl = fp?.pregame || { wins: 0, losses: 0, pushes: 0, totalProfit: 0, totalUnits: 0, record: '—' };
-              const totalGraded = pnl.wins + pnl.losses + pnl.pushes;
-              const winPct = totalGraded > 0 ? ((pnl.wins / totalGraded) * 100).toFixed(1) : '0.0';
-              const roi = pnl.totalUnits > 0 ? ((pnl.totalProfit / pnl.totalUnits) * 100).toFixed(1) : '0.0';
-              const stars = fp?.byStars || {};
-              const isFiltered = perfDateRange !== 'all' || perfSport !== 'ALL' || perfMarket !== 'all' || perfGrowth !== 'all';
-              const dateLabels = { today: 'Today', yesterday: 'Yesterday', '7d': 'Last 7 Days', '30d': 'Last 30 Days', all: 'All Time' };
-              const growthLabels = { all: '', topPick: ' · ▲ Top Pick' };
+
+              // Fresh aggregation: every graded pick dated strictly BEFORE
+              // V12_LAUNCH, regardless of which retired model graded it
+              // (stars / v9 / v10 / v11). Heterogeneous internally but
+              // displayed as a single lumped bucket per the user's request.
+              const archivePicks = (allTimePnL?.picks || []).filter(p =>
+                p && p.date && p.date < V12_LAUNCH && !p.cancelled
+              );
+              let arW = 0, arL = 0, arP = 0, arProfit = 0, arUnits = 0;
+              for (const p of archivePicks) {
+                if (!p.outcome) continue;
+                const u = p.units || 1;
+                arUnits += u;
+                if (p.outcome === 'WIN') { arW++; arProfit += (p.profit || 0); }
+                else if (p.outcome === 'LOSS') { arL++; arProfit -= u; }
+                else if (p.outcome === 'PUSH') { arP++; }
+              }
+              const archiveTotalGraded = arW + arL + arP;
+              const archiveRecord = `${arW}-${arL}${arP > 0 ? `-${arP}` : ''}`;
+              const archiveWinPct = archiveTotalGraded > 0
+                ? ((arW / (arW + arL || 1)) * 100).toFixed(1)
+                : '0.0';
+              const archiveRoi = arUnits > 0 ? ((arProfit / arUnits) * 100).toFixed(1) : '0.0';
+              const archiveProfit = +arProfit.toFixed(2);
 
               return (
                 <div style={{ marginBottom: '1rem' }}>
@@ -12115,7 +12154,7 @@ export default function SharpFlow() {
                     // Neutral / muted styling — this is the archive, not the headline.
                     // No gold border, no gold accent dot. Just a thin neutral chrome
                     // so the user can drill in if they want, but the eye stays on the
-                    // AGS-U Performance Dashboard above.
+                    // v12 LIVE bar above.
                     background: 'linear-gradient(135deg, rgba(21,25,35,0.6) 0%, rgba(26,31,46,0.4) 100%)',
                     border: `1px solid ${B.borderSubtle}`,
                     borderRadius: showPerf ? '8px 8px 0 0' : '8px',
@@ -12126,10 +12165,10 @@ export default function SharpFlow() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
                       <BarChart3 size={13} color={B.textMuted} />
                       <span style={{ ...T.micro, fontWeight: 800, color: B.textSec, letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: '0.6rem' }}>
-                        Pre-Cutover Archive
+                        Pre-v12 Archive
                       </span>
                       <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem', letterSpacing: '0.03em' }}>
-                        legacy stars-based era · pre {AGS_U_CUTOVER}
+                        every retired model · pre {V12_LAUNCH}
                       </span>
                       {hasData ? (
                         <span style={{
@@ -12138,7 +12177,7 @@ export default function SharpFlow() {
                           border: `1px solid ${B.borderSubtle}`,
                           fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
                         }}>
-                          {pnl.record} · {winPct}% · {pnl.totalProfit >= 0 ? '+' : ''}{pnl.totalProfit.toFixed(1)}u
+                          {archiveRecord} · {archiveWinPct}% · {archiveProfit >= 0 ? '+' : ''}{archiveProfit.toFixed(1)}u
                         </span>
                       ) : showPerf ? (
                         <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem' }}>Loading…</span>
@@ -12165,196 +12204,52 @@ export default function SharpFlow() {
                       borderRadius: '0 0 10px 10px', padding: '1rem',
                       marginTop: '-1px',
                     }}>
-                      {/* Date range + Sport filters */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexWrap: 'wrap' }}>
-                          {[
-                            { id: 'today', label: 'Today' },
-                            { id: 'yesterday', label: 'Yesterday' },
-                            { id: '7d', label: '7D' },
-                            { id: '30d', label: '30D' },
-                            { id: 'all', label: 'All Time' },
-                          ].map(opt => (
-                            <button key={opt.id} onClick={() => setPerfDateRange(opt.id)} style={{
-                              padding: '0.2rem 0.5rem', borderRadius: '5px', cursor: 'pointer',
-                              ...T.micro, fontWeight: 700, fontSize: '0.6rem',
-                              border: perfDateRange === opt.id ? `1px solid ${B.goldBorder}` : `1px solid ${B.border}`,
-                              background: perfDateRange === opt.id ? `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)` : 'transparent',
-                              color: perfDateRange === opt.id ? B.gold : B.textMuted,
-                              transition: 'all 0.2s ease',
-                            }}>{opt.label}</button>
-                          ))}
-                          <span style={{ width: '1px', height: '14px', background: B.border, margin: '0 0.125rem' }} />
-                          {[
-                            { id: 'ALL', label: 'ALL', color: B.gold },
-                            { id: 'NHL', label: 'NHL', color: '#D4AF37' },
-                            { id: 'CBB', label: 'CBB', color: '#FF6B35' },
-                            { id: 'MLB', label: 'MLB', color: '#E31837' },
-                            { id: 'NBA', label: 'NBA', color: '#FF8C00' },
-                          ].map(opt => (
-                            <button key={opt.id} onClick={() => setPerfSport(opt.id)} style={{
-                              padding: '0.2rem 0.5rem', borderRadius: '5px', cursor: 'pointer',
-                              ...T.micro, fontWeight: 700, fontSize: '0.6rem',
-                              border: perfSport === opt.id ? `1px solid ${opt.color}33` : `1px solid ${B.border}`,
-                              background: perfSport === opt.id ? `${opt.color}18` : 'transparent',
-                              color: perfSport === opt.id ? opt.color : B.textMuted,
-                              transition: 'all 0.2s ease',
-                            }}>{opt.label}</button>
-                          ))}
-                          <span style={{ width: '1px', height: '14px', background: B.border, margin: '0 0.125rem' }} />
-                          {[
-                            { id: 'all', label: 'All Markets' },
-                            { id: 'ml', label: 'ML' },
-                            { id: 'spread', label: 'Spread' },
-                            { id: 'total', label: 'Total' },
-                          ].map(opt => (
-                            <button key={opt.id} onClick={() => setPerfMarket(opt.id)} style={{
-                              padding: '0.2rem 0.5rem', borderRadius: '5px', cursor: 'pointer',
-                              ...T.micro, fontWeight: 700, fontSize: '0.6rem',
-                              border: perfMarket === opt.id ? `1px solid ${opt.id === 'spread' ? '#8B5CF633' : opt.id === 'total' ? '#F59E0B33' : B.goldBorder}` : `1px solid ${B.border}`,
-                              background: perfMarket === opt.id ? (opt.id === 'spread' ? 'rgba(139,92,246,0.1)' : opt.id === 'total' ? 'rgba(245,158,11,0.1)' : B.goldDim) : 'transparent',
-                              color: perfMarket === opt.id ? (opt.id === 'spread' ? '#8B5CF6' : opt.id === 'total' ? '#F59E0B' : B.gold) : B.textMuted,
-                              transition: 'all 0.2s ease',
-                            }}>{opt.label}</button>
-                          ))}
-                          <span style={{ width: '1px', height: '14px', background: B.border, margin: '0 0.125rem' }} />
-                          <button onClick={() => setPerfGrowth(perfGrowth === 'topPick' ? 'all' : 'topPick')} style={{
-                            padding: '0.2rem 0.5rem', borderRadius: '5px', cursor: 'pointer',
-                            ...T.micro, fontWeight: 700, fontSize: '0.6rem',
-                            border: perfGrowth === 'topPick' ? '1px solid rgba(212,175,55,0.45)' : `1px solid ${B.border}`,
-                            background: perfGrowth === 'topPick' ? 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05))' : 'transparent',
-                            color: perfGrowth === 'topPick' ? '#D4AF37' : B.textMuted,
-                            transition: 'all 0.2s ease',
-                          }}>▲ Top Pick</button>
-                        </div>
-                      </div>
-
+                      {/* Lumped-bucket top-line: record / win% / profit / ROI.
+                          No filters here — the archive is reference data. Active
+                          slate filters belong on the v12 LIVE bar above. */}
                       <div style={{
                         display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
                         gap: '0.5rem', marginBottom: '1rem',
                       }}>
                         <div style={{ textAlign: 'center' }}>
-                          <div style={{ ...T.heading, color: B.text, fontSize: '1.1rem' }}>{pnl.record}</div>
+                          <div style={{ ...T.heading, color: B.text, fontSize: '1.1rem' }}>{archiveRecord}</div>
                           <div style={{ ...T.micro, color: B.textMuted }}>RECORD</div>
                         </div>
                         <div style={{ textAlign: 'center' }}>
-                          <div style={{ ...T.heading, color: B.green, fontSize: '1.1rem' }}>{winPct}%</div>
+                          <div style={{ ...T.heading, color: B.textSec, fontSize: '1.1rem' }}>{archiveWinPct}%</div>
                           <div style={{ ...T.micro, color: B.textMuted }}>WIN RATE</div>
                         </div>
                         <div style={{ textAlign: 'center' }}>
-                          <div style={{ ...T.heading, color: pnl.totalProfit >= 0 ? B.green : B.red, fontSize: '1.1rem' }}>
-                            {pnl.totalProfit >= 0 ? '+' : ''}{pnl.totalProfit.toFixed(1)}u
+                          <div style={{ ...T.heading, color: archiveProfit >= 0 ? B.green : B.red, fontSize: '1.1rem' }}>
+                            {archiveProfit >= 0 ? '+' : ''}{archiveProfit.toFixed(1)}u
                           </div>
                           <div style={{ ...T.micro, color: B.textMuted }}>PROFIT</div>
                         </div>
                         <div style={{ textAlign: 'center' }}>
-                          <div style={{ ...T.heading, color: Number(roi) >= 0 ? B.green : B.red, fontSize: '1.1rem' }}>
-                            {Number(roi) >= 0 ? '+' : ''}{roi}%
+                          <div style={{ ...T.heading, color: Number(archiveRoi) >= 0 ? B.green : B.red, fontSize: '1.1rem' }}>
+                            {Number(archiveRoi) >= 0 ? '+' : ''}{archiveRoi}%
                           </div>
                           <div style={{ ...T.micro, color: B.textMuted }}>ROI</div>
                         </div>
                       </div>
 
                       <div style={{ borderTop: `1px solid ${B.border}`, paddingTop: '0.75rem' }}>
-                        <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.5rem', fontWeight: 700, letterSpacing: '0.06em' }}>
-                          BY CONVICTION RATING
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-                          {[5, 4, 3, 2].map(n => {
-                            const s = stars[n];
-                            if (!s) return null;
-                            const starLabels = { 5: 'ELITE', 4: 'STRONG', 3: 'SOLID', 2: 'DEVELOPING' };
-                            const graded = s.wins + s.losses + s.pushes;
-                            const sWinPct = graded > 0 ? ((s.wins / graded) * 100).toFixed(0) : '—';
-                            return (
-                              <div key={n} style={{
-                                display: 'grid', gridTemplateColumns: '90px 1fr 60px 60px 60px',
-                                alignItems: 'center', gap: '0.5rem',
-                                padding: '0.4rem 0.5rem', borderRadius: '6px',
-                                background: n === 5 ? B.goldDim : 'rgba(255,255,255,0.02)',
-                                border: n === 5 ? `1px solid ${B.goldBorder}` : `1px solid transparent`,
-                              }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                  <span style={{ color: B.gold, fontSize: '0.65rem', letterSpacing: '-1px' }}>
-                                    {'★'.repeat(n)}{'☆'.repeat(5 - n)}
-                                  </span>
-                                </div>
-                                <div style={{
-                                  height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden',
-                                }}>
-                                  {graded > 0 && (
-                                    <div style={{
-                                      height: '100%', borderRadius: '2px', width: `${(s.wins / graded) * 100}%`,
-                                      background: `linear-gradient(90deg, ${B.green}, ${B.green}cc)`,
-                                    }} />
-                                  )}
-                                </div>
-                                <span style={{ ...T.micro, color: B.textSec, textAlign: 'right', fontFeatureSettings: "'tnum'" }}>
-                                  {s.record}
-                                </span>
-                                <span style={{ ...T.micro, color: graded > 0 ? B.text : B.textMuted, textAlign: 'right', fontFeatureSettings: "'tnum'" }}>
-                                  {sWinPct}{graded > 0 ? '%' : ''}
-                                </span>
-                                <span style={{
-                                  ...T.micro, textAlign: 'right', fontFeatureSettings: "'tnum'",
-                                  color: s.totalProfit > 0 ? B.green : s.totalProfit < 0 ? B.red : B.textMuted,
-                                }}>
-                                  {s.totalProfit > 0 ? '+' : ''}{s.totalProfit.toFixed(1)}u
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                        <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.5rem', fontSize: '0.55rem', opacity: 0.6 }}>
-                          {totalGraded} graded picks{isFiltered ? ` · ${dateLabels[perfDateRange]}${perfSport !== 'ALL' ? ` · ${perfSport}` : ''}${perfMarket !== 'all' ? ` · ${perfMarket.toUpperCase()}` : ''}${growthLabels[perfGrowth]}` : ' since Mar 16'}
+                        <div style={{
+                          ...T.micro, color: B.textMuted, marginBottom: '0.65rem',
+                          fontSize: '0.55rem', lineHeight: 1.5,
+                        }}>
+                          Heterogeneous sample: legacy stars-based picks (pre-2026-05-14),
+                          AGS-U v9, v10, and v11 picks (2026-05-14 → 2026-05-31). Sizing
+                          ladders, gating rules, and scoring functions differ across these
+                          eras — the lumped record reflects three retired systems, not the
+                          live v12 model.
                         </div>
 
-                        <SharpFlowProfitChart picks={(() => {
-                          const raw = (allTimePnL?.picks || []).filter(p => !p.cancelled);
-                          if (!isFiltered) return raw;
-                          return raw.filter(p => {
-                            if (perfSport !== 'ALL' && p.sport !== perfSport) return false;
-                            if (perfGrowth === 'topPick') {
-                              if (p.v8_topPick !== undefined) { if (!p.v8_topPick) return false; }
-                              else { const d = (p.lockStars != null ? p.stars - p.lockStars : 0); if (d < 1.0) return false; }
-                            }
-                            else if (perfGrowth === 'golden') { const d = (p.lockStars != null ? p.stars - p.lockStars : 0); const e = (p.peakEV != null && p.lockEV != null ? p.peakEV - p.lockEV : 0); if (d < 1.0 || e <= 0) return false; }
-                            if (perfDateRange === 'all') return true;
-                            const now = new Date();
-                            const todayS = now.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-                            const yesterdayS = new Date(now.getTime() - 86400000).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-                            if (perfDateRange === 'today') return p.date === todayS;
-                            if (perfDateRange === 'yesterday') return p.date === yesterdayS;
-                            const daysMap = { '7d': 7, '30d': 30 };
-                            if (daysMap[perfDateRange]) { const dd = new Date(now); dd.setDate(dd.getDate() - daysMap[perfDateRange]); return p.date >= dd.toLocaleDateString('en-CA', { timeZone: 'America/New_York' }); }
-                            return true;
-                          });
-                        })()} />
+                        <SharpFlowProfitChart picks={archivePicks} />
 
-                        {/* CLV Metrics */}
+                        {/* Pre-v12 CLV snapshot */}
                         {(() => {
-                          const rawP = fp?.pregame ? (filteredPnL ? (allTimePnL?.picks || []).filter(p => {
-                            if (perfSport !== 'ALL' && p.sport !== perfSport) return false;
-                            if (perfMarket !== 'all' && (p.marketType || 'ml') !== perfMarket) return false;
-                            if (perfGrowth === 'topPick') {
-                              if (p.v8_topPick !== undefined) { if (!p.v8_topPick) return false; }
-                              else { const d = (p.lockStars != null ? p.stars - p.lockStars : 0); if (d < 1.0) return false; }
-                            }
-                            else if (perfGrowth === 'golden') { const d = (p.lockStars != null ? p.stars - p.lockStars : 0); const e = (p.peakEV != null && p.lockEV != null ? p.peakEV - p.lockEV : 0); if (d < 1.0 || e <= 0) return false; }
-                            if (perfDateRange === 'all') return true;
-                            const now = new Date();
-                            const todayS = now.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-                            const yesterdayS = new Date(now.getTime() - 86400000).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-                            if (perfDateRange === 'today') return p.date === todayS;
-                            if (perfDateRange === 'yesterday') return p.date === yesterdayS;
-                            const daysMap = { '7d': 7, '30d': 30 };
-                            if (daysMap[perfDateRange]) {
-                              const d = new Date(now); d.setDate(d.getDate() - daysMap[perfDateRange]);
-                              return p.date >= d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-                            }
-                            return true;
-                          }) : allTimePnL?.picks || []) : [];
-                          const clvPicks = rawP.filter(p => p.clv != null && p.outcome);
+                          const clvPicks = archivePicks.filter(p => p.clv != null && p.outcome);
                           if (clvPicks.length === 0) return null;
                           const avgCLV = clvPicks.reduce((s, p) => s + p.clv, 0) / clvPicks.length;
                           const clvPositive = clvPicks.filter(p => p.clv > 0).length;
