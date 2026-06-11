@@ -1054,3 +1054,28 @@ p {
 .spinner {
   animation: spin 0.8s linear infinite;
 }
+
+/* ========================
+   AGS-U Dashboard — Ledger row hover lift
+   Used by the Recent AGS-U Picks ticket-style rows. Tiny rightward
+   translate + lifted background on hover makes the row feel
+   tactile/responsive without a heavy animation.
+   ======================== */
+.agsu-ledger-row:hover {
+  transform: translateX(2px);
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.012) 100%) !important;
+}
+
+/* ========================
+   SharpFlow Paywall — CTA hover halo
+   Green button gets a gold-aura on hover so the upgrade action
+   feels premium without disturbing the resting state. Matches the
+   gold/green duality the dashboard establishes.
+   ======================== */
+.sharpflow-paywall-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 32px rgba(16,185,129,0.50), 0 0 0 2px rgba(212,175,55,0.25), inset 0 1px 0 rgba(255,255,255,0.20) !important;
+}
+.sharpflow-paywall-cta:active {
+  transform: translateY(0);
+}

@@ -11372,14 +11372,37 @@ export default function SharpFlow() {
                       border: `1px solid ${B.border}`,
                       borderTop: 'none',
                       borderRadius: '0 0 10px 10px',
-                      padding: '1rem',
+                      padding: isMobile ? '1rem' : '1.25rem 1.25rem 1.1rem',
                       position: 'relative', overflow: 'hidden',
                     }}>
-                      {/* Subtle top accent line */}
+                      {/* Premium atmosphere ─────────────────────────
+                          Three stacked decorations give the body a sense
+                          of place instead of "another flat dark card":
+                          (1) a hairline gold-glint top accent,
+                          (2) a soft radial wash from top-center
+                              (gold→transparent at 4% opacity) — works
+                              like stage lighting on the hero KPIs,
+                          (3) a faint inset bottom shadow for depth.
+                          All decorative, pointerEvents: 'none' so they
+                          never block clicks. */}
                       <div style={{
                         position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
-                        background: 'linear-gradient(90deg, transparent 0%, rgba(212,175,55,0.5) 50%, transparent 100%)',
+                        background: 'linear-gradient(90deg, transparent 0%, rgba(212,175,55,0.55) 50%, transparent 100%)',
+                        pointerEvents: 'none',
                       }} />
+                      <div style={{
+                        position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
+                        width: '70%', height: '260px',
+                        background: 'radial-gradient(ellipse at top, rgba(212,175,55,0.045) 0%, rgba(212,175,55,0.018) 35%, transparent 70%)',
+                        pointerEvents: 'none', zIndex: 0,
+                      }} />
+                      <div style={{
+                        position: 'absolute', bottom: 0, left: 0, right: 0, height: '60px',
+                        background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.25) 100%)',
+                        pointerEvents: 'none', zIndex: 0,
+                      }} />
+                      {/* All real content sits above the atmosphere */}
+                      <div style={{ position: 'relative', zIndex: 1 }}>
 
                       {/* ── Era toggle ──────────────────────────────
                           Two pills the user can flip between. v12 is the
@@ -11491,104 +11514,238 @@ export default function SharpFlow() {
 
                       {hasData && (
                         <>
-                          {/* ── Band 1: Hero KPIs (4 clean cards) ──
-                              Sparklines removed: at 64×18px they're noise,
-                              not signal. The equity curve below carries
-                              the trend story for users who care; the KPI
-                              row is now four big legible numbers — exactly
-                              what a lay user needs to answer "is it
-                              winning?" in 1 second. Also swapped AVG CLV
-                              (jargon) for WIN % (universal). CLV lives
-                              under the equity-curve disclosure now. */}
-                          <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
-                            gap: '0.625rem', marginBottom: '1rem',
-                          }}>
-                            {/* RECORD */}
-                            <div style={{
-                              padding: '0.85rem 0.95rem',
-                              borderRadius: '8px',
-                              background: 'linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(15,23,42,0.5) 100%)',
-                              border: `1px solid ${B.borderSubtle}`,
-                            }}>
-                              <div style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.1em', fontSize: '0.55rem', marginBottom: '0.3rem' }}>
-                                RECORD
-                              </div>
+                          {/* ── Eyebrow: "since launch" telemetry strip ──
+                              Tiny tabular run that prefaces the hero KPIs.
+                              Gives the user a one-glance scale check: how
+                              long has this been live, how many graded, how
+                              much wagered. Premium dashboards always
+                              answer "how big is the sample?" before the
+                              headline number — otherwise the headline
+                              feels unearned. */}
+                          {(() => {
+                            const daysLive = (() => {
+                              if (agsuPicks.length === 0) return null;
+                              const dates = agsuPicks.map(p => p.date).filter(Boolean).sort();
+                              if (dates.length === 0) return null;
+                              try {
+                                const first = new Date(dates[0] + 'T12:00:00').getTime();
+                                const last = new Date(dates[dates.length - 1] + 'T12:00:00').getTime();
+                                return Math.max(1, Math.round((last - first) / 86400000) + 1);
+                              } catch { return null; }
+                            })();
+                            return (
                               <div style={{
-                                fontSize: '1.7rem', fontWeight: 900, color: B.text, lineHeight: 1,
+                                display: 'flex', alignItems: 'center', gap: '0.6rem',
+                                marginBottom: '0.7rem', flexWrap: 'wrap',
                                 fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
                               }}>
-                                {recordTxt}
+                                {isV12Scope && (
+                                  <span style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                                    padding: '0.15rem 0.45rem', borderRadius: '4px',
+                                    background: B.greenDim, border: `1px solid ${B.green}33`,
+                                  }}>
+                                    <span style={{
+                                      width: '5px', height: '5px', borderRadius: '50%',
+                                      background: B.green,
+                                      boxShadow: `0 0 6px ${B.green}`,
+                                      animation: 'pulse 2s ease-in-out infinite',
+                                    }} />
+                                    <span style={{ ...T.micro, color: B.green, fontSize: '0.52rem', fontWeight: 900, letterSpacing: '0.1em' }}>
+                                      LIVE
+                                    </span>
+                                  </span>
+                                )}
+                                {daysLive != null && (
+                                  <span style={{ ...T.micro, color: B.textSec, fontSize: '0.58rem', letterSpacing: '0.05em' }}>
+                                    <span style={{ color: B.text, fontWeight: 800 }}>{daysLive}</span> day{daysLive === 1 ? '' : 's'} {isV12Scope ? 'live' : 'tracked'}
+                                  </span>
+                                )}
+                                <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: B.textSubtle }} />
+                                <span style={{ ...T.micro, color: B.textSec, fontSize: '0.58rem', letterSpacing: '0.05em' }}>
+                                  <span style={{ color: B.text, fontWeight: 800 }}>{totalGradedLive}</span> graded
+                                </span>
+                                <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: B.textSubtle }} />
+                                <span style={{ ...T.micro, color: B.textSec, fontSize: '0.58rem', letterSpacing: '0.05em' }}>
+                                  <span style={{ color: B.text, fontWeight: 800 }}>{totalUnitsLive.toFixed(1)}u</span> risked
+                                </span>
+                                {livePending > 0 && (
+                                  <>
+                                    <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: B.textSubtle }} />
+                                    <span style={{ ...T.micro, color: B.gold, fontSize: '0.58rem', letterSpacing: '0.05em', fontWeight: 800 }}>
+                                      {livePending} pending
+                                    </span>
+                                  </>
+                                )}
                               </div>
-                              <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem', marginTop: '0.3rem' }}>
-                                {totalGradedLive} graded
-                              </div>
-                            </div>
+                            );
+                          })()}
 
-                            {/* WIN % */}
-                            <div style={{
-                              padding: '0.85rem 0.95rem',
-                              borderRadius: '8px',
-                              background: 'linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(15,23,42,0.5) 100%)',
-                              border: `1px solid ${B.borderSubtle}`,
-                            }}>
-                              <div style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.1em', fontSize: '0.55rem', marginBottom: '0.3rem' }}>
-                                WIN %
-                              </div>
+                          {/* ── Hero KPIs ─────────────────────────────────
+                              PROFIT is the brag stat — the entire product
+                              exists to put this number on screen. Layout
+                              ranks it: a single feature card on the left
+                              gets ~half the row width, hero-typography
+                              treatment (2.4rem gradient number, glass
+                              backdrop, gold corner glints, $-on-$100/u
+                              translation so units feel concrete), while
+                              RECORD / WIN% / ROI stack as three smaller
+                              supporting cards on the right. On mobile the
+                              feature card sits on top full-width and the
+                              three supporting cards become a 3-column
+                              strip below. */}
+                          {(() => {
+                            const dollarsPerUnit = 100;
+                            const dollarProfit = totalProfitLive * dollarsPerUnit;
+                            const dollarSign = dollarProfit >= 0 ? '+$' : '-$';
+                            const dollarFmt = Math.abs(dollarProfit).toLocaleString('en-US', { maximumFractionDigits: 0 });
+                            const profitGradient = totalProfitLive >= 0
+                              ? `linear-gradient(135deg, ${B.green} 0%, #34D399 100%)`
+                              : `linear-gradient(135deg, ${B.red} 0%, #F87171 100%)`;
+                            return (
                               <div style={{
-                                fontSize: '1.7rem', fontWeight: 900, color: liveWinPct >= 52.4 ? B.green : liveWinPct >= 50 ? B.textSec : B.red, lineHeight: 1,
-                                fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                                display: 'grid',
+                                gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1.05fr) minmax(0, 1fr)',
+                                gap: '0.7rem', marginBottom: '1rem',
                               }}>
-                                {totalGradedLive === 0 ? '—' : `${liveWinPct.toFixed(1)}%`}
-                              </div>
-                              <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem', marginTop: '0.3rem' }}>
-                                vs 52.4% breakeven
-                              </div>
-                            </div>
+                                {/* ── PROFIT — feature card ── */}
+                                <div style={{
+                                  position: 'relative', overflow: 'hidden',
+                                  padding: isMobile ? '1.1rem 1.1rem 1rem' : '1.25rem 1.3rem 1.15rem',
+                                  borderRadius: '12px',
+                                  background: totalProfitLive >= 0
+                                    ? `linear-gradient(140deg, rgba(16,185,129,0.10) 0%, rgba(255,255,255,0.018) 35%, rgba(15,23,42,0.55) 100%)`
+                                    : `linear-gradient(140deg, rgba(239,68,68,0.10) 0%, rgba(255,255,255,0.018) 35%, rgba(15,23,42,0.55) 100%)`,
+                                  border: `1px solid ${totalProfitLive >= 0 ? 'rgba(16,185,129,0.28)' : 'rgba(239,68,68,0.28)'}`,
+                                  boxShadow: totalProfitLive >= 0
+                                    ? '0 8px 28px -10px rgba(16,185,129,0.30), inset 0 1px 0 rgba(255,255,255,0.04)'
+                                    : '0 8px 28px -10px rgba(239,68,68,0.30), inset 0 1px 0 rgba(255,255,255,0.04)',
+                                }}>
+                                  {/* Gold corner glint, top-left */}
+                                  <div style={{
+                                    position: 'absolute', top: 0, left: 0, width: '40%', height: '1px',
+                                    background: `linear-gradient(90deg, ${B.gold} 0%, transparent 100%)`,
+                                    opacity: 0.5, pointerEvents: 'none',
+                                  }} />
+                                  <div style={{
+                                    position: 'absolute', top: 0, left: 0, width: '1px', height: '40%',
+                                    background: `linear-gradient(180deg, ${B.gold} 0%, transparent 100%)`,
+                                    opacity: 0.5, pointerEvents: 'none',
+                                  }} />
+                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
+                                    <span style={{
+                                      ...T.micro, color: B.gold, fontWeight: 900,
+                                      letterSpacing: '0.12em', fontSize: '0.55rem',
+                                    }}>
+                                      ◆ TOTAL PROFIT · {isV12Scope ? 'v12 ERA' : 'ALL TIME'}
+                                    </span>
+                                    {totalProfitLive >= 0
+                                      ? <TrendingUp size={13} color={B.green} />
+                                      : <TrendingDown size={13} color={B.red} />}
+                                  </div>
+                                  <div style={{
+                                    fontSize: isMobile ? '2.4rem' : '2.85rem',
+                                    fontWeight: 900, lineHeight: 1, letterSpacing: '-0.02em',
+                                    fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                                    background: profitGradient,
+                                    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                                    backgroundClip: 'text',
+                                  }}>
+                                    {totalGradedLive === 0 ? '—' : `${totalProfitLive >= 0 ? '+' : ''}${totalProfitLive.toFixed(2)}u`}
+                                  </div>
+                                  <div style={{
+                                    ...T.micro, color: B.textSec, fontSize: '0.68rem',
+                                    marginTop: '0.4rem', letterSpacing: '0.02em',
+                                    fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                                  }}>
+                                    {totalGradedLive === 0
+                                      ? 'no graded picks yet'
+                                      : <>≈ <span style={{ color: B.text, fontWeight: 800 }}>{dollarSign}{dollarFmt}</span> if you wagered <span style={{ color: B.textMuted }}>$100/unit</span></>
+                                    }
+                                  </div>
+                                </div>
 
-                            {/* PROFIT */}
-                            <div style={{
-                              padding: '0.85rem 0.95rem',
-                              borderRadius: '8px',
-                              background: 'linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(15,23,42,0.5) 100%)',
-                              border: `1px solid ${B.borderSubtle}`,
-                            }}>
-                              <div style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.1em', fontSize: '0.55rem', marginBottom: '0.3rem' }}>
-                                PROFIT
-                              </div>
-                              <div style={{
-                                fontSize: '1.7rem', fontWeight: 900, color: heroProfitColor, lineHeight: 1,
-                                fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
-                              }}>
-                                {totalGradedLive === 0 ? '—' : `${totalProfitLive >= 0 ? '+' : ''}${totalProfitLive.toFixed(2)}u`}
-                              </div>
-                              <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem', marginTop: '0.3rem' }}>
-                                {livePending > 0 ? `${livePending} pending` : trackedCount > 0 ? `${trackedCount} tracked` : 'all graded'}
-                              </div>
-                            </div>
+                                {/* ── Supporting trio: RECORD · WIN% · ROI ── */}
+                                <div style={{
+                                  display: 'grid',
+                                  gridTemplateColumns: 'repeat(3, 1fr)',
+                                  gap: '0.5rem',
+                                }}>
+                                  {/* RECORD */}
+                                  <div style={{
+                                    padding: '0.7rem 0.8rem',
+                                    borderRadius: '10px',
+                                    background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(15,23,42,0.55) 100%)',
+                                    border: `1px solid ${B.borderSubtle}`,
+                                    display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+                                  }}>
+                                    <div style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.12em', fontSize: '0.52rem' }}>
+                                      RECORD
+                                    </div>
+                                    <div style={{
+                                      fontSize: isMobile ? '1.2rem' : '1.35rem', fontWeight: 900, color: B.text, lineHeight: 1.1,
+                                      fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                                      letterSpacing: '-0.01em', marginTop: '0.35rem',
+                                    }}>
+                                      {recordTxt}
+                                    </div>
+                                    <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem', marginTop: '0.25rem' }}>
+                                      {totalGradedLive} graded
+                                    </div>
+                                  </div>
 
-                            {/* ROI */}
-                            <div style={{
-                              padding: '0.85rem 0.95rem',
-                              borderRadius: '8px',
-                              background: 'linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(15,23,42,0.5) 100%)',
-                              border: `1px solid ${B.borderSubtle}`,
-                            }}>
-                              <div style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.1em', fontSize: '0.55rem', marginBottom: '0.3rem' }}>
-                                ROI
+                                  {/* WIN % */}
+                                  <div style={{
+                                    padding: '0.7rem 0.8rem',
+                                    borderRadius: '10px',
+                                    background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(15,23,42,0.55) 100%)',
+                                    border: `1px solid ${B.borderSubtle}`,
+                                    display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+                                  }}>
+                                    <div style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.12em', fontSize: '0.52rem' }}>
+                                      WIN %
+                                    </div>
+                                    <div style={{
+                                      fontSize: isMobile ? '1.2rem' : '1.35rem', fontWeight: 900,
+                                      color: liveWinPct >= 52.4 ? B.green : liveWinPct >= 50 ? B.textSec : B.red,
+                                      lineHeight: 1.1,
+                                      fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                                      letterSpacing: '-0.01em', marginTop: '0.35rem',
+                                    }}>
+                                      {totalGradedLive === 0 ? '—' : `${liveWinPct.toFixed(1)}%`}
+                                    </div>
+                                    <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem', marginTop: '0.25rem' }}>
+                                      breakeven 52.4%
+                                    </div>
+                                  </div>
+
+                                  {/* ROI */}
+                                  <div style={{
+                                    padding: '0.7rem 0.8rem',
+                                    borderRadius: '10px',
+                                    background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(15,23,42,0.55) 100%)',
+                                    border: `1px solid ${B.borderSubtle}`,
+                                    display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+                                  }}>
+                                    <div style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.12em', fontSize: '0.52rem' }}>
+                                      ROI
+                                    </div>
+                                    <div style={{
+                                      fontSize: isMobile ? '1.2rem' : '1.35rem', fontWeight: 900,
+                                      color: heroRoiColor, lineHeight: 1.1,
+                                      fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                                      letterSpacing: '-0.01em', marginTop: '0.35rem',
+                                    }}>
+                                      {totalGradedLive === 0 ? '—' : `${liveRoi >= 0 ? '+' : ''}${liveRoi.toFixed(1)}%`}
+                                    </div>
+                                    <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem', marginTop: '0.25rem' }}>
+                                      {totalUnitsLive.toFixed(1)}u risked
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
-                              <div style={{
-                                fontSize: '1.7rem', fontWeight: 900, color: heroRoiColor, lineHeight: 1,
-                                fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
-                              }}>
-                                {totalGradedLive === 0 ? '—' : `${liveRoi >= 0 ? '+' : ''}${liveRoi.toFixed(1)}%`}
-                              </div>
-                              <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem', marginTop: '0.3rem' }}>
-                                {totalUnitsLive.toFixed(1)}u risked
-                              </div>
-                            </div>
-                          </div>
+                            );
+                          })()}
 
                           {/* ── Band 2: Best/Worst tier highlight ──
                               Two cards instead of six. The lay user sees
@@ -11623,11 +11780,12 @@ export default function SharpFlow() {
                               if (!stat) {
                                 return (
                                   <div style={{
-                                    padding: '0.7rem 0.85rem', borderRadius: '8px',
+                                    padding: '0.85rem 1rem', borderRadius: '10px',
                                     background: 'rgba(255,255,255,0.015)',
                                     border: `1px solid ${B.borderSubtle}`,
+                                    minHeight: '110px', display: 'flex', flexDirection: 'column',
                                   }}>
-                                    <div style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.1em', fontSize: '0.55rem', marginBottom: '0.3rem' }}>
+                                    <div style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.12em', fontSize: '0.52rem', marginBottom: '0.4rem' }}>
                                       {slot}
                                     </div>
                                     <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.62rem', fontStyle: 'italic' }}>
@@ -11639,48 +11797,68 @@ export default function SharpFlow() {
                               const meta = AGS_TIER_META[stat.key] || { label: stat.key, color: B.gold };
                               const slotIsBest = slot === 'BEST TIER';
                               const headColor = slotIsBest ? B.green : B.red;
+                              const headTint = slotIsBest ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)';
+                              const roiPositive = stat.tierRoi != null && stat.tierRoi >= 0;
                               return (
                                 <div style={{
-                                  padding: '0.7rem 0.85rem', borderRadius: '8px',
-                                  background: 'linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(15,23,42,0.5) 100%)',
+                                  padding: isMobile ? '0.85rem 0.95rem' : '0.95rem 1.05rem 0.9rem 1.1rem',
+                                  borderRadius: '10px',
+                                  background: `linear-gradient(140deg, ${headTint} 0%, rgba(255,255,255,0.018) 35%, rgba(15,23,42,0.55) 100%)`,
                                   border: `1px solid ${meta.color}33`,
                                   position: 'relative', overflow: 'hidden',
+                                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)',
                                 }}>
+                                  {/* Tier-color ribbon (left edge) */}
                                   <div style={{
                                     position: 'absolute', top: 0, bottom: 0, left: 0,
-                                    width: '3px', background: meta.color, boxShadow: `0 0 6px ${meta.color}66`,
+                                    width: '3px', background: meta.color, boxShadow: `0 0 8px ${meta.color}99`,
                                   }} />
+                                  {/* Slot eyebrow + tier-name caption + trend icon */}
                                   <div style={{
                                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                    marginBottom: '0.4rem', gap: '0.4rem',
+                                    marginBottom: '0.55rem', gap: '0.5rem',
                                   }}>
-                                    <span style={{ ...T.micro, color: headColor, fontWeight: 800, letterSpacing: '0.1em', fontSize: '0.55rem' }}>
-                                      {slot}
-                                    </span>
-                                    <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>
-                                      {stat.graded} graded
-                                    </span>
+                                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', flexWrap: 'wrap', minWidth: 0 }}>
+                                      <span style={{ ...T.micro, color: headColor, fontWeight: 900, letterSpacing: '0.12em', fontSize: '0.52rem' }}>
+                                        {slot}
+                                      </span>
+                                      <span style={{ ...T.micro, color: meta.color, fontWeight: 800, fontSize: '0.58rem', letterSpacing: '0.06em' }}>
+                                        {meta.label}{isV12Scope && stat.size ? ` · ${stat.size}/play` : ''}
+                                      </span>
+                                    </div>
+                                    {roiPositive
+                                      ? <TrendingUp size={13} color={B.green} />
+                                      : <TrendingDown size={13} color={B.red} />}
                                   </div>
-                                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', flexWrap: 'wrap' }}>
-                                    <span style={{ ...T.micro, fontWeight: 900, color: meta.color, fontSize: '0.85rem', letterSpacing: '0.05em' }}>
-                                      {meta.label}
-                                    </span>
-                                    <span style={{
-                                      fontSize: '1.15rem', fontWeight: 900, color: B.text, lineHeight: 1,
-                                      fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
-                                    }}>
+                                  {/* HERO: ROI as the big number */}
+                                  <div style={{
+                                    fontSize: isMobile ? '1.85rem' : '2.1rem',
+                                    fontWeight: 900, lineHeight: 1, letterSpacing: '-0.02em',
+                                    color: roiPositive ? B.green : B.red,
+                                    fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                                  }}>
+                                    {stat.tierRoi == null ? '—' : `${stat.tierRoi >= 0 ? '+' : ''}${stat.tierRoi.toFixed(1)}%`}
+                                  </div>
+                                  {/* Sub-line: record · profit · graded */}
+                                  <div style={{
+                                    display: 'flex', alignItems: 'baseline', gap: '0.4rem',
+                                    marginTop: '0.45rem', flexWrap: 'wrap',
+                                    fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                                  }}>
+                                    <span style={{ ...T.micro, color: B.text, fontWeight: 800, fontSize: '0.7rem' }}>
                                       {stat.b.wins}-{stat.b.losses}{stat.b.pushes > 0 ? `-${stat.b.pushes}` : ''}
                                     </span>
+                                    <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: B.textSubtle }} />
                                     <span style={{
-                                      ...T.micro, fontWeight: 800, fontSize: '0.85rem',
-                                      color: stat.tierRoi != null && stat.tierRoi >= 0 ? B.green : B.red,
-                                      fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                                      ...T.micro, fontWeight: 800, fontSize: '0.7rem',
+                                      color: stat.b.profit >= 0 ? B.green : B.red,
                                     }}>
-                                      {stat.tierRoi == null ? '—' : `${stat.tierRoi >= 0 ? '+' : ''}${stat.tierRoi.toFixed(1)}%`}
+                                      {stat.b.profit >= 0 ? '+' : ''}{stat.b.profit.toFixed(2)}u
                                     </span>
-                                  </div>
-                                  <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem', marginTop: '0.3rem' }}>
-                                    {stat.b.profit >= 0 ? '+' : ''}{stat.b.profit.toFixed(2)}u profit{isV12Scope && stat.size ? ` · ${stat.size}/play` : ''}
+                                    <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: B.textSubtle }} />
+                                    <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem' }}>
+                                      {stat.graded} graded
+                                    </span>
                                   </div>
                                 </div>
                               );
@@ -11875,34 +12053,60 @@ export default function SharpFlow() {
                             const bestDay = curve.reduce((acc, d) => (acc == null || d.dayPnl > acc.dayPnl) ? d : acc, null);
                             const worstDay = curve.reduce((acc, d) => (acc == null || d.dayPnl < acc.dayPnl) ? d : acc, null);
 
+                            // Bankroll math — translates abstract units into
+                            // dollars at a stable $100/u so readers feel
+                            // the magnitude. STARTING_BANKROLL is a UX
+                            // anchor only (not pulled from real wallets);
+                            // change to make the dollar lens richer or
+                            // poorer for storytelling.
+                            const STARTING_BANKROLL = 10000;
+                            const DOLLARS_PER_UNIT = 100;
+                            const dollarsCurrent = STARTING_BANKROLL + (finalCum * DOLLARS_PER_UNIT);
+                            const fmt$ = (n) => `$${Math.round(n).toLocaleString('en-US')}`;
                             return (
                               <div style={{ marginBottom: '1rem' }}>
                                 <button onClick={() => setShowAgsuProfit(p => !p)} style={{
                                   width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                  padding: '0.5rem 0.75rem', borderRadius: '8px', cursor: 'pointer',
-                                  background: 'rgba(255,255,255,0.02)', border: `1px solid ${B.borderSubtle}`,
+                                  padding: '0.6rem 0.85rem', borderRadius: '9px', cursor: 'pointer',
+                                  background: isProfit
+                                    ? 'linear-gradient(135deg, rgba(16,185,129,0.05) 0%, rgba(255,255,255,0.02) 50%, rgba(15,23,42,0.5) 100%)'
+                                    : 'rgba(255,255,255,0.02)',
+                                  border: `1px solid ${isProfit ? 'rgba(16,185,129,0.20)' : B.borderSubtle}`,
                                   marginBottom: showAgsuProfit ? '0.5rem' : 0,
+                                  transition: 'all 0.2s ease',
                                 }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                                     <TrendingUp size={14} color={isProfit ? B.green : B.red} />
                                     <span style={{ ...T.micro, fontWeight: 800, color: B.text, letterSpacing: '0.06em', fontSize: '0.62rem', textTransform: 'uppercase' }}>
-                                      Cumulative Profit
+                                      Equity Curve
                                     </span>
                                     {curve.length > 0 && (
-                                      <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>
-                                        · {totalPicks} graded · {curve.length} day{curve.length === 1 ? '' : 's'}
-                                      </span>
+                                      <>
+                                        <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>
+                                          · {totalPicks} graded · {curve.length} day{curve.length === 1 ? '' : 's'}
+                                        </span>
+                                        <span style={{
+                                          ...T.micro, color: B.textSec, fontSize: '0.55rem',
+                                          padding: '0.1rem 0.35rem', borderRadius: '3px',
+                                          background: 'rgba(0,0,0,0.25)',
+                                          border: `1px solid ${B.borderSubtle}`,
+                                          fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                                        }}>
+                                          {fmt$(STARTING_BANKROLL)} → <span style={{ color: isProfit ? B.green : B.red, fontWeight: 800 }}>{fmt$(dollarsCurrent)}</span> @ $100/u
+                                        </span>
+                                      </>
                                     )}
                                   </div>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     {curve.length > 0 && (
                                       <span style={{
-                                        padding: '0.15rem 0.45rem', borderRadius: '4px',
-                                        fontSize: '0.65rem', fontWeight: 800,
+                                        padding: '0.18rem 0.5rem', borderRadius: '5px',
+                                        fontSize: '0.7rem', fontWeight: 900,
                                         color: isProfit ? B.green : B.red,
                                         background: isProfit ? B.greenDim : B.redDim,
-                                        border: `1px solid ${isProfit ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)'}`,
+                                        border: `1px solid ${isProfit ? 'rgba(16,185,129,0.30)' : 'rgba(239,68,68,0.30)'}`,
                                         fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                                        letterSpacing: '-0.01em',
                                       }}>
                                         {isProfit ? '+' : ''}{finalCum.toFixed(2)}u
                                       </span>
@@ -12115,52 +12319,110 @@ export default function SharpFlow() {
                                 </div>
                               )}
                               {showAgsuLedger && (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
                                 {ledgerRows.map((p, i) => {
                                   const meta = AGS_TIER_META[p._resolvedTier] || AGS_TIER_META.UNKNOWN;
                                   const drv = topDriverOf(p);
                                   const isWin = p.outcome === 'WIN';
                                   const isLoss = p.outcome === 'LOSS';
+                                  const isPush = p.outcome === 'PUSH';
                                   const isPending = !p.outcome;
                                   const isTracked = p.tracked;
-                                  const profitColor = isWin ? B.green : isLoss ? B.red : B.textMuted;
-                                  const profitStr = isPending ? '—'
-                                                  : isTracked ? '0.00u'
-                                                  : `${p.profit >= 0 ? '+' : ''}${(p.profit || 0).toFixed(2)}u`;
+                                  // Outcome chip — pill-shaped, color-coded
+                                  // status badge that reads like a betting
+                                  // ticket result rather than a plain text
+                                  // cell. The chip carries both the label
+                                  // (WIN/LOSS/PUSH/PEND/TRK) and the unit
+                                  // delta so the eye lands on one bound
+                                  // glyph per row instead of a comma'd
+                                  // sentence.
+                                  const chip = isTracked
+                                    ? { label: 'TRK',  color: '#60A5FA', bg: 'rgba(96,165,250,0.10)', border: 'rgba(96,165,250,0.30)', delta: '' }
+                                    : isPending
+                                    ? { label: 'PEND', color: B.textSec, bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.20)', delta: '' }
+                                    : isPush
+                                    ? { label: 'PUSH', color: B.textSec, bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.20)', delta: '0.00u' }
+                                    : isWin
+                                    ? { label: 'WIN',  color: B.green, bg: B.greenDim, border: 'rgba(16,185,129,0.30)', delta: `+${(p.profit || 0).toFixed(2)}u` }
+                                    : isLoss
+                                    ? { label: 'LOSS', color: B.red, bg: B.redDim, border: 'rgba(239,68,68,0.30)', delta: `${(p.profit || 0).toFixed(2)}u` }
+                                    : { label: '—', color: B.textMuted, bg: 'transparent', border: B.borderSubtle, delta: '' };
                                   return (
-                                    <div key={i} style={{
-                                      display: 'grid',
-                                      gridTemplateColumns: isMobile ? '46px 1fr 56px 56px' : '46px 1fr 70px 80px 70px',
-                                      alignItems: 'center', gap: '0.5rem',
-                                      padding: '0.35rem 0.5rem',
-                                      borderRadius: '5px',
-                                      background: 'rgba(255,255,255,0.015)',
-                                      borderLeft: `2px solid ${meta.color}`,
-                                    }}>
-                                      <span style={{ ...T.micro, fontWeight: 800, color: meta.color, fontSize: '0.58rem', letterSpacing: '0.04em' }}>
+                                    <div
+                                      key={i}
+                                      className="agsu-ledger-row"
+                                      style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: isMobile ? '52px 1fr auto' : '52px 1fr 88px auto',
+                                        alignItems: 'center', gap: isMobile ? '0.55rem' : '0.7rem',
+                                        padding: '0.45rem 0.6rem 0.45rem 0.65rem',
+                                        borderRadius: '7px',
+                                        background: 'linear-gradient(90deg, rgba(255,255,255,0.025) 0%, rgba(255,255,255,0.008) 100%)',
+                                        borderLeft: `3px solid ${meta.color}`,
+                                        boxShadow: `0 0 12px -8px ${meta.color}66`,
+                                        transition: 'transform 0.15s ease, background 0.15s ease',
+                                      }}
+                                    >
+                                      <span style={{
+                                        ...T.micro, fontWeight: 900, color: meta.color,
+                                        fontSize: '0.58rem', letterSpacing: '0.06em',
+                                      }}>
                                         {meta.short}
                                       </span>
                                       <div style={{ minWidth: 0, overflow: 'hidden' }}>
-                                        <div style={{ ...T.micro, color: B.text, fontWeight: 700, fontSize: '0.65rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        <div style={{
+                                          ...T.micro, color: B.text, fontWeight: 700, fontSize: '0.68rem',
+                                          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                                          letterSpacing: '-0.005em',
+                                        }}>
                                           {p.team || (p.away && p.home ? `${p.away} @ ${p.home}` : '—')}
                                         </div>
-                                        <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>
+                                        <div style={{
+                                          ...T.micro, color: B.textMuted, fontSize: '0.55rem',
+                                          fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                                        }}>
                                           {p.date} · {p.sport} · {(p.marketType || 'ml').toUpperCase()}
+                                          {drv ? <span style={{ color: B.textSubtle }}>{`  ·  ${drv.label} ${drv.z >= 0 ? '+' : ''}${drv.z.toFixed(1)}`}</span> : null}
                                         </div>
                                       </div>
                                       {!isMobile && (
-                                        <span style={{ ...T.micro, color: B.textSec, fontSize: '0.6rem', textAlign: 'right', fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums' }}>
-                                          {p.v8_ags != null ? `${p.v8_ags >= 0 ? '+' : ''}${p.v8_ags.toFixed(2)}` : '—'}
+                                        <span style={{
+                                          ...T.micro, color: B.textSec, fontSize: '0.6rem',
+                                          textAlign: 'right', letterSpacing: '0.02em',
+                                          fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                                        }}>
+                                          {p.v8_ags != null ? (
+                                            <>
+                                              <span style={{ color: B.textMuted, fontSize: '0.5rem', letterSpacing: '0.08em', marginRight: '0.3rem' }}>SCORE</span>
+                                              {p.v8_ags >= 0 ? '+' : ''}{p.v8_ags.toFixed(2)}
+                                            </>
+                                          ) : '—'}
                                         </span>
                                       )}
-                                      <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem', textAlign: 'right', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                        {drv ? `${drv.label} ${drv.z >= 0 ? '+' : ''}${drv.z.toFixed(1)}` : '—'}
-                                      </span>
-                                      <span style={{ ...T.micro, color: profitColor, fontSize: '0.65rem', fontWeight: 800, textAlign: 'right', fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums' }}>
-                                        {isPending ? <span style={{ color: B.textMuted }}>PEND</span>
-                                          : isTracked ? <span style={{ color: '#60A5FA' }}>TRK</span>
-                                          : profitStr}
-                                      </span>
+                                      {/* Outcome chip — single bound glyph */}
+                                      <div style={{
+                                        display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+                                        padding: '0.18rem 0.45rem', borderRadius: '5px',
+                                        background: chip.bg,
+                                        border: `1px solid ${chip.border}`,
+                                        fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                                      }}>
+                                        <span style={{
+                                          ...T.micro, color: chip.color,
+                                          fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.08em',
+                                        }}>
+                                          {chip.label}
+                                        </span>
+                                        {chip.delta && (
+                                          <span style={{
+                                            ...T.micro, color: chip.color,
+                                            fontSize: '0.65rem', fontWeight: 800,
+                                            letterSpacing: '-0.005em',
+                                          }}>
+                                            {chip.delta}
+                                          </span>
+                                        )}
+                                      </div>
                                     </div>
                                   );
                                 })}
@@ -12178,6 +12440,7 @@ export default function SharpFlow() {
                           </div>
                         </>
                       )}
+                      </div>{/* /atmosphere zIndex wrapper */}
                     </div>
                   )}
                 </div>
@@ -13335,7 +13598,7 @@ function SportTabs({ active, onChange }) {
   );
 }
 
-function SharpFlowPaywall({ isMobile, lockedCount }) {
+function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
   const [now, setNow] = useState(Date.now());
 
   // Countdown to Sunday April 20 at midnight ET
@@ -13356,13 +13619,65 @@ function SharpFlowPaywall({ isMobile, lockedCount }) {
   const seconds = Math.floor((remaining % 60000) / 1000);
   const promoActive = remaining > 0;
 
-  const features = [
-    'Verified sharp bettor tracking in real time',
-    'Pinnacle fair value + best retail EV edge',
-    'Auto-locked plays with smart unit sizing',
-    'Full market flow — tickets, money, & whale action',
-    'Line movement alerts + reverse line moves',
-    'Complete performance dashboard with ROI tracking',
+  // ── LIVE v12 PROOF derived from the same all-time PnL feed the
+  // dashboard uses. Computed here (not passed in) so the paywall
+  // remains self-contained and always reflects whatever scope the
+  // graded ledger has. Mirrors SharpFlow's rawAgsuPicks v12 filter:
+  //   • only picks dated on/after V12_LAUNCH
+  //   • excludes cancelled
+  //   • excludes tracked-only (units = 0)
+  //   • excludes pending (no outcome yet)
+  // The output is the same record / W% / profit / ROI the dashboard
+  // shows, so a free user sees the same numbers the live customer
+  // sees — no exaggeration, no marketing-only stats. If pnlData is
+  // still loading or empty, proofReady === false and the banner
+  // falls back to a non-numeric premium chrome.
+  const v12Proof = (() => {
+    const picks = pnlData?.picks || [];
+    if (picks.length === 0) return { ready: false };
+    const live = picks.filter(p =>
+      p && p.date && !p.cancelled && p.date >= V12_LAUNCH && !p.tracked && p.outcome
+    );
+    let w = 0, l = 0, pu = 0, profit = 0, units = 0;
+    for (const p of live) {
+      const u = p.units || 0;
+      units += u;
+      if (p.outcome === 'WIN')       { w++;  profit += (p.profit || 0); }
+      else if (p.outcome === 'LOSS') { l++;  profit -= u; }
+      else if (p.outcome === 'PUSH') { pu++; }
+    }
+    const totalGraded = w + l + pu;
+    if (totalGraded === 0) return { ready: false };
+    const winPct = (w + l) > 0 ? (w / (w + l)) * 100 : 0;
+    const roi = units > 0 ? (profit / units) * 100 : 0;
+    const isProfit = profit >= 0;
+    // Days live since V12_LAUNCH (capped at today).
+    const launchMs = new Date(V12_LAUNCH + 'T12:00:00').getTime();
+    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+    const todayMs = new Date(todayStr + 'T12:00:00').getTime();
+    const daysLive = Math.max(1, Math.round((todayMs - launchMs) / 86400000) + 1);
+    return {
+      ready: true, w, l, pu, totalGraded, profit, units, winPct, roi, isProfit, daysLive,
+      record: `${w}-${l}${pu > 0 ? `-${pu}` : ''}`,
+    };
+  })();
+
+  // Features rewritten as proof-backed bullets. Numbers come straight
+  // from v12Proof when available, fall back to neutral copy otherwise.
+  const features = v12Proof.ready ? [
+    { label: `Verified track record · ${v12Proof.record} (${v12Proof.winPct.toFixed(1)}%)`, sub: `${v12Proof.totalGraded} graded picks since v12 launch` },
+    { label: `Conviction-sized auto-locks · 5u → 0.25u ladder`, sub: 'ELITE plays at 5u, weak edges at 0.25u, fades muted' },
+    { label: '200+ sharp wallets tracked nightly', sub: 'Verified profitable accounts, refreshed 4× per day' },
+    { label: 'Pinnacle fair odds + best-retail EV scoring', sub: 'Every lock is graded against closing-line value' },
+    { label: 'Full audit trail · every pick, every day', sub: 'Cron-stamped grading, no cherry-picked highlights' },
+    { label: 'Live market flow · tickets, money, whale action', sub: 'Reverse line moves and conviction alerts as they happen' },
+  ] : [
+    { label: 'Verified sharp bettor tracking in real time', sub: '200+ profitable wallets refreshed nightly' },
+    { label: 'Pinnacle fair value + best retail EV edge', sub: 'Every lock graded against closing line' },
+    { label: 'Auto-locked plays with smart unit sizing', sub: 'Conviction tier drives 0.25u → 5u sizing' },
+    { label: 'Full market flow — tickets, money, whale action', sub: 'Reverse line moves and conviction alerts' },
+    { label: 'Line movement alerts + RLM detection', sub: 'Real-time when the market moves against the public' },
+    { label: 'Complete performance dashboard with ROI tracking', sub: 'Equity curve, tier breakdown, full audit trail' },
   ];
 
   return (
@@ -13370,74 +13685,282 @@ function SharpFlowPaywall({ isMobile, lockedCount }) {
       marginTop: '2rem', borderRadius: '16px', overflow: 'hidden',
       background: `linear-gradient(145deg, rgba(212,175,55,0.08) 0%, ${B.card} 35%, rgba(16,185,129,0.05) 100%)`,
       border: `1px solid rgba(212,175,55,0.3)`,
-      boxShadow: '0 4px 40px rgba(0,0,0,0.5)',
+      boxShadow: '0 4px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(212,175,55,0.10)',
+      position: 'relative',
     }}>
+      {/* Gold hairline glint along the top — matches the dashboard body */}
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+        background: 'linear-gradient(90deg, transparent 0%, rgba(212,175,55,0.55) 50%, transparent 100%)',
+        pointerEvents: 'none',
+      }} />
+
       {/* Promo banner strip */}
       {promoActive && (
         <div style={{
           background: 'linear-gradient(90deg, #D4AF37 0%, #F5D060 50%, #D4AF37 100%)',
-          padding: '0.5rem 1rem',
+          padding: '0.55rem 1rem',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+          letterSpacing: '0.06em',
         }}>
-          <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#0B1120', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-            🏆 NBA & NHL PLAYOFF LAUNCH — 37% OFF
+          <span style={{ fontSize: '0.72rem', fontWeight: 900, color: '#0B1120', textTransform: 'uppercase' }}>
+            NBA & NHL PLAYOFF LAUNCH · 37% OFF
           </span>
         </div>
       )}
 
-      <div style={{ padding: isMobile ? '2rem 1.25rem' : '2.5rem 2rem' }}>
+      <div style={{ padding: isMobile ? '1.75rem 1.25rem 1.5rem' : '2rem 2rem 1.75rem', position: 'relative' }}>
 
-        {/* Headline */}
+        {/* ── PROOF HERO ──────────────────────────────────────
+            The bridge from "you just scrolled past 86-73-2 ·
+            +26.80u of proof" to "now buy this". Free users see
+            the dashboard fully — this banner makes sure those
+            numbers don't evaporate when they hit the upgrade
+            wall. If the PnL feed hasn't loaded yet, we still
+            show premium chrome but skip the bragging numbers. */}
+        {v12Proof.ready ? (
+          <div style={{
+            marginBottom: isMobile ? '1.5rem' : '1.75rem',
+            padding: isMobile ? '1.1rem 1.1rem 1rem' : '1.25rem 1.3rem 1.15rem',
+            borderRadius: '12px',
+            background: v12Proof.isProfit
+              ? `linear-gradient(140deg, rgba(16,185,129,0.10) 0%, rgba(255,255,255,0.018) 35%, rgba(15,23,42,0.55) 100%)`
+              : `linear-gradient(140deg, rgba(239,68,68,0.10) 0%, rgba(255,255,255,0.018) 35%, rgba(15,23,42,0.55) 100%)`,
+            border: `1px solid ${v12Proof.isProfit ? 'rgba(16,185,129,0.28)' : 'rgba(239,68,68,0.28)'}`,
+            boxShadow: v12Proof.isProfit
+              ? '0 8px 28px -10px rgba(16,185,129,0.25), inset 0 1px 0 rgba(255,255,255,0.04)'
+              : '0 8px 28px -10px rgba(239,68,68,0.25), inset 0 1px 0 rgba(255,255,255,0.04)',
+            position: 'relative', overflow: 'hidden',
+          }}>
+            {/* Gold corner glint — same device as the dashboard PROFIT card */}
+            <div style={{
+              position: 'absolute', top: 0, left: 0, width: '40%', height: '1px',
+              background: `linear-gradient(90deg, ${B.gold} 0%, transparent 100%)`,
+              opacity: 0.5, pointerEvents: 'none',
+            }} />
+            <div style={{
+              position: 'absolute', top: 0, left: 0, width: '1px', height: '40%',
+              background: `linear-gradient(180deg, ${B.gold} 0%, transparent 100%)`,
+              opacity: 0.5, pointerEvents: 'none',
+            }} />
+
+            {/* LIVE eyebrow */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap',
+              marginBottom: '0.8rem',
+            }}>
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                padding: '0.15rem 0.5rem', borderRadius: '4px',
+                background: B.greenDim, border: `1px solid ${B.green}33`,
+              }}>
+                <span style={{
+                  width: '5px', height: '5px', borderRadius: '50%',
+                  background: B.green,
+                  boxShadow: `0 0 6px ${B.green}`,
+                  animation: 'pulse 2s ease-in-out infinite',
+                }} />
+                <span style={{ ...T.micro, color: B.green, fontSize: '0.52rem', fontWeight: 900, letterSpacing: '0.12em' }}>
+                  LIVE
+                </span>
+              </span>
+              <span style={{ ...T.micro, color: B.gold, fontWeight: 900, letterSpacing: '0.12em', fontSize: '0.58rem' }}>
+                AGS-U v12 PERFORMANCE
+              </span>
+              <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem', letterSpacing: '0.05em' }}>
+                · last {v12Proof.daysLive} day{v12Proof.daysLive === 1 ? '' : 's'} · {v12Proof.totalGraded} graded
+              </span>
+            </div>
+
+            {/* The four-up hero stat strip — record · win% · profit · ROI */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+              gap: isMobile ? '0.7rem' : '1.1rem',
+              alignItems: 'baseline',
+            }}>
+              <div>
+                <div style={{
+                  fontSize: isMobile ? '1.55rem' : '1.85rem', fontWeight: 900, lineHeight: 1,
+                  letterSpacing: '-0.02em', color: B.text,
+                  fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                }}>
+                  {v12Proof.record}
+                </div>
+                <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.12em', marginTop: '0.3rem' }}>
+                  RECORD
+                </div>
+              </div>
+              <div>
+                <div style={{
+                  fontSize: isMobile ? '1.55rem' : '1.85rem', fontWeight: 900, lineHeight: 1,
+                  letterSpacing: '-0.02em',
+                  color: v12Proof.winPct >= 52.4 ? B.green : v12Proof.winPct >= 50 ? B.textSec : B.red,
+                  fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                }}>
+                  {v12Proof.winPct.toFixed(1)}%
+                </div>
+                <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.12em', marginTop: '0.3rem' }}>
+                  WIN %
+                </div>
+              </div>
+              <div>
+                <div style={{
+                  fontSize: isMobile ? '1.7rem' : '2.05rem', fontWeight: 900, lineHeight: 1,
+                  letterSpacing: '-0.02em',
+                  fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                  background: v12Proof.isProfit
+                    ? `linear-gradient(135deg, ${B.green} 0%, #34D399 100%)`
+                    : `linear-gradient(135deg, ${B.red} 0%, #F87171 100%)`,
+                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}>
+                  {v12Proof.isProfit ? '+' : ''}{v12Proof.profit.toFixed(2)}u
+                </div>
+                <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.12em', marginTop: '0.3rem' }}>
+                  PROFIT
+                </div>
+              </div>
+              <div>
+                <div style={{
+                  fontSize: isMobile ? '1.55rem' : '1.85rem', fontWeight: 900, lineHeight: 1,
+                  letterSpacing: '-0.02em',
+                  color: v12Proof.roi >= 0 ? B.green : B.red,
+                  fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                }}>
+                  {v12Proof.roi >= 0 ? '+' : ''}{v12Proof.roi.toFixed(1)}%
+                </div>
+                <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.12em', marginTop: '0.3rem' }}>
+                  ROI
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Fallback hero — premium chrome without bragging numbers */
+          <div style={{
+            marginBottom: '1.5rem',
+            padding: isMobile ? '1rem 1.1rem' : '1.1rem 1.3rem',
+            borderRadius: '12px',
+            background: 'linear-gradient(140deg, rgba(212,175,55,0.06) 0%, rgba(15,23,42,0.5) 100%)',
+            border: '1px solid rgba(212,175,55,0.25)',
+            display: 'flex', alignItems: 'center', gap: '0.7rem',
+          }}>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+              padding: '0.2rem 0.55rem', borderRadius: '5px',
+              background: B.greenDim, border: `1px solid ${B.green}33`,
+            }}>
+              <span style={{
+                width: '5px', height: '5px', borderRadius: '50%',
+                background: B.green, boxShadow: `0 0 6px ${B.green}`,
+                animation: 'pulse 2s ease-in-out infinite',
+              }} />
+              <span style={{ ...T.micro, color: B.green, fontSize: '0.55rem', fontWeight: 900, letterSpacing: '0.12em' }}>
+                LIVE
+              </span>
+            </span>
+            <span style={{ ...T.micro, color: B.gold, fontWeight: 900, letterSpacing: '0.1em', fontSize: '0.65rem' }}>
+              AGS-U v12 TRACKING
+            </span>
+          </div>
+        )}
+
+        {/* ── Headline + subhead ────────────────────────────── */}
         <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-          <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🏒🏀</div>
+          {/* Lock badge — replaces the old 🏒🏀 emoji.
+              Circular gold-haloed glyph that visually anchors
+              the "unlock" idea and stays on-brand with the
+              dashboard's gold/dark palette. */}
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            width: '54px', height: '54px', borderRadius: '50%',
+            background: 'linear-gradient(140deg, rgba(212,175,55,0.18) 0%, rgba(15,23,42,0.55) 100%)',
+            border: '1px solid rgba(212,175,55,0.35)',
+            boxShadow: '0 6px 24px -6px rgba(212,175,55,0.30), inset 0 1px 0 rgba(255,255,255,0.06)',
+            marginBottom: '0.85rem', position: 'relative',
+          }}>
+            <Lock size={22} color={B.gold} strokeWidth={2.2} />
+          </div>
           <h2 style={{
-            fontSize: isMobile ? '1.5rem' : '1.85rem', fontWeight: 900,
-            color: B.text, margin: '0 0 0.5rem 0', letterSpacing: '-0.02em', lineHeight: 1.2,
+            fontSize: isMobile ? '1.4rem' : '1.75rem', fontWeight: 900,
+            color: B.text, margin: '0 0 0.55rem 0', letterSpacing: '-0.02em', lineHeight: 1.2,
           }}>
             {lockedCount
-              ? <><span style={{ color: B.gold }}>{lockedCount} more game{lockedCount !== 1 ? 's' : ''}</span> locked</>
-              : <>Unlock <span style={{ color: B.gold }}>Sharp Flow</span></>}
+              ? <><span style={{ color: B.gold }}>{lockedCount} more game{lockedCount !== 1 ? 's' : ''}</span> locked behind Sharp Flow</>
+              : <>Unlock the <span style={{
+                  background: `linear-gradient(135deg, ${B.gold} 0%, ${B.goldHover} 100%)`,
+                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+                }}>live signal</span></>}
           </h2>
           <p style={{
             ...T.body, color: B.textSec, margin: '0 auto', maxWidth: '540px', lineHeight: 1.7,
           }}>
-            We track <span style={{ color: B.text, fontWeight: 700 }}>200+ verified sharp bettors</span> across
-            prediction markets, surface their real positions on today's games, and combine it with Pinnacle
-            fair odds, EV edges, and full market flow — so you bet with an edge, not a hunch.
+            {v12Proof.ready
+              ? <>The numbers above are <span style={{ color: B.text, fontWeight: 700 }}>live v12 picks</span>, graded by cron every night.
+                  Sharp Flow surfaces the same locks in real time — sized, tagged, and ready to bet.</>
+              : <>We track <span style={{ color: B.text, fontWeight: 700 }}>200+ verified sharp bettors</span>, score every pick by conviction,
+                  and auto-size the locks. Every result is graded the same way the dashboard above shows it.</>}
           </p>
         </div>
 
-        {/* Features grid */}
+        {/* ── Features grid — proof-backed bullets ──────────── */}
         <div style={{
           display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-          gap: '0.6rem 1.5rem', marginBottom: '1.75rem', maxWidth: '540px', margin: '0 auto 1.75rem',
+          gap: '0.65rem 1.25rem', marginBottom: '1.75rem',
+          maxWidth: '600px', marginLeft: 'auto', marginRight: 'auto',
         }}>
           {features.map((f, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <CheckCircle size={14} color={B.green} style={{ flexShrink: 0 }} />
-              <span style={{ ...T.label, color: B.textSec, lineHeight: 1.4 }}>{f}</span>
+            <div key={i} style={{
+              display: 'flex', alignItems: 'flex-start', gap: '0.55rem',
+              padding: '0.35rem 0',
+            }}>
+              <div style={{
+                flexShrink: 0, marginTop: '0.1rem',
+                width: '16px', height: '16px', borderRadius: '50%',
+                background: 'rgba(16,185,129,0.12)',
+                border: '1px solid rgba(16,185,129,0.30)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <CheckCircle size={10} color={B.green} strokeWidth={3} />
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ ...T.label, color: B.text, fontWeight: 700, lineHeight: 1.35, fontSize: '0.78rem' }}>
+                  {f.label}
+                </div>
+                <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.62rem', lineHeight: 1.45, marginTop: '0.15rem' }}>
+                  {f.sub}
+                </div>
+              </div>
             </div>
           ))}
         </div>
 
-        {/* Pricing + promo card */}
+        {/* ── Pricing + promo card ──────────────────────────── */}
         <div style={{
-          background: 'linear-gradient(145deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.2) 100%)',
+          background: 'linear-gradient(145deg, rgba(0,0,0,0.40) 0%, rgba(0,0,0,0.20) 100%)',
           borderRadius: '14px', padding: isMobile ? '1.5rem 1.25rem' : '1.75rem 2rem',
-          border: `1px solid rgba(212,175,55,0.2)`, maxWidth: '480px', margin: '0 auto',
+          border: `1px solid rgba(212,175,55,0.25)`,
+          maxWidth: '480px', margin: '0 auto',
+          position: 'relative', overflow: 'hidden',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
         }}>
+          {/* Tier-ribbon accent — same device as the dashboard's tier cards */}
+          <div style={{
+            position: 'absolute', top: 0, bottom: 0, left: 0,
+            width: '3px',
+            background: `linear-gradient(180deg, ${B.gold} 0%, ${B.green} 100%)`,
+            boxShadow: `0 0 10px ${B.gold}55`,
+          }} />
+
           {/* Countdown timer */}
           {promoActive && (
             <>
-              <div style={{
-                textAlign: 'center', marginBottom: '1rem',
-              }}>
-                <div style={{ ...T.micro, color: B.gold, fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.6rem', fontSize: '0.65rem' }}>
+              <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+                <div style={{ ...T.micro, color: B.gold, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.6rem', fontSize: '0.62rem' }}>
                   PLAYOFF LAUNCH OFFER ENDS IN
                 </div>
-                <div style={{
-                  display: 'flex', justifyContent: 'center', gap: '0.5rem',
-                }}>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem' }}>
                   {[
                     { val: days, label: 'DAYS' },
                     { val: hours, label: 'HRS' },
@@ -13445,9 +13968,11 @@ function SharpFlowPaywall({ isMobile, lockedCount }) {
                     { val: seconds, label: 'SEC' },
                   ].map(t => (
                     <div key={t.label} style={{
-                      background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.25)',
+                      background: 'linear-gradient(180deg, rgba(212,175,55,0.14) 0%, rgba(212,175,55,0.04) 100%)',
+                      border: '1px solid rgba(212,175,55,0.30)',
                       borderRadius: '8px', padding: '0.5rem 0.6rem', minWidth: isMobile ? '50px' : '58px',
                       textAlign: 'center',
+                      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
                     }}>
                       <div style={{
                         fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: 900, color: B.gold,
@@ -13455,7 +13980,7 @@ function SharpFlowPaywall({ isMobile, lockedCount }) {
                       }}>
                         {String(t.val).padStart(2, '0')}
                       </div>
-                      <div style={{ fontSize: '0.5rem', fontWeight: 700, color: B.textMuted, letterSpacing: '0.08em', marginTop: '0.2rem' }}>
+                      <div style={{ fontSize: '0.5rem', fontWeight: 700, color: B.textMuted, letterSpacing: '0.1em', marginTop: '0.2rem' }}>
                         {t.label}
                       </div>
                     </div>
@@ -13463,21 +13988,23 @@ function SharpFlowPaywall({ isMobile, lockedCount }) {
                 </div>
               </div>
 
-              {/* Price display with discount */}
+              {/* Price display with discount — green gradient hero */}
               <div style={{
                 display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '0.5rem',
-                marginBottom: '0.5rem',
+                marginBottom: '0.6rem',
               }}>
                 <span style={{
-                  fontSize: isMobile ? '2rem' : '2.4rem', fontWeight: 900, color: B.green,
-                  fontFeatureSettings: "'tnum'",
+                  fontSize: isMobile ? '2.1rem' : '2.5rem', fontWeight: 900,
+                  background: `linear-gradient(135deg, ${B.green} 0%, #34D399 100%)`,
+                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+                  fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em',
                 }}>
                   ${promoPrice}
                 </span>
                 <span style={{ ...T.body, color: B.textSec, fontWeight: 600 }}>/mo</span>
                 <span style={{
-                  fontSize: '1.1rem', color: B.textMuted, textDecoration: 'line-through', fontWeight: 600,
-                  opacity: 0.6, fontFeatureSettings: "'tnum'",
+                  fontSize: '1.05rem', color: B.textMuted, textDecoration: 'line-through', fontWeight: 600,
+                  opacity: 0.55, fontFeatureSettings: "'tnum'",
                 }}>
                   ${fullPrice}
                 </span>
@@ -13487,19 +14014,19 @@ function SharpFlowPaywall({ isMobile, lockedCount }) {
               <div style={{
                 textAlign: 'center', marginBottom: '1rem',
                 padding: '0.6rem 0.75rem', borderRadius: '8px',
-                background: 'linear-gradient(135deg, rgba(212,175,55,0.15) 0%, rgba(212,175,55,0.05) 100%)',
-                border: '1px solid rgba(212,175,55,0.3)',
+                background: 'linear-gradient(135deg, rgba(212,175,55,0.16) 0%, rgba(212,175,55,0.04) 100%)',
+                border: '1px solid rgba(212,175,55,0.30)',
               }}>
-                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: B.textSec }}>
+                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: B.textSec }}>
                   Use code </span>
                 <span style={{
-                  fontSize: '0.9rem', fontWeight: 900, color: B.gold,
+                  fontSize: '0.88rem', fontWeight: 900, color: B.gold,
                   padding: '0.15rem 0.5rem', borderRadius: '4px',
-                  background: 'rgba(212,175,55,0.15)', letterSpacing: '0.06em',
+                  background: 'rgba(212,175,55,0.18)', letterSpacing: '0.08em',
                 }}>PLAYOFFS</span>
-                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: B.textSec }}>
+                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: B.textSec }}>
                   {' '}— </span>
-                <span style={{ fontSize: '0.8rem', fontWeight: 800, color: B.green }}>
+                <span style={{ fontSize: '0.78rem', fontWeight: 800, color: B.green }}>
                   37% off for life
                 </span>
               </div>
@@ -13508,43 +14035,56 @@ function SharpFlowPaywall({ isMobile, lockedCount }) {
 
           {/* Non-promo pricing */}
           {!promoActive && (
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-              <span style={{ fontSize: isMobile ? '2rem' : '2.25rem', fontWeight: 900, color: B.green }}>$25.99</span>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.85rem' }}>
+              <span style={{
+                fontSize: isMobile ? '2.1rem' : '2.4rem', fontWeight: 900,
+                background: `linear-gradient(135deg, ${B.green} 0%, #34D399 100%)`,
+                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+                fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em',
+              }}>
+                $25.99
+              </span>
               <span style={{ ...T.body, color: B.textSec, fontWeight: 600 }}>/mo</span>
             </div>
           )}
 
           {/* Free trial badge */}
           <div style={{
-            textAlign: 'center', marginBottom: '0.75rem',
-            padding: '0.5rem 0.75rem', borderRadius: '8px',
-            background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)',
+            textAlign: 'center', marginBottom: '0.85rem',
+            padding: '0.55rem 0.75rem', borderRadius: '8px',
+            background: 'linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(99,102,241,0.04) 100%)',
+            border: '1px solid rgba(99,102,241,0.28)',
           }}>
-            <span style={{ ...T.label, color: '#818CF8', fontWeight: 800 }}>5-DAY FREE TRIAL</span>
+            <span style={{ ...T.label, color: '#A5B4FC', fontWeight: 800, letterSpacing: '0.05em' }}>5-DAY FREE TRIAL</span>
             <span style={{ ...T.micro, color: B.textSec, marginLeft: '0.4rem' }}>— full access, cancel anytime</span>
           </div>
 
-          {/* CTA */}
-          <a href={promoActive ? '#/pricing?promo=PLAYOFFS' : '#/pricing'} style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-            padding: '0.85rem 1.5rem', borderRadius: '10px',
-            background: `linear-gradient(135deg, ${B.green}, #059669)`,
-            color: '#fff', fontWeight: 900, fontSize: isMobile ? '1.05rem' : '1rem',
-            textDecoration: 'none', letterSpacing: '0.01em',
-            boxShadow: '0 4px 20px rgba(16,185,129,0.35)',
-            transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-          }}>
+          {/* CTA — green gradient w/ gold-halo hover */}
+          <a
+            href={promoActive ? '#/pricing?promo=PLAYOFFS' : '#/pricing'}
+            className="sharpflow-paywall-cta"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.55rem',
+              padding: '0.95rem 1.5rem', borderRadius: '11px',
+              background: `linear-gradient(135deg, ${B.green} 0%, #059669 100%)`,
+              color: '#fff', fontWeight: 900, fontSize: isMobile ? '1.05rem' : '1.02rem',
+              textDecoration: 'none', letterSpacing: '0.01em',
+              boxShadow: '0 6px 24px rgba(16,185,129,0.40), inset 0 1px 0 rgba(255,255,255,0.18)',
+              transition: 'transform 0.18s ease, box-shadow 0.18s ease',
+              border: '1px solid rgba(255,255,255,0.10)',
+            }}
+          >
             {promoActive ? 'Claim Playoff Offer →' : 'Start Free Trial →'}
           </a>
 
           {/* Trust badges */}
           <div style={{
-            display: 'flex', justifyContent: 'center', gap: '1rem',
-            marginTop: '0.75rem',
+            display: 'flex', justifyContent: 'center', gap: '1.1rem',
+            marginTop: '0.85rem', flexWrap: 'wrap',
           }}>
-            <span style={{ ...T.micro, color: B.textMuted }}>✓ 5 days free</span>
-            <span style={{ ...T.micro, color: B.textMuted }}>✓ Cancel anytime</span>
-            <span style={{ ...T.micro, color: B.textMuted }}>✓ All picks verified</span>
+            <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem' }}>✓ 5 days free</span>
+            <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem' }}>✓ Cancel anytime</span>
+            <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem' }}>✓ Cron-graded picks</span>
           </div>
         </div>
       </div>
