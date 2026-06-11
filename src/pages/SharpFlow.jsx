@@ -11315,6 +11315,35 @@ export default function SharpFlow() {
                 ? `since ${V12_LAUNCH}`
                 : 'every era · stars · v9 · v10 · v11 · v12';
 
+              // Filter-aware scope label — a single source of truth that
+              // every panel uses to describe what the user is currently
+              // looking at. Without this, switching to "Today" leaves the
+              // PROFIT card still saying "v12 ERA" while the numbers shrink
+              // to a one-day slice, which reads as a bug. Examples:
+              //   v12 + All + All        → "v12 ERA"
+              //   v12 + Today + All      → "v12 · TODAY"
+              //   v12 + 7D + MLB         → "v12 · LAST 7D · MLB"
+              //   All + All + All        → "ALL TIME"
+              //   All + Yesterday + NHL  → "YESTERDAY · NHL"
+              // hasActiveSubFilter is true whenever date or sport differ
+              // from their defaults — that drives the "FILTERED" indicator
+              // on the collapsed bar.
+              const dateRangeLabel = (
+                agsuDateRange === 'today'     ? 'TODAY'     :
+                agsuDateRange === 'yesterday' ? 'YESTERDAY' :
+                agsuDateRange === '7d'        ? 'LAST 7D'   :
+                null
+              );
+              const sportLabel = agsuSport !== 'ALL' ? agsuSport : null;
+              const hasActiveSubFilter = dateRangeLabel != null || sportLabel != null;
+              const scopeLabel = (() => {
+                const base = isV12Scope
+                  ? (hasActiveSubFilter ? 'v12' : 'v12 ERA')
+                  : (hasActiveSubFilter ? null : 'ALL TIME');
+                const parts = [base, dateRangeLabel, sportLabel].filter(Boolean);
+                return parts.join(' · ');
+              })();
+
               return (
                 <div style={{ marginBottom: '1rem' }}>
                   {/* ── Collapsed/expanded header ──────────────────── */}
@@ -11351,15 +11380,36 @@ export default function SharpFlow() {
                         {eraSinceLabel}
                       </span>
                       {hasData && (
-                        <span style={{
-                          ...T.micro, fontWeight: 800, fontSize: '0.65rem',
-                          padding: '0.15rem 0.5rem', borderRadius: '4px',
-                          color: totalProfitLive >= 0 ? B.green : B.red,
-                          background: totalProfitLive >= 0 ? B.greenDim : B.redDim,
-                          fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
-                        }}>
-                          {recordTxt} · {(liveWinPct).toFixed(1)}% · {totalProfitLive >= 0 ? '+' : ''}{totalProfitLive.toFixed(2)}u
-                        </span>
+                        <>
+                          {/* Filter indicator on the collapsed bar — when the
+                              user has drilled into a date or sport, the
+                              summary chip silently shows filtered numbers
+                              instead of era totals. Without this pill they
+                              can't tell. Pill carries the actual scope
+                              label so it reads as "v12 · TODAY · MLB". */}
+                          {hasActiveSubFilter && (
+                            <span style={{
+                              ...T.micro, fontWeight: 800, fontSize: '0.55rem',
+                              padding: '0.1rem 0.4rem', borderRadius: '3px',
+                              color: B.gold, background: B.goldDim,
+                              border: `1px solid ${B.gold}33`,
+                              letterSpacing: '0.08em', textTransform: 'uppercase',
+                            }}>
+                              {[dateRangeLabel, sportLabel].filter(Boolean).join(' · ')}
+                            </span>
+                          )}
+                          <span style={{
+                            ...T.micro, fontWeight: 800, fontSize: '0.65rem',
+                            padding: '0.15rem 0.5rem', borderRadius: '4px',
+                            color: totalProfitLive >= 0 ? B.green : B.red,
+                            background: totalProfitLive >= 0 ? B.greenDim : B.redDim,
+                            fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                          }}>
+                            {totalGradedLive === 0
+                              ? 'no graded picks'
+                              : `${recordTxt} · ${(liveWinPct).toFixed(1)}% · ${totalProfitLive >= 0 ? '+' : ''}${totalProfitLive.toFixed(2)}u`}
+                          </span>
+                        </>
                       )}
                     </div>
                     {showAgsuPerf ? <ChevronUp size={14} color={B.textMuted} /> : <ChevronDown size={14} color={B.textMuted} />}
@@ -11504,6 +11554,29 @@ export default function SharpFlow() {
                             transition: 'all 0.2s ease',
                           }}>{opt.label}</button>
                         ))}
+                        {/* Clear-filters affordance — only appears when the
+                            date/sport row diverges from defaults. Wipes both
+                            sub-filters without touching the era toggle so
+                            the user can pop back to the era view in one
+                            click without losing v12-vs-all-time choice. */}
+                        {hasActiveSubFilter && (
+                          <button
+                            onClick={() => { setAgsuDateRange('all'); setAgsuSport('ALL'); }}
+                            style={{
+                              padding: '0.22rem 0.55rem', borderRadius: '5px', cursor: 'pointer',
+                              ...T.micro, fontWeight: 800, fontSize: '0.55rem',
+                              border: `1px solid ${B.borderSubtle}`,
+                              background: 'transparent',
+                              color: B.textMuted,
+                              letterSpacing: '0.06em',
+                              transition: 'all 0.2s ease',
+                              marginLeft: '0.4rem',
+                            }}
+                            title="Reset date + sport filters"
+                          >
+                            CLEAR
+                          </button>
+                        )}
                       </div>
 
                       {!hasData && (
@@ -11512,7 +11585,49 @@ export default function SharpFlow() {
                         </div>
                       )}
 
-                      {hasData && (
+                      {/* Filtered-to-zero empty state — single body-level
+                          message that replaces the 4 per-panel "no data"
+                          fallbacks (PROFIT '—', Best/Worst threshold,
+                          Equity Curve '< 2 days', Recent Picks 'no
+                          match'). When the user hits zero with active
+                          filters we offer a one-click reset. */}
+                      {hasData && agsuPicks.length === 0 && (
+                        <div style={{
+                          textAlign: 'center', padding: '2.5rem 1.5rem',
+                          borderRadius: '10px',
+                          background: 'linear-gradient(140deg, rgba(212,175,55,0.04) 0%, rgba(15,23,42,0.45) 100%)',
+                          border: `1px dashed ${B.borderSubtle}`,
+                        }}>
+                          <div style={{ ...T.micro, color: B.gold, fontWeight: 900, letterSpacing: '0.12em', fontSize: '0.58rem', marginBottom: '0.5rem' }}>
+                            ◆ NO PICKS MATCH
+                          </div>
+                          <div style={{ ...T.body, color: B.textSec, marginBottom: '0.85rem', maxWidth: '420px', marginLeft: 'auto', marginRight: 'auto' }}>
+                            {hasActiveSubFilter
+                              ? <>No <span style={{ color: B.text, fontWeight: 700 }}>{scopeLabel}</span> picks. Try a wider date range or a different sport.</>
+                              : isV12Scope
+                                ? <>No v12 picks in this slice yet. Switch to <span style={{ color: B.text, fontWeight: 700 }}>All Time</span> to see historical results.</>
+                                : <>No graded picks in this slice yet.</>
+                            }
+                          </div>
+                          {hasActiveSubFilter && (
+                            <button
+                              onClick={() => { setAgsuDateRange('all'); setAgsuSport('ALL'); }}
+                              style={{
+                                padding: '0.4rem 0.9rem', borderRadius: '6px', cursor: 'pointer',
+                                ...T.micro, fontWeight: 800, fontSize: '0.62rem',
+                                border: `1px solid ${B.goldBorder}`,
+                                background: `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)`,
+                                color: B.gold,
+                                letterSpacing: '0.06em',
+                              }}
+                            >
+                              CLEAR FILTERS
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      {hasData && agsuPicks.length > 0 && (
                         <>
                           {/* ── Eyebrow: "since launch" telemetry strip ──
                               Tiny tabular run that prefaces the hero KPIs.
@@ -11637,21 +11752,34 @@ export default function SharpFlow() {
                                       ...T.micro, color: B.gold, fontWeight: 900,
                                       letterSpacing: '0.12em', fontSize: '0.55rem',
                                     }}>
-                                      ◆ TOTAL PROFIT · {isV12Scope ? 'v12 ERA' : 'ALL TIME'}
+                                      ◆ TOTAL PROFIT · {scopeLabel}
                                     </span>
                                     {totalProfitLive >= 0
                                       ? <TrendingUp size={13} color={B.green} />
                                       : <TrendingDown size={13} color={B.red} />}
                                   </div>
-                                  <div style={{
-                                    fontSize: isMobile ? '2.4rem' : '2.85rem',
-                                    fontWeight: 900, lineHeight: 1, letterSpacing: '-0.02em',
-                                    fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
-                                    background: profitGradient,
-                                    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                                    backgroundClip: 'text',
-                                  }}>
-                                    {totalGradedLive === 0 ? '—' : `${totalProfitLive >= 0 ? '+' : ''}${totalProfitLive.toFixed(2)}u`}
+                                  {/* Gradient hero number — wrapped in an inline-block
+                                      span so the gradient box hugs the text width
+                                      (instead of filling the parent card width). This
+                                      avoids the regression where some browsers/setups
+                                      fail to apply `background-clip: text` and end up
+                                      painting a full-width green bar over the number.
+                                      We also use `backgroundImage` (not the `background`
+                                      shorthand) so we don't accidentally reset
+                                      `background-clip` to its initial `border-box`. */}
+                                  <div style={{ lineHeight: 1 }}>
+                                    <span style={{
+                                      display: 'inline-block',
+                                      fontSize: isMobile ? '2.4rem' : '2.85rem',
+                                      fontWeight: 900, lineHeight: 1, letterSpacing: '-0.02em',
+                                      fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                                      color: totalProfitLive >= 0 ? B.green : B.red,
+                                      backgroundImage: profitGradient,
+                                      WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                                      backgroundClip: 'text',
+                                    }}>
+                                      {totalGradedLive === 0 ? '—' : `${totalProfitLive >= 0 ? '+' : ''}${totalProfitLive.toFixed(2)}u`}
+                                    </span>
                                   </div>
                                   <div style={{
                                     ...T.micro, color: B.textSec, fontSize: '0.68rem',
@@ -13921,15 +14049,21 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
                         ? <TrendingUp size={13} color={B.green} />
                         : <TrendingDown size={13} color={B.red} />}
                     </div>
-                    <div style={{
-                      fontSize: isMobile ? '2.4rem' : '2.85rem',
-                      fontWeight: 900, lineHeight: 1, letterSpacing: '-0.02em',
-                      fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
-                      background: profitGradient,
-                      WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text',
-                    }}>
-                      {v12Proof.isProfit ? '+' : ''}{v12Proof.profit.toFixed(2)}u
+                    {/* Gradient hero number — see dashboard equivalent for
+                        the same inline-block + backgroundImage rationale. */}
+                    <div style={{ lineHeight: 1 }}>
+                      <span style={{
+                        display: 'inline-block',
+                        fontSize: isMobile ? '2.4rem' : '2.85rem',
+                        fontWeight: 900, lineHeight: 1, letterSpacing: '-0.02em',
+                        fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                        color: v12Proof.isProfit ? B.green : B.red,
+                        backgroundImage: profitGradient,
+                        WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                      }}>
+                        {v12Proof.isProfit ? '+' : ''}{v12Proof.profit.toFixed(2)}u
+                      </span>
                     </div>
                     <div style={{
                       ...T.micro, color: B.textSec, fontSize: '0.68rem',
@@ -14017,7 +14151,9 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
             {lockedCount
               ? <><span style={{ color: B.gold }}>{lockedCount} more game{lockedCount !== 1 ? 's' : ''}</span> locked behind Sharp Flow</>
               : <>Unlock the <span style={{
-                  background: `linear-gradient(135deg, ${B.gold} 0%, ${B.goldHover} 100%)`,
+                  display: 'inline-block',
+                  color: B.gold,
+                  backgroundImage: `linear-gradient(135deg, ${B.gold} 0%, ${B.goldHover} 100%)`,
                   WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
                 }}>live signal</span></>}
           </h2>
@@ -14122,8 +14258,10 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
                 marginBottom: '0.6rem',
               }}>
                 <span style={{
+                  display: 'inline-block',
                   fontSize: isMobile ? '2.1rem' : '2.5rem', fontWeight: 900,
-                  background: `linear-gradient(135deg, ${B.green} 0%, #34D399 100%)`,
+                  color: B.green,
+                  backgroundImage: `linear-gradient(135deg, ${B.green} 0%, #34D399 100%)`,
                   WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
                   fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em',
                 }}>
@@ -14165,8 +14303,10 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
           {!promoActive && (
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.85rem' }}>
               <span style={{
+                display: 'inline-block',
                 fontSize: isMobile ? '2.1rem' : '2.4rem', fontWeight: 900,
-                background: `linear-gradient(135deg, ${B.green} 0%, #34D399 100%)`,
+                color: B.green,
+                backgroundImage: `linear-gradient(135deg, ${B.green} 0%, #34D399 100%)`,
                 WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
                 fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em',
               }}>
