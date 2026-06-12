@@ -11219,6 +11219,10 @@ export default function SharpFlow() {
                   const d = new Date(nowEt); d.setDate(d.getDate() - 7);
                   return p.date >= d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
                 }
+                if (agsuDateRange === '30d') {
+                  const d = new Date(nowEt); d.setDate(d.getDate() - 30);
+                  return p.date >= d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+                }
                 return true;
               };
               const agsuPicks = rawAgsuPicks.filter(passesAgsuFilter);
@@ -11332,6 +11336,7 @@ export default function SharpFlow() {
                 agsuDateRange === 'today'     ? 'TODAY'     :
                 agsuDateRange === 'yesterday' ? 'YESTERDAY' :
                 agsuDateRange === '7d'        ? 'LAST 7D'   :
+                agsuDateRange === '30d'       ? 'LAST 30D'  :
                 null
               );
               const sportLabel = agsuSport !== 'ALL' ? agsuSport : null;
@@ -11524,9 +11529,11 @@ export default function SharpFlow() {
                           if there's actual demand. */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
                         {[
-                          { id: 'today', label: 'Today' },
-                          { id: '7d', label: '7D' },
-                          { id: 'all', label: 'All' },
+                          { id: 'today',     label: 'Today' },
+                          { id: 'yesterday', label: 'Yesterday' },
+                          { id: '7d',        label: '7D' },
+                          { id: '30d',       label: '30D' },
+                          { id: 'all',       label: 'All' },
                         ].map(opt => (
                           <button key={opt.id} onClick={() => setAgsuDateRange(opt.id)} style={{
                             padding: '0.22rem 0.6rem', borderRadius: '5px', cursor: 'pointer',
