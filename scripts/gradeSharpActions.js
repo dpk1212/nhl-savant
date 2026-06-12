@@ -16,6 +16,7 @@ import admin from 'firebase-admin';
 import { readFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { resolveSOCTeam } from './lib/soccerTeams.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '../public');
@@ -25,6 +26,7 @@ const NHL_SCHEDULE_URL = 'https://api-web.nhle.com/v1/schedule';
 const NCAA_API_URL = 'https://ncaa-api.henrygd.me/scoreboard/basketball-men/d1';
 const ESPN_MLB_URL = 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard';
 const ESPN_NBA_URL = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard';
+const ESPN_SOC_URL = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard';
 
 const ABBREV_MAP = {
   bos: 'BOS', tor: 'TOR', mtl: 'MTL', ott: 'OTT', buf: 'BUF', det: 'DET',
@@ -208,9 +210,46 @@ async function fetchNBAFinalGames() {
   }
 }
 
+async function fetchSOCFinalGames(dateStr) {
+  // FIFA World Cup via ESPN. The Polymarket 3-way market (win/win/draw)
+  // resolves on the 90-minute result. Group stage (through June 27) has no
+  // extra time so the final score IS the regulation score. NOTE: knockout
+  // rounds may include extra time in ESPN's score — revisit before June 28.
+  try {
+    const ymd = dateStr ? `?dates=${dateStr.replace(/-/g, '')}` : '';
+    const res = await fetch(`${ESPN_SOC_URL}${ymd}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.events || [])
+      .filter(e => {
+        const st = e.competitions?.[0]?.status?.type;
+        return st?.state === 'post' || st?.completed;
+      })
+      .map(e => {
+        const comp = e.competitions[0];
+        const comps = comp.competitors || [];
+        const away = comps.find(c => c.homeAway === 'away') || {};
+        const home = comps.find(c => c.homeAway === 'home') || {};
+        const awayName = away.team?.displayName || away.team?.name || '';
+        const homeName = home.team?.displayName || home.team?.name || '';
+        return {
+          awayCode: (resolveSOCTeam(awayName) || '').toLowerCase(),
+          homeCode: (resolveSOCTeam(homeName) || '').toLowerCase(),
+          awayTeam: awayName,
+          homeTeam: homeName,
+          awayScore: parseInt(away.score) || 0,
+          homeScore: parseInt(home.score) || 0,
+        };
+      });
+  } catch (e) {
+    console.error('ESPN SOC fetch error:', e.message);
+    return [];
+  }
+}
+
 // ─── Outcome calculation (mirrors betTracking.js) ───────────────────────────
 
-function calculateOutcome(game, marketType, side, line) {
+function calculateOutcome(game, marketType, side, line, sport = null) {
   const totalScore = game.awayScore + game.homeScore;
   const awayWin = game.awayScore > game.homeScore;
   const homeWin = game.homeScore > game.awayScore;
@@ -243,15 +282,17 @@ function calculateOutcome(game, marketType, side, line) {
     }
   }
 
-  // ML
-  if (side === 'home') return homeWin ? 'WIN' : (awayWin ? 'LOSS' : 'PUSH');
-  return awayWin ? 'WIN' : (homeWin ? 'LOSS' : 'PUSH');
+  // ML — soccer is 3-way: Draw is its own side, so a drawn match is a LOSS
+  // for team-side bets and a WIN for draw-side bets (never a PUSH).
+  if (side === 'draw') return (!awayWin && !homeWin) ? 'WIN' : 'LOSS';
+  if (side === 'home') return homeWin ? 'WIN' : (awayWin ? 'LOSS' : (sport === 'SOC' ? 'LOSS' : 'PUSH'));
+  return awayWin ? 'WIN' : (homeWin ? 'LOSS' : (sport === 'SOC' ? 'LOSS' : 'PUSH'));
 }
 
 // ─── Match a position's gameKey to a final game ─────────────────────────────
 
-function findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals) {
-  const rawKey = (pos.gameKey || '').replace(/^(NHL|NBA|MLB|CBB):/, '');
+function findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals = []) {
+  const rawKey = (pos.gameKey || '').replace(/^(NHL|NBA|MLB|CBB|SOC):/, '');
   const parts = rawKey.split('_');
 
   if (pos.sport === 'NHL') {
@@ -293,6 +334,19 @@ function findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals) {
     return null;
   }
 
+  if (pos.sport === 'SOC') {
+    if (parts.length < 2) return null;
+    for (const g of socFinals) {
+      if (!g.awayCode || !g.homeCode) continue;
+      if (g.awayCode === parts[0] && g.homeCode === parts[1]) return g;
+      // ESPN home/away designation may not match our key order — flip scores
+      if (g.awayCode === parts[1] && g.homeCode === parts[0]) {
+        return { awayScore: g.homeScore, homeScore: g.awayScore };
+      }
+    }
+    return null;
+  }
+
   return null;
 }
 
@@ -324,11 +378,13 @@ async function main() {
   const sports = new Set();
   const cbbDates = new Set();
   const nhlDates = new Set();
+  const socDates = new Set();
   snapshot.forEach(doc => {
     const d = doc.data();
     sports.add(d.sport);
     if (d.sport === 'CBB' && d.date) cbbDates.add(d.date);
     if (d.sport === 'NHL' && d.date) nhlDates.add(d.date);
+    if (d.sport === 'SOC' && d.date) socDates.add(d.date);
   });
 
   // Fetch scores
@@ -362,6 +418,15 @@ async function main() {
     console.log(`ESPN NBA API: ${nbaFinals.length} final NBA games`);
   }
 
+  let socFinals = [];
+  if (sports.has('SOC')) {
+    for (const d of socDates) {
+      const games = await fetchSOCFinalGames(d);
+      socFinals.push(...games);
+      console.log(`ESPN SOC API: ${games.length} final World Cup games for ${d}`);
+    }
+  }
+
   // Grade each position
   let graded = 0, noGame = 0, errors = 0;
   const BATCH_SIZE = 400;
@@ -375,7 +440,7 @@ async function main() {
     for (const doc of chunk) {
       const pos = doc.data();
 
-      const game = findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals);
+      const game = findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals);
       if (!game) {
         noGame++;
         continue;
@@ -403,7 +468,7 @@ async function main() {
         }
       }
 
-      const outcome = calculateOutcome(game, pos.marketType, pos.side, line);
+      const outcome = calculateOutcome(game, pos.marketType, pos.side, line, pos.sport);
       if (!outcome) {
         errors++;
         console.warn(`  Could not calculate outcome for ${doc.id} (line=${line})`);

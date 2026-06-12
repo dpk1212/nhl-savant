@@ -459,7 +459,7 @@ async function main() {
 
   for (const { data: posData, mkt } of posFiles) {
     if (!posData) continue;
-    for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'NFL']) {
+    for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'NFL', 'SOC']) {
       const sportGames = posData[sport] || {};
       for (const [gameKey, gd] of Object.entries(sportGames)) {
         if (!gd.positions) continue;
@@ -490,7 +490,7 @@ async function main() {
 
   for (const { data: posData, mkt } of posFiles) {
     if (!posData) continue;
-    for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'NFL']) {
+    for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'NFL', 'SOC']) {
       const sportGames = posData[sport] || {};
       for (const [gameKey, gd] of Object.entries(sportGames)) {
         if (!gd.positions) continue;
@@ -506,9 +506,11 @@ async function main() {
           const qualificationTier = rawMult >= VAULT_MIN_MULTIPLIER ? 'VAULT' : 'SHADOW';
           const vaultQualified = qualificationTier === 'VAULT';
 
-          const teamName = pos.side === 'home' || pos.side === 'over'
-            ? (pos.side === 'over' ? 'Over' : gd.home)
-            : (pos.side === 'under' ? 'Under' : gd.away);
+          const teamName = pos.side === 'over' ? 'Over'
+            : pos.side === 'under' ? 'Under'
+            : pos.side === 'draw' ? 'Draw'
+            : pos.side === 'home' ? gd.home
+            : gd.away;
           const mult = avgBet > 0 ? +(pos.invested / avgBet).toFixed(2) : 0;
           const displayRoi = Math.min(pos.sportROI || 0, 999.9);
 

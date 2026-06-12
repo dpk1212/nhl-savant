@@ -14,6 +14,7 @@ import { readFileSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { parseOddsTrader } from '../src/utils/oddsTraderParser.js';
+import { resolveSOCTeam, isMainWorldCupMatchSlug } from './lib/soccerTeams.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -116,6 +117,45 @@ function aggregateTrades(trades, awayRaw, homeRaw) {
     homeMoneyPct: totalCash > 0 ? Number((homeCash / totalCash * 100).toFixed(1)) : 0,
     awayTicketPct: totalTickets > 0 ? Number((awayTickets / totalTickets * 100).toFixed(1)) : 0,
     homeTicketPct: totalTickets > 0 ? Number((homeTickets / totalTickets * 100).toFixed(1)) : 0,
+    ticketCount: trades.length,
+  };
+}
+
+/**
+ * SOC trade aggregation. Soccer events are negRisk with one binary market per
+ * outcome, so trade outcomes are "Yes"/"No" and the side lives in the market
+ * title ("Will Mexico win on 2026-06-18?", "Will X vs. Y end in a draw?").
+ * Only Yes-side trades are attributed to a side; No-side cash counts in total.
+ */
+function aggregateSoccerTrades(trades, awayRaw, homeRaw) {
+  let totalCash = 0;
+  let awayCash = 0, homeCash = 0, drawCash = 0;
+  let awayTickets = 0, homeTickets = 0, drawTickets = 0;
+  const nAway = normalize(awayRaw);
+  const nHome = normalize(homeRaw);
+
+  for (const t of trades) {
+    const cash = (t.size || 0) * (t.price || 0);
+    totalCash += cash;
+    if (normalize(t.outcome || '') !== 'yes') continue;
+    const title = normalize(t.title || '');
+    if (/endinadraw/.test(title)) {
+      drawCash += cash; drawTickets++;
+    } else if (nAway && title.includes(nAway)) {
+      awayCash += cash; awayTickets++;
+    } else if (nHome && title.includes(nHome)) {
+      homeCash += cash; homeTickets++;
+    }
+  }
+  const totalTickets = awayTickets + homeTickets + drawTickets;
+  return {
+    totalCash: Math.round(totalCash),
+    awayMoneyPct: totalCash > 0 ? Number((awayCash / totalCash * 100).toFixed(1)) : 0,
+    homeMoneyPct: totalCash > 0 ? Number((homeCash / totalCash * 100).toFixed(1)) : 0,
+    drawMoneyPct: totalCash > 0 ? Number((drawCash / totalCash * 100).toFixed(1)) : 0,
+    awayTicketPct: totalTickets > 0 ? Number((awayTickets / totalTickets * 100).toFixed(1)) : 0,
+    homeTicketPct: totalTickets > 0 ? Number((homeTickets / totalTickets * 100).toFixed(1)) : 0,
+    drawTicketPct: totalTickets > 0 ? Number((drawTickets / totalTickets * 100).toFixed(1)) : 0,
     ticketCount: trades.length,
   };
 }
@@ -381,6 +421,12 @@ function matchToGameKey(teams, cbbMap, sport) {
     if (!aCode || !bCode) return null;
     return `${normalize(aCode)}_${normalize(bCode)}`;
   }
+  if (sport === 'SOC') {
+    const aCode = resolveSOCTeam(a);
+    const bCode = resolveSOCTeam(b);
+    if (!aCode || !bCode) return null;
+    return `${normalize(aCode)}_${normalize(bCode)}`;
+  }
   return null;
 }
 
@@ -515,14 +561,44 @@ async function loadTodaysSchedule(cbbMap) {
     }
   }
 
-  return { validCBB, validNHL, validMLB, validNBA, commenceTimes };
+  // SOC (FIFA World Cup): use Odds API. h2h for soccer is 3-way (home/away/draw)
+  // but away_team/home_team fields are still populated like other sports.
+  const validSOC = new Set();
+  if (ODDS_API_KEY) {
+    try {
+      const url = `https://api.the-odds-api.com/v4/sports/soccer_fifa_world_cup/odds/?apiKey=${ODDS_API_KEY}&regions=us&markets=h2h&oddsFormat=american&bookmakers=fanduel`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const games = await res.json();
+        for (const g of games) {
+          const away = resolveSOCTeam(g.away_team);
+          const home = resolveSOCTeam(g.home_team);
+          if (away && home) {
+            const gk = `${normalize(away)}_${normalize(home)}`;
+            validSOC.add(gk);
+            if (g.commence_time && !commenceTimes[`SOC:${gk}`]) commenceTimes[`SOC:${gk}`] = g.commence_time;
+          } else {
+            console.warn(`SOC team resolution miss: "${g.away_team}" / "${g.home_team}"`);
+          }
+        }
+        const remaining = res.headers.get('x-requests-remaining');
+        console.log(`📋 Today's SOC/World Cup (Odds API): ${validSOC.size} games [credits left: ${remaining}]`);
+      } else {
+        console.warn(`Odds API SOC error: ${res.status}`);
+      }
+    } catch (e) {
+      console.warn('Could not load SOC schedule from Odds API:', e.message);
+    }
+  }
+
+  return { validCBB, validNHL, validMLB, validNBA, validSOC, commenceTimes };
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────
 async function run() {
-  const out = { CBB: {}, NHL: {}, MLB: {}, NBA: {}, updatedAt: new Date().toISOString() };
+  const out = { CBB: {}, NHL: {}, MLB: {}, NBA: {}, SOC: {}, updatedAt: new Date().toISOString() };
   const cbbMap = loadCBBTeamMap();
-  const { validCBB, validNHL, validMLB, validNBA, commenceTimes } = await loadTodaysSchedule(cbbMap);
+  const { validCBB, validNHL, validMLB, validNBA, validSOC, commenceTimes } = await loadTodaysSchedule(cbbMap);
 
   const tags = [
     { slug: 'sports', sport: null },
@@ -535,6 +611,8 @@ async function run() {
     { slug: 'mlb', sport: 'MLB' },
     { slug: 'baseball', sport: 'MLB' },
     { slug: 'nba', sport: 'NBA' },
+    { slug: 'fifa-world-cup', sport: 'SOC' },
+    { slug: 'soccer', sport: 'SOC' },
   ];
 
   const seenDates = new Map();  // key -> ET date string of accepted Poly event
@@ -583,8 +661,9 @@ async function run() {
     const hasNbaTag = evTags.includes('nba');
     const hasNhlTag = evTags.includes('nhl') || evTags.includes('hockey');
     const hasMlbTag = evTags.includes('mlb') || evTags.includes('baseball');
+    const hasSoccerTag = evTags.includes('fifa-world-cup') || evTags.includes('soccer');
 
-    let sport = ev._sport === 'CBB' ? 'CBB' : ev._sport === 'ncaa' ? 'CBB' : ev._sport === 'nhl' ? 'NHL' : ev._sport === 'MLB' ? 'MLB' : ev._sport === 'mlb' ? 'MLB' : ev._sport === 'baseball' ? 'MLB' : ev._sport === 'nba' ? 'NBA' : ev._sport === 'NBA' ? 'NBA' : null;
+    let sport = ev._sport === 'CBB' ? 'CBB' : ev._sport === 'ncaa' ? 'CBB' : ev._sport === 'nhl' ? 'NHL' : ev._sport === 'MLB' ? 'MLB' : ev._sport === 'mlb' ? 'MLB' : ev._sport === 'baseball' ? 'MLB' : ev._sport === 'nba' ? 'NBA' : ev._sport === 'NBA' ? 'NBA' : ev._sport === 'SOC' ? 'SOC' : null;
 
     // If tag says ncaa/college, force CBB regardless of _sport from tag_slug
     if (!sport && hasNcaaTag && !hasNbaTag) sport = 'CBB';
@@ -598,6 +677,7 @@ async function run() {
       else if (hasNhlTag && !hasNcaaTag) sport = 'NHL';
       else if (hasMlbTag) sport = 'MLB';
       else if (hasNbaTag) sport = 'NBA';
+      else if (hasSoccerTag && isMainWorldCupMatchSlug(ev.slug)) sport = 'SOC';
       else {
         const revTeams = [teams[1], teams[0]];
         const cbbKey = matchToGameKey(teams, cbbMap, 'CBB');
@@ -614,11 +694,15 @@ async function run() {
         else if ((nbaKey && validNBA.has(nbaKey)) || (nbaRevKey && validNBA.has(nbaRevKey))) sport = 'NBA';
       }
     }
-    if (!sport || !['CBB', 'NHL', 'MLB', 'NBA'].includes(sport)) continue;
+    if (!sport || !['CBB', 'NHL', 'MLB', 'NBA', 'SOC'].includes(sport)) continue;
+
+    // SOC: only MAIN World Cup match events (drops props: corners, first-to-score,
+    // halftime-result; drops futures: winner, starting-11; drops club soccer).
+    if (sport === 'SOC' && !isMainWorldCupMatchSlug(ev.slug)) continue;
 
     const key1 = matchToGameKey(teams, cbbMap, sport);
     const key2 = matchToGameKey([teams[1], teams[0]], cbbMap, sport);
-    const validSet = sport === 'CBB' ? validCBB : sport === 'MLB' ? validMLB : sport === 'NBA' ? validNBA : validNHL;
+    const validSet = sport === 'CBB' ? validCBB : sport === 'MLB' ? validMLB : sport === 'NBA' ? validNBA : sport === 'SOC' ? validSOC : validNHL;
     const keyReversed = !(key1 && validSet.has(key1)) && (key2 && validSet.has(key2));
     const key = keyReversed ? key2 : (key1 && validSet.has(key1)) ? key1 : null;
     if (!key) continue;
@@ -664,6 +748,7 @@ async function run() {
       whales: null,
       awayProb: null,
       homeProb: null,
+      drawProb: null,
       polySpread: null,
       polyTotal: null,
       awayTeam: _awayRawSkeleton,
@@ -679,7 +764,9 @@ async function run() {
     try {
       const live = await getLiveVolume(id);
       const trades = await getAllTrades(id);
-      const agg = aggregateTrades(trades, teams[0], teams[1]);
+      const agg = sport === 'SOC'
+        ? aggregateSoccerTrades(trades, teams[0], teams[1])
+        : aggregateTrades(trades, teams[0], teams[1]);
 
       let priceMove1h = null;
       let priceHistory = null;
@@ -689,19 +776,41 @@ async function run() {
       let mlMarket = null;
       let spreadMarket = null;
       let totalMarket = null;
-      for (const m of markets) {
-        const git = (m.groupItemTitle || '').toLowerCase();
-        const q = (m.question || '').toLowerCase();
-        let outs = m.outcomes;
-        if (typeof outs === 'string') try { outs = JSON.parse(outs); } catch { outs = []; }
-        const hasOverUnder = Array.isArray(outs) && outs.some(o => /^(over|under)$/i.test(o));
+      let socHomeMarket = null;
+      let socDrawMarket = null;
+      if (sport === 'SOC') {
+        // negRisk soccer event: one binary (Yes/No) market per outcome.
+        // groupItemTitle is "Mexico" / "Korea Republic" / "Draw (Mexico vs. Korea Republic)".
+        const awayCode = resolveSOCTeam(teams[0]);
+        const homeCode = resolveSOCTeam(teams[1]);
+        for (const m of markets) {
+          const git = m.groupItemTitle || '';
+          const q = m.question || '';
+          if (/^draw\b/i.test(git.trim()) || /end in a draw/i.test(q)) {
+            if (!socDrawMarket) socDrawMarket = m;
+            continue;
+          }
+          const code = resolveSOCTeam(git);
+          if (code && code === awayCode) { if (!mlMarket) mlMarket = m; }
+          else if (code && code === homeCode) { if (!socHomeMarket) socHomeMarket = m; }
+        }
+        // mlMarket = away-team market, so its Yes token tracks the away side
+        // (matches the away-oriented priceHistory convention below).
+      } else {
+        for (const m of markets) {
+          const git = (m.groupItemTitle || '').toLowerCase();
+          const q = (m.question || '').toLowerCase();
+          let outs = m.outcomes;
+          if (typeof outs === 'string') try { outs = JSON.parse(outs); } catch { outs = []; }
+          const hasOverUnder = Array.isArray(outs) && outs.some(o => /^(over|under)$/i.test(o));
 
-        if (git.includes('spread') || q.includes('spread:')) {
-          if (!spreadMarket) spreadMarket = m;
-        } else if (hasOverUnder && (git.includes('o/u') || git.includes('over') || git.includes('under') || q.includes('o/u'))) {
-          if (!totalMarket) totalMarket = m;
-        } else {
-          if (!mlMarket) mlMarket = m;
+          if (git.includes('spread') || q.includes('spread:')) {
+            if (!spreadMarket) spreadMarket = m;
+          } else if (hasOverUnder && (git.includes('o/u') || git.includes('over') || git.includes('under') || q.includes('o/u'))) {
+            if (!totalMarket) totalMarket = m;
+          } else {
+            if (!mlMarket) mlMarket = m;
+          }
         }
       }
       if (!mlMarket) mlMarket = markets[0];
@@ -744,10 +853,22 @@ async function run() {
           const cash = (t.size || 0) * (t.price || 0);
           totalCash += cash;
           if (t.side === 'BUY') buyCount++; else sellCount++;
+          // SOC: binary Yes/No outcomes carry no side info — resolve the side
+          // from the market title so the UI can attribute whale direction.
+          let outcomeLabel = t.outcome || null;
+          if (sport === 'SOC') {
+            outcomeLabel = null;
+            if (normalize(t.outcome || '') === 'yes') {
+              const tTitle = normalize(t.title || '');
+              if (/endinadraw/.test(tTitle)) outcomeLabel = 'Draw';
+              else if (normalize(teams[0]) && tTitle.includes(normalize(teams[0]))) outcomeLabel = teams[0];
+              else if (normalize(teams[1]) && tTitle.includes(normalize(teams[1]))) outcomeLabel = teams[1];
+            }
+          }
           tradeDetails.push({
             amount: Math.round(cash),
             side: t.side || 'BUY',
-            outcome: t.outcome || null,
+            outcome: outcomeLabel,
             price: t.price ? Number((t.price * 100).toFixed(0)) : null,
             ts: t.timestamp ? Number(t.timestamp) * 1000 : null,
             wallet: t.proxyWallet || null,
@@ -800,6 +921,24 @@ async function run() {
           awayProb = marketProbs[0];
           homeProb = marketProbs[1];
         }
+      }
+
+      // SOC override: each side has its own binary market, so the generic
+      // Yes/No mapping above only got awayProb right (mlMarket = away market).
+      // Pull home and draw probs from their respective markets' Yes price.
+      let drawProb = null;
+      if (sport === 'SOC') {
+        const yesPrice = (m) => {
+          if (!m) return null;
+          let prices = m.outcomePrices;
+          if (typeof prices === 'string') try { prices = JSON.parse(prices); } catch { prices = null; }
+          return Array.isArray(prices) && prices.length >= 1 ? Number(prices[0]) : null;
+        };
+        const hY = yesPrice(socHomeMarket);
+        const dY = yesPrice(socDrawMarket);
+        if (hY != null) homeProb = hY;
+        drawProb = dY;
+        token0IsAway = true; // mlMarket is the away-team market; Yes token = away
       }
 
       // Flip price history to always represent the AWAY team
@@ -900,6 +1039,9 @@ async function run() {
         whales: whaleData,
         awayProb: awayProb != null ? Number((awayProb * 100).toFixed(1)) : null,
         homeProb: homeProb != null ? Number((homeProb * 100).toFixed(1)) : null,
+        drawProb: drawProb != null ? Number((drawProb * 100).toFixed(1)) : null,
+        drawMoneyPct: agg.drawMoneyPct ?? null,
+        drawTicketPct: agg.drawTicketPct ?? null,
         polySpread,
         polyTotal,
         awayTeam: awayRaw,
@@ -922,8 +1064,9 @@ async function run() {
   const nhlCount = Object.keys(out.NHL).length;
   const mlbCount = Object.keys(out.MLB).length;
   const nbaCount = Object.keys(out.NBA).length;
-  console.log(`Wrote ${outPath} — CBB: ${cbbCount}, NHL: ${nhlCount}, MLB: ${mlbCount}, NBA: ${nbaCount}`);
-  if (cbbCount === 0 && nhlCount === 0 && mlbCount === 0 && nbaCount === 0) {
+  const socCount = Object.keys(out.SOC).length;
+  console.log(`Wrote ${outPath} — CBB: ${cbbCount}, NHL: ${nhlCount}, MLB: ${mlbCount}, NBA: ${nbaCount}, SOC: ${socCount}`);
+  if (cbbCount === 0 && nhlCount === 0 && mlbCount === 0 && nbaCount === 0 && socCount === 0) {
     console.log('(No Polymarket markets matched today\'s schedule)');
   }
 }

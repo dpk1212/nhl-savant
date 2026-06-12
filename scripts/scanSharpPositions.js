@@ -12,6 +12,7 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { matchSoccerPositionTitle, resolveSoccerSide } from './lib/soccerTeams.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -299,7 +300,7 @@ function writeIntelExcludedWallets(mmAddrs, traderAddrs) {
 // NHL and MLB share 3-letter city codes (bos, tor, min, col, etc.)
 function buildTodaysGames(polyData) {
   const games = {};
-  for (const sport of ['NHL', 'CBB', 'MLB', 'NBA']) {
+  for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC']) {
     const sportGames = polyData?.[sport] || {};
     for (const [key, g] of Object.entries(sportGames)) {
       const away = g.awayTeam || '';
@@ -359,6 +360,13 @@ function matchPositionToGame(posTitle, todaysGames, cbbMap) {
   }
 
   return null;
+}
+
+// SOC titles name a single side ("Will Mexico win on 2026-06-18?"), so they
+// need their own matcher — extractTeamsFromTitle can't parse them.
+function matchPositionToGameOrSoccer(posTitle, todaysGames, cbbMap) {
+  return matchPositionToGame(posTitle, todaysGames, cbbMap)
+    || matchSoccerPositionTitle(posTitle, todaysGames);
 }
 
 // ─── Match spread-formatted titles like "Spread: Knicks (-3.5)" ─────────────
@@ -540,7 +548,7 @@ async function run() {
   const cbbMap = loadCBBTeamMap();
   const todaysGames = buildTodaysGames(polyData);
   const gameKeys = Object.keys(todaysGames);
-  console.log(`Today's games: ${gameKeys.length} (${gameKeys.filter(k => todaysGames[k].sport === 'NHL').length} NHL, ${gameKeys.filter(k => todaysGames[k].sport === 'CBB').length} CBB, ${gameKeys.filter(k => todaysGames[k].sport === 'MLB').length} MLB, ${gameKeys.filter(k => todaysGames[k].sport === 'NBA').length} NBA)\n`);
+  console.log(`Today's games: ${gameKeys.length} (${gameKeys.filter(k => todaysGames[k].sport === 'NHL').length} NHL, ${gameKeys.filter(k => todaysGames[k].sport === 'CBB').length} CBB, ${gameKeys.filter(k => todaysGames[k].sport === 'MLB').length} MLB, ${gameKeys.filter(k => todaysGames[k].sport === 'NBA').length} NBA, ${gameKeys.filter(k => todaysGames[k].sport === 'SOC').length} SOC)\n`);
 
   // Existing pipeline: tier + mmScore + sport PnL floor (needed before no-games exit for Vault exclusions)
   const MM_THRESHOLD = 40;
@@ -632,7 +640,7 @@ async function run() {
   if (gameKeys.length === 0) {
     console.log('No games today — skipping scan');
     const outPath = join(ROOT, 'public', 'sharp_positions.json');
-    writeFileSync(outPath, JSON.stringify({ NHL: {}, CBB: {}, MLB: {}, NBA: {}, scannedAt: new Date().toISOString(), walletsScanned: 0 }, null, 2), 'utf8');
+    writeFileSync(outPath, JSON.stringify({ NHL: {}, CBB: {}, MLB: {}, NBA: {}, SOC: {}, scannedAt: new Date().toISOString(), walletsScanned: 0 }, null, 2), 'utf8');
     writeVaultExclusionFile({});
     return;
   }
@@ -644,7 +652,7 @@ async function run() {
   for (const filename of ['sharp_positions.json', 'sharp_spread_positions.json', 'sharp_total_positions.json']) {
     const prevData = loadJSON(filename);
     if (!prevData) continue;
-    for (const sport of ['NHL', 'CBB', 'MLB', 'NBA']) {
+    for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC']) {
       for (const [gameKey, game] of Object.entries(prevData[sport] || {})) {
         for (const pos of (game.positions || [])) {
           if (pos.firstSeen) {
@@ -656,9 +664,9 @@ async function run() {
     }
   }
 
-  const result = { NHL: {}, CBB: {}, MLB: {}, NBA: {} };
-  const spreadResult = { NHL: {}, CBB: {}, MLB: {}, NBA: {} };
-  const totalResult = { NHL: {}, CBB: {}, MLB: {}, NBA: {} };
+  const result = { NHL: {}, CBB: {}, MLB: {}, NBA: {}, SOC: {} };
+  const spreadResult = { NHL: {}, CBB: {}, MLB: {}, NBA: {}, SOC: {} };
+  const totalResult = { NHL: {}, CBB: {}, MLB: {}, NBA: {}, SOC: {} };
   let matchCount = 0;
   let spreadMatchCount = 0;
   let totalMatchCount = 0;
@@ -682,7 +690,7 @@ async function run() {
 
     for (const pos of positions) {
       const title = pos.title || '';
-      let match = matchPositionToGame(title, todaysGames, cbbMap);
+      let match = matchPositionToGameOrSoccer(title, todaysGames, cbbMap);
       let forcedSpread = false;
 
       if (!match) {
@@ -772,6 +780,11 @@ async function run() {
       let side;
       if (isTotal) {
         side = outcomeNorm === 'over' ? 'over' : 'under';
+      } else if (sport === 'SOC') {
+        // 3-way: side comes from the negRisk market itself + Yes outcome.
+        // "No" on a single side (= home OR draw) isn't attributable — skip.
+        side = resolveSoccerSide(match, outcome, game.away, game.home);
+        if (!side) continue;
       } else {
         side = resolveOutcomeSide(outcome, game.away, game.home, title);
       }
@@ -791,7 +804,9 @@ async function run() {
           positions: [],
           summary: marketType === 'total'
             ? { sharpOver: 0, sharpUnder: 0, overInvested: 0, underInvested: 0 }
-            : { sharpAway: 0, sharpHome: 0, awayInvested: 0, homeInvested: 0 },
+            : sport === 'SOC'
+              ? { sharpAway: 0, sharpHome: 0, sharpDraw: 0, awayInvested: 0, homeInvested: 0, drawInvested: 0 }
+              : { sharpAway: 0, sharpHome: 0, awayInvested: 0, homeInvested: 0 },
         };
       }
 
@@ -835,6 +850,7 @@ async function run() {
         else { summary.sharpUnder++; summary.underInvested += invested; }
       } else {
         if (side === 'away') { summary.sharpAway++; summary.awayInvested += invested; }
+        else if (side === 'draw') { summary.sharpDraw = (summary.sharpDraw || 0) + 1; summary.drawInvested = (summary.drawInvested || 0) + invested; }
         else { summary.sharpHome++; summary.homeInvested += invested; }
       }
 
@@ -860,7 +876,7 @@ async function run() {
   {
     const bothSidesCount = {};
     for (const resSet of [result, spreadResult, totalResult]) {
-      for (const sport of ['NHL', 'CBB', 'MLB', 'NBA']) {
+      for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC']) {
         for (const gd of Object.values(resSet[sport] || {})) {
           const walletSides = {};
           for (const pos of gd.positions || []) {
@@ -877,7 +893,7 @@ async function run() {
 
     const allWalletsInResults = new Set();
     for (const resSet of [result, spreadResult, totalResult]) {
-      for (const sport of ['NHL', 'CBB', 'MLB', 'NBA']) {
+      for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC']) {
         for (const gd of Object.values(resSet[sport] || {})) {
           for (const pos of gd.positions || []) allWalletsInResults.add(pos.wallet);
         }
@@ -898,7 +914,7 @@ async function run() {
     let traderDollarsRemoved = 0;
 
     function stripTraders(resSet, isTotalMarket = false) {
-      for (const sport of ['NHL', 'CBB', 'MLB', 'NBA']) {
+      for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC']) {
         for (const [gameKey, gd] of Object.entries(resSet[sport] || {})) {
           const removed = gd.positions.filter(p => traderSet.has((p.wallet || '').toLowerCase()));
           gd.positions = gd.positions.filter(p => !traderSet.has((p.wallet || '').toLowerCase()));
@@ -918,9 +934,13 @@ async function run() {
                 else { gd.summary.sharpUnder++; gd.summary.underInvested += p.invested; }
               }
             } else {
-              gd.summary = { sharpAway: 0, sharpHome: 0, awayInvested: 0, homeInvested: 0 };
+              gd.summary = {
+                sharpAway: 0, sharpHome: 0, awayInvested: 0, homeInvested: 0,
+                ...(sport === 'SOC' && { sharpDraw: 0, drawInvested: 0 }),
+              };
               for (const p of gd.positions) {
                 if (p.side === 'away') { gd.summary.sharpAway++; gd.summary.awayInvested += p.invested; }
+                else if (p.side === 'draw') { gd.summary.sharpDraw = (gd.summary.sharpDraw || 0) + 1; gd.summary.drawInvested = (gd.summary.drawInvested || 0) + p.invested; }
                 else { gd.summary.sharpHome++; gd.summary.homeInvested += p.invested; }
               }
             }
@@ -953,10 +973,13 @@ async function run() {
                         : null;
             s.totalInvested = s.overInvested + s.underInvested;
           } else {
-            s.consensus = s.awayInvested > s.homeInvested ? 'away'
-                        : s.homeInvested > s.awayInvested ? 'home'
+            // 3-way aware (drawInvested is 0/absent for non-SOC sports)
+            const dInv = s.drawInvested || 0;
+            s.consensus = (s.awayInvested > s.homeInvested && s.awayInvested > dInv) ? 'away'
+                        : (s.homeInvested > s.awayInvested && s.homeInvested > dInv) ? 'home'
+                        : (dInv > s.awayInvested && dInv > s.homeInvested) ? 'draw'
                         : null;
-            s.totalInvested = s.awayInvested + s.homeInvested;
+            s.totalInvested = s.awayInvested + s.homeInvested + dInv;
           }
         }
       }
@@ -993,7 +1016,7 @@ async function run() {
   let totalGamesWithPositions = 0;
   let spreadGames = 0;
   let totalGames = 0;
-  for (const sport of ['NHL', 'CBB', 'MLB', 'NBA']) {
+  for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC']) {
     totalGamesWithPositions += Object.keys(result[sport]).length;
     spreadGames += Object.keys(spreadResult[sport]).length;
     totalGames += Object.keys(totalResult[sport]).length;

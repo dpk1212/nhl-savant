@@ -63,6 +63,7 @@ import admin from 'firebase-admin';
 import { readFileSync, writeFileSync, existsSync, unlinkSync, renameSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { matchSoccerPositionTitle, resolveSoccerSide } from './lib/soccerTeams.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -257,7 +258,7 @@ function extractTeamsFromTitle(title) {
 
 function buildTodaysGames(polyData) {
   const games = {};
-  for (const sport of ['NHL', 'CBB', 'MLB', 'NBA']) {
+  for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC']) {
     const sportGames = polyData?.[sport] || {};
     for (const [key, g] of Object.entries(sportGames)) {
       const away = g.awayTeam || '';
@@ -411,7 +412,7 @@ function collectScannedWallets() {
   for (const f of ['sharp_positions.json', 'sharp_spread_positions.json', 'sharp_total_positions.json']) {
     const data = loadJSON(f);
     if (!data) continue;
-    for (const sport of ['NHL', 'CBB', 'MLB', 'NBA']) {
+    for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC']) {
       const games = data[sport] || {};
       if (typeof games !== 'object') continue;
       for (const g of Object.values(games)) {
@@ -660,7 +661,8 @@ async function run() {
     const matched = [];
     for (const pos of fetched.data) {
       const title = pos.title || '';
-      let match = matchPositionToGame(title, todaysGames, cbbMap);
+      let match = matchPositionToGame(title, todaysGames, cbbMap)
+        || matchSoccerPositionTitle(title, todaysGames);
       let forcedSpread = false;
       if (!match) {
         const sm = matchSpreadTitle(title, todaysGames, cbbMap);
@@ -676,9 +678,16 @@ async function run() {
       const isSpread = forcedSpread || (!isTotal && (titleLower.includes('spread') || /[+-]\d+\.?\d*/.test(outcome)));
       const marketType = isTotal ? 'total' : isSpread ? 'spread' : 'ml';
       const game = todaysGames[`${match.sport}:${match.key}`];
-      const side = isTotal
-        ? (outcomeNorm === 'over' ? 'over' : 'under')
-        : resolveOutcomeSide(outcome, game.away, game.home, title);
+      let side;
+      if (isTotal) {
+        side = outcomeNorm === 'over' ? 'over' : 'under';
+      } else if (match.sport === 'SOC') {
+        // 3-way: side comes from the negRisk market itself + Yes outcome.
+        side = resolveSoccerSide(match, outcome, game.away, game.home);
+        if (!side) continue;
+      } else {
+        side = resolveOutcomeSide(outcome, game.away, game.home, title);
+      }
 
       // ── entryLine extraction (mirrors scanSharpPositions.js) ─────────
       // For spread/total, writeSharpActions reads entryLine to stamp
@@ -954,7 +963,7 @@ function mergeRecoveredIntoScanFiles(positions, polyData) {
     if (!data) {
       // If the main scanner didn't produce this file (e.g. no totals
       // today), bootstrap a minimal shape so we can still inject.
-      data = { NHL: {}, CBB: {}, MLB: {}, NBA: {}, _whitelist_bootstrap: true };
+      data = { NHL: {}, CBB: {}, MLB: {}, NBA: {}, SOC: {}, _whitelist_bootstrap: true };
     }
 
     for (const pos of bucket.positions) {
@@ -975,7 +984,9 @@ function mergeRecoveredIntoScanFiles(positions, polyData) {
           positions: [],
           summary: marketType === 'total'
             ? { sharpOver: 0, sharpUnder: 0, overInvested: 0, underInvested: 0 }
-            : { sharpAway: 0, sharpHome: 0, awayInvested: 0, homeInvested: 0 },
+            : sport === 'SOC'
+              ? { sharpAway: 0, sharpHome: 0, sharpDraw: 0, awayInvested: 0, homeInvested: 0, drawInvested: 0 }
+              : { sharpAway: 0, sharpHome: 0, awayInvested: 0, homeInvested: 0 },
         };
       } else if (!data[sport][pos.gameKey].away && pos.awayName) {
         // Backfill empty names if the main scanner created the entry but
@@ -1042,8 +1053,9 @@ function mergeRecoveredIntoScanFiles(positions, polyData) {
         if (pos.side === 'over') { game.summary.sharpOver++; game.summary.overInvested += pos.invested; }
         else                     { game.summary.sharpUnder++; game.summary.underInvested += pos.invested; }
       } else {
-        if (pos.side === 'away') { game.summary.sharpAway++; game.summary.awayInvested += pos.invested; }
-        else                     { game.summary.sharpHome++; game.summary.homeInvested += pos.invested; }
+        if (pos.side === 'away')      { game.summary.sharpAway++; game.summary.awayInvested += pos.invested; }
+        else if (pos.side === 'draw') { game.summary.sharpDraw = (game.summary.sharpDraw || 0) + 1; game.summary.drawInvested = (game.summary.drawInvested || 0) + pos.invested; }
+        else                          { game.summary.sharpHome++; game.summary.homeInvested += pos.invested; }
       }
       stats[marketType]++;
     }

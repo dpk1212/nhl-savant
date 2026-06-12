@@ -416,7 +416,7 @@ function loadGameMetadata() {
   const meta = new Map(); // key: `${sport}|${gameKey}` → { commenceTime, away, home, mlOdds: { away, home }, spread, total }
   try {
     const poly = JSON.parse(readFileSync(join(PUBLIC, 'polymarket_data.json'), 'utf8'));
-    for (const sport of ['NBA', 'MLB', 'NHL', 'CBB']) {
+    for (const sport of ['NBA', 'MLB', 'NHL', 'CBB', 'SOC']) {
       const games = poly[sport] || {};
       for (const [gk, g] of Object.entries(games)) {
         const key = `${sport}|${gk}`;
@@ -439,7 +439,7 @@ function loadGameMetadata() {
   }
   try {
     const pinn = JSON.parse(readFileSync(join(PUBLIC, 'pinnacle_history.json'), 'utf8'));
-    for (const sport of ['NBA', 'MLB', 'NHL', 'CBB']) {
+    for (const sport of ['NBA', 'MLB', 'NHL', 'CBB', 'SOC']) {
       const games = pinn[sport] || {};
       for (const [gk, g] of Object.entries(games)) {
         const key = `${sport}|${gk}`;
@@ -488,6 +488,7 @@ const LINE_PLAUSIBILITY = {
     NBA: { min: 150, max: 300 }, // typical 200-260
     MLB: { min: 4,   max: 25  }, // typical 6.5-12.5
     NHL: { min: 3,   max: 12  }, // typical 5-7
+    SOC: { min: 0.5, max: 7.5 }, // soccer goals — typical 1.5-3.5
     DEFAULT: { min: 1.5, max: 400 }, // catch-all that still rejects 1
   },
   SPREAD: {
@@ -661,7 +662,9 @@ function computeSideAnalytics(positions, side, sport, walletProfiles, agsCalibra
 // `agsBothSides` on the pick doc. Returns null when both sides are
 // empty (nothing meaningful to record).
 function computeBothSidesAnalytics(positions, marketType, sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn = null, walletPriorStatsFn = null) {
-  const sides = marketType === 'TOTAL' ? ['over', 'under'] : ['away', 'home'];
+  const sides = marketType === 'TOTAL' ? ['over', 'under']
+    : sport === 'SOC' ? ['away', 'home', 'draw']
+    : ['away', 'home'];
   const out = {};
   let any = false;
   for (const side of sides) {
@@ -735,7 +738,9 @@ async function createMissingLockedPicks({
       continue;
     }
 
-    const sides = marketType === 'TOTAL' ? ['over', 'under'] : ['away', 'home'];
+    const sides = marketType === 'TOTAL' ? ['over', 'under']
+      : sport === 'SOC' ? ['away', 'home', 'draw']
+      : ['away', 'home'];
     const newSides = {};
     for (const side of sides) {
       const live = computeWalletConsensus(positions, side, sport, walletProfiles);
@@ -811,7 +816,7 @@ async function createMissingLockedPicks({
           ? `${tot} ${line}`
           : tot;
       } else {
-        team = side === 'home' ? meta.home : meta.away;
+        team = side === 'draw' ? 'Draw' : side === 'home' ? meta.home : meta.away;
       }
 
       // Build the rich peak fields the dashboard render reads. Without

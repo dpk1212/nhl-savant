@@ -1309,7 +1309,7 @@ async function buildWalletPoolHealth(report) {
   report.push('');
   try {
     const snap = await db.collection('sharpWalletProfiles').get();
-    const SPORTS = ['MLB', 'NBA', 'NHL'];
+    const SPORTS = ['MLB', 'NBA', 'NHL', 'SOC'];
     const c = {};
     for (const sp of SPORTS) c[sp] = { has: 0, CONFIRMED: 0, FLAT: 0, WR50: 0, null: 0 };
     for (const d of snap.docs) {

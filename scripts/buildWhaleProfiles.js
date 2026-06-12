@@ -12,6 +12,7 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { isSoccerMarketTitle } from './lib/soccerTeams.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -63,6 +64,9 @@ function classifySport(title) {
       if (t.includes(kw)) return sport;
     }
   }
+  // SOC last: precise shape-based matcher (no substring misfires on
+  // US team names like "New Mexico"). See lib/soccerTeams.js.
+  if (isSoccerMarketTitle(title)) return 'SOC';
   return null;
 }
 

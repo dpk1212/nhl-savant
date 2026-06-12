@@ -41,6 +41,41 @@ const ESPN_NBA_TO_CODE = {
 const NCAA_API_URL = "https://ncaa-api.henrygd.me/scoreboard/basketball-men/d1";
 const ESPN_MLB_URL = "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard";
 const ESPN_NBA_URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard";
+const ESPN_SOC_URL = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard";
+
+// World Cup country name → FIFA code (mirrors scripts/lib/soccerTeams.js —
+// functions/ is CommonJS so it can't import that ESM module directly).
+// Covers Polymarket, ESPN, and Odds API spelling variants.
+const SOC_NAME_TO_CODE = {
+  "algeria": "ALG", "argentina": "ARG", "australia": "AUS", "austria": "AUT",
+  "belgium": "BEL", "bosniaherzegovina": "BIH", "bosniaandherzegovina": "BIH", "bosnia": "BIH",
+  "brazil": "BRA", "canada": "CAN", "capeverde": "CPV", "caboverde": "CPV",
+  "cotedivoire": "CIV", "ivorycoast": "CIV",
+  "drcongo": "COD", "congodr": "COD", "democraticrepublicofthecongo": "COD",
+  "croatia": "CRO", "curacao": "CUW", "czechia": "CZE", "czechrepublic": "CZE",
+  "ecuador": "ECU", "egypt": "EGY", "england": "ENG", "spain": "ESP",
+  "france": "FRA", "germany": "GER", "ghana": "GHA", "haiti": "HAI",
+  "iriran": "IRN", "iran": "IRN", "iraq": "IRQ", "italy": "ITA",
+  "jordan": "JOR", "japan": "JPN",
+  "korearepublic": "KOR", "southkorea": "KOR", "republicofkorea": "KOR",
+  "saudiarabia": "KSA", "morocco": "MAR", "mexico": "MEX",
+  "netherlands": "NED", "holland": "NED", "norway": "NOR", "newzealand": "NZL",
+  "panama": "PAN", "paraguay": "PAR", "peru": "PER", "portugal": "POR",
+  "qatar": "QAT", "southafrica": "RSA", "scotland": "SCO", "senegal": "SEN",
+  "switzerland": "SUI", "sweden": "SWE", "tunisia": "TUN",
+  "turkiye": "TUR", "turkey": "TUR",
+  "uruguay": "URU", "usa": "USA", "unitedstates": "USA", "unitedstatesofamerica": "USA",
+  "uzbekistan": "UZB",
+};
+
+function resolveSOCCode(raw) {
+  const n = (raw || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+  return SOC_NAME_TO_CODE[n] || null;
+}
 
 function impliedProbability(american) {
   if (!american || american === 0) return null;
@@ -230,6 +265,40 @@ async function fetchNBAFinalGames() {
   }
 }
 
+async function fetchSOCFinalGames(dateStr) {
+  // FIFA World Cup via ESPN. Polymarket's 3-way market resolves on the
+  // 90-minute result; group stage (through June 27) has no extra time so
+  // the final score IS the regulation score. Knockout rounds may include
+  // extra time in ESPN's score — revisit before June 28.
+  try {
+    const ymd = dateStr ? `?dates=${dateStr.replace(/-/g, "")}` : "";
+    const res = await fetch(`${ESPN_SOC_URL}${ymd}`);
+    if (!res.ok) { logger.warn(`ESPN SOC API ${res.status}`); return []; }
+    const data = await res.json();
+    return (data.events || [])
+        .filter((e) => isActuallyFinal(e.competitions?.[0]?.status?.type))
+        .map((e) => {
+          const comp = e.competitions[0];
+          const comps = comp.competitors || [];
+          const away = comps.find((c) => c.homeAway === "away") || {};
+          const home = comps.find((c) => c.homeAway === "home") || {};
+          const awayName = away.team?.displayName || away.team?.name || "";
+          const homeName = home.team?.displayName || home.team?.name || "";
+          return {
+            awayCode: (resolveSOCCode(awayName) || "").toLowerCase(),
+            homeCode: (resolveSOCCode(homeName) || "").toLowerCase(),
+            awayTeam: awayName,
+            homeTeam: homeName,
+            awayScore: parseInt(away.score) || 0,
+            homeScore: parseInt(home.score) || 0,
+          };
+        });
+  } catch (e) {
+    logger.error("ESPN SOC fetch error:", e.message);
+    return [];
+  }
+}
+
 /**
  * Scheduled function: Updates bet results with game outcomes
  */
@@ -335,10 +404,12 @@ exports.updateBetResults = onSchedule({
 
     const allSports = new Set();
     const allCbbDates = new Set();
+    const allSocDates = new Set();
     allDocs.forEach((d) => {
       const p = d.data();
       allSports.add(p.sport);
       if (p.sport === "CBB" && p.date) allCbbDates.add(p.date);
+      if (p.sport === "SOC" && p.date) allSocDates.add(p.date);
     });
 
     let cbbFinalByDate = {};
@@ -361,6 +432,15 @@ exports.updateBetResults = onSchedule({
     if (allSports.has("NBA")) {
       nbaFinalGames = await fetchNBAFinalGames();
       logger.info(`ESPN NBA API: ${nbaFinalGames.length} final NBA games`);
+    }
+
+    let socFinalGames = [];
+    if (allSports.has("SOC")) {
+      for (const d of allSocDates) {
+        const games = await fetchSOCFinalGames(d);
+        socFinalGames.push(...games);
+        logger.info(`ESPN SOC API: ${games.length} final World Cup games for ${d}`);
+      }
     }
 
     // ─── Grade Sharp Flow ML Picks ───────────────────────────────────
@@ -451,12 +531,33 @@ exports.updateBetResults = onSchedule({
                 }
               }
             }
+          } else if (sport === "SOC") {
+            const rawKey = (pick.gameKey || "").replace(/^SOC:/, "");
+            const parts = rawKey.split("_");
+            if (parts.length === 2) {
+              matchingGame = socFinalGames.find((g) =>
+                g.awayCode === parts[0] && g.homeCode === parts[1],
+              );
+              // ESPN home/away may not match our key order — flip scores
+              if (!matchingGame) {
+                const flipped = socFinalGames.find((g) =>
+                  g.awayCode === parts[1] && g.homeCode === parts[0],
+                );
+                if (flipped) {
+                  matchingGame = {
+                    awayScore: flipped.homeScore,
+                    homeScore: flipped.awayScore,
+                  };
+                }
+              }
+            }
           }
 
           if (!matchingGame) continue;
 
           const winner = matchingGame.awayScore > matchingGame.homeScore ?
-            "away" : "home";
+            "away" : matchingGame.homeScore > matchingGame.awayScore ?
+            "home" : "draw";
 
           logger.info(
               `📊 ${sport}: ${pick.away} (${matchingGame.awayScore}) @ ` +
@@ -470,14 +571,16 @@ exports.updateBetResults = onSchedule({
               "result.winner": winner,
               "result.source": sport === "NHL" ? "NHL_API" :
                 sport === "CBB" ? "NCAA_API" :
-                sport === "NBA" ? "ESPN_NBA_API" : "ESPN_MLB_API",
+                sport === "NBA" ? "ESPN_NBA_API" :
+                sport === "SOC" ? "ESPN_SOC_API" : "ESPN_MLB_API",
             };
             let allSidesGraded = true;
 
             for (const [side, sideData] of Object.entries(pick.sides)) {
               if (sideData.status === "COMPLETED") continue;
 
-              const sideUpper = side === "away" ? "AWAY" : "HOME";
+              const sideUpper = side === "away" ? "AWAY" :
+                side === "draw" ? "DRAW" : "HOME";
               const outcome = calculateOutcome(matchingGame, {
                 market: "MONEYLINE",
                 side: sideUpper,
@@ -567,7 +670,8 @@ exports.updateBetResults = onSchedule({
               "result.profit": parseFloat(profit.toFixed(2)),
               "result.source": sport === "NHL" ? "NHL_API" :
                 sport === "CBB" ? "NCAA_API" :
-                sport === "NBA" ? "ESPN_NBA_API" : "ESPN_MLB_API",
+                sport === "NBA" ? "ESPN_NBA_API" :
+                sport === "SOC" ? "ESPN_SOC_API" : "ESPN_MLB_API",
               "result.gradedAt":
                 admin.firestore.FieldValue.serverTimestamp(),
               "status": "COMPLETED",
@@ -1022,6 +1126,11 @@ function calculateOutcome(game, bet) {
       }
 
     case "MONEYLINE":
+      // 3-way soccer support: DRAW is its own side; team sides lose on draws
+      // (already the behavior here — a tie grades LOSS for HOME and AWAY).
+      if (bet.side === "DRAW") {
+        return (!awayWin && !homeWin) ? "WIN" : "LOSS";
+      }
       if (bet.side === "HOME") {
         return homeWin ? "WIN" : "LOSS";
       } else {

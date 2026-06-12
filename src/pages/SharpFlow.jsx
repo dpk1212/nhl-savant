@@ -122,6 +122,7 @@ function sportStyle(sport) {
   if (sport === 'CBB') return { color: '#FF6B35', bg: 'rgba(255,107,53,0.12)', icon: '🏀' };
   if (sport === 'MLB') return { color: '#E31837', bg: 'rgba(227,24,55,0.12)', icon: '⚾' };
   if (sport === 'NBA') return { color: '#FF8C00', bg: 'rgba(255,140,0,0.12)', icon: '🏀' };
+  if (sport === 'SOC') return { color: '#2ECC71', bg: 'rgba(46,204,113,0.12)', icon: '⚽' };
   return { color: '#D4AF37', bg: 'rgba(212,175,55,0.12)', icon: '🏒' };
 }
 
@@ -769,6 +770,7 @@ const WHITELIST_INTERVENTION = {
   NHL: { bonus: true, mute: true, cancel: true, promote: true },
   CBB: { bonus: true, mute: true, cancel: true, promote: true },
   NFL: { bonus: true, mute: true, cancel: true, promote: true },
+  SOC: { bonus: true, mute: true, cancel: true, promote: true },
 };
 // v6 = Two-Factor overhaul. Δ_winner + Δ_quality@T30 are now the sole
 // drivers of stars/units/lock/mute/cancel for Sharp Intel. Floor G
@@ -2826,7 +2828,7 @@ async function toggleUserPick(uid, date, gameKey, pickData) {
 // "T30+ contributor AND whitelisted" — a slight tightening. forW/agW,
 // HC margin, hcDominant are unaffected (they already filtered to
 // whitelisted/CONFIRMED wallets only).
-const SHARP_INTEL_SPORTS = new Set(['NHL', 'CBB', 'MLB', 'NBA', 'NFL']);
+const SHARP_INTEL_SPORTS = new Set(['NHL', 'CBB', 'MLB', 'NBA', 'NFL', 'SOC']);
 function filterToQualifiedWallets(rawData, profilesMap) {
   if (!rawData) return null;
   if (!profilesMap || profilesMap.size === 0) return null;
@@ -2871,15 +2873,23 @@ function filterToQualifiedWallets(rawData, profilesMap) {
         summary.totalInvested = summary.overInvested + summary.underInvested;
       } else {
         summary = { sharpAway: 0, sharpHome: 0, awayInvested: 0, homeInvested: 0 };
+        if (sport === 'SOC') { summary.sharpDraw = 0; summary.drawInvested = 0; }
         for (const p of positions) {
           const inv = p.invested || 0;
           if (p.side === 'away') { summary.sharpAway++; summary.awayInvested += inv; }
           else if (p.side === 'home') { summary.sharpHome++; summary.homeInvested += inv; }
+          else if (p.side === 'draw') {
+            summary.sharpDraw = (summary.sharpDraw || 0) + 1;
+            summary.drawInvested = (summary.drawInvested || 0) + inv;
+          }
         }
-        summary.consensus = summary.awayInvested > summary.homeInvested ? 'away'
-                          : summary.homeInvested > summary.awayInvested ? 'home'
+        // 3-way aware (drawInvested is 0/absent outside SOC)
+        const dInv = summary.drawInvested || 0;
+        summary.consensus = (summary.awayInvested > summary.homeInvested && summary.awayInvested > dInv) ? 'away'
+                          : (summary.homeInvested > summary.awayInvested && summary.homeInvested > dInv) ? 'home'
+                          : (dInv > summary.awayInvested && dInv > summary.homeInvested) ? 'draw'
                           : null;
-        summary.totalInvested = summary.awayInvested + summary.homeInvested;
+        summary.totalInvested = summary.awayInvested + summary.homeInvested + dInv;
       }
       filteredSport[gameKey] = { ...gd, positions, summary };
     }
@@ -3090,6 +3100,8 @@ function buildGameData(polyData, kalshiData) {
 
       const awayProb = poly?.awayProb ?? kalshi?.awayProb ?? null;
       const homeProb = poly?.homeProb ?? kalshi?.homeProb ?? null;
+      // 3-way (soccer): draw is a third priced outcome on the same game
+      const drawProb = poly?.drawProb ?? null;
       const polyVol = poly?.volume24h || 0;
       const kalshiVol = kalshi?.volume24h || 0;
       const volume = polyVol + kalshiVol;
@@ -3103,14 +3115,17 @@ function buildGameData(polyData, kalshiData) {
       const totalTrades = polyTrades + kTrades;
       const totalCash = polyCash + kCash;
 
-      const awayTicketPct = totalTrades > 0
+      // 3-way (soccer): home% is NOT the complement of away% (draw holds the
+      // remainder), so use Polymarket's per-side percentages directly.
+      const isThreeWay = sport === 'SOC';
+      const awayTicketPct = isThreeWay ? (polyFlow.awayTicketPct || 0) : totalTrades > 0
         ? Number(((((polyFlow.awayTicketPct || 0) / 100 * polyTrades) + ((kalshiFlow.awayTicketPct || 0) / 100 * kTrades)) / totalTrades * 100).toFixed(1))
         : polyFlow.awayTicketPct || kalshiFlow.awayTicketPct || 0;
-      const homeTicketPct = totalTrades > 0 ? Number((100 - awayTicketPct).toFixed(1)) : polyFlow.homeTicketPct || kalshiFlow.homeTicketPct || 0;
-      const awayMoneyPct = totalCash > 0
+      const homeTicketPct = isThreeWay ? (polyFlow.homeTicketPct || 0) : totalTrades > 0 ? Number((100 - awayTicketPct).toFixed(1)) : polyFlow.homeTicketPct || kalshiFlow.homeTicketPct || 0;
+      const awayMoneyPct = isThreeWay ? (polyFlow.awayMoneyPct || 0) : totalCash > 0
         ? Number(((((polyFlow.awayMoneyPct || 0) / 100 * polyCash) + ((kalshiFlow.awayMoneyPct || 0) / 100 * kCash)) / totalCash * 100).toFixed(1))
         : polyFlow.awayMoneyPct || kalshiFlow.awayMoneyPct || 0;
-      const homeMoneyPct = totalCash > 0 ? Number((100 - awayMoneyPct).toFixed(1)) : polyFlow.homeMoneyPct || kalshiFlow.homeMoneyPct || 0;
+      const homeMoneyPct = isThreeWay ? (polyFlow.homeMoneyPct || 0) : totalCash > 0 ? Number((100 - awayMoneyPct).toFixed(1)) : polyFlow.homeMoneyPct || kalshiFlow.homeMoneyPct || 0;
 
       const away = poly?.awayTeam || key.split('_')[0]?.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/\b\w/g, c => c.toUpperCase()) || '';
       const home = poly?.homeTeam || key.split('_').slice(1).join('_')?.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/\b\w/g, c => c.toUpperCase()) || '';
@@ -3137,6 +3152,9 @@ function buildGameData(polyData, kalshiData) {
       let whaleCashAway = 0, whaleCashHome = 0;
       for (const w of allWhales) {
         const side = resolveOutcomeSide(w.outcome, away, home);
+        // SOC: Draw whales and unattributed No-side trades carry no
+        // away/home direction — exclude from the 2-way whale tally.
+        if (sport === 'SOC' && side === null) continue;
         const isAway = side === 'away';
         if (w.side === 'BUY') {
           if (isAway) { whaleBuyAway++; whaleCashAway += w.amount; }
@@ -3166,8 +3184,10 @@ function buildGameData(polyData, kalshiData) {
       const kalshiTotals = kalshi?.totals || null;
 
       games.push({
-        key, sport, away, home, awayProb, homeProb, volume,
+        key, sport, away, home, awayProb, homeProb, drawProb, volume,
         awayTicketPct, homeTicketPct, awayMoneyPct, homeMoneyPct,
+        drawMoneyPct: poly?.drawMoneyPct ?? null,
+        drawTicketPct: poly?.drawTicketPct ?? null,
         totalTrades, totalCash, whaleCount, whaleCash,
         allWhales, ticketDivergence,
         priceChange, priceOpen, priceCurrent, priceMovedTeam,
@@ -3183,6 +3203,7 @@ function buildGameData(polyData, kalshiData) {
   processSport('NHL');
   processSport('MLB');
   processSport('NBA');
+  processSport('SOC');
 
   games.sort((a, b) => b.volume - a.volume);
   return games;
@@ -3444,13 +3465,19 @@ const GameFlowCard = memo(function GameFlowCard({ game, isMobile, whaleProfiles,
   const gameTimeFormatted = commenceTime
     ? new Date(commenceTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' })
     : null;
-  const ticketFav = game.awayTicketPct >= game.homeTicketPct ? 'away' : 'home';
-  const moneyFav = game.awayMoneyPct >= game.homeMoneyPct ? 'away' : 'home';
+  // 3-way (soccer): Draw can be the ticket/money favorite too
+  const hasDraw = game.sport === 'SOC' && game.drawMoneyPct != null;
+  const drawTicketPctVal = hasDraw ? (game.drawTicketPct || 0) : -1;
+  const drawMoneyPctVal = hasDraw ? (game.drawMoneyPct || 0) : -1;
+  const ticketFav = (drawTicketPctVal > game.awayTicketPct && drawTicketPctVal > game.homeTicketPct) ? 'draw'
+    : game.awayTicketPct >= game.homeTicketPct ? 'away' : 'home';
+  const moneyFav = (drawMoneyPctVal > game.awayMoneyPct && drawMoneyPctVal > game.homeMoneyPct) ? 'draw'
+    : game.awayMoneyPct >= game.homeMoneyPct ? 'away' : 'home';
   const isReverse = ticketFav !== moneyFav && game.ticketDivergence >= 10;
   const hasDivergence = game.ticketDivergence >= 10;
-  const moneyTeam = moneyFav === 'away' ? awayShort : homeShort;
-  const moneyPct = moneyFav === 'away' ? game.awayMoneyPct : game.homeMoneyPct;
-  const ticketPctOnMoneySide = moneyFav === 'away' ? game.awayTicketPct : game.homeTicketPct;
+  const moneyTeam = moneyFav === 'draw' ? 'Draw' : moneyFav === 'away' ? awayShort : homeShort;
+  const moneyPct = moneyFav === 'draw' ? drawMoneyPctVal : moneyFav === 'away' ? game.awayMoneyPct : game.homeMoneyPct;
+  const ticketPctOnMoneySide = moneyFav === 'draw' ? Math.max(drawTicketPctVal, 0) : moneyFav === 'away' ? game.awayTicketPct : game.homeTicketPct;
 
   const pinnAway = pinnGame?.current?.away;
   const pinnHome = pinnGame?.current?.home;
@@ -3502,6 +3529,7 @@ const GameFlowCard = memo(function GameFlowCard({ game, isMobile, whaleProfiles,
 
   const awayCash = game.totalCash * (game.awayMoneyPct / 100);
   const homeCash = game.totalCash * (game.homeMoneyPct / 100);
+  const drawCash = hasDraw ? game.totalCash * ((game.drawMoneyPct || 0) / 100) : 0;
   const awayWhales = game.whaleBuyAway || 0;
   const homeWhales = game.whaleBuyHome || 0;
 
@@ -3593,7 +3621,7 @@ const GameFlowCard = memo(function GameFlowCard({ game, isMobile, whaleProfiles,
         </div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginBottom: '0.25rem' }}>
           <span style={{ fontSize: '1.1rem', fontWeight: 800, color: B.text, letterSpacing: '-0.01em' }}>
-            {moneyTeam} ML
+            {moneyFav === 'draw' ? 'Draw' : `${moneyTeam} ML`}
           </span>
           {pinnOnMoneySide != null && (
             <span style={{ ...T.caption, fontWeight: 700, color: B.gold, fontFeatureSettings: "'tnum'" }}>
@@ -3688,12 +3716,14 @@ const GameFlowCard = memo(function GameFlowCard({ game, isMobile, whaleProfiles,
       {marketTab === 'ml' && <>
       {/* ── Side-by-side flow comparison ── */}
       <div style={{
-        display: 'grid', gridTemplateColumns: '1fr auto 1fr',
-        margin: '0 0.75rem 0.5rem', gap: 0,
+        display: 'grid', gridTemplateColumns: hasDraw ? '1fr 1fr 1fr' : '1fr auto 1fr',
+        margin: '0 0.75rem 0.5rem', gap: hasDraw ? '0.375rem' : 0,
       }}>
         {[
           { side: 'away', team: awayShort, ticketPct: game.awayTicketPct, moneyPct: game.awayMoneyPct, cash: awayCash, whales: awayWhales },
-          null,
+          hasDraw
+            ? { side: 'draw', team: 'Draw', ticketPct: Math.max(drawTicketPctVal, 0), moneyPct: Math.max(drawMoneyPctVal, 0), cash: drawCash, whales: 0 }
+            : null,
           { side: 'home', team: homeShort, ticketPct: game.homeTicketPct, moneyPct: game.homeMoneyPct, cash: homeCash, whales: homeWhales },
         ].map((item, idx) => {
           if (!item) return (
@@ -6204,10 +6234,10 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const ss = sportStyle(gd.sport);
   const s = gd.summary;
   const consensusSide = s.consensus;
-  const consensusTeam = consensusSide === 'away' ? gd.away : gd.home;
+  const consensusTeam = consensusSide === 'draw' ? 'Draw' : consensusSide === 'away' ? gd.away : gd.home;
   const consensusShort = consensusTeam.split(' ').pop();
-  const oppTeam = consensusSide === 'away' ? gd.home : gd.away;
-  const oppShort = oppTeam.split(' ').pop();
+  const oppTeam = consensusSide === 'draw' ? 'Either Team' : consensusSide === 'away' ? gd.home : gd.away;
+  const oppShort = consensusSide === 'draw' ? 'Teams' : oppTeam.split(' ').pop();
   const awayShort = gd.away.split(' ').pop();
   const homeShort = gd.home.split(' ').pop();
   const pinnGame = pinnacleHistory?.[gd.sport]?.[gd.key];
@@ -6260,26 +6290,30 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     return s.size;
   })();
 
-  // Per-side aggregation
+  // Per-side aggregation (3-way aware: draw* stay 0 outside SOC)
   const awayPositions = gd.positions.filter(p => p.side === 'away');
   const homePositions = gd.positions.filter(p => p.side === 'home');
+  const drawPositions = gd.positions.filter(p => p.side === 'draw');
   const awayWallets = new Set(awayPositions.map(p => p.wallet)).size;
   const homeWallets = new Set(homePositions.map(p => p.wallet)).size;
+  const drawWallets = new Set(drawPositions.map(p => p.wallet)).size;
   const awayInvested = s.awayInvested || 0;
   const homeInvested = s.homeInvested || 0;
+  const drawInvested = s.drawInvested || 0;
   const awayLifetimePnl = awayPositions.reduce((sum, p) => sum + (p.totalPnl || 0), 0);
   const homeLifetimePnl = homePositions.reduce((sum, p) => sum + (p.totalPnl || 0), 0);
-  const totalLifetimePnl = awayLifetimePnl + homeLifetimePnl;
-  const totalInvested = awayInvested + homeInvested;
+  const drawLifetimePnl = drawPositions.reduce((sum, p) => sum + (p.totalPnl || 0), 0);
+  const totalLifetimePnl = awayLifetimePnl + homeLifetimePnl + drawLifetimePnl;
+  const totalInvested = awayInvested + homeInvested + drawInvested;
   const awayPct = totalInvested > 0 ? (awayInvested / totalInvested) * 100 : 50;
 
-  const consensusPositions = consensusSide === 'away' ? awayPositions : homePositions;
-  const consensusWalletCount = consensusSide === 'away' ? awayWallets : homeWallets;
-  const consensusInvestedAmt = consensusSide === 'away' ? awayInvested : homeInvested;
-  const consensusLifetimePnl = consensusSide === 'away' ? awayLifetimePnl : homeLifetimePnl;
+  const consensusPositions = consensusSide === 'draw' ? drawPositions : consensusSide === 'away' ? awayPositions : homePositions;
+  const consensusWalletCount = consensusSide === 'draw' ? drawWallets : consensusSide === 'away' ? awayWallets : homeWallets;
+  const consensusInvestedAmt = consensusSide === 'draw' ? drawInvested : consensusSide === 'away' ? awayInvested : homeInvested;
+  const consensusLifetimePnl = consensusSide === 'draw' ? drawLifetimePnl : consensusSide === 'away' ? awayLifetimePnl : homeLifetimePnl;
   const consensusAvgBet = consensusWalletCount > 0 ? consensusInvestedAmt / consensusPositions.length : 0;
-  const oppPositions = consensusSide === 'away' ? homePositions : awayPositions;
-  const oppAvgBet = oppPositions.length > 0 ? (consensusSide === 'away' ? homeInvested : awayInvested) / oppPositions.length : 0;
+  const oppPositions = gd.positions.filter(p => p.side && p.side !== consensusSide);
+  const oppAvgBet = oppPositions.length > 0 ? (totalInvested - consensusInvestedAmt) / oppPositions.length : 0;
   const awayAvgBet = awayPositions.length > 0 ? awayInvested / awayPositions.length : 0;
   const homeAvgBet = homePositions.length > 0 ? homeInvested / homePositions.length : 0;
 
@@ -8774,7 +8808,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
           const sideOpts = [
             { key: 'all', label: 'All Bets' },
             { key: 'consensus', label: consensusShort },
-            { key: 'opposing', label: consensusSide === 'away' ? homeShort : awayShort },
+            { key: 'opposing', label: gd.sport === 'SOC' ? 'Opposing' : consensusSide === 'away' ? homeShort : awayShort },
           ];
           const now = Date.now();
           const filtered = gd.positions.filter(p => {
@@ -8828,7 +8862,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                   <span style={{ ...T.micro, color: B.textMuted }}>No positions match filters</span>
                 </div>
               ) : filtered.map((p, i) => {
-                const sideTeam = p.side === 'away' ? gd.away : gd.home;
+                const sideTeam = p.side === 'draw' ? 'Draw' : p.side === 'away' ? gd.away : gd.home;
                 const sideShort = sideTeam.split(' ').pop();
                 const posColor = p.pnl >= 0 ? B.green : B.red;
                 const lifeColor = (p.totalPnl || 0) >= 0 ? B.green : B.red;
@@ -9090,7 +9124,7 @@ const SharpFlowProfitChart = memo(function SharpFlowProfitChart({ picks }) {
             <div>
               <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: '0.375rem' }}>Sport</div>
               <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
-                {[{ k: 'ALL', l: 'All Sports' }, { k: 'NHL', l: 'NHL' }, { k: 'CBB', l: 'CBB' }, { k: 'MLB', l: 'MLB' }, { k: 'NBA', l: 'NBA' }].map(s => (
+                {[{ k: 'ALL', l: 'All Sports' }, { k: 'NHL', l: 'NHL' }, { k: 'CBB', l: 'CBB' }, { k: 'MLB', l: 'MLB' }, { k: 'NBA', l: 'NBA' }, { k: 'SOC', l: 'SOC' }].map(s => (
                   <FilterBtn key={s.k} isActive={chartSport === s.k} onClick={() => setChartSport(s.k)} color="#3B82F6">{s.l}</FilterBtn>
                 ))}
               </div>
@@ -9347,7 +9381,7 @@ export default function SharpFlow() {
     }).length;
 
     let totalSharpInvested = 0;
-    for (const sport of ['NHL', 'CBB', 'MLB', 'NBA']) {
+    for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC']) {
       const sg = sharpPositions?.[sport] || {};
       for (const gd of Object.values(sg)) totalSharpInvested += gd.summary?.totalInvested || 0;
     }
@@ -9642,8 +9676,8 @@ export default function SharpFlow() {
       )}
       {viewMode === 'sharpVault' && !isFreeUser && vaultData && (() => {
         const { entries, todayPositions, convergences, activeCount, combinedPnl, actionPositions } = vaultData;
-        const SPORT_COLORS = { NBA: '#FF8C00', NHL: '#D4AF37', MLB: '#E31837', CBB: '#FF6B35', NFL: '#4CAF50' };
-        const sportIcons = { NBA: '\u{1F3C0}', NHL: '\u{1F3D2}', MLB: '\u26BE', CBB: '\u{1F3C0}', NFL: '\u{1F3C8}' };
+        const SPORT_COLORS = { NBA: '#FF8C00', NHL: '#D4AF37', MLB: '#E31837', CBB: '#FF6B35', NFL: '#4CAF50', SOC: '#2ECC71' };
+        const sportIcons = { NBA: '\u{1F3C0}', NHL: '\u{1F3D2}', MLB: '\u26BE', CBB: '\u{1F3C0}', NFL: '\u{1F3C8}', SOC: '\u26BD' };
 
         let filteredEntries = vaultSportFilter === 'ALL'
           ? [...entries]
@@ -9935,7 +9969,7 @@ export default function SharpFlow() {
                       }}>{sf.label} <span style={{ opacity: 0.6 }}>({sf.cnt})</span></button>
                     ))}
                     <div style={{ width: '1px', height: '14px', background: B.border, margin: '0 0.15rem' }} />
-                    {['ALL', 'NBA', 'NHL', 'MLB', 'CBB', 'NFL'].map(sp => {
+                    {['ALL', 'NBA', 'NHL', 'MLB', 'CBB', 'NFL', 'SOC'].map(sp => {
                       const statusFiltered = enriched.filter(p => actionStatusFilter === 'PREGAME' ? !p._isLive : actionStatusFilter === 'LIVE' ? p._isLive : true);
                       const cnt = sp === 'ALL' ? statusFiltered.length : (sportCounts[sp] || 0);
                       if (sp !== 'ALL' && cnt === 0) return null;
@@ -10750,7 +10784,7 @@ export default function SharpFlow() {
                   </span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexWrap: 'wrap' }}>
-                  {['ALL', 'NBA', 'NHL', 'MLB', 'CBB', 'NFL'].map(sp => (
+                  {['ALL', 'NBA', 'NHL', 'MLB', 'CBB', 'NFL', 'SOC'].map(sp => (
                     <button key={sp} onClick={() => setVaultSportFilter(sp)} style={{
                       padding: '0.25rem 0.55rem', borderRadius: '5px', cursor: 'pointer',
                       ...T.micro, fontWeight: 700, fontSize: '0.575rem',
@@ -11551,6 +11585,7 @@ export default function SharpFlow() {
                           { id: 'NBA', label: 'NBA', color: '#FF8C00' },
                           { id: 'NHL', label: 'NHL', color: '#D4AF37' },
                           { id: 'CBB', label: 'CBB', color: '#FF6B35' },
+                          { id: 'SOC', label: 'SOC', color: '#2ECC71' },
                         ].map(opt => (
                           <button key={opt.id} onClick={() => setAgsuSport(opt.id)} style={{
                             padding: '0.22rem 0.55rem', borderRadius: '5px', cursor: 'pointer',
@@ -12676,7 +12711,7 @@ export default function SharpFlow() {
             {(() => {
               const allPosGames = [];
               const nowMs = Date.now();
-              for (const sport of ['NHL', 'CBB', 'MLB', 'NBA']) {
+              for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC']) {
                 if (sportFilter !== 'All' && sport !== sportFilter) continue;
                 const sportGames = sharpPositions?.[sport] || {};
                 for (const [key, gd] of Object.entries(sportGames)) {
@@ -13422,7 +13457,7 @@ export default function SharpFlow() {
                     const lostCount = lockedArr.filter(p => p.outcome === 'LOSS').length;
                     const sportCounts = {};
                     allLockedArr.forEach(p => { sportCounts[p.sport] = (sportCounts[p.sport] || 0) + 1; });
-                    const sportColorMap = { NHL: '#D4AF37', MLB: '#E31837', NBA: '#FF8C00', CBB: '#FF6B35', NFL: '#4CAF50' };
+                    const sportColorMap = { NHL: '#D4AF37', MLB: '#E31837', NBA: '#FF8C00', CBB: '#FF6B35', NFL: '#4CAF50', SOC: '#2ECC71' };
                     const activeSports = Object.keys(sportCounts).sort();
 
                     // ── AGS-U Tier Scorecard (REMOVED 2026-05-22) ─────────
@@ -13803,7 +13838,7 @@ const FlowStatCard = memo(function FlowStatCard({ icon: Icon, label, value, acce
 function SportTabs({ active, onChange }) {
   return (
     <div style={{ display: 'flex', gap: '0.375rem' }}>
-      {['All', 'CBB', 'NHL', 'MLB', 'NBA'].map(key => {
+      {['All', 'CBB', 'NHL', 'MLB', 'NBA', 'SOC'].map(key => {
         const isActive = active === key;
         const ss = key === 'All' ? null : sportStyle(key);
         return (
