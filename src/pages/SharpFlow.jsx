@@ -6,7 +6,7 @@
  * Expandable game cards show individual whale trades in context.
  */
 
-import React, { useState, useEffect, useMemo, useCallback, useRef, memo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, memo, Fragment } from 'react';
 import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Activity, Zap, BarChart3, Eye, ArrowUpRight, ArrowDownRight, Minus, DollarSign, Workflow, Lock, CheckCircle, Circle, Clock, AlertTriangle } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ComposedChart, Bar, ReferenceDot, Cell, Area, AreaChart, ReferenceLine } from 'recharts';
 import { resolveOutcomeSide } from '../utils/teamNameMapper';
@@ -5152,30 +5152,30 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
     : 'rgba(16,185,129,0.20)';
 
   return (
-    <div className="sf-card" style={{
+    <div className="sf-card sf-glass" style={{
       borderRadius: '16px', overflow: 'hidden', position: 'relative',
       opacity: isCancelled ? 0.45 : isMuted ? 0.65 : superseded ? 0.55 : isTrackedGrade ? 0.7 : 1,
       background: superseded
-        ? `linear-gradient(160deg, ${B.cardAlt} 0%, ${B.card} 45%, #11151F 100%)`
+        ? 'linear-gradient(160deg, rgba(26,31,46,0.72) 0%, rgba(21,25,35,0.66) 45%, rgba(17,21,31,0.78) 100%)'
         : isTrackedGrade
-        ? `linear-gradient(160deg, rgba(96,165,250,0.04) 0%, ${B.card} 30%, #11151F 100%)`
+        ? 'linear-gradient(160deg, rgba(96,165,250,0.05) 0%, rgba(21,25,35,0.66) 30%, rgba(17,21,31,0.78) 100%)'
         : isElite
-        ? `linear-gradient(160deg, rgba(212,175,55,0.08) 0%, ${B.card} 30%, #11151F 100%)`
+        ? 'linear-gradient(160deg, rgba(212,175,55,0.09) 0%, rgba(21,25,35,0.66) 30%, rgba(17,21,31,0.78) 100%)'
         : isLean
-        ? `linear-gradient(160deg, rgba(250,204,21,0.04) 0%, ${B.card} 30%, #11151F 100%)`
+        ? 'linear-gradient(160deg, rgba(250,204,21,0.05) 0%, rgba(21,25,35,0.66) 30%, rgba(17,21,31,0.78) 100%)'
         : isWeak
-        ? `linear-gradient(160deg, rgba(245,158,11,0.04) 0%, ${B.card} 30%, #11151F 100%)`
+        ? 'linear-gradient(160deg, rgba(245,158,11,0.05) 0%, rgba(21,25,35,0.66) 30%, rgba(17,21,31,0.78) 100%)'
         // Graded picks get a very faint outcome wash — wins drift
         // green, losses drift red — so the Yesterday tab reads with
         // the same visual richness as the Live tab instead of all
         // cards looking identical and "muted".
         : isGraded && isWin
-        ? `linear-gradient(160deg, rgba(16,185,129,0.05) 0%, ${B.card} 35%, #11151F 100%)`
+        ? 'linear-gradient(160deg, rgba(16,185,129,0.06) 0%, rgba(21,25,35,0.66) 35%, rgba(17,21,31,0.78) 100%)'
         : isGraded && isLoss
-        ? `linear-gradient(160deg, rgba(239,68,68,0.04) 0%, ${B.card} 35%, #11151F 100%)`
+        ? 'linear-gradient(160deg, rgba(239,68,68,0.05) 0%, rgba(21,25,35,0.66) 35%, rgba(17,21,31,0.78) 100%)'
         : isTopPick && !isMuted && !isCancelled
-        ? `linear-gradient(160deg, rgba(212,175,55,0.06) 0%, ${B.card} 30%, #11151F 100%)`
-        : `linear-gradient(160deg, ${B.cardAlt} 0%, ${B.card} 45%, #11151F 100%)`,
+        ? 'linear-gradient(160deg, rgba(212,175,55,0.07) 0%, rgba(21,25,35,0.66) 30%, rgba(17,21,31,0.78) 100%)'
+        : 'linear-gradient(160deg, rgba(26,31,46,0.72) 0%, rgba(21,25,35,0.66) 45%, rgba(17,21,31,0.78) 100%)',
       border: `1px solid ${tierSpineSoft}`,
       boxShadow: isCancelled || isMuted || superseded || isTrackedGrade ? '0 8px 24px rgba(0,0,0,0.25)'
         : isElite
@@ -5344,7 +5344,27 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
               </span>
             )}
             <span style={{ ...T.body, fontWeight: 700, color: isCancelled ? B.textMuted : B.text, textDecoration: isCancelled ? 'line-through' : 'none' }}>
-              {away} <span style={{ color: B.textMuted, fontWeight: 400 }}>vs</span> {home}
+              {/* Masthead: the locked side reads bright, the opponent
+                  recedes — verdict legible from the matchup alone.
+                  Totals (no side team) keep both equal. */}
+              {(() => {
+                const pickIsHome = displayTeam && home && (displayTeam === home || home.includes(displayTeam) || displayTeam.includes(home));
+                const pickIsAway = !pickIsHome && displayTeam && away && (displayTeam === away || away.includes(displayTeam) || displayTeam.includes(away));
+                const hasSide = pickIsHome || pickIsAway;
+                return (
+                  <>
+                    <span style={{
+                      color: isCancelled ? B.textMuted : hasSide && !pickIsAway ? B.textSec : B.text,
+                      fontWeight: hasSide && pickIsAway ? 800 : hasSide ? 600 : 700,
+                    }}>{away}</span>
+                    <span style={{ color: B.textMuted, fontWeight: 400 }}> vs </span>
+                    <span style={{
+                      color: isCancelled ? B.textMuted : hasSide && !pickIsHome ? B.textSec : B.text,
+                      fontWeight: hasSide && pickIsHome ? 800 : hasSide ? 600 : 700,
+                    }}>{home}</span>
+                  </>
+                );
+              })()}
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
@@ -6139,25 +6159,45 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
             </div>
           </div>
 
-          {/* Timeline */}
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-            padding: '0.625rem 0.875rem 0.75rem', flexWrap: 'wrap',
-          }}>
-            {lockedAt && <span style={{ ...T.micro, color: B.green, fontWeight: 600 }}>Locked {fmtET(lockedAt)}</span>}
-            {peakAt && peakAt !== lockedAt && (
-              <>
-                <span style={{ color: B.borderSubtle, fontSize: '0.5rem' }}>▸</span>
-                <span style={{ ...T.micro, color: B.gold, fontWeight: 600 }}>Peak {fmtET(peakAt)}</span>
-              </>
-            )}
-            {gameTime && (
-              <>
-                <span style={{ color: B.borderSubtle, fontSize: '0.5rem' }}>▸</span>
-                <span style={{ ...T.micro, color: B.textMuted }}>Game {fmtET(gameTime)}</span>
-              </>
-            )}
-          </div>
+          {/* Timeline — milestone rail: glowing dots joined by a gradient
+              line so the pick's lifecycle (Locked → Peak → Game) reads as
+              a journey instead of a text breadcrumb. */}
+          {(() => {
+            const gameEpoch = gameTime ? (typeof gameTime === 'number' ? gameTime : Date.parse(gameTime)) : null;
+            const gameStarted = gameEpoch != null && !isNaN(gameEpoch) && Date.now() >= gameEpoch;
+            const stops = [];
+            if (lockedAt) stops.push({ label: 'Locked', time: fmtET(lockedAt), color: B.green });
+            if (peakAt && peakAt !== lockedAt) stops.push({ label: 'Peak', time: fmtET(peakAt), color: B.gold });
+            if (gameTime) stops.push({ label: 'Game', time: fmtET(gameTime), color: gameStarted ? B.red : B.textMuted, live: gameStarted && !isGraded });
+            if (stops.length === 0) return null;
+            return (
+              <div style={{
+                display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+                padding: '0.7rem 1.25rem 0.8rem',
+              }}>
+                {stops.map((s, i) => (
+                  <Fragment key={s.label}>
+                    {i > 0 && (
+                      <div style={{
+                        flex: 1, maxWidth: '90px', height: '1px', marginTop: '3.5px',
+                        background: `linear-gradient(90deg, ${stops[i - 1].color}55, ${s.color}55)`,
+                      }} />
+                    )}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem', padding: '0 0.5rem' }}>
+                      <span style={{
+                        width: '7px', height: '7px', borderRadius: '50%',
+                        background: s.color,
+                        boxShadow: `0 0 8px ${s.color}80`,
+                        ...(s.live ? { animation: 'pulse 2s ease-in-out infinite' } : {}),
+                      }} />
+                      <span style={{ ...T.micro, fontSize: '0.55rem', fontWeight: 700, color: s.color, letterSpacing: '0.05em' }}>{s.label}</span>
+                      <span style={{ ...T.micro, fontSize: '0.55rem', color: B.textMuted, fontFeatureSettings: "'tnum'", marginTop: '-0.15rem' }}>{s.time}</span>
+                    </div>
+                  </Fragment>
+                ))}
+              </div>
+            );
+          })()}
         </div>
       )}
     </div>
@@ -7223,13 +7263,13 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const accentBorder = displayMeta.border;
 
   return (
-    <div className="sf-card" style={{
+    <div className="sf-card sf-glass" style={{
       borderRadius: '16px', overflow: 'hidden', position: 'relative',
-      background: `linear-gradient(160deg, ${B.cardAlt} 0%, ${B.card} 45%, #11151F 100%)`,
+      background: 'linear-gradient(160deg, rgba(26,31,46,0.72) 0%, rgba(21,25,35,0.66) 45%, rgba(17,21,31,0.78) 100%)',
       border: isMyPick ? `1px solid ${B.goldBorder}` : `1px solid ${accentBorder}`,
       boxShadow: isMyPick
-        ? `0 0 14px ${B.goldGlow}, 0 8px 24px rgba(0,0,0,0.35)`
-        : `0 2px 16px ${accentColor}10, 0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.03)`,
+        ? `0 0 14px ${B.goldGlow}, 0 12px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06)`
+        : `0 2px 16px ${accentColor}10, 0 12px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06), inset 0 0 0 0.5px rgba(255,255,255,0.03)`,
     }}>
       {/* Left-edge accent ribbon — state-colored ticket stub feel.
           3px wide, full card height, soft top/bottom fade. */}
@@ -7261,7 +7301,19 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
               whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
               minWidth: 0,
             }}>
-              {gd.away} <span style={{ color: B.textMuted, fontWeight: 400 }}>vs</span> {gd.home}
+              {/* Masthead: the sharp-consensus side reads bright, the
+                  opposing side recedes — the card's verdict is legible
+                  from the matchup line alone. Draw/no-consensus keeps
+                  both sides equal. */}
+              <span style={{
+                color: consensusSide === 'home' ? B.textSec : B.text,
+                fontWeight: consensusSide === 'home' ? 600 : 800,
+              }}>{gd.away}</span>
+              <span style={{ color: B.textMuted, fontWeight: 400 }}> vs </span>
+              <span style={{
+                color: consensusSide === 'away' ? B.textSec : B.text,
+                fontWeight: consensusSide === 'away' ? 600 : 800,
+              }}>{gd.home}</span>
             </span>
           </div>
           {gameTimeLabel && (
@@ -8839,15 +8891,30 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                       flex: '1 1 auto', minWidth: '60px',
                       padding: '0.3rem 0.4rem',
                       borderRight: `1px solid ${B.borderSubtle}`,
-                      background: isBest ? B.greenDim : 'transparent',
+                      background: isBest
+                        ? 'linear-gradient(180deg, rgba(16,185,129,0.14) 0%, rgba(16,185,129,0.04) 100%)'
+                        : 'transparent',
+                      boxShadow: isBest ? 'inset 0 0 0 1px rgba(16,185,129,0.35)' : 'none',
+                      position: 'relative',
                     }}>
-                      <div style={{ ...T.micro, fontSize: '0.55rem', color: isPinn ? B.gold : B.textMuted, fontWeight: isPinn ? 700 : 400, lineHeight: 1.15 }}>
-                        {book.name}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <span style={{ ...T.micro, fontSize: '0.55rem', color: isPinn ? B.gold : B.textMuted, fontWeight: isPinn ? 700 : 400, lineHeight: 1.15 }}>
+                          {book.name}
+                        </span>
+                        {isBest && (
+                          <span style={{
+                            fontSize: '0.42rem', fontWeight: 900, letterSpacing: '0.08em',
+                            padding: '0.05rem 0.22rem', borderRadius: '2.5px',
+                            color: '#04110B', background: B.green,
+                            lineHeight: 1.3,
+                          }}>BEST</span>
+                        )}
                       </div>
                       <div style={{
-                        ...T.caption, fontWeight: 700,
+                        ...T.caption, fontWeight: isBest ? 900 : 700,
                         color: isBest ? B.green : isPinn ? B.gold : B.text,
-                        lineHeight: 1.1,
+                        lineHeight: 1.1, fontFeatureSettings: "'tnum'",
+                        textShadow: isBest ? '0 0 10px rgba(16,185,129,0.35)' : 'none',
                       }}>
                         {fmtOdds(odds)}
                       </div>
@@ -9744,7 +9811,13 @@ export default function SharpFlow() {
   }
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: isMobile ? '1rem' : '1.5rem 1rem' }}>
+    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: isMobile ? '1rem' : '1.5rem 1rem', position: 'relative' }}>
+      {/* Ambient aurora — fixed light field behind the glass cards. Two
+          slow-drifting radial pools (brand gold + emerald) plus a deep
+          blue wash give the backdrop-filter blur something to refract,
+          which is what sells the glassmorphism. pointer-events: none and
+          z-index below content; honors prefers-reduced-motion via CSS. */}
+      <div className="sf-aurora" aria-hidden="true" />
       <PageHeader sportFilter={sportFilter} setSportFilter={setSportFilter} viewMode={viewMode} setViewMode={setViewMode} isMobile={isMobile} />
 
       {/* ─── Sharp Vault View ─── */}
@@ -12934,7 +13007,7 @@ export default function SharpFlow() {
 
                   {/* Always render SharpPositionCards so health effects stay alive */}
                   <div style={sortBy === 'locked' ? { display: 'none' } : undefined}>
-                    <div style={{
+                    <div className="sf-stagger" style={{
                       display: 'grid',
                       gridTemplateColumns: isMobile ? '1fr' : allPosGames.length === 1 ? '1fr' : 'repeat(2, 1fr)',
                       gap: '0.75rem',
@@ -13648,7 +13721,7 @@ export default function SharpFlow() {
                               : `No ${lockedStatusFilter === 'pending' ? 'pending' : lockedStatusFilter === 'won' ? 'winning' : 'losing'} picks`}
                           </div>
                         ) : (
-                          <div style={{
+                          <div className="sf-stagger" style={{
                             display: 'grid',
                             gridTemplateColumns: isMobile ? '1fr' : filteredLocked.length === 1 ? '1fr' : 'repeat(2, 1fr)',
                             gap: '0.75rem',
