@@ -1175,7 +1175,27 @@ p {
 .sf-stagger > *:nth-child(7) { animation-delay: 0.38s; }
 .sf-stagger > *:nth-child(8) { animation-delay: 0.42s; }
 
+/* Sharp Tape — trading-floor ticker. Track holds two copies of the
+   run; sliding -50% loops seamlessly. Edge mask fades entries in/out. */
+.sf-tape {
+  mask-image: linear-gradient(90deg, transparent 0%, black 4%, black 96%, transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 4%, black 96%, transparent 100%);
+}
+.sf-tape-track {
+  display: inline-flex;
+  width: max-content;
+  animation: sf-tape-scroll 60s linear infinite;
+  will-change: transform;
+}
+.sf-tape:hover .sf-tape-track {
+  animation-play-state: paused;
+}
+@keyframes sf-tape-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .sf-card, .sf-bar-left, .sf-bar-right, .sf-spark-halo, .sf-aurora,
-  .sf-stagger > * { animation: none; transition: none; }
+  .sf-stagger > *, .sf-tape-track { animation: none; transition: none; }
 }

@@ -6533,8 +6533,11 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   // satisfied for WEAK and up, muted for FADE. Single source of
   // truth. earlyV12Tier is also reused below as `liveV12Tier` for the
   // tier-chip / banner so we don't compute v12 twice per render.
-  const earlyV12Tier = (() => {
-    if (mlCronTier && AGS_TIER_META[mlCronTier]) return mlCronTier;
+  // Full v12 result retained (not just the tier) so downstream display
+  // surfaces — consensus-panel quintile bar, conviction gauge gating —
+  // can read the SAME v12 score/quintile the tier strip uses instead of
+  // falling back to the legacy v9 computation.
+  const earlyV12Res = (() => {
     if (!consensusSide || !Array.isArray(gd.positions) || gd.positions.length === 0) return null;
     if (!walletProfiles || walletProfiles.size === 0) return null;
     const walletPriorStatsFn = buildWalletPriorStatsFnForUI(walletProfiles);
@@ -6542,9 +6545,12 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     const cal = getAgsCalibration();
     if (!cal || !cal.v12Quintiles) return null;
     try {
-      const res = computeAgsV12FromPositions(gd.positions, consensusSide, gd.sport, cal, walletPriorStatsFn);
-      return res?.tier && AGS_TIER_META[res.tier] ? res.tier : null;
+      return computeAgsV12FromPositions(gd.positions, consensusSide, gd.sport, cal, walletPriorStatsFn);
     } catch { return null; }
+  })();
+  const earlyV12Tier = (() => {
+    if (mlCronTier && AGS_TIER_META[mlCronTier]) return mlCronTier;
+    return earlyV12Res?.tier && AGS_TIER_META[earlyV12Res.tier] ? earlyV12Res.tier : null;
   })();
   if (earlyV12Tier) {
     const v12Stars = starsFromAgsuTier(earlyV12Tier);
@@ -7700,8 +7706,17 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
         const healthStatus = mlHealth?.status || 'ACTIVE';
         const isCancelledLive = healthStatus === 'CANCELLED';
 
-        const agsValue = Number.isFinite(mlAgs?.ags) ? mlAgs.ags : null;
-        const agsQuintile = mlAgs?.quintile ?? null;
+        // v12-first: the quintile bar + signal gate read the SAME v12
+        // score/quintile that drives the header tier strip and sizing
+        // (earlyV12Res). Legacy v9 (mlAgs) is only a fallback for renders
+        // where the browser can't compute v12 (no wallet profiles /
+        // calibration yet). Driver rows below stay on mlAgs.featureValues
+        // — those are raw position features (proven counts, HC counts,
+        // money share), model-version-agnostic by construction.
+        const agsValue = Number.isFinite(earlyV12Res?.score)
+          ? earlyV12Res.score
+          : (Number.isFinite(mlAgs?.ags) ? mlAgs.ags : null);
+        const agsQuintile = earlyV12Res?.quintile ?? mlAgs?.quintile ?? null;
         const fv = mlAgs?.featureValues ?? null;
         const dCount = fv?.dCount ?? 0;
         const dHcCount = fv?.dHcCount ?? 0;
@@ -7793,21 +7808,28 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                 : <span style={{ ...T.micro, fontSize: '0.55rem', color: B.textMuted, fontWeight: 700, letterSpacing: '0.05em' }}>SHARP CONSENSUS</span>}
               {agsValue != null && <QuintileBar />}
             </div>
-            <Driver
-              met={drv1Met}
-              label={`Proven ${sportLabel || 'sport'} winners backing`}
-              detail={`${forCount}–${agCount}`}
-            />
-            <Driver
-              met={drv2Met}
-              label="High-conviction sharps confirming"
-              detail={forHcCount > 0 ? `${forHcCount} HC` : (totalProven > 0 ? '0 HC' : '—')}
-            />
-            <Driver
-              met={drv3Met}
-              label="Money concentrated on this side"
-              detail={forContribShare != null ? `${Math.round(forContribShare * 100)}%` : '—'}
-            />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <Driver
+                  met={drv1Met}
+                  label={`Proven ${sportLabel || 'sport'} winners backing`}
+                  detail={`${forCount}–${agCount}`}
+                />
+                <Driver
+                  met={drv2Met}
+                  label="High-conviction sharps confirming"
+                  detail={forHcCount > 0 ? `${forHcCount} HC` : (totalProven > 0 ? '0 HC' : '—')}
+                />
+                <Driver
+                  met={drv3Met}
+                  label="Money concentrated on this side"
+                  detail={forContribShare != null ? `${Math.round(forContribShare * 100)}%` : '—'}
+                />
+              </div>
+              {forContribShare != null && (
+                <ConvictionGauge pct={forContribShare * 100} accent={accentColor} />
+              )}
+            </div>
           </div>
         );
       })()}
@@ -9309,6 +9331,142 @@ const SharpFlowProfitChart = memo(function SharpFlowProfitChart({ picks }) {
 });
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
+
+// ─── ConvictionGauge ─────────────────────────────────────────────────────
+// Semicircular arc gauge — the card's iconic "how loaded is this side"
+// visual. Sweeps in on mount via stroke-dasharray transition.
+function ConvictionGauge({ pct, accent }) {
+  const r = 25, cx = 32, cy = 32, sw = 5.5;
+  const clamped = Math.max(0, Math.min(100, pct || 0));
+  const circ = Math.PI * r;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.1rem', flexShrink: 0 }}>
+      <svg width="64" height="36" viewBox="0 0 64 36" style={{ display: 'block', overflow: 'visible' }}>
+        <path
+          d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`}
+          fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth={sw} strokeLinecap="round"
+        />
+        <path
+          d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`}
+          fill="none" stroke={accent} strokeWidth={sw} strokeLinecap="round"
+          strokeDasharray={`${(clamped / 100) * circ} ${circ}`}
+          style={{
+            filter: `drop-shadow(0 0 3px ${accent}88)`,
+            transition: 'stroke-dasharray 0.9s cubic-bezier(0.4,0,0.2,1)',
+          }}
+        />
+        <text x={cx} y={cy - 1} textAnchor="middle" fill={accent} fontSize="13.5" fontWeight="900"
+          style={{ fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em' }}>
+          {Math.round(clamped)}%
+        </text>
+      </svg>
+      <span style={{
+        fontSize: '0.42rem', fontWeight: 800, letterSpacing: '0.12em',
+        color: B.textSubtle, textTransform: 'uppercase', whiteSpace: 'nowrap',
+        lineHeight: 1,
+      }}>
+        Money on side
+      </span>
+    </div>
+  );
+}
+
+// ─── SharpTape ───────────────────────────────────────────────────────────
+// Trading-floor ticker: the most recent verified-sharp entries across
+// every tracked game stream right-to-left above the card grid. Pure
+// CSS marquee (duplicated content, translateX(-50%) loop), pauses on
+// hover, edge-faded via mask. Makes the page feel ALIVE before a
+// single card is read.
+const SharpTape = memo(function SharpTape({ sharpPositions }) {
+  const items = useMemo(() => {
+    const out = [];
+    for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC']) {
+      const games = sharpPositions?.[sport] || {};
+      for (const gd of Object.values(games)) {
+        for (const p of gd.positions || []) {
+          if (!p.firstSeen || !(p.invested >= 1000)) continue;
+          const ts = new Date(p.firstSeen).getTime();
+          if (isNaN(ts)) continue;
+          const team = p.side === 'draw' ? 'Draw' : p.side === 'away' ? gd.away : gd.home;
+          if (!team) continue;
+          out.push({
+            sport,
+            team: team.split(' ').pop(),
+            invested: p.invested,
+            price: p.avgPrice,
+            pnl: p.totalPnl || 0,
+            ts,
+          });
+        }
+      }
+    }
+    out.sort((a, b) => b.ts - a.ts);
+    return out.slice(0, 18);
+  }, [sharpPositions]);
+
+  if (items.length < 4) return null;
+
+  const agoTxt = (ts) => {
+    const m = Math.round((Date.now() - ts) / 60000);
+    if (m < 60) return `${m}m`;
+    const h = Math.round(m / 60);
+    if (h < 24) return `${h}h`;
+    return `${Math.round(h / 24)}d`;
+  };
+
+  const renderRun = (prefix) => items.map((it, i) => (
+    <span key={`${prefix}-${i}`} style={{
+      display: 'inline-flex', alignItems: 'center', gap: '0.45rem',
+      padding: '0 1.15rem', whiteSpace: 'nowrap',
+    }}>
+      <span style={{
+        width: '5px', height: '5px', borderRadius: '50%', flexShrink: 0,
+        background: it.pnl >= 0 ? B.green : '#F59E0B',
+        boxShadow: `0 0 6px ${it.pnl >= 0 ? 'rgba(16,185,129,0.5)' : 'rgba(245,158,11,0.5)'}`,
+      }} />
+      <span style={{ ...T.micro, fontSize: '0.58rem', fontWeight: 600, color: B.textSubtle, letterSpacing: '0.05em' }}>{it.sport}</span>
+      <span style={{ ...T.micro, fontSize: '0.62rem', fontWeight: 800, color: B.text, letterSpacing: '0.03em' }}>{it.team.toUpperCase()}</span>
+      <span style={{ ...T.micro, fontSize: '0.62rem', fontWeight: 800, color: B.gold, fontFeatureSettings: "'tnum'" }}>{fmtVol(it.invested)}</span>
+      {Number.isFinite(it.price) && (
+        <span style={{ ...T.micro, fontSize: '0.58rem', color: B.textMuted, fontFeatureSettings: "'tnum'" }}>@{Math.round(it.price * 100)}¢</span>
+      )}
+      <span style={{ ...T.micro, fontSize: '0.58rem', fontWeight: 700, color: it.pnl >= 0 ? B.green : B.red, fontFeatureSettings: "'tnum'" }}>
+        {it.pnl >= 0 ? '+' : ''}{fmtVol(it.pnl)}
+      </span>
+      <span style={{ ...T.micro, fontSize: '0.55rem', color: B.textSubtle, fontFeatureSettings: "'tnum'" }}>{agoTxt(it.ts)}</span>
+    </span>
+  ));
+
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: '0.65rem',
+      marginBottom: '0.85rem', padding: '0.45rem 0.65rem',
+      borderRadius: '10px',
+      background: 'linear-gradient(160deg, rgba(26,31,46,0.55) 0%, rgba(17,21,31,0.65) 100%)',
+      border: `1px solid ${B.borderSubtle}`,
+      overflow: 'hidden',
+    }}>
+      <span style={{
+        display: 'inline-flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0,
+        padding: '0.18rem 0.5rem', borderRadius: '5px',
+        background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)',
+      }}>
+        <span style={{
+          width: '5px', height: '5px', borderRadius: '50%', background: B.green,
+          boxShadow: '0 0 6px rgba(16,185,129,0.7)',
+          animation: 'pulse 2s ease-in-out infinite',
+        }} />
+        <span style={{ ...T.micro, fontSize: '0.55rem', fontWeight: 900, color: B.green, letterSpacing: '0.1em' }}>SHARP TAPE</span>
+      </span>
+      <div className="sf-tape" style={{ flex: 1, overflow: 'hidden', minWidth: 0 }}>
+        <div className="sf-tape-track" style={{ animationDuration: `${Math.max(40, items.length * 5)}s` }}>
+          {renderRun('a')}
+          {renderRun('b')}
+        </div>
+      </div>
+    </div>
+  );
+});
 
 export default function SharpFlow() {
   const { polyData, kalshiData, whaleProfiles, pinnacleHistory, sharpPositions, spreadPositions, totalPositions, sportsSharps, intelExcludedWallets, walletProfiles, loading } = useMarketData();
@@ -11342,11 +11500,11 @@ export default function SharpFlow() {
               gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
               gap: '0.625rem', marginBottom: '1.5rem',
             }}>
-              <FlowStatCard icon={Eye} label="Sharp Bettors" value={sharpStats.trackedCount} accent={B.gold}
+              <FlowStatCard icon={Eye} label="Sharp Bettors" value={sharpStats.trackedCount} rawValue={sharpStats.trackedCount} accent={B.gold}
                 hint={sharpStats.totalExcluded > 0 ? `${sharpStats.totalExcluded} non-sharp bettors filtered` : 'Verified sport bettors tracked'} />
-              <FlowStatCard icon={DollarSign} label="Sharp Money Today" value={fmtVol(sharpStats.totalSharpInvested)} accent={B.green}
+              <FlowStatCard icon={DollarSign} label="Sharp Money Today" value={fmtVol(sharpStats.totalSharpInvested)} rawValue={sharpStats.totalSharpInvested} fmt={fmtVol} accent={B.green}
                 hint="Total verified sharp $ on today's games" />
-              <FlowStatCard icon={TrendingUp} label="Combined Sports P&L" value={`+${fmtVol(sharpStats.totalSharpPnl)}`} accent={B.green}
+              <FlowStatCard icon={TrendingUp} label="Combined Sports P&L" value={`+${fmtVol(sharpStats.totalSharpPnl)}`} rawValue={sharpStats.totalSharpPnl} fmt={(v) => `+${fmtVol(v)}`} accent={B.green}
                 hint="Aggregate P&L of all tracked sharp bettors" />
             </div>
 
@@ -13007,6 +13165,7 @@ export default function SharpFlow() {
 
                   {/* Always render SharpPositionCards so health effects stay alive */}
                   <div style={sortBy === 'locked' ? { display: 'none' } : undefined}>
+                    <SharpTape sharpPositions={sharpPositions} />
                     <div className="sf-stagger" style={{
                       display: 'grid',
                       gridTemplateColumns: isMobile ? '1fr' : allPosGames.length === 1 ? '1fr' : 'repeat(2, 1fr)',
@@ -13955,7 +14114,25 @@ function StatCard({ icon: Icon, label, value, accent }) {
   );
 }
 
-const FlowStatCard = memo(function FlowStatCard({ icon: Icon, label, value, accent, hint }) {
+const FlowStatCard = memo(function FlowStatCard({ icon: Icon, label, value, accent, hint, rawValue, fmt }) {
+  // Count-up: when a numeric rawValue (+ formatter) is supplied, the
+  // stat sweeps from 0 to its value on mount — odometer credibility.
+  const [shown, setShown] = useState(rawValue != null ? 0 : null);
+  useEffect(() => {
+    if (rawValue == null || !Number.isFinite(rawValue)) return;
+    let raf; const t0 = performance.now(); const dur = 1100;
+    const tick = (t) => {
+      const k = Math.min(1, (t - t0) / dur);
+      const eased = 1 - Math.pow(1 - k, 3);
+      setShown(rawValue * eased);
+      if (k < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [rawValue]);
+  const display = (rawValue != null && Number.isFinite(rawValue) && shown != null)
+    ? (fmt ? fmt(shown) : Math.round(shown).toLocaleString())
+    : value;
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem',
@@ -13971,7 +14148,7 @@ const FlowStatCard = memo(function FlowStatCard({ icon: Icon, label, value, acce
       {Icon && <Icon size={14} color={accent || B.textMuted} style={{ opacity: 0.6, marginBottom: '0.125rem' }} />}
       <span style={{
         ...T.heading, color: accent || B.text, fontFeatureSettings: "'tnum'",
-      }}>{value}</span>
+      }}>{display}</span>
       <span style={{
         ...T.micro, color: B.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em',
       }}>{label}</span>
