@@ -4770,40 +4770,62 @@ const MiniSparkline = memo(function MiniSparkline({ points, width = 140, height 
   const min = Math.min(...points);
   const max = Math.max(...points);
   const range = max - min || 1;
-  const pad = 2;
+  const pad = 3;
   const xStep = (width - pad * 2) / (points.length - 1);
   const yH = height - pad * 2;
   const pts = points.map((v, i) => ({
     x: pad + i * xStep,
     y: pad + yH - ((v - min) / range) * yH,
   }));
-  const d = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  // Catmull-Rom → cubic bezier: smooth flowing curve instead of the
+  // old jagged polyline. tension 0.18 keeps peaks honest.
+  const d = (() => {
+    if (pts.length === 2) return `M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)} L${pts[1].x.toFixed(1)},${pts[1].y.toFixed(1)}`;
+    const t = 0.18;
+    let path = `M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[i - 1] || pts[i];
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = pts[i + 2] || p2;
+      const c1x = p1.x + (p2.x - p0.x) * t;
+      const c1y = p1.y + (p2.y - p0.y) * t;
+      const c2x = p2.x - (p3.x - p1.x) * t;
+      const c2y = p2.y - (p3.y - p1.y) * t;
+      path += ` C${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
+    }
+    return path;
+  })();
   const lastPt = pts[pts.length - 1];
   const trend = points[points.length - 1] > points[0] ? B.green : points[points.length - 1] < points[0] ? B.red : B.textMuted;
+  const gid = `sg-${(label || 'spark').replace(/[^a-zA-Z0-9]/g, '')}`;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
       {label && (
         <span style={{ ...T.micro, color: B.textMuted, marginBottom: '0.1rem' }}>{label}</span>
       )}
-      <svg width={width} height={height} style={{ display: 'block' }}>
+      <svg width={width} height={height} style={{ display: 'block', overflow: 'visible' }}>
         <defs>
-          <linearGradient id={`sg-${label?.replace(/\s/g, '')}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={color} stopOpacity="0.15" />
+          <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.28" />
+            <stop offset="70%" stopColor={color} stopOpacity="0.05" />
             <stop offset="100%" stopColor={color} stopOpacity="0" />
           </linearGradient>
         </defs>
         <path
           d={`${d} L${lastPt.x.toFixed(1)},${height} L${pts[0].x.toFixed(1)},${height} Z`}
-          fill={`url(#sg-${label?.replace(/\s/g, '')})`}
+          fill={`url(#${gid})`}
         />
-        <path d={d} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
-        <circle cx={lastPt.x} cy={lastPt.y} r={2.5} fill={trend} />
+        <path d={d} fill="none" stroke={color} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" />
+        {/* glowing live end-dot: breathing halo + core */}
+        <circle className="sf-spark-halo" cx={lastPt.x} cy={lastPt.y} r={4.5} fill={trend} opacity={0.25} />
+        <circle cx={lastPt.x} cy={lastPt.y} r={2.25} fill={trend} stroke="rgba(0,0,0,0.4)" strokeWidth={0.75} />
       </svg>
       {(startLabel || endLabel) && (
         <div style={{ display: 'flex', justifyContent: 'space-between', width }}>
-          <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem' }}>{startLabel || ''}</span>
-          <span style={{ ...T.micro, color: trend, fontWeight: 700, fontSize: '0.5rem' }}>{endLabel || ''}</span>
+          <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem', fontFeatureSettings: "'tnum'" }}>{startLabel || ''}</span>
+          <span style={{ ...T.micro, color: trend, fontWeight: 700, fontSize: '0.5rem', fontFeatureSettings: "'tnum'" }}>{endLabel || ''}</span>
         </div>
       )}
     </div>
@@ -7162,13 +7184,13 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const accentBorder = displayMeta.border;
 
   return (
-    <div style={{
-      borderRadius: '12px', overflow: 'hidden', position: 'relative',
-      background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
-      border: isMyPick ? '1px solid rgba(99,102,241,0.5)' : `1px solid ${accentBorder}`,
+    <div className="sf-card" style={{
+      borderRadius: '16px', overflow: 'hidden', position: 'relative',
+      background: `linear-gradient(160deg, ${B.cardAlt} 0%, ${B.card} 45%, #11151F 100%)`,
+      border: isMyPick ? `1px solid ${B.goldBorder}` : `1px solid ${accentBorder}`,
       boxShadow: isMyPick
-        ? '0 0 12px rgba(99,102,241,0.15)'
-        : `0 2px 16px ${accentColor}12, 0 1px 2px rgba(0,0,0,0.3)`,
+        ? `0 0 14px ${B.goldGlow}, 0 8px 24px rgba(0,0,0,0.35)`
+        : `0 2px 16px ${accentColor}10, 0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.03)`,
     }}>
       {/* Left-edge accent ribbon — state-colored ticket stub feel.
           3px wide, full card height, soft top/bottom fade. */}
@@ -7309,10 +7331,11 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
             • Risk row drops the redundant TIER pill (already in strip
               above). Just RISK / TO WIN with tabular alignment. */}
       <div style={{
-        margin: '0.5rem 0.875rem 0', padding: '0.7rem 0.85rem',
-        borderRadius: '10px',
-        background: `linear-gradient(135deg, ${displayMeta.bg} 0%, ${displayMeta.bgSoft} 100%)`,
+        margin: '0.5rem 0.875rem 0', padding: '0.8rem 0.9rem',
+        borderRadius: '12px',
+        background: `radial-gradient(130% 160% at 88% 0%, ${displayMeta.color}14 0%, transparent 55%), linear-gradient(135deg, ${displayMeta.bg} 0%, ${displayMeta.bgSoft} 100%)`,
         border: `1px solid ${displayMeta.border}`,
+        boxShadow: `inset 0 1px 0 rgba(255,255,255,0.04)`,
       }}>
         {/* Headline ONLY for non-PLAY states. PLAY pick: skip — the
             tier strip already carries the call to action. */}
@@ -7402,16 +7425,17 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
         }}>
           <div style={{ minWidth: 0 }}>
             <div style={{
-              fontSize: '1.35rem', fontWeight: 900, color: B.text,
-              lineHeight: 1.1, letterSpacing: '-0.01em',
+              fontSize: '1.6rem', fontWeight: 900, color: B.text,
+              lineHeight: 1.08, letterSpacing: '-0.02em',
               whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              textShadow: `0 0 24px ${displayMeta.color}25`,
             }}>
               {consensusShort} ML
             </div>
             {pinnProb && (
               <div style={{
-                ...T.micro, fontSize: '0.58rem', color: B.textMuted,
-                marginTop: '0.2rem', letterSpacing: '0.03em',
+                ...T.micro, fontSize: '0.62rem', color: B.textMuted,
+                marginTop: '0.25rem', letterSpacing: '0.03em',
                 fontFeatureSettings: "'tnum'",
               }}>
                 fair {fmtOdds(consensusOdds)} · {(pinnProb * 100).toFixed(0)}% implied
@@ -7421,17 +7445,18 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
           {(bestRetail || consensusOdds) && (
             <div style={{ textAlign: 'right' }}>
               <div style={{
-                fontSize: '1.5rem', fontWeight: 900,
+                fontSize: '1.75rem', fontWeight: 900,
                 color: hasEV ? B.green : B.text,
                 lineHeight: 1, letterSpacing: '-0.02em',
                 fontFeatureSettings: "'tnum'",
+                textShadow: hasEV ? '0 0 20px rgba(16,185,129,0.25)' : 'none',
               }}>
                 {fmtOdds(bestRetail || consensusOdds)}
               </div>
               <div style={{
-                ...T.micro, fontSize: '0.58rem',
-                color: B.textMuted, marginTop: '0.25rem',
-                letterSpacing: '0.04em', textTransform: 'uppercase',
+                ...T.micro, fontSize: '0.6rem',
+                color: B.textMuted, marginTop: '0.3rem',
+                letterSpacing: '0.05em', textTransform: 'uppercase',
               }}>
                 {bestBook || 'Pinnacle'} · {displayState === 'PLAY' ? 'bet at' : displayState === 'TRACKING' ? 'track at' : 'best price'}
               </div>
@@ -7663,10 +7688,9 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
 
         return (
           <div style={{
-            margin: '0.5rem 0.875rem 0', padding: '0.45rem 0.65rem',
-            borderRadius: '8px',
+            margin: '0.5rem 0.875rem 0', padding: '0.5rem 0.65rem',
+            borderRadius: '10px',
             background: displayMeta.bgSoft,
-            border: `1px solid ${displayMeta.border}`,
           }}>
             <div style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -8045,7 +8069,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                             {rankGroup && (
                               <span style={{
                                 ...T.micro, padding: '0.1rem 0.32rem', borderRadius: '3px', fontWeight: 800, fontSize: '0.45rem',
-                                color: '#22D3EE', background: 'rgba(34,211,238,0.1)', border: '1px solid rgba(34,211,238,0.22)', letterSpacing: '0.04em',
+                                color: '#CBD5E1', background: 'rgba(148,163,184,0.10)', border: '1px solid rgba(148,163,184,0.22)', letterSpacing: '0.04em',
                               }}>{rankGroup}</span>
                             )}
                             {isSportWinner(p.wallet, gd.sport) && (
@@ -8423,7 +8447,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                             {rankGroup && (
                               <span style={{
                                 ...T.micro, padding: '0.1rem 0.32rem', borderRadius: '3px', fontWeight: 800, fontSize: '0.45rem',
-                                color: '#22D3EE', background: 'rgba(34,211,238,0.1)', border: '1px solid rgba(34,211,238,0.22)', letterSpacing: '0.04em',
+                                color: '#CBD5E1', background: 'rgba(148,163,184,0.10)', border: '1px solid rgba(148,163,184,0.22)', letterSpacing: '0.04em',
                               }}>{rankGroup}</span>
                             )}
                             {isSportWinner(p.wallet, gd.sport) && (
@@ -8462,15 +8486,20 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
           const awaySide = consensusSide === 'away';
           const homeSide = consensusSide === 'home';
           const moneyRatio = totalInvested > 0 ? Math.round((Math.max(awayInvested, homeInvested) / totalInvested) * 100) : 50;
+          // Asymmetry follows the data: the sharp side takes ~60% of the
+          // row and glows; the dead side compresses and dims.
           const panelStyle = (isActive) => ({
-            flex: 1, padding: '0.4rem 0.5rem',
-            borderRadius: '8px',
+            flex: isActive ? 1.55 : 1, padding: isActive ? '0.5rem 0.6rem' : '0.4rem 0.5rem',
+            borderRadius: '10px',
             background: isActive
-              ? `linear-gradient(135deg, ${accentColor}10 0%, ${accentColor}03 100%)`
+              ? `radial-gradient(120% 150% at 50% 0%, ${accentColor}12 0%, transparent 60%), linear-gradient(135deg, ${accentColor}0e 0%, ${accentColor}03 100%)`
               : 'rgba(255,255,255,0.015)',
-            border: `1px solid ${isActive ? `${accentColor}33` : B.borderSubtle}`,
+            border: `1px solid ${isActive ? `${accentColor}40` : B.borderSubtle}`,
+            boxShadow: isActive ? `0 0 14px ${accentColor}14, inset 0 1px 0 rgba(255,255,255,0.04)` : 'none',
+            opacity: isActive ? 1 : 0.7,
             position: 'relative',
             overflow: 'hidden',
+            transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)',
           });
 
           const SidePanel = ({ team, wallets, invested, pnl, avgBet, isActive, align }) => (
@@ -8577,20 +8606,20 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                 ];
                 return (
                   <div style={{
-                    marginTop: '0.4rem', borderRadius: '8px', overflow: 'hidden',
-                    border: `1px solid ${B.borderSubtle}`, background: 'rgba(255,255,255,0.02)',
+                    marginTop: '0.55rem', paddingTop: '0.5rem',
+                    borderTop: `1px solid ${B.borderSubtle}`,
                   }}>
                     <div style={{
                       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                      padding: '0.3rem 0.55rem', borderBottom: `1px solid ${B.borderSubtle}`,
+                      padding: '0 0.1rem 0.3rem',
                     }}>
-                      <span style={{ ...T.micro, fontSize: '0.58rem', color: B.textMuted, letterSpacing: '0.04em' }}>MARKET FLOW</span>
+                      <span style={{ ...T.tiny, fontSize: '0.55rem', color: B.textSubtle, letterSpacing: '0.09em' }}>MARKET FLOW</span>
                       <div style={{ display: 'flex', gap: '0.7rem' }}>
                         <span style={{ ...T.micro, fontSize: '0.58rem', color: B.textMuted, fontWeight: 700 }}>{awayShort}</span>
                         <span style={{ ...T.micro, fontSize: '0.58rem', color: B.textMuted, fontWeight: 700 }}>{homeShort}</span>
                       </div>
                     </div>
-                    <div style={{ padding: '0.35rem 0.55rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                    <div style={{ padding: '0 0.1rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                       {bars.map(bar => {
                         const awayWins = bar.awayVal > bar.homeVal;
                         const homeWins = bar.homeVal > bar.awayVal;
@@ -8616,24 +8645,27 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                               </span>
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
                                 <div style={{
-                                  display: 'flex', height: '5px', borderRadius: '2.5px', overflow: 'hidden',
-                                  background: 'rgba(255,255,255,0.03)',
+                                  display: 'flex', height: '7px', borderRadius: '3.5px', overflow: 'hidden',
+                                  background: 'rgba(255,255,255,0.04)',
+                                  boxShadow: 'inset 0 1px 1px rgba(0,0,0,0.3)',
                                 }}>
-                                  <div style={{
+                                  <div className="sf-bar-left" style={{
                                     width: `${bar.awayVal}%`, background: barAwayBg,
-                                    borderRadius: '2.5px 0 0 2.5px',
+                                    borderRadius: awayWins ? '3.5px' : '3.5px 0 0 3.5px',
+                                    boxShadow: awaySide && awayWins ? `0 0 8px ${accentColor}50` : 'none',
                                     transition: 'width 0.5s cubic-bezier(.4,0,.2,1)',
                                   }} />
-                                  <div style={{ width: '1px', background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
-                                  <div style={{
+                                  <div style={{ width: '2px', background: 'rgba(11,15,31,0.9)', flexShrink: 0 }} />
+                                  <div className="sf-bar-right" style={{
                                     width: `${bar.homeVal}%`, background: barHomeBg,
-                                    borderRadius: '0 2.5px 2.5px 0',
+                                    borderRadius: homeWins ? '3.5px' : '0 3.5px 3.5px 0',
+                                    boxShadow: homeSide && homeWins ? `0 0 8px ${accentColor}50` : 'none',
                                     transition: 'width 0.5s cubic-bezier(.4,0,.2,1)',
                                   }} />
                                 </div>
                                 <span style={{
-                                  ...T.micro, fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)',
-                                  textAlign: 'center', letterSpacing: '0.03em',
+                                  ...T.micro, fontSize: '0.5rem', color: 'rgba(255,255,255,0.35)',
+                                  textAlign: 'center', letterSpacing: '0.05em', textTransform: 'uppercase',
                                 }}>
                                   {bar.label}
                                 </span>
@@ -8659,15 +8691,14 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
         {/* ─── Price Movement — Sparklines with directional context ─── */}
         {(pinnConsensusPoints.length >= 2 || polyPoints.length >= 2) && (
           <div style={{
-            borderRadius: '8px', overflow: 'hidden',
-            border: `1px solid ${B.borderSubtle}`, marginBottom: '0.5rem',
-            background: 'rgba(255,255,255,0.02)',
+            marginBottom: '0.5rem', paddingTop: '0.5rem',
+            borderTop: `1px solid ${B.borderSubtle}`,
           }}>
-            <div style={{ padding: '0.3rem 0.55rem', borderBottom: `1px solid ${B.borderSubtle}` }}>
-              <span style={{ ...T.micro, fontSize: '0.58rem', color: B.textMuted, letterSpacing: '0.04em' }}>PRICE MOVEMENT</span>
+            <div style={{ padding: '0 0.1rem 0.35rem' }}>
+              <span style={{ ...T.tiny, fontSize: '0.55rem', color: B.textSubtle, letterSpacing: '0.09em' }}>PRICE MOVEMENT</span>
             </div>
             <div style={{
-              display: 'flex', gap: '0.65rem', padding: '0.4rem 0.55rem',
+              display: 'flex', gap: '0.65rem', padding: '0 0.1rem',
               flexWrap: 'wrap', alignItems: 'flex-start',
             }}>
               {pinnConsensusPoints.length >= 2 && (
@@ -8738,16 +8769,15 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
         {/* ─── Book Prices ─── */}
         {pinnGame && Object.keys(allBooks).length > 1 && (
           <div style={{
-            borderRadius: '8px', background: 'rgba(255,255,255,0.02)',
-            border: `1px solid ${B.borderSubtle}`, marginBottom: '0.5rem',
-            overflow: 'hidden',
+            marginBottom: '0.5rem', paddingTop: '0.5rem',
+            borderTop: `1px solid ${B.borderSubtle}`,
           }}>
-            <div style={{ padding: '0.3rem 0.55rem', borderBottom: `1px solid ${B.borderSubtle}` }}>
-              <span style={{ ...T.micro, fontSize: '0.58rem', color: B.textMuted, letterSpacing: '0.04em' }}>
+            <div style={{ padding: '0 0.1rem 0.35rem' }}>
+              <span style={{ ...T.tiny, fontSize: '0.55rem', color: B.textSubtle, letterSpacing: '0.09em' }}>
                 BOOK PRICES — {consensusShort} ML
               </span>
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', borderRadius: '8px', overflow: 'hidden', background: 'rgba(255,255,255,0.02)' }}>
               {Object.entries(allBooks)
                 .sort(([, a], [, b]) => {
                   const aO = consensusSide === 'away' ? a.away : a.home;
@@ -8819,8 +8849,9 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
 
           return (
             <div style={{
-              marginTop: '0.375rem', borderRadius: '8px', overflow: 'hidden',
+              marginTop: '0.375rem', borderRadius: '10px', overflow: 'hidden',
               border: `1px solid ${B.borderSubtle}`,
+              animation: 'fadeIn 0.3s ease both',
             }}>
               {/* Filter bar */}
               <div style={{
@@ -8894,7 +8925,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                         {rankGroup && (
                           <span style={{
                             ...T.micro, padding: '0.1rem 0.32rem', borderRadius: '3px', fontWeight: 800, fontSize: '0.45rem',
-                            color: '#22D3EE', background: 'rgba(34,211,238,0.1)', border: '1px solid rgba(34,211,238,0.22)', letterSpacing: '0.04em',
+                            color: '#CBD5E1', background: 'rgba(148,163,184,0.10)', border: '1px solid rgba(148,163,184,0.22)', letterSpacing: '0.04em',
                           }}>{rankGroup}</span>
                         )}
                         {isSportWinner(p.wallet, gd.sport) && (
@@ -8970,15 +9001,15 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
             <button
               onClick={() => onToggleMyPick(gd.key, isMyPick ? null : { side: consensusSide, team: consensusTeam, sport: gd.sport })}
               style={{
-                width: '100%', padding: '0.625rem 0.75rem', borderRadius: '8px', cursor: 'pointer',
+                width: '100%', padding: '0.625rem 0.75rem', borderRadius: '10px', cursor: 'pointer',
                 fontSize: '0.8rem', fontWeight: 800, letterSpacing: '0.04em',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                border: isMyPick ? '1.5px solid rgba(99,102,241,0.6)' : '1.5px solid rgba(99,102,241,0.25)',
+                border: isMyPick ? `1.5px solid rgba(212,175,55,0.55)` : `1.5px solid ${B.goldBorder}`,
                 background: isMyPick
-                  ? 'linear-gradient(135deg, rgba(99,102,241,0.18) 0%, rgba(129,140,248,0.10) 100%)'
-                  : 'linear-gradient(135deg, rgba(99,102,241,0.06) 0%, rgba(129,140,248,0.02) 100%)',
-                color: isMyPick ? '#A5B4FC' : '#818CF8',
-                boxShadow: isMyPick ? '0 0 10px rgba(99,102,241,0.2)' : 'none',
+                  ? 'linear-gradient(135deg, rgba(212,175,55,0.16) 0%, rgba(212,175,55,0.08) 100%)'
+                  : 'linear-gradient(135deg, rgba(212,175,55,0.05) 0%, rgba(212,175,55,0.01) 100%)',
+                color: isMyPick ? B.goldHover : B.gold,
+                boxShadow: isMyPick ? `0 0 12px ${B.goldGlow}` : 'none',
                 transition: 'all 0.2s ease',
               }}
             >
@@ -8989,12 +9020,12 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
             <a
               href="#/pricing"
               style={{
-                width: '100%', padding: '0.625rem 0.75rem', borderRadius: '8px', cursor: 'pointer',
+                width: '100%', padding: '0.625rem 0.75rem', borderRadius: '10px', cursor: 'pointer',
                 fontSize: '0.8rem', fontWeight: 800, letterSpacing: '0.04em',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                border: '1.5px solid rgba(99,102,241,0.25)',
-                background: 'linear-gradient(135deg, rgba(99,102,241,0.06) 0%, rgba(129,140,248,0.02) 100%)',
-                color: '#818CF8',
+                border: `1.5px solid ${B.goldBorder}`,
+                background: 'linear-gradient(135deg, rgba(212,175,55,0.05) 0%, rgba(212,175,55,0.01) 100%)',
+                color: B.gold,
                 transition: 'all 0.2s ease',
                 textDecoration: 'none',
               }}

@@ -1079,3 +1079,40 @@ p {
 .sharpflow-paywall-cta:active {
   transform: translateY(0);
 }
+
+/* ========================
+   SharpFlow Position Cards — premium polish layer
+   .sf-card: resting card gets a soft layered shadow; hover lifts it
+   2px with a deeper shadow so the grid feels tactile. Honors
+   prefers-reduced-motion via the transition (no keyframes here).
+   ======================== */
+.sf-card {
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+.sf-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Flow bars sweep in from their anchored edge on mount. */
+@keyframes sf-fill-left {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+@keyframes sf-fill-right {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+.sf-bar-left  { transform-origin: left center;  animation: sf-fill-left  0.7s cubic-bezier(0.4, 0, 0.2, 1) both; }
+.sf-bar-right { transform-origin: right center; animation: sf-fill-right 0.7s cubic-bezier(0.4, 0, 0.2, 1) both; }
+
+/* Sparkline live end-dot: slow breathing halo. */
+@keyframes sf-dot-pulse {
+  0%, 100% { opacity: 0.35; r: 4.5; }
+  50%      { opacity: 0.08; r: 6.5; }
+}
+.sf-spark-halo { animation: sf-dot-pulse 2.4s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sf-card, .sf-bar-left, .sf-bar-right, .sf-spark-halo { animation: none; transition: none; }
+}
