@@ -1093,6 +1093,20 @@ p {
 .sf-card:hover {
   transform: translateY(-2px);
 }
+/* Top-edge specular highlight that breathes in on hover — reads as
+   light catching the card's beveled edge. */
+.sf-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 8%; right: 8%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+.sf-card:hover::after {
+  opacity: 1;
+}
 
 /* Flow bars sweep in from their anchored edge on mount. */
 @keyframes sf-fill-left {

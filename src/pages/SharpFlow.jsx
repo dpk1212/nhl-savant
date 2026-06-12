@@ -5152,39 +5152,39 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
     : 'rgba(16,185,129,0.20)';
 
   return (
-    <div style={{
-      borderRadius: '12px', overflow: 'hidden', position: 'relative',
+    <div className="sf-card" style={{
+      borderRadius: '16px', overflow: 'hidden', position: 'relative',
       opacity: isCancelled ? 0.45 : isMuted ? 0.65 : superseded ? 0.55 : isTrackedGrade ? 0.7 : 1,
       background: superseded
-        ? `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`
+        ? `linear-gradient(160deg, ${B.cardAlt} 0%, ${B.card} 45%, #11151F 100%)`
         : isTrackedGrade
-        ? `linear-gradient(135deg, rgba(96,165,250,0.04) 0%, ${B.card} 30%, ${B.cardAlt} 100%)`
+        ? `linear-gradient(160deg, rgba(96,165,250,0.04) 0%, ${B.card} 30%, #11151F 100%)`
         : isElite
-        ? `linear-gradient(135deg, rgba(212,175,55,0.07) 0%, ${B.card} 30%, ${B.cardAlt} 100%)`
+        ? `linear-gradient(160deg, rgba(212,175,55,0.08) 0%, ${B.card} 30%, #11151F 100%)`
         : isLean
-        ? `linear-gradient(135deg, rgba(250,204,21,0.04) 0%, ${B.card} 30%, ${B.cardAlt} 100%)`
+        ? `linear-gradient(160deg, rgba(250,204,21,0.04) 0%, ${B.card} 30%, #11151F 100%)`
         : isWeak
-        ? `linear-gradient(135deg, rgba(245,158,11,0.04) 0%, ${B.card} 30%, ${B.cardAlt} 100%)`
+        ? `linear-gradient(160deg, rgba(245,158,11,0.04) 0%, ${B.card} 30%, #11151F 100%)`
         // Graded picks get a very faint outcome wash — wins drift
         // green, losses drift red — so the Yesterday tab reads with
         // the same visual richness as the Live tab instead of all
         // cards looking identical and "muted".
         : isGraded && isWin
-        ? `linear-gradient(135deg, rgba(16,185,129,0.05) 0%, ${B.card} 35%, ${B.cardAlt} 100%)`
+        ? `linear-gradient(160deg, rgba(16,185,129,0.05) 0%, ${B.card} 35%, #11151F 100%)`
         : isGraded && isLoss
-        ? `linear-gradient(135deg, rgba(239,68,68,0.04) 0%, ${B.card} 35%, ${B.cardAlt} 100%)`
+        ? `linear-gradient(160deg, rgba(239,68,68,0.04) 0%, ${B.card} 35%, #11151F 100%)`
         : isTopPick && !isMuted && !isCancelled
-        ? `linear-gradient(135deg, rgba(212,175,55,0.06) 0%, ${B.card} 30%, ${B.cardAlt} 100%)`
-        : `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
+        ? `linear-gradient(160deg, rgba(212,175,55,0.06) 0%, ${B.card} 30%, #11151F 100%)`
+        : `linear-gradient(160deg, ${B.cardAlt} 0%, ${B.card} 45%, #11151F 100%)`,
       border: `1px solid ${tierSpineSoft}`,
-      boxShadow: isCancelled || isMuted || superseded || isTrackedGrade ? 'none'
+      boxShadow: isCancelled || isMuted || superseded || isTrackedGrade ? '0 8px 24px rgba(0,0,0,0.25)'
         : isElite
-        ? '0 0 24px rgba(212,175,55,0.22), 0 0 48px rgba(212,175,55,0.08)'
+        ? '0 0 24px rgba(212,175,55,0.22), 0 0 48px rgba(212,175,55,0.08), 0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04)'
         : isSuperTopPick
-        ? '0 0 24px rgba(212,175,55,0.18), 0 0 48px rgba(212,175,55,0.06)'
+        ? '0 0 24px rgba(212,175,55,0.18), 0 0 48px rgba(212,175,55,0.06), 0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04)'
         : isTopPick
-        ? '0 0 20px rgba(212,175,55,0.12), 0 0 40px rgba(212,175,55,0.04)'
-        : isWin ? '0 0 16px rgba(16,185,129,0.04)' : isLoss ? '0 0 16px rgba(239,68,68,0.04)' : 'none',
+        ? '0 0 20px rgba(212,175,55,0.12), 0 0 40px rgba(212,175,55,0.04), 0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.03)'
+        : isWin ? '0 0 16px rgba(16,185,129,0.04), 0 8px 24px rgba(0,0,0,0.3)' : isLoss ? '0 0 16px rgba(239,68,68,0.04), 0 8px 24px rgba(0,0,0,0.3)' : '0 8px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03)',
     }}>
       {/* Left tier-spine — 4px stripe in the AGS-U tier color so the
           conviction tier is scannable at a glance when the cards are
@@ -5356,20 +5356,24 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                     : `${walletConsensusForW ?? 1} proven ${sport} winner backing, ${walletConsensusAgW ?? 0} against (Δw=+${walletConsensusDelta ?? 1}, Δq=${(walletConsensusQualityMargin ?? 0) >= 0 ? '+' : ''}${walletConsensusQualityMargin ?? 0})`
                 }
                 style={{
-                  ...T.micro, fontWeight: 900, letterSpacing: '0.06em',
-                  padding: '0.15rem 0.5rem', borderRadius: '5px',
-                  color: isSuperTopPick ? '#fff' : '#D4AF37',
+                  ...T.micro, fontWeight: 900, letterSpacing: '0.07em',
+                  padding: '0.18rem 0.55rem', borderRadius: '5px',
+                  whiteSpace: 'nowrap',
+                  color: isSuperTopPick ? '#1A1404' : '#D4AF37',
                   background: isSuperTopPick
-                    ? 'linear-gradient(135deg, #D4AF37 0%, #B8962E 50%, #D4AF37 100%)'
+                    ? 'linear-gradient(120deg, #B8962E 0%, #E5C158 35%, #F5D060 50%, #E5C158 65%, #B8962E 100%)'
                     : 'linear-gradient(135deg, rgba(212,175,55,0.15) 0%, rgba(245,208,96,0.08) 100%)',
                   border: isSuperTopPick
-                    ? '1px solid rgba(245,208,96,0.6)'
+                    ? '1px solid rgba(245,208,96,0.8)'
                     : '1px solid rgba(212,175,55,0.35)',
-                  boxShadow: isSuperTopPick ? '0 0 8px rgba(212,175,55,0.3)' : 'none',
-                  display: 'flex', alignItems: 'center', gap: '0.2rem',
+                  boxShadow: isSuperTopPick
+                    ? '0 0 12px rgba(212,175,55,0.45), inset 0 1px 0 rgba(255,255,255,0.45)'
+                    : 'none',
+                  textShadow: isSuperTopPick ? '0 1px 0 rgba(255,255,255,0.25)' : 'none',
+                  display: 'flex', alignItems: 'center', gap: '0.25rem',
                 }}
               >
-                {isSuperTopPick ? <Zap size={9} strokeWidth={3} fill="#fff" /> : <TrendingUp size={9} strokeWidth={3} />}
+                {isSuperTopPick ? <Zap size={9} strokeWidth={3} fill="#1A1404" /> : <TrendingUp size={9} strokeWidth={3} />}
                 <span>{isSuperTopPick ? 'SUPER TOP PICK' : 'TOP PICK'}</span>
               </span>
             )}
@@ -5531,9 +5535,10 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
               whole panel reads as the AGS-U tier (ELITE gold · PREMIUM/LOCK
               green · LEAN blue · WEAK amber · MUTED/CANCELLED red/amber). */}
           <div style={{
-            margin: '0.75rem 0.875rem 0', padding: '0.75rem',
-            borderRadius: '10px',
-            background: isCancelled
+            margin: '0.75rem 0.875rem 0', padding: '0.85rem 0.9rem',
+            borderRadius: '12px',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+            background: `radial-gradient(130% 160% at 88% 0%, ${accentColor}12 0%, transparent 55%), ${isCancelled
               ? 'linear-gradient(135deg, rgba(239,68,68,0.08) 0%, rgba(239,68,68,0.02) 100%)'
               : isMuted
               ? 'linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(245,158,11,0.02) 100%)'
@@ -5545,7 +5550,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
               ? 'linear-gradient(135deg, rgba(245,158,11,0.10) 0%, rgba(245,158,11,0.02) 100%)'
               : isGraded
               ? (isWin ? 'linear-gradient(135deg, rgba(16,185,129,0.10) 0%, rgba(16,185,129,0.02) 100%)' : isLoss ? 'linear-gradient(135deg, rgba(239,68,68,0.10) 0%, rgba(239,68,68,0.02) 100%)' : 'linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(212,175,55,0.02) 100%)')
-              : 'linear-gradient(135deg, rgba(16,185,129,0.10) 0%, rgba(16,185,129,0.02) 100%)',
+              : 'linear-gradient(135deg, rgba(16,185,129,0.10) 0%, rgba(16,185,129,0.02) 100%)'}`,
             border: `1px solid ${isCancelled ? 'rgba(239,68,68,0.25)'
               : isMuted ? 'rgba(245,158,11,0.25)'
               : isElite ? 'rgba(212,175,55,0.40)'
@@ -5822,23 +5827,33 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
             {/* Bet line: team + fair value | locked odds + book */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '0.625rem', alignItems: 'center' }}>
               <div>
-                <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.2rem' }}>
+                <div style={{ ...T.micro, fontSize: '0.6rem', color: B.textMuted, marginBottom: '0.25rem', letterSpacing: '0.05em' }}>
                   {sharpCount || '—'} sharp{sharpCount !== 1 ? 's' : ''} backing
                 </div>
-                <div style={{ ...T.heading, fontWeight: 900, color: B.text }}>
+                <div style={{
+                  fontSize: '1.5rem', fontWeight: 900, color: B.text,
+                  lineHeight: 1.08, letterSpacing: '-0.02em',
+                  textShadow: `0 0 24px ${accentColor}25`,
+                }}>
                   {marketType === 'spread' ? `${teamShort} ${line > 0 ? '+' : ''}${line}` : marketType === 'total' ? teamShort : `${teamShort} ML`}
                 </div>
                 {pinnProb && (
-                  <div style={{ ...T.micro, color: B.textSec, marginTop: '0.15rem' }}>
+                  <div style={{ ...T.micro, fontSize: '0.62rem', color: B.textSec, marginTop: '0.25rem', fontFeatureSettings: "'tnum'" }}>
                     Fair value: {fmtO(pinnacleOdds)} ({(pinnProb * 100).toFixed(1)}%)
                   </div>
                 )}
               </div>
-              <div style={{ width: '1px', height: '40px', background: B.borderSubtle }} />
+              <div style={{ width: '1px', height: '46px', background: `linear-gradient(180deg, transparent, ${B.border}, transparent)` }} />
               <div style={{ textAlign: 'right' }}>
-                <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.2rem' }}>LOCKED AT</div>
-                <div style={{ ...T.heading, fontWeight: 900, color: evEdge > 0 ? B.green : B.text }}>{fmtO(odds)}</div>
-                <div style={{ ...T.micro, color: B.textSec, marginTop: '0.15rem' }}>{book}</div>
+                <div style={{ ...T.micro, fontSize: '0.6rem', color: B.textMuted, marginBottom: '0.25rem', letterSpacing: '0.07em' }}>LOCKED AT</div>
+                <div style={{
+                  fontSize: '1.65rem', fontWeight: 900,
+                  color: evEdge > 0 ? B.green : B.text,
+                  lineHeight: 1, letterSpacing: '-0.02em',
+                  fontFeatureSettings: "'tnum'",
+                  textShadow: evEdge > 0 ? '0 0 20px rgba(16,185,129,0.25)' : 'none',
+                }}>{fmtO(odds)}</div>
+                <div style={{ ...T.micro, fontSize: '0.6rem', color: B.textSec, marginTop: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{book}</div>
               </div>
             </div>
 
@@ -5971,9 +5986,10 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                                                color: B.green, bg: 'rgba(16,185,129,0.06)', border: 'rgba(16,185,129,0.25)' };
             return (
             <div style={{
-              margin: '0.5rem 0.875rem 0', padding: '0.5rem 0.625rem', borderRadius: '8px',
+              margin: '0.5rem 0.875rem 0', padding: '0.55rem 0.7rem', borderRadius: '10px',
               background: `linear-gradient(135deg, ${tierBanner.bg} 0%, transparent 100%)`,
               border: `1px solid ${tierBanner.border}`,
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)',
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
                 <span style={{ ...T.micro, color: tierBanner.color, fontWeight: 700 }}>
@@ -5996,9 +6012,9 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
           {/* Sharp Money Battle */}
           {consensusStrength?.moneyPct != null && (
             <div style={{ padding: '0.75rem 0.875rem 0' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.375rem' }}>
-                <span style={{ ...T.micro, color: B.textMuted }}>Sharp Money — At Lock</span>
-                <span style={{ ...T.micro, fontWeight: 800, color: accentColor, padding: '0.1rem 0.3rem', borderRadius: '3px', background: `${accentColor}15` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.4rem' }}>
+                <span style={{ ...T.tiny, fontSize: '0.55rem', color: B.textSubtle, letterSpacing: '0.09em' }}>SHARP MONEY — AT LOCK</span>
+                <span style={{ ...T.micro, fontWeight: 800, color: accentColor, padding: '0.1rem 0.32rem', borderRadius: '3px', background: `${accentColor}15`, fontFeatureSettings: "'tnum'" }}>
                   {consensusStrength.moneyPct}% {teamShort}
                 </span>
               </div>
@@ -6007,27 +6023,42 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                 const totalBoth = pct > 0 ? totalInvested / pct : totalInvested;
                 const otherAmt = Math.round(totalBoth - totalInvested);
                 return (
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <div style={{ flex: 1, padding: '0.5rem 0.625rem', borderRadius: '8px', background: 'rgba(255,255,255,0.015)', border: `1px solid ${B.borderSubtle}` }}>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'stretch' }}>
+                    <div style={{
+                      flex: 1, padding: '0.5rem 0.625rem', borderRadius: '10px',
+                      background: 'rgba(255,255,255,0.015)', border: `1px solid ${B.borderSubtle}`,
+                      opacity: 0.7, transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)',
+                    }}>
                       <div style={{ ...T.micro, fontWeight: 700, color: B.textMuted, marginBottom: '0.25rem' }}>{otherTeam}</div>
                       <div style={{ ...T.heading, fontWeight: 900, color: B.textSec, fontFeatureSettings: "'tnum'" }}>{fmtV(otherAmt)}</div>
-                      <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.1rem' }}>{100 - consensusStrength.moneyPct}%</div>
+                      <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.1rem', fontFeatureSettings: "'tnum'" }}>{100 - consensusStrength.moneyPct}%</div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700 }}>VS</span>
+                      <span style={{
+                        ...T.micro, fontSize: '0.52rem', color: B.textMuted, fontWeight: 800,
+                        width: '22px', height: '22px', borderRadius: '50%',
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        border: `1px solid ${B.border}`, background: 'rgba(255,255,255,0.02)',
+                        letterSpacing: '0.02em',
+                      }}>VS</span>
                     </div>
                     <div style={{
-                      flex: 1, padding: '0.5rem 0.625rem', borderRadius: '8px',
-                      background: `linear-gradient(135deg, ${accentColor}12 0%, ${accentColor}04 100%)`,
+                      flex: 1.55, padding: '0.55rem 0.7rem', borderRadius: '10px',
+                      background: `radial-gradient(120% 150% at 50% 0%, ${accentColor}14 0%, transparent 60%), linear-gradient(135deg, ${accentColor}0e 0%, ${accentColor}03 100%)`,
                       border: `1px solid ${accentColor}40`, position: 'relative', overflow: 'hidden',
+                      boxShadow: `0 0 14px ${accentColor}14, inset 0 1px 0 rgba(255,255,255,0.04)`,
+                      transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)',
                     }}>
-                      <div style={{ position: 'absolute', top: 0, right: 0, width: '3px', height: '100%', background: accentColor, borderRadius: '0 8px 8px 0' }} />
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginBottom: '0.25rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', marginBottom: '0.25rem' }}>
                         <span style={{ ...T.micro, fontWeight: 700, color: B.text }}>{teamShort}</span>
-                        <span style={{ ...T.micro, fontSize: '0.5rem', fontWeight: 900, padding: '0.05rem 0.25rem', borderRadius: '3px', color: '#fff', background: accentColor }}>SHARP SIDE</span>
+                        <span style={{ ...T.micro, fontSize: '0.5rem', fontWeight: 900, padding: '0.06rem 0.28rem', borderRadius: '3px', color: '#fff', background: accentColor }}>SHARP SIDE</span>
                       </div>
-                      <div style={{ ...T.heading, fontWeight: 900, color: accentColor, fontFeatureSettings: "'tnum'" }}>{fmtV(totalInvested)}</div>
-                      <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.1rem' }}>{consensusStrength.moneyPct}%</div>
+                      <div style={{
+                        fontSize: '1.3rem', fontWeight: 900, color: accentColor,
+                        fontFeatureSettings: "'tnum'", lineHeight: 1.05, letterSpacing: '-0.01em',
+                        textShadow: `0 0 18px ${accentColor}30`,
+                      }}>{fmtV(totalInvested)}</div>
+                      <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.15rem', fontFeatureSettings: "'tnum'" }}>{consensusStrength.moneyPct}%</div>
                     </div>
                   </div>
                 );
@@ -6035,28 +6066,36 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
 
               {/* Market flow bar */}
               <div style={{
-                marginTop: '0.5rem', borderRadius: '8px', overflow: 'hidden',
-                border: `1px solid ${B.borderSubtle}`, background: 'rgba(255,255,255,0.02)',
+                marginTop: '0.6rem', paddingTop: '0.5rem',
+                borderTop: `1px solid ${B.borderSubtle}`,
               }}>
-                <div style={{ padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}`, display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ ...T.micro, color: B.textMuted }}>Market Flow</span>
+                <div style={{ padding: '0 0.1rem 0.3rem', display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ ...T.tiny, fontSize: '0.55rem', color: B.textSubtle, letterSpacing: '0.09em' }}>MARKET FLOW</span>
                   <div style={{ display: 'flex', gap: '0.75rem' }}>
-                    <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700 }}>{otherTeam}</span>
-                    <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700 }}>{teamShort}</span>
+                    <span style={{ ...T.micro, fontSize: '0.58rem', color: B.textMuted, fontWeight: 700 }}>{otherTeam}</span>
+                    <span style={{ ...T.micro, fontSize: '0.58rem', color: B.textMuted, fontWeight: 700 }}>{teamShort}</span>
                   </div>
                 </div>
-                <div style={{ padding: '0.5rem 0.625rem' }}>
+                <div style={{ padding: '0 0.1rem' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '36px 1fr 36px', alignItems: 'center', gap: '0.375rem' }}>
                     <span style={{ ...T.micro, fontSize: '0.625rem', fontWeight: 800, fontFeatureSettings: "'tnum'", color: B.textMuted, textAlign: 'left' }}>
                       {100 - consensusStrength.moneyPct}%
                     </span>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
-                      <div style={{ display: 'flex', height: '5px', borderRadius: '2.5px', overflow: 'hidden', background: 'rgba(255,255,255,0.03)' }}>
-                        <div style={{ width: `${100 - consensusStrength.moneyPct}%`, background: 'rgba(255,255,255,0.05)', borderRadius: '2.5px 0 0 2.5px' }} />
-                        <div style={{ width: '1px', background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
-                        <div style={{ width: `${consensusStrength.moneyPct}%`, background: `linear-gradient(90deg, ${accentColor}, ${accentColor}44)`, borderRadius: '0 2.5px 2.5px 0' }} />
+                      <div style={{
+                        display: 'flex', height: '7px', borderRadius: '3.5px', overflow: 'hidden',
+                        background: 'rgba(255,255,255,0.04)', boxShadow: 'inset 0 1px 1px rgba(0,0,0,0.3)',
+                      }}>
+                        <div className="sf-bar-left" style={{ width: `${100 - consensusStrength.moneyPct}%`, background: 'rgba(255,255,255,0.06)', borderRadius: '3.5px 0 0 3.5px' }} />
+                        <div style={{ width: '2px', background: 'rgba(11,15,31,0.9)', flexShrink: 0 }} />
+                        <div className="sf-bar-right" style={{
+                          width: `${consensusStrength.moneyPct}%`,
+                          background: `linear-gradient(90deg, ${accentColor}44, ${accentColor})`,
+                          borderRadius: '3.5px',
+                          boxShadow: `0 0 8px ${accentColor}50`,
+                        }} />
                       </div>
-                      <span style={{ ...T.micro, fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', textAlign: 'center', letterSpacing: '0.03em' }}>Sharp Money</span>
+                      <span style={{ ...T.micro, fontSize: '0.5rem', color: 'rgba(255,255,255,0.35)', textAlign: 'center', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Sharp Money</span>
                     </div>
                     <span style={{ ...T.micro, fontSize: '0.625rem', fontWeight: 800, fontFeatureSettings: "'tnum'", color: accentColor, textAlign: 'right' }}>
                       {consensusStrength.moneyPct}%
@@ -6069,21 +6108,21 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
 
           {/* Book Prices */}
           <div style={{
-            margin: '0.625rem 0.875rem 0', borderRadius: '8px', overflow: 'hidden',
-            border: `1px solid ${B.borderSubtle}`, background: 'rgba(255,255,255,0.02)',
+            margin: '0.7rem 0.875rem 0', paddingTop: '0.5rem',
+            borderTop: `1px solid ${B.borderSubtle}`,
           }}>
             <div style={{
-              padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}`,
+              padding: '0 0.1rem 0.35rem',
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             }}>
-              <span style={{ ...T.micro, color: B.textMuted }}>Book Prices — {marketType === 'spread' ? `${teamShort} ${line > 0 ? '+' : ''}${line}` : marketType === 'total' ? teamShort : `${teamShort} ML`}</span>
+              <span style={{ ...T.tiny, fontSize: '0.55rem', color: B.textSubtle, letterSpacing: '0.09em' }}>BOOK PRICES — {marketType === 'spread' ? `${teamShort} ${line > 0 ? '+' : ''}${line}` : marketType === 'total' ? teamShort : `${teamShort} ML`}</span>
               {clvPct != null && (
                 <span style={{ ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'", color: clvPositive ? B.green : liveCLV < 0 ? B.red : B.textMuted }}>
                   CLV {clvPositive ? '+' : ''}{clvPct}%
                 </span>
               )}
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 0 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 0, borderRadius: '8px', overflow: 'hidden', background: 'rgba(255,255,255,0.02)' }}>
               {[
                 { label: book || 'Locked', value: odds ? fmtO(odds) : '—', color: B.text },
                 { label: 'Pinnacle', value: pinnacleOdds ? fmtO(pinnacleOdds) : '—', color: B.textSec },
@@ -6093,8 +6132,8 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                   textAlign: 'center', padding: '0.625rem 0.375rem',
                   borderRight: i < 2 ? `1px solid ${B.borderSubtle}` : 'none',
                 }}>
-                  <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.25rem', fontWeight: 600 }}>{col.label}</div>
-                  <div style={{ ...T.sub, fontWeight: 900, color: col.color, fontFeatureSettings: "'tnum'" }}>{col.value}</div>
+                  <div style={{ ...T.micro, fontSize: '0.55rem', color: B.textMuted, marginBottom: '0.3rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{col.label}</div>
+                  <div style={{ fontSize: '1.05rem', fontWeight: 900, color: col.color, fontFeatureSettings: "'tnum'", letterSpacing: '-0.01em' }}>{col.value}</div>
                 </div>
               ))}
             </div>
@@ -8545,9 +8584,10 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
               }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: align === 'right' ? 'flex-end' : 'flex-start' }}>
                   <div style={{
-                    ...T.body, fontWeight: 900,
+                    fontSize: isActive ? '1.25rem' : '0.875rem', fontWeight: 900,
                     color: isActive ? accentColor : B.textSec,
-                    fontFeatureSettings: "'tnum'", lineHeight: 1.1,
+                    fontFeatureSettings: "'tnum'", lineHeight: 1.1, letterSpacing: '-0.01em',
+                    textShadow: isActive ? `0 0 18px ${accentColor}30` : 'none',
                   }}>
                     {fmtVol(invested)}
                   </div>
@@ -8571,25 +8611,31 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
 
           return (
             <div style={{ marginBottom: '0.625rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.375rem' }}>
-                <span style={{ ...T.micro, color: B.textMuted }}>Sharp Money — Both Sides</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.4rem' }}>
+                <span style={{ ...T.tiny, fontSize: '0.55rem', color: B.textSubtle, letterSpacing: '0.09em' }}>SHARP MONEY — BOTH SIDES</span>
                 <span style={{
                   ...T.micro, fontWeight: 800, color: accentColor,
-                  padding: '0.1rem 0.3rem', borderRadius: '3px',
-                  background: `${accentColor}15`,
+                  padding: '0.1rem 0.32rem', borderRadius: '3px',
+                  background: `${accentColor}15`, fontFeatureSettings: "'tnum'",
                 }}>
                   {moneyRatio}% {consensusShort}
                 </span>
               </div>
 
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'stretch' }}>
                 <SidePanel team={awayShort} wallets={awayWallets} invested={awayInvested} pnl={awayLifetimePnl} avgBet={awayAvgBet} isActive={awaySide} align="left" />
 
                 <div style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                  padding: '0 0.125rem', flexShrink: 0,
+                  padding: '0 0.05rem', flexShrink: 0,
                 }}>
-                  <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700 }}>VS</span>
+                  <span style={{
+                    ...T.micro, fontSize: '0.52rem', color: B.textMuted, fontWeight: 800,
+                    width: '22px', height: '22px', borderRadius: '50%',
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    border: `1px solid ${B.border}`, background: 'rgba(255,255,255,0.02)',
+                    letterSpacing: '0.02em',
+                  }}>VS</span>
                 </div>
 
                 <SidePanel team={homeShort} wallets={homeWallets} invested={homeInvested} pnl={homeLifetimePnl} avgBet={homeAvgBet} isActive={homeSide} align="right" />
