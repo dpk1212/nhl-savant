@@ -12914,6 +12914,19 @@ export default function SharpFlow() {
                       const docSport = doc.sport || 'NHL';
                       for (const [sideKey, sd] of Object.entries(doc.sides || {})) {
                         if (sd.lockStage === 'SHADOW' || sd.superseded) continue;
+                        // ─── TRACKED-ONLY HARD GATE ───────────────────────
+                        // result.tracked=true means the grader logged the
+                        // outcome but ZERO money was at risk (sized at 0u
+                        // because v12 said FADE/WEAK or shipped at 0u for
+                        // some other reason). These are shadow logs, not
+                        // locks. They have NO place in a "Locked Picks"
+                        // historical view — surfacing them as
+                        // TRACKED-WIN / TRACKED-LOSS chips makes users
+                        // (correctly) think we're claiming credit/blame
+                        // for picks we never made. Skip unconditionally,
+                        // before the graded-bypass below can let them
+                        // slip through.
+                        if (sd.result?.tracked === true) continue;
                         // ─── CRON-V12 SOURCE-OF-TRUTH GATE ────────────────
                         // Locked Picks ONLY shows sides the cron has
                         // actually evaluated under v12 logic. The signal:

@@ -104,15 +104,59 @@ async function fetchNCAAFinalGames(dateStr) {
   }
 }
 
+// ── Phantom-score guard ───────────────────────────────────────────────
+// ESPN's `status.type` carries `state: "post"` for ANY past-the-clock
+// game — including ones that never actually played (postponed by weather,
+// canceled, suspended without a makeup). When the game didn't play,
+// ESPN returns no scores, which `parseInt(undefined) || 0` quietly turns
+// into 0-0. Down the pipe `calculateOutcome` then grades ML 0-0 as LOSS
+// for the AWAY side and grades RUNLINE/PUCKLINE picks based on the
+// phantom 0-0 — pure invented outcomes (e.g. ATL @ CWS 2026-06-11
+// rained out, picks shipped as -3.0u of fake LOSSes).
+//
+// `STATUS_FINAL` is the only name that's safe to grade for MLB/NBA.
+// We also accept the rare hockey/baseball completed-game variants
+// (FINAL_OT, FINAL_PEN, FINAL_SO, FINAL_DELAYED) by allow-listing
+// any name starting with "STATUS_FINAL".
+//
+// We DENY-list the four no-play states explicitly so a typo in a
+// future ESPN status (e.g. STATUS_RAIN_DELAY) doesn't slip a no-play
+// game through.
+const isActuallyFinal = (statusType) => {
+  if (!statusType) return false;
+  const name = statusType.name || '';
+  if (name.startsWith('STATUS_POSTPONED')) return false;
+  if (name.startsWith('STATUS_CANCELED'))  return false;
+  if (name.startsWith('STATUS_CANCELLED')) return false;
+  if (name.startsWith('STATUS_SUSPENDED')) return false;
+  if (name.startsWith('STATUS_RAIN_DELAY')) return false;
+  if (name.startsWith('STATUS_DELAYED'))   return false;
+  if (name.startsWith('STATUS_FORFEIT'))   return false;
+  // Only after the deny-list — accept canonical finished states.
+  return name.startsWith('STATUS_FINAL')
+      || statusType.completed === true
+      || statusType.state === 'post';
+};
+
 async function fetchMLBFinalGames() {
   try {
     const res = await fetch(ESPN_MLB_URL);
     if (!res.ok) { logger.warn(`ESPN MLB API ${res.status}`); return []; }
     const data = await res.json();
-    return (data.events || [])
+    let postponedCount = 0;
+    const games = (data.events || [])
         .filter((e) => {
           const st = e.competitions?.[0]?.status?.type;
-          return st?.state === "post" || st?.completed;
+          const ok = isActuallyFinal(st);
+          if (!ok && (st?.state === 'post' || st?.completed)) {
+            postponedCount++;
+            const comp = e.competitions[0];
+            const comps = comp.competitors || [];
+            const away = comps.find((c) => c.homeAway === 'away') || {};
+            const home = comps.find((c) => c.homeAway === 'home') || {};
+            logger.warn(`[grader] SKIP MLB no-play game (${st?.name}): ${away.team?.displayName} @ ${home.team?.displayName}`);
+          }
+          return ok;
         })
         .map((e) => {
           const comp = e.competitions[0];
@@ -130,6 +174,10 @@ async function fetchMLBFinalGames() {
             homeScore: parseInt(home.score) || 0,
           };
         });
+    if (postponedCount > 0) {
+      logger.info(`[grader] MLB: ${games.length} truly final, ${postponedCount} no-play skipped`);
+    }
+    return games;
   } catch (e) {
     logger.error("ESPN MLB fetch error:", e.message);
     return [];
@@ -141,10 +189,20 @@ async function fetchNBAFinalGames() {
     const res = await fetch(ESPN_NBA_URL);
     if (!res.ok) { logger.warn(`ESPN NBA API ${res.status}`); return []; }
     const data = await res.json();
-    return (data.events || [])
+    let postponedCount = 0;
+    const games = (data.events || [])
         .filter((e) => {
           const st = e.competitions?.[0]?.status?.type;
-          return st?.state === "post" || st?.completed;
+          const ok = isActuallyFinal(st);
+          if (!ok && (st?.state === 'post' || st?.completed)) {
+            postponedCount++;
+            const comp = e.competitions[0];
+            const comps = comp.competitors || [];
+            const away = comps.find((c) => c.homeAway === 'away') || {};
+            const home = comps.find((c) => c.homeAway === 'home') || {};
+            logger.warn(`[grader] SKIP NBA no-play game (${st?.name}): ${away.team?.displayName} @ ${home.team?.displayName}`);
+          }
+          return ok;
         })
         .map((e) => {
           const comp = e.competitions[0];
@@ -162,6 +220,10 @@ async function fetchNBAFinalGames() {
             homeScore: parseInt(home.score) || 0,
           };
         });
+    if (postponedCount > 0) {
+      logger.info(`[grader] NBA: ${games.length} truly final, ${postponedCount} no-play skipped`);
+    }
+    return games;
   } catch (e) {
     logger.error("ESPN NBA fetch error:", e.message);
     return [];
