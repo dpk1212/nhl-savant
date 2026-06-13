@@ -9544,7 +9544,6 @@ export default function SharpFlow() {
   // Sub-sections inside the dashboard — all collapsed by default so the
   // first impression is clean (era pills + filters + 4 KPIs + curve only).
   const [showAgsuLedger, setShowAgsuLedger] = useState(false);
-  const [showAgsuProfit, setShowAgsuProfit] = useState(false);
   const [showAgsuTiers, setShowAgsuTiers] = useState(false);
   const [lockedDay, setLockedDay] = useState('today');
   const [lockedStatusFilter, setLockedStatusFilter] = useState('all');
@@ -11665,6 +11664,63 @@ export default function SharpFlow() {
               const heroProfitColor = totalProfitLive > 0 ? B.green : totalProfitLive < 0 ? B.red : B.textSec;
               const heroRoiColor = liveRoi > 0 ? B.green : liveRoi < 0 ? B.red : B.textSec;
 
+              // ─── Equity curve (hoisted to dashboard scope) ─────────────
+              // The cumulative-profit curve is now the hero centerpiece
+              // (Robinhood-style), so its computation lives up here where
+              // both the hero chart and the stat rail can read it. One
+              // anchor point per calendar day at end-of-day cumulative P/L;
+              // realized picks only (no pending / tracked-only).
+              const eq = (() => {
+                const realized = [...agsuPicks]
+                  .filter(p => !p.tracked && p.outcome && p.status === 'COMPLETED')
+                  .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+                const byDate = new Map();
+                let cum = 0;
+                for (const p of realized) {
+                  cum += (p.profit || 0);
+                  const day = p.date;
+                  const existing = byDate.get(day);
+                  const pnl = p.profit || 0;
+                  const isWin = p.outcome === 'WIN';
+                  const isLoss = p.outcome === 'LOSS';
+                  if (!existing) {
+                    let dateMs, dateLabel;
+                    try {
+                      dateMs = new Date(day + 'T12:00:00').getTime();
+                      dateLabel = new Date(day + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    } catch { dateMs = 0; dateLabel = day; }
+                    byDate.set(day, {
+                      date: day, dateMs, dateLabel,
+                      picks: 1, wins: isWin ? 1 : 0, losses: isLoss ? 1 : 0,
+                      dayPnl: pnl, dayStake: p.units || 0, cum: +cum.toFixed(2),
+                    });
+                  } else {
+                    existing.picks += 1;
+                    if (isWin) existing.wins += 1;
+                    if (isLoss) existing.losses += 1;
+                    existing.dayPnl += pnl;
+                    existing.dayStake += (p.units || 0);
+                    existing.cum = +cum.toFixed(2);
+                  }
+                }
+                const curve = [...byDate.values()].sort((a, b) => a.dateMs - b.dateMs);
+                const totalPicks = realized.length;
+                const finalCum = curve.length > 0 ? curve[curve.length - 1].cum : 0;
+                const isProfit = finalCum >= 0;
+                const minCum = curve.length > 0 ? Math.min(0, ...curve.map(d => d.cum)) : 0;
+                const maxCum = curve.length > 0 ? Math.max(0, ...curve.map(d => d.cum)) : 0;
+                const peak = curve.reduce((acc, d) => d.cum > acc.cum ? d : acc, { cum: -Infinity, dateLabel: '—' });
+                const trough = curve.reduce((acc, d) => d.cum < acc.cum ? d : acc, { cum: Infinity, dateLabel: '—' });
+                const drawdown = peak.cum > -Infinity ? finalCum - peak.cum : 0;
+                const bestDay = curve.reduce((acc, d) => (acc == null || d.dayPnl > acc.dayPnl) ? d : acc, null);
+                const worstDay = curve.reduce((acc, d) => (acc == null || d.dayPnl < acc.dayPnl) ? d : acc, null);
+                const STARTING_BANKROLL = 10000;
+                const DOLLARS_PER_UNIT = 100;
+                const dollarsCurrent = STARTING_BANKROLL + (finalCum * DOLLARS_PER_UNIT);
+                const fmt$ = (n) => `$${Math.round(n).toLocaleString('en-US')}`;
+                return { curve, totalPicks, finalCum, isProfit, minCum, maxCum, peak, trough, drawdown, bestDay, worstDay, STARTING_BANKROLL, dollarsCurrent, fmt$ };
+              })();
+
               // ─── Recent picks ledger (last 20 graded/pending, newest first) ──
               const ledgerRows = [...agsuPicks]
                 .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
@@ -11904,33 +11960,12 @@ export default function SharpFlow() {
                         </div>
                       </div>
 
-                      {/* ── Filters bar (slim) ─────────────────────
-                          Trimmed for the lay-user facelift: dropped the
-                          Yesterday / Since-Cutover date pills (rarely
-                          used) and the entire markets row (drilling
-                          ML/Spread/Total is power-user terrain). Keep
-                          date pills and sport pills — the two filters
-                          everyone reaches for. Power-user knobs can
-                          come back behind a "Refine" disclosure later
-                          if there's actual demand. */}
+                      {/* ── League filter (compact) ─────────────────
+                          Date range moved under the equity chart as a
+                          Robinhood-style time selector. This row is just
+                          the league context the user is viewing. */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-                        {[
-                          { id: 'today',     label: 'Today' },
-                          { id: 'yesterday', label: 'Yesterday' },
-                          { id: '7d',        label: '7D' },
-                          { id: '30d',       label: '30D' },
-                          { id: 'all',       label: 'All' },
-                        ].map(opt => (
-                          <button key={opt.id} onClick={() => setAgsuDateRange(opt.id)} style={{
-                            padding: '0.22rem 0.6rem', borderRadius: '5px', cursor: 'pointer',
-                            ...T.micro, fontWeight: 700, fontSize: '0.6rem',
-                            border: agsuDateRange === opt.id ? `1px solid ${B.goldBorder}` : `1px solid ${B.border}`,
-                            background: agsuDateRange === opt.id ? `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)` : 'transparent',
-                            color: agsuDateRange === opt.id ? B.gold : B.textMuted,
-                            transition: 'all 0.2s ease',
-                          }}>{opt.label}</button>
-                        ))}
-                        <span style={{ width: '1px', height: '14px', background: B.border, margin: '0 0.25rem' }} />
+                        <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem', letterSpacing: '0.08em', fontWeight: 700, marginRight: '0.15rem' }}>LEAGUE</span>
                         {[
                           { id: 'ALL', label: 'ALL', color: B.gold },
                           { id: 'MLB', label: 'MLB', color: '#E31837' },
@@ -11940,33 +11975,28 @@ export default function SharpFlow() {
                           { id: 'SOC', label: 'SOC', color: '#2ECC71' },
                         ].map(opt => (
                           <button key={opt.id} onClick={() => setAgsuSport(opt.id)} style={{
-                            padding: '0.22rem 0.55rem', borderRadius: '5px', cursor: 'pointer',
-                            ...T.micro, fontWeight: 700, fontSize: '0.6rem',
-                            border: agsuSport === opt.id ? `1px solid ${opt.color}55` : `1px solid ${B.border}`,
-                            background: agsuSport === opt.id ? `${opt.color}18` : 'transparent',
+                            padding: '0.22rem 0.6rem', borderRadius: '6px', cursor: 'pointer',
+                            ...T.micro, fontWeight: 800, fontSize: '0.6rem', letterSpacing: '0.04em',
+                            border: agsuSport === opt.id ? `1px solid ${opt.color}66` : `1px solid ${B.border}`,
+                            background: agsuSport === opt.id ? `${opt.color}1f` : 'transparent',
                             color: agsuSport === opt.id ? opt.color : B.textMuted,
                             transition: 'all 0.2s ease',
                           }}>{opt.label}</button>
                         ))}
-                        {/* Clear-filters affordance — only appears when the
-                            date/sport row diverges from defaults. Wipes both
-                            sub-filters without touching the era toggle so
-                            the user can pop back to the era view in one
-                            click without losing v12-vs-all-time choice. */}
                         {hasActiveSubFilter && (
                           <button
                             onClick={() => { setAgsuDateRange('all'); setAgsuSport('ALL'); }}
                             style={{
-                              padding: '0.22rem 0.55rem', borderRadius: '5px', cursor: 'pointer',
+                              padding: '0.22rem 0.55rem', borderRadius: '6px', cursor: 'pointer',
                               ...T.micro, fontWeight: 800, fontSize: '0.55rem',
                               border: `1px solid ${B.borderSubtle}`,
                               background: 'transparent',
                               color: B.textMuted,
                               letterSpacing: '0.06em',
                               transition: 'all 0.2s ease',
-                              marginLeft: '0.4rem',
+                              marginLeft: '0.3rem',
                             }}
-                            title="Reset date + sport filters"
+                            title="Reset date + league filters"
                           >
                             CLEAR
                           </button>
@@ -12023,17 +12053,23 @@ export default function SharpFlow() {
 
                       {hasData && agsuPicks.length > 0 && (
                         <>
-                          {/* ── Eyebrow: "since launch" telemetry strip ──
-                              Tiny tabular run that prefaces the hero KPIs.
-                              Gives the user a one-glance scale check: how
-                              long has this been live, how many graded, how
-                              much wagered. Premium dashboards always
-                              answer "how big is the sample?" before the
-                              headline number — otherwise the headline
-                              feels unearned. */}
+                          {/* ── Robinhood-style scoreboard + equity hero ──
+                              The cumulative-profit curve is the centerpiece.
+                              Giant profit number up top, a change line with
+                              ROI + dollar translation beneath, then the
+                              full-width equity chart, then a time-range
+                              selector under the chart (Robinhood pattern).
+                              Mobile: everything stacks — number scales down,
+                              chart shortens, range pills stretch full-width. */}
                           {(() => {
+                            const dollarProfit = totalProfitLive * 100;
+                            const dollarSign = dollarProfit >= 0 ? '+$' : '-$';
+                            const dollarFmt = Math.abs(dollarProfit).toLocaleString('en-US', { maximumFractionDigits: 0 });
+                            const profitGradient = totalProfitLive >= 0
+                              ? `linear-gradient(135deg, ${B.green} 0%, #34D399 100%)`
+                              : `linear-gradient(135deg, ${B.red} 0%, #F87171 100%)`;
+                            const { curve, isProfit, minCum, maxCum, bestDay, worstDay } = eq;
                             const daysLive = (() => {
-                              if (agsuPicks.length === 0) return null;
                               const dates = agsuPicks.map(p => p.date).filter(Boolean).sort();
                               if (dates.length === 0) return null;
                               try {
@@ -12043,260 +12079,185 @@ export default function SharpFlow() {
                               } catch { return null; }
                             })();
                             return (
-                              <div style={{
-                                display: 'flex', alignItems: 'center', gap: '0.6rem',
-                                marginBottom: '0.7rem', flexWrap: 'wrap',
-                                fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                              <div className="sf-card sf-glass" style={{
+                                position: 'relative', overflow: 'hidden',
+                                padding: isMobile ? '1.1rem 1rem 0.9rem' : '1.4rem 1.5rem 1.1rem',
+                                borderRadius: '16px', marginBottom: '0.875rem',
+                                background: totalProfitLive >= 0
+                                  ? `linear-gradient(150deg, rgba(16,185,129,0.10) 0%, rgba(255,255,255,0.015) 30%, rgba(15,23,42,0.35) 100%)`
+                                  : `linear-gradient(150deg, rgba(239,68,68,0.10) 0%, rgba(255,255,255,0.015) 30%, rgba(15,23,42,0.35) 100%)`,
+                                border: `1px solid ${totalProfitLive >= 0 ? 'rgba(16,185,129,0.28)' : 'rgba(239,68,68,0.28)'}`,
+                                boxShadow: totalProfitLive >= 0
+                                  ? '0 16px 44px -16px rgba(16,185,129,0.45), inset 0 1px 0 rgba(255,255,255,0.05)'
+                                  : '0 16px 44px -16px rgba(239,68,68,0.45), inset 0 1px 0 rgba(255,255,255,0.05)',
                               }}>
-                                {isV12Scope && (
-                                  <span style={{
-                                    display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
-                                    padding: '0.15rem 0.45rem', borderRadius: '4px',
-                                    background: B.greenDim, border: `1px solid ${B.green}33`,
-                                  }}>
-                                    <span style={{
-                                      width: '5px', height: '5px', borderRadius: '50%',
-                                      background: B.green,
-                                      boxShadow: `0 0 6px ${B.green}`,
-                                      animation: 'pulse 2s ease-in-out infinite',
+                                {/* eyebrow: label + LIVE + sample */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.35rem' }}>
+                                  <span style={{ ...T.micro, color: B.gold, fontWeight: 900, letterSpacing: '0.12em', fontSize: '0.56rem' }}>
+                                    ◆ TOTAL PROFIT · {scopeLabel}
+                                  </span>
+                                  {isV12Scope && (
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.1rem 0.4rem', borderRadius: '4px', background: B.greenDim, border: `1px solid ${B.green}33` }}>
+                                      <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: B.green, boxShadow: `0 0 6px ${B.green}`, animation: 'pulse 2s ease-in-out infinite' }} />
+                                      <span style={{ ...T.micro, color: B.green, fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.1em' }}>LIVE</span>
+                                    </span>
+                                  )}
+                                  {daysLive != null && (
+                                    <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.56rem', letterSpacing: '0.04em' }}>
+                                      <span style={{ color: B.textSec, fontWeight: 800 }}>{daysLive}</span>d · <span style={{ color: B.textSec, fontWeight: 800 }}>{totalGradedLive}</span> graded
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* giant profit number */}
+                                <div style={{ lineHeight: 1 }}>
+                                  {totalGradedLive === 0 ? (
+                                    <span style={{ display: 'inline-block', fontSize: isMobile ? '2.7rem' : '3.6rem', fontWeight: 900, lineHeight: 1, letterSpacing: '-0.03em', color: B.textSec }}>—</span>
+                                  ) : (
+                                    <CountUp value={totalProfitLive} format={(n) => `${n >= 0 ? '+' : ''}${n.toFixed(2)}u`} style={{
+                                      display: 'inline-block', fontSize: isMobile ? '2.7rem' : '3.6rem', fontWeight: 900, lineHeight: 1, letterSpacing: '-0.03em',
+                                      fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                                      color: totalProfitLive >= 0 ? B.green : B.red,
+                                      backgroundImage: profitGradient, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
                                     }} />
-                                    <span style={{ ...T.micro, color: B.green, fontSize: '0.52rem', fontWeight: 900, letterSpacing: '0.1em' }}>
-                                      LIVE
+                                  )}
+                                </div>
+
+                                {/* change line: ROI chip + dollar translation */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flexWrap: 'wrap', marginTop: '0.5rem', fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums' }}>
+                                  {totalGradedLive === 0 ? (
+                                    <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.7rem' }}>no graded picks yet</span>
+                                  ) : (
+                                    <>
+                                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.18rem 0.5rem', borderRadius: '6px', background: liveRoi >= 0 ? B.greenDim : B.redDim, border: `1px solid ${liveRoi >= 0 ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}` }}>
+                                        {liveRoi >= 0 ? <TrendingUp size={12} color={B.green} /> : <TrendingDown size={12} color={B.red} />}
+                                        <span style={{ ...T.micro, fontWeight: 900, fontSize: '0.72rem', color: liveRoi >= 0 ? B.green : B.red }}>{liveRoi >= 0 ? '+' : ''}{liveRoi.toFixed(1)}% ROI</span>
+                                      </span>
+                                      <span style={{ ...T.micro, color: B.textSec, fontSize: '0.68rem' }}>
+                                        ≈ <span style={{ color: B.text, fontWeight: 800 }}>{dollarSign}{dollarFmt}</span> <span style={{ color: B.textMuted }}>@ $100/unit</span>
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+
+                                {/* equity chart — hero centerpiece */}
+                                {curve.length >= 2 ? (
+                                  <div style={{ marginTop: '0.9rem', marginLeft: isMobile ? '-0.5rem' : '-0.75rem', marginRight: isMobile ? '-0.5rem' : '-0.75rem' }}>
+                                    <ResponsiveContainer width="100%" height={isMobile ? 170 : 230}>
+                                      <AreaChart data={curve} margin={{ top: 6, right: 10, left: 6, bottom: 0 }}>
+                                        <defs>
+                                          <linearGradient id="agsuHeroGreen" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor={B.green} stopOpacity={0.40} />
+                                            <stop offset="100%" stopColor={B.green} stopOpacity={0} />
+                                          </linearGradient>
+                                          <linearGradient id="agsuHeroRed" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor={B.red} stopOpacity={0} />
+                                            <stop offset="100%" stopColor={B.red} stopOpacity={0.34} />
+                                          </linearGradient>
+                                        </defs>
+                                        <XAxis dataKey="dateMs" type="number" scale="time" domain={['dataMin', 'dataMax']} tick={{ fill: B.textMuted, fontSize: 10 }} axisLine={false} tickLine={false} minTickGap={isMobile ? 30 : 50} tickFormatter={(ms) => { try { return new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); } catch { return ''; } }} />
+                                        <YAxis hide domain={[Math.floor(minCum) - 1, Math.ceil(maxCum) + 1]} />
+                                        <ReferenceLine y={0} stroke="rgba(255,255,255,0.16)" strokeDasharray="3 3" />
+                                        <Tooltip cursor={{ stroke: 'rgba(255,255,255,0.18)', strokeWidth: 1 }} content={({ active, payload }) => {
+                                          if (!active || !payload?.[0]) return null;
+                                          const d = payload[0].payload;
+                                          const dayRoi = d.dayStake > 0 ? (d.dayPnl / d.dayStake) * 100 : null;
+                                          const dayColor = d.dayPnl > 0 ? B.green : d.dayPnl < 0 ? B.red : B.textSec;
+                                          const cumColor = d.cum > 0 ? B.green : d.cum < 0 ? B.red : B.textSec;
+                                          return (
+                                            <div style={{ background: 'rgba(17,24,39,0.96)', border: `1px solid ${dayColor}55`, borderRadius: '8px', padding: '0.55rem 0.7rem', backdropFilter: 'blur(8px)', boxShadow: '0 8px 24px rgba(0,0,0,0.45)', minWidth: 190 }}>
+                                              <div style={{ fontSize: '0.6rem', color: B.textMuted, marginBottom: '0.3rem', display: 'flex', justifyContent: 'space-between' }}>
+                                                <span style={{ color: B.text, fontWeight: 800 }}>{d.dateLabel}</span>
+                                                <span>{d.picks} pick{d.picks === 1 ? '' : 's'}</span>
+                                              </div>
+                                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.25rem' }}>
+                                                <span style={{ fontSize: '0.58rem', color: B.textMuted }}>{d.wins}-{d.losses}{dayRoi != null ? ` · ${dayRoi >= 0 ? '+' : ''}${dayRoi.toFixed(1)}%` : ''}</span>
+                                                <span style={{ fontSize: '0.78rem', fontWeight: 900, color: dayColor, fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums' }}>{d.dayPnl >= 0 ? '+' : ''}{d.dayPnl.toFixed(2)}u</span>
+                                              </div>
+                                              <div style={{ marginTop: '0.3rem', paddingTop: '0.3rem', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                                                <span style={{ fontSize: '0.54rem', color: B.textMuted, letterSpacing: '0.06em' }}>CUM EOD</span>
+                                                <span style={{ fontSize: '0.82rem', fontWeight: 900, color: cumColor, fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums' }}>{d.cum >= 0 ? '+' : ''}{d.cum.toFixed(2)}u</span>
+                                              </div>
+                                            </div>
+                                          );
+                                        }} />
+                                        <Area type="monotone" dataKey="cum" stroke={isProfit ? B.green : B.red} strokeWidth={2.4} fill={`url(#${isProfit ? 'agsuHeroGreen' : 'agsuHeroRed'})`} isAnimationActive={true} animationDuration={900} dot={false} activeDot={{ r: 4, fill: isProfit ? B.green : B.red, stroke: B.bg, strokeWidth: 2 }} />
+                                      </AreaChart>
+                                    </ResponsiveContainer>
+                                  </div>
+                                ) : (
+                                  <div style={{ marginTop: '0.9rem', padding: '1.5rem 1rem', textAlign: 'center', ...T.micro, color: B.textMuted, fontStyle: 'italic', fontSize: '0.62rem' }}>
+                                    Equity curve appears once 2+ days are graded.
+                                  </div>
+                                )}
+
+                                {/* time-range selector under chart (Robinhood) */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                                  {[
+                                    { id: 'today', label: 'Today' },
+                                    { id: 'yesterday', label: 'Yest' },
+                                    { id: '7d', label: '7D' },
+                                    { id: '30d', label: '30D' },
+                                    { id: 'all', label: 'All' },
+                                  ].map(opt => {
+                                    const active = agsuDateRange === opt.id;
+                                    return (
+                                      <button key={opt.id} onClick={() => setAgsuDateRange(opt.id)} style={{
+                                        flex: isMobile ? '1 1 0' : '0 0 auto',
+                                        padding: '0.3rem 0.7rem', borderRadius: '7px', cursor: 'pointer',
+                                        ...T.micro, fontWeight: 800, fontSize: '0.62rem', letterSpacing: '0.04em',
+                                        border: active ? `1px solid ${(isProfit ? B.green : B.red)}55` : `1px solid ${B.border}`,
+                                        background: active ? (isProfit ? B.greenDim : B.redDim) : 'transparent',
+                                        color: active ? (isProfit ? B.green : B.red) : B.textMuted,
+                                        transition: 'all 0.18s ease',
+                                      }}>{opt.label}</button>
+                                    );
+                                  })}
+                                  {bestDay && worstDay && !isMobile && (
+                                    <span style={{ marginLeft: 'auto', ...T.micro, color: B.textMuted, fontSize: '0.55rem', letterSpacing: '0.03em', fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums' }}>
+                                      best <span style={{ color: B.green, fontWeight: 700 }}>+{bestDay.dayPnl.toFixed(2)}u</span> · worst <span style={{ color: B.red, fontWeight: 700 }}>{worstDay.dayPnl.toFixed(2)}u</span>
                                     </span>
-                                  </span>
-                                )}
-                                {daysLive != null && (
-                                  <span style={{ ...T.micro, color: B.textSec, fontSize: '0.58rem', letterSpacing: '0.05em' }}>
-                                    <span style={{ color: B.text, fontWeight: 800 }}>{daysLive}</span> day{daysLive === 1 ? '' : 's'} {isV12Scope ? 'live' : 'tracked'}
-                                  </span>
-                                )}
-                                <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: B.textSubtle }} />
-                                <span style={{ ...T.micro, color: B.textSec, fontSize: '0.58rem', letterSpacing: '0.05em' }}>
-                                  <span style={{ color: B.text, fontWeight: 800 }}>{totalGradedLive}</span> graded
-                                </span>
-                                <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: B.textSubtle }} />
-                                <span style={{ ...T.micro, color: B.textSec, fontSize: '0.58rem', letterSpacing: '0.05em' }}>
-                                  <span style={{ color: B.text, fontWeight: 800 }}>{totalUnitsLive.toFixed(1)}u</span> risked
-                                </span>
-                                {livePending > 0 && (
-                                  <>
-                                    <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: B.textSubtle }} />
-                                    <span style={{ ...T.micro, color: B.gold, fontSize: '0.58rem', letterSpacing: '0.05em', fontWeight: 800 }}>
-                                      {livePending} pending
-                                    </span>
-                                  </>
-                                )}
+                                  )}
+                                </div>
                               </div>
                             );
                           })()}
 
-                          {/* ── Hero KPIs ─────────────────────────────────
-                              PROFIT is the brag stat — the entire product
-                              exists to put this number on screen. Layout
-                              ranks it: a single feature card on the left
-                              gets ~half the row width, hero-typography
-                              treatment (2.4rem gradient number, glass
-                              backdrop, gold corner glints, $-on-$100/u
-                              translation so units feel concrete), while
-                              RECORD / WIN% / ROI stack as three smaller
-                              supporting cards on the right. On mobile the
-                              feature card sits on top full-width and the
-                              three supporting cards become a 3-column
-                              strip below. */}
+                          {/* ── KPI stat rail ──────────────────────────
+                              Compact uniform tiles for the supporting
+                              metrics that used to be the RECORD/WIN%/ROI
+                              trio, now expanded to also surface RISKED,
+                              PENDING, PEAK and DRAWDOWN. Desktop: 6 across.
+                              Mobile: 3×2 grid. Count-up on numeric values. */}
                           {(() => {
-                            const dollarsPerUnit = 100;
-                            const dollarProfit = totalProfitLive * dollarsPerUnit;
-                            const dollarSign = dollarProfit >= 0 ? '+$' : '-$';
-                            const dollarFmt = Math.abs(dollarProfit).toLocaleString('en-US', { maximumFractionDigits: 0 });
-                            const profitGradient = totalProfitLive >= 0
-                              ? `linear-gradient(135deg, ${B.green} 0%, #34D399 100%)`
-                              : `linear-gradient(135deg, ${B.red} 0%, #F87171 100%)`;
+                            const tiles = [
+                              { label: 'WIN %',    value: totalGradedLive === 0 ? '—' : <CountUp value={liveWinPct} format={(n) => `${n.toFixed(1)}%`} />, sub: 'breakeven 52.4%', color: liveWinPct >= 52.4 ? B.green : liveWinPct >= 50 ? B.textSec : B.red },
+                              { label: 'RECORD',   value: recordTxt, sub: `${totalGradedLive} graded`, color: B.text },
+                              { label: 'RISKED',   value: <CountUp value={totalUnitsLive} format={(n) => `${n.toFixed(1)}u`} />, sub: 'total staked', color: B.text },
+                              { label: 'PENDING',  value: livePending, sub: 'open picks', color: livePending > 0 ? B.gold : B.textSec },
+                              { label: 'PEAK',     value: eq.curve.length ? <CountUp value={eq.peak.cum} format={(n) => `${n >= 0 ? '+' : ''}${n.toFixed(1)}u`} /> : '—', sub: eq.curve.length ? eq.peak.dateLabel : 'no data', color: B.green },
+                              { label: 'DRAWDOWN', value: eq.curve.length ? <CountUp value={eq.drawdown} format={(n) => `${n >= 0 ? '+' : ''}${n.toFixed(1)}u`} /> : '—', sub: 'from peak', color: eq.drawdown < 0 ? B.red : B.textSec },
+                            ];
                             return (
-                              <div style={{
+                              <div className="sf-stagger" style={{
                                 display: 'grid',
-                                gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1.05fr) minmax(0, 1fr)',
-                                gap: '0.7rem', marginBottom: '1rem',
+                                gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(6, 1fr)',
+                                gap: '0.5rem', marginBottom: '0.875rem',
                               }}>
-                                {/* ── PROFIT — feature card ── */}
-                                <div className="sf-card" style={{
-                                  position: 'relative', overflow: 'hidden',
-                                  padding: isMobile ? '1.1rem 1.1rem 1rem' : '1.25rem 1.3rem 1.15rem',
-                                  borderRadius: '14px',
-                                  background: totalProfitLive >= 0
-                                    ? `linear-gradient(140deg, rgba(16,185,129,0.13) 0%, rgba(255,255,255,0.02) 35%, rgba(15,23,42,0.40) 100%)`
-                                    : `linear-gradient(140deg, rgba(239,68,68,0.13) 0%, rgba(255,255,255,0.02) 35%, rgba(15,23,42,0.40) 100%)`,
-                                  border: `1px solid ${totalProfitLive >= 0 ? 'rgba(16,185,129,0.30)' : 'rgba(239,68,68,0.30)'}`,
-                                  boxShadow: totalProfitLive >= 0
-                                    ? '0 10px 34px -12px rgba(16,185,129,0.40), inset 0 1px 0 rgba(255,255,255,0.05)'
-                                    : '0 10px 34px -12px rgba(239,68,68,0.40), inset 0 1px 0 rgba(255,255,255,0.05)',
-                                }}>
-                                  {/* Gold corner glint, top-left */}
-                                  <div style={{
-                                    position: 'absolute', top: 0, left: 0, width: '40%', height: '1px',
-                                    background: `linear-gradient(90deg, ${B.gold} 0%, transparent 100%)`,
-                                    opacity: 0.5, pointerEvents: 'none',
-                                  }} />
-                                  <div style={{
-                                    position: 'absolute', top: 0, left: 0, width: '1px', height: '40%',
-                                    background: `linear-gradient(180deg, ${B.gold} 0%, transparent 100%)`,
-                                    opacity: 0.5, pointerEvents: 'none',
-                                  }} />
-                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
-                                    <span style={{
-                                      ...T.micro, color: B.gold, fontWeight: 900,
-                                      letterSpacing: '0.12em', fontSize: '0.55rem',
-                                    }}>
-                                      ◆ TOTAL PROFIT · {scopeLabel}
-                                    </span>
-                                    {totalProfitLive >= 0
-                                      ? <TrendingUp size={13} color={B.green} />
-                                      : <TrendingDown size={13} color={B.red} />}
-                                  </div>
-                                  {/* Gradient hero number — wrapped in an inline-block
-                                      span so the gradient box hugs the text width
-                                      (instead of filling the parent card width). This
-                                      avoids the regression where some browsers/setups
-                                      fail to apply `background-clip: text` and end up
-                                      painting a full-width green bar over the number.
-                                      We also use `backgroundImage` (not the `background`
-                                      shorthand) so we don't accidentally reset
-                                      `background-clip` to its initial `border-box`. */}
-                                  <div style={{ lineHeight: 1 }}>
-                                    {totalGradedLive === 0 ? (
-                                      <span style={{
-                                        display: 'inline-block',
-                                        fontSize: isMobile ? '2.4rem' : '2.85rem',
-                                        fontWeight: 900, lineHeight: 1, letterSpacing: '-0.02em',
-                                        color: B.textSec,
-                                      }}>—</span>
-                                    ) : (
-                                      <CountUp
-                                        value={totalProfitLive}
-                                        format={(n) => `${n >= 0 ? '+' : ''}${n.toFixed(2)}u`}
-                                        style={{
-                                          display: 'inline-block',
-                                          fontSize: isMobile ? '2.4rem' : '2.85rem',
-                                          fontWeight: 900, lineHeight: 1, letterSpacing: '-0.02em',
-                                          fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
-                                          color: totalProfitLive >= 0 ? B.green : B.red,
-                                          backgroundImage: profitGradient,
-                                          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                                          backgroundClip: 'text',
-                                        }}
-                                      />
-                                    )}
-                                  </div>
-                                  <div style={{
-                                    ...T.micro, color: B.textSec, fontSize: '0.68rem',
-                                    marginTop: '0.4rem', letterSpacing: '0.02em',
-                                    fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
-                                  }}>
-                                    {totalGradedLive === 0
-                                      ? 'no graded picks yet'
-                                      : <>≈ <span style={{ color: B.text, fontWeight: 800 }}>{dollarSign}{dollarFmt}</span> if you wagered <span style={{ color: B.textMuted }}>$100/unit</span></>
-                                    }
-                                  </div>
-                                </div>
-
-                                {/* ── Supporting trio: RECORD · WIN% · ROI ── */}
-                                <div className="sf-stagger" style={{
-                                  display: 'grid',
-                                  gridTemplateColumns: 'repeat(3, 1fr)',
-                                  gap: '0.5rem',
-                                }}>
-                                  {/* RECORD */}
-                                  <div className="sf-card" style={{
-                                    padding: '0.7rem 0.8rem',
-                                    borderRadius: '11px',
+                                {tiles.map(t => (
+                                  <div key={t.label} className="sf-card" style={{
+                                    padding: '0.6rem 0.65rem', borderRadius: '11px',
                                     background: 'linear-gradient(180deg, rgba(255,255,255,0.045) 0%, rgba(15,23,42,0.32) 100%)',
                                     border: `1px solid ${B.borderSubtle}`,
-                                    display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
                                     position: 'relative', overflow: 'hidden',
                                     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.035)',
                                   }}>
-                                    <div style={{
-                                      position: 'absolute', top: 0, left: 0, width: '30%', height: '1px',
-                                      background: `linear-gradient(90deg, ${B.gold} 0%, transparent 100%)`,
-                                      opacity: 0.35, pointerEvents: 'none',
-                                    }} />
-                                    <div style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.12em', fontSize: '0.52rem' }}>
-                                      RECORD
-                                    </div>
-                                    <div style={{
-                                      fontSize: isMobile ? '1.2rem' : '1.35rem', fontWeight: 900, color: B.text, lineHeight: 1.1,
-                                      fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
-                                      letterSpacing: '-0.01em', marginTop: '0.35rem',
-                                    }}>
-                                      {recordTxt}
-                                    </div>
-                                    <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem', marginTop: '0.25rem' }}>
-                                      {totalGradedLive} graded
-                                    </div>
+                                    <div style={{ position: 'absolute', top: 0, left: 0, width: '30%', height: '1px', background: `linear-gradient(90deg, ${B.gold} 0%, transparent 100%)`, opacity: 0.35, pointerEvents: 'none' }} />
+                                    <div style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.1em', fontSize: '0.5rem' }}>{t.label}</div>
+                                    <div style={{ fontSize: isMobile ? '1.05rem' : '1.2rem', fontWeight: 900, color: t.color, lineHeight: 1.1, marginTop: '0.3rem', letterSpacing: '-0.01em', fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums' }}>{t.value}</div>
+                                    <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem', marginTop: '0.2rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.sub}</div>
                                   </div>
-
-                                  {/* WIN % */}
-                                  <div className="sf-card" style={{
-                                    padding: '0.7rem 0.8rem',
-                                    borderRadius: '11px',
-                                    background: 'linear-gradient(180deg, rgba(255,255,255,0.045) 0%, rgba(15,23,42,0.32) 100%)',
-                                    border: `1px solid ${B.borderSubtle}`,
-                                    display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-                                    position: 'relative', overflow: 'hidden',
-                                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.035)',
-                                  }}>
-                                    <div style={{
-                                      position: 'absolute', top: 0, left: 0, width: '30%', height: '1px',
-                                      background: `linear-gradient(90deg, ${B.gold} 0%, transparent 100%)`,
-                                      opacity: 0.35, pointerEvents: 'none',
-                                    }} />
-                                    <div style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.12em', fontSize: '0.52rem' }}>
-                                      WIN %
-                                    </div>
-                                    <div style={{
-                                      fontSize: isMobile ? '1.2rem' : '1.35rem', fontWeight: 900,
-                                      color: liveWinPct >= 52.4 ? B.green : liveWinPct >= 50 ? B.textSec : B.red,
-                                      lineHeight: 1.1,
-                                      fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
-                                      letterSpacing: '-0.01em', marginTop: '0.35rem',
-                                    }}>
-                                      {totalGradedLive === 0 ? '—' : <CountUp value={liveWinPct} format={(n) => `${n.toFixed(1)}%`} />}
-                                    </div>
-                                    <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem', marginTop: '0.25rem' }}>
-                                      breakeven 52.4%
-                                    </div>
-                                  </div>
-
-                                  {/* ROI */}
-                                  <div className="sf-card" style={{
-                                    padding: '0.7rem 0.8rem',
-                                    borderRadius: '11px',
-                                    background: 'linear-gradient(180deg, rgba(255,255,255,0.045) 0%, rgba(15,23,42,0.32) 100%)',
-                                    border: `1px solid ${B.borderSubtle}`,
-                                    display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-                                    position: 'relative', overflow: 'hidden',
-                                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.035)',
-                                  }}>
-                                    <div style={{
-                                      position: 'absolute', top: 0, left: 0, width: '30%', height: '1px',
-                                      background: `linear-gradient(90deg, ${B.gold} 0%, transparent 100%)`,
-                                      opacity: 0.35, pointerEvents: 'none',
-                                    }} />
-                                    <div style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.12em', fontSize: '0.52rem' }}>
-                                      ROI
-                                    </div>
-                                    <div style={{
-                                      fontSize: isMobile ? '1.2rem' : '1.35rem', fontWeight: 900,
-                                      color: heroRoiColor, lineHeight: 1.1,
-                                      fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
-                                      letterSpacing: '-0.01em', marginTop: '0.35rem',
-                                    }}>
-                                      {totalGradedLive === 0 ? '—' : <CountUp value={liveRoi} format={(n) => `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`} />}
-                                    </div>
-                                    <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem', marginTop: '0.25rem' }}>
-                                      {totalUnitsLive.toFixed(1)}u risked
-                                    </div>
-                                  </div>
-                                </div>
+                                ))}
                               </div>
                             );
                           })()}
@@ -12327,9 +12288,6 @@ export default function SharpFlow() {
                             const best = qualified.length > 0
                               ? [...qualified].sort((a, b) => b.tierRoi - a.tierRoi)[0]
                               : fallback[0];
-                            const worst = qualified.length > 1
-                              ? [...qualified].sort((a, b) => a.tierRoi - b.tierRoi)[0]
-                              : null;
                             const TierHighlight = ({ slot, stat, fallbackMsg }) => {
                               if (!stat) {
                                 return (
@@ -12462,13 +12420,8 @@ export default function SharpFlow() {
                                     {showAgsuTiers ? <ChevronUp size={11} color={B.textMuted} /> : <ChevronDown size={11} color={B.textMuted} />}
                                   </button>
                                 </div>
-                                <div className="sf-stagger" style={{
-                                  display: 'grid',
-                                  gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-                                  gap: '0.5rem',
-                                }}>
+                                <div className="sf-stagger" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.5rem' }}>
                                   <TierHighlight slot="BEST TIER" stat={best} fallbackMsg={`No tier has ≥${MIN_GRADED} graded picks yet`} />
-                                  <TierHighlight slot="WORST TIER" stat={worst} fallbackMsg={`Need ≥${MIN_GRADED} graded picks in ≥2 tiers`} />
                                 </div>
 
                                 {showAgsuTiers && (
@@ -12561,328 +12514,26 @@ export default function SharpFlow() {
                             );
                           })()}
 
-                          {/* ── Band 4: Cumulative profit curve ──────────────────
-                              All AGS-U live picks rolled up into one equity curve,
-                              respecting the dashboard's date / sport / market
-                              filters. Excludes pending and tracked-only picks so
-                              the line reflects realized P/L only. Green gradient
-                              fill above the 0 reference line; muted below. */}
-                          {(() => {
-                            // ── PER-DAY equity curve ──────────────────────
-                            // Each day = one anchor point at end-of-day
-                            // cumulative profit, plotted at real calendar
-                            // time. Previously each pick was plotted on a
-                            // categorical axis, so a 10-pick day occupied
-                            // 10× the horizontal space of a 1-pick day —
-                            // visually distorting the equity curve into
-                            // long busy stretches and compressed quiet days.
-                            // The new shape honestly tracks daily bankroll
-                            // progress regardless of how many picks fired.
-                            const realized = [...agsuPicks]
-                              .filter(p => !p.tracked && p.outcome && p.status === 'COMPLETED')
-                              .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
-                            const curve = (() => {
-                              const byDate = new Map();
-                              let cum = 0;
-                              for (const p of realized) {
-                                cum += (p.profit || 0);
-                                const day = p.date;
-                                const existing = byDate.get(day);
-                                const pnl = p.profit || 0;
-                                const isWin = p.outcome === 'WIN';
-                                const isLoss = p.outcome === 'LOSS';
-                                if (!existing) {
-                                  let dateMs;
-                                  let dateLabel;
-                                  try {
-                                    dateMs = new Date(day + 'T12:00:00').getTime();
-                                    dateLabel = new Date(day + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                                  } catch {
-                                    dateMs = 0;
-                                    dateLabel = day;
-                                  }
-                                  byDate.set(day, {
-                                    date: day,
-                                    dateMs,
-                                    dateLabel,
-                                    picks: 1,
-                                    wins: isWin ? 1 : 0,
-                                    losses: isLoss ? 1 : 0,
-                                    dayPnl: pnl,
-                                    dayStake: p.units || 0,
-                                    cum: +cum.toFixed(2),
-                                  });
-                                } else {
-                                  existing.picks += 1;
-                                  if (isWin) existing.wins += 1;
-                                  if (isLoss) existing.losses += 1;
-                                  existing.dayPnl += pnl;
-                                  existing.dayStake += (p.units || 0);
-                                  existing.cum = +cum.toFixed(2);  // end-of-day cum
-                                }
-                              }
-                              return [...byDate.values()].sort((a, b) => a.dateMs - b.dateMs);
-                            })();
-                            const totalPicks = realized.length;
-                            const finalCum = curve.length > 0 ? curve[curve.length - 1].cum : 0;
-                            const isProfit = finalCum >= 0;
-                            const minCum = curve.length > 0 ? Math.min(0, ...curve.map(d => d.cum)) : 0;
-                            const maxCum = curve.length > 0 ? Math.max(0, ...curve.map(d => d.cum)) : 0;
-                            const peak = curve.reduce((acc, d) => d.cum > acc.cum ? d : acc, { cum: -Infinity, dateLabel: '—' });
-                            const trough = curve.reduce((acc, d) => d.cum < acc.cum ? d : acc, { cum: Infinity, dateLabel: '—' });
-                            const drawdown = peak.cum > -Infinity ? finalCum - peak.cum : 0;
-                            // Best/worst single day (for at-a-glance context).
-                            const bestDay = curve.reduce((acc, d) => (acc == null || d.dayPnl > acc.dayPnl) ? d : acc, null);
-                            const worstDay = curve.reduce((acc, d) => (acc == null || d.dayPnl < acc.dayPnl) ? d : acc, null);
-
-                            // Bankroll math — translates abstract units into
-                            // dollars at a stable $100/u so readers feel
-                            // the magnitude. STARTING_BANKROLL is a UX
-                            // anchor only (not pulled from real wallets);
-                            // change to make the dollar lens richer or
-                            // poorer for storytelling.
-                            const STARTING_BANKROLL = 10000;
-                            const DOLLARS_PER_UNIT = 100;
-                            const dollarsCurrent = STARTING_BANKROLL + (finalCum * DOLLARS_PER_UNIT);
-                            const fmt$ = (n) => `$${Math.round(n).toLocaleString('en-US')}`;
-                            return (
-                              <div style={{ marginBottom: '1rem' }}>
-                                {/* Unified section header — ◆ eyebrow + tier label +
-                                    +profit chip + chevron, with the gold hairline rule.
-                                    Bankroll context (e.g. "$10k → $12.6k") moved off the
-                                    header onto a caption beneath the chart so the row
-                                    stays calm and matches the TIER PERFORMANCE header
-                                    rhythm above. */}
-                                <button onClick={() => setShowAgsuProfit(p => !p)} style={{
-                                  width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                  padding: '0.5rem 0.4rem 0.5rem 0.1rem', borderRadius: 0, cursor: 'pointer',
-                                  background: 'transparent',
-                                  border: 'none',
-                                  borderBottom: `1px solid ${B.borderSubtle}`,
-                                  backgroundImage: `linear-gradient(90deg, ${B.gold}22 0%, transparent 60%)`,
-                                  backgroundRepeat: 'no-repeat',
-                                  backgroundSize: '100% 1px',
-                                  backgroundPosition: 'bottom left',
-                                  marginBottom: showAgsuProfit ? '0.5rem' : 0,
-                                  transition: 'all 0.2s ease',
-                                }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flexWrap: 'wrap' }}>
-                                    <span style={{ ...T.micro, color: B.gold, fontWeight: 900, letterSpacing: '0.12em', fontSize: '0.58rem' }}>
-                                      ◆ EQUITY CURVE
-                                    </span>
-                                    {curve.length > 0 && (
-                                      <span style={{ ...T.micro, color: B.textSec, fontSize: '0.58rem', letterSpacing: '0.04em' }}>
-                                        <span style={{ color: B.text, fontWeight: 800 }}>{totalPicks}</span> graded
-                                        <span style={{ color: B.textSubtle, margin: '0 0.35rem' }}>·</span>
-                                        <span style={{ color: B.text, fontWeight: 800 }}>{curve.length}</span> day{curve.length === 1 ? '' : 's'}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    {curve.length > 0 && (
-                                      <span style={{
-                                        padding: '0.18rem 0.5rem', borderRadius: '5px',
-                                        fontSize: '0.7rem', fontWeight: 900,
-                                        color: isProfit ? B.green : B.red,
-                                        background: isProfit ? B.greenDim : B.redDim,
-                                        border: `1px solid ${isProfit ? 'rgba(16,185,129,0.30)' : 'rgba(239,68,68,0.30)'}`,
-                                        fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
-                                        letterSpacing: '-0.01em',
-                                      }}>
-                                        {isProfit ? '+' : ''}{finalCum.toFixed(2)}u
-                                      </span>
-                                    )}
-                                    {showAgsuProfit ? <ChevronUp size={13} color={B.textMuted} /> : <ChevronDown size={13} color={B.textMuted} />}
-                                  </div>
-                                </button>
-
-                                {showAgsuProfit && (
-                                  <div className="sf-glass" style={{
-                                    padding: '0.75rem 0.875rem 0.5rem',
-                                    borderRadius: '12px',
-                                    background: 'rgba(15,23,42,0.32)',
-                                    border: `1px solid ${B.borderSubtle}`,
-                                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)',
-                                  }}>
-                                    {curve.length < 2 ? (
-                                      <div style={{ ...T.micro, color: B.textMuted, padding: '1.25rem 1rem', textAlign: 'center', fontStyle: 'italic' }}>
-                                        Need at least 2 graded days to plot the equity curve.
-                                      </div>
-                                    ) : (
-                                      <>
-                                        {/* Mini stat strip above the chart */}
-                                        <div style={{
-                                          display: 'grid',
-                                          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
-                                          gap: '0.4rem',
-                                          marginBottom: '0.6rem',
-                                        }}>
-                                          {[
-                                            { label: 'PEAK', value: `${peak.cum >= 0 ? '+' : ''}${peak.cum.toFixed(2)}u`, sub: peak.dateLabel, color: B.green },
-                                            { label: 'TROUGH', value: `${trough.cum >= 0 ? '+' : ''}${trough.cum.toFixed(2)}u`, sub: trough.dateLabel, color: B.red },
-                                            { label: 'CURRENT', value: `${finalCum >= 0 ? '+' : ''}${finalCum.toFixed(2)}u`, sub: curve[curve.length-1].dateLabel, color: isProfit ? B.green : B.red },
-                                            { label: 'DD FROM PEAK', value: `${drawdown >= 0 ? '+' : ''}${drawdown.toFixed(2)}u`, sub: `${curve.length} day${curve.length === 1 ? '' : 's'} · ${totalPicks} picks`, color: drawdown < 0 ? B.red : B.textSec },
-                                          ].map(s => (
-                                            <div key={s.label} style={{
-                                              padding: '0.4rem 0.5rem', borderRadius: '6px',
-                                              background: 'rgba(255,255,255,0.02)', border: `1px solid ${B.borderSubtle}`,
-                                            }}>
-                                              <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem', letterSpacing: '0.08em', fontWeight: 700 }}>{s.label}</div>
-                                              <div style={{ ...T.micro, color: s.color, fontSize: '0.85rem', fontWeight: 900, lineHeight: 1.1, fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums' }}>{s.value}</div>
-                                              <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.52rem', marginTop: '0.1rem' }}>{s.sub}</div>
-                                            </div>
-                                          ))}
-                                        </div>
-
-                                        {/* The chart */}
-                                        <ResponsiveContainer width="100%" height={isMobile ? 200 : 240}>
-                                          <AreaChart data={curve} margin={{ top: 8, right: 12, left: 0, bottom: 4 }}>
-                                            <defs>
-                                              <linearGradient id="agsuProfitGreen" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="0%" stopColor={B.green} stopOpacity={0.35} />
-                                                <stop offset="100%" stopColor={B.green} stopOpacity={0} />
-                                              </linearGradient>
-                                              <linearGradient id="agsuProfitRed" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="0%" stopColor={B.red} stopOpacity={0} />
-                                                <stop offset="100%" stopColor={B.red} stopOpacity={0.30} />
-                                              </linearGradient>
-                                            </defs>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                                            <XAxis
-                                              dataKey="dateMs"
-                                              type="number"
-                                              scale="time"
-                                              domain={['dataMin', 'dataMax']}
-                                              tick={{ fill: B.textMuted, fontSize: 10 }}
-                                              axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
-                                              tickLine={false}
-                                              minTickGap={isMobile ? 25 : 40}
-                                              tickFormatter={(ms) => {
-                                                try { return new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
-                                                catch { return ''; }
-                                              }}
-                                            />
-                                            <YAxis
-                                              tick={{ fill: B.textMuted, fontSize: 10 }}
-                                              axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
-                                              tickLine={false}
-                                              tickFormatter={(v) => `${v >= 0 ? '+' : ''}${v}u`}
-                                              domain={[Math.floor(minCum) - 1, Math.ceil(maxCum) + 1]}
-                                            />
-                                            <ReferenceLine y={0} stroke="rgba(255,255,255,0.2)" strokeDasharray="3 3" />
-                                            <Tooltip
-                                              cursor={{ stroke: 'rgba(255,255,255,0.15)', strokeWidth: 1 }}
-                                              content={({ active, payload }) => {
-                                                if (!active || !payload?.[0]) return null;
-                                                const d = payload[0].payload;
-                                                const dayRoi = d.dayStake > 0 ? (d.dayPnl / d.dayStake) * 100 : null;
-                                                const dayColor = d.dayPnl > 0 ? B.green : d.dayPnl < 0 ? B.red : B.textSec;
-                                                const cumColor = d.cum > 0 ? B.green : d.cum < 0 ? B.red : B.textSec;
-                                                return (
-                                                  <div style={{
-                                                    background: 'rgba(17,24,39,0.96)',
-                                                    border: `1px solid ${dayColor}55`,
-                                                    borderRadius: '8px',
-                                                    padding: '0.55rem 0.7rem',
-                                                    backdropFilter: 'blur(8px)',
-                                                    boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
-                                                    minWidth: 200,
-                                                  }}>
-                                                    <div style={{ fontSize: '0.6rem', color: B.textMuted, marginBottom: '0.3rem', display: 'flex', justifyContent: 'space-between' }}>
-                                                      <span style={{ color: B.text, fontWeight: 800, letterSpacing: '0.02em' }}>{d.dateLabel}</span>
-                                                      <span>{d.picks} pick{d.picks === 1 ? '' : 's'}</span>
-                                                    </div>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.25rem' }}>
-                                                      <span style={{ fontSize: '0.6rem', color: B.textMuted, letterSpacing: '0.04em' }}>
-                                                        {d.wins}-{d.losses}{dayRoi != null ? ` · ${dayRoi >= 0 ? '+' : ''}${dayRoi.toFixed(1)}% ROI` : ''}
-                                                      </span>
-                                                      <span style={{
-                                                        fontSize: '0.8rem', fontWeight: 900,
-                                                        color: dayColor,
-                                                        fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
-                                                      }}>
-                                                        {d.dayPnl >= 0 ? '+' : ''}{d.dayPnl.toFixed(2)}u
-                                                      </span>
-                                                    </div>
-                                                    <div style={{ fontSize: '0.55rem', color: B.textMuted, marginBottom: '0.4rem' }}>
-                                                      Risked {d.dayStake.toFixed(2)}u this day
-                                                    </div>
-                                                    <div style={{
-                                                      marginTop: '0.35rem', paddingTop: '0.3rem',
-                                                      borderTop: '1px solid rgba(255,255,255,0.08)',
-                                                      display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
-                                                    }}>
-                                                      <span style={{ fontSize: '0.55rem', color: B.textMuted, letterSpacing: '0.06em' }}>CUM THROUGH EOD</span>
-                                                      <span style={{
-                                                        fontSize: '0.85rem', fontWeight: 900,
-                                                        color: cumColor,
-                                                        fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
-                                                      }}>
-                                                        {d.cum >= 0 ? '+' : ''}{d.cum.toFixed(2)}u
-                                                      </span>
-                                                    </div>
-                                                  </div>
-                                                );
-                                              }}
-                                            />
-                                            <Area
-                                              type="monotone"
-                                              dataKey="cum"
-                                              stroke={isProfit ? B.green : B.red}
-                                              strokeWidth={2}
-                                              fill={`url(#${isProfit ? 'agsuProfitGreen' : 'agsuProfitRed'})`}
-                                              isAnimationActive={false}
-                                              dot={curve.length <= 60 ? { r: 2, fill: isProfit ? B.green : B.red, stroke: 'none' } : false}
-                                              activeDot={{ r: 4, fill: isProfit ? B.green : B.red, stroke: B.bg, strokeWidth: 2 }}
-                                            />
-                                          </AreaChart>
-                                        </ResponsiveContainer>
-                                        <div style={{
-                                          marginTop: '0.45rem',
-                                          fontSize: '0.55rem',
-                                          color: B.textMuted,
-                                          letterSpacing: '0.04em',
-                                          display: 'flex',
-                                          justifyContent: 'space-between',
-                                          gap: '0.5rem',
-                                          flexWrap: 'wrap',
-                                        }}>
-                                          <span>
-                                            One point per day · end-of-day cumulative profit
-                                          </span>
-                                          {bestDay && worstDay && (
-                                            <span style={{ fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums' }}>
-                                              best <span style={{ color: B.green, fontWeight: 700 }}>+{bestDay.dayPnl.toFixed(2)}u</span> {bestDay.dateLabel}
-                                              {' · '}
-                                              worst <span style={{ color: B.red, fontWeight: 700 }}>{worstDay.dayPnl.toFixed(2)}u</span> {worstDay.dateLabel}
-                                            </span>
-                                          )}
-                                        </div>
-                                        {/* Bankroll translation — moved out of the section
-                                            header so the eyebrow stays clean. This anchor
-                                            line tells the lay reader what {finalCum}u
-                                            actually means in dollars at a stable $100/u. */}
-                                        <div style={{
-                                          marginTop: '0.4rem',
-                                          padding: '0.4rem 0.55rem',
-                                          borderRadius: '6px',
-                                          background: 'rgba(255,255,255,0.018)',
-                                          border: `1px dashed ${B.borderSubtle}`,
-                                          fontSize: '0.56rem', color: B.textSec,
-                                          letterSpacing: '0.04em',
-                                          fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
-                                        }}>
-                                          <span style={{ color: B.textMuted, marginRight: '0.4rem' }}>BANKROLL LENS</span>
-                                          {fmt$(STARTING_BANKROLL)} → <span style={{ color: isProfit ? B.green : B.red, fontWeight: 800 }}>{fmt$(dollarsCurrent)}</span>
-                                          <span style={{ color: B.textMuted, marginLeft: '0.4rem' }}>at a steady $100/unit stake</span>
-                                        </div>
-                                      </>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })()}
+                          {/* ── Bankroll lens caption ──────────────────
+                              The equity curve is now the hero centerpiece
+                              above, so this slim line is all that remains of
+                              the old standalone chart band — it keeps the
+                              dollar storytelling ($10k → today at $100/u)
+                              without rendering a second chart. */}
+                          {eq.curve.length >= 2 && (
+                            <div style={{
+                              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.45rem',
+                              flexWrap: 'wrap', marginBottom: '0.875rem',
+                              padding: '0.5rem 0.7rem', borderRadius: '9px',
+                              background: 'rgba(255,255,255,0.018)', border: `1px dashed ${B.borderSubtle}`,
+                              fontSize: '0.6rem', color: B.textSec, letterSpacing: '0.03em',
+                              fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                            }}>
+                              <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.1em', fontSize: '0.52rem' }}>BANKROLL LENS</span>
+                              <span>{eq.fmt$(eq.STARTING_BANKROLL)} → <span style={{ color: eq.isProfit ? B.green : B.red, fontWeight: 800 }}>{eq.fmt$(eq.dollarsCurrent)}</span></span>
+                              <span style={{ color: B.textMuted }}>at a steady $100/unit stake</span>
+                            </div>
+                          )}
 
                           {/* ── Band 5: Recent picks ledger (full width) ── */}
                           <div>
