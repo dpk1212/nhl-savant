@@ -11533,7 +11533,7 @@ export default function SharpFlow() {
         return (
           <div>
             {/* Stat cards */}
-            <div style={{
+            <div className="sf-stagger" style={{
               display: 'grid',
               gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
               gap: '0.625rem', marginBottom: '1.5rem',
@@ -13976,29 +13976,41 @@ const FlowStatCard = memo(function FlowStatCard({ icon: Icon, label, value, acce
   const display = (rawValue != null && Number.isFinite(rawValue) && shown != null)
     ? (fmt ? fmt(shown) : Math.round(shown).toLocaleString())
     : value;
+  const ac = accent || B.gold;
   return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem',
-      padding: '0.875rem 1.25rem 0.625rem', borderRadius: '10px',
-      background: 'linear-gradient(135deg, rgba(21,25,35,0.9) 0%, rgba(26,31,46,0.7) 100%)',
-      border: `1px solid ${B.border}`,
+    <div className="sf-card sf-glass" style={{
+      display: 'flex', flexDirection: 'column', gap: '0.45rem',
+      padding: '1rem 1.15rem 0.95rem', borderRadius: '14px',
+      background: `linear-gradient(150deg, ${ac}14 0%, rgba(255,255,255,0.015) 32%, rgba(15,23,42,0.32) 100%)`,
+      border: `1px solid ${ac}2e`,
+      boxShadow: `0 12px 32px -16px ${ac}55, inset 0 1px 0 rgba(255,255,255,0.045)`,
       minWidth: '110px', position: 'relative', overflow: 'hidden',
     }}>
-      <div style={{
-        position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
-        background: accent ? `linear-gradient(90deg, transparent 0%, ${accent}40 50%, transparent 100%)` : 'transparent',
-      }} />
-      {Icon && <Icon size={14} color={accent || B.textMuted} style={{ opacity: 0.6, marginBottom: '0.125rem' }} />}
+      {/* accent corner wash + top hairline */}
+      <div style={{ position: 'absolute', top: '-45%', right: '-20%', width: '62%', height: '130%', background: `radial-gradient(circle, ${ac}24 0%, transparent 70%)`, pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: `linear-gradient(90deg, transparent 0%, ${ac}70 50%, transparent 100%)`, pointerEvents: 'none' }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', position: 'relative' }}>
+        {Icon && (
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            width: '24px', height: '24px', borderRadius: '7px',
+            background: `${ac}1f`, border: `1px solid ${ac}38`,
+            boxShadow: `0 0 12px -4px ${ac}66`,
+          }}>
+            <Icon size={13} color={ac} />
+          </span>
+        )}
+        <span style={{ ...T.micro, color: B.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 800, fontSize: '0.55rem' }}>{label}</span>
+      </div>
       <span style={{
-        ...T.heading, color: accent || B.text, fontFeatureSettings: "'tnum'",
+        fontSize: '1.7rem', fontWeight: 900, color: accent || B.text, lineHeight: 1,
+        letterSpacing: '-0.02em', position: 'relative',
+        fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
       }}>{display}</span>
-      <span style={{
-        ...T.micro, color: B.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em',
-      }}>{label}</span>
       {hint && (
         <span style={{
-          ...T.micro, color: B.textSec, fontSize: '0.55rem', marginTop: '0.2rem',
-          textAlign: 'center', lineHeight: 1.3, opacity: 0.7,
+          ...T.micro, color: B.textSec, fontSize: '0.56rem', lineHeight: 1.35,
+          opacity: 0.78, position: 'relative',
         }}>{hint}</span>
       )}
     </div>
