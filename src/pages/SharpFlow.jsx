@@ -5310,7 +5310,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                   }}
                 >
                   <span>{tierSpec.label} · {tierSpec.stake}</span>
-                  {agsTxt && (
+                  {agsTxt && !isMobile && (
                     <span style={{
                       ...T.micro, fontWeight: 700, fontSize: '0.5rem',
                       padding: '0.05rem 0.3rem', borderRadius: '3px',
@@ -5343,7 +5343,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                 ↓ {peakTierFromStars}→{liveTierForRank}
               </span>
             )}
-            <span style={{ ...T.body, fontWeight: 700, color: isCancelled ? B.textMuted : B.text, textDecoration: isCancelled ? 'line-through' : 'none' }}>
+            <span style={{ ...T.body, fontWeight: 700, color: isCancelled ? B.textMuted : B.text, textDecoration: isCancelled ? 'line-through' : 'none', ...(isMobile ? { flexBasis: '100%', marginTop: '0.15rem', fontSize: '0.9rem' } : {}) }}>
               {/* Masthead: the locked side reads bright, the opponent
                   recedes — verdict legible from the matchup alone.
                   Totals (no side team) keep both equal. */}
@@ -5394,7 +5394,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                 }}
               >
                 {isSuperTopPick ? <Zap size={9} strokeWidth={3} fill="#1A1404" /> : <TrendingUp size={9} strokeWidth={3} />}
-                <span>{isSuperTopPick ? 'SUPER TOP PICK' : 'TOP PICK'}</span>
+                <span>{isSuperTopPick ? (isMobile ? 'SUPER' : 'SUPER TOP PICK') : (isMobile ? 'TOP' : 'TOP PICK')}</span>
               </span>
             )}
             {/* v6.1 — hero chips removed from header. The narrative + LOCK
@@ -5415,7 +5415,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                   : half ? <span key={i} style={{ position: 'relative', display: 'inline-block', fontSize: '0.5rem', lineHeight: 1, width: '0.5rem' }}><span style={{ color: 'rgba(255,255,255,0.15)' }}>★</span><span style={{ position: 'absolute', left: 0, top: 0, overflow: 'hidden', width: '50%', color: starColor }}>★</span></span>
                   : <span key={i} style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.15)', lineHeight: 1 }}>★</span>;
               })}
-              <span style={{ marginLeft: '0.15rem' }}>{starLabel}</span>
+              {!isMobile && <span style={{ marginLeft: '0.15rem' }}>{starLabel}</span>}
             </span>
           </div>
         </div>
@@ -11535,15 +11535,13 @@ export default function SharpFlow() {
             {/* Stat cards */}
             <div className="sf-stagger" style={{
               display: 'grid',
-              gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+              gridTemplateColumns: 'repeat(2, 1fr)',
               gap: '0.625rem', marginBottom: '1.5rem',
             }}>
               <FlowStatCard icon={Eye} label="Sharp Bettors" value={sharpStats.trackedCount} rawValue={sharpStats.trackedCount} accent={B.gold}
                 hint={sharpStats.totalExcluded > 0 ? `${sharpStats.totalExcluded} non-sharp bettors filtered` : 'Verified sport bettors tracked'} />
               <FlowStatCard icon={DollarSign} label="Sharp Money Today" value={fmtVol(sharpStats.totalSharpInvested)} rawValue={sharpStats.totalSharpInvested} fmt={fmtVol} accent={B.green}
                 hint="Total verified sharp $ on today's games" />
-              <FlowStatCard icon={TrendingUp} label="Combined Sports P&L" value={`+${fmtVol(sharpStats.totalSharpPnl)}`} rawValue={sharpStats.totalSharpPnl} fmt={(v) => `+${fmtVol(v)}`} accent={B.green}
-                hint="Aggregate P&L of all tracked sharp bettors" />
             </div>
 
             {/* ─── AGS-U Performance Dashboard (primary, since 2026-05-14 cutover) ─── */}
@@ -12069,6 +12067,28 @@ export default function SharpFlow() {
                               ? `linear-gradient(135deg, ${B.green} 0%, #34D399 100%)`
                               : `linear-gradient(135deg, ${B.red} 0%, #F87171 100%)`;
                             const { curve, isProfit, minCum, maxCum, bestDay, worstDay } = eq;
+                            // zero-crossing split point (fraction from top of plot where cum = 0)
+                            const gradOff = (() => {
+                              if (maxCum <= 0) return 0;        // entirely at/below 0 → all red
+                              if (minCum >= 0) return 1;        // entirely at/above 0 → all green
+                              return maxCum / (maxCum - minCum);
+                            })();
+                            const lastCum = curve.length ? curve[curve.length - 1].cum : 0;
+                            const lastPos = lastCum >= 0;
+                            const lastColor = lastPos ? B.green : B.red;
+                            // glowing, pulsing marker pinned to the most recent equity point
+                            const renderEndDot = (dp) => {
+                              if (dp == null || dp.index !== curve.length - 1 || dp.cx == null || dp.cy == null) return null;
+                              return (
+                                <g key="eq-end-dot" style={{ pointerEvents: 'none' }}>
+                                  <circle cx={dp.cx} cy={dp.cy} r={7} fill={lastColor} opacity={0.22}>
+                                    <animate attributeName="r" values="6;13;6" dur="2.4s" repeatCount="indefinite" />
+                                    <animate attributeName="opacity" values="0.30;0.04;0.30" dur="2.4s" repeatCount="indefinite" />
+                                  </circle>
+                                  <circle cx={dp.cx} cy={dp.cy} r={4.2} fill={lastColor} stroke={B.bg} strokeWidth={2} />
+                                </g>
+                              );
+                            };
                             const daysLive = (() => {
                               const dates = agsuPicks.map(p => p.date).filter(Boolean).sort();
                               if (dates.length === 0) return null;
@@ -12144,20 +12164,34 @@ export default function SharpFlow() {
                                 {curve.length >= 2 ? (
                                   <div style={{ marginTop: '0.9rem', marginLeft: isMobile ? '-0.5rem' : '-0.75rem', marginRight: isMobile ? '-0.5rem' : '-0.75rem' }}>
                                     <ResponsiveContainer width="100%" height={isMobile ? 170 : 230}>
-                                      <AreaChart data={curve} margin={{ top: 6, right: 10, left: 6, bottom: 0 }}>
+                                      <AreaChart data={curve} margin={{ top: 10, right: 14, left: 6, bottom: 0 }}>
                                         <defs>
-                                          <linearGradient id="agsuHeroGreen" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="0%" stopColor={B.green} stopOpacity={0.40} />
-                                            <stop offset="100%" stopColor={B.green} stopOpacity={0} />
+                                          {/* split fill — green above the zero line, red below, each fading toward it */}
+                                          <linearGradient id="agsuFillSplit" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0" stopColor={B.green} stopOpacity={0.42} />
+                                            <stop offset={Math.max(0, gradOff - 0.0001)} stopColor={B.green} stopOpacity={0.02} />
+                                            <stop offset={gradOff} stopColor={B.red} stopOpacity={0.02} />
+                                            <stop offset="1" stopColor={B.red} stopOpacity={0.34} />
                                           </linearGradient>
-                                          <linearGradient id="agsuHeroRed" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="0%" stopColor={B.red} stopOpacity={0} />
-                                            <stop offset="100%" stopColor={B.red} stopOpacity={0.34} />
+                                          {/* split stroke — line color flips at the zero crossing */}
+                                          <linearGradient id="agsuStrokeSplit" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0" stopColor="#34D399" />
+                                            <stop offset={Math.max(0, gradOff - 0.0001)} stopColor={B.green} />
+                                            <stop offset={gradOff} stopColor={B.red} />
+                                            <stop offset="1" stopColor="#F87171" />
                                           </linearGradient>
+                                          {/* neon glow for the equity line */}
+                                          <filter id="agsuLineGlow" x="-8%" y="-40%" width="116%" height="180%">
+                                            <feGaussianBlur in="SourceGraphic" stdDeviation="2.6" result="blur" />
+                                            <feMerge>
+                                              <feMergeNode in="blur" />
+                                              <feMergeNode in="SourceGraphic" />
+                                            </feMerge>
+                                          </filter>
                                         </defs>
                                         <XAxis dataKey="dateMs" type="number" scale="time" domain={['dataMin', 'dataMax']} tick={{ fill: B.textMuted, fontSize: 10 }} axisLine={false} tickLine={false} minTickGap={isMobile ? 30 : 50} tickFormatter={(ms) => { try { return new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); } catch { return ''; } }} />
                                         <YAxis hide domain={[Math.floor(minCum) - 1, Math.ceil(maxCum) + 1]} />
-                                        <ReferenceLine y={0} stroke="rgba(255,255,255,0.16)" strokeDasharray="3 3" />
+                                        <ReferenceLine y={0} stroke="rgba(255,255,255,0.14)" strokeDasharray="2 4" />
                                         <Tooltip cursor={{ stroke: 'rgba(255,255,255,0.18)', strokeWidth: 1 }} content={({ active, payload }) => {
                                           if (!active || !payload?.[0]) return null;
                                           const d = payload[0].payload;
@@ -12181,7 +12215,8 @@ export default function SharpFlow() {
                                             </div>
                                           );
                                         }} />
-                                        <Area type="monotone" dataKey="cum" stroke={isProfit ? B.green : B.red} strokeWidth={2.4} fill={`url(#${isProfit ? 'agsuHeroGreen' : 'agsuHeroRed'})`} isAnimationActive={true} animationDuration={900} dot={false} activeDot={{ r: 4, fill: isProfit ? B.green : B.red, stroke: B.bg, strokeWidth: 2 }} />
+                                        <Area type="monotone" dataKey="cum" baseValue={0} stroke="none" fill="url(#agsuFillSplit)" isAnimationActive={true} animationDuration={900} dot={false} activeDot={false} />
+                                        <Line type="monotone" dataKey="cum" stroke="url(#agsuStrokeSplit)" strokeWidth={2.6} strokeLinecap="round" filter="url(#agsuLineGlow)" isAnimationActive={true} animationDuration={950} dot={renderEndDot} activeDot={{ r: 4.5, fill: lastColor, stroke: B.bg, strokeWidth: 2 }} />
                                       </AreaChart>
                                     </ResponsiveContainer>
                                   </div>
@@ -13609,10 +13644,19 @@ export default function SharpFlow() {
                       ...(ledgerAvgClv != null ? [{ label: 'AVG CLV', value: `${ledgerAvgClv >= 0 ? '+' : ''}${ledgerAvgClv.toFixed(1)}%`, color: ledgerAvgClv >= 0 ? B.green : B.red }] : []),
                     ];
                     const FilterGroup = ({ label, children }) => (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexWrap: 'wrap' }}>
-                        <span style={{ ...T.tiny, fontSize: '0.48rem', color: B.textSubtle, letterSpacing: '0.1em', marginRight: '0.1rem' }}>{label}</span>
-                        {children}
-                      </div>
+                      isMobile ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', width: '100%', minWidth: 0 }}>
+                          <span style={{ ...T.tiny, fontSize: '0.46rem', color: B.textSubtle, letterSpacing: '0.12em' }}>{label}</span>
+                          <div className="sf-chiprail" style={{ display: 'flex', gap: '0.3rem', overflowX: 'auto', flexWrap: 'nowrap', WebkitOverflowScrolling: 'touch', paddingBottom: '0.1rem' }}>
+                            {children}
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexWrap: 'wrap' }}>
+                          <span style={{ ...T.tiny, fontSize: '0.48rem', color: B.textSubtle, letterSpacing: '0.1em', marginRight: '0.1rem' }}>{label}</span>
+                          {children}
+                        </div>
+                      )
                     );
                     const chipStyle = (active, color) => ({
                       padding: '0.22rem 0.6rem', borderRadius: '6px', cursor: 'pointer',
@@ -13622,6 +13666,7 @@ export default function SharpFlow() {
                       color: active ? color : B.textMuted,
                       transition: 'all 0.2s ease',
                       fontFeatureSettings: "'tnum'",
+                      flexShrink: 0, whiteSpace: 'nowrap',
                     });
                     return (
                       <>
@@ -13651,9 +13696,12 @@ export default function SharpFlow() {
                           </div>
                         )}
                         <div style={{
-                          display: 'flex', flexWrap: 'wrap', alignItems: 'center',
-                          gap: '0.45rem 1rem',
-                          padding: '0.5rem 0.65rem', borderRadius: '10px',
+                          display: 'flex',
+                          flexDirection: isMobile ? 'column' : 'row',
+                          flexWrap: isMobile ? 'nowrap' : 'wrap',
+                          alignItems: isMobile ? 'stretch' : 'center',
+                          gap: isMobile ? '0.55rem' : '0.45rem 1rem',
+                          padding: isMobile ? '0.65rem 0.7rem' : '0.5rem 0.65rem', borderRadius: '10px',
                           background: 'rgba(255,255,255,0.02)',
                           border: `1px solid ${B.borderSubtle}`,
                           marginBottom: '0.6rem',

@@ -1195,6 +1195,16 @@ p {
   to   { transform: translateX(-50%); }
 }
 
+/* Horizontal-scroll filter chip rail (mobile). Hidden scrollbar +
+   soft right-edge fade to hint there's more to swipe. */
+.sf-chiprail {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-mask-image: linear-gradient(90deg, black 0%, black 92%, transparent 100%);
+  mask-image: linear-gradient(90deg, black 0%, black 92%, transparent 100%);
+}
+.sf-chiprail::-webkit-scrollbar { display: none; }
+
 @media (prefers-reduced-motion: reduce) {
   .sf-card, .sf-bar-left, .sf-bar-right, .sf-spark-halo, .sf-aurora,
   .sf-stagger > *, .sf-tape-track { animation: none; transition: none; }
