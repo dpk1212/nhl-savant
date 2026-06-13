@@ -1,38 +1,38 @@
 # AGS-Unified — V12 Performance Monitor
 
-**Generated:** Friday, June 12, 2026 at 11:48 AM ET
+**Generated:** Saturday, June 13, 2026 at 8:32 AM ET
 
-**Active model:** `ags-unified-v12` · **V12 went live:** 2026-06-01 · **Days live:** 12
+**Active model:** `ags-unified-v12` · **V12 went live:** 2026-06-01 · **Days live:** 13
 
 > This report is a **CEO-grade monitor of V12 in production**. The only non-V12 section is § 2 (model version comparison), kept so you can see V12's results in the context of every prior model bump. Everything else — daily trajectory, tier scoreboard, score reliability, mute-rule audit, wallet-quality inputs, operational health — is **strictly V12-scoped** (pick date ≥ 2026-06-01) so cron back-fill of V12 stamps onto older picks can't contaminate the production numbers.
 
 ## § 1 — Executive Summary
 
-> 🟢 **V12 is currently WINNING.** Since going live on **2026-06-01** (12 days ago), V12 has evaluated **283** picks, shipped **170** for real money (60.1% ship rate), and muted the other **113**. On the shipped picks V12 has gone **92-78** (54.1% win), staked **355.50u**, and returned **+27.88u** at **+7.8% ROI**.
+> 🟢 **V12 is currently WINNING.** Since going live on **2026-06-01** (13 days ago), V12 has evaluated **299** picks, shipped **186** for real money (62.2% ship rate), and muted the other **113**. On the shipped picks V12 has gone **101-85** (54.3% win), staked **382.00u**, and returned **+33.94u** at **+8.9% ROI**.
 
 ### Snapshot
 
 | Metric                              | Value                          |
 |-------------------------------------|--------------------------------|
-| Days V12 has been authoritative     |                             12 |
-| Picks V12 has evaluated             |                            283 |
-| Picks SHIPPED (units > 0)           |                            170 |
+| Days V12 has been authoritative     |                             13 |
+| Picks V12 has evaluated             |                            299 |
+| Picks SHIPPED (units > 0)           |                            186 |
 | Picks MUTED (score ≤ 0, FADE)       |                            113 |
-| Ship rate                           |                          60.1% |
-| Live W-L                            |                          92-78 |
-| Live Win %                          |                          54.1% |
-| Live PnL (units)                    |                         +27.88 |
-| Live ROI                            |                          +7.8% |
-| Avg PnL / day                       |                         +2.32u |
+| Ship rate                           |                          62.2% |
+| Live W-L                            |                         101-85 |
+| Live Win %                          |                          54.3% |
+| Live PnL (units)                    |                         +33.94 |
+| Live ROI                            |                          +8.9% |
+| Avg PnL / day                       |                         +2.61u |
 | Most recent action (2026-06-14)  |            0 live, 0-0, +0.00u |
 
 ### What's working
 
-- V12 is profitable at **7.8% ROI** across 170 live picks (+27.88u real PnL).
-- Mute rule is **saving money** — the 58 muted picks would have lost -4.61u at flat 1u (-8.0% counterfactual ROI). V12 correctly rejected losers.
-- V12 is generating **+2.32u/day** on average since launch.
+- V12 is profitable at **8.9% ROI** across 186 live picks (+33.94u real PnL).
+- Mute rule is **saving money** — the 65 muted picks would have lost -4.24u at flat 1u (-6.5% counterfactual ROI). V12 correctly rejected losers.
+- V12 is generating **+2.61u/day** on average since launch.
 - **NBA** is V12's strongest sport: 9 live, 3-6, 33.3% ROI, +2.58u.
-- **SPREAD** is V12's strongest market: 10 live, 8-2, +52.4% ROI.
+- **SPREAD** is V12's strongest market: 13 live, 9-4, +40.3% ROI.
 
 ## § 2 — Model Version Comparison (V9 → V10 → V11 → V12)
 
@@ -45,15 +45,15 @@ How does the latest model (**ags-unified-v12**) compare against prior versions? 
 | v9      | 05-15 → 05-22        |    7 |     60 |  12 | 32-28  |  53.3% |     -9.0% |     -10.38 |    -0.17 | 0.549 |        0.3400 | ⚪ retired |
 | v10     | 05-22 → 05-25        |    3 |     62 |  14 | 30-32  |  48.4% |    -18.8% |     -19.42 |    -0.31 | 0.394 |        0.2804 | ⚪ retired |
 | v11     | 05-25 → 06-01        |    7 |    111 |  22 | 61-50  |  55.0% |      2.8% |      +6.76 |    +0.06 | 0.444 |        0.2642 | ⚪ retired |
-| v12     | 06-01 → present      |   12 |    170 |  58 | 92-78  |  54.1% |      7.8% |     +27.88 |    +0.16 | 0.531 |             — | 🟢 LIVE  |
+| v12     | 06-01 → present      |   13 |    186 |  65 | 101-85 |  54.3% |      8.9% |     +33.94 |    +0.18 | 0.534 |             — | 🟢 LIVE  |
 
 ### v12 vs prior versions
 
 | Comparison         | ΔN     | ΔWin %    | ΔROI       | Δ per-pick (u)  | ΔAUC     | ΔBrier     | Verdict |
 |--------------------|--------|-----------|------------|-----------------|----------|------------|---------|
-| v12 − v9           | +  110 |    +0.8pp |    +16.8pp |          +0.337 |   -0.018 |          — | 🟡 mixed |
-| v12 − v10          | +  108 |    +5.7pp |    +26.6pp |          +0.477 |   +0.137 |          — | 🟢 better |
-| v12 − v11          | +   59 |    -0.8pp |     +5.0pp |          +0.103 |   +0.087 |          — | 🟡 mixed |
+| v12 − v9           | +  126 |    +1.0pp |    +17.8pp |          +0.355 |   -0.014 |          — | 🟡 mixed |
+| v12 − v10          | +  124 |    +5.9pp |    +27.6pp |          +0.496 |   +0.141 |          — | 🟢 better |
+| v12 − v11          | +   75 |    -0.7pp |     +6.1pp |          +0.122 |   +0.091 |          — | 🟡 mixed |
 
 > **ΔBrier > 0** means the newer model's Brier is LOWER (better probability calibration). All other Δ columns: positive = newer model is better. Verdict requires the newer model to dominate on 3 of 4 metrics (ROI / Win% / AUC / Brier).
 
@@ -64,7 +64,7 @@ How does the latest model (**ags-unified-v12**) compare against prior versions? 
 | v9      | 40n 55.0% -3%  | 14n 50.0% -7%  | 6n 50.0% -46%  | 60n 53.3% -9% |
 | v10     | 50n 52.0% -4%  | 7n 14.3% -91%  | 5n 60.0% -9%   | 62n 48.4% -19% |
 | v11     | 96n 56.3% +4%  | 7n 71.4% +33%  | 8n 25.0% -59%  | 111n 55.0% +3% |
-| v12     | 157n 54.8% +7% | 9n 33.3% +33%  | 4n 75.0% +15%  | 170n 54.1% +8% |
+| v12     | 173n 54.9% +8% | 9n 33.3% +33%  | 4n 75.0% +15%  | 186n 54.3% +9% |
 
 ### Per-tier ROI × version (monotonicity check across model history)
 
@@ -73,7 +73,7 @@ How does the latest model (**ags-unified-v12**) compare against prior versions? 
 | v9      | 10n -25%      | 6n +10%       | 13n -32%      | 16n +24%      | 14n -6%       | 🟡 partial (0) |
 | v10     | 8n -13%       | 5n -69%       | 13n -25%      | 27n +4%       | 8n -1%        | 🟡 partial (0) |
 | v11     | 22n +3%       | 26n -6%       | 24n +9%       | 25n +10%      | 13n +22%      | 🟡 partial (2) |
-| v12     | 39n +3%       | 42n +24%      | 39n -24%      | 25n +14%      | 21n -9%       | 🟡 partial (0) |
+| v12     | 41n +7%       | 46n +21%      | 44n -24%      | 28n +20%      | 23n -17%      | 🟡 partial (0) |
 
 > Monotonicity score on tier-ROI vector (ELITE → WEAK). Fully sorted (each tier earns LESS than the one above) = -3 for 4-tier samples / -4 for full ladder. Fully inverted = +3/+4. A NEW model that flips the ladder from inverted → monotonic is the strongest evidence the redesign worked.
 
@@ -114,11 +114,13 @@ Day-by-day production since V12 went live. **Evaluated** = picks V12 scored that
 | 2026-06-09 |        25 |   21 |     4 | 10-11      |  47.6% |     45.00 |     +14.08 |     31.3% |     +39.11 |
 | 2026-06-10 |        31 |   23 |     5 | 11-12      |  47.8% |     55.75 |     -10.06 |    -18.0% |     +29.05 |
 | 2026-06-11 |        17 |    7 |     4 | 4-3        |  57.1% |     13.25 |      -1.17 |     -8.8% |     +27.88 |
-| 2026-06-12 |        13 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +27.88 |
-| 2026-06-13 |         1 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +27.88 |
-| 2026-06-14 |         1 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +27.88 |
+| 2026-06-12 |        26 |   16 |     7 | 9-7        |  56.3% |     26.50 |      +6.06 |     22.9% |     +33.94 |
+| 2026-06-13 |         4 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +33.94 |
+| 2026-06-14 |         1 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +33.94 |
 
-> **Bottom line.** 12 days live, 170 live picks shipped, **+27.88u total PnL** at **+7.8% ROI**, averaging **+2.32u per day**.
+> **Trajectory.** 🟢 Last 3 days (22.9% ROI) is **+15.0pp better** than the prior window (7.8%). V12 is accelerating.
+
+> **Bottom line.** 13 days live, 186 live picks shipped, **+33.94u total PnL** at **+8.9% ROI**, averaging **+2.61u per day**.
 
 ## § 5 — V12 By Tier (Where The Money Comes From)
 
@@ -128,12 +130,12 @@ V12 buckets every shipped pick into a tier (ELITE → WEAK) based on the score b
 
 | Tier     | Ladder | N   | W-L    | Win %  | Avg V12 score | Expected | Avg stake actual | Drift  | Total Stake | PnL (u)    | ROI       |
 |----------|--------|-----|--------|--------|---------------|----------|------------------|--------|-------------|------------|-----------|
-| ELITE    |  5.00u |  39 | 22-17  |  56.4% |        +0.991 |    5.00u |            4.49u | -0.51u |      175.00 |      +5.41 |      3.1% |
-| PREMIUM  |  3.00u |  42 | 28-14  |  66.7% |        +0.976 |    3.00u |            2.81u | -0.19u |      118.00 |     +28.18 |     23.9% |
-| LOCK     |  1.00u |  39 | 15-24  |  38.5% |        +0.955 |    1.00u |            1.00u | +0.00u |       39.00 |      -9.27 |    -23.8% |
-| LEAN     |  0.50u |  25 | 15-10  |  60.0% |        +0.877 |    0.50u |            0.50u | +0.00u |       12.50 |      +1.80 |     14.4% |
-| WEAK     |  0.25u |  21 | 10-11  |  47.6% |        +0.365 |    0.25u |            0.25u | +0.00u |        5.25 |      -0.49 |     -9.3% |
-| FADE     |  0.00u |  58 | 0-0    |      — |        -0.272 |    0.00u |                — |      — |        0.00 |      +0.00 |         — |
+| ELITE    |  5.00u |  41 | 24-17  |  58.5% |        +0.991 |    5.00u |            4.45u | -0.55u |      182.50 |     +12.88 |      7.1% |
+| PREMIUM  |  3.00u |  46 | 30-16  |  65.2% |        +0.975 |    3.00u |            2.83u | -0.17u |      130.00 |     +27.64 |     21.3% |
+| LOCK     |  1.00u |  44 | 17-27  |  38.6% |        +0.952 |    1.00u |            1.00u | +0.00u |       44.00 |     -10.68 |    -24.3% |
+| LEAN     |  0.50u |  28 | 18-10  |  64.3% |        +0.874 |    0.50u |            0.50u | +0.00u |       14.00 |      +2.84 |     20.3% |
+| WEAK     |  0.25u |  23 | 10-13  |  43.5% |        +0.391 |    0.25u |            0.25u | +0.00u |        5.75 |      -0.99 |    -17.2% |
+| FADE     |  0.00u |  65 | 0-0    |      — |        -0.260 |    0.00u |                — |      — |        0.00 |      +0.00 |         — |
 
 > **Ladder monotonicity** (positive tiers ELITE → WEAK only). ROI score `0` 🟡 partial · Win-rate score `0` 🟡 partial. **Partial — the ladder is in the right direction overall but has rough spots. Watch a few more days before reacting.**
 
@@ -147,10 +149,10 @@ V12 finds different amounts of edge in different sports and bet types. This grid
 
 | Sport | ML                     | SPREAD                 | TOTAL                  | All                    |
 |-------|------------------------|------------------------|------------------------|------------------------|
-| MLB   | 95n · 54.7% · +11.3%   | 6n · 83.3% · +31.5%    | 56n · 51.8% · -0.1%    | 157n · 54.8% · +7.0%   |
+| MLB   | 105n · 55.2% · +12.0%  | 9n · 66.7% · +17.9%    | 59n · 52.5% · +2.7%    | 173n · 54.9% · +8.2%   |
 | NBA   | 4n · 0.0% · -100.0%    | 3n · 66.7% · +78.9%    | 2n · 50.0% · -60.8%    | 9n · 33.3% · +33.3%    |
 | NHL   | 1n · 100.0% · +64.0%   | 1n · 100.0% · +215.0%  | 2n · 50.0% · -6.5%     | 4n · 75.0% · +14.8%    |
-| **All** | **100n · 53.0% · +10.7%** | **10n · 80.0% · +52.4%** | **60n · 51.7% · -0.9%** | **170n · 54.1% · +7.8%** |
+| **All** | **110n · 53.6% · +11.4%** | **13n · 69.2% · +40.3%** | **63n · 52.4% · +1.7%** | **186n · 54.3% · +8.9%** |
 
 > **V12's strongest sub-market:** NBA SPREAD — 3 live, 2-1, +78.9% ROI, +4.34u PnL.
 
@@ -160,34 +162,34 @@ If V12's score is real signal — not just a number — then **higher scores sho
 
 | V12 score band     | N   | Live N | W-L    | Realized | Implied | Edge       | ROI (live)|
 |--------------------|-----|--------|--------|----------|---------|------------|-----------|
-| > 0.9 (strongest)  | 129 |    129 | 71-58  |    55.0% |   52.5% |     +2.6pp |      7.8% |
-| 0.7 – 0.9          |  18 |     18 | 11-7   |    61.1% |   55.6% |     +5.6pp |      5.1% |
-| 0.5 – 0.7          |   4 |      4 | 3-1    |    75.0% |   58.8% |    +16.2pp |     36.0% |
+| > 0.9 (strongest)  | 140 |    140 | 77-63  |    55.0% |   52.4% |     +2.6pp |      8.8% |
+| 0.7 – 0.9          |  22 |     22 | 14-8   |    63.6% |   55.6% |     +8.0pp |     11.9% |
+| 0.5 – 0.7          |   5 |      5 | 3-2    |    60.0% |   56.2% |     +3.8pp |      8.8% |
 | 0.25 – 0.5         |   7 |      7 | 3-4    |    42.9% |   53.0% |    -10.1pp |    -18.3% |
 | (0, 0.25]          |   8 |      8 | 2-6    |    25.0% |   56.4% |    -31.4pp |    -49.0% |
-| ≤ 0 (MUTED)        |  54 |      0 | 0-0    |    51.9% |   52.5% |     -0.7pp |         — |
+| ≤ 0 (MUTED)        |  60 |      0 | 0-0    |    51.7% |   52.8% |     -1.1pp |         — |
 
 > 🟡 **Strong-score band (> 0.9) edge is +2.6pp** — borderline. Larger sample needed before declaring V12's top tier as real alpha.
 
-> 🟡 **Mute band wins 51.9%** — roughly coin-flip. The mute rule isn't obviously wrong, but it's not capturing strong rejection either. §8 quantifies the dollar impact.
+> 🟡 **Mute band wins 51.7%** — roughly coin-flip. The mute rule isn't obviously wrong, but it's not capturing strong rejection either. §8 quantifies the dollar impact.
 
 ## § 8 — V12 Mute Rule: Saving Money or Throwing Away Edge?
 
-V12 muted **58** graded picks (any pick with score ≤ 0). This sub-section asks the most important question about V12: **were those rejections correct?**
+V12 muted **65** graded picks (any pick with score ≤ 0). This sub-section asks the most important question about V12: **were those rejections correct?**
 
 The audit is a counterfactual — if every muted pick had been shipped at a flat 1-unit stake (same risk per pick), what would the bottom line look like? If muting saved money, V12's rule is justified. If muting cost money, V12 is throwing away edge and the wallet-quality threshold should be loosened.
 
 | Metric                              | Value                |
 |-------------------------------------|----------------------|
-| Muted picks (graded)                |                   58 |
-| Muted W-L                           |                28-30 |
-| Muted Win %                         |                48.3% |
-| Counterfactual PnL at flat 1u       |                -4.61 |
-| Counterfactual ROI at flat 1u       |                -8.0% |
+| Muted picks (graded)                |                   65 |
+| Muted W-L                           |                32-33 |
+| Muted Win %                         |                49.2% |
+| Counterfactual PnL at flat 1u       |                -4.24 |
+| Counterfactual ROI at flat 1u       |                -6.5% |
 
 ### Verdict
 
-🟢 **THE MUTE RULE IS SAVING MONEY.** The picks V12 rejected would have lost **-4.61u** at a flat 1u stake — a counterfactual ROI of **-8.0%**. V12 is correctly identifying losers and refusing to ship them. **Keep the mute rule as-is.**
+🟢 **THE MUTE RULE IS SAVING MONEY.** The picks V12 rejected would have lost **-4.24u** at a flat 1u stake — a counterfactual ROI of **-6.5%**. V12 is correctly identifying losers and refusing to ship them. **Keep the mute rule as-is.**
 
 ## § 9 — How Different is V12 from V11? (Pick Selection)
 
@@ -197,10 +199,10 @@ The cleanest test is **Spearman rank correlation** between v11 score and V12 sco
 
 | Metric                              | Value                |
 |-------------------------------------|----------------------|
-| Shared graded picks                 |                  220 |
-| Spearman ρ (v11 vs V12 score)       |               -0.366 |
+| Shared graded picks                 |                  242 |
+| Spearman ρ (v11 vs V12 score)       |               -0.362 |
 
-> 🟢 **V12 actively disagrees with V11** — ρ = -0.366. The two models are ranking picks in nearly-opposite order. V12 is a fundamentally different bet-selection model, NOT a v11 tweak. If V12's results in § 2 are good, that disagreement is V12's whole edge.
+> 🟢 **V12 actively disagrees with V11** — ρ = -0.362. The two models are ranking picks in nearly-opposite order. V12 is a fundamentally different bet-selection model, NOT a v11 tweak. If V12's results in § 2 are good, that disagreement is V12's whole edge.
 
 > **Why this is the only honest V11-vs-V12 comparison here.** The Firestore `v8_agsTier` stamp is overwritten by V12 in production, so any tier-confusion-matrix comparison would be artificially 100% diagonal. The raw scores (`v8_ags` and `v8_agsV12`) are still distinct, so Spearman ρ on those is the cleanest signal.
 
@@ -208,19 +210,19 @@ The cleanest test is **Spearman rank correlation** between v11 score and V12 sco
 
 V12's score is the bounded difference of two averages: the mean wallet quality FOR the pick minus the mean wallet quality AGAINST it. Surfacing those raw inputs lets you see whether V12 is "looking at" the right things: does V12 ship picks because the FOR-side wallets are genuinely sharper, or because the AGAINST-side has no wallets at all (which can artificially inflate the score)?
 
-### Average per-side wallet quality (across 220 V12-era picks)
+### Average per-side wallet quality (across 242 V12-era picks)
 
 | Side    | Avg Q (mean)       | Avg # contributing wallets |
 |---------|--------------------|----------------------------|
-| FOR     |            +24.274 |                        2.2 |
-| AGAINST |             +5.350 |                        1.2 |
+| FOR     |            +23.506 |                        2.1 |
+| AGAINST |             +4.941 |                        1.2 |
 
 ### One-sided wallet support (high-variance picks)
 
-- **15** picks had ≥ 3 FOR-side wallets but **zero** AGAINST-side wallets. V12 score is high here because the AGAINST mean defaults to 0, not because of genuine quality contrast.
+- **18** picks had ≥ 3 FOR-side wallets but **zero** AGAINST-side wallets. V12 score is high here because the AGAINST mean defaults to 0, not because of genuine quality contrast.
 - **0** picks had ≥ 3 AGAINST-side wallets but **zero** FOR-side wallets. Mirror case.
 
-> One-sided FOR picks have gone **7-6** (53.8% win) at **+9.8% ROI**. If this materially underperforms the all-picks average, the one-sided trigger should be tightened (e.g. require ≥ N AGAINST wallets before scoring).
+> One-sided FOR picks have gone **9-7** (56.3% win) at **+11.8% ROI**. If this materially underperforms the all-picks average, the one-sided trigger should be tightened (e.g. require ≥ N AGAINST wallets before scoring).
 
 ### Wallet count distribution per pick
 
@@ -235,6 +237,22 @@ The last 30 picks V12 actually shipped (units > 0). This is the audit trail — 
 
 | Date       | Sport | Mkt    | Pick                    | Odds  | V12   | Tier     | Stake | Outcome | PnL (u)    |
 |------------|-------|--------|-------------------------|-------|-------|----------|-------|---------|------------|
+| 2026-06-12 | MLB   | ML     | New York Mets           |  -114 | +0.992 | ELITE    | 5.00u | WIN     |      +4.39 |
+| 2026-06-12 | MLB   | ML     | San Francisco Giants    |  -110 | +0.978 | PREMIUM  | 3.00u | LOSS    |      -3.00 |
+| 2026-06-12 | MLB   | ML     | Athletics               |  -210 | +0.808 | LEAN     | 0.50u | WIN     |      +0.24 |
+| 2026-06-12 | MLB   | ML     | Detroit Tigers          |  +105 | +0.765 | WEAK     | 0.25u | LOSS    |      -0.25 |
+| 2026-06-12 | MLB   | ML     | Houston Astros          |  -110 | +0.952 | LOCK     | 1.00u | WIN     |      +0.91 |
+| 2026-06-12 | MLB   | ML     | Chicago White Sox       |  +123 | +0.996 | ELITE    | 2.50u | WIN     |      +3.08 |
+| 2026-06-12 | MLB   | ML     | Pittsburgh Pirates      |  -144 | +0.961 | PREMIUM  | 3.00u | LOSS    |      -3.00 |
+| 2026-06-12 | MLB   | ML     | San Diego Padres        |  +112 | +0.568 | WEAK     | 0.25u | LOSS    |      -0.25 |
+| 2026-06-12 | MLB   | ML     | Seattle Mariners        |  -148 | +0.916 | LOCK     | 1.00u | WIN     |      +0.68 |
+| 2026-06-12 | MLB   | ML     | Minnesota Twins         |  -136 | +0.852 | LEAN     | 0.50u | WIN     |      +0.37 |
+| 2026-06-12 | MLB   | SPREAD | Los Angeles Dodgers     |  +112 | +0.920 | LOCK     | 1.00u | LOSS    |      -1.00 |
+| 2026-06-12 | MLB   | SPREAD | Milwaukee Brewers       |  -115 | +0.880 | LEAN     | 0.50u | WIN     |      +0.43 |
+| 2026-06-12 | MLB   | SPREAD | Tampa Bay Rays          |  -102 | +0.948 | LOCK     | 1.00u | LOSS    |      -1.00 |
+| 2026-06-12 | MLB   | TOTAL  | Over 8.5                |  -102 | +0.938 | LOCK     | 1.00u | LOSS    |      -1.00 |
+| 2026-06-12 | MLB   | TOTAL  | Over 9.5                |  -110 | +0.956 | PREMIUM  | 3.00u | WIN     |      +2.73 |
+| 2026-06-12 | MLB   | TOTAL  | Over 8.5                |  -110 | +0.972 | PREMIUM  | 3.00u | WIN     |      +2.73 |
 | 2026-06-11 | MLB   | ML     | Arizona Diamondbacks    |  +112 | +0.921 | LOCK     | 1.00u | LOSS    |      -1.00 |
 | 2026-06-11 | MLB   | ML     | Colorado Rockies        |     0 | +0.995 | ELITE    | 5.00u | LOSS    |      -5.00 |
 | 2026-06-11 | MLB   | ML     | Los Angeles Dodgers     |  -175 | +0.840 | LEAN     | 0.50u | WIN     |      +0.29 |
@@ -249,22 +267,6 @@ The last 30 picks V12 actually shipped (units > 0). This is the audit trail — 
 | 2026-06-10 | MLB   | ML     | Los Angeles Angels      |  -117 | +0.720 | WEAK     | 0.25u | WIN     |      +0.21 |
 | 2026-06-10 | MLB   | ML     | Pittsburgh Pirates      |  +166 | +0.926 | LOCK     | 1.00u | WIN     |      +1.66 |
 | 2026-06-10 | MLB   | ML     | Milwaukee Brewers       |  -104 | +0.992 | ELITE    | 5.00u | LOSS    |      -5.00 |
-| 2026-06-10 | MLB   | ML     | Minnesota Twins         |  +146 | +0.932 | LOCK     | 1.00u | WIN     |      +1.46 |
-| 2026-06-10 | MLB   | ML     | Baltimore Orioles       |  +103 | +0.984 | PREMIUM  | 2.50u | WIN     |      +2.58 |
-| 2026-06-10 | MLB   | ML     | New York Mets           |  -127 | +0.932 | LOCK     | 1.00u | LOSS    |      -1.00 |
-| 2026-06-10 | MLB   | ML     | Texas Rangers           |  -120 | +0.952 | LOCK     | 1.00u | WIN     |      +0.83 |
-| 2026-06-10 | MLB   | ML     | Washington Nationals    |  -106 | +0.993 | ELITE    | 5.00u | LOSS    |      -5.00 |
-| 2026-06-10 | NBA   | ML     | Spurs                   |  +115 | +0.352 | WEAK     | 0.25u | LOSS    |      -0.25 |
-| 2026-06-10 | MLB   | TOTAL  | Over 8.5                |  -110 | +0.969 | PREMIUM  | 3.00u | LOSS    |      -3.00 |
-| 2026-06-10 | MLB   | TOTAL  | Over 7.5                |  -110 | +0.930 | LOCK     | 1.00u | WIN     |      +0.91 |
-| 2026-06-10 | MLB   | TOTAL  | Under 12.5              |  -110 | +0.994 | ELITE    | 5.00u | WIN     |      +4.55 |
-| 2026-06-10 | MLB   | TOTAL  | Over 8.5                |  -110 | +0.987 | ELITE    | 5.00u | LOSS    |      -5.00 |
-| 2026-06-10 | MLB   | TOTAL  | Over 7.5                |  -110 | +0.989 | ELITE    | 5.00u | WIN     |      +4.55 |
-| 2026-06-10 | MLB   | TOTAL  | Over 7.5                |  -110 | +0.968 | PREMIUM  | 3.00u | WIN     |      +2.73 |
-| 2026-06-10 | MLB   | TOTAL  | Over 8.5                |  -101 | +0.981 | PREMIUM  | 3.00u | WIN     |      +2.97 |
-| 2026-06-10 | MLB   | TOTAL  | Under 9.5               |  -110 | +0.984 | PREMIUM  | 3.00u | LOSS    |      -3.00 |
-| 2026-06-10 | MLB   | TOTAL  | Under 8.5               |  -104 | +0.995 | ELITE    | 5.00u | LOSS    |      -5.00 |
-| 2026-06-10 | NBA   | TOTAL  | Under 216.5             |  -104 | +0.769 | WEAK     | 0.25u | WIN     |      +0.24 |
 
 ## § 12 — V12 Statistical Monitor (Predictive-Power Diagnostics)
 
@@ -276,11 +278,11 @@ Five different statistical lenses on the same question. Each one is computed onl
 
 | Metric                                | Value    | Plain-English read                                                                 |
 |---------------------------------------|----------|------------------------------------------------------------------------------------|
-| AUC (ROC)                             |    0.546 | 0.50 = coin flip · 0.55 = real edge · 0.60+ = strong · _interpret as P(score(win) > score(loss))_ |
-| KS statistic                          |    0.156 | Max gap between win-score CDF and loss-score CDF. 0.15+ ⇒ meaningful separation     |
-| Spearman ρ(score, won)                |   +0.092 | Rank-correlation of score and binary outcome. Above 0.10 = useful signal           |
-| Spearman ρ(score, unit-return)        |   +0.073 | Higher score should mean higher per-unit return. Above 0.10 = useful signal        |
-| Point-biserial r(score, won)          |   +0.103 | Parametric cousin of Spearman ρ. Above 0.10 = useful signal                        |
+| AUC (ROC)                             |    0.550 | 0.50 = coin flip · 0.55 = real edge · 0.60+ = strong · _interpret as P(score(win) > score(loss))_ |
+| KS statistic                          |    0.158 | Max gap between win-score CDF and loss-score CDF. 0.15+ ⇒ meaningful separation     |
+| Spearman ρ(score, won)                |   +0.064 | Rank-correlation of score and binary outcome. Above 0.10 = useful signal           |
+| Spearman ρ(score, unit-return)        |   +0.081 | Higher score should mean higher per-unit return. Above 0.10 = useful signal        |
+| Point-biserial r(score, won)          |   +0.109 | Parametric cousin of Spearman ρ. Above 0.10 = useful signal                        |
 
 > **AUC verdict:** 🟡 **Weak** — barely separating; close to a coin flip
 
@@ -290,9 +292,9 @@ How much of the variance in actual outcomes does the V12 score actually explain?
 
 | Target              | N    | slope (β)  | intercept  | R²     | r       | RMSE    | reads as                                                |
 |---------------------|------|------------|------------|--------|---------|---------|---------------------------------------------------------|
-| per-pick unit-return |  166 |    +0.4569 |    -0.3662 | 0.0103 |  +0.101 |   0.966 | positive (higher score ⇒ better outcome)                 |
-| won (binary)        |  166 |    +0.2382 |    +0.3320 | 0.0106 |  +0.103 |   0.496 | positive (higher score ⇒ better outcome)                 |
-| per-pick PnL (u)    |  166 |    +0.4139 |    -0.2108 | 0.0013 |  +0.036 |   2.480 | positive (higher score ⇒ better outcome)                 |
+| per-pick unit-return |  182 |    +0.5093 |    -0.4132 | 0.0120 |  +0.110 |   0.962 | positive (higher score ⇒ better outcome)                 |
+| won (binary)        |  182 |    +0.2614 |    +0.3129 | 0.0119 |  +0.109 |   0.495 | positive (higher score ⇒ better outcome)                 |
+| per-pick PnL (u)    |  182 |    +0.4943 |    -0.2627 | 0.0018 |  +0.042 |   2.442 | positive (higher score ⇒ better outcome)                 |
 
 > Even a "small" R² of 0.02–0.05 is meaningful for sports picks — outcomes are 50%+ noise floor. The signs of the slopes and the direction of r are the primary check: if **slope < 0** on per-pick PnL, V12 is **anti-predictive** for sizing decisions and the ladder needs revisiting.
 
@@ -302,12 +304,12 @@ V12's score is built from four inputs per pick: the mean quality of FOR-side wal
 
 | Feature           | N   | r(feature, won) | ρ(feature, won) | r(feature, unit-return) | ρ(feature, unit-return) | reads as                                                       |
 |-------------------|-----|-----------------|------------------|--------------------------|--------------------------|----------------------------------------------------------------|
-| agsV12ForMean     | 166 |          +0.084 |           +0.078 |                   +0.065 |                   +0.002 | mean Q of FOR-side wallets — higher should help                |
-| agsV12AgMean      | 166 |          -0.094 |           +0.272 |                   -0.100 |                   +0.051 | mean Q of AGAINST-side wallets — higher should HURT (negative correlation expected) |
-| agsV12ForCount    | 166 |          -0.105 |           +0.115 |                   -0.117 |                   +0.019 | count of contributing FOR-side wallets                         |
-| agsV12AgCount     | 166 |          -0.001 |           +0.156 |                   +0.011 |                   +0.100 | count of contributing AGAINST-side wallets                     |
-| provenFor         | 166 |          -0.107 |           +0.106 |                   -0.115 |                   +0.019 | count of proven (HC_BASE) FOR wallets                          |
-| provenAg          | 166 |          -0.039 |           +0.137 |                   -0.034 |                   +0.068 | count of proven (HC_BASE) AGAINST wallets                      |
+| agsV12ForMean     | 182 |          +0.092 |           +0.015 |                   +0.085 |                   +0.008 | mean Q of FOR-side wallets — higher should help                |
+| agsV12AgMean      | 182 |          -0.101 |           +0.280 |                   -0.106 |                   +0.052 | mean Q of AGAINST-side wallets — higher should HURT (negative correlation expected) |
+| agsV12ForCount    | 182 |          -0.096 |           +0.126 |                   -0.108 |                   +0.010 | count of contributing FOR-side wallets                         |
+| agsV12AgCount     | 182 |          -0.021 |           +0.115 |                   -0.005 |                   +0.094 | count of contributing AGAINST-side wallets                     |
+| provenFor         | 182 |          -0.095 |           +0.132 |                   -0.104 |                   +0.016 | count of proven (HC_BASE) FOR wallets                          |
+| provenAg          | 182 |          -0.051 |           +0.113 |                   -0.044 |                   +0.063 | count of proven (HC_BASE) AGAINST wallets                      |
 
 #### Tercile breakdown — forMean vs realised ROI
 
@@ -315,9 +317,9 @@ If `agsV12ForMean` is doing real work, the high-tercile bucket should out-perfor
 
 | Bucket            | range                  | N   | W-L     | Win %   | ROI       |
 |-------------------|------------------------|-----|---------|---------|-----------|
-| LOW (≤ p33)       | 8.379 … 9.652          |  56 | 27-29   |   48.2% |     -6.3% |
-| MID (p33–p67)     | 19.950 … 17.706        |  56 | 33-23   |   58.9% |     +5.2% |
-| HIGH (> p67)      | 48.906 … 125.928       |  54 | 30-24   |   55.6% |     +1.1% |
+| LOW (≤ p33)       | 8.379 … 10.944         |  63 | 31-32   |   49.2% |     -5.3% |
+| MID (p33–p67)     | 19.950 … 17.175        |  58 | 35-23   |   60.3% |     +6.5% |
+| HIGH (> p67)      | 48.906 … 47.180        |  61 | 33-28   |   54.1% |     +0.5% |
 
 ### 12D — Score distribution shape
 
@@ -325,12 +327,12 @@ Distribution-level diagnostics on the V12 score itself. Big shifts in mean/sd da
 
 | Stat              | Value     | reads as                                                       |
 |-------------------|-----------|----------------------------------------------------------------|
-| N (live picks)    |       166 | live shipped & graded V12 picks                                 |
-| Mean              |   +0.8821 | average score across live picks                                 |
-| SD                |    0.2161 | dispersion — higher SD ⇒ V12 ships a wider spread of conviction |
-| Skewness          |    -2.597 | + = right tail (rare super-strong picks) · − = left tail        |
-| Excess kurtosis   |    +5.750 | 0 = normal · > 3 = fat tails (small N driving the ROI signal)    |
-| p10 / p50 / p90   | +0.603 / +0.968 / +0.991 | bottom-decile / median / top-decile V12 score                   |
+| N (live picks)    |       182 | live shipped & graded V12 picks                                 |
+| Mean              |   +0.8837 | average score across live picks                                 |
+| SD                |    0.2088 | dispersion — higher SD ⇒ V12 ships a wider spread of conviction |
+| Skewness          |    -2.660 | + = right tail (rare super-strong picks) · − = left tail        |
+| Excess kurtosis   |    +6.240 | 0 = normal · > 3 = fat tails (small N driving the ROI signal)    |
+| p10 / p50 / p90   | +0.617 / +0.965 / +0.991 | bottom-decile / median / top-decile V12 score                   |
 | min / max         | +0.018 / +0.997 | extreme scores observed on live picks                            |
 
 ### 12E — Discrimination by sport
@@ -339,7 +341,7 @@ AUC computed separately per sport — V12 may be sharp in one market and noise i
 
 | Sport | N    | W-L    | Win %   | ROI       | AUC    | ρ(score, won) | reads as                                  |
 |-------|------|--------|---------|-----------|--------|---------------|-------------------------------------------|
-| MLB   |  153 | 84-69  |   54.9% |     +6.5% |  0.524 |        +0.057 | noise                                     |
+| MLB   |  169 | 93-76  |   55.0% |     +7.7% |  0.530 |        +0.024 | real                                      |
 | NBA   |    9 | 3-6    |   33.3% |    +33.3% |  0.833 |        +0.533 | strong (N<20)                             |
 | NHL   |    4 | 3-1    |   75.0% |    +14.8% |  0.000 |        -0.800 | anti-signal (N<20)                        |
 
@@ -354,8 +356,9 @@ Recompute AUC on a moving 7-day window. If recent windows are degrading (e.g. dr
 | 2026-06-09 |    7 |  119 | 67-52  |   56.3% |    +13.3% |  0.584 |
 | 2026-06-10 |    7 |  123 | 67-56  |   54.5% |     +8.2% |  0.555 |
 | 2026-06-11 |    7 |  117 | 64-53  |   54.7% |     +9.3% |  0.559 |
+| 2026-06-12 |    7 |  116 | 62-54  |   53.4% |     +7.8% |  0.550 |
 
-> 🟢 **AUC is trending UP** — V12 is sharpening (0.537 avg in first half → 0.566 avg in second half · Δ = +0.028)
+> 🟡 **AUC is roughly flat** — no meaningful drift, V12 holding steady (0.553 avg in first half → 0.554 avg in second half · Δ = +0.001)
 
 ### 12G — Bootstrap 95% confidence intervals (1000 resamples)
 
@@ -363,10 +366,10 @@ Resample the live V12 picks (with replacement, 1000 iterations) and recompute ke
 
 | Metric                       | Point estimate | 95% CI               | Reads as                                                  |
 |------------------------------|----------------|----------------------|-----------------------------------------------------------|
-| ROI (%)                      |          +7.8% | [-11.6%, +24.6%]  | If CI crosses 0%, ROI is statistically indistinguishable from break-even |
-| Win %                        |          54.1% | [47.0%, 61.4%]  | Range you'd expect the long-run win rate to fall in            |
-| AUC                          |          0.546 | [0.459, 0.633]    | If CI lo ≤ 0.50, edge is not statistically established yet      |
-| Wins − Losses                |             14 | [-10, 38]      | Flat-bet hit count range                                       |
+| ROI (%)                      |          +8.9% | [-9.4%, +24.8%]  | If CI crosses 0%, ROI is statistically indistinguishable from break-even |
+| Win %                        |          54.3% | [47.3%, 61.5%]  | Range you'd expect the long-run win rate to fall in            |
+| AUC                          |          0.550 | [0.462, 0.631]    | If CI lo ≤ 0.50, edge is not statistically established yet      |
+| Wins − Losses                |             16 | [-10, 42]      | Flat-bet hit count range                                       |
 
 > 🟡 **ROI CI crosses zero** — current sample size cannot distinguish edge from break-even. Keep shipping picks and re-check
 
@@ -378,12 +381,12 @@ Resample the live V12 picks (with replacement, 1000 iterations) and recompute ke
 
 | Metric                                       | Value                                                     |
 |----------------------------------------------|-----------------------------------------------------------|
-| Live V12 picks analysed                      |                                                       170 |
+| Live V12 picks analysed                      |                                                       186 |
 | Unique wallets ever on a FOR side            |                                                        58 |
-| Avg FOR-side wallets per pick                |                                                      2.15 |
-| Top-5 wallets' share of all FOR appearances  |                                                     45.4% |
-| Top-10 wallets' share of all FOR appearances |                                                     65.0% |
-| Top-20 wallets' share of all FOR appearances |                                                     81.1% |
+| Avg FOR-side wallets per pick                |                                                      2.12 |
+| Top-5 wallets' share of all FOR appearances  |                                                     45.6% |
+| Top-10 wallets' share of all FOR appearances |                                                     66.6% |
+| Top-20 wallets' share of all FOR appearances |                                                     82.3% |
 
 > 🟢 **Influence is well-distributed** — no single wallet (or small cluster) dominates V12's picks.
 
@@ -393,23 +396,23 @@ These are the wallets V12 is "listening to" the most. Each row also shows how th
 
 | Rank | Wallet  | Sports     | FOR# | AG#  | W-L    | Win %   | ROI       | PnL (u)   | Avg sizeR | Tier        | Prior ROI | Prior N | Last seen  |
 |------|---------|------------|------|------|--------|---------|-----------|-----------|-----------|-------------|-----------|---------|------------|
-|    1 | 4c64aa  | MLB        |   63 |    5 | 33-30  |   52.4% |     +8.5% |     +8.40 |     0.83× | CONFIRMED   |     +2.8% |     209 | 2026-06-11 |
-|    2 | 70135d  | MLB,NBA    |   30 |   51 | 15-15  |   50.0% |     +1.9% |     +0.87 |     1.69× | CONFIRMED   |     -9.5% |     320 | 2026-06-11 |
+|    1 | 4c64aa  | MLB        |   68 |    5 | 36-32  |   52.9% |     +6.2% |     +6.44 |     0.84× | CONFIRMED   |     +1.7% |     216 | 2026-06-12 |
+|    2 | 70135d  | MLB,NBA    |   33 |   54 | 16-17  |   48.5% |     -0.0% |     -0.01 |     1.59× | CONFIRMED   |     -7.9% |     333 | 2026-06-12 |
 |    3 | 913987  | MLB        |   30 |    5 | 20-10  |   66.7% |    +12.8% |    +10.20 |     0.97× | CONFIRMED   |    +32.2% |      44 | 2026-06-11 |
-|    4 | 1e8f33  | MLB        |   23 |    5 | 14-9   |   60.9% |    -11.3% |     -6.38 |     1.04× | CONFIRMED   |     +6.1% |      45 | 2026-06-11 |
-|    5 | 7923c4  | MLB,NBA    |   20 |    4 | 11-9   |   55.0% |    +40.6% |    +11.68 |     0.86× | CONFIRMED   |    +11.1% |      88 | 2026-06-10 |
-|    6 | cd2f63  | MLB,NBA    |   18 |   13 | 9-9    |   50.0% |    +24.3% |     +9.47 |     0.98× | FLAT        |     +0.3% |     218 | 2026-06-11 |
-|    7 | eeabaf  | MLB,NBA    |   16 |    1 | 8-8    |   50.0% |    -11.5% |     -5.15 |     0.81× | CONFIRMED   |    +18.1% |      64 | 2026-06-11 |
-|    8 | 491f30  | MLB        |   15 |    1 | 11-4   |   73.3% |    +56.9% |    +27.44 |     0.97× | CONFIRMED   |    +22.9% |      22 | 2026-06-11 |
-|    9 | 10c684  | MLB,NBA    |   13 |    4 | 4-9    |   30.8% |    -31.6% |     -4.74 |     1.74× | FLAT        |    -26.6% |      31 | 2026-06-11 |
-|   10 | 9a69c2  | MLB        |   10 |   33 | 5-5    |   50.0% |    +30.7% |     +3.53 |     2.45× | CONFIRMED   |    -21.0% |     122 | 2026-06-11 |
-|   11 | bc3532  | MLB,NBA,NHL |    9 |    9 | 4-5    |   44.4% |    -18.9% |     -1.18 |     2.26× | FLAT        |     +3.2% |     133 | 2026-06-10 |
-|   12 | 2f2a9e  | MLB        |    9 |   12 | 2-7    |   22.2% |    -17.8% |     -2.23 |     0.29× | FLAT        |    -30.4% |      40 | 2026-06-11 |
+|    4 | 1e8f33  | MLB        |   27 |    6 | 16-11  |   59.3% |    -11.8% |     -7.04 |     0.99× | CONFIRMED   |     +4.5% |      51 | 2026-06-12 |
+|    5 | 7923c4  | MLB,NBA    |   22 |    4 | 12-10  |   54.5% |    +40.9% |    +13.41 |     0.82× | CONFIRMED   |     +9.5% |      91 | 2026-06-12 |
+|    6 | 491f30  | MLB        |   19 |    1 | 13-6   |   68.4% |    +52.6% |    +31.31 |     0.89× | CONFIRMED   |    +18.6% |      26 | 2026-06-12 |
+|    7 | cd2f63  | MLB,NBA    |   19 |   14 | 10-9   |   52.6% |    +29.0% |    +12.20 |     0.94× | FLAT        |     +0.2% |     220 | 2026-06-12 |
+|    8 | eeabaf  | MLB,NBA    |   17 |    1 | 8-9    |   47.1% |    -12.0% |     -5.40 |     0.81× | CONFIRMED   |    +18.2% |      66 | 2026-06-12 |
+|    9 | 2f2a9e  | MLB        |   15 |   14 | 7-8    |   46.7% |    -13.7% |     -2.60 |     0.52× | CONFIRMED   |    -15.1% |      49 | 2026-06-12 |
+|   10 | 10c684  | MLB,NBA    |   13 |    4 | 4-9    |   30.8% |    -31.6% |     -4.74 |     1.74× | FLAT        |    -26.6% |      31 | 2026-06-11 |
+|   11 | 9a69c2  | MLB        |   11 |   33 | 5-6    |   45.5% |    +27.9% |     +3.28 |     2.51× | CONFIRMED   |    -22.3% |     124 | 2026-06-12 |
+|   12 | bc3532  | MLB,NBA,NHL |    9 |   10 | 4-5    |   44.4% |    -18.9% |     -1.18 |     2.26× | FLAT        |     +2.4% |     134 | 2026-06-12 |
 |   13 | 8c1eae  | MLB,NBA    |    7 |    3 | 4-3    |   57.1% |    +53.8% |     +4.71 |     1.79× | CONFIRMED   |     -7.1% |      95 | 2026-06-08 |
-|   14 | b19a27  | MLB,NBA    |    6 |    4 | 3-3    |   50.0% |    -15.9% |     -2.35 |     1.34× | CONFIRMED   |     -5.0% |     278 | 2026-06-07 |
-|   15 | 972768  | MLB        |    6 |    2 | 2-4    |   33.3% |    -90.9% |    -14.77 |     1.11× | CONFIRMED   | +Infinity% |      40 | 2026-06-11 |
-|   16 | f2d227  | MLB,NBA    |    5 |    0 | 2-3    |   40.0% |    -76.3% |     -4.39 |     0.75× | CONFIRMED   |    -24.7% |      29 | 2026-06-10 |
-|   17 | 5b1e50  | MLB,NBA    |    5 |   16 | 3-2    |   60.0% |    +12.0% |     +1.23 |     0.64× | CONFIRMED   |    -28.0% |      24 | 2026-06-11 |
+|   14 | 972768  | MLB        |    7 |    2 | 3-4    |   42.9% |    -62.3% |    -11.69 |     1.15× | CONFIRMED   | +Infinity% |      41 | 2026-06-12 |
+|   15 | b19a27  | MLB,NBA    |    6 |    4 | 3-3    |   50.0% |    -15.9% |     -2.35 |     1.34× | CONFIRMED   |     -5.0% |     278 | 2026-06-07 |
+|   16 | f2d227  | MLB,NBA    |    5 |    0 | 2-3    |   40.0% |    -76.3% |     -4.39 |     0.75× | CONFIRMED   |    -24.5% |      31 | 2026-06-10 |
+|   17 | 5b1e50  | MLB,NBA    |    5 |   18 | 3-2    |   60.0% |    +12.0% |     +1.23 |     0.64× | CONFIRMED   |    -26.2% |      26 | 2026-06-12 |
 |   18 | e05213  | MLB        |    4 |    2 | 4-0    |  100.0% |    +94.1% |    +10.12 |     1.35× | CONFIRMED   |    +69.6% |       9 | 2026-06-09 |
 |   19 | 4d2125  | NHL        |    4 |    0 | 3-1    |   75.0% |    +14.8% |     +1.66 |     0.31× | CONFIRMED   |    +16.7% |      15 | 2026-06-09 |
 |   20 | 2e8da5  | NBA        |    4 |    0 | 1-3    |   25.0% |    -51.0% |     -0.51 |     2.76× | CONFIRMED   |    +33.5% |      15 | 2026-06-10 |
@@ -420,16 +423,17 @@ Among wallets with at least **10 FOR-side appearances** on live V12 picks, ranke
 
 | Rank | Wallet  | Sports     | FOR# | W-L    | Win %   | ROI        | PnL (u)   | Avg sizeR | Last seen  |
 |------|---------|------------|------|--------|---------|------------|-----------|-----------|------------|
-|    1 | 491f30  | MLB        |   15 | 11-4   |   73.3% |     +56.9% |    +27.44 |     0.97× | 2026-06-11 |
-|    2 | 7923c4  | MLB,NBA    |   20 | 11-9   |   55.0% |     +40.6% |    +11.68 |     0.86× | 2026-06-10 |
-|    3 | 9a69c2  | MLB        |   10 | 5-5    |   50.0% |     +30.7% |     +3.53 |     2.45× | 2026-06-11 |
-|    4 | cd2f63  | MLB,NBA    |   18 | 9-9    |   50.0% |     +24.3% |     +9.47 |     0.98× | 2026-06-11 |
+|    1 | 491f30  | MLB        |   19 | 13-6   |   68.4% |     +52.6% |    +31.31 |     0.89× | 2026-06-12 |
+|    2 | 7923c4  | MLB,NBA    |   22 | 12-10  |   54.5% |     +40.9% |    +13.41 |     0.82× | 2026-06-12 |
+|    3 | cd2f63  | MLB,NBA    |   19 | 10-9   |   52.6% |     +29.0% |    +12.20 |     0.94× | 2026-06-12 |
+|    4 | 9a69c2  | MLB        |   11 | 5-6    |   45.5% |     +27.9% |     +3.28 |     2.51× | 2026-06-12 |
 |    5 | 913987  | MLB        |   30 | 20-10  |   66.7% |     +12.8% |    +10.20 |     0.97× | 2026-06-11 |
-|    6 | 4c64aa  | MLB        |   63 | 33-30  |   52.4% |      +8.5% |     +8.40 |     0.83× | 2026-06-11 |
-|    7 | 70135d  | MLB,NBA    |   30 | 15-15  |   50.0% |      +1.9% |     +0.87 |     1.69× | 2026-06-11 |
-|    8 | 1e8f33  | MLB        |   23 | 14-9   |   60.9% |     -11.3% |     -6.38 |     1.04× | 2026-06-11 |
-|    9 | eeabaf  | MLB,NBA    |   16 | 8-8    |   50.0% |     -11.5% |     -5.15 |     0.81× | 2026-06-11 |
-|   10 | 10c684  | MLB,NBA    |   13 | 4-9    |   30.8% |     -31.6% |     -4.74 |     1.74× | 2026-06-11 |
+|    6 | 4c64aa  | MLB        |   68 | 36-32  |   52.9% |      +6.2% |     +6.44 |     0.84× | 2026-06-12 |
+|    7 | 70135d  | MLB,NBA    |   33 | 16-17  |   48.5% |      -0.0% |     -0.01 |     1.59× | 2026-06-12 |
+|    8 | 1e8f33  | MLB        |   27 | 16-11  |   59.3% |     -11.8% |     -7.04 |     0.99× | 2026-06-12 |
+|    9 | eeabaf  | MLB,NBA    |   17 | 8-9    |   47.1% |     -12.0% |     -5.40 |     0.81× | 2026-06-12 |
+|   10 | 2f2a9e  | MLB        |   15 | 7-8    |   46.7% |     -13.7% |     -2.60 |     0.52× | 2026-06-12 |
+|   11 | 10c684  | MLB,NBA    |   13 | 4-9    |   30.8% |     -31.6% |     -4.74 |     1.74× | 2026-06-11 |
 
 ### 13D — Worst-performing wallets (potential anti-signals; min 10 appearances)
 
@@ -438,29 +442,30 @@ Same filter, sorted ROI ascending. Wallets that consistently lose when they're o
 | Rank | Wallet  | Sports     | FOR# | W-L    | Win %   | ROI        | PnL (u)   | Avg sizeR | Last seen  |
 |------|---------|------------|------|--------|---------|------------|-----------|-----------|------------|
 |    1 | 10c684  | MLB,NBA    |   13 | 4-9    |   30.8% |     -31.6% |     -4.74 |     1.74× | 2026-06-11 |
-|    2 | eeabaf  | MLB,NBA    |   16 | 8-8    |   50.0% |     -11.5% |     -5.15 |     0.81× | 2026-06-11 |
-|    3 | 1e8f33  | MLB        |   23 | 14-9   |   60.9% |     -11.3% |     -6.38 |     1.04× | 2026-06-11 |
-|    4 | 70135d  | MLB,NBA    |   30 | 15-15  |   50.0% |      +1.9% |     +0.87 |     1.69× | 2026-06-11 |
-|    5 | 4c64aa  | MLB        |   63 | 33-30  |   52.4% |      +8.5% |     +8.40 |     0.83× | 2026-06-11 |
-|    6 | 913987  | MLB        |   30 | 20-10  |   66.7% |     +12.8% |    +10.20 |     0.97× | 2026-06-11 |
-|    7 | cd2f63  | MLB,NBA    |   18 | 9-9    |   50.0% |     +24.3% |     +9.47 |     0.98× | 2026-06-11 |
-|    8 | 9a69c2  | MLB        |   10 | 5-5    |   50.0% |     +30.7% |     +3.53 |     2.45× | 2026-06-11 |
-|    9 | 7923c4  | MLB,NBA    |   20 | 11-9   |   55.0% |     +40.6% |    +11.68 |     0.86× | 2026-06-10 |
-|   10 | 491f30  | MLB        |   15 | 11-4   |   73.3% |     +56.9% |    +27.44 |     0.97× | 2026-06-11 |
+|    2 | 2f2a9e  | MLB        |   15 | 7-8    |   46.7% |     -13.7% |     -2.60 |     0.52× | 2026-06-12 |
+|    3 | eeabaf  | MLB,NBA    |   17 | 8-9    |   47.1% |     -12.0% |     -5.40 |     0.81× | 2026-06-12 |
+|    4 | 1e8f33  | MLB        |   27 | 16-11  |   59.3% |     -11.8% |     -7.04 |     0.99× | 2026-06-12 |
+|    5 | 70135d  | MLB,NBA    |   33 | 16-17  |   48.5% |      -0.0% |     -0.01 |     1.59× | 2026-06-12 |
+|    6 | 4c64aa  | MLB        |   68 | 36-32  |   52.9% |      +6.2% |     +6.44 |     0.84× | 2026-06-12 |
+|    7 | 913987  | MLB        |   30 | 20-10  |   66.7% |     +12.8% |    +10.20 |     0.97× | 2026-06-11 |
+|    8 | 9a69c2  | MLB        |   11 | 5-6    |   45.5% |     +27.9% |     +3.28 |     2.51× | 2026-06-12 |
+|    9 | cd2f63  | MLB,NBA    |   19 | 10-9   |   52.6% |     +29.0% |    +12.20 |     0.94× | 2026-06-12 |
+|   10 | 7923c4  | MLB,NBA    |   22 | 12-10  |   54.5% |     +40.9% |    +13.41 |     0.82× | 2026-06-12 |
+|   11 | 491f30  | MLB        |   19 | 13-6   |   68.4% |     +52.6% |    +31.31 |     0.89× | 2026-06-12 |
 
-> 🔴 **3 wallet(s) appear in BOTH the top-20 most-influential list AND the worst-performers list with ROI < −5%.** They are actively dragging V12's results down while having heavy say in pick generation. Candidates: `10c684` (FOR# 13, ROI -31.6%), `eeabaf` (FOR# 16, ROI -11.5%), `1e8f33` (FOR# 23, ROI -11.3%).
+> 🔴 **4 wallet(s) appear in BOTH the top-20 most-influential list AND the worst-performers list with ROI < −5%.** They are actively dragging V12's results down while having heavy say in pick generation. Candidates: `10c684` (FOR# 13, ROI -31.6%), `2f2a9e` (FOR# 15, ROI -13.7%), `eeabaf` (FOR# 17, ROI -12.0%), `1e8f33` (FOR# 27, ROI -11.8%).
 
 ## § 14 — Operational Health (V12 pipeline sanity)
 
 | Check                                                          | Count | Verdict                                            |
 |----------------------------------------------------------------|-------|----------------------------------------------------|
 | Graded picks with `tracked=true` AND `finalUnits > 0`         |     1 | 🚨 grader regression — see betTracking.js |
-| Graded picks with `tracked=true` AND `finalUnits == 0`        |   125 | 🟡 informational only — true tracked plays |
+| Graded picks with `tracked=true` AND `finalUnits == 0`        |   133 | 🟡 informational only — true tracked plays |
 | LOCK+ tier picks with `finalUnits == 0` (sizing regression)   |    12 | 🚨 sizing regression — agsSizeMultiplier returning 0 for strong AGS-U |
-| Live picks (not graded yet) with `finalUnits > 0`             |    11 | 🟢 picks queued for grading |
+| Live picks (not graded yet) with `finalUnits > 0`             |     4 | 🟢 picks queued for grading |
 | AGS-U promoted picks missing `v8_ags` value                   |     1 | 🟡 some picks missing AGS-U — cron lag or stale doc |
-| AGS-U promoted picks missing `agsTier`                        |     6 | 🟡 some picks missing tier classification |
-| Single-wallet shipped picks (`provenWalletCount == 1`)       |   106 | 🟡 informational — AGS-U calibration controls sample adequacy |
+| AGS-U promoted picks missing `agsTier`                        |     5 | 🟡 some picks missing tier classification |
+| Single-wallet shipped picks (`provenWalletCount == 1`)       |   104 | 🟡 informational — AGS-U calibration controls sample adequacy |
 
 **Tracked-shipped detail (these are the picks the grader wrongly marked 0u):**
 
@@ -489,11 +494,11 @@ Same filter, sorted ROI ascending. Wallets that consistently lose when they're o
 
 The live `agsCalibration/current` document — what the cron and UI both read at runtime to score & size every pick. **This is the actual thresholds V12 is using right now.**
 
-- **Computed at:** 2026-06-11T16:41:21.473Z
+- **Computed at:** 2026-06-12T15:55:37.439Z
 - **Schema version:** `ags-unified-v12` 🟢 (V12 active)
 - **Source:** cron
-- **Sample size:** 985
-- **Date range:** 2026-04-18 → 2026-06-10
+- **Sample size:** 1004
+- **Date range:** 2026-04-18 → 2026-06-11
 
 ### V12 wallet-quality score thresholds (live)
 
@@ -501,10 +506,10 @@ These are the cuts on the V12 score (in [-1, +1]) that decide which tier each pi
 
 | Boundary | V12 score cut | Tier band start | Stake (absolute units) |
 |----------|---------------|-----------------|------------------------|
-| q80      |        +0.983 | ELITE           | 5.00u                  |
-| q60      |        +0.958 | PREMIUM         | 3.00u                  |
-| q40      |        +0.913 | LOCK            | 1.00u                  |
-| q20      |        +0.778 | LEAN            | 0.50u                  |
+| q80      |        +0.982 | ELITE           | 5.00u                  |
+| q60      |        +0.955 | PREMIUM         | 3.00u                  |
+| q40      |        +0.902 | LOCK            | 1.00u                  |
+| q20      |        +0.782 | LEAN            | 0.50u                  |
 | —        |        +0.000 | WEAK            | 0.25u  (any score in (0, q20]) |
 | mute     |             — | FADE            | 0.00u  (any score ≤ 0) |
 
@@ -516,48 +521,47 @@ The size of the qualifying-wallet pool per sport is the upstream cap on AGS-U si
 
 | sport | wallet records | CONFIRMED | FLAT | WR50 | NULL | qualifying (C+F+WR50) |
 |-------|----------------|-----------|------|------|------|------------------------|
-| MLB   |            124 |        30 |   14 |    6 |   74 |                     50 |
+| MLB   |            126 |        32 |   13 |    6 |   75 |                     51 |
 | NBA   |            206 |        55 |   25 |   22 |  104 |                    102 |
 | NHL   |            105 |        22 |    8 |   12 |   63 |                     42 |
-
-> ⚠ **MLB pool is < 50% of NBA pool** (50 vs 102). MLB AUC will be inherently capped by sample size. To meaningfully improve MLB further: broaden leaderboard ingestion or relax Source B threshold (`exportWalletProfiles.js`).
+| SOC   |             20 |         0 |    0 |    0 |   20 |                      0 |
 
 ## § 17 — AGS-U Full-History Feature Lab
 
-> **Why this section matters.** V12 makes a deliberate bet that **wallet-quality mean ratio** is the single best predictor of pick outcomes. This section tests that assumption against ~510 graded AGS-U picks since cutover. For every plausible feature we have stamped on a pick, we measure how strongly it correlates with **winning** and with **per-unit PnL** — first individually, then in concert via multivariate regression. The closing sub-section (§17F) cross-references the data-driven top features against the ones V12 actually uses, so any signal V12 is leaving on the table is named explicitly.
+> **Why this section matters.** V12 makes a deliberate bet that **wallet-quality mean ratio** is the single best predictor of pick outcomes. This section tests that assumption against ~533 graded AGS-U picks since cutover. For every plausible feature we have stamped on a pick, we measure how strongly it correlates with **winning** and with **per-unit PnL** — first individually, then in concert via multivariate regression. The closing sub-section (§17F) cross-references the data-driven top features against the ones V12 actually uses, so any signal V12 is leaving on the table is named explicitly.
 
 ### 17A — Candidate feature panel & coverage
 
-We test 26 candidate features across 404 live graded picks. "Coverage %" = share of picks where the feature is non-null (some features are only stamped on V12-era picks, some on lock time, etc.). Features below ~40% coverage are still tested univariately but **excluded from the multivariate regression** in §17E because OLS requires complete rows.
+We test 26 candidate features across 420 live graded picks. "Coverage %" = share of picks where the feature is non-null (some features are only stamped on V12-era picks, some on lock time, etc.). Features below ~40% coverage are still tested univariately but **excluded from the multivariate regression** in §17E because OLS requires complete rows.
 
 | Feature              | Coverage          | Meaning                                                              |
 |----------------------|-------------------|----------------------------------------------------------------------|
-| agsV12 🟢            | 166 / 404 (41%)   | V12 score itself — bounded wallet-quality differential               |
-| V12 forMean 🟢       | 166 / 404 (41%)   | Mean wallet quality (Q) of FOR-side proven wallets                   |
-| V12 agMean 🟢        | 166 / 404 (41%)   | Mean wallet quality (Q) of AGAINST-side proven wallets               |
-| qMargin 🟢           | 166 / 404 (41%)   | forMean − agMean (raw difference, pre-bounding)                      |
-| V12 forCount 🟢      | 166 / 404 (41%)   | Count of proven FOR-side wallets contributing to V12                 |
-| V12 agCount 🟢       | 166 / 404 (41%)   | Count of proven AGAINST-side wallets                                 |
-| countMargin          | 166 / 404 (41%)   | forCount − agCount (signed wallet-count advantage)                   |
-| ags (v11)            | 404 / 404 (100%)  | V11 logistic composite score — predecessor of V12                    |
-| provenFor            | 404 / 404 (100%)  | Count of HC_BASE (CONFIRMED/FLAT) wallets FOR the pick               |
-| provenAg             | 404 / 404 (100%)  | Count of HC_BASE wallets AGAINST the pick                            |
-| provenTotal          | 404 / 404 (100%)  | Total HC_BASE wallets touching the game                              |
-| provenMargin         | 404 / 404 (100%)  | provenFor − provenAg                                                 |
-| hcMargin             | 404 / 404 (100%)  | High-conviction margin from v11 — signed conviction differential     |
-| lockPinnProb         | 400 / 404 (99%)   | Pinnacle implied probability at lock time (the line itself)          |
-| clv                  | 399 / 404 (99%)   | Closing line value — how far line moved in our favour                |
-| peakStars            | 404 / 404 (100%)  | Star rating at peak (heuristic conviction grade)                     |
-| wd forCount          | 404 / 404 (100%)  | Wallet-detail-derived FOR side count (any wallet, not just HC_BASE)  |
-| wd agCount           | 232 / 404 (57%)   | Wallet-detail-derived AGAINST side count                             |
-| wd forAvgSize        | 404 / 404 (100%)  | Avg sizeRatio of FOR-side wallets (size vs their own avg)            |
-| wd agAvgSize         | 232 / 404 (57%)   | Avg sizeRatio of AGAINST-side wallets                                |
-| wd sizeMargin        | 232 / 404 (57%)   | forAvgSize − agAvgSize (signed sizing advantage)                     |
-| wd contribFor        | 404 / 404 (100%)  | Σ contribution (walletBase × convictionMult) on FOR side             |
-| wd contribAg         | 404 / 404 (100%)  | Σ contribution on AGAINST side                                       |
-| wd contribMargin     | 404 / 404 (100%)  | forContrib − agContrib (total weighted-money advantage)              |
-| wd maxForContrib     | 404 / 404 (100%)  | Max single-wallet contribution on FOR side                           |
-| wd maxShare          | 404 / 404 (100%)  | Largest single contribution / total (concentration risk)             |
+| agsV12 🟢            | 182 / 420 (43%)   | V12 score itself — bounded wallet-quality differential               |
+| V12 forMean 🟢       | 182 / 420 (43%)   | Mean wallet quality (Q) of FOR-side proven wallets                   |
+| V12 agMean 🟢        | 182 / 420 (43%)   | Mean wallet quality (Q) of AGAINST-side proven wallets               |
+| qMargin 🟢           | 182 / 420 (43%)   | forMean − agMean (raw difference, pre-bounding)                      |
+| V12 forCount 🟢      | 182 / 420 (43%)   | Count of proven FOR-side wallets contributing to V12                 |
+| V12 agCount 🟢       | 182 / 420 (43%)   | Count of proven AGAINST-side wallets                                 |
+| countMargin          | 182 / 420 (43%)   | forCount − agCount (signed wallet-count advantage)                   |
+| ags (v11)            | 420 / 420 (100%)  | V11 logistic composite score — predecessor of V12                    |
+| provenFor            | 420 / 420 (100%)  | Count of HC_BASE (CONFIRMED/FLAT) wallets FOR the pick               |
+| provenAg             | 420 / 420 (100%)  | Count of HC_BASE wallets AGAINST the pick                            |
+| provenTotal          | 420 / 420 (100%)  | Total HC_BASE wallets touching the game                              |
+| provenMargin         | 420 / 420 (100%)  | provenFor − provenAg                                                 |
+| hcMargin             | 420 / 420 (100%)  | High-conviction margin from v11 — signed conviction differential     |
+| lockPinnProb         | 416 / 420 (99%)   | Pinnacle implied probability at lock time (the line itself)          |
+| clv                  | 415 / 420 (99%)   | Closing line value — how far line moved in our favour                |
+| peakStars            | 420 / 420 (100%)  | Star rating at peak (heuristic conviction grade)                     |
+| wd forCount          | 420 / 420 (100%)  | Wallet-detail-derived FOR side count (any wallet, not just HC_BASE)  |
+| wd agCount           | 242 / 420 (58%)   | Wallet-detail-derived AGAINST side count                             |
+| wd forAvgSize        | 420 / 420 (100%)  | Avg sizeRatio of FOR-side wallets (size vs their own avg)            |
+| wd agAvgSize         | 242 / 420 (58%)   | Avg sizeRatio of AGAINST-side wallets                                |
+| wd sizeMargin        | 242 / 420 (58%)   | forAvgSize − agAvgSize (signed sizing advantage)                     |
+| wd contribFor        | 420 / 420 (100%)  | Σ contribution (walletBase × convictionMult) on FOR side             |
+| wd contribAg         | 420 / 420 (100%)  | Σ contribution on AGAINST side                                       |
+| wd contribMargin     | 420 / 420 (100%)  | forContrib − agContrib (total weighted-money advantage)              |
+| wd maxForContrib     | 420 / 420 (100%)  | Max single-wallet contribution on FOR side                           |
+| wd maxShare          | 420 / 420 (100%)  | Largest single contribution / total (concentration risk)             |
 
 > 🟢 = feature is currently consumed by V12. All others are observed but unused.
 
@@ -567,88 +571,88 @@ Each row tests one feature in isolation. Sorted by **|r(feature, unit-return)|**
 
 | Rank | Feature              | N   | V12? | r(won)    | ρ(won)    | r(unit-ret) | ρ(unit-ret) | AUC    |
 |------|----------------------|-----|------|-----------|-----------|-------------|-------------|--------|
-|    1 | countMargin          | 166 |      |    -0.110 |    -0.030 |      -0.132 |      -0.080 |  0.448 |
-|    2 | wd forCount          | 404 |      |    -0.127 |    -0.073 |      -0.120 |      -0.090 |  0.445 |
-|    3 | provenFor            | 404 |      |    -0.119 |    -0.093 |      -0.118 |      -0.117 |  0.438 |
-|    4 | V12 forCount         | 166 |  🟢  |    -0.105 |    +0.115 |      -0.117 |      +0.019 |  0.492 |
-|    5 | wd contribFor        | 404 |      |    -0.123 |    -0.185 |      -0.111 |      -0.126 |  0.461 |
-|    6 | provenTotal          | 404 |      |    -0.108 |    -0.043 |      -0.104 |      -0.077 |  0.446 |
-|    7 | agsV12               | 166 |  🟢  |    +0.103 |    +0.092 |      +0.101 |      +0.073 |  0.546 |
-|    8 | V12 agMean           | 166 |  🟢  |    -0.094 |    +0.272 |      -0.100 |      +0.051 |  0.515 |
-|    9 | provenMargin         | 404 |      |    -0.086 |    -0.129 |      -0.092 |      -0.116 |  0.455 |
-|   10 | qMargin              | 166 |  🟢  |    +0.110 |    +0.113 |      +0.091 |      +0.038 |  0.559 |
-|   11 | wd contribMargin     | 404 |      |    -0.090 |    -0.261 |      -0.087 |      -0.160 |  0.451 |
-|   12 | wd maxShare          | 404 |      |    +0.076 |    +0.057 |      +0.066 |      +0.054 |  0.555 |
-|   13 | V12 forMean          | 166 |  🟢  |    +0.084 |    +0.078 |      +0.065 |      +0.002 |  0.538 |
-|   14 | hcMargin             | 404 |      |    -0.036 |    +0.049 |      -0.061 |      -0.023 |  0.502 |
-|   15 | wd contribAg         | 404 |      |    -0.071 |    +0.120 |      -0.058 |      +0.060 |  0.492 |
-|   16 | provenAg             | 404 |      |    -0.062 |    +0.183 |      -0.055 |      +0.080 |  0.481 |
-|   17 | wd forAvgSize        | 404 |      |    -0.025 |    -0.084 |      -0.050 |      -0.099 |  0.517 |
-|   18 | wd sizeMargin        | 232 |      |    -0.011 |    -0.131 |      -0.048 |      -0.124 |  0.500 |
-|   19 | ags (v11)            | 404 |      |    -0.017 |    -0.261 |      -0.042 |      -0.207 |  0.460 |
-|   20 | wd agCount           | 232 |      |    -0.050 |    +0.265 |      -0.038 |      +0.123 |  0.494 |
-|   21 | wd agAvgSize         | 232 |      |    -0.058 |    -0.022 |      -0.031 |      -0.018 |  0.474 |
-|   22 | wd maxForContrib     | 404 |      |    -0.028 |    -0.117 |      -0.023 |      -0.067 |  0.506 |
-|   23 | peakStars            | 404 |      |    -0.006 |    +0.105 |      -0.021 |      -0.011 |  0.487 |
-|   24 | V12 agCount          | 166 |  🟢  |    -0.001 |    +0.156 |      +0.011 |      +0.100 |  0.532 |
-|   25 | lockPinnProb         | 400 |      |    +0.115 |    +0.124 |      +0.008 |      -0.137 |  0.556 |
-|   26 | clv                  | 399 |      |    +0.041 |    +0.040 |      +0.004 |      +0.065 |  0.552 |
+|    1 | wd forCount          | 420 |      |    -0.122 |    -0.066 |      -0.117 |      -0.091 |  0.448 |
+|    2 | provenFor            | 420 |      |    -0.113 |    -0.078 |      -0.114 |      -0.115 |  0.444 |
+|    3 | qMargin              | 182 |  🟢  |    +0.119 |    +0.053 |      +0.112 |      +0.043 |  0.553 |
+|    4 | agsV12               | 182 |  🟢  |    +0.109 |    +0.064 |      +0.110 |      +0.081 |  0.550 |
+|    5 | V12 forCount         | 182 |  🟢  |    -0.096 |    +0.126 |      -0.108 |      +0.010 |  0.499 |
+|    6 | countMargin          | 182 |      |    -0.081 |    +0.017 |      -0.107 |      -0.074 |  0.467 |
+|    7 | V12 agMean           | 182 |  🟢  |    -0.101 |    +0.280 |      -0.106 |      +0.052 |  0.498 |
+|    8 | wd contribFor        | 420 |      |    -0.114 |    -0.169 |      -0.104 |      -0.121 |  0.468 |
+|    9 | provenTotal          | 420 |      |    -0.107 |    -0.038 |      -0.103 |      -0.076 |  0.447 |
+|   10 | V12 forMean          | 182 |  🟢  |    +0.092 |    +0.015 |      +0.085 |      +0.008 |  0.533 |
+|   11 | provenMargin         | 420 |      |    -0.074 |    -0.109 |      -0.082 |      -0.111 |  0.461 |
+|   12 | wd maxShare          | 420 |      |    +0.082 |    +0.059 |      +0.072 |      +0.055 |  0.560 |
+|   13 | wd contribMargin     | 420 |      |    -0.071 |    -0.230 |      -0.070 |      -0.151 |  0.464 |
+|   14 | wd contribAg         | 420 |      |    -0.079 |    +0.111 |      -0.066 |      +0.058 |  0.480 |
+|   15 | hcMargin             | 420 |      |    -0.039 |    +0.049 |      -0.062 |      -0.022 |  0.499 |
+|   16 | provenAg             | 420 |      |    -0.067 |    +0.175 |      -0.059 |      +0.078 |  0.474 |
+|   17 | wd forAvgSize        | 420 |      |    -0.022 |    -0.081 |      -0.046 |      -0.090 |  0.521 |
+|   18 | wd agAvgSize         | 242 |      |    -0.064 |    -0.035 |      -0.038 |      -0.023 |  0.479 |
+|   19 | ags (v11)            | 420 |      |    -0.012 |    -0.228 |      -0.037 |      -0.192 |  0.471 |
+|   20 | wd agCount           | 242 |      |    -0.046 |    +0.250 |      -0.035 |      +0.118 |  0.503 |
+|   21 | wd sizeMargin        | 242 |      |    +0.006 |    -0.108 |      -0.030 |      -0.107 |  0.511 |
+|   22 | lockPinnProb         | 416 |      |    +0.123 |    +0.128 |      +0.015 |      -0.136 |  0.562 |
+|   23 | wd maxForContrib     | 420 |      |    -0.017 |    -0.102 |      -0.013 |      -0.058 |  0.514 |
+|   24 | peakStars            | 420 |      |    -0.001 |    +0.104 |      -0.013 |      -0.003 |  0.491 |
+|   25 | V12 agCount          | 182 |  🟢  |    -0.021 |    +0.115 |      -0.005 |      +0.094 |  0.512 |
+|   26 | clv                  | 415 |      |    +0.033 |    +0.027 |      -0.004 |      +0.053 |  0.543 |
 
-> **Top 3 univariate features by PnL correlation:** `countMargin` (r = -0.132), `wd forCount` (r = -0.120), `provenFor` (r = -0.118).
+> **Top 3 univariate features by PnL correlation:** `wd forCount` (r = -0.117), `provenFor` (r = -0.114), `qMargin` (r = +0.112).
 
-> 🟡 **Highest-ranked feature NOT used by V12:** `countMargin` — r(unit-ret) = -0.132, AUC = 0.448. If this stays at the top of the table after another month of picks, V12 should be revised to incorporate it.
+> 🟡 **Highest-ranked feature NOT used by V12:** `wd forCount` — r(unit-ret) = -0.117, AUC = 0.448. If this stays at the top of the table after another month of picks, V12 should be revised to incorporate it.
 
 ### 17C — Tercile-bucket ROI for the top 5 features
 
 Splits each feature into thirds (low / mid / high) and shows realised ROI in each bucket. If the feature is genuinely impactful, you should see a **monotonic ROI gradient** (high bucket > mid > low, or vice-versa). Flat or inverted bucket ROIs mean the correlation is noise.
 
-#### `countMargin` · r(unit-ret) = -0.132 · AUC = 0.448
+#### `wd forCount` · r(unit-ret) = -0.117 · AUC = 0.448
 
 | Bucket            | range                    | N   | W-L     | Win %   | ROI       |
 |-------------------|--------------------------|-----|---------|---------|-----------|
-| LOW (≤ p33)       | -1.000 … -2.000          |  78 | 46-32   |   59.0% |     +6.6% |
-| MID (p33–p67)     | 1.000 … 1.000            |  38 | 16-22   |   42.1% |     -8.4% |
-| HIGH (> p67)      | 3.000 … 2.000            |  50 | 28-22   |   56.0% |     +2.4% |
-
-> 🟡 non-monotonic across buckets — correlation may be partially noise
-
-#### `wd forCount` · r(unit-ret) = -0.120 · AUC = 0.445
-
-| Bucket            | range                    | N   | W-L     | Win %   | ROI       |
-|-------------------|--------------------------|-----|---------|---------|-----------|
-| LOW (≤ p33)       | 1.000 … 1.000            | 138 | 79-59   |   57.2% |     +4.5% |
-| MID (p33–p67)     | 3.000 … 3.000            | 199 | 108-91  |   54.3% |     +0.5% |
-| HIGH (> p67)      | 4.000 … 4.000            |  67 | 29-38   |   43.3% |    -10.4% |
+| LOW (≤ p33)       | 1.000 … 1.000            | 144 | 82-62   |   56.9% |     +4.3% |
+| MID (p33–p67)     | 2.000 … 2.000            | 136 | 77-59   |   56.6% |     +2.7% |
+| HIGH (> p67)      | 4.000 … 3.000            | 140 | 66-74   |   47.1% |     -6.2% |
 
 > 🔴 strictly monotone DOWN (higher feature ⇒ lower ROI — feature is INVERSE)
 
-#### `provenFor` · r(unit-ret) = -0.118 · AUC = 0.438
+#### `provenFor` · r(unit-ret) = -0.114 · AUC = 0.444
 
 | Bucket            | range                    | N   | W-L     | Win %   | ROI       |
 |-------------------|--------------------------|-----|---------|---------|-----------|
-| LOW (≤ p33)       | 1.000 … 1.000            | 156 | 89-67   |   57.1% |     +4.3% |
-| MID (p33–p67)     | 2.000 … 2.000            | 123 | 74-49   |   60.2% |     +6.4% |
-| HIGH (> p67)      | 10.000 … 3.000           | 125 | 53-72   |   42.4% |     -9.8% |
+| LOW (≤ p33)       | 1.000 … 1.000            | 161 | 91-70   |   56.5% |     +3.9% |
+| MID (p33–p67)     | 2.000 … 2.000            | 131 | 79-52   |   60.3% |     +6.3% |
+| HIGH (> p67)      | 10.000 … 3.000           | 128 | 55-73   |   43.0% |     -9.5% |
 
 > 🟡 non-monotonic across buckets — correlation may be partially noise
 
-#### `V12 forCount` · r(unit-ret) = -0.117 · AUC = 0.492
+#### `qMargin` · r(unit-ret) = +0.112 · AUC = 0.553
 
 | Bucket            | range                    | N   | W-L     | Win %   | ROI       |
 |-------------------|--------------------------|-----|---------|---------|-----------|
-| LOW (≤ p33)       | 1.000 … 1.000            |  81 | 41-40   |   50.6% |     -0.3% |
-| MID (p33–p67)     | 2.000 … 2.000            |  40 | 29-11   |   72.5% |    +15.6% |
-| HIGH (> p67)      | 3.000 … 4.000            |  45 | 20-25   |   44.4% |    -15.0% |
+| LOW (≤ p33)       | 8.379 … 10.944           |  61 | 32-29   |   52.5% |     +2.7% |
+| MID (p33–p67)     | 19.950 … 17.175          |  60 | 32-28   |   53.3% |     +0.1% |
+| HIGH (> p67)      | 46.556 … 34.368          |  61 | 35-26   |   57.4% |     +2.7% |
 
 > 🟡 non-monotonic across buckets — correlation may be partially noise
 
-#### `wd contribFor` · r(unit-ret) = -0.111 · AUC = 0.461
+#### `agsV12` · r(unit-ret) = +0.110 · AUC = 0.550
 
 | Bucket            | range                    | N   | W-L     | Win %   | ROI       |
 |-------------------|--------------------------|-----|---------|---------|-----------|
-| LOW (≤ p33)       | 49.800 … 26.300          | 135 | 70-65   |   51.9% |     -0.9% |
-| MID (p33–p67)     | 89.000 … 72.300          | 134 | 88-46   |   65.7% |     +9.7% |
-| HIGH (> p67)      | 212.200 … 218.500        | 135 | 58-77   |   43.0% |     -9.1% |
+| LOW (≤ p33)       | 0.944 … 0.938            |  61 | 34-27   |   55.7% |    +15.1% |
+| MID (p33–p67)     | 0.974 … 0.972            |  60 | 28-32   |   46.7% |     -6.8% |
+| HIGH (> p67)      | 0.976 … 0.996            |  61 | 37-24   |   60.7% |     +3.9% |
+
+> 🟡 non-monotonic across buckets — correlation may be partially noise
+
+#### `V12 forCount` · r(unit-ret) = -0.108 · AUC = 0.499
+
+| Bucket            | range                    | N   | W-L     | Win %   | ROI       |
+|-------------------|--------------------------|-----|---------|---------|-----------|
+| LOW (≤ p33)       | 1.000 … 1.000            |  87 | 44-43   |   50.6% |     -0.3% |
+| MID (p33–p67)     | 2.000 … 2.000            |  47 | 33-14   |   70.2% |    +14.2% |
+| HIGH (> p67)      | 3.000 … 3.000            |  48 | 22-26   |   45.8% |    -13.7% |
 
 > 🟡 non-monotonic across buckets — correlation may be partially noise
 
@@ -656,36 +660,36 @@ Splits each feature into thirds (low / mid / high) and shows realised ROI in eac
 
 Before running multivariate OLS, check whether the top features are measuring redundant things. **|r| > 0.85** is a red flag — the regression will inflate standard errors and β estimates become unstable. In that case, drop one of the pair before interpreting §17E.
 
-| feat \ feat | countMargin    | wd forCount    | provenFor      | V12 forCount   | wd contribFor  | provenTotal    | agsV12         | V12 agMean     |
+| feat \ feat | wd forCount    | provenFor      | qMargin        | agsV12         | V12 forCount   | countMargin    | V12 agMean     | wd contribFor  |
 |-------------|----------------|----------------|----------------|----------------|----------------|----------------|----------------|----------------|
-| countMargin |  1.000         |         +0.627 |         +0.579 |         +0.648 |         +0.489 |         +0.280 |         +0.001 |         -0.018 |
-| wd forCount |         +0.627 |  1.000         |         +0.934 |         +0.988 |         +0.924 |         +0.851 |         -0.446 |         +0.541 |
-| provenFor   |         +0.579 |         +0.934 |  1.000         |         +0.920 |         +0.877 |         +0.912 |         -0.429 |         +0.539 |
-| V12 forCount |         +0.648 |         +0.988 |         +0.920 |  1.000         |         +0.906 |         +0.835 |         -0.435 |         +0.523 |
-| wd contribFor |         +0.489 |         +0.924 |         +0.877 |         +0.906 |  1.000         |         +0.840 |         -0.454 |         +0.632 |
-| provenTotal |         +0.280 |         +0.851 |         +0.912 |         +0.835 |         +0.840 |  1.000         |         -0.526 |         +0.673 |
-| agsV12      |         +0.001 |         -0.446 |         -0.429 |         -0.435 |         -0.454 |         -0.526 |  1.000         |         -0.782 |
-| V12 agMean  |         -0.018 |         +0.541 |         +0.539 |         +0.523 |         +0.632 |         +0.673 |         -0.782 |  1.000         |
+| wd forCount |  1.000         |         +0.932 |         -0.179 |         -0.447 |         +0.989 |         +0.626 |         +0.534 |         +0.922 |
+| provenFor   |         +0.932 |  1.000         |         -0.116 |         -0.430 |         +0.918 |         +0.574 |         +0.531 |         +0.874 |
+| qMargin     |         -0.179 |         -0.116 |  1.000         |         +0.189 |         -0.180 |         -0.314 |         +0.048 |         -0.022 |
+| agsV12      |         -0.447 |         -0.430 |         +0.189 |  1.000         |         -0.436 |         -0.002 |         -0.782 |         -0.450 |
+| V12 forCount |         +0.989 |         +0.918 |         -0.180 |         -0.436 |  1.000         |         +0.647 |         +0.517 |         +0.904 |
+| countMargin |         +0.626 |         +0.574 |         -0.314 |         -0.002 |         +0.647 |  1.000         |         -0.033 |         +0.488 |
+| V12 agMean  |         +0.534 |         +0.531 |         +0.048 |         -0.782 |         +0.517 |         -0.033 |  1.000         |         +0.623 |
+| wd contribFor |         +0.922 |         +0.874 |         -0.022 |         -0.450 |         +0.904 |         +0.488 |         +0.623 |  1.000         |
 
-> 🔴 **Strong collinearity detected:** `wd forCount` and `V12 forCount` have r = +0.988. They're measuring nearly the same thing. The multivariate β estimates below will split credit between them unreliably; treat the looser of the two as a noise channel.
+> 🔴 **Strong collinearity detected:** `wd forCount` and `V12 forCount` have r = +0.989. They're measuring nearly the same thing. The multivariate β estimates below will split credit between them unreliably; treat the looser of the two as a noise channel.
 
 ### 17E — Multivariate OLS: standardized β for top 8 features
 
 Regress **per-pick unit-return** on the z-scored top features simultaneously. The standardized **β** tells you "how much does a 1-σ change in this feature shift per-unit PnL, holding the others constant." Compare |β| across features to rank impact when controlling for the others — this is the multivariate sibling of the univariate r column above.
 
-**Model fit:** N = 166 picks · features = 8 (+ intercept) · multiple R² = **0.0321** · adjusted R² = **-0.0237** · residual sd = 0.983
+**Model fit:** N = 182 picks · features = 8 (+ intercept) · multiple R² = **0.0333** · adjusted R² = **-0.0173** · residual sd = 0.976
 
 | Rank | Feature              | V12? | β (std)    | SE       | t-stat   | |β| rank |
 |------|----------------------|------|------------|----------|----------|----------|
-|    1 | countMargin          |     |    -0.2158 |   0.1698 | -1.27        |        1 |
-|    2 | wd forCount          |     |    +0.1390 |   0.6040 | +0.23        |        2 |
-|    3 | provenTotal          |     |    -0.0868 |   0.3090 | -0.28        |        3 |
-|    4 | V12 agMean           |  🟢 |    -0.0868 |   0.1596 | -0.54        |        4 |
-|    5 | agsV12               |  🟢 |    +0.0624 |   0.1282 | +0.49        |        5 |
-|    6 | provenFor            |     |    +0.0373 |   0.3494 | +0.11        |        6 |
-|    7 | wd contribFor        |     |    -0.0119 |   0.2309 | -0.05        |        7 |
-|    8 | V12 forCount         |  🟢 |    +0.0103 |   0.5341 | +0.02        |        8 |
-| —    | (intercept)          |     |    +0.0368 |   0.0763 |    +0.48 | —        |
+|    1 | wd forCount          |     |    +0.1666 |   0.5826 | +0.29        |        1 |
+|    2 | V12 agMean           |  🟢 |    -0.1423 |   0.1508 | -0.94        |        2 |
+|    3 | countMargin          |     |    -0.1208 |   0.1183 | -1.02        |        3 |
+|    4 | qMargin              |  🟢 |    +0.0871 |   0.0859 | +1.01        |        4 |
+|    5 | V12 forCount         |  🟢 |    -0.0745 |   0.5021 | -0.15        |        5 |
+|    6 | provenFor            |     |    -0.0491 |   0.2031 | -0.24        |        6 |
+|    7 | wd contribFor        |     |    +0.0235 |   0.2217 | +0.11        |        7 |
+|    8 | agsV12               |  🟢 |    +0.0097 |   0.1275 | +0.08        |        8 |
+| —    | (intercept)          |     |    +0.0369 |   0.0723 |    +0.51 | —        |
 
 > **|t-stat| ≥ 2** ≈ p < 0.05 (roughly significant). `(~sig)` flags |t| ≥ 1.5 — suggestive but not conclusive at our sample size. A feature with a large univariate r but small multivariate β is being **explained away** by other features in the panel.
 
@@ -693,23 +697,24 @@ Regress **per-pick unit-return** on the z-scored top features simultaneously. Th
 
 Cross-reference: of the top 8 features by multivariate |β|, which does V12 actually use, and which does it ignore?
 
-- **3 / 8** top multivariate features are inputs to V12 (38%).
-- V12 consumes: `V12 agMean` (β = -0.087), `agsV12` (β = +0.062), `V12 forCount` (β = +0.010)
-- V12 IGNORES: `countMargin` (β = -0.216, t = -1.27), `wd forCount` (β = +0.139, t = +0.23), `provenTotal` (β = -0.087, t = -0.28), `provenFor` (β = +0.037, t = +0.11), `wd contribFor` (β = -0.012, t = -0.05)
+- **4 / 8** top multivariate features are inputs to V12 (50%).
+- V12 consumes: `V12 agMean` (β = -0.142), `qMargin` (β = +0.087), `V12 forCount` (β = -0.074), `agsV12` (β = +0.010)
+- V12 IGNORES: `wd forCount` (β = +0.167, t = +0.29), `countMargin` (β = -0.121, t = -1.02), `provenFor` (β = -0.049, t = -0.24), `wd contribFor` (β = +0.024, t = +0.11)
 
 | Model                              | AUC    | reads as                                                         |
 |------------------------------------|--------|------------------------------------------------------------------|
-| V12 score alone                    |  0.546 | how well V12's single number sorts winners from losers           |
-| Multivariate OLS on top 8 features |  0.566 | best AUC achievable by linearly combining the top features         |
+| V12 score alone                    |  0.550 | how well V12's single number sorts winners from losers           |
+| Multivariate OLS on top 8 features |  0.571 | best AUC achievable by linearly combining the top features         |
 
 > ⚠ **Honesty caveat.** The multivariate AUC is **in-sample** — the model was fit on the same picks it's being scored against. Expect the true out-of-sample AUC to be lower by ~0.03–0.08, depending on how much of the gap is overfit. The point of this row is not to declare V12 "worse" but to flag the **maximum upside** still on the table; if even a haircutted out-of-sample version of the multivariate beats V12 by a clear margin, the feature set should be reconsidered.
 
-> 🟢 **AUC gap = +0.021.** Modest but real — extra features marginally improve discrimination. Worth tracking; revisit when sample doubles.
+> 🟢 **AUC gap = +0.022.** Modest but real — extra features marginally improve discrimination. Worth tracking; revisit when sample doubles.
 
 ### 17G — Actionable recommendations
 
-- Sample size is currently 404 live picks — statistically meaningful but tight. Treat single-feature recommendations as provisional until N ≥ 500. The rankings will firm up as the daily cron accumulates more graded picks.
-- Adjusted R² of -0.0237 confirms that **sports picks are dominated by variance** — no realistic linear combination of stamped features will explain more than a few percent of outcome variance. The value of V12 (or any future model) lies in capturing the small, persistent signal at the top of the score distribution, not in high R² explanation.
+- Inputs V12 currently uses but that show weak multivariate signal: `agsV12`. They may be contributing noise rather than information.
+- Sample size is currently 420 live picks — statistically meaningful but tight. Treat single-feature recommendations as provisional until N ≥ 500. The rankings will firm up as the daily cron accumulates more graded picks.
+- Adjusted R² of -0.0173 confirms that **sports picks are dominated by variance** — no realistic linear combination of stamped features will explain more than a few percent of outcome variance. The value of V12 (or any future model) lies in capturing the small, persistent signal at the top of the score distribution, not in high R² explanation.
 
 ---
 
