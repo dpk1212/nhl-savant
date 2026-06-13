@@ -12099,7 +12099,16 @@ export default function SharpFlow() {
                               } catch { return null; }
                             })();
                             return (
-                              <div className="sf-card sf-glass" style={{
+                              <div
+                                className="sf-glass sf-sheen sf-grain sf-tilt"
+                                onMouseMove={isMobile ? undefined : (e) => {
+                                  const r = e.currentTarget.getBoundingClientRect();
+                                  const px = (e.clientX - r.left) / r.width - 0.5;
+                                  const py = (e.clientY - r.top) / r.height - 0.5;
+                                  e.currentTarget.style.transform = `perspective(1300px) rotateX(${(-py * 3.2).toFixed(2)}deg) rotateY(${(px * 4.2).toFixed(2)}deg)`;
+                                }}
+                                onMouseLeave={isMobile ? undefined : (e) => { e.currentTarget.style.transform = 'perspective(1300px) rotateX(0deg) rotateY(0deg)'; }}
+                                style={{
                                 position: 'relative', overflow: 'hidden',
                                 padding: isMobile ? '1.1rem 1rem 0.9rem' : '1.4rem 1.5rem 1.1rem',
                                 borderRadius: '16px', marginBottom: '0.875rem',
@@ -12107,9 +12116,11 @@ export default function SharpFlow() {
                                   ? `linear-gradient(150deg, rgba(16,185,129,0.10) 0%, rgba(255,255,255,0.015) 30%, rgba(15,23,42,0.35) 100%)`
                                   : `linear-gradient(150deg, rgba(239,68,68,0.10) 0%, rgba(255,255,255,0.015) 30%, rgba(15,23,42,0.35) 100%)`,
                                 border: `1px solid ${totalProfitLive >= 0 ? 'rgba(16,185,129,0.28)' : 'rgba(239,68,68,0.28)'}`,
+                                // dual-light elevation: cool ambient depth below + warm
+                                // P&L-tinted key glow + crisp inner top highlight.
                                 boxShadow: totalProfitLive >= 0
-                                  ? '0 16px 44px -16px rgba(16,185,129,0.45), inset 0 1px 0 rgba(255,255,255,0.05)'
-                                  : '0 16px 44px -16px rgba(239,68,68,0.45), inset 0 1px 0 rgba(255,255,255,0.05)',
+                                  ? '0 24px 60px -20px rgba(16,185,129,0.40), 0 8px 22px -10px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06)'
+                                  : '0 24px 60px -20px rgba(239,68,68,0.40), 0 8px 22px -10px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06)',
                               }}>
                                 {/* eyebrow: label + LIVE + sample */}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.35rem' }}>
@@ -12139,6 +12150,7 @@ export default function SharpFlow() {
                                       fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
                                       color: totalProfitLive >= 0 ? B.green : B.red,
                                       backgroundImage: profitGradient, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+                                      filter: totalProfitLive >= 0 ? 'drop-shadow(0 3px 14px rgba(16,185,129,0.45))' : 'drop-shadow(0 3px 14px rgba(239,68,68,0.42))',
                                     }} />
                                   )}
                                 </div>
@@ -12160,9 +12172,13 @@ export default function SharpFlow() {
                                   )}
                                 </div>
 
-                                {/* equity chart — hero centerpiece */}
+                                {/* equity chart — hero centerpiece (3D depth stage) */}
                                 {curve.length >= 2 ? (
-                                  <div style={{ marginTop: '0.9rem', marginLeft: isMobile ? '-0.5rem' : '-0.75rem', marginRight: isMobile ? '-0.5rem' : '-0.75rem' }}>
+                                  <div style={{ position: 'relative', marginTop: '0.9rem', marginLeft: isMobile ? '-0.5rem' : '-0.75rem', marginRight: isMobile ? '-0.5rem' : '-0.75rem' }}>
+                                    <div className="sf-grid-floor" aria-hidden="true" style={{ zIndex: 0 }} />
+                                    <div className="sf-chart-aurora" aria-hidden="true" style={{ zIndex: 0, '--sf-glow': isProfit ? 'rgba(16,185,129,0.22)' : 'rgba(239,68,68,0.20)' }} />
+                                    <div className="sf-scanline" aria-hidden="true" style={{ zIndex: 2, '--sf-scan': isProfit ? 'rgba(52,211,153,0.16)' : 'rgba(248,113,113,0.15)' }} />
+                                    <div style={{ position: 'relative', zIndex: 1 }}>
                                     <ResponsiveContainer width="100%" height={isMobile ? 170 : 230}>
                                       <AreaChart data={curve} margin={{ top: 10, right: 14, left: 6, bottom: 0 }}>
                                         <defs>
@@ -12219,6 +12235,7 @@ export default function SharpFlow() {
                                         <Line type="monotone" dataKey="cum" stroke="url(#agsuStrokeSplit)" strokeWidth={2.6} strokeLinecap="round" filter="url(#agsuLineGlow)" isAnimationActive={true} animationDuration={950} dot={renderEndDot} activeDot={{ r: 4.5, fill: lastColor, stroke: B.bg, strokeWidth: 2 }} />
                                       </AreaChart>
                                     </ResponsiveContainer>
+                                    </div>
                                   </div>
                                 ) : (
                                   <div style={{ marginTop: '0.9rem', padding: '1.5rem 1rem', textAlign: 'center', ...T.micro, color: B.textMuted, fontStyle: 'italic', fontSize: '0.62rem' }}>
