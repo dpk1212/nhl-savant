@@ -12076,16 +12076,13 @@ export default function SharpFlow() {
                             const lastCum = curve.length ? curve[curve.length - 1].cum : 0;
                             const lastPos = lastCum >= 0;
                             const lastColor = lastPos ? B.green : B.red;
-                            // glowing, pulsing marker pinned to the most recent equity point
+                            // calm current-value marker pinned to the most recent point
                             const renderEndDot = (dp) => {
                               if (dp == null || dp.index !== curve.length - 1 || dp.cx == null || dp.cy == null) return null;
                               return (
                                 <g key="eq-end-dot" style={{ pointerEvents: 'none' }}>
-                                  <circle cx={dp.cx} cy={dp.cy} r={7} fill={lastColor} opacity={0.22}>
-                                    <animate attributeName="r" values="6;13;6" dur="2.4s" repeatCount="indefinite" />
-                                    <animate attributeName="opacity" values="0.30;0.04;0.30" dur="2.4s" repeatCount="indefinite" />
-                                  </circle>
-                                  <circle cx={dp.cx} cy={dp.cy} r={4.2} fill={lastColor} stroke={B.bg} strokeWidth={2} />
+                                  <circle cx={dp.cx} cy={dp.cy} r={6} fill="none" stroke={lastColor} strokeOpacity={0.25} strokeWidth={1.5} />
+                                  <circle cx={dp.cx} cy={dp.cy} r={3.2} fill={lastColor} stroke={B.bg} strokeWidth={1.5} />
                                 </g>
                               );
                             };
@@ -12100,27 +12097,19 @@ export default function SharpFlow() {
                             })();
                             return (
                               <div
-                                className="sf-glass sf-sheen sf-grain sf-tilt"
-                                onMouseMove={isMobile ? undefined : (e) => {
-                                  const r = e.currentTarget.getBoundingClientRect();
-                                  const px = (e.clientX - r.left) / r.width - 0.5;
-                                  const py = (e.clientY - r.top) / r.height - 0.5;
-                                  e.currentTarget.style.transform = `perspective(1300px) rotateX(${(-py * 3.2).toFixed(2)}deg) rotateY(${(px * 4.2).toFixed(2)}deg)`;
-                                }}
-                                onMouseLeave={isMobile ? undefined : (e) => { e.currentTarget.style.transform = 'perspective(1300px) rotateX(0deg) rotateY(0deg)'; }}
+                                className="sf-glass"
                                 style={{
                                 position: 'relative', overflow: 'hidden',
-                                padding: isMobile ? '1.1rem 1rem 0.9rem' : '1.4rem 1.5rem 1.1rem',
+                                padding: isMobile ? '1.15rem 1.1rem 1rem' : '1.5rem 1.6rem 1.25rem',
                                 borderRadius: '16px', marginBottom: '0.875rem',
-                                background: totalProfitLive >= 0
-                                  ? `linear-gradient(150deg, rgba(16,185,129,0.10) 0%, rgba(255,255,255,0.015) 30%, rgba(15,23,42,0.35) 100%)`
-                                  : `linear-gradient(150deg, rgba(239,68,68,0.10) 0%, rgba(255,255,255,0.015) 30%, rgba(15,23,42,0.35) 100%)`,
-                                border: `1px solid ${totalProfitLive >= 0 ? 'rgba(16,185,129,0.28)' : 'rgba(239,68,68,0.28)'}`,
-                                // dual-light elevation: cool ambient depth below + warm
-                                // P&L-tinted key glow + crisp inner top highlight.
-                                boxShadow: totalProfitLive >= 0
-                                  ? '0 24px 60px -20px rgba(16,185,129,0.40), 0 8px 22px -10px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06)'
-                                  : '0 24px 60px -20px rgba(239,68,68,0.40), 0 8px 22px -10px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06)',
+                                // Calm layered surface: a whisper of top-light + a near-
+                                // neutral elevated plane. No color wash — depth comes from
+                                // the surface gradient + soft shadow, not a glow.
+                                background: 'linear-gradient(180deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.008) 16%, rgba(255,255,255,0) 48%), linear-gradient(180deg, rgba(30,36,49,0.72) 0%, rgba(18,22,31,0.78) 100%)',
+                                border: '1px solid rgba(255,255,255,0.08)',
+                                // Soft, real elevation: crisp top inner highlight + a large
+                                // diffuse ambient shadow + a tighter contact shadow.
+                                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.4), 0 24px 56px -28px rgba(0,0,0,0.85)',
                               }}>
                                 {/* eyebrow: label + LIVE + sample */}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.35rem' }}>
@@ -12150,7 +12139,6 @@ export default function SharpFlow() {
                                       fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
                                       color: totalProfitLive >= 0 ? B.green : B.red,
                                       backgroundImage: profitGradient, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-                                      filter: totalProfitLive >= 0 ? 'drop-shadow(0 3px 14px rgba(16,185,129,0.45))' : 'drop-shadow(0 3px 14px rgba(239,68,68,0.42))',
                                     }} />
                                   )}
                                 </div>
@@ -12172,42 +12160,31 @@ export default function SharpFlow() {
                                   )}
                                 </div>
 
-                                {/* equity chart — hero centerpiece (3D depth stage) */}
+                                {/* equity chart — calm, premium analytics centerpiece */}
                                 {curve.length >= 2 ? (
-                                  <div style={{ position: 'relative', marginTop: '0.9rem', marginLeft: isMobile ? '-0.5rem' : '-0.75rem', marginRight: isMobile ? '-0.5rem' : '-0.75rem' }}>
-                                    <div className="sf-grid-floor" aria-hidden="true" style={{ zIndex: 0 }} />
-                                    <div className="sf-chart-aurora" aria-hidden="true" style={{ zIndex: 0, '--sf-glow': isProfit ? 'rgba(16,185,129,0.22)' : 'rgba(239,68,68,0.20)' }} />
-                                    <div className="sf-scanline" aria-hidden="true" style={{ zIndex: 2, '--sf-scan': isProfit ? 'rgba(52,211,153,0.16)' : 'rgba(248,113,113,0.15)' }} />
-                                    <div style={{ position: 'relative', zIndex: 1 }}>
-                                    <ResponsiveContainer width="100%" height={isMobile ? 170 : 230}>
-                                      <AreaChart data={curve} margin={{ top: 10, right: 14, left: 6, bottom: 0 }}>
+                                  <div style={{ marginTop: '1rem', marginLeft: isMobile ? '-0.4rem' : '-0.6rem', marginRight: isMobile ? '-0.4rem' : '-0.6rem' }}>
+                                    <ResponsiveContainer width="100%" height={isMobile ? 168 : 226}>
+                                      <AreaChart data={curve} margin={{ top: 12, right: 10, left: 6, bottom: 0 }}>
                                         <defs>
-                                          {/* split fill — green above the zero line, red below, each fading toward it */}
+                                          {/* split fill — green above the zero line, red below */}
                                           <linearGradient id="agsuFillSplit" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="0" stopColor={B.green} stopOpacity={0.42} />
-                                            <stop offset={Math.max(0, gradOff - 0.0001)} stopColor={B.green} stopOpacity={0.02} />
-                                            <stop offset={gradOff} stopColor={B.red} stopOpacity={0.02} />
-                                            <stop offset="1" stopColor={B.red} stopOpacity={0.34} />
+                                            <stop offset="0" stopColor={B.green} stopOpacity={0.16} />
+                                            <stop offset={Math.max(0, gradOff - 0.0001)} stopColor={B.green} stopOpacity={0.01} />
+                                            <stop offset={gradOff} stopColor={B.red} stopOpacity={0.01} />
+                                            <stop offset="1" stopColor={B.red} stopOpacity={0.15} />
                                           </linearGradient>
                                           {/* split stroke — line color flips at the zero crossing */}
                                           <linearGradient id="agsuStrokeSplit" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="0" stopColor="#34D399" />
+                                            <stop offset="0" stopColor={B.green} />
                                             <stop offset={Math.max(0, gradOff - 0.0001)} stopColor={B.green} />
                                             <stop offset={gradOff} stopColor={B.red} />
-                                            <stop offset="1" stopColor="#F87171" />
+                                            <stop offset="1" stopColor={B.red} />
                                           </linearGradient>
-                                          {/* neon glow for the equity line */}
-                                          <filter id="agsuLineGlow" x="-8%" y="-40%" width="116%" height="180%">
-                                            <feGaussianBlur in="SourceGraphic" stdDeviation="2.6" result="blur" />
-                                            <feMerge>
-                                              <feMergeNode in="blur" />
-                                              <feMergeNode in="SourceGraphic" />
-                                            </feMerge>
-                                          </filter>
                                         </defs>
+                                        <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.04)" />
                                         <XAxis dataKey="dateMs" type="number" scale="time" domain={['dataMin', 'dataMax']} tick={{ fill: B.textMuted, fontSize: 10 }} axisLine={false} tickLine={false} minTickGap={isMobile ? 30 : 50} tickFormatter={(ms) => { try { return new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); } catch { return ''; } }} />
                                         <YAxis hide domain={[Math.floor(minCum) - 1, Math.ceil(maxCum) + 1]} />
-                                        <ReferenceLine y={0} stroke="rgba(255,255,255,0.14)" strokeDasharray="2 4" />
+                                        <ReferenceLine y={0} stroke="rgba(255,255,255,0.10)" strokeDasharray="4 4" />
                                         <Tooltip cursor={{ stroke: 'rgba(255,255,255,0.18)', strokeWidth: 1 }} content={({ active, payload }) => {
                                           if (!active || !payload?.[0]) return null;
                                           const d = payload[0].payload;
@@ -12231,11 +12208,9 @@ export default function SharpFlow() {
                                             </div>
                                           );
                                         }} />
-                                        <Area type="monotone" dataKey="cum" baseValue={0} stroke="none" fill="url(#agsuFillSplit)" isAnimationActive={true} animationDuration={900} dot={false} activeDot={false} />
-                                        <Line type="monotone" dataKey="cum" stroke="url(#agsuStrokeSplit)" strokeWidth={2.6} strokeLinecap="round" filter="url(#agsuLineGlow)" isAnimationActive={true} animationDuration={950} dot={renderEndDot} activeDot={{ r: 4.5, fill: lastColor, stroke: B.bg, strokeWidth: 2 }} />
+                                        <Area type="monotone" dataKey="cum" baseValue={0} stroke="url(#agsuStrokeSplit)" strokeWidth={2} fill="url(#agsuFillSplit)" isAnimationActive={true} animationDuration={850} dot={renderEndDot} activeDot={{ r: 4, fill: lastColor, stroke: B.bg, strokeWidth: 2 }} />
                                       </AreaChart>
                                     </ResponsiveContainer>
-                                    </div>
                                   </div>
                                 ) : (
                                   <div style={{ marginTop: '0.9rem', padding: '1.5rem 1rem', textAlign: 'center', ...T.micro, color: B.textMuted, fontStyle: 'italic', fontSize: '0.62rem' }}>
