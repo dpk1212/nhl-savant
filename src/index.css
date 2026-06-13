@@ -1205,6 +1205,13 @@ p {
 }
 .sf-chiprail::-webkit-scrollbar { display: none; }
 
+/* Collapsible mobile filter drawer. Native <details> toggle, custom
+   chevron that flips when open, no default disclosure triangle. */
+.sf-mfilters > summary { list-style: none; -webkit-tap-highlight-color: transparent; }
+.sf-mfilters > summary::-webkit-details-marker { display: none; }
+.sf-mfilters-chev { transition: transform 0.22s ease; }
+.sf-mfilters[open] .sf-mfilters-chev { transform: rotate(180deg); }
+
 @media (prefers-reduced-motion: reduce) {
   .sf-card, .sf-bar-left, .sf-bar-right, .sf-spark-halo, .sf-aurora,
   .sf-stagger > *, .sf-tape-track { animation: none; transition: none; }

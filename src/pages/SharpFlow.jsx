@@ -13668,6 +13668,77 @@ export default function SharpFlow() {
                       fontFeatureSettings: "'tnum'",
                       flexShrink: 0, whiteSpace: 'nowrap',
                     });
+                    const filterGroups = (
+                      <>
+                        <FilterGroup label="DAY">
+                          {[
+                            { id: 'today', label: 'Today' },
+                            { id: 'yesterday', label: 'Yesterday' },
+                          ].map(opt => (
+                            <button key={opt.id} onClick={() => setLockedDay(opt.id)} style={chipStyle(lockedDay === opt.id, B.green)}>{opt.label}</button>
+                          ))}
+                        </FilterGroup>
+                        <FilterGroup label="STATUS">
+                          {[
+                            { id: 'all', label: `All ${lockedArr.length}`, color: B.gold },
+                            { id: 'pending', label: `Pending ${pendingCount}`, color: B.gold },
+                            { id: 'won', label: `Won ${wonCount}`, color: B.green },
+                            { id: 'lost', label: `Lost ${lostCount}`, color: B.red },
+                          ].map(opt => (
+                            <button key={opt.id} onClick={() => setLockedStatusFilter(opt.id)} style={chipStyle(lockedStatusFilter === opt.id, opt.color)}>{opt.label}</button>
+                          ))}
+                        </FilterGroup>
+                        <FilterGroup label="SPORT">
+                          {[{ id: 'All', label: 'All', color: B.gold }, ...activeSports.map(s => ({ id: s, label: s, color: sportColorMap[s] || B.gold }))].map(opt => (
+                            <button key={opt.id} onClick={() => setLockedSportFilter(opt.id)} style={chipStyle(lockedSportFilter === opt.id, opt.color)}>
+                              {opt.label}{opt.id !== 'All' && sportCounts[opt.id] ? ` ${sportCounts[opt.id]}` : ''}
+                            </button>
+                          ))}
+                        </FilterGroup>
+                        <FilterGroup label="MARKET">
+                          {[
+                            { id: 'all', label: 'All', color: B.gold },
+                            { id: 'ml', label: 'ML', color: B.green },
+                            { id: 'spread', label: 'Spread', color: '#8B5CF6' },
+                            { id: 'total', label: 'Total', color: '#F59E0B' },
+                          ].map(opt => (
+                            <button key={opt.id} onClick={() => setLockedMarketFilter(opt.id)} style={chipStyle(lockedMarketFilter === opt.id, opt.color)}>{opt.label}</button>
+                          ))}
+                        </FilterGroup>
+                        <FilterGroup label="ORDER">
+                          {[
+                            { id: 'stars', label: '★ Rating' },
+                            { id: 'time', label: 'Game Time' },
+                          ].map(opt => (
+                            <button key={opt.id} onClick={() => setLockedSort(opt.id)} style={chipStyle(lockedSort === opt.id, B.gold)}>{opt.label}</button>
+                          ))}
+                        </FilterGroup>
+                        {(cancelledCount > 0 || mutedCount > 0) && (
+                          <FilterGroup label="HEALTH">
+                            {mutedCount > 0 && (
+                              <span style={{ ...T.micro, fontSize: '0.55rem', fontWeight: 600, color: '#F59E0B' }}>
+                                {mutedCount} weakening
+                              </span>
+                            )}
+                            {cancelledCount > 0 && (
+                              <button onClick={() => setShowCancelled(v => !v)} style={chipStyle(showCancelled, '#EF4444')}>
+                                {showCancelled ? 'Hide' : 'Show'} cancelled ({cancelledCount})
+                              </button>
+                            )}
+                          </FilterGroup>
+                        )}
+                      </>
+                    );
+                    // Compact active-selection summary for the collapsed mobile
+                    // drawer — only surfaces non-default picks so the closed bar
+                    // tells the user what's filtered without opening it.
+                    const summaryBits = [
+                      lockedDay === 'yesterday' ? 'Yesterday' : 'Today',
+                      lockedStatusFilter !== 'all' ? (lockedStatusFilter.charAt(0).toUpperCase() + lockedStatusFilter.slice(1)) : null,
+                      lockedSportFilter !== 'All' ? lockedSportFilter : null,
+                      lockedMarketFilter !== 'all' ? lockedMarketFilter.toUpperCase() : null,
+                      lockedSort === 'time' ? 'By time' : null,
+                    ].filter(Boolean);
                     return (
                       <>
                         {lockedArr.length > 0 && (
@@ -13695,75 +13766,42 @@ export default function SharpFlow() {
                             ))}
                           </div>
                         )}
-                        <div style={{
-                          display: 'flex',
-                          flexDirection: isMobile ? 'column' : 'row',
-                          flexWrap: isMobile ? 'nowrap' : 'wrap',
-                          alignItems: isMobile ? 'stretch' : 'center',
-                          gap: isMobile ? '0.55rem' : '0.45rem 1rem',
-                          padding: isMobile ? '0.65rem 0.7rem' : '0.5rem 0.65rem', borderRadius: '10px',
-                          background: 'rgba(255,255,255,0.02)',
-                          border: `1px solid ${B.borderSubtle}`,
-                          marginBottom: '0.6rem',
-                        }}>
-                          <FilterGroup label="DAY">
-                            {[
-                              { id: 'today', label: 'Today' },
-                              { id: 'yesterday', label: 'Yesterday' },
-                            ].map(opt => (
-                              <button key={opt.id} onClick={() => setLockedDay(opt.id)} style={chipStyle(lockedDay === opt.id, B.green)}>{opt.label}</button>
-                            ))}
-                          </FilterGroup>
-                          <FilterGroup label="STATUS">
-                            {[
-                              { id: 'all', label: `All ${lockedArr.length}`, color: B.gold },
-                              { id: 'pending', label: `Pending ${pendingCount}`, color: B.gold },
-                              { id: 'won', label: `Won ${wonCount}`, color: B.green },
-                              { id: 'lost', label: `Lost ${lostCount}`, color: B.red },
-                            ].map(opt => (
-                              <button key={opt.id} onClick={() => setLockedStatusFilter(opt.id)} style={chipStyle(lockedStatusFilter === opt.id, opt.color)}>{opt.label}</button>
-                            ))}
-                          </FilterGroup>
-                          <FilterGroup label="SPORT">
-                            {[{ id: 'All', label: 'All', color: B.gold }, ...activeSports.map(s => ({ id: s, label: s, color: sportColorMap[s] || B.gold }))].map(opt => (
-                              <button key={opt.id} onClick={() => setLockedSportFilter(opt.id)} style={chipStyle(lockedSportFilter === opt.id, opt.color)}>
-                                {opt.label}{opt.id !== 'All' && sportCounts[opt.id] ? ` ${sportCounts[opt.id]}` : ''}
-                              </button>
-                            ))}
-                          </FilterGroup>
-                          <FilterGroup label="MARKET">
-                            {[
-                              { id: 'all', label: 'All', color: B.gold },
-                              { id: 'ml', label: 'ML', color: B.green },
-                              { id: 'spread', label: 'Spread', color: '#8B5CF6' },
-                              { id: 'total', label: 'Total', color: '#F59E0B' },
-                            ].map(opt => (
-                              <button key={opt.id} onClick={() => setLockedMarketFilter(opt.id)} style={chipStyle(lockedMarketFilter === opt.id, opt.color)}>{opt.label}</button>
-                            ))}
-                          </FilterGroup>
-                          <FilterGroup label="ORDER">
-                            {[
-                              { id: 'stars', label: '★ Rating' },
-                              { id: 'time', label: 'Game Time' },
-                            ].map(opt => (
-                              <button key={opt.id} onClick={() => setLockedSort(opt.id)} style={chipStyle(lockedSort === opt.id, B.gold)}>{opt.label}</button>
-                            ))}
-                          </FilterGroup>
-                          {(cancelledCount > 0 || mutedCount > 0) && (
-                            <FilterGroup label="HEALTH">
-                              {mutedCount > 0 && (
-                                <span style={{ ...T.micro, fontSize: '0.55rem', fontWeight: 600, color: '#F59E0B' }}>
-                                  {mutedCount} weakening
-                                </span>
-                              )}
-                              {cancelledCount > 0 && (
-                                <button onClick={() => setShowCancelled(v => !v)} style={chipStyle(showCancelled, '#EF4444')}>
-                                  {showCancelled ? 'Hide' : 'Show'} cancelled ({cancelledCount})
-                                </button>
-                              )}
-                            </FilterGroup>
-                          )}
-                        </div>
+                        {isMobile ? (
+                          <details className="sf-mfilters" style={{
+                            borderRadius: '10px', marginBottom: '0.6rem', overflow: 'hidden',
+                            background: 'rgba(255,255,255,0.02)', border: `1px solid ${B.borderSubtle}`,
+                          }}>
+                            <summary style={{
+                              display: 'flex', alignItems: 'center', gap: '0.5rem',
+                              padding: '0.6rem 0.75rem', cursor: 'pointer',
+                            }}>
+                              <Workflow size={13} color={B.gold} style={{ flexShrink: 0 }} />
+                              <span style={{ ...T.micro, fontWeight: 800, letterSpacing: '0.08em', color: B.text, flexShrink: 0 }}>FILTERS</span>
+                              <span style={{
+                                ...T.micro, fontSize: '0.6rem', color: B.textMuted, fontWeight: 600,
+                                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0,
+                              }}>{summaryBits.join(' · ')}</span>
+                              <ChevronDown size={15} color={B.textMuted} className="sf-mfilters-chev" style={{ flexShrink: 0 }} />
+                            </summary>
+                            <div style={{
+                              display: 'flex', flexDirection: 'column', gap: '0.55rem',
+                              padding: '0.2rem 0.75rem 0.75rem',
+                            }}>
+                              {filterGroups}
+                            </div>
+                          </details>
+                        ) : (
+                          <div style={{
+                            display: 'flex', flexWrap: 'wrap', alignItems: 'center',
+                            gap: '0.45rem 1rem',
+                            padding: '0.5rem 0.65rem', borderRadius: '10px',
+                            background: 'rgba(255,255,255,0.02)',
+                            border: `1px solid ${B.borderSubtle}`,
+                            marginBottom: '0.6rem',
+                          }}>
+                            {filterGroups}
+                          </div>
+                        )}
                         {filteredLocked.length === 0 ? (
                           <div style={{ textAlign: 'center', padding: '2rem', color: B.textMuted, ...T.label }}>
                             {lockedArr.length === 0
