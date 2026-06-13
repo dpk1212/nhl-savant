@@ -9332,6 +9332,37 @@ const SharpFlowProfitChart = memo(function SharpFlowProfitChart({ picks }) {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
+// ─── CountUp ─────────────────────────────────────────────────────────────
+// Odometer animation — eases a number from its previously-displayed value
+// to the new target on mount and on every value change. Used across the
+// Performance dashboard hero KPIs so figures assemble themselves on reveal
+// (the same credibility cue the top-of-page stat cards use). Continues
+// smoothly from the current animated value if the target changes mid-flight.
+function CountUp({ value, format, duration = 950, style, className }) {
+  const target = Number.isFinite(value) ? value : 0;
+  const [display, setDisplay] = useState(0);
+  const curRef = useRef(0);
+  const rafRef = useRef(null);
+  useEffect(() => {
+    const from = curRef.current;
+    if (from === target) { setDisplay(target); return undefined; }
+    const t0 = performance.now();
+    const tick = (t) => {
+      const k = Math.min(1, (t - t0) / duration);
+      const eased = 1 - Math.pow(1 - k, 3);
+      const cur = from + (target - from) * eased;
+      curRef.current = cur;
+      setDisplay(cur);
+      if (k < 1) rafRef.current = requestAnimationFrame(tick);
+      else { curRef.current = target; setDisplay(target); }
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [target, duration]);
+  const fmt = format || ((n) => `${Math.round(n)}`);
+  return <span style={style} className={className}>{fmt(display)}</span>;
+}
+
 // ─── ConvictionGauge ─────────────────────────────────────────────────────
 // Semicircular arc gauge — the card's iconic "how loaded is this side"
 // visual. Sweeps in on mount via stroke-dasharray transition.
@@ -11702,13 +11733,17 @@ export default function SharpFlow() {
               return (
                 <div style={{ marginBottom: '1rem' }}>
                   {/* ── Collapsed/expanded header ──────────────────── */}
-                  <button onClick={() => setShowAgsuPerf(p => !p)} style={{
+                  <button onClick={() => setShowAgsuPerf(p => !p)} className="sf-glass" style={{
                     width: '100%',
-                    background: 'linear-gradient(135deg, rgba(212,175,55,0.06) 0%, rgba(21,25,35,0.95) 35%, rgba(26,31,46,0.85) 100%)',
+                    background: 'linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(26,31,46,0.62) 35%, rgba(17,21,31,0.7) 100%)',
                     border: `1px solid ${B.goldBorder}`,
-                    borderRadius: showAgsuPerf ? '10px 10px 0 0' : '10px',
-                    padding: '0.75rem 1rem',
+                    borderRadius: showAgsuPerf ? '14px 14px 0 0' : '14px',
+                    padding: '0.85rem 1.1rem',
                     cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    boxShadow: showAgsuPerf
+                      ? 'inset 0 1px 0 rgba(255,255,255,0.05)'
+                      : '0 8px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)',
+                    transition: 'box-shadow 0.25s ease, border-radius 0.25s ease',
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
                       <span style={{
@@ -11772,13 +11807,14 @@ export default function SharpFlow() {
 
                   {/* ── Body ──────────────────────────────────────── */}
                   {showAgsuPerf && (
-                    <div style={{
-                      background: 'linear-gradient(180deg, rgba(15,20,32,0.98) 0%, rgba(21,25,35,0.95) 100%)',
+                    <div className="sf-glass" style={{
+                      background: 'linear-gradient(180deg, rgba(20,25,38,0.72) 0%, rgba(15,19,29,0.78) 100%)',
                       border: `1px solid ${B.border}`,
                       borderTop: 'none',
-                      borderRadius: '0 0 10px 10px',
+                      borderRadius: '0 0 14px 14px',
                       padding: isMobile ? '1rem' : '1.25rem 1.25rem 1.1rem',
                       position: 'relative', overflow: 'hidden',
+                      boxShadow: '0 16px 40px rgba(0,0,0,0.4)',
                     }}>
                       {/* Premium atmosphere ─────────────────────────
                           Three stacked decorations give the body a sense
@@ -12082,17 +12118,17 @@ export default function SharpFlow() {
                                 gap: '0.7rem', marginBottom: '1rem',
                               }}>
                                 {/* ── PROFIT — feature card ── */}
-                                <div style={{
+                                <div className="sf-card" style={{
                                   position: 'relative', overflow: 'hidden',
                                   padding: isMobile ? '1.1rem 1.1rem 1rem' : '1.25rem 1.3rem 1.15rem',
-                                  borderRadius: '12px',
+                                  borderRadius: '14px',
                                   background: totalProfitLive >= 0
-                                    ? `linear-gradient(140deg, rgba(16,185,129,0.10) 0%, rgba(255,255,255,0.018) 35%, rgba(15,23,42,0.55) 100%)`
-                                    : `linear-gradient(140deg, rgba(239,68,68,0.10) 0%, rgba(255,255,255,0.018) 35%, rgba(15,23,42,0.55) 100%)`,
-                                  border: `1px solid ${totalProfitLive >= 0 ? 'rgba(16,185,129,0.28)' : 'rgba(239,68,68,0.28)'}`,
+                                    ? `linear-gradient(140deg, rgba(16,185,129,0.13) 0%, rgba(255,255,255,0.02) 35%, rgba(15,23,42,0.40) 100%)`
+                                    : `linear-gradient(140deg, rgba(239,68,68,0.13) 0%, rgba(255,255,255,0.02) 35%, rgba(15,23,42,0.40) 100%)`,
+                                  border: `1px solid ${totalProfitLive >= 0 ? 'rgba(16,185,129,0.30)' : 'rgba(239,68,68,0.30)'}`,
                                   boxShadow: totalProfitLive >= 0
-                                    ? '0 8px 28px -10px rgba(16,185,129,0.30), inset 0 1px 0 rgba(255,255,255,0.04)'
-                                    : '0 8px 28px -10px rgba(239,68,68,0.30), inset 0 1px 0 rgba(255,255,255,0.04)',
+                                    ? '0 10px 34px -12px rgba(16,185,129,0.40), inset 0 1px 0 rgba(255,255,255,0.05)'
+                                    : '0 10px 34px -12px rgba(239,68,68,0.40), inset 0 1px 0 rgba(255,255,255,0.05)',
                                 }}>
                                   {/* Gold corner glint, top-left */}
                                   <div style={{
@@ -12126,18 +12162,29 @@ export default function SharpFlow() {
                                       shorthand) so we don't accidentally reset
                                       `background-clip` to its initial `border-box`. */}
                                   <div style={{ lineHeight: 1 }}>
-                                    <span style={{
-                                      display: 'inline-block',
-                                      fontSize: isMobile ? '2.4rem' : '2.85rem',
-                                      fontWeight: 900, lineHeight: 1, letterSpacing: '-0.02em',
-                                      fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
-                                      color: totalProfitLive >= 0 ? B.green : B.red,
-                                      backgroundImage: profitGradient,
-                                      WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                                      backgroundClip: 'text',
-                                    }}>
-                                      {totalGradedLive === 0 ? '—' : `${totalProfitLive >= 0 ? '+' : ''}${totalProfitLive.toFixed(2)}u`}
-                                    </span>
+                                    {totalGradedLive === 0 ? (
+                                      <span style={{
+                                        display: 'inline-block',
+                                        fontSize: isMobile ? '2.4rem' : '2.85rem',
+                                        fontWeight: 900, lineHeight: 1, letterSpacing: '-0.02em',
+                                        color: B.textSec,
+                                      }}>—</span>
+                                    ) : (
+                                      <CountUp
+                                        value={totalProfitLive}
+                                        format={(n) => `${n >= 0 ? '+' : ''}${n.toFixed(2)}u`}
+                                        style={{
+                                          display: 'inline-block',
+                                          fontSize: isMobile ? '2.4rem' : '2.85rem',
+                                          fontWeight: 900, lineHeight: 1, letterSpacing: '-0.02em',
+                                          fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
+                                          color: totalProfitLive >= 0 ? B.green : B.red,
+                                          backgroundImage: profitGradient,
+                                          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                                          backgroundClip: 'text',
+                                        }}
+                                      />
+                                    )}
                                   </div>
                                   <div style={{
                                     ...T.micro, color: B.textSec, fontSize: '0.68rem',
@@ -12152,20 +12199,20 @@ export default function SharpFlow() {
                                 </div>
 
                                 {/* ── Supporting trio: RECORD · WIN% · ROI ── */}
-                                <div style={{
+                                <div className="sf-stagger" style={{
                                   display: 'grid',
                                   gridTemplateColumns: 'repeat(3, 1fr)',
                                   gap: '0.5rem',
                                 }}>
                                   {/* RECORD */}
-                                  <div style={{
+                                  <div className="sf-card" style={{
                                     padding: '0.7rem 0.8rem',
-                                    borderRadius: '10px',
-                                    background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(15,23,42,0.55) 100%)',
+                                    borderRadius: '11px',
+                                    background: 'linear-gradient(180deg, rgba(255,255,255,0.045) 0%, rgba(15,23,42,0.32) 100%)',
                                     border: `1px solid ${B.borderSubtle}`,
                                     display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
                                     position: 'relative', overflow: 'hidden',
-                                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.025)',
+                                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.035)',
                                   }}>
                                     <div style={{
                                       position: 'absolute', top: 0, left: 0, width: '30%', height: '1px',
@@ -12188,14 +12235,14 @@ export default function SharpFlow() {
                                   </div>
 
                                   {/* WIN % */}
-                                  <div style={{
+                                  <div className="sf-card" style={{
                                     padding: '0.7rem 0.8rem',
-                                    borderRadius: '10px',
-                                    background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(15,23,42,0.55) 100%)',
+                                    borderRadius: '11px',
+                                    background: 'linear-gradient(180deg, rgba(255,255,255,0.045) 0%, rgba(15,23,42,0.32) 100%)',
                                     border: `1px solid ${B.borderSubtle}`,
                                     display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
                                     position: 'relative', overflow: 'hidden',
-                                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.025)',
+                                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.035)',
                                   }}>
                                     <div style={{
                                       position: 'absolute', top: 0, left: 0, width: '30%', height: '1px',
@@ -12212,7 +12259,7 @@ export default function SharpFlow() {
                                       fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
                                       letterSpacing: '-0.01em', marginTop: '0.35rem',
                                     }}>
-                                      {totalGradedLive === 0 ? '—' : `${liveWinPct.toFixed(1)}%`}
+                                      {totalGradedLive === 0 ? '—' : <CountUp value={liveWinPct} format={(n) => `${n.toFixed(1)}%`} />}
                                     </div>
                                     <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem', marginTop: '0.25rem' }}>
                                       breakeven 52.4%
@@ -12220,14 +12267,14 @@ export default function SharpFlow() {
                                   </div>
 
                                   {/* ROI */}
-                                  <div style={{
+                                  <div className="sf-card" style={{
                                     padding: '0.7rem 0.8rem',
-                                    borderRadius: '10px',
-                                    background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(15,23,42,0.55) 100%)',
+                                    borderRadius: '11px',
+                                    background: 'linear-gradient(180deg, rgba(255,255,255,0.045) 0%, rgba(15,23,42,0.32) 100%)',
                                     border: `1px solid ${B.borderSubtle}`,
                                     display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
                                     position: 'relative', overflow: 'hidden',
-                                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.025)',
+                                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.035)',
                                   }}>
                                     <div style={{
                                       position: 'absolute', top: 0, left: 0, width: '30%', height: '1px',
@@ -12243,7 +12290,7 @@ export default function SharpFlow() {
                                       fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
                                       letterSpacing: '-0.01em', marginTop: '0.35rem',
                                     }}>
-                                      {totalGradedLive === 0 ? '—' : `${liveRoi >= 0 ? '+' : ''}${liveRoi.toFixed(1)}%`}
+                                      {totalGradedLive === 0 ? '—' : <CountUp value={liveRoi} format={(n) => `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`} />}
                                     </div>
                                     <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem', marginTop: '0.25rem' }}>
                                       {totalUnitsLive.toFixed(1)}u risked
@@ -12307,13 +12354,13 @@ export default function SharpFlow() {
                               const headTint = slotIsBest ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)';
                               const roiPositive = stat.tierRoi != null && stat.tierRoi >= 0;
                               return (
-                                <div style={{
+                                <div className="sf-card" style={{
                                   padding: isMobile ? '0.95rem 1rem' : '1.05rem 1.15rem 1rem 1.2rem',
-                                  borderRadius: '10px',
-                                  background: `linear-gradient(140deg, ${headTint} 0%, rgba(255,255,255,0.018) 35%, rgba(15,23,42,0.55) 100%)`,
-                                  border: `1px solid ${meta.color}33`,
+                                  borderRadius: '12px',
+                                  background: `linear-gradient(140deg, ${headTint} 0%, rgba(255,255,255,0.02) 35%, rgba(15,23,42,0.40) 100%)`,
+                                  border: `1px solid ${meta.color}40`,
                                   position: 'relative', overflow: 'hidden',
-                                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)',
+                                  boxShadow: `0 10px 30px -14px ${meta.color}55, inset 0 1px 0 rgba(255,255,255,0.04)`,
                                 }}>
                                   {/* Tier-color ribbon (left edge) */}
                                   <div style={{
@@ -12348,7 +12395,7 @@ export default function SharpFlow() {
                                     color: roiPositive ? B.green : B.red,
                                     fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums',
                                   }}>
-                                    {stat.tierRoi == null ? '—' : `${stat.tierRoi >= 0 ? '+' : ''}${stat.tierRoi.toFixed(1)}%`}
+                                    {stat.tierRoi == null ? '—' : <CountUp value={stat.tierRoi} format={(n) => `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`} />}
                                   </div>
                                   {/* Tier identity caption — first thing after the hero number */}
                                   <div style={{
@@ -12415,7 +12462,7 @@ export default function SharpFlow() {
                                     {showAgsuTiers ? <ChevronUp size={11} color={B.textMuted} /> : <ChevronDown size={11} color={B.textMuted} />}
                                   </button>
                                 </div>
-                                <div style={{
+                                <div className="sf-stagger" style={{
                                   display: 'grid',
                                   gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
                                   gap: '0.5rem',
@@ -12650,11 +12697,12 @@ export default function SharpFlow() {
                                 </button>
 
                                 {showAgsuProfit && (
-                                  <div style={{
+                                  <div className="sf-glass" style={{
                                     padding: '0.75rem 0.875rem 0.5rem',
-                                    borderRadius: '8px',
-                                    background: 'rgba(15,23,42,0.4)',
+                                    borderRadius: '12px',
+                                    background: 'rgba(15,23,42,0.32)',
                                     border: `1px solid ${B.borderSubtle}`,
+                                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)',
                                   }}>
                                     {curve.length < 2 ? (
                                       <div style={{ ...T.micro, color: B.textMuted, padding: '1.25rem 1rem', textAlign: 'center', fontStyle: 'italic' }}>
@@ -12843,11 +12891,12 @@ export default function SharpFlow() {
                                 (◆ eyebrow + count chip + gold hairline). The card
                                 background is dropped when collapsed so the row reads
                                 as a section header rather than a third heavy panel. */}
-                            <div style={{
+                            <div className={showAgsuLedger ? 'sf-glass' : undefined} style={{
                               padding: showAgsuLedger ? '0.75rem 0.875rem' : '0',
-                              borderRadius: '8px',
-                              background: showAgsuLedger ? 'rgba(15,23,42,0.4)' : 'transparent',
+                              borderRadius: '12px',
+                              background: showAgsuLedger ? 'rgba(15,23,42,0.32)' : 'transparent',
                               border: showAgsuLedger ? `1px solid ${B.borderSubtle}` : 'none',
+                              boxShadow: showAgsuLedger ? 'inset 0 1px 0 rgba(255,255,255,0.03)' : 'none',
                             }}>
                               <button
                                 onClick={() => setShowAgsuLedger(p => !p)}
@@ -12882,7 +12931,7 @@ export default function SharpFlow() {
                                 </div>
                               )}
                               {showAgsuLedger && (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                              <div className="sf-stagger" style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
                                 {ledgerRows.map((p, i) => {
                                   const meta = AGS_TIER_META[p._resolvedTier] || AGS_TIER_META.UNKNOWN;
                                   const drv = topDriverOf(p);
