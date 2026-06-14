@@ -4993,11 +4993,9 @@ function BackingWalletStrip({ wallets, sport, accent = B.green, isMobile }) {
     <div style={{
       margin: '0.85rem 0 0', padding: '0 1rem',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.55rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <Eye size={12} color={accent} />
-          <span style={{ ...T.tiny, fontSize: '0.55rem', color: B.textSec, letterSpacing: '0.09em' }}>WHO'S BACKING IT</span>
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.55rem' }}>
+        <span style={{ ...T.tiny, fontSize: '0.5rem', color: B.textSubtle, letterSpacing: '0.14em', fontWeight: 700 }}>THE RECEIPTS</span>
+        <div style={{ flex: 1, height: '1px', background: `linear-gradient(90deg, ${B.borderSubtle}, transparent)` }} />
         <span style={{ ...T.micro, fontWeight: 800, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
           {winnerCount > 0
             ? <><span style={{ color: B.green }}>{winnerCount} proven</span> · {enriched.length} wallet{enriched.length !== 1 ? 's' : ''}</>
@@ -5085,49 +5083,63 @@ function BackingWalletStrip({ wallets, sport, accent = B.green, isMobile }) {
   );
 }
 
-function V12ConvictionPanel({ tier, tierColor, tierBg, forW, agW, qFor, qAg, hcFor, hcAg, moneyPct, sport, accentColor, isMobile }) {
+// THE CASE — the cohesive verdict. One plain-language thesis (the story)
+// built from the real data, plus a single conviction meter. Replaces the
+// old debug-style stack of full-width driver bars. The wallet receipts
+// render separately right below via BackingWalletStrip.
+function V12ConvictionPanel({ tier, tierColor, tierBg, forW, agW, qFor, qAg, hcFor, hcAg, moneyPct, sport, accentColor, isMobile, backingWallets, totalInvested }) {
   const sportUp = (sport || '').toUpperCase();
-  const baseDrivers = [
-    { key: 'pw', name: `Proven ${sportUp} winners`, ...v12DriverState(forW, agW) },
-    { key: 'hc', name: 'High-conviction money', ...v12DriverState(hcFor, hcAg) },
-    { key: 'q',  name: 'Quality wallet backing', ...v12DriverState(qFor, qAg) },
-    { key: 'm',  name: 'Sharp money lean', ...v12MoneyState(moneyPct) },
-  ];
-  const drivers = baseDrivers.filter(d => d.key === 'pw' || d.key === 'm' || d.active);
   const fill = V12_TIER_FILL[tier] ?? 0.5;
-  const read = V12_TIER_READ[tier] || 'Conviction scored from sharp wallet alignment';
   const mc = tierColor || accentColor || B.green;
-  const toneColor = (t) => t === 'pos' ? B.green : t === 'neg' ? B.red : t === 'mid' ? B.gold : B.textMuted;
+  const tierWord = tier ? (tier.charAt(0) + tier.slice(1).toLowerCase()) : 'Strong';
+
+  // Lead proven-winner record (largest decided sample) for the thesis.
+  const leadRec = (() => {
+    if (!Array.isArray(backingWallets)) return null;
+    let best = null, bestDecided = 3;
+    for (const w of backingWallets) {
+      const short = String(w.wallet || '').slice(-6);
+      if (!isSportWinner(short, sport)) continue;
+      const rec = getWalletProfile(short)?.bySport?.[sport]?.positions;
+      const decided = rec ? (rec.wins || 0) + (rec.losses || 0) : 0;
+      if (decided > bestDecided) { bestDecided = decided; best = rec; }
+    }
+    return best;
+  })();
+
+  const fw = forW || 0, aw = agW || 0, qf = qFor || 0;
+  const money = moneyPct != null ? Math.round(moneyPct) : null;
 
   return (
-    <div style={{
-      margin: '0.85rem 0 0', padding: '0 1rem',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <Activity size={12} color={mc} />
-          <span style={{ ...T.tiny, fontSize: '0.55rem', color: B.textSec, letterSpacing: '0.09em' }}>V12 CONVICTION</span>
-        </div>
+    <div style={{ padding: '1rem 1rem 0' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.6rem' }}>
+        <span style={{ ...T.tiny, fontSize: '0.5rem', color: B.textSubtle, letterSpacing: '0.14em', fontWeight: 700 }}>THE CASE</span>
+        <div style={{ flex: 1, height: '1px', background: `linear-gradient(90deg, ${B.borderSubtle}, transparent)` }} />
         {tier && (
-          <span style={{ ...T.micro, fontWeight: 800, color: mc, background: tierBg || `${mc}1a`, border: `1px solid ${mc}55`, padding: '0.1rem 0.4rem', borderRadius: '5px', letterSpacing: '0.04em' }}>{tier}</span>
+          <span style={{ ...T.micro, fontWeight: 800, color: mc, background: tierBg || `${mc}1a`, border: `1px solid ${mc}55`, padding: '0.12rem 0.45rem', borderRadius: '5px', letterSpacing: '0.04em' }}>{tier}</span>
         )}
       </div>
-      {/* Conviction meter — keyed to tier, no raw score shown */}
-      <div style={{ height: '8px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', overflow: 'hidden', boxShadow: 'inset 0 1px 1px rgba(0,0,0,0.3)' }}>
-        <div style={{ width: `${Math.round(fill * 100)}%`, height: '100%', borderRadius: '4px', background: `linear-gradient(90deg, ${mc}66, ${mc})`, boxShadow: `0 0 10px ${mc}55` }} />
-      </div>
-      <div style={{ ...T.micro, fontSize: '0.58rem', color: B.textMuted, marginTop: '0.3rem', letterSpacing: '0.02em' }}>{read}</div>
 
-      <div style={{ marginTop: '0.6rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-        {drivers.map((d) => (
-          <div key={d.key} style={{ display: 'grid', gridTemplateColumns: isMobile ? '90px 1fr 58px' : '120px 1fr 74px', gap: '0.5rem', alignItems: 'center' }}>
-            <span style={{ ...T.micro, fontSize: '0.56rem', color: d.active ? B.textSec : B.textSubtle, fontWeight: 600, lineHeight: 1.15 }}>{d.name}</span>
-            <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.05)', overflow: 'hidden', opacity: d.active ? 1 : 0.4 }}>
-              <div style={{ width: `${Math.round((d.active ? d.share : 0.5) * 100)}%`, height: '100%', background: toneColor(d.tone), borderRadius: '3px', transition: 'width 0.35s ease' }} />
-            </div>
-            <span style={{ ...T.micro, fontSize: '0.52rem', fontWeight: 800, color: toneColor(d.tone), textAlign: 'right', textTransform: 'uppercase', letterSpacing: '0.03em' }}>{d.label}</span>
-          </div>
-        ))}
+      {/* The thesis — one designed sentence that tells the story */}
+      <div style={{ ...T.caption, color: B.textSec, lineHeight: 1.6, marginBottom: '0.7rem' }}>
+        <span style={{ color: mc, fontWeight: 800 }}>{tierWord} conviction.</span>{' '}
+        {fw > 0 ? (
+          <>
+            <span style={{ color: B.text, fontWeight: 700 }}>{fw} proven {sportUp} winner{fw !== 1 ? 's' : ''}</span>
+            {leadRec ? <span style={{ color: B.textMuted, fontFeatureSettings: "'tnum'" }}> ({leadRec.wins}-{leadRec.losses}{leadRec.settledPnl ? <>, {leadRec.settledPnl >= 0 ? '+' : ''}{fmtVol(leadRec.settledPnl)}</> : ''})</span> : null}
+            {' '}backing{qf > 0 ? <>, <span style={{ color: B.text, fontWeight: 700 }}>{qf} quality wallet{qf !== 1 ? 's' : ''}</span> confirming</> : ''}
+          </>
+        ) : (
+          <span style={{ color: B.text, fontWeight: 700 }}>Sharp wallets aligned</span>
+        )}
+        {totalInvested ? <> — <span style={{ color: B.text, fontWeight: 700, fontFeatureSettings: "'tnum'" }}>{fmtVol(totalInvested)}</span> in</> : ''}
+        {money != null ? <>{totalInvested ? ' at ' : ' — '}<span style={{ color: mc, fontWeight: 700 }}>{money}% of sharp money</span></> : ''}
+        {aw > 0 ? <>, <span style={{ color: B.red, fontWeight: 700 }}>{aw} against</span>.</> : <span style={{ color: B.green, fontWeight: 700 }}> · no dissent.</span>}
+      </div>
+
+      {/* Conviction meter — keyed to tier, no raw score shown */}
+      <div style={{ height: '7px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
+        <div style={{ width: `${Math.round(fill * 100)}%`, height: '100%', borderRadius: '4px', background: `linear-gradient(90deg, ${mc}66, ${mc})`, boxShadow: `0 0 10px ${mc}55` }} />
       </div>
     </div>
   );
@@ -5579,17 +5591,6 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                   }}
                 >
                   <span>{tierSpec.label} · {tierSpec.stake}</span>
-                  {agsTxt && !isMobile && (
-                    <span style={{
-                      ...T.micro, fontWeight: 700, fontSize: '0.5rem',
-                      padding: '0.05rem 0.3rem', borderRadius: '3px',
-                      background: 'rgba(0,0,0,0.25)',
-                      color: tierSpec.color, opacity: 0.95,
-                      fontFeatureSettings: "'tnum'",
-                    }}>
-                      AGS {agsTxt}
-                    </span>
-                  )}
                 </span>
               );
             })()}
@@ -5684,7 +5685,6 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                   : half ? <span key={i} style={{ position: 'relative', display: 'inline-block', fontSize: '0.5rem', lineHeight: 1, width: '0.5rem' }}><span style={{ color: 'rgba(255,255,255,0.15)' }}>★</span><span style={{ position: 'absolute', left: 0, top: 0, overflow: 'hidden', width: '50%', color: starColor }}>★</span></span>
                   : <span key={i} style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.15)', lineHeight: 1 }}>★</span>;
               })}
-              {!isMobile && <span style={{ marginLeft: '0.15rem' }}>{starLabel}</span>}
             </span>
           </div>
         </div>
@@ -5948,19 +5948,11 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
 
           </div>
 
-          {/* ─── ACT 2 · WHY WE LOCKED IT ─── conviction read + the actual
-              proven wallets behind the pick. This is the differentiated data
-              moment; the bet hero above answers "what", this answers "why". */}
-          <div style={{ padding: '0.85rem 0.875rem 0 0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ ...T.tiny, fontSize: '0.5rem', color: B.textSubtle, letterSpacing: '0.14em', fontWeight: 700 }}>WHY WE LOCKED IT</span>
-            <div style={{ flex: 1, height: '1px', background: `linear-gradient(90deg, ${B.borderSubtle}, transparent)` }} />
-          </div>
-
-          {/* V12 Conviction — how the proven-wallet signal feeds the model.
-              Replaces the legacy 6-criterion "conditions met" grid (which read
-              0/6 even on PREMIUM locks and didn't reflect the V12 score).
-              Proprietary-safe: directional strength + tier meter only, no raw
-              score, quintile cutoffs, or internal feature names. */}
+          {/* ─── ACT 2 · THE CASE ─── one plain-language thesis (the story)
+              + a conviction meter, followed by the actual proven wallets that
+              back it. The hero above answers "what"; this answers "why" and
+              shows the receipts. Proprietary-safe: no raw score / quintile /
+              internal feature names. */}
           {(walletConsensusForW != null || consensusStrength?.moneyPct != null || agsTierDisplay) && (
             <V12ConvictionPanel
               tier={agsTierDisplay}
@@ -5976,6 +5968,8 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
               sport={sport}
               accentColor={accentColor}
               isMobile={isMobile}
+              backingWallets={backingWallets}
+              totalInvested={totalInvested}
             />
           )}
 
@@ -5991,17 +5985,23 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
             />
           )}
 
-          {/* Sharp Money Battle */}
+          {/* ─── ACT 3 · THE MARKET ─── sharp money + the line, grouped under
+              one header so the market read is a single cohesive section. */}
+          <div style={{ padding: '1rem 1rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ ...T.tiny, fontSize: '0.5rem', color: B.textSubtle, letterSpacing: '0.14em', fontWeight: 700 }}>THE MARKET</span>
+            <div style={{ flex: 1, height: '1px', background: `linear-gradient(90deg, ${B.borderSubtle}, transparent)` }} />
+          </div>
+
+          {/* Sharp money split — amounts as the hero, one clean bar */}
           {consensusStrength?.moneyPct != null && (() => {
             const myPct = consensusStrength.moneyPct;
             const pct = myPct / 100;
             const totalBoth = pct > 0 ? totalInvested / pct : totalInvested;
             const otherAmt = Math.round(totalBoth - totalInvested);
             return (
-              <div style={{ padding: '0.9rem 1rem 0' }}>
-                <div style={{ ...T.tiny, fontSize: '0.5rem', color: B.textSubtle, letterSpacing: '0.12em', fontWeight: 700, marginBottom: '0.6rem' }}>SHARP MONEY AT LOCK</div>
-                {/* Sharp side vs the field — amounts as the hero, one split bar */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.45rem', fontFeatureSettings: "'tnum'" }}>
+              <div style={{ padding: '0.7rem 1rem 0' }}>
+                <div style={{ ...T.micro, fontSize: '0.52rem', color: B.textMuted, letterSpacing: '0.04em', marginBottom: '0.4rem' }}>Sharp money at lock</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.4rem', fontFeatureSettings: "'tnum'" }}>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', minWidth: 0 }}>
                     <span style={{ ...T.body, fontWeight: 900, color: accentColor, letterSpacing: '-0.01em' }}>{fmtV(totalInvested)}</span>
                     <span style={{ ...T.micro, fontSize: '0.58rem', color: B.textSec }}>{teamShort} · {myPct}%</span>
@@ -6018,16 +6018,10 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
             );
           })()}
 
-          {/* ─── ACT 3 · THE EDGE & LIFECYCLE ─── */}
-          <div style={{ padding: '0.9rem 1rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ ...T.tiny, fontSize: '0.5rem', color: B.textSubtle, letterSpacing: '0.14em', fontWeight: 700 }}>THE EDGE</span>
-            <div style={{ flex: 1, height: '1px', background: `linear-gradient(90deg, ${B.borderSubtle}, transparent)` }} />
-          </div>
-
           {/* Book Prices — de-boxed: plain columns split by hairlines, no
               table fill. CLV lives once, up in the bet row. */}
-          <div style={{ padding: '0.7rem 1rem 0' }}>
-            <div style={{ ...T.tiny, fontSize: '0.5rem', color: B.textSubtle, letterSpacing: '0.1em', marginBottom: '0.5rem' }}>
+          <div style={{ padding: '0.85rem 1rem 0' }}>
+            <div style={{ ...T.micro, fontSize: '0.52rem', color: B.textMuted, letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
               {marketType === 'spread' ? `${teamShort} ${line > 0 ? '+' : ''}${line}` : marketType === 'total' ? teamShort : `${teamShort} ML`} — line history
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr' }}>
