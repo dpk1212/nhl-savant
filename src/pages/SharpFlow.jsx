@@ -4895,6 +4895,103 @@ const HEALTH_REASON_LABELS = {
   sum_below_floor:     'Δw + Δq below the v7.4 lock floor (Σ < 5)',
 };
 
+// ─── V12 Conviction (proprietary-safe) ─────────────────────────────────────────
+// Surfaces HOW the wallet signal feeds the V12 model without exposing the raw
+// score, quintile cutoffs, or internal feature names. We show directional
+// strength (support share + a vague qualitative label) per driver and an
+// overall conviction meter keyed to the shipped tier.
+const V12_TIER_FILL = { ELITE: 1, PREMIUM: 0.82, LOCK: 0.62, LEAN: 0.42, WEAK: 0.26 };
+const V12_TIER_READ = {
+  ELITE: 'Among our strongest conviction signals',
+  PREMIUM: 'Premium-tier sharp conviction',
+  LOCK: 'Solid lock conviction',
+  LEAN: 'Lean conviction — reduced stake',
+  WEAK: 'Minimal conviction — exposure only',
+};
+
+function v12DriverState(forV, agV) {
+  const f = Math.max(0, forV || 0);
+  const a = Math.max(0, agV || 0);
+  const total = f + a;
+  if (total === 0) return { share: 0.5, label: 'neutral', tone: 'muted', active: false };
+  const share = f / total;
+  if (a === 0 && f > 0) return { share, label: 'no dissent', tone: 'pos', active: true };
+  if (share >= 0.75) return { share, label: 'strongly for', tone: 'pos', active: true };
+  if (share >= 0.56) return { share, label: 'leaning for', tone: 'pos', active: true };
+  if (share >= 0.45) return { share, label: 'split', tone: 'mid', active: true };
+  return { share, label: 'fading', tone: 'neg', active: true };
+}
+
+function v12MoneyState(moneyPct) {
+  if (moneyPct == null) return { share: 0.5, label: 'neutral', tone: 'muted', active: false };
+  const share = Math.max(0, Math.min(1, moneyPct / 100));
+  if (moneyPct >= 85) return { share, label: 'one-sided', tone: 'pos', active: true };
+  if (moneyPct >= 70) return { share, label: 'dominant', tone: 'pos', active: true };
+  if (moneyPct >= 55) return { share, label: 'leaning', tone: 'mid', active: true };
+  return { share, label: 'split', tone: 'mid', active: true };
+}
+
+// Compact one-word read for the collapsed card.
+function v12OverallTag({ forW, agW, hcFor, hcAg, moneyPct }) {
+  const pm = (forW || 0) - (agW || 0);
+  const hm = (hcFor || 0) - (hcAg || 0);
+  const money = moneyPct || 0;
+  if ((agW || 0) === 0 && (forW || 0) > 0 && money >= 70) return { label: 'heavily backed', tone: 'pos' };
+  if (pm >= 1 || hm >= 1 || money >= 70) return { label: 'backed', tone: 'pos' };
+  if (pm <= -1 || hm <= -1) return { label: 'contested', tone: 'neg' };
+  return { label: 'mixed', tone: 'mid' };
+}
+
+function V12ConvictionPanel({ tier, tierColor, tierBg, forW, agW, qFor, qAg, hcFor, hcAg, moneyPct, sport, accentColor, isMobile }) {
+  const sportUp = (sport || '').toUpperCase();
+  const baseDrivers = [
+    { key: 'pw', name: `Proven ${sportUp} winners`, ...v12DriverState(forW, agW) },
+    { key: 'hc', name: 'High-conviction money', ...v12DriverState(hcFor, hcAg) },
+    { key: 'q',  name: 'Quality wallet backing', ...v12DriverState(qFor, qAg) },
+    { key: 'm',  name: 'Sharp money lean', ...v12MoneyState(moneyPct) },
+  ];
+  const drivers = baseDrivers.filter(d => d.key === 'pw' || d.key === 'm' || d.active);
+  const fill = V12_TIER_FILL[tier] ?? 0.5;
+  const read = V12_TIER_READ[tier] || 'Conviction scored from sharp wallet alignment';
+  const mc = tierColor || accentColor || B.green;
+  const toneColor = (t) => t === 'pos' ? B.green : t === 'neg' ? B.red : t === 'mid' ? B.gold : B.textMuted;
+
+  return (
+    <div style={{
+      margin: '0.5rem 0.875rem 0', padding: '0.7rem 0.8rem', borderRadius: '12px',
+      background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 55%), rgba(255,255,255,0.012)',
+      border: `1px solid ${B.borderSubtle}`,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <Activity size={12} color={mc} />
+          <span style={{ ...T.tiny, fontSize: '0.55rem', color: B.textSec, letterSpacing: '0.09em' }}>V12 CONVICTION</span>
+        </div>
+        {tier && (
+          <span style={{ ...T.micro, fontWeight: 800, color: mc, background: tierBg || `${mc}1a`, border: `1px solid ${mc}55`, padding: '0.1rem 0.4rem', borderRadius: '5px', letterSpacing: '0.04em' }}>{tier}</span>
+        )}
+      </div>
+      {/* Conviction meter — keyed to tier, no raw score shown */}
+      <div style={{ height: '8px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', overflow: 'hidden', boxShadow: 'inset 0 1px 1px rgba(0,0,0,0.3)' }}>
+        <div style={{ width: `${Math.round(fill * 100)}%`, height: '100%', borderRadius: '4px', background: `linear-gradient(90deg, ${mc}66, ${mc})`, boxShadow: `0 0 10px ${mc}55` }} />
+      </div>
+      <div style={{ ...T.micro, fontSize: '0.58rem', color: B.textMuted, marginTop: '0.3rem', letterSpacing: '0.02em' }}>{read}</div>
+
+      <div style={{ marginTop: '0.6rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        {drivers.map((d) => (
+          <div key={d.key} style={{ display: 'grid', gridTemplateColumns: isMobile ? '90px 1fr 58px' : '120px 1fr 74px', gap: '0.5rem', alignItems: 'center' }}>
+            <span style={{ ...T.micro, fontSize: '0.56rem', color: d.active ? B.textSec : B.textSubtle, fontWeight: 600, lineHeight: 1.15 }}>{d.name}</span>
+            <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.05)', overflow: 'hidden', opacity: d.active ? 1 : 0.4 }}>
+              <div style={{ width: `${Math.round((d.active ? d.share : 0.5) * 100)}%`, height: '100%', background: toneColor(d.tone), borderRadius: '3px', transition: 'width 0.35s ease' }} />
+            </div>
+            <span style={{ ...T.micro, fontSize: '0.52rem', fontWeight: 800, color: toneColor(d.tone), textAlign: 'right', textTransform: 'uppercase', letterSpacing: '0.03em' }}>{d.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   const { team, away, home, sport, stars, peakStars, lockStars, units, peakUnits, isDownsized, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, lockEV, criteriaMet, criteria, consensusStrength, pinnacleOdds, marketType, line, superseded, health, lockTier, trackedOnly, isTopPick: isTopPickPre, isSuperTopPick: isSuperTopPickPre, walletConsensusDelta, walletConsensusForW, walletConsensusAgW, walletConsensusQualityMargin, walletConsensusQualityForT30, walletConsensusQualityAgT30, hcDominant, hcConfFor, hcConfAg, hcMargin, systemVersion, promotedBy, v73HcRescue, agsValue, agsTier, agsQuintile, agsProvenForCount, agsProvenAgCount, agsValueV12, agsTierV12, agsQuintileV12 } = pick;
   // v12 is authoritative when stamped — every chip/badge that renders an
@@ -5539,7 +5636,21 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '0.25rem 0.875rem 0.5rem',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexWrap: 'wrap' }}>
+            {!isCancelled && (walletConsensusForW != null || consensusStrength?.moneyPct != null) && (() => {
+              const t = v12OverallTag({ forW: walletConsensusForW, agW: walletConsensusAgW, hcFor: hcConfFor, hcAg: hcConfAg, moneyPct: consensusStrength?.moneyPct });
+              const c = t.tone === 'pos' ? B.green : t.tone === 'neg' ? B.red : B.gold;
+              return (
+                <span style={{
+                  ...T.micro, fontSize: '0.52rem', fontWeight: 800, color: c,
+                  background: `${c}1a`, border: `1px solid ${c}33`,
+                  padding: '0.05rem 0.32rem', borderRadius: '4px', letterSpacing: '0.04em',
+                  display: 'inline-flex', alignItems: 'center', gap: '0.2rem',
+                }}>
+                  <Activity size={8} /> V12 · {t.label.toUpperCase()}
+                </span>
+              );
+            })()}
             <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>Peak: {peakAt ? fmtET(peakAt) : '—'}</span>
             {starDelta > 0 && (
               <span style={{
@@ -6012,53 +6123,28 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
             )}
           </div>
 
-          {/* Lock-In Criteria — header tinted to live AGS-U tier so a WEAK
-              pick reads "WEAK · ⅕ STAKE" (amber) and a LEAN pick reads
-              "LEAN · ½ STAKE" (blue) instead of every shipped pick saying
-              "PLAY LOCKED — ★★★ SOLID" (green). The 6-criterion grid
-              below is a historical "lock-time conditions met" view; we
-              keep it for context but the BANNER is the AGS-U tier truth. */}
-          {criteriaList.length > 0 && (() => {
-            // Tier-driven banner. Falls back to "PLAY LOCKED" only when
-            // no AGS-U tier is available (legacy pre-v9 picks).
-            // v12: same fix as the hero label — use cron-stamped `units`
-            // instead of the hardcoded ladder default so the criteria
-            // banner can't say "PREMIUM LOCK · 3u · ★★★★" when the bet
-            // is actually 2.5u.
-            const tBu = Number.isFinite(units) ? ` · ${units.toFixed(units >= 1 ? 1 : 2)}u` : '';
-            const tierBanner = isElite     ? { text: `ELITE LOCK${tBu} · ★★★★★`, color: ELITE_GOLD, bg: 'rgba(212,175,55,0.10)', border: 'rgba(212,175,55,0.40)' }
-                             : isPremium   ? { text: `PREMIUM LOCK${tBu} · ★★★★`, color: B.green,  bg: 'rgba(16,185,129,0.10)',  border: 'rgba(16,185,129,0.35)' }
-                             : isLock      ? { text: `LOCKED${tBu} · ★★★`,         color: B.green,  bg: 'rgba(16,185,129,0.06)',  border: 'rgba(16,185,129,0.25)' }
-                             : isLean      ? { text: `LEAN${tBu}`,                color: LEAN_BLUE, bg: 'rgba(250,204,21,0.08)', border: 'rgba(250,204,21,0.40)' }
-                             : isWeak      ? { text: `WEAK${tBu}`,                color: WEAK_AMBER, bg: 'rgba(245,158,11,0.10)', border: 'rgba(245,158,11,0.30)' }
-                             : isMuted     ? { text: 'MUTED · HARD STOP',            color: WEAK_AMBER, bg: 'rgba(245,158,11,0.10)', border: 'rgba(245,158,11,0.30)' }
-                             : isCancelled ? { text: 'CANCELLED',                    color: B.red,    bg: 'rgba(239,68,68,0.10)',   border: 'rgba(239,68,68,0.30)' }
-                             :               { text: `PLAY LOCKED — ${stars >= 4.5 ? '★★★★★ ELITE' : stars >= 3.5 ? '★★★★ STRONG' : '★★★ SOLID'}`,
-                                               color: B.green, bg: 'rgba(16,185,129,0.06)', border: 'rgba(16,185,129,0.25)' };
-            return (
-            <div style={{
-              margin: '0.5rem 0.875rem 0', padding: '0.55rem 0.7rem', borderRadius: '10px',
-              background: `linear-gradient(135deg, ${tierBanner.bg} 0%, transparent 100%)`,
-              border: `1px solid ${tierBanner.border}`,
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)',
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
-                <span style={{ ...T.micro, color: tierBanner.color, fontWeight: 700 }}>
-                  {tierBanner.text}
-                </span>
-                <span style={{ ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'", color: metCount >= 4 ? B.green : B.gold }}>{metCount}/6</span>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: '0.25rem' }}>
-                {criteriaList.map(c => (
-                  <div key={c.key} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                    <CheckCircle size={11} color={c.met ? B.green : 'rgba(255,255,255,0.12)'} />
-                    <span style={{ ...T.micro, color: c.met ? B.green : B.textMuted, fontWeight: c.met ? 600 : 400 }}>{c.label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            );
-          })()}
+          {/* V12 Conviction — how the proven-wallet signal feeds the model.
+              Replaces the legacy 6-criterion "conditions met" grid (which read
+              0/6 even on PREMIUM locks and didn't reflect the V12 score).
+              Proprietary-safe: directional strength + tier meter only, no raw
+              score, quintile cutoffs, or internal feature names. */}
+          {(walletConsensusForW != null || consensusStrength?.moneyPct != null || agsTierDisplay) && (
+            <V12ConvictionPanel
+              tier={agsTierDisplay}
+              tierColor={(AGS_TIER_META[agsTierDisplay] && AGS_TIER_META[agsTierDisplay].color) || accentColor}
+              tierBg={AGS_TIER_META[agsTierDisplay] && AGS_TIER_META[agsTierDisplay].bg}
+              forW={walletConsensusForW}
+              agW={walletConsensusAgW}
+              qFor={walletConsensusQualityForT30}
+              qAg={walletConsensusQualityAgT30}
+              hcFor={hcConfFor}
+              hcAg={hcConfAg}
+              moneyPct={consensusStrength?.moneyPct}
+              sport={sport}
+              accentColor={accentColor}
+              isMobile={isMobile}
+            />
+          )}
 
           {/* Sharp Money Battle */}
           {consensusStrength?.moneyPct != null && (
