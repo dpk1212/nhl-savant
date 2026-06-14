@@ -4991,9 +4991,7 @@ function BackingWalletStrip({ wallets, sport, accent = B.green, isMobile }) {
 
   return (
     <div style={{
-      margin: '0.5rem 0.875rem 0', padding: '0.7rem 0.8rem', borderRadius: '12px',
-      background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 55%), rgba(255,255,255,0.012)',
-      border: `1px solid ${B.borderSubtle}`,
+      margin: '0.85rem 0 0', padding: '0 1rem',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.55rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -5013,9 +5011,9 @@ function BackingWalletStrip({ wallets, sport, accent = B.green, isMobile }) {
             display: 'grid',
             gridTemplateColumns: isMobile ? '1fr auto' : 'minmax(0,1fr) auto',
             gap: '0.4rem 0.6rem', alignItems: 'center',
-            padding: '0.45rem 0.55rem', borderRadius: '9px',
-            background: e.winner ? `linear-gradient(135deg, ${e.tierColor}10 0%, transparent 70%), rgba(255,255,255,0.012)` : 'rgba(255,255,255,0.012)',
-            border: `1px solid ${e.winner ? `${e.tierColor}22` : B.borderSubtle}`,
+            padding: '0.5rem 0.1rem 0.5rem 0.6rem',
+            borderTop: i === 0 ? 'none' : `1px solid ${B.borderSubtle}`,
+            borderLeft: e.winner ? `2px solid ${e.tierColor}` : '2px solid transparent',
           }}>
             {/* Identity + record (left column) */}
             <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.22rem' }}>
@@ -5103,9 +5101,7 @@ function V12ConvictionPanel({ tier, tierColor, tierBg, forW, agW, qFor, qAg, hcF
 
   return (
     <div style={{
-      margin: '0.5rem 0.875rem 0', padding: '0.7rem 0.8rem', borderRadius: '12px',
-      background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 55%), rgba(255,255,255,0.012)',
-      border: `1px solid ${B.borderSubtle}`,
+      margin: '0.85rem 0 0', padding: '0 1rem',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -5838,244 +5834,71 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
       {expanded && (
         <div style={{ borderTop: `1px solid ${B.border}` }}>
 
-          {/* Hero action box — background tier-tinted under AGS-U v9 so the
-              whole panel reads as the AGS-U tier (ELITE gold · PREMIUM/LOCK
-              green · LEAN blue · WEAK amber · MUTED/CANCELLED red/amber). */}
+          {/* ─── ACT 1 · THE BET ─── de-boxed hero. No nested card: just a
+              soft tier glow + generous space so the pick + price are the
+              single hero moment (Robinhood-style), not another widget. The
+              tier/units/AGS already live in the collapsed header above, so we
+              do NOT repeat them here — only a one-line status read for
+              non-standard tiers. */}
           <div style={{
-            margin: '0.75rem 0.875rem 0', padding: '0.85rem 0.9rem',
-            borderRadius: '12px',
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
-            background: `radial-gradient(130% 160% at 88% 0%, ${accentColor}12 0%, transparent 55%), ${isCancelled
-              ? 'linear-gradient(135deg, rgba(239,68,68,0.08) 0%, rgba(239,68,68,0.02) 100%)'
-              : isMuted
-              ? 'linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(245,158,11,0.02) 100%)'
-              : isElite
-              ? 'linear-gradient(135deg, rgba(212,175,55,0.14) 0%, rgba(212,175,55,0.03) 100%)'
-              : isLean
-              ? 'linear-gradient(135deg, rgba(250,204,21,0.08) 0%, rgba(250,204,21,0.02) 100%)'
-              : isWeak
-              ? 'linear-gradient(135deg, rgba(245,158,11,0.10) 0%, rgba(245,158,11,0.02) 100%)'
-              : isGraded
-              ? (isWin ? 'linear-gradient(135deg, rgba(16,185,129,0.10) 0%, rgba(16,185,129,0.02) 100%)' : isLoss ? 'linear-gradient(135deg, rgba(239,68,68,0.10) 0%, rgba(239,68,68,0.02) 100%)' : 'linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(212,175,55,0.02) 100%)')
-              : 'linear-gradient(135deg, rgba(16,185,129,0.10) 0%, rgba(16,185,129,0.02) 100%)'}`,
-            border: `1px solid ${isCancelled ? 'rgba(239,68,68,0.25)'
-              : isMuted ? 'rgba(245,158,11,0.25)'
-              : isElite ? 'rgba(212,175,55,0.40)'
-              : isLean ? 'rgba(250,204,21,0.30)'
-              : isWeak ? 'rgba(245,158,11,0.30)'
-              : isGraded ? (isWin ? 'rgba(16,185,129,0.25)' : isLoss ? 'rgba(239,68,68,0.25)' : B.goldBorder)
-              : 'rgba(16,185,129,0.25)'}`,
+            padding: '1.15rem 1rem 0.5rem',
+            position: 'relative',
+            background: `radial-gradient(120% 70% at 82% -10%, ${accentColor}10 0%, transparent 62%)`,
           }}>
-            {/* Narrative + unit badge */}
-            <div style={{ marginBottom: '0.625rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                <span style={{ ...T.label, fontWeight: 800, color: accentColor }}>
-                  {(() => {
-                    // v12: render the tier label with the ACTUAL cron-stamped
-                    // unit size, not the ladder default. PREMIUM is nominally
-                    // 3u, but odds caps / regime trim can pull it down (e.g.
-                    // KCR/CIN ML 2026-06-01 was PREMIUM/2.5u — chip showed
-                    // "PREMIUM LOCK · 3u" while the body showed "2.5u @ +160",
-                    // confusing the user). One number across the whole card.
-                    const u = Number.isFinite(units) ? units : null;
-                    const fmt = u == null ? '' : ` · ${u.toFixed(u >= 1 ? 1 : 2)}u`;
-                    if (isCancelled) return 'CANCELLED';
-                    if (isMuted) return 'WEAKENING';
-                    if (isTrackedGrade) return `TRACKED · ${isWin ? 'WIN' : isLoss ? 'LOSS' : 'PUSH'} (0u)`;
-                    if (isElite)   return `ELITE LOCK${fmt}`;
-                    if (isPremium) return `PREMIUM LOCK${fmt}`;
-                    if (isLock)    return `LOCKED${fmt}`;
-                    if (isLean)    return `LEAN${fmt}`;
-                    if (isWeak)    return `WEAK${fmt}`;
-                    if (isGraded)  return isWin ? 'WINNING BET' : isLoss ? 'LOSING BET' : 'PUSH';
-                    return 'LOCKED BET';
-                  })()}
-                </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                  <span style={{
-                    ...T.body, fontWeight: 900,
-                    color: isCancelled ? B.textMuted
-                      : isTrackedGrade ? LEAN_BLUE
-                      : isElite ? '#fff'
-                      : isLean ? LEAN_BLUE
-                      : isWeak ? WEAK_AMBER
-                      : '#fff',
-                    padding: '0.2rem 0.6rem', borderRadius: '5px',
-                    background: isCancelled
-                      ? 'linear-gradient(135deg, rgba(239,68,68,0.15), rgba(239,68,68,0.08))'
-                      : isMuted
-                      ? 'linear-gradient(135deg, #F59E0B, #D97706)'
-                      : isTrackedGrade
-                      ? 'rgba(96,165,250,0.12)'
-                      : isElite
-                      ? 'linear-gradient(135deg, #D4AF37 0%, #B8962E 100%)'
-                      : isPremium
-                      ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
-                      : isLean
-                      ? 'linear-gradient(135deg, rgba(250,204,21,0.30), rgba(250,204,21,0.15))'
-                      : isWeak
-                      ? 'linear-gradient(135deg, rgba(245,158,11,0.25), rgba(245,158,11,0.10))'
-                      : isGraded
-                      ? (isWin ? 'linear-gradient(135deg, #10B981, #059669)' : isLoss ? 'linear-gradient(135deg, #EF4444, #DC2626)' : 'linear-gradient(135deg, #64748B, #475569)')
-                      : 'linear-gradient(135deg, #10B981, #059669)',
-                    border: `1px solid ${isCancelled ? 'rgba(239,68,68,0.3)'
-                      : isMuted ? 'rgba(245,158,11,0.4)'
-                      : isLean ? 'rgba(250,204,21,0.50)'
-                      : isTrackedGrade ? 'rgba(96,165,250,0.45)'
-                      : isWeak ? 'rgba(245,158,11,0.45)'
-                      : isElite ? 'rgba(245,208,96,0.6)'
-                      : isWin ? 'rgba(16,185,129,0.4)'
-                      : isLoss ? 'rgba(239,68,68,0.4)'
-                      : 'rgba(16,185,129,0.4)'}`,
-                    fontFeatureSettings: "'tnum'",
-                    textDecoration: (isCancelled || isMuted) ? 'line-through' : 'none',
-                    boxShadow: isElite ? '0 0 8px rgba(212,175,55,0.35)' : 'none',
-                  }}>
-                    {isTrackedGrade ? '0u · TRACK' : (isCancelled || isMuted) ? `${ut.icon} ${units}u → 0u` : `${ut.icon} ${units}u`}
-                  </span>
-                  {/* AGS-Unified v9 HC chip — high-conviction CONFIRMED
-                      wallets backing this side. Diagnostic-only: under v9,
-                      sizing is owned by the AGS-U tier ladder (ELITE 2.0×,
-                      PREMIUM 1.5×, LOCK 1.1×, LEAN 0.5×, WEAK 0.2×,
-                      FADE 0.0×). HC is one of the AGS-U input features but
-                      does NOT layer a separate multiplier on top. Hidden on
-                      graded picks (we already committed at lock size) and
-                      on tracked-only picks. */}
-                  {showHcChip && !isGraded && !isLean && (
-                    <span style={{
-                      ...T.micro, fontWeight: 900, color: B.gold,
-                      padding: '0.2rem 0.45rem', borderRadius: '5px',
-                      background: isHcSuper ? 'rgba(212,175,55,0.30)' : B.goldDim,
-                      border: `1px solid ${B.goldBorder}`,
-                      letterSpacing: '0.04em',
-                      boxShadow: isHcSuper ? '0 0 8px rgba(212,175,55,0.45)' : 'none',
-                    }}
-                    title={isHcSuper
-                      ? `HC margin +${hcMarginVal}: ${hcConfFor} high-conviction CONFIRMED wallet${hcConfFor !== 1 ? 's' : ''} for · ${hcConfAg} against. Strong proven-wallet conviction — one of the input features AGS-U v9 weighs when scoring this side.`
-                      : `HC margin +${hcMarginVal}: ${hcConfFor} high-conviction CONFIRMED wallet${hcConfFor !== 1 ? 's' : ''} for · ${hcConfAg} against. Proven-wallet conviction — one of the input features AGS-U v9 weighs when scoring this side.`}>
-                      HC +{hcMarginVal}
-                    </span>
-                  )}
-                  {/* AGS-U v9 tier chip — composite over 5 L1-pruned features
-                      (proven count Δ, proven contribution Δ, HC ratio Δ,
-                      conviction Δ, ROI/PnL Δ). z-scored against the daily
-                      calibration distribution. Tier bands: ELITE ≥ q90,
-                      PREMIUM ≥ q80, LOCK ≥ q60, LEAN ≥ q40, WEAK ≥ q20,
-                      FADE < q20 (hard mute). Drives both display and the
-                      cron's actual lock/mute/sizing decisions — single
-                      source of truth. */}
-                  {agsValueDisplay != null && Number.isFinite(agsValueDisplay) && AGS_TIER_META[agsTierDisplay] && (
-                    <span style={{
-                      ...T.micro, fontWeight: 800,
-                      padding: '0.2rem 0.45rem', borderRadius: '5px',
-                      color: AGS_TIER_META[agsTierDisplay].color,
-                      background: AGS_TIER_META[agsTierDisplay].bg,
-                      border: `1px solid ${AGS_TIER_META[agsTierDisplay].color}66`,
-                      letterSpacing: '0.04em',
-                      display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
-                    }}
-                    title={`AGS-U v12 = ${agsValueDisplay >= 0 ? '+' : ''}${agsValueDisplay.toFixed(3)} — ratio of weighted "for" wallet quality to weighted "against" wallet quality over hcBase whitelisted wallets. Tier=${agsTierDisplay}${agsQuintileDisplay ? ` · Q${agsQuintileDisplay}` : ''}${agsProvenForCount != null ? ` · proven ${agsProvenForCount} for / ${agsProvenAgCount} against` : ''}. v12 quintile cutoffs (lock above zero): ELITE ≥ q80 · PREMIUM ≥ q60 · LOCK ≥ q40 · LEAN ≥ q20 · WEAK > 0 · FADE ≤ 0 (hard mute). Sizing ladder: ELITE 5u · PREMIUM 3u · LOCK 1u · LEAN 0.5u · WEAK 0.25u.`}>
-                      AGS {agsValueDisplay >= 0 ? '+' : ''}{agsValueDisplay.toFixed(2)}
-                    </span>
-                  )}
-                  {/* Legacy v7.3 promotion chips — DROPPED FROM LIVE
-                      PICKS. Under AGS-U v9 the AGS-U tier chip above is
-                      the single source of conviction; surfacing
-                      "RESCUED" / "Σ=1 FLOOR" / "Σ=2 FLOOR" on a live
-                      shipped pick was confusing because it implied a
-                      separate sizing route on top of the AGS-U ladder.
-                      We still render the chips on graded picks so
-                      historical attribution stays visible for legacy
-                      shipped picks. */}
-                  {wasHcRescued && isGraded && (
-                    <span style={{
-                      ...T.micro, fontWeight: 800, color: B.textSec,
-                      padding: '0.2rem 0.45rem', borderRadius: '5px',
-                      background: 'rgba(255,255,255,0.04)',
-                      border: '1px solid rgba(255,255,255,0.12)',
-                      letterSpacing: '0.04em',
-                    }}
-                    title={`Historical attribution — this graded pick was promoted via the legacy pre-AGS-U "HC rescue" route (promotedBy=v73-hc-rescue or ags-rescue). Under AGS-U v9 today the same data is scored by the AGS chip above.`}>
-                      (legacy: rescued)
-                    </span>
-                  )}
-                  {(wasSigma1Promoted || wasSigma2Promoted) && isGraded && (
-                    <span style={{
-                      ...T.micro, fontWeight: 800, color: B.textSec,
-                      padding: '0.2rem 0.45rem', borderRadius: '5px',
-                      background: 'rgba(255,255,255,0.04)',
-                      border: '1px solid rgba(255,255,255,0.12)',
-                      letterSpacing: '0.04em',
-                    }}
-                    title={`Historical attribution — graded under the legacy pre-AGS-U Σ-floor promotion route. Under AGS-U v9 the same data is scored by the AGS chip above.`}>
-                      (legacy: Σ={wasSigma1Promoted ? '1' : '2'} floor)
-                    </span>
-                  )}
-                  {evEdge > 0 && (
-                    <span style={{ ...T.body, fontWeight: 900, color: B.green, padding: '0.2rem 0.6rem', borderRadius: '5px', background: B.greenDim }}>
-                      +{evEdge}% EV
-                    </span>
-                  )}
-                </div>
-              </div>
-              {(() => {
-                // Edge-state note ONLY. For normal locks the conviction panel
-                // + "who's backing it" strip below carry the full story, so we
-                // drop the redundant winner/quality/$ paragraph that used to
-                // restate the same facts four times. Non-standard tiers still
-                // get a one-line read so the user knows why the stake differs.
-                const noteStyle = { ...T.micro, color: B.textSec, lineHeight: 1.5, marginTop: '0.15rem' };
-                if (isCancelled) return (<div style={noteStyle}><span style={{ color: B.red, fontWeight: 700 }}>Signal killed</span> — proven winners flipped against this side after lock.</div>);
-                if (isMuted)     return (<div style={noteStyle}><span style={{ color: '#F59E0B', fontWeight: 700 }}>Signal fading</span> — conviction weakened since lock. Stand down.</div>);
-                if (isLean)      return (<div style={noteStyle}><span style={{ color: LEAN_BLUE, fontWeight: 700 }}>Lean · ½ stake</span> — moderate conviction; sized at half a standard lock.</div>);
-                if (isWeak)      return (<div style={noteStyle}><span style={{ color: WEAK_AMBER, fontWeight: 700 }}>Weak · ⅕ stake</span> — minimum exposure, just above the mute floor.</div>);
-                if (isTrackedGrade) return (<div style={noteStyle}><span style={{ color: LEAN_BLUE, fontWeight: 700 }}>Tracked only</span> — graded for the record; contributes 0u to P&amp;L.</div>);
-                return null;
-              })()}
-            </div>
+            {(() => {
+              // Edge-state note ONLY — normal locks render nothing; the
+              // conviction + backing wallets below carry the story. The
+              // tier/units/AGS chips that used to sit here were a duplicate
+              // of the always-visible collapsed header, so they're gone.
+              const noteStyle = { ...T.micro, color: B.textSec, lineHeight: 1.5, marginBottom: '0.7rem' };
+              if (isCancelled) return (<div style={noteStyle}><span style={{ color: B.red, fontWeight: 700 }}>Signal killed</span> — proven winners flipped against this side after lock.</div>);
+              if (isMuted)     return (<div style={noteStyle}><span style={{ color: '#F59E0B', fontWeight: 700 }}>Signal fading</span> — conviction weakened since lock. Stand down.</div>);
+              if (isLean)      return (<div style={noteStyle}><span style={{ color: LEAN_BLUE, fontWeight: 700 }}>Lean · ½ stake</span> — moderate conviction; sized at half a standard lock.</div>);
+              if (isWeak)      return (<div style={noteStyle}><span style={{ color: WEAK_AMBER, fontWeight: 700 }}>Weak · ⅕ stake</span> — minimum exposure, just above the mute floor.</div>);
+              if (isTrackedGrade) return (<div style={noteStyle}><span style={{ color: LEAN_BLUE, fontWeight: 700 }}>Tracked only</span> — graded for the record; contributes 0u to P&amp;L.</div>);
+              return null;
+            })()}
 
-            {/* Bet line: team + fair value | locked odds + book */}
+            {/* Bet line: the pick + the locked price as the two hero numbers */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '0.625rem', alignItems: 'center' }}>
               <div>
-                <div style={{ ...T.micro, fontSize: '0.6rem', color: B.textMuted, marginBottom: '0.25rem', letterSpacing: '0.05em' }}>
-                  {sharpCount || '—'} sharp{sharpCount !== 1 ? 's' : ''} backing
+                <div style={{ ...T.micro, fontSize: '0.56rem', color: accentColor, marginBottom: '0.3rem', letterSpacing: '0.12em', fontWeight: 800 }}>
+                  THE PICK
                 </div>
                 <div style={{
-                  fontSize: '1.5rem', fontWeight: 900, color: B.text,
-                  lineHeight: 1.08, letterSpacing: '-0.02em',
-                  textShadow: `0 0 24px ${accentColor}25`,
+                  fontSize: '1.7rem', fontWeight: 900, color: B.text,
+                  lineHeight: 1.05, letterSpacing: '-0.025em',
                 }}>
                   {marketType === 'spread' ? `${teamShort} ${line > 0 ? '+' : ''}${line}` : marketType === 'total' ? teamShort : `${teamShort} ML`}
                 </div>
                 {pinnProb && (
-                  <div style={{ ...T.micro, fontSize: '0.62rem', color: B.textSec, marginTop: '0.25rem', fontFeatureSettings: "'tnum'" }}>
-                    Fair value: {fmtO(pinnacleOdds)} ({(pinnProb * 100).toFixed(1)}%)
+                  <div style={{ ...T.micro, fontSize: '0.62rem', color: B.textMuted, marginTop: '0.35rem', fontFeatureSettings: "'tnum'" }}>
+                    Fair value {fmtO(pinnacleOdds)} · {(pinnProb * 100).toFixed(1)}%{evEdge > 0 ? <span style={{ color: B.green, fontWeight: 700 }}>{'  ·  +'}{evEdge}% EV</span> : null}
                   </div>
                 )}
               </div>
-              <div style={{ width: '1px', height: '46px', background: `linear-gradient(180deg, transparent, ${B.border}, transparent)` }} />
+              <div style={{ width: '1px', height: '52px', background: `linear-gradient(180deg, transparent, ${B.border}, transparent)` }} />
               <div style={{ textAlign: 'right' }}>
-                <div style={{ ...T.micro, fontSize: '0.6rem', color: B.textMuted, marginBottom: '0.25rem', letterSpacing: '0.07em' }}>LOCKED AT</div>
+                <div style={{ ...T.micro, fontSize: '0.56rem', color: B.textMuted, marginBottom: '0.3rem', letterSpacing: '0.12em', fontWeight: 700 }}>LOCKED AT</div>
                 <div style={{
-                  fontSize: '1.65rem', fontWeight: 900,
+                  fontSize: '1.85rem', fontWeight: 900,
                   color: evEdge > 0 ? B.green : B.text,
-                  lineHeight: 1, letterSpacing: '-0.02em',
+                  lineHeight: 1, letterSpacing: '-0.025em',
                   fontFeatureSettings: "'tnum'",
-                  textShadow: evEdge > 0 ? '0 0 20px rgba(16,185,129,0.25)' : 'none',
                 }}>{fmtO(odds)}</div>
-                <div style={{ ...T.micro, fontSize: '0.6rem', color: B.textSec, marginTop: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{book}</div>
+                <div style={{ ...T.micro, fontSize: '0.58rem', color: B.textMuted, marginTop: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{book}</div>
               </div>
             </div>
 
-            {/* Risk / Result row */}
+            {/* Risk / Result row — de-boxed; a hairline rule separates it from
+                the hero numbers instead of a nested colored box. */}
             <div style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              marginTop: '0.625rem', padding: '0.375rem 0.5rem', borderRadius: '6px',
-              background: isGraded ? (isWin ? 'rgba(16,185,129,0.06)' : isLoss ? 'rgba(239,68,68,0.06)' : 'rgba(255,255,255,0.02)') : 'rgba(16,185,129,0.06)',
-              border: `1px solid ${isGraded ? (isWin ? 'rgba(16,185,129,0.15)' : isLoss ? 'rgba(239,68,68,0.15)' : B.borderSubtle) : 'rgba(16,185,129,0.15)'}`,
+              marginTop: '0.85rem', paddingTop: '0.7rem',
+              borderTop: `1px solid ${B.borderSubtle}`,
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexWrap: 'wrap' }}>
-                <span style={{ ...T.micro, color: B.textSec }}>Risk</span>
+                <span style={{ ...T.micro, color: B.textMuted }}>Risk</span>
                 {/* Live AGS-U-sized stake — always show the actual live
                     unit count. Strikethrough/peak-unit comparison was
                     removed because peak.units carries values from the
@@ -6104,26 +5927,23 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                   </span>
                 )}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                <span style={{ ...T.micro, color: B.textSec }}>{isGraded ? 'Result' : 'To Win'}</span>
-                <span style={{ ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'", color: isGraded ? (isWin ? B.green : isLoss ? B.red : B.textSec) : (isLean ? LEAN_BLUE : isWeak ? WEAK_AMBER : (isMuted || isCancelled) ? B.textMuted : showDownsize ? DOWNSIZE_AMBER : B.green) }}>
-                  {/* AGS-U v9 — LEAN (0.5×) and WEAK (0.2×) BOTH ship real
-                      money under the new ladder, so the legacy v7 force-
-                      to-0 on `isLean` was zeroing the payout calc on
-                      every LEAN ship (today's Cavs/Pistons total: 0.75u
-                      @ -110 should pay 0.68u, was reading "+0.00u"). Only
-                      MUTED (FADE) and CANCELLED truly have no money at
-                      risk. */}
-                  {isGraded ? `${isWin ? '+' : isLoss ? '' : ''}${(profit || 0).toFixed(2)}u` : `+${((isMuted || isCancelled) ? 0 : potentialWin).toFixed(2)}u`}
-                </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                  <span style={{ ...T.micro, color: B.textMuted }}>{isGraded ? 'Result' : 'To win'}</span>
+                  <span style={{ ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'", color: isGraded ? (isWin ? B.green : isLoss ? B.red : B.textSec) : (isLean ? LEAN_BLUE : isWeak ? WEAK_AMBER : (isMuted || isCancelled) ? B.textMuted : showDownsize ? DOWNSIZE_AMBER : B.green) }}>
+                    {/* LEAN/WEAK ship real money; only MUTED/CANCELLED are 0. */}
+                    {isGraded ? `${isWin ? '+' : isLoss ? '' : ''}${(profit || 0).toFixed(2)}u` : `+${((isMuted || isCancelled) ? 0 : potentialWin).toFixed(2)}u`}
+                  </span>
+                </div>
+                {clvPct != null && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                    <span style={{ ...T.micro, color: B.textMuted }}>CLV</span>
+                    <span style={{ ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'", color: clvPositive ? B.green : liveCLV < 0 ? B.red : B.textMuted }}>
+                      {clvPositive ? '+' : ''}{clvPct}%
+                    </span>
+                  </div>
+                )}
               </div>
-              <span style={{
-                ...T.micro, fontWeight: 800, color: ut.color,
-                padding: '0.1rem 0.35rem', borderRadius: '4px',
-                background: ut.color === B.green ? B.greenDim : ut.color === B.gold ? B.goldDim : 'rgba(255,255,255,0.04)',
-              }}>
-                {ut.icon} {ut.label}
-              </span>
             </div>
 
           </div>
@@ -6172,91 +5992,56 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
           )}
 
           {/* Sharp Money Battle */}
-          {consensusStrength?.moneyPct != null && (
-            <div style={{ padding: '0.75rem 0.875rem 0' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.4rem' }}>
-                <span style={{ ...T.tiny, fontSize: '0.55rem', color: B.textSubtle, letterSpacing: '0.09em' }}>SHARP MONEY — AT LOCK</span>
-                <span style={{ ...T.micro, fontWeight: 800, color: accentColor, padding: '0.1rem 0.32rem', borderRadius: '3px', background: `${accentColor}15`, fontFeatureSettings: "'tnum'" }}>
-                  {consensusStrength.moneyPct}% {teamShort}
-                </span>
-              </div>
-              {(() => {
-                const pct = consensusStrength.moneyPct / 100;
-                const totalBoth = pct > 0 ? totalInvested / pct : totalInvested;
-                const otherAmt = Math.round(totalBoth - totalInvested);
-                return (
-                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'stretch' }}>
-                    <div style={{
-                      flex: 1, padding: '0.5rem 0.625rem', borderRadius: '10px',
-                      background: 'rgba(255,255,255,0.015)', border: `1px solid ${B.borderSubtle}`,
-                      opacity: 0.7, transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)',
-                    }}>
-                      <div style={{ ...T.micro, fontWeight: 700, color: B.textMuted, marginBottom: '0.25rem' }}>{otherTeam}</div>
-                      <div style={{ ...T.heading, fontWeight: 900, color: B.textSec, fontFeatureSettings: "'tnum'" }}>{fmtV(otherAmt)}</div>
-                      <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.1rem', fontFeatureSettings: "'tnum'" }}>{100 - consensusStrength.moneyPct}%</div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <span style={{
-                        ...T.micro, fontSize: '0.52rem', color: B.textMuted, fontWeight: 800,
-                        width: '22px', height: '22px', borderRadius: '50%',
-                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                        border: `1px solid ${B.border}`, background: 'rgba(255,255,255,0.02)',
-                        letterSpacing: '0.02em',
-                      }}>VS</span>
-                    </div>
-                    <div style={{
-                      flex: 1.55, padding: '0.55rem 0.7rem', borderRadius: '10px',
-                      background: `radial-gradient(120% 150% at 50% 0%, ${accentColor}14 0%, transparent 60%), linear-gradient(135deg, ${accentColor}0e 0%, ${accentColor}03 100%)`,
-                      border: `1px solid ${accentColor}40`, position: 'relative', overflow: 'hidden',
-                      boxShadow: `0 0 14px ${accentColor}14, inset 0 1px 0 rgba(255,255,255,0.04)`,
-                      transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)',
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', marginBottom: '0.25rem' }}>
-                        <span style={{ ...T.micro, fontWeight: 700, color: B.text }}>{teamShort}</span>
-                        <span style={{ ...T.micro, fontSize: '0.5rem', fontWeight: 900, padding: '0.06rem 0.28rem', borderRadius: '3px', color: '#fff', background: accentColor }}>SHARP SIDE</span>
-                      </div>
-                      <div style={{
-                        fontSize: '1.3rem', fontWeight: 900, color: accentColor,
-                        fontFeatureSettings: "'tnum'", lineHeight: 1.05, letterSpacing: '-0.01em',
-                        textShadow: `0 0 18px ${accentColor}30`,
-                      }}>{fmtV(totalInvested)}</div>
-                      <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.15rem', fontFeatureSettings: "'tnum'" }}>{consensusStrength.moneyPct}%</div>
-                    </div>
+          {consensusStrength?.moneyPct != null && (() => {
+            const myPct = consensusStrength.moneyPct;
+            const pct = myPct / 100;
+            const totalBoth = pct > 0 ? totalInvested / pct : totalInvested;
+            const otherAmt = Math.round(totalBoth - totalInvested);
+            return (
+              <div style={{ padding: '0.9rem 1rem 0' }}>
+                <div style={{ ...T.tiny, fontSize: '0.5rem', color: B.textSubtle, letterSpacing: '0.12em', fontWeight: 700, marginBottom: '0.6rem' }}>SHARP MONEY AT LOCK</div>
+                {/* Sharp side vs the field — amounts as the hero, one split bar */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.45rem', fontFeatureSettings: "'tnum'" }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', minWidth: 0 }}>
+                    <span style={{ ...T.body, fontWeight: 900, color: accentColor, letterSpacing: '-0.01em' }}>{fmtV(totalInvested)}</span>
+                    <span style={{ ...T.micro, fontSize: '0.58rem', color: B.textSec }}>{teamShort} · {myPct}%</span>
                   </div>
-                );
-              })()}
-            </div>
-          )}
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
+                    <span style={{ ...T.micro, fontSize: '0.58rem', color: B.textMuted }}>{100 - myPct}% · {otherTeam}</span>
+                    <span style={{ ...T.caption, fontWeight: 700, color: B.textMuted }}>{fmtV(otherAmt)}</span>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', height: '8px', borderRadius: '4px', overflow: 'hidden', background: 'rgba(255,255,255,0.05)' }}>
+                  <div style={{ width: `${myPct}%`, background: `linear-gradient(90deg, ${accentColor}99, ${accentColor})`, borderRadius: '4px' }} />
+                </div>
+              </div>
+            );
+          })()}
 
           {/* ─── ACT 3 · THE EDGE & LIFECYCLE ─── */}
+          <div style={{ padding: '0.9rem 1rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ ...T.tiny, fontSize: '0.5rem', color: B.textSubtle, letterSpacing: '0.14em', fontWeight: 700 }}>THE EDGE</span>
+            <div style={{ flex: 1, height: '1px', background: `linear-gradient(90deg, ${B.borderSubtle}, transparent)` }} />
+          </div>
 
-          {/* Book Prices */}
-          <div style={{
-            margin: '0.7rem 0.875rem 0', paddingTop: '0.5rem',
-            borderTop: `1px solid ${B.borderSubtle}`,
-          }}>
-            <div style={{
-              padding: '0 0.1rem 0.35rem',
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            }}>
-              <span style={{ ...T.tiny, fontSize: '0.55rem', color: B.textSubtle, letterSpacing: '0.09em' }}>BOOK PRICES — {marketType === 'spread' ? `${teamShort} ${line > 0 ? '+' : ''}${line}` : marketType === 'total' ? teamShort : `${teamShort} ML`}</span>
-              {clvPct != null && (
-                <span style={{ ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'", color: clvPositive ? B.green : liveCLV < 0 ? B.red : B.textMuted }}>
-                  CLV {clvPositive ? '+' : ''}{clvPct}%
-                </span>
-              )}
+          {/* Book Prices — de-boxed: plain columns split by hairlines, no
+              table fill. CLV lives once, up in the bet row. */}
+          <div style={{ padding: '0.7rem 1rem 0' }}>
+            <div style={{ ...T.tiny, fontSize: '0.5rem', color: B.textSubtle, letterSpacing: '0.1em', marginBottom: '0.5rem' }}>
+              {marketType === 'spread' ? `${teamShort} ${line > 0 ? '+' : ''}${line}` : marketType === 'total' ? teamShort : `${teamShort} ML`} — line history
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 0, borderRadius: '8px', overflow: 'hidden', background: 'rgba(255,255,255,0.02)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr' }}>
               {[
                 { label: book || 'Locked', value: odds ? fmtO(odds) : '—', color: B.text },
                 { label: 'Pinnacle', value: pinnacleOdds ? fmtO(pinnacleOdds) : '—', color: B.textSec },
-                { label: 'Current', value: closingOdds ? fmtO(closingOdds) : '—', color: clvPositive ? B.green : liveCLV != null && liveCLV < 0 ? B.red : B.textSec },
+                { label: 'Now', value: closingOdds ? fmtO(closingOdds) : '—', color: clvPositive ? B.green : liveCLV != null && liveCLV < 0 ? B.red : B.textSec },
               ].map((col, i) => (
                 <div key={col.label} style={{
-                  textAlign: 'center', padding: '0.625rem 0.375rem',
-                  borderRight: i < 2 ? `1px solid ${B.borderSubtle}` : 'none',
+                  textAlign: i === 0 ? 'left' : 'center',
+                  paddingLeft: i === 0 ? '0' : '0.375rem',
+                  borderLeft: i > 0 ? `1px solid ${B.borderSubtle}` : 'none',
                 }}>
-                  <div style={{ ...T.micro, fontSize: '0.55rem', color: B.textMuted, marginBottom: '0.3rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{col.label}</div>
+                  <div style={{ ...T.micro, fontSize: '0.52rem', color: B.textMuted, marginBottom: '0.3rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{col.label}</div>
                   <div style={{ fontSize: '1.05rem', fontWeight: 900, color: col.color, fontFeatureSettings: "'tnum'", letterSpacing: '-0.01em' }}>{col.value}</div>
                 </div>
               ))}
