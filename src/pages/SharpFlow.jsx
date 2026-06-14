@@ -4942,6 +4942,151 @@ function v12OverallTag({ forW, agW, hcFor, hcAg, moneyPct }) {
   return { label: 'mixed', tone: 'mid' };
 }
 
+// BackingWalletStrip — the receipts. Surfaces the ACTUAL proven wallets
+// behind a locked pick (lifted from the stamped walletDetails snapshot)
+// with each wallet's stored sport track record (getWalletProfile cache).
+// This is the differentiated "data we store and share" moment: instead of
+// an abstract "1 proven winner" count, the user sees who is on the pick,
+// their real-money W-L / ROI in this sport, and how hard they sized it.
+function BackingWalletStrip({ wallets, sport, accent = B.green, isMobile }) {
+  if (!Array.isArray(wallets) || wallets.length === 0) return null;
+  const sportUp = (sport || '').toUpperCase();
+
+  const enriched = wallets.map((w) => {
+    const short = String(w.wallet || '').slice(-6);
+    const profile = getWalletProfile(short);
+    const rec = profile?.bySport?.[sport]?.positions || null;
+    const decided = rec ? (rec.wins || 0) + (rec.losses || 0) : 0;
+    const winner = isSportWinner(short, sport);
+    const rankGroup = groupedSportsRankLabel(w.rank);
+    const eliteRank = w.rank != null && w.rank > 0 && w.rank <= 20;
+    // Size edge: bigger than this wallet's own median, and they win more
+    // when they load up (cross-sport own-median buckets).
+    const sz = profile?.sizeSignal;
+    let sizeEdge = null;
+    if (sz && sz.medianInvested > 0 && (w.invested || 0) > 0) {
+      const ratio = w.invested / sz.medianInvested;
+      if (ratio >= 1.5) {
+        const bucket = ratio >= 2 ? sz.wayAbove : sz.above;
+        if (bucket && bucket.n >= 3 && bucket.wr != null) sizeEdge = { ratio, wr: bucket.wr };
+      }
+    }
+    const tierLabel = eliteRank ? 'ELITE' : winner ? 'PROVEN' : 'SHARP';
+    const tierColor = eliteRank ? B.gold : winner ? B.green : B.textSec;
+    const tierBg = eliteRank ? B.goldDim : winner ? B.greenDim : 'rgba(148,163,184,0.10)';
+    return { ...w, short, profile, rec, decided, winner, rankGroup, sizeEdge, tierLabel, tierColor, tierBg, hasRecord: !!rec && decided >= 4 };
+  });
+
+  // Best wallets first: winners, then most-decided record, then biggest stake.
+  enriched.sort((a, b) =>
+    (Number(b.winner) - Number(a.winner)) ||
+    (b.decided - a.decided) ||
+    ((b.invested || 0) - (a.invested || 0))
+  );
+
+  const cap = isMobile ? 3 : 4;
+  const shown = enriched.slice(0, cap);
+  const more = enriched.length - shown.length;
+  const winnerCount = enriched.filter(e => e.winner).length;
+
+  return (
+    <div style={{
+      margin: '0.5rem 0.875rem 0', padding: '0.7rem 0.8rem', borderRadius: '12px',
+      background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 55%), rgba(255,255,255,0.012)',
+      border: `1px solid ${B.borderSubtle}`,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.55rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <Eye size={12} color={accent} />
+          <span style={{ ...T.tiny, fontSize: '0.55rem', color: B.textSec, letterSpacing: '0.09em' }}>WHO'S BACKING IT</span>
+        </div>
+        <span style={{ ...T.micro, fontWeight: 800, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
+          {winnerCount > 0
+            ? <><span style={{ color: B.green }}>{winnerCount} proven</span> · {enriched.length} wallet{enriched.length !== 1 ? 's' : ''}</>
+            : <>{enriched.length} wallet{enriched.length !== 1 ? 's' : ''}</>}
+        </span>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+        {shown.map((e, i) => (
+          <div key={`${e.short}-${i}`} style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr auto' : 'minmax(0,1fr) auto',
+            gap: '0.4rem 0.6rem', alignItems: 'center',
+            padding: '0.45rem 0.55rem', borderRadius: '9px',
+            background: e.winner ? `linear-gradient(135deg, ${e.tierColor}10 0%, transparent 70%), rgba(255,255,255,0.012)` : 'rgba(255,255,255,0.012)',
+            border: `1px solid ${e.winner ? `${e.tierColor}22` : B.borderSubtle}`,
+          }}>
+            {/* Identity + record (left column) */}
+            <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.22rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexWrap: 'wrap' }}>
+                <span style={{
+                  ...T.micro, fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.05em',
+                  padding: '0.08rem 0.32rem', borderRadius: '4px',
+                  color: e.tierColor, background: e.tierBg, border: `1px solid ${e.tierColor}44`,
+                }}>{e.tierLabel}</span>
+                {e.rankGroup && (
+                  <span style={{ ...T.micro, fontSize: '0.5rem', fontWeight: 800, color: '#CBD5E1', background: 'rgba(148,163,184,0.10)', border: '1px solid rgba(148,163,184,0.20)', padding: '0.08rem 0.32rem', borderRadius: '4px' }}>{e.rankGroup}</span>
+                )}
+                {e.winner && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.18rem', ...T.micro, fontSize: '0.5rem', fontWeight: 800, color: B.gold }}>
+                    <CheckCircle size={9} style={{ strokeWidth: 3 }} />{sportUp}
+                  </span>
+                )}
+                <span style={{ ...T.micro, fontSize: '0.55rem', color: B.textMuted, fontFeatureSettings: "'tnum'" }}>…{e.short.slice(-4)}</span>
+              </div>
+              {e.hasRecord ? (
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', flexWrap: 'wrap', fontFeatureSettings: "'tnum'" }}>
+                  <span style={{ ...T.caption, fontWeight: 900, color: B.text }}>{e.rec.wins}-{e.rec.losses}</span>
+                  <span style={{ ...T.micro, fontSize: '0.56rem', color: B.textSec }}>{Math.round(e.rec.wr)}% W</span>
+                  {e.rec.dollarRoi != null && (
+                    <span style={{ ...T.micro, fontSize: '0.56rem', fontWeight: 800, color: e.rec.dollarRoi >= 0 ? B.green : B.red }}>
+                      {e.rec.dollarRoi >= 0 ? '+' : ''}{Math.round(e.rec.dollarRoi)}% ROI
+                    </span>
+                  )}
+                  {e.rec.settledPnl != null && e.rec.settledPnl !== 0 && (
+                    <span style={{ ...T.micro, fontSize: '0.56rem', fontWeight: 800, color: e.rec.settledPnl >= 0 ? B.green : B.red }}>
+                      {e.rec.settledPnl >= 0 ? '+' : ''}{fmtVol(e.rec.settledPnl)}
+                    </span>
+                  )}
+                  <span style={{ ...T.micro, fontSize: '0.5rem', color: B.textSubtle, letterSpacing: '0.04em' }}>{sportUp} record</span>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem', fontFeatureSettings: "'tnum'" }}>
+                  <span style={{ ...T.caption, fontWeight: 900, color: (e.pnl || 0) >= 0 ? B.green : B.red }}>
+                    {(e.pnl || 0) >= 0 ? '+' : ''}{fmtVol(e.pnl || 0)}
+                  </span>
+                  <span style={{ ...T.micro, fontSize: '0.5rem', color: B.textSubtle, letterSpacing: '0.04em' }}>{sportUp} profit</span>
+                </div>
+              )}
+              {e.sizeEdge && (
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.05rem' }}>
+                  <Zap size={9} color="#FBBF24" style={{ flexShrink: 0, fill: 'rgba(245,158,11,0.35)' }} />
+                  <span style={{ ...T.micro, fontSize: '0.52rem', color: '#FBBF24', fontWeight: 700, fontFeatureSettings: "'tnum'" }}>
+                    Loading up {e.sizeEdge.ratio.toFixed(1)}× · {Math.round(e.sizeEdge.wr)}% W when sized up
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Stake on this pick (right column) */}
+            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+              <div style={{ ...T.caption, fontWeight: 900, color: accent, fontFeatureSettings: "'tnum'", lineHeight: 1 }}>{fmtVol(e.invested)}</div>
+              <div style={{ ...T.micro, fontSize: '0.5rem', color: B.textMuted, letterSpacing: '0.04em', marginTop: '0.15rem' }}>on this pick</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {more > 0 && (
+        <div style={{ ...T.micro, fontSize: '0.56rem', color: B.textMuted, textAlign: 'center', marginTop: '0.45rem', letterSpacing: '0.03em' }}>
+          + {more} more backing wallet{more !== 1 ? 's' : ''}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function V12ConvictionPanel({ tier, tierColor, tierBg, forW, agW, qFor, qAg, hcFor, hcAg, moneyPct, sport, accentColor, isMobile }) {
   const sportUp = (sport || '').toUpperCase();
   const baseDrivers = [
@@ -4993,7 +5138,7 @@ function V12ConvictionPanel({ tier, tierColor, tierBg, forW, agW, qFor, qAg, hcF
 }
 
 const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
-  const { team, away, home, sport, stars, peakStars, lockStars, units, peakUnits, isDownsized, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, lockEV, criteriaMet, criteria, consensusStrength, pinnacleOdds, marketType, line, superseded, health, lockTier, trackedOnly, isTopPick: isTopPickPre, isSuperTopPick: isSuperTopPickPre, walletConsensusDelta, walletConsensusForW, walletConsensusAgW, walletConsensusQualityMargin, walletConsensusQualityForT30, walletConsensusQualityAgT30, hcDominant, hcConfFor, hcConfAg, hcMargin, systemVersion, promotedBy, v73HcRescue, agsValue, agsTier, agsQuintile, agsProvenForCount, agsProvenAgCount, agsValueV12, agsTierV12, agsQuintileV12 } = pick;
+  const { team, away, home, sport, stars, peakStars, lockStars, units, peakUnits, isDownsized, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, lockEV, criteriaMet, criteria, consensusStrength, pinnacleOdds, marketType, line, superseded, health, lockTier, trackedOnly, isTopPick: isTopPickPre, isSuperTopPick: isSuperTopPickPre, walletConsensusDelta, walletConsensusForW, walletConsensusAgW, walletConsensusQualityMargin, walletConsensusQualityForT30, walletConsensusQualityAgT30, hcDominant, hcConfFor, hcConfAg, hcMargin, systemVersion, promotedBy, v73HcRescue, agsValue, agsTier, agsQuintile, agsProvenForCount, agsProvenAgCount, agsValueV12, agsTierV12, agsQuintileV12, backingWallets } = pick;
   // v12 is authoritative when stamped — every chip/badge that renders an
   // AGS number must speak v12 vocabulary (the lock-above-zero rule, the
   // tier-bucket Qs, the score). The legacy `agsValue` / `agsTier` /
@@ -5874,115 +6019,18 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                 </div>
               </div>
               {(() => {
-                // v6 narrative — lead with proven winners + quality wallets (what actually
-                // drives the lock). When the pick is muted/cancelled we invert the lead
-                // to surface the fade story. Avg-bet metric drops to a secondary caption.
-                const forW = walletConsensusForW ?? 0;
-                const agW  = walletConsensusAgW  ?? 0;
-                const qFor = walletConsensusQualityForT30 ?? 0;
-                const dw   = walletConsensusDelta ?? 0;
-                const sportUp = (sport || '').toUpperCase();
-                const marketNoun = marketType === 'spread' ? 'the spread' : marketType === 'total' ? 'the total' : 'ML';
-                const pinnSuffix = criteria?.pinnacleConfirms ? ` Pinnacle confirmed the play at lock.` : '';
-                const evSuffix = evEdge > 0 ? ` +${evEdge}% EV edge at ${book}.` : '';
-
-                let lead;
-                if (isCancelled) {
-                  lead = (
-                    <>
-                      <span style={{ color: B.red, fontWeight: 700 }}>Signal killed</span> on {teamShort} {marketNoun}: {Math.abs(dw)} proven {sportUp} winner{Math.abs(dw) !== 1 ? 's' : ''} now against this pick.{pinnSuffix}
-                    </>
-                  );
-                } else if (isMuted) {
-                  lead = (
-                    <>
-                      <span style={{ color: '#F59E0B', fontWeight: 700 }}>Signal fading</span> on {teamShort} {marketNoun}: {agW > 0 ? <>{agW} proven {sportUp} winner{agW !== 1 ? 's' : ''} flipped off, {forW} still backing.</> : <>quality wallets collapsed to the other side.</>}
-                    </>
-                  );
-                } else if (isLean) {
-                  // AGS-U v9: LEAN tier = AGS between q40 (LEAN floor) and
-                  // q60 (LOCK floor). Ships at 0.50× the base stake — half
-                  // the normal LOCK-tier size. NOT a 0u tracked play.
-                  const agsTxt = (agsValue != null && Number.isFinite(agsValue))
-                    ? `${agsValue >= 0 ? '+' : ''}${agsValue.toFixed(2)}`
-                    : null;
-                  lead = (
-                    <>
-                      <span style={{ color: LEAN_BLUE, fontWeight: 700 }}>LEAN tier · ½ stake</span> — {forW} proven {sportUp} winner{forW !== 1 ? 's' : ''} backing {teamShort} {marketNoun}{agsTxt ? <> at AGS-U <span style={{ color: LEAN_BLUE, fontWeight: 700 }}>{agsTxt}</span> (q40-q60 band)</> : null}. Ships at {units}u — half the standard LOCK-tier stake under the AGS-U v9 ladder.{pinnSuffix}
-                    </>
-                  );
-                } else if (isWeak) {
-                  // AGS-U v9: WEAK tier = AGS between q20 (hard mute floor)
-                  // and q40 (LEAN floor). Ships at 0.20× the base stake —
-                  // exposure only, just above the hard-mute line.
-                  const agsTxt = (agsValue != null && Number.isFinite(agsValue))
-                    ? `${agsValue >= 0 ? '+' : ''}${agsValue.toFixed(2)}`
-                    : null;
-                  lead = (
-                    <>
-                      <span style={{ color: WEAK_AMBER, fontWeight: 700 }}>WEAK tier · ⅕ stake</span> — AGS-U {agsTxt ? <span style={{ color: WEAK_AMBER, fontWeight: 700 }}>{agsTxt}</span> : 'low'} is in the q20-q40 band (just above the hard-mute floor). {forW} proven {sportUp} winner{forW !== 1 ? 's' : ''} {agW > 0 ? <>backing, {agW} against</> : <>backing</>} {teamShort} {marketNoun}. Shipping {units}u — minimum exposure, NOT a confident lock.{pinnSuffix}
-                    </>
-                  );
-                } else if (isElite) {
-                  // AGS-U v9: ELITE tier = AGS ≥ q90 (top decile).
-                  // Ships at 2.00× the base stake.
-                  const agsTxt = (agsValue != null && Number.isFinite(agsValue))
-                    ? `${agsValue >= 0 ? '+' : ''}${agsValue.toFixed(2)}`
-                    : null;
-                  lead = (
-                    <>
-                      <span style={{ color: ELITE_GOLD, fontWeight: 800 }}>ELITE tier · 2× stake</span> — {forW} proven {sportUp} winner{forW !== 1 ? 's' : ''} backing {teamShort} {marketNoun}{agsTxt ? <> at AGS-U <span style={{ color: ELITE_GOLD, fontWeight: 800 }}>{agsTxt}</span> (top decile, q90+)</> : null}. Shipping {units}u — full conviction.{pinnSuffix}{evSuffix}
-                    </>
-                  );
-                } else if (forW > 0 || wasHcRescued || wasSigma1Promoted || wasSigma2Promoted) {
-                  // AGS-Unified v9 narrative — proven winners + (optionally)
-                  // quality wallets lead the story. Sizing is owned by the
-                  // AGS-U tier ladder (ELITE 2.0× · PREMIUM 1.5× · LOCK 1.1×
-                  // · LEAN 0.5× · WEAK 0.2× · FADE 0.0×). HC dominance is
-                  // one of the AGS-U input features (HC ratio Δ) and shows
-                  // on its own chip above. The legacy v7.3 rescue / Σ-floor
-                  // promotion tags are suppressed on live picks (they
-                  // implied a sizing route that no longer exists) and only
-                  // re-surface on graded picks as historical attribution.
-                  const agsTxt = (agsValue != null && Number.isFinite(agsValue))
-                    ? `${agsValue >= 0 ? '+' : ''}${agsValue.toFixed(2)}`
-                    : null;
-                  const agsSuffix = agsTxt
-                    ? ` AGS-U ${agsTxt}${agsTier ? ` (${agsTier} tier)` : ''}.`
-                    : '';
-                  const hcSuffix = showHcChip
-                    ? ` HC margin +${hcMarginVal} (${hcConfFor} high-conviction CONFIRMED ${hcConfFor !== 1 ? 'wallets' : 'wallet'}${hcConfAg > 0 ? `, ${hcConfAg} HC dissent` : ''}) feeds the AGS-U score.`
-                    : '';
-                  lead = (
-                    <>
-                      <span style={{ color: B.gold, fontWeight: 700 }}>{forW || hcConfFor} proven {sportUp} winner{(forW || hcConfFor) !== 1 ? 's' : ''}</span> backing {teamShort} {marketNoun}
-                      {qFor > 0 ? <> with <span style={{ color: B.green, fontWeight: 700 }}>{qFor} quality wallet{qFor !== 1 ? 's' : ''}</span> confirming.</> : '.'}
-                      {totalInvested ? <> Combined <span style={{ color: B.gold, fontWeight: 700 }}>{fmtV(totalInvested)}</span> invested.</> : ''}
-                      {pinnSuffix}{evSuffix}{agsSuffix}{hcSuffix}
-                    </>
-                  );
-                } else {
-                  lead = (
-                    <>
-                      {sharpCount || '—'} sharp bettor{(sharpCount || 0) !== 1 ? 's' : ''} backing {teamShort} {marketNoun}
-                      {totalInvested ? <>, combined <span style={{ color: B.gold, fontWeight: 700 }}>{fmtV(totalInvested)}</span> invested.</> : '.'}
-                      {pinnSuffix}{evSuffix}
-                    </>
-                  );
-                }
-
-                return (
-                  <>
-                    <div style={{ ...T.micro, color: B.textSec, lineHeight: 1.5, marginTop: '0.15rem' }}>
-                      {lead}
-                    </div>
-                    {avgBet ? (
-                      <div style={{ ...T.micro, fontSize: '0.56rem', color: B.textMuted, marginTop: '0.25rem', letterSpacing: '0.03em' }}>
-                        avg {fmtV(avgBet)}/bet
-                      </div>
-                    ) : null}
-                  </>
-                );
+                // Edge-state note ONLY. For normal locks the conviction panel
+                // + "who's backing it" strip below carry the full story, so we
+                // drop the redundant winner/quality/$ paragraph that used to
+                // restate the same facts four times. Non-standard tiers still
+                // get a one-line read so the user knows why the stake differs.
+                const noteStyle = { ...T.micro, color: B.textSec, lineHeight: 1.5, marginTop: '0.15rem' };
+                if (isCancelled) return (<div style={noteStyle}><span style={{ color: B.red, fontWeight: 700 }}>Signal killed</span> — proven winners flipped against this side after lock.</div>);
+                if (isMuted)     return (<div style={noteStyle}><span style={{ color: '#F59E0B', fontWeight: 700 }}>Signal fading</span> — conviction weakened since lock. Stand down.</div>);
+                if (isLean)      return (<div style={noteStyle}><span style={{ color: LEAN_BLUE, fontWeight: 700 }}>Lean · ½ stake</span> — moderate conviction; sized at half a standard lock.</div>);
+                if (isWeak)      return (<div style={noteStyle}><span style={{ color: WEAK_AMBER, fontWeight: 700 }}>Weak · ⅕ stake</span> — minimum exposure, just above the mute floor.</div>);
+                if (isTrackedGrade) return (<div style={noteStyle}><span style={{ color: LEAN_BLUE, fontWeight: 700 }}>Tracked only</span> — graded for the record; contributes 0u to P&amp;L.</div>);
+                return null;
               })()}
             </div>
 
@@ -6078,49 +6126,14 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
               </span>
             </div>
 
-            {/* v6 pill strip — primary pill uses verified-winner count when
-                available; DOMINANT/STRONG consensus grade demoted to the
-                diagnostics caption below. */}
-            <div style={{
-              display: 'flex', gap: '0.5rem', flexWrap: 'wrap',
-              marginTop: '0.625rem', paddingTop: '0.5rem',
-              borderTop: `1px solid ${isGraded ? (isWin ? 'rgba(16,185,129,0.15)' : isLoss ? 'rgba(239,68,68,0.12)' : 'rgba(212,175,55,0.12)') : 'rgba(16,185,129,0.15)'}`,
-            }}>
-              {(() => {
-                const forW = walletConsensusForW ?? 0;
-                const sportUp = (sport || '').toUpperCase();
-                if (forW > 0) {
-                  return (
-                    <span style={{ ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px', background: B.greenDim, color: B.green, fontWeight: 700 }}>
-                      {forW} {sportUp} WINNER{forW !== 1 ? 'S' : ''}
-                    </span>
-                  );
-                }
-                if (sharpCount) {
-                  return (
-                    <span style={{ ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px', background: B.goldDim, color: B.gold, fontWeight: 600 }}>
-                      {sharpCount} sharp bettor{sharpCount !== 1 ? 's' : ''}
-                    </span>
-                  );
-                }
-                return null;
-              })()}
-              {totalInvested && <span style={{ ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px', background: 'rgba(255,255,255,0.04)', color: B.textSec }}>{fmtV(totalInvested)} invested</span>}
-              {criteria?.pinnacleConfirms && <span style={{ ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px', background: B.greenDim, color: B.green, fontWeight: 600 }}>✓ Pinnacle confirms</span>}
-              {evEdge > 0 && <span style={{ ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px', background: B.greenDim, color: B.green, fontWeight: 700 }}>+{evEdge}% edge</span>}
-              {clvPct != null && <span style={{ ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px', fontWeight: 700, fontFeatureSettings: "'tnum'", color: clvPositive ? B.green : liveCLV < 0 ? B.red : B.textMuted, background: clvPositive ? B.greenDim : liveCLV < 0 ? B.redDim : 'rgba(255,255,255,0.04)' }}>CLV {clvPositive ? '+' : ''}{clvPct}%</span>}
-            </div>
-            {/* Diagnostics caption — consensus grade demoted here since it no
-                longer gates the lock under v6. */}
-            {consensusStrength?.grade && (
-              <div style={{
-                ...T.micro, fontSize: '0.56rem', color: B.textMuted,
-                marginTop: '0.4rem', letterSpacing: '0.04em', textTransform: 'lowercase',
-              }}>
-                <span style={{ opacity: 0.7 }}>diagnostics · </span>
-                <span>sharp money {consensusStrength.moneyPct}% ({consensusStrength.grade.toLowerCase()})</span>
-              </div>
-            )}
+          </div>
+
+          {/* ─── ACT 2 · WHY WE LOCKED IT ─── conviction read + the actual
+              proven wallets behind the pick. This is the differentiated data
+              moment; the bet hero above answers "what", this answers "why". */}
+          <div style={{ padding: '0.85rem 0.875rem 0 0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ ...T.tiny, fontSize: '0.5rem', color: B.textSubtle, letterSpacing: '0.14em', fontWeight: 700 }}>WHY WE LOCKED IT</span>
+            <div style={{ flex: 1, height: '1px', background: `linear-gradient(90deg, ${B.borderSubtle}, transparent)` }} />
           </div>
 
           {/* V12 Conviction — how the proven-wallet signal feeds the model.
@@ -6142,6 +6155,18 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
               moneyPct={consensusStrength?.moneyPct}
               sport={sport}
               accentColor={accentColor}
+              isMobile={isMobile}
+            />
+          )}
+
+          {/* The receipts — actual proven wallets backing this pick, each with
+              its stored sport track record. Lifted from the stamped
+              walletDetails snapshot; only renders when we have wallet rows. */}
+          {Array.isArray(backingWallets) && backingWallets.length > 0 && (
+            <BackingWalletStrip
+              wallets={backingWallets}
+              sport={sport}
+              accent={accentColor}
               isMobile={isMobile}
             />
           )}
@@ -6200,48 +6225,10 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                   </div>
                 );
               })()}
-
-              {/* Market flow bar */}
-              <div style={{
-                marginTop: '0.6rem', paddingTop: '0.5rem',
-                borderTop: `1px solid ${B.borderSubtle}`,
-              }}>
-                <div style={{ padding: '0 0.1rem 0.3rem', display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ ...T.tiny, fontSize: '0.55rem', color: B.textSubtle, letterSpacing: '0.09em' }}>MARKET FLOW</span>
-                  <div style={{ display: 'flex', gap: '0.75rem' }}>
-                    <span style={{ ...T.micro, fontSize: '0.58rem', color: B.textMuted, fontWeight: 700 }}>{otherTeam}</span>
-                    <span style={{ ...T.micro, fontSize: '0.58rem', color: B.textMuted, fontWeight: 700 }}>{teamShort}</span>
-                  </div>
-                </div>
-                <div style={{ padding: '0 0.1rem' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '36px 1fr 36px', alignItems: 'center', gap: '0.375rem' }}>
-                    <span style={{ ...T.micro, fontSize: '0.625rem', fontWeight: 800, fontFeatureSettings: "'tnum'", color: B.textMuted, textAlign: 'left' }}>
-                      {100 - consensusStrength.moneyPct}%
-                    </span>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
-                      <div style={{
-                        display: 'flex', height: '7px', borderRadius: '3.5px', overflow: 'hidden',
-                        background: 'rgba(255,255,255,0.04)', boxShadow: 'inset 0 1px 1px rgba(0,0,0,0.3)',
-                      }}>
-                        <div className="sf-bar-left" style={{ width: `${100 - consensusStrength.moneyPct}%`, background: 'rgba(255,255,255,0.06)', borderRadius: '3.5px 0 0 3.5px' }} />
-                        <div style={{ width: '2px', background: 'rgba(11,15,31,0.9)', flexShrink: 0 }} />
-                        <div className="sf-bar-right" style={{
-                          width: `${consensusStrength.moneyPct}%`,
-                          background: `linear-gradient(90deg, ${accentColor}44, ${accentColor})`,
-                          borderRadius: '3.5px',
-                          boxShadow: `0 0 8px ${accentColor}50`,
-                        }} />
-                      </div>
-                      <span style={{ ...T.micro, fontSize: '0.5rem', color: 'rgba(255,255,255,0.35)', textAlign: 'center', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Sharp Money</span>
-                    </div>
-                    <span style={{ ...T.micro, fontSize: '0.625rem', fontWeight: 800, fontFeatureSettings: "'tnum'", color: accentColor, textAlign: 'right' }}>
-                      {consensusStrength.moneyPct}%
-                    </span>
-                  </div>
-                </div>
-              </div>
             </div>
           )}
+
+          {/* ─── ACT 3 · THE EDGE & LIFECYCLE ─── */}
 
           {/* Book Prices */}
           <div style={{
@@ -13598,6 +13585,32 @@ export default function SharpFlow() {
                           walletConsensusQualityMargin: sd.v8_walletConsensusQualityMargin ?? null,
                           walletConsensusQualityForT30: sd.v8_walletConsensusQualityForT30 ?? null,
                           walletConsensusQualityAgT30: sd.v8_walletConsensusQualityAgT30 ?? null,
+                          // Backing wallets — the actual proven wallets behind
+                          // this side, lifted from the stamped peak/lock
+                          // v8Scoring.walletDetails snapshot. Filtered to the
+                          // consensus side + a real stake, sorted by size.
+                          // The card enriches each with its stored sport
+                          // track record (getWalletProfile) at render so we
+                          // surface WHO is on the pick, not just a count.
+                          backingWallets: (() => {
+                            const wd = sd.peak?.v8Scoring?.walletDetails
+                              || sd.lock?.v8Scoring?.walletDetails
+                              || peak?.v8Scoring?.walletDetails
+                              || lock?.v8Scoring?.walletDetails
+                              || null;
+                            if (!Array.isArray(wd)) return null;
+                            const rows = wd
+                              .filter(w => w && w.side === sideKey && (w.invested || 0) > 0)
+                              .map(w => ({
+                                wallet: w.wallet,
+                                invested: w.invested || 0,
+                                roi: w.roi || 0,
+                                pnl: w.pnl || 0,
+                                rank: w.rank ?? null,
+                              }))
+                              .sort((a, b) => (b.invested || 0) - (a.invested || 0));
+                            return rows.length ? rows : null;
+                          })(),
                           // v7.1 TOP PICK tiers — read from stamped fields when
                           // the pick is post-cutover and has been stamped under
                           // consensus version 7. Pre-cutover picks fall through
