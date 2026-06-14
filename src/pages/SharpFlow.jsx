@@ -6326,6 +6326,136 @@ function deriveDisplayState({ cronTier, cronUnits, fallbackTier }) {
   return { state: 'PLAY', tier: cronTier, units };
 }
 
+// ─── Wallet Dossier Row ───────────────────────────────────────────────────────
+// Premium per-wallet line for the expanded card. Leads with the proprietary
+// track record we grade + store (per-sport real-money W/L, ROI, settled profit)
+// and the "sizes up = wins more" edge tied to the live bet — not just the raw
+// snapshot. Internal whitelist plumbing (source A/B, verdict codes) is hidden on
+// purpose; users only see signal that helps them decide.
+function WalletDossierRow({ p, gd, now, isMobile, market = 'ml', accent = B.gold }) {
+  const posColor = p.pnl >= 0 ? B.green : B.red;
+  const tc = p.tier === 'ELITE' ? { color: B.gold, bg: B.goldDim } : { color: B.green, bg: B.greenDim };
+  const rankGroup = groupedSportsRankLabel(p.leaderboardRank);
+  const isWinner = isSportWinner(p.wallet, gd.sport);
+
+  const seenAgo = p.firstSeen ? (() => {
+    const mins = Math.round((now - new Date(p.firstSeen).getTime()) / 60000);
+    if (mins < 60) return `${mins}m ago`;
+    if (mins < 1440) return `${Math.round(mins / 60)}h ago`;
+    return `${Math.round(mins / 1440)}d ago`;
+  })() : null;
+
+  // Position label varies by market (team / team+line / Over·Under line).
+  let sideLabel;
+  if (market === 'total') {
+    sideLabel = `${p.side === 'over' ? 'Over' : 'Under'}${p.entryLine != null ? ' ' + p.entryLine : ''}`;
+  } else {
+    const sideTeam = p.side === 'draw' ? 'Draw' : p.side === 'away' ? gd.away : gd.home;
+    const short = sideTeam.split(' ').pop();
+    sideLabel = market === 'spread' && p.entryLine != null
+      ? `${short} ${p.entryLine > 0 ? '+' : ''}${p.entryLine}`
+      : short;
+  }
+
+  // Stored, graded track record for THIS sport (real-money on-chain results).
+  const profile = getWalletProfile(p.wallet.slice(-6));
+  const rec = profile?.bySport?.[gd.sport]?.positions;
+  const decided = rec ? (rec.wins || 0) + (rec.losses || 0) : 0;
+  const hasRecord = !!rec && decided >= 4;
+
+  // Size edge — is this bet bigger than the wallet's own median, and do they
+  // win more when they size up? sizeSignal buckets are own-median, cross-sport.
+  const sz = profile?.sizeSignal;
+  let sizeEdge = null;
+  if (sz && sz.medianInvested > 0 && p.invested > 0) {
+    const ratio = p.invested / sz.medianInvested;
+    if (ratio >= 1.5) {
+      const bucket = ratio >= 2 ? sz.wayAbove : sz.above;
+      if (bucket && bucket.n >= 3 && bucket.wr != null) sizeEdge = { ratio, wr: bucket.wr };
+    }
+  }
+
+  return (
+    <div className="sf-card" style={{
+      padding: isMobile ? '0.6rem 0.65rem' : '0.7rem 0.8rem',
+      borderRadius: '12px',
+      background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 55%), rgba(255,255,255,0.012)',
+      border: `1px solid ${B.borderSubtle}`,
+      display: 'flex', flexDirection: 'column', gap: '0.5rem',
+    }}>
+      {/* Identity */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', minWidth: 0, flexWrap: 'wrap' }}>
+          <Badge color={tc.color} bg={tc.bg}>{p.tier}</Badge>
+          {rankGroup && (
+            <span style={{ ...T.tiny, padding: '0.15rem 0.4rem', borderRadius: '5px', color: '#CBD5E1', background: 'rgba(148,163,184,0.10)', border: '1px solid rgba(148,163,184,0.20)' }}>{rankGroup}</span>
+          )}
+          {isWinner && (
+            <span style={{ ...T.tiny, padding: '0.15rem 0.4rem', borderRadius: '5px', display: 'inline-flex', alignItems: 'center', gap: '0.2rem', color: B.gold, background: B.goldDim, border: `1px solid ${B.goldBorder}`, textShadow: '0 0 6px rgba(212,175,55,0.35)' }}>
+              <CheckCircle size={9} style={{ strokeWidth: 3 }} />{gd.sport} WINNER
+            </span>
+          )}
+          <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>…{p.wallet.slice(-4)}</span>
+        </div>
+        {seenAgo && <span style={{ ...T.micro, color: B.textMuted, whiteSpace: 'nowrap', fontFeatureSettings: "'tnum'" }}>{seenAgo}</span>}
+      </div>
+
+      {/* Verified track record (stored) — or lifetime fallback for thin samples */}
+      {hasRecord ? (
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.45rem', flexWrap: 'wrap', fontFeatureSettings: "'tnum'" }}>
+          <span style={{ ...T.tiny, color: B.textMuted, alignSelf: 'center' }}>{gd.sport} RECORD</span>
+          <span style={{ ...T.sub, fontWeight: 900, color: B.text }}>{rec.wins}-{rec.losses}</span>
+          <span style={{ ...T.caption, color: B.textSec }}>{Math.round(rec.wr)}% W</span>
+          {rec.dollarRoi != null && (
+            <span style={{ ...T.micro, fontWeight: 800, padding: '0.12rem 0.4rem', borderRadius: '6px', alignSelf: 'center', color: rec.dollarRoi >= 0 ? B.green : B.red, background: rec.dollarRoi >= 0 ? B.greenDim : B.redDim }}>
+              {rec.dollarRoi >= 0 ? '+' : ''}{Math.round(rec.dollarRoi)}% ROI
+            </span>
+          )}
+          {rec.settledPnl != null && rec.settledPnl !== 0 && (
+            <span style={{ ...T.caption, fontWeight: 800, color: rec.settledPnl >= 0 ? B.green : B.red }}>
+              {rec.settledPnl >= 0 ? '+' : ''}{fmtVol(rec.settledPnl)}
+            </span>
+          )}
+        </div>
+      ) : (
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', flexWrap: 'wrap', fontFeatureSettings: "'tnum'" }}>
+          <span style={{ ...T.tiny, color: B.textMuted, alignSelf: 'center' }}>LIFETIME</span>
+          <span style={{ ...T.sub, fontWeight: 900, color: (p.totalPnl || 0) >= 0 ? B.green : B.red }}>
+            {(p.totalPnl || 0) >= 0 ? '+' : ''}{fmtVol(p.totalPnl || 0)}
+          </span>
+          <span style={{ ...T.micro, color: B.textMuted, alignSelf: 'center' }}>sports profit</span>
+        </div>
+      )}
+
+      {/* Size edge — the proprietary "they win more when they load up" signal */}
+      {sizeEdge && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '0.4rem',
+          padding: '0.35rem 0.5rem', borderRadius: '8px',
+          background: 'linear-gradient(135deg, rgba(245,158,11,0.15) 0%, rgba(245,158,11,0.04) 100%)',
+          border: '1px solid rgba(245,158,11,0.28)',
+        }}>
+          <Zap size={12} color="#F59E0B" style={{ flexShrink: 0, fill: 'rgba(245,158,11,0.35)' }} />
+          <span style={{ ...T.micro, color: '#FBBF24', fontWeight: 700, fontFeatureSettings: "'tnum'" }}>
+            Loading up — {sizeEdge.ratio.toFixed(1)}× their usual size · {Math.round(sizeEdge.wr)}% W when sizing up
+          </span>
+        </div>
+      )}
+
+      {/* This game's position */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap',
+        paddingTop: '0.5rem', borderTop: `1px solid ${B.borderSubtle}`, fontFeatureSettings: "'tnum'",
+      }}>
+        <span style={{ ...T.tiny, color: B.textMuted }}>THIS GAME</span>
+        <span style={{ ...T.caption, color: accent, fontWeight: 800 }}>{sideLabel}</span>
+        <span style={{ ...T.caption, color: B.textSec }}>{fmtVol(p.invested)} @ {Math.round(p.avgPrice * 100)}¢</span>
+        <span style={{ ...T.caption, fontWeight: 800, color: posColor }}>{p.pnl >= 0 ? '+' : ''}{fmtVol(p.pnl)}</span>
+      </div>
+    </div>
+  );
+}
+
 const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile, onPickSynced, onHealthSynced, isMyPick, onToggleMyPick, canPickGames, gameFlowMap, spreadPositions, totalPositions, originalLockedSide, originalLockStars, originalLockWPS, originalFlipBeatThreshold, originalSpreadLockStars, originalSpreadLockWPS, originalTotalLockStars, originalTotalLockWPS, v8Norm, walletProfiles,
   // CRON-FIRST OVERRIDES (per market). When the syncPickStateAuthoritative
   // cron has stamped tier + finalUnits on the synced doc for this game/market,
@@ -8205,49 +8335,11 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                       <button key={o.key} onClick={() => setSpreadWalletFilter(o.key)} style={{ ...T.micro, fontWeight: spreadWalletFilter === o.key ? 700 : 400, padding: '0.15rem 0.45rem', borderRadius: '4px', cursor: 'pointer', border: 'none', color: spreadWalletFilter === o.key ? '#8B5CF6' : B.textMuted, background: spreadWalletFilter === o.key ? 'rgba(139,92,246,0.12)' : 'rgba(255,255,255,0.04)' }}>{o.label}</button>
                     ))}
                   </div>
-                  {filtered.map((p, i) => {
-                    const sideTeam = p.side === 'away' ? gd.away : gd.home;
-                    const sideShort = sideTeam.split(' ').pop();
-                    const posColor = p.pnl >= 0 ? B.green : B.red;
-                    const lifeColor = (p.totalPnl || 0) >= 0 ? B.green : B.red;
-                    const tc = p.tier === 'ELITE' ? { color: B.gold, bg: B.goldDim } : { color: B.green, bg: B.greenDim };
-                    const rankGroup = groupedSportsRankLabel(p.leaderboardRank);
-                    const seenAgo = p.firstSeen ? (() => { const mins = Math.round((now - new Date(p.firstSeen).getTime()) / 60000); return mins < 60 ? `${mins}m ago` : mins < 1440 ? `${Math.round(mins / 60)}h ago` : `${Math.round(mins / 1440)}d ago`; })() : null;
-                    const showMonthly = p.monthlyQualified && p.monthlyPnl > 0 && (p.totalPnl || 0) <= 0;
-                    return (
-                      <div key={`${p.wallet}-${i}`} style={{ padding: '0.5rem 0.625rem', borderBottom: i < filtered.length - 1 ? `1px solid ${B.borderSubtle}` : 'none', background: i % 2 === 0 ? 'rgba(255,255,255,0.015)' : 'transparent' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', minWidth: 0, flexWrap: 'wrap' }}>
-                            <Badge color={tc.color} bg={tc.bg}>{p.tier}</Badge>
-                            {rankGroup && (
-                              <span style={{
-                                ...T.micro, padding: '0.1rem 0.32rem', borderRadius: '3px', fontWeight: 800, fontSize: '0.45rem',
-                                color: '#CBD5E1', background: 'rgba(148,163,184,0.10)', border: '1px solid rgba(148,163,184,0.22)', letterSpacing: '0.04em',
-                              }}>{rankGroup}</span>
-                            )}
-                            {isSportWinner(p.wallet, gd.sport) && (
-                              <span style={{
-                                ...T.micro, padding: '0.1rem 0.32rem', borderRadius: '3px', fontWeight: 900, fontSize: '0.45rem',
-                                color: B.gold, background: B.goldDim, border: `1px solid ${B.goldBorder}`, letterSpacing: '0.06em',
-                                textShadow: '0 0 6px rgba(212,175,55,0.35)',
-                              }}>{gd.sport} WINNER</span>
-                            )}
-                            <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>...{p.wallet.slice(-4)}</span>
-                            <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: lifeColor, padding: '0.1rem 0.3rem', borderRadius: '3px', background: (p.totalPnl || 0) >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)' }}>{(p.totalPnl || 0) >= 0 ? '+' : ''}{fmtVol(p.totalPnl || 0)} sports P&L</span>
-                            {showMonthly && <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: '#F59E0B', padding: '0.1rem 0.3rem', borderRadius: '3px', background: 'rgba(245,158,11,0.10)' }}>+{fmtVol(p.monthlyPnl)} this month</span>}
-                          </div>
-                          {seenAgo && <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'", whiteSpace: 'nowrap' }}>{seenAgo}</span>}
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', paddingLeft: '0.25rem', flexWrap: 'wrap' }}>
-                          <span style={{ ...T.micro, color: '#8B5CF6', fontWeight: 700 }}>{sideShort}</span>
-                          <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>{fmtVol(p.invested)} @ {Math.round(p.avgPrice * 100)}¢</span>
-                          <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: posColor }}>{p.pnl >= 0 ? '+' : ''}{fmtVol(p.pnl)}</span>
-                          {p.sportROI !== undefined && p.sportROI !== 0 && <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: p.sportROI > 0 ? '#10B981' : '#EF4444', padding: '0.1rem 0.3rem', borderRadius: '3px', background: p.sportROI > 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)' }}>{p.sportROI > 0 ? '+' : ''}{p.sportROI}% ROI</span>}
-                          {p.avgSportBet > 0 && p.invested > 0 && (p.invested / p.avgSportBet) >= 1.5 && <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: '#F59E0B', padding: '0.1rem 0.3rem', borderRadius: '3px', background: 'rgba(245,158,11,0.10)' }}>{(p.invested / p.avgSportBet).toFixed(1)}x avg</span>}
-                        </div>
-                      </div>
-                    );
-                  })}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.6rem' }}>
+                    {filtered.map((p, i) => (
+                      <WalletDossierRow key={`${p.wallet}-${i}`} p={p} gd={gd} now={now} isMobile={isMobile} market="spread" accent="#8B5CF6" />
+                    ))}
+                  </div>
                 </div>
               )}
             </>;
@@ -8584,48 +8676,11 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                       <button key={o.key} onClick={() => setTotalWalletFilter(o.key)} style={{ ...T.micro, fontWeight: totalWalletFilter === o.key ? 700 : 400, padding: '0.15rem 0.45rem', borderRadius: '4px', cursor: 'pointer', border: 'none', color: totalWalletFilter === o.key ? '#F59E0B' : B.textMuted, background: totalWalletFilter === o.key ? 'rgba(245,158,11,0.12)' : 'rgba(255,255,255,0.04)' }}>{o.label}</button>
                     ))}
                   </div>
-                  {filtered.map((p, i) => {
-                    const sideLabel = p.side === 'over' ? 'Over' : 'Under';
-                    const posColor = p.pnl >= 0 ? B.green : B.red;
-                    const lifeColor = (p.totalPnl || 0) >= 0 ? B.green : B.red;
-                    const tc = p.tier === 'ELITE' ? { color: B.gold, bg: B.goldDim } : { color: B.green, bg: B.greenDim };
-                    const rankGroup = groupedSportsRankLabel(p.leaderboardRank);
-                    const seenAgo = p.firstSeen ? (() => { const mins = Math.round((now - new Date(p.firstSeen).getTime()) / 60000); return mins < 60 ? `${mins}m ago` : mins < 1440 ? `${Math.round(mins / 60)}h ago` : `${Math.round(mins / 1440)}d ago`; })() : null;
-                    const showMonthly = p.monthlyQualified && p.monthlyPnl > 0 && (p.totalPnl || 0) <= 0;
-                    return (
-                      <div key={`${p.wallet}-${i}`} style={{ padding: '0.5rem 0.625rem', borderBottom: i < filtered.length - 1 ? `1px solid ${B.borderSubtle}` : 'none', background: i % 2 === 0 ? 'rgba(255,255,255,0.015)' : 'transparent' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', minWidth: 0, flexWrap: 'wrap' }}>
-                            <Badge color={tc.color} bg={tc.bg}>{p.tier}</Badge>
-                            {rankGroup && (
-                              <span style={{
-                                ...T.micro, padding: '0.1rem 0.32rem', borderRadius: '3px', fontWeight: 800, fontSize: '0.45rem',
-                                color: '#CBD5E1', background: 'rgba(148,163,184,0.10)', border: '1px solid rgba(148,163,184,0.22)', letterSpacing: '0.04em',
-                              }}>{rankGroup}</span>
-                            )}
-                            {isSportWinner(p.wallet, gd.sport) && (
-                              <span style={{
-                                ...T.micro, padding: '0.1rem 0.32rem', borderRadius: '3px', fontWeight: 900, fontSize: '0.45rem',
-                                color: B.gold, background: B.goldDim, border: `1px solid ${B.goldBorder}`, letterSpacing: '0.06em',
-                                textShadow: '0 0 6px rgba(212,175,55,0.35)',
-                              }}>{gd.sport} WINNER</span>
-                            )}
-                            <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>...{p.wallet.slice(-4)}</span>
-                            <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: lifeColor, padding: '0.1rem 0.3rem', borderRadius: '3px', background: (p.totalPnl || 0) >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)' }}>{(p.totalPnl || 0) >= 0 ? '+' : ''}{fmtVol(p.totalPnl || 0)} sports P&L</span>
-                            {showMonthly && <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: '#F59E0B', padding: '0.1rem 0.3rem', borderRadius: '3px', background: 'rgba(245,158,11,0.10)' }}>+{fmtVol(p.monthlyPnl)} this month</span>}
-                          </div>
-                          {seenAgo && <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'", whiteSpace: 'nowrap' }}>{seenAgo}</span>}
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', paddingLeft: '0.25rem', flexWrap: 'wrap' }}>
-                          <span style={{ ...T.micro, color: '#F59E0B', fontWeight: 700 }}>{sideLabel}</span>
-                          <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>{fmtVol(p.invested)} @ {Math.round(p.avgPrice * 100)}¢</span>
-                          <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: posColor }}>{p.pnl >= 0 ? '+' : ''}{fmtVol(p.pnl)}</span>
-                          {p.sportROI !== undefined && p.sportROI !== 0 && <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: p.sportROI > 0 ? '#10B981' : '#EF4444', padding: '0.1rem 0.3rem', borderRadius: '3px', background: p.sportROI > 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)' }}>{p.sportROI > 0 ? '+' : ''}{p.sportROI}% ROI</span>}
-                          {p.avgSportBet > 0 && p.invested > 0 && (p.invested / p.avgSportBet) >= 1.5 && <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: '#F59E0B', padding: '0.1rem 0.3rem', borderRadius: '3px', background: 'rgba(245,158,11,0.10)' }}>{(p.invested / p.avgSportBet).toFixed(1)}x avg</span>}
-                        </div>
-                      </div>
-                    );
-                  })}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.6rem' }}>
+                    {filtered.map((p, i) => (
+                      <WalletDossierRow key={`${p.wallet}-${i}`} p={p} gd={gd} now={now} isMobile={isMobile} market="total" accent="#F59E0B" />
+                    ))}
+                  </div>
                 </div>
               )}
             </>;
@@ -9062,111 +9117,18 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                 </div>
               )}
 
-              {/* Position rows */}
+              {/* Position rows — premium wallet dossiers */}
               {filtered.length === 0 ? (
                 <div style={{ padding: '1rem 0.625rem', textAlign: 'center' }}>
                   <span style={{ ...T.micro, color: B.textMuted }}>No positions match filters</span>
                 </div>
-              ) : filtered.map((p, i) => {
-                const sideTeam = p.side === 'draw' ? 'Draw' : p.side === 'away' ? gd.away : gd.home;
-                const sideShort = sideTeam.split(' ').pop();
-                const posColor = p.pnl >= 0 ? B.green : B.red;
-                const lifeColor = (p.totalPnl || 0) >= 0 ? B.green : B.red;
-                const tc = p.tier === 'ELITE'
-                  ? { color: B.gold, bg: B.goldDim }
-                  : { color: B.green, bg: B.greenDim };
-                const seenAgo = p.firstSeen ? (() => {
-                  const mins = Math.round((now - new Date(p.firstSeen).getTime()) / 60000);
-                  if (mins < 60) return `${mins}m ago`;
-                  const hrs = Math.round(mins / 60);
-                  if (hrs < 24) return `${hrs}h ago`;
-                  return `${Math.round(hrs / 24)}d ago`;
-                })() : null;
-                const showMonthly = p.monthlyQualified && p.monthlyPnl > 0 && (p.totalPnl || 0) <= 0;
-                const rankGroup = groupedSportsRankLabel(p.leaderboardRank);
-
-                return (
-                  <div key={`${p.wallet}-${i}`} style={{
-                    padding: '0.5rem 0.625rem',
-                    borderBottom: i < filtered.length - 1 ? `1px solid ${B.borderSubtle}` : 'none',
-                    background: i % 2 === 0 ? 'rgba(255,255,255,0.015)' : 'transparent',
-                  }}>
-                    <div style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      gap: '0.5rem', marginBottom: '0.25rem',
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', minWidth: 0, flexWrap: 'wrap' }}>
-                        <Badge color={tc.color} bg={tc.bg}>{p.tier}</Badge>
-                        {rankGroup && (
-                          <span style={{
-                            ...T.micro, padding: '0.1rem 0.32rem', borderRadius: '3px', fontWeight: 800, fontSize: '0.45rem',
-                            color: '#CBD5E1', background: 'rgba(148,163,184,0.10)', border: '1px solid rgba(148,163,184,0.22)', letterSpacing: '0.04em',
-                          }}>{rankGroup}</span>
-                        )}
-                        {isSportWinner(p.wallet, gd.sport) && (
-                          <span style={{
-                            ...T.micro, padding: '0.1rem 0.32rem', borderRadius: '3px', fontWeight: 900, fontSize: '0.45rem',
-                            color: B.gold, background: B.goldDim, border: `1px solid ${B.goldBorder}`, letterSpacing: '0.06em',
-                            textShadow: '0 0 6px rgba(212,175,55,0.35)',
-                          }}>{gd.sport} WINNER</span>
-                        )}
-                        <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
-                          ...{p.wallet.slice(-4)}
-                        </span>
-                        <span style={{
-                          ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'",
-                          color: lifeColor,
-                          padding: '0.1rem 0.3rem', borderRadius: '3px',
-                          background: (p.totalPnl || 0) >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
-                        }}>
-                          {(p.totalPnl || 0) >= 0 ? '+' : ''}{fmtVol(p.totalPnl || 0)} sports P&L
-                        </span>
-                        {showMonthly && (
-                          <span style={{
-                            ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'",
-                            color: '#F59E0B',
-                            padding: '0.1rem 0.3rem', borderRadius: '3px',
-                            background: 'rgba(245,158,11,0.10)',
-                          }}>
-                            +{fmtVol(p.monthlyPnl)} this month
-                          </span>
-                        )}
-                      </div>
-                      {seenAgo && (
-                        <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'", whiteSpace: 'nowrap' }}>
-                          {seenAgo}
-                        </span>
-                      )}
-                    </div>
-                    <div style={{
-                      display: 'flex', alignItems: 'center', gap: '0.5rem',
-                      paddingLeft: '0.25rem', flexWrap: 'wrap',
-                    }}>
-                      <span style={{ ...T.micro, color: B.gold, fontWeight: 700 }}>
-                        {sideShort}
-                      </span>
-                      <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
-                        {fmtVol(p.invested)} @ {Math.round(p.avgPrice * 100)}¢
-                      </span>
-                      <span style={{
-                        ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: posColor,
-                      }}>
-                        {p.pnl >= 0 ? '+' : ''}{fmtVol(p.pnl)}
-                      </span>
-                      {p.sportROI !== undefined && p.sportROI !== 0 && (
-                        <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: p.sportROI > 0 ? '#10B981' : '#EF4444', padding: '0.1rem 0.3rem', borderRadius: '3px', background: p.sportROI > 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)' }}>
-                          {p.sportROI > 0 ? '+' : ''}{p.sportROI}% ROI
-                        </span>
-                      )}
-                      {p.avgSportBet > 0 && p.invested > 0 && (p.invested / p.avgSportBet) >= 1.5 && (
-                        <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: '#F59E0B', padding: '0.1rem 0.3rem', borderRadius: '3px', background: 'rgba(245,158,11,0.10)' }}>
-                          {(p.invested / p.avgSportBet).toFixed(1)}x avg
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.6rem' }}>
+                  {filtered.map((p, i) => (
+                    <WalletDossierRow key={`${p.wallet}-${i}`} p={p} gd={gd} now={now} isMobile={isMobile} market="ml" accent={B.gold} />
+                  ))}
+                </div>
+              )}
             </div>
           );
         })()}
