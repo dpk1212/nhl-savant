@@ -5254,6 +5254,17 @@ function SlkMoney({ totalInvested, moneyPct, teamShort, otherTeam, accent, run }
   );
 }
 
+// Distinct accent per conviction tier so the list isn't a wall of green.
+// A premium ladder: gold (apex) → green → blue → amber → orange.
+const LOCK_TIER_ACCENT = {
+  ELITE:   '#E8B85C',
+  PREMIUM: '#22C55E',
+  LOCK:    '#3B82F6',
+  LEAN:    '#F59E0B',
+  WEAK:    '#F97316',
+  FADE:    '#EF4444',
+};
+
 const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
   const {
     team, away, home, sport, units, odds, book, lockedAt, peakAt, gameTime,
@@ -5277,7 +5288,7 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
   const accent = isCancelled ? B.red
     : isMuted ? '#F59E0B'
     : isGraded ? (isWin ? B.green : isLoss ? B.red : B.gold)
-    : (tierMeta.color || B.green);
+    : (LOCK_TIER_ACCENT[tierKey] || tierMeta.color || B.green);
 
   const score = agsValueV12 != null ? agsValueV12 : agsValue;
   // Display the literal AGSU V12 score on a 0–100 face (raw score ×100),
@@ -5345,12 +5356,14 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
 
   const tierStrip = (
     <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: '0.38rem', flexShrink: 0,
-      padding: '0.25rem 0.5rem 0.25rem 0.3rem', borderRadius: '6px',
+      display: 'inline-flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0,
+      padding: '0.3rem 0.55rem', borderRadius: '6px',
       background: `${accent}14`, border: `1px solid ${accent}40`, color: accent,
       fontFeatureSettings: "'tnum'",
     }}>
-      <span style={{ fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.08em', padding: '0.18rem 0.36rem', borderRadius: '3px', background: accent, color: '#0a0a0a', lineHeight: 1 }}>{statePill}</span>
+      {statePill !== 'PLAY' && (
+        <span style={{ fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.08em', padding: '0.18rem 0.36rem', borderRadius: '3px', background: accent, color: '#0a0a0a', lineHeight: 1 }}>{statePill}</span>
+      )}
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.05rem' }}>
         {Array.from({ length: 5 }, (_, i) => {
           const filled = i + 1 <= Math.floor(tierStars);
@@ -5375,7 +5388,7 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
   // (×100), with a slim meter so each card varies and reads at a glance.
   const convEl = (
     <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.22rem', minWidth: '50px' }}>
-      <span style={{ fontSize: '1.7rem', fontWeight: 900, color: conviction > 0 ? accent : B.textMuted, fontFeatureSettings: "'tnum'", letterSpacing: '-0.04em', lineHeight: 1 }}>
+      <span style={{ fontSize: '1.7rem', fontWeight: 900, color: conviction > 0 ? B.text : B.textMuted, fontFeatureSettings: "'tnum'", letterSpacing: '-0.04em', lineHeight: 1 }}>
         {conviction > 0 ? conviction : '—'}
       </span>
       <span style={{ fontSize: '0.44rem', fontWeight: 800, color: B.textSubtle, letterSpacing: '0.16em', lineHeight: 1 }}>AGSU V12</span>
