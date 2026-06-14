@@ -5271,7 +5271,10 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
     status, outcome, profit, closingOdds, totalInvested, evEdge, consensusStrength,
     pinnacleOdds, marketType, line, superseded, health, lockTier, trackedOnly,
     agsValueV12, agsValue, agsTierV12, agsTier, backingWallets, hcConfFor,
+    isTopPick: isTopPickPre, isSuperTopPick: isSuperTopPickPre,
   } = pick;
+  const isTopPick = !!isTopPickPre;
+  const isSuperTopPick = !!isSuperTopPickPre;
   const [open, setOpen] = useState(false);
   const [hover, setHover] = useState(false);
 
@@ -5375,31 +5378,68 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
             : <span key={i} style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.15)', lineHeight: 1 }}>★</span>;
         })}
       </span>
-      <span style={{ fontSize: '0.58rem', fontWeight: 800, letterSpacing: '0.04em', lineHeight: 1 }}>{tierMeta.label}</span>
-      {isGraded ? (
-        <span style={{ fontSize: '0.58rem', fontWeight: 700, opacity: 0.9, lineHeight: 1, paddingLeft: '0.32rem', borderLeft: `1px solid ${accent}40` }}>{(isTrackedGrade ? 0 : (profit || 0)) > 0 ? '+' : ''}{(isTrackedGrade ? 0 : (profit || 0)).toFixed(2)}u</span>
-      ) : Number.isFinite(units) && units > 0 ? (
-        <span style={{ fontSize: '0.58rem', fontWeight: 700, opacity: 0.85, lineHeight: 1, paddingLeft: '0.32rem', borderLeft: `1px solid ${accent}40` }}>{fmtU(units)}u</span>
-      ) : null}
+      <span style={{ fontSize: '0.58rem', fontWeight: 800, letterSpacing: '0.05em', lineHeight: 1 }}>{tierMeta.label}</span>
     </span>
   );
 
-  // The hero metric — our product. Conviction is the literal AGSU V12 score
-  // (×100), with a slim meter so each card varies and reads at a glance.
-  const convEl = (
-    <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.22rem', minWidth: '50px' }}>
-      <span style={{ fontSize: '1.7rem', fontWeight: 900, color: conviction > 0 ? B.text : B.textMuted, fontFeatureSettings: "'tnum'", letterSpacing: '-0.04em', lineHeight: 1 }}>
+  // The hero metric — our product, presented as a score medallion: the
+  // literal AGSU V12 score (×100), an accent-tinted tile, and a fill meter.
+  const medallion = (
+    <div style={{
+      flexShrink: 0, width: '76px', padding: '0.5rem 0.45rem 0.55rem',
+      borderRadius: '13px', textAlign: 'center', position: 'relative',
+      background: `linear-gradient(165deg, ${accent}26 0%, ${accent}0b 100%)`,
+      border: `1px solid ${accent}3a`,
+      boxShadow: `inset 0 1px 0 rgba(255,255,255,0.07), 0 4px 14px -8px ${accent}55`,
+    }}>
+      <div style={{ fontSize: '1.75rem', fontWeight: 900, color: B.text, lineHeight: 1, fontFeatureSettings: "'tnum'", letterSpacing: '-0.04em' }}>
         {conviction > 0 ? conviction : '—'}
-      </span>
-      <span style={{ fontSize: '0.44rem', fontWeight: 800, color: B.textSubtle, letterSpacing: '0.16em', lineHeight: 1 }}>AGSU V12</span>
-      <div style={{ width: '48px', height: '3px', borderRadius: '2px', background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+      </div>
+      <div style={{ fontSize: '0.4rem', fontWeight: 800, color: accent, letterSpacing: '0.14em', marginTop: '0.32rem' }}>AGSU V12</div>
+      <div style={{ marginTop: '0.4rem', height: '3px', borderRadius: '2px', background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
         <div style={{ width: `${Math.max(0, Math.min(100, conviction))}%`, height: '100%', background: accent, borderRadius: '2px' }} />
       </div>
     </div>
   );
 
-  const oddsMeta = odds != null ? (
-    <span> · <span style={{ color: B.textSec, fontWeight: 700 }}>{fmtO(odds)}</span></span>
+  const topBadge = (isSuperTopPick || isTopPick) ? (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: '0.2rem', flexShrink: 0,
+      padding: '0.14rem 0.42rem', borderRadius: '5px',
+      background: isSuperTopPick ? 'linear-gradient(135deg, #F0C46A 0%, #C99A3F 100%)' : `${B.gold}1a`,
+      border: isSuperTopPick ? 'none' : `1px solid ${B.gold}55`,
+      color: isSuperTopPick ? '#1a1205' : B.gold,
+      fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.07em', lineHeight: 1,
+      boxShadow: isSuperTopPick ? `0 3px 10px -3px ${B.gold}77` : 'none', whiteSpace: 'nowrap',
+    }}>
+      {isSuperTopPick ? <Zap size={9} strokeWidth={3} /> : <ArrowUpRight size={9} strokeWidth={3} />}
+      {isSuperTopPick ? 'SUPER TOP PICK' : 'TOP PICK'}
+    </span>
+  ) : null;
+
+  // One tidy fact line: stake, price, book — plus the graded result/CLV.
+  const metaLine = (
+    <span style={{ fontSize: '0.62rem', color: B.textMuted, letterSpacing: '0.01em', fontFeatureSettings: "'tnum'" }}>
+      {Number.isFinite(units) && units > 0 ? `${fmtU(units)}u @ ` : ''}
+      <span style={{ color: B.textSec, fontWeight: 700 }}>{fmtO(odds)}</span>
+      {book ? ` · ${book}` : ''}
+      {gameTime ? ` · ${isGraded ? (gameStarted ? 'Final' : fmtET(gameTime)) : fmtET(gameTime) + ' ET'}` : ''}
+      {isGraded && clvPct != null ? <span style={{ color: clvPct > 0 ? B.green : clvPct < 0 ? B.red : B.textMuted, fontWeight: 700 }}> · CLV {clvPct > 0 ? '+' : ''}{clvPct}%</span> : null}
+    </span>
+  );
+
+  const resultChip = isGraded ? (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: '0.25rem', flexShrink: 0,
+      padding: '0.16rem 0.48rem', borderRadius: '6px',
+      background: isWin ? `${B.green}1a` : isLoss ? `${B.red}1a` : 'rgba(255,255,255,0.06)',
+      border: `1px solid ${isWin ? B.green + '55' : isLoss ? B.red + '55' : B.border}`,
+      color: isWin ? B.green : isLoss ? B.red : B.textSec,
+      fontSize: '0.62rem', fontWeight: 800, fontFeatureSettings: "'tnum'", lineHeight: 1,
+    }}>
+      {isWin ? <Check size={11} strokeWidth={3} /> : isLoss ? <X size={11} strokeWidth={3} /> : null}
+      {isTrackedGrade ? '0.00u' : `${(profit || 0) > 0 ? '+' : ''}${(profit || 0).toFixed(2)}u`}
+    </span>
   ) : null;
 
   return (
@@ -5438,44 +5478,47 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
         }}
       >
         {isMobile ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', padding: '0.85rem 0.9rem' }}>
-            {/* Row 1 — sport · matchup · chevron */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', minWidth: 0 }}>
-              <Badge color={ss.color} bg={ss.bg}>{ss.icon} {sport}</Badge>
-              <span style={{ flex: 1, minWidth: 0, fontSize: '0.82rem' }}>{matchupEl}</span>
-              <ChevronDown size={17} color={B.textMuted} style={{ flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .25s ease' }} />
-            </div>
-            {/* Row 2 — the pick (hero) + the conviction (hero metric); odds demoted */}
-            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '0.75rem' }}>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: '1.32rem', fontWeight: 800, color: isCancelled ? B.textMuted : B.text, letterSpacing: '-0.02em', lineHeight: 1.05, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: isCancelled ? 'line-through' : 'none' }}>{pickLabel}</div>
-                <div style={{ fontSize: '0.64rem', color: B.textMuted, marginTop: '0.3rem', fontFeatureSettings: "'tnum'", letterSpacing: '0.02em' }}>
-                  {gameTime ? (isGraded ? (gameStarted ? 'Final' : fmtET(gameTime)) : fmtET(gameTime) + ' ET') : ''}{book ? ` · ${book}` : ''}{oddsMeta}
-                </div>
+          <div style={{ display: 'flex', gap: '0.8rem', padding: '0.85rem 0.9rem', alignItems: 'stretch' }}>
+            <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', gap: '0.42rem' }}>
+              {/* sport · matchup · top-pick */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0 }}>
+                <Badge color={ss.color} bg={ss.bg}>{ss.icon} {sport}</Badge>
+                <span style={{ flex: 1, minWidth: 0, fontSize: '0.74rem' }}>{matchupEl}</span>
+                {topBadge}
               </div>
-              {convEl}
+              {/* the pick — hero */}
+              <div style={{ fontSize: '1.32rem', fontWeight: 800, color: isCancelled ? B.textMuted : B.text, letterSpacing: '-0.02em', lineHeight: 1.05, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: isCancelled ? 'line-through' : 'none' }}>{pickLabel}</div>
+              {metaLine}
+              {/* tier · result */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                {tierStrip}
+                {resultChip}
+              </div>
             </div>
-            {/* Row 3 — tier strip */}
-            <div style={{ display: 'flex' }}>{tierStrip}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem', flexShrink: 0 }}>
+              {medallion}
+              <ChevronDown size={16} color={B.textMuted} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .25s ease' }} />
+            </div>
           </div>
         ) : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.8rem 0.9rem' }}>
-            <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', gap: '0.22rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem', padding: '0.85rem 0.95rem' }}>
+            <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', gap: '0.28rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0 }}>
                 <Badge color={ss.color} bg={ss.bg}>{ss.icon} {sport}</Badge>
                 {matchupEl}
+                {topBadge}
               </div>
-              <div style={{ fontSize: '1.02rem', fontWeight: 800, color: isCancelled ? B.textMuted : B.text, letterSpacing: '-0.01em', lineHeight: 1.1, textDecoration: isCancelled ? 'line-through' : 'none' }}>{pickLabel}</div>
-              <div style={{ fontSize: '0.6rem', color: B.textMuted, letterSpacing: '0.02em', fontFeatureSettings: "'tnum'" }}>
-                {gameTime ? (isGraded ? (gameStarted ? 'Final' : fmtET(gameTime)) : fmtET(gameTime) + ' ET') : ''}{book ? ` · ${book}` : ''}{oddsMeta}
+              <div style={{ fontSize: '1.18rem', fontWeight: 800, color: isCancelled ? B.textMuted : B.text, letterSpacing: '-0.02em', lineHeight: 1.05, textDecoration: isCancelled ? 'line-through' : 'none' }}>{pickLabel}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                {tierStrip}
+                {metaLine}
+                {resultChip}
               </div>
             </div>
 
-            {convEl}
+            {medallion}
 
-            {tierStrip}
-
-            <ChevronDown size={15} color={B.textMuted} style={{ flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .25s ease' }} />
+            <ChevronDown size={16} color={B.textMuted} style={{ flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .25s ease' }} />
           </div>
         )}
       </button>
