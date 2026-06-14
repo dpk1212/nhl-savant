@@ -1158,6 +1158,16 @@ p {
   -webkit-backdrop-filter: blur(18px) saturate(150%);
 }
 
+/* Expanded lock-card sheet unfurls with a soft rise. */
+@keyframes sf-reveal {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.sf-reveal { animation: sf-reveal 0.3s cubic-bezier(0.16, 1, 0.3, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .sf-reveal { animation: none; }
+}
+
 /* Cards cascade in with a soft rise — staggered by DOM order, capped
    at 8 so deep lists don't feel sluggish. Replays on filter changes
    (list remount), which reads as intentional choreography. */

@@ -890,6 +890,46 @@ export function agsV12SizeMultiplier(score, calibration = null) {
   return 0.25;                                                // SMALL
 }
 
+// Conviction 1–100 — the user-facing gauge value derived directly from the
+// v12 score. It is the score's percentile WITHIN the positive distribution,
+// anchored on the same calibration quintiles that drive the tier ladder, so
+// the number always agrees with the tier band:
+//
+//   ELITE   → 80–100   (score > q80)
+//   PREMIUM → 60–80    (q60 < score ≤ q80)
+//   LOCK    → 40–60    (q40 < score ≤ q60)
+//   LEAN    → 20–40    (q20 < score ≤ q40)
+//   WEAK    → 1–20     (0   < score ≤ q20)
+//   FADE    → 0        (score ≤ 0 — muted, never shipped)
+//
+// The ELITE band has no upper quintile in the v12 calibration, so we
+// extrapolate one quintile-width above q80 as the 100 anchor. Output is
+// clamped to [1,100] for any positive score so a real bet never reads 0.
+export function agsV12Conviction(score, calibration = null) {
+  if (score == null || !Number.isFinite(score) || score <= 0) return 0;
+  const cal = (calibration && calibration.v12Quintiles) ? calibration : AGS_V12_FALLBACK_CALIBRATION;
+  const q = cal.v12Quintiles;
+  const eliteWidth = Math.max((q.q80 - q.q60) || 0, 0.02);
+  const anchors = [
+    { s: 0,                  p: 0 },
+    { s: q.q20,              p: 20 },
+    { s: q.q40,              p: 40 },
+    { s: q.q60,              p: 60 },
+    { s: q.q80,              p: 80 },
+    { s: q.q80 + eliteWidth, p: 100 },
+  ];
+  let pct = 100;
+  for (let i = 1; i < anchors.length; i++) {
+    if (score <= anchors[i].s) {
+      const lo = anchors[i - 1], hi = anchors[i];
+      const t = hi.s === lo.s ? 1 : (score - lo.s) / (hi.s - lo.s);
+      pct = lo.p + t * (hi.p - lo.p);
+      break;
+    }
+  }
+  return Math.max(1, Math.min(100, Math.round(pct)));
+}
+
 // Quintile placement (0 = muted, 1..5 = positive picks bottom..top).
 export function agsV12QuintileFromValue(score, calibration = AGS_V12_FALLBACK_CALIBRATION) {
   if (score == null || !Number.isFinite(score) || score <= 0) return 0;

@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useEffect, useMemo, useCallback, useRef, memo, Fragment } from 'react';
-import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Activity, Zap, BarChart3, Eye, ArrowUpRight, ArrowDownRight, Minus, DollarSign, Workflow, Lock, CheckCircle, Circle, Clock, AlertTriangle } from 'lucide-react';
+import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Activity, Zap, BarChart3, Eye, ArrowUpRight, ArrowDownRight, Minus, DollarSign, Workflow, Lock, CheckCircle, Circle, Clock, AlertTriangle, ShieldCheck, Sparkles, Flame, Check, X } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ComposedChart, Bar, ReferenceDot, Cell, Area, AreaChart, ReferenceLine } from 'recharts';
 import { resolveOutcomeSide } from '../utils/teamNameMapper';
 import { collection, doc, setDoc, getDoc, getDocs, query, where, orderBy, deleteField } from 'firebase/firestore';
@@ -23,6 +23,7 @@ import {
   agsSizeMultiplier,
   agsTierFromValue,
   agsV12TierFromValue,
+  agsV12Conviction,
   computeAgs,
   computeAgsFromPositions,
   computeAgsV12FromPositions,
@@ -30,6 +31,7 @@ import {
   meetsAgsLockFloor,
   positionToWalletDetail,
 } from '../lib/ags.js';
+import { getTeamIdentity } from '../utils/teamIdentity.js';
 
 // Browser-side mirror of scripts/syncPickStateAuthoritative.js::buildWalletPriorStatsFn
 // — feeds aggregateSideV12 the per-sport prior stats (whitelist tier,
@@ -5144,6 +5146,384 @@ function V12ConvictionPanel({ tier, tierColor, tierBg, forW, agW, qFor, qAg, hcF
     </div>
   );
 }
+
+// ════════════════════════════════════════════════════════════════════════
+// SharpLockCardV2 — premium flagship locked-pick card.
+// Collapsed row scans fast (crest · pick · price · edge · conviction tier);
+// expanding unseals a cinematic verdict band with an animated AGSU V12
+// conviction gauge (1–100), the payoff numbers, the receipts, the sharp-
+// money split, line history and lifecycle. Reuses BackingWalletStrip for the
+// proven-wallet enrichment so the receipts stay authoritative.
+// ════════════════════════════════════════════════════════════════════════
+function useSlkCountUp(target, run, ms = 1100) {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    if (!run) { setV(0); return; }
+    if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setV(target); return;
+    }
+    let raf, start;
+    const tick = (t) => {
+      if (start == null) start = t;
+      const prog = Math.min(1, (t - start) / ms);
+      const eased = 1 - Math.pow(1 - prog, 3);
+      setV(target * eased);
+      if (prog < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, run, ms]);
+  return v;
+}
+
+// Semicircle gauge — same geometry/feel as the live card's ConvictionGauge
+// so the locked card reads as a sibling of the Sharp Position card. The
+// number is the literal AGSU V12 score on a 0–100 face.
+function SlkRing({ value, color, tier, run, size = 124 }) {
+  const sw = 9;
+  const r = (size - sw) / 2 - 2;
+  const cx = size / 2;
+  const cy = r + sw / 2 + 2;
+  const semicirc = Math.PI * r;
+  const animated = useSlkCountUp(value, run, 1100);
+  const dash = (Math.max(0, Math.min(100, animated)) / 100) * semicirc;
+  const h = cy + sw / 2 + 2;
+  return (
+    <div style={{ position: 'relative', width: size, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <svg width={size} height={h} viewBox={`0 0 ${size} ${h}`} style={{ display: 'block', overflow: 'visible' }}>
+        <path d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`}
+          fill="none" stroke="rgba(148,163,184,0.13)" strokeWidth={sw} strokeLinecap="round" />
+        <path d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`}
+          fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round"
+          strokeDasharray={`${dash} ${semicirc}`}
+          style={{ filter: `drop-shadow(0 0 5px ${color}88)`, transition: 'stroke-dasharray 0.9s cubic-bezier(0.4,0,0.2,1)' }} />
+        <text x={cx} y={cy - 9} textAnchor="middle" fill={B.text} fontSize="30" fontWeight="900"
+          style={{ fontFeatureSettings: "'tnum'", letterSpacing: '-0.03em' }}>{Math.round(animated)}</text>
+      </svg>
+      <div style={{ marginTop: '-2px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+        <span style={{ fontSize: '0.46rem', color: B.textSubtle, letterSpacing: '0.14em', fontWeight: 800 }}>AGSU V12</span>
+        <span style={{ fontSize: '0.56rem', fontWeight: 800, color, letterSpacing: '0.07em' }}>{tier}</span>
+      </div>
+    </div>
+  );
+}
+
+// Consensus checklist row — mirrors the live card's `Driver` exactly so
+// the locked card's "why" reads with the same brand vocabulary.
+function SlkDriver({ met, label, detail, color }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.16rem 0', minHeight: '20px' }}>
+      {met
+        ? <CheckCircle size={12} color={color} strokeWidth={2.5} />
+        : <Circle size={12} color={B.textMuted} strokeWidth={1.5} />}
+      <span style={{ fontSize: '0.66rem', color: met ? B.text : B.textSec, fontWeight: met ? 700 : 500, lineHeight: 1.15 }}>{label}</span>
+      <span style={{ fontSize: '0.64rem', fontFeatureSettings: "'tnum'", color: met ? color : B.textMuted, fontWeight: 700, marginLeft: 'auto', lineHeight: 1.15 }}>{detail}</span>
+    </div>
+  );
+}
+
+function SlkLabel({ children }) {
+  return <div style={{ fontSize: '0.55rem', color: B.textSubtle, letterSpacing: '0.12em', fontWeight: 700 }}>{children}</div>;
+}
+
+function SlkPayRow({ label, value, sub, color }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.75rem' }}>
+      <span style={{ fontSize: '0.7rem', color: B.textMuted, fontWeight: 600 }}>{label}</span>
+      <span style={{ textAlign: 'right' }}>
+        <span style={{ fontSize: '0.9rem', fontWeight: 800, color, fontFeatureSettings: "'tnum'", letterSpacing: '-0.01em' }}>{value}</span>
+        {sub && <span style={{ fontSize: '0.6rem', color: B.textMuted, marginLeft: '0.5rem' }}>{sub}</span>}
+      </span>
+    </div>
+  );
+}
+
+function SlkMoney({ totalInvested, moneyPct, teamShort, otherTeam, accent, run }) {
+  const amt = useSlkCountUp(totalInvested || 0, run, 1100);
+  const pct = useSlkCountUp(moneyPct || 0, run, 1100);
+  const fmtV = (v) => (v >= 1000 ? `$${(v / 1000).toFixed(1)}K` : `$${Math.round(v)}`);
+  return (
+    <div style={{ padding: '1rem 1rem 0' }}>
+      <SlkLabel>SHARP MONEY AT LOCK</SlkLabel>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '0.55rem' }}>
+        <span style={{ fontSize: '1.3rem', fontWeight: 900, color: accent, fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em' }}>{fmtV(amt)}</span>
+        <span style={{ fontSize: '0.6rem', color: B.textMuted, fontFeatureSettings: "'tnum'" }}>{Math.round(pct)}% {teamShort} · {Math.max(0, 100 - moneyPct)}% {otherTeam}</span>
+      </div>
+      <div style={{ marginTop: '0.5rem', height: '7px', borderRadius: '4px', background: 'rgba(148,163,184,0.12)', overflow: 'hidden' }}>
+        <div style={{ width: `${pct}%`, height: '100%', background: `linear-gradient(90deg, ${accent}aa, ${accent})`, borderRadius: '4px' }} />
+      </div>
+    </div>
+  );
+}
+
+const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
+  const {
+    team, away, home, sport, units, odds, book, lockedAt, peakAt, gameTime,
+    status, outcome, profit, closingOdds, totalInvested, evEdge, consensusStrength,
+    pinnacleOdds, marketType, line, superseded, health, lockTier, trackedOnly,
+    agsValueV12, agsValue, agsTierV12, agsTier, backingWallets, hcConfFor,
+  } = pick;
+  const [open, setOpen] = useState(false);
+  const [hover, setHover] = useState(false);
+
+  const isGraded = status === 'COMPLETED' && !!outcome;
+  const isWin = outcome === 'WIN';
+  const isLoss = outcome === 'LOSS';
+  const healthStatus = health?.status || 'ACTIVE';
+  const isMuted = healthStatus === 'MUTED';
+  const isCancelled = healthStatus === 'CANCELLED';
+  const isTrackedGrade = isGraded && !!trackedOnly;
+
+  const tierKey = agsTierV12 || agsTier || lockTier || 'LOCK';
+  const tierMeta = AGS_TIER_META[tierKey] || AGS_TIER_META.LOCK;
+  const accent = isCancelled ? B.red
+    : isMuted ? '#F59E0B'
+    : isGraded ? (isWin ? B.green : isLoss ? B.red : B.gold)
+    : (tierMeta.color || B.green);
+
+  const score = agsValueV12 != null ? agsValueV12 : agsValue;
+  // Display the literal AGSU V12 score on a 0–100 face (raw score ×100),
+  // so the number on the gauge IS the real model score, not a re-mapping.
+  const conviction = (score != null && Number.isFinite(score))
+    ? Math.max(0, Math.min(100, Math.round(score * 100)))
+    : 0;
+  const backers = Array.isArray(backingWallets) ? backingWallets.length : 0;
+
+  const teamShort = (team || '').split(' ').pop() || team;
+  const awayShort = (away || '').split(' ').pop() || away;
+  const homeShort = (home || '').split(' ').pop() || home;
+  const otherTeam = teamShort === awayShort ? homeShort : awayShort;
+
+  const isTotal = marketType === 'total';
+  const pickLabel = marketType === 'spread'
+    ? `${teamShort} ${line > 0 ? '+' : ''}${line}`
+    : isTotal ? (team || 'Total')
+    : `${teamShort} ML`;
+  const marketTag = marketType === 'spread' ? 'SPREAD' : isTotal ? 'TOTAL' : 'ML';
+
+  const ident = isTotal ? getTeamIdentity(null, sport) : getTeamIdentity(team, sport);
+
+  const fmtO = (o) => (o == null ? '—' : o > 0 ? `+${o}` : `${o}`);
+  const fmtV = (v) => (v == null ? '—' : v >= 1000 ? `$${(v / 1000).toFixed(1)}K` : `$${v}`);
+  const fmtET = (ts) => {
+    if (!ts) return '';
+    const e = typeof ts === 'number' ? ts : Date.parse(ts);
+    if (isNaN(e)) return typeof ts === 'string' ? ts : '';
+    return new Date(e).toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', hour12: true });
+  };
+  const fmtU = (u) => (Number.isFinite(u) ? (u < 1 ? u.toFixed(2) : u % 1 === 0 ? u.toFixed(0) : u.toFixed(1)) : '—');
+
+  const ip = (o) => (o == null ? null : o < 0 ? Math.abs(o) / (Math.abs(o) + 100) : 100 / (o + 100));
+  const lockProb = ip(odds);
+  const closeProb = ip(closingOdds);
+  const liveCLV = (lockProb != null && closeProb != null) ? +(closeProb - lockProb).toFixed(4) : null;
+  const clvPct = liveCLV != null ? +(liveCLV * 100).toFixed(1) : null;
+  const fairProb = ip(pinnacleOdds);
+  const toWin = profitFromOdds(odds, units);
+  const moneyPct = consensusStrength?.moneyPct;
+
+  const gameEpoch = gameTime ? (typeof gameTime === 'number' ? gameTime : Date.parse(gameTime)) : null;
+  const gameStarted = gameEpoch != null && !isNaN(gameEpoch) && Date.now() >= gameEpoch;
+
+  // Header vocabulary borrowed verbatim from the live Sharp Position card:
+  // a sport badge, the matchup with the pick side weighted bright, and the
+  // unified state·stars·tier·units strip.
+  const ss = sportStyle(sport);
+  const tierStars = starsFromAgsuTier(tierKey);
+  const statePill = isCancelled ? 'VOID' : isMuted ? 'MUTE' : superseded ? 'FLIP'
+    : isGraded ? (isWin ? 'WON' : isLoss ? 'LOST' : 'PUSH') : 'PLAY';
+  const pickIsAway = !isTotal && teamShort === awayShort;
+  const pickIsHome = !isTotal && teamShort === homeShort;
+
+  return (
+    <div
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      className="sf-glass"
+      style={{
+        position: 'relative', borderRadius: '18px', overflow: 'hidden',
+        background: open ? 'rgba(20,25,37,0.92)' : (hover ? 'rgba(18,23,36,0.9)' : 'rgba(15,20,32,0.88)'),
+        border: `1px solid ${open ? accent + '33' : hover ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.07)'}`,
+        boxShadow: open
+          ? `0 30px 64px -24px rgba(0,0,0,0.8), 0 0 0 1px ${accent}1a`
+          : hover ? '0 14px 30px -16px rgba(0,0,0,0.6)' : '0 2px 8px rgba(0,0,0,0.3)',
+        opacity: isCancelled ? 0.6 : isMuted || superseded || isTrackedGrade ? 0.78 : 1,
+        transition: 'background .2s ease, border-color .2s ease, box-shadow .3s ease',
+      }}
+    >
+      {open && <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(90% 55% at 0% 0%, ${ident.c1}1c 0%, transparent 50%)` }} />}
+
+      {/* Collapsed row — mirrors the live Sharp Position card header:
+          sport badge · matchup (pick side bright) · unified tier strip. */}
+      <button
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          position: 'relative', width: '100%', cursor: 'pointer', background: 'transparent',
+          border: 'none', textAlign: 'left', color: 'inherit', font: 'inherit',
+          display: 'flex', alignItems: 'center', gap: '0.7rem', padding: '0.7rem 0.8rem',
+        }}
+      >
+        <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', gap: '0.18rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0 }}>
+            <Badge color={ss.color} bg={ss.bg}>{ss.icon} {sport}</Badge>
+            <span style={{
+              ...T.body, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden',
+              textOverflow: 'ellipsis', minWidth: 0,
+              textDecoration: isCancelled ? 'line-through' : 'none',
+            }}>
+              <span style={{ color: pickIsAway ? B.text : B.textSec, fontWeight: pickIsAway ? 800 : 600 }}>{awayShort}</span>
+              <span style={{ color: B.textMuted, fontWeight: 400 }}> vs </span>
+              <span style={{ color: pickIsHome ? B.text : B.textSec, fontWeight: pickIsHome ? 800 : 600 }}>{homeShort}</span>
+            </span>
+          </div>
+          <div style={{ fontSize: '0.6rem', color: B.textMuted, letterSpacing: '0.02em', fontFeatureSettings: "'tnum'" }}>
+            {pickLabel}{gameTime ? ` · ${isGraded ? (gameStarted ? 'Final' : fmtET(gameTime)) : fmtET(gameTime) + ' ET'}` : ''}
+          </div>
+        </div>
+
+        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+          <div style={{ fontSize: '1.15rem', fontWeight: 800, color: isGraded ? B.textSec : B.green, fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em', lineHeight: 1 }}>{fmtO(odds)}</div>
+          {evEdge > 0 && <div style={{ fontSize: '0.55rem', fontWeight: 700, color: B.green, marginTop: '0.25rem', fontFeatureSettings: "'tnum'" }}>+{evEdge}% EV</div>}
+        </div>
+
+        {/* Unified state · stars · tier · units strip */}
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', gap: '0.38rem', flexShrink: 0,
+          padding: '0.25rem 0.5rem 0.25rem 0.3rem', borderRadius: '6px',
+          background: `${accent}14`, border: `1px solid ${accent}40`, color: accent,
+          fontFeatureSettings: "'tnum'",
+        }}>
+          <span style={{ fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.08em', padding: '0.18rem 0.36rem', borderRadius: '3px', background: accent, color: '#0a0a0a', lineHeight: 1 }}>{statePill}</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.05rem' }}>
+            {Array.from({ length: 5 }, (_, i) => {
+              const filled = i + 1 <= Math.floor(tierStars);
+              const half = !filled && i + 0.5 === tierStars;
+              return filled
+                ? <span key={i} style={{ fontSize: '0.5rem', color: accent, lineHeight: 1 }}>★</span>
+                : half
+                ? <span key={i} style={{ position: 'relative', display: 'inline-block', fontSize: '0.5rem', lineHeight: 1, width: '0.5rem' }}><span style={{ color: 'rgba(255,255,255,0.15)' }}>★</span><span style={{ position: 'absolute', left: 0, top: 0, overflow: 'hidden', width: '50%', color: accent }}>★</span></span>
+                : <span key={i} style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.15)', lineHeight: 1 }}>★</span>;
+            })}
+          </span>
+          <span style={{ fontSize: '0.58rem', fontWeight: 800, letterSpacing: '0.04em', lineHeight: 1 }}>{tierMeta.label}</span>
+          {isGraded ? (
+            <span style={{ fontSize: '0.58rem', fontWeight: 700, opacity: 0.9, lineHeight: 1, paddingLeft: '0.32rem', borderLeft: `1px solid ${accent}40` }}>{(isTrackedGrade ? 0 : (profit || 0)) > 0 ? '+' : ''}{(isTrackedGrade ? 0 : (profit || 0)).toFixed(2)}u</span>
+          ) : Number.isFinite(units) && units > 0 ? (
+            <span style={{ fontSize: '0.58rem', fontWeight: 700, opacity: 0.85, lineHeight: 1, paddingLeft: '0.32rem', borderLeft: `1px solid ${accent}40` }}>{fmtU(units)}u</span>
+          ) : null}
+        </span>
+
+        <ChevronDown size={15} color={B.textMuted} style={{ flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .25s ease' }} />
+      </button>
+
+      {/* Expanded sheet */}
+      {open && (
+        <div className="sf-reveal" style={{ position: 'relative' }}>
+          {/* Sharp consensus + AGSU V12 verdict — brand-matched to the
+              live Sharp Position card (checklist drivers + semicircle gauge). */}
+          <div style={{ position: 'relative', borderTop: `1px solid ${B.border}`, padding: '0.9rem 1rem 0' }}>
+            <div style={{
+              borderRadius: '12px', padding: '0.8rem 0.85rem',
+              background: `linear-gradient(135deg, ${accent}16 0%, ${accent}07 58%, transparent 100%)`,
+              border: `1px solid ${accent}22`,
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
+                <span style={{ fontSize: '0.55rem', color: B.textSubtle, letterSpacing: '0.12em', fontWeight: 800 }}>SHARP CONSENSUS</span>
+                {evEdge != null && (
+                  <span style={{ fontSize: '0.62rem', fontWeight: 800, color: evEdge > 0 ? B.green : B.textSec, fontFeatureSettings: "'tnum'", letterSpacing: '0.02em' }}>
+                    {evEdge > 0 ? '+' : ''}{evEdge}% EDGE
+                  </span>
+                )}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <SlkDriver met={backers > 0} label={`Proven ${sport || 'sport'} winners backing`} detail={backers > 0 ? `${backers}` : '—'} color={accent} />
+                  <SlkDriver met={(hcConfFor || 0) > 0} label="High-conviction sharps confirming" detail={(hcConfFor || 0) > 0 ? `${hcConfFor} HC` : '—'} color={accent} />
+                  <SlkDriver met={moneyPct != null && moneyPct >= 60} label="Money concentrated on this side" detail={moneyPct != null ? `${moneyPct}%` : '—'} color={accent} />
+                </div>
+                <SlkRing value={conviction} color={accent} tier={isGraded ? outcome : tierMeta.label} run={open} />
+              </div>
+            </div>
+
+            <div style={{ marginTop: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+              <SlkPayRow label={isGraded ? 'Settled' : 'Locked'} value={fmtO(odds)} sub={`${book || ''}${pinnacleOdds ? ` · fair ${fmtO(pinnacleOdds)}` : ''}`} color={isGraded ? B.text : B.green} />
+              <SlkPayRow
+                label={isGraded ? 'Result' : 'Payout'}
+                value={isGraded ? `${(profit || 0) > 0 ? '+' : ''}${(isTrackedGrade ? 0 : (profit || 0)).toFixed(2)}u` : `+${toWin.toFixed(2)}u`}
+                sub={isGraded ? `${outcome} · ${fmtU(units)}u` : `on ${fmtU(units)}u risk`}
+                color={isGraded ? (isWin ? B.green : isLoss ? B.red : B.textSec) : B.green}
+              />
+            </div>
+          </div>
+
+          {/* Why locked */}
+          <div style={{ padding: '1.1rem 1rem 0' }}>
+            <SlkLabel>WHY IT'S LOCKED</SlkLabel>
+            <p style={{ fontSize: '0.92rem', color: B.text, lineHeight: 1.5, margin: '0.6rem 0 0', fontWeight: 500 }}>
+              {Array.isArray(backingWallets) && backingWallets.length > 0
+                ? <>{backingWallets.length} sharp {backingWallets.length === 1 ? 'wallet' : 'wallets'} put <b>{fmtV(totalInvested)}</b> behind {teamShort}</>
+                : <>Sharp money locked behind {teamShort}</>}
+              {moneyPct != null && <span style={{ color: accent, fontWeight: 700 }}> — {moneyPct}% of sharp money</span>}
+              {moneyPct != null && moneyPct >= 100 ? ', zero dissent.' : '.'}
+            </p>
+          </div>
+
+          {/* Receipts (reuses the enriched wallet strip) */}
+          {Array.isArray(backingWallets) && backingWallets.length > 0 && (
+            <BackingWalletStrip wallets={backingWallets} sport={sport} accent={accent} isMobile={isMobile} />
+          )}
+
+          {/* Sharp money split */}
+          {moneyPct != null && totalInvested != null && (
+            <SlkMoney totalInvested={totalInvested} moneyPct={moneyPct} teamShort={teamShort} otherTeam={otherTeam} accent={accent} run={open} />
+          )}
+
+          {/* Line history + CLV */}
+          <div style={{ padding: '1.1rem 1rem 0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+              <SlkLabel>{pickLabel} — LINE HISTORY</SlkLabel>
+              {clvPct != null && <span style={{ fontSize: '0.6rem', fontWeight: 700, color: clvPct > 0 ? B.green : clvPct < 0 ? B.red : B.textMuted, fontFeatureSettings: "'tnum'" }}>CLV {clvPct > 0 ? '+' : ''}{clvPct}%</span>}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', marginTop: '0.6rem' }}>
+              {[
+                { label: book || 'Locked', value: fmtO(odds), color: B.text, first: true },
+                { label: 'Pinnacle', value: fmtO(pinnacleOdds), color: B.textSec },
+                { label: 'Now', value: fmtO(closingOdds), color: clvPct > 0 ? B.green : clvPct < 0 ? B.red : B.textSec },
+              ].map((c, i) => (
+                <div key={c.label} style={{ textAlign: c.first ? 'left' : 'center', borderLeft: c.first ? 'none' : `1px solid ${B.borderSubtle}`, paddingLeft: c.first ? 0 : '0.5rem' }}>
+                  <div style={{ fontSize: '0.55rem', color: B.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.3rem', fontWeight: 600 }}>{c.label}</div>
+                  <div style={{ fontSize: '1.05rem', fontWeight: 800, color: c.color, fontFeatureSettings: "'tnum'", letterSpacing: '-0.01em' }}>{c.value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Lifecycle */}
+          {(lockedAt || peakAt || gameTime) && (
+            <div style={{ padding: '1.1rem 1.25rem 1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                {[
+                  lockedAt && { label: 'Locked', time: fmtET(lockedAt), color: B.green },
+                  peakAt && peakAt !== lockedAt && { label: 'Peak', time: fmtET(peakAt), color: B.gold },
+                  gameTime && { label: 'Game', time: isGraded || gameStarted ? 'Final' : fmtET(gameTime), color: isGraded ? B.textMuted : accent },
+                ].filter(Boolean).map((s, i, arr) => (
+                  <Fragment key={s.label}>
+                    {i > 0 && <div style={{ flex: 1, height: '1px', background: B.border, marginTop: '4px' }} />}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.3rem' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: s.color, boxShadow: `0 0 8px ${s.color}99` }} />
+                      <span style={{ fontSize: '0.6rem', fontWeight: 700, color: s.color, letterSpacing: '0.03em' }}>{s.label}</span>
+                      <span style={{ fontSize: '0.6rem', color: B.textMuted, fontFeatureSettings: "'tnum'" }}>{s.time}</span>
+                    </div>
+                  </Fragment>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+});
 
 const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   const { team, away, home, sport, stars, peakStars, lockStars, units, peakUnits, isDownsized, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, lockEV, criteriaMet, criteria, consensusStrength, pinnacleOdds, marketType, line, superseded, health, lockTier, trackedOnly, isTopPick: isTopPickPre, isSuperTopPick: isSuperTopPickPre, walletConsensusDelta, walletConsensusForW, walletConsensusAgW, walletConsensusQualityMargin, walletConsensusQualityForT30, walletConsensusQualityAgT30, hcDominant, hcConfFor, hcConfAg, hcMargin, systemVersion, promotedBy, v73HcRescue, agsValue, agsTier, agsQuintile, agsProvenForCount, agsProvenAgCount, agsValueV12, agsTierV12, agsQuintileV12, backingWallets } = pick;
@@ -13687,7 +14067,7 @@ export default function SharpFlow() {
                             gap: '0.75rem',
                           }}>
                             {filteredLocked.map(p => (
-                              <LockedPickCard key={p.key} pick={p} isMobile={isMobile} />
+                              <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} />
                             ))}
                           </div>
                         )}
