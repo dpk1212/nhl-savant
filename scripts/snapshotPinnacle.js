@@ -14,6 +14,7 @@ import * as dotenv from 'dotenv';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { resolveSOCTeam } from './lib/soccerTeams.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -30,6 +31,9 @@ const SPORTS = [
   { key: 'basketball_ncaab', label: 'CBB' },
   { key: 'baseball_mlb', label: 'MLB' },
   { key: 'basketball_nba', label: 'NBA' },
+  // World Cup 2026 — h2h is 3-way (home/draw/away). We only key + store the
+  // home/away book prices the cards consume; the Draw outcome is ignored.
+  { key: 'soccer_fifa_world_cup', label: 'SOC' },
 ];
 
 const BOOKMAKERS = 'pinnacle,draftkings,fanduel,betmgm,caesars';
@@ -145,6 +149,15 @@ function makeGameKey(away, home, sportLabel) {
     const a = NBA_CODES[away] || away.toLowerCase().replace(/[^a-z]/g, '').slice(0, 3);
     const h = NBA_CODES[home] || home.toLowerCase().replace(/[^a-z]/g, '').slice(0, 3);
     return `${a}_${h}`;
+  }
+  if (sportLabel === 'SOC') {
+    // Key by FIFA code so it matches fetchPolymarketData's SOC convention
+    // (normalize(resolveSOCTeam(away))_normalize(resolveSOCTeam(home))).
+    // Returns null when a country can't be resolved — caller skips it.
+    const a = resolveSOCTeam(away);
+    const h = resolveSOCTeam(home);
+    if (!a || !h) return null;
+    return `${normalize(a)}_${normalize(h)}`;
   }
   const aCanon = findCBBTeam(cbbMap, away);
   const hCanon = findCBBTeam(cbbMap, home);
@@ -292,6 +305,7 @@ async function run() {
       const awayName = game.away_team;
       const homeName = game.home_team;
       const gameKey = makeGameKey(awayName, homeName, label);
+      if (!gameKey) continue; // SOC country we can't resolve to a FIFA code
 
       const existing = history[label][gameKey] || {};
 

@@ -431,6 +431,37 @@ function profitFromOdds(odds, units) {
   return units * (100 / Math.abs(odds));
 }
 
+// Return a copy of a pinnacle/odds game record with the away/home-oriented
+// fields swapped. World Cup matches are neutral-site, so the Odds API and
+// Polymarket can disagree on which country is "home" — when the direct game
+// key misses we look up the reversed key and flip it so away/home line up
+// with the card's orientation.
+function flipPinnGame(g) {
+  if (!g) return g;
+  const swapAH = (o) => (o && typeof o === 'object' && ('away' in o || 'home' in o))
+    ? { ...o, away: o.home, home: o.away } : o;
+  const flippedBooks = {};
+  for (const [k, v] of Object.entries(g.allBooks || {})) {
+    flippedBooks[k] = { ...v, away: v.home, home: v.away };
+  }
+  return {
+    ...g,
+    current: swapAH(g.current),
+    opener: swapAH(g.opener),
+    bestAway: g.bestHome, bestHome: g.bestAway,
+    bestAwayBook: g.bestHomeBook, bestHomeBook: g.bestAwayBook,
+    movement: g.movement ? {
+      ...g.movement,
+      away: g.movement.home, home: g.movement.away,
+      direction: g.movement.direction === 'away' ? 'home' : g.movement.direction === 'home' ? 'away' : g.movement.direction,
+    } : g.movement,
+    ev: g.ev ? { away: g.ev.home, home: g.ev.away } : g.ev,
+    history: Array.isArray(g.history) ? g.history.map(h => ({ ...h, away: h.home, home: h.away })) : g.history,
+    allBooks: flippedBooks,
+    awayTeam: g.homeTeam, homeTeam: g.awayTeam,
+  };
+}
+
 // V7 Unified Star Rating (rateStarsV7) — DELETED 2026-05-15. ~160 lines of
 // dead code, never called outside its own definition (last verified by
 // the AGS-U v9 legacy-gate audit). Replaced wholesale by rateStarsV8
@@ -6341,7 +6372,16 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const oppShort = consensusSide === 'draw' ? 'Teams' : oppTeam.split(' ').pop();
   const awayShort = gd.away.split(' ').pop();
   const homeShort = gd.home.split(' ').pop();
-  const pinnGame = pinnacleHistory?.[gd.sport]?.[gd.key];
+  let pinnGame = pinnacleHistory?.[gd.sport]?.[gd.key];
+  // SOC neutral-site fallback: try the reversed key and flip away/home so the
+  // odds line up with this card's orientation (see flipPinnGame).
+  if (!pinnGame && gd.sport === 'SOC' && gd.key) {
+    const parts = gd.key.split('_');
+    if (parts.length === 2) {
+      const rev = pinnacleHistory?.SOC?.[`${parts[1]}_${parts[0]}`];
+      if (rev) pinnGame = flipPinnGame(rev);
+    }
+  }
   const allBooks = pinnGame?.allBooks || {};
   const polyGameData = polyData?.[gd.sport]?.[gd.key];
   const commenceTime = polyGameData?.commence ? new Date(polyGameData.commence).getTime()
