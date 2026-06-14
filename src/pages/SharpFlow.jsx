@@ -31,8 +31,6 @@ import {
   meetsAgsLockFloor,
   positionToWalletDetail,
 } from '../lib/ags.js';
-import { getTeamIdentity } from '../utils/teamIdentity.js';
-
 // Browser-side mirror of scripts/syncPickStateAuthoritative.js::buildWalletPriorStatsFn
 // — feeds aggregateSideV12 the per-sport prior stats (whitelist tier,
 // historical pick count, flat ROI) that the v12 quality calc weighs. Used
@@ -5301,8 +5299,6 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
     : `${teamShort} ML`;
   const marketTag = marketType === 'spread' ? 'SPREAD' : isTotal ? 'TOTAL' : 'ML';
 
-  const ident = isTotal ? getTeamIdentity(null, sport) : getTeamIdentity(team, sport);
-
   const fmtO = (o) => (o == null ? '—' : o > 0 ? `+${o}` : `${o}`);
   const fmtV = (v) => (v == null ? '—' : v >= 1000 ? `$${(v / 1000).toFixed(1)}K` : `$${v}`);
   const fmtET = (ts) => {
@@ -5375,6 +5371,24 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
     </span>
   );
 
+  // The hero metric — our product. Conviction is the literal AGSU V12 score
+  // (×100), with a slim meter so each card varies and reads at a glance.
+  const convEl = (
+    <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.22rem', minWidth: '50px' }}>
+      <span style={{ fontSize: '1.7rem', fontWeight: 900, color: conviction > 0 ? accent : B.textMuted, fontFeatureSettings: "'tnum'", letterSpacing: '-0.04em', lineHeight: 1 }}>
+        {conviction > 0 ? conviction : '—'}
+      </span>
+      <span style={{ fontSize: '0.44rem', fontWeight: 800, color: B.textSubtle, letterSpacing: '0.16em', lineHeight: 1 }}>AGSU V12</span>
+      <div style={{ width: '48px', height: '3px', borderRadius: '2px', background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+        <div style={{ width: `${Math.max(0, Math.min(100, conviction))}%`, height: '100%', background: accent, borderRadius: '2px' }} />
+      </div>
+    </div>
+  );
+
+  const oddsMeta = odds != null ? (
+    <span> · <span style={{ color: B.textSec, fontWeight: 700 }}>{fmtO(odds)}</span></span>
+  ) : null;
+
   return (
     <div
       onMouseEnter={() => setHover(true)}
@@ -5383,19 +5397,22 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
       style={{
         position: 'relative', borderRadius: '16px', overflow: 'hidden',
         background: open
-          ? `linear-gradient(160deg, ${accent}16 0%, rgba(20,25,37,0.94) 38%, rgba(15,20,32,0.96) 100%)`
-          : `linear-gradient(150deg, ${accent}12 0%, rgba(18,23,36,0.92) 46%, rgba(13,17,28,0.95) 100%)`,
-        border: `1px solid ${open ? accent + '4d' : hover ? accent + '3a' : accent + '24'}`,
+          ? 'linear-gradient(180deg, rgba(28,33,48,0.97) 0%, rgba(18,23,35,0.98) 100%)'
+          : 'linear-gradient(180deg, rgba(23,28,42,0.93) 0%, rgba(15,19,30,0.95) 100%)',
+        border: `1px solid ${open ? `${accent}3a` : hover ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.065)'}`,
         boxShadow: open
-          ? `inset 0 1px 0 rgba(255,255,255,0.05), 0 26px 60px -22px rgba(0,0,0,0.82), 0 0 0 1px ${accent}1f, 0 0 32px -10px ${accent}33`
+          ? `inset 0 1px 0 rgba(255,255,255,0.06), 0 26px 58px -22px rgba(0,0,0,0.85), 0 0 24px -12px ${accent}33`
           : hover
-          ? `inset 0 1px 0 rgba(255,255,255,0.05), 0 16px 32px -16px rgba(0,0,0,0.66), 0 0 20px -10px ${accent}30`
-          : `inset 0 1px 0 rgba(255,255,255,0.04), 0 8px 20px -12px rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.4)`,
+          ? 'inset 0 1px 0 rgba(255,255,255,0.06), 0 16px 34px -18px rgba(0,0,0,0.7)'
+          : 'inset 0 1px 0 rgba(255,255,255,0.05), 0 10px 24px -16px rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.45)',
         opacity: isCancelled ? 0.6 : isMuted || superseded || isTrackedGrade ? 0.78 : 1,
         transition: 'background .2s ease, border-color .2s ease, box-shadow .3s ease',
       }}
     >
-      {open && <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(90% 55% at 0% 0%, ${ident.c1}1c 0%, transparent 50%)` }} />}
+      {/* Restrained tier cue — a soft corner light, not a full wash, so the
+          card reads premium-neutral and the tiers don't all look green. */}
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(120% 78% at 100% 0%, ${accent}${open ? '20' : '10'} 0%, transparent 52%)` }} />
+      <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: '2px', background: accent, opacity: open ? 0.9 : 0.55 }} />
 
       {/* Collapsed row — mirrors the live Sharp Position card header.
           Desktop keeps a single dense row; mobile stacks so the matchup,
@@ -5408,45 +5425,40 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
         }}
       >
         {isMobile ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', padding: '0.85rem 0.9rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', padding: '0.85rem 0.9rem' }}>
             {/* Row 1 — sport · matchup · chevron */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', minWidth: 0 }}>
               <Badge color={ss.color} bg={ss.bg}>{ss.icon} {sport}</Badge>
-              <span style={{ flex: 1, minWidth: 0, fontSize: '0.84rem' }}>{matchupEl}</span>
+              <span style={{ flex: 1, minWidth: 0, fontSize: '0.82rem' }}>{matchupEl}</span>
               <ChevronDown size={17} color={B.textMuted} style={{ flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .25s ease' }} />
             </div>
-            {/* Row 2 — the pick + the price (the hero of the row) */}
-            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '0.6rem' }}>
+            {/* Row 2 — the pick (hero) + the conviction (hero metric); odds demoted */}
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '0.75rem' }}>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: '1.08rem', fontWeight: 800, color: isCancelled ? B.textMuted : B.text, letterSpacing: '-0.01em', lineHeight: 1.05, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: isCancelled ? 'line-through' : 'none' }}>{pickLabel}</div>
-                <div style={{ fontSize: '0.62rem', color: B.textMuted, marginTop: '0.22rem', fontFeatureSettings: "'tnum'", letterSpacing: '0.02em' }}>
-                  {gameTime ? (isGraded ? (gameStarted ? 'Final' : fmtET(gameTime)) : fmtET(gameTime) + ' ET') : ''}{book ? ` · ${book}` : ''}
+                <div style={{ fontSize: '1.32rem', fontWeight: 800, color: isCancelled ? B.textMuted : B.text, letterSpacing: '-0.02em', lineHeight: 1.05, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: isCancelled ? 'line-through' : 'none' }}>{pickLabel}</div>
+                <div style={{ fontSize: '0.64rem', color: B.textMuted, marginTop: '0.3rem', fontFeatureSettings: "'tnum'", letterSpacing: '0.02em' }}>
+                  {gameTime ? (isGraded ? (gameStarted ? 'Final' : fmtET(gameTime)) : fmtET(gameTime) + ' ET') : ''}{book ? ` · ${book}` : ''}{oddsMeta}
                 </div>
               </div>
-              <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <div style={{ fontSize: '1.55rem', fontWeight: 900, color: isGraded ? B.textSec : B.green, fontFeatureSettings: "'tnum'", letterSpacing: '-0.03em', lineHeight: 1, textShadow: isGraded ? 'none' : `0 0 18px ${B.green}33` }}>{fmtO(odds)}</div>
-                {evEdge > 0 && <div style={{ fontSize: '0.58rem', fontWeight: 700, color: B.green, marginTop: '0.2rem', fontFeatureSettings: "'tnum'" }}>+{evEdge}% EV</div>}
-              </div>
+              {convEl}
             </div>
             {/* Row 3 — tier strip */}
             <div style={{ display: 'flex' }}>{tierStrip}</div>
           </div>
         ) : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', padding: '0.7rem 0.8rem' }}>
-            <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', gap: '0.18rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.8rem 0.9rem' }}>
+            <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', gap: '0.22rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0 }}>
                 <Badge color={ss.color} bg={ss.bg}>{ss.icon} {sport}</Badge>
                 {matchupEl}
               </div>
+              <div style={{ fontSize: '1.02rem', fontWeight: 800, color: isCancelled ? B.textMuted : B.text, letterSpacing: '-0.01em', lineHeight: 1.1, textDecoration: isCancelled ? 'line-through' : 'none' }}>{pickLabel}</div>
               <div style={{ fontSize: '0.6rem', color: B.textMuted, letterSpacing: '0.02em', fontFeatureSettings: "'tnum'" }}>
-                {pickLabel}{gameTime ? ` · ${isGraded ? (gameStarted ? 'Final' : fmtET(gameTime)) : fmtET(gameTime) + ' ET'}` : ''}
+                {gameTime ? (isGraded ? (gameStarted ? 'Final' : fmtET(gameTime)) : fmtET(gameTime) + ' ET') : ''}{book ? ` · ${book}` : ''}{oddsMeta}
               </div>
             </div>
 
-            <div style={{ textAlign: 'right', flexShrink: 0 }}>
-              <div style={{ fontSize: '1.15rem', fontWeight: 800, color: isGraded ? B.textSec : B.green, fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em', lineHeight: 1 }}>{fmtO(odds)}</div>
-              {evEdge > 0 && <div style={{ fontSize: '0.55rem', fontWeight: 700, color: B.green, marginTop: '0.25rem', fontFeatureSettings: "'tnum'" }}>+{evEdge}% EV</div>}
-            </div>
+            {convEl}
 
             {tierStrip}
 
