@@ -5335,85 +5335,124 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
   const pickIsAway = !isTotal && teamShort === awayShort;
   const pickIsHome = !isTotal && teamShort === homeShort;
 
+  const matchupEl = (
+    <span style={{
+      ...T.body, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden',
+      textOverflow: 'ellipsis', minWidth: 0,
+      textDecoration: isCancelled ? 'line-through' : 'none',
+    }}>
+      <span style={{ color: pickIsAway ? B.text : B.textSec, fontWeight: pickIsAway ? 800 : 600 }}>{awayShort}</span>
+      <span style={{ color: B.textMuted, fontWeight: 400 }}> vs </span>
+      <span style={{ color: pickIsHome ? B.text : B.textSec, fontWeight: pickIsHome ? 800 : 600 }}>{homeShort}</span>
+    </span>
+  );
+
+  const tierStrip = (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: '0.38rem', flexShrink: 0,
+      padding: '0.25rem 0.5rem 0.25rem 0.3rem', borderRadius: '6px',
+      background: `${accent}14`, border: `1px solid ${accent}40`, color: accent,
+      fontFeatureSettings: "'tnum'",
+    }}>
+      <span style={{ fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.08em', padding: '0.18rem 0.36rem', borderRadius: '3px', background: accent, color: '#0a0a0a', lineHeight: 1 }}>{statePill}</span>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.05rem' }}>
+        {Array.from({ length: 5 }, (_, i) => {
+          const filled = i + 1 <= Math.floor(tierStars);
+          const half = !filled && i + 0.5 === tierStars;
+          return filled
+            ? <span key={i} style={{ fontSize: '0.5rem', color: accent, lineHeight: 1 }}>★</span>
+            : half
+            ? <span key={i} style={{ position: 'relative', display: 'inline-block', fontSize: '0.5rem', lineHeight: 1, width: '0.5rem' }}><span style={{ color: 'rgba(255,255,255,0.15)' }}>★</span><span style={{ position: 'absolute', left: 0, top: 0, overflow: 'hidden', width: '50%', color: accent }}>★</span></span>
+            : <span key={i} style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.15)', lineHeight: 1 }}>★</span>;
+        })}
+      </span>
+      <span style={{ fontSize: '0.58rem', fontWeight: 800, letterSpacing: '0.04em', lineHeight: 1 }}>{tierMeta.label}</span>
+      {isGraded ? (
+        <span style={{ fontSize: '0.58rem', fontWeight: 700, opacity: 0.9, lineHeight: 1, paddingLeft: '0.32rem', borderLeft: `1px solid ${accent}40` }}>{(isTrackedGrade ? 0 : (profit || 0)) > 0 ? '+' : ''}{(isTrackedGrade ? 0 : (profit || 0)).toFixed(2)}u</span>
+      ) : Number.isFinite(units) && units > 0 ? (
+        <span style={{ fontSize: '0.58rem', fontWeight: 700, opacity: 0.85, lineHeight: 1, paddingLeft: '0.32rem', borderLeft: `1px solid ${accent}40` }}>{fmtU(units)}u</span>
+      ) : null}
+    </span>
+  );
+
   return (
     <div
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       className="sf-glass"
       style={{
-        position: 'relative', borderRadius: '18px', overflow: 'hidden',
-        background: open ? 'rgba(20,25,37,0.92)' : (hover ? 'rgba(18,23,36,0.9)' : 'rgba(15,20,32,0.88)'),
-        border: `1px solid ${open ? accent + '33' : hover ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.07)'}`,
+        position: 'relative', borderRadius: '16px', overflow: 'hidden',
+        background: open
+          ? `linear-gradient(160deg, ${accent}16 0%, rgba(20,25,37,0.94) 38%, rgba(15,20,32,0.96) 100%)`
+          : `linear-gradient(150deg, ${accent}12 0%, rgba(18,23,36,0.92) 46%, rgba(13,17,28,0.95) 100%)`,
+        border: `1px solid ${open ? accent + '4d' : hover ? accent + '3a' : accent + '24'}`,
         boxShadow: open
-          ? `0 30px 64px -24px rgba(0,0,0,0.8), 0 0 0 1px ${accent}1a`
-          : hover ? '0 14px 30px -16px rgba(0,0,0,0.6)' : '0 2px 8px rgba(0,0,0,0.3)',
+          ? `inset 0 1px 0 rgba(255,255,255,0.05), 0 26px 60px -22px rgba(0,0,0,0.82), 0 0 0 1px ${accent}1f, 0 0 32px -10px ${accent}33`
+          : hover
+          ? `inset 0 1px 0 rgba(255,255,255,0.05), 0 16px 32px -16px rgba(0,0,0,0.66), 0 0 20px -10px ${accent}30`
+          : `inset 0 1px 0 rgba(255,255,255,0.04), 0 8px 20px -12px rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.4)`,
         opacity: isCancelled ? 0.6 : isMuted || superseded || isTrackedGrade ? 0.78 : 1,
         transition: 'background .2s ease, border-color .2s ease, box-shadow .3s ease',
       }}
     >
       {open && <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(90% 55% at 0% 0%, ${ident.c1}1c 0%, transparent 50%)` }} />}
 
-      {/* Collapsed row — mirrors the live Sharp Position card header:
-          sport badge · matchup (pick side bright) · unified tier strip. */}
+      {/* Collapsed row — mirrors the live Sharp Position card header.
+          Desktop keeps a single dense row; mobile stacks so the matchup,
+          big odds, and tier strip each get room to breathe. */}
       <button
         onClick={() => setOpen((o) => !o)}
         style={{
           position: 'relative', width: '100%', cursor: 'pointer', background: 'transparent',
-          border: 'none', textAlign: 'left', color: 'inherit', font: 'inherit',
-          display: 'flex', alignItems: 'center', gap: '0.7rem', padding: '0.7rem 0.8rem',
+          border: 'none', textAlign: 'left', color: 'inherit', font: 'inherit', display: 'block',
         }}
       >
-        <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', gap: '0.18rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0 }}>
-            <Badge color={ss.color} bg={ss.bg}>{ss.icon} {sport}</Badge>
-            <span style={{
-              ...T.body, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden',
-              textOverflow: 'ellipsis', minWidth: 0,
-              textDecoration: isCancelled ? 'line-through' : 'none',
-            }}>
-              <span style={{ color: pickIsAway ? B.text : B.textSec, fontWeight: pickIsAway ? 800 : 600 }}>{awayShort}</span>
-              <span style={{ color: B.textMuted, fontWeight: 400 }}> vs </span>
-              <span style={{ color: pickIsHome ? B.text : B.textSec, fontWeight: pickIsHome ? 800 : 600 }}>{homeShort}</span>
-            </span>
+        {isMobile ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', padding: '0.85rem 0.9rem' }}>
+            {/* Row 1 — sport · matchup · chevron */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', minWidth: 0 }}>
+              <Badge color={ss.color} bg={ss.bg}>{ss.icon} {sport}</Badge>
+              <span style={{ flex: 1, minWidth: 0, fontSize: '0.84rem' }}>{matchupEl}</span>
+              <ChevronDown size={17} color={B.textMuted} style={{ flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .25s ease' }} />
+            </div>
+            {/* Row 2 — the pick + the price (the hero of the row) */}
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '0.6rem' }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: '1.08rem', fontWeight: 800, color: isCancelled ? B.textMuted : B.text, letterSpacing: '-0.01em', lineHeight: 1.05, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: isCancelled ? 'line-through' : 'none' }}>{pickLabel}</div>
+                <div style={{ fontSize: '0.62rem', color: B.textMuted, marginTop: '0.22rem', fontFeatureSettings: "'tnum'", letterSpacing: '0.02em' }}>
+                  {gameTime ? (isGraded ? (gameStarted ? 'Final' : fmtET(gameTime)) : fmtET(gameTime) + ' ET') : ''}{book ? ` · ${book}` : ''}
+                </div>
+              </div>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <div style={{ fontSize: '1.55rem', fontWeight: 900, color: isGraded ? B.textSec : B.green, fontFeatureSettings: "'tnum'", letterSpacing: '-0.03em', lineHeight: 1, textShadow: isGraded ? 'none' : `0 0 18px ${B.green}33` }}>{fmtO(odds)}</div>
+                {evEdge > 0 && <div style={{ fontSize: '0.58rem', fontWeight: 700, color: B.green, marginTop: '0.2rem', fontFeatureSettings: "'tnum'" }}>+{evEdge}% EV</div>}
+              </div>
+            </div>
+            {/* Row 3 — tier strip */}
+            <div style={{ display: 'flex' }}>{tierStrip}</div>
           </div>
-          <div style={{ fontSize: '0.6rem', color: B.textMuted, letterSpacing: '0.02em', fontFeatureSettings: "'tnum'" }}>
-            {pickLabel}{gameTime ? ` · ${isGraded ? (gameStarted ? 'Final' : fmtET(gameTime)) : fmtET(gameTime) + ' ET'}` : ''}
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', padding: '0.7rem 0.8rem' }}>
+            <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', gap: '0.18rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0 }}>
+                <Badge color={ss.color} bg={ss.bg}>{ss.icon} {sport}</Badge>
+                {matchupEl}
+              </div>
+              <div style={{ fontSize: '0.6rem', color: B.textMuted, letterSpacing: '0.02em', fontFeatureSettings: "'tnum'" }}>
+                {pickLabel}{gameTime ? ` · ${isGraded ? (gameStarted ? 'Final' : fmtET(gameTime)) : fmtET(gameTime) + ' ET'}` : ''}
+              </div>
+            </div>
+
+            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+              <div style={{ fontSize: '1.15rem', fontWeight: 800, color: isGraded ? B.textSec : B.green, fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em', lineHeight: 1 }}>{fmtO(odds)}</div>
+              {evEdge > 0 && <div style={{ fontSize: '0.55rem', fontWeight: 700, color: B.green, marginTop: '0.25rem', fontFeatureSettings: "'tnum'" }}>+{evEdge}% EV</div>}
+            </div>
+
+            {tierStrip}
+
+            <ChevronDown size={15} color={B.textMuted} style={{ flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .25s ease' }} />
           </div>
-        </div>
-
-        <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <div style={{ fontSize: '1.15rem', fontWeight: 800, color: isGraded ? B.textSec : B.green, fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em', lineHeight: 1 }}>{fmtO(odds)}</div>
-          {evEdge > 0 && <div style={{ fontSize: '0.55rem', fontWeight: 700, color: B.green, marginTop: '0.25rem', fontFeatureSettings: "'tnum'" }}>+{evEdge}% EV</div>}
-        </div>
-
-        {/* Unified state · stars · tier · units strip */}
-        <span style={{
-          display: 'inline-flex', alignItems: 'center', gap: '0.38rem', flexShrink: 0,
-          padding: '0.25rem 0.5rem 0.25rem 0.3rem', borderRadius: '6px',
-          background: `${accent}14`, border: `1px solid ${accent}40`, color: accent,
-          fontFeatureSettings: "'tnum'",
-        }}>
-          <span style={{ fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.08em', padding: '0.18rem 0.36rem', borderRadius: '3px', background: accent, color: '#0a0a0a', lineHeight: 1 }}>{statePill}</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.05rem' }}>
-            {Array.from({ length: 5 }, (_, i) => {
-              const filled = i + 1 <= Math.floor(tierStars);
-              const half = !filled && i + 0.5 === tierStars;
-              return filled
-                ? <span key={i} style={{ fontSize: '0.5rem', color: accent, lineHeight: 1 }}>★</span>
-                : half
-                ? <span key={i} style={{ position: 'relative', display: 'inline-block', fontSize: '0.5rem', lineHeight: 1, width: '0.5rem' }}><span style={{ color: 'rgba(255,255,255,0.15)' }}>★</span><span style={{ position: 'absolute', left: 0, top: 0, overflow: 'hidden', width: '50%', color: accent }}>★</span></span>
-                : <span key={i} style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.15)', lineHeight: 1 }}>★</span>;
-            })}
-          </span>
-          <span style={{ fontSize: '0.58rem', fontWeight: 800, letterSpacing: '0.04em', lineHeight: 1 }}>{tierMeta.label}</span>
-          {isGraded ? (
-            <span style={{ fontSize: '0.58rem', fontWeight: 700, opacity: 0.9, lineHeight: 1, paddingLeft: '0.32rem', borderLeft: `1px solid ${accent}40` }}>{(isTrackedGrade ? 0 : (profit || 0)) > 0 ? '+' : ''}{(isTrackedGrade ? 0 : (profit || 0)).toFixed(2)}u</span>
-          ) : Number.isFinite(units) && units > 0 ? (
-            <span style={{ fontSize: '0.58rem', fontWeight: 700, opacity: 0.85, lineHeight: 1, paddingLeft: '0.32rem', borderLeft: `1px solid ${accent}40` }}>{fmtU(units)}u</span>
-          ) : null}
-        </span>
-
-        <ChevronDown size={15} color={B.textMuted} style={{ flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .25s ease' }} />
+        )}
       </button>
 
       {/* Expanded sheet */}
