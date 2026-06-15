@@ -46,10 +46,21 @@ function buildWalletPriorStatsFnForUI(walletProfiles) {
     const profile = walletProfiles.get(key) || walletProfiles.get(key.toUpperCase());
     const sportRec = profile?.bySport?.[sport];
     if (!sportRec) return null;
+    // Mirror cron walletPriorStatsFromSportRec: Source A primary, Source-B
+    // (on-chain) flat-ROI mirror fallback for B-only qualified wallets so their
+    // v12 quality isn't zeroed (matters for SOC + any B-only CONFIRMED wallet).
+    const picksN = Number(sportRec.picks?.n) || 0;
+    if (picksN >= 2) {
+      return {
+        tier: sportRec.whitelistTier || null,
+        priorN: picksN,
+        priorRoi: Number(sportRec.picks?.flatRoi) || 0,
+      };
+    }
     return {
       tier: sportRec.whitelistTier || null,
-      priorN: Number(sportRec.picks?.n) || 0,
-      priorRoi: Number(sportRec.picks?.flatRoi) || 0,
+      priorN: Number(sportRec.positions?.n) || 0,
+      priorRoi: Number(sportRec.positions?.positionFlatRoi) || 0,
     };
   };
 }

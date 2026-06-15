@@ -86,11 +86,22 @@ async function loadWalletData() {
     const priorMap = {};
     for (const [sport, rec] of Object.entries(p.bySport)) {
       if (rec?.whitelistTier) tierMap[sport] = rec.whitelistTier;
-      priorMap[sport] = {
-        tier: rec?.whitelistTier || null,
-        priorN: Number(rec?.picks?.n) || 0,
-        priorRoi: Number(rec?.picks?.flatRoi) || 0,
-      };
+      // Match syncPickStateAuthoritative.walletPriorStatsFromSportRec: Source A
+      // (featured-pick history) primary, Source-B (on-chain) flat-ROI mirror
+      // fallback for B-only qualified wallets. Keeps the quintile cuts derived
+      // from the same score distribution the live scorer produces.
+      const picksN = Number(rec?.picks?.n) || 0;
+      priorMap[sport] = picksN >= 2
+        ? {
+            tier: rec?.whitelistTier || null,
+            priorN: picksN,
+            priorRoi: Number(rec?.picks?.flatRoi) || 0,
+          }
+        : {
+            tier: rec?.whitelistTier || null,
+            priorN: Number(rec?.positions?.n) || 0,
+            priorRoi: Number(rec?.positions?.positionFlatRoi) || 0,
+          };
     }
     tiers.set(d.id, tierMap);
     walletPriorBySport.set(d.id, priorMap);

@@ -398,11 +398,33 @@ function buildWalletPriorStatsFn(walletProfiles) {
     const profile = walletProfiles.get(key) || walletProfiles.get(key.toUpperCase());
     const sportRec = profile?.bySport?.[sport];
     if (!sportRec) return null;
+    return walletPriorStatsFromSportRec(sportRec);
+  };
+}
+
+// v12 prior stats — Source A (featured-pick history) is the primary ROI/N signal,
+// but wallets that qualify on Source B alone (on-chain positions) have no Source A
+// data, which would zero out their v12 quality (roi=0, nReliab=0) even though they
+// are CONFIRMED. Fall back to the Source-B flat-ROI mirror + position count so the
+// quality formula reflects their actual tracked edge. Threshold mirrors
+// exportWalletProfiles WHITELIST_MIN_BETS (2): use Source A only when it is non-thin.
+const V12_SOURCE_A_MIN = 2;
+function walletPriorStatsFromSportRec(sportRec) {
+  if (!sportRec) return null;
+  const picksN = Number(sportRec.picks?.n) || 0;
+  if (picksN >= V12_SOURCE_A_MIN) {
     return {
       tier: sportRec.whitelistTier || null,
-      priorN: Number(sportRec.picks?.n) || 0,
+      priorN: picksN,
       priorRoi: Number(sportRec.picks?.flatRoi) || 0,
     };
+  }
+  // Source-A thin → fall back to Source-B (on-chain) flat-ROI mirror.
+  const posN = Number(sportRec.positions?.n) || 0;
+  return {
+    tier: sportRec.whitelistTier || null,
+    priorN: posN,
+    priorRoi: Number(sportRec.positions?.positionFlatRoi) || 0,
   };
 }
 
