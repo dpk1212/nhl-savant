@@ -1024,7 +1024,13 @@ export const AGS_V12_TIER_META = {
 //   score <= 0                  → FADE       (0u — muted, unchanged)
 export const V12_1_SUPER_UNITS = 6;
 export const V12_1_TOP_UNITS = 4;
+export const V12_1_MINI_UNITS = 3;
 export const V12_1_CONFIRMED_UNITS = 1;
+
+// Mini-HC band — a CONFIRMED wallet sized between HC_MINI_FLOOR and HC_RATIO is
+// "sized up, but not full conviction." A net mini-HC margin (with no full-HC
+// margin) stakes the MINI tier. Full HC remains sizeRatio ≥ HC_RATIO (1.5).
+export const HC_MINI_FLOOR = 1.0;
 
 // Display metadata for the v12.1 stake tiers. The UI branches on `stakeTier`
 // and reuses the existing SUPER/TOP ribbon components; CONFIRMED gets a blue
@@ -1032,6 +1038,7 @@ export const V12_1_CONFIRMED_UNITS = 1;
 export const AGS_V12_STAKE_TIER_META = {
   SUPER:      { label: 'SUPER TOP PICK', short: 'SUPER',   color: '#E8B85C', bg: 'rgba(232,184,92,0.15)',  units: V12_1_SUPER_UNITS,     ribbon: 'SUPER', stars: 5 },
   TOP:        { label: 'TOP PICK',       short: 'TOP',     color: '#22C55E', bg: 'rgba(34,197,94,0.15)',   units: V12_1_TOP_UNITS,       ribbon: 'TOP',   stars: 4 },
+  MINI:       { label: 'STRONG PICK',    short: 'STRONG',  color: '#14B8A6', bg: 'rgba(20,184,166,0.15)',  units: V12_1_MINI_UNITS,      ribbon: null,    stars: 4 },
   CONFIRMED:  { label: 'CONFIRMED',      short: 'CONFIRM', color: '#3B82F6', bg: 'rgba(59,130,246,0.15)',  units: V12_1_CONFIRMED_UNITS, ribbon: null,    stars: 3 },
   MONITORING: { label: 'MONITORING',     short: 'MONITOR', color: '#6B7280', bg: 'rgba(107,114,128,0.12)', units: 0,                     ribbon: null,    stars: 0 },
   FADE:       { label: 'FADE',           short: 'FADE',    color: '#ef4444', bg: 'rgba(239,68,68,0.12)',   units: 0,                     ribbon: null,    stars: 0 },
@@ -1040,19 +1047,25 @@ export const AGS_V12_STAKE_TIER_META = {
 // Compute the v12.1 stake tier + RAW units (no odds cap — the cron applies
 // `oddsCap` after this). Pure function of the v12 score, its score-quintile
 // tier, and the HC margin. Returns { stakeTier, unitsRaw }.
-export function agsV12HcStake({ score, scoreTier = null, hcMargin = 0, calibration = null }) {
+export function agsV12HcStake({ score, scoreTier = null, hcMargin = 0, miniHcMargin = 0, calibration = null }) {
   // Selection gate — score ≤ 0 is muted/cancelled (unchanged from v12).
   if (score == null || !Number.isFinite(score) || score <= 0) {
     return { stakeTier: 'FADE', unitsRaw: 0 };
   }
   const tier = scoreTier || agsV12TierFromValue(score, calibration);
-  const m = Number(hcMargin) || 0;
-  // Non-HC, or HC that the score still lands in the WEAK quintile → Monitoring.
-  // Both are negative-EV historically; shown for volume but never staked.
-  if (m < 1 || tier === 'WEAK') {
+  // A WEAK-quintile score mutes everything (full-HC and mini-HC alike).
+  if (tier === 'WEAK') {
     return { stakeTier: 'MONITORING', unitsRaw: 0 };
   }
+  // Full-HC ladder (CONFIRMED wallets sized ≥ HC_RATIO).
+  const m = Number(hcMargin) || 0;
   if (m === 1) return { stakeTier: 'TOP',       unitsRaw: V12_1_TOP_UNITS };
   if (m === 2) return { stakeTier: 'SUPER',     unitsRaw: V12_1_SUPER_UNITS };
-  return { stakeTier: 'CONFIRMED', unitsRaw: V12_1_CONFIRMED_UNITS }; // m >= 3
+  if (m >= 3)  return { stakeTier: 'CONFIRMED', unitsRaw: V12_1_CONFIRMED_UNITS };
+  // No full-HC margin → fall back to the mini-HC band (CONFIRMED wallets sized
+  // HC_MINI_FLOOR ≤ sizeRatio < HC_RATIO — "sized up, but not full conviction").
+  const mm = Number(miniHcMargin) || 0;
+  if (mm >= 1) return { stakeTier: 'MINI', unitsRaw: V12_1_MINI_UNITS };
+  // Non-HC → Monitoring (shown for volume, never staked).
+  return { stakeTier: 'MONITORING', unitsRaw: 0 };
 }

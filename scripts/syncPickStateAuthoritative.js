@@ -61,6 +61,7 @@ import {
   AGS_MIN_PROVEN_WALLETS,
   AGS_V12_FALLBACK_CALIBRATION,
   HC_RATIO,
+  HC_MINI_FLOOR,
   aggregateSideProven,
   aggregateSideV12,
   agsSizeMultiplier,
@@ -241,11 +242,12 @@ function isV121Eligible(pickDate) {
 // v12.1 sizing — derive { stakeTier, units } from the HC margin via
 // agsV12HcStake, then apply the same odds cap as the score ladder. MONITORING
 // and FADE return 0u. Returns post-cap, rounded units alongside the stake tier.
-function hcStakeFromV12({ scoreV12, scoreTier, hcMargin, odds, calibration }) {
+function hcStakeFromV12({ scoreV12, scoreTier, hcMargin, miniHcMargin, odds, calibration }) {
   const { stakeTier, unitsRaw } = agsV12HcStake({
     score: scoreV12,
     scoreTier,
     hcMargin,
+    miniHcMargin,
     calibration,
   });
   if (!unitsRaw) return { stakeTier, units: 0 };
@@ -282,10 +284,11 @@ function computeWalletConsensus(rawPositions, mySide, sport, walletProfiles) {
     forW: 0, agW: 0, delta: 0,
     qualityForT30: 0, qualityAgT30: 0, qualityMargin: 0,
     hcConfFor: 0, hcConfAg: 0, hcDominant: false, hcMargin: 0,
+    miniHcConfFor: 0, miniHcConfAg: 0, miniHcMargin: 0,
   };
   if (!Array.isArray(rawPositions) || !mySide || !sport) return out;
   const positions = dedupBySide(rawPositions);
-  let qFor = 0, qAg = 0, forW = 0, agW = 0, hcF = 0, hcA = 0;
+  let qFor = 0, qAg = 0, forW = 0, agW = 0, hcF = 0, hcA = 0, mhcF = 0, mhcA = 0;
   for (const p of positions) {
     const short = String(p.walletShort || p.wallet || '').slice(-6).toLowerCase();
     const profile = walletProfiles.get(short) || walletProfiles.get(short.toUpperCase());
@@ -305,6 +308,10 @@ function computeWalletConsensus(rawPositions, mySide, sport, walletProfiles) {
     if (tier === 'CONFIRMED' && sr >= HC_RATIO) {
       if (p.side === mySide) hcF++;
       else if (p.side) hcA++;
+    } else if (tier === 'CONFIRMED' && sr >= HC_MINI_FLOOR) {
+      // Mini-HC band: CONFIRMED + sized HC_MINI_FLOOR ≤ sizeRatio < HC_RATIO.
+      if (p.side === mySide) mhcF++;
+      else if (p.side) mhcA++;
     }
   }
   out.forW = forW;
@@ -317,6 +324,9 @@ function computeWalletConsensus(rawPositions, mySide, sport, walletProfiles) {
   out.hcConfAg = hcA;
   out.hcMargin = hcF - hcA;
   out.hcDominant = hcF >= 1 && hcA === 0;
+  out.miniHcConfFor = mhcF;
+  out.miniHcConfAg = mhcA;
+  out.miniHcMargin = mhcF - mhcA;
   return out;
 }
 
@@ -865,10 +875,11 @@ async function createMissingLockedPicks({
           scoreV12,
           scoreTier: finalTier,
           hcMargin: live.hcMargin,
+          miniHcMargin: live.miniHcMargin,
           odds: odds ?? null,
           calibration: agsCalibration,
         });
-        hcStakeTierCreate = hc.stakeTier;     // SUPER | TOP | CONFIRMED | MONITORING
+        hcStakeTierCreate = hc.stakeTier;     // SUPER | TOP | MINI | CONFIRMED | MONITORING
         peakUnitsApplied = hc.units;          // odds-capped; MONITORING → 0u
       }
 
@@ -959,6 +970,9 @@ async function createMissingLockedPicks({
         v8_hcConfAg: live.hcConfAg,
         v8_hcMargin: live.hcMargin,
         v8_hcDominant: live.hcDominant,
+        v8_miniHcConfFor: live.miniHcConfFor,
+        v8_miniHcConfAg: live.miniHcConfAg,
+        v8_miniHcMargin: live.miniHcMargin,
         v8_lockTier: finalTier,
       };
       if (agsRes) {
@@ -1310,10 +1324,11 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       scoreV12: scoreV12Live,
       scoreTier: liveTier,
       hcMargin: live.hcMargin,
+      miniHcMargin: live.miniHcMargin,
       odds: sideOdds,
       calibration: agsCalibration,
     });
-    hcStakeTier = hc.stakeTier;        // SUPER | TOP | CONFIRMED | MONITORING
+    hcStakeTier = hc.stakeTier;        // SUPER | TOP | MINI | CONFIRMED | MONITORING
     finalUnitsApplied = hc.units;      // odds-capped; MONITORING → 0u
   }
 
@@ -1427,6 +1442,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   patch.v8_hcConfAg = live.hcConfAg;
   patch.v8_hcMargin = live.hcMargin;
   patch.v8_hcDominant = live.hcDominant;
+  patch.v8_miniHcConfFor = live.miniHcConfFor;
+  patch.v8_miniHcConfAg = live.miniHcConfAg;
+  patch.v8_miniHcMargin = live.miniHcMargin;
   patch.v8_lockTier = liveTier;
 
   // AGS-Unified v12 — write canonical lockStage every cycle.

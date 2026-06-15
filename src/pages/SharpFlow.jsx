@@ -1302,6 +1302,7 @@ function starsFromAgsuTier(tier) {
   // v12.1 product stake tiers.
   if (tier === 'SUPER') return 5.0;
   if (tier === 'TOP') return 4.0;
+  if (tier === 'MINI') return 4.0;
   if (tier === 'CONFIRMED') return 3.0;
   if (tier === 'MONITORING') return 1.0;
   // Legacy score-quintile tiers.
@@ -5318,6 +5319,7 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
   const stakeMeta = hcStakeTier ? (AGS_V12_STAKE_TIER_META[hcStakeTier] || null) : null;
   const isMonitoring = hcStakeTier === 'MONITORING';
   const isConfirmed = hcStakeTier === 'CONFIRMED';
+  const isMini = hcStakeTier === 'MINI';
   const [open, setOpen] = useState(false);
   const [hover, setHover] = useState(false);
 
@@ -5333,7 +5335,7 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
   // v12.1 — CONFIRMED + MONITORING drive the strip from the product meta
   // (blue / grey). SUPER/TOP keep the score-quintile strip because the gold
   // ribbon already conveys the product tier; legacy picks use the score tier.
-  const useStakeStrip = !!stakeMeta && (isMonitoring || isConfirmed);
+  const useStakeStrip = !!stakeMeta && (isMonitoring || isConfirmed || isMini);
   const tierMeta = useStakeStrip ? stakeMeta : (AGS_TIER_META[tierKey] || AGS_TIER_META.LOCK);
   const accent = isCancelled ? B.red
     : isMuted ? '#F59E0B'
@@ -5481,6 +5483,18 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
     }}>
       <ShieldCheck size={9} strokeWidth={3} />
       CONFIRMED
+    </span>
+  ) : isMini ? (
+    // v12.1 MINI (mini-HC: CONFIRMED sized 1.0–1.5×) — teal "STRONG PICK".
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: '0.2rem', flexShrink: 0,
+      padding: '0.14rem 0.42rem', borderRadius: '5px',
+      background: 'rgba(20,184,166,0.14)', border: '1px solid rgba(20,184,166,0.45)',
+      color: '#14B8A6', fontSize: '0.5rem', fontWeight: 900,
+      letterSpacing: '0.07em', lineHeight: 1, whiteSpace: 'nowrap',
+    }}>
+      <ArrowUpRight size={9} strokeWidth={3} />
+      STRONG PICK
     </span>
   ) : null;
 
@@ -7986,7 +8000,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
               fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.04em',
               lineHeight: 1,
             }}>
-              {displayTier || '—'}
+              {(displayTier && AGS_V12_STAKE_TIER_META[displayTier]?.short) || displayTier || '—'}
             </span>
             {/* Units — omitted on PREVIEW (no stamp yet) and on MUTED
                 (always 0; redundant with the red FADE tier + MUTED pill). */}

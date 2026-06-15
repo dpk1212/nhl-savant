@@ -1936,12 +1936,12 @@ function buildV12TierAnalysis(report, stats) {
   if (v121Rows.length > 0) {
     report.push(`### v12.1 — By Stake Tier (HC margin)`);
     report.push('');
-    report.push(`Post-cutover picks size off the **HC margin**, not the score quintile. SUPER (margin 2 · 6u), TOP (margin 1 · 4u), CONFIRMED (margin 3+ · 1u) are staked; **MONITORING** (non-HC or WEAK-tier HC) is tracked at **0u** and excluded from the staked record/ROI below.`);
+    report.push(`Post-cutover picks size off the **HC margin**, not the score quintile. SUPER (margin 2 · 6u), TOP (margin 1 · 4u), MINI (mini-HC 1.0–1.5× · 3u), CONFIRMED (margin 3+ · 1u) are staked; **MONITORING** (non-HC or WEAK-tier HC) is tracked at **0u** and excluded from the staked record/ROI below.`);
     report.push('');
     report.push(`| Stake Tier | Units | N   | W-L    | Win %  | Total Stake | PnL (u)    | ROI       |`);
     report.push(`|------------|-------|-----|--------|--------|-------------|------------|-----------|`);
-    const STAKE_TIER_UNITS = { SUPER: 6, TOP: 4, CONFIRMED: 1 };
-    for (const st of ['SUPER', 'TOP', 'CONFIRMED']) {
+    const STAKE_TIER_UNITS = { SUPER: 6, TOP: 4, MINI: 3, CONFIRMED: 1 };
+    for (const st of ['SUPER', 'TOP', 'MINI', 'CONFIRMED']) {
       const stRows = v121Rows.filter(r => r.hcStakeTier === st);
       const sagg = aggregate(stRows);
       if (sagg.n + sagg.trackedN === 0) continue;
