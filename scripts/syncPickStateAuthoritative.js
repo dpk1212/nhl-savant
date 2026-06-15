@@ -65,6 +65,7 @@ import {
   aggregateSideV12,
   agsSizeMultiplier,
   agsTierFromValue,
+  agsV12HcStake,
   agsV12SizeMultiplier,
   agsV12TierFromValue,
   computeAgs,
@@ -221,6 +222,35 @@ function unitsFromAgsV12(scoreV12, odds, calibration) {
   if (units === 0) return 0;
   const capped = oddsCap(units, odds);
   return Math.round(capped * 100) / 100;
+}
+
+// ── AGS-Unified v12.1 — HC-margin staking cutover ───────────────────────────
+// V12 still SELECTS the side (score > 0). From this date forward the STAKE +
+// display tier come from the HC margin (see agsV12HcStake in src/lib/ags.js):
+//   margin 2 → SUPER 6u, margin 1 → TOP 4u, margin ≥3 → CONFIRMED 1u,
+//   non-HC or WEAK-tier HC → MONITORING 0u (visible, never staked).
+// Picks dated before this keep their score-quintile ladder so the dashboard
+// can split the eras cleanly (history is never rewritten).
+const V12_1_EFFECTIVE_FROM = '2026-06-15';
+function isV121Eligible(pickDate) {
+  if (!pickDate || typeof pickDate !== 'string') return false;
+  // ISO YYYY-MM-DD strings compare lexicographically == chronologically.
+  return pickDate >= V12_1_EFFECTIVE_FROM;
+}
+
+// v12.1 sizing — derive { stakeTier, units } from the HC margin via
+// agsV12HcStake, then apply the same odds cap as the score ladder. MONITORING
+// and FADE return 0u. Returns post-cap, rounded units alongside the stake tier.
+function hcStakeFromV12({ scoreV12, scoreTier, hcMargin, odds, calibration }) {
+  const { stakeTier, unitsRaw } = agsV12HcStake({
+    score: scoreV12,
+    scoreTier,
+    hcMargin,
+    calibration,
+  });
+  if (!unitsRaw) return { stakeTier, units: 0 };
+  const capped = oddsCap(unitsRaw, odds);
+  return { stakeTier, units: Math.round(capped * 100) / 100 };
 }
 
 // v12 health — score ≤ 0 is MUTED by rule (no separate calibrated mute
@@ -800,6 +830,26 @@ async function createMissingLockedPicks({
       const agsUnitsMult = agsValue != null ? agsSizeMultiplier(agsValue, agsCalibration) : 0;
       const agsV12UnitsRaw = agsV12SizeMultiplier(scoreV12, agsCalibration);
 
+      // ── v12.1 HC-margin staking overlay (going-forward) ─────────────────
+      // Newly-created docs are dated TARGET_DATE; when on/after the cutover
+      // the STAKE + product tier come from the HC margin. finalTier (score
+      // quintile) is kept as a diagnostic; v8_hcStakeTier carries the product
+      // tier and peakUnitsApplied is the HC-based, odds-capped size.
+      const createV121Eligible = isV121Eligible(TARGET_DATE);
+      let hcStakeTierCreate = null;
+      let peakUnitsApplied = peakUnits;
+      if (createV121Eligible) {
+        const hc = hcStakeFromV12({
+          scoreV12,
+          scoreTier: finalTier,
+          hcMargin: live.hcMargin,
+          odds: odds ?? null,
+          calibration: agsCalibration,
+        });
+        hcStakeTierCreate = hc.stakeTier;     // SUPER | TOP | CONFIRMED | MONITORING
+        peakUnitsApplied = hc.units;          // odds-capped; MONITORING → 0u
+      }
+
       // Determine team label for the side.
       //
       // For TOTAL picks: write the canonical "Over <line>" form ONLY when
@@ -837,8 +887,8 @@ async function createMissingLockedPicks({
         // rendering on the dashboard before this fix.
         book: 'Pinnacle',
         stars: peakStars,
-        units: peakUnits,
-        unitTier: unitTierLabel(peakUnits),
+        units: peakUnitsApplied,
+        unitTier: unitTierLabel(peakUnitsApplied),
         sharpCount: peakStats.sharpCount,
         totalInvested: peakStats.totalInvested,
         consensusStrength: peakStats.consensusStrength,
@@ -902,7 +952,7 @@ async function createMissingLockedPicks({
         v8Stamps.v8_agsEvaluatedAt = now;
         v8Stamps.v8_agsUnitsMult = agsUnitsMult;
         v8Stamps.v8_agsUnitsBase = (marketType === 'SPREAD' || marketType === 'TOTAL') ? BASE_UNITS_SPREAD_TOTAL : BASE_UNITS_ML;
-        v8Stamps.v8_agsUnitsApplied = peakUnits; // mirrored on finalUnits for the grader
+        v8Stamps.v8_agsUnitsApplied = peakUnitsApplied; // mirrored on finalUnits for the grader
       }
       // v12 (AUTHORITATIVE — v8_agsTier and finalUnits are v12-derived).
       v8Stamps.v8_agsTier = finalTier; // v12 tier (overwrites legacy v11 tier slot)
@@ -914,9 +964,13 @@ async function createMissingLockedPicks({
       v8Stamps.v8_agsV12ForMean = agsV12Res.forMean;
       v8Stamps.v8_agsV12AgMean = agsV12Res.agMean;
       v8Stamps.v8_agsV12UnitsRaw = agsV12UnitsRaw; // ladder value pre-odds-cap
-      v8Stamps.v8_agsV12UnitsApplied = peakUnits;  // post-odds-cap, == finalUnits
+      v8Stamps.v8_agsV12UnitsApplied = peakUnitsApplied;  // post-odds-cap, == finalUnits
       v8Stamps.v8_agsV12CalibrationSource = agsV12Res.calibrationSource || 'fallback';
       v8Stamps.v8_agsV12EvaluatedAt = now;
+      // v12.1 — product stake tier from the HC margin (going-forward only).
+      if (createV121Eligible) {
+        v8Stamps.v8_hcStakeTier = hcStakeTierCreate;
+      }
       // Health stamp — gives the dashboard a non-undefined health.status
       // immediately. reconcileSide will overwrite next cycle (same shape).
       const healthStamp = {
@@ -946,7 +1000,7 @@ async function createMissingLockedPicks({
         maxEV: 0,
         maxEVAt: now,
         // Canonical bet size — same source of truth used by grader and dashboard.
-        finalUnits: peakUnits,
+        finalUnits: peakUnitsApplied,
         status: 'PENDING',
         result: { outcome: null, profit: null, gradedAt: null },
         // Flag so we know this came from the cron auto-create path.
@@ -959,7 +1013,8 @@ async function createMissingLockedPicks({
         col, docId, side, route: promotedBy,
         ags: agsValue, agsTotal: agsProvenTotal,
         agsV12: scoreV12, agsV12Tier: finalTier,
-        peakStars, peakUnits, team,
+        hcStakeTier: hcStakeTierCreate,
+        peakStars, peakUnits: peakUnitsApplied, team,
       });
     }
     if (Object.keys(newSides).length === 0) continue;
@@ -1103,6 +1158,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
           finalUnits: 0,
           v8_agsTier: 'FADE',
           v8_agsV12Tier: 'FADE',
+          v8_hcStakeTier: 'FADE',
           v8_agsV12UnitsApplied: 0,
           v8_agsUnitsApplied: 0,
           _frozenFinalUnitsRescue: {
@@ -1176,6 +1232,27 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     ? agsV12SizeMultiplier(scoreV12Live, agsCalibration)
     : 0;
   const liveUnitsPreAgs = (mkt === 'SPREAD' || mkt === 'TOTAL') ? BASE_UNITS_SPREAD_TOTAL : BASE_UNITS_ML;
+
+  // ─── v12.1 HC-margin staking overlay (going-forward) ──────────────────
+  // When the pick is on/after V12_1_EFFECTIVE_FROM, the STAKE + product tier
+  // come from the HC margin (SUPER/TOP/CONFIRMED/MONITORING) rather than the
+  // score quintile. liveTier (score quintile) is preserved as a diagnostic on
+  // v8_agsV12Tier; v8_hcStakeTier carries the new product tier and finalUnits
+  // reflects the HC-based size. Pre-cutover picks keep the score ladder.
+  const v121Eligible = isV121Eligible(pickDate);
+  let hcStakeTier = null;
+  let finalUnitsApplied = liveUnits;
+  if (v121Eligible && appliedStatus === 'ACTIVE' && scoreV12Live != null && scoreV12Live > 0) {
+    const hc = hcStakeFromV12({
+      scoreV12: scoreV12Live,
+      scoreTier: liveTier,
+      hcMargin: live.hcMargin,
+      odds: sideOdds,
+      calibration: agsCalibration,
+    });
+    hcStakeTier = hc.stakeTier;        // SUPER | TOP | CONFIRMED | MONITORING
+    finalUnitsApplied = hc.units;      // odds-capped; MONITORING → 0u
+  }
 
   // ─── lockStage promote/demote — v12 gate ──────────────────────────────
   // Ship floor: v12 score > 0 (the mute boundary). Picks above 0 LOCK
@@ -1331,9 +1408,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     patch.v8_agsUnitsMult = agsUnitsMult;
     patch.v8_agsUnitsBase = liveUnitsPreAgs;
     // v8_agsUnitsApplied retained on the v11 logical block but mirrors the
-    // v12 authoritative liveUnits (so legacy consumers reading this field
+    // authoritative applied units (so legacy consumers reading this field
     // see the same number as finalUnits).
-    patch.v8_agsUnitsApplied = liveUnits;
+    patch.v8_agsUnitsApplied = finalUnitsApplied;
   } else if (sd.v8_ags != null) {
     patch.v8_ags = admin.firestore.FieldValue.delete();
     patch.v8_agsTierV11 = admin.firestore.FieldValue.delete();
@@ -1353,11 +1430,17 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     patch.v8_agsV12ForMean = agsV12Result.forMean;
     patch.v8_agsV12AgMean = agsV12Result.agMean;
     patch.v8_agsV12UnitsRaw = agsV12UnitsRaw;              // ladder pre odds-cap
-    patch.v8_agsV12UnitsApplied = liveUnits;               // mirrors finalUnits
+    patch.v8_agsV12UnitsApplied = finalUnitsApplied;       // mirrors finalUnits
     patch.v8_agsV12CalibrationSource = agsV12Result.calibrationSource || 'fallback';
     patch.v8_agsV12EvaluatedAt = now;
-    // CANONICAL bet size — grader + dashboard read only this.
-    patch.finalUnits = liveUnits;
+    // v12.1 — product stake tier from the HC margin (going-forward). Null
+    // for pre-cutover picks so the dashboard/UI fall back to the score tier.
+    if (v121Eligible) {
+      patch.v8_hcStakeTier = hcStakeTier;
+    }
+    // CANONICAL bet size — grader + dashboard read only this. Under v12.1
+    // this is the HC-based size (MONITORING → 0u); pre-cutover it's the ladder.
+    patch.finalUnits = finalUnitsApplied;
     // Drift logging.
     const stampedV12 = sd.v8_agsV12;
     const v12Changed = stampedV12 == null
@@ -1365,9 +1448,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       || Math.abs(stampedV12 - agsV12Result.agsV12) >= 0.01;
     const stampedTierField = sd.v8_agsTier;
     const tierChanged = stampedTierField !== agsV12Result.tier;
-    const v12UnitsDrifted = Math.abs((sd.finalUnits ?? 0) - liveUnits) >= 0.05;
+    const v12UnitsDrifted = Math.abs((sd.finalUnits ?? 0) - finalUnitsApplied) >= 0.05;
     if (v12Changed || tierChanged || v12UnitsDrifted) {
-      changes.push(`AGS-v12: ${stampedV12 == null ? '∅' : stampedV12.toFixed(3)} → ${agsV12Result.agsV12.toFixed(3)} (${agsV12Result.tier} → ${liveUnits}u, ladder=${agsV12UnitsRaw.toFixed(2)}u)`);
+      const tierNote = v121Eligible ? `${agsV12Result.tier}/${hcStakeTier}` : agsV12Result.tier;
+      changes.push(`AGS-v12: ${stampedV12 == null ? '∅' : stampedV12.toFixed(3)} → ${agsV12Result.agsV12.toFixed(3)} (${tierNote} → ${finalUnitsApplied}u, ladder=${agsV12UnitsRaw.toFixed(2)}u)`);
     }
   } else {
     // No v12 result for ANY reason (missing walletDetails, missing
@@ -1386,6 +1470,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     patch.v8_agsV12Tier = 'FADE';
     patch.v8_agsV12UnitsApplied = 0;
     patch.finalUnits = 0;
+    // v12.1 — no signal → FADE stake tier (going-forward), else clear stale.
+    if (v121Eligible) {
+      patch.v8_hcStakeTier = 'FADE';
+    } else if (sd.v8_hcStakeTier != null) {
+      patch.v8_hcStakeTier = admin.firestore.FieldValue.delete();
+    }
     if (sd.v8_agsV12 != null) {
       patch.v8_agsV12 = admin.firestore.FieldValue.delete();
       patch.v8_agsV12Quintile = admin.firestore.FieldValue.delete();
@@ -1396,10 +1486,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   }
   // finalUnits drift logging — flag any time the canonical bet size changes
   // by ≥0.05u so cycle output makes the change visible.
-  if (Number.isFinite(sd.finalUnits) && Math.abs(sd.finalUnits - liveUnits) >= 0.05) {
-    changes.push(`finalUnits: ${sd.finalUnits}u → ${liveUnits}u`);
+  if (Number.isFinite(sd.finalUnits) && Math.abs(sd.finalUnits - finalUnitsApplied) >= 0.05) {
+    changes.push(`finalUnits: ${sd.finalUnits}u → ${finalUnitsApplied}u`);
   } else if (sd.finalUnits == null) {
-    changes.push(`finalUnits backfill: ${liveUnits}u`);
+    changes.push(`finalUnits backfill: ${finalUnitsApplied}u`);
   }
 
   // ── Descriptive peak stats refresh (display-only, every cycle authoritative).
@@ -1867,7 +1957,8 @@ async function main() {
   } else {
     for (const c of cm.created) {
       const agsLabel = c.ags != null ? c.ags.toFixed(2) : '∅';
-      console.log(`  + ${c.col.replace('sharpFlow', '').toUpperCase()} ${c.docId} / ${c.side} (${c.team}) — route=${c.route}  AGS-U=${agsLabel} (proven=${c.agsTotal})  stars=${c.peakStars} units=${c.peakUnits}u`);
+      const stakeLabel = c.hcStakeTier ? ` stake=${c.hcStakeTier}` : '';
+      console.log(`  + ${c.col.replace('sharpFlow', '').toUpperCase()} ${c.docId} / ${c.side} (${c.team}) — route=${c.route}  AGS-U=${agsLabel} (proven=${c.agsTotal})  stars=${c.peakStars} units=${c.peakUnits}u${stakeLabel}`);
     }
   }
   if (cm.skipped.length > 0) {

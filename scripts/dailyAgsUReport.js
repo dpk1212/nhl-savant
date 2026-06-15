@@ -587,6 +587,9 @@ async function loadAllAgsuGradedPicks() {
           ags, agsTier, agsQuintile, agsComponents,
           agsV12, agsV12Tier, agsV12Quintile, agsV12UnitsApplied,
           agsV12ForMean, agsV12AgMean, agsV12ForCount, agsV12AgCount,
+          // v12.1 product stake tier (SUPER/TOP/CONFIRMED/MONITORING/FADE).
+          // Null on pre-cutover picks (kept on the score-quintile ladder).
+          hcStakeTier: sd.v8_hcStakeTier || null,
           provenFor, provenAg,
           provenTotal: (provenFor ?? 0) + (provenAg ?? 0),
           hcMargin,
@@ -1922,6 +1925,35 @@ function buildV12TierAnalysis(report, stats) {
     const winMono = monoScore(winRates);
     const verdict = (m, n) => m <= -(n-2) ? '🟢 monotonic' : m >= (n-2) ? '🚨 inverted' : '🟡 partial';
     report.push(`> **Ladder monotonicity** (positive tiers ELITE → WEAK only). ROI score \`${roiMono}\` ${verdict(roiMono, rois.length)} · Win-rate score \`${winMono}\` ${verdict(winMono, winRates.length)}. **${verdict(roiMono, rois.length).includes('monotonic') ? 'The ladder is working — V12 sizes high-edge picks more and they\'re returning more.' : verdict(roiMono, rois.length).includes('inverted') ? 'The ladder is upside-down — V12 is staking the wrong picks the most. This is the #1 thing to fix.' : 'Partial — the ladder is in the right direction overall but has rough spots. Watch a few more days before reacting.'}**`);
+    report.push('');
+  }
+
+  // ── v12.1 — HC-margin stake tier breakdown (post-cutover only) ────────────
+  // Once V12_1_EFFECTIVE_FROM lands, the STAKE comes from the HC margin, not
+  // the score quintile: SUPER (margin 2, 6u), TOP (margin 1, 4u), CONFIRMED
+  // (margin 3+, 1u), MONITORING (non-HC / WEAK-tier HC, 0u — never staked).
+  const v121Rows = v12Rows.filter(r => r.hcStakeTier);
+  if (v121Rows.length > 0) {
+    report.push(`### v12.1 — By Stake Tier (HC margin)`);
+    report.push('');
+    report.push(`Post-cutover picks size off the **HC margin**, not the score quintile. SUPER (margin 2 · 6u), TOP (margin 1 · 4u), CONFIRMED (margin 3+ · 1u) are staked; **MONITORING** (non-HC or WEAK-tier HC) is tracked at **0u** and excluded from the staked record/ROI below.`);
+    report.push('');
+    report.push(`| Stake Tier | Units | N   | W-L    | Win %  | Total Stake | PnL (u)    | ROI       |`);
+    report.push(`|------------|-------|-----|--------|--------|-------------|------------|-----------|`);
+    const STAKE_TIER_UNITS = { SUPER: 6, TOP: 4, CONFIRMED: 1 };
+    for (const st of ['SUPER', 'TOP', 'CONFIRMED']) {
+      const stRows = v121Rows.filter(r => r.hcStakeTier === st);
+      const sagg = aggregate(stRows);
+      if (sagg.n + sagg.trackedN === 0) continue;
+      report.push(`| ${st.padEnd(10)} | ${(STAKE_TIER_UNITS[st].toFixed(2)+'u').padStart(5)} | ${String(sagg.n + sagg.trackedN).padStart(3)} | ${(sagg.w+'-'+sagg.l).padEnd(6)} | ${pct(sagg.w, sagg.n).padStart(6)} | ${sagg.totalStake.toFixed(2).padStart(11)} | ${fmtSigned(sagg.profit).padStart(10)} | ${(sagg.roi != null ? sagg.roi.toFixed(1)+'%' : '—').padStart(9)} |`);
+    }
+    report.push('');
+    // Monitoring volume line — informational only (0u, excluded from staked).
+    const monRows = v121Rows.filter(r => r.hcStakeTier === 'MONITORING');
+    const monGraded = monRows.filter(r => r.won != null);
+    const monW = monGraded.filter(r => r.won === 1).length;
+    const monL = monGraded.filter(r => r.won === 0).length;
+    report.push(`> **MONITORING volume:** ${monRows.length} picks tracked at 0u${monGraded.length ? ` (would-be ${monW}-${monL}, ${pct(monW, monGraded.length)} win)` : ''}. Shown to users for context; **not** part of the staked record, units, or ROI.`);
     report.push('');
   }
 

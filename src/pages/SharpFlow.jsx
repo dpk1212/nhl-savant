@@ -18,6 +18,7 @@ import {
   AGS_FALLBACK_CALIBRATION,
   AGS_MIN_PROVEN_WALLETS,
   AGS_TIER_META,
+  AGS_V12_STAKE_TIER_META,
   HC_RATIO,
   aggregateSideProven,
   agsSizeMultiplier,
@@ -1287,6 +1288,12 @@ function calculateSpreadTotalUnits(_stars, _consensusPenalty = 0, odds = null, _
 // number we shipped on, the number we sized at, and the number the user
 // sees on the card.
 function starsFromAgsuTier(tier) {
+  // v12.1 product stake tiers.
+  if (tier === 'SUPER') return 5.0;
+  if (tier === 'TOP') return 4.0;
+  if (tier === 'CONFIRMED') return 3.0;
+  if (tier === 'MONITORING') return 1.0;
+  // Legacy score-quintile tiers.
   if (tier === 'ELITE') return 5.0;
   if (tier === 'PREMIUM') return 4.5;
   if (tier === 'LOCK') return 4.0;
@@ -1559,8 +1566,19 @@ function evaluateTopPickTier(peak, lock, sideKey, promotedRegime = null,
   const v8 = peak?.v8Scoring ?? lock?.v8Scoring ?? null;
   const meanBaseF = computeMeanBaseF(v8, sideKey);
 
-  // Prefer the stamped tier, then derive from stamped AGS-U value, then
-  // fall through to "no badge" (no AGS-U signal → not a top pick).
+  // v12.1 (HC-margin staking) — cron-authoritative. When the cron has stamped
+  // a product stake tier, the ribbon comes from it, NOT the score quintile:
+  //   SUPER → filled gold "SUPER TOP PICK", TOP → outlined gold "TOP PICK".
+  //   CONFIRMED / MONITORING / FADE → no gold ribbon (own labels handled in card).
+  const hcStakeTier = side?.v8_hcStakeTier || null;
+  if (hcStakeTier) {
+    const isSuperTopPick = hcStakeTier === 'SUPER';
+    const isTopPick = isSuperTopPick || hcStakeTier === 'TOP';
+    return { isTopPick, isSuperTopPick, hcStakeTier, regime, meanBaseF, qualityMargin };
+  }
+
+  // Legacy (pre-v12.1) — prefer the stamped tier, then derive from stamped
+  // AGS-U value, then fall through to "no badge" (no AGS-U signal → not top).
   let tier = side?.v8_agsTier || null;
   if (!tier && Number.isFinite(side?.v8_ags)) {
     tier = agsTierFromValue(side.v8_ags, getAgsCalibration());
@@ -1568,7 +1586,7 @@ function evaluateTopPickTier(peak, lock, sideKey, promotedRegime = null,
   const isSuperTopPick = tier === 'ELITE';
   const isTopPick      = isSuperTopPick || tier === 'PREMIUM';
 
-  return { isTopPick, isSuperTopPick, regime, meanBaseF, qualityMargin };
+  return { isTopPick, isSuperTopPick, hcStakeTier: null, regime, meanBaseF, qualityMargin };
 }
 
 // V8.3 — NEAR_START elite-wallet modifier (regime-specific).
@@ -1701,8 +1719,17 @@ function stampWalletConsensus(target, v8Scoring, sideKey, sport, baseStars, prom
     || liveTier === 'PREMIUM'
     || liveTier === 'LOCK';
   const agsTierStamp = stampAgsResult?.tier || null;
-  target.v8_topPick      = isShipped && (agsTierStamp === 'ELITE' || agsTierStamp === 'PREMIUM');
-  target.v8_superTopPick = isShipped && agsTierStamp === 'ELITE';
+  // v12.1 — when the cron has stamped a product stake tier on this side, the
+  // browser MUST defer to it so the gold ribbon never disagrees with the
+  // authoritative HC-margin model. SUPER → super ribbon, TOP → top ribbon;
+  // CONFIRMED / MONITORING → no gold ribbon.
+  if (target.v8_hcStakeTier) {
+    target.v8_topPick      = target.v8_hcStakeTier === 'SUPER' || target.v8_hcStakeTier === 'TOP';
+    target.v8_superTopPick = target.v8_hcStakeTier === 'SUPER';
+  } else {
+    target.v8_topPick      = isShipped && (agsTierStamp === 'ELITE' || agsTierStamp === 'PREMIUM');
+    target.v8_superTopPick = isShipped && agsTierStamp === 'ELITE';
+  }
 
   // AGS (AggregateScore) — already computed above (stampAgsResult).
   //
@@ -5271,10 +5298,15 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
     status, outcome, profit, closingOdds, totalInvested, evEdge, consensusStrength,
     pinnacleOdds, marketType, line, superseded, health, lockTier, trackedOnly,
     agsValueV12, agsValue, agsTierV12, agsTier, backingWallets, hcConfFor,
-    isTopPick: isTopPickPre, isSuperTopPick: isSuperTopPickPre,
+    isTopPick: isTopPickPre, isSuperTopPick: isSuperTopPickPre, hcStakeTier,
   } = pick;
   const isTopPick = !!isTopPickPre;
   const isSuperTopPick = !!isSuperTopPickPre;
+  // v12.1 product stake tier (cron-authoritative). When present it drives the
+  // badge/label/units; null on pre-cutover picks (legacy score-quintile path).
+  const stakeMeta = hcStakeTier ? (AGS_V12_STAKE_TIER_META[hcStakeTier] || null) : null;
+  const isMonitoring = hcStakeTier === 'MONITORING';
+  const isConfirmed = hcStakeTier === 'CONFIRMED';
   const [open, setOpen] = useState(false);
   const [hover, setHover] = useState(false);
 
@@ -5287,10 +5319,15 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
   const isTrackedGrade = isGraded && !!trackedOnly;
 
   const tierKey = agsTierV12 || agsTier || lockTier || 'LOCK';
-  const tierMeta = AGS_TIER_META[tierKey] || AGS_TIER_META.LOCK;
+  // v12.1 — CONFIRMED + MONITORING drive the strip from the product meta
+  // (blue / grey). SUPER/TOP keep the score-quintile strip because the gold
+  // ribbon already conveys the product tier; legacy picks use the score tier.
+  const useStakeStrip = !!stakeMeta && (isMonitoring || isConfirmed);
+  const tierMeta = useStakeStrip ? stakeMeta : (AGS_TIER_META[tierKey] || AGS_TIER_META.LOCK);
   const accent = isCancelled ? B.red
     : isMuted ? '#F59E0B'
     : isGraded ? (isWin ? B.green : isLoss ? B.red : B.gold)
+    : useStakeStrip ? stakeMeta.color
     : (LOCK_TIER_ACCENT[tierKey] || tierMeta.color || B.green);
 
   const score = agsValueV12 != null ? agsValueV12 : agsValue;
@@ -5339,9 +5376,10 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
   // a sport badge, the matchup with the pick side weighted bright, and the
   // unified state·stars·tier·units strip.
   const ss = sportStyle(sport);
-  const tierStars = starsFromAgsuTier(tierKey);
+  const tierStars = useStakeStrip ? (stakeMeta.stars || 0) : starsFromAgsuTier(tierKey);
   const statePill = isCancelled ? 'VOID' : isMuted ? 'MUTE' : superseded ? 'FLIP'
-    : isGraded ? (isWin ? 'WON' : isLoss ? 'LOST' : 'PUSH') : 'PLAY';
+    : isGraded ? (isWin ? 'WON' : isLoss ? 'LOST' : 'PUSH')
+    : isMonitoring ? 'WATCH' : 'PLAY';
   const pickIsAway = !isTotal && teamShort === awayShort;
   const pickIsHome = !isTotal && teamShort === homeShort;
 
@@ -5420,6 +5458,18 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
     }}>
       {isSuperTopPick ? <Zap size={9} strokeWidth={3} /> : <ArrowUpRight size={9} strokeWidth={3} />}
       {isSuperTopPick ? 'SUPER TOP PICK' : 'TOP PICK'}
+    </span>
+  ) : isConfirmed ? (
+    // v12.1 CONFIRMED (margin 3+) — own blue label, no gold ribbon.
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: '0.2rem', flexShrink: 0,
+      padding: '0.14rem 0.42rem', borderRadius: '5px',
+      background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.45)',
+      color: '#3B82F6', fontSize: '0.5rem', fontWeight: 900,
+      letterSpacing: '0.07em', lineHeight: 1, whiteSpace: 'nowrap',
+    }}>
+      <ShieldCheck size={9} strokeWidth={3} />
+      CONFIRMED
     </span>
   ) : null;
 
@@ -6633,6 +6683,16 @@ const AGS_V12_DISPLAY_META = Object.freeze({
     border: 'rgba(212,175,55,0.20)',
     bannerLabel: null,
   },
+  // v12.1 — non-HC / WEAK-tier HC sides: tracked for context, never staked.
+  MONITORING: {
+    pill: 'MONITORING',
+    headline: 'MONITORING — tracked, not staked',
+    color:  '#6B7280',                     // grey
+    bg:     'rgba(107,114,128,0.08)',
+    bgSoft: 'rgba(107,114,128,0.03)',
+    border: 'rgba(107,114,128,0.22)',
+    bannerLabel: null,
+  },
 });
 
 // Pure helper — derives the unified display state from cron stamps
@@ -6640,7 +6700,20 @@ const AGS_V12_DISPLAY_META = Object.freeze({
 // Centralized so the ML / Spread / Total tabs can each derive their
 // own state from their own cron props without re-implementing the
 // logic.
-function deriveDisplayState({ cronTier, cronUnits, fallbackTier }) {
+function deriveDisplayState({ cronTier, cronUnits, fallbackTier, cronStakeTier = null }) {
+  // v12.1 — when the cron has stamped a product stake tier, the live card
+  // speaks the product vocabulary (SUPER / TOP / CONFIRMED / MONITORING)
+  // and the size comes from the HC-based finalUnits.
+  if (cronStakeTier) {
+    if (cronStakeTier === 'MONITORING') {
+      return { state: 'MONITORING', tier: 'MONITORING', units: 0 };
+    }
+    if (cronStakeTier === 'FADE') {
+      return { state: 'MUTED', tier: 'FADE', units: 0 };
+    }
+    const u = Number.isFinite(cronUnits) ? cronUnits : 0;
+    return { state: 'PLAY', tier: cronStakeTier, units: u };
+  }
   const tier = cronTier || fallbackTier || null;
   // Cron hasn't seen this side yet → browser still has tier preview but
   // we can't claim a bet (no finalUnits stamped). Show as PREVIEW.
@@ -6797,9 +6870,9 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   // which produces the "WEAK on lock card vs 5★ LOCK on live card" bug
   // (Cavs/Pistons total, 2026-05-17). Cron-stamped values are derived from
   // the live Firestore calibration that the grader and bankroll math use.
-  mlCronTier = null, mlCronUnits = null,
-  spreadCronTier = null, spreadCronUnits = null,
-  totalCronTier = null, totalCronUnits = null,
+  mlCronTier = null, mlCronUnits = null, mlCronStakeTier = null,
+  spreadCronTier = null, spreadCronUnits = null, spreadCronStakeTier = null,
+  totalCronTier = null, totalCronUnits = null, totalCronStakeTier = null,
 }) {
   const [showWallets, setShowWallets] = useState(false);
   const [walletSideFilter, setWalletSideFilter] = useState('all');
@@ -7248,6 +7321,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     cronTier: mlCronTier,
     cronUnits: mlCronUnits,
     fallbackTier: effectiveV12Tier,
+    cronStakeTier: mlCronStakeTier,
   });
   const displayState = displayML.state;
   const displayTier = displayML.tier;
@@ -7500,7 +7574,8 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const spreadUnits = spreadCronUnits != null ? spreadCronUnits : spreadUnitsLive;
   const isSpreadLocked = isSpreadLockedRaw
     || (!!spreadCronTier && spreadCronTier !== 'FADE' && spreadCronTier !== 'UNKNOWN' && (spreadCronUnits ?? 0) > 0);
-  const spreadRenderedStars = spreadCronTier ? starsFromAgsuTier(spreadCronTier) : (spreadSr?.stars ?? 0);
+  const spreadRenderedStars = spreadCronStakeTier ? starsFromAgsuTier(spreadCronStakeTier)
+    : spreadCronTier ? starsFromAgsuTier(spreadCronTier) : (spreadSr?.stars ?? 0);
 
   useEffect(() => {
     if ((!isSpreadLocked && !isSpreadShadow) || isGameLive || !commenceTime || !onPickSynced || !spreadConsensusSide) return;
@@ -7675,7 +7750,8 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   // non-FADE with finalUnits > 0 was actually promoted.
   const isTotalLocked = isTotalLockedRaw
     || (!!totalCronTier && totalCronTier !== 'FADE' && totalCronTier !== 'UNKNOWN' && (totalCronUnits ?? 0) > 0);
-  const totalRenderedStars = totalCronTier ? starsFromAgsuTier(totalCronTier) : (totalSr?.stars ?? 0);
+  const totalRenderedStars = totalCronStakeTier ? starsFromAgsuTier(totalCronStakeTier)
+    : totalCronTier ? starsFromAgsuTier(totalCronTier) : (totalSr?.stars ?? 0);
 
   useEffect(() => {
     if ((!isTotalLocked && !isTotalShadow) || isGameLive || !commenceTime || !onPickSynced || !totalConsensusSide) return;
@@ -13404,16 +13480,22 @@ export default function SharpFlow() {
                                             : Number.isFinite(side?.v8_agsV12UnitsApplied) ? side.v8_agsV12UnitsApplied
                                             : Number.isFinite(side?.v8_agsUnitsApplied) ? side.v8_agsUnitsApplied
                                             : null;
+                        // v12.1 product stake tier (cron-authoritative). null on
+                        // pre-cutover picks → live card keeps the score-quintile path.
+                        const pickHcStakeTier = (side) => side?.v8_hcStakeTier || null;
                         const gdMlCronSide = gdActiveSideEntry?.[1];
                         const gdMlCronTier = pickV12Tier(gdMlCronSide);
                         const gdMlCronUnits = pickV12Units(gdMlCronSide);
+                        const gdMlCronStakeTier = pickHcStakeTier(gdMlCronSide);
                         const gdSpreadCronSide = gdSpreadSideEntry?.[1];
                         const gdSpreadCronTier = pickV12Tier(gdSpreadCronSide);
                         const gdSpreadCronUnits = pickV12Units(gdSpreadCronSide);
+                        const gdSpreadCronStakeTier = pickHcStakeTier(gdSpreadCronSide);
                         const gdTotalCronSide = gdTotalSideEntry?.[1];
                         const gdTotalCronTier = pickV12Tier(gdTotalCronSide);
                         const gdTotalCronUnits = pickV12Units(gdTotalCronSide);
-                        return <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} onHealthSynced={onHealthSynced} isMyPick={!!userPicks[gd.key]} onToggleMyPick={onToggleMyPick} canPickGames={!!(user && isPremium)} gameFlowMap={gameFlowMap} spreadPositions={spreadPositions} totalPositions={totalPositions} originalLockedSide={gdOriginalSide} originalLockStars={gdLockStars} originalLockWPS={gdLockWPS} originalFlipBeatThreshold={gdFlipBeatThreshold} originalSpreadLockStars={gdSpreadLockStars} originalSpreadLockWPS={gdSpreadLockWPS} originalTotalLockStars={gdTotalLockStars} originalTotalLockWPS={gdTotalLockWPS} v8Norm={v8Norm} walletProfiles={walletProfiles} mlCronTier={gdMlCronTier} mlCronUnits={gdMlCronUnits} spreadCronTier={gdSpreadCronTier} spreadCronUnits={gdSpreadCronUnits} totalCronTier={gdTotalCronTier} totalCronUnits={gdTotalCronUnits} />;
+                        const gdTotalCronStakeTier = pickHcStakeTier(gdTotalCronSide);
+                        return <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} onHealthSynced={onHealthSynced} isMyPick={!!userPicks[gd.key]} onToggleMyPick={onToggleMyPick} canPickGames={!!(user && isPremium)} gameFlowMap={gameFlowMap} spreadPositions={spreadPositions} totalPositions={totalPositions} originalLockedSide={gdOriginalSide} originalLockStars={gdLockStars} originalLockWPS={gdLockWPS} originalFlipBeatThreshold={gdFlipBeatThreshold} originalSpreadLockStars={gdSpreadLockStars} originalSpreadLockWPS={gdSpreadLockWPS} originalTotalLockStars={gdTotalLockStars} originalTotalLockWPS={gdTotalLockWPS} v8Norm={v8Norm} walletProfiles={walletProfiles} mlCronTier={gdMlCronTier} mlCronUnits={gdMlCronUnits} mlCronStakeTier={gdMlCronStakeTier} spreadCronTier={gdSpreadCronTier} spreadCronUnits={gdSpreadCronUnits} spreadCronStakeTier={gdSpreadCronStakeTier} totalCronTier={gdTotalCronTier} totalCronUnits={gdTotalCronUnits} totalCronStakeTier={gdTotalCronStakeTier} />;
                       })}
                     </div>
                     {isFreeUser && <SharpFlowPaywall isMobile={isMobile} lockedCount={allPosGames.length > 1 ? allPosGames.length - 1 : 0} pnlData={allTimePnL} />}
@@ -13922,6 +14004,11 @@ export default function SharpFlow() {
                           agsValueV12: Number.isFinite(sd.v8_agsV12) ? sd.v8_agsV12 : null,
                           agsTierV12: sd.v8_agsV12Tier || null,
                           agsQuintileV12: Number.isFinite(sd.v8_agsV12Quintile) ? sd.v8_agsV12Quintile : null,
+                          // v12.1 — product stake tier from the HC margin
+                          // (cron-authoritative; null on pre-cutover picks).
+                          // SUPER / TOP / CONFIRMED / MONITORING / FADE.
+                          hcStakeTier: sd.v8_hcStakeTier || null,
+                          isMonitoring: sd.v8_hcStakeTier === 'MONITORING',
                         });
                       }
                     }
@@ -13954,9 +14041,13 @@ export default function SharpFlow() {
                       const tB = b.gameTime ? new Date(b.gameTime).getTime() : 0;
                       return tA - tB || b.stars - a.stars;
                     });
-                    const pendingCount = lockedArr.filter(p => !p.outcome).length;
-                    const wonCount = lockedArr.filter(p => p.outcome === 'WIN').length;
-                    const lostCount = lockedArr.filter(p => p.outcome === 'LOSS').length;
+                    // v12.1 — MONITORING picks (0u, non-HC or WEAK-tier HC) are
+                    // shown for volume but never staked: they are excluded from
+                    // the record / units / ROI ledger entirely.
+                    const stakedLockedArr = lockedArr.filter(p => !p.isMonitoring);
+                    const pendingCount = stakedLockedArr.filter(p => !p.outcome).length;
+                    const wonCount = stakedLockedArr.filter(p => p.outcome === 'WIN').length;
+                    const lostCount = stakedLockedArr.filter(p => p.outcome === 'LOSS').length;
                     const sportCounts = {};
                     allLockedArr.forEach(p => { sportCounts[p.sport] = (sportCounts[p.sport] || 0) + 1; });
                     const sportColorMap = { NHL: '#D4AF37', MLB: '#E31837', NBA: '#FF8C00', CBB: '#FF6B35', NFL: '#4CAF50', SOC: '#2ECC71' };
@@ -13976,7 +14067,7 @@ export default function SharpFlow() {
                     // Record / exposure / payout / realized, computed
                     // from the sport+market-filtered set so the numbers
                     // track the filters the user has applied.
-                    const ledgerPending = lockedArr.filter(p => !p.outcome);
+                    const ledgerPending = stakedLockedArr.filter(p => !p.outcome);
                     const ledgerUnitsAtRisk = ledgerPending.reduce((s, p) => s + (Number.isFinite(p.units) ? p.units : 0), 0);
                     const ledgerToWin = ledgerPending.reduce((s, p) => {
                       const u = Number.isFinite(p.units) ? p.units : 0;
@@ -13984,8 +14075,8 @@ export default function SharpFlow() {
                       if (!u || !Number.isFinite(o) || o === 0) return s;
                       return s + (o > 0 ? u * (o / 100) : u * (100 / Math.abs(o)));
                     }, 0);
-                    const ledgerRealized = lockedArr.filter(p => p.outcome).reduce((s, p) => s + (p.profit || 0), 0);
-                    const ledgerClvVals = lockedArr.map(p => p.clv).filter(v => Number.isFinite(v));
+                    const ledgerRealized = stakedLockedArr.filter(p => p.outcome).reduce((s, p) => s + (p.profit || 0), 0);
+                    const ledgerClvVals = stakedLockedArr.map(p => p.clv).filter(v => Number.isFinite(v));
                     const ledgerAvgClv = ledgerClvVals.length ? ledgerClvVals.reduce((s, v) => s + v, 0) / ledgerClvVals.length : null;
                     const ledgerCells = [
                       { label: 'RECORD', value: `${wonCount}–${lostCount}`, color: wonCount > lostCount ? B.green : wonCount < lostCount ? B.red : B.text },
@@ -14160,17 +14251,56 @@ export default function SharpFlow() {
                               ? `No locked picks for ${lockedDay === 'today' ? 'today' : 'yesterday'}`
                               : `No ${lockedStatusFilter === 'pending' ? 'pending' : lockedStatusFilter === 'won' ? 'winning' : 'losing'} picks`}
                           </div>
-                        ) : (
-                          <div className="sf-stagger" style={{
-                            display: 'grid',
-                            gridTemplateColumns: isMobile ? '1fr' : filteredLocked.length === 1 ? '1fr' : 'repeat(2, 1fr)',
-                            gap: '0.75rem',
-                          }}>
-                            {filteredLocked.map(p => (
-                              <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} />
-                            ))}
-                          </div>
-                        )}
+                        ) : (() => {
+                          // v12.1 — split staked picks (SUPER/TOP/CONFIRMED) from
+                          // MONITORING (0u, non-staked). Monitoring renders below
+                          // in a muted grey section so volume stays visible but is
+                          // clearly not part of the staked card / ledger.
+                          const stakedCards = filteredLocked.filter(p => !p.isMonitoring);
+                          const monitoringCards = filteredLocked.filter(p => p.isMonitoring);
+                          return (
+                            <>
+                              {stakedCards.length > 0 && (
+                                <div className="sf-stagger" style={{
+                                  display: 'grid',
+                                  gridTemplateColumns: isMobile ? '1fr' : stakedCards.length === 1 ? '1fr' : 'repeat(2, 1fr)',
+                                  gap: '0.75rem',
+                                }}>
+                                  {stakedCards.map(p => (
+                                    <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} />
+                                  ))}
+                                </div>
+                              )}
+                              {monitoringCards.length > 0 && (
+                                <div style={{ marginTop: stakedCards.length > 0 ? '1.25rem' : 0 }}>
+                                  <div style={{
+                                    display: 'flex', alignItems: 'center', gap: '0.5rem',
+                                    margin: '0 0 0.6rem 0.1rem',
+                                  }}>
+                                    <span style={{
+                                      ...T.micro, fontWeight: 800, letterSpacing: '0.12em',
+                                      color: '#6B7280', fontSize: '0.6rem',
+                                    }}>MONITORING</span>
+                                    <span style={{
+                                      ...T.tiny, color: B.textSubtle, fontSize: '0.55rem',
+                                    }}>tracked, not staked · {monitoringCards.length}</span>
+                                    <div style={{ flex: 1, height: '1px', background: B.borderSubtle }} />
+                                  </div>
+                                  <div className="sf-stagger" style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: isMobile ? '1fr' : monitoringCards.length === 1 ? '1fr' : 'repeat(2, 1fr)',
+                                    gap: '0.75rem',
+                                    opacity: 0.78,
+                                  }}>
+                                    {monitoringCards.map(p => (
+                                      <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} />
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
                       </>
                     );
                   })() : (

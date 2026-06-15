@@ -964,3 +964,58 @@ export const AGS_V12_TIER_META = {
   FADE:    { label: 'FADE',    color: '#ef4444', bg: 'rgba(239,68,68,0.15)',  short: 'FADE',    units: 0    },
   UNKNOWN: { label: '—',       color: '#6b7280', bg: 'rgba(107,114,128,0.10)', short: '—',      units: 0    },
 };
+
+// ─────────────────────────────────────────────────────────────────────────
+// AGS-Unified v12.1 — HC-MARGIN staking model.
+//
+// V12 still SELECTS the pick (score > 0 picks the side). The STAKE + display
+// tier are now driven by the high-conviction margin (hcMargin = count of
+// CONFIRMED conviction sharps FOR − AGAINST), not the score quintile.
+//
+// Grounded purely in win rate + average odds (no past-ROI dependence), the
+// leak-free lifetime + live samples show:
+//   • Only the WEAK-tier gate (39.5% WR) and the margin≥3 fade (you're late
+//     after a pile-on) significantly separate win rate.
+//   • Non-WEAK HC is a uniform ~60% win-rate group; margin==2 is the star.
+//
+// Mapping (score > 0 required):
+//   margin == 1, tier != WEAK  → TOP        (4u — gold "TOP PICK" ribbon)
+//   margin == 2, tier != WEAK  → SUPER      (6u — gold "SUPER TOP PICK" ribbon)
+//   margin >= 3, tier != WEAK  → CONFIRMED  (1u — own blue label)
+//   non-HC (margin <= 0)        → MONITORING (0u — shown, never staked)
+//   WEAK-tier HC (any margin)   → MONITORING (0u — the WEAK score gate wins)
+//   score <= 0                  → FADE       (0u — muted, unchanged)
+export const V12_1_SUPER_UNITS = 6;
+export const V12_1_TOP_UNITS = 4;
+export const V12_1_CONFIRMED_UNITS = 1;
+
+// Display metadata for the v12.1 stake tiers. The UI branches on `stakeTier`
+// and reuses the existing SUPER/TOP ribbon components; CONFIRMED gets a blue
+// label, MONITORING a muted grey chip with no ribbon.
+export const AGS_V12_STAKE_TIER_META = {
+  SUPER:      { label: 'SUPER TOP PICK', short: 'SUPER',   color: '#E8B85C', bg: 'rgba(232,184,92,0.15)',  units: V12_1_SUPER_UNITS,     ribbon: 'SUPER', stars: 5 },
+  TOP:        { label: 'TOP PICK',       short: 'TOP',     color: '#22C55E', bg: 'rgba(34,197,94,0.15)',   units: V12_1_TOP_UNITS,       ribbon: 'TOP',   stars: 4 },
+  CONFIRMED:  { label: 'CONFIRMED',      short: 'CONFIRM', color: '#3B82F6', bg: 'rgba(59,130,246,0.15)',  units: V12_1_CONFIRMED_UNITS, ribbon: null,    stars: 3 },
+  MONITORING: { label: 'MONITORING',     short: 'MONITOR', color: '#6B7280', bg: 'rgba(107,114,128,0.12)', units: 0,                     ribbon: null,    stars: 0 },
+  FADE:       { label: 'FADE',           short: 'FADE',    color: '#ef4444', bg: 'rgba(239,68,68,0.12)',   units: 0,                     ribbon: null,    stars: 0 },
+};
+
+// Compute the v12.1 stake tier + RAW units (no odds cap — the cron applies
+// `oddsCap` after this). Pure function of the v12 score, its score-quintile
+// tier, and the HC margin. Returns { stakeTier, unitsRaw }.
+export function agsV12HcStake({ score, scoreTier = null, hcMargin = 0, calibration = null }) {
+  // Selection gate — score ≤ 0 is muted/cancelled (unchanged from v12).
+  if (score == null || !Number.isFinite(score) || score <= 0) {
+    return { stakeTier: 'FADE', unitsRaw: 0 };
+  }
+  const tier = scoreTier || agsV12TierFromValue(score, calibration);
+  const m = Number(hcMargin) || 0;
+  // Non-HC, or HC that the score still lands in the WEAK quintile → Monitoring.
+  // Both are negative-EV historically; shown for volume but never staked.
+  if (m < 1 || tier === 'WEAK') {
+    return { stakeTier: 'MONITORING', unitsRaw: 0 };
+  }
+  if (m === 1) return { stakeTier: 'TOP',       unitsRaw: V12_1_TOP_UNITS };
+  if (m === 2) return { stakeTier: 'SUPER',     unitsRaw: V12_1_SUPER_UNITS };
+  return { stakeTier: 'CONFIRMED', unitsRaw: V12_1_CONFIRMED_UNITS }; // m >= 3
+}
