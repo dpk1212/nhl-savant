@@ -714,6 +714,42 @@ export function agsV12ScoreFromQualities(forQualities, agQualities) {
   return (fMean - aMean) / (fMean + aMean + 0.5);
 }
 
+// Minimum sizeRatio (bet size relative to a wallet's own average) for a leg to
+// count as a real directional opinion when a wallet has bet MULTIPLE outcomes of
+// the same game. Sub-floor legs on a hedged wallet are treated as dust/insurance
+// and discarded so they don't score the wallet against its own conviction side.
+export const V12_HEDGE_FLOOR = 1.0;
+
+// Option B attribution — collapse wallets that bet multiple outcomes of the same
+// game down to a single directional vote so a wallet can never appear FOR and
+// AGAINST simultaneously:
+//   • single-outcome wallets are left untouched (small solo bets still count)
+//   • multi-outcome wallets keep only legs at/above V12_HEDGE_FLOOR, then take
+//     the single highest-sizeRatio leg as their vote
+//   • a wallet with no leg above the floor (pure balanced dust) is excluded
+// This removes the self-hedge double-counting that otherwise dilutes the
+// for/against margin (see egy_bel: 6 fake "against" dust legs muting a 6u SUPER).
+export function collapseHedgedWalletsV12(walletDetails) {
+  if (!Array.isArray(walletDetails) || walletDetails.length === 0) return walletDetails;
+  const byWallet = new Map();
+  for (const w of walletDetails) {
+    if (!w || !w.wallet || !w.side) continue;
+    if (!byWallet.has(w.wallet)) byWallet.set(w.wallet, []);
+    byWallet.get(w.wallet).push(w);
+  }
+  const out = [];
+  for (const legs of byWallet.values()) {
+    if (legs.length === 1) { out.push(legs[0]); continue; }
+    const distinctSides = new Set(legs.map((l) => l.side));
+    if (distinctSides.size === 1) { out.push(legs[0]); continue; } // multiple legs, same side
+    const kept = legs.filter((l) => Number(l.sizeRatio || 0) >= V12_HEDGE_FLOOR);
+    if (kept.length === 0) continue; // balanced dust → no directional edge
+    kept.sort((a, b) => Number(b.sizeRatio || 0) - Number(a.sizeRatio || 0));
+    out.push(kept[0]);
+  }
+  return out;
+}
+
 // End-to-end aggregator for v12.
 //
 // Inputs:
@@ -727,10 +763,11 @@ export function agsV12ScoreFromQualities(forQualities, agQualities) {
 // Returns null when walletDetails is empty.
 export function aggregateSideV12(walletDetails, sideKey, sport, walletPriorStatsFn) {
   if (!Array.isArray(walletDetails) || walletDetails.length === 0) return null;
+  const collapsed = collapseHedgedWalletsV12(walletDetails);
   const forQs = [];
   const agQs = [];
   let provenContributors = 0;
-  for (const w of walletDetails) {
+  for (const w of collapsed) {
     if (!w || !w.wallet || !w.side) continue;
     const stats = walletPriorStatsFn ? walletPriorStatsFn(w.wallet, sport) : null;
     if (!stats) continue;
