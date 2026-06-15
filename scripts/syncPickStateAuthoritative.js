@@ -1184,7 +1184,23 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // back-compat / drift tracking.
   let agsResult = null;
   let agsV12Result = null;
-  const wd = sd.peak?.v8Scoring?.walletDetails || sd.lock?.v8Scoring?.walletDetails || null;
+  // ─── v12 SCORE now reads LIVE positions (cron-authoritative) ───────────
+  // Previously this read ONLY the create-time-frozen snapshot. In cron-only
+  // operation (the browser is read-only in production) that meant the v12
+  // score never updated after lock — a 7 AM lock on a single wallet stayed
+  // frozen all day while money piled in on the other side (Tampa Bay Rays /
+  // LAD 2026-06-15: ELITE +0.99 frozen on 1 wallet, blind to a $17.4K
+  // CONFIRMED conviction bet on the Dodgers). HC margin already reconstructs
+  // from `group` live every cycle; the SCORE now does too, so both react to
+  // the same live truth. Falls back to the frozen snapshot only when the
+  // live group is empty (scanner gap / freshness prune wiped it), preserving
+  // prior behavior for that edge. The T-15 freeze above still applies, so the
+  // last pre-T-15 live re-score is what locks in near game time.
+  const liveWd = Array.isArray(group) && group.length > 0
+    ? group.map(positionToWalletDetail).filter(Boolean)
+    : null;
+  const frozenWd = sd.peak?.v8Scoring?.walletDetails || sd.lock?.v8Scoring?.walletDetails || null;
+  const wd = (liveWd && liveWd.length > 0) ? liveWd : frozenWd;
   if (Array.isArray(wd) && wd.length > 0 && agsCalibration) {
     if (isProvenFn) {
       const agg = aggregateSideProven(wd, side, pick.sport, isProvenFn, isHcEligibleFn, walletStatsFn);
@@ -1198,6 +1214,31 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const agsValueLive = agsResult && Number.isFinite(agsResult.ags) ? agsResult.ags : null;
   const agsTotalProven = agsResult ? (agsResult.provenForCount || 0) + (agsResult.provenAgCount || 0) : 0;
   const scoreV12Live = agsV12Result && Number.isFinite(agsV12Result.agsV12) ? agsV12Result.agsV12 : null;
+
+  // ─── v12 live side-flip detection (cron-authoritative) ─────────────────
+  // If THIS side has gone non-positive on live data but the OPPOSITE side is
+  // now the live-best with a positive score, the original lock is on the
+  // WRONG side — it was locked early (e.g. 7 AM) before the sharp money
+  // arrived on the other side. We supersede this side; the same-cycle
+  // ghost-recovery + create-missing pass then rebuilds the live-best side
+  // from current positions (reusing all the battle-tested side construction).
+  // Conservative by design (no flapping): only fires when this side is ≤ 0
+  // AND a different side is > 0, and only when we actually have live
+  // positions to trust. We're already past the T-15 freeze gate here.
+  let flipSupersede = false;
+  let flipToSide = null;
+  if (liveWd && liveWd.length > 0 && (scoreV12Live == null || scoreV12Live <= 0)) {
+    const flipSides = mkt === 'TOTAL' ? ['over', 'under']
+      : pick.sport === 'SOC' ? ['away', 'home', 'draw'] : ['away', 'home'];
+    let bestOtherScore = -Infinity;
+    for (const s of flipSides) {
+      if (s === side) continue;
+      const aggO = aggregateSideV12(liveWd, s, pick.sport, walletPriorStatsFn);
+      const sc = aggO && Number.isFinite(aggO.score) ? aggO.score : null;
+      if (sc != null && sc > bestOtherScore) { bestOtherScore = sc; flipToSide = s; }
+    }
+    if (bestOtherScore > 0) flipSupersede = true;
+  }
 
   // v12 health gate is authoritative: score ≤ 0 → MUTED, score > 0 → ACTIVE.
   // v11 health is computed in parallel only for diagnostic purposes — its
@@ -1619,7 +1660,33 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (stampedHc !== live.hcMargin) changes.push(`HC_m: ${stampedHc ?? '∅'} → ${live.hcMargin}`);
   if (stampedTier && stampedTier !== liveTier) changes.push(`tier: ${stampedTier} → ${liveTier}`);
 
+  // ─── v12 live side-flip — supersede the wrong side ─────────────────────
+  // Mark this side superseded so the main loop can demote the doc to "ghost"
+  // and let createMissingLockedPicks rebuild the live-best side this cycle.
+  // The FADE/0u stamps from the mute path above still write alongside, so
+  // the grader/record see an honest 0u faded side until it's superseded.
+  if (flipSupersede && !sd.superseded) {
+    patch.superseded = true;
+    patch.supersededAt = now;
+    patch.supersededReason = 'v12_live_side_flip';
+    patch.supersededFlipTo = flipToSide;
+    changes.push(`superseded: live side-flip → ${flipToSide} (this side ${scoreV12Live == null ? '∅' : scoreV12Live.toFixed(2)} ≤ 0)`);
+  }
+
   wroteAnything = changes.length > 0 || stampedStatus !== appliedStatus;
+
+  // Persist the refreshed live snapshot so peak.v8Scoring no longer carries
+  // the stale create-time wallet set. This hardens the cron-only fallback:
+  // on a future empty-group cycle we fall back to the LAST GOOD live snapshot
+  // instead of the original (often single-wallet) create-time freeze. Only
+  // written on cycles we're already writing, and only when live data exists.
+  if (wroteAnything && liveWd && liveWd.length > 0) {
+    patch.peak = {
+      ...(patch.peak || {}),
+      v8Scoring: { walletDetails: liveWd, consensusSide: side },
+      updatedAt: now,
+    };
+  }
 
   return {
     skipped: false,
@@ -1795,6 +1862,9 @@ async function main() {
       } else {
         existingDocIds.add(`${col}|${pick._id}`);
       }
+      // Track sides reconcile superseded THIS cycle (v12 live side-flip) so we
+      // can demote the doc to ghost below and rebuild the better side now.
+      const newlySuperseded = new Set();
       for (const [sideKey, sd] of Object.entries(sides)) {
         if (!sd) continue;
         stats.examined++;
@@ -1843,6 +1913,7 @@ async function main() {
           expectedLockStage: result.expectedLockStage,
           expected: { status: result.expectedStatus, reason: result.expectedReason, tier: result.expectedTier, units: result.expectedUnits },
         });
+        if (result.patch?.superseded === true) newlySuperseded.add(sideKey);
         // Build write payload — always merge: true on the side.
         if (!collectionWrites.has(col)) collectionWrites.set(col, []);
         collectionWrites.get(col).push({
@@ -1852,6 +1923,21 @@ async function main() {
             lastSyncAt: now,
           },
         });
+      }
+
+      // ── Same-cycle v12 side-flip → ghost demotion ─────────────────────
+      // If reconcile superseded the last live side(s) this cycle, the doc now
+      // carries 0 live sides. Remove it from existingDocIds so the
+      // create-missing pass (which runs AFTER the supersede writes commit)
+      // rebuilds the live-best side from current positions THIS cycle, instead
+      // of leaving the game with no pick for a full cron cycle.
+      if (pick.status !== 'COMPLETED' && newlySuperseded.size > 0) {
+        const remainingLive = liveSides.filter(([k]) => !newlySuperseded.has(k));
+        if (remainingLive.length === 0 && existingDocIds.has(`${col}|${pick._id}`)) {
+          existingDocIds.delete(`${col}|${pick._id}`);
+          ghostDocIds.add(`${col}|${pick._id}`);
+          console.warn(`  ↻ v12 side-flip: ${col}/${pick._id} — superseded [${[...newlySuperseded].join(', ')}]; create-missing will add the live-best side this cycle`);
+        }
       }
 
       // ── Both-sides analytical sidecar refresh ─────────────────────────
