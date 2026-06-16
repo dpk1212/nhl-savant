@@ -1,35 +1,39 @@
 # Sharp Intel v6 — Daily Master Report
 
-_Auto-generated **6/15/2026, 1:38:23 PM ET** by `scripts/dailyV6Report.js`. Do not edit by hand._
+_Auto-generated **6/16/2026, 1:49:27 PM ET** by `scripts/dailyV6Report.js`. Do not edit by hand._
 
 **Source of truth: this report mirrors the live Pick Performance dashboard.** Inclusion = `lockStage ≠ SHADOW ∧ ¬superseded ∧ health ∉ {MUTED, CANCELLED} ∧ peak.stars ≥ 2.5`. PnL is in **peak units** (the size shipped to users). HC margin / Δw / Δq are the **frozen** stamps written at last sync before the T-15 freeze. HC margin only existed from the v7.1 launch (**2026-04-30**); pre-launch picks have no HC value (no retro-fitting). Nothing is recomputed against today's whitelist.
 
-v6 cutover: **2026-04-18** · whitelist source: live `sharpWalletProfiles` (254 profiles — drives §5 roster snapshot only) · quality cut: contribution ≥ 30 · HC = CONFIRMED tier ∧ sizeRatio ≥ 1.5.
+v6 cutover: **2026-04-18** · whitelist source: live `sharpWalletProfiles` (261 profiles — drives §5 roster snapshot only) · quality cut: contribution ≥ 30 · HC = CONFIRMED tier ∧ sizeRatio ≥ 1.5.
 
 ---
 ## §1. Yesterday's picks
 
-Slate: **2026-06-14** · 13 shipped sides.
+Slate: **2026-06-15** · 17 shipped sides.
 
 | N | W-L-P | WR% | PnL (peak u) | PnL (flat 1u) |
 |---|---|---|---|---|
-| 13 | 6-7-0 | 46.2% | -16.07u | -2.11u |
+| 17 | 7-10-0 | 41.2% | -8.43u | -4.17u |
 
 | Sport | Market | Matchup | Pick | Stars · Units | HC | Δw | Δq | Σ | Odds | Result | PnL (peak u) |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| MLB | ML | Atlanta Braves @ New York Mets | Atlanta Braves | 4.0★ · 1.00u | +1 | +1 | +1 | +2 | +106 | L | -1.00u |
-| MLB | ML | Chicago Cubs @ San Francisco Giants | San Francisco Giants | 2.5★ · 0.25u | +0 | +1 | +1 | +2 | -124 | **W** | +0.19u |
-| MLB | ML | Colorado Rockies @ Athletics | Athletics | 5.0★ · 5.00u | +0 | +1 | +0 | +1 | -192 | L | -5.00u |
-| MLB | ML | Houston Astros @ Kansas City Royals | Houston Astros | 4.5★ · 2.50u | +0 | +0 | +0 | +0 | +106 | L | -2.50u |
-| MLB | ML | New York Yankees @ Toronto Blue Jays | New York Yankees | 4.0★ · 1.00u | +1 | +2 | +2 | +4 | -125 | **W** | +0.77u |
-| MLB | ML | St. Louis Cardinals @ Minnesota Twins | St. Louis Cardinals | 4.5★ · 3.00u | +0 | +1 | +0 | +1 | -101 | L | -3.00u |
-| MLB | ML | Tampa Bay Rays @ Los Angeles Angels | Tampa Bay Rays | 2.5★ · 0.25u | +0 | +2 | +1 | +3 | -115 | **W** | +0.21u |
-| MLB | SPREAD | Chicago Cubs @ San Francisco Giants | Chicago Cubs | 5.0★ · 5.00u | +0 | +1 | +1 | +2 | -180 | L | -5.00u |
-| MLB | SPREAD | Los Angeles Dodgers @ Chicago White Sox | Los Angeles Dodgers | 4.5★ · 3.00u | +0 | +2 | +2 | +4 | -116 | L | -3.00u |
-| MLB | SPREAD | Miami Marlins @ Pittsburgh Pirates | Miami Marlins | 4.0★ · 1.00u | -1 | +1 | +0 | +1 | -158 | **W** | +0.62u |
-| MLB | TOTAL | Colorado Rockies @ Athletics | Under 13.5 | 4.5★ · 3.00u | +0 | +1 | +1 | +2 | -110 | L | -3.00u |
-| NHL | ML | Hurricanes @ Golden Knights | Hurricanes | 2.5★ · 0.25u | +1 | -1 | +0 | -1 | -115 | **W** | +0.22u |
-| NHL | TOTAL | Hurricanes @ Golden Knights | Under 5.5 | 5.0★ · 5.00u | +0 | -1 | +0 | -1 | -110 | **W** | +4.42u |
+| MLB | ML | Colorado Rockies @ Chicago Cubs | Chicago Cubs | 4.0★ · 1.00u | +0 | +1 | +1 | +2 | -204 | **W** | +0.00u |
+| MLB | ML | Los Angeles Angels @ Arizona Diamondbacks | Los Angeles Angels | 3.0★ · 0.50u | +0 | +2 | +1 | +3 | +115 | L | -0.50u |
+| MLB | ML | Miami Marlins @ Philadelphia Phillies | Miami Marlins | 3.0★ · 0.50u | +0 | +2 | -1 | +1 | +160 | L | -0.50u |
+| MLB | ML | Minnesota Twins @ Texas Rangers | Texas Rangers | 2.5★ · 0.25u | +0 | +1 | +2 | +3 | -157 | L | -0.25u |
+| MLB | ML | New York Mets @ Cincinnati Reds | Cincinnati Reds | 3.0★ · 0.50u | +1 | +3 | +3 | +6 | -132 | **W** | +2.21u |
+| MLB | ML | San Diego Padres @ St. Louis Cardinals | St. Louis Cardinals | 3.0★ · 0.50u | +0 | +1 | +3 | +4 | -154 | **W** | +0.00u |
+| MLB | ML | Tampa Bay Rays @ Los Angeles Dodgers | Los Angeles Dodgers | 2.5★ · 0.25u | +1 | -1 | +0 | -1 | -161 | **W** | +0.00u |
+| MLB | SPREAD | Colorado Rockies @ Chicago Cubs | Colorado Rockies | 4.5★ · 3.00u | +0 | +1 | +1 | +2 | -114 | **W** | +2.86u |
+| MLB | SPREAD | Kansas City Royals @ Washington Nationals | Washington Nationals | 4.0★ · 1.00u | +0 | +1 | +1 | +2 | +153 | **W** | +0.00u |
+| MLB | SPREAD | Miami Marlins @ Philadelphia Phillies | Miami Marlins | 2.5★ · 0.25u | +0 | +0 | -2 | -2 | -120 | L | -0.25u |
+| MLB | SPREAD | San Diego Padres @ St. Louis Cardinals | San Diego Padres | 5.0★ · 5.00u | +0 | +1 | +1 | +2 | -160 | L | -5.00u |
+| MLB | TOTAL | Colorado Rockies @ Chicago Cubs | Over 9.5 | 4.0★ · 1.00u | +0 | +1 | +0 | +1 | -110 | L | -1.00u |
+| MLB | TOTAL | Kansas City Royals @ Washington Nationals | Over 9.5 | 4.5★ · 2.50u | +0 | +0 | +0 | +0 | -110 | **W** | +0.00u |
+| MLB | TOTAL | Miami Marlins @ Philadelphia Phillies | Over 7.5 | 4.5★ · 3.00u | +0 | +3 | +1 | +4 | -110 | L | -3.00u |
+| MLB | TOTAL | Minnesota Twins @ Texas Rangers | Over 8.5 | 4.0★ · 1.00u | +0 | +1 | +0 | +1 | -110 | L | -1.00u |
+| MLB | TOTAL | Pittsburgh Pirates @ Athletics | Under 10.5 | 4.0★ · 1.00u | +0 | +1 | +2 | +3 | -110 | L | -1.00u |
+| MLB | TOTAL | Tampa Bay Rays @ Los Angeles Dodgers | Over 9.5 | 4.0★ · 1.00u | +0 | +1 | +0 | +1 | -110 | L | -1.00u |
 
 ---
 ## §2. 3-day / 7-day / all-time cohort rollups
@@ -40,113 +44,114 @@ Shipped picks only. PnL in **peak units** (size we actually bet) and flat 1u (co
 
 ### §2a. 3-day
 
-Total: **48** shipped · 26-22-0 · WR 54.2% · PnL -8.20u (peak) / +0.85u (flat).
+Total: **49** shipped · 24-25-0 · WR 49.0% · PnL -22.69u (peak) / -4.01u (flat).
 
-**By HC margin** _(picks dated ≥ 2026-04-30, N = 48)_
+**By HC margin** _(picks dated ≥ 2026-04-30, N = 49)_
 
 | Bucket | N | W-L-P | WR% | PnL (peak u) | PnL (flat 1u) |
 |---|---|---|---|---|---|
 | HC ≥ +3 | 1 | 0-1-0 | 0.0% | -0.25u | -1.00u |
-| HC = +1 | 6 | 4-2-0 | 66.7% | +7.17u | +1.77u |
-| HC = 0 | 39 | 20-19-0 | 51.3% | -18.47u | -1.46u |
-| HC ≤ −1 | 2 | 2-0-0 | 100.0% | +3.35u | +1.54u |
+| HC = +1 | 6 | 5-1-0 | 83.3% | +6.55u | +2.92u |
+| HC = 0 | 41 | 18-23-0 | 43.9% | -29.61u | -6.56u |
+| HC ≤ −1 | 1 | 1-0-0 | 100.0% | +0.62u | +0.63u |
 
 **By Δw (winner margin)**
 
 | Bucket | N | W-L-P | WR% | PnL (peak u) | PnL (flat 1u) |
 |---|---|---|---|---|---|
-| ≥ +3 | 3 | 0-3-0 | 0.0% | -5.50u | -3.00u |
-| +2 | 9 | 8-1-0 | 88.9% | +3.96u | +5.78u |
-| +1 | 20 | 8-12-0 | 40.0% | -22.31u | -5.36u |
-| 0 | 13 | 8-5-0 | 61.5% | +11.26u | +2.66u |
-| −1 | 3 | 2-1-0 | 66.7% | +4.39u | +0.78u |
+| ≥ +3 | 4 | 1-3-0 | 25.0% | -6.04u | -2.24u |
+| +2 | 6 | 3-3-0 | 50.0% | +0.33u | +0.01u |
+| +1 | 26 | 11-15-0 | 42.3% | -24.43u | -5.72u |
+| 0 | 10 | 6-4-0 | 60.0% | +2.81u | +1.55u |
+| −1 | 3 | 3-0-0 | 100.0% | +4.64u | +2.40u |
 
 **By Δq (quality margin)**
 
 | Bucket | N | W-L-P | WR% | PnL (peak u) | PnL (flat 1u) |
 |---|---|---|---|---|---|
-| ≥ +3 | 2 | 1-1-0 | 50.0% | +0.12u | -0.25u |
-| +2 | 8 | 5-3-0 | 62.5% | -2.11u | +1.69u |
-| +1 | 19 | 12-7-0 | 63.2% | +0.06u | +3.08u |
-| 0 | 17 | 7-10-0 | 41.2% | -9.10u | -3.89u |
-| −1 | 2 | 1-1-0 | 50.0% | +2.83u | +0.23u |
+| ≥ +3 | 3 | 2-1-0 | 66.7% | +1.96u | +0.41u |
+| +2 | 6 | 2-4-0 | 33.3% | -5.13u | -1.86u |
+| +1 | 20 | 12-8-0 | 60.0% | -8.94u | +2.71u |
+| 0 | 18 | 8-10-0 | 44.4% | -9.83u | -3.27u |
+| −1 | 1 | 0-1-0 | 0.0% | -0.50u | -1.00u |
+| ≤ −2 | 1 | 0-1-0 | 0.0% | -0.25u | -1.00u |
 
-**By AGS tier** _(picks dated ≥ 2026-05-05, N = 48)_
+**By AGS tier** _(picks dated ≥ 2026-05-05, N = 49)_
 
 | Bucket | N | W-L-P | WR% | PnL (peak u) | PnL (flat 1u) |
 |---|---|---|---|---|---|
 | STRONG (+3 .. +5) | 1 | 0-1-0 | 0.0% | -0.25u | -1.00u |
-| NEUT   (0 .. +3) | 28 | 17-11-0 | 60.7% | -4.79u | +3.99u |
-| WEAK   (−1 .. 0) | 19 | 9-10-0 | 47.4% | -3.16u | -2.13u |
+| NEUT   (0 .. +3) | 27 | 13-14-0 | 48.1% | -19.30u | -1.98u |
+| WEAK   (−1 .. 0) | 21 | 11-10-0 | 52.4% | -3.14u | -1.02u |
 
 ### §2b. 7-day
 
-Total: **119** shipped · 58-57-4 · WR 50.4% · PnL +0.67u (peak) / -2.57u (flat).
+Total: **123** shipped · 58-62-3 · WR 48.3% · PnL -17.78u (peak) / -8.32u (flat).
 
-**By HC margin** _(picks dated ≥ 2026-04-30, N = 119)_
+**By HC margin** _(picks dated ≥ 2026-04-30, N = 123)_
 
 | Bucket | N | W-L-P | WR% | PnL (peak u) | PnL (flat 1u) |
 |---|---|---|---|---|---|
 | HC ≥ +3 | 1 | 0-1-0 | 0.0% | -0.25u | -1.00u |
-| HC = +2 | 3 | 2-1-0 | 66.7% | +6.60u | +0.91u |
-| HC = +1 | 15 | 9-6-0 | 60.0% | +12.19u | +2.01u |
-| HC = 0 | 93 | 40-49-4 | 44.9% | -31.32u | -10.87u |
-| HC ≤ −1 | 7 | 7-0-0 | 100.0% | +13.45u | +6.37u |
+| HC = +2 | 1 | 1-0-0 | 100.0% | +2.50u | +1.00u |
+| HC = +1 | 15 | 10-5-0 | 66.7% | +15.09u | +3.57u |
+| HC = 0 | 101 | 42-56-3 | 42.9% | -43.75u | -15.89u |
+| HC ≤ −1 | 5 | 5-0-0 | 100.0% | +8.63u | +4.00u |
 
 **By Δw (winner margin)**
 
 | Bucket | N | W-L-P | WR% | PnL (peak u) | PnL (flat 1u) |
 |---|---|---|---|---|---|
-| ≥ +3 | 13 | 5-8-0 | 38.5% | -1.84u | -3.48u |
-| +2 | 16 | 10-5-1 | 66.7% | -0.12u | +3.36u |
-| +1 | 51 | 22-27-2 | 44.9% | -13.90u | -7.42u |
-| 0 | 31 | 17-14-0 | 54.8% | +12.61u | +4.42u |
-| −1 | 6 | 3-2-1 | 60.0% | +1.62u | +0.69u |
-| ≤ −2 | 2 | 1-1-0 | 50.0% | +2.30u | -0.14u |
+| ≥ +3 | 11 | 4-7-0 | 36.4% | -6.00u | -3.41u |
+| +2 | 17 | 10-6-1 | 62.5% | -0.12u | +2.36u |
+| +1 | 57 | 24-32-1 | 42.9% | -23.60u | -10.39u |
+| 0 | 30 | 16-14-0 | 53.3% | +10.57u | +2.81u |
+| −1 | 7 | 4-2-1 | 66.7% | +1.62u | +1.31u |
+| ≤ −2 | 1 | 0-1-0 | 0.0% | -0.25u | -1.00u |
 
 **By Δq (quality margin)**
 
 | Bucket | N | W-L-P | WR% | PnL (peak u) | PnL (flat 1u) |
 |---|---|---|---|---|---|
-| ≥ +3 | 14 | 6-7-1 | 46.2% | -6.19u | -1.97u |
-| +2 | 18 | 10-8-0 | 55.6% | +3.25u | +1.11u |
-| +1 | 37 | 20-15-2 | 57.1% | +5.40u | +1.73u |
-| 0 | 30 | 14-16-0 | 46.7% | -4.64u | -0.80u |
-| −1 | 15 | 6-8-1 | 42.9% | +1.79u | -1.58u |
-| ≤ −2 | 5 | 2-3-0 | 40.0% | +1.06u | -1.06u |
+| ≥ +3 | 13 | 7-5-1 | 58.3% | -5.08u | +0.52u |
+| +2 | 16 | 8-8-0 | 50.0% | +1.42u | -0.49u |
+| +1 | 42 | 22-18-2 | 55.0% | -2.24u | +0.94u |
+| 0 | 34 | 15-19-0 | 44.1% | -10.19u | -3.13u |
+| −1 | 12 | 4-8-0 | 33.3% | -2.50u | -4.10u |
+| ≤ −2 | 6 | 2-4-0 | 33.3% | +0.81u | -2.06u |
 
-**By AGS tier** _(picks dated ≥ 2026-05-05, N = 119)_
+**By AGS tier** _(picks dated ≥ 2026-05-05, N = 123)_
 
 | Bucket | N | W-L-P | WR% | PnL (peak u) | PnL (flat 1u) |
 |---|---|---|---|---|---|
 | STRONG (+3 .. +5) | 1 | 0-1-0 | 0.0% | -0.25u | -1.00u |
-| NEUT   (0 .. +3) | 65 | 34-29-2 | 54.0% | +9.28u | +3.16u |
-| WEAK   (−1 .. 0) | 51 | 22-27-2 | 44.9% | -12.57u | -7.37u |
-| FADE   (< −1) | 2 | 2-0-0 | 100.0% | +4.21u | +2.64u |
+| NEUT   (0 .. +3) | 68 | 35-31-2 | 53.0% | -0.29u | +1.78u |
+| WEAK   (−1 .. 0) | 53 | 22-30-1 | 42.3% | -18.90u | -10.88u |
+| FADE   (< −1) | 1 | 1-0-0 | 100.0% | +1.66u | +1.78u |
 
 ### §2c. All-time
 
-Total: **640** shipped · 322-310-8 · WR 50.9% · PnL -58.52u (peak) / -15.05u (flat).
+Total: **657** shipped · 329-320-8 · WR 50.7% · PnL -66.95u (peak) / -19.22u (flat).
 
-**By HC margin** _(picks dated ≥ 2026-04-30, N = 529)_
+**By HC margin** _(picks dated ≥ 2026-04-30, N = 546)_
 
 | Bucket | N | W-L-P | WR% | PnL (peak u) | PnL (flat 1u) |
 |---|---|---|---|---|---|
 | HC ≥ +3 | 11 | 3-8-0 | 27.3% | -9.08u | -6.67u |
 | HC = +2 | 31 | 16-15-0 | 51.6% | -4.61u | -0.13u |
-| HC = +1 | 158 | 88-70-0 | 55.7% | +7.48u | +11.33u |
-| HC = 0 | 303 | 149-147-7 | 50.3% | -54.41u | -16.00u |
+| HC = +1 | 160 | 90-70-0 | 56.3% | +9.69u | +12.71u |
+| HC = 0 | 318 | 154-157-7 | 49.5% | -65.05u | -21.54u |
 | HC ≤ −1 | 25 | 15-10-0 | 60.0% | +12.70u | +5.19u |
 
 **By Δw (winner margin)**
 
 | Bucket | N | W-L-P | WR% | PnL (peak u) | PnL (flat 1u) |
 |---|---|---|---|---|---|
-| ≥ +3 | 105 | 49-56-0 | 46.7% | -31.50u | -6.17u |
-| +2 | 133 | 66-66-1 | 50.0% | -30.46u | -4.03u |
-| +1 | 232 | 124-105-3 | 54.1% | -8.73u | +5.10u |
-| 0 | 134 | 69-62-3 | 52.7% | +15.32u | -0.66u |
-| −1 | 24 | 8-15-1 | 34.8% | -3.85u | -7.63u |
+| ≥ +3 | 107 | 50-57-0 | 46.7% | -32.29u | -6.42u |
+| +2 | 135 | 66-68-1 | 49.3% | -31.46u | -6.03u |
+| +1 | 242 | 128-111-3 | 53.6% | -15.12u | +2.65u |
+| 0 | 136 | 70-63-3 | 52.6% | +15.07u | -0.75u |
+| −1 | 25 | 9-15-1 | 37.5% | -3.85u | -7.01u |
 | ≤ −2 | 6 | 2-4-0 | 33.3% | -3.29u | -2.51u |
 | missing | 6 | 4-2-0 | 66.7% | +3.99u | +0.85u |
 
@@ -154,23 +159,23 @@ Total: **640** shipped · 322-310-8 · WR 50.9% · PnL -58.52u (peak) / -15.05u 
 
 | Bucket | N | W-L-P | WR% | PnL (peak u) | PnL (flat 1u) |
 |---|---|---|---|---|---|
-| ≥ +3 | 127 | 62-62-3 | 50.0% | -28.93u | -4.15u |
-| +2 | 119 | 55-64-0 | 46.2% | -36.79u | -12.32u |
-| +1 | 199 | 108-88-3 | 55.1% | +23.96u | +7.56u |
-| 0 | 123 | 62-60-1 | 50.8% | -14.33u | -1.61u |
-| −1 | 49 | 26-22-1 | 54.2% | +11.08u | +2.12u |
-| ≤ −2 | 17 | 5-12-0 | 29.4% | -16.75u | -7.42u |
+| ≥ +3 | 129 | 64-62-3 | 50.8% | -26.72u | -2.74u |
+| +2 | 121 | 55-66-0 | 45.5% | -38.04u | -14.32u |
+| +1 | 205 | 111-91-3 | 55.0% | +18.32u | +7.45u |
+| 0 | 128 | 64-63-1 | 50.4% | -17.33u | -3.08u |
+| −1 | 50 | 26-23-1 | 53.1% | +10.58u | +1.12u |
+| ≤ −2 | 18 | 5-13-0 | 27.8% | -17.00u | -8.42u |
 | missing | 6 | 4-2-0 | 66.7% | +3.24u | +0.77u |
 
-**By AGS tier** _(picks dated ≥ 2026-05-05, N = 504)_
+**By AGS tier** _(picks dated ≥ 2026-05-05, N = 521)_
 
 | Bucket | N | W-L-P | WR% | PnL (peak u) | PnL (flat 1u) |
 |---|---|---|---|---|---|
 | ELITE  (≥ +7) | 3 | 3-0-0 | 100.0% | +8.01u | +2.34u |
 | LOCK   (+5 .. +7) | 9 | 5-4-0 | 55.6% | -2.93u | -0.47u |
 | STRONG (+3 .. +5) | 23 | 13-10-0 | 56.5% | -6.91u | +1.77u |
-| NEUT   (0 .. +3) | 311 | 157-152-2 | 50.8% | -43.77u | -13.50u |
-| WEAK   (−1 .. 0) | 143 | 72-67-4 | 51.8% | -2.05u | -1.20u |
+| NEUT   (0 .. +3) | 320 | 161-157-2 | 50.6% | -48.70u | -14.69u |
+| WEAK   (−1 .. 0) | 151 | 75-72-4 | 51.0% | -5.55u | -4.18u |
 | FADE   (< −1) | 14 | 9-5-0 | 64.3% | +4.68u | +5.05u |
 | missing | 1 | 1-0-0 | 100.0% | +1.63u | +0.96u |
 
@@ -182,11 +187,11 @@ Daily cumulative peak-unit PnL since the HC margin launch (**2026-04-30**). The 
 ```mermaid
 xychart-beta
     title "Cumulative peak-unit PnL — HC era (2026-04-30+)"
-    x-axis ["04-30", "05-01", "05-02", "05-03", "05-04", "05-05", "05-06", "05-07", "05-08", "05-09", "05-10", "05-11", "05-12", "05-13", "05-14", "05-15", "05-16", "05-17", "05-18", "05-19", "05-20", "05-21", "05-22", "05-23", "05-24", "05-25", "05-26", "05-27", "05-28", "05-29", "05-30", "05-31", "06-01", "06-02", "06-03", "06-04", "06-05", "06-06", "06-07", "06-08", "06-09", "06-10", "06-11", "06-12", "06-13", "06-14"]
+    x-axis ["04-30", "05-01", "05-02", "05-03", "05-04", "05-05", "05-06", "05-07", "05-08", "05-09", "05-10", "05-11", "05-12", "05-13", "05-14", "05-15", "05-16", "05-17", "05-18", "05-19", "05-20", "05-21", "05-22", "05-23", "05-24", "05-25", "05-26", "05-27", "05-28", "05-29", "05-30", "05-31", "06-01", "06-02", "06-03", "06-04", "06-05", "06-06", "06-07", "06-08", "06-09", "06-10", "06-11", "06-12", "06-13", "06-14", "06-15"]
     y-axis "PnL (peak u)"
-    line "HC ≥ +1" [-0.48, -2.48, -4.41, -3.94, -0.95, -5.45, -3.86, -3.18, 0.54, 4.41, 6.41, 6.25, 2.11, 9.78, 3.00, 3.27, 4.90, 1.62, -2.98, -10.18, -8.90, -14.92, -23.44, -23.30, -28.89, -32.63, -26.98, -29.77, -33.27, -44.12, -48.21, -40.65, -34.49, -30.14, -28.48, -25.53, -22.94, -25.33, -24.75, -21.34, -10.19, -14.95, -13.13, -10.30, -6.20, -6.21]
-    line "HC = 0"  [0.00, -0.50, -0.50, -0.50, -0.50, -0.34, 2.84, 2.84, 3.60, 3.60, 2.32, 1.05, -9.45, -13.95, -15.20, -16.83, -17.05, -15.11, -17.67, -16.17, -15.07, -14.58, -23.93, -16.53, -21.34, -20.03, -10.27, -14.68, -17.58, -11.51, -11.10, -17.79, -24.29, -24.19, -27.68, -32.54, -32.20, -29.06, -23.09, -21.30, -23.13, -30.43, -35.94, -35.44, -37.73, -54.41]
-    line "All (HC era)" [-0.48, -5.98, -7.91, -7.44, -4.95, -9.29, -4.52, -3.84, 0.64, 6.14, 6.86, 5.43, -9.21, -6.04, -14.07, -15.43, -14.02, -15.36, -22.52, -28.22, -25.84, -31.37, -49.24, -44.70, -55.10, -55.65, -40.24, -49.69, -53.57, -58.35, -62.03, -61.16, -58.77, -56.82, -56.00, -58.91, -48.76, -50.51, -46.96, -36.94, -22.86, -34.92, -38.09, -32.03, -30.22, -46.29]
+    line "HC ≥ +1" [-0.48, -2.48, -4.41, -3.94, -0.95, -5.45, -3.86, -3.18, 0.54, 4.41, 6.41, 6.25, 2.11, 9.78, 3.00, 3.27, 4.90, 1.62, -2.98, -10.18, -8.90, -14.92, -23.44, -23.30, -28.89, -32.63, -26.98, -29.77, -33.27, -44.12, -48.21, -40.65, -34.49, -30.14, -28.48, -25.53, -22.94, -25.33, -24.75, -21.34, -10.19, -14.95, -13.13, -10.30, -6.20, -6.21, -4.00]
+    line "HC = 0"  [0.00, -0.50, -0.50, -0.50, -0.50, -0.34, 2.84, 2.84, 3.60, 3.60, 2.32, 1.05, -9.45, -13.95, -15.20, -16.83, -17.05, -15.11, -17.67, -16.17, -15.07, -14.58, -23.93, -16.53, -21.34, -20.03, -10.27, -14.68, -17.58, -11.51, -11.10, -17.79, -24.29, -24.19, -27.68, -32.54, -32.20, -29.06, -23.09, -21.30, -23.13, -30.43, -35.94, -35.44, -37.73, -54.41, -65.05]
+    line "All (HC era)" [-0.48, -5.98, -7.91, -7.44, -4.95, -9.29, -4.52, -3.84, 0.64, 6.14, 6.86, 5.43, -9.21, -6.04, -14.07, -15.43, -14.02, -15.36, -22.52, -28.22, -25.84, -31.37, -49.24, -44.70, -55.10, -55.65, -40.24, -49.69, -53.57, -58.35, -62.03, -61.16, -58.77, -56.82, -56.00, -58.91, -48.76, -50.51, -46.96, -36.94, -22.86, -34.92, -38.09, -32.03, -30.22, -46.29, -54.72]
 ```
 
 Daily cumulative table (peak units, HC era only):
@@ -239,6 +244,7 @@ Daily cumulative table (peak units, HC era only):
 | 2026-06-12 | -10.30u | -35.44u | -32.03u |
 | 2026-06-13 | -6.20u | -37.73u | -30.22u |
 | 2026-06-14 | -6.21u | -54.41u | -46.29u |
+| 2026-06-15 | -4.00u | -65.05u | -54.72u |
 
 ---
 ## §4. Wallet roster growth & profitability
@@ -249,10 +255,10 @@ Daily cumulative table (peak units, HC era only):
 
 | Sport | Total wallets seen | Tracked (≥2) | Profitable | % prof | WR ≥ 50% | WR ≥ 60% | WR ≥ 70% |
 |---|---|---|---|---|---|---|---|
-| MLB | 74 | 57 | 18 | 32% | 26 | 8 | 2 |
+| MLB | 74 | 57 | 19 | 33% | 27 | 8 | 2 |
 | NBA | 138 | 108 | 44 | 41% | 60 | 29 | 11 |
 | NHL | 60 | 43 | 12 | 28% | 24 | 12 | 6 |
-| **ALL (any sport)** | **171** | **136** | **55** | **40%** | **71** | **30** | **9** |
+| **ALL (any sport)** | **171** | **136** | **56** | **41%** | **71** | **30** | **9** |
 
 ### §4b. Daily roster growth (cumulative through each date)
 
@@ -318,6 +324,7 @@ Format: `tracked (profitable)`. For each date D, recompute the roster using ever
 | 2026-06-12 | 135 (56) | 55 (17) | 105 (45) | 42 (13) |
 | 2026-06-13 | 136 (56) | 57 (17) | 108 (44) | 42 (13) |
 | 2026-06-14 | 136 (55) | 57 (18) | 108 (44) | 43 (12) |
+| 2026-06-15 | 136 (56) | 57 (19) | 108 (44) | 43 (12) |
 
 ### §4c. Top 10 profitable wallets by sport
 
@@ -325,7 +332,7 @@ Format: `tracked (profitable)`. For each date D, recompute the roster using ever
 
 | # | Wallet | N | W | L | WR% | Flat PnL (u) | Flat ROI | $ PnL |
 |---|---|---|---|---|---|---|---|---|
-| 1 | e05213 | 9 | 8 | 1 | 88.9% | +6.27 | +69.6% | $294.4K |
+| 1 | e05213 | 10 | 8 | 2 | 80.0% | +5.27 | +52.7% | $288.2K |
 | 2 | ad88a3 | 8 | 6 | 2 | 75.0% | +3.79 | +47.3% | $7.8K |
 | 3 | b839b3 | 3 | 2 | 1 | 66.7% | +0.99 | +33.0% | -$281 |
 | 4 | 913987 | 44 | 30 | 14 | 68.2% | +14.19 | +32.2% | $666.8K |
@@ -373,14 +380,14 @@ Format: `tracked (profitable)`. For each date D, recompute the roster using ever
 
 ### §5a. Current proven-winner roster (snapshot)
 
-Roster as of **2026-06-14** — wallets with ≥2 bets in the sport.
+Roster as of **2026-06-15** — wallets with ≥2 bets in the sport.
 
 | Sport | Wallets seen | Eligible (≥2) | CONFIRMED | FLAT | Proven (C+F) | WR50 only | Conv % |
 |---|---|---|---|---|---|---|---|
-| MLB | 123 | 57 | 12 | 6 | **18** | 8 | 14.6% |
+| MLB | 123 | 57 | 12 | 7 | **19** | 8 | 15.4% |
 | NBA | 210 | 108 | 29 | 15 | **44** | 21 | 21.0% |
 | NHL | 105 | 43 | 9 | 3 | **12** | 12 | 11.4% |
-| **ALL** | **—** | **—** | **—** | **—** | **74** | **—** | **—** |
+| **ALL** | **—** | **—** | **—** | **—** | **75** | **—** | **—** |
 
 ### §5b. Live whitelist drift check
 
@@ -388,19 +395,19 @@ Live `sharpWalletProfiles` is what the engine reads at lock time. Drift between 
 
 | Sport | CONFIRMED (live · script) | FLAT (live · script) | WR50 (live · script) | Drift |
 |---|---|---|---|---|
-| MLB | 32 · 12 | 14 · 6 | 6 · 8 | +28 live |
+| MLB | 32 · 12 | 15 · 7 | 6 · 8 | +28 live |
 | NBA | 58 · 29 | 25 · 15 | 23 · 21 | +39 live |
 | NHL | 23 · 9 | 6 · 3 | 16 · 12 | +17 live |
 
 ### §5c. Roster growth — 3d / 7d / 30d / all-time deltas
 
-Each cell is **net growth** in proven (CONFIRMED + FLAT) wallets in that window, with the absolute count at the start (`+Δ from N`). Negative = wallets demoted. Window endpoint = 2026-06-14.
+Each cell is **net growth** in proven (CONFIRMED + FLAT) wallets in that window, with the absolute count at the start (`+Δ from N`). Negative = wallets demoted. Window endpoint = 2026-06-15.
 
 | Sport | 3-day | 7-day | 30-day | All-time (since cutover) |
 |---|---|---|---|---|
-| MLB | +2 from 16 | +2 from 16 | +8 from 10 | +18 from 0 |
-| NBA | -1 from 45 | +1 from 43 | +5 from 39 | +44 from 0 |
-| NHL | -1 from 13 | -2 from 14 | +0 from 12 | +12 from 0 |
+| MLB | +2 from 17 | +3 from 16 | +7 from 12 | +19 from 0 |
+| NBA | -1 from 45 | +0 from 44 | +5 from 39 | +44 from 0 |
+| NHL | -1 from 13 | -2 from 14 | -2 from 14 | +12 from 0 |
 
 A flat 7-day delta on a sport with healthy slate density = either the bubble pipeline has stalled (no wallets approaching the bar) or our cohort has saturated. Check §13d for the funnel diagnostic.
 
@@ -416,7 +423,7 @@ Wallets surviving each gate, in order. The biggest %-drop tells you the bottlene
 
 | Sport | 1·Seen | 2·Eligible (% of Seen) | 3·Flat-OK (% of Elig) | 4·$-OK (% of Flat) | 5·Promoted | Bottleneck |
 |---|---|---|---|---|---|---|
-| MLB | 123 | 57 (46%) | 18 (32%) | 12 (67%) | **18** | edge (Eligible→Flat-OK) 68% |
+| MLB | 123 | 57 (46%) | 19 (33%) | 12 (63%) | **19** | edge (Eligible→Flat-OK) 67% |
 | NBA | 210 | 108 (51%) | 44 (41%) | 29 (66%) | **44** | edge (Eligible→Flat-OK) 59% |
 | NHL | 105 | 43 (41%) | 12 (28%) | 9 (75%) | **12** | edge (Eligible→Flat-OK) 72% |
 
@@ -426,11 +433,11 @@ Every v7.x promotion is gated on `HC_m ≥ +1`, which requires at least one CONF
 
 | Sport | Window | Picks (with HC stamp) | Any HC for-side | HC_m ≥ +1 | HC_m ≥ +2 |
 |---|---|---|---|---|---|
-| MLB | 3-day | 45 | 5 (11.1%) | 5 (11.1%) | 0 (0.0%) |
-| MLB | 7-day | 108 | 18 (16.7%) | 14 (13.0%) | 1 (0.9%) |
-| MLB | All-time | 459 | 154 (33.6%) | 141 (30.7%) | 16 (3.5%) |
+| MLB | 3-day | 46 | 5 (10.9%) | 5 (10.9%) | 0 (0.0%) |
+| MLB | 7-day | 115 | 16 (13.9%) | 14 (12.2%) | 1 (0.9%) |
+| MLB | All-time | 476 | 156 (32.8%) | 143 (30.0%) | 16 (3.4%) |
 | NBA | 3-day | 1 | 1 (100.0%) | 1 (100.0%) | 1 (100.0%) |
-| NBA | 7-day | 6 | 5 (83.3%) | 4 (66.7%) | 3 (50.0%) |
+| NBA | 7-day | 3 | 3 (100.0%) | 2 (66.7%) | 1 (33.3%) |
 | NBA | All-time | 126 | 83 (65.9%) | 69 (54.8%) | 34 (27.0%) |
 | NHL | 3-day | 2 | 1 (50.0%) | 1 (50.0%) | 0 (0.0%) |
 | NHL | 7-day | 5 | 1 (20.0%) | 1 (20.0%) | 0 (0.0%) |
@@ -440,9 +447,9 @@ Pooled across sports:
 
 | Window | Picks (with HC stamp) | Any HC for-side | HC_m ≥ +1 | HC_m ≥ +2 |
 |---|---|---|---|---|
-| 3-day | 48 | 7 (14.6%) | 7 (14.6%) | 1 (2.1%) |
-| 7-day | 119 | 24 (20.2%) | 19 (16.0%) | 4 (3.4%) |
-| All-time | 634 | 258 (40.7%) | 230 (36.3%) | 55 (8.7%) |
+| 3-day | 49 | 7 (14.3%) | 7 (14.3%) | 1 (2.0%) |
+| 7-day | 123 | 20 (16.3%) | 17 (13.8%) | 2 (1.6%) |
+| All-time | 651 | 260 (39.9%) | 232 (35.6%) | 55 (8.4%) |
 
 ### §5f. Bubble wallets — next-up graduations
 
@@ -458,7 +465,7 @@ Wallets currently NOT promoted but close. Two flavors:
 | wallet | picksN | flat PnL | pos N | pos $ROI |
 |---|---|---|---|---|
 | `...be17` | 1 | +6.95 | 23 | -60% |
-| `...fc26` | 1 | +0.91 | 12 | -20% |
+| `...fc26` | 1 | +0.91 | 15 | -29% |
 | `...be00` | 1 | +0.87 | 15 | 10% |
 | `...9373` | 1 | +0.87 | 0 | — |
 | `...9b3c` | 1 | +0.77 | 8 | 52% |
@@ -469,11 +476,11 @@ Wallets currently NOT promoted but close. Two flavors:
 | wallet | picksN | WR | flat ROI | pos N | pos $ROI |
 |---|---|---|---|---|---|
 | `...afd2` | 41 | 51% | -0.5% | 177 | -20% |
-| `...2768` | 41 | 46% | -3.4% | 63 | 18% |
-| `...135d` | 312 | 50% | -4.3% | 344 | 5% |
+| `...2f63` | 108 | 49% | -3.8% | 1044 | -5% |
 | `...600d` | 16 | 50% | -4.3% | 55 | 1% |
+| `...135d` | 314 | 50% | -4.3% | 346 | 5% |
 | `...0232` | 4 | 50% | -4.5% | 11 | 30% |
-| `...2f63` | 107 | 49% | -5.0% | 1042 | -5% |
+| `...2a9e` | 78 | 50% | -4.9% | 106 | 5% |
 
 #### NBA
 
@@ -537,16 +544,16 @@ Re-classified every 2h via `grade-sharp-actions` cron. Roll-back: set `B_ONLY_MI
 
 | Sport | A | A+B | B (new) | FLAT-or-better total | % from B-only |
 |---|---|---|---|---|---|
-| MLB | 4 | 15 | **27** | 46 | 58.7% |
+| MLB | 5 | 15 | **27** | 47 | 57.4% |
 | NBA | 10 | 34 | **39** | 83 | 47.0% |
 | NHL | 4 | 8 | **17** | 29 | 58.6% |
-| **ALL** | **18** | **57** | **83** | **158** | **52.5%** |
+| **ALL** | **19** | **57** | **83** | **159** | **52.2%** |
 
 #### Pipeline freshness
 
-- `sharp_action_positions` GRADED rows: **14176**
-- `sharp_action_positions` PENDING rows: **370** (queued for next Grade Sharp Actions run)
-- Latest `sharpWalletProfiles` rebuild: 6/15/2026, 11:19:12 AM ET — 139 min · within 2 cron cycles
+- `sharp_action_positions` GRADED rows: **14514**
+- `sharp_action_positions` PENDING rows: **395** (queued for next Grade Sharp Actions run)
+- Latest `sharpWalletProfiles` rebuild: 6/16/2026, 9:27:30 AM ET — **262 min · STALE** — check grade-sharp-actions workflow
 
 **Alarms**: pending > 200 OR rebuild lag > 4h → cron is lagging or failing — check `gh run list --workflow="Grade Sharp Actions"`.
 
@@ -559,15 +566,15 @@ Wallets here would have been EXCLUDED under v1 (Source-A-only). Top by Source-B 
 | wallet | tier | B_n | B_flat ROI | B_$ ROI |
 |---|---|---|---|---|
 | `...9a27` | CONFIRMED | 467 | +12.3% | +4.4% |
-| `...135d` | CONFIRMED | 344 | +2.2% | +5.4% |
-| `...1e50` | FLAT | 186 | +1.7% | -0.2% |
+| `...135d` | CONFIRMED | 346 | +2% | +5.3% |
+| `...3532` | CONFIRMED | 314 | +1.7% | +5.1% |
+| `...1e50` | FLAT | 205 | +0.1% | -1.5% |
 | `...1eae` | FLAT | 147 | +3.1% | -1.4% |
 | `...c684` | FLAT | 85 | +6.6% | -2.2% |
 | `...69c2` | CONFIRMED | 66 | +17.4% | +1% |
-| `...ad50` | CONFIRMED | 50 | +7.7% | +1.9% |
+| `...ad50` | CONFIRMED | 52 | +11.8% | +4.6% |
 | `...d6d2` | FLAT | 38 | +6.8% | -25.5% |
 | `...cff6` | CONFIRMED | 26 | +6.6% | +22% |
-| `...e3d0` | CONFIRMED | 24 | +5.6% | +27.2% |
 | … | 17 more | | | |
 
 **NBA** — 39 wallets promoted via B
@@ -618,32 +625,39 @@ Who on the proven roster is actually printing — yesterday's bets, the rolling 
 
 ### §6a. Yesterday's proven-wallet bets
 
-Slate: **2026-06-14** · 22 bets · 8 distinct proven wallets · WR 50% · $ vol $196.5K · $ PnL -$16.9K.
+Slate: **2026-06-15** · 29 bets · 8 distinct proven wallets · WR 52% · $ vol $353.9K · $ PnL -$37.1K.
 
 | Wallet | Sport | Market | Game | $ size | Result | $ PnL |
 |---|---|---|---|---|---|---|
-| `...2125` (CONFIRMED) | NHL | ML | Hurricanes @ Golden Knights | $35.5K | **W** | $30.9K |
-| `...64aa` (CONFIRMED) | MLB | ML | New York Yankees @ Toronto Blue Jays | $14.6K | **W** | $11.2K |
-| `...2125` (CONFIRMED) | NHL | TOTAL | Hurricanes @ Golden Knights | $11.4K | **W** | $10.1K |
-| `...d227` (CONFIRMED) | MLB | SPREAD | Texas Rangers @ Boston Red Sox | $5.7K | **W** | $8.8K |
-| `...8f33` (CONFIRMED) | MLB | ML | New York Yankees @ Toronto Blue Jays | $7.0K | **W** | $5.4K |
-| `...64aa` (CONFIRMED) | MLB | ML | Tampa Bay Rays @ Los Angeles Angels | $6.2K | **W** | $5.3K |
-| `...8f33` (CONFIRMED) | MLB | ML | Chicago Cubs @ San Francisco Giants | $5.5K | **W** | $4.1K |
-| `...d227` (CONFIRMED) | MLB | SPREAD | New York Yankees @ Toronto Blue Jays | $3.1K | **W** | $4.0K |
-| `...8f33` (CONFIRMED) | MLB | SPREAD | Miami Marlins @ Pittsburgh Pirates | $3.9K | **W** | $2.4K |
-| `...88a3` (CONFIRMED) | MLB | ML | Arizona Diamondbacks @ Cincinnati Reds | $2.2K | **W** | $2.0K |
-| `...8f33` (CONFIRMED) | MLB | ML | Miami Marlins @ Pittsburgh Pirates | $70 | **W** | $45 |
-| `...8f33` (CONFIRMED) | MLB | TOTAL | San Diego Padres @ Baltimore Orioles | $73 | L | -$73 |
-| `...8f33` (CONFIRMED) | MLB | ML | St. Louis Cardinals @ Minnesota Twins | $630 | L | -$630 |
-| `...8f33` (CONFIRMED) | MLB | ML | Houston Astros @ Kansas City Royals | $730 | L | -$730 |
-| `...8f33` (CONFIRMED) | MLB | TOTAL | Colorado Rockies @ Athletics | $1.3K | L | -$1.3K |
-| `...64aa` (CONFIRMED) | MLB | ML | Chicago Cubs @ San Francisco Giants | $3.1K | L | -$3.1K |
-| `...abaf` (CONFIRMED) | MLB | SPREAD | Chicago Cubs @ San Francisco Giants | $4.9K | L | -$4.9K |
-| `...8f33` (CONFIRMED) | MLB | ML | Atlanta Braves @ New York Mets | $6.0K | L | -$6.0K |
-| `...abaf` (CONFIRMED) | MLB | SPREAD | Los Angeles Dodgers @ Chicago White Sox | $10.2K | L | -$10.2K |
-| `...3532` (FLAT) | NHL | ML | Hurricanes @ Golden Knights | $18.8K | L | -$18.8K |
-| `...64aa` (CONFIRMED) | MLB | ML | Miami Marlins @ Pittsburgh Pirates | $23.0K | L | -$23.0K |
-| `...bba3` (CONFIRMED) | MLB | ML | Colorado Rockies @ Athletics | $32.5K | L | -$32.5K |
+| `...23c4` (FLAT) | MLB | TOTAL | Kansas City Royals @ Washington Nationals | $49.0K | **W** | $49.0K |
+| `...64aa` (CONFIRMED) | MLB | ML | Kansas City Royals @ Washington Nationals | $25.2K | **W** | $19.1K |
+| `...64aa` (CONFIRMED) | MLB | ML | Colorado Rockies @ Chicago Cubs | $19.7K | **W** | $9.4K |
+| `...1f30` (CONFIRMED) | MLB | ML | Tampa Bay Rays @ Los Angeles Dodgers | $17.4K | **W** | $9.4K |
+| `...23c4` (FLAT) | MLB | TOTAL | New York Mets @ Cincinnati Reds | $9.6K | **W** | $8.7K |
+| `...64aa` (CONFIRMED) | MLB | ML | Pittsburgh Pirates @ Athletics | $8.7K | **W** | $7.2K |
+| `...8f33` (CONFIRMED) | MLB | ML | Detroit Tigers @ Houston Astros | $5.9K | **W** | $6.3K |
+| `...8f33` (CONFIRMED) | MLB | SPREAD | Colorado Rockies @ Chicago Cubs | $6.4K | **W** | $6.1K |
+| `...8f33` (CONFIRMED) | MLB | ML | New York Mets @ Cincinnati Reds | $7.3K | **W** | $5.4K |
+| `...aeea` (FLAT) | MLB | ML | Miami Marlins @ Philadelphia Phillies | $3.1K | **W** | $5.1K |
+| `...8f33` (CONFIRMED) | MLB | SPREAD | Miami Marlins @ Philadelphia Phillies | $4.7K | **W** | $3.9K |
+| `...8f33` (CONFIRMED) | MLB | ML | Kansas City Royals @ Washington Nationals | $5.0K | **W** | $3.8K |
+| `...aeea` (FLAT) | MLB | ML | Kansas City Royals @ Washington Nationals | $4.9K | **W** | $3.7K |
+| `...8f33` (CONFIRMED) | MLB | ML | San Diego Padres @ St. Louis Cardinals | $5.2K | **W** | $3.5K |
+| `...8f33` (CONFIRMED) | MLB | SPREAD | Kansas City Royals @ Washington Nationals | $1.6K | **W** | $2.4K |
+| `...1f30` (CONFIRMED) | MLB | ML | Kansas City Royals @ Washington Nationals | $1.5K | L | -$1.5K |
+| `...1f30` (CONFIRMED) | MLB | TOTAL | Miami Marlins @ Philadelphia Phillies | $1.6K | L | -$1.6K |
+| `...8f33` (CONFIRMED) | MLB | TOTAL | Miami Marlins @ Philadelphia Phillies | $5.4K | L | -$5.4K |
+| `...8f33` (CONFIRMED) | MLB | ML | Los Angeles Angels @ Arizona Diamondbacks | $5.6K | L | -$5.6K |
+| `...5213` (CONFIRMED) | MLB | SPREAD | Miami Marlins @ Philadelphia Phillies | $6.2K | L | -$6.2K |
+| `...23c4` (FLAT) | MLB | TOTAL | Miami Marlins @ Philadelphia Phillies | $8.5K | L | -$8.5K |
+| `...23c4` (FLAT) | MLB | TOTAL | Minnesota Twins @ Texas Rangers | $9.0K | L | -$9.0K |
+| `...0ff5` (FLAT) | MLB | TOTAL | Pittsburgh Pirates @ Athletics | $9.3K | L | -$9.3K |
+| `...23c4` (FLAT) | MLB | ML | Miami Marlins @ Philadelphia Phillies | $10.8K | L | -$10.8K |
+| `...d227` (CONFIRMED) | MLB | SPREAD | San Diego Padres @ St. Louis Cardinals | $14.3K | L | -$14.3K |
+| `...64aa` (CONFIRMED) | MLB | ML | Minnesota Twins @ Texas Rangers | $16.2K | L | -$16.2K |
+| `...23c4` (FLAT) | MLB | TOTAL | Colorado Rockies @ Chicago Cubs | $17.3K | L | -$17.3K |
+| `...64aa` (CONFIRMED) | MLB | ML | Detroit Tigers @ Houston Astros | $25.9K | L | -$25.9K |
+| `...23c4` (FLAT) | MLB | TOTAL | Tampa Bay Rays @ Los Angeles Dodgers | $48.5K | L | -$48.5K |
 
 ### §6b. Proven-wallet leaderboard
 
@@ -651,20 +665,22 @@ Top 15 proven `(wallet × sport)` pairs per sport per horizon, ranked by **$ PnL
 
 #### §6b-1. 3-day
 
-**MLB** — 10 active proven wallets
+**MLB** — 12 active proven wallets
 
 | # | Wallet | Tier | Bets | WR% | Bets/day | Flat PnL (u) | Flat ROI | $ vol | $ PnL | $ ROI | Streak |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | `...64aa` | CONFIRMED | 17 | 53% | 5.7 | -0.31 | -2% | $257.7K | $55.1K | +21% | 2W |
-| 2 | `...d227` | CONFIRMED | 6 | 67% | 2.0 | +2.82 | +47% | $48.7K | $29.9K | +61% | 2W |
-| 3 | `...8f33` | CONFIRMED | 26 | 54% | 8.7 | -0.52 | -2% | $104.3K | $17.4K | +17% | 2L |
-| 4 | `...23c4` | FLAT | 4 | 50% | 2.0 | -0.08 | -2% | $46.4K | $10.2K | +22% | 2W |
-| 5 | `...fc82` | FLAT | 2 | 50% | 1.0 | -0.15 | -8% | $42.6K | $9.8K | +23% | 1L |
-| 6 | `...88a3` | CONFIRMED | 3 | 100% | 1.0 | +2.65 | +88% | $6.4K | $5.6K | +88% | 3W |
-| 7 | `...39b3` | CONFIRMED | 2 | 100% | 2.0 | +1.99 | +99% | $754 | $719 | +95% | 2W |
-| 8 | `...1f30` | CONFIRMED | 10 | 40% | 5.0 | -2.00 | -20% | $65.6K | -$10.2K | -16% | 1W |
-| 9 | `...bba3` | CONFIRMED | 1 | 0% | 1.0 | -1.00 | -100% | $32.5K | -$32.5K | -100% | 1L |
-| 10 | `...abaf` | CONFIRMED | 6 | 17% | 2.0 | -4.09 | -68% | $117.5K | -$83.0K | -71% | 4L |
+| 1 | `...64aa` | CONFIRMED | 15 | 60% | 5.0 | +1.86 | +12% | $241.5K | $69.6K | +29% | 1W |
+| 2 | `...8f33` | CONFIRMED | 29 | 62% | 9.7 | +4.48 | +15% | $121.4K | $36.1K | +30% | 2W |
+| 3 | `...d227` | CONFIRMED | 5 | 60% | 1.7 | +2.25 | +45% | $43.1K | $13.1K | +31% | 1L |
+| 4 | `...aeea` | FLAT | 3 | 67% | 1.0 | +1.41 | +47% | $11.2K | $5.7K | +51% | 2W |
+| 5 | `...88a3` | CONFIRMED | 1 | 100% | 1.0 | +0.91 | +91% | $2.2K | $2.0K | +91% | 1W |
+| 6 | `...1f30` | CONFIRMED | 8 | 38% | 2.7 | -2.25 | -28% | $63.2K | -$1.2K | -2% | 1W |
+| 7 | `...5213` | CONFIRMED | 1 | 0% | 1.0 | -1.00 | -100% | $6.2K | -$6.2K | -100% | 1L |
+| 8 | `...0ff5` | FLAT | 1 | 0% | 1.0 | -1.00 | -100% | $9.3K | -$9.3K | -100% | 1L |
+| 9 | `...fc82` | FLAT | 1 | 0% | 1.0 | -1.00 | -100% | $14.2K | -$14.2K | -100% | 1L |
+| 10 | `...23c4` | FLAT | 8 | 38% | 2.7 | -2.08 | -26% | $158.4K | -$30.5K | -19% | 1L |
+| 11 | `...bba3` | CONFIRMED | 1 | 0% | 1.0 | -1.00 | -100% | $32.5K | -$32.5K | -100% | 1L |
+| 12 | `...abaf` | CONFIRMED | 5 | 20% | 2.5 | -3.09 | -62% | $92.0K | -$57.4K | -62% | 4L |
 
 **NBA** — 15 active proven wallets
 
@@ -695,45 +711,45 @@ Top 15 proven `(wallet × sport)` pairs per sport per horizon, ranked by **$ PnL
 
 #### §6b-2. 7-day
 
-**MLB** — 15 active proven wallets
+**MLB** — 16 active proven wallets
 
 | # | Wallet | Tier | Bets | WR% | Bets/day | Flat PnL (u) | Flat ROI | $ vol | $ PnL | $ ROI | Streak |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | `...5213` | CONFIRMED | 2 | 100% | 1.0 | +1.92 | +96% | $180.4K | $169.6K | +94% | 2W |
+| 1 | `...5213` | CONFIRMED | 2 | 50% | 0.3 | -0.09 | -5% | $131.5K | $107.7K | +82% | 1L |
 | 2 | `...fc82` | FLAT | 3 | 67% | 0.8 | +0.70 | +23% | $94.6K | $54.3K | +57% | 1L |
-| 3 | `...8f33` | CONFIRMED | 41 | 56% | 5.9 | +1.57 | +4% | $183.6K | $39.8K | +22% | 2L |
-| 4 | `...abaf` | CONFIRMED | 11 | 45% | 1.6 | -0.94 | -9% | $245.0K | $22.2K | +9% | 4L |
-| 5 | `...3987` | CONFIRMED | 10 | 80% | 2.5 | +5.27 | +53% | $419.3K | $17.4K | +4% | 1L |
-| 6 | `...1f30` | CONFIRMED | 19 | 53% | 3.2 | +0.56 | +3% | $134.2K | $14.1K | +10% | 1W |
-| 7 | `...d227` | CONFIRMED | 14 | 57% | 2.0 | +1.95 | +14% | $134.4K | $10.6K | +8% | 2W |
+| 3 | `...8f33` | CONFIRMED | 46 | 59% | 6.6 | +5.10 | +11% | $185.4K | $47.1K | +25% | 2W |
+| 4 | `...1f30` | CONFIRMED | 21 | 52% | 3.0 | +0.10 | +0% | $149.4K | $25.7K | +17% | 1W |
+| 5 | `...abaf` | CONFIRMED | 9 | 44% | 1.5 | -1.45 | -16% | $229.9K | $13.9K | +6% | 4L |
+| 6 | `...aeea` | FLAT | 4 | 75% | 0.8 | +2.53 | +63% | $14.4K | $9.2K | +64% | 2W |
+| 7 | `...d227` | CONFIRMED | 13 | 54% | 1.9 | +1.36 | +10% | $129.8K | $7.3K | +6% | 1L |
 | 8 | `...88a3` | CONFIRMED | 6 | 83% | 1.2 | +2.99 | +50% | $13.4K | $6.2K | +46% | 4W |
 | 9 | `...a240` | CONFIRMED | 1 | 100% | 1.0 | +0.98 | +98% | $2.4K | $2.4K | +98% | 1W |
 | 10 | `...39b3` | CONFIRMED | 2 | 100% | 2.0 | +1.99 | +99% | $754 | $719 | +95% | 2W |
-| 11 | `...0ff5` | FLAT | 3 | 33% | 1.0 | -1.09 | -36% | $14.2K | -$5.2K | -36% | 1W |
-| 12 | `...64aa` | CONFIRMED | 40 | 43% | 5.7 | -8.90 | -22% | $544.8K | -$20.8K | -4% | 2W |
-| 13 | `...bba3` | CONFIRMED | 1 | 0% | 1.0 | -1.00 | -100% | $32.5K | -$32.5K | -100% | 1L |
-| 14 | `...c991` | FLAT | 2 | 0% | 1.0 | -2.00 | -100% | $94.0K | -$94.0K | -100% | 2L |
-| 15 | `...23c4` | FLAT | 13 | 38% | 2.2 | -2.50 | -19% | $327.6K | -$209.2K | -64% | 2W |
+| 11 | `...0ff5` | FLAT | 3 | 33% | 0.4 | -1.09 | -36% | $18.8K | -$9.7K | -52% | 1L |
+| 12 | `...bba3` | CONFIRMED | 1 | 0% | 1.0 | -1.00 | -100% | $32.5K | -$32.5K | -100% | 1L |
+| 13 | `...64aa` | CONFIRMED | 40 | 40% | 5.7 | -10.63 | -27% | $558.4K | -$51.7K | -9% | 1W |
+| 14 | `...3987` | CONFIRMED | 7 | 71% | 2.3 | +2.53 | +36% | $300.4K | -$87.3K | -29% | 1L |
+| 15 | `...c991` | FLAT | 2 | 0% | 1.0 | -2.00 | -100% | $94.0K | -$94.0K | -100% | 2L |
 
-**NBA** — 20 active proven wallets
+**NBA** — 19 active proven wallets
 
 | # | Wallet | Tier | Bets | WR% | Bets/day | Flat PnL (u) | Flat ROI | $ vol | $ PnL | $ ROI | Streak |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | `...2ca8` | CONFIRMED | 2 | 50% | 0.7 | -0.24 | -12% | $253.4K | $138.5K | +55% | 1W |
-| 2 | `...66f5` | CONFIRMED | 3 | 100% | 0.8 | +2.24 | +75% | $92.0K | $65.4K | +71% | 3W |
-| 3 | `...e8f1` | CONFIRMED | 3 | 67% | 0.5 | +0.28 | +9% | $275.4K | $58.4K | +21% | 2W |
-| 4 | `...aeeb` | CONFIRMED | 2 | 100% | 0.7 | +1.56 | +78% | $69.9K | $54.8K | +78% | 2W |
-| 5 | `...3532` | FLAT | 5 | 60% | 0.8 | +0.76 | +15% | $112.7K | $51.4K | +46% | 2W |
-| 6 | `...3f67` | CONFIRMED | 2 | 50% | 0.3 | -0.13 | -7% | $101.4K | $36.4K | +36% | 1L |
-| 7 | `...c933` | CONFIRMED | 2 | 100% | 0.5 | +1.28 | +64% | $16.8K | $11.5K | +68% | 2W |
-| 8 | `...00bc` | CONFIRMED | 3 | 67% | 0.5 | +0.74 | +25% | $11.2K | $1.7K | +16% | 2W |
-| 9 | `...684d` | CONFIRMED | 2 | 100% | 0.5 | +1.94 | +97% | $1.8K | $1.7K | +98% | 2W |
-| 10 | `...03d4` | CONFIRMED | 1 | 100% | 1.0 | +0.52 | +52% | $3.0K | $1.6K | +52% | 1W |
-| 11 | `...39b3` | CONFIRMED | 4 | 75% | 0.7 | +1.26 | +31% | $3.0K | $519 | +17% | 3W |
-| 12 | `...9ef0` | CONFIRMED | 1 | 100% | 1.0 | +0.52 | +52% | $734 | $382 | +52% | 1W |
-| 13 | `...9953` | CONFIRMED | 1 | 0% | 1.0 | -1.00 | -100% | $6.2K | -$6.2K | -100% | 1L |
-| 14 | `...dc5b` | FLAT | 1 | 0% | 1.0 | -1.00 | -100% | $10.4K | -$10.4K | -100% | 1L |
-| 15 | `...2f63` | FLAT | 9 | 44% | 1.5 | -1.44 | -16% | $91.6K | -$17.4K | -19% | 1L |
+| 1 | `...2ca8` | CONFIRMED | 1 | 100% | 1.0 | +0.76 | +76% | $222.9K | $168.9K | +76% | 1W |
+| 2 | `...e8f1` | CONFIRMED | 2 | 100% | 0.5 | +1.28 | +64% | $196.5K | $137.3K | +70% | 2W |
+| 3 | `...66f5` | CONFIRMED | 3 | 100% | 0.8 | +2.24 | +75% | $92.0K | $65.4K | +71% | 3W |
+| 4 | `...aeeb` | CONFIRMED | 1 | 100% | 1.0 | +0.76 | +76% | $31.8K | $24.1K | +76% | 1W |
+| 5 | `...2f63` | FLAT | 6 | 50% | 1.5 | -0.31 | -5% | $60.6K | $13.0K | +21% | 1L |
+| 6 | `...c933` | CONFIRMED | 2 | 100% | 0.5 | +1.28 | +64% | $16.8K | $11.5K | +68% | 2W |
+| 7 | `...00bc` | CONFIRMED | 2 | 100% | 0.5 | +1.74 | +87% | $6.9K | $6.1K | +88% | 2W |
+| 8 | `...684d` | CONFIRMED | 2 | 100% | 0.5 | +1.94 | +97% | $1.8K | $1.7K | +98% | 2W |
+| 9 | `...03d4` | CONFIRMED | 1 | 100% | 1.0 | +0.52 | +52% | $3.0K | $1.6K | +52% | 1W |
+| 10 | `...39b3` | CONFIRMED | 3 | 100% | 0.8 | +2.26 | +75% | $2.0K | $1.5K | +75% | 3W |
+| 11 | `...9ef0` | CONFIRMED | 1 | 100% | 1.0 | +0.52 | +52% | $734 | $382 | +52% | 1W |
+| 12 | `...9953` | CONFIRMED | 1 | 0% | 1.0 | -1.00 | -100% | $6.2K | -$6.2K | -100% | 1L |
+| 13 | `...3532` | FLAT | 3 | 67% | 0.8 | +0.95 | +32% | $29.3K | -$7.0K | -24% | 2W |
+| 14 | `...3f67` | CONFIRMED | 1 | 0% | 1.0 | -1.00 | -100% | $27.7K | -$27.7K | -100% | 1L |
+| 15 | `...9c38` | CONFIRMED | 1 | 0% | 1.0 | -1.00 | -100% | $54.6K | -$54.6K | -100% | 1L |
 
 **NHL** — 3 active proven wallets
 
@@ -745,23 +761,23 @@ Top 15 proven `(wallet × sport)` pairs per sport per horizon, ranked by **$ PnL
 
 #### §6b-3. All-time
 
-**MLB** — 18 active proven wallets
+**MLB** — 19 active proven wallets
 
 | # | Wallet | Tier | Bets | WR% | Bets/day | Flat PnL (u) | Flat ROI | $ vol | $ PnL | $ ROI | Streak |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | 1 | `...abaf` | CONFIRMED | 54 | 52% | 1.8 | +7.48 | +14% | $1.25M | $857.2K | +69% | 4L |
 | 2 | `...3987` | CONFIRMED | 44 | 68% | 4.0 | +14.19 | +32% | $2.29M | $666.8K | +29% | 1L |
-| 3 | `...5213` | CONFIRMED | 9 | 89% | 1.1 | +6.27 | +70% | $386.1K | $294.4K | +76% | 7W |
-| 4 | `...64aa` | CONFIRMED | 226 | 56% | 4.0 | +5.47 | +2% | $4.01M | $273.4K | +7% | 2W |
+| 3 | `...5213` | CONFIRMED | 10 | 80% | 0.7 | +5.27 | +53% | $392.3K | $288.2K | +73% | 1L |
+| 4 | `...64aa` | CONFIRMED | 231 | 56% | 4.0 | +5.52 | +2% | $4.11M | $267.0K | +6% | 1W |
 | 5 | `...fc82` | FLAT | 27 | 52% | 0.5 | +0.41 | +2% | $556.2K | $139.9K | +25% | 1L |
-| 6 | `...8f33` | CONFIRMED | 70 | 56% | 3.2 | +3.24 | +5% | $394.2K | $73.5K | +19% | 2L |
-| 7 | `...1f30` | CONFIRMED | 31 | 55% | 2.4 | +4.03 | +13% | $213.8K | $33.7K | +16% | 1W |
+| 6 | `...8f33` | CONFIRMED | 79 | 58% | 3.4 | +7.79 | +10% | $441.3K | $93.9K | +21% | 2W |
+| 7 | `...1f30` | CONFIRMED | 34 | 53% | 2.3 | +2.57 | +8% | $234.4K | $40.0K | +17% | 1W |
 | 8 | `...5143` | CONFIRMED | 10 | 50% | 0.4 | +0.27 | +3% | $317.6K | $26.2K | +8% | 1W |
-| 9 | `...d227` | CONFIRMED | 16 | 56% | 0.4 | +1.68 | +11% | $148.8K | $21.1K | +14% | 2W |
-| 10 | `...1187` | FLAT | 8 | 63% | 2.7 | +1.65 | +21% | $30.5K | $13.5K | +44% | 1W |
+| 9 | `...1187` | FLAT | 8 | 63% | 2.7 | +1.65 | +21% | $30.5K | $13.5K | +44% | 1W |
+| 10 | `...aeea` | FLAT | 16 | 56% | 0.3 | +1.19 | +7% | $43.8K | $12.2K | +28% | 2W |
 | 11 | `...88a3` | CONFIRMED | 8 | 75% | 0.7 | +3.79 | +47% | $17.4K | $7.8K | +45% | 4W |
-| 12 | `...a240` | CONFIRMED | 3 | 67% | 0.1 | +0.85 | +28% | $6.7K | $2.5K | +38% | 1W |
-| 13 | `...0ff5` | FLAT | 35 | 54% | 1.2 | +2.63 | +8% | $233.1K | $1.2K | +1% | 1W |
+| 12 | `...d227` | CONFIRMED | 17 | 53% | 0.4 | +0.68 | +4% | $163.1K | $6.8K | +4% | 1L |
+| 13 | `...a240` | CONFIRMED | 3 | 67% | 0.1 | +0.85 | +28% | $6.7K | $2.5K | +38% | 1W |
 | 14 | `...68b3` | FLAT | 16 | 63% | 0.4 | +3.16 | +20% | $16.3K | $270 | +2% | 1L |
 | 15 | `...39b3` | CONFIRMED | 3 | 67% | 0.3 | +0.99 | +33% | $1.8K | -$281 | -16% | 2W |
 
@@ -823,7 +839,6 @@ Per-day bet count, $ volume, and $ PnL from proven wallets only. Helps spot slat
 
 | Date | TOTAL N · $vol · $PnL | MLB N · $vol · $PnL | NBA N · $vol · $PnL | NHL N · $vol · $PnL |
 |---|---|---|---|---|
-| 2026-06-01 | 23 · $575.7K · $86.5K | 23 · $575.7K · $86.5K | — | — |
 | 2026-06-02 | 27 · $586.5K · $262.0K | 20 · $495.6K · $149.9K | — | 7 · $90.9K · $112.1K |
 | 2026-06-03 | 54 · $1.07M · -$145.4K | 29 · $584.3K · $123.7K | 25 · $488.2K · -$269.1K | — |
 | 2026-06-04 | 22 · $552.7K · $8.3K | 20 · $513.8K · -$16.0K | — | 2 · $39.0K · $24.4K |
@@ -833,11 +848,12 @@ Per-day bet count, $ volume, and $ PnL from proven wallets only. Helps spot slat
 | 2026-06-08 | 36 · $1.13M · $404.7K | 20 · $399.7K · $131.3K | 16 · $728.8K · $273.4K | — |
 | 2026-06-09 | 31 · $671.0K · -$8.6K | 26 · $620.1K · -$44.9K | — | 5 · $50.9K · $36.2K |
 | 2026-06-10 | 52 · $1.49M · $182.3K | 32 · $424.1K · -$13.3K | 20 · $1.07M · $195.6K | — |
-| 2026-06-11 | 17 · $313.7K · -$107.1K | 13 · $255.0K · -$100.4K | — | 4 · $58.8K · -$6.7K |
+| 2026-06-11 | 18 · $316.9K · -$103.5K | 14 · $258.2K · -$96.8K | — | 4 · $58.8K · -$6.7K |
 | 2026-06-12 | 29 · $284.3K · -$12.6K | 29 · $284.3K · -$12.6K | — | — |
-| 2026-06-13 | 47 · $1.26M · -$762.2K | 29 · $307.4K · $54.6K | 18 · $954.4K · -$816.8K | — |
+| 2026-06-13 | 48 · $1.26M · -$765.4K | 30 · $310.6K · $51.4K | 18 · $954.4K · -$816.8K | — |
 | 2026-06-14 | 22 · $196.5K · -$16.9K | 19 · $130.7K · -$39.1K | — | 3 · $65.7K · $22.2K |
+| 2026-06-15 | 29 · $353.9K · -$37.1K | 29 · $353.9K · -$37.1K | — | — |
 
 ---
 
-_Driven by `scripts/dailyV6Report.js` · regenerates daily via `.github/workflows/daily-v6-report.yml` · QUALITY_CONTRIB_CUT = 30 · HC = CONFIRMED ∧ sizeRatio ≥ 1.5 · inclusion mirrors live Pick Performance dashboard · §1–§3 use shipped picks · §4–§5 wallet/tracking growth mirror `exportWalletProfiles.js` · §6 daily proven-wallet board uses today's roster (CONFIRMED ∪ FLAT) as-of 2026-06-14_
+_Driven by `scripts/dailyV6Report.js` · regenerates daily via `.github/workflows/daily-v6-report.yml` · QUALITY_CONTRIB_CUT = 30 · HC = CONFIRMED ∧ sizeRatio ≥ 1.5 · inclusion mirrors live Pick Performance dashboard · §1–§3 use shipped picks · §4–§5 wallet/tracking growth mirror `exportWalletProfiles.js` · §6 daily proven-wallet board uses today's roster (CONFIRMED ∪ FLAT) as-of 2026-06-15_
