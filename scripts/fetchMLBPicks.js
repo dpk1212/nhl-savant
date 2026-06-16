@@ -69,6 +69,16 @@ function todayET() {
   return `${et.getFullYear()}-${String(et.getMonth() + 1).padStart(2, '0')}-${String(et.getDate()).padStart(2, '0')}`;
 }
 
+// ET calendar date ('YYYY-MM-DD') of an ISO/ms commence time. Used to keep the
+// odds match on TODAY's slate — in a series the same two teams play multiple
+// days, and the odds board returns every event, so a date guard is required.
+function commenceDateET(commenceTime) {
+  if (!commenceTime) return null;
+  const t = typeof commenceTime === 'number' ? commenceTime : Date.parse(commenceTime);
+  if (Number.isNaN(t)) return null;
+  return new Date(t).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+}
+
 // ─── Step 1: Fetch Sharp + Retail Lines ─────────────────────────────
 
 async function fetchMLBOdds() {
@@ -146,10 +156,23 @@ async function fetchMLBOdds() {
 
 // ─── Step 2: Match Games Across Sources ────────────────────────────
 
-function matchGames(dratingsGames, dimersGames, oddsGames) {
-  const matched = [];
+function matchGames(dratingsGames, dimersGames, oddsGames, date) {
+  // Keep only odds events on TODAY's ET slate. Without this, an MLB series
+  // (same teams 2-3 days running) returns multiple events for the matchup; once
+  // today's game starts the board drops it, leaving only tomorrow's event, which
+  // would then get matched and stamp tomorrow's commence/odds onto today's pick.
+  const todaysOdds = date ? oddsGames.filter(o => commenceDateET(o.commenceTime) === date) : oddsGames;
 
-  for (const odds of oddsGames) {
+  // Dedup per matchup → earliest commence (defensive: doubleheaders, dupes).
+  const byMatchup = new Map();
+  for (const o of todaysOdds) {
+    const key = `${o.awayTeam}_${o.homeTeam}`;
+    const cur = byMatchup.get(key);
+    if (!cur || new Date(o.commenceTime) < new Date(cur.commenceTime)) byMatchup.set(key, o);
+  }
+
+  const matched = [];
+  for (const odds of byMatchup.values()) {
     const dr = dratingsGames.find(g => g.awayTeam === odds.awayTeam && g.homeTeam === odds.homeTeam);
     const dim = dimersGames.find(g => g.awayTeam === odds.awayTeam && g.homeTeam === odds.homeTeam);
 
@@ -499,8 +522,8 @@ async function main() {
   console.log(`   📊 Dimers games:   ${dimersGames.length}`);
   console.log(`   📊 Odds games:     ${oddsGames.length}`);
 
-  const matchedGames = matchGames(dratingsGames, dimersGames, oddsGames);
-  console.log(`   ✅ Matched games:  ${matchedGames.length}\n`);
+  const matchedGames = matchGames(dratingsGames, dimersGames, oddsGames, date);
+  console.log(`   ✅ Matched games:  ${matchedGames.length} (odds filtered to ET date ${date})\n`);
 
   if (matchedGames.length === 0) {
     console.log('   ⚠️  No matched games — exiting.\n');
@@ -527,6 +550,18 @@ async function main() {
     console.log(`   ✅ ${team} ML (${pred.bestOdds > 0 ? '+' : ''}${pred.bestOdds}) @ ${pred.bestBook || 'Best'} — ${pred.grade} grade, ${pred.bestEV.toFixed(1)}% EV, ${p.units}u${pred.modelsAgree ? ' [MODELS AGREE]' : ''}`);
   }
   console.log();
+
+  if (process.argv.includes('--dry-run')) {
+    console.log('🧪 DRY RUN — matched games (no writes):');
+    console.log('   matchup            | commence ET                  | away | home');
+    for (const g of matchedGames.sort((a, b) => new Date(a.commenceTime) - new Date(b.commenceTime))) {
+      const ct = new Date(g.commenceTime).toLocaleString('en-US', { timeZone: 'America/New_York' });
+      const onDate = commenceDateET(g.commenceTime) === date ? '✓' : `✗ (${commenceDateET(g.commenceTime)})`;
+      console.log(`   ${`${g.awayTeam}_${g.homeTeam}`.padEnd(18)} | ${ct.padEnd(28)} | ${String(g.odds.awayOdds).padStart(4)} | ${String(g.odds.homeOdds).padStart(4)}  ${onDate}`);
+    }
+    console.log('\n🧪 DRY RUN complete — no Firestore/JSON writes performed.\n');
+    process.exit(0);
+  }
 
   // ════════════════════════════════════════════════════════════════════
   // STEP 4: WRITE TO FIREBASE
