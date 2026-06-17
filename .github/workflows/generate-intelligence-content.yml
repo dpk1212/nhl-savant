@@ -1,0 +1,28 @@
+name: Generate Intelligence Content
+
+on:
+  schedule:
+    # 9 AM ET = 13:00 UTC (EDT)
+    - cron: '0 13 * * *'
+  workflow_dispatch:
+
+jobs:
+  generate-intelligence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Generate market intelligence posts
+        run: npm run generate-intelligence-content
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/social_today.json
+          git diff --staged --quiet || git commit -m "Auto-update: Market intelligence content [$(date -u +%Y-%m-%d)]"
+          git push
