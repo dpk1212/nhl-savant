@@ -1,6 +1,6 @@
 # AGS-Unified — V12 Performance Monitor
 
-**Generated:** Thursday, June 18, 2026 at 5:25 AM ET
+**Generated:** Thursday, June 18, 2026 at 12:00 PM ET
 
 **Active model:** `ags-unified-v12` · **V12 went live:** 2026-06-01 · **Days live:** 18
 
@@ -8,17 +8,17 @@
 
 ## § 1 — Executive Summary
 
-> 🟢 **V12 is currently WINNING.** Since going live on **2026-06-01** (18 days ago), V12 has evaluated **465** picks, shipped **231** for real money (49.7% ship rate), and muted the other **234**. On the shipped picks V12 has gone **126-105** (54.5% win), staked **500.25u**, and returned **+25.86u** at **+5.2% ROI**.
+> 🟢 **V12 is currently WINNING.** Since going live on **2026-06-01** (18 days ago), V12 has evaluated **474** picks, shipped **231** for real money (48.7% ship rate), and muted the other **243**. On the shipped picks V12 has gone **126-105** (54.5% win), staked **500.25u**, and returned **+25.86u** at **+5.2% ROI**.
 
 ### Snapshot
 
 | Metric                              | Value                          |
 |-------------------------------------|--------------------------------|
 | Days V12 has been authoritative     |                             18 |
-| Picks V12 has evaluated             |                            465 |
+| Picks V12 has evaluated             |                            474 |
 | Picks SHIPPED (units > 0)           |                            231 |
-| Picks MUTED (score ≤ 0, FADE)       |                            234 |
-| Ship rate                           |                          49.7% |
+| Picks MUTED (score ≤ 0, FADE)       |                            243 |
+| Ship rate                           |                          48.7% |
 | Live W-L                            |                        126-105 |
 | Live Win %                          |                          54.5% |
 | Live PnL (units)                    |                         +25.86 |
@@ -120,7 +120,7 @@ Day-by-day production since V12 went live. **Evaluated** = picks V12 scored that
 | 2026-06-15 |        31 |    2 |    15 | 2-0        | 100.0% |      6.00 |      +5.07 |     84.5% |     +24.75 |
 | 2026-06-16 |        36 |    6 |    21 | 3-3        |  50.0% |     24.00 |      -0.85 |     -3.5% |     +23.90 |
 | 2026-06-17 |        37 |    5 |    20 | 3-2        |  60.0% |     14.50 |      +1.96 |     13.5% |     +25.86 |
-| 2026-06-18 |         5 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +25.86 |
+| 2026-06-18 |        14 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +25.86 |
 
 > **Trajectory.** Last 3 days (2.9% ROI) is roughly **in-line** with the prior window (5.4%). V12 is in a steady state.
 
@@ -514,8 +514,8 @@ Same filter, sorted ROI ascending. Wallets that consistently lose when they're o
 | Graded picks with `tracked=true` AND `finalUnits > 0`         |     1 | 🚨 grader regression — see betTracking.js |
 | Graded picks with `tracked=true` AND `finalUnits == 0`        |   229 | 🟡 informational only — true tracked plays |
 | LOCK+ tier picks with `finalUnits == 0` (sizing regression)   |    24 | 🚨 sizing regression — agsSizeMultiplier returning 0 for strong AGS-U |
-| Live picks (not graded yet) with `finalUnits > 0`             |     3 | 🟢 picks queued for grading |
-| AGS-U promoted picks missing `v8_ags` value                   |    10 | 🟡 some picks missing AGS-U — cron lag or stale doc |
+| Live picks (not graded yet) with `finalUnits > 0`             |     5 | 🟢 picks queued for grading |
+| AGS-U promoted picks missing `v8_ags` value                   |    11 | 🟡 some picks missing AGS-U — cron lag or stale doc |
 | AGS-U promoted picks missing `agsTier`                        |     4 | 🟡 some picks missing tier classification |
 | Single-wallet shipped picks (`provenWalletCount == 1`)       |   123 | 🟡 informational — AGS-U calibration controls sample adequacy |
 
