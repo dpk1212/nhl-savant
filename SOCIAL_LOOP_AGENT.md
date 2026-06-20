@@ -31,6 +31,18 @@ PHASE 1 — PULL TWITTER (learn what's working)
   the voice, the top-performing formats, and the growth gaps (retweets ≈ 0,
   no threads, likes lag views).
 
+PHASE 1B — STUDY THE NICHE (what's going viral right now)
+- Read social_analysis/niche_trends.json (refreshed twice weekly by the
+  refresh-twitter-analysis GitHub workflow; it's the ranked viral posts from
+  peer betting accounts + niche searches, with per-post construction features
+  and an aggregate summary).
+- Learn from it: which hooks/openers are pulling the most engagement, how the
+  top posts are STRUCTURED (length, line breaks, emoji use, numbers, the
+  question/CTA close), and which angles are trending in the niche this week.
+- Note the aggregate (e.g. % with emoji, % with a question, % with numbers,
+  avg length) and bias your drafts toward what's working — without copying any
+  post verbatim.
+
 PHASE 2 — PULL DATA (today's raw material)
 - Read for today's angles:
   public/sports_sharps.json, public/sharp_positions.json,
@@ -68,6 +80,17 @@ PHASE 6 — OUTPUT
   ranked best-first. For threads, "text" is the full thread with each tweet
   separated by a line of "---".
 - Also print each post's text to the console so it's easy to copy.
+
+PHASE 7 — FEEDBACK (coaching, not just posts)
+- After the posts, append a short "FEEDBACK" section to the same JSON under a
+  top-level "feedback" key (and print it). Cover:
+  • How today's drafts compare to the niche's viral construction (am I matching
+    what works — hook strength, length, emoji, the question close?).
+  • The single biggest thing to improve vs my own past posts (recall the gaps
+    in MY_VOICE_PROFILE.md: retweets ≈ 0, no threads, likes lag views).
+  • One concrete experiment to try this week (a new hook style, a format, a
+    posting-time idea) drawn from niche_trends.json.
+- Keep it tight and actionable — 4-6 bullets, no fluff.
 
 HARD RULES
 - Never fabricate a number. If you can't source it, drop that post.

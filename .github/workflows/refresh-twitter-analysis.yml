@@ -37,14 +37,17 @@ jobs:
         run: |
           echo "FIRECRAWL_API_KEY=${{ secrets.FIRECRAWL_API_KEY }}" >> .env
 
-      - name: Pull + process timeline
+      - name: Pull + process own timeline
         run: node scripts/analyzeMyTweets.mjs
+
+      - name: Pull + process niche viral trends
+        run: node scripts/analyzeNicheTrends.mjs || echo "niche trends pull failed (non-fatal)"
 
       - name: Commit refreshed analysis if changed
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add social_analysis/my_tweets.json
+          git add social_analysis/my_tweets.json social_analysis/niche_trends.json
           if git diff --staged --quiet; then
             echo "No timeline changes this run."
           else
