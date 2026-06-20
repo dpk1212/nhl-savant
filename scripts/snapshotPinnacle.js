@@ -31,8 +31,9 @@ const SPORTS = [
   { key: 'basketball_ncaab', label: 'CBB' },
   { key: 'baseball_mlb', label: 'MLB' },
   { key: 'basketball_nba', label: 'NBA' },
-  // World Cup 2026 — h2h is 3-way (home/draw/away). We only key + store the
-  // home/away book prices the cards consume; the Draw outcome is ignored.
+  // World Cup 2026 — h2h is 3-way (home/draw/away). We store the Draw price
+  // too so soccer flows through the same pipeline as 2-way sports (a draw is
+  // a first-class pickable side).
   { key: 'soccer_fifa_world_cup', label: 'SOC' },
 ];
 
@@ -195,9 +196,9 @@ function extractBookOdds(game) {
   const awayName = game.away_team;
   const homeName = game.home_team;
 
-  let pinnAway = null, pinnHome = null;
-  let bestAway = null, bestHome = null;
-  let bestAwayBook = null, bestHomeBook = null;
+  let pinnAway = null, pinnHome = null, pinnDraw = null;
+  let bestAway = null, bestHome = null, bestDraw = null;
+  let bestAwayBook = null, bestHomeBook = null, bestDrawBook = null;
   const allBooks = {};
 
   for (const bk of (game.bookmakers || [])) {
@@ -206,14 +207,18 @@ function extractBookOdds(game) {
 
     const aw = h2h.outcomes.find(o => o.name === awayName);
     const hm = h2h.outcomes.find(o => o.name === homeName);
+    // 3-way soccer: the Draw outcome is named literally "Draw".
+    const dr = h2h.outcomes.find(o => o.name === 'Draw');
     if (!aw || !hm) continue;
 
     const bookName = BOOK_DISPLAY[bk.key] || bk.title;
     allBooks[bk.key] = { away: aw.price, home: hm.price, name: bookName };
+    if (dr) allBooks[bk.key].draw = dr.price;
 
     if (bk.key === 'pinnacle') {
       pinnAway = aw.price;
       pinnHome = hm.price;
+      if (dr) pinnDraw = dr.price;
     }
 
     if (RETAIL_BOOKS.includes(bk.key)) {
@@ -225,10 +230,14 @@ function extractBookOdds(game) {
         bestHome = hm.price;
         bestHomeBook = bookName;
       }
+      if (dr && (bestDraw === null || dr.price > bestDraw)) {
+        bestDraw = dr.price;
+        bestDrawBook = bookName;
+      }
     }
   }
 
-  return { pinnAway, pinnHome, bestAway, bestHome, bestAwayBook, bestHomeBook, allBooks };
+  return { pinnAway, pinnHome, pinnDraw, bestAway, bestHome, bestDraw, bestAwayBook, bestHomeBook, bestDrawBook, allBooks };
 }
 
 function extractSpreadOdds(game) {
@@ -299,7 +308,7 @@ async function run() {
 
     const games = await fetchOdds(sportKey);
     for (const game of games) {
-      const { pinnAway, pinnHome, bestAway, bestHome, bestAwayBook, bestHomeBook, allBooks } = extractBookOdds(game);
+      const { pinnAway, pinnHome, pinnDraw, bestAway, bestHome, bestDraw, bestAwayBook, bestHomeBook, bestDrawBook, allBooks } = extractBookOdds(game);
       if (pinnAway == null || pinnHome == null) continue;
 
       const awayName = game.away_team;
@@ -322,12 +331,15 @@ async function run() {
         delete existing.totalHistory;
       }
 
-      // ML history
+      // ML history (draw stored only when present — 3-way soccer).
       const snapshot = { t: now, away: pinnAway, home: pinnHome };
+      if (pinnDraw != null) snapshot.draw = pinnDraw;
       if (!existing.opener) {
         existing.opener = { ...snapshot };
       }
-      existing.current = { away: pinnAway, home: pinnHome };
+      existing.current = pinnDraw != null
+        ? { away: pinnAway, home: pinnHome, draw: pinnDraw }
+        : { away: pinnAway, home: pinnHome };
 
       const hist = existing.history || [];
       hist.push(snapshot);
@@ -352,6 +364,7 @@ async function run() {
       existing.bestHome = bestHome;
       existing.bestAwayBook = bestAwayBook;
       existing.bestHomeBook = bestHomeBook;
+      if (bestDraw != null) { existing.bestDraw = bestDraw; existing.bestDrawBook = bestDrawBook; }
 
       const pinnAwayProb = impliedProb(pinnAway);
       const pinnHomeProb = impliedProb(pinnHome);

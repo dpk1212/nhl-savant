@@ -493,6 +493,7 @@ function loadGameMetadata() {
         cur.home = g.homeTeam || cur.home || null;
         cur.polyAwayProb = typeof g.awayProb === 'number' ? g.awayProb : null;
         cur.polyHomeProb = typeof g.homeProb === 'number' ? g.homeProb : null;
+        cur.polyDrawProb = typeof g.drawProb === 'number' ? g.drawProb : null;
         meta.set(key, cur);
       }
     }
@@ -509,9 +510,9 @@ function loadGameMetadata() {
         const cT = g.opener?.t ?? g.current?.t ?? null;
         if (cT && !cur.commenceTime) cur.commenceTime = cT * 1000;
         if (g.current) {
-          cur.mlOdds = { away: g.current.away, home: g.current.home };
+          cur.mlOdds = { away: g.current.away, home: g.current.home, draw: g.current.draw ?? null };
         } else if (g.opener) {
-          cur.mlOdds = { away: g.opener.away, home: g.opener.home };
+          cur.mlOdds = { away: g.opener.away, home: g.opener.home, draw: g.opener.draw ?? null };
         }
         // Spread line + odds (Pinnacle opener — pinnacle_history doesn't
         // track spreads over time the way it does ML). Populated for the
@@ -844,7 +845,18 @@ async function createMissingLockedPicks({
       let odds = null;
       let line = null;
       if (marketType === 'ML') {
-        odds = side === 'home' ? meta.mlOdds?.home : meta.mlOdds?.away;
+        // 3-way soccer: the draw is a first-class side and MUST use the draw
+        // price — not the away fallback (which previously stamped the favorite's
+        // odds onto draw picks, e.g. "Draw ML -1100"). Prefer Pinnacle's draw
+        // line; if it hasn't been captured yet, derive from Polymarket draw prob.
+        if (side === 'home') odds = meta.mlOdds?.home;
+        else if (side === 'draw') {
+          odds = meta.mlOdds?.draw ?? null;
+          if (odds == null && Number.isFinite(meta.polyDrawProb) && meta.polyDrawProb > 0 && meta.polyDrawProb < 100) {
+            const p = meta.polyDrawProb / 100;
+            odds = p >= 0.5 ? -Math.round((p / (1 - p)) * 100) : Math.round(((1 - p) / p) * 100);
+          }
+        } else odds = meta.mlOdds?.away;
       } else if (marketType === 'SPREAD') {
         odds = side === 'home' ? meta.spreadOpener?.homeOdds : meta.spreadOpener?.awayOdds;
         if (odds == null) odds = -110;

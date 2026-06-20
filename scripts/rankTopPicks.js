@@ -216,11 +216,20 @@ async function loadHistorical() {
       const sides = d.sides || {};
 
       // Identify winning side once per game (for Source-A bet attribution).
+      // Prefer an explicit WIN (always reliable). Only infer the winner from a
+      // LOSS via OPPOSITE for 2-way markets — in a 3-way soccer game a home/away
+      // LOSS does NOT imply the other team won (the draw could have), so a draw
+      // outcome has no OPPOSITE and we leave the winner unresolved rather than
+      // mis-attributing it.
+      const isThreeWay = d.sport === 'SOC' && market === 'ML';
       let winningSide = null;
       for (const sk of Object.keys(sides)) {
-        const oc = sides[sk]?.result?.outcome;
-        if (oc === 'WIN')  { winningSide = sk; break; }
-        if (oc === 'LOSS' && OPPOSITE[sk]) { winningSide = OPPOSITE[sk]; break; }
+        if (sides[sk]?.result?.outcome === 'WIN') { winningSide = sk; break; }
+      }
+      if (!winningSide && !isThreeWay) {
+        for (const sk of Object.keys(sides)) {
+          if (sides[sk]?.result?.outcome === 'LOSS' && OPPOSITE[sk]) { winningSide = OPPOSITE[sk]; break; }
+        }
       }
       const peakOddsBySide = new Map();
       for (const [sk, sd] of Object.entries(sides)) {

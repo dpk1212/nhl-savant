@@ -6964,7 +6964,9 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     ? new Date(commenceTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' })
     : null;
 
-  const consensusOdds = consensusSide === 'away' ? pinnGame?.current?.away : pinnGame?.current?.home;
+  const consensusOdds = consensusSide === 'away' ? pinnGame?.current?.away
+                      : consensusSide === 'draw' ? pinnGame?.current?.draw
+                      : pinnGame?.current?.home;
   const oppOdds = consensusSide === 'away' ? pinnGame?.current?.home : pinnGame?.current?.away;
   const bestRetail = consensusSide === 'away' ? pinnGame?.bestAway : pinnGame?.bestHome;
   const bestBook = consensusSide === 'away' ? pinnGame?.bestAwayBook : pinnGame?.bestHomeBook;
@@ -7047,11 +7049,14 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     return pLast > pFirst;
   })();
 
-  // Consensus strength
-  const consensusWallets = consensusSide === 'away' ? awayWallets : homeWallets;
-  const oppWallets = consensusSide === 'away' ? homeWallets : awayWallets;
-  const consensusInvested = consensusSide === 'away' ? awayInvested : homeInvested;
-  const oppInvestedAmt = consensusSide === 'away' ? homeInvested : awayInvested;
+  // Consensus strength — 3-way aware. Use the draw-aware per-side aggregates
+  // computed above (consensusWalletCount / consensusInvestedAmt) and treat the
+  // "opponent" as ALL non-consensus sides. For 2-way sports drawWallets/
+  // drawInvested are 0, so these are identical to the old home/away math.
+  const consensusWallets = consensusWalletCount;
+  const oppWallets = new Set(oppPositions.map(p => p.wallet)).size;
+  const consensusInvested = consensusInvestedAmt;
+  const oppInvestedAmt = totalInvested - consensusInvestedAmt;
   const moneyPct = totalInvested > 0 ? (consensusInvested / totalInvested) * 100 : 50;
   const walletPct = (consensusWallets + oppWallets) > 0 ? (consensusWallets / (consensusWallets + oppWallets)) * 100 : 50;
   const cGrade = consensusGrade(moneyPct, walletPct);
