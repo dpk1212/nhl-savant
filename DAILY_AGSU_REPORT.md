@@ -1,6 +1,6 @@
 # AGS-Unified — V12 Performance Monitor
 
-**Generated:** Saturday, June 20, 2026 at 9:30 AM ET
+**Generated:** Saturday, June 20, 2026 at 10:42 AM ET
 
 **Active model:** `ags-unified-v12` · **V12 went live:** 2026-06-01 · **Days live:** 20
 
@@ -8,17 +8,17 @@
 
 ## § 1 — Executive Summary
 
-> 🟢 **V12 is currently WINNING.** Since going live on **2026-06-01** (20 days ago), V12 has evaluated **528** picks, shipped **240** for real money (45.5% ship rate), and muted the other **288**. On the shipped picks V12 has gone **132-108** (55.0% win), staked **529.75u**, and returned **+31.95u** at **+6.0% ROI**.
+> 🟢 **V12 is currently WINNING.** Since going live on **2026-06-01** (20 days ago), V12 has evaluated **531** picks, shipped **240** for real money (45.2% ship rate), and muted the other **291**. On the shipped picks V12 has gone **132-108** (55.0% win), staked **529.75u**, and returned **+31.95u** at **+6.0% ROI**.
 
 ### Snapshot
 
 | Metric                              | Value                          |
 |-------------------------------------|--------------------------------|
 | Days V12 has been authoritative     |                             20 |
-| Picks V12 has evaluated             |                            528 |
+| Picks V12 has evaluated             |                            531 |
 | Picks SHIPPED (units > 0)           |                            240 |
-| Picks MUTED (score ≤ 0, FADE)       |                            288 |
-| Ship rate                           |                          45.5% |
+| Picks MUTED (score ≤ 0, FADE)       |                            291 |
+| Ship rate                           |                          45.2% |
 | Live W-L                            |                        132-108 |
 | Live Win %                          |                          55.0% |
 | Live PnL (units)                    |                         +31.95 |
@@ -122,7 +122,7 @@ Day-by-day production since V12 went live. **Evaluated** = picks V12 scored that
 | 2026-06-17 |        37 |    5 |    20 | 3-2        |  60.0% |     14.50 |      +1.96 |     13.5% |     +25.86 |
 | 2026-06-18 |        21 |    4 |     7 | 3-1        |  75.0% |     12.50 |      +4.09 |     32.7% |     +29.95 |
 | 2026-06-19 |        36 |    5 |    19 | 3-2        |  60.0% |     17.00 |      +2.00 |     11.8% |     +31.95 |
-| 2026-06-20 |         9 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +31.95 |
+| 2026-06-20 |        12 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +31.95 |
 | 2026-06-23 |         1 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +31.95 |
 | 2026-06-25 |         1 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +31.95 |
 
