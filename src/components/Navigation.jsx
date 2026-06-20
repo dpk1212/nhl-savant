@@ -24,8 +24,8 @@ const Navigation = () => {
   
   // Premium navigation links with Lucide icons
   const navLinks = [
-    { path: '/', label: "Today's Games", icon: Target },
-    { path: '/sharp-flow', label: 'Sharp Flow', icon: TrendingUp },
+    { path: '/', label: 'Sharp Flow', icon: TrendingUp },
+    { path: '/todays-games', label: "Today's Games", icon: Target },
     { path: '/dashboard', label: 'Analytics Hub', icon: BarChart3 },
     { path: '/performance', label: 'Performance', icon: TrendingUp },
     { path: '/methodology', label: 'Methodology', icon: BookOpen },

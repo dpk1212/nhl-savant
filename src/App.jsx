@@ -42,6 +42,9 @@ import { useSplashScreen } from './hooks/useSplashScreen';
 // Lazy load 3D splash screen to reduce initial bundle size
 const SplashScreen = lazy(() => import('./components/SplashScreen'));
 
+// Design sandbox for the AGSU V12 locked-pick card redesign — #/card-lab
+const LockedPickCardLab = lazy(() => import('./components/preview/LockedPickCardLab'));
+
 function App() {
   // ALL HOOKS FIRST - Called on every render
   const { showSplash, hasWebGL, dismissSplash } = useSplashScreen();
@@ -330,8 +333,10 @@ function AppContent({ dataProcessor, oddsData, startingGoalies, goalieData, stat
       <Navigation />
       <main>
         <Routes>
-              {/* Today's Games is the primary landing page */}
-              <Route path="/" element={<TodaysGames 
+              {/* Sharp Flow is the primary landing page (nhlsavant.com → Sharp Flow). */}
+              <Route path="/" element={<SharpFlow />} />
+              {/* Today's Games moved off "/" but kept reachable at its own path. */}
+              <Route path="/todays-games" element={<TodaysGames 
                 dataProcessor={dataProcessor} 
                 oddsData={oddsData} 
                 startingGoalies={startingGoalies}
@@ -340,6 +345,7 @@ function AppContent({ dataProcessor, oddsData, startingGoalies, goalieData, stat
                 edgeFactorCalc={edgeFactorCalc}
               />} />
               <Route path="/my-picks" element={<MyPicks />} />
+              {/* Backwards-compatible alias for existing /sharp-flow links. */}
               <Route path="/sharp-flow" element={<SharpFlow />} />
               
               {/* Basketball - Hidden from navigation */}
@@ -361,6 +367,7 @@ function AppContent({ dataProcessor, oddsData, startingGoalies, goalieData, stat
               <Route path="/data" element={<Data />} />
               <Route path="/admin/social-content" element={<AdminSocialContent />} />
               <Route path="/disclaimer" element={<Disclaimer />} />
+              <Route path="/card-lab" element={<Suspense fallback={<LoadingSpinner />}><LockedPickCardLab /></Suspense>} />
           </Routes>
         </main>
         
