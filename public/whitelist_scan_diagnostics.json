@@ -1,22 +1,22 @@
 {
-  "scannedAt": "2026-06-20T06:05:42.391Z",
-  "elapsedSec": 146.2,
+  "scannedAt": "2026-06-20T09:31:08.296Z",
+  "elapsedSec": 131.9,
   "phase": "PHASE_2_MERGE_ENABLED",
-  "todayGamesCount": 53,
+  "todayGamesCount": 54,
   "summary": {
-    "total": 144,
+    "total": 142,
     "coveredByMain": 8,
-    "recovered": 16,
-    "recoveredPositions": 247,
-    "noPositions": 120,
+    "recovered": 19,
+    "recoveredPositions": 266,
+    "noPositions": 115,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 105,
-      "spread": 4,
-      "total": 2,
-      "dropped_shadow_gate": 136,
+      "ml": 103,
+      "spread": 5,
+      "total": 5,
+      "dropped_shadow_gate": 153,
       "dropped_duplicate": 0
     }
   },
@@ -28,14 +28,6 @@
       "sports": "",
       "status": "SCANNED_NO_POSITIONS_TODAY",
       "addr": "0x0767aa79d578aead1c849fd9f0fdc6cdb50336b0"
-    },
-    {
-      "walletShort": "06c80c",
-      "tier": "CONFIRMED",
-      "name": "BreakTheBank",
-      "sports": "SOC",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xf0318c32136c2db7fec88b84869aee6a1106c80c"
     },
     {
       "walletShort": "0b0329",
@@ -62,7 +54,7 @@
       "addr": "0xf49ce459b52f60b70ce0fe9aa6203e6bf90f9786",
       "positionsCount": 28,
       "statsSource": "sharpWalletProfiles_derived",
-      "avgSportBet": 3863,
+      "avgSportBet": 3408,
       "willPassShadowGate": 20,
       "willDropAtShadowGate": 8,
       "positions": [
@@ -71,7 +63,7 @@
           "gameKey": "irq_fra",
           "marketType": "ml",
           "side": "draw",
-          "invested": 2464,
+          "invested": 2465,
           "entryLine": null,
           "passesShadow": true
         },
@@ -324,7 +316,7 @@
       "walletShort": "0f9d74",
       "tier": "CONFIRMED",
       "name": "0x0A77exmm",
-      "sports": "NHL,SOC,NBA",
+      "sports": "NHL,NBA,SOC",
       "status": "SCANNED_NO_POSITIONS_TODAY",
       "addr": "0x0a77bc0638f13892c8b1d1d2c13ba178540f9d74"
     },
@@ -451,7 +443,7 @@
       "walletShort": "2f2a9e",
       "tier": "CONFIRMED",
       "name": "purplegatto",
-      "sports": "MLB,NBA",
+      "sports": "NBA",
       "status": "COVERED_BY_MAIN"
     },
     {
@@ -519,7 +511,7 @@
       "addr": "0x9a4cf053d6788a095da9be5e811e73131f491f30",
       "positionsCount": 2,
       "statsSource": "sharpWalletProfiles_derived",
-      "avgSportBet": 8390,
+      "avgSportBet": 8307,
       "willPassShadowGate": 1,
       "willDropAtShadowGate": 1,
       "positions": [
@@ -645,10 +637,10 @@
       "sports": "MLB,NBA,SOC",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xdb83e85ffd22faa4009273034770f96ffc5b1e50",
-      "positionsCount": 1,
+      "positionsCount": 2,
       "statsSource": "sports_sharps",
       "avgSportBet": 949,
-      "willPassShadowGate": 1,
+      "willPassShadowGate": 2,
       "willDropAtShadowGate": 0,
       "positions": [
         {
@@ -657,6 +649,15 @@
           "marketType": "ml",
           "side": "away",
           "invested": 731,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "SOC",
+          "gameKey": "jpn_tun",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 216,
           "entryLine": null,
           "passesShadow": true
         }
@@ -711,14 +712,6 @@
       "addr": "0xc6b13482e72f656519705d792a1f25587a6c78fd"
     },
     {
-      "walletShort": "6cd2f7",
-      "tier": "CONFIRMED",
-      "name": "UpTheBlues",
-      "sports": "SOC",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x2a69660046d7acc4ab204d7cc5ba78b0776cd2f7"
-    },
-    {
       "walletShort": "6f5295",
       "tier": "CONFIRMED",
       "name": "JESUSCHRISTISGOD",
@@ -733,12 +726,21 @@
       "sports": "MLB,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
-      "positionsCount": 17,
+      "positionsCount": 21,
       "statsSource": "sports_sharps",
       "avgSportBet": 5134,
-      "willPassShadowGate": 3,
-      "willDropAtShadowGate": 14,
+      "willPassShadowGate": 5,
+      "willDropAtShadowGate": 16,
       "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "mil_atl",
+          "marketType": "total",
+          "side": "over",
+          "invested": 1669,
+          "entryLine": 7.5,
+          "passesShadow": true
+        },
         {
           "sport": "MLB",
           "gameKey": "pit_col",
@@ -759,12 +761,30 @@
         },
         {
           "sport": "MLB",
+          "gameKey": "bos_sea",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 825,
+          "entryLine": 1.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
           "gameKey": "pit_col",
           "marketType": "spread",
           "side": "away",
           "invested": 656,
           "entryLine": 1.5,
           "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "sdp_tex",
+          "marketType": "total",
+          "side": "over",
+          "invested": 345,
+          "entryLine": 8.5,
+          "passesShadow": false
         },
         {
           "sport": "MLB",
@@ -795,6 +815,15 @@
         },
         {
           "sport": "MLB",
+          "gameKey": "cin_nyy",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 83,
+          "entryLine": -1.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
           "gameKey": "cle_hou",
           "marketType": "spread",
           "side": "away",
@@ -813,11 +842,11 @@
         },
         {
           "sport": "MLB",
-          "gameKey": "bos_sea",
-          "marketType": "spread",
-          "side": "away",
-          "invested": 173,
-          "entryLine": 1.5,
+          "gameKey": "cin_nyy",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 180,
+          "entryLine": null,
           "passesShadow": false
         },
         {
@@ -858,6 +887,15 @@
         },
         {
           "sport": "MLB",
+          "gameKey": "min_ari",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 69,
+          "entryLine": -1.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
           "gameKey": "cin_nyy",
           "marketType": "total",
           "side": "over",
@@ -881,15 +919,6 @@
           "side": "home",
           "invested": 67,
           "entryLine": 1.5,
-          "passesShadow": false
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "sfg_mia",
-          "marketType": "total",
-          "side": "under",
-          "invested": 79,
-          "entryLine": 8.5,
           "passesShadow": false
         }
       ]
@@ -951,7 +980,7 @@
       "addr": "0x86fbea68d619daf670185ecd38a69aa90f7703d4",
       "positionsCount": 3,
       "statsSource": "sharpWalletProfiles_derived",
-      "avgSportBet": 2763,
+      "avgSportBet": 2754,
       "willPassShadowGate": 0,
       "willDropAtShadowGate": 3,
       "positions": [
@@ -988,7 +1017,7 @@
       "walletShort": "779ef0",
       "tier": "CONFIRMED",
       "name": "matanovik",
-      "sports": "NBA,MLB",
+      "sports": "NBA",
       "status": "SCANNED_NO_POSITIONS_TODAY",
       "addr": "0x39d3c773be30fcc73161fc6768f46d563a779ef0"
     },
@@ -1150,11 +1179,11 @@
       "sports": "NHL",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x033f0346c007323030eb420305ffede19a95618e",
-      "positionsCount": 3,
+      "positionsCount": 4,
       "statsSource": "sports_sharps",
       "avgSportBet": 2425,
       "willPassShadowGate": 1,
-      "willDropAtShadowGate": 2,
+      "willDropAtShadowGate": 3,
       "positions": [
         {
           "sport": "MLB",
@@ -1164,6 +1193,15 @@
           "invested": 901,
           "entryLine": 6.5,
           "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "laa_oak",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 16,
+          "entryLine": null,
+          "passesShadow": false
         },
         {
           "sport": "MLB",
@@ -1190,8 +1228,24 @@
       "tier": "CONFIRMED",
       "name": null,
       "sports": "MLB",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x38f0b76ed812c24166a4f6293f991ac4b9972768"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x38f0b76ed812c24166a4f6293f991ac4b9972768",
+      "positionsCount": 1,
+      "statsSource": "sharpWalletProfiles_derived",
+      "avgSportBet": 16421,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "mil_atl",
+          "marketType": "total",
+          "side": "under",
+          "invested": 6918,
+          "entryLine": 7.5,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "981187",
@@ -1216,45 +1270,36 @@
       "sports": "MLB",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x9703676286b93c2eca71ca96e8757104519a69c2",
-      "positionsCount": 30,
+      "positionsCount": 24,
       "statsSource": "sports_sharps",
       "avgSportBet": 3216,
-      "willPassShadowGate": 30,
+      "willPassShadowGate": 24,
       "willDropAtShadowGate": 0,
       "positions": [
-        {
-          "sport": "SOC",
-          "gameKey": "swe_ned",
-          "marketType": "ml",
-          "side": "draw",
-          "invested": 24798,
-          "entryLine": null,
-          "passesShadow": true
-        },
-        {
-          "sport": "SOC",
-          "gameKey": "cuw_ecu",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 24119,
-          "entryLine": null,
-          "passesShadow": true
-        },
-        {
-          "sport": "SOC",
-          "gameKey": "swe_ned",
-          "marketType": "ml",
-          "side": "away",
-          "invested": 19548,
-          "entryLine": null,
-          "passesShadow": true
-        },
         {
           "sport": "SOC",
           "gameKey": "mex_cze",
           "marketType": "ml",
           "side": "away",
-          "invested": 23196,
+          "invested": 21791,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "SOC",
+          "gameKey": "swe_ned",
+          "marketType": "ml",
+          "side": "draw",
+          "invested": 17138,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "SOC",
+          "gameKey": "swe_ned",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 15426,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1263,7 +1308,7 @@
           "gameKey": "cuw_ecu",
           "marketType": "ml",
           "side": "away",
-          "invested": 16170,
+          "invested": 10407,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1272,16 +1317,16 @@
           "gameKey": "jpn_tun",
           "marketType": "ml",
           "side": "draw",
-          "invested": 12231,
+          "invested": 10458,
           "entryLine": null,
           "passesShadow": true
         },
         {
           "sport": "SOC",
-          "gameKey": "ksa_esp",
+          "gameKey": "usa_tur",
           "marketType": "ml",
           "side": "away",
-          "invested": 9010,
+          "invested": 10023,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1296,10 +1341,19 @@
         },
         {
           "sport": "SOC",
+          "gameKey": "ksa_esp",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 7943,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "SOC",
           "gameKey": "aut_arg",
           "marketType": "ml",
           "side": "draw",
-          "invested": 8180,
+          "invested": 8037,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1317,7 +1371,7 @@
           "gameKey": "sen_nor",
           "marketType": "ml",
           "side": "away",
-          "invested": 6546,
+          "invested": 6555,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1335,16 +1389,7 @@
           "gameKey": "sen_nor",
           "marketType": "ml",
           "side": "draw",
-          "invested": 6420,
-          "entryLine": null,
-          "passesShadow": true
-        },
-        {
-          "sport": "SOC",
-          "gameKey": "usa_tur",
-          "marketType": "ml",
-          "side": "away",
-          "invested": 6782,
+          "invested": 6270,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1353,7 +1398,7 @@
           "gameKey": "kor_rsa",
           "marketType": "ml",
           "side": "away",
-          "invested": 8413,
+          "invested": 8546,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1362,16 +1407,7 @@
           "gameKey": "aut_alg",
           "marketType": "ml",
           "side": "away",
-          "invested": 5492,
-          "entryLine": null,
-          "passesShadow": true
-        },
-        {
-          "sport": "SOC",
-          "gameKey": "ksa_esp",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 5524,
+          "invested": 5383,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1380,7 +1416,7 @@
           "gameKey": "fra_nor",
           "marketType": "ml",
           "side": "draw",
-          "invested": 4115,
+          "invested": 4102,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1389,25 +1425,7 @@
           "gameKey": "fra_nor",
           "marketType": "ml",
           "side": "away",
-          "invested": 4002,
-          "entryLine": null,
-          "passesShadow": true
-        },
-        {
-          "sport": "SOC",
-          "gameKey": "can_sui",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 4015,
-          "entryLine": null,
-          "passesShadow": true
-        },
-        {
-          "sport": "SOC",
-          "gameKey": "jpn_tun",
-          "marketType": "ml",
-          "side": "away",
-          "invested": 7085,
+          "invested": 3989,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1425,16 +1443,16 @@
           "gameKey": "cpv_uru",
           "marketType": "ml",
           "side": "away",
-          "invested": 3658,
+          "invested": 3666,
           "entryLine": null,
           "passesShadow": true
         },
         {
           "sport": "SOC",
-          "gameKey": "aut_arg",
+          "gameKey": "can_sui",
           "marketType": "ml",
           "side": "home",
-          "invested": 4533,
+          "invested": 3882,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1443,7 +1461,7 @@
           "gameKey": "uzb_cod",
           "marketType": "ml",
           "side": "draw",
-          "invested": 3652,
+          "invested": 3649,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1453,15 +1471,6 @@
           "marketType": "ml",
           "side": "home",
           "invested": 3597,
-          "entryLine": null,
-          "passesShadow": true
-        },
-        {
-          "sport": "SOC",
-          "gameKey": "cpv_uru",
-          "marketType": "ml",
-          "side": "draw",
-          "invested": 3576,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1479,16 +1488,7 @@
           "gameKey": "gha_eng",
           "marketType": "ml",
           "side": "draw",
-          "invested": 3540,
-          "entryLine": null,
-          "passesShadow": true
-        },
-        {
-          "sport": "SOC",
-          "gameKey": "ksa_cpv",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 3501,
+          "invested": 3358,
           "entryLine": null,
           "passesShadow": true
         }
@@ -1501,10 +1501,10 @@
       "sports": "MLB,NBA,NHL",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xe9076a87c5ed90ef16e6fe6529c943baeca0cff6",
-      "positionsCount": 40,
+      "positionsCount": 41,
       "statsSource": "sports_sharps",
       "avgSportBet": 3761,
-      "willPassShadowGate": 29,
+      "willPassShadowGate": 30,
       "willDropAtShadowGate": 11,
       "positions": [
         {
@@ -1512,7 +1512,25 @@
           "gameKey": "civ_ger",
           "marketType": "ml",
           "side": "home",
-          "invested": 23348,
+          "invested": 61968,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "SOC",
+          "gameKey": "swe_ned",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 33872,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "SOC",
+          "gameKey": "cuw_ecu",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 32483,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1521,16 +1539,7 @@
           "gameKey": "jpn_tun",
           "marketType": "ml",
           "side": "away",
-          "invested": 12840,
-          "entryLine": null,
-          "passesShadow": true
-        },
-        {
-          "sport": "SOC",
-          "gameKey": "swe_ned",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 11564,
+          "invested": 20528,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1539,7 +1548,7 @@
           "gameKey": "ksa_esp",
           "marketType": "ml",
           "side": "away",
-          "invested": 592,
+          "invested": 603,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1548,7 +1557,7 @@
           "gameKey": "cuw_ecu",
           "marketType": "ml",
           "side": "away",
-          "invested": 550,
+          "invested": 601,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1557,7 +1566,7 @@
           "gameKey": "usa_tur",
           "marketType": "ml",
           "side": "away",
-          "invested": 4952,
+          "invested": 5495,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1566,7 +1575,16 @@
           "gameKey": "swe_ned",
           "marketType": "ml",
           "side": "away",
-          "invested": 1847,
+          "invested": 2396,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "SOC",
+          "gameKey": "swe_ned",
+          "marketType": "ml",
+          "side": "draw",
+          "invested": 2734,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1575,7 +1593,7 @@
           "gameKey": "cuw_ecu",
           "marketType": "ml",
           "side": "draw",
-          "invested": 774,
+          "invested": 889,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1584,16 +1602,7 @@
           "gameKey": "civ_ger",
           "marketType": "ml",
           "side": "draw",
-          "invested": 1464,
-          "entryLine": null,
-          "passesShadow": true
-        },
-        {
-          "sport": "SOC",
-          "gameKey": "swe_ned",
-          "marketType": "ml",
-          "side": "draw",
-          "invested": 1380,
+          "invested": 1886,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1602,16 +1611,7 @@
           "gameKey": "kor_rsa",
           "marketType": "ml",
           "side": "away",
-          "invested": 2814,
-          "entryLine": null,
-          "passesShadow": true
-        },
-        {
-          "sport": "SOC",
-          "gameKey": "cuw_ecu",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 3610,
+          "invested": 2823,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1620,7 +1620,7 @@
           "gameKey": "aut_arg",
           "marketType": "ml",
           "side": "home",
-          "invested": 2329,
+          "invested": 2350,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1629,7 +1629,7 @@
           "gameKey": "gha_eng",
           "marketType": "ml",
           "side": "home",
-          "invested": 2578,
+          "invested": 2600,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1638,7 +1638,25 @@
           "gameKey": "mex_cze",
           "marketType": "ml",
           "side": "away",
-          "invested": 1464,
+          "invested": 1551,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "SOC",
+          "gameKey": "jpn_tun",
+          "marketType": "ml",
+          "side": "draw",
+          "invested": 678,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "SOC",
+          "gameKey": "civ_ger",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 422,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1647,7 +1665,7 @@
           "gameKey": "irq_fra",
           "marketType": "ml",
           "side": "home",
-          "invested": 2225,
+          "invested": 2313,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1665,7 +1683,7 @@
           "gameKey": "bra_sco",
           "marketType": "ml",
           "side": "away",
-          "invested": 1539,
+          "invested": 1574,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1674,7 +1692,16 @@
           "gameKey": "esp_uru",
           "marketType": "ml",
           "side": "away",
-          "invested": 1368,
+          "invested": 1379,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "SOC",
+          "gameKey": "cro_pan",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 1269,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1684,15 +1711,6 @@
           "marketType": "ml",
           "side": "home",
           "invested": 1189,
-          "entryLine": null,
-          "passesShadow": true
-        },
-        {
-          "sport": "SOC",
-          "gameKey": "cro_pan",
-          "marketType": "ml",
-          "side": "away",
-          "invested": 1266,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1709,10 +1727,10 @@
           "sport": "SOC",
           "gameKey": "jpn_tun",
           "marketType": "ml",
-          "side": "draw",
-          "invested": 466,
+          "side": "home",
+          "invested": 283,
           "entryLine": null,
-          "passesShadow": true
+          "passesShadow": false
         },
         {
           "sport": "SOC",
@@ -1728,7 +1746,7 @@
           "gameKey": "sen_nor",
           "marketType": "ml",
           "side": "home",
-          "invested": 754,
+          "invested": 770,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1737,7 +1755,7 @@
           "gameKey": "irn_bel",
           "marketType": "ml",
           "side": "home",
-          "invested": 1106,
+          "invested": 1122,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1746,7 +1764,7 @@
           "gameKey": "hai_mar",
           "marketType": "ml",
           "side": "home",
-          "invested": 1115,
+          "invested": 1133,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1756,15 +1774,6 @@
           "marketType": "ml",
           "side": "home",
           "invested": 89,
-          "entryLine": null,
-          "passesShadow": false
-        },
-        {
-          "sport": "SOC",
-          "gameKey": "civ_ger",
-          "marketType": "ml",
-          "side": "away",
-          "invested": 227,
           "entryLine": null,
           "passesShadow": false
         },
@@ -1785,15 +1794,6 @@
           "invested": 924,
           "entryLine": null,
           "passesShadow": true
-        },
-        {
-          "sport": "SOC",
-          "gameKey": "jpn_tun",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 139,
-          "entryLine": null,
-          "passesShadow": false
         },
         {
           "sport": "SOC",
@@ -1824,21 +1824,39 @@
         },
         {
           "sport": "SOC",
-          "gameKey": "ksa_cpv",
+          "gameKey": "ksa_esp",
           "marketType": "ml",
-          "side": "away",
-          "invested": 228,
+          "side": "home",
+          "invested": 620,
           "entryLine": null,
-          "passesShadow": false
+          "passesShadow": true
         },
         {
           "sport": "SOC",
           "gameKey": "uzb_por",
           "marketType": "ml",
           "side": "home",
-          "invested": 505,
+          "invested": 563,
           "entryLine": null,
           "passesShadow": true
+        },
+        {
+          "sport": "SOC",
+          "gameKey": "ksa_cpv",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 233,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "SOC",
+          "gameKey": "irn_egy",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 155,
+          "entryLine": null,
+          "passesShadow": false
         },
         {
           "sport": "SOC",
@@ -1854,18 +1872,9 @@
           "gameKey": "bel_nzl",
           "marketType": "ml",
           "side": "draw",
-          "invested": 92,
+          "invested": 94,
           "entryLine": null,
           "passesShadow": false
-        },
-        {
-          "sport": "SOC",
-          "gameKey": "ksa_esp",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 507,
-          "entryLine": null,
-          "passesShadow": true
         }
       ]
     },
@@ -1902,7 +1911,7 @@
       "addr": "0x9770ca178764cdca1271934ad613ad7ab4a10ff5",
       "positionsCount": 1,
       "statsSource": "sharpWalletProfiles_derived",
-      "avgSportBet": 7441,
+      "avgSportBet": 7515,
       "willPassShadowGate": 1,
       "willDropAtShadowGate": 0,
       "positions": [
@@ -2026,8 +2035,42 @@
       "tier": "CONFIRMED",
       "name": "ckw",
       "sports": "NBA",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x92672c80d36dcd08172aa1e51dface0f20b70f9a"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x92672c80d36dcd08172aa1e51dface0f20b70f9a",
+      "positionsCount": 3,
+      "statsSource": "sports_sharps",
+      "avgSportBet": 13564,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 2,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "nym_phi",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 1609,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "mil_atl",
+          "marketType": "total",
+          "side": "under",
+          "invested": 66,
+          "entryLine": 7.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "nym_phi",
+          "marketType": "total",
+          "side": "under",
+          "invested": 47,
+          "entryLine": 7.5,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "b839b3",
@@ -2066,19 +2109,35 @@
       "tier": "CONFIRMED",
       "name": null,
       "sports": "NHL",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x21f333307ac6d2e65ac82f014b3dd2b64cbc35e3"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x21f333307ac6d2e65ac82f014b3dd2b64cbc35e3",
+      "positionsCount": 1,
+      "statsSource": "sharpWalletProfiles_derived",
+      "avgSportBet": 5160,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "mil_atl",
+          "marketType": "total",
+          "side": "over",
+          "invested": 1969,
+          "entryLine": 7.5,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "bc44b0",
       "tier": "FLAT",
       "name": null,
-      "sports": "NBA",
+      "sports": "NBA,SOC",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x27f738fe203827445690339104aae35b20bc44b0",
       "positionsCount": 2,
       "statsSource": "sharpWalletProfiles_derived",
-      "avgSportBet": 7898,
+      "avgSportBet": 7919,
       "willPassShadowGate": 2,
       "willDropAtShadowGate": 0,
       "positions": [
@@ -2127,7 +2186,7 @@
       "addr": "0x53757615de1c42b83f893b79d4241a009dc2aeea",
       "positionsCount": 16,
       "statsSource": "sharpWalletProfiles_derived",
-      "avgSportBet": 12208,
+      "avgSportBet": 12191,
       "willPassShadowGate": 2,
       "willDropAtShadowGate": 14,
       "positions": [
@@ -2312,14 +2371,14 @@
     {
       "walletShort": "c911a4",
       "tier": "CONFIRMED",
-      "name": null,
+      "name": "neutralwave23",
       "sports": "NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x5b6331e7ff0831a3fe2ed12004747db1a9c911a4",
-      "positionsCount": 6,
+      "positionsCount": 7,
       "statsSource": "sharpWalletProfiles_derived",
-      "avgSportBet": 8163,
-      "willPassShadowGate": 5,
+      "avgSportBet": 8350,
+      "willPassShadowGate": 6,
       "willDropAtShadowGate": 1,
       "positions": [
         {
@@ -2327,7 +2386,7 @@
           "gameKey": "civ_ger",
           "marketType": "ml",
           "side": "home",
-          "invested": 10188,
+          "invested": 11263,
           "entryLine": null,
           "passesShadow": true
         },
@@ -2339,6 +2398,24 @@
           "invested": 5683,
           "entryLine": null,
           "passesShadow": true
+        },
+        {
+          "sport": "SOC",
+          "gameKey": "swe_ned",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 3748,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "SOC",
+          "gameKey": "cuw_ecu",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 223,
+          "entryLine": null,
+          "passesShadow": false
         },
         {
           "sport": "SOC",
@@ -2357,15 +2434,6 @@
           "invested": 3468,
           "entryLine": null,
           "passesShadow": true
-        },
-        {
-          "sport": "SOC",
-          "gameKey": "cuw_ecu",
-          "marketType": "ml",
-          "side": "away",
-          "invested": 199,
-          "entryLine": null,
-          "passesShadow": false
         },
         {
           "sport": "SOC",
@@ -2414,30 +2482,30 @@
       "walletShort": "cd2f63",
       "tier": "FLAT",
       "name": null,
-      "sports": "NBA",
+      "sports": "MLB,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x84cfffc3f16dcc353094de30d4a45226eccd2f63",
-      "positionsCount": 93,
+      "positionsCount": 105,
       "statsSource": "sharpWalletProfiles_derived",
-      "avgSportBet": 14830,
+      "avgSportBet": 15669,
       "willPassShadowGate": 16,
-      "willDropAtShadowGate": 77,
+      "willDropAtShadowGate": 89,
       "positions": [
         {
           "sport": "SOC",
           "gameKey": "usa_tur",
           "marketType": "ml",
           "side": "away",
-          "invested": 90557,
+          "invested": 94158,
           "entryLine": null,
           "passesShadow": true
         },
         {
           "sport": "SOC",
-          "gameKey": "swe_ned",
+          "gameKey": "civ_ger",
           "marketType": "ml",
-          "side": "away",
-          "invested": 18100,
+          "side": "home",
+          "invested": 106611,
           "entryLine": null,
           "passesShadow": true
         },
@@ -2446,7 +2514,25 @@
           "gameKey": "mex_cze",
           "marketType": "ml",
           "side": "away",
-          "invested": 39836,
+          "invested": 49394,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "SOC",
+          "gameKey": "swe_ned",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 18174,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "SOC",
+          "gameKey": "aut_arg",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 28348,
           "entryLine": null,
           "passesShadow": true
         },
@@ -2456,24 +2542,6 @@
           "marketType": "ml",
           "side": "away",
           "invested": 21216,
-          "entryLine": null,
-          "passesShadow": true
-        },
-        {
-          "sport": "SOC",
-          "gameKey": "aut_arg",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 26675,
-          "entryLine": null,
-          "passesShadow": true
-        },
-        {
-          "sport": "SOC",
-          "gameKey": "civ_ger",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 19552,
           "entryLine": null,
           "passesShadow": true
         },
@@ -2632,6 +2700,15 @@
         },
         {
           "sport": "SOC",
+          "gameKey": "aus_par",
+          "marketType": "ml",
+          "side": "draw",
+          "invested": 882,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "SOC",
           "gameKey": "civ_cuw",
           "marketType": "ml",
           "side": "draw",
@@ -2658,6 +2735,15 @@
           "passesShadow": false
         },
         {
+          "sport": "MLB",
+          "gameKey": "bos_sea",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 392,
+          "entryLine": -1.5,
+          "passesShadow": false
+        },
+        {
           "sport": "SOC",
           "gameKey": "irn_bel",
           "marketType": "ml",
@@ -2681,15 +2767,6 @@
           "marketType": "ml",
           "side": "home",
           "invested": 461,
-          "entryLine": null,
-          "passesShadow": false
-        },
-        {
-          "sport": "SOC",
-          "gameKey": "aus_par",
-          "marketType": "ml",
-          "side": "draw",
-          "invested": 393,
           "entryLine": null,
           "passesShadow": false
         },
@@ -2726,6 +2803,15 @@
           "marketType": "ml",
           "side": "home",
           "invested": 449,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "nym_phi",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 405,
           "entryLine": null,
           "passesShadow": false
         },
@@ -2835,6 +2921,15 @@
           "side": "home",
           "invested": 58,
           "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "nym_phi",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 119,
+          "entryLine": -1.5,
           "passesShadow": false
         },
         {
@@ -3036,6 +3131,33 @@
           "passesShadow": false
         },
         {
+          "sport": "MLB",
+          "gameKey": "min_ari",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 55,
+          "entryLine": 1.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "cin_nyy",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 40,
+          "entryLine": -1.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "nym_phi",
+          "marketType": "total",
+          "side": "over",
+          "invested": 38,
+          "entryLine": 7.5,
+          "passesShadow": false
+        },
+        {
           "sport": "SOC",
           "gameKey": "swe_ned",
           "marketType": "ml",
@@ -3063,6 +3185,15 @@
           "passesShadow": false
         },
         {
+          "sport": "MLB",
+          "gameKey": "cin_nyy",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 39,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
           "sport": "SOC",
           "gameKey": "gha_cro",
           "marketType": "ml",
@@ -3078,6 +3209,15 @@
           "side": "draw",
           "invested": 10,
           "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "min_ari",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 19,
+          "entryLine": -1.5,
           "passesShadow": false
         },
         {
@@ -3117,6 +3257,15 @@
           "passesShadow": false
         },
         {
+          "sport": "MLB",
+          "gameKey": "laa_oak",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 21,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
           "sport": "SOC",
           "gameKey": "gha_eng",
           "marketType": "ml",
@@ -3127,11 +3276,11 @@
         },
         {
           "sport": "MLB",
-          "gameKey": "nym_phi",
-          "marketType": "spread",
-          "side": "home",
-          "invested": 13,
-          "entryLine": -1.5,
+          "gameKey": "laa_oak",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 12,
+          "entryLine": null,
           "passesShadow": false
         },
         {
@@ -3216,6 +3365,24 @@
           "passesShadow": false
         },
         {
+          "sport": "MLB",
+          "gameKey": "pit_col",
+          "marketType": "total",
+          "side": "under",
+          "invested": 5,
+          "entryLine": 10.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "bos_sea",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 5,
+          "entryLine": 1.5,
+          "passesShadow": false
+        },
+        {
           "sport": "SOC",
           "gameKey": "cro_pan",
           "marketType": "ml",
@@ -3238,6 +3405,15 @@
           "gameKey": "aut_alg",
           "marketType": "ml",
           "side": "draw",
+          "invested": 2,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "nym_phi",
+          "marketType": "ml",
+          "side": "away",
           "invested": 2,
           "entryLine": null,
           "passesShadow": false
