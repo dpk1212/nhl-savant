@@ -6964,12 +6964,16 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     ? new Date(commenceTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' })
     : null;
 
-  const consensusOdds = consensusSide === 'away' ? pinnGame?.current?.away
-                      : consensusSide === 'draw' ? pinnGame?.current?.draw
-                      : pinnGame?.current?.home;
+  // Draw-aware per-side odds resolvers. For 2-way sports the 'draw' branch is
+  // never hit, so these are identical to the old `away ? a : b` ternaries — but
+  // a 3-way soccer DRAW pick now reads the draw line instead of leaking the
+  // home/favorite price (which produced "Draw ML -1100" = France's odds).
+  const sideCurrentOdds = (sk) => sk === 'away' ? pinnGame?.current?.away : sk === 'draw' ? pinnGame?.current?.draw : pinnGame?.current?.home;
+  const sideBookOdds = (book, sk) => sk === 'away' ? book?.away : sk === 'draw' ? book?.draw : book?.home;
+  const consensusOdds = sideCurrentOdds(consensusSide);
   const oppOdds = consensusSide === 'away' ? pinnGame?.current?.home : pinnGame?.current?.away;
-  const bestRetail = consensusSide === 'away' ? pinnGame?.bestAway : pinnGame?.bestHome;
-  const bestBook = consensusSide === 'away' ? pinnGame?.bestAwayBook : pinnGame?.bestHomeBook;
+  const bestRetail = consensusSide === 'away' ? pinnGame?.bestAway : consensusSide === 'draw' ? pinnGame?.bestDraw : pinnGame?.bestHome;
+  const bestBook = consensusSide === 'away' ? pinnGame?.bestAwayBook : consensusSide === 'draw' ? pinnGame?.bestDrawBook : pinnGame?.bestHomeBook;
   const pinnProb = impliedProb(consensusOdds);
   const retailProb = impliedProb(bestRetail);
   const evEdge = (pinnProb && retailProb) ? +((pinnProb - retailProb) * 100).toFixed(1) : null;
@@ -7026,11 +7030,12 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const polyPoints = polyPriceHistory?.points || [];
   const pinnAwayPoints = pinnHistory.map(h => h.away);
   const pinnHomePoints = pinnHistory.map(h => h.home);
-  const pinnConsensusPoints = consensusSide === 'away' ? pinnAwayPoints : pinnHomePoints;
+  const pinnDrawPoints = pinnHistory.map(h => h.draw);
+  const pinnConsensusPoints = consensusSide === 'away' ? pinnAwayPoints : consensusSide === 'draw' ? pinnDrawPoints : pinnHomePoints;
 
   // Directional context: use opener-to-current (not sparkline) to avoid intraday noise
-  const pinnOpenOdds = consensusSide === 'away' ? pinnGame?.opener?.away : pinnGame?.opener?.home;
-  const pinnCurrentOdds = consensusSide === 'away' ? pinnGame?.current?.away : pinnGame?.current?.home;
+  const pinnOpenOdds = consensusSide === 'away' ? pinnGame?.opener?.away : consensusSide === 'draw' ? pinnGame?.opener?.draw : pinnGame?.opener?.home;
+  const pinnCurrentOdds = sideCurrentOdds(consensusSide);
   const pinnOpenProb = impliedProb(pinnOpenOdds);
   const pinnCurrentProb = impliedProb(pinnCurrentOdds);
   const pinnMovingWith = !!(pinnOpenProb && pinnCurrentProb) && pinnCurrentProb > pinnOpenProb;
@@ -9432,13 +9437,14 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', borderRadius: '8px', overflow: 'hidden', background: 'rgba(255,255,255,0.02)' }}>
               {Object.entries(allBooks)
+                .filter(([, b]) => sideBookOdds(b, consensusSide) != null)
                 .sort(([, a], [, b]) => {
-                  const aO = consensusSide === 'away' ? a.away : a.home;
-                  const bO = consensusSide === 'away' ? b.away : b.home;
+                  const aO = sideBookOdds(a, consensusSide);
+                  const bO = sideBookOdds(b, consensusSide);
                   return bO - aO;
                 })
                 .map(([key, book]) => {
-                  const odds = consensusSide === 'away' ? book.away : book.home;
+                  const odds = sideBookOdds(book, consensusSide);
                   const isBest = odds === bestRetail && hasEV;
                   const isPinn = key === 'pinnacle';
                   return (
@@ -10834,9 +10840,10 @@ export default function SharpFlow() {
                         let pinnOdds = null, bestRetail = null, bestBook = null, evEdge = null, allBooks = {}, spreadLine = null, totalLine = null;
                         if (pinnGame) {
                           if (p.marketType === 'ML') {
-                            pinnOdds = p.side === 'away' ? pinnGame.current?.away : pinnGame.current?.home;
-                            bestRetail = p.side === 'away' ? pinnGame.bestAway : pinnGame.bestHome;
-                            bestBook = p.side === 'away' ? pinnGame.bestAwayBook : pinnGame.bestHomeBook;
+                            // 3-way aware: a soccer draw reads the draw line, not the home fallback.
+                            pinnOdds = p.side === 'away' ? pinnGame.current?.away : p.side === 'draw' ? pinnGame.current?.draw : pinnGame.current?.home;
+                            bestRetail = p.side === 'away' ? pinnGame.bestAway : p.side === 'draw' ? pinnGame.bestDraw : pinnGame.bestHome;
+                            bestBook = p.side === 'away' ? pinnGame.bestAwayBook : p.side === 'draw' ? pinnGame.bestDrawBook : pinnGame.bestHomeBook;
                             allBooks = pinnGame.allBooks || {};
                           } else if (p.marketType === 'SPREAD') {
                             pinnOdds = p.side === 'away' ? pinnGame.spreadCurrent?.awayOdds : pinnGame.spreadCurrent?.homeOdds;
@@ -10900,7 +10907,7 @@ export default function SharpFlow() {
                           if (!pinnGame) return false;
                           const hist = p.marketType === 'ML' ? (pinnGame.history || []) : p.marketType === 'SPREAD' ? (pinnGame.spreadHistory || []) : (pinnGame.totalHistory || []);
                           if (hist.length < 2) return false;
-                          const getOdds = (h) => p.marketType === 'ML' ? (p.side === 'away' ? h.away : h.home) : p.marketType === 'SPREAD' ? (p.side === 'away' ? h.awayOdds : h.homeOdds) : (p.side === 'over' ? h.overOdds : h.underOdds);
+                          const getOdds = (h) => p.marketType === 'ML' ? (p.side === 'away' ? h.away : p.side === 'draw' ? h.draw : h.home) : p.marketType === 'SPREAD' ? (p.side === 'away' ? h.awayOdds : h.homeOdds) : (p.side === 'over' ? h.overOdds : h.underOdds);
                           const openOdds = getOdds(hist[0]);
                           const curOdds = getOdds(hist[hist.length - 1]);
                           if (!openOdds || !curOdds) return false;
@@ -11149,7 +11156,7 @@ export default function SharpFlow() {
                                   if (hist.length < 2) return null;
 
                                   const getOdds = (h) => {
-                                    if (p.marketType === 'ML') return p.side === 'away' ? h.away : h.home;
+                                    if (p.marketType === 'ML') return p.side === 'away' ? h.away : p.side === 'draw' ? h.draw : h.home;
                                     if (p.marketType === 'SPREAD') return p.side === 'away' ? h.awayOdds : h.homeOdds;
                                     return p.side === 'over' ? h.overOdds : h.underOdds;
                                   };
@@ -11472,13 +11479,14 @@ export default function SharpFlow() {
                                     </div>
                                     <div style={{ display: 'flex', flexWrap: 'wrap' }}>
                                       {Object.entries(allBooks)
+                                        .filter(([, b]) => (p.side === 'away' ? b.away : p.side === 'draw' ? b.draw : b.home) != null)
                                         .sort(([, a], [, b]) => {
-                                          const aO = p.side === 'away' ? a.away : a.home;
-                                          const bO = p.side === 'away' ? b.away : b.home;
+                                          const aO = p.side === 'away' ? a.away : p.side === 'draw' ? a.draw : a.home;
+                                          const bO = p.side === 'away' ? b.away : p.side === 'draw' ? b.draw : b.home;
                                           return bO - aO;
                                         })
                                         .map(([key, book]) => {
-                                          const odds = p.side === 'away' ? book.away : book.home;
+                                          const odds = p.side === 'away' ? book.away : p.side === 'draw' ? book.draw : book.home;
                                           const isBest = odds === bestRetail && hasEV;
                                           const isPinn = key === 'pinnacle';
                                           return (
@@ -13215,15 +13223,15 @@ export default function SharpFlow() {
 
                   const ss = gd.summary;
                   const cSide = ss.consensus;
-                  const cOdds = cSide === 'away' ? pg?.current?.away : pg?.current?.home;
-                  const bRetail = cSide === 'away' ? pg?.bestAway : pg?.bestHome;
+                  const cOdds = cSide === 'away' ? pg?.current?.away : cSide === 'draw' ? pg?.current?.draw : pg?.current?.home;
+                  const bRetail = cSide === 'away' ? pg?.bestAway : cSide === 'draw' ? pg?.bestDraw : pg?.bestHome;
                   const pProb = impliedProb(cOdds);
                   if (pProb != null && pProb >= 0.95) continue;
                   const rProb = impliedProb(bRetail);
                   const ev = (pProb && rProb) ? +((pProb - rProb) * 100).toFixed(1) : null;
                   const pinnConf = pg?.movement?.direction === cSide;
-                  const cOpenOdds = cSide === 'away' ? pg?.opener?.away : pg?.opener?.home;
-                  const cCurOdds = cSide === 'away' ? pg?.current?.away : pg?.current?.home;
+                  const cOpenOdds = cSide === 'away' ? pg?.opener?.away : cSide === 'draw' ? pg?.opener?.draw : pg?.opener?.home;
+                  const cCurOdds = cSide === 'away' ? pg?.current?.away : cSide === 'draw' ? pg?.current?.draw : pg?.current?.home;
                   const cOpenP = impliedProb(cOpenOdds);
                   const cCurP = impliedProb(cCurOdds);
                   const pinnMoveWith = !!(cOpenP && cCurP) && cCurP > cOpenP;
