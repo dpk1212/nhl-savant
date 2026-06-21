@@ -1039,6 +1039,7 @@ export const AGS_V12_STAKE_TIER_META = {
   SUPER:      { label: 'SUPER TOP PICK', short: 'SUPER',   color: '#E8B85C', bg: 'rgba(232,184,92,0.15)',  units: V12_1_SUPER_UNITS,     ribbon: 'SUPER', stars: 5 },
   TOP:        { label: 'TOP PICK',       short: 'TOP',     color: '#22C55E', bg: 'rgba(34,197,94,0.15)',   units: V12_1_TOP_UNITS,       ribbon: 'TOP',   stars: 4 },
   MINI:       { label: 'STRONG PICK',    short: 'STRONG',  color: '#14B8A6', bg: 'rgba(20,184,166,0.15)',  units: V12_1_MINI_UNITS,      ribbon: null,    stars: 4 },
+  RANK:       { label: 'RANK PLAY',      short: 'RANK',    color: '#A855F7', bg: 'rgba(168,85,247,0.15)',  units: 4,                     ribbon: null,    stars: 4 },
   CONFIRMED:  { label: 'CONFIRMED',      short: 'CONFIRM', color: '#3B82F6', bg: 'rgba(59,130,246,0.15)',  units: V12_1_CONFIRMED_UNITS, ribbon: null,    stars: 3 },
   MONITORING: { label: 'MONITORING',     short: 'MONITOR', color: '#6B7280', bg: 'rgba(107,114,128,0.12)', units: 0,                     ribbon: null,    stars: 0 },
   FADE:       { label: 'FADE',           short: 'FADE',    color: '#ef4444', bg: 'rgba(239,68,68,0.12)',   units: 0,                     ribbon: null,    stars: 0 },

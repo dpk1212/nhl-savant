@@ -1303,6 +1303,7 @@ function starsFromAgsuTier(tier) {
   if (tier === 'SUPER') return 5.0;
   if (tier === 'TOP') return 4.0;
   if (tier === 'MINI') return 4.0;
+  if (tier === 'RANK') return 4.0;       // 2-for-0 wallet-slice rescue (4u)
   if (tier === 'CONFIRMED') return 3.0;
   if (tier === 'MONITORING') return 1.0;
   // Legacy score-quintile tiers.

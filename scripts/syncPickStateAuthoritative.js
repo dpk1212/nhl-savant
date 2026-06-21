@@ -438,6 +438,39 @@ function walletPriorStatsFromSportRec(sportRec) {
   };
 }
 
+// ── RANK-RESCUE (2-for-0 wallet slice) ──────────────────────────────────────
+// A side "qualifies" when ≥2 ELIGIBLE whitelist wallets back it and 0 back the
+// other side. Eligible = whitelistTier ∈ {CONFIRMED,FLAT,WR50} AND ≥ RANK_RESCUE
+// _MIN_PICKS settled featured picks in-sport (profile.bySport[sport].picks.n).
+// For a LIVE pick this current count is leak-free (today's games aren't settled).
+// Backtest (v12 era, 20d): muted-&-qualifying picks went 62% / +17% flat, ~1.45/day,
+// ROI-neutral to the HC book. Used ONLY to rescue HC-muted picks — NOT to up-size
+// already-staked picks (the slice adds no edge inside the HC book).
+const RANK_RESCUE_MIN_PICKS = 8;
+const RANK_RESCUE_UNITS = 4;
+function isRankEligible(profile, sport) {
+  const rec = profile?.bySport?.[sport];
+  if (!rec) return false;
+  const tier = rec.whitelistTier;
+  if (tier !== 'CONFIRMED' && tier !== 'FLAT' && tier !== 'WR50') return false;
+  return (Number(rec.picks?.n) || 0) >= RANK_RESCUE_MIN_PICKS;
+}
+function computeRankSlice(walletDetails, mySide, sport, walletProfiles) {
+  if (!Array.isArray(walletDetails) || !mySide || !sport) return { backing: 0, against: 0, qualifies: false };
+  let backing = 0, against = 0;
+  const seen = new Set();
+  for (const w of walletDetails) {
+    const short = String(w.walletShort || w.wallet || '').slice(-6).toLowerCase();
+    if (!short || seen.has(short)) continue;            // one vote per wallet
+    seen.add(short);
+    const profile = walletProfiles.get(short) || walletProfiles.get(short.toUpperCase());
+    if (!isRankEligible(profile, sport)) continue;
+    if (w.side === mySide) backing++;
+    else if (w.side) against++;
+  }
+  return { backing, against, qualifies: backing >= 2 && against === 0 };
+}
+
 // ── Firebase init ──────────────────────────────────────────────────────────
 function initFirebase() {
   if (!admin.apps.length) {
@@ -1344,6 +1377,37 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     finalUnitsApplied = hc.units;      // odds-capped; MONITORING → 0u
   }
 
+  // ─── Manual RANK-promotion override (wallet-rank coalition path) ──────
+  // A pick explicitly promoted because the FOR side carried ≥2 top-ranked
+  // whitelist wallets (point-in-time) is stamped with `sd.manualStake`. We
+  // honor that bet size and tag the stake tier RANK, bypassing the HC sizer
+  // — but ONLY while the base v12 signal is still ACTIVE and positive, so a
+  // later side-flip or mute still demotes it honestly. Completely inert on
+  // any doc that does not carry `manualStake`.
+  if (Number.isFinite(sd.manualStake) && sd.manualStake > 0
+      && appliedStatus === 'ACTIVE' && scoreV12Live != null && scoreV12Live > 0) {
+    finalUnitsApplied = sd.manualStake;
+    hcStakeTier = sd.manualStakeTier || 'RANK';
+  }
+
+  // ─── RANK-RESCUE: 2-for-0 wallet slice rescues an HC-muted pick ───────
+  // When v12a's HC sizer muted a v12-shipped (score>0) pick to 0u but the FOR
+  // side is 2-for-0 (≥2 eligible whitelist wallets backing, 0 against), promote
+  // it to RANK_RESCUE_UNITS and tag the stake tier RANK. ONLY rescues muted
+  // picks — never up-sizes an already-staked pick. manualStake (if present)
+  // already set the size above, so we skip when one is in effect.
+  let rankRescued = false;
+  if (v121Eligible && appliedStatus === 'ACTIVE' && scoreV12Live != null && scoreV12Live > 0
+      && finalUnitsApplied === 0
+      && !(Number.isFinite(sd.manualStake) && sd.manualStake > 0)) {
+    const slice = computeRankSlice(wd, side, pick.sport, walletProfiles);
+    if (slice.qualifies) {
+      finalUnitsApplied = RANK_RESCUE_UNITS;
+      hcStakeTier = 'RANK';
+      rankRescued = true;
+    }
+  }
+
   // ─── lockStage promote/demote — v12 gate ──────────────────────────────
   // Ship floor: v12 score > 0 (the mute boundary). Picks above 0 LOCK
   // with units determined by the ladder (SMALL 0.25u → ELITE 5u).
@@ -1576,6 +1640,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     } else if (sd.v8_agsTier == null) {
       changes.push(`AGS-v12: ∅ → ∅ (no signal — defensively muted to FADE/0u)`);
     }
+  }
+  if (rankRescued) {
+    changes.push(`RANK-RESCUE: 2-for-0 slice promoted HC-muted pick → ${RANK_RESCUE_UNITS}u`);
   }
   // finalUnits drift logging — flag any time the canonical bet size changes
   // by ≥0.05u so cycle output makes the change visible.
