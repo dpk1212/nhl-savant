@@ -848,6 +848,56 @@ const AGS_U_CUTOVER = '2026-05-14';
 // v10, or v11 (retired logistic-regression models) or by the legacy
 // stars system and are bucketed into the archive view.
 const V12_LAUNCH = '2026-06-01';
+
+// Resolve the cron-stamped AGS-U tier on a graded pick (v8_agsTier preferred,
+// v8_lockTier fallback). Shared by the performance dashboard and paywall so
+// both surfaces count the exact same v12-era pick population.
+function resolveAgsuTier(p) {
+  if (typeof p?.v8_agsTier === 'string' && p.v8_agsTier !== 'UNKNOWN' && AGS_TIER_META[p.v8_agsTier]) return p.v8_agsTier;
+  if (typeof p?.v8_lockTier === 'string' && AGS_TIER_META[p.v8_lockTier]) return p.v8_lockTier;
+  return null;
+}
+
+// Headline v12-era stats — mirrors the dashboard hero (§ AGS-U performance):
+//   • date ≥ V12_LAUNCH, not cancelled, not tracked-only, has outcome
+//   • must resolve to a known AGS-U tier (same gate as rawAgsuPicks)
+//   • profit = Σ stored result.profit (not recomputed from units)
+function computeV12EraStats(picks) {
+  if (!Array.isArray(picks) || picks.length === 0) return { ready: false };
+  const graded = picks.filter(p =>
+    p && p.date && !p.cancelled && p.date >= V12_LAUNCH && !p.tracked && p.outcome && resolveAgsuTier(p)
+  );
+  let w = 0, l = 0, pu = 0, profit = 0, units = 0;
+  for (const p of graded) {
+    units += (p.units || 0);
+    profit += (p.profit || 0);
+    if (p.outcome === 'WIN') w++;
+    else if (p.outcome === 'LOSS') l++;
+    else if (p.outcome === 'PUSH') pu++;
+  }
+  const totalGraded = w + l + pu;
+  if (totalGraded === 0) return { ready: false };
+  const winPct = (w + l) > 0 ? (w / (w + l)) * 100 : 0;
+  const roi = units > 0 ? (profit / units) * 100 : 0;
+  const launchMs = new Date(V12_LAUNCH + 'T12:00:00').getTime();
+  const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  const todayMs = new Date(todayStr + 'T12:00:00').getTime();
+  const daysLive = Math.max(1, Math.round((todayMs - launchMs) / 86400000) + 1);
+  return {
+    ready: true, w, l, pu, totalGraded, profit, units, winPct, roi,
+    isProfit: profit >= 0, daysLive,
+    record: `${w}-${l}${pu > 0 ? `-${pu}` : ''}`,
+  };
+}
+
+// Sharp Flow paywall — limited-time promo (mirrors Pricing.jsx PROMO_CODES.SUMMER).
+const PAYWALL_PROMO = {
+  code: 'SUMMER',
+  discount: 0.33,
+  label: 'Summer Launch',
+  fullPrice: 25.99,
+  endMs: new Date('2026-09-01T04:00:00Z').getTime(), // midnight ET Aug 31
+};
 //
 // Stubbed eligibility helpers below return `true` unconditionally so
 // any straggling caller that hasn't been swept will short-circuit to
@@ -12028,11 +12078,7 @@ export default function SharpFlow() {
               // it couldn't score). Resolved tier is stashed as
               // _resolvedTier on a shallow-cloned object so we don't
               // mutate the cached pick.
-              const resolveTier = (p) => {
-                if (typeof p.v8_agsTier === 'string' && p.v8_agsTier !== 'UNKNOWN' && AGS_TIER_META[p.v8_agsTier]) return p.v8_agsTier;
-                if (typeof p.v8_lockTier === 'string' && AGS_TIER_META[p.v8_lockTier]) return p.v8_lockTier;
-                return null;
-              };
+              const resolveTier = resolveAgsuTier;
               // Era-aware scope: 'v12' (live model only, the default) vs
               // 'all' (every pick ever graded, including legacy-stars era
               // before AGS-U existed). In v12 scope we require both the
@@ -14683,10 +14729,7 @@ function SportTabs({ active, onChange }) {
 function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
   const [now, setNow] = useState(Date.now());
 
-  // Countdown to Sunday April 20 at midnight ET
-  const promoEnd = new Date('2026-04-21T04:00:00Z').getTime(); // midnight ET = 4AM UTC
-  const fullPrice = 25.99;
-  const discount = 0.37;
+  const { fullPrice, discount, endMs, code: promoCode, label: promoLabel } = PAYWALL_PROMO;
   const promoPrice = (fullPrice * (1 - discount)).toFixed(2);
 
   useEffect(() => {
@@ -14694,55 +14737,14 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
     return () => clearInterval(id);
   }, []);
 
-  const remaining = Math.max(0, promoEnd - now);
+  const remaining = Math.max(0, endMs - now);
   const days = Math.floor(remaining / 86400000);
   const hours = Math.floor((remaining % 86400000) / 3600000);
   const minutes = Math.floor((remaining % 3600000) / 60000);
   const seconds = Math.floor((remaining % 60000) / 1000);
   const promoActive = remaining > 0;
 
-  // ── LIVE v12 PROOF derived from the same all-time PnL feed the
-  // dashboard uses. Computed here (not passed in) so the paywall
-  // remains self-contained and always reflects whatever scope the
-  // graded ledger has. Mirrors SharpFlow's rawAgsuPicks v12 filter:
-  //   • only picks dated on/after V12_LAUNCH
-  //   • excludes cancelled
-  //   • excludes tracked-only (units = 0)
-  //   • excludes pending (no outcome yet)
-  // The output is the same record / W% / profit / ROI the dashboard
-  // shows, so a free user sees the same numbers the live customer
-  // sees — no exaggeration, no marketing-only stats. If pnlData is
-  // still loading or empty, proofReady === false and the banner
-  // falls back to a non-numeric premium chrome.
-  const v12Proof = (() => {
-    const picks = pnlData?.picks || [];
-    if (picks.length === 0) return { ready: false };
-    const live = picks.filter(p =>
-      p && p.date && !p.cancelled && p.date >= V12_LAUNCH && !p.tracked && p.outcome
-    );
-    let w = 0, l = 0, pu = 0, profit = 0, units = 0;
-    for (const p of live) {
-      const u = p.units || 0;
-      units += u;
-      if (p.outcome === 'WIN')       { w++;  profit += (p.profit || 0); }
-      else if (p.outcome === 'LOSS') { l++;  profit -= u; }
-      else if (p.outcome === 'PUSH') { pu++; }
-    }
-    const totalGraded = w + l + pu;
-    if (totalGraded === 0) return { ready: false };
-    const winPct = (w + l) > 0 ? (w / (w + l)) * 100 : 0;
-    const roi = units > 0 ? (profit / units) * 100 : 0;
-    const isProfit = profit >= 0;
-    // Days live since V12_LAUNCH (capped at today).
-    const launchMs = new Date(V12_LAUNCH + 'T12:00:00').getTime();
-    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-    const todayMs = new Date(todayStr + 'T12:00:00').getTime();
-    const daysLive = Math.max(1, Math.round((todayMs - launchMs) / 86400000) + 1);
-    return {
-      ready: true, w, l, pu, totalGraded, profit, units, winPct, roi, isProfit, daysLive,
-      record: `${w}-${l}${pu > 0 ? `-${pu}` : ''}`,
-    };
-  })();
+  const v12Proof = computeV12EraStats(pnlData?.picks || []);
 
   // Features rewritten as proof-backed bullets. Numbers come straight
   // from v12Proof when available, fall back to neutral copy otherwise.
@@ -14786,7 +14788,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
           letterSpacing: '0.06em',
         }}>
           <span style={{ fontSize: '0.72rem', fontWeight: 900, color: '#0B1120', textTransform: 'uppercase' }}>
-            NBA & NHL PLAYOFF LAUNCH · 37% OFF
+            {promoLabel.toUpperCase()} · 33% OFF FOR LIFE
           </span>
         </div>
       )}
@@ -15099,7 +15101,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
             <>
               <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
                 <div style={{ ...T.micro, color: B.gold, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.6rem', fontSize: '0.62rem' }}>
-                  PLAYOFF LAUNCH OFFER ENDS IN
+                  SUMMER LAUNCH OFFER ENDS IN
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem' }}>
                   {[
@@ -15166,11 +15168,11 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
                   fontSize: '0.88rem', fontWeight: 900, color: B.gold,
                   padding: '0.15rem 0.5rem', borderRadius: '4px',
                   background: 'rgba(212,175,55,0.18)', letterSpacing: '0.08em',
-                }}>PLAYOFFS</span>
+                }}>{promoCode}</span>
                 <span style={{ fontSize: '0.78rem', fontWeight: 700, color: B.textSec }}>
                   {' '}— </span>
                 <span style={{ fontSize: '0.78rem', fontWeight: 800, color: B.green }}>
-                  37% off for life
+                  33% off for life
                 </span>
               </div>
             </>
@@ -15206,7 +15208,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
 
           {/* CTA — green gradient w/ gold-halo hover */}
           <a
-            href={promoActive ? '#/pricing?promo=PLAYOFFS' : '#/pricing'}
+            href={promoActive ? `#/pricing?promo=${promoCode}` : '#/pricing'}
             className="sharpflow-paywall-cta"
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.55rem',
@@ -15219,7 +15221,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
               border: '1px solid rgba(255,255,255,0.10)',
             }}
           >
-            {promoActive ? 'Claim Playoff Offer →' : 'Start Free Trial →'}
+            {promoActive ? 'Claim Summer Offer →' : 'Start Free Trial →'}
           </a>
 
           {/* Trust badges */}

@@ -26,6 +26,7 @@ const logEvent = (eventName, params) => {
 
 const PROMO_CODES = {
   PLAYOFFS: { code: 'PLAYOFFS', discount: 37, label: 'NBA & NHL Playoff Launch', forLife: true, expires: new Date('2026-04-21T04:00:00Z') },
+  SUMMER:   { code: 'SUMMER',   discount: 33, label: 'Summer Launch', forLife: true, expires: new Date('2026-09-01T04:00:00Z') },
 };
 
 const Pricing = () => {
