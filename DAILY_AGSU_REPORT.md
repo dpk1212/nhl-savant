@@ -1,6 +1,6 @@
 # AGS-Unified — V12 Performance Monitor
 
-**Generated:** Sunday, June 21, 2026 at 9:59 AM ET
+**Generated:** Sunday, June 21, 2026 at 10:08 AM ET
 
 **Active model:** `ags-unified-v12` · **V12 went live:** 2026-06-01 · **Days live:** 21
 
