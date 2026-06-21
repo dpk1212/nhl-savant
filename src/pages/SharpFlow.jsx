@@ -12049,7 +12049,7 @@ export default function SharpFlow() {
                   if (agsuEraScope === 'v12' && p.date < V12_LAUNCH) return null;
                   const tier = resolveTier(p);
                   if (agsuEraScope === 'v12' && !tier) return null;
-                  return { ...p, _resolvedTier: tier || 'LEGACY' };
+                  return { ...p, _resolvedTier: tier || 'LEGACY', _stakeTier: (typeof p.v8_hcStakeTier === 'string' ? p.v8_hcStakeTier : null) };
                 })
                 .filter(Boolean));
               const isAgsuFiltered = agsuDateRange !== 'all' || agsuSport !== 'ALL';
@@ -12096,20 +12096,36 @@ export default function SharpFlow() {
               // adequately and CLV doesn't need to be in front of every user.
 
               // ─── Per-tier breakdown from filtered picks ────────────────
-              // v12 ladder — absolute units, not multipliers.
+              // v12ab STAKE tiers — the actual sizing system (HC-margin ladder
+              // + RANK-RESCUE), NOT the score quintile. The score-quintile tiers
+              // (ELITE/PREMIUM/…) only SELECT the side; they don't size it, so
+              // bucketing performance by them was misleading. We bucket by the
+              // cron-stamped v8_hcStakeTier instead.
               const TIER_DEFS = [
-                { key: 'ELITE',   size: '5.00u' },
-                { key: 'PREMIUM', size: '3.00u' },
-                { key: 'LOCK',    size: '1.00u' },
-                { key: 'LEAN',    size: '0.50u' },
-                { key: 'WEAK',    size: '0.25u' },
-                { key: 'FADE',    size: '0' },
+                { key: 'SUPER',     size: '6u' },
+                { key: 'TOP',       size: '4u' },
+                { key: 'RANK',      size: '4u' },
+                { key: 'MINI',      size: '3u' },
+                { key: 'CONFIRMED', size: '1u' },
               ];
+              // Concise display meta for the stake tiers (label + accent). Kept
+              // local so the long product labels don't overflow the small cards.
+              const STAKE_TIER_META = {
+                SUPER:     { label: 'SUPER TOP', color: '#E8B85C' },
+                TOP:       { label: 'TOP PICK',  color: '#22C55E' },
+                RANK:      { label: 'RANK PLAY', color: '#A855F7' },
+                MINI:      { label: 'STRONG',    color: '#14B8A6' },
+                CONFIRMED: { label: 'CONFIRMED', color: '#3B82F6' },
+              };
               const tierAgg = {};
               for (const t of TIER_DEFS) tierAgg[t.key] = { wins:0, losses:0, pushes:0, units:0, profit:0, pending:0, tracked:0, sparkPnL:[] };
               const sortedByDate = [...agsuPicks].sort((a,b) => (a.date||'').localeCompare(b.date||''));
               for (const p of sortedByDate) {
-                const tier = p._resolvedTier;
+                // Bucket by v12ab STAKE tier (cron-stamped). Picks without a
+                // stake tier are pre-v12a score-ladder picks, and MONITORING/
+                // FADE are 0u (not staked) — neither belongs in the staked-tier
+                // scoreboard, so they fall through.
+                const tier = p._stakeTier;
                 if (!tier || !tierAgg[tier]) continue;
                 const b = tierAgg[tier];
                 if (p.tracked) { b.tracked++; continue; }
@@ -12801,7 +12817,7 @@ export default function SharpFlow() {
                                   </div>
                                 );
                               }
-                              const meta = AGS_TIER_META[stat.key] || { label: stat.key, color: B.gold };
+                              const meta = STAKE_TIER_META[stat.key] || { label: stat.key, color: B.gold };
                               const slotIsBest = slot === 'BEST TIER';
                               const headColor = slotIsBest ? B.green : B.red;
                               const headTint = slotIsBest ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)';
@@ -12856,7 +12872,7 @@ export default function SharpFlow() {
                                     color: meta.color, letterSpacing: '0.08em',
                                     marginTop: '0.4rem',
                                   }}>
-                                    {meta.label}{isV12Scope && stat.size ? <span style={{ color: B.textMuted, fontWeight: 600, letterSpacing: '0.04em' }}> · {stat.size}u/play</span> : null}
+                                    {meta.label}{stat.size ? <span style={{ color: B.textMuted, fontWeight: 600, letterSpacing: '0.04em' }}> · {stat.size}/play</span> : null}
                                   </div>
                                   {/* Sub-line: record · profit · graded.
                                       Reformatted into a single rhythmic line with consistent
@@ -12927,7 +12943,7 @@ export default function SharpFlow() {
                                   }}>
                                     {TIER_DEFS.map(t => {
                                       const b = tierAgg[t.key];
-                                      const meta = AGS_TIER_META[t.key];
+                                      const meta = STAKE_TIER_META[t.key];
                                       const graded = b.wins + b.losses + b.pushes;
                                       const tierRoi = b.units > 0 ? (b.profit / b.units) * 100 : 0;
                                       const winPct = (b.wins + b.losses) > 0 ? (b.wins / (b.wins + b.losses)) * 100 : null;
@@ -12955,11 +12971,9 @@ export default function SharpFlow() {
                                             <span style={{ ...T.micro, fontWeight: 900, color: meta.color, fontSize: '0.6rem', letterSpacing: '0.06em' }}>
                                               {meta.label}
                                             </span>
-                                            {isV12Scope && (
-                                              <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem', fontWeight: 700, padding: '0.08rem 0.25rem', borderRadius: '3px', background: 'rgba(0,0,0,0.25)' }}>
-                                                {t.size}
-                                              </span>
-                                            )}
+                                            <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem', fontWeight: 700, padding: '0.08rem 0.25rem', borderRadius: '3px', background: 'rgba(0,0,0,0.25)' }}>
+                                              {t.size}
+                                            </span>
                                           </div>
                                           <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.3rem', lineHeight: 1 }}>
                                             <span style={{ fontSize: '1.05rem', fontWeight: 900, color: B.text, fontFeatureSettings: "'tnum'", fontVariantNumeric: 'tabular-nums' }}>
