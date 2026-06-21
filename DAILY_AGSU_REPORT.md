@@ -1,6 +1,6 @@
 # AGS-Unified — V12 Performance Monitor
 
-**Generated:** Sunday, June 21, 2026 at 9:44 AM ET
+**Generated:** Sunday, June 21, 2026 at 9:59 AM ET
 
 **Active model:** `ags-unified-v12` · **V12 went live:** 2026-06-01 · **Days live:** 21
 
@@ -8,17 +8,17 @@
 
 ## § 1 — Executive Summary
 
-> 🟢 **V12 is currently WINNING.** Since going live on **2026-06-01** (21 days ago), V12 has evaluated **559** picks, shipped **244** for real money (43.6% ship rate), and muted the other **315**. On the shipped picks V12 has gone **135-109** (55.3% win), staked **542.75u**, and returned **+33.98u** at **+6.3% ROI**.
+> 🟢 **V12 is currently WINNING.** Since going live on **2026-06-01** (21 days ago), V12 has evaluated **561** picks, shipped **244** for real money (43.5% ship rate), and muted the other **317**. On the shipped picks V12 has gone **135-109** (55.3% win), staked **542.75u**, and returned **+33.98u** at **+6.3% ROI**.
 
 ### Snapshot
 
 | Metric                              | Value                          |
 |-------------------------------------|--------------------------------|
 | Days V12 has been authoritative     |                             21 |
-| Picks V12 has evaluated             |                            559 |
+| Picks V12 has evaluated             |                            561 |
 | Picks SHIPPED (units > 0)           |                            244 |
-| Picks MUTED (score ≤ 0, FADE)       |                            315 |
-| Ship rate                           |                          43.6% |
+| Picks MUTED (score ≤ 0, FADE)       |                            317 |
+| Ship rate                           |                          43.5% |
 | Live W-L                            |                        135-109 |
 | Live Win %                          |                          55.3% |
 | Live PnL (units)                    |                         +33.98 |
@@ -123,7 +123,7 @@ Day-by-day production since V12 went live. **Evaluated** = picks V12 scored that
 | 2026-06-18 |        21 |    4 |     7 | 3-1        |  75.0% |     12.50 |      +4.09 |     32.7% |     +29.95 |
 | 2026-06-19 |        36 |    5 |    19 | 3-2        |  60.0% |     17.00 |      +2.00 |     11.8% |     +31.95 |
 | 2026-06-20 |        20 |    4 |    13 | 3-1        |  75.0% |     13.00 |      +2.03 |     15.6% |     +33.98 |
-| 2026-06-21 |        20 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +33.98 |
+| 2026-06-21 |        22 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +33.98 |
 | 2026-06-23 |         1 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +33.98 |
 | 2026-06-25 |         1 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +33.98 |
 
@@ -190,6 +190,42 @@ Post-cutover picks size off the **HC margin**, not the score quintile. SUPER (ma
 | 2026-06-16 | MLB   | ML     | Athletics               |  -138 | +0.878 | LEAN     |             0.50u |  0.00u |  -0.50 |
 | 2026-06-16 | MLB   | ML     | San Diego Padres        |  +100 | +0.878 | LEAN     |             0.50u |  0.00u |  -0.50 |
 | _… and 61 more_ |
+
+## § 5a — RANK-RESCUE Slice (2-for-0 wallet path · v12ab book)
+
+> **What this is.** `v12ab` = the v12a book (HC-margin sizing) **plus** the RANK-RESCUE staking path that went live **2026-06-21**. The rule: a v12-shipped pick (score > 0) that the HC sizer mutes to 0u is staked at **4u** when its FOR side is **2-for-0** — ≥2 eligible whitelist wallets backing (CONFIRMED/FLAT/WR50 with ≥8 settled in-sport picks) and 0 against. It **only rescues muted picks**; it never up-sizes a pick the HC ladder already staked.
+
+### (B) Reconstruction over the V12 era (2026-06-01 → today)
+
+> Re-derived from frozen `walletDetails` + **current** wallet profiles. Eligibility uses today's settled-pick counts, so this is a **mildly optimistic projection** (a wallet at ≥8 picks now may have had fewer at pick time). Live-stamped numbers in (A) are the ground truth.
+
+| Bucket | Picks | W-L | Win % | Stake | PnL | ROI | Per day |
+|--------|------:|:---:|:-----:|------:|----:|----:|--------:|
+| RANK-RESCUE (HC-muted → 4u) | 37 | 24-13 | 64.9% | 148u | +34.64u | +23.4% | 1.76 |
+
+**2-for-0 picks the HC ladder ALREADY staked (NOT rescued — no hammer): 19** (12-7). These are left at their HC size — the slice adds no edge inside the HC book.
+
+#### RANK-RESCUE by sport (reconstructed)
+
+| Sport | Picks | W-L | Win % | PnL @4u | ROI |
+|-------|------:|:---:|:-----:|------:|----:|
+| MLB | 34 | 23-11 | 67.6% | +34.04u | +25.0% |
+| NBA | 1 | 0-1 | 0.0% | -4.00u | -100.0% |
+| NHL | 2 | 1-1 | 50.0% | +4.60u | +57.5% |
+
+### (A) Live stamped RANK picks (ground truth — populates going forward)
+
+| Picks | W-L | Win % | Stake | PnL | ROI |
+|------:|:---:|:-----:|------:|----:|----:|
+| 1 | 1-0 | 100.0% | 2u | +1.82u | +91.0% |
+
+| Date | Sport | Matchup | Side | Odds | Result | PnL |
+|------|-------|---------|------|-----:|:------:|----:|
+| 2026-06-20 | MLB | Milwaukee Brewers@Atlanta Braves | Under 7.5 | -110 | WIN | +1.82u |
+
+### Incremental impact
+
+> RANK-RESCUE sits **on top of the v12a HC book** — it stakes 4u on picks the HC ladder would mute (0u), so every rescue is net-new volume, never an up-size. Reconstruction: **+1.76 picks/day** (37 over 21 days) at **+23.4% ROI** / **+34.64u**, pulled from the muted pool — so no existing HC pick's size or grade changes. (The § 1 / § 4–5 headline book still reflects historical score-ladder sizing for picks shipped before v12a; only NEW picks size under v12a + RANK.)
 
 ## § 6 — V12 By Sport & Market (Where The Edge Is)
 
@@ -520,10 +556,10 @@ Same filter, sorted ROI ascending. Wallets that consistently lose when they're o
 | Graded picks with `tracked=true` AND `finalUnits > 0`         |     1 | 🚨 grader regression — see betTracking.js |
 | Graded picks with `tracked=true` AND `finalUnits == 0`        |   277 | 🟡 informational only — true tracked plays |
 | LOCK+ tier picks with `finalUnits == 0` (sizing regression)   |    39 | 🚨 sizing regression — agsSizeMultiplier returning 0 for strong AGS-U |
-| Live picks (not graded yet) with `finalUnits > 0`             |     5 | 🟢 picks queued for grading |
+| Live picks (not graded yet) with `finalUnits > 0`             |     6 | 🟢 picks queued for grading |
 | AGS-U promoted picks missing `v8_ags` value                   |    15 | 🟡 some picks missing AGS-U — cron lag or stale doc |
-| AGS-U promoted picks missing `agsTier`                        |     8 | 🟡 some picks missing tier classification |
-| Single-wallet shipped picks (`provenWalletCount == 1`)       |   128 | 🟡 informational — AGS-U calibration controls sample adequacy |
+| AGS-U promoted picks missing `agsTier`                        |     6 | 🟡 some picks missing tier classification |
+| Single-wallet shipped picks (`provenWalletCount == 1`)       |   129 | 🟡 informational — AGS-U calibration controls sample adequacy |
 
 **Tracked-shipped detail (these are the picks the grader wrongly marked 0u):**
 

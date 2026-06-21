@@ -561,6 +561,9 @@ async function loadAllAgsuGradedPicks() {
         const hcMargin = Number.isFinite(sd.v8_hcMargin)
           ? sd.v8_hcMargin
           : ((sd.v8_hcConfFor || 0) - (sd.v8_hcConfAg || 0));
+        const miniHcMargin = Number.isFinite(sd.v8_miniHcMargin)
+          ? sd.v8_miniHcMargin
+          : ((sd.v8_miniHcConfFor || 0) - (sd.v8_miniHcConfAg || 0));
         const schemaVersion = sd.v8_agsCalibrationSchema || sd.v8_agsSchema || null;
 
         const lockOdds = lock.odds || 0;
@@ -592,7 +595,7 @@ async function loadAllAgsuGradedPicks() {
           hcStakeTier: sd.v8_hcStakeTier || null,
           provenFor, provenAg,
           provenTotal: (provenFor ?? 0) + (provenAg ?? 0),
-          hcMargin,
+          hcMargin, miniHcMargin,
           hcConfFor: sd.v8_hcConfFor ?? 0,
           hcConfAg:  sd.v8_hcConfAg ?? 0,
           hcDominant: !!sd.v8_hcDominant,
@@ -1663,6 +1666,146 @@ function buildVersionComparison(report, rows, eras) {
 // All v12-scoped sections use date-only filtering via v12EraRows() so
 // historical v11-era picks that the cron back-filled v12 scores onto
 // cannot contaminate the production numbers.
+
+// ── § 5a — RANK-RESCUE (2-for-0 wallet slice · v12ab book) ───────────────────
+// Mirrors the production rule in syncPickStateAuthoritative.js: a v12-shipped
+// (score>0) pick that v12a's HC sizer muted to 0u is rescued to 4u when the FOR
+// side is "2-for-0" — ≥2 ELIGIBLE whitelist wallets backing, 0 against. Eligible
+// = whitelistTier ∈ {CONFIRMED,FLAT,WR50} AND bySport[sport].picks.n ≥ 8. Went
+// live 2026-06-21; this section tracks (A) actually-stamped RANK picks going
+// forward and (B) a reconstruction over the whole v12 era for immediate context.
+const RANK_RESCUE_UNITS = 4;
+function rankEligible(profile, sport) {
+  const rec = profile?.bySport?.[sport];
+  if (!rec) return false;
+  const t = rec.whitelistTier;
+  if (t !== 'CONFIRMED' && t !== 'FLAT' && t !== 'WR50') return false;
+  return (Number(rec.picks?.n) || 0) >= 8;
+}
+function rankSliceQualifies(walletDetails, sideKey, sport, walletProfiles) {
+  if (!Array.isArray(walletDetails) || !sideKey || !sport || !walletProfiles) return false;
+  let backing = 0, against = 0; const seen = new Set();
+  for (const w of walletDetails) {
+    const short = String(w.walletShort || w.wallet || '').slice(-6).toLowerCase();
+    if (!short || seen.has(short)) continue; seen.add(short);
+    const profile = walletProfiles.get(short) || walletProfiles.get(short.toUpperCase());
+    if (!rankEligible(profile, sport)) continue;
+    if (w.side === sideKey) backing++;
+    else if (w.side) against++;
+  }
+  return backing >= 2 && against === 0;
+}
+// Per-unit profit at decimal odds; uniform 4u stake → PnL = perUnit × 4.
+function perUnitReturn(won, odds) {
+  if (won == null) return null;
+  if (won === 1) return odds < 0 ? 100 / Math.abs(odds) : odds / 100;
+  return -1;
+}
+function rescueAgg(picks) {
+  const n = picks.length;
+  const w = picks.filter(p => p.won === 1).length;
+  const l = picks.filter(p => p.won === 0).length;
+  const pnl = picks.reduce((s, p) => s + perUnitReturn(p.won, p.odds) * RANK_RESCUE_UNITS, 0);
+  const flatPnl = picks.reduce((s, p) => s + perUnitReturn(p.won, p.odds), 0);
+  return {
+    n, w, l,
+    winRate: n ? w / n : null,
+    pnl,
+    roi: n ? (flatPnl / n) * 100 : null,    // uniform stake → ROI = flat per-unit %
+    stake: n * RANK_RESCUE_UNITS,
+  };
+}
+
+function buildV12RankRescue(report, stats, walletProfiles) {
+  report.push(`## § 5a — RANK-RESCUE Slice (2-for-0 wallet path · v12ab book)`);
+  report.push('');
+  if (!stats || stats.v12Rows.length === 0) {
+    report.push(`_(no V12-era graded picks yet.)_`);
+    report.push('');
+    return;
+  }
+  const { v12Rows, daysLive } = stats;
+  report.push(`> **What this is.** \`v12ab\` = the v12a book (HC-margin sizing) **plus** the RANK-RESCUE staking path that went live **2026-06-21**. The rule: a v12-shipped pick (score > 0) that the HC sizer mutes to 0u is staked at **${RANK_RESCUE_UNITS}u** when its FOR side is **2-for-0** — ≥2 eligible whitelist wallets backing (CONFIRMED/FLAT/WR50 with ≥8 settled in-sport picks) and 0 against. It **only rescues muted picks**; it never up-sizes a pick the HC ladder already staked.`);
+  report.push('');
+
+  // ── (B) Reconstruction over the v12 era ──────────────────────────────────
+  // Re-derive the slice from frozen walletDetails + CURRENT profiles. "HC-muted"
+  // = hcMargin < 1 AND miniHcMargin < 1 (what v12a HC-only sizes to 0u).
+  const graded = v12Rows.filter(r => r.won != null && Array.isArray(r.walletDetails) && r.walletDetails.length);
+  const rescue = [], hcStakedSlice = [];
+  for (const r of graded) {
+    const score = Number.isFinite(r.agsV12) ? r.agsV12 : null;
+    if (score == null || score <= 0) continue;                 // must be v12-shipped
+    if (!rankSliceQualifies(r.walletDetails, r.sideKey, r.sport, walletProfiles)) continue;
+    const hcMuted = (r.hcMargin < 1) && (r.miniHcMargin < 1);   // v12a → 0u
+    const odds = r.peakOdds || r.lockOdds || 0;
+    (hcMuted ? rescue : hcStakedSlice).push({ won: r.won, odds, sport: r.sport, date: r.date });
+  }
+  const ra = rescueAgg(rescue);
+  const days = Math.max(1, daysLive || 1);
+
+  report.push(`### (B) Reconstruction over the V12 era (${stats.v12From} → today)`);
+  report.push('');
+  report.push(`> Re-derived from frozen \`walletDetails\` + **current** wallet profiles. Eligibility uses today's settled-pick counts, so this is a **mildly optimistic projection** (a wallet at ≥8 picks now may have had fewer at pick time). Live-stamped numbers in (A) are the ground truth.`);
+  report.push('');
+  report.push(`| Bucket | Picks | W-L | Win % | Stake | PnL | ROI | Per day |`);
+  report.push(`|--------|------:|:---:|:-----:|------:|----:|----:|--------:|`);
+  report.push(`| RANK-RESCUE (HC-muted → ${RANK_RESCUE_UNITS}u) | ${ra.n} | ${ra.w}-${ra.l} | ${ra.winRate != null ? (ra.winRate*100).toFixed(1)+'%' : '—'} | ${ra.stake.toFixed(0)}u | ${fmtSigned(ra.pnl)}u | ${ra.roi != null ? (ra.roi>=0?'+':'')+ra.roi.toFixed(1)+'%' : '—'} | ${(ra.n/days).toFixed(2)} |`);
+  report.push('');
+  report.push(`**2-for-0 picks the HC ladder ALREADY staked (NOT rescued — no hammer): ${hcStakedSlice.length}**`+(hcStakedSlice.length ? ` (${hcStakedSlice.filter(p=>p.won===1).length}-${hcStakedSlice.filter(p=>p.won===0).length}). These are left at their HC size — the slice adds no edge inside the HC book.` : '.'));
+  report.push('');
+
+  // Per-sport of the reconstructed rescue slice.
+  const sports = [...new Set(rescue.map(p => p.sport))].sort();
+  if (sports.length) {
+    report.push(`#### RANK-RESCUE by sport (reconstructed)`);
+    report.push('');
+    report.push(`| Sport | Picks | W-L | Win % | PnL @${RANK_RESCUE_UNITS}u | ROI |`);
+    report.push(`|-------|------:|:---:|:-----:|------:|----:|`);
+    for (const sp of sports) {
+      const a = rescueAgg(rescue.filter(p => p.sport === sp));
+      report.push(`| ${sp} | ${a.n} | ${a.w}-${a.l} | ${a.winRate != null ? (a.winRate*100).toFixed(1)+'%' : '—'} | ${fmtSigned(a.pnl)}u | ${a.roi != null ? (a.roi>=0?'+':'')+a.roi.toFixed(1)+'%' : '—'} |`);
+    }
+    report.push('');
+  }
+
+  // ── (A) Live, actually-stamped RANK picks ────────────────────────────────
+  const liveRank = v12Rows.filter(r => r.hcStakeTier === 'RANK' && r.won != null);
+  const la = (() => {
+    const n = liveRank.length, w = liveRank.filter(r => r.won===1).length, l = liveRank.filter(r => r.won===0).length;
+    const pnl = liveRank.reduce((s, r) => s + (Number.isFinite(r.profit) ? r.profit : 0), 0);
+    const stake = liveRank.reduce((s, r) => s + (r.units || 0), 0);
+    return { n, w, l, winRate: n ? w/n : null, pnl, stake, roi: stake>0 ? pnl/stake*100 : null };
+  })();
+  report.push(`### (A) Live stamped RANK picks (ground truth — populates going forward)`);
+  report.push('');
+  if (la.n === 0) {
+    const pending = v12Rows.filter(r => r.hcStakeTier === 'RANK').length;
+    report.push(`_No graded RANK-stamped picks yet${pending ? ` (${pending} ungraded in flight)` : ''}. RANK-RESCUE went live 2026-06-21 — this fills in as the cron stamps and grades \`hcStakeTier=RANK\` picks._`);
+  } else {
+    report.push(`| Picks | W-L | Win % | Stake | PnL | ROI |`);
+    report.push(`|------:|:---:|:-----:|------:|----:|----:|`);
+    report.push(`| ${la.n} | ${la.w}-${la.l} | ${la.winRate != null ? (la.winRate*100).toFixed(1)+'%' : '—'} | ${la.stake.toFixed(0)}u | ${fmtSigned(la.pnl)}u | ${la.roi != null ? (la.roi>=0?'+':'')+la.roi.toFixed(1)+'%' : '—'} |`);
+    report.push('');
+    report.push(`| Date | Sport | Matchup | Side | Odds | Result | PnL |`);
+    report.push(`|------|-------|---------|------|-----:|:------:|----:|`);
+    for (const r of liveRank.sort((a,b)=> (a.date<b.date?1:-1)).slice(0, 30)) {
+      report.push(`| ${r.date} | ${r.sport} | ${r.away}@${r.home} | ${r.team || r.sideKey} | ${r.peakOdds || r.lockOdds} | ${r.won===1?'WIN':'LOSS'} | ${fmtSigned(r.profit)}u |`);
+    }
+  }
+  report.push('');
+
+  // ── Incremental impact framing ───────────────────────────────────────────
+  // NOTE: the historical v12-era live book was sized by the SCORE LADDER (many
+  // small 0.25–1u picks), not the v12a HC ladder that is current production —
+  // so we do NOT compare RANK volume against that headline count (apples-to-
+  // oranges). RANK-RESCUE is incremental to the v12a HC book (HC+2→6u, HC+1→4u,
+  // mini→3u, else muted), pulling 4u plays out of the muted bucket.
+  report.push(`### Incremental impact`);
+  report.push('');
+  report.push(`> RANK-RESCUE sits **on top of the v12a HC book** — it stakes ${RANK_RESCUE_UNITS}u on picks the HC ladder would mute (0u), so every rescue is net-new volume, never an up-size. Reconstruction: **+${(ra.n/days).toFixed(2)} picks/day** (${ra.n} over ${days} days) at **${ra.roi != null ? (ra.roi>=0?'+':'')+ra.roi.toFixed(1)+'%' : '—'} ROI** / **${fmtSigned(ra.pnl)}u**, pulled from the muted pool — so no existing HC pick's size or grade changes. (The § 1 / § 4–5 headline book still reflects historical score-ladder sizing for picks shipped before v12a; only NEW picks size under v12a + RANK.)`);
+  report.push('');
+}
 
 // Convenience: compute v12 stats once and pass them around for the CEO
 // summary card. Keeps the math in one place.
@@ -3568,6 +3711,7 @@ async function main() {
   buildV12Primer(report);
   buildV12DailyScoreboard(report, v12Stats);
   buildV12TierAnalysis(report, v12Stats);
+  buildV12RankRescue(report, v12Stats, walletProfiles);
   buildV12SportMarketAnalysis(report, v12Stats);
   buildV12ScoreReliability(report, v12Stats);
   buildV12MuteAudit(report, v12Stats);
