@@ -1,23 +1,22 @@
 # Wallet Profiles Summary
 
-Generated: 6/20/2026, 6:11:53 AM ET · V8 cutover: 2026-04-18 · whitelistVersion: 2
+Generated: 6/21/2026, 3:57:34 AM ET · V8 cutover: 2026-04-18 · whitelistVersion: 2
 
 Monitoring artifact for the nightly `sharpWalletProfiles` rebuild. Shows how many wallets qualify for each whitelist tier per sport, who the top performers are, and what changed since the last run.
 
-**Population**: 275 wallets · 4062 graded picks · 15660 graded positions.
+**Population**: 283 wallets · 4107 graded picks · 15910 graded positions.
 
 ## Population by verdict
 
 | Verdict | Wallets |
 |---|---|
-| POSITIONS_ONLY_NEGATIVE | 55 |
-| INCONCLUSIVE | 55 |
-| POSITIONS_ONLY_POSITIVE | 43 |
+| INCONCLUSIVE | 60 |
+| POSITIONS_ONLY_NEGATIVE | 56 |
+| POSITIONS_ONLY_POSITIVE | 45 |
 | CONFIRMED_BLEEDER | 41 |
 | CONFIRMED_WINNER | 33 |
-| MIXED_PICKS_GOOD_$_BAD | 24 |
+| MIXED_PICKS_GOOD_$_BAD | 25 |
 | MIXED_PICKS_BAD_$_GOOD | 23 |
-| PICKS_ONLY_POSITIVE | 1 |
 
 ## Whitelist tiers per sport
 
@@ -25,10 +24,10 @@ Minimum 2 bets per sport. Precedence: CONFIRMED > FLAT > WR50. "FLAT-or-better" 
 
 | Sport | CONFIRMED | FLAT-or-better | WR50-only | Active (≥2 bets) | Any activity |
 |---|---|---|---|---|---|
-| MLB | 34 | 50 | 5 | 113 | 131 |
+| MLB | 36 | 52 | 7 | 115 | 132 |
 | NBA | 58 | 83 | 23 | 193 | 211 |
 | NHL | 23 | 29 | 16 | 90 | 105 |
-| SOC | 9 | 12 | 5 | 80 | 102 |
+| SOC | 10 | 12 | 7 | 84 | 111 |
 
 ## Promotion source mix (v2 — Source-B-only trial)
 
@@ -36,7 +35,7 @@ Per-sport breakdown of how each FLAT-or-better wallet earned its tier. **B (new)
 
 | Sport | A | A+B | B (new) | FLAT-or-better total | % from B-only |
 |---|---|---|---|---|---|
-| MLB | 8 | 15 | 27 | 50 | 54% |
+| MLB | 9 | 13 | 30 | 52 | 57.7% |
 | NBA | 10 | 34 | 39 | 83 | 47% |
 | NHL | 4 | 8 | 17 | 29 | 58.6% |
 | SOC | 0 | 0 | 12 | 12 | 100% |
@@ -49,14 +48,14 @@ Per-sport breakdown of how each FLAT-or-better wallet earned its tier. **B (new)
 |---|---|---|---|---|---|---|---|---|
 | 1 | 972768 | CONFIRMED | 48 | 47.9% | +Infinity% | +Infinity | +13.3% | +90470 |
 | 2 | d10319 | FLAT | 7 | 42.9% | +Infinity% | +Infinity | -16.5% | -310863 |
-| 3 | 7703d4 | FLAT | 17 | 47.1% | +Infinity% | +Infinity | -15.4% | -66035 |
+| 3 | 7703d4 | FLAT | 17 | 47.1% | +Infinity% | +Infinity | -14.4% | -61761 |
 | 4 | c19b3c | CONFIRMED | 1 | 100% | +76.9% | +0.77 | +52.3% | +41769 |
-| 5 | ad88a3 | CONFIRMED | 13 | 76.9% | +38.7% | +5.03 | +40.8% | +68835 |
-| 6 | e05213 | CONFIRMED | 14 | 71.4% | +36.9% | +5.17 | +42.7% | +704570 |
-| 7 | 913987 | CONFIRMED | 44 | 68.2% | +32.2% | +14.19 | +28.2% | +1461331 |
+| 5 | e05213 | CONFIRMED | 14 | 71.4% | +36.9% | +5.17 | +42.7% | +704570 |
+| 6 | 913987 | CONFIRMED | 44 | 68.2% | +32.2% | +14.19 | +28.2% | +1461331 |
+| 7 | ad88a3 | CONFIRMED | 14 | 71.4% | +28.8% | +4.03 | +40% | +67895 |
 | 8 | dfa240 | CONFIRMED | 3 | 66.7% | +28.3% | +0.85 | +63.7% | +9568 |
-| 9 | f2d227 | CONFIRMED | 25 | 64% | +26.3% | +6.58 | +25.5% | +107385 |
-| 10 | c9bba3 | CONFIRMED | 6 | 66.7% | +22.8% | +1.37 | +9.5% | +87349 |
+| 9 | f2d227 | CONFIRMED | 26 | 65.4% | +27.3% | +7.10 | +25.5% | +107385 |
+| 10 | c9bba3 | CONFIRMED | 6 | 66.7% | +22.8% | +1.37 | +7.3% | +68149 |
 
 ### NBA
 
@@ -94,18 +93,33 @@ Per-sport breakdown of how each FLAT-or-better wallet earned its tier. **B (new)
 |---|---|---|---|---|---|---|---|---|
 | 1 | 4c64aa | CONFIRMED | 0 | 0% | +0% | +0.00 | +35.1% | +138254 |
 | 2 | fec67e | CONFIRMED | 0 | 0% | +0% | +0.00 | +44.5% | +21107 |
-| 3 | c91057 | CONFIRMED | 0 | 0% | +0% | +0.00 | +73.3% | +3503240 |
-| 4 | 0f9786 | CONFIRMED | 0 | 0% | +0% | +0.00 | +64.6% | +43218 |
-| 5 | fc4582 | CONFIRMED | 0 | 0% | +0% | +0.00 | +0.8% | +4558 |
-| 6 | 11381f | CONFIRMED | 0 | 0% | +0% | +0.00 | +81.6% | +1840 |
-| 7 | c9bba3 | CONFIRMED | 0 | 0% | +0% | +0.00 | +1.8% | +8680 |
-| 8 | fea6f5 | CONFIRMED | 0 | 0% | +0% | +0.00 | +87% | +308757 |
-| 9 | 5b1e50 | FLAT | 0 | 0% | +0% | +0.00 | -9% | -16024 |
-| 10 | 0f9d74 | FLAT | 0 | 0% | +0% | +0.00 | -3.4% | -1190 |
+| 3 | 946418 | CONFIRMED | 0 | 0% | +0% | +0.00 | +18% | +7581 |
+| 4 | c91057 | CONFIRMED | 0 | 0% | +0% | +0.00 | +73.3% | +3503240 |
+| 5 | e1f804 | CONFIRMED | 0 | 0% | +0% | +0.00 | +26.9% | +600033 |
+| 6 | 6cd2f7 | CONFIRMED | 0 | 0% | +0% | +0.00 | +53.6% | +87003 |
+| 7 | 0f9786 | CONFIRMED | 0 | 0% | +0% | +0.00 | +27% | +23456 |
+| 8 | fc4582 | CONFIRMED | 0 | 0% | +0% | +0.00 | +0.8% | +4558 |
+| 9 | 11381f | CONFIRMED | 0 | 0% | +0% | +0.00 | +81.6% | +1840 |
+| 10 | 5b1e50 | FLAT | 0 | 0% | +0% | +0.00 | -8.3% | -15692 |
 
 ## Churn since last run
 
-_No whitelist-tier changes vs. the prior run._
+**12** wallet-sport tier changes since the prior run.
+
+| Wallet | Sport | From | To | Notes |
+|---|---|---|---|---|
+| 0f9d74 | SOC | FLAT | WR50 |  |
+| 6cd2f7 | SOC | — | CONFIRMED |  |
+| 946418 | SOC | WR50 | CONFIRMED |  |
+| 95618e | MLB | — | CONFIRMED |  |
+| b51a56 | MLB | FLAT | WR50 |  |
+| b70f9a | MLB | — | FLAT |  |
+| c5cea1 | MLB | — | CONFIRMED |  |
+| c911a4 | SOC | — | WR50 |  |
+| c9bba3 | SOC | CONFIRMED | WR50 |  |
+| cdb33b | MLB | — | WR50 |  |
+| e1f804 | SOC | WR50 | CONFIRMED |  |
+| fea6f5 | SOC | CONFIRMED | WR50 |  |
 
 ---
 *Generated by `scripts/exportWalletProfiles.js`.*
