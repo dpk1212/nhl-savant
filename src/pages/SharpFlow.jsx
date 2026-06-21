@@ -5321,6 +5321,10 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
   const isMonitoring = hcStakeTier === 'MONITORING';
   const isConfirmed = hcStakeTier === 'CONFIRMED';
   const isMini = hcStakeTier === 'MINI';
+  // RANK-RESCUE (2-for-0 wallet slice). Staked off sharp-wallet consensus, NOT
+  // the v12 score quintile — so the card must NOT lead with the (often WEAK)
+  // score or it reads as a low-quality pick. It gets its own violet identity.
+  const isRank = hcStakeTier === 'RANK';
   const [open, setOpen] = useState(false);
   const [hover, setHover] = useState(false);
 
@@ -5336,7 +5340,7 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
   // v12.1 — CONFIRMED + MONITORING drive the strip from the product meta
   // (blue / grey). SUPER/TOP keep the score-quintile strip because the gold
   // ribbon already conveys the product tier; legacy picks use the score tier.
-  const useStakeStrip = !!stakeMeta && (isMonitoring || isConfirmed || isMini);
+  const useStakeStrip = !!stakeMeta && (isMonitoring || isConfirmed || isMini || isRank);
   const tierMeta = useStakeStrip ? stakeMeta : (AGS_TIER_META[tierKey] || AGS_TIER_META.LOCK);
   const accent = isCancelled ? B.red
     : isMuted ? '#F59E0B'
@@ -5456,7 +5460,9 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
         ? <StatCol label="P&L" value={`${(isTrackedGrade ? 0 : (profit || 0)) > 0 ? '+' : ''}${(isTrackedGrade ? 0 : (profit || 0)).toFixed(1)}u`} color={isWin ? B.green : isLoss ? B.red : B.textSec} />
         : <StatCol label="STAKE" value={Number.isFinite(units) && units > 0 ? `${fmtU(units)}u` : '—'} color={B.text} />}
       <StatDivider />
-      <StatCol label="AGSU V12" value={conviction > 0 ? conviction : '—'} color={accent} meter />
+      {isRank
+        ? <StatCol label="SHARPS ON" value={backers > 0 ? backers : '—'} color={accent} />
+        : <StatCol label="AGSU V12" value={conviction > 0 ? conviction : '—'} color={accent} meter />}
     </div>
   );
 
@@ -5496,6 +5502,19 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
     }}>
       <ArrowUpRight size={9} strokeWidth={3} />
       STRONG PICK
+    </span>
+  ) : isRank ? (
+    // RANK-RESCUE (2-for-0 wallet slice) — violet "RANK PLAY". Sharp-wallet
+    // consensus, not score quintile, so it leads with its own identity.
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: '0.2rem', flexShrink: 0,
+      padding: '0.14rem 0.42rem', borderRadius: '5px',
+      background: 'rgba(168,85,247,0.14)', border: '1px solid rgba(168,85,247,0.45)',
+      color: '#A855F7', fontSize: '0.5rem', fontWeight: 900,
+      letterSpacing: '0.07em', lineHeight: 1, whiteSpace: 'nowrap',
+    }}>
+      <Flame size={9} strokeWidth={3} />
+      RANK PLAY
     </span>
   ) : null;
 
