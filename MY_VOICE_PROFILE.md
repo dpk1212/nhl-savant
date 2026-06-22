@@ -57,9 +57,9 @@ The sharp-wallet data is the *supporting evidence* inside the pick — not a rep
 
 ## The 3 biggest growth opportunities (from the data)
 
-1. **Retweets are ~0.** Add explicit shareable moments: bold one-liners, "screenshot this", and contrarian takes people want to repost. The tracker reveal proves novelty + visual = reach.
-2. **Threads are absent.** The single-game deep dives (Mets post) are thread-shaped. Break them into a hook tweet + reply chain to multiply watch time.
-3. **Engagement-bait questions work but are samey.** Rotate: "Which ticket?", "Fade or follow?", "Who's got the Over?", polls.
+1. **Sharp/public boards are missing.** The latest improvement brief shows 0% of posts using the niche's best in-lane structure: game/slate first, public side vs sharp money, then one verdict.
+2. **Recaps need a lesson, not just emotion.** The current labeled 0-like posts are contextless pain/no-lock fragments; lead with the miss, the market lesson, and the next filter.
+3. **Pick cards are the only labeled winner right now.** Keep Dale's picks + units voice, but make the first line a market-read rule before the team list.
 
 ---
 
