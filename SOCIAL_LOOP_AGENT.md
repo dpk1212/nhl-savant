@@ -14,6 +14,8 @@ One automation. Runs end-to-end each time and hands you **3–5 ready-to-post tw
 | **Memory** | Enabled |
 | **Env** | Needs `FIRECRAWL_API_KEY` for the live Twitter refresh. If it's missing, the agent falls back to the last saved pull — still works. |
 
+**Pair with:** `SOCIAL_IMPROVEMENT_AGENT.md` (Leg 2 — weekly coaching guide → `TWITTER_IMPROVEMENT_GUIDE.md`).
+
 ---
 
 ## The prompt (paste this into Agent Instructions)
@@ -55,6 +57,10 @@ PHASE 2 — PULL DATA (today's raw material)
   yesterday's record + cumulative profit.
 
 PHASE 3 — STRATEGIZE
+- Read TWITTER_IMPROVEMENT_GUIDE.md (written by the Social Improvement agent —
+  weekly coaching: what's working, gaps vs niche, experiments, mandates for you).
+  Follow its "Rules for the Content Loop agent" section when picking angles and
+  drafting. If the guide is missing or stale (>8 days), note that in feedback.
 - Pick the 3–5 best angles for today. Mix the proven formats from
   MY_VOICE_PROFILE.md: record flex + CTA, contrarian hook, single-game deep
   dive, personality + card, whale tape, recap with checkmarks. Do not repeat

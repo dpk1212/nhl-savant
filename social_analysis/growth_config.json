@@ -1,0 +1,35 @@
+{
+  "_comment": "Searches for recent, high-engagement X/Twitter growth advice. 'searches' use nitter min_faves to bias viral. 'accounts' = creators who post actionable platform tips. 'requireAny' keeps posts on-topic. 'exclude' drops spam/courses/crypto.",
+  "minEngagement": 50,
+  "maxPerSource": 15,
+  "searches": [
+    "twitter growth tip min_faves:100 -course -crypto",
+    "X algorithm tip min_faves:100 -course -crypto",
+    "how to get retweets min_faves:75 -course",
+    "twitter thread hook min_faves:75 -course",
+    "grow on twitter min_faves:100 -course -crypto",
+    "twitter engagement hack min_faves:75 -course",
+    "best time to post twitter min_faves:50 -course",
+    "twitter creator tip min_faves:100 -course -crypto",
+    "X growth strategy min_faves:100 -course",
+    "twitter hook formula min_faves:50 -course"
+  ],
+  "accounts": [
+    "MattGray",
+    "gregisenberg",
+    "thedankoe"
+  ],
+  "requireAny": [
+    "growth", "algorithm", "hook", "thread", "retweet", "engagement", "follower",
+    "impression", "reach", "reply", "replies", "posting", "creator", "audience",
+    "viral", "tip", "tips", "strategy", "twitter", " x ", "post more", "open rate",
+    "bookmark", "share", "quote", "timeline", "for you", "fyp", "first line",
+    "cta", "call to action", "consistency", "niche", "content"
+  ],
+  "exclude": [
+    "crypto", "bitcoin", "$btc", "nft", "airdrop", "token", "presale", "memecoin",
+    "buy my course", "link in bio", "webinar", "newsletter signup", "onlyfans",
+    "dm me for", "affiliate link", "discount code", "limited spots", "masterclass",
+    "coaching program", "passive income", "make money online"
+  ]
+}

@@ -43,11 +43,17 @@ jobs:
       - name: Pull + process niche viral trends
         run: node scripts/analyzeNicheTrends.mjs || echo "niche trends pull failed (non-fatal)"
 
+      - name: Pull + process X growth tips
+        run: node scripts/analyzeGrowthTips.mjs || echo "growth tips pull failed (non-fatal)"
+
+      - name: Build improvement brief (own vs niche stats)
+        run: node scripts/buildTwitterImprovementBrief.mjs || echo "improvement brief failed (non-fatal)"
+
       - name: Commit refreshed analysis if changed
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add social_analysis/my_tweets.json social_analysis/niche_trends.json
+          git add social_analysis/my_tweets.json social_analysis/niche_trends.json social_analysis/growth_tips.json social_analysis/improvement_brief.json
           if git diff --staged --quiet; then
             echo "No timeline changes this run."
           else
