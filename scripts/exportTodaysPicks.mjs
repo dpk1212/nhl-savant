@@ -33,11 +33,22 @@ mkdirSync(OUT_DIR, { recursive: true });
 
 if (!admin.apps.length) {
   const sak = join(REPO_ROOT, 'serviceAccountKey.json');
-  if (!existsSync(sak)) {
-    console.warn('No serviceAccountKey.json — cannot reach Firestore. Skipping (agent will fall back to daily reports).');
+  if (existsSync(sak)) {
+    // Local dev — service account file on disk
+    admin.initializeApp({ credential: admin.credential.cert(JSON.parse(readFileSync(sak, 'utf8'))) });
+  } else if (process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
+    // CI (GitHub Actions) — credentials from repo secrets
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        project_id: process.env.VITE_FIREBASE_PROJECT_ID,
+        client_email: process.env.FIREBASE_CLIENT_EMAIL,
+        private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      }),
+    });
+  } else {
+    console.warn('No Firestore credentials (serviceAccountKey.json or FIREBASE_* env). Skipping.');
     process.exit(0);
   }
-  admin.initializeApp({ credential: admin.credential.cert(JSON.parse(readFileSync(sak, 'utf8'))) });
 }
 const db = admin.firestore();
 

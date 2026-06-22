@@ -69,11 +69,18 @@ jobs:
           echo "════════════════════════════════════════════════════════════════"
           node scripts/rankTopPicks.js | tee top-picks-ranked.txt
 
-      - name: Commit WIN_MATRIX.md + win_matrix.json + top_picks_ranked.json
+      - name: Export today's LIVE board for social (same as site)
+        run: |
+          echo "════════════════════════════════════════════════════════════════"
+          echo "  TODAY'S PICKS — live board export for the social Content Brief"
+          echo "════════════════════════════════════════════════════════════════"
+          node scripts/exportTodaysPicks.mjs | tee todays-picks-export.txt || echo "export failed (non-fatal)"
+
+      - name: Commit WIN_MATRIX.md + win_matrix.json + top_picks_ranked.json + todays_picks.json
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add WIN_MATRIX.md public/win_matrix.json public/top_picks_ranked.json
+          git add WIN_MATRIX.md public/win_matrix.json public/top_picks_ranked.json social_analysis/todays_picks.json
           if git diff --staged --quiet; then
             echo "--- no artifact changes this run ---"
           else

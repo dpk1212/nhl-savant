@@ -56,20 +56,25 @@ PHASE 2 — LOAD THE IMPROVEMENT GUIDE (how to make it perform)
   Every angle you brief must respect these. If the guide is missing or >8 days
   old, say so in the brief and fall back to MY_VOICE_PROFILE.md formats.
 
-PHASE 3 — PULL TODAY'S REAL PICKS (exactly what the site shows)
-- FIRST regenerate the live board so it matches the site:
-    node scripts/exportTodaysPicks.mjs
-  This reads the SAME Firestore collections the site loads (sharpFlowPicks/
-  Spreads/Totals, today + yesterday) and writes social_analysis/todays_picks.json
-  with each LIVE pick's real team, market, line, odds, units, stakeTier
-  (SUPER/TOP/RANK/MINI/CONFIRMED), AGS conviction tier, HC margin, and proven
-  winners for/against. If the script can't reach Firestore, fall back to
-  DAILY_AGSU_REPORT.md (its tier scoreboard + RANK section) — and say so.
+PHASE 3 — READ TODAY'S REAL PICKS (exactly what the site shows)
+- Read social_analysis/todays_picks.json — this is the AUTHORITATIVE live board.
+  It is refreshed every hour by the "Rank Today's Top Picks" GitHub Action
+  (which has Firestore access) and committed to the repo, so you can read it
+  directly with NO database access. It mirrors the SAME Firestore collections
+  the site loads (sharpFlowPicks/Spreads/Totals).
+- FRESHNESS CHECK: confirm the file's "today" field equals today's ET date and
+  "generatedAt" is recent (within ~2h). If it is stale or "today" is yesterday,
+  SAY SO at the top of the brief and treat the picks as provisional — the hourly
+  Action may not have run yet for today's slate. Fall back to DAILY_AGSU_REPORT.md
+  (tier scoreboard + RANK section) for context.
 - DO NOT use public/top_picks_ranked.json — it is a separate ranking export and
   is NOT representative of the live board the site/customers see.
-- Read social_analysis/todays_picks.json as the AUTHORITATIVE pick source:
+- Use social_analysis/todays_picks.json as the pick source:
     • summary → counts, total units, byTier, bySport for today
     • picks[] where isToday && shipped → the real plays to feature (units > 0)
+    • each pick has: team, market, line, odds, units, stakeTier
+      (SUPER/TOP/RANK/MINI/CONFIRMED), agsConvictionTier, hcMargin, proven
+      winners for/against, minsToGame
     • tracked-only picks (units = 0) are NOT product — don't present as plays
 - Layer supporting PROOF/context from the public data files:
     public/sharp_positions.json         → ML wallet tape ($ size, avg price, tier)
