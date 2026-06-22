@@ -1,35 +1,29 @@
 {
-  "_comment": "Searches for recent, high-engagement X/Twitter growth advice. 'searches' use nitter min_faves to bias viral. 'accounts' = creators who post actionable platform tips. 'requireAny' keeps posts on-topic. 'exclude' drops spam/courses/crypto.",
-  "minEngagement": 50,
-  "maxPerSource": 15,
+  "_comment": "Actionable X growth advice for small/niche creators — NOT mega-viral lottery posts. preferMaxEngagement deprioritizes 100k+ engagement outliers in the brief builder.",
+  "minEngagement": 30,
+  "preferMaxEngagement": 25000,
+  "maxPerSource": 12,
   "searches": [
-    "twitter growth tip min_faves:100 -course -crypto",
-    "X algorithm tip min_faves:100 -course -crypto",
-    "how to get retweets min_faves:75 -course",
-    "twitter thread hook min_faves:75 -course",
-    "grow on twitter min_faves:100 -course -crypto",
-    "twitter engagement hack min_faves:75 -course",
-    "best time to post twitter min_faves:50 -course",
-    "twitter creator tip min_faves:100 -course -crypto",
-    "X growth strategy min_faves:100 -course",
-    "twitter hook formula min_faves:50 -course"
+    "twitter thread structure min_faves:50 -course -crypto",
+    "twitter hook writing min_faves:40 -course",
+    "grow twitter niche account min_faves:50 -course -crypto",
+    "twitter content strategy creator min_faves:75 -course",
+    "how to write viral tweets min_faves:50 -course",
+    "twitter engagement tips creator min_faves:40 -course -crypto",
+    "x thread tips min_faves:40 -course",
+    "twitter first line hook min_faves:30 -course"
   ],
-  "accounts": [
-    "MattGray",
-    "gregisenberg",
-    "thedankoe"
-  ],
+  "accounts": [],
   "requireAny": [
-    "growth", "algorithm", "hook", "thread", "retweet", "engagement", "follower",
-    "impression", "reach", "reply", "replies", "posting", "creator", "audience",
-    "viral", "tip", "tips", "strategy", "twitter", " x ", "post more", "open rate",
-    "bookmark", "share", "quote", "timeline", "for you", "fyp", "first line",
-    "cta", "call to action", "consistency", "niche", "content"
+    "thread", "hook", "first line", "open", "structure", "format", "post",
+    "tweet", "content", "creator", "audience", "engagement", "reply", "replies",
+    "consistency", "schedule", "writing", "story", "tip", "tips", "strategy",
+    "share", "bookmark", "algorithm", "timeline", "grow", "followers"
   ],
   "exclude": [
     "crypto", "bitcoin", "$btc", "nft", "airdrop", "token", "presale", "memecoin",
     "buy my course", "link in bio", "webinar", "newsletter signup", "onlyfans",
-    "dm me for", "affiliate link", "discount code", "limited spots", "masterclass",
-    "coaching program", "passive income", "make money online"
+    "dm me for", "affiliate", "discount code", "masterclass", "coaching program",
+    "passive income", "make money online", "repost if you", "rt if you agree"
   ]
 }
