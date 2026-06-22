@@ -56,24 +56,38 @@ PHASE 2 — LOAD THE IMPROVEMENT GUIDE (how to make it perform)
   Every angle you brief must respect these. If the guide is missing or >8 days
   old, say so in the brief and fall back to MY_VOICE_PROFILE.md formats.
 
-PHASE 3 — PULL TODAY'S REAL MATERIAL (the site + the picks)
-- Read the live data for today's slate and extract concrete, sourced facts:
-    public/top_picks_ranked.json        → today's ranked plays + stake tiers/units
+PHASE 3 — PULL TODAY'S REAL PICKS (exactly what the site shows)
+- FIRST regenerate the live board so it matches the site:
+    node scripts/exportTodaysPicks.mjs
+  This reads the SAME Firestore collections the site loads (sharpFlowPicks/
+  Spreads/Totals, today + yesterday) and writes social_analysis/todays_picks.json
+  with each LIVE pick's real team, market, line, odds, units, stakeTier
+  (SUPER/TOP/RANK/MINI/CONFIRMED), AGS conviction tier, HC margin, and proven
+  winners for/against. If the script can't reach Firestore, fall back to
+  DAILY_AGSU_REPORT.md (its tier scoreboard + RANK section) — and say so.
+- DO NOT use public/top_picks_ranked.json — it is a separate ranking export and
+  is NOT representative of the live board the site/customers see.
+- Read social_analysis/todays_picks.json as the AUTHORITATIVE pick source:
+    • summary → counts, total units, byTier, bySport for today
+    • picks[] where isToday && shipped → the real plays to feature (units > 0)
+    • tracked-only picks (units = 0) are NOT product — don't present as plays
+- Layer supporting PROOF/context from the public data files:
+    public/sharp_positions.json         → ML wallet tape ($ size, avg price, tier)
+    public/sharp_spread_positions.json  → spread wallet tape
+    public/sharp_total_positions.json   → totals wallet tape
     public/sports_sharps.json           → sharp-money games, public-vs-sharp splits
-    public/sharp_positions.json         → wallet positions (moneyline)
-    public/sharp_spread_positions.json  → spread positions
-    public/sharp_total_positions.json   → totals positions
     public/pinnacle_history.json        → line moves / Pinnacle confirms
     public/polymarket_data.json, public/kalshi_data.json → prediction-market reads
     public/whale_profiles.json          → whale tape / biggest dollar backers
-    public/win_matrix.json              → matchup edges
-    public/social_today.json            → any pre-staged social data for today
-    DAILY_AGSU_REPORT.md                → yesterday's record, cumulative P/L, RANK plays
+    DAILY_AGSU_REPORT.md                → yesterday's record + cumulative P/L
     DAILY_SHARP_ACTION_REPORT.md        → sharp action summary
-- Build a short "Today's Board" fact sheet: top plays (team, market, line, units,
-  tier), the 2–3 biggest sharp/public splits, notable line moves, whale tape
-  ($ amounts), and the latest record + cumulative profit. Cite the file for each.
-- If a sport has no games / no qualifying picks today, say so — do not pad.
+- Build a short "Today's Board" fact sheet from todays_picks.json: the shipped
+  plays (team · market · line/odds · units · stakeTier), proven winners for/
+  against per play, the 2–3 biggest sharp/public splits, notable line moves,
+  whale tape ($), and yesterday's record + cumulative profit. Cite the file for
+  each fact. Match $ amounts to a wallet-tape file before quoting them.
+- If there are no shipped picks today (or no games), SAY SO and pivot the brief
+  to recap/record/educational angles — do not invent plays.
 
 PHASE 4 — SELECT ANGLES FOR THIS SLOT (strategy, not drafting)
 - Choose the 3–4 strongest content opportunities for the CURRENT slot, using the
@@ -169,5 +183,10 @@ node scripts/analyzeMyTweets.mjs
 | `content_briefs/` | This agent | Timestamped brief archive (recently-covered memory) |
 | `TWITTER_IMPROVEMENT_GUIDE.md` | Leg 2 | How to post better (read each run) |
 | `MY_VOICE_PROFILE.md` | Periodic | Real voice + proven formats |
-| `public/*.json`, `DAILY_AGSU_REPORT.md` | Pipeline | Today's picks + sharp data |
+| `social_analysis/todays_picks.json` | `exportTodaysPicks.mjs` | **Authoritative** live board (same as site) |
+| `public/sharp_*positions.json`, `sports_sharps.json` | Pipeline | $ wallet tape + sharp/public splits |
+| `DAILY_AGSU_REPORT.md` | Pipeline | Record, cumulative P/L, fallback board |
 | `social_analysis/my_tweets.json` | GH Action | Own timeline (recently-posted check) |
+
+> **Note:** `public/top_picks_ranked.json` is intentionally NOT used — it's a
+> separate ranking export and does not represent the live board.
