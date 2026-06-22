@@ -94,9 +94,36 @@ PHASE 3 — READ TODAY'S REAL PICKS (exactly what the site shows)
 - If there are no shipped picks today (or no games), SAY SO and pivot the brief
   to recap/record/educational angles — do not invent plays.
 
+PHASE 3B — DETERMINE "WHAT'S NEXT" (narrative + cadence continuity)
+This is the heart of the loop: given everything we've ALREADY posted, what is the
+single perfect NEXT tweet type right now? Treat the timeline as an ongoing story,
+not isolated posts.
+- Reconstruct the recent post SEQUENCE from social_analysis/my_tweets.json + your
+  last few content_briefs/: for the last ~5–8 posts, note format, angle, the
+  game(s)/pick(s) referenced, and roughly when each went out.
+- Look for the OPEN LOOPS and the natural next beat. Examples of the cadence logic
+  (not rules to copy verbatim — reason from the actual sequence):
+    • Posted a morning card/board → next: a line-move/sharp-money update or a
+      single-game deep dive on the strongest play, NOT another full board.
+    • Hyped a specific pick earlier → next (after it settles): the result +
+      honest recap of THAT pick — close the loop you opened.
+    • Flexed a record/“up Xu” → next: today's plays that back it up (proof for the
+      flex), or a "can we keep it going" tease.
+    • Last post was a recap/results → next: pivot forward to the next slate/lock.
+    • Several pick-cards in a row → next: a personality/contrarian/educational beat
+      to break the monotony (variety keeps the feed human).
+    • An earlier post asked a question / ran a poll → next: reference the answers
+      or reveal the outcome.
+- Also weigh: time-to-game (a play with minsToGame < ~90 is a "last call" beat),
+  the current SLOT, what's gone stale, and the guide's mandates.
+- Output a single explicit call: THE NEXT TWEET TYPE = [format] because [the
+  sequence/loop reason]. This drives the #1 angle in Phase 4.
+
 PHASE 4 — SELECT ANGLES FOR THIS SLOT (strategy, not drafting)
-- Choose the 3–4 strongest content opportunities for the CURRENT slot, using the
-  real material from Phase 3 and the structure recipes from the guide.
+- Angle #1 IS the "what's next" call from Phase 3B — the perfect next beat in the
+  story. Build it out fully.
+- Then add 2–3 more strong opportunities for the CURRENT slot, using the real
+  material from Phase 3 and the structure recipes from the guide.
 - Each angle must be specific to today (a real game, a real number, a real
   record) — never a generic template. Vary the formats; no two angles use the
   same hook shape. Honor the stop list and "recently covered" list.
@@ -113,6 +140,12 @@ content_briefs/YYYY-MM-DD_HHMM.md) with EXACTLY this structure:
 - Date/time (ET), slot, day of week
 - Recently covered (last ~36h) — angles/games/formats to AVOID repeating
 - Active guide lever (from TWITTER_IMPROVEMENT_GUIDE.md) + guide age
+
+## What's next (the perfect next beat)
+- Recent post sequence: last ~5–8 posts (format · angle · game · when)
+- Open loops: picks/questions/records we haven't closed or followed up on
+- **THE NEXT TWEET TYPE = [format]** — one sentence on WHY (the sequence/loop
+  reason + timing). This is angle #1 below.
 
 ## Today's board (sourced facts only)
 - Top plays: team · market · line · units · tier   [file]
