@@ -25,14 +25,14 @@ The sharp-wallet data is the *supporting evidence* inside the pick — not a rep
 
 | Rank | Format | Example | Why it works |
 |------|--------|---------|--------------|
-| 1 | **Launch/explainer with visual** | "🚨Sharp Money Tracker🚨 ... if you haven't seen the tool you're in for a treat" (~49K views) | Novelty + product reveal + screenshot |
-| 2 | **Record + flex + soft CTA** | "Yesterday 3-2 +2u ... Like this post and follow if you're riding with the sharps" (17❤) | Proof + direct ask |
-| 3 | **Contrarian hook + board** | "Everybody is about to watch the World Cup... meanwhile the sharps are looking elsewhere" (13❤) | Tension vs the obvious narrative |
-| 4 | **Recap with checkmarks** | "3-1 today. Mets ML ✅✅ Over 9.5 ✅✅ ... Were you on the Mets?" (11❤) | Visual win-stacking + question |
-| 5 | **Personality + card** | "What are we grilling this weekend... here's how we pay for it" (9❤) | Human, relatable, then the plays |
-| 6 | **Single-game deep dive** | "Mets ML +103 ... 7 proven winners, 2 HC sharps, $67.8K, 91% sharp money, Pinnacle confirms. Which ticket?" | Full sharp-data stack + choice |
+| 1 | **Launch/explainer with visual** | "🚨Sharp Money Tracker🚨 ... if you haven't seen the tool you're in for a treat" (49,857 engagement) | Novelty + product reveal + screenshot |
+| 2 | **Pick card** | "When you're using the sharps.. always check back within 60 mins..." (best labeled avg likes: 8 across 2 posts) | Clear picks + units + useful timing note |
+| 3 | **Record + contrarian board** | "We just went 2-0 in MLB yesterday..." (4,115 engagement) | Proof first, then a clean board |
+| 4 | **Sharp conflict hook** | "Sharp dog or sharp trap?" after a 3-0 moneyline flex (3,540 engagement) | Tension gives people a side to pick |
+| 5 | **Whale-wallet single game** | "One sharp wallet just dropped $690.9K on the Yankees" (2,700 engagement) | Huge number + proof stack stops the scroll |
+| 6 | **Single-game / multi-pick deep dive** | "The sharpest MLB wallets..." with Braves/Astros/Yankees (2,722 engagement) | Wallet clustering + dollars + Pinnacle-style proof |
 
-**Reach is decent (1.7K–2.5K views/post, 49K on the tracker reveal). Likes are modest (6–17). Retweets are basically 0.** That's the growth gap to attack.
+**Current pull: 24 posts, avg likes 3 in the labeled sample, 0 total retweets.** Product/novelty can still create reach, but the day-to-day growth gap is making pick-card and sharp-board posts worth reposting.
 
 ---
 
@@ -57,9 +57,9 @@ The sharp-wallet data is the *supporting evidence* inside the pick — not a rep
 
 ## The 3 biggest growth opportunities (from the data)
 
-1. **Retweets are ~0.** Add explicit shareable moments: bold one-liners, "screenshot this", and contrarian takes people want to repost. The tracker reveal proves novelty + visual = reach.
-2. **Threads are absent.** The single-game deep dives (Mets post) are thread-shaped. Break them into a hook tweet + reply chain to multiply watch time.
-3. **Engagement-bait questions work but are samey.** Rotate: "Which ticket?", "Fade or follow?", "Who's got the Over?", polls.
+1. **Retweets are 0.** Add one standalone line per post that followers can repost without context: sharp/public split, whale-wallet line, or "do not chase this public side" warning.
+2. **Depth is underbuilt.** Own posts average 310 chars vs the niche benchmark's 1,147; turn the best sharp-board ideas into true threads instead of compressed single-tweet walls.
+3. **Questions are overused but underpowered.** Own posts ask questions 58% of the time vs niche 14%; make closes either a sharp A/B choice or one explicit repost ask, not generic engagement bait.
 
 ---
 
