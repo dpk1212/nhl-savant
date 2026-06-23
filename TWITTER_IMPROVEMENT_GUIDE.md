@@ -4,6 +4,26 @@
 
 *Auto-seeded from `social_analysis/improvement_brief.json`. The Social Improvement Cursor automation refreshes this weekly.*
 
+## Hard gates (every post must pass — non-negotiable)
+
+These two gates are the reason most of our posts top out at ~10 likes and 0 RTs. The writer/Leg 1 must be able to point to each one before a post ships. If a draft fails either gate, it is not done.
+
+1. **The screenshot test (line 1).** The first sentence must land as a standalone screenshot with ZERO context. If it only makes sense after the proof block, rewrite it. Banned openers: "Here are today's picks", a bare team/line, or any setup that buries the hook (e.g. "I completely stopped posting for 2 weeks because I didn't trust the math *enough*" → lead with "I stopped posting for 2 weeks. **Not because I was losing.**"). Move the strongest words to word one; add a curiosity gap.
+2. **One RT line per post.** Every post must contain exactly ONE standalone, quotable sentence engineered to be reposted with no context — a contrarian truth, an identity line, or a bold claim. This is the direct fix for our zero-retweet gap. Example: "I'd rather go dark than sell you a number I don't believe in." If you can't point to the line, the post isn't finished.
+
+## Identity-hook bank (lead with these on non-pick posts)
+
+Our automations over-index on the proof stack (units, wallets, $, Pinnacle) and under-use the human/identity angle — which is what actually stops the scroll. Rotate one of these as the line-1 hook on any non-pick post (comeback, recap, milestone, slow slate). Never reuse the same category twice in a row.
+
+- **Comeback / blackout** — "I stopped posting for 2 weeks. Not because I was losing — because I didn't trust the math enough to put it in front of you."
+- **Discipline / standards** — "If I wouldn't bet it with my own money, you never see it." / "I'd rather go dark than sell you a number I don't believe in."
+- **Self-fade / honesty** — "I faded my own play yesterday. Here's why." / "I was wrong about [team]. Here's what I missed."
+- **Milestone** — "[N] units tracked. Here's what the tape actually proved." / "[N] followers — none of them bought a pick. They came for the receipts."
+- **Anti-tout** — "Every tout posts every single day. The good ones know when to shut up."
+- **Origin / why** — "I built this because I was tired of being lied to by 22-year-olds with a Discord."
+- **Process over outcome** — "We lost yesterday and I'd make every one of those bets again."
+- **Receipts-as-identity** — "I post the Ls. That's the whole brand."
+
 ## Performance snapshot
 
 | Metric | @Real_NHL_Savant | Niche viral (60 posts) |
@@ -59,7 +79,11 @@
 
 ## Anti-patterns checklist
 
+- [ ] Line 1 fails the screenshot test (only makes sense after the proof block)
+- [ ] No identifiable standalone RT line in the post
+- [ ] Two different jobs in one post (e.g. comeback story + site lock-time info) — split them
 - [ ] No post without a shareable one-liner
 - [ ] No single-tweet walls for 6+ line cards — thread it
 - [ ] No post without emoji on pick content
 - [ ] No weak close ("thoughts?") — use A vs B questions
+- [ ] Same identity-hook category used two posts in a row

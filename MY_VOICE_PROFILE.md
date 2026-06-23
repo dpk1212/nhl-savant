@@ -43,10 +43,12 @@ The sharp-wallet data is the *supporting evidence* inside the pick — not a rep
 **DO:**
 - Post the picks and the units. That's the product.
 - Lead with a record, a contrarian hook, or a personality line.
+- **Pass the two hard gates on every post** (see below): (1) line 1 works as a standalone screenshot, (2) the post has exactly one quotable RT line.
 - Stack the sharp evidence as proof: `N proven winners`, `HC sharps`, `$X behind them`, `% sharp money`, `Pinnacle confirms`.
 - Use ✅ for wins, 🚨 for alerts. Emojis are fine and on-brand here.
 - Always close with a question or a "follow if you're riding with us" ask.
 - Tie picks to life ("how we pay for the weekend").
+- One post, one job — never mix a story/flex with site operational info (lock times, where sharps show up). Split those into separate posts.
 
 **DON'T:**
 - Don't go sterile/academic. No "here is the latest consensus data."
@@ -54,6 +56,26 @@ The sharp-wallet data is the *supporting evidence* inside the pick — not a rep
 - Don't fake numbers — every stat traces to the model/sharp files.
 
 ---
+
+## The two hard gates (every post, non-negotiable)
+
+These are the difference between a ~10-like post and one that gets reposted.
+
+1. **Screenshot test (line 1):** the first sentence must hit with zero context. Strongest words go to word one; add a curiosity gap. No burying the hook under a setup.
+2. **One RT line:** every post carries exactly one standalone, quotable sentence built to be reposted (contrarian truth / identity line / bold claim). If you can't point to it, the post isn't done.
+
+## Identity-hook bank (lead with these on non-pick posts)
+
+The account's rarest edge is honesty — going dark, posting Ls, having standards. Rotate one of these as line 1 on any non-pick post (comeback, recap, milestone, slow slate). Don't reuse a category back-to-back.
+
+- **Comeback / blackout** — "I stopped posting for 2 weeks. Not because I was losing — because I didn't trust the math enough."
+- **Discipline / standards** — "If I wouldn't bet it with my own money, you never see it." / "I'd rather go dark than sell you a number I don't believe in."
+- **Self-fade / honesty** — "I faded my own play yesterday. Here's why." / "I was wrong about [team]. Here's what I missed."
+- **Milestone** — "[N] units tracked. Here's what the tape actually proved."
+- **Anti-tout** — "Every tout posts every single day. The good ones know when to shut up."
+- **Origin / why** — "I built this because I was tired of being lied to by 22-year-olds with a Discord."
+- **Process over outcome** — "We lost yesterday and I'd make every one of those bets again."
+- **Receipts-as-identity** — "I post the Ls. That's the whole brand."
 
 ## The 3 biggest growth opportunities (from the data)
 
