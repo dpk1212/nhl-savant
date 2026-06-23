@@ -73,6 +73,22 @@ Overwrite the file with EXACTLY this structure (~90–120 lines, dense, no fluff
 > One sentence: the single biggest lever to grow reach/engagement this week
 > (refine improvement_brief.diagnosis; labeled data only).
 
+## Hard gates (every post must pass — non-negotiable) [PERSISTENT — never drop]
+Re-emit these two gates verbatim every run; they do not rotate out with the weekly
+data. Tighten the wording only if the data demands it.
+1. Screenshot test (line 1): the first sentence must land as a standalone screenshot
+   with zero context. Ban buried hooks and bare "here are today's picks" openers.
+2. One RT line per post: exactly one standalone, quotable sentence engineered to be
+   reposted with no context. This is the direct fix for the zero-retweet gap.
+
+## Identity-hook bank (lead with these on non-pick posts) [PERSISTENT — maintain, don't reset]
+Carry the bank forward every run. ADD a new entry when you spot a fresh
+honesty/identity angle that performed; PRUNE only ones proven stale. Categories to
+keep: comeback/blackout, discipline/standards, self-fade/honesty, milestone,
+anti-tout, origin/why, process-over-outcome, receipts-as-identity. Each entry = a
+one-line Dale-voice opener. Rule for the writer: rotate one as line 1 on non-pick
+posts; never reuse the same category back-to-back.
+
 ## The one thing that matters this week
 2–3 sentences: the one structural change, WHY it beats last week's advice, and
 what to STOP doing to make room. Reference a post ID or a niche pattern by name.
@@ -136,6 +152,12 @@ HARD RULES
 - Small sample → honest uncertainty, but still give a strong structural call.
 - Web tactics must be recent and sourced; map each to a real gap.
 - Never copy peer posts verbatim. Never output ready_to_post/ content.
+- ALWAYS re-emit the two "Hard gates" and carry forward the "Identity-hook bank"
+  sections (both marked PERSISTENT). These survive every regeneration — never let a
+  weekly rewrite silently drop them. The screenshot test and the one-RT-line gate
+  are the standing fix for our zero-retweet ceiling.
+- Mirror any change to the gates or the hook bank into MY_VOICE_PROFILE.md (Phase 6)
+  so the durable voice doc and the weekly guide never diverge.
 ```
 
 ---

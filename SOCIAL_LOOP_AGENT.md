@@ -51,10 +51,15 @@ PHASE 1 — REFRESH OWN VOICE + WHAT WORKS
 PHASE 2 — LOAD THE IMPROVEMENT GUIDE (how to make it perform)
 - Read TWITTER_IMPROVEMENT_GUIDE.md (written by Leg 2). Pull:
     • the current "one thing that matters" lever
+    • the two HARD GATES (screenshot test on line 1 + one RT line per post)
+    • the IDENTITY-HOOK BANK (for non-pick angles)
     • the niche structure recipes (line 1 job / proof block / close job)
     • the Leg 1 mandates and the stop list
-  Every angle you brief must respect these. If the guide is missing or >8 days
-  old, say so in the brief and fall back to MY_VOICE_PROFILE.md formats.
+  Every angle you brief must respect these. The two hard gates are mandatory on
+  EVERY angle — a brief that can't specify a line-1 screenshot opener and a single
+  RT line for an angle is incomplete. If the guide is missing or >8 days old, say
+  so in the brief and fall back to MY_VOICE_PROFILE.md (same gates + bank live
+  there too).
 
 PHASE 3 — READ TODAY'S REAL PICKS (exactly what the site shows)
 - Read social_analysis/todays_picks.json — this is the AUTHORITATIVE live board.
@@ -160,8 +165,14 @@ For each of 3–4 angles:
 - **Why now:** the timely reason this fits the slot
 - **The data:** the exact sourced facts to use (numbers + file)
 - **Structure:** line 1 job · proof block · close job (from the guide recipe)
+- **Line-1 (screenshot gate):** the standalone opener that works with ZERO context
+  (move the strongest words to word one; add a curiosity gap). For non-pick angles,
+  pull the category from the identity-hook bank and don't repeat last post's category.
+- **RT line (gate):** the one quotable sentence to plant for reposts
 - **Hook direction:** 1–2 example opener directions (not final copy)
 - **Engagement goal:** what this angle is optimizing (RT / replies / saves)
+- **One job check:** confirm this angle isn't mixing a story/flex with operational
+  site info — if it is, split into two angles
 - **Draft seed:** a rough starting line the writer will finalize (clearly a seed)
 
 ## Do-not-post this slot
@@ -180,6 +191,12 @@ HARD RULES
 - Every fact traces to a file read this run. If you can't source it, cut it.
 - Respect the slot, the recently-covered list, and the guide's stop list.
 - Picks + units are the product; sharp data is the proof inside the pick.
+- Every angle MUST pass both hard gates: a line-1 screenshot opener and one RT line.
+  No angle ships without both specified.
+- Non-pick angles MUST lead with an identity-hook-bank category, and not the same
+  category as the last post.
+- One post, one job — never brief an angle that mixes a story/flex with site
+  operational info (lock times, where sharps show up). Split them.
 - Be concise and dense. A writer should be able to act on this in 60 seconds.
 ```
 
