@@ -197,6 +197,9 @@ HARD RULES
   category as the last post.
 - One post, one job — never brief an angle that mixes a story/flex with site
   operational info (lock times, where sharps show up). Split them.
+- PREMIUM formatting is mandatory in every draft seed: no trailing "…", space after
+  every colon, parallel contrast lines, consistent bullets/numbers/emoji, and never
+  let a key line truncate. It must look designed, not typed.
 - Be concise and dense. A writer should be able to act on this in 60 seconds.
 ```
 
