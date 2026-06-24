@@ -27,7 +27,30 @@ const normalize = s => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
 const DELAY_MS = 800;
 const RETRY_LIMIT = 3;
+// Number of wallet position fetches kept in flight at once. The Polymarket
+// data-api tolerates modest parallelism; fetchWithRetry still backs off per
+// request on 429 so a burst self-throttles. Tune down if 429s appear.
+const SCAN_CONCURRENCY = Number(process.env.SCAN_CONCURRENCY) || 4;
 const TIERS_TO_SCAN = ['ELITE', 'PROVEN', 'ACTIVE'];
+
+// Bounded-concurrency async map: runs `worker(item, idx)` for every item with
+// at most `concurrency` promises in flight. Results are returned in input
+// order regardless of completion order, so downstream processing can stay
+// deterministic. Errors from a worker reject the whole pool (workers here
+// never throw — fetchWithRetry returns null on failure).
+async function mapPool(items, concurrency, worker) {
+  const results = new Array(items.length);
+  let cursor = 0;
+  const runNext = async () => {
+    while (cursor < items.length) {
+      const i = cursor++;
+      results[i] = await worker(items[i], i);
+    }
+  };
+  const lanes = Array.from({ length: Math.min(concurrency, items.length) }, runNext);
+  await Promise.all(lanes);
+  return results;
+}
 
 // ─── NHL team resolution ──────────────────────────────────────────────────────
 const NHL_MAP = {
@@ -672,13 +695,25 @@ async function run() {
   let totalMatchCount = 0;
   let errorCount = 0;
 
-  for (const wallet of walletsToScan) {
-    process.stdout.write(`  ${wallet.tier === 'ELITE' ? '***' : '**'} ${wallet.name || wallet.addr.slice(0, 10)}: `);
+  // ── Phase A: fetch every wallet's open positions in parallel (bounded) ──
+  // The network call is the bottleneck (1 throttled request per wallet). A
+  // small concurrency pool collapses what was ~6 min of serial 800ms-spaced
+  // calls into ~1-2 min, while keeping the exact per-request retry / 429
+  // backoff semantics of fetchWithRetry. Results are kept by index so Phase B
+  // processes wallets in the original order — output is identical to the old
+  // sequential scan.
+  console.log(`Fetching positions for ${walletsToScan.length} wallets (concurrency=${SCAN_CONCURRENCY})...`);
+  const fetchedPositions = await mapPool(
+    walletsToScan,
+    SCAN_CONCURRENCY,
+    (wallet) => fetchWithRetry(`${DATA_API}/positions?user=${wallet.addr}&limit=500`),
+  );
 
-    const positions = await fetchWithRetry(
-      `${DATA_API}/positions?user=${wallet.addr}&limit=500`
-    );
-    await sleep(DELAY_MS);
+  // ── Phase B: process results sequentially in original order (no network) ──
+  for (let wi = 0; wi < walletsToScan.length; wi++) {
+    const wallet = walletsToScan[wi];
+    const positions = fetchedPositions[wi];
+    process.stdout.write(`  ${wallet.tier === 'ELITE' ? '***' : '**'} ${wallet.name || wallet.addr.slice(0, 10)}: `);
 
     if (!positions || !Array.isArray(positions)) {
       console.log('no data');

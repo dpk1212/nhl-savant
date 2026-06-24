@@ -87,6 +87,24 @@ const normalize = s => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
 const DELAY_MS = 800;
 const RETRY_LIMIT = 3;
+// In-flight supplemental fetches. fetchWithRetry still backs off per request
+// on 429, so a burst self-throttles. Override via SCAN_CONCURRENCY env.
+const SCAN_CONCURRENCY = Number(process.env.SCAN_CONCURRENCY) || 4;
+
+// Bounded-concurrency async map: runs `worker(item, idx)` for every item with
+// at most `concurrency` promises in flight. Workers here never throw
+// (fetchWithRetry returns {ok:false} on failure).
+async function mapPool(items, concurrency, worker) {
+  let cursor = 0;
+  const runNext = async () => {
+    while (cursor < items.length) {
+      const i = cursor++;
+      await worker(items[i], i);
+    }
+  };
+  const lanes = Array.from({ length: Math.min(concurrency, items.length) }, runNext);
+  await Promise.all(lanes);
+}
 
 // ─── Firebase init ─────────────────────────────────────────────────────────
 if (!admin.apps.length) {
@@ -603,7 +621,25 @@ async function run() {
 
   console.log(`Promoted wallets total: ${whitelist.length}`);
   console.log(`Today's games: ${todayGamesCount}`);
-  console.log('Beginning supplemental scan loop...\n');
+
+  // ── Phase A: parallel supplemental fetch (bounded concurrency) ──────────
+  // Only wallets the main scan missed need a network call. We fetch them in a
+  // small concurrency pool (each request keeps fetchWithRetry's 429 backoff),
+  // then the loop below consumes the cached results — turning ~130 serial
+  // 800ms-spaced calls (~2.5 min) into ~30-40s. Wallets covered by the main
+  // scan or with no known address are handled with zero network in the loop.
+  const fetchedBySuffix = new Map();
+  const toFetch = whitelist.filter((w) => {
+    const fullAddr = addrBySuffix.get(w.walletShort);
+    return fullAddr && !mainScanned.has(fullAddr);
+  });
+  console.log(`Supplemental fetch: ${toFetch.length} wallet(s) need a network call (concurrency=${SCAN_CONCURRENCY})...`);
+  await mapPool(toFetch, SCAN_CONCURRENCY, async (w) => {
+    const fullAddr = addrBySuffix.get(w.walletShort);
+    const res = await fetchWithRetry(`${DATA_API}/positions?user=${fullAddr}&limit=500`);
+    fetchedBySuffix.set(w.walletShort, res);
+  });
+  console.log('Processing supplemental scan results...\n');
 
   for (const w of whitelist) {
     const suffix = w.walletShort;
@@ -636,10 +672,8 @@ async function run() {
       continue;
     }
 
-    // Supplemental scan. Mirror main scanner's throttling.
-    const url = `${DATA_API}/positions?user=${fullAddr}&limit=500`;
-    const fetched = await fetchWithRetry(url);
-    await sleep(DELAY_MS);
+    // Supplemental scan result (prefetched in Phase A's concurrency pool).
+    const fetched = fetchedBySuffix.get(suffix) || { ok: false, error: 'not prefetched' };
 
     if (!fetched.ok || !Array.isArray(fetched.data)) {
       apiError++;
