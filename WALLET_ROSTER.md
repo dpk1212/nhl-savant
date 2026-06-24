@@ -1,6 +1,6 @@
 # Sharp Wallet Roster
 
-Generated: 6/24/2026, 2:46:07 AM ET · V8 cutover: 2026-04-18 · whitelistVersion: 2
+Generated: 6/24/2026, 6:19:54 AM ET · V8 cutover: 2026-04-18 · whitelistVersion: 2
 
 Every sharp wallet we have V8-era data on, sorted by combined conviction score. This is the **full roster** (no minimum-bets filter) — noisy at the tail, but that's the point for a tracking dataset. Verdict column reflects the ≥3-bet threshold.
 
@@ -282,7 +282,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 6b853d | CONFIRMED_BLEEDER | ELITE | 412 | 62 | 50% | -6.2% | -3.82 | 175 | 46.9% | -5.9% | -45253 | 32.9 | 46.6 | 3.2% |
 | c289a0 | CONFIRMED_BLEEDER | ELITE | 240 | 14 | 28.6% | -46.7% | -6.54 | 36 | 50% | -27.5% | -18242 | 31 | 22.1 | 1.5% |
 | 43020b | CONFIRMED_BLEEDER | ELITE | 93 | 6 | 50% | -5.7% | -0.34 | 53 | 37.7% | -8.2% | -100674 | 49.5 | 32.2 | 2% |
-| 5b1e50 | CONFIRMED_BLEEDER | ELITE | 368 | 103 | 47.6% | -9.7% | -9.99 | 445 | 49% | -1.5% | -8010 | 12.9 | 13.8 | 1% |
+| 5b1e50 | CONFIRMED_BLEEDER | ELITE | 368 | 103 | 47.6% | -9.7% | -9.99 | 446 | 49.1% | -1.4% | -7588 | 12.9 | 13.8 | 1% |
 | 1d14b8 | CONFIRMED_BLEEDER | ELITE | 293 | 6 | 16.7% | -67.9% | -4.07 | 16 | 37.5% | -20.8% | -69455 | 53.3 | 62.7 | 5.2% |
 | d50c53 | CONFIRMED_BLEEDER | ELITE | — | 8 | 37.5% | -43.1% | -3.45 | 15 | 33.3% | -48.5% | -89467 | 47.3 | 70.9 | 6.8% |
 | bc35e3 | CONFIRMED_BLEEDER | SHARP | — | 45 | 46.7% | -14.2% | -6.39 | 289 | 43.6% | -4.7% | -64204 | 18.9 | 27.9 | 1.8% |
@@ -373,7 +373,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 6b853d | 62 | -6.2% | 175 | -5.9% | -45253 | 32.9 | 3.2% |
 | c289a0 | 14 | -46.7% | 36 | -27.5% | -18242 | 31 | 1.5% |
 | 43020b | 6 | -5.7% | 53 | -8.2% | -100674 | 49.5 | 2% |
-| 5b1e50 | 103 | -9.7% | 445 | -1.5% | -8010 | 12.9 | 1% |
+| 5b1e50 | 103 | -9.7% | 446 | -1.4% | -7588 | 12.9 | 1% |
 | 1d14b8 | 6 | -67.9% | 16 | -20.8% | -69455 | 53.3 | 5.2% |
 | d50c53 | 8 | -43.1% | 15 | -48.5% | -89467 | 47.3 | 6.8% |
 | bc35e3 | 45 | -14.2% | 289 | -4.7% | -64204 | 18.9 | 1.8% |
