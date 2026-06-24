@@ -27,6 +27,27 @@ const CLOB = 'https://clob.polymarket.com';
 
 const httpFetch = typeof globalThis.fetch === 'function' ? globalThis.fetch : (await import('node-fetch')).default;
 
+// Number of per-game enrichments (each = ~5 sequential Polymarket calls) kept
+// in flight at once. The data/gamma APIs tolerate modest parallelism; each
+// underlying request still throws on non-2xx and is caught per-game, so a slow
+// or failing game never blocks the others. Override via ENRICH_CONCURRENCY env.
+const ENRICH_CONCURRENCY = Number(process.env.ENRICH_CONCURRENCY) || 4;
+
+// Bounded-concurrency async map: runs `worker(item, idx)` for every item with
+// at most `concurrency` promises in flight. Used to parallelize the otherwise
+// serial per-game enrichment loop.
+async function mapPool(items, concurrency, worker) {
+  let cursor = 0;
+  const runNext = async () => {
+    while (cursor < items.length) {
+      const i = cursor++;
+      await worker(items[i], i);
+    }
+  };
+  const lanes = Array.from({ length: Math.min(concurrency, items.length) }, runNext);
+  await Promise.all(lanes);
+}
+
 async function get(path, base = GAMMA) {
   const url = base + path;
   const res = await httpFetch(url, { headers: { Accept: 'application/json' } });
@@ -645,6 +666,12 @@ async function run() {
   const nowMs = Date.now();
   const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000;
 
+  // Phase 1 (this loop) does sequential classification, date-dedup (mutates
+  // shared seenDates) and a skeleton write per matched game. The expensive
+  // network enrichment is deferred into enrichJobs[] and run in parallel
+  // afterward — see Phase 2 below.
+  const enrichJobs = [];
+
   for (const ev of byId.values()) {
     const id = ev.id ?? ev.slug;
     const title = ev.title || ev.question || '';
@@ -761,7 +788,11 @@ async function run() {
       enrichmentFailed: true,
     };
 
-    try {
+    // Defer the network-heavy enrichment (5+ Polymarket calls per game) into a
+    // parallel task. It only writes into this game's own bucket[key], so many
+    // can run concurrently without racing on shared state.
+    enrichJobs.push(async () => {
+     try {
       const live = await getLiveVolume(id);
       const trades = await getAllTrades(id);
       const agg = sport === 'SOC'
@@ -1053,10 +1084,17 @@ async function run() {
         polyGameDate: ev.eventDate || null,
         enrichmentFailed: false,
       };
-    } catch (e) {
+     } catch (e) {
       console.warn(`Failed to enrich ${title}:`, e.message, '(skeleton entry retained)');
-    }
+     }
+    });
   }
+
+  // Phase 2: run all deferred per-game enrichments with bounded concurrency.
+  // This is the big win — what used to be ~5 sequential calls × every matched
+  // game (serial) now runs ENRICH_CONCURRENCY games at a time.
+  console.log(`Enriching ${enrichJobs.length} matched game(s) (concurrency=${ENRICH_CONCURRENCY})...`);
+  await mapPool(enrichJobs, ENRICH_CONCURRENCY, (job) => job());
 
   const outPath = join(ROOT, 'public', 'polymarket_data.json');
   writeFileSync(outPath, JSON.stringify(out, null, 2), 'utf8');
