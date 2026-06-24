@@ -79,9 +79,9 @@ The account's rarest edge is honesty — going dark, posting Ls, having standard
 
 ## The 3 biggest growth opportunities (from the data)
 
-1. **Retweets are ~0.** Add explicit shareable moments: bold one-liners, "screenshot this", and contrarian takes people want to repost. The tracker reveal proves novelty + visual = reach.
-2. **Threads are absent.** The single-game deep dives (Mets post) are thread-shaped. Break them into a hook tweet + reply chain to multiply watch time.
-3. **Engagement-bait questions work but are samey.** Rotate: "Which ticket?", "Fade or follow?", "Who's got the Over?", polls.
+1. **Sharp/public boards are the clearest current lever.** The latest labeled winner opened with public money vs sharp money before the pick; lead with the market map, then make the bet the verdict.
+2. **Generic opinion posts need structure.** If a draft starts as "people only see team names" or "interesting matchup," convert it into Line 1 / Proof / Close with public %, sharp side, and line move.
+3. **Long proof stacks need better packaging.** Keep the sharp evidence, but cap single posts at 3 evidence slots or split deeper reads into hook + replies so the board stays readable.
 
 ---
 
