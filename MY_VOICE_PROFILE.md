@@ -79,9 +79,9 @@ The account's rarest edge is honesty — going dark, posting Ls, having standard
 
 ## The 3 biggest growth opportunities (from the data)
 
-1. **Retweets are ~0.** Add explicit shareable moments: bold one-liners, "screenshot this", and contrarian takes people want to repost. The tracker reveal proves novelty + visual = reach.
-2. **Threads are absent.** The single-game deep dives (Mets post) are thread-shaped. Break them into a hook tweet + reply chain to multiply watch time.
-3. **Engagement-bait questions work but are samey.** Rotate: "Which ticket?", "Fade or follow?", "Who's got the Over?", polls.
+1. **Sharp/public boards are absent.** The latest improvement brief shows 0% of posts use the peer-winning market-map shape: public side, sharp money, line move, verdict. Keep Dale's swagger, but lead pick posts with where the market is wrong before naming the bet.
+2. **Shareability is still unproven.** The labeled sample is tiny (5/22), but it still has 0 RTs. One standalone verdict line per board post should be specific enough to repost without the rest of the card.
+3. **Record-flex works for identity posts, not every pick.** Post 2069378261994328352 followed the comeback/receipts structure and became the best labeled post. Use that for non-pick trust building; use market boards for picks.
 
 ---
 

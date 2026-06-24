@@ -1,89 +1,91 @@
-# Twitter Improvement Guide — 2026-06-22
+# Twitter Improvement Guide — 2026-06-24
 
-> **Verdict:** Retweets are still zero — every post needs one standalone, shareable line people want to repost; split long cards into threads.
+> The single biggest lever this week is to turn pick-first cards into sharp/public market boards before naming the bet; the labeled sample is tiny, but the niche structure gap is not.
 
-*Auto-seeded from `social_analysis/improvement_brief.json`. The Social Improvement Cursor automation refreshes this weekly.*
+## The one thing that matters this week
+Last week's advice said "make line 1 screenshot-worthy" and "add one shareable line"; Leg 1 applied it on post 2069378261994328352 and that became the best labeled post at 16 likes.
+That advice worked, so this week beats it by moving upstream: the first line must now promise a market map, not just a stronger hook.
+Stop shipping "here are the plays" walls; make room for one board-shaped pick post where public %, sharp money, line move, and verdict are the product.
 
-## Hard gates (every post must pass — non-negotiable)
+## How we're actually performing (truth layer)
+- n=5 of 22 posts have real likes/RTs from labeled x.com scrape; conclusions are directional only.
+- Avg likes: 7.2; avg RTs: 0.0; 0-like count: 0 in the labeled sample.
+- Best labeled post: 2069378261994328352, `record_flex_cta`, 16 likes, 0 RTs.
+- What worked there: identity first ("I stopped posting..."), then receipts, then a follow-if-you-care close.
+- Worst labeled post: 2069226645685199232, `pick_card`, 3 likes; no labeled post had 0 likes.
+- What failed there: postponement context led, proof was thin, and the close did not create a market read.
+- Format leaderboard, labeled only:
+- `record_flex_cta`: n=2, 19 likes, avg 9.5, 0 RTs.
+- `other`: n=1, 9 likes, avg 9.0, 0 RTs.
+- `pick_with_proof`: n=1, 5 likes, avg 5.0, 0 RTs.
+- `pick_card`: n=1, 3 likes, avg 3.0, 0 RTs.
+- Unlabeled formats (`product_reveal`, `record_plus_picks`, `recap_checkmarks`, `contrarian_hook`) cannot be ranked for performance.
+- Did last week's advice move anything? Yes, directionally: the ready-to-post comeback/discipline brief followed the screenshot-line and one-job advice, and its shipped labeled post is the top result.
+- The part that did not move: 0 total retweets in the labeled sample, so shareability is still unproven.
 
-These two gates are the reason most of our posts top out at ~10 likes and 0 RTs. The writer/Leg 1 must be able to point to each one before a post ships. If a draft fails either gate, it is not done.
+## What the niche does better (steal the structure)
+For up to 3 peer patterns (from structureRecipes):
+### sharp_public_board — @PatrickE_Vegas
+- Line 1 job · Proof block · Close job
+- Line 1 names the slate/game and promises where sharps vs public money are split.
+- Proof block is side-by-side market evidence: public %, sharp $, line move, "notable sharp action."
+- Close job is one verdict line: which side the market is wrong about, not "who are you riding?"
+- Our gap (specific, from formatMatchups): post 2069183020783874527 opens with a discipline slogan, then picks; 0% of our corpus has sharp/public split.
 
-1. **The screenshot test (line 1).** The first sentence must land as a standalone screenshot with ZERO context. If it only makes sense after the proof block, rewrite it. Banned openers: "Here are today's picks", a bare team/line, or any setup that buries the hook (e.g. "I completely stopped posting for 2 weeks because I didn't trust the math *enough*" → lead with "I stopped posting for 2 weeks. **Not because I was losing.**"). Move the strongest words to word one; add a curiosity gap.
-2. **One RT line per post.** Every post must contain exactly ONE standalone, quotable sentence engineered to be reposted with no context — a contrarian truth, an identity line, or a bold claim. This is the direct fix for our zero-retweet gap. Example: "I'd rather go dark than sell you a number I don't believe in." If you can't point to the line, the post isn't finished.
+### pick_card — @AlexCaruso
+- Line 1 job · Proof block · Close job
+- Line 1 is blunt and labeled ("MLB Recap:") so the reader knows the job immediately.
+- Proof block stacks outcomes or numbers in a scan-friendly order before commentary.
+- Close job gives a next action or question after the record, not before the receipts.
+- Our gap (specific, from formatMatchups): weak pick cards like 2069226645685199232 give replacement context before proof, so there is no reason to save, share, or argue.
 
-## Identity-hook bank (lead with these on non-pick posts)
+## Current X growth tactics (from web research)
+3–5 recent, sourced tactics mapped to OUR gaps:
+- **Optimize for multiple predicted actions, not likes** — source xAI GitHub, May 15 2026; Postory, May 16 2026.
+  Maps to gap: labeled posts average 7.2 likes but 0 RTs and no market-board format. How we apply it to betting content: design the board to earn a profile click/follow, a reply on the verdict, and a repostable market sentence.
+- **Author-engaged replies in the first hour** — source Postory, May 2026.
+  Maps to gap: closes ask "which one?" but do not create debate. How we apply it to betting content: close board posts with one specific market disagreement Dale can answer fast, then reply with one extra proof note.
+- **Write for dwell with explicit context, not compressed picks** — source @shiraeis growth post, May 2026; VoiceMoat algorithm series, May 2026.
+  Maps to gap: bottom posts are long single-tweet walls but still pick-first. How we apply it to betting content: make line 2 pay off line 1, then use 3 bullets max: public side, sharp side, line move.
+- **Avoid burst-posting low-substance variants** — source xAI GitHub author diversity scorer, May 2026; Postory, May 2026.
+  Maps to gap: several formats compete for the same job. How we apply it to betting content: one high-substance board beats three thin replacement-card posts in the same window.
+- **Make proof saveable before asking for action** — source @javilopen scraped growth post, May 2026 ("save it for later" long algorithm post); Alex Berman 2026 feed/reach guide.
+  Maps to gap: post 2069535394732056937 says "bookmark this" before the board exists. How we apply it to betting content: earn the bookmark with public/sharp/line-move rows, then close.
 
-Our automations over-index on the proof stack (units, wallets, $, Pinnacle) and under-use the human/identity angle — which is what actually stops the scroll. Rotate one of these as the line-1 hook on any non-pick post (comeback, recap, milestone, slow slate). Never reuse the same category twice in a row.
+## Before → After (2 rewrites)
+From improvement_brief.rewriteCandidates. For each weak post:
+- Post ID 2069535394732056937 (3 likes) — current hook: "Stop what you're doing and bookmark this. 📌"
+- Problem (structural): asks for a save before delivering a market map; pick-first stack; too much proof in one wall.
+- After: Line 1 / Proof / Close skeleton in Dale's voice (not a finished tweet)
+- Line 1: "Tonight's board has three public sides I am not chasing yet."
+- Proof: `[Game] public % vs sharp $ / line move / wallet size`; repeat for the 2 strongest games only.
+- Close: "Verdict: [side] is the one where the market is lying; the others stay off my card unless price moves."
 
-- **Comeback / blackout** — "I stopped posting for 2 weeks. Not because I was losing — because I didn't trust the math enough to put it in front of you."
-- **Discipline / standards** — "If I wouldn't bet it with my own money, you never see it." / "I'd rather go dark than sell you a number I don't believe in."
-- **Self-fade / honesty** — "I faded my own play yesterday. Here's why." / "I was wrong about [team]. Here's what I missed."
-- **Milestone** — "[N] units tracked. Here's what the tape actually proved." / "[N] followers — none of them bought a pick. They came for the receipts."
-- **Anti-tout** — "Every tout posts every single day. The good ones know when to shut up."
-- **Origin / why** — "I built this because I was tired of being lied to by 22-year-olds with a Discord."
-- **Process over outcome** — "We lost yesterday and I'd make every one of those bets again."
-- **Receipts-as-identity** — "I post the Ls. That's the whole brand."
+- Post ID 2069226645685199232 (3 likes) — current hook: "Cubs and Mets was postponed.."
+- Problem (structural): operational context leads; no sharp/public split; close is generic.
+- After: Line 1 / Proof / Close skeleton in Dale's voice (not a finished tweet)
+- Line 1: "The replacement play only matters if the market is still wrong."
+- Proof: `Orioles/Angels total: public %, sharp wallets, line open -> current, why over 8.5 still/does not still clear`.
+- Close: "Verdict: if [price] holds, I ride; if it moves past [number], we pass."
 
-## Performance snapshot
+## This week's ONE experiment
+Pick the top recommendedExperiment (or justify switching):
+- Switching from top priority `format_double_down` to `sharp_public_board_test` because record-flex was already applied and produced the top labeled post, while the board gap is still 0% of posts.
+- Hypothesis: market-map openers outperform pick-first cards in our lane because they create dwell, debate, and a repostable verdict.
+- Test protocol: ship one pick post using `sharp_public_board`: line 1 names slate + sharp/public split; body has public %, sharp $, line move; close gives one verdict.
+- Baseline: 0% of current posts use this shape; weakest labeled pick/card floor is 3 likes; labeled average is 7.2 likes.
+- Success metric: beats 3 likes and earns either 1 RT or at least one substantive reply Dale can answer with added proof.
+- Fail signal: under 3 likes and no replies/RTs, or replies show readers cannot identify the actual market disagreement.
 
-| Metric | @Real_NHL_Savant | Niche viral (60 posts) |
-|--------|------------------|------------------------|
-| Avg likes (labeled sample) | 9.8 | — |
-| Retweets | **0** | high on top posts |
-| Posts with emoji | 26% | **75%** |
-| Posts with question | **70%** | 13% |
-| Posts with numbers | 87% | 88% |
-| Avg length (chars) | 387 | 1,159 |
+## Mandates for the Content Brief agent (max 5)
+- For one pick brief, open with the board before the team: "public is on X / sharp money is on Y" traced to @PatrickE_Vegas `sharp_public_board`.
+- Any "bookmark this" angle must include a 3-row proof board first; do not repeat 2069535394732056937's ask-before-proof order.
+- Replacement or late-slate plays must lead with why the market changed, not the postponement/admin note, traced to 2069226645685199232.
+- Record-flex posts may keep the post-2069378261994328352 identity structure, but only for non-pick posts; pick posts need market map first.
+- Close with one verdict Dale can defend in replies: side, price limit, or pass trigger; no generic "which ticket?" on board posts.
 
-**Best format (labeled likes):** `record_flex_cta` — avg **17 likes** (Yesterday 3-2 +2u style).
-
-## What's working (keep doing)
-
-- **Record flex + CTA** — "Yesterday X-Y +Zu … like and follow if you're riding with the sharps" (17❤ on recent labeled post).
-- **Contrarian hooks** — World Cup / public narrative vs where sharps are looking (~13❤ avg when labeled).
-- **Numbers + proof stack** — units, V12 scores, $ behind, HC sharps, Pinnacle confirms.
-- **Product/novelty reveals** — Sharp Money Tracker post drove massive reach (49K+ stat in corpus).
-
-## What's not working (stop or fix)
-
-- **Zero retweets** — nothing is quotable enough to share; posts read as "for followers only."
-- **Recap checkmarks format** — 0 avg engagement in recent sample; don't repeat without a stronger hook.
-- **Shorter than niche winners** — our avg 387 chars vs niche 1,159; viral peers often use thread-length depth (but as threads, not walls).
-
-## Niche lessons (structure, not copy)
-
-1. **Emoji is table stakes** — 75% of viral niche posts use emoji; we're at 26%. Use 🚨 on alerts, ✅ on recaps — don't go sterile.
-2. **Long-form wins as threads** — niche avg ~1,160 chars; break our deep dives into hook + 2–4 reply tweets instead of one block.
-3. **Bold opener = the product** — top niche hooks lead with a claim or tension line, not "here are picks."
-
-### Hook templates (Dale voice)
-
-- `"Everybody's on [obvious narrative]… the sharps are on [side/game]."`
-- `"Yesterday: [W-L] [+Xu]. Here's the [N]-play card they're loading today."`
-- `"One line worth screenshotting: [bold contrarian claim]. Thread 👇"`
-
-## This week's priority experiments
-
-1. **Shareable one-liner** — Add one RT-bait sentence per post that works without context. *Metric: first RT.*
-2. **One thread/week** — Hook + 2–4 replies for best single-game or multi-pick card. *Metric: replies + profile clicks.*
-3. **Double down record_flex_cta** — Post daily record + cumulative v12 profit 3× this week. *Metric: likes ≥ 15.*
-
-## Rules for the Content Loop agent (next 7 days)
-
-- Every post includes **one screenshot-worthy line** in the first 2 sentences.
-- Ship **at least one thread** (hook + replies) in the 3–5 daily options.
-- Lead with **record or contrarian** before the pick list when data supports it.
-- Use **🚨 or ✅** on every pick post — match niche emoji rate.
-- Close with a **binary choice** ("Yankees RL or the under?") not generic "which ticket?"
-- **Never** post a recap-checkmarks-only format without a record flex hook first.
-
-## Anti-patterns checklist
-
-- [ ] Line 1 fails the screenshot test (only makes sense after the proof block)
-- [ ] No identifiable standalone RT line in the post
-- [ ] Two different jobs in one post (e.g. comeback story + site lock-time info) — split them
-- [ ] No post without a shareable one-liner
-- [ ] No single-tweet walls for 6+ line cards — thread it
-- [ ] No post without emoji on pick content
-- [ ] No weak close ("thoughts?") — use A vs B questions
-- [ ] Same identity-hook category used two posts in a row
+## Stop list (max 4)
+- Stop pick-first walls that list units before public/sharp context, traced to 2069593226357494198.
+- Stop asking for bookmarks before proving the post is saveable, traced to 2069535394732056937.
+- Stop leading with admin context ("postponed", "replacement") unless the market move is the point, traced to 2069226645685199232.
+- Stop treating a stronger hook as the whole fix; the niche advantage is line 1 + proof board + verdict.
