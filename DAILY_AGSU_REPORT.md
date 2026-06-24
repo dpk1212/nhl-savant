@@ -1,6 +1,6 @@
 # AGS-Unified — V12 Performance Monitor
 
-**Generated:** Wednesday, June 24, 2026 at 7:26 AM ET
+**Generated:** Wednesday, June 24, 2026 at 11:19 AM ET
 
 **Active model:** `ags-unified-v12` · **V12 went live:** 2026-06-01 · **Days live:** 24
 
@@ -8,17 +8,17 @@
 
 ## § 1 — Executive Summary
 
-> 🟢 **V12 is currently WINNING.** Since going live on **2026-06-01** (24 days ago), V12 has evaluated **660** picks, shipped **256** for real money (38.8% ship rate), and muted the other **404**. On the shipped picks V12 has gone **141-115** (55.1% win), staked **578.75u**, and returned **+32.21u** at **+5.6% ROI**.
+> 🟢 **V12 is currently WINNING.** Since going live on **2026-06-01** (24 days ago), V12 has evaluated **667** picks, shipped **256** for real money (38.4% ship rate), and muted the other **411**. On the shipped picks V12 has gone **141-115** (55.1% win), staked **578.75u**, and returned **+32.21u** at **+5.6% ROI**.
 
 ### Snapshot
 
 | Metric                              | Value                          |
 |-------------------------------------|--------------------------------|
 | Days V12 has been authoritative     |                             24 |
-| Picks V12 has evaluated             |                            660 |
+| Picks V12 has evaluated             |                            667 |
 | Picks SHIPPED (units > 0)           |                            256 |
-| Picks MUTED (score ≤ 0, FADE)       |                            404 |
-| Ship rate                           |                          38.8% |
+| Picks MUTED (score ≤ 0, FADE)       |                            411 |
+| Ship rate                           |                          38.4% |
 | Live W-L                            |                        141-115 |
 | Live Win %                          |                          55.1% |
 | Live PnL (units)                    |                         +32.21 |
@@ -126,7 +126,7 @@ Day-by-day production since V12 went live. **Evaluated** = picks V12 scored that
 | 2026-06-21 |        38 |    4 |    19 | 2-2        |  50.0% |     11.50 |      -1.87 |    -16.3% |     +32.11 |
 | 2026-06-22 |        32 |    5 |    17 | 4-1        |  80.0% |     16.00 |      +8.60 |     53.8% |     +40.71 |
 | 2026-06-23 |        36 |    3 |    27 | 0-3        |   0.0% |      8.50 |      -8.50 |   -100.0% |     +32.21 |
-| 2026-06-24 |        11 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +32.21 |
+| 2026-06-24 |        18 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +32.21 |
 | 2026-06-25 |         5 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +32.21 |
 | 2026-06-26 |         1 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +32.21 |
 
@@ -561,10 +561,10 @@ Same filter, sorted ROI ascending. Wallets that consistently lose when they're o
 | Graded picks with `tracked=true` AND `finalUnits > 0`         |     1 | 🚨 grader regression — see betTracking.js |
 | Graded picks with `tracked=true` AND `finalUnits == 0`        |   354 | 🟡 informational only — true tracked plays |
 | LOCK+ tier picks with `finalUnits == 0` (sizing regression)   |    49 | 🚨 sizing regression — agsSizeMultiplier returning 0 for strong AGS-U |
-| Live picks (not graded yet) with `finalUnits > 0`             |     5 | 🟢 picks queued for grading |
+| Live picks (not graded yet) with `finalUnits > 0`             |     6 | 🟢 picks queued for grading |
 | AGS-U promoted picks missing `v8_ags` value                   |    18 | 🟡 some picks missing AGS-U — cron lag or stale doc |
 | AGS-U promoted picks missing `agsTier`                        |    12 | 🟡 some picks missing tier classification |
-| Single-wallet shipped picks (`provenWalletCount == 1`)       |   130 | 🟡 informational — AGS-U calibration controls sample adequacy |
+| Single-wallet shipped picks (`provenWalletCount == 1`)       |   131 | 🟡 informational — AGS-U calibration controls sample adequacy |
 
 **Tracked-shipped detail (these are the picks the grader wrongly marked 0u):**
 
