@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-06-24T01:21:51.420Z",
+  "fetchedAt": "2026-06-24T11:29:26.393Z",
   "config": {
     "searches": [
       "twitter thread structure min_faves:50 -course -crypto",
@@ -14,21 +14,21 @@
     "accounts": [],
     "minEngagement": 30
   },
-  "totalTips": 26,
+  "totalTips": 25,
   "topicBreakdown": {
-    "algorithm": 10,
-    "threads": 7,
+    "algorithm": 14,
     "engagement": 3,
+    "threads": 2,
     "hooks": 3,
     "timing": 1,
     "general": 2
   },
   "aggregate": {
-    "pctWithEmoji": 62,
+    "pctWithEmoji": 56,
     "pctNumberedList": 0,
-    "pctThreadShaped": 85,
-    "pctWithMetrics": 35,
-    "avgChars": 1817
+    "pctThreadShaped": 80,
+    "pctWithMetrics": 32,
+    "avgChars": 2390
   },
   "posts": [
     {
@@ -36,12 +36,12 @@
       "id": "2055681064085938429",
       "dateTitle": "May 16, 2026 · 4:05 PM UTC",
       "text": "⚡ xAI dropped the X algorithm yesterday and I don't get why nobody noticed what's actually in there\nI burned $500 on Claude going through every single line\nHere's what I found (LONG POST, save it for later):\n0/ Every account has an \"embedding\" attached to it that describes you the way AI models do: in latent space. It's the internal fingerprint the model keeps of every user, a vector of numbers that sums up how your account behaves (what topics you touch, what engagement you generate, who you interact with). The model uses it every time it decides who to show your posts to. If your history is good, it stays clean and the model pushes you. If you accumulate negative signals (blocks, mutes, reports, not\\_interested), it goes toxic and starts penalizing you automatically. And the trap: it does NOT reset. What you do today stays in there for weeks, poisoning everything you publish after, even if it's good.\nThat's why getting out of a shadowban or a low-reach streak on X feels like trying to move a giant rusted wheel. It's not your imagination, it's literally that. Cleaning up your embedding is slow and painful, like the impression you have of someone you don't like: no matter how nice they get to you, it's gonna take a while before you trust them.\nAnother important finding: the embedding doesn't decay on a clock. It decays with NEW engagement entering the system. If you stop posting, the old bad signals stay frozen in there. Nothing overwrites them. If you start making content the algorithm likes, you'd see improvement after 6 to 8 weeks and a real shift around 12 to 16 weeks, assuming you don't pile up more bad signals along the way.\nWhy is nobody talking about this? It blows my mind. Finally a confirmation of that \"I'm in a bad streak\" feeling we've all been through.\n1/ First 30 minutes are everything\nIf your post doesn't get engagement fast, Grok doesn't even evaluate it. No quality score, no deep analysis, no chance of reaching anyone who doesn't follow you. Dead and buried\n2/ Post age caps at 80 hours:\nPOST\\_AGE\\_MAX\\_MINUTES = 4800, bucketed in 1 hour chunks. After that you're in the \"overflow bucket\" which translates to \"ancient, ignore\"\nBest window: first 0 to 12 hours. After 24 you're already in a worse bucket\nFar from rewarding \"evergreen\" content, X wants a constant stream of fresh meat (literally the opposite of YouTube)\n3/ MY BIGGEST FEAR TURNED OUT TO BE UNFOUNDED (supposedly): living in EU posting English for US audience: ZERO direct penalty in theory:\nThe PostCandidate struct has NO field for author country, IP, or location. Gizmoduck (X's identity service) returns only follower count + screen name. The Phoenix transformer just sees a hash of your author\\_id\nWhat hurts you indirectly: timezone (your post ages while US sleeps) and the language of the POST itself\nSo using a VPN to \"post from the US\" does literally nothing (unlike TikTok or Instagram, by the way)\n4/ The 5 negative signals that kill your reach:\nThe model predicts 22 actions per post. 5 of them are negative weights that get SUBTRACTED from your score:\n\\- not\\_interested\n\\- block\\_author\n\\- mute\\_author\n\\- report\n\\- not\\_dwelled (people scrolling past your post without stopping)\nThat last one is brutal tbh. A post that gets ignored is mathematically WORSE than a post that never got published\n5/ Shadowbans 100% exist. 4 different kinds:\n\\- Hard drop. X removes your post from everyone's feed without telling you. Applied to posts with serious content (child safety, etc.) or suspended accounts. You don't even find out\n\\- DO\\_NOT\\_AMPLIFY label. Literally a field in the code that says \"do not amplify this post\". If they put it on you, ads stop showing next to your posts → X stops making money from showing you → the system stops pushing you. Full blackout\n\\- BotMaker rules. The internal panel where X employees can manually limit a specific account by hand. The code shows the categories that exist (Content, ContentLimited, Safety, Grok) but does NOT show who they're applied to or why. The tool is documented, the usage isn't\n\\- Poisoned embedding. The worst one, as we saw above. The model has an internal \"memory\" for every account. If your account racks up enough \"not interested\" + blocks + mutes + reports over time, that memory goes toxic. From then on, even your good future posts get penalized automatically. Nobody decided this. The model just learned your account gets bad engagement and self-corrected\n6/ Only ORIGINAL posts get the \"Banger Screen\"\nReplies and retweets never enter the Grok quality classifier. If you spend your day replying to viral accounts, you're optimizing for the Reply Ranker, NOT for amplification\nWant to be discovered out of network? Write originals. There's no other way\n7/ Replies to small accounts get spam-scanned. Replies to big accounts get Grok-ranked\nTwo separate classifiers. The SpamEapiLowFollowerClassifier hits replies to small accounts. The ReplyRanker scores replies to big accounts 0 to 3 with Grok\n\"First!\" or emoji-only replies get a 0. \"Sir, this is a Wendy's\" energy gets penalized. Basically, if you write replies, they better add something. Otherwise don't bother\n8/ 50% of all feed requests are \"shadow traffic\"\nis\\_sampled(request\\_id, 0.5) marks half of every feed request as shadow. Many context features (gender inference, demographics, Grok topic preferences) only activate on shadow OR with a feature flag\nTranslation: you literally cannot know which version of the algorithm any given user is getting. Half your audience is in an experiment at any moment\n9/ Dwell (the time a user spends looking at your post before scrolling) is 5x better than getting likes\nThe scorer has 5 different dwell signals (dwell, cont\\_dwell\\_time, click\\_dwell\\_time, etc.) but only 1 favorite signal.\n\\- A post with tons of likes but people read it for 1 second and keep scrolling → low score\n\\- A post with few likes but people stay 8 seconds reading it → high score\nOptimize for time spent on your post, not for likes!\n10/ Things that actually work:\n\\- Get engagement in the first 10 min. DM your friends, ping your community, whatever\n\\- Post in your AUDIENCE'S timezone, not yours. US targeting: 8 to 11am ET (14 to 17 Madrid time)\n\\- Don't post 5 things in a row. AuthorDiversityScorer multiplies each next post by decay^position. By post 4 you're at the floor\n\\- Video ≥ 10 seconds. Below MinVideoDurationMs you lose the full VQV weight\n\\- Videos with audio. Grok runs ASR (speech to text) on every video. No audio = blank signal\n\\- Quote tweet virals in your niche. The model already knows the original engages, your value-add stacks on top\n11/ Things that absolutely kill your reach:\n\\- WILD FINDING: threads of 10+ tweets. DedupConversationFilter keeps only 1 tweet per conversation per feed. Megathreads are mathematically a waste\n\\- Reposting the same content. Bloom filters dedupe it\n\\- AI slop. There's literally a slop\\_score field in the BangerScreen output. They explicitly detect it\n\\- NSFW/violence/hate without tags. Auto MediumRisk = no ads = structural shadowban\n\\- Reply-spamming small accounts. Specific classifier for that\n12/ What they DIDN'T release, the sneaky bastards:\nThe skeleton is public. The dials are not\n\\- Exact numeric values of every weight (FavoriteWeight, ReplyWeight, OonWeightFactor, AuthorDiversityDecay). Live in xai\\_feature\\_switches::Params, external config\n\\- The actual Grok prompts (the 7 PToS policy prompts, BangerMiniVlmScreenScore, SafetyPtos). Could literally have any framing in them\n\\- The BotMaker rules that apply DO\\_NOT\\_AMPLIFY to specific accounts\n\\- util/phoenix\\_request.rs, which constructs the final model call\n\\- 25+ xai\\_\\* crates referenced but not included\n\\- The production Phoenix weights. They only released the mini version\nMy theory: they gave us a pretty skinny skeleton of the whole thing they actually have. The muscle (weights) and the brain (prompts and BotMaker rules) are completely opaque. They kept the best parts for themselves, clearly\n13/ Cheat sheet so you don't forget:\n\\- First 30 min matter more than anything\n\\- Your location is irrelevant, your timing and language are not\n\\- Shadowbans exist in 4 flavors. Worst is the model quietly poisoning your author embedding from past bad signals. Climbing back up by cleaning your embedding is gonna hurt, but it can be done\n\\- Replies and retweets don't get the quality classifier. Originals do\n\\- Dwell (someone actually staying to look at your post) beats likes 5 to 1\n\\- Half of all traffic is in some experiment at any moment\n\\- They kept the best parts of the algorithm for themselves, but hey, something is something",
-      "engagement": 172889,
+      "engagement": 172930,
       "stats": [
         207,
         201,
-        1091,
-        172889
+        1090,
+        172930
       ],
       "source": "search:how to write viral tweets min_faves:50 -course",
       "features": {
@@ -58,42 +58,16 @@
       }
     },
     {
-      "handle": "archivetheart",
-      "id": "2068909869995069820",
-      "dateTitle": "Jun 22, 2026 · 4:12 AM UTC",
-      "text": "TIPS AMAN MAIN X 🚨\na thread\n(disclaimer: ini berdasarkan pengalaman pribadi dan observasi selama main X. belum tentu 100% work di semua akun, jadi anggap aja sebagai langkah pencegahan biar akun tetap sehat ya!)",
-      "engagement": 63541,
-      "stats": [
-        31,
-        171,
-        897,
-        63541
-      ],
-      "source": "search:x thread tips min_faves:40 -course",
-      "features": {
-        "chars": 212,
-        "lines": 3,
-        "hasEmoji": true,
-        "hasNumberedList": false,
-        "hasBulletList": false,
-        "isThreadShaped": true,
-        "hasActionVerbs": false,
-        "hasMetrics": true,
-        "topic": "threads",
-        "firstLine": "TIPS AMAN MAIN X 🚨"
-      }
-    },
-    {
       "handle": "Haistar999",
       "id": "2058823995945054643",
       "dateTitle": "May 25, 2026 · 8:14 AM UTC",
       "text": "🚀 Web3 Builder \\| Growth Strategist \\| Community Leader\nHelping early-stage projects grow from “unknown” to active communities through strategy, engagement & creative execution.\n🔹 Ambassador & Community Growth Manager\n🔹 Meme Marketing + Viral Campaign Specialist\n🔹 Graphic Designer & Creative Content Creator\n🔹 Moderator & Community Handler\n🔹 Web3 Shiller with organic engagement strategies\n🔹 Twitter/X Growth & Brand Positioning\n🔹 AI Tools + Content Workflow Knowledge\n🔹 Contest & Campaign Management\n🔹 Fast learner, active contributor & team player\nI work with projects that want: ✅ Strong community engagement\n✅ High-quality content & memes\n✅ Better social presence\n✅ Organic hype & visibility\n✅ Active moderation & support\n✅ Creative marketing ideas that actually perform\nOpen to collaborations, ambassador roles, growth partnerships & long-term Web3 opportunities.\n📩 DM open for serious projects & builders.\n[#AmbassadorProgram](https://nitter.net/search?f=tweets&q=%23AmbassadorProgram) [#CommunityManager](https://nitter.net/search?f=tweets&q=%23CommunityManager) [#OpenToWork](https://nitter.net/search?f=tweets&q=%23OpenToWork) [#Shiller](https://nitter.net/search?f=tweets&q=%23Shiller) [#Web3](https://nitter.net/search?f=tweets&q=%23Web3) [#MemeMarketing](https://nitter.net/search?f=tweets&q=%23MemeMarketing) [#Hiring](https://nitter.net/search?f=tweets&q=%23Hiring)",
-      "engagement": 32713,
+      "engagement": 32715,
       "stats": [
         42,
         98,
         391,
-        32713
+        32715
       ],
       "source": "search:twitter content strategy creator min_faves:75 -course",
       "features": {
@@ -114,12 +88,12 @@
       "id": "2056572290469658882",
       "dateTitle": "May 19, 2026 · 3:06 AM UTC",
       "text": "I wanted to know why I was deboosted so hard, so I took a deep look at the new x algorithm and decided I’d share my findings.\nThe first thing to understand is “the algorithm” is a pretty straight-forward recommender pipeline: 1) build a representation of the user 2) retrieve candidate posts 3) score those posts with a ranking model 4) apply filters, diversity constraints, and source adjustments 5) serve the final feed\nso when people say “x rewards engagement,” that’s a simplification\nThe system isn’t really counting post hoc engagement, but rather is trying to predict future engagement before showing the post.\nFor each user/post pair, the model estimates the probability of different actions: will this user like it? reply to it? repost it? quote tweet it? click it? expand the media? watch the video? open the author profile? follow the author? share it in a dm? spend time reading it?\nIt also predicts negative actions like will they click “not interested”? mute the author? block the author? report the post?\nThe predicted probabilities get combined into a weighted score. Positive predicted actions push the post up while negative predicted actions push it down.\n“engagement” is too vague a word to describe this.\nA ragebait-y post that gets a lot of angry replies may not be treated the same as a post that gets fewer replies but more profile expansions, follows, longer dwell times, and reposts from accounts in the right clusters on the social graph.\nFor example, it is very possible that from the recommender’s perspective, a post with 700 likes, 80 well-thought-out replies, high dwell time, lots of profile clicks, strong follow conversion, and reposts from accounts in the relevant topic cluster is BETTER than one with 2000 likes, 400 hostile replies, lots of mutes or “not interested” clicks, and low follow through after people see the author.\nAnother thing to note is that your post has to actually enter the candidate set before it can even be ranked\nFor people who follow you, posts can be retrieved through the in-network pipeline, BUT for people who don’t follow you, the post needs to be retrieved out-of-network,\nwhich means the system has to infer that your post is relevant to some user, topic, graph, or behavioral cluster.\nThis is likely where most posts fail.\nA post can be good but if it’s hard to classify, or too dependent on context, or only legible to people who already know your posting arc, it may not get routed well.\nAn example of this would be a post that is funny to your mutuals who know what you’re referring to, but has very little semantic surface area for the recommender to hold onto.\nAnother thing is your audience is part of the signal. If your posts regularly make people click to open your profile or follow you or reply in a way that extends the conversation or spend time reading your content, the algorithm learns that showing your posts creates valuable downstream behavior and drives further activity on the platform.\nIt’s also possible that your posts generate a lot of likes, but most people only dwell on them a short time, and not many people follow you from them, or people reply pretty weakly, or with a lot of negative feedback. In that case, the system will learn something entirely different.\nThis goes to why having a large following doesn’t guarantee distribution. Some accounts have audiences that reliably give positive engagement signals while others have audiences that mostly scroll or only engage when something is already viral. It’s a sad reality, and from the recommender’s perspective, these are different author user content dynamics.\nFinally, when you’re “deboosted” (like me), it apparently doesn’t always mean there’s an explicit penalty.\nSometimes there actually is a penalty (visibility filters, safety rules, spam classifiers, block and mute signals, subscription eligibility, deduplication filters, and history constraints are all real),\nBUT a lot of what looks like deboosting might actually be ordinary ranking failure. Maybe your post was not retrieved for many users or maybe it was retrieved but scored below competing posts or maybe it predicted poor downstream engagement or maybe it predicted too much negative feedback or maybe it was shown to the wrong initial audience or maybe it was too niche to classify well or maybe your recent account-level signals hurt distribution or maybe another source diversity rule limited how much one author or content type appeared.\nThe feed isn’t only sorting posts by score.\nAfter scoring, the recommender still has to decide how to mix in-network and out-of-network posts, avoid too many posts from the same authors, deduplicate posts, filter ineligible content, avoid recently seen posts (it’s bad at this), and maintain some diversity in the feed.\nEven if your post scores well, it can still be affected by these final stage constraints.\nThe practical takeaway for posting is to write posts that are legible both humans AND agents,\nwhich means things like a clear first line, obvious topic signal, enough keywords for retrieval, specific claims instead of vague gestures, examples early, a reason to reply, a reason to open your profile, NOT annoying bait that causes mutes or blocks. Above all it should have enough substance (or length lol) that people actually dwell on it.\nInterestingly enough, this might actually mean longer posts get rewarded more easily than shorter ones (everyone should be incentivized to tweet like Bill Ackman).\nYou need to be contextmaxxing.\nAnnoyingly, and perhaps indicative of the divergence between what this algorithm produces and what humans will want, is that the best writing often compresses context, while the best distribution often requires exposing a lot of context.\nThe trick might be to give your tweets enough explicit structure without making them feel pedantic or over-explained.\nLong story short, if you want distribution under this algorithmic regime, you have to make your tweets easy to understand by two primary audiences at once: the human deciding whether to keep reading, and the ranking algorithm deciding whether that human should see your post at all.",
-      "engagement": 20338,
+      "engagement": 20343,
       "stats": [
         27,
         6,
         99,
-        20338
+        20343
       ],
       "source": "search:how to write viral tweets min_faves:50 -course",
       "features": {
@@ -136,54 +110,29 @@
       }
     },
     {
-      "handle": "jabelaJAr",
-      "id": "2066798585254121975",
-      "dateTitle": "Jun 16, 2026 · 8:22 AM UTC",
-      "text": "TIPS KEREN LOLOS PRETEST\na thread by [@jabelaJAr](https://nitter.net/jabelaJAr \"ezra\") on x",
-      "engagement": 19782,
+      "handle": "elonmusk",
+      "id": "2055277918633562153",
+      "dateTitle": "May 15, 2026 · 1:23 PM UTC",
+      "text": "The latest 𝕏 algorithm has been published to GitHub\n[github.com/xai-org/x-algorit…](https://github.com/xai-org/x-algorithm)",
+      "engagement": 19205,
       "stats": [
-        15,
-        117,
-        656,
-        19782
+        13,
+        73,
+        545,
+        19205
       ],
-      "source": "search:x thread tips min_faves:40 -course",
+      "source": "search:twitter engagement tips creator min_faves:40 -course -crypto",
       "features": {
-        "chars": 91,
+        "chars": 124,
         "lines": 2,
         "hasEmoji": false,
         "hasNumberedList": false,
         "hasBulletList": false,
-        "isThreadShaped": true,
+        "isThreadShaped": false,
         "hasActionVerbs": false,
         "hasMetrics": false,
-        "topic": "threads",
-        "firstLine": "TIPS KEREN LOLOS PRETEST"
-      }
-    },
-    {
-      "handle": "unalee90",
-      "id": "2068317083759493259",
-      "dateTitle": "Jun 20, 2026 · 12:56 PM UTC",
-      "text": "Another tips yg bisa dicoba kalau mau reread AU lama yang panelnya hilang.\n1\\. Copy link X au yang mau kamu baca\n2\\. Buka [twitter-thread.com/](https://twitter-thread.com/)\n3\\. Paste link au\n4\\. Klik Unroll Thread\nNanti bakal muncul thread AU nya. Kalau mentok tinggal copas lagi link panel terakhir yang kamu baca, lalu klik unroll thread.\nEnable hls playback\n[Download video](https://nitter.net/video/26B095B898CA3/https%3A%2F%2Fvideo.twimg.com%2Famplify_video%2F2068316924673687552%2Fvid%2Favc1%2F888x1920%2FCZmmhgsKtgLlAPsD.mp4 \"Download video\")",
-      "engagement": 19196,
-      "stats": [
-        103,
-        344,
-        19196
-      ],
-      "source": "search:x thread tips min_faves:40 -course",
-      "features": {
-        "chars": 549,
-        "lines": 8,
-        "hasEmoji": false,
-        "hasNumberedList": false,
-        "hasBulletList": false,
-        "isThreadShaped": true,
-        "hasActionVerbs": false,
-        "hasMetrics": true,
-        "topic": "threads",
-        "firstLine": "Another tips yg bisa dicoba kalau mau reread AU lama yang panelnya hilang."
+        "topic": "algorithm",
+        "firstLine": "The latest 𝕏 algorithm has been published to GitHub"
       }
     },
     {
@@ -216,7 +165,7 @@
       "handle": "YusufAsunmogejo",
       "id": "2055604646534594894",
       "dateTitle": "May 16, 2026 · 11:01 AM UTC",
-      "text": "I took my time last night to study the Algorithm released by Elon's X, and one big motivation that prompted me was understanding how the new algorithm works so that I and my followers can get the maximum benefit from it.\nHere is what I found out:\nDOs: For Maximum Reach\n1\\. Reply bait is real. Posts that make people respond, argue, or agree loudly get pushed hardest. Write opinions, not announcements.\n2\\. Reply to every comment on your post. An active thread signals sustained engagement and keeps your post alive in the scoring window.\n3\\. Post when your audience is online. The algorithm trims old posts from memory. Early engagement in the first 60 minutes determines if non-followers ever see your post.\n4\\. Reposts and quote tweets beat likes. A like is a light signal. A repost drops your content into someone else's feed and starts a chain reaction.\n5\\. Stop scrolling and engage on big posts. Leaving a strong reply on a viral post exposes your account to audiences already interested in that topic.\n6\\. Write posts people read to the end. Dwell time is tracked. A weak opening line kills your score before anyone gets to the substance.\nDON'Ts: What Kills Your Reach\n1\\. Do not post back to back. The algorithm deliberately suppresses repeated authors in the same feed session. Space your posts out.\n2\\. Do not post and go silent. An abandoned thread with no follow-up responses is a dead signal.\n3\\. Do not rely on hashtags. They are not part of the scoring formula at all.\n4\\. Do not post content that makes people hit Not Interested, Mute or Block. Those carry negative weights that actively push your posts down.\n5\\. Do not obsess over likes. The algorithm weighs replies and reposts far more heavily.\nThe formula is simple: make people stop and view your post, respond, and share. Everything else follows.\n[Load more](https://nitter.net/search?f=tweets&q=how+to+write+viral+tweets+min_faves%3A50+-course&cursor=DAADDAABCgABHLA51SpW8UcKAAIchvmI81ZBTgAIAAIAAAACCAADAAAAAAgABAAAAAAKAAUcuKptvAAnEAoABhy4qm27_9jwAAA)",
+      "text": "I took my time last night to study the Algorithm released by Elon's X, and one big motivation that prompted me was understanding how the new algorithm works so that I and my followers can get the maximum benefit from it.\nHere is what I found out:\nDOs: For Maximum Reach\n1\\. Reply bait is real. Posts that make people respond, argue, or agree loudly get pushed hardest. Write opinions, not announcements.\n2\\. Reply to every comment on your post. An active thread signals sustained engagement and keeps your post alive in the scoring window.\n3\\. Post when your audience is online. The algorithm trims old posts from memory. Early engagement in the first 60 minutes determines if non-followers ever see your post.\n4\\. Reposts and quote tweets beat likes. A like is a light signal. A repost drops your content into someone else's feed and starts a chain reaction.\n5\\. Stop scrolling and engage on big posts. Leaving a strong reply on a viral post exposes your account to audiences already interested in that topic.\n6\\. Write posts people read to the end. Dwell time is tracked. A weak opening line kills your score before anyone gets to the substance.\nDON'Ts: What Kills Your Reach\n1\\. Do not post back to back. The algorithm deliberately suppresses repeated authors in the same feed session. Space your posts out.\n2\\. Do not post and go silent. An abandoned thread with no follow-up responses is a dead signal.\n3\\. Do not rely on hashtags. They are not part of the scoring formula at all.\n4\\. Do not post content that makes people hit Not Interested, Mute or Block. Those carry negative weights that actively push your posts down.\n5\\. Do not obsess over likes. The algorithm weighs replies and reposts far more heavily.\nThe formula is simple: make people stop and view your post, respond, and share. Everything else follows.\n[Load more](https://nitter.net/search?f=tweets&q=how+to+write+viral+tweets+min_faves%3A50+-course&cursor=DAADDAABCgABHLA51SpW8UcKAAIchvmI81ZBTgAIAAIAAAACCAADAAAAAAgABAAAAAAKAAUcuTWrEwAnEAoABhy5NasS_9jwAAA)",
       "engagement": 14198,
       "stats": [
         58,
@@ -295,12 +244,12 @@
       "id": "2046160713987522926",
       "dateTitle": "Apr 20, 2026 · 9:35 AM UTC",
       "text": "I Created YouTube Channel After YouTube Channel… and Got Absolutely ZERO Views Every Single Time.\nNo impressions. No clicks. Complete silence.\nIf that sounds familiar, you're not alone. And I know exactly what questions are racing through your mind right now because I asked myself the same ones:\n\"Is my computer flagged by YouTube?\"\n\"Do I need to buy a new laptop?\"\n\"Should I be using proxies or antidetect browsers?\"\n\"Am I shadow-banned forever?\"\nLet me walk you through what's actually happening—and more importantly, how to fix it.\nQ: Is there still hope, or is my setup permanently ruined?\nA: There is 100% hope. Here's the truth: if you can still upload videos, your account isn't banned.\nWhat you're experiencing is what I call a \"low trust phase.\" Think of it like this: YouTube doesn't know you yet. It doesn't trust that your content is worth showing to people. So it's basically putting you in a \"waiting room\" until you prove you're legitimate.\nThe good news? This can absolutely be fixed. You're not blocked. You're just not trusted yet.\nQ: Why are my videos getting zero impressions?\nA: This isn't about your thumbnail, title, or even your content quality. Zero impressions means YouTube isn't even testing your video with real viewers.\nThink of YouTube's algorithm like a careful investor. Before it \"invests\" (shows your video to people), it wants to see proof that you're worth the risk.\nHere's what triggers this low-trust state:\nCreating multiple new channels in a short time – This looks like spam behavior to YouTube\nDeleting and reuploading the same videos repeatedly – This signals panic and inexperience\nAccounts that seem automated or fake – No watch history, no engagement, just uploading\nUnusual patterns – Like brand new accounts immediately uploading daily\nYouTube's system isn't punishing you on purpose. It's just being cautious because these patterns match what spammers and bots do.\nQ: Is my computer or IP address the problem?\nA: Your device is only a tiny piece of the puzzle.\nYes, YouTube can see some device information. But here's what matters way more: your behavior.\nYouTube cares about:\nHow you use the account\nWhether you act like a real person\nIf your content gets genuine engagement\nYour uploading patterns and consistency\nYour laptop itself? Not the main issue.\nQ: So should I buy a new computer to start fresh?\nA: No. Save your money.\nI know it's tempting to think a clean slate will solve everything, but here's the reality: If you repeat the same behaviors on a new computer, you'll get the same results.\nIt's like moving to a new city but bringing all your old habits with you. The location changed, but you didn't.\nThe problem isn't the hardware. It's the approach.\nQ: Okay, so what's ACTUALLY going wrong then?\nA: You're stuck in a restart loop.\nHere's what's happening:\nYou create a channel → It gets zero views\nYou panic and think \"This channel is dead\"\nYou delete everything or create a new channel\nYou start over at zero trust again\nRepeat\nEvery time you restart, you're pressing the reset button on trust. You never give YouTube's algorithm enough time to learn about your content, test it with viewers, or build any momentum.\nIt's like planting a seed, digging it up after two days because nothing grew, planting a new seed somewhere else, and wondering why you never get a garden.\nYou're not giving anything time to grow.\nQ: So what should I actually do instead?\nHere's your step-by-step recovery plan:\nStep 1: Pick ONE channel and commit to it\nStop creating new channels. Stop deleting content. Choose one and stick with it for at least 30-60 days.\nStep 2: Act like a real human on YouTube\nBefore you upload anything else, spend 3-5 days using YouTube normally:\nWatch videos in your niche (10-15 minutes per day)\nLeave genuine comments on videos you actually enjoy\nLike videos and subscribe to channels\nSearch for topics related to what you want to create\nThis signals to YouTube: \"This is a real person, not a bot.\"\nStep 3: Upload like a real creator, not a desperate one\nDo:\nUpload one video and leave it up (no matter what happens)\nChoose simple, clear topics that answer specific questions\nFocus on searchable content first (tutorials, how-tos, explanations)\nWrite a detailed description and use relevant tags\nDon't:\nUpload multiple videos in one day\nDelete and reupload the same content\nMake drastic changes to your channel daily\nObsess over analytics in the first 48 hours\nStep 4: Share your video outside of YouTube\nYouTube's algorithm pays attention to where your traffic comes from. A few real viewers help build initial trust.\nShare your video:\nOn relevant Reddit communities (helpfully, not spammy)\nIn niche Facebook groups\nOn Twitter with useful context\nIn Discord servers related to your topic\nWith friends or family who might genuinely be interested\nEven 10-20 real views from external sources tells YouTube: \"Real people are choosing to watch this.\"\nStep 5: Upload consistently but slowly\nDon't rush. Give YouTube time to test each video.\nRecommended schedule:\nWeek 1: Upload 1 video, wait 3-4 days\nWeek 2: Upload 1 video, wait 3-4 days\nWeek 3-4: Upload 1-2 videos per week\nThis gives the algorithm time to:\nTest your content with small audiences\nGather data on watch time and engagement\nDecide if your content is worth promoting\nQ: What does actual recovery look like?\nRecovery is gradual, not instant. Here's what progress actually looks like:\nVideo 1: 5-20 impressions (YouTube is barely testing)\nVideo 2: 30-80 impressions (slight increase, still cautious)\nVideo 3: 100-300 impressions (algorithm is gaining confidence)\nVideo 4: 500+ impressions (you're building trust)\nThis is normal. This is healthy growth from a low-trust state.\nYou're not looking for viral success right away. You're looking for steady increases in impressions, which prove YouTube is starting to trust your channel.\nQ: How long does this take?\nHonest answer: 3-8 weeks of consistent, patient effort.\nI know that's not the \"get rich quick\" answer you might want to hear. But this is the realistic timeline for going from zero impressions to a channel that's actually being tested by YouTube's algorithm.\nThe creators who succeed are the ones who outlast the low-trust phase instead of restarting every time it gets hard.\nWhat's the Real Lesson Here?\nStop trying to outsmart YouTube's system.\nStart trying to build trust with it.\nYouTube's algorithm isn't your enemy. It's just cautious. It's designed to filter out spam and promote real creators who make valuable content.\nYour job isn't to trick it. Your job is to convince it—through consistent, patient, genuine behavior—that you're the real deal.\nYour Action Plan (Starting Today):\n✅ Stop creating new channels – Commit to one\n✅ Use YouTube like a normal person – Watch, comment, engage for a few days\n✅ Upload one simple, searchable video – Don't overthink it\n✅ Share it with real people – Get those first genuine views\n✅ Wait 3-4 days – Give YouTube time to test it\n✅ Repeat slowly and consistently – Build momentum over weeks, not days\nYou're not shadow-banned. You're not cursed. You're just in the trust-building phase.\nA compilation of my chat with CHATGPT after I wen throgh this, and yes, it worked, kinda.",
-      "engagement": 10874,
+      "engagement": 10877,
       "stats": [
         15,
         22,
         164,
-        10874
+        10877
       ],
       "source": "search:grow twitter niche account min_faves:50 -course -crypto",
       "features": {
@@ -317,29 +266,55 @@
       }
     },
     {
-      "handle": "desirecode_",
-      "id": "2067997121941234175",
-      "dateTitle": "Jun 19, 2026 · 3:45 PM UTC",
-      "text": "Unfiltered s\\*x tips for Men...\nThread 🪡\n1\\. Never allow her to be on top...",
-      "engagement": 6566,
+      "handle": "yfimaxiNFT",
+      "id": "2021506653632299354",
+      "dateTitle": "Feb 11, 2026 · 8:48 AM UTC",
+      "text": "Sang Pengemis Biru☑️\n(catatan: ini bukan cerita serius, cuma curhatan yang kepanjangan)\nBudi (nama samaran) itu tipe orang yang begadang bukan karena kerjaan, tapi karena masih scroll X. Tau-tau jam 2 pagi. Matanya merah, bukan nangis, cuma... ya gitulah, too much screen time.\nTimeline-nya isinya sama aja.\n\"FOLLOW BACK YA GUYS!\" 🤮\n\"Bantu 1K followers, auto follback!\"\n\"Yg follow, saya doakan rezekinya lancar!\" (serius, ada yg sampe segitunya)\nBudi ngeliat. Scroll. Scroll lagi. Sama. Pasar tumpah, tapi yg dijual bukan sayur - dijual harga diri. Dulu Twitter (sekarang X) itu tempat diskusi serius, skrg? Tempat minta-minta. Bukan minta uang sih, minta angka. Followers. Padahal angka doang, kok bisa ngerasa bakal ubah nasib?\nNah, Budi ini sebenernya dulu punya cita-cita. Dia pengen nulis panjang lebar soal urban planning, gimana kota-kota di Indo kehilangan ruang publik. Tapi dia pernah coba: nulis thread 3 hari 3 malem. Hasil? 12 likes. Dua di antaranya dari ibunya sendiri.\nSementara itu, akun TukangSpam\\_ receh baru sebulan udah 50K followers. Caranya? Giveaway berantai. \"RETWEET DAN FOLLOW SEMUA YANG LIKE, AUTO JP!\"\nIronis ya? Orang-orang ngatain politisi korup, tapi disini rela jual timeline demi voucher GoPay 50rb.\nBudi inget aturan monetize X: 5M impression dalam 3 bulan. Lima juta. Kayaknya X bilang: \"Kualitas ga penting, yg penting rame.\"\nTerus suatu malem, setelah kopi ke-6 (dia itung), Budi mikir. Ya udahlah. Dia buka Canva. Bikin gambar teks Comic Sans kuning nyala: \"Fakta Mencengangkan! 90% Orang Gagal Monetize Karena TIDAK TAHU Cara Ini!\"\nDia posting. Ga ada riset. Ga ada sumber. Clickbait murni.\n500 retweet dalam sejam.\nBudi ketawa. Getir. Dia baru jadi apa yg dia benci. Tapi angka itu... manis. Kayak narkoba murahan langsung ke otak. Dopamine gratisan.\nBesoknya dia bikin akun kedua. Ketiga. Keempat. Saling follow satu sama lain. Kayam gerebeg, saling bagi receh biar ga mati kelaparan.\n(ngomong-ngomong, siapa sih yg pertama kali nyaranin pake Comic Sans? Budi sendiri bingung kenapa dia pilih warna kuning)\nTiga bulan kemudian, centang biru menyala. 5M impression tercapai. Monetize aktif. Budi resmi jadi \"content creator.\"\nTapi dia nulis apaan sih sebenernya?\nDia cek arsip:\nHari 1-30: \"Tips viral!\" (padahal dia sendiri ga pernah viral organik)\nHari 31-60: \"Mari saling support sesama creator!\" (maksudnya: mari saling bohongin algoritma)\nHari 61-90: \"Thread: Kenapa Generasi Z Lemah?\" (ditulis orang yg baru spam follow 1000 akun)\nKontennya sampah. Dia tau. Tiap like masuk rasanya kayak diejek. Tapi ejekan yg bayar.\nCek bulanan X masuk. Satu dolar. Dua dolar. Abis dipotong pajak & konversi, cuma bisa beli... 2 cup kopi kekinian. Ironisnya, kopi itu buat begadang bikin konten sampah lagi.\nSuatu sore, di kafe, Budi ketemu Sari. Kenal dari foto profil. Sari juga creator. Juga monetized. Juga... hampa.\n\"Kamu nulis apa sebenernya?\" tanya Sari.\nBudi diam. Dia inget esai urban planning yg masih ngendon di draft. Yg ga pernah dipost karena \"nanti dulu, followers dulu, monetize dulu, baru konten berkualitas.\"\nTapi \"nanti\" itu kan ga pernah dateng? Kayak orang bilang mau hidup sehat \"nanti kaya dulu\"- kaya ga dateng, sehat juga lupa.\n\"Aku... pengemis,\" jawab Budi. \"Bukan pengemis uang. Pengemis angka. Dan aku dapetinnya. Tapi aku kehilangan sesuatu yg ga bisa dibeli angka: keberanian buat jadi jelek dulu, sebelum jadi bagus.\"\nSari senyum sedih. \"Kita semua gitu. Kita ciptain pasar sampah, terus ngeluh kenapa bau. Padahal kalo ada yg bawa sesuatu bagus... siapa yg punya waktu baca? Timeline udah penuh engagement farming.\"\nX masih berdentum sampe sekarang. Masih ada yg \"Follback gaes!\" Masih ada yg berhasil monetize, masih ada yg gagal & putus asa.\nBudi cancel centang biru malam itu juga. Mulai dari nol, akun anonim. Nulis esai urban planning. Dapet 5 likes. Tapi 5 likes dari yg beneran baca.\nDia ga kaya. Mungkin ga bakal monetized lagi. Tapi pas dia ngecek ponsel jam 2 pagi sekarang, matanya ga merah lagi karena kehausan validasi.\nDia ngerasa... bebas.\nDari pasar kaget digital. Dari hiruk-pikuk para pengemis biru yg berlutut di depan algoritma. Dari ilusi bahwa angka bisa ngisi rasa lapar akan makna.",
+      "engagement": 9067,
       "stats": [
-        5,
-        6,
-        56,
-        6566
+        131,
+        16,
+        125,
+        9067
       ],
-      "source": "search:x thread tips min_faves:40 -course",
+      "source": "search:twitter engagement tips creator min_faves:40 -course -crypto",
       "features": {
-        "chars": 77,
-        "lines": 3,
+        "chars": 4170,
+        "lines": 37,
         "hasEmoji": true,
         "hasNumberedList": false,
         "hasBulletList": false,
         "isThreadShaped": true,
-        "hasActionVerbs": true,
+        "hasActionVerbs": false,
+        "hasMetrics": true,
+        "topic": "algorithm",
+        "firstLine": "Sang Pengemis Biru☑️"
+      }
+    },
+    {
+      "handle": "holonabove",
+      "id": "2060756841030651941",
+      "dateTitle": "May 30, 2026 · 4:14 PM UTC",
+      "text": "This is bigger than politics..\nI think we’ve all noticed over the last ten years that something much larger than normal politics has been unfolding...\nThe modern control structure was not built overnight... it formed gradually through banking systems... intelligence networks... media synchronization... regulatory capture... academia... pharmaceutical dependency... censorship systems... endless war financing... debt expansion... cultural fragmentation... and behavioral conditioning layered across generations until the structure itself simply became accepted as normal life...\nWhat feels remarkable is how many parts of that operational scaffolding have now been pushed into visibility at the same time...\nThe border exposed trafficking pipelines... COVID exposed pharmaceutical capture... Twitter Files exposed censorship coordination... Election interference exposure fractured institutional trust... USAID exposure revealed narrative engineering mechanisms... NGO funding trails exposed laundering structures... DEI frameworks exposed social conditioning systems... the financial reset conversation exposed fiat dependency structures... the judiciary increasingly became a codification battlefield... and state-level sovereignty became a replication framework...\nThe intensity of the reaction across institutions, media, governments, and corporations feels proportional to the scale of exposure itself...\nAlmost as if the structure recognized a threat to its own continuity...\nA 3 part thread...",
+      "engagement": 7829,
+      "stats": [
+        7,
+        80,
+        164,
+        7829
+      ],
+      "source": "search:twitter thread structure min_faves:50 -course -crypto",
+      "features": {
+        "chars": 1502,
+        "lines": 8,
+        "hasEmoji": false,
+        "hasNumberedList": false,
+        "hasBulletList": false,
+        "isThreadShaped": true,
+        "hasActionVerbs": false,
         "hasMetrics": false,
         "topic": "threads",
-        "firstLine": "Unfiltered s\\*x tips for Men..."
+        "firstLine": "This is bigger than politics.."
       }
     },
     {
@@ -347,11 +322,11 @@
       "id": "2068140761116229843",
       "dateTitle": "Jun 20, 2026 · 1:15 AM UTC",
       "text": "Maybe a lot of you already know this, but for those who don't: running a fanmade account is not easy.\nEven if you have a life outside of Twitter, the accounts you see with thousands of followers are the result of being here practically 24/7, looking for content, writing tweets that hook people, doing real time translations, finding fancams in seconds so nobody misses anything.\nSo yeah, when someone asks \"why aren't there accounts for Sangwon?\"... there are. The difference is the support. Giving them interactions, sharing their content, keeping them active. That's what makes an account grow.\nThose of us behind these pages have sacrificed real things. In my case sleep, there are days I go to bed at 7am just so you guys have the info as fast as possible. I'm not exaggerating, being a fan feels like an actual job even though you don't get paid.\nAnyone can open a fanmade account but keeping it consistent is a whole other thing, and that's what sets the big accounts apart.\nHopefully more of you start appreciating that effort 🖤 I'm glad Sangwon and Leo have accounts big enough to promote them because not every fandom has that luxury.",
-      "engagement": 6110,
+      "engagement": 6122,
       "stats": [
         53,
-        382,
-        6110
+        380,
+        6122
       ],
       "source": "search:twitter hook writing min_faves:40 -course",
       "features": {
@@ -368,42 +343,16 @@
       }
     },
     {
-      "handle": "langitluruh",
-      "id": "2067131665663881532",
-      "dateTitle": "Jun 17, 2026 · 6:26 AM UTC",
-      "text": "🔥 PRIORITAS BALAS KOMENTAR DI POST SENDIRI vs REPLY TWEET ORANG?\nBuat yang mau monetisasi di X, ini bedanya:\n1\\. Balas reply di post sendiri = PABRIK REVENUE\n• Engagement di thread kamu dihitung langsung buat ads revenue\n• Thread hidup = algoritma push lebih lama\n• Reply author = sinyal kuat ke algoritma\n• Target: Premium users (centang biru) karena bobotnya paling berat\n2\\. Reply tweet orang = MESIN GROWTH\n• Pinjam audiens akun besar\n• Naikin followers & visibility\n• Engagement di reply orang TIDAK langsung bayar\n• Kecuali reply-mu viral atau di-quote\n🎯 Strategi 80/20:\n80% reply value-added ke akun besar di niche-mu\n20% bales komentar di post sendiri\nTapi kalau fokus MONETISASI:\nPrioritas #1 = Balas reply di post sendiri!\nKarena:\n• Langsung ke revenue\n• Bangun aset sendiri\n• Engagement di thread-mu = uang\nTips:\n• Posting yang undang reply (pertanyaan, opini)\n• Selalu balas minimal 3-5 komentar pertama\n• Reply quality > spam\n• Konsisten 10-15 post + 50-100 reply/hari\nIngat: Reply ke orang lain itu alat tumbuh, reply ke post sendiri itu alat cuan!",
-      "engagement": 5204,
-      "stats": [
-        33,
-        17,
-        96,
-        5204
-      ],
-      "source": "search:x thread tips min_faves:40 -course",
-      "features": {
-        "chars": 1064,
-        "lines": 27,
-        "hasEmoji": true,
-        "hasNumberedList": false,
-        "hasBulletList": true,
-        "isThreadShaped": true,
-        "hasActionVerbs": true,
-        "hasMetrics": true,
-        "topic": "threads",
-        "firstLine": "🔥 PRIORITAS BALAS KOMENTAR DI POST SENDIRI vs REPLY TWEET ORANG?"
-      }
-    },
-    {
       "handle": "PlanetOfMemes",
       "id": "2065615811503616314",
       "dateTitle": "Jun 13, 2026 · 2:02 AM UTC",
       "text": "Does Elon Musk deserve to be the world's first trillionaire?\nElon doesn’t just lead companies, he founds and scales transformative technologies that reshape civilization.\nHere’s a clear breakdown of his roles and key achievements:\n⚡ TESLA, INC.\nLeads product design, engineering, manufacturing strategy, and global operations for EVs, battery technology, and energy products. Sets the vision for Full Self-Driving, Optimus humanoid robots, and next-gen vehicles. Transformed Tesla from near-bankruptcy into the world’s leading EV maker and the first U.S. automaker to reach a $1 trillion market cap. Launched the vehicles that made premium EVs mainstream: Roadster, Model S, X, 3, Y, Cybertruck, and Semi. Built global Gigafactories, pioneered large-scale battery production and energy storage, and is advancing autonomy and robotics.\n🚀 SPACEX (including Starlink)\nFounder, CEO & Chief Engineer. Leads design of all rockets (Falcon family, Starship) and spacecraft (Dragon). Directs reusable launch systems, crewed spaceflight, Mars colonization, and the Starlink satellite constellation for global broadband. Revolutionized spaceflight with reusable rockets and first private crewed ISS missions. Deployed thousands of Starlinks to connect underserved regions. Major NASA contractor.\n𝕏, X Corp\nSets the vision for 𝕏 as the “everything app” and real-time information platform with free speech as a core principle. Oversees tech, product, algorithms, monetization, and Grok AI integration. Acquired Twitter for $44 billion in 2022, rebranded to 𝕏, implemented major efficiencies, shifted to subscription/creator models, and reduced heavy content moderation.\n🤖 xAI\nLeads development of advanced AI systems to understand the true nature of the universe. Oversees Grok model development, the Colossus supercomputing cluster, and massive compute scaling. Rapidly built frontier AI capabilities as a truth-seeking alternative and is integrating with SpaceX for space-based compute and X for real-time data.\n🧠 NEURALINK\nDirects R&D for high-bandwidth brain-machine interface implants. Oversees hardware, software, surgical robotics, and clinical strategy. Achieved the first successful human brain-chip implants starting in 2024, enabling thought-controlled operation. Expanded trials by 2026 with plans for high-volume automated production and procedures to help paralysis patients and advance human-AI symbiosis.\n🚇 THE BORING COMPANY\nLeads development of faster, lower-cost tunneling technology and underground electric transport. Built and operates the Las Vegas Convention Center Loop, a functional public underground transit system, while demonstrating significantly cheaper and quicker tunneling methods.\nThrough vision, technical leadership, relentless execution, and willingness to take enormous risks across electric vehicles, space exploration, AI, brain interfaces, social media, and infrastructure, Elon has created massive value for humanity and investors alike.\nHe deserves every damn penny and then some.",
-      "engagement": 4683,
+      "engagement": 4691,
       "stats": [
         15,
         17,
         127,
-        4683
+        4691
       ],
       "source": "search:twitter content strategy creator min_faves:75 -course",
       "features": {
@@ -420,28 +369,29 @@
       }
     },
     {
-      "handle": "freaananda",
-      "id": "2066747637580357698",
-      "dateTitle": "Jun 16, 2026 · 5:00 AM UTC",
-      "text": "Gatau ini x lagi sakit apa, tapi banyak part di AU yg ilang 😔. Semua yg ilang udah aku qrt ya guys, silakan cek di qrt aku.\nBtw kalo kalian ada yg tau tips atau cara biar part thread ngga ilang2 gitu, boleh kasih tau aku dongss biar next update ngga kyk gini lagi ☹️🫶",
-      "engagement": 4418,
+      "handle": "Otunba_Bini",
+      "id": "2023001110512796136",
+      "dateTitle": "Feb 15, 2026 · 11:47 AM UTC",
+      "text": "HOW TO CREATE STRIPE ACCOUNT FOR TWITTER X PAYOUTS (Step by step outline)\nFor those who do not know how 👇\nTo create a Stripe account for X (Twitter) payouts, here’s a simple step-by-step guide:\n1\\. Be Eligible for X Monetization\nFirst, ensure you’re approved for monetization on X (Ads Revenue Sharing or Subscriptions).\nGo to: Profile → Creator Subscriptions / Monetization → Apply\nYou’ll need:\nVerified account (X Premium)\n18+\nConsistent engagement\nEligible country (Nigeria is supported for Stripe payouts in most cases)\n2\\. Start the Payout Setup on X\nOnce approved:\nGo to Settings & Support\nClick Settings and Privacy\nTap Monetization\nSelect Payouts\nClick Set up payouts\nX partners with Stripe for payments.\n3\\. Create Your Stripe Account\nYou’ll be redirected to Stripe.\nProvide:\nFull legal name (must match your ID)\nDate of birth\nNigerian bank account details\nBVN (if required)\nValid ID (NIN, Passport, or Driver’s License)\nEnsure your name matches your bank account exactly.\n4\\. Verify Your Identity\nStripe may:\nAsk for selfie verification\nRequest ID upload\nSend email confirmation\nComplete all steps to avoid payout delays.\n5\\. Add & Confirm Your Bank Account\nEnter:\nBank name\nAccount number\nAccount holder name\nStripe may send a small test deposit to confirm.\n6\\. Wait for First Payout\nOnce your earnings reach the payout threshold on X:\nStripe processes payment\nFunds go directly to your bank\nPayout timing depends on revenue cycle.\nImportant Tips (Especially for Nigeria 🇳🇬)\n✔️ Use a stable email you control\n✔️ Don’t create multiple Stripe accounts\n✔️ Ensure your bank account accepts international payments\n✔️ Check tax form requirements during setup.",
+      "engagement": 4325,
       "stats": [
-        3,
-        54,
-        4418
+        28,
+        42,
+        92,
+        4325
       ],
-      "source": "search:x thread tips min_faves:40 -course",
+      "source": "search:twitter engagement tips creator min_faves:40 -course -crypto",
       "features": {
-        "chars": 269,
-        "lines": 2,
+        "chars": 1667,
+        "lines": 50,
         "hasEmoji": true,
         "hasNumberedList": false,
         "hasBulletList": false,
         "isThreadShaped": true,
-        "hasActionVerbs": false,
+        "hasActionVerbs": true,
         "hasMetrics": false,
-        "topic": "threads",
-        "firstLine": "Gatau ini x lagi sakit apa, tapi banyak part di AU yg ilang 😔. Semua yg ilang udah aku qrt ya guys, silakan cek di qrt aku."
+        "topic": "algorithm",
+        "firstLine": "HOW TO CREATE STRIPE ACCOUNT FOR TWITTER X PAYOUTS (Step by step outline)"
       }
     },
     {
@@ -449,12 +399,12 @@
       "id": "2058247035808289275",
       "dateTitle": "May 23, 2026 · 6:01 PM UTC",
       "text": "how to grow your twitter 101\nmy older account had 10k followers and this one’s grown pretty quickly to 3k followers and some tweets have gotten some crazy reach\nlemme try to break it down\n1/ understand the algorithm\nyou see what you like so the algorithm tries to show you posts from people that you like or post in the domains that you like/follow\nif you like ai, you’ll see a lot of ai posts\nso decide what your niche or set of niches are going to be\n2/ post a lot and be consistent\nyour account health improves + engagement increases\ndon’t worry about what people will think, you’re not as important - don’t overthink, just post a lot\n3/ be raw and non-generic\ndon’t post generic stuff, make it raw and add a personal touch\n4/ engage with people\nbut be original and avoid ai slop, it shows when you use ai slop\n5/ build a plan and then let it become a habit\nonce you get a feel of this, you’ll become a content wh and it’ll naturally come to you\nyou’ll recognise trends, what works and more\n6/ don’t be serious, no one cares\nlet your heart out and have fun",
-      "engagement": 4085,
+      "engagement": 4086,
       "stats": [
         12,
         2,
         104,
-        4085
+        4086
       ],
       "source": "search:grow twitter niche account min_faves:50 -course -crypto",
       "features": {
@@ -497,29 +447,29 @@
       }
     },
     {
-      "handle": "purmaisuri",
-      "id": "2069053916428513617",
-      "dateTitle": "Jun 22, 2026 · 1:44 PM UTC",
-      "text": "a little tips for whoever afraid to faces highschool years! (for kelas 10 & 11 SMA) 📚🧃🍓💕👀\n——thread by; [@purmaisuri](https://nitter.net/purmaisuri \"sesil²⁷\") on X!",
-      "engagement": 2631,
+      "handle": "Chain__Crafters",
+      "id": "2061745151760843076",
+      "dateTitle": "Jun 2, 2026 · 9:42 AM UTC",
+      "text": "Thread Contest Alert 🚨\nPolyRex is looking for creators to write a deep-dive Twitter thread explaining its role in the Polymarket ecosystem and why it matters for decentralized intelligence, verification, and bounty systems.\n💰 Rewards:\n🎖️ $1,000 USDC Total Prize Pool\n🏆 10 winners\n💵 $100 USDC each\n📌 Requirements:\n• Write a 5+ tweet thread on X (Twitter)\n• Explain what PolyRex does (bounties, quests, verifiable credentials)\n• Explain how it supports builders and researchers in the Polymarket ecosystem\n• Highlight why decentralized verification of data matters\n• Tag @poly\\_rex in your thread\n• Mention at least ONE project you want to see on the platform\n• Use clear formatting (emojis, structure, screenshots encouraged)\n• Submit your published thread link\n⏰ Deadline: 15 June 2026\n🔗 Submission link: [polyrex.pro/bounties/cmpuw9r…](https://www.polyrex.pro/bounties/cmpuw9r4g0005ud84uezaartk)\nThis is a research + storytelling task focused on explaining real utility, not surface-level promotion.\nGood luck 🤞",
+      "engagement": 3577,
       "stats": [
-        2,
-        16,
-        80,
-        2631
+        19,
+        14,
+        92,
+        3577
       ],
-      "source": "search:x thread tips min_faves:40 -course",
+      "source": "search:twitter thread structure min_faves:50 -course -crypto",
       "features": {
-        "chars": 168,
-        "lines": 2,
+        "chars": 1020,
+        "lines": 19,
         "hasEmoji": true,
         "hasNumberedList": false,
-        "hasBulletList": false,
+        "hasBulletList": true,
         "isThreadShaped": true,
-        "hasActionVerbs": false,
+        "hasActionVerbs": true,
         "hasMetrics": false,
         "topic": "threads",
-        "firstLine": "a little tips for whoever afraid to faces highschool years! (for kelas 10 & 11 SMA) 📚🧃🍓💕👀"
+        "firstLine": "Thread Contest Alert 🚨"
       }
     },
     {
@@ -527,14 +477,14 @@
       "id": "2067957092770607308",
       "dateTitle": "Jun 19, 2026 · 1:06 PM UTC",
       "text": "these are some Claude prompt codes that are very useful useful for creators most especially for writing\n\\> /twitter ~ short thread style\n\\> /script ~ video or reel script\n\\> /hook ~ strong opening lines\n\\> /story ~ storytelling format\n\\> /headlines ~ multiple title options\n\\> /viral ~ high engagement style\n\\> /authority ~ expert tone\n\\> /newsletter ~ email newsletter format\n\\> /thread ~ long form thread format\n\\> /analyst ~ deep analysis\n\\> /deepdive ~ go very detailed\n\\> /eli5 ~ very simple explanation\n\\> /simplify ~ explain like beginner\n\\> /compare ~ compare options\ni mostly use them to find the best hooks , structure my post and put together rough ideas and make them whole not to write",
-      "engagement": 2485,
+      "engagement": 2503,
       "stats": [
         98,
         1,
-        153,
-        2485
+        154,
+        2503
       ],
-      "source": "search:twitter hook writing min_faves:40 -course",
+      "source": "search:twitter thread structure min_faves:50 -course -crypto",
       "features": {
         "chars": 698,
         "lines": 16,
@@ -553,12 +503,12 @@
       "id": "2067918477722018257",
       "dateTitle": "Jun 19, 2026 · 10:32 AM UTC",
       "text": "HOW TO GROW YOUR X ACCOUNT\nMy 2 cents on how to grow your account on X, most important one would be consistency but I’m sure you’ve heard that a lot so I’ll add;\n1\\. Be keen on growing mutuals first before followers, people you interact with on this space, they’re the ones that’ll always engage every of your tweets with their comments and take it to their own TL… except you’re an internet sensation you’re going to have day ones\n2\\. Be in everyone’s face, interact with people, drop meaningful comments that would attract replies or even stupid one that’ll attract insults😂(choose your poison)\n3.Have a niche,let them know you for something, be it football, savage tweets, being a banger boy,politics, gym whatever, thing is, no matter how bad your niche is you’ll find your people or they’ll find you rather\n4.Make the app fun for you, it should be where you come to relax, most people with big accounts on here are literally addicted to the app\n5\\. This app is more opinionated than actual content creating, your opinion is mostly your content, so drop your opinions on whatever is the topic of the day… the 3 core topics on this app are football, politics, gender war amongst others\nWhile doing all these, pick an avi and stick with it,it’s part of the branding… Twitter folks tend to recognize the profile picture before even the username",
-      "engagement": 2415,
+      "engagement": 2424,
       "stats": [
         19,
         20,
         69,
-        2415
+        2424
       ],
       "source": "search:grow twitter niche account min_faves:50 -course -crypto",
       "features": {
@@ -579,12 +529,12 @@
       "id": "2066556615533228078",
       "dateTitle": "Jun 15, 2026 · 4:21 PM UTC",
       "text": "I still use Twitter like a Public Online Diary. I write down things That I notice or I encounter on a Daily. So it’s easy to come back to my TL Anyday to Read & review my past Thoughts. Some Tweets go viral And some dont. This is how iv been since Day 1 here. Are you the same? 🧐",
-      "engagement": 2371,
+      "engagement": 2373,
       "stats": [
         14,
         9,
         78,
-        2371
+        2373
       ],
       "source": "search:how to write viral tweets min_faves:50 -course",
       "features": {
@@ -598,32 +548,6 @@
         "hasMetrics": false,
         "topic": "timing",
         "firstLine": "I still use Twitter like a Public Online Diary. I write down things That I notice or I encounter on a Daily. So it’s easy to come back to my TL Anyday to Read & review my past Thoughts. Some Tweets go viral And some dont. This is how iv been since Day 1 here. Are you the same? 🧐"
-      }
-    },
-    {
-      "handle": "KevinSzabo14",
-      "id": "2069439995341905935",
-      "dateTitle": "Jun 23, 2026 · 3:18 PM UTC",
-      "text": "Most creators post 1-2 times a day and stay stuck.\nI post 15-30 times daily on X alone.\nThe algorithm rewards volume when it’s valuable.\nMore posts mean more data for what your audience is looking for.\nSo share frameworks, stories or even just quick tips.\nOne viral thread can 10x your reach, but it requires daily work for people to find you.",
-      "engagement": 2352,
-      "stats": [
-        44,
-        5,
-        81,
-        2352
-      ],
-      "source": "search:x thread tips min_faves:40 -course",
-      "features": {
-        "chars": 343,
-        "lines": 6,
-        "hasEmoji": false,
-        "hasNumberedList": false,
-        "hasBulletList": false,
-        "isThreadShaped": true,
-        "hasActionVerbs": true,
-        "hasMetrics": false,
-        "topic": "algorithm",
-        "firstLine": "Most creators post 1-2 times a day and stay stuck."
       }
     },
     {
@@ -653,10 +577,36 @@
       }
     },
     {
+      "handle": "Ithielix",
+      "id": "2062065586834694191",
+      "dateTitle": "Jun 3, 2026 · 6:55 AM UTC",
+      "text": "here are 105+ prompt codes for Claude that they don't want you to know\nExecution / Output Modes\nthis controls exactly how Claude formats and delivers its response\n/ghost - final answer only, no explanation\n/minimal - shortest possible response\n/brief - 3 to 5 lines max\n/expand - detailed explanation\n/stepbystep - clear steps\n/checklist - actionable checklist\n/framework - structured framework\n/blueprint - implementation plan\n/playbook - repeatable system\n/roadmap - timeline based steps\n/draft - rough first version\n/polish - clean and refine output\nThinking Styles\nthis tells Claude how to think before it answers\n/analyst - deep analysis\n/critic - find flaws only\n/optimizer - improve what’s given\n/simplify - explain like beginner\n/eli5 - very simple explanation\n/deepdive - go very detailed\n/compare - compare options\n/proscons - list pros and cons\n/firstprinciples - break to basics\n/contrarian - challenge the idea\n/devil - argue the other side\n/steelman - best version of an argument\nContent Creation\nthis turns Claude into your personal content team\n/linkedin - LinkedIn post\n/twitter - short thread style\n/script - video or reel script\n/hook - strong opening lines\n/story - storytelling format\n/carousel - slide wise content\n/headlines - multiple title options\n/caption - social media caption\n/viral - high engagement style\n/authority - expert tone\n/newsletter - email newsletter format\n/thread - long form thread format\nCareer / Job Help\nthis would help you use Claude as your personal career coach\n/resume - improve resume\n/interview - interview Q and A\n/mockinterview - simulate interview\n/hr - HR round answers\n/portfolio - project ideas\n/roadmapcareer - career roadmap\n/jobsearch - job strategy\n/referral - referral message\n/salary - salary negotiation\n/skills - skills to learn\n/coverletter - write cover letter\n/linkedinbio - optimize your profile\nCoding / Tech\nthis'll let Claude be your dev partner\n/debug - find bugs\n/refactor - clean code\n/optimizecode - improve performance\n/systemdesign - architecture design\n/api - API structure\n/database - DB design\n/scalability - scaling approach\n/security - security checks\n/testcases - generate tests\n/pseudocode - logic only\n/explain - explain code simply\n/review - full code review\nBusiness / Strategy\nthis'll help you use Claude to build and grow your business ideas\n/startup - startup idea\n/gtm - go to market plan\n/monetize - revenue ideas\n/validate - validate idea\n/icp - ideal customer profile\n/sales - sales pitch\n/coldoutreach - cold outreach\n/offer - offer creation\n/funnel - funnel strategy\n/retention - retention ideas\n/positioning - brand positioning\n/competitor - competitor analysis\nProductivity\nlet Claude help you get more done with less effort\n/plan - daily plan\n/weekly - weekly plan\n/prioritize - what to do first\n/focus - remove distractions\n/automate - automation ideas\n/delegate - what to delegate\n/habits - habit building\n/track - tracking system\n/timeblock - time blocking\n/review - weekly review\n/morningroutine - start your day right\n/batchtasks - group similar tasks\nLearning\nyou can use Claude as your on-demand tutor\n/learn - explain topic\n/resources - best resources\n/practice - practice questions\n/quiz - test knowledge\n/mistakes - common mistakes\n/summary - summarize topic\n/revision - quick revision\n/notes - structured notes\n/examples - real examples\n/explainwhy - reasoning\n/teach - explain so I can teach others\n/roadmaplearn - step by step learning path",
+      "engagement": 1201,
+      "stats": [
+        81,
+        6,
+        112,
+        1201
+      ],
+      "source": "search:twitter thread structure min_faves:50 -course -crypto",
+      "features": {
+        "chars": 3455,
+        "lines": 113,
+        "hasEmoji": false,
+        "hasNumberedList": false,
+        "hasBulletList": false,
+        "isThreadShaped": true,
+        "hasActionVerbs": true,
+        "hasMetrics": false,
+        "topic": "algorithm",
+        "firstLine": "here are 105+ prompt codes for Claude that they don't want you to know"
+      }
+    },
+    {
       "handle": "sleepagotchi",
       "id": "2055287091244753216",
       "dateTitle": "May 15, 2026 · 2:00 PM UTC",
-      "text": "Sleepagotchi Creator Leaderboard is coming to [@NucleusCodes](https://nitter.net/NucleusCodes \"Nucleus\") 💤\n$120,000 in [$SLEEP](https://nitter.net/search?f=tweets&q=%23SLEEP) rewards:\n✦ $100K for Top 300 creators\n✦ $20K for highest reputation users\nSign in with X and see if your reputation is high enough to qualify ↓\n[nucleus.codes/](https://nucleus.codes/)\n[Load more](https://nitter.net/search?f=tweets&q=twitter+content+strategy+creator+min_faves%3A75+-course&cursor=DAADDAABCgABHLRT4XEaMJsKAAIcjNoN5FowUwAIAAIAAAACCAADAAAAAAgABAAAAAAKAAUcuKpmb8AnEAoABhy4qmZvv9jwAAA)",
+      "text": "Sleepagotchi Creator Leaderboard is coming to [@NucleusCodes](https://nitter.net/NucleusCodes \"Nucleus\") 💤\n$120,000 in [$SLEEP](https://nitter.net/search?f=tweets&q=%23SLEEP) rewards:\n✦ $100K for Top 300 creators\n✦ $20K for highest reputation users\nSign in with X and see if your reputation is high enough to qualify ↓\n[nucleus.codes/](https://nucleus.codes/)",
       "engagement": 951,
       "stats": [
         89,
@@ -666,8 +616,8 @@
       ],
       "source": "search:twitter content strategy creator min_faves:75 -course",
       "features": {
-        "chars": 573,
-        "lines": 7,
+        "chars": 360,
+        "lines": 6,
         "hasEmoji": true,
         "hasNumberedList": false,
         "hasBulletList": false,
@@ -683,12 +633,12 @@
       "id": "2062384599007928441",
       "dateTitle": "Jun 4, 2026 · 4:03 AM UTC",
       "text": "Good morning, friends!\nYesterday, I finally got access to the [@NucleusCodes](https://nitter.net/NucleusCodes \"Nucleus\") beta, and I immediately decided not to waste any time and jumped into the [@sleepagotchi](https://nitter.net/sleepagotchi \"Sleepagotchi 💤🦖\") campaign with a total pool of 120,000.\nYeah, the hype has been going on for about two weeks now, so I'm kind of catching the tail end of it. But you guys might remember that I’ve already written about this project before—my previous posts are actually under review right now. I'm really curious to see how the team rates them because I genuinely like the project and have been following it closely.\nI'll keep you posted on how the reviews go and what the rewards look like. Anyone else in on this? Let me know how it's going!",
-      "engagement": 675,
+      "engagement": 679,
       "stats": [
         23,
         3,
         38,
-        675
+        679
       ],
       "source": "search:twitter first line hook min_faves:30 -course",
       "features": {
@@ -702,6 +652,32 @@
         "hasMetrics": false,
         "topic": "general",
         "firstLine": "Good morning, friends!"
+      }
+    },
+    {
+      "handle": "Nadia_with_Ai",
+      "id": "2057996598429511810",
+      "dateTitle": "May 23, 2026 · 1:26 AM UTC",
+      "text": "BREAKING: If you're not using Claude at your job, you're already behind.\nCopy these 11 prompts:1. Multi-File Project Auditor\nPaste to Claude: \"Load my entire project folder: \\[upload files\\]. Analyze: architectural decisions that should change, technical debt to tackle first, security vulnerabilities, performance bottlenecks, and outdated dependencies. Give me a prioritized action plan.\"2. Context Memory Vault\nPaste to Claude: \"I'm working on \\[project name\\]. Here's everything you need to retain: \\[paste project context\\]. From now on, reference this context in every response without me repeating it. Summarize what you'll remember.\"3. Parallel Work Manager\nPaste to Claude: \"I need to complete these tasks simultaneously: \\[list tasks\\]. Spawn agent teams: assign each task to a separate agent, coordinate between them, report progress from all agents, merge results when done. Run them in parallel.\"4. Adaptive Problem Navigator\nPaste to Claude: \"Complex problem: \\[describe problem\\]. Don't answer immediately. First, assess: how deep should you think about this (quick/medium/deep reasoning), what information is missing, what assumptions to challenge. Then solve it at the appropriate depth.\"5. Mistake Spotter\nPaste to Claude: \"Review everything I've done so far in this conversation. Find: logical errors I made, assumptions that might be wrong, places where I'm overconfident, risks I haven't considered. Challenge my thinking before I commit to this approach.\"6. Long-Term Project Assistant\nPaste to Claude: \"This is a month-long project: \\[describe project\\]. Track decisions from past conversations, context from weeks ago, shifting requirements, and what we've already tried. Use context compaction so you never forget anything important as we continue.\"7. Cross-Repo Connector\nPaste to Claude: \"I have two projects: \\[project A\\] and \\[project B\\]. Load both codebases. Find how they should integrate, which API endpoints to create, shared data structures needed, the migration strategy, and what breaks if we connect them. Map the full integration.\"8. Decision Simulator\nPaste to Claude: \"I'm deciding between these options: \\[option A vs option B\\]. Simulate the next 6 months for each path. Compare risks, hidden costs, opportunity upside, second order effects, and likely failure points. Recommend the highest leverage choice.\"9. Content Repurposing Engine\nPaste to Claude: \"Turn this single piece of content: \\[paste content\\] into a LinkedIn post, Twitter thread, newsletter, YouTube script, carousel outline, and short form video hook set. Keep the tone native to each platform.\"10. Meeting Intelligence Assistant\nPaste to Claude: \"Here are my meeting notes/transcript: \\[paste notes\\]. Extract key decisions, unresolved blockers, action items, deadlines, ownership, and hidden concerns people hinted at but didn’t directly say.\"11. Reverse Engineer Anything\nPaste to Claude: \"Here is an example I admire: \\[paste example\\]. Reverse engineer the strategy behind it. Break down structure, psychology, hooks, distribution method, monetization angle, and why it works.\"12. Skill Accelerator\nPaste to Claude: \"I want to become highly skilled at \\[skill\\]. Create a 30 day learning roadmap with daily exercises, practical projects, feedback loops, mistakes to avoid, and ways to measure improvement.\"Bonus: AI Workflow Architect\nPaste to Claude: \"Design an AI powered workflow for my job as a \\[role\\]. Include tools, prompts, automations, delegation systems, quality checks, and how to reduce manual work by at least 50%.\"",
+      "engagement": 343,
+      "stats": [
+        17,
+        23,
+        62,
+        343
+      ],
+      "source": "search:twitter thread structure min_faves:50 -course -crypto",
+      "features": {
+        "chars": 3546,
+        "lines": 15,
+        "hasEmoji": false,
+        "hasNumberedList": false,
+        "hasBulletList": false,
+        "isThreadShaped": true,
+        "hasActionVerbs": true,
+        "hasMetrics": true,
+        "topic": "algorithm",
+        "firstLine": "BREAKING: If you're not using Claude at your job, you're already behind."
       }
     }
   ]
