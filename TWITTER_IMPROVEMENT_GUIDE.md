@@ -77,8 +77,20 @@ Our automations over-index on the proof stack (units, wallets, $, Pinnacle) and 
 - Close with a **binary choice** ("Yankees RL or the under?") not generic "which ticket?"
 - **Never** post a recap-checkmarks-only format without a record flex hook first.
 
+## PREMIUM formatting standard (look designed, not typed)
+
+A sloppy-looking tweet reads as low quality even with strong reach. Enforce on every post:
+
+- No trailing ellipses / "…" on hooks or stat lines — end clean (period or nothing).
+- Space after every colon: "Sharp money: 71%", never "money:71%".
+- Parallel structure for contrast pairs (both lines identical shape).
+- One idea per line; exactly one blank line between blocks.
+- Consistent bullets ("•" + space), numbers ($12.4K, +145, 4.0u), and emoji (one per purpose).
+- Never let copy truncate or a key line get dropped — tighten or thread instead.
+
 ## Anti-patterns checklist
 
+- [ ] Sloppy formatting: trailing "…", missing space after colon, mismatched contrast lines, or a dropped/truncated line
 - [ ] Line 1 fails the screenshot test (only makes sense after the proof block)
 - [ ] No identifiable standalone RT line in the post
 - [ ] Two different jobs in one post (e.g. comeback story + site lock-time info) — split them

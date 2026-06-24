@@ -57,6 +57,24 @@ The sharp-wallet data is the *supporting evidence* inside the pick — not a rep
 
 ---
 
+## PREMIUM formatting standard (every post must look designed, not typed)
+
+Even a great hook reads as low-quality if the formatting is sloppy. A posted tweet
+once shipped with trailing dots ("Red Sox...."), a missing space ("money:71%"), and
+a key line silently dropped — never again. Before any post ships:
+
+- **No trailing ellipses or "…"** on hooks or stat lines. End each line clean — a period or nothing. Trailing dots read as lazy tout copy.
+- **Space after every colon/punctuation:** "Sharp money: 71%" — never "money:71%".
+- **Parallel structure for contrast pairs:** both lines identical shape ("Public money: 85% on the Red Sox" / "Sharp money: 71% on the Rockies").
+- **One idea per line. Deliberate whitespace:** exactly one blank line between blocks, never random gaps inside a block.
+- **Consistent bullets:** use "•" + a space for every list item; don't mix styles.
+- **Consistent number/unit style:** $12.4K, +145, 4.0u, +41% ROI — same format throughout.
+- **Purposeful emoji:** ✅ receipts, 🚨/👀 alerts, 🎯 close. One per purpose, not scattered.
+- **Nothing truncated/orphaned:** verify the FULL intended copy fits and posts. If it's too long, tighten or thread — never let a key line (e.g. the transparency line) get cut.
+- **Consistent capitalization:** no random lowercase sentence starts.
+
+The bar: it should look like a designed graphic in text form. If it looks like a rushed DM, rewrite it.
+
 ## The two hard gates (every post, non-negotiable)
 
 These are the difference between a ~10-like post and one that gets reposted.

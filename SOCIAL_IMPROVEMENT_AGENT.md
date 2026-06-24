@@ -152,10 +152,12 @@ HARD RULES
 - Small sample → honest uncertainty, but still give a strong structural call.
 - Web tactics must be recent and sourced; map each to a real gap.
 - Never copy peer posts verbatim. Never output ready_to_post/ content.
-- ALWAYS re-emit the two "Hard gates" and carry forward the "Identity-hook bank"
-  sections (both marked PERSISTENT). These survive every regeneration — never let a
-  weekly rewrite silently drop them. The screenshot test and the one-RT-line gate
-  are the standing fix for our zero-retweet ceiling.
+- ALWAYS re-emit the two "Hard gates", the "Identity-hook bank", AND the "PREMIUM
+  formatting standard" sections (all PERSISTENT). These survive every regeneration —
+  never let a weekly rewrite silently drop them. The screenshot test and the
+  one-RT-line gate are the standing fix for our zero-retweet ceiling; the formatting
+  standard is the standing fix for posts that look low-quality (trailing "…",
+  missing colon spaces, dropped lines).
 - Mirror any change to the gates or the hook bank into MY_VOICE_PROFILE.md (Phase 6)
   so the durable voice doc and the weekly guide never diverge.
 ```
