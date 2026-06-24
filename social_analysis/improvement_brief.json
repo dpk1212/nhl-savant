@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-06-22T17:50:00.197Z",
+  "generatedAt": "2026-06-24T01:21:51.465Z",
   "handle": "Real_NHL_Savant",
   "dataQuality": {
     "labeledPostCount": 5,
-    "totalPostCount": 22,
+    "totalPostCount": 25,
     "warning": "CRITICAL: Fewer than 8 labeled posts. Use labeledEngagement section ONLY for performance claims. Do NOT rank posts by nitterViews.",
     "rules": [
       "labeledScore = likes + 3*RTs from x.com scrape — authoritative",
@@ -11,28 +11,28 @@
       "Do not recommend \"more emoji\" unless tied to a specific niche peer comparison"
     ]
   },
-  "diagnosis": "Only 5 posts have labeled likes — conclusions are directional, not statistical. Best labeled format: pick_with_proof (avg 11 likes, n=1). Top labeled post (11 score) opens: \"Everybody wants a full morning card.…\" 1 labeled posts at 0 likes — mostly recaps/contextless replies. Niche winners in our lane use \"sharp_public_board\" structure — Dale rarely posts that shape.",
+  "diagnosis": "Only 5 posts have labeled likes — conclusions are directional, not statistical. Best labeled format: record_flex_cta (avg 3 likes, n=1). Top labeled post (8 score) opens: \"⚽ Sweden vs Japan …\" Niche winners in our lane use \"sharp_public_board\" structure — Dale rarely posts that shape.",
   "sources": {
-    "myTweetsFetchedAt": "2026-06-22T17:44:30.643Z",
-    "nicheTrendsFetchedAt": "2026-06-22T17:46:40.326Z",
-    "growthTipsFetchedAt": "2026-06-22T17:50:00.145Z",
-    "growthTipsCount": 23
+    "myTweetsFetchedAt": "2026-06-24T01:17:31.124Z",
+    "nicheTrendsFetchedAt": "2026-06-24T01:18:23.624Z",
+    "growthTipsFetchedAt": "2026-06-24T01:21:51.420Z",
+    "growthTipsCount": 26
   },
   "labeledEngagement": {
     "sampleSize": 5,
-    "totalPosts": 22,
-    "avgLikes": 6.2,
+    "totalPosts": 25,
+    "avgLikes": 2.8,
     "totalRetweets": 0,
-    "bestPost": "2069044073302728887",
-    "zeroLikeCount": 1
+    "bestPost": "2069469202059030635",
+    "zeroLikeCount": 0
   },
   "corpusConstruction": {
-    "pctWithEmoji": 27,
-    "pctWithQuestion": 64,
+    "pctWithEmoji": 32,
+    "pctWithQuestion": 56,
     "pctWithSharpPublicSplit": 0,
     "pctTrueThreads": 0,
-    "pctMultiLineCards": 95,
-    "avgChars": 325
+    "pctMultiLineCards": 88,
+    "avgChars": 310
   },
   "formatBreakdown": {
     "product_reveal": {
@@ -43,39 +43,47 @@
       "avgLikes": null,
       "avgLabeledScore": null
     },
-    "pick_with_proof": {
-      "count": 2,
+    "record_flex_cta": {
+      "count": 4,
       "labeledCount": 1,
-      "likesSum": 11,
+      "likesSum": 3,
       "rtSum": 0,
-      "avgLikes": 11,
-      "avgLabeledScore": 11
-    },
-    "pick_card": {
-      "count": 1,
-      "labeledCount": 1,
-      "likesSum": 8,
-      "rtSum": 0,
-      "avgLikes": 8,
-      "avgLabeledScore": 8
+      "avgLikes": 3,
+      "avgLabeledScore": 3
     },
     "other": {
-      "count": 9,
-      "labeledCount": 2,
-      "likesSum": 7,
+      "count": 10,
+      "labeledCount": 4,
+      "likesSum": 11,
       "rtSum": 0,
-      "avgLikes": 3.5,
-      "avgLabeledScore": 3.5
+      "avgLikes": 2.8,
+      "avgLabeledScore": 2.8
+    },
+    "pick_card": {
+      "count": 3,
+      "labeledCount": 0,
+      "likesSum": 0,
+      "rtSum": 0,
+      "avgLikes": null,
+      "avgLabeledScore": null
+    },
+    "record_plus_picks": {
+      "count": 2,
+      "labeledCount": 0,
+      "likesSum": 0,
+      "rtSum": 0,
+      "avgLikes": null,
+      "avgLabeledScore": null
+    },
+    "pick_with_proof": {
+      "count": 2,
+      "labeledCount": 0,
+      "likesSum": 0,
+      "rtSum": 0,
+      "avgLikes": null,
+      "avgLabeledScore": null
     },
     "recap_checkmarks": {
-      "count": 2,
-      "labeledCount": 1,
-      "likesSum": 5,
-      "rtSum": 0,
-      "avgLikes": 5,
-      "avgLabeledScore": 5
-    },
-    "record_flex_cta": {
       "count": 2,
       "labeledCount": 0,
       "likesSum": 0,
@@ -84,15 +92,7 @@
       "avgLabeledScore": null
     },
     "contrarian_hook": {
-      "count": 2,
-      "labeledCount": 0,
-      "likesSum": 0,
-      "rtSum": 0,
-      "avgLikes": null,
-      "avgLabeledScore": null
-    },
-    "record_plus_picks": {
-      "count": 3,
+      "count": 1,
       "labeledCount": 0,
       "likesSum": 0,
       "rtSum": 0,
@@ -103,10 +103,10 @@
   "nicheBenchmark": {
     "inLanePostCount": 32,
     "aggregate": {
-      "pctWithEmoji": 73,
-      "pctWithQuestion": 15,
-      "pctWithNumbers": 86,
-      "avgChars": 1264
+      "pctWithEmoji": 75,
+      "pctWithQuestion": 13,
+      "pctWithNumbers": 89,
+      "avgChars": 1150
     },
     "structureRecipes": [
       {
@@ -131,39 +131,19 @@
       },
       {
         "pattern": "pick_card",
-        "handle": "decenterghost",
-        "engagement": 24002,
-        "hook": "Patriots Broncos rn is a liquidity event",
+        "handle": "AlexCaruso",
+        "engagement": 72467,
+        "hook": "MLB Recap:",
         "recipe": {
           "pattern": "pick_card",
           "line1Job": "Scroll-stopping hook with specific game/market",
           "proofBlock": "Numbers, wallets, or line evidence",
           "closeJob": "Question or next-action",
           "exemplarLines": [
-            "Patriots Broncos rn is a liquidity event",
-            "$4M in liquidity and its climbing every second",
-            "Everybody got a take, but the only thing that matters is price vs reality",
-            "Prediction markets is pricing NE at 66c on the ML with more $4.0m total volume"
-          ]
-        }
-      },
-      {
-        "pattern": "line_move_table",
-        "handle": "FadeReportHQ",
-        "engagement": 318,
-        "hook": "Sharp money vs. public in the NBA Playoffs today:",
-        "recipe": {
-          "pattern": "line_move_table",
-          "line1Job": "Slate header (round/week/game)",
-          "proofBlock": "Compact table: team, public %, sharp %, book, move arrow",
-          "closeJob": "Optional — which side is the story",
-          "exemplarLines": [
-            "Sharp money vs. public in the NBA Playoffs today:",
-            "🔥 Spurs (+118) ML - 64% money, 37% bets (+27pt)",
-            "[fadereport.com/nba](http://fadereport.com/nba) [#NBA](https://nitter.net/search?f=tweets&q=%23NBA) [#NBAPlayoffs](https://nitter.net/search?f=tweets&q=%23NBAPlayoffs) [#NBAPlayoffs2026](https://nitter.net/search?f=tweets&q=%23NBAPlayoffs2026) [#BettingTwitter](https://nitter.net/search?f=tweets&q=%23BettingTwitter) [#SharpMoney](https://nitter.net/search?f=tweets&q=%23SharpMoney)",
-            "[**NBA Playoffs Betting Splits — Sharp Money Tracker \\| FadeReport** \\\\",
-            "\\\\",
-            "Track real sportsbook betting splits and sharp money signals for every NBA Playoffs game.\\\\"
+            "MLB Recap:",
+            "Shane Bieber Under 6.5 Strikeouts✅",
+            "Guardians Moneyline❌",
+            "Nationals Moneyline❌"
           ]
         }
       }
@@ -179,14 +159,6 @@
       "fix": "Lead with \"where sharp vs public money is\" BEFORE naming the pick"
     },
     {
-      "area": "recap_format",
-      "issue": "Zero-like labeled posts",
-      "ours": "1 posts at 0 likes",
-      "niche": "AlexCaruso recaps name misses and still get engagement",
-      "severity": "high",
-      "fix": "Never post win-only recaps; lead with the miss + lesson"
-    },
-    {
       "area": "shareability",
       "issue": "No retweets in labeled sample",
       "ours": "0 RTs",
@@ -197,83 +169,83 @@
   ],
   "topLabeledPosts": [
     {
-      "id": "2069044073302728887",
-      "date": "Mon, 22 Jun 2026 13:05:22 GMT",
-      "format": "pick_with_proof",
-      "likes": 11,
-      "retweets": 0,
-      "labeledScore": 11,
-      "textPreview": "Everybody wants a full morning card. · > That’s usually how people force bad bets. · > This board had 8 live sides. · Only 1 actually cleared so far... · > Yankees ML -129 (4u) · > • 2 proven winners for, 0 aga",
-      "hook": "Everybody wants a full morning card.",
-      "close": "> Save this.",
-      "structure": {
-        "hasRecordFlex": false,
-        "hasSharpStack": true,
-        "hasSharpPublicSplit": false,
-        "isTrueThread": false
-      }
-    },
-    {
-      "id": "2068780081820897532",
-      "date": "Sun, 21 Jun 2026 19:36:22 GMT",
-      "format": "pick_card",
+      "id": "2069469202059030635",
+      "date": "2026\\-06\\-23T17:14:41\\.000Z",
+      "format": "other",
       "likes": 8,
       "retweets": 0,
       "labeledScore": 8,
-      "textPreview": "When you’re using the sharps.. always check back within 60 mins of gametime..  · > That’s when I see a lot of sharp action hitting late lines.. · > Here are two more.. · > Seattle/Red Sox under 6.5 - 2.5u · D",
-      "hook": "When you’re using the sharps.. always check back within 60 mins of gametime.. ",
-      "close": "Dodgers ML - 3u",
+      "textPreview": "⚽ Sweden vs Japan  · > Soccer Fam!! What do we think? · > One wallet. 5-0 in soccer. It has never lost when it sizes up. · > It just put $97.7K on Japan at 2.3x its normal bet. · > I'm not calling this a lock",
+      "hook": "⚽ Sweden vs Japan ",
+      "close": "> Fade the whale, or jump in? 👀",
       "structure": {
-        "hasRecordFlex": false,
-        "hasSharpStack": false,
-        "hasSharpPublicSplit": false,
-        "isTrueThread": false
-      }
-    },
-    {
-      "id": "2068734159485628703",
-      "date": "Sun, 21 Jun 2026 16:33:53 GMT",
-      "format": "other",
-      "likes": 7,
-      "retweets": 0,
-      "labeledScore": 7,
-      "textPreview": "Most people spend Sunday chasing... · > The sharper money usually is more discrete... · > Right now it keeps coming back to these two picks.. · > Phillies ML -184 · Under 8.5 White Sox/Tigers · > Phillies is th",
-      "hook": "Most people spend Sunday chasing...",
-      "close": "> If you can only take one, which gets your money?",
-      "structure": {
-        "hasRecordFlex": false,
+        "hasRecordFlex": true,
         "hasSharpStack": true,
         "hasSharpPublicSplit": false,
         "isTrueThread": false
       }
     },
     {
-      "id": "2068694847460888834",
-      "date": "Sun, 21 Jun 2026 13:57:40 GMT",
-      "format": "recap_checkmarks",
-      "likes": 5,
+      "id": "2069535394732056937",
+      "date": "2026\\-06\\-23T21:37:42\\.000Z",
+      "format": "record_flex_cta",
+      "likes": 3,
       "retweets": 0,
-      "labeledScore": 5,
-      "textPreview": "The Yankees miss hurt. · but the board still finished green.. · > Phillies ML ✅ · Marlins ML ✅ · Under 7.5 ✅ · > So even after the biggest loss on the card, · V12 and the sharps still finished 3-1 · for +2.03u on t",
-      "hook": "The Yankees miss hurt.",
-      "close": "> Did you stay with it after the Yankees loss?",
+      "labeledScore": 3,
+      "textPreview": "Stop what you're doing and bookmark this. 📌 · > Following these sharp wallets the last 7 days has been a gold mine.. · > ✅ +13.23u ✅ 20-12 · 62.5% ✅ +12.5% ROI · > Here are the 3 they're loading tonight 👇",
+      "hook": "Stop what you're doing and bookmark this. 📌",
+      "close": "> Which one are you riding? 🎯",
       "structure": {
         "hasRecordFlex": true,
+        "hasSharpStack": true,
+        "hasSharpPublicSplit": false,
+        "isTrueThread": false
+      }
+    },
+    {
+      "id": "2069466730892562534",
+      "date": "2026\\-06\\-23T17:04:52\\.000Z",
+      "format": "other",
+      "likes": 1,
+      "retweets": 0,
+      "labeledScore": 1,
+      "textPreview": "Appreciate you! A name I recognize from the start!",
+      "hook": "Appreciate you! A name I recognize from the start!",
+      "close": "Appreciate you! A name I recognize from the start!",
+      "structure": {
+        "hasRecordFlex": false,
         "hasSharpStack": false,
         "hasSharpPublicSplit": false,
         "isTrueThread": false
       }
     },
     {
-      "id": "2069079276079534471",
-      "date": "Mon, 22 Jun 2026 15:25:15 GMT",
+      "id": "2069428843765518845",
+      "date": "2026\\-06\\-23T14:34:19\\.000Z",
       "format": "other",
-      "likes": 0,
+      "likes": 1,
       "retweets": 0,
-      "labeledScore": 0,
-      "textPreview": "May never win again for the rest of the season. 3rd time is the charm?",
-      "hook": "May never win again for the rest of the season. 3rd time is the charm?",
-      "close": "May never win again for the rest of the season. 3rd time is the charm?",
+      "labeledScore": 1,
+      "textPreview": "only up and to the right from here!",
+      "hook": "only up and to the right from here!",
+      "close": "only up and to the right from here!",
+      "structure": {
+        "hasRecordFlex": false,
+        "hasSharpStack": false,
+        "hasSharpPublicSplit": false,
+        "isTrueThread": false
+      }
+    },
+    {
+      "id": "2069428725213429815",
+      "date": "2026\\-06\\-23T14:33:50\\.000Z",
+      "format": "other",
+      "likes": 1,
+      "retweets": 0,
+      "labeledScore": 1,
+      "textPreview": "I'd still like a slightly larger sample..but really have been at this for 4ish months data collecting.. just v12 has this sample · > and about 8 days ago I started allowing only the highest quality pick",
+      "hook": "I'd still like a slightly larger sample..but really have been at this for 4ish months data collecting.. just v12 has thi",
+      "close": "> and about 8 days ago I started allowing only the highest quality picks threw the gate in order to raise our win rate..",
       "structure": {
         "hasRecordFlex": false,
         "hasSharpStack": false,
@@ -284,35 +256,33 @@
   ],
   "bottomLabeledPosts": [
     {
-      "id": "2069079276079534471",
+      "id": "2069466730892562534",
       "format": "other",
-      "likes": 0,
-      "textPreview": "May never win again for the rest of the season. 3rd time is the charm?",
-      "hook": "May never win again for the rest of the season. 3rd time is the charm?",
+      "likes": 1,
+      "textPreview": "Appreciate you! A name I recognize from the start!",
+      "hook": "Appreciate you! A name I recognize from the start!",
       "whyWeak": [
         "No sharp/public split — post leads with picks not market map"
       ]
     },
     {
-      "id": "2068694847460888834",
-      "format": "recap_checkmarks",
-      "likes": 5,
-      "textPreview": "The Yankees miss hurt. · but the board still finished green.. · > Phillies ML ✅ · Marlins ML ✅ · Under 7.5 ✅ · > So even after the biggest loss on the card, · V12 and the sharps still finished 3-1 · for +2.03u on t",
-      "hook": "The Yankees miss hurt.",
+      "id": "2069428843765518845",
+      "format": "other",
+      "likes": 1,
+      "textPreview": "only up and to the right from here!",
+      "hook": "only up and to the right from here!",
       "whyWeak": [
-        "No sharp/public split — post leads with picks not market map",
-        "Pick-first structure; niche winners lead with \"where money is\" board"
+        "No sharp/public split — post leads with picks not market map"
       ]
     },
     {
-      "id": "2068734159485628703",
+      "id": "2069428725213429815",
       "format": "other",
-      "likes": 7,
-      "textPreview": "Most people spend Sunday chasing... · > The sharper money usually is more discrete... · > Right now it keeps coming back to these two picks.. · > Phillies ML -184 · Under 8.5 White Sox/Tigers · > Phillies is th",
-      "hook": "Most people spend Sunday chasing...",
+      "likes": 1,
+      "textPreview": "I'd still like a slightly larger sample..but really have been at this for 4ish months data collecting.. just v12 has this sample · > and about 8 days ago I started allowing only the highest quality pick",
+      "hook": "I'd still like a slightly larger sample..but really have been at this for 4ish months data collecting.. just v12 has thi",
       "whyWeak": [
-        "No sharp/public split — post leads with picks not market map",
-        "Long single-tweet wall — split into hook + reply thread"
+        "No sharp/public split — post leads with picks not market map"
       ]
     }
   ],
@@ -320,12 +290,11 @@
     {
       "nichePattern": "sharp_public_board",
       "nicheExemplar": "@PatrickE_Vegas: \"Where the sharps/public are and more on Miami vs. Ole Miss College Football Playoff semifinal odds at [@primesportsbook](https://nitter.net/primesportsbook \"Prime Sportsbook\"):\"",
-      "dalePostId": "2066972449594577312",
-      "daleHook": "We just went 2-0 in MLB yesterday. World cup is a different story.. (every game was a draw...🤔)",
+      "dalePostId": "2069183020783874527",
+      "daleHook": "You do not need 10 bets to have a real edge.",
       "structuralGaps": [
         "No sharp/public split — post leads with picks not market map",
-        "Pick-first structure; niche winners lead with \"where money is\" board",
-        "Long single-tweet wall — split into hook + reply thread"
+        "Pick-first structure; niche winners lead with \"where money is\" board"
       ],
       "nicheRecipe": {
         "pattern": "sharp_public_board",
@@ -345,10 +314,10 @@
   ],
   "rewriteCandidates": [
     {
-      "postId": "2069079276079534471",
-      "currentHook": "May never win again for the rest of the season. 3rd time is the charm?",
+      "postId": "2069466730892562534",
+      "currentHook": "Appreciate you! A name I recognize from the start!",
       "currentFormat": "other",
-      "labeledLikes": 0,
+      "labeledLikes": 1,
       "structuralProblems": [
         "No sharp/public split — post leads with picks not market map"
       ],
@@ -369,13 +338,12 @@
       }
     },
     {
-      "postId": "2068694847460888834",
-      "currentHook": "The Yankees miss hurt.",
-      "currentFormat": "recap_checkmarks",
-      "labeledLikes": 5,
+      "postId": "2069428843765518845",
+      "currentHook": "only up and to the right from here!",
+      "currentFormat": "other",
+      "labeledLikes": 1,
       "structuralProblems": [
-        "No sharp/public split — post leads with picks not market map",
-        "Pick-first structure; niche winners lead with \"where money is\" board"
+        "No sharp/public split — post leads with picks not market map"
       ],
       "applyRecipe": "sharp_public_board",
       "rewriteSlots": {
@@ -394,13 +362,12 @@
       }
     },
     {
-      "postId": "2068734159485628703",
-      "currentHook": "Most people spend Sunday chasing...",
+      "postId": "2069428725213429815",
+      "currentHook": "I'd still like a slightly larger sample..but really have been at this for 4ish months data collecting.. just v12 has thi",
       "currentFormat": "other",
-      "labeledLikes": 7,
+      "labeledLikes": 1,
       "structuralProblems": [
-        "No sharp/public split — post leads with picks not market map",
-        "Long single-tweet wall — split into hook + reply thread"
+        "No sharp/public split — post leads with picks not market map"
       ],
       "applyRecipe": "sharp_public_board",
       "rewriteSlots": {
@@ -429,6 +396,22 @@
       "textPreview": "Where the sharps/public are and more on Miami vs. Ole Miss College Football Playoff semifinal odds at [@primesportsbook](https://nitter.net/primesportsbook \"Prime Sportsbook\"): · Sharp Action · Ole Miss +3.5 · \"65% of public handle is laying \\[points\\] wit"
     },
     {
+      "handle": "PatrickE_Vegas",
+      "pattern": "sharp_public_board",
+      "engagement": 73338,
+      "hook": "Where the sharps/public are, biggest needs, how the totals are being bet and more on NFL Week 13 odds for the 3 Thanksgiving games, from [@primesportsbook](https://nitter.net/primesportsbook \"Prime Sportsbook\"):",
+      "chars": 926,
+      "textPreview": "Where the sharps/public are, biggest needs, how the totals are being bet and more on NFL Week 13 odds for the 3 Thanksgiving games, from [@primesportsbook](https://nitter.net/primesportsbook \"Prime Sportsbook\"): · Packers vs. Lions · Sharp play on Lions "
+    },
+    {
+      "handle": "AlexCaruso",
+      "pattern": "pick_card",
+      "engagement": 72467,
+      "hook": "MLB Recap:",
+      "chars": 540,
+      "textPreview": "MLB Recap: · Shane Bieber Under 6.5 Strikeouts✅ · Guardians Moneyline❌ · Nationals Moneyline❌ · Astros Moneyline❌ · Brandon Sproat Over 5.5 Strikeouts❌ · 1-4, nationals blew a 9th inning lead, Astros blew the game in the 8th, some tough losses tonight · I hold my "
+    },
+    {
       "handle": "invisiblestats",
       "pattern": "sharp_public_board",
       "engagement": 70535,
@@ -439,34 +422,18 @@
     {
       "handle": "PatrickE_Vegas",
       "pattern": "sharp_public_board",
-      "engagement": 24888,
-      "hook": "Where the sharps/public are, biggest needs, Pros vs. Joes and more in NFL Week 18 odds at [@primesportsbook](https://nitter.net/primesportsbook \"Prime Sportsbook\"):",
-      "chars": 620,
-      "textPreview": "Where the sharps/public are, biggest needs, Pros vs. Joes and more in NFL Week 18 odds at [@primesportsbook](https://nitter.net/primesportsbook \"Prime Sportsbook\"): · Notable Sharp Action · Note: This is where sharp play landed. Not the current line! · Bro"
+      "engagement": 27150,
+      "hook": "Where the sharp play/public money is on NBA Finals Game 1 at [@primesportsbook](https://nitter.net/primesportsbook \"Prime Sportsbook\"):",
+      "chars": 561,
+      "textPreview": "Where the sharp play/public money is on NBA Finals Game 1 at [@primesportsbook](https://nitter.net/primesportsbook \"Prime Sportsbook\"): · Notable Sharp Action · ➡️ Spurs -5 · ➡️ Over 217 · \"The whole world (80%) is taking the points with the Knicks. However,"
     },
     {
-      "handle": "decenterghost",
+      "handle": "invisiblestats",
       "pattern": "pick_card",
-      "engagement": 24002,
-      "hook": "Patriots Broncos rn is a liquidity event",
-      "chars": 1543,
-      "textPreview": "Patriots Broncos rn is a liquidity event · $4M in liquidity and its climbing every second · Everybody got a take, but the only thing that matters is price vs reality · Prediction markets is pricing NE at 66c on the ML with more $4.0m total volume · Translati"
-    },
-    {
-      "handle": "PatrickE_Vegas",
-      "pattern": "sharp_public_board",
-      "engagement": 17863,
-      "hook": "They were busy at [@primesportsbook](https://nitter.net/primesportsbook \"Prime Sportsbook\") this morning. So just the two later games:",
-      "chars": 888,
-      "textPreview": "They were busy at [@primesportsbook](https://nitter.net/primesportsbook \"Prime Sportsbook\") this morning. So just the two later games: · Where the sharps/public are and more on Sunday NFL Wild Card odds at Prime: · Notable Sharp Action · Eagles -3.5 and -4"
-    },
-    {
-      "handle": "PatrickE_Vegas",
-      "pattern": "sharp_public_board",
-      "engagement": 15918,
-      "hook": "Where the sharps/public are and more on today's NFL Divisional Round odds at [@primesportsbook](https://nitter.net/primesportsbook \"Prime Sportsbook\").",
-      "chars": 1212,
-      "textPreview": "Where the sharps/public are and more on today's NFL Divisional Round odds at [@primesportsbook](https://nitter.net/primesportsbook \"Prime Sportsbook\"). · Note: Prime is not DK nor FD, etc. So there could be significant differences. And even though Prim"
+      "engagement": 26223,
+      "hook": "10 bets Vegas likes in the NBA today...",
+      "chars": 1217,
+      "textPreview": "10 bets Vegas likes in the NBA today... · 🎲ML's: · Jazz ML (+415): Sharp🔪 · ➡️Jazz ML has a very positive bet% - money% and has moved from +530 to +415... · Pacers ML (+175): 38% of public $'s · ➡️Pacers ML has moved from +220 to +175 despite not being widel"
     }
   ],
   "growthPlaybook": {
@@ -474,37 +441,37 @@
       {
         "handle": "leowondiary",
         "topic": "hooks",
-        "engagement": 6087,
+        "engagement": 6110,
         "hook": "Maybe a lot of you already know this, but for those who don't: running a fanmade account is not easy.",
         "textPreview": "Maybe a lot of you already know this, but for those who don't: running a fanmade account is not easy. · Even if you have a life outside of Twitter, the accounts you see with thousands of followers are t"
       },
       {
         "handle": "nicktheriot_",
         "topic": "hooks",
-        "engagement": 3756,
+        "engagement": 3757,
         "hook": "Amateur \"research\":",
         "textPreview": "Amateur \"research\": · → Dump 30 competitor ads into Notion · → Screenshot some Reddit threads · → Never look at it again · → Cry on Twitter why ads don't convert · Real research: · → Read 200+ customer reviews an"
       },
       {
         "handle": "badboyfoxy",
         "topic": "hooks",
-        "engagement": 2424,
+        "engagement": 2485,
         "hook": "these are some Claude prompt codes that are very useful useful for creators most especially for writing",
         "textPreview": "these are some Claude prompt codes that are very useful useful for creators most especially for writing · \\> /twitter ~ short thread style · \\> /script ~ video or reel script · \\> /hook ~ strong opening lin"
       },
       {
-        "handle": "holonabove",
+        "handle": "jabelaJAr",
         "topic": "threads",
-        "engagement": 7827,
-        "hook": "This is bigger than politics..",
-        "textPreview": "This is bigger than politics.. · I think we’ve all noticed over the last ten years that something much larger than normal politics has been unfolding... · The modern control structure was not built overni"
+        "engagement": 19782,
+        "hook": "TIPS KEREN LOLOS PRETEST",
+        "textPreview": "TIPS KEREN LOLOS PRETEST · a thread by [@jabelaJAr](https://nitter.net/jabelaJAr \"ezra\") on x"
       },
       {
-        "handle": "Chain__Crafters",
+        "handle": "unalee90",
         "topic": "threads",
-        "engagement": 3575,
-        "hook": "Thread Contest Alert 🚨",
-        "textPreview": "Thread Contest Alert 🚨 · PolyRex is looking for creators to write a deep-dive Twitter thread explaining its role in the Polymarket ecosystem and why it matters for decentralized intelligence, verificat"
+        "engagement": 19196,
+        "hook": "Another tips yg bisa dicoba kalau mau reread AU lama yang panelnya hilang.",
+        "textPreview": "Another tips yg bisa dicoba kalau mau reread AU lama yang panelnya hilang. · 1\\. Copy link X au yang mau kamu baca · 2\\. Buka [twitter-thread.com/](https://twitter-thread.com/) · 3\\. Paste link au · 4\\. Klik "
       }
     ],
     "note": "Secondary input only — niche peer structure beats generic growth hacks"
@@ -513,10 +480,10 @@
     {
       "id": "format_double_down",
       "priority": 1,
-      "hypothesis": "pick_with_proof is the only format with proven labeled likes",
-      "test": "Post 3x pick_with_proof this week using the same hook → proof → close order as post 2069044073302728887",
-      "baseline": "6.2 avg likes (n=5)",
-      "successMetric": "≥14 avg likes on the 3-test batch"
+      "hypothesis": "record_flex_cta is the only format with proven labeled likes",
+      "test": "Post 3x record_flex_cta this week using the same hook → proof → close order as post 2069469202059030635",
+      "baseline": "2.8 avg likes (n=5)",
+      "successMetric": "≥8 avg likes on the 3-test batch"
     },
     {
       "id": "sharp_public_board_test",
@@ -530,7 +497,7 @@
       "id": "rewrite_weakest",
       "priority": 3,
       "hypothesis": "Restructuring 0-like posts using niche recipe lifts floor",
-      "test": "Rewrite post 2069079276079534471 using sharp_public_board slots before reposting similar content",
+      "test": "Rewrite post 2069466730892562534 using sharp_public_board slots before reposting similar content",
       "baseline": "0 likes on original",
       "successMetric": "≥3 likes on the restructured version"
     }
