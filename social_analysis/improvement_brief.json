@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-24T23:36:05.286Z",
+  "generatedAt": "2026-06-25T11:24:23.670Z",
   "handle": "Real_NHL_Savant",
   "dataQuality": {
     "labeledPostCount": 4,
@@ -11,12 +11,12 @@
       "Do not recommend \"more emoji\" unless tied to a specific niche peer comparison"
     ]
   },
-  "diagnosis": "Only 4 posts have labeled likes — conclusions are directional, not statistical. Best labeled format: sharp_public_board (avg 7 likes, n=1). Top labeled post (7 score) opens: \"⚾ Public money: 85% on the Red Sox....…\" Niche winners in our lane use \"sharp_public_board\" structure — Dale rarely posts that shape.",
+  "diagnosis": "Only 4 posts have labeled likes — conclusions are directional, not statistical. Best labeled format: sharp_public_board (avg 7 likes, n=1). Top labeled post (7 score) opens: \"⚾ Public money: 85% on the Red Sox....…\" 1 labeled posts at 0 likes — mostly recaps/contextless replies. Niche winners in our lane use \"sharp_public_board\" structure — Dale rarely posts that shape.",
   "sources": {
-    "myTweetsFetchedAt": "2026-06-24T23:32:00.657Z",
-    "nicheTrendsFetchedAt": "2026-06-24T23:32:50.248Z",
-    "growthTipsFetchedAt": "2026-06-24T23:35:07.426Z",
-    "growthTipsCount": 21
+    "myTweetsFetchedAt": "2026-06-25T11:21:50.736Z",
+    "nicheTrendsFetchedAt": "2026-06-25T11:23:04.716Z",
+    "growthTipsFetchedAt": "2026-06-25T11:24:23.614Z",
+    "growthTipsCount": 25
   },
   "labeledEngagement": {
     "sampleSize": 4,
@@ -24,15 +24,15 @@
     "avgLikes": 3.8,
     "totalRetweets": 0,
     "bestPost": "2069847083042079153",
-    "zeroLikeCount": 0
+    "zeroLikeCount": 1
   },
   "corpusConstruction": {
-    "pctWithEmoji": 50,
-    "pctWithQuestion": 55,
+    "pctWithEmoji": 55,
+    "pctWithQuestion": 59,
     "pctWithSharpPublicSplit": 9,
     "pctTrueThreads": 0,
-    "pctMultiLineCards": 91,
-    "avgChars": 357
+    "pctMultiLineCards": 95,
+    "avgChars": 366
   },
   "formatBreakdown": {
     "product_reveal": {
@@ -44,12 +44,12 @@
       "avgLabeledScore": null
     },
     "pick_with_proof": {
-      "count": 4,
-      "labeledCount": 1,
-      "likesSum": 6,
+      "count": 5,
+      "labeledCount": 2,
+      "likesSum": 8,
       "rtSum": 0,
-      "avgLikes": 6,
-      "avgLabeledScore": 6
+      "avgLikes": 4,
+      "avgLabeledScore": 4
     },
     "sharp_public_board": {
       "count": 1,
@@ -68,12 +68,12 @@
       "avgLabeledScore": null
     },
     "other": {
-      "count": 5,
-      "labeledCount": 2,
-      "likesSum": 2,
+      "count": 4,
+      "labeledCount": 1,
+      "likesSum": 0,
       "rtSum": 0,
-      "avgLikes": 1,
-      "avgLabeledScore": 1
+      "avgLikes": 0,
+      "avgLabeledScore": 0
     },
     "pick_card": {
       "count": 3,
@@ -111,29 +111,29 @@
   "nicheBenchmark": {
     "inLanePostCount": 32,
     "aggregate": {
-      "pctWithEmoji": 75,
+      "pctWithEmoji": 84,
       "pctWithQuestion": 12,
-      "pctWithNumbers": 89,
-      "avgChars": 1150
+      "pctWithNumbers": 91,
+      "avgChars": 1087
     },
     "structureRecipes": [
       {
         "pattern": "sharp_public_board",
         "handle": "PatrickE_Vegas",
-        "engagement": 103560,
-        "hook": "Where the sharps/public are and more on Miami vs. Ole Miss College Football Playoff semifinal odds at [@primesportsbook](https://nitter.net/primesportsbook \"Prime Sportsbook\"):",
+        "engagement": 73338,
+        "hook": "Where the sharps/public are, biggest needs, how the totals are being bet and more on NFL Week 13 odds for the 3 Thanksgiving games, from [@primesportsbook](https://nitter.net/primesportsbook \"Prime Sportsbook\"):",
         "recipe": {
           "pattern": "sharp_public_board",
           "line1Job": "Name the game/slate + promise sharp vs public split",
           "proofBlock": "Side-by-side: public % vs sharp $, line move, or \"notable sharp action\" bullets",
           "closeJob": "One verdict line — which side the market is wrong about",
           "exemplarLines": [
-            "Where the sharps/public are and more on Miami vs. Ole Miss College Football Playoff semifinal odds at [@primesportsbook](https://nitter.net/primesportsbook \"Prime Sportsbook\"):",
-            "Sharp Action",
-            "Ole Miss +3.5",
-            "\"65% of public handle is laying \\[points\\] with Miami. However, 68% of professional money is backing Ole Miss.",
-            "\"We have 3X the handle on Miami moneyline bets over Ole Miss moneyline bets. But Pros are still seeing value in the 'dog.",
-            "\"Both Pros and Joes favor the Over.\""
+            "Where the sharps/public are, biggest needs, how the totals are being bet and more on NFL Week 13 odds for the 3 Thanksgiving games, from [@primesportsbook](https://nitter.net/primesportsbook \"Prime Sportsbook\"):",
+            "Packers vs. Lions",
+            "Sharp play on Lions -2.5. That said, sharps are split on the spread. Public is laying the points.",
+            "Total currently 48.5. Twice as much money on the Over.",
+            "Moneyline: \"Seemingly every Thanksgiving parlay starts with Detroit moneyline.\"",
+            "Chiefs vs. Cowboys"
           ]
         }
       },
@@ -167,12 +167,28 @@
       "fix": "Lead with \"where sharp vs public money is\" BEFORE naming the pick"
     },
     {
+      "area": "recap_format",
+      "issue": "Zero-like labeled posts",
+      "ours": "1 posts at 0 likes",
+      "niche": "AlexCaruso recaps name misses and still get engagement",
+      "severity": "high",
+      "fix": "Never post win-only recaps; lead with the miss + lesson"
+    },
+    {
       "area": "shareability",
       "issue": "No retweets in labeled sample",
       "ours": "0 RTs",
       "niche": "Viral niche posts have a quotable market-read line",
       "severity": "medium",
       "fix": "First line must work as a standalone screenshot (market read, not pick list)"
+    },
+    {
+      "area": "format_mix",
+      "issue": "Posting formats that labeled data says fail",
+      "ours": "other",
+      "niche": "Double sharp_public_board (avg 7 likes)",
+      "severity": "high",
+      "fix": "Pause other until record/proof hook is fixed"
     }
   ],
   "topLabeledPosts": [
@@ -211,34 +227,34 @@
       }
     },
     {
-      "id": "2069844053345145009",
-      "date": "2026\\-06\\-24T18:04:12\\.000Z",
-      "format": "other",
-      "likes": 1,
+      "id": "2069931426561085894",
+      "date": "2026\\-06\\-24T23:51:24\\.000Z",
+      "format": "pick_with_proof",
+      "likes": 2,
       "retweets": 0,
-      "labeledScore": 1,
-      "textPreview": "I think a lot of people just see the team names or the starting pitcher records and go off of that..",
-      "hook": "I think a lot of people just see the team names or the starting pitcher records and go off of that..",
-      "close": "I think a lot of people just see the team names or the starting pitcher records and go off of that..",
+      "labeledScore": 2,
+      "textPreview": "2 cashed.  · > +9.44u banked today. · >  3 still live. 1 lock left to go. 🔥 · > And we're up +39 units in June. · > The last play before the night closes · > ⚾ Braves ML -132 · • 4 proven sharps on it · • 89% of t",
+      "hook": "2 cashed. ",
+      "close": "> Tailing the last one with us, or watching? 🎯",
       "structure": {
         "hasRecordFlex": false,
-        "hasSharpStack": false,
+        "hasSharpStack": true,
         "hasSharpPublicSplit": false,
         "isTrueThread": false
       }
     },
     {
-      "id": "2069843811748954121",
-      "date": "2026\\-06\\-24T18:03:15\\.000Z",
+      "id": "2070100718694891951",
+      "date": "2026\\-06\\-25T11:04:06\\.000Z",
       "format": "other",
-      "likes": 1,
+      "likes": 0,
       "retweets": 0,
-      "labeledScore": 1,
-      "textPreview": "Interesting matchup too. Rockies have been playing better than people expect. With two bad teams anything can happen",
-      "hook": "Interesting matchup too. Rockies have been playing better than people expect. With two bad teams anything can happen",
-      "close": "Interesting matchup too. Rockies have been playing better than people expect. With two bad teams anything can happen",
+      "labeledScore": 0,
+      "textPreview": "finishing 3-3 after a starting 3-0 sucked.",
+      "hook": "finishing 3-3 after a starting 3-0 sucked.",
+      "close": "finishing 3-3 after a starting 3-0 sucked.",
       "structure": {
-        "hasRecordFlex": false,
+        "hasRecordFlex": true,
         "hasSharpStack": false,
         "hasSharpPublicSplit": false,
         "isTrueThread": false
@@ -247,23 +263,24 @@
   ],
   "bottomLabeledPosts": [
     {
-      "id": "2069844053345145009",
+      "id": "2070100718694891951",
       "format": "other",
-      "likes": 1,
-      "textPreview": "I think a lot of people just see the team names or the starting pitcher records and go off of that..",
-      "hook": "I think a lot of people just see the team names or the starting pitcher records and go off of that..",
+      "likes": 0,
+      "textPreview": "finishing 3-3 after a starting 3-0 sucked.",
+      "hook": "finishing 3-3 after a starting 3-0 sucked.",
       "whyWeak": [
         "No sharp/public split — post leads with picks not market map"
       ]
     },
     {
-      "id": "2069843811748954121",
-      "format": "other",
-      "likes": 1,
-      "textPreview": "Interesting matchup too. Rockies have been playing better than people expect. With two bad teams anything can happen",
-      "hook": "Interesting matchup too. Rockies have been playing better than people expect. With two bad teams anything can happen",
+      "id": "2069931426561085894",
+      "format": "pick_with_proof",
+      "likes": 2,
+      "textPreview": "2 cashed.  · > +9.44u banked today. · >  3 still live. 1 lock left to go. 🔥 · > And we're up +39 units in June. · > The last play before the night closes · > ⚾ Braves ML -132 · • 4 proven sharps on it · • 89% of t",
+      "hook": "2 cashed. ",
       "whyWeak": [
-        "No sharp/public split — post leads with picks not market map"
+        "No sharp/public split — post leads with picks not market map",
+        "Pick-first structure; niche winners lead with \"where money is\" board"
       ]
     },
     {
@@ -280,7 +297,7 @@
   "formatMatchups": [
     {
       "nichePattern": "sharp_public_board",
-      "nicheExemplar": "@PatrickE_Vegas: \"Where the sharps/public are and more on Miami vs. Ole Miss College Football Playoff semifinal odds at [@primesportsbook](https://nitter.net/primesportsbook \"Prime Sportsbook\"):\"",
+      "nicheExemplar": "@PatrickE_Vegas: \"Where the sharps/public are, biggest needs, how the totals are being bet and more on NFL Week 13 odds for the 3 Thanksgiving games, from [@primesportsbook](https://nitter.net/primesportsbook \"Prime Sportsbook\"):\"",
       "dalePostId": "2069183020783874527",
       "daleHook": "You do not need 10 bets to have a real edge.",
       "structuralGaps": [
@@ -293,22 +310,22 @@
         "proofBlock": "Side-by-side: public % vs sharp $, line move, or \"notable sharp action\" bullets",
         "closeJob": "One verdict line — which side the market is wrong about",
         "exemplarLines": [
-          "Where the sharps/public are and more on Miami vs. Ole Miss College Football Playoff semifinal odds at [@primesportsbook](https://nitter.net/primesportsbook \"Prime Sportsbook\"):",
-          "Sharp Action",
-          "Ole Miss +3.5",
-          "\"65% of public handle is laying \\[points\\] with Miami. However, 68% of professional money is backing Ole Miss.",
-          "\"We have 3X the handle on Miami moneyline bets over Ole Miss moneyline bets. But Pros are still seeing value in the 'dog.",
-          "\"Both Pros and Joes favor the Over.\""
+          "Where the sharps/public are, biggest needs, how the totals are being bet and more on NFL Week 13 odds for the 3 Thanksgiving games, from [@primesportsbook](https://nitter.net/primesportsbook \"Prime Sportsbook\"):",
+          "Packers vs. Lions",
+          "Sharp play on Lions -2.5. That said, sharps are split on the spread. Public is laying the points.",
+          "Total currently 48.5. Twice as much money on the Over.",
+          "Moneyline: \"Seemingly every Thanksgiving parlay starts with Detroit moneyline.\"",
+          "Chiefs vs. Cowboys"
         ]
       }
     }
   ],
   "rewriteCandidates": [
     {
-      "postId": "2069844053345145009",
-      "currentHook": "I think a lot of people just see the team names or the starting pitcher records and go off of that..",
+      "postId": "2070100718694891951",
+      "currentHook": "finishing 3-3 after a starting 3-0 sucked.",
       "currentFormat": "other",
-      "labeledLikes": 1,
+      "labeledLikes": 0,
       "structuralProblems": [
         "No sharp/public split — post leads with picks not market map"
       ],
@@ -319,22 +336,23 @@
         "proofBlock": "Side-by-side: public % vs sharp $, line move, or \"notable sharp action\" bullets",
         "closeJob": "One verdict line — which side the market is wrong about",
         "exemplarLines": [
-          "Where the sharps/public are and more on Miami vs. Ole Miss College Football Playoff semifinal odds at [@primesportsbook](https://nitter.net/primesportsbook \"Prime Sportsbook\"):",
-          "Sharp Action",
-          "Ole Miss +3.5",
-          "\"65% of public handle is laying \\[points\\] with Miami. However, 68% of professional money is backing Ole Miss.",
-          "\"We have 3X the handle on Miami moneyline bets over Ole Miss moneyline bets. But Pros are still seeing value in the 'dog.",
-          "\"Both Pros and Joes favor the Over.\""
+          "Where the sharps/public are, biggest needs, how the totals are being bet and more on NFL Week 13 odds for the 3 Thanksgiving games, from [@primesportsbook](https://nitter.net/primesportsbook \"Prime Sportsbook\"):",
+          "Packers vs. Lions",
+          "Sharp play on Lions -2.5. That said, sharps are split on the spread. Public is laying the points.",
+          "Total currently 48.5. Twice as much money on the Over.",
+          "Moneyline: \"Seemingly every Thanksgiving parlay starts with Detroit moneyline.\"",
+          "Chiefs vs. Cowboys"
         ]
       }
     },
     {
-      "postId": "2069843811748954121",
-      "currentHook": "Interesting matchup too. Rockies have been playing better than people expect. With two bad teams anything can happen",
-      "currentFormat": "other",
-      "labeledLikes": 1,
+      "postId": "2069931426561085894",
+      "currentHook": "2 cashed. ",
+      "currentFormat": "pick_with_proof",
+      "labeledLikes": 2,
       "structuralProblems": [
-        "No sharp/public split — post leads with picks not market map"
+        "No sharp/public split — post leads with picks not market map",
+        "Pick-first structure; niche winners lead with \"where money is\" board"
       ],
       "applyRecipe": "sharp_public_board",
       "rewriteSlots": {
@@ -343,12 +361,12 @@
         "proofBlock": "Side-by-side: public % vs sharp $, line move, or \"notable sharp action\" bullets",
         "closeJob": "One verdict line — which side the market is wrong about",
         "exemplarLines": [
-          "Where the sharps/public are and more on Miami vs. Ole Miss College Football Playoff semifinal odds at [@primesportsbook](https://nitter.net/primesportsbook \"Prime Sportsbook\"):",
-          "Sharp Action",
-          "Ole Miss +3.5",
-          "\"65% of public handle is laying \\[points\\] with Miami. However, 68% of professional money is backing Ole Miss.",
-          "\"We have 3X the handle on Miami moneyline bets over Ole Miss moneyline bets. But Pros are still seeing value in the 'dog.",
-          "\"Both Pros and Joes favor the Over.\""
+          "Where the sharps/public are, biggest needs, how the totals are being bet and more on NFL Week 13 odds for the 3 Thanksgiving games, from [@primesportsbook](https://nitter.net/primesportsbook \"Prime Sportsbook\"):",
+          "Packers vs. Lions",
+          "Sharp play on Lions -2.5. That said, sharps are split on the spread. Public is laying the points.",
+          "Total currently 48.5. Twice as much money on the Over.",
+          "Moneyline: \"Seemingly every Thanksgiving parlay starts with Detroit moneyline.\"",
+          "Chiefs vs. Cowboys"
         ]
       }
     },
@@ -367,25 +385,17 @@
         "proofBlock": "Side-by-side: public % vs sharp $, line move, or \"notable sharp action\" bullets",
         "closeJob": "One verdict line — which side the market is wrong about",
         "exemplarLines": [
-          "Where the sharps/public are and more on Miami vs. Ole Miss College Football Playoff semifinal odds at [@primesportsbook](https://nitter.net/primesportsbook \"Prime Sportsbook\"):",
-          "Sharp Action",
-          "Ole Miss +3.5",
-          "\"65% of public handle is laying \\[points\\] with Miami. However, 68% of professional money is backing Ole Miss.",
-          "\"We have 3X the handle on Miami moneyline bets over Ole Miss moneyline bets. But Pros are still seeing value in the 'dog.",
-          "\"Both Pros and Joes favor the Over.\""
+          "Where the sharps/public are, biggest needs, how the totals are being bet and more on NFL Week 13 odds for the 3 Thanksgiving games, from [@primesportsbook](https://nitter.net/primesportsbook \"Prime Sportsbook\"):",
+          "Packers vs. Lions",
+          "Sharp play on Lions -2.5. That said, sharps are split on the spread. Public is laying the points.",
+          "Total currently 48.5. Twice as much money on the Over.",
+          "Moneyline: \"Seemingly every Thanksgiving parlay starts with Detroit moneyline.\"",
+          "Chiefs vs. Cowboys"
         ]
       }
     }
   ],
   "topNicheInLane": [
-    {
-      "handle": "PatrickE_Vegas",
-      "pattern": "sharp_public_board",
-      "engagement": 103560,
-      "hook": "Where the sharps/public are and more on Miami vs. Ole Miss College Football Playoff semifinal odds at [@primesportsbook](https://nitter.net/primesportsbook \"Prime Sportsbook\"):",
-      "chars": 473,
-      "textPreview": "Where the sharps/public are and more on Miami vs. Ole Miss College Football Playoff semifinal odds at [@primesportsbook](https://nitter.net/primesportsbook \"Prime Sportsbook\"): · Sharp Action · Ole Miss +3.5 · \"65% of public handle is laying \\[points\\] wit"
-    },
     {
       "handle": "PatrickE_Vegas",
       "pattern": "sharp_public_board",
@@ -403,14 +413,6 @@
       "textPreview": "MLB Recap: · Shane Bieber Under 6.5 Strikeouts✅ · Guardians Moneyline❌ · Nationals Moneyline❌ · Astros Moneyline❌ · Brandon Sproat Over 5.5 Strikeouts❌ · 1-4, nationals blew a 9th inning lead, Astros blew the game in the 8th, some tough losses tonight · I hold my "
     },
     {
-      "handle": "invisiblestats",
-      "pattern": "sharp_public_board",
-      "engagement": 70535,
-      "hook": "Public vs Sharps, Divisional round.",
-      "chars": 256,
-      "textPreview": "Public vs Sharps, Divisional round. · Broncos Spread & ML - Sharp · 31% bets, 36% dollars. · Most books: -1.5 · Move: +1.5 -> -1.5 (3pts) · Bills Spread & ML - Public · 49ers - Between · 75% bets, 69% dollars. · Most books: +7 · Move: +6.5 -> +7.5 -> +7 · Seahawks ML - "
-    },
-    {
       "handle": "PatrickE_Vegas",
       "pattern": "sharp_public_board",
       "engagement": 27157,
@@ -425,6 +427,22 @@
       "hook": "10 bets Vegas likes in the NBA today...",
       "chars": 1217,
       "textPreview": "10 bets Vegas likes in the NBA today... · 🎲ML's: · Jazz ML (+415): Sharp🔪 · ➡️Jazz ML has a very positive bet% - money% and has moved from +530 to +415... · Pacers ML (+175): 38% of public $'s · ➡️Pacers ML has moved from +220 to +175 despite not being widel"
+    },
+    {
+      "handle": "invisiblestats",
+      "pattern": "pick_card",
+      "engagement": 23280,
+      "hook": "7 bets Vegas likes in the NBA tonight…",
+      "chars": 845,
+      "textPreview": "7 bets Vegas likes in the NBA tonight… · \\*these have been dominating\\* · 🎲ML’s: · Suns ML (+165): 5% of public $’s · ➡️Suns ML has moved from +185 to +165 despite not being widely public… · Jazz ML (+470): 26% of public $’s · ➡️Jazz ML has moved from +500 to +"
+    },
+    {
+      "handle": "PatrickE_Vegas",
+      "pattern": "sharp_public_board",
+      "engagement": 21767,
+      "hook": "Where the sharps/public are and more on Dolphins vs. Steelers NFL Week 15 odds at [@primesportsbook](https://nitter.net/primesportsbook \"Prime Sportsbook\"):",
+      "chars": 409,
+      "textPreview": "Where the sharps/public are and more on Dolphins vs. Steelers NFL Week 15 odds at [@primesportsbook](https://nitter.net/primesportsbook \"Prime Sportsbook\"): · \"59% of the handle is backing Pittsburgh, but sharp money is resolutely backing Miami +3.5. · \""
     }
   ],
   "growthPlaybook": {
@@ -432,7 +450,7 @@
       {
         "handle": "leowondiary",
         "topic": "hooks",
-        "engagement": 6128,
+        "engagement": 6140,
         "hook": "Maybe a lot of you already know this, but for those who don't: running a fanmade account is not easy.",
         "textPreview": "Maybe a lot of you already know this, but for those who don't: running a fanmade account is not easy. · Even if you have a life outside of Twitter, the accounts you see with thousands of followers are t"
       },
@@ -446,23 +464,23 @@
       {
         "handle": "badboyfoxy",
         "topic": "hooks",
-        "engagement": 2513,
+        "engagement": 2529,
         "hook": "these are some Claude prompt codes that are very useful useful for creators most especially for writing",
         "textPreview": "these are some Claude prompt codes that are very useful useful for creators most especially for writing · \\> /twitter ~ short thread style · \\> /script ~ video or reel script · \\> /hook ~ strong opening lin"
       },
       {
-        "handle": "shiraeis",
-        "topic": "algorithm",
-        "engagement": 20346,
-        "hook": "I wanted to know why I was deboosted so hard, so I took a deep look at the new x algorithm and decided I’d share my find",
-        "textPreview": "I wanted to know why I was deboosted so hard, so I took a deep look at the new x algorithm and decided I’d share my findings. · The first thing to understand is “the algorithm” is a pretty straight-forw"
+        "handle": "holonabove",
+        "topic": "threads",
+        "engagement": 7830,
+        "hook": "This is bigger than politics..",
+        "textPreview": "This is bigger than politics.. · I think we’ve all noticed over the last ten years that something much larger than normal politics has been unfolding... · The modern control structure was not built overni"
       },
       {
-        "handle": "elonmusk",
-        "topic": "algorithm",
-        "engagement": 19209,
-        "hook": "The latest 𝕏 algorithm has been published to GitHub",
-        "textPreview": "The latest 𝕏 algorithm has been published to GitHub · [github.com/xai-org/x-algorit…](https://github.com/xai-org/x-algorithm)"
+        "handle": "Chain__Crafters",
+        "topic": "threads",
+        "engagement": 3578,
+        "hook": "Thread Contest Alert 🚨",
+        "textPreview": "Thread Contest Alert 🚨 · PolyRex is looking for creators to write a deep-dive Twitter thread explaining its role in the Polymarket ecosystem and why it matters for decentralized intelligence, verificat"
       }
     ],
     "note": "Secondary input only — niche peer structure beats generic growth hacks"
@@ -488,7 +506,7 @@
       "id": "rewrite_weakest",
       "priority": 3,
       "hypothesis": "Restructuring 0-like posts using niche recipe lifts floor",
-      "test": "Rewrite post 2069844053345145009 using sharp_public_board slots before reposting similar content",
+      "test": "Rewrite post 2070100718694891951 using sharp_public_board slots before reposting similar content",
       "baseline": "0 likes on original",
       "successMetric": "≥3 likes on the restructured version"
     }
