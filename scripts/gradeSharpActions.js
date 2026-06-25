@@ -232,6 +232,14 @@ async function fetchSOCFinalGames(dateStr) {
         const home = comps.find(c => c.homeAway === 'home') || {};
         const awayName = away.team?.displayName || away.team?.name || '';
         const homeName = home.team?.displayName || home.team?.name || '';
+        // A knockout match that reached extra time (STATUS_FINAL_AET) or a
+        // penalty shootout (STATUS_FINAL_PEN) was, by definition, level after
+        // 90 minutes. Polymarket's 3-way match market resolves on the
+        // 90-minute result, so those settle as a DRAW — even though ESPN's
+        // `score` below includes extra-time goals (and shootoutScore the pens).
+        // Group-stage games are always STATUS_FULL_TIME → score IS regulation.
+        const stName = comp.status?.type?.name || '';
+        const wentBeyond90 = stName === 'STATUS_FINAL_AET' || stName === 'STATUS_FINAL_PEN';
         return {
           awayCode: (resolveSOCTeam(awayName) || '').toLowerCase(),
           homeCode: (resolveSOCTeam(homeName) || '').toLowerCase(),
@@ -239,6 +247,7 @@ async function fetchSOCFinalGames(dateStr) {
           homeTeam: homeName,
           awayScore: parseInt(away.score) || 0,
           homeScore: parseInt(home.score) || 0,
+          wentBeyond90,
         };
       });
   } catch (e) {
@@ -284,9 +293,18 @@ function calculateOutcome(game, marketType, side, line, sport = null) {
 
   // ML — soccer is 3-way: Draw is its own side, so a drawn match is a LOSS
   // for team-side bets and a WIN for draw-side bets (never a PUSH).
-  if (side === 'draw') return (!awayWin && !homeWin) ? 'WIN' : 'LOSS';
-  if (side === 'home') return homeWin ? 'WIN' : (awayWin ? 'LOSS' : (sport === 'SOC' ? 'LOSS' : 'PUSH'));
-  return awayWin ? 'WIN' : (homeWin ? 'LOSS' : (sport === 'SOC' ? 'LOSS' : 'PUSH'));
+  //
+  // Knockout correctness: Polymarket's 3-way match market resolves on the
+  // 90-minute result. A World Cup game that reached extra time or penalties
+  // (game.wentBeyond90) was level at 90 by definition, so its 90-minute
+  // result is a DRAW — regardless of ESPN's full-time `score`, which includes
+  // extra-time goals. Without this override, an ET/shootout winner's ML would
+  // be mis-graded WIN even though Polymarket settled the match as Draw.
+  let mlAwayWin = awayWin, mlHomeWin = homeWin;
+  if (sport === 'SOC' && game.wentBeyond90) { mlAwayWin = false; mlHomeWin = false; }
+  if (side === 'draw') return (!mlAwayWin && !mlHomeWin) ? 'WIN' : 'LOSS';
+  if (side === 'home') return mlHomeWin ? 'WIN' : (mlAwayWin ? 'LOSS' : (sport === 'SOC' ? 'LOSS' : 'PUSH'));
+  return mlAwayWin ? 'WIN' : (mlHomeWin ? 'LOSS' : (sport === 'SOC' ? 'LOSS' : 'PUSH'));
 }
 
 // ─── Match a position's gameKey to a final game ─────────────────────────────
@@ -340,8 +358,9 @@ function findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFi
       if (!g.awayCode || !g.homeCode) continue;
       if (g.awayCode === parts[0] && g.homeCode === parts[1]) return g;
       // ESPN home/away designation may not match our key order — flip scores
+      // (carry wentBeyond90 through so the 90-min draw rule still applies).
       if (g.awayCode === parts[1] && g.homeCode === parts[0]) {
-        return { awayScore: g.homeScore, homeScore: g.awayScore };
+        return { awayScore: g.homeScore, homeScore: g.awayScore, wentBeyond90: g.wentBeyond90 };
       }
     }
     return null;

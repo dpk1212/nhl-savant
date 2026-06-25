@@ -50,6 +50,7 @@ const SOC_NAME_TO_CODE = {
   "algeria": "ALG", "argentina": "ARG", "australia": "AUS", "austria": "AUT",
   "belgium": "BEL", "bosniaherzegovina": "BIH", "bosniaandherzegovina": "BIH", "bosnia": "BIH",
   "brazil": "BRA", "canada": "CAN", "capeverde": "CPV", "caboverde": "CPV",
+  "colombia": "COL",
   "cotedivoire": "CIV", "ivorycoast": "CIV",
   "drcongo": "COD", "congodr": "COD", "democraticrepublicofthecongo": "COD",
   "croatia": "CRO", "curacao": "CUW", "czechia": "CZE", "czechrepublic": "CZE",
@@ -266,10 +267,15 @@ async function fetchNBAFinalGames() {
 }
 
 async function fetchSOCFinalGames(dateStr) {
-  // FIFA World Cup via ESPN. Polymarket's 3-way market resolves on the
-  // 90-minute result; group stage (through June 27) has no extra time so
-  // the final score IS the regulation score. Knockout rounds may include
-  // extra time in ESPN's score — revisit before June 28.
+  // FIFA World Cup via ESPN. Polymarket's 3-way match market resolves on the
+  // 90-minute result. Group stage is always STATUS_FULL_TIME, so the final
+  // score IS the regulation score. Knockout rounds, however, can go to extra
+  // time (STATUS_FINAL_AET) or penalties (STATUS_FINAL_PEN) — and ESPN's
+  // `score` then INCLUDES extra-time goals (shootout goals live in a separate
+  // shootoutScore field). A knockout that reached ET/pens was, by definition,
+  // level after 90 minutes, so its 90-minute result is a DRAW. We flag those
+  // games (wentBeyond90) so calculateOutcome / winner grade them as a draw
+  // regardless of the ET-inflated score below.
   try {
     const ymd = dateStr ? `?dates=${dateStr.replace(/-/g, "")}` : "";
     const res = await fetch(`${ESPN_SOC_URL}${ymd}`);
@@ -284,6 +290,9 @@ async function fetchSOCFinalGames(dateStr) {
           const home = comps.find((c) => c.homeAway === "home") || {};
           const awayName = away.team?.displayName || away.team?.name || "";
           const homeName = home.team?.displayName || home.team?.name || "";
+          const stName = comp.status?.type?.name || "";
+          const wentBeyond90 =
+            stName === "STATUS_FINAL_AET" || stName === "STATUS_FINAL_PEN";
           return {
             awayCode: (resolveSOCCode(awayName) || "").toLowerCase(),
             homeCode: (resolveSOCCode(homeName) || "").toLowerCase(),
@@ -291,6 +300,7 @@ async function fetchSOCFinalGames(dateStr) {
             homeTeam: homeName,
             awayScore: parseInt(away.score) || 0,
             homeScore: parseInt(home.score) || 0,
+            wentBeyond90,
           };
         });
   } catch (e) {
@@ -547,6 +557,7 @@ exports.updateBetResults = onSchedule({
                   matchingGame = {
                     awayScore: flipped.homeScore,
                     homeScore: flipped.awayScore,
+                    wentBeyond90: flipped.wentBeyond90,
                   };
                 }
               }
@@ -555,7 +566,11 @@ exports.updateBetResults = onSchedule({
 
           if (!matchingGame) continue;
 
-          const winner = matchingGame.awayScore > matchingGame.homeScore ?
+          // SOC knockout: a match that reached extra time / penalties was a
+          // draw at 90 min, so the 3-way market settles DRAW regardless of the
+          // ET-inflated score. (wentBeyond90 is only ever set for SOC games.)
+          const winner = matchingGame.wentBeyond90 ? "draw" :
+            matchingGame.awayScore > matchingGame.homeScore ?
             "away" : matchingGame.homeScore > matchingGame.awayScore ?
             "home" : "draw";
 
@@ -1110,8 +1125,12 @@ exports.triggerBetUpdate = onRequest(async (request, response) => {
  */
 function calculateOutcome(game, bet) {
   const totalScore = game.awayScore + game.homeScore;
-  const awayWin = game.awayScore > game.homeScore;
-  const homeWin = game.homeScore > game.awayScore;
+  // SOC knockout: a game that went to extra time / penalties (wentBeyond90,
+  // only ever set for World Cup games) was level at 90 minutes, which is what
+  // Polymarket's 3-way market settles on — so treat it as a draw for the
+  // moneyline regardless of ESPN's ET-inflated score.
+  const awayWin = game.wentBeyond90 ? false : game.awayScore > game.homeScore;
+  const homeWin = game.wentBeyond90 ? false : game.homeScore > game.awayScore;
 
   switch (bet.market) {
     case "TOTAL":
