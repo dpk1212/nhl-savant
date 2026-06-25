@@ -1,6 +1,6 @@
 # Sharp Wallet Roster
 
-Generated: 6/25/2026, 2:45:20 AM ET · V8 cutover: 2026-04-18 · whitelistVersion: 2
+Generated: 6/25/2026, 6:14:12 AM ET · V8 cutover: 2026-04-18 · whitelistVersion: 2
 
 Every sharp wallet we have V8-era data on, sorted by combined conviction score. This is the **full roster** (no minimum-bets filter) — noisy at the tail, but that's the point for a tracking dataset. Verdict column reflects the ≥3-bet threshold.
 
@@ -50,7 +50,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 95eb4c | CONFIRMED_WINNER | ELITE | 348 | 10 | 60% | +86.4% | +8.64 | 28 | 42.9% | +22.2% | +38433 | 20.1 | 20.7 | 1.4% |
 | 78e8f1 | CONFIRMED_WINNER | ELITE | 136 | 27 | 40.7% | +5.7% | +1.55 | 76 | 38.2% | +4% | +102487 | 67.6 | 67.1 | 6% |
 | 468c33 | CONFIRMED_WINNER | ELITE | 86 | 3 | 66.7% | +28.5% | +0.85 | 5 | 80% | +97.7% | +108723 | 64.5 | 73.4 | 7.9% |
-| 5b1e50 | CONFIRMED_WINNER | ELITE | 368 | 140 | 50.7% | +7.5% | +10.57 | 479 | 49.9% | +0.9% | +5627 | 50 | 0 | 1% |
+| 5b1e50 | CONFIRMED_WINNER | ELITE | 368 | 140 | 50.7% | +7.5% | +10.57 | 481 | 49.9% | +1.1% | +6625 | 50 | 0 | 1% |
 | f2b814 | CONFIRMED_WINNER | ELITE | 409 | 3 | 100% | +18.8% | +0.56 | 9 | 100% | +7.2% | +93033 | 45.6 | 67.6 | 6.4% |
 | 7f00bc | CONFIRMED_WINNER | ELITE | — | 26 | 57.7% | +26.8% | +6.98 | 92 | 46.7% | +12.1% | +28185 | 57 | 85.7 | 17% |
 | 95618e | CONFIRMED_WINNER | ELITE | 139 | 6 | 66.7% | +10% | +0.60 | 43 | 62.8% | +22.2% | +88905 | 64.2 | 61.8 | 5.3% |
@@ -350,7 +350,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 95eb4c | 10 | +86.4% | 28 | +22.2% | +38433 | 20.1 | 1.4% |
 | 78e8f1 | 27 | +5.7% | 76 | +4% | +102487 | 67.6 | 6% |
 | 468c33 | 3 | +28.5% | 5 | +97.7% | +108723 | 64.5 | 7.9% |
-| 5b1e50 | 140 | +7.5% | 479 | +0.9% | +5627 | 50 | 1% |
+| 5b1e50 | 140 | +7.5% | 481 | +1.1% | +6625 | 50 | 1% |
 | f2b814 | 3 | +18.8% | 9 | +7.2% | +93033 | 45.6 | 6.4% |
 | 7f00bc | 26 | +26.8% | 92 | +12.1% | +28185 | 57 | 17% |
 | 95618e | 6 | +10% | 43 | +22.2% | +88905 | 64.2 | 5.3% |
