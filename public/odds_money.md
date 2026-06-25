@@ -13,9 +13,9 @@
 - [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldHockey.svg)NHL](https://www.oddstrader.com/nhl/)
 - [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldFootball.svg)NFL](https://www.oddstrader.com/nfl/)
 - [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldFootball.svg)NCAAF](https://www.oddstrader.com/ncaa-college-football/)
-- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldSoccer.svg)soccer](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1782323218046)
-- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldTennis.svg)tennis](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1782323218046)
-- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldMore.svg)other](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1782323218046)
+- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldSoccer.svg)soccer](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1782410561933)
+- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldTennis.svg)tennis](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1782410561933)
+- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldMore.svg)other](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1782410561933)
 
 NHL
 
@@ -119,7 +119,7 @@ There’s also a difference in how books weigh public money versus sharp action.
 
 This is why comparing odds across multiple books before placing a bet is so important. You’re not just looking at who has the best number. You’re learning how each sportsbook behaves and how to time your bet for the most value.
 
-Why do NHL odds differ between sportsbooks? It’s often due to how each book responds to betting action, sharp money, and real-time market changes.
+Why do NHL odds differ between sportsbooks? It's often due to how each book responds to betting action, sharp money, and real-time market changes.
 
 ## Frequently Asked Questions On NHL Betting Odds
 
