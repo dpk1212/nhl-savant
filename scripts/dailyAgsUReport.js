@@ -87,6 +87,16 @@ const PICK_COLLECTIONS = [
 const AGSU_PROMOTION_PREFIX = 'ags-unified-v';
 const isAgsuPromotion = (tag) => typeof tag === 'string' && tag.startsWith(AGSU_PROMOTION_PREFIX);
 
+// Short staking-PATH labels for per-pick tables (audit trail + recent picks).
+// These are the internal levers (one per pick), grouped into the 5 user-facing
+// display tiers elsewhere. Keep in sync with AGS_V12_STAKE_PATH in src/lib/ags.js.
+const PATH_SHORT = {
+  SUPER: 'HC-2', 'TOP+': 'HC-1+$', TOP: 'HC-1', RANK: '2-for-0',
+  'SHARP-PRIME': 'SHARP+', SHARP: 'SHARP', MINI: 'MINI', 'MINI-': 'MINI-',
+  CONFIRMED: 'CONF', MONITORING: 'WATCH', FADE: 'PASS',
+};
+const pathShort = (k) => PATH_SHORT[k] || k || '—';
+
 // AGS-U sizing ladder multipliers (must match scripts/syncPickStateAuthoritative.js).
 const TIER_MULT = { ELITE: 2.00, PREMIUM: 1.50, LOCK: 1.10, LEAN: 0.50, WEAK: 0.20, FADE: 0.00 };
 const TIER_ORDER = ['ELITE', 'PREMIUM', 'LOCK', 'LEAN', 'WEAK', 'FADE'];
@@ -1066,8 +1076,8 @@ function buildRecentPicks(report, rows, n) {
   report.push(`Most-recent graded AGS-U picks. Use this to spot anomalies (high-AGS losers, low-AGS winners, sizing surprises).`);
   report.push('');
   const recent = rows.slice(-n).reverse();
-  report.push(`| Date       | Sport | Mkt    | Team / Side             | Odds  | Stake  | AGS-U  | Tier    | Quint | HCm  | Top Driver           | Outcome | PnL (u)    | CLV    |`);
-  report.push(`|------------|-------|--------|-------------------------|-------|--------|--------|---------|-------|------|----------------------|---------|------------|--------|`);
+  report.push(`| Date       | Sport | Mkt    | Team / Side             | Odds  | Stake  | AGS-U  | Score   | Path     | Quint | HCm  | Top Driver           | Outcome | PnL (u)    | CLV    |`);
+  report.push(`|------------|-------|--------|-------------------------|-------|--------|--------|---------|----------|-------|------|----------------------|---------|------------|--------|`);
   for (const r of recent) {
     const teamLabel = `${r.team || r.sideKey}`.substring(0, 23);
     const oddsStr = r.peakOdds > 0 ? `+${r.peakOdds}` : `${r.peakOdds}`;
@@ -1095,7 +1105,7 @@ function buildRecentPicks(report, rows, n) {
     }
     report.push(`| ${r.date.padEnd(10)} | ${(r.sport || '').padEnd(5)} | ${(r.marketType || '').padEnd(6)} | ${teamLabel.padEnd(23)}`
       + ` | ${oddsStr.padStart(5)} | ${(r.units.toFixed(2)+'u').padStart(6)} | ${fmtSigned(r.ags).padStart(6)}`
-      + ` | ${(r.agsTier || '—').padEnd(7)} | Q${r.agsQuintile || '?'}`.padEnd(8)
+      + ` | ${(r.agsTier || '—').padEnd(7)} | ${pathShort(r.hcStakeTier).padEnd(8)} | Q${r.agsQuintile || '?'}`.padEnd(8)
       + `   | ${fmtSigned(r.hcMargin, 0).padStart(4)} | ${topDriver.padEnd(20)} | ${outcomeStr.padEnd(7)} | ${profitStr.padStart(10)} | ${clvStr.padStart(6)} |`);
   }
   report.push('');
@@ -2105,6 +2115,38 @@ function buildV12TierAnalysis(report, stats) {
     const stakedRoi = staked.stake > 0 ? (staked.profit / staked.stake) * 100 : null;
     report.push(`| **STAKED TOTAL** | ${'—'.padStart(5)} | ${String(staked.n).padStart(3)} | ${(staked.w+'-'+staked.l).padEnd(6)} | ${pct(staked.w, staked.n).padStart(6)} | ${staked.stake.toFixed(2).padStart(11)} | ${fmtSigned(staked.profit).padStart(10)} | ${(stakedRoi != null ? (stakedRoi>=0?'+':'')+stakedRoi.toFixed(1)+'%' : '—').padStart(9)} |`);
     report.push('');
+
+    // ── Granular — every individual staking path on its own ────────────────
+    // The condensed table above is what users see (5 tiers); this breaks each
+    // tier back into its component LEVERS so each path can be judged on its own
+    // win-rate / ROI / stake. SHARP PLAY = RANK 2-for-0 + SHARP + SHARP+; TOP =
+    // HC-1 + HC-1+$; LEAN = CONF + MINI-. Path labels match the per-pick tables.
+    const PATHS = [
+      { key: 'SUPER',       u: '6u', label: 'HC-2 (model max)' },
+      { key: 'TOP+',        u: '5u', label: 'HC-1 + $-boost' },
+      { key: 'TOP',         u: '4u', label: 'HC-1 (model)' },
+      { key: 'RANK',        u: '4u', label: '2-for-0 rescue' },
+      { key: 'SHARP-PRIME', u: '4u', label: 'proven-$ prime' },
+      { key: 'SHARP',       u: '3u', label: 'proven-$ consensus' },
+      { key: 'MINI',        u: '3u', label: 'mini-HC (gate-pass)' },
+      { key: 'MINI-',       u: '1u', label: 'mini gate-cut' },
+      { key: 'CONFIRMED',   u: '1u', label: 'margin 3+' },
+    ];
+    report.push(`#### Granular — by individual staking path`);
+    report.push('');
+    report.push(`| Path                  | Key         | Units | N   | W-L    | Win %  | Total Stake | PnL (u)    | ROI       |`);
+    report.push(`|-----------------------|-------------|-------|-----|--------|--------|-------------|------------|-----------|`);
+    for (const p of PATHS) {
+      const pr = aggregate(v121Rows.filter(r => r.hcStakeTier === p.key));
+      // Show ALL levers (even 0-graded) so the full ladder is visible — the
+      // v12abc overlay paths (TOP+/SHARP/SHARP+/MINI-) went live 2026-06-26
+      // and read "pending" until their first picks grade.
+      const tot = pr.n + pr.trackedN;
+      const wl = tot === 0 ? 'pending' : `${pr.w}-${pr.l}`;
+      report.push(`| ${p.label.padEnd(21)} | ${p.key.padEnd(11)} | ${p.u.padStart(5)} | ${String(tot).padStart(3)} | ${wl.padEnd(6)} | ${(tot===0?'—':pct(pr.w, pr.n)).padStart(6)} | ${pr.totalStake.toFixed(2).padStart(11)} | ${fmtSigned(pr.profit).padStart(10)} | ${(pr.roi != null ? pr.roi.toFixed(1)+'%' : '—').padStart(9)} |`);
+    }
+    report.push('');
+
     // Monitoring volume line — informational only (0u, excluded from staked).
     const monRows = v121Rows.filter(r => r.hcStakeTier === 'MONITORING');
     const monGraded = monRows.filter(r => r.won != null);
@@ -2424,13 +2466,13 @@ function buildV12RecentLivePicks(report, stats, n = 30) {
     .slice(0, n);
   report.push(`The last ${recent.length} picks V12 actually shipped (units > 0). This is the audit trail — every row is a real bet that risked real money, with the V12 score that drove the decision and the realised outcome.`);
   report.push('');
-  report.push(`| Date       | Sport | Mkt    | Pick                    | Odds  | V12   | Tier     | Stake | Outcome | PnL (u)    |`);
-  report.push(`|------------|-------|--------|-------------------------|-------|-------|----------|-------|---------|------------|`);
+  report.push(`| Date       | Sport | Mkt    | Pick                    | Odds  | V12   | Path     | Score    | Stake | Outcome | PnL (u)    |`);
+  report.push(`|------------|-------|--------|-------------------------|-------|-------|----------|----------|-------|---------|------------|`);
   for (const r of recent) {
     const teamLabel = `${r.team || r.sideKey || ''}`.substring(0, 23);
     const oddsStr = r.peakOdds > 0 ? `+${r.peakOdds}` : `${r.peakOdds}`;
     const outcome = r.won === 1 ? 'WIN' : r.won === 0 ? 'LOSS' : '—';
-    report.push(`| ${r.date.padEnd(10)} | ${(r.sport || '').padEnd(5)} | ${(r.marketType || '').padEnd(6)} | ${teamLabel.padEnd(23)} | ${oddsStr.padStart(5)} | ${(Number.isFinite(r.agsV12) ? fmtSigned(r.agsV12, 3) : '—').padStart(5)} | ${(r.agsV12Tier || '—').padEnd(8)} | ${((r.units||0).toFixed(2)+'u').padStart(5)} | ${outcome.padEnd(7)} | ${fmtSigned(r.profit).padStart(10)} |`);
+    report.push(`| ${r.date.padEnd(10)} | ${(r.sport || '').padEnd(5)} | ${(r.marketType || '').padEnd(6)} | ${teamLabel.padEnd(23)} | ${oddsStr.padStart(5)} | ${(Number.isFinite(r.agsV12) ? fmtSigned(r.agsV12, 3) : '—').padStart(5)} | ${pathShort(r.hcStakeTier).padEnd(8)} | ${(r.agsV12Tier || '—').padEnd(8)} | ${((r.units||0).toFixed(2)+'u').padStart(5)} | ${outcome.padEnd(7)} | ${fmtSigned(r.profit).padStart(10)} |`);
   }
   report.push('');
 }

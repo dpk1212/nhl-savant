@@ -1,6 +1,6 @@
 # AGS-Unified — V12 Performance Monitor
 
-**Generated:** Friday, June 26, 2026 at 11:12 AM ET
+**Generated:** Friday, June 26, 2026 at 3:33 PM ET
 
 **Active model:** `ags-unified-v12` · **V12 went live:** 2026-06-01 · **Days live:** 26
 
@@ -8,17 +8,17 @@
 
 ## § 1 — Executive Summary
 
-> 🟢 **V12 is currently WINNING.** Since going live on **2026-06-01** (26 days ago), V12 has evaluated **742** picks, shipped **268** for real money (36.1% ship rate), and muted the other **474**. On the shipped picks V12 has gone **147-121** (54.9% win), staked **618.75u**, and returned **+28.53u** at **+4.6% ROI**.
+> 🟢 **V12 is currently WINNING.** Since going live on **2026-06-01** (26 days ago), V12 has evaluated **750** picks, shipped **268** for real money (35.7% ship rate), and muted the other **482**. On the shipped picks V12 has gone **147-121** (54.9% win), staked **618.75u**, and returned **+28.53u** at **+4.6% ROI**.
 
 ### Snapshot
 
 | Metric                              | Value                          |
 |-------------------------------------|--------------------------------|
 | Days V12 has been authoritative     |                             26 |
-| Picks V12 has evaluated             |                            742 |
+| Picks V12 has evaluated             |                            750 |
 | Picks SHIPPED (units > 0)           |                            268 |
-| Picks MUTED (score ≤ 0, FADE)       |                            474 |
-| Ship rate                           |                          36.1% |
+| Picks MUTED (score ≤ 0, FADE)       |                            482 |
+| Ship rate                           |                          35.7% |
 | Live W-L                            |                        147-121 |
 | Live Win %                          |                          54.9% |
 | Live PnL (units)                    |                         +28.53 |
@@ -132,8 +132,8 @@ Day-by-day production since V12 went live. **Evaluated** = picks V12 scored that
 | 2026-06-23 |        36 |    3 |    29 | 0-3        |   0.0% |      8.50 |      -8.50 |   -100.0% |     +32.78 |
 | 2026-06-24 |        46 |    6 |    26 | 3-3        |  50.0% |     22.00 |      +0.58 |      2.6% |     +33.36 |
 | 2026-06-25 |        37 |    5 |    15 | 2-3        |  40.0% |     17.00 |      -4.83 |    -28.4% |     +28.53 |
-| 2026-06-26 |        13 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +28.53 |
-| 2026-06-27 |         5 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +28.53 |
+| 2026-06-26 |        20 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +28.53 |
+| 2026-06-27 |         6 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +28.53 |
 
 > **Trajectory.** 🟡 Last 3 days (-28.4% ROI) is **-34.0pp worse** than the prior window (5.5%). Watch for further regression.
 
@@ -156,16 +156,32 @@ V12 buckets every shipped pick into a tier (ELITE → WEAK) based on the score b
 
 > **Ladder monotonicity** (positive tiers ELITE → WEAK only). ROI score `0` 🟡 partial · Win-rate score `0` 🟡 partial. **Partial — the ladder is in the right direction overall but has rough spots. Watch a few more days before reacting.**
 
-### v12.1 — By Stake Tier (HC margin)
+### v12abc — By Stake Tier (HC margin + 2-for-0 rescue + proven-$ overlay)
 
-Post-cutover picks size off the **HC margin**, not the score quintile. SUPER (margin 2 · 6u), TOP (margin 1 · 4u), MINI (mini-HC 1.0–1.5× · 3u), CONFIRMED (margin 3+ · 1u) are staked; **MONITORING** (non-HC or WEAK-tier HC) is tracked at **0u** and excluded from the staked record/ROI below.
+Post-cutover picks size off the **HC margin** — SUPER (margin 2 · 6u), TOP (margin 1 · 4u), MINI (mini-HC 1.0–1.5× · 3u), CONFIRMED (margin 3+ · 1u) — **plus** the **RANK (2-for-0)** wallet-rescue path at **4u**. From **2026-06-26** the **v12abc proven-$ overlay** (internal stats: backer `positions.dollarRoi` + featured `picks.wr`) adds: **SHARP / SHARP-PRIME** ($-rescue of HC-muted picks at 3u / 4u when ≥2 sharps back it incl. a proven-money winner and mean win-rate ≥ 50 / 55), **TOP+** (HC-1 boosted 4u → 5u when a proven-$ backer is present), and **MINI-** (MINI cut 3u → 1u when no proven-$ backer is on it). Together these paths ARE the v12abc staked book. **MONITORING** (non-HC or WEAK-tier HC, no proven-$ rescue) is tracked at **0u** and excluded from the staked record/ROI below.
 
-| Stake Tier | Units | N   | W-L    | Win %  | Total Stake | PnL (u)    | ROI       |
-|------------|-------|-----|--------|--------|-------------|------------|-----------|
-| SUPER      | 6.00u |   1 | 1-0    | 100.0% |        6.00 |      +4.48 |     74.7% |
-| TOP        | 4.00u |  13 | 10-3   |  76.9% |       49.00 |     +10.77 |     22.0% |
-| MINI       | 3.00u |  27 | 13-14  |  48.1% |       80.00 |      -8.87 |    -11.1% |
-| CONFIRMED  | 1.00u |   1 | 0-1    |   0.0% |        1.00 |      -1.00 |   -100.0% |
+| Tier (paths)              | Units | N   | W-L    | Win %  | Total Stake | PnL (u)    | ROI       |
+|---------------------------|-------|-----|--------|--------|-------------|------------|-----------|
+| MAX PLAY (SUPER)          |    6u |   1 | 1-0    | 100.0% |        6.00 |      +4.48 |     74.7% |
+| TOP PICK (TOP+/TOP)       |  4-5u |  13 | 10-3   |  76.9% |       49.00 |     +10.77 |     22.0% |
+| SHARP PLAY (RANK/SHARP-PRIME/SHARP) |  3-4u |   7 | 4-3    |  57.1% |       26.00 |      +2.90 |     11.2% |
+| STRONG (MINI)             |    3u |  27 | 13-14  |  48.1% |       80.00 |      -8.87 |    -11.1% |
+| LEAN (CONFIRMED/MINI-)    |    1u |   1 | 0-1    |   0.0% |        1.00 |      -1.00 |   -100.0% |
+| **STAKED TOTAL** |     — |  49 | 28-21  |  57.1% |      162.00 |      +8.28 |     +5.1% |
+
+#### Granular — by individual staking path
+
+| Path                  | Key         | Units | N   | W-L    | Win %  | Total Stake | PnL (u)    | ROI       |
+|-----------------------|-------------|-------|-----|--------|--------|-------------|------------|-----------|
+| HC-2 (model max)      | SUPER       |    6u |   1 | 1-0    | 100.0% |        6.00 |      +4.48 |     74.7% |
+| HC-1 + $-boost        | TOP+        |    5u |   0 | pending |      — |        0.00 |      +0.00 |         — |
+| HC-1 (model)          | TOP         |    4u |  13 | 10-3   |  76.9% |       49.00 |     +10.77 |     22.0% |
+| 2-for-0 rescue        | RANK        |    4u |   7 | 4-3    |  57.1% |       26.00 |      +2.90 |     11.2% |
+| proven-$ prime        | SHARP-PRIME |    4u |   0 | pending |      — |        0.00 |      +0.00 |         — |
+| proven-$ consensus    | SHARP       |    3u |   0 | pending |      — |        0.00 |      +0.00 |         — |
+| mini-HC (gate-pass)   | MINI        |    3u |  27 | 13-14  |  48.1% |       80.00 |      -8.87 |    -11.1% |
+| mini gate-cut         | MINI-       |    1u |   0 | pending |      — |        0.00 |      +0.00 |         — |
+| margin 3+             | CONFIRMED   |    1u |   1 | 0-1    |   0.0% |        1.00 |      -1.00 |   -100.0% |
 
 > **MONITORING volume:** 157 picks tracked at 0u (would-be 73-84, 46.5% win). Shown to users for context; **not** part of the staked record, units, or ROI.
 
@@ -338,38 +354,38 @@ V12's score is the bounded difference of two averages: the mean wallet quality F
 
 The last 30 picks V12 actually shipped (units > 0). This is the audit trail — every row is a real bet that risked real money, with the V12 score that drove the decision and the realised outcome.
 
-| Date       | Sport | Mkt    | Pick                    | Odds  | V12   | Tier     | Stake | Outcome | PnL (u)    |
-|------------|-------|--------|-------------------------|-------|-------|----------|-------|---------|------------|
-| 2026-06-25 | SOC   | ML     | Germany                 |  -155 | +0.939 | LOCK     | 1.00u | LOSS    |      -1.00 |
-| 2026-06-25 | SOC   | ML     | Netherlands             |  -750 | +0.993 | ELITE    | 4.00u | WIN     |      +0.53 |
-| 2026-06-25 | SOC   | ML     | United States           |  +105 | +0.631 | WEAK     | 4.00u | LOSS    |      -4.00 |
-| 2026-06-25 | MLB   | SPREAD | New York Yankees        |  +114 | +0.988 | ELITE    | 4.00u | LOSS    |      -4.00 |
-| 2026-06-25 | MLB   | TOTAL  | Under 9.5               |  -110 | +0.968 | PREMIUM  | 4.00u | WIN     |      +3.64 |
-| 2026-06-24 | MLB   | ML     | Atlanta Braves          |  -118 | +0.964 | PREMIUM  | 3.00u | LOSS    |      -3.00 |
-| 2026-06-24 | MLB   | ML     | Colorado Rockies        |  +145 | +0.977 | PREMIUM  | 4.00u | WIN     |      +5.80 |
-| 2026-06-24 | SOC   | ML     | Morocco                 |  -350 | +0.981 | PREMIUM  | 4.00u | WIN     |      +1.14 |
-| 2026-06-24 | MLB   | TOTAL  | Over 10.5               |  -110 | +0.969 | PREMIUM  | 4.00u | WIN     |      +3.64 |
-| 2026-06-24 | MLB   | TOTAL  | Over 9.5                |  -110 | +0.961 | PREMIUM  | 3.00u | LOSS    |      -3.00 |
-| 2026-06-24 | MLB   | TOTAL  | Under 7.5               |  -109 | +0.778 | LEAN     | 4.00u | LOSS    |      -4.00 |
-| 2026-06-23 | MLB   | ML     | Atlanta Braves          |  -110 | +0.976 | PREMIUM  | 3.00u | LOSS    |      -3.00 |
-| 2026-06-23 | MLB   | ML     | Baltimore Orioles       |  -142 | +0.973 | PREMIUM  | 3.00u | LOSS    |      -3.00 |
-| 2026-06-23 | MLB   | TOTAL  | Over 9.5                |  +103 | +0.906 | LOCK     | 2.50u | LOSS    |      -2.50 |
-| 2026-06-22 | MLB   | ML     | Toronto Blue Jays       |  -131 | +0.991 | ELITE    | 3.00u | WIN     |      +2.29 |
-| 2026-06-22 | MLB   | TOTAL  | Over 8.5                |  -102 | +0.962 | PREMIUM  | 3.00u | LOSS    |      -3.00 |
-| 2026-06-22 | MLB   | TOTAL  | Over 8.5                |  -110 | +0.959 | PREMIUM  | 3.00u | WIN     |      +2.73 |
-| 2026-06-22 | MLB   | TOTAL  | Under 6.5               |  -110 | +0.986 | ELITE    | 3.00u | WIN     |      +2.73 |
-| 2026-06-22 | MLB   | TOTAL  | Under 8.5               |  -104 | +0.922 | LOCK     | 4.00u | WIN     |      +3.85 |
-| 2026-06-21 | MLB   | ML     | Los Angeles Dodgers     |  -225 | +0.939 | LOCK     | 3.00u | LOSS    |      -3.00 |
-| 2026-06-21 | MLB   | ML     | Philadelphia Phillies   |  -186 | +0.964 | PREMIUM  | 3.00u | WIN     |      +1.61 |
-| 2026-06-21 | SOC   | ML     | Egypt                   |  -175 |     — | —        | 1.00u | WIN     |      +0.57 |
-| 2026-06-21 | MLB   | TOTAL  | Under 6.5               |  +101 | +0.964 | PREMIUM  | 2.50u | WIN     |      +2.52 |
-| 2026-06-21 | MLB   | TOTAL  | Under 8.5               |  -105 | +0.960 | PREMIUM  | 3.00u | LOSS    |      -3.00 |
-| 2026-06-20 | MLB   | ML     | New York Yankees        |  -201 | +0.965 | PREMIUM  | 4.00u | LOSS    |      -4.00 |
-| 2026-06-20 | MLB   | ML     | Philadelphia Phillies   |  -198 | +0.943 | LOCK     | 4.00u | WIN     |      +2.02 |
-| 2026-06-20 | MLB   | ML     | Miami Marlins           |  -137 | +0.978 | ELITE    | 3.00u | WIN     |      +2.19 |
-| 2026-06-20 | MLB   | TOTAL  | Under 7.5               |  -110 | +0.954 | PREMIUM  | 2.00u | WIN     |      +1.82 |
-| 2026-06-19 | MLB   | ML     | Arizona Diamondbacks    |  -168 | +0.976 | PREMIUM  | 4.00u | WIN     |      +2.38 |
-| 2026-06-19 | MLB   | SPREAD | New York Yankees        |  -130 | +0.959 | PREMIUM  | 4.00u | WIN     |      +3.08 |
+| Date       | Sport | Mkt    | Pick                    | Odds  | V12   | Path     | Score    | Stake | Outcome | PnL (u)    |
+|------------|-------|--------|-------------------------|-------|-------|----------|----------|-------|---------|------------|
+| 2026-06-25 | SOC   | ML     | Germany                 |  -155 | +0.939 | CONF     | LOCK     | 1.00u | LOSS    |      -1.00 |
+| 2026-06-25 | SOC   | ML     | Netherlands             |  -750 | +0.993 | HC-1     | ELITE    | 4.00u | WIN     |      +0.53 |
+| 2026-06-25 | SOC   | ML     | United States           |  +105 | +0.631 | 2-for-0  | WEAK     | 4.00u | LOSS    |      -4.00 |
+| 2026-06-25 | MLB   | SPREAD | New York Yankees        |  +114 | +0.988 | 2-for-0  | ELITE    | 4.00u | LOSS    |      -4.00 |
+| 2026-06-25 | MLB   | TOTAL  | Under 9.5               |  -110 | +0.968 | 2-for-0  | PREMIUM  | 4.00u | WIN     |      +3.64 |
+| 2026-06-24 | MLB   | ML     | Atlanta Braves          |  -118 | +0.964 | MINI     | PREMIUM  | 3.00u | LOSS    |      -3.00 |
+| 2026-06-24 | MLB   | ML     | Colorado Rockies        |  +145 | +0.977 | 2-for-0  | PREMIUM  | 4.00u | WIN     |      +5.80 |
+| 2026-06-24 | SOC   | ML     | Morocco                 |  -350 | +0.981 | HC-1     | PREMIUM  | 4.00u | WIN     |      +1.14 |
+| 2026-06-24 | MLB   | TOTAL  | Over 10.5               |  -110 | +0.969 | 2-for-0  | PREMIUM  | 4.00u | WIN     |      +3.64 |
+| 2026-06-24 | MLB   | TOTAL  | Over 9.5                |  -110 | +0.961 | MINI     | PREMIUM  | 3.00u | LOSS    |      -3.00 |
+| 2026-06-24 | MLB   | TOTAL  | Under 7.5               |  -109 | +0.778 | 2-for-0  | LEAN     | 4.00u | LOSS    |      -4.00 |
+| 2026-06-23 | MLB   | ML     | Atlanta Braves          |  -110 | +0.976 | MINI     | PREMIUM  | 3.00u | LOSS    |      -3.00 |
+| 2026-06-23 | MLB   | ML     | Baltimore Orioles       |  -142 | +0.973 | MINI     | PREMIUM  | 3.00u | LOSS    |      -3.00 |
+| 2026-06-23 | MLB   | TOTAL  | Over 9.5                |  +103 | +0.906 | MINI     | LOCK     | 2.50u | LOSS    |      -2.50 |
+| 2026-06-22 | MLB   | ML     | Toronto Blue Jays       |  -131 | +0.991 | MINI     | ELITE    | 3.00u | WIN     |      +2.29 |
+| 2026-06-22 | MLB   | TOTAL  | Over 8.5                |  -102 | +0.962 | MINI     | PREMIUM  | 3.00u | LOSS    |      -3.00 |
+| 2026-06-22 | MLB   | TOTAL  | Over 8.5                |  -110 | +0.959 | MINI     | PREMIUM  | 3.00u | WIN     |      +2.73 |
+| 2026-06-22 | MLB   | TOTAL  | Under 6.5               |  -110 | +0.986 | MINI     | ELITE    | 3.00u | WIN     |      +2.73 |
+| 2026-06-22 | MLB   | TOTAL  | Under 8.5               |  -104 | +0.922 | HC-1     | LOCK     | 4.00u | WIN     |      +3.85 |
+| 2026-06-21 | MLB   | ML     | Los Angeles Dodgers     |  -225 | +0.939 | MINI     | LOCK     | 3.00u | LOSS    |      -3.00 |
+| 2026-06-21 | MLB   | ML     | Philadelphia Phillies   |  -186 | +0.964 | MINI     | PREMIUM  | 3.00u | WIN     |      +1.61 |
+| 2026-06-21 | SOC   | ML     | Egypt                   |  -175 |     — | —        | —        | 1.00u | WIN     |      +0.57 |
+| 2026-06-21 | MLB   | TOTAL  | Under 6.5               |  +101 | +0.964 | HC-1     | PREMIUM  | 2.50u | WIN     |      +2.52 |
+| 2026-06-21 | MLB   | TOTAL  | Under 8.5               |  -105 | +0.960 | MINI     | PREMIUM  | 3.00u | LOSS    |      -3.00 |
+| 2026-06-20 | MLB   | ML     | New York Yankees        |  -201 | +0.965 | HC-1     | PREMIUM  | 4.00u | LOSS    |      -4.00 |
+| 2026-06-20 | MLB   | ML     | Philadelphia Phillies   |  -198 | +0.943 | HC-1     | LOCK     | 4.00u | WIN     |      +2.02 |
+| 2026-06-20 | MLB   | ML     | Miami Marlins           |  -137 | +0.978 | MINI     | ELITE    | 3.00u | WIN     |      +2.19 |
+| 2026-06-20 | MLB   | TOTAL  | Under 7.5               |  -110 | +0.954 | 2-for-0  | PREMIUM  | 2.00u | WIN     |      +1.82 |
+| 2026-06-19 | MLB   | ML     | Arizona Diamondbacks    |  -168 | +0.976 | HC-1     | PREMIUM  | 4.00u | WIN     |      +2.38 |
+| 2026-06-19 | MLB   | SPREAD | New York Yankees        |  -130 | +0.959 | HC-1     | PREMIUM  | 4.00u | WIN     |      +3.08 |
 
 ## § 12 — V12 Statistical Monitor (Predictive-Power Diagnostics)
 
@@ -578,9 +594,9 @@ Same filter, sorted ROI ascending. Wallets that consistently lose when they're o
 | Graded picks with `tracked=true` AND `finalUnits > 0`         |     1 | 🚨 grader regression — see betTracking.js |
 | Graded picks with `tracked=true` AND `finalUnits == 0`        |   470 | 🟡 informational only — true tracked plays |
 | LOCK+ tier picks with `finalUnits == 0` (sizing regression)   |    64 | 🚨 sizing regression — agsSizeMultiplier returning 0 for strong AGS-U |
-| Live picks (not graded yet) with `finalUnits > 0`             |     4 | 🟢 picks queued for grading |
+| Live picks (not graded yet) with `finalUnits > 0`             |     5 | 🟢 picks queued for grading |
 | AGS-U promoted picks missing `v8_ags` value                   |    18 | 🟡 some picks missing AGS-U — cron lag or stale doc |
-| AGS-U promoted picks missing `agsTier`                        |    11 | 🟡 some picks missing tier classification |
+| AGS-U promoted picks missing `agsTier`                        |    12 | 🟡 some picks missing tier classification |
 | Single-wallet shipped picks (`provenWalletCount == 1`)       |   133 | 🟡 informational — AGS-U calibration controls sample adequacy |
 
 **Tracked-shipped detail (these are the picks the grader wrongly marked 0u):**
@@ -628,11 +644,11 @@ Same filter, sorted ROI ascending. Wallets that consistently lose when they're o
 
 The live `agsCalibration/current` document — what the cron and UI both read at runtime to score & size every pick. **This is the actual thresholds V12 is using right now.**
 
-- **Computed at:** 2026-06-25T15:33:28.852Z
+- **Computed at:** 2026-06-26T15:16:16.580Z
 - **Schema version:** `ags-unified-v12` 🟢 (V12 active)
 - **Source:** cron
-- **Sample size:** 1428
-- **Date range:** 2026-04-18 → 2026-06-24
+- **Sample size:** 1472
+- **Date range:** 2026-04-18 → 2026-06-25
 
 ### V12 wallet-quality score thresholds (live)
 
@@ -641,9 +657,9 @@ These are the cuts on the V12 score (in [-1, +1]) that decide which tier each pi
 | Boundary | V12 score cut | Tier band start | Stake (absolute units) |
 |----------|---------------|-----------------|------------------------|
 | q80      |        +0.984 | ELITE           | 5.00u                  |
-| q60      |        +0.960 | PREMIUM         | 3.00u                  |
-| q40      |        +0.820 | LOCK            | 1.00u                  |
-| q20      |        +0.655 | LEAN            | 0.50u                  |
+| q60      |        +0.955 | PREMIUM         | 3.00u                  |
+| q40      |        +0.858 | LOCK            | 1.00u                  |
+| q20      |        +0.724 | LEAN            | 0.50u                  |
 | —        |        +0.000 | WEAK            | 0.25u  (any score in (0, q20]) |
 | mute     |             — | FADE            | 0.00u  (any score ≤ 0) |
 
