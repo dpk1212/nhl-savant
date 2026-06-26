@@ -2081,18 +2081,22 @@ function buildV12TierAnalysis(report, stats) {
   // MONITORING (non-HC / WEAK-tier HC, 0u) is never staked — tracked only.
   const v121Rows = v12Rows.filter(r => r.hcStakeTier);
   if (v121Rows.length > 0) {
-    report.push(`### v12.1 — By Stake Tier (HC margin + 2-for-0 rescue)`);
+    report.push(`### v12abc — By Stake Tier (HC margin + 2-for-0 rescue + proven-$ overlay)`);
     report.push('');
-    report.push(`Post-cutover picks size off the **HC margin** — SUPER (margin 2 · 6u), TOP (margin 1 · 4u), MINI (mini-HC 1.0–1.5× · 3u), CONFIRMED (margin 3+ · 1u) — **plus** the **RANK (2-for-0)** wallet-rescue path at **${RANK_RESCUE_UNITS}u**: a v12-shipped pick the HC sizer would mute, staked when ≥2 eligible whitelist wallets back it with 0 against. Together these two paths ARE the v12ab staked book. **MONITORING** (non-HC or WEAK-tier HC) is tracked at **0u** and excluded from the staked record/ROI below.`);
+    report.push(`Post-cutover picks size off the **HC margin** — SUPER (margin 2 · 6u), TOP (margin 1 · 4u), MINI (mini-HC 1.0–1.5× · 3u), CONFIRMED (margin 3+ · 1u) — **plus** the **RANK (2-for-0)** wallet-rescue path at **${RANK_RESCUE_UNITS}u**. From **2026-06-26** the **v12abc proven-$ overlay** (internal stats: backer \`positions.dollarRoi\` + featured \`picks.wr\`) adds: **SHARP / SHARP-PRIME** ($-rescue of HC-muted picks at 3u / 4u when ≥2 sharps back it incl. a proven-money winner and mean win-rate ≥ 50 / 55), **TOP+** (HC-1 boosted 4u → 5u when a proven-$ backer is present), and **MINI-** (MINI cut 3u → 1u when no proven-$ backer is on it). Together these paths ARE the v12abc staked book. **MONITORING** (non-HC or WEAK-tier HC, no proven-$ rescue) is tracked at **0u** and excluded from the staked record/ROI below.`);
     report.push('');
     report.push(`| Stake Tier     | Units | N   | W-L    | Win %  | Total Stake | PnL (u)    | ROI       |`);
     report.push(`|----------------|-------|-----|--------|--------|-------------|------------|-----------|`);
     const STAKE_TIERS = [
-      { key: 'SUPER',     units: 6,                 label: 'SUPER' },
-      { key: 'TOP',       units: 4,                 label: 'TOP' },
-      { key: 'RANK',      units: RANK_RESCUE_UNITS, label: 'RANK (2-for-0)' },
-      { key: 'MINI',      units: 3,                 label: 'MINI' },
-      { key: 'CONFIRMED', units: 1,                 label: 'CONFIRMED' },
+      { key: 'SUPER',       units: 6,                 label: 'SUPER' },
+      { key: 'TOP+',        units: 5,                 label: 'TOP+ ($-boost)' },
+      { key: 'TOP',         units: 4,                 label: 'TOP' },
+      { key: 'RANK',        units: RANK_RESCUE_UNITS, label: 'RANK (2-for-0)' },
+      { key: 'SHARP-PRIME', units: 4,                 label: 'SHARP-PRIME ($-rescue)' },
+      { key: 'SHARP',       units: 3,                 label: 'SHARP ($-rescue)' },
+      { key: 'MINI',        units: 3,                 label: 'MINI' },
+      { key: 'MINI-',       units: 1,                 label: 'MINI- (gate-cut)' },
+      { key: 'CONFIRMED',   units: 1,                 label: 'CONFIRMED' },
     ];
     const staked = { n: 0, w: 0, l: 0, stake: 0, profit: 0 };
     for (const { key, units, label } of STAKE_TIERS) {

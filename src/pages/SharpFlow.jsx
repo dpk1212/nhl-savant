@@ -1351,10 +1351,14 @@ function calculateSpreadTotalUnits(_stars, _consensusPenalty = 0, odds = null, _
 function starsFromAgsuTier(tier) {
   // v12.1 product stake tiers.
   if (tier === 'SUPER') return 5.0;
+  if (tier === 'TOP+') return 5.0;       // HC-1 boosted by proven-$ (5u)
   if (tier === 'TOP') return 4.0;
   if (tier === 'MINI') return 4.0;
   if (tier === 'RANK') return 4.0;       // 2-for-0 wallet-slice rescue (4u)
+  if (tier === 'SHARP-PRIME') return 4.0; // proven-$ rescue, prime (4u)
+  if (tier === 'SHARP') return 4.0;      // proven-$ rescue (3u)
   if (tier === 'CONFIRMED') return 3.0;
+  if (tier === 'MINI-') return 3.0;      // gate-fail MINI, reduced (1u)
   if (tier === 'MONITORING') return 1.0;
   // Legacy score-quintile tiers.
   if (tier === 'ELITE') return 5.0;
@@ -1636,7 +1640,7 @@ function evaluateTopPickTier(peak, lock, sideKey, promotedRegime = null,
   const hcStakeTier = side?.v8_hcStakeTier || null;
   if (hcStakeTier) {
     const isSuperTopPick = hcStakeTier === 'SUPER';
-    const isTopPick = isSuperTopPick || hcStakeTier === 'TOP';
+    const isTopPick = isSuperTopPick || hcStakeTier === 'TOP' || hcStakeTier === 'TOP+';
     return { isTopPick, isSuperTopPick, hcStakeTier, regime, meanBaseF, qualityMargin };
   }
 
@@ -1787,7 +1791,7 @@ function stampWalletConsensus(target, v8Scoring, sideKey, sport, baseStars, prom
   // authoritative HC-margin model. SUPER → super ribbon, TOP → top ribbon;
   // CONFIRMED / MONITORING → no gold ribbon.
   if (target.v8_hcStakeTier) {
-    target.v8_topPick      = target.v8_hcStakeTier === 'SUPER' || target.v8_hcStakeTier === 'TOP';
+    target.v8_topPick      = ['SUPER', 'TOP', 'TOP+'].includes(target.v8_hcStakeTier);
     target.v8_superTopPick = target.v8_hcStakeTier === 'SUPER';
   } else {
     target.v8_topPick      = isShipped && (agsTierStamp === 'ELITE' || agsTierStamp === 'PREMIUM');
@@ -5370,11 +5374,15 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
   const stakeMeta = hcStakeTier ? (AGS_V12_STAKE_TIER_META[hcStakeTier] || null) : null;
   const isMonitoring = hcStakeTier === 'MONITORING';
   const isConfirmed = hcStakeTier === 'CONFIRMED';
-  const isMini = hcStakeTier === 'MINI';
+  const isMini = hcStakeTier === 'MINI' || hcStakeTier === 'MINI-';
   // RANK-RESCUE (2-for-0 wallet slice). Staked off sharp-wallet consensus, NOT
   // the v12 score quintile — so the card must NOT lead with the (often WEAK)
   // score or it reads as a low-quality pick. It gets its own violet identity.
   const isRank = hcStakeTier === 'RANK';
+  // v12abc SHARP-RESCUE (proven-$ + win-rate consensus). Like RANK, these are
+  // rescued from a (usually WEAK) score, so they get their own violet identity
+  // and the stake strip rather than the misleading score-quintile strip.
+  const isSharp = hcStakeTier === 'SHARP' || hcStakeTier === 'SHARP-PRIME';
   const [open, setOpen] = useState(false);
   const [hover, setHover] = useState(false);
 
@@ -5390,7 +5398,7 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
   // v12.1 — CONFIRMED + MONITORING drive the strip from the product meta
   // (blue / grey). SUPER/TOP keep the score-quintile strip because the gold
   // ribbon already conveys the product tier; legacy picks use the score tier.
-  const useStakeStrip = !!stakeMeta && (isMonitoring || isConfirmed || isMini || isRank);
+  const useStakeStrip = !!stakeMeta && (isMonitoring || isConfirmed || isMini || isRank || isSharp);
   const tierMeta = useStakeStrip ? stakeMeta : (AGS_TIER_META[tierKey] || AGS_TIER_META.LOCK);
   const accent = isCancelled ? B.red
     : isMuted ? '#F59E0B'
@@ -12148,20 +12156,28 @@ export default function SharpFlow() {
               // bucketing performance by them was misleading. We bucket by the
               // cron-stamped v8_hcStakeTier instead.
               const TIER_DEFS = [
-                { key: 'SUPER',     size: '6u' },
-                { key: 'TOP',       size: '4u' },
-                { key: 'RANK',      size: '4u' },
-                { key: 'MINI',      size: '3u' },
-                { key: 'CONFIRMED', size: '1u' },
+                { key: 'SUPER',       size: '6u' },
+                { key: 'TOP+',        size: '5u' },
+                { key: 'TOP',         size: '4u' },
+                { key: 'RANK',        size: '4u' },
+                { key: 'SHARP-PRIME', size: '4u' },
+                { key: 'SHARP',       size: '3u' },
+                { key: 'MINI',        size: '3u' },
+                { key: 'MINI-',       size: '1u' },
+                { key: 'CONFIRMED',   size: '1u' },
               ];
               // Concise display meta for the stake tiers (label + accent). Kept
               // local so the long product labels don't overflow the small cards.
               const STAKE_TIER_META = {
-                SUPER:     { label: 'SUPER TOP', color: '#E8B85C' },
-                TOP:       { label: 'TOP PICK',  color: '#22C55E' },
-                RANK:      { label: 'RANK PLAY', color: '#A855F7' },
-                MINI:      { label: 'STRONG',    color: '#14B8A6' },
-                CONFIRMED: { label: 'CONFIRMED', color: '#3B82F6' },
+                SUPER:         { label: 'SUPER TOP', color: '#E8B85C' },
+                'TOP+':        { label: 'TOP PICK+', color: '#E8B85C' },
+                TOP:           { label: 'TOP PICK',  color: '#22C55E' },
+                RANK:          { label: 'RANK PLAY', color: '#A855F7' },
+                'SHARP-PRIME': { label: 'SHARP+',    color: '#8B5CF6' },
+                SHARP:         { label: 'SHARP',     color: '#8B5CF6' },
+                MINI:          { label: 'STRONG',    color: '#14B8A6' },
+                'MINI-':       { label: 'LEAN',      color: '#14B8A6' },
+                CONFIRMED:     { label: 'CONFIRMED', color: '#3B82F6' },
               };
               const tierAgg = {};
               for (const t of TIER_DEFS) tierAgg[t.key] = { wins:0, losses:0, pushes:0, units:0, profit:0, pending:0, tracked:0, sparkPnL:[] };

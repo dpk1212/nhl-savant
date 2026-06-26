@@ -471,6 +471,61 @@ function computeRankSlice(walletDetails, mySide, sport, walletProfiles) {
   return { backing, against, qualifies: backing >= 2 && against === 0 };
 }
 
+// ── SHARP-RESCUE / v12abc "c" — proven-$ + win-rate + 2-backer consensus ────
+// A v12-shipped pick (score > 0) the HC sizer muted to 0u is staked when its FOR
+// side carries the wallet-QUALITY signal, built from INTERNAL stats only:
+//   • ≥1 FOR backer with positions.dollarRoi ≥ SHARP_MIN_QROI on ≥ SHARP_MIN_QN
+//     settled positions  (our grading of their real-money Polymarket trades)
+//   • mean picks.wr across FOR backers (each ≥ SHARP_MIN_PN settled picks) ≥ floor
+//   • ≥ SHARP_MIN_FOR distinct sharps on the FOR side (dissent allowed)
+// Profiles are read AT SCORING TIME for a LIVE pick (today's games unsettled), so
+// — exactly like RANK-RESCUE — the read is leak-free / point-in-time.
+// v12-era backtest: BASE +24.1% / 67% (holdout TEST +31.6%), PRIME +38.2% / 77%.
+// Also drives two HC-book overlays: TOP boost (HC-1 + proven-$) and MINI cut
+// (gate-fail MINI). Internal stats live at profile.positions.* / profile.picks.*.
+const SHARP_LIVE_FROM   = '2026-06-26';  // cutover — history is never rewritten
+const SHARP_MIN_QN      = 8;             // min settled positions for a $ROI read
+const SHARP_MIN_QROI    = 10;            // positions.dollarRoi threshold (%)
+const SHARP_MIN_PN      = 5;             // min settled picks to count toward wr
+const SHARP_WR_BASE     = 50;            // mean picks.wr floor — SHARP
+const SHARP_WR_PRIME    = 55;            // mean picks.wr floor — SHARP-PRIME boost
+const SHARP_MIN_FOR     = 2;             // ≥2 distinct FOR-side sharps (consensus)
+const SHARP_UNITS       = 3;             // SHARP rescue stake
+const SHARP_PRIME_UNITS = 4;             // SHARP-PRIME rescue stake
+const TOP_BOOST_UNITS   = 5;             // HC-1 TOP + proven-$ → boost 4u → 5u
+const MINI_REDUCED_UNITS = 1;            // gate-fail MINI (no proven-$) → 3u → 1u
+function isSharpRescueLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= SHARP_LIVE_FROM;
+}
+function computeSharpQuality(walletDetails, mySide, sport, walletProfiles) {
+  const empty = { forCount: 0, maxQRoi: -Infinity, meanPWr: null, provenDollar: false, qualifies: false, prime: false };
+  if (!Array.isArray(walletDetails) || !mySide) return empty;
+  let forCount = 0, maxQRoi = -Infinity; const wrPool = [];
+  const seen = new Set();
+  for (const w of walletDetails) {
+    const short = String(w.walletShort || w.wallet || '').slice(-6).toLowerCase();
+    if (!short || seen.has(short)) continue;             // one vote per wallet
+    seen.add(short);
+    if (w.side !== mySide) continue;                     // FOR side only
+    forCount++;
+    const profile = walletProfiles.get(short) || walletProfiles.get(short.toUpperCase());
+    if (!profile) continue;
+    const q = profile.positions || {};
+    if ((Number(q.n) || 0) >= SHARP_MIN_QN && Number.isFinite(Number(q.dollarRoi))) {
+      maxQRoi = Math.max(maxQRoi, Number(q.dollarRoi));
+    }
+    const pk = profile.picks || {};
+    if ((Number(pk.n) || 0) >= SHARP_MIN_PN && Number.isFinite(Number(pk.wr))) {
+      wrPool.push(Number(pk.wr));
+    }
+  }
+  const meanPWr = wrPool.length ? wrPool.reduce((s, x) => s + x, 0) / wrPool.length : null;
+  const provenDollar = maxQRoi >= SHARP_MIN_QROI;
+  const qualifies = provenDollar && meanPWr != null && meanPWr >= SHARP_WR_BASE && forCount >= SHARP_MIN_FOR;
+  const prime = qualifies && meanPWr >= SHARP_WR_PRIME;
+  return { forCount, maxQRoi, meanPWr, provenDollar, qualifies, prime };
+}
+
 // ── Firebase init ──────────────────────────────────────────────────────────
 function initFirebase() {
   if (!admin.apps.length) {
@@ -1377,6 +1432,27 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     finalUnitsApplied = hc.units;      // odds-capped; MONITORING → 0u
   }
 
+  // ─── v12abc HC-book overlays — TOP boost + MINI reduction ─────────────
+  // Internal wallet-quality slice (proven-$ ROI + featured win-rate), same
+  // point-in-time read as RANK-RESCUE. Computed once here, reused by the
+  // SHARP-RESCUE block below. Inert before the SHARP_LIVE_FROM cutover.
+  //   • TOP (HC margin 1) + proven-$ backer & mean wr ≥ floor → boost 4u → 5u
+  //     (backtest: SHARP-pass TOP +41% vs +25% gate-fail).
+  //   • MINI with NO proven-$ backer → cut 3u → 1u (gate-fail MINI ran −56%).
+  let sharpQ = null;
+  if (isSharpRescueLive(pickDate) && appliedStatus === 'ACTIVE'
+      && scoreV12Live != null && scoreV12Live > 0) {
+    sharpQ = computeSharpQuality(wd, side, pick.sport, walletProfiles);
+    if (hcStakeTier === 'TOP' && sharpQ.provenDollar
+        && sharpQ.meanPWr != null && sharpQ.meanPWr >= SHARP_WR_BASE) {
+      finalUnitsApplied = Math.round(oddsCap(TOP_BOOST_UNITS, sideOdds) * 100) / 100;
+      hcStakeTier = 'TOP+';
+    } else if (hcStakeTier === 'MINI' && !sharpQ.provenDollar) {
+      finalUnitsApplied = Math.round(oddsCap(MINI_REDUCED_UNITS, sideOdds) * 100) / 100;
+      hcStakeTier = 'MINI-';
+    }
+  }
+
   // ─── Manual RANK-promotion override (wallet-rank coalition path) ──────
   // A pick explicitly promoted because the FOR side carried ≥2 top-ranked
   // whitelist wallets (point-in-time) is stamped with `sd.manualStake`. We
@@ -1405,6 +1481,24 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       finalUnitsApplied = RANK_RESCUE_UNITS;
       hcStakeTier = 'RANK';
       rankRescued = true;
+    }
+  }
+
+  // ─── SHARP-RESCUE: v12abc "c" proven-$ + win-rate + 2-backer consensus ──
+  // Rescues a v12-shipped pick the HC sizer (and RANK) left muted at 0u, when
+  // the FOR side clears the internal wallet-quality gate. PRIME (mean wr ≥ 55)
+  // sizes one notch up. Only ever rescues muted picks — never up-sizes.
+  let sharpRescued = false;
+  if (isSharpRescueLive(pickDate) && appliedStatus === 'ACTIVE'
+      && scoreV12Live != null && scoreV12Live > 0
+      && finalUnitsApplied === 0 && !rankRescued
+      && !(Number.isFinite(sd.manualStake) && sd.manualStake > 0)) {
+    const q = sharpQ || computeSharpQuality(wd, side, pick.sport, walletProfiles);
+    if (q.qualifies) {
+      const u = q.prime ? SHARP_PRIME_UNITS : SHARP_UNITS;
+      finalUnitsApplied = Math.round(oddsCap(u, sideOdds) * 100) / 100;
+      hcStakeTier = q.prime ? 'SHARP-PRIME' : 'SHARP';
+      sharpRescued = true;
     }
   }
 
