@@ -2071,25 +2071,40 @@ function buildV12TierAnalysis(report, stats) {
     report.push('');
   }
 
-  // ── v12.1 — HC-margin stake tier breakdown (post-cutover only) ────────────
-  // Once V12_1_EFFECTIVE_FROM lands, the STAKE comes from the HC margin, not
-  // the score quintile: SUPER (margin 2, 6u), TOP (margin 1, 4u), CONFIRMED
-  // (margin 3+, 1u), MONITORING (non-HC / WEAK-tier HC, 0u — never staked).
+  // ── v12.1 — staked stake-tier breakdown (post-cutover only) ───────────────
+  // The full v12ab staked book has TWO paths, both shown here:
+  //   1. HC-margin ladder: SUPER (margin 2, 6u), TOP (margin 1, 4u),
+  //      MINI (mini-HC 1.0–1.5×, 3u), CONFIRMED (margin 3+, 1u).
+  //   2. RANK (2-for-0) wallet-rescue: a v12-shipped (score>0) pick the HC
+  //      sizer muted to 0u, staked at RANK_RESCUE_UNITS when ≥2 eligible
+  //      whitelist wallets back it with 0 against (live 2026-06-21).
+  // MONITORING (non-HC / WEAK-tier HC, 0u) is never staked — tracked only.
   const v121Rows = v12Rows.filter(r => r.hcStakeTier);
   if (v121Rows.length > 0) {
-    report.push(`### v12.1 — By Stake Tier (HC margin)`);
+    report.push(`### v12.1 — By Stake Tier (HC margin + 2-for-0 rescue)`);
     report.push('');
-    report.push(`Post-cutover picks size off the **HC margin**, not the score quintile. SUPER (margin 2 · 6u), TOP (margin 1 · 4u), MINI (mini-HC 1.0–1.5× · 3u), CONFIRMED (margin 3+ · 1u) are staked; **MONITORING** (non-HC or WEAK-tier HC) is tracked at **0u** and excluded from the staked record/ROI below.`);
+    report.push(`Post-cutover picks size off the **HC margin** — SUPER (margin 2 · 6u), TOP (margin 1 · 4u), MINI (mini-HC 1.0–1.5× · 3u), CONFIRMED (margin 3+ · 1u) — **plus** the **RANK (2-for-0)** wallet-rescue path at **${RANK_RESCUE_UNITS}u**: a v12-shipped pick the HC sizer would mute, staked when ≥2 eligible whitelist wallets back it with 0 against. Together these two paths ARE the v12ab staked book. **MONITORING** (non-HC or WEAK-tier HC) is tracked at **0u** and excluded from the staked record/ROI below.`);
     report.push('');
-    report.push(`| Stake Tier | Units | N   | W-L    | Win %  | Total Stake | PnL (u)    | ROI       |`);
-    report.push(`|------------|-------|-----|--------|--------|-------------|------------|-----------|`);
-    const STAKE_TIER_UNITS = { SUPER: 6, TOP: 4, MINI: 3, CONFIRMED: 1 };
-    for (const st of ['SUPER', 'TOP', 'MINI', 'CONFIRMED']) {
-      const stRows = v121Rows.filter(r => r.hcStakeTier === st);
+    report.push(`| Stake Tier     | Units | N   | W-L    | Win %  | Total Stake | PnL (u)    | ROI       |`);
+    report.push(`|----------------|-------|-----|--------|--------|-------------|------------|-----------|`);
+    const STAKE_TIERS = [
+      { key: 'SUPER',     units: 6,                 label: 'SUPER' },
+      { key: 'TOP',       units: 4,                 label: 'TOP' },
+      { key: 'RANK',      units: RANK_RESCUE_UNITS, label: 'RANK (2-for-0)' },
+      { key: 'MINI',      units: 3,                 label: 'MINI' },
+      { key: 'CONFIRMED', units: 1,                 label: 'CONFIRMED' },
+    ];
+    const staked = { n: 0, w: 0, l: 0, stake: 0, profit: 0 };
+    for (const { key, units, label } of STAKE_TIERS) {
+      const stRows = v121Rows.filter(r => r.hcStakeTier === key);
       const sagg = aggregate(stRows);
       if (sagg.n + sagg.trackedN === 0) continue;
-      report.push(`| ${st.padEnd(10)} | ${(STAKE_TIER_UNITS[st].toFixed(2)+'u').padStart(5)} | ${String(sagg.n + sagg.trackedN).padStart(3)} | ${(sagg.w+'-'+sagg.l).padEnd(6)} | ${pct(sagg.w, sagg.n).padStart(6)} | ${sagg.totalStake.toFixed(2).padStart(11)} | ${fmtSigned(sagg.profit).padStart(10)} | ${(sagg.roi != null ? sagg.roi.toFixed(1)+'%' : '—').padStart(9)} |`);
+      staked.n += sagg.n; staked.w += sagg.w; staked.l += sagg.l;
+      staked.stake += sagg.totalStake; staked.profit += sagg.profit;
+      report.push(`| ${label.padEnd(14)} | ${(units.toFixed(2)+'u').padStart(5)} | ${String(sagg.n + sagg.trackedN).padStart(3)} | ${(sagg.w+'-'+sagg.l).padEnd(6)} | ${pct(sagg.w, sagg.n).padStart(6)} | ${sagg.totalStake.toFixed(2).padStart(11)} | ${fmtSigned(sagg.profit).padStart(10)} | ${(sagg.roi != null ? sagg.roi.toFixed(1)+'%' : '—').padStart(9)} |`);
     }
+    const stakedRoi = staked.stake > 0 ? (staked.profit / staked.stake) * 100 : null;
+    report.push(`| **STAKED TOTAL** | ${'—'.padStart(5)} | ${String(staked.n).padStart(3)} | ${(staked.w+'-'+staked.l).padEnd(6)} | ${pct(staked.w, staked.n).padStart(6)} | ${staked.stake.toFixed(2).padStart(11)} | ${fmtSigned(staked.profit).padStart(10)} | ${(stakedRoi != null ? (stakedRoi>=0?'+':'')+stakedRoi.toFixed(1)+'%' : '—').padStart(9)} |`);
     report.push('');
     // Monitoring volume line — informational only (0u, excluded from staked).
     const monRows = v121Rows.filter(r => r.hcStakeTier === 'MONITORING');
