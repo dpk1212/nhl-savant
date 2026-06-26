@@ -1064,6 +1064,24 @@ export const AGS_V12_STAKE_PATH = {
   FADE:          'muted',
 };
 
+// Condensed 5-tier display grouping — the SINGLE source of truth shared by the
+// AGS-U daily report and the live Tier Performance UI. Each display tier rolls
+// up one or more internal staking paths so the user/operator never sees more
+// than five buckets, and the report + UI always agree on the grouping.
+export const AGS_V12_DISPLAY_TIERS = [
+  { key: 'MAX',    label: 'MAX PLAY',   color: '#E8B85C', unitsLabel: '6u',   sub: 'HC-2 model',      paths: ['SUPER'] },
+  { key: 'TOP',    label: 'TOP PICK',   color: '#E8B85C', unitsLabel: '4-5u', sub: 'HC-margin model', paths: ['TOP+', 'TOP'] },
+  { key: 'SHARP',  label: 'SHARP PLAY', color: '#A855F7', unitsLabel: '3-4u', sub: 'sharp money',     paths: ['RANK', 'SHARP-PRIME', 'SHARP'] },
+  { key: 'STRONG', label: 'STRONG',     color: '#14B8A6', unitsLabel: '3u',   sub: 'mini-HC',         paths: ['MINI'] },
+  { key: 'LEAN',   label: 'LEAN',       color: '#6B7280', unitsLabel: '1u',   sub: 'confirmed / cut', paths: ['CONFIRMED', 'MINI-'] },
+];
+
+// Reverse lookup: internal stake-tier key → display-tier key.
+export const AGS_V12_PATH_TO_DISPLAY = AGS_V12_DISPLAY_TIERS.reduce((m, dt) => {
+  for (const p of dt.paths) m[p] = dt.key;
+  return m;
+}, {});
+
 export const AGS_V12_STAKE_TIER_META = {
   SUPER:         { label: 'MAX PLAY',  short: 'MAX',    color: '#E8B85C', bg: 'rgba(232,184,92,0.15)',  units: V12_1_SUPER_UNITS,     ribbon: null, stars: 5 },
   'TOP+':        { label: 'TOP PICK',  short: 'TOP',    color: '#E8B85C', bg: 'rgba(232,184,92,0.13)',  units: 5,                     ribbon: null, stars: 5 },

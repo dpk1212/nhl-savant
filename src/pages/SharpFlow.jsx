@@ -20,6 +20,8 @@ import {
   AGS_TIER_META,
   AGS_V12_STAKE_TIER_META,
   AGS_V12_STAKE_PATH,
+  AGS_V12_DISPLAY_TIERS,
+  AGS_V12_PATH_TO_DISPLAY,
   HC_RATIO,
   aggregateSideProven,
   agsSizeMultiplier,
@@ -2690,7 +2692,7 @@ async function loadAllTimePnL() {
     // tier counters (wins/losses/pushes/pending/tracked + roi) are
     // preserved unchanged so the existing Locked-Picks-Today tier
     // scorecard keeps working.
-    const cacheKey = 'sharpFlow_pnl_v17';
+    const cacheKey = 'sharpFlow_pnl_v18';
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
       const { data, ts } = JSON.parse(cached);
@@ -2814,7 +2816,11 @@ async function loadAllTimePnL() {
           }
         }
         const pickStars = isPostDeploy ? (bestSnap?.stars ?? 0) : s;
-        if (pickStars >= 2.5) {
+        // Include any pick with a stamped stake tier even if its snapshot stars
+        // are low — v12abc SHARP/MINI rescues are staked off proven money, not
+        // the (often WEAK) score, so the stars gate would otherwise hide them
+        // and the Tier Performance wouldn't match the AGS-U report.
+        if (pickStars >= 2.5 || typeof sd.v8_hcStakeTier === 'string') {
           const lkStars = lockSnap?.stars ?? 0;
           const lkEV = lockSnap?.evEdge ?? null;
           const pkEV = bestSnap?.evEdge ?? null;
@@ -2839,6 +2845,12 @@ async function loadAllTimePnL() {
             v8_ags: Number.isFinite(sd.v8_ags) ? sd.v8_ags : null,
             v8_agsTier: typeof sd.v8_agsTier === 'string' ? sd.v8_agsTier : null,
             v8_agsComponents: sd.v8_agsComponents || null,
+            // v12abc — carry the stamped stake tier (the staking PATH) + v12
+            // score so the Tier Performance scoreboard can bucket picks into the
+            // 5 display tiers and MATCH the AGS-U daily report.
+            v8_hcStakeTier: typeof sd.v8_hcStakeTier === 'string' ? sd.v8_hcStakeTier : null,
+            v8_agsV12: Number.isFinite(sd.v8_agsV12) ? sd.v8_agsV12 : null,
+            v8_agsV12Tier: typeof sd.v8_agsV12Tier === 'string' ? sd.v8_agsV12Tier : null,
             team: sd.team || null,
             away: data.away || null,
             home: data.home || null,
@@ -12116,45 +12128,26 @@ export default function SharpFlow() {
               // (ELITE/PREMIUM/…) only SELECT the side; they don't size it, so
               // bucketing performance by them was misleading. We bucket by the
               // cron-stamped v8_hcStakeTier instead.
-              const TIER_DEFS = [
-                { key: 'SUPER',       size: '6u' },
-                { key: 'TOP+',        size: '5u' },
-                { key: 'TOP',         size: '4u' },
-                { key: 'RANK',        size: '4u' },
-                { key: 'SHARP-PRIME', size: '4u' },
-                { key: 'SHARP',       size: '3u' },
-                { key: 'MINI',        size: '3u' },
-                { key: 'MINI-',       size: '1u' },
-                { key: 'CONFIRMED',   size: '1u' },
-              ];
-              // Concise display meta for the stake tiers (label + accent). Kept
-              // local so the long product labels don't overflow the small cards.
-              // Friendly conviction name (matches the live cards) + the internal
-              // staking PATH it represents (sub), so each row reads as e.g.
-              // "SHARP PLAY · proven-$ prime" — same name on the card, but here
-              // you can tell the 2-for-0 / proven-$ / proven-$ prime paths apart.
-              const STAKE_TIER_META = {
-                SUPER:         { label: 'MAX PLAY',  color: '#E8B85C', sub: AGS_V12_STAKE_PATH.SUPER },
-                'TOP+':        { label: 'TOP PICK',  color: '#E8B85C', sub: AGS_V12_STAKE_PATH['TOP+'] },
-                TOP:           { label: 'TOP PICK',  color: '#E8B85C', sub: AGS_V12_STAKE_PATH.TOP },
-                RANK:          { label: 'SHARP PLAY', color: '#A855F7', sub: AGS_V12_STAKE_PATH.RANK },
-                'SHARP-PRIME': { label: 'SHARP PLAY', color: '#A855F7', sub: AGS_V12_STAKE_PATH['SHARP-PRIME'] },
-                SHARP:         { label: 'SHARP PLAY', color: '#A855F7', sub: AGS_V12_STAKE_PATH.SHARP },
-                MINI:          { label: 'STRONG',    color: '#14B8A6', sub: AGS_V12_STAKE_PATH.MINI },
-                'MINI-':       { label: 'LEAN',      color: '#6B7280', sub: AGS_V12_STAKE_PATH['MINI-'] },
-                CONFIRMED:     { label: 'CONFIRMED', color: '#3B82F6', sub: AGS_V12_STAKE_PATH.CONFIRMED },
-              };
+              // Condensed to the 5 shared display tiers (AGS_V12_DISPLAY_TIERS)
+              // — identical grouping to the AGS-U daily report, so the numbers
+              // here MATCH the report. Each tier rolls up its internal staking
+              // paths (e.g. SHARP PLAY = RANK 2-for-0 + SHARP/SHARP-PRIME).
+              const TIER_DEFS = AGS_V12_DISPLAY_TIERS.map(dt => ({ key: dt.key, size: dt.unitsLabel }));
+              const STAKE_TIER_META = AGS_V12_DISPLAY_TIERS.reduce((m, dt) => {
+                m[dt.key] = { label: dt.label, color: dt.color, sub: dt.sub };
+                return m;
+              }, {});
               const tierAgg = {};
               for (const t of TIER_DEFS) tierAgg[t.key] = { wins:0, losses:0, pushes:0, units:0, profit:0, pending:0, tracked:0, sparkPnL:[] };
               const sortedByDate = [...agsuPicks].sort((a,b) => (a.date||'').localeCompare(b.date||''));
               for (const p of sortedByDate) {
-                // Bucket by v12ab STAKE tier (cron-stamped). Picks without a
-                // stake tier are pre-v12a score-ladder picks, and MONITORING/
-                // FADE are 0u (not staked) — neither belongs in the staked-tier
-                // scoreboard, so they fall through.
-                const tier = p._stakeTier;
-                if (!tier || !tierAgg[tier]) continue;
-                const b = tierAgg[tier];
+                // Bucket by the DISPLAY tier (path → display group). Picks without
+                // a stake tier are pre-v12a score-ladder picks; MONITORING/FADE
+                // are 0u (not staked) — none map to a display tier, so they fall
+                // through (excluded from the staked scoreboard).
+                const display = p._stakeTier ? AGS_V12_PATH_TO_DISPLAY[p._stakeTier] : null;
+                if (!display || !tierAgg[display]) continue;
+                const b = tierAgg[display];
                 if (p.tracked) { b.tracked++; continue; }
                 if (!p.outcome) { if (p.units > 0) b.pending++; continue; }
                 if (p.outcome === 'WIN')  { b.wins++;   b.profit += (p.profit || 0); b.units += p.units; }

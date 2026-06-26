@@ -37,6 +37,7 @@ import {
   AGS_WEIGHTS,
   AGS_FALLBACK_CALIBRATION,
   AGS_ABSOLUTE_MUTE_FLOOR,
+  AGS_V12_DISPLAY_TIERS,
 } from '../src/lib/ags.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -2085,27 +2086,21 @@ function buildV12TierAnalysis(report, stats) {
     report.push('');
     report.push(`Post-cutover picks size off the **HC margin** — SUPER (margin 2 · 6u), TOP (margin 1 · 4u), MINI (mini-HC 1.0–1.5× · 3u), CONFIRMED (margin 3+ · 1u) — **plus** the **RANK (2-for-0)** wallet-rescue path at **${RANK_RESCUE_UNITS}u**. From **2026-06-26** the **v12abc proven-$ overlay** (internal stats: backer \`positions.dollarRoi\` + featured \`picks.wr\`) adds: **SHARP / SHARP-PRIME** ($-rescue of HC-muted picks at 3u / 4u when ≥2 sharps back it incl. a proven-money winner and mean win-rate ≥ 50 / 55), **TOP+** (HC-1 boosted 4u → 5u when a proven-$ backer is present), and **MINI-** (MINI cut 3u → 1u when no proven-$ backer is on it). Together these paths ARE the v12abc staked book. **MONITORING** (non-HC or WEAK-tier HC, no proven-$ rescue) is tracked at **0u** and excluded from the staked record/ROI below.`);
     report.push('');
-    report.push(`| Stake Tier     | Units | N   | W-L    | Win %  | Total Stake | PnL (u)    | ROI       |`);
-    report.push(`|----------------|-------|-----|--------|--------|-------------|------------|-----------|`);
-    const STAKE_TIERS = [
-      { key: 'SUPER',       units: 6,                 label: 'SUPER' },
-      { key: 'TOP+',        units: 5,                 label: 'TOP+ ($-boost)' },
-      { key: 'TOP',         units: 4,                 label: 'TOP' },
-      { key: 'RANK',        units: RANK_RESCUE_UNITS, label: 'RANK (2-for-0)' },
-      { key: 'SHARP-PRIME', units: 4,                 label: 'SHARP-PRIME ($-rescue)' },
-      { key: 'SHARP',       units: 3,                 label: 'SHARP ($-rescue)' },
-      { key: 'MINI',        units: 3,                 label: 'MINI' },
-      { key: 'MINI-',       units: 1,                 label: 'MINI- (gate-cut)' },
-      { key: 'CONFIRMED',   units: 1,                 label: 'CONFIRMED' },
-    ];
+    report.push(`| Tier (paths)              | Units | N   | W-L    | Win %  | Total Stake | PnL (u)    | ROI       |`);
+    report.push(`|---------------------------|-------|-----|--------|--------|-------------|------------|-----------|`);
+    // Condensed to the 5 shared display tiers (AGS_V12_DISPLAY_TIERS) so the
+    // report and the live Tier Performance UI bucket picks identically. Each
+    // tier rolls up its internal staking paths (e.g. SHARP PLAY = RANK 2-for-0
+    // + SHARP/SHARP-PRIME proven-$ rescues).
     const staked = { n: 0, w: 0, l: 0, stake: 0, profit: 0 };
-    for (const { key, units, label } of STAKE_TIERS) {
-      const stRows = v121Rows.filter(r => r.hcStakeTier === key);
+    for (const dt of AGS_V12_DISPLAY_TIERS) {
+      const stRows = v121Rows.filter(r => dt.paths.includes(r.hcStakeTier));
       const sagg = aggregate(stRows);
       if (sagg.n + sagg.trackedN === 0) continue;
       staked.n += sagg.n; staked.w += sagg.w; staked.l += sagg.l;
       staked.stake += sagg.totalStake; staked.profit += sagg.profit;
-      report.push(`| ${label.padEnd(14)} | ${(units.toFixed(2)+'u').padStart(5)} | ${String(sagg.n + sagg.trackedN).padStart(3)} | ${(sagg.w+'-'+sagg.l).padEnd(6)} | ${pct(sagg.w, sagg.n).padStart(6)} | ${sagg.totalStake.toFixed(2).padStart(11)} | ${fmtSigned(sagg.profit).padStart(10)} | ${(sagg.roi != null ? sagg.roi.toFixed(1)+'%' : '—').padStart(9)} |`);
+      const label = `${dt.label} (${dt.paths.join('/')})`;
+      report.push(`| ${label.padEnd(25)} | ${dt.unitsLabel.padStart(5)} | ${String(sagg.n + sagg.trackedN).padStart(3)} | ${(sagg.w+'-'+sagg.l).padEnd(6)} | ${pct(sagg.w, sagg.n).padStart(6)} | ${sagg.totalStake.toFixed(2).padStart(11)} | ${fmtSigned(sagg.profit).padStart(10)} | ${(sagg.roi != null ? sagg.roi.toFixed(1)+'%' : '—').padStart(9)} |`);
     }
     const stakedRoi = staked.stake > 0 ? (staked.profit / staked.stake) * 100 : null;
     report.push(`| **STAKED TOTAL** | ${'—'.padStart(5)} | ${String(staked.n).padStart(3)} | ${(staked.w+'-'+staked.l).padEnd(6)} | ${pct(staked.w, staked.n).padStart(6)} | ${staked.stake.toFixed(2).padStart(11)} | ${fmtSigned(staked.profit).padStart(10)} | ${(stakedRoi != null ? (stakedRoi>=0?'+':'')+stakedRoi.toFixed(1)+'%' : '—').padStart(9)} |`);
