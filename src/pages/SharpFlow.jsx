@@ -5374,7 +5374,8 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
   const stakeMeta = hcStakeTier ? (AGS_V12_STAKE_TIER_META[hcStakeTier] || null) : null;
   const isMonitoring = hcStakeTier === 'MONITORING';
   const isConfirmed = hcStakeTier === 'CONFIRMED';
-  const isMini = hcStakeTier === 'MINI' || hcStakeTier === 'MINI-';
+  const isMini = hcStakeTier === 'MINI';
+  const isMiniMinus = hcStakeTier === 'MINI-';
   // RANK-RESCUE (2-for-0 wallet slice). Staked off sharp-wallet consensus, NOT
   // the v12 score quintile — so the card must NOT lead with the (often WEAK)
   // score or it reads as a low-quality pick. It gets its own violet identity.
@@ -5398,7 +5399,7 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
   // v12.1 — CONFIRMED + MONITORING drive the strip from the product meta
   // (blue / grey). SUPER/TOP keep the score-quintile strip because the gold
   // ribbon already conveys the product tier; legacy picks use the score tier.
-  const useStakeStrip = !!stakeMeta && (isMonitoring || isConfirmed || isMini || isRank || isSharp);
+  const useStakeStrip = !!stakeMeta && (isMonitoring || isConfirmed || isMini || isMiniMinus || isRank || isSharp);
   const tierMeta = useStakeStrip ? stakeMeta : (AGS_TIER_META[tierKey] || AGS_TIER_META.LOCK);
   const accent = isCancelled ? B.red
     : isMuted ? '#F59E0B'
@@ -5518,12 +5519,16 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
         ? <StatCol label="P&L" value={`${(isTrackedGrade ? 0 : (profit || 0)) > 0 ? '+' : ''}${(isTrackedGrade ? 0 : (profit || 0)).toFixed(1)}u`} color={isWin ? B.green : isLoss ? B.red : B.textSec} />
         : <StatCol label="STAKE" value={Number.isFinite(units) && units > 0 ? `${fmtU(units)}u` : '—'} color={B.text} />}
       <StatDivider />
-      {isRank
+      {(isRank || isSharp)
         ? <StatCol label="SHARPS ON" value={backers > 0 ? backers : '—'} color={accent} />
         : <StatCol label="AGSU V12" value={conviction > 0 ? conviction : '—'} color={accent} meter />}
     </div>
   );
 
+  // Single premium ribbon — gold TOP / SUPER (and the v12abc TOP+ boost) only.
+  // Every other tier identity (CONFIRMED / RANK / SHARP / SHARP-PRIME / MINI /
+  // MINI-) is carried by the stars-pill below the pick, so the header never
+  // double-labels and the gold ribbon stays reserved for the marquee picks.
   const topBadge = (isSuperTopPick || isTopPick) ? (
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: '0.2rem', flexShrink: 0,
@@ -5535,44 +5540,7 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
       boxShadow: isSuperTopPick ? `0 3px 10px -3px ${B.gold}77` : 'none', whiteSpace: 'nowrap',
     }}>
       {isSuperTopPick ? <Zap size={9} strokeWidth={3} /> : <ArrowUpRight size={9} strokeWidth={3} />}
-      {isSuperTopPick ? 'SUPER TOP PICK' : 'TOP PICK'}
-    </span>
-  ) : isConfirmed ? (
-    // v12.1 CONFIRMED (margin 3+) — own blue label, no gold ribbon.
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: '0.2rem', flexShrink: 0,
-      padding: '0.14rem 0.42rem', borderRadius: '5px',
-      background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.45)',
-      color: '#3B82F6', fontSize: '0.5rem', fontWeight: 900,
-      letterSpacing: '0.07em', lineHeight: 1, whiteSpace: 'nowrap',
-    }}>
-      <ShieldCheck size={9} strokeWidth={3} />
-      CONFIRMED
-    </span>
-  ) : isMini ? (
-    // v12.1 MINI (mini-HC: CONFIRMED sized 1.0–1.5×) — teal "STRONG PICK".
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: '0.2rem', flexShrink: 0,
-      padding: '0.14rem 0.42rem', borderRadius: '5px',
-      background: 'rgba(20,184,166,0.14)', border: '1px solid rgba(20,184,166,0.45)',
-      color: '#14B8A6', fontSize: '0.5rem', fontWeight: 900,
-      letterSpacing: '0.07em', lineHeight: 1, whiteSpace: 'nowrap',
-    }}>
-      <ArrowUpRight size={9} strokeWidth={3} />
-      STRONG PICK
-    </span>
-  ) : isRank ? (
-    // RANK-RESCUE (2-for-0 wallet slice) — violet "RANK PLAY". Sharp-wallet
-    // consensus, not score quintile, so it leads with its own identity.
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: '0.2rem', flexShrink: 0,
-      padding: '0.14rem 0.42rem', borderRadius: '5px',
-      background: 'rgba(168,85,247,0.14)', border: '1px solid rgba(168,85,247,0.45)',
-      color: '#A855F7', fontSize: '0.5rem', fontWeight: 900,
-      letterSpacing: '0.07em', lineHeight: 1, whiteSpace: 'nowrap',
-    }}>
-      <Flame size={9} strokeWidth={3} />
-      RANK PLAY
+      {isSuperTopPick ? 'SUPER TOP PICK' : (hcStakeTier === 'TOP+' ? 'TOP PICK +' : 'TOP PICK')}
     </span>
   ) : null;
 
