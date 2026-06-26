@@ -1350,16 +1350,18 @@ function calculateSpreadTotalUnits(_stars, _consensusPenalty = 0, odds = null, _
 // sees on the card.
 function starsFromAgsuTier(tier) {
   // v12.1 product stake tiers.
-  if (tier === 'SUPER') return 5.0;
-  if (tier === 'TOP+') return 5.0;       // HC-1 boosted by proven-$ (5u)
-  if (tier === 'TOP') return 4.0;
-  if (tier === 'MINI') return 4.0;
-  if (tier === 'RANK') return 4.0;       // 2-for-0 wallet-slice rescue (4u)
-  if (tier === 'SHARP-PRIME') return 4.0; // proven-$ rescue, prime (4u)
-  if (tier === 'SHARP') return 4.0;      // proven-$ rescue (3u)
-  if (tier === 'CONFIRMED') return 3.0;
-  if (tier === 'MINI-') return 3.0;      // gate-fail MINI, reduced (1u)
-  if (tier === 'MONITORING') return 1.0;
+  // Conviction scale (matches AGS_V12_STAKE_TIER_META.stars): MAX/TOP=5,
+  // STRONG=4, SOLID=3, LEAN=2 — keyed to bet size, not the internal path.
+  if (tier === 'SUPER') return 5.0;       // MAX PLAY (6u)
+  if (tier === 'TOP+') return 5.0;        // TOP PLAY (5u)
+  if (tier === 'TOP') return 4.0;         // STRONG PLAY (4u)
+  if (tier === 'RANK') return 4.0;        // STRONG PLAY (4u)
+  if (tier === 'SHARP-PRIME') return 4.0; // STRONG PLAY (4u)
+  if (tier === 'SHARP') return 3.0;       // SOLID PLAY (3u)
+  if (tier === 'MINI') return 3.0;        // SOLID PLAY (3u)
+  if (tier === 'CONFIRMED') return 2.0;   // LEAN (1u)
+  if (tier === 'MINI-') return 2.0;       // LEAN (1u)
+  if (tier === 'MONITORING') return 0.0;
   // Legacy score-quintile tiers.
   if (tier === 'ELITE') return 5.0;
   if (tier === 'PREMIUM') return 4.5;
@@ -5396,10 +5398,11 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
   const isTrackedGrade = isGraded && !!trackedOnly;
 
   const tierKey = agsTierV12 || agsTier || lockTier || 'LOCK';
-  // v12.1 — CONFIRMED + MONITORING drive the strip from the product meta
-  // (blue / grey). SUPER/TOP keep the score-quintile strip because the gold
-  // ribbon already conveys the product tier; legacy picks use the score tier.
-  const useStakeStrip = !!stakeMeta && (isMonitoring || isConfirmed || isMini || isMiniMinus || isRank || isSharp);
+  // v12abc — EVERY product stake tier (incl. SUPER/TOP) drives the strip from
+  // the user-facing conviction meta, so the pill always reads as a plain
+  // strength (MAX/STRONG/LEAN…), never the internal score-quintile. Only legacy
+  // picks (no stamped stake tier → stakeMeta null) fall back to the score tier.
+  const useStakeStrip = !!stakeMeta;
   const tierMeta = useStakeStrip ? stakeMeta : (AGS_TIER_META[tierKey] || AGS_TIER_META.LOCK);
   const accent = isCancelled ? B.red
     : isMuted ? '#F59E0B'
@@ -5525,24 +5528,11 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
     </div>
   );
 
-  // Single premium ribbon — gold TOP / SUPER (and the v12abc TOP+ boost) only.
-  // Every other tier identity (CONFIRMED / RANK / SHARP / SHARP-PRIME / MINI /
-  // MINI-) is carried by the stars-pill below the pick, so the header never
-  // double-labels and the gold ribbon stays reserved for the marquee picks.
-  const topBadge = (isSuperTopPick || isTopPick) ? (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: '0.2rem', flexShrink: 0,
-      padding: '0.14rem 0.42rem', borderRadius: '5px',
-      background: isSuperTopPick ? 'linear-gradient(135deg, #F0C46A 0%, #C99A3F 100%)' : `${B.gold}1a`,
-      border: isSuperTopPick ? 'none' : `1px solid ${B.gold}55`,
-      color: isSuperTopPick ? '#1a1205' : B.gold,
-      fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.07em', lineHeight: 1,
-      boxShadow: isSuperTopPick ? `0 3px 10px -3px ${B.gold}77` : 'none', whiteSpace: 'nowrap',
-    }}>
-      {isSuperTopPick ? <Zap size={9} strokeWidth={3} /> : <ArrowUpRight size={9} strokeWidth={3} />}
-      {isSuperTopPick ? 'SUPER TOP PICK' : (hcStakeTier === 'TOP+' ? 'TOP PICK +' : 'TOP PICK')}
-    </span>
-  ) : null;
+  // v12abc — the single conviction pill (stars + MAX/STRONG/LEAN… colored by the
+  // gradient) is now the ONLY tier tag on the card, so there is no separate
+  // header ribbon to double-label against. MAX/TOP plays read premium via the
+  // gold pill + gold card glow instead of a standalone gold ribbon.
+  const topBadge = null;
 
   // Secondary context only: book · time (+ CLV when graded). The stake and
   // price now live in the bold stat block, so they're no longer buried here.
