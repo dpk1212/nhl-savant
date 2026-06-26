@@ -19,6 +19,7 @@ import {
   AGS_MIN_PROVEN_WALLETS,
   AGS_TIER_META,
   AGS_V12_STAKE_TIER_META,
+  AGS_V12_STAKE_PATH,
   HC_RATIO,
   aggregateSideProven,
   agsSizeMultiplier,
@@ -5476,7 +5477,9 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
   );
 
   const tierStrip = (
-    <span style={{
+    <span
+      title={hcStakeTier ? `Path: ${hcStakeTier}${AGS_V12_STAKE_PATH[hcStakeTier] ? ` · ${AGS_V12_STAKE_PATH[hcStakeTier]}` : ''}` : undefined}
+      style={{
       display: 'inline-flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0,
       padding: '0.3rem 0.55rem', borderRadius: '6px',
       background: `${accent}14`, border: `1px solid ${accent}40`, color: accent,
@@ -12126,16 +12129,20 @@ export default function SharpFlow() {
               ];
               // Concise display meta for the stake tiers (label + accent). Kept
               // local so the long product labels don't overflow the small cards.
+              // Friendly conviction name (matches the live cards) + the internal
+              // staking PATH it represents (sub), so each row reads as e.g.
+              // "SHARP PLAY · proven-$ prime" — same name on the card, but here
+              // you can tell the 2-for-0 / proven-$ / proven-$ prime paths apart.
               const STAKE_TIER_META = {
-                SUPER:         { label: 'SUPER TOP', color: '#E8B85C' },
-                'TOP+':        { label: 'TOP PICK+', color: '#E8B85C' },
-                TOP:           { label: 'TOP PICK',  color: '#22C55E' },
-                RANK:          { label: 'RANK PLAY', color: '#A855F7' },
-                'SHARP-PRIME': { label: 'SHARP+',    color: '#8B5CF6' },
-                SHARP:         { label: 'SHARP',     color: '#8B5CF6' },
-                MINI:          { label: 'STRONG',    color: '#14B8A6' },
-                'MINI-':       { label: 'LEAN',      color: '#14B8A6' },
-                CONFIRMED:     { label: 'CONFIRMED', color: '#3B82F6' },
+                SUPER:         { label: 'MAX PLAY',  color: '#E8B85C', sub: AGS_V12_STAKE_PATH.SUPER },
+                'TOP+':        { label: 'TOP PICK',  color: '#E8B85C', sub: AGS_V12_STAKE_PATH['TOP+'] },
+                TOP:           { label: 'TOP PICK',  color: '#E8B85C', sub: AGS_V12_STAKE_PATH.TOP },
+                RANK:          { label: 'SHARP PLAY', color: '#A855F7', sub: AGS_V12_STAKE_PATH.RANK },
+                'SHARP-PRIME': { label: 'SHARP PLAY', color: '#A855F7', sub: AGS_V12_STAKE_PATH['SHARP-PRIME'] },
+                SHARP:         { label: 'SHARP PLAY', color: '#A855F7', sub: AGS_V12_STAKE_PATH.SHARP },
+                MINI:          { label: 'STRONG',    color: '#14B8A6', sub: AGS_V12_STAKE_PATH.MINI },
+                'MINI-':       { label: 'LEAN',      color: '#6B7280', sub: AGS_V12_STAKE_PATH['MINI-'] },
+                CONFIRMED:     { label: 'CONFIRMED', color: '#3B82F6', sub: AGS_V12_STAKE_PATH.CONFIRMED },
               };
               const tierAgg = {};
               for (const t of TIER_DEFS) tierAgg[t.key] = { wins:0, losses:0, pushes:0, units:0, profit:0, pending:0, tracked:0, sparkPnL:[] };
@@ -12892,7 +12899,7 @@ export default function SharpFlow() {
                                     color: meta.color, letterSpacing: '0.08em',
                                     marginTop: '0.4rem',
                                   }}>
-                                    {meta.label}{stat.size ? <span style={{ color: B.textMuted, fontWeight: 600, letterSpacing: '0.04em' }}> · {stat.size}/play</span> : null}
+                                    {meta.label}{meta.sub ? <span style={{ color: B.textMuted, fontWeight: 600, letterSpacing: '0.03em' }}> · {meta.sub}</span> : null}{stat.size ? <span style={{ color: B.textMuted, fontWeight: 600, letterSpacing: '0.04em' }}> · {stat.size}/play</span> : null}
                                   </div>
                                   {/* Sub-line: record · profit · graded.
                                       Reformatted into a single rhythmic line with consistent
@@ -12987,11 +12994,18 @@ export default function SharpFlow() {
                                               width: '3px', background: meta.color, boxShadow: `0 0 6px ${meta.color}66`,
                                             }} />
                                           )}
-                                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.25rem', marginBottom: '0.35rem' }}>
-                                            <span style={{ ...T.micro, fontWeight: 900, color: meta.color, fontSize: '0.6rem', letterSpacing: '0.06em' }}>
-                                              {meta.label}
+                                          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.25rem', marginBottom: '0.35rem' }}>
+                                            <span style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem', minWidth: 0 }}>
+                                              <span style={{ ...T.micro, fontWeight: 900, color: meta.color, fontSize: '0.6rem', letterSpacing: '0.06em' }}>
+                                                {meta.label}
+                                              </span>
+                                              {meta.sub && (
+                                                <span style={{ ...T.micro, fontWeight: 700, color: B.textMuted, fontSize: '0.46rem', letterSpacing: '0.03em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                  {meta.sub}
+                                                </span>
+                                              )}
                                             </span>
-                                            <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem', fontWeight: 700, padding: '0.08rem 0.25rem', borderRadius: '3px', background: 'rgba(0,0,0,0.25)' }}>
+                                            <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem', fontWeight: 700, padding: '0.08rem 0.25rem', borderRadius: '3px', background: 'rgba(0,0,0,0.25)', flexShrink: 0 }}>
                                               {t.size}
                                             </span>
                                           </div>

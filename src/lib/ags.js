@@ -1046,6 +1046,24 @@ export const HC_MINI_FLOOR = 1.0;
 // Stars track bet size; the SHARPS ON / AGSU stat on the card separates picks
 // inside the same band, so two SHARP PLAYs with 2 vs 10 backers still read
 // differently.
+// Internal staking-path descriptor for each stake tier. The card shows the
+// friendly conviction label (TOP PICK / SHARP PLAY…); this reveals WHICH path
+// produced it (HC-margin / 2-for-0 / proven-$ rescue…) for the operator — via
+// the card tooltip and the Tier Performance breakdown.
+export const AGS_V12_STAKE_PATH = {
+  SUPER:         'HC-2 model',
+  'TOP+':        'HC-1 + $-boost',
+  TOP:           'HC-1 model',
+  RANK:          '2-for-0 slice',
+  'SHARP-PRIME': 'proven-$ prime',
+  SHARP:         'proven-$',
+  MINI:          'mini-HC',
+  CONFIRMED:     'margin 3+',
+  'MINI-':       'gate-cut',
+  MONITORING:    'watch',
+  FADE:          'muted',
+};
+
 export const AGS_V12_STAKE_TIER_META = {
   SUPER:         { label: 'MAX PLAY',  short: 'MAX',    color: '#E8B85C', bg: 'rgba(232,184,92,0.15)',  units: V12_1_SUPER_UNITS,     ribbon: null, stars: 5 },
   'TOP+':        { label: 'TOP PICK',  short: 'TOP',    color: '#E8B85C', bg: 'rgba(232,184,92,0.13)',  units: 5,                     ribbon: null, stars: 5 },
