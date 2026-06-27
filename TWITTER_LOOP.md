@@ -27,11 +27,20 @@
 
 ## Files the agent updates every run
 
+**📌 Read these two after every run — they sort to the very top of the file tree (`AA_` beats `AGSU_`):**
+
+| File | Contents |
+|------|----------|
+| `AA_TWITTER_RESEARCH_REPORT.md` | Everything the loop found this run — growth/trends research (Phase 1) + performance review/feedback (Phase 2), in readable prose. |
+| `AA_TWITTER_NEXT_STEPS.md` | The tweet/content ideas — the recommended next post + alternates in copy-paste code blocks, the RT line, and an action checklist (Phase 3). |
+
+**Durable memory (carried forward run-to-run, also updated):**
+
 | File | Phase | Role |
 |------|-------|------|
-| `TWITTER_GROWTH_PLAYBOOK.md` | 1 | Growth & trends findings |
-| `TWITTER_IMPROVEMENT_GUIDE.md` | 2 | Performance feedback loop |
-| `ready_to_post/YYYY-MM-DD_HHMM.json` | 3 | Candidate tweets for the next post |
+| `TWITTER_GROWTH_PLAYBOOK.md` | 1 | Running growth/trends playbook |
+| `TWITTER_IMPROVEMENT_GUIDE.md` | 2 | Running performance guide (persistent sections) |
+| `ready_to_post/YYYY-MM-DD_HHMM.json` | 3 | Machine-format candidate tweets |
 
 ---
 
@@ -98,10 +107,37 @@ Role: combine site picks + the playbook + the guide + the voice into finished dr
   options: { hero_single, thread?, alt_hooks[], standalone_rt_line,
   companion_post? }, edits_rationale, voice_checks }. Numbers must match the board.
 
-PHASE 4 — OUTPUT
-- Print: the slot, the Phase-1 top new trend, the Phase-2 one-line verdict + top
-  mandate, and the Phase-3 recommended hero hook. Confirm all three files were
-  written. Remind the user to review + post, and to commit the markdown updates.
+PHASE 4 — WRITE THE TWO HUMAN-READABLE REPORTS (this is what the user actually reads)
+- OVERWRITE AA_TWITTER_RESEARCH_REPORT.md with a skimmable digest of THIS run:
+    # A Twitter Research Report — [YYYY-MM-DD HH:MM ET] · [SLOT]
+    > one line: state of the account + a data-freshness note
+    ## Growth & trends (Phase 1)
+      current viral hook shapes, tweet-construction tricks, growth levers, and a
+      trends watchlist — the highlights a human can read fast
+    ## How we're performing (Phase 2)
+      labeled stats (state n + "directional"), best/worst post by ID, what's working,
+      what's not, the niche gap, this run's mandates + stop list
+    Keep it ~80–120 lines, prose/bullets. This is the "read all the research" file.
+- OVERWRITE AA_TWITTER_NEXT_STEPS.md with the content ideas from THIS run:
+    # A Twitter Next Steps — [YYYY-MM-DD HH:MM ET] · [SLOT]
+    > one line: the single best thing to post next and why now
+    ## Recommended post
+      the hero tweet inside a ```code block``` (copy-paste ready), then 2–3 sentences
+      on why it wins
+    ## Alternates
+      2–3 more tweet/content ideas, each in its own ```code block```
+    ## RT line
+      the one standalone quotable line that must be in the post
+    ## Action checklist
+      post the hero now · reply within ~30 min with [specific data point] · which open
+      loop to close next
+    Every draft passes the two gates + PREMIUM formatting; numbers match the board.
+
+PHASE 5 — OUTPUT
+- Print: the slot, the Phase-1 top new trend, the Phase-2 one-line verdict, and the
+  recommended hero hook. Confirm AA_TWITTER_RESEARCH_REPORT.md,
+  AA_TWITTER_NEXT_STEPS.md, the playbook, the guide, and the ready_to_post JSON were
+  all written. Remind the user to review + post, then commit the updates.
 
 HARD RULES
 - Run every phase in order on "run the twitter loop." Do not skip the research/review
