@@ -1,3 +1,8 @@
+> **⚠️ Superseded for the daily workflow by [`TWITTER_LOOP.md`](./TWITTER_LOOP.md).**
+> The current setup is a single agent you trigger with "run the twitter loop" after
+> the `Refresh Twitter Analysis` GitHub Action. This doc is kept as reference for the
+> growth-research + performance-review logic, which now lives as Phases 1 & 2 of the loop.
+
 # NHL Savant — Social Improvement Agent (Leg 2 of the social engine)
 
 **Purpose:** Learn how to make @Real_NHL_Savant grow. Each run it studies **our own Twitter performance**, **what's working for peers in the niche**, and **current X growth strategy from the web**, then writes one durable document — `TWITTER_IMPROVEMENT_GUIDE.md` — with **usable, actionable insights on how to improve our posts, reach, and engagement.**

@@ -1,3 +1,8 @@
+> **⚠️ Superseded for the daily workflow by [`TWITTER_LOOP.md`](./TWITTER_LOOP.md).**
+> The current setup is a single agent you trigger with "run the twitter loop" after
+> the `Refresh Twitter Analysis` GitHub Action. This doc is kept as reference for the
+> Content Brief phase logic, which now lives as Phase 3 of the loop.
+
 # NHL Savant — Content Brief Agent (Leg 1 of the social engine)
 
 **Purpose:** Each run, this agent looks at **today's real picks + site data**, the latest **improvement guide** (Leg 2), and **what we've recently posted**, then writes a single **content brief** a writer uses to create the next post(s).
