@@ -1,6 +1,6 @@
 # Twitter Improvement Guide — 2026-06-27 (EVENING)
 
-> **Verdict:** Our likeliest first retweet is the obscure-game whale — six-figure sharp money on a game the public isn't watching ($206K on Uzbekistan vs DR Congo tonight). Lead with the dollar read, plant one quotable line, mine low-profile games for novelty.
+> **Verdict:** Our best labeled post is a **pick_with_proof** SUPER-lock explainer (12 likes) — proof + conviction beats bare cards. The niche's highest-engagement shape is the **sharp/public market-read board**, which we keep posting with a weak opener (our one attempt: 3 likes). Fix the opener, not the format: lead line 1 with the money/the split, never a setup line like "Massive slate tonight."
 
 *Maintained by The Twitter Loop (Phase 2). The three sections below are PERSISTENT — re-emitted every run.*
 
@@ -29,34 +29,36 @@
 ---
 
 ## Performance snapshot (truth layer — labeled data only)
-- **n = 5** of 21 posts have real likes/RTs — **directional, not statistical** (brief from this morning; refresh runs Mon/Thu).
-- Avg likes **5.2** · **Retweets 0** · 0-like posts: 0.
-- **Best labeled post:** `2070640305364160568` ("other", 6 likes).
-- **Today on the board: 0-1 (-4u)** — Astros/Tigers Under 8.5 lost; 10 pending into the evening.
-- **Weakest:** `2070583160803619090` (sharp_public_board, 3 likes) — opener didn't read as a standalone market line.
+- **n = 5** of 20 posts have real likes/RTs — **directional, not statistical** (refresh runs Mon/Thu; pulled live this run).
+- Avg likes **6.6** · **Retweets ~0** — still zero reposts. That's the gap.
+- **Best labeled post:** `2070888202299174981` — *pick_with_proof*, **12 likes**. Opens "Our highest conviction tier is the SUPER lock. We don't hand…"
+- **Format leaderboard (avg likes):** pick_with_proof **12** (n=1) · "other" **7.5** · pick_card **3** · sharp_public_board **3**.
+- **Weakest:** `2070583160803619090` (*sharp_public_board*, 3 likes) and `2070983093641511148` (*pick_card*, 3 likes) — both opened with a setup line instead of a standalone market read.
 
 ## What's working / not
-- **Working:** numbers + proof; the two market-board posts are stable mid-pack.
-- **Not working:** **0 retweets** — nothing is quotable enough to repost. Posts still open like pick lists, not market reads.
+- **Working:** conviction + proof (the SUPER-lock explainer) and human/"other" posts. Numbers and a clear stance.
+- **Not working:** **0 retweets** — nothing is quotable enough to repost. Bare card lists still flop: today's 5:30 PM "Massive slate tonight" loaded-card post got **3 likes** because line 1 was a setup, not a hook.
 
 ## The niche gap (steal the structure)
-- **sharp_public_board — @PatrickE_Vegas:** line 1 = name game + promise sharp/public split · proof = side-by-side public % vs sharp $ + line move · close = verdict. We post the picks; they post the *read*. Same info, different order.
+- **sharp_public_board — @PatrickE_Vegas / @invisiblestats:** line 1 names the game + promises the sharp-vs-public split; proof = public % vs sharp $ + line move; close = a verdict. We post the picks; they post the *read*. Same info, different order. Our one attempt under-performed only because the opener buried the hook — the format is the niche's best, our execution wasn't.
 
 ## Before → After
-- `2070583160803619090` (3 likes) — opened as a board but the first line wasn't a standalone hook.
-- **After:** Line 1 = "Public's on [team]. The money isn't." · Proof = public % · sharp $ · line move · Close = "I'm trusting the money over the logo."
+- `2070583160803619090` (3 likes) — opened as a board; first line wasn't a standalone hook.
+- **After:** Line 1 = "Sharp money just poured $207K into a game you've never heard of." · Proof = $ on our side · % of game money · the lead wallet · Close = "Tailing the unknown, or fading it?"
 
 ## This week's ONE experiment
-- **sharp_public_board_test:** post 3 market-map openers (split → proof → verdict). Baseline 5.2 avg likes; success = ≥9 avg and a first RT.
+- **obscure-game-whale openers:** post 3 single-game whale reads that LEAD with the dollar magnitude on a low-profile game (tonight's DR Congo / Argentina template). Baseline 6.6 avg likes; success = ≥10 avg and our first retweet.
 
 ## Mandates for the writer (this run)
-- **Mine obscure/low-profile games for big sharp money** — they're the most novel, quotable hooks (tonight: $206K on DR Congo).
-- Open with the **dollar read** ($ + %), never a bare pick list or team name.
-- Every post: one standalone RT line; emoji on; 3-slot proof max.
+- **Mine obscure/low-profile games for big sharp money** — most novel, most quotable (tonight: $207K on DR Congo, $204K on Argentina).
+- Open with the **dollar read** ($ + %), never a bare pick list or a setup line ("Massive slate tonight").
+- Every post: one standalone RT line; emoji on; **≤3 proof slots** (thread if deeper).
+- Reply to your own hero within ~30 min with the lead wallet's rank/ROI (dwell + early engagement).
 - Live posts stay forward-looking; **own the 0-1 start only in the night recap** (honesty hook).
 - Close with a binary side choice, not "thoughts?".
 
 ## Stop list
-- Pick-first openers with no market read.
+- Setup-line / pick-first openers with no market read.
 - Soft "thoughts?" closes.
-- Walls of 6+ proof lines in one tweet — thread or trim.
+- Walls of 6+ proof lines in one tweet — thread or trim to 3.
+- Quoting settled/in-progress six-figure totals as if they're still tailable.

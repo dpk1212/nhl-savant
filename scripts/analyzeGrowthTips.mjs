@@ -73,6 +73,40 @@ function parsePosts(md) {
   return posts;
 }
 
+// ── relevance guard: nitter search returns lots of foreign-language "tips"
+// (Indonesian/Malay K-pop AU/RP fandom posts where "main X" = "use Twitter",
+// "thread" = an AU thread). Those match our loose requireAny ("tip","thread",
+// "post") and poison the growth corpus. Gate on real English advice. ──
+const EN_STOPWORDS = ['the', 'and', 'you', 'your', 'for', 'with', 'this', 'that',
+  'how', 'why', 'what', 'when', 'are', 'is', 'to', 'of', 'on', 'in', 'a', 'i',
+  'it', 'they', 'we', 'if', 'but', 'not', 'get', 'make', 'will', 'can', 'do'];
+
+// Fandom / roleplay / non-English-market markers — if present, almost never
+// real growth advice for a sports-betting account.
+const FANDOM_BLOCK = [
+  ' au ', 'au ', ' rp ', 'roleplay', 'role play', 'pretest', 'reread', 'panel',
+  'menfess', 'mutuals', ' moots', 'fanbase', 'fan account', 'kpop', 'k-pop',
+  'idol', ' bias', 'comeback stage', 'fess', ' wts', ' wtb', ' wtt', ' ph ',
+  ' ina ', ' nder', 'rt ya', 'rbf', 'slow respon', 'fast respon',
+  // common Indonesian/Malay tokens that flag non-English posts
+  ' yang ', ' yg ', ' kalau ', ' dgn ', ' dengan ', ' banget', ' bgt', ' aku ',
+  ' kamu ', ' tapi ', ' bisa ', ' dicoba', ' keren', ' lolos', ' main x',
+];
+
+/** Is this post primarily English advice (vs foreign-fandom noise)? */
+function isEnglishAdvice(text) {
+  const t = ` ${text.toLowerCase().replace(/\s+/g, ' ')} `;
+  if (FANDOM_BLOCK.some((b) => t.includes(b))) return false;
+  // latin-script majority (reject heavy non-latin content)
+  const letters = (text.match(/\p{L}/gu) || []).length;
+  const latin = (text.match(/[a-z]/gi) || []).length;
+  if (letters > 0 && latin / letters < 0.85) return false;
+  // require a minimum density of common English function words
+  const words = t.split(' ').filter(Boolean);
+  const hits = words.filter((w) => EN_STOPWORDS.includes(w)).length;
+  return hits >= 3;
+}
+
 function classifyTopic(text) {
   const t = text.toLowerCase();
   if (/algorithm|for you|timeline|ranking|distribution|impression|reach|fyp/.test(t)) return 'algorithm';
@@ -140,16 +174,20 @@ const requireAny = (cfg.requireAny || []).map((s) => s.toLowerCase());
 const exclude = (cfg.exclude || []).map((s) => s.toLowerCase());
 const passesFilter = (text) => {
   const t = text.toLowerCase();
+  if (!isEnglishAdvice(text)) return false;
   if (exclude.some((x) => t.includes(x))) return false;
   if (requireAny.length && !requireAny.some((r) => t.includes(r))) return false;
   return true;
 };
 
-let posts = [...all.values()]
+const rawCandidates = [...all.values()];
+const droppedNonEnglish = rawCandidates.filter((p) => !isEnglishAdvice(p.text)).length;
+let posts = rawCandidates
   .filter((p) => p.engagement >= (cfg.minEngagement || 0))
   .filter((p) => passesFilter(p.text))
   .map((p) => ({ ...p, features: features(p.text) }))
   .sort((a, b) => b.engagement - a.engagement);
+console.log(`Relevance gate: ${rawCandidates.length} raw → dropped ${droppedNonEnglish} non-English/fandom → ${posts.length} kept`);
 
 const topicCounts = {};
 for (const p of posts) {
@@ -161,6 +199,7 @@ const out = {
   fetchedAt: new Date().toISOString(),
   config: { searches: cfg.searches, accounts: cfg.accounts, minEngagement: cfg.minEngagement },
   totalTips: posts.length,
+  relevanceGate: { rawCandidates: rawCandidates.length, droppedNonEnglish, kept: posts.length },
   topicBreakdown: topicCounts,
   aggregate: {
     pctWithEmoji: posts.length ? +(posts.filter((p) => p.features.hasEmoji).length / posts.length * 100).toFixed(0) : 0,
