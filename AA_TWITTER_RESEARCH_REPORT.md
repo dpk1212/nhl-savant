@@ -1,39 +1,38 @@
-# A Twitter Research Report — 2026-06-27 12:26 PM ET · MIDDAY
+# A Twitter Research Report — 2026-06-27 5:13 PM ET · EVENING
 
-> State of the account: profitable but quiet (0 RTs in the labeled sample). This run focuses on **upcoming plays** and pulls the **real sharp-money tape** — which corrected a key read from the morning run. Data fresh (positions re-scanned 15:06 UTC, picks 15:00 UTC).
+> Massive evening slate (18 plays today, 10 pending). We're 0-1 (-4u) after the Astros/Tigers Under lost — forward-looking posture, don't lead with the L. The growth play tonight is the **obscure-game whale** ($206K on Uzbekistan vs DR Congo). Data: positions live (scanned 21:13 UTC), picks 20:37; performance brief is from this morning (refresh runs Mon/Thu).
 >
-> Read this, then open `AA_TWITTER_NEXT_STEPS.md` for the drafts.
+> Read this, then `AA_TWITTER_NEXT_STEPS.md` for the drafts.
 
 ---
 
-## Sharp-money tape — upcoming plays (NOW PARSING CORRECTLY)
+## Sharp-money tape — upcoming plays (real $ from sharp_positions.json)
 
-Source `public/sharp_positions.json` (schema: `sport → gameKey → {positions[]}`; each position has `invested` $, `side`, `name`, `tier`, `sportROI`, `leaderboardRank`, `sportPnl`).
+| Play | Sharp $ | % | Wallets | Top wallet | Game time |
+|------|---------|---|---------|-----------|-----------|
+| **DR Congo ML -140** | **$206K** | 82% | 8 | ChinesePro (PROVEN #180, 90% ROI, +$571K) — $105K, 3× usual | ~7:30 ET |
+| **Argentina ML -525** | **$202K** | 86% | 6 | mooseborzoi (PROVEN #24, 110% ROI, **+$1.02M**) — $77K, 6.7× usual | ~10 ET |
+| Miami Marlins +1.5 -175 | $2K | 100% | 1 (thin) | HomeRunHazard (+$884K) | ~7:16 ET |
 
-| Play | Sharp $ on our side | % of ML $ | Wallets | Biggest single bet |
-|------|---------------------|-----------|---------|--------------------|
-| **Portugal ML +100** | **$742K** | **88%** | 13 | **$186K** — suntori (PROVEN, #319, +$231K) |
-| Atlanta Braves ML +112 | $30K | 92% | 4 | $20K — phonesculptor (ELITE, #171, 100% ROI, +$592K) |
-| England ML -550 | $92K | 65% | 7 | $32K — suntori |
-| Croatia ML -130 (SUPER) | $115K | **51% (SPLIT)** | 11 | $36K — suntori |
-| Cincinnati Reds ML -112 | $10K | 97% | 1 (thin) | $10K — lluucckkyy (ELITE, 450% ROI) |
-| Detroit Tigers ML -129 | $14K | **38% (money against)** | 2 | $11K — lluucckkyy |
-
-**Headline:** Portugal is the whale story — the single biggest position on the entire board ($186K) and the most lopsided money ($742K vs $99K), at **plus money**. Braves is the clean second plus-money sharp play.
-
-**⚠️ Morning-run correction:** Croatia was framed as the day's lopsided SUPER lock. The real tape shows its **money is split 51/49** — it's a model + proven-winner conviction play, NOT a money-lopsided one. Do not post it as "zero dissent." This is exactly why the run needs the real $ tape.
+**Headline:** Two soccer games the public isn't watching are drawing six figures from proven winners. DR Congo is the growth hook (obscure game + $206K); Argentina is the whale nightcap (a +$1.02M, top-24 wallet sizing up 6.7×).
 
 ---
 
 ## Growth & trends (Phase 1)
-- **Sharp-vs-public board (@PatrickE_Vegas, 103K)** remains the niche's top structure: split → proof → verdict. Today's Portugal $742K-vs-$99K is a perfect fit.
-- In-lane niche posts run long, **77% emoji**, **89% numbers**, **11% questions** — dense number-heavy boards win.
-- Whale-tape (single outsized position) is our proven original format — and we now have a real $186K position to anchor it.
+- **The obscure-game whale is our best growth hook.** Six-figure sharp money on a game nobody's watching = curiosity gap + status + voyeurism in one screenshot. This is the most quotable thing we can post and our likeliest first-RT.
+- **Sharp-vs-public board (@PatrickE_Vegas, 103K)** remains the niche's top structure — lead with the $ read, prove, verdict.
+- Niche posts run long, **77% emoji**, **89% numbers** — dense, number-heavy boards win.
 
 ## How we're performing (Phase 2)
-- Labeled n=5, avg **5.2 likes**, **0 RTs**. Gap = shareability (no standalone quotable line).
-- Best post `2070640305364160568` ("other", 6L). sharp_public_board avg 4.5 (n2).
-- Mandate this run: lead with the **$ market read** (now that the tape parses), one RT line, binary close.
+- Labeled n=5, avg **5.2 likes**, **0 RTs** (brief from this morning; refresh runs Mon/Thu).
+- **Gap = shareability:** still nothing reposted. The $206K-obscure-game line is built to fix exactly this.
+- **Today: 0-1 (-4u)** — one graded loss (Astros/Tigers Under 8.5). 10 pending; evening is the bounce-back window.
 
-## Tooling note (resolved)
-The morning run couldn't parse `sharp_positions.json`; the schema is `sport → gameKey → positions[]` keyed by `side` (home/away/draw), with `invested` as the dollar field. `TWITTER_LOOP.md` Phase 3 now documents this so every future run pulls real $.
+## How we improve / maximize growth (the call this run)
+1. **Lead every post with the dollar read** ($206K, 82%) — never the team name.
+2. **Mine the obscure/low-profile games** for big sharp money — they're more novel and more quotable than chalk on marquee games.
+3. **One standalone RT line every post**; reply within 30 min with the whale's record.
+4. **Own the 0-1 start tonight** in the recap (honesty is our proven trust hook) — but keep the live posts forward-looking.
+
+## Tooling
+`sharp_positions.json` parsing is solid (real $ + wallet records flowing into drafts). `improvement_brief.json` is stale (morning) — trigger the Refresh Twitter Analysis Action again if you want fresh performance numbers.
