@@ -1,62 +1,72 @@
-# A Twitter Next Steps — 2026-06-27 12:26 PM ET · MIDDAY
+# A Twitter Next Steps — 2026-06-27 5:13 PM ET · EVENING
 
-> Best post right now: the **whale headliner**. The single biggest sharp position on our entire board ($186K) is on **Portugal at plus money** — that's the viral hook, and it's an upcoming play (~7:30 ET). Focus is on upcoming plays only, with the real sharp-money tape.
+> What to post next: the **obscure-game whale**. Sharps dropped **$206K on Uzbekistan vs DR Congo** — a game nobody's watching, led by a +$571K winner. It's the most screenshot-worthy hook type we have (curiosity + status + whale tape), and it directly attacks our zero-retweet gap.
+>
+> Day context: 0-1 (-4u) after the Astros/Tigers Under lost; 10 pending. Keep it forward-looking — don't lead with the loss.
 
 ## Recommended post
 
 ```
-The single biggest sharp position on our entire board today is $186K.
+Sharps just dropped $206K on a game you've never heard of.
 
-One proven winner. One side. Portugal. ⚽
+Uzbekistan vs DR Congo. ⚽
 
-Portugal ML +100
-• $742K in tracked sharp money — 88% of everything on the match
-• 13 proven wallets in, almost nothing on the other side
-• Biggest bet on the board: $186K from a top-ranked winner
+DR Congo ML -140
+• $206K in tracked sharp money — 82% of the match
+• 8 proven wallets, led by a +$571K winner ($105K, 3× his usual size)
+• Nobody's watching. The money is.
 
-And it's plus money. You're getting even odds on the side the sharps are hammering.
+This is the whole edge: we see where the sharp money goes before the public ever looks.
 
 Locks on the site before kickoff (~7:30 ET) 👉 [your link]
 
-Tailing the whale, or nah? 🎯
+On it, or fading the unknown? 🎯
 ```
 
-**Why it wins:** Line 1 is pure whale-watch FOMO with a hard number ($186K) — standalone screenshot + RT line in one. It's our proven top format, now backed by real tape, on a **plus-money** side (rare and persuasive). Upcoming game, so it drives a click before lock.
+**Why it wins (growth):** Line 1 is a curiosity-gap + status hook that works as a standalone screenshot — the exact RT-bait we've been missing. "Nobody's watching. The money is." is the identity line. Six-figure money on an obscure game is novel enough to get quoted, which is how we finally break 0 RTs.
 
 ## Alternates
 
 ```
-Two of today's sharp sides are getting plus money. The market is paying you to be on the smart side.
+A top-25 ranked sharp — +$1,020,000 lifetime, 110% ROI — just bet 6.7× his normal size.
 
-⚽ Portugal ML +100
-$742K sharp money · 88% of the match
+The side? Argentina. ⚽
 
-⚾ Braves ML +112
-92% of the sharp money · led by a +$592K winner
+Argentina ML -525
+• $202K in sharp money, 86% of the match
+• 6 proven wallets, almost nothing against
 
-Both lock on the site before game time 👉 [your link]
+When a million-dollar winner sizes up like that, we pay attention.
 
-Portugal, Braves, or both? 🎯
+Before kickoff (~10 ET) on the site 👉 [your link]
+
+Tailing the whale? 🎯
 ```
 
 ```
-Portugal vs Colombia, and the money isn't subtle.
+Massive evening slate — and the sharp money is screaming on two soccer games most books are sleeping on:
 
-Sharp money on Portugal: $742K (88%)
-Everything else: $99K
+⚽ DR Congo ML -140 — $206K (82%)
+⚽ Argentina ML -525 — $202K (86%)
 
-13 proven wallets loaded one side. The biggest single bet on our whole board — $186K — is right here.
+Six figures from proven winners on games the public isn't even watching.
 
-Portugal ML +100, before kickoff 👉 [your link]
+Full board on the site before each kickoff 👉 [your link]
 
-Follow the $742K or fade it? 🎯
+Which one's your hammer? 🎯
 ```
 
 ## RT line
-**"Sharp money on Portugal: $742K. On the other side: $99K. That's not a lean, that's a verdict."**
+**"Sharps just dropped $206K on a game you've never heard of."**
+
+## How we improve / maximize growth (this run)
+- **Lean into the obscure-game whale hook.** Six-figure sharp money on a game the public ignores = curiosity + status + voyeurism in one line. Most quotable thing we can post.
+- **Always lead with the dollar read** now that the tape parses ($206K, 82%) — not the team name.
+- **One quotable line per post** (still 0 RTs in the sample). Today's hero has it.
+- **Reply within 30 min** with the whale's record (ChinesePro, +$571K, 90% ROI) for dwell.
 
 ## Action checklist
 - [ ] Post the hero now (swap `[your link]` for your URL)
-- [ ] Reply within ~30 min with the proven winner's record (suntori, +$231K PnL, rank #319) for extra proof
-- [ ] Skip Croatia as a "lopsided sharp" post — its money is split 51/49 (model lock, not a money lock)
-- [ ] Tonight: honest recap of how Portugal / Braves graded
+- [ ] Reply ~30 min in with ChinesePro's full line (+$571K, 90% ROI, $105K = 3× usual)
+- [ ] ~9:30 ET: tease the Argentina whale (+$1.02M, 6.7× size-up) as the nightcap
+- [ ] Tonight: honest recap — own the 0-1 start, show the evening results

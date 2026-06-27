@@ -1,6 +1,6 @@
-# Twitter Improvement Guide — 2026-06-27
+# Twitter Improvement Guide — 2026-06-27 (EVENING)
 
-> **Verdict:** Our niche's #1 format is the sharp-vs-public board (@PatrickE_Vegas, 103K) and we still rarely post it — lead with the market read, not a pick list, and plant one quotable line to finally break 0 RTs.
+> **Verdict:** Our likeliest first retweet is the obscure-game whale — six-figure sharp money on a game the public isn't watching ($206K on Uzbekistan vs DR Congo tonight). Lead with the dollar read, plant one quotable line, mine low-profile games for novelty.
 
 *Maintained by The Twitter Loop (Phase 2). The three sections below are PERSISTENT — re-emitted every run.*
 
@@ -29,10 +29,10 @@
 ---
 
 ## Performance snapshot (truth layer — labeled data only)
-- **n = 5** of 21 posts have real likes/RTs — **directional, not statistical**.
+- **n = 5** of 21 posts have real likes/RTs — **directional, not statistical** (brief from this morning; refresh runs Mon/Thu).
 - Avg likes **5.2** · **Retweets 0** · 0-like posts: 0.
-- **Best labeled post:** `2070640305364160568` ("other", 6 likes) — "Okay.. here are two high tier plays for tonight!"
-- Format leaderboard (labeled): `other` 6 (n1) · `pick_with_proof` 6 (n1) · `record_plus_picks` 5 (n1) · `sharp_public_board` 4.5 (n2).
+- **Best labeled post:** `2070640305364160568` ("other", 6 likes).
+- **Today on the board: 0-1 (-4u)** — Astros/Tigers Under 8.5 lost; 10 pending into the evening.
 - **Weakest:** `2070583160803619090` (sharp_public_board, 3 likes) — opener didn't read as a standalone market line.
 
 ## What's working / not
@@ -50,8 +50,10 @@
 - **sharp_public_board_test:** post 3 market-map openers (split → proof → verdict). Baseline 5.2 avg likes; success = ≥9 avg and a first RT.
 
 ## Mandates for the writer (this run)
-- Open with a market read or a conviction/identity line — never a bare pick list.
+- **Mine obscure/low-profile games for big sharp money** — they're the most novel, quotable hooks (tonight: $206K on DR Congo).
+- Open with the **dollar read** ($ + %), never a bare pick list or team name.
 - Every post: one standalone RT line; emoji on; 3-slot proof max.
+- Live posts stay forward-looking; **own the 0-1 start only in the night recap** (honesty hook).
 - Close with a binary side choice, not "thoughts?".
 
 ## Stop list
