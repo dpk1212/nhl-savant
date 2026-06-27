@@ -6,7 +6,7 @@
 
 1. **Trigger the data pull first.** Run the **`Refresh Twitter Analysis`** GitHub Action (Actions tab → *Refresh Twitter Analysis* → *Run workflow*, or `gh workflow run refresh-twitter-analysis.yml`). It scrapes our timeline, niche peers, and X growth posts via Firecrawl and commits fresh JSON to `social_analysis/`.
 2. **Come here and say:** `run the twitter loop`
-3. The agent runs Phases 0→6 below: updates the markdown files, drafts the next tweets into `ready_to_post/`, prints a summary, and **always commits the updated files to a fresh branch and opens a new PR** (Phase 6) for you to review and merge. You review and post manually.
+3. The agent runs Phases 0→6 below: updates the markdown files, drafts the next tweets into `ready_to_post/`, prints a summary, and **always lands the updated files on `main` AND opens a fresh PR for the record** (Phase 6). You review and post manually.
 
 > The agent reads the **committed JSON** the Action produced — it does not need a Firecrawl key itself. If the JSON is stale (the Action didn't run), the agent says so and proceeds with the last committed snapshot.
 
@@ -149,17 +149,23 @@ PHASE 5 — OUTPUT
   AA_TWITTER_NEXT_STEPS.md, the playbook, the guide, and the ready_to_post JSON were
   all written.
 
-PHASE 6 — COMMIT + OPEN A FRESH PR (ALWAYS — never end the loop without this)
-- Create a NEW branch for this run (one fresh branch + PR per run):
+PHASE 6 — SHIP TO MAIN + OPEN A FRESH PR (ALWAYS — never end the loop without this)
+The output MUST land on main so GitHub shows it immediately. Also open a fresh PR
+each run as a record. Order:
+- Create a branch and commit every file the loop touched this run:
     git checkout -b twitter-loop/[YYYY-MM-DD-HHMM]
-- Stage and commit every file the loop touched this run:
     git add AA_TWITTER_RESEARCH_REPORT.md AA_TWITTER_NEXT_STEPS.md \
       TWITTER_GROWTH_PLAYBOOK.md TWITTER_IMPROVEMENT_GUIDE.md ready_to_post/
     git commit -m "Twitter Loop run [YYYY-MM-DD HH:MM ET] [SLOT]: research, review, drafts"
     git push -u origin twitter-loop/[YYYY-MM-DD-HHMM]
-- Open a NEW pull request INTO main for this run (use `gh pr create` or the editor's
-  PR tool). Title: "Twitter Loop — [YYYY-MM-DD] [SLOT]". Body: the Phase 5 summary.
-- Print the PR link so the user can review and merge it. One fresh PR every run.
+- Open a NEW PR into main for the record (`gh pr create`; title "Twitter Loop —
+  [YYYY-MM-DD] [SLOT]", body = the Phase 5 summary). Print the link.
+- THEN land it on main directly (the repo allows direct pushes to main — the data
+  Actions do it constantly), so the user never has to merge anything to see it:
+    git checkout main && git pull --no-edit origin main
+    git merge --no-ff twitter-loop/[YYYY-MM-DD-HHMM] -m "Merge Twitter Loop [SLOT]"
+    git push origin main
+- Confirm main was updated (print the new main HEAD) AND print the PR link.
   (Cloud-agent runs must use the required branch prefix instead of twitter-loop/.)
 
 HARD RULES
@@ -169,9 +175,9 @@ HARD RULES
   data is the proof inside the pick.
 - Drafts only — never post. The user reviews and posts manually.
 - Preserve the three PERSISTENT sections in the guide on every run.
-- ALWAYS finish with Phase 6: commit the updated files to a FRESH branch, push, and
-  open a NEW PR into main for the user to merge. One fresh PR per run — never finish
-  with uncommitted output or without a PR.
+- ALWAYS finish with Phase 6: the output MUST land on `main` (push to main directly)
+  AND a fresh PR is opened each run for the record. Never finish with the output
+  stuck on a branch that isn't merged to main.
 ```
 
 ---
