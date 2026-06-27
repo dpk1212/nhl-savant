@@ -97,8 +97,18 @@ PHASE 3 — WRITE THE NEXT TWEETS  → writes ready_to_post/YYYY-MM-DD_HHMM.json
 Role: combine site picks + the playbook + the guide + the voice into finished drafts.
 - Reconstruct the recent post sequence from my_tweets.json + recent ready_to_post/
   files; identify the perfect NEXT beat (don't repeat a recent angle/game/format).
-- Build today's board fact sheet from todays_picks.json (shipped plays only, units>0)
-  + proof from the public/ tape files + yesterday's record from DAILY_AGSU_REPORT.md.
+- Build today's board fact sheet from todays_picks.json (shipped plays only, units>0).
+  If the user asks for UPCOMING plays, filter to minsToGame > 0 (compute from
+  commenceTime vs now) and sort soonest-first.
+- ALWAYS pull the real sharp-money tape from public/sharp_positions.json (ML),
+  sharp_spread_positions.json, sharp_total_positions.json. Schema:
+  `sport → gameKey → { away, home, positions[], summary }`. Each position has
+  `side` (home/away/draw), `marketType` ("ml"/…), `invested` ($), `size`, `name`,
+  `tier`, `sportROI`, `leaderboardRank`, `sportPnl`. For each play: match
+  pick.gameKey + pick.side, SUM `invested` on our side vs the other side to get the
+  $ and the % split, count wallets, and find the biggest single position (name,
+  tier, rank, ROI, PnL, $). Quote these REAL numbers — never invent or carry over
+  a stale "100% / zero dissent" claim; verify the split every run.
 - Draft 2–3 candidate posts for the current SLOT. Each MUST pass the two hard gates,
   use a hook-bank category for non-pick angles (no back-to-back repeats), and follow
   the PREMIUM formatting standard. Lead with the market split / the money / an

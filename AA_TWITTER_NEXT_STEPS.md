@@ -1,61 +1,62 @@
-# A Twitter Next Steps — 2026-06-27 11:05 AM ET · MORNING
+# A Twitter Next Steps — 2026-06-27 12:26 PM ET · MIDDAY
 
-> Best post right now: lead the morning with the day's **only SUPER lock** (our highest-conviction tier) as a market-read opener, with the two plus-money dogs as the value layer. It's a board, but framed as a read — the structure the niche rewards.
+> Best post right now: the **whale headliner**. The single biggest sharp position on our entire board ($186K) is on **Portugal at plus money** — that's the viral hook, and it's an upcoming play (~7:30 ET). Focus is on upcoming plays only, with the real sharp-money tape.
 
 ## Recommended post
 
 ```
-Our highest-conviction tier is the SUPER lock. We don't hand them out often.
+The single biggest sharp position on our entire board today is $186K.
 
-Today there's exactly one. ⚽
+One proven winner. One side. Portugal. ⚽
 
-Croatia ML -130
-• 4 proven soccer sharps backing it, only 2 against
-• Highest model score on our board (V12 0.83)
-• 6 units — our biggest stake of the day
+Portugal ML +100
+• $742K in tracked sharp money — 88% of everything on the match
+• 13 proven wallets in, almost nothing on the other side
+• Biggest bet on the board: $186K from a top-ranked winner
 
-Two more the sharps like at plus money:
-⚽ Portugal ML +100 (2.5u)
-⚾ Braves ML +112 (4u)
+And it's plus money. You're getting even odds on the side the sharps are hammering.
 
-Full card locks on the site before each game 👉 [your link]
+Locks on the site before kickoff (~7:30 ET) 👉 [your link]
 
-Which one's on your card? 🎯
+Tailing the whale, or nah? 🎯
 ```
 
-**Why it wins:** Line 1 is a standalone conviction read (passes the screenshot test), not a pick list. It leads with the rarest signal we have today (a single SUPER lock), proves it with sharp consensus + model score + the biggest stake, and layers two plus-money dogs for the value crowd. Binary-ish close drives replies.
+**Why it wins:** Line 1 is pure whale-watch FOMO with a hard number ($186K) — standalone screenshot + RT line in one. It's our proven top format, now backed by real tape, on a **plus-money** side (rare and persuasive). Upcoming game, so it drives a click before lock.
 
 ## Alternates
 
 ```
-Two of our plays today are getting plus money — and the public's asleep on both.
+Two of today's sharp sides are getting plus money. The market is paying you to be on the smart side.
+
+⚽ Portugal ML +100
+$742K sharp money · 88% of the match
 
 ⚾ Braves ML +112
-⚽ Portugal ML +100
+92% of the sharp money · led by a +$592K winner
 
-The model and the sharps both like the dogs here. Plus-money winners are how the ROI actually compounds.
+Both lock on the site before game time 👉 [your link]
 
-Locked on the site before first pitch 👉 [your link]
-
-Braves, Portugal, or both? 🎯
+Portugal, Braves, or both? 🎯
 ```
 
 ```
-What earns a "SUPER lock" from us?
+Portugal vs Colombia, and the money isn't subtle.
 
-Not a hunch. Not a hot take.
+Sharp money on Portugal: $742K (88%)
+Everything else: $99K
 
-It's when our model and the proven sharp wallets hammer the same side with no real dissent.
+13 proven wallets loaded one side. The biggest single bet on our whole board — $186K — is right here.
 
-We've graded exactly one today: Croatia ML -130.
+Portugal ML +100, before kickoff 👉 [your link]
 
-This is the tier we trust most 👉 [your link]
+Follow the $742K or fade it? 🎯
 ```
 
 ## RT line
-**"We only hand out a SUPER lock when the model and the wallets leave no doubt."**
+**"Sharp money on Portugal: $742K. On the other side: $99K. That's not a lean, that's a verdict."**
 
 ## Action checklist
-- [ ] Post the recommended hero now (swap `[your link]` for your URL)
-- [ ] Reply within ~30 min with one extra Croatia data point (sharp $ once the tape parses, or the proven-winner names)
-- [ ] Tonight: close the loop with an honest recap of how the SUPER lock + plus-money dogs graded
+- [ ] Post the hero now (swap `[your link]` for your URL)
+- [ ] Reply within ~30 min with the proven winner's record (suntori, +$231K PnL, rank #319) for extra proof
+- [ ] Skip Croatia as a "lopsided sharp" post — its money is split 51/49 (model lock, not a money lock)
+- [ ] Tonight: honest recap of how Portugal / Braves graded
