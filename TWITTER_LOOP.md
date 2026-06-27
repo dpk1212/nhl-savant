@@ -109,6 +109,13 @@ Role: combine site picks + the playbook + the guide + the voice into finished dr
   $ and the % split, count wallets, and find the biggest single position (name,
   tier, rank, ROI, PnL, $). Quote these REAL numbers — never invent or carry over
   a stale "100% / zero dissent" claim; verify the split every run.
+- SLATE-SCALE FIRST on big boards: compute the TOTAL tracked sharp $ across all
+  shipped plays and find the single biggest position of the day. If the slate is
+  large (many plays / big total), the hero should LEAD WITH THE MAGNITUDE
+  ("$X.XM in sharp money across today's board" + the biggest single bet), then list
+  the top upcoming plays still tailable. Do NOT default to a single obscure game on
+  a massive slate — the scale flex is the better growth post. Keep single-game whale
+  hooks as alternates.
 - Draft 2–3 candidate posts for the current SLOT. Each MUST pass the two hard gates,
   use a hook-bank category for non-pick angles (no back-to-back repeats), and follow
   the PREMIUM formatting standard. Lead with the market split / the money / an
