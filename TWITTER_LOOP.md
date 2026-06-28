@@ -129,6 +129,24 @@ Role: combine site picks + the playbook + the guide + the voice into finished dr
   the top upcoming plays still tailable. Do NOT default to a single obscure game on
   a massive slate — the scale flex is the better growth post. Keep single-game whale
   hooks as alternates.
+- HOUSE VOICE = "THE BLEND" (locked 2026-06-28): lead with a CHARACTER, write with
+  trading-desk AUTHORITY. The hero opens on a person/anomaly (a named whale + verified
+  P&L — "a bettor up $860K", a 3× size-up, a winner doubling up), then delivers it like
+  an intelligence desk: confident, precise, "here's the money you can't see," parallel
+  structure, ZERO fluff. At most ONE purposeful emoji (e.g. 🐋 once). Mantra-style close
+  ("The public bets logos. He bets the math."), not "thoughts?". Add a FRANCHISE
+  CLIFFHANGER when possible ("we report back tonight"). Benchmarks this is modeled on:
+  @marlowxbt's wallet-story (character), @PatrickE_Vegas's desk note (authority, 103K).
+- VIRALITY BAR (the hero must clear this — a stat-sheet FAILS): a "$X sharp / $0 against
+  · 3 bullets · binary close" post is the FLOOR — an alternate at most, NEVER the hero.
+  Every hero must clear a higher gear: CHARACTER, ANOMALY, FRANCHISE+CLIFFHANGER,
+  TENSION/villain, or a real STAKE. Mission is 1,000,000 followers: ask "would a
+  stranger screenshot or repost this?"
+- DATA INTEGRITY (a wrong number kills trust): use the `selection` field from
+  todays_picks.json VERBATIM for the play label — it is sign-correct ("Miami Marlins
+  +1.5 (-190)"). NEVER hand-derive a spread sign (a positive run line is the UNDERDOG
+  +1.5 getting runs, not -1.5). The `outcome` string in the position files is often a
+  stale artifact — trust `side` + `entryLine` + the summary `$`. Cross-check every $.
 - Draft 2–3 candidate posts for the current SLOT. Each MUST pass the two hard gates,
   use a hook-bank category for non-pick angles (no back-to-back repeats), and follow
   the PREMIUM formatting standard. Lead with the market split / the money / an

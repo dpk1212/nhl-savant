@@ -8,6 +8,23 @@
 ## NORTH STAR
 The mission is **1,000,000 followers**. Every post is judged by one question: *would a stranger screenshot or repost this?* Reach is fine (1.2K–1.9K views/post); the bottleneck is **shareability** — we have ~0 retweets. Fix that and growth compounds. Always think one move ahead: *what is the single best NEXT post for virality, right now?*
 
+## HOUSE VOICE = "THE BLEND" (locked 2026-06-28)
+Lead with a CHARACTER (a named whale + verified P&L, an anomaly), write with trading-desk AUTHORITY (confident, precise, "the money you can't see," parallel structure, zero fluff). One purposeful emoji max (🐋). Mantra close ("The public bets logos. He bets the math."), never "thoughts?". Add a franchise cliffhanger when possible ("we report back tonight"). Modeled on the two highest performers in our lane: @marlowxbt's wallet-story (character/narrative) + @PatrickE_Vegas's desk note (authority — 103K eng).
+
+## THE VIRALITY BAR (this is the quality gate — a generic stat-sheet FAILS it)
+A "$X sharp / $0 against · 3 bullets · binary close" post is table stakes, not viral. Before drafting, force the post through ONE of these higher gears:
+- **CHARACTER over stat.** Lead with a *person*, not a number. The anonymous whales (HomeRunHazard +$860K rank #119; ChinesePro +$571K; the +$1.49M ELITE) are recurring CHARACTERS — wealth + mystery + a tail. "A bettor up $860K just did this" travels; "$29K on one side" doesn't.
+- **ANOMALY, not status quo.** Hunt the weird, screenshot-able fact: a 3× size-up, a +$860K winner betting two games, a wallet that's 41-7. Magnitude + specificity = the stop.
+- **FRANCHISE + CLIFFHANGER.** Build repeatable series with an open loop ("The Whale Report — we report back tonight"). Anticipation compounds followers; one-off slips don't.
+- **TENSION / villain.** "Everyone's on X. The smart money is quietly doing the opposite." Contrarian conviction.
+- **A real STAKE.** A sweat, a size-up, an honest L, a redemption. Emotion gets reposted; information gets ignored.
+The bullet-list pick is the FLOOR (an alternate at most), never the hero. If the hero is just a stat with proof, it isn't done.
+
+## DATA INTEGRITY (never quote a wrong number — it kills trust instantly)
+- **Use `selection` from todays_picks.json verbatim** for the play label. It is sign-correct ("Miami Marlins +1.5 (-190)"). NEVER hand-derive a spread sign — a positive run line is the UNDERDOG +1.5 getting runs, not -1.5.
+- The `outcome` string in the public position files is often a stale/mislabeled artifact — trust `side` + `entryLine` + the summary `$` instead.
+- Cross-check every $ figure against the wallet-tape file's summary; flag positions >60 min out as movable.
+
 ## Current viral hook shapes in our lane
 - **Sharp-vs-public market read (TOP format)** — *@invisiblestats* "Public vs Sharps, [round]" hit **70K engagement**; *@PatrickE_Vegas* runs the same shape. Line 1 = the split or the money; proof = side-by-side $/% (+ line move); close = a verdict. This is the niche's highest-engagement structure and the one we keep under-using. The most viral version is a **clean-sweep / "$0 on the other side"** read — the lopsidedness IS the hook.
 - **Obscure-game / underdog whale** — six-figure (or one-sided) sharp money on a game/side the public ignores. Curiosity gap + "we see what you don't" + whale tape. Our likeliest first retweet.
