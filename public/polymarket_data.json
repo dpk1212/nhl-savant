@@ -3,14 +3,14 @@
   "NHL": {},
   "MLB": {
     "oak_laa": {
-      "volume24h": 1078627.9824789988,
-      "liveVolume": 1080062.4539879998,
+      "volume24h": 1104777.4220969991,
+      "liveVolume": 1104985.7120949998,
       "awayMoneyPct": 58.1,
       "homeMoneyPct": 41.9,
-      "awayTicketPct": 62,
-      "homeTicketPct": 38,
-      "tradeCount": 2773,
-      "sampleCash": 549363,
+      "awayTicketPct": 61.8,
+      "homeTicketPct": 38.2,
+      "tradeCount": 2781,
+      "sampleCash": 550092,
       "priceMove1h": -99.1,
       "priceHistory": {
         "points": [
@@ -24,7 +24,7 @@
           11,
           10.5,
           11,
-          7.5,
+          6,
           50,
           0.4
         ],
@@ -268,8 +268,8 @@
           }
         ]
       },
-      "awayProb": 50,
-      "homeProb": 50,
+      "awayProb": 0.4,
+      "homeProb": 99.6,
       "drawProb": null,
       "drawMoneyPct": null,
       "drawTicketPct": null,
@@ -281,8 +281,8 @@
           "Los Angeles Angels"
         ],
         "probs": [
-          1,
-          99
+          0.1,
+          100
         ],
         "priceHistory": {
           "points": [
@@ -297,7 +297,7 @@
             36.5,
             36.5,
             36.5,
-            47.5,
+            52.5,
             0.1
           ],
           "open": 38.5,
@@ -313,8 +313,8 @@
           "Under"
         ],
         "probs": [
-          6.5,
-          93.5
+          0.1,
+          100
         ],
         "priceHistory": {
           "points": [
@@ -329,7 +329,7 @@
             48.5,
             48.5,
             49.5,
-            29,
+            31.5,
             0.1
           ],
           "open": 49.5,
@@ -346,15 +346,170 @@
       "polyGameDate": "2026-06-27",
       "enrichmentFailed": false
     },
+    "phi_nym": {
+      "volume24h": 28263.78940999999,
+      "liveVolume": 28263.789409,
+      "awayMoneyPct": 19.1,
+      "homeMoneyPct": 80.9,
+      "awayTicketPct": 42.4,
+      "homeTicketPct": 57.6,
+      "tradeCount": 139,
+      "sampleCash": 13482,
+      "priceMove1h": 5.2,
+      "priceHistory": {
+        "points": [
+          53.5,
+          53.5,
+          53.5,
+          53.5,
+          54.5,
+          54.5,
+          53,
+          55.5,
+          55.5,
+          54.5,
+          55.5,
+          57.5,
+          60.5
+        ],
+        "open": 53.5,
+        "current": 60.5,
+        "high": 60.5,
+        "low": 52.5,
+        "change": 7
+      },
+      "whales": {
+        "count": 4,
+        "totalCash": 10368,
+        "largest": 7777,
+        "buyCount": 4,
+        "sellCount": 0,
+        "topTrades": [
+          {
+            "amount": 7777,
+            "side": "BUY",
+            "outcome": "New York Mets",
+            "price": 48,
+            "ts": 1782576043000,
+            "wallet": "0xd48a81db62f742c4e42d86dfc23a7ee345366e90",
+            "traderName": "NiFengFanPan"
+          },
+          {
+            "amount": 1334,
+            "side": "BUY",
+            "outcome": "New York Mets",
+            "price": 40,
+            "ts": 1782620341000,
+            "wallet": "0x032eb1bc893940263ad0b01889f262fc232f2a9e",
+            "traderName": "purplegatto"
+          },
+          {
+            "amount": 749,
+            "side": "BUY",
+            "outcome": "Philadelphia Phillies",
+            "price": 60,
+            "ts": 1782619534000,
+            "wallet": "0xaa7789219c17e180dcb5933099c90d885f1d15a5",
+            "traderName": "alaskabaked"
+          },
+          {
+            "amount": 508,
+            "side": "BUY",
+            "outcome": "New York Mets",
+            "price": 40,
+            "ts": 1782619856000,
+            "wallet": "0x3b8abedc2d928cc2ec0ecc14b567c1342ca476a2",
+            "traderName": "herculeshanjun"
+          }
+        ]
+      },
+      "awayProb": 60.5,
+      "homeProb": 39.5,
+      "drawProb": null,
+      "drawMoneyPct": null,
+      "drawTicketPct": null,
+      "polySpread": {
+        "line": 1,
+        "title": "1st 5 Innings Spread -1.5",
+        "outcomes": [
+          "Philadelphia Phillies",
+          "New York Mets"
+        ],
+        "probs": [
+          50,
+          50
+        ],
+        "priceHistory": {
+          "points": [
+            50,
+            50,
+            50,
+            50,
+            50,
+            50,
+            50,
+            50,
+            50,
+            50,
+            50,
+            50,
+            50
+          ],
+          "open": 50,
+          "current": 50,
+          "change": 0
+        }
+      },
+      "polyTotal": {
+        "line": 8.5,
+        "title": "O/U 8.5",
+        "outcomes": [
+          "Over",
+          "Under"
+        ],
+        "probs": [
+          46,
+          54
+        ],
+        "priceHistory": {
+          "points": [
+            45.5,
+            45.5,
+            46,
+            46,
+            46,
+            46,
+            46,
+            46,
+            46,
+            46,
+            46,
+            46,
+            46
+          ],
+          "open": 45.5,
+          "current": 46,
+          "change": 0.5
+        }
+      },
+      "awayTeam": "Philadelphia Phillies",
+      "homeTeam": "New York Mets",
+      "eventId": "622136",
+      "title": "Philadelphia Phillies vs. New York Mets",
+      "commence": "2026-06-28T17:41:00Z",
+      "polyGameTime": "2026-06-28T17:40:00Z",
+      "polyGameDate": "2026-06-28",
+      "enrichmentFailed": false
+    },
     "cin_pit": {
-      "volume24h": 24562.518141,
-      "liveVolume": 24569.184805000004,
-      "awayMoneyPct": 80.4,
-      "homeMoneyPct": 19.6,
-      "awayTicketPct": 56.3,
-      "homeTicketPct": 43.8,
-      "tradeCount": 160,
-      "sampleCash": 11936,
+      "volume24h": 24570.970519000002,
+      "liveVolume": 24570.970518000002,
+      "awayMoneyPct": 79.7,
+      "homeMoneyPct": 20.3,
+      "awayTicketPct": 55.9,
+      "homeTicketPct": 44.1,
+      "tradeCount": 161,
+      "sampleCash": 12030,
       "priceMove1h": -2.2,
       "priceHistory": {
         "points": [
@@ -492,179 +647,23 @@
       "polyGameDate": "2026-06-28",
       "enrichmentFailed": false
     },
-    "phi_nym": {
-      "volume24h": 23605.485066999998,
-      "liveVolume": 27165.255066,
-      "awayMoneyPct": 19.3,
-      "homeMoneyPct": 80.7,
-      "awayTicketPct": 45,
-      "homeTicketPct": 55,
-      "tradeCount": 131,
-      "sampleCash": 13355,
-      "priceMove1h": 5.2,
-      "priceHistory": {
-        "points": [
-          53.5,
-          53.5,
-          53.5,
-          53.5,
-          54.5,
-          54.5,
-          53.5,
-          55.5,
-          55.5,
-          54.5,
-          54.5,
-          57.5,
-          60.5
-        ],
-        "open": 53.5,
-        "current": 60.5,
-        "high": 60.5,
-        "low": 52.5,
-        "change": 7
-      },
-      "whales": {
-        "count": 4,
-        "totalCash": 10368,
-        "largest": 7777,
-        "buyCount": 4,
-        "sellCount": 0,
-        "topTrades": [
-          {
-            "amount": 7777,
-            "side": "BUY",
-            "outcome": "New York Mets",
-            "price": 48,
-            "ts": 1782576043000,
-            "wallet": "0xd48a81db62f742c4e42d86dfc23a7ee345366e90",
-            "traderName": "NiFengFanPan"
-          },
-          {
-            "amount": 1334,
-            "side": "BUY",
-            "outcome": "New York Mets",
-            "price": 40,
-            "ts": 1782620341000,
-            "wallet": "0x032eb1bc893940263ad0b01889f262fc232f2a9e",
-            "traderName": "purplegatto"
-          },
-          {
-            "amount": 749,
-            "side": "BUY",
-            "outcome": "Philadelphia Phillies",
-            "price": 60,
-            "ts": 1782619534000,
-            "wallet": "0xaa7789219c17e180dcb5933099c90d885f1d15a5",
-            "traderName": "alaskabaked"
-          },
-          {
-            "amount": 508,
-            "side": "BUY",
-            "outcome": "New York Mets",
-            "price": 40,
-            "ts": 1782619856000,
-            "wallet": "0x3b8abedc2d928cc2ec0ecc14b567c1342ca476a2",
-            "traderName": "herculeshanjun"
-          }
-        ]
-      },
-      "awayProb": 60.5,
-      "homeProb": 39.5,
-      "drawProb": null,
-      "drawMoneyPct": null,
-      "drawTicketPct": null,
-      "polySpread": {
-        "line": 1,
-        "title": "1st 5 Innings Spread -1.5",
-        "outcomes": [
-          "Philadelphia Phillies",
-          "New York Mets"
-        ],
-        "probs": [
-          50,
-          50
-        ],
-        "priceHistory": {
-          "points": [
-            50,
-            50,
-            50,
-            50,
-            50,
-            50,
-            50,
-            50,
-            50,
-            50,
-            50,
-            50,
-            50
-          ],
-          "open": 50,
-          "current": 50,
-          "change": 0
-        }
-      },
-      "polyTotal": {
-        "line": 8.5,
-        "title": "O/U 8.5",
-        "outcomes": [
-          "Over",
-          "Under"
-        ],
-        "probs": [
-          46,
-          54
-        ],
-        "priceHistory": {
-          "points": [
-            45.5,
-            45.5,
-            46,
-            46,
-            46,
-            46,
-            46.5,
-            46,
-            46,
-            46,
-            46,
-            46,
-            46,
-            46
-          ],
-          "open": 45.5,
-          "current": 46,
-          "change": 0.5
-        }
-      },
-      "awayTeam": "Philadelphia Phillies",
-      "homeTeam": "New York Mets",
-      "eventId": "622136",
-      "title": "Philadelphia Phillies vs. New York Mets",
-      "commence": "2026-06-28T17:41:00Z",
-      "polyGameTime": "2026-06-28T17:40:00Z",
-      "polyGameDate": "2026-06-28",
-      "enrichmentFailed": false
-    },
     "tex_tor": {
-      "volume24h": 5348.600692999998,
-      "liveVolume": 5348.600689999999,
-      "awayMoneyPct": 79.6,
-      "homeMoneyPct": 20.4,
-      "awayTicketPct": 76.3,
-      "homeTicketPct": 23.7,
-      "tradeCount": 118,
-      "sampleCash": 2583,
-      "priceMove1h": 0,
+      "volume24h": 5350.418872999998,
+      "liveVolume": 5350.4188699999995,
+      "awayMoneyPct": 79.5,
+      "homeMoneyPct": 20.5,
+      "awayTicketPct": 75.6,
+      "homeTicketPct": 24.4,
+      "tradeCount": 119,
+      "sampleCash": 2585,
+      "priceMove1h": 2.2,
       "priceHistory": {
         "points": [
           43,
           43.5,
           43,
           43.5,
-          43.5,
+          43,
           42.5,
           41.5,
           44.5,
@@ -672,13 +671,13 @@
           44.5,
           45.5,
           45.5,
-          45.5
+          46.5
         ],
         "open": 43,
-        "current": 45.5,
-        "high": 46,
+        "current": 46.5,
+        "high": 46.5,
         "low": 40.5,
-        "change": 2.5
+        "change": 3.5
       },
       "whales": {
         "count": 1,
@@ -698,8 +697,8 @@
           }
         ]
       },
-      "awayProb": 45.5,
-      "homeProb": 54.5,
+      "awayProb": 46.5,
+      "homeProb": 53.5,
       "drawProb": null,
       "drawMoneyPct": null,
       "drawTicketPct": null,
@@ -777,7 +776,7 @@
       "enrichmentFailed": false
     },
     "lad_sdp": {
-      "volume24h": 4750.966813,
+      "volume24h": 4753.966813,
       "liveVolume": 4753.966813,
       "awayMoneyPct": 97.9,
       "homeMoneyPct": 2.1,
@@ -847,10 +846,10 @@
             44,
             46,
             46,
-            46,
+            46.5,
             45.5,
             45,
-            45,
+            44.5,
             44.5,
             44,
             44,
@@ -879,7 +878,7 @@
             46,
             45,
             45,
-            45.5,
+            48,
             46.5,
             46.5,
             46.5,
@@ -906,13 +905,13 @@
     },
     "atl_sfg": {
       "volume24h": 3909.030247,
-      "liveVolume": 3909.030247,
-      "awayMoneyPct": 91.3,
-      "homeMoneyPct": 8.7,
-      "awayTicketPct": 67.2,
-      "homeTicketPct": 32.8,
-      "tradeCount": 61,
-      "sampleCash": 1938,
+      "liveVolume": 3936.530247,
+      "awayMoneyPct": 90.8,
+      "homeMoneyPct": 9.2,
+      "awayTicketPct": 66.1,
+      "homeTicketPct": 33.9,
+      "tradeCount": 62,
+      "sampleCash": 1950,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -1015,152 +1014,15 @@
       "polyGameDate": "2026-06-28",
       "enrichmentFailed": false
     },
-    "ari_tbr": {
-      "volume24h": 3759.006622,
-      "liveVolume": 3759.0066220000003,
-      "awayMoneyPct": 12.2,
-      "homeMoneyPct": 87.8,
-      "awayTicketPct": 39.5,
-      "homeTicketPct": 60.5,
-      "tradeCount": 43,
-      "sampleCash": 1922,
-      "priceMove1h": 0,
-      "priceHistory": {
-        "points": [
-          40.5,
-          40.5,
-          40.5,
-          40.5,
-          40.5,
-          40.5,
-          40.5,
-          39.5,
-          39.5,
-          38.5,
-          37.5,
-          37.5,
-          37.5
-        ],
-        "open": 40.5,
-        "current": 37.5,
-        "high": 41,
-        "low": 37.5,
-        "change": -3
-      },
-      "whales": {
-        "count": 2,
-        "totalCash": 1182,
-        "largest": 662,
-        "buyCount": 2,
-        "sellCount": 0,
-        "topTrades": [
-          {
-            "amount": 662,
-            "side": "BUY",
-            "outcome": "Tampa Bay Rays",
-            "price": 45,
-            "ts": 1782604837000,
-            "wallet": "0x204f72f35326db932158cba6adff0b9a1da95e14",
-            "traderName": "swisstony"
-          },
-          {
-            "amount": 520,
-            "side": "BUY",
-            "outcome": "Tampa Bay Rays",
-            "price": 62,
-            "ts": 1782603707000,
-            "wallet": "0xac65e23705a693fb2e79a92f9d518ba5af38cfe6",
-            "traderName": "dumbguy"
-          }
-        ]
-      },
-      "awayProb": 37.5,
-      "homeProb": 62.5,
-      "drawProb": null,
-      "drawMoneyPct": null,
-      "drawTicketPct": null,
-      "polySpread": {
-        "line": -1.5,
-        "title": "Spread -1.5",
-        "outcomes": [
-          "Tampa Bay Rays",
-          "Arizona Diamondbacks"
-        ],
-        "probs": [
-          44,
-          56
-        ],
-        "priceHistory": {
-          "points": [
-            46,
-            46.5,
-            46.5,
-            46.5,
-            46.5,
-            45,
-            44.5,
-            44.5,
-            44.5,
-            43.5,
-            43.5,
-            43.5,
-            44
-          ],
-          "open": 46,
-          "current": 44,
-          "change": -2
-        }
-      },
-      "polyTotal": {
-        "line": 7.5,
-        "title": "O/U 7.5",
-        "outcomes": [
-          "Over",
-          "Under"
-        ],
-        "probs": [
-          51.5,
-          48.5
-        ],
-        "priceHistory": {
-          "points": [
-            48.5,
-            54,
-            54,
-            54,
-            53.5,
-            50.5,
-            51,
-            51.5,
-            51.5,
-            51.5,
-            51.5,
-            51.5,
-            51.5
-          ],
-          "open": 48.5,
-          "current": 51.5,
-          "change": 3
-        }
-      },
-      "awayTeam": "Arizona Diamondbacks",
-      "homeTeam": "Tampa Bay Rays",
-      "eventId": "622137",
-      "title": "Arizona Diamondbacks vs. Tampa Bay Rays",
-      "commence": "2026-06-28T17:41:00Z",
-      "polyGameTime": "2026-06-28T17:40:00Z",
-      "polyGameDate": "2026-06-28",
-      "enrichmentFailed": false
-    },
     "wsh_bal": {
-      "volume24h": 3689.0348919999997,
-      "liveVolume": 3764.9348899999995,
+      "volume24h": 3766.4733519999995,
+      "liveVolume": 3769.251126,
       "awayMoneyPct": 56.2,
       "homeMoneyPct": 43.8,
-      "awayTicketPct": 77.7,
-      "homeTicketPct": 22.3,
-      "tradeCount": 274,
-      "sampleCash": 1978,
+      "awayTicketPct": 77.8,
+      "homeTicketPct": 22.2,
+      "tradeCount": 275,
+      "sampleCash": 1979,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -1280,9 +1142,146 @@
       "polyGameDate": "2026-06-28",
       "enrichmentFailed": false
     },
+    "ari_tbr": {
+      "volume24h": 3760.593922,
+      "liveVolume": 3760.593922,
+      "awayMoneyPct": 12.2,
+      "homeMoneyPct": 87.8,
+      "awayTicketPct": 39.5,
+      "homeTicketPct": 60.5,
+      "tradeCount": 43,
+      "sampleCash": 1922,
+      "priceMove1h": 0,
+      "priceHistory": {
+        "points": [
+          40.5,
+          40.5,
+          40.5,
+          40.5,
+          40.5,
+          40.5,
+          40.5,
+          39.5,
+          39.5,
+          38.5,
+          37.5,
+          37.5,
+          37.5
+        ],
+        "open": 40.5,
+        "current": 37.5,
+        "high": 41,
+        "low": 37.5,
+        "change": -3
+      },
+      "whales": {
+        "count": 2,
+        "totalCash": 1182,
+        "largest": 662,
+        "buyCount": 2,
+        "sellCount": 0,
+        "topTrades": [
+          {
+            "amount": 662,
+            "side": "BUY",
+            "outcome": "Tampa Bay Rays",
+            "price": 45,
+            "ts": 1782604837000,
+            "wallet": "0x204f72f35326db932158cba6adff0b9a1da95e14",
+            "traderName": "swisstony"
+          },
+          {
+            "amount": 520,
+            "side": "BUY",
+            "outcome": "Tampa Bay Rays",
+            "price": 62,
+            "ts": 1782603707000,
+            "wallet": "0xac65e23705a693fb2e79a92f9d518ba5af38cfe6",
+            "traderName": "dumbguy"
+          }
+        ]
+      },
+      "awayProb": 37.5,
+      "homeProb": 62.5,
+      "drawProb": null,
+      "drawMoneyPct": null,
+      "drawTicketPct": null,
+      "polySpread": {
+        "line": -1.5,
+        "title": "Spread -1.5",
+        "outcomes": [
+          "Tampa Bay Rays",
+          "Arizona Diamondbacks"
+        ],
+        "probs": [
+          44,
+          56
+        ],
+        "priceHistory": {
+          "points": [
+            46,
+            46.5,
+            46.5,
+            46.5,
+            46.5,
+            45,
+            44.5,
+            44.5,
+            44.5,
+            43.5,
+            43.5,
+            43.5,
+            44
+          ],
+          "open": 46,
+          "current": 44,
+          "change": -2
+        }
+      },
+      "polyTotal": {
+        "line": 7.5,
+        "title": "O/U 7.5",
+        "outcomes": [
+          "Over",
+          "Under"
+        ],
+        "probs": [
+          51.5,
+          48.5
+        ],
+        "priceHistory": {
+          "points": [
+            48.5,
+            54,
+            54,
+            54,
+            53.5,
+            51,
+            51,
+            51.5,
+            51.5,
+            51.5,
+            51.5,
+            51.5,
+            51.5
+          ],
+          "open": 48.5,
+          "current": 51.5,
+          "change": 3
+        }
+      },
+      "awayTeam": "Arizona Diamondbacks",
+      "homeTeam": "Tampa Bay Rays",
+      "eventId": "622137",
+      "title": "Arizona Diamondbacks vs. Tampa Bay Rays",
+      "commence": "2026-06-28T17:41:00Z",
+      "polyGameTime": "2026-06-28T17:40:00Z",
+      "polyGameDate": "2026-06-28",
+      "enrichmentFailed": false
+    },
     "hou_det": {
-      "volume24h": 3270.0724630000004,
-      "liveVolume": 3270.072462,
+      "volume24h": 3271.890643,
+      "liveVolume": 3271.890642,
       "awayMoneyPct": 70.1,
       "homeMoneyPct": 29.9,
       "awayTicketPct": 57.1,
@@ -1297,7 +1296,7 @@
           53.5,
           53.5,
           53.5,
-          53.5,
+          53,
           54.5,
           54,
           54.5,
@@ -1556,8 +1555,8 @@
             39,
             39,
             39,
-            49.5,
-            63,
+            49,
+            62.5,
             38.5,
             37.5,
             38,
@@ -1614,7 +1613,7 @@
       "enrichmentFailed": false
     },
     "mia_stl": {
-      "volume24h": 1872.6151889999999,
+      "volume24h": 1875.1792899999998,
       "liveVolume": 1875.179289,
       "awayMoneyPct": 23.9,
       "homeMoneyPct": 76.1,
@@ -1627,7 +1626,7 @@
         "points": [
           43.5,
           43.5,
-          42,
+          42.5,
           42,
           43,
           43,
@@ -1676,8 +1675,8 @@
           "Miami Marlins"
         ],
         "probs": [
-          38.5,
-          61.5
+          38,
+          62
         ],
         "priceHistory": {
           "points": [
@@ -1693,11 +1692,13 @@
             38,
             38,
             38.5,
-            38
+            38,
+            38,
+            38.5
           ],
           "open": 40,
-          "current": 38,
-          "change": -2
+          "current": 38.5,
+          "change": -1.5
         }
       },
       "polyTotal": {
@@ -1708,8 +1709,8 @@
           "Under"
         ],
         "probs": [
-          48.5,
-          51.5
+          49,
+          51
         ],
         "priceHistory": {
           "points": [
@@ -1725,6 +1726,7 @@
             48,
             48,
             48.5,
+            49,
             49
           ],
           "open": 47,
@@ -1742,8 +1744,8 @@
       "enrichmentFailed": false
     },
     "sea_cle": {
-      "volume24h": 1160.2954180000002,
-      "liveVolume": 1160.295418,
+      "volume24h": 1162.2562010000001,
+      "liveVolume": 1162.256201,
       "awayMoneyPct": 42,
       "homeMoneyPct": 58,
       "awayTicketPct": 68.3,
@@ -1826,8 +1828,8 @@
           "points": [
             48.5,
             36.5,
-            27,
-            30,
+            27.5,
+            29.5,
             49.5,
             48.5,
             50,
@@ -1853,14 +1855,14 @@
       "enrichmentFailed": false
     },
     "chc_mil": {
-      "volume24h": 992.023614,
-      "liveVolume": 992.0236140000001,
-      "awayMoneyPct": 34.6,
-      "homeMoneyPct": 65.4,
-      "awayTicketPct": 29.2,
-      "homeTicketPct": 70.8,
-      "tradeCount": 24,
-      "sampleCash": 503,
+      "volume24h": 1141.856946,
+      "liveVolume": 1141.8569459999999,
+      "awayMoneyPct": 24.9,
+      "homeMoneyPct": 75.1,
+      "awayTicketPct": 26.9,
+      "homeTicketPct": 73.1,
+      "tradeCount": 26,
+      "sampleCash": 697,
       "priceMove1h": 1.4,
       "priceHistory": {
         "points": [
@@ -1915,6 +1917,7 @@
             45.5,
             46,
             46,
+            46,
             46
           ],
           "open": 48,
@@ -1930,8 +1933,8 @@
           "Under"
         ],
         "probs": [
-          49,
-          51
+          51,
+          49
         ],
         "priceHistory": {
           "points": [
@@ -1947,11 +1950,12 @@
             49,
             48.5,
             49,
-            50
+            50,
+            51
           ],
           "open": 47,
-          "current": 50,
-          "change": 3
+          "current": 51,
+          "change": 4
         }
       },
       "awayTeam": "Chicago Cubs",
@@ -1972,10 +1976,10 @@
       "homeTicketPct": 58.8,
       "tradeCount": 17,
       "sampleCash": 328,
-      "priceMove1h": -1.2,
+      "priceMove1h": 1.2,
       "priceHistory": {
         "points": [
-          43,
+          42,
           42.5,
           42.5,
           42.5,
@@ -1989,11 +1993,11 @@
           42.5,
           42
         ],
-        "open": 43,
+        "open": 42,
         "current": 42,
         "high": 43,
         "low": 41.5,
-        "change": -1
+        "change": 0
       },
       "whales": null,
       "awayProb": 42,
@@ -2048,11 +2052,11 @@
           "points": [
             48,
             70.5,
-            71,
-            69,
-            68.5,
+            50.5,
+            67.5,
+            69.5,
             68,
-            68,
+            45.5,
             45.5,
             45.5,
             44.5,
@@ -2078,14 +2082,14 @@
   "NBA": {},
   "SOC": {
     "can_rsa": {
-      "volume24h": 1391787.3295129973,
-      "liveVolume": 1405946.193921,
-      "awayMoneyPct": 55.1,
-      "homeMoneyPct": 3.8,
-      "awayTicketPct": 62.6,
-      "homeTicketPct": 25.3,
+      "volume24h": 1413452.477463999,
+      "liveVolume": 1451863.404682,
+      "awayMoneyPct": 56.1,
+      "homeMoneyPct": 3.6,
+      "awayTicketPct": 62.9,
+      "homeTicketPct": 25,
       "tradeCount": 3500,
-      "sampleCash": 640770,
+      "sampleCash": 676954,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -2111,7 +2115,7 @@
       },
       "whales": {
         "count": 75,
-        "totalCash": 374744,
+        "totalCash": 412513,
         "largest": 136597,
         "buyCount": 74,
         "sellCount": 1,
@@ -2162,6 +2166,24 @@
             "traderName": "Badgeroff"
           },
           {
+            "amount": 11097,
+            "side": "BUY",
+            "outcome": null,
+            "price": 74,
+            "ts": 1782620986000,
+            "wallet": "0x0346afae2603313d2bbee96b628536c8cbe352a5",
+            "traderName": "GoalLineGhost"
+          },
+          {
+            "amount": 9101,
+            "side": "BUY",
+            "outcome": "Canada",
+            "price": 58,
+            "ts": 1782620753000,
+            "wallet": "0xe9076a87c5ed90ef16e6fe6529c943baeca0cff6",
+            "traderName": "suntori"
+          },
+          {
             "amount": 8355,
             "side": "BUY",
             "outcome": "Canada",
@@ -2169,6 +2191,24 @@
             "ts": 1782595244000,
             "wallet": "0x204f72f35326db932158cba6adff0b9a1da95e14",
             "traderName": "swisstony"
+          },
+          {
+            "amount": 8244,
+            "side": "BUY",
+            "outcome": "Canada",
+            "price": 58,
+            "ts": 1782620927000,
+            "wallet": "0x0346afae2603313d2bbee96b628536c8cbe352a5",
+            "traderName": "GoalLineGhost"
+          },
+          {
+            "amount": 8115,
+            "side": "BUY",
+            "outcome": "Canada",
+            "price": 58,
+            "ts": 1782620782000,
+            "wallet": "0x0346afae2603313d2bbee96b628536c8cbe352a5",
+            "traderName": "GoalLineGhost"
           },
           {
             "amount": 7604,
@@ -2279,6 +2319,15 @@
             "traderName": "VeryLucky888"
           },
           {
+            "amount": 2540,
+            "side": "BUY",
+            "outcome": "Canada",
+            "price": 58,
+            "ts": 1782620905000,
+            "wallet": "0xd4081f280de71b3e82b15bdc724588556f52e85c",
+            "traderName": "Zetalias"
+          },
+          {
             "amount": 2536,
             "side": "BUY",
             "outcome": "South Africa",
@@ -2295,59 +2344,14 @@
             "ts": 1782562184000,
             "wallet": "0x0346afae2603313d2bbee96b628536c8cbe352a5",
             "traderName": "GoalLineGhost"
-          },
-          {
-            "amount": 2000,
-            "side": "BUY",
-            "outcome": "Canada",
-            "price": 58,
-            "ts": 1782619697000,
-            "wallet": "0xb1570c0bf3051fbdf459399264db617308430120",
-            "traderName": "verababe"
-          },
-          {
-            "amount": 2000,
-            "side": "BUY",
-            "outcome": "Canada",
-            "price": 58,
-            "ts": 1782616844000,
-            "wallet": "0xd5eb2846e5f41e76fd1a607320ae1ec45af0b9d6",
-            "traderName": "Burgil"
-          },
-          {
-            "amount": 2000,
-            "side": "BUY",
-            "outcome": "Canada",
-            "price": 57,
-            "ts": 1782602843000,
-            "wallet": "0x60944234fb8cf204855cd16fbe6d9b3ceb4fd510",
-            "traderName": "vael0x"
-          },
-          {
-            "amount": 1797,
-            "side": "BUY",
-            "outcome": null,
-            "price": 73,
-            "ts": 1782605036000,
-            "wallet": "0x204f72f35326db932158cba6adff0b9a1da95e14",
-            "traderName": "swisstony"
-          },
-          {
-            "amount": 1680,
-            "side": "BUY",
-            "outcome": "Canada",
-            "price": 56,
-            "ts": 1782595249000,
-            "wallet": "0x6d3c5bd13984b2de47c3a88ddc455309aab3d294",
-            "traderName": "VeryLucky888"
           }
         ]
       },
       "awayProb": 57.5,
       "homeProb": 16.5,
       "drawProb": 26.5,
-      "drawMoneyPct": 2,
-      "drawTicketPct": 12.1,
+      "drawMoneyPct": 2.1,
+      "drawTicketPct": 12.2,
       "polySpread": null,
       "polyTotal": null,
       "awayTeam": "Canada",
@@ -2360,14 +2364,14 @@
       "enrichmentFailed": false
     },
     "jpn_bra": {
-      "volume24h": 1348133.9853840051,
-      "liveVolume": 1352093.804836,
+      "volume24h": 1361205.0184540052,
+      "liveVolume": 1378286.3724099998,
       "awayMoneyPct": 8.6,
-      "homeMoneyPct": 41.1,
+      "homeMoneyPct": 42.9,
       "awayTicketPct": 26.7,
       "homeTicketPct": 58.6,
       "tradeCount": 3500,
-      "sampleCash": 542622,
+      "sampleCash": 542722,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -2393,10 +2397,10 @@
       },
       "whales": {
         "count": 75,
-        "totalCash": 378550,
+        "totalCash": 359009,
         "largest": 29155,
-        "buyCount": 73,
-        "sellCount": 2,
+        "buyCount": 72,
+        "sellCount": 3,
         "topTrades": [
           {
             "amount": 29155,
@@ -2498,24 +2502,6 @@
             "traderName": "GoalLineGhost"
           },
           {
-            "amount": 10053,
-            "side": "BUY",
-            "outcome": "Brazil",
-            "price": 58,
-            "ts": 1782549512000,
-            "wallet": "0x2117ae94a97d69b78cbc81b6680a62deb1955c26",
-            "traderName": "Zzzz87"
-          },
-          {
-            "amount": 9871,
-            "side": "BUY",
-            "outcome": null,
-            "price": 76,
-            "ts": 1782547172000,
-            "wallet": "0x0346afae2603313d2bbee96b628536c8cbe352a5",
-            "traderName": "GoalLineGhost"
-          },
-          {
             "amount": 9782,
             "side": "BUY",
             "outcome": null,
@@ -2532,15 +2518,6 @@
             "ts": 1782615547000,
             "wallet": "0x0346afae2603313d2bbee96b628536c8cbe352a5",
             "traderName": "GoalLineGhost"
-          },
-          {
-            "amount": 8936,
-            "side": "BUY",
-            "outcome": "Japan",
-            "price": 19,
-            "ts": 1782550054000,
-            "wallet": "0x9b87bed27fff72d26cc8ee5b1dbcf43f5a73d7aa",
-            "traderName": "0x9b87bED27FFF72D26cc8EE5B1dBCf43f5a73d7aa-1773089194709"
           },
           {
             "amount": 8429,
@@ -2622,6 +2599,33 @@
             "ts": 1782551611000,
             "wallet": "0x0346afae2603313d2bbee96b628536c8cbe352a5",
             "traderName": "GoalLineGhost"
+          },
+          {
+            "amount": 7432,
+            "side": "BUY",
+            "outcome": "Brazil",
+            "price": 58,
+            "ts": 1782552376000,
+            "wallet": "0x0346afae2603313d2bbee96b628536c8cbe352a5",
+            "traderName": "GoalLineGhost"
+          },
+          {
+            "amount": 6497,
+            "side": "BUY",
+            "outcome": "Brazil",
+            "price": 58,
+            "ts": 1782616451000,
+            "wallet": "0x0346afae2603313d2bbee96b628536c8cbe352a5",
+            "traderName": "GoalLineGhost"
+          },
+          {
+            "amount": 6096,
+            "side": "BUY",
+            "outcome": "Brazil",
+            "price": 58,
+            "ts": 1782609077000,
+            "wallet": "0xe25dd35dd07e88fdb5f713f96ac419ff514ee6b8",
+            "traderName": null
           }
         ]
       },
@@ -2642,14 +2646,14 @@
       "enrichmentFailed": false
     },
     "mar_ned": {
-      "volume24h": 425936.6791810016,
-      "liveVolume": 427077.706858,
-      "awayMoneyPct": 4.3,
-      "homeMoneyPct": 47,
-      "awayTicketPct": 22.6,
-      "homeTicketPct": 65.7,
-      "tradeCount": 2269,
-      "sampleCash": 209483,
+      "volume24h": 457600.6878670019,
+      "liveVolume": 458886.459996,
+      "awayMoneyPct": 4,
+      "homeMoneyPct": 43,
+      "awayTicketPct": 22.4,
+      "homeTicketPct": 65.4,
+      "tradeCount": 2313,
+      "sampleCash": 230332,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -2674,10 +2678,10 @@
         "change": -1
       },
       "whales": {
-        "count": 31,
-        "totalCash": 165578,
+        "count": 33,
+        "totalCash": 185491,
         "largest": 33479,
-        "buyCount": 28,
+        "buyCount": 30,
         "sellCount": 3,
         "topTrades": [
           {
@@ -2722,6 +2726,24 @@
             "outcome": null,
             "price": 70,
             "ts": 1782614039000,
+            "wallet": "0x0346afae2603313d2bbee96b628536c8cbe352a5",
+            "traderName": "GoalLineGhost"
+          },
+          {
+            "amount": 10271,
+            "side": "BUY",
+            "outcome": null,
+            "price": 70,
+            "ts": 1782620675000,
+            "wallet": "0x0346afae2603313d2bbee96b628536c8cbe352a5",
+            "traderName": "GoalLineGhost"
+          },
+          {
+            "amount": 9641,
+            "side": "BUY",
+            "outcome": null,
+            "price": 70,
+            "ts": 1782620674000,
             "wallet": "0x0346afae2603313d2bbee96b628536c8cbe352a5",
             "traderName": "GoalLineGhost"
           },
@@ -2886,32 +2908,14 @@
             "ts": 1782619561000,
             "wallet": "0xe9076a87c5ed90ef16e6fe6529c943baeca0cff6",
             "traderName": "suntori"
-          },
-          {
-            "amount": 918,
-            "side": "SELL",
-            "outcome": null,
-            "price": 69,
-            "ts": 1782560368000,
-            "wallet": "0xa5bf6bb735f88f5e2260a7f555bb986cfd3d8763",
-            "traderName": "AK4747"
-          },
-          {
-            "amount": 918,
-            "side": "SELL",
-            "outcome": null,
-            "price": 69,
-            "ts": 1782560356000,
-            "wallet": "0xa5bf6bb735f88f5e2260a7f555bb986cfd3d8763",
-            "traderName": "AK4747"
           }
         ]
       },
       "awayProb": 24.5,
       "homeProb": 45.5,
       "drawProb": 30.5,
-      "drawMoneyPct": 2.2,
-      "drawTicketPct": 11.7,
+      "drawMoneyPct": 2,
+      "drawTicketPct": 12.1,
       "polySpread": null,
       "polyTotal": null,
       "awayTeam": "Morocco",
@@ -2923,15 +2927,579 @@
       "polyGameDate": "2026-06-29",
       "enrichmentFailed": false
     },
+    "swe_fra": {
+      "volume24h": 358216.7932620004,
+      "liveVolume": 358373.936109,
+      "awayMoneyPct": 0.9,
+      "homeMoneyPct": 61.4,
+      "awayTicketPct": 7.6,
+      "homeTicketPct": 86.9,
+      "tradeCount": 1373,
+      "sampleCash": 173291,
+      "priceMove1h": 0,
+      "priceHistory": {
+        "points": [
+          6.5,
+          8,
+          8,
+          8.5,
+          8.5,
+          8.5,
+          8.5,
+          8.5,
+          8.5,
+          8.5,
+          8.5,
+          8.5,
+          8.5
+        ],
+        "open": 6.5,
+        "current": 8.5,
+        "high": 8.5,
+        "low": 6.5,
+        "change": 2
+      },
+      "whales": {
+        "count": 49,
+        "totalCash": 129701,
+        "largest": 20000,
+        "buyCount": 48,
+        "sellCount": 1,
+        "topTrades": [
+          {
+            "amount": 20000,
+            "side": "BUY",
+            "outcome": null,
+            "price": 24,
+            "ts": 1782615422000,
+            "wallet": "0xe8725f4bd4de73c888dda35c4850f702c322819a",
+            "traderName": "nottop6896"
+          },
+          {
+            "amount": 15000,
+            "side": "BUY",
+            "outcome": "France",
+            "price": 77,
+            "ts": 1782612122000,
+            "wallet": "0x3da89a55cdd4b5c69f80e5cd3ef1782a3e0480c3",
+            "traderName": "0x3DA89a55CdD4b5c69F80E5Cd3ef1782a3E0480c3-1777119032461"
+          },
+          {
+            "amount": 14790,
+            "side": "BUY",
+            "outcome": null,
+            "price": 92,
+            "ts": 1782573581000,
+            "wallet": "0xb2a48372404e6a0bfb6c2f23d715d3acc5a8cf8a",
+            "traderName": "POLYCHEAT"
+          },
+          {
+            "amount": 8880,
+            "side": "BUY",
+            "outcome": null,
+            "price": 24,
+            "ts": 1782615748000,
+            "wallet": "0x457f89ae6fb64ace63f595378c0a2959cb422a64",
+            "traderName": "hitfardedidi"
+          },
+          {
+            "amount": 7600,
+            "side": "BUY",
+            "outcome": "France",
+            "price": 76,
+            "ts": 1782575323000,
+            "wallet": "0x3e0a8847c74b98a0d865e24ae399604ddf67b9cc",
+            "traderName": "Melqui"
+          },
+          {
+            "amount": 7201,
+            "side": "BUY",
+            "outcome": "France",
+            "price": 76,
+            "ts": 1782605252000,
+            "wallet": "0xbc1b1e935cf5a06f9378fe2b249338649dc29d59",
+            "traderName": "shijiebeifacai"
+          },
+          {
+            "amount": 5000,
+            "side": "BUY",
+            "outcome": "France",
+            "price": 77,
+            "ts": 1782606811000,
+            "wallet": "0xa70642eb5bf8d290cf90d5a24f96f4b79f92ac8a",
+            "traderName": null
+          },
+          {
+            "amount": 3864,
+            "side": "BUY",
+            "outcome": "France",
+            "price": 77,
+            "ts": 1782612863000,
+            "wallet": "0xe9076a87c5ed90ef16e6fe6529c943baeca0cff6",
+            "traderName": "suntori"
+          },
+          {
+            "amount": 2500,
+            "side": "BUY",
+            "outcome": "France",
+            "price": 77,
+            "ts": 1782615293000,
+            "wallet": "0x578a71a54f1d914668305dda452535f99f2dc93e",
+            "traderName": "0x578a71A54f1d914668305dda452535f99F2dC93e-1781558705626"
+          },
+          {
+            "amount": 2205,
+            "side": "BUY",
+            "outcome": null,
+            "price": 24,
+            "ts": 1782616213000,
+            "wallet": "0x457f89ae6fb64ace63f595378c0a2959cb422a64",
+            "traderName": "hitfardedidi"
+          },
+          {
+            "amount": 2000,
+            "side": "BUY",
+            "outcome": "France",
+            "price": 77,
+            "ts": 1782610804000,
+            "wallet": "0x4f7041dd86eb10e0ddf0c724849ef4bef7ce0ca9",
+            "traderName": "msantos1968"
+          },
+          {
+            "amount": 2000,
+            "side": "BUY",
+            "outcome": "France",
+            "price": 76,
+            "ts": 1782601321000,
+            "wallet": "0x4f3d92b0d244854dfa744781a4ffb62e29802023",
+            "traderName": "CryptoJohnMax"
+          },
+          {
+            "amount": 2000,
+            "side": "BUY",
+            "outcome": "France",
+            "price": 76,
+            "ts": 1782564823000,
+            "wallet": "0xadcac2f095c12e23fc8b50d51c93308e48c14013",
+            "traderName": "what27"
+          },
+          {
+            "amount": 1699,
+            "side": "BUY",
+            "outcome": null,
+            "price": 24,
+            "ts": 1782569681000,
+            "wallet": "0x204f72f35326db932158cba6adff0b9a1da95e14",
+            "traderName": "swisstony"
+          },
+          {
+            "amount": 1657,
+            "side": "BUY",
+            "outcome": null,
+            "price": 24,
+            "ts": 1782582797000,
+            "wallet": "0x204f72f35326db932158cba6adff0b9a1da95e14",
+            "traderName": "swisstony"
+          },
+          {
+            "amount": 1531,
+            "side": "BUY",
+            "outcome": "France",
+            "price": 76,
+            "ts": 1782587564000,
+            "wallet": "0x2117ae94a97d69b78cbc81b6680a62deb1955c26",
+            "traderName": "Zzzz87"
+          },
+          {
+            "amount": 1520,
+            "side": "BUY",
+            "outcome": "France",
+            "price": 76,
+            "ts": 1782601588000,
+            "wallet": "0x939efdaa0a57d80bb66c6e54f4f744ef5a9c0a64",
+            "traderName": "0x939efDaA0a57D80BB66c6e54F4F744ef5A9c0a64-1782246791463"
+          },
+          {
+            "amount": 1500,
+            "side": "BUY",
+            "outcome": "France",
+            "price": 76,
+            "ts": 1782595052000,
+            "wallet": "0x3ee5e36efe9a3f4d2982fe13a83393c09b237bf0",
+            "traderName": "vchch"
+          },
+          {
+            "amount": 1345,
+            "side": "BUY",
+            "outcome": null,
+            "price": 25,
+            "ts": 1782616838000,
+            "wallet": "0x457f89ae6fb64ace63f595378c0a2959cb422a64",
+            "traderName": "hitfardedidi"
+          },
+          {
+            "amount": 1324,
+            "side": "BUY",
+            "outcome": "France",
+            "price": 76,
+            "ts": 1782571877000,
+            "wallet": "0xf3be32e8d248855d00a415fdccc8228017d412cc",
+            "traderName": "jianlai001"
+          },
+          {
+            "amount": 1312,
+            "side": "BUY",
+            "outcome": null,
+            "price": 92,
+            "ts": 1782612122000,
+            "wallet": "0x03805a13a0b3e058f55f6c6af95389d4f431073d",
+            "traderName": "donthackme"
+          },
+          {
+            "amount": 1198,
+            "side": "BUY",
+            "outcome": null,
+            "price": 84,
+            "ts": 1782612122000,
+            "wallet": "0x03805a13a0b3e058f55f6c6af95389d4f431073d",
+            "traderName": "donthackme"
+          },
+          {
+            "amount": 1155,
+            "side": "BUY",
+            "outcome": null,
+            "price": 24,
+            "ts": 1782569683000,
+            "wallet": "0x204f72f35326db932158cba6adff0b9a1da95e14",
+            "traderName": "swisstony"
+          },
+          {
+            "amount": 1155,
+            "side": "BUY",
+            "outcome": "France",
+            "price": 77,
+            "ts": 1782565421000,
+            "wallet": "0x137060efbd6e6004b50f14b8ff8108254db22cfd",
+            "traderName": "fqy2026"
+          },
+          {
+            "amount": 1111,
+            "side": "BUY",
+            "outcome": null,
+            "price": 24,
+            "ts": 1782560626000,
+            "wallet": "0x204f72f35326db932158cba6adff0b9a1da95e14",
+            "traderName": "swisstony"
+          }
+        ]
+      },
+      "awayProb": 8.5,
+      "homeProb": 76.5,
+      "drawProb": 16.5,
+      "drawMoneyPct": 0.3,
+      "drawTicketPct": 5.5,
+      "polySpread": null,
+      "polyTotal": null,
+      "awayTeam": "Sweden",
+      "homeTeam": "France",
+      "eventId": "640358",
+      "title": "France vs. Sweden",
+      "commence": "2026-06-30T21:00:00Z",
+      "polyGameTime": "2026-06-30T21:00:00Z",
+      "polyGameDate": "2026-06-30",
+      "enrichmentFailed": false
+    },
+    "nor_civ": {
+      "volume24h": 337045.9476869996,
+      "liveVolume": 338318.88592,
+      "awayMoneyPct": 33.9,
+      "homeMoneyPct": 18,
+      "awayTicketPct": 79.5,
+      "homeTicketPct": 11.4,
+      "tradeCount": 1158,
+      "sampleCash": 146447,
+      "priceMove1h": 2.2,
+      "priceHistory": {
+        "points": [
+          47.5,
+          48.5,
+          47.5,
+          47.5,
+          47.5,
+          46.5,
+          45.5,
+          45.5,
+          46.5,
+          46.5,
+          46.5,
+          46.5,
+          47.5
+        ],
+        "open": 47.5,
+        "current": 47.5,
+        "high": 48.5,
+        "low": 45.5,
+        "change": 0
+      },
+      "whales": {
+        "count": 26,
+        "totalCash": 113099,
+        "largest": 24685,
+        "buyCount": 25,
+        "sellCount": 1,
+        "topTrades": [
+          {
+            "amount": 24685,
+            "side": "BUY",
+            "outcome": "Côte d'Ivoire",
+            "price": 27,
+            "ts": 1782586660000,
+            "wallet": "0x349606c1b77f3ba668879cbc9347f15a44cf8fc4",
+            "traderName": "skk1ch"
+          },
+          {
+            "amount": 23349,
+            "side": "BUY",
+            "outcome": null,
+            "price": 53,
+            "ts": 1782579986000,
+            "wallet": "0x076daa87c4fe1a85402a9b6b8e0a866224388d4c",
+            "traderName": null
+          },
+          {
+            "amount": 19875,
+            "side": "BUY",
+            "outcome": null,
+            "price": 53,
+            "ts": 1782559993000,
+            "wallet": "0x9770ca178764cdca1271934ad613ad7ab4a10ff5",
+            "traderName": "Odzfx"
+          },
+          {
+            "amount": 10000,
+            "side": "BUY",
+            "outcome": "Norway",
+            "price": 46,
+            "ts": 1782598375000,
+            "wallet": "0x694d10119eaabbeeb7661d2ccaaa9825b1e29aad",
+            "traderName": "coincommerce22st"
+          },
+          {
+            "amount": 9697,
+            "side": "BUY",
+            "outcome": null,
+            "price": 53,
+            "ts": 1782579986000,
+            "wallet": "0x076daa87c4fe1a85402a9b6b8e0a866224388d4c",
+            "traderName": null
+          },
+          {
+            "amount": 3021,
+            "side": "BUY",
+            "outcome": null,
+            "price": 53,
+            "ts": 1782562378000,
+            "wallet": "0x9a4cf053d6788a095da9be5e811e73131f491f30",
+            "traderName": "EbHaalnd"
+          },
+          {
+            "amount": 2400,
+            "side": "BUY",
+            "outcome": "Norway",
+            "price": 47,
+            "ts": 1782598523000,
+            "wallet": "0x694d10119eaabbeeb7661d2ccaaa9825b1e29aad",
+            "traderName": "coincommerce22st"
+          },
+          {
+            "amount": 2200,
+            "side": "BUY",
+            "outcome": null,
+            "price": 53,
+            "ts": 1782577688000,
+            "wallet": "0xc0924abade09c672e8ff3e9d9e9c4704e86a0cd9",
+            "traderName": "njch.las"
+          },
+          {
+            "amount": 2158,
+            "side": "SELL",
+            "outcome": null,
+            "price": 52,
+            "ts": 1782579746000,
+            "wallet": "0xc0924abade09c672e8ff3e9d9e9c4704e86a0cd9",
+            "traderName": "njch.las"
+          },
+          {
+            "amount": 2000,
+            "side": "BUY",
+            "outcome": "Norway",
+            "price": 47,
+            "ts": 1782580099000,
+            "wallet": "0x019aa67574107801142003f49789b0c283e85458",
+            "traderName": "Benkzzii"
+          },
+          {
+            "amount": 1404,
+            "side": "BUY",
+            "outcome": null,
+            "price": 52,
+            "ts": 1782560572000,
+            "wallet": "0x204f72f35326db932158cba6adff0b9a1da95e14",
+            "traderName": "swisstony"
+          },
+          {
+            "amount": 1370,
+            "side": "BUY",
+            "outcome": "Norway",
+            "price": 48,
+            "ts": 1782562699000,
+            "wallet": "0x10658d371ae1f09eed503a3a14c8ac6a1a936218",
+            "traderName": "kunkun168"
+          },
+          {
+            "amount": 1242,
+            "side": "BUY",
+            "outcome": "Norway",
+            "price": 46,
+            "ts": 1782583633000,
+            "wallet": "0x9a5462ab1c4d54c016dfa25a29be8a617d387191",
+            "traderName": "ss0855"
+          },
+          {
+            "amount": 1056,
+            "side": "BUY",
+            "outcome": null,
+            "price": 54,
+            "ts": 1782583421000,
+            "wallet": "0x076daa87c4fe1a85402a9b6b8e0a866224388d4c",
+            "traderName": null
+          },
+          {
+            "amount": 1042,
+            "side": "BUY",
+            "outcome": null,
+            "price": 52,
+            "ts": 1782560570000,
+            "wallet": "0x204f72f35326db932158cba6adff0b9a1da95e14",
+            "traderName": "swisstony"
+          },
+          {
+            "amount": 1008,
+            "side": "BUY",
+            "outcome": null,
+            "price": 74,
+            "ts": 1782617690000,
+            "wallet": "0x204f72f35326db932158cba6adff0b9a1da95e14",
+            "traderName": "swisstony"
+          },
+          {
+            "amount": 1000,
+            "side": "BUY",
+            "outcome": "Norway",
+            "price": 48,
+            "ts": 1782620167000,
+            "wallet": "0x2117ae94a97d69b78cbc81b6680a62deb1955c26",
+            "traderName": "Zzzz87"
+          },
+          {
+            "amount": 1000,
+            "side": "BUY",
+            "outcome": "Norway",
+            "price": 48,
+            "ts": 1782620026000,
+            "wallet": "0x04a7e0b81af8a096b7187554f10bd7f308fec0df",
+            "traderName": "Wanjawest"
+          },
+          {
+            "amount": 650,
+            "side": "BUY",
+            "outcome": "Norway",
+            "price": 47,
+            "ts": 1782615464000,
+            "wallet": "0x578a71a54f1d914668305dda452535f99f2dc93e",
+            "traderName": "0x578a71A54f1d914668305dda452535f99F2dC93e-1781558705626"
+          },
+          {
+            "amount": 588,
+            "side": "BUY",
+            "outcome": "Norway",
+            "price": 49,
+            "ts": 1782560602000,
+            "wallet": "0x8fe70c889ce14f67acea5d597e3d0351d73b4f20",
+            "traderName": "amused85"
+          },
+          {
+            "amount": 585,
+            "side": "BUY",
+            "outcome": "Norway",
+            "price": 46,
+            "ts": 1782587422000,
+            "wallet": "0x2117ae94a97d69b78cbc81b6680a62deb1955c26",
+            "traderName": "Zzzz87"
+          },
+          {
+            "amount": 573,
+            "side": "BUY",
+            "outcome": "Norway",
+            "price": 48,
+            "ts": 1782562582000,
+            "wallet": "0x10658d371ae1f09eed503a3a14c8ac6a1a936218",
+            "traderName": "kunkun168"
+          },
+          {
+            "amount": 573,
+            "side": "BUY",
+            "outcome": "Norway",
+            "price": 48,
+            "ts": 1782560809000,
+            "wallet": "0x10658d371ae1f09eed503a3a14c8ac6a1a936218",
+            "traderName": "kunkun168"
+          },
+          {
+            "amount": 564,
+            "side": "BUY",
+            "outcome": "Norway",
+            "price": 47,
+            "ts": 1782617689000,
+            "wallet": "0x2117ae94a97d69b78cbc81b6680a62deb1955c26",
+            "traderName": "Zzzz87"
+          },
+          {
+            "amount": 543,
+            "side": "BUY",
+            "outcome": "Norway",
+            "price": 48,
+            "ts": 1782619913000,
+            "wallet": "0x6e3f0edb4618556d23ce245ccda7bde3c9b2cb63",
+            "traderName": "Cabo-Verde"
+          }
+        ]
+      },
+      "awayProb": 47.5,
+      "homeProb": 25.5,
+      "drawProb": 27.5,
+      "drawMoneyPct": 1.4,
+      "drawTicketPct": 9.1,
+      "polySpread": null,
+      "polyTotal": null,
+      "awayTeam": "Norway",
+      "homeTeam": "Côte d'Ivoire",
+      "eventId": "640353",
+      "title": "Côte d'Ivoire vs. Norway",
+      "commence": "2026-06-30T17:00:00Z",
+      "polyGameTime": "2026-06-30T17:00:00Z",
+      "polyGameDate": "2026-06-30",
+      "enrichmentFailed": false
+    },
     "bih_usa": {
-      "volume24h": 206783.42986199987,
-      "liveVolume": 208269.41596199997,
+      "volume24h": 208715.29404999988,
+      "liveVolume": 208760.11275700002,
       "awayMoneyPct": 1.6,
       "homeMoneyPct": 65.2,
-      "awayTicketPct": 18.9,
-      "homeTicketPct": 69.5,
-      "tradeCount": 1192,
-      "sampleCash": 128672,
+      "awayTicketPct": 19.3,
+      "homeTicketPct": 69,
+      "tradeCount": 1200,
+      "sampleCash": 128747,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -3193,7 +3761,7 @@
       "homeProb": 71.5,
       "drawProb": 18.5,
       "drawMoneyPct": 3.2,
-      "drawTicketPct": 11.5,
+      "drawTicketPct": 11.6,
       "polySpread": null,
       "polyTotal": null,
       "awayTeam": "Bosnia and Herzegovina",
@@ -3205,30 +3773,311 @@
       "polyGameDate": "2026-07-01",
       "enrichmentFailed": false
     },
+    "par_ger": {
+      "volume24h": 204136.80153399945,
+      "liveVolume": 204275.38340000002,
+      "awayMoneyPct": 0.9,
+      "homeMoneyPct": 78.5,
+      "awayTicketPct": 12,
+      "homeTicketPct": 78.7,
+      "tradeCount": 1439,
+      "sampleCash": 140397,
+      "priceMove1h": 0,
+      "priceHistory": {
+        "points": [
+          10,
+          10.5,
+          9.5,
+          9.5,
+          9.5,
+          9.5,
+          9.5,
+          9.5,
+          9.5,
+          9.5,
+          9.5,
+          9.5
+        ],
+        "open": 10,
+        "current": 9.5,
+        "high": 10.5,
+        "low": 9.5,
+        "change": -0.5
+      },
+      "whales": {
+        "count": 44,
+        "totalCash": 112892,
+        "largest": 12635,
+        "buyCount": 41,
+        "sellCount": 3,
+        "topTrades": [
+          {
+            "amount": 12635,
+            "side": "BUY",
+            "outcome": null,
+            "price": 90,
+            "ts": 1782560479000,
+            "wallet": "0xbc1b1e935cf5a06f9378fe2b249338649dc29d59",
+            "traderName": "shijiebeifacai"
+          },
+          {
+            "amount": 10450,
+            "side": "BUY",
+            "outcome": "Germany",
+            "price": 72,
+            "ts": 1782620858000,
+            "wallet": "0x0346afae2603313d2bbee96b628536c8cbe352a5",
+            "traderName": "GoalLineGhost"
+          },
+          {
+            "amount": 10277,
+            "side": "BUY",
+            "outcome": "Germany",
+            "price": 72,
+            "ts": 1782620675000,
+            "wallet": "0x0346afae2603313d2bbee96b628536c8cbe352a5",
+            "traderName": "GoalLineGhost"
+          },
+          {
+            "amount": 10137,
+            "side": "BUY",
+            "outcome": "Germany",
+            "price": 72,
+            "ts": 1782609709000,
+            "wallet": "0x2117ae94a97d69b78cbc81b6680a62deb1955c26",
+            "traderName": "Zzzz87"
+          },
+          {
+            "amount": 7038,
+            "side": "BUY",
+            "outcome": "Germany",
+            "price": 72,
+            "ts": 1782620782000,
+            "wallet": "0x530d4297fac06fa81a338568bde89ba24edfcb00",
+            "traderName": "halimonnudbd"
+          },
+          {
+            "amount": 6227,
+            "side": "BUY",
+            "outcome": "Germany",
+            "price": 72,
+            "ts": 1782600038000,
+            "wallet": "0x56ffb8ac3fe6a7aad4570800d15aa5d7b96e81a0",
+            "traderName": "seztek"
+          },
+          {
+            "amount": 5625,
+            "side": "BUY",
+            "outcome": "Germany",
+            "price": 72,
+            "ts": 1782620674000,
+            "wallet": "0x0346afae2603313d2bbee96b628536c8cbe352a5",
+            "traderName": "GoalLineGhost"
+          },
+          {
+            "amount": 5411,
+            "side": "BUY",
+            "outcome": "Draw",
+            "price": 19,
+            "ts": 1782570653000,
+            "wallet": "0x10a6fadcbacd66330862206f6199b197e3ad4d8b",
+            "traderName": "rabbitfoot1"
+          },
+          {
+            "amount": 4345,
+            "side": "BUY",
+            "outcome": null,
+            "price": 81,
+            "ts": 1782615733000,
+            "wallet": "0x0346afae2603313d2bbee96b628536c8cbe352a5",
+            "traderName": "GoalLineGhost"
+          },
+          {
+            "amount": 4223,
+            "side": "BUY",
+            "outcome": "Germany",
+            "price": 72,
+            "ts": 1782620674000,
+            "wallet": "0x0346afae2603313d2bbee96b628536c8cbe352a5",
+            "traderName": "GoalLineGhost"
+          },
+          {
+            "amount": 2221,
+            "side": "BUY",
+            "outcome": "Germany",
+            "price": 72,
+            "ts": 1782609997000,
+            "wallet": "0x71e99c16f10c260c4f3af13990bb612a7e44bc32",
+            "traderName": null
+          },
+          {
+            "amount": 2190,
+            "side": "SELL",
+            "outcome": "Germany",
+            "price": 71,
+            "ts": 1782616961000,
+            "wallet": "0x71e99c16f10c260c4f3af13990bb612a7e44bc32",
+            "traderName": null
+          },
+          {
+            "amount": 2059,
+            "side": "BUY",
+            "outcome": "Germany",
+            "price": 71,
+            "ts": 1782556537000,
+            "wallet": "0xaa65ca365cbbe89bb1649757b0ef47bed9cb1021",
+            "traderName": "xebir"
+          },
+          {
+            "amount": 2002,
+            "side": "BUY",
+            "outcome": null,
+            "price": 91,
+            "ts": 1782577061000,
+            "wallet": "0x0b349863b23d8ba553a29e541f60b08d6fa581c8",
+            "traderName": "waleyyyy"
+          },
+          {
+            "amount": 2000,
+            "side": "BUY",
+            "outcome": "Germany",
+            "price": 72,
+            "ts": 1782586097000,
+            "wallet": "0x3486ef8eeec032111d20acd71cb24f34ef5349ee",
+            "traderName": "AndrianoLamo"
+          },
+          {
+            "amount": 1998,
+            "side": "BUY",
+            "outcome": "Germany",
+            "price": 72,
+            "ts": 1782614374000,
+            "wallet": "0xe9076a87c5ed90ef16e6fe6529c943baeca0cff6",
+            "traderName": "suntori"
+          },
+          {
+            "amount": 1488,
+            "side": "BUY",
+            "outcome": "Germany",
+            "price": 72,
+            "ts": 1782560629000,
+            "wallet": "0x3491a0c5edbb601b64e61cbe05ec8bde45775909",
+            "traderName": "hialex"
+          },
+          {
+            "amount": 1433,
+            "side": "BUY",
+            "outcome": "Germany",
+            "price": 72,
+            "ts": 1782612667000,
+            "wallet": "0xe9076a87c5ed90ef16e6fe6529c943baeca0cff6",
+            "traderName": "suntori"
+          },
+          {
+            "amount": 1368,
+            "side": "BUY",
+            "outcome": "Germany",
+            "price": 72,
+            "ts": 1782583468000,
+            "wallet": "0x40c0d3508a8e74b72161fef66f9a9e07bc7c7e64",
+            "traderName": "09583jr485u"
+          },
+          {
+            "amount": 1195,
+            "side": "BUY",
+            "outcome": "Germany",
+            "price": 72,
+            "ts": 1782618341000,
+            "wallet": "0x939efdaa0a57d80bb66c6e54f4f744ef5a9c0a64",
+            "traderName": "0x939efDaA0a57D80BB66c6e54F4F744ef5A9c0a64-1782246791463"
+          },
+          {
+            "amount": 1069,
+            "side": "BUY",
+            "outcome": "Germany",
+            "price": 72,
+            "ts": 1782619813000,
+            "wallet": "0x71e99c16f10c260c4f3af13990bb612a7e44bc32",
+            "traderName": null
+          },
+          {
+            "amount": 1069,
+            "side": "BUY",
+            "outcome": null,
+            "price": 91,
+            "ts": 1782562135000,
+            "wallet": "0x22292decebf2e9146b27fe59404d162447ea6bf8",
+            "traderName": "absol"
+          },
+          {
+            "amount": 1000,
+            "side": "BUY",
+            "outcome": "Germany",
+            "price": 72,
+            "ts": 1782575062000,
+            "wallet": "0x4f7041dd86eb10e0ddf0c724849ef4bef7ce0ca9",
+            "traderName": "msantos1968"
+          },
+          {
+            "amount": 1000,
+            "side": "BUY",
+            "outcome": "Germany",
+            "price": 72,
+            "ts": 1782567005000,
+            "wallet": "0xadcac2f095c12e23fc8b50d51c93308e48c14013",
+            "traderName": "what27"
+          },
+          {
+            "amount": 1000,
+            "side": "BUY",
+            "outcome": "Germany",
+            "price": 72,
+            "ts": 1782564887000,
+            "wallet": "0xadcac2f095c12e23fc8b50d51c93308e48c14013",
+            "traderName": "what27"
+          }
+        ]
+      },
+      "awayProb": 9.5,
+      "homeProb": 71.5,
+      "drawProb": 18.5,
+      "drawMoneyPct": 5.2,
+      "drawTicketPct": 9.2,
+      "polySpread": null,
+      "polyTotal": null,
+      "awayTeam": "Paraguay",
+      "homeTeam": "Germany",
+      "eventId": "640346",
+      "title": "Germany vs. Paraguay",
+      "commence": "2026-06-29T20:30:00Z",
+      "polyGameTime": "2026-06-29T20:30:00Z",
+      "polyGameDate": "2026-06-29",
+      "enrichmentFailed": false
+    },
     "cpv_arg": {
-      "volume24h": 124686.38454600002,
-      "liveVolume": 124763.55380899999,
-      "awayMoneyPct": 1.6,
+      "volume24h": 126019.151778,
+      "liveVolume": 126283.903691,
+      "awayMoneyPct": 1.7,
       "homeMoneyPct": 57.9,
-      "awayTicketPct": 20.9,
-      "homeTicketPct": 59.4,
-      "tradeCount": 839,
-      "sampleCash": 76247,
+      "awayTicketPct": 20.8,
+      "homeTicketPct": 59.3,
+      "tradeCount": 861,
+      "sampleCash": 76411,
       "priceMove1h": 2.8,
       "priceHistory": {
         "points": [
           5,
-          4,
+          3.5,
           3.6,
           4.3,
           4.4,
           4.6,
           4.3,
-          3.8,
           4.3,
           4.3,
-          4.5,
-          4.2,
+          4.3,
+          4.7,
+          3.5,
           3.6
         ],
         "open": 5,
@@ -3430,7 +4279,7 @@
       "homeProb": 86.5,
       "drawProb": 10.5,
       "drawMoneyPct": 1.1,
-      "drawTicketPct": 19.6,
+      "drawTicketPct": 19.9,
       "polySpread": null,
       "polyTotal": null,
       "awayTeam": "Cabo Verde",
@@ -3443,19 +4292,20 @@
       "enrichmentFailed": false
     },
     "egy_aus": {
-      "volume24h": 37474.971411000006,
-      "liveVolume": 37474.97141,
+      "volume24h": 37798.27440300001,
+      "liveVolume": 37828.012136,
       "awayMoneyPct": 41.6,
-      "homeMoneyPct": 8.6,
-      "awayTicketPct": 64.7,
-      "homeTicketPct": 21.4,
-      "tradeCount": 804,
-      "sampleCash": 15379,
+      "homeMoneyPct": 8.7,
+      "awayTicketPct": 64.6,
+      "homeTicketPct": 21.6,
+      "tradeCount": 814,
+      "sampleCash": 15441,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
           38,
           38,
+          38.5,
           38.5,
           38.5,
           38.5,
@@ -3513,7 +4363,7 @@
       "homeProb": 28.5,
       "drawProb": 33.5,
       "drawMoneyPct": 24.8,
-      "drawTicketPct": 13.9,
+      "drawTicketPct": 13.8,
       "polySpread": null,
       "polyTotal": null,
       "awayTeam": "Egypt",
@@ -3526,5 +4376,5 @@
       "enrichmentFailed": false
     }
   },
-  "updatedAt": "2026-06-28T04:22:33.732Z"
+  "updatedAt": "2026-06-28T04:30:33.172Z"
 }
