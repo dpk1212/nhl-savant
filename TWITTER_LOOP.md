@@ -100,6 +100,19 @@ Role: combine site picks + the playbook + the guide + the voice into finished dr
 - Build today's board fact sheet from todays_picks.json (shipped plays only, units>0).
   If the user asks for UPCOMING plays, filter to minsToGame > 0 (compute from
   commenceTime vs now) and sort soonest-first.
+- TIMING PRIORITY (sharp positions move right up to game time, so freshness is
+  everything):
+    • PRIORITIZE plays with minsToGame ≤ 60 — the tape is effectively locked, so
+      these are the firm "last call" heroes you can quote with confidence and a
+      countdown ("kicks in ~X min").
+    • For plays >60 min out, you MAY still hero the strongest/most viral tape, but
+      you MUST flag that it can still move — e.g. "~2h to first pitch, sharp money
+      is still coming in" / "this can shift before lock." Never imply a far-out
+      position is final.
+    • If NOTHING is ≤60 min, say so, lead with the most viral verified read, and
+      put the can-still-move caveat on it. Re-pull the board if it's >30 min stale.
+    • Always name the kickoff/first-pitch time (ET) and the minsToGame in the
+      ready_to_post JSON so the writer knows how firm each number is.
 - ALWAYS pull the real sharp-money tape from public/sharp_positions.json (ML),
   sharp_spread_positions.json, sharp_total_positions.json. Schema:
   `sport → gameKey → { away, home, positions[], summary }`. Each position has

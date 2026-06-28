@@ -1,39 +1,42 @@
-# A Twitter Research Report — 2026-06-27 6:54 PM ET · EVENING
+# A Twitter Research Report — 2026-06-28 12:00 PM ET · MIDDAY
 
-> State of the account: ~2K followers, reach is fine (1.7K–2.5K/post) but **retweets are still ~0** — quotability is the one thing to fix. **Data freshness:** board scanned 6:35 PM ET, sharp tape scanned **6:52 PM ET** (live), timeline + niche + growth all re-pulled via Firecrawl this run. Growth corpus was just cleaned by a new English/relevance gate (dropped 15 foreign-fandom posts).
+> **Mission: 1,000,000 followers.** Reach is fine (1.2K–1.9K views/post); the bottleneck is **shareability — ~0 retweets.** Every post is judged: would a stranger screenshot or repost this? **Data freshness:** board + sharp tape scanned **11:58 AM ET** (live), timeline + niche + growth all re-pulled via Firecrawl this run. **Timing flag:** nothing on today's board is within 1 hour of first pitch — all positions can still move.
 
 ## Growth & trends (Phase 1)
 
 **Viral hook shapes in our lane right now**
-- **Obscure-game whale** (our top growth pick): six figures of sharp money on a game the public can't find — tonight $207K (79%) on Uzbekistan vs DR Congo. Curiosity gap + "we see what you don't" + whale tape in one line. Likeliest first retweet.
-- **Sharp-vs-public market board** (@PatrickE_Vegas, six-figure engagement): name the game → public % vs sharp $ + line move → verdict. The single highest-engagement structure in our niche; we still under-post it.
-- **"N bets Vegas likes" authority list** (@invisiblestats, @WizBetz "MLB Play of the Day"): clean scannable list — maps to our board if we open with a read, not a setup line.
+- **Sharp-vs-public market read (the niche's #1 format):** @invisiblestats "Public vs Sharps" hit **70K engagement**; @PatrickE_Vegas runs the same shape. Line 1 = the money/the split → proof → verdict. The most viral variant is a **clean sweep / "$0 on the other side."**
+- **Obscure/underdog whale:** one-sided sharp money on a side the public ignores. Strong hook — but see the Phase-2 lesson on subject legibility.
+- **"N bets the sharps like" authority list:** @WizBetz "MLB Play of the Day", @invisiblestats — scannable, screenshot-friendly.
+- **Honest record flex:** post the units AND the Ls. Our rarest edge.
 
-**Tweet-construction tricks landing now (cleaned growth corpus, 41 posts)**
-- **Bold-claim + "here's everything you need to know 🧵"** — @AlexFinn's algo thread (30K eng) makes a specific claim, then promises the payoff. Our version: "$207K just hit a game nobody's watching. Here's who's loading it 👇".
-- **The growth-creator lane runs LONG** — 80% thread-shaped, ~2,288 avg chars, 51% emoji. When a play has depth, **thread it** (hook + reply) instead of a 6-line wall.
-- **Volume + real voice** — @rachcorrine (15K eng): tweet more than feels comfortable, have an opinion, be a real person, reply/build community, keep 2–5 focus topics. Cadence is itself a lever.
-- **Reach is throttled, not removed** — @GiveMeBanHammer (36K eng) on the 2026 algo: low-signal/over-posting gets deboosted; dense, high-signal posts get carried. Make every post earn its slot.
+**Construction tricks landing now**
+- **The contrast/twist opener** — two short lines that flip ("$29K on one side. $0 on the other."). The gap between them is the screenshot.
+- **Growth lane runs LONG & thread-shaped** — @AlexFinn's "I read all 24,000 lines of the X algo, here's everything 🧵" (30K eng). Thread deep reads instead of a 6-line wall.
+- **Volume + real voice** — @rachcorrine (15K eng): tweet more, have an opinion, be a real person, build community in replies.
+- **Reach is throttled, not removed** — @GiveMeBanHammer (36K eng): dense, high-signal posts get carried; low-effort/over-posting gets deboosted.
 
-**Trends watchlist**
-- Big sharp money on low-profile soccer: DR Congo ($207K, 79%, kicks ~7:30) and Argentina ($204K, 81%, ~10 PM). Mine these first — more novel than chalk on marquee games.
-- Whale magnitude of the day: $2.77M poured onto one side of Ghana–Croatia (already in progress — context/recap only, not a live tail).
+**NEW standing rule — timing:** ≤60 min to game = firm "last call" (use a countdown). >60 min = hero the most viral read but always flag "money's still coming in / can move." Name the game time every post.
+
+**Trends watchlist (today)**
+- Cleanest tape on the board: **Marlins -1.5 = $29K sharp, $0 against** (3 proven wallets, led by a +$860K winner). The "$0 other side" is the most viral hook available.
+- **HomeRunHazard (+$860K lifetime) is doubling up** — Marlins -1.5 AND Reds/Pirates Under. "What's this whale doing today" is a reusable cross-play angle.
+- No play within 1 hour at midday → no true "last call" yet; the countdown beats come ~1:00–1:15 ET.
 
 ## How we're performing (Phase 2)
 
-**Labeled stats (n = 5 of 20 — directional, not statistical; pulled live this run)**
-- Avg likes **6.6**, retweets **~0**.
-- **Best post:** `2070888202299174981` — *pick_with_proof* SUPER-lock explainer, **12 likes**.
-- **Format leaderboard (avg likes):** pick_with_proof **12** · "other" **7.5** · pick_card **3** · sharp_public_board **3**.
-- **Weakest:** `2070583160803619090` (*sharp_public_board*, 3) and `2070983093641511148` (*pick_card*, 3) — both buried the hook behind a setup line.
+**Labeled stats (n = 5 of 21 — directional; pulled live this run)**
+- Avg likes **5.6**, retweets **~0**.
+- **Best:** `2070888202299174981` — pick_with_proof SUPER-lock explainer, **12 likes**.
+- **The miss:** `2071009748950851948` — last night's DR Congo whale hero, **1 like / 1,228 views.** Right structure, wrong subject (obscure soccer) + posted at the buzzer.
+- **Format leaderboard (avg likes):** pick_with_proof **6.5** · "other" **5** · pick_card **5**.
 
-**What's working:** conviction + proof and human posts. **What's not:** zero retweets; bare card lists flop — today's 5:30 PM "Massive slate tonight" loaded-card post got just **3 likes**.
+**The lesson:** subject legibility matters as much as structure. The whale hook works — but a US betting audience connects with MLB/marquee far more than obscure international soccer. Today: same structure, legible market, sharper number ("$0 on the other side"), real lead time.
 
-**The niche gap:** the sharp/public market-read board is the niche's best structure; our one attempt under-performed only because the opener buried the hook. Fix the opener, keep the format.
+**Mandates this run:** timing priority (≤60 min firm / >60 min flag-can-move); legible markets for the hero; lead with the dollar contrast; one RT line; ≤3 proof slots; reply within ~30 min with the lead wallet detail; binary close.
 
-**Mandates this run:** lead with the dollar read; obscure-game whales first; one RT line every post; ≤3 proof slots (thread if deeper); reply within ~30 min with the lead wallet's rank/ROI; own the 0-1 only in the night recap.
-
-**Stop list:** setup-line openers, soft "thoughts?" closes, 6+ proof-line walls, quoting settled/in-progress totals as if tailable.
+**Stop list:** far-out positions quoted as locked; obscure-subject heroes when a legible read exists; setup-line openers; soft "thoughts?" closes; 6+ proof-line walls.
 
 ## Loop maintenance done this run
-- **Hardened `scripts/analyzeGrowthTips.mjs`**: added an English/relevance gate (`isEnglishAdvice`) + a fandom/foreign blocklist, and `lang:en` to every search query. The growth pull was returning Indonesian/Malay K-pop "AU/RP" fandom posts ("TIPS AMAN MAIN X", "reread AU lama") as "growth tips." The gate now drops ~15 noise posts/run; the corpus is real X-growth advice (algorithm, hooks, threads).
+- **Baked the timing rule into `TWITTER_LOOP.md` (Phase 3)**: prioritize ≤60-min plays as firm "last call" with a countdown; for >60-min plays, hero the most viral read but require a "can still move" flag and the game time; re-pull the board if >30 min stale.
+- Carried forward last run's hardened growth-tips relevance/English gate (dropped 13 fandom/foreign posts again this run).
