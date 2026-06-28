@@ -115,6 +115,24 @@ for (const [col, mkt] of COLLECTIONS) {
       const minsToGame = ct != null ? Math.round((ct - NOW) / 60000) : null;
       const units = num(sd.finalUnits) ?? num(sd.v8_agsUnitsApplied) ?? 0;
 
+      // Human-readable, sign-correct selection string — SAME convention the site
+      // renders (SharpFlow.jsx: `${team} ${line>0?'+':''}${line}`). The line is
+      // stored SIGNED, so a positive run line is the UNDERDOG +1.5 (getting runs),
+      // never -1.5. Emit this so downstream (the Twitter loop) never guesses the
+      // sign and can't mislabel a play.
+      const _team = sd.team || side;
+      const _line = num(sd.peak?.line ?? sd.lock?.line);
+      const _odds = num(sd.peak?.odds ?? sd.lock?.odds);
+      const _oddsStr = _odds == null ? '' : (_odds > 0 ? `+${_odds}` : `${_odds}`);
+      let selection;
+      if (mkt === 'SPREAD') {
+        selection = `${_team} ${_line > 0 ? '+' : ''}${_line}${_oddsStr ? ` (${_oddsStr})` : ''}`;
+      } else if (mkt === 'TOTAL') {
+        selection = `${_team}${_oddsStr ? ` (${_oddsStr})` : ''}`; // _team already "Under 8.5"/"Over 8.5"
+      } else {
+        selection = `${_team} ML${_oddsStr ? ` ${_oddsStr}` : ''}`;
+      }
+
       // Sharp proof: proven winners for/against + AGS score
       const wd = sd.peak?.v8Scoring?.walletDetails || sd.lock?.v8Scoring?.walletDetails || [];
       let provenFor = null, provenAgainst = null, ags = null, agsTier = null;
@@ -142,6 +160,7 @@ for (const [col, mkt] of COLLECTIONS) {
         home: d.home,
         side,
         team: sd.team || side,
+        selection,
         line: num(sd.peak?.line ?? sd.lock?.line),
         odds: num(sd.peak?.odds ?? sd.lock?.odds),
         units,

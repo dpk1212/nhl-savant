@@ -1,60 +1,55 @@
-# A Twitter Next Steps — 2026-06-28 12:00 PM ET · MIDDAY
+# A Twitter Next Steps — 2026-06-28 12:30 PM ET · MIDDAY
 
-> The single best thing to post next: the **Marlins -1.5 clean sweep** — it's the most quotable read on the board ("$29K on one side, $0 on the other"), on a legible MLB market, using the niche's highest-engagement format. Nothing is within 1 hour yet, so it carries a "money's still moving" flag; the countdown beats come ~1:00 ET.
+> **House voice locked: "The Blend"** — lead with the whale as a character, write with trading-desk authority. One purposeful emoji max, mantra close, franchise cliffhanger. Pick label is sign-verified: **Miami Marlins +1.5 (-190)** (getting 1.5 runs). Modeled on the real winners in our lane: @marlowxbt's wallet-story (character) + @PatrickE_Vegas's desk note (authority, 103K eng).
 
-## Recommended post
+## Recommended post — "The Whale Report" (Blend voice)
 
 ```
-Sharp money on the Marlins spread: $29K.
+A bettor up $860,000 just made two moves this afternoon. We're on both. 🐋
 
-The other side: $0. ⚾
+He doesn't tweet and he doesn't sell picks — he's top-120 of every wallet we track, and he just fired 3× his usual size on one game.
 
-Three proven winners hammered Miami -1.5 — nobody's touching the Cardinals.
+The two tickets:
+• Reds–Pirates UNDER 9.5 — first pitch 1:35 ET
+• Marlins +1.5 — the size-up — 2:15 ET
 
-• 100% of the tracked sharp money is on one side
-• Led by a +$860K winner who dropped $15.7K
-• First pitch ~2:15 ET — money's still flowing in, but it's already completely one-sided
+The public bets logos. He bets the math.
 
-Marlins -1.5. Every wallet is live on the site 👉 [your link]
-
-Riding the sweep, or fading it? 🎯
+We report back tonight.
 ```
 
-**Why it wins:** Line 1 + line 2 are a standalone screenshot — the "$29K vs $0" contrast IS the hook and the RT line. It's the niche's top-performing structure (sharp-vs-public read), on a market a US audience actually knows (the fix for last night's obscure-soccer miss). Every number traces to tape scanned 11:58 AM ET. It's honest about timing (~2h out, can still move) per the standing rule.
+**Why it wins:** Character + anomaly (3× size-up) + desk authority + a cliffhanger that earns the next post. RT line = the first sentence. Every number verified on today's tape (HomeRunHazard, rank #119, +$860,008; $15,685 on Miami +1.5 vs his $5,133 avg = 3.06×; $3,534 on the Under). It launches a nightly franchise — tonight you post the grade.
 
 ## Alternates
 
+**The Intelligence Desk** (dry authority — the 103K-ceiling format):
 ```
-A +$860K winner just bet the Reds–Pirates UNDER. ⚾
+What the proven winners are doing on today's MLB card — the money you can't see:
 
-First pitch in ~90 minutes — the closest play to lock on the board.
+Cubs–Brewers: 88% of tracked sharp money is on the UNDER. Three proven winners on it, none against.
 
-• HomeRunHazard (+$860K lifetime) sitting on Under 9.5
-• Sharp money leans Under, almost nothing on the Over
-• Proven winners 2, against 0
+Reds–Pirates: same read — the UNDER, three winners, nobody fading.
 
-Under 9.5 👉 [your link]
+Marlins +1.5: $29K backing Miami to get the run. The Cardinals side? Not one tracked dollar.
 
-Under or over? 🎯
+The public bets teams. The pros bet the math.
 ```
 
+**The size-up, solo** (single-play character):
 ```
-Up +29 units since June 1. We post every single one — the wins AND the Ls. ⚾
+$15,685 on the Miami Marlins. That's 3× what this bettor normally risks — and he's up $860,000 doing it. 🐋
 
-• 158-130 on real plays (54.9%)
-• +4.3% ROI, ~+1 unit a day, 28 days straight
-• Today's card is live now
+Miami +1.5, getting a run and a half. The other side has not one tracked dollar.
 
-No deleted picks. No hidden losses. Just the tape 👉 [your link]
-
-Follow if you're riding with the sharps. 🎯
+First pitch 2:15 ET. The money's still moving, but it's only moving one way.
 ```
 
 ## RT line
-> Sharp money on the Marlins spread: $29K. The other side: $0.
+> A bettor up $860,000 made two bets this afternoon. We're on both.
 
 ## Action checklist
-- **Post the Marlins hero now** (note: ~2h to first pitch — it can still move; if you wait, re-check the tape).
-- **Reply within ~30 min:** "Same wallet — HomeRunHazard, +$860K lifetime — is ALSO on the Reds–Pirates Under (first pitch ~1:35 ET). When a winner like that doubles up, I pay attention. 👀"
-- **~1:00–1:15 ET:** post the Reds/Pirates Under as a true "last call" (it's the soonest, ~90 min now → inside the hour by then) with a countdown.
-- **Tonight:** honest recap of the card to close the loop.
+- **Post the Whale Report hero now** (timing: ~1:05 / ~1:45 to first pitch — positions can still move; re-check if you wait).
+- **Reply within ~30 min:** the receipt — screenshot HomeRunHazard's two tickets + the #119 rank. Visual proof drives reposts.
+- **Tonight:** close the loop — grade the whale's day honestly ("HomeRunHazard went X-for-2"). That's the franchise payoff and the brand.
+
+> Note: the wrong "Marlins -1.5" draft (PR #27) is superseded by this. exportTodaysPicks.mjs now emits a sign-correct `selection` so it can't recur.

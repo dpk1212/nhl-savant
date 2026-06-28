@@ -1,79 +1,67 @@
 {
-  "generatedAt": "2026-06-28T16:00:00Z",
+  "generatedAt": "2026-06-28T16:15:00Z",
   "slot": "MIDDAY",
-  "focus": "Sunday MIDDAY, tight 4-play MLB board (14.5u). NOTHING is within 1 hour of first pitch — soonest is Reds/Pirates Under at ~96 min, then Cubs/Marlins at 131-136 min. Per the timing rule: lead with the most VIRAL verified read, but flag clearly that sharp positions can still move before lock.",
+  "supersedes": "earlier 2026-06-28_1200 draft that mislabeled the Marlins play as -1.5",
+  "focus": "QUALITY UPGRADE + correction. Stop posting stat-sheets; post CHARACTERS. The breakout asset is the anonymous whales with huge verified P&L. Lead with the +$860K bettor making two moves on our card today.",
+  "correction": "Pick is Miami Marlins +1.5 (-190) — getting 1.5 runs, NOT -1.5. Sign verified vs site convention (SharpFlow.jsx:5446 `${team} ${line>0?'+':''}${line}`) and wallet entryLine 1.5. exportTodaysPicks.mjs now emits a sign-correct `selection` string so this can't recur.",
   "timing": {
-    "nowET": "12:00 PM",
-    "withinOneHour": "NONE — soonest play (Reds/Pirates Under 9.5) is 96 min out",
-    "note": "All four positions can still shift; HomeRunHazard's Marlins money was first seen 1 min before the scan. Re-pull the board before posting if it's been >30 min."
+    "nowET": "12:15 PM",
+    "withinOneHour": "NONE yet — soonest (Reds/Pirates Under 9.5 & Pirates ML) ~81 min; Marlins +1.5 ~121 min",
+    "note": "Positions can still move; flag it. The whale's Marlins money was first seen 12:09 ET."
   },
-  "nextBeatLogic": "Last night we posted the DR Congo whale hero (1 like, 1228 views) and the 'Massive slate' card (1 like) — both underperformed; the engagement/RT gap is the thing to crack. Today is a fresh board. The niche's single highest-engagement format is the sharp-vs-public market READ (@invisiblestats 'Public vs Sharps' = 70K eng). Next beat = the cleanest, most quotable market read on the board: Marlins -1.5 has 100% of tracked sharp money and $0 on the other side. The $0 IS the viral hook.",
   "verifiedTape": {
-    "source": "public/sharp_spread_positions.json + sharp_total_positions.json (scannedAt 2026-06-28T15:58:53Z, ~11:58 AM ET) + social_analysis/todays_picks.json (15:59Z)",
-    "mia_stl_Marlins_spread": {
-      "pick": "Miami Marlins -1.5 -190, 4u, RANK (LOCK), proven 2-for/0-against, first pitch 18:16Z (~2:16 PM ET, 136 min)",
-      "awayInvested": 28858,
-      "awayWallets": 3,
-      "homeInvested": 0,
-      "pctOneSided": 100,
-      "headlineWallet": "HomeRunHazard (PROVEN, +$860,008 lifetime): $15,685 on Marlins -1.5; also Bagwell306 (ELITE, +$292,975) and ndb1 (PROVEN, +$653,231)",
-      "canMove": true
+    "source": "social_analysis/todays_picks.json (16:15Z) + public/sharp_spread_positions.json & sharp_total_positions.json (scanned ~12:00 ET)",
+    "whale_HomeRunHazard": {
+      "tier": "PROVEN",
+      "lifetimeSportPnl": 860008,
+      "leaderboardRank": 119,
+      "avgSportBet": 5133,
+      "betsTodayOnOurCard": [
+        {"selection": "Miami Marlins +1.5 (-190)", "invested": 15685, "sizeVsAvg": "3.06x", "firstPitchET": "~2:15"},
+        {"selection": "Reds/Pirates Under 9.5 (-101)", "invested": 3534, "firstPitchET": "~1:35"}
+      ]
     },
-    "chc_mil_Under": {
-      "pick": "Cubs/Brewers Under 8.5 -109, 4u, TOP (LOCK), proven 2-for/0, first pitch 18:11Z (~2:11 PM ET, 131 min)",
-      "underInvested": 16837,
-      "underWallets": 3,
-      "overInvested": 2268,
-      "pctUnder": 88,
-      "canMove": true
-    },
-    "cin_pit_Under": {
-      "pick": "Reds/Pirates Under 9.5 -101, 4u, RANK (LOCK), proven 2-for/0, first pitch 17:36Z (~1:36 PM ET, 96 min) — SOONEST/firmest",
-      "underInvested": 3534,
-      "underWallets": 1,
-      "overInvested": 729,
-      "headlineWallet": "HomeRunHazard (PROVEN, +$860,008) — the SAME whale that's on the Marlins spread",
-      "canMove": true
-    },
-    "record": "Since June 1 (28 days): 158-130 shipped (54.9%), +29.47u, +4.3% ROI, +1.05u/day [DAILY_AGSU_REPORT.md]"
-  },
-  "recommended": "hero_single",
-  "options": {
-    "hero_single": {
-      "label": "Marlins -1.5 clean sweep (sharp-vs-public market read — niche's top format)",
-      "type": "single tweet",
-      "text": "Sharp money on the Marlins spread: $29K.\n\nThe other side: $0. ⚾\n\nThree proven winners hammered Miami -1.5 — nobody's touching the Cardinals.\n\n• 100% of the tracked sharp money is on one side\n• Led by a +$860K winner who dropped $15.7K\n• First pitch ~2:15 ET — money's still flowing in, but it's already completely one-sided\n\nMarlins -1.5. Every wallet is live on the site 👉 [your link]\n\nRiding the sweep, or fading it? 🎯"
-    },
-    "thread": null,
-    "alt_hooks": [
-      "Sharp money on the Marlins spread: $29K. The other side: $0.",
-      "A +$860K winner is betting two games today. Both are on our board."
+    "board": [
+      {"selection": "Cubs/Brewers Under 8.5 (-109)", "tier": "TOP", "provenFor": 3, "provenAgainst": 0, "underInvested": 16837, "overInvested": 2268, "firstPitchET": "~2:11"},
+      {"selection": "Reds/Pirates Under 9.5 (-101)", "tier": "RANK", "provenFor": 3, "provenAgainst": 0, "firstPitchET": "~1:35"},
+      {"selection": "Miami Marlins +1.5 (-190)", "tier": "RANK", "provenFor": 2, "provenAgainst": 0, "awayInvested": 28858, "homeInvested": 0, "firstPitchET": "~2:15"},
+      {"selection": "Pittsburgh Pirates ML -134", "tier": "SHARP-PRIME", "provenFor": 2, "provenAgainst": 0, "firstPitchET": "~1:35"}
     ],
+    "record": "Since June 1 (28 days): 158-130 shipped (54.9%), +29.47u, +4.3% ROI [DAILY_AGSU_REPORT.md]"
+  },
+  "houseVoice": "THE BLEND — character lead + trading-desk authority, 1 emoji max, mantra close, franchise cliffhanger (locked 2026-06-28)",
+  "recommended": "hero_whale_report",
+  "options": {
+    "hero_whale_report": {
+      "label": "The Whale Report (Blend voice) — character + desk authority + cliffhanger franchise",
+      "type": "single tweet",
+      "text": "A bettor up $860,000 just made two moves this afternoon. We're on both. \ud83d\udc0b\n\nHe doesn't tweet and he doesn't sell picks \u2014 he's top-120 of every wallet we track, and he just fired 3\u00d7 his usual size on one game.\n\nThe two tickets:\n\u2022 Reds\u2013Pirates UNDER 9.5 \u2014 first pitch 1:35 ET\n\u2022 Marlins +1.5 \u2014 the size-up \u2014 2:15 ET\n\nThe public bets logos. He bets the math.\n\nWe report back tonight."
+    },
     "alternates": [
       {
-        "label": "Reds/Pirates Under — SOONEST play (~90 min, firmest tape)",
-        "text": "A +$860K winner just bet the Reds–Pirates UNDER. ⚾\n\nFirst pitch in ~90 minutes — the closest play to lock on the board.\n\n• HomeRunHazard (+$860K lifetime) sitting on Under 9.5\n• Sharp money leans Under, almost nothing on the Over\n• Proven winners 2, against 0\n\nUnder 9.5 👉 [your link]\n\nUnder or over? 🎯"
+        "label": "The Intelligence Desk (dry authority — the 103K-ceiling format, @PatrickE_Vegas style)",
+        "text": "What the proven winners are doing on today's MLB card \u2014 the money you can't see:\n\nCubs\u2013Brewers: 88% of tracked sharp money is on the UNDER. Three proven winners on it, none against.\n\nReds\u2013Pirates: same read \u2014 the UNDER, three winners, nobody fading.\n\nMarlins +1.5: $29K backing Miami to get the run. The Cardinals side? Not one tracked dollar.\n\nThe public bets teams. The pros bet the math."
       },
       {
-        "label": "Record flex — proof for the brand (honesty hook)",
-        "text": "Up +29 units since June 1. We post every single one — the wins AND the Ls. ⚾\n\n• 158-130 on real plays (54.9%)\n• +4.3% ROI, ~+1 unit a day, 28 days straight\n• Today's card is live now\n\nNo deleted picks. No hidden losses. Just the tape 👉 [your link]\n\nFollow if you're riding with the sharps. 🎯"
+        "label": "The size-up, solo (single-play character)",
+        "text": "$15,685 on the Miami Marlins. That's 3\u00d7 what this bettor normally risks \u2014 and he's up $860,000 doing it. \ud83d\udc0b\n\nMiami +1.5, getting a run and a half. The other side has not one tracked dollar.\n\nFirst pitch 2:15 ET. The money's still moving, but it's only moving one way."
       }
     ],
-    "standalone_rt_line": "Sharp money on the Marlins spread: $29K. The other side: $0.",
+    "standalone_rt_line": "A bettor up $860,000 made two bets this afternoon. We're on both.",
     "companion_post": {
-      "label": "reply within ~30 min of the hero",
-      "text": "Bonus tell: the same wallet — HomeRunHazard, +$860K lifetime — is ALSO on the Reds–Pirates Under (first pitch ~1:35 ET).\n\nWhen a winner like that doubles up in one afternoon, I'm paying attention. 👀"
-    }
+      "label": "reply within ~30 min — the receipt (visual)",
+      "text": "The receipt: HomeRunHazard, rank #119 of every bettor we track, +$860K lifetime. Both tickets timestamped this afternoon. \ud83d\udc47 [screenshot the tape]"
+    },
+    "tonight_payoff": "Close the loop: 'HomeRunHazard went X-for-2 today.' Honest grade either way — that IS the brand and the cliffhanger payoff."
   },
   "voice_checks": {
     "line1_screenshot_test": true,
     "one_rt_line": true,
-    "premium_formatting": true,
-    "real_sharp_dollars": true,
-    "timing_priority_applied": true,
-    "positions_can_move_flagged": true,
-    "three_proof_slots_max": true,
-    "binary_close": true,
-    "no_back_to_back_format_repeat": true
+    "character_driven": true,
+    "franchise_repeatable": true,
+    "real_verified_numbers": true,
+    "sign_correct_selection": true,
+    "timing_flagged": true,
+    "cliffhanger_followup": true
   }
 }

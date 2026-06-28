@@ -37,6 +37,18 @@
 
 **Stop list:** far-out positions quoted as locked; obscure-subject heroes when a legible read exists; setup-line openers; soft "thoughts?" closes; 6+ proof-line walls.
 
+## Quality reset — the "1M bar" + house voice (added 12:30 PM ET)
+Pulled the real top performers in our lane this run to calibrate what actually travels:
+- **@marlowxbt — 28K eng:** a narrative about an anonymous Polymarket wallet ("Sharky6999. $641,513 profit. 96% win rate"). A *story about a winning wallet* — literally our product as a story.
+- **@PatrickE_Vegas — 103K eng:** dry, no-emoji trading-desk note ("Where the sharps/public are…"). The niche's highest ceiling. Mechanism: authority + inside info.
+- **@AlexCaruso — 72K eng:** honest recap with ✅❌ ("1-4, I hold my Ls"). Identity/accountability.
+- **@invisiblestats — 70K eng:** terse public-vs-sharps data table.
+
+**Throughline:** authority, characters, and accountability travel; pick-slips with bullets don't. **House voice locked = "The Blend"** — lead with the whale as a character, write with desk-level authority, 1 emoji max, mantra close, franchise cliffhanger. The bullet-list pick is now the FLOOR (alternate only), never the hero.
+
+## Data integrity fix this run
+A draft mislabeled the Marlins play "-1.5" (it's **+1.5**, getting runs). Root-caused and fixed at source: `exportTodaysPicks.mjs` now emits a sign-correct `selection` string ("Miami Marlins +1.5 (-190)") using the site's own convention, so the loop never hand-derives a run-line sign again.
+
 ## Loop maintenance done this run
 - **Baked the timing rule into `TWITTER_LOOP.md` (Phase 3)**: prioritize ≤60-min plays as firm "last call" with a countdown; for >60-min plays, hero the most viral read but require a "can still move" flag and the game time; re-pull the board if >30 min stale.
 - Carried forward last run's hardened growth-tips relevance/English gate (dropped 13 fandom/foreign posts again this run).
