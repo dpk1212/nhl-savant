@@ -1,55 +1,57 @@
-# A Twitter Next Steps — 2026-06-28 12:30 PM ET · MIDDAY
+# A Twitter Next Steps — 2026-06-28 · ENGAGEMENT-FIRST RESET
 
-> **House voice locked: "The Blend"** — lead with the whale as a character, write with trading-desk authority. One purposeful emoji max, mantra close, franchise cliffhanger. Pick label is sign-verified: **Miami Marlins +1.5 (-190)** (getting 1.5 runs). Modeled on the real winners in our lane: @marlowxbt's wallet-story (character) + @PatrickE_Vegas's desk note (authority, 103K eng).
+> **#1 goal = GROWTH / max distribution.** The hero LEADS with an engagement mechanic that forces an action (reply / vote / screenshot / return-visit). The sharp-money system is the **backbone and proof — directional only** ("the sharpest money," "every winning bettor we track," "our highest-conviction play"), plus the model/record (+29u) within reason. **No precise Polymarket $ figures in the tweet.** Rotate the mechanic every post — never the same one twice in a row. Pick labels are sign-verified from `todays_picks.json` `selection`.
 
-## Recommended post — "The Whale Report" (Blend voice)
+## Recommended HERO — Reply-before-reveal (mechanic #1)
+*Best fit for a cold pregame binary. Forces a reply BEFORE the reveal + a reason to come back tonight.*
 
 ```
-A bettor up $860,000 just made two moves this afternoon. We're on both. 🐋
+Cubs–Brewers. The total is 8.5.
 
-He doesn't tweet and he doesn't sell picks — he's top-120 of every wallet we track, and he just fired 3× his usual size on one game.
+Over or under? Lock your pick in the replies BEFORE you scroll.
 
-The two tickets:
-• Reds–Pirates UNDER 9.5 — first pitch 1:35 ET
-• Marlins +1.5 — the size-up — 2:15 ET
+I already know where every sharp bettor we track landed — and it's our highest-conviction play on the board. First pitch 2:11 ET. I reveal the side and grade it tonight. ⚾
 
-The public bets logos. He bets the math.
-
-We report back tonight.
+Don't lurk. Commit.
 ```
 
-**Why it wins:** Character + anomaly (3× size-up) + desk authority + a cliffhanger that earns the next post. RT line = the first sentence. Every number verified on today's tape (HomeRunHazard, rank #119, +$860,008; $15,685 on Miami +1.5 vs his $5,133 avg = 3.06×; $3,534 on the Under). It launches a nightly franchise — tonight you post the grade.
+**Why it wins:** the binary + "commit before you scroll" forces a reply (the single strongest engagement signal); the reveal/grade is a built-in return visit and a nightly franchise. Proof is directional only. Zero shaky numbers to misquote.
 
-## Alternates
+## Rotation alternates (pick whichever fits the moment — vary it next time)
 
-**The Intelligence Desk** (dry authority — the 103K-ceiling format):
+**② Call-your-shot / accountability (screenshot bait):**
 ```
-What the proven winners are doing on today's MLB card — the money you can't see:
+Calling it now: Cubs–Brewers stays UNDER 8.5.
 
-Cubs–Brewers: 88% of tracked sharp money is on the UNDER. Three proven winners on it, none against.
+This is our highest-conviction play on the board today and where the sharpest money in the game went — the same model that's +29 units since June 1.
 
-Reds–Pirates: same read — the UNDER, three winners, nobody fading.
-
-Marlins +1.5: $29K backing Miami to get the run. The Cardinals side? Not one tracked dollar.
-
-The public bets teams. The pros bet the math.
+Screenshot this. If the bats wake up, come drag me tonight. I'll be here either way. 🎯
 ```
 
-**The size-up, solo** (single-play character):
+**③ Polarizing tribe take (agree/disagree war):**
 ```
-$15,685 on the Miami Marlins. That's 3× what this bettor normally risks — and he's up $860,000 doing it. 🐋
+If you're on the OVER in Cubs–Brewers tonight, you're betting with the public — and against every winning bettor we track.
 
-Miami +1.5, getting a run and a half. The other side has not one tracked dollar.
+The pros are on the under 8.5. They don't bet for fun. They bet to be right.
 
-First pitch 2:15 ET. The money's still moving, but it's only moving one way.
+So which one are you? ⚾
 ```
 
-## RT line
-> A bettor up $860,000 made two bets this afternoon. We're on both.
+**④ Like/RT-as-vote (pure distribution):**
+```
+Cubs–Brewers, total 8.5. Let's settle it.
+
+❤️ = under, with the sharps
+🔁 = over, you think the bats show up
+
+First pitch 2:11 ET. The timeline's about to go on record.
+```
+
+## Reply (within ~30 min of the hero)
+> The reveal/grade is the payoff for ①. For ②–④, drop ONE directional receipt — "three proven winners on the under, none fading it" — never a precise dollar figure. Visual or a clean one-liner drives the dwell + early engagement.
 
 ## Action checklist
-- **Post the Whale Report hero now** (timing: ~1:05 / ~1:45 to first pitch — positions can still move; re-check if you wait).
-- **Reply within ~30 min:** the receipt — screenshot HomeRunHazard's two tickets + the #119 rank. Visual proof drives reposts.
-- **Tonight:** close the loop — grade the whale's day honestly ("HomeRunHazard went X-for-2"). That's the franchise payoff and the brand.
-
-> Note: the wrong "Marlins -1.5" draft (PR #27) is superseded by this. exportTodaysPicks.mjs now emits a sign-correct `selection` so it can't recur.
+- **Post the hero now** — first pitch ~2:11 ET, positions can still move; re-pull the board if you wait >30 min.
+- **Rotate the mechanic next post** — don't run reply-before-reveal twice in a row. Next slot: call-your-shot or the like/RT vote.
+- **Tonight:** close the loop — reveal the side and grade it honestly. That return-visit IS the franchise.
+- **Always be scouting:** before the next hero, name the freshest viral hook shape on X right now and test it (Phase 1 mandate).
