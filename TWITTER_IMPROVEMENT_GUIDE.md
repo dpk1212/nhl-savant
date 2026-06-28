@@ -1,6 +1,6 @@
-# Twitter Improvement Guide — 2026-06-27 (EVENING)
+# Twitter Improvement Guide — 2026-06-28 (MIDDAY)
 
-> **Verdict:** Our best labeled post is a **pick_with_proof** SUPER-lock explainer (12 likes) — proof + conviction beats bare cards. The niche's highest-engagement shape is the **sharp/public market-read board**, which we keep posting with a weak opener (our one attempt: 3 likes). Fix the opener, not the format: lead line 1 with the money/the split, never a setup line like "Massive slate tonight."
+> **Verdict:** Our best post is still the **pick_with_proof** conviction explainer (12 likes). Last night's obscure-game whale hero (DR Congo) was a strong hook but landed at **1 like** — a US betting audience doesn't connect with obscure soccer, and it posted with no lead time. Today: same viral structure, **more legible market (MLB)**, a cleaner number ("$0 on the other side"), and respect the clock.
 
 *Maintained by The Twitter Loop (Phase 2). The three sections below are PERSISTENT — re-emitted every run.*
 
@@ -29,36 +29,35 @@
 ---
 
 ## Performance snapshot (truth layer — labeled data only)
-- **n = 5** of 20 posts have real likes/RTs — **directional, not statistical** (refresh runs Mon/Thu; pulled live this run).
-- Avg likes **6.6** · **Retweets ~0** — still zero reposts. That's the gap.
-- **Best labeled post:** `2070888202299174981` — *pick_with_proof*, **12 likes**. Opens "Our highest conviction tier is the SUPER lock. We don't hand…"
-- **Format leaderboard (avg likes):** pick_with_proof **12** (n=1) · "other" **7.5** · pick_card **3** · sharp_public_board **3**.
-- **Weakest:** `2070583160803619090` (*sharp_public_board*, 3 likes) and `2070983093641511148` (*pick_card*, 3 likes) — both opened with a setup line instead of a standalone market read.
+- **n = 5** of 21 posts have real likes/RTs — **directional, not statistical** (pulled live this run).
+- Avg likes **5.6** · **Retweets ~0** — still zero reposts. That's the whole game.
+- **Best labeled post:** `2070888202299174981` — *pick_with_proof* SUPER-lock explainer, **12 likes**.
+- **Format leaderboard (avg likes):** pick_with_proof **6.5** (n=2) · "other" **5** · pick_card **5**.
+- **The miss:** `2071009748950851948` — last night's DR Congo whale hero (*pick_with_proof*), **1 like / 1,228 views**. Great structure, wrong market (obscure soccer) + no lead time. The hook works; the subject + timing didn't.
 
 ## What's working / not
-- **Working:** conviction + proof (the SUPER-lock explainer) and human/"other" posts. Numbers and a clear stance.
-- **Not working:** **0 retweets** — nothing is quotable enough to repost. Bare card lists still flop: today's 5:30 PM "Massive slate tonight" loaded-card post got **3 likes** because line 1 was a setup, not a hook.
+- **Working:** conviction + proof, and human "other" posts. Clear stance + real numbers.
+- **Not working:** zero retweets; subject choice matters as much as structure — a US betting audience connects with MLB/marquee far more than obscure international soccer. Bare card lists still flop (the "Massive slate" card = ~1 like in the labeled scrape).
 
 ## The niche gap (steal the structure)
-- **sharp_public_board — @PatrickE_Vegas / @invisiblestats:** line 1 names the game + promises the sharp-vs-public split; proof = public % vs sharp $ + line move; close = a verdict. We post the picks; they post the *read*. Same info, different order. Our one attempt under-performed only because the opener buried the hook — the format is the niche's best, our execution wasn't.
+- **sharp_public_board — @invisiblestats ("Public vs Sharps", 70K eng) / @PatrickE_Vegas:** line 1 = the split/the money; proof = side-by-side $/% + line move; close = a verdict. We post picks; they post the *read*. The most viral variant is a **clean sweep / "$0 on the other side"** — the lopsidedness is the hook.
 
 ## Before → After
-- `2070583160803619090` (3 likes) — opened as a board; first line wasn't a standalone hook.
-- **After:** Line 1 = "Sharp money just poured $207K into a game you've never heard of." · Proof = $ on our side · % of game money · the lead wallet · Close = "Tailing the unknown, or fading it?"
+- DR Congo hero (1 like) — right structure, wrong subject (obscure soccer) and posted at the buzzer.
+- **After:** Same structure on a legible market with a sharper number — "Sharp money on the Marlins spread: $29K. The other side: $0." · Proof = 100% one-sided · +$860K lead wallet · game time · Close = "Riding the sweep or fading it?"
 
 ## This week's ONE experiment
-- **obscure-game-whale openers:** post 3 single-game whale reads that LEAD with the dollar magnitude on a low-profile game (tonight's DR Congo / Argentina template). Baseline 6.6 avg likes; success = ≥10 avg and our first retweet.
+- **"$0 on the other side" clean-sweep openers** on legible (MLB/marquee) markets, posted with real lead time. Baseline 5.6 avg likes; success = ≥10 avg and our first retweet.
 
 ## Mandates for the writer (this run)
-- **Mine obscure/low-profile games for big sharp money** — most novel, most quotable (tonight: $207K on DR Congo, $204K on Argentina).
-- Open with the **dollar read** ($ + %), never a bare pick list or a setup line ("Massive slate tonight").
+- **TIMING:** prioritize plays ≤60 min to game (firm "last call" + countdown). For plays >60 min, you may still hero the most viral read but you MUST flag it can still move. Name the game time (ET) every post.
+- Pick **legible markets** for the hero (MLB/marquee) over obscure international games — the structure only converts if the audience knows the teams.
+- Open with the **dollar read / the contrast** ($ + %, or "$X vs $0"), never a bare pick list or setup line.
 - Every post: one standalone RT line; emoji on; **≤3 proof slots** (thread if deeper).
-- Reply to your own hero within ~30 min with the lead wallet's rank/ROI (dwell + early engagement).
-- Live posts stay forward-looking; **own the 0-1 start only in the night recap** (honesty hook).
+- Reply to your own hero within ~30 min with the lead wallet's rank/ROI or a second game it's on.
 - Close with a binary side choice, not "thoughts?".
 
 ## Stop list
-- Setup-line / pick-first openers with no market read.
-- Soft "thoughts?" closes.
-- Walls of 6+ proof lines in one tweet — thread or trim to 3.
-- Quoting settled/in-progress six-figure totals as if they're still tailable.
+- Far-out positions quoted as if locked (always flag "can still move" >60 min).
+- Obscure-subject heroes when a legible-market read is available.
+- Setup-line / pick-first openers; soft "thoughts?" closes; 6+ proof-line walls.

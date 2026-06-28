@@ -1,59 +1,60 @@
-# A Twitter Next Steps — 2026-06-27 6:54 PM ET · EVENING
+# A Twitter Next Steps — 2026-06-28 12:00 PM ET · MIDDAY
 
-> The single best thing to post next: the **DR Congo last-call whale read** — it kicks in ~30 minutes, it's the most quotable hook we have, and it closes the loop on the bare card list we posted at 5:30 PM. Lead with the money.
+> The single best thing to post next: the **Marlins -1.5 clean sweep** — it's the most quotable read on the board ("$29K on one side, $0 on the other"), on a legible MLB market, using the niche's highest-engagement format. Nothing is within 1 hour yet, so it carries a "money's still moving" flag; the countdown beats come ~1:00 ET.
 
 ## Recommended post
 
 ```
-Sharp money just poured $207K into a game you've never heard of. ⚽
+Sharp money on the Marlins spread: $29K.
 
-Uzbekistan vs DR Congo — kicks in ~30 minutes.
+The other side: $0. ⚾
 
-• $207K on DR Congo: 79% of every sharp dollar in the match
-• 8 proven wallets, led by a +$571K winner who dropped $105K
-• The other side? $28K. It's not close.
+Three proven winners hammered Miami -1.5 — nobody's touching the Cardinals.
 
-DR Congo ML -150 (4u). Every wallet is live on the site before kickoff 👉 [your link]
+• 100% of the tracked sharp money is on one side
+• Led by a +$860K winner who dropped $15.7K
+• First pitch ~2:15 ET — money's still flowing in, but it's already completely one-sided
 
-Tailing the unknown, or fading it? 🎯
+Marlins -1.5. Every wallet is live on the site 👉 [your link]
+
+Riding the sweep, or fading it? 🎯
 ```
 
-**Why it wins:** It passes both gates — line 1 is a standalone screenshot ("Sharp money just poured $207K into a game you've never heard of"), and it carries one clean RT line. It uses our top growth hook (obscure-game whale), every number is verified against the live tape (scanned 6:52 PM ET), and the ~30-minute clock creates real urgency. It also closes the open loop: at 5:30 we listed the card; now we post the *read* behind the soonest play.
+**Why it wins:** Line 1 + line 2 are a standalone screenshot — the "$29K vs $0" contrast IS the hook and the RT line. It's the niche's top-performing structure (sharp-vs-public read), on a market a US audience actually knows (the fix for last night's obscure-soccer miss). Every number traces to tape scanned 11:58 AM ET. It's honest about timing (~2h out, can still move) per the standing rule.
 
 ## Alternates
 
 ```
-$204K in sharp money is sitting on Argentina tonight — 81% of the entire match. ⚽
+A +$860K winner just bet the Reds–Pirates UNDER. ⚾
 
-Argentina vs Jordan, ~10 PM ET.
+First pitch in ~90 minutes — the closest play to lock on the board.
 
-• $204K from 6 proven wallets
-• Jordan's side: $32K
-• When the money is this lopsided, I want to know who's right
+• HomeRunHazard (+$860K lifetime) sitting on Under 9.5
+• Sharp money leans Under, almost nothing on the Over
+• Proven winners 2, against 0
 
-Argentina ML -525 (4u). On the board before kickoff 👉 [your link]
+Under 9.5 👉 [your link]
 
-Riding the chalk or fading it? 🎯
+Under or over? 🎯
 ```
 
 ```
-Seven figures of sharp money hit the board today. We tracked every dollar. ⚾⚽
+Up +29 units since June 1. We post every single one — the wins AND the Ls. ⚾
 
-The biggest single read: $2.77M pouring onto one side of Ghana–Croatia.
+• 158-130 on real plays (54.9%)
+• +4.3% ROI, ~+1 unit a day, 28 days straight
+• Today's card is live now
 
-Still live to tail tonight:
-• DR Congo ML -150 — $207K, 79% (kicks ~7:30)
-• Argentina ML -525 — $204K, 81% (kicks ~10)
+No deleted picks. No hidden losses. Just the tape 👉 [your link]
 
-Every wallet, every dollar 👉 [your link]
-
-What's on your card tonight? 🎯
+Follow if you're riding with the sharps. 🎯
 ```
 
 ## RT line
-> Nobody's watching Uzbekistan vs DR Congo. Six figures of sharp money are.
+> Sharp money on the Marlins spread: $29K. The other side: $0.
 
 ## Action checklist
-- **Post the DR Congo hero now** — it's a true last call (~30 min to kickoff).
-- **Reply within ~30 min** with the lead-wallet detail: "The wallet leading it: ChinesePro — a +$571K proven winner — sized this at ~1.7× their normal action. That's conviction, not a dart throw. 👀"
-- **Next open loop to close:** the Argentina nightcap read at ~9:30 PM ET, then an **honest night recap** (own the 0-1 start) once results settle.
+- **Post the Marlins hero now** (note: ~2h to first pitch — it can still move; if you wait, re-check the tape).
+- **Reply within ~30 min:** "Same wallet — HomeRunHazard, +$860K lifetime — is ALSO on the Reds–Pirates Under (first pitch ~1:35 ET). When a winner like that doubles up, I pay attention. 👀"
+- **~1:00–1:15 ET:** post the Reds/Pirates Under as a true "last call" (it's the soonest, ~90 min now → inside the hour by then) with a countdown.
+- **Tonight:** honest recap of the card to close the loop.
