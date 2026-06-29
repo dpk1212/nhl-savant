@@ -232,6 +232,38 @@ function rocAuc(scores, outcomes) {
   }
   return pos > 0 && neg > 0 ? tp / (pos * neg) : null;
 }
+// 1-D logistic calibration: fit p = sigmoid(a + b·x) by Newton/IRLS so a raw
+// score (e.g. the V12 [-1,+1] wallet-quality differential, which is NOT a
+// probability) can be mapped to a win probability and scored with Brier.
+// Returns { a, b } in the ORIGINAL x units, or null if N is too small / degenerate.
+// NOTE: when used on the same picks it's evaluated against, the resulting Brier
+// is IN-SAMPLE (mildly optimistic) — always label it as such in the report.
+function logisticFit1D(x, y) {
+  if (!Array.isArray(x) || x.length !== y.length || x.length < 8) return null;
+  const mx = avg(x), sx = std(x) || 1;            // standardize for stability
+  const xs = x.map(v => (v - mx) / sx);
+  let a = 0, b = 0;
+  for (let iter = 0; iter < 50; iter++) {
+    let g0 = 0, g1 = 0, h00 = 0, h01 = 0, h11 = 0;
+    for (let i = 0; i < xs.length; i++) {
+      const p = sigmoid(a + b * xs[i]);
+      const w = Math.max(p * (1 - p), 1e-6);
+      const err = p - y[i];
+      g0 += err; g1 += err * xs[i];
+      h00 += w; h01 += w * xs[i]; h11 += w * xs[i] * xs[i];
+    }
+    const det = h00 * h11 - h01 * h01;
+    if (Math.abs(det) < 1e-9) break;
+    const da = (h11 * g0 - h01 * g1) / det;
+    const db = (h00 * g1 - h01 * g0) / det;
+    a -= da; b -= db;
+    if (Math.abs(da) < 1e-7 && Math.abs(db) < 1e-7) break;
+  }
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
+  // de-standardize: a + b·((x−mx)/sx) = (a − b·mx/sx) + (b/sx)·x
+  return { a: a - b * mx / sx, b: b / sx };
+}
+const logisticProb = (fit, x) => (fit ? sigmoid(fit.a + fit.b * x) : null);
 // Monotonicity score: +N when sequence strictly increases, -N when strictly decreases.
 function monoScore(arr) {
   let s = 0;
@@ -1539,16 +1571,20 @@ function buildVersionComparison(report, rows, eras) {
     const agg = aggregate(eraRows);
     // Rank/calibration metrics: each era uses ITS OWN model's score so we
     // honestly measure that model's separating power. v11 score is a logit
-    // (sigmoid → probability); v12 score is a wallet-quality mean ratio in
-    // [-1, +1] and is NOT a probability, so we skip Brier for v12 to avoid
-    // misleading apples-to-oranges comparisons. AUC is rank-based and
-    // works on both.
+    // (sigmoid → probability) so its Brier is direct. v12 score is a
+    // wallet-quality mean ratio in [-1, +1] and is NOT a probability, so we
+    // first calibrate it to a win probability with an in-sample 1-D logistic
+    // fit, then score Brier on that. AUC is rank-based and works on both.
     const scoreFn = isV12 ? (r => r.agsV12) : (r => r.ags);
     const withAgs = eraRows.filter(r => Number.isFinite(scoreFn(r)) && r.won != null);
     const auc = rocAuc(withAgs.map(scoreFn), withAgs.map(r => r.won));
-    const brier = isV12
-      ? null
-      : brierScore(withAgs.map(r => sigmoid(r.ags)), withAgs.map(r => r.won));
+    let brier;
+    if (isV12) {
+      const fit = logisticFit1D(withAgs.map(scoreFn), withAgs.map(r => r.won));
+      brier = fit ? brierScore(withAgs.map(r => logisticProb(fit, scoreFn(r))), withAgs.map(r => r.won)) : null;
+    } else {
+      brier = brierScore(withAgs.map(r => sigmoid(r.ags)), withAgs.map(r => r.won));
+    }
     const perPick = agg.flat;
     const endLabel = era.effectiveTo
       ? era.effectiveTo.slice(5)  // MM-DD without year
@@ -1598,6 +1634,8 @@ function buildVersionComparison(report, rows, eras) {
     }
     report.push('');
     report.push(`> **ΔBrier > 0** means the newer model's Brier is LOWER (better probability calibration). All other Δ columns: positive = newer model is better. Verdict requires the newer model to dominate on 3 of 4 metrics (ROI / Win% / AUC / Brier).`);
+    report.push('');
+    report.push(`> **On v12's Brier.** The v12 score is a bounded \`[-1, +1]\` wallet-quality differential, not a probability. To make Brier comparable to the older logit models, the score is mapped to a win probability via an **in-sample 1-D logistic calibration** (\`p = sigmoid(a + b·score)\`). Because it's fit on the same picks it scores, treat it as a mildly optimistic floor on true calibration error — the per-staking-book breakdown in § 9 is the more actionable read.`);
     report.push('');
   }
 
@@ -2154,6 +2192,60 @@ function buildV12TierAnalysis(report, stats) {
     const monL = monGraded.filter(r => r.won === 0).length;
     report.push(`> **MONITORING volume:** ${monRows.length} picks tracked at 0u${monGraded.length ? ` (would-be ${monW}-${monL}, ${pct(monW, monGraded.length)} win)` : ''}. Shown to users for context; **not** part of the staked record, units, or ROI.`);
     report.push('');
+
+    // ── § 5b — Path trajectory time-series (Mermaid line charts) ───────────
+    // Per staking tier: cumulative PnL (u) and cumulative win% over the live
+    // timeline, so each path can be monitored for trend (is it earning or
+    // bleeding, and is its hit-rate holding?). Charts roll the granular paths
+    // up into the 5 shared display tiers (same buckets as the table above) —
+    // granular paths individually have too few graded picks to trend cleanly.
+    const gradedTS = v121Rows.filter(r => r.won != null && r.hcStakeTier && r.hcStakeTier !== 'MONITORING' && r.date);
+    const tsDates = [...new Set(gradedTS.map(r => r.date))].sort();
+    if (tsDates.length >= 2) {
+      const xLabels = '[' + tsDates.map(d => `"${d.slice(5)}"`).join(', ') + ']';
+      report.push(`### § 5b — Path Trajectory (win% & PnL over time)`);
+      report.push('');
+      report.push(`Each staking tier's **cumulative PnL (units)** and **cumulative win rate (%)** across the live timeline. Read the PnL line for "is this path making money and is the slope still up?" and the win-rate line for "is its hit-rate holding or decaying?" Only tiers with graded action on ≥2 distinct days are charted.`);
+      report.push('');
+      for (const dt of AGS_V12_DISPLAY_TIERS) {
+        const tierRows = gradedTS.filter(r => dt.paths.includes(r.hcStakeTier));
+        const tierDays = new Set(tierRows.map(r => r.date));
+        if (tierRows.length < 2 || tierDays.size < 2) continue;
+        // Cumulative series carried forward across the shared date axis.
+        let cumPnl = 0, cw = 0, cl = 0;
+        const pnlSeries = [], wrSeries = [];
+        for (const d of tsDates) {
+          for (const r of tierRows.filter(x => x.date === d)) {
+            cumPnl += (r.profit || 0);
+            if (r.won === 1) cw++; else if (r.won === 0) cl++;
+          }
+          pnlSeries.push(Number(cumPnl.toFixed(2)));
+          wrSeries.push(cw + cl > 0 ? Math.round((cw / (cw + cl)) * 100) : 0);
+        }
+        const pMin = Math.min(0, ...pnlSeries), pMax = Math.max(0, ...pnlSeries);
+        const pLo = Math.floor(pMin - Math.max(1, Math.abs(pMin) * 0.1));
+        const pHi = Math.ceil(pMax + Math.max(1, Math.abs(pMax) * 0.1));
+        const label = `${dt.label} (${dt.paths.join('/')})`;
+        report.push(`**${label}** — final ${cw}-${cl}, ${cw + cl > 0 ? Math.round(cw / (cw + cl) * 100) : 0}% win, ${fmtSigned(cumPnl)}u`);
+        report.push('');
+        report.push('```mermaid');
+        report.push('xychart-beta');
+        report.push(`    title "${dt.label} — cumulative PnL (u)"`);
+        report.push(`    x-axis ${xLabels}`);
+        report.push(`    y-axis "PnL (u)" ${pLo} --> ${pHi}`);
+        report.push(`    line [${pnlSeries.join(', ')}]`);
+        report.push('```');
+        report.push('');
+        report.push('```mermaid');
+        report.push('xychart-beta');
+        report.push(`    title "${dt.label} — cumulative win rate (%)"`);
+        report.push(`    x-axis ${xLabels}`);
+        report.push(`    y-axis "Win %" 0 --> 100`);
+        report.push(`    line [${wrSeries.join(', ')}]`);
+        report.push('```');
+        report.push('');
+      }
+    }
   }
 
   // Per-pick sizing drift — only flag non-odds-cap discrepancies
@@ -2169,20 +2261,15 @@ function buildV12TierAnalysis(report, stats) {
   report.push(`### Sizing pipeline integrity`);
   report.push('');
   if (drifters.length > 0) {
-    report.push(`🚨 **${drifters.length} picks deviate from the V12 ladder by > ±0.05u** even after accounting for the production odds-cap. Investigate \`unitsFromAgsV12\` in \`syncPickStateAuthoritative.js\`.`);
-    report.push('');
-    report.push(`| Date       | Sport | Mkt    | Pick                    | Odds  | V12   | Tier     | Expected (capped) | Actual | Drift  |`);
-    report.push(`|------------|-------|--------|-------------------------|-------|-------|----------|-------------------|--------|--------|`);
-    for (const d of drifters.slice(0, 25)) {
-      const r = d.r;
-      const teamLabel = `${r.team || r.sideKey || ''}`.substring(0, 23);
-      const oddsStr = r.peakOdds > 0 ? `+${r.peakOdds}` : `${r.peakOdds}`;
-      report.push(`| ${r.date.padEnd(10)} | ${(r.sport || '').padEnd(5)} | ${(r.marketType || '').padEnd(6)} | ${teamLabel.padEnd(23)} | ${oddsStr.padStart(5)} | ${fmtSigned(r.agsV12, 3).padStart(5)} | ${(r.agsV12Tier || '—').padEnd(8)} | ${(d.expectedCapped.toFixed(2)+'u').padStart(17)} | ${(d.actual.toFixed(2)+'u').padStart(6)} | ${fmtSigned(d.diff, 2).padStart(6)} |`);
-    }
-    if (drifters.length > 25) report.push(`| _… and ${drifters.length - 25} more_ |`);
+    // NOTE: "expected" here is the legacy SCORE-ladder target (agsV12Tier →
+    // V12_TIER_UNITS). Production now sizes off the HC-margin / v12abc ladder,
+    // so most of this delta is the two ladders disagreeing by design, NOT a
+    // bug. Kept as a one-line tripwire; the full per-pick dump was removed as
+    // noise. A real regression looks like a sudden JUMP in this count.
+    report.push(`🟡 **${drifters.length} shipped picks differ from the legacy score-ladder target by > ±0.05u.** Expected once the HC-margin/v12abc ladder diverges from the old score-band ladder — this is informational, not a bug. Watch for a sudden spike (would indicate a real \`unitsFromAgsV12\` regression in \`syncPickStateAuthoritative.js\`).`);
     report.push('');
   } else {
-    report.push(`🟢 **No sizing drift detected.** Every shipped V12 pick's actual stake matches the ladder target (after odds-cap) within ±0.05u. The sizing pipeline is healthy.`);
+    report.push(`🟢 **No sizing drift detected** vs the legacy score-ladder target (after odds-cap).`);
     report.push('');
   }
 }
@@ -2345,9 +2432,9 @@ function buildV12MuteAudit(report, stats) {
   report.push('');
 }
 
-// § 9 — V12 vs V11 Differentiation
-function buildV12VsV11Differentiation(report, stats) {
-  report.push(`## § 9 — How Different is V12 from V11? (Pick Selection)`);
+// § 9 — v12abc AUC / Brier by staking book
+function buildV12abcDiscrimination(report, stats) {
+  report.push(`## § 9 — v12abc AUC / Brier (by staking book)`);
   report.push('');
   if (!stats || stats.v12Rows.length === 0) {
     report.push(`_(no graded V12-era picks yet)_`);
@@ -2355,39 +2442,69 @@ function buildV12VsV11Differentiation(report, stats) {
     return;
   }
   const { v12Rows } = stats;
-  const shared = v12Rows.filter(r => Number.isFinite(r.ags) && Number.isFinite(r.agsV12));
-  if (shared.length === 0) {
-    report.push(`_(no shared-stamp picks to compare)_`);
+  report.push(`The score that drives every pick is the same V12 number; the **a / ab / abc** books differ only in *which picks they choose to stake*. This panel asks, for the picks each book actually ships: does the V12 score still **discriminate** winners from losers (AUC), and is it **calibrated** (Brier)? If a newer overlay (ab adds RANK; abc adds the proven-\$ rescues) drags AUC/Brier down, it's buying volume at the cost of signal quality.`);
+  report.push('');
+  report.push(`- **AUC** — P(score of a winner > score of a loser). 0.50 = coin flip · 0.55 = real edge · 0.60+ = strong.`);
+  report.push(`- **Brier (cal)** — mean squared error of a win probability obtained by an **in-sample** logistic calibration of the score. Lower = better; 0.25 = the coin-flip prior.`);
+  report.push(`- **Brier (market)** — same metric on the closing-odds implied probability, as a benchmark. **Δ = market − model**; positive means V12 is better-calibrated than the market.`);
+  report.push('');
+
+  // Book membership by staking path (MONITORING is never staked).
+  const BOOK_A   = ['SUPER', 'TOP', 'TOP+', 'MINI', 'MINI-', 'CONFIRMED']; // HC-margin core (incl. its $-modifiers)
+  const BOOK_RANK = ['RANK'];                                              // ab adds 2-for-0 rescue
+  const BOOK_SHARP = ['SHARP', 'SHARP-PRIME'];                            // abc adds proven-$ rescues
+  const books = [
+    { key: 'v12a',   label: 'v12a (HC margin core)',     paths: BOOK_A },
+    { key: 'v12ab',  label: 'v12ab (+ RANK 2-for-0)',    paths: [...BOOK_A, ...BOOK_RANK] },
+    { key: 'v12abc', label: 'v12abc (+ proven-$ rescue)', paths: [...BOOK_A, ...BOOK_RANK, ...BOOK_SHARP] },
+  ];
+
+  report.push(`| Book                         | Graded N | W-L    | Win %  | AUC    | Brier (cal) | Brier (market) | Δ vs market |`);
+  report.push(`|------------------------------|----------|--------|--------|--------|-------------|----------------|-------------|`);
+  const rowsByBook = {};
+  for (const bk of books) {
+    const br = v12Rows.filter(r =>
+      r.hcStakeTier && bk.paths.includes(r.hcStakeTier) &&
+      Number.isFinite(r.agsV12) && r.won != null);
+    rowsByBook[bk.key] = br;
+    if (br.length === 0) {
+      report.push(`| ${bk.label.padEnd(28)} | ${'0'.padStart(8)} | ${'—'.padEnd(6)} | ${'—'.padStart(6)} | ${'—'.padStart(6)} | ${'—'.padStart(11)} | ${'—'.padStart(14)} | ${'—'.padStart(11)} |`);
+      continue;
+    }
+    const scores = br.map(r => r.agsV12);
+    const outs = br.map(r => r.won);
+    const w = outs.filter(o => o === 1).length;
+    const l = outs.length - w;
+    const auc = rocAuc(scores, outs);
+    const fit = logisticFit1D(scores, outs);
+    const brierCal = fit ? brierScore(br.map(r => logisticProb(fit, r.agsV12)), outs) : null;
+    const mktRows = br.filter(r => Number.isFinite(americanToImplied(r.lockOdds || r.peakOdds)));
+    const brierMkt = mktRows.length
+      ? brierScore(mktRows.map(r => americanToImplied(r.lockOdds || r.peakOdds)), mktRows.map(r => r.won))
+      : null;
+    const dMkt = (brierCal != null && brierMkt != null) ? brierMkt - brierCal : null;
+    report.push(`| ${bk.label.padEnd(28)} | ${String(br.length).padStart(8)} | ${(w+'-'+l).padEnd(6)} | ${pct(w, br.length).padStart(6)} | ${fmtN(auc, 3).padStart(6)} | ${fmtN(brierCal, 4).padStart(11)} | ${fmtN(brierMkt, 4).padStart(14)} | ${(dMkt != null ? fmtSigned(dMkt, 4) : '—').padStart(11)} |`);
+  }
+  report.push('');
+
+  // Narrative: did the overlays help or hurt discrimination?
+  const aucOf = (key) => {
+    const br = rowsByBook[key];
+    return br && br.length >= 3 ? rocAuc(br.map(r => r.agsV12), br.map(r => r.won)) : null;
+  };
+  const aA = aucOf('v12a'), aAbc = aucOf('v12abc');
+  if (aA != null && aAbc != null) {
+    const d = aAbc - aA;
+    if (d <= -0.02) {
+      report.push(`> 🟡 **The overlays dilute discrimination** — AUC falls ${fmtN(aA,3)} (v12a) → ${fmtN(aAbc,3)} (v12abc), Δ = ${fmtSigned(d,3)}. The RANK/proven-\$ rescues add volume on picks where the V12 score sorts winners less cleanly. Justified only if their standalone ROI (see § 5) pays for the lower signal quality.`);
+    } else if (d >= 0.02) {
+      report.push(`> 🟢 **The overlays improve discrimination** — AUC rises ${fmtN(aA,3)} (v12a) → ${fmtN(aAbc,3)} (v12abc), Δ = ${fmtSigned(d,3)}. The rescue paths are landing on picks the score still ranks well.`);
+    } else {
+      report.push(`> 🟢 **The overlays are signal-neutral** — AUC ${fmtN(aA,3)} (v12a) → ${fmtN(aAbc,3)} (v12abc), Δ = ${fmtSigned(d,3)}. They add volume without degrading how well the score separates winners from losers.`);
+    }
     report.push('');
-    return;
   }
-  report.push(`The cron continues to compute the v11 score (\`v8_ags\`) on every pick during the transition, even though V12 is now the authoritative model. That lets us answer a critical question: **is V12 just a re-skin of V11 with new sizes, or is it picking fundamentally different bets?**`);
-  report.push('');
-  report.push(`The cleanest test is **Spearman rank correlation** between v11 score and V12 score on the same picks. ρ ≈ +1.0 means the two models agree on which picks are strongest (so V12 is basically a sizing change). ρ ≈ 0 means they're orthogonal (V12 is picking completely different bets). ρ < 0 means they actively *disagree* — what V11 ranks high, V12 ranks low.`);
-  report.push('');
-  const v11Scores = shared.map(r => r.ags);
-  const v12Scores = shared.map(r => r.agsV12);
-  const rho = spearman(v11Scores, v12Scores);
-  report.push(`| Metric                              | Value                |`);
-  report.push(`|-------------------------------------|----------------------|`);
-  report.push(`| Shared graded picks                 | ${String(shared.length).padStart(20)} |`);
-  report.push(`| Spearman ρ (v11 vs V12 score)       | ${fmtN(rho, 3).padStart(20)} |`);
-  report.push('');
-  let interp;
-  if (rho == null) {
-    interp = '_(insufficient sample)_';
-  } else if (rho > 0.7) {
-    interp = `🟡 **V12 and V11 largely agree** — ρ = ${rho.toFixed(3)}. V12 is mostly a sizing redesign on top of V11's selection. The mute rule and absolute ladder are the main behavioural differences; pick selection is similar.`;
-  } else if (rho > 0.2) {
-    interp = `🟢 **V12 is meaningfully different from V11** — ρ = ${rho.toFixed(3)}. The two models agree on the broad direction but materially disagree on which picks deserve the most weight. V12's wallet-quality formula is doing real work.`;
-  } else if (rho > -0.2) {
-    interp = `🟢 **V12 is essentially independent of V11** — ρ = ${rho.toFixed(3)}. The two models are picking fundamentally different bets. Whether V12 outperforms V11 in this window (see § 2) tells you whether the wallet-quality redesign is paying off.`;
-  } else {
-    interp = `🟢 **V12 actively disagrees with V11** — ρ = ${rho.toFixed(3)}. The two models are ranking picks in nearly-opposite order. V12 is a fundamentally different bet-selection model, NOT a v11 tweak. If V12's results in § 2 are good, that disagreement is V12's whole edge.`;
-  }
-  report.push(`> ${interp}`);
-  report.push('');
-  report.push(`> **Why this is the only honest V11-vs-V12 comparison here.** The Firestore \`v8_agsTier\` stamp is overwritten by V12 in production, so any tier-confusion-matrix comparison would be artificially 100% diagonal. The raw scores (\`v8_ags\` and \`v8_agsV12\`) are still distinct, so Spearman ρ on those is the cleanest signal.`);
+  report.push(`> ⚠ **In-sample caveat.** Brier (cal) uses a logistic fit on the same picks it scores, so it's a mildly optimistic floor on true calibration error. AUC is rank-based and needs no fit. Track both week-over-week — a rising Brier or an AUC drifting toward 0.50 is the early warning that the score is decaying before ROI follows.`);
   report.push('');
 }
 
@@ -3771,7 +3888,7 @@ async function main() {
   buildV12SportMarketAnalysis(report, v12Stats);
   buildV12ScoreReliability(report, v12Stats);
   buildV12MuteAudit(report, v12Stats);
-  buildV12VsV11Differentiation(report, v12Stats);
+  buildV12abcDiscrimination(report, v12Stats);
   buildV12WalletQualityInputs(report, v12Stats);
   buildV12RecentLivePicks(report, v12Stats, 30);
 
