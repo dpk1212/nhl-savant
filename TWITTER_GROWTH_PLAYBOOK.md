@@ -3,7 +3,7 @@
 > Updated by **The Twitter Loop** (Phase 1) each run. "What's working on X right now
 > and how we grow." The Writer (Phase 3) pulls hook shapes + construction tricks here.
 
-*Last updated: 2026-06-28 12:00 PM ET (MIDDAY loop run) · source: niche_trends.json (32 in-lane posts), growth_tips.json (35 kept; English/relevance gate dropped 13 fandom/foreign), live sharp tape (scanned 11:58 AM ET).*
+*Last updated: 2026-06-29 3:42 PM ET (MIDDAY loop run) · source: niche_trends.json (60 in-lane posts, fetched 6/28), growth_tips.json (35 kept), live sharp tape + board (todays_picks.json @ 11:09 AM ET — fresh; my_tweets/niche/growth/brief snapshot is 6/28, Refresh-Twitter-Analysis Action didn't fire today).*
 
 ## NORTH STAR — GROWTH IS THE ONLY GOAL
 The mission is **1,000,000 followers** via **MAX DISTRIBUTION**. The backend system is profitable and works; the bottleneck is reach. Every post is judged by ONE question: *does it FORCE an action* — a reply, a vote, a quote-tweet, a screenshot, a return-visit? Information alone gets ignored; engagement is the algorithm's fuel. We have ~0 retweets — fix that and growth compounds. Always think one move ahead: *what is the best NEXT post for virality, right now?* You are the account's social-media expert, **perpetually scouting the next viral format** — never running a fixed template.
@@ -40,6 +40,8 @@ Our sharp-money / Polymarket tracking is HOW we know the side and our credibilit
 - **Obscure-game / underdog whale** — six-figure (or one-sided) sharp money on a game/side the public ignores. Curiosity gap + "we see what you don't" + whale tape. Our likeliest first retweet.
 - **"N bets the sharps like" authority list** — *@WizBetz* "MLB Play of the Day", *@invisiblestats* — clean, scannable list. Maps to our board if we open with a read, not a setup line.
 - **Honest record flex / recap** — post the units AND the Ls (e.g. "+29u since June 1, 158-130, we post every L"). Honesty is our rarest edge and a strong identity beat.
+- **Live running card / ✅❌ recap (NEW 6/29)** — *@AlexCaruso* posts a running ✅❌ list of the day's results as they settle. Maps perfectly to a HOT-HAND moment: when a play just cashed and the next leg is minutes away, post "✅ [winner] — cashed / ⬜ [next] — kicks in X min" + the week record. The just-cashed result is the proof; the loading next leg is the open loop. Only list results you can confirm — never fabricate the ✅/❌ history.
+- **Record-on-an-angle flex** — *@WizBetz* "I'm 12-3 on Brewers ML props" — a narrow, specific hot streak with a number. Our version: "Our soccer card is 11-4 this week" attached to the live next leg. The specificity (one sport, one week) makes it believable and screenshot-worthy.
 
 ## Tweet-construction tricks landing now
 - **The contrast/twist opener** — two short lines that flip ("$29K on one side. $0 on the other."). The gap between the two lines is the screenshot. Most reposted shape we can build.
@@ -60,10 +62,13 @@ Our sharp-money / Polymarket tracking is HOW we know the side and our credibilit
 - Rotate identity/contrarian/record beats so the feed stays human, not a wall of cards.
 - Thread deep reads instead of truncating.
 
-## Trends watchlist (2026-06-28 MIDDAY)
-- Tight Sunday MLB board (4 plays). The cleanest tape: **Marlins -1.5 = $29K sharp, $0 against** (3 proven wallets, led by a +$860K winner). The "$0 other side" is the most viral hook on the board.
-- **HomeRunHazard (+$860K lifetime) is doubling up** — on the Marlins spread AND the Reds/Pirates Under. "What is this whale doing today" is a reusable cross-play angle.
-- Nothing within 1 hour at midday → no true "last call" yet; lead viral + caveat, save the countdown beats for ~1:00–1:15 ET.
+## THE NEXT VIRAL BET (named this run — test it now)
+**Hot-hand live running card + call-your-shot.** We have a real momentum event: SOC card is **11-4 this week (+11.3u, 73%)**, **Brazil just cashed** (it was the day's biggest sharp-consensus play — 19 sharp wallets / $752K home tape), and **Germany (our biggest play left, 4u TOP) kicks off in ~48 min** with the sharp money on our side. That's a firm last-call + a live winning streak + a marquee team the whole world knows. Lead with the just-cashed receipt, tease the next leg with a countdown, close with "tail the run or fade us?" This fuses the freshest format (@AlexCaruso ✅ running card) with mechanic #2 (call-your-shot). Rotate OFF reply-before-reveal (last run's hero).
+
+## Trends watchlist (2026-06-29 MIDDAY)
+- **Marquee soccer ≠ obscure soccer.** Last week's DR Congo whale post died at 1 like (audience didn't know the teams). Germany / Brazil / Canada are blue-blood national teams in a live international window — legible to a global + US audience. The "wrong subject" lesson does NOT apply here; the live streak makes it stronger.
+- **Replies are the whole game (growth_tips theme):** the recurring X-algo posts ("most of you are posting into the void," Elon algo threads, Kai Cenat clip strategy) all point one way — the algorithm rewards replies/reposts, not reads. Our zero-RT problem is a mechanic problem, not a content-quality problem. Every hero must force an action.
+- **Board shape today (4 shipped):** Germany ML -275 (4u TOP, 16:30 ET — firm), Brazil ML ✅ (cashed 13:00 ET), Marlins/Rockies Over 11.5 (3u SHARP, 20:41 ET), Mets ML +112 (2.5u SHARP-PRIME, 19:08 ET). The Mets dog (+112, only proven winners FOR, none against) is the cleanest evening "sharp on the underdog" hero once Germany settles.
 
 ## Stale / stop
 - Setup-line / pick-list openers with no market read ("Massive slate tonight" → ~1 like).

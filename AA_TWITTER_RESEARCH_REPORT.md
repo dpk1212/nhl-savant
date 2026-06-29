@@ -1,54 +1,41 @@
-# A Twitter Research Report — 2026-06-28 12:00 PM ET · MIDDAY
+# A Twitter Research Report — 2026-06-29 3:42 PM ET · MIDDAY
 
-> **Mission: 1,000,000 followers.** Reach is fine (1.2K–1.9K views/post); the bottleneck is **shareability — ~0 retweets.** Every post is judged: would a stranger screenshot or repost this? **Data freshness:** board + sharp tape scanned **11:58 AM ET** (live), timeline + niche + growth all re-pulled via Firecrawl this run. **Timing flag:** nothing on today's board is within 1 hour of first pitch — all positions can still move.
+> State of the account: profitable backend, tiny reach (avg 5.6 likes, ~0 RTs). We're sitting on a real growth catalyst right now — a live soccer winning streak (11-4 this week) with a result that just landed (Brazil ✅) and a marquee last-call (Germany, ~48 min). **Data-freshness note:** today's board + sharp tape are fresh (6/29 11:09 AM ET); the social-analysis snapshot (my_tweets / niche_trends / growth_tips / improvement_brief) is from 6/28 — the *Refresh Twitter Analysis* Action did not fire today, so the performance read is directional.
 
 ## Growth & trends (Phase 1)
 
-**Viral hook shapes in our lane right now**
-- **Sharp-vs-public market read (the niche's #1 format):** @invisiblestats "Public vs Sharps" hit **70K engagement**; @PatrickE_Vegas runs the same shape. Line 1 = the money/the split → proof → verdict. The most viral variant is a **clean sweep / "$0 on the other side."**
-- **Obscure/underdog whale:** one-sided sharp money on a side the public ignores. Strong hook — but see the Phase-2 lesson on subject legibility.
-- **"N bets the sharps like" authority list:** @WizBetz "MLB Play of the Day", @invisiblestats — scannable, screenshot-friendly.
-- **Honest record flex:** post the units AND the Ls. Our rarest edge.
+**The named next viral bet this run: hot-hand live running card + call-your-shot.** We have a genuine momentum event, not a manufactured one — and it checks every box the algorithm rewards.
 
-**Construction tricks landing now**
-- **The contrast/twist opener** — two short lines that flip ("$29K on one side. $0 on the other."). The gap between them is the screenshot.
-- **Growth lane runs LONG & thread-shaped** — @AlexFinn's "I read all 24,000 lines of the X algo, here's everything 🧵" (30K eng). Thread deep reads instead of a 6-line wall.
-- **Volume + real voice** — @rachcorrine (15K eng): tweet more, have an opinion, be a real person, build community in replies.
-- **Reach is throttled, not removed** — @GiveMeBanHammer (36K eng): dense, high-signal posts get carried; low-effort/over-posting gets deboosted.
+**Current viral hook shapes in our lane (from niche_trends, 60 posts):**
+- **Live ✅❌ running card — @AlexCaruso.** Posts results as they settle. On a hot hand this is the highest-leverage format available today: the just-cashed ✅ is the proof, the loading next leg is the open loop. Only ever list results you can confirm.
+- **Record-on-an-angle flex — @WizBetz** ("I'm 12-3 on Brewers ML props"). A narrow, specific streak with a number reads as believable, not braggy. Ours: "Our soccer card is 11-4 this week."
+- **Sharp-vs-public read — @invisiblestats (70K eng) / @PatrickE_Vegas.** Still our evergreen high-ceiling structure for non-streak slots: line 1 = the split/the money, proof = side-by-side, close = a verdict.
 
-**NEW standing rule — timing:** ≤60 min to game = firm "last call" (use a countdown). >60 min = hero the most viral read but always flag "money's still coming in / can move." Name the game time every post.
+**Tweet-construction tricks landing now:**
+- **Replies are the whole game.** The growth_tips corpus is dominated by X-algorithm posts ("most of you are posting into the void," Elon's algo threads, Kai Cenat's clip strategy). The throughline: the algorithm pays for replies/reposts, not reads. Our zero-RT problem is a *mechanic* problem, not a quality problem.
+- **Contrast/twist openers** and **specific numbers** out-perform setup lines. A result ("We just cashed Brazil") beats a preview ("Big soccer card today").
 
-**Trends watchlist (today)**
-- Cleanest tape on the board: **Marlins -1.5 = $29K sharp, $0 against** (3 proven wallets, led by a +$860K winner). The "$0 other side" is the most viral hook available.
-- **HomeRunHazard (+$860K lifetime) is doubling up** — Marlins -1.5 AND Reds/Pirates Under. "What's this whale doing today" is a reusable cross-play angle.
-- No play within 1 hour at midday → no true "last call" yet; the countdown beats come ~1:00–1:15 ET.
+**Growth levers:** lead with the result/the streak/the money; one quotable standalone line per post; reply to your own hero within 30 min with one extra receipt; close on a binary, never "thoughts?"; rotate mechanics so the feed stays human.
+
+**Trends watchlist:**
+- **Marquee soccer ≠ obscure soccer.** Germany / Brazil / Canada are blue-blood national teams in a live international window — legible worldwide. The DR Congo "wrong subject" lesson is about *obscurity*, not the sport. The live streak makes these stronger, not weaker.
+- **Board today (4 shipped):** Germany ML -275 (4u TOP, 16:30 ET — firm), Brazil ML ✅ (cashed 13:00 ET), Mets ML +112 (2.5u SHARP-PRIME, 19:08 ET), Marlins/Rockies Over 11.5 (3u SHARP, 20:41 ET). The Mets underdog is the cleanest evening "sharp on the dog" hero once Germany settles.
 
 ## How we're performing (Phase 2)
 
-**Labeled stats (n = 5 of 21 — directional; pulled live this run)**
-- Avg likes **5.6**, retweets **~0**.
-- **Best:** `2070888202299174981` — pick_with_proof SUPER-lock explainer, **12 likes**.
-- **The miss:** `2071009748950851948` — last night's DR Congo whale hero, **1 like / 1,228 views.** Right structure, wrong subject (obscure soccer) + posted at the buzzer.
-- **Format leaderboard (avg likes):** pick_with_proof **6.5** · "other" **5** · pick_card **5**.
+**Labeled stats (n = 5 of 21 — directional, last scraped 6/28, NOT refreshed today):**
+- Avg likes **5.6** · Retweets **~0**. The zero-RT wall is the entire growth story.
+- Best post: `2070888202299174981` — pick_with_proof conviction explainer, **12 likes**.
+- Format leaderboard (avg likes): pick_with_proof **6.5** · "other" **5** · pick_card **5**.
+- Standing miss: `2071009748950851948` — DR Congo whale hero, **1 like / 1,228 views** (great structure, obscure subject, no lead time).
 
-**The lesson:** subject legibility matters as much as structure. The whale hook works — but a US betting audience connects with MLB/marquee far more than obscure international soccer. Today: same structure, legible market, sharper number ("$0 on the other side"), real lead time.
+**What's working:** conviction + real numbers, human posts with a clear stance.
+**What's not:** we post *information*; the algorithm pays for *action*. Bare card lists and obscure subjects flop.
 
-**Mandates this run:** timing priority (≤60 min firm / >60 min flag-can-move); legible markets for the hero; lead with the dollar contrast; one RT line; ≤3 proof slots; reply within ~30 min with the lead wallet detail; binary close.
+**The niche gap:** peers post the *read* and the *result* and force a side; we post the *pick* and explain it. The fix isn't more detail — it's a forcing mechanic on top of the same proof.
 
-**Stop list:** far-out positions quoted as locked; obscure-subject heroes when a legible read exists; setup-line openers; soft "thoughts?" closes; 6+ proof-line walls.
+**This run's unlock:** a result + a streak + a deadline. Brazil ✅ (the proof) + 11-4 this week (the streak) + Germany in ~48 min (the deadline) = replies (tail/fade), screenshots (call-your-shot), and a return visit (grade the next leg). That's the three signals we've been missing, handed to us by the slate.
 
-## Quality reset — the "1M bar" + house voice (added 12:30 PM ET)
-Pulled the real top performers in our lane this run to calibrate what actually travels:
-- **@marlowxbt — 28K eng:** a narrative about an anonymous Polymarket wallet ("Sharky6999. $641,513 profit. 96% win rate"). A *story about a winning wallet* — literally our product as a story.
-- **@PatrickE_Vegas — 103K eng:** dry, no-emoji trading-desk note ("Where the sharps/public are…"). The niche's highest ceiling. Mechanism: authority + inside info.
-- **@AlexCaruso — 72K eng:** honest recap with ✅❌ ("1-4, I hold my Ls"). Identity/accountability.
-- **@invisiblestats — 70K eng:** terse public-vs-sharps data table.
+**Mandates this run:** rotate off reply-before-reveal → call-your-shot/running card; lead with the result + streak, not the pick card; Germany is firm (countdown, no caveat, re-pull if posting after ~4:15 ET); proof directional only (no Polymarket $/ROI — Brazil's proven-winner *count* is the unique-data touch in the reply); close on a binary.
 
-**Throughline:** authority, characters, and accountability travel; pick-slips with bullets don't. **House voice locked = "The Blend"** — lead with the whale as a character, write with desk-level authority, 1 emoji max, mantra close, franchise cliffhanger. The bullet-list pick is now the FLOOR (alternate only), never the hero.
-
-## Data integrity fix this run
-A draft mislabeled the Marlins play "-1.5" (it's **+1.5**, getting runs). Root-caused and fixed at source: `exportTodaysPicks.mjs` now emits a sign-correct `selection` string ("Miami Marlins +1.5 (-190)") using the site's own convention, so the loop never hand-derives a run-line sign again.
-
-## Loop maintenance done this run
-- **Baked the timing rule into `TWITTER_LOOP.md` (Phase 3)**: prioritize ≤60-min plays as firm "last call" with a countdown; for >60-min plays, hero the most viral read but require a "can still move" flag and the game time; re-pull the board if >30 min stale.
-- Carried forward last run's hardened growth-tips relevance/English gate (dropped 13 fandom/foreign posts again this run).
+**Stop list:** info cards with no mechanic; obscure-subject heroes; quoting Germany after kickoff; fabricated ✅/❌ history (only Brazil is confirmed today); soft "thoughts?" closes.
