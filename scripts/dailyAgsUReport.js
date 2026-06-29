@@ -697,7 +697,7 @@ function buildHeader(report, cutover, liveCal, eras) {
   report.push('');
   report.push(`**Active model:** \`${schemaLive}\` · **V12 went live:** ${v12From || '— (not yet shipped)'} · **Days live:** ${v12Days ?? '—'}`);
   report.push('');
-  report.push(`> This report is a **CEO-grade monitor of V12 in production**. The only non-V12 section is § 2 (model version comparison), kept so you can see V12's results in the context of every prior model bump. Everything else — daily trajectory, tier scoreboard, score reliability, mute-rule audit, wallet-quality inputs, operational health — is **strictly V12-scoped** (pick date ≥ ${v12From || 'TBD'}) so cron back-fill of V12 stamps onto older picks can't contaminate the production numbers.`);
+  report.push(`> This report is a **CEO-grade monitor of V12 in production**. The only non-V12 section is § 2 (model version comparison), kept so you can see V12's results in the context of every prior model bump. Everything else — daily trajectory, tier scoreboard, stake calibration, mute-rule audit, wallet-quality inputs, operational health — is **strictly V12-scoped** (pick date ≥ ${v12From || 'TBD'}) so cron back-fill of V12 stamps onto older picks can't contaminate the production numbers.`);
   report.push('');
 }
 
@@ -2203,9 +2203,9 @@ function buildV12TierAnalysis(report, stats) {
     const tsDates = [...new Set(gradedTS.map(r => r.date))].sort();
     if (tsDates.length >= 2) {
       const xLabels = '[' + tsDates.map(d => `"${d.slice(5)}"`).join(', ') + ']';
-      report.push(`### § 5b — Path Trajectory (win% & PnL over time)`);
+      report.push(`### § 5b — Path Trajectory & Stake-Size Monitor (win% & PnL over time)`);
       report.push('');
-      report.push(`Each staking tier's **cumulative PnL (units)** and **cumulative win rate (%)** across the live timeline. Read the PnL line for "is this path making money and is the slope still up?" and the win-rate line for "is its hit-rate holding or decaying?" Only tiers with graded action on ≥2 distinct days are charted.`);
+      report.push(`**This is the over-time stake-size monitor.** Each staking tier's **cumulative PnL (units)** and **cumulative win rate (%)** across the live timeline. Read the PnL line for "is this path making money at its current size, and is the slope still up?" — a tier whose PnL line is sloping *down* is over-staked for what it's returning. Read the win-rate line for "is its hit-rate holding or decaying?" Pair this with the point-in-time over/under verdicts in § 7. Only tiers with graded action on ≥2 distinct days are charted.`);
       report.push('');
       for (const dt of AGS_V12_DISPLAY_TIERS) {
         const tierRows = gradedTS.filter(r => dt.paths.includes(r.hcStakeTier));
@@ -2330,66 +2330,93 @@ function buildV12SportMarketAnalysis(report, stats) {
   }
 }
 
-// § 7 — V12 Score-band reliability
-function buildV12ScoreReliability(report, stats) {
-  report.push(`## § 7 — Does V12 Actually Predict Outcomes? (Score Reliability)`);
+// § 7 — Stake calibration: are we over/under-sizing each path?
+function buildV12StakeCalibration(report, stats) {
+  report.push(`## § 7 — Stake Calibration (are any paths over- or under-sized?)`);
   report.push('');
   if (!stats || stats.v12Rows.length === 0) {
     report.push(`_(no graded V12-era picks yet)_`);
     report.push('');
     return;
   }
-  const { v12Rows } = stats;
-  report.push(`If V12's score is real signal — not just a number — then **higher scores should win more often than the market is pricing**. This table buckets every graded V12 pick by score band and compares the realized win rate (what actually happened) against the market-implied win rate (what the closing odds said would happen). The gap, **Edge**, is V12's claimed alpha. Positive Edge in the high bands means V12 is finding mispricings the market hasn't.`);
+  // Only staked, graded picks (MONITORING is 0u and never staked).
+  const staked = stats.v12Rows.filter(r =>
+    r.hcStakeTier && r.hcStakeTier !== 'MONITORING' && r.won != null && (r.units || 0) > 0 && r.date);
+  if (staked.length === 0) {
+    report.push(`_(no graded staked picks under the v12abc ladder yet)_`);
+    report.push('');
+    return;
+  }
+  report.push(`Each path ships at a **fixed unit size**. This section asks the sizing question directly: **for the units we're risking on each path, is the realized PnL justifying that size?** A path staked at 6u that loses money is far more dangerous than a 1u path with the same win-rate, because every loss costs 6× as much. The read is simple:`);
   report.push('');
-  const v12Bands = [
-    { label: '> 0.9 (strongest)',  lo: 0.9,   hi: Infinity },
-    { label: '0.7 – 0.9',           lo: 0.7,   hi: 0.9 },
-    { label: '0.5 – 0.7',           lo: 0.5,   hi: 0.7 },
-    { label: '0.25 – 0.5',          lo: 0.25,  hi: 0.5 },
-    { label: '(0, 0.25]',           lo: 0,     hi: 0.25 },
-    { label: '≤ 0 (MUTED)',         lo: -Infinity, hi: 0 },
+  report.push(`- **Avg PnL / pick** is the single most important column — it's the average units won or lost *every time that path fires*, already accounting for both win-rate and stake size. Negative = that path is bleeding at its current size.`);
+  report.push(`- **Recent vs all-time ROI** (last 7 days) is the over-time monitor: a path whose recent ROI is collapsing below its all-time ROI is degrading *now*, before the cumulative line in § 5b bends.`);
+  report.push(`- **Verdict** flags paths to cut (over-sized + losing) or paths with room to grow (small size + strongly earning).`);
+  report.push('');
+
+  const PATHS = [
+    { key: 'SUPER',       u: 6, label: 'HC-2 (model max)' },
+    { key: 'TOP+',        u: 5, label: 'HC-1 + $-boost' },
+    { key: 'TOP',         u: 4, label: 'HC-1 (model)' },
+    { key: 'RANK',        u: 4, label: '2-for-0 rescue' },
+    { key: 'SHARP-PRIME', u: 4, label: 'proven-$ prime' },
+    { key: 'SHARP',       u: 3, label: 'proven-$ consensus' },
+    { key: 'MINI',        u: 3, label: 'mini-HC (gate-pass)' },
+    { key: 'MINI-',       u: 1, label: 'mini gate-cut' },
+    { key: 'CONFIRMED',   u: 1, label: 'margin 3+' },
   ];
-  report.push(`| V12 score band     | N   | Live N | W-L    | Realized | Implied | Edge       | ROI (live)|`);
-  report.push(`|--------------------|-----|--------|--------|----------|---------|------------|-----------|`);
-  let strongBandEdge = null;
-  let muteBandRealized = null;
-  for (const b of v12Bands) {
-    const bandRows = v12Rows.filter(r => {
-      if (!Number.isFinite(r.agsV12)) return false;
-      if (b.lo === -Infinity) return r.agsV12 <= b.hi;
-      if (b.hi === Infinity) return r.agsV12 > b.lo;
-      return r.agsV12 > b.lo && r.agsV12 <= b.hi;
-    });
-    if (bandRows.length === 0) continue;
-    const bandAgg = aggregate(bandRows);
-    const n = bandRows.length;
-    const wins = bandRows.filter(r => r.won === 1).length;
-    const realized = n > 0 ? wins / n * 100 : null;
-    const impliedVals = bandRows.map(r => americanToImplied(r.lockOdds || r.peakOdds)).filter(Number.isFinite);
-    const implied = impliedVals.length ? avg(impliedVals) * 100 : null;
-    const edge = (realized != null && implied != null) ? realized - implied : null;
-    if (b.label.startsWith('> 0.9') && edge != null) strongBandEdge = edge;
-    if (b.label.startsWith('≤ 0') && realized != null) muteBandRealized = realized;
-    report.push(`| ${b.label.padEnd(18)} | ${String(n).padStart(3)} | ${String(bandAgg.n).padStart(6)} | ${(bandAgg.w+'-'+bandAgg.l).padEnd(6)} | ${(realized != null ? realized.toFixed(1)+'%' : '—').padStart(8)} | ${(implied != null ? implied.toFixed(1)+'%' : '—').padStart(7)} | ${(edge != null ? (edge>=0?'+':'') + edge.toFixed(1)+'pp' : '—').padStart(10)} | ${(bandAgg.roi != null ? bandAgg.roi.toFixed(1)+'%' : '—').padStart(9)} |`);
+
+  // Recent window = picks dated within the last 7 calendar days of action.
+  const maxDate = staked.map(r => r.date).sort().slice(-1)[0];
+  const cutoff = new Date(new Date(maxDate).getTime() - 7 * 86400000).toISOString().slice(0, 10);
+
+  report.push(`| Path                  | Units | N   | W-L    | Win %  | ROI       | PnL (u)    | Avg PnL/pick | Recent ROI (7d) | Verdict                 |`);
+  report.push(`|-----------------------|-------|-----|--------|--------|-----------|------------|--------------|-----------------|-------------------------|`);
+  const barLabels = [], barVals = [];
+  for (const p of PATHS) {
+    const rows = staked.filter(r => r.hcStakeTier === p.key);
+    if (rows.length === 0) continue;
+    const n = rows.length;
+    const w = rows.filter(r => r.won === 1).length;
+    const l = n - w;
+    const stake = rows.reduce((s, r) => s + (r.units || 0), 0);
+    const pnl = rows.reduce((s, r) => s + (r.profit || 0), 0);
+    const roi = stake > 0 ? (pnl / stake) * 100 : null;
+    const avgPnl = n > 0 ? pnl / n : null;
+    const recentRows = rows.filter(r => r.date >= cutoff);
+    const recentStake = recentRows.reduce((s, r) => s + (r.units || 0), 0);
+    const recentPnl = recentRows.reduce((s, r) => s + (r.profit || 0), 0);
+    const recentRoi = recentStake > 0 ? (recentPnl / recentStake) * 100 : null;
+    // Sizing verdict.
+    let verdict;
+    if (n < 6) verdict = '⚪ thin — hold';
+    else if (roi <= -15 && p.u >= 3) verdict = '🔴 over-sized — cut';
+    else if (roi <= -8) verdict = '🟠 bleeding — watch';
+    else if (roi >= 15 && p.u <= 3) verdict = '🟢 under-sized — room';
+    else if (roi >= 5) verdict = '🟢 earning — size OK';
+    else verdict = '🟡 ~break-even';
+    report.push(`| ${p.label.padEnd(21)} | ${(p.u+'u').padStart(5)} | ${String(n).padStart(3)} | ${(w+'-'+l).padEnd(6)} | ${pct(w, n).padStart(6)} | ${(roi != null ? (roi>=0?'+':'')+roi.toFixed(1)+'%' : '—').padStart(9)} | ${fmtSigned(pnl).padStart(10)} | ${(avgPnl != null ? fmtSigned(avgPnl, 2)+'u' : '—').padStart(12)} | ${(recentRoi != null ? (recentRoi>=0?'+':'')+recentRoi.toFixed(1)+'%' : '—').padStart(15)} | ${verdict.padEnd(23)} |`);
+    if (n >= 3 && avgPnl != null) { barLabels.push(p.key); barVals.push(Number(avgPnl.toFixed(2))); }
   }
   report.push('');
-  // Narrative
-  const notes = [];
-  if (strongBandEdge != null) {
-    if (strongBandEdge > 3) notes.push(`🟢 **Strong-score band (> 0.9) wins ${strongBandEdge.toFixed(1)}pp more often than the market expects** — V12's high-confidence picks are real signal.`);
-    else if (strongBandEdge < -3) notes.push(`🚨 **Strong-score band (> 0.9) wins ${strongBandEdge.toFixed(1)}pp LESS than the market expects** — V12 is misidentifying its highest-confidence picks. This is bad.`);
-    else notes.push(`🟡 **Strong-score band (> 0.9) edge is +${strongBandEdge.toFixed(1)}pp** — borderline. Larger sample needed before declaring V12's top tier as real alpha.`);
-  }
-  if (muteBandRealized != null) {
-    if (muteBandRealized < 50) notes.push(`🟢 **Mute band (≤ 0) actually wins only ${muteBandRealized.toFixed(1)}%** — V12 correctly identifies these as losers. The mute rule is justified.`);
-    else if (muteBandRealized > 55) notes.push(`🚨 **Mute band (≤ 0) wins ${muteBandRealized.toFixed(1)}%** — these picks actually win MORE than half the time. V12 is rejecting winners. Loosen the mute threshold.`);
-    else notes.push(`🟡 **Mute band wins ${muteBandRealized.toFixed(1)}%** — roughly coin-flip. The mute rule isn't obviously wrong, but it's not capturing strong rejection either. §8 quantifies the dollar impact.`);
-  }
-  for (const n of notes) {
-    report.push(`> ${n}`);
+
+  // Bar chart — avg PnL/pick by path (the over/under-size signal at a glance).
+  if (barLabels.length >= 2) {
+    const lo = Math.floor(Math.min(0, ...barVals) - 0.5);
+    const hi = Math.ceil(Math.max(0, ...barVals) + 0.5);
+    report.push(`Avg PnL per pick by path — bars below 0 are paths losing money at their current stake:`);
+    report.push('');
+    report.push('```mermaid');
+    report.push('xychart-beta');
+    report.push(`    title "Avg PnL per pick by path (u, ≥3 graded)"`);
+    report.push(`    x-axis [${barLabels.map(k => `"${k}"`).join(', ')}]`);
+    report.push(`    y-axis "u / pick" ${lo} --> ${hi}`);
+    report.push(`    bar [${barVals.join(', ')}]`);
+    report.push('```');
     report.push('');
   }
+  report.push(`> **Over-time view:** § 5b charts each tier's cumulative PnL and win% across the full timeline — use it to confirm whether a "bleeding" verdict here is a genuine downtrend or just a rough patch. A path that's over-sized **and** trending down in § 5b is the one to resize first.`);
+  report.push('');
 }
 
 // § 8 — V12 Mute-rule effectiveness
@@ -2520,7 +2547,7 @@ function buildV12WalletQualityInputs(report, stats) {
   const { v12Rows } = stats;
   const withMeans = v12Rows.filter(r => Number.isFinite(r.agsV12ForMean) && Number.isFinite(r.agsV12AgMean));
   if (withMeans.length === 0) {
-    report.push(`_(the cron isn't stamping per-side wallet-quality means yet — this section will populate once \`v8_agsV12ForMean\` / \`v8_agsV12AgMean\` are being written. Until then, all you can see is the final V12 score in § 7.)_`);
+    report.push(`_(the cron isn't stamping per-side wallet-quality means yet — this section will populate once \`v8_agsV12ForMean\` / \`v8_agsV12AgMean\` are being written. Until then, all you can see is the final V12 score in § 12.)_`);
     report.push('');
     return;
   }
@@ -2612,9 +2639,15 @@ function buildV12RecentLivePicks(report, stats, n = 30) {
 //   F. Stability — rolling 7-day AUC across the V12 window
 //   G. Bootstrap 95% CI on overall V12 ROI
 function buildV12StatisticalMonitor(report, stats) {
-  report.push(`## § 12 — V12 Statistical Monitor (Predictive-Power Diagnostics)`);
+  report.push(`## § 12 — Trust the Process: Predictive Edge Over Time`);
   report.push('');
-  report.push(`> **Why this section matters.** Win-rate and ROI tell you whether V12 made money. The numbers below tell you whether V12 deserves the credit — i.e. whether the score itself is genuinely separating winners from losers, or whether the realised PnL is just variance on a near-random gate. Track these week-over-week: if AUC drifts below 0.50, the score has lost its signal and the ROI line is about to follow.`);
+  report.push(`> **What this whole section is for.** Win-rate and ROI (everything above) tell you whether V12 *made money*. This section tells you whether it made money because the score is **real signal** or because we got **lucky**. That distinction is the entire game: real signal repeats, luck doesn't. Everything below answers three questions, in order.`);
+  report.push('');
+  report.push(`1. **Does the score separate winners from losers?** (12A–12C, plus 12E per sport) — If we line up every pick by its V12 score, do the higher-scored picks actually win more? We measure this several independent ways so no single metric can fool us. 12D is a population sanity check (is the score spread normal, or are a few outliers doing all the work?).`);
+  report.push(`2. **Is that edge stable, or is it decaying?** (12F) — A score can be predictive overall but quietly losing its edge. We track the same separation on a moving window so we see decay *as it happens*.`);
+  report.push(`3. **Is the edge real or just small-sample luck?** (12G) — We resample the picks thousands of times to get an honest confidence band. If the band straddles "break-even," we don't have proof yet — we have a hopeful trend.`);
+  report.push('');
+  report.push(`> **The one number to watch:** **AUC**. Read it as "*pick a random winner and a random loser — what's the chance V12 scored the winner higher?*" 0.50 = coin-flip (no signal). 0.55 = a real, usable edge. 0.60+ = strong. If rolling AUC (12F) drifts under 0.50, the score has stopped working and the ROI line is about to follow it down.`);
   report.push('');
   if (!stats || stats.liveRows.length < 10) {
     report.push(`_(need at least 10 graded V12 live picks for the stat tests; currently have ${stats?.liveRows.length ?? 0}.)_`);
@@ -2642,7 +2675,7 @@ function buildV12StatisticalMonitor(report, stats) {
 
   report.push(`### 12A — Discrimination: does V12 actually separate winners from losers?`);
   report.push('');
-  report.push(`Five different statistical lenses on the same question. Each one is computed only over **live shipped picks** (units > 0, tracked = false) that have a graded outcome.`);
+  report.push(`Five lenses on **one** question: *do higher scores go with wins?* They're independent on purpose — AUC and KS look at the **ranking** (do winners sit higher than losers regardless of scale), while the correlations (Spearman / point-biserial) look at the **strength and consistency** of that relationship. When they all agree, the signal is trustworthy; when they disagree, the edge is fragile. All computed over **live shipped picks** (units > 0) with a graded outcome.`);
   report.push('');
   report.push(`| Metric                                | Value    | Plain-English read                                                                 |`);
   report.push(`|---------------------------------------|----------|------------------------------------------------------------------------------------|`);
@@ -2688,7 +2721,7 @@ function buildV12StatisticalMonitor(report, stats) {
   const withMeans = live.filter(r => Number.isFinite(r.agsV12ForMean) && Number.isFinite(r.agsV12AgMean));
   report.push(`### 12C — Per-feature correlation (V12's actual inputs vs outcome)`);
   report.push('');
-  report.push(`V12's score is built from four inputs per pick: the mean quality of FOR-side wallets, the mean quality of AGAINST-side wallets, the count of wallets on each side, and the count of \`proven\` (HC_BASE) wallets among them. We test each one independently — does it correlate with the outcome on its own? If a feature has near-zero correlation, V12 is paying for noise in that channel.`);
+  report.push(`The score above is a *blend* of inputs. Here we crack it open and test each ingredient **on its own**: FOR-side wallet quality, AGAINST-side wallet quality, how many wallets are on each side, and how many are \`proven\` (HC_BASE). For each one we ask "does this ingredient, by itself, line up with winning?" Two columns answer it: **r** (Pearson — strength of a straight-line relationship) and **ρ** (Spearman — same idea but rank-based, so one weird pick can't distort it). Numbers near **0** mean that ingredient is contributing noise, not signal; we'd want to down-weight it. A sign that's *backwards* (e.g. AGAINST-side quality showing a positive correlation with our wins) means the input is wired against us. The most important sanity check: \`agsV12ForMean\` should be **positive**, \`agsV12AgMean\` should be **negative**.`);
   report.push('');
   if (withMeans.length < 10) {
     report.push(`_(only ${withMeans.length} picks have per-side wallet-quality means stamped — feature-level tests need ≥ 10. Section will fill in once more picks ship.)_`);
@@ -2795,17 +2828,18 @@ function buildV12StatisticalMonitor(report, stats) {
   // ────────────────────────────────────────────────────────────────────
   // 12F — Rolling 7-day AUC (stability over time)
   // ────────────────────────────────────────────────────────────────────
-  report.push(`### 12F — Stability: rolling 7-day AUC across the V12 window`);
+  report.push(`### 12F — Stability: predictive edge over time (rolling 7-day window)`);
   report.push('');
-  report.push(`Recompute AUC on a moving 7-day window. If recent windows are degrading (e.g. dropping from 0.58 → 0.50 → 0.45), V12's edge is decaying in real time. Each row anchors on the END date of its window.`);
+  report.push(`This is the **decay alarm**. We recompute the same two signals on a moving 7-day window and chart them so you can *see* the trend rather than read it off a wall of numbers:`);
+  report.push('');
+  report.push(`- **Rolling AUC** — is the score still separating winners from losers *recently*? A line drifting toward 0.50 = the edge is fading.`);
+  report.push(`- **Rolling edge (pp)** — realized win% minus the market-implied win% baked into the closing odds. This is the part that actually pays: a positive line means V12 is still beating the price the market set, *right now*.`);
   report.push('');
   const dates = [...new Set(live.map(r => r.date))].sort();
   if (dates.length < 7) {
     report.push(`_(need at least 7 calendar days of V12 picks for a rolling window; currently have ${dates.length}.)_`);
     report.push('');
   } else {
-    report.push(`| Window end | Days | N    | W-L    | Win %   | ROI       | AUC    |`);
-    report.push(`|------------|------|------|--------|---------|-----------|--------|`);
     // Step every 1 day; if too many rows trim to most recent 14.
     const windowDays = 7;
     const allWindows = [];
@@ -2817,11 +2851,56 @@ function buildV12StatisticalMonitor(report, stats) {
       const ss = win.map(r => r.agsV12);
       const ww = win.map(r => r.won);
       const agg = aggregate(win);
-      allWindows.push({ endDate, startDate, n: win.length, w: agg.w, l: agg.l, roi: agg.roi, auc: rocAuc(ss, ww) });
+      const realized = agg.n > 0 ? (agg.w / agg.n) * 100 : null;
+      const impliedVals = win.map(r => americanToImplied(r.lockOdds || r.peakOdds)).filter(Number.isFinite);
+      const implied = impliedVals.length ? avg(impliedVals) * 100 : null;
+      const edge = (realized != null && implied != null) ? realized - implied : null;
+      allWindows.push({ endDate, startDate, n: win.length, w: agg.w, l: agg.l, roi: agg.roi, auc: rocAuc(ss, ww), edge });
     }
     const recent = allWindows.slice(-14);
+
+    // ── Rolling AUC + rolling edge line charts ───────────────────────────
+    const chartWins = recent.filter(r => Number.isFinite(r.auc));
+    if (chartWins.length >= 3) {
+      const xLabels = '[' + chartWins.map(r => `"${r.endDate.slice(5)}"`).join(', ') + ']';
+      const aucSeries = chartWins.map(r => Number(r.auc.toFixed(3)));
+      const aLo = Math.min(0.4, Math.floor(Math.min(...aucSeries) * 20) / 20);
+      const aHi = Math.max(0.65, Math.ceil(Math.max(...aucSeries) * 20) / 20);
+      report.push(`**Rolling AUC** (0.50 = coin-flip line; above is signal, below is anti-signal):`);
+      report.push('');
+      report.push('```mermaid');
+      report.push('xychart-beta');
+      report.push(`    title "Rolling 7-day AUC (window end date)"`);
+      report.push(`    x-axis ${xLabels}`);
+      report.push(`    y-axis "AUC" ${aLo} --> ${aHi}`);
+      report.push(`    line [${aucSeries.join(', ')}]`);
+      report.push('```');
+      report.push('');
+      const edgeWins = chartWins.filter(r => Number.isFinite(r.edge));
+      if (edgeWins.length >= 3) {
+        const xe = '[' + edgeWins.map(r => `"${r.endDate.slice(5)}"`).join(', ') + ']';
+        const edgeSeries = edgeWins.map(r => Number(r.edge.toFixed(1)));
+        const eLo = Math.floor(Math.min(0, ...edgeSeries) - 1);
+        const eHi = Math.ceil(Math.max(0, ...edgeSeries) + 1);
+        report.push(`**Rolling edge vs market** (pp; 0 = exactly market price, above 0 = beating the close):`);
+        report.push('');
+        report.push('```mermaid');
+        report.push('xychart-beta');
+        report.push(`    title "Rolling 7-day edge: realized − implied win% (pp)"`);
+        report.push(`    x-axis ${xe}`);
+        report.push(`    y-axis "edge (pp)" ${eLo} --> ${eHi}`);
+        report.push(`    line [${edgeSeries.join(', ')}]`);
+        report.push('```');
+        report.push('');
+      }
+    }
+
+    report.push(`Underlying windows (each anchored on its END date):`);
+    report.push('');
+    report.push(`| Window end | Days | N    | W-L    | Win %   | ROI       | AUC    | Edge vs mkt |`);
+    report.push(`|------------|------|------|--------|---------|-----------|--------|-------------|`);
     for (const r of recent) {
-      report.push(`| ${r.endDate.padEnd(10)} | ${String(windowDays).padStart(4)} | ${String(r.n).padStart(4)} | ${(r.w+'-'+r.l).padEnd(6)} | ${pct(r.w, r.w + r.l).padStart(7)} | ${(r.roi != null ? (r.roi>=0?'+':'') + r.roi.toFixed(1)+'%' : '—').padStart(9)} | ${fmtN(r.auc, 3).padStart(6)} |`);
+      report.push(`| ${r.endDate.padEnd(10)} | ${String(windowDays).padStart(4)} | ${String(r.n).padStart(4)} | ${(r.w+'-'+r.l).padEnd(6)} | ${pct(r.w, r.w + r.l).padStart(7)} | ${(r.roi != null ? (r.roi>=0?'+':'') + r.roi.toFixed(1)+'%' : '—').padStart(9)} | ${fmtN(r.auc, 3).padStart(6)} | ${(r.edge != null ? (r.edge>=0?'+':'')+r.edge.toFixed(1)+'pp' : '—').padStart(11)} |`);
     }
     report.push('');
     if (allWindows.length >= 3) {
@@ -3886,7 +3965,7 @@ async function main() {
   buildV12TierAnalysis(report, v12Stats);
   buildV12RankRescue(report, v12Stats, walletProfiles);
   buildV12SportMarketAnalysis(report, v12Stats);
-  buildV12ScoreReliability(report, v12Stats);
+  buildV12StakeCalibration(report, v12Stats);
   buildV12MuteAudit(report, v12Stats);
   buildV12abcDiscrimination(report, v12Stats);
   buildV12WalletQualityInputs(report, v12Stats);

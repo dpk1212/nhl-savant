@@ -1,10 +1,10 @@
 # AGS-Unified — V12 Performance Monitor
 
-**Generated:** Monday, June 29, 2026 at 6:15 AM ET
+**Generated:** Monday, June 29, 2026 at 6:29 AM ET
 
 **Active model:** `ags-unified-v12` · **V12 went live:** 2026-06-01 · **Days live:** 29
 
-> This report is a **CEO-grade monitor of V12 in production**. The only non-V12 section is § 2 (model version comparison), kept so you can see V12's results in the context of every prior model bump. Everything else — daily trajectory, tier scoreboard, score reliability, mute-rule audit, wallet-quality inputs, operational health — is **strictly V12-scoped** (pick date ≥ 2026-06-01) so cron back-fill of V12 stamps onto older picks can't contaminate the production numbers.
+> This report is a **CEO-grade monitor of V12 in production**. The only non-V12 section is § 2 (model version comparison), kept so you can see V12's results in the context of every prior model bump. Everything else — daily trajectory, tier scoreboard, stake calibration, mute-rule audit, wallet-quality inputs, operational health — is **strictly V12-scoped** (pick date ≥ 2026-06-01) so cron back-fill of V12 stamps onto older picks can't contaminate the production numbers.
 
 ## § 1 — Executive Summary
 
@@ -186,9 +186,9 @@ Post-cutover picks size off the **HC margin** — SUPER (margin 2 · 6u), TOP (m
 
 > **MONITORING volume:** 197 picks tracked at 0u (would-be 90-107, 45.7% win). Shown to users for context; **not** part of the staked record, units, or ROI.
 
-### § 5b — Path Trajectory (win% & PnL over time)
+### § 5b — Path Trajectory & Stake-Size Monitor (win% & PnL over time)
 
-Each staking tier's **cumulative PnL (units)** and **cumulative win rate (%)** across the live timeline. Read the PnL line for "is this path making money and is the slope still up?" and the win-rate line for "is its hit-rate holding or decaying?" Only tiers with graded action on ≥2 distinct days are charted.
+**This is the over-time stake-size monitor.** Each staking tier's **cumulative PnL (units)** and **cumulative win rate (%)** across the live timeline. Read the PnL line for "is this path making money at its current size, and is the slope still up?" — a tier whose PnL line is sloping *down* is over-staked for what it's returning. Read the win-rate line for "is its hit-rate holding or decaying?" Pair this with the point-in-time over/under verdicts in § 7. Only tiers with graded action on ≥2 distinct days are charted.
 
 **MAX PLAY (SUPER)** — final 2-1, 67% win, +7.12u
 
@@ -352,22 +352,37 @@ V12 finds different amounts of edge in different sports and bet types. This grid
 
 > **V12's strongest sub-market:** NBA SPREAD — 3 live, 2-1, +78.9% ROI, +4.34u PnL.
 
-## § 7 — Does V12 Actually Predict Outcomes? (Score Reliability)
+## § 7 — Stake Calibration (are any paths over- or under-sized?)
 
-If V12's score is real signal — not just a number — then **higher scores should win more often than the market is pricing**. This table buckets every graded V12 pick by score band and compares the realized win rate (what actually happened) against the market-implied win rate (what the closing odds said would happen). The gap, **Edge**, is V12's claimed alpha. Positive Edge in the high bands means V12 is finding mispricings the market hasn't.
+Each path ships at a **fixed unit size**. This section asks the sizing question directly: **for the units we're risking on each path, is the realized PnL justifying that size?** A path staked at 6u that loses money is far more dangerous than a 1u path with the same win-rate, because every loss costs 6× as much. The read is simple:
 
-| V12 score band     | N   | Live N | W-L    | Realized | Implied | Edge       | ROI (live)|
-|--------------------|-----|--------|--------|----------|---------|------------|-----------|
-| > 0.9 (strongest)  | 358 |    229 | 125-104 |    51.4% |   52.4% |     -1.0pp |      3.5% |
-| 0.7 – 0.9          |  68 |     32 | 21-11  |    51.5% |   52.2% |     -0.8pp |     13.5% |
-| 0.5 – 0.7          |  26 |     10 | 5-5    |    46.2% |   55.2% |     -9.1pp |    -17.7% |
-| 0.25 – 0.5         |  23 |     12 | 6-6    |    56.5% |   51.4% |     +5.2pp |    -17.6% |
-| (0, 0.25]          |  14 |      9 | 3-6    |    42.9% |   57.0% |    -14.1pp |    -33.8% |
-| ≤ 0 (MUTED)        | 151 |      0 | 0-0    |    45.7% |   53.8% |     -8.2pp |         — |
+- **Avg PnL / pick** is the single most important column — it's the average units won or lost *every time that path fires*, already accounting for both win-rate and stake size. Negative = that path is bleeding at its current size.
+- **Recent vs all-time ROI** (last 7 days) is the over-time monitor: a path whose recent ROI is collapsing below its all-time ROI is degrading *now*, before the cumulative line in § 5b bends.
+- **Verdict** flags paths to cut (over-sized + losing) or paths with room to grow (small size + strongly earning).
 
-> 🟡 **Strong-score band (> 0.9) edge is +-1.0pp** — borderline. Larger sample needed before declaring V12's top tier as real alpha.
+| Path                  | Units | N   | W-L    | Win %  | ROI       | PnL (u)    | Avg PnL/pick | Recent ROI (7d) | Verdict                 |
+|-----------------------|-------|-----|--------|--------|-----------|------------|--------------|-----------------|-------------------------|
+| HC-2 (model max)      |    6u |   3 | 2-1    |  66.7% |    +52.7% |      +7.12 |       +2.37u |          +35.2% | ⚪ thin — hold           |
+| HC-1 + $-boost        |    5u |   4 | 2-2    |  50.0% |    -19.3% |      -3.37 |       -0.84u |          -19.3% | ⚪ thin — hold           |
+| HC-1 (model)          |    4u |  16 | 12-4   |  75.0% |    +18.3% |     +11.17 |       +0.70u |          +31.8% | 🟢 earning — size OK    |
+| 2-for-0 rescue        |    4u |  18 | 11-7   |  61.1% |     +7.2% |      +5.07 |       +0.28u |           +4.8% | 🟢 earning — size OK    |
+| proven-$ prime        |    4u |   3 | 1-2    |  33.3% |    -23.7% |      -2.25 |       -0.75u |          -23.7% | ⚪ thin — hold           |
+| proven-$ consensus    |    3u |   2 | 1-1    |  50.0% |     -8.3% |      -0.50 |       -0.25u |           -8.3% | ⚪ thin — hold           |
+| mini-HC (gate-pass)   |    3u |  28 | 13-15  |  46.4% |    -14.3% |     -11.87 |       -0.42u |          -44.5% | 🟠 bleeding — watch     |
+| mini gate-cut         |    1u |   2 | 1-1    |  50.0% |     -2.0% |      -0.04 |       -0.02u |           -2.0% | ⚪ thin — hold           |
+| margin 3+             |    1u |   2 | 1-1    |  50.0% |    -15.5% |      -0.31 |       -0.16u |          -15.5% | ⚪ thin — hold           |
 
-> 🟢 **Mute band (≤ 0) actually wins only 45.7%** — V12 correctly identifies these as losers. The mute rule is justified.
+Avg PnL per pick by path — bars below 0 are paths losing money at their current stake:
+
+```mermaid
+xychart-beta
+    title "Avg PnL per pick by path (u, ≥3 graded)"
+    x-axis ["SUPER", "TOP+", "TOP", "RANK", "SHARP-PRIME", "MINI"]
+    y-axis "u / pick" -2 --> 3
+    bar [2.37, -0.84, 0.7, 0.28, -0.75, -0.42]
+```
+
+> **Over-time view:** § 5b charts each tier's cumulative PnL and win% across the full timeline — use it to confirm whether a "bleeding" verdict here is a genuine downtrend or just a rough patch. A path that's over-sized **and** trending down in § 5b is the one to resize first.
 
 ## § 8 — V12 Mute Rule: Saving Money or Throwing Away Edge?
 
@@ -467,13 +482,19 @@ The last 30 picks V12 actually shipped (units > 0). This is the audit trail — 
 | 2026-06-26 | MLB   | TOTAL  | Under 7.5               |  -110 | +0.997 | HC-1     | ELITE    | 4.00u | LOSS    |      -4.00 |
 | 2026-06-25 | SOC   | ML     | Germany                 |  -155 | +0.939 | CONF     | LOCK     | 1.00u | LOSS    |      -1.00 |
 
-## § 12 — V12 Statistical Monitor (Predictive-Power Diagnostics)
+## § 12 — Trust the Process: Predictive Edge Over Time
 
-> **Why this section matters.** Win-rate and ROI tell you whether V12 made money. The numbers below tell you whether V12 deserves the credit — i.e. whether the score itself is genuinely separating winners from losers, or whether the realised PnL is just variance on a near-random gate. Track these week-over-week: if AUC drifts below 0.50, the score has lost its signal and the ROI line is about to follow.
+> **What this whole section is for.** Win-rate and ROI (everything above) tell you whether V12 *made money*. This section tells you whether it made money because the score is **real signal** or because we got **lucky**. That distinction is the entire game: real signal repeats, luck doesn't. Everything below answers three questions, in order.
+
+1. **Does the score separate winners from losers?** (12A–12C, plus 12E per sport) — If we line up every pick by its V12 score, do the higher-scored picks actually win more? We measure this several independent ways so no single metric can fool us. 12D is a population sanity check (is the score spread normal, or are a few outliers doing all the work?).
+2. **Is that edge stable, or is it decaying?** (12F) — A score can be predictive overall but quietly losing its edge. We track the same separation on a moving window so we see decay *as it happens*.
+3. **Is the edge real or just small-sample luck?** (12G) — We resample the picks thousands of times to get an honest confidence band. If the band straddles "break-even," we don't have proof yet — we have a hopeful trend.
+
+> **The one number to watch:** **AUC**. Read it as "*pick a random winner and a random loser — what's the chance V12 scored the winner higher?*" 0.50 = coin-flip (no signal). 0.55 = a real, usable edge. 0.60+ = strong. If rolling AUC (12F) drifts under 0.50, the score has stopped working and the ROI line is about to follow it down.
 
 ### 12A — Discrimination: does V12 actually separate winners from losers?
 
-Five different statistical lenses on the same question. Each one is computed only over **live shipped picks** (units > 0, tracked = false) that have a graded outcome.
+Five lenses on **one** question: *do higher scores go with wins?* They're independent on purpose — AUC and KS look at the **ranking** (do winners sit higher than losers regardless of scale), while the correlations (Spearman / point-biserial) look at the **strength and consistency** of that relationship. When they all agree, the signal is trustworthy; when they disagree, the edge is fragile. All computed over **live shipped picks** (units > 0) with a graded outcome.
 
 | Metric                                | Value    | Plain-English read                                                                 |
 |---------------------------------------|----------|------------------------------------------------------------------------------------|
@@ -499,7 +520,7 @@ How much of the variance in actual outcomes does the V12 score actually explain?
 
 ### 12C — Per-feature correlation (V12's actual inputs vs outcome)
 
-V12's score is built from four inputs per pick: the mean quality of FOR-side wallets, the mean quality of AGAINST-side wallets, the count of wallets on each side, and the count of `proven` (HC_BASE) wallets among them. We test each one independently — does it correlate with the outcome on its own? If a feature has near-zero correlation, V12 is paying for noise in that channel.
+The score above is a *blend* of inputs. Here we crack it open and test each ingredient **on its own**: FOR-side wallet quality, AGAINST-side wallet quality, how many wallets are on each side, and how many are `proven` (HC_BASE). For each one we ask "does this ingredient, by itself, line up with winning?" Two columns answer it: **r** (Pearson — strength of a straight-line relationship) and **ρ** (Spearman — same idea but rank-based, so one weird pick can't distort it). Numbers near **0** mean that ingredient is contributing noise, not signal; we'd want to down-weight it. A sign that's *backwards* (e.g. AGAINST-side quality showing a positive correlation with our wins) means the input is wired against us. The most important sanity check: `agsV12ForMean` should be **positive**, `agsV12AgMean` should be **negative**.
 
 | Feature           | N   | r(feature, won) | ρ(feature, won) | r(feature, unit-return) | ρ(feature, unit-return) | reads as                                                       |
 |-------------------|-----|-----------------|------------------|--------------------------|--------------------------|----------------------------------------------------------------|
@@ -545,26 +566,51 @@ AUC computed separately per sport — V12 may be sharp in one market and noise i
 | NHL   |    6 | 5-1    |   83.3% |    +38.2% |  0.000 |        -0.371 | anti-signal (N<20)                        |
 | SOC   |   14 | 10-4   |   71.4% |    +17.3% |  0.750 |        +0.200 | strong (N<20)                             |
 
-### 12F — Stability: rolling 7-day AUC across the V12 window
+### 12F — Stability: predictive edge over time (rolling 7-day window)
 
-Recompute AUC on a moving 7-day window. If recent windows are degrading (e.g. dropping from 0.58 → 0.50 → 0.45), V12's edge is decaying in real time. Each row anchors on the END date of its window.
+This is the **decay alarm**. We recompute the same two signals on a moving 7-day window and chart them so you can *see* the trend rather than read it off a wall of numbers:
 
-| Window end | Days | N    | W-L    | Win %   | ROI       | AUC    |
-|------------|------|------|--------|---------|-----------|--------|
-| 2026-06-15 |    7 |  101 | 53-48  |   52.5% |     -0.1% |  0.476 |
-| 2026-06-16 |    7 |   86 | 46-40  |   53.5% |     -7.6% |  0.417 |
-| 2026-06-17 |    7 |   68 | 38-30  |   55.9% |     -2.0% |  0.446 |
-| 2026-06-18 |    7 |   65 | 37-28  |   56.9% |     +1.3% |  0.441 |
-| 2026-06-19 |    7 |   54 | 31-23  |   57.4% |     -1.3% |  0.388 |
-| 2026-06-20 |    7 |   39 | 23-16  |   59.0% |     -1.5% |  0.351 |
-| 2026-06-21 |    7 |   30 | 19-11  |   63.3% |    +12.6% |  0.440 |
-| 2026-06-22 |    7 |   33 | 21-12  |   63.6% |    +14.7% |  0.484 |
-| 2026-06-23 |    7 |   30 | 18-12  |   60.0% |     +8.9% |  0.514 |
-| 2026-06-24 |    7 |   31 | 18-13  |   58.1% |     +6.9% |  0.560 |
-| 2026-06-25 |    7 |   32 | 17-15  |   53.1% |     -1.9% |  0.655 |
-| 2026-06-26 |    7 |   35 | 18-17  |   51.4% |     -3.1% |  0.621 |
-| 2026-06-27 |    7 |   43 | 22-21  |   51.2% |     -3.4% |  0.597 |
-| 2026-06-28 |    7 |   48 | 25-23  |   52.1% |     -4.5% |  0.576 |
+- **Rolling AUC** — is the score still separating winners from losers *recently*? A line drifting toward 0.50 = the edge is fading.
+- **Rolling edge (pp)** — realized win% minus the market-implied win% baked into the closing odds. This is the part that actually pays: a positive line means V12 is still beating the price the market set, *right now*.
+
+**Rolling AUC** (0.50 = coin-flip line; above is signal, below is anti-signal):
+
+```mermaid
+xychart-beta
+    title "Rolling 7-day AUC (window end date)"
+    x-axis ["06-15", "06-16", "06-17", "06-18", "06-19", "06-20", "06-21", "06-22", "06-23", "06-24", "06-25", "06-26", "06-27", "06-28"]
+    y-axis "AUC" 0.35 --> 0.7
+    line [0.476, 0.417, 0.446, 0.441, 0.388, 0.351, 0.44, 0.484, 0.514, 0.56, 0.655, 0.621, 0.597, 0.576]
+```
+
+**Rolling edge vs market** (pp; 0 = exactly market price, above 0 = beating the close):
+
+```mermaid
+xychart-beta
+    title "Rolling 7-day edge: realized − implied win% (pp)"
+    x-axis ["06-15", "06-16", "06-17", "06-18", "06-19", "06-20", "06-21", "06-22", "06-23", "06-24", "06-25", "06-26", "06-27", "06-28"]
+    y-axis "edge (pp)" -8 --> 9
+    line [0.1, 0.5, 2.3, 3.3, 3.4, 3.5, 7.2, 8, 5, 2.4, -3.2, -5.2, -6.2, -3.6]
+```
+
+Underlying windows (each anchored on its END date):
+
+| Window end | Days | N    | W-L    | Win %   | ROI       | AUC    | Edge vs mkt |
+|------------|------|------|--------|---------|-----------|--------|-------------|
+| 2026-06-15 |    7 |  101 | 53-48  |   52.5% |     -0.1% |  0.476 |      +0.1pp |
+| 2026-06-16 |    7 |   86 | 46-40  |   53.5% |     -7.6% |  0.417 |      +0.5pp |
+| 2026-06-17 |    7 |   68 | 38-30  |   55.9% |     -2.0% |  0.446 |      +2.3pp |
+| 2026-06-18 |    7 |   65 | 37-28  |   56.9% |     +1.3% |  0.441 |      +3.3pp |
+| 2026-06-19 |    7 |   54 | 31-23  |   57.4% |     -1.3% |  0.388 |      +3.4pp |
+| 2026-06-20 |    7 |   39 | 23-16  |   59.0% |     -1.5% |  0.351 |      +3.5pp |
+| 2026-06-21 |    7 |   30 | 19-11  |   63.3% |    +12.6% |  0.440 |      +7.2pp |
+| 2026-06-22 |    7 |   33 | 21-12  |   63.6% |    +14.7% |  0.484 |      +8.0pp |
+| 2026-06-23 |    7 |   30 | 18-12  |   60.0% |     +8.9% |  0.514 |      +5.0pp |
+| 2026-06-24 |    7 |   31 | 18-13  |   58.1% |     +6.9% |  0.560 |      +2.4pp |
+| 2026-06-25 |    7 |   32 | 17-15  |   53.1% |     -1.9% |  0.655 |      -3.2pp |
+| 2026-06-26 |    7 |   35 | 18-17  |   51.4% |     -3.1% |  0.621 |      -5.2pp |
+| 2026-06-27 |    7 |   43 | 22-21  |   51.2% |     -3.4% |  0.597 |      -6.2pp |
+| 2026-06-28 |    7 |   48 | 25-23  |   52.1% |     -4.5% |  0.576 |      -3.6pp |
 
 > 🟡 **AUC is roughly flat** — no meaningful drift, V12 holding steady (0.521 avg in first half → 0.512 avg in second half · Δ = -0.009)
 
