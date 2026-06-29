@@ -1,6 +1,6 @@
 # AGS-Unified — V12 Performance Monitor
 
-**Generated:** Monday, June 29, 2026 at 6:33 AM ET
+**Generated:** Monday, June 29, 2026 at 6:38 AM ET
 
 **Active model:** `ags-unified-v12` · **V12 went live:** 2026-06-01 · **Days live:** 29
 
@@ -188,95 +188,33 @@ Post-cutover picks size off the **HC margin** — SUPER (margin 2 · 6u), TOP (m
 
 ### § 5b — Path Trajectory & Stake-Size Monitor (win% & PnL over time)
 
-**This is the over-time stake-size monitor.** Each staking tier's **cumulative PnL (units)** and **cumulative win rate (%)** across the live timeline. Read the PnL line for "is this path making money at its current size, and is the slope still up?" — a tier whose PnL line is sloping *down* is over-staked for what it's returning. Read the win-rate line for "is its hit-rate holding or decaying?" Pair this with the point-in-time over/under verdicts in § 7. Only tiers with graded action on ≥2 distinct days are charted.
+**This is the over-time stake-size monitor.** Two charts, one line per staking tier: **cumulative PnL (units)** and **cumulative win rate (%)** across the live timeline. Read the PnL chart for "is this path making money at its current size, and is the slope still up?" — a line sloping *down* is over-staked for what it's returning. Read the win-rate chart for "is its hit-rate holding or decaying?" Pair this with the point-in-time over/under verdicts in § 7. Only tiers with graded action on ≥2 distinct days are charted.
 
-**MAX PLAY (SUPER)** — final 2-1, 67% win, +7.12u
+**Lines:** 🔵 MAX PLAY (2-1, +7.12u)  ·  🟢 TOP PICK (14-6, +7.80u)  ·  🟠 SHARP PLAY (13-10, +2.32u)  ·  🔴 STRONG (13-15, -11.87u)  ·  🟣 LEAN (2-2, -0.35u)
 
 ```mermaid
+%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#3b82f6,#22c55e,#f97316,#ef4444,#a855f7"}}}}%%
 xychart-beta
-    title "MAX PLAY — cumulative PnL (u)"
+    title "Cumulative PnL by path (u)"
     x-axis ["06-15", "06-16", "06-17", "06-18", "06-19", "06-20", "06-21", "06-22", "06-23", "06-24", "06-25", "06-26", "06-27", "06-28"]
-    y-axis "PnL (u)" -1 --> 9
+    y-axis "PnL (u)" -14 --> 12
     line [0, 4.48, 4.48, 4.48, 4.48, 4.48, 4.48, 4.48, 4.48, 4.48, 4.48, 7.12, 7.12, 7.12]
-```
-
-```mermaid
-xychart-beta
-    title "MAX PLAY — cumulative win rate (%)"
-    x-axis ["06-15", "06-16", "06-17", "06-18", "06-19", "06-20", "06-21", "06-22", "06-23", "06-24", "06-25", "06-26", "06-27", "06-28"]
-    y-axis "Win %" 0 --> 100
-    line [0, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 67, 67, 67]
-```
-
-**TOP PICK (TOP+/TOP)** — final 14-6, 70% win, +7.80u
-
-```mermaid
-xychart-beta
-    title "TOP PICK — cumulative PnL (u)"
-    x-axis ["06-15", "06-16", "06-17", "06-18", "06-19", "06-20", "06-21", "06-22", "06-23", "06-24", "06-25", "06-26", "06-27", "06-28"]
-    y-axis "PnL (u)" -2 --> 12
     line [0, 0.67, 0.67, -0.75, 4.71, 2.73, 5.25, 9.1, 9.1, 10.24, 10.77, 4.27, 9.16, 7.8]
-```
-
-```mermaid
-xychart-beta
-    title "TOP PICK — cumulative win rate (%)"
-    x-axis ["06-15", "06-16", "06-17", "06-18", "06-19", "06-20", "06-21", "06-22", "06-23", "06-24", "06-25", "06-26", "06-27", "06-28"]
-    y-axis "Win %" 0 --> 100
-    line [0, 67, 67, 60, 71, 67, 70, 73, 73, 75, 77, 67, 72, 70]
-```
-
-**SHARP PLAY (RANK/SHARP-PRIME/SHARP)** — final 13-10, 57% win, +2.32u
-
-```mermaid
-xychart-beta
-    title "SHARP PLAY — cumulative PnL (u)"
-    x-axis ["06-15", "06-16", "06-17", "06-18", "06-19", "06-20", "06-21", "06-22", "06-23", "06-24", "06-25", "06-26", "06-27", "06-28"]
-    y-axis "PnL (u)" -1 --> 9
     line [0, 0, 0, 0, 0, 1.82, 1.82, 1.82, 1.82, 7.26, 2.9, 7.13, 3.81, 2.32]
-```
-
-```mermaid
-xychart-beta
-    title "SHARP PLAY — cumulative win rate (%)"
-    x-axis ["06-15", "06-16", "06-17", "06-18", "06-19", "06-20", "06-21", "06-22", "06-23", "06-24", "06-25", "06-26", "06-27", "06-28"]
-    y-axis "Win %" 0 --> 100
-    line [0, 0, 0, 0, 0, 100, 100, 100, 100, 75, 57, 64, 58, 57]
-```
-
-**STRONG (MINI)** — final 13-15, 46% win, -11.87u
-
-```mermaid
-xychart-beta
-    title "STRONG — cumulative PnL (u)"
-    x-axis ["06-15", "06-16", "06-17", "06-18", "06-19", "06-20", "06-21", "06-22", "06-23", "06-24", "06-25", "06-26", "06-27", "06-28"]
-    y-axis "PnL (u)" -14 --> 8
     line [5.07, -0.93, 1.03, 6.54, 3.08, 5.27, 0.88, 5.63, -2.87, -8.87, -8.87, -8.87, -8.87, -11.87]
-```
-
-```mermaid
-xychart-beta
-    title "STRONG — cumulative win rate (%)"
-    x-axis ["06-15", "06-16", "06-17", "06-18", "06-19", "06-20", "06-21", "06-22", "06-23", "06-24", "06-25", "06-26", "06-27", "06-28"]
-    y-axis "Win %" 0 --> 100
-    line [100, 50, 56, 64, 57, 60, 56, 59, 52, 48, 48, 48, 48, 46]
-```
-
-**LEAN (CONFIRMED/MINI-)** — final 2-2, 50% win, -0.35u
-
-```mermaid
-xychart-beta
-    title "LEAN — cumulative PnL (u)"
-    x-axis ["06-15", "06-16", "06-17", "06-18", "06-19", "06-20", "06-21", "06-22", "06-23", "06-24", "06-25", "06-26", "06-27", "06-28"]
-    y-axis "PnL (u)" -3 --> 1
     line [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, -2, -0.35]
 ```
 
 ```mermaid
+%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#3b82f6,#22c55e,#f97316,#ef4444,#a855f7"}}}}%%
 xychart-beta
-    title "LEAN — cumulative win rate (%)"
+    title "Cumulative win rate by path (%)"
     x-axis ["06-15", "06-16", "06-17", "06-18", "06-19", "06-20", "06-21", "06-22", "06-23", "06-24", "06-25", "06-26", "06-27", "06-28"]
     y-axis "Win %" 0 --> 100
+    line [0, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 67, 67, 67]
+    line [0, 67, 67, 60, 71, 67, 70, 73, 73, 75, 77, 67, 72, 70]
+    line [0, 0, 0, 0, 0, 100, 100, 100, 100, 75, 57, 64, 58, 57]
+    line [100, 50, 56, 64, 57, 60, 56, 59, 52, 48, 48, 48, 48, 46]
     line [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 50]
 ```
 

@@ -2205,13 +2205,19 @@ function buildV12TierAnalysis(report, stats) {
       const xLabels = '[' + tsDates.map(d => `"${d.slice(5)}"`).join(', ') + ']';
       report.push(`### § 5b — Path Trajectory & Stake-Size Monitor (win% & PnL over time)`);
       report.push('');
-      report.push(`**This is the over-time stake-size monitor.** Each staking tier's **cumulative PnL (units)** and **cumulative win rate (%)** across the live timeline. Read the PnL line for "is this path making money at its current size, and is the slope still up?" — a tier whose PnL line is sloping *down* is over-staked for what it's returning. Read the win-rate line for "is its hit-rate holding or decaying?" Pair this with the point-in-time over/under verdicts in § 7. Only tiers with graded action on ≥2 distinct days are charted.`);
+      report.push(`**This is the over-time stake-size monitor.** Two charts, one line per staking tier: **cumulative PnL (units)** and **cumulative win rate (%)** across the live timeline. Read the PnL chart for "is this path making money at its current size, and is the slope still up?" — a line sloping *down* is over-staked for what it's returning. Read the win-rate chart for "is its hit-rate holding or decaying?" Pair this with the point-in-time over/under verdicts in § 7. Only tiers with graded action on ≥2 distinct days are charted.`);
       report.push('');
+
+      // Fixed palette so the emoji legend below reliably maps to each line.
+      const PALETTE = ['#3b82f6', '#22c55e', '#f97316', '#ef4444', '#a855f7'];
+      const SWATCH  = ['🔵', '🟢', '🟠', '🔴', '🟣'];
+
+      // Build one carried-forward cumulative series per display tier.
+      const series = [];
       for (const dt of AGS_V12_DISPLAY_TIERS) {
         const tierRows = gradedTS.filter(r => dt.paths.includes(r.hcStakeTier));
         const tierDays = new Set(tierRows.map(r => r.date));
         if (tierRows.length < 2 || tierDays.size < 2) continue;
-        // Cumulative series carried forward across the shared date axis.
         let cumPnl = 0, cw = 0, cl = 0;
         const pnlSeries = [], wrSeries = [];
         for (const d of tsDates) {
@@ -2222,26 +2228,43 @@ function buildV12TierAnalysis(report, stats) {
           pnlSeries.push(Number(cumPnl.toFixed(2)));
           wrSeries.push(cw + cl > 0 ? Math.round((cw / (cw + cl)) * 100) : 0);
         }
-        const pMin = Math.min(0, ...pnlSeries), pMax = Math.max(0, ...pnlSeries);
+        series.push({ label: dt.label, paths: dt.paths, pnlSeries, wrSeries, cw, cl, cumPnl });
+      }
+
+      if (series.length === 0) {
+        report.push(`_(no tier has ≥2 graded days yet — charts will appear as volume builds)_`);
+        report.push('');
+      } else {
+        const palette = series.map((_, i) => PALETTE[i % PALETTE.length]).join(',');
+        const initDirective = `%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "${palette}"}}}}%%`;
+
+        // Legend (color key) — emoji order matches PALETTE order.
+        report.push(`**Lines:** ${series.map((s, i) => `${SWATCH[i % SWATCH.length]} ${s.label} (${s.cw}-${s.cl}, ${fmtSigned(s.cumPnl)}u)`).join('  ·  ')}`);
+        report.push('');
+
+        // Chart 1 — cumulative PnL, one line per tier.
+        const allPnl = series.flatMap(s => s.pnlSeries);
+        const pMin = Math.min(0, ...allPnl), pMax = Math.max(0, ...allPnl);
         const pLo = Math.floor(pMin - Math.max(1, Math.abs(pMin) * 0.1));
         const pHi = Math.ceil(pMax + Math.max(1, Math.abs(pMax) * 0.1));
-        const label = `${dt.label} (${dt.paths.join('/')})`;
-        report.push(`**${label}** — final ${cw}-${cl}, ${cw + cl > 0 ? Math.round(cw / (cw + cl) * 100) : 0}% win, ${fmtSigned(cumPnl)}u`);
-        report.push('');
         report.push('```mermaid');
+        report.push(initDirective);
         report.push('xychart-beta');
-        report.push(`    title "${dt.label} — cumulative PnL (u)"`);
+        report.push(`    title "Cumulative PnL by path (u)"`);
         report.push(`    x-axis ${xLabels}`);
         report.push(`    y-axis "PnL (u)" ${pLo} --> ${pHi}`);
-        report.push(`    line [${pnlSeries.join(', ')}]`);
+        for (const s of series) report.push(`    line [${s.pnlSeries.join(', ')}]`);
         report.push('```');
         report.push('');
+
+        // Chart 2 — cumulative win%, one line per tier.
         report.push('```mermaid');
+        report.push(initDirective);
         report.push('xychart-beta');
-        report.push(`    title "${dt.label} — cumulative win rate (%)"`);
+        report.push(`    title "Cumulative win rate by path (%)"`);
         report.push(`    x-axis ${xLabels}`);
         report.push(`    y-axis "Win %" 0 --> 100`);
-        report.push(`    line [${wrSeries.join(', ')}]`);
+        for (const s of series) report.push(`    line [${s.wrSeries.join(', ')}]`);
         report.push('```');
         report.push('');
       }
