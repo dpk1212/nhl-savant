@@ -5065,6 +5065,14 @@ function BackingWalletStrip({ wallets, sport, accent = B.green, isMobile }) {
     const short = String(w.wallet || '').slice(-6);
     const profile = getWalletProfile(short);
     const rec = profile?.bySport?.[sport]?.positions || null;
+    const picksRec = profile?.bySport?.[sport]?.picks || null;
+    // Whitelist-qualifying metric: the cron promotes a wallet to a PROVEN
+    // sport winner (CONFIRMED/FLAT) on FLAT/unit ROI, not dollar ROI. Show
+    // THAT so the record never contradicts the PROVEN badge (a FLAT wallet
+    // can be +unit-ROI yet deeply −$ if it sized a few losers big). Prefer
+    // the on-chain position flat ROI, fall back to the featured-pick flat ROI.
+    const flatRoiDisp = rec?.positionFlatRoi != null ? rec.positionFlatRoi
+      : (picksRec?.flatRoi != null ? picksRec.flatRoi : null);
     const decided = rec ? (rec.wins || 0) + (rec.losses || 0) : 0;
     const winner = isSportWinner(short, sport);
     const rankGroup = groupedSportsRankLabel(w.rank);
@@ -5080,10 +5088,10 @@ function BackingWalletStrip({ wallets, sport, accent = B.green, isMobile }) {
         if (bucket && bucket.n >= 3 && bucket.wr != null) sizeEdge = { ratio, wr: bucket.wr };
       }
     }
-    const tierLabel = eliteRank ? 'ELITE' : winner ? 'PROVEN' : 'SHARP';
+    const tierLabel = eliteRank ? 'ELITE' : winner ? 'PROVEN' : 'TRACKED';
     const tierColor = eliteRank ? B.gold : winner ? B.green : B.textSec;
     const tierBg = eliteRank ? B.goldDim : winner ? B.greenDim : 'rgba(148,163,184,0.10)';
-    return { ...w, short, profile, rec, decided, winner, rankGroup, sizeEdge, tierLabel, tierColor, tierBg, hasRecord: !!rec && decided >= 4 };
+    return { ...w, short, profile, rec, flatRoiDisp, decided, winner, rankGroup, sizeEdge, tierLabel, tierColor, tierBg, hasRecord: !!rec && decided >= 4 };
   });
 
   // Best wallets first: winners, then most-decided record, then biggest stake.
@@ -5144,14 +5152,9 @@ function BackingWalletStrip({ wallets, sport, accent = B.green, isMobile }) {
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', flexWrap: 'wrap', fontFeatureSettings: "'tnum'" }}>
                   <span style={{ ...T.caption, fontWeight: 900, color: B.text }}>{e.rec.wins}-{e.rec.losses}</span>
                   <span style={{ ...T.micro, fontSize: '0.56rem', color: B.textSec }}>{Math.round(e.rec.wr)}% W</span>
-                  {e.rec.dollarRoi != null && (
-                    <span style={{ ...T.micro, fontSize: '0.56rem', fontWeight: 800, color: e.rec.dollarRoi >= 0 ? B.green : B.red }}>
-                      {e.rec.dollarRoi >= 0 ? '+' : ''}{Math.round(e.rec.dollarRoi)}% ROI
-                    </span>
-                  )}
-                  {e.rec.settledPnl != null && e.rec.settledPnl !== 0 && (
-                    <span style={{ ...T.micro, fontSize: '0.56rem', fontWeight: 800, color: e.rec.settledPnl >= 0 ? B.green : B.red }}>
-                      {e.rec.settledPnl >= 0 ? '+' : ''}{fmtVol(e.rec.settledPnl)}
+                  {e.flatRoiDisp != null && (
+                    <span style={{ ...T.micro, fontSize: '0.56rem', fontWeight: 800, color: e.flatRoiDisp >= 0 ? B.green : B.red }}>
+                      {e.flatRoiDisp >= 0 ? '+' : ''}{Math.round(e.flatRoiDisp)}% ROI
                     </span>
                   )}
                   <span style={{ ...T.micro, fontSize: '0.5rem', color: B.textSubtle, letterSpacing: '0.04em' }}>{sportUp} record</span>
@@ -5235,7 +5238,7 @@ function V12ConvictionPanel({ tier, tierColor, tierBg, forW, agW, qFor, qAg, hcF
         {fw > 0 ? (
           <>
             <span style={{ color: B.text, fontWeight: 700 }}>{fw} proven {sportUp} winner{fw !== 1 ? 's' : ''}</span>
-            {leadRec ? <span style={{ color: B.textMuted, fontFeatureSettings: "'tnum'" }}> ({leadRec.wins}-{leadRec.losses}{leadRec.settledPnl ? <>, {leadRec.settledPnl >= 0 ? '+' : ''}{fmtVol(leadRec.settledPnl)}</> : ''})</span> : null}
+            {leadRec ? <span style={{ color: B.textMuted, fontFeatureSettings: "'tnum'" }}> ({leadRec.wins}-{leadRec.losses}{leadRec.positionFlatRoi != null ? <>, {leadRec.positionFlatRoi >= 0 ? '+' : ''}{Math.round(leadRec.positionFlatRoi)}% ROI</> : ''})</span> : null}
             {' '}backing{qf > 0 ? <>, <span style={{ color: B.text, fontWeight: 700 }}>{qf} quality wallet{qf !== 1 ? 's' : ''}</span> confirming</> : ''}
           </>
         ) : (
@@ -5430,6 +5433,11 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
     ? Math.max(0, Math.min(100, Math.round(score * 100)))
     : 0;
   const backers = Array.isArray(backingWallets) ? backingWallets.length : 0;
+  // Qualified backers = proven sport winners (whitelist CONFIRMED/FLAT) — the
+  // wallets the model actually trusts, vs all tracked wallets on the side.
+  const provenBackers = Array.isArray(backingWallets)
+    ? backingWallets.filter(w => w && isSportWinner(String(w.wallet || '').slice(-6), sport)).length
+    : 0;
 
   const teamShort = (team || '').split(' ').pop() || team;
   const awayShort = (away || '').split(' ').pop() || away;
@@ -5538,7 +5546,7 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
         : <StatCol label="STAKE" value={Number.isFinite(units) && units > 0 ? `${fmtU(units)}u` : '—'} color={B.text} />}
       <StatDivider />
       {(isRank || isSharp)
-        ? <StatCol label="SHARPS ON" value={backers > 0 ? backers : '—'} color={accent} />
+        ? <StatCol label="QUALIFIED" value={provenBackers > 0 ? provenBackers : (backers > 0 ? backers : '—')} color={accent} />
         : <StatCol label="AGSU V12" value={conviction > 0 ? conviction : '—'} color={accent} meter />}
     </div>
   );
@@ -5663,7 +5671,7 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <SlkDriver met={backers > 0} label={`Proven ${sport || 'sport'} winners backing`} detail={backers > 0 ? `${backers}` : '—'} color={accent} />
+                  <SlkDriver met={provenBackers > 0} label={`Proven ${sport || 'sport'} winners backing`} detail={provenBackers > 0 ? `${provenBackers}` : '—'} color={accent} />
                   <SlkDriver met={(hcConfFor || 0) > 0} label="High-conviction sharps confirming" detail={(hcConfFor || 0) > 0 ? `${hcConfFor} HC` : '—'} color={accent} />
                   <SlkDriver met={moneyPct != null && moneyPct >= 60} label="Money concentrated on this side" detail={moneyPct != null ? `${moneyPct}%` : '—'} color={accent} />
                 </div>
@@ -5687,7 +5695,9 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
             <SlkLabel>WHY IT'S LOCKED</SlkLabel>
             <p style={{ fontSize: '0.92rem', color: B.text, lineHeight: 1.5, margin: '0.6rem 0 0', fontWeight: 500 }}>
               {Array.isArray(backingWallets) && backingWallets.length > 0
-                ? <>{backingWallets.length} sharp {backingWallets.length === 1 ? 'wallet' : 'wallets'} put <b>{fmtV(totalInvested)}</b> behind {teamShort}</>
+                ? (provenBackers > 0
+                    ? <><b>{provenBackers}</b> proven {(sport || '').toUpperCase()} winner{provenBackers === 1 ? '' : 's'} back {teamShort}{backingWallets.length > provenBackers ? <span style={{ color: B.textMuted, fontWeight: 500 }}> ({backingWallets.length} tracked wallets, {fmtV(totalInvested)})</span> : <> (<b>{fmtV(totalInvested)}</b>)</>}</>
+                    : <>{backingWallets.length} tracked {backingWallets.length === 1 ? 'wallet' : 'wallets'} put <b>{fmtV(totalInvested)}</b> behind {teamShort}</>)
                 : <>Sharp money locked behind {teamShort}</>}
               {moneyPct != null && <span style={{ color: accent, fontWeight: 700 }}> — {moneyPct}% of sharp money</span>}
               {moneyPct != null && moneyPct >= 100 ? ', zero dissent.' : '.'}
@@ -6841,6 +6851,12 @@ function WalletDossierRow({ p, gd, now, isMobile, market = 'ml', accent = B.gold
   // Stored, graded track record for THIS sport (real-money on-chain results).
   const profile = getWalletProfile(p.wallet.slice(-6));
   const rec = profile?.bySport?.[gd.sport]?.positions;
+  const picksRec = profile?.bySport?.[gd.sport]?.picks || null;
+  // Show the whitelist-qualifying metric (FLAT/unit ROI) — the same axis the
+  // cron uses to promote a wallet to a sport WINNER — not dollar ROI/PnL, which
+  // is sizing-skewed and can read deeply negative for a legitimately FLAT wallet.
+  const flatRoiDisp = rec?.positionFlatRoi != null ? rec.positionFlatRoi
+    : (picksRec?.flatRoi != null ? picksRec.flatRoi : null);
   const decided = rec ? (rec.wins || 0) + (rec.losses || 0) : 0;
   const hasRecord = !!rec && decided >= 4;
 
@@ -6887,14 +6903,9 @@ function WalletDossierRow({ p, gd, now, isMobile, market = 'ml', accent = B.gold
           <span style={{ ...T.tiny, color: B.textMuted, alignSelf: 'center' }}>{gd.sport} RECORD</span>
           <span style={{ ...T.sub, fontWeight: 900, color: B.text }}>{rec.wins}-{rec.losses}</span>
           <span style={{ ...T.caption, color: B.textSec }}>{Math.round(rec.wr)}% W</span>
-          {rec.dollarRoi != null && (
-            <span style={{ ...T.micro, fontWeight: 800, padding: '0.12rem 0.4rem', borderRadius: '6px', alignSelf: 'center', color: rec.dollarRoi >= 0 ? B.green : B.red, background: rec.dollarRoi >= 0 ? B.greenDim : B.redDim }}>
-              {rec.dollarRoi >= 0 ? '+' : ''}{Math.round(rec.dollarRoi)}% ROI
-            </span>
-          )}
-          {rec.settledPnl != null && rec.settledPnl !== 0 && (
-            <span style={{ ...T.caption, fontWeight: 800, color: rec.settledPnl >= 0 ? B.green : B.red }}>
-              {rec.settledPnl >= 0 ? '+' : ''}{fmtVol(rec.settledPnl)}
+          {flatRoiDisp != null && (
+            <span style={{ ...T.micro, fontWeight: 800, padding: '0.12rem 0.4rem', borderRadius: '6px', alignSelf: 'center', color: flatRoiDisp >= 0 ? B.green : B.red, background: flatRoiDisp >= 0 ? B.greenDim : B.redDim }}>
+              {flatRoiDisp >= 0 ? '+' : ''}{Math.round(flatRoiDisp)}% ROI
             </span>
           )}
         </div>
@@ -9188,6 +9199,36 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
           const awaySide = consensusSide === 'away';
           const homeSide = consensusSide === 'home';
           const moneyRatio = totalInvested > 0 ? Math.round((Math.max(awayInvested, homeInvested) / totalInvested) * 100) : 50;
+
+          // ── Qualified sharp money (proven winners we actually follow) ──────
+          // The $ bars above are ALL tracked sharp money — they can pile onto
+          // the favorite even when the proven, whitelisted winners (the wallets
+          // the model trusts) sit on the OTHER side. This callout isolates the
+          // qualified signal and anchors to the locked/AGS side so the card can
+          // never imply the opposite side is "the play".
+          const provenSideAgg = (side) => {
+            let n = 0, money = 0, pnl = 0; const seen = new Set();
+            for (const p of gd.positions) {
+              if (!p || p.side !== side || !(p.invested > 0)) continue;
+              if (!isSportWinner(p.wallet, gd.sport)) continue;
+              if (seen.has(p.wallet)) continue; seen.add(p.wallet);
+              n++; money += p.invested || 0; pnl += (p.totalPnl || p.sportPnlTotal || 0);
+            }
+            return { n, money, pnl };
+          };
+          const qLockSide = (liveLockedSideKey === 'away' || liveLockedSideKey === 'home') ? liveLockedSideKey : consensusSide;
+          const qOffSide = qLockSide === 'away' ? 'home' : 'away';
+          const qLockShort = qLockSide === 'away' ? awayShort : homeShort;
+          const qOffShort = qOffSide === 'away' ? awayShort : homeShort;
+          const provLock = provenSideAgg(qLockSide);
+          const provOff = provenSideAgg(qOffSide);
+          const fvQ = mlAgs?.featureValues ?? null;
+          const qForCount = fvQ?.forCount ?? provLock.n;
+          const qAgCount = fvQ?.agCount ?? provOff.n;
+          const qHcCount = fvQ?.forHcCount ?? 0;
+          const qContrib = Number.isFinite(fvQ?.forContribShare) ? Math.round(fvQ.forContribShare * 100) : null;
+          const qHasData = (qForCount + qAgCount) > 0 || (provLock.n + provOff.n) > 0;
+          const qDisagrees = qHasData && qLockSide !== consensusSide;
           // Asymmetry follows the data: the sharp side takes ~60% of the
           // row and glows; the dead side compresses and dims.
           const panelStyle = (isActive) => ({
@@ -9224,7 +9265,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                     ...T.micro, fontSize: '0.46rem', fontWeight: 900,
                     padding: '0.08rem 0.28rem', borderRadius: '3px',
                     color: '#fff', background: accentColor,
-                  }}>SHARP</span>
+                  }}>MOST $</span>
                 )}
                 <span style={{
                   ...T.sub, fontWeight: 900,
@@ -9237,7 +9278,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                     ...T.micro, fontSize: '0.46rem', fontWeight: 900,
                     padding: '0.08rem 0.28rem', borderRadius: '3px',
                     color: '#fff', background: accentColor,
-                  }}>SHARP</span>
+                  }}>MOST $</span>
                 )}
               </div>
 
@@ -9275,11 +9316,11 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
           return (
             <div style={{ marginBottom: '0.625rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.4rem' }}>
-                <span style={{ ...T.tiny, fontSize: '0.55rem', color: B.textSubtle, letterSpacing: '0.09em' }}>SHARP MONEY — BOTH SIDES</span>
+                <span style={{ ...T.tiny, fontSize: '0.55rem', color: B.textSubtle, letterSpacing: '0.09em' }}>ALL TRACKED MONEY — BOTH SIDES</span>
                 <span style={{
-                  ...T.micro, fontWeight: 800, color: accentColor,
+                  ...T.micro, fontWeight: 800, color: B.textSec,
                   padding: '0.1rem 0.32rem', borderRadius: '3px',
-                  background: `${accentColor}15`, fontFeatureSettings: "'tnum'",
+                  background: 'rgba(255,255,255,0.05)', fontFeatureSettings: "'tnum'",
                 }}>
                   {moneyRatio}% {consensusShort}
                 </span>
@@ -9303,6 +9344,54 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
 
                 <SidePanel team={homeShort} wallets={homeWallets} invested={homeInvested} pnl={homeLifetimePnl} avgBet={homeAvgBet} isActive={homeSide} align="right" />
               </div>
+
+              {/* ─── Qualified sharp money (proven winners we follow) ─── */}
+              {qHasData && (
+                <div style={{
+                  marginTop: '0.5rem', padding: '0.5rem 0.6rem', borderRadius: '10px',
+                  background: `${accentColor}0c`, border: `1px solid ${accentColor}33`,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.4rem' }}>
+                    <ShieldCheck size={11} color={accentColor} strokeWidth={2.5} />
+                    <span style={{ ...T.tiny, fontSize: '0.55rem', color: accentColor, letterSpacing: '0.08em', fontWeight: 900 }}>QUALIFIED SHARP MONEY</span>
+                    <span style={{ ...T.micro, fontSize: '0.5rem', color: B.textMuted, fontWeight: 600 }}>proven winners we follow</span>
+                    {qContrib != null && (
+                      <span style={{
+                        marginLeft: 'auto', ...T.micro, fontWeight: 800, color: accentColor,
+                        padding: '0.1rem 0.32rem', borderRadius: '3px',
+                        background: `${accentColor}15`, fontFeatureSettings: "'tnum'",
+                      }}>
+                        {qContrib}% {qLockShort}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'stretch' }}>
+                    <div style={{ flex: 1.4, padding: '0.4rem 0.5rem', borderRadius: '8px', background: `${accentColor}10`, border: `1px solid ${accentColor}40` }}>
+                      <div style={{ ...T.sub, fontWeight: 900, color: B.text, lineHeight: 1.1 }}>{qLockShort}</div>
+                      <div style={{ ...T.micro, fontSize: '0.6rem', color: accentColor, fontWeight: 800, lineHeight: 1.3 }}>
+                        {qForCount} proven winner{qForCount !== 1 ? 's' : ''}{qHcCount > 0 ? ` · ${qHcCount} HC` : ''}
+                      </div>
+                      <div style={{ ...T.micro, fontSize: '0.58rem', color: provLock.pnl >= 0 ? B.green : B.red, fontWeight: 700, fontFeatureSettings: "'tnum'" }}>
+                        {fmtVol(provLock.money)} · {provLock.pnl >= 0 ? '+' : ''}{fmtVol(provLock.pnl)} net
+                      </div>
+                    </div>
+                    <div style={{ flex: 1, padding: '0.4rem 0.5rem', borderRadius: '8px', background: 'rgba(255,255,255,0.015)', border: `1px solid ${B.borderSubtle}`, opacity: 0.75 }}>
+                      <div style={{ ...T.sub, fontWeight: 800, color: B.textMuted, lineHeight: 1.1 }}>{qOffShort}</div>
+                      <div style={{ ...T.micro, fontSize: '0.6rem', color: B.textMuted, fontWeight: 700, lineHeight: 1.3 }}>
+                        {qAgCount} proven{qAgCount !== 1 ? 's' : ''}
+                      </div>
+                      <div style={{ ...T.micro, fontSize: '0.58rem', color: provOff.pnl >= 0 ? B.green : B.red, fontWeight: 700, fontFeatureSettings: "'tnum'" }}>
+                        {fmtVol(provOff.money)} · {provOff.pnl >= 0 ? '+' : ''}{fmtVol(provOff.pnl)} net
+                      </div>
+                    </div>
+                  </div>
+                  {qDisagrees && (
+                    <div style={{ marginTop: '0.4rem', ...T.micro, fontSize: '0.58rem', color: B.gold, fontWeight: 600, lineHeight: 1.35 }}>
+                      Most tracked money is on {consensusShort} ({moneyRatio}%), but the proven winners — and our model — back {qLockShort}.
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* ─── Market Flow Split ─── */}
               {(() => {
