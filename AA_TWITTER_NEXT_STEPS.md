@@ -1,57 +1,66 @@
-# A Twitter Next Steps — 2026-06-28 · ENGAGEMENT-FIRST RESET
+# A Twitter Next Steps — 2026-06-29 3:42 PM ET · MIDDAY
 
-> **#1 goal = GROWTH / max distribution.** The hero LEADS with an engagement mechanic that forces an action (reply / vote / screenshot / return-visit). The sharp-money system is the **backbone and proof — directional only** ("the sharpest money," "every winning bettor we track," "our highest-conviction play"), plus the model/record (+29u) within reason. **No precise Polymarket $ figures in the tweet.** Rotate the mechanic every post — never the same one twice in a row. Pick labels are sign-verified from `todays_picks.json` `selection`.
+> **Post the hot hand NOW.** Brazil just cashed, the soccer card is 11-4 this week, and Germany — our biggest play left — kicks off in ~45 minutes. A result + a streak + a deadline is the most engagement-forcing setup we get. Lead with the win, ride the run, make them tail or fade. Proof stays directional (no Polymarket $). Pick label is sign-verified from `todays_picks.json`.
 
-## Recommended HERO — Reply-before-reveal (mechanic #1)
-*Best fit for a cold pregame binary. Forces a reply BEFORE the reveal + a reason to come back tonight.*
+## Recommended HERO — Call-your-shot off a just-cashed result (mechanic #2)
+*Rotates off last run's reply-before-reveal. Screenshot line 1 + believable record + firm countdown + binary close.*
 
 ```
-Cubs–Brewers. The total is 8.5.
+We just cashed Brazil. ✅
 
-Over or under? Lock your pick in the replies BEFORE you scroll.
+Our soccer card this week: 11-4, +11 units, 73% winners.
 
-I already know where every sharp bettor we track landed — and it's our highest-conviction play on the board. First pitch 2:11 ET. I reveal the side and grade it tonight. ⚾
+Next leg: Germany — our biggest play left on the board, sharp money on our side, kicks off in 45 minutes.
 
-Don't lurk. Commit.
+Calling it now: the run keeps going. Tailing it or fading us?
 ```
 
-**Why it wins:** the binary + "commit before you scroll" forces a reply (the single strongest engagement signal); the reveal/grade is a built-in return visit and a nightly franchise. Proof is directional only. Zero shaky numbers to misquote.
+**Why it wins:** "We just cashed Brazil" is a standalone screenshot — proof you can't argue with. "11-4 this week" is the specific, believable RT line (the @WizBetz record-flex shape). Germany is a **marquee** team (not the obscure-soccer trap that killed the DR Congo post) and a **firm <60-min last call**, so the countdown creates real urgency. The "tailing it or fading us?" close forces the reply — the one signal we keep missing (we're still at ~0 retweets).
 
-## Rotation alternates (pick whichever fits the moment — vary it next time)
+## Alternates (rotate next time — don't repeat the hero's mechanic)
 
-**② Call-your-shot / accountability (screenshot bait):**
+**② Like/RT-as-vote (pure distribution):**
 ```
-Calling it now: Cubs–Brewers stays UNDER 8.5.
+Brazil ✅. Soccer card's 11-4 this week.
 
-This is our highest-conviction play on the board today and where the sharpest money in the game went — the same model that's +29 units since June 1.
+Germany kicks off in 45 minutes — our biggest play left on the board.
 
-Screenshot this. If the bats wake up, come drag me tonight. I'll be here either way. 🎯
+❤️ = tail the run with us
+🔁 = you're fading, you think it ends here
+
+The timeline goes on record before the whistle.
 ```
 
 **③ Polarizing tribe take (agree/disagree war):**
 ```
-If you're on the OVER in Cubs–Brewers tonight, you're betting with the public — and against every winning bettor we track.
+If you're fading Germany today, you're fading the same money that just cashed Brazil an hour ago.
 
-The pros are on the under 8.5. They don't bet for fun. They bet to be right.
+Our soccer card is 11-4 this week. The sharpest money in the market is on Germany.
 
-So which one are you? ⚾
+First touch in 45 minutes. So which side are you actually on?
 ```
 
-**④ Like/RT-as-vote (pure distribution):**
+**④ Live running card — the @AlexCaruso ✅ format (freshest test):**
 ```
-Cubs–Brewers, total 8.5. Let's settle it.
+Today's soccer card:
 
-❤️ = under, with the sharps
-🔁 = over, you think the bats show up
+✅ Brazil — cashed
+⬜ Germany — kicks off in 45 min
 
-First pitch 2:11 ET. The timeline's about to go on record.
+This week: 11-4, +11 units, 73% winners. We post every result, Ls included.
+
+Tailing Germany or fading us? 🇩🇪
 ```
 
-## Reply (within ~30 min of the hero)
-> The reveal/grade is the payoff for ①. For ②–④, drop ONE directional receipt — "three proven winners on the under, none fading it" — never a precise dollar figure. Visual or a clean one-liner drives the dwell + early engagement.
+## RT line
+> **We just cashed Brazil. Our soccer card is 11-4 this week, and the next leg kicks off in 45 minutes.**
+
+## Reply (within ~30 min of the hero — before Germany kicks)
+> Receipt: **11 of the proven winners we track were on Brazil before kickoff. Two against.** That's the sharpest money in the market showing its hand — and it just hit. Germany's the same side of that money. (Uses our proprietary proven-winner *count*, not a Polymarket $ — that's the unique-data touch, and it stays directional.)
 
 ## Action checklist
-- **Post the hero now** — first pitch ~2:11 ET, positions can still move; re-pull the board if you wait >30 min.
-- **Rotate the mechanic next post** — don't run reply-before-reveal twice in a row. Next slot: call-your-shot or the like/RT vote.
-- **Tonight:** close the loop — reveal the side and grade it honestly. That return-visit IS the franchise.
-- **Always be scouting:** before the next hero, name the freshest viral hook shape on X right now and test it (Phase 1 mandate).
+- **Post the hero now** — Germany is firm at ~45 min out. If you post after ~4:15 PM ET, re-pull the board first; never quote it once the whistle blows.
+- **Reply within 30 min** with the Brazil proven-winner receipt above (drives dwell + early engagement).
+- **Tonight — close the loop:** grade Germany honestly. If it cashes, the running card becomes a 2-for-2 streak flex; if it loses, run the honest-L beat (accountability is the brand). Then pivot to the **Mets +112 "sharp on the underdog"** evening hero (19:08 ET).
+- **Rotate the mechanic next post** — don't run call-your-shot twice. Next: the like/RT vote or the sharp-vs-public read.
+- **Always be scouting:** this run's named next viral bet = the **hot-hand live running card + call-your-shot** (see playbook). Test it, measure replies/RTs, report back next run.
