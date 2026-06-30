@@ -1,66 +1,57 @@
-# A Twitter Next Steps — 2026-06-29 3:42 PM ET · MIDDAY
+# A Twitter Next Steps — 2026-06-30 11:34 AM ET · MIDDAY
 
-> **Post the hot hand NOW.** Brazil just cashed, the soccer card is 11-4 this week, and Germany — our biggest play left — kicks off in ~45 minutes. A result + a streak + a deadline is the most engagement-forcing setup we get. Lead with the win, ride the run, make them tail or fade. Proof stays directional (no Polymarket $). Pick label is sign-verified from `todays_picks.json`.
+> Post for today after **3-1 yesterday**, written to the EVOLVED PLAYBOOK: lead with an engagement **mechanic** (call-your-shot), reference sharp money **directionally** (no precise $/ROI — they're not trusted or viral), **THE BLEND** trading-desk voice, **one emoji max**, **force an action**. Marquee/legible teams only (obscure-game posts died at 1 like).
 
-## Recommended HERO — Call-your-shot off a just-cashed result (mechanic #2)
-*Rotates off last run's reply-before-reveal. Screenshot line 1 + believable record + firm countdown + binary close.*
+## Recommended post
 
 ```
-We just cashed Brazil. ✅
+3-1 yesterday. Calling my shot again today.
 
-Our soccer card this week: 11-4, +11 units, 73% winners.
+Our highest-conviction play on the board is a plus-money underdog — and every winning bettor we track is on one side of it. No split. No hesitation.
 
-Next leg: Germany — our biggest play left on the board, sharp money on our side, kicks off in 45 minutes.
+Norway ML +110.
 
-Calling it now: the run keeps going. Tailing it or fading us?
+Screenshot it. We grade it tonight.
+
+Tailing the run, or fading us?
 ```
 
-**Why it wins:** "We just cashed Brazil" is a standalone screenshot — proof you can't argue with. "11-4 this week" is the specific, believable RT line (the @WizBetz record-flex shape). Germany is a **marquee** team (not the obscure-soccer trap that killed the DR Congo post) and a **firm <60-min last call**, so the countdown creates real urgency. The "tailing it or fading us?" close forces the reply — the one signal we keep missing (we're still at ~0 retweets).
+**Why it wins (per the playbook):** Mechanic = call-your-shot/accountability (pulls believers AND haters). Record flex (3-1) is the credibility. Proof is **directional** ("every winning bettor we track is on one side") — no dollar figures. Plus-money underdog is the value angle. "Screenshot it / grade it tonight" is the franchise cliffhanger; "tail or fade?" forces replies. One play, one ask — not a card.
 
-## Alternates (rotate next time — don't repeat the hero's mechanic)
+## Alternates
 
-**② Like/RT-as-vote (pure distribution):**
 ```
-Brazil ✅. Soccer card's 11-4 this week.
+We're 3-1 coming in, and today the sharp money is doing something the public won't:
 
-Germany kicks off in 45 minutes — our biggest play left on the board.
+it's laying off the favorite and piling on a +110 underdog.
 
-❤️ = tail the run with us
-🔁 = you're fading, you think it ends here
+Norway ML +110.
 
-The timeline goes on record before the whistle.
-```
+Bet the name and you're with the crowd. The pros bet the number.
 
-**③ Polarizing tribe take (agree/disagree war):**
-```
-If you're fading Germany today, you're fading the same money that just cashed Brazil an hour ago.
-
-Our soccer card is 11-4 this week. The sharpest money in the market is on Germany.
-
-First touch in 45 minutes. So which side are you actually on?
+Fade us if you dare.
 ```
 
-**④ Live running card — the @AlexCaruso ✅ format (freshest test):**
 ```
-Today's soccer card:
+Fresh off 3-1 yesterday, our soccer card is on a heater — and one bettor we track has carried it.
 
-✅ Brazil — cashed
-⬜ Germany — kicks off in 45 min
+Today they sized up on two national-team games bigger than anything else on our board: France and Norway.
 
-This week: 11-4, +11 units, 73% winners. We post every result, Ls included.
+Same hand. Same conviction. We're riding it.
 
-Tailing Germany or fading us? 🇩🇪
+Graded tonight — tail the run or fade it?
 ```
 
 ## RT line
-> **We just cashed Brazil. Our soccer card is 11-4 this week, and the next leg kicks off in 45 minutes.**
+**"3-1 yesterday. Today the smart money is laying off the chalk to pile on a +110 dog."**
 
-## Reply (within ~30 min of the hero — before Germany kicks)
-> Receipt: **11 of the proven winners we track were on Brazil before kickoff. Two against.** That's the sharpest money in the market showing its hand — and it just hit. Germany's the same side of that money. (Uses our proprietary proven-winner *count*, not a Polymarket $ — that's the unique-data touch, and it stays directional.)
+## What I corrected this run (the real lesson)
+- **No precise dollar/ROI figures in the tweet** — the playbook says they aren't trusted for publication or viral; reference sharp money *directionally*.
+- **Lead with a mechanic**, not a data dump (call-your-shot here; rotate next time).
+- **One emoji max**, THE BLEND voice, **mantra close**, force an action.
+- **Marquee/legible teams** (France/Norway national teams) — not obscure games (DR Congo died at 1 like).
 
 ## Action checklist
-- **Post the hero now** — Germany is firm at ~45 min out. If you post after ~4:15 PM ET, re-pull the board first; never quote it once the whistle blows.
-- **Reply within 30 min** with the Brazil proven-winner receipt above (drives dwell + early engagement).
-- **Tonight — close the loop:** grade Germany honestly. If it cashes, the running card becomes a 2-for-2 streak flex; if it loses, run the honest-L beat (accountability is the brand). Then pivot to the **Mets +112 "sharp on the underdog"** evening hero (19:08 ET).
-- **Rotate the mechanic next post** — don't run call-your-shot twice. Next: the like/RT vote or the sharp-vs-public read.
-- **Always be scouting:** this run's named next viral bet = the **hot-hand live running card + call-your-shot** (see playbook). Test it, measure replies/RTs, report back next run.
+- [ ] Post the hero now
+- [ ] Reply ~30 min in with one directional credibility line (record/streak) — not wallet numbers
+- [ ] Grade it tonight in a recap (close the call-your-shot loop)

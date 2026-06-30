@@ -3,7 +3,7 @@
 > Updated by **The Twitter Loop** (Phase 1) each run. "What's working on X right now
 > and how we grow." The Writer (Phase 3) pulls hook shapes + construction tricks here.
 
-*Last updated: 2026-06-29 3:42 PM ET (MIDDAY loop run) · source: niche_trends.json (60 in-lane posts, fetched 6/28), growth_tips.json (35 kept), live sharp tape + board (todays_picks.json @ 11:09 AM ET — fresh; my_tweets/niche/growth/brief snapshot is 6/28, Refresh-Twitter-Analysis Action didn't fire today).*
+*Last updated: 2026-06-30 11:34 AM ET (loop run) · source: niche_trends.json, growth_tips.json, live sharp tape + board (all fresh today: picks 15:08, positions 15:34, brief 15:03 UTC). Coming off 3-1 yesterday.*
 
 ## NORTH STAR — GROWTH IS THE ONLY GOAL
 The mission is **1,000,000 followers** via **MAX DISTRIBUTION**. The backend system is profitable and works; the bottleneck is reach. Every post is judged by ONE question: *does it FORCE an action* — a reply, a vote, a quote-tweet, a screenshot, a return-visit? Information alone gets ignored; engagement is the algorithm's fuel. We have ~0 retweets — fix that and growth compounds. Always think one move ahead: *what is the best NEXT post for virality, right now?* You are the account's social-media expert, **perpetually scouting the next viral format** — never running a fixed template.
@@ -63,12 +63,14 @@ Our sharp-money / Polymarket tracking is HOW we know the side and our credibilit
 - Thread deep reads instead of truncating.
 
 ## THE NEXT VIRAL BET (named this run — test it now)
-**Hot-hand live running card + call-your-shot.** We have a real momentum event: SOC card is **11-4 this week (+11.3u, 73%)**, **Brazil just cashed** (it was the day's biggest sharp-consensus play — 19 sharp wallets / $752K home tape), and **Germany (our biggest play left, 4u TOP) kicks off in ~48 min** with the sharp money on our side. That's a firm last-call + a live winning streak + a marquee team the whole world knows. Lead with the just-cashed receipt, tease the next leg with a countdown, close with "tail the run or fade us?" This fuses the freshest format (@AlexCaruso ✅ running card) with mechanic #2 (call-your-shot). Rotate OFF reply-before-reveal (last run's hero).
+**Call-your-shot off a 3-1 day, on a plus-money underdog.** Momentum event: **3-1 yesterday**, and today's highest-conviction play is **Norway ML +110** — a plus-money dog the sharp money is one-sided on, and the same winning bettor who's carried our soccer card sized it up bigger than anything else on the board. Lead with "3-1 yesterday, calling my shot," name the +110 dog, say "screenshot it / graded tonight," close with "tail the run or fade us?" Mechanic #2 (call-your-shot) — rotate OFF last run's hot-hand running card. Plus-money + contrarian (laying off the chalk) doubles as a polarizing tribe take.
 
-## Trends watchlist (2026-06-29 MIDDAY)
-- **Marquee soccer ≠ obscure soccer.** Last week's DR Congo whale post died at 1 like (audience didn't know the teams). Germany / Brazil / Canada are blue-blood national teams in a live international window — legible to a global + US audience. The "wrong subject" lesson does NOT apply here; the live streak makes it stronger.
-- **Replies are the whole game (growth_tips theme):** the recurring X-algo posts ("most of you are posting into the void," Elon algo threads, Kai Cenat clip strategy) all point one way — the algorithm rewards replies/reposts, not reads. Our zero-RT problem is a mechanic problem, not a content-quality problem. Every hero must force an action.
-- **Board shape today (4 shipped):** Germany ML -275 (4u TOP, 16:30 ET — firm), Brazil ML ✅ (cashed 13:00 ET), Marlins/Rockies Over 11.5 (3u SHARP, 20:41 ET), Mets ML +112 (2.5u SHARP-PRIME, 19:08 ET). The Mets dog (+112, only proven winners FOR, none against) is the cleanest evening "sharp on the underdog" hero once Germany settles.
+## Trends watchlist (2026-06-30)
+- **Plus-money underdog + contrarian framing** is the sharpest tribe-war hook today (Norway +110 — "bet the name and you're with the crowd").
+- **Marquee/legible teams only** — France, Norway are national teams (fine). Obscure-game posts (DR Congo) died at 1 like; do not repeat.
+- **Directional proof, never precise $** — our recent dollar-card posts underperformed; the playbook rule holds. Reference the money as "the sharpest money we track," add the 3-1 / +29u record as credibility.
+- **Replies are the whole game** — still ~0 RTs; every hero must force an action (tail/fade, screenshot, vote).
+- **Board today:** Norway ML +110 (SUPER, ~1 PM ET — the hero), France ML -325 (4u, ~5 PM ET — same whale, supporting), Rays/Brewers ML + two Overs (thinner) later.
 
 ## Stale / stop
 - Setup-line / pick-list openers with no market read ("Massive slate tonight" → ~1 like).

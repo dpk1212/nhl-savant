@@ -1,8 +1,8 @@
-# Twitter Improvement Guide — 2026-06-29 (MIDDAY)
+# Twitter Improvement Guide — 2026-06-30 (MIDDAY)
 
-> **Verdict:** Our best post is still the **pick_with_proof** conviction explainer (12 likes), and we still have **~0 retweets** — that is the entire growth problem. The fix is not better information, it's a forcing **mechanic**. This run we have a live edge the data never gave us before: a **hot hand** (SOC 11-4 this week) + a **just-cashed result** (Brazil) + a **firm last-call** (Germany, ~48 min) on a **marquee team**. Lead with the result, ride the streak, make them tail or fade. Engagement > information, every time.
+> **Verdict:** Still **~0 retweets** — the entire growth problem, and it's a **mechanic** problem, not an information one. This run's edge: **3-1 yesterday** (hot hand) + a **plus-money underdog** the sharp money is one-sided on (Norway +110). Lead with a **call-your-shot** off the record, frame the +110 dog as fading the public, force a tail/fade. Proof stays **directional** — no precise $/ROI in the tweet (they're not trusted or viral). Engagement > information, every time.
 
-*Maintained by The Twitter Loop (Phase 2). The three sections below are PERSISTENT — re-emitted every run. NOTE: labeled-engagement numbers are unchanged from the 6/28 scrape — the Refresh-Twitter-Analysis Action did not run today, so performance data is directional and stale.*
+*Maintained by The Twitter Loop (Phase 2). The three sections below are PERSISTENT — re-emitted every run. Data is fresh today (brief 15:03, picks 15:08, positions 15:34 UTC).*
 
 ## Hard gates (every post must pass — non-negotiable) [PERSISTENT]
 1. **Screenshot test (line 1):** the first sentence must land as a standalone screenshot with ZERO context. No bare team names, no "here are today's picks," no buried hook.
