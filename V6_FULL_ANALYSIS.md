@@ -1,14 +1,14 @@
 # Sharp Intel v6 — Full Analysis
 
-_Auto-generated **6/29/2026, 12:31:35 PM ET** by `scripts/v6FullAnalysis.js`. Do not edit by hand._
+_Auto-generated **6/30/2026, 11:21:55 AM ET** by `scripts/v6FullAnalysis.js`. Do not edit by hand._
 
 **Inclusion mirrors live Pick Performance dashboard:** `lockStage ≠ SHADOW ∧ ¬superseded ∧ health ∉ {MUTED, CANCELLED} ∧ peak.stars ≥ 2.5`. PnL in **peak units** (the size shipped to users) and **flat 1u** (cohort EV lens). Cohort tags from frozen `v8_walletConsensus*` stamps written at last sync before T-15.
 
 ## Executive summary
 
-**Sample:** 922 shipped+graded picks · 2026-04-18 → 2026-06-28  (HC analyses scoped to post-cutover 2026-04-30, 810 picks)
-**Headline:** 459-455-8 · WR 50.2% [47.0%–53.5%] vs 52.4% break-even · -45.4u flat (-4.9%) · -202.5u peak.
-**Overall t-test:** t = -1.54 → ✗ noise.
+**Sample:** 943 shipped+graded picks · 2026-04-18 → 2026-06-29  (HC analyses scoped to post-cutover 2026-04-30, 831 picks)
+**Headline:** 469-465-9 · WR 50.2% [47.0%–53.4%] vs 52.4% break-even · -46.9u flat (-5.0%) · -195.9u peak.
+**Overall t-test:** t = -1.57 → ✗ noise.
 
 **Verdict:** ✗ overall sample is consistent with zero or negative true ROI.
 
@@ -16,25 +16,25 @@ _Auto-generated **6/29/2026, 12:31:35 PM ET** by `scripts/v6FullAnalysis.js`. Do
 
 The two real engine-signals are **Δw** (proven-roster directional consensus) and **HC** (high-conviction-wallet margin, post-cutover). Univariate correlations:
 
-- **ρ(Δw, flat ROI) = 0.027 ✗**  (full sample, N=916)
-- **ρ(HC, flat ROI) = -0.015 ✗**  (post-cutover, N=810)
-- **ρ(Δw+HC, flat ROI) = -0.016 ✗**  (post-cutover, N=810)
+- **ρ(Δw, flat ROI) = 0.030 ✗**  (full sample, N=937)
+- **ρ(HC, flat ROI) = -0.015 ✗**  (post-cutover, N=831)
+- **ρ(Δw+HC, flat ROI) = -0.012 ✗**  (post-cutover, N=831)
 
 Cohort breakdown:
 
 **No cohort cleared the 90% sig threshold. Best directional cohorts:**
 
 **Bleeder cohorts (t ≤ −1.645 with negative mean):**
-- **Stale Δw ≤ 0 (full sample)** — N=250, 115-131, WR 46.7% [41%–53%], flat ROI -12.5% (t=-2.09 ✓ p<.05)
+- **Stale Δw ≤ 0 (full sample)** — N=257, 118-134, WR 46.8% [41%–53%], flat ROI -12.1% (t=-2.05 ✓ p<.05)
 
 ### Action map
 
-- **Tier-1a (HC ≥ +2)** — N=55, WR 45.5%, flat ROI -17.8%. Bayesian posterior WR ≈ 46.2%, half-Kelly = **0.0%** bankroll at −110 → **size aggressively**.
-- **Tier-1b (HC = +1)** — N=186, WR 58.6%, flat ROI +10.1%. Bayesian posterior WR ≈ 58.2%, half-Kelly = **6.1%** bankroll at −110.
-- **Tier-2 (HC ≤ 0 ∧ Δw ≥ +2, HC era)** — N=120, WR 46.2%, flat ROI -13.5%. Δw saves the pick when HC is silent.
-- **Δw ≥ +3 (full sample)** — N=131, WR 50.4%, flat ROI -3.0%. Bayesian posterior WR ≈ 50.4%, half-Kelly = **0.0%** bankroll at −110.
-- **Stale Δw ≤ 0 (full sample)** — -12.5% flat ROI on 250 picks. Already muted by v7.x; should not re-appear.
-- **Sample size:** at observed σ (0.97u/pick), we need **~1458 graded picks** to validate a true +5% flat ROI at 95% confidence. We have 922. Cohort findings — especially HC subsets — are provisional until N grows.
+- **Tier-1a (HC ≥ +2)** — N=57, WR 45.6%, flat ROI -17.7%. Bayesian posterior WR ≈ 46.3%, half-Kelly = **0.0%** bankroll at −110 → **size aggressively**.
+- **Tier-1b (HC = +1)** — N=188, WR 59.0%, flat ROI +10.7%. Bayesian posterior WR ≈ 58.6%, half-Kelly = **6.5%** bankroll at −110.
+- **Tier-2 (HC ≤ 0 ∧ Δw ≥ +2, HC era)** — N=121, WR 46.7%, flat ROI -12.5%. Δw saves the pick when HC is silent.
+- **Δw ≥ +3 (full sample)** — N=133, WR 50.4%, flat ROI -3.2%. Bayesian posterior WR ≈ 50.3%, half-Kelly = **0.0%** bankroll at −110.
+- **Stale Δw ≤ 0 (full sample)** — -12.1% flat ROI on 257 picks. Already muted by v7.x; should not re-appear.
+- **Sample size:** at observed σ (0.97u/pick), we need **~1455 graded picks** to validate a true +5% flat ROI at 95% confidence. We have 943. Cohort findings — especially HC subsets — are provisional until N grows.
 
 ---
 
@@ -43,17 +43,17 @@ _Dashboard-truth filter (mirrors live Pick Performance)._
 
 | Metric | Value |
 |---|---|
-| Date range | 2026-04-18 … 2026-06-28 |
-| Sides scanned | 1696 |
-| Shipped + graded | **922** |
-| W-L-P | 459-455-8 |
-| Win rate | **50.2%** [47.0%–53.5%] |
+| Date range | 2026-04-18 … 2026-06-29 |
+| Sides scanned | 1735 |
+| Shipped + graded | **943** |
+| W-L-P | 469-465-9 |
+| Win rate | **50.2%** [47.0%–53.4%] |
 | Break-even WR @ −110 | 52.38% |
 | Distance to break-even | WR needs +2.2 pp |
-| Peak-units PnL | **-202.5u** |
-| Flat-1u PnL | **-45.4u** (-4.9% flat ROI) |
-| Flat t-statistic vs zero | -1.54 → ✗ noise |
-| Flat 95% CI per-pick | [-0.112, 0.014]u |
+| Peak-units PnL | **-195.9u** |
+| Flat-1u PnL | **-46.9u** (-5.0% flat ROI) |
+| Flat t-statistic vs zero | -1.57 → ✗ noise |
+| Flat 95% CI per-pick | [-0.112, 0.012]u |
 
 ### Power note
 
@@ -61,11 +61,11 @@ At our observed flat-PnL standard deviation (0.97u/pick), to detect a true edge 
 
 | True flat ROI | Picks needed (95% conf) |
 |---|---|
-| +3% | 4050 |
-| +5% | 1458 |
-| +10% | 365 |
+| +3% | 4040 |
+| +5% | 1455 |
+| +10% | 364 |
 
-We have **922** graded picks. Anything we conclude on cohorts smaller than ~200 is provisional.
+We have **943** graded picks. Anything we conclude on cohorts smaller than ~200 is provisional.
 
 ---
 
@@ -77,13 +77,13 @@ _For each axis: bucket performance + Pearson/Spearman correlation with WIN and f
 | Bucket | N | W-L-P | WR % [95% Wilson] | Flat ROI | Peak PnL | Flat t-stat |
 |---|---|---|---|---|---|---|
 | Δw ≤ −2 | 10 | 3-7-0 | 30.0% [11–60] | -42.5% | -6.8u | -1.43 ✗ noise |
-| Δw = −1 | 40 | 16-23-1 | 41.0% [27–57] | -21.5% | -14.2u | -1.42 ✗ noise |
-| Δw = 0 | 200 | 96-101-3 | 48.7% [42–56] | -9.2% | -50.0u | -1.37 ✗ noise |
-| Δw = +1 | 373 | 192-178-3 | 51.9% [47–57] | -1.8% | -102.0u | -0.36 ✗ noise |
-| Δw = +2 | 162 | 82-79-1 | 50.9% [43–59] | -2.8% | -21.3u | -0.36 ✗ noise |
-| Δw ≥ +3 | 131 | 66-65-0 | 50.4% [42–59] | -3.0% | -12.2u | -0.33 ✗ noise |
+| Δw = −1 | 42 | 16-24-2 | 40.0% [26–55] | -22.9% | -14.5u | -1.58 ✗ noise |
+| Δw = 0 | 205 | 99-103-3 | 49.0% [42–56] | -8.4% | -50.8u | -1.27 ✗ noise |
+| Δw = +1 | 383 | 196-184-3 | 51.6% [47–57] | -2.5% | -97.0u | -0.50 ✗ noise |
+| Δw = +2 | 164 | 84-79-1 | 51.5% [44–59] | -1.7% | -21.3u | -0.23 ✗ noise |
+| Δw ≥ +3 | 133 | 67-66-0 | 50.4% [42–59] | -3.2% | -9.6u | -0.35 ✗ noise |
 
-**Pearson ρ(Δw, WIN) = 0.033** ✗  ·  **ρ(Δw, flat ROI) = 0.027** ✗  (N=916)
+**Pearson ρ(Δw, WIN) = 0.039** ✗  ·  **ρ(Δw, flat ROI) = 0.030** ✗  (N=937)
 
 ### §2b. HC margin — high-conviction proven-wallet margin (post-cutover 2026-04-30)
 
@@ -93,14 +93,14 @@ HC = `hcConfFor − hcConfAg`. "High-conviction" wallets = `CONFIRMED` tier with
 |---|---|---|---|---|---|---|
 | HC ≤ −2 | 1 | 1-0-0 | 100.0% [21–100] | +86.2% | +2.5u | 0.00 ✗ n<2 |
 | HC = −1 | 31 | 17-14-0 | 54.8% [38–71] | +11.1% | +8.2u | 0.59 ✗ noise |
-| HC = 0 | 537 | 256-274-7 | 48.3% [44–53] | -9.3% | -226.6u | -2.27 ✓ p<.05 |
-| HC = +1 | 186 | 109-77-0 | 58.6% [51–65] | +10.1% | +25.4u | 1.43 ✗ noise |
-| HC = +2 | 38 | 19-19-0 | 50.0% [35–65] | -5.9% | +3.6u | -0.37 ✗ noise |
-| HC ≥ +3 | 17 | 6-11-0 | 35.3% [17–59] | -44.3% | -5.0u | -2.33 ✓ p<.05 |
+| HC = 0 | 554 | 263-283-8 | 48.2% [44–52] | -9.5% | -222.5u | -2.35 ✓ p<.05 |
+| HC = +1 | 188 | 111-77-0 | 59.0% [52–66] | +10.7% | +25.4u | 1.54 ✗ noise |
+| HC = +2 | 39 | 20-19-0 | 51.3% [36–66] | -4.0% | +6.7u | -0.26 ✗ noise |
+| HC ≥ +3 | 18 | 6-12-0 | 33.3% [16–56] | -47.4% | -5.5u | -2.61 ✓ p<.01 |
 
-**Pearson ρ(HC, WIN) = 0.003** ✗  ·  **ρ(HC, flat ROI) = -0.015** ✗  (N=810)
+**Pearson ρ(HC, WIN) = 0.005** ✗  ·  **ρ(HC, flat ROI) = -0.015** ✗  (N=831)
 
-Spearman rank ρ(HC, flat ROI) = 0.023.
+Spearman rank ρ(HC, flat ROI) = 0.024.
 
 ### §2c. Δw + HC — combined scalar (post-cutover only)
 
@@ -108,45 +108,45 @@ Sum of the two axes the engine actually relies on. Captures the v7.4 lock-floor 
 
 | Bucket | N | W-L-P | WR % [95% Wilson] | Flat ROI | Peak PnL | Flat t-stat |
 |---|---|---|---|---|---|---|
-| Σ ≤ 0 | 197 | 93-101-3 | 47.9% [41–55] | -10.1% | -61.8u | -1.48 ✗ noise |
-| Σ = +1 | 291 | 149-139-3 | 51.7% [46–57] | -2.1% | -103.9u | -0.37 ✗ noise |
-| Σ = +2 | 152 | 83-68-1 | 55.0% [47–63] | +3.4% | -3.0u | 0.44 ✗ noise |
-| Σ = +3 | 72 | 34-38-0 | 47.2% [36–59] | -10.5% | -4.1u | -0.91 ✗ noise |
+| Σ ≤ 0 | 203 | 95-104-4 | 47.7% [41–55] | -10.1% | -62.8u | -1.51 ✗ noise |
+| Σ = +1 | 302 | 154-145-3 | 51.5% [46–57] | -2.7% | -98.8u | -0.49 ✗ noise |
+| Σ = +2 | 153 | 84-68-1 | 55.3% [47–63] | +4.0% | -3.0u | 0.52 ✗ noise |
+| Σ = +3 | 73 | 35-38-0 | 47.9% [37–59] | -9.5% | -4.1u | -0.83 ✗ noise |
 | Σ = +4 | 45 | 24-21-0 | 53.3% [39–67] | +4.1% | -3.6u | 0.27 ✗ noise |
 | Σ = +5 | 23 | 12-11-0 | 52.2% [33–71] | -11.0% | -6.4u | -0.58 ✗ noise |
-| Σ ≥ +6 | 30 | 13-17-0 | 43.3% [27–61] | -25.5% | -9.1u | -1.57 ✗ noise |
+| Σ ≥ +6 | 32 | 14-18-0 | 43.8% [28–61] | -24.9% | -6.5u | -1.58 ✗ noise |
 
-**Pearson ρ(Δw+HC, WIN) = 0.003** ✗  ·  **ρ(Σ, flat ROI) = -0.016** ✗  (N=810)
+**Pearson ρ(Δw+HC, WIN) = 0.010** ✗  ·  **ρ(Σ, flat ROI) = -0.012** ✗  (N=831)
 
 ### §2d. Which axis is the strongest single predictor?
 
-Comparison restricted to the post-cutover sample where every axis has a value (so the rows are apples-to-apples). N = 810.
+Comparison restricted to the post-cutover sample where every axis has a value (so the rows are apples-to-apples). N = 831.
 
 | Predictor | ρ(·, WIN) | ρ(·, flat ROI) | Spearman ρ | Verdict |
 |---|---|---|---|---|
-| Δw | 0.003 ✗ | -0.013 ✗ | -0.001 | weak |
-| HC margin | 0.003 ✗ | -0.015 ✗ | 0.023 | weak |
-| Δw + HC | 0.003 ✗ | -0.016 ✗ | 0.010 | weak |
-| peak.stars | -0.035 ✗ | -0.047 ✗ | -0.049 | weak |
-| vault.star | -0.003 ✗ | -0.018 ✗ | -0.035 | weak |
-| lock.stars | -0.028 ✗ | -0.042 ✗ | -0.040 | weak |
+| Δw | 0.011 ✗ | -0.008 ✗ | 0.001 | weak |
+| HC margin | 0.005 ✗ | -0.015 ✗ | 0.024 | weak |
+| Δw + HC | 0.010 ✗ | -0.012 ✗ | 0.012 | weak |
+| peak.stars | -0.036 ✗ | -0.047 ✗ | -0.046 | weak |
+| vault.star | -0.000 ✗ | -0.018 ✗ | -0.036 | weak |
+| lock.stars | -0.030 ✗ | -0.042 ✗ | -0.039 | weak |
 
 ---
 
 ## §3. Bivariate HC × Δw matrix (post-cutover 2026-04-30 only)
 _Each cell: N · W-L · WR% · Wilson 95% CI · flat ROI %. ★ flag = sig 95% one-sample t-test on flat PnL._
 
-Universe N = 810 (post-cutover, both axes present).
+Universe N = 831 (post-cutover, both axes present).
 
 | HC \ Δw | ≤ −3 | -2 | -1 | +0 | +1 | +2 | ≥ +3 |
 |---|---|---|---|---|---|---|---|
 | ≤ −3 | — | — | — | — | — | — | — |
 | -2 | — | N=1 · 1-0 · 100% [21–100] · —  | — | — | — | — | — |
 | -1 | — | N=1 · 0-1 · 0% [0–79] · —  | N=7 · 4-3 · 57% [25–84] · +21%  | N=8 · 5-3 · 63% [31–86] · +31%  | N=9 · 4-5 · 44% [19–73] · -21%  | N=2 · 2-0 · 100% [34–100] · — ★ | N=4 · 2-2 · 50% [15–85] · -1%  |
-| +0 | N=2 · 1-1 · 50% [9–91] · —  | N=4 · 1-3 · 25% [5–70] · -44%  | N=19 · 6-12 · 33% [16–56] · -34%  | N=137 · 66-69 · 49% [41–57] · -9%  | N=261 · 131-127 · 51% [45–57] · -4%  | N=80 · 40-39 · 51% [40–61] · -6%  | N=34 · 11-23 · 32% [19–49] · -40% ✗ |
-| +1 | — | — | N=8 · 5-3 · 63% [31–86] · +5%  | N=28 · 16-12 · 57% [39–73] · +6%  | N=65 · 40-25 · 62% [49–72] · +18%  | N=41 · 23-18 · 56% [41–70] · +8%  | N=44 · 25-19 · 57% [42–70] · +4%  |
-| +2 | — | N=1 · 0-1 · 0% [0–79] · —  | — | N=3 · 1-2 · 33% [6–79] · -47%  | N=4 · 1-3 · 25% [5–70] · -55%  | N=11 · 5-6 · 45% [21–72] · -7%  | N=19 · 12-7 · 63% [41–81] · +16%  |
-| ≥ +3 | — | — | — | N=1 · 1-0 · 100% [21–100] · —  | N=1 · 1-0 · 100% [21–100] · —  | N=3 · 1-2 · 33% [6–79] · -50%  | N=12 · 3-9 · 25% [9–53] · -60% ✗ |
+| +0 | N=2 · 1-1 · 50% [9–91] · —  | N=4 · 1-3 · 25% [5–70] · -44%  | N=21 · 6-13 · 32% [15–54] · -36%  | N=141 · 68-71 · 49% [41–57] · -9%  | N=271 · 135-133 · 50% [44–56] · -5%  | N=81 · 41-39 · 51% [40–62] · -5%  | N=34 · 11-23 · 32% [19–49] · -40% ✗ |
+| +1 | — | — | N=8 · 5-3 · 63% [31–86] · +5%  | N=29 · 17-12 · 59% [41–74] · +9%  | N=65 · 40-25 · 62% [49–72] · +18%  | N=42 · 24-18 · 57% [42–71] · +9%  | N=44 · 25-19 · 57% [42–70] · +4%  |
+| +2 | — | N=1 · 0-1 · 0% [0–79] · —  | — | N=3 · 1-2 · 33% [6–79] · -47%  | N=4 · 1-3 · 25% [5–70] · -55%  | N=11 · 5-6 · 45% [21–72] · -7%  | N=20 · 13-7 · 65% [43–82] · +19%  |
+| ≥ +3 | — | — | — | N=1 · 1-0 · 100% [21–100] · —  | N=1 · 1-0 · 100% [21–100] · —  | N=3 · 1-2 · 33% [6–79] · -50%  | N=13 · 3-10 · 23% [8–50] · -63% ✗ |
 
 ### §3b. Row totals (HC fixed, Δw collapsed)
 
@@ -154,36 +154,36 @@ Universe N = 810 (post-cutover, both axes present).
 |---|---|---|---|---|---|---|
 | HC ≤ −2 | 1 | 1-0-0 | 100.0% [21–100] | +86.2% | +2.5u | 0.00 ✗ n<2 |
 | HC = −1 | 31 | 17-14-0 | 54.8% [38–71] | +11.1% | +8.2u | 0.59 ✗ noise |
-| HC = 0 | 537 | 256-274-7 | 48.3% [44–53] | -9.3% | -226.6u | -2.27 ✓ p<.05 |
-| HC = +1 | 186 | 109-77-0 | 58.6% [51–65] | +10.1% | +25.4u | 1.43 ✗ noise |
-| HC = +2 | 38 | 19-19-0 | 50.0% [35–65] | -5.9% | +3.6u | -0.37 ✗ noise |
-| HC ≥ +3 | 17 | 6-11-0 | 35.3% [17–59] | -44.3% | -5.0u | -2.33 ✓ p<.05 |
+| HC = 0 | 554 | 263-283-8 | 48.2% [44–52] | -9.5% | -222.5u | -2.35 ✓ p<.05 |
+| HC = +1 | 188 | 111-77-0 | 59.0% [52–66] | +10.7% | +25.4u | 1.54 ✗ noise |
+| HC = +2 | 39 | 20-19-0 | 51.3% [36–66] | -4.0% | +6.7u | -0.26 ✗ noise |
+| HC ≥ +3 | 18 | 6-12-0 | 33.3% [16–56] | -47.4% | -5.5u | -2.61 ✓ p<.01 |
 
 ### §3c. Column totals (Δw fixed, HC collapsed)
 
 | Bucket | N | W-L-P | WR % [95% Wilson] | Flat ROI | Peak PnL | Flat t-stat |
 |---|---|---|---|---|---|---|
 | Δw ≤ −2 | 9 | 3-6-0 | 33.3% [12–65] | -36.1% | -6.3u | -1.12 ✗ noise |
-| Δw = −1 | 34 | 15-18-1 | 45.5% [30–62] | -13.7% | -9.7u | -0.83 ✗ noise |
-| Δw = 0 | 177 | 89-86-2 | 50.9% [44–58] | -5.3% | -36.6u | -0.74 ✗ noise |
-| Δw = +1 | 340 | 177-160-3 | 52.5% [47–58] | -0.5% | -97.5u | -0.10 ✗ noise |
-| Δw = +2 | 137 | 71-65-1 | 52.2% [44–60] | -1.2% | -17.5u | -0.15 ✗ noise |
-| Δw ≥ +3 | 113 | 53-60-0 | 46.9% [38–56] | -14.1% | -24.3u | -1.59 ✗ noise |
+| Δw = −1 | 36 | 15-19-2 | 44.1% [29–61] | -15.7% | -10.0u | -1.00 ✗ noise |
+| Δw = 0 | 182 | 92-88-2 | 51.1% [44–58] | -4.5% | -37.4u | -0.64 ✗ noise |
+| Δw = +1 | 350 | 181-166-3 | 52.2% [47–57] | -1.3% | -92.4u | -0.26 ✗ noise |
+| Δw = +2 | 139 | 73-65-1 | 52.9% [45–61] | -0.0% | -17.5u | -0.01 ✗ noise |
+| Δw ≥ +3 | 115 | 54-61-0 | 47.0% [38–56] | -14.1% | -21.7u | -1.61 ✗ noise |
 
 ### §3d. Practical lock zones (v7.4 floor anatomy)
 
 | Bucket | N | W-L-P | WR % [95% Wilson] | Flat ROI | Peak PnL | Flat t-stat |
 |---|---|---|---|---|---|---|
-| Tier-1: HC ≥ +1 | 241 | 134-107-0 | 55.6% [49–62] | +3.7% | +24.0u | 0.61 ✗ noise |
-| Tier-2: HC ≤ 0 ∧ Δw ≥ +2 | 120 | 55-64-1 | 46.2% [38–55] | -13.5% | -40.4u | -1.55 ✗ noise |
-| No-ship zone: HC ≤ 0 ∧ Δw ≤ +1 | 449 | 219-224-6 | 49.4% [45–54] | -6.6% | -175.5u | -1.46 ✗ noise |
+| Tier-1: HC ≥ +1 | 245 | 137-108-0 | 55.9% [50–62] | +4.1% | +26.5u | 0.68 ✗ noise |
+| Tier-2: HC ≤ 0 ∧ Δw ≥ +2 | 121 | 56-64-1 | 46.7% [38–56] | -12.5% | -40.4u | -1.45 ✗ noise |
+| No-ship zone: HC ≤ 0 ∧ Δw ≤ +1 | 465 | 225-233-7 | 49.1% [45–54] | -7.1% | -171.4u | -1.60 ✗ noise |
 
 ---
 
 ## §4. Proven-wallet feature predictors
 _Even without HC / Δw, what do the *characteristics* of the proven wallets on each side tell us? Universe = `CONFIRMED ∪ FLAT` per sport. Δfeature = For-side − Against-side._
 
-Universe N = 850 picks where ≥1 proven wallet appeared on either side.
+Universe N = 886 picks where ≥1 proven wallet appeared on either side.
 
 ### §4a. ΔCount — proven-wallet count differential
 
@@ -191,44 +191,44 @@ Crude version: do we win more often when the proven roster is *more numerous* on
 
 | Bucket | N | W-L-P | WR % [95% Wilson] | Flat ROI | Peak PnL | Flat t-stat |
 |---|---|---|---|---|---|---|
-| Δcount ≤ −2 (heavy oppose) | 32 | 12-20-0 | 37.5% [23–55] | -26.7% | -18.2u | -1.54 ✗ noise |
-| Δcount = −1 | 74 | 32-42-0 | 43.2% [33–55] | -15.6% | -19.8u | -1.35 ✗ noise |
-| Δcount = 0 (balanced) | 127 | 56-69-2 | 44.8% [36–54] | -15.6% | -38.1u | -1.86 ~ p<.10 |
-| Δcount = +1 | 332 | 173-158-1 | 52.3% [47–58] | -1.3% | -129.3u | -0.25 ✗ noise |
-| Δcount = +2 | 164 | 84-79-1 | 51.5% [44–59] | -4.0% | -15.5u | -0.53 ✗ noise |
-| Δcount ≥ +3 (heavy support) | 121 | 75-43-3 | 63.6% [55–72] | +23.5% | +51.2u | 2.47 ✓ p<.05 |
+| Δcount ≤ −2 (heavy oppose) | 32 | 12-20-0 | 37.5% [23–55] | -27.5% | -17.8u | -1.60 ✗ noise |
+| Δcount = −1 | 79 | 36-43-0 | 45.6% [35–57] | -11.0% | -14.7u | -0.98 ✗ noise |
+| Δcount = 0 (balanced) | 142 | 62-77-3 | 44.6% [37–53] | -16.8% | -44.5u | -2.15 ✓ p<.05 |
+| Δcount = +1 | 319 | 164-154-1 | 51.6% [46–57] | -2.7% | -121.4u | -0.50 ✗ noise |
+| Δcount = +2 | 181 | 93-87-1 | 51.7% [44–59] | -3.4% | -20.7u | -0.47 ✗ noise |
+| Δcount ≥ +3 (heavy support) | 133 | 83-47-3 | 63.8% [55–72] | +23.6% | +52.3u | 2.64 ✓ p<.01 |
 
-**ρ(Δcount, WIN) = 0.119** ✓ p<.01  ·  **ρ(Δcount, flat ROI) = 0.116** ✓ p<.01
+**ρ(Δcount, WIN) = 0.120** ✓ p<.01  ·  **ρ(Δcount, flat ROI) = 0.117** ✓ p<.01
 
 ### §4b. ΔWlNet — sum-of-(wins − losses) across proven wallets on each side
 
 Each proven wallet brings its own historical W − L record (in this sport). ΔWlNet is `Σwl(For) − Σwl(Ag)`. A high ΔWlNet means the wallets backing our side have collectively won far more games over their tracked history than the wallets backing the opposing side.
 
-Quintile cuts: ≤ -9 · ≤ 0 · ≤ 8 · ≤ 14 · > 14
+Quintile cuts: ≤ -10 · ≤ -1 · ≤ 8 · ≤ 14 · > 14
 
 | Bucket | N | W-L-P | WR % [95% Wilson] | Flat ROI | Peak PnL | Flat t-stat |
 |---|---|---|---|---|---|---|
-| Q1 (worst — heavy oppose) | 189 | 73-116-0 | 38.6% [32–46] | -24.7% | -95.5u | -3.52 ✓ p<.01 |
-| Q2 | 180 | 81-96-3 | 45.8% [39–53] | -12.2% | -26.2u | -1.70 ~ p<.10 |
-| Q3 (balanced) | 152 | 77-74-1 | 51.0% [43–59] | -5.1% | -41.7u | -0.66 ✗ noise |
-| Q4 | 167 | 100-66-1 | 60.2% [53–67] | +14.5% | -38.6u | 1.95 ~ p<.10 |
-| Q5 (best — heavy support) | 162 | 101-59-2 | 63.1% [55–70] | +18.4% | +32.2u | 2.33 ✓ p<.05 |
+| Q1 (worst — heavy oppose) | 180 | 73-107-0 | 40.6% [34–48] | -21.2% | -60.2u | -2.93 ✓ p<.01 |
+| Q2 | 178 | 77-98-3 | 44.0% [37–51] | -16.8% | -62.2u | -2.37 ✓ p<.05 |
+| Q3 (balanced) | 193 | 98-93-2 | 51.3% [44–58] | -3.1% | -40.6u | -0.45 ✗ noise |
+| Q4 | 158 | 92-65-1 | 58.6% [51–66] | +11.6% | -37.2u | 1.51 ✗ noise |
+| Q5 (best — heavy support) | 177 | 110-65-2 | 62.9% [55–70] | +17.6% | +33.5u | 2.35 ✓ p<.05 |
 
-**ρ(ΔWlNet, WIN) = 0.195** ✓ p<.01  ·  **ρ(ΔWlNet, flat ROI) = 0.174** ✓ p<.01
+**ρ(ΔWlNet, WIN) = 0.190** ✓ p<.01  ·  **ρ(ΔWlNet, flat ROI) = 0.170** ✓ p<.01
 
 ### §4c. ΔFlatPnl — sum-of-flatPnL across proven wallets on each side
 
 Same shape as §4b but using flatPnL (units) instead of W−L count. Captures which side has the *biggest cumulative-units winners* historically — slightly different from W−L because a 60%-WR low-volume wallet can have lower flatPnL than a 53%-WR high-volume wallet.
 
-Quintile cuts (units): ≤ -51.45 · ≤ 8.39 · ≤ 9.49 · ≤ 2.14 · > 2.14
+Quintile cuts (units): ≤ -17.97 · ≤ 15.24 · ≤ 11.54 · ≤ 2.14 · > 2.14
 
 | Bucket | N | W-L-P | WR % [95% Wilson] | Flat ROI | Peak PnL | Flat t-stat |
 |---|---|---|---|---|---|---|
-| Q1 | 48 | 18-29-1 | 38.3% [26–53] | -26.4% | -19.4u | -1.93 ~ p<.10 |
-| Q2 | 488 | 237-250-1 | 48.7% [44–53] | -8.1% | -98.4u | -1.86 ~ p<.10 |
-| Q3 | 52 | 33-19-0 | 63.5% [50–75] | +20.4% | -29.3u | 1.55 ✗ noise |
+| Q1 | 155 | 67-87-1 | 43.5% [36–51] | -18.3% | -47.2u | -2.42 ✓ p<.05 |
+| Q2 | 521 | 266-250-5 | 51.6% [47–56] | -2.3% | -95.3u | -0.54 ✗ noise |
+| Q3 | 0 | — | — | — | — | — |
 | Q4 | 0 | — | — | — | — | — |
-| Q5 | 262 | 144-113-5 | 56.0% [50–62] | +7.3% | -22.6u | 1.16 ✗ noise |
+| Q5 | 210 | 117-91-2 | 56.3% [49–63] | +7.5% | -24.2u | 1.06 ✗ noise |
 
 **ρ(ΔFlatPnl, WIN) = NaN** —  ·  **ρ(ΔFlatPnl, flat ROI) = NaN** —
 
@@ -236,15 +236,15 @@ Quintile cuts (units): ≤ -51.45 · ≤ 8.39 · ≤ 9.49 · ≤ 2.14 · > 2.14
 
 Normalizes for volume: a side with 5 sharp wallets averaging +20% ROI scores higher than a side with 5 sharp wallets averaging +3% ROI, even if the W−L counts are similar. Pure quality lens.
 
-Quintile cuts (% ROI): ≤ -77.2 · ≤ 13.0 · ≤ 9.5 · ≤ 1.3 · > 1.3
+Quintile cuts (% ROI): ≤ -9.7 · ≤ 20.0 · ≤ 17.2 · ≤ 1.6 · > 1.6
 
 | Bucket | N | W-L-P | WR % [95% Wilson] | Flat ROI | Peak PnL | Flat t-stat |
 |---|---|---|---|---|---|---|
-| Q1 | 50 | 18-31-1 | 36.7% [25–51] | -29.3% | -21.2u | -2.21 ✓ p<.05 |
-| Q2 | 511 | 247-262-2 | 48.5% [44–53] | -7.4% | -94.6u | -1.72 ~ p<.10 |
+| Q1 | 142 | 41-100-1 | 29.1% [22–37] | -44.7% | -97.1u | -6.09 ✓ p<.01 |
+| Q2 | 507 | 271-232-4 | 53.9% [50–58] | +2.8% | -20.0u | 0.65 ✗ noise |
 | Q3 | 0 | — | — | — | — | — |
 | Q4 | 0 | — | — | — | — | — |
-| Q5 | 289 | 167-118-4 | 58.6% [53–64] | +10.4% | -54.0u | 1.80 ~ p<.10 |
+| Q5 | 237 | 138-96-3 | 59.0% [53–65] | +10.5% | -49.6u | 1.64 ✗ noise |
 
 **ρ(ΔAvgRoi, WIN) = NaN** —  ·  **ρ(ΔAvgRoi, flat ROI) = NaN** —
 
@@ -254,13 +254,13 @@ For each pick we look up the BEST (lowest-numbered) sport rank among proven wall
 
 | Bucket | N | W-L-P | WR % [95% Wilson] | Flat ROI | Peak PnL | Flat t-stat |
 |---|---|---|---|---|---|---|
-| ΔBestRank ≤ −5 (we have worse #1 by ≥5) | 111 | 34-75-2 | 31.2% [23–40] | -39.6% | -52.9u | -4.65 ✓ p<.01 |
-| ΔBestRank ∈ [−4,−1] | 20 | 9-11-0 | 45.0% [26–66] | -13.0% | -13.0u | -0.58 ✗ noise |
-| ΔBestRank = 0 (tied) | 5 | 4-1-0 | 80.0% [38–96] | +58.8% | +5.1u | 1.47 ✗ noise |
-| ΔBestRank ∈ [+1,+4] | 23 | 11-12-0 | 47.8% [29–67] | -1.9% | -9.1u | -0.09 ✗ noise |
-| ΔBestRank ≥ +5 (we have better #1 by ≥5) | 207 | 111-94-2 | 54.1% [47–61] | +3.1% | -36.1u | 0.43 ✗ noise |
+| ΔBestRank ≤ −5 (we have worse #1 by ≥5) | 117 | 39-76-2 | 33.9% [26–43] | -34.3% | -52.0u | -4.05 ✓ p<.01 |
+| ΔBestRank ∈ [−4,−1] | 28 | 11-17-0 | 39.3% [24–58] | -24.9% | -22.4u | -1.36 ✗ noise |
+| ΔBestRank = 0 (tied) | 7 | 5-2-0 | 71.4% [36–92] | +44.7% | +2.7u | 1.19 ✗ noise |
+| ΔBestRank ∈ [+1,+4] | 28 | 14-14-0 | 50.0% [33–67] | -2.9% | +14.2u | -0.15 ✗ noise |
+| ΔBestRank ≥ +5 (we have better #1 by ≥5) | 222 | 117-102-3 | 53.4% [47–60] | +1.8% | -47.6u | 0.26 ✗ noise |
 
-**ρ(ΔBestRank, WIN) = 0.260** ✓ p<.01  ·  **ρ(ΔBestRank, flat ROI) = 0.245** ✓ p<.01  (N=366)
+**ρ(ΔBestRank, WIN) = 0.221** ✓ p<.01  ·  **ρ(ΔBestRank, flat ROI) = 0.210** ✓ p<.01  (N=402)
 
 ### §4f. ΔTopQ share — fraction-of-side that's in the sport's top quartile
 
@@ -268,13 +268,13 @@ Top quartile = top 25% of proven wallets in the sport, ranked by flatRoi. Δshar
 
 | Bucket | N | W-L-P | WR % [95% Wilson] | Flat ROI | Peak PnL | Flat t-stat |
 |---|---|---|---|---|---|---|
-| Δshare ≤ −30 pp | 70 | 20-49-1 | 29.0% [20–41] | -42.9% | -48.9u | -3.96 ✓ p<.01 |
-| Δshare ∈ [−30,−10] pp | 7 | 1-6-0 | 14.3% [3–51] | -72.7% | -4.0u | -2.67 ✓ p<.01 |
-| Δshare ≈ 0 (±10 pp) | 527 | 267-258-2 | 50.9% [47–55] | -2.6% | -93.1u | -0.62 ✗ noise |
-| Δshare ∈ [+10,+30] pp | 32 | 16-15-1 | 51.6% [35–68] | -3.2% | +5.2u | -0.19 ✗ noise |
-| Δshare ≥ +30 pp | 214 | 128-83-3 | 60.7% [54–67] | +12.9% | -29.0u | 1.91 ~ p<.10 |
+| Δshare ≤ −30 pp | 67 | 20-46-1 | 30.3% [21–42] | -40.5% | -46.6u | -3.62 ✓ p<.01 |
+| Δshare ∈ [−30,−10] pp | 10 | 3-7-0 | 30.0% [11–60] | -39.5% | -2.6u | -1.25 ✗ noise |
+| Δshare ≈ 0 (±10 pp) | 565 | 284-278-3 | 50.5% [46–55] | -3.8% | -93.9u | -0.94 ✗ noise |
+| Δshare ∈ [+10,+30] pp | 34 | 17-16-1 | 51.5% [35–67] | -0.8% | +5.5u | -0.05 ✗ noise |
+| Δshare ≥ +30 pp | 210 | 126-81-3 | 60.9% [54–67] | +13.5% | -29.1u | 1.98 ✓ p<.05 |
 
-**ρ(ΔTopQShare, WIN) = 0.136** ✓ p<.01  ·  **ρ(ΔTopQShare, flat ROI) = 0.118** ✓ p<.01
+**ρ(ΔTopQShare, WIN) = 0.131** ✓ p<.01  ·  **ρ(ΔTopQShare, flat ROI) = 0.116** ✓ p<.01
 
 ### §4g. Predictor leaderboard — which proven-wallet feature is strongest?
 
@@ -282,14 +282,14 @@ Apples-to-apples (same N for all rows). Sorted by |ρ(·, flat ROI)|.
 
 | Rank | Feature | ρ(·, WIN) | ρ(·, flat ROI) | Spearman ρ |
 |---|---|---|---|---|
-| 1 | **ΔWlNet** | 0.195 ✓ p<.01 | 0.174 ✓ p<.01 | 0.135 |
-| 2 | **ΔTopQCount** | 0.173 ✓ p<.01 | 0.159 ✓ p<.01 | 0.111 |
-| 3 | **ΔTopQShare** | 0.136 ✓ p<.01 | 0.118 ✓ p<.01 | 0.102 |
-| 4 | **Δcount** | 0.119 ✓ p<.01 | 0.116 ✓ p<.01 | 0.094 |
-| 5 | **ΔFlatPnl** | NaN — | NaN — | 0.081 |
-| 6 | **ΔAvgRoi** | NaN — | NaN — | 0.091 |
+| 1 | **ΔWlNet** | 0.190 ✓ p<.01 | 0.170 ✓ p<.01 | 0.134 |
+| 2 | **ΔTopQCount** | 0.173 ✓ p<.01 | 0.161 ✓ p<.01 | 0.121 |
+| 3 | **Δcount** | 0.120 ✓ p<.01 | 0.117 ✓ p<.01 | 0.099 |
+| 4 | **ΔTopQShare** | 0.131 ✓ p<.01 | 0.116 ✓ p<.01 | 0.106 |
+| 5 | **ΔFlatPnl** | NaN — | NaN — | 0.067 |
+| 6 | **ΔAvgRoi** | NaN — | NaN — | 0.078 |
 
-_(ΔBestRank uses N=366 subset where both sides had a proven wallet — ρ(flat ROI) = 0.245 ✓ p<.01.)_
+_(ΔBestRank uses N=402 subset where both sides had a proven wallet — ρ(flat ROI) = 0.210 ✓ p<.01.)_
 
 ---
 
@@ -300,13 +300,13 @@ _Which of the six AGS inputs are pulling the weight, and is the composite earnin
 
 AGS aggregates the proven-wallet (`CONFIRMED` ∪ `FLAT`) slice of `peak.v8Scoring.walletDetails[]` into 6 *delta* features (FOR-side minus AGAINST-side), z-scores each one against a daily-recomputed calibration, and **sums the z-scores**. Equal sign-weighted — no fitted coefficients. Thresholds: `AGS ≥ +5` rescues a lock (route C), `AGS ≥ +3` confirms a thin Δw=+1 lock (v7.5 route B), `AGS < -1` mutes an otherwise-locking side (confirmation gate). Sizing multiplier scales [0.5, 1.0]× over [-1, +5].
 
-**In-sample (live production) calibration**: source = `cron`, sampleSize = 1491, dateRange = 2026-04-18 → 2026-06-28, computedAt = 2026-06-29T16:27:59.237Z. _This is what production scores against today; the §AGS-0a audit below shows how much its in-sample numbers diverge from the leakage-free walk-forward version._
+**In-sample (live production) calibration**: source = `cron`, sampleSize = 1579, dateRange = 2026-04-18 → 2026-06-29, computedAt = 2026-06-30T15:18:47.582Z. _This is what production scores against today; the §AGS-0a audit below shows how much its in-sample numbers diverge from the leakage-free walk-forward version._
 
 ### §AGS-0a. Leakage audit — in-sample vs point-in-time / out-of-sample
 
 Two sources of leakage existed in the prior version of this section: (1) a wallet was treated as "proven" if it currently has CONFIRMED/FLAT tier, even for picks made before it earned that status; (2) the AGS calibration normalizers (and the +5/+3/-1 thresholds tuned against them) were computed on data that overlaps with the test sample. The PIT/OOS pass replaces both: it uses a chronological tier lens (proven gate fires only on events strictly prior to the pick date) and walk-forward calibration (mean/SD per feature recomputed at each pick date from prior picks only, cold-started from live calibration when prior N < 30).
 
-Coverage: in-sample AGS computable on **850** rows · PIT aggregate computable on **884** rows (the proven wallet count drops because some wallets weren't yet proven on those early dates) · PIT walk-forward AGS computed on **884** rows (34 used the cold-start fallback calibration for the early dates).
+Coverage: in-sample AGS computable on **886** rows · PIT aggregate computable on **905** rows (the proven wallet count drops because some wallets weren't yet proven on those early dates) · PIT walk-forward AGS computed on **905** rows (34 used the cold-start fallback calibration for the early dates).
 
 Same rows, same outcomes — only the AGS scoring lens differs:
 
@@ -315,21 +315,21 @@ Same rows, same outcomes — only the AGS scoring lens differs:
 | ELITE (≥+7) | 0 · — · — | 0 · — · — | — |
 | LOCK (+5..+7) | 0 · — · — | 0 · — · — | — |
 | STRONG (+3..+5) | 0 · — · — | 1 · 0% · -100.0% | — |
-| NEUTRAL (0..+3) | 655 · 54% · +1.2% | 501 · 53% · -2.4% | -3.6pp |
-| WEAK (−3..0) | 166 · 45% · -14.3% | 319 · 50% · -0.9% | +13.4pp |
-| FADE (<−3) | 2 · 0% · -100.0% | 2 · 0% · -100.0% | +0.0pp |
+| NEUTRAL (0..+3) | 665 · 53% · +0.5% | 527 · 53% · -2.4% | -2.9pp |
+| WEAK (−3..0) | 193 · 46% · -11.8% | 329 · 50% · -1.3% | +10.4pp |
+| FADE (<−3) | 1 · 0% · -100.0% | 2 · 0% · -100.0% | +0.0pp |
 
 Production-threshold lift (the rules that actually fire):
 
 | Floor | In-sample fire | PIT-OOS fire | Δ ROI (OOS − in-sample) |
 |---|---|---|---|
-| AGS ≥ +5 (lock-floor route C) | N=447, WR=55%, ROI=+4.6% | N=386, WR=52%, ROI=-3.0% | -7.6pp |
-| AGS ≥ +3 (Δw=+1 confirm route B) | N=655, WR=54%, ROI=+1.2% | N=502, WR=53%, ROI=-2.6% | -3.8pp |
-| AGS < −1 (mute veto) | N=65, WR=45%, ROI=-13.9% | N=188, WR=47%, ROI=-5.6% | +8.3pp |
+| AGS ≥ +5 (lock-floor route C) | N=464, WR=55%, ROI=+4.2% | N=411, WR=53%, ROI=-2.7% | -6.9pp |
+| AGS ≥ +3 (Δw=+1 confirm route B) | N=665, WR=53%, ROI=+0.5% | N=528, WR=53%, ROI=-2.6% | -3.1pp |
+| AGS < −1 (mute veto) | N=73, WR=49%, ROI=-6.4% | N=194, WR=47%, ROI=-5.6% | +0.8pp |
 
 _Reading: a large negative Δ in the LOCK / STRONG rows = the in-sample numbers were optimistically inflated by leakage. A small Δ = the original analysis was directionally honest. The PIT-OOS numbers are what the engine would have produced if every pick had been scored at the moment it was made._
 
-#### §AGS-0a-recent. Last-14-days holdout (PIT-OOS, 2026-06-15 → 2026-06-28, N=251)
+#### §AGS-0a-recent. Last-14-days holdout (PIT-OOS, 2026-06-16 → 2026-06-29, N=264)
 
 The cleanest out-of-sample window — every pick here was scored against a walk-forward calibration computed entirely from prior dates (no cold-start fallback in this slice).
 
@@ -338,28 +338,28 @@ The cleanest out-of-sample window — every pick here was scored against a walk-
 | ELITE (≥+7) | 0 · — · — |
 | LOCK (+5..+7) | 0 · — · — |
 | STRONG (+3..+5) | 1 · 0% · -100.0% |
-| NEUTRAL (0..+3) | 143 · 55% · -0.6% |
-| WEAK (−3..0) | 105 · 44% · -16.8% |
+| NEUTRAL (0..+3) | 155 · 55% · -0.2% |
+| WEAK (−3..0) | 106 · 46% · -13.0% |
 | FADE (<−3) | 2 · 0% · -100.0% |
 
 | Floor | Fire (PIT-OOS, last 14d) |
 |---|---|
-| AGS ≥ +5 (lock-floor route C) | N=121, WR=55%, ROI=-1.3% |
-| AGS ≥ +3 (Δw=+1 confirm route B) | N=144, WR=55%, ROI=-1.3% |
-| AGS < −1 (mute veto) | N=53, WR=40%, ROI=-24.1% |
+| AGS ≥ +5 (lock-floor route C) | N=132, WR=55%, ROI=+0.0% |
+| AGS ≥ +3 (Δw=+1 confirm route B) | N=156, WR=55%, ROI=-0.8% |
+| AGS < −1 (mute veto) | N=56, WR=41%, ROI=-20.9% |
 
 #### Reference: in-sample calibration normalizers (used only as cold-start fallback during PIT walk-forward)
 
 | Feature key | Family | Sign | Cal mean | Cal SD |
 |---|---|---|---|---|
-| `dCount` | COUNT | + | 0.73 | 2.20 |
-| `dHcSizeRatio` | INTENSITY_HC | + | 0.56 | 5.86 |
-| `dSumRankNorm` | QUALITY_RANK | − | 39.16 | 92.01 |
-| `dWinnerCtPreA` | QUALITY_TRACK | − | 0.39 | 1.65 |
+| `dCount` | COUNT | + | 0.74 | 2.26 |
+| `dHcSizeRatio` | INTENSITY_HC | + | 0.54 | 5.76 |
+| `dSumRankNorm` | QUALITY_RANK | − | 38.32 | 91.20 |
+| `dWinnerCtPreA` | QUALITY_TRACK | − | 0.39 | 1.70 |
 
 ### §AGS-1. Coverage + distribution
 
-PIT-OOS AGS computable on **884/922** shipped+graded rows (96%). Rows drop out for two reasons: missing frozen `walletDetails[]` (older docs), or no wallet on either side was yet proven on this pick's date under the strict-prior PIT lens.
+PIT-OOS AGS computable on **905/943** shipped+graded rows (96%). Rows drop out for two reasons: missing frozen `walletDetails[]` (older docs), or no wallet on either side was yet proven on this pick's date under the strict-prior PIT lens.
 
 | Stat | AGS value |
 |---|---|
@@ -369,19 +369,19 @@ PIT-OOS AGS computable on **884/922** shipped+graded rows (96%). Rows drop out f
 | Median | 0.08 |
 | 60th pct | 0.16 |
 | 80th pct | 0.39 |
-| 90th pct | 0.59 |
+| 90th pct | 0.60 |
 | Max | 3.04 |
 
 **Tier counts (boundaries set in `src/lib/ags.js → agsTierFromValue`):**
 
 | Tier | Range | N | Share |
 |---|---|---|---|
-| **ELITE** | ≥ +7 | 149 | 16.9% |
-| **LOCK** | +5..+7 | 161 | 18.2% |
+| **ELITE** | ≥ +7 | 155 | 17.1% |
+| **LOCK** | +5..+7 | 168 | 18.6% |
 | **STRONG** | +3..+5 | 0 | 0.0% |
 | **NEUTRAL** | 0..+3 | 0 | 0.0% |
-| **WEAK** | −3..0 | 125 | 14.1% |
-| **FADE** | < −3 | 215 | 24.3% |
+| **WEAK** | −3..0 | 126 | 13.9% |
+| **FADE** | < −3 | 221 | 24.4% |
 
 ### §AGS-2. AGS tier × outcome — does the ladder pay?
 
@@ -389,12 +389,12 @@ If the AGS calibration is right, win-rate and flat ROI should rise monotonically
 
 | Bucket | N | W-L-P | WR % [95% Wilson] | Flat ROI | Peak PnL | Flat t-stat |
 |---|---|---|---|---|---|---|
-| ELITE | 149 | 82-65-2 | 55.8% [48–64] | -0.1% | -12.5u | -0.01 ✗ noise |
-| LOCK | 161 | 73-88-0 | 45.3% [38–53] | -13.9% | -76.8u | -1.83 ~ p<.10 |
+| ELITE | 155 | 86-67-2 | 56.2% [48–64] | +0.8% | -5.7u | 0.11 ✗ noise |
+| LOCK | 168 | 76-92-0 | 45.2% [38–53] | -14.0% | -75.7u | -1.88 ~ p<.10 |
 | STRONG | 0 | — | — | — | — | — |
 | NEUTRAL | 0 | — | — | — | — | — |
-| WEAK | 125 | 63-60-2 | 51.2% [42–60] | -2.3% | -27.2u | -0.26 ✗ noise |
-| FADE | 215 | 98-114-3 | 46.2% [40–53] | -7.7% | -74.7u | -1.09 ✗ noise |
+| WEAK | 126 | 64-60-2 | 51.6% [43–60] | -1.5% | -26.8u | -0.18 ✗ noise |
+| FADE | 221 | 99-118-4 | 45.6% [39–52] | -8.9% | -75.9u | -1.29 ✗ noise |
 
 ### §AGS-3. Per-feature univariate predictive power
 
@@ -402,14 +402,14 @@ Each of the 6 inputs evaluated on its own. `r(WIN)` and `r(ROI)` are the Pearson
 
 #### `dCount` (COUNT)
 
-r(WIN) = **0.052** ✗ · r(ROI) = **0.024** ✗ · Spearman ρ(ROI) = **-0.007**.
+r(WIN) = **0.060** ~ p<.10 · r(ROI) = **0.030** ✗ · Spearman ρ(ROI) = **0.002**.
 
 | Bucket | N | W-L-P | WR % [95% Wilson] | Flat ROI | Peak PnL | Flat t-stat |
 |---|---|---|---|---|---|---|
-| z < −1 (very negative) | 183 | 89-92-2 | 49.2% [42–56] | -3.6% | -47.5u | -0.49 ✗ noise |
-| z ∈ [−1, 0) | 353 | 180-170-3 | 51.4% [46–57] | -2.2% | -97.1u | -0.41 ✗ noise |
-| z ∈ [0, +1) | 232 | 114-117-1 | 49.4% [43–56] | -8.0% | -41.3u | -1.28 ✗ noise |
-| z ≥ +1 (very positive) | 116 | 59-55-2 | 51.8% [43–61] | -7.0% | -7.3u | -0.82 ✗ noise |
+| z < −1 (very negative) | 185 | 90-93-2 | 49.2% [42–56] | -3.6% | -47.7u | -0.50 ✗ noise |
+| z ∈ [−1, 0) | 364 | 183-177-4 | 50.8% [46–56] | -3.3% | -99.6u | -0.63 ✗ noise |
+| z ∈ [0, +1) | 237 | 118-118-1 | 50.0% [44–56] | -6.9% | -34.5u | -1.11 ✗ noise |
+| z ≥ +1 (very positive) | 119 | 61-56-2 | 52.1% [43–61] | -6.3% | -4.7u | -0.74 ✗ noise |
 
 #### `dHcSizeRatio` (INTENSITY_HC)
 
@@ -419,18 +419,18 @@ r(WIN) = **NaN** — · r(ROI) = **NaN** — · Spearman ρ(ROI) = **NaN**.
 |---|---|---|---|---|---|---|
 | z < −1 (very negative) | 0 | — | — | — | — | — |
 | z ∈ [−1, 0) | 34 | 15-19-0 | 44.1% [29–61] | -3.2% | -3.0u | -0.15 ✗ noise |
-| z ∈ [0, +1) | 850 | 427-415-8 | 50.7% [47–54] | -4.7% | -190.2u | -1.43 ✗ noise |
+| z ∈ [0, +1) | 871 | 437-425-9 | 50.7% [47–54] | -4.7% | -183.5u | -1.46 ✗ noise |
 | z ≥ +1 (very positive) | 0 | — | — | — | — | — |
 
 #### `dSumRankNorm` (QUALITY_RANK)
 
-r(WIN) = **-0.035** ✗ · r(ROI) = **-0.036** ✗ · Spearman ρ(ROI) = **-0.035**.
+r(WIN) = **-0.031** ✗ · r(ROI) = **-0.033** ✗ · Spearman ρ(ROI) = **-0.031**.
 
 | Bucket | N | W-L-P | WR % [95% Wilson] | Flat ROI | Peak PnL | Flat t-stat |
 |---|---|---|---|---|---|---|
-| z < −1 (very negative) | 155 | 84-70-1 | 54.5% [47–62] | +0.4% | -8.0u | 0.06 ✗ noise |
-| z ∈ [−1, 0) | 376 | 191-183-2 | 51.1% [46–56] | -2.3% | -107.5u | -0.44 ✗ noise |
-| z ∈ [0, +1) | 268 | 126-138-4 | 47.7% [42–54] | -8.6% | -80.4u | -1.45 ✗ noise |
+| z < −1 (very negative) | 159 | 86-72-1 | 54.4% [47–62] | +0.3% | -5.4u | 0.04 ✗ noise |
+| z ∈ [−1, 0) | 389 | 196-190-3 | 50.8% [46–56] | -2.9% | -105.6u | -0.57 ✗ noise |
+| z ∈ [0, +1) | 272 | 129-139-4 | 48.1% [42–54] | -8.0% | -78.3u | -1.36 ✗ noise |
 | z ≥ +1 (very positive) | 85 | 41-43-1 | 48.8% [38–59] | -11.8% | +2.6u | -1.19 ✗ noise |
 
 #### `dWinnerCtPreA` (QUALITY_TRACK)
@@ -441,15 +441,15 @@ r(WIN) = **NaN** — · r(ROI) = **NaN** — · Spearman ρ(ROI) = **NaN**.
 |---|---|---|---|---|---|---|
 | z < −1 (very negative) | 0 | — | — | — | — | — |
 | z ∈ [−1, 0) | 34 | 15-19-0 | 44.1% [29–61] | -3.2% | -3.0u | -0.15 ✗ noise |
-| z ∈ [0, +1) | 850 | 427-415-8 | 50.7% [47–54] | -4.7% | -190.2u | -1.43 ✗ noise |
+| z ∈ [0, +1) | 871 | 437-425-9 | 50.7% [47–54] | -4.7% | -183.5u | -1.46 ✗ noise |
 | z ≥ +1 (very positive) | 0 | — | — | — | — | — |
 
 #### §AGS-3 recap — features sorted by univariate predictive power (|Spearman ρ vs. ROI|)
 
 | Rank | Feature | Family | r(WIN) | r(ROI) | Spearman ρ |
 |---|---|---|---|---|---|
-| 1 | `dSumRankNorm` | QUALITY_RANK | -0.035 ✗ | -0.036 ✗ | -0.035 |
-| 2 | `dCount` | COUNT | 0.052 ✗ | 0.024 ✗ | -0.007 |
+| 1 | `dSumRankNorm` | QUALITY_RANK | -0.031 ✗ | -0.033 ✗ | -0.031 |
+| 2 | `dCount` | COUNT | 0.060 ~ p<.10 | 0.030 ✗ | 0.002 |
 | 3 | `dHcSizeRatio` | INTENSITY_HC | NaN — | NaN — | NaN |
 | 4 | `dWinnerCtPreA` | QUALITY_TRACK | NaN — | NaN — | NaN |
 
@@ -459,9 +459,9 @@ A feature with mean |z| ≈ 0 contributes almost nothing to AGS in practice — 
 
 | Rank | Feature | Mean signed z | Mean &#124;z&#124; | Share of &#124;AGS&#124; | Verdict |
 |---|---|---|---|---|---|
-| 1 | `dCount` | -0.101 | 0.813 | 50.7% | dominant |
-| 2 | `dSumRankNorm` | -0.221 | 0.777 | 48.5% | meaningful |
-| 3 | `dWinnerCtPreA` | -0.009 | 0.009 | 0.6% | silent (<0.2) |
+| 1 | `dCount` | -0.095 | 0.814 | 50.8% | dominant |
+| 2 | `dSumRankNorm` | -0.230 | 0.775 | 48.4% | meaningful |
+| 3 | `dWinnerCtPreA` | -0.009 | 0.009 | 0.5% | silent (<0.2) |
 | 4 | `dHcSizeRatio` | -0.004 | 0.004 | 0.2% | silent (<0.2) |
 
 ### §AGS-5. Pairwise feature correlation (Pearson r between z-scored features)
@@ -470,10 +470,10 @@ Two features with |r| ≥ 0.7 are double-counting. Two with |r| ≤ 0.2 are orth
 
 | | `dCount` | `dHcSizeRatio` | `dSumRankNorm` | `dWinnerCtPreA` |
 |---|---|---|---|---|
-| `dCount` | 1.000 | -0.017 | +0.658 | -0.017 |
-| `dHcSizeRatio` | -0.017 | 1.000 | -0.048 | +1.000 ⚠ |
-| `dSumRankNorm` | +0.658 | -0.048 | 1.000 | -0.048 |
-| `dWinnerCtPreA` | -0.017 | +1.000 ⚠ | -0.048 | 1.000 |
+| `dCount` | 1.000 | -0.016 | +0.640 | -0.016 |
+| `dHcSizeRatio` | -0.016 | 1.000 | -0.051 | +1.000 ⚠ |
+| `dSumRankNorm` | +0.640 | -0.051 | 1.000 | -0.051 |
+| `dWinnerCtPreA` | -0.016 | +1.000 ⚠ | -0.051 | 1.000 |
 
 _⚠ flags |r| ≥ 0.7 — those pairs are essentially the same signal._
 
@@ -481,14 +481,14 @@ _⚠ flags |r| ≥ 0.7 — those pairs are essentially the same signal._
 
 For each of the 6 inputs, recompute AGS as the **sum of the OTHER 5 z-scores** (each contribution preserved with its original sign), then evaluate three lenses. **The discriminative-power lens (Spearman ρ vs. outcome) is the cleanest** — a big drop in |ρ| means that feature carried marginal info the other five lacked. The cohort-matched lens compares apples-to-apples by holding cohort size fixed at the baseline lock-floor N. The same-threshold lens is included for transparency but read it with the caveat that removing a feature mechanically shrinks the cohort, so the surviving subset can look stronger purely from sample selection.
 
-**Baseline (full 6-feature AGS):** Spearman ρ(AGS, flat ROI) = **0.009**. At AGS ≥ +0.12 fires N=407, WR=51.9%, ROI=-4.1%. At AGS ≥ +null fires N=530, WR=51.8%, ROI=-4.3%.
+**Baseline (full 6-feature AGS):** Spearman ρ(AGS, flat ROI) = **0.015**. At AGS ≥ +0.12 fires N=421, WR=52.0%, ROI=-3.8%. At AGS ≥ +null fires N=543, WR=52.0%, ROI=-3.8%.
 
-| Feature dropped | ρ(5-feat AGS, ROI) | ρ drop vs full | Top-407 ROI (matched cohort) | Top-407 lift loss vs baseline | Same-threshold ≥+5 cell |
+| Feature dropped | ρ(5-feat AGS, ROI) | ρ drop vs full | Top-421 ROI (matched cohort) | Top-421 lift loss vs baseline | Same-threshold ≥+5 cell |
 |---|---|---|---|---|---|
-| `dCount` | +0.052 | +0.042 | WR=55%, ROI=+4.2% | -8.3pp | N=496, WR=53%, ROI=-0.9% |
-| `dHcSizeRatio` | +0.046 | +0.037 | WR=54%, ROI=-0.6% | -3.5pp | N=438, WR=53%, ROI=-2.0% |
-| `dSumRankNorm` | -0.023 | +0.014 | WR=49%, ROI=-9.9% | +5.8pp | N=344, WR=51%, ROI=-6.6% |
-| `dWinnerCtPreA` | +0.045 | +0.036 | WR=54%, ROI=-0.3% | -3.8pp | N=430, WR=53%, ROI=-1.2% |
+| `dCount` | +0.048 | +0.033 | WR=55%, ROI=+3.6% | -7.4pp | N=512, WR=52%, ROI=-1.2% |
+| `dHcSizeRatio` | +0.049 | +0.034 | WR=54%, ROI=-0.4% | -3.4pp | N=452, WR=53%, ROI=-1.7% |
+| `dSumRankNorm` | -0.016 | +0.000 | WR=49%, ROI=-8.9% | +5.1pp | N=352, WR=51%, ROI=-5.6% |
+| `dWinnerCtPreA` | +0.048 | +0.033 | WR=54%, ROI=-0.5% | -3.2pp | N=444, WR=54%, ROI=-1.0% |
 
 _Reading the **ρ drop** column: positive (`−0.0XX`) = dropping this feature **reduced** the AGS's ability to rank-order picks → the feature was carrying marginal info. Reading the **matched-cohort lift loss**: positive `+X pp` = the top-K of the 5-feature AGS earned LESS ROI than baseline → the feature was contributing positive lift._
 
@@ -496,10 +496,10 @@ _Reading the **ρ drop** column: positive (`−0.0XX`) = dropping this feature *
 
 | Rank | Feature | ρ drop when removed | Matched-cohort lift loss | Verdict |
 |---|---|---|---|---|
-| 1 | `dSumRankNorm` | +0.014 | +5.8pp | redundant — other features cover it |
-| 2 | `dWinnerCtPreA` | +0.036 | -3.8pp | redundant — other features cover it |
-| 3 | `dHcSizeRatio` | +0.037 | -3.5pp | redundant — other features cover it |
-| 4 | `dCount` | +0.042 | -8.3pp | redundant — other features cover it |
+| 1 | `dSumRankNorm` | +0.000 | +5.1pp | redundant — other features cover it |
+| 2 | `dCount` | +0.033 | -7.4pp | redundant — other features cover it |
+| 3 | `dWinnerCtPreA` | +0.033 | -3.2pp | redundant — other features cover it |
+| 4 | `dHcSizeRatio` | +0.034 | -3.4pp | redundant — other features cover it |
 
 ### §AGS-7. Multivariate logistic regression on the 6 z-scored features
 
@@ -507,12 +507,12 @@ Fit `logit(P(WIN)) = α + Σ βᵢ · zᵢ` on the AGS sample. Standardized inpu
 
 | Rank | Feature | Family | β (z-input) | |β| | Direction |
 |---|---|---|---|---|---|
-| 1 | `dSumRankNorm` | QUALITY_RANK | -0.167 | 0.167 | negative ↓ |
-| 2 | `dCount` | COUNT | +0.143 | 0.143 | positive ↑ |
-| 3 | `dWinnerCtPreA` | QUALITY_TRACK | +0.010 | 0.010 | flat ≈ 0 |
+| 1 | `dSumRankNorm` | QUALITY_RANK | -0.162 | 0.162 | negative ↓ |
+| 2 | `dCount` | COUNT | +0.149 | 0.149 | positive ↑ |
+| 3 | `dWinnerCtPreA` | QUALITY_TRACK | +0.009 | 0.009 | flat ≈ 0 |
 | 4 | `dHcSizeRatio` | INTENSITY_HC | +0.004 | 0.004 | flat ≈ 0 |
 
-Intercept b = -0.022 · Final log-loss = 0.6884 · N = 884.
+Intercept b = -0.025 · Final log-loss = 0.6883 · N = 905.
 
 ### §AGS-8. Final ranked verdict — composite importance across all four lenses
 
@@ -521,18 +521,18 @@ Each feature gets a 1..6 rank in each lens (1 = most important). The **composite
 | Composite rank | Feature | Family | Univariate (§AGS-3) | Score-mover (§AGS-4) | Drop-one (§AGS-6) | Logistic (§AGS-7) | Avg rank |
 |---|---|---|---|---|---|---|---|
 | 1 | `dSumRankNorm` | QUALITY_RANK | #1 | #2 | #1 | #1 | 1.25 |
-| 2 | `dCount` | COUNT | #2 | #1 | #4 | #2 | 2.25 |
-| 3 | `dWinnerCtPreA` | QUALITY_TRACK | #4 | #3 | #2 | #3 | 3.00 |
-| 4 | `dHcSizeRatio` | INTENSITY_HC | #3 | #4 | #3 | #4 | 3.50 |
+| 2 | `dCount` | COUNT | #2 | #1 | #2 | #2 | 1.75 |
+| 3 | `dWinnerCtPreA` | QUALITY_TRACK | #4 | #3 | #3 | #3 | 3.25 |
+| 4 | `dHcSizeRatio` | INTENSITY_HC | #3 | #4 | #4 | #4 | 3.75 |
 
 #### Plain-English summary
 
 - **Workhorse**: `dSumRankNorm` (QUALITY_RANK) — ranks #1/#2/#1/#1 across the four lenses. Whatever else changes, this one stays.
-- **Weakest contributor**: `dHcSizeRatio` (INTENSITY_HC) — composite avg rank 3.50. Strong candidate to down-weight or drop in v9.
+- **Weakest contributor**: `dHcSizeRatio` (INTENSITY_HC) — composite avg rank 3.75. Strong candidate to down-weight or drop in v9.
 - **Redundant pairs (|r| ≥ 0.7)**: `dHcSizeRatio` ↔ `dWinnerCtPreA` (r=+1.00). Each pair effectively double-counts the same signal in the composite.
 - **Silent inputs (mean |z| < 0.2)**: `dWinnerCtPreA`, `dHcSizeRatio`. These barely move the AGS score in practice — calibration is washing them out.
-- **In-sample calibration source**: `cron` (used as cold-start fallback for the first 34 of 884 PIT rows where prior history was thin). Live calibration is loaded; the means/SDs above are this morning's.
-- **Look-ahead controls**: PIT proven gate (strict-prior-events tier lens) + walk-forward feature calibration (mean/SD per feature recomputed at each pick date from prior picks only, 34/884 cold-started). Production thresholds (+5/+3/-1) were tuned on overlapping data and are still treated as fixed constants here — the §AGS-0a leakage audit shows the true lift those thresholds deliver out-of-sample.
+- **In-sample calibration source**: `cron` (used as cold-start fallback for the first 34 of 905 PIT rows where prior history was thin). Live calibration is loaded; the means/SDs above are this morning's.
+- **Look-ahead controls**: PIT proven gate (strict-prior-events tier lens) + walk-forward feature calibration (mean/SD per feature recomputed at each pick date from prior picks only, 34/905 cold-started). Production thresholds (+5/+3/-1) were tuned on overlapping data and are still treated as fixed constants here — the §AGS-0a leakage audit shows the true lift those thresholds deliver out-of-sample.
 
 ---
 
@@ -542,20 +542,20 @@ _Does the engine's star calc add information beyond the deltas?_
 | Bucket | N | W-L-P | WR % [95% Wilson] | Flat ROI | Peak PnL | Flat t-stat |
 |---|---|---|---|---|---|---|
 | 5.0★ | 257 | 125-132-0 | 48.6% [43–55] | -11.4% | -135.1u | -1.95 ~ p<.10 |
-| 4.5★ | 195 | 102-91-2 | 52.8% [46–60] | +0.1% | -51.5u | 0.01 ✗ noise |
-| 4.0★ | 178 | 83-93-2 | 47.2% [40–55] | -9.3% | -15.7u | -1.26 ✗ noise |
+| 4.5★ | 197 | 102-92-3 | 52.6% [46–59] | -0.4% | -54.0u | -0.06 ✗ noise |
+| 4.0★ | 179 | 84-93-2 | 47.5% [40–55] | -8.7% | -15.7u | -1.18 ✗ noise |
 | 3.5★ | 38 | 19-19-0 | 50.0% [35–65] | +8.8% | +3.8u | 0.43 ✗ noise |
-| 3.0★ | 122 | 61-58-3 | 51.3% [42–60] | -1.5% | +0.6u | -0.17 ✗ noise |
-| 2.5★ | 132 | 69-62-1 | 52.7% [44–61] | -1.1% | -4.7u | -0.14 ✗ noise |
+| 3.0★ | 127 | 62-62-3 | 50.0% [41–59] | -3.8% | +1.3u | -0.45 ✗ noise |
+| 2.5★ | 145 | 77-67-1 | 53.5% [45–61] | +0.1% | +3.8u | 0.01 ✗ noise |
 
 ### §5b. Stars × Δw stratified — does the star tier hold up within each Δw cohort?
 
 | Δw cohort | 5★ | 4.5★ | 4★ | 3.5★ | 3★ | 2.5★ |
 |---|---|---|---|---|---|---|
-| Δw ≤ 0 | 48/52%/-7% | 50/50%/-5% | 42/37%/-32% | 6/33%/-26% | 42/35%/-33% | 61/55%/+5% |
-| Δw = +1 | 67/54%/-2% | 94/50%/-5% | 89/48%/-7% | 28/54%/+4% | 51/57%/+9% | 43/53%/-3% |
-| Δw = +2 | 69/45%/-15% | 26/54%/+1% | 38/58%/+11% | — | 18/59%/+12% | 11/45%/-9% |
-| Δw ≥ +3 | 71/44%/-22% | 22/68%/+30% | 9/44%/-10% | 3/67%/+156% | 11/73%/+47% | 15/40%/-26% |
+| Δw ≤ 0 | 48/52%/-7% | 51/50%/-5% | 42/37%/-32% | 6/33%/-26% | 43/34%/-35% | 66/55%/+6% |
+| Δw = +1 | 67/54%/-2% | 95/49%/-6% | 89/48%/-7% | 28/54%/+4% | 54/56%/+7% | 49/53%/-4% |
+| Δw = +2 | 69/45%/-15% | 26/54%/+1% | 39/59%/+14% | — | 18/59%/+12% | 12/50%/-3% |
+| Δw ≥ +3 | 71/44%/-22% | 22/68%/+30% | 9/44%/-10% | 3/67%/+156% | 12/67%/+34% | 16/44%/-20% |
 
 ---
 
@@ -565,12 +565,12 @@ _How does the system perform across the price ladder? Identifies under/over-pric
 | Bucket | N | W-L-P | WR % [95% Wilson] | Flat ROI | Peak PnL | Flat t-stat |
 |---|---|---|---|---|---|---|
 | −400+ | 19 | 17-2-0 | 89.5% [69–97] | +8.4% | +10.6u | 0.95 ✗ noise |
-| −300/−201 | 30 | 20-10-0 | 66.7% [49–81] | -3.5% | +11.9u | -0.27 ✗ noise |
-| −200/−151 | 95 | 55-40-0 | 57.9% [48–67] | -7.8% | -31.1u | -0.95 ✗ noise |
-| −150/−101 | 535 | 269-261-5 | 50.8% [47–55] | -4.7% | -98.3u | -1.16 ✗ noise |
-| −100/+100 | 11 | 6-5-0 | 54.5% [28–79] | +9.1% | +1.8u | 0.29 ✗ noise |
-| +101/+150 | 180 | 74-103-3 | 41.8% [35–49] | -8.2% | -86.9u | -1.02 ✗ noise |
-| +151/+200 | 27 | 15-12-0 | 55.6% [37–72] | +45.6% | +9.3u | 1.78 ~ p<.10 |
+| −300/−201 | 31 | 20-11-0 | 64.5% [47–79] | -6.6% | +11.4u | -0.52 ✗ noise |
+| −200/−151 | 97 | 57-40-0 | 58.8% [49–68] | -6.4% | -31.1u | -0.79 ✗ noise |
+| −150/−101 | 547 | 275-266-6 | 50.8% [47–55] | -4.6% | -87.6u | -1.15 ✗ noise |
+| −100/+100 | 12 | 7-5-0 | 58.3% [32–81] | +16.7% | +1.8u | 0.56 ✗ noise |
+| +101/+150 | 183 | 75-105-3 | 41.7% [35–49] | -8.4% | -89.6u | -1.05 ✗ noise |
+| +151/+200 | 29 | 15-14-0 | 51.7% [34–69] | +35.6% | +8.6u | 1.43 ✗ noise |
 | +201+ | 23 | 3-20-0 | 13.0% [5–32] | -44.1% | -9.8u | -1.38 ✗ noise |
 
 ### §6b. Odds × Δw heatmap (flat ROI %, sample size in parens)
@@ -578,12 +578,12 @@ _How does the system perform across the price ladder? Identifies under/over-pric
 | Odds | Δw ≤ 0 | Δw = +1 | Δw = +2 | Δw ≥ +3 |
 |---|---|---|---|---|
 | −400+ | -10% (4) | -4% (5) | +26% (2) | +20% (7) |
-| −300/−201 | -16% (12) | +23% (6) | +20% (6) | -29% (6) |
-| −200/−151 | -17% (29) | -1% (37) | +33% (12) | -40% (16) |
-| −150/−101 | -7% (138) | -2% (228) | -11% (94) | -3% (72) |
-| −100/+100 | -100% (3) | +67% (6) | -100% (1) | +100% (1) |
-| +101/+150 | -15% (52) | -7% (71) | +1% (37) | -10% (20) |
-| +151/+200 | +27% (4) | +52% (12) | +54% (7) | +73% (3) |
+| −300/−201 | -16% (12) | +23% (6) | +20% (6) | -39% (7) |
+| −200/−151 | -17% (29) | +0% (38) | +35% (13) | -40% (16) |
+| −150/−101 | -7% (144) | -2% (233) | -11% (94) | -2% (73) |
+| −100/+100 | -100% (3) | +67% (6) | +0% (2) | +100% (1) |
+| +101/+150 | -12% (53) | -10% (73) | +1% (37) | -10% (20) |
+| +151/+200 | +27% (4) | +31% (14) | +54% (7) | +73% (3) |
 | +201+ | -61% (8) | -100% (6) | -100% (3) | +62% (6) |
 
 ---
@@ -593,17 +593,17 @@ _Per-market global stats + Δw cohort breakdown._
 
 | Bucket | N | W-L-P | WR % [95% Wilson] | Flat ROI | Peak PnL | Flat t-stat |
 |---|---|---|---|---|---|---|
-| ML | 488 | 238-249-1 | 48.9% [44–53] | -8.1% | -109.1u | -1.82 ~ p<.10 |
-| SPREAD | 158 | 80-76-2 | 51.3% [44–59] | -3.8% | -42.3u | -0.50 ✗ noise |
-| TOTAL | 276 | 141-130-5 | 52.0% [46–58] | +0.1% | -51.1u | 0.02 ✗ noise |
+| ML | 498 | 244-253-1 | 49.1% [45–53] | -7.8% | -106.7u | -1.77 ~ p<.10 |
+| SPREAD | 162 | 82-78-2 | 51.2% [44–59] | -3.8% | -43.1u | -0.50 ✗ noise |
+| TOTAL | 283 | 143-134-6 | 51.6% [46–57] | -0.6% | -46.1u | -0.11 ✗ noise |
 
 ### §7b. Market × Δw cohort
 
 | Market | Δw ≤ 0 | Δw = +1 | Δw = +2 | Δw ≥ +3 |
 |---|---|---|---|---|
-| ML | N=136 · 43% · -20% | N=176 · 51% · -5% | N=85 · 54% · +5% | N=88 · 48% · -8% |
-| SPREAD | N=42 · 39% · -29% | N=76 · 57% · +10% | N=23 · 61% · +8% | N=16 · 38% · -27% |
-| TOTAL | N=72 · 59% · +12% | N=121 · 50% · -5% | N=54 · 42% · -19% | N=27 · 67% · +28% |
+| ML | N=138 · 44% · -19% | N=180 · 51% · -6% | N=87 · 55% · +6% | N=90 · 48% · -8% |
+| SPREAD | N=43 · 40% · -25% | N=79 · 56% · +8% | N=23 · 61% · +8% | N=16 · 38% · -27% |
+| TOTAL | N=76 · 56% · +7% | N=124 · 50% · -4% | N=54 · 42% · -19% | N=27 · 67% · +28% |
 
 ---
 
@@ -612,7 +612,7 @@ _Per-sport global stats + Δw cohort breakdown._
 
 | Bucket | N | W-L-P | WR % [95% Wilson] | Flat ROI | Peak PnL | Flat t-stat |
 |---|---|---|---|---|---|---|
-| MLB | 703 | 353-345-5 | 50.6% [47–54] | -4.5% | -173.3u | -1.25 ✗ noise |
+| MLB | 722 | 362-354-6 | 50.6% [47–54] | -4.5% | -169.3u | -1.28 ✗ noise |
 | NBA | 130 | 60-69-1 | 46.5% [38–55] | -7.4% | -15.3u | -0.78 ✗ noise |
 | NHL | 50 | 25-23-2 | 52.1% [38–66] | +0.7% | -16.2u | 0.05 ✗ noise |
 
@@ -620,7 +620,7 @@ _Per-sport global stats + Δw cohort breakdown._
 
 | Sport | Δw ≤ 0 | Δw = +1 | Δw = +2 | Δw ≥ +3 |
 |---|---|---|---|---|
-| MLB | N=198 · 49% · -9% | N=320 · 52% · -2% | N=120 · 52% · -1% | N=64 · 48% · -9% |
+| MLB | N=205 · 49% · -9% | N=330 · 51% · -3% | N=122 · 52% · +0% | N=64 · 48% · -9% |
 | NBA | N=30 · 31% · -43% | N=29 · 48% · -6% | N=23 · 48% · -5% | N=43 · 53% · +14% |
 | NHL | N=10 · 70% · +44% | N=14 · 69% · +25% | N=13 · 42% · -18% | N=13 · 31% · -40% |
 
@@ -631,23 +631,23 @@ _For each binary criterion, compare picks where it was met vs not._
 
 | Criterion | Met N · WR · Flat ROI · t | NOT met N · WR · Flat ROI · t |
 |---|---|---|
-| **sharps3Plus** | 321 · 46% · -11.1% · -1.99 ✓ p<.05 | 600 · 52% · -1.9% · -0.47 ✗ noise |
-| **plusEV** | 85 · 52% · -0.9% · -0.08 ✗ noise | 836 · 50% · -5.5% · -1.66 ~ p<.10 |
-| **pinnacleConfirms** | 186 · 55% · +2.6% · 0.35 ✗ noise | 552 · 48% · -8.6% · -2.09 ✓ p<.05 |
-| **invested10kPlus** | 415 · 51% · -5.1% · -1.06 ✗ noise | 323 · 49% · -6.6% · -1.22 ✗ noise |
-| **lineMovingWith** | 352 · 55% · +3.4% · 0.64 ✗ noise | 569 · 47% · -10.3% · -2.54 ✓ p<.05 |
-| **predMarketAligns** | 205 · 52% · -2.4% · -0.35 ✗ noise | 533 · 49% · -7.0% · -1.68 ~ p<.10 |
+| **sharps3Plus** | 327 · 46% · -11.1% · -2.01 ✓ p<.05 | 615 · 52% · -1.9% · -0.51 ✗ noise |
+| **plusEV** | 85 · 52% · -0.9% · -0.08 ✗ noise | 857 · 50% · -5.6% · -1.69 ~ p<.10 |
+| **pinnacleConfirms** | 189 · 54% · +1.8% · 0.25 ✗ noise | 569 · 49% · -8.2% · -2.02 ✓ p<.05 |
+| **invested10kPlus** | 424 · 51% · -5.0% · -1.05 ✗ noise | 334 · 49% · -6.5% · -1.23 ✗ noise |
+| **lineMovingWith** | 360 · 54% · +2.3% · 0.45 ✗ noise | 582 · 48% · -9.7% · -2.43 ✓ p<.05 |
+| **predMarketAligns** | 207 · 52% · -2.6% · -0.37 ✗ noise | 551 · 49% · -6.8% · -1.66 ~ p<.10 |
 
 ### §9b. Total criteria met (0–6)
 
 | Bucket | N | W-L-P | WR % [95% Wilson] | Flat ROI | Peak PnL | Flat t-stat |
 |---|---|---|---|---|---|---|
-| 0 | 345 | 171-174-0 | 49.6% [44–55] | -5.8% | -141.5u | -1.11 ✗ noise |
-| 1 | 171 | 82-84-5 | 49.4% [42–57] | -4.9% | -35.5u | -0.66 ✗ noise |
-| 2 | 185 | 91-91-3 | 50.0% [43–57] | -5.9% | -7.4u | -0.83 ✗ noise |
+| 0 | 355 | 176-179-0 | 49.6% [44–55] | -5.7% | -136.6u | -1.12 ✗ noise |
+| 1 | 175 | 83-86-6 | 49.1% [42–57] | -5.4% | -36.2u | -0.74 ✗ noise |
+| 2 | 189 | 94-92-3 | 50.5% [43–58] | -5.0% | -2.0u | -0.72 ✗ noise |
 | 3 | 69 | 35-34-0 | 50.7% [39–62] | -5.5% | -6.9u | -0.47 ✗ noise |
-| 4 | 68 | 37-31-0 | 54.4% [43–66] | -0.7% | -9.1u | -0.06 ✗ noise |
-| 5 | 66 | 34-32-0 | 51.5% [40–63] | -7.3% | -6.5u | -0.63 ✗ noise |
+| 4 | 70 | 38-32-0 | 54.3% [43–65] | -1.2% | -9.6u | -0.10 ✗ noise |
+| 5 | 67 | 34-33-0 | 50.7% [39–62] | -8.7% | -9.0u | -0.76 ✗ noise |
 | 6 | 18 | 9-9-0 | 50.0% [29–71] | +16.0% | +4.4u | 0.45 ✗ noise |
 
 ### §9c. Regime
@@ -655,49 +655,49 @@ _For each binary criterion, compare picks where it was met vs not._
 | Bucket | N | W-L-P | WR % [95% Wilson] | Flat ROI | Peak PnL | Flat t-stat |
 |---|---|---|---|---|---|---|
 | CLEAR_MOVE | 120 | 65-54-1 | 54.6% [46–63] | +1.4% | -4.3u | 0.16 ✗ noise |
-| NEAR_START | 346 | 166-175-5 | 48.7% [43–54] | -6.8% | -66.2u | -1.28 ✗ noise |
+| NEAR_START | 357 | 170-181-6 | 48.4% [43–54] | -7.5% | -64.7u | -1.42 ✗ noise |
 | NO_MOVE | 28 | 14-14-0 | 50.0% [33–67] | -6.2% | +10.9u | -0.34 ✗ noise |
-| PREGAME | 254 | 128-126-0 | 50.4% [44–56] | -4.5% | -111.8u | -0.74 ✗ noise |
-| SMALL_MOVE | 172 | 84-86-2 | 49.4% [42–57] | -7.3% | -33.6u | -0.99 ✗ noise |
+| PREGAME | 263 | 133-130-0 | 50.6% [45–57] | -4.1% | -106.6u | -0.69 ✗ noise |
+| SMALL_MOVE | 173 | 85-86-2 | 49.7% [42–57] | -6.7% | -33.6u | -0.92 ✗ noise |
 
 ### §9d. Consensus grade
 
 | Bucket | N | W-L-P | WR % [95% Wilson] | Flat ROI | Peak PnL | Flat t-stat |
 |---|---|---|---|---|---|---|
-| DOMINANT | 536 | 272-261-3 | 51.0% [47–55] | -4.7% | -163.3u | -1.13 ✗ noise |
-| STRONG | 126 | 62-62-2 | 50.0% [41–59] | -4.3% | -9.6u | -0.49 ✗ noise |
-| LEAN | 248 | 120-125-3 | 49.0% [43–55] | -5.3% | -27.2u | -0.82 ✗ noise |
+| DOMINANT | 546 | 277-266-3 | 51.0% [47–55] | -4.7% | -164.3u | -1.15 ✗ noise |
+| STRONG | 127 | 62-62-3 | 50.0% [41–59] | -4.3% | -9.6u | -0.49 ✗ noise |
+| LEAN | 258 | 125-130-3 | 49.0% [43–55] | -5.4% | -19.6u | -0.86 ✗ noise |
 | CONTESTED | 11 | 4-7-0 | 36.4% [15–65] | -29.3% | -4.0u | -0.98 ✗ noise |
 
 ### §9e. Continuous criteria — correlation with WIN / flat ROI
 
 | Predictor | ρ(·, WIN) | ρ(·, flat ROI) | Spearman ρ | t-stat |
 |---|---|---|---|---|
-| sharpCount | -0.048 ✗ | -0.043 ✗ | -0.040 | -1.30 |
-| totalInvested | -0.040 ✗ | -0.052 ✗ | -0.003 | -1.57 |
-| evEdge | 0.091 ✓ p<.01 | 0.114 ✓ p<.01 | 0.047 | 3.48 |
-| moneyPct | 0.040 ✗ | 0.018 ✗ | 0.005 | 0.55 |
-| walletPct | 0.039 ✗ | 0.030 ✗ | 0.024 | 0.91 |
-| criteriaMet | 0.020 ✗ | 0.014 ✗ | -0.016 | 0.43 |
-| maxContribFor | 0.003 ✗ | 0.014 ✗ | 0.029 | 0.43 |
-| meanBaseFor | -0.003 ✗ | 0.024 ✗ | 0.043 | 0.72 |
+| sharpCount | -0.039 ✗ | -0.037 ✗ | -0.034 | -1.12 |
+| totalInvested | -0.039 ✗ | -0.052 ✗ | -0.002 | -1.58 |
+| evEdge | 0.089 ✓ p<.01 | 0.112 ✓ p<.01 | 0.045 | 3.46 |
+| moneyPct | 0.038 ✗ | 0.017 ✗ | 0.005 | 0.52 |
+| walletPct | 0.042 ✗ | 0.031 ✗ | 0.024 | 0.94 |
+| criteriaMet | 0.018 ✗ | 0.012 ✗ | -0.018 | 0.37 |
+| maxContribFor | 0.009 ✗ | 0.019 ✗ | 0.034 | 0.58 |
+| meanBaseFor | -0.005 ✗ | 0.021 ✗ | 0.042 | 0.65 |
 
 ---
 
 ## §10. CLV / line-movement diagnostic
 _CLV is the gold-standard "are we beating the closing line?" metric._
 
-Sample with CLV: **907** picks. Mean CLV = **-0.0024**.
-t-statistic vs zero: -1.50 → ✗ noise · 95% CI [-0.0057, 0.0008]
+Sample with CLV: **928** picks. Mean CLV = **-0.0024**.
+t-statistic vs zero: -1.53 → ✗ noise · 95% CI [-0.0056, 0.0007]
 
 Bucketed CLV vs flat PnL:
 
 | Bucket | N | W-L-P | WR % [95% Wilson] | Flat ROI | Peak PnL | Flat t-stat |
 |---|---|---|---|---|---|---|
-| CLV ≤ −2% | 106 | 48-57-1 | 45.7% [37–55] | -16.4% | -39.9u | -1.83 ~ p<.10 |
-| CLV (−2%, 0] | 527 | 267-254-6 | 51.2% [47–56] | -3.4% | -93.6u | -0.82 ✗ noise |
-| CLV (0, +2%] | 228 | 116-112-0 | 50.9% [44–57] | -1.0% | -53.3u | -0.14 ✗ noise |
-| CLV > +2% | 46 | 22-23-1 | 48.9% [35–63] | -8.1% | -5.9u | -0.56 ✗ noise |
+| CLV ≤ −2% | 108 | 49-58-1 | 45.8% [37–55] | -15.8% | -40.1u | -1.76 ~ p<.10 |
+| CLV (−2%, 0] | 538 | 273-258-7 | 51.4% [47–56] | -3.2% | -88.7u | -0.78 ✗ noise |
+| CLV (0, +2%] | 235 | 119-116-0 | 50.6% [44–57] | -1.6% | -50.8u | -0.24 ✗ noise |
+| CLV > +2% | 47 | 22-24-1 | 47.8% [34–62] | -10.0% | -6.4u | -0.71 ✗ noise |
 
 ρ(CLV, flat ROI) = 0.005 ✗
 
@@ -706,28 +706,28 @@ Bucketed CLV vs flat PnL:
 ## §11. Logistic regression — feature importance
 _L2-regularized (λ=0.05) logistic regression with z-scored features. Coefficients ranked by absolute magnitude. Larger |β| ≈ stronger effect at fixed everything-else._
 
-Trained on N=676 (with all features non-null). Intercept β₀ = 0.056.
+Trained on N=692 (with all features non-null). Intercept β₀ = 0.050.
 
 | Rank | Feature | β (z-scaled) | Direction |
 |---|---|---|---|
-| 1 | sharpCount | -0.263 | ↓ hurts |
-| 2 | log(impliedProb) | +0.227 | ↑ helps |
-| 3 | pw.Δcount | +0.214 | ↑ helps |
-| 4 | pw.ΔAvgRoi | +0.211 | ↑ helps |
-| 5 | evEdge | +0.185 | ↑ helps |
-| 6 | pw.ΔWlNet | +0.173 | ↑ helps |
-| 7 | pw.ΔTopQShare | +0.170 | ↑ helps |
-| 8 | odds (American) | -0.151 | ↓ hurts |
-| 9 | peak.stars | -0.097 | ↓ hurts |
-| 10 | pw.ΔFlatPnl | +0.080 | ↑ helps |
-| 11 | criteriaMet | +0.067 | ↑ helps |
-| 12 | vault.star | +0.066 | ↑ helps |
-| 13 | moneyPct | -0.053 | ↓ hurts |
-| 14 | Δw | -0.029 | ≈ flat |
-| 15 | log10(invested) | +0.025 | ≈ flat |
-| 16 | HC margin | +0.018 | ≈ flat |
-| 17 | Δw + HC | -0.014 | ≈ flat |
-| 18 | walletPct | +0.011 | ≈ flat |
+| 1 | sharpCount | -0.250 | ↓ hurts |
+| 2 | log(impliedProb) | +0.237 | ↑ helps |
+| 3 | pw.Δcount | +0.209 | ↑ helps |
+| 4 | pw.ΔAvgRoi | +0.201 | ↑ helps |
+| 5 | pw.ΔTopQShare | +0.200 | ↑ helps |
+| 6 | evEdge | +0.179 | ↑ helps |
+| 7 | pw.ΔWlNet | +0.179 | ↑ helps |
+| 8 | odds (American) | -0.144 | ↓ hurts |
+| 9 | peak.stars | -0.090 | ↓ hurts |
+| 10 | moneyPct | -0.071 | ↓ hurts |
+| 11 | criteriaMet | +0.069 | ↑ helps |
+| 12 | pw.ΔFlatPnl | +0.060 | ↑ helps |
+| 13 | vault.star | +0.051 | ↑ helps |
+| 14 | Δw | -0.028 | ≈ flat |
+| 15 | walletPct | +0.027 | ≈ flat |
+| 16 | Δw + HC | -0.015 | ≈ flat |
+| 17 | HC margin | +0.014 | ≈ flat |
+| 18 | log10(invested) | +0.009 | ≈ flat |
 
 ---
 
@@ -736,12 +736,12 @@ _Bayesian posterior WR (Beta(5,5) prior) and half-Kelly stake at the cohort's me
 
 | Cohort | N | W-L | WR observed | Bayesian WR | Median odds | Half-Kelly stake | Current avg | Verdict |
 |---|---|---|---|---|---|---|---|---|
-| Tier-1a HC ≥ +2 (post-cutover) | 55 | 25-30 | 45.5% | 46.2% | -110 | — (mute) | 2.50u | **MUTE** (negative EV at posterior) |
-| Tier-1b HC = +1 (post-cutover) | 186 | 109-77 | 58.6% | 58.2% | -110 | 6.07% bankroll | 2.05u | **UNDER-SIZED** — ship up to 6.07u (1u=1% bankroll) |
-| Tier-2 HC ≤ 0 ∧ Δw ≥ +2 (HC era) | 120 | 55-64 | 46.2% | 46.5% | -110 | — (mute) | 2.01u | **MUTE** (negative EV at posterior) |
-| Δw ≥ +3 (full sample) | 131 | 66-65 | 50.4% | 50.4% | -110 | — (mute) | 2.38u | **MUTE** (negative EV at posterior) |
-| Stale Δw = 0 | 200 | 96-101 | 48.7% | 48.8% | -110 | — (mute) | 1.84u | **MUTE** (negative EV at posterior) |
-| Stale Δw ≤ −1 | 50 | 19-30 | 38.8% | 40.7% | -110 | — (mute) | 1.27u | **MUTE** (negative EV at posterior) |
+| Tier-1a HC ≥ +2 (post-cutover) | 57 | 26-31 | 45.6% | 46.3% | -110 | — (mute) | 2.42u | **MUTE** (negative EV at posterior) |
+| Tier-1b HC = +1 (post-cutover) | 188 | 111-77 | 59.0% | 58.6% | -110 | 6.52% bankroll | 2.03u | **UNDER-SIZED** — ship up to 6.52u (1u=1% bankroll) |
+| Tier-2 HC ≤ 0 ∧ Δw ≥ +2 (HC era) | 121 | 56-64 | 46.7% | 46.9% | -110 | — (mute) | 2.00u | **MUTE** (negative EV at posterior) |
+| Δw ≥ +3 (full sample) | 133 | 67-66 | 50.4% | 50.3% | -110 | — (mute) | 2.35u | **MUTE** (negative EV at posterior) |
+| Stale Δw = 0 | 205 | 99-103 | 49.0% | 49.1% | -110 | — (mute) | 1.80u | **MUTE** (negative EV at posterior) |
+| Stale Δw ≤ −1 | 52 | 19-31 | 38.0% | 40.0% | -110 | — (mute) | 1.29u | **MUTE** (negative EV at posterior) |
 
 > Bayesian posterior uses Beta(5,5) prior — pulls small-sample WR toward 50%. Half-Kelly is conservative; reduce by another 50% if you prefer quarter-Kelly. **Treat 1u = 1% of bankroll** when reading suggested stakes.
 
@@ -824,12 +824,13 @@ _Daily PnL distribution + max drawdown._
 | 2026-06-26 | 21 | 13-8 | -5.4u | -185.6u |
 | 2026-06-27 | 23 | 10-13 | -7.4u | -193.0u |
 | 2026-06-28 | 25 | 10-15 | -9.5u | -202.5u |
+| 2026-06-29 | 21 | 10-10 | +6.7u | -195.8u |
 
 **Peak cum PnL:** +7.1u
 **Max drawdown:** -209.6u
 **Longest losing-day streak:** 10
 **Longest winning-day streak:** 5
-**Daily Sharpe-like (μ/σ):** -0.370  (annualized × √252 ≈ -5.87)
+**Daily Sharpe-like (μ/σ):** -0.352  (annualized × √252 ≈ -5.58)
 
 ---
 
@@ -909,41 +910,41 @@ _Sortable raw data behind every section. Use to spot-check individual decisions.
 | 2026-04-24 | NBA | TOTAL | over | 3.5 | 0.50 | -111 | 1 | — | — | 1 | 2 | 0.00 | W | +0.5u |
 | 2026-04-24 | NBA | ML | home | 5.0 | 2.00 | +120 | 2 | — | — | 2 | 21 | 0.70 | L | -2.0u |
 | 2026-04-24 | NHL | ML | home | 5.0 | 3.00 | +102 | 2 | — | — | 2 | 0 | -1.70 | W | +2.9u |
-| 2026-04-25 | MLB | ML | away | 3.5 | 0.75 | +124 | 1 | — | — | 1 | -19 | -1.50 | L | -0.8u |
-| 2026-04-25 | MLB | ML | home | 4.0 | 1.25 | +128 | 1 | — | — | 1 | -19 | -0.40 | L | -1.3u |
+| 2026-04-25 | MLB | ML | away | 3.5 | 0.75 | +124 | 1 | — | — | 0 | -24 | -1.50 | L | -0.8u |
+| 2026-04-25 | MLB | ML | home | 4.0 | 1.25 | +128 | 1 | — | — | 2 | -14 | -0.40 | L | -1.3u |
 | 2026-04-25 | NBA | ML | away | 5.0 | 3.00 | -118 | 3 | — | — | 1 | -17 | -1.90 | L | -3.0u |
 | 2026-04-25 | NBA | ML | home | 5.0 | 2.00 | +125 | 4 | — | — | 2 | 10 | -1.20 | W | +2.4u |
 | 2026-04-25 | NBA | SPREAD | home | 5.0 | 2.00 | -105 | 2 | — | — | 1 | 3 | -0.70 | L | -2.0u |
 | 2026-04-25 | NHL | ML | away | 3.5 | 0.75 | +118 | 1 | — | — | 1 | -6 | -0.60 | L | -0.8u |
 | 2026-04-25 | NHL | ML | home | 5.0 | 3.00 | -120 | 2 | — | — | 2 | -3 | -0.40 | L | -3.0u |
 | 2026-04-26 | MLB | ML | away | 3.5 | 0.75 | +108 | 1 | — | — | 2 | 8 | 0.50 | L | -0.8u |
-| 2026-04-26 | MLB | TOTAL | over | 3.5 | 0.50 | -116 | 1 | — | — | -1 | 19 | 0.00 | L | -0.5u |
+| 2026-04-26 | MLB | TOTAL | over | 3.5 | 0.50 | -116 | 1 | — | — | 0 | 24 | 0.00 | L | -0.5u |
 | 2026-04-26 | MLB | ML | home | 3.5 | 0.75 | -110 | 1 | — | — | 1 | -5 | -1.40 | L | -0.8u |
-| 2026-04-26 | MLB | ML | away | 5.0 | 2.00 | +100 | 2 | — | — | 1 | -5 | 0.00 | L | -2.0u |
-| 2026-04-26 | MLB | TOTAL | over | 4.0 | 0.75 | -102 | 1 | — | — | 2 | -6 | 0.00 | W | +0.7u |
+| 2026-04-26 | MLB | ML | away | 5.0 | 2.00 | +100 | 2 | — | — | 2 | 0 | 0.00 | L | -2.0u |
+| 2026-04-26 | MLB | TOTAL | over | 4.0 | 0.75 | -102 | 1 | — | — | 3 | -1 | 0.00 | W | +0.7u |
 | 2026-04-26 | NBA | ML | away | 5.0 | 3.00 | -290 | 3 | — | — | 2 | 12 | 1.40 | W | +1.0u |
 | 2026-04-26 | NBA | TOTAL | over | 4.0 | 0.75 | -101 | 1 | — | — | 4 | 26 | 0.00 | W | +0.7u |
 | 2026-04-26 | NBA | ML | away | 5.0 | 3.00 | -158 | 2 | — | — | 2 | 6 | -0.70 | L | -3.0u |
 | 2026-04-26 | NBA | TOTAL | under | 5.0 | 2.00 | -110 | 3 | — | — | 1 | -6 | 0.00 | W | +1.8u |
 | 2026-04-26 | NBA | SPREAD | home | 4.0 | 0.75 | -110 | 1 | — | — | 3 | -1 | 0.20 | W | +0.7u |
-| 2026-04-27 | MLB | ML | home | 5.0 | 2.00 | +140 | 2 | — | — | 1 | -1 | -0.50 | L | -2.0u |
-| 2026-04-27 | MLB | ML | away | 3.5 | 0.75 | +104 | 1 | — | — | 1 | -19 | -0.70 | W | +0.8u |
+| 2026-04-27 | MLB | ML | home | 5.0 | 2.00 | +140 | 2 | — | — | 2 | 4 | -0.50 | L | -2.0u |
+| 2026-04-27 | MLB | ML | away | 3.5 | 0.75 | +104 | 1 | — | — | 2 | -14 | -0.70 | W | +0.8u |
 | 2026-04-27 | NBA | SPREAD | away | 4.0 | 0.75 | -114 | 1 | — | — | 2 | -18 | -0.70 | L | -0.8u |
 | 2026-04-27 | NBA | TOTAL | over | 5.0 | 2.00 | -104 | 3 | — | — | 3 | 16 | 0.00 | L | -2.0u |
 | 2026-04-27 | NBA | ML | home | 5.0 | 3.00 | -500 | 3 | — | — | 3 | 28 | 0.40 | W | +0.6u |
 | 2026-04-27 | NBA | TOTAL | over | 5.0 | 2.00 | -115 | 2 | — | — | 4 | 17 | 0.00 | W | +1.7u |
-| 2026-04-28 | MLB | ML | home | 3.5 | 0.75 | -118 | 1 | — | — | 1 | 13 | -0.80 | W | +0.6u |
-| 2026-04-28 | MLB | ML | away | 5.0 | 3.00 | -102 | 2 | — | — | -1 | 5 | -0.50 | L | -3.0u |
-| 2026-04-28 | MLB | ML | home | 5.0 | 3.00 | -124 | 2 | — | — | 0 | 7 | -0.80 | W | +2.4u |
-| 2026-04-28 | MLB | ML | home | 5.0 | 2.00 | +102 | 2 | — | — | 1 | -5 | -1.90 | L | -2.0u |
-| 2026-04-28 | MLB | ML | home | 3.5 | 0.75 | +108 | 1 | — | — | 1 | -5 | -0.20 | L | -0.8u |
-| 2026-04-28 | MLB | ML | away | 5.0 | 2.00 | +142 | 3 | — | — | -1 | 8 | 0.00 | L | -2.0u |
-| 2026-04-28 | MLB | ML | away | 5.0 | 2.00 | +112 | 2 | — | — | 1 | 11 | 0.00 | W | +2.2u |
+| 2026-04-28 | MLB | ML | home | 3.5 | 0.75 | -118 | 1 | — | — | 2 | 18 | -0.80 | W | +0.6u |
+| 2026-04-28 | MLB | ML | away | 5.0 | 3.00 | -102 | 2 | — | — | 0 | 10 | -0.50 | L | -3.0u |
+| 2026-04-28 | MLB | ML | home | 5.0 | 3.00 | -124 | 2 | — | — | 1 | 12 | -0.80 | W | +2.4u |
+| 2026-04-28 | MLB | ML | home | 5.0 | 2.00 | +102 | 2 | — | — | 2 | 0 | -1.90 | L | -2.0u |
+| 2026-04-28 | MLB | ML | home | 3.5 | 0.75 | +108 | 1 | — | — | 2 | 0 | -0.20 | L | -0.8u |
+| 2026-04-28 | MLB | ML | away | 5.0 | 2.00 | +142 | 3 | — | — | 0 | 13 | 0.00 | L | -2.0u |
+| 2026-04-28 | MLB | ML | away | 5.0 | 2.00 | +112 | 2 | — | — | 2 | 17 | 0.00 | W | +2.2u |
 | 2026-04-28 | NBA | ML | away | 5.0 | 0.50 | +215 | 2 | — | — | 2 | -3 | -0.70 | L | -0.5u |
 | 2026-04-28 | NBA | SPREAD | away | 5.0 | 2.00 | -105 | 2 | — | — | 6 | 1 | -1.60 | W | +1.8u |
 | 2026-04-28 | NBA | SPREAD | away | 5.0 | 2.00 | -105 | 3 | — | — | 3 | 21 | 0.20 | L | -2.0u |
-| 2026-04-29 | MLB | ML | home | 3.5 | 0.50 | -108 | 1 | — | — | 0 | 0 | 0.50 | L | -0.5u |
-| 2026-04-29 | MLB | TOTAL | under | 3.5 | 0.50 | -117 | 1 | — | — | 2 | -6 | 0.00 | L | -0.5u |
+| 2026-04-29 | MLB | ML | home | 3.5 | 0.50 | -108 | 1 | — | — | 1 | 5 | 0.50 | L | -0.5u |
+| 2026-04-29 | MLB | TOTAL | under | 3.5 | 0.50 | -117 | 1 | — | — | 3 | -1 | 0.00 | L | -0.5u |
 | 2026-04-29 | NBA | SPREAD | home | 3.5 | 0.50 | -105 | 1 | — | — | 1 | 15 | -0.70 | L | -0.5u |
 | 2026-04-29 | NBA | TOTAL | under | 3.5 | 0.50 | -104 | 1 | — | — | 0 | -1 | 0.00 | L | -0.5u |
 | 2026-04-29 | NBA | ML | home | 5.0 | 3.00 | -355 | 4 | — | — | 0 | 4 | 0.20 | W | +0.8u |
@@ -954,13 +955,13 @@ _Sortable raw data behind every section. Use to spot-check individual decisions.
 | 2026-04-30 | NBA | TOTAL | under | 4.0 | 1.13 | -106 | 1 | 1 | 2 | 3 | 8 | 0.00 | W | +1.0u |
 | 2026-04-30 | NHL | ML | away | 2.5 | 0.75 | -130 | 0 | 1 | 1 | 0 | -5 | -0.60 | L | -0.8u |
 | 2026-04-30 | NHL | TOTAL | over | 4.0 | 1.00 | +105 | 1 | 0 | 1 | 0 | 0 | 0.00 | P | +0.0u |
-| 2026-05-01 | MLB | ML | away | 3.5 | 1.00 | -110 | 1 | 0 | 1 | 0 | 0 | -1.10 | W | +0.0u |
+| 2026-05-01 | MLB | ML | away | 3.5 | 1.00 | -110 | 1 | 0 | 1 | 1 | 5 | -1.10 | W | +0.0u |
 | 2026-05-01 | NBA | SPREAD | away | 2.5 | 0.50 | -115 | 1 | 0 | 1 | 1 | 4 | -1.80 | L | -0.5u |
 | 2026-05-01 | NBA | ML | home | 5.0 | 3.00 | -180 | 3 | -1 | 2 | 4 | -9 | 0.10 | L | -3.0u |
 | 2026-05-01 | NBA | SPREAD | home | 5.0 | 2.00 | -108 | 2 | 1 | 3 | 2 | 12 | -2.70 | L | -2.0u |
 | 2026-05-01 | NBA | TOTAL | under | 2.5 | 0.50 | -110 | 1 | 0 | 1 | 1 | 1 | 0.00 | W | +0.0u |
 | 2026-05-01 | NHL | ML | away | 4.0 | 0.50 | -114 | 2 | 0 | 2 | 2 | 16 | -0.70 | W | +0.0u |
-| 2026-05-02 | MLB | ML | away | 4.5 | 3.00 | +140 | 1 | 1 | 2 | 1 | 2 | -0.50 | L | -3.0u |
+| 2026-05-02 | MLB | ML | away | 4.5 | 3.00 | +140 | 1 | 1 | 2 | 2 | 7 | -0.50 | L | -3.0u |
 | 2026-05-02 | NBA | TOTAL | over | 4.0 | 1.13 | -109 | 1 | 1 | 2 | 3 | 17 | 0.00 | W | +1.1u |
 | 2026-05-03 | MLB | ML | away | 2.8 | 0.75 | -130 | 1 | 1 | 2 | 0 | 0 | -1.00 | W | +0.6u |
 | 2026-05-03 | NBA | ML | away | 4.0 | 0.75 | +310 | 0 | 1 | 1 | 2 | 3 | 0.70 | L | -0.8u |
@@ -1003,43 +1004,43 @@ _Sortable raw data behind every section. Use to spot-check individual decisions.
 | 2026-05-11 | MLB | ML | home | 3.5 | 1.13 | -156 | 1 | 1 | 2 | 1 | -19 | 0.00 | W | +0.7u |
 | 2026-05-11 | NBA | TOTAL | under | 4.5 | 2.00 | -110 | 1 | 2 | 3 | 0 | 8 | 0.00 | L | -2.0u |
 | 2026-05-11 | NHL | TOTAL | under | 4.5 | 1.27 | -110 | 2 | 0 | 2 | 2 | 14 | 0.00 | L | -1.3u |
-| 2026-05-12 | MLB | ML | away | 5.0 | 4.50 | +108 | 4 | 0 | 4 | 1 | -19 | -0.20 | L | -4.5u |
-| 2026-05-12 | MLB | TOTAL | under | 4.0 | 0.64 | -110 | 2 | 1 | 3 | 2 | -6 | 0.00 | L | -0.6u |
-| 2026-05-12 | MLB | ML | away | 4.5 | 3.00 | +129 | 3 | 0 | 3 | 0 | 0 | -1.00 | L | -3.0u |
-| 2026-05-12 | MLB | ML | home | 5.0 | 3.00 | +108 | 3 | 0 | 3 | 2 | -6 | -0.50 | L | -3.0u |
+| 2026-05-12 | MLB | ML | away | 5.0 | 4.50 | +108 | 4 | 0 | 4 | 2 | -18 | -0.20 | L | -4.5u |
+| 2026-05-12 | MLB | TOTAL | under | 4.0 | 0.64 | -110 | 2 | 1 | 3 | 2 | -7 | 0.00 | L | -0.6u |
+| 2026-05-12 | MLB | ML | away | 4.5 | 3.00 | +129 | 3 | 0 | 3 | 1 | 1 | -1.00 | L | -3.0u |
+| 2026-05-12 | MLB | ML | home | 5.0 | 3.00 | +108 | 3 | 0 | 3 | 2 | -7 | -0.50 | L | -3.0u |
 | 2026-05-12 | NBA | SPREAD | away | 5.0 | 3.50 | -105 | 6 | 4 | 10 | 5 | 31 | -0.70 | L | -3.5u |
-| 2026-05-13 | MLB | ML | home | 4.5 | 4.50 | -116 | 1 | 1 | 2 | 1 | -19 | -1.30 | W | +3.7u |
+| 2026-05-13 | MLB | ML | home | 4.5 | 4.50 | -116 | 1 | 1 | 2 | 2 | -18 | -1.30 | W | +3.7u |
 | 2026-05-13 | MLB | SPREAD | home | 5.0 | 3.50 | -105 | 1 | 1 | 2 | 2 | -25 | 0.90 | W | +3.2u |
-| 2026-05-13 | MLB | TOTAL | under | 4.0 | 0.96 | -110 | 1 | 1 | 2 | 2 | -6 | 0.00 | W | +0.9u |
-| 2026-05-13 | MLB | TOTAL | under | 5.0 | 3.50 | -110 | 4 | 2 | 6 | 5 | -19 | 0.00 | L | -3.5u |
+| 2026-05-13 | MLB | TOTAL | under | 4.0 | 0.96 | -110 | 1 | 1 | 2 | 2 | -5 | 0.00 | W | +0.9u |
+| 2026-05-13 | MLB | TOTAL | under | 5.0 | 3.50 | -110 | 4 | 2 | 6 | 5 | -18 | 0.00 | L | -3.5u |
 | 2026-05-13 | NBA | ML | home | 5.0 | 4.50 | -162 | 6 | 0 | 6 | 2 | -16 | -1.00 | L | -4.5u |
 | 2026-05-13 | NBA | TOTAL | over | 5.0 | 3.50 | -101 | 3 | 2 | 5 | 4 | 2 | 0.00 | W | +3.4u |
-| 2026-05-14 | MLB | ML | home | 5.0 | 4.50 | -103 | 4 | 1 | 5 | 1 | 0 | -0.40 | L | -4.5u |
+| 2026-05-14 | MLB | ML | home | 5.0 | 4.50 | -103 | 4 | 1 | 5 | 2 | 1 | -0.40 | L | -4.5u |
 | 2026-05-14 | MLB | ML | home | 4.0 | 1.25 | +108 | 2 | 0 | 2 | 1 | -19 | -0.90 | L | -1.3u |
 | 2026-05-14 | MLB | TOTAL | over | 3.5 | 0.49 | -110 | 1 | 1 | 2 | 1 | -6 | 0.00 | L | -0.5u |
 | 2026-05-14 | NHL | TOTAL | under | 5.0 | 3.50 | -110 | 3 | 1 | 4 | 1 | 8 | 0.00 | L | -3.5u |
 | 2026-05-14 | NHL | ML | away | 4.5 | 1.95 | -114 | 0 | 1 | 1 | 3 | 10 | 0.00 | W | +1.7u |
-| 2026-05-15 | MLB | TOTAL | under | 2.5 | 0.30 | -110 | 1 | 1 | 2 | 2 | -20 | 0.00 | W | +0.3u |
+| 2026-05-15 | MLB | TOTAL | under | 2.5 | 0.30 | -110 | 1 | 1 | 2 | 3 | -15 | 0.00 | W | +0.3u |
 | 2026-05-15 | MLB | ML | home | 4.0 | 2.50 | +128 | 0 | 0 | 0 | 0 | 3 | 0.00 | L | -2.5u |
-| 2026-05-15 | MLB | ML | away | 4.0 | 2.75 | -211 | 2 | 1 | 3 | 0 | 0 | -0.90 | W | +1.3u |
+| 2026-05-15 | MLB | ML | away | 4.0 | 2.75 | -211 | 2 | 1 | 3 | 1 | 1 | -0.90 | W | +1.3u |
 | 2026-05-15 | MLB | ML | away | 3.0 | 1.25 | +115 | 0 | 1 | 1 | 0 | 0 | -1.10 | L | -1.3u |
 | 2026-05-15 | NBA | ML | away | 2.5 | 0.50 | +145 | 6 | 1 | 7 | 5 | 38 | -0.50 | W | +0.8u |
 | 2026-05-15 | NBA | TOTAL | over | 4.0 | 0.75 | -109 | 0 | 1 | 1 | 3 | -14 | 0.00 | L | -0.8u |
 | 2026-05-15 | NBA | SPREAD | home | 2.5 | 1.00 | -105 | 1 | 0 | 1 | 1 | 23 | 0.00 | L | -1.0u |
 | 2026-05-15 | NBA | TOTAL | over | 5.0 | 2.00 | -110 | 1 | 0 | 1 | 3 | -1 | 0.00 | W | +1.9u |
-| 2026-05-16 | MLB | ML | away | 5.0 | 4.50 | +124 | 3 | 1 | 4 | 4 | -27 | -1.30 | W | +1.4u |
-| 2026-05-16 | MLB | SPREAD | away | 4.0 | 1.65 | -175 | 2 | 0 | 2 | 2 | -6 | 0.00 | W | +0.9u |
+| 2026-05-16 | MLB | ML | away | 5.0 | 4.50 | +124 | 3 | 1 | 4 | 4 | -28 | -1.30 | W | +1.4u |
+| 2026-05-16 | MLB | SPREAD | away | 4.0 | 1.65 | -175 | 2 | 0 | 2 | 2 | -7 | 0.00 | W | +0.9u |
 | 2026-05-16 | MLB | ML | home | 5.0 | 2.50 | +119 | 2 | 1 | 3 | 1 | -19 | -2.00 | L | -2.5u |
-| 2026-05-16 | MLB | ML | home | 5.0 | 2.50 | +115 | 3 | 2 | 5 | 2 | -6 | -1.10 | W | +2.8u |
-| 2026-05-16 | MLB | TOTAL | over | 4.0 | 1.65 | -110 | 2 | 0 | 2 | 2 | -26 | 0.00 | L | -1.6u |
-| 2026-05-16 | MLB | ML | away | 2.5 | 0.50 | -102 | 1 | 0 | 1 | 2 | -6 | 0.00 | W | +0.5u |
+| 2026-05-16 | MLB | ML | home | 5.0 | 2.50 | +115 | 3 | 2 | 5 | 2 | -7 | -1.10 | W | +2.8u |
+| 2026-05-16 | MLB | TOTAL | over | 4.0 | 1.65 | -110 | 2 | 0 | 2 | 2 | -25 | 0.00 | L | -1.6u |
+| 2026-05-16 | MLB | ML | away | 2.5 | 0.50 | -102 | 1 | 0 | 1 | 3 | 0 | 0.00 | W | +0.5u |
 | 2026-05-17 | MLB | ML | away | 4.0 | 2.75 | -148 | 1 | 0 | 1 | 1 | -19 | -0.70 | W | +1.9u |
 | 2026-05-17 | MLB | ML | away | 2.5 | 0.50 | +139 | 0 | 1 | 1 | 1 | -19 | 0.70 | L | -0.5u |
 | 2026-05-17 | MLB | ML | away | 5.0 | 5.00 | -129 | 3 | 1 | 4 | 1 | -19 | 0.40 | L | -5.0u |
 | 2026-05-17 | MLB | ML | home | 4.0 | 2.75 | -114 | 3 | 1 | 4 | 4 | -16 | 2.20 | W | +2.4u |
 | 2026-05-17 | MLB | TOTAL | over | 4.5 | 2.25 | -110 | 2 | 1 | 3 | 2 | -25 | 0.00 | W | +2.0u |
 | 2026-05-17 | MLB | TOTAL | over | 5.0 | 2.50 | +107 | 2 | 2 | 4 | 1 | -19 | 0.00 | L | -2.5u |
-| 2026-05-17 | MLB | TOTAL | under | 2.5 | 0.30 | -110 | 0 | 1 | 1 | -1 | -13 | 0.00 | W | +0.3u |
+| 2026-05-17 | MLB | TOTAL | under | 2.5 | 0.30 | -110 | 0 | 1 | 1 | -1 | -14 | 0.00 | W | +0.3u |
 | 2026-05-17 | NBA | ML | away | 3.0 | 1.25 | +165 | 3 | 1 | 4 | 3 | 2 | -0.60 | W | +0.8u |
 | 2026-05-17 | NBA | TOTAL | under | 5.0 | 0.75 | -110 | 2 | 3 | 5 | 0 | 30 | 0.00 | L | -0.8u |
 | 2026-05-18 | MLB | ML | home | 4.5 | 5.00 | -111 | 2 | 1 | 3 | 1 | -19 | -1.10 | W | +4.4u |
@@ -1051,15 +1052,15 @@ _Sortable raw data behind every section. Use to spot-check individual decisions.
 | 2026-05-18 | NBA | SPREAD | home | 2.5 | 1.00 | -110 | 1 | 1 | 2 | 0 | 19 | 0.20 | L | -1.0u |
 | 2026-05-18 | NHL | ML | home | 5.0 | 5.00 | -112 | 2 | 2 | 4 | 1 | 5 | -1.10 | L | -5.0u |
 | 2026-05-18 | NHL | TOTAL | under | 4.5 | 2.25 | -110 | 3 | 1 | 4 | 1 | 8 | 0.00 | W | +2.0u |
-| 2026-05-19 | MLB | ML | home | 5.0 | 2.50 | +118 | 1 | 1 | 2 | 1 | -23 | -1.30 | L | -2.5u |
-| 2026-05-19 | MLB | TOTAL | under | 4.0 | 1.65 | -110 | 2 | 0 | 2 | 1 | 0 | 0.00 | W | +1.5u |
+| 2026-05-19 | MLB | ML | home | 5.0 | 2.50 | +118 | 1 | 1 | 2 | 2 | -22 | -1.30 | L | -2.5u |
+| 2026-05-19 | MLB | TOTAL | under | 4.0 | 1.65 | -110 | 2 | 0 | 2 | 3 | 5 | 0.00 | W | +1.5u |
 | 2026-05-19 | MLB | ML | home | 2.5 | 2.50 | +105 | 1 | 1 | 2 | 2 | -21 | -0.90 | L | -2.5u |
-| 2026-05-19 | MLB | ML | away | 2.5 | 1.25 | -104 | 1 | 1 | 2 | 0 | -13 | -1.20 | W | +1.2u |
+| 2026-05-19 | MLB | ML | away | 2.5 | 1.25 | -104 | 1 | 1 | 2 | 1 | -12 | -1.20 | W | +1.2u |
 | 2026-05-19 | NBA | ML | home | 5.0 | 5.00 | -260 | 0 | 3 | 3 | 3 | 5 | -0.50 | W | +1.9u |
 | 2026-05-19 | NBA | SPREAD | away | 5.0 | 2.25 | -105 | 3 | 2 | 5 | 2 | -4 | -0.90 | L | -2.3u |
 | 2026-05-19 | NBA | TOTAL | under | 5.0 | 3.00 | -106 | 2 | 3 | 5 | 2 | 14 | 0.00 | L | -3.0u |
 | 2026-05-20 | MLB | ML | away | 5.0 | 2.50 | +113 | 2 | 1 | 3 | 1 | -19 | -1.00 | L | -2.5u |
-| 2026-05-20 | MLB | ML | home | 4.0 | 2.75 | -154 | 2 | 0 | 2 | 0 | 0 | -1.50 | W | +1.9u |
+| 2026-05-20 | MLB | ML | home | 4.0 | 2.75 | -154 | 2 | 0 | 2 | 1 | 1 | -1.50 | W | +1.9u |
 | 2026-05-20 | MLB | TOTAL | under | 4.0 | 0.75 | -110 | 2 | 0 | 2 | 1 | -19 | 0.00 | L | -0.8u |
 | 2026-05-20 | MLB | ML | home | 2.5 | 0.50 | -140 | 1 | 1 | 2 | 1 | -19 | -1.10 | W | +0.9u |
 | 2026-05-20 | MLB | ML | home | 2.5 | 0.50 | +111 | 0 | 1 | 1 | 0 | 0 | 0.00 | W | +0.6u |
@@ -1072,18 +1073,18 @@ _Sortable raw data behind every section. Use to spot-check individual decisions.
 | 2026-05-21 | MLB | SPREAD | home | 3.0 | 0.75 | -148 | 0 | 0 | 0 | 1 | -19 | -1.50 | L | -0.8u |
 | 2026-05-21 | MLB | ML | away | 3.0 | 1.25 | +172 | 2 | 0 | 2 | 1 | -19 | -0.50 | L | -1.3u |
 | 2026-05-21 | MLB | ML | away | 4.5 | 2.75 | -110 | 2 | 1 | 3 | 1 | -19 | -0.50 | W | +2.5u |
-| 2026-05-21 | MLB | TOTAL | under | 2.5 | 0.30 | -110 | 0 | 0 | 0 | 2 | -19 | 0.00 | W | +0.3u |
-| 2026-05-21 | MLB | ML | home | 3.0 | 1.25 | -116 | 3 | 1 | 4 | 2 | -25 | -0.40 | L | -1.3u |
-| 2026-05-21 | MLB | ML | away | 3.0 | 1.25 | +129 | 1 | 0 | 1 | 4 | -26 | -0.40 | W | +1.6u |
+| 2026-05-21 | MLB | TOTAL | under | 2.5 | 0.30 | -110 | 0 | 0 | 0 | 0 | -26 | 0.00 | W | +0.3u |
+| 2026-05-21 | MLB | ML | home | 3.0 | 1.25 | -116 | 3 | 1 | 4 | 3 | -24 | -0.40 | L | -1.3u |
+| 2026-05-21 | MLB | ML | away | 3.0 | 1.25 | +129 | 1 | 0 | 1 | 4 | -27 | -0.40 | W | +1.6u |
 | 2026-05-21 | MLB | SPREAD | away | 4.0 | 1.65 | -170 | 1 | 1 | 2 | 1 | -6 | 0.30 | W | +1.0u |
 | 2026-05-21 | NBA | SPREAD | away | 5.0 | 3.00 | -110 | 4 | 2 | 6 | 3 | 16 | 0.70 | L | -3.0u |
 | 2026-05-21 | NHL | ML | home | 4.0 | 2.75 | -197 | 4 | 1 | 5 | 1 | 8 | -1.30 | L | -2.8u |
 | 2026-05-21 | NHL | TOTAL | over | 3.0 | 0.75 | +103 | 1 | 0 | 1 | 1 | 8 | 0.00 | W | +0.7u |
 | 2026-05-22 | MLB | ML | home | 5.0 | 1.25 | -175 | 1 | 0 | 1 | 0 | 0 | -0.90 | L | -1.3u |
-| 2026-05-22 | MLB | ML | home | 4.0 | 1.25 | -195 | 3 | 0 | 3 | 0 | 0 | 0.80 | L | -1.3u |
-| 2026-05-22 | MLB | TOTAL | over | 3.0 | 0.75 | -110 | 1 | 0 | 1 | -1 | 7 | 0.00 | W | +0.7u |
-| 2026-05-22 | MLB | ML | home | 3.0 | 1.25 | -137 | 1 | 0 | 1 | 0 | -24 | 0.00 | L | -1.3u |
-| 2026-05-22 | MLB | TOTAL | over | 3.0 | 0.75 | -110 | 1 | 0 | 1 | 0 | 0 | 0.00 | L | -0.8u |
+| 2026-05-22 | MLB | ML | home | 4.0 | 1.25 | -195 | 3 | 0 | 3 | 1 | 1 | 0.80 | L | -1.3u |
+| 2026-05-22 | MLB | TOTAL | over | 3.0 | 0.75 | -110 | 1 | 0 | 1 | 0 | 7 | 0.00 | W | +0.7u |
+| 2026-05-22 | MLB | ML | home | 3.0 | 1.25 | -137 | 1 | 0 | 1 | 1 | -20 | 0.00 | L | -1.3u |
+| 2026-05-22 | MLB | TOTAL | over | 3.0 | 0.75 | -110 | 1 | 0 | 1 | -1 | -5 | 0.00 | L | -0.8u |
 | 2026-05-22 | MLB | ML | home | 5.0 | 5.00 | -144 | 4 | 2 | 6 | 1 | -19 | -1.60 | L | -5.0u |
 | 2026-05-22 | MLB | SPREAD | home | 5.0 | 0.75 | -155 | 2 | 0 | 2 | 1 | -19 | -0.30 | W | +0.4u |
 | 2026-05-22 | MLB | ML | home | 5.0 | 2.75 | -158 | 1 | 0 | 1 | 0 | 0 | -0.80 | W | +1.7u |
@@ -1098,42 +1099,42 @@ _Sortable raw data behind every section. Use to spot-check individual decisions.
 | 2026-05-22 | NBA | TOTAL | over | 5.0 | 0.75 | +101 | 2 | 1 | 3 | 1 | 9 | 0.00 | W | +0.7u |
 | 2026-05-22 | NHL | ML | home | 4.5 | 3.75 | -167 | 4 | 3 | 7 | 4 | 4 | 0.00 | L | -3.8u |
 | 2026-05-22 | NHL | TOTAL | under | 5.0 | 2.50 | -110 | 3 | 1 | 4 | 0 | 0 | 0.00 | W | +2.5u |
-| 2026-05-23 | MLB | ML | home | 2.5 | 0.50 | -181 | 1 | 0 | 1 | 1 | 13 | -1.70 | W | +0.3u |
+| 2026-05-23 | MLB | ML | home | 2.5 | 0.50 | -181 | 1 | 0 | 1 | 1 | 14 | -1.70 | W | +0.3u |
 | 2026-05-23 | MLB | ML | away | 2.5 | 2.75 | +109 | 2 | 0 | 2 | 2 | -9 | -0.50 | L | -2.8u |
-| 2026-05-23 | MLB | TOTAL | over | 2.5 | 0.30 | -110 | 0 | 1 | 1 | 0 | -32 | 0.00 | W | +0.3u |
-| 2026-05-23 | MLB | ML | home | 5.0 | 1.00 | -148 | 0 | 0 | 0 | 1 | -22 | -0.20 | L | -1.0u |
-| 2026-05-23 | MLB | SPREAD | away | 3.0 | 0.75 | -163 | 1 | 0 | 1 | 1 | -19 | 0.00 | W | +0.5u |
-| 2026-05-23 | MLB | TOTAL | under | 5.0 | 3.00 | -110 | 3 | 1 | 4 | 3 | -27 | 0.00 | W | +2.7u |
-| 2026-05-23 | MLB | SPREAD | home | 3.0 | 0.75 | -163 | 0 | 0 | 0 | 1 | 13 | -0.90 | L | -0.8u |
-| 2026-05-23 | MLB | TOTAL | under | 3.0 | 0.75 | -110 | 2 | 1 | 3 | 2 | -26 | 0.00 | L | -0.8u |
-| 2026-05-23 | MLB | SPREAD | away | 4.5 | 1.50 | -209 | 0 | 0 | 0 | 2 | -6 | 29.00 | W | +2.5u |
-| 2026-05-23 | MLB | TOTAL | under | 3.0 | 0.75 | +102 | 0 | 0 | 0 | 1 | 13 | 0.00 | W | +0.8u |
+| 2026-05-23 | MLB | TOTAL | over | 2.5 | 0.30 | -110 | 0 | 1 | 1 | 0 | -34 | 0.00 | W | +0.3u |
+| 2026-05-23 | MLB | ML | home | 5.0 | 1.00 | -148 | 0 | 0 | 0 | 1 | -23 | -0.20 | L | -1.0u |
+| 2026-05-23 | MLB | SPREAD | away | 3.0 | 0.75 | -163 | 1 | 0 | 1 | 0 | -24 | 0.00 | W | +0.5u |
+| 2026-05-23 | MLB | TOTAL | under | 5.0 | 3.00 | -110 | 3 | 1 | 4 | 3 | -26 | 0.00 | W | +2.7u |
+| 2026-05-23 | MLB | SPREAD | home | 3.0 | 0.75 | -163 | 0 | 0 | 0 | 1 | 14 | -0.90 | L | -0.8u |
+| 2026-05-23 | MLB | TOTAL | under | 3.0 | 0.75 | -110 | 2 | 1 | 3 | 2 | -25 | 0.00 | L | -0.8u |
+| 2026-05-23 | MLB | SPREAD | away | 4.5 | 1.50 | -209 | 0 | 0 | 0 | 2 | -5 | 29.00 | W | +2.5u |
+| 2026-05-23 | MLB | TOTAL | under | 3.0 | 0.75 | +102 | 0 | 0 | 0 | 1 | 14 | 0.00 | W | +0.8u |
 | 2026-05-23 | MLB | TOTAL | under | 3.0 | 0.75 | -110 | 1 | 0 | 1 | 1 | -19 | 0.00 | W | +0.7u |
-| 2026-05-23 | MLB | ML | away | 2.5 | 1.25 | -111 | -1 | 1 | 0 | 1 | 8 | 0.40 | L | -1.3u |
-| 2026-05-23 | MLB | SPREAD | home | 3.0 | 0.75 | -135 | 0 | 0 | 0 | 1 | 13 | 0.40 | W | +0.6u |
-| 2026-05-23 | MLB | TOTAL | under | 2.5 | 0.30 | +108 | 0 | 0 | 0 | 0 | 0 | 0.00 | P | +0.0u |
-| 2026-05-23 | MLB | ML | home | 4.0 | 2.50 | +118 | 1 | 0 | 1 | 1 | -19 | 1.10 | W | +2.9u |
-| 2026-05-23 | MLB | ML | away | 3.0 | 1.25 | +166 | 2 | 1 | 3 | 2 | -40 | -0.30 | W | +1.8u |
-| 2026-05-23 | MLB | SPREAD | away | 4.5 | 2.25 | -123 | 1 | 0 | 1 | 2 | 7 | -0.90 | W | +1.6u |
-| 2026-05-23 | MLB | TOTAL | over | 2.5 | 0.30 | -111 | 1 | 0 | 1 | 0 | 13 | 0.00 | L | -0.3u |
+| 2026-05-23 | MLB | ML | away | 2.5 | 1.25 | -111 | -1 | 1 | 0 | 1 | 10 | 0.40 | L | -1.3u |
+| 2026-05-23 | MLB | SPREAD | home | 3.0 | 0.75 | -135 | 0 | 0 | 0 | 1 | 14 | 0.40 | W | +0.6u |
+| 2026-05-23 | MLB | TOTAL | under | 2.5 | 0.30 | +108 | 0 | 0 | 0 | 0 | 1 | 0.00 | P | +0.0u |
+| 2026-05-23 | MLB | ML | home | 4.0 | 2.50 | +118 | 1 | 0 | 1 | 1 | -20 | 1.10 | W | +2.9u |
+| 2026-05-23 | MLB | ML | away | 3.0 | 1.25 | +166 | 2 | 1 | 3 | 2 | -41 | -0.30 | W | +1.8u |
+| 2026-05-23 | MLB | SPREAD | away | 4.5 | 2.25 | -123 | 1 | 0 | 1 | 2 | 8 | -0.90 | W | +1.6u |
+| 2026-05-23 | MLB | TOTAL | over | 2.5 | 0.30 | -111 | 1 | 0 | 1 | 0 | 15 | 0.00 | L | -0.3u |
 | 2026-05-23 | NBA | SPREAD | home | 5.0 | 3.00 | -107 | 5 | 1 | 6 | 2 | 24 | 0.20 | L | -3.0u |
 | 2026-05-23 | NBA | TOTAL | under | 5.0 | 3.00 | +102 | 1 | -1 | 0 | 6 | 1 | 0.00 | L | -3.0u |
 | 2026-05-23 | NHL | ML | home | 5.0 | 5.00 | -205 | 8 | 0 | 8 | 3 | 4 | -0.70 | W | +2.4u |
 | 2026-05-23 | NHL | TOTAL | under | 3.0 | 0.30 | -110 | 1 | 1 | 2 | 0 | -3 | 0.00 | W | +0.3u |
 | 2026-05-24 | MLB | ML | home | 4.5 | 3.75 | -101 | 2 | 1 | 3 | 2 | -25 | 0.00 | L | -3.8u |
 | 2026-05-24 | MLB | ML | home | 3.0 | 1.25 | -189 | 1 | 0 | 1 | 0 | 0 | 0.00 | W | +0.7u |
-| 2026-05-24 | MLB | TOTAL | under | 4.0 | 0.75 | -110 | 1 | 0 | 1 | 2 | -6 | 0.00 | L | -0.8u |
-| 2026-05-24 | MLB | TOTAL | under | 4.0 | 1.65 | -110 | 1 | 1 | 2 | 0 | -36 | 0.00 | L | -1.6u |
+| 2026-05-24 | MLB | TOTAL | under | 4.0 | 0.75 | -110 | 1 | 0 | 1 | 2 | -8 | 0.00 | L | -0.8u |
+| 2026-05-24 | MLB | TOTAL | under | 4.0 | 1.65 | -110 | 1 | 1 | 2 | 1 | -32 | 0.00 | L | -1.6u |
 | 2026-05-24 | MLB | ML | home | 5.0 | 5.00 | -115 | 1 | 1 | 2 | 1 | -6 | 0.00 | W | +4.3u |
-| 2026-05-24 | MLB | TOTAL | under | 3.0 | 0.75 | -110 | 2 | 0 | 2 | 1 | 4 | 0.00 | W | +0.7u |
-| 2026-05-24 | MLB | TOTAL | under | 4.0 | 1.65 | -110 | 1 | 0 | 1 | 1 | 5 | 0.00 | L | -1.6u |
+| 2026-05-24 | MLB | TOTAL | under | 3.0 | 0.75 | -110 | 2 | 0 | 2 | 1 | 5 | 0.00 | W | +0.7u |
+| 2026-05-24 | MLB | TOTAL | under | 4.0 | 1.65 | -110 | 1 | 0 | 1 | 1 | 6 | 0.00 | L | -1.6u |
 | 2026-05-24 | MLB | ML | home | 2.5 | 0.50 | +144 | 1 | 1 | 2 | -1 | -35 | 0.00 | L | -0.5u |
-| 2026-05-24 | MLB | SPREAD | home | 4.0 | 1.65 | -110 | 2 | 1 | 3 | 2 | -6 | -1.30 | L | -1.6u |
+| 2026-05-24 | MLB | SPREAD | home | 4.0 | 1.65 | -110 | 2 | 1 | 3 | 2 | -5 | -1.30 | L | -1.6u |
 | 2026-05-24 | MLB | ML | home | 3.0 | 1.25 | -107 | 1 | 0 | 1 | 1 | 13 | 0.00 | W | +1.2u |
-| 2026-05-24 | MLB | TOTAL | under | 2.5 | 1.00 | -101 | 1 | 1 | 2 | 1 | 13 | 0.00 | W | +0.0u |
-| 2026-05-24 | MLB | TOTAL | under | 2.5 | 0.30 | -104 | 0 | 0 | 0 | 1 | 0 | 0.00 | W | +0.3u |
-| 2026-05-24 | MLB | ML | away | 4.0 | 1.25 | +148 | 2 | 2 | 4 | 0 | -35 | -1.40 | W | +1.9u |
-| 2026-05-24 | MLB | ML | away | 3.0 | 1.25 | -122 | -1 | 1 | 0 | 0 | -26 | -1.10 | L | -1.3u |
+| 2026-05-24 | MLB | TOTAL | under | 2.5 | 1.00 | -101 | 1 | 1 | 2 | 1 | 14 | 0.00 | W | +0.0u |
+| 2026-05-24 | MLB | TOTAL | under | 2.5 | 0.30 | -104 | 0 | 0 | 0 | 1 | -2 | 0.00 | W | +0.3u |
+| 2026-05-24 | MLB | ML | away | 4.0 | 1.25 | +148 | 2 | 2 | 4 | 0 | -37 | -1.40 | W | +1.9u |
+| 2026-05-24 | MLB | ML | away | 3.0 | 1.25 | -122 | -1 | 1 | 0 | 0 | -27 | -1.10 | L | -1.3u |
 | 2026-05-24 | MLB | TOTAL | over | 3.0 | 0.75 | -110 | 1 | 0 | 1 | 2 | -5 | 0.00 | L | -0.8u |
 | 2026-05-24 | MLB | SPREAD | home | 3.0 | 0.75 | +134 | 1 | 0 | 1 | 1 | 0 | 0.00 | L | -0.8u |
 | 2026-05-24 | MLB | TOTAL | under | 3.0 | 0.75 | -110 | 1 | 0 | 1 | 0 | -33 | 0.00 | W | +0.7u |
@@ -1142,624 +1143,645 @@ _Sortable raw data behind every section. Use to spot-check individual decisions.
 | 2026-05-24 | NHL | ML | away | 4.0 | 2.75 | -136 | 3 | 0 | 3 | 1 | 4 | -0.70 | L | -2.8u |
 | 2026-05-25 | MLB | ML | home | 5.0 | 5.00 | -149 | 1 | 0 | 1 | 2 | -9 | -0.70 | L | -5.0u |
 | 2026-05-25 | MLB | ML | home | 5.0 | 5.00 | -310 | 2 | 0 | 2 | 1 | 2 | -1.20 | W | +1.6u |
-| 2026-05-25 | MLB | TOTAL | over | 4.0 | 1.65 | +103 | 1 | 0 | 1 | 2 | 18 | 0.00 | L | -1.6u |
+| 2026-05-25 | MLB | TOTAL | over | 4.0 | 1.65 | +103 | 1 | 0 | 1 | 2 | 20 | 0.00 | L | -1.6u |
 | 2026-05-25 | MLB | ML | home | 4.0 | 1.25 | -125 | 1 | -1 | 0 | 1 | -3 | -1.90 | L | -1.3u |
 | 2026-05-25 | MLB | SPREAD | away | 4.0 | 1.65 | -184 | 1 | 0 | 1 | 1 | -6 | 28.40 | W | +2.4u |
 | 2026-05-25 | MLB | TOTAL | under | 5.0 | 2.25 | -112 | 4 | 0 | 4 | 4 | 7 | 0.00 | L | -2.3u |
-| 2026-05-25 | MLB | ML | home | 5.0 | 1.25 | -160 | 3 | 0 | 3 | 2 | -41 | -1.10 | L | -1.3u |
-| 2026-05-25 | MLB | TOTAL | over | 5.0 | 3.00 | -110 | 3 | 0 | 3 | 3 | 30 | 0.00 | W | +2.5u |
+| 2026-05-25 | MLB | ML | home | 5.0 | 1.25 | -160 | 3 | 0 | 3 | 2 | -42 | -1.10 | L | -1.3u |
+| 2026-05-25 | MLB | TOTAL | over | 5.0 | 3.00 | -110 | 3 | 0 | 3 | 3 | 32 | 0.00 | W | +2.5u |
 | 2026-05-25 | MLB | ML | away | 5.0 | 3.75 | -108 | 0 | 0 | 0 | 3 | -28 | -1.70 | L | -3.8u |
-| 2026-05-25 | MLB | SPREAD | home | 5.0 | 1.65 | -124 | 2 | 0 | 2 | 2 | -6 | -1.30 | W | +0.5u |
-| 2026-05-25 | MLB | ML | away | 5.0 | 5.00 | -119 | 2 | -1 | 1 | 4 | 11 | -0.60 | W | +3.1u |
-| 2026-05-25 | MLB | ML | away | 2.5 | 2.75 | -113 | 0 | 0 | 0 | 0 | -13 | -1.80 | W | +1.1u |
+| 2026-05-25 | MLB | SPREAD | home | 5.0 | 1.65 | -124 | 2 | 0 | 2 | 2 | -5 | -1.30 | W | +0.5u |
+| 2026-05-25 | MLB | ML | away | 5.0 | 5.00 | -119 | 2 | -1 | 1 | 4 | 13 | -0.60 | W | +3.1u |
+| 2026-05-25 | MLB | ML | away | 2.5 | 2.75 | -113 | 0 | 0 | 0 | 0 | -14 | -1.80 | W | +1.1u |
 | 2026-05-25 | MLB | ML | home | 4.0 | 5.00 | -209 | -1 | 0 | -1 | 2 | -9 | -0.80 | W | +2.3u |
-| 2026-05-25 | MLB | TOTAL | under | 5.0 | 0.75 | -101 | 2 | 1 | 3 | 1 | -6 | 0.00 | W | +0.7u |
-| 2026-05-25 | MLB | SPREAD | home | 5.0 | 1.65 | -178 | 1 | 0 | 1 | 2 | -6 | -1.60 | W | +0.9u |
+| 2026-05-25 | MLB | TOTAL | under | 5.0 | 0.75 | -101 | 2 | 1 | 3 | 1 | -7 | 0.00 | W | +0.7u |
+| 2026-05-25 | MLB | SPREAD | home | 5.0 | 1.65 | -178 | 1 | 0 | 1 | 2 | -5 | -1.60 | W | +0.9u |
 | 2026-05-25 | NBA | ML | away | 5.0 | 5.00 | -125 | 0 | 0 | 0 | 3 | 26 | -0.40 | W | +4.0u |
 | 2026-05-25 | NBA | TOTAL | under | 5.0 | 3.00 | -110 | 2 | 2 | 4 | 0 | -2 | 0.00 | L | -3.0u |
 | 2026-05-25 | NHL | ML | home | 5.0 | 2.50 | +120 | 8 | 4 | 12 | 1 | -4 | -0.60 | L | -2.5u |
 | 2026-05-25 | NHL | SPREAD | home | 4.5 | 2.25 | -215 | 1 | 1 | 2 | 1 | 1 | -0.80 | W | +1.1u |
-| 2026-05-26 | MLB | TOTAL | over | 5.0 | 1.65 | -110 | 2 | 0 | 2 | 2 | -6 | 0.00 | W | +1.5u |
+| 2026-05-26 | MLB | TOTAL | over | 5.0 | 1.65 | -110 | 2 | 0 | 2 | 2 | -5 | 0.00 | W | +1.5u |
 | 2026-05-26 | MLB | ML | away | 5.0 | 1.50 | +200 | 2 | 0 | 2 | 2 | -21 | -1.00 | L | -1.5u |
-| 2026-05-26 | MLB | SPREAD | away | 5.0 | 1.00 | -101 | 2 | 1 | 3 | 2 | -6 | 0.50 | L | -1.0u |
-| 2026-05-26 | MLB | ML | away | 2.5 | 1.25 | +113 | 0 | 0 | 0 | -1 | -13 | -1.50 | W | +1.4u |
-| 2026-05-26 | MLB | ML | home | 2.5 | 1.25 | -130 | 1 | 0 | 1 | -1 | -13 | -1.30 | W | +1.0u |
-| 2026-05-26 | MLB | ML | away | 5.0 | 5.00 | -200 | 1 | 0 | 1 | 1 | 13 | -0.60 | W | +1.9u |
-| 2026-05-26 | MLB | SPREAD | home | 4.0 | 1.00 | +105 | 1 | 0 | 1 | 2 | 18 | -0.20 | L | -1.0u |
-| 2026-05-26 | MLB | ML | away | 5.0 | 5.00 | -102 | 3 | 1 | 4 | 3 | -28 | -0.50 | W | +4.9u |
+| 2026-05-26 | MLB | SPREAD | away | 5.0 | 1.00 | -101 | 2 | 1 | 3 | 2 | -5 | 0.50 | L | -1.0u |
+| 2026-05-26 | MLB | ML | away | 2.5 | 1.25 | +113 | 0 | 0 | 0 | -1 | -14 | -1.50 | W | +1.4u |
+| 2026-05-26 | MLB | ML | home | 2.5 | 1.25 | -130 | 1 | 0 | 1 | -1 | -14 | -1.30 | W | +1.0u |
+| 2026-05-26 | MLB | ML | away | 5.0 | 5.00 | -200 | 1 | 0 | 1 | 1 | 14 | -0.60 | W | +1.9u |
+| 2026-05-26 | MLB | SPREAD | home | 4.0 | 1.00 | +105 | 1 | 0 | 1 | 2 | 20 | -0.20 | L | -1.0u |
+| 2026-05-26 | MLB | ML | away | 5.0 | 5.00 | -102 | 3 | 1 | 4 | 3 | -30 | -0.50 | W | +4.9u |
 | 2026-05-26 | MLB | ML | home | 5.0 | 3.75 | -108 | 3 | 1 | 4 | 3 | 7 | -0.20 | L | -3.8u |
-| 2026-05-26 | MLB | ML | home | 5.0 | 5.00 | -105 | 2 | 1 | 3 | 1 | 13 | -2.00 | W | +3.6u |
-| 2026-05-26 | MLB | ML | away | 5.0 | 2.50 | +116 | 1 | 0 | 1 | 1 | 13 | -1.00 | W | +2.9u |
+| 2026-05-26 | MLB | ML | home | 5.0 | 5.00 | -105 | 2 | 1 | 3 | 1 | 14 | -2.00 | W | +3.6u |
+| 2026-05-26 | MLB | ML | away | 5.0 | 2.50 | +116 | 1 | 0 | 1 | 1 | 14 | -1.00 | W | +2.9u |
 | 2026-05-26 | NBA | ML | home | 5.0 | 5.00 | -198 | 2 | 4 | 6 | 2 | 12 | -0.70 | W | +1.9u |
 | 2026-05-26 | NBA | SPREAD | home | 5.0 | 1.00 | -110 | 2 | 2 | 4 | 3 | 21 | 1.20 | W | +0.0u |
 | 2026-05-26 | NBA | TOTAL | over | 5.0 | 3.00 | -108 | 0 | 0 | 0 | 3 | -3 | 0.00 | W | +2.6u |
 | 2026-05-26 | NHL | SPREAD | home | 5.0 | 2.25 | -250 | 2 | 0 | 2 | 2 | 6 | 0.80 | W | +0.9u |
 | 2026-05-27 | MLB | ML | home | 4.5 | 0.50 | -102 | 3 | 1 | 4 | 2 | -11 | -1.10 | W | +0.4u |
 | 2026-05-27 | MLB | SPREAD | away | 5.0 | 2.50 | +141 | 1 | 1 | 2 | 4 | -6 | 0.80 | L | -2.5u |
-| 2026-05-27 | MLB | TOTAL | under | 4.0 | 1.00 | +105 | 2 | 0 | 2 | 2 | -6 | 0.00 | L | -1.0u |
+| 2026-05-27 | MLB | TOTAL | under | 4.0 | 1.00 | +105 | 2 | 0 | 2 | 2 | -5 | 0.00 | L | -1.0u |
 | 2026-05-27 | MLB | ML | home | 4.5 | 3.75 | -420 | 1 | 1 | 2 | 0 | 0 | -0.50 | W | +0.7u |
-| 2026-05-27 | MLB | ML | home | 3.0 | 1.25 | -144 | -1 | -1 | -2 | 0 | -16 | -1.00 | L | -1.3u |
-| 2026-05-27 | MLB | ML | away | 5.0 | 0.50 | -102 | 3 | 0 | 3 | 2 | -9 | -1.00 | L | -0.5u |
-| 2026-05-27 | MLB | SPREAD | away | 4.0 | 0.75 | -163 | 0 | 0 | 0 | 1 | 13 | 0.40 | W | +0.5u |
+| 2026-05-27 | MLB | ML | home | 3.0 | 1.25 | -144 | -1 | -1 | -2 | 0 | -17 | -1.00 | L | -1.3u |
+| 2026-05-27 | MLB | ML | away | 5.0 | 0.50 | -102 | 3 | 0 | 3 | 2 | -10 | -1.00 | L | -0.5u |
+| 2026-05-27 | MLB | SPREAD | away | 4.0 | 0.75 | -163 | 0 | 0 | 0 | 1 | 14 | 0.40 | W | +0.5u |
 | 2026-05-27 | MLB | TOTAL | under | 5.0 | 1.00 | -112 | 3 | 1 | 4 | 3 | 4 | 0.00 | W | +0.0u |
-| 2026-05-27 | MLB | ML | away | 4.0 | 1.00 | -108 | 1 | -1 | 0 | 0 | 22 | -0.90 | L | -1.0u |
-| 2026-05-27 | MLB | ML | home | 5.0 | 0.50 | +132 | 2 | 0 | 2 | 2 | 21 | -0.50 | L | -0.5u |
-| 2026-05-27 | MLB | TOTAL | under | 4.0 | 1.65 | +104 | 2 | 0 | 2 | 2 | 18 | 0.00 | W | +1.7u |
-| 2026-05-27 | MLB | TOTAL | under | 4.0 | 0.75 | +104 | 2 | 0 | 2 | 2 | 26 | 0.00 | W | +0.8u |
+| 2026-05-27 | MLB | ML | away | 4.0 | 1.00 | -108 | 1 | -1 | 0 | 0 | 23 | -0.90 | L | -1.0u |
+| 2026-05-27 | MLB | ML | home | 5.0 | 0.50 | +132 | 2 | 0 | 2 | 2 | 24 | -0.50 | L | -0.5u |
+| 2026-05-27 | MLB | TOTAL | under | 4.0 | 1.65 | +104 | 2 | 0 | 2 | 2 | 20 | 0.00 | W | +1.7u |
+| 2026-05-27 | MLB | TOTAL | under | 4.0 | 0.75 | +104 | 2 | 0 | 2 | 2 | 27 | 0.00 | W | +0.8u |
 | 2026-05-27 | MLB | ML | away | 5.0 | 2.50 | +128 | 3 | 2 | 5 | 2 | -30 | -0.30 | L | -2.5u |
-| 2026-05-27 | MLB | SPREAD | away | 4.5 | 1.65 | -145 | 1 | 1 | 2 | 1 | 13 | -0.30 | W | +1.1u |
-| 2026-05-27 | MLB | ML | away | 5.0 | 5.00 | -126 | 2 | 0 | 2 | 3 | 37 | -4.10 | L | -5.0u |
+| 2026-05-27 | MLB | SPREAD | away | 4.5 | 1.65 | -145 | 1 | 1 | 2 | 1 | 14 | -0.30 | W | +1.1u |
+| 2026-05-27 | MLB | ML | away | 5.0 | 5.00 | -126 | 2 | 0 | 2 | 3 | 39 | -4.10 | L | -5.0u |
 | 2026-05-27 | MLB | ML | home | 4.0 | 1.25 | -190 | 1 | 0 | 1 | 0 | 0 | -0.70 | W | +0.7u |
 | 2026-05-27 | MLB | SPREAD | away | 5.0 | 3.00 | -135 | 0 | 0 | 0 | 3 | 13 | -0.90 | W | +2.2u |
 | 2026-05-27 | NHL | SPREAD | home | 5.0 | 1.00 | -194 | 3 | 0 | 3 | 1 | 1 | 0.00 | L | -1.0u |
 | 2026-05-27 | NHL | TOTAL | over | 5.0 | 2.25 | -112 | 3 | 0 | 3 | 1 | -1 | 0.00 | L | -2.3u |
-| 2026-05-28 | MLB | TOTAL | over | 5.0 | 3.00 | +101 | 3 | -1 | 2 | 3 | 49 | 0.00 | W | +2.5u |
+| 2026-05-28 | MLB | TOTAL | over | 5.0 | 3.00 | +101 | 3 | -1 | 2 | 3 | 51 | 0.00 | W | +2.5u |
 | 2026-05-28 | MLB | ML | home | 5.0 | 1.25 | -140 | 2 | 0 | 2 | 2 | -20 | -0.50 | L | -1.3u |
-| 2026-05-28 | MLB | TOTAL | under | 5.0 | 1.00 | -107 | 1 | 0 | 1 | 1 | 26 | 0.00 | W | +0.0u |
+| 2026-05-28 | MLB | TOTAL | under | 5.0 | 1.00 | -107 | 1 | 0 | 1 | 1 | 27 | 0.00 | W | +0.0u |
 | 2026-05-28 | MLB | ML | away | 5.0 | 2.50 | +128 | 3 | 1 | 4 | 3 | -28 | -0.60 | L | -2.5u |
-| 2026-05-28 | MLB | TOTAL | over | 2.5 | 1.65 | -108 | 2 | 0 | 2 | 2 | -6 | 0.00 | L | -1.6u |
+| 2026-05-28 | MLB | TOTAL | over | 2.5 | 1.65 | -108 | 2 | 0 | 2 | 2 | -5 | 0.00 | L | -1.6u |
 | 2026-05-28 | NBA | SPREAD | away | 5.0 | 1.00 | -110 | 1 | 2 | 3 | 0 | -2 | -0.90 | L | -1.0u |
-| 2026-05-29 | MLB | ML | home | 5.0 | 2.50 | +118 | 5 | 1 | 6 | 5 | 33 | -0.90 | L | -2.5u |
-| 2026-05-29 | MLB | SPREAD | home | 5.0 | 0.75 | -135 | 2 | 0 | 2 | 1 | -36 | 1.00 | L | -0.8u |
-| 2026-05-29 | MLB | ML | home | 5.0 | 3.75 | -124 | 2 | 1 | 3 | 2 | -6 | -1.00 | W | +3.0u |
-| 2026-05-29 | MLB | TOTAL | over | 4.5 | 1.65 | -106 | 2 | 0 | 2 | 3 | 26 | 0.00 | L | -1.6u |
+| 2026-05-29 | MLB | ML | home | 5.0 | 2.50 | +118 | 5 | 1 | 6 | 5 | 35 | -0.90 | L | -2.5u |
+| 2026-05-29 | MLB | SPREAD | home | 5.0 | 0.75 | -135 | 2 | 0 | 2 | 1 | -37 | 1.00 | L | -0.8u |
+| 2026-05-29 | MLB | ML | home | 5.0 | 3.75 | -124 | 2 | 1 | 3 | 2 | -5 | -1.00 | W | +3.0u |
+| 2026-05-29 | MLB | TOTAL | over | 4.5 | 1.65 | -106 | 2 | 0 | 2 | 3 | 27 | 0.00 | L | -1.6u |
 | 2026-05-29 | MLB | ML | home | 4.0 | 2.50 | +120 | 1 | 0 | 1 | 1 | -2 | 0.40 | W | +3.0u |
-| 2026-05-29 | MLB | TOTAL | over | 4.5 | 2.25 | -112 | 2 | 0 | 2 | 3 | 52 | 0.00 | W | +2.0u |
-| 2026-05-29 | MLB | SPREAD | away | 4.0 | 0.75 | +150 | 0 | 0 | 0 | 1 | 13 | -0.50 | L | -0.8u |
-| 2026-05-29 | MLB | ML | away | 5.0 | 2.50 | +140 | 2 | 1 | 3 | 1 | -37 | 1.00 | L | -2.5u |
-| 2026-05-29 | MLB | TOTAL | over | 4.0 | 1.65 | -103 | 0 | 0 | 0 | 2 | -6 | 0.00 | W | +1.6u |
-| 2026-05-29 | MLB | ML | away | 4.5 | 1.25 | -142 | 0 | 1 | 1 | 0 | 48 | -1.20 | W | +0.3u |
-| 2026-05-29 | MLB | SPREAD | home | 5.0 | 1.65 | -135 | 1 | 0 | 1 | 2 | -6 | 0.40 | W | +1.2u |
-| 2026-05-29 | MLB | ML | home | 4.5 | 1.25 | -134 | 1 | 0 | 1 | 0 | -22 | -1.70 | W | +2.8u |
+| 2026-05-29 | MLB | TOTAL | over | 4.5 | 2.25 | -112 | 2 | 0 | 2 | 3 | 55 | 0.00 | W | +2.0u |
+| 2026-05-29 | MLB | SPREAD | away | 4.0 | 0.75 | +150 | 0 | 0 | 0 | 1 | 14 | -0.50 | L | -0.8u |
+| 2026-05-29 | MLB | ML | away | 5.0 | 2.50 | +140 | 2 | 1 | 3 | 1 | -38 | 1.00 | L | -2.5u |
+| 2026-05-29 | MLB | TOTAL | over | 4.0 | 1.65 | -103 | 0 | 0 | 0 | 2 | -5 | 0.00 | W | +1.6u |
+| 2026-05-29 | MLB | ML | away | 4.5 | 1.25 | -142 | 0 | 1 | 1 | 0 | 50 | -1.20 | W | +0.3u |
+| 2026-05-29 | MLB | SPREAD | home | 5.0 | 1.65 | -135 | 1 | 0 | 1 | 2 | -5 | 0.40 | W | +1.2u |
+| 2026-05-29 | MLB | ML | home | 4.5 | 1.25 | -134 | 1 | 0 | 1 | 0 | -24 | -1.70 | W | +2.8u |
 | 2026-05-29 | MLB | SPREAD | away | 5.0 | 2.25 | -184 | 0 | 0 | 0 | 2 | 13 | -1.00 | W | +1.2u |
-| 2026-05-29 | MLB | TOTAL | over | 4.0 | 0.75 | -109 | 1 | 0 | 1 | 2 | 26 | 0.00 | W | +0.7u |
-| 2026-05-29 | MLB | ML | home | 5.0 | 2.75 | -106 | 2 | 1 | 3 | 1 | -8 | 0.70 | L | -2.8u |
-| 2026-05-29 | MLB | SPREAD | home | 4.0 | 1.65 | -175 | 0 | 0 | 0 | 2 | -6 | -0.80 | L | -1.6u |
-| 2026-05-29 | MLB | TOTAL | over | 4.5 | 0.30 | +105 | 2 | 1 | 3 | 1 | -8 | 0.00 | W | +0.3u |
-| 2026-05-29 | MLB | ML | home | 4.5 | 3.75 | -122 | 0 | 1 | 1 | 1 | 16 | -0.60 | L | -3.8u |
-| 2026-05-29 | MLB | TOTAL | over | 3.0 | 1.00 | -108 | 0 | 0 | 0 | 1 | 13 | 0.00 | W | +1.5u |
+| 2026-05-29 | MLB | TOTAL | over | 4.0 | 0.75 | -109 | 1 | 0 | 1 | 2 | 27 | 0.00 | W | +0.7u |
+| 2026-05-29 | MLB | ML | home | 5.0 | 2.75 | -106 | 2 | 1 | 3 | 1 | -9 | 0.70 | L | -2.8u |
+| 2026-05-29 | MLB | SPREAD | home | 4.0 | 1.65 | -175 | 0 | 0 | 0 | 2 | -5 | -0.80 | L | -1.6u |
+| 2026-05-29 | MLB | TOTAL | over | 4.5 | 0.30 | +105 | 2 | 1 | 3 | 1 | -9 | 0.00 | W | +0.3u |
+| 2026-05-29 | MLB | ML | home | 4.5 | 3.75 | -122 | 0 | 1 | 1 | 1 | 18 | -0.60 | L | -3.8u |
+| 2026-05-29 | MLB | TOTAL | over | 3.0 | 1.00 | -108 | 0 | 0 | 0 | 1 | 14 | 0.00 | W | +1.5u |
 | 2026-05-29 | NHL | ML | away | 5.0 | 1.00 | +205 | 3 | 0 | 3 | 0 | -4 | -0.60 | L | -1.0u |
 | 2026-05-29 | NHL | SPREAD | away | 5.0 | 3.00 | -118 | 3 | 1 | 4 | 1 | -4 | 0.00 | L | -3.0u |
 | 2026-05-29 | NHL | TOTAL | under | 5.0 | 2.25 | -106 | 2 | 0 | 2 | 2 | 1 | 0.00 | L | -2.3u |
 | 2026-05-30 | MLB | ML | away | 5.0 | 2.50 | +132 | 2 | 1 | 3 | 2 | -25 | 0.00 | L | -2.5u |
 | 2026-05-30 | MLB | ML | away | 4.5 | 2.75 | -125 | 1 | 2 | 3 | 1 | 29 | -0.60 | W | +2.3u |
-| 2026-05-30 | MLB | ML | home | 5.0 | 5.00 | -130 | 1 | 0 | 1 | 2 | -8 | -1.20 | L | -5.0u |
+| 2026-05-30 | MLB | ML | home | 5.0 | 5.00 | -130 | 1 | 0 | 1 | 2 | -9 | -1.20 | L | -5.0u |
 | 2026-05-30 | MLB | ML | away | 4.0 | 3.75 | -132 | 1 | 1 | 2 | 0 | 33 | -1.00 | W | +2.9u |
-| 2026-05-30 | MLB | SPREAD | home | 3.0 | 0.75 | -143 | 0 | 1 | 1 | 0 | -19 | -1.40 | L | -0.8u |
+| 2026-05-30 | MLB | SPREAD | home | 3.0 | 0.75 | -143 | 0 | 1 | 1 | 0 | -20 | -1.40 | L | -0.8u |
 | 2026-05-30 | MLB | ML | away | 5.0 | 3.75 | -118 | 1 | 1 | 2 | 1 | -7 | -1.30 | L | -3.8u |
-| 2026-05-30 | MLB | SPREAD | away | 4.0 | 1.00 | +152 | 1 | 0 | 1 | 1 | 13 | 0.20 | L | -1.0u |
+| 2026-05-30 | MLB | SPREAD | away | 4.0 | 1.00 | +152 | 1 | 0 | 1 | 1 | 14 | 0.20 | L | -1.0u |
 | 2026-05-30 | MLB | ML | home | 5.0 | 5.00 | -120 | 0 | 0 | 0 | 3 | -28 | -1.10 | W | +4.2u |
 | 2026-05-30 | MLB | TOTAL | over | 4.5 | 0.75 | +100 | 1 | 1 | 2 | 1 | -14 | 0.00 | W | +0.8u |
-| 2026-05-30 | MLB | ML | home | 4.0 | 2.75 | -130 | 0 | 1 | 1 | -1 | -13 | -1.60 | W | +0.4u |
-| 2026-05-30 | MLB | TOTAL | over | 4.0 | 2.25 | -116 | 2 | 0 | 2 | 2 | 27 | 0.00 | W | +1.9u |
+| 2026-05-30 | MLB | ML | home | 4.0 | 2.75 | -130 | 0 | 1 | 1 | -1 | -14 | -1.60 | W | +0.4u |
+| 2026-05-30 | MLB | TOTAL | over | 4.0 | 2.25 | -116 | 2 | 0 | 2 | 2 | 28 | 0.00 | W | +1.9u |
 | 2026-05-30 | MLB | TOTAL | under | 4.0 | 1.65 | -107 | 1 | 0 | 1 | 1 | 14 | 0.00 | L | -1.6u |
 | 2026-05-30 | MLB | ML | home | 4.0 | 2.50 | +129 | 1 | 0 | 1 | 1 | -19 | -0.90 | W | +0.7u |
-| 2026-05-30 | MLB | SPREAD | home | 5.0 | 1.65 | -120 | 2 | 1 | 3 | 2 | -6 | -0.60 | W | +1.4u |
+| 2026-05-30 | MLB | SPREAD | home | 5.0 | 1.65 | -120 | 2 | 1 | 3 | 2 | -5 | -0.60 | W | +1.4u |
 | 2026-05-30 | MLB | ML | away | 5.0 | 2.50 | +108 | 1 | 0 | 1 | 3 | -28 | -0.90 | W | +2.7u |
 | 2026-05-30 | MLB | ML | home | 4.0 | 0.50 | +110 | 1 | 0 | 1 | 1 | -19 | -0.20 | W | +0.6u |
 | 2026-05-30 | MLB | ML | home | 5.0 | 1.25 | -102 | 2 | 0 | 2 | 1 | -19 | -0.70 | W | +1.2u |
 | 2026-05-30 | MLB | ML | away | 5.0 | 3.75 | -122 | 1 | 1 | 2 | 2 | -9 | -0.20 | L | -3.8u |
-| 2026-05-30 | MLB | TOTAL | under | 3.0 | 0.75 | -108 | 0 | 0 | 0 | 1 | 13 | 0.00 | L | -0.8u |
+| 2026-05-30 | MLB | TOTAL | under | 3.0 | 0.75 | -108 | 0 | 0 | 0 | 1 | 14 | 0.00 | L | -0.8u |
 | 2026-05-30 | NBA | ML | home | 5.0 | 1.00 | -154 | 3 | 3 | 6 | 0 | 5 | 0.00 | L | -1.0u |
 | 2026-05-30 | NBA | TOTAL | under | 5.0 | 2.50 | -109 | 5 | 0 | 5 | 6 | 6 | 0.00 | L | -2.5u |
 | 2026-05-31 | MLB | ML | away | 3.0 | 2.75 | -125 | -2 | 0 | -2 | 1 | -3 | -1.20 | L | -2.8u |
-| 2026-05-31 | MLB | TOTAL | under | 5.0 | 1.65 | -114 | 2 | 0 | 2 | 3 | 7 | 0.00 | L | -1.6u |
-| 2026-05-31 | MLB | ML | home | 2.5 | 2.75 | -115 | 1 | 1 | 2 | 1 | 37 | 0.00 | W | +2.4u |
+| 2026-05-31 | MLB | TOTAL | under | 5.0 | 1.65 | -114 | 2 | 0 | 2 | 3 | 8 | 0.00 | L | -1.6u |
+| 2026-05-31 | MLB | ML | home | 2.5 | 2.75 | -115 | 1 | 1 | 2 | 1 | 39 | 0.00 | W | +2.4u |
 | 2026-05-31 | MLB | ML | away | 5.0 | 1.00 | +115 | -1 | 0 | -1 | 2 | -9 | -0.60 | L | -1.0u |
-| 2026-05-31 | MLB | SPREAD | away | 5.0 | 1.00 | -117 | 3 | 1 | 4 | 3 | -1 | -0.20 | L | -1.0u |
+| 2026-05-31 | MLB | SPREAD | away | 5.0 | 1.00 | -117 | 3 | 1 | 4 | 3 | 1 | -0.20 | L | -1.0u |
 | 2026-05-31 | MLB | ML | home | 5.0 | 5.00 | -164 | 0 | 1 | 1 | 2 | -9 | -1.20 | W | +2.3u |
-| 2026-05-31 | MLB | ML | away | 3.0 | 1.25 | -184 | 0 | 0 | 0 | 0 | -35 | -1.70 | W | +0.7u |
-| 2026-05-31 | MLB | ML | home | 2.5 | 1.25 | -232 | 0 | 0 | 0 | 0 | 15 | -0.50 | W | +0.5u |
+| 2026-05-31 | MLB | ML | away | 3.0 | 1.25 | -184 | 0 | 0 | 0 | 0 | -37 | -1.70 | W | +0.7u |
+| 2026-05-31 | MLB | ML | home | 2.5 | 1.25 | -232 | 0 | 0 | 0 | 0 | 16 | -0.50 | W | +0.5u |
 | 2026-05-31 | MLB | ML | home | 5.0 | 5.00 | -102 | 0 | 1 | 1 | 3 | -15 | 0.20 | W | +4.9u |
-| 2026-05-31 | MLB | TOTAL | over | 4.0 | 1.00 | +101 | 2 | 1 | 3 | 2 | 9 | 0.00 | L | -1.0u |
-| 2026-05-31 | MLB | ML | away | 4.5 | 2.50 | +110 | 0 | 0 | 0 | 0 | -35 | -1.10 | L | -2.5u |
-| 2026-06-01 | MLB | ML | home | 4.5 | 3.00 | -155 | 3 | 2 | 5 | 2 | 13 | -1.00 | W | +2.1u |
-| 2026-06-01 | MLB | ML | away | 4.0 | 1.00 | +135 | 2 | 2 | 4 | 2 | 26 | -0.20 | W | +1.4u |
-| 2026-06-01 | MLB | ML | away | 5.0 | 2.50 | +160 | 2 | -1 | 1 | 2 | 21 | -1.30 | W | +2.7u |
+| 2026-05-31 | MLB | TOTAL | over | 4.0 | 1.00 | +101 | 2 | 1 | 3 | 2 | 10 | 0.00 | L | -1.0u |
+| 2026-05-31 | MLB | ML | away | 4.5 | 2.50 | +110 | 0 | 0 | 0 | 0 | -37 | -1.10 | L | -2.5u |
+| 2026-06-01 | MLB | ML | home | 4.5 | 3.00 | -155 | 3 | 2 | 5 | 2 | 14 | -1.00 | W | +2.1u |
+| 2026-06-01 | MLB | ML | away | 4.0 | 1.00 | +135 | 2 | 2 | 4 | 2 | 28 | -0.20 | W | +1.4u |
+| 2026-06-01 | MLB | ML | away | 5.0 | 2.50 | +160 | 2 | -1 | 1 | 2 | 22 | -1.30 | W | +2.7u |
 | 2026-06-01 | MLB | TOTAL | under | 4.0 | 1.00 | -116 | 0 | 0 | 0 | 2 | -12 | 0.00 | L | -1.0u |
-| 2026-06-01 | MLB | ML | home | 3.0 | 0.50 | -142 | -1 | 0 | -1 | -2 | -15 | -0.40 | L | -0.5u |
-| 2026-06-01 | MLB | TOTAL | under | 5.0 | 5.00 | -110 | 1 | 0 | 1 | 0 | 10 | 0.00 | L | -5.0u |
-| 2026-06-01 | MLB | TOTAL | under | 4.5 | 3.00 | -110 | 1 | 1 | 2 | 2 | -28 | 0.00 | W | +2.7u |
+| 2026-06-01 | MLB | ML | home | 3.0 | 0.50 | -142 | -1 | 0 | -1 | -2 | -16 | -0.40 | L | -0.5u |
+| 2026-06-01 | MLB | TOTAL | under | 5.0 | 5.00 | -110 | 1 | 0 | 1 | 1 | 16 | 0.00 | L | -5.0u |
+| 2026-06-01 | MLB | TOTAL | under | 4.5 | 3.00 | -110 | 1 | 1 | 2 | 3 | -19 | 0.00 | W | +2.7u |
 | 2026-06-02 | MLB | ML | home | 2.5 | 0.25 | -215 | -1 | 0 | -1 | -1 | -13 | -1.40 | L | -0.3u |
-| 2026-06-02 | MLB | TOTAL | under | 4.0 | 1.00 | -117 | 1 | 0 | 1 | 0 | 0 | 0.00 | L | -1.0u |
+| 2026-06-02 | MLB | TOTAL | under | 4.0 | 1.00 | -117 | 1 | 0 | 1 | 0 | -1 | 0.00 | L | -1.0u |
 | 2026-06-02 | MLB | ML | away | 5.0 | 2.50 | +130 | 2 | 0 | 2 | -1 | 25 | -0.60 | W | +3.1u |
-| 2026-06-02 | MLB | ML | away | 3.0 | 0.50 | +100 | 1 | 0 | 1 | 1 | 13 | -1.20 | W | +0.5u |
+| 2026-06-02 | MLB | ML | away | 3.0 | 0.50 | +100 | 1 | 0 | 1 | 1 | 14 | -1.20 | W | +0.5u |
 | 2026-06-02 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 1 | 16 | 0.00 | W | +2.7u |
-| 2026-06-02 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 1 | 16 | 0.00 | L | -3.0u |
+| 2026-06-02 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 0 | 15 | 0.00 | L | -3.0u |
 | 2026-06-02 | MLB | ML | home | 4.0 | 1.00 | -112 | 1 | 0 | 1 | 0 | 0 | -1.10 | L | -1.0u |
 | 2026-06-02 | MLB | ML | home | 4.0 | 1.00 | -106 | 1 | 0 | 1 | 0 | 0 | -0.50 | L | -1.0u |
-| 2026-06-02 | MLB | ML | away | 5.0 | 2.50 | +102 | 0 | -1 | -1 | 1 | -14 | 0.00 | L | -2.5u |
+| 2026-06-02 | MLB | ML | away | 5.0 | 2.50 | +102 | 0 | -1 | -1 | 2 | -8 | 0.00 | L | -2.5u |
 | 2026-06-02 | NHL | TOTAL | over | 5.0 | 5.00 | -110 | 2 | 2 | 4 | 2 | 13 | 0.00 | W | +4.3u |
 | 2026-06-03 | MLB | ML | home | 3.0 | 0.50 | -150 | 3 | 1 | 4 | 4 | -15 | -1.30 | W | +0.3u |
 | 2026-06-03 | MLB | ML | away | 4.0 | 1.00 | +134 | -1 | -1 | -2 | -2 | 9 | -1.00 | W | +1.2u |
 | 2026-06-03 | MLB | ML | away | 4.0 | 1.00 | +125 | 0 | -1 | -1 | -1 | 22 | 0.40 | W | +1.3u |
-| 2026-06-03 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 1 | 51 | 0.00 | L | -3.0u |
+| 2026-06-03 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 1 | 53 | 0.00 | L | -3.0u |
 | 2026-06-03 | MLB | ML | home | 4.5 | 1.50 | +167 | 0 | 0 | 0 | -2 | -20 | -0.40 | L | -1.5u |
-| 2026-06-03 | MLB | SPREAD | away | 4.0 | 1.00 | -111 | 1 | 0 | 1 | 0 | 1 | 0.20 | W | +0.8u |
-| 2026-06-03 | MLB | ML | home | 3.0 | 0.50 | -103 | 3 | 1 | 4 | 2 | -20 | -1.20 | L | -0.5u |
-| 2026-06-03 | MLB | TOTAL | over | 5.0 | 5.00 | -110 | 1 | 0 | 1 | 1 | -16 | 0.00 | L | -5.0u |
+| 2026-06-03 | MLB | SPREAD | away | 4.0 | 1.00 | -111 | 1 | 0 | 1 | 0 | 0 | 0.20 | W | +0.8u |
+| 2026-06-03 | MLB | ML | home | 3.0 | 0.50 | -103 | 3 | 1 | 4 | 2 | -21 | -1.20 | L | -0.5u |
+| 2026-06-03 | MLB | TOTAL | over | 5.0 | 5.00 | -110 | 1 | 0 | 1 | 1 | -17 | 0.00 | L | -5.0u |
 | 2026-06-03 | MLB | ML | away | 3.0 | 0.50 | +119 | 1 | 0 | 1 | -1 | 5 | 0.00 | W | +0.6u |
-| 2026-06-03 | MLB | ML | away | 4.5 | 3.00 | -137 | 0 | 0 | 0 | -2 | 6 | -1.50 | L | -3.0u |
-| 2026-06-03 | MLB | ML | home | 5.0 | 5.00 | -215 | 0 | 1 | 1 | -1 | 22 | -1.00 | W | +2.3u |
+| 2026-06-03 | MLB | ML | away | 4.5 | 3.00 | -137 | 0 | 0 | 0 | -2 | 5 | -1.50 | L | -3.0u |
+| 2026-06-03 | MLB | ML | home | 5.0 | 5.00 | -215 | 0 | 1 | 1 | -1 | 23 | -1.00 | W | +2.3u |
 | 2026-06-03 | MLB | TOTAL | over | 2.5 | 0.25 | -110 | 1 | 1 | 2 | 1 | -22 | 0.00 | L | -0.3u |
-| 2026-06-03 | MLB | TOTAL | under | 4.5 | 2.50 | -110 | 1 | 0 | 1 | 0 | 0 | 0.00 | W | +2.5u |
+| 2026-06-03 | MLB | TOTAL | under | 4.5 | 2.50 | -110 | 1 | 0 | 1 | 0 | -1 | 0.00 | W | +2.5u |
 | 2026-06-03 | MLB | ML | home | 4.5 | 3.00 | -112 | 0 | 0 | 0 | 0 | 0 | -0.90 | W | +2.7u |
 | 2026-06-03 | MLB | TOTAL | under | 5.0 | 5.00 | -110 | 2 | 0 | 2 | 1 | -3 | 0.00 | W | +4.5u |
-| 2026-06-03 | MLB | ML | home | 3.0 | 0.50 | -139 | 0 | 0 | 0 | -2 | 40 | -1.20 | W | +0.3u |
-| 2026-06-03 | MLB | TOTAL | under | 4.5 | 2.50 | -110 | 1 | 0 | 1 | 0 | 0 | 0.00 | L | -2.5u |
+| 2026-06-03 | MLB | ML | home | 3.0 | 0.50 | -139 | 0 | 0 | 0 | -2 | 41 | -1.20 | W | +0.3u |
+| 2026-06-03 | MLB | TOTAL | under | 4.5 | 2.50 | -110 | 1 | 0 | 1 | 0 | -1 | 0.00 | L | -2.5u |
 | 2026-06-03 | NBA | ML | home | 2.5 | 0.25 | -198 | 3 | 4 | 7 | 5 | 9 | -1.20 | L | -0.3u |
 | 2026-06-03 | NBA | SPREAD | away | 2.5 | 0.25 | -104 | 3 | -1 | 2 | 4 | 1 | -1.20 | W | +0.2u |
-| 2026-06-04 | MLB | ML | away | 3.0 | 0.50 | +104 | 1 | 0 | 1 | 1 | -5 | 0.00 | W | +0.5u |
+| 2026-06-04 | MLB | ML | away | 3.0 | 0.50 | +104 | 1 | 0 | 1 | 0 | -10 | 0.00 | W | +0.5u |
 | 2026-06-04 | MLB | TOTAL | over | 4.0 | 1.00 | -110 | 1 | -1 | 0 | 0 | 21 | 0.00 | L | -1.0u |
 | 2026-06-04 | MLB | ML | home | 4.0 | 1.00 | +102 | 0 | 0 | 0 | 0 | 0 | 0.00 | L | -1.0u |
-| 2026-06-04 | MLB | ML | home | 5.0 | 2.50 | +118 | 1 | 1 | 2 | 0 | 38 | -0.40 | W | +3.0u |
+| 2026-06-04 | MLB | ML | home | 5.0 | 2.50 | +118 | 1 | 1 | 2 | 0 | 39 | -0.40 | W | +3.0u |
 | 2026-06-04 | MLB | SPREAD | away | 5.0 | 5.00 | -111 | 0 | 0 | 0 | 1 | 14 | 0.00 | L | -5.0u |
-| 2026-06-04 | MLB | ML | home | 5.0 | 5.00 | -131 | 1 | 0 | 1 | 0 | 38 | 0.20 | W | +3.5u |
+| 2026-06-04 | MLB | ML | home | 5.0 | 5.00 | -131 | 1 | 0 | 1 | 0 | 39 | 0.20 | W | +3.5u |
 | 2026-06-04 | MLB | ML | away | 2.5 | 0.25 | +105 | 0 | 0 | 0 | 1 | 0 | -1.00 | W | +0.2u |
-| 2026-06-04 | MLB | ML | home | 4.0 | 1.00 | -210 | 1 | 0 | 1 | 1 | 48 | -1.00 | W | +0.5u |
-| 2026-06-04 | MLB | ML | home | 4.0 | 1.00 | -188 | 0 | 0 | 0 | -1 | -13 | -1.10 | L | -1.0u |
-| 2026-06-04 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 0 | 21 | 0.00 | W | +2.7u |
-| 2026-06-04 | MLB | ML | home | 3.0 | 0.50 | -235 | 4 | 0 | 4 | 4 | 30 | 0.00 | L | -0.5u |
-| 2026-06-04 | MLB | TOTAL | under | 5.0 | 5.00 | -110 | 2 | 0 | 2 | 0 | 3 | 0.00 | L | -5.0u |
+| 2026-06-04 | MLB | ML | home | 4.0 | 1.00 | -210 | 1 | 0 | 1 | 1 | 50 | -1.00 | W | +0.5u |
+| 2026-06-04 | MLB | ML | home | 4.0 | 1.00 | -188 | 0 | 0 | 0 | -1 | -14 | -1.10 | L | -1.0u |
+| 2026-06-04 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 1 | 26 | 0.00 | W | +2.7u |
+| 2026-06-04 | MLB | ML | home | 3.0 | 0.50 | -235 | 4 | 0 | 4 | 4 | 32 | 0.00 | L | -0.5u |
+| 2026-06-04 | MLB | TOTAL | under | 5.0 | 5.00 | -110 | 2 | 0 | 2 | 0 | 2 | 0.00 | L | -5.0u |
 | 2026-06-04 | NHL | ML | home | 2.5 | 0.25 | -160 | -3 | 0 | -3 | 2 | 11 | -0.40 | W | +0.2u |
-| 2026-06-05 | MLB | ML | home | 2.5 | 0.25 | -144 | 1 | 1 | 2 | -1 | -6 | -1.20 | L | -0.3u |
+| 2026-06-05 | MLB | ML | home | 2.5 | 0.25 | -144 | 1 | 1 | 2 | -1 | -7 | -1.20 | L | -0.3u |
 | 2026-06-05 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 0 | -1 | -1 | -1 | 16 | 0.00 | W | +2.8u |
 | 2026-06-05 | MLB | ML | away | 3.0 | 0.50 | +128 | 1 | 0 | 1 | 0 | 19 | 0.00 | W | +0.6u |
-| 2026-06-05 | MLB | TOTAL | over | 4.0 | 1.00 | -109 | 0 | 0 | 0 | 0 | 0 | 0.00 | P | +0.0u |
-| 2026-06-05 | MLB | ML | home | 3.0 | 0.50 | -136 | 1 | 0 | 1 | 2 | 11 | 0.00 | W | +0.4u |
-| 2026-06-05 | MLB | TOTAL | over | 3.0 | 0.50 | -110 | 3 | 0 | 3 | 4 | 21 | 0.00 | W | +0.4u |
-| 2026-06-05 | MLB | ML | away | 5.0 | 5.00 | -122 | 0 | 1 | 1 | 1 | 51 | -0.80 | L | -5.0u |
-| 2026-06-05 | MLB | ML | home | 5.0 | 5.00 | -171 | 0 | 2 | 2 | 2 | 29 | -0.20 | W | +2.7u |
-| 2026-06-05 | MLB | ML | home | 4.0 | 1.00 | -188 | 2 | 0 | 2 | 1 | 13 | -0.90 | W | +0.5u |
+| 2026-06-05 | MLB | TOTAL | over | 4.0 | 1.00 | -109 | 0 | 0 | 0 | 0 | -1 | 0.00 | P | +0.0u |
+| 2026-06-05 | MLB | ML | home | 3.0 | 0.50 | -136 | 1 | 0 | 1 | 1 | 6 | 0.00 | W | +0.4u |
+| 2026-06-05 | MLB | TOTAL | over | 3.0 | 0.50 | -110 | 3 | 0 | 3 | 4 | 22 | 0.00 | W | +0.4u |
+| 2026-06-05 | MLB | ML | away | 5.0 | 5.00 | -122 | 0 | 1 | 1 | 1 | 53 | -0.80 | L | -5.0u |
+| 2026-06-05 | MLB | ML | home | 5.0 | 5.00 | -171 | 0 | 2 | 2 | 2 | 30 | -0.20 | W | +2.7u |
+| 2026-06-05 | MLB | ML | home | 4.0 | 1.00 | -188 | 2 | 0 | 2 | 1 | 14 | -0.90 | W | +0.5u |
 | 2026-06-05 | MLB | ML | away | 4.0 | 1.00 | -105 | 1 | 0 | 1 | 0 | 0 | 0.00 | L | -1.0u |
-| 2026-06-05 | MLB | ML | home | 4.0 | 1.00 | -141 | 3 | 2 | 5 | 2 | -8 | 0.30 | W | +0.7u |
+| 2026-06-05 | MLB | ML | home | 4.0 | 1.00 | -141 | 3 | 2 | 5 | 2 | -9 | 0.30 | W | +0.7u |
 | 2026-06-05 | MLB | TOTAL | over | 5.0 | 2.50 | -110 | 0 | 1 | 1 | -1 | 25 | 0.00 | W | +2.5u |
 | 2026-06-05 | MLB | ML | home | 4.0 | 1.00 | -172 | 1 | 0 | 1 | 0 | 0 | 0.00 | L | -1.0u |
-| 2026-06-05 | MLB | TOTAL | over | 5.0 | 5.00 | -110 | 0 | -1 | -1 | 0 | 0 | 0.00 | W | +4.4u |
+| 2026-06-05 | MLB | TOTAL | over | 5.0 | 5.00 | -110 | 0 | -1 | -1 | 0 | -1 | 0.00 | W | +4.4u |
 | 2026-06-05 | MLB | ML | away | 4.5 | 3.00 | -129 | -1 | 1 | 0 | -2 | 27 | -1.10 | W | +2.2u |
 | 2026-06-05 | MLB | SPREAD | away | 3.0 | 0.50 | +126 | 1 | 0 | 1 | 1 | 14 | 0.00 | W | +0.6u |
 | 2026-06-05 | NBA | ML | home | 2.5 | 0.25 | -230 | 2 | 2 | 4 | 4 | 11 | 1.00 | L | -0.3u |
 | 2026-06-05 | NBA | SPREAD | home | 2.5 | 0.25 | -106 | 3 | 0 | 3 | 0 | 4 | -0.70 | L | -0.3u |
-| 2026-06-06 | MLB | TOTAL | over | 2.5 | 0.25 | -110 | 1 | 0 | 1 | 0 | 16 | 0.00 | W | +0.2u |
+| 2026-06-06 | MLB | TOTAL | over | 2.5 | 0.25 | -110 | 1 | 0 | 1 | 0 | 15 | 0.00 | W | +0.2u |
 | 2026-06-06 | MLB | TOTAL | under | 4.5 | 3.00 | -110 | 0 | 0 | 0 | 0 | 4 | 0.00 | W | +2.7u |
-| 2026-06-06 | MLB | ML | home | 4.5 | 3.00 | -126 | 0 | 0 | 0 | -1 | -13 | -1.00 | W | +2.4u |
+| 2026-06-06 | MLB | ML | home | 4.5 | 3.00 | -126 | 0 | 0 | 0 | -1 | -14 | -1.00 | W | +2.4u |
 | 2026-06-06 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 0 | 0 | 0 | 2 | -5 | 0.00 | W | +2.7u |
 | 2026-06-06 | MLB | TOTAL | over | 4.0 | 1.00 | -110 | 0 | 1 | 1 | -1 | 9 | 0.00 | L | -1.0u |
-| 2026-06-06 | MLB | ML | home | 3.0 | 0.50 | -130 | 0 | 0 | 0 | -1 | 7 | -0.90 | L | -0.5u |
-| 2026-06-06 | MLB | TOTAL | over | 5.0 | 5.00 | -110 | 1 | 0 | 1 | 1 | 5 | 0.00 | L | -5.0u |
-| 2026-06-06 | MLB | ML | home | 4.5 | 3.00 | -350 | 0 | 1 | 1 | -1 | 39 | -0.90 | W | +0.9u |
-| 2026-06-06 | MLB | TOTAL | under | 5.0 | 2.50 | -110 | 0 | 0 | 0 | 0 | 3 | 0.00 | L | -2.5u |
+| 2026-06-06 | MLB | ML | home | 3.0 | 0.50 | -130 | 0 | 0 | 0 | -1 | 8 | -0.90 | L | -0.5u |
+| 2026-06-06 | MLB | TOTAL | over | 5.0 | 5.00 | -110 | 1 | 0 | 1 | 1 | 6 | 0.00 | L | -5.0u |
+| 2026-06-06 | MLB | ML | home | 4.5 | 3.00 | -350 | 0 | 1 | 1 | -1 | 41 | -0.90 | W | +0.9u |
+| 2026-06-06 | MLB | TOTAL | under | 5.0 | 2.50 | -110 | 0 | 0 | 0 | 0 | 2 | 0.00 | L | -2.5u |
 | 2026-06-06 | MLB | TOTAL | under | 4.5 | 3.00 | -110 | 3 | 1 | 4 | 3 | 7 | 0.00 | W | +2.8u |
-| 2026-06-06 | MLB | ML | home | 5.0 | 5.00 | -123 | 0 | 0 | 0 | 1 | 5 | 0.00 | W | +4.1u |
+| 2026-06-06 | MLB | ML | home | 5.0 | 5.00 | -123 | 0 | 0 | 0 | 1 | 6 | 0.00 | W | +4.1u |
 | 2026-06-06 | MLB | TOTAL | under | 4.0 | 1.00 | -110 | 1 | 0 | 1 | 1 | 1 | 0.00 | L | -1.0u |
 | 2026-06-06 | MLB | ML | home | 5.0 | 2.50 | +117 | -2 | -1 | -3 | 0 | 25 | 0.00 | L | -2.5u |
 | 2026-06-06 | MLB | ML | home | 5.0 | 5.00 | -154 | 2 | 1 | 3 | -1 | 25 | -0.80 | L | -5.0u |
-| 2026-06-07 | MLB | ML | home | 4.5 | 3.00 | -130 | 1 | 0 | 1 | -1 | 22 | -0.90 | W | +2.2u |
-| 2026-06-07 | MLB | TOTAL | over | 3.0 | 0.50 | -112 | 0 | 0 | 0 | 3 | 13 | 0.00 | L | -0.5u |
+| 2026-06-07 | MLB | ML | home | 4.5 | 3.00 | -130 | 1 | 0 | 1 | -1 | 23 | -0.90 | W | +2.2u |
+| 2026-06-07 | MLB | TOTAL | over | 3.0 | 0.50 | -112 | 0 | 0 | 0 | 3 | 14 | 0.00 | L | -0.5u |
 | 2026-06-07 | MLB | ML | home | 5.0 | 5.00 | -143 | 1 | 0 | 1 | 1 | 14 | 0.00 | W | +3.5u |
 | 2026-06-07 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 0 | 0 | 0 | 2 | -5 | 0.00 | L | -3.0u |
-| 2026-06-07 | MLB | ML | home | 4.0 | 1.00 | -136 | 1 | 0 | 1 | -1 | 22 | 0.00 | W | +0.7u |
+| 2026-06-07 | MLB | ML | home | 4.0 | 1.00 | -136 | 1 | 0 | 1 | -1 | 23 | 0.00 | W | +0.7u |
 | 2026-06-07 | MLB | ML | home | 4.5 | 3.00 | -165 | 2 | 2 | 4 | 2 | -9 | -1.10 | W | +1.8u |
-| 2026-06-07 | MLB | TOTAL | under | 4.5 | 3.00 | -110 | 1 | 1 | 2 | 1 | -3 | 0.00 | L | -3.0u |
+| 2026-06-07 | MLB | TOTAL | under | 4.5 | 3.00 | -110 | 1 | 1 | 2 | 2 | 2 | 0.00 | L | -3.0u |
 | 2026-06-07 | MLB | ML | away | 2.5 | 0.25 | -107 | 1 | 0 | 1 | -2 | 11 | -0.80 | W | +0.2u |
-| 2026-06-07 | MLB | TOTAL | over | 2.5 | 0.25 | -115 | 0 | 0 | 0 | -1 | -22 | 0.00 | W | +0.2u |
-| 2026-06-07 | MLB | ML | home | 2.5 | 0.25 | -210 | -1 | 0 | -1 | 0 | 15 | 0.80 | L | -0.3u |
+| 2026-06-07 | MLB | TOTAL | over | 2.5 | 0.25 | -115 | 0 | 0 | 0 | -1 | -23 | 0.00 | W | +0.2u |
+| 2026-06-07 | MLB | ML | home | 2.5 | 0.25 | -210 | -1 | 0 | -1 | 0 | 16 | 0.80 | L | -0.3u |
 | 2026-06-07 | MLB | TOTAL | under | 3.0 | 0.50 | -110 | 0 | 0 | 0 | 1 | -2 | 0.00 | L | -0.5u |
 | 2026-06-07 | MLB | ML | home | 3.0 | 0.50 | +158 | 1 | 0 | 1 | 2 | -4 | -1.30 | L | -0.5u |
 | 2026-06-07 | MLB | TOTAL | over | 4.0 | 1.00 | -110 | 1 | 0 | 1 | 1 | 13 | 0.00 | W | +0.9u |
 | 2026-06-07 | MLB | ML | home | 4.0 | 1.00 | -105 | 1 | 0 | 1 | 0 | 0 | 0.00 | L | -1.0u |
-| 2026-06-07 | MLB | TOTAL | over | 5.0 | 5.00 | -110 | 1 | 0 | 1 | 1 | 5 | 0.00 | L | -5.0u |
-| 2026-06-07 | MLB | SPREAD | away | 4.5 | 3.00 | -152 | 2 | 0 | 2 | 1 | 36 | -0.50 | W | +1.9u |
-| 2026-06-07 | MLB | TOTAL | over | 5.0 | 2.25 | -114 | 1 | 1 | 2 | 1 | -9 | 0.00 | L | -2.3u |
-| 2026-06-07 | MLB | ML | home | 3.0 | 0.50 | +102 | 1 | 0 | 1 | -2 | -1 | -0.20 | W | +0.5u |
-| 2026-06-07 | MLB | SPREAD | away | 4.5 | 2.25 | +164 | 1 | 1 | 2 | 1 | 13 | 29.50 | W | +3.7u |
+| 2026-06-07 | MLB | TOTAL | over | 5.0 | 5.00 | -110 | 1 | 0 | 1 | 0 | 1 | 0.00 | L | -5.0u |
+| 2026-06-07 | MLB | SPREAD | away | 4.5 | 3.00 | -152 | 2 | 0 | 2 | 1 | 37 | -0.50 | W | +1.9u |
+| 2026-06-07 | MLB | TOTAL | over | 5.0 | 2.25 | -114 | 1 | 1 | 2 | 1 | -8 | 0.00 | L | -2.3u |
+| 2026-06-07 | MLB | ML | home | 3.0 | 0.50 | +102 | 1 | 0 | 1 | -2 | 0 | -0.20 | W | +0.5u |
+| 2026-06-07 | MLB | SPREAD | away | 4.5 | 2.25 | +164 | 1 | 1 | 2 | 1 | 14 | 29.50 | W | +3.7u |
 | 2026-06-07 | MLB | ML | away | 2.5 | 0.25 | +103 | -1 | 0 | -1 | -1 | 7 | 0.20 | W | +0.3u |
 | 2026-06-07 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | -1 | 0 | 1 | 15 | 0.00 | L | -3.0u |
-| 2026-06-07 | MLB | ML | home | 4.0 | 1.00 | -102 | 2 | 0 | 2 | -1 | -13 | 0.50 | W | +1.0u |
-| 2026-06-07 | MLB | TOTAL | under | 5.0 | 5.00 | -110 | 1 | 0 | 1 | 0 | 6 | 0.00 | W | +4.8u |
+| 2026-06-07 | MLB | ML | home | 4.0 | 1.00 | -102 | 2 | 0 | 2 | -1 | -14 | 0.50 | W | +1.0u |
+| 2026-06-07 | MLB | TOTAL | under | 5.0 | 5.00 | -110 | 1 | 0 | 1 | 0 | 5 | 0.00 | W | +4.8u |
 | 2026-06-07 | MLB | ML | home | 3.0 | 0.50 | -127 | 0 | 1 | 1 | -2 | 11 | -1.90 | W | +0.4u |
 | 2026-06-07 | MLB | TOTAL | under | 3.0 | 0.50 | -110 | 0 | 0 | 0 | 1 | -2 | 0.00 | W | +0.5u |
-| 2026-06-08 | MLB | ML | away | 4.5 | 3.00 | -113 | 6 | 1 | 7 | 5 | 41 | -0.50 | L | -3.0u |
-| 2026-06-08 | MLB | ML | home | 4.5 | 3.00 | -129 | 3 | 0 | 3 | 1 | 19 | -0.40 | W | +2.3u |
-| 2026-06-08 | MLB | TOTAL | under | 4.5 | 3.00 | -110 | 0 | 0 | 0 | -1 | -11 | 0.00 | L | -3.0u |
-| 2026-06-08 | MLB | ML | away | 4.5 | 3.00 | -121 | 1 | 1 | 2 | -1 | -2 | -1.60 | W | +2.3u |
-| 2026-06-08 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 2 | 47 | 0.00 | P | +0.0u |
-| 2026-06-08 | MLB | ML | away | 4.5 | 3.00 | -146 | 1 | 0 | 1 | -1 | -5 | -0.50 | W | +2.0u |
-| 2026-06-08 | MLB | ML | home | 4.0 | 1.00 | -118 | 2 | 0 | 2 | 2 | -56 | -0.40 | L | -1.0u |
-| 2026-06-08 | MLB | TOTAL | over | 4.5 | 2.50 | -116 | -2 | -2 | -4 | -2 | 25 | 0.00 | W | +2.5u |
-| 2026-06-08 | MLB | ML | away | 4.5 | 1.50 | +151 | 0 | -1 | -1 | 0 | 10 | 0.00 | W | +2.3u |
-| 2026-06-08 | MLB | TOTAL | under | 5.0 | 2.50 | +101 | 0 | 0 | 0 | -1 | -9 | 0.00 | W | +2.5u |
+| 2026-06-08 | MLB | ML | away | 4.5 | 3.00 | -113 | 6 | 1 | 7 | 5 | 47 | -0.50 | L | -3.0u |
+| 2026-06-08 | MLB | ML | home | 4.5 | 3.00 | -129 | 3 | 0 | 3 | 1 | 24 | -0.40 | W | +2.3u |
+| 2026-06-08 | MLB | TOTAL | under | 4.5 | 3.00 | -110 | 0 | 0 | 0 | -1 | -16 | 0.00 | L | -3.0u |
+| 2026-06-08 | MLB | ML | away | 4.5 | 3.00 | -121 | 1 | 1 | 2 | -1 | -8 | -1.60 | W | +2.3u |
+| 2026-06-08 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 2 | 54 | 0.00 | P | +0.0u |
+| 2026-06-08 | MLB | ML | away | 4.5 | 3.00 | -146 | 1 | 0 | 1 | -1 | -11 | -0.50 | W | +2.0u |
+| 2026-06-08 | MLB | ML | home | 4.0 | 1.00 | -118 | 2 | 0 | 2 | 2 | -63 | -0.40 | L | -1.0u |
+| 2026-06-08 | MLB | TOTAL | over | 4.5 | 2.50 | -116 | -2 | -2 | -4 | -2 | 20 | 0.00 | W | +2.5u |
+| 2026-06-08 | MLB | ML | away | 4.5 | 1.50 | +151 | 0 | -1 | -1 | 0 | 11 | 0.00 | W | +2.3u |
+| 2026-06-08 | MLB | TOTAL | under | 5.0 | 2.50 | +101 | 0 | 0 | 0 | -1 | -15 | 0.00 | W | +2.5u |
 | 2026-06-08 | NBA | ML | home | 2.5 | 0.25 | -132 | 5 | 2 | 7 | 3 | 6 | -0.40 | L | -0.3u |
 | 2026-06-08 | NBA | SPREAD | away | 5.0 | 5.00 | -110 | 3 | 2 | 5 | 2 | 4 | -1.30 | W | +4.3u |
 | 2026-06-08 | NBA | TOTAL | under | 4.0 | 1.00 | -107 | 1 | 0 | 1 | 3 | -1 | 0.00 | L | -1.0u |
-| 2026-06-09 | MLB | ML | away | 2.5 | 0.25 | +132 | 1 | 0 | 1 | 3 | 41 | -1.20 | L | -0.3u |
-| 2026-06-09 | MLB | TOTAL | over | 5.0 | 5.00 | -110 | 1 | 0 | 1 | 0 | 3 | 0.00 | W | +4.3u |
-| 2026-06-09 | MLB | ML | away | 3.0 | 0.50 | -148 | 1 | 0 | 1 | 2 | 4 | 0.00 | L | -0.5u |
-| 2026-06-09 | MLB | ML | away | 4.0 | 1.00 | -116 | 0 | 0 | 0 | 3 | 24 | 0.80 | L | -1.0u |
-| 2026-06-09 | MLB | TOTAL | over | 4.0 | 1.00 | -110 | 0 | 0 | 0 | 1 | 0 | 0.00 | L | -1.0u |
+| 2026-06-09 | MLB | ML | away | 2.5 | 0.25 | +132 | 1 | 0 | 1 | 3 | 43 | -1.20 | L | -0.3u |
+| 2026-06-09 | MLB | TOTAL | over | 5.0 | 5.00 | -110 | 1 | 0 | 1 | 0 | 2 | 0.00 | W | +4.3u |
+| 2026-06-09 | MLB | ML | away | 3.0 | 0.50 | -148 | 1 | 0 | 1 | 2 | 5 | 0.00 | L | -0.5u |
+| 2026-06-09 | MLB | ML | away | 4.0 | 1.00 | -116 | 0 | 0 | 0 | 3 | 25 | 0.80 | L | -1.0u |
+| 2026-06-09 | MLB | TOTAL | over | 4.0 | 1.00 | -110 | 0 | 0 | 0 | 1 | -1 | 0.00 | L | -1.0u |
 | 2026-06-09 | MLB | ML | away | 4.0 | 1.00 | -143 | 1 | 0 | 1 | 0 | 0 | 0.00 | L | -1.0u |
-| 2026-06-09 | MLB | SPREAD | home | 4.5 | 3.00 | -117 | 1 | 0 | 1 | 1 | 14 | 0.00 | W | +2.6u |
-| 2026-06-09 | MLB | TOTAL | under | 3.0 | 0.50 | -110 | 0 | 0 | 0 | -1 | 10 | 0.00 | W | +0.5u |
-| 2026-06-09 | MLB | ML | away | 5.0 | 5.00 | -122 | 2 | 1 | 3 | 1 | 5 | 0.00 | W | +4.1u |
+| 2026-06-09 | MLB | SPREAD | home | 4.5 | 3.00 | -117 | 1 | 0 | 1 | 0 | 9 | 0.00 | W | +2.6u |
+| 2026-06-09 | MLB | TOTAL | under | 3.0 | 0.50 | -110 | 0 | 0 | 0 | -2 | 4 | 0.00 | W | +0.5u |
+| 2026-06-09 | MLB | ML | away | 5.0 | 5.00 | -122 | 2 | 1 | 3 | 2 | 11 | 0.00 | W | +4.1u |
 | 2026-06-09 | MLB | ML | away | 2.5 | 0.25 | -120 | 0 | 0 | 0 | -1 | -14 | 0.00 | L | -0.3u |
 | 2026-06-09 | MLB | ML | home | 4.0 | 1.00 | -107 | 1 | 0 | 1 | -1 | 9 | -1.30 | L | -1.0u |
 | 2026-06-09 | MLB | ML | home | 5.0 | 5.00 | -105 | 1 | -1 | 0 | 1 | -3 | 0.00 | W | +4.8u |
-| 2026-06-09 | MLB | ML | away | 4.5 | 2.50 | +115 | 1 | 0 | 1 | -1 | -13 | -0.70 | L | -2.5u |
-| 2026-06-09 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 0 | 2 | 0.00 | W | +2.7u |
-| 2026-06-09 | MLB | ML | away | 3.0 | 0.50 | -116 | 1 | 0 | 1 | 1 | 14 | 0.00 | W | +0.4u |
-| 2026-06-09 | MLB | ML | home | 5.0 | 2.50 | +100 | 4 | 2 | 6 | 0 | -6 | 0.00 | W | +2.5u |
-| 2026-06-09 | MLB | TOTAL | under | 5.0 | 5.00 | -110 | 1 | 1 | 2 | 0 | 4 | 0.00 | W | +4.5u |
-| 2026-06-09 | MLB | ML | home | 4.0 | 1.00 | +102 | 2 | 0 | 2 | 2 | -9 | -1.20 | L | -1.0u |
-| 2026-06-09 | MLB | ML | away | 4.0 | 1.00 | -119 | 1 | 0 | 1 | -1 | 22 | -0.80 | L | -1.0u |
+| 2026-06-09 | MLB | ML | away | 4.5 | 2.50 | +115 | 1 | 0 | 1 | -1 | -14 | -0.70 | L | -2.5u |
+| 2026-06-09 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 1 | 3 | 0.00 | W | +2.7u |
+| 2026-06-09 | MLB | ML | away | 3.0 | 0.50 | -116 | 1 | 0 | 1 | 2 | 19 | 0.00 | W | +0.4u |
+| 2026-06-09 | MLB | ML | home | 5.0 | 2.50 | +100 | 4 | 2 | 6 | 0 | -11 | 0.00 | W | +2.5u |
+| 2026-06-09 | MLB | TOTAL | under | 5.0 | 5.00 | -110 | 1 | 1 | 2 | -1 | -2 | 0.00 | W | +4.5u |
+| 2026-06-09 | MLB | ML | home | 4.0 | 1.00 | +102 | 2 | 0 | 2 | 2 | -10 | -1.20 | L | -1.0u |
+| 2026-06-09 | MLB | ML | away | 4.0 | 1.00 | -119 | 1 | 0 | 1 | -1 | 23 | -0.80 | L | -1.0u |
 | 2026-06-09 | NHL | SPREAD | away | 4.5 | 1.00 | +215 | 0 | 0 | 0 | 2 | 11 | 41.70 | W | +2.1u |
 | 2026-06-09 | NHL | TOTAL | under | 5.0 | 5.00 | -110 | 2 | 0 | 2 | 2 | 13 | 0.00 | L | -5.0u |
-| 2026-06-10 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 0 | 11 | 0.00 | L | -3.0u |
+| 2026-06-10 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 0 | 6 | 0.00 | L | -3.0u |
 | 2026-06-10 | MLB | ML | away | 4.5 | 3.00 | -148 | 0 | 0 | 0 | 0 | 23 | -0.50 | L | -3.0u |
 | 2026-06-10 | MLB | ML | away | 4.0 | 1.00 | +136 | 3 | 0 | 3 | 4 | 20 | -1.10 | L | -1.0u |
-| 2026-06-10 | MLB | TOTAL | over | 4.0 | 1.00 | -110 | 0 | 0 | 0 | 1 | 0 | 0.00 | W | +0.9u |
+| 2026-06-10 | MLB | TOTAL | over | 4.0 | 1.00 | -110 | 0 | 0 | 0 | 1 | -1 | 0.00 | W | +0.9u |
 | 2026-06-10 | MLB | ML | away | 4.0 | 1.00 | -172 | 1 | 0 | 1 | 1 | 0 | -1.00 | L | -1.0u |
 | 2026-06-10 | MLB | TOTAL | under | 5.0 | 5.00 | -110 | 0 | 0 | 0 | 1 | -3 | 0.00 | W | +4.5u |
-| 2026-06-10 | MLB | ML | away | 3.0 | 0.50 | +136 | 0 | 0 | 0 | -2 | 15 | 0.00 | L | -0.5u |
-| 2026-06-10 | MLB | TOTAL | under | 4.0 | 1.00 | -113 | 1 | 0 | 1 | 1 | 13 | 0.00 | L | -1.0u |
+| 2026-06-10 | MLB | ML | away | 3.0 | 0.50 | +136 | 0 | 0 | 0 | -2 | 10 | 0.00 | L | -0.5u |
+| 2026-06-10 | MLB | TOTAL | under | 4.0 | 1.00 | -113 | 1 | 0 | 1 | 1 | 14 | 0.00 | L | -1.0u |
 | 2026-06-10 | MLB | ML | home | 2.5 | 0.25 | -117 | 0 | 0 | 0 | 2 | 18 | 0.00 | W | +0.2u |
 | 2026-06-10 | MLB | TOTAL | over | 5.0 | 5.00 | -110 | 2 | 0 | 2 | 1 | -3 | 0.00 | L | -5.0u |
 | 2026-06-10 | MLB | ML | home | 4.0 | 1.00 | +178 | 1 | 0 | 1 | -2 | 31 | -1.40 | W | +1.7u |
-| 2026-06-10 | MLB | TOTAL | over | 5.0 | 5.00 | -110 | 3 | 0 | 3 | 0 | -6 | 0.00 | W | +4.5u |
+| 2026-06-10 | MLB | TOTAL | over | 5.0 | 5.00 | -110 | 3 | 0 | 3 | 0 | -11 | 0.00 | W | +4.5u |
 | 2026-06-10 | MLB | ML | away | 5.0 | 5.00 | -104 | 0 | 0 | 0 | 1 | 14 | -0.20 | L | -5.0u |
 | 2026-06-10 | MLB | ML | away | 4.0 | 1.00 | +148 | 0 | 0 | 0 | -1 | 9 | -0.80 | W | +1.5u |
-| 2026-06-10 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 1 | 16 | 0.00 | W | +2.7u |
-| 2026-06-10 | MLB | ML | home | 4.5 | 2.50 | +103 | 0 | 0 | 0 | 1 | -3 | 0.00 | W | +2.6u |
+| 2026-06-10 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 2 | 21 | 0.00 | W | +2.7u |
+| 2026-06-10 | MLB | ML | home | 4.5 | 2.50 | +103 | 0 | 0 | 0 | 2 | 2 | 0.00 | W | +2.6u |
 | 2026-06-10 | MLB | ML | home | 4.0 | 1.00 | -127 | 1 | 0 | 1 | 0 | 0 | 0.00 | L | -1.0u |
-| 2026-06-10 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 0 | 25 | 0.00 | W | +3.0u |
+| 2026-06-10 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 0 | 24 | 0.00 | W | +3.0u |
 | 2026-06-10 | MLB | ML | away | 4.0 | 1.00 | -120 | 1 | 0 | 1 | 0 | 0 | -0.40 | W | +0.8u |
 | 2026-06-10 | MLB | TOTAL | under | 4.5 | 3.00 | -110 | -1 | 0 | -1 | 1 | 14 | 0.00 | L | -3.0u |
 | 2026-06-10 | MLB | ML | away | 5.0 | 5.00 | -106 | 1 | 0 | 1 | -2 | 16 | -0.70 | L | -5.0u |
-| 2026-06-10 | MLB | SPREAD | home | 2.5 | 1.00 | -190 | 0 | 0 | 0 | 0 | -13 | -31.40 | L | -1.0u |
-| 2026-06-10 | MLB | TOTAL | under | 5.0 | 5.00 | -110 | 4 | 1 | 5 | -1 | -6 | 0.00 | L | -5.0u |
+| 2026-06-10 | MLB | SPREAD | home | 2.5 | 1.00 | -190 | 0 | 0 | 0 | 0 | -14 | -31.40 | L | -1.0u |
+| 2026-06-10 | MLB | TOTAL | under | 5.0 | 5.00 | -110 | 4 | 1 | 5 | -1 | -7 | 0.00 | L | -5.0u |
 | 2026-06-10 | NBA | ML | away | 2.5 | 0.25 | +112 | -2 | 0 | -2 | -3 | -11 | 0.20 | L | -0.3u |
 | 2026-06-10 | NBA | TOTAL | under | 2.5 | 0.25 | -108 | 4 | 1 | 5 | 3 | 9 | 0.00 | W | +0.2u |
-| 2026-06-11 | MLB | ML | away | 4.0 | 1.00 | +112 | 0 | 0 | 0 | 0 | 12 | 0.00 | L | -1.0u |
+| 2026-06-11 | MLB | ML | away | 4.0 | 1.00 | +112 | 0 | 0 | 0 | 0 | 16 | 0.00 | L | -1.0u |
 | 2026-06-11 | MLB | ML | away | 3.0 | 0.50 | -120 | -1 | 0 | -1 | 4 | -4 | -1.70 | P | +0.0u |
-| 2026-06-11 | MLB | SPREAD | away | 4.5 | 2.50 | +140 | 1 | 0 | 1 | 3 | 1 | -1.00 | P | +0.0u |
+| 2026-06-11 | MLB | SPREAD | away | 4.5 | 2.50 | +140 | 1 | 0 | 1 | 3 | 2 | -1.00 | P | +0.0u |
 | 2026-06-11 | MLB | ML | home | 5.0 | 5.00 | — | 1 | 0 | 1 | 1 | -2 | 0.00 | L | -5.0u |
 | 2026-06-11 | MLB | ML | away | 3.0 | 0.50 | -167 | 1 | -1 | 0 | 0 | 29 | -0.10 | W | +0.3u |
 | 2026-06-11 | MLB | TOTAL | under | 5.0 | 1.00 | -108 | 1 | 1 | 2 | 0 | -22 | 0.00 | L | -1.0u |
 | 2026-06-11 | MLB | ML | away | 5.0 | 1.00 | +110 | 3 | 1 | 4 | 2 | -9 | -0.90 | L | -1.0u |
 | 2026-06-11 | MLB | ML | away | 3.0 | 0.50 | -111 | 1 | 0 | 1 | 0 | 0 | 0.00 | L | -0.5u |
-| 2026-06-11 | MLB | ML | home | 5.0 | 5.00 | -131 | 2 | 1 | 3 | 0 | -6 | 0.00 | W | +3.8u |
-| 2026-06-11 | MLB | ML | away | 4.0 | 1.00 | +100 | 1 | 0 | 1 | 1 | -37 | -0.50 | W | +1.0u |
-| 2026-06-11 | MLB | TOTAL | under | 2.5 | 0.25 | -110 | -1 | -1 | -2 | 0 | 17 | 0.00 | W | +0.2u |
+| 2026-06-11 | MLB | ML | home | 5.0 | 5.00 | -131 | 2 | 1 | 3 | 0 | -11 | 0.00 | W | +3.8u |
+| 2026-06-11 | MLB | ML | away | 4.0 | 1.00 | +100 | 1 | 0 | 1 | 1 | -39 | -0.50 | W | +1.0u |
+| 2026-06-11 | MLB | TOTAL | under | 2.5 | 0.25 | -110 | -1 | -1 | -2 | -1 | 12 | 0.00 | W | +0.2u |
 | 2026-06-11 | NHL | TOTAL | under | 3.0 | 0.50 | -104 | 2 | 0 | 2 | 3 | 14 | 0.00 | P | +0.0u |
-| 2026-06-12 | MLB | ML | home | 5.0 | 5.00 | -114 | 0 | 0 | 0 | 0 | -6 | 0.00 | W | +4.4u |
-| 2026-06-12 | MLB | ML | home | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 1 | -15 | 0.00 | L | -3.0u |
-| 2026-06-12 | MLB | TOTAL | over | 4.0 | 1.00 | +100 | 0 | 0 | 0 | 0 | 0 | 0.00 | L | -1.0u |
+| 2026-06-12 | MLB | ML | home | 5.0 | 5.00 | -114 | 0 | 0 | 0 | 0 | -11 | 0.00 | W | +4.4u |
+| 2026-06-12 | MLB | ML | home | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 1 | -20 | 0.00 | L | -3.0u |
+| 2026-06-12 | MLB | TOTAL | over | 4.0 | 1.00 | +100 | 0 | 0 | 0 | 0 | -1 | 0.00 | L | -1.0u |
 | 2026-06-12 | MLB | ML | home | 3.0 | 0.50 | -210 | 2 | 0 | 2 | 1 | -9 | -0.10 | W | +0.2u |
 | 2026-06-12 | MLB | ML | away | 2.5 | 0.25 | +111 | 3 | 1 | 4 | 2 | -9 | -0.70 | L | -0.3u |
-| 2026-06-12 | MLB | ML | away | 4.0 | 1.00 | -114 | 2 | 0 | 2 | 1 | -8 | -1.20 | W | +0.9u |
+| 2026-06-12 | MLB | ML | away | 4.0 | 1.00 | -114 | 2 | 0 | 2 | 1 | -9 | -1.20 | W | +0.9u |
 | 2026-06-12 | MLB | ML | home | 5.0 | 2.50 | +123 | 0 | 1 | 1 | 0 | 3 | 0.00 | W | +3.1u |
-| 2026-06-12 | MLB | SPREAD | away | 4.0 | 1.00 | +121 | 0 | 0 | 0 | 2 | 27 | 0.40 | L | -1.0u |
+| 2026-06-12 | MLB | SPREAD | away | 4.0 | 1.00 | +121 | 0 | 0 | 0 | 2 | 28 | 0.40 | L | -1.0u |
 | 2026-06-12 | MLB | ML | home | 4.5 | 3.00 | -138 | 1 | 0 | 1 | -1 | 9 | -1.00 | L | -3.0u |
 | 2026-06-12 | MLB | SPREAD | home | 3.0 | 0.50 | -107 | 2 | 0 | 2 | 2 | 5 | -0.40 | W | +0.4u |
-| 2026-06-12 | MLB | ML | away | 2.5 | 0.25 | +118 | -1 | 0 | -1 | -1 | -32 | -0.20 | L | -0.3u |
+| 2026-06-12 | MLB | ML | away | 2.5 | 0.25 | +118 | -1 | 0 | -1 | -1 | -31 | -0.20 | L | -0.3u |
 | 2026-06-12 | MLB | ML | away | 4.0 | 1.00 | -136 | 2 | 0 | 2 | 1 | -9 | -1.30 | W | +0.7u |
-| 2026-06-12 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 0 | -1 | -1 | 1 | 13 | 0.00 | W | +2.7u |
-| 2026-06-12 | MLB | ML | home | 3.0 | 0.50 | -134 | 2 | 0 | 2 | 2 | 4 | -1.10 | W | +0.4u |
-| 2026-06-12 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 1 | -3 | 0.00 | W | +2.7u |
+| 2026-06-12 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 0 | -1 | -1 | 0 | 8 | 0.00 | W | +2.7u |
+| 2026-06-12 | MLB | ML | home | 3.0 | 0.50 | -134 | 2 | 0 | 2 | 2 | 5 | -1.10 | W | +0.4u |
+| 2026-06-12 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 2 | 2 | 0.00 | W | +2.7u |
 | 2026-06-12 | MLB | SPREAD | away | 4.0 | 1.00 | -106 | 1 | 0 | 1 | 0 | 23 | -1.00 | L | -1.0u |
 | 2026-06-13 | MLB | ML | away | 5.0 | 5.00 | -128 | 3 | 0 | 3 | 0 | 20 | -0.20 | L | -5.0u |
 | 2026-06-13 | MLB | SPREAD | away | 4.0 | 1.00 | +123 | 1 | 0 | 1 | 1 | 14 | 0.00 | L | -1.0u |
 | 2026-06-13 | MLB | ML | away | 4.5 | 3.00 | -102 | 0 | 0 | 0 | 1 | 14 | -2.00 | W | +2.9u |
-| 2026-06-13 | MLB | TOTAL | under | 5.0 | 5.00 | -110 | 0 | 0 | 0 | 1 | 5 | 0.00 | W | +4.5u |
-| 2026-06-13 | MLB | ML | away | 2.5 | 0.25 | -118 | 0 | 0 | 0 | -3 | 7 | -1.30 | W | +0.2u |
+| 2026-06-13 | MLB | TOTAL | under | 5.0 | 5.00 | -110 | 0 | 0 | 0 | 0 | 5 | 0.00 | W | +4.5u |
+| 2026-06-13 | MLB | ML | away | 2.5 | 0.25 | -118 | 0 | 0 | 0 | -3 | 4 | -1.30 | W | +0.2u |
 | 2026-06-13 | MLB | TOTAL | under | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 1 | 14 | 0.00 | W | +2.7u |
 | 2026-06-13 | MLB | ML | away | 4.5 | 2.50 | +136 | 1 | 0 | 1 | -1 | 1 | 1.30 | L | -2.5u |
-| 2026-06-13 | MLB | ML | home | 5.0 | 2.50 | +134 | 2 | 0 | 2 | -1 | -8 | 0.00 | W | +3.4u |
+| 2026-06-13 | MLB | ML | home | 5.0 | 2.50 | +134 | 2 | 0 | 2 | -1 | -13 | 0.00 | W | +3.4u |
 | 2026-06-13 | MLB | SPREAD | home | 4.0 | 1.00 | -130 | 1 | 0 | 1 | 1 | 14 | 0.00 | W | +0.8u |
 | 2026-06-13 | MLB | SPREAD | away | 4.0 | 1.00 | -120 | 1 | 0 | 1 | 2 | 5 | 0.20 | W | +0.8u |
-| 2026-06-13 | MLB | ML | away | 4.5 | 2.50 | +114 | 1 | 0 | 1 | 0 | 1 | 0.00 | L | -2.5u |
-| 2026-06-13 | MLB | TOTAL | under | 4.0 | 1.00 | +101 | 0 | 0 | 0 | 0 | 0 | 0.00 | W | +1.0u |
-| 2026-06-13 | MLB | ML | home | 4.5 | 3.00 | -157 | 0 | 0 | 0 | -1 | -2 | 0.00 | L | -3.0u |
-| 2026-06-13 | MLB | TOTAL | over | 3.0 | 0.50 | -110 | 1 | 0 | 1 | 1 | 36 | 0.00 | W | +0.5u |
+| 2026-06-13 | MLB | ML | away | 4.5 | 2.50 | +114 | 1 | 0 | 1 | 0 | 0 | 0.00 | L | -2.5u |
+| 2026-06-13 | MLB | TOTAL | under | 4.0 | 1.00 | +101 | 0 | 0 | 0 | 0 | -1 | 0.00 | W | +1.0u |
+| 2026-06-13 | MLB | ML | home | 4.5 | 3.00 | -157 | 0 | 0 | 0 | -1 | -7 | 0.00 | L | -3.0u |
+| 2026-06-13 | MLB | TOTAL | over | 3.0 | 0.50 | -110 | 1 | 0 | 1 | 1 | 37 | 0.00 | W | +0.5u |
 | 2026-06-13 | MLB | ML | home | 5.0 | 5.00 | -115 | 1 | 1 | 2 | -1 | 6 | -0.40 | W | +4.3u |
 | 2026-06-13 | MLB | SPREAD | away | 4.0 | 1.00 | -106 | 0 | 0 | 0 | 1 | 14 | 0.00 | L | -1.0u |
 | 2026-06-13 | MLB | ML | home | 4.0 | 1.00 | -112 | 0 | 0 | 0 | 2 | 5 | -1.30 | W | +0.8u |
-| 2026-06-13 | MLB | TOTAL | under | 5.0 | 5.00 | -110 | 1 | 0 | 1 | 0 | 10 | 0.00 | L | -5.0u |
+| 2026-06-13 | MLB | TOTAL | under | 5.0 | 5.00 | -110 | 1 | 0 | 1 | 0 | 11 | 0.00 | L | -5.0u |
 | 2026-06-13 | NBA | ML | home | 2.5 | 0.25 | -205 | 6 | 6 | 12 | 6 | -27 | 0.60 | L | -0.3u |
 | 2026-06-14 | MLB | ML | away | 4.0 | 1.00 | +106 | 1 | 1 | 2 | 3 | 0 | -1.50 | L | -1.0u |
 | 2026-06-14 | MLB | ML | home | 2.5 | 0.25 | -124 | 1 | 0 | 1 | 3 | 5 | -1.50 | W | +0.2u |
-| 2026-06-14 | MLB | SPREAD | away | 5.0 | 5.00 | -180 | 1 | 0 | 1 | 0 | 2 | 0.00 | L | -5.0u |
+| 2026-06-14 | MLB | SPREAD | away | 5.0 | 5.00 | -180 | 1 | 0 | 1 | 0 | -2 | 0.00 | L | -5.0u |
 | 2026-06-14 | MLB | ML | home | 5.0 | 5.00 | -192 | 1 | 0 | 1 | 1 | 0 | 0.00 | L | -5.0u |
 | 2026-06-14 | MLB | TOTAL | under | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 1 | 14 | 0.00 | L | -3.0u |
 | 2026-06-14 | MLB | ML | away | 4.5 | 2.50 | +106 | 0 | 0 | 0 | 1 | 14 | 0.00 | L | -2.5u |
-| 2026-06-14 | MLB | SPREAD | away | 4.5 | 3.00 | -116 | 2 | 0 | 2 | 2 | -4 | 0.00 | L | -3.0u |
-| 2026-06-14 | MLB | SPREAD | away | 4.0 | 1.00 | -158 | 1 | -1 | 0 | 1 | 36 | 0.10 | W | +0.6u |
+| 2026-06-14 | MLB | SPREAD | away | 4.5 | 3.00 | -116 | 2 | 0 | 2 | 2 | -3 | 0.00 | L | -3.0u |
+| 2026-06-14 | MLB | SPREAD | away | 4.0 | 1.00 | -158 | 1 | -1 | 0 | 1 | 37 | 0.10 | W | +0.6u |
 | 2026-06-14 | MLB | ML | away | 4.0 | 1.00 | -125 | 2 | 1 | 3 | 3 | 4 | -1.20 | W | +0.8u |
 | 2026-06-14 | MLB | ML | away | 4.5 | 3.00 | -101 | 1 | 0 | 1 | 1 | 14 | 0.00 | L | -3.0u |
-| 2026-06-14 | MLB | ML | away | 2.5 | 0.25 | -115 | 2 | 0 | 2 | 2 | 4 | 0.00 | W | +0.2u |
+| 2026-06-14 | MLB | ML | away | 2.5 | 0.25 | -115 | 2 | 0 | 2 | 2 | 5 | 0.00 | W | +0.2u |
 | 2026-06-14 | NHL | ML | away | 2.5 | 0.25 | -115 | -1 | 1 | 0 | 1 | -5 | -0.20 | W | +0.2u |
 | 2026-06-14 | NHL | TOTAL | under | 5.0 | 5.00 | -110 | -1 | 0 | -1 | 1 | 5 | 0.00 | W | +4.4u |
 | 2026-06-15 | MLB | ML | home | 4.0 | 1.00 | -204 | 1 | 0 | 1 | 0 | 0 | -0.60 | W | +0.0u |
 | 2026-06-15 | MLB | SPREAD | away | 4.5 | 3.00 | -114 | 1 | 0 | 1 | 1 | 14 | 0.00 | W | +2.9u |
 | 2026-06-15 | MLB | TOTAL | over | 4.0 | 1.00 | -110 | 1 | 0 | 1 | 1 | 13 | 0.00 | L | -1.0u |
 | 2026-06-15 | MLB | SPREAD | home | 4.0 | 1.00 | +153 | 1 | 0 | 1 | 1 | 14 | 0.00 | W | +0.0u |
-| 2026-06-15 | MLB | TOTAL | over | 4.5 | 2.50 | -110 | 0 | 0 | 0 | 0 | 0 | 0.00 | W | +0.0u |
-| 2026-06-15 | MLB | ML | away | 3.0 | 0.50 | +115 | 2 | 0 | 2 | 2 | 17 | -0.80 | L | -0.5u |
-| 2026-06-15 | MLB | ML | away | 3.0 | 0.50 | +160 | 2 | 0 | 2 | 0 | 23 | -0.70 | L | -0.5u |
+| 2026-06-15 | MLB | TOTAL | over | 4.5 | 2.50 | -110 | 0 | 0 | 0 | 0 | -1 | 0.00 | W | +0.0u |
+| 2026-06-15 | MLB | ML | away | 3.0 | 0.50 | +115 | 2 | 0 | 2 | 2 | 18 | -0.80 | L | -0.5u |
+| 2026-06-15 | MLB | ML | away | 3.0 | 0.50 | +160 | 2 | 0 | 2 | 0 | 28 | -0.70 | L | -0.5u |
 | 2026-06-15 | MLB | SPREAD | away | 2.5 | 0.25 | -120 | 0 | 0 | 0 | -1 | 2 | 0.00 | L | -0.3u |
 | 2026-06-15 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 3 | 0 | 3 | 2 | 33 | 0.00 | L | -3.0u |
 | 2026-06-15 | MLB | ML | home | 2.5 | 0.25 | -157 | 1 | 0 | 1 | 2 | -10 | -0.20 | L | -0.3u |
 | 2026-06-15 | MLB | TOTAL | over | 4.0 | 1.00 | -110 | 1 | 0 | 1 | 1 | 13 | 0.00 | L | -1.0u |
 | 2026-06-15 | MLB | ML | home | 3.0 | 0.50 | -132 | 3 | 1 | 4 | 3 | 5 | -0.70 | W | +2.2u |
-| 2026-06-15 | MLB | TOTAL | under | 4.0 | 1.00 | -110 | 1 | 0 | 1 | 1 | 0 | 0.00 | L | -1.0u |
-| 2026-06-15 | MLB | ML | home | 3.0 | 0.50 | -154 | 1 | 0 | 1 | 3 | -3 | 0.50 | W | +0.0u |
+| 2026-06-15 | MLB | TOTAL | under | 4.0 | 1.00 | -110 | 1 | 0 | 1 | 1 | -1 | 0.00 | L | -1.0u |
+| 2026-06-15 | MLB | ML | home | 3.0 | 0.50 | -154 | 1 | 0 | 1 | 3 | -8 | 0.50 | W | +0.0u |
 | 2026-06-15 | MLB | SPREAD | away | 5.0 | 5.00 | -160 | 1 | 0 | 1 | 1 | 12 | -1.30 | L | -5.0u |
-| 2026-06-15 | MLB | ML | home | 2.5 | 0.25 | -161 | -1 | 1 | 0 | -2 | 3 | -1.00 | W | +0.0u |
-| 2026-06-15 | MLB | TOTAL | over | 4.0 | 1.00 | -110 | 1 | 0 | 1 | 1 | 12 | 0.00 | L | -1.0u |
-| 2026-06-15 | SOC | ML | home | 2.5 | 0.25 | -105 | 3 | 3 | 6 | 1 | -3 | -1.10 | L | -0.3u |
-| 2026-06-16 | MLB | ML | home | 4.0 | 1.00 | -145 | 1 | 0 | 1 | 0 | 0 | -1.00 | W | +0.0u |
+| 2026-06-15 | MLB | ML | home | 2.5 | 0.25 | -161 | -1 | 1 | 0 | -2 | -3 | -1.00 | W | +0.0u |
+| 2026-06-15 | MLB | TOTAL | over | 4.0 | 1.00 | -110 | 1 | 0 | 1 | 1 | 10 | 0.00 | L | -1.0u |
+| 2026-06-15 | SOC | ML | home | 2.5 | 0.25 | -105 | 3 | 3 | 6 | 1 | -6 | -1.10 | L | -0.3u |
+| 2026-06-16 | MLB | ML | home | 4.0 | 1.00 | -145 | 1 | 0 | 1 | -1 | -5 | -1.00 | W | +0.0u |
 | 2026-06-16 | MLB | SPREAD | away | 4.5 | 1.00 | -162 | 1 | 0 | 1 | 1 | 14 | 0.00 | W | +0.0u |
 | 2026-06-16 | MLB | TOTAL | under | 5.0 | 5.00 | -101 | 1 | 0 | 1 | 1 | 7 | 0.00 | W | +0.0u |
-| 2026-06-16 | MLB | ML | home | 4.5 | 3.00 | -194 | 1 | 0 | 1 | -1 | 21 | 0.40 | L | -3.0u |
-| 2026-06-16 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 1 | 14 | 0.00 | L | -3.0u |
+| 2026-06-16 | MLB | ML | home | 4.5 | 3.00 | -194 | 1 | 0 | 1 | -1 | 20 | 0.40 | L | -3.0u |
+| 2026-06-16 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 2 | 19 | 0.00 | L | -3.0u |
 | 2026-06-16 | MLB | SPREAD | home | 4.0 | 1.00 | +156 | 1 | 0 | 1 | 1 | 12 | 0.00 | W | +0.0u |
-| 2026-06-16 | MLB | ML | home | 4.5 | 3.00 | -163 | 5 | 3 | 8 | 4 | 10 | -1.00 | W | +2.4u |
-| 2026-06-16 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | -1 | 0 | -1 | -1 | -19 | 0.00 | L | -3.0u |
-| 2026-06-16 | MLB | ML | home | 4.5 | 3.00 | -135 | 3 | 2 | 5 | 2 | 8 | -2.10 | W | +4.5u |
-| 2026-06-16 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 1 | 7 | 0.00 | W | +0.0u |
-| 2026-06-16 | MLB | ML | away | 2.5 | 0.25 | -106 | 1 | 0 | 1 | 0 | 0 | -0.20 | W | +0.0u |
-| 2026-06-16 | MLB | ML | home | 3.0 | 0.50 | -174 | 2 | 1 | 3 | 1 | 8 | -1.40 | W | +2.3u |
-| 2026-06-16 | MLB | ML | away | 4.0 | 1.00 | -116 | 0 | 0 | 0 | -1 | -8 | -0.80 | L | -1.0u |
-| 2026-06-16 | MLB | TOTAL | over | 5.0 | 5.00 | -110 | 2 | 0 | 2 | 2 | 21 | 0.00 | L | -5.0u |
-| 2026-06-16 | MLB | ML | home | 3.0 | 0.50 | -138 | 0 | 0 | 0 | -1 | -3 | 0.70 | L | -0.5u |
+| 2026-06-16 | MLB | ML | home | 4.5 | 3.00 | -163 | 5 | 3 | 8 | 4 | 15 | -1.00 | W | +2.4u |
+| 2026-06-16 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | -1 | 0 | -1 | -1 | -25 | 0.00 | L | -3.0u |
+| 2026-06-16 | MLB | ML | home | 4.5 | 3.00 | -135 | 3 | 2 | 5 | 0 | 2 | -2.10 | W | +4.5u |
+| 2026-06-16 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 2 | 8 | 0.00 | W | +0.0u |
+| 2026-06-16 | MLB | ML | away | 2.5 | 0.25 | -106 | 1 | 0 | 1 | 1 | 5 | -0.20 | W | +0.0u |
+| 2026-06-16 | MLB | ML | home | 3.0 | 0.50 | -174 | 2 | 1 | 3 | 2 | 12 | -1.40 | W | +2.3u |
+| 2026-06-16 | MLB | ML | away | 4.0 | 1.00 | -116 | 0 | 0 | 0 | -1 | -4 | -0.80 | L | -1.0u |
+| 2026-06-16 | MLB | TOTAL | over | 5.0 | 5.00 | -110 | 2 | 0 | 2 | 3 | 26 | 0.00 | L | -5.0u |
+| 2026-06-16 | MLB | ML | home | 3.0 | 0.50 | -138 | 0 | 0 | 0 | -1 | -8 | 0.70 | L | -0.5u |
 | 2026-06-16 | MLB | ML | away | 3.0 | 0.50 | -102 | 1 | 0 | 1 | 0 | 0 | -1.00 | L | -0.5u |
-| 2026-06-16 | MLB | SPREAD | away | 4.0 | 1.00 | -160 | 0 | 0 | 0 | 2 | 25 | 30.10 | W | +0.0u |
+| 2026-06-16 | MLB | SPREAD | away | 4.0 | 1.00 | -160 | 0 | 0 | 0 | 2 | 26 | 30.10 | W | +0.0u |
 | 2026-06-16 | MLB | ML | home | 3.0 | 0.50 | -161 | 1 | 1 | 2 | 0 | -22 | -0.40 | L | -0.5u |
-| 2026-06-16 | MLB | ML | away | 5.0 | 2.50 | +120 | -1 | -1 | -2 | -1 | 24 | -1.80 | L | -2.5u |
+| 2026-06-16 | MLB | ML | away | 5.0 | 2.50 | +120 | -1 | -1 | -2 | -1 | 21 | -1.80 | L | -2.5u |
 | 2026-06-16 | MLB | TOTAL | over | 4.0 | 1.00 | -110 | 0 | 0 | 0 | 2 | 4 | 0.00 | L | -1.0u |
-| 2026-06-16 | MLB | ML | away | 2.5 | 0.25 | -112 | 1 | 0 | 1 | 2 | 6 | -0.90 | W | +0.0u |
+| 2026-06-16 | MLB | ML | away | 2.5 | 0.25 | -112 | 1 | 0 | 1 | 2 | 7 | -0.90 | W | +0.0u |
 | 2026-06-16 | MLB | SPREAD | away | 4.0 | 1.00 | -110 | 1 | 0 | 1 | 1 | 12 | 0.00 | W | +0.0u |
 | 2026-06-16 | SOC | ML | home | 4.0 | 1.00 | +1375 | 1 | 0 | 1 | -2 | -28 | 0.00 | L | -1.0u |
-| 2026-06-17 | MLB | ML | away | 2.5 | 0.25 | +126 | -2 | 0 | -2 | -1 | -16 | -0.40 | W | +0.0u |
+| 2026-06-17 | MLB | ML | away | 2.5 | 0.25 | +126 | -2 | 0 | -2 | -1 | -23 | -0.40 | W | +0.0u |
 | 2026-06-17 | MLB | TOTAL | over | 5.0 | 5.00 | -110 | 1 | 0 | 1 | 1 | 14 | 0.00 | W | +2.7u |
-| 2026-06-17 | MLB | ML | away | 4.5 | 2.50 | +112 | -1 | -1 | -2 | -2 | 11 | -1.20 | L | -2.5u |
-| 2026-06-17 | MLB | ML | home | 5.0 | 5.00 | -173 | 1 | 0 | 1 | 1 | -7 | 0.00 | W | +0.0u |
+| 2026-06-17 | MLB | ML | away | 4.5 | 2.50 | +112 | -1 | -1 | -2 | -2 | 7 | -1.20 | L | -2.5u |
+| 2026-06-17 | MLB | ML | home | 5.0 | 5.00 | -173 | 1 | 0 | 1 | 0 | -11 | 0.00 | W | +0.0u |
 | 2026-06-17 | MLB | TOTAL | under | 5.0 | 5.00 | -110 | 1 | 0 | 1 | 1 | 14 | 0.00 | W | +2.7u |
 | 2026-06-17 | MLB | ML | away | 5.0 | 2.50 | +100 | 1 | 0 | 1 | 1 | 14 | 0.00 | W | +2.5u |
-| 2026-06-17 | MLB | ML | home | 4.5 | 2.50 | +115 | 1 | 0 | 1 | 1 | 14 | 0.00 | L | -2.5u |
+| 2026-06-17 | MLB | ML | home | 4.5 | 2.50 | +115 | 1 | 0 | 1 | 0 | 9 | 0.00 | L | -2.5u |
 | 2026-06-17 | MLB | SPREAD | home | 4.5 | 3.00 | -141 | 0 | 0 | 0 | 1 | 14 | 0.00 | L | -3.0u |
 | 2026-06-17 | MLB | SPREAD | away | 5.0 | 5.00 | -181 | 0 | 0 | 0 | 1 | 12 | -0.80 | W | +0.0u |
-| 2026-06-17 | MLB | TOTAL | over | 5.0 | 5.00 | -110 | 1 | 0 | 1 | 1 | 7 | 0.00 | L | -5.0u |
+| 2026-06-17 | MLB | TOTAL | over | 5.0 | 5.00 | -110 | 1 | 0 | 1 | 2 | 8 | 0.00 | L | -5.0u |
 | 2026-06-17 | MLB | ML | home | 2.5 | 0.25 | -157 | 0 | 0 | 0 | 0 | 17 | -1.10 | W | +0.0u |
 | 2026-06-17 | MLB | SPREAD | home | 2.5 | 0.25 | +125 | -1 | 0 | -1 | -1 | 17 | -0.60 | L | -0.3u |
-| 2026-06-17 | MLB | ML | home | 5.0 | 5.00 | -123 | 1 | 0 | 1 | 0 | 12 | 0.00 | L | -5.0u |
+| 2026-06-17 | MLB | ML | home | 5.0 | 5.00 | -123 | 1 | 0 | 1 | 0 | 9 | 0.00 | L | -5.0u |
 | 2026-06-17 | MLB | SPREAD | home | 4.0 | 1.00 | +161 | 1 | 0 | 1 | 0 | 0 | 0.00 | L | -1.0u |
 | 2026-06-17 | SOC | ML | away | 5.0 | 1.00 | +1028 | 1 | 0 | 1 | -5 | -36 | 0.00 | L | -1.0u |
-| 2026-06-17 | SOC | ML | home | 4.0 | 1.00 | -140 | 0 | 0 | 0 | 0 | 3 | -0.30 | W | +0.0u |
-| 2026-06-17 | SOC | ML | home | 4.0 | 1.00 | +142 | 1 | 0 | 1 | 3 | -9 | 0.00 | W | +0.0u |
+| 2026-06-17 | SOC | ML | home | 4.0 | 1.00 | -140 | 0 | 0 | 0 | 0 | 6 | -0.30 | W | +0.0u |
+| 2026-06-17 | SOC | ML | home | 4.0 | 1.00 | +142 | 1 | 0 | 1 | 3 | -15 | 0.00 | W | +0.0u |
 | 2026-06-18 | MLB | ML | home | 4.0 | 1.00 | -138 | 1 | 0 | 1 | 1 | 2 | 0.00 | W | +0.0u |
-| 2026-06-18 | MLB | ML | home | 4.5 | 3.00 | -141 | 1 | 1 | 2 | 0 | 12 | -1.30 | L | -3.0u |
-| 2026-06-18 | MLB | ML | home | 4.5 | 3.00 | -151 | 3 | 0 | 3 | 2 | 12 | -1.50 | W | +0.0u |
-| 2026-06-18 | MLB | ML | away | 4.5 | 2.50 | +108 | 3 | 1 | 4 | 3 | -4 | -1.20 | W | +2.6u |
-| 2026-06-18 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 1 | 14 | 0.00 | W | +2.7u |
+| 2026-06-18 | MLB | ML | home | 4.5 | 3.00 | -141 | 1 | 1 | 2 | 0 | 11 | -1.30 | L | -3.0u |
+| 2026-06-18 | MLB | ML | home | 4.5 | 3.00 | -151 | 3 | 0 | 3 | 3 | 17 | -1.50 | W | +0.0u |
+| 2026-06-18 | MLB | ML | away | 4.5 | 2.50 | +108 | 3 | 1 | 4 | 5 | 4 | -1.20 | W | +2.6u |
+| 2026-06-18 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 2 | 19 | 0.00 | W | +2.7u |
 | 2026-06-18 | MLB | SPREAD | away | 4.5 | 3.00 | -199 | 1 | 0 | 1 | 2 | 3 | 0.00 | L | -3.0u |
-| 2026-06-18 | MLB | TOTAL | under | 4.5 | 3.00 | -110 | 3 | 0 | 3 | 3 | -7 | 0.00 | W | +2.8u |
-| 2026-06-18 | SOC | ML | home | 5.0 | 2.50 | +113 | 2 | 0 | 2 | 5 | 1 | 0.00 | W | +0.0u |
-| 2026-06-19 | MLB | ML | home | 4.5 | 3.00 | -205 | 1 | 0 | 1 | 1 | 7 | 0.10 | W | +0.0u |
-| 2026-06-19 | MLB | TOTAL | over | 4.5 | 3.00 | -114 | 0 | 0 | 0 | 2 | 27 | 0.00 | W | +0.0u |
+| 2026-06-18 | MLB | TOTAL | under | 4.5 | 3.00 | -110 | 3 | 0 | 3 | 3 | -3 | 0.00 | W | +2.8u |
+| 2026-06-18 | SOC | ML | home | 5.0 | 2.50 | +113 | 2 | 0 | 2 | 5 | -1 | 0.00 | W | +0.0u |
+| 2026-06-19 | MLB | ML | home | 4.5 | 3.00 | -205 | 1 | 0 | 1 | 2 | 11 | 0.10 | W | +0.0u |
+| 2026-06-19 | MLB | TOTAL | over | 4.5 | 3.00 | -114 | 0 | 0 | 0 | 2 | 28 | 0.00 | W | +0.0u |
 | 2026-06-19 | MLB | SPREAD | away | 5.0 | 5.00 | -194 | 1 | 0 | 1 | 1 | 12 | 0.00 | W | +0.0u |
-| 2026-06-19 | MLB | TOTAL | over | 3.0 | 0.50 | -117 | 0 | 0 | 0 | 0 | 0 | 0.00 | W | +0.0u |
-| 2026-06-19 | MLB | ML | away | 4.5 | 1.00 | +239 | 1 | 0 | 1 | 1 | -7 | 0.00 | L | -1.0u |
-| 2026-06-19 | MLB | SPREAD | home | 4.5 | 3.00 | -111 | 1 | 1 | 2 | 0 | 10 | 0.00 | W | +3.1u |
-| 2026-06-19 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 2 | 0 | 2 | 2 | -13 | 0.00 | L | -3.0u |
+| 2026-06-19 | MLB | TOTAL | over | 3.0 | 0.50 | -117 | 0 | 0 | 0 | 0 | -1 | 0.00 | W | +0.0u |
+| 2026-06-19 | MLB | ML | away | 4.5 | 1.00 | +239 | 1 | 0 | 1 | 0 | -11 | 0.00 | L | -1.0u |
+| 2026-06-19 | MLB | SPREAD | home | 4.5 | 3.00 | -111 | 1 | 1 | 2 | 0 | 4 | 0.00 | W | +3.1u |
+| 2026-06-19 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 2 | 0 | 2 | 2 | -9 | 0.00 | L | -3.0u |
 | 2026-06-19 | MLB | ML | away | 4.0 | 1.00 | +107 | 0 | 0 | 0 | 1 | -2 | 0.00 | L | -1.0u |
-| 2026-06-19 | MLB | SPREAD | away | 4.0 | 1.00 | -115 | 2 | 0 | 2 | 3 | 30 | 0.00 | W | +2.5u |
+| 2026-06-19 | MLB | SPREAD | away | 4.0 | 1.00 | -115 | 2 | 0 | 2 | 3 | 36 | 0.00 | W | +2.5u |
 | 2026-06-19 | MLB | ML | away | 4.5 | 2.50 | +141 | 1 | 0 | 1 | 1 | 14 | 0.00 | L | -2.5u |
-| 2026-06-19 | MLB | ML | home | 2.5 | 0.25 | +158 | -1 | -1 | -2 | 0 | -14 | -1.10 | W | +0.0u |
-| 2026-06-19 | MLB | SPREAD | away | 4.5 | 2.50 | -101 | 0 | -1 | -1 | 0 | 23 | -0.70 | L | -2.5u |
-| 2026-06-19 | MLB | ML | home | 4.5 | 3.00 | -163 | -1 | -1 | -2 | -2 | 28 | -0.40 | W | +2.4u |
+| 2026-06-19 | MLB | ML | home | 2.5 | 0.25 | +158 | -1 | -1 | -2 | 1 | -10 | -1.10 | W | +0.0u |
+| 2026-06-19 | MLB | SPREAD | away | 4.5 | 2.50 | -101 | 0 | -1 | -1 | -1 | 18 | -0.70 | L | -2.5u |
+| 2026-06-19 | MLB | ML | home | 4.5 | 3.00 | -163 | -1 | -1 | -2 | -2 | 22 | -0.40 | W | +2.4u |
 | 2026-06-19 | MLB | SPREAD | home | 4.5 | 2.50 | +130 | 1 | 0 | 1 | 1 | 14 | 0.00 | W | +0.0u |
 | 2026-06-19 | MLB | TOTAL | over | 5.0 | 5.00 | -110 | 1 | 0 | 1 | 1 | 14 | 0.00 | L | -5.0u |
 | 2026-06-19 | MLB | ML | home | 3.0 | 0.50 | -152 | 1 | 0 | 1 | 0 | 0 | 0.00 | W | +0.0u |
 | 2026-06-19 | MLB | SPREAD | home | 2.5 | 0.25 | +147 | 1 | 0 | 1 | 0 | 0 | 0.00 | L | -0.3u |
-| 2026-06-19 | MLB | ML | home | 5.0 | 1.00 | -109 | 1 | 0 | 1 | 1 | -7 | 0.00 | W | +0.0u |
+| 2026-06-19 | MLB | ML | home | 5.0 | 1.00 | -109 | 1 | 0 | 1 | 1 | -6 | 0.00 | W | +0.0u |
 | 2026-06-19 | MLB | SPREAD | away | 5.0 | 5.00 | -110 | 1 | 0 | 1 | 1 | 12 | 0.00 | W | +0.0u |
-| 2026-06-19 | MLB | TOTAL | under | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 1 | 14 | 0.00 | L | -3.0u |
+| 2026-06-19 | MLB | TOTAL | under | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 2 | 19 | 0.00 | L | -3.0u |
 | 2026-06-19 | MLB | SPREAD | home | 2.5 | 0.25 | +170 | 1 | 0 | 1 | 0 | 0 | 0.00 | L | -0.3u |
 | 2026-06-19 | SOC | ML | away | 3.0 | 0.50 | +2500 | 0 | 0 | 0 | -4 | -28 | 0.00 | L | -0.5u |
-| 2026-06-19 | SOC | ML | home | 4.5 | 2.50 | +108 | 1 | 0 | 1 | 5 | 22 | -2.40 | L | -2.5u |
+| 2026-06-19 | SOC | ML | home | 4.5 | 2.50 | +108 | 1 | 0 | 1 | 5 | 21 | -2.40 | L | -2.5u |
 | 2026-06-20 | MLB | SPREAD | away | 5.0 | 5.00 | -194 | 0 | 0 | 0 | 1 | 12 | 0.00 | W | +0.0u |
-| 2026-06-20 | MLB | ML | home | 4.5 | 3.00 | -200 | -2 | 0 | -2 | -2 | 6 | -1.30 | L | -3.0u |
-| 2026-06-20 | MLB | SPREAD | home | 3.0 | 0.50 | -110 | 1 | 0 | 1 | 0 | 0 | 0.00 | L | -0.5u |
-| 2026-06-20 | MLB | ML | away | 4.5 | 2.50 | +123 | 2 | 0 | 2 | 3 | -5 | -3.20 | L | -2.5u |
-| 2026-06-20 | MLB | TOTAL | under | 2.5 | 0.25 | -110 | -1 | 1 | 0 | 0 | 14 | 0.00 | W | +0.0u |
-| 2026-06-20 | MLB | TOTAL | under | 4.5 | 3.00 | -110 | 0 | 0 | 0 | 2 | -4 | 0.00 | W | +1.8u |
-| 2026-06-20 | MLB | ML | away | 3.0 | 0.50 | +116 | 0 | 0 | 0 | -2 | -1 | 0.00 | W | +0.0u |
-| 2026-06-20 | MLB | TOTAL | under | 4.0 | 1.00 | -110 | -1 | 0 | -1 | -1 | -19 | 0.00 | L | -1.0u |
-| 2026-06-20 | MLB | ML | home | 4.0 | 1.00 | -190 | 2 | 1 | 3 | 0 | 2 | -1.70 | W | +2.0u |
+| 2026-06-20 | MLB | ML | home | 4.5 | 3.00 | -200 | -2 | 0 | -2 | -2 | 1 | -1.30 | L | -3.0u |
+| 2026-06-20 | MLB | SPREAD | home | 3.0 | 0.50 | -110 | 1 | 0 | 1 | 1 | 5 | 0.00 | L | -0.5u |
+| 2026-06-20 | MLB | ML | away | 4.5 | 2.50 | +123 | 2 | 0 | 2 | 3 | -6 | -3.20 | L | -2.5u |
+| 2026-06-20 | MLB | TOTAL | under | 2.5 | 0.25 | -110 | -1 | 1 | 0 | -1 | 10 | 0.00 | W | +0.0u |
+| 2026-06-20 | MLB | TOTAL | under | 4.5 | 3.00 | -110 | 0 | 0 | 0 | 2 | -3 | 0.00 | W | +1.8u |
+| 2026-06-20 | MLB | ML | away | 3.0 | 0.50 | +116 | 0 | 0 | 0 | -1 | -1 | 0.00 | W | +0.0u |
+| 2026-06-20 | MLB | TOTAL | under | 4.0 | 1.00 | -110 | -1 | 0 | -1 | -1 | -25 | 0.00 | L | -1.0u |
+| 2026-06-20 | MLB | ML | home | 4.0 | 1.00 | -190 | 2 | 1 | 3 | 0 | -2 | -1.70 | W | +2.0u |
 | 2026-06-20 | MLB | ML | home | 5.0 | 5.00 | -137 | 1 | 0 | 1 | 1 | 14 | 0.00 | W | +2.2u |
-| 2026-06-20 | MLB | TOTAL | over | 3.0 | 0.50 | -110 | 1 | 0 | 1 | 0 | 0 | 0.00 | W | +0.0u |
-| 2026-06-20 | MLB | TOTAL | under | 3.0 | 0.50 | -110 | 1 | 0 | 1 | 0 | 0 | 0.00 | L | -0.5u |
-| 2026-06-20 | SOC | ML | away | 2.5 | 0.25 | +474 | -3 | 0 | -3 | -20 | -54 | 0.00 | L | -0.3u |
-| 2026-06-20 | SOC | ML | away | 2.5 | 0.25 | +2200 | 0 | 0 | 0 | -1 | -15 | -0.20 | L | -0.3u |
-| 2026-06-21 | MLB | ML | home | 4.0 | 1.00 | -226 | 1 | 0 | 1 | 0 | 15 | 0.30 | L | -1.0u |
+| 2026-06-20 | MLB | TOTAL | over | 3.0 | 0.50 | -110 | 1 | 0 | 1 | 1 | 5 | 0.00 | W | +0.0u |
+| 2026-06-20 | MLB | TOTAL | under | 3.0 | 0.50 | -110 | 1 | 0 | 1 | 1 | 5 | 0.00 | L | -0.5u |
+| 2026-06-20 | SOC | ML | away | 2.5 | 0.25 | +474 | -3 | 0 | -3 | -20 | -51 | 0.00 | L | -0.3u |
+| 2026-06-20 | SOC | ML | away | 2.5 | 0.25 | +2200 | 0 | 0 | 0 | -1 | -13 | -0.20 | L | -0.3u |
+| 2026-06-21 | MLB | ML | home | 4.0 | 1.00 | -226 | 1 | 0 | 1 | 0 | 16 | 0.30 | L | -1.0u |
 | 2026-06-21 | MLB | SPREAD | away | 5.0 | 5.00 | -190 | 0 | 0 | 0 | 1 | 12 | -0.50 | L | -5.0u |
-| 2026-06-21 | MLB | TOTAL | under | 4.5 | 2.50 | +100 | 1 | 1 | 2 | 1 | 27 | 0.00 | W | +2.5u |
-| 2026-06-21 | MLB | ML | home | 4.0 | 1.00 | -104 | -1 | 0 | -1 | 0 | -10 | -0.50 | L | -1.0u |
-| 2026-06-21 | MLB | TOTAL | over | 4.0 | 1.00 | -110 | 1 | 0 | 1 | 1 | 0 | 0.00 | L | -1.0u |
+| 2026-06-21 | MLB | TOTAL | under | 4.5 | 2.50 | +100 | 1 | 1 | 2 | 0 | 23 | 0.00 | W | +2.5u |
+| 2026-06-21 | MLB | ML | home | 4.0 | 1.00 | -104 | -1 | 0 | -1 | 0 | -14 | -0.50 | L | -1.0u |
+| 2026-06-21 | MLB | TOTAL | over | 4.0 | 1.00 | -110 | 1 | 0 | 1 | 1 | -1 | 0.00 | L | -1.0u |
 | 2026-06-21 | MLB | ML | away | 5.0 | 2.50 | +113 | 0 | 0 | 0 | 1 | -2 | 0.00 | L | -2.5u |
 | 2026-06-21 | MLB | TOTAL | over | 2.5 | 0.25 | -110 | 0 | 0 | 0 | 0 | 1 | 0.00 | L | -0.3u |
 | 2026-06-21 | MLB | TOTAL | under | 4.5 | 3.00 | -110 | 0 | 0 | 0 | 0 | 17 | 0.00 | L | -3.0u |
 | 2026-06-21 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 1 | 14 | 0.00 | W | +0.0u |
-| 2026-06-21 | MLB | ML | away | 2.5 | 0.25 | +110 | 0 | 0 | 0 | 0 | 0 | -1.00 | W | +0.0u |
-| 2026-06-21 | MLB | SPREAD | home | 2.5 | 0.25 | -110 | 0 | 0 | 0 | 0 | 0 | -1.00 | L | -0.3u |
+| 2026-06-21 | MLB | ML | away | 2.5 | 0.25 | +110 | 0 | 0 | 0 | -1 | -5 | -1.00 | W | +0.0u |
+| 2026-06-21 | MLB | SPREAD | home | 2.5 | 0.25 | -110 | 0 | 0 | 0 | 1 | 5 | -1.00 | L | -0.3u |
 | 2026-06-21 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 1 | 14 | 0.00 | L | -3.0u |
-| 2026-06-21 | MLB | ML | home | 4.5 | 3.00 | -178 | 3 | 0 | 3 | 3 | 54 | -1.30 | W | +1.6u |
-| 2026-06-21 | MLB | ML | home | 3.0 | 0.50 | +130 | 0 | 0 | 0 | -1 | -3 | -0.80 | L | -0.5u |
+| 2026-06-21 | MLB | ML | home | 4.5 | 3.00 | -178 | 3 | 0 | 3 | 3 | 61 | -1.30 | W | +1.6u |
+| 2026-06-21 | MLB | ML | home | 3.0 | 0.50 | +130 | 0 | 0 | 0 | -1 | -8 | -0.80 | L | -0.5u |
 | 2026-06-21 | MLB | ML | home | 3.0 | 0.50 | +123 | 1 | 0 | 1 | 0 | 0 | -0.20 | W | +0.0u |
-| 2026-06-21 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 0 | 0 | 0 | 0 | -3 | 0.00 | L | -3.0u |
+| 2026-06-21 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 0 | 0 | 0 | 0 | -9 | 0.00 | L | -3.0u |
 | 2026-06-21 | MLB | SPREAD | away | 5.0 | 2.50 | +130 | 0 | 0 | 0 | 1 | 12 | -1.30 | W | +0.0u |
-| 2026-06-21 | MLB | TOTAL | under | 2.5 | 0.25 | -110 | 2 | 0 | 2 | 2 | 9 | 0.00 | L | -0.3u |
-| 2026-06-21 | MLB | TOTAL | under | 4.5 | 1.00 | -114 | 1 | 1 | 2 | 1 | -22 | 0.00 | W | +0.0u |
-| 2026-06-21 | SOC | ML | away | 4.5 | 1.00 | +725 | 2 | 0 | 2 | -4 | -50 | 0.00 | L | -1.0u |
-| 2026-06-21 | SOC | ML | home | 4.0 | 1.00 | +650 | 2 | 0 | 2 | 1 | 1 | -0.20 | L | -1.0u |
-| 2026-06-21 | SOC | ML | draw | 3.0 | 0.50 | +950 | 0 | 0 | 0 | -9 | -37 | 0.00 | L | -0.5u |
-| 2026-06-22 | MLB | ML | home | 4.5 | 3.00 | -138 | 0 | 0 | 0 | 0 | 11 | 0.30 | W | +0.0u |
+| 2026-06-21 | MLB | TOTAL | under | 2.5 | 0.25 | -110 | 2 | 0 | 2 | 2 | 15 | 0.00 | L | -0.3u |
+| 2026-06-21 | MLB | TOTAL | under | 4.5 | 1.00 | -114 | 1 | 1 | 2 | 1 | -23 | 0.00 | W | +0.0u |
+| 2026-06-21 | SOC | ML | away | 4.5 | 1.00 | +725 | 2 | 0 | 2 | -4 | -57 | 0.00 | L | -1.0u |
+| 2026-06-21 | SOC | ML | home | 4.0 | 1.00 | +650 | 2 | 0 | 2 | 1 | -2 | -0.20 | L | -1.0u |
+| 2026-06-21 | SOC | ML | draw | 3.0 | 0.50 | +950 | 0 | 0 | 0 | -9 | -38 | 0.00 | L | -0.5u |
+| 2026-06-22 | MLB | ML | home | 4.5 | 3.00 | -138 | 0 | 0 | 0 | 0 | 6 | 0.30 | W | +0.0u |
 | 2026-06-22 | MLB | SPREAD | away | 5.0 | 5.00 | -168 | 1 | 0 | 1 | 1 | 12 | 0.00 | W | +0.0u |
-| 2026-06-22 | MLB | TOTAL | over | 4.5 | 1.00 | +105 | 1 | 0 | 1 | 1 | 4 | 0.00 | L | -1.0u |
-| 2026-06-22 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 0 | 0 | 0 | 0 | 19 | 0.00 | L | -3.0u |
+| 2026-06-22 | MLB | TOTAL | over | 4.5 | 1.00 | +105 | 1 | 0 | 1 | 1 | 8 | 0.00 | L | -1.0u |
+| 2026-06-22 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 0 | 0 | 0 | 0 | 14 | 0.00 | L | -3.0u |
 | 2026-06-22 | MLB | SPREAD | away | 5.0 | 2.50 | +118 | 1 | 0 | 1 | 1 | 12 | 0.00 | W | +0.0u |
-| 2026-06-22 | MLB | TOTAL | under | 5.0 | 5.00 | -110 | 1 | 0 | 1 | 0 | 16 | 0.00 | W | +0.0u |
+| 2026-06-22 | MLB | TOTAL | under | 5.0 | 5.00 | -110 | 1 | 0 | 1 | 0 | 15 | 0.00 | W | +0.0u |
 | 2026-06-22 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 1 | 14 | 0.00 | W | +2.7u |
-| 2026-06-22 | MLB | ML | home | 5.0 | 5.00 | -124 | 1 | 0 | 1 | 1 | 5 | -1.20 | W | +2.3u |
+| 2026-06-22 | MLB | ML | home | 5.0 | 5.00 | -124 | 1 | 0 | 1 | 1 | 6 | -1.20 | W | +2.3u |
 | 2026-06-22 | MLB | TOTAL | under | 5.0 | 5.00 | -110 | 3 | 0 | 3 | 3 | 34 | 0.00 | W | +2.7u |
 | 2026-06-22 | MLB | ML | home | 3.0 | 0.50 | -180 | 1 | 0 | 1 | 0 | 0 | -1.30 | L | -0.5u |
-| 2026-06-22 | MLB | ML | home | 5.0 | 2.50 | +133 | 0 | 0 | 0 | 0 | -5 | 0.00 | L | -2.5u |
-| 2026-06-22 | MLB | ML | home | 5.0 | 2.50 | +137 | 0 | 0 | 0 | 0 | -5 | 0.00 | L | -2.5u |
-| 2026-06-22 | MLB | SPREAD | home | 4.5 | 1.00 | -109 | 0 | 0 | 0 | -1 | 11 | 0.00 | W | +0.0u |
+| 2026-06-22 | MLB | ML | home | 5.0 | 2.50 | +133 | 0 | 0 | 0 | 0 | -10 | 0.00 | L | -2.5u |
+| 2026-06-22 | MLB | ML | home | 5.0 | 2.50 | +137 | 0 | 0 | 0 | 0 | -10 | 0.00 | L | -2.5u |
+| 2026-06-22 | MLB | SPREAD | home | 4.5 | 1.00 | -109 | 0 | 0 | 0 | -1 | 7 | 0.00 | W | +0.0u |
 | 2026-06-22 | MLB | SPREAD | away | 4.5 | 2.50 | +138 | 2 | 0 | 2 | 1 | 35 | 0.00 | L | -2.5u |
-| 2026-06-22 | MLB | TOTAL | under | 4.0 | 1.00 | -104 | 2 | 1 | 3 | 2 | 7 | 0.00 | W | +3.9u |
-| 2026-06-22 | MLB | ML | away | 5.0 | 5.00 | — | 1 | 0 | 1 | 1 | 5 | 0.00 | L | -5.0u |
+| 2026-06-22 | MLB | TOTAL | under | 4.0 | 1.00 | -104 | 2 | 1 | 3 | 2 | 13 | 0.00 | W | +3.9u |
+| 2026-06-22 | MLB | ML | away | 5.0 | 5.00 | — | 1 | 0 | 1 | 1 | 11 | 0.00 | L | -5.0u |
 | 2026-06-22 | SOC | ML | draw | 4.5 | 1.00 | +350 | -1 | 0 | -1 | -16 | -46 | -0.70 | L | -1.0u |
-| 2026-06-22 | SOC | ML | home | 2.5 | 0.25 | -950 | 1 | 0 | 1 | 8 | 50 | 0.00 | W | +0.0u |
-| 2026-06-22 | SOC | ML | home | 4.5 | 2.50 | +139 | 1 | 0 | 1 | 9 | 40 | 0.00 | W | +0.0u |
-| 2026-06-23 | MLB | ML | home | 3.0 | 0.50 | -109 | 0 | 0 | 0 | -1 | -13 | -1.80 | L | -0.5u |
+| 2026-06-22 | SOC | ML | home | 2.5 | 0.25 | -950 | 1 | 0 | 1 | 8 | 49 | 0.00 | W | +0.0u |
+| 2026-06-22 | SOC | ML | home | 4.5 | 2.50 | +139 | 1 | 0 | 1 | 9 | 36 | 0.00 | W | +0.0u |
+| 2026-06-23 | MLB | ML | home | 3.0 | 0.50 | -109 | 0 | 0 | 0 | -1 | -14 | -1.80 | L | -0.5u |
 | 2026-06-23 | MLB | SPREAD | away | 5.0 | 5.00 | -168 | 1 | 0 | 1 | 1 | 12 | 0.00 | W | +0.0u |
 | 2026-06-23 | MLB | TOTAL | under | 5.0 | 5.00 | -110 | 0 | 0 | 0 | 1 | -2 | 0.00 | W | +0.0u |
-| 2026-06-23 | MLB | ML | away | 4.5 | 3.00 | -108 | 2 | 0 | 2 | 2 | -6 | -1.40 | L | -3.0u |
-| 2026-06-23 | MLB | ML | away | 4.5 | 3.00 | -133 | 1 | 0 | 1 | 1 | 11 | -1.40 | L | -3.0u |
+| 2026-06-23 | MLB | ML | away | 4.5 | 3.00 | -108 | 2 | 0 | 2 | 3 | 0 | -1.40 | L | -3.0u |
+| 2026-06-23 | MLB | ML | away | 4.5 | 3.00 | -133 | 1 | 0 | 1 | 1 | 17 | -1.40 | L | -3.0u |
 | 2026-06-23 | MLB | SPREAD | away | 3.0 | 0.50 | +110 | 1 | 0 | 1 | 1 | 14 | 0.00 | L | -0.5u |
 | 2026-06-23 | MLB | ML | away | 3.0 | 0.50 | -162 | 1 | 0 | 1 | 1 | 14 | 0.00 | W | +0.0u |
 | 2026-06-23 | MLB | SPREAD | home | 4.0 | 1.00 | -107 | 0 | 0 | 0 | 0 | -23 | 0.00 | L | -1.0u |
-| 2026-06-23 | MLB | TOTAL | under | 5.0 | 5.00 | -114 | 0 | 0 | 0 | -1 | -25 | 0.00 | L | -5.0u |
-| 2026-06-23 | MLB | ML | home | 2.5 | 0.25 | -125 | 1 | 0 | 1 | 0 | -21 | -1.90 | L | -0.3u |
-| 2026-06-23 | MLB | TOTAL | under | 5.0 | 1.00 | -102 | 1 | 2 | 3 | 1 | 2 | 0.00 | L | -1.0u |
+| 2026-06-23 | MLB | TOTAL | under | 5.0 | 5.00 | -114 | 0 | 0 | 0 | -1 | -31 | 0.00 | L | -5.0u |
+| 2026-06-23 | MLB | ML | home | 2.5 | 0.25 | -125 | 1 | 0 | 1 | 0 | -20 | -1.90 | L | -0.3u |
+| 2026-06-23 | MLB | TOTAL | under | 5.0 | 1.00 | -102 | 1 | 2 | 3 | 1 | 8 | 0.00 | L | -1.0u |
 | 2026-06-23 | MLB | ML | away | 4.5 | 3.00 | -172 | 1 | 0 | 1 | 1 | -9 | 0.00 | W | +0.0u |
-| 2026-06-23 | MLB | TOTAL | under | 5.0 | 1.00 | -109 | 2 | 0 | 2 | 2 | -3 | 0.00 | L | -1.0u |
+| 2026-06-23 | MLB | TOTAL | under | 5.0 | 1.00 | -109 | 2 | 0 | 2 | 2 | -4 | 0.00 | L | -1.0u |
 | 2026-06-23 | MLB | SPREAD | away | 5.0 | 2.50 | +132 | 1 | 0 | 1 | 1 | -9 | 0.00 | W | +0.0u |
 | 2026-06-23 | MLB | TOTAL | over | 4.0 | 1.00 | -110 | 1 | 0 | 1 | 1 | 14 | 0.00 | L | -1.0u |
-| 2026-06-23 | MLB | ML | home | 5.0 | 2.50 | +104 | 1 | 0 | 1 | 1 | -7 | 0.00 | L | -2.5u |
+| 2026-06-23 | MLB | ML | home | 5.0 | 2.50 | +104 | 1 | 0 | 1 | 1 | -6 | 0.00 | L | -2.5u |
 | 2026-06-23 | MLB | SPREAD | away | 5.0 | 5.00 | -110 | 0 | 0 | 0 | 1 | 12 | 0.00 | L | -5.0u |
-| 2026-06-23 | MLB | ML | away | 4.0 | 1.00 | +117 | 1 | 0 | 1 | 0 | 6 | -0.20 | L | -1.0u |
-| 2026-06-23 | MLB | SPREAD | away | 2.5 | 0.25 | +106 | 1 | 0 | 1 | 0 | 28 | -1.50 | W | +0.0u |
-| 2026-06-23 | MLB | TOTAL | under | 2.5 | 0.25 | -110 | 0 | 0 | 0 | 0 | -5 | 0.00 | W | +0.0u |
+| 2026-06-23 | MLB | ML | away | 4.0 | 1.00 | +117 | 1 | 0 | 1 | 0 | 11 | -0.20 | L | -1.0u |
+| 2026-06-23 | MLB | SPREAD | away | 2.5 | 0.25 | +106 | 1 | 0 | 1 | 0 | 29 | -1.50 | W | +0.0u |
+| 2026-06-23 | MLB | TOTAL | under | 2.5 | 0.25 | -110 | 0 | 0 | 0 | 0 | -10 | 0.00 | W | +0.0u |
 | 2026-06-23 | MLB | ML | home | 4.5 | 1.00 | -153 | 2 | 0 | 2 | 2 | 14 | 0.00 | W | +0.0u |
 | 2026-06-23 | MLB | SPREAD | home | 3.0 | 0.50 | +139 | 1 | 0 | 1 | 1 | 14 | 0.00 | W | +0.0u |
-| 2026-06-23 | MLB | TOTAL | under | 4.5 | 1.00 | -110 | 1 | 0 | 1 | 1 | -1 | 0.00 | L | -1.0u |
+| 2026-06-23 | MLB | TOTAL | under | 4.5 | 1.00 | -110 | 1 | 0 | 1 | 1 | -2 | 0.00 | L | -1.0u |
 | 2026-06-23 | SOC | ML | home | 2.5 | 0.25 | -450 | 1 | 0 | 1 | 0 | 0 | 0.60 | L | -0.3u |
-| 2026-06-23 | SOC | ML | away | 4.5 | 1.00 | +1800 | 1 | 0 | 1 | -3 | -25 | 0.00 | L | -1.0u |
+| 2026-06-23 | SOC | ML | away | 4.5 | 1.00 | +1800 | 1 | 0 | 1 | -3 | -24 | 0.00 | L | -1.0u |
 | 2026-06-24 | MLB | SPREAD | away | 5.0 | 5.00 | -214 | 0 | 0 | 0 | 1 | 12 | 0.00 | W | +0.0u |
 | 2026-06-24 | MLB | TOTAL | over | 4.0 | 1.00 | -110 | 1 | 0 | 1 | 1 | 14 | 0.00 | W | +0.0u |
-| 2026-06-24 | MLB | ML | away | 4.5 | 3.00 | -132 | 1 | 0 | 1 | 1 | 14 | -1.10 | L | -3.0u |
+| 2026-06-24 | MLB | ML | away | 4.5 | 3.00 | -132 | 1 | 0 | 1 | 0 | 13 | -1.10 | L | -3.0u |
 | 2026-06-24 | MLB | SPREAD | away | 4.0 | 1.00 | +155 | 1 | 0 | 1 | 1 | 14 | -0.30 | L | -1.0u |
 | 2026-06-24 | MLB | TOTAL | under | 4.0 | 1.00 | -110 | 1 | 0 | 1 | 1 | 13 | 0.00 | W | +0.0u |
 | 2026-06-24 | MLB | ML | away | 3.0 | 0.50 | +110 | 1 | 0 | 1 | 0 | 0 | 0.00 | L | -0.5u |
 | 2026-06-24 | MLB | TOTAL | over | 2.5 | 0.25 | -110 | 0 | 0 | 0 | 0 | -22 | 0.00 | W | +0.0u |
-| 2026-06-24 | MLB | ML | home | 4.5 | 2.50 | +152 | 2 | 0 | 2 | 1 | 7 | -1.10 | W | +5.8u |
+| 2026-06-24 | MLB | ML | home | 4.5 | 2.50 | +152 | 2 | 0 | 2 | 1 | 6 | -1.10 | W | +5.8u |
 | 2026-06-24 | MLB | SPREAD | away | 5.0 | 5.00 | -105 | 0 | 0 | 0 | 1 | 12 | 0.00 | L | -5.0u |
-| 2026-06-24 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | -1 | 0 | 1 | -5 | 0.00 | W | +3.6u |
-| 2026-06-24 | MLB | ML | away | 4.5 | 2.50 | -134 | 1 | 0 | 1 | 2 | 6 | -0.20 | W | +0.0u |
-| 2026-06-24 | MLB | TOTAL | under | 5.0 | 5.00 | -110 | 0 | 0 | 0 | -1 | -14 | 0.00 | L | -5.0u |
+| 2026-06-24 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | -1 | 0 | 2 | 2 | 0.00 | W | +3.6u |
+| 2026-06-24 | MLB | ML | away | 4.5 | 2.50 | -134 | 1 | 0 | 1 | 2 | 7 | -0.20 | W | +0.0u |
+| 2026-06-24 | MLB | TOTAL | under | 5.0 | 5.00 | -110 | 0 | 0 | 0 | -1 | -19 | 0.00 | L | -5.0u |
 | 2026-06-24 | MLB | ML | home | 4.5 | 3.00 | -134 | 1 | 0 | 1 | 1 | -9 | -1.90 | L | -3.0u |
 | 2026-06-24 | MLB | TOTAL | under | 2.5 | 0.25 | -110 | 0 | 0 | 0 | 0 | -1 | 0.00 | W | +0.0u |
-| 2026-06-24 | MLB | ML | away | 3.0 | 0.50 | +132 | 0 | 0 | 0 | -1 | -3 | -2.20 | L | -0.5u |
+| 2026-06-24 | MLB | ML | away | 3.0 | 0.50 | +132 | 0 | 0 | 0 | -1 | -8 | -2.20 | L | -0.5u |
 | 2026-06-24 | MLB | SPREAD | home | 4.0 | 1.00 | -115 | 1 | 0 | 1 | 1 | 14 | 0.00 | W | +0.0u |
 | 2026-06-24 | MLB | TOTAL | under | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 1 | 13 | 0.00 | L | -3.0u |
-| 2026-06-24 | MLB | ML | away | 4.5 | 2.50 | +117 | 1 | 0 | 1 | 1 | 5 | 0.00 | W | +0.0u |
-| 2026-06-24 | MLB | TOTAL | under | 5.0 | 5.00 | -110 | 1 | 0 | 1 | 1 | 13 | 0.00 | W | +0.0u |
+| 2026-06-24 | MLB | ML | away | 4.5 | 2.50 | +117 | 1 | 0 | 1 | 1 | 6 | 0.00 | W | +0.0u |
+| 2026-06-24 | MLB | TOTAL | under | 5.0 | 5.00 | -110 | 1 | 0 | 1 | 0 | 12 | 0.00 | W | +0.0u |
 | 2026-06-24 | MLB | ML | home | 2.5 | 0.25 | -102 | -1 | 0 | -1 | -1 | 8 | -0.70 | W | +0.0u |
 | 2026-06-24 | MLB | SPREAD | away | 4.0 | 1.00 | +136 | 1 | 0 | 1 | 1 | 14 | 0.00 | L | -1.0u |
 | 2026-06-24 | MLB | TOTAL | under | 4.0 | 1.00 | -110 | 1 | 0 | 1 | 1 | 13 | 0.00 | W | +0.0u |
-| 2026-06-24 | MLB | ML | home | 4.5 | 2.50 | +108 | 0 | 0 | 0 | 0 | -12 | 0.00 | L | -2.5u |
+| 2026-06-24 | MLB | ML | home | 4.5 | 2.50 | +108 | 0 | 0 | 0 | 0 | -17 | 0.00 | L | -2.5u |
 | 2026-06-24 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 1 | 14 | 0.00 | L | -3.0u |
 | 2026-06-24 | MLB | TOTAL | under | 3.0 | 0.50 | -110 | 1 | 0 | 1 | 1 | 14 | 0.00 | L | -0.5u |
-| 2026-06-24 | MLB | TOTAL | under | 5.0 | 1.00 | -115 | 2 | 0 | 2 | 2 | 16 | 0.00 | W | +0.0u |
-| 2026-06-24 | SOC | ML | home | 4.0 | 1.00 | +153 | 3 | 0 | 3 | 1 | 29 | -1.10 | W | +0.0u |
-| 2026-06-24 | SOC | ML | home | 4.5 | 3.00 | -525 | 4 | 1 | 5 | 2 | 60 | 0.50 | W | +1.1u |
+| 2026-06-24 | MLB | TOTAL | under | 5.0 | 1.00 | -115 | 2 | 0 | 2 | 2 | 22 | 0.00 | W | +0.0u |
+| 2026-06-24 | SOC | ML | home | 4.0 | 1.00 | +153 | 3 | 0 | 3 | 2 | 29 | -1.10 | W | +0.0u |
+| 2026-06-24 | SOC | ML | home | 4.5 | 3.00 | -525 | 4 | 1 | 5 | 2 | 62 | 0.50 | W | +1.1u |
 | 2026-06-24 | SOC | ML | away | 4.5 | 3.00 | -104 | -1 | 0 | -1 | 2 | 29 | -1.00 | W | +0.0u |
-| 2026-06-24 | SOC | ML | home | 2.5 | 0.25 | -257 | 2 | 0 | 2 | 2 | 26 | -1.10 | W | +0.0u |
+| 2026-06-24 | SOC | ML | home | 2.5 | 0.25 | -257 | 2 | 0 | 2 | 2 | 25 | -1.10 | W | +0.0u |
 | 2026-06-25 | MLB | TOTAL | under | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 0 | 0 | 0.00 | W | +0.0u |
-| 2026-06-25 | MLB | SPREAD | away | 4.5 | 1.00 | +164 | 1 | 1 | 2 | 1 | 13 | 27.50 | W | +0.0u |
-| 2026-06-25 | MLB | TOTAL | under | 4.5 | 3.00 | -110 | 2 | 0 | 2 | 2 | -6 | 0.00 | W | +3.6u |
-| 2026-06-25 | MLB | ML | away | 2.5 | 0.25 | -136 | 3 | 0 | 3 | 2 | -11 | -2.40 | L | -0.3u |
-| 2026-06-25 | MLB | SPREAD | away | 5.0 | 2.50 | +114 | 2 | 0 | 2 | 2 | -6 | -1.90 | L | -2.5u |
+| 2026-06-25 | MLB | SPREAD | away | 4.5 | 1.00 | +164 | 1 | 1 | 2 | 1 | 14 | 27.50 | W | +0.0u |
+| 2026-06-25 | MLB | TOTAL | under | 4.5 | 3.00 | -110 | 2 | 0 | 2 | 2 | -1 | 0.00 | W | +3.6u |
+| 2026-06-25 | MLB | ML | away | 2.5 | 0.25 | -136 | 3 | 0 | 3 | 1 | -6 | -2.40 | L | -0.3u |
+| 2026-06-25 | MLB | SPREAD | away | 5.0 | 2.50 | +114 | 2 | 0 | 2 | 1 | -2 | -1.90 | L | -2.5u |
 | 2026-06-25 | MLB | TOTAL | under | 4.5 | 3.00 | -116 | 0 | 0 | 0 | 0 | -5 | 0.00 | L | -3.0u |
-| 2026-06-25 | MLB | ML | home | 4.5 | 1.00 | +443 | 1 | 0 | 1 | 2 | -9 | 0.00 | L | -1.0u |
-| 2026-06-25 | MLB | SPREAD | away | 4.5 | 3.00 | -105 | 1 | 0 | 1 | 1 | -3 | 0.00 | W | +0.0u |
+| 2026-06-25 | MLB | ML | home | 4.5 | 1.00 | +443 | 1 | 0 | 1 | 1 | -10 | 0.00 | L | -1.0u |
+| 2026-06-25 | MLB | SPREAD | away | 4.5 | 3.00 | -105 | 1 | 0 | 1 | 1 | 2 | 0.00 | W | +0.0u |
 | 2026-06-25 | MLB | TOTAL | under | 2.5 | 0.25 | -110 | 0 | 1 | 1 | -1 | -13 | 0.00 | L | -0.3u |
-| 2026-06-25 | SOC | ML | home | 4.5 | 1.50 | +163 | -1 | 0 | -1 | -1 | 4 | 0.00 | L | -1.5u |
-| 2026-06-25 | SOC | ML | away | 2.5 | 0.25 | -600 | 4 | 1 | 5 | 4 | 41 | -0.70 | W | +0.0u |
+| 2026-06-25 | SOC | ML | home | 4.5 | 1.50 | +163 | -1 | 0 | -1 | -1 | 11 | 0.00 | L | -1.5u |
+| 2026-06-25 | SOC | ML | away | 2.5 | 0.25 | -600 | 4 | 1 | 5 | 4 | 36 | -0.70 | W | +0.0u |
 | 2026-06-25 | SOC | ML | away | 4.0 | 1.00 | -110 | 12 | 7 | 19 | 12 | 42 | -0.90 | L | -1.0u |
-| 2026-06-25 | SOC | ML | away | 5.0 | 5.00 | -700 | 5 | 1 | 6 | 4 | 36 | 1.80 | W | +0.5u |
-| 2026-06-25 | SOC | ML | away | 2.5 | 0.25 | -105 | 4 | 4 | 8 | 5 | 2 | -0.20 | L | -0.3u |
+| 2026-06-25 | SOC | ML | away | 5.0 | 5.00 | -700 | 5 | 1 | 6 | 4 | 39 | 1.80 | W | +0.5u |
+| 2026-06-25 | SOC | ML | away | 2.5 | 0.25 | -105 | 4 | 4 | 8 | 5 | -1 | -0.20 | L | -0.3u |
 | 2026-06-26 | MLB | ML | away | 4.5 | 3.00 | -120 | 2 | 0 | 2 | 1 | -9 | -0.80 | W | +3.3u |
-| 2026-06-26 | MLB | TOTAL | over | 4.0 | 1.00 | -110 | 1 | 0 | 1 | 1 | 0 | 0.00 | L | -1.0u |
-| 2026-06-26 | MLB | SPREAD | home | 2.5 | 0.25 | -117 | 0 | 1 | 1 | 1 | 14 | 0.00 | W | +0.0u |
-| 2026-06-26 | MLB | TOTAL | under | 5.0 | 5.00 | -110 | 1 | 1 | 2 | 1 | 5 | 0.00 | L | -5.0u |
+| 2026-06-26 | MLB | TOTAL | over | 4.0 | 1.00 | -110 | 1 | 0 | 1 | 1 | -1 | 0.00 | L | -1.0u |
+| 2026-06-26 | MLB | SPREAD | home | 2.5 | 0.25 | -117 | 0 | 1 | 1 | 0 | 13 | 0.00 | W | +0.0u |
+| 2026-06-26 | MLB | TOTAL | under | 5.0 | 5.00 | -110 | 1 | 1 | 2 | 1 | 6 | 0.00 | L | -5.0u |
 | 2026-06-26 | MLB | TOTAL | over | 3.0 | 0.50 | -110 | 0 | 0 | 0 | 1 | 14 | 0.00 | W | +0.0u |
-| 2026-06-26 | MLB | ML | away | 5.0 | 2.50 | +100 | 0 | 0 | 0 | 0 | 4 | 0.00 | L | -2.5u |
-| 2026-06-26 | MLB | SPREAD | home | 2.5 | 0.25 | -135 | 1 | 0 | 1 | 0 | 0 | 0.00 | W | +0.0u |
+| 2026-06-26 | MLB | ML | away | 5.0 | 2.50 | +100 | 0 | 0 | 0 | 0 | -2 | 0.00 | L | -2.5u |
+| 2026-06-26 | MLB | SPREAD | home | 2.5 | 0.25 | -135 | 1 | 0 | 1 | 1 | 1 | 0.00 | W | +0.0u |
 | 2026-06-26 | MLB | SPREAD | away | 4.5 | 3.00 | -204 | 1 | 0 | 1 | 1 | 12 | 0.00 | W | +0.0u |
-| 2026-06-26 | MLB | ML | home | 4.0 | 1.00 | -2261 | 0 | 0 | 0 | 0 | -5 | 0.00 | W | +0.0u |
+| 2026-06-26 | MLB | ML | home | 4.0 | 1.00 | -2261 | 0 | 0 | 0 | 0 | -10 | 0.00 | W | +0.0u |
 | 2026-06-26 | MLB | ML | away | 2.5 | 0.25 | -154 | 0 | 0 | 0 | 1 | 14 | 0.00 | W | +0.0u |
-| 2026-06-26 | MLB | SPREAD | away | 4.5 | 2.50 | +110 | 1 | 1 | 2 | 1 | 20 | 0.00 | L | -2.5u |
+| 2026-06-26 | MLB | SPREAD | away | 4.5 | 2.50 | +110 | 1 | 1 | 2 | 1 | 16 | 0.00 | L | -2.5u |
 | 2026-06-26 | MLB | TOTAL | under | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 1 | -9 | 0.00 | W | +0.0u |
 | 2026-06-26 | MLB | ML | away | 4.0 | 1.00 | -106 | 1 | 0 | 1 | 1 | 13 | -1.00 | W | +0.0u |
 | 2026-06-26 | MLB | TOTAL | under | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 1 | 13 | 0.00 | L | -3.0u |
 | 2026-06-26 | MLB | ML | away | 3.0 | 0.50 | +121 | 1 | 0 | 1 | 0 | 0 | -0.80 | L | -0.5u |
-| 2026-06-26 | SOC | ML | away | 5.0 | 5.00 | -600 | 1 | 0 | 1 | 1 | 19 | -0.30 | W | +0.8u |
-| 2026-06-26 | SOC | ML | away | 3.0 | 0.50 | -200 | 7 | 2 | 9 | 10 | 68 | -0.20 | W | +4.1u |
-| 2026-06-26 | SOC | ML | away | 2.5 | 0.25 | -155 | 5 | 2 | 7 | 8 | 52 | 1.20 | W | +1.6u |
+| 2026-06-26 | SOC | ML | away | 5.0 | 5.00 | -600 | 1 | 0 | 1 | 1 | 15 | -0.30 | W | +0.8u |
+| 2026-06-26 | SOC | ML | away | 3.0 | 0.50 | -200 | 7 | 2 | 9 | 10 | 66 | -0.20 | W | +4.1u |
+| 2026-06-26 | SOC | ML | away | 2.5 | 0.25 | -155 | 5 | 2 | 7 | 8 | 60 | 1.20 | W | +1.6u |
 | 2026-06-26 | SOC | ML | home | 3.0 | 0.50 | +150 | 0 | 2 | 2 | -1 | 8 | -0.30 | L | -0.5u |
-| 2026-06-26 | SOC | ML | home | 2.5 | 0.25 | -380 | -1 | 1 | 0 | 0 | 15 | 0.00 | W | +0.0u |
-| 2026-06-26 | SOC | ML | home | 2.5 | 0.25 | +135 | -2 | 2 | 0 | -6 | -13 | -0.30 | L | -0.3u |
-| 2026-06-27 | MLB | ML | away | 5.0 | 2.50 | +121 | 0 | 0 | 0 | 0 | 4 | 0.00 | L | -2.5u |
+| 2026-06-26 | SOC | ML | home | 2.5 | 0.25 | -380 | -1 | 1 | 0 | 0 | 17 | 0.00 | W | +0.0u |
+| 2026-06-26 | SOC | ML | home | 2.5 | 0.25 | +135 | -2 | 2 | 0 | -6 | -10 | -0.30 | L | -0.3u |
+| 2026-06-27 | MLB | ML | away | 5.0 | 2.50 | +121 | 0 | 0 | 0 | 0 | -2 | 0.00 | L | -2.5u |
 | 2026-06-27 | MLB | TOTAL | over | 4.0 | 1.00 | -110 | 1 | 0 | 1 | 1 | 13 | 0.00 | L | -1.0u |
-| 2026-06-27 | MLB | ML | away | 4.0 | 1.00 | +116 | 0 | 0 | 0 | 1 | -44 | -0.70 | L | -1.0u |
-| 2026-06-27 | MLB | ML | home | 2.5 | 0.25 | -155 | 0 | 2 | 2 | 0 | 2 | -0.80 | L | -0.3u |
-| 2026-06-27 | MLB | ML | away | 2.5 | 0.25 | -112 | 3 | 1 | 4 | 4 | 34 | -0.90 | W | +3.6u |
+| 2026-06-27 | MLB | ML | away | 4.0 | 1.00 | +116 | 0 | 0 | 0 | 1 | -46 | -0.70 | L | -1.0u |
+| 2026-06-27 | MLB | ML | home | 2.5 | 0.25 | -155 | 0 | 2 | 2 | 0 | 4 | -0.80 | L | -0.3u |
+| 2026-06-27 | MLB | ML | away | 2.5 | 0.25 | -112 | 3 | 1 | 4 | 4 | 36 | -0.90 | W | +3.6u |
 | 2026-06-27 | MLB | ML | home | 4.5 | 3.00 | -134 | 1 | 0 | 1 | 0 | 0 | 0.00 | L | -3.0u |
-| 2026-06-27 | MLB | TOTAL | under | 2.5 | 0.25 | -104 | 4 | 1 | 5 | 3 | -6 | 0.00 | L | -0.3u |
-| 2026-06-27 | MLB | ML | away | 5.0 | 2.50 | +114 | 1 | 0 | 1 | 1 | 5 | 0.00 | L | -2.5u |
+| 2026-06-27 | MLB | TOTAL | under | 2.5 | 0.25 | -104 | 4 | 1 | 5 | 4 | 0 | 0.00 | L | -0.3u |
+| 2026-06-27 | MLB | ML | away | 5.0 | 2.50 | +114 | 1 | 0 | 1 | 1 | 6 | 0.00 | L | -2.5u |
 | 2026-06-27 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | 1 | 0 | 1 | 1 | -9 | 0.00 | W | +0.0u |
 | 2026-06-27 | MLB | ML | home | 4.5 | 3.00 | -130 | 1 | 0 | 1 | 0 | 0 | 0.00 | L | -3.0u |
-| 2026-06-27 | MLB | SPREAD | away | 4.5 | 3.00 | -204 | 2 | 0 | 2 | 2 | 25 | -1.70 | W | +2.3u |
+| 2026-06-27 | MLB | SPREAD | away | 4.5 | 3.00 | -204 | 2 | 0 | 2 | 2 | 26 | -1.70 | W | +2.3u |
 | 2026-06-27 | MLB | ML | away | 4.0 | 1.00 | -104 | 0 | 0 | 0 | 0 | 0 | -1.20 | L | -1.0u |
-| 2026-06-27 | MLB | ML | home | 4.0 | 1.00 | -123 | 0 | 0 | 0 | -1 | -3 | 0.00 | W | +3.3u |
-| 2026-06-27 | MLB | SPREAD | home | 4.5 | 1.50 | +154 | 1 | 0 | 1 | 1 | 5 | 0.00 | W | +0.0u |
-| 2026-06-27 | MLB | TOTAL | over | 2.5 | 1.00 | -110 | 1 | 0 | 1 | 1 | 0 | 0.00 | L | -1.0u |
+| 2026-06-27 | MLB | ML | home | 4.0 | 1.00 | -123 | 0 | 0 | 0 | -1 | -8 | 0.00 | W | +3.3u |
+| 2026-06-27 | MLB | SPREAD | home | 4.5 | 1.50 | +154 | 1 | 0 | 1 | 1 | 6 | 0.00 | W | +0.0u |
+| 2026-06-27 | MLB | TOTAL | over | 2.5 | 1.00 | -110 | 1 | 0 | 1 | 2 | 0 | 0.00 | L | -1.0u |
 | 2026-06-27 | MLB | ML | away | 4.5 | 3.00 | -142 | 1 | 0 | 1 | 0 | 0 | 0.00 | L | -3.0u |
-| 2026-06-27 | MLB | ML | home | 4.5 | 3.00 | -178 | 3 | 0 | 3 | 2 | 10 | -0.10 | L | -3.0u |
+| 2026-06-27 | MLB | ML | home | 4.5 | 3.00 | -178 | 3 | 0 | 3 | 2 | 14 | -0.10 | L | -3.0u |
 | 2026-06-27 | MLB | SPREAD | home | 4.5 | 2.50 | +113 | 1 | 0 | 1 | 1 | -9 | 0.00 | L | -2.5u |
-| 2026-06-27 | SOC | ML | away | 5.0 | 5.00 | -500 | 2 | 1 | 3 | 2 | 11 | 1.30 | W | +0.8u |
-| 2026-06-27 | SOC | ML | draw | 2.5 | 0.25 | +109 | -1 | 0 | -1 | 0 | 13 | 1.40 | W | +0.0u |
-| 2026-06-27 | SOC | ML | away | 5.0 | 5.00 | -575 | 4 | 1 | 5 | 5 | 28 | -0.10 | W | +0.8u |
-| 2026-06-27 | SOC | ML | home | 2.5 | 0.25 | -122 | 1 | 3 | 4 | 4 | 15 | 1.00 | W | +2.5u |
+| 2026-06-27 | SOC | ML | away | 5.0 | 5.00 | -500 | 2 | 1 | 3 | 2 | 8 | 1.30 | W | +0.8u |
+| 2026-06-27 | SOC | ML | draw | 2.5 | 0.25 | +109 | -1 | 0 | -1 | 0 | 20 | 1.40 | W | +0.0u |
+| 2026-06-27 | SOC | ML | away | 5.0 | 5.00 | -575 | 4 | 1 | 5 | 5 | 30 | -0.10 | W | +0.8u |
+| 2026-06-27 | SOC | ML | home | 2.5 | 0.25 | -122 | 1 | 3 | 4 | 4 | 18 | 1.00 | W | +2.5u |
 | 2026-06-27 | SOC | ML | home | 3.0 | 0.50 | -125 | 2 | 1 | 3 | 3 | 14 | -1.00 | W | +3.3u |
-| 2026-06-28 | MLB | ML | away | 4.5 | 1.00 | +337 | 0 | 0 | 0 | 0 | 2 | 0.00 | L | -1.0u |
+| 2026-06-28 | MLB | ML | away | 4.5 | 1.00 | +337 | 0 | 0 | 0 | 0 | -2 | 0.00 | L | -1.0u |
 | 2026-06-28 | MLB | SPREAD | home | 3.0 | 0.50 | -131 | 1 | 0 | 1 | 1 | 14 | -0.50 | W | +0.0u |
-| 2026-06-28 | MLB | TOTAL | under | 3.0 | 0.50 | -110 | 2 | 0 | 2 | 2 | 5 | 0.00 | W | +1.0u |
-| 2026-06-28 | MLB | TOTAL | under | 4.0 | 1.00 | -110 | 2 | 1 | 3 | 2 | -6 | 0.00 | W | +3.6u |
-| 2026-06-28 | MLB | SPREAD | away | 4.5 | 3.00 | -180 | 1 | 0 | 1 | 1 | 5 | -0.30 | L | -3.0u |
-| 2026-06-28 | MLB | TOTAL | under | 4.5 | 2.50 | -110 | 2 | 0 | 2 | 3 | -8 | 0.00 | L | -2.5u |
-| 2026-06-28 | MLB | ML | home | 2.5 | 0.25 | -103 | 1 | 0 | 1 | 1 | 24 | 0.20 | L | -0.3u |
-| 2026-06-28 | MLB | SPREAD | home | 4.5 | 1.00 | -155 | 1 | 0 | 1 | 1 | 5 | 0.00 | L | -1.0u |
-| 2026-06-28 | MLB | TOTAL | under | 4.5 | 1.00 | -110 | 1 | 0 | 1 | 2 | -11 | 0.00 | L | -1.0u |
-| 2026-06-28 | MLB | ML | home | 4.5 | 2.50 | +122 | 0 | 0 | 0 | 0 | 2 | 0.00 | L | -2.5u |
+| 2026-06-28 | MLB | TOTAL | under | 3.0 | 0.50 | -110 | 2 | 0 | 2 | 2 | 13 | 0.00 | W | +1.0u |
+| 2026-06-28 | MLB | TOTAL | under | 4.0 | 1.00 | -110 | 2 | 1 | 3 | 2 | -1 | 0.00 | W | +3.6u |
+| 2026-06-28 | MLB | SPREAD | away | 4.5 | 3.00 | -180 | 1 | 0 | 1 | 1 | 6 | -0.30 | L | -3.0u |
+| 2026-06-28 | MLB | TOTAL | under | 4.5 | 2.50 | -110 | 2 | 0 | 2 | 2 | -1 | 0.00 | L | -2.5u |
+| 2026-06-28 | MLB | ML | home | 2.5 | 0.25 | -103 | 1 | 0 | 1 | 1 | 20 | 0.20 | L | -0.3u |
+| 2026-06-28 | MLB | SPREAD | home | 4.5 | 1.00 | -155 | 1 | 0 | 1 | 1 | 6 | 0.00 | L | -1.0u |
+| 2026-06-28 | MLB | TOTAL | under | 4.5 | 1.00 | -110 | 1 | 0 | 1 | 1 | -9 | 0.00 | L | -1.0u |
+| 2026-06-28 | MLB | ML | home | 4.5 | 2.50 | +122 | 0 | 0 | 0 | 0 | -2 | 0.00 | L | -2.5u |
 | 2026-06-28 | MLB | SPREAD | home | 3.0 | 0.50 | -149 | 1 | 0 | 1 | 1 | 14 | -0.20 | L | -0.5u |
-| 2026-06-28 | MLB | TOTAL | under | 4.5 | 3.00 | -110 | 0 | 0 | 0 | 0 | 10 | 0.00 | W | +0.0u |
+| 2026-06-28 | MLB | TOTAL | under | 4.5 | 3.00 | -110 | 0 | 0 | 0 | 0 | 5 | 0.00 | W | +0.0u |
 | 2026-06-28 | MLB | ML | away | 3.0 | 0.50 | +108 | 1 | 0 | 1 | 1 | 14 | 0.00 | L | -0.5u |
-| 2026-06-28 | MLB | SPREAD | away | 4.0 | 1.00 | -168 | 0 | 0 | 0 | 2 | 25 | 0.00 | W | +2.1u |
-| 2026-06-28 | MLB | ML | away | 4.5 | 1.00 | -101 | 4 | 0 | 4 | 4 | 3 | -0.70 | L | -1.0u |
+| 2026-06-28 | MLB | SPREAD | away | 4.0 | 1.00 | -168 | 0 | 0 | 0 | 2 | 26 | 0.00 | W | +2.1u |
+| 2026-06-28 | MLB | ML | away | 4.5 | 1.00 | -101 | 4 | 0 | 4 | 4 | 9 | -0.70 | L | -1.0u |
 | 2026-06-28 | MLB | TOTAL | under | 4.5 | 3.00 | -104 | 1 | 0 | 1 | 1 | 8 | 0.00 | L | -3.0u |
-| 2026-06-28 | MLB | ML | away | 4.5 | 3.00 | +1210 | 3 | 1 | 4 | 3 | 1 | -1.20 | L | -3.0u |
-| 2026-06-28 | MLB | ML | away | 4.5 | 3.00 | -158 | 0 | 0 | 0 | 0 | 2 | 0.00 | W | +0.0u |
-| 2026-06-28 | MLB | SPREAD | away | 4.5 | 1.00 | +119 | 1 | 0 | 1 | 1 | 5 | 0.00 | L | -1.0u |
+| 2026-06-28 | MLB | ML | away | 4.5 | 3.00 | +1210 | 3 | 1 | 4 | 3 | 5 | -1.20 | L | -3.0u |
+| 2026-06-28 | MLB | ML | away | 4.5 | 3.00 | -158 | 0 | 0 | 0 | 0 | -2 | 0.00 | W | +0.0u |
+| 2026-06-28 | MLB | SPREAD | away | 4.5 | 1.00 | +119 | 1 | 0 | 1 | 1 | 6 | 0.00 | L | -1.0u |
 | 2026-06-28 | MLB | TOTAL | over | 3.0 | 0.50 | -110 | 1 | 0 | 1 | 1 | 14 | 0.00 | W | +0.0u |
 | 2026-06-28 | MLB | ML | away | 3.0 | 0.50 | -103 | 1 | 0 | 1 | 1 | 14 | -1.20 | L | -0.5u |
-| 2026-06-28 | MLB | ML | away | 4.0 | 1.00 | +115 | 1 | 0 | 1 | 1 | -5 | -1.10 | W | +4.4u |
-| 2026-06-28 | MLB | TOTAL | over | 3.0 | 0.50 | -110 | 0 | -1 | -1 | 0 | 11 | 0.00 | L | -0.5u |
+| 2026-06-28 | MLB | ML | away | 4.0 | 1.00 | +115 | 1 | 0 | 1 | 1 | 0 | -1.10 | W | +4.4u |
+| 2026-06-28 | MLB | TOTAL | over | 3.0 | 0.50 | -110 | 0 | -1 | -1 | -1 | 5 | 0.00 | L | -0.5u |
 | 2026-06-28 | MLB | SPREAD | away | 3.0 | 0.50 | -124 | 1 | 0 | 1 | 1 | 14 | 0.00 | W | +0.0u |
-| 2026-06-28 | SOC | ML | away | 5.0 | 5.00 | -142 | 12 | 3 | 15 | 16 | 79 | -0.50 | W | +0.7u |
+| 2026-06-28 | SOC | ML | away | 5.0 | 5.00 | -142 | 12 | 3 | 15 | 16 | 87 | -0.50 | W | +0.7u |
+| 2026-06-29 | MLB | ML | home | 2.5 | 0.25 | -128 | 0 | 1 | 1 | 0 | -5 | -1.50 | W | +0.0u |
+| 2026-06-29 | MLB | SPREAD | home | 2.5 | 0.25 | +139 | 0 | 0 | 0 | 1 | 8 | 0.00 | W | +0.0u |
+| 2026-06-29 | MLB | TOTAL | over | 3.0 | 0.50 | -110 | 0 | 0 | 0 | 0 | 5 | 0.00 | L | -0.5u |
+| 2026-06-29 | MLB | TOTAL | under | 2.5 | 0.25 | -110 | 0 | 0 | 0 | 0 | 8 | 0.00 | L | -0.3u |
+| 2026-06-29 | MLB | SPREAD | away | 2.5 | 0.25 | -176 | 1 | 0 | 1 | 1 | 8 | 0.00 | W | +0.0u |
+| 2026-06-29 | MLB | TOTAL | under | 2.5 | 0.25 | -105 | 1 | 0 | 1 | 0 | 3 | 0.00 | L | -0.3u |
+| 2026-06-29 | MLB | ML | away | 3.0 | 0.50 | +193 | 1 | 0 | 1 | 1 | -1 | 0.00 | L | -0.5u |
+| 2026-06-29 | MLB | SPREAD | away | 3.0 | 0.50 | -119 | 1 | 0 | 1 | 0 | -6 | 0.00 | L | -0.5u |
+| 2026-06-29 | MLB | ML | away | 2.5 | 0.25 | -112 | 0 | 0 | 0 | 0 | -15 | -0.60 | W | +0.0u |
+| 2026-06-29 | MLB | ML | home | 2.5 | 0.25 | +129 | 1 | 0 | 1 | 1 | -21 | -0.50 | L | -0.3u |
+| 2026-06-29 | MLB | TOTAL | over | 3.0 | 0.50 | -110 | 1 | 0 | 1 | 1 | 19 | 0.00 | W | +2.6u |
+| 2026-06-29 | MLB | SPREAD | home | 2.5 | 0.25 | +171 | 1 | 0 | 1 | 1 | 8 | 0.00 | L | -0.3u |
+| 2026-06-29 | MLB | ML | away | 4.0 | 1.00 | +100 | 2 | 0 | 2 | 4 | 3 | 0.00 | W | +0.0u |
+| 2026-06-29 | MLB | ML | home | 2.5 | 0.25 | -158 | 2 | 1 | 3 | 2 | 22 | -0.60 | W | +0.0u |
+| 2026-06-29 | MLB | TOTAL | under | 2.5 | 0.25 | -110 | 1 | 0 | 1 | 2 | -7 | 0.00 | W | +3.6u |
+| 2026-06-29 | MLB | ML | home | 2.5 | 0.25 | -131 | 1 | 0 | 1 | 1 | 8 | 0.00 | W | +3.0u |
+| 2026-06-29 | MLB | TOTAL | over | 4.5 | 3.00 | -110 | -1 | 0 | -1 | 0 | -1 | 0.00 | P | +0.0u |
+| 2026-06-29 | MLB | TOTAL | under | 2.5 | 0.25 | -110 | -1 | 0 | -1 | -1 | -30 | 0.00 | L | -0.3u |
+| 2026-06-29 | MLB | ML | away | 4.5 | 2.50 | +150 | 1 | 0 | 1 | 1 | -9 | -0.60 | L | -2.5u |
+| 2026-06-29 | SOC | ML | home | 2.5 | 0.25 | -145 | 10 | 2 | 12 | 12 | 59 | -1.00 | W | +3.1u |
+| 2026-06-29 | SOC | ML | home | 3.0 | 0.50 | -265 | 5 | 3 | 8 | 6 | 28 | 0.00 | L | -0.5u |
 
 ---
 _Generator: `scripts/v6FullAnalysis.js` · regenerates daily via `.github/workflows/v6-full-analysis.yml`._
