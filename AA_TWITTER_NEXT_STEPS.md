@@ -11,14 +11,16 @@ The hardest part of a huge slate isn't winning it — it's not giving it back th
 
 So we're not getting cute. Same sharps, same discipline, right back to the well this afternoon:
 
-Under 11.5 — Padres/Cubs (4u)
-Rangers ML (2.5u)
-White Sox ML +123 (4u) — the plus-money dog nobody wants
+Under 11.5, Padres/Cubs (4u) — 100% of the sharp money, zero dissent
+Rangers ML (2.5u) — 4 proven winners, 3 high-conviction sharps
+White Sox +123 (4u) — 100% sharp money on the dog the public won't touch
 
 We don't chase. We follow the money.
 
 On the run with us, or waiting for us to slip?
 ```
+
+**Sharp data used (from the card's SHARP CONSENSUS, not raw wallet $):** Under 11.5 = 100% sharp money / zero dissent / 1 proven (HC); Rangers = 4 proven winners, 3 HC, 72%; White Sox +123 = 100% sharp, 2 proven, zero dissent.
 
 **Why it's the perfect hook (per the playbook):**
 - **Screenshot/RT line:** "The hardest part of a +17-unit day isn't winning it — it's not giving it back today." Every bettor has lived this; it's inherently quotable (your zero-RT fix).
