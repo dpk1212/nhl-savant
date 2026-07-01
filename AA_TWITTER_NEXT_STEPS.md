@@ -7,11 +7,13 @@
 ```
 +17 units yesterday.
 
-The hardest part of a day like that isn't winning it — it's not giving it back today.
+The hardest part of a huge slate isn't winning it — it's not giving it back the next day.
 
-So we're not getting cute. Same sharps, same discipline, right back to the well this afternoon.
+So we're not getting cute. Same sharps, same discipline, right back to the well this afternoon:
 
-The smart money's already loaded on three MLB spots — headlined by a plus-money dog the public won't touch.
+Under 11.5 — Padres/Cubs (4u)
+Rangers ML (2.5u)
+White Sox ML +123 (4u) — the plus-money dog nobody wants
 
 We don't chase. We follow the money.
 
