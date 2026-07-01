@@ -1,71 +1,92 @@
-# Twitter Improvement Guide — 2026-06-30 (MIDDAY)
+# Twitter Improvement Guide — 2026-07-01
 
-> **Verdict:** Still **~0 retweets** — the entire growth problem, and it's a **mechanic** problem, not an information one. This run's edge: **3-1 yesterday** (hot hand) + a **plus-money underdog** the sharp money is one-sided on (Norway +110). Lead with a **call-your-shot** off the record, frame the +110 dog as fading the public, force a tail/fade. Proof stays **directional** — no precise $/ROI in the tweet (they're not trusted or viral). Engagement > information, every time.
+> The single biggest lever this week is to turn every pick-first post into a public-vs-sharp market board before naming the bet; labeled data is tiny, but the weak posts all miss that structure.
 
-*Maintained by The Twitter Loop (Phase 2). The three sections below are PERSISTENT — re-emitted every run. Data is fresh today (brief 15:03, picks 15:08, positions 15:34 UTC).*
+## The one thing that matters this week
+Stop treating the pick as the opener; make the opener the market map, because last week's hot-hand/live-card advice did get applied in the writer drafts but post `2072083386584203447` still led with "one of these dogs" and only earned 1 labeled like.
+This beats last week's advice because @PatrickE_Vegas-style `sharp_public_board` posts give people a reason to repost the read, not just react to whether the pick won.
+Stop spending the first two lines on suspense, streak flexes, or "calling my shot" unless the next block shows public money versus sharp money.
 
-## Hard gates (every post must pass — non-negotiable) [PERSISTENT]
-1. **Screenshot test (line 1):** the first sentence must land as a standalone screenshot with ZERO context. No bare team names, no "here are today's picks," no buried hook.
-2. **One RT line:** every post carries exactly one standalone, quotable sentence built to be reposted with no context. If you can't point to it, it isn't done.
+## How we're actually performing (truth layer)
+- n=5 of 21 posts have real likes/RTs — directional only
+- Data rule followed: performance claims below use labeledEngagement only
+- Avg likes: 4 · total RTs: 0 · 0-like count: 0
+- Best labeled post: `2072054188683694469`, `recap_checkmarks`, 8 likes — it opened with conflict, then receipts, then a stale-screen warning
+- Why it worked structurally: the hook created tension before the proof stack
+- Worst labeled post: no 0-like labeled post; floor is `2072083386584203447` and `2071408949979464073` at 1 like each
+- Why the floor failed structurally: both posts ask readers to care before showing the market evidence
+- Format leaderboard: `recap_checkmarks` 7 avg likes (n=2) · `other` 2.5 (n=2) · `record_plus_picks` 1 (n=1)
+- Unlabeled formats stay unranked: `sharp_public_board`, `pick_with_proof`, `pick_card`, and `product_reveal` have no current labeled likes/RTs
+- Diagnosis: the sample is too small for certainty, but every bottom labeled post is missing the sharp/public split
+- Did last week's advice move anything? Partly: recent `ready_to_post` drafts used Brazil/Germany live-card mechanics and binary closes
+- What did not move: labeled reposts are still 0, and the weak dog post stayed pick-first instead of board-first
+- Writer adoption check: the 2026-06-29 and 2026-06-30 drafts followed the live-card advice, but not the current `formatMatchups` board split
 
-## Identity-hook bank (lead with these on non-pick posts; no back-to-back repeats) [PERSISTENT]
-- **Comeback / blackout** — "I stopped posting for 2 weeks. Not because I was losing…"
-- **Discipline / standards** — "I'd rather go dark than sell you a number I don't believe in."
-- **Self-fade / honesty** — "I faded my own play yesterday. Here's why."
-- **Honest L / bounce-back** — "[Team] just cost us. We don't hide the Ls — that's the brand."
-- **Whale tape** — "A wallet up +$Xk just bet [N]× its normal size. Not a typo."
-- **Sharp vs public** — "Public money: X% on [team]. Sharp money: Y% on [other]."
-- **CLV flex** — "We locked it at [price]. It's now [price] — a +X% line beat before kickoff."
-- **Milestone / anti-tout / origin / process-over-outcome / receipts-as-identity.**
+## What the niche does better (steal the structure)
+### sharp_public_board — @PatrickE_Vegas
+- Line 1 job · Name the slate and promise "where the sharps/public are"
+- Proof block · Side-by-side public %, sharp $, line move, and notable sharp action
+- Close job · One verdict line about which side the market is mispricing
+- Our gap: `formatMatchups` says Dale's comparable post `2069897190915600661` became a long single-tweet wall instead of hook + board + verdict
+- Same lane signal: @invisiblestats also wins with "Public vs Sharps" first, then bullets for bets, dollars, books, and move
+- Steal this: every proof line should answer either "where is the public?" or "where did the market move?"
 
-## PREMIUM formatting standard (look designed, not typed) [PERSISTENT]
-- No trailing ellipses / "…" on hooks or stat lines — end clean.
-- Space after every colon ("Sharp money: 71%", never "money:71%").
-- Parallel structure for contrast pairs (both lines identical shape).
-- One idea per line; exactly one blank line between blocks.
-- Consistent bullets ("•" + space), numbers ($12.4K, +145, 4.0u), emoji (one per purpose).
-- Never let copy truncate or a key line drop — tighten or thread instead.
+### pick_card — @AlexCaruso
+- Line 1 job · Label the card/recap immediately so the reader knows the job
+- Proof block · Compact results or numbers, not a paragraph explaining the model
+- Close job · Question or next-action after the proof is visible
+- Our gap: `2072083386584203447` mixed a dog choice, monthly record, pending plays, and verdict; the proof never became a clean card
+- Steal this: if a post is a card, make the card visible before the commentary
+- Do not steal: generic recap virality outside our lane; the useful part is compact proof order
 
----
+## Current X growth tactics (from web research)
+- **Optimize for action heads, not likes** — source xAI `x-algorithm`, May 2026 open-source release.
+  Maps to gap: 0 total reposts in labeled sample.
+  How we apply it to betting content: make line 1 a quotable market read, then close with a verdict question tied to the split.
+- **Create dwell with scannable native proof** — source RankSaga/VoiceMoat technical reads of Phoenix, 2026.
+  Maps to gap: `2069897190915600661` was a long wall.
+  How we apply it: cap the hero at Line 1 / public side / sharp side / line move / verdict; put deeper wallet tape in replies.
+- **Reply fast to real comments after publishing** — source Buffer X algorithm guide, 2026.
+  Maps to gap: last week's drafts planned companion replies but not a response protocol.
+  How we apply it: for the first 30 minutes, answer any tail/fade reply with one extra receipt, not a generic thanks.
+- **Keep links out of the hero when distribution matters** — source Towards AI analysis of the 2026 X open-source release.
+  Maps to gap: older writer drafts put site CTAs inside the hero.
+  How we apply it: hero is native market read only; link or screenshot receipt goes in the first self-reply.
+- **Use specific numbers in the first two lines** — source `growth_tips.json` and Quip 2026 operator playbook, 2026.
+  Maps to gap: `2072083386584203447` opened with "one of these dogs," which is too vague.
+  How we apply it: lead with "public X%, sharp Y%, line moved Z" before the team name.
 
-## One-line verdict
-We have a live winning streak and a result that JUST landed — stop explaining picks and start posting the run. Lead with "Brazil just cashed," ride 11-4, force a tail/fade before Germany kicks.
+## Before → After (2 rewrites)
+- Post ID `2072083386584203447` (1 like) — current hook: "One of these dogs is getting there tonight."
+- Problem: pick-first suspense with no visible market split; the proof arrives as a tier record instead of a board
+- After: Line 1 / "Tonight's dog board is not about team names; it's where the public and sharp money split."
+- After: Proof / public side %, sharp side %, line move, 17-10 tier record
+- After: Close / "Verdict: take the side the market moved toward, not the logo the crowd likes."
 
-## Performance snapshot (truth layer — labeled data only)
-- **n = 5** of 21 posts have real likes/RTs — **directional, not statistical** (last scraped 6/28; not refreshed today).
-- Avg likes **5.6** · **Retweets ~0** — still zero reposts. That's the whole game.
-- **Best labeled post:** `2070888202299174981` — *pick_with_proof* conviction explainer, **12 likes**.
-- **Format leaderboard (avg likes):** pick_with_proof **6.5** (n=2) · "other" **5** · pick_card **5**.
-- **The miss (still the standing lesson):** `2071009748950851948` — DR Congo whale hero, **1 like / 1,228 views**. Great structure, obscure subject, no lead time.
-
-## What's working / not
-- **Working:** conviction + proof, human "other" posts, a clear stance with real numbers.
-- **Not working:** zero retweets. We post *information*; the algorithm pays for *action*. Bare card lists flop. Obscure subjects flop.
-- **The unlock this run:** a *result* + a *streak* + a *deadline*. That combination forces replies (tail/fade), screenshots (call-your-shot), and a return visit (grade the next leg) — the three signals we've been missing.
-
-## The niche gap (steal the structure)
-- **Live ✅❌ running card — @AlexCaruso:** posts results as they settle. On a hot hand this is the highest-leverage format we have today — the just-cashed ✅ is the proof, the loading next leg is the open loop. (Only list confirmable results.)
-- **Record-on-an-angle — @WizBetz ("12-3 on Brewers ML"):** a narrow, specific streak with a number. Ours: "11-4 in soccer this week." Specific = believable = screenshot-worthy.
-- **Sharp-vs-public read — @invisiblestats (70K eng) / @PatrickE_Vegas:** still our evergreen high-ceiling structure for non-streak slots.
-
-## Before → After
-- **Before:** "Germany ML -275 is our top soccer play today. The model and sharp money like it. First touch 4:30 ET." (an info card — no reason to engage)
-- **After:** "We just cashed Brazil. ✅ / Our soccer card this week: 11-4, +11 units, 73% winners. / Next leg: Germany — our biggest play left, sharp money on our side, kicks in 45 min. / Calling it now: the run keeps going. Tailing it or fading us?" (result + streak + deadline + binary)
+- Post ID `2071408949979464073` (1 like) — current hook: "Went 6-3 today... This one was one of the 3... nobody likes this team"
+- Problem: honesty is there, but no market evidence tells readers why the ugly side deserved the bet
+- After: Line 1 / "We went 6-3, and the ugly loss was the exact kind of side sharps still bet."
+- After: Proof / closing number, public fade, sharp money for, what we would bet again
+- After: Close / "Verdict: bad result, good process, same trigger stays on the board."
 
 ## This week's ONE experiment
-- **Hot-hand call-your-shot off a just-cashed result.** When a play settles and the next leg is <60 min out, post the running card + streak + tail/fade close. Baseline 5.6 avg likes / 0 RTs; success = ≥10 likes AND our first retweet.
+Switch from the top `format_double_down` recommendation to `sharp_public_board_test` because recap_checkmarks already proved likes, while reach still needs market-map repostability.
+- Hypothesis · Market-map openers outperform pick-first cards because they give followers a screenshot-ready reason before the bet
+- Test protocol · Publish one hero using `sharp_public_board`: line 1 names slate + split, body shows public % vs sharp $ + line move, close gives one verdict
+- Baseline · 4 avg likes across labeled sample; 0 total RTs; 29% of current posts use this shape
+- Success metric · Beats 4 likes and earns at least 1 repost or quote
+- Fail signal · Under 3 likes with no replies, or replies ask "why" because the split was not clear
+- Measurement note · Judge only the next labeled scrape; do not use view-ish or unlabeled numbers
 
-## Mandates for the writer (this run)
-- **Rotate the mechanic:** last hero was reply-before-reveal → this hero is **call-your-shot / live running card**. Never repeat back-to-back.
-- **Lead with the result + the streak,** not the pick card. The screenshot line is "We just cashed Brazil" / "Our soccer card is 11-4 this week."
-- **TIMING:** Germany is ~48 min out = **firm**. Use the countdown, no "can move" caveat. If you post after ~16:15 ET, re-pull — don't quote it once the whistle blows.
-- **Marquee subjects only for soccer heroes** (Germany/Brazil/Canada are fine — the DR Congo lesson is about obscurity, not the sport).
-- **Proof stays directional:** "the sharpest money," "every winning bettor we track," our record/units. Brazil's proven-winner count (our proprietary signal) is fair game in the reply. **No precise Polymarket $ or wallet ROIs.**
-- **Close with a binary** (tail/fade, ❤️/🔁), never "thoughts?". Reply to your own hero within ~30 min with the Brazil receipt.
+## Mandates for the Content Brief agent (max 5)
+- For every pick post, open with the sharp/public split before naming the pick; trace: @PatrickE_Vegas `sharp_public_board`
+- Rewrite any "one of these dogs" or "nobody likes this team" hook into a named market board; trace: `2072083386584203447`, `2071408949979464073`
+- Keep the proof block to four slots max: public side, sharp side, line move, record/grade; trace: `2069897190915600661` wall gap
+- If using recap_checkmarks, keep the conflict opener from `2072054188683694469` and add one market-read verdict line
+- Put external links and deep wallet receipts in the first reply, not the hero; trace: older ready_to_post link CTAs and 2026 X native-content guidance
 
-## Stop list
-- Info cards that explain a pick with no forcing mechanic.
-- Obscure-subject heroes when a marquee read is available.
-- Quoting Germany once it kicks off; quoting any far-out position as locked (flag >60 min).
-- Fabricated ✅/❌ history — only list results you can confirm (today: Brazil).
-- Setup-line / pick-first openers; soft "thoughts?" closes; 6+ proof-line walls.
+## Stop list (max 4)
+- Pick-first dog suspense with no public/sharp split
+- Long single-tweet proof walls that hide the verdict
+- Vague proof phrases like "smart money likes it" when the board has percentages or line movement
+- Generic tail/fade closes that are not tied to a specific market disagreement

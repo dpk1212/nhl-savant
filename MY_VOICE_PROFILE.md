@@ -79,9 +79,9 @@ The account's rarest edge is honesty — going dark, posting Ls, having standard
 
 ## The 3 biggest growth opportunities (from the data)
 
-1. **Sharp/public boards are the clearest current lever.** The latest labeled winner opened with public money vs sharp money before the pick; lead with the market map, then make the bet the verdict.
-2. **Generic opinion posts need structure.** If a draft starts as "people only see team names" or "interesting matchup," convert it into Line 1 / Proof / Close with public %, sharp side, and line move.
-3. **Long proof stacks need better packaging.** Keep the sharp evidence, but cap single posts at 3 evidence slots or split deeper reads into hook + replies so the board stays readable.
+1. **Sharp/public boards are the current reach lever.** The 2026-07-01 brief has only 5 labeled posts, but the weak floor posts all lead with picks or vague opinion instead of a market map; open with public %, sharp side, and line move, then make the bet the verdict.
+2. **Recaps can keep the swagger, but add a market-read verdict.** The best labeled format is `recap_checkmarks` (7 avg likes, n=2); preserve the receipts/conflict opener, then close with what the board proved.
+3. **Long proof stacks need reply packaging.** Keep the sharp evidence, but cap single-post proof at public side / sharp side / line move / record and move deeper wallet tape or links into the first reply.
 
 ---
 
