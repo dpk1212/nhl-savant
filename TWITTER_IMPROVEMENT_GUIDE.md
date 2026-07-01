@@ -3,8 +3,7 @@
 > The single biggest lever this week is to turn every pick-first post into a public-vs-sharp market board before naming the bet; labeled data is tiny, but the weak posts all miss that structure.
 
 ## The one thing that matters this week
-Stop treating the pick as the opener; make the opener the market map.
-Last week's hot-hand/live-card advice did get applied in the writer drafts, but post `2072083386584203447` still led with "one of these dogs" and only earned 1 labeled like.
+Stop treating the pick as the opener; make the opener the market map, because last week's hot-hand/live-card advice did get applied in the writer drafts but post `2072083386584203447` still led with "one of these dogs" and only earned 1 labeled like.
 This beats last week's advice because @PatrickE_Vegas-style `sharp_public_board` posts give people a reason to repost the read, not just react to whether the pick won.
 Stop spending the first two lines on suspense, streak flexes, or "calling my shot" unless the next block shows public money versus sharp money.
 
@@ -54,7 +53,7 @@ Stop spending the first two lines on suspense, streak flexes, or "calling my sho
   Maps to gap: older writer drafts put site CTAs inside the hero.
   How we apply it: hero is native market read only; link or screenshot receipt goes in the first self-reply.
 - **Use specific numbers in the first two lines** — source `growth_tips.json` and Quip 2026 operator playbook, 2026.
-  Maps to gap: "one of these dogs" is too vague.
+  Maps to gap: `2072083386584203447` opened with "one of these dogs," which is too vague.
   How we apply it: lead with "public X%, sharp Y%, line moved Z" before the team name.
 
 ## Before → After (2 rewrites)
