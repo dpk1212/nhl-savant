@@ -1,6 +1,6 @@
 # Sharp Flow — V8 Diagnostic Report
-**Generated**: 2026-07-01 ET
-**Completed Picks**: 1626 | **V8 Era Picks**: 1064 | **V8 Since**: 2026-04-18
+**Generated**: 2026-07-02 ET
+**Completed Picks**: 1647 | **V8 Era Picks**: 1085 | **V8 Since**: 2026-04-18
 **Universe**: All locked picks across ML, Spread, Total markets
 
 ## Executive Summary
@@ -27,12 +27,12 @@ Track V8 on multiple windows so you do not get fooled by one hot or cold streak.
 
 | Window | Picks | WR | Flat P/L | Flat ROI | Model P/L | Model ROI | Avg CLV | Avg EV | Notes |
 |---|---|---|---|---|---|---|---|---|---|
-| 3-Day | 75 | 49.3% | -5.53u | -7.4% | 20.30u | 24.2% | 0.84% | -0.51% |  |
-| 7-Day | 163 | 51.5% | -10.91u | -6.7% | 16.99u | 6.9% | -0.07% | 1.20% |  |
-| 14-Day | 296 | 50.3% | -22.32u | -7.5% | 25.87u | 5.1% | 0.18% | 0.43% |  |
-| 30-Day | 560 | 51.2% | -22.59u | -4.0% | 49.77u | 4.9% | -0.09% | 0.19% |  |
-| V8 Era | 1064 | 50.9% | -43.82u | -4.1% | 17.34u | 0.9% | -0.08% | -0.34% |  |
-| All Time | 1626 | 51.8% | -73.33u | -4.5% | -27.54u | -1.0% | -0.19% | -0.14% |  |
+| 3-Day | 71 | 53.5% | 2.23u | 3.1% | 12.94u | 13.1% | -0.09% | -0.59% |  |
+| 7-Day | 154 | 50.0% | -13.92u | -9.0% | 4.85u | 2.1% | 0.12% | 0.99% |  |
+| 14-Day | 300 | 50.3% | -21.25u | -7.1% | 12.35u | 2.4% | 0.21% | 0.38% |  |
+| 30-Day | 573 | 51.3% | -22.04u | -3.8% | 36.07u | 3.4% | -0.09% | 0.20% |  |
+| V8 Era | 1085 | 51.0% | -42.77u | -3.9% | 5.78u | 0.3% | -0.08% | -0.35% |  |
+| All Time | 1647 | 51.9% | -72.29u | -4.4% | -39.10u | -1.4% | -0.19% | -0.14% |  |
 
 ---
 
@@ -40,76 +40,76 @@ Track V8 on multiple windows so you do not get fooled by one hot or cold streak.
 
 V8 is working only if higher stars beat lower stars.
 
-### V8 Era (n=1064)
+### V8 Era (n=1085)
 
 | Stars | N | Avg Implied% | Expected WR | Actual WR | WR Delta | Flat ROI | Model ROI | Avg Units | Avg CLV | Verdict |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 5 | 280 | 53.8% | 53.8% | 50.4% | -3.4% | -8.5% | -3.9% | 3.23 | -0.21% | Weak |
-| 4.5 | 209 | 51.9% | 51.9% | 52.6% | +0.7% | -0.6% | 6.5% | 2.54 | 0.19% | Fair |
-| 4 | 195 | 52.4% | 52.4% | 49.2% | -3.1% | -5.7% | 5.9% | 1.21 | -0.37% | Weak |
+| 5 | 286 | 53.8% | 53.8% | 50.0% | -3.8% | -9.1% | -5.0% | 3.26 | -0.24% | Weak |
+| 4.5 | 214 | 51.9% | 51.9% | 53.3% | +1.3% | 0.6% | 6.4% | 2.55 | 0.16% | Fair |
+| 4 | 198 | 52.3% | 52.3% | 49.5% | -2.8% | -5.0% | 7.9% | 1.21 | -0.38% | Weak |
 | 3.5 | 68 | 51.2% | 51.2% | 51.5% | +0.2% | 4.8% | 8.8% | 0.79 | -0.07% | Fair |
-| 3 | 140 | 52.6% | 52.6% | 50.7% | -1.9% | -3.4% | -7.3% | 0.72 | 0.54% | Fair |
-| 2.5 | 153 | 53.3% | 53.3% | 51.0% | -2.3% | -4.4% | 8.7% | 0.46 | -0.41% | Fair |
+| 3 | 143 | 52.5% | 52.5% | 51.0% | -1.4% | -1.7% | -4.9% | 0.72 | 0.67% | Fair |
+| 2.5 | 156 | 53.2% | 53.2% | 50.0% | -3.2% | -6.2% | -2.7% | 0.46 | -0.42% | Weak |
 | 2 | 1 | 53.5% | 53.5% | 0.0% | -53.5% | -100.0% | -100.0% | 1.10 | 0.67% | Failing |
-| 1 | 15 | 52.7% | 52.7% | 60.0% | +7.3% | 5.8% | 20.8% | 0.40 | 0.11% | Strong |
+| 1 | 16 | 54.2% | 54.2% | 62.5% | +8.3% | 7.2% | 17.9% | 0.44 | 0.10% | Strong |
 
 **Pairwise Rank Test**
 
 | Comparison | Higher WR | Lower WR | Delta | Status |
 |---|---|---|---|---|
-| 5★ vs 4.5★ | 50.4% | 52.6% | -2.2% | Flat |
-| 4.5★ vs 4★ | 52.6% | 49.2% | +3.4% | Correct |
-| 4★ vs 3.5★ | 49.2% | 51.5% | -2.3% | Flat |
-| 3.5★ vs 3★ | 51.5% | 50.7% | +0.8% | Correct |
-| 3★ vs 2.5★ | 50.7% | 51.0% | -0.3% | Flat |
-| 2.5★ vs 2★ | 51.0% | 0.0% | +51.0% | Correct |
-| 2★ vs 1★ | 0.0% | 60.0% | -60.0% | INVERTED |
+| 5★ vs 4.5★ | 50.0% | 53.3% | -3.3% | INVERTED |
+| 4.5★ vs 4★ | 53.3% | 49.5% | +3.8% | Correct |
+| 4★ vs 3.5★ | 49.5% | 51.5% | -2.0% | Flat |
+| 3.5★ vs 3★ | 51.5% | 51.0% | +0.5% | Correct |
+| 3★ vs 2.5★ | 51.0% | 50.0% | +1.0% | Correct |
+| 2.5★ vs 2★ | 50.0% | 0.0% | +50.0% | Correct |
+| 2★ vs 1★ | 0.0% | 62.5% | -62.5% | INVERTED |
 
 **Calibration Summary**
 
 | Metric | Value |
 |---|---|
-| Spearman: Stars vs WR | -0.143 |
-| Spearman: Stars vs Flat ROI | -0.214 |
+| Spearman: Stars vs WR | -0.119 |
+| Spearman: Stars vs Flat ROI | -0.143 |
 | Spearman: Stars vs CLV | -0.286 |
-| Brier Score | 0.2410 |
-| Monotonicity Score | 0.14 |
+| Brier Score | 0.2413 |
+| Monotonicity Score | -0.14 |
 
 **⚠️ RANKING LAYER IS MISCALIBRATED** — higher stars are not producing better ROI
 
-### All Time (n=1626)
+### All Time (n=1647)
 
 | Stars | N | Avg Implied% | Expected WR | Actual WR | WR Delta | Flat ROI | Model ROI | Avg Units | Avg CLV | Verdict |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 5 | 293 | 54.0% | 54.0% | 50.5% | -3.5% | -8.5% | -4.2% | 3.21 | -0.16% | Weak |
-| 4.5 | 243 | 52.7% | 52.7% | 52.3% | -0.5% | -2.3% | 3.2% | 2.55 | 0.35% | Fair |
-| 4 | 310 | 53.7% | 53.7% | 51.0% | -2.8% | -4.8% | 1.1% | 1.55 | -0.49% | Fair |
+| 5 | 299 | 54.1% | 54.1% | 50.2% | -3.9% | -9.1% | -5.3% | 3.23 | -0.19% | Weak |
+| 4.5 | 248 | 52.7% | 52.7% | 52.8% | +0.1% | -1.1% | 3.3% | 2.56 | 0.33% | Fair |
+| 4 | 313 | 53.7% | 53.7% | 51.1% | -2.5% | -4.4% | 2.1% | 1.55 | -0.50% | Fair |
 | 3.5 | 186 | 54.8% | 54.8% | 56.5% | +1.7% | 2.0% | 4.1% | 1.41 | -0.25% | Fair |
-| 3 | 300 | 54.0% | 54.0% | 49.7% | -4.3% | -8.5% | -9.6% | 0.98 | 0.00% | Weak |
-| 2.5 | 260 | 53.8% | 53.8% | 52.7% | -1.1% | -2.9% | 5.4% | 0.57 | -0.57% | Fair |
+| 3 | 303 | 53.9% | 53.9% | 49.8% | -4.1% | -7.7% | -8.8% | 0.97 | 0.08% | Weak |
+| 2.5 | 263 | 53.7% | 53.7% | 52.1% | -1.6% | -4.0% | 0.0% | 0.57 | -0.57% | Fair |
 | 2 | 1 | 53.5% | 53.5% | 0.0% | -53.5% | -100.0% | -100.0% | 1.10 | 0.67% | Failing |
-| 1 | 15 | 52.7% | 52.7% | 60.0% | +7.3% | 5.8% | 20.8% | 0.40 | 0.11% | Strong |
+| 1 | 16 | 54.2% | 54.2% | 62.5% | +8.3% | 7.2% | 17.9% | 0.44 | 0.10% | Strong |
 
 **Pairwise Rank Test**
 
 | Comparison | Higher WR | Lower WR | Delta | Status |
 |---|---|---|---|---|
-| 5★ vs 4.5★ | 50.5% | 52.3% | -1.8% | Flat |
-| 4.5★ vs 4★ | 52.3% | 51.0% | +1.3% | Correct |
-| 4★ vs 3.5★ | 51.0% | 56.5% | -5.5% | INVERTED |
-| 3.5★ vs 3★ | 56.5% | 49.7% | +6.8% | Correct |
-| 3★ vs 2.5★ | 49.7% | 52.7% | -3.0% | INVERTED |
-| 2.5★ vs 2★ | 52.7% | 0.0% | +52.7% | Correct |
-| 2★ vs 1★ | 0.0% | 60.0% | -60.0% | INVERTED |
+| 5★ vs 4.5★ | 50.2% | 52.8% | -2.6% | Flat |
+| 4.5★ vs 4★ | 52.8% | 51.1% | +1.7% | Correct |
+| 4★ vs 3.5★ | 51.1% | 56.5% | -5.4% | INVERTED |
+| 3.5★ vs 3★ | 56.5% | 49.8% | +6.7% | Correct |
+| 3★ vs 2.5★ | 49.8% | 52.1% | -2.3% | Flat |
+| 2.5★ vs 2★ | 52.1% | 0.0% | +52.1% | Correct |
+| 2★ vs 1★ | 0.0% | 62.5% | -62.5% | INVERTED |
 
 **Calibration Summary**
 
 | Metric | Value |
 |---|---|
-| Spearman: Stars vs WR | -0.190 |
+| Spearman: Stars vs WR | -0.095 |
 | Spearman: Stars vs Flat ROI | -0.190 |
 | Spearman: Stars vs CLV | -0.214 |
-| Brier Score | 0.2363 |
+| Brier Score | 0.2366 |
 | Monotonicity Score | 0.14 |
 
 **⚠️ RANKING LAYER IS MISCALIBRATED** — higher stars are not producing better ROI
@@ -123,20 +123,20 @@ These are the variables that actually make V8 work. Each one should be tracked a
 
 | Variable | Type | What It Measures | Expected Direction | Spearman vs WR | Spearman vs ROI | Verdict |
 |---|---|---|---|---|---|---|
-| ROI_norm | Wallet quality | Wallet skill percentile | Higher → better | -0.092 | -0.020 | Tune |
-| Rank_norm | Wallet quality | Leaderboard quality | Higher → better | -0.158 | -0.101 | Tune |
-| PnL_norm | Wallet quality | Wallet durability | Higher → better | -0.099 | -0.050 | Tune |
-| WalletBase | Wallet quality | Composite skill score | Higher → better | -0.126 | -0.036 | Tune |
-| SizeRatio | Conviction | Current bet vs avg bet | Higher → better (nonlinear) | -0.053 | -0.008 | Tune |
-| ConvictionMult | Conviction | Log-scaled conviction boost | Higher → better (capped) | -0.031 | 0.012 | Monitor |
-| WalletContribution | Per-wallet force | Skill × conviction | Higher → better | -0.130 | -0.036 | Tune |
-| ForSide | Side support | Total wallet force on side | Higher → better | -0.154 | -0.077 | Tune |
-| AgainstSide | Opposition | Force against side | Higher → worse | 0.007 | 0.040 | Monitor |
-| NetEdge | Core side edge | For minus discounted against | Higher → better | -0.123 | -0.072 | Tune |
-| BreadthBonus | Consensus | More supporting wallets | Higher → better (modest) | 0.020 | 0.006 | Monitor |
-| TopShare | Concentration | Dependency on one wallet | Higher → worse | 0.139 | 0.087 | Tune |
-| ConcPenalty | Concentration | Penalty from TopShare | Higher → worse | 0.142 | 0.092 | Tune |
-| WalletPlayScore | Final raw score | Pre-star V8 signal | Higher → better | -0.121 | -0.075 | Tune |
+| ROI_norm | Wallet quality | Wallet skill percentile | Higher → better | -0.086 | -0.015 | Tune |
+| Rank_norm | Wallet quality | Leaderboard quality | Higher → better | -0.160 | -0.102 | Tune |
+| PnL_norm | Wallet quality | Wallet durability | Higher → better | -0.102 | -0.053 | Tune |
+| WalletBase | Wallet quality | Composite skill score | Higher → better | -0.121 | -0.031 | Tune |
+| SizeRatio | Conviction | Current bet vs avg bet | Higher → better (nonlinear) | -0.053 | -0.011 | Tune |
+| ConvictionMult | Conviction | Log-scaled conviction boost | Higher → better (capped) | -0.031 | 0.009 | Monitor |
+| WalletContribution | Per-wallet force | Skill × conviction | Higher → better | -0.126 | -0.033 | Tune |
+| ForSide | Side support | Total wallet force on side | Higher → better | -0.147 | -0.075 | Tune |
+| AgainstSide | Opposition | Force against side | Higher → worse | 0.008 | 0.038 | Monitor |
+| NetEdge | Core side edge | For minus discounted against | Higher → better | -0.120 | -0.072 | Tune |
+| BreadthBonus | Consensus | More supporting wallets | Higher → better (modest) | 0.024 | 0.006 | Monitor |
+| TopShare | Concentration | Dependency on one wallet | Higher → worse | 0.135 | 0.085 | Tune |
+| ConcPenalty | Concentration | Penalty from TopShare | Higher → worse | 0.140 | 0.091 | Tune |
+| WalletPlayScore | Final raw score | Pre-star V8 signal | Higher → better | -0.116 | -0.074 | Tune |
 
 ---
 
@@ -148,21 +148,21 @@ This is how you find out where V8 is actually making money.
 
 | Bucket | N | WR | Flat ROI | Model ROI | Avg CLV | Notes |
 |---|---|---|---|---|---|---|
-| p0-20 (10.10–32.60) | 176 | 47.2% | -14.2% | -1.1% | 0.15% |  |
-| p20-40 (32.63–38.52) | 176 | 51.7% | -5.0% | 6.9% | -0.01% |  |
-| p40-60 (38.53–44.30) | 176 | 59.7% | 14.3% | 7.1% | -0.77% |  |
-| p60-80 (44.30–50.29) | 176 | 49.4% | -8.5% | 2.1% | -0.17% |  |
-| p80-95 (50.30–57.97) | 176 | 49.4% | -2.1% | -4.7% | 0.57% |  |
-| p95+ (58.00–83.30) | 176 | 47.7% | -9.9% | -8.8% | -0.25% |  |
+| p0-20 (10.10–32.60) | 179 | 46.9% | -14.0% | -3.5% | 0.12% |  |
+| p20-40 (32.60–38.60) | 180 | 51.7% | -5.6% | 6.0% | -0.02% |  |
+| p40-60 (38.60–44.18) | 179 | 59.2% | 13.5% | 7.4% | -0.80% |  |
+| p60-80 (44.20–50.25) | 180 | 50.6% | -6.6% | 3.4% | -0.19% |  |
+| p80-95 (50.26–57.83) | 179 | 49.2% | -2.1% | -5.8% | 0.68% |  |
+| p95+ (57.85–83.30) | 180 | 47.8% | -9.4% | -9.7% | -0.26% |  |
 
 ### ConvictionMultiplier Buckets
 
 | Bucket | N | WR | Flat ROI | Model ROI | Avg CLV | Notes |
 |---|---|---|---|---|---|---|
-| 0.70-0.90 | 466 | 48.1% | -9.4% | -2.2% | -0.33% |  |
-| 0.90-1.05 | 341 | 49.6% | -8.1% | -5.1% | 0.15% |  |
-| 1.05-1.20 | 175 | 63.4% | 22.6% | 27.8% | -0.10% |  |
-| 1.20-1.35 | 45 | 44.4% | -18.5% | -23.2% | 1.21% |  |
+| 0.70-0.90 | 474 | 48.3% | -8.8% | -2.0% | -0.34% |  |
+| 0.90-1.05 | 347 | 49.6% | -7.6% | -6.4% | 0.20% |  |
+| 1.05-1.20 | 179 | 63.1% | 21.5% | 27.1% | -0.12% |  |
+| 1.20-1.35 | 48 | 43.8% | -19.6% | -21.6% | 1.04% |  |
 | 1.35-1.50 | 13 | 38.5% | -28.6% | -47.4% | -0.54% |  |
 | 1.50+ | 1 | 100.0% | 94.3% | 94.7% | 0.23% |  |
 
@@ -170,22 +170,22 @@ This is how you find out where V8 is actually making money.
 
 | Bucket | N | WR | Flat ROI | Model ROI | Avg CLV | Notes |
 |---|---|---|---|---|---|---|
-| Bottom 20% (-2.06–0.19) | 130 | 46.9% | -10.7% | -1.3% | -0.39% |  |
-| 20-40% (0.19–0.51) | 130 | 58.5% | 7.7% | 15.0% | -0.21% |  |
-| 40-60% (0.51–0.79) | 130 | 53.8% | 0.8% | 4.9% | 0.01% |  |
-| 60-80% (0.79–1.11) | 130 | 50.8% | -3.0% | 3.5% | 0.16% |  |
-| 80-95% (1.11–1.60) | 130 | 46.9% | -10.4% | -7.8% | -0.03% |  |
-| 95%+ (1.60–6.68) | 131 | 48.9% | -10.6% | -6.7% | -0.09% |  |
+| Bottom 20% (-2.06–0.19) | 132 | 47.7% | -9.1% | -0.1% | -0.39% |  |
+| 20-40% (0.19–0.52) | 132 | 57.6% | 6.1% | 12.8% | -0.17% |  |
+| 40-60% (0.52–0.80) | 132 | 54.5% | 1.1% | 5.1% | -0.03% |  |
+| 60-80% (0.80–1.11) | 132 | 51.5% | -0.1% | 2.4% | 0.34% |  |
+| 80-95% (1.11–1.60) | 132 | 46.2% | -11.3% | -6.7% | -0.10% |  |
+| 95%+ (1.60–6.68) | 133 | 48.9% | -10.7% | -6.2% | -0.12% |  |
 
 ### TopShare / Concentration Buckets
 
 | Bucket | N | WR | Flat ROI | Model ROI | Avg CLV | Interpretation |
 |---|---|---|---|---|---|---|
 | 0.00-0.25 | 43 | 41.9% | -18.8% | -17.6% | 0.07% | Broad support |
-| 0.25-0.40 | 149 | 50.3% | -4.9% | -0.1% | 0.01% | Healthy support |
-| 0.40-0.60 | 245 | 49.0% | -8.0% | -1.6% | -0.14% | Concentrated |
-| 0.60-0.80 | 149 | 57.7% | 6.3% | 11.0% | -0.19% | Very concentrated |
-| 0.80-1.00 | 195 | 50.8% | -4.3% | 0.9% | -0.05% | One-wallet driven |
+| 0.25-0.40 | 152 | 50.7% | -3.6% | 1.3% | 0.12% | Healthy support |
+| 0.40-0.60 | 250 | 49.2% | -7.7% | -0.8% | -0.17% | Concentrated |
+| 0.60-0.80 | 152 | 57.2% | 5.4% | 7.9% | -0.18% | Very concentrated |
+| 0.80-1.00 | 196 | 51.0% | -3.7% | 0.9% | -0.05% | One-wallet driven |
 
 ---
 
@@ -193,10 +193,10 @@ This is how you find out where V8 is actually making money.
 
 | Board Type | N | WR | Flat ROI | Model ROI | Avg CLV | Avg Stars |
 |---|---|---|---|---|---|---|
-| Clean consensus | 89 | 39.3% | -30.5% | -31.1% | -0.28% | 4.2 |
-| Broad battle | 318 | 50.0% | -4.5% | 5.0% | -0.01% | 3.8 |
-| One-wallet nuke | 478 | 50.8% | -3.8% | 1.4% | -0.05% | 3.9 |
-| Thin support | 700 | 52.0% | -2.1% | 1.2% | -0.09% | 3.9 |
+| Clean consensus | 90 | 40.0% | -28.8% | -28.1% | -0.30% | 4.2 |
+| Broad battle | 323 | 50.2% | -3.9% | 4.4% | 0.05% | 3.7 |
+| One-wallet nuke | 488 | 50.8% | -3.7% | 0.1% | -0.07% | 3.9 |
+| Thin support | 710 | 52.0% | -2.1% | 0.2% | -0.11% | 3.9 |
 
 ---
 
@@ -206,32 +206,32 @@ V8 stars are wallet-only, but the production system still depends on lock/shadow
 
 ### Regime Performance
 
-**V8 Era** (n=1064)
+**V8 Era** (n=1085)
 
 | Regime | N | WR | Flat ROI | Model ROI | Avg CLV | Avg Stars | Lock Rate |
 |---|---|---|---|---|---|---|---|
 | NO_MOVE | 35 | 54.3% | -2.8% | 33.4% | 1.05% | 4.0 | 91.4% |
-| SMALL_MOVE | 199 | 50.3% | -5.9% | 1.6% | -0.51% | 4.1 | 100.0% |
+| SMALL_MOVE | 203 | 50.2% | -6.0% | -0.3% | -0.50% | 4.0 | 100.0% |
 | CLEAR_MOVE | 148 | 54.1% | -0.9% | 3.0% | 0.05% | 4.1 | 100.0% |
-| NEAR_START | 407 | 50.1% | -4.8% | -3.8% | -0.03% | 3.7 | 100.0% |
+| NEAR_START | 415 | 50.4% | -4.0% | -2.6% | 0.00% | 3.7 | 100.0% |
 
-**All Time** (n=1626)
+**All Time** (n=1647)
 
 | Regime | N | WR | Flat ROI | Model ROI | Avg CLV | Avg Stars | Lock Rate |
 |---|---|---|---|---|---|---|---|
 | NO_MOVE | 552 | 53.8% | -5.0% | -2.1% | -0.39% | 3.3 | 7.2% |
-| SMALL_MOVE | 202 | 50.0% | -6.3% | 0.3% | -0.47% | 4.1 | 98.5% |
+| SMALL_MOVE | 206 | 50.0% | -6.4% | -1.5% | -0.46% | 4.0 | 98.5% |
 | CLEAR_MOVE | 174 | 54.0% | -0.7% | 2.8% | -0.02% | 4.1 | 100.0% |
-| NEAR_START | 423 | 50.1% | -5.1% | -4.1% | -0.01% | 3.7 | 100.0% |
+| NEAR_START | 431 | 50.3% | -4.3% | -2.9% | 0.01% | 3.7 | 100.0% |
 
 ### Stars × Regime
 
 | Stars | NO_MOVE (N/WR/ROI) | SMALL_MOVE (N/WR/ROI) | CLEAR_MOVE (N/WR/ROI) | NEAR_START (N/WR/ROI) |
 |---|---|---|---|---|
-| 4.5-5★ | 16 / 62.5% / 5.6% | 99 / 50.5% / -8.2% | 74 / 58.1% / 3.7% | 153 / 49.7% / -6.8% |
-| 3.5-4★ | 11 / 36.4% / -29.3% | 57 / 56.1% / 8.4% | 43 / 44.2% / -19.0% | 97 / 53.6% / 6.9% |
-| 2.5-3★ | 7 / 57.1% / 11.2% | 38 / 42.1% / -18.8% | 31 / 58.1% / 13.3% | 146 / 47.9% / -10.5% |
-| 1.0-2★ | 1 / 100.0% / 57.1% | 5 / 40.0% / -25.6% | — | 11 / 54.5% / -3.9% |
+| 4.5-5★ | 16 / 62.5% / 5.6% | 101 / 50.5% / -7.7% | 74 / 58.1% / 3.7% | 156 / 50.0% / -6.3% |
+| 3.5-4★ | 11 / 36.4% / -29.3% | 57 / 56.1% / 8.4% | 43 / 44.2% / -19.0% | 99 / 53.5% / 6.9% |
+| 2.5-3★ | 7 / 57.1% / 11.2% | 39 / 41.0% / -20.9% | 31 / 58.1% / 13.3% | 149 / 48.3% / -8.8% |
+| 1.0-2★ | 1 / 100.0% / 57.1% | 6 / 50.0% / -16.4% | — | 11 / 54.5% / -3.9% |
 
 ### Lock vs Shadow
 
@@ -239,26 +239,26 @@ V8 stars are wallet-only, but the production system still depends on lock/shadow
 
 | Status | N | WR | Flat ROI | Model ROI | Avg Stars | Avg CLV |
 |---|---|---|---|---|---|---|
-| LOCKED | 1061 | 50.9% | -4.2% | 0.8% | 3.9 | -0.08% |
+| LOCKED | 1082 | 50.9% | -4.0% | 0.2% | 3.9 | -0.08% |
 | SHADOW | 3 | 66.7% | 31.2% | 49.5% | 3.7 | 0.66% |
 
 **All Time**
 
 | Status | N | WR | Flat ROI | Model ROI | Avg Stars | Avg CLV |
 |---|---|---|---|---|---|---|
-| LOCKED | 1111 | 50.9% | -4.3% | 0.6% | 3.9 | -0.08% |
+| LOCKED | 1132 | 51.0% | -4.1% | -0.0% | 3.9 | -0.08% |
 | SHADOW | 515 | 53.8% | -5.0% | -5.0% | 3.2 | -0.50% |
 
 ### V8 Era Gate Volume
 
 | Category | Count | % |
 |---|---|---|
-| Total Written | 1780 | 100% |
-| LOCKED (direct) | 106 | 6.0% |
-| Promoted (SHADOW→LOCKED) | 1180 | 66.3% |
-| Rejected (stayed SHADOW) | 201 | 11.3% |
-| Superseded (side flipped) | 288 | 16.2% |
-| Muted | 613 | 34.4% |
+| Total Written | 1819 | 100% |
+| LOCKED (direct) | 107 | 5.9% |
+| Promoted (SHADOW→LOCKED) | 1202 | 66.1% |
+| Rejected (stayed SHADOW) | 203 | 11.2% |
+| Superseded (side flipped) | 302 | 16.6% |
+| Muted | 627 | 34.5% |
 | Cancelled | 20 | 1.1% |
 
 ---
@@ -267,53 +267,53 @@ V8 stars are wallet-only, but the production system still depends on lock/shadow
 
 Keep this separate from ranking. V8 tuning should first answer: are the stars right? Only then ask whether units are right.
 
-### V8 Era (n=1064)
+### V8 Era (n=1085)
 
 **Counterfactual Scenarios**
 
 | Scenario | P/L | ROI | vs Actual |
 |---|---|---|---|
-| Actual (model units) | 17.34u | 0.9% | — |
-| Flat 1.0u | -43.82u | -4.1% | +61.16u |
-| Lock units only | -38.49u | — | +55.83u |
-| Units change only on star change | -34.08u | — | +51.42u |
+| Actual (model units) | 5.78u | 0.3% | — |
+| Flat 1.0u | -42.77u | -3.9% | +48.55u |
+| Lock units only | -43.07u | — | +48.85u |
+| Units change only on star change | -38.66u | — | +44.44u |
 
 **Sizing by Star Bucket**
 
 | Stars | N | Avg Units | Flat ROI | Model ROI | Sizing Edge | Verdict |
 |---|---|---|---|---|---|---|
-| 5 | 280 | 3.23 | -8.5% | -3.9% | -11.40u | Sizing hurts |
-| 4.5 | 209 | 2.54 | -0.6% | 6.5% | +35.60u | Sizing helps |
-| 4 | 195 | 1.21 | -5.7% | 5.9% | +25.12u | Sizing helps |
+| 5 | 286 | 3.26 | -9.1% | -5.0% | -20.43u | Sizing hurts |
+| 4.5 | 214 | 2.55 | 0.6% | 6.4% | +33.49u | Sizing helps |
+| 4 | 198 | 1.21 | -5.0% | 7.9% | +28.91u | Sizing helps |
 | 3.5 | 68 | 0.79 | 4.8% | 8.8% | +1.52u | Sizing helps |
-| 3 | 140 | 0.72 | -3.4% | -7.3% | -2.59u | Sizing hurts |
-| 2.5 | 153 | 0.46 | -4.4% | 8.7% | +12.84u | Sizing helps |
+| 3 | 143 | 0.72 | -1.7% | -4.9% | -2.54u | Sizing hurts |
+| 2.5 | 156 | 0.46 | -6.2% | -2.7% | +7.84u | Sizing helps |
 | 2 | 1 | 1.10 | -100.0% | -100.0% | -0.10u | Neutral |
-| 1 | 15 | 0.40 | 5.8% | 20.8% | +0.38u | Neutral |
+| 1 | 16 | 0.44 | 7.2% | 17.9% | +0.09u | Neutral |
 
-### All Time (n=1626)
+### All Time (n=1647)
 
 **Counterfactual Scenarios**
 
 | Scenario | P/L | ROI | vs Actual |
 |---|---|---|---|
-| Actual (model units) | -27.54u | -1.0% | — |
-| Flat 1.0u | -73.33u | -4.5% | +45.79u |
-| Lock units only | -72.60u | — | +45.06u |
-| Units change only on star change | -78.12u | — | +50.58u |
+| Actual (model units) | -39.10u | -1.4% | — |
+| Flat 1.0u | -72.29u | -4.4% | +33.19u |
+| Lock units only | -77.18u | — | +38.08u |
+| Units change only on star change | -82.70u | — | +43.60u |
 
 **Sizing by Star Bucket**
 
 | Stars | N | Avg Units | Flat ROI | Model ROI | Sizing Edge | Verdict |
 |---|---|---|---|---|---|---|
-| 5 | 293 | 3.21 | -8.5% | -4.2% | -14.99u | Sizing hurts |
-| 4.5 | 243 | 2.55 | -2.3% | 3.2% | +25.58u | Sizing helps |
-| 4 | 310 | 1.55 | -4.8% | 1.1% | +19.88u | Sizing helps |
+| 5 | 299 | 3.23 | -9.1% | -5.3% | -24.02u | Sizing hurts |
+| 4.5 | 248 | 2.56 | -1.1% | 3.3% | +23.47u | Sizing helps |
+| 4 | 313 | 1.55 | -4.4% | 2.1% | +23.66u | Sizing helps |
 | 3.5 | 186 | 1.41 | 2.0% | 4.1% | +6.83u | Sizing helps |
-| 3 | 300 | 0.98 | -8.5% | -9.6% | -2.74u | Sizing hurts |
-| 2.5 | 260 | 0.57 | -2.9% | 5.4% | +15.55u | Sizing helps |
+| 3 | 303 | 0.97 | -7.7% | -8.8% | -2.69u | Sizing hurts |
+| 2.5 | 263 | 0.57 | -4.0% | 0.0% | +10.55u | Sizing helps |
 | 2 | 1 | 1.10 | -100.0% | -100.0% | -0.10u | Neutral |
-| 1 | 15 | 0.40 | 5.8% | 20.8% | +0.38u | Neutral |
+| 1 | 16 | 0.44 | 7.2% | 17.9% | +0.09u | Neutral |
 
 
 ---
@@ -324,10 +324,10 @@ Use market expectation as a discipline check.
 
 | Bucket | N | Avg Implied% | Actual WR | WR Delta | Flat ROI | Avg CLV | Verdict |
 |---|---|---|---|---|---|---|---|
-| All V8 plays | 1064 | 52.8% | 50.9% | -1.8% | -4.1% | -0.08% | Neutral |
-| 4.5-5★ | 489 | 53.0% | 51.3% | -1.7% | -5.1% | -0.04% | Neutral |
-| 3.5-4★ | 263 | 52.1% | 49.8% | -2.3% | -3.0% | -0.29% | Below market |
-| 2.5-3★ | 295 | 53.0% | 51.2% | -1.8% | -3.3% | 0.04% | Neutral |
+| All V8 plays | 1085 | 52.8% | 51.0% | -1.8% | -3.9% | -0.08% | Neutral |
+| 4.5-5★ | 500 | 53.0% | 51.4% | -1.6% | -4.9% | -0.07% | Neutral |
+| 3.5-4★ | 266 | 52.0% | 50.0% | -2.0% | -2.5% | -0.30% | Below market |
+| 2.5-3★ | 301 | 52.8% | 50.8% | -2.0% | -3.5% | 0.10% | Below market |
 | CLEAR_MOVE only | 148 | 54.1% | 54.1% | -0.1% | -0.9% | 0.05% | Neutral |
 | NO_MOVE only | 35 | 52.9% | 54.3% | +1.4% | -2.8% | 1.05% | Neutral |
 
@@ -337,54 +337,54 @@ Use market expectation as a discipline check.
 
 V8 should be rechecked anytime the live board stops looking like the calibration universe.
 
-### 7-Day (n=94)
+### 7-Day (n=89)
 
 | Feature | Frozen Mean | Live Mean | Drift (σ) | Alert |
 |---|---|---|---|---|
-| ROI_norm | 43.431 | 36.071 | 0.41 |  |
-| Rank_norm | 48.452 | 36.913 | 0.43 |  |
-| PnL_norm | 45.110 | 32.784 | 0.57 |  |
-| WalletBase | 45.009 | 37.210 | 0.60 |  |
-| SizeRatio | 1.254 | 1.260 | 0.00 |  |
-| ConvictionMult | 0.934 | 0.940 | 0.04 |  |
-| WalletCountFor | 2.904 | 3.766 | 0.43 |  |
-| TopShare | 0.608 | 0.546 | 0.24 |  |
-| ForSide | 134.533 | 134.159 | 0.00 |  |
-| AgainstSide | 47.932 | 41.071 | 0.09 |  |
-| NetEdge | 0.938 | 0.992 | 0.06 |  |
-| WalletPlayScore | 0.842 | 1.402 | 0.23 |  |
+| ROI_norm | 43.466 | 36.999 | 0.36 |  |
+| Rank_norm | 48.064 | 37.607 | 0.39 |  |
+| PnL_norm | 44.819 | 32.416 | 0.58 |  |
+| WalletBase | 44.942 | 37.521 | 0.57 |  |
+| SizeRatio | 1.258 | 1.276 | 0.01 |  |
+| ConvictionMult | 0.935 | 0.957 | 0.14 |  |
+| WalletCountFor | 2.919 | 4.045 | 0.56 |  |
+| TopShare | 0.606 | 0.523 | 0.33 |  |
+| ForSide | 135.004 | 148.547 | 0.12 |  |
+| AgainstSide | 47.851 | 43.760 | 0.06 |  |
+| NetEdge | 0.943 | 1.113 | 0.19 |  |
+| WalletPlayScore | 0.856 | 1.710 | 0.35 |  |
 
-### V8 Era (n=781)
+### V8 Era (n=793)
 
 | Feature | Frozen Mean | Live Mean | Drift (σ) | Alert |
 |---|---|---|---|---|
-| ROI_norm | 43.431 | 42.066 | 0.08 |  |
-| Rank_norm | 48.452 | 56.611 | 0.30 |  |
-| PnL_norm | 45.110 | 49.618 | 0.21 |  |
-| WalletBase | 45.009 | 45.681 | 0.05 |  |
-| SizeRatio | 1.254 | 1.336 | 0.06 |  |
-| ConvictionMult | 0.934 | 0.954 | 0.13 |  |
-| WalletCountFor | 2.904 | 2.904 | 0.00 |  |
-| TopShare | 0.608 | 0.608 | 0.00 |  |
-| ForSide | 134.533 | 134.533 | 0.00 |  |
-| AgainstSide | 47.932 | 47.932 | 0.00 |  |
-| NetEdge | 0.938 | 0.938 | 0.00 |  |
-| WalletPlayScore | 0.842 | 0.842 | 0.00 |  |
+| ROI_norm | 43.466 | 42.160 | 0.07 |  |
+| Rank_norm | 48.064 | 56.409 | 0.31 |  |
+| PnL_norm | 44.819 | 49.474 | 0.22 |  |
+| WalletBase | 44.942 | 45.695 | 0.06 |  |
+| SizeRatio | 1.258 | 1.341 | 0.07 |  |
+| ConvictionMult | 0.935 | 0.955 | 0.13 |  |
+| WalletCountFor | 2.919 | 2.919 | 0.00 |  |
+| TopShare | 0.606 | 0.606 | 0.00 |  |
+| ForSide | 135.004 | 135.004 | 0.00 |  |
+| AgainstSide | 47.851 | 47.851 | 0.00 |  |
+| NetEdge | 0.943 | 0.943 | 0.00 |  |
+| WalletPlayScore | 0.856 | 0.856 | 0.00 |  |
 
 
 ---
 
 ## 11. Failure Diagnostics
 
-### V8 Era (n=1064)
+### V8 Era (n=1085)
 
 No major failure modes detected.
 
-### 7-Day (n=163)
+### 7-Day (n=154)
 
-- **Gate issue**: NO_MOVE ROI (4.8%) significantly trails CLEAR_MOVE (20.8%)
+- **Concentration issue**: 28 high-concentration picks (TopShare>0.6) at -14.2% ROI
 
-### All Time (n=1626)
+### All Time (n=1647)
 
 No major failure modes detected.
 
@@ -438,29 +438,29 @@ _Fill this in manually after reviewing the diagnostic sections above._
 
 | KPI | Value |
 |---|---|
-| V8 era picks | 1064 |
-| V8 flat ROI | -4.1% |
-| V8 model ROI | 0.9% |
-| V8 star monotonicity score | 0.14 |
-| 4.5-5★ ROI | -5.1% |
-| 2.5-3★ ROI | -3.3% |
+| V8 era picks | 1085 |
+| V8 flat ROI | -3.9% |
+| V8 model ROI | 0.3% |
+| V8 star monotonicity score | -0.14 |
+| 4.5-5★ ROI | -4.9% |
+| 2.5-3★ ROI | -3.5% |
 | CLEAR_MOVE ROI | -0.9% |
 | NO_MOVE ROI | -2.8% |
 | Single-wallet play rate | 43.0% |
 | Whale override win rate | 80.0% |
-| Avg CLV by star bucket | 5★: -0.21% | 4.5★: 0.19% | 4★: -0.37% | 3.5★: -0.07% | 3★: 0.54% | 2.5★: -0.41% | 2★: 0.67% | 1★: 0.11% |
+| Avg CLV by star bucket | 5★: -0.24% | 4.5★: 0.16% | 4★: -0.38% | 3.5★: -0.07% | 3★: 0.67% | 2.5★: -0.42% | 2★: 0.67% | 1★: 0.10% |
 | Drift alert count | 0 |
 
 ---
 
 ## Pick Health (Mute/Cancel) Audit
 
-### V8 Era (n=1064)
+### V8 Era (n=1085)
 
 | Health | N | % | WR | Flat ROI | Model ROI | Avg CLV |
 |---|---|---|---|---|---|---|
-| ACTIVE | 978 | 91.9% | 50.5% | -4.6% | -0.3% | -0.08% |
-| MUTED | 75 | 7.0% | 56.0% | 2.2% | 20.8% | -0.11% |
+| ACTIVE | 999 | 92.1% | 50.6% | -4.4% | -0.9% | -0.08% |
+| MUTED | 75 | 6.9% | 56.0% | 2.2% | 20.8% | -0.11% |
 | CANCELLED | 11 | 1.0% | 54.5% | -2.8% | -10.4% | 0.16% |
 
 **Health Trigger Frequency**
@@ -482,17 +482,17 @@ _Fill this in manually after reviewing the diagnostic sections above._
 | whitelist_fade_strong | 2 | 50.0% |
 | dw1_no_ags_support | 1 | 100.0% |
 
-### 7-Day (n=163)
+### 7-Day (n=154)
 
 | Health | N | % | WR | Flat ROI | Model ROI | Avg CLV |
 |---|---|---|---|---|---|---|
-| ACTIVE | 163 | 100.0% | 51.5% | -6.7% | 6.9% | -0.07% |
+| ACTIVE | 154 | 100.0% | 50.0% | -9.0% | 2.1% | 0.12% |
 
-### All Time (n=1626)
+### All Time (n=1647)
 
 | Health | N | % | WR | Flat ROI | Model ROI | Avg CLV |
 |---|---|---|---|---|---|---|
-| ACTIVE | 1538 | 94.6% | 51.6% | -5.0% | -2.0% | -0.19% |
+| ACTIVE | 1559 | 94.7% | 51.6% | -4.9% | -2.4% | -0.19% |
 | MUTED | 75 | 4.6% | 56.0% | 2.2% | 20.8% | -0.11% |
 | CANCELLED | 13 | 0.8% | 61.5% | 17.8% | 4.8% | -0.95% |
 
