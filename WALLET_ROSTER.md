@@ -1,6 +1,6 @@
 # Sharp Wallet Roster
 
-Generated: 7/2/2026, 2:39:16 AM ET · V8 cutover: 2026-04-18 · whitelistVersion: 2
+Generated: 7/2/2026, 5:59:46 AM ET · V8 cutover: 2026-04-18 · whitelistVersion: 2
 
 Every sharp wallet we have V8-era data on, sorted by combined conviction score. This is the **full roster** (no minimum-bets filter) — noisy at the tail, but that's the point for a tracking dataset. Verdict column reflects the ≥3-bet threshold.
 
@@ -69,7 +69,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 4a9953 | CONFIRMED_WINNER | ELITE | 426 | 3 | 66.7% | +38.8% | +1.16 | 11 | 63.6% | +30.3% | +17668 | 34.5 | 51.1 | 3.9% |
 | fc4582 | CONFIRMED_WINNER | ELITE | 167 | 4 | 75% | +30.1% | +1.20 | 8 | 62.5% | +0.7% | +4102 | 48.1 | 38.9 | 2.5% |
 | cce0fd | CONFIRMED_WINNER | ELITE | 161 | 3 | 66.7% | +8.8% | +0.26 | 6 | 83.3% | +27.4% | +9290 | 36.7 | 17.2 | 1.1% |
-| 4b912c | CONFIRMED_WINNER | ELITE | 388 | 30 | 53.3% | +2% | +0.61 | 116 | 48.3% | +6.2% | +4243 | 19.3 | 25.2 | 1.7% |
+| 4b912c | CONFIRMED_WINNER | ELITE | 388 | 30 | 53.3% | +2% | +0.61 | 117 | 47.9% | +5.6% | +3885 | 19.3 | 25.2 | 1.7% |
 | 669791 | CONFIRMED_WINNER | ELITE | 465 | 7 | 57.1% | +4.1% | +0.29 | 20 | 55% | +10.7% | +2883 | 29.4 | 43.6 | 3.1% |
 | c91057 | POSITIONS_ONLY_POSITIVE | ELITE | 46 | 1 | 100% | +113% | +1.13 | 7 | 85.7% | +73.3% | +3503240 | 88.8 | 88.5 | 21.5% |
 | e1f804 | POSITIONS_ONLY_POSITIVE | ELITE | 33 | 2 | 50% | -14.3% | -0.29 | 29 | 75.9% | +32.8% | +1296339 | 83.2 | 77.1 | 10.5% |
@@ -400,7 +400,7 @@ Every sharp wallet we have V8-era data on, sorted by combined conviction score. 
 | 4a9953 | 3 | +38.8% | 11 | +30.3% | +17668 | 34.5 | 3.9% |
 | fc4582 | 4 | +30.1% | 8 | +0.7% | +4102 | 48.1 | 2.5% |
 | cce0fd | 3 | +8.8% | 6 | +27.4% | +9290 | 36.7 | 1.1% |
-| 4b912c | 30 | +2% | 116 | +6.2% | +4243 | 19.3 | 1.7% |
+| 4b912c | 30 | +2% | 117 | +5.6% | +3885 | 19.3 | 1.7% |
 | 669791 | 7 | +4.1% | 20 | +10.7% | +2883 | 29.4 | 3.1% |
 
 ## Confirmed bleeders (≥3 bets in both sources, negative in both)
