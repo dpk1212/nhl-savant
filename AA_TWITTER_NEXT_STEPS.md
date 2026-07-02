@@ -1,62 +1,53 @@
-# A Twitter Next Steps — 2026-07-01 11:53 AM ET · MIDDAY
+# A Twitter Next Steps — 2026-07-02 9:35 AM ET · GROWTH-EXPERT RUN
 
-> Afternoon post the day after a **massive +17u slate** (28.5% ROI, 12-5-1). The perfect hook is the discipline narrative you handed me — "the hardest part isn't winning big, it's not giving it back" — a relatable veteran-wisdom line, fresh mechanic vs yesterday's call-your-shot, built to force replies.
+> First run powered by live Firecrawl research. Two things changed today: (1) we now have the **2026 X algorithm hard rules** (replies weighted ~27x likes, first-30-min velocity decides reach, links in tweet 1 = -50%, hashtags dead) baked into every draft; (2) every number below is **verified against graded Firestore picks**, not the stale JSON.
 
-## Recommended post
+## Verified numbers (do not eyeball — these are graded)
+- **World Cup card: 16-5, +17.3u, 26% ROI** since group play (Jun 21–Jul 1)
+- Yesterday (Jul 1): **5-7, -11.6u** — honest-L material, don't hide it
+- 6u max plays: **3-0, +12.3u** since Jun 10
+- Today: **Spain ML -295 (5u TOP+ ELITE, 3pm ET)** — proven winners **unanimous, 2 for / 0 against**; **Portugal ML -135 (3u, 7pm ET)** — proven winners **6 for / 1 against**
+- Both games were >60 min out at write time — re-pull before quoting after ~1pm.
 
-```
-+17 units yesterday.
-
-The hardest part of a huge slate isn't winning it — it's not giving it back the next day.
-
-So we're not getting cute. Same sharps, same discipline, right back to the well this afternoon:
-
-Under 11.5, Padres/Cubs (4u) — 100% of the sharp money, zero dissent
-Rangers ML (2.5u) — 4 proven winners, 3 high-conviction sharps
-White Sox +123 (4u) — 100% sharp money on the dog the public won't touch
-
-We don't chase. We follow the money.
-
-On the run with us, or waiting for us to slip?
-```
-
-**Sharp data used (from the card's SHARP CONSENSUS, not raw wallet $):** Under 11.5 = 100% sharp money / zero dissent / 1 proven (HC); Rangers = 4 proven winners, 3 HC, 72%; White Sox +123 = 100% sharp, 2 proven, zero dissent.
-
-**Why it's the perfect hook (per the playbook):**
-- **Screenshot/RT line:** "The hardest part of a +17-unit day isn't winning it — it's not giving it back today." Every bettor has lived this; it's inherently quotable (your zero-RT fix).
-- **Mechanic:** discipline/process narrative + a forcing binary close ("on the run, or waiting for us to slip?") — pulls believers AND doubters. Fresh vs yesterday.
-- **Directional proof, no dollar dump** — "the smart money's already loaded," "a plus-money dog the public won't touch."
-- **Record flex** (+17u) as credibility; **THE BLEND** voice with a mantra close ("We don't chase. We follow the money.").
-- **Legible MLB teams**, one play anchored (the plus-money dog), not a card.
-
-## Alternates
+## Recommended post (hero) — post 11:30 AM–12:15 PM ET
 
 ```
-+17 units yesterday — and today everyone will tell you to "book it and sit out."
+We're 16-5 betting the World Cup and I couldn't name Austria's starting XI.
 
-That's how the public thinks. Winners don't flinch.
+We don't watch the games. We watch the wallets — a small group of bettors who win year after year, and where their money goes.
 
-Same sharps, same plays, right back to the well this afternoon.
+Knockout round today, and they're loud:
 
-We don't protect a number. We press an edge.
+Spain, 3pm ET — our top play. Every proven winner we track is on it. Zero against.
+Portugal, 7pm ET — 6 winning wallets in, 1 fading.
 
-Fading us today?
++17 units in three weeks doing exactly this.
+
+So tell me — is not watching the games a red flag, or is it the whole point?
 ```
 
+**RT line:** "We're 16-5 betting the World Cup and I couldn't name Austria's starting XI."
+
+**Why this is the one:**
+- Line 1 is a confession-flex — believable narrow record + self-deprecation + curiosity gap. It reads like a person, not a template.
+- The close is a real identity war (purists vs quants). Both sides reply. **Replies are worth ~27x likes in the 2026 algo** — this question is the whole growth engine of the post.
+- Marquee teams (Spain/Portugal), record-on-an-angle flex, structure rotated off the retired bullet-card.
+
+**Self-reply at ~25 min (this is where the link goes, never the hero):**
+
 ```
-+17 units yesterday. Now the real test: not giving it back.
+The wallets aren't split today, for what it's worth. Spain is unanimous — every proven winner we track, zero against. Portugal is 6-to-1. When they disagree with each other we stay small. When they line up like this we don't overthink it.
 
-Before I post the side — the sharps are on a plus-money underdog in White Sox / Orioles. The public's on the favorite.
-
-Which side do you want?
-
-Reply before I reveal it.
+Full card + the tracker: nhlsavant.com
 ```
 
-## RT line
-**"The hardest part of a +17-unit day isn't winning it. It's not giving it back the next day."**
+## Alternates (in `ready_to_post/2026-07-02_0930.json`)
+1. **Honest-L ladder** — "Yesterday: 5-7. Baseball bit us. / World Cup card: still 16-5…" — use if you want the accountability beat first.
+2. **Reply-before-reveal** — "on one of them they're completely unanimous… Spain or Portugal, which one?" — max reply-forcer, needs the 1pm answer post.
 
-## Action checklist
-- [ ] Post the hero now
-- [ ] Reply ~30 min in naming the plus-money dog (White Sox +123) once you've committed replies
-- [ ] Tonight: recap — did we hold the line or give it back? (closes the discipline loop)
+## Daily algo checklist (new, from the 2026 research)
+- [ ] Post hero at a peak window; **reply to every early commenter in the first 30 min** (velocity threshold: 10+ engagements in 15 min = amplification)
+- [ ] Self-reply with data + link at ~25 min
+- [ ] **3–5 strategic replies to bigger World Cup/MLB betting accounts today** — this is how out-of-network reach works now; add a real market read, not "great pick"
+- [ ] Zero hashtags, zero links in tweet 1
+- [ ] Tonight: grade the shot publicly (✅/❌) — closes the loop, feeds tomorrow's velocity

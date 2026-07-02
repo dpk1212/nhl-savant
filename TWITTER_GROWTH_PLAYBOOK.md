@@ -3,7 +3,16 @@
 > Updated by **The Twitter Loop** (Phase 1) each run. "What's working on X right now
 > and how we grow." The Writer (Phase 3) pulls hook shapes + construction tricks here.
 
-*Last updated: 2026-06-30 11:34 AM ET (loop run) · source: niche_trends.json, growth_tips.json, live sharp tape + board (all fresh today: picks 15:08, positions 15:34, brief 15:03 UTC). Coming off 3-1 yesterday.*
+*Last updated: 2026-07-02 9:35 AM ET (growth-expert run) · source: LIVE Firecrawl research (2026 X algorithm deep-dives), improvement_brief.json (fresh 13:28 UTC), graded Firestore records.*
+
+## THE 2026 X ALGORITHM — HARD RULES (Firecrawl-verified 7/2)
+These are not vibes; they're from current algo teardowns. Every post must comply:
+1. **Replies are weighted ~27x likes.** Conversation quality > raw engagement. A post with 50 real replies beats one with 500 likes. → Every hero ends on a *genuinely answerable, polarizing* question — never "thoughts?".
+2. **First 30 minutes decide everything.** 10+ engagements in the first 15–30 min triggers amplification; under 3 and the post dies. → Post at peak windows, self-reply at ~25 min with a new data point, and reply to every early commenter fast.
+3. **Links in tweet 1 cut reach ~50%.** → nhlsavant.com goes in the self-reply, NEVER the hero.
+4. **Hashtags are dead** (semantic NLP categorizes content; 3+ tags = spam filter). → Zero hashtags.
+5. **Out-of-network reach comes from strategic replies to bigger accounts** — the candidate-sourcing stage pulls from accounts similar users engage with. → Daily: 3–5 smart replies on big World Cup/MLB betting posts (add a real market read, not "great pick!").
+6. **Consistency compounds** — daily posting at consistent times measurably raises per-post reach; a 3-day gap deboosts the next ~5 posts.
 
 ## NORTH STAR — GROWTH IS THE ONLY GOAL
 The mission is **1,000,000 followers** via **MAX DISTRIBUTION**. The backend system is profitable and works; the bottleneck is reach. Every post is judged by ONE question: *does it FORCE an action* — a reply, a vote, a quote-tweet, a screenshot, a return-visit? Information alone gets ignored; engagement is the algorithm's fuel. We have ~0 retweets — fix that and growth compounds. Always think one move ahead: *what is the best NEXT post for virality, right now?* You are the account's social-media expert, **perpetually scouting the next viral format** — never running a fixed template.
@@ -63,14 +72,14 @@ Our sharp-money / Polymarket tracking is HOW we know the side and our credibilit
 - Thread deep reads instead of truncating.
 
 ## THE NEXT VIRAL BET (named this run — test it now)
-**Call-your-shot off a 3-1 day, on a plus-money underdog.** Momentum event: **3-1 yesterday**, and today's highest-conviction play is **Norway ML +110** — a plus-money dog the sharp money is one-sided on, and the same winning bettor who's carried our soccer card sized it up bigger than anything else on the board. Lead with "3-1 yesterday, calling my shot," name the +110 dog, say "screenshot it / graded tonight," close with "tail the run or fade us?" Mechanic #2 (call-your-shot) — rotate OFF last run's hot-hand running card. Plus-money + contrarian (laying off the chalk) doubles as a polarizing tribe take.
+**The confession-flex: "We're 16-5 betting the World Cup and I couldn't name Austria's starting XI."** The soccer card is verifiably 16-5 / +17.3u since group play (graded Firestore) and today is a marquee knockout slate (Spain 3pm, Portugal 7pm). The hook pairs a believable narrow flex with self-deprecating honesty and a built-in identity war (watch-the-games purists vs follow-the-money quants) — the close question ("is not watching the games a red flag, or the whole point?") is engineered for the 27x reply weighting. Structure = story/confession, rotating OFF the retired bullet-card.
 
-## Trends watchlist (2026-06-30)
-- **Plus-money underdog + contrarian framing** is the sharpest tribe-war hook today (Norway +110 — "bet the name and you're with the crowd").
-- **Marquee/legible teams only** — France, Norway are national teams (fine). Obscure-game posts (DR Congo) died at 1 like; do not repeat.
-- **Directional proof, never precise $** — our recent dollar-card posts underperformed; the playbook rule holds. Reference the money as "the sharpest money we track," add the 3-1 / +29u record as credibility.
-- **Replies are the whole game** — still ~0 RTs; every hero must force an action (tail/fade, screenshot, vote).
-- **Board today:** Norway ML +110 (SUPER, ~1 PM ET — the hero), France ML -325 (4u, ~5 PM ET — same whale, supporting), Rays/Brewers ML + two Overs (thinner) later.
+## Trends watchlist (2026-07-02)
+- **Confession/self-deprecating flex** is the freshest hook shape — flexes that admit a weakness read human and get quote-tweeted; pure flexes get scrolled.
+- **World Cup knockout rounds are peak marquee** — Spain, Portugal, France, Brazil dominate the conversation. Ride it while it lasts; obscure teams still die.
+- **Record-on-an-angle stays our most believable flex** (16-5 World Cup > +Xu overall). Attach it to a live next leg every time.
+- **Reply-guy strategy is now algo-canonical** — out-of-network reach comes from replies to bigger accounts. This is a daily job, not a tactic.
+- **Board today:** Spain ML -295 (5u TOP+ ELITE, 3pm ET, proven winners unanimous 2-0) — the hero anchor; Portugal ML -135 (3u, 7pm ET, 6-1 proven consensus) — the follow-up; MLB card thinner, yesterday was 5-7 (honest-L material).
 
 ## Stale / stop
 - Setup-line / pick-list openers with no market read ("Massive slate tonight" → ~1 like).
