@@ -1,6 +1,6 @@
 # MLB Predictions
 
-MLB predictions for every game, built on data. See win probabilities and market insights for the moneyline, run line, and total. Strictly by the numbers—no guesswork. On 7/2, the Dodgers have the highest win probability at 64.7%.
+MLB predictions for every game, built on data. See win probabilities and market insights for the moneyline, run line, and total. Strictly by the numbers—no guesswork. On 7/2, the Mariners have the highest win probability at 65.0%.
 
 [![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-left.svg) Start your FREE 3-day trial of Dimers Pro ![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-right.svg)](https://www.dimers.com/subscription)
 
@@ -10,33 +10,33 @@ Jul 2 2026
 \\
 ![Pirates](https://cdn.ciphersports.io/images/MLB/official/PIT.svg)\\
 \\
-Pirates  J. Jones \\
+Pirates \\
 \\
-46.4% \\
+0 \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
-\\
-+117\\
+45.5% \\
 \\
 ![Phillies](https://cdn.ciphersports.io/images/MLB/official/PHI.svg)\\
 \\
-Phillies  A. Rangel \\
+Phillies \\
 \\
-53.6% \\
+0 \\
 \\
-![FanDuel](https://cdn.ciphersports.io/images/bookmaker-logos/fanduel-icon.svg)\\
+54.5% \\
 \\
--122\\
+3 Out\\
 \\
-MLB \\
+LIVE\\
 \\
-See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_100_phi_pit) [Jul 2, 2:10 PM ET\\
+Bot 1st \\
+\\
+In-Play Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_100_phi_pit) [Jul 2, 2:10 PM ET\\
 \\
 ![Reds](https://cdn.ciphersports.io/images/MLB/official/CIN.svg)\\
 \\
 Reds  C. Burns \\
 \\
-40.2% \\
+40.1% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
@@ -46,7 +46,7 @@ Reds  C. Burns \\
 \\
 Brewers  J. Misiorowski \\
 \\
-59.8% \\
+59.9% \\
 \\
 ![Polymarket](https://cdn.ciphersports.io/images/polymarket-small.png)\\
 \\
@@ -60,7 +60,7 @@ See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_100_mil_c
 \\
 Marlins  R. Gusto \\
 \\
-50.6% \\
+51.3% \\
 \\
 ![Polymarket](https://cdn.ciphersports.io/images/polymarket-small.png)\\
 \\
@@ -70,7 +70,7 @@ Marlins  R. Gusto \\
 \\
 Rockies  M. Lorenzen \\
 \\
-49.4% \\
+48.7% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
@@ -84,7 +84,7 @@ See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_100_col_m
 \\
 White Sox  D. Martin \\
 \\
-48.3% \\
+47.9% \\
 \\
 ![Polymarket](https://cdn.ciphersports.io/images/polymarket-small.png)\\
 \\
@@ -94,7 +94,7 @@ White Sox  D. Martin \\
 \\
 Guardians  S. Cecconi \\
 \\
-51.7% \\
+52.1% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
@@ -108,7 +108,7 @@ See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_100_cle_c
 \\
 Cardinals  D. May \\
 \\
-47.1% \\
+47.0% \\
 \\
 ![Polymarket](https://cdn.ciphersports.io/images/polymarket-small.png)\\
 \\
@@ -118,7 +118,7 @@ Cardinals  D. May \\
 \\
 Braves  H. Waldrep \\
 \\
-52.9% \\
+53.0% \\
 \\
 ![Polymarket](https://cdn.ciphersports.io/images/polymarket-small.png)\\
 \\
@@ -156,7 +156,7 @@ See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_100_kc_tb
 \\
 Tigers  F. Valdez \\
 \\
-47.9% \\
+49.5% \\
 \\
 ![Polymarket](https://cdn.ciphersports.io/images/polymarket-small.png)\\
 \\
@@ -166,7 +166,7 @@ Tigers  F. Valdez \\
 \\
 Rangers  N. Eovaldi \\
 \\
-52.1% \\
+50.5% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
@@ -180,7 +180,7 @@ See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_100_tex_d
 \\
 Angels  W. Ureña \\
 \\
-35.0% \\
+35.9% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
@@ -190,7 +190,7 @@ Angels  W. Ureña \\
 \\
 Mariners  B. Miller \\
 \\
-65.0% \\
+64.1% \\
 \\
 ![Polymarket](https://cdn.ciphersports.io/images/polymarket-small.png)\\
 \\
@@ -402,12 +402,12 @@ How to claim
 
 Dimers’ MLB predictions are powered by a simulation-based model that plays out each game thousands of times, inning by inning. From those simulations, we estimate each team’s chances of winning.
 
-On Thursday, the Dodgers lead all win probabilities with a 64.7% chance of beating the Padres at UNIQLO Field at Dodger Stadium. The Mariners and Brewers also rank among the leading moneyline favorites.
+On Thursday, the Mariners lead all win probabilities with a 65.0% chance of beating the Angels at T-Mobile Park. The Dodgers and Brewers also rank among the leading moneyline favorites.
 
 | Team | Prob. | Opponent | First pitch (ET) |
 | --- | --- | --- | --- |
-| Dodgers | 64.7% | vs. Padres | 7:10pm |
-| Mariners | 63.9% | vs. Angels | 6:40pm |
+| Mariners | 65.0% | vs. Angels | 6:40pm |
+| Dodgers | 65.0% | vs. Padres | 7:10pm |
 | Brewers | 59.8% | vs. Reds | 11:10am |
 
 ## MLB predictions today: Data-driven outcomes for every game
