@@ -10123,10 +10123,10 @@ export default function SharpFlow() {
   const [agsuEraScope, setAgsuEraScope] = useState('v12');
   const [agsuDateRange, setAgsuDateRange] = useState('all');
   const [agsuSport, setAgsuSport] = useState('ALL');
-  // agsuMarket state dropped 2026-06-11 with the lay-user facelift —
-  // ML/Spread/Total drilldowns lived in a third pill row that overwhelmed
-  // the filter bar without earning its keep. If a power-user request
-  // brings it back, this is where the state and the filter clause go.
+  // agsuMarket — ML / Spread / Total drilldown, reinstated 2026-07-02 under
+  // the league row. Values: 'ALL' | 'ML' | 'SPREAD' | 'TOTAL' (compared
+  // against the pick's marketType, which is lowercase 'ml'/'spread'/'total').
+  const [agsuMarket, setAgsuMarket] = useState('ALL');
   // Sub-sections inside the dashboard — all collapsed by default so the
   // first impression is clean (era pills + filters + 4 KPIs + curve only).
   const [showAgsuLedger, setShowAgsuLedger] = useState(false);
@@ -12168,12 +12168,13 @@ export default function SharpFlow() {
                   return { ...p, _resolvedTier: tier || 'LEGACY', _stakeTier: (typeof p.v8_hcStakeTier === 'string' ? p.v8_hcStakeTier : null) };
                 })
                 .filter(Boolean));
-              const isAgsuFiltered = agsuDateRange !== 'all' || agsuSport !== 'ALL';
+              const isAgsuFiltered = agsuDateRange !== 'all' || agsuSport !== 'ALL' || agsuMarket !== 'ALL';
               const nowEt = new Date();
               const todayEt = nowEt.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
               const yesterdayEt = new Date(nowEt.getTime() - 86400000).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
               const passesAgsuFilter = (p) => {
                 if (agsuSport !== 'ALL' && p.sport !== agsuSport) return false;
+                if (agsuMarket !== 'ALL' && (p.marketType || 'ml').toUpperCase() !== agsuMarket) return false;
                 if (agsuDateRange === 'all') return true;
                 if (agsuDateRange === 'today') return p.date === todayEt;
                 if (agsuDateRange === 'yesterday') return p.date === yesterdayEt;
@@ -12368,12 +12369,15 @@ export default function SharpFlow() {
                 null
               );
               const sportLabel = agsuSport !== 'ALL' ? agsuSport : null;
-              const hasActiveSubFilter = dateRangeLabel != null || sportLabel != null;
+              const marketLabel = agsuMarket !== 'ALL'
+                ? (agsuMarket === 'ML' ? 'ML' : agsuMarket === 'SPREAD' ? 'SPREAD' : 'TOTALS')
+                : null;
+              const hasActiveSubFilter = dateRangeLabel != null || sportLabel != null || marketLabel != null;
               const scopeLabel = (() => {
                 const base = isV12Scope
                   ? (hasActiveSubFilter ? 'v12' : 'v12 ERA')
                   : (hasActiveSubFilter ? null : 'ALL TIME');
-                const parts = [base, dateRangeLabel, sportLabel].filter(Boolean);
+                const parts = [base, dateRangeLabel, sportLabel, marketLabel].filter(Boolean);
                 return parts.join(' · ');
               })();
 
@@ -12432,7 +12436,7 @@ export default function SharpFlow() {
                               border: `1px solid ${B.gold}33`,
                               letterSpacing: '0.08em', textTransform: 'uppercase',
                             }}>
-                              {[dateRangeLabel, sportLabel].filter(Boolean).join(' · ')}
+                              {[dateRangeLabel, sportLabel, marketLabel].filter(Boolean).join(' · ')}
                             </span>
                           )}
                           <span style={{
@@ -12576,7 +12580,7 @@ export default function SharpFlow() {
                         ))}
                         {hasActiveSubFilter && (
                           <button
-                            onClick={() => { setAgsuDateRange('all'); setAgsuSport('ALL'); }}
+                            onClick={() => { setAgsuDateRange('all'); setAgsuSport('ALL'); setAgsuMarket('ALL'); }}
                             style={{
                               padding: '0.22rem 0.55rem', borderRadius: '6px', cursor: 'pointer',
                               ...T.micro, fontWeight: 800, fontSize: '0.55rem',
@@ -12587,11 +12591,35 @@ export default function SharpFlow() {
                               transition: 'all 0.2s ease',
                               marginLeft: '0.3rem',
                             }}
-                            title="Reset date + league filters"
+                            title="Reset date + league + market filters"
                           >
                             CLEAR
                           </button>
                         )}
+                      </div>
+
+                      {/* ── Market filter (compact) ─────────────────
+                          Mirrors the league row so power users can split
+                          performance by bet type (ML / Spread / Totals).
+                          Compares against pick.marketType ('ml'/'spread'/
+                          'total'), which is lowercase, so ids are upper. */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                        <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem', letterSpacing: '0.08em', fontWeight: 700, marginRight: '0.15rem' }}>MARKET</span>
+                        {[
+                          { id: 'ALL', label: 'ALL', color: B.gold },
+                          { id: 'ML', label: 'ML', color: '#60A5FA' },
+                          { id: 'SPREAD', label: 'SPREAD', color: '#A78BFA' },
+                          { id: 'TOTAL', label: 'TOTALS', color: '#34D399' },
+                        ].map(opt => (
+                          <button key={opt.id} onClick={() => setAgsuMarket(opt.id)} style={{
+                            padding: '0.22rem 0.6rem', borderRadius: '6px', cursor: 'pointer',
+                            ...T.micro, fontWeight: 800, fontSize: '0.6rem', letterSpacing: '0.04em',
+                            border: agsuMarket === opt.id ? `1px solid ${opt.color}66` : `1px solid ${B.border}`,
+                            background: agsuMarket === opt.id ? `${opt.color}1f` : 'transparent',
+                            color: agsuMarket === opt.id ? opt.color : B.textMuted,
+                            transition: 'all 0.2s ease',
+                          }}>{opt.label}</button>
+                        ))}
                       </div>
 
                       {!hasData && (
@@ -12626,7 +12654,7 @@ export default function SharpFlow() {
                           </div>
                           {hasActiveSubFilter && (
                             <button
-                              onClick={() => { setAgsuDateRange('all'); setAgsuSport('ALL'); }}
+                              onClick={() => { setAgsuDateRange('all'); setAgsuSport('ALL'); setAgsuMarket('ALL'); }}
                               style={{
                                 padding: '0.4rem 0.9rem', borderRadius: '6px', cursor: 'pointer',
                                 ...T.micro, fontWeight: 800, fontSize: '0.62rem',
