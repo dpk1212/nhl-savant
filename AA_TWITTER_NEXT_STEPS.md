@@ -1,66 +1,62 @@
-# A Twitter Next Steps — 2026-07-03 1:02 PM ET · MIDDAY
+# A Twitter Next Steps — 2026-07-04 10:15 AM ET · MORNING
 
-> ML-priority post. The real records (from the daily report): **soccer ML 17-5 (77.3%, +28.6% ROI)** and **MLB ML profitable across 168 picks (54.2%, +5.1% ROI)** — the moneyline IS the brand. Mechanic: record-on-an-angle flex (fresh vs the last two runs), mantra close, tail/fade forcing question.
+> The perfect recap of the July 3 slate: **8-4, +16 units** (every result verified against ESPN/BBC/FIFA finals and our locked odds). Structure modeled on our own recap posts (timeline refreshed via Firecrawl this morning): record+units hook, ✅ stack, honest ❌ with one-line stories, mantra RT line, engagement close.
 
 ## Recommended post
 
 ```
-We're not a parlay account. We bet moneylines — and the moneylines are printing.
+8-4 yesterday. +16 units.
 
-Soccer ML: 17-5 (77%)
-MLB ML: our biggest sample of the season, profitable all year
+Holiday-eve slate, and the sharps showed up:
 
-Today's card is ML-heavy, led by our biggest play on the board:
+✅ Colombia ML (6u — our biggest play of the day)
+✅ Nationals ML (5u)
+✅ Orioles/Reds Under 9.5 (5u)
+✅ Sox/Guardians Under 8.5 (5u)
+✅ Rays ML (5u)
+✅ Rays/Astros Under 9 (4u)
+✅ Brewers/D-backs Over (4u)
+✅ Brewers ML (1u)
 
-Colombia ML (6u) — 5 proven winners backing it, zero against
-Egypt +135 (2.5u) — the plus-money dog the sharps grabbed early, kicks off ~1 PM ET
-Rays ML and Nationals ML behind them
+The misses — we post those too:
+❌ Giants/Rockies Under — Coors did Coors things (18 runs)
+❌ Twins +1.5
+❌ Egypt ML — won on penalties, but the 90-minute draw kills the ML
+❌ Argentina ML — same story, needed extra time
 
-The public chases parlays. The pros grind the line.
+Every play posted before lock. Every result graded after.
 
-Tail the moneylines, or fade the streak?
+That's the difference.
+
+Who rode with us?
 ```
 
-**Why it wins:** The 17-5 / 77% soccer ML record is a genuinely elite, specific, believable number (record-on-an-angle — the playbook's proven flex shape). Identity framing ("not a parlay account") is a tribe take that invites agree/disagree. Colombia (6u SUPER, 5-0 proven consensus) is the anchor; Egypt +135 adds the plus-money urgency with a real kick time. Mantra close is the RT line; tail/fade forces replies.
+**Why it's the perfect recap:**
+- **Line 1 = record + units** — our proven recap hook (the "+17 units yesterday" and "8-3, +8.4 units" posts were our strongest recent structures).
+- **The Ls have stories** — "Coors did Coors things" and "won on penalties but the ML dies at 90" turn losses into credibility and personality. Honesty is the brand's proven trust hook.
+- **The RT line** — "Every play posted before lock. Every result graded after. That's the difference." — quotable, context-free, anti-tout.
+- **6u SUPER cashing** is flagged (biggest play of the day won = conviction proof).
 
-## Alternates
+## Grading detail (all verified)
+| Play | Result | Units |
+|------|--------|-------|
+| Colombia ML -235 (6u) | 1-0 vs Ghana | +2.55 |
+| Nationals ML -148 (5u) | 9-5 | +3.38 |
+| O's/Reds U9.5 (5u) | 3 runs | +4.55 |
+| Sox/Guards U8.5 (5u) | 7 runs (10 inn) | +4.55 |
+| Rays ML -108 (5u) | 3-1 | +4.63 |
+| Rays/Astros U9 (4u) | 4 runs | +3.67 |
+| Brewers/D-backs Over (4u) | 11 runs (11 inn) | +3.60 |
+| Brewers ML -146 (1u) | 7-4 | +0.68 |
+| Giants/Rockies U11.5 (5u) | 18 runs | -5.00 |
+| Twins +1.5 (3u) | lost by 3 | -3.00 |
+| Egypt ML +140 (2.5u) | 1-1 at 90 (won PKs) | -2.50 |
+| Argentina ML -650 (1u) | 2-2 at 90 (won ET) | -1.00 |
+| **Total** | **8-4** | **≈ +16.1u** |
 
-```
-Our soccer moneylines are 17-5 this season. 77%.
-
-Today the model's biggest play on the whole board is another one:
-
-Colombia ML (6u) — 5 proven winners backing it, zero against.
-
-And the early kick: Egypt +135, the plus-money dog the sharp money grabbed before noon.
-
-The public chases parlays. The pros grind the line.
-
-Tail or fade?
-```
-
-```
-Kickoff in under an hour, and the sharps are on the plus-money side.
-
-Egypt +135.
-
-Our soccer moneylines are 17-5 this season — this is the exact profile that got us there.
-
-Are you tailing a 77% streak, or is this the one that breaks it?
-
-Answer before kickoff.
-```
-
-## RT line
-**"The public chases parlays. The pros grind the line."**
-
-## Data notes (internal — not published)
-- SOC ML: 22 picks 77.3% +28.6% ROI → 17-5. MLB ML: 168n, 54.2%, +5.1% (say "profitable all year," don't quote 54% — it reads modest).
-- Colombia ML -230, 6u SUPER ELITE, prov 5-0, HC2, $208K (91%), whale +$1.16M sizing 2.6× (~9:30 PM ET).
-- Egypt ML +135: $267K (78%), 11 wallets, whale sizing 13.8× — but proven winners are 4-5 (mixed); it's the sharps' early dog, keep it secondary, don't oversell.
-- Rays ML: prov 3-0 but money split 37% — named without stats on purpose. Argentina -650 (1u) skipped: chalk, tiny stake.
+> Note: Egypt/Argentina both *advanced* but MLs grade on 90 minutes — the recap wording handles this honestly (and it's a great educational beat).
 
 ## Action checklist
-- [ ] Post the hero before Egypt kicks (~1 PM ET) for the urgency to land
-- [ ] Reply ~30 min in: the Colombia whale note (a +$1M winner sized up on it) — directional, no exact $
-- [ ] Tonight: grade the card publicly — "moneylines: X-Y today" closes the loop
+- [ ] Post the hero this morning (holiday audience is on their phones early)
+- [ ] Reply ~30 min in: "The 6u Colombia play was our SUPER tier — that tier is now [X-Y] this month" if you want a follow-on flex
+- [ ] Later: today's July 4 card as the pivot post ("back to the well")
