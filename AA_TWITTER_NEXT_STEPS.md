@@ -60,3 +60,30 @@ Who rode with us?
 - [ ] Post the hero this morning (holiday audience is on their phones early)
 - [ ] Reply ~30 min in: "The 6u Colombia play was our SUPER tier — that tier is now [X-Y] this month" if you want a follow-on flex
 - [ ] Later: today's July 4 card as the pivot post ("back to the well")
+
+---
+
+# Follow-up post (~2 hours later) — total units + moneyline profit
+
+> Milestone flex, all numbers from `DAILY_AGSU_REPORT.md` after July 3 graded: **+47.43u total** (34 days, 354 plays, +5.1% ROI) · **MLB ML 171 plays, 55%, +7.1% ROI** · **Soccer ML 18-7 (72%), +24% ROI**.
+
+```
++47 units since June 1.
+
+34 days. 354 plays. Every one posted before lock.
+
+And the engine behind it is the moneyline:
+
+⚾ MLB ML — 171 plays, 55% winners, +7% ROI
+⚽ Soccer ML — 18-7 (72%), +24% ROI
+
+No parlays. No props. No hidden slips.
+
+The public chases 10-leg lottery tickets. We grind the line that actually pays.
+
+Holiday card drops before first pitch — the sharps don't take days off.
+```
+
+**Why it works:** Fresh mechanic vs the morning receipts (milestone/authority flex, not another recap). Line 1 is the compounding number (+47u) with full transparency stats (34 days / 354 plays / posted before lock). The ML section delivers exactly the highlight you wanted — both sports, records AND ROI. Anti-parlay mantra is the RT line. Forward tease ("holiday card before first pitch") sets up the next post instead of repeating the morning's question close.
+
+**Alternate** (identity lead): "+47 units in 34 days — and almost all of it came from the least sexy bet in sports. The moneyline. … Boring wins. Ask our bankroll." (full text in `ready_to_post/2026-07-04_1424.json`)
