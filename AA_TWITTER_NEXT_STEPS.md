@@ -87,3 +87,30 @@ Holiday card drops before first pitch — the sharps don't take days off.
 **Why it works:** Fresh mechanic vs the morning receipts (milestone/authority flex, not another recap). Line 1 is the compounding number (+47u) with full transparency stats (34 days / 354 plays / posted before lock). The ML section delivers exactly the highlight you wanted — both sports, records AND ROI. Anti-parlay mantra is the RT line. Forward tease ("holiday card before first pitch") sets up the next post instead of repeating the morning's question close.
 
 **Alternate** (identity lead): "+47 units in 34 days — and almost all of it came from the least sexy bet in sports. The moneyline. … Boring wins. Ask our bankroll." (full text in `ready_to_post/2026-07-04_1424.json`)
+
+---
+
+# The 4th of July card post (~evening slot)
+
+> All upcoming ML picks from today's board (started games excluded; Brewers listed without a sharp claim because its money is split 36%).
+
+```
+Happy 4th. While the burgers hit the grill, the sharps are already working.
+
++47 units since June 1, and today's card is pure moneyline:
+
+⚽ France ML (6u — our biggest play of the day)
+100% of the sharp money. One proven winner sized up 38× his usual bet.
+
+⚾ Orioles +109 — 7 proven winners, zero dissent, led by a +$2M career wallet
+⚾ Rangers +100 — even money, sharps on the road side
+⚾ Brewers ML (5u) — the late anchor
+
+Two plus-money dogs on Independence Day.
+
+Declare independence from the chalk.
+
+Everything locks before first pitch — enjoy the fireworks, we'll bring ours.
+```
+
+**Why it wins:** Personality/holiday + card is our proven format (the "what are we grilling" post). "+47u" carries over from the milestone post as the running story. France 6u SUPER with the 38× size-up is the conviction anchor; the two plus-money dogs give the holiday value angle. **"Declare independence from the chalk"** is the RT line — holiday-native and quotable. Alternates (France-led conviction post + a reply-before-reveal engagement version) in `ready_to_post/2026-07-04_1338.json`.
