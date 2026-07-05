@@ -1,15 +1,15 @@
 # Non-LOCKED edge audit — do maxRoiN_F / meanBase_F deserve their own promotion path?
 
-Generated: 7/4/2026, 10:09:22 AM ET · V8 cutover: 2026-04-18
+Generated: 7/5/2026, 10:16:10 AM ET · V8 cutover: 2026-04-18
 
 ## Baseline — all graded V8-era game sides
 
 | Segment | N | WR | flat ROI | flat PnL |
 |---|---|---|---|---|
-| LOCKED | 1264 | 50.2% | +Infinity% | +Infinityu |
-| SHADOW | 586 | 48.6% | +Infinity% | +Infinityu |
+| LOCKED | 1290 | 50.5% | +Infinity% | +Infinityu |
+| SHADOW | 598 | 48.5% | +Infinity% | +Infinityu |
 | UNPROMOTED | 5 | 60.0% | +22.7% | +1.13u |
-| **All** | 1855 | 49.7% | +Infinity% | +Infinityu |
+| **All** | 1893 | 49.9% | +Infinity% | +Infinityu |
 
 ---
 ## 1. Does the edge survive outside the LOCKED universe?
@@ -20,10 +20,10 @@ If the signal genuinely predicts winners, the rightmost "★" columns should bea
 
 | lockStage | both★ | maxRoi★ only | meanBase★ only | neither | stage total |
 |---|---|---|---|---|---|
-| **LOCKED** | N=230 · 47% · -10% · -23.2u | N=247 · 53% · +1% · +2.8u | N=80 · 43% · -16% · -12.7u | N=707 · 51% · +Infinity% · +Infinityu | **N=1264 · 50% · +Infinity% · +Infinityu** |
-| **SHADOW** | N=97 · 38% · +Infinity% · +Infinityu | N=79 · 53% · -1% · -1.0u | N=62 · 47% · -10% · -6.4u | N=348 · 51% · +Infinity% · +Infinityu | **N=586 · 49% · +Infinity% · +Infinityu** |
+| **LOCKED** | N=230 · 47% · -10% · -23.2u | N=250 · 54% · +1% · +2.8u | N=81 · 42% · -17% · -13.7u | N=729 · 52% · +Infinity% · +Infinityu | **N=1290 · 50% · +Infinity% · +Infinityu** |
+| **SHADOW** | N=97 · 38% · +Infinity% · +Infinityu | N=79 · 53% · -1% · -1.0u | N=62 · 47% · -10% · -6.4u | N=360 · 51% · +Infinity% · +Infinityu | **N=598 · 48% · +Infinity% · +Infinityu** |
 | **UNPROMOTED** | N=1 · 100% · +120% · +1.2u | — | — | N=4 · 50% · -2% · -0.1u | **N=5 · 60% · +23% · +1.1u** |
-| **ALL** | N=328 · 44% · +Infinity% · +Infinityu | N=326 · 53% · +1% · +1.8u | N=142 · 44% · -13% · -19.0u | N=1059 · 51% · +Infinity% · +Infinityu | **N=1855 · 50% · +Infinity% · +Infinityu** |
+| **ALL** | N=328 · 44% · +Infinity% · +Infinityu | N=329 · 53% · +1% · +1.8u | N=143 · 44% · -14% · -20.0u | N=1093 · 51% · +Infinity% · +Infinityu | **N=1893 · 50% · +Infinity% · +Infinityu** |
 
 ### SHADOW + UNPROMOTED pool (the candidate promotion universe)
 
@@ -32,15 +32,15 @@ If the signal genuinely predicts winners, the rightmost "★" columns should bea
 | both★ | 98 | 38.8% | +Infinity% | +Infinityu |
 | maxRoi★ only | 79 | 53.2% | -1.3% | -0.99u |
 | meanBase★ only | 62 | 46.8% | -10.3% | -6.36u |
-| neither | 352 | 50.9% | +Infinity% | +Infinityu |
-| **pool total** | 591 | 48.7% | +Infinity% | +Infinityu |
+| neither | 364 | 50.5% | +Infinity% | +Infinityu |
+| **pool total** | 603 | 48.6% | +Infinity% | +Infinityu |
 
 **Proposed filter:** non-LOCKED side where `maxRoiN_F ≥ 70` **OR** `meanBase_F ≥ 55`
 
 | Subset | N | WR | flat ROI | flat PnL |
 |---|---|---|---|---|
 | filter hits (★) | 239 | 45.6% | +Infinity% | +Infinityu |
-| filter drops | 352 | 50.9% | +Infinity% | +Infinityu |
+| filter drops | 364 | 50.5% | +Infinity% | +Infinityu |
 
 
 ---
@@ -127,6 +127,7 @@ Column **Prod** = our actual LOCKED book as of each date. Column **Prod + elite-
 | 2026-07-01 | N=28 · 50% · +1% · +0.17u | N=37 · 54% · +Infinity% · +Infinityu | +9 | +Infinityu |
 | 2026-07-02 | N=28 · 32% · -39% · -10.92u | N=32 · 34% · -36% · -11.39u | +4 | -0.48u |
 | 2026-07-03 | N=24 · 71% · +32% · +7.72u | N=28 · 64% · +19% · +5.27u | +4 | -2.45u |
+| 2026-07-04 | N=26 · 65% · +18% · +4.76u | N=26 · 65% · +18% · +4.76u | +0 | +0.00u |
 | **Total delta** | — | — | **+239** picks | **NaNu** |
 
 
@@ -150,9 +151,11 @@ The current promotion system uses two paths: **regime** (CLEAR_MOVE / NEAR_START
 ---
 ## 4. Today's live candidates for the elite-wallet path
 
-Currently-SHADOW or unpromoted sides on the board for 2026-07-04 that would promote if we shipped the new path:
+Currently-SHADOW or unpromoted sides on the board for 2026-07-05 that would promote if we shipped the new path:
 
-_None._
+| Pick | lockStage | regime | tier | maxRoiN_F | meanBase_F | margin | Δctrb |
+|---|---|---|---|---|---|---|---|
+| SOC ML — Mexico | SHADOW | CLEAR_MOVE | STRONG | 83★ | 50 | +2 | -47 |
 
 
 ---
@@ -160,7 +163,7 @@ _None._
 
 ### Summary
 
-- **Non-LOCKED pool:** N=591, flat ROI +Infinity%.
+- **Non-LOCKED pool:** N=603, flat ROI +Infinity%.
 - **Non-LOCKED × edge hit:** N=239, flat ROI +Infinity%, PnL +Infinityu.
 - **NOVEL picks (filter catches them, current paths miss them):** N=84, flat ROI +Infinity%, PnL +Infinityu.
 
