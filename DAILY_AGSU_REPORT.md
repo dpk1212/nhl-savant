@@ -1,6 +1,6 @@
 # AGS-Unified — V12 Performance Monitor
 
-**Generated:** Sunday, July 5, 2026 at 7:49 AM ET
+**Generated:** Sunday, July 5, 2026 at 10:17 AM ET
 
 **Active model:** `ags-unified-v12` · **V12 went live:** 2026-06-01 · **Days live:** 35
 
@@ -8,16 +8,16 @@
 
 ## § 1 — Executive Summary
 
-> 🟢 **V12 is currently WINNING.** Since going live on **2026-06-01** (35 days ago), V12 has evaluated **1079** picks, shipped **366** for real money (33.9% ship rate), and muted the other **713**. On the shipped picks V12 has gone **205-161** (56.0% win), staked **972.25u**, and returned **+53.77u** at **+5.5% ROI**.
+> 🟢 **V12 is currently WINNING.** Since going live on **2026-06-01** (35 days ago), V12 has evaluated **1080** picks, shipped **366** for real money (33.9% ship rate), and muted the other **714**. On the shipped picks V12 has gone **205-161** (56.0% win), staked **972.25u**, and returned **+53.77u** at **+5.5% ROI**.
 
 ### Snapshot
 
 | Metric                              | Value                          |
 |-------------------------------------|--------------------------------|
 | Days V12 has been authoritative     |                             35 |
-| Picks V12 has evaluated             |                           1079 |
+| Picks V12 has evaluated             |                           1080 |
 | Picks SHIPPED (units > 0)           |                            366 |
-| Picks MUTED (score ≤ 0, FADE)       |                            713 |
+| Picks MUTED (score ≤ 0, FADE)       |                            714 |
 | Ship rate                           |                          33.9% |
 | Live W-L                            |                        205-161 |
 | Live Win %                          |                          56.0% |
@@ -139,7 +139,7 @@ Day-by-day production since V12 went live. **Evaluated** = picks V12 scored that
 | 2026-07-02 |        40 |   11 |    13 | 5-6        |  45.5% |     38.50 |      -6.89 |    -17.9% |     +31.32 |
 | 2026-07-03 |        31 |   12 |    11 | 8-4        |  66.7% |     46.50 |     +16.11 |     34.6% |     +47.43 |
 | 2026-07-04 |        36 |   12 |    12 | 8-4        |  66.7% |     49.50 |      +6.34 |     12.8% |     +53.77 |
-| 2026-07-05 |         7 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +53.77 |
+| 2026-07-05 |         8 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +53.77 |
 | 2026-07-06 |         2 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +53.77 |
 | 2026-07-07 |         2 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +53.77 |
 
