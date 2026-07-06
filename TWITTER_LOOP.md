@@ -168,6 +168,19 @@ PHASE 2 — SELF-REVIEW (G6, driven by the LEDGER report, not vibes)
   (hard gates, identity-hook bank, PREMIUM formatting).
 
 PHASE 3 — WRITE (G1 + G2 + G3 + G4)
+- NARRATIVE CONTINUITY FIRST: read the full text of the last ~7 logged posts
+  (post_ledger.json) + any unposted drafts from the last 2 ready_to_post files.
+  Before writing, answer in one line each:
+    • OPEN LOOPS — did we promise anything ("graded tonight", a reveal, a
+      running bit)? Close it or continue it TODAY; never leave a promise hanging.
+    • CALLBACKS — did a recent post take a position that today's results
+      confirmed or embarrassed? Reference it explicitly ("Friday we said X —
+      it cashed / we were wrong"). The account is ONE person telling ONE
+      continuing story, not a series of disconnected announcements.
+    • STAT FATIGUE — which records/numbers did we already quote this week?
+      Don't lead with the same flex twice in 3 days; find the fresh angle on it.
+    • GAME/ANGLE DEDUP — don't hero the same game or angle as the previous
+      post unless the story advanced.
 - Choose the hero from the board buckets (G3). Attach a verified hot record.
 - Draft 2–3 candidates for the SLOT, each a DIFFERENT architecture (G1
   structure rotation), each with: the two hard gates passed, one RT line, the
