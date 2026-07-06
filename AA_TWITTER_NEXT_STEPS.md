@@ -1,116 +1,72 @@
-# A Twitter Next Steps — 2026-07-04 10:15 AM ET · MORNING
+# A Twitter Next Steps — 2026-07-06 11:05 AM ET · MIDDAY
 
-> The perfect recap of the July 3 slate: **8-4, +16 units** (every result verified against ESPN/BBC/FIFA finals and our locked odds). Structure modeled on our own recap posts (timeline refreshed via Firecrawl this morning): record+units hook, ✅ stack, honest ❌ with one-line stories, mantra RT line, engagement close.
+> The single best thing to post today: the **American-run tracker leaning Belgium against the US in a home knockout game**. It's the rare day the honest data IS the polarizing story — no manufacturing needed. Full day slate below (G7): hero, pre-written grade posts, 4 drafted replies, screenshots named.
 
-## Recommended post
+## FIRST — if you haven't posted the weekend recap yet
+The recap (`ready_to_post/2026-07-06_0915_weekend_recap.json`) is still the strongest asset from this morning. If unposted: post it now (~11:30), push the Belgium hero to ~5 PM as the evening post, and skip the separate grade post. If posted: go straight to the hero at noon. **Either way, tell me the URL so I can log it.**
 
-```
-8-4 yesterday. +16 units.
-
-Holiday-eve slate, and the sharps showed up:
-
-✅ Colombia ML (6u — our biggest play of the day)
-✅ Nationals ML (5u)
-✅ Orioles/Reds Under 9.5 (5u)
-✅ Sox/Guardians Under 8.5 (5u)
-✅ Rays ML (5u)
-✅ Rays/Astros Under 9 (4u)
-✅ Brewers/D-backs Over (4u)
-✅ Brewers ML (1u)
-
-The misses — we post those too:
-❌ Giants/Rockies Under — Coors did Coors things (18 runs)
-❌ Twins +1.5
-❌ Egypt ML — won on penalties, but the 90-minute draw kills the ML
-❌ Argentina ML — same story, needed extra time
-
-Every play posted before lock. Every result graded after.
-
-That's the difference.
-
-Who rode with us?
-```
-
-**Why it's the perfect recap:**
-- **Line 1 = record + units** — our proven recap hook (the "+17 units yesterday" and "8-3, +8.4 units" posts were our strongest recent structures).
-- **The Ls have stories** — "Coors did Coors things" and "won on penalties but the ML dies at 90" turn losses into credibility and personality. Honesty is the brand's proven trust hook.
-- **The RT line** — "Every play posted before lock. Every result graded after. That's the difference." — quotable, context-free, anti-tout.
-- **6u SUPER cashing** is flagged (biggest play of the day won = conviction proof).
-
-## Grading detail (all verified)
-| Play | Result | Units |
-|------|--------|-------|
-| Colombia ML -235 (6u) | 1-0 vs Ghana | +2.55 |
-| Nationals ML -148 (5u) | 9-5 | +3.38 |
-| O's/Reds U9.5 (5u) | 3 runs | +4.55 |
-| Sox/Guards U8.5 (5u) | 7 runs (10 inn) | +4.55 |
-| Rays ML -108 (5u) | 3-1 | +4.63 |
-| Rays/Astros U9 (4u) | 4 runs | +3.67 |
-| Brewers/D-backs Over (4u) | 11 runs (11 inn) | +3.60 |
-| Brewers ML -146 (1u) | 7-4 | +0.68 |
-| Giants/Rockies U11.5 (5u) | 18 runs | -5.00 |
-| Twins +1.5 (3u) | lost by 3 | -3.00 |
-| Egypt ML +140 (2.5u) | 1-1 at 90 (won PKs) | -2.50 |
-| Argentina ML -650 (1u) | 2-2 at 90 (won ET) | -1.00 |
-| **Total** | **8-4** | **≈ +16.1u** |
-
-> Note: Egypt/Argentina both *advanced* but MLs grade on 90 minutes — the recap wording handles this honestly (and it's a great educational beat).
-
-## Action checklist
-- [ ] Post the hero this morning (holiday audience is on their phones early)
-- [ ] Reply ~30 min in: "The 6u Colombia play was our SUPER tier — that tier is now [X-Y] this month" if you want a follow-on flex
-- [ ] Later: today's July 4 card as the pivot post ("back to the well")
-
----
-
-# Follow-up post (~2 hours later) — total units + moneyline profit
-
-> Milestone flex, all numbers from `DAILY_AGSU_REPORT.md` after July 3 graded: **+47.43u total** (34 days, 354 plays, +5.1% ROI) · **MLB ML 171 plays, 55%, +7.1% ROI** · **Soccer ML 18-7 (72%), +24% ROI**.
+## Recommended hero — post 12:00–1:00 PM ET (screenshot: the Belgium pick card)
 
 ```
-+47 units since June 1.
+The US plays a World Cup knockout game at home tonight, and the bettors we track are leaning Belgium.
 
-34 days. 354 plays. Every one posted before lock.
+I'm American. I wanted to skip this one. But we didn't build a tracker to follow it only when it's comfortable — the wallets we follow are 21-8 on this World Cup, and more of them are on Belgium at +180 than on the US.
 
-And the engine behind it is the moneyline:
+It's a small position, not a max play. The system's top-rated bet tonight is actually Arizona +101 on the baseball side.
 
-⚾ MLB ML — 171 plays, 55% winners, +7% ROI
-⚽ Soccer ML — 18-7 (72%), +24% ROI
+Money moves all day, so the live board is ahead of this tweet — picks lock 15 minutes before kickoff.
 
-No parlays. No props. No hidden slips.
-
-The public chases 10-leg lottery tickets. We grind the line that actually pays.
-
-Holiday card drops before first pitch — the sharps don't take days off.
+Honest question: could you bet against your own country in a knockout game?
 ```
 
-**Why it works:** Fresh mechanic vs the morning receipts (milestone/authority flex, not another recap). Line 1 is the compounding number (+47u) with full transparency stats (34 days / 354 plays / posted before lock). The ML section delivers exactly the highlight you wanted — both sports, records AND ROI. Anti-parlay mantra is the RT line. Forward tease ("holiday card before first pitch") sets up the next post instead of repeating the morning's question close.
+**RT line:** "We didn't build a tracker to follow it only when it's comfortable."
 
-**Alternate** (identity lead): "+47 units in 34 days — and almost all of it came from the least sexy bet in sports. The moneyline. … Boring wins. Ask our bankroll." (full text in `ready_to_post/2026-07-04_1424.json`)
+Why it wins: the close is a moral question every American sports bettor has an instant opinion on — patriots and mercenaries both have to answer (replies ≈ 27x likes). The confession structure implements EXP-001. The honesty about it being a small, split lean (8-6) is the credibility play — and the movement disclaimer is baked in naturally (guardrail #4).
 
----
-
-# The 4th of July card post (~evening slot)
-
-> All upcoming ML picks from today's board (started games excluded; Brewers listed without a sharp claim because its money is split 36%).
+**Self-reply at ~25 min:**
 
 ```
-Happy 4th. While the burgers hit the grill, the sharps are already working.
-
-+47 units since June 1, and today's card is pure moneyline:
-
-⚽ France ML (6u — our biggest play of the day)
-100% of the sharp money. One proven winner sized up 38× his usual bet.
-
-⚾ Orioles +109 — 7 proven winners, zero dissent, led by a +$2M career wallet
-⚾ Rangers +100 — even money, sharps on the road side
-⚾ Brewers ML (5u) — the late anchor
-
-Two plus-money dogs on Independence Day.
-
-Declare independence from the chalk.
-
-Everything locks before first pitch — enjoy the fireworks, we'll bring ours.
+For transparency, it's genuinely split — 8 of the winning wallets we track are on Belgium, 6 stayed with the US. That's exactly why it's sized small. The live board has the current read: nhlsavant.com/?ref=t0706b
 ```
 
-**Why it wins:** Personality/holiday + card is our proven format (the "what are we grilling" post). "+47u" carries over from the milestone post as the running story. France 6u SUPER with the 38× size-up is the conviction anchor; the two plus-money dogs give the holiday value angle. **"Declare independence from the chalk"** is the RT line — holiday-native and quotable. Alternates (France-led conviction post + a reply-before-reveal engagement version) in `ready_to_post/2026-07-04_1338.json`.
+## Pre-written grade posts (post the right one within minutes of full time)
+
+WIN (Belgium):
+```
+Belgium +180 cashed and nobody in this house was cheering. Strangest win of the tournament.
+
+Soccer card: 22-8, up 26 units since group play. We bet the number, not the logo — even when the logo is ours.
+```
+
+LOSS (US advances):
+```
+The US moves on, and our Belgium ticket dies with the party. Genuinely fine eating this one.
+
+Soccer card: 21-9, still up 22 units on the tournament. Some losses don't feel like losses.
+```
+
+## Reply targets (post these BEFORE the hero — they seed out-of-network reach)
+
+1. **@azcentral** — USA/Belgium picks preview — https://x.com/azcentral/status/2073814289719111837
+> Interesting wrinkle from the money side: the winning bettors we track are split on this one, and slightly more of them are on Belgium at +180 than on the US. First time this tournament they've leaned against the home crowd.
+
+2. **@PulseSportsNG** — Balogun cleared, team news — https://x.com/PulseSportsNG/status/2073995366568017952
+> The Balogun news moved the price, but the wallets we track still lean Belgium. Saying that as an American who hates typing it.
+
+3. **@RotoWireSoccer** — Portugal vs Spain picks — https://x.com/RotoWireSoccer/status/2073919875165135299
+> The winning money we track was all over Spain in the group stage — tonight it didn't reach consensus on this game at all. Sometimes the quiet is the read.
+
+4. **@DimersCom** — full betting preview — https://x.com/DimersCom/status/2073894982751060003
+> The quiet one on tonight's board: Arizona +101. The only proven winners we track with a position on that game are both on the Diamondbacks.
+
+## Alternate hero (if you don't want to touch the USA fade)
+Desk-note on Arizona +101 — in `ready_to_post/2026-07-06_1100.json` (alternates[0]), screenshot: the Arizona pick card.
+
+## Action checklist (the G7 day)
+- [ ] ~11:30 — weekend recap if unposted (screenshot: dashboard, Jul 3–5 filter)
+- [ ] ~11:45 — post the 4 replies above
+- [ ] 12:00–1:00 — hero (Belgium pick card screenshot) · babysit replies 30 min · self-reply at ~25 min
+- [ ] ~7 PM — re-run `node scripts/socialBoard.mjs`; if Arizona still ELITE and <60 min at ~8:45, one-line last-call post is optional
+- [ ] Full time USA-Belgium (~10 PM) — post the matching grade post within minutes
+- [ ] **Tell me every posted URL** — I log it in the ledger (this is how the system learns)
+- [ ] Bio + pin still pending from BRAND_MESSAGING.md — 5 minutes, do it today
