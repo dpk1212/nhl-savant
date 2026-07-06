@@ -297,8 +297,17 @@ HARD RULES
 - No trailing ellipses on hooks — end clean. Space after every colon.
 - One idea per line; exactly one blank line between blocks.
 - Consistent numbers ($12.4K, +145, 4.0u); at most ONE purposeful emoji per job
-  (✅ for wins, 🚨 for alerts).
+  (✅ for wins, 🚨 for alerts, a flag where the irony lives).
 - Never let copy truncate — tighten or thread instead.
+- **Fold engineering (added 7/6):** X truncates long posts in-feed. The first
+  3–4 lines must work as a complete mini-story that ends on a curiosity gap —
+  tapping "Show more" is itself an engagement signal. Draft the visible block
+  deliberately.
+- **Vertical escalation:** stack rising beats one per line (the eye falls down
+  the steps). **Isolation = emphasis:** the RT line and the payoff sit alone,
+  surrounded by white space — on a phone, white space is volume.
+- **Scannable honesty:** compress transparency/caveat material into 2–3 "•"
+  bullets — the roast-shield only protects if skimmers actually see it.
 
 ## The 2026 X algorithm hard rules (verified 7/2 via Firecrawl — recheck monthly)
 - Replies ≈ **27x** likes → close on a real, answerable, polarizing question.

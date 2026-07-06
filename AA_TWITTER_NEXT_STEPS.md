@@ -5,16 +5,26 @@
 ## FIRST — if you haven't posted the weekend recap yet
 The recap (`ready_to_post/2026-07-06_0915_weekend_recap.json`) is still the strongest asset from this morning. If unposted: post it now (~11:30), push the Belgium hero to ~5 PM as the evening post, and skip the separate grade post. If posted: go straight to the hero at noon. **Either way, tell me the URL so I can log it.**
 
-## Recommended hero v3 (FINAL) — post 12:00–1:00 PM ET (screenshot: the Belgium pick card)
+## Recommended hero v4 (SHIP THIS) — post 12:00–1:00 PM ET (screenshot: the Belgium pick card)
 
 ```
-As of noon: the winning bettors we track are leaning Belgium tonight. Against the US. At home. In a knockout game.
+As of noon: the winning bettors we track are leaning Belgium tonight.
+
+Against the US 🇺🇸
+At home.
+In a knockout game.
 
 I'm American. I sat on this for an hour looking for a reason not to post it.
 
-But these wallets are 21-8 in this World Cup. At some point you stop arguing.
+But these wallets are 21-8 in this World Cup.
 
-Full transparency — it's a lean, not a pound. 8 of the 14 winners we track took Belgium at +180, six stayed home, so we sized it small. And if the money swings back before kickoff, our board swings with it and I'll post the flip. Nothing locks until 15 minutes out.
+At some point you stop arguing.
+
+The honest details:
+
+• A lean, not a pound — 8 of 14 winners took Belgium +180, six stayed home. Sized small.
+• If the money swings back before kickoff, our board swings with it. I'll post the flip.
+• Nothing locks until 15 minutes out.
 
 Could you bet against your own country in a knockout game?
 
@@ -23,11 +33,14 @@ Because I just did.
 
 **RT line:** "Because I just did." (the two-beat close IS the screenshot)
 
-Why v3 is the viral version:
-- **The ending flips from hypothetical to confession.** v2 asked the question and hedged. v3 asks it, lets it hang, then answers it — "Because I just did." Now nobody's debating an abstract question; they're reacting to a *person who did the thing*. Patriots pile in to fight him, degens pile in to respect him. Both are replies.
-- **Escalating fragment opener** — "Against the US. At home. In a knockout game." Each beat raises the stakes; by the third the scroll has stopped.
-- **Housekeeping compressed from two paragraphs to one**, without losing a single protection: timestamp ✓ lean-not-pound ✓ 8-6 split ✓ flip owned in advance ✓ 15-minute lock ✓.
-- **"At some point you stop arguing."** — five plain words, the mid-tweet quotable, no craft-smell.
+The visual layer (what changed v3 → v4):
+- **Fold engineering.** X truncates long posts in-feed after the first few lines — the visible block is now: hook line + the three-step stack + "I'm American…". That's a complete mini-story ending on a cliffhanger, and tapping "Show more" is itself an engagement signal.
+- **The escalation is now vertical.** "Against the US / At home. / In a knockout game." stacked one per line — the eye falls down the steps like a drumroll. Same words, double the impact.
+- **Isolation = emphasis.** "At some point you stop arguing." and "Because I just did." each sit alone surrounded by white space. On a phone, white space is what makes a line feel loud.
+- **The transparency block became three scannable bullets** — skimmers get the honesty at a glance instead of wading through a paragraph (the roast-shield only works if people actually see it).
+- **Exactly one emoji** (🇺🇸), where the irony lives.
+
+Carried from v3: the commitment-twist close, the timestamped live-read, the flip owned in advance.
 
 **Self-reply at ~25 min:**
 
