@@ -5,27 +5,29 @@
 ## FIRST — if you haven't posted the weekend recap yet
 The recap (`ready_to_post/2026-07-06_0915_weekend_recap.json`) is still the strongest asset from this morning. If unposted: post it now (~11:30), push the Belgium hero to ~5 PM as the evening post, and skip the separate grade post. If posted: go straight to the hero at noon. **Either way, tell me the URL so I can log it.**
 
-## Recommended hero v2 — post 12:00–1:00 PM ET (screenshot: the Belgium pick card)
+## Recommended hero v3 (FINAL) — post 12:00–1:00 PM ET (screenshot: the Belgium pick card)
 
 ```
-As of noon, the winning bettors we track are leaning Belgium tonight. Against the US. At home.
+As of noon: the winning bettors we track are leaning Belgium tonight. Against the US. At home. In a knockout game.
 
-I'm American. I've been staring at this for an hour trying to find a reason not to post it.
+I'm American. I sat on this for an hour looking for a reason not to post it.
 
-Two things before anyone yells at me:
+But these wallets are 21-8 in this World Cup. At some point you stop arguing.
 
-This is a live read, not a locked pick. The money keeps moving until kickoff — if the wallets swing back to the US this afternoon, our board swings with them and I'll post the update. Nothing locks until 15 minutes before the whistle.
+Full transparency — it's a lean, not a pound. 8 of the 14 winners we track took Belgium at +180, six stayed home, so we sized it small. And if the money swings back before kickoff, our board swings with it and I'll post the flip. Nothing locks until 15 minutes out.
 
-And it's a lean, not a pound. 8 of the 14 winners we track are on Belgium at +180. Six stayed home. We sized it small.
+Could you bet against your own country in a knockout game?
 
-These same wallets are 21-8 on this World Cup, so I stopped arguing with them a while ago.
-
-Could you bet against your own country in a knockout game? I'm honestly still deciding how I feel about it.
+Because I just did.
 ```
 
-**RT line:** "I stopped arguing with them a while ago."
+**RT line:** "Because I just did." (the two-beat close IS the screenshot)
 
-Why v2 beats v1 (which was a 7/10): the read is **timestamped** ("As of noon") so a later flip can never be called flip-flopping — it's a snapshot by definition. The flip is **owned in advance in plain speech** ("I'll post the update"), which turns pick-changes from a liability into proof the tracking is live. And the human tells are real ones — "staring at this for an hour," "before anyone yells at me," "still deciding how I feel" — hedges and asides, not crafted quotables.
+Why v3 is the viral version:
+- **The ending flips from hypothetical to confession.** v2 asked the question and hedged. v3 asks it, lets it hang, then answers it — "Because I just did." Now nobody's debating an abstract question; they're reacting to a *person who did the thing*. Patriots pile in to fight him, degens pile in to respect him. Both are replies.
+- **Escalating fragment opener** — "Against the US. At home. In a knockout game." Each beat raises the stakes; by the third the scroll has stopped.
+- **Housekeeping compressed from two paragraphs to one**, without losing a single protection: timestamp ✓ lean-not-pound ✓ 8-6 split ✓ flip owned in advance ✓ 15-minute lock ✓.
+- **"At some point you stop arguing."** — five plain words, the mid-tweet quotable, no craft-smell.
 
 **Self-reply at ~25 min:**
 
