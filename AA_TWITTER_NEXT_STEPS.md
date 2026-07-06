@@ -66,6 +66,28 @@ The US moves on, and our Belgium ticket dies with the party. Genuinely fine eati
 Soccer card: 21-9, still up 22 units on the tournament. Some losses don't feel like losses.
 ```
 
+## 🎯 QUOTE-TWEET OPPORTUNITY — @BookitWithTrent (145K views, live now)
+Trent's "do I really have to do this shit again" USA-Belgium dread post is the
+biggest organic wave on our exact game. QT it ~2:30-3:00 PM (after the hero has
+its first 2 hours — don't cannibalize). NO image — his scorecard is the visual.
+Tease the moment, never the man (his following is loyal; banter yes, dunk no).
+
+**Recommended QT:**
+```
+The dread is earned. 8 of the 14 winning bettors we track took Belgium +180 tonight.
+
+I'm American and I bet it anyway. Some patterns you stop fighting.
+```
+
+**Alternate (friendlier, name-check banter):**
+```
+Bad news Trent — the winning wallets we track agree with your gut. More of them are on Belgium tonight than the US.
+
+History might be doing the thing again.
+```
+
+Log it when posted: structure=quote-tweet, mechanic=wave-riding.
+
 ## Reply targets (post these BEFORE the hero — they seed out-of-network reach)
 
 1. **@azcentral** — USA/Belgium picks preview — https://x.com/azcentral/status/2073814289719111837
