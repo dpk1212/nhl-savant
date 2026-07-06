@@ -220,11 +220,20 @@ PHASE 3 — WRITE (G1 + G2 + G3 + G4)
   BRAND_MESSAGING.md pairing).
 
 PHASE 3.25 — REPLY TARGETS (the out-of-network engine — never skip)
-- Firecrawl search for TODAY's biggest live betting conversations in our
-  sports. Proven query shape: {"query":"site:x.com [event] bet picks",
-  "limit":6,"tbs":"qdr:d"} — vary [event] (world cup, MLB, a marquee matchup).
-  Prefer large accounts (media/books/stats: azcentral, DimersCom, RotoWire,
-  BetUS...) and posts from the last ~12h on games still upcoming.
+- RECENCY IS THE RANKING FACTOR (locked 7/6): a reply lands inside the target
+  post's first-30-min velocity window and ranks high in a short thread; a
+  reply on an old post is furniture. Search freshest-first:
+    1. {"query":"site:x.com [event] bet","limit":8,"tbs":"qdr:n90"}  ← last 90 min (PRIORITY)
+    2. widen to "qdr:h3" if fewer than 3 usable targets
+    3. "qdr:d" only as the final fallback
+  Vary [event] (the marquee matchup, world cup, MLB). Verified working:
+  qdr:n90 returns live posts (e.g. ActionNetworkHQ pregame best-bets).
+- FRESH → REPLY, AGED-BUT-VIRAL → QUOTE-TWEET: posts ≤90 min old get a reply
+  (their velocity carries us). A big post that's hours old but still pulling
+  views (100K+) is QT inventory instead — our QT rides the algo on its own
+  and sits in their quote tab. Dread/hype posts from big accounts about a
+  game we hold a position on are the best QT inventory.
+- Prefer large accounts (media/books/stats/cappers) on games still upcoming.
 - Pick 3–5 targets and DRAFT the reply for each, copy-paste ready. A good
   reply is one or two sentences of OUR data edge on THEIR game — e.g. "The
   winning wallets we track are actually leaning the other way here — proven
@@ -232,7 +241,8 @@ PHASE 3.25 — REPLY TARGETS (the out-of-network engine — never skip)
   never our record unprompted. Add value, sound human, let curiosity do the
   work (that's what drives the profile click).
 - Output: a "Reply targets" section in AA_TWITTER_NEXT_STEPS.md — URL, the
-  account's angle, our drafted reply.
+  account's angle, post age, our drafted reply. Re-run the qdr:n90 search
+  right before the user's posting window so targets are never stale.
 
 PHASE 3.4 — PRE-WRITE THE GRADE POSTS (zero-latency win moments)
 - For the hero's featured play(s), pre-write BOTH outcome posts now:

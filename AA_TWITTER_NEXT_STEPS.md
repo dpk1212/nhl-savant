@@ -88,19 +88,21 @@ History might be doing the thing again.
 
 Log it when posted: structure=quote-tweet, mechanic=wave-riding.
 
-## Reply targets (post these BEFORE the hero — they seed out-of-network reach)
+## Reply targets — freshest first (≤90 min = priority; reply BEFORE the hero)
 
-1. **@azcentral** — USA/Belgium picks preview — https://x.com/azcentral/status/2073814289719111837
-> Interesting wrinkle from the money side: the winning bettors we track are split on this one, and slightly more of them are on Belgium at +180 than on the US. First time this tournament they've leaned against the home crowd.
+1. 🔥 **@ActionNetworkHQ** — USA vs Belgium best bets (posted <90 min ago — inside its velocity window, reply NOW) — https://x.com/ActionNetworkHQ/status/2074134094552637901
+> The winning bettors we track are leaning the other way on this one — more of them took Belgium at +180 than the US. First time all tournament they've gone against the home side.
 
-2. **@PulseSportsNG** — Balogun cleared, team news — https://x.com/PulseSportsNG/status/2073995366568017952
+2. **@PulseSportsNG** — Balogun cleared, team news (~2h old) — https://x.com/PulseSportsNG/status/2073995366568017952
 > The Balogun news moved the price, but the wallets we track still lean Belgium. Saying that as an American who hates typing it.
 
-3. **@RotoWireSoccer** — Portugal vs Spain picks — https://x.com/RotoWireSoccer/status/2073919875165135299
+3. **@RotoWireSoccer** — Portugal vs Spain picks (~4h old) — https://x.com/RotoWireSoccer/status/2073919875165135299
 > The winning money we track was all over Spain in the group stage — tonight it didn't reach consensus on this game at all. Sometimes the quiet is the read.
 
-4. **@DimersCom** — full betting preview — https://x.com/DimersCom/status/2073894982751060003
+4. **@DimersCom** — full betting preview (~5h old) — https://x.com/DimersCom/status/2073894982751060003
 > The quiet one on tonight's board: Arizona +101. The only proven winners we track with a position on that game are both on the Diamondbacks.
+
+(@azcentral preview dropped — ~12h old, past its window. @BookitWithTrent stays a QUOTE-TWEET, not a reply: aged but still pulling views. Ask me to re-run the fresh-target search right before you post — targets go stale in an hour.)
 
 ## Alternate hero (if you don't want to touch the USA fade)
 Desk-note on Arizona +101 — in `ready_to_post/2026-07-06_1100.json` (alternates[0]), screenshot: the Arizona pick card.
