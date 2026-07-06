@@ -61,9 +61,28 @@ responses in `.firecrawl/`):
 - If Firecrawl is down/keyless, say so and fall back to the last committed research — never silently skip.
 
 ## G6 — THE SELF-IMPROVEMENT LOOP (every run makes the next one smarter)
-- **Grade the past:** compare our last ~10 posts' real engagement against what the playbook predicted. Name what worked/flopped with n.
-- **Import the outside:** fold this run's Firecrawl findings into `TWITTER_GROWTH_PLAYBOOK.md` (dated, pruned — playbook stays ≤ ~100 lines).
-- **Log the experiment:** every run names ONE experiment (a structure, a hook shape, a mechanic) in `TWITTER_IMPROVEMENT_GUIDE.md`; the NEXT run grades it before choosing a new one. This closed loop is the whole point — findings must land in the files, not the chat.
+The loop's memory is the **post ledger** (`social_analysis/post_ledger.json`,
+managed by `scripts/socialLedger.mjs`). Every posted tweet is logged with its
+creative DNA (structure · mechanic · refTag · RT line), re-measured over time
+via Firecrawl, and scored `likes + 3·RTs + 5·replies` (replies are the algo
+currency). Follower count is snapshotted every refresh.
+- **Log every post.** When the user confirms a post (any message like
+  "posted: <url>"), immediately run
+  `node scripts/socialLedger.mjs log --url <url> --draft <ready_to_post file> --pick <hero|altN>`.
+  If they posted edited/custom copy, log with explicit `--structure/--mechanic`
+  tags and `--note`. A post that isn't logged is a post we learn nothing from.
+- **Refresh + report every run (Phase 0):** `node scripts/socialLedger.mjs refresh`
+  then `report`. The report's structure/mechanic leaderboards — not vibes — decide
+  what Phase 3 writes. State n; under 8 measured posts everything is directional.
+- **Formal experiments:** `social_analysis/experiments.json` holds ONE active
+  experiment (hypothesis + metric). Phase 2 grades the active experiment from
+  ledger data when its n is met (verdict + gradedAt), promotes the next queued
+  one, and Phase 3's hero implements the active experiment.
+- **Ref-tag the funnel:** every draft carries a unique refTag
+  (`nhlsavant.com/?ref=tMMDDx`) used in the self-reply link, so site analytics
+  can attribute visits per post (bio = `?ref=bio`, pinned = `?ref=pin`).
+- **Import the outside:** fold this run's Firecrawl findings into
+  `TWITTER_GROWTH_PLAYBOOK.md` (dated, pruned — ≤ ~100 lines).
 
 ---
 
@@ -73,6 +92,8 @@ responses in `.firecrawl/`):
 |--------|---------|
 | `node scripts/socialRecords.mjs` | **Verified records from Firestore** — the ONLY source for quoted W-L/units (writes `social_analysis/verified_records.json`) |
 | `node scripts/socialBoard.mjs` | Time-prioritized board (G3 buckets, staleness check) — `git pull` first if it warns |
+| `node scripts/socialLedger.mjs refresh` + `report` | **The memory** — measured engagement per post by structure/mechanic, follower history, experiment status |
+| `social_analysis/experiments.json` | The active experiment Phase 3 must implement |
 | Firecrawl API (live) | Growth/algo research + today's sport narratives (G5) |
 | `social_analysis/todays_picks.json` | Raw board (updated hourly by Action; the board script reads it) |
 | `MY_VOICE_PROFILE.md` | The voice (G1) |
@@ -105,7 +126,10 @@ PHASE 0 — CONTEXT + VERIFIED DATA
 - Run: node scripts/socialRecords.mjs   (and a second run with --from for any
   window today's angle needs, e.g. the weekend or this week)
 - Run: node scripts/socialBoard.mjs     (re-run after pull if it warned stale)
-- Read MY_VOICE_PROFILE.md + the STANDARDS block below.
+- Run: node scripts/socialLedger.mjs refresh  (updates engagement + followers)
+  then: node scripts/socialLedger.mjs report  (the leaderboards Phase 2/3 use)
+- Read MY_VOICE_PROFILE.md + social_analysis/experiments.json + the STANDARDS
+  block below.
 
 PHASE 1 — LIVE RESEARCH (Firecrawl, G5)
 - 2–3 searches: freshest X-algo guidance + viral betting-Twitter formats this
@@ -113,11 +137,14 @@ PHASE 1 — LIVE RESEARCH (Firecrawl, G5)
 - Name THE NEXT VIRAL BET: the single freshest hook shape to test today.
 - Update TWITTER_GROWTH_PLAYBOOK.md (dated adds, prune stale, ≤ ~100 lines).
 
-PHASE 2 — SELF-REVIEW (G6)
-- Grade the last ~10 posts vs what we predicted; grade last run's named
-  experiment. State n; call small samples directional.
+PHASE 2 — SELF-REVIEW (G6, driven by the LEDGER report, not vibes)
+- Read the ledger report: structure + mechanic leaderboards, top/bottom posts,
+  follower delta since last run. State n; call small samples directional.
+- Grade the ACTIVE experiment in experiments.json if its metric's n is met:
+  write verdict + gradedAt + status "graded", promote the next queued one to
+  active. If n not met, say what's still needed.
 - Update TWITTER_IMPROVEMENT_GUIDE.md: verdict, what's working/not, the gap vs
-  the niche, THIS run's ONE experiment. Preserve the persistent sections
+  the niche, the active experiment. Preserve the persistent sections
   (hard gates, identity-hook bank, PREMIUM formatting).
 
 PHASE 3 — WRITE (G1 + G2 + G3 + G4)
@@ -132,12 +159,24 @@ PHASE 3 — WRITE (G1 + G2 + G3 + G4)
 - The close must be a genuinely answerable question (2026 algo: replies ≈ 27x
   likes). Post windows: first 30 min velocity decides reach — recommend a peak
   window and say to babysit replies.
+- LEDGER-DRIVEN CHOICES: pick the hero's structure/mechanic from the report's
+  leaderboard (exploit the winner) while ONE candidate implements the active
+  experiment (explore). Never reuse the structure of the immediately previous
+  logged post.
 - DATA INTEGRITY: use `selection` VERBATIM. Directional sharp proof only (no
   precise wallet $ / Polymarket figures). Cross-check every number against
   verified_records.json.
 - Write ready_to_post/YYYY-MM-DD_HHMM.json: { generatedAt, slot, guardrailCheck,
-  verifiedNumbers, hero{text, rtLine, structure, selfReplyAt25min, postWindow},
-  alternates[], doNotDo[] }.
+  verifiedNumbers, hero{text, rtLine, structure, mechanic, refTag,
+  selfReplyAt25min, postWindow}, alternates[] (each also tagged
+  structure/mechanic/refTag), doNotDo[] }. The structure/mechanic/refTag tags
+  are MANDATORY on every candidate — `socialLedger.mjs log --draft` reads them.
+
+PHASE 3.5 — AFTER THE USER POSTS (standing instruction, any time)
+- When the user says they posted (any phrasing + a URL), run:
+  node scripts/socialLedger.mjs log --url <url> --draft <that run's ready_to_post file> --pick <hero|altN>
+  If they posted modified copy, pass explicit --structure/--mechanic/--note.
+  Confirm the log line back to them. This is how the system learns.
 
 PHASE 4 — REPORTS
 - Overwrite AA_TWITTER_NEXT_STEPS.md (hero + alternates in code blocks, RT

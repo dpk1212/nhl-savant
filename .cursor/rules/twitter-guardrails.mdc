@@ -26,5 +26,12 @@ Whenever drafting ANY tweet, recap, or social copy for this project:
 6. **Research with Firecrawl** (`FIRECRAWL_API_KEY` env secret,
    `https://api.firecrawl.dev/v2/search|/scrape`) for current viral formats
    before big posts; fold findings into `TWITTER_GROWTH_PLAYBOOK.md` (dated).
+7. **Log every posted tweet.** When the user says they posted (any phrasing +
+   URL), immediately run `node scripts/socialLedger.mjs log --url <url>
+   --draft <ready_to_post file> --pick <hero|altN>` (or explicit
+   --structure/--mechanic tags for custom copy). Before writing new drafts,
+   run `node scripts/socialLedger.mjs refresh` + `report` and let the
+   structure/mechanic leaderboards pick the winning shape. Tag every draft
+   candidate with structure/mechanic/refTag so logging works.
 
 Full system + phases: `TWITTER_LOOP.md`. Drafts only — never post for the user.
