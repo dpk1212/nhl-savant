@@ -1,0 +1,30 @@
+---
+description: Guardrails for writing any tweet/social content for @Real_NHL_Savant
+alwaysApply: true
+---
+
+# Twitter Guardrails (canonical: TWITTER_LOOP.md)
+
+Whenever drafting ANY tweet, recap, or social copy for this project:
+
+1. **Verify every number first.** Run `node scripts/socialRecords.mjs` (records)
+   and `node scripts/socialBoard.mjs` (live board with time buckets). Never
+   quote a W-L record, unit total, or pick that didn't come from these this
+   session. Use the pick's `selection` field verbatim.
+2. **Sound human.** Voice = `MY_VOICE_PROFILE.md`. Rotate post architecture
+   (story / one-liner / desk note / question-first / ✅-recap) — never the same
+   structure back-to-back. Banned: "let's dive in", "game-changer", "delve",
+   default "tail or fade? 🎯" closers, 3-emoji rows.
+3. **Sell without selling.** Proof and challenges ("bookmark this, grade us")
+   instead of pitches. Site link ONLY in a ~25-min self-reply, never tweet 1.
+   No hashtags.
+4. **Prioritize top-tier picks inside 60 min of start.** Picks >60 min out MUST
+   carry a natural line-movement reminder: sharp money moves, the site is the
+   live truth, picks lock 15 min before start.
+5. **Close on a real question** (2026 algo weights replies ~27x likes) and
+   recommend a post window + first-30-min reply babysitting.
+6. **Research with Firecrawl** (`FIRECRAWL_API_KEY` env secret,
+   `https://api.firecrawl.dev/v2/search|/scrape`) for current viral formats
+   before big posts; fold findings into `TWITTER_GROWTH_PLAYBOOK.md` (dated).
+
+Full system + phases: `TWITTER_LOOP.md`. Drafts only — never post for the user.
