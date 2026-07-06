@@ -72,14 +72,14 @@ Our sharp-money / Polymarket tracking is HOW we know the side and our credibilit
 - Thread deep reads instead of truncating.
 
 ## THE NEXT VIRAL BET (named this run — test it now)
-**The confession-flex: "We're 16-5 betting the World Cup and I couldn't name Austria's starting XI."** The soccer card is verifiably 16-5 / +17.3u since group play (graded Firestore) and today is a marquee knockout slate (Spain 3pm, Portugal 7pm). The hook pairs a believable narrow flex with self-deprecating honesty and a built-in identity war (watch-the-games purists vs follow-the-money quants) — the close question ("is not watching the games a red flag, or the whole point?") is engineered for the 27x reply weighting. Structure = story/confession, rotating OFF the retired bullet-card.
+**The reluctant-patriot fade (7/6).** USA plays Belgium in a home knockout game tonight and the tracked winning money leans Belgium (8 of 14 proven wallets, +180). An American-run account fading the USMNT — reluctantly, on data, stated honestly as a split — is the rare post where the truthful read IS the polarizing story. Confession structure, moral-question close ("could you bet against your own country in a knockout game?"). Both tribes have to answer; that's the 27x reply engine.
 
-## Trends watchlist (2026-07-02)
-- **Confession/self-deprecating flex** is the freshest hook shape — flexes that admit a weakness read human and get quote-tweeted; pure flexes get scrolled.
-- **World Cup knockout rounds are peak marquee** — Spain, Portugal, France, Brazil dominate the conversation. Ride it while it lasts; obscure teams still die.
-- **Record-on-an-angle stays our most believable flex** (16-5 World Cup > +Xu overall). Attach it to a live next leg every time.
-- **Reply-guy strategy is now algo-canonical** — out-of-network reach comes from replies to bigger accounts. This is a daily job, not a tactic.
-- **Board today:** Spain ML -295 (5u TOP+ ELITE, 3pm ET, proven winners unanimous 2-0) — the hero anchor; Portugal ML -135 (3u, 7pm ET, 6-1 proven consensus) — the follow-up; MLB card thinner, yesterday was 5-7 (honest-L material).
+## Trends watchlist (2026-07-06)
+- **Ride the day's biggest betting conversation** — today that's USA–Belgium (amplified by the Balogun red-card rescission flipping the odds) and Portugal–Spain. The reply-target engine posts our data edge under the big preview accounts BEFORE the hero goes up.
+- **Confession/self-deprecating flex** (added 7/2) remains the house hero shape under test (EXP-001).
+- **Record-on-an-angle stays our most believable flex** — soccer card 21-8, +23.8u (verified 7/6) beats any all-time number.
+- **Reply-guy strategy is algo-canonical** — now a formal loop phase (3.25) with drafted replies, not advice.
+- **Cadence > polish (7/6 lesson):** the two strongest drafts of the week died unposted. G7 contract exists because unshipped drafts earn nothing.
 
 ## Stale / stop
 - Setup-line / pick-list openers with no market read ("Massive slate tonight" → ~1 like).

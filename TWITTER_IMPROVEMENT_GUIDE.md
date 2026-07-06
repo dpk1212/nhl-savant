@@ -1,71 +1,60 @@
-# Twitter Improvement Guide — 2026-06-30 (MIDDAY)
+# Twitter Improvement Guide — 2026-07-06 (MIDDAY)
 
-> **Verdict:** Still **~0 retweets** — the entire growth problem, and it's a **mechanic** problem, not an information one. This run's edge: **3-1 yesterday** (hot hand) + a **plus-money underdog** the sharp money is one-sided on (Norway +110). Lead with a **call-your-shot** off the record, frame the +110 dog as fading the public, force a tail/fade. Proof stays **directional** — no precise $/ROI in the tweet (they're not trusted or viral). Engagement > information, every time.
+> **Verdict:** The measurement system is finally real (post ledger live, followers tracked: **1,987 → 2,007**), but the labeled sample is still tiny (n=5) and shows the same two facts: modest likes (avg ~4.8), **zero retweets, zero measured replies**. The 2026 algorithm pays replies ~27x — so this run's hero closes on a genuinely answerable moral question (could you bet against your own country?), not a tail/fade binary. That IS the experiment now.
 
-*Maintained by The Twitter Loop (Phase 2). The three sections below are PERSISTENT — re-emitted every run. Data is fresh today (brief 15:03, picks 15:08, positions 15:34 UTC).*
+*Maintained by The Twitter Loop (Phase 2). The three sections below are PERSISTENT — re-emitted every run. Data this run: verified_records + board + ledger all refreshed 10:53 AM ET 7/6.*
 
 ## Hard gates (every post must pass — non-negotiable) [PERSISTENT]
 1. **Screenshot test (line 1):** the first sentence must land as a standalone screenshot with ZERO context. No bare team names, no "here are today's picks," no buried hook.
 2. **One RT line:** every post carries exactly one standalone, quotable sentence built to be reposted with no context. If you can't point to it, it isn't done.
 
 ## Identity-hook bank (lead with these on non-pick posts; no back-to-back repeats) [PERSISTENT]
-- **Comeback / blackout** — "I stopped posting for 2 weeks. Not because I was losing…"
+- **Comeback / blackout** — "I stopped posting for two weeks. Not because I was losing."
 - **Discipline / standards** — "I'd rather go dark than sell you a number I don't believe in."
 - **Self-fade / honesty** — "I faded my own play yesterday. Here's why."
-- **Honest L / bounce-back** — "[Team] just cost us. We don't hide the Ls — that's the brand."
-- **Whale tape** — "A wallet up +$Xk just bet [N]× its normal size. Not a typo."
-- **Sharp vs public** — "Public money: X% on [team]. Sharp money: Y% on [other]."
-- **CLV flex** — "We locked it at [price]. It's now [price] — a +X% line beat before kickoff."
-- **Milestone / anti-tout / origin / process-over-outcome / receipts-as-identity.**
+- **Honest L / bounce-back** — "[Team] just cost us. The loss is on the site with everything else."
+- **Whale tape** — "One of the winners we track just bet [N]× his normal size."
+- **Sharp vs public** — "Public money went one way. The winning wallets went the other."
+- **CLV flex** — "We posted it at [price]. It closed at [price]."
+- **Milestone / anti-tout / origin / process-over-outcome.**
+(Tone per BRAND_MESSAGING.md: complete sentences, no fragment-stack swagger, no mantras written to be quoted.)
 
 ## PREMIUM formatting standard (look designed, not typed) [PERSISTENT]
-- No trailing ellipses / "…" on hooks or stat lines — end clean.
+- No trailing ellipses on hooks or stat lines — end clean.
 - Space after every colon ("Sharp money: 71%", never "money:71%").
-- Parallel structure for contrast pairs (both lines identical shape).
 - One idea per line; exactly one blank line between blocks.
-- Consistent bullets ("•" + space), numbers ($12.4K, +145, 4.0u), emoji (one per purpose).
-- Never let copy truncate or a key line drop — tighten or thread instead.
-
----
+- Consistent numbers ($12.4K, +145, 4.0u); at most one purposeful emoji per job.
+- Never let copy truncate — tighten or thread instead.
+- Vary rhythm; three matched clauses in a row is template smell.
 
 ## One-line verdict
-We have a live winning streak and a result that JUST landed — stop explaining picks and start posting the run. Lead with "Brazil just cashed," ride 11-4, force a tail/fade before Germany kicks.
+Thin board day after a big weekend — the growth play isn't the pick, it's the *story* (an American-run tracker leaning Belgium against the US in a home knockout game) plus the reply-target engine's first real deployment.
 
-## Performance snapshot (truth layer — labeled data only)
-- **n = 5** of 21 posts have real likes/RTs — **directional, not statistical** (last scraped 6/28; not refreshed today).
-- Avg likes **5.6** · **Retweets ~0** — still zero reposts. That's the whole game.
-- **Best labeled post:** `2070888202299174981` — *pick_with_proof* conviction explainer, **12 likes**.
-- **Format leaderboard (avg likes):** pick_with_proof **6.5** (n=2) · "other" **5** · pick_card **5**.
-- **The miss (still the standing lesson):** `2071009748950851948` — DR Congo whale hero, **1 like / 1,228 views**. Great structure, obscure subject, no lead time.
+## Performance snapshot (ledger truth layer)
+- **n = 5 measured posts** — everything below is directional.
+- Scores: record-flex card 8 · whale-story 6 · discipline-narrative 5 · honest-L 4 · one-liner reply 1. Avg likes ~4.8, **0 RTs, 0 measured replies**.
+- **Followers: 2,007** (+20 since 6/20 baseline — ~1.2/day; this is the number the whole system exists to move).
+- The 7/2 confession-flex hero and 7/6 weekend recap were drafted but never logged as posted — **the ledger only learns from what gets posted and logged.**
 
 ## What's working / not
-- **Working:** conviction + proof, human "other" posts, a clear stance with real numbers.
-- **Not working:** zero retweets. We post *information*; the algorithm pays for *action*. Bare card lists flop. Obscure subjects flop.
-- **The unlock this run:** a *result* + a *streak* + a *deadline*. That combination forces replies (tail/fade), screenshots (call-your-shot), and a return visit (grade the next leg) — the three signals we've been missing.
+- **Working (directionally):** posts with a record + a stance; the whale size-up curiosity shape.
+- **Not working:** zero shareability (0 RTs) and zero conversation (0 replies) — we've optimized likes, which the algorithm barely pays. Also: two strong drafts died unposted; cadence (G7) matters more than polish now.
+- **Structural fix live this run:** every close is now a real question; reply targets give us out-of-network exposure the heroes can't.
 
-## The niche gap (steal the structure)
-- **Live ✅❌ running card — @AlexCaruso:** posts results as they settle. On a hot hand this is the highest-leverage format we have today — the just-cashed ✅ is the proof, the loading next leg is the open loop. (Only list confirmable results.)
-- **Record-on-an-angle — @WizBetz ("12-3 on Brewers ML"):** a narrow, specific streak with a number. Ours: "11-4 in soccer this week." Specific = believable = screenshot-worthy.
-- **Sharp-vs-public read — @invisiblestats (70K eng) / @PatrickE_Vegas:** still our evergreen high-ceiling structure for non-streak slots.
-
-## Before → After
-- **Before:** "Germany ML -275 is our top soccer play today. The model and sharp money like it. First touch 4:30 ET." (an info card — no reason to engage)
-- **After:** "We just cashed Brazil. ✅ / Our soccer card this week: 11-4, +11 units, 73% winners. / Next leg: Germany — our biggest play left, sharp money on our side, kicks in 45 min. / Calling it now: the run keeps going. Tailing it or fading us?" (result + streak + deadline + binary)
-
-## This week's ONE experiment
-- **Hot-hand call-your-shot off a just-cashed result.** When a play settles and the next leg is <60 min out, post the running card + streak + tail/fade close. Baseline 5.6 avg likes / 0 RTs; success = ≥10 likes AND our first retweet.
+## Experiment status (experiments.json)
+- **EXP-001 (active):** confession-flex vs record-card — **n=0 confession posts measured** (the 7/2 draft was never logged as posted). Today's hero implements it; grading needs ≥3 measured confession posts.
+- EXP-002 (queued): question-close vs binary-close reply rates — today's hero doubles as its first data point once EXP-001 has its n.
+- EXP-003: shelved by owner (conversion tracking deprioritized 7/6).
 
 ## Mandates for the writer (this run)
-- **Rotate the mechanic:** last hero was reply-before-reveal → this hero is **call-your-shot / live running card**. Never repeat back-to-back.
-- **Lead with the result + the streak,** not the pick card. The screenshot line is "We just cashed Brazil" / "Our soccer card is 11-4 this week."
-- **TIMING:** Germany is ~48 min out = **firm**. Use the countdown, no "can move" caveat. If you post after ~16:15 ET, re-pull — don't quote it once the whistle blows.
-- **Marquee subjects only for soccer heroes** (Germany/Brazil/Canada are fine — the DR Congo lesson is about obscurity, not the sport).
-- **Proof stays directional:** "the sharpest money," "every winning bettor we track," our record/units. Brazil's proven-winner count (our proprietary signal) is fair game in the reply. **No precise Polymarket $ or wallet ROIs.**
-- **Close with a binary** (tail/fade, ❤️/🔁), never "thoughts?". Reply to your own hero within ~30 min with the Brazil receipt.
+- Close on a genuinely answerable question, never tail/fade (banned as default).
+- The Belgium lean must be stated honestly (8 wallets for, 6 against — a lean, not a consensus) — overstating splits is how trust dies.
+- Both featured picks are >60 min out: movement caveat mandatory (G4).
+- Don't lead with +54u or 211-167 (used in the weekend recap draft).
+- Post the replies under the big accounts BEFORE the hero goes up — they seed out-of-network reach while the hero cooks.
 
 ## Stop list
-- Info cards that explain a pick with no forcing mechanic.
-- Obscure-subject heroes when a marquee read is available.
-- Quoting Germany once it kicks off; quoting any far-out position as locked (flag >60 min).
-- Fabricated ✅/❌ history — only list results you can confirm (today: Brazil).
-- Setup-line / pick-first openers; soft "thoughts?" closes; 6+ proof-line walls.
+- Fragment-stack swagger and invented mantras (see BRAND_MESSAGING.md never-say list).
+- Tail/fade closers, "thoughts?", info cards with no question.
+- Obscure-subject heroes; quoting in-progress games as tailable.
+- Drafting without logging the previous post — the loop is blind without the ledger.
