@@ -27,11 +27,15 @@ friend at a bar?* Specifically:
 - Voice source of truth: `MY_VOICE_PROFILE.md`. Swagger, accountability, ✅✅, "we post the Ls."
 
 ## G2 — SELL WITHOUT SELLING (the covert funnel)
-We are always converting readers into site visitors and followers — invisibly:
-- **Proof sells, pitches repel.** The record, the graded Ls, the "bookmark and grade us" challenge — that IS the pitch. Never "sign up now!", never "link in bio 🔗", never feature lists.
-- The site link goes in the ~25-min **self-reply only** (link in tweet 1 = −50% reach), framed as receipts: "full tracker, every graded pick: nhlsavant.com".
-- One soft identity ask max per day across all posts ("follow and hold us to it"), phrased as a challenge, not a plea.
-- New-follower framing beat (~1x/day): one line that tells a first-time reader what this account IS ("we track bettors who actually win and post where their money goes").
+Canonical language lives in **`BRAND_MESSAGING.md`** (positioning, bio, pinned
+tweet, phrase bank, screenshot pairing) — read it every run; use its EXACT
+phrase shapes so the brand compounds. Core rules:
+- **Proof sells, pitches repel.** The record, the graded Ls, the challenge frame — that IS the pitch. Never "sign up now!", never "link in bio 🔗", never prices, never feature lists.
+- **The soft ask is the free trial as a challenge:** "Grade us free for a week." Every tier has a free trial — that's the only funnel fact tweets ever reference.
+- The site link goes in the ~25-min **self-reply only** (link in tweet 1 = −50% reach), ref-tagged, framed as receipts.
+- One soft identity ask max per day across all posts, phrased as a challenge, not a plea.
+- New-follower framing beat (~1x/day): one mechanism line ("we track bettors who actually win and post where their money goes").
+- **Every tweet ships with a site screenshot** (the user attaches it). Every draft MUST name which screenshot proves its claim — pick card, dashboard record view (with the right filters set), or sharp-flow view. The screenshot is the covert ad.
 
 ## G3 — PICK PRIORITY: TOP TIER + INSIDE 60 MINUTES
 Run `node scripts/socialBoard.mjs` before writing. It buckets the board:
@@ -94,6 +98,7 @@ currency). Follower count is snapshotted every refresh.
 | `node scripts/socialBoard.mjs` | Time-prioritized board (G3 buckets, staleness check) — `git pull` first if it warns |
 | `node scripts/socialLedger.mjs refresh` + `report` | **The memory** — measured engagement per post by structure/mechanic, follower history, experiment status |
 | `social_analysis/experiments.json` | The active experiment Phase 3 must implement |
+| `BRAND_MESSAGING.md` | Canonical positioning, bio/pin, phrase bank, screenshot pairing (G2) |
 | Firecrawl API (live) | Growth/algo research + today's sport narratives (G5) |
 | `social_analysis/todays_picks.json` | Raw board (updated hourly by Action; the board script reads it) |
 | `MY_VOICE_PROFILE.md` | The voice (G1) |
@@ -167,10 +172,11 @@ PHASE 3 — WRITE (G1 + G2 + G3 + G4)
   precise wallet $ / Polymarket figures). Cross-check every number against
   verified_records.json.
 - Write ready_to_post/YYYY-MM-DD_HHMM.json: { generatedAt, slot, guardrailCheck,
-  verifiedNumbers, hero{text, rtLine, structure, mechanic, refTag,
+  verifiedNumbers, hero{text, rtLine, structure, mechanic, refTag, screenshot,
   selfReplyAt25min, postWindow}, alternates[] (each also tagged
-  structure/mechanic/refTag), doNotDo[] }. The structure/mechanic/refTag tags
-  are MANDATORY on every candidate — `socialLedger.mjs log --draft` reads them.
+  structure/mechanic/refTag/screenshot), doNotDo[] }. The tags are MANDATORY on
+  every candidate — `socialLedger.mjs log --draft` reads them. `screenshot`
+  names which site view to capture (per BRAND_MESSAGING.md pairing).
 
 PHASE 3.5 — AFTER THE USER POSTS (standing instruction, any time)
 - When the user says they posted (any phrasing + a URL), run:
