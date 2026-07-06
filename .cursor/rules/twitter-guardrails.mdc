@@ -35,7 +35,15 @@ Whenever drafting ANY tweet, recap, or social copy for this project:
    to `qdr:h3` → `qdr:d` last). ≤90-min posts get replies; aged-but-viral
    (100K+ views) get quote-tweets. Replies to big accounts are the #1
    out-of-network reach lever at our size.
-8. **Log every posted tweet.** When the user says they posted (any phrasing +
+8. **Target the scored actions** (`ALGO_PSYCH_PLAYBOOK.md` — ground truth from
+   X's open-sourced ranker). Every hero names the 2–3 feed actions it's built
+   to win (reply / follow_author / photo_expand / share_via_dm / dwell) as
+   `algoActions`, passes the negative-signal audit (nothing that earns
+   mute/not_interested — polarize the question, never attack a person), carries
+   a follow-conversion beat (an open loop that makes following necessary),
+   stays in-lane (embedding discipline), and sits ≥2–3h from our previous post
+   (author-diversity attenuation).
+9. **Log every posted tweet.** When the user says they posted (any phrasing +
    URL), immediately run `node scripts/socialLedger.mjs log --url <url>
    --draft <ready_to_post file> --pick <hero|altN>` (or explicit
    --structure/--mechanic tags for custom copy). Before writing new drafts,

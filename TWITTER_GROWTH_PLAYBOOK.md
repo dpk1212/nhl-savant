@@ -3,7 +3,27 @@
 > Updated by **The Twitter Loop** (Phase 1) each run. "What's working on X right now
 > and how we grow." The Writer (Phase 3) pulls hook shapes + construction tricks here.
 
-*Last updated: 2026-07-02 9:35 AM ET (growth-expert run) · source: LIVE Firecrawl research (2026 X algorithm deep-dives), improvement_brief.json (fresh 13:28 UTC), graded Firestore records.*
+*Last updated: 2026-07-06 12:20 PM ET · sources: X's open-sourced For You algorithm (production code, read directly), LIVE Firecrawl research, graded Firestore records.*
+
+## GROUND TRUTH: X'S OPEN-SOURCED RANKER (read 7/6 — full playbook: ALGO_PSYCH_PLAYBOOK.md)
+We read the production code (github.com/xai-org/x-algorithm, `weighted_scorer.rs`).
+The feed score = weighted sum of predicted actions per viewer. What it changes for us:
+- **Design posts to win NAMED actions** — reply, quote, share, share_via_dm, dwell,
+  photo_expand, profile_click, and **follow_author** are all directly scored. A post
+  built to convert follows (open loop, promised grade, next episode) is literally
+  ranked higher, not just strategically smarter.
+- **Negatives subtract:** not_interested/block/mute/report carry negative weights.
+  Dunking on a person = their fans mute us = ranked against us. Polarize the
+  QUESTION, never the person.
+- **Author-diversity attenuation:** burst-posting devalues each successive post →
+  space 2–3h+.
+- **Two-tower discovery:** non-followers see us via embedding similarity to our
+  engagers → topical consistency is a distribution strategy; off-niche posts poison
+  the pool.
+- **Dwell + dwell_time are scored** → long posts that HOLD attention outrank short
+  ones that don't. Fold engineering is an algo play, not just aesthetics.
+- **Photo_expand is scored** → the screenshot should look like it contains the
+  answer, slightly too small to read without tapping.
 
 ## THE 2026 X ALGORITHM — HARD RULES (Firecrawl-verified 7/2)
 These are not vibes; they're from current algo teardowns. Every post must comply:

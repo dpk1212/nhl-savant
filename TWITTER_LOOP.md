@@ -125,6 +125,7 @@ Every loop run outputs this checklist with the specific content slotted in.
 | `node scripts/socialBoard.mjs` | Time-prioritized board (G3 buckets, staleness check) — `git pull` first if it warns |
 | `node scripts/socialLedger.mjs refresh` + `report` | **The memory** — measured engagement per post by structure/mechanic, follower history, experiment status |
 | `social_analysis/experiments.json` | The active experiment Phase 3 must implement |
+| `ALGO_PSYCH_PLAYBOOK.md` | **Ground-truth ranking mechanics** (from X's open-sourced algo) × the psychology that earns each scored action — Phase 3 checks every hero against it |
 | `BRAND_MESSAGING.md` | Canonical positioning, bio/pin, phrase bank, screenshot pairing (G2) |
 | Firecrawl API (live) | Growth/algo research + today's sport narratives (G5) |
 | `social_analysis/todays_picks.json` | Raw board (updated hourly by Action; the board script reads it) |
@@ -208,13 +209,21 @@ PHASE 3 — WRITE (G1 + G2 + G3 + G4)
   leaderboard (exploit the winner) while ONE candidate implements the active
   experiment (explore). Never reuse the structure of the immediately previous
   logged post.
+- ALGO-ACTION TARGETING (ALGO_PSYCH_PLAYBOOK.md — added 7/6): for the hero,
+  explicitly name the 2–3 scored feed actions it's built to win (reply,
+  follow_author, photo_expand, share_via_dm, dwell…) and record them as
+  `algoActions` in the JSON. Run the playbook's standing checks: the
+  negative-signal audit (why neither tribe mutes this), the follow-conversion
+  beat (an unresolved loop that makes following necessary), embedding
+  discipline (in-lane content only), and ≥2–3h spacing from our last post
+  (author-diversity attenuation).
 - DATA INTEGRITY: use `selection` VERBATIM. Directional sharp proof only (no
   precise wallet $ / Polymarket figures). Cross-check every number against
   verified_records.json.
 - Write ready_to_post/YYYY-MM-DD_HHMM.json: { generatedAt, slot, guardrailCheck,
-  verifiedNumbers, hero{text, rtLine, structure, mechanic, refTag, screenshot,
-  selfReplyAt25min, postWindow}, gradePosts{win, loss}, alternates[] (each also
-  tagged structure/mechanic/refTag/screenshot), replyTargets[], doNotDo[] }.
+  verifiedNumbers, hero{text, rtLine, structure, mechanic, algoActions, refTag,
+  screenshot, selfReplyAt25min, postWindow}, gradePosts{win, loss}, alternates[]
+  (each also tagged structure/mechanic/refTag/screenshot), replyTargets[], doNotDo[] }.
   The tags are MANDATORY on every candidate — `socialLedger.mjs log --draft`
   reads them. `screenshot` names which site view to capture (per
   BRAND_MESSAGING.md pairing).
@@ -326,3 +335,17 @@ HARD RULES
 - Hashtags dead (3+ = spam filter). Zero hashtags.
 - Out-of-network reach = strategic replies to bigger accounts → 3–5/day with a real market read.
 - Consistency compounds; a 3-day gap deboosts the next ~5 posts.
+
+## Ground truth from the open-sourced algo (7/6 — full detail: ALGO_PSYCH_PLAYBOOK.md)
+Read directly from X's production code (github.com/xai-org/x-algorithm,
+`home-mixer/scorers/weighted_scorer.rs`). Non-negotiables it adds:
+- The feed score is a weighted sum of predicted actions — reply, quote, share,
+  **share_via_dm**, dwell/dwell_time, photo_expand, profile_click, and
+  **follow_author** are ALL directly scored. Design posts to win named actions.
+- **Negative weights are real:** not_interested / block / mute / report
+  subtract from the score. Rage-bait and dunking are ranked against us.
+- **Author diversity scorer** attenuates repeated authors → space posts 2–3h+.
+- **Two-tower retrieval** matches us to non-followers by embedding similarity →
+  stay in-lane; off-niche posts poison our discovery pool.
+- **Already-seen filter** → never repost identical content. **Dwell is scored**
+  → a long post that holds attention outranks a short one that doesn't.
