@@ -3,18 +3,36 @@
 > The single source of truth for how we describe ourselves — bio, pinned tweet,
 > tweet framing lines, funnel language. The Twitter Loop reads this every run
 > (G2). If the messaging here changes, it changes everywhere.
-> Last tightened: 2026-07-06.
+> Last tightened: 2026-07-06 (v2 — de-AI'd the tone).
+
+## The tone rule (read this first)
+
+We are a **quality brand**: understated, precise, confident enough that we
+don't need to perform. The AI tells to kill on sight:
+
+- **Fragment-stack swagger** — "Every pick graded. Every L public. That's the
+  brand." Chopped two-word punch sentences reeking of a hype account. Write
+  complete, calm sentences instead.
+- **Self-conscious mantras** — "The Ls stay up." / "A tracker with receipts."
+  Slogans that sound like they were written to be quoted. If a line is trying
+  to be a tagline, cut it.
+- **Over-parallel structure** — three matched clauses in a row is template
+  smell. Humans vary their rhythm.
+
+The test: **would a sharp, successful friend explain it this way over dinner?**
+He'd say "the whole record's on the site, losses included" — he would never
+say "Every L public." One understated line beats three punchy ones. Say it
+once, plainly, and move on.
 
 ## Positioning (the one sentence)
 
-**We track a small circle of bettors who win year after year — and post
-exactly where their money goes, graded in public.**
+**We track a small group of bettors who beat the market year after year, and
+we post where their money goes — before the games start, every day.**
 
-Not a capper. Not a model selling vibes. A tracker with receipts.
-
-- The MECHANISM is the differentiator: proven winning wallets, followed in real time.
-- The PROOF is structural: every pick posted before lock, graded after, Ls left up.
-- The PRODUCT is the site: the live board, real-time sharp flow, records. Twitter is the trailer; the site is the movie.
+Not a capper. Not a model selling vibes. The differentiators, in order:
+1. The MECHANISM — real winning bettors' money, followed in real time.
+2. The PROOF — everything posted before lock and graded after, losses included.
+3. The PRODUCT — the live board on the site. Twitter is the trailer; the site is the movie.
 
 ## The offer (funnel truth — from Pricing.jsx)
 
@@ -24,49 +42,48 @@ Not a capper. Not a model selling vibes. A tracker with receipts.
 | Elite (popular) | $25.99/mo | 7-day free trial |
 | Savant Pro | $150/yr | 10-day free trial |
 
-**Every tier has a free trial → the canonical soft ask is "grade us free for a
-week."** Never quote prices in tweets; never say "subscribe." The ask is always
-framed as a challenge (try it, grade it, hold us accountable), not a purchase.
+**Every tier has a free trial → the canonical soft ask: "the first week is
+free — watch and grade it yourself."** Never quote prices in tweets; never say
+"subscribe" or "sign up." The offer is framed as *see for yourself*, never *buy*.
 
 ## Bio (X profile)
 
-**Recommended (structural proof — never goes stale):**
+**Recommended:**
 ```
-We track a small circle of bettors who win year after year — and post where their money goes. Every pick graded. Every L public. Free week on the site.
+We track a small group of bettors who beat the market year after year, and post where their money goes. Full graded record on the site — losses included.
 ```
 
 Rules for the bio:
-- NO hard-coded sport list (seasons rotate and it dates instantly; the pinned
-  tweet carries what's hot right now).
-- NO specific unit counts (they rot; numbers live in the pin, updated weekly).
-- Keep "Free week on the site" — the only funnel line the bio needs.
-- Name field stays searchable: `NHL Savant` (+ optionally `| Sharp Money Tracker`).
+- NO hard-coded sport list (it dates instantly; the pinned tweet carries what's in season).
+- NO unit counts or records (they rot; numbers live in the pin, refreshed weekly).
+- Complete sentences. No slogans.
+- Name field stays searchable: `NHL Savant`.
 - Website field: `nhlsavant.com/?ref=bio` (attribution).
 
 ## Pinned tweet (the "start here" asset — refresh WEEKLY with current numbers)
 
-Template (numbers from `scripts/socialRecords.mjs` only, + tracker screenshot):
+Template (numbers from `scripts/socialRecords.mjs` only, + full tracker screenshot):
 ```
-What this account is, in 20 seconds:
+Quick intro, since a lot of you found us recently.
 
-We don't cap games. We track a small circle of bettors who've won for years — and post where their money goes, before lock, every day.
+We don't handicap games. We track a small group of bettors who beat the market year after year, and we post where their money goes — before the games start, every day.
 
-Since June 1: [record], [+Xu]. Every pick graded on the site. The Ls stay up.
+Since June 1 we're [record], up [X] units. The full graded history is on the site, losses included.
 
-Sharp money moves all day — the live board is the truth. Picks lock 15 min before start.
+Worth knowing: sharp money moves all day, so the live board is always ahead of any tweet. Picks lock 15 minutes before start.
 
-Grade us free for a week. That's the whole pitch.
+If you want to test us, the first week is free. Watch and grade it yourself.
 ```
 Self-reply on the pin: `nhlsavant.com/?ref=pin`
 
-## Canonical phrase bank (use these EXACT shapes; consistency = brand)
+## Phrase bank (natural shapes, not slogans — vary the wording around these ideas)
 
-- **Mechanism:** "We track bettors who actually win — and post where their money goes."
-- **Proof:** "Every pick graded. Every L public." / "We post the Ls. That's why you can trust the Ws."
-- **Freshness (G4):** "Sharp money moves — the site is the live truth. Picks lock 15 min before start."
-- **Funnel (G2):** "Grade us free for a week." / "Bookmark this and hold us to it."
-- **Identity:** "We bet the money, not the logos." / "Not a capper. A tracker with receipts."
-- **New-follower beat (~1x/day):** one line of mechanism so a first-time reader knows what this is.
+- **Mechanism:** "we track bettors who actually win, and follow their money" / "the winning wallets we track"
+- **Proof:** "the whole record is on the site, losses included" / "we posted it before lock — go check"
+- **Freshness (G4):** "sharp money moves all day — the live board is ahead of any tweet. Picks lock 15 minutes before start."
+- **Offer (G2):** "the first week is free — watch and grade it yourself" / "test us for a week before you believe anything"
+- **Identity (use sparingly, max one per post):** "we bet the number, not the logo" — the ONE aphorism we keep, because it's a real bettors' saying, not something we invented to sound cool.
+- **New-follower beat (~1x/day):** one plain mechanism sentence so a first-time reader knows what this is.
 
 ## Screenshot pairing (user attaches a site screenshot to EVERY tweet)
 
@@ -76,11 +93,12 @@ tweet's claim and quietly advertise the site:
 - **Recap / record flex** → the AGS-U dashboard record view (filters set to the window being flexed).
 - **Whale/sharp story** → the sharp-flow / wallet view behind the claim.
 - **Pinned tweet** → the full tracker board (the money shot).
-Screenshots ARE the covert funnel — clean UI + a graded record on screen does the selling so the words don't have to.
+The screenshot does the selling so the words don't have to.
 
 ## Never say
 
 - "Sign up now" / "subscribe" / "link in bio" / prices / "🔒 premium".
+- "The Ls stay up" / "receipts" / "that's the brand" / "that's the whole pitch" — retired 7/6 as AI-swagger tells.
 - "Lock of the day/year", "can't lose", "guaranteed", parlay content.
 - Sport lists that are out of season. Precise wallet $/ROI figures (directional only).
-- Anything a tout would say. When in doubt: receipts over adjectives.
+- Anything a tout would say — and anything that sounds like it WANTS to be screenshotted. Understatement is the flex.

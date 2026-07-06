@@ -23,6 +23,7 @@ Every draft must pass a read-aloud test: *would a real bettor say this to a
 friend at a bar?* Specifically:
 - First person, contractions, opinions, imperfect rhythm. Sentence fragments are fine. Perfect parallel bullets every post are NOT — that's template smell.
 - **Banned (AI tells):** "Let's dive in", "game-changer", "It's important to note", "elevate", "unlock", "delve", em-dash chains, 3-emoji rows, any structure we've posted 3+ times in a row, "tail or fade? 🎯" as a default closer.
+- **Banned (swagger tells, added 7/6):** fragment-stack punch lines ("Every pick graded. Every L public."), self-conscious mantras ("The Ls stay up", "receipts", "that's the whole pitch"), anything written to be quoted. Complete, calm sentences — understatement is the flex. See the tone rule in BRAND_MESSAGING.md.
 - Rotate STRUCTURE, not just words: story/confession · one-liner + card · desk note · question-first · recap with ✅. Never the same architecture back-to-back.
 - Voice source of truth: `MY_VOICE_PROFILE.md`. Swagger, accountability, ✅✅, "we post the Ls."
 
@@ -31,7 +32,7 @@ Canonical language lives in **`BRAND_MESSAGING.md`** (positioning, bio, pinned
 tweet, phrase bank, screenshot pairing) — read it every run; use its EXACT
 phrase shapes so the brand compounds. Core rules:
 - **Proof sells, pitches repel.** The record, the graded Ls, the challenge frame — that IS the pitch. Never "sign up now!", never "link in bio 🔗", never prices, never feature lists.
-- **The soft ask is the free trial as a challenge:** "Grade us free for a week." Every tier has a free trial — that's the only funnel fact tweets ever reference.
+- **The soft ask is the free trial as see-for-yourself:** "the first week is free — watch and grade it yourself." Every tier has a free trial; that's the only funnel fact tweets ever reference.
 - The site link goes in the ~25-min **self-reply only** (link in tweet 1 = −50% reach), ref-tagged, framed as receipts.
 - One soft identity ask max per day across all posts, phrased as a challenge, not a plea.
 - New-follower framing beat (~1x/day): one mechanism line ("we track bettors who actually win and post where their money goes").
