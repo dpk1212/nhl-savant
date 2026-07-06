@@ -67,6 +67,26 @@ as THE PRODUCT — we're the ones watching the money move in real time:
 For <60-min posts use the lighter "locks in X minutes" framing. Never imply a
 far-out number is final.
 
+## G5a — THE X API IS LIVE (connected 7/6 via MCP + xurl bridge)
+We have an authenticated X API connection as @Real_NHL_Savant (OAuth token
+cached in `~/.xurl`, auto-refreshes; MCP server `user-xapi` in Cursor; scripts
+call it via `npx -y @xdevplatform/xurl <path>`). **Credits are pay-per-use —
+be surgical, not chatty.** What it replaces:
+- **Engagement truth:** `socialLedger.mjs refresh` now pulls real
+  public_metrics (impressions, bookmarks, quotes included) via one batch API
+  call. Firecrawl scraping is the fallback only.
+- **Follower count:** from the API (`/2/users/me?user.fields=public_metrics`),
+  not nitter.
+- **Reply-target discovery:** `/2/tweets/search/recent` with
+  `sort_order=recency` + author follower counts beats the Firecrawl
+  `site:x.com` hack — real post age, real velocity, real account size.
+- **MENTIONS ARE INBOUND GOLD:** `get_users_mentions` (user id
+  `1991513001204281345`) surfaces every reply/question to us. Answering an
+  inbound question beats any outbound reply — the asker is already engaged.
+- MCP tools available in-session: users/posts lookup, mentions, timelines,
+  quoted-posts/reposters/likers of any post, trends by location, news search.
+  (Full-archive search is app-only-auth — use recent search via xurl instead.)
+
 ## G5 — FIRECRAWL IS THE RESEARCH ENGINE
 Live, in-session, every run (key: `FIRECRAWL_API_KEY` env secret; REST base
 `https://api.firecrawl.dev/v2`, endpoints `/search` and `/scrape`, cache
@@ -123,7 +143,8 @@ Every loop run outputs this checklist with the specific content slotted in.
 |--------|---------|
 | `node scripts/socialRecords.mjs` | **Verified records from Firestore** — the ONLY source for quoted W-L/units (writes `social_analysis/verified_records.json`) |
 | `node scripts/socialBoard.mjs` | Time-prioritized board (G3 buckets, staleness check) — `git pull` first if it warns |
-| `node scripts/socialLedger.mjs refresh` + `report` | **The memory** — measured engagement per post by structure/mechanic, follower history, experiment status |
+| `node scripts/socialLedger.mjs refresh` + `report` | **The memory** — real X API metrics per post (impressions/bookmarks/quotes included), follower history, experiment status |
+| X API (MCP `user-xapi` / xurl bridge) | Mentions inbox, reply-target search with real velocity, quoters/reposters of viral posts, trends (G5a — mind the credits) |
 | `social_analysis/experiments.json` | The active experiment Phase 3 must implement |
 | `ALGO_PSYCH_PLAYBOOK.md` | **Ground-truth ranking mechanics** (from X's open-sourced algo) × the psychology that earns each scored action — Phase 3 checks every hero against it |
 | `BRAND_MESSAGING.md` | Canonical positioning, bio/pin, phrase bank, screenshot pairing (G2) |
@@ -229,14 +250,20 @@ PHASE 3 — WRITE (G1 + G2 + G3 + G4)
   BRAND_MESSAGING.md pairing).
 
 PHASE 3.25 — REPLY TARGETS (the out-of-network engine — never skip)
+- FIRST: check our own mentions (X API `get_users_mentions` or
+  xurl /2/users/1991513001204281345/mentions) — draft an answer for every
+  unanswered inbound question. Inbound beats outbound.
 - RECENCY IS THE RANKING FACTOR (locked 7/6): a reply lands inside the target
   post's first-30-min velocity window and ranks high in a short thread; a
-  reply on an old post is furniture. Search freshest-first:
-    1. {"query":"site:x.com [event] bet","limit":8,"tbs":"qdr:n90"}  ← last 90 min (PRIORITY)
-    2. widen to "qdr:h3" if fewer than 3 usable targets
-    3. "qdr:d" only as the final fallback
-  Vary [event] (the marquee matchup, world cup, MLB). Verified working:
-  qdr:n90 returns live posts (e.g. ActionNetworkHQ pregame best-bets).
+  reply on an old post is furniture. Search freshest-first via the X API:
+    xurl "/2/tweets/search/recent?query=([event]) (bet OR pick OR odds)
+    -is:retweet -is:reply lang:en&sort_order=recency&max_results=10
+    &tweet.fields=public_metrics,created_at&expansions=author_id
+    &user.fields=username,public_metrics"
+  → filter to posts ≤90 min old from accounts with 5K+ followers; their
+  public_metrics show real velocity. (Firecrawl `site:x.com` + qdr:n90 is
+  the fallback if the API errors.) Vary [event] (marquee matchup, world cup,
+  MLB). Watch credits — 2–3 searches per run, not 10.
 - FRESH → REPLY, AGED-BUT-VIRAL → QUOTE-TWEET: posts ≤90 min old get a reply
   (their velocity carries us). A big post that's hours old but still pulling
   views (100K+) is QT inventory instead — our QT rides the algo on its own

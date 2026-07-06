@@ -13,8 +13,11 @@
  *                [--structure confession-flex --mechanic polarizing-question --note "..."]
  *              With --draft, tags (structure/mechanic/refTag/rtLine) are copied
  *              from the draft JSON (--pick hero | alt1 | alt2...).
- *   refresh  — Firecrawl-scrape every logged tweet's live engagement and the
- *              profile follower count; store timestamped snapshots.
+ *   refresh  — pull every logged tweet's live engagement + the follower count
+ *              and store timestamped snapshots. PRIMARY source: the X API via
+ *              the xurl bridge (authoritative public_metrics incl. impressions
+ *              and bookmarks, one batch call). FALLBACK: Firecrawl scraping
+ *              (the pre-MCP path) if the API call fails.
  *              node scripts/socialLedger.mjs refresh
  *   report   — leaderboards by structure + mechanic, best/worst posts,
  *              follower growth, experiment status.
@@ -25,6 +28,7 @@
 import Firecrawl from '@mendable/firecrawl-js';
 import * as dotenv from 'dotenv';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { execFileSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -105,6 +109,66 @@ function cmdLog() {
 }
 
 // ── refresh ─────────────────────────────────────────────────────────────────
+const USER_ID = '1991513001204281345'; // @Real_NHL_Savant
+
+// X API via the xurl OAuth bridge (token cached in ~/.xurl, auto-refreshes)
+function xapi(path) {
+  const out = execFileSync('npx', ['-y', '@xdevplatform/xurl', path], {
+    encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 120000,
+  });
+  return JSON.parse(out);
+}
+
+function snapshotsDue(ledger) {
+  return ledger.posts.filter((post) => {
+    const ageH = (Date.now() - new Date(post.postedAt).getTime()) / 36e5;
+    const last = post.snapshots[post.snapshots.length - 1];
+    const lastAgeH = last ? (Date.now() - new Date(last.at).getTime()) / 36e5 : Infinity;
+    if (ageH > 14 * 24 && post.snapshots.length > 0) return false; // settled
+    if (lastAgeH < 6) return false; // don't spam snapshots
+    return true;
+  });
+}
+
+function refreshViaApi(ledger) {
+  const me = xapi('/2/users/me?user.fields=public_metrics');
+  const followers = me?.data?.public_metrics?.followers_count;
+  if (Number.isFinite(followers)) {
+    ledger.followerHistory.push({ at: new Date().toISOString(), followers, source: 'x-api' });
+    console.log(`Followers: ${followers} (via X API)`);
+  }
+
+  const due = snapshotsDue(ledger);
+  if (!due.length) { console.log('No posts due for a snapshot.'); return { ok: 0, fail: 0 }; }
+
+  let ok = 0, fail = 0;
+  for (let i = 0; i < due.length; i += 100) {
+    const batch = due.slice(i, i + 100);
+    const ids = batch.map(p => p.id).join(',');
+    const res = xapi(`/2/tweets?ids=${ids}&tweet.fields=public_metrics`);
+    const byId = Object.fromEntries((res.data || []).map(t => [t.id, t.public_metrics]));
+    for (const post of batch) {
+      const m = byId[post.id];
+      if (!m) { fail++; console.log(`  ${post.id}: not returned (deleted?)`); continue; }
+      const ageH = (Date.now() - new Date(post.postedAt).getTime()) / 36e5;
+      post.snapshots.push({
+        at: new Date().toISOString(),
+        hoursSincePost: +ageH.toFixed(1),
+        likes: m.like_count ?? null,
+        retweets: m.retweet_count ?? null,
+        replies: m.reply_count ?? null,
+        views: m.impression_count ?? null,
+        bookmarks: m.bookmark_count ?? null,
+        quotes: m.quote_count ?? null,
+        source: 'x-api',
+      });
+      ok++;
+      console.log(`  ${post.id}: ${m.like_count}❤ ${m.retweet_count}🔁 ${m.reply_count}💬 ${m.impression_count}👁 ${m.bookmark_count}🔖 (${ageH.toFixed(0)}h old)`);
+    }
+  }
+  return { ok, fail };
+}
+
 function parseStatusPage(md) {
   // x.com single-status pages via Firecrawl typically carry
   // "Likes: N | Retweets: N" and sometimes Replies / Views / Bookmarks.
@@ -119,6 +183,23 @@ function parseStatusPage(md) {
 }
 
 async function cmdRefresh() {
+  const ledger = loadLedger();
+
+  // PRIMARY: X API (authoritative metrics, one batch call)
+  try {
+    const { ok, fail } = refreshViaApi(ledger);
+    saveLedger(ledger);
+    console.log(`\nRefreshed via X API: ${ok} ok, ${fail} failed. Ledger saved.`);
+    return;
+  } catch (e) {
+    console.log(`X API refresh failed (${(e?.message || e).toString().slice(0, 120)}) — falling back to Firecrawl.`);
+  }
+
+  await refreshViaFirecrawl(ledger);
+}
+
+// FALLBACK: the pre-MCP Firecrawl scraping path
+async function refreshViaFirecrawl(ledger) {
   const key = process.env.FIRECRAWL_API_KEY;
   if (!key) { console.error('FIRECRAWL_API_KEY not set'); process.exit(1); }
   const firecrawl = new Firecrawl({ apiKey: key });
@@ -126,8 +207,6 @@ async function cmdRefresh() {
     const res = await firecrawl.scrape(url, { formats: ['markdown'], onlyMainContent: true, waitFor: 4000, timeout: 120000 });
     return res?.markdown || res?.data?.markdown || '';
   };
-
-  const ledger = loadLedger();
 
   // follower count — nitter renders it reliably ("Followers2,007"); x.com fallback
   let gotFollowers = false;
