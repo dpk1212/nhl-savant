@@ -89,6 +89,20 @@ currency). Follower count is snapshotted every refresh.
 - **Import the outside:** fold this run's Firecrawl findings into
   `TWITTER_GROWTH_PLAYBOOK.md` (dated, pruned — ≤ ~100 lines).
 
+## G7 — THE DAILY CADENCE CONTRACT (growth is volume × quality; we enforce both)
+A day's output is a SLATE, not a tweet. Consistency is itself a ranking input
+(a 3-day gap deboosts the next ~5 posts). The daily minimum:
+1. **Hero** at a peak window (11:30–13:00 ET default) — babysat for 30 min.
+2. **Evening grade post** — close the loop on the day's shot (✅/❌ + the running
+   record). Pre-written at draft time (see Phase 3), so it ships in seconds.
+3. **3–5 strategic replies** under big accounts' live betting posts (Phase 3.25
+   finds and drafts them). At our size this is the #1 out-of-network reach lever.
+4. **One new-follower beat** somewhere in the day (a plain mechanism line).
+5. **Weekly:** refresh the pinned tweet's numbers (Monday); post one evergreen
+   explainer thread (how the tracking works / anatomy of a max play — the
+   compounding asset pick posts can't be).
+Every loop run outputs this checklist with the specific content slotted in.
+
 ---
 
 ## Inputs every run
@@ -174,10 +188,35 @@ PHASE 3 — WRITE (G1 + G2 + G3 + G4)
   verified_records.json.
 - Write ready_to_post/YYYY-MM-DD_HHMM.json: { generatedAt, slot, guardrailCheck,
   verifiedNumbers, hero{text, rtLine, structure, mechanic, refTag, screenshot,
-  selfReplyAt25min, postWindow}, alternates[] (each also tagged
-  structure/mechanic/refTag/screenshot), doNotDo[] }. The tags are MANDATORY on
-  every candidate — `socialLedger.mjs log --draft` reads them. `screenshot`
-  names which site view to capture (per BRAND_MESSAGING.md pairing).
+  selfReplyAt25min, postWindow}, gradePosts{win, loss}, alternates[] (each also
+  tagged structure/mechanic/refTag/screenshot), replyTargets[], doNotDo[] }.
+  The tags are MANDATORY on every candidate — `socialLedger.mjs log --draft`
+  reads them. `screenshot` names which site view to capture (per
+  BRAND_MESSAGING.md pairing).
+
+PHASE 3.25 — REPLY TARGETS (the out-of-network engine — never skip)
+- Firecrawl search for TODAY's biggest live betting conversations in our
+  sports. Proven query shape: {"query":"site:x.com [event] bet picks",
+  "limit":6,"tbs":"qdr:d"} — vary [event] (world cup, MLB, a marquee matchup).
+  Prefer large accounts (media/books/stats: azcentral, DimersCom, RotoWire,
+  BetUS...) and posts from the last ~12h on games still upcoming.
+- Pick 3–5 targets and DRAFT the reply for each, copy-paste ready. A good
+  reply is one or two sentences of OUR data edge on THEIR game — e.g. "The
+  winning wallets we track are actually leaning the other way here — proven
+  money showed up on [side] this morning." Never "great pick!", never a link,
+  never our record unprompted. Add value, sound human, let curiosity do the
+  work (that's what drives the profile click).
+- Output: a "Reply targets" section in AA_TWITTER_NEXT_STEPS.md — URL, the
+  account's angle, our drafted reply.
+
+PHASE 3.4 — PRE-WRITE THE GRADE POSTS (zero-latency win moments)
+- For the hero's featured play(s), pre-write BOTH outcome posts now:
+  the ✅ version (win — cashed, running record, one plain line, no gloating)
+  and the ❌ version (loss — owned in one sentence, the record anyway, no
+  excuses). Store in the ready_to_post JSON as gradePosts: {win, loss}.
+- The moment the game settles, the user posts the right one in seconds —
+  engagement velocity while the game is still trending is worth multiples of
+  a recap an hour later.
 
 PHASE 3.5 — AFTER THE USER POSTS (standing instruction, any time)
 - When the user says they posted (any phrasing + a URL), run:
@@ -186,9 +225,11 @@ PHASE 3.5 — AFTER THE USER POSTS (standing instruction, any time)
   Confirm the log line back to them. This is how the system learns.
 
 PHASE 4 — REPORTS
-- Overwrite AA_TWITTER_NEXT_STEPS.md (hero + alternates in code blocks, RT
-  line, action checklist incl. reply-babysitting + 3–5 strategic replies to
-  bigger accounts).
+- Overwrite AA_TWITTER_NEXT_STEPS.md with the FULL DAY SLATE (G7):
+  hero + alternates in code blocks · the pre-written grade posts ·
+  the reply-targets section (URLs + drafted replies) · the RT line ·
+  which screenshot to attach to each post · the daily cadence checklist
+  with times.
 - Overwrite AA_TWITTER_RESEARCH_REPORT.md (research digest + performance
   review + experiment status).
 

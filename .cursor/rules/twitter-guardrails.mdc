@@ -28,7 +28,12 @@ Whenever drafting ANY tweet, recap, or social copy for this project:
 6. **Research with Firecrawl** (`FIRECRAWL_API_KEY` env secret,
    `https://api.firecrawl.dev/v2/search|/scrape`) for current viral formats
    before big posts; fold findings into `TWITTER_GROWTH_PLAYBOOK.md` (dated).
-7. **Log every posted tweet.** When the user says they posted (any phrasing +
+7. **A day's output is a slate, not a tweet** (TWITTER_LOOP.md G7): hero +
+   pre-written win/loss grade posts + 3–5 drafted replies under big accounts'
+   live betting posts (Firecrawl: `site:x.com [event] bet picks`, last day) +
+   one new-follower beat. Replies to big accounts are the #1 out-of-network
+   reach lever at our size.
+8. **Log every posted tweet.** When the user says they posted (any phrasing +
    URL), immediately run `node scripts/socialLedger.mjs log --url <url>
    --draft <ready_to_post file> --pick <hero|altN>` (or explicit
    --structure/--mechanic tags for custom copy). Before writing new drafts,
