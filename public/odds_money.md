@@ -188,3 +188,11 @@ The content on this site is for entertainment purposes only. OddsTrader makes no
 OddsTrader no longer operates under any U.S. license, including Pennsylvania.
 
 Seek help with a gambling addiction at 1-800-Gambler.
+
+×Feedback
+
+![Paperclip Icon](<Base64-Image-Removed>)Upload files
+
+Send
+
+[Powered by Doorbell.io](https://doorbell.io/?utm_source=feedback_form&utm_medium=web_sdk&utm_campaign=application_10828)
