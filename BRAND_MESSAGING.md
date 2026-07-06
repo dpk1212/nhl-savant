@@ -80,7 +80,7 @@ Self-reply on the pin: `nhlsavant.com/?ref=pin`
 
 - **Mechanism:** "we track bettors who actually win, and follow their money" / "the winning wallets we track"
 - **Proof:** "the whole record is on the site, losses included" / "we posted it before lock — go check"
-- **Freshness (G4):** "sharp money moves all day — the live board is ahead of any tweet. Picks lock 15 minutes before start."
+- **Freshness (G4 — live-read framing, never legalese):** timestamp the read ("As of noon"), call it a lean not a pick until lock, and own the flip in advance: "if the money moves this afternoon, our board moves with it, and I'll post the update. Nothing locks until 15 minutes before start." If a lean flips, post the flip proudly — that's the product working, not us waffling.
 - **Offer (G2):** "the first week is free — watch and grade it yourself" / "test us for a week before you believe anything"
 - **Identity (use sparingly, max one per post):** "we bet the number, not the logo" — the ONE aphorism we keep, because it's a real bettors' saying, not something we invented to sound cool.
 - **New-follower beat (~1x/day):** one plain mechanism sentence so a first-time reader knows what this is.

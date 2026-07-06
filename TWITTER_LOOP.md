@@ -46,14 +46,26 @@ Run `node scripts/socialBoard.mjs` before writing. It buckets the board:
 4. Everything else is context, not a hero.
 Attach the tier's verified record (from `socialRecords.mjs`) to the pick whenever it flexes — a pick with a great record attached beats a naked pick. If the 5u+ tier is cold, flex a hot segment honestly (6u max plays, a sport, a market) — never a cold one.
 
-## G4 — THE MOVEMENT DISCLAIMER (kill the promoted/cancelled confusion)
-Sharp money moves. Picks can get promoted, resized, or dropped after we post.
-Every pick post carries ONE freshness line, natural not legalese. Rotate:
-- "Sharp money moves all day — the live board on the site is the truth, we lock 15 min before start."
-- "This is the read as of [time] ET. If the wallets flip, the site flips — final card locks 15 min out."
-- "Always check the site before you bet — positions move right up to lock (15 min before start)."
-For >60-min-out picks this is MANDATORY; for <60 min use the lighter "locked
-soon" framing. Never imply a far-out number is final.
+## G4 — LIVE-READ FRAMING (movement is the product, not a disclaimer)
+Sharp money moves; picks get promoted, resized, or dropped after we post. If we
+frame that as fine print, we get roasted for "switching picks." So we frame it
+as THE PRODUCT — we're the ones watching the money move in real time:
+- **Timestamp every far-out read:** open with "As of [time]" or equivalent. A
+  timestamped lean can't be called a flip-flop; an untimestamped "pick" can.
+- **Lean vs locked vocabulary:** >60 min out is a "lean" / "live read" /
+  "where the money sits right now" — NEVER "the pick" or "locked in." The
+  card locks 15 minutes before start; only then is it final.
+- **Own the flip in advance, in a human way:** one line that says we'll post
+  the update if the money moves ("if the wallets flip this afternoon, our
+  board flips with them, and I'll post it"). Monitoring the move IS the edge —
+  say it with pride, not legalese.
+- **The flip protocol:** if a posted lean changes before lock, post the update
+  referencing the original ("Noon read had Belgium. The money moved — the
+  board's on the US now. This is what following live money looks like.").
+  NEVER quietly ignore or delete the original — the public flip, handled
+  confidently, builds more trust than a win.
+For <60-min posts use the lighter "locks in X minutes" framing. Never imply a
+far-out number is final.
 
 ## G5 — FIRECRAWL IS THE RESEARCH ENGINE
 Live, in-session, every run (key: `FIRECRAWL_API_KEY` env secret; REST base

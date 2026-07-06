@@ -5,29 +5,35 @@
 ## FIRST — if you haven't posted the weekend recap yet
 The recap (`ready_to_post/2026-07-06_0915_weekend_recap.json`) is still the strongest asset from this morning. If unposted: post it now (~11:30), push the Belgium hero to ~5 PM as the evening post, and skip the separate grade post. If posted: go straight to the hero at noon. **Either way, tell me the URL so I can log it.**
 
-## Recommended hero — post 12:00–1:00 PM ET (screenshot: the Belgium pick card)
+## Recommended hero v2 — post 12:00–1:00 PM ET (screenshot: the Belgium pick card)
 
 ```
-The US plays a World Cup knockout game at home tonight, and the bettors we track are leaning Belgium.
+As of noon, the winning bettors we track are leaning Belgium tonight. Against the US. At home.
 
-I'm American. I wanted to skip this one. But we didn't build a tracker to follow it only when it's comfortable — the wallets we follow are 21-8 on this World Cup, and more of them are on Belgium at +180 than on the US.
+I'm American. I've been staring at this for an hour trying to find a reason not to post it.
 
-It's a small position, not a max play. The system's top-rated bet tonight is actually Arizona +101 on the baseball side.
+Two things before anyone yells at me:
 
-Money moves all day, so the live board is ahead of this tweet — picks lock 15 minutes before kickoff.
+This is a live read, not a locked pick. The money keeps moving until kickoff — if the wallets swing back to the US this afternoon, our board swings with them and I'll post the update. Nothing locks until 15 minutes before the whistle.
 
-Honest question: could you bet against your own country in a knockout game?
+And it's a lean, not a pound. 8 of the 14 winners we track are on Belgium at +180. Six stayed home. We sized it small.
+
+These same wallets are 21-8 on this World Cup, so I stopped arguing with them a while ago.
+
+Could you bet against your own country in a knockout game? I'm honestly still deciding how I feel about it.
 ```
 
-**RT line:** "We didn't build a tracker to follow it only when it's comfortable."
+**RT line:** "I stopped arguing with them a while ago."
 
-Why it wins: the close is a moral question every American sports bettor has an instant opinion on — patriots and mercenaries both have to answer (replies ≈ 27x likes). The confession structure implements EXP-001. The honesty about it being a small, split lean (8-6) is the credibility play — and the movement disclaimer is baked in naturally (guardrail #4).
+Why v2 beats v1 (which was a 7/10): the read is **timestamped** ("As of noon") so a later flip can never be called flip-flopping — it's a snapshot by definition. The flip is **owned in advance in plain speech** ("I'll post the update"), which turns pick-changes from a liability into proof the tracking is live. And the human tells are real ones — "staring at this for an hour," "before anyone yells at me," "still deciding how I feel" — hedges and asides, not crafted quotables.
 
 **Self-reply at ~25 min:**
 
 ```
-For transparency, it's genuinely split — 8 of the winning wallets we track are on Belgium, 6 stayed with the US. That's exactly why it's sized small. The live board has the current read: nhlsavant.com/?ref=t0706b
+Worth adding: Belgium's the story tonight, but Arizona +101 is the system's actual top-rated bet — the only proven winners with a position on that game are both on the D-backs. Live board, updated until lock: nhlsavant.com/?ref=t0706b
 ```
+
+**If the lean flips before lock (the anti-roast protocol, G4):** post the update referencing this tweet — "Noon read had Belgium. The money moved and the board's back on the US. This is what following live money looks like." Confident, no apology, no deletion.
 
 ## Pre-written grade posts (post the right one within minutes of full time)
 
