@@ -1,90 +1,106 @@
-# NEXT STEPS — Tuesday July 7 (Argentina day → doubleheader afternoon)
+# NEXT STEPS — Tuesday July 7, EVENING (updated 6:15 PM)
 
-> Every post below is final text — copy the block, paste, attach the named
-> screenshot, done. Machine copy lives in `ready_to_post/2026-07-07_1410_over_window.json`.
+> Copy the block, paste, attach the named screenshot. Machine copy:
+> `ready_to_post/2026-07-07_1815_evening.json`.
 
-## THE DAY SCRIPT (updated 2:05 PM — Argentina WON ✅, late Over added)
-11:15 AM hero (Argentina split, posted) → **2:10 PM Over decision-window post
-(doubles as the Argentina grade)** → 3:15 PM Colombia countdown → ~5 PM Over
-grade post → tonight: Colombia grade + Graded card. Each post points at the next.
-
----
-
-## 1) COMBO POST — POST NOW · attach Argentina graded card + Over 7.5 pick card (both if possible)
-
-4 units cashed at noon. 4 more locked for 2:16.
-
-Argentina ML ✅ — the easy part.
-
-Now the same wallets are on Over 7.5, Brewers/Cardinals.
-
-Nobody is watching this game. That's usually when they eat.
-
-Graded here either way.
-
-*(Linter 100/SHIP. The combo IS the hook: cashed money + live money in one
-breath. Still works a few minutes after first pitch — "locked for 2:16" is the
-receipt.)*
+## THE DAY SCRIPT
+Argentina ✅ (+1.3u) posted and cashed · Over 7.5 ❌ (-4u) — combo post promised
+"graded either way," debt owed · Colombia was NEVER a locked play (fell off the
+board — never reference it as ours).
+Sequence: **6:15 hero (three-ML night, locks 6:26)** → inbound replies
+immediately → ~7:30 Over ❌ grade woven into a live-night frame → games settle
+~9:30: grade post → 9:45 Dodgers/Rockies window (optional, only if night is
+going well) → Graded card closes the episode.
 
 ---
 
-## 2) COLOMBIA COUNTDOWN — post 3:15–3:30 PM ET · attach Colombia pick card
+## 1) HERO — POST NOW (first lock 6:26 ET) · attach board screenshot with the three staked cards
 
-Colombia again...
+I've tracked 500 winning wallets every day since June 1. Tonight they got loud...
 
-Friday, they cashed the board's biggest play of the week.
+Three moneylines, 9 units, one window:
 
-Today, the same tracked wallets came back for more — at +130 this time.
+Braves +131.
+Mariners +105.
+Phillies -168 — their biggest, 4 units.
 
-2.5 units. Colombia ML. 4:00 PM ET.
-
-Picks lock 15 minutes before kick. Soccer since June 1: 22-9, +25 units.
-
-*(Price updated to +130 per the 2:03 PM board pull. Locks 3:45 ET.)*
+First locks 6:26 ET. Graded either way.
 
 ---
 
-## 3) OVER GRADE POST — when Brewers/Cardinals goes final (~5 PM), pick the one that happened
+## 2) SELF-REPLY — ~25 min after the hero
 
-**IF OVER 7.5 CASHES:**
-
-Over 7.5 in Brewers–Cardinals. ✅
-
-That's back-to-back 4-unit winners today — a noon ML everyone watched and a Tuesday total nobody did.
-
-Colombia grades next. The board doesn't take days off.
-
-**IF IT MISSES:**
-
-Over 7.5 misses. ❌
-
-4 units, graded in public, same as the noon winner. That's the deal.
-
-Argentina ✅ + Colombia pending — the day's still green.
+The full board with sizes and every graded result since June 1 (+57 units, 387 picks, Ls included): nhlsavant.com/?ref=t0707night
 
 ---
 
-## REPLIES — 2–3 this afternoon (Argentina-result posts are spiking right now)
+## 3) INBOUND REPLIES — do immediately after posting (they're waiting)
 
-**Under any big-account "Messi/Argentina advance" result post:**
+**To @KineticSZN ("is braves -1.5 an error?"):**
 
-The tracked wallets had this at 4 units — but the interesting part was the split: 2 proven winners took Egypt and lost for the first time in weeks. Even sharp money isn't unanimous.
+Good catch — display bug on the spread card this morning, fixed within the hour. Board's correct now: Braves +1.5 and Braves ML both live. That's why every pick gets graded in public.
 
-**Under @BettingPros' Daily Juice post (22K):**
+**To @bigda05 ("I'm tailing that over"):**
 
-Same board here: Argentina cashed at noon, a 4u total just locked at 2:16, and Colombia +130 goes at 4. Busy Tuesday.
+It missed — 4 units, graded like everything else. Appreciate you riding. Three MLs just locked for tonight if you're still in it.
 
-**Under any Brewers/Cardinals game thread once runs start scoring:**
+**To @bryaniet0 ("Colombia vs Switzerland?👀"):**
 
-Tracked money took Over 7.5 before first pitch — 4 units. Quiet weekday totals have been the board's best look lately.
+The wallets never locked it — it fell off the board before kick. When they don't bet, neither do we. That's the whole system.
+
+---
+
+## 4) OVER ❌ GRADE — ~7:30 PM, woven into the live night (never a standalone L)
+
+Over 7.5 missed this afternoon. ❌ 4 units, graded in public like the noon winner.
+
+Meanwhile the night board is live: Braves +131 and Mariners +105 both through the early innings.
+
+Every result lands here either way. That's the product.
+
+---
+
+## 5) NIGHT GRADE POST — when Braves/Mariners/Phillies settle (~9:30-10 PM), fill in actual results
+
+**IF THE NIGHT GOES GREEN (2+ of 3):**
+
+The wallets got loud at 6. They were right...
+
+[Braves +131 ✅ / Mariners +105 ✅ / Phillies -168 ✅ — keep only what cashed, one per line]
+
+Argentina ✅ this morning. [X] units on the day.
+
+387 graded picks since June 1. +[XX] units. All public.
+
+**IF THE NIGHT GOES RED (0-1 of 3):**
+
+Tonight's dogs didn't land. [✅/❌ each play, one per line]
+
+Graded in public, same as every winner — 387 picks since June 1, +[XX] units, Ls included.
+
+The board resets in the morning.
+
+---
+
+## 6) OPTIONAL LATE WINDOW — 9:45 PM (Dodgers/Rockies 10:11, locks 9:56) · only if awake and night isn't 0-3
+
+One more before midnight...
+
+The wallets are on BOTH sides of Rockies-Dodgers: Dodgers ML -254 (4 units) and Rockies +1.5 (+118).
+
+Favorite to win it, dog to keep it close. That's how sharp books get beat.
+
+Locks 9:56 ET. Graded either way.
+
+*(Numbers verified 6:10 board pull. If posting, re-check the board first — Rockies line was +114 → +118 today, it moves.)*
 
 ---
 
 ## DO NOT
-- Don't post the Over decision-window tweet after ~2:30 PM — the "locked before first pitch" timestamp is the whole receipt. If missed, skip to the grade post.
-- Don't quote Egypt's ML price (not verified this run).
-- Don't post Braves +1.5 standalone (LEAN tier, and spread display just got patched — keep it off the feed today).
-- Don't re-use the ATH/$15,706 number — this morning's post owns it today.
-- The 2:10 Over post and 3:15 Colombia post are only ~65 min apart — that's an approved exception (two live decision windows), don't add a third original before the Over grades.
+- NEVER reference Colombia as our play — it was never locked (fell off the board pre-kick).
+- Don't post the Over ❌ as a standalone-L hook — it rides inside the live-night post (win-narrative law).
+- Don't quote the 5u+ tier record (negative: -2.7u). Hot segments tonight: 6u MAX 6-1 +15.7u, ML market +47.3u, SOC +26.6u.
+- Space originals 2-3h: 6:15 hero → ~7:30 grade-weave → ~9:30 night grade is compliant.
+- The hero is dead after 6:41 first pitch — if missed, open with the Phillies window instead (locks 6:55).
 
-**When you post, send me the URL — I'll log it and take the 30-minute velocity read.**
+**Send URLs as you post — I log everything and take the 30-min velocity reads.**
