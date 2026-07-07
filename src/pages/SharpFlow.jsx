@@ -5383,7 +5383,7 @@ const LOCK_TIER_ACCENT = {
 //   > 1h out   — quiet glass, clock icon, "LOCKS IN 2H 14M"
 //   ≤ 1h out   — gold, urgency building
 //   ≤ 15m out  — red with a soft breathing glow, seconds ticking
-//   post-lock  — green "LOCKED" seal until the game starts
+//   post-lock  — green "LOCKED" seal, worn through the live game until graded
 const LOCK_LEAD_MS = 15 * 60 * 1000;
 const LockCountdown = memo(function LockCountdown({ gameTime, isGraded }) {
   const gameEpoch = gameTime ? (typeof gameTime === 'number' ? gameTime : Date.parse(gameTime)) : null;
@@ -5392,14 +5392,15 @@ const LockCountdown = memo(function LockCountdown({ gameTime, isGraded }) {
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
-    if (!valid || isGraded || Date.now() >= gameEpoch) return undefined;
+    // Once locked the pill is static — no more ticking needed.
+    if (!valid || isGraded || Date.now() >= lockEpoch) return undefined;
     // Tick each second inside the final 10 min (seconds display), else every 30s.
     const fast = lockEpoch - Date.now() < 10 * 60 * 1000;
     const id = setInterval(() => setNow(Date.now()), fast ? 1000 : 30000);
     return () => clearInterval(id);
   }, [valid, isGraded, gameEpoch, lockEpoch, now]);
 
-  if (!valid || isGraded || now >= gameEpoch) return null;
+  if (!valid || isGraded) return null;
 
   const pillBase = {
     display: 'inline-flex', alignItems: 'center', gap: '0.3rem', flexShrink: 0,
@@ -5548,9 +5549,10 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
   const gameEpoch = gameTime ? (typeof gameTime === 'number' ? gameTime : Date.parse(gameTime)) : null;
   const gameStarted = gameEpoch != null && !isNaN(gameEpoch) && Date.now() >= gameEpoch;
 
-  // Sealed window — the 15 minutes between lock and first pitch/kick. Drives
-  // the card-level LOCKED banner + emerald glow. Ticks every 15s so the seal
-  // appears/retires on time without a per-second render cost.
+  // Sealed state — starts at lock (15 min before first pitch/kick) and is worn
+  // through the live game until the pick grades. Ticks every 15s until the
+  // game starts (so the banner appears on time and flips to LIVE), then the
+  // seal is permanent and the timer retires.
   const [sealNow, setSealNow] = useState(() => Date.now());
   useEffect(() => {
     if (gameEpoch == null || isNaN(gameEpoch) || isGraded || Date.now() >= gameEpoch) return undefined;
@@ -5558,7 +5560,8 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
     return () => clearInterval(id);
   }, [gameEpoch, isGraded]);
   const isSealed = gameEpoch != null && !isNaN(gameEpoch) && !isGraded && !isCancelled
-    && sealNow < gameEpoch && sealNow >= gameEpoch - LOCK_LEAD_MS;
+    && sealNow >= gameEpoch - LOCK_LEAD_MS;
+  const sealLive = isSealed && sealNow >= gameEpoch;
 
   // Header vocabulary borrowed verbatim from the live Sharp Position card:
   // a sport badge, the matchup with the pick side weighted bright, and the
@@ -5680,9 +5683,10 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
       <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(120% 78% at 100% 0%, ${accent}${open ? '20' : '10'} 0%, transparent 52%)` }} />
       <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: '2px', background: isSealed ? B.green : accent, opacity: open ? 0.9 : 0.55 }} />
 
-      {/* Sealed banner — the pick is locked (inside 15 min of start). The
-          card wears an emerald seal until first pitch/kick, then the normal
-          live/graded states take over. */}
+      {/* Sealed banner — the pick is locked (from 15 min before start). The
+          card wears the emerald seal through the live game until the pick
+          grades; the tail flips from the start time to LIVE at first
+          pitch/kick. */}
       {isSealed && (
         <div className="sf-lock-seal" style={{
           position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -5695,7 +5699,7 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
             PICK LOCKED
           </span>
           <span style={{ fontSize: '0.52rem', fontWeight: 700, letterSpacing: '0.06em', color: 'rgba(16,185,129,0.75)', fontFeatureSettings: "'tnum'", lineHeight: 1 }}>
-            · STARTS {fmtET(gameTime)} ET
+            {sealLive ? '· LIVE' : `· STARTS ${fmtET(gameTime)} ET`}
           </span>
         </div>
       )}
