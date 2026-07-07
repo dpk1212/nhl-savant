@@ -1,6 +1,6 @@
 # @Real_NHL_Savant — Real Voice Profile (data-grounded)
 
-> Built from a live Firecrawl pull of the actual timeline (`scripts/analyzeMyTweets.mjs` → `social_analysis/my_tweets.json`). This is what the account ACTUALLY posts and what ACTUALLY gets reach — not a theory. The content agents must write in THIS voice, not the sterile "intelligence desk" persona.
+> Built from a pull of the actual timeline (source pipeline retired 7/7 — the live record now lives in `social_analysis/post_ledger.json`, refreshed via the X API by `scripts/socialLedger.mjs`). This is what the account ACTUALLY posts and what ACTUALLY gets reach — not a theory. The content agents must write in THIS voice, not the sterile "intelligence desk" persona.
 
 Last analyzed: 2026-06-20 · 21 posts sampled · 1,987 followers · 3,894 total posts
 
@@ -91,4 +91,4 @@ The account's rarest edge is honesty — going dark, posting Ls, having standard
 - **Idea Generator (Agent 2):** map ideas to the 6 REAL formats in the table above, not the abstract pillars.
 - **Social Expert (Agent 3):** write in the voice defined here. Picks + units + sharp proof + emoji + engagement-bait close. Match the cadence of the top posts above.
 
-Re-run `node scripts/analyzeMyTweets.mjs` weekly to refresh this profile as the account grows.
+Refresh this profile from `node scripts/socialLedger.mjs report` + the ledger's post texts as the account grows.

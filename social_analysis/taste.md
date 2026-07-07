@@ -25,7 +25,7 @@
    "As of noon: the winning bettors we track are leaning Belgium tonight."
    WHY: plain insider fact, timestamped, with real stakes. Calm authority.
 
-### Niche winners (swipe file, pulled 7/7 via X API — see swipe_file_raw.txt)
+### Niche winners (swipe file, pulled 7/7 via X API — full corpus with metrics: competitor_corpus.json)
 1. **@invisiblestats — 152,931 views:** "Scott Foster is head official for Game 5,
    and he's NOT the 'extender' everyone thinks he is..." → myth-bust data reveal
    on the day's biggest story. Not a pick.
