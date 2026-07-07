@@ -336,6 +336,37 @@ PHASE 2 — SELF-REVIEW (G6, driven by the LEDGER report, not vibes)
   (hard gates, identity-hook bank, PREMIUM formatting).
 
 PHASE 3 — WRITE (G1 + G2 + G3 + G4)
+- THE DAY SCRIPT FIRST (added 7/7 — the account is a serialized show, not a
+  bulletin board): before drafting any single post, sequence today's
+  franchise slots into ONE narrative arc in 3-5 lines — what the morning
+  post promises, what the midday post pays off, which open loop carries the
+  reader to the decision window, how Graded closes the episode. Every post
+  should make the reader need the NEXT one (that need is the follow). Write
+  the script at the top of AA_TWITTER_NEXT_STEPS.md so any later run
+  continues the same episode instead of starting a new show.
+- THE HOOK TOURNAMENT (added 7/7 — heroes are selected, not written): write
+  6-8 DIFFERENT line-1 hooks for the chosen story before writing any body —
+  spanning at least: open-loop prophecy ("Something unusual is happening
+  in tonight's X..."), first-person stakes ("I've watched these 20 wallets
+  every day since June 1"), the naked number, the character/whale, and the
+  live-moment countdown. Run each through
+  `node scripts/tweetLint.mjs "<hook + skeleton>"` and pick the winner on
+  score + taste; build the full draft only from the winning hook. Show the
+  user the winner and the runner-up hook (one line), never the whole heap.
+- THE LINTER IS THE LAW (added 7/7): every candidate's final text runs
+  `node scripts/tweetLint.mjs --purpose <REACH|CONVERT|RETAIN> "<text>"`
+  (or --file on the finished draft JSON). A hero below SHIP (85) is not
+  shown to the owner — fix or kill. The linter encodes the measured corpus
+  edges and every owner-killed pattern; it cannot be argued with, only
+  updated with new evidence.
+- THREADS FOR REACH HEROES (added 7/7 — the corpus's biggest structure):
+  thread-pointer posts measure 2.1x and the niche's 50K-view monsters are
+  threads (prophecy hook → 🧵 → build → data reveal → one-line ask). When
+  the story has 3+ beats, structure the hero as a 2-4 tweet thread: tweet 1
+  is pure hook (short, no link, open loop), the reveal sits in tweet 2-3 so
+  profile clicks and dwell accrue, the ask + link close the thread. The
+  ready_to_post JSON carries it as hero.thread[] (tweet 1 text stays in
+  hero.text).
 - PURPOSE FIRST (Purpose Matrix, TWITTER_IMPROVEMENT_GUIDE hard gate 3): declare
   each draft's ONE job — REACH (out-of-network story, question close) ·
   CONVERT (receipts/FOMO, one trial line, no question) · RETAIN (grades/

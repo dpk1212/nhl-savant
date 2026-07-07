@@ -119,7 +119,8 @@ function cmdLog() {
   });
   saveLedger(ledger);
   console.log(`Logged ${id}  structure=${tags.structure}  mechanic=${tags.mechanic}  ref=${tags.refTag}`);
-  console.log(`Ledger now has ${ledger.posts.length} posts. Run 'refresh' in ~24h to capture engagement.`);
+  console.log(`Ledger now has ${ledger.posts.length} posts.`);
+  console.log(`⏱  VELOCITY READ: run 'refresh' ~30-60 min after posting (the algo decides reach in the first 30 min; analyze reports views/hour). Then again at ~24h for the settled number.`);
 }
 
 // ── refresh ─────────────────────────────────────────────────────────────────
@@ -374,6 +375,30 @@ function cmdAnalyze() {
     if (base) baselineNow = base;
   }
   if (baselineNow) console.log(`\nCURRENT BASELINE: ~${baselineNow} views in 24h. The next post's job is to beat it and to say HOW in advance.`);
+
+  // early velocity: views/hour at the first snapshot taken under 6h — the
+  // algorithm decides reach in the first 30-60 min; this is our only read on it
+  const withEarly = measured
+    .map(p => ({ p, s: p.snapshots.find(s => s.views != null && (s.hoursSincePost ?? 99) <= 6) }))
+    .filter(x => x.s);
+  if (withEarly.length) {
+    console.log('\n── Early velocity (views/hour at first <6h snapshot — take a snapshot ~30-60 min after posting) ──');
+    for (const { p, s } of withEarly.sort((a, b) => (b.s.views / b.s.hoursSincePost) - (a.s.views / a.s.hoursSincePost))) {
+      console.log(`  ${Math.round(s.views / Math.max(0.25, s.hoursSincePost)).toString().padStart(5)}/h at ${s.hoursSincePost}h | "${(p.text || '').split('\n')[0].slice(0, 55)}"`);
+    }
+  }
+
+  // hour-of-day: when do our posts actually land (ET)
+  const byHour = {};
+  for (const p of measured) {
+    const h = new Date(p.postedAt).toLocaleString('en-US', { timeZone: 'America/New_York', hour: 'numeric', hour12: false });
+    (byHour[h] ||= []).push(viewsAt24h(p));
+  }
+  if (Object.keys(byHour).length > 2) {
+    console.log('\n── Views by posting hour (ET) ──');
+    for (const [h, vs] of Object.entries(byHour).sort((a, b) => +a[0] - +b[0]))
+      console.log(`  ${String(h).padStart(2)}:00  avg ${Math.round(vs.reduce((s, v) => s + v, 0) / vs.length).toString().padStart(6)}v  (n=${vs.length})`);
+  }
 
   const settled = measured.filter(p => (Date.now() - new Date(p.postedAt)) / 36e5 > 24 && !p.lesson);
   if (settled.length) {

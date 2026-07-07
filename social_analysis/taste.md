@@ -92,6 +92,13 @@ Standing kill-list (any draft matching these dies before the user sees it):
 - Claims about what was posted without checking the ledger.
 - Numbers not verified THIS run.
 
+### Our own timing data (7/7 — directional, n=12; re-read from `analyze` each run)
+- 12:00–14:00 ET posts average ~2.9K views; 07:00–09:00 posts ~1.2K. The
+  "morning post" should land closer to late morning/noon when the betting
+  audience is actually on the timeline — not at 8 AM because we're awake.
+- Best measured early velocity: a live grade post (~2.0K views/hour) and the
+  locked-countdown post (~830/hour). Live moments carry velocity; recaps crawl.
+
 ## PART 3 — THE VOICE IN ONE LINE
 A winning professional who watches proven money move in real time and says
 what he sees — calm, specific, timestamped, a little wry, never begging.
