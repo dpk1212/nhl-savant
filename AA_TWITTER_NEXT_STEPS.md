@@ -16,20 +16,24 @@ going well) → Graded card closes the episode.
 
 ## 1) HERO — POST NOW (first lock 6:26 ET) · attach board screenshot with the three staked cards
 
-I've watched 500 winning wallets every day since June 1. Following their money: +57 units...
+I've been tracking 500 winning wallets every day since June 1. +57 units following them...
 
-Tonight they got loud.
+Tonight, one game stood out.
 
-Every proven winner with a position on the Mariners game took Seattle +105. Not one took Miami.
+Mariners/Marlins: $121K of tracked sharp money on Seattle. $14K on Miami.
 
-They also grabbed Braves +131 and went 4 units on Phillies -168.
+Three of tonight's six:
 
-Locked at 6:26. First pitch 6:41 ET.
+Mariners ML +105 — 89% of the sharp dollars
+Braves ML +131 — 94%, led by the pool's biggest wallets
+Phillies ML -168 — the board's biggest stake, 4 units
 
-*(Attach the Mariners card. Four layers: persona stakes → authority (+57u
-verified) → proprietary unanimity punch → live receipt. NOTE: "proven 2-0" on
-the board = 2 wallets FOR / 0 AGAINST, a headcount, NOT a win-loss record —
-never tweet it as a record.)*
+Lines move until lock. The full board's on the site — everything graded here after.
+
+*(Attach the board screenshot. All figures from the 6:27 PM wallet scan:
+Seattle $121,531 / Miami $14,662 (89.2%) · Braves 93.8%, ELITE tier $28.9K
+of $33.5K · Phillies wallet split mixed, so the stake leads. Six staked
+tonight: Braves ML, Braves +1.5, Mariners, Phillies, Dodgers ML, Rockies +1.5.)*
 
 ---
 

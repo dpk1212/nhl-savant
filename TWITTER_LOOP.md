@@ -430,9 +430,14 @@ PHASE 3 — WRITE (G1 + G2 + G3 + G4)
   beat (an unresolved loop that makes following necessary), embedding
   discipline (in-lane content only), and ≥2–3h spacing from our last post
   (author-diversity attenuation).
-- DATA INTEGRITY: use `selection` VERBATIM. Directional sharp proof only (no
-  precise wallet $ / Polymarket figures). Cross-check every number against
-  verified_records.json.
+- DATA INTEGRITY: use `selection` VERBATIM. Cross-check every number against
+  verified_records.json. Wallet dollars (owner-updated 7/7): AGGREGATED pool
+  totals and percentages from `public/sharp_positions.json` are approved and
+  are the preferred punch ("$121K on Seattle, $14K on Miami" · "89% of the
+  sharp dollars") — aggregate `invested` by side/tier at draft time, quote
+  only figures computed THIS run. Individual-wallet dollar figures stay
+  banned. The wallet headcount fields (provenWinnersFor/Against) are
+  HEADCOUNTS, never win-loss records.
 - Write ready_to_post/YYYY-MM-DD_HHMM.json: { generatedAt, slot, guardrailCheck,
   verifiedNumbers, hero{text, rtLine, structure, mechanic, algoActions,
   improvesOn, prediction, refTag, screenshot, selfReplyAt25min, postWindow},
