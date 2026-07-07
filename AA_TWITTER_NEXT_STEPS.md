@@ -1,117 +1,89 @@
-# A Twitter Next Steps — 2026-07-06 11:05 AM ET · MIDDAY
+# NEXT STEPS — Tuesday July 7 (Argentina day)
 
-> The single best thing to post today: the **American-run tracker leaning Belgium against the US in a home knockout game**. It's the rare day the honest data IS the polarizing story — no manufacturing needed. Full day slate below (G7): hero, pre-written grade posts, 4 drafted replies, screenshots named.
+> Every post below is final text — copy the block, paste, attach the named
+> screenshot, done. Machine copy lives in `ready_to_post/2026-07-07_1115_argentina_day.json`.
 
-## FIRST — if you haven't posted the weekend recap yet
-The recap (`ready_to_post/2026-07-06_0915_weekend_recap.json`) is still the strongest asset from this morning. If unposted: post it now (~11:30), push the Belgium hero to ~5 PM as the evening post, and skip the separate grade post. If posted: go straight to the hero at noon. **Either way, tell me the URL so I can log it.**
+## THE DAY SCRIPT
+11:15 AM hero (Argentina split) → ~2:15 PM grade post → 3:15 PM Colombia
+countdown → tonight: Colombia grade + Graded card. Each post points at the next.
 
-## Recommended hero v4 (SHIP THIS) — post 12:00–1:00 PM ET (screenshot: the Belgium pick card)
+---
 
-```
-As of noon: the winning bettors we track are leaning Belgium tonight.
+## 1) HERO — post 11:15–11:30 AM ET · attach Argentina pick card screenshot
 
-Against the US 🇺🇸
-At home.
-In a knockout game.
+One superstar goes home at noon. The wallets we track already picked which one...
 
-I'm American. I sat on this for an hour looking for a reason not to post it.
+Argentina ML is the board's play — 4 units. But for the first time in weeks the winning money isn't unanimous: 3 of our tracked winners took Argentina, 2 took Egypt.
 
-But these wallets are 21-8 in this World Cup.
+Locks 11:45 ET. Graded here after.
 
-At some point you stop arguing.
+---
 
-The honest details:
+## 2) SELF-REPLY — ~25 min after the hero (11:40ish)
 
-• A lean, not a pound — 8 of 14 winners took Belgium +180, six stayed home. Sized small.
-• If the money swings back before kickoff, our board swings with it. I'll post the flip.
-• Nothing locks until 15 minutes out.
+The full read, sizes, and the live board — picks lock 15 min before every kick: nhlsavant.com/?ref=t0707arg
 
-Could you bet against your own country in a knockout game?
+Soccer since June 1: 22-9, +25.2 units.
 
-Because I just did.
-```
+---
 
-**RT line:** "Because I just did." (the two-beat close IS the screenshot)
+## 3) GRADE POST — ~2:15 PM, pick the one that happened
 
-The visual layer (what changed v3 → v4):
-- **Fold engineering.** X truncates long posts in-feed after the first few lines — the visible block is now: hook line + the three-step stack + "I'm American…". That's a complete mini-story ending on a cliffhanger, and tapping "Show more" is itself an engagement signal.
-- **The escalation is now vertical.** "Against the US / At home. / In a knockout game." stacked one per line — the eye falls down the steps like a drumroll. Same words, double the impact.
-- **Isolation = emphasis.** "At some point you stop arguing." and "Because I just did." each sit alone surrounded by white space. On a phone, white space is what makes a line feel loud.
-- **The transparency block became three scannable bullets** — skimmers get the honesty at a glance instead of wading through a paragraph (the roast-shield only works if people actually see it).
-- **Exactly one emoji** (🇺🇸), where the irony lives.
+**IF ARGENTINA WINS:**
 
-Carried from v3: the commitment-twist close, the timestamped live-read, the flip owned in advance.
+Argentina handles it. ✅
 
-**Self-reply at ~25 min:**
+4 units at -285 — favorites are supposed to look like this. The two wallets that took Egypt were wrong for the first time in a while.
 
-```
-Worth adding: Belgium's the story tonight, but Arizona +101 is the system's actual top-rated bet — the only proven winners with a position on that game are both on the D-backs. Live board, updated until lock: nhlsavant.com/?ref=t0706b
-```
+The rest of them already moved on: Colombia +125 at 4 PM. Same Colombia that cashed Friday's max play.
 
-**If the lean flips before lock (the anti-roast protocol, G4):** post the update referencing this tweet — "Noon read had Belgium. The money moved and the board's back on the US. This is what following live money looks like." Confident, no apology, no deletion.
+**IF ARGENTINA LOSES:**
 
-## Pre-written grade posts (post the right one within minutes of full time)
+Egypt just sent Messi home — and 2 of the wallets we track had it before kickoff.
 
-WIN (Belgium):
-```
-Belgium +180 cashed and nobody in this house was cheering. Strangest win of the tournament.
+We sized Argentina at 4 units and it lost. That's what sizing is for.
 
-Soccer card: 22-8, up 26 units since group play. We bet the number, not the logo — even when the logo is ours.
-```
+Colombia +125 at 4 PM. Same wallets, better price. The day isn't over.
 
-LOSS (US advances):
-```
-The US moves on, and our Belgium ticket dies with the party. Genuinely fine eating this one.
+---
 
-Soccer card: 21-9, still up 22 units on the tournament. Some losses don't feel like losses.
-```
+## 4) COLOMBIA COUNTDOWN — post 3:15–3:30 PM ET · attach Colombia pick card
 
-## 🎯 QUOTE-TWEET OPPORTUNITY — @BookitWithTrent (145K views, live now)
-Trent's "do I really have to do this shit again" USA-Belgium dread post is the
-biggest organic wave on our exact game. QT it ~2:30-3:00 PM (after the hero has
-its first 2 hours — don't cannibalize). NO image — his scorecard is the visual.
-Tease the moment, never the man (his following is loyal; banter yes, dunk no).
+Colombia again...
 
-**Recommended QT:**
-```
-The dread is earned. 8 of the 14 winning bettors we track took Belgium +180 tonight.
+Friday they cashed the board's biggest play of the week. Today the same tracked wallets came back for more — at +125 this time.
 
-I'm American and I bet it anyway. Some patterns you stop fighting.
-```
+2.5 units, Colombia ML, 4:00 PM ET. Picks lock 15 minutes before kick — the board is live until then.
 
-**Alternate (friendlier, name-check banter):**
-```
-Bad news Trent — the winning wallets we track agree with your gut. More of them are on Belgium tonight than the US.
+Soccer since June 1: 22-9, +25 units.
 
-History might be doing the thing again.
-```
+---
 
-Log it when posted: structure=quote-tweet, mechanic=wave-riding.
+## REPLIES — do 2–3 before noon (they ride the match's velocity)
 
-## Reply targets — freshest first (≤90 min = priority; reply BEFORE the hero)
+**Under @BakersBetClub's Salah post (63.7K followers):**
 
-1. 🔥 **@ActionNetworkHQ** — USA vs Belgium best bets (posted <90 min ago — inside its velocity window, reply NOW) — https://x.com/ActionNetworkHQ/status/2074134094552637901
-> The winning bettors we track are leaning the other way on this one — more of them took Belgium at +180 than the US. First time all tournament they've gone against the home side.
+The winning wallets we track actually split on this match — a couple of proven winners took Egypt against -285. If Salah's letting them fly, that side of the split gets interesting.
 
-2. **@PulseSportsNG** — Balogun cleared, team news (~2h old) — https://x.com/PulseSportsNG/status/2073995366568017952
-> The Balogun news moved the price, but the wallets we track still lean Belgium. Saying that as an American who hates typing it.
+**Under @thefireflyapp's "safe ticket or chaos?" post (51.2K):**
 
-3. **@RotoWireSoccer** — Portugal vs Spain picks (~4h old) — https://x.com/RotoWireSoccer/status/2073919875165135299
-> The winning money we track was all over Spain in the group stage — tonight it didn't reach consensus on this game at all. Sometimes the quiet is the read.
+The proven wallets we track split 3-2 on it — first non-unanimous read on a big favorite in weeks. Not a safe ticket.
 
-4. **@DimersCom** — full betting preview (~5h old) — https://x.com/DimersCom/status/2073894982751060003
-> The quiet one on tonight's board: Arizona +101. The only proven winners we track with a position on that game are both on the Diamondbacks.
+**Under @BettingPros' Daily Juice post (22K):**
 
-(@azcentral preview dropped — ~12h old, past its window. @BookitWithTrent stays a QUOTE-TWEET, not a reply: aged but still pulling views. Ask me to re-run the fresh-target search right before you post — targets go stale in an hour.)
+Same board here: Argentina at noon, then a +125 Colombia read at 4 that the tracked money keeps coming back to.
 
-## Alternate hero (if you don't want to touch the USA fade)
-Desk-note on Arizona +101 — in `ready_to_post/2026-07-06_1100.json` (alternates[0]), screenshot: the Arizona pick card.
+**Inbound (do first, 30 seconds):** someone replied "You're killing the game bro"
+at 8:15 — like it and reply:
 
-## Action checklist (the G7 day)
-- [ ] ~11:30 — weekend recap if unposted (screenshot: dashboard, Jul 3–5 filter)
-- [ ] ~11:45 — post the 4 replies above
-- [ ] 12:00–1:00 — hero (Belgium pick card screenshot) · babysit replies 30 min · self-reply at ~25 min
-- [ ] ~7 PM — re-run `node scripts/socialBoard.mjs`; if Arizona still ELITE and <60 min at ~8:45, one-line last-call post is optional
-- [ ] Full time USA-Belgium (~10 PM) — post the matching grade post within minutes
-- [ ] **Tell me every posted URL** — I log it in the ledger (this is how the system learns)
-- [ ] Bio + pin still pending from BRAND_MESSAGING.md — 5 minutes, do it today
+Appreciate you — Argentina at noon, stick around.
+
+---
+
+## DO NOT
+- Don't quote Egypt's ML price (not verified this run).
+- Don't post Braves -1.5 standalone (volatile RANK/LEAN tier).
+- Don't re-use the ATH/$15,706 number — this morning's post owns it today.
+- Keep 2–3h+ between original posts.
+
+**When you post, send me the URL — I'll log it and take the 30-minute velocity read.**

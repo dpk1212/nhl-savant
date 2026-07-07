@@ -473,6 +473,16 @@ PHASE 3.25 — REPLY TARGETS (the out-of-network engine — never skip)
   account's angle, post age, our drafted reply. Re-run the qdr:n90 search
   right before the user's posting window so targets are never stale.
 
+COPY-PASTE FORMAT (owner rule, 7/7 — how AA_TWITTER_NEXT_STEPS.md is written):
+- The owner posts by copying from that file. EVERY post (hero, self-reply,
+  grade variants, replies) appears as clean final text — real line breaks,
+  no JSON escapes, no quotes around the text, nothing inside the block that
+  isn't meant to be posted.
+- Structure per post: a header line with slot/time + screenshot to attach,
+  then the paste-ready text, then a horizontal rule. Rationale, lint scores,
+  and tournament notes stay in the ready_to_post JSON (machine memory), not
+  between the owner and the copy button.
+
 PHASE 3.4 — PRE-WRITE THE GRADE POSTS (zero-latency win moments)
 - For the hero's featured play(s), pre-write BOTH outcome posts now:
   the ✅ version (win — cashed, running record, one plain line, no gloating)
