@@ -16,7 +16,9 @@ going well) → Graded card closes the episode.
 
 ## 1) HERO — POST NOW (first lock 6:26 ET) · attach board screenshot with the three staked cards
 
-I've tracked 500 winning wallets every day since June 1. Tonight they got loud...
+I've watched 500 winning wallets every day since June 1. Following their money: +57 units...
+
+Tonight they got loud.
 
 Every proven winner with a position on the Mariners game took Seattle +105. Not one took Miami.
 
@@ -24,8 +26,10 @@ They also grabbed Braves +131 and went 4 units on Phillies -168.
 
 Locked at 6:26. First pitch 6:41 ET.
 
-*(Attach the Mariners card — the unanimity is the star. NOTE: "proven 2-0" on
-the board = 2 wallets FOR / 0 AGAINST, a headcount, NOT a win-loss record.)*
+*(Attach the Mariners card. Four layers: persona stakes → authority (+57u
+verified) → proprietary unanimity punch → live receipt. NOTE: "proven 2-0" on
+the board = 2 wallets FOR / 0 AGAINST, a headcount, NOT a win-loss record —
+never tweet it as a record.)*
 
 ---
 
