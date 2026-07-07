@@ -4,16 +4,16 @@
     {
       "id": "EXP-001",
       "startedAt": "2026-07-02",
-      "status": "active",
+      "status": "abandoned",
       "hypothesis": "Confession-flex openers (believable narrow record + self-deprecation, e.g. '16-5 and I couldn't name Austria's XI') out-earn straight record-flex cards on replies and RTs.",
       "metric": "ledger score (likes + 3*RT + 5*replies) of structure=confession-flex vs structure=record-plus-picks-card, n>=3 each",
-      "verdict": null,
-      "gradedAt": null
+      "verdict": "ABANDONED 7/7 (never gradable) — n=1 each after 5 days. Root cause: this metric needs the SAME structure posted 3+ times, but guardrail G1/loop rule bans reusing the immediately-previous structure, so full-structure experiments starve by design. LESSON: design experiments on a MECHANIC or INGREDIENT present across many different structures (e.g. 'has an open loop' vs 'does not', 'has named receipts' vs 'does not') so every post is a data point regardless of structure rotation.",
+      "gradedAt": "2026-07-07"
     },
     {
       "id": "EXP-002",
-      "startedAt": "2026-07-06",
-      "status": "queued",
+      "startedAt": "2026-07-07",
+      "status": "active",
       "hypothesis": "Posts whose close is a genuinely answerable polarizing question get >=2x the replies of posts closing with a binary tail/fade ask.",
       "metric": "avg replies of question-close vs binary-close posts in ledger, n>=4 each",
       "verdict": null,
@@ -25,6 +25,15 @@
       "status": "queued",
       "hypothesis": "Ref-tagged self-reply links (nhlsavant.com/?ref=tMMDDx) show bio link drives more site visits than in-post links.",
       "metric": "site analytics ref= breakdown after 2 weeks of tagging",
+      "verdict": null,
+      "gradedAt": null
+    },
+    {
+      "id": "EXP-004",
+      "startedAt": "2026-07-07",
+      "status": "queued",
+      "hypothesis": "THE RECEIPT STACK (named, anonymized wallet receipts — taste.md Part 0) beats aggregate-dollar-only posts on views AND replies, replicating our own April results (7.2K-11K impr) against tonight's aggregate-only baseline (~1.9K-2.7K).",
+      "metric": "avg views + avg replies of posts WITH >=2 named receipt lines vs posts with aggregate-$ language only, n>=3 each — MECHANIC-level tag so it survives structure rotation",
       "verdict": null,
       "gradedAt": null
     }

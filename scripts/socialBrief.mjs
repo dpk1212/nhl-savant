@@ -43,6 +43,36 @@ run('LEDGER · report', 'node scripts/socialLedger.mjs report');
 run('LEDGER · ratchet analysis', 'node scripts/socialLedger.mjs analyze');
 run('COMPETITOR INTEL (cached, free)', 'node scripts/competitorIntel.mjs --report');
 
+// STALENESS GATE (added 7/7 — the pinned tweet went 105 days unrefreshed
+// with 0.03% engagement, quietly leaking every profile-click conversion.
+// This makes that class of gap visible every single run instead of only
+// when someone happens to notice.)
+console.log(`\n${'='.repeat(70)}\nSTALENESS GATE\n${'='.repeat(70)}`);
+try {
+  const me = JSON.parse(execFileSync('npx', ['-y', '@xdevplatform/xurl',
+    `/2/users/me?user.fields=pinned_tweet_id`], { encoding: 'utf8', timeout: 60000 }));
+  const pinId = me?.data?.pinned_tweet_id;
+  if (pinId) {
+    const pin = JSON.parse(execFileSync('npx', ['-y', '@xdevplatform/xurl',
+      `/2/tweets/${pinId}?tweet.fields=created_at,public_metrics`], { encoding: 'utf8', timeout: 60000 }));
+    const created = new Date(pin?.data?.created_at);
+    const ageDays = Math.round((Date.now() - created) / 864e5);
+    const m = pin?.data?.public_metrics || {};
+    const engRate = m.impression_count ? (100 * (m.like_count || 0) / m.impression_count).toFixed(2) : '?';
+    console.log(`Pinned tweet: ${ageDays}d old · ${m.impression_count} impr · ${engRate}% like-rate`);
+    if (ageDays > 7) console.log(`⚠️  PINNED TWEET IS ${ageDays} DAYS STALE (rule: refresh weekly, G7). Every profile click from tonight's posts lands on this. Refresh it THIS run if >14 days.`);
+  }
+} catch (e) { console.log(`FAILED (pin check): ${(e?.message || e).toString().slice(0, 150)}`); }
+try {
+  const exp = JSON.parse(execSync('cat social_analysis/experiments.json', { cwd: root, encoding: 'utf8' }));
+  const active = (exp.experiments || []).find(e => e.status === 'active');
+  if (active) {
+    const days = Math.round((Date.now() - new Date(active.startedAt)) / 864e5);
+    console.log(`Active experiment ${active.id}: running ${days}d — "${active.hypothesis.slice(0, 70)}..."`);
+    if (days > 5) console.log(`⚠️  ${active.id} has run ${days}d without being graded. Run 'socialLedger.mjs analyze', check if n is met, grade it or say why not.`);
+  }
+} catch (e) { console.log(`FAILED (experiment check): ${(e?.message || e).toString().slice(0, 150)}`); }
+
 // mentions — inbound gold
 console.log(`\n${'='.repeat(70)}\nMENTIONS · latest 10 (answer inbound questions FIRST)\n${'='.repeat(70)}`);
 try {

@@ -117,6 +117,25 @@ spread` right before posting; the scan refreshes and $ figures move.)*
 
 ---
 
+## 7) PINNED TWEET — REFRESH NOW (found 7:03 PM: current pin is 105 DAYS OLD, NHL-season copy, 0.03% like-rate)
+
+New pin (copy-paste, replace the current pinned tweet):
+
+500 proven-winning wallets. Every day since June 1.
+
+We publish where their money goes on prediction markets — before games, timestamped, graded after. Nobody else on this platform has this data.
+
+216-171, +57.2 units, 387 picks graded in public. Ls included.
+
+The first week is free. Watch it, grade it yourself.
+
+*(Lints 96/SHIP. Every profile click from tonight's viral attempts has been
+landing on a March pin about NHL puck drop — this was quietly costing every
+single conversion the loop is trying to create. Screenshot: dashboard
+record view.)*
+
+---
+
 ## WHY THIS FORMAT CHANGE MATTERS (read once, applies going forward)
 
 The owner bookmarked 3 of our OWN April tweets tonight. They did 7,223 /
