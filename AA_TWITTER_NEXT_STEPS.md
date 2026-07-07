@@ -18,13 +18,15 @@ going well) → Graded card closes the episode.
 
 I've tracked 500 winning wallets every day since June 1. Tonight they got loud...
 
-Three moneylines, 9 units, one window:
+At noon they cashed a -300 favorite. Tonight they crossed the counter:
 
 Braves +131.
 Mariners +105.
-Phillies -168 — their biggest, 4 units.
+Phillies -168, their biggest.
 
-First locks 6:26 ET. Graded either way.
+Proven money doesn't take dogs for fun.
+
+First locks 6:26 ET.
 
 ---
 
