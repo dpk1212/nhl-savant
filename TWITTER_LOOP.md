@@ -16,6 +16,55 @@ and post manually — the agent never posts.
 
 ---
 
+# G0 — THE BUSINESS DOCTRINE (owner-locked 7/7 — outranks everything below)
+
+## The business, stated as fact
+**NHLsavant.com is a subscription product.** Revenue = paying members. Members
+pay because the board wins: +57u / 55.8% / 387 graded picks since June 1
+(v12 era), max-play tier +36.7% ROI. The product is proven; the constraint is
+distribution. **X is our distribution channel — the only one.** Every tweet is
+therefore a business asset with one measurable job in the acquisition chain:
+
+```
+impression → profile visit → follow → repeated exposure → site visit (free week) → paying member
+```
+
+Each stage is instrumented and reviewed every run: impressions/engagement
+(X API → ledger), follower delta (followerHistory), site visits (ref-tags),
+trials/members (owner). A post that moves no stage is deleted inventory.
+
+## The strategy ladder (how a stranger becomes a subscriber)
+A bettor subscribes when four beliefs are installed, in order. Content is
+manufactured against whichever belief the audience is missing:
+1. **PROOF — "the record is real."** Graded picks, timestamps, CLV, dollarized
+   results ($10,000 → $15,706), tier records. Screenshots of the live board,
+   never claims without receipts.
+2. **SOCIAL PROOF — "people like me are winning with this."** Tails and
+   winners amplified from the replies, callbacks to public calls that cashed,
+   member results. Manufactured daily by engaging every winner in our mentions.
+3. **TRUST / RELIABILITY — "it will still be true tomorrow."** Daily cadence,
+   picks posted before games and graded after, the same mechanism every time
+   (we track ~20 proven winning wallets — say it plainly and identically).
+4. **DISTRIBUTION EVENTS — "I keep seeing this account."** Viral swings on the
+   day's biggest betting conversation using data only we possess. Purpose:
+   reach cheap impressions so rungs 1–3 compound against a bigger audience.
+Rung 5 — **THE ASK** — is one confident line ("the first week is free"),
+earned by the four above, never begged.
+
+## The winning narrative (brand law)
+Premium brands radiate competence. Hooks lead with strength, momentum, money
+made, calls that cashed — never losses, guilt, self-deprecation, drawdowns,
+or "weak link" framing. Aspiration converts; misery doesn't. Losses exist in
+the math as a credibility line ("387 graded, Ls included") — never as a hook,
+never as a theme. Honest-L/confession structures: max once a week, never the
+day's first post, never during a hot streak. When in doubt: lead green.
+
+## Portfolio allocation (how the day's slate spends attention)
+- ~60% PROOF/AUTHORITY: record staircases, graded receipts, insider data reads.
+- ~30% DECISION-WINDOW: pregame posts inside 60 min with tier + record attached.
+- ~10% BRAND/COMMUNITY: mechanism explainers, replying to winners, callbacks.
+- 0% negative-narrative hooks. 0% posts with no assigned funnel stage.
+
 # THE SIX GUARDRAILS (locked 2026-07-06 — every run, every draft, non-negotiable)
 
 ## G1 — SOUND HUMAN (the human gate)
