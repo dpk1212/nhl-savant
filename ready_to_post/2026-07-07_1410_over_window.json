@@ -1,0 +1,45 @@
+{
+  "generatedAt": "2026-07-07T18:05:00Z",
+  "slot": "AFTERNOON DECISION WINDOW (post immediately; Brewers/Cardinals first pitch 2:16 PM ET, pick already locked)",
+  "dayScript": "Episode continues: Argentina cashed at noon (✅). The 2:10 Over post does double duty — decision-window receipt for the 4u total AND the Argentina grade in one line ('same board cashed the noon ML'). 3:15 Colombia countdown keeps the baton moving. ~5 PM Over grade post. Evening: Colombia grade + Graded card closes a potential 3-0 day.",
+  "loopReasoning": "Ratchet: countdown/decision-window remains our best measured structure (1.8x OVER). This run's ONE variable: stacking a live win receipt ('same board cashed the noon ML') inside the countdown — proof + urgency in the same post instead of a separate grade post. Timing: 2:05-2:15 PM is inside our best measured window (noon-2 averages ~2.9K). Merging grade+countdown also preserves the 2-3h spacing rule that a separate 2:15 grade post would have violated with Colombia at 3:15.",
+  "verifiedNumbers": {
+    "over": "Over 7.5 (-110), Brewers @ Cardinals, 4u SHARP-PRIME/LOCK, proven 1-0, first pitch 2:16 PM ET (board pull 2:03 PM)",
+    "argentina": "Argentina ML -300 (entry -285), 4u, WON at noon (user-confirmed + board shows LOCKED/LIVE past final)",
+    "colombia": "Colombia ML +130, 2.5u SHARP/WEAK, proven 4-2, 4:00 PM ET, locks 3:45 (board pull 2:03 PM — price moved from +125 to +130)",
+    "soccerSinceJune1": "22-9, +25.2u (verified this morning's run)"
+  },
+  "hookTournament": [
+    { "hook": "Locked. First pitch 2:16 ET.", "lint": 100, "verdict": "WINNER — timestamp is the receipt; two isolated beats" },
+    { "hook": "Locked, 13 minutes to first pitch: Over 7.5 in Brewers–Cardinals. 4 units.", "lint": 96, "verdict": "runner-up — same idea, one dense line" },
+    { "hook": "Argentina ML cashes at noon. ✅", "lint": 86, "verdict": "leads with the past instead of the live decision; grade rides along instead" }
+  ],
+  "hero": {
+    "purpose": "REACH",
+    "structure": "locked-pick countdown / decision window",
+    "mechanic": "live win receipt stacked inside the countdown",
+    "improvesOn": "2074204190402879758 lineage: countdown format 1.8x OVER; today's 11:15 hero added the open loop; this one adds an in-post win receipt as social proof",
+    "prediction": "PAR-to-OVER baseline (~2183) — weekday MLB total is a quieter subject than Messi, but the win receipt + 4u sizing + hard timestamp compensate",
+    "algoActions": ["dwell (the quiet-load detail)", "follow_author (grade promised either way)", "profile click (noon ML claim is checkable)"],
+    "text": "Locked. First pitch 2:16 ET.\n\nOver 7.5 — Brewers/Cardinals. 4 units.\n\nThe wallets we track loaded this quietly while everyone was watching Argentina.\n\nSame board cashed the noon ML.\n\nGraded here either way.",
+    "lint": "SHIP 100",
+    "screenshot": "Over 7.5 pick card (tier + units visible)",
+    "postWindow": "IMMEDIATELY — dead after ~2:30 PM; if missed, skip straight to the grade post"
+  },
+  "gradePosts": {
+    "win": "Over 7.5 in Brewers–Cardinals. ✅\n\nThat's back-to-back 4-unit winners today — a noon ML everyone watched and a Tuesday total nobody did.\n\nColombia grades next. The board doesn't take days off.",
+    "loss": "Over 7.5 misses. ❌\n\n4 units, graded in public, same as the noon winner. That's the deal.\n\nArgentina ✅ + Colombia pending — the day's still green."
+  },
+  "colombiaHero": {
+    "note": "Carried from the 11:15 run with ONE change: price updated +125 → +130 per the 2:03 PM board.",
+    "postWindow": "3:15-3:30 PM ET (kick 4:00, locks 3:45)",
+    "text": "Colombia again...\n\nFriday, they cashed the board's biggest play of the week.\n\nToday, the same tracked wallets came back for more — at +130 this time.\n\n2.5 units. Colombia ML. 4:00 PM ET.\n\nPicks lock 15 minutes before kick. Soccer since June 1: 22-9, +25 units.",
+    "lint": "SHIP 100 (carried format, price-only edit)"
+  },
+  "doNotDo": [
+    "Do not post the Over window tweet after ~2:30 PM — the pre-pitch timestamp IS the receipt",
+    "Do not post a separate Argentina grade post — it's merged into the Over window post",
+    "Do not post Braves +1.5 standalone (LEAN tier; spread pipeline patched today, keep off feed)",
+    "Do not add a third original before the Over grades — 2:10 and 3:15 are an approved two-window exception"
+  ]
+}

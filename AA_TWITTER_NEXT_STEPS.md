@@ -1,96 +1,90 @@
-# NEXT STEPS — Tuesday July 7 (Argentina day)
+# NEXT STEPS — Tuesday July 7 (Argentina day → doubleheader afternoon)
 
 > Every post below is final text — copy the block, paste, attach the named
-> screenshot, done. Machine copy lives in `ready_to_post/2026-07-07_1115_argentina_day.json`.
+> screenshot, done. Machine copy lives in `ready_to_post/2026-07-07_1410_over_window.json`.
 
-## THE DAY SCRIPT
-11:15 AM hero (Argentina split) → ~2:15 PM grade post → 3:15 PM Colombia
-countdown → tonight: Colombia grade + Graded card. Each post points at the next.
-
----
-
-## 1) HERO — post 11:15–11:30 AM ET · attach Argentina pick card screenshot
-
-One superstar goes home at noon. The wallets we track already picked which one...
-
-The board says Argentina ML — 4 units.
-
-But for the first time in weeks, the winning money split:
-
-3 proven wallets took Argentina.
-2 took Egypt.
-
-Locks 11:45 ET. Graded here after.
+## THE DAY SCRIPT (updated 2:05 PM — Argentina WON ✅, late Over added)
+11:15 AM hero (Argentina split, posted) → **2:10 PM Over decision-window post
+(doubles as the Argentina grade)** → 3:15 PM Colombia countdown → ~5 PM Over
+grade post → tonight: Colombia grade + Graded card. Each post points at the next.
 
 ---
 
-## 2) SELF-REPLY — ~25 min after the hero (11:40ish)
+## 1) OVER DECISION WINDOW — POST IMMEDIATELY (first pitch 2:16 ET) · attach Over 7.5 pick card
 
-The full read, sizes, and the live board — picks lock 15 min before every kick: nhlsavant.com/?ref=t0707arg
+Locked. First pitch 2:16 ET.
 
-Soccer since June 1: 22-9, +25.2 units.
+Over 7.5 — Brewers/Cardinals. 4 units.
 
----
+The wallets we track loaded this quietly while everyone was watching Argentina.
 
-## 3) GRADE POST — ~2:15 PM, pick the one that happened
+Same board cashed the noon ML.
 
-**IF ARGENTINA WINS:**
+Graded here either way.
 
-Argentina handles it. ✅
-
-4 units at -285 — favorites are supposed to look like this. The two wallets that took Egypt were wrong for the first time in a while.
-
-The rest of them already moved on: Colombia +125 at 4 PM. Same Colombia that cashed Friday's max play.
-
-**IF ARGENTINA LOSES:**
-
-Egypt just sent Messi home — and 2 of the wallets we track had it before kickoff.
-
-We sized Argentina at 4 units and it lost. That's what sizing is for.
-
-Colombia +125 at 4 PM. Same wallets, better price. The day isn't over.
+*(Linter 100/SHIP. This replaces the separate 2:15 Argentina grade post — the
+"same board cashed the noon ML" line IS the grade. One job per tweet, but the
+win rides along.)*
 
 ---
 
-## 4) COLOMBIA COUNTDOWN — post 3:15–3:30 PM ET · attach Colombia pick card
+## 2) COLOMBIA COUNTDOWN — post 3:15–3:30 PM ET · attach Colombia pick card
 
 Colombia again...
 
 Friday, they cashed the board's biggest play of the week.
 
-Today, the same tracked wallets came back for more — at +125 this time.
+Today, the same tracked wallets came back for more — at +130 this time.
 
 2.5 units. Colombia ML. 4:00 PM ET.
 
 Picks lock 15 minutes before kick. Soccer since June 1: 22-9, +25 units.
 
+*(Price updated to +130 per the 2:03 PM board pull. Locks 3:45 ET.)*
+
 ---
 
-## REPLIES — do 2–3 before noon (they ride the match's velocity)
+## 3) OVER GRADE POST — when Brewers/Cardinals goes final (~5 PM), pick the one that happened
 
-**Under @BakersBetClub's Salah post (63.7K followers):**
+**IF OVER 7.5 CASHES:**
 
-The winning wallets we track actually split on this match — a couple of proven winners took Egypt against -285. If Salah's letting them fly, that side of the split gets interesting.
+Over 7.5 in Brewers–Cardinals. ✅
 
-**Under @thefireflyapp's "safe ticket or chaos?" post (51.2K):**
+That's back-to-back 4-unit winners today — a noon ML everyone watched and a Tuesday total nobody did.
 
-The proven wallets we track split 3-2 on it — first non-unanimous read on a big favorite in weeks. Not a safe ticket.
+Colombia grades next. The board doesn't take days off.
+
+**IF IT MISSES:**
+
+Over 7.5 misses. ❌
+
+4 units, graded in public, same as the noon winner. That's the deal.
+
+Argentina ✅ + Colombia pending — the day's still green.
+
+---
+
+## REPLIES — 2–3 this afternoon (Argentina-result posts are spiking right now)
+
+**Under any big-account "Messi/Argentina advance" result post:**
+
+The tracked wallets had this at 4 units — but the interesting part was the split: 2 proven winners took Egypt and lost for the first time in weeks. Even sharp money isn't unanimous.
 
 **Under @BettingPros' Daily Juice post (22K):**
 
-Same board here: Argentina at noon, then a +125 Colombia read at 4 that the tracked money keeps coming back to.
+Same board here: Argentina cashed at noon, a 4u total just locked at 2:16, and Colombia +130 goes at 4. Busy Tuesday.
 
-**Inbound (do first, 30 seconds):** someone replied "You're killing the game bro"
-at 8:15 — like it and reply:
+**Under any Brewers/Cardinals game thread once runs start scoring:**
 
-Appreciate you — Argentina at noon, stick around.
+Tracked money took Over 7.5 before first pitch — 4 units. Quiet weekday totals have been the board's best look lately.
 
 ---
 
 ## DO NOT
+- Don't post the Over decision-window tweet after ~2:30 PM — the "locked before first pitch" timestamp is the whole receipt. If missed, skip to the grade post.
 - Don't quote Egypt's ML price (not verified this run).
-- Don't post Braves -1.5 standalone (volatile RANK/LEAN tier).
+- Don't post Braves +1.5 standalone (LEAN tier, and spread display just got patched — keep it off the feed today).
 - Don't re-use the ATH/$15,706 number — this morning's post owns it today.
-- Keep 2–3h+ between original posts.
+- The 2:10 Over post and 3:15 Colombia post are only ~65 min apart — that's an approved exception (two live decision windows), don't add a third original before the Over grades.
 
 **When you post, send me the URL — I'll log it and take the 30-minute velocity read.**
