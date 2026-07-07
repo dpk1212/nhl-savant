@@ -14119,12 +14119,17 @@ export default function SharpFlow() {
                           pinnacleOdds: peak.pinnacleOdds || lock.pinnacleOdds || sd.closingOdds || null,
                           marketType: marketTypeKey,
                           // line fallback: peak.line → lock.line → closingLine.
-                          // Same rationale as cardOdds — cron-created spread/
-                          // total docs may have peak.line undefined, but
-                          // closingLine is stamped by updateClosingOdds.js so
-                          // the card renders the real spread/total instead of
-                          // "Pistons null".
-                          line: peak.line ?? lock.line ?? sd.closingLine ?? null,
+                          // PENDING spread: if lock/peak sign-flips vs closingLine
+                          // (Polymarket entryLine bug), Pinnacle close wins.
+                          line: (() => {
+                            const locked = peak.line ?? lock.line;
+                            const close = sd.closingLine;
+                            if (marketTypeKey === 'spread' && sd.status === 'PENDING'
+                                && locked != null && close != null && locked === -close && locked !== 0) {
+                              return close;
+                            }
+                            return locked ?? close ?? null;
+                          })(),
                           superseded: !!sd.superseded,
                           health: healthResolved,
                           // True when this side was a LEAN / 0u tracked-only

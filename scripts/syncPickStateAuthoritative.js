@@ -614,6 +614,14 @@ function loadGameMetadata() {
             homeOdds: g.spreadOpener.homeOdds,
           };
         }
+        if (g.spreadCurrent) {
+          cur.spreadCurrent = {
+            awayLine: g.spreadCurrent.awayLine,
+            awayOdds: g.spreadCurrent.awayOdds,
+            homeLine: g.spreadCurrent.homeLine,
+            homeOdds: g.spreadCurrent.homeOdds,
+          };
+        }
         meta.set(key, cur);
       }
     }
@@ -946,10 +954,16 @@ async function createMissingLockedPicks({
           }
         } else odds = meta.mlOdds?.away;
       } else if (marketType === 'SPREAD') {
-        odds = side === 'home' ? meta.spreadOpener?.homeOdds : meta.spreadOpener?.awayOdds;
-        if (odds == null) odds = -110;
-        const openerLine = side === 'home' ? meta.spreadOpener?.homeLine : meta.spreadOpener?.awayLine;
-        line = consensusLine(positions, side, sport, 'SPREAD') ?? openerLine ?? null;
+        // Side/money = wallet consensus. The number on the ticket = Pinnacle.
+        // Polymarket entryLine can invert sign (underdog stamped -1.5 when
+        // Pinnacle has +1.5) — real incident 2026-07-07 Braves @ Pirates.
+        const pinnLine = side === 'home'
+          ? (meta.spreadCurrent?.homeLine ?? meta.spreadOpener?.homeLine)
+          : (meta.spreadCurrent?.awayLine ?? meta.spreadOpener?.awayLine);
+        odds = (side === 'home'
+          ? (meta.spreadCurrent?.homeOdds ?? meta.spreadOpener?.homeOdds)
+          : (meta.spreadCurrent?.awayOdds ?? meta.spreadOpener?.awayOdds)) ?? -110;
+        line = pinnLine ?? consensusLine(positions, side, sport, 'SPREAD') ?? null;
       } else if (marketType === 'TOTAL') {
         odds = -110;
         line = consensusLine(positions, side, sport, 'TOTAL') ?? null;
