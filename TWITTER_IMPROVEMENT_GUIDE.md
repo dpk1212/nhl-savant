@@ -6,6 +6,7 @@
 
 ## Hard gates (every post must pass — non-negotiable) [PERSISTENT]
 1. **Screenshot test (line 1):** the first sentence must land as a standalone screenshot with ZERO context. No bare team names, no "here are today's picks," no buried hook.
+   **Reader-stakes upgrade (7/7):** line 1 must put the READER's emotion on the line — name a stake for them ("I cost you money yesterday.") or trigger a named emotion (guilt, greed, disbelief, self-recognition). "Interesting to us" does not qualify; our-perspective openers ("our board", "our night") are banned as hooks. Six punchy words beat thirteen accurate ones.
 2. **One RT line:** every post carries exactly one standalone, quotable sentence built to be reposted with no context. If you can't point to it, it isn't done.
 3. **ONE JOB PER TWEET (Purpose Matrix, added 7/7 from live creator research + user mandate).**
    Every draft declares its purpose BEFORE writing; no tweet does two jobs:
