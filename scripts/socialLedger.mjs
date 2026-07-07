@@ -22,6 +22,14 @@
  *   report   — leaderboards by structure + mechanic, best/worst posts,
  *              follower growth, experiment status.
  *              node scripts/socialLedger.mjs report
+ *   analyze  — THE RATCHET (added 7/7): per-post expected-vs-actual against
+ *              the account's rolling baseline (views ~24h), OVER/UNDER flags,
+ *              prediction grading for posts that declared one, and a list of
+ *              posts still missing a post-mortem lesson.
+ *              node scripts/socialLedger.mjs analyze
+ *   lesson   — attach the one-line post-mortem to a post (required for every
+ *              settled post; analyze nags until it exists).
+ *              node scripts/socialLedger.mjs lesson --id <tweetId> --text "..."
  *
  * Data: social_analysis/post_ledger.json  (committed — this is durable memory)
  */
@@ -76,6 +84,8 @@ function cmdLog() {
     rtLine: null,
     slot: argVal('--slot'),
     text: null,
+    improvesOn: argVal('--improves-on'), // "<prevTweetId>: <the ONE variable changed>"
+    prediction: argVal('--prediction'),  // "OVER|PAR baseline because <reason>"
   };
   const draftPath = argVal('--draft');
   if (draftPath) {
@@ -90,10 +100,14 @@ function cmdLog() {
       rtLine: src.rtLine || null,
       slot: draft.slot || tags.slot,
       text: src.text || null,
+      improvesOn: src.improvesOn || tags.improvesOn,
+      prediction: src.prediction || tags.prediction,
       draft: draftPath,
       pick,
     };
   }
+  if (!tags.improvesOn) console.log('⚠️  no improvesOn — the ratchet wants every post to name its predecessor and the ONE variable improved.');
+  if (!tags.prediction) console.log('⚠️  no prediction — declare OVER/PAR vs baseline and why, so analyze can grade our judgment.');
 
   ledger.posts.push({
     id, url,
@@ -325,11 +339,69 @@ function cmdReport() {
   console.log('\nScore = likes + 3·RTs + 5·replies (replies are the 2026 algo currency).');
 }
 
+// ── analyze (THE RATCHET) ───────────────────────────────────────────────────
+// Views at the snapshot closest to 24h (fair comparison across posts).
+function viewsAt24h(post) {
+  const snaps = post.snapshots.filter(s => s.views != null);
+  if (!snaps.length) return null;
+  return snaps.reduce((best, s) =>
+    Math.abs((s.hoursSincePost ?? 999) - 24) < Math.abs((best.hoursSincePost ?? 999) - 24) ? s : best
+  ).views;
+}
+
+function cmdAnalyze() {
+  const ledger = loadLedger();
+  const posts = [...ledger.posts]
+    .filter(p => !(p.structure || '').includes('reply'))
+    .sort((a, b) => new Date(a.postedAt) - new Date(b.postedAt));
+  const measured = posts.filter(p => viewsAt24h(p) != null);
+  console.log(`=== RATCHET ANALYSIS — ${new Date().toISOString().slice(0, 16)}Z ===`);
+  console.log('Baseline = median ~24h views of the prior 10 measured posts. OVER ≥ 1.5x · PAR · UNDER ≤ 0.6x\n');
+
+  let baselineNow = null;
+  for (let i = 0; i < measured.length; i++) {
+    const p = measured[i];
+    const prior = measured.slice(Math.max(0, i - 10), i).map(viewsAt24h).sort((a, b) => a - b);
+    const base = prior.length >= 3 ? prior[Math.floor(prior.length / 2)] : null;
+    const v = viewsAt24h(p);
+    const ratio = base ? v / base : null;
+    const flag = ratio == null ? '  —  ' : ratio >= 1.5 ? 'OVER ' : ratio <= 0.6 ? 'UNDER' : ' par ';
+    const first = (p.text || '').split('\n')[0].slice(0, 55);
+    console.log(`${flag} ${String(v).padStart(6)}v${base ? ` (${ratio.toFixed(1)}x of ${base})` : ' (no baseline yet)'} ${p.postedAt.slice(5, 10)} ${p.structure || '?'} | "${first}"`);
+    if (p.prediction) console.log(`       predicted: ${p.prediction} → ${ratio == null ? 'ungradable' : (p.prediction.toUpperCase().startsWith('OVER') === (ratio >= 1.5)) ? 'CORRECT' : 'WRONG'}`);
+    if (p.improvesOn) console.log(`       improved on: ${p.improvesOn}`);
+    if (p.lesson) console.log(`       lesson: ${p.lesson}`);
+    if (base) baselineNow = base;
+  }
+  if (baselineNow) console.log(`\nCURRENT BASELINE: ~${baselineNow} views in 24h. The next post's job is to beat it and to say HOW in advance.`);
+
+  const settled = measured.filter(p => (Date.now() - new Date(p.postedAt)) / 36e5 > 24 && !p.lesson);
+  if (settled.length) {
+    console.log(`\n⚠️  ${settled.length} settled post(s) missing a lesson — write one line each (what worked / what to change):`);
+    for (const p of settled) console.log(`   node scripts/socialLedger.mjs lesson --id ${p.id} --text "..."   ← "${(p.text || '').split('\n')[0].slice(0, 50)}"`);
+  } else {
+    console.log('\nAll settled posts have lessons. The ratchet is engaged.');
+  }
+}
+
+function cmdLesson() {
+  const id = argVal('--id'), text = argVal('--text');
+  if (!id || !text) { console.error('lesson requires --id and --text'); process.exit(1); }
+  const ledger = loadLedger();
+  const post = ledger.posts.find(p => p.id === id);
+  if (!post) { console.error(`post ${id} not in ledger`); process.exit(1); }
+  post.lesson = text;
+  saveLedger(ledger);
+  console.log(`Lesson saved on ${id}: ${text}`);
+}
+
 // ── main ────────────────────────────────────────────────────────────────────
 if (cmd === 'log') cmdLog();
 else if (cmd === 'refresh') await cmdRefresh();
 else if (cmd === 'report') cmdReport();
+else if (cmd === 'analyze') cmdAnalyze();
+else if (cmd === 'lesson') cmdLesson();
 else {
-  console.log('Usage: node scripts/socialLedger.mjs <log|refresh|report> [flags]');
+  console.log('Usage: node scripts/socialLedger.mjs <log|refresh|report|analyze|lesson> [flags]');
   process.exit(1);
 }

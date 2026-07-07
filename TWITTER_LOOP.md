@@ -308,7 +308,12 @@ PHASE 0 — CONTEXT + VERIFIED DATA (one command — added 7/7)
   MY_VOICE_PROFILE.md, social_analysis/experiments.json, and the STANDARDS
   block below.
 
-PHASE 1 — LIVE RESEARCH (Firecrawl, G5)
+PHASE 1 — LIVE RESEARCH (Firecrawl + X API, G5)
+- COMPETITOR CORPUS (added 7/7): `node scripts/competitorIntel.mjs --report`
+  reads the cached 191-post corpus free of charge — per-account medians, top
+  posts, outlier ratios, current winning formats. Refresh the corpus (no
+  --report flag, ~6 API calls) at most WEEKLY or when the meta clearly shifts.
+  The quantified findings live in taste.md ("Quantified meta").
 - 2–3 searches: freshest X-algo guidance + viral betting-Twitter formats this
   week + today's narratives in our live sports. Scrape the best 1–2 hits.
 - Name THE NEXT VIRAL BET: the single freshest hook shape to test today.
@@ -317,6 +322,12 @@ PHASE 1 — LIVE RESEARCH (Firecrawl, G5)
 PHASE 2 — SELF-REVIEW (G6, driven by the LEDGER report, not vibes)
 - Read the ledger report: structure + mechanic leaderboards, top/bottom posts,
   follower delta since last run. State n; call small samples directional.
+- RUN THE RATCHET: `node scripts/socialLedger.mjs analyze` — every post
+  scored OVER/par/UNDER against the rolling 24h-view baseline, predictions
+  graded, and settled posts missing a lesson listed. WRITE THE MISSING
+  LESSONS NOW (`socialLedger.mjs lesson --id <id> --text "..."`) — one line:
+  what worked or what to change. State the CURRENT BASELINE number; the next
+  hero's explicit job is to beat it.
 - Grade the ACTIVE experiment in experiments.json if its metric's n is met:
   write verdict + gradedAt + status "graded", promote the next queued one to
   active. If n not met, say what's still needed.
@@ -354,6 +365,17 @@ PHASE 3 — WRITE (G1 + G2 + G3 + G4)
   paywall apology, ad-speak, unverified "posted" claim — kill it yourself
   and redraft. One strong draft that passes beats three that don't. Every
   killed draft (by us or the user) gets a one-line entry added to the log.
+- THE RATCHET (added 7/7 — each tweet better than the last, by construction):
+  every hero carries two new MANDATORY fields —
+    • `improvesOn`: "<previous hero's tweetId>: <the ONE variable this post
+      changes and why, citing its lesson or ratchet flag>" (e.g. "2074204...:
+      countdown format proven 1.8x OVER; adding the open-loop line-1 that
+      measures 2.1x in the competitor corpus"). Change ONE variable per post
+      so wins are attributable; a post that changes everything teaches nothing.
+    • `prediction`: "OVER|PAR baseline (~current number from analyze) because
+      <reason>". The analyze command grades these — we are learning to
+      predict our own audience, which is the whole skill.
+  A hero with no named predecessor and no prediction is not done.
 - Choose the hero from the board buckets (G3). Attach a verified hot record.
 - Draft 2–3 candidates for the SLOT, each a DIFFERENT architecture (G1
   structure rotation), each with: the two hard gates passed, one RT line, the
@@ -381,8 +403,9 @@ PHASE 3 — WRITE (G1 + G2 + G3 + G4)
   precise wallet $ / Polymarket figures). Cross-check every number against
   verified_records.json.
 - Write ready_to_post/YYYY-MM-DD_HHMM.json: { generatedAt, slot, guardrailCheck,
-  verifiedNumbers, hero{text, rtLine, structure, mechanic, algoActions, refTag,
-  screenshot, selfReplyAt25min, postWindow}, gradePosts{win, loss}, alternates[]
+  verifiedNumbers, hero{text, rtLine, structure, mechanic, algoActions,
+  improvesOn, prediction, refTag, screenshot, selfReplyAt25min, postWindow},
+  gradePosts{win, loss}, alternates[]
   (each also tagged structure/mechanic/refTag/screenshot), replyTargets[], doNotDo[] }.
   The tags are MANDATORY on every candidate — `socialLedger.mjs log --draft`
   reads them. `screenshot` names which site view to capture (per

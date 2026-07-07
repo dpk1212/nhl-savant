@@ -40,6 +40,8 @@ run('RECORDS · since June 1', 'node scripts/socialRecords.mjs --from 2026-06-01
 run('BOARD · today (run exportTodaysPicks first if stale)', 'node scripts/socialBoard.mjs');
 run('LEDGER · refresh (X API)', 'node scripts/socialLedger.mjs refresh');
 run('LEDGER · report', 'node scripts/socialLedger.mjs report');
+run('LEDGER · ratchet analysis', 'node scripts/socialLedger.mjs analyze');
+run('COMPETITOR INTEL (cached, free)', 'node scripts/competitorIntel.mjs --report');
 
 // mentions — inbound gold
 console.log(`\n${'='.repeat(70)}\nMENTIONS · latest 10 (answer inbound questions FIRST)\n${'='.repeat(70)}`);

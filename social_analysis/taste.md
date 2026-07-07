@@ -39,6 +39,34 @@
 LAW FROM THE SPECIMENS: growth posts are data-backed authority on the story
 everyone's already arguing about. Pick posts and recaps are retention, not reach.
 
+### Quantified meta (7/7 — 191 posts from 5 niche accounts, views normalized
+### to each account's median so format effects separate from audience size)
+- **Line-1 open loop ("...") = 2.1x.** The single biggest measured format
+  edge. invisiblestats' two monsters (52K, 35K vs 7.6K median) both open
+  "Something very [special/uncomfortable] is about to happen in tonight's
+  X..." — a prophecy the reader must resolve. OUR VERSION: "Something
+  unusual is happening in tonight's [game]..." → the wallet data. This
+  format is our moat wearing their best-performing costume.
+- **First-person stakes line 1 = 2.5x.** Trent's 838K post is "I have bet
+  against the US in every major sport the last 3 years." Persona + stakes.
+  Our calm version: "I've watched these 20 wallets every day since June 1."
+- **Long posts (>200 chars) UNDERPERFORM (1.30x vs 1.54x).** Reach posts are
+  short; depth goes in the self-reply/thread. Trent's average is 70 chars.
+- **Thread pointer (🧵/👇) = 2.1x** — commits the reader to a next beat.
+- **Receipt emojis (✅❌) = 0.78x of no-receipt posts** — UNLESS the receipts
+  ARE the story (Trent's 1-11 fade list). Scorecard-as-furniture loses;
+  receipts-as-identity wins. Our Graded franchise is RETAIN, not REACH.
+- **A literal "?" barely matters for reach (1.51x vs 1.46x).** What drives
+  replies is an emotional statement that DEMANDS response ("Can I please
+  bet the US tonight" — 759 replies, no question mark), not interrogation.
+- **What the leaders' own FLOPS share:** link-out news reports ("Updated
+  odds report: [link]"), balanced analysis with no tension, engagement
+  begging ("Didn't get 100 likes, but..."). Furniture formats, even from
+  90K-follower accounts, die at 0.3–0.5x.
+- **Every account's income is 1–2 outliers per week (max/median 5–10x).**
+  Baseline posts hold the floor; engineered swings move the follower count.
+  This confirms G0: distribution events are a discipline, not luck.
+
 ## PART 2 — THE REJECTION LOG (what the owner kills, and why — never repeat)
 
 From the 13-draft morning of 7/7 (the founding dataset):

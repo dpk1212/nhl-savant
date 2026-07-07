@@ -64,5 +64,14 @@ Whenever drafting ANY tweet, recap, or social copy for this project:
    run `node scripts/socialLedger.mjs refresh` + `report` and let the
    structure/mechanic leaderboards pick the winning shape. Tag every draft
    candidate with structure/mechanic/refTag so logging works.
+10. **THE RATCHET — each tweet better than the last.** Every hero MUST carry
+    `improvesOn` ("<previous hero id>: the ONE variable changed and why") and
+    `prediction` ("OVER|PAR baseline because ..."). Run
+    `node scripts/socialLedger.mjs analyze` before drafting: it prints each
+    post's OVER/par/UNDER vs the rolling 24h-view baseline, grades past
+    predictions, and lists settled posts missing a lesson — write those
+    lessons immediately (`socialLedger.mjs lesson --id <id> --text "..."`).
+    State the current baseline in the draft summary; the hero's job is to
+    beat it. Change one variable per post so wins are attributable.
 
 Full system + phases: `TWITTER_LOOP.md`. Drafts only — never post for the user.
