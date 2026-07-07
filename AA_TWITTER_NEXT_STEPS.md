@@ -13,7 +13,12 @@ countdown → tonight: Colombia grade + Graded card. Each post points at the nex
 
 One superstar goes home at noon. The wallets we track already picked which one...
 
-Argentina ML is the board's play — 4 units. But for the first time in weeks the winning money isn't unanimous: 3 of our tracked winners took Argentina, 2 took Egypt.
+The board says Argentina ML — 4 units.
+
+But for the first time in weeks, the winning money split:
+
+3 proven wallets took Argentina.
+2 took Egypt.
 
 Locks 11:45 ET. Graded here after.
 
@@ -51,11 +56,13 @@ Colombia +125 at 4 PM. Same wallets, better price. The day isn't over.
 
 Colombia again...
 
-Friday they cashed the board's biggest play of the week. Today the same tracked wallets came back for more — at +125 this time.
+Friday, they cashed the board's biggest play of the week.
 
-2.5 units, Colombia ML, 4:00 PM ET. Picks lock 15 minutes before kick — the board is live until then.
+Today, the same tracked wallets came back for more — at +125 this time.
 
-Soccer since June 1: 22-9, +25 units.
+2.5 units. Colombia ML. 4:00 PM ET.
+
+Picks lock 15 minutes before kick. Soccer since June 1: 22-9, +25 units.
 
 ---
 

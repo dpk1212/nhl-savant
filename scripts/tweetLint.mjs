@@ -72,6 +72,12 @@ function lint(text, label) {
   const caps = (text.match(/\b[A-Z]{3,}\b/g) || []).length;
   if (caps > 4) hit(-8, 'heavy ALL-CAPS — we are the calm professional in a screaming niche; that contrast IS the brand');
 
+  // visual formatting: the punch must be ISOLATED, not buried in a block
+  const dense = lines.filter(l => l.length > 150);
+  if (dense.length) hit(-8, `dense block (${dense[0].length} chars on one line) — isolate the punch: short stacked lines, vertical escalation, key numbers on their own line`);
+  if (lines.length >= 3 && !lines.some(l => l.length < 45))
+    hit(-4, 'no short line anywhere — a scannable post needs at least one isolated beat');
+
   // ── the close ──
   const last = lines[lines.length - 1] || '';
   if (/\?\s*$/.test(last)) hit(+4, 'closes on a question — replies are the 27x currency (make sure it is genuinely answerable)');
