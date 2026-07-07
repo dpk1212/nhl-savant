@@ -18,15 +18,14 @@ going well) → Graded card closes the episode.
 
 I've tracked 500 winning wallets every day since June 1. Tonight they got loud...
 
-Every proven winner on the Mariners game took Seattle +105. Not one took Miami.
-
-That exact signal has fired twice before: 2-0.
+Every proven winner with a position on the Mariners game took Seattle +105. Not one took Miami.
 
 They also grabbed Braves +131 and went 4 units on Phillies -168.
 
-First locks 6:26 ET.
+Locked at 6:26. First pitch 6:41 ET.
 
-*(Attach the Mariners card — the 2-0 signal is the star.)*
+*(Attach the Mariners card — the unanimity is the star. NOTE: "proven 2-0" on
+the board = 2 wallets FOR / 0 AGAINST, a headcount, NOT a win-loss record.)*
 
 ---
 

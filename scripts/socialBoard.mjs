@@ -47,8 +47,9 @@ for (const p of picks) {
   const t = p.commenceTime
     ? new Date(p.commenceTime).toLocaleString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit' })
     : '?';
-  const proven = `proven ${p.provenWinnersFor ?? '?'}-${p.provenWinnersAgainst ?? '?'}`;
+  const proven = `wallets ${p.provenWinnersFor ?? '?'}for/${p.provenWinnersAgainst ?? '?'}against`;
   console.log(`${(p.sport || '').padEnd(4)} ${p.matchup} | ${p.selection} | ${p.units}u ${p.stakeTier || ''}/${p.agsConvictionTier || ''} | ${proven} | ${t} ET (${p.mins} min)`);
 }
 if (!picks.length) console.log('\nNo shipped picks with units > 0 for today.');
 console.log('\nReminder: quote `selection` VERBATIM. >60 min out ⇒ include the movement caveat. Picks lock 15 min before start.');
+console.log('DATA MEANING: "wallets Xfor/Yagainst" is a HEADCOUNT of proven winners on each side — it is NOT a win-loss record. Never tweet it as one.');

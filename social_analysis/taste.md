@@ -94,6 +94,13 @@ From 7/7 evening (three-ML hero — took THREE versions; learn this one):
 | "Three moneylines, 9 units, one window" | correct hook + clean list, no story turn | SO CLOSE, not elite (owner) | A high-lint post is still flat without one viral detail. |
 | "crossed the counter" + "Proven money doesn't take dogs for fun" | generic narrative turn | KILLED — "NOT IT" (owner) | **THE PUNCH LAW (final form): the viral detail must be OUR PROPRIETARY WALLET/SIZING DATA, not a clever narrative turn anyone could write. Unanimity ("every proven winner took X, not one took Y"), a sizing anomaly ("2x his normal size"), or a named-signal record ("that exact signal has fired twice: 2-0"). Pull the pick's wallet fields (provenWinnersFor/Against, consensus deltas) BEFORE drafting — the moat is the punch. If the punch could appear on any capper's feed, it isn't ours.** |
 
+DATA-MEANING TRAP (7/7 — owner caught a near-fabrication): the board's
+"proven X-Y" / "wallets Xfor/Yagainst" is a HEADCOUNT of proven winners on
+each side of THIS pick — NOT a historical win-loss record. "That signal has
+fired twice before: 2-0" was FALSE and nearly shipped. Records come from
+socialRecords.mjs ONLY; wallet counts are described as counts ("every proven
+winner took X, none took Y"), never as track records.
+
 Standing kill-list (any draft matching these dies before the user sees it):
 - Negative/self-deprecating hooks of any kind (loss, guilt, drawdown, mistake).
 - Generic stat cards without a story, character, or live moment.
