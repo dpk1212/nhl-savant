@@ -363,12 +363,27 @@ PHASE 3 — WRITE (G1 + G2 + G3 + G4)
   `node scripts/tweetLint.mjs "<hook + skeleton>"` and pick the winner on
   score + taste; build the full draft only from the winning hook. Show the
   user the winner and the runner-up hook (one line), never the whole heap.
-- THE LINTER IS THE LAW (added 7/7): every candidate's final text runs
-  `node scripts/tweetLint.mjs --purpose <REACH|CONVERT|RETAIN> "<text>"`
-  (or --file on the finished draft JSON). A hero below SHIP (85) is not
-  shown to the owner — fix or kill. The linter encodes the measured corpus
-  edges and every owner-killed pattern; it cannot be argued with, only
-  updated with new evidence.
+- THE LINTER IS THE LAW (added 7/7, RAISED 7/7 PM): every candidate's final
+  text runs `node scripts/tweetLint.mjs --purpose <REACH|CONVERT|RETAIN>
+  "<text>"` (or --file on the finished draft JSON). **THE BAR IS ELITE, NOT
+  SHIP.** SHIP (>=85) only means "no measured anti-pattern" — every hero
+  tonight scored SHIP on its first draft and still needed 3-6 owner catches
+  before it was actually top-1%. A hero may not be shown to the owner below
+  ELITE (>=105 AND all 5 elite gates passed: authority, proprietary punch,
+  not-a-naked-grade, scroll-stopping hook, no critical violation). If a
+  draft scores SHIP but not ELITE, that is a signal to iterate — pull real
+  wallet data (`walletReceipts.mjs`), add a verified record line, or fuse in
+  a live pick — not a signal to show it to the owner anyway.
+- THE COHERENCE GATE (added 7/7 PM — ELITE alone is not enough; a perfect
+  tweet that contradicts the day's actual timeline is still a failure).
+  Before showing ANY draft, run `node scripts/dayCoherenceCheck.mjs
+  "<draft text>"` (or `--file <ready_to_post.json>`). It pulls what ACTUALLY
+  posted from the account in the last 12h (not what you assume was posted —
+  posted text can differ from the draft) and flags: open grade promises not
+  yet honored, repeated numbers/angles (stat fatigue), and prints the stated
+  day script for a manual gut-check. Read the output; a clean run is
+  advisory, not a rubber stamp. Both gates (ELITE + coherence) must pass
+  before a draft is shown as finished — this replaces "SHIP is enough."
 - THREADS FOR REACH HEROES (added 7/7 — the corpus's biggest structure):
   thread-pointer posts measure 2.1x and the niche's 50K-view monsters are
   threads (prophecy hook → 🧵 → build → data reveal → one-line ask). When

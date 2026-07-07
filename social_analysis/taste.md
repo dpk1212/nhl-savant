@@ -1,5 +1,21 @@
 # TASTE — the file that separates us from slop
 
+## PART -1 — THE TWO GATES (7/7 PM — read this first, every run)
+Tonight every hero scored SHIP (85-114) on its FIRST draft under the old
+linter and still needed 3-6 owner catches before it was actually top-1%.
+SHIP means "no measured anti-pattern." It does not mean elite. Two commands
+are now mandatory before ANY draft is shown as finished:
+1. `node scripts/tweetLint.mjs --purpose <X> "<text>"` — bar is now **ELITE**
+   (score >=105 AND all 5 gates: authority present, proprietary punch
+   present, not a naked grade, scroll-stopping hook, no critical violation).
+2. `node scripts/dayCoherenceCheck.mjs "<text>"` — reads what ACTUALLY
+   posted today (real API data — the posted text can diverge from the
+   draft; this happened tonight) and flags unpaid grade promises + repeated
+   numbers/angles.
+A draft that is ELITE but incoherent with the day's real timeline is still a
+failure, and a draft that's coherent but generic is still a failure. Both,
+every time.
+
 > Read this BEFORE drafting anything. Rules prevent bad tweets; exemplars and
 > rejections define good ones. This file is updated every time a post wins,
 > a draft dies, or a niche specimen teaches something.

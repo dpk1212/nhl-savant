@@ -11,8 +11,28 @@
  *   node scripts/tweetLint.mjs --purpose RETAIN "text..."
  *   node scripts/tweetLint.mjs --file ready_to_post/2026-07-07_1130.json   # lints hero + alternates
  *
- * Verdicts: SHIP (>=85) · FIX (70-84) · KILL (<70).
- * A hero may not be shown to the owner below SHIP.
+ * Verdicts: ELITE (>=105, all elite gates passed) · SHIP (>=85) · FIX (70-84)
+ * · KILL (<70).
+ *
+ * RAISED BAR (7/7 — the SHIP bar was proven insufficient): every hero
+ * tonight scored SHIP (85-114) on its FIRST draft and still needed 3-6 owner
+ * catches before it was actually top-1%. SHIP means "no measured
+ * anti-pattern" — it does NOT mean "elite." A REACH hero may not be shown to
+ * the owner below ELITE. The elite gates below are the five structural laws
+ * discovered tonight, now enforced as code instead of relying on memory:
+ *   1. AUTHORITY — a verified record/number that answers "why should a
+ *      stranger care?" (a W-L record, +Xu, a $ growth figure, or a receipt
+ *      stack standing in as its own authority).
+ *   2. PROPRIETARY PUNCH — the one detail nobody else could post: named
+ *      wallet receipts, a $ + % figure, unanimity language, or a sizing
+ *      anomaly. A hook that talks about "the wallets" with zero proprietary
+ *      data attached is generic-clever, not elite (killed twice tonight).
+ *   3. Not a naked grade — a REACH post that only reports a result with no
+ *      forward-looking live pick is leaving reach on the table (the combo
+ *      law: fuse a same-day win into the next live pick, don't split them).
+ *   4. Scroll-stopping hook (open loop / first-person stakes / receipt stack).
+ *   5. No critical violation (negative hook, banned phrase, link in tweet 1,
+ *      dense unscannable block).
  */
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
@@ -47,6 +67,12 @@ const EMOJI_ROW = /(\p{Extended_Pictographic}\s*){3,}/u;
 // receipt line is a last-4 hex wallet tag + a dollar figure on its own line
 // — e.g. "23c4  $46.2K". Generate these with scripts/walletReceipts.mjs.
 const NAMED_RECEIPT = /^\s*[0-9a-f]{4}\s+\$[\d,.]+[KM]?\b/im;
+// ── ELITE GATES (added 7/7 — codifying tonight's five hard-won structural laws) ──
+const AUTHORITY_MARKER = /\b\d{2,3}-\d{2,3}\b|\+\d+(\.\d+)?\s?u(nits)?\b|since june ?1|\$[\d,]+\s?(→|->|to)\s?\$[\d,]+/i;
+const PROPRIETARY_PUNCH = /\$[\d,.]+[KM]?\b.{0,40}\d{1,3}(\.\d+)?%|not one|every (proven )?winner|unanimous|100% (of|agreement)|\d+(\.\d+)?x (his|her|their|its|own|avg|average)/i;
+const GRADE_LANGUAGE = /[✅❌]|\bcashed\b|\bmissed\b|\bhandles it\b/i;
+const FORWARD_PICK = /\blocks?\b.{0,20}\b(et|pm|am)\b|first pitch|first lock|kicks off|\bcountdown\b/i;
+const CRITICAL_FLAG = (findings) => findings.some(f => /^-(1[5-9]|[2-9]\d)\s/.test(f));
 
 function lint(text, label) {
   const findings = [];
@@ -93,13 +119,35 @@ function lint(text, label) {
   if (/\?\s*$/.test(last)) hit(+4, 'closes on a question — replies are the 27x currency (make sure it is genuinely answerable)');
   else if (/(free|nhlsavant)/i.test(last) && purpose === 'REACH') hit(-5, 'REACH post closing on the ask — one job per tweet; the self-reply converts');
 
-  const verdict = score >= 85 ? 'SHIP' : score >= 70 ? 'FIX' : 'KILL';
+  // ── THE ELITE GATES (7/7) — these do NOT add/subtract score; they gate the
+  // verdict independently. A post can be SHIP-scored and still fail ELITE. ──
+  const hasAuthority = AUTHORITY_MARKER.test(text);
+  const hasPunch = PROPRIETARY_PUNCH.test(text) || hasReceiptStack;
+  const hasGrade = GRADE_LANGUAGE.test(text);
+  const hasForwardPick = FORWARD_PICK.test(text);
+  const scrollStop = OPEN_LOOP.test(line1) || FIRST_PERSON_STAKES.test(line1) || hasReceiptStack || /\d/.test(line1);
+  const eliteGates = {
+    'AUTHORITY (a verified record/number, or the receipt stack standing in as its own authority)': hasAuthority || hasReceiptStack,
+    'PROPRIETARY PUNCH (named receipts / $+% / unanimity / sizing anomaly — not a generic narrative turn)': hasPunch,
+    'NOT A NAKED GRADE (if reporting a result, a forward-looking live pick is fused in — the combo law)': !hasGrade || hasForwardPick || purpose !== 'REACH',
+    'SCROLL-STOPPING HOOK (open loop / first-person stakes / receipt stack / hard number in line 1)': scrollStop,
+    'NO CRITICAL VIOLATION (negative hook / banned phrase / link in tweet 1 / dense block)': !CRITICAL_FLAG(findings),
+  };
+  const failedGates = Object.entries(eliteGates).filter(([, pass]) => !pass).map(([g]) => g);
+  const isElite = score >= 105 && failedGates.length === 0;
+
+  const verdict = isElite ? 'ELITE' : score >= 85 ? 'SHIP' : score >= 70 ? 'FIX' : 'KILL';
   console.log(`\n── ${label} · purpose ${purpose} · SCORE ${score} → ${verdict} ──`);
   console.log(`"${line1.slice(0, 80)}${line1.length > 80 ? '…' : ''}"`);
   for (const f of findings) console.log('  ' + f);
   if (!findings.length) console.log('  clean — no measured anti-patterns detected');
-  if (verdict !== 'SHIP') console.log('  ⛔ below SHIP — do not show the owner; fix or kill.');
-  return { score, verdict };
+  if (verdict === 'ELITE') {
+    console.log('  ✅ ELITE — all 5 gates passed. This may be shown to the owner as a finished hero.');
+  } else {
+    console.log(`  ⛔ NOT ELITE (verdict ${verdict}) — do not show this as a finished hero. Failed gates:`);
+    for (const g of failedGates.length ? failedGates : ['score below 105 — push a stronger hook, authority line, or proprietary punch']) console.log('     • ' + g);
+  }
+  return { score, verdict, eliteGates, failedGates };
 }
 
 if (file) {

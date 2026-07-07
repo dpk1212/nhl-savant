@@ -14,12 +14,22 @@ Whenever drafting ANY tweet, recap, or social copy for this project:
    engineered-clever openers, no paywall apologies, no ad-speak. Kill and
    redraft yourself. When the owner rejects a draft, add a one-line entry to
    the rejection log immediately — that file is how the system learns taste.
-   **The executable half is mandatory:** run
+   **The executable half is mandatory, and THE BAR IS ELITE, NOT SHIP**
+   (raised 7/7 PM — every hero tonight scored SHIP on its first draft and
+   still needed 3-6 owner catches to become actually top-1%). Run
    `node scripts/tweetLint.mjs --purpose <REACH|CONVERT|RETAIN> "<text>"` on
-   every candidate's final text; below SHIP (85) it is not shown — fix or
-   kill.    Heroes are SELECTED, not written: 6-8 different line-1 hooks first
-   (open-loop prophecy, first-person stakes, naked number, whale character,
-   countdown), lint them, build only from the winner.
+   every candidate; below ELITE (>=105 + all 5 gates: authority, proprietary
+   punch, not-a-naked-grade, scroll-stopping hook, no critical violation) it
+   is NOT a finished draft — iterate, don't show it anyway. Heroes are
+   SELECTED, not written: 6-8 different line-1 hooks first (open-loop
+   prophecy, first-person stakes, naked number, whale character, countdown),
+   lint them, build only from the winner.
+   **THEN THE COHERENCE GATE (added 7/7 PM):** run
+   `node scripts/dayCoherenceCheck.mjs "<text>"` before showing any draft —
+   it reads what ACTUALLY posted in the last 12h (real API data, not your
+   memory of the draft — posted text can and does diverge from drafts) and
+   flags unpaid grade promises and repeated numbers/angles. Both gates must
+   pass before a draft is "finished."
    **THE RECEIPT STACK (added 7/7 — our #1 proven format, per owner's
    bookmarked April tweets at 7.2K-11K impressions, 2-5x baseline):** for any
    pick with 3+ tracked wallets, run `node scripts/walletReceipts.mjs

@@ -3,14 +3,19 @@
 > Copy the block, paste, attach the named screenshot. Machine copy:
 > `ready_to_post/2026-07-07_1815_evening.json`.
 
-## THE DAY SCRIPT
-Argentina ✅ (+1.3u) posted and cashed · Over 7.5 ❌ (-4u) — combo post promised
-"graded either way," debt owed · Colombia was NEVER a locked play (fell off the
-board — never reference it as ours).
-Sequence: **6:15 hero (three-ML night, locks 6:26)** → inbound replies
-immediately → ~7:30 Over ❌ grade woven into a live-night frame → games settle
-~9:30: grade post → 9:45 Dodgers/Rockies window (optional, only if night is
-going well) → Graded card closes the episode.
+## THE DAY SCRIPT (corrected 7:15 PM via dayCoherenceCheck against REAL posted text)
+CORRECTION: the actual posted combo tweet does NOT contain "graded either
+way" (that line was in the draft but got edited out before posting) — so
+there is no EXPLICIT unpaid promise, though grading Over 7.5 is still the
+standing brand convention regardless of exact wording. The 6:37 PM hero also
+posted as "seven picks" not "six" — re-verify the live count before quoting
+it again.
+Argentina ✅ (+1.3u) posted and cashed · Over 7.5 ❌ (-4u), not yet graded on
+the feed · Colombia was NEVER a locked play (fell off the board — never
+reference it as ours).
+Sequence: three-ML hero posted 6:37 PM → inbound replies → Over ❌ grade
+woven into a live-night frame (~7:30) → games settle ~9:30: grade post →
+9:45 Rockies window (THE RECEIPT STACK — see below) → Graded card closes.
 
 ---
 
