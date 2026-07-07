@@ -5548,6 +5548,18 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
   const gameEpoch = gameTime ? (typeof gameTime === 'number' ? gameTime : Date.parse(gameTime)) : null;
   const gameStarted = gameEpoch != null && !isNaN(gameEpoch) && Date.now() >= gameEpoch;
 
+  // Sealed window — the 15 minutes between lock and first pitch/kick. Drives
+  // the card-level LOCKED banner + emerald glow. Ticks every 15s so the seal
+  // appears/retires on time without a per-second render cost.
+  const [sealNow, setSealNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (gameEpoch == null || isNaN(gameEpoch) || isGraded || Date.now() >= gameEpoch) return undefined;
+    const id = setInterval(() => setSealNow(Date.now()), 15000);
+    return () => clearInterval(id);
+  }, [gameEpoch, isGraded]);
+  const isSealed = gameEpoch != null && !isNaN(gameEpoch) && !isGraded && !isCancelled
+    && sealNow < gameEpoch && sealNow >= gameEpoch - LOCK_LEAD_MS;
+
   // Header vocabulary borrowed verbatim from the live Sharp Position card:
   // a sport badge, the matchup with the pick side weighted bright, and the
   // unified state·stars·tier·units strip.
@@ -5652,12 +5664,13 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
         background: open
           ? 'linear-gradient(180deg, rgba(28,33,48,0.97) 0%, rgba(18,23,35,0.98) 100%)'
           : 'linear-gradient(180deg, rgba(23,28,42,0.93) 0%, rgba(15,19,30,0.95) 100%)',
-        border: `1px solid ${open ? `${accent}3a` : hover ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.065)'}`,
-        boxShadow: open
+        border: `1px solid ${isSealed ? 'rgba(16,185,129,0.32)' : open ? `${accent}3a` : hover ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.065)'}`,
+        boxShadow: (open
           ? `inset 0 1px 0 rgba(255,255,255,0.06), 0 26px 58px -22px rgba(0,0,0,0.85), 0 0 24px -12px ${accent}33`
           : hover
           ? 'inset 0 1px 0 rgba(255,255,255,0.06), 0 16px 34px -18px rgba(0,0,0,0.7)'
-          : 'inset 0 1px 0 rgba(255,255,255,0.05), 0 10px 24px -16px rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.45)',
+          : 'inset 0 1px 0 rgba(255,255,255,0.05), 0 10px 24px -16px rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.45)')
+          + (isSealed ? ', 0 0 30px -12px rgba(16,185,129,0.55)' : ''),
         opacity: isCancelled ? 0.6 : isMuted || superseded || isTrackedGrade ? 0.78 : 1,
         transition: 'background .2s ease, border-color .2s ease, box-shadow .3s ease',
       }}
@@ -5665,7 +5678,27 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
       {/* Restrained tier cue — a soft corner light, not a full wash, so the
           card reads premium-neutral and the tiers don't all look green. */}
       <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(120% 78% at 100% 0%, ${accent}${open ? '20' : '10'} 0%, transparent 52%)` }} />
-      <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: '2px', background: accent, opacity: open ? 0.9 : 0.55 }} />
+      <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: '2px', background: isSealed ? B.green : accent, opacity: open ? 0.9 : 0.55 }} />
+
+      {/* Sealed banner — the pick is locked (inside 15 min of start). The
+          card wears an emerald seal until first pitch/kick, then the normal
+          live/graded states take over. */}
+      {isSealed && (
+        <div className="sf-lock-seal" style={{
+          position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          gap: '0.4rem', padding: '0.34rem 0.9rem',
+          background: 'linear-gradient(90deg, rgba(16,185,129,0.22) 0%, rgba(16,185,129,0.08) 50%, rgba(16,185,129,0.22) 100%)',
+          borderBottom: '1px solid rgba(16,185,129,0.35)',
+        }}>
+          <Lock size={10} color={B.green} strokeWidth={2.8} />
+          <span style={{ fontSize: '0.56rem', fontWeight: 900, letterSpacing: '0.2em', color: B.green, lineHeight: 1 }}>
+            PICK LOCKED
+          </span>
+          <span style={{ fontSize: '0.52rem', fontWeight: 700, letterSpacing: '0.06em', color: 'rgba(16,185,129,0.75)', fontFeatureSettings: "'tnum'", lineHeight: 1 }}>
+            · STARTS {fmtET(gameTime)} ET
+          </span>
+        </div>
+      )}
 
       {/* Collapsed row — mirrors the live Sharp Position card header.
           Desktop keeps a single dense row; mobile stacks so the matchup,

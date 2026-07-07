@@ -1164,8 +1164,25 @@ p {
   50%      { box-shadow: 0 0 14px -2px rgba(248, 113, 113, 0.75); }
 }
 .sf-lock-urgent { animation: sf-lock-breathe 1.8s ease-in-out infinite; }
+
+/* Sealed banner — a slow emerald sheen sweeps the LOCKED strip. */
+@keyframes sf-seal-sheen {
+  0%        { transform: translateX(-120%); }
+  55%, 100% { transform: translateX(320%); }
+}
+.sf-lock-seal { overflow: hidden; }
+.sf-lock-seal::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0; left: 0;
+  width: 34%;
+  background: linear-gradient(105deg, transparent, rgba(16, 185, 129, 0.22), transparent);
+  animation: sf-seal-sheen 5.5s ease-in-out infinite;
+  pointer-events: none;
+}
 @media (prefers-reduced-motion: reduce) {
   .sf-lock-urgent { animation: none; }
+  .sf-lock-seal::after { animation: none; }
 }
 
 /* Expanded lock-card sheet unfurls with a soft rise. */
