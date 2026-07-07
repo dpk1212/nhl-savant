@@ -18,15 +18,15 @@ going well) → Graded card closes the episode.
 
 I've tracked 500 winning wallets every day since June 1. Tonight they got loud...
 
-At noon they cashed a -300 favorite. Tonight they crossed the counter:
+Every proven winner on the Mariners game took Seattle +105. Not one took Miami.
 
-Braves +131.
-Mariners +105.
-Phillies -168, their biggest.
+That exact signal has fired twice before: 2-0.
 
-Proven money doesn't take dogs for fun.
+They also grabbed Braves +131 and went 4 units on Phillies -168.
 
 First locks 6:26 ET.
+
+*(Attach the Mariners card — the 2-0 signal is the star.)*
 
 ---
 

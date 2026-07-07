@@ -88,10 +88,11 @@ From 7/7 afternoon (Over window):
 |---|---|---|---|
 | Over countdown with win buried | "Locked. First pitch 2:16." + one throwaway line "same board cashed the noon ML" | KILLED by owner | **THE COMBO LAW: when a fresh win and a live pick coexist, they are ONE post — the cashed win IS the hook/receipt, the live pick IS the urgency. Never bury a same-day 4u winner in a subordinate clause, and never split them into two posts.** Winning combo: "4 units cashed at noon. 4 more locked for 2:16." |
 
-From 7/7 evening (three-ML hero):
+From 7/7 evening (three-ML hero — took THREE versions; learn this one):
 | Draft | Hook/idea | Verdict | Law extracted |
 |---|---|---|---|
-| "Three moneylines, 9 units, one window" | correct hook + clean list, no story turn | SO CLOSE, not elite (owner) | **THE PUNCH LAW: a high-lint post is still flat without one viral detail — a story turn (anomaly, contrast, crossing) plus one isolated quotable line. "At noon they cashed a -300 favorite. Tonight they crossed the counter" + "Proven money doesn't take dogs for fun." Take the linter's length penalty for a real punch; the linter scores anti-patterns, the punch is the pattern.** |
+| "Three moneylines, 9 units, one window" | correct hook + clean list, no story turn | SO CLOSE, not elite (owner) | A high-lint post is still flat without one viral detail. |
+| "crossed the counter" + "Proven money doesn't take dogs for fun" | generic narrative turn | KILLED — "NOT IT" (owner) | **THE PUNCH LAW (final form): the viral detail must be OUR PROPRIETARY WALLET/SIZING DATA, not a clever narrative turn anyone could write. Unanimity ("every proven winner took X, not one took Y"), a sizing anomaly ("2x his normal size"), or a named-signal record ("that exact signal has fired twice: 2-0"). Pull the pick's wallet fields (provenWinnersFor/Against, consensus deltas) BEFORE drafting — the moat is the punch. If the punch could appear on any capper's feed, it isn't ours.** |
 
 Standing kill-list (any draft matching these dies before the user sees it):
 - Negative/self-deprecating hooks of any kind (loss, guilt, drawdown, mistake).
