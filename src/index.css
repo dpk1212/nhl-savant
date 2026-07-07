@@ -1158,6 +1158,16 @@ p {
   -webkit-backdrop-filter: blur(18px) saturate(150%);
 }
 
+/* Lock countdown — final-15-minutes breathing glow. */
+@keyframes sf-lock-breathe {
+  0%, 100% { box-shadow: 0 0 4px -2px rgba(248, 113, 113, 0.35); }
+  50%      { box-shadow: 0 0 14px -2px rgba(248, 113, 113, 0.75); }
+}
+.sf-lock-urgent { animation: sf-lock-breathe 1.8s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .sf-lock-urgent { animation: none; }
+}
+
 /* Expanded lock-card sheet unfurls with a soft rise. */
 @keyframes sf-reveal {
   from { opacity: 0; transform: translateY(-8px); }

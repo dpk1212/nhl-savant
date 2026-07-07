@@ -5377,6 +5377,81 @@ const LOCK_TIER_ACCENT = {
   FADE:    '#EF4444',
 };
 
+// ─── Lock Countdown Pill ──────────────────────────────────────────────────────
+// Live countdown to the pick's lock moment (15 min before first pitch/kick).
+// Three escalating states, all speaking the card's glass-pill vocabulary:
+//   > 1h out   — quiet glass, clock icon, "LOCKS IN 2H 14M"
+//   ≤ 1h out   — gold, urgency building
+//   ≤ 15m out  — red with a soft breathing glow, seconds ticking
+//   post-lock  — green "LOCKED" seal until the game starts
+const LOCK_LEAD_MS = 15 * 60 * 1000;
+const LockCountdown = memo(function LockCountdown({ gameTime, isGraded }) {
+  const gameEpoch = gameTime ? (typeof gameTime === 'number' ? gameTime : Date.parse(gameTime)) : null;
+  const valid = gameEpoch != null && !isNaN(gameEpoch);
+  const lockEpoch = valid ? gameEpoch - LOCK_LEAD_MS : null;
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!valid || isGraded || Date.now() >= gameEpoch) return undefined;
+    // Tick each second inside the final 10 min (seconds display), else every 30s.
+    const fast = lockEpoch - Date.now() < 10 * 60 * 1000;
+    const id = setInterval(() => setNow(Date.now()), fast ? 1000 : 30000);
+    return () => clearInterval(id);
+  }, [valid, isGraded, gameEpoch, lockEpoch, now]);
+
+  if (!valid || isGraded || now >= gameEpoch) return null;
+
+  const pillBase = {
+    display: 'inline-flex', alignItems: 'center', gap: '0.3rem', flexShrink: 0,
+    padding: '0.22rem 0.5rem', borderRadius: '999px',
+    fontSize: '0.56rem', fontWeight: 800, letterSpacing: '0.07em',
+    fontFeatureSettings: "'tnum'", lineHeight: 1, whiteSpace: 'nowrap',
+  };
+
+  // Post-lock, pre-game: the sealed state.
+  if (now >= lockEpoch) {
+    return (
+      <span style={{
+        ...pillBase, color: B.green,
+        background: 'linear-gradient(135deg, rgba(16,185,129,0.16), rgba(5,150,105,0.08))',
+        border: '1px solid rgba(16,185,129,0.35)',
+        boxShadow: '0 0 12px -4px rgba(16,185,129,0.5)',
+      }}>
+        <Lock size={9} strokeWidth={2.6} /> LOCKED
+      </span>
+    );
+  }
+
+  const rem = lockEpoch - now;
+  const h = Math.floor(rem / 36e5);
+  const m = Math.floor((rem % 36e5) / 6e4);
+  const s = Math.floor((rem % 6e4) / 1e3);
+  const label = h > 0 ? `${h}H ${String(m).padStart(2, '0')}M`
+    : rem >= 10 * 60 * 1000 ? `${m}M`
+    : `${m}:${String(s).padStart(2, '0')}`;
+
+  const urgent = rem <= 15 * 60 * 1000;           // inside 15 min — red, breathing
+  const closing = !urgent && rem <= 60 * 60 * 1000; // inside the hour — gold
+  const c = urgent ? '#F87171' : closing ? B.gold : B.textSec;
+  return (
+    <span
+      className={urgent ? 'sf-lock-urgent' : undefined}
+      title={`Locks 15 min before start · ${new Date(lockEpoch).toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit' })} ET`}
+      style={{
+        ...pillBase, color: c,
+        background: urgent ? 'linear-gradient(135deg, rgba(248,113,113,0.16), rgba(220,38,38,0.07))'
+          : closing ? 'linear-gradient(135deg, rgba(245,158,11,0.14), rgba(245,158,11,0.05))'
+          : 'rgba(255,255,255,0.045)',
+        border: `1px solid ${urgent ? 'rgba(248,113,113,0.4)' : closing ? 'rgba(245,158,11,0.32)' : 'rgba(255,255,255,0.1)'}`,
+      }}
+    >
+      <Clock size={9} strokeWidth={2.6} />
+      <span style={{ opacity: 0.75, fontWeight: 700 }}>LOCKS IN</span>
+      <span style={{ fontSize: '0.62rem' }}>{label}</span>
+    </span>
+  );
+});
+
 const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
   const {
     team, away, home, sport, units, odds, book, lockedAt, peakAt, gameTime,
@@ -5617,6 +5692,7 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.4rem' }}>
                 {tierStrip}
                 {metaLine}
+                <LockCountdown gameTime={gameTime} isGraded={isGraded} />
               </div>
             </div>
             {/* bettor stat block — full width, the actionable numbers */}
@@ -5640,6 +5716,7 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                 {tierStrip}
                 {metaLine}
+                <LockCountdown gameTime={gameTime} isGraded={isGraded} />
               </div>
             </div>
 
