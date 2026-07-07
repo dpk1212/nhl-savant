@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-07-07T05:21:16.790Z",
-  "elapsedSec": 14.3,
+  "scannedAt": "2026-07-07T05:29:05.283Z",
+  "elapsedSec": 14.1,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 19,
   "summary": {
     "total": 187,
     "coveredByMain": 10,
     "recovered": 12,
-    "recoveredPositions": 54,
+    "recoveredPositions": 55,
     "noPositions": 165,
     "apiError": 0,
     "addressNotFound": 0,
@@ -16,7 +16,7 @@
       "ml": 23,
       "spread": 5,
       "total": 0,
-      "dropped_shadow_gate": 25,
+      "dropped_shadow_gate": 26,
       "dropped_duplicate": 1
     }
   },
@@ -625,6 +625,15 @@
         },
         {
           "sport": "MLB",
+          "gameKey": "cle_min",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 279,
+          "entryLine": -1.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
           "gameKey": "atl_pit",
           "marketType": "spread",
           "side": "away",
@@ -648,15 +657,6 @@
           "side": "away",
           "invested": 276,
           "entryLine": 1.5,
-          "passesShadow": false
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "cle_min",
-          "marketType": "spread",
-          "side": "home",
-          "invested": 116,
-          "entryLine": -1.5,
           "passesShadow": false
         }
       ]
@@ -1230,7 +1230,7 @@
           "gameKey": "egy_arg",
           "marketType": "ml",
           "side": "home",
-          "invested": 51845,
+          "invested": 53300,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1239,25 +1239,25 @@
           "gameKey": "egy_arg",
           "marketType": "ml",
           "side": "away",
-          "invested": 1863,
+          "invested": 1865,
           "entryLine": null,
           "passesShadow": false
-        },
-        {
-          "sport": "SOC",
-          "gameKey": "mar_fra",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 8104,
-          "entryLine": null,
-          "passesShadow": true
         },
         {
           "sport": "SOC",
           "gameKey": "col_sui",
           "marketType": "ml",
           "side": "away",
-          "invested": 5077,
+          "invested": 5793,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "SOC",
+          "gameKey": "mar_fra",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 8109,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1266,7 +1266,7 @@
           "gameKey": "col_sui",
           "marketType": "ml",
           "side": "home",
-          "invested": 2657,
+          "invested": 2741,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1275,7 +1275,7 @@
           "gameKey": "eng_nor",
           "marketType": "ml",
           "side": "home",
-          "invested": 1261,
+          "invested": 1265,
           "entryLine": null,
           "passesShadow": false
         },
@@ -1635,12 +1635,21 @@
       "sports": "NBA,SOC,MLB",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x32ccd9015a900fde62040162a04bedf093c668b3",
-      "positionsCount": 2,
+      "positionsCount": 3,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 2382,
       "willPassShadowGate": 0,
-      "willDropAtShadowGate": 2,
+      "willDropAtShadowGate": 3,
       "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "cle_min",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 65,
+          "entryLine": -1.5,
+          "passesShadow": false
+        },
         {
           "sport": "SOC",
           "gameKey": "col_sui",
@@ -1687,7 +1696,7 @@
           "gameKey": "egy_arg",
           "marketType": "ml",
           "side": "home",
-          "invested": 8286,
+          "invested": 8411,
           "entryLine": null,
           "passesShadow": true
         },
