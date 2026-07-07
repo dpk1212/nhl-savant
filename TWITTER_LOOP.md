@@ -202,6 +202,11 @@ PHASE 2 — SELF-REVIEW (G6, driven by the LEDGER report, not vibes)
   (hard gates, identity-hook bank, PREMIUM formatting).
 
 PHASE 3 — WRITE (G1 + G2 + G3 + G4)
+- PURPOSE FIRST (Purpose Matrix, TWITTER_IMPROVEMENT_GUIDE hard gate 3): declare
+  each draft's ONE job — REACH (out-of-network story, question close) ·
+  CONVERT (receipts/FOMO, one trial line, no question) · RETAIN (grades/
+  community). Record it as `purpose` in the JSON. The slate covers all three
+  across the day; no single tweet does two jobs.
 - NARRATIVE CONTINUITY FIRST: read the full text of the last ~7 logged posts
   (post_ledger.json) + any unposted drafts from the last 2 ready_to_post files.
   Before writing, answer in one line each:

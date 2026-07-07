@@ -7,6 +7,13 @@
 ## Hard gates (every post must pass — non-negotiable) [PERSISTENT]
 1. **Screenshot test (line 1):** the first sentence must land as a standalone screenshot with ZERO context. No bare team names, no "here are today's picks," no buried hook.
 2. **One RT line:** every post carries exactly one standalone, quotable sentence built to be reposted with no context. If you can't point to it, it isn't done.
+3. **ONE JOB PER TWEET (Purpose Matrix, added 7/7 from live creator research + user mandate).**
+   Every draft declares its purpose BEFORE writing; no tweet does two jobs:
+   - **REACH** (out-of-network growth): story/confession/whale riding the day's biggest conversation. Close = polarizing answerable question. Metric: impressions + replies from strangers.
+   - **CONVERT** (feed → site funnel): receipts + FOMO on what the feed didn't get (site-only wins are the standing asset). Close = ONE trial line as fact, no question. Metric: profile clicks + ref-tag visits.
+   - **RETAIN** (community/trust): grades, Ls owned, answering our people by name. Close = callback/thanks. Metric: repeat repliers.
+   The daily slate covers all three across the day: morning CONVERT (yesterday's receipts), midday REACH (the marquee story), evening RETAIN+REACH (grades). Tag `purpose` in every ready_to_post candidate.
+4. **Reply to every comment in the first hour** of any hero — non-negotiable (velocity research, confirmed by 2026 creator consensus AND the 30-min amplification window).
 
 ## Identity-hook bank (lead with these on non-pick posts; no back-to-back repeats) [PERSISTENT]
 - **Comeback / blackout** — "I stopped posting for two weeks. Not because I was losing."
