@@ -83,6 +83,11 @@ From the 13-draft morning of 7/7 (the founding dataset):
 | comeback arc | "Five days ago we were down 11 units" | KILLED | Drawdowns are never hooks. Lead green. |
 | ATH + $10k→$15.7k + receipts + "chart doesn't need a salesman" | ACCEPTED | The record is the star; dollars make it visceral; the ask stated as fact. |
 
+From 7/7 afternoon (Over window):
+| Draft | Hook/idea | Verdict | Law extracted |
+|---|---|---|---|
+| Over countdown with win buried | "Locked. First pitch 2:16." + one throwaway line "same board cashed the noon ML" | KILLED by owner | **THE COMBO LAW: when a fresh win and a live pick coexist, they are ONE post — the cashed win IS the hook/receipt, the live pick IS the urgency. Never bury a same-day 4u winner in a subordinate clause, and never split them into two posts.** Winning combo: "4 units cashed at noon. 4 more locked for 2:16." |
+
 Standing kill-list (any draft matching these dies before the user sees it):
 - Negative/self-deprecating hooks of any kind (loss, guilt, drawdown, mistake).
 - Generic stat cards without a story, character, or live moment.

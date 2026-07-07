@@ -10,21 +10,21 @@ grade post → tonight: Colombia grade + Graded card. Each post points at the ne
 
 ---
 
-## 1) OVER DECISION WINDOW — POST IMMEDIATELY (first pitch 2:16 ET) · attach Over 7.5 pick card
+## 1) COMBO POST — POST NOW · attach Argentina graded card + Over 7.5 pick card (both if possible)
 
-Locked. First pitch 2:16 ET.
+4 units cashed at noon. 4 more locked for 2:16.
 
-Over 7.5 — Brewers/Cardinals. 4 units.
+Argentina ML ✅ — the easy part.
 
-The wallets we track loaded this quietly while everyone was watching Argentina.
+Now the same wallets are on Over 7.5, Brewers/Cardinals.
 
-Same board cashed the noon ML.
+Nobody is watching this game. That's usually when they eat.
 
 Graded here either way.
 
-*(Linter 100/SHIP. This replaces the separate 2:15 Argentina grade post — the
-"same board cashed the noon ML" line IS the grade. One job per tweet, but the
-win rides along.)*
+*(Linter 100/SHIP. The combo IS the hook: cashed money + live money in one
+breath. Still works a few minutes after first pitch — "locked for 2:16" is the
+receipt.)*
 
 ---
 
