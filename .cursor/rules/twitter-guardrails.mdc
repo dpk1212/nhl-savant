@@ -7,14 +7,24 @@ alwaysApply: true
 
 Whenever drafting ANY tweet, recap, or social copy for this project:
 
-1. **Verify every number first.** Run `node scripts/socialRecords.mjs` (records)
-   and `node scripts/socialBoard.mjs` (live board with time buckets). Never
-   quote a W-L record, unit total, or pick that didn't come from these this
-   session. Use the pick's `selection` field verbatim.
-2. **Sound human.** Voice = `MY_VOICE_PROFILE.md`. Rotate post architecture
-   (story / one-liner / desk note / question-first / ✅-recap) — never the same
-   structure back-to-back. Banned: "let's dive in", "game-changer", "delve",
-   default "tail or fade? 🎯" closers, 3-emoji rows.
+0. **THE TASTE GATE comes before everything.** Read
+   `social_analysis/taste.md` (exemplars + the owner's rejection log) before
+   drafting, and check every draft against its kill-list BEFORE showing it:
+   no negative/self-deprecating hooks, no stat cards without a story, no
+   engineered-clever openers, no paywall apologies, no ad-speak. Kill and
+   redraft yourself. When the owner rejects a draft, add a one-line entry to
+   the rejection log immediately — that file is how the system learns taste.
+1. **Verify every number first.** Run `node scripts/socialBrief.mjs` — one
+   command: records (yesterday/7d/June 1), the time-bucketed board, ledger
+   refresh + report, and the mentions inbox. Never quote a W-L record, unit
+   total, or pick that didn't come from it this session. Use the pick's
+   `selection` field verbatim.
+2. **Build from a FRANCHISE** (TWITTER_LOOP.md G0.5): Morning Board ·
+   Decision Window · The Money Moved · Graded · Weekly Ledger. Freestyle only
+   if it beats the franchise option. **Sound human.** Voice =
+   `MY_VOICE_PROFILE.md`. Never the same structure back-to-back. Banned:
+   "let's dive in", "game-changer", "delve", default "tail or fade? 🎯"
+   closers, 3-emoji rows.
 3. **Sell without selling.** Canonical language + TONE RULE: `BRAND_MESSAGING.md`.
    Complete calm sentences — no fragment-stack swagger ("Every L public."), no
    self-conscious mantras. Offer = "the first week is free, grade it yourself";

@@ -266,7 +266,24 @@ function cmdReport() {
 
   if (ledger.followerHistory.length) {
     const first = ledger.followerHistory[0], lastF = ledger.followerHistory[ledger.followerHistory.length - 1];
-    console.log(`Followers: ${first.followers} (${first.at.slice(0, 10)}) → ${lastF.followers} (${lastF.at.slice(0, 10)})`);
+    const days = Math.max(1, (new Date(lastF.at) - new Date(first.at)) / 864e5);
+    const perDay = ((lastF.followers - first.followers) / days).toFixed(1);
+    console.log(`Followers: ${first.followers} (${first.at.slice(0, 10)}) → ${lastF.followers} (${lastF.at.slice(0, 10)}) · ${perDay}/day`);
+    console.log(`G0 TARGET: +50/day at steady state — current pace is ${perDay}/day. ${perDay < 5 ? 'Growth engine not yet compounding; prioritize DISTRIBUTION events (franchise 3).' : ''}`);
+    // last 7 days pace
+    const cutoff = Date.now() - 7 * 864e5;
+    const recent = ledger.followerHistory.filter(f => new Date(f.at) >= cutoff);
+    if (recent.length >= 2) {
+      const rd = Math.max(0.5, (new Date(recent[recent.length - 1].at) - new Date(recent[0].at)) / 864e5);
+      console.log(`Last-7d pace: ${((recent[recent.length - 1].followers - recent[0].followers) / rd).toFixed(1)}/day`);
+    }
+  }
+  // reach layer
+  const withViews = measured.filter(p => latestStats(p).views != null);
+  if (withViews.length) {
+    const totV = withViews.reduce((s, p) => s + latestStats(p).views, 0);
+    const best = [...withViews].sort((a, b) => latestStats(b).views - latestStats(a).views)[0];
+    console.log(`Reach: ${totV.toLocaleString()} total views across ${withViews.length} measured posts · best ${latestStats(best).views.toLocaleString()} ("${(best.text || '').split('\n')[0].slice(0, 50)}")`);
   }
 
   for (const dim of ['structure', 'mechanic']) {
@@ -277,9 +294,13 @@ function cmdReport() {
     }
     console.log(`\n── By ${dim} ──`);
     const rows = Object.entries(groups)
-      .map(([k, ps]) => ({ k, n: ps.length, avg: ps.reduce((s, p) => s + score(p), 0) / ps.length }))
-      .sort((a, b) => b.avg - a.avg);
-    for (const r of rows) console.log(`  ${r.k.padEnd(28)} avgScore ${r.avg.toFixed(1)}  (n=${r.n})`);
+      .map(([k, ps]) => ({
+        k, n: ps.length,
+        avg: ps.reduce((s, p) => s + score(p), 0) / ps.length,
+        avgViews: ps.reduce((s, p) => s + (latestStats(p).views || 0), 0) / ps.length,
+      }))
+      .sort((a, b) => b.avgViews - a.avgViews);
+    for (const r of rows) console.log(`  ${r.k.slice(0, 38).padEnd(40)} avgViews ${Math.round(r.avgViews).toString().padStart(6)}  engScore ${r.avg.toFixed(1)}  (n=${r.n})`);
   }
 
   const ranked = [...measured].sort((a, b) => score(b) - score(a));
