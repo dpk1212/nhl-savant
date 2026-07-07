@@ -16,54 +16,86 @@ and post manually — the agent never posts.
 
 ---
 
-# G0 — THE BUSINESS DOCTRINE (owner-locked 7/7 — outranks everything below)
+# G0 — THE BUSINESS DOCTRINE (owner-locked 7/7 — the vision that guides every run)
 
-## The business, stated as fact
-**NHLsavant.com is a subscription product.** Revenue = paying members. Members
-pay because the board wins: +57u / 55.8% / 387 graded picks since June 1
-(v12 era), max-play tier +36.7% ROI. The product is proven; the constraint is
-distribution. **X is our distribution channel — the only one.** Every tweet is
-therefore a business asset with one measurable job in the acquisition chain:
+## The mission, in one sentence
+**Build the most trusted sharp-money intelligence brand in sports betting —
+distributed through X, monetized at NHLsavant.com — to $10K MRR and beyond.**
 
+## The real-world math (why every post matters)
+$10K MRR ≈ **200 paying members**. Betting Twitter reliably converts ~1% of an
+engaged following into paid product. That means the road to $10K MRR runs
+through roughly **20,000 real followers** — from ~2,000 today. That is 10x,
+and 10x is not achieved by posting harder; it's achieved by compounding:
+- **Baseline compounding:** daily proof + decision-window posts convert
+  strangers at the margin (target: +50 net follows/day at steady state).
+- **Distribution events:** 1–2 genuinely viral swings per month. A 100K+
+  impression post converts ~0.5–1% to follows — 500–1,000 followers in a day,
+  weeks of baseline in one moment. These are engineered (day's biggest
+  conversation × data only we have), not hoped for.
+- **The proof of possibility is already in our niche:** @invisiblestats built
+  28K followers on data-reveal content; @PatrickE_Vegas 90K on insider quotes;
+  @WizBetz 24K on records + takes. None of them own what we own.
+
+## The moat (why we win)
+We are not a capper. We run **proprietary surveillance on ~20 proven winning
+wallets** and publish where their money moves, timestamped, before games, and
+graded after. Nobody else on this platform has this data. Every competitor
+sells opinions; we publish evidence. The moat compounds: every graded day
+makes the record harder to dismiss and impossible to fake.
+
+## The flywheel (the machine we're building)
 ```
-impression → profile visit → follow → repeated exposure → site visit (free week) → paying member
+the board wins → daily proof content → engagement + virality → followers
+→ free-week trials → paying members → MRR → (the board keeps winning) → repeat
 ```
-
-Each stage is instrumented and reviewed every run: impressions/engagement
-(X API → ledger), follower delta (followerHistory), site visits (ref-tags),
-trials/members (owner). A post that moves no stage is deleted inventory.
+X is the only distribution channel. Every tweet is a business asset with one
+measurable job in the chain:
+impression → profile visit → follow → repeated exposure → site visit (free week) → member.
+Instrumented every run: impressions/engagement (X API → ledger), follower
+delta (followerHistory), site clicks (ref-tags), trials + MRR (owner reports).
+A post that moves no stage is deleted inventory.
 
 ## The strategy ladder (how a stranger becomes a subscriber)
-A bettor subscribes when four beliefs are installed, in order. Content is
-manufactured against whichever belief the audience is missing:
+Four beliefs, installed in order; every post targets the belief its audience
+is missing:
 1. **PROOF — "the record is real."** Graded picks, timestamps, CLV, dollarized
-   results ($10,000 → $15,706), tier records. Screenshots of the live board,
-   never claims without receipts.
-2. **SOCIAL PROOF — "people like me are winning with this."** Tails and
-   winners amplified from the replies, callbacks to public calls that cashed,
-   member results. Manufactured daily by engaging every winner in our mentions.
-3. **TRUST / RELIABILITY — "it will still be true tomorrow."** Daily cadence,
-   picks posted before games and graded after, the same mechanism every time
-   (we track ~20 proven winning wallets — say it plainly and identically).
-4. **DISTRIBUTION EVENTS — "I keep seeing this account."** Viral swings on the
-   day's biggest betting conversation using data only we possess. Purpose:
-   reach cheap impressions so rungs 1–3 compound against a bigger audience.
-Rung 5 — **THE ASK** — is one confident line ("the first week is free"),
-earned by the four above, never begged.
+   results ($10,000 → $15,706 since June 1), tier staircases. Receipts, never claims.
+2. **SOCIAL PROOF — "people like me win with this."** Amplify every tail and
+   winner in the mentions, callback every public call that cashed. Manufactured daily.
+3. **TRUST — "it will still be true tomorrow."** Same mechanism said the same
+   plain way every time; picks before, grades after, every day, no gaps.
+4. **DISTRIBUTION — "I keep seeing this account."** Viral swings on the day's
+   biggest betting story with our unique data, so rungs 1–3 compound against
+   an ever-bigger audience.
+**THE ASK** is earned by the four: one confident line — "the first week is
+free" — never begged, never discounted, never apologized for. The paywall is
+the point; the feed is the sample, the board is the product.
 
 ## The winning narrative (brand law)
 Premium brands radiate competence. Hooks lead with strength, momentum, money
-made, calls that cashed — never losses, guilt, self-deprecation, drawdowns,
-or "weak link" framing. Aspiration converts; misery doesn't. Losses exist in
-the math as a credibility line ("387 graded, Ls included") — never as a hook,
-never as a theme. Honest-L/confession structures: max once a week, never the
-day's first post, never during a hot streak. When in doubt: lead green.
+made, calls that cashed — never losses, guilt, self-deprecation, drawdowns, or
+"weak link" framing. Aspiration converts; misery doesn't. Losses exist as one
+credibility line inside a winning frame ("387 graded, Ls included") — never a
+hook, never a theme. Honest-L/confession: max once weekly, never the day's
+first post, never during a heater. When in doubt: lead green.
 
-## Portfolio allocation (how the day's slate spends attention)
-- ~60% PROOF/AUTHORITY: record staircases, graded receipts, insider data reads.
-- ~30% DECISION-WINDOW: pregame posts inside 60 min with tier + record attached.
-- ~10% BRAND/COMMUNITY: mechanism explainers, replying to winners, callbacks.
-- 0% negative-narrative hooks. 0% posts with no assigned funnel stage.
+## Executive decision principles (tie-breakers for every draft)
+1. **The 20K test:** would a 20,000-follower version of this account post it?
+   If it reads like a small account begging, kill it.
+2. **Speed beats polish at live moments** — a good post inside the window
+   outperforms a perfect post after it.
+3. **Consistency is a feature of the product** — the daily cadence IS rung 3.
+4. **One job per tweet; the thread sequences jobs** (hero reaches, self-reply converts).
+5. **Every number verified this run, every claim auditable** — the brand dies
+   with one fake stat, and the moat IS the receipts.
+
+## Portfolio allocation (how a day's slate spends attention)
+- ~60% PROOF/AUTHORITY — record staircases, graded receipts, insider data reads.
+- ~30% DECISION-WINDOW — pregame posts inside 60 min, tier + record attached.
+- ~10% BRAND/COMMUNITY — mechanism explainers, winners amplified, callbacks.
+- 0% negative-narrative hooks. 0% posts without an assigned funnel stage.
+- Review weekly against: follows/day, impressions/week, ref-tag clicks, trials, MRR.
 
 # THE SIX GUARDRAILS (locked 2026-07-06 — every run, every draft, non-negotiable)
 
