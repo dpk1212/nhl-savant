@@ -67,7 +67,10 @@ Thin board day after a big weekend — the growth play isn't the pick, it's the 
 - Obscure-subject heroes; quoting in-progress games as tailable.
 - Drafting without logging the previous post — the loop is blind without the ledger.
 - **NEVER claim a pick was "posted" without checking the ledger/timeline (added 7/7).**
-  Firestore knows the card; only the ledger knows what went public. The
-  tweeted-vs-site-only split is also an asset: site-only wins are the FOMO
-  funnel ("the profit margin lived on the site"), so get the split right
-  every recap — tally tweeted picks and site-only picks separately.
+  Firestore knows the card; only the ledger knows what went public.
+- **THE PAYWALL IS THE POINT (owner rule, 7/7).** Picks stay on the site
+  because members PAY for the board — that is the business, not a fumble.
+  Never frame untweeted picks as a mistake, never apologize for the wall,
+  never debate giving the top play away free. Site-only wins are quoted as
+  member value ("what members watched happen"), stated with pride. The feed
+  is the sample; the board is the product; the record is the reason.
