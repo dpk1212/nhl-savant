@@ -5559,8 +5559,10 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
     const id = setInterval(() => setSealNow(Date.now()), 15000);
     return () => clearInterval(id);
   }, [gameEpoch, isGraded]);
+  // Monitoring cards are tracked, not staked — nothing to lock, so they never
+  // wear the countdown pill or the seal.
   const isSealed = gameEpoch != null && !isNaN(gameEpoch) && !isGraded && !isCancelled
-    && sealNow >= gameEpoch - LOCK_LEAD_MS;
+    && !isMonitoring && sealNow >= gameEpoch - LOCK_LEAD_MS;
   const sealLive = isSealed && sealNow >= gameEpoch;
 
   // Header vocabulary borrowed verbatim from the live Sharp Position card:
@@ -5729,7 +5731,7 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.4rem' }}>
                 {tierStrip}
                 {metaLine}
-                <LockCountdown gameTime={gameTime} isGraded={isGraded} />
+                {!isMonitoring && <LockCountdown gameTime={gameTime} isGraded={isGraded} />}
               </div>
             </div>
             {/* bettor stat block — full width, the actionable numbers */}
@@ -5753,7 +5755,7 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                 {tierStrip}
                 {metaLine}
-                <LockCountdown gameTime={gameTime} isGraded={isGraded} />
+                {!isMonitoring && <LockCountdown gameTime={gameTime} isGraded={isGraded} />}
               </div>
             </div>
 
