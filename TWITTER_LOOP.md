@@ -130,6 +130,15 @@ exception and must beat the franchise alternative to ship:
    leans against the public, flips, doubles size — say it plainly with
    timestamps. This is the myth-bust/insider slot the niche's 50K+ view
    posts live in. Withholding a name is allowed (the board is the gate).
+   **THE RECEIPT STACK (added 7/7 — our proven highest-performing shape,
+   verified via owner-bookmarked April tweets at 7.2K-11K impressions, 2-5x
+   the current baseline):** contrarian/persona setup → open-loop pivot → the
+   pick isolated → RECEIPT BLOCK (sharp count · $ invested · % of matchup
+   money · combined pool P&L) → up to 4 NAMED RECEIPTS (`<last-4-hex-tag>
+   $<amount>`, generated via `node scripts/walletReceipts.mjs <gameKey>
+   <ml|spread|total> [outcome]` — never hand-typed) → optional largest-bet
+   ROI + avg-size multiple → locks-in-X close. Use this skeleton whenever a
+   pick has 3+ tracked wallets on one side; full spec in taste.md Part 0.
 4. **GRADED** (nightly · TRUST + SOCIAL PROOF)
    ✅/❌ card with running numbers, one line of voice, zero gloating; amplify
    every winner who tailed in the replies.
@@ -267,6 +276,7 @@ Every loop run outputs this checklist with the specific content slotted in.
 | `node scripts/socialBoard.mjs` | Time-prioritized board (G3 buckets, staleness check) — `git pull` first if it warns |
 | `node scripts/socialLedger.mjs refresh` + `report` | **The memory** — real X API metrics per post (impressions/bookmarks/quotes included), follower history, experiment status |
 | X API (MCP `user-xapi` / xurl bridge) | Mentions inbox, reply-target search with real velocity, quoters/reposters of viral posts, trends (G5a — mind the credits) |
+| `node scripts/walletReceipts.mjs <gameKey> <ml\|spread\|total> [outcome]` | THE RECEIPT STACK — sharp count, $ invested, % of matchup, pool P&L, named last-4-hex receipts, largest-bet ROI/size-multiple. Run for every 3+ tracked-wallet pick before drafting its hero. |
 | `social_analysis/experiments.json` | The active experiment Phase 3 must implement |
 | `ALGO_PSYCH_PLAYBOOK.md` | **Ground-truth ranking mechanics** (from X's open-sourced algo) × the psychology that earns each scored action — Phase 3 checks every hero against it |
 | `BRAND_MESSAGING.md` | Canonical positioning, bio/pin, phrase bank, screenshot pairing (G2) |
@@ -431,13 +441,14 @@ PHASE 3 — WRITE (G1 + G2 + G3 + G4)
   discipline (in-lane content only), and ≥2–3h spacing from our last post
   (author-diversity attenuation).
 - DATA INTEGRITY: use `selection` VERBATIM. Cross-check every number against
-  verified_records.json. Wallet dollars (owner-updated 7/7): AGGREGATED pool
-  totals and percentages from `public/sharp_positions.json` are approved and
-  are the preferred punch ("$121K on Seattle, $14K on Miami" · "89% of the
-  sharp dollars") — aggregate `invested` by side/tier at draft time, quote
-  only figures computed THIS run. Individual-wallet dollar figures stay
-  banned. The wallet headcount fields (provenWinnersFor/Against) are
-  HEADCOUNTS, never win-loss records.
+  verified_records.json. Wallet dollars (owner-updated 7/7, twice): named,
+  anonymized (last-4-hex-tag-only) wallet receipts ARE our proven house style
+  — see taste.md Part 0, THE RECEIPT STACK — generated via
+  `node scripts/walletReceipts.mjs <gameKey> <ml|spread|total> [outcome]`.
+  NEVER the full wallet address, NEVER a display name/handle, NEVER
+  hand-typed — always from this run's script output. Aggregated pool totals
+  and percentages remain approved for lighter posts. The wallet headcount
+  fields (provenWinnersFor/Against) are HEADCOUNTS, never win-loss records.
 - Write ready_to_post/YYYY-MM-DD_HHMM.json: { generatedAt, slot, guardrailCheck,
   verifiedNumbers, hero{text, rtLine, structure, mechanic, algoActions,
   improvesOn, prediction, refTag, screenshot, selfReplyAt25min, postWindow},

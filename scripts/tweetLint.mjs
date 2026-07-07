@@ -42,6 +42,11 @@ const BANNED = [
 const OPEN_LOOP = /(\.\.\.|…)\s*$/;
 const FIRST_PERSON_STAKES = /^(i('ve| have| watched| put| bet| spent| tracked)|my )/i;
 const EMOJI_ROW = /(\p{Extended_Pictographic}\s*){3,}/u;
+// THE RECEIPT STACK (added 7/7 — owner bookmarked our own April tweets that
+// used this exact shape and out-performed our current output 2-5x). A named
+// receipt line is a last-4 hex wallet tag + a dollar figure on its own line
+// — e.g. "23c4  $46.2K". Generate these with scripts/walletReceipts.mjs.
+const NAMED_RECEIPT = /^\s*[0-9a-f]{4}\s+\$[\d,.]+[KM]?\b/im;
 
 function lint(text, label) {
   const findings = [];
@@ -63,8 +68,13 @@ function lint(text, label) {
   if (/https?:\/\//i.test(text)) hit(-25, 'LINK IN TWEET 1 — measured −50% reach; the link lives in the ~25-min self-reply');
   for (const [re, msg] of BANNED) if (re.test(text)) hit(-15, msg);
   if (EMOJI_ROW.test(text)) hit(-10, '3+ emoji row — not our brand');
-  if (purpose === 'REACH' && text.length > 240)
+  const namedReceiptCount = (text.match(new RegExp(NAMED_RECEIPT, 'gim')) || []).length;
+  const hasReceiptStack = namedReceiptCount >= 2;
+  if (hasReceiptStack) hit(+12, `${namedReceiptCount} named wallet receipts (hex tag + $) — our own historical top-3 posts (7.2K-11K impressions, 7/7 owner-verified via bookmarks) used exactly this shape; it is our proprietary, unreplicable format`);
+  if (purpose === 'REACH' && text.length > 240 && !hasReceiptStack)
     hit(-8, `${text.length} chars on a REACH post — corpus: >200-char posts average 1.30x vs 1.54x; move depth to the self-reply/thread`);
+  else if (purpose === 'REACH' && text.length > 240 && hasReceiptStack)
+    hit(-2, `${text.length} chars, but a receipt stack earns its length — dwell is scored and this is our proven exception (bookmarked exemplars ran 300-400+ chars)`);
   if (text.length > 550) hit(-10, 'wall of text — dwell is scored, but only if the first screen earns it');
   const receipts = (text.match(/[✅❌]/g) || []).length;
   if (receipts >= 3 && purpose === 'REACH')

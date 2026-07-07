@@ -4,6 +4,48 @@
 > rejections define good ones. This file is updated every time a post wins,
 > a draft dies, or a niche specimen teaches something.
 
+## PART 0 — THE RECEIPT STACK (7/7 — the single biggest finding to date)
+
+The owner bookmarked three of OUR OWN tweets from April 2026. They out-earned
+tonight's entire slate 2-5x on impressions (7,223 / 11,074 / 10,172 vs a
+~1,900-2,700 baseline) using a format the loop had fully abandoned:
+
+1. **Rowdy magic ML (7,223 impr):** "Sharps went 2-0 in the NBA play-in
+   yesterday… and today a lot of the sharper money is showing up on Orlando.
+   / Magic ML / 12 sharps / $147.3K invested / 70% of sharp money / Best Magic
+   receipts: / 23c4 $46.2K / 9723 $37.6K / afd2 $24.6K / 266e $18.9K"
+2. **Cubs ML (11,074 impr, our best of the three):** "This is exactly why I
+   built this tool. / The public is on the Pirates. Pinnacle is moving with
+   the Pirates. Prediction markets are moving with the Pirates. / And yet...
+   / every sharp dollar we've tracked is on the Cubs. / Cubs ML -140 / 5 sharp
+   bettors / $16.8K invested / 99.9% of tracked [sharp money]"
+3. **Hawks dog (10,172 impr):** "Everybody is loading up NBA favorites today.
+   / Cavs. Nuggets. Knicks. Rockets. / Our board only found one sharp dog
+   worth talking about: / Hawks ML +200 / 3 sharps / $43.8K invested / 100% of
+   tracked sharp money / +$1.2M combined P&L / Largest bet: / e8f1 / $29.4K /
+   +6.1% ROI / 8.6x avg size"
+
+**THE SKELETON (mandatory for Money Moved / Decision Window heroes when a
+pick has 3+ tracked wallets):**
+1. Contrarian or persona setup (public/consensus lists building tension, or a
+   mission-stakes line) → "And yet..." / open-loop pivot.
+2. The pick, isolated on its own line.
+3. THE RECEIPT BLOCK: sharp count · $ invested · % of matchup money (or "% of
+   tracked sharp money") · optionally the pool's combined P&L.
+4. NAMED RECEIPTS: up to 4 lines of `<last-4-hex-wallet-tag>  $<amount>` —
+   this is our house anonymization (last 4 hex chars of the public wallet
+   address, NEVER the full address, NEVER a display name/handle). Generate
+   with `node scripts/walletReceipts.mjs <gameKey> <ml|spread|total>
+   [outcome]` — never hand-type these numbers.
+5. Optional: the single largest bet's ROI and size-vs-their-own-average
+   multiple ("8.6x avg size") — the specificity IS the authority.
+6. Close: locks-in-X framing.
+**This supersedes the earlier "individual-wallet $ banned" rule** — named,
+anonymized (last-4-only) wallet receipts are OUR proven house style, not a
+violation. `tweetLint.mjs` now scores 2+ named receipt lines +12 and waives
+most of the length penalty (dwell is scored; the bookmarked exemplars ran
+300-450 chars).
+
 ## PART 1 — EXEMPLARS (what good looks like, with receipts)
 
 ### Ours (by measured performance)

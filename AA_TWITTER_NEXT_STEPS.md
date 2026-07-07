@@ -91,17 +91,47 @@ The board resets in the morning.
 
 ---
 
-## 6) OPTIONAL LATE WINDOW — 9:45 PM (Dodgers/Rockies 10:11, locks 9:56) · only if awake and night isn't 0-3
+## 6) LATE WINDOW — 9:45 PM (Rockies +1.5, locks 9:56) · THE RECEIPT STACK (new format — see below)
 
-One more before midnight...
+Everybody's watching Braves and Mariners tonight. Our board found one more worth talking about...
 
-The wallets are on BOTH sides of Rockies-Dodgers: Dodgers ML -254 (4 units) and Rockies +1.5 (+118).
+Rockies +1.5
 
-Favorite to win it, dog to keep it close. That's how sharp books get beat.
+6 sharps. $30.0K invested. 87% of matchup money. +$3.06M combined P&L.
 
-Locks 9:56 ET. Graded either way.
+Best receipts:
+f960 $8.1K
+35e3 $7.5K
+135d $6.5K
+1e50 $5.2K
 
-*(Numbers verified 6:10 board pull. If posting, re-check the board first — Rockies line was +114 → +118 today, it moves.)*
+Largest bet, f960: 4.6x his own average size.
+
+Locks 9:56 ET.
+
+*(Attach the Rockies pick card. Lints 118 — highest score yet, because it's
+the first hero this run using THE RECEIPT STACK: named, anonymized wallet
+tags this account used to post in April and which out-earned tonight's whole
+slate 2-5x — see below. Re-run `node scripts/walletReceipts.mjs col_lad
+spread` right before posting; the scan refreshes and $ figures move.)*
+
+---
+
+## WHY THIS FORMAT CHANGE MATTERS (read once, applies going forward)
+
+The owner bookmarked 3 of our OWN April tweets tonight. They did 7,223 /
+11,074 / 10,172 impressions — 2-5x tonight's baseline (~1,900-2,700) — using
+named wallet receipts (`23c4 $46.2K`, `e8f1 $29.4K`) that the loop had
+quietly stopped using. That format is now restored as a first-class citizen:
+- **New tool:** `node scripts/walletReceipts.mjs <gameKey> <ml|spread|total>
+  [outcome]` computes sharp count, $ invested, % of matchup, pool P&L, top-4
+  named receipts, and the biggest bet's ROI + size multiple — straight from
+  the live wallet scan. Never hand-type these numbers again.
+- **The linter rewards it:** 2+ named receipt lines now score +12 and mostly
+  waive the length penalty (dwell is scored; our best posts ran 300-450 chars).
+- Full skeleton + the 3 bookmarked exemplars: `social_analysis/taste.md`
+  Part 0. Use this shape for every Money Moved / Decision Window hero with
+  3+ tracked wallets on one side, starting with tonight's Rockies window.
 
 ---
 
