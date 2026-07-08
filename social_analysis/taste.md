@@ -1,5 +1,21 @@
 # TASTE — the file that separates us from slop
 
+## THE SKELETON TRAP (added 7/7, ~8 PM)
+A draft scored ELITE 120 — all 5 mechanical gates passed, receipt stack
+present — and was still "pure skeleton... stick straw man" (owner's words).
+Cause: the ELITE gates check for PRESENCE of ingredients (an authority
+marker exists, a receipt line exists) but not DENSITY. Two bare receipt
+lines with no record/ROI context, no model-score authority on the pick
+itself, and no payout math is technically a receipt stack and technically
+has authority (the wallet's own record) — but it's the minimum viable
+version, not the full one. FIX APPLIED: v2 added each wallet's full
+record+ROI (not just the record), the pick's own model score/star rating as
+a second authority layer, and real payout math (stake → return). Same
+receipt-line format, same ELITE gates, score went 120→124 but the real
+gain was substance the linter can't measure. RULE: passing ELITE is a floor,
+not a finish line — always ask "did I use every verified data point I
+actually have, or just the minimum to pass the gates?" before shipping.
+
 ## PART -1 — THE TWO GATES (7/7 PM — read this first, every run)
 Tonight every hero scored SHIP (85-114) on its FIRST draft under the old
 linter and still needed 3-6 owner catches before it was actually top-1%.
