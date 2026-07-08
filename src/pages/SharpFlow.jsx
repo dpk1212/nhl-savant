@@ -5140,22 +5140,27 @@ function BackingWalletStrip({ wallets, sport, accent = B.green, isMobile }) {
     return { ...w, short, profile, rec, flatRoiDisp, decided, winner, counted, rankGroup, sizeEdge, tierLabel, tierColor, tierBg, hasRecord: !!rec && decided >= 4 };
   });
 
-  // Model-counted wallets first (they're what the stake is built on), then
-  // winners, then most-decided record, then biggest stake.
-  enriched.sort((a, b) =>
-    (Number(b.counted) - Number(a.counted)) ||
+  // STREAMLINE: the receipts show ONLY the wallets the model counted toward
+  // the stake (≥ 0.10× conviction). Token-sized bets are not evidence — they
+  // collapse into a single muted footnote instead of renting a receipt row.
+  const countedRows = enriched.filter(e => e.counted);
+  const tokenRows = enriched.filter(e => !e.counted);
+
+  // Winners first, then most-decided record, then biggest stake.
+  countedRows.sort((a, b) =>
     (Number(b.winner) - Number(a.winner)) ||
     (b.decided - a.decided) ||
     ((b.invested || 0) - (a.invested || 0))
   );
 
   const cap = isMobile ? 3 : 4;
-  const shown = enriched.slice(0, cap);
-  const more = enriched.length - shown.length;
+  const shown = countedRows.slice(0, cap);
+  const more = countedRows.length - shown.length;
   // "N proven" counts only wallets the model actually counted — matches the
   // cron's whitelist consensus, not the raw tracked-wallet list.
-  const winnerCount = enriched.filter(e => e.winner && e.counted).length;
-  const tokenCount = enriched.filter(e => !e.counted).length;
+  const winnerCount = countedRows.filter(e => e.winner).length;
+  const tokenCount = tokenRows.length;
+  if (countedRows.length === 0) return null;
 
   return (
     <div style={{
@@ -5166,9 +5171,8 @@ function BackingWalletStrip({ wallets, sport, accent = B.green, isMobile }) {
         <div style={{ flex: 1, height: '1px', background: `linear-gradient(90deg, ${B.borderSubtle}, transparent)` }} />
         <span style={{ ...T.micro, fontWeight: 800, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
           {winnerCount > 0
-            ? <><span style={{ color: B.green }}>{winnerCount} proven</span> · {enriched.length} wallet{enriched.length !== 1 ? 's' : ''}</>
-            : <>{enriched.length} wallet{enriched.length !== 1 ? 's' : ''}</>}
-          {tokenCount > 0 && <span style={{ color: B.textSubtle }}> · {tokenCount} token</span>}
+            ? <><span style={{ color: B.green }}>{winnerCount} proven</span> · {countedRows.length} wallet{countedRows.length !== 1 ? 's' : ''}</>
+            : <>{countedRows.length} wallet{countedRows.length !== 1 ? 's' : ''}</>}
         </span>
       </div>
 
@@ -5197,12 +5201,6 @@ function BackingWalletStrip({ wallets, sport, accent = B.green, isMobile }) {
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.18rem', ...T.micro, fontSize: '0.5rem', fontWeight: 800, color: B.gold }}>
                     <CheckCircle size={9} style={{ strokeWidth: 3 }} />{sportUp}
                   </span>
-                )}
-                {!e.counted && (
-                  <span
-                    title={`Bet is under ${Math.round(MODEL_MIN_CONVICTION * 100)}% of this wallet's average ${sportUp} bet — the model doesn't count token-sized positions toward the stake`}
-                    style={{ ...T.micro, fontSize: '0.5rem', fontWeight: 800, color: B.textSubtle, background: 'rgba(148,163,184,0.08)', border: '1px solid rgba(148,163,184,0.18)', padding: '0.08rem 0.32rem', borderRadius: '4px', letterSpacing: '0.05em' }}
-                  >TOKEN BET</span>
                 )}
                 <span style={{ ...T.micro, fontSize: '0.55rem', color: B.textMuted, fontFeatureSettings: "'tnum'" }}>…{e.short.slice(-4)}</span>
               </div>
@@ -5244,9 +5242,15 @@ function BackingWalletStrip({ wallets, sport, accent = B.green, isMobile }) {
         ))}
       </div>
 
-      {more > 0 && (
+      {(more > 0 || tokenCount > 0) && (
         <div style={{ ...T.micro, fontSize: '0.56rem', color: B.textMuted, textAlign: 'center', marginTop: '0.45rem', letterSpacing: '0.03em' }}>
-          + {more} more backing wallet{more !== 1 ? 's' : ''}
+          {more > 0 && <>+ {more} more backing wallet{more !== 1 ? 's' : ''}</>}
+          {more > 0 && tokenCount > 0 && ' · '}
+          {tokenCount > 0 && (
+            <span style={{ color: B.textSubtle }}>
+              {tokenCount} small bet{tokenCount !== 1 ? 's' : ''} tracked, not counted
+            </span>
+          )}
         </div>
       )}
     </div>
