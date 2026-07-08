@@ -168,6 +168,48 @@ function isSportWinner(fullWallet, sport) {
   return tier === 'CONFIRMED' || tier === 'FLAT';
 }
 
+// Model-parity conviction floor. writeSharpActions drops any position with
+// invested < 0.10× the wallet's avg sport bet (SHADOW_MIN_MULTIPLIER), so the
+// staking cron literally cannot see those token bets. The card must not count
+// them as full receipts either, or "4 proven winners backing" renders on a
+// pick the model stakes off 1-2 wallets. Entries without a sizeRatio (legacy
+// stamps) are assumed counted.
+const MODEL_MIN_CONVICTION = 0.10;
+function isModelCounted(w) {
+  const sr = Number(w?.sizeRatio);
+  return !Number.isFinite(sr) || sr <= 0 || sr >= MODEL_MIN_CONVICTION;
+}
+
+/**
+ * The record that EARNED the wallet its whitelist badge — never a
+ * contradicting one. A wallet can be whitelisted via Source A (featured-pick
+ * flat ROI) while its on-chain $ record is negative; showing the on-chain
+ * record next to a PROVEN badge reads as nonsense ("how can you be negative
+ * and on our whitelist?"). whitelistSource tells us which signal promoted the
+ * wallet, so we display THAT record.
+ * Returns { wins, losses, wr, roi, kind: 'picks'|'positions' } or null.
+ */
+function whitelistRecordForDisplay(walletShort, sport) {
+  const sr = getWalletProfile(walletShort)?.bySport?.[sport];
+  if (!sr) return null;
+  const isWinner = sr.whitelistTier === 'CONFIRMED' || sr.whitelistTier === 'FLAT';
+  const pos = sr.positions || null;
+  const pk = sr.picks || null;
+  const mk = (r, kind, roi) => ({
+    wins: r.wins || 0, losses: r.losses || 0,
+    wr: r.wr ?? null, roi: roi ?? null, kind,
+  });
+  // Promoted purely on featured-pick performance → show the pick record.
+  if (isWinner && sr.whitelistSource === 'A' && pk && pk.n > 0) {
+    return mk(pk, 'picks', pk.flatRoi);
+  }
+  if (pos && (pos.n || 0) > 0) {
+    return mk(pos, 'positions', pos.positionFlatRoi ?? (pk?.flatRoi ?? null));
+  }
+  if (pk && pk.n > 0) return mk(pk, 'picks', pk.flatRoi);
+  return null;
+}
+
 /** UI: grouped sports leaderboard rank (no raw # or percentile shown). */
 function groupedSportsRankLabel(rank) {
   if (rank == null || rank <= 0) return null;
@@ -5064,17 +5106,17 @@ function BackingWalletStrip({ wallets, sport, accent = B.green, isMobile }) {
   const enriched = wallets.map((w) => {
     const short = String(w.wallet || '').slice(-6);
     const profile = getWalletProfile(short);
-    const rec = profile?.bySport?.[sport]?.positions || null;
-    const picksRec = profile?.bySport?.[sport]?.picks || null;
-    // Whitelist-qualifying metric: the cron promotes a wallet to a PROVEN
-    // sport winner (CONFIRMED/FLAT) on FLAT/unit ROI, not dollar ROI. Show
-    // THAT so the record never contradicts the PROVEN badge (a FLAT wallet
-    // can be +unit-ROI yet deeply −$ if it sized a few losers big). Prefer
-    // the on-chain position flat ROI, fall back to the featured-pick flat ROI.
-    const flatRoiDisp = rec?.positionFlatRoi != null ? rec.positionFlatRoi
-      : (picksRec?.flatRoi != null ? picksRec.flatRoi : null);
-    const decided = rec ? (rec.wins || 0) + (rec.losses || 0) : 0;
+    // Whitelist-coherent record: show the record that EARNED the badge
+    // (featured-pick record for Source-A promotions, on-chain record
+    // otherwise) so a PROVEN wallet never renders with a negative ROI.
+    const wlRec = whitelistRecordForDisplay(short, sport);
+    const rec = wlRec;
+    const flatRoiDisp = wlRec?.roi ?? null;
+    const decided = wlRec ? (wlRec.wins || 0) + (wlRec.losses || 0) : 0;
     const winner = isSportWinner(short, sport);
+    // Model parity: token bets (< 0.10× the wallet's avg sport bet) are
+    // invisible to the staking cron — badge them instead of counting them.
+    const counted = isModelCounted(w);
     const rankGroup = groupedSportsRankLabel(w.rank);
     const eliteRank = w.rank != null && w.rank > 0 && w.rank <= 20;
     // Size edge: bigger than this wallet's own median, and they win more
@@ -5091,11 +5133,13 @@ function BackingWalletStrip({ wallets, sport, accent = B.green, isMobile }) {
     const tierLabel = eliteRank ? 'ELITE' : winner ? 'PROVEN' : 'TRACKED';
     const tierColor = eliteRank ? B.gold : winner ? B.green : B.textSec;
     const tierBg = eliteRank ? B.goldDim : winner ? B.greenDim : 'rgba(148,163,184,0.10)';
-    return { ...w, short, profile, rec, flatRoiDisp, decided, winner, rankGroup, sizeEdge, tierLabel, tierColor, tierBg, hasRecord: !!rec && decided >= 4 };
+    return { ...w, short, profile, rec, flatRoiDisp, decided, winner, counted, rankGroup, sizeEdge, tierLabel, tierColor, tierBg, hasRecord: !!rec && decided >= 4 };
   });
 
-  // Best wallets first: winners, then most-decided record, then biggest stake.
+  // Model-counted wallets first (they're what the stake is built on), then
+  // winners, then most-decided record, then biggest stake.
   enriched.sort((a, b) =>
+    (Number(b.counted) - Number(a.counted)) ||
     (Number(b.winner) - Number(a.winner)) ||
     (b.decided - a.decided) ||
     ((b.invested || 0) - (a.invested || 0))
@@ -5104,7 +5148,10 @@ function BackingWalletStrip({ wallets, sport, accent = B.green, isMobile }) {
   const cap = isMobile ? 3 : 4;
   const shown = enriched.slice(0, cap);
   const more = enriched.length - shown.length;
-  const winnerCount = enriched.filter(e => e.winner).length;
+  // "N proven" counts only wallets the model actually counted — matches the
+  // cron's whitelist consensus, not the raw tracked-wallet list.
+  const winnerCount = enriched.filter(e => e.winner && e.counted).length;
+  const tokenCount = enriched.filter(e => !e.counted).length;
 
   return (
     <div style={{
@@ -5117,6 +5164,7 @@ function BackingWalletStrip({ wallets, sport, accent = B.green, isMobile }) {
           {winnerCount > 0
             ? <><span style={{ color: B.green }}>{winnerCount} proven</span> · {enriched.length} wallet{enriched.length !== 1 ? 's' : ''}</>
             : <>{enriched.length} wallet{enriched.length !== 1 ? 's' : ''}</>}
+          {tokenCount > 0 && <span style={{ color: B.textSubtle }}> · {tokenCount} token</span>}
         </span>
       </div>
 
@@ -5146,6 +5194,12 @@ function BackingWalletStrip({ wallets, sport, accent = B.green, isMobile }) {
                     <CheckCircle size={9} style={{ strokeWidth: 3 }} />{sportUp}
                   </span>
                 )}
+                {!e.counted && (
+                  <span
+                    title={`Bet is under ${Math.round(MODEL_MIN_CONVICTION * 100)}% of this wallet's average ${sportUp} bet — the model doesn't count token-sized positions toward the stake`}
+                    style={{ ...T.micro, fontSize: '0.5rem', fontWeight: 800, color: B.textSubtle, background: 'rgba(148,163,184,0.08)', border: '1px solid rgba(148,163,184,0.18)', padding: '0.08rem 0.32rem', borderRadius: '4px', letterSpacing: '0.05em' }}
+                  >TOKEN BET</span>
+                )}
                 <span style={{ ...T.micro, fontSize: '0.55rem', color: B.textMuted, fontFeatureSettings: "'tnum'" }}>…{e.short.slice(-4)}</span>
               </div>
               {e.hasRecord ? (
@@ -5157,7 +5211,7 @@ function BackingWalletStrip({ wallets, sport, accent = B.green, isMobile }) {
                       {e.flatRoiDisp >= 0 ? '+' : ''}{Math.round(e.flatRoiDisp)}% ROI
                     </span>
                   )}
-                  <span style={{ ...T.micro, fontSize: '0.5rem', color: B.textSubtle, letterSpacing: '0.04em' }}>{sportUp} record</span>
+                  <span style={{ ...T.micro, fontSize: '0.5rem', color: B.textSubtle, letterSpacing: '0.04em' }}>{sportUp} {e.rec?.kind === 'picks' ? 'pick record' : 'record'}</span>
                 </div>
               ) : (
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem', fontFeatureSettings: "'tnum'" }}>
@@ -5206,13 +5260,16 @@ function V12ConvictionPanel({ tier, tierColor, tierBg, forW, agW, qFor, qAg, hcF
   const tierWord = tier ? (tier.charAt(0) + tier.slice(1).toLowerCase()) : 'Strong';
 
   // Lead proven-winner record (largest decided sample) for the thesis.
+  // Model-counted wallets only, and the whitelist-coherent record — the
+  // thesis must never pair "proven winner" with a negative ROI.
   const leadRec = (() => {
     if (!Array.isArray(backingWallets)) return null;
     let best = null, bestDecided = 3;
     for (const w of backingWallets) {
       const short = String(w.wallet || '').slice(-6);
       if (!isSportWinner(short, sport)) continue;
-      const rec = getWalletProfile(short)?.bySport?.[sport]?.positions;
+      if (!isModelCounted(w)) continue;
+      const rec = whitelistRecordForDisplay(short, sport);
       const decided = rec ? (rec.wins || 0) + (rec.losses || 0) : 0;
       if (decided > bestDecided) { bestDecided = decided; best = rec; }
     }
@@ -5238,7 +5295,7 @@ function V12ConvictionPanel({ tier, tierColor, tierBg, forW, agW, qFor, qAg, hcF
         {fw > 0 ? (
           <>
             <span style={{ color: B.text, fontWeight: 700 }}>{fw} proven {sportUp} winner{fw !== 1 ? 's' : ''}</span>
-            {leadRec ? <span style={{ color: B.textMuted, fontFeatureSettings: "'tnum'" }}> ({leadRec.wins}-{leadRec.losses}{leadRec.positionFlatRoi != null ? <>, {leadRec.positionFlatRoi >= 0 ? '+' : ''}{Math.round(leadRec.positionFlatRoi)}% ROI</> : ''})</span> : null}
+            {leadRec ? <span style={{ color: B.textMuted, fontFeatureSettings: "'tnum'" }}> ({leadRec.wins}-{leadRec.losses}{leadRec.roi != null ? <>, {leadRec.roi >= 0 ? '+' : ''}{Math.round(leadRec.roi)}% ROI</> : ''})</span> : null}
             {' '}backing{qf > 0 ? <>, <span style={{ color: B.text, fontWeight: 700 }}>{qf} quality wallet{qf !== 1 ? 's' : ''}</span> confirming</> : ''}
           </>
         ) : (
@@ -5509,18 +5566,22 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
     ? Math.max(0, Math.min(100, Math.round(score * 100)))
     : 0;
   const backers = Array.isArray(backingWallets) ? backingWallets.length : 0;
-  // Qualified backers = proven sport winners (whitelist CONFIRMED/FLAT) — the
-  // wallets the model actually trusts, vs all tracked wallets on the side.
+  // Qualified backers = proven sport winners (whitelist CONFIRMED/FLAT) that
+  // the model actually COUNTED (≥ 0.10× conviction) — matches the cron's
+  // whitelist consensus, not the raw tracked-wallet list.
   const provenBackers = Array.isArray(backingWallets)
-    ? backingWallets.filter(w => w && isSportWinner(String(w.wallet || '').slice(-6), sport)).length
+    ? backingWallets.filter(w => w && isModelCounted(w) && isSportWinner(String(w.wallet || '').slice(-6), sport)).length
     : 0;
 
-  const teamShort = (team || '').split(' ').pop() || team;
+  const isTotal = marketType === 'total';
+  // TOTAL picks split Over vs Under — never "44% 9.5 · 56% Astros".
+  const totalDir = isTotal ? ((team || '').toLowerCase().startsWith('under') ? 'Under' : 'Over') : null;
+  const teamShort = isTotal ? totalDir : ((team || '').split(' ').pop() || team);
   const awayShort = (away || '').split(' ').pop() || away;
   const homeShort = (home || '').split(' ').pop() || home;
-  const otherTeam = teamShort === awayShort ? homeShort : awayShort;
-
-  const isTotal = marketType === 'total';
+  const otherTeam = isTotal
+    ? (totalDir === 'Over' ? 'Under' : 'Over')
+    : (teamShort === awayShort ? homeShort : awayShort);
   const pickLabel = marketType === 'spread'
     ? `${teamShort} ${line > 0 ? '+' : ''}${line}`
     : isTotal ? (team || 'Total')
@@ -6095,10 +6156,16 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
     if (Number.isFinite(line) && line >= 1.5) return `${dir} ${line}`;
     return dir;
   })();
-  const teamShort = displayTeam?.split(' ').pop() || displayTeam;
+  // TOTAL picks label as Over/Under — the last-word split would yield the
+  // line number ("9.5") and pair it against a team name in money splits.
+  const dtIsTotal = /^(over|under)/i.test(displayTeam || '');
+  const dtDir = dtIsTotal ? ((displayTeam || '').toLowerCase().startsWith('under') ? 'Under' : 'Over') : null;
+  const teamShort = dtIsTotal ? dtDir : (displayTeam?.split(' ').pop() || displayTeam);
   const awayShort = away?.split(' ').pop() || away;
   const homeShort = home?.split(' ').pop() || home;
-  const otherTeam = teamShort === awayShort ? homeShort : awayShort;
+  const otherTeam = dtIsTotal
+    ? (dtDir === 'Over' ? 'Under' : 'Over')
+    : (teamShort === awayShort ? homeShort : awayShort);
   const ut = unitTier(units);
   const potentialWin = profitFromOdds(odds, units);
 
@@ -6601,7 +6668,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                   fontSize: '1.7rem', fontWeight: 900, color: B.text,
                   lineHeight: 1.05, letterSpacing: '-0.025em',
                 }}>
-                  {marketType === 'spread' ? `${teamShort} ${line > 0 ? '+' : ''}${line}` : marketType === 'total' ? teamShort : `${teamShort} ML`}
+                  {marketType === 'spread' ? `${teamShort} ${line > 0 ? '+' : ''}${line}` : marketType === 'total' ? displayTeam : `${teamShort} ML`}
                 </div>
                 {pinnProb && (
                   <div style={{ ...T.micro, fontSize: '0.62rem', color: B.textMuted, marginTop: '0.35rem', fontFeatureSettings: "'tnum'" }}>
@@ -6754,7 +6821,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
               table fill. CLV lives once, up in the bet row. */}
           <div style={{ padding: '0.85rem 1rem 0' }}>
             <div style={{ ...T.micro, fontSize: '0.52rem', color: B.textMuted, letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
-              {marketType === 'spread' ? `${teamShort} ${line > 0 ? '+' : ''}${line}` : marketType === 'total' ? teamShort : `${teamShort} ML`} — line history
+              {marketType === 'spread' ? `${teamShort} ${line > 0 ? '+' : ''}${line}` : marketType === 'total' ? displayTeam : `${teamShort} ML`} — line history
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr' }}>
               {[
@@ -14285,6 +14352,9 @@ export default function SharpFlow() {
                                 roi: w.roi || 0,
                                 pnl: w.pnl || 0,
                                 rank: w.rank ?? null,
+                                // conviction vs the wallet's avg sport bet —
+                                // powers the model-parity TOKEN BET badge
+                                sizeRatio: Number.isFinite(w.sizeRatio) ? w.sizeRatio : null,
                               }))
                               .sort((a, b) => (b.invested || 0) - (a.invested || 0));
                             return rows.length ? rows : null;
