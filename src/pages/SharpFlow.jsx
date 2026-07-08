@@ -195,9 +195,13 @@ function whitelistRecordForDisplay(walletShort, sport) {
   const isWinner = sr.whitelistTier === 'CONFIRMED' || sr.whitelistTier === 'FLAT';
   const pos = sr.positions || null;
   const pk = sr.picks || null;
+  // ROI is display-guarded to finite values: 4 stored profiles carried
+  // picks.flatRoi = Infinity (odds=0 bug in exportWalletProfiles, since
+  // fixed) which rendered "+Infinity% ROI" on the card. Until those docs
+  // regenerate, show the record without an ROI figure.
   const mk = (r, kind, roi) => ({
     wins: r.wins || 0, losses: r.losses || 0,
-    wr: r.wr ?? null, roi: roi ?? null, kind,
+    wr: r.wr ?? null, roi: Number.isFinite(roi) ? roi : null, kind,
   });
   // Promoted purely on featured-pick performance → show the pick record.
   if (isWinner && sr.whitelistSource === 'A' && pk && pk.n > 0) {
