@@ -69,11 +69,64 @@ minutes before start. Recaps with no live moment measured 0.3-0.6x; skip
 them or fuse them into a live pick (a fresh win is a hook, not a post).
 
 **DRAFT**: 3 genuinely different angles. Kill anything whose hook shape
-appears in the last 10 real posts. Apply Rules 2 and 4. Ship one.
+appears in the last 10 real posts. Apply Rules 2 and 4 and the ARSENAL
+below. Ship one.
 
 **MEASURE**: the next run's PULL grades it. One line in the log below —
 what was predicted, what happened, what changes. Prune the log to ~15
 lines; old lessons either graduate into the Five Rules or die.
+
+---
+
+## THE ARSENAL — psychology that moves numbers, mapped to OUR content
+Every draft must consciously deploy at least 3 of these. Name them when
+presenting a draft ("this uses #1, #4, #9"). If you can't name them, the
+draft is generic and dies.
+
+1. **Information gap** (Loewenstein): the hook opens a loop the reader can
+   only close by reading on — "one game made every wallet agree" forces
+   "which game?" The gap must be SPECIFIC (a named unknown), not vague.
+2. **High-arousal emotion** (Berger, *Contagious*): awe, surprise, anxiety,
+   righteous anger get shared; contentment and sadness don't. Our natural
+   arousal triggers: a whale betting 4.6x his average (surprise), a fortune
+   moving quietly on a game nobody watches (conspiracy-tinged awe), the
+   books getting beaten (righteous anger for the tribe).
+3. **Odd-number specificity**: $15,706 is credible; $15K is marketing.
+   145-125 is a real record; "winning record" is a claim. Precision is our
+   costliest, least copyable signal — always the exact figure.
+4. **Costly signal / anti-hero honesty**: posting losses, showing the -4u
+   graded ❌, "losses included" — credibility bought with pain. One visible
+   scar makes ten wins believable. (Lead green, but never hide red.)
+5. **Tribal identity**: us = the small group who follow the wallets;
+   them = the public, the books, the touts capping games on vibes. Every
+   post should let a reader feel smarter than the crowd for following.
+6. **Scarcity + deadline**: "locks 8:06 ET" is a real, non-manufactured
+   deadline — the single strongest CTA we own. Countdown posts measured 2x
+   baseline. Never fake urgency; the game clock provides it free.
+7. **Zeigarnik effect** (unfinished stories nag): plant a prediction in the
+   morning, pay it off at night with a QT — measured 1.8x. A graded pick is
+   a story RESOLUTION; a locked pick is a story OPENING. Chain them.
+8. **Character > data** (narrative transportation): "wallet f960" doing
+   something anomalous is a character in a story; "89% of sharp money" is a
+   statistic. People retell stories, not percentages. Receipts give both:
+   the stat frames, the whale stars.
+9. **Processing fluency**: one idea per line, short words, vertical
+   escalation, the punch isolated on its own line. If line 1 doesn't read
+   itself to a scroller in under a second, it's furniture.
+10. **Concrete imagery** (*Made to Stick*): "while the burgers hit the
+    grill, the sharps are already working" — a scene, not an abstraction.
+    One concrete image per post maximum; more becomes purple.
+11. **Reciprocity before the ask**: the pick, the receipts, the record —
+    all given free in the post. The site link never begs; it lives in the
+    self-reply, stated once as fact. Givers get profile clicks.
+12. **Answerable controversy** (reply engine): close on a question a
+    stranger can actually answer with an opinion ("Would you bet against
+    the US at home?") — replies are the algorithm's currency. Never
+    rhetorical questions; nobody replies to those.
+13. **Authority stacking, one layer per claim**: the wallet's record, the
+    model's score, the season's units — each claim gets exactly one
+    authority attached. Unanchored claims read as touting; over-anchored
+    reads as insecurity.
 
 ---
 
