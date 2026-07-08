@@ -146,6 +146,8 @@ draft is generic and dies.
 
 ## FOLLOWER LOG
 - 2026-07-07 8:15 PM: 2,015
+- 2026-07-08 6:20 PM: 2,014 (flat — reach is the bottleneck; prioritize
+  out-of-network: replies on high-velocity posts + shareable anomaly heroes)
 
 ## LESSON LOG (max ~15 lines, prune every run)
 - 7/7: v1's gates passed a hook that duplicated the live timeline 90 min
@@ -154,3 +156,9 @@ draft is generic and dies.
   model score/payout). Fix: Rule 4.
 - 7/7: pinned tweet was 105 days old with 54K impressions — every profile
   click from a hot post landed on stale proof. Refresh pinned monthly.
+- 7/8: weekday MLB-only baseline is ~900-1,100 impr (WC soccer boost gone) —
+  calibrate expectations to the slate, not to last week's peaks.
+- 7/8: owner's "Late money changed this one" hook (early look → sharper
+  close reversal) earned 3 replies — reversal/late-money is a keeper shape.
+- 7/8: a warm lead ("tried to DM, won't go thru") sat 5+ hours — DMs are a
+  funnel hole; check mentions for DM-intent every run and flag immediately.
