@@ -14,7 +14,7 @@
 import 'dotenv/config';
 import admin from 'firebase-admin';
 import { readFileSync, existsSync } from 'fs';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { dirname, join } from 'path';
 import { resolveSOCTeam } from './lib/soccerTeams.js';
 
@@ -150,6 +150,16 @@ async function fetchNCAAFinalGames(dateStr) {
   }
 }
 
+// ET calendar date of an ESPN event ('YYYY-MM-DD'), or null when the event
+// carries no timestamp. Positions are keyed by ET game date, so finals must
+// be matched on the same calendar.
+function espnEventDateET(e) {
+  if (!e?.date) return null;
+  const d = new Date(e.date);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+}
+
 async function fetchMLBFinalGames() {
   try {
     const res = await fetch(ESPN_MLB_URL);
@@ -166,6 +176,7 @@ async function fetchMLBFinalGames() {
         const away = comps.find(c => c.homeAway === 'away') || {};
         const home = comps.find(c => c.homeAway === 'home') || {};
         return {
+          dateET: espnEventDateET(e),
           awayCode: ESPN_MLB_TO_CODE[away.team?.abbreviation] || away.team?.abbreviation?.toLowerCase(),
           homeCode: ESPN_MLB_TO_CODE[home.team?.abbreviation] || home.team?.abbreviation?.toLowerCase(),
           awayTeam: away.team?.displayName || '',
@@ -196,6 +207,7 @@ async function fetchNBAFinalGames() {
         const away = comps.find(c => c.homeAway === 'away') || {};
         const home = comps.find(c => c.homeAway === 'home') || {};
         return {
+          dateET: espnEventDateET(e),
           awayCode: ESPN_NBA_TO_CODE[away.team?.abbreviation] || away.team?.abbreviation?.toLowerCase(),
           homeCode: ESPN_NBA_TO_CODE[home.team?.abbreviation] || home.team?.abbreviation?.toLowerCase(),
           awayTeam: away.team?.displayName || '',
@@ -309,6 +321,22 @@ function calculateOutcome(game, marketType, side, line, sport = null) {
 
 // ─── Match a position's gameKey to a final game ─────────────────────────────
 
+// DATE GUARD — a final may only grade a position from the SAME ET calendar
+// date. MLB/NBA finals come from a date-blind ESPN scoreboard fetch that
+// still lists yesterday's completed games in the early-morning runs; teams
+// play multi-game series, so team-code matching alone graded TODAY'S docs
+// with YESTERDAY'S score. Real incident 2026-07-08 (NYY@TBR played 7/7 and
+// 7/8): 5 of today's position docs were mis-graded pre-game, which froze
+// their updatedAt (writeSharpActions doesn't refresh graded docs), which
+// stale-pruned those wallets out of the staking cron's consensus/RANK math
+// for the rest of the day. Finals with no parseable date are rejected when
+// the position has a date (fail-closed: an ungraded doc self-heals next
+// run; a mis-graded doc silently corrupts staking inputs all day).
+function finalDateMatches(g, pos) {
+  if (!pos.date) return true;      // legacy docs without a date — keep old behavior
+  return g.dateET != null && g.dateET === pos.date;
+}
+
 function findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals = []) {
   const rawKey = (pos.gameKey || '').replace(/^(NHL|NBA|MLB|CBB|SOC):/, '');
   const parts = rawKey.split('_');
@@ -321,22 +349,24 @@ function findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFi
   }
 
   if (pos.sport === 'MLB') {
+    const dated = mlbFinals.filter(g => finalDateMatches(g, pos));
     if (parts.length >= 2) {
-      const match = mlbFinals.find(g => g.awayCode === parts[0] && g.homeCode === parts[1]);
+      const match = dated.find(g => g.awayCode === parts[0] && g.homeCode === parts[1]);
       if (match) return match;
     }
-    for (const g of mlbFinals) {
+    for (const g of dated) {
       if (teamNamesMatch(pos.away, g.awayTeam) && teamNamesMatch(pos.home, g.homeTeam)) return g;
     }
     return null;
   }
 
   if (pos.sport === 'NBA') {
+    const dated = nbaFinals.filter(g => finalDateMatches(g, pos));
     if (parts.length >= 2) {
-      const match = nbaFinals.find(g => g.awayCode === parts[0] && g.homeCode === parts[1]);
+      const match = dated.find(g => g.awayCode === parts[0] && g.homeCode === parts[1]);
       if (match) return match;
     }
-    for (const g of nbaFinals) {
+    for (const g of dated) {
       if (teamNamesMatch(pos.away, g.awayTeam) && teamNamesMatch(pos.home, g.homeTeam)) return g;
     }
     return null;
@@ -611,7 +641,15 @@ async function main() {
   console.log('\nDone.');
 }
 
-main().catch(err => {
-  console.error('Fatal error:', err);
-  process.exit(1);
-});
+// Exported for tests (tests/testGradeDateGuard.mjs) — pure helpers, no I/O.
+export { espnEventDateET, finalDateMatches, findMatchingGame, teamNamesMatch };
+
+// Only run when executed directly (node scripts/gradeSharpActions.js), so
+// tests can import the helpers without triggering a live grading pass.
+const isDirectRun = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isDirectRun) {
+  main().catch(err => {
+    console.error('Fatal error:', err);
+    process.exit(1);
+  });
+}

@@ -717,6 +717,40 @@ async function main() {
       if (existing.exists) {
         const data = existing.data();
         if (data.status === 'GRADED') {
+          // MIS-GRADE AUTO-REPAIR — this position came from the CURRENT scan,
+          // which only reports OPEN markets (curPrice 0.01–0.99). A resolved
+          // Polymarket market pins to 0/1 and falls out of the scan, so a
+          // GRADED doc whose market is still tradeable was graded against the
+          // wrong game. Real incident 2026-07-08: the date-blind MLB grader
+          // matched yesterday's NYY@TBR final onto today's series-repeat docs
+          // pre-game; graded docs stop receiving updatedAt refreshes, so the
+          // staking cron's 30-min freshness prune erased those wallets from
+          // consensus / RANK-RESCUE math for the rest of the day. Reset to
+          // PENDING so the doc rejoins the live pipeline; the (now
+          // date-guarded) grader re-grades it after the game actually ends.
+          // PUSH excluded: a pushed market can resolve at 0.5 (mid-range
+          // curPrice) while the position lingers pre-redemption — only
+          // WIN/LOSS grades are provably wrong on an open market.
+          const curPrice = parseFloat(pos.curPrice ?? data.curPrice ?? 0);
+          if (curPrice > 0.01 && curPrice < 0.99 && (data.result === 'WIN' || data.result === 'LOSS')) {
+            console.warn(`  ⚠ UN-GRADING ${docId}: market still open (curPrice=${curPrice}) but doc was GRADED (${data.result} on ${data.score?.away ?? '?'}-${data.score?.home ?? '?'}) — mis-graded against another game's final; resetting to PENDING`);
+            batch.update(ref, {
+              status: 'PENDING',
+              result: null,
+              settledPnl: null,
+              settledPrice: null,
+              clv: null,
+              closingPinnacleOdds: null,
+              gradedAt: null,
+              'score.away': null,
+              'score.home': null,
+              misgradeRepairedAt: admin.firestore.FieldValue.serverTimestamp(),
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+            batchOps++;
+            updated++;
+            continue;
+          }
           // Still update V8 scoring on graded positions (analysis data)
           const v8Patch = {
             // Vault/Shadow tier — backfill onto graded docs (preserves

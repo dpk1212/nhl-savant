@@ -1486,12 +1486,18 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // it to RANK_RESCUE_UNITS and tag the stake tier RANK. ONLY rescues muted
   // picks — never up-sizes an already-staked pick. manualStake (if present)
   // already set the size above, so we skip when one is in effect.
+  //
+  // The slice (and sharpQ below) are computed EVERY cycle — not just when a
+  // rescue is possible — so the per-side census log always shows exactly what
+  // the staking paths saw: how many whitelist wallets were visible, which
+  // qualified, and why RANK / SHARP did or didn't fire. This is the audit
+  // trail for "were all whitelisted positions counted this cycle?"
   let rankRescued = false;
+  const rankSlice = computeRankSlice(wd, side, pick.sport, walletProfiles);
   if (v121Eligible && appliedStatus === 'ACTIVE' && scoreV12Live != null && scoreV12Live > 0
       && finalUnitsApplied === 0
       && !(Number.isFinite(sd.manualStake) && sd.manualStake > 0)) {
-    const slice = computeRankSlice(wd, side, pick.sport, walletProfiles);
-    if (slice.qualifies) {
+    if (rankSlice.qualifies) {
       finalUnitsApplied = RANK_RESCUE_UNITS;
       hcStakeTier = 'RANK';
       rankRescued = true;
@@ -1503,11 +1509,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // the FOR side clears the internal wallet-quality gate. PRIME (mean wr ≥ 55)
   // sizes one notch up. Only ever rescues muted picks — never up-sizes.
   let sharpRescued = false;
+  const sharpCensus = sharpQ || computeSharpQuality(wd, side, pick.sport, walletProfiles);
   if (isSharpRescueLive(pickDate) && appliedStatus === 'ACTIVE'
       && scoreV12Live != null && scoreV12Live > 0
       && finalUnitsApplied === 0 && !rankRescued
       && !(Number.isFinite(sd.manualStake) && sd.manualStake > 0)) {
-    const q = sharpQ || computeSharpQuality(wd, side, pick.sport, walletProfiles);
+    const q = sharpCensus;
     if (q.qualifies) {
       const u = q.prime ? SHARP_PRIME_UNITS : SHARP_UNITS;
       finalUnitsApplied = Math.round(oddsCap(u, sideOdds) * 100) / 100;
@@ -1921,6 +1928,26 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     patch,
     changes,
     live,
+    // Whitelist census — what the staking paths actually saw this cycle.
+    // Printed for EVERY evaluated side (even no-change cycles) so cron logs
+    // are a complete audit trail of position visibility. `wdSource` exposes
+    // whether the score ran on live positions or the create-time freeze —
+    // 'frozen' on a game with known live money means positions are being
+    // lost upstream (scan gap / stale prune / mis-graded doc).
+    census: {
+      wdCount: Array.isArray(wd) ? wd.length : 0,
+      wdSource: (liveWd && liveWd.length > 0) ? 'live' : (frozenWd && frozenWd.length > 0 ? 'frozen' : 'none'),
+      forW: live.forW,
+      agW: live.agW,
+      hcMargin: live.hcMargin,
+      rank: rankSlice,
+      rankRescued,
+      sharp: sharpCensus,
+      sharpRescued,
+      score: scoreV12Live,
+      stakeTier: hcStakeTier,
+      units: finalUnitsApplied,
+    },
     expectedStatus: appliedStatus,
     expectedReason: appliedReason,
     expectedTier: liveTier,
@@ -2048,6 +2075,7 @@ async function main() {
     ags_both_sides_refreshed: 0,
   };
   const changeLog = [];
+  const censusLog = [];   // whitelist-visibility audit — one row per evaluated side, every cycle
 
   // Helper — extract commenceTime ms across all the storage shapes Firestore
   // returns (Timestamp, number, _seconds, Date, ISO string). Identical to
@@ -2122,6 +2150,9 @@ async function main() {
             }
           }
           continue;
+        }
+        if (result.census) {
+          censusLog.push({ col, docId: pick._id, side: sideKey, census: result.census });
         }
         if (!result.wrote) {
           stats.no_change++;
@@ -2208,6 +2239,33 @@ async function main() {
     console.log(`  Live:     dw=${c.live.delta} dq=${c.live.qualityMargin} HC_m=${c.live.hcMargin} (HC ${c.live.hcConfFor}/${c.live.hcConfAg})`);
     console.log(`  Expected: lockStage=${c.expectedLockStage || '∅'} · status=${c.expected.status}${c.expected.reason ? ` · ${c.expected.reason}` : ''} tier=${c.expected.tier} units=${c.expected.units}`);
     console.log(`  Changes:  ${c.changes.join(', ')}`);
+  }
+
+  // ── Whitelist census — the "were all whitelisted positions counted?" audit.
+  // One line per evaluated side EVERY cycle (including no-change cycles):
+  //   wd     = positions visible to the score (source: live | frozen | none)
+  //   wl     = CONFIRMED/FLAT whitelist wallets for-against
+  //   rank   = RANK-eligible (CONFIRMED/FLAT/WR50, ≥8 in-sport picks) backing-against
+  //            [✓ marks a fired 2-for-0 rescue]
+  //   sharp$ = best FOR-backer dollarRoi / mean picks.wr (proven-$ path inputs)
+  //   →      = resulting stake tier + units this cycle
+  // A 'frozen' wd source on a game with live money, or a rank slice that
+  // undercounts wallets visible on the site, means positions are being lost
+  // upstream (scan gap / stale prune / mis-graded position doc).
+  console.log(`\n── Whitelist census (${censusLog.length} side(s)) ──`);
+  for (const c of censusLog) {
+    const cs = c.census;
+    const rankMark = cs.rankRescued ? ' ✓RESCUED' : (cs.rank.qualifies ? ' (qualifies)' : '');
+    const sharpRoi = Number.isFinite(cs.sharp?.maxQRoi) ? `${cs.sharp.maxQRoi.toFixed(1)}%` : '—';
+    const sharpWr = cs.sharp?.meanPWr != null ? cs.sharp.meanPWr.toFixed(1) : '—';
+    const sharpMark = cs.sharpRescued ? ' ✓RESCUED' : '';
+    console.log(
+      `  ${c.col.replace('sharpFlow', '').toUpperCase()} ${c.docId}/${c.side}: `
+      + `wd=${cs.wdCount}(${cs.wdSource}) wl=${cs.forW}-${cs.agW} hc=${cs.hcMargin} `
+      + `rank=${cs.rank.backing}-${cs.rank.against}${rankMark} `
+      + `sharp$=${sharpRoi}/wr${sharpWr}${sharpMark} `
+      + `→ ${cs.stakeTier || '∅'} ${cs.units}u (score=${cs.score == null ? '∅' : cs.score.toFixed(3)})`
+    );
   }
 
   // Apply writes (unless dry run). Merge per-side patches into a single
