@@ -96,7 +96,15 @@ const COLS = [
 const OPPOSITE = { home: 'away', away: 'home', over: 'under', under: 'over' };
 
 const americanToDecimal = (odds) => (odds > 0 ? 1 + odds / 100 : 1 + 100 / Math.abs(odds));
-const flatProfit = (odds, won) => (won ? americanToDecimal(odds) - 1 : -1);
+// Guard: 0 / null / NaN odds previously produced Infinity flat profit on won
+// bets (100 / |0|), poisoning the whole-sport aggregate — 4 whitelisted
+// wallets carried picks.flatRoi = Infinity, which rendered "+Infinity% ROI"
+// on locked cards and auto-passed the flatRoi > 0 whitelist gate. A bet with
+// no usable price contributes NO flat signal (null, excluded in picksAgg).
+const flatProfit = (odds, won) => {
+  if (!Number.isFinite(odds) || odds === 0) return null;
+  return won ? americanToDecimal(odds) - 1 : -1;
+};
 const r2 = (v) => v == null ? null : Math.round(v * 100) / 100;
 const r1 = (v) => v == null ? null : Math.round(v * 10) / 10;
 const pct = (v) => v == null ? null : +(v * 100).toFixed(1);
@@ -207,12 +215,16 @@ async function loadPositions() {
 function picksAgg(bets) {
   const n = bets.length;
   const wins = bets.filter(b => b.won === 1).length;
-  const flatPnl = bets.reduce((s, b) => s + (b.flat ?? 0), 0);
+  // Flat stats run over bets with a usable price only (flat is null when the
+  // bet had no odds). Excluding them from BOTH numerator and denominator
+  // keeps flatRoi an honest per-priced-bet mean instead of diluting toward 0.
+  const flatBets = bets.filter(b => Number.isFinite(b.flat));
+  const flatPnl = flatBets.reduce((s, b) => s + b.flat, 0);
   return {
     n, wins, losses: n - wins,
     wr: n ? +(wins / n * 100).toFixed(1) : 0,
     flatPnl: r2(flatPnl),
-    flatRoi: n ? +((flatPnl / n) * 100).toFixed(1) : 0,
+    flatRoi: flatBets.length ? +((flatPnl / flatBets.length) * 100).toFixed(1) : 0,
   };
 }
 function positionsAgg(bets) {
@@ -288,8 +300,9 @@ function classifyWhitelistTierWithSource(picksInSport, positionsInSport) {
   const p = picksInSport || { n: 0 };
   const q = positionsInSport || { n: 0 };
 
-  // Source A (featured-pick) signals — original v1 gates.
-  const flatOkA   = p.n >= WHITELIST_MIN_BETS && (p.flatRoi ?? 0) > 0;
+  // Source A (featured-pick) signals — original v1 gates. Finite-guard:
+  // a poisoned Infinity flatRoi must never auto-pass the profitability gate.
+  const flatOkA   = p.n >= WHITELIST_MIN_BETS && Number.isFinite(p.flatRoi ?? 0) && (p.flatRoi ?? 0) > 0;
   const wr50OkA   = p.n >= WHITELIST_MIN_BETS && (p.wr ?? 0) >= 50;
   // Source B (on-chain position) signals — flat-ROI uses positionFlatRoi
   // (Polymarket unit return), WR uses settledPnl > 0 win rate, dollar-ROI
