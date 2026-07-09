@@ -1,8 +1,21 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const Stripe = require('stripe');
+const { syncOnesignalPaidTags } = require('./onesignalTags');
 
 const db = admin.firestore();
+
+const PAID_TIERS = new Set(['scout', 'elite', 'pro']);
+
+/** Push entitlement tags to OneSignal (best-effort; never fails the webhook). */
+async function syncPushEntitlement(userId, { tier, status, isActive }) {
+  try {
+    const paid = !!isActive && PAID_TIERS.has(tier);
+    await syncOnesignalPaidTags(userId, { paid, tier: paid ? tier : 'free', status });
+  } catch (err) {
+    console.warn('[OneSignal] entitlement sync failed (non-fatal):', err.message || err);
+  }
+}
 
 // Get Stripe config - PREFER process.env (new method), fallback to functions.config() (deprecated)
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || functions.config().stripe?.secret_key;
@@ -179,6 +192,7 @@ async function handleCheckoutCompleted(session) {
     }, { merge: true });
 
     console.log(`✅ User ${userId} upgraded to ${tier} (${subscription.status}, isActive: ${isActive})`);
+    await syncPushEntitlement(userId, { tier, status: subscription.status, isActive });
   } catch (error) {
     console.error('Error handling checkout:', error);
     throw error;
@@ -232,6 +246,7 @@ async function handleSubscriptionCreated(subscription) {
     });
 
     console.log(`✅ User ${userId} subscription created: ${tier} (isActive: ${isActive})`);
+    await syncPushEntitlement(userId, { tier, status: subscription.status, isActive });
   } catch (error) {
     console.error('Error handling subscription created:', error);
   }
@@ -296,6 +311,11 @@ async function handleSubscriptionUpdated(subscription) {
     });
 
     console.log(`✅ User ${userId} subscription updated: ${tier} (status: ${subscription.status}, isActive: ${isActive}, cancelAtPeriodEnd: ${subscription.cancel_at_period_end})`);
+    await syncPushEntitlement(userId, {
+      tier: isActive ? tier : 'free',
+      status: subscription.status,
+      isActive,
+    });
   } catch (error) {
     console.error('Error handling subscription updated:', error);
   }
@@ -340,6 +360,7 @@ async function handleSubscriptionDeleted(subscription) {
     });
 
     console.log(`✅ User ${userId} downgraded to free tier (isActive: false)`);
+    await syncPushEntitlement(userId, { tier: 'free', status: 'canceled', isActive: false });
   } catch (error) {
     console.error('Error handling subscription deleted:', error);
   }
@@ -367,6 +388,8 @@ async function handlePaymentSucceeded(invoice) {
     }
 
     const userDoc = usersSnapshot.docs[0];
+    const priorTier = userDoc.data()?.tier;
+    const tier = PAID_TIERS.has(priorTier) ? priorTier : 'scout';
 
     // Update status to active if it was past_due
     await userDoc.ref.update({
@@ -376,6 +399,7 @@ async function handlePaymentSucceeded(invoice) {
     });
 
     console.log(`✅ Payment succeeded for user ${userDoc.id} (isActive: true)`);
+    await syncPushEntitlement(userDoc.id, { tier, status: 'active', isActive: true });
   } catch (error) {
     console.error('Error handling payment succeeded:', error);
   }

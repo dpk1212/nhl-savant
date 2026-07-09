@@ -13,6 +13,9 @@ import {
  * Does NOT request notification permission. Opt-in lives on Account
  * (#/account) so users see directions and choose Enable Lock Alerts.
  *
+ * Option A entitlement: sign-out only clears External ID (subscription
+ * stays — alerts still fire offline). Sub lapse → optOut + paid=false.
+ *
  * isPremium = tier in scout|elite|pro AND status in active|trialing
  */
 export default function PaidPushGate() {

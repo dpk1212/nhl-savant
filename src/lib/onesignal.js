@@ -5,6 +5,9 @@
  * visitors never see a permission prompt. Paid users opt in from Account
  * settings; PaidPushGate only syncs identity/tags (no auto-prompt).
  *
+ * Option A: logout clears External ID only (device stays subscribed so
+ * lock alerts work without being signed in). Lapse/free → optOut.
+ *
  * App ID: d8fcb504-8d29-4354-a9e4-8b612d3eafeb
  * Service worker: /OneSignalSDKWorker.js
  */

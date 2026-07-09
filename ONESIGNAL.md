@@ -8,81 +8,101 @@ Brand colors: Primary `#10B981` · Secondary `#D4AF37`
 
 ---
 
-## Repo (done)
+## Entitlement (Option A)
+
+| Event | Behavior |
+|---|---|
+| Paid user Enables on Account | Subscribe + tags `paid=true`, `lock_alerts=true`, External ID = Firebase uid |
+| User signs out | Clear External ID only — **keep** browser subscription (alerts work offline) |
+| Sub lapses / canceled | Tag `paid=false` (+ client optOut if they reopen) via Stripe webhook |
+| Production send | Always filter `tag paid = true` — **never** `Active Subscriptions` |
+
+---
+
+## Repo
 
 | Piece | Behavior |
 |---|---|
-| `index.html` | SDK init · **autoPrompt: false** (no public prompt) |
+| `index.html` | SDK init · **autoPrompt: false** |
 | `public/OneSignalSDKWorker.js` | Service worker at site root |
-| `public/manifest.json` | PWA manifest (`display: standalone`) for iOS home-screen push |
-| `PaidPushGate.jsx` | Paid → sync External ID + tags only (no permission prompt) |
+| `public/manifest.json` | PWA (`display: standalone`) for iOS home-screen push |
+| `PaidPushGate.jsx` | Paid → sync External ID + tags (no permission prompt). Logout ≠ optOut |
 | `LockAlertsCard.jsx` | Account `#/account` — Enable / Turn off + iOS/Android directions |
+| `scripts/sendLockAlerts.mjs` | Cron: newly frozen LOCKED at T−15 → OneSignal (`paid=true`) |
+| `functions/src/onesignalTags.js` | Stripe webhook syncs `paid` tags by External ID |
 | Tags | `paid`, `tier`, `status`, `email`, `lock_alerts` |
 
-Free visitors and logged-out users never see a permission dialog. Paid users opt in from **Account → Lock Alerts**.
+Free visitors never see a permission dialog. Paid users opt in from **Account → Lock Alerts**.
 
 ---
 
-## Dashboard — finish BEFORE clicking "I've installed the SDK"
+## T−15 lock automation
 
-### 1. Site setup (Settings → Push & In-App → Web)
-- Site Name: `NHL Savant` / Sharp Flow  
-- Site URL: **`https://nhlsavant.com`** (exact)  
-- Default Icon: 256×256 PNG  
-- Auto Resubscribe: on  
-
-### 2. Permission prompts — CRITICAL for paid-only
-- Open the **Prompt Editor**
-- Turn **Auto Prompt OFF** (and Save)
-- Do **not** enable a site-wide Bell that shows to everyone  
-- We trigger permission from code only (`PaidPushGate`)
-
-### 3. Service worker
-- Path: site root `/`  
-- After deploy, this must return JS (not HTML 404):  
-  **https://nhlsavant.com/OneSignalSDKWorker.js**  
-  Expected body:
-  ```js
-  importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
-  ```
-
-### 4. Segments (recommended)
-Create a segment for sends:
-- Tag `paid` is `true`  
-  (and/or External ID present — Firebase uid after login)
-
-### 5. Then click **I've installed the SDK**
-
----
-
-## Deploy + verify (owner)
+1. Market cron ([`.github/workflows/fetch-polymarket.yml`](.github/workflows/fetch-polymarket.yml)) runs `syncPickStateAuthoritative` every ~8 min.
+2. Then `node scripts/sendLockAlerts.mjs`:
+   - Today’s picks (`sharpFlowPicks` / Spreads / Totals)
+   - Live side with `lockStage === 'LOCKED'`
+   - Inside T−15 freeze (`now >= commenceTime - 15m` and `now <= commenceTime`)
+   - Not yet stamped `sides[side].lockAlertSentAt`
+3. Sends template **15-Min Lock Alert** with filter `paid=true`.
+4. On success, stamps `lockAlertSentAt` + `lockAlertMessageId` (idempotent).
 
 ```bash
-npm run deploy
+# Local inspect
+node scripts/sendLockAlerts.mjs --dry-run
+
+# Live (needs REST key)
+ONESIGNAL_REST_API_KEY=... node scripts/sendLockAlerts.mjs
 ```
 
-1. Confirm worker URL above loads the `importScripts` line.  
-2. Visit site **logged out** → no notification prompt.  
-3. Sign in as a **paid** account → allow when prompted.  
-4. OneSignal → Audience → Subscriptions → you appear; tags include `paid=true`.  
-5. Add yourself as Test User → send a test push.
+### GitHub Actions secrets
+
+| Secret | Purpose |
+|---|---|
+| `ONESIGNAL_APP_ID` | App ID (optional; script has prod default) |
+| `ONESIGNAL_REST_API_KEY` | REST API key — **required** for cron sends |
+
+### Firebase Functions env
+
+Same `ONESIGNAL_REST_API_KEY` (+ optional `ONESIGNAL_APP_ID`) on Cloud Functions so Stripe cancel/lapse updates tags even if the user never reopens the site.
 
 ---
 
-## Local
+## Lock alert assets
 
-`allowLocalhostAsSecureOrigin: true` is set. Prefer a separate OneSignal app for localhost so you don't mix test devices into prod.
+| Asset | ID / name |
+|---|---|
+| Template | **15-Min Lock Alert** · `451e41a3-2bdf-4758-a779-ec59a8fecf36` |
+| Template vars | `custom_data.pick`, `custom_data.detail` |
+| Click URL | `https://nhlsavant.com/#/` |
+| Audience | filter `tag paid = true` |
 
-## API keys
+---
 
-App API Key (Settings → Keys & IDs) stays **server-side only** — never in the frontend. Use for lock-time / pick alerts to the `paid=true` (and/or `lock_alerts=true`) segment.
+## Dashboard setup (one-time)
+
+1. Site URL: **`https://nhlsavant.com`** (exact)
+2. Prompt Editor → **Auto Prompt OFF**
+3. Service worker at `/` — live at https://nhlsavant.com/OneSignalSDKWorker.js
+4. Skip SDK verification if needed (paid-only means no public first subscription)
+
+---
+
+## Mobile
+
+### Android
+Open site in Chrome → sign in paid → Account → Enable Lock Alerts → Allow.
+
+### iPhone / iPad (iOS 16.4+)
+1. Open site → Share → **Add to Home Screen**
+2. Open from **home-screen icon**
+3. Sign in paid → Account → Enable Lock Alerts → Allow
+
+See [iOS web push](https://documentation.onesignal.com/docs/en/web-push-for-ios).
+
+---
 
 ## OneSignal MCP (Cursor)
-
-So the agent can create the 15‑min lock template and send test pushes:
-
-1. OneSignal → Settings → Keys & IDs → copy **App ID** + create/copy **REST API Key** (not Key ID).
-2. Add to `~/.cursor/mcp.json`:
 
 ```json
 "onesignal": {
@@ -90,36 +110,7 @@ So the agent can create the 15‑min lock template and send test pushes:
 }
 ```
 
-3. Restart Cursor → Settings → MCP & Integrations → **Authenticate** next to OneSignal → paste App ID + API key.
-4. New chat: `Use onesignal_health to check if the server is connected.`
-
+Authenticate with App ID + REST API key (not Key ID).  
 Docs: https://documentation.onesignal.com/docs/en/model-context-protocol
 
 **Never commit the REST API key.**
-
----
-
-## Mobile — paid users (lock alerts)
-
-Desktop Chrome/Edge/Firefox: sign in as paid → Allow. Done.
-
-### Android (Chrome / Edge / Samsung Internet)
-1. Open **https://nhlsavant.com** in Chrome (not Incognito).
-2. Sign in with a **paid** account.
-3. When prompted, tap **Allow**.
-4. Optional: Chrome menu → **Install app** / Add to Home screen (nicer UX; not required for push).
-5. Keep notifications enabled for Chrome in Android Settings.
-
-### iPhone / iPad (iOS / iPadOS **16.4+** only)
-Apple requires a home-screen web app — Safari tab alone cannot subscribe. See [iOS web push setup](https://documentation.onesignal.com/docs/en/web-push-for-ios).
-
-1. Open **https://nhlsavant.com** in Safari, Chrome, or Edge (not Private).
-2. Share → **Add to Home Screen** → Add.
-3. Open **NHL Savant from the home-screen icon** (not the browser tab).
-4. Sign in as a **paid** user.
-5. Tap through the permission prompt → **Allow**.
-6. Test: send a push from OneSignal → should appear even if the app is closed.
-
-**Re-test / denied permission:** delete the home-screen icon → clear site data → Add to Home Screen again.
-
-**Site requirements (repo):** `public/manifest.json` with `display: "standalone"`, icons, and `<link rel="manifest">` in `index.html`. Service worker already at `/OneSignalSDKWorker.js`.

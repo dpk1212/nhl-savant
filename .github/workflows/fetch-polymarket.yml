@@ -46,6 +46,9 @@ jobs:
       # the dashboard open (root cause of 2026-05-01 stale-state audit).
       FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
       FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+      # OneSignal — paid-only T−15 lock alerts (sendLockAlerts.mjs)
+      ONESIGNAL_APP_ID: ${{ secrets.ONESIGNAL_APP_ID }}
+      ONESIGNAL_REST_API_KEY: ${{ secrets.ONESIGNAL_REST_API_KEY }}
 
     steps:
       - uses: actions/checkout@v4
@@ -154,6 +157,15 @@ jobs:
               echo "::warning::syncPickStateAuthoritative failed inline (cycle $i) — will retry via sync-pick-state-on-deploy workflow after gh-pages push"
             fi
 
+            # Paid-only lock alerts: newly frozen LOCKED sides at T−15 →
+            # OneSignal filter tag paid=true. Idempotent via lockAlertSentAt.
+            echo "--- sendLockAlerts ---"
+            if [ -n "${ONESIGNAL_REST_API_KEY:-}" ]; then
+              node scripts/sendLockAlerts.mjs || echo "::warning::sendLockAlerts failed (cycle $i — non-fatal)"
+            else
+              echo "--- sendLockAlerts skipped (ONESIGNAL_REST_API_KEY not set) ---"
+            fi
+
             echo "--- updateClosingOdds ---"
             node scripts/updateClosingOdds.js || echo "closingOdds failed (cycle $i)"
 
@@ -213,6 +225,10 @@ jobs:
                 echo "--- syncPickStateAuthoritative (post-deploy safety net) ---"
                 if ! node scripts/syncPickStateAuthoritative.js; then
                   echo "::warning::syncPickStateAuthoritative POST-DEPLOY also failed (cycle $i) — Firestore may be stale relative to deployed JSON until next cycle"
+                fi
+                echo "--- sendLockAlerts (post-deploy) ---"
+                if [ -n "${ONESIGNAL_REST_API_KEY:-}" ]; then
+                  node scripts/sendLockAlerts.mjs || echo "::warning::sendLockAlerts post-deploy failed (cycle $i)"
                 fi
               fi
             else
