@@ -3,8 +3,8 @@
   "NHL": {},
   "MLB": {
     "bos_cws": {
-      "volume24h": 47208.19480700001,
-      "liveVolume": 47229.540959,
+      "volume24h": 47409.132794,
+      "liveVolume": 47409.132794000005,
       "awayMoneyPct": 77.9,
       "homeMoneyPct": 22.1,
       "awayTicketPct": 42.8,
@@ -14,7 +14,7 @@
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
-          47.5,
+          48,
           48.5,
           49,
           48.5,
@@ -28,11 +28,11 @@
           48.5,
           48.5
         ],
-        "open": 47.5,
+        "open": 48,
         "current": 48.5,
         "high": 49.5,
-        "low": 47.5,
-        "change": 1
+        "low": 48,
+        "change": 0.5
       },
       "whales": {
         "count": 7,
@@ -135,6 +135,7 @@
             37.5,
             37.5,
             37.5,
+            37.5,
             37.5
           ],
           "open": 36,
@@ -184,14 +185,14 @@
       "enrichmentFailed": false
     },
     "atl_pit": {
-      "volume24h": 17402.433342999997,
-      "liveVolume": 17697.795036999996,
-      "awayMoneyPct": 83.1,
-      "homeMoneyPct": 16.9,
-      "awayTicketPct": 74.6,
-      "homeTicketPct": 25.4,
-      "tradeCount": 389,
-      "sampleCash": 9177,
+      "volume24h": 18400.403379999992,
+      "liveVolume": 18621.488474999995,
+      "awayMoneyPct": 81.2,
+      "homeMoneyPct": 18.8,
+      "awayTicketPct": 73,
+      "homeTicketPct": 27,
+      "tradeCount": 400,
+      "sampleCash": 9479,
       "priceMove1h": 1.9,
       "priceHistory": {
         "points": [
@@ -308,7 +309,7 @@
             45.5,
             47,
             47,
-            47.5,
+            48,
             48.5,
             48.5,
             48.5,
@@ -329,15 +330,161 @@
       "polyGameDate": "2026-07-09",
       "enrichmentFailed": false
     },
+    "nyy_tbr": {
+      "volume24h": 16572.948930000013,
+      "liveVolume": 16572.948930000002,
+      "awayMoneyPct": 31.6,
+      "homeMoneyPct": 68.4,
+      "awayTicketPct": 31.4,
+      "homeTicketPct": 68.6,
+      "tradeCount": 290,
+      "sampleCash": 8623,
+      "priceMove1h": 0,
+      "priceHistory": {
+        "points": [
+          43.5,
+          43.5,
+          43.5,
+          43.5,
+          43,
+          43.5,
+          43.5,
+          43.5,
+          42.5,
+          41.5,
+          41.5,
+          41.5,
+          40.5
+        ],
+        "open": 43.5,
+        "current": 40.5,
+        "high": 43.5,
+        "low": 40.5,
+        "change": -3
+      },
+      "whales": {
+        "count": 3,
+        "totalCash": 2731,
+        "largest": 1047,
+        "buyCount": 3,
+        "sellCount": 0,
+        "topTrades": [
+          {
+            "amount": 1047,
+            "side": "BUY",
+            "outcome": "New York Yankees",
+            "price": 41,
+            "ts": 1783576910000,
+            "wallet": "0x58b920e683324d2371bd8c788ecc5eaa73a5ee8b",
+            "traderName": "0x58b920e683324D2371BD8C788eCc5EaA73a5EE8b-1722040682983"
+          },
+          {
+            "amount": 1000,
+            "side": "BUY",
+            "outcome": "Tampa Bay Rays",
+            "price": 59,
+            "ts": 1783592078000,
+            "wallet": "0x2f0bec54f4f26f749af2db20e52729427a7a5577",
+            "traderName": "traderwins180"
+          },
+          {
+            "amount": 684,
+            "side": "BUY",
+            "outcome": "Tampa Bay Rays",
+            "price": 57,
+            "ts": 1783560850000,
+            "wallet": "0x032eb1bc893940263ad0b01889f262fc232f2a9e",
+            "traderName": "purplegatto"
+          }
+        ]
+      },
+      "awayProb": 40.5,
+      "homeProb": 59.5,
+      "drawProb": null,
+      "drawMoneyPct": null,
+      "drawTicketPct": null,
+      "polySpread": {
+        "line": -1.5,
+        "title": "Spread -1.5",
+        "outcomes": [
+          "Tampa Bay Rays",
+          "New York Yankees"
+        ],
+        "probs": [
+          41,
+          59
+        ],
+        "priceHistory": {
+          "points": [
+            40,
+            39.5,
+            40,
+            39,
+            39.5,
+            40.5,
+            40.5,
+            40.5,
+            41.5,
+            41,
+            41,
+            41,
+            41
+          ],
+          "open": 40,
+          "current": 41,
+          "change": 1
+        }
+      },
+      "polyTotal": {
+        "line": 7.5,
+        "title": "O/U 7.5",
+        "outcomes": [
+          "Over",
+          "Under"
+        ],
+        "probs": [
+          51,
+          49
+        ],
+        "priceHistory": {
+          "points": [
+            50,
+            51,
+            51,
+            51,
+            50.5,
+            50.5,
+            50.5,
+            50.5,
+            50.5,
+            50.5,
+            50.5,
+            50.5,
+            51
+          ],
+          "open": 50,
+          "current": 51,
+          "change": 1
+        }
+      },
+      "awayTeam": "New York Yankees",
+      "homeTeam": "Tampa Bay Rays",
+      "eventId": "662494",
+      "title": "New York Yankees vs. Tampa Bay Rays",
+      "commence": "2026-07-09T17:10:00Z",
+      "polyGameTime": "2026-07-09T17:10:00Z",
+      "polyGameDate": "2026-07-09",
+      "enrichmentFailed": false
+    },
     "chc_bal": {
-      "volume24h": 16404.26023199996,
-      "liveVolume": 16404.260231,
-      "awayMoneyPct": 27.4,
-      "homeMoneyPct": 72.6,
-      "awayTicketPct": 14,
-      "homeTicketPct": 86,
-      "tradeCount": 565,
-      "sampleCash": 8541,
+      "volume24h": 16434.26023199996,
+      "liveVolume": 16434.260231,
+      "awayMoneyPct": 27.5,
+      "homeMoneyPct": 72.5,
+      "awayTicketPct": 14.1,
+      "homeTicketPct": 85.9,
+      "tradeCount": 566,
+      "sampleCash": 8555,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -475,161 +622,15 @@
       "polyGameDate": "2026-07-09",
       "enrichmentFailed": false
     },
-    "nyy_tbr": {
-      "volume24h": 16354.916414000012,
-      "liveVolume": 16396.282265,
-      "awayMoneyPct": 31.5,
-      "homeMoneyPct": 68.5,
-      "awayTicketPct": 31.1,
-      "homeTicketPct": 68.9,
-      "tradeCount": 289,
-      "sampleCash": 8611,
-      "priceMove1h": 0,
-      "priceHistory": {
-        "points": [
-          43.5,
-          43.5,
-          43.5,
-          43.5,
-          43,
-          43.5,
-          43.5,
-          43.5,
-          42.5,
-          41.5,
-          41.5,
-          41.5,
-          40.5
-        ],
-        "open": 43.5,
-        "current": 40.5,
-        "high": 43.5,
-        "low": 40.5,
-        "change": -3
-      },
-      "whales": {
-        "count": 3,
-        "totalCash": 2731,
-        "largest": 1047,
-        "buyCount": 3,
-        "sellCount": 0,
-        "topTrades": [
-          {
-            "amount": 1047,
-            "side": "BUY",
-            "outcome": "New York Yankees",
-            "price": 41,
-            "ts": 1783576910000,
-            "wallet": "0x58b920e683324d2371bd8c788ecc5eaa73a5ee8b",
-            "traderName": "0x58b920e683324D2371BD8C788eCc5EaA73a5EE8b-1722040682983"
-          },
-          {
-            "amount": 1000,
-            "side": "BUY",
-            "outcome": "Tampa Bay Rays",
-            "price": 59,
-            "ts": 1783592078000,
-            "wallet": "0x2f0bec54f4f26f749af2db20e52729427a7a5577",
-            "traderName": "traderwins180"
-          },
-          {
-            "amount": 684,
-            "side": "BUY",
-            "outcome": "Tampa Bay Rays",
-            "price": 57,
-            "ts": 1783560850000,
-            "wallet": "0x032eb1bc893940263ad0b01889f262fc232f2a9e",
-            "traderName": "purplegatto"
-          }
-        ]
-      },
-      "awayProb": 40.5,
-      "homeProb": 59.5,
-      "drawProb": null,
-      "drawMoneyPct": null,
-      "drawTicketPct": null,
-      "polySpread": {
-        "line": -1.5,
-        "title": "Spread -1.5",
-        "outcomes": [
-          "Tampa Bay Rays",
-          "New York Yankees"
-        ],
-        "probs": [
-          41,
-          59
-        ],
-        "priceHistory": {
-          "points": [
-            40,
-            39.5,
-            40,
-            39,
-            39.5,
-            40.5,
-            40.5,
-            40.5,
-            41.5,
-            41,
-            41,
-            41,
-            41
-          ],
-          "open": 40,
-          "current": 41,
-          "change": 1
-        }
-      },
-      "polyTotal": {
-        "line": 7.5,
-        "title": "O/U 7.5",
-        "outcomes": [
-          "Over",
-          "Under"
-        ],
-        "probs": [
-          50.5,
-          49.5
-        ],
-        "priceHistory": {
-          "points": [
-            50,
-            51,
-            51,
-            51,
-            50.5,
-            50.5,
-            50.5,
-            50.5,
-            50.5,
-            50.5,
-            50.5,
-            50.5,
-            51
-          ],
-          "open": 50,
-          "current": 51,
-          "change": 1
-        }
-      },
-      "awayTeam": "New York Yankees",
-      "homeTeam": "Tampa Bay Rays",
-      "eventId": "662494",
-      "title": "New York Yankees vs. Tampa Bay Rays",
-      "commence": "2026-07-09T17:10:00Z",
-      "polyGameTime": "2026-07-09T17:10:00Z",
-      "polyGameDate": "2026-07-09",
-      "enrichmentFailed": false
-    },
     "cle_min": {
-      "volume24h": 12428.371895000004,
-      "liveVolume": 12438.371894999998,
-      "awayMoneyPct": 89.4,
-      "homeMoneyPct": 10.6,
-      "awayTicketPct": 72.1,
-      "homeTicketPct": 27.9,
-      "tradeCount": 147,
-      "sampleCash": 6498,
+      "volume24h": 12611.850154000003,
+      "liveVolume": 13142.141061999999,
+      "awayMoneyPct": 88.8,
+      "homeMoneyPct": 11.2,
+      "awayTicketPct": 71.3,
+      "homeTicketPct": 28.7,
+      "tradeCount": 150,
+      "sampleCash": 6870,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -727,6 +728,7 @@
             41.5,
             41.5,
             41.5,
+            41.5,
             41.5
           ],
           "open": 39.5,
@@ -776,14 +778,14 @@
       "enrichmentFailed": false
     },
     "ari_sdp": {
-      "volume24h": 12143.307141,
-      "liveVolume": 12172.30714,
+      "volume24h": 12172.307141,
+      "liveVolume": 12202.30714,
       "awayMoneyPct": 93.6,
       "homeMoneyPct": 6.4,
       "awayTicketPct": 82.4,
       "homeTicketPct": 17.6,
-      "tradeCount": 278,
-      "sampleCash": 5738,
+      "tradeCount": 279,
+      "sampleCash": 5752,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -905,14 +907,14 @@
       "enrichmentFailed": false
     },
     "oak_det": {
-      "volume24h": 8926.170939000001,
-      "liveVolume": 8926.170939000001,
-      "awayMoneyPct": 68.6,
-      "homeMoneyPct": 31.4,
+      "volume24h": 9083.313795000002,
+      "liveVolume": 9113.313795,
+      "awayMoneyPct": 67.3,
+      "homeMoneyPct": 32.7,
       "awayTicketPct": 55,
       "homeTicketPct": 45,
-      "tradeCount": 149,
-      "sampleCash": 4215,
+      "tradeCount": 151,
+      "sampleCash": 4317,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -1014,7 +1016,7 @@
         "priceHistory": {
           "points": [
             54,
-            54,
+            54.5,
             54.5,
             55.5,
             54,
@@ -1042,14 +1044,14 @@
       "enrichmentFailed": false
     },
     "laa_tex": {
-      "volume24h": 8546.910714000001,
-      "liveVolume": 8546.910714000001,
-      "awayMoneyPct": 90,
-      "homeMoneyPct": 10,
-      "awayTicketPct": 52.2,
-      "homeTicketPct": 47.8,
-      "tradeCount": 67,
-      "sampleCash": 3865,
+      "volume24h": 8817.689932000001,
+      "liveVolume": 8847.689932000001,
+      "awayMoneyPct": 88.2,
+      "homeMoneyPct": 11.8,
+      "awayTicketPct": 52.9,
+      "homeTicketPct": 47.1,
+      "tradeCount": 70,
+      "sampleCash": 4017,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -1113,8 +1115,8 @@
           "Los Angeles Angels"
         ],
         "probs": [
-          36,
-          64
+          36.5,
+          63.5
         ],
         "priceHistory": {
           "points": [
@@ -1130,11 +1132,11 @@
             36.5,
             36.5,
             36,
-            36
+            36.5
           ],
           "open": 36.5,
-          "current": 36,
-          "change": -0.5
+          "current": 36.5,
+          "change": 0
         }
       },
       "polyTotal": {
@@ -1179,21 +1181,21 @@
       "enrichmentFailed": false
     },
     "kcr_nym": {
-      "volume24h": 8379.446897999987,
-      "liveVolume": 8379.446896000001,
+      "volume24h": 8419.964135999988,
+      "liveVolume": 8419.964134,
       "awayMoneyPct": 76.1,
       "homeMoneyPct": 23.9,
-      "awayTicketPct": 43.9,
-      "homeTicketPct": 56.1,
-      "tradeCount": 253,
-      "sampleCash": 3940,
+      "awayTicketPct": 43.8,
+      "homeTicketPct": 56.3,
+      "tradeCount": 256,
+      "sampleCash": 3959,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
-          42,
+          42.5,
           42,
           40.5,
-          42.5,
+          43,
           42.5,
           42.5,
           42.5,
@@ -1204,11 +1206,11 @@
           42.5,
           42.5
         ],
-        "open": 42,
+        "open": 42.5,
         "current": 42.5,
         "high": 43,
         "low": 40.5,
-        "change": 0.5
+        "change": 0
       },
       "whales": {
         "count": 1,
@@ -1307,14 +1309,14 @@
       "enrichmentFailed": false
     },
     "mil_stl": {
-      "volume24h": 7933.640448000002,
-      "liveVolume": 7989.540446999999,
-      "awayMoneyPct": 86.7,
-      "homeMoneyPct": 13.3,
-      "awayTicketPct": 68.4,
-      "homeTicketPct": 31.6,
-      "tradeCount": 152,
-      "sampleCash": 4171,
+      "volume24h": 8041.440448000002,
+      "liveVolume": 8071.440447,
+      "awayMoneyPct": 86.4,
+      "homeMoneyPct": 13.6,
+      "awayTicketPct": 68,
+      "homeTicketPct": 32,
+      "tradeCount": 153,
+      "sampleCash": 4185,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -1380,12 +1382,11 @@
             41,
             41.5,
             41.5,
-            41.5,
+            42,
             42,
             42,
             42,
             42.5,
-            43.5,
             43.5
           ],
           "open": 41,
@@ -1401,8 +1402,8 @@
           "Under"
         ],
         "probs": [
-          50,
-          50
+          50.5,
+          49.5
         ],
         "priceHistory": {
           "points": [
@@ -1412,7 +1413,6 @@
             48,
             48,
             48,
-            50.5,
             50.5,
             50.5,
             50.5,
@@ -1438,12 +1438,12 @@
     "phi_cin": {
       "volume24h": 7697.811927,
       "liveVolume": 7697.811926000001,
-      "awayMoneyPct": 71.5,
-      "homeMoneyPct": 28.5,
-      "awayTicketPct": 66.6,
-      "homeTicketPct": 33.4,
-      "tradeCount": 311,
-      "sampleCash": 4006,
+      "awayMoneyPct": 71.3,
+      "homeMoneyPct": 28.7,
+      "awayTicketPct": 66.3,
+      "homeTicketPct": 33.7,
+      "tradeCount": 312,
+      "sampleCash": 4018,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -1540,7 +1540,7 @@
             49,
             49,
             49,
-            49.5,
+            50,
             49,
             48.5,
             48.5,
@@ -1565,13 +1565,13 @@
     },
     "col_sfg": {
       "volume24h": 6095.030458999999,
-      "liveVolume": 6095.030458,
-      "awayMoneyPct": 4.8,
-      "homeMoneyPct": 95.2,
-      "awayTicketPct": 6,
-      "homeTicketPct": 94,
-      "tradeCount": 385,
-      "sampleCash": 3443,
+      "liveVolume": 6125.030458,
+      "awayMoneyPct": 5.1,
+      "homeMoneyPct": 94.9,
+      "awayTicketPct": 6.2,
+      "homeTicketPct": 93.8,
+      "tradeCount": 386,
+      "sampleCash": 3456,
       "priceMove1h": -1.1,
       "priceHistory": {
         "points": [
@@ -1623,8 +1623,6 @@
             37.5,
             37.5,
             38,
-            38.5,
-            38,
             38,
             38,
             37.5
@@ -1658,7 +1656,6 @@
             47.5,
             47.5,
             47.5,
-            47.5,
             47.5
           ],
           "open": 48,
@@ -1677,13 +1674,13 @@
     },
     "sea_mia": {
       "volume24h": 6001.114043,
-      "liveVolume": 6001.114042999999,
-      "awayMoneyPct": 73.8,
-      "homeMoneyPct": 26.2,
-      "awayTicketPct": 77,
-      "homeTicketPct": 23,
-      "tradeCount": 187,
-      "sampleCash": 3116,
+      "liveVolume": 6041.803693999999,
+      "awayMoneyPct": 73.5,
+      "homeMoneyPct": 26.5,
+      "awayTicketPct": 76.8,
+      "homeTicketPct": 23.2,
+      "tradeCount": 190,
+      "sampleCash": 3135,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -1730,7 +1727,6 @@
             44,
             44,
             44,
-            44.5,
             44.5,
             44.5,
             44.5,
@@ -1790,15 +1786,15 @@
   "NBA": {},
   "SOC": {
     "mar_fra": {
-      "volume24h": 6605938.279746035,
-      "liveVolume": 6627473.9409920005,
-      "awayMoneyPct": 8.2,
-      "homeMoneyPct": 56.5,
-      "awayTicketPct": 23.8,
-      "homeTicketPct": 62.5,
+      "volume24h": 6653153.30078503,
+      "liveVolume": 6655795.832077,
+      "awayMoneyPct": 8.5,
+      "homeMoneyPct": 54.9,
+      "awayTicketPct": 23.6,
+      "homeTicketPct": 62.7,
       "tradeCount": 3500,
-      "sampleCash": 333159,
-      "priceMove1h": 0,
+      "sampleCash": 321349,
+      "priceMove1h": 2.8,
       "priceHistory": {
         "points": [
           14.5,
@@ -1823,10 +1819,10 @@
       },
       "whales": {
         "count": 75,
-        "totalCash": 187321,
+        "totalCash": 195934,
         "largest": 50622,
-        "buyCount": 70,
-        "sellCount": 5,
+        "buyCount": 71,
+        "sellCount": 4,
         "topTrades": [
           {
             "amount": 50622,
@@ -1845,6 +1841,15 @@
             "ts": 1783591654000,
             "wallet": "0xec445c8bee160281558ebb9b083ac0025006c92b",
             "traderName": "0xEC445C8BEE160281558EbB9B083AC0025006C92b-1769822891061"
+          },
+          {
+            "amount": 6887,
+            "side": "BUY",
+            "outcome": "France",
+            "price": 62,
+            "ts": 1783599314000,
+            "wallet": "0x335d3dedf02b9884db93dc4c1a90cf578e598c00",
+            "traderName": "Boned"
           },
           {
             "amount": 6028,
@@ -1991,6 +1996,15 @@
             "traderName": "brchan"
           },
           {
+            "amount": 2113,
+            "side": "BUY",
+            "outcome": "France",
+            "price": 62,
+            "ts": 1783599575000,
+            "wallet": "0xe8c8621f478aa310b526eba0d1dc4b4f904da3c2",
+            "traderName": "darmovaya"
+          },
+          {
             "amount": 2000,
             "side": "BUY",
             "outcome": null,
@@ -2009,6 +2023,15 @@
             "traderName": "Ruperrt"
           },
           {
+            "amount": 1661,
+            "side": "BUY",
+            "outcome": "France",
+            "price": 62,
+            "ts": 1783599502000,
+            "wallet": "0xb3ef21de762ba3ac1e5b54cb29329a795c07cd3b",
+            "traderName": "0xB3eF21De762BA3ac1e5b54cb29329a795c07Cd3B-1783115430436"
+          },
+          {
             "amount": 1561,
             "side": "BUY",
             "outcome": null,
@@ -2025,40 +2048,13 @@
             "ts": 1783586549000,
             "wallet": "0x12b49b2a5075f7e98ee7395eb8a6c2db409cef59",
             "traderName": "BitzimEliat"
-          },
-          {
-            "amount": 1500,
-            "side": "BUY",
-            "outcome": "France",
-            "price": 62,
-            "ts": 1783597333000,
-            "wallet": "0x6d1573b9d011768866c2e495de31a0ed6c7104c2",
-            "traderName": "WC888888"
-          },
-          {
-            "amount": 1500,
-            "side": "BUY",
-            "outcome": "Draw",
-            "price": 25,
-            "ts": 1783594013000,
-            "wallet": "0xa4b5e15f821f5859806ff7518076cc518e4eb6e6",
-            "traderName": "cheermomo"
-          },
-          {
-            "amount": 1500,
-            "side": "BUY",
-            "outcome": "Draw",
-            "price": 25,
-            "ts": 1783588388000,
-            "wallet": "0x910da788f88794054c027fbfc90dde6581c50d1c",
-            "traderName": "yecheng"
           }
         ]
       },
-      "awayProb": 13.9,
+      "awayProb": 13.5,
       "homeProb": 61.5,
       "drawProb": 24.5,
-      "drawMoneyPct": 5.3,
+      "drawMoneyPct": 5.4,
       "drawTicketPct": 13.7,
       "polySpread": null,
       "polyTotal": null,
@@ -2072,15 +2068,15 @@
       "enrichmentFailed": false
     },
     "eng_nor": {
-      "volume24h": 1662892.651612988,
-      "liveVolume": 1663683.833509,
-      "awayMoneyPct": 14.1,
-      "homeMoneyPct": 62,
-      "awayTicketPct": 26.5,
+      "volume24h": 1664423.2228479881,
+      "liveVolume": 1666893.1399830002,
+      "awayMoneyPct": 14.2,
+      "homeMoneyPct": 61.6,
+      "awayTicketPct": 26.4,
       "homeTicketPct": 61.8,
       "tradeCount": 3500,
-      "sampleCash": 147752,
-      "priceMove1h": 0,
+      "sampleCash": 146714,
+      "priceMove1h": -0.2,
       "priceHistory": {
         "points": [
           52.5,
@@ -2095,13 +2091,13 @@
           52.5,
           52.5,
           52.5,
-          52.5
+          52.4
         ],
         "open": 52.5,
-        "current": 52.5,
+        "current": 52.4,
         "high": 52.5,
         "low": 52.4,
-        "change": 0
+        "change": -0.1
       },
       "whales": {
         "count": 75,
@@ -2337,10 +2333,10 @@
           }
         ]
       },
-      "awayProb": 52.4,
+      "awayProb": 52.5,
       "homeProb": 22.5,
       "drawProb": 26.4,
-      "drawMoneyPct": 4.3,
+      "drawMoneyPct": 4.4,
       "drawTicketPct": 11.8,
       "polySpread": null,
       "polyTotal": null,
@@ -2354,15 +2350,15 @@
       "enrichmentFailed": false
     },
     "bel_esp": {
-      "volume24h": 1329954.1631369956,
-      "liveVolume": 1343129.730688,
-      "awayMoneyPct": 4.6,
-      "homeMoneyPct": 11.9,
+      "volume24h": 1344305.9507099956,
+      "liveVolume": 1344576.9408939998,
+      "awayMoneyPct": 4.7,
+      "homeMoneyPct": 12,
       "awayTicketPct": 25.1,
-      "homeTicketPct": 61.8,
+      "homeTicketPct": 62,
       "tradeCount": 3500,
-      "sampleCash": 339309,
-      "priceMove1h": 0,
+      "sampleCash": 338584,
+      "priceMove1h": 2.3,
       "priceHistory": {
         "points": [
           16.5,
@@ -2622,8 +2618,8 @@
       "awayProb": 16.5,
       "homeProb": 59.5,
       "drawProb": 24.5,
-      "drawMoneyPct": 2.4,
-      "drawTicketPct": 13.1,
+      "drawMoneyPct": 2.3,
+      "drawTicketPct": 12.9,
       "polySpread": null,
       "polyTotal": null,
       "awayTeam": "Belgium",
@@ -2636,14 +2632,14 @@
       "enrichmentFailed": false
     },
     "sui_arg": {
-      "volume24h": 275874.8598989992,
-      "liveVolume": 276079.087965,
+      "volume24h": 276516.4063529992,
+      "liveVolume": 277074.893608,
       "awayMoneyPct": 4.6,
-      "homeMoneyPct": 65.2,
-      "awayTicketPct": 17.5,
+      "homeMoneyPct": 65.3,
+      "awayTicketPct": 17.6,
       "homeTicketPct": 73,
-      "tradeCount": 2608,
-      "sampleCash": 135837,
+      "tradeCount": 2617,
+      "sampleCash": 136193,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -2901,11 +2897,11 @@
           }
         ]
       },
-      "awayProb": 16.4,
+      "awayProb": 16.5,
       "homeProb": 56.5,
       "drawProb": 27.4,
       "drawMoneyPct": 2.6,
-      "drawTicketPct": 9.5,
+      "drawTicketPct": 9.4,
       "polySpread": null,
       "polyTotal": null,
       "awayTeam": "Switzerland",
@@ -2918,5 +2914,5 @@
       "enrichmentFailed": false
     }
   },
-  "updatedAt": "2026-07-09T12:14:52.827Z"
+  "updatedAt": "2026-07-09T12:22:52.479Z"
 }
