@@ -7,15 +7,16 @@ name: Fetch Market Data (Polymarket + Kalshi)
 # workflow_dispatch catch-ups).
 #
 # Fix: trigger once per hour on a reliable cadence and run the fetch +
-# commit + build + deploy pipeline 6× internally with ~8-min spacing.
-# Each cycle deploys to GitHub Pages so the live site at nhlsavant.com
-# serves fresh sharp_positions.json within ~8 min of every scan.
+# commit + build + deploy pipeline N× internally with a fixed start-to-start
+# interval. Each cycle deploys to GitHub Pages so nhlsavant.com serves fresh
+# sharp_positions.json within one interval of every scan.
 #
-# Effective cadence for Sharp Intel / SharpFlow picks: ~8 min, 6× per hour,
-# on predictable wall-clock minutes (0, 8, 16, 24, 32, 40 past the hour).
+# 2026-07-09: tightened 8 min → 4 min. Measured cycle work is ~150–180s
+# (scan + Firestore + build/deploy); the old 480s target was mostly sleep
+# (~328s). 12 × 240s ≈ 48 min/hour — same wall coverage as 6 × 480s.
 #
-# Odds API budget: ~180 calls/day at 6 cycles × 24 hours × ~1-2 calls/cycle,
-# well under the 50K/mo doubled quota.
+# Odds API budget: ~290 calls/day at 12 cycles × 24h × ~1-2 calls/cycle,
+# still well under the 50K/mo doubled quota.
 on:
   schedule:
     - cron: '0 * * * *'
@@ -80,31 +81,32 @@ jobs:
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
 
-      # ─── Fast-cycle loop: 6 iterations × ~8 min apart ────────────────────
+      # ─── Fast-cycle loop: 12 iterations × ~4 min apart ───────────────────
       # Each iteration:
       #   1. fetch + snapshot + scanSharpPositions + updateClosingOdds
       #   2. commit public/*.json to main (if changed)
       #   3. npm run build
       #   4. force-push ./dist to the gh-pages branch
       #
-      # Each cycle targets 480s start-to-start. Scripts themselves take
-      # ~2-4 min, commit+build+deploy adds ~1-2 min, so the natural cycle
-      # is ~5-6 min and we sleep the remainder.
+      # Each cycle targets 240s start-to-start. Measured work is ~150–180s
+      # (2026-07-09 logs: "Cycle 2 took 152s"); we sleep the remainder.
+      # If a cycle overruns 240s, the next starts immediately (no pile-up).
       #
       # The shell-based gh-pages push mirrors what peaceiris/actions-gh-pages
       # does internally — we can't call that action inside a shell loop.
-      - name: Fetch + deploy cycle loop (6× at 8-min cadence)
+      - name: Fetch + deploy cycle loop (12× at 4-min cadence)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
         run: |
           set +e
-          target_interval=480
-          for i in 1 2 3 4 5 6; do
+          target_interval=240
+          cycles=12
+          for i in $(seq 1 "$cycles"); do
             cycle_start=$(date +%s)
             echo ""
             echo "════════════════════════════════════════════════════════════"
-            echo "### Cycle $i/6 — $(date -u +%H:%M:%S) UTC"
+            echo "### Cycle $i/${cycles} — $(date -u +%H:%M:%S) UTC"
             echo "════════════════════════════════════════════════════════════"
 
             echo "--- fetchPolymarketData ---"
@@ -141,7 +143,7 @@ jobs:
             # state to sharpFlowPicks/Spreads/Totals. This is the server-side
             # mirror of the browser's syncPickHealth — it runs whether or not
             # anyone has the dashboard open, so picks stay current with the
-            # 8-min fetch cadence right up to T-15 freeze.
+            # 4-min fetch cadence right up to T-15 freeze.
             echo "--- writeSharpActions ---"
             node scripts/writeSharpActions.js || echo "writeSharpActions failed (cycle $i)"
 
@@ -236,8 +238,8 @@ jobs:
             fi
 
             cycle_elapsed=$(( $(date +%s) - cycle_start ))
-            echo "### Cycle $i took ${cycle_elapsed}s"
-            if [ "$i" -lt 6 ]; then
+            echo "### Cycle $i took ${cycle_elapsed}s (target ${target_interval}s start-to-start)"
+            if [ "$i" -lt "$cycles" ]; then
               remain=$(( target_interval - cycle_elapsed ))
               if [ "$remain" -gt 0 ]; then
                 echo "--- sleeping ${remain}s until next cycle ---"
@@ -249,4 +251,4 @@ jobs:
           done
           set -e
           echo ""
-          echo "### All 6 cycles complete — $(date -u +%H:%M:%S) UTC"
+          echo "### All ${cycles} cycles complete — $(date -u +%H:%M:%S) UTC"
