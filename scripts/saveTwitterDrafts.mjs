@@ -23,7 +23,9 @@
  *       "replyToId": "2074...",                 // optional — for replies
  *       "quoteId": "2074...",                   // optional — for QTs
  *       "attach": "dashboard screenshots",      // optional note
- *       "when": "post now / ~12:21 PM lock"     // optional timing note
+ *       "when": "post now / ~12:21 PM lock",    // optional timing note
+ *       "improvesOn": "post id or shape from growth_pulse",  // ratchet
+ *       "prediction": "beat X impr / Y replies because ..." // ratchet
  *     }
  *   ]
  * }
@@ -112,6 +114,8 @@ drafts.forEach((d, i) => {
     `KIND: ${d.kind || 'hero'}`,
     d.when ? `WHEN: ${d.when}` : null,
     d.attach ? `ATTACH: ${d.attach}` : null,
+    d.improvesOn ? `IMPROVES_ON: ${d.improvesOn}` : null,
+    d.prediction ? `PREDICTION: ${d.prediction}` : null,
     d.replyToId ? `REPLY_TO: https://x.com/i/status/${d.replyToId}` : null,
     d.quoteId ? `QUOTE: https://x.com/i/status/${d.quoteId}` : null,
     `COMPOSE: ${composeUrl(d)}`,

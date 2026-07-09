@@ -1,15 +1,19 @@
-# Twitter drafts (local)
+# Twitter drafts (local) — stage only, never auto-publish
 
-Every loop run that produces copy should end with:
+## Every loop run
+1. **Pulse first** (self-improvement):
+   ```bash
+   node scripts/growthPulse.mjs --save
+   ```
+   → `growth_pulse.json` with OVER/UNDER + `nextBet`
 
-```bash
-node scripts/saveTwitterDrafts.mjs --file twitter_drafts/inbox.json
-```
+2. **Draft** against that pulse (`improvesOn` + `prediction` on each item)
 
-That writes a timestamped folder with `.txt` copy + `compose_links.md`
-(one-tap open in X with text pre-filled).
+3. **Save** (owner posts manually via compose links):
+   ```bash
+   node scripts/saveTwitterDrafts.mjs --file twitter_drafts/inbox.json
+   ```
+   → timestamped folder with `.txt` + `compose_links.md`
 
-**Why not native X Drafts?** The consumer Drafts folder is not on the
-pay-per-use X API our MCP uses. Official `draft_tweets` is Ads API only.
-If we get an Ads account linked to @Real_NHL_Savant, we can upgrade this
-script to POST drafts into X directly. Until then: files + intent URLs.
+**Why not native X Drafts?** Consumer Drafts folder ≠ `tweet.write`.
+We can publish live if asked; we stage by default.

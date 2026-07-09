@@ -10,6 +10,10 @@ apart, because it compared drafts to drafts instead of to the real
 timeline. v2 keeps memory in the API. Nothing in this file is a cached
 "fact" that can go stale; every run re-derives state from live pulls.
 
+**Never auto-publish.** Stage drafts + compose links only. Publish only
+when the owner explicitly says so. Optimization = better drafts from
+measured feedback, not more automation of posting.
+
 ---
 
 ## THE FIVE RULES (all of them — resist adding more)
@@ -58,61 +62,91 @@ timeline. v2 keeps memory in the API. Nothing in this file is a cached
 
 ## THE LOOP (every run, in order)
 
-**PULL** (MCP `user-xapi` — credits are pay-per-use, be surgical):
+**1. PULL** (MCP `user-xapi` — credits are pay-per-use, be surgical):
 - `get_users_me` (user.fields=public_metrics) — follower count → delta vs
-  last run (logged below).
+  last pulse.
 - `get_users_posts` (id=1991513001204281345, exclude=replies,
   post.fields=created_at,public_metrics,non_public_metrics, max~15) —
-  grade recent HERO posts: impressions, engagements, profile clicks, link
-  clicks. This is also the anti-duplicate corpus (Rule 3).
-- `get_users_posts` AGAIN (same id, **do NOT exclude replies**,
+  heroes + anti-duplicate corpus (Rule 3).
+- `get_users_posts` AGAIN (**do NOT exclude replies**,
   expansions=referenced_tweets.id,in_reply_to_user_id,
   post.fields=created_at,public_metrics,referenced_tweets,
-  in_reply_to_user_id, max~20) — OUR outbound replies. Process them:
-  which mentions did we already answer? which need a follow-up? did we
-  promise a grade / lock / DM that is still owed? Never draft a reply
-  that duplicates one we already sent.
-- `get_users_mentions` — the inbox. Cross-check against our replies pull
-  before drafting answers. Answer unanswered inbound first.
-- **DISTRIBUTION HUNT** (mandatory every run — see ENGINE):
-  `search_posts_all` / recent search, sort_order=recency, on tonight's
-  event + 1-2 niche accounts' fresh posts. Rank by parent velocity
-  (impressions + replies in first ~30–60 min). Pull 3–5 candidates.
-- `get_trends_by_woeid` (23424977 = US) — only when hunting a hook for a
-  mainstream-moment post.
+  in_reply_to_user_id, max~20) — outbound replies: already answered?
+  promises owed? never duplicate a reply we already sent.
+- `get_users_mentions` — inbox. Cross-check vs our replies. Answer first.
+- **DISTRIBUTION HUNT** (ENGINE): recent search + niche accounts' fresh
+  posts. Rank by parent velocity. Pull 3–5 candidates.
+- `get_trends_by_woeid` (23424977 = US) — only for mainstream-moment hooks.
 
-**READ** (repo, free): tonight's board — `public/sharp_positions.json`
-(+ spread/total variants), `public/pinnacle_history.json`, the site's
-pick data. The receipts live here: per-wallet invested $, records, ROI,
-sizing multiples, pool percentages.
+**2. PULSE** (self-improvement — mandatory before drafting):
+```
+node scripts/growthPulse.mjs --save
+```
+Reads live heroes + outbound replies, scores OVER (≥1.5x baseline) /
+PAR / UNDER (≤0.6x), writes `twitter_drafts/growth_pulse.json` with
+`nextBet` (what content + distribution must improve on this run).
+Present the ratchet to the owner in one short block before drafts.
 
-**DECIDE**: two jobs every run —
-1. CONTENT: one hero job (reach / convert / retain) + one moment
-2. DISTRIBUTION: which 2–4 out-of-network replies/QTs to ship (ENGINE)
+**3. READ** (repo, free): `public/sharp_positions.json` (+ spread/total),
+pinnacle / picks export. Receipts: wallet $, records, ROI, sizing, %.
 
-The measured best content moment is the decision window: locked pick,
-minutes before start. Recaps with no live moment measured 0.3-0.6x; skip
-them or fuse them into a live pick (a fresh win is a hook, not a post).
+**4. DECIDE**: two jobs —
+1. CONTENT: reach / convert / retain + one moment (prefer decision window)
+2. DISTRIBUTION: 2–4 outbound replies/QTs from the hunt
+Recaps with no live moment measured 0.3-0.6x — fuse into a live pick or skip.
 
-**DRAFT**: 3 genuinely different hero angles + copy-paste ready
-distribution replies (ENGINE). Kill anything whose hook shape appears in
-the last 10 real posts. Apply Rules 2 and 4 and the ARSENAL. Ship both.
+**5. DRAFT** (every hero/distribution item must declare):
+- `improvesOn`: post id or shape from the pulse (OVER to double down, or
+  UNDER to explicitly avoid)
+- `prediction`: "beat X impr / Y replies / Z profile clicks because ___"
+- ≥3 Arsenal weapons named
+Kill hook shapes in the last 10 real posts. Skeleton = die (Rule 4).
 
-**SAVE DRAFTS (mandatory end of every run that produces copy):**
-We HAVE `tweet.write` (can publish live via `xurl post`). We do NOT have
-an API into X's Drafts folder — that folder ≠ `tweet.write` (see
-`X_API.md`). Default = stage, never auto-publish:
-1. Write `twitter_drafts/inbox.json` (hero, self-reply, distribution,
-   inbound — shape in `scripts/saveTwitterDrafts.mjs` header).
-2. Run `node scripts/saveTwitterDrafts.mjs --file twitter_drafts/inbox.json`
-3. Tell the owner the folder path + `compose_links.md` (one-tap pre-fill).
-4. Only run `xurl post "..."` / `POST /2/tweets` when the owner explicitly
-   says publish/post it — never as a silent end-of-run step.
-Never leave copy only in chat.
+**6. SAVE DRAFTS** (never auto-publish):
+1. Write `twitter_drafts/inbox.json` (include improvesOn + prediction
+   fields on each draft).
+2. `node scripts/saveTwitterDrafts.mjs --file twitter_drafts/inbox.json`
+3. Tell owner folder path + `compose_links.md`.
+4. Publish via `xurl` ONLY if owner explicitly says so.
 
-**MEASURE**: the next run's PULL grades BOTH — hero impressions AND
-outbound-reply impressions (profile clicks if available). One line in
-the log. Prune to ~15 lines.
+**7. CLOSE THE LOOP** (end of run, in chat + lesson log):
+- One line: what we predicted last time → what happened → what changes.
+- Update FOLLOWER LOG if delta ≠ 0.
+- Prune LESSON LOG to ~15 lines; graduate winners into Rules/ENGINE or kill.
+
+---
+
+## THE RATCHET — how the loop self-improves (added 7/9)
+
+No auto-publish. Improvement = every draft is a bet against the last pulse.
+
+**North-star metrics (in order):**
+1. Follower delta (weekly) — are we growing?
+2. Profile clicks on heroes + outbound replies — funnel to bio → site
+3. Outbound-reply impressions — growth engine health
+4. Hero impressions vs baseline — reach
+5. Replies + engScore (likes + 3·RT + 5·replies) — algo currency
+
+**Every run:**
+1. Run `growthPulse.mjs --save` before drafting.
+2. Drafts must cite `improvesOn` + `prediction` from that pulse.
+3. Next run's pulse grades the prediction. Log one honest line.
+4. OVER shapes → double down (change ONE variable). UNDER → kill that
+   shape for 10 posts. PAR → keep only if it serves convert/retain.
+
+**Weekly (or when followers flat ≥3 days):**
+- Re-read OVER heroes + best outbound — extract the winning *mechanic*
+  (not the whole structure) into WHAT THE DATA SAYS.
+- Refresh pinned tweet if >14 days or if a stronger proof post exists
+  (all-time chase, middle, ATH).
+- Ask: is distribution volume hitting 3–6 quality outbound/day? If not,
+  the content loop is optimizing a closed 2K room.
+
+**Anti-patterns that fake "improvement":**
+- Adding more rules without a measured OVER/UNDER.
+- Optimizing likes while profile clicks stay at 0.
+- Shipping more heroes instead of more high-velocity outbound.
+- Declaring a format "proven" from n=1.
 
 ---
 
@@ -299,3 +333,8 @@ draft is generic and dies.
   Loop now requires a DISTRIBUTION block every run (3–6 quality replies/
   0–2 QTs/day). Cold @-mentions banned. Reply quality bar = proprietary
   data or it dies.
+- 7/9: RATCHET live via growthPulse.mjs — hero baseline ~1,257v; OVER
+  shapes = decision-window / win→next-leg combo / story QT. Best outbound
+  1,130v on Trent. Profile clicks still 0 across recent posts — pin +
+  self-reply funnel is the convert leak. Every draft now requires
+  improvesOn + prediction; never auto-publish.
