@@ -2121,6 +2121,12 @@ async function main() {
   const groups = buildPositionGroupsFromFirestore(positions);
   console.log(`Loaded ${positions.length} sharp_action_positions in ${groups.size} game-market clusters`);
 
+  // Needed by reconcileSide (spread lock-odds repair) AND createMissingLockedPicks.
+  // Must load before the reconcile loop — TDZ crash if declared later
+  // (2026-07-09: ReferenceError: Cannot access 'gameMeta' before initialization).
+  const gameMeta = loadGameMetadata();
+  console.log(`Loaded metadata for ${gameMeta.size} games (commenceTime + odds source)`);
+
   // Load today's pick docs.
   const collections = ['sharpFlowPicks', 'sharpFlowSpreads', 'sharpFlowTotals'];
   const collectionWrites = new Map(); // colName → [{ docId, sideKey, patch }]
@@ -2379,9 +2385,8 @@ async function main() {
   // Scan every (sport|gameKey|mkt) group of sharp_action_positions and
   // write a fresh pick doc for any side that passes the v7.5 floor but
   // doesn't have an existing doc. Closes the "browser-only writer" gap.
-  const gameMeta = loadGameMetadata();
+  // gameMeta already loaded above (shared with reconcileSide).
   console.log(`\n── Create-missing pass ──`);
-  console.log(`  Loaded metadata for ${gameMeta.size} games (commenceTime + odds source)`);
   const cm = await createMissingLockedPicks({
     db, groups, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn,
     walletStatsFn, walletPriorStatsFn,
