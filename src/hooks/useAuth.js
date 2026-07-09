@@ -6,6 +6,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, googleProvider, db, analytics, logEvent as firebaseLogEvent } from '../firebase/config';
+import { onesignalLogin, onesignalLogout, onesignalAddTags } from '../lib/onesignal';
 
 // Wrapper for analytics logging
 const logEvent = (eventName, params) => {
@@ -45,9 +46,14 @@ export function useAuth() {
         } catch (err) {
           console.error('Error updating last login:', err);
         }
+
+        // Link OneSignal push subscription → Firebase uid for targeted sends
+        onesignalLogin(firebaseUser.uid);
+        onesignalAddTags({ email: firebaseUser.email || '' });
       } else {
         // User is signed out
         setUser(null);
+        onesignalLogout();
       }
       setLoading(false);
     });
