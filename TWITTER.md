@@ -98,6 +98,19 @@ them or fuse them into a live pick (a fresh win is a hook, not a post).
 distribution replies (ENGINE). Kill anything whose hook shape appears in
 the last 10 real posts. Apply Rules 2 and 4 and the ARSENAL. Ship both.
 
+**SAVE DRAFTS (mandatory end of every run that produces copy):**
+Native X Drafts folder is NOT on our MCP/API (Ads API only — see
+`twitter_drafts/README.md`). Until Ads access exists, every run writes
+local drafts + one-tap compose links:
+1. Write `twitter_drafts/inbox.json` with the hero, self-reply,
+   distribution replies/QTs, and inbound answers (shape in
+   `scripts/saveTwitterDrafts.mjs` header).
+2. Run `node scripts/saveTwitterDrafts.mjs --file twitter_drafts/inbox.json`
+3. Tell the owner the folder path + that `compose_links.md` opens X
+   pre-filled (attach media manually, then Post).
+Never leave copy only in chat — if it was good enough to show the owner,
+it gets saved as a draft.
+
 **MEASURE**: the next run's PULL grades BOTH — hero impressions AND
 outbound-reply impressions (profile clicks if available). One line in
 the log. Prune to ~15 lines.

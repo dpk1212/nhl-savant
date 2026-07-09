@@ -13,7 +13,11 @@ Authenticated as **@Real_NHL_Savant** · user id `1991513001204281345`.
 
 **Credits are pay-per-use — be surgical, not chatty.**
 
-Everything else (loop docs, taste files, linters, ledgers, guardrails,
-ready_to_post drafts) was gutted 7/7/2026 at the owner's direction after the
-system produced a duplicate hook 90 minutes apart despite all its gates.
-History is in git if anything ever needs recovering.
+## Drafts (important limitation)
+Native X "Drafts" (compose → Save draft) are **not** on this MCP. Official
+`POST .../draft_tweets` is **Ads API only**. Our loop saves drafts locally
+via `node scripts/saveTwitterDrafts.mjs` → `twitter_drafts/<run>/` with
+one-tap `intent/tweet` compose links. Upgrade path: link an Ads account
+to @Real_NHL_Savant, then POST to ads-api draft_tweets.
+
+See `TWITTER.md` (SAVE DRAFTS step) and `twitter_drafts/README.md`.
