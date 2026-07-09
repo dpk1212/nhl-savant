@@ -17,6 +17,11 @@ import { readFileSync, existsSync } from 'fs';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { dirname, join } from 'path';
 import { resolveSOCTeam } from './lib/soccerTeams.js';
+import {
+  resolveUFCFighter,
+  fightersMatch,
+  isGradableUFCMainML,
+} from './lib/ufcFighters.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '../public');
@@ -27,6 +32,7 @@ const NCAA_API_URL = 'https://ncaa-api.henrygd.me/scoreboard/basketball-men/d1';
 const ESPN_MLB_URL = 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard';
 const ESPN_NBA_URL = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard';
 const ESPN_SOC_URL = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard';
+const ESPN_UFC_URL = 'https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard';
 
 const ABBREV_MAP = {
   bos: 'BOS', tor: 'TOR', mtl: 'MTL', ott: 'OTT', buf: 'BUF', det: 'DET',
@@ -268,6 +274,63 @@ async function fetchSOCFinalGames(dateStr) {
   }
 }
 
+/**
+ * UFC fight card via ESPN MMA scoreboard.
+ * One ESPN event = full card; each competition = one bout.
+ * Competitors use athlete.displayName; homeAway is usually null — order is
+ * arbitrary, so findMatchingGame must flip. Winner is competitor.winner
+ * (boolean), mapped to synthetic 1/0 scores for the shared ML grader.
+ * No Contest (neither winner) is skipped — stay PENDING.
+ */
+async function fetchUFCFinalFights(dateStr) {
+  try {
+    const ymd = dateStr ? `?dates=${dateStr.replace(/-/g, '')}` : '';
+    const res = await fetch(`${ESPN_UFC_URL}${ymd}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    const fights = [];
+    for (const ev of data.events || []) {
+      const cardDateET = espnEventDateET(ev);
+      for (const comp of ev.competitions || []) {
+        const st = comp.status?.type;
+        const name = st?.name || '';
+        if (name.startsWith('STATUS_POSTPONED') || name.startsWith('STATUS_CANCELED')
+          || name.startsWith('STATUS_CANCELLED') || name.startsWith('STATUS_SUSPENDED')) {
+          continue;
+        }
+        if (st?.state !== 'post' && !st?.completed && !name.startsWith('STATUS_FINAL')) continue;
+        const comps = comp.competitors || [];
+        if (comps.length < 2) continue;
+        const fighterName = (c) => c.athlete?.displayName || c.team?.displayName || c.team?.name || '';
+        const f0 = fighterName(comps[0]);
+        const f1 = fighterName(comps[1]);
+        const w0 = comps[0].winner === true;
+        const w1 = comps[1].winner === true;
+        if (!w0 && !w1) continue; // NC / no decisive result — do not invent a grade
+        const code0 = resolveUFCFighter(f0);
+        const code1 = resolveUFCFighter(f1);
+        if (!code0 || !code1) continue;
+        const boutDate = espnEventDateET(comp) || cardDateET;
+        fights.push({
+          dateET: boutDate,
+          awayCode: code0,
+          homeCode: code1,
+          awayFighter: f0,
+          homeFighter: f1,
+          awayTeam: f0,
+          homeTeam: f1,
+          awayScore: w0 ? 1 : 0,
+          homeScore: w1 ? 1 : 0,
+        });
+      }
+    }
+    return fights;
+  } catch (e) {
+    console.error('ESPN UFC fetch error:', e.message);
+    return [];
+  }
+}
+
 // ─── Outcome calculation (mirrors betTracking.js) ───────────────────────────
 
 function calculateOutcome(game, marketType, side, line, sport = null) {
@@ -337,8 +400,8 @@ function finalDateMatches(g, pos) {
   return g.dateET != null && g.dateET === pos.date;
 }
 
-function findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals = []) {
-  const rawKey = (pos.gameKey || '').replace(/^(NHL|NBA|MLB|CBB|SOC):/, '');
+function findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals = [], ufcFinals = []) {
+  const rawKey = (pos.gameKey || '').replace(/^(NHL|NBA|MLB|CBB|SOC|UFC):/, '');
   const parts = rawKey.split('_');
 
   if (pos.sport === 'NHL') {
@@ -396,6 +459,25 @@ function findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFi
     return null;
   }
 
+  if (pos.sport === 'UFC') {
+    if (!isGradableUFCMainML(pos)) return null;
+    if (parts.length < 2) return null;
+    const dated = ufcFinals.filter(g => finalDateMatches(g, pos));
+    for (const g of dated) {
+      if (g.awayCode === parts[0] && g.homeCode === parts[1]) return g;
+      if (g.awayCode === parts[1] && g.homeCode === parts[0]) {
+        return { ...g, awayScore: g.homeScore, homeScore: g.awayScore };
+      }
+    }
+    for (const g of dated) {
+      if (fightersMatch(pos.away, g.awayFighter) && fightersMatch(pos.home, g.homeFighter)) return g;
+      if (fightersMatch(pos.away, g.homeFighter) && fightersMatch(pos.home, g.awayFighter)) {
+        return { ...g, awayScore: g.homeScore, homeScore: g.awayScore };
+      }
+    }
+    return null;
+  }
+
   return null;
 }
 
@@ -428,12 +510,14 @@ async function main() {
   const cbbDates = new Set();
   const nhlDates = new Set();
   const socDates = new Set();
+  const ufcDates = new Set();
   snapshot.forEach(doc => {
     const d = doc.data();
     sports.add(d.sport);
     if (d.sport === 'CBB' && d.date) cbbDates.add(d.date);
     if (d.sport === 'NHL' && d.date) nhlDates.add(d.date);
     if (d.sport === 'SOC' && d.date) socDates.add(d.date);
+    if (d.sport === 'UFC' && d.date) ufcDates.add(d.date);
   });
 
   // Fetch scores
@@ -476,6 +560,15 @@ async function main() {
     }
   }
 
+  let ufcFinals = [];
+  if (sports.has('UFC')) {
+    for (const d of ufcDates) {
+      const fights = await fetchUFCFinalFights(d);
+      ufcFinals.push(...fights);
+      console.log(`ESPN UFC API: ${fights.length} final fights for ${d}`);
+    }
+  }
+
   // Grade each position
   let graded = 0, noGame = 0, errors = 0;
   const BATCH_SIZE = 400;
@@ -489,7 +582,7 @@ async function main() {
     for (const doc of chunk) {
       const pos = doc.data();
 
-      const game = findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals);
+      const game = findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals, ufcFinals);
       if (!game) {
         noGame++;
         continue;

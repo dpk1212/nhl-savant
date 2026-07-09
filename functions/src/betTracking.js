@@ -42,6 +42,60 @@ const NCAA_API_URL = "https://ncaa-api.henrygd.me/scoreboard/basketball-men/d1";
 const ESPN_MLB_URL = "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard";
 const ESPN_NBA_URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard";
 const ESPN_SOC_URL = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard";
+const ESPN_UFC_URL = "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard";
+
+// UFC fighter helpers (mirrors scripts/lib/ufcFighters.js — functions/ is CJS).
+const UFC_ALIASES = {
+  benoitsaintdenis: "benoitsaintdenis",
+  terrancemckinney: "terrancemckinney",
+  bobbygreen: "kinggreen",
+  kinggreen: "kinggreen",
+};
+
+function normalizeFighterName(s) {
+  return (s || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+}
+
+function resolveUFCFighter(raw) {
+  if (!raw) return null;
+  const cleaned = String(raw)
+      .replace(/\s*\([^)]*\)\s*$/g, "")
+      .replace(/^ufc\s*\d+\s*:\s*/i, "")
+      .trim();
+  const n = normalizeFighterName(cleaned);
+  if (!n || n.length < 3) return null;
+  return UFC_ALIASES[n] || n;
+}
+
+function fightersMatch(rawA, rawB) {
+  const a = resolveUFCFighter(rawA);
+  const b = resolveUFCFighter(rawB);
+  return !!(a && b && a === b);
+}
+
+function isGradableUFCMainML(pos) {
+  if (!pos) return false;
+  const mt = (pos.marketType || pos.market || "ml").toString().toLowerCase();
+  if (mt && mt !== "ml" && mt !== "moneyline" && mt !== "h2h") return false;
+  const blob = [
+    pos.title, pos.marketTitle, pos.outcome, pos.teamName, pos.team, pos.sideLabel,
+  ].filter(Boolean).join(" ");
+  if (/win by|go the distance|method|ko\/?tko|submission|decision|rounds?\b|o\/u\s*\d|over\/under|parlay|champion|fight next/i.test(blob)) {
+    return false;
+  }
+  return true;
+}
+
+function espnEventDateET(e) {
+  if (!e?.date) return null;
+  const d = new Date(e.date);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("en-CA", {timeZone: "America/New_York"});
+}
 
 // World Cup country name → FIFA code (mirrors scripts/lib/soccerTeams.js —
 // functions/ is CommonJS so it can't import that ESM module directly).
@@ -310,6 +364,56 @@ async function fetchSOCFinalGames(dateStr) {
 }
 
 /**
+ * UFC fight card via ESPN MMA scoreboard.
+ * One event = full card; each competition = one bout.
+ * Competitors use athlete.displayName; homeAway is usually null.
+ * Winner → synthetic 1/0 scores. No Contest (neither winner) skipped.
+ */
+async function fetchUFCFinalFights(dateStr) {
+  try {
+    const ymd = dateStr ? `?dates=${dateStr.replace(/-/g, "")}` : "";
+    const res = await fetch(`${ESPN_UFC_URL}${ymd}`);
+    if (!res.ok) { logger.warn(`ESPN UFC API ${res.status}`); return []; }
+    const data = await res.json();
+    const fights = [];
+    for (const ev of data.events || []) {
+      const cardDateET = espnEventDateET(ev);
+      for (const comp of ev.competitions || []) {
+        const st = comp.status?.type;
+        if (!isActuallyFinal(st)) continue;
+        const comps = comp.competitors || [];
+        if (comps.length < 2) continue;
+        const fighterName = (c) =>
+          c.athlete?.displayName || c.team?.displayName || c.team?.name || "";
+        const f0 = fighterName(comps[0]);
+        const f1 = fighterName(comps[1]);
+        const w0 = comps[0].winner === true;
+        const w1 = comps[1].winner === true;
+        if (!w0 && !w1) continue; // NC — stay PENDING
+        const code0 = resolveUFCFighter(f0);
+        const code1 = resolveUFCFighter(f1);
+        if (!code0 || !code1) continue;
+        fights.push({
+          dateET: espnEventDateET(comp) || cardDateET,
+          awayCode: code0,
+          homeCode: code1,
+          awayFighter: f0,
+          homeFighter: f1,
+          awayTeam: f0,
+          homeTeam: f1,
+          awayScore: w0 ? 1 : 0,
+          homeScore: w1 ? 1 : 0,
+        });
+      }
+    }
+    return fights;
+  } catch (e) {
+    logger.error("ESPN UFC fetch error:", e.message);
+    return [];
+  }
+}
+
+/**
  * Scheduled function: Updates bet results with game outcomes
  */
 exports.updateBetResults = onSchedule({
@@ -415,11 +519,13 @@ exports.updateBetResults = onSchedule({
     const allSports = new Set();
     const allCbbDates = new Set();
     const allSocDates = new Set();
+    const allUfcDates = new Set();
     allDocs.forEach((d) => {
       const p = d.data();
       allSports.add(p.sport);
       if (p.sport === "CBB" && p.date) allCbbDates.add(p.date);
       if (p.sport === "SOC" && p.date) allSocDates.add(p.date);
+      if (p.sport === "UFC" && p.date) allUfcDates.add(p.date);
     });
 
     let cbbFinalByDate = {};
@@ -450,6 +556,15 @@ exports.updateBetResults = onSchedule({
         const games = await fetchSOCFinalGames(d);
         socFinalGames.push(...games);
         logger.info(`ESPN SOC API: ${games.length} final World Cup games for ${d}`);
+      }
+    }
+
+    let ufcFinalGames = [];
+    if (allSports.has("UFC")) {
+      for (const d of allUfcDates) {
+        const fights = await fetchUFCFinalFights(d);
+        ufcFinalGames.push(...fights);
+        logger.info(`ESPN UFC API: ${fights.length} final fights for ${d}`);
       }
     }
 
@@ -562,6 +677,51 @@ exports.updateBetResults = onSchedule({
                 }
               }
             }
+          } else if (sport === "UFC") {
+            if (!isGradableUFCMainML(pick)) continue;
+            const rawKey = (pick.gameKey || "").replace(/^UFC:/, "");
+            const parts = rawKey.split("_");
+            if (parts.length < 2) continue;
+            const dated = ufcFinalGames.filter((g) =>
+              !pick.date || (g.dateET != null && g.dateET === pick.date),
+            );
+            for (const g of dated) {
+              if (g.awayCode === parts[0] && g.homeCode === parts[1]) {
+                matchingGame = g;
+                break;
+              }
+              if (g.awayCode === parts[1] && g.homeCode === parts[0]) {
+                matchingGame = {
+                  ...g,
+                  awayScore: g.homeScore,
+                  homeScore: g.awayScore,
+                };
+                break;
+              }
+            }
+            if (!matchingGame) {
+              for (const g of dated) {
+                if (fightersMatch(pick.away, g.awayFighter) &&
+                    fightersMatch(pick.home, g.homeFighter)) {
+                  matchingGame = g;
+                  break;
+                }
+                if (fightersMatch(pick.away, g.homeFighter) &&
+                    fightersMatch(pick.home, g.awayFighter)) {
+                  matchingGame = {
+                    ...g,
+                    awayScore: g.homeScore,
+                    homeScore: g.awayScore,
+                  };
+                  break;
+                }
+              }
+            }
+            // No decisive winner (shouldn't reach here after NC skip) — stay PENDING
+            if (matchingGame &&
+                matchingGame.awayScore === matchingGame.homeScore) {
+              matchingGame = null;
+            }
           }
 
           if (!matchingGame) continue;
@@ -587,7 +747,8 @@ exports.updateBetResults = onSchedule({
               "result.source": sport === "NHL" ? "NHL_API" :
                 sport === "CBB" ? "NCAA_API" :
                 sport === "NBA" ? "ESPN_NBA_API" :
-                sport === "SOC" ? "ESPN_SOC_API" : "ESPN_MLB_API",
+                sport === "SOC" ? "ESPN_SOC_API" :
+                sport === "UFC" ? "ESPN_UFC_API" : "ESPN_MLB_API",
             };
             let allSidesGraded = true;
 
@@ -686,7 +847,8 @@ exports.updateBetResults = onSchedule({
               "result.source": sport === "NHL" ? "NHL_API" :
                 sport === "CBB" ? "NCAA_API" :
                 sport === "NBA" ? "ESPN_NBA_API" :
-                sport === "SOC" ? "ESPN_SOC_API" : "ESPN_MLB_API",
+                sport === "SOC" ? "ESPN_SOC_API" :
+                sport === "UFC" ? "ESPN_UFC_API" : "ESPN_MLB_API",
               "result.gradedAt":
                 admin.firestore.FieldValue.serverTimestamp(),
               "status": "COMPLETED",

@@ -157,3 +157,28 @@ export function matchUFCPositionTitle(posTitle, todaysGames) {
 
   return null;
 }
+
+/** True when two raw fighter strings resolve to the same canonical key. */
+export function fightersMatch(rawA, rawB) {
+  const a = resolveUFCFighter(rawA);
+  const b = resolveUFCFighter(rawB);
+  return !!(a && b && a === b);
+}
+
+/**
+ * Only main-fight moneyline positions are safe to grade as fight winner.
+ * Method / distance / round props may attach to a fight with a fighter side
+ * but must NOT be graded against the bout result.
+ */
+export function isGradableUFCMainML(pos) {
+  if (!pos) return false;
+  const mt = (pos.marketType || pos.market || 'ml').toString().toLowerCase();
+  if (mt && mt !== 'ml' && mt !== 'moneyline' && mt !== 'h2h') return false;
+  const blob = [
+    pos.title, pos.marketTitle, pos.outcome, pos.teamName, pos.team, pos.sideLabel,
+  ].filter(Boolean).join(' ');
+  if (/win by|go the distance|method|ko\/?tko|submission|decision|rounds?\b|o\/u\s*\d|over\/under|parlay|champion|fight next/i.test(blob)) {
+    return false;
+  }
+  return true;
+}
