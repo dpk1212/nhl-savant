@@ -35,7 +35,7 @@ function isStandalone() {
  * Lock Alerts — Account settings card for paid users.
  * Opt-in / opt-out + desktop / Android / iOS directions.
  */
-export default function LockAlertsCard({ user, tier, status, isPremium }) {
+export default function LockAlertsCard({ user, isPremium }) {
   const [pushStatus, setPushStatus] = useState(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(null);
@@ -77,9 +77,6 @@ export default function LockAlertsCard({ user, tier, status, isPremium }) {
       }
       const outcome = await onesignalEnableForPaidUser({
         uid: user.uid,
-        email: user.email,
-        tier,
-        status,
       });
       await refreshStatus();
       if (outcome.ok) {

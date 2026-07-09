@@ -660,8 +660,6 @@ const Account = () => {
         {/* Lock Alerts (OneSignal) — paid opt-in + mobile directions */}
         <LockAlertsCard
           user={user}
-          tier={tier}
-          status={status}
           isPremium={isPremium}
         />
 

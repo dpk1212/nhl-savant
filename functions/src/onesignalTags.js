@@ -4,6 +4,9 @@
  * Keeps tag paid=true/false honest when users cancel and never reopen the app.
  * Uses REST API: PATCH /apps/{app_id}/users/by/external_id/{uid}
  *
+ * Only writes the single tag `paid` — org plan hits entitlements-tag-limit
+ * if we send tier/email/lock_alerts extras.
+ *
  * Env: ONESIGNAL_APP_ID, ONESIGNAL_REST_API_KEY
  */
 
@@ -22,12 +25,7 @@ async function syncOnesignalPaidTags(externalId, opts) {
   }
 
   const paid = !!opts.paid;
-  const tags = {
-    paid: paid ? 'true' : 'false',
-    lock_alerts: paid ? 'true' : 'false',
-    tier: String(opts.tier || (paid ? '' : 'free')),
-    status: String(opts.status || ''),
-  };
+  const tags = { paid: paid ? 'true' : 'false' };
 
   const url = `https://api.onesignal.com/apps/${APP_ID}/users/by/external_id/${encodeURIComponent(externalId)}`;
   try {
@@ -40,7 +38,6 @@ async function syncOnesignalPaidTags(externalId, opts) {
       body: JSON.stringify({ properties: { tags } }),
     });
     if (res.status === 404) {
-      // User never opted into push — fine
       console.log(`[OneSignal] no user for external_id=${externalId} (404)`);
       return { ok: true, reason: 'no_onesignal_user' };
     }

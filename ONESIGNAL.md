@@ -12,10 +12,18 @@ Brand colors: Primary `#10B981` · Secondary `#D4AF37`
 
 | Event | Behavior |
 |---|---|
-| Paid user Enables on Account | Subscribe + tags `paid=true`, `lock_alerts=true`, External ID = Firebase uid |
+| Paid user Enables on Account | Subscribe + tag `paid=true`, External ID = Firebase uid |
+| Paid user visits while premium | `PaidPushGate` re-asserts `paid=true` (no permission prompt) |
 | User signs out | Clear External ID only — **keep** browser subscription (alerts work offline) |
-| Sub lapses / canceled | Tag `paid=false` (+ client optOut if they reopen) via Stripe webhook |
+| Sub lapses / canceled | Tag `paid=false` via Stripe webhook (+ client optOut if they reopen) |
 | Production send | Always filter `tag paid = true` — **never** `Active Subscriptions` |
+
+### Tag hygiene (plan limit)
+
+OneSignal org plan allows **one custom tag** for us (`entitlements-tag-limit`).  
+**Only write `paid` = `"true"` | `"false"`.** Do not add `tier` / `email` / `lock_alerts`.
+
+Client free-path is delayed ~5s so Stripe sync can promote free→paid without a false untag on login.
 
 ---
 
@@ -26,11 +34,11 @@ Brand colors: Primary `#10B981` · Secondary `#D4AF37`
 | `index.html` | SDK init · **autoPrompt: false** |
 | `public/OneSignalSDKWorker.js` | Service worker at site root |
 | `public/manifest.json` | PWA (`display: standalone`) for iOS home-screen push |
-| `PaidPushGate.jsx` | Paid → sync External ID + tags (no permission prompt). Logout ≠ optOut |
+| `PaidPushGate.jsx` | Paid → External ID + `paid=true`. Free → delayed `paid=false` + optOut. Logout ≠ optOut |
 | `LockAlertsCard.jsx` | Account `#/account` — Enable / Turn off + iOS/Android directions |
 | `scripts/sendLockAlerts.mjs` | Cron: newly frozen LOCKED at T−15 → OneSignal (`paid=true`) |
-| `functions/src/onesignalTags.js` | Stripe webhook syncs `paid` tags by External ID |
-| Tags | `paid`, `tier`, `status`, `email`, `lock_alerts` |
+| `functions/src/onesignalTags.js` | Stripe webhook syncs only `paid` by External ID |
+| Tags | **`paid` only** |
 
 Free visitors never see a permission dialog. Paid users opt in from **Account → Lock Alerts**.
 
@@ -62,9 +70,34 @@ ONESIGNAL_REST_API_KEY=... node scripts/sendLockAlerts.mjs
 | `ONESIGNAL_APP_ID` | App ID (optional; script has prod default) |
 | `ONESIGNAL_REST_API_KEY` | REST API key — **required** for cron sends |
 
-### Firebase Functions env
+### Firebase Functions env (required for cancel → untag)
 
-Same `ONESIGNAL_REST_API_KEY` (+ optional `ONESIGNAL_APP_ID`) on Cloud Functions so Stripe cancel/lapse updates tags even if the user never reopens the site.
+Add to `functions/.env` (same pattern as Stripe keys), then redeploy functions:
+
+```bash
+# functions/.env
+ONESIGNAL_APP_ID=d8fcb504-8d29-4354-a9e4-8b612d3eafeb
+ONESIGNAL_REST_API_KEY=your_rest_api_key
+
+npm run deploy:functions
+```
+
+Without this, cancel/lapse only updates Firestore; OneSignal `paid` stays stale until the user reopens the site.
+
+### Verify tag sync
+
+1. Paid + Enable → Audience user shows `paid=true`
+2. Ask agent to send filter `paid=true` → you receive; `paid=false` → rejected
+3. After Functions secret is live: cancel test sub (or set Firestore free + webhook) → `paid=false` without opening the app
+
+### Backfill existing users
+
+```bash
+ONESIGNAL_REST_API_KEY=... node scripts/syncOnesignalPaidTags.mjs --dry-run
+ONESIGNAL_REST_API_KEY=... node scripts/syncOnesignalPaidTags.mjs
+# single user:
+ONESIGNAL_REST_API_KEY=... node scripts/syncOnesignalPaidTags.mjs --uid=FIREBASE_UID
+```
 
 ---
 

@@ -8,47 +8,50 @@ import {
 } from '../lib/onesignal';
 
 /**
- * PaidPushGate — keep OneSignal identity/tags in sync for paid users.
+ * PaidPushGate — keep OneSignal External ID + `paid` tag in sync.
  *
  * Does NOT request notification permission. Opt-in lives on Account
  * (#/account) so users see directions and choose Enable Lock Alerts.
  *
- * Option A entitlement: sign-out only clears External ID (subscription
- * stays — alerts still fire offline). Sub lapse → optOut + paid=false.
+ * Option A: sign-out only clears External ID (subscription stays).
+ * Sub lapse → paid=false + optOut.
  *
- * isPremium = tier in scout|elite|pro AND status in active|trialing
+ * Free-path is deferred ~5s so Stripe background sync can promote
+ * free→paid without a false untag race on login.
  */
 export default function PaidPushGate() {
   const { user, loading: authLoading } = useAuth();
-  const { isPremium, loading: subLoading, tier, status } = useSubscription(user);
-  const lastKey = useRef('');
+  const { isPremium, loading: subLoading } = useSubscription(user);
+  const lastPaidKey = useRef('');
 
   useEffect(() => {
     if (authLoading || subLoading) return;
 
     if (!user) {
-      if (lastKey.current !== 'anon') {
-        lastKey.current = 'anon';
-        onesignalLogout();
-      }
+      lastPaidKey.current = 'anon';
+      onesignalLogout();
       return;
     }
 
-    const key = `${user.uid}:${isPremium ? 'paid' : 'free'}:${tier || ''}`;
-    if (lastKey.current === key) return;
-    lastKey.current = key;
-
     if (isPremium) {
-      onesignalSyncPaidIdentity({
-        uid: user.uid,
-        email: user.email,
-        tier,
-        status,
-      });
-    } else {
-      onesignalDisableForNonPaid();
+      const key = `paid:${user.uid}`;
+      if (lastPaidKey.current === key) return;
+      lastPaidKey.current = key;
+      onesignalSyncPaidIdentity({ uid: user.uid });
+      return;
     }
-  }, [user, isPremium, authLoading, subLoading, tier, status]);
+
+    // Not premium yet — wait for Stripe sync before untagging.
+    const uid = user.uid;
+    const timer = setTimeout(() => {
+      const key = `free:${uid}`;
+      if (lastPaidKey.current === key) return;
+      lastPaidKey.current = key;
+      onesignalDisableForNonPaid();
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [user, isPremium, authLoading, subLoading]);
 
   return null;
 }

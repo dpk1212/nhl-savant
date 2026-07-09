@@ -3,10 +3,13 @@
  *
  * Init lives in index.html with autoPrompt disabled. Free / logged-out
  * visitors never see a permission prompt. Paid users opt in from Account
- * settings; PaidPushGate only syncs identity/tags (no auto-prompt).
+ * settings; PaidPushGate only syncs identity + the `paid` tag.
  *
  * Option A: logout clears External ID only (device stays subscribed so
- * lock alerts work without being signed in). Lapse/free → optOut.
+ * lock alerts work without being signed in). Lapse/free → paid=false + optOut.
+ *
+ * Tag plan limit: only use the single tag `paid` ("true"|"false"). Extra
+ * tags (tier/email/lock_alerts) hit OneSignal entitlements-tag-limit (409).
  *
  * App ID: d8fcb504-8d29-4354-a9e4-8b612d3eafeb
  * Service worker: /OneSignalSDKWorker.js
@@ -43,6 +46,7 @@ export function onesignalLogout() {
   });
 }
 
+/** Set tags — keep payloads tiny (plan tag limit). */
 export function onesignalAddTags(tags) {
   if (!tags || typeof tags !== 'object') return Promise.resolve();
   return withOneSignal(async (OneSignal) => {
@@ -51,19 +55,14 @@ export function onesignalAddTags(tags) {
 }
 
 /**
- * Paid identity sync only — login + tags. Does NOT request permission.
+ * Paid identity sync only — login + paid=true. Does NOT request permission.
  * Used by PaidPushGate so Account remains the opt-in surface.
  */
-export async function onesignalSyncPaidIdentity({ uid, email, tier, status }) {
+export async function onesignalSyncPaidIdentity({ uid }) {
   if (!uid) return;
   await withOneSignal(async (OneSignal) => {
     await OneSignal.login(String(uid));
-    await OneSignal.User.addTags({
-      paid: 'true',
-      tier: String(tier || ''),
-      status: String(status || ''),
-      email: email || '',
-    });
+    await OneSignal.User.addTags({ paid: 'true' });
   });
 }
 
@@ -97,20 +96,14 @@ export async function onesignalGetPushStatus() {
 }
 
 /**
- * Explicit opt-in from Account: login → tag → request permission → opt in.
+ * Explicit opt-in from Account: login → paid=true → request permission → opt in.
  */
-export async function onesignalEnableForPaidUser({ uid, email, tier, status }) {
+export async function onesignalEnableForPaidUser({ uid }) {
   if (!uid) return { ok: false, reason: 'no_uid' };
   let outcome = { ok: false, reason: 'unknown' };
   await withOneSignal(async (OneSignal) => {
     await OneSignal.login(String(uid));
-    await OneSignal.User.addTags({
-      paid: 'true',
-      tier: String(tier || ''),
-      status: String(status || ''),
-      email: email || '',
-      lock_alerts: 'true',
-    });
+    await OneSignal.User.addTags({ paid: 'true' });
     if (OneSignal.Notifications?.requestPermission) {
       await OneSignal.Notifications.requestPermission();
     }
@@ -134,20 +127,19 @@ export async function onesignalEnableForPaidUser({ uid, email, tier, status }) {
   return outcome;
 }
 
-/** Paid user turns off lock alerts on this browser. */
+/** Paid user turns off lock alerts on this browser (keeps paid tag). */
 export async function onesignalOptOutPush() {
   await withOneSignal(async (OneSignal) => {
-    await OneSignal.User.addTags({ lock_alerts: 'false' });
     if (OneSignal.User?.PushSubscription?.optOut) {
       await OneSignal.User.PushSubscription.optOut();
     }
   });
 }
 
-/** When subscription lapses — stop push for this browser. */
+/** When subscription lapses — untag + stop push for this browser. */
 export async function onesignalDisableForNonPaid() {
   await withOneSignal(async (OneSignal) => {
-    await OneSignal.User.addTags({ paid: 'false', lock_alerts: 'false' });
+    await OneSignal.User.addTags({ paid: 'false' });
     if (OneSignal.User?.PushSubscription?.optOut) {
       await OneSignal.User.PushSubscription.optOut();
     }
