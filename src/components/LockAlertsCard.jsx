@@ -149,7 +149,7 @@ export default function LockAlertsCard({ user, isPremium }) {
 
       <p style={{ fontSize: '0.938rem', color: 'rgba(241, 245, 249, 0.8)', lineHeight: 1.6, marginBottom: '1.25rem' }}>
         Get a push when a Sharp Flow play <strong style={{ color: '#10B981' }}>locks</strong> — about 15 minutes before gametime.
-        Opt in once per device (Home Screen on iPhone). Alerts keep working after you sign out while your plan is active; they stop if the subscription ends.
+        Opt in once per device (Home Screen on iPhone). Stays on until you tap Turn off — including after sign-out while your plan is active. If the plan ends, sends pause; re-subscribe and they resume on this device without enabling again.
       </p>
 
       {/* Status */}

@@ -63,14 +63,21 @@ export function useSubscription(user) {
     } catch (error) {
       console.error('Error checking subscription from Stripe:', error);
       setSyncStatus('error');
-      // Fallback to free tier on error
-      setSubscription({
-        tier: 'free',
-        status: 'active',
-        isActive: false,
-        isTrial: false,
-        daysRemaining: 0,
-        error: error.message
+      // Do NOT force free on Stripe errors — that raced PaidPushGate into
+      // untagging paid users and (previously) opting them out of push.
+      // Keep whatever Firestore already gave us; only set free if we have
+      // no subscription state yet.
+      setSubscription((prev) => {
+        if (prev?.isActive) return prev;
+        if (prev && prev.tier && prev.tier !== 'free') return prev;
+        return {
+          tier: 'free',
+          status: 'active',
+          isActive: false,
+          isTrial: false,
+          daysRemaining: 0,
+          error: error.message
+        };
       });
       setLoading(false);
       return null;

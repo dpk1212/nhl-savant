@@ -5,8 +5,14 @@
  * visitors never see a permission prompt. Paid users opt in from Account
  * settings; PaidPushGate only syncs identity + the `paid` tag.
  *
- * Option A: logout clears External ID only (device stays subscribed so
- * lock alerts work without being signed in). Lapse/free → paid=false + optOut.
+ * Persistence (critical):
+ * - Explicit Enable → optIn. Explicit Turn off → optOut.
+ * - We NEVER auto-optOut on free/lapse/logout. Audience is gated by tag
+ *   paid=true in sendLockAlerts. Auto-optOut was wiping Enable after
+ *   brief isPremium=false races (Stripe sync lag / check errors).
+ * - Logout clears External ID only (device stays subscribed).
+ * - Lapse/free → paid=false only (stops sends; subscription stays so
+ *   re-subscribe resumes alerts without tapping Enable again).
  *
  * Tag plan limit: only use the single tag `paid` ("true"|"false"). Extra
  * tags (tier/email/lock_alerts) hit OneSignal entitlements-tag-limit (409).
@@ -140,12 +146,13 @@ export async function onesignalOptOutPush() {
   });
 }
 
-/** When subscription lapses — untag + stop push for this browser. */
+/**
+ * When subscription lapses / free path — untag only.
+ * Do NOT optOut: that made Account flip "Lock alerts off" after Enable
+ * whenever isPremium briefly read false. Sends already require paid=true.
+ */
 export async function onesignalDisableForNonPaid() {
   await withOneSignal(async (OneSignal) => {
     await OneSignal.User.addTags({ paid: 'false' });
-    if (OneSignal.User?.PushSubscription?.optOut) {
-      await OneSignal.User.PushSubscription.optOut();
-    }
   });
 }
