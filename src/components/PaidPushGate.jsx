@@ -2,16 +2,18 @@ import { useEffect, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
 import {
-  onesignalEnableForPaidUser,
+  onesignalSyncPaidIdentity,
   onesignalDisableForNonPaid,
   onesignalLogout,
 } from '../lib/onesignal';
 
 /**
- * PaidPushGate — OneSignal is for paid active users only.
+ * PaidPushGate — keep OneSignal identity/tags in sync for paid users.
+ *
+ * Does NOT request notification permission. Opt-in lives on Account
+ * (#/account) so users see directions and choose Enable Lock Alerts.
  *
  * isPremium = tier in scout|elite|pro AND status in active|trialing
- * (same rule as useSubscription). Free / logged-out never get prompted.
  */
 export default function PaidPushGate() {
   const { user, loading: authLoading } = useAuth();
@@ -34,7 +36,7 @@ export default function PaidPushGate() {
     lastKey.current = key;
 
     if (isPremium) {
-      onesignalEnableForPaidUser({
+      onesignalSyncPaidIdentity({
         uid: user.uid,
         email: user.email,
         tier,
