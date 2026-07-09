@@ -13791,48 +13791,14 @@ export default function SharpFlow() {
                     };
                     return (
                       <>
-                        <div style={{
-                          display: 'inline-flex', gap: '2px',
-                          padding: '3px', borderRadius: '11px',
-                          background: 'rgba(255,255,255,0.03)',
-                          border: `1px solid ${B.border}`,
-                          marginBottom: '0.6rem',
-                          boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.3)',
-                        }}>
-                          {views.map(v => {
-                            const active = activeView === v.id;
-                            const VIcon = v.icon;
-                            return (
-                              <button key={v.id} onClick={() => selectView(v.id)} style={{
-                                display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                                padding: isMobile ? '0.4rem 0.65rem' : '0.45rem 0.95rem',
-                                borderRadius: '8px', cursor: 'pointer', border: 'none',
-                                ...T.micro, fontWeight: active ? 800 : 600,
-                                fontSize: isMobile ? '0.6rem' : '0.66rem',
-                                letterSpacing: '0.04em',
-                                color: active ? v.color : B.textMuted,
-                                background: active
-                                  ? `linear-gradient(135deg, ${v.color}1c 0%, ${v.color}08 100%)`
-                                  : 'transparent',
-                                boxShadow: active
-                                  ? `inset 0 0 0 1px ${v.color}40, 0 2px 8px rgba(0,0,0,0.25)`
-                                  : 'none',
-                                transition: 'all 0.22s cubic-bezier(0.4,0,0.2,1)',
-                              }}>
-                                <VIcon size={11} strokeWidth={2.5} style={{ opacity: active ? 1 : 0.55 }} />
-                                <span>{v.label}</span>
-                                {v.count != null && (
-                                  <span style={{
-                                    ...T.micro, fontSize: '0.52rem', fontWeight: 800,
-                                    padding: '0.06rem 0.32rem', borderRadius: '4px',
-                                    fontFeatureSettings: "'tnum'",
-                                    color: active ? v.color : B.textMuted,
-                                    background: active ? `${v.color}1f` : 'rgba(255,255,255,0.05)',
-                                  }}>{v.count}</span>
-                                )}
-                              </button>
-                            );
-                          })}
+                        <div style={{ marginBottom: '0.6rem' }}>
+                          <SfSegmented
+                            options={views}
+                            value={activeView}
+                            onChange={selectView}
+                            isMobile={isMobile}
+                            scrollable={isMobile}
+                          />
                         </div>
                         {activeView === 'positions' && (
                           <div style={{
@@ -15075,26 +15041,104 @@ const FlowStatCard = memo(function FlowStatCard({ icon: Icon, label, value, acce
   );
 });
 
-function SportTabs({ active, onChange }) {
+/** Shared premium segmented control — same shell as Live Positions /
+ *  Locked Picks / Watchlist. Optional horizontal scroll for dense rows. */
+function SfSegmented({ options, value, onChange, isMobile, scrollable = false }) {
   return (
-    <div style={{ display: 'flex', gap: '0.375rem' }}>
-      {['All', 'CBB', 'NHL', 'MLB', 'NBA', 'WNBA', 'SOC', 'UFC'].map(key => {
-        const isActive = active === key;
-        const ss = key === 'All' ? null : sportStyle(key);
+    <div
+      className={scrollable ? 'sf-chiprail' : undefined}
+      style={{
+        display: scrollable ? 'flex' : 'inline-flex',
+        gap: '2px',
+        padding: '3px',
+        borderRadius: '11px',
+        background: 'rgba(255,255,255,0.03)',
+        border: `1px solid ${B.border}`,
+        boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.3)',
+        maxWidth: '100%',
+        ...(scrollable ? {
+          overflowX: 'auto',
+          flexWrap: 'nowrap',
+          WebkitOverflowScrolling: 'touch',
+        } : {}),
+      }}
+    >
+      {options.map((opt) => {
+        const active = value === opt.id;
+        const color = opt.color || B.gold;
+        const Icon = opt.icon;
         return (
-          <button key={key} onClick={() => onChange(key)} style={{
-            padding: '0.5rem 1.125rem', borderRadius: '8px', cursor: 'pointer',
-            ...T.tiny,
-            border: isActive ? `1px solid ${B.goldBorder}` : `1px solid ${B.border}`,
-            background: isActive ? `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)` : 'transparent',
-            color: isActive ? B.gold : B.textMuted,
-            transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
-          }}>
-            {ss ? `${ss.icon} ` : '⚡ '}{key}
+          <button
+            key={opt.id}
+            type="button"
+            onClick={() => onChange(opt.id)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              padding: isMobile ? '0.4rem 0.6rem' : '0.45rem 0.85rem',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              border: 'none',
+              flexShrink: 0,
+              whiteSpace: 'nowrap',
+              ...T.micro,
+              fontWeight: active ? 800 : 600,
+              fontSize: isMobile ? '0.58rem' : '0.66rem',
+              letterSpacing: '0.04em',
+              color: active ? color : B.textMuted,
+              background: active
+                ? `linear-gradient(135deg, ${color}1c 0%, ${color}08 100%)`
+                : 'transparent',
+              boxShadow: active
+                ? `inset 0 0 0 1px ${color}40, 0 2px 8px rgba(0,0,0,0.25)`
+                : 'none',
+              transition: 'all 0.22s cubic-bezier(0.4,0,0.2,1)',
+            }}
+          >
+            {Icon ? (
+              <Icon size={11} strokeWidth={2.5} style={{ opacity: active ? 1 : 0.55 }} />
+            ) : opt.emoji ? (
+              <span style={{ fontSize: isMobile ? '0.7rem' : '0.78rem', lineHeight: 1, opacity: active ? 1 : 0.7 }}>
+                {opt.emoji}
+              </span>
+            ) : null}
+            <span>{opt.label}</span>
+            {opt.count != null && (
+              <span style={{
+                ...T.micro,
+                fontSize: '0.52rem',
+                fontWeight: 800,
+                padding: '0.06rem 0.32rem',
+                borderRadius: '4px',
+                fontFeatureSettings: "'tnum'",
+                color: active ? color : B.textMuted,
+                background: active ? `${color}1f` : 'rgba(255,255,255,0.05)',
+              }}>{opt.count}</span>
+            )}
           </button>
         );
       })}
     </div>
+  );
+}
+
+function SportTabs({ active, onChange, isMobile }) {
+  const options = [
+    { id: 'All', label: 'All', emoji: '⚡', color: B.gold },
+    ...['CBB', 'NHL', 'MLB', 'NBA', 'WNBA', 'SOC', 'UFC'].map((key) => {
+      const ss = sportStyle(key);
+      return { id: key, label: key, emoji: ss.icon, color: ss.color };
+    }),
+  ];
+  return (
+    <SfSegmented
+      options={options}
+      value={active}
+      onChange={onChange}
+      isMobile={isMobile}
+      scrollable
+    />
   );
 }
 
@@ -15612,14 +15656,22 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
 }
 
 function PageHeader({ sportFilter, setSportFilter, viewMode, setViewMode, isMobile }) {
+  const pageViews = [
+    { id: 'signals', label: 'Signals', icon: BarChart3, color: B.sky },
+    { id: 'flow', label: isMobile ? 'Flow' : 'Money Flow', icon: Workflow, color: B.green },
+    { id: 'whaleSignals', label: isMobile ? 'Intel' : 'Sharp Intel', icon: Zap, color: B.gold },
+    { id: 'sharpVault', label: isMobile ? 'Vault' : 'Sharp Vault', icon: Lock, color: '#818CF8' },
+  ];
   return (
     <div style={{ marginBottom: '1.75rem', paddingBottom: '1.25rem', borderBottom: `1px solid ${B.border}` }}>
       <div style={{
-        display: 'flex', justifyContent: 'space-between',
-        alignItems: isMobile ? 'flex-start' : 'center',
-        flexDirection: isMobile ? 'column' : 'row', gap: '0.75rem',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        flexDirection: isMobile ? 'column' : 'row',
+        gap: isMobile ? '0.85rem' : '1rem',
       }}>
-        <div>
+        <div style={{ flexShrink: 0 }}>
           <h1 style={{
             fontSize: isMobile ? '1.375rem' : '1.75rem', fontWeight: 900,
             color: B.text, margin: 0, display: 'flex', alignItems: 'center',
@@ -15632,62 +15684,23 @@ function PageHeader({ sportFilter, setSportFilter, viewMode, setViewMode, isMobi
             Real-time market intelligence across prediction markets
           </p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexWrap: 'wrap' }}>
-          {/* View mode toggle */}
-          <div style={{
-            display: 'flex', borderRadius: '8px', overflow: 'hidden',
-            border: `1px solid ${B.border}`,
-          }}>
-            <button onClick={() => setViewMode('signals')} style={{
-              padding: '0.5rem 0.875rem', cursor: 'pointer',
-              ...T.tiny, display: 'flex', alignItems: 'center', gap: '0.3rem',
-              border: 'none', borderRight: `1px solid ${B.border}`,
-              background: viewMode === 'signals'
-                ? `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)`
-                : 'transparent',
-              color: viewMode === 'signals' ? B.gold : B.textMuted,
-              transition: 'all 0.2s ease',
-            }}>
-              <BarChart3 size={12} /> Signals
-            </button>
-            <button onClick={() => setViewMode('flow')} style={{
-              padding: '0.5rem 0.875rem', cursor: 'pointer',
-              ...T.tiny, display: 'flex', alignItems: 'center', gap: '0.3rem',
-              border: 'none', borderRight: `1px solid ${B.border}`,
-              background: viewMode === 'flow'
-                ? `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)`
-                : 'transparent',
-              color: viewMode === 'flow' ? B.gold : B.textMuted,
-              transition: 'all 0.2s ease',
-            }}>
-              <Workflow size={12} /> Money Flow
-            </button>
-            <button onClick={() => setViewMode('whaleSignals')} style={{
-              padding: '0.5rem 0.875rem', cursor: 'pointer',
-              ...T.tiny, display: 'flex', alignItems: 'center', gap: '0.3rem',
-              border: 'none', borderRight: `1px solid ${B.border}`,
-              background: viewMode === 'whaleSignals'
-                ? `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)`
-                : 'transparent',
-              color: viewMode === 'whaleSignals' ? B.gold : B.textMuted,
-              transition: 'all 0.2s ease',
-            }}>
-              <Zap size={12} /> Sharp Intel
-            </button>
-            <button onClick={() => setViewMode('sharpVault')} style={{
-              padding: '0.5rem 0.875rem', cursor: 'pointer',
-              ...T.tiny, display: 'flex', alignItems: 'center', gap: '0.3rem',
-              border: 'none',
-              background: viewMode === 'sharpVault'
-                ? `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)`
-                : 'transparent',
-              color: viewMode === 'sharpVault' ? B.gold : B.textMuted,
-              transition: 'all 0.2s ease',
-            }}>
-              <Lock size={12} /> Sharp Vault
-            </button>
-          </div>
-          <SportTabs active={sportFilter} onChange={setSportFilter} />
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: isMobile ? 'stretch' : 'flex-end',
+          gap: '0.5rem',
+          minWidth: 0,
+          width: isMobile ? '100%' : 'auto',
+          flex: isMobile ? undefined : 1,
+        }}>
+          <SfSegmented
+            options={pageViews}
+            value={viewMode}
+            onChange={setViewMode}
+            isMobile={isMobile}
+            scrollable={isMobile}
+          />
+          <SportTabs active={sportFilter} onChange={setSportFilter} isMobile={isMobile} />
         </div>
       </div>
     </div>
