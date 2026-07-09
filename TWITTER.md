@@ -35,11 +35,15 @@ timeline. v2 keeps memory in the API. Nothing in this file is a cached
    math), or the minimum that looks acceptable? Substance is the moat —
    nobody else has wallet-level receipts.
 
-5. **REPLY-FIRST DISTRIBUTION.** Out-of-network reach is the only path from
-   2K to 10K. Every run: answer every inbound mention (inbound beats
-   outbound — the asker is already engaged), and when a relevant event is
-   live, land 1-3 substantive replies on high-velocity posts in-niche
-   within their first 30 minutes.
+5. **DISTRIBUTION IS HALF THE JOB (raised 7/9).** Heroes alone will not
+   get us to 10K. Measured on our own account (7/7–7/8):
+   - Inbound reply to our mention: ~30–60 impressions
+   - Outbound reply on @BookitWithTrent (87K–445K parent posts):
+     **936 and 1,130 impressions** — matching a weekday hero
+   Out-of-network replies are the growth engine. Every run ships BOTH a
+   content deliverable AND a distribution deliverable (see ENGINE below).
+   More empty volume is not the answer; more *high-velocity, high-substance*
+   replies/QTs is.
 
 6. **LOCK DISCIPLINE (added 7/9).** Never tweet a play as locked / "here's
    the pick" before the site's 15-min lock window. Pre-lock: "on the board /
@@ -70,8 +74,10 @@ timeline. v2 keeps memory in the API. Nothing in this file is a cached
   that duplicates one we already sent.
 - `get_users_mentions` — the inbox. Cross-check against our replies pull
   before drafting answers. Answer unanswered inbound first.
-- `search_posts_all` or recent search (sort_order=recency) on tonight's
-  event — reply targets + what formats are winning right now.
+- **DISTRIBUTION HUNT** (mandatory every run — see ENGINE):
+  `search_posts_all` / recent search, sort_order=recency, on tonight's
+  event + 1-2 niche accounts' fresh posts. Rank by parent velocity
+  (impressions + replies in first ~30–60 min). Pull 3–5 candidates.
 - `get_trends_by_woeid` (23424977 = US) — only when hunting a hook for a
   mainstream-moment post.
 
@@ -80,18 +86,106 @@ timeline. v2 keeps memory in the API. Nothing in this file is a cached
 pick data. The receipts live here: per-wallet invested $, records, ROI,
 sizing multiples, pool percentages.
 
-**DECIDE**: one job for the next post — reach, convert, or retain — and
-one moment. The measured best moment is the decision window: locked pick,
+**DECIDE**: two jobs every run —
+1. CONTENT: one hero job (reach / convert / retain) + one moment
+2. DISTRIBUTION: which 2–4 out-of-network replies/QTs to ship (ENGINE)
+
+The measured best content moment is the decision window: locked pick,
 minutes before start. Recaps with no live moment measured 0.3-0.6x; skip
 them or fuse them into a live pick (a fresh win is a hook, not a post).
 
-**DRAFT**: 3 genuinely different angles. Kill anything whose hook shape
-appears in the last 10 real posts. Apply Rules 2 and 4 and the ARSENAL
-below. Ship one.
+**DRAFT**: 3 genuinely different hero angles + copy-paste ready
+distribution replies (ENGINE). Kill anything whose hook shape appears in
+the last 10 real posts. Apply Rules 2 and 4 and the ARSENAL. Ship both.
 
-**MEASURE**: the next run's PULL grades it. One line in the log below —
-what was predicted, what happened, what changes. Prune the log to ~15
-lines; old lessons either graduate into the Five Rules or die.
+**MEASURE**: the next run's PULL grades BOTH — hero impressions AND
+outbound-reply impressions (profile clicks if available). One line in
+the log. Prune to ~15 lines.
+
+---
+
+## THE DISTRIBUTION ENGINE (added 7/9 — this is how we get to 10K)
+
+Heroes keep the tribe. Distribution grows the account. At 2K followers,
+posting only into our own timeline is a closed loop. The algorithm pays
+accounts that create conversations *on other people's posts*.
+
+### Daily volume targets (quality floor, not spam)
+| Slot | What | Count/day | Why |
+|---|---|---|---|
+| Hero / original | Locked pick, middle, milestone, receipt stack | 1–3 | Brand + convert |
+| Self-reply | System explain / site / lock rules | 1 per hero | Funnel (link lives here) |
+| Own-timeline QT | Pay off our earlier post (Zeigarnik) | 0–1 | Measured 1.8x |
+| **Outbound reply** | High-velocity niche posts (first 30–60 min) | **3–6** | Growth engine |
+| **Quote tweet** | Viral niche moment + our proprietary angle | **0–2** | Borrowed reach |
+| Inbound reply | Mentions / questions | All of them | Retention + trust |
+| Cold @-mention | Tagging big accounts unprompted | **0** | Looks needy; skip |
+
+Total intentional outs: ~8–12/day. Not 40. Substance density stays high.
+
+### Reply vs Quote vs Mention — when to use which
+- **REPLY** (default growth move): land under a post that's already
+  moving. Our reply rides their distribution. Best when we have a
+  *specific* receipt/angle they don't. Target: posts <60 min old with
+  rising reply count. Our Trent replies proved this (936 / 1,130 impr).
+- **QUOTE TWEET**: when the parent is a moment (final score, viral take,
+  public lean) and we add a *new* proprietary layer (wallet $ / middle /
+  our locked card). QT puts us on *our* timeline AND theirs. Don't QT
+  mid-tier takes — only moments.
+- **@-MENTION in an original**: almost never. Tagging Trent/Wiz unprompted
+  in our hero reads as hitchhiking. Exception: they asked, or we're
+  answering them in a thread they started.
+- **Self-QT of our own post**: keep — it's story continuation, not
+  distribution. Different job.
+
+### Target ladder (hunt these every run)
+1. **Mega accounts, open prompts** — e.g. Trent "who wants to spoon feed
+   me" / public lean asks. Highest ROI. Reply with receipts, not vibes.
+2. **Niche leaders' live game posts** (<60 min): @PatrickE_Vegas,
+   @WizBetz, @invisiblestats, @BookitWithTrent, @br_betting when relevant.
+3. **Mid-size sharp accounts (5K–50K)** posting the same game we have
+   locked data on — easier to get seen in a shorter thread.
+4. **Viral score / highlight posts** (Barstool, team accounts) when our
+   board just cashed or got wrecked on that game — costly-signal QT.
+
+Search templates (recent, recency sort):
+```
+(MLB OR "moneyline" OR "sharp" OR "units") (bet OR pick OR lock) -is:retweet lang:en
+from:BookitWithTrent -is:retweet
+from:PatrickE_Vegas -is:retweet
+```
+Swap in tonight's teams once locked.
+
+### The reply quality bar (non-negotiable)
+A distribution reply must contain at least ONE of:
+- a named wallet receipt or $ / % figure from our scan
+- a verified record (W-L, units, ROI) tied to this side
+- a real lock/grade fact from our board
+- a precise disagreement with a number (not "fade this")
+
+Kill: "lets go", "tailing", "thoughts?", emoji-only, "check my page",
+any ask for a follow. If it could be posted by a random bettor, it dies.
+The reply should make a stranger click our profile.
+
+### Every run's DISTRIBUTION block (present to owner)
+```
+DISTRIBUTION (copy-paste):
+1. REPLY → @user / post-id / ~X impr parent / why now
+   [full reply text]
+2. REPLY or QT → ...
+3. ...
+Inbound still owed: ...
+Already answered (skip): ...
+```
+If the hunt finds nothing above the quality bar, say so and ship zero
+outbound — empty replies are worse than silence.
+
+### What NOT to optimize
+- Raw tweet count. 40 thin posts/day trains the algo that we're noise.
+- Ratio-following / engagement pods. Burns the brand.
+- Replying to every mega account every hour. Diminishing + looks botty.
+- Putting the site link in outbound replies. Profile click is the funnel;
+  link in reply suppresses and looks spammy.
 
 ---
 
@@ -188,3 +282,8 @@ draft is generic and dies.
   precision is a shareable proprietary story; site users saw it live.
 - 7/9: all-time chase is -12.12u from green; V12 era +58.82u since June 1
   after a May drawdown of 70+u — the comeback IS the brand story right now.
+- 7/9: DISTRIBUTION ENGINE — our Trent outbound replies did 936 / 1,130
+  impr vs inbound replies at 30–60. Out-of-network is the growth lever.
+  Loop now requires a DISTRIBUTION block every run (3–6 quality replies/
+  0–2 QTs/day). Cold @-mentions banned. Reply quality bar = proprietary
+  data or it dies.
