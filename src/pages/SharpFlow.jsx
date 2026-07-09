@@ -14114,7 +14114,6 @@ export default function SharpFlow() {
                         // / zero-peak. Legacy graded picks already carry the
                         // explicit tracked stamp from the v6/v7 grader.
                         const isTrackedOnly = sd.result?.tracked === true;
-                        const lockOddsValid = lock.odds && Math.abs(lock.odds) <= 400;
                         const lockStars = lock.stars || 0;
                         const marketTypeKey = doc.marketType || 'ml';
                         // Odds fallback: lock.odds → peak.odds → closingOdds.
@@ -14124,8 +14123,21 @@ export default function SharpFlow() {
                         // (line=null, odds=null) but closingOdds is always
                         // populated post-T-15 — fall back to it so the card
                         // never renders "0 · pinnacle".
-                        const cardOdds = lockOddsValid ? lock.odds
-                          : (peak.odds || lock.odds || sd.closingOdds || 0);
+                        //
+                        // SPREAD guard (2026-07-09 Braves -1.5): create-time
+                        // sometimes stamped lock.odds=-110 (ML chalk / default)
+                        // while peak correctly held the run-line juice (+139).
+                        // Prefer peak when lock looks like that bleed.
+                        const lockOddsRaw = lock.odds;
+                        const peakOddsRaw = peak.odds;
+                        const spreadLockIsMlBleed = marketTypeKey === 'spread'
+                          && lockOddsRaw === -110
+                          && Number.isFinite(peakOddsRaw)
+                          && peakOddsRaw !== -110;
+                        const lockOddsValid = !spreadLockIsMlBleed
+                          && lockOddsRaw && Math.abs(lockOddsRaw) <= 400;
+                        const cardOdds = lockOddsValid ? lockOddsRaw
+                          : (peakOddsRaw || lockOddsRaw || sd.closingOdds || 0);
                         // v6.6 — health is engine-truth. evaluatePickHealth
                         // is the single source of truth for ACTIVE / MUTED /
                         // CANCELLED under the hybrid floor. Earlier code self-
@@ -14327,7 +14339,10 @@ export default function SharpFlow() {
                           status: sd.status || doc.status || 'PENDING',
                           outcome: sd.result?.outcome || null,
                           profit,
-                          lockPinnOdds: peak.pinnacleOdds || lock.pinnacleOdds || null,
+                          // Prefer peak pinnacleOdds when lock was ML-bleed (-110).
+                          lockPinnOdds: (spreadLockIsMlBleed
+                            ? (peak.pinnacleOdds || lock.pinnacleOdds)
+                            : (peak.pinnacleOdds || lock.pinnacleOdds)) || null,
                           closingOdds: sd.closingOdds || null,
                           clv: sd.result?.clv ?? null,
                           sharpCount: liveSharpCount ?? peak.sharpCount ?? lock.sharpCount ?? null,
@@ -14361,7 +14376,10 @@ export default function SharpFlow() {
                           lockTotalInvested: lock.totalInvested ?? null,
                           peakSharpCount: peak.sharpCount ?? null,
                           peakTotalInvested: peak.totalInvested ?? null,
-                          pinnacleOdds: peak.pinnacleOdds || lock.pinnacleOdds || sd.closingOdds || null,
+                          pinnacleOdds: (spreadLockIsMlBleed
+                            ? (peak.pinnacleOdds || lock.pinnacleOdds)
+                            : (peak.pinnacleOdds || lock.pinnacleOdds))
+                            || sd.closingOdds || null,
                           marketType: marketTypeKey,
                           // line fallback: peak.line → lock.line → closingLine.
                           // PENDING spread: if lock/peak sign-flips vs closingLine

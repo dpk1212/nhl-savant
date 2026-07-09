@@ -954,15 +954,18 @@ async function createMissingLockedPicks({
           }
         } else odds = meta.mlOdds?.away;
       } else if (marketType === 'SPREAD') {
-        // Side/money = wallet consensus. The number on the ticket = Pinnacle.
-        // Polymarket entryLine can invert sign (underdog stamped -1.5 when
-        // Pinnacle has +1.5) — real incident 2026-07-07 Braves @ Pirates.
+        // Side/money = wallet consensus. The number on the ticket = Pinnacle
+        // SPREAD juice — never ML. Do NOT default to -110: that is the
+        // standard ML chalk price and was burned onto Braves -1.5 at
+        // create-time (2026-07-09 atl_pit) while real spread juice was +139.
+        // Leave odds null until spreadCurrent/Opener is available; reconcile
+        // will backfill pre-T-15 once Pinnacle has the number.
         const pinnLine = side === 'home'
           ? (meta.spreadCurrent?.homeLine ?? meta.spreadOpener?.homeLine)
           : (meta.spreadCurrent?.awayLine ?? meta.spreadOpener?.awayLine);
         odds = (side === 'home'
           ? (meta.spreadCurrent?.homeOdds ?? meta.spreadOpener?.homeOdds)
-          : (meta.spreadCurrent?.awayOdds ?? meta.spreadOpener?.awayOdds)) ?? -110;
+          : (meta.spreadCurrent?.awayOdds ?? meta.spreadOpener?.awayOdds)) ?? null;
         line = pinnLine ?? consensusLine(positions, side, sport, 'SPREAD') ?? null;
       } else if (marketType === 'TOTAL') {
         odds = -110;
@@ -1264,7 +1267,25 @@ async function createMissingLockedPicks({
 }
 
 // ── Main sync logic per side ───────────────────────────────────────────────
-function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn, walletPriorStatsFn }) {
+/**
+ * True when a SPREAD side's lock.odds looks like ML bleed / the -110 default
+ * rather than real run-line juice. Peak or live Pinnacle spread odds are the
+ * recovery source.
+ */
+function spreadLockLooksLikeMlBleed(lockOdds, peakOdds, spreadOdds, mlOdds) {
+  if (lockOdds == null || !Number.isFinite(lockOdds)) return false;
+  // Classic create-time default: lock stamped -110 while peak/spread is not.
+  if (lockOdds === -110 && peakOdds != null && peakOdds !== -110) return true;
+  if (lockOdds === -110 && spreadOdds != null && spreadOdds !== -110) return true;
+  // Lock equals the ML price for this side, but Pinnacle's spread juice differs.
+  if (mlOdds != null && lockOdds === mlOdds && spreadOdds != null
+      && Math.abs(spreadOdds - mlOdds) >= 20) {
+    return true;
+  }
+  return false;
+}
+
+function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn, walletPriorStatsFn, gameMeta = null }) {
   const pickDate = pick.date || TARGET_DATE;
   const sport = pick.sport;
   const lockStage = sd.lockStage || null;
@@ -1836,6 +1857,50 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     }
   }
 
+  // ── SPREAD lock-odds repair (ML bleed / -110 default) ───────────────────
+  // Real incident 2026-07-09 Braves -1.5: create stamped lock.odds=-110
+  // (ML chalk / TOTAL-style default) while peak later correctly held +139
+  // retail / +144 Pinnacle spread juice. Pre-T-15, rewrite lock from the
+  // best available spread source so Locked / CLV / payout match the ticket.
+  if (pick.status !== 'COMPLETED' && mkt === 'SPREAD') {
+    const metaKey = `${sport}|${pick.gameKey}`;
+    const meta = gameMeta?.get?.(metaKey) || null;
+    const spreadOdds = side === 'home'
+      ? (meta?.spreadCurrent?.homeOdds ?? meta?.spreadOpener?.homeOdds)
+      : (meta?.spreadCurrent?.awayOdds ?? meta?.spreadOpener?.awayOdds);
+    const mlOdds = side === 'home' ? meta?.mlOdds?.home : meta?.mlOdds?.away;
+    const peakOdds = Number.isFinite(sd.peak?.odds) ? sd.peak.odds : null;
+    const lockOdds = Number.isFinite(sd.lock?.odds) ? sd.lock.odds : null;
+    const repairFrom = (Number.isFinite(spreadOdds) && spreadOdds !== -110)
+      ? spreadOdds
+      : (peakOdds != null && peakOdds !== -110 ? peakOdds : null);
+    if (repairFrom != null
+        && spreadLockLooksLikeMlBleed(lockOdds, peakOdds, spreadOdds, mlOdds)) {
+      const pinnSpread = Number.isFinite(spreadOdds) ? spreadOdds : repairFrom;
+      patch.lock = {
+        ...(patch.lock || {}),
+        odds: repairFrom,
+        pinnacleOdds: pinnSpread,
+        book: sd.lock?.book === 'Pinnacle' || !sd.lock?.book
+          ? 'Pinnacle'
+          : sd.lock.book,
+      };
+      // Keep peak.pinnacleOdds on the spread number too when it was ML-bleed.
+      if (sd.peak?.pinnacleOdds === -110 || sd.peak?.pinnacleOdds === mlOdds) {
+        patch.peak = {
+          ...(patch.peak || {}),
+          pinnacleOdds: pinnSpread,
+          ...(peakOdds === -110 || peakOdds === mlOdds ? { odds: repairFrom } : {}),
+          updatedAt: now,
+        };
+      }
+      changes.push(
+        `spreadOdds repair: lock ${lockOdds ?? '∅'} → ${repairFrom}`
+        + ` (was ML-bleed/default; pinn spread ${pinnSpread})`,
+      );
+    }
+  }
+
   // ── v12 peak/lock refresh (stars/units/unitTier/team) ───────────────────
   // The browser's pre-v12 syncPickToFirebase wrote peak.stars/units/unitTier
   // from v9's decideLockStage. When v12 disagrees (e.g. Nationals 2026-06-01
@@ -2129,6 +2194,7 @@ async function main() {
           sd, side: sideKey, pick, mkt, group, walletProfiles, now,
           force: FORCE,
           agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn, walletPriorStatsFn,
+          gameMeta,
         });
         if (result.skipped) {
           if (result.reason === 'not_locked_or_lean') stats.skipped_not_locked++;
