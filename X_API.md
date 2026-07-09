@@ -13,11 +13,24 @@ Authenticated as **@Real_NHL_Savant** · user id `1991513001204281345`.
 
 **Credits are pay-per-use — be surgical, not chatty.**
 
-## Drafts (important limitation)
-Native X "Drafts" (compose → Save draft) are **not** on this MCP. Official
-`POST .../draft_tweets` is **Ads API only**. Our loop saves drafts locally
-via `node scripts/saveTwitterDrafts.mjs` → `twitter_drafts/<run>/` with
-one-tap `intent/tweet` compose links. Upgrade path: link an Ads account
-to @Real_NHL_Savant, then POST to ads-api draft_tweets.
+## Write access vs Drafts (read this — easy to confuse)
 
-See `TWITTER.md` (SAVE DRAFTS step) and `twitter_drafts/README.md`.
+Your OAuth token **does** include `tweet.write` (+ `media.write`, etc.).
+That is real. It unlocks:
+
+| Capability | Available with our token? | How |
+|---|---|---|
+| **Publish a post live** (`POST /2/tweets`) | YES | `xurl post "..."` or `xurl -X POST /2/tweets -d '{"text":"..."}'` |
+| **Reply / quote / media** | YES | same endpoint + reply/quote/media fields |
+| **Save into X's Drafts folder** (compose → Drafts) | **NO** | no consumer API for that folder |
+| **Ads `draft_tweets`** | only with Ads API + ads account | different product |
+
+So: we can post for you, or stage copy locally / via intent URLs.
+We cannot silently drop text into the Drafts UI you open in the X app —
+that folder is not on the pay-per-use Post API, scopes or not.
+
+**Loop policy (safety):** never auto-publish without owner OK. Default =
+save local drafts + compose links. Optional upgrade = `xurl post` only
+when you explicitly say "post it" / "publish."
+
+See `TWITTER.md` (SAVE DRAFTS) and `twitter_drafts/README.md`.

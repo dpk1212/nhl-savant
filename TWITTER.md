@@ -99,17 +99,16 @@ distribution replies (ENGINE). Kill anything whose hook shape appears in
 the last 10 real posts. Apply Rules 2 and 4 and the ARSENAL. Ship both.
 
 **SAVE DRAFTS (mandatory end of every run that produces copy):**
-Native X Drafts folder is NOT on our MCP/API (Ads API only — see
-`twitter_drafts/README.md`). Until Ads access exists, every run writes
-local drafts + one-tap compose links:
-1. Write `twitter_drafts/inbox.json` with the hero, self-reply,
-   distribution replies/QTs, and inbound answers (shape in
-   `scripts/saveTwitterDrafts.mjs` header).
+We HAVE `tweet.write` (can publish live via `xurl post`). We do NOT have
+an API into X's Drafts folder — that folder ≠ `tweet.write` (see
+`X_API.md`). Default = stage, never auto-publish:
+1. Write `twitter_drafts/inbox.json` (hero, self-reply, distribution,
+   inbound — shape in `scripts/saveTwitterDrafts.mjs` header).
 2. Run `node scripts/saveTwitterDrafts.mjs --file twitter_drafts/inbox.json`
-3. Tell the owner the folder path + that `compose_links.md` opens X
-   pre-filled (attach media manually, then Post).
-Never leave copy only in chat — if it was good enough to show the owner,
-it gets saved as a draft.
+3. Tell the owner the folder path + `compose_links.md` (one-tap pre-fill).
+4. Only run `xurl post "..."` / `POST /2/tweets` when the owner explicitly
+   says publish/post it — never as a silent end-of-run step.
+Never leave copy only in chat.
 
 **MEASURE**: the next run's PULL grades BOTH — hero impressions AND
 outbound-reply impressions (profile clicks if available). One line in
