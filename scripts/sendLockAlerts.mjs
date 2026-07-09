@@ -127,9 +127,9 @@ async function sendOneSignal({ pickText, detail }) {
       detail: detail || '',
     },
     contents: {
-      en: `${pickText} is locked — ~15 min to gametime.${detail || ''}`,
+      en: `${pickText} just locked — ~15 min to gametime. Tap for the card.`,
     },
-    headings: { en: 'Play Locked' },
+    headings: { en: 'Sharp Flow · Locked' },
     url: SITE_URL,
     ttl: 900,
     name: `Lock: ${pickText}`.slice(0, 128),

@@ -10337,12 +10337,63 @@ export default function SharpFlow() {
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, []);
-  // Load existing locked picks on mount
+  // Locked picks (Firestore) — same cadence as market JSON: load on mount,
+  // refresh every 8 min while visible, and again on return to foreground.
+  // Home Screen PWAs can't pull-to-refresh; without this, cron lock/tier/
+  // health updates stay invisible until remount.
   useEffect(() => {
-    loadLockedPicks().then(picks => {
-      setLockedPicks(picks);
-      setPicksLoaded(true);
-    });
+    let cancelled = false;
+    let timer = null;
+    const REFRESH_MS = 8 * 60 * 1000;
+
+    // Server docs win. Keep local-only ids briefly so an in-flight
+    // browser sync (onPickSynced) isn't wiped before Firestore catches up.
+    const applyServerPicks = (server, { initial = false } = {}) => {
+      if (cancelled) return;
+      setLockedPicks(prev => {
+        const next = { ...server };
+        for (const [id, doc] of Object.entries(prev)) {
+          if (!next[id]) next[id] = doc;
+        }
+        return next;
+      });
+      if (initial) setPicksLoaded(true);
+    };
+
+    const refresh = async ({ initial = false } = {}) => {
+      const picks = await loadLockedPicks();
+      applyServerPicks(picks, { initial });
+    };
+
+    refresh({ initial: true });
+
+    const start = () => {
+      if (timer) return;
+      timer = setInterval(() => {
+        if (document.visibilityState === 'visible') refresh({ initial: false });
+      }, REFRESH_MS);
+    };
+    const stop = () => {
+      if (!timer) return;
+      clearInterval(timer);
+      timer = null;
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        refresh({ initial: false });
+        start();
+      } else {
+        stop();
+      }
+    };
+    start();
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      cancelled = true;
+      stop();
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, []);
   // Load user's watchlist on mount (premium users only)
   useEffect(() => {

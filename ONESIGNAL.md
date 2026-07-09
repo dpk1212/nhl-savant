@@ -105,9 +105,12 @@ ONESIGNAL_REST_API_KEY=... node scripts/syncOnesignalPaidTags.mjs --uid=FIREBASE
 
 | Asset | ID / name |
 |---|---|
-| Template | **15-Min Lock Alert** · `451e41a3-2bdf-4758-a779-ec59a8fecf36` |
-| Template vars | `custom_data.pick`, `custom_data.detail` |
-| Click URL | `https://nhlsavant.com/#/` |
+| Lock template | **15-Min Lock Alert** · `451e41a3-2bdf-4758-a779-ec59a8fecf36` |
+| Lock copy | Title `Sharp Flow · Locked` · `{{pick}} just locked — ~15 min to gametime. Tap for the card.` |
+| Enable template | **Lock Alerts Enabled** · `43652cb9-f99a-47a7-a0ce-2eea9a1001e4` |
+| Enable copy | Title `You're on for lock alerts` · welcome body |
+| Template vars | `custom_data.pick` |
+| Click URLs | Lock → `/#/` · Enable → `/#/account` |
 | Audience | filter `tag paid = true` |
 
 ---

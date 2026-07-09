@@ -95,6 +95,10 @@ export async function onesignalGetPushStatus() {
   return result;
 }
 
+/** Welcome push after first successful Enable (template Lock Alerts Enabled). */
+export const ONESIGNAL_ENABLE_TEMPLATE_ID = '43652cb9-f99a-47a7-a0ce-2eea9a1001e4';
+export const ONESIGNAL_LOCK_TEMPLATE_ID = '451e41a3-2bdf-4758-a779-ec59a8fecf36';
+
 /**
  * Explicit opt-in from Account: login → paid=true → request permission → opt in.
  */
