@@ -41,6 +41,15 @@ timeline. v2 keeps memory in the API. Nothing in this file is a cached
    live, land 1-3 substantive replies on high-velocity posts in-niche
    within their first 30 minutes.
 
+6. **LOCK DISCIPLINE (added 7/9).** Never tweet a play as locked / "here's
+   the pick" before the site's 15-min lock window. Pre-lock: "on the board /
+   check the site" only — no odds, no units, no "locked." Post-lock: full
+   receipt stack is fair game. Cause: plays get muted/unstaked after we
+   tweet them, or users see a pre-lock lean that later disappears — both
+   destroy trust. If a mention asks "what happened to X on the site?",
+   answer honestly: it fell off / got muted before lock. Never invent a
+   grade for a play that never locked.
+
 ---
 
 ## THE LOOP (every run, in order)
@@ -50,9 +59,17 @@ timeline. v2 keeps memory in the API. Nothing in this file is a cached
   last run (logged below).
 - `get_users_posts` (id=1991513001204281345, exclude=replies,
   post.fields=created_at,public_metrics,non_public_metrics, max~15) —
-  grade recent posts: impressions, engagements, profile clicks, link
+  grade recent HERO posts: impressions, engagements, profile clicks, link
   clicks. This is also the anti-duplicate corpus (Rule 3).
-- `get_users_mentions` — the inbox. Answer first.
+- `get_users_posts` AGAIN (same id, **do NOT exclude replies**,
+  expansions=referenced_tweets.id,in_reply_to_user_id,
+  post.fields=created_at,public_metrics,referenced_tweets,
+  in_reply_to_user_id, max~20) — OUR outbound replies. Process them:
+  which mentions did we already answer? which need a follow-up? did we
+  promise a grade / lock / DM that is still owed? Never draft a reply
+  that duplicates one we already sent.
+- `get_users_mentions` — the inbox. Cross-check against our replies pull
+  before drafting answers. Answer unanswered inbound first.
 - `search_posts_all` or recent search (sort_order=recency) on tonight's
   event — reply targets + what formats are winning right now.
 - `get_trends_by_woeid` (23424977 = US) — only when hunting a hook for a
@@ -148,6 +165,8 @@ draft is generic and dies.
 - 2026-07-07 8:15 PM: 2,015
 - 2026-07-08 6:20 PM: 2,014 (flat — reach is the bottleneck; prioritize
   out-of-network: replies on high-velocity posts + shareable anomaly heroes)
+- 2026-07-09 5:58 AM: 2,014 (still flat — middle + all-time chase is the
+  shareable story today; pin refresh still owed)
 
 ## LESSON LOG (max ~15 lines, prune every run)
 - 7/7: v1's gates passed a hook that duplicated the live timeline 90 min
@@ -162,3 +181,10 @@ draft is generic and dies.
   close reversal) earned 3 replies — reversal/late-money is a keeper shape.
 - 7/8: a warm lead ("tried to DM, won't go thru") sat 5+ hours — DMs are a
   funnel hole; check mentions for DM-intent every run and flag immediately.
+- 7/9: LOCK DISCIPLINE became Rule 6 after mute/pre-lock visibility issues —
+  never tweet a play as locked before the 15-min window; answer "what
+  happened to X on the site?" with mute/fell-off honesty, never a fake grade.
+- 7/9: Dodgers ML + Rockies +1.5 middle cashed (final 4-3) — both-sides
+  precision is a shareable proprietary story; site users saw it live.
+- 7/9: all-time chase is -12.12u from green; V12 era +58.82u since June 1
+  after a May drawdown of 70+u — the comeback IS the brand story right now.
