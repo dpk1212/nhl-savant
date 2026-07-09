@@ -18,6 +18,7 @@ import Methodology from './components/Methodology';
 import LoadingSpinner from './components/LoadingSpinner';
 import ErrorBoundary from './components/ErrorBoundary';
 import LegalFooter from './components/LegalFooter';
+import PaidPushGate from './components/PaidPushGate';
 import Disclaimer from './pages/Disclaimer';
 
 import MyPicks from './pages/MyPicks';
@@ -260,6 +261,8 @@ function App() {
   return (
     <ErrorBoundary>
       <Router>
+        {/* OneSignal: prompt + subscribe only for paid active users */}
+        <PaidPushGate />
         {/* 🎉 Checkout Success Banner */}
         {checkoutSuccess && (
           <div style={{

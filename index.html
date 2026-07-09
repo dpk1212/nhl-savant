@@ -37,15 +37,20 @@
     <!-- Theme Color -->
     <meta name="theme-color" content="#0A0E27" />
 
-    <!-- OneSignal Web Push (v16) — App ID is public; prompts configured in OneSignal dashboard -->
+    <!-- OneSignal Web Push (v16) — PAID ACTIVE USERS ONLY (see PaidPushGate.jsx) -->
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function (OneSignal) {
         await OneSignal.init({
           appId: "d8fcb504-8d29-4354-a9e4-8b612d3eafeb",
-          // Allow local Vite testing (http://localhost:5173). Production is HTTPS.
           allowLocalhostAsSecureOrigin: true,
+          // Never auto-prompt visitors. PaidPushGate calls requestPermission for paid users only.
+          promptOptions: {
+            slidedown: {
+              prompts: [{ type: "push", autoPrompt: false }],
+            },
+          },
         });
       });
     </script>

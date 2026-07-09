@@ -1,42 +1,84 @@
 /**
- * OneSignal helpers — Web Push SDK is initialized in index.html.
- * Use these from React to identify users and tag segments.
+ * OneSignal helpers — Web Push for PAID ACTIVE users only.
  *
- * App ID: d8fcb504-8d29-4354-a9e4-8b612d3eafeb (public client id)
- * Service worker: /OneSignalSDKWorker.js (must stay at site root)
+ * Init lives in index.html with autoPrompt disabled. Free / logged-out
+ * visitors never see a permission prompt. Paid users (scout|elite|pro +
+ * active|trialing) are opted in from PaidPushGate.
+ *
+ * App ID: d8fcb504-8d29-4354-a9e4-8b612d3eafeb
+ * Service worker: /OneSignalSDKWorker.js
  */
 
 function withOneSignal(fn) {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined') return Promise.resolve();
   window.OneSignalDeferred = window.OneSignalDeferred || [];
-  window.OneSignalDeferred.push(async (OneSignal) => {
-    try {
-      await fn(OneSignal);
-    } catch (err) {
-      console.warn('[OneSignal]', err?.message || err);
-    }
+  return new Promise((resolve) => {
+    window.OneSignalDeferred.push(async (OneSignal) => {
+      try {
+        await fn(OneSignal);
+      } catch (err) {
+        console.warn('[OneSignal]', err?.message || err);
+      } finally {
+        resolve();
+      }
+    });
   });
 }
 
-/** Link the current push subscription to a Firebase uid (External ID). */
+/** Link push subscription to Firebase uid (External ID). */
 export function onesignalLogin(uid) {
-  if (!uid) return;
-  withOneSignal(async (OneSignal) => {
+  if (!uid) return Promise.resolve();
+  return withOneSignal(async (OneSignal) => {
     await OneSignal.login(String(uid));
   });
 }
 
-/** Clear External ID on sign-out (keeps anonymous push subscription). */
+/** Clear External ID on sign-out. */
 export function onesignalLogout() {
-  withOneSignal(async (OneSignal) => {
+  return withOneSignal(async (OneSignal) => {
     await OneSignal.logout();
   });
 }
 
-/** Set tags for segmentation (e.g. { tier: 'premium', sport: 'MLB' }). */
 export function onesignalAddTags(tags) {
-  if (!tags || typeof tags !== 'object') return;
-  withOneSignal(async (OneSignal) => {
+  if (!tags || typeof tags !== 'object') return Promise.resolve();
+  return withOneSignal(async (OneSignal) => {
     await OneSignal.User.addTags(tags);
+  });
+}
+
+/**
+ * Paid-only subscribe: login → tag → request permission → opt in.
+ * Safe to call repeatedly; no-ops if already opted in.
+ */
+export async function onesignalEnableForPaidUser({ uid, email, tier, status }) {
+  if (!uid) return;
+  await withOneSignal(async (OneSignal) => {
+    await OneSignal.login(String(uid));
+    await OneSignal.User.addTags({
+      paid: 'true',
+      tier: String(tier || ''),
+      status: String(status || ''),
+      email: email || '',
+    });
+    const already = OneSignal.User?.PushSubscription?.optedIn;
+    if (already) return;
+    // Native permission (dashboard Auto Prompt must be OFF)
+    if (OneSignal.Notifications?.requestPermission) {
+      await OneSignal.Notifications.requestPermission();
+    }
+    if (OneSignal.User?.PushSubscription?.optIn) {
+      await OneSignal.User.PushSubscription.optIn();
+    }
+  });
+}
+
+/** When subscription lapses — stop push for this browser. */
+export async function onesignalDisableForNonPaid() {
+  await withOneSignal(async (OneSignal) => {
+    await OneSignal.User.addTags({ paid: 'false' });
+    if (OneSignal.User?.PushSubscription?.optOut) {
+      await OneSignal.User.PushSubscription.optOut();
+    }
   });
 }
