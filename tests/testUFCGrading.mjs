@@ -74,24 +74,24 @@ const pos = {
   title: 'UFC 329: Max Holloway vs. Conor McGregor',
 };
 
-const hit = findMatchingGame(pos, [], [], [], [], [], [hollowayWin]);
+const hit = findMatchingGame(pos, [], [], [], [], [], [hollowayWin], []);
 check('direct key match grades Holloway win',
   hit && hit.awayScore === 1 && hit.homeScore === 0);
 
-const flipped = findMatchingGame(pos, [], [], [], [], [], [flippedEspnOrder]);
+const flipped = findMatchingGame(pos, [], [], [], [], [], [flippedEspnOrder], []);
 check('ESPN fighter-order flip still grades Holloway win',
   flipped && flipped.awayScore === 1 && flipped.homeScore === 0);
 
 check('wrong-day rematch blocked by date guard',
-  findMatchingGame(pos, [], [], [], [], [], [wrongDay]) === null);
+  findMatchingGame(pos, [], [], [], [], [], [wrongDay], []) === null);
 
 check('prop position never matches even with final present',
   findMatchingGame({
     ...pos,
     title: 'Will Max Holloway win by KO or TKO?',
-  }, [], [], [], [], [], [hollowayWin]) === null);
+  }, [], [], [], [], [], [hollowayWin], []) === null);
 
-// MLB path still works with extra ufcFinals arg (no cross-sport bleed)
+// MLB path still works with extra ufcFinals/wnbaFinals args (no cross-sport bleed)
 const mlbPos = {
   sport: 'MLB', gameKey: 'nyy_tbr', date: '2026-07-08',
   away: 'New York Yankees', home: 'Tampa Bay Rays',
@@ -102,7 +102,7 @@ const mlbFinal = {
   awayScore: 2, homeScore: 3,
 };
 check('MLB matching unchanged with UFC finals present',
-  findMatchingGame(mlbPos, [], [], [mlbFinal], [], [], [hollowayWin]) === mlbFinal);
+  findMatchingGame(mlbPos, [], [], [mlbFinal], [], [], [hollowayWin], []) === mlbFinal);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail > 0 ? 1 : 0);

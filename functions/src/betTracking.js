@@ -41,8 +41,69 @@ const ESPN_NBA_TO_CODE = {
 const NCAA_API_URL = "https://ncaa-api.henrygd.me/scoreboard/basketball-men/d1";
 const ESPN_MLB_URL = "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard";
 const ESPN_NBA_URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard";
+const ESPN_WNBA_URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard";
 const ESPN_SOC_URL = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard";
 const ESPN_UFC_URL = "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard";
+
+// ESPN WNBA abbreviation → our lowercased codes (mirrors gradeSharpActions.js).
+const ESPN_WNBA_TO_CODE = {
+  ATL: "atl", CHI: "chi", CON: "con", DAL: "dal", GS: "gsv", GSV: "gsv",
+  IND: "ind", LV: "lva", LVA: "lva", LA: "las", LAS: "las", MIN: "min",
+  NY: "nyl", NYL: "nyl", PHX: "pho", PHO: "pho", POR: "por", SEA: "sea",
+  TOR: "tor", WAS: "was", WSH: "was",
+};
+
+const WNBA_NAME_TO_CODE = {
+  atlantadream: "ATL", atlanta: "ATL", dream: "ATL",
+  chicagosky: "CHI", chicago: "CHI", sky: "CHI",
+  connecticutsun: "CON", connecticut: "CON", sun: "CON",
+  dallaswings: "DAL", dallas: "DAL", wings: "DAL",
+  goldenstatevalkyries: "GSV", goldenstate: "GSV", valkyries: "GSV", gsv: "GSV", gs: "GSV",
+  indianafever: "IND", indiana: "IND", fever: "IND",
+  losangelessparks: "LAS", lasparks: "LAS", losangeles: "LAS", sparks: "LAS", las: "LAS", la: "LAS",
+  lasvegasaces: "LVA", lasvegas: "LVA", aces: "LVA", lva: "LVA", lv: "LVA",
+  minnesotalynx: "MIN", minnesota: "MIN", lynx: "MIN",
+  newyorkliberty: "NYL", newyork: "NYL", liberty: "NYL", nyl: "NYL", ny: "NYL",
+  phoenixmercury: "PHO", phoenix: "PHO", mercury: "PHO", pho: "PHO", phx: "PHO",
+  portlandfire: "POR", portland: "POR", fire: "POR",
+  seattlestorm: "SEA", seattle: "SEA", storm: "SEA",
+  torontotempo: "TOR", toronto: "TOR", tempo: "TOR",
+  washingtonmystics: "WAS", washington: "WAS", mystics: "WAS", was: "WAS", wsh: "WAS",
+};
+
+function normalizeWNBAName(s) {
+  return (s || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+}
+
+function resolveWNBATeam(raw) {
+  if (!raw) return null;
+  const cleaned = String(raw)
+      .replace(/\s*\((?:w|women|wnba)\)\s*$/i, "")
+      .replace(/^wnba\s*:\s*/i, "")
+      .trim();
+  const n = normalizeWNBAName(cleaned);
+  if (WNBA_NAME_TO_CODE[n]) return WNBA_NAME_TO_CODE[n];
+  let best = null;
+  let bestLen = 0;
+  for (const [alias, code] of Object.entries(WNBA_NAME_TO_CODE)) {
+    if (alias.length < 3) continue;
+    if ((n === alias || n.startsWith(alias) || n.includes(alias)) && alias.length > bestLen) {
+      best = code;
+      bestLen = alias.length;
+    }
+  }
+  return best;
+}
+
+function wnbaTeamsMatch(rawA, rawB) {
+  const a = resolveWNBATeam(rawA);
+  const b = resolveWNBATeam(rawB);
+  return !!(a && b && a === b);
+}
 
 // UFC fighter helpers (mirrors scripts/lib/ufcFighters.js — functions/ is CJS).
 const UFC_ALIASES = {
@@ -320,6 +381,59 @@ async function fetchNBAFinalGames() {
   }
 }
 
+async function fetchWNBAFinalGames() {
+  try {
+    const res = await fetch(ESPN_WNBA_URL);
+    if (!res.ok) { logger.warn(`ESPN WNBA API ${res.status}`); return []; }
+    const data = await res.json();
+    let postponedCount = 0;
+    const games = (data.events || [])
+        .filter((e) => {
+          const st = e.competitions?.[0]?.status?.type;
+          const ok = isActuallyFinal(st);
+          if (!ok && (st?.state === "post" || st?.completed)) {
+            postponedCount++;
+            const comp = e.competitions[0];
+            const comps = comp.competitors || [];
+            const away = comps.find((c) => c.homeAway === "away") || {};
+            const home = comps.find((c) => c.homeAway === "home") || {};
+            logger.warn(`[grader] SKIP WNBA no-play game (${st?.name}): ${away.team?.displayName} @ ${home.team?.displayName}`);
+          }
+          return ok;
+        })
+        .map((e) => {
+          const comp = e.competitions[0];
+          const comps = comp.competitors || [];
+          const away = comps.find((c) => c.homeAway === "away") || {};
+          const home = comps.find((c) => c.homeAway === "home") || {};
+          const awayAbbr = away.team?.abbreviation || "";
+          const homeAbbr = home.team?.abbreviation || "";
+          const awayName = away.team?.displayName || awayAbbr;
+          const homeName = home.team?.displayName || homeAbbr;
+          return {
+            dateET: espnEventDateET(e),
+            awayCode: ESPN_WNBA_TO_CODE[awayAbbr]
+              || (resolveWNBATeam(awayName) || "").toLowerCase()
+              || awayAbbr.toLowerCase(),
+            homeCode: ESPN_WNBA_TO_CODE[homeAbbr]
+              || (resolveWNBATeam(homeName) || "").toLowerCase()
+              || homeAbbr.toLowerCase(),
+            awayTeam: awayName,
+            homeTeam: homeName,
+            awayScore: parseInt(away.score) || 0,
+            homeScore: parseInt(home.score) || 0,
+          };
+        });
+    if (postponedCount > 0) {
+      logger.info(`[grader] WNBA: ${games.length} truly final, ${postponedCount} no-play skipped`);
+    }
+    return games;
+  } catch (e) {
+    logger.error("ESPN WNBA fetch error:", e.message);
+    return [];
+  }
+}
+
 async function fetchSOCFinalGames(dateStr) {
   // FIFA World Cup via ESPN. Polymarket's 3-way match market resolves on the
   // 90-minute result. Group stage is always STATUS_FULL_TIME, so the final
@@ -550,6 +664,12 @@ exports.updateBetResults = onSchedule({
       logger.info(`ESPN NBA API: ${nbaFinalGames.length} final NBA games`);
     }
 
+    let wnbaFinalGames = [];
+    if (allSports.has("WNBA")) {
+      wnbaFinalGames = await fetchWNBAFinalGames();
+      logger.info(`ESPN WNBA API: ${wnbaFinalGames.length} final WNBA games`);
+    }
+
     let socFinalGames = [];
     if (allSports.has("SOC")) {
       for (const d of allSocDates) {
@@ -656,6 +776,31 @@ exports.updateBetResults = onSchedule({
                 }
               }
             }
+          } else if (sport === "WNBA") {
+            const rawKey = (pick.gameKey || "").replace(/^WNBA:/, "");
+            const parts = rawKey.split("_");
+            const dated = wnbaFinalGames.filter((g) =>
+              !pick.date || (g.dateET != null && g.dateET === pick.date),
+            );
+            if (parts.length === 2) {
+              matchingGame = dated.find((g) =>
+                g.awayCode === parts[0] && g.homeCode === parts[1],
+              );
+            }
+            if (!matchingGame) {
+              for (const g of dated) {
+                if (wnbaTeamsMatch(pick.away, g.awayTeam) &&
+                    wnbaTeamsMatch(pick.home, g.homeTeam)) {
+                  matchingGame = g;
+                  break;
+                }
+                if (teamNamesMatch(pick.away, g.awayTeam) &&
+                    teamNamesMatch(pick.home, g.homeTeam)) {
+                  matchingGame = g;
+                  break;
+                }
+              }
+            }
           } else if (sport === "SOC") {
             const rawKey = (pick.gameKey || "").replace(/^SOC:/, "");
             const parts = rawKey.split("_");
@@ -747,6 +892,7 @@ exports.updateBetResults = onSchedule({
               "result.source": sport === "NHL" ? "NHL_API" :
                 sport === "CBB" ? "NCAA_API" :
                 sport === "NBA" ? "ESPN_NBA_API" :
+                sport === "WNBA" ? "ESPN_WNBA_API" :
                 sport === "SOC" ? "ESPN_SOC_API" :
                 sport === "UFC" ? "ESPN_UFC_API" : "ESPN_MLB_API",
             };
@@ -847,6 +993,7 @@ exports.updateBetResults = onSchedule({
               "result.source": sport === "NHL" ? "NHL_API" :
                 sport === "CBB" ? "NCAA_API" :
                 sport === "NBA" ? "ESPN_NBA_API" :
+                sport === "WNBA" ? "ESPN_WNBA_API" :
                 sport === "SOC" ? "ESPN_SOC_API" :
                 sport === "UFC" ? "ESPN_UFC_API" : "ESPN_MLB_API",
               "result.gradedAt":
@@ -932,6 +1079,31 @@ exports.updateBetResults = onSchedule({
             }
             if (!matchingGame) {
               for (const g of nbaFinalGames) {
+                if (teamNamesMatch(pick.away, g.awayTeam) &&
+                    teamNamesMatch(pick.home, g.homeTeam)) {
+                  matchingGame = g;
+                  break;
+                }
+              }
+            }
+          } else if (sport === "WNBA") {
+            const rawKey = (pick.gameKey || "").replace(/^WNBA:/, "");
+            const parts = rawKey.split("_");
+            const dated = wnbaFinalGames.filter((g) =>
+              !pick.date || (g.dateET != null && g.dateET === pick.date),
+            );
+            if (parts.length === 2) {
+              matchingGame = dated.find(
+                  (g) => g.awayCode === parts[0] && g.homeCode === parts[1],
+              );
+            }
+            if (!matchingGame) {
+              for (const g of dated) {
+                if (wnbaTeamsMatch(pick.away, g.awayTeam) &&
+                    wnbaTeamsMatch(pick.home, g.homeTeam)) {
+                  matchingGame = g;
+                  break;
+                }
                 if (teamNamesMatch(pick.away, g.awayTeam) &&
                     teamNamesMatch(pick.home, g.homeTeam)) {
                   matchingGame = g;
@@ -1079,6 +1251,31 @@ exports.updateBetResults = onSchedule({
             }
             if (!matchingGame) {
               for (const g of nbaFinalGames) {
+                if (teamNamesMatch(pick.away, g.awayTeam) &&
+                    teamNamesMatch(pick.home, g.homeTeam)) {
+                  matchingGame = g;
+                  break;
+                }
+              }
+            }
+          } else if (sport === "WNBA") {
+            const rawKey = (pick.gameKey || "").replace(/^WNBA:/, "");
+            const parts = rawKey.split("_");
+            const dated = wnbaFinalGames.filter((g) =>
+              !pick.date || (g.dateET != null && g.dateET === pick.date),
+            );
+            if (parts.length === 2) {
+              matchingGame = dated.find(
+                  (g) => g.awayCode === parts[0] && g.homeCode === parts[1],
+              );
+            }
+            if (!matchingGame) {
+              for (const g of dated) {
+                if (wnbaTeamsMatch(pick.away, g.awayTeam) &&
+                    wnbaTeamsMatch(pick.home, g.homeTeam)) {
+                  matchingGame = g;
+                  break;
+                }
                 if (teamNamesMatch(pick.away, g.awayTeam) &&
                     teamNamesMatch(pick.home, g.homeTeam)) {
                   matchingGame = g;
