@@ -65,6 +65,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { matchSoccerPositionTitle, resolveSoccerSide } from './lib/soccerTeams.js';
 import { matchUFCPositionTitle } from './lib/ufcFighters.js';
+import { matchWNBAPositionTitle, resolveWNBATeam, WNBA_NAME_TO_CODE } from './lib/wnbaTeams.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -277,7 +278,7 @@ function extractTeamsFromTitle(title) {
 
 function buildTodaysGames(polyData) {
   const games = {};
-  for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC']) {
+  for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA']) {
     const sportGames = polyData?.[sport] || {};
     for (const [key, g] of Object.entries(sportGames)) {
       const away = g.awayTeam || '';
@@ -317,6 +318,15 @@ function matchPositionToGame(posTitle, todaysGames, cbbMap) {
     const rev = `${mlbB}_${mlbA}`;
     if (todaysGames[`MLB:${rev}`]) return { key: rev, sport: 'MLB', side: 'home', awayName: rawB, homeName: rawA };
   }
+  // WNBA before NBA — shared nicknames (Sun, Sparks, Liberty, …)
+  const wnbaA = resolveWNBATeam(rawA);
+  const wnbaB = resolveWNBATeam(rawB);
+  if (wnbaA && wnbaB) {
+    const key = `${wnbaA.toLowerCase()}_${wnbaB.toLowerCase()}`;
+    if (todaysGames[`WNBA:${key}`]) return { key, sport: 'WNBA', side: 'away', awayName: rawA, homeName: rawB };
+    const rev = `${wnbaB.toLowerCase()}_${wnbaA.toLowerCase()}`;
+    if (todaysGames[`WNBA:${rev}`]) return { key: rev, sport: 'WNBA', side: 'home', awayName: rawB, homeName: rawA };
+  }
   const nbaA = resolveNBACode(rawA);
   const nbaB = resolveNBACode(rawB);
   if (nbaA && nbaB) {
@@ -333,7 +343,10 @@ function matchSpreadTitle(posTitle, todaysGames, cbbMap) {
   if (!m) return null;
   const teamRaw = m[1].trim();
   const spreadLine = parseFloat(m[2]);
-  const SPORT_MAPS = { NHL: NHL_MAP, NBA: NBA_MAP, MLB: MLB_MAP };
+  const WNBA_MAP = Object.fromEntries(
+    Object.entries(WNBA_NAME_TO_CODE).map(([k, v]) => [k, String(v).toLowerCase()]),
+  );
+  const SPORT_MAPS = { NHL: NHL_MAP, WNBA: WNBA_MAP, NBA: NBA_MAP, MLB: MLB_MAP };
   const candidates = [];
   const teamNorm = normalize(teamRaw);
   const words = teamRaw.split(/\s+/).map(w => normalize(w)).filter(w => w.length >= 3);
@@ -431,7 +444,7 @@ function collectScannedWallets() {
   for (const f of ['sharp_positions.json', 'sharp_spread_positions.json', 'sharp_total_positions.json']) {
     const data = loadJSON(f);
     if (!data) continue;
-    for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC']) {
+    for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA']) {
       const games = data[sport] || {};
       if (typeof games !== 'object') continue;
       for (const g of Object.values(games)) {
@@ -698,7 +711,8 @@ async function run() {
       const title = pos.title || '';
       let match = matchPositionToGame(title, todaysGames, cbbMap)
         || matchSoccerPositionTitle(title, todaysGames)
-        || matchUFCPositionTitle(title, todaysGames);
+        || matchUFCPositionTitle(title, todaysGames)
+        || matchWNBAPositionTitle(title, todaysGames);
       let forcedSpread = false;
       if (!match) {
         const sm = matchSpreadTitle(title, todaysGames, cbbMap);
@@ -1001,7 +1015,7 @@ function mergeRecoveredIntoScanFiles(positions, polyData) {
     if (!data) {
       // If the main scanner didn't produce this file (e.g. no totals
       // today), bootstrap a minimal shape so we can still inject.
-      data = { NHL: {}, CBB: {}, MLB: {}, NBA: {}, SOC: {}, UFC: {}, _whitelist_bootstrap: true };
+      data = { NHL: {}, CBB: {}, MLB: {}, NBA: {}, SOC: {}, UFC: {}, WNBA: {}, _whitelist_bootstrap: true };
     }
 
     for (const pos of bucket.positions) {

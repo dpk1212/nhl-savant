@@ -16,6 +16,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { resolveSOCTeam } from './lib/soccerTeams.js';
 import { makeUFCGameKey } from './lib/ufcFighters.js';
+import { makeWNBAGameKey } from './lib/wnbaTeams.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -38,6 +39,8 @@ const SPORTS = [
   { key: 'soccer_fifa_world_cup', label: 'SOC' },
   // UFC fight cards — h2h only (no spreads/totals on Odds API for MMA).
   { key: 'mma_mixed_martial_arts', label: 'UFC', markets: 'h2h' },
+  // WNBA — full NBA-style markets (ML + spreads + totals).
+  { key: 'basketball_wnba', label: 'WNBA', markets: 'h2h,spreads,totals' },
 ];
 
 const BOOKMAKERS = 'pinnacle,draftkings,fanduel,betmgm,caesars';
@@ -165,6 +168,9 @@ function makeGameKey(away, home, sportLabel) {
   }
   if (sportLabel === 'UFC') {
     return makeUFCGameKey(away, home);
+  }
+  if (sportLabel === 'WNBA') {
+    return makeWNBAGameKey(away, home);
   }
   const aCanon = findCBBTeam(cbbMap, away);
   const hCanon = findCBBTeam(cbbMap, home);

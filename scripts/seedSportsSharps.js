@@ -16,6 +16,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { isSoccerMarketTitle } from './lib/soccerTeams.js';
 import { isUFCMarketTitle } from './lib/ufcFighters.js';
+import { isWNBAMarketTitle } from './lib/wnbaTeams.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -65,6 +66,8 @@ const SPORT_KEYWORDS = {
 
 function classifySport(title) {
   const t = title.toLowerCase();
+  // WNBA before NBA keyword loop — shared nicknames (Liberty, Sun, Sparks, …).
+  if (isWNBAMarketTitle(title)) return 'WNBA';
   for (const [sport, keywords] of Object.entries(SPORT_KEYWORDS)) {
     for (const kw of keywords) {
       if (t.includes(kw)) return sport;

@@ -14,6 +14,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { matchSoccerPositionTitle, resolveSoccerSide } from './lib/soccerTeams.js';
 import { matchUFCPositionTitle } from './lib/ufcFighters.js';
+import { matchWNBAPositionTitle, resolveWNBATeam, WNBA_NAME_TO_CODE } from './lib/wnbaTeams.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -324,7 +325,7 @@ function writeIntelExcludedWallets(mmAddrs, traderAddrs) {
 // NHL and MLB share 3-letter city codes (bos, tor, min, col, etc.)
 function buildTodaysGames(polyData) {
   const games = {};
-  for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC']) {
+  for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA']) {
     const sportGames = polyData?.[sport] || {};
     for (const [key, g] of Object.entries(sportGames)) {
       const away = g.awayTeam || '';
@@ -373,6 +374,16 @@ function matchPositionToGame(posTitle, todaysGames, cbbMap) {
     if (todaysGames[`MLB:${rev}`]) return { key: rev, sport: 'MLB', side: 'home', awayName: rawB, homeName: rawA };
   }
 
+  // Try WNBA before NBA (shared nicknames: Sun, Sparks, Liberty, …)
+  const wnbaA = resolveWNBATeam(rawA);
+  const wnbaB = resolveWNBATeam(rawB);
+  if (wnbaA && wnbaB) {
+    const key = `${wnbaA.toLowerCase()}_${wnbaB.toLowerCase()}`;
+    if (todaysGames[`WNBA:${key}`]) return { key, sport: 'WNBA', side: 'away', awayName: rawA, homeName: rawB };
+    const rev = `${wnbaB.toLowerCase()}_${wnbaA.toLowerCase()}`;
+    if (todaysGames[`WNBA:${rev}`]) return { key: rev, sport: 'WNBA', side: 'home', awayName: rawB, homeName: rawA };
+  }
+
   // Try NBA
   const nbaA = resolveNBACode(rawA);
   const nbaB = resolveNBACode(rawB);
@@ -389,10 +400,12 @@ function matchPositionToGame(posTitle, todaysGames, cbbMap) {
 // SOC titles name a single side ("Will Mexico win on 2026-06-18?"), so they
 // need their own matcher — extractTeamsFromTitle can't parse them.
 // UFC titles often include "UFC 329:" prefix — use dedicated fighter matcher.
+// WNBA single-side "Will X win?" titles use matchWNBAPositionTitle.
 function matchPositionToGameOrSoccer(posTitle, todaysGames, cbbMap) {
   return matchPositionToGame(posTitle, todaysGames, cbbMap)
     || matchSoccerPositionTitle(posTitle, todaysGames)
-    || matchUFCPositionTitle(posTitle, todaysGames);
+    || matchUFCPositionTitle(posTitle, todaysGames)
+    || matchWNBAPositionTitle(posTitle, todaysGames);
 }
 
 // ─── Match spread-formatted titles like "Spread: Knicks (-3.5)" ─────────────
@@ -402,8 +415,13 @@ function matchSpreadTitle(posTitle, todaysGames, cbbMap) {
   const teamRaw = m[1].trim();
   const spreadLine = parseFloat(m[2]);
 
+  // WNBA_NAME_TO_CODE is normalized-alias → CODE; lower-case codes for keys.
+  const WNBA_MAP = Object.fromEntries(
+    Object.entries(WNBA_NAME_TO_CODE).map(([k, v]) => [k, String(v).toLowerCase()]),
+  );
   const SPORT_MAPS = {
     NHL: NHL_MAP,
+    WNBA: WNBA_MAP,
     NBA: NBA_MAP,
     MLB: MLB_MAP,
   };
@@ -666,7 +684,7 @@ async function run() {
   if (gameKeys.length === 0) {
     console.log('No games today — skipping scan');
     const outPath = join(ROOT, 'public', 'sharp_positions.json');
-    writeFileSync(outPath, JSON.stringify({ NHL: {}, CBB: {}, MLB: {}, NBA: {}, SOC: {}, UFC: {}, scannedAt: new Date().toISOString(), walletsScanned: 0 }, null, 2), 'utf8');
+    writeFileSync(outPath, JSON.stringify({ NHL: {}, CBB: {}, MLB: {}, NBA: {}, SOC: {}, UFC: {}, WNBA: {}, scannedAt: new Date().toISOString(), walletsScanned: 0 }, null, 2), 'utf8');
     writeVaultExclusionFile({});
     return;
   }
@@ -678,7 +696,7 @@ async function run() {
   for (const filename of ['sharp_positions.json', 'sharp_spread_positions.json', 'sharp_total_positions.json']) {
     const prevData = loadJSON(filename);
     if (!prevData) continue;
-    for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC']) {
+    for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA']) {
       for (const [gameKey, game] of Object.entries(prevData[sport] || {})) {
         for (const pos of (game.positions || [])) {
           if (pos.firstSeen) {
@@ -690,9 +708,9 @@ async function run() {
     }
   }
 
-  const result = { NHL: {}, CBB: {}, MLB: {}, NBA: {}, SOC: {}, UFC: {} };
-  const spreadResult = { NHL: {}, CBB: {}, MLB: {}, NBA: {}, SOC: {}, UFC: {} };
-  const totalResult = { NHL: {}, CBB: {}, MLB: {}, NBA: {}, SOC: {}, UFC: {} };
+  const result = { NHL: {}, CBB: {}, MLB: {}, NBA: {}, SOC: {}, UFC: {}, WNBA: {} };
+  const spreadResult = { NHL: {}, CBB: {}, MLB: {}, NBA: {}, SOC: {}, UFC: {}, WNBA: {} };
+  const totalResult = { NHL: {}, CBB: {}, MLB: {}, NBA: {}, SOC: {}, UFC: {}, WNBA: {} };
   let matchCount = 0;
   let spreadMatchCount = 0;
   let totalMatchCount = 0;
@@ -917,7 +935,7 @@ async function run() {
   {
     const bothSidesCount = {};
     for (const resSet of [result, spreadResult, totalResult]) {
-      for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC']) {
+      for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA']) {
         for (const gd of Object.values(resSet[sport] || {})) {
           const walletSides = {};
           for (const pos of gd.positions || []) {
@@ -934,7 +952,7 @@ async function run() {
 
     const allWalletsInResults = new Set();
     for (const resSet of [result, spreadResult, totalResult]) {
-      for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC']) {
+      for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA']) {
         for (const gd of Object.values(resSet[sport] || {})) {
           for (const pos of gd.positions || []) allWalletsInResults.add(pos.wallet);
         }
@@ -955,7 +973,7 @@ async function run() {
     let traderDollarsRemoved = 0;
 
     function stripTraders(resSet, isTotalMarket = false) {
-      for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC']) {
+      for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA']) {
         for (const [gameKey, gd] of Object.entries(resSet[sport] || {})) {
           const removed = gd.positions.filter(p => traderSet.has((p.wallet || '').toLowerCase()));
           gd.positions = gd.positions.filter(p => !traderSet.has((p.wallet || '').toLowerCase()));
@@ -1057,7 +1075,7 @@ async function run() {
   let totalGamesWithPositions = 0;
   let spreadGames = 0;
   let totalGames = 0;
-  for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC']) {
+  for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA']) {
     totalGamesWithPositions += Object.keys(result[sport]).length;
     spreadGames += Object.keys(spreadResult[sport]).length;
     totalGames += Object.keys(totalResult[sport]).length;

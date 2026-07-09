@@ -137,6 +137,7 @@ function sportStyle(sport) {
   if (sport === 'CBB') return { color: '#FF6B35', bg: 'rgba(255,107,53,0.12)', icon: '🏀' };
   if (sport === 'MLB') return { color: '#E31837', bg: 'rgba(227,24,55,0.12)', icon: '⚾' };
   if (sport === 'NBA') return { color: '#FF8C00', bg: 'rgba(255,140,0,0.12)', icon: '🏀' };
+  if (sport === 'WNBA') return { color: '#F472B6', bg: 'rgba(244,114,182,0.12)', icon: '🏀' };
   if (sport === 'SOC') return { color: '#2ECC71', bg: 'rgba(46,204,113,0.12)', icon: '⚽' };
   if (sport === 'UFC') return { color: '#C0392B', bg: 'rgba(192,57,43,0.12)', icon: '🥊' };
   return { color: '#D4AF37', bg: 'rgba(212,175,55,0.12)', icon: '🏒' };
@@ -3015,7 +3016,7 @@ async function toggleUserPick(uid, date, gameKey, pickData) {
 // "T30+ contributor AND whitelisted" — a slight tightening. forW/agW,
 // HC margin, hcDominant are unaffected (they already filtered to
 // whitelisted/CONFIRMED wallets only).
-const SHARP_INTEL_SPORTS = new Set(['NHL', 'CBB', 'MLB', 'NBA', 'NFL', 'SOC', 'UFC']);
+const SHARP_INTEL_SPORTS = new Set(['NHL', 'CBB', 'MLB', 'NBA', 'NFL', 'SOC', 'UFC', 'WNBA']);
 function filterToQualifiedWallets(rawData, profilesMap) {
   if (!rawData) return null;
   if (!profilesMap || profilesMap.size === 0) return null;
@@ -3392,6 +3393,7 @@ function buildGameData(polyData, kalshiData) {
   processSport('NBA');
   processSport('SOC');
   processSport('UFC');
+  processSport('WNBA');
 
   games.sort((a, b) => b.volume - a.volume);
   return games;
@@ -10069,7 +10071,7 @@ const SharpFlowProfitChart = memo(function SharpFlowProfitChart({ picks }) {
             <div>
               <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: '0.375rem' }}>Sport</div>
               <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
-                {[{ k: 'ALL', l: 'All Sports' }, { k: 'NHL', l: 'NHL' }, { k: 'CBB', l: 'CBB' }, { k: 'MLB', l: 'MLB' }, { k: 'NBA', l: 'NBA' }, { k: 'SOC', l: 'SOC' }, { k: 'UFC', l: 'UFC' }].map(s => (
+                {[{ k: 'ALL', l: 'All Sports' }, { k: 'NHL', l: 'NHL' }, { k: 'CBB', l: 'CBB' }, { k: 'MLB', l: 'MLB' }, { k: 'NBA', l: 'NBA' }, { k: 'WNBA', l: 'WNBA' }, { k: 'SOC', l: 'SOC' }, { k: 'UFC', l: 'UFC' }].map(s => (
                   <FilterBtn key={s.k} isActive={chartSport === s.k} onClick={() => setChartSport(s.k)} color="#3B82F6">{s.l}</FilterBtn>
                 ))}
               </div>
@@ -10190,7 +10192,7 @@ function ConvictionGauge({ pct, accent }) {
 const SharpTape = memo(function SharpTape({ sharpPositions }) {
   const items = useMemo(() => {
     const out = [];
-    for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC']) {
+    for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA']) {
       const games = sharpPositions?.[sport] || {};
       for (const gd of Object.values(games)) {
         for (const p of gd.positions || []) {
@@ -10551,7 +10553,7 @@ export default function SharpFlow() {
     }).length;
 
     let totalSharpInvested = 0;
-    for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC']) {
+    for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA']) {
       const sg = sharpPositions?.[sport] || {};
       for (const gd of Object.values(sg)) totalSharpInvested += gd.summary?.totalInvested || 0;
     }
@@ -10852,8 +10854,8 @@ export default function SharpFlow() {
       )}
       {viewMode === 'sharpVault' && !isFreeUser && vaultData && (() => {
         const { entries, todayPositions, convergences, activeCount, combinedPnl, actionPositions } = vaultData;
-        const SPORT_COLORS = { NBA: '#FF8C00', NHL: '#D4AF37', MLB: '#E31837', CBB: '#FF6B35', NFL: '#4CAF50', SOC: '#2ECC71', UFC: '#C0392B' };
-        const sportIcons = { NBA: '\u{1F3C0}', NHL: '\u{1F3D2}', MLB: '\u26BE', CBB: '\u{1F3C0}', NFL: '\u{1F3C8}', SOC: '\u26BD', UFC: '\u{1F94A}' };
+        const SPORT_COLORS = { NBA: '#FF8C00', WNBA: '#F472B6', NHL: '#D4AF37', MLB: '#E31837', CBB: '#FF6B35', NFL: '#4CAF50', SOC: '#2ECC71', UFC: '#C0392B' };
+        const sportIcons = { NBA: '\u{1F3C0}', WNBA: '\u{1F3C0}', NHL: '\u{1F3D2}', MLB: '\u26BE', CBB: '\u{1F3C0}', NFL: '\u{1F3C8}', SOC: '\u26BD', UFC: '\u{1F94A}' };
 
         let filteredEntries = vaultSportFilter === 'ALL'
           ? [...entries]
@@ -11145,7 +11147,7 @@ export default function SharpFlow() {
                       }}>{sf.label} <span style={{ opacity: 0.6 }}>({sf.cnt})</span></button>
                     ))}
                     <div style={{ width: '1px', height: '14px', background: B.border, margin: '0 0.15rem' }} />
-                    {['ALL', 'NBA', 'NHL', 'MLB', 'CBB', 'NFL', 'SOC', 'UFC'].map(sp => {
+                    {['ALL', 'NBA', 'NHL', 'MLB', 'CBB', 'NFL', 'SOC', 'UFC', 'WNBA'].map(sp => {
                       const statusFiltered = enriched.filter(p => actionStatusFilter === 'PREGAME' ? !p._isLive : actionStatusFilter === 'LIVE' ? p._isLive : true);
                       const cnt = sp === 'ALL' ? statusFiltered.length : (sportCounts[sp] || 0);
                       if (sp !== 'ALL' && cnt === 0) return null;
@@ -11962,7 +11964,7 @@ export default function SharpFlow() {
                   </span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexWrap: 'wrap' }}>
-                  {['ALL', 'NBA', 'NHL', 'MLB', 'CBB', 'NFL', 'SOC', 'UFC'].map(sp => (
+                  {['ALL', 'NBA', 'NHL', 'MLB', 'CBB', 'NFL', 'SOC', 'UFC', 'WNBA'].map(sp => (
                     <button key={sp} onClick={() => setVaultSportFilter(sp)} style={{
                       padding: '0.25rem 0.55rem', borderRadius: '5px', cursor: 'pointer',
                       ...T.micro, fontWeight: 700, fontSize: '0.575rem',
@@ -12812,6 +12814,7 @@ export default function SharpFlow() {
                           { id: 'NHL', label: 'NHL', color: '#D4AF37' },
                           { id: 'CBB', label: 'CBB', color: '#FF6B35' },
                           { id: 'SOC', label: 'SOC', color: '#2ECC71' },
+                          { id: 'WNBA', label: 'WNBA', color: '#F472B6' },
                           { id: 'UFC', label: 'UFC', color: '#C0392B' },
                         ].map(opt => (
                           <button key={opt.id} onClick={() => setAgsuSport(opt.id)} style={{
@@ -13634,7 +13637,7 @@ export default function SharpFlow() {
                 ? buildWalletPriorStatsFnForUI(walletProfiles)
                 : null;
               const v12SortToday = todayET();
-              for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC']) {
+              for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA']) {
                 if (sportFilter !== 'All' && sport !== sportFilter) continue;
                 const sportGames = sharpPositions?.[sport] || {};
                 for (const [key, gd] of Object.entries(sportGames)) {
@@ -14537,7 +14540,7 @@ export default function SharpFlow() {
                     const lostCount = stakedLockedArr.filter(p => p.outcome === 'LOSS').length;
                     const sportCounts = {};
                     allLockedArr.forEach(p => { sportCounts[p.sport] = (sportCounts[p.sport] || 0) + 1; });
-                    const sportColorMap = { NHL: '#D4AF37', MLB: '#E31837', NBA: '#FF8C00', CBB: '#FF6B35', NFL: '#4CAF50', SOC: '#2ECC71', UFC: '#C0392B' };
+                    const sportColorMap = { NHL: '#D4AF37', MLB: '#E31837', NBA: '#FF8C00', WNBA: '#F472B6', CBB: '#FF6B35', NFL: '#4CAF50', SOC: '#2ECC71', UFC: '#C0392B' };
                     const activeSports = Object.keys(sportCounts).sort();
 
                     // ── AGS-U Tier Scorecard (REMOVED 2026-05-22) ─────────
@@ -15075,7 +15078,7 @@ const FlowStatCard = memo(function FlowStatCard({ icon: Icon, label, value, acce
 function SportTabs({ active, onChange }) {
   return (
     <div style={{ display: 'flex', gap: '0.375rem' }}>
-      {['All', 'CBB', 'NHL', 'MLB', 'NBA', 'SOC', 'UFC'].map(key => {
+      {['All', 'CBB', 'NHL', 'MLB', 'NBA', 'WNBA', 'SOC', 'UFC'].map(key => {
         const isActive = active === key;
         const ss = key === 'All' ? null : sportStyle(key);
         return (
