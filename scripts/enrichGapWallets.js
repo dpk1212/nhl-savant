@@ -62,6 +62,8 @@ function classifySport(title) {
       if (t.includes(kw)) return sport;
     }
   }
+  // UFC: require explicit "ufc" — never bare "fight" (CBB Fighting Illini).
+  if (/\bufc\b/.test(t)) return 'UFC';
   return null;
 }
 

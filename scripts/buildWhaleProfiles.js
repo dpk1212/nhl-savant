@@ -13,6 +13,7 @@ import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { isSoccerMarketTitle } from './lib/soccerTeams.js';
+import { isUFCMarketTitle } from './lib/ufcFighters.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -65,6 +66,7 @@ function classifySport(title) {
     }
   }
   // SOC last: precise shape-based matcher (no substring misfires on
+  if (isUFCMarketTitle(title)) return 'UFC';
   // US team names like "New Mexico"). See lib/soccerTeams.js.
   if (isSoccerMarketTitle(title)) return 'SOC';
   return null;

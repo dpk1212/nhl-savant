@@ -15,6 +15,7 @@ import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { resolveSOCTeam } from './lib/soccerTeams.js';
+import { makeUFCGameKey } from './lib/ufcFighters.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -35,6 +36,8 @@ const SPORTS = [
   // too so soccer flows through the same pipeline as 2-way sports (a draw is
   // a first-class pickable side).
   { key: 'soccer_fifa_world_cup', label: 'SOC' },
+  // UFC fight cards — h2h only (no spreads/totals on Odds API for MMA).
+  { key: 'mma_mixed_martial_arts', label: 'UFC', markets: 'h2h' },
 ];
 
 const BOOKMAKERS = 'pinnacle,draftkings,fanduel,betmgm,caesars';
@@ -160,6 +163,9 @@ function makeGameKey(away, home, sportLabel) {
     if (!a || !h) return null;
     return `${normalize(a)}_${normalize(h)}`;
   }
+  if (sportLabel === 'UFC') {
+    return makeUFCGameKey(away, home);
+  }
   const aCanon = findCBBTeam(cbbMap, away);
   const hCanon = findCBBTeam(cbbMap, home);
   if (aCanon && hCanon) {
@@ -174,8 +180,8 @@ function impliedProb(american) {
   return Math.abs(american) / (Math.abs(american) + 100);
 }
 
-async function fetchOdds(sportKey) {
-  const url = `https://api.the-odds-api.com/v4/sports/${sportKey}/odds?apiKey=${API_KEY}&bookmakers=${BOOKMAKERS}&markets=h2h,spreads,totals&oddsFormat=american`;
+async function fetchOdds(sportKey, markets = 'h2h,spreads,totals') {
+  const url = `https://api.the-odds-api.com/v4/sports/${sportKey}/odds?apiKey=${API_KEY}&bookmakers=${BOOKMAKERS}&markets=${markets}&oddsFormat=american`;
   const res = await fetch(url);
   if (!res.ok) {
     console.warn(`  ⚠️ Odds API ${sportKey}: ${res.status}`);
@@ -303,10 +309,10 @@ async function run() {
   const history = loadHistory();
   const staleCutoff = now - STALE_HOURS * 3600;
 
-  for (const { key: sportKey, label } of SPORTS) {
+  for (const { key: sportKey, label, markets } of SPORTS) {
     if (!history[label]) history[label] = {};
 
-    const games = await fetchOdds(sportKey);
+    const games = await fetchOdds(sportKey, markets || 'h2h,spreads,totals');
     for (const game of games) {
       const { pinnAway, pinnHome, pinnDraw, bestAway, bestHome, bestDraw, bestAwayBook, bestHomeBook, bestDrawBook, allBooks } = extractBookOdds(game);
       if (pinnAway == null || pinnHome == null) continue;

@@ -64,6 +64,7 @@ import { readFileSync, writeFileSync, existsSync, unlinkSync, renameSync } from 
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { matchSoccerPositionTitle, resolveSoccerSide } from './lib/soccerTeams.js';
+import { matchUFCPositionTitle } from './lib/ufcFighters.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -276,7 +277,7 @@ function extractTeamsFromTitle(title) {
 
 function buildTodaysGames(polyData) {
   const games = {};
-  for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC']) {
+  for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC']) {
     const sportGames = polyData?.[sport] || {};
     for (const [key, g] of Object.entries(sportGames)) {
       const away = g.awayTeam || '';
@@ -430,7 +431,7 @@ function collectScannedWallets() {
   for (const f of ['sharp_positions.json', 'sharp_spread_positions.json', 'sharp_total_positions.json']) {
     const data = loadJSON(f);
     if (!data) continue;
-    for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC']) {
+    for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC']) {
       const games = data[sport] || {};
       if (typeof games !== 'object') continue;
       for (const g of Object.values(games)) {
@@ -696,7 +697,8 @@ async function run() {
     for (const pos of fetched.data) {
       const title = pos.title || '';
       let match = matchPositionToGame(title, todaysGames, cbbMap)
-        || matchSoccerPositionTitle(title, todaysGames);
+        || matchSoccerPositionTitle(title, todaysGames)
+        || matchUFCPositionTitle(title, todaysGames);
       let forcedSpread = false;
       if (!match) {
         const sm = matchSpreadTitle(title, todaysGames, cbbMap);
@@ -719,6 +721,8 @@ async function run() {
         // 3-way: side comes from the negRisk market itself + Yes outcome.
         side = resolveSoccerSide(match, outcome, game.away, game.home);
         if (!side) continue;
+      } else if (match.sport === 'UFC' && match.side) {
+        side = match.side;
       } else {
         side = resolveOutcomeSide(outcome, game.away, game.home, title);
       }
@@ -997,7 +1001,7 @@ function mergeRecoveredIntoScanFiles(positions, polyData) {
     if (!data) {
       // If the main scanner didn't produce this file (e.g. no totals
       // today), bootstrap a minimal shape so we can still inject.
-      data = { NHL: {}, CBB: {}, MLB: {}, NBA: {}, SOC: {}, _whitelist_bootstrap: true };
+      data = { NHL: {}, CBB: {}, MLB: {}, NBA: {}, SOC: {}, UFC: {}, _whitelist_bootstrap: true };
     }
 
     for (const pos of bucket.positions) {

@@ -459,7 +459,7 @@ async function main() {
 
   for (const { data: posData, mkt } of posFiles) {
     if (!posData) continue;
-    for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'NFL', 'SOC']) {
+    for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'NFL', 'SOC', 'UFC']) {
       const sportGames = posData[sport] || {};
       for (const [gameKey, gd] of Object.entries(sportGames)) {
         if (!gd.positions) continue;
@@ -490,7 +490,7 @@ async function main() {
 
   for (const { data: posData, mkt } of posFiles) {
     if (!posData) continue;
-    for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'NFL', 'SOC']) {
+    for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'NFL', 'SOC', 'UFC']) {
       const sportGames = posData[sport] || {};
       for (const [gameKey, gd] of Object.entries(sportGames)) {
         if (!gd.positions) continue;

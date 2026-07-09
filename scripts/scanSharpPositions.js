@@ -13,6 +13,7 @@ import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { matchSoccerPositionTitle, resolveSoccerSide } from './lib/soccerTeams.js';
+import { matchUFCPositionTitle } from './lib/ufcFighters.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -323,7 +324,7 @@ function writeIntelExcludedWallets(mmAddrs, traderAddrs) {
 // NHL and MLB share 3-letter city codes (bos, tor, min, col, etc.)
 function buildTodaysGames(polyData) {
   const games = {};
-  for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC']) {
+  for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC']) {
     const sportGames = polyData?.[sport] || {};
     for (const [key, g] of Object.entries(sportGames)) {
       const away = g.awayTeam || '';
@@ -387,9 +388,11 @@ function matchPositionToGame(posTitle, todaysGames, cbbMap) {
 
 // SOC titles name a single side ("Will Mexico win on 2026-06-18?"), so they
 // need their own matcher — extractTeamsFromTitle can't parse them.
+// UFC titles often include "UFC 329:" prefix — use dedicated fighter matcher.
 function matchPositionToGameOrSoccer(posTitle, todaysGames, cbbMap) {
   return matchPositionToGame(posTitle, todaysGames, cbbMap)
-    || matchSoccerPositionTitle(posTitle, todaysGames);
+    || matchSoccerPositionTitle(posTitle, todaysGames)
+    || matchUFCPositionTitle(posTitle, todaysGames);
 }
 
 // ─── Match spread-formatted titles like "Spread: Knicks (-3.5)" ─────────────
@@ -571,7 +574,7 @@ async function run() {
   const cbbMap = loadCBBTeamMap();
   const todaysGames = buildTodaysGames(polyData);
   const gameKeys = Object.keys(todaysGames);
-  console.log(`Today's games: ${gameKeys.length} (${gameKeys.filter(k => todaysGames[k].sport === 'NHL').length} NHL, ${gameKeys.filter(k => todaysGames[k].sport === 'CBB').length} CBB, ${gameKeys.filter(k => todaysGames[k].sport === 'MLB').length} MLB, ${gameKeys.filter(k => todaysGames[k].sport === 'NBA').length} NBA, ${gameKeys.filter(k => todaysGames[k].sport === 'SOC').length} SOC)\n`);
+  console.log(`Today's games: ${gameKeys.length} (${gameKeys.filter(k => todaysGames[k].sport === 'NHL').length} NHL, ${gameKeys.filter(k => todaysGames[k].sport === 'CBB').length} CBB, ${gameKeys.filter(k => todaysGames[k].sport === 'MLB').length} MLB, ${gameKeys.filter(k => todaysGames[k].sport === 'NBA').length} NBA, ${gameKeys.filter(k => todaysGames[k].sport === 'SOC').length} SOC, ${gameKeys.filter(k => todaysGames[k].sport === 'UFC').length} UFC)\n`);
 
   // Existing pipeline: tier + mmScore + sport PnL floor (needed before no-games exit for Vault exclusions)
   const MM_THRESHOLD = 40;
@@ -663,7 +666,7 @@ async function run() {
   if (gameKeys.length === 0) {
     console.log('No games today — skipping scan');
     const outPath = join(ROOT, 'public', 'sharp_positions.json');
-    writeFileSync(outPath, JSON.stringify({ NHL: {}, CBB: {}, MLB: {}, NBA: {}, SOC: {}, scannedAt: new Date().toISOString(), walletsScanned: 0 }, null, 2), 'utf8');
+    writeFileSync(outPath, JSON.stringify({ NHL: {}, CBB: {}, MLB: {}, NBA: {}, SOC: {}, UFC: {}, scannedAt: new Date().toISOString(), walletsScanned: 0 }, null, 2), 'utf8');
     writeVaultExclusionFile({});
     return;
   }
@@ -675,7 +678,7 @@ async function run() {
   for (const filename of ['sharp_positions.json', 'sharp_spread_positions.json', 'sharp_total_positions.json']) {
     const prevData = loadJSON(filename);
     if (!prevData) continue;
-    for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC']) {
+    for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC']) {
       for (const [gameKey, game] of Object.entries(prevData[sport] || {})) {
         for (const pos of (game.positions || [])) {
           if (pos.firstSeen) {
@@ -687,9 +690,9 @@ async function run() {
     }
   }
 
-  const result = { NHL: {}, CBB: {}, MLB: {}, NBA: {}, SOC: {} };
-  const spreadResult = { NHL: {}, CBB: {}, MLB: {}, NBA: {}, SOC: {} };
-  const totalResult = { NHL: {}, CBB: {}, MLB: {}, NBA: {}, SOC: {} };
+  const result = { NHL: {}, CBB: {}, MLB: {}, NBA: {}, SOC: {}, UFC: {} };
+  const spreadResult = { NHL: {}, CBB: {}, MLB: {}, NBA: {}, SOC: {}, UFC: {} };
+  const totalResult = { NHL: {}, CBB: {}, MLB: {}, NBA: {}, SOC: {}, UFC: {} };
   let matchCount = 0;
   let spreadMatchCount = 0;
   let totalMatchCount = 0;
@@ -820,6 +823,9 @@ async function run() {
         // "No" on a single side (= home OR draw) isn't attributable — skip.
         side = resolveSoccerSide(match, outcome, game.away, game.home);
         if (!side) continue;
+      } else if (sport === 'UFC' && match.side) {
+        // Prop titles ("Will Holloway win by KO?") already carry the side.
+        side = match.side;
       } else {
         side = resolveOutcomeSide(outcome, game.away, game.home, title);
       }
@@ -911,7 +917,7 @@ async function run() {
   {
     const bothSidesCount = {};
     for (const resSet of [result, spreadResult, totalResult]) {
-      for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC']) {
+      for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC']) {
         for (const gd of Object.values(resSet[sport] || {})) {
           const walletSides = {};
           for (const pos of gd.positions || []) {
@@ -928,7 +934,7 @@ async function run() {
 
     const allWalletsInResults = new Set();
     for (const resSet of [result, spreadResult, totalResult]) {
-      for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC']) {
+      for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC']) {
         for (const gd of Object.values(resSet[sport] || {})) {
           for (const pos of gd.positions || []) allWalletsInResults.add(pos.wallet);
         }
@@ -949,7 +955,7 @@ async function run() {
     let traderDollarsRemoved = 0;
 
     function stripTraders(resSet, isTotalMarket = false) {
-      for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC']) {
+      for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC']) {
         for (const [gameKey, gd] of Object.entries(resSet[sport] || {})) {
           const removed = gd.positions.filter(p => traderSet.has((p.wallet || '').toLowerCase()));
           gd.positions = gd.positions.filter(p => !traderSet.has((p.wallet || '').toLowerCase()));
@@ -1051,7 +1057,7 @@ async function run() {
   let totalGamesWithPositions = 0;
   let spreadGames = 0;
   let totalGames = 0;
-  for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC']) {
+  for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC']) {
     totalGamesWithPositions += Object.keys(result[sport]).length;
     spreadGames += Object.keys(spreadResult[sport]).length;
     totalGames += Object.keys(totalResult[sport]).length;

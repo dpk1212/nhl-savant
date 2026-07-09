@@ -566,7 +566,7 @@ function loadGameMetadata() {
   const meta = new Map(); // key: `${sport}|${gameKey}` → { commenceTime, away, home, mlOdds: { away, home }, spread, total }
   try {
     const poly = JSON.parse(readFileSync(join(PUBLIC, 'polymarket_data.json'), 'utf8'));
-    for (const sport of ['NBA', 'MLB', 'NHL', 'CBB', 'SOC']) {
+    for (const sport of ['NBA', 'MLB', 'NHL', 'CBB', 'SOC', 'UFC']) {
       const games = poly[sport] || {};
       for (const [gk, g] of Object.entries(games)) {
         const key = `${sport}|${gk}`;
@@ -590,7 +590,7 @@ function loadGameMetadata() {
   }
   try {
     const pinn = JSON.parse(readFileSync(join(PUBLIC, 'pinnacle_history.json'), 'utf8'));
-    for (const sport of ['NBA', 'MLB', 'NHL', 'CBB', 'SOC']) {
+    for (const sport of ['NBA', 'MLB', 'NHL', 'CBB', 'SOC', 'UFC']) {
       const games = pinn[sport] || {};
       for (const [gk, g] of Object.entries(games)) {
         const key = `${sport}|${gk}`;

@@ -15,6 +15,12 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { parseOddsTrader } from '../src/utils/oddsTraderParser.js';
 import { resolveSOCTeam, isMainWorldCupMatchSlug } from './lib/soccerTeams.js';
+import {
+  resolveUFCFighter,
+  makeUFCGameKey,
+  extractUFCFightersFromTitle,
+  isMainUFCFightSlug,
+} from './lib/ufcFighters.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -448,6 +454,9 @@ function matchToGameKey(teams, cbbMap, sport) {
     if (!aCode || !bCode) return null;
     return `${normalize(aCode)}_${normalize(bCode)}`;
   }
+  if (sport === 'UFC') {
+    return makeUFCGameKey(a, b);
+  }
   return null;
 }
 
@@ -612,14 +621,42 @@ async function loadTodaysSchedule(cbbMap) {
     }
   }
 
-  return { validCBB, validNHL, validMLB, validNBA, validSOC, commenceTimes };
+  // UFC: Odds API key is mma_mixed_martial_arts (includes non-UFC orgs).
+  // Polymarket gate (isMainUFCFightSlug) keeps us on UFC fight cards only.
+  const validUFC = new Set();
+  if (ODDS_API_KEY) {
+    try {
+      const url = `https://api.the-odds-api.com/v4/sports/mma_mixed_martial_arts/odds/?apiKey=${ODDS_API_KEY}&regions=us&markets=h2h&oddsFormat=american&bookmakers=fanduel,draftkings,pinnacle`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const games = await res.json();
+        for (const g of games) {
+          const gk = makeUFCGameKey(g.away_team, g.home_team);
+          if (gk) {
+            validUFC.add(gk);
+            if (g.commence_time && !commenceTimes[`UFC:${gk}`]) commenceTimes[`UFC:${gk}`] = g.commence_time;
+          } else {
+            console.warn(`UFC fighter resolution miss: "${g.away_team}" / "${g.home_team}"`);
+          }
+        }
+        const remaining = res.headers.get('x-requests-remaining');
+        console.log(`📋 Today's UFC/MMA (Odds API): ${validUFC.size} fights [credits left: ${remaining}]`);
+      } else {
+        console.warn(`Odds API UFC/MMA error: ${res.status}`);
+      }
+    } catch (e) {
+      console.warn('Could not load UFC schedule from Odds API:', e.message);
+    }
+  }
+
+  return { validCBB, validNHL, validMLB, validNBA, validSOC, validUFC, commenceTimes };
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────
 async function run() {
-  const out = { CBB: {}, NHL: {}, MLB: {}, NBA: {}, SOC: {}, updatedAt: new Date().toISOString() };
+  const out = { CBB: {}, NHL: {}, MLB: {}, NBA: {}, SOC: {}, UFC: {}, updatedAt: new Date().toISOString() };
   const cbbMap = loadCBBTeamMap();
-  const { validCBB, validNHL, validMLB, validNBA, validSOC, commenceTimes } = await loadTodaysSchedule(cbbMap);
+  const { validCBB, validNHL, validMLB, validNBA, validSOC, validUFC, commenceTimes } = await loadTodaysSchedule(cbbMap);
 
   const tags = [
     { slug: 'sports', sport: null },
@@ -634,6 +671,8 @@ async function run() {
     { slug: 'nba', sport: 'NBA' },
     { slug: 'fifa-world-cup', sport: 'SOC' },
     { slug: 'soccer', sport: 'SOC' },
+    { slug: 'ufc', sport: 'UFC' },
+    { slug: 'mma', sport: 'UFC' },
   ];
 
   const seenDates = new Map();  // key -> ET date string of accepted Poly event
@@ -675,8 +714,6 @@ async function run() {
   for (const ev of byId.values()) {
     const id = ev.id ?? ev.slug;
     const title = ev.title || ev.question || '';
-    const teams = extractTeamsFromTitle(title);
-    if (!teams) continue;
 
     // Reject stale events (eventDate > 2 days in the past)
     const evDate = ev.eventDate ? new Date(ev.eventDate).getTime() : null;
@@ -689,11 +726,22 @@ async function run() {
     const hasNhlTag = evTags.includes('nhl') || evTags.includes('hockey');
     const hasMlbTag = evTags.includes('mlb') || evTags.includes('baseball');
     const hasSoccerTag = evTags.includes('fifa-world-cup') || evTags.includes('soccer');
+    const hasUfcTag = evTags.includes('ufc') || evTags.includes('mma');
 
-    let sport = ev._sport === 'CBB' ? 'CBB' : ev._sport === 'ncaa' ? 'CBB' : ev._sport === 'nhl' ? 'NHL' : ev._sport === 'MLB' ? 'MLB' : ev._sport === 'mlb' ? 'MLB' : ev._sport === 'baseball' ? 'MLB' : ev._sport === 'nba' ? 'NBA' : ev._sport === 'NBA' ? 'NBA' : ev._sport === 'SOC' ? 'SOC' : null;
+    let sport = ev._sport === 'CBB' ? 'CBB' : ev._sport === 'ncaa' ? 'CBB' : ev._sport === 'nhl' ? 'NHL' : ev._sport === 'MLB' ? 'MLB' : ev._sport === 'mlb' ? 'MLB' : ev._sport === 'baseball' ? 'MLB' : ev._sport === 'nba' ? 'NBA' : ev._sport === 'NBA' ? 'NBA' : ev._sport === 'SOC' ? 'SOC' : ev._sport === 'UFC' ? 'UFC' : null;
 
     // If tag says ncaa/college, force CBB regardless of _sport from tag_slug
     if (!sport && hasNcaaTag && !hasNbaTag) sport = 'CBB';
+
+    // UFC fight-card slugs are authoritative — detect before generic vs-parse
+    // (generic extractTeamsFromTitle would treat "UFC 329: Max Holloway" as a team).
+    if ((!sport || sport === 'UFC') && isMainUFCFightSlug(ev.slug)) sport = 'UFC';
+    else if (!sport && hasUfcTag && isMainUFCFightSlug(ev.slug)) sport = 'UFC';
+
+    let teams = sport === 'UFC'
+      ? extractUFCFightersFromTitle(title)
+      : extractTeamsFromTitle(title);
+    if (!teams) continue;
 
     if (!sport) {
       const t = title.toLowerCase();
@@ -721,15 +769,23 @@ async function run() {
         else if ((nbaKey && validNBA.has(nbaKey)) || (nbaRevKey && validNBA.has(nbaRevKey))) sport = 'NBA';
       }
     }
-    if (!sport || !['CBB', 'NHL', 'MLB', 'NBA', 'SOC'].includes(sport)) continue;
+    if (!sport || !['CBB', 'NHL', 'MLB', 'NBA', 'SOC', 'UFC'].includes(sport)) continue;
 
     // SOC: only MAIN World Cup match events (drops props: corners, first-to-score,
     // halftime-result; drops futures: winner, starting-11; drops club soccer).
     if (sport === 'SOC' && !isMainWorldCupMatchSlug(ev.slug)) continue;
 
+    // UFC: only MAIN fight-card ML events (drops method/round props + futures).
+    if (sport === 'UFC' && !isMainUFCFightSlug(ev.slug)) continue;
+
     const key1 = matchToGameKey(teams, cbbMap, sport);
     const key2 = matchToGameKey([teams[1], teams[0]], cbbMap, sport);
-    const validSet = sport === 'CBB' ? validCBB : sport === 'MLB' ? validMLB : sport === 'NBA' ? validNBA : sport === 'SOC' ? validSOC : validNHL;
+    const validSet = sport === 'CBB' ? validCBB
+      : sport === 'MLB' ? validMLB
+      : sport === 'NBA' ? validNBA
+      : sport === 'SOC' ? validSOC
+      : sport === 'UFC' ? validUFC
+      : validNHL;
     const keyReversed = !(key1 && validSet.has(key1)) && (key2 && validSet.has(key2));
     const key = keyReversed ? key2 : (key1 && validSet.has(key1)) ? key1 : null;
     if (!key) continue;
@@ -827,6 +883,23 @@ async function run() {
         }
         // mlMarket = away-team market, so its Yes token tracks the away side
         // (matches the away-oriented priceHistory convention below).
+      } else if (sport === 'UFC') {
+        // UFC fight card: one 2-way ML market (fighter names as outcomes) plus
+        // method/round props. Prefer the market whose slug equals the event slug.
+        for (const m of markets) {
+          const slug = (m.slug || '').toLowerCase();
+          const q = (m.question || '').toLowerCase();
+          let outs = m.outcomes;
+          if (typeof outs === 'string') try { outs = JSON.parse(outs); } catch { outs = []; }
+          const isProp = /go-the-distance|win-by|method|totals-|o\/u|rounds?/.test(slug)
+            || /go the distance|win by|method of|o\/u|rounds?/.test(q);
+          if (isProp) continue;
+          const fighterOuts = Array.isArray(outs) && outs.length === 2
+            && outs.every(o => resolveUFCFighter(o));
+          if (slug === String(ev.slug || '').toLowerCase() || fighterOuts) {
+            if (!mlMarket) mlMarket = m;
+          }
+        }
       } else {
         for (const m of markets) {
           const git = (m.groupItemTitle || '').toLowerCase();
@@ -1103,7 +1176,8 @@ async function run() {
   const mlbCount = Object.keys(out.MLB).length;
   const nbaCount = Object.keys(out.NBA).length;
   const socCount = Object.keys(out.SOC).length;
-  console.log(`Wrote ${outPath} — CBB: ${cbbCount}, NHL: ${nhlCount}, MLB: ${mlbCount}, NBA: ${nbaCount}, SOC: ${socCount}`);
+  const ufcCount = Object.keys(out.UFC).length;
+  console.log(`Wrote ${outPath} — CBB: ${cbbCount}, NHL: ${nhlCount}, MLB: ${mlbCount}, NBA: ${nbaCount}, SOC: ${socCount}, UFC: ${ufcCount}`);
   if (cbbCount === 0 && nhlCount === 0 && mlbCount === 0 && nbaCount === 0 && socCount === 0) {
     console.log('(No Polymarket markets matched today\'s schedule)');
   }

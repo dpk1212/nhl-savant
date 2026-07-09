@@ -117,6 +117,7 @@ const LEAGUE_FALLBACK = {
   MLB: { c1: '#1d3557', c2: '#0d1b2a' },
   CBB: { c1: '#FF6B35', c2: '#2a1206' },
   SOC: { c1: '#2ECC71', c2: '#0d3320' },
+  UFC: { c1: '#C0392B', c2: '#2a0f0c' },
 };
 
 function deriveAbbr(name) {
