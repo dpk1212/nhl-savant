@@ -22,6 +22,40 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # TEMP investigation step (first WNBA slate) — remove after dump lands
+      - name: Dump first WNBA slate (sharp_action_positions)
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: |
+          node scripts/_dumpWnbaSlate.mjs
+          echo "===== DUMP JSON ====="
+          cat data/wnba_first_slate_dump.json
+
+      - name: Upload WNBA dump artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-first-slate-dump
+          path: data/wnba_first_slate_dump.json
+          if-no-files-found: warn
+
+      - name: Commit WNBA dump JSON
+        run: |
+          git config --local user.name  "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          mkdir -p data
+          git add data/wnba_first_slate_dump.json
+          git diff --quiet && git diff --staged --quiet || (
+            git commit -m "Dump: first WNBA slate from sharp_action_positions" &&
+            git pull --rebase -X theirs || true
+            for i in 1 2 3; do
+              git push && break
+              echo "Push attempt $i failed, retrying..."
+              sleep 2
+            done
+          )
+
       - name: Grade sharp actions
         env:
           VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
