@@ -15,10 +15,9 @@ name: Rank Today's Top Picks
 #      every pick. Writes public/top_picks_ranked.json.
 #   3. Commit artifacts to main and upload as a workflow artifact.
 #
-# Runs on :30 to avoid racing the fetch-polymarket hourly job that
-# kicks off at :00 — the ranking reflects whatever state
-# sharpFlowPicks was in at :30, which is 3-4 scan cycles into the
-# fetch loop.
+# Runs on :30. fetch-polymarket self-chains ~hourly chunks 6am–11pm ET
+# (inner 4-min cycles); :30 still sits mid-chunk so rank sees several
+# scan cycles of fresh sharpFlowPicks before locking.
 on:
   schedule:
     - cron: '30 * * * *'

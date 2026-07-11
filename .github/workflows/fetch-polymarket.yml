@@ -1,25 +1,28 @@
 name: Fetch Market Data (Polymarket + Kalshi)
 
-# ─── Scheduling note (2026-04-24) ──────────────────────────────────────────
-# GitHub Actions cron is unreliable at sub-15-min cadence — runs are silently
-# queued and dropped under load. Audit of `*/8 * * * *` on this repo showed
-# actual schedule firings only every ~55-65 min (most runs in the UI were
-# workflow_dispatch catch-ups).
+# ─── Scheduling (Option A — self-chain, 2026-07-11) ────────────────────────
+# GitHub Actions cron is unreliable at sub-15-min cadence (silently dropped).
+# We keep ~4-min scans via an inner loop (~12 × 240s ≈ 48 min/run), then
+# self-dispatch the next run so coverage is continuous without babysitting.
 #
-# Fix: trigger once per hour on a reliable cadence and run the fetch +
-# commit + build + deploy pipeline N× internally with a fixed start-to-start
-# interval. Each cycle deploys to GitHub Pages so nhlsavant.com serves fresh
-# sharp_positions.json within one interval of every scan.
+# Day window (America/New_York):
+#   • Starter cron ~6am ET (10:00 UTC during EDT / 11:00 UTC during EST)
+#   • Safety crons ~12pm + ~6pm ET in case the chain broke
+#   • End-of-run: if still 5am–11pm ET and nothing is queued → `gh workflow run`
+#   • After 11pm ET the chain stops until the next morning starter
 #
-# 2026-07-09: tightened 8 min → 4 min. Measured cycle work is ~150–180s
-# (scan + Firestore + build/deploy); the old 480s target was mostly sleep
-# (~328s). 12 × 240s ≈ 48 min/hour — same wall coverage as 6 × 480s.
+# concurrency cancel-in-progress:false → queued safety/cron waits; no kill.
+# Inner loop unchanged (2026-07-09): 12 × ~4 min, work ~150–180s/cycle.
 #
-# Odds API budget: ~290 calls/day at 12 cycles × 24h × ~1-2 calls/cycle,
-# still well under the 50K/mo doubled quota.
+# Odds API budget: ~12 cycles × ~17 waking hours ≈ ~200 cycles/day × ~1–2
+# calls — still well under the 50K/mo quota.
 on:
   schedule:
-    - cron: '0 * * * *'
+    # 6:00 AM ET  (EDT=10:00 UTC · EST=11:00 UTC — pinned to EDT summer)
+    - cron: '0 10 * * *'
+    # Safety restarts if self-chain died: 12:00 PM + 6:00 PM ET (EDT)
+    - cron: '0 16 * * *'
+    - cron: '0 22 * * *'
   workflow_dispatch:
 
 concurrency:
@@ -32,6 +35,7 @@ jobs:
     timeout-minutes: 58
     permissions:
       contents: write
+      actions: write   # required for end-of-run self-dispatch (gh workflow run)
     env:
       VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
       VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
@@ -252,3 +256,39 @@ jobs:
           set -e
           echo ""
           echo "### All ${cycles} cycles complete — $(date -u +%H:%M:%S) UTC"
+
+      # Self-chain: keep a fetch running 5am–11pm ET without hourly cron babysitting.
+      # Skips if another run is already queued (safety cron / prior dispatch).
+      - name: Chain next fetch (5am–11pm ET)
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -e
+          hour=$(TZ=America/New_York date +%H)
+          hour=$((10#$hour))
+          et_now=$(TZ=America/New_York date '+%Y-%m-%d %H:%M:%S %Z')
+          echo "### ET now: ${et_now} (hour=${hour})"
+
+          if [ "$hour" -lt 5 ] || [ "$hour" -ge 23 ]; then
+            echo "### Outside 5am–11pm ET window — chain stops until morning starter cron"
+            exit 0
+          fi
+
+          queued=$(gh run list \
+            --workflow fetch-polymarket.yml \
+            --repo "$GH_REPO" \
+            --status queued \
+            --limit 10 \
+            --json databaseId \
+            --jq 'length' 2>/dev/null || echo 0)
+          queued=$((10#${queued:-0}))
+          if [ "$queued" -gt 0 ]; then
+            echo "### Chain skipped — ${queued} run(s) already queued (concurrency will drain)"
+            exit 0
+          fi
+
+          echo "### Dispatching next fetch-polymarket run…"
+          gh workflow run fetch-polymarket.yml --repo "$GH_REPO"
+          echo "### Chained OK"
