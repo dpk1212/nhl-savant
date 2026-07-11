@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-07-11T21:35:53.052Z",
-  "elapsedSec": 10.2,
+  "scannedAt": "2026-07-11T21:39:56.321Z",
+  "elapsedSec": 11.5,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 34,
   "summary": {
     "total": 192,
     "coveredByMain": 21,
-    "recovered": 35,
-    "recoveredPositions": 138,
-    "noPositions": 136,
+    "recovered": 36,
+    "recoveredPositions": 140,
+    "noPositions": 135,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,7 +16,7 @@
       "ml": 65,
       "spread": 11,
       "total": 14,
-      "dropped_shadow_gate": 43,
+      "dropped_shadow_gate": 45,
       "dropped_duplicate": 5
     }
   },
@@ -102,11 +102,11 @@
       "sports": "NHL,SOC,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x0a77bc0638f13892c8b1d1d2c13ba178540f9d74",
-      "positionsCount": 4,
+      "positionsCount": 5,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 2449,
       "willPassShadowGate": 4,
-      "willDropAtShadowGate": 0,
+      "willDropAtShadowGate": 1,
       "positions": [
         {
           "sport": "UFC",
@@ -143,6 +143,15 @@
           "invested": 320,
           "entryLine": null,
           "passesShadow": true
+        },
+        {
+          "sport": "UFC",
+          "gameKey": "cesaralmeida_damianpinas",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 18,
+          "entryLine": null,
+          "passesShadow": false
         }
       ]
     },
@@ -294,8 +303,24 @@
       "tier": "CONFIRMED",
       "name": "surfandturf",
       "sports": "NBA,NHL,SOC",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x9f2fe025f84839ca81dd8e0338892605702d2ca8"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x9f2fe025f84839ca81dd8e0338892605702d2ca8",
+      "positionsCount": 1,
+      "statsSource": "sports_sharps",
+      "avgSportBet": 133615,
+      "willPassShadowGate": 0,
+      "willDropAtShadowGate": 1,
+      "positions": [
+        {
+          "sport": "UFC",
+          "gameKey": "faridbasharat_johngarza",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 3904,
+          "entryLine": null,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "2e8da5",
@@ -1563,7 +1588,7 @@
           "gameKey": "conormcgregor_maxholloway",
           "marketType": "ml",
           "side": "home",
-          "invested": 538433,
+          "invested": 542107,
           "entryLine": null,
           "passesShadow": true
         }
@@ -1867,7 +1892,7 @@
           "gameKey": "sui_arg",
           "marketType": "ml",
           "side": "home",
-          "invested": 62816,
+          "invested": 62817,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1885,7 +1910,7 @@
           "gameKey": "sui_arg",
           "marketType": "ml",
           "side": "draw",
-          "invested": 3251,
+          "invested": 3248,
           "entryLine": null,
           "passesShadow": true
         },
@@ -2901,7 +2926,7 @@
           "gameKey": "pho_lva",
           "marketType": "spread",
           "side": "away",
-          "invested": 1544,
+          "invested": 1742,
           "entryLine": 8.5,
           "passesShadow": false
         },
