@@ -1,22 +1,22 @@
 {
-  "scannedAt": "2026-07-12T01:46:03.294Z",
-  "elapsedSec": 21.1,
+  "scannedAt": "2026-07-12T01:49:44.452Z",
+  "elapsedSec": 18.6,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 25,
   "summary": {
     "total": 192,
-    "coveredByMain": 16,
+    "coveredByMain": 17,
     "recovered": 35,
-    "recoveredPositions": 78,
-    "noPositions": 141,
+    "recoveredPositions": 80,
+    "noPositions": 140,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 38,
+      "ml": 41,
       "spread": 7,
       "total": 3,
-      "dropped_shadow_gate": 30,
+      "dropped_shadow_gate": 29,
       "dropped_duplicate": 0
     }
   },
@@ -84,10 +84,10 @@
       "sports": "NHL,SOC,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x0a77bc0638f13892c8b1d1d2c13ba178540f9d74",
-      "positionsCount": 3,
+      "positionsCount": 4,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 2449,
-      "willPassShadowGate": 3,
+      "willPassShadowGate": 4,
       "willDropAtShadowGate": 0,
       "positions": [
         {
@@ -114,6 +114,15 @@
           "marketType": "ml",
           "side": "away",
           "invested": 2400,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "UFC",
+          "gameKey": "conormcgregor_maxholloway",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 1999,
           "entryLine": null,
           "passesShadow": true
         }
@@ -280,7 +289,7 @@
           "gameKey": "conormcgregor_maxholloway",
           "marketType": "ml",
           "side": "away",
-          "invested": 159434,
+          "invested": 175475,
           "entryLine": null,
           "passesShadow": true
         },
@@ -448,7 +457,7 @@
           "gameKey": "conormcgregor_maxholloway",
           "marketType": "ml",
           "side": "home",
-          "invested": 236231,
+          "invested": 236417,
           "entryLine": null,
           "passesShadow": true
         }
@@ -834,7 +843,7 @@
           "gameKey": "nyl_tor",
           "marketType": "spread",
           "side": "away",
-          "invested": 14409,
+          "invested": 14412,
           "entryLine": 1.5,
           "passesShadow": true
         },
@@ -1114,8 +1123,24 @@
       "tier": "CONFIRMED",
       "name": "0xd4aa6f8e91cfea29b66a48ebff52814",
       "sports": "NBA,SOC,NHL,MLB",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x709e8dcb133555794decc598e07f2c923b8366f5"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x709e8dcb133555794decc598e07f2c923b8366f5",
+      "positionsCount": 1,
+      "statsSource": "sports_sharps",
+      "avgSportBet": 120719,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "UFC",
+          "gameKey": "conormcgregor_maxholloway",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 280632,
+          "entryLine": null,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "842db4",
@@ -1466,7 +1491,7 @@
           "gameKey": "conormcgregor_maxholloway",
           "marketType": "ml",
           "side": "away",
-          "invested": 2295,
+          "invested": 2297,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1520,7 +1545,7 @@
           "gameKey": "benoitsaintdenis_paddypimblett",
           "marketType": "ml",
           "side": "home",
-          "invested": 360,
+          "invested": 455,
           "entryLine": null,
           "passesShadow": false
         },
@@ -1990,7 +2015,7 @@
           "gameKey": "conormcgregor_maxholloway",
           "marketType": "ml",
           "side": "away",
-          "invested": 7275,
+          "invested": 7280,
           "entryLine": null,
           "passesShadow": true
         }
@@ -2009,24 +2034,7 @@
       "tier": "CONFIRMED",
       "name": "NO-GOD-PLEASE-NO",
       "sports": "NBA",
-      "status": "RECOVERED_VIA_WHITELIST_SCAN",
-      "addr": "0x5257aa84944804bbb0c718814ebebeeafaca3e2a",
-      "positionsCount": 1,
-      "statsSource": "sports_sharps",
-      "avgSportBet": 62560,
-      "willPassShadowGate": 0,
-      "willDropAtShadowGate": 1,
-      "positions": [
-        {
-          "sport": "UFC",
-          "gameKey": "benoitsaintdenis_paddypimblett",
-          "marketType": "ml",
-          "side": "away",
-          "invested": 0,
-          "entryLine": null,
-          "passesShadow": false
-        }
-      ]
+      "status": "COVERED_BY_MAIN"
     },
     {
       "walletShort": "cad739",
@@ -2256,12 +2264,21 @@
       "sports": "SOC,NBA,MLB",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x3dfb153c197d4c19d3b31c1ecd2c7b6860eeabaf",
-      "positionsCount": 4,
+      "positionsCount": 5,
       "statsSource": "sports_sharps",
       "avgSportBet": 31016,
-      "willPassShadowGate": 4,
+      "willPassShadowGate": 5,
       "willDropAtShadowGate": 0,
       "positions": [
+        {
+          "sport": "UFC",
+          "gameKey": "conormcgregor_maxholloway",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 136800,
+          "entryLine": null,
+          "passesShadow": true
+        },
         {
           "sport": "UFC",
           "gameKey": "mariobautista_corysandhagen",
