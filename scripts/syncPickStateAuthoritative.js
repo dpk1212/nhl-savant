@@ -576,8 +576,12 @@ function computePathDSlice(walletDetails, mySide) {
 //        · EDGE≥10 (Q5 extreme) → 6u on A/B/C
 //        · EDGE<0 (toxic mid) → hard-cap 1u on A/B/C (DISSENT → 0)
 //   3. RESCUE — still 0u + score>0 + EDGE≥3 → WINNER @ 6u (E10+) / 4u (E5–10) / 3u (E3–5)
-// CF Jun1–Jul11 (causal): E5@4/E3@3 pack ≈ +50u vs actual on full book.
-// E10→6u / EDGE<0 cap: utilization of quintile findings (2026-07-12).
+//   4. TOP-WINNER E (2026-07-12) — follow unopposed elites / cut junk
+//        · topVsTop OR (Top5 on AG only) → cap 1u
+//        · elite-unopp OR Top5-unopp @ EDGE≥5 → floor 4u (E10→6u); muted → WINNER
+//        · EDGE≥10 + Top5 FOR (not opposed) → floor 6u
+//        · A/B/C/D stake + no Top5 FOR + EDGE<5 → 0u (junk cut; keeps WINNER@E3+)
+// CF vs v12abcd production Jun1–Jul12: policy E ≈ +30u; OOS ≈ +33u.
 const WINNER_ALIGN_LIVE_FROM = '2026-07-12';
 const WINNER_ALIGN_MIN_N = 8;
 const WINNER_ALIGN_FADE_TOP_WR = 60;
@@ -589,11 +593,18 @@ const WINNER_ALIGN_RESCUE_E10_UNITS = 6;
 const WINNER_ALIGN_RESCUE_E5_UNITS = 4;
 const WINNER_ALIGN_RESCUE_E3_UNITS = 3;
 const WINNER_ALIGN_BAD_EDGE_CAP = 1; // EDGE < 0 → max stake (A/B/C)
+const WINNER_ALIGN_ELITE_WR = 60; // absolute WR floor for "elite unopposed"
+const WINNER_ALIGN_TOP_N = 5; // per-sport Top-N by featured WR
+const WINNER_ALIGN_OPPOSED_CAP = 1;
 const WINNER_ALIGN_MUTE_TIERS = new Set([
   'SUPER', 'TOP', 'TOP+', 'MINI', 'MINI-', 'CONFIRMED',
   'RANK', 'SHARP', 'SHARP-PRIME',
 ]);
 const WINNER_ALIGN_PATH_A = new Set(['SUPER', 'TOP', 'TOP+', 'MINI', 'MINI-', 'CONFIRMED']);
+const WINNER_ALIGN_JUNK_CUT_TIERS = new Set([
+  ...WINNER_ALIGN_MUTE_TIERS,
+  'DISSENT',
+]);
 function isWinnerAlignLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= WINNER_ALIGN_LIVE_FROM;
 }
@@ -605,15 +616,47 @@ function sportFeaturedWr(profile, sport) {
   if (n < WINNER_ALIGN_MIN_N || !Number.isFinite(wr)) return null;
   return wr;
 }
-/** Mean FOR−AG sport WR edge + fade-top diagnostics from walletDetails. */
-function computeWinnerAlign(walletDetails, mySide, sport, walletProfiles) {
+/**
+ * Per-sport leaderboards from sharpWalletProfiles (n≥8 featured WR).
+ * Built once per sync cycle — Top-5 by WR and elite (WR≥60) sets.
+ */
+function buildSportWinnerBoards(walletProfiles) {
+  const bySport = new Map(); // sport -> [{ short, wr, n }]
+  for (const [shortRaw, profile] of walletProfiles) {
+    const short = String(shortRaw || '').slice(-6).toLowerCase();
+    if (!short || !profile?.bySport) continue;
+    for (const [sport, rec] of Object.entries(profile.bySport)) {
+      const n = Number(rec?.picks?.n) || 0;
+      const wr = Number(rec?.picks?.wr);
+      if (n < WINNER_ALIGN_MIN_N || !Number.isFinite(wr)) continue;
+      if (!bySport.has(sport)) bySport.set(sport, []);
+      bySport.get(sport).push({ short, wr, n });
+    }
+  }
+  const boards = new Map();
+  for (const [sport, arr] of bySport) {
+    const sorted = [...arr].sort((a, b) => b.wr - a.wr || b.n - a.n);
+    boards.set(sport, {
+      top5: new Set(sorted.slice(0, WINNER_ALIGN_TOP_N).map((x) => x.short)),
+      elite60: new Set(arr.filter((x) => x.wr >= WINNER_ALIGN_ELITE_WR).map((x) => x.short)),
+    });
+  }
+  return boards;
+}
+/** Mean FOR−AG sport WR edge + fade-top + top-winner diagnostics. */
+function computeWinnerAlign(walletDetails, mySide, sport, walletProfiles, sportWinnerBoards = null) {
   const empty = {
     forWrs: [], agWrs: [], forN: 0, agN: 0, meanFor: null, meanAg: null, edge: null,
     topFor: null, topAg: null, hasBoth: false, fadeTop60: false, meanBehind5: false,
+    hasTop5For: false, hasTop5Ag: false, hasE60For: false, hasE60Ag: false,
+    topUnopp: false, eliteUnopp: false, topVsTop: false,
   };
   if (!Array.isArray(walletDetails) || !mySide || !sport) return empty;
+  const board = sportWinnerBoards?.get?.(sport) || null;
   const forWrs = [];
   const agWrs = [];
+  const forShorts = [];
+  const agShorts = [];
   const seen = new Set();
   for (const w of walletDetails) {
     const short = String(w.walletShort || w.wallet || '').slice(-6).toLowerCase();
@@ -622,8 +665,8 @@ function computeWinnerAlign(walletDetails, mySide, sport, walletProfiles) {
     const profile = walletProfiles.get(short) || walletProfiles.get(short.toUpperCase());
     const wr = sportFeaturedWr(profile, sport);
     if (wr == null) continue;
-    if (w.side === mySide) forWrs.push(wr);
-    else if (w.side) agWrs.push(wr);
+    if (w.side === mySide) { forWrs.push(wr); forShorts.push(short); }
+    else if (w.side) { agWrs.push(wr); agShorts.push(short); }
   }
   const meanFor = forWrs.length ? forWrs.reduce((s, x) => s + x, 0) / forWrs.length : null;
   const meanAg = agWrs.length ? agWrs.reduce((s, x) => s + x, 0) / agWrs.length : null;
@@ -635,10 +678,30 @@ function computeWinnerAlign(walletDetails, mySide, sport, walletProfiles) {
     && topAg >= WINNER_ALIGN_FADE_TOP_WR
     && (topFor == null || topAg > topFor);
   const meanBehind5 = hasBoth && edge <= WINNER_ALIGN_MEAN_BEHIND;
+  let hasTop5For = false, hasTop5Ag = false, hasE60For = false, hasE60Ag = false;
+  if (board) {
+    for (const s of forShorts) {
+      if (board.top5.has(s)) hasTop5For = true;
+      if (board.elite60.has(s)) hasE60For = true;
+    }
+    for (const s of agShorts) {
+      if (board.top5.has(s)) hasTop5Ag = true;
+      if (board.elite60.has(s)) hasE60Ag = true;
+    }
+  } else {
+    // Fallback without boards: absolute WR thresholds only (no Top-5 rank).
+    hasE60For = forWrs.some((wr) => wr >= WINNER_ALIGN_ELITE_WR);
+    hasE60Ag = agWrs.some((wr) => wr >= WINNER_ALIGN_ELITE_WR);
+  }
+  const topUnopp = hasTop5For && !hasTop5Ag;
+  const eliteUnopp = hasE60For && !hasE60Ag;
+  const topVsTop = hasTop5For && hasTop5Ag;
   return {
     forWrs, agWrs, forN: forWrs.length, agN: agWrs.length,
     meanFor, meanAg, edge, topFor, topAg,
     hasBoth, fadeTop60, meanBehind5,
+    hasTop5For, hasTop5Ag, hasE60For, hasE60Ag,
+    topUnopp, eliteUnopp, topVsTop,
   };
 }
 
@@ -1000,6 +1063,7 @@ async function createMissingLockedPicks({
   db, groups, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn,
   walletStatsFn, walletPriorStatsFn,
   existingDocIds, gameMeta, now, dryRun, force,
+  sportWinnerBoards = null,
 }) {
   const created = []; // { col, docId, side, ags, agsTotal }
   const skipped = []; // { reason, ... }
@@ -1273,7 +1337,7 @@ async function createMissingLockedPicks({
       }
       // EDGE feature — stamp at create so the datapoint exists from first write.
       if (createV121Eligible && Array.isArray(walletDetails) && walletDetails.length > 0) {
-        const waCreate = computeWinnerAlign(walletDetails, side, sport, walletProfiles);
+        const waCreate = computeWinnerAlign(walletDetails, side, sport, walletProfiles, sportWinnerBoards);
         v8Stamps.v8_winnerAlignEdge = waCreate.edge;
         v8Stamps.v8_winnerAlignMeanFor = waCreate.meanFor;
         v8Stamps.v8_winnerAlignMeanAg = waCreate.meanAg;
@@ -1284,6 +1348,11 @@ async function createMissingLockedPicks({
         v8Stamps.v8_winnerAlignHasBoth = waCreate.hasBoth;
         v8Stamps.v8_winnerAlignFadeTop60 = waCreate.fadeTop60;
         v8Stamps.v8_winnerAlignMeanBehind5 = waCreate.meanBehind5;
+        v8Stamps.v8_winnerAlignHasTop5For = waCreate.hasTop5For;
+        v8Stamps.v8_winnerAlignHasTop5Ag = waCreate.hasTop5Ag;
+        v8Stamps.v8_winnerAlignTopUnopp = waCreate.topUnopp;
+        v8Stamps.v8_winnerAlignEliteUnopp = waCreate.eliteUnopp;
+        v8Stamps.v8_winnerAlignTopVsTop = waCreate.topVsTop;
         v8Stamps.v8_winnerAlignAction = null;
         v8Stamps.v8_winnerAlignEvaluatedAt = now;
       }
@@ -1448,7 +1517,7 @@ function spreadLockLooksLikeMlBleed(lockOdds, peakOdds, spreadOdds, mlOdds) {
   return false;
 }
 
-function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn, walletPriorStatsFn, gameMeta = null }) {
+function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn, walletPriorStatsFn, gameMeta = null, sportWinnerBoards = null }) {
   const pickDate = pick.date || TARGET_DATE;
   const sport = pick.sport;
   const lockStage = sd.lockStage || null;
@@ -1740,9 +1809,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   let winnerMuted = false;
   let winnerRescued = false;
   let winnerSized = false;
-  let winnerAlignAction = null; // 'mute' | 'size' | 'rescue' | null
+  let winnerTopFloored = false;
+  let winnerTopCapped = false;
+  let winnerTopJunkCut = false;
+  let winnerAlignAction = null; // 'mute' | 'size' | 'rescue' | 'top_floor' | 'top_cap' | 'top_junk' | null
   if (v121Eligible && Array.isArray(wd) && wd.length > 0) {
-    winnerAlign = computeWinnerAlign(wd, side, pick.sport, walletProfiles);
+    winnerAlign = computeWinnerAlign(wd, side, pick.sport, walletProfiles, sportWinnerBoards);
   }
   if (winnerAlign
       && isWinnerAlignLive(pickDate)
@@ -1845,6 +1917,67 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       winnerRescued = true;
       winnerMuted = false;
       winnerAlignAction = 'rescue';
+    }
+
+    // 4) TOP-WINNER POLICY E — caps first, then floors, then junk cut
+    //    Caps never get overwritten by floors (opposed fights stay capped).
+    if (wa.hasBoth && !(Number.isFinite(sd.manualStake) && sd.manualStake > 0)) {
+      const e = wa.edge;
+      const beforeTop = finalUnitsApplied;
+      const opposed = wa.topVsTop || (wa.hasTop5Ag && !wa.hasTop5For);
+
+      if (opposed && finalUnitsApplied > WINNER_ALIGN_OPPOSED_CAP) {
+        finalUnitsApplied = Math.round(oddsCap(WINNER_ALIGN_OPPOSED_CAP, sideOdds) * 100) / 100;
+        winnerTopCapped = true;
+        winnerAlignAction = 'top_cap';
+      } else if (!opposed) {
+        let floor = null;
+        if ((wa.eliteUnopp || wa.topUnopp) && e >= WINNER_ALIGN_EDGE5) {
+          floor = e >= WINNER_ALIGN_EDGE10
+            ? WINNER_ALIGN_RESCUE_E10_UNITS
+            : WINNER_ALIGN_RESCUE_E5_UNITS;
+        } else if (e >= WINNER_ALIGN_EDGE10 && wa.hasTop5For) {
+          floor = WINNER_ALIGN_RESCUE_E10_UNITS;
+        }
+        if (floor != null && finalUnitsApplied < floor) {
+          const wasMuted = finalUnitsApplied <= 0;
+          finalUnitsApplied = Math.round(oddsCap(floor, sideOdds) * 100) / 100;
+          if (wasMuted) {
+            hcStakeTier = 'WINNER';
+            winnerRescued = true;
+            winnerMuted = false;
+          }
+          winnerTopFloored = true;
+          winnerAlignAction = 'top_floor';
+        }
+      }
+
+      // Junk cut: A/B/C/D stake with no Top-5 FOR and EDGE<5 → 0.
+      // Preserve WINNER rescues at EDGE≥3 (Path E ladder).
+      const tierForJunk = hcStakeTier;
+      if (finalUnitsApplied > 0
+          && tierForJunk
+          && WINNER_ALIGN_JUNK_CUT_TIERS.has(tierForJunk)
+          && !wa.hasTop5For
+          && e < WINNER_ALIGN_EDGE5) {
+        finalUnitsApplied = 0;
+        winnerTopJunkCut = true;
+        winnerMuted = true;
+        winnerAlignAction = 'top_junk';
+      } else if (finalUnitsApplied > 0
+          && tierForJunk === 'WINNER'
+          && !wa.hasTop5For
+          && e < WINNER_ALIGN_EDGE3) {
+        // WINNER that drifted below E3 with no Top-5 — kill
+        finalUnitsApplied = 0;
+        winnerTopJunkCut = true;
+        winnerMuted = true;
+        winnerAlignAction = 'top_junk';
+      }
+
+      if (Math.abs(finalUnitsApplied - beforeTop) < 0.05) {
+        // no-op
+      }
     }
   }
 
@@ -2108,6 +2241,11 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       patch.v8_winnerAlignHasBoth = winnerAlign.hasBoth;
       patch.v8_winnerAlignFadeTop60 = winnerAlign.fadeTop60;
       patch.v8_winnerAlignMeanBehind5 = winnerAlign.meanBehind5;
+      patch.v8_winnerAlignHasTop5For = winnerAlign.hasTop5For;
+      patch.v8_winnerAlignHasTop5Ag = winnerAlign.hasTop5Ag;
+      patch.v8_winnerAlignTopUnopp = winnerAlign.topUnopp;
+      patch.v8_winnerAlignEliteUnopp = winnerAlign.eliteUnopp;
+      patch.v8_winnerAlignTopVsTop = winnerAlign.topVsTop;
       patch.v8_winnerAlignAction = winnerAlignAction;
       patch.v8_winnerAlignEvaluatedAt = now;
     } else if (sd.v8_winnerAlignEdge != null || sd.v8_winnerAlignEvaluatedAt != null) {
@@ -2121,11 +2259,16 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       patch.v8_winnerAlignHasBoth = admin.firestore.FieldValue.delete();
       patch.v8_winnerAlignFadeTop60 = admin.firestore.FieldValue.delete();
       patch.v8_winnerAlignMeanBehind5 = admin.firestore.FieldValue.delete();
+      patch.v8_winnerAlignHasTop5For = admin.firestore.FieldValue.delete();
+      patch.v8_winnerAlignHasTop5Ag = admin.firestore.FieldValue.delete();
+      patch.v8_winnerAlignTopUnopp = admin.firestore.FieldValue.delete();
+      patch.v8_winnerAlignEliteUnopp = admin.firestore.FieldValue.delete();
+      patch.v8_winnerAlignTopVsTop = admin.firestore.FieldValue.delete();
       patch.v8_winnerAlignAction = admin.firestore.FieldValue.delete();
       patch.v8_winnerAlignEvaluatedAt = admin.firestore.FieldValue.delete();
     }
   }
-  if (winnerMuted) {
+  if (winnerMuted && winnerAlignAction === 'mute') {
     const why = winnerAlign?.fadeTop60
       ? `fadeTop ${winnerAlign.topAg?.toFixed?.(1) ?? winnerAlign.topAg}`
       : `meanEdge ${winnerAlign?.edge?.toFixed?.(1) ?? winnerAlign?.edge}`;
@@ -2137,10 +2280,28 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       + `→ ${finalUnitsApplied}u (${hcStakeTier})`
     );
   }
-  if (winnerRescued) {
+  if (winnerRescued && !winnerTopFloored) {
     changes.push(
       `WINNER-ALIGN RESCUE: edge=${winnerAlign?.edge?.toFixed?.(1) ?? '—'} `
       + `→ ${finalUnitsApplied}u WINNER`
+    );
+  }
+  if (winnerTopCapped) {
+    changes.push(
+      `TOP-WINNER CAP: ${winnerAlign?.topVsTop ? 'topVsTop' : 'top5 on AG'} `
+      + `→ ${finalUnitsApplied}u`
+    );
+  }
+  if (winnerTopFloored) {
+    changes.push(
+      `TOP-WINNER FLOOR: ${winnerAlign?.eliteUnopp ? 'eliteUnopp' : winnerAlign?.topUnopp ? 'topUnopp' : 'E10+Top5'} `
+      + `edge=${winnerAlign?.edge?.toFixed?.(1) ?? '—'} → ${finalUnitsApplied}u`
+      + `${hcStakeTier === 'WINNER' ? ' WINNER' : ''}`
+    );
+  }
+  if (winnerTopJunkCut) {
+    changes.push(
+      `TOP-WINNER JUNK CUT: no Top5 FOR + edge=${winnerAlign?.edge?.toFixed?.(1) ?? '—'} < 5 → 0u`
     );
   }
   // Always persist EDGE diagnostics when they drift — even if units unchanged —
@@ -2155,6 +2316,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       || (sd.v8_winnerAlignAction || null) !== (winnerAlignAction || null)
       || !!sd.v8_winnerAlignFadeTop60 !== !!winnerAlign.fadeTop60
       || !!sd.v8_winnerAlignMeanBehind5 !== !!winnerAlign.meanBehind5
+      || !!sd.v8_winnerAlignHasTop5For !== !!winnerAlign.hasTop5For
+      || !!sd.v8_winnerAlignTopUnopp !== !!winnerAlign.topUnopp
+      || !!sd.v8_winnerAlignEliteUnopp !== !!winnerAlign.eliteUnopp
+      || !!sd.v8_winnerAlignTopVsTop !== !!winnerAlign.topVsTop
       || (sd.v8_winnerAlignForN || 0) !== (winnerAlign.forN || 0)
       || (sd.v8_winnerAlignAgN || 0) !== (winnerAlign.agN || 0)
       || !!sd.v8_winnerAlignHasBoth !== !!winnerAlign.hasBoth;
@@ -2404,6 +2569,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         forN: winnerAlign.forN,
         agN: winnerAlign.agN,
         hasBoth: winnerAlign.hasBoth,
+        topUnopp: winnerAlign.topUnopp,
+        eliteUnopp: winnerAlign.eliteUnopp,
+        topVsTop: winnerAlign.topVsTop,
         action: winnerAlignAction,
       } : null,
       winnerRescued,
@@ -2434,6 +2602,8 @@ async function main() {
   const profilesSnap = await db.collection('sharpWalletProfiles').get();
   profilesSnap.forEach(d => walletProfiles.set(d.id.toLowerCase(), d.data()));
   console.log(`Loaded ${walletProfiles.size} sharpWalletProfiles`);
+  const sportWinnerBoards = buildSportWinnerBoards(walletProfiles);
+  console.log(`Sport winner boards: ${sportWinnerBoards.size} sports (Top-${WINNER_ALIGN_TOP_N} + elite≥${WINNER_ALIGN_ELITE_WR})`);
 
   // Load AGS-U calibration + build the proven / HC-eligible predicates.
   // AGS-U v12 is the SOLE decision input — drives lock/mute/sizing for every
@@ -2598,7 +2768,7 @@ async function main() {
           sd, side: sideKey, pick, mkt, group, walletProfiles, now,
           force: FORCE,
           agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn, walletPriorStatsFn,
-          gameMeta,
+          gameMeta, sportWinnerBoards,
         });
         if (result.skipped) {
           if (result.reason === 'not_locked_or_lean') stats.skipped_not_locked++;
@@ -2794,6 +2964,7 @@ async function main() {
     walletStatsFn, walletPriorStatsFn,
     existingDocIds, gameMeta, now,
     dryRun: DRY_RUN, force: FORCE,
+    sportWinnerBoards,
   });
   stats.created_missing = cm.created.length;
   if (cm.created.length === 0) {

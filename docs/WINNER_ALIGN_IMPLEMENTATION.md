@@ -1,6 +1,6 @@
 # Winner-Align Implementation
 
-_Status: **SHIPPED** on `pathd-v12abcd-live` · live from **2026-07-12** · rescue **E10@6u / E5@4u / E3@3u** · bad-EDGE cap **1u**._
+_Status: **SHIPPED** on `pathd-v12abcd-live` · live from **2026-07-12** · rescue **E10@6u / E5@4u / E3@3u** · bad-EDGE cap **1u** · **Top-Winner Policy E** (unopposed floors + junk cut)._
 
 Site thesis: **follow the real winners.**
 
@@ -18,6 +18,7 @@ Code: `scripts/syncPickStateAuthoritative.js` (WINNER-ALIGN block after Path D).
 6. **Null-tier book** — ~half of Jun1+ stakes lack `v8_hcStakeTier`; mute/size only hit stamped A/B/C. Rescues still fire on any muted score>0 + EDGE≥3.
 7. **Correlation** — CF treats bets independent; same-slate correlation not modeled.
 8. **No side flips** — mute/size/rescue only. T-15 freeze unchanged.
+9. **Top-Winner E** — CF vs full v12abcd production (~+47u actual) ≈ **+30u** full / **+33u** OOS. Partly overlaps Path E rescue; unique meat is unopposed gate + no-Top5 junk cut.
 
 ---
 
@@ -56,8 +57,20 @@ Odds-cap still applies. Universal: any A/B/C stake with EDGE&lt;0 hard-capped at
 - **EDGE≥10 → 6u** · **EDGE 5–10 → 4u** · **EDGE 3–5 → 3u**
 - `v8_hcStakeTier = WINNER`
 
+### 4. TOP-WINNER POLICY E (follow unopposed elites / cut junk)
+Built once per cycle from `sharpWalletProfiles`: per-sport **Top-5** by featured WR (n≥8) and **elite** = WR≥60.
+
+| Step | Rule | Action |
+|------|------|--------|
+| Cap first | Top-5 FOR **and** Top-5 AG (topVsTop), **or** Top-5 on AG only | → **1u** max |
+| Floor | Elite-unopp **or** Top5-unopp @ EDGE≥5 | → floor **4u** (E10→**6u**); if was 0u → `WINNER` |
+| Floor | EDGE≥10 + Top5 FOR (not opposed) | → floor **6u** |
+| Junk cut | A/B/C/D stake + **no** Top5 FOR + EDGE&lt;5 | → **0u** (preserves WINNER @ EDGE≥3) |
+
+Actions stamped: `top_cap` | `top_floor` | `top_junk`.
+
 ### Stamps
-`v8_winnerAlignEdge`, `MeanFor/Ag`, `TopFor/Ag`, `FadeTop60`, `MeanBehind5`, `Action` (`mute`|`size`|`rescue`).
+`v8_winnerAlignEdge`, `MeanFor/Ag`, `TopFor/Ag`, `FadeTop60`, `MeanBehind5`, `HasTop5For/Ag`, `TopUnopp`, `EliteUnopp`, `TopVsTop`, `Action` (`mute`|`size`|`rescue`|`top_floor`|`top_cap`|`top_junk`).
 
 ---
 
@@ -72,16 +85,15 @@ Odds-cap still applies. Universal: any A/B/C stake with EDGE&lt;0 hard-capped at
 
 ---
 
-## CF vs actual Jun1–Jul11 (full book)
+## CF vs actual Jun1–Jul12 (full v12abcd production book)
 
 | Policy | PnL | Δ vs actual |
 |--------|----:|------------:|
-| Actual | +55.6u | — |
-| Mute + size | +70.9u | +15u |
-| Full E5@4 / E3@2 | +112u | +57u |
-| **Full E5@4 / E3@3 (base ship)** | ~mid | expect **~+50u+** class |
+| **Actual v12abcd** (470 stakes) | **+46.9u** | — |
+| Mute + size + rescue (Path E base) | (shipped earlier) | ~+50u class on prior CF window |
+| **Top-Winner Policy E** (on top of actual) | **~+77u** | **+30.2u** (OOS **+33.3u**) |
 
-Path-stamped A/B/C + rescues: same ΔPnL (~+48–57u depending on rescue ladder). E10→6u / bad-EDGE shrink are utilization of quintile findings (2026-07-12) — monitor in AGS-U §5d.
+Daily volume (Policy E CF): ~−1 ticket/day, ~+4u/day (fewer bets, bigger clean ones).
 
 ---
 
@@ -92,7 +104,8 @@ Path-stamped A/B/C + rescues: same ΔPnL (~+48–57u depending on rescue ladder)
 - [x] RESCUE WINNER @ 6/4/3
 - [x] Date gate + stamps
 - [x] AGS-U §5d full EDGE monitor (ladder, findings watch, actions, vs AGS)
-- [ ] Monitor first 2 weeks: WINNER WR by band, mute kill rate, E3-slice PnL, E10 WR, EDGE&lt;0 staked bleed
+- [x] **TOP-WINNER POLICY E** (unopposed floors + opposed cap + junk cut)
+- [ ] Monitor first 2 weeks: WINNER WR by band, mute kill rate, E3-slice PnL, E10 WR, EDGE&lt;0 staked bleed, top_floor / top_junk rates
 - [ ] UI badge for `WINNER` tier (if not already generic)
 
 ## CRITICAL — Report vs causal (2026-07-12)
