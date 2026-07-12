@@ -478,38 +478,46 @@ function computeRankSlice(walletDetails, mySide, sport, walletProfiles) {
 //     settled positions  (our grading of their real-money Polymarket trades)
 //   • mean picks.wr across FOR backers (each ≥ SHARP_MIN_PN settled picks) ≥ floor
 //   • ≥ SHARP_MIN_FOR distinct sharps on the FOR side (dissent allowed)
-//   • american odds softer than SHARP_NO_CHALK_ODDS (no ≤-150 chalk rescues)
+//   • (retune+) american odds softer than SHARP_NO_CHALK_ODDS (no ≤-150 chalk)
 // Profiles are read AT SCORING TIME for a LIVE pick (today's games unsettled), so
 // — exactly like RANK-RESCUE — the read is leak-free / point-in-time.
+// Also drives the MINI cut (gate-fail MINI). TOP boost is date-gated OFF after
+// the retune cutover. RANK / SUPER / TOP / MINI-pass / CONFIRMED are untouched.
 //
-// Live calibration (graded Path C 2026-06-26→07-11, 78 sides): defaults ran
-// 39-39 / −24.5u / −9.6% ROI. Grid + leak-free walk-forward retune:
-//   for≥3 + no-chalk rescue + TOP boost OFF + keep MINI- cut
-// → 35-26 / +8.8u / +5.0% ROI (both date halves green). Raising $ROI/WR floors
-// alone did not beat that package; disabling TOP+ and requiring 3+ FOR did.
-// Also drives the MINI cut (gate-fail MINI). TOP boost stays coded but OFF.
-const SHARP_LIVE_FROM   = '2026-06-26';  // cutover — history is never rewritten
+// Retune (SHARP_C_RETUNE_FROM onward) — live Path C 2026-06-26→07-11 ran
+// 39-39 / −24.5u; for≥3 + no-chalk + TOP boost OFF → +8.8u / +5% ROI.
+// Pre-retune dates keep legacy for≥2 + TOP boost so already-published slates
+// are not resized. Graded/COMPLETED docs are never rewritten either way.
+const SHARP_LIVE_FROM   = '2026-06-26';  // original Path C cutover
+const SHARP_C_RETUNE_FROM = '2026-07-13'; // optimal-levels cutover (forward-only)
 const SHARP_MIN_QN      = 8;             // min settled positions for a $ROI read
 const SHARP_MIN_QROI    = 10;            // positions.dollarRoi threshold (%)
 const SHARP_MIN_PN      = 5;             // min settled picks to count toward wr
 const SHARP_WR_BASE     = 50;            // mean picks.wr floor — SHARP
 const SHARP_WR_PRIME    = 55;            // mean picks.wr floor — SHARP-PRIME boost
-const SHARP_MIN_FOR     = 3;             // ≥3 distinct FOR-side sharps (was 2; for=2 ran −36% live)
-const SHARP_NO_CHALK_ODDS = -150;        // skip SHARP rescue when odds ≤ this (chalk)
+const SHARP_MIN_FOR_LEGACY = 2;          // pre-retune consensus floor
+const SHARP_MIN_FOR_RETUNE = 3;          // retune consensus floor
+const SHARP_NO_CHALK_ODDS = -150;        // retune: skip SHARP rescue when odds ≤ this
 const SHARP_UNITS       = 3;             // SHARP rescue stake
 const SHARP_PRIME_UNITS = 4;             // SHARP-PRIME rescue stake
-const TOP_BOOST_ENABLED = false;         // live: TOP+ boost ran −9% ROI — leave at HC TOP 4u
-const TOP_BOOST_UNITS   = 5;             // HC-1 TOP + proven-$ → boost 4u → 5u (inert while OFF)
+const TOP_BOOST_UNITS   = 5;             // HC-1 TOP + proven-$ → boost 4u → 5u (pre-retune only)
 const MINI_REDUCED_UNITS = 1;            // gate-fail MINI (no proven-$) → 3u → 1u
 function isSharpRescueLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= SHARP_LIVE_FROM;
 }
+function isSharpCRetuneLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= SHARP_C_RETUNE_FROM;
+}
+function sharpMinFor(pickDate) {
+  return isSharpCRetuneLive(pickDate) ? SHARP_MIN_FOR_RETUNE : SHARP_MIN_FOR_LEGACY;
+}
 function isSharpChalk(odds) {
   return Number.isFinite(odds) && odds <= SHARP_NO_CHALK_ODDS;
 }
-function computeSharpQuality(walletDetails, mySide, sport, walletProfiles) {
+function computeSharpQuality(walletDetails, mySide, sport, walletProfiles, pickDate) {
   const empty = { forCount: 0, maxQRoi: -Infinity, meanPWr: null, provenDollar: false, qualifies: false, prime: false };
   if (!Array.isArray(walletDetails) || !mySide) return empty;
+  const minFor = sharpMinFor(pickDate);
   let forCount = 0, maxQRoi = -Infinity; const wrPool = [];
   const seen = new Set();
   for (const w of walletDetails) {
@@ -531,9 +539,9 @@ function computeSharpQuality(walletDetails, mySide, sport, walletProfiles) {
   }
   const meanPWr = wrPool.length ? wrPool.reduce((s, x) => s + x, 0) / wrPool.length : null;
   const provenDollar = maxQRoi >= SHARP_MIN_QROI;
-  const qualifies = provenDollar && meanPWr != null && meanPWr >= SHARP_WR_BASE && forCount >= SHARP_MIN_FOR;
+  const qualifies = provenDollar && meanPWr != null && meanPWr >= SHARP_WR_BASE && forCount >= minFor;
   const prime = qualifies && meanPWr >= SHARP_WR_PRIME;
-  return { forCount, maxQRoi, meanPWr, provenDollar, qualifies, prime };
+  return { forCount, maxQRoi, meanPWr, provenDollar, qualifies, prime, minFor };
 }
 
 // ── Firebase init ──────────────────────────────────────────────────────────
@@ -1478,19 +1486,20 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     finalUnitsApplied = hc.units;      // odds-capped; MONITORING → 0u
   }
 
-  // ─── v12abc HC-book overlays — TOP boost (optional) + MINI reduction ──
+  // ─── v12abc HC-book overlays — TOP boost (pre-retune) + MINI reduction ─
   // Internal wallet-quality slice (proven-$ ROI + featured win-rate), same
   // point-in-time read as RANK-RESCUE. Computed once here, reused by the
   // SHARP-RESCUE block below. Inert before the SHARP_LIVE_FROM cutover.
   //   • TOP (HC margin 1) + proven-$ backer & mean wr ≥ floor → boost 4u → 5u
-  //     ONLY when TOP_BOOST_ENABLED (live Path C: boost OFF — TOP+ was −9% ROI).
-  //   • MINI with NO proven-$ backer → cut 3u → 1u (gate-fail MINI ran −56%;
-  //     live MINI- kept +27% ROI — this lever stays ON).
+  //     ONLY on pre-retune dates (TOP+ ran −9% ROI live; OFF from retune on).
+  //   • MINI with NO proven-$ backer → cut 3u → 1u (kept — live MINI- +27%).
+  // SUPER / RANK / CONFIRMED / gate-pass MINI / plain TOP sizing are unchanged.
   let sharpQ = null;
+  const pathCRetune = isSharpCRetuneLive(pickDate);
   if (isSharpRescueLive(pickDate) && appliedStatus === 'ACTIVE'
       && scoreV12Live != null && scoreV12Live > 0) {
-    sharpQ = computeSharpQuality(wd, side, pick.sport, walletProfiles);
-    if (TOP_BOOST_ENABLED && hcStakeTier === 'TOP' && sharpQ.provenDollar
+    sharpQ = computeSharpQuality(wd, side, pick.sport, walletProfiles, pickDate);
+    if (!pathCRetune && hcStakeTier === 'TOP' && sharpQ.provenDollar
         && sharpQ.meanPWr != null && sharpQ.meanPWr >= SHARP_WR_BASE) {
       finalUnitsApplied = Math.round(oddsCap(TOP_BOOST_UNITS, sideOdds) * 100) / 100;
       hcStakeTier = 'TOP+';
@@ -1537,18 +1546,19 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     }
   }
 
-  // ─── SHARP-RESCUE: v12abc "c" proven-$ + win-rate + ≥3-backer consensus ─
+  // ─── SHARP-RESCUE: v12abc "c" proven-$ + win-rate + consensus ─────────
   // Rescues a v12-shipped pick the HC sizer (and RANK) left muted at 0u, when
-  // the FOR side clears the internal wallet-quality gate AND the price is not
-  // heavy chalk (≤ SHARP_NO_CHALK_ODDS). PRIME (mean wr ≥ 55) sizes one notch
-  // up. Only ever rescues muted picks — never up-sizes.
+  // the FOR side clears the internal wallet-quality gate. From the retune
+  // cutover: require ≥3 FOR sharps and skip heavy chalk (≤ −150). PRIME
+  // (mean wr ≥ 55) sizes one notch up. Only ever rescues muted picks —
+  // never up-sizes. Does not touch RANK / SUPER / TOP / CONFIRMED.
   let sharpRescued = false;
-  const sharpCensus = sharpQ || computeSharpQuality(wd, side, pick.sport, walletProfiles);
+  const sharpCensus = sharpQ || computeSharpQuality(wd, side, pick.sport, walletProfiles, pickDate);
   if (isSharpRescueLive(pickDate) && appliedStatus === 'ACTIVE'
       && scoreV12Live != null && scoreV12Live > 0
       && finalUnitsApplied === 0 && !rankRescued
       && !(Number.isFinite(sd.manualStake) && sd.manualStake > 0)
-      && !isSharpChalk(sideOdds)) {
+      && !(pathCRetune && isSharpChalk(sideOdds))) {
     const q = sharpCensus;
     if (q.qualifies) {
       const u = q.prime ? SHARP_PRIME_UNITS : SHARP_UNITS;
