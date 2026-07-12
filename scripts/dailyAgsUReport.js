@@ -93,7 +93,7 @@ const isAgsuPromotion = (tag) => typeof tag === 'string' && tag.startsWith(AGSU_
 const PATH_SHORT = {
   SUPER: 'HC-2', 'TOP+': 'HC-1+$', TOP: 'HC-1', RANK: '2-for-0',
   'SHARP-PRIME': 'SHARP+', SHARP: 'SHARP', MINI: 'MINI', 'MINI-': 'MINI-',
-  CONFIRMED: 'CONF', MONITORING: 'WATCH', FADE: 'PASS',
+  CONFIRMED: 'CONF', DISSENT: 'PATH-D', MONITORING: 'WATCH', FADE: 'PASS',
 };
 const pathShort = (k) => PATH_SHORT[k] || k || '—';
 
@@ -697,7 +697,7 @@ function buildHeader(report, cutover, liveCal, eras) {
   report.push('');
   report.push(`**Active model:** \`${schemaLive}\` · **V12 went live:** ${v12From || '— (not yet shipped)'} · **Days live:** ${v12Days ?? '—'}`);
   report.push('');
-  report.push(`> This report is a **CEO-grade monitor of V12 in production**. The only non-V12 section is § 2 (model version comparison), kept so you can see V12's results in the context of every prior model bump. Everything else — daily trajectory, tier scoreboard, stake calibration, mute-rule audit, wallet-quality inputs, operational health — is **strictly V12-scoped** (pick date ≥ ${v12From || 'TBD'}) so cron back-fill of V12 stamps onto older picks can't contaminate the production numbers.`);
+  report.push(`> This report is a **CEO-grade monitor of V12 in production** (stacking era **v12abcd**: Path A HC · Path B RANK · Path C SHARP · Path D DISSENT). The only non-V12 section is § 2 (model version comparison), kept so you can see V12's results in the context of every prior model bump. Everything else — daily trajectory, tier scoreboard, stake calibration, mute-rule audit, wallet-quality inputs, operational health — is **strictly V12-scoped** (pick date ≥ ${v12From || 'TBD'}) so cron back-fill of V12 stamps onto older picks can't contaminate the production numbers.`);
   report.push('');
 }
 
@@ -1856,6 +1856,41 @@ function buildV12RankRescue(report, stats, walletProfiles) {
   report.push('');
 }
 
+// ── § 5c — PATH-D / DISSENT (contribMargin ≤ 0 · v12abcd book) ─────────────
+const PATH_D_UNITS = 1;
+const PATH_D_LIVE_FROM = '2026-07-12';
+function buildV12PathD(report, stats) {
+  report.push(`## § 5c — PATH-D / DISSENT (contribMargin ≤ 0 · v12abcd book)`);
+  report.push('');
+  if (!stats) {
+    report.push(`_(no V12-era graded picks yet.)_`);
+    report.push('');
+    return;
+  }
+  report.push(`> **What this is.** \`v12abcd\` = the v12abc book **plus** Path D. Rule (live **${PATH_D_LIVE_FROM}**): a v12-shipped pick (score > 0) that HC / RANK / SHARP left at **0u** is staked at **${PATH_D_UNITS}u** when **MLB** · american odds ≤ **+200** · wallet \`contribMargin ≤ 0\` (Σ FOR contribution − Σ AGAINST ≤ 0) · \`maxShare < 0.35\`. Tier stamp: \`DISSENT\`. Source signal: §17 Feature Lab unused inverse \`wd contribMargin\`. Never up-sizes an already-staked pick.`);
+  report.push('');
+
+  const { v12Rows, v12RowsAll } = stats;
+  const liveD = (v12RowsAll || v12Rows).filter(r => r.hcStakeTier === 'DISSENT');
+  const liveGraded = liveD.filter(r => r.won != null);
+  report.push(`### (A) Live stamped DISSENT picks (ground truth — populates going forward)`);
+  report.push('');
+  if (liveGraded.length === 0) {
+    const pending = liveD.filter(r => r.won == null).length;
+    report.push(`_No graded DISSENT-stamped picks yet${pending ? ` (${pending} ungraded in flight)` : ''}. Path D went live ${PATH_D_LIVE_FROM} — this fills in as \`hcStakeTier=DISSENT\` picks grade._`);
+  } else {
+    const a = aggregate(liveGraded);
+    report.push(`| Picks | W-L | Win % | Stake | PnL | ROI |`);
+    report.push(`|-------|-----|-------|-------|-----|-----|`);
+    report.push(`| ${a.n} | ${a.w}-${a.l} | ${pct(a.w, a.n)} | ${a.totalStake.toFixed(1)}u | ${fmtSigned(a.profit)}u | ${a.roi != null ? (a.roi>=0?'+':'')+a.roi.toFixed(1)+'%' : '—'} |`);
+    const pending = liveD.filter(r => r.won == null).length;
+    if (pending) report.push(`_Also ${pending} ungraded DISSENT pick(s) in flight._`);
+  }
+  report.push('');
+  report.push(`> Path D is **additive mute volume only**. Track it separately from Path C — same mute pool, different gate (contribution dissent vs proven-$ forCount).`);
+  report.push('');
+}
+
 // Convenience: compute v12 stats once and pass them around for the CEO
 // summary card. Keeps the math in one place.
 function computeV12Stats(agsuRows, allRowsAgsu, eras) {
@@ -2130,9 +2165,15 @@ function buildV12TierAnalysis(report, stats) {
   // MONITORING (non-HC / WEAK-tier HC, 0u) is never staked — tracked only.
   const v121Rows = v12Rows.filter(r => r.hcStakeTier);
   if (v121Rows.length > 0) {
-    report.push(`### v12abc — By Stake Tier (HC margin + 2-for-0 rescue + proven-$ overlay)`);
+    report.push(`### v12abcd — By Stake Tier (Paths A / B / C / D)`);
     report.push('');
-    report.push(`Post-cutover picks size off the **HC margin** — SUPER (margin 2 · 6u), TOP (margin 1 · 4u), MINI (mini-HC 1.0–1.5× · 3u), CONFIRMED (margin 3+ · 1u) — **plus** the **RANK (2-for-0)** wallet-rescue path at **${RANK_RESCUE_UNITS}u**. From **2026-06-26** the **v12abc proven-$ overlay** (internal stats: backer \`positions.dollarRoi\` + featured \`picks.wr\`) adds: **SHARP / SHARP-PRIME** ($-rescue of HC-muted picks at 3u / 4u when sharps back it incl. a proven-money winner and mean win-rate ≥ 50 / 55; from **2026-07-12** requires ≥3 FOR sharps and odds softer than −150), **TOP+** (HC-1 boosted 4u → 5u when a proven-$ backer is present — **disabled from 2026-07-12**), and **MINI-** (MINI cut 3u → 1u when no proven-$ backer is on it). Together these paths ARE the v12abc staked book. **MONITORING** (non-HC or WEAK-tier HC, no proven-$ rescue) is tracked at **0u** and excluded from the staked record/ROI below.`);
+    report.push(`**Era legend (stacking system):**`);
+    report.push(`- **Path A (v12a)** — HC-margin model sizer: SUPER 6u · TOP 4u · MINI 3u · CONFIRMED 1u · else MONITORING 0u.`);
+    report.push(`- **Path B (v12ab, live 2026-06-21)** — RANK 2-for-0 rescue: muted score>0 pick with ≥2 eligible whitelist FOR and 0 AGAINST → **4u**.`);
+    report.push(`- **Path C (v12abc, live 2026-06-26; retune 2026-07-12)** — SHARP / SHARP-PRIME proven-$ rescue (+ MINI- cut). Retune: ≥3 FOR sharps, skip odds ≤ −150, TOP+ boost OFF.`);
+    report.push(`- **Path D (v12abcd, live 2026-07-12)** — DISSENT mute rescue: MLB · odds ≤ +200 · \`contribMargin ≤ 0\` · \`maxShare < 0.35\` → **1u** (tier key \`DISSENT\`). Uses wallet contribution dissent — not proven-$ forCount.`);
+    report.push('');
+    report.push(`Post-cutover picks size off the **HC margin** — SUPER (margin 2 · 6u), TOP (margin 1 · 4u), MINI (mini-HC 1.0–1.5× · 3u), CONFIRMED (margin 3+ · 1u) — **plus** the **RANK (2-for-0)** wallet-rescue path at **${RANK_RESCUE_UNITS}u**. From **2026-06-26** the **v12abc proven-$ overlay** (internal stats: backer \`positions.dollarRoi\` + featured \`picks.wr\`) adds: **SHARP / SHARP-PRIME** ($-rescue of HC-muted picks at 3u / 4u when sharps back it incl. a proven-money winner and mean win-rate ≥ 50 / 55; from **2026-07-12** requires ≥3 FOR sharps and odds softer than −150), **TOP+** (HC-1 boosted 4u → 5u when a proven-$ backer is present — **disabled from 2026-07-12**), and **MINI-** (MINI cut 3u → 1u when no proven-$ backer is on it). From **2026-07-12** **Path D / DISSENT** adds a 1u mute rescue on contested MLB books (\`contribMargin ≤ 0\`, dispersed). Together these paths ARE the **v12abcd** staked book. **MONITORING** (non-HC or WEAK-tier HC, no rescue path) is tracked at **0u** and excluded from the staked record/ROI below.`);
     report.push('');
     report.push(`| Tier (paths)              | Units | N   | W-L    | Win %  | Total Stake | PnL (u)    | ROI       |`);
     report.push(`|---------------------------|-------|-----|--------|--------|-------------|------------|-----------|`);
@@ -2160,15 +2201,16 @@ function buildV12TierAnalysis(report, stats) {
     // win-rate / ROI / stake. SHARP PLAY = RANK 2-for-0 + SHARP + SHARP+; TOP =
     // HC-1 + HC-1+$; LEAN = CONF + MINI-. Path labels match the per-pick tables.
     const PATHS = [
-      { key: 'SUPER',       u: '6u', label: 'HC-2 (model max)' },
-      { key: 'TOP+',        u: '5u', label: 'HC-1 + $-boost' },
-      { key: 'TOP',         u: '4u', label: 'HC-1 (model)' },
-      { key: 'RANK',        u: '4u', label: '2-for-0 rescue' },
-      { key: 'SHARP-PRIME', u: '4u', label: 'proven-$ prime' },
-      { key: 'SHARP',       u: '3u', label: 'proven-$ consensus' },
-      { key: 'MINI',        u: '3u', label: 'mini-HC (gate-pass)' },
-      { key: 'MINI-',       u: '1u', label: 'mini gate-cut' },
-      { key: 'CONFIRMED',   u: '1u', label: 'margin 3+' },
+      { key: 'SUPER',       u: '6u', label: 'A · HC-2 (model max)' },
+      { key: 'TOP+',        u: '5u', label: 'A/C · HC-1 + $-boost' },
+      { key: 'TOP',         u: '4u', label: 'A · HC-1 (model)' },
+      { key: 'RANK',        u: '4u', label: 'B · 2-for-0 rescue' },
+      { key: 'SHARP-PRIME', u: '4u', label: 'C · proven-$ prime' },
+      { key: 'SHARP',       u: '3u', label: 'C · proven-$ consensus' },
+      { key: 'MINI',        u: '3u', label: 'A · mini-HC (gate-pass)' },
+      { key: 'MINI-',       u: '1u', label: 'C · mini gate-cut' },
+      { key: 'CONFIRMED',   u: '1u', label: 'A · margin 3+' },
+      { key: 'DISSENT',     u: '1u', label: 'D · CM≤0 dissent' },
     ];
     report.push(`#### Granular — by individual staking path`);
     report.push('');
@@ -2366,7 +2408,7 @@ function buildV12StakeCalibration(report, stats) {
   const staked = stats.v12Rows.filter(r =>
     r.hcStakeTier && r.hcStakeTier !== 'MONITORING' && r.won != null && (r.units || 0) > 0 && r.date);
   if (staked.length === 0) {
-    report.push(`_(no graded staked picks under the v12abc ladder yet)_`);
+    report.push(`_(no graded staked picks under the v12abcd ladder yet)_`);
     report.push('');
     return;
   }
@@ -2482,9 +2524,9 @@ function buildV12MuteAudit(report, stats) {
   report.push('');
 }
 
-// § 9 — v12abc AUC / Brier by staking book
+// § 9 — v12abcd AUC / Brier by staking book
 function buildV12abcDiscrimination(report, stats) {
-  report.push(`## § 9 — v12abc AUC / Brier (by staking book)`);
+  report.push(`## § 9 — v12abcd AUC / Brier (by staking book)`);
   report.push('');
   if (!stats || stats.v12Rows.length === 0) {
     report.push(`_(no graded V12-era picks yet)_`);
@@ -2492,7 +2534,7 @@ function buildV12abcDiscrimination(report, stats) {
     return;
   }
   const { v12Rows } = stats;
-  report.push(`The score that drives every pick is the same V12 number; the **a / ab / abc** books differ only in *which picks they choose to stake*. This panel asks, for the picks each book actually ships: does the V12 score still **discriminate** winners from losers (AUC), and is it **calibrated** (Brier)? If a newer overlay (ab adds RANK; abc adds the proven-\$ rescues) drags AUC/Brier down, it's buying volume at the cost of signal quality.`);
+  report.push(`The score that drives every pick is the same V12 number; the **a / ab / abc / abcd** books differ only in *which picks they choose to stake*. This panel asks, for the picks each book actually ships: does the V12 score still **discriminate** winners from losers (AUC), and is it **calibrated** (Brier)? If a newer overlay (ab adds RANK; abc adds proven-\$; abcd adds Path D DISSENT) drags AUC/Brier down, it's buying volume at the cost of signal quality.`);
   report.push('');
   report.push(`- **AUC** — P(score of a winner > score of a loser). 0.50 = coin flip · 0.55 = real edge · 0.60+ = strong.`);
   report.push(`- **Brier (cal)** — mean squared error of a win probability obtained by an **in-sample** logistic calibration of the score. Lower = better; 0.25 = the coin-flip prior.`);
@@ -2503,10 +2545,12 @@ function buildV12abcDiscrimination(report, stats) {
   const BOOK_A   = ['SUPER', 'TOP', 'TOP+', 'MINI', 'MINI-', 'CONFIRMED']; // HC-margin core (incl. its $-modifiers)
   const BOOK_RANK = ['RANK'];                                              // ab adds 2-for-0 rescue
   const BOOK_SHARP = ['SHARP', 'SHARP-PRIME'];                            // abc adds proven-$ rescues
+  const BOOK_D = ['DISSENT'];                                              // abcd adds Path D contribMargin rescue
   const books = [
-    { key: 'v12a',   label: 'v12a (HC margin core)',     paths: BOOK_A },
-    { key: 'v12ab',  label: 'v12ab (+ RANK 2-for-0)',    paths: [...BOOK_A, ...BOOK_RANK] },
-    { key: 'v12abc', label: 'v12abc (+ proven-$ rescue)', paths: [...BOOK_A, ...BOOK_RANK, ...BOOK_SHARP] },
+    { key: 'v12a',    label: 'v12a (Path A · HC core)',      paths: BOOK_A },
+    { key: 'v12ab',   label: 'v12ab (+ Path B RANK)',        paths: [...BOOK_A, ...BOOK_RANK] },
+    { key: 'v12abc',  label: 'v12abc (+ Path C SHARP)',      paths: [...BOOK_A, ...BOOK_RANK, ...BOOK_SHARP] },
+    { key: 'v12abcd', label: 'v12abcd (+ Path D DISSENT)',   paths: [...BOOK_A, ...BOOK_RANK, ...BOOK_SHARP, ...BOOK_D] },
   ];
 
   report.push(`| Book                         | Graded N | W-L    | Win %  | AUC    | Brier (cal) | Brier (market) | Δ vs market |`);
@@ -2542,15 +2586,16 @@ function buildV12abcDiscrimination(report, stats) {
     const br = rowsByBook[key];
     return br && br.length >= 3 ? rocAuc(br.map(r => r.agsV12), br.map(r => r.won)) : null;
   };
-  const aA = aucOf('v12a'), aAbc = aucOf('v12abc');
-  if (aA != null && aAbc != null) {
-    const d = aAbc - aA;
+  const aA = aucOf('v12a'), aAbcd = aucOf('v12abcd') ?? aucOf('v12abc');
+  if (aA != null && aAbcd != null) {
+    const d = aAbcd - aA;
+    const tip = aucOf('v12abcd') != null ? 'v12abcd' : 'v12abc';
     if (d <= -0.02) {
-      report.push(`> 🟡 **The overlays dilute discrimination** — AUC falls ${fmtN(aA,3)} (v12a) → ${fmtN(aAbc,3)} (v12abc), Δ = ${fmtSigned(d,3)}. The RANK/proven-\$ rescues add volume on picks where the V12 score sorts winners less cleanly. Justified only if their standalone ROI (see § 5) pays for the lower signal quality.`);
+      report.push(`> 🟡 **The overlays dilute discrimination** — AUC falls ${fmtN(aA,3)} (v12a) → ${fmtN(aAbcd,3)} (${tip}), Δ = ${fmtSigned(d,3)}. Rescue paths add volume on picks where the V12 score sorts winners less cleanly. Justified only if their standalone ROI (see § 5) pays for the lower signal quality.`);
     } else if (d >= 0.02) {
-      report.push(`> 🟢 **The overlays improve discrimination** — AUC rises ${fmtN(aA,3)} (v12a) → ${fmtN(aAbc,3)} (v12abc), Δ = ${fmtSigned(d,3)}. The rescue paths are landing on picks the score still ranks well.`);
+      report.push(`> 🟢 **The overlays improve discrimination** — AUC rises ${fmtN(aA,3)} (v12a) → ${fmtN(aAbcd,3)} (${tip}), Δ = ${fmtSigned(d,3)}. The rescue paths are landing on picks the score still ranks well.`);
     } else {
-      report.push(`> 🟢 **The overlays are signal-neutral** — AUC ${fmtN(aA,3)} (v12a) → ${fmtN(aAbc,3)} (v12abc), Δ = ${fmtSigned(d,3)}. They add volume without degrading how well the score separates winners from losers.`);
+      report.push(`> 🟢 **The overlays are signal-neutral** — AUC ${fmtN(aA,3)} (v12a) → ${fmtN(aAbcd,3)} (${tip}), Δ = ${fmtSigned(d,3)}. They add volume without degrading how well the score separates winners from losers.`);
     }
     report.push('');
   }
@@ -3987,6 +4032,7 @@ async function main() {
   buildV12DailyScoreboard(report, v12Stats);
   buildV12TierAnalysis(report, v12Stats);
   buildV12RankRescue(report, v12Stats, walletProfiles);
+  buildV12PathD(report, v12Stats);
   buildV12SportMarketAnalysis(report, v12Stats);
   buildV12StakeCalibration(report, v12Stats);
   buildV12MuteAudit(report, v12Stats);

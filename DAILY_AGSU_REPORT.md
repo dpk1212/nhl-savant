@@ -1,24 +1,24 @@
 # AGS-Unified — V12 Performance Monitor
 
-**Generated:** Sunday, July 12, 2026 at 10:05 AM ET
+**Generated:** Sunday, July 12, 2026 at 1:12 PM ET
 
 **Active model:** `ags-unified-v12` · **V12 went live:** 2026-06-01 · **Days live:** 42
 
-> This report is a **CEO-grade monitor of V12 in production**. The only non-V12 section is § 2 (model version comparison), kept so you can see V12's results in the context of every prior model bump. Everything else — daily trajectory, tier scoreboard, stake calibration, mute-rule audit, wallet-quality inputs, operational health — is **strictly V12-scoped** (pick date ≥ 2026-06-01) so cron back-fill of V12 stamps onto older picks can't contaminate the production numbers.
+> This report is a **CEO-grade monitor of V12 in production** (stacking era **v12abcd**: Path A HC · Path B RANK · Path C SHARP · Path D DISSENT). The only non-V12 section is § 2 (model version comparison), kept so you can see V12's results in the context of every prior model bump. Everything else — daily trajectory, tier scoreboard, stake calibration, mute-rule audit, wallet-quality inputs, operational health — is **strictly V12-scoped** (pick date ≥ 2026-06-01) so cron back-fill of V12 stamps onto older picks can't contaminate the production numbers.
 
 ## § 1 — Executive Summary
 
-> 🟢 **V12 is currently WINNING.** Since going live on **2026-06-01** (42 days ago), V12 has evaluated **1292** picks, shipped **423** for real money (32.7% ship rate), and muted the other **869**. On the shipped picks V12 has gone **235-188** (55.6% win), staked **1161.75u**, and returned **+56.04u** at **+4.8% ROI**.
+> 🟢 **V12 is currently WINNING.** Since going live on **2026-06-01** (42 days ago), V12 has evaluated **1302** picks, shipped **423** for real money (32.5% ship rate), and muted the other **879**. On the shipped picks V12 has gone **235-188** (55.6% win), staked **1161.75u**, and returned **+56.04u** at **+4.8% ROI**.
 
 ### Snapshot
 
 | Metric                              | Value                          |
 |-------------------------------------|--------------------------------|
 | Days V12 has been authoritative     |                             42 |
-| Picks V12 has evaluated             |                           1292 |
+| Picks V12 has evaluated             |                           1302 |
 | Picks SHIPPED (units > 0)           |                            423 |
-| Picks MUTED (score ≤ 0, FADE)       |                            869 |
-| Ship rate                           |                          32.7% |
+| Picks MUTED (score ≤ 0, FADE)       |                            879 |
+| Ship rate                           |                          32.5% |
 | Live W-L                            |                        235-188 |
 | Live Win %                          |                          55.6% |
 | Live PnL (units)                    |                         +56.04 |
@@ -146,7 +146,7 @@ Day-by-day production since V12 went live. **Evaluated** = picks V12 scored that
 | 2026-07-09 |        25 |    7 |    11 | 5-2        |  71.4% |     25.00 |      +7.44 |     29.8% |     +69.08 |
 | 2026-07-10 |        37 |    8 |    16 | 5-3        |  62.5% |     34.00 |      +4.96 |     14.6% |     +74.04 |
 | 2026-07-11 |        23 |    5 |    10 | 0-5        |   0.0% |     18.00 |     -18.00 |   -100.0% |     +56.04 |
-| 2026-07-12 |        10 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +56.04 |
+| 2026-07-12 |        20 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +56.04 |
 | 2026-07-14 |         2 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +56.04 |
 
 > **Trajectory.** 🟡 Last 3 days (-100.0% ROI) is **-106.5pp worse** than the prior window (6.5%). Watch for further regression.
@@ -170,9 +170,15 @@ V12 buckets every shipped pick into a tier (ELITE → WEAK) based on the score b
 
 > **Ladder monotonicity** (positive tiers ELITE → WEAK only). ROI score `0` 🟡 partial · Win-rate score `-2` 🟡 partial. **Partial — the ladder is in the right direction overall but has rough spots. Watch a few more days before reacting.**
 
-### v12abc — By Stake Tier (HC margin + 2-for-0 rescue + proven-$ overlay)
+### v12abcd — By Stake Tier (Paths A / B / C / D)
 
-Post-cutover picks size off the **HC margin** — SUPER (margin 2 · 6u), TOP (margin 1 · 4u), MINI (mini-HC 1.0–1.5× · 3u), CONFIRMED (margin 3+ · 1u) — **plus** the **RANK (2-for-0)** wallet-rescue path at **4u**. From **2026-06-26** the **v12abc proven-$ overlay** (internal stats: backer `positions.dollarRoi` + featured `picks.wr`) adds: **SHARP / SHARP-PRIME** ($-rescue of HC-muted picks at 3u / 4u when ≥2 sharps back it incl. a proven-money winner and mean win-rate ≥ 50 / 55), **TOP+** (HC-1 boosted 4u → 5u when a proven-$ backer is present), and **MINI-** (MINI cut 3u → 1u when no proven-$ backer is on it). Together these paths ARE the v12abc staked book. **MONITORING** (non-HC or WEAK-tier HC, no proven-$ rescue) is tracked at **0u** and excluded from the staked record/ROI below.
+**Era legend (stacking system):**
+- **Path A (v12a)** — HC-margin model sizer: SUPER 6u · TOP 4u · MINI 3u · CONFIRMED 1u · else MONITORING 0u.
+- **Path B (v12ab, live 2026-06-21)** — RANK 2-for-0 rescue: muted score>0 pick with ≥2 eligible whitelist FOR and 0 AGAINST → **4u**.
+- **Path C (v12abc, live 2026-06-26; retune 2026-07-12)** — SHARP / SHARP-PRIME proven-$ rescue (+ MINI- cut). Retune: ≥3 FOR sharps, skip odds ≤ −150, TOP+ boost OFF.
+- **Path D (v12abcd, live 2026-07-12)** — DISSENT mute rescue: MLB · odds ≤ +200 · `contribMargin ≤ 0` · `maxShare < 0.35` → **1u** (tier key `DISSENT`). Uses wallet contribution dissent — not proven-$ forCount.
+
+Post-cutover picks size off the **HC margin** — SUPER (margin 2 · 6u), TOP (margin 1 · 4u), MINI (mini-HC 1.0–1.5× · 3u), CONFIRMED (margin 3+ · 1u) — **plus** the **RANK (2-for-0)** wallet-rescue path at **4u**. From **2026-06-26** the **v12abc proven-$ overlay** (internal stats: backer `positions.dollarRoi` + featured `picks.wr`) adds: **SHARP / SHARP-PRIME** ($-rescue of HC-muted picks at 3u / 4u when sharps back it incl. a proven-money winner and mean win-rate ≥ 50 / 55; from **2026-07-12** requires ≥3 FOR sharps and odds softer than −150), **TOP+** (HC-1 boosted 4u → 5u when a proven-$ backer is present — **disabled from 2026-07-12**), and **MINI-** (MINI cut 3u → 1u when no proven-$ backer is on it). From **2026-07-12** **Path D / DISSENT** adds a 1u mute rescue on contested MLB books (`contribMargin ≤ 0`, dispersed). Together these paths ARE the **v12abcd** staked book. **MONITORING** (non-HC or WEAK-tier HC, no rescue path) is tracked at **0u** and excluded from the staked record/ROI below.
 
 | Tier (paths)              | Units | N   | W-L    | Win %  | Total Stake | PnL (u)    | ROI       |
 |---------------------------|-------|-----|--------|--------|-------------|------------|-----------|
@@ -180,22 +186,23 @@ Post-cutover picks size off the **HC margin** — SUPER (margin 2 · 6u), TOP (m
 | TOP PICK (TOP+/TOP)       |  4-5u |  66 | 41-25  |  62.1% |      267.00 |     +16.90 |      6.3% |
 | SHARP PLAY (RANK/SHARP-PRIME/SHARP) |  3-4u |  77 | 40-37  |  51.9% |      263.50 |      +1.38 |      0.5% |
 | STRONG (MINI)             |    3u |  35 | 17-18  |  48.6% |      101.50 |      -8.68 |     -8.6% |
-| LEAN (CONFIRMED/MINI-)    |    1u |  15 | 9-6    |  60.0% |       15.00 |      +0.71 |      4.7% |
+| LEAN (CONFIRMED/MINI-/DISSENT) |    1u |  15 | 9-6    |  60.0% |       15.00 |      +0.71 |      4.7% |
 | **STAKED TOTAL** |     — | 204 | 116-88 |  56.9% |      705.00 |     +35.79 |     +5.1% |
 
 #### Granular — by individual staking path
 
 | Path                  | Key         | Units | N   | W-L    | Win %  | Total Stake | PnL (u)    | ROI       |
 |-----------------------|-------------|-------|-----|--------|--------|-------------|------------|-----------|
-| HC-2 (model max)      | SUPER       |    6u |  11 | 9-2    |  81.8% |       58.00 |     +25.48 |     43.9% |
-| HC-1 + $-boost        | TOP+        |    5u |  29 | 15-14  |  51.7% |      132.50 |     -11.94 |     -9.0% |
-| HC-1 (model)          | TOP         |    4u |  37 | 26-11  |  70.3% |      134.50 |     +28.84 |     21.4% |
-| 2-for-0 rescue        | RANK        |    4u |  38 | 23-15  |  60.5% |      150.00 |     +16.64 |     11.1% |
-| proven-$ prime        | SHARP-PRIME |    4u |  14 | 6-8    |  42.9% |       49.00 |      -6.61 |    -13.5% |
-| proven-$ consensus    | SHARP       |    3u |  25 | 11-14  |  44.0% |       64.50 |      -8.65 |    -13.4% |
-| mini-HC (gate-pass)   | MINI        |    3u |  35 | 17-18  |  48.6% |      101.50 |      -8.68 |     -8.6% |
-| mini gate-cut         | MINI-       |    1u |  10 | 7-3    |  70.0% |       10.00 |      +2.73 |     27.3% |
-| margin 3+             | CONFIRMED   |    1u |   5 | 2-3    |  40.0% |        5.00 |      -2.02 |    -40.4% |
+| A · HC-2 (model max)  | SUPER       |    6u |  11 | 9-2    |  81.8% |       58.00 |     +25.48 |     43.9% |
+| A/C · HC-1 + $-boost  | TOP+        |    5u |  29 | 15-14  |  51.7% |      132.50 |     -11.94 |     -9.0% |
+| A · HC-1 (model)      | TOP         |    4u |  37 | 26-11  |  70.3% |      134.50 |     +28.84 |     21.4% |
+| B · 2-for-0 rescue    | RANK        |    4u |  38 | 23-15  |  60.5% |      150.00 |     +16.64 |     11.1% |
+| C · proven-$ prime    | SHARP-PRIME |    4u |  14 | 6-8    |  42.9% |       49.00 |      -6.61 |    -13.5% |
+| C · proven-$ consensus | SHARP       |    3u |  25 | 11-14  |  44.0% |       64.50 |      -8.65 |    -13.4% |
+| A · mini-HC (gate-pass) | MINI        |    3u |  35 | 17-18  |  48.6% |      101.50 |      -8.68 |     -8.6% |
+| C · mini gate-cut     | MINI-       |    1u |  10 | 7-3    |  70.0% |       10.00 |      +2.73 |     27.3% |
+| A · margin 3+         | CONFIRMED   |    1u |   5 | 2-3    |  40.0% |        5.00 |      -2.02 |    -40.4% |
+| D · CM≤0 dissent      | DISSENT     |    1u |   0 | pending |      — |        0.00 |      +0.00 |         — |
 
 > **MONITORING volume:** 307 picks tracked at 0u (would-be 142-165, 46.3% win). Shown to users for context; **not** part of the staked record, units, or ROI.
 
@@ -301,6 +308,16 @@ xychart-beta
 
 > RANK-RESCUE sits **on top of the v12a HC book** — it stakes 4u on picks the HC ladder would mute (0u), so every rescue is net-new volume, never an up-size. Reconstruction: **+1.19 picks/day** (50 over 42 days) at **+28.0% ROI** / **+56.05u**, pulled from the muted pool — so no existing HC pick's size or grade changes. (The § 1 / § 4–5 headline book still reflects historical score-ladder sizing for picks shipped before v12a; only NEW picks size under v12a + RANK.)
 
+## § 5c — PATH-D / DISSENT (contribMargin ≤ 0 · v12abcd book)
+
+> **What this is.** `v12abcd` = the v12abc book **plus** Path D. Rule (live **2026-07-12**): a v12-shipped pick (score > 0) that HC / RANK / SHARP left at **0u** is staked at **1u** when **MLB** · american odds ≤ **+200** · wallet `contribMargin ≤ 0` (Σ FOR contribution − Σ AGAINST ≤ 0) · `maxShare < 0.35`. Tier stamp: `DISSENT`. Source signal: §17 Feature Lab unused inverse `wd contribMargin`. Never up-sizes an already-staked pick.
+
+### (A) Live stamped DISSENT picks (ground truth — populates going forward)
+
+_No graded DISSENT-stamped picks yet. Path D went live 2026-07-12 — this fills in as `hcStakeTier=DISSENT` picks grade._
+
+> Path D is **additive mute volume only**. Track it separately from Path C — same mute pool, different gate (contribution dissent vs proven-$ forCount).
+
 ## § 6 — V12 By Sport & Market (Where The Edge Is)
 
 V12 finds different amounts of edge in different sports and bet types. This grid shows live performance per sport × market cell. Each cell: `N · Win% · ROI` over LIVE shipped picks (units > 0).
@@ -366,9 +383,9 @@ The audit is a counterfactual — if every muted pick had been shipped at a flat
 
 🟢 **THE MUTE RULE IS SAVING MONEY.** The picks V12 rejected would have lost **-52.29u** at a flat 1u stake — a counterfactual ROI of **-9.9%**. V12 is correctly identifying losers and refusing to ship them. **Keep the mute rule as-is.**
 
-## § 9 — v12abc AUC / Brier (by staking book)
+## § 9 — v12abcd AUC / Brier (by staking book)
 
-The score that drives every pick is the same V12 number; the **a / ab / abc** books differ only in *which picks they choose to stake*. This panel asks, for the picks each book actually ships: does the V12 score still **discriminate** winners from losers (AUC), and is it **calibrated** (Brier)? If a newer overlay (ab adds RANK; abc adds the proven-$ rescues) drags AUC/Brier down, it's buying volume at the cost of signal quality.
+The score that drives every pick is the same V12 number; the **a / ab / abc / abcd** books differ only in *which picks they choose to stake*. This panel asks, for the picks each book actually ships: does the V12 score still **discriminate** winners from losers (AUC), and is it **calibrated** (Brier)? If a newer overlay (ab adds RANK; abc adds proven-$; abcd adds Path D DISSENT) drags AUC/Brier down, it's buying volume at the cost of signal quality.
 
 - **AUC** — P(score of a winner > score of a loser). 0.50 = coin flip · 0.55 = real edge · 0.60+ = strong.
 - **Brier (cal)** — mean squared error of a win probability obtained by an **in-sample** logistic calibration of the score. Lower = better; 0.25 = the coin-flip prior.
@@ -376,11 +393,12 @@ The score that drives every pick is the same V12 number; the **a / ab / abc** bo
 
 | Book                         | Graded N | W-L    | Win %  | AUC    | Brier (cal) | Brier (market) | Δ vs market |
 |------------------------------|----------|--------|--------|--------|-------------|----------------|-------------|
-| v12a (HC margin core)        |      127 | 76-51  |  59.8% |  0.538 |      0.2392 |         0.2358 |     -0.0034 |
-| v12ab (+ RANK 2-for-0)       |      165 | 99-66  |  60.0% |  0.504 |      0.2399 |         0.2354 |     -0.0045 |
-| v12abc (+ proven-$ rescue)   |      204 | 116-88 |  56.9% |  0.514 |      0.2452 |         0.2410 |     -0.0042 |
+| v12a (Path A · HC core)      |      127 | 76-51  |  59.8% |  0.538 |      0.2392 |         0.2358 |     -0.0034 |
+| v12ab (+ Path B RANK)        |      165 | 99-66  |  60.0% |  0.504 |      0.2399 |         0.2354 |     -0.0045 |
+| v12abc (+ Path C SHARP)      |      204 | 116-88 |  56.9% |  0.514 |      0.2452 |         0.2410 |     -0.0042 |
+| v12abcd (+ Path D DISSENT)   |      204 | 116-88 |  56.9% |  0.514 |      0.2452 |         0.2410 |     -0.0042 |
 
-> 🟡 **The overlays dilute discrimination** — AUC falls 0.538 (v12a) → 0.514 (v12abc), Δ = -0.024. The RANK/proven-$ rescues add volume on picks where the V12 score sorts winners less cleanly. Justified only if their standalone ROI (see § 5) pays for the lower signal quality.
+> 🟡 **The overlays dilute discrimination** — AUC falls 0.538 (v12a) → 0.514 (v12abcd), Δ = -0.024. Rescue paths add volume on picks where the V12 score sorts winners less cleanly. Justified only if their standalone ROI (see § 5) pays for the lower signal quality.
 
 > ⚠ **In-sample caveat.** Brier (cal) uses a logistic fit on the same picks it scores, so it's a mildly optimistic floor on true calibration error. AUC is rank-based and needs no fit. Track both week-over-week — a rising Brier or an AUC drifting toward 0.50 is the early warning that the score is decaying before ROI follows.
 
@@ -688,10 +706,10 @@ Same filter, sorted ROI ascending. Wallets that consistently lose when they're o
 | Graded picks with `tracked=true` AND `finalUnits > 0`         |     1 | 🚨 grader regression — see betTracking.js |
 | Graded picks with `tracked=true` AND `finalUnits == 0`        |   855 | 🟡 informational only — true tracked plays |
 | LOCK+ tier picks with `finalUnits == 0` (sizing regression)   |   127 | 🚨 sizing regression — agsSizeMultiplier returning 0 for strong AGS-U |
-| Live picks (not graded yet) with `finalUnits > 0`             |     2 | 🟢 picks queued for grading |
+| Live picks (not graded yet) with `finalUnits > 0`             |     5 | 🟢 picks queued for grading |
 | AGS-U promoted picks missing `v8_ags` value                   |    40 | 🟡 some picks missing AGS-U — cron lag or stale doc |
 | AGS-U promoted picks missing `agsTier`                        |     9 | 🟡 some picks missing tier classification |
-| Single-wallet shipped picks (`provenWalletCount == 1`)       |   167 | 🟡 informational — AGS-U calibration controls sample adequacy |
+| Single-wallet shipped picks (`provenWalletCount == 1`)       |   168 | 🟡 informational — AGS-U calibration controls sample adequacy |
 
 **Tracked-shipped detail (these are the picks the grader wrongly marked 0u):**
 

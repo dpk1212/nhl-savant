@@ -514,6 +514,55 @@ function sharpMinFor(pickDate) {
 function isSharpChalk(odds) {
   return Number.isFinite(odds) && odds <= SHARP_NO_CHALK_ODDS;
 }
+
+// ── PATH-D / v12abcd "d" — DISSENT-WEIGHTED rescue (contribMargin ≤ 0) ─────
+// Mute rescue that Path A/B/C leave at 0u. Uses walletDetails contribution
+// (walletBase × convictionMult), NOT proven-$ forCount (Path C) and NOT the
+// 2-for-0 whitelist slice (Path B).
+//   • score > 0, still muted after HC / RANK / SHARP
+//   • MLB only
+//   • american odds ≤ +200 (no longshot dogs)
+//   • contribMargin = Σ FOR contrib − Σ AGAINST contrib ≤ 0
+//   • maxShare = max FOR contrib / total contrib < 0.35 (dispersed)
+// Stake 1u. Live from PATH_D_LIVE_FROM. Jun-1 raw CM≤0 alone was −1.5u;
+// this PKG filter is the production gate (+7.1u CF Jun 1–Jul 11).
+const PATH_D_LIVE_FROM = '2026-07-12';
+const PATH_D_UNITS = 1;
+const PATH_D_MAX_ODDS = 200;       // skip dogs longer than +200
+const PATH_D_MAX_SHARE = 0.35;    // single-wallet concentration cap
+function isPathDLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= PATH_D_LIVE_FROM;
+}
+function computePathDSlice(walletDetails, mySide) {
+  const empty = {
+    fo: 0, ag: 0, contribFor: 0, contribAg: 0, contribMargin: 0,
+    maxShare: null, qualifies: false,
+  };
+  if (!Array.isArray(walletDetails) || !mySide) return empty;
+  const seen = new Set();
+  let fo = 0, ag = 0, contribFor = 0, contribAg = 0, maxFor = 0, total = 0;
+  for (const w of walletDetails) {
+    const short = String(w.walletShort || w.wallet || '').slice(-6).toLowerCase();
+    if (!short || seen.has(short)) continue;
+    seen.add(short);
+    const c = Number(w.contribution) || 0;
+    total += c;
+    if (w.side === mySide) {
+      fo++;
+      contribFor += c;
+      if (c > maxFor) maxFor = c;
+    } else {
+      ag++;
+      contribAg += c;
+    }
+  }
+  const contribMargin = contribFor - contribAg;
+  const maxShare = total > 0 ? maxFor / total : null;
+  const qualifies = contribMargin <= 0
+    && maxShare != null
+    && maxShare < PATH_D_MAX_SHARE;
+  return { fo, ag, contribFor, contribAg, contribMargin, maxShare, qualifies };
+}
 function computeSharpQuality(walletDetails, mySide, sport, walletProfiles, pickDate) {
   const empty = { forCount: 0, maxQRoi: -Infinity, meanPWr: null, provenDollar: false, qualifies: false, prime: false };
   if (!Array.isArray(walletDetails) || !mySide) return empty;
@@ -1568,6 +1617,24 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     }
   }
 
+  // ─── PATH-D / DISSENT: v12abcd "d" contribMargin ≤ 0 mute rescue ──────
+  // After HC / RANK / SHARP leave a pick at 0u, rescue when against-side
+  // weighted contribution matches or beats FOR (Feature Lab unused signal),
+  // on MLB, odds ≤ +200, maxShare < 0.35. Flat 1u. Never up-sizes.
+  let pathDRescued = false;
+  const pathDSlice = computePathDSlice(wd, side);
+  if (isPathDLive(pickDate) && appliedStatus === 'ACTIVE'
+      && scoreV12Live != null && scoreV12Live > 0
+      && finalUnitsApplied === 0 && !rankRescued && !sharpRescued
+      && !(Number.isFinite(sd.manualStake) && sd.manualStake > 0)
+      && pick.sport === 'MLB'
+      && Number.isFinite(sideOdds) && sideOdds <= PATH_D_MAX_ODDS
+      && pathDSlice.qualifies) {
+    finalUnitsApplied = Math.round(oddsCap(PATH_D_UNITS, sideOdds) * 100) / 100;
+    hcStakeTier = 'DISSENT';
+    pathDRescued = true;
+  }
+
   // ─── lockStage promote/demote — v12 gate ──────────────────────────────
   // Ship floor: v12 score > 0 (the mute boundary). Picks above 0 LOCK
   // with units determined by the ladder (SMALL 0.25u → ELITE 5u).
@@ -1804,6 +1871,13 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (rankRescued) {
     changes.push(`RANK-RESCUE: 2-for-0 slice promoted HC-muted pick → ${RANK_RESCUE_UNITS}u`);
   }
+  if (pathDRescued) {
+    changes.push(
+      `PATH-D/DISSENT: contribMargin=${pathDSlice.contribMargin.toFixed(1)} `
+      + `maxShare=${pathDSlice.maxShare == null ? '—' : pathDSlice.maxShare.toFixed(3)} `
+      + `fo=${pathDSlice.fo} ag=${pathDSlice.ag} → ${PATH_D_UNITS}u`
+    );
+  }
   // finalUnits drift logging — flag any time the canonical bet size changes
   // by ≥0.05u so cycle output makes the change visible.
   if (Number.isFinite(sd.finalUnits) && Math.abs(sd.finalUnits - finalUnitsApplied) >= 0.05) {
@@ -2033,6 +2107,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       rankRescued,
       sharp: sharpCensus,
       sharpRescued,
+      pathD: pathDSlice,
+      pathDRescued,
       score: scoreV12Live,
       stakeTier: hcStakeTier,
       units: finalUnitsApplied,
@@ -2355,11 +2431,15 @@ async function main() {
     const sharpRoi = Number.isFinite(cs.sharp?.maxQRoi) ? `${cs.sharp.maxQRoi.toFixed(1)}%` : '—';
     const sharpWr = cs.sharp?.meanPWr != null ? cs.sharp.meanPWr.toFixed(1) : '—';
     const sharpMark = cs.sharpRescued ? ' ✓RESCUED' : '';
+    const cm = cs.pathD?.contribMargin;
+    const ms = cs.pathD?.maxShare;
+    const pathDMark = cs.pathDRescued ? ' ✓RESCUED' : (cs.pathD?.qualifies ? ' (qualifies)' : '');
     console.log(
       `  ${c.col.replace('sharpFlow', '').toUpperCase()} ${c.docId}/${c.side}: `
       + `wd=${cs.wdCount}(${cs.wdSource}) wl=${cs.forW}-${cs.agW} hc=${cs.hcMargin} `
       + `rank=${cs.rank.backing}-${cs.rank.against}${rankMark} `
       + `sharp$=${sharpRoi}/wr${sharpWr}${sharpMark} `
+      + `dissent=cm${cm == null ? '—' : cm.toFixed(1)}/ms${ms == null ? '—' : ms.toFixed(2)}${pathDMark} `
       + `→ ${cs.stakeTier || '∅'} ${cs.units}u (score=${cs.score == null ? '∅' : cs.score.toFixed(3)})`
     );
   }

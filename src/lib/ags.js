@@ -1060,6 +1060,7 @@ export const AGS_V12_STAKE_PATH = {
   MINI:          'mini-HC',
   CONFIRMED:     'margin 3+',
   'MINI-':       'gate-cut',
+  DISSENT:       'Path D CM≤0',
   MONITORING:    'watch',
   FADE:          'muted',
 };
@@ -1073,7 +1074,7 @@ export const AGS_V12_DISPLAY_TIERS = [
   { key: 'TOP',    label: 'TOP PICK',   color: '#E8B85C', unitsLabel: '4-5u', sub: 'HC-margin model', paths: ['TOP+', 'TOP'] },
   { key: 'SHARP',  label: 'SHARP PLAY', color: '#A855F7', unitsLabel: '3-4u', sub: 'sharp money',     paths: ['RANK', 'SHARP-PRIME', 'SHARP'] },
   { key: 'STRONG', label: 'STRONG',     color: '#14B8A6', unitsLabel: '3u',   sub: 'mini-HC',         paths: ['MINI'] },
-  { key: 'LEAN',   label: 'LEAN',       color: '#6B7280', unitsLabel: '1u',   sub: 'confirmed / cut', paths: ['CONFIRMED', 'MINI-'] },
+  { key: 'LEAN',   label: 'LEAN',       color: '#6B7280', unitsLabel: '1u',   sub: 'confirmed / cut / Path D', paths: ['CONFIRMED', 'MINI-', 'DISSENT'] },
 ];
 
 // Reverse lookup: internal stake-tier key → display-tier key.
@@ -1092,6 +1093,7 @@ export const AGS_V12_STAKE_TIER_META = {
   MINI:          { label: 'STRONG',    short: 'STRONG', color: '#14B8A6', bg: 'rgba(20,184,166,0.14)',  units: V12_1_MINI_UNITS,      ribbon: null, stars: 3 },
   CONFIRMED:     { label: 'CONFIRMED', short: 'CONF',   color: '#3B82F6', bg: 'rgba(59,130,246,0.14)',  units: V12_1_CONFIRMED_UNITS, ribbon: null, stars: 2 },
   'MINI-':       { label: 'LEAN',      short: 'LEAN',   color: '#6B7280', bg: 'rgba(107,114,128,0.12)', units: 1,                     ribbon: null, stars: 2 },
+  DISSENT:       { label: 'LEAN',      short: 'PATH-D', color: '#0EA5E9', bg: 'rgba(14,165,233,0.12)',  units: 1,                     ribbon: null, stars: 2 },
   MONITORING:    { label: 'MONITORING', short: 'WATCH', color: '#6B7280', bg: 'rgba(107,114,128,0.12)', units: 0,                     ribbon: null, stars: 0 },
   FADE:          { label: 'PASS',      short: 'PASS',   color: '#ef4444', bg: 'rgba(239,68,68,0.12)',   units: 0,                     ribbon: null, stars: 0 },
 };
