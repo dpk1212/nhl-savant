@@ -563,6 +563,78 @@ function computePathDSlice(walletDetails, mySide) {
     && maxShare < PATH_D_MAX_SHARE;
   return { fo, ag, contribFor, contribAg, contribMargin, maxShare, qualifies };
 }
+
+// ── WINNER-ALIGN (v12abcde) — mute toxic fades, size by EDGE, rescue WINNER ─
+// Site thesis: follow real winners. Uses per-sport featured-pick WR from
+// sharpWalletProfiles (n≥8). For LIVE picks today's games are unsettled, so
+// the profile read is near-causal (same contract as RANK / SHARP).
+//
+// Cutover: WINNER_ALIGN_LIVE_FROM. Pre-cutover history is never rewritten.
+// Pipeline order (after Path A/B/C/D):
+//   1. MUTE  — A/B/C stakes → 0u if fadeTop WR≥60 OR meanEdge≤−5
+//   2. SIZE  — survivors resized by path × EDGE class
+//   3. RESCUE — still 0u + score>0 + EDGE≥3 → WINNER @ 4u (E5+) / 3u (E3–5)
+// CF Jun1–Jul11 (causal): E5@4/E3@3 pack ≈ +50u vs actual on full book.
+const WINNER_ALIGN_LIVE_FROM = '2026-07-12';
+const WINNER_ALIGN_MIN_N = 8;
+const WINNER_ALIGN_FADE_TOP_WR = 60;
+const WINNER_ALIGN_MEAN_BEHIND = -5;
+const WINNER_ALIGN_EDGE5 = 5;
+const WINNER_ALIGN_EDGE3 = 3;
+const WINNER_ALIGN_RESCUE_E5_UNITS = 4;
+const WINNER_ALIGN_RESCUE_E3_UNITS = 3;
+const WINNER_ALIGN_MUTE_TIERS = new Set([
+  'SUPER', 'TOP', 'TOP+', 'MINI', 'MINI-', 'CONFIRMED',
+  'RANK', 'SHARP', 'SHARP-PRIME',
+]);
+const WINNER_ALIGN_PATH_A = new Set(['SUPER', 'TOP', 'TOP+', 'MINI', 'MINI-', 'CONFIRMED']);
+function isWinnerAlignLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= WINNER_ALIGN_LIVE_FROM;
+}
+function sportFeaturedWr(profile, sport) {
+  const rec = profile?.bySport?.[sport];
+  if (!rec) return null;
+  const n = Number(rec.picks?.n) || 0;
+  const wr = Number(rec.picks?.wr);
+  if (n < WINNER_ALIGN_MIN_N || !Number.isFinite(wr)) return null;
+  return wr;
+}
+/** Mean FOR−AG sport WR edge + fade-top diagnostics from walletDetails. */
+function computeWinnerAlign(walletDetails, mySide, sport, walletProfiles) {
+  const empty = {
+    forWrs: [], agWrs: [], meanFor: null, meanAg: null, edge: null,
+    topFor: null, topAg: null, hasBoth: false, fadeTop60: false, meanBehind5: false,
+  };
+  if (!Array.isArray(walletDetails) || !mySide || !sport) return empty;
+  const forWrs = [];
+  const agWrs = [];
+  const seen = new Set();
+  for (const w of walletDetails) {
+    const short = String(w.walletShort || w.wallet || '').slice(-6).toLowerCase();
+    if (!short || seen.has(short)) continue;
+    seen.add(short);
+    const profile = walletProfiles.get(short) || walletProfiles.get(short.toUpperCase());
+    const wr = sportFeaturedWr(profile, sport);
+    if (wr == null) continue;
+    if (w.side === mySide) forWrs.push(wr);
+    else if (w.side) agWrs.push(wr);
+  }
+  const meanFor = forWrs.length ? forWrs.reduce((s, x) => s + x, 0) / forWrs.length : null;
+  const meanAg = agWrs.length ? agWrs.reduce((s, x) => s + x, 0) / agWrs.length : null;
+  const topFor = forWrs.length ? Math.max(...forWrs) : null;
+  const topAg = agWrs.length ? Math.max(...agWrs) : null;
+  const hasBoth = meanFor != null && meanAg != null;
+  const edge = hasBoth ? meanFor - meanAg : null;
+  const fadeTop60 = topAg != null
+    && topAg >= WINNER_ALIGN_FADE_TOP_WR
+    && (topFor == null || topAg > topFor);
+  const meanBehind5 = hasBoth && edge <= WINNER_ALIGN_MEAN_BEHIND;
+  return {
+    forWrs, agWrs, meanFor, meanAg, edge, topFor, topAg,
+    hasBoth, fadeTop60, meanBehind5,
+  };
+}
+
 function computeSharpQuality(walletDetails, mySide, sport, walletProfiles, pickDate) {
   const empty = { forCount: 0, maxQRoi: -Infinity, meanPWr: null, provenDollar: false, qualifies: false, prime: false };
   if (!Array.isArray(walletDetails) || !mySide) return empty;
@@ -1635,6 +1707,88 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     pathDRescued = true;
   }
 
+  // ─── WINNER-ALIGN — mute / size / rescue (after A/B/C/D) ───────────────
+  // Diagnostics stamp every eligible cycle; actions only when date-gated.
+  // Does NOT flip sides. T-15 freeze still gates writes upstream.
+  let winnerAlign = null;
+  let winnerMuted = false;
+  let winnerRescued = false;
+  let winnerSized = false;
+  let winnerAlignAction = null; // 'mute' | 'size' | 'rescue' | null
+  if (v121Eligible && appliedStatus === 'ACTIVE'
+      && scoreV12Live != null && scoreV12Live > 0) {
+    winnerAlign = computeWinnerAlign(wd, side, pick.sport, walletProfiles);
+    if (isWinnerAlignLive(pickDate)) {
+      const tierNow = hcStakeTier;
+      const wa = winnerAlign;
+
+      // 1) MUTE toxic A/B/C stakes
+      if (finalUnitsApplied > 0
+          && tierNow
+          && WINNER_ALIGN_MUTE_TIERS.has(tierNow)
+          && (wa.fadeTop60 || wa.meanBehind5)) {
+        finalUnitsApplied = 0;
+        winnerMuted = true;
+        winnerAlignAction = 'mute';
+      }
+
+      // 2) SIZE survivors by path × EDGE
+      if (finalUnitsApplied > 0 && wa.hasBoth && tierNow) {
+        const e = wa.edge;
+        const before = finalUnitsApplied;
+        if (WINNER_ALIGN_PATH_A.has(tierNow)) {
+          if (e >= WINNER_ALIGN_EDGE5) {
+            finalUnitsApplied = Math.min(finalUnitsApplied + 1, 6);
+          } else if (e >= WINNER_ALIGN_EDGE3) {
+            // keep
+          } else if (e >= 0) {
+            finalUnitsApplied = Math.max(1, finalUnitsApplied - 1);
+          } else {
+            finalUnitsApplied = 1;
+          }
+        } else if (tierNow === 'RANK') {
+          finalUnitsApplied = e >= WINNER_ALIGN_EDGE5
+            ? 4
+            : Math.min(finalUnitsApplied, 2);
+        } else if (tierNow === 'SHARP' || tierNow === 'SHARP-PRIME') {
+          if (e >= WINNER_ALIGN_EDGE5) {
+            // keep full
+          } else if (e >= WINNER_ALIGN_EDGE3) {
+            finalUnitsApplied = Math.min(finalUnitsApplied, 2);
+          } else {
+            finalUnitsApplied = 1;
+          }
+        } else if (tierNow === 'DISSENT') {
+          if (e >= WINNER_ALIGN_EDGE3) {
+            finalUnitsApplied = 1;
+          } else if (e < 0) {
+            finalUnitsApplied = 0;
+          }
+        }
+        finalUnitsApplied = Math.round(oddsCap(finalUnitsApplied, sideOdds) * 100) / 100;
+        if (Math.abs(finalUnitsApplied - before) >= 0.05) {
+          winnerSized = true;
+          if (!winnerAlignAction) winnerAlignAction = 'size';
+        }
+      }
+
+      // 3) RESCUE — still muted, score>0, EDGE≥3 → WINNER @ 4u / 3u
+      if (finalUnitsApplied === 0
+          && wa.hasBoth
+          && wa.edge >= WINNER_ALIGN_EDGE3
+          && !(Number.isFinite(sd.manualStake) && sd.manualStake > 0)) {
+        const u = wa.edge >= WINNER_ALIGN_EDGE5
+          ? WINNER_ALIGN_RESCUE_E5_UNITS
+          : WINNER_ALIGN_RESCUE_E3_UNITS;
+        finalUnitsApplied = Math.round(oddsCap(u, sideOdds) * 100) / 100;
+        hcStakeTier = 'WINNER';
+        winnerRescued = true;
+        winnerMuted = false;
+        winnerAlignAction = 'rescue';
+      }
+    }
+  }
+
   // ─── lockStage promote/demote — v12 gate ──────────────────────────────
   // Ship floor: v12 score > 0 (the mute boundary). Picks above 0 LOCK
   // with units determined by the ladder (SMALL 0.25u → ELITE 5u).
@@ -1715,8 +1869,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // that v12 has un-muted to ELITE/5u still gets hidden by the UI's
   // `mutedBy != null` filter — manifesting as "biggest pick of the day
   // missing from the Locked Picks list".
-  const LEGACY_UI_MUTE_VALUES = new Set(['ags-quality-veto', 'ags-hard-mute']);
-  if (mutedByAgs) {
+  const LEGACY_UI_MUTE_VALUES = new Set(['ags-quality-veto', 'ags-hard-mute', 'winner_align_fade']);
+  if (winnerMuted) {
+    patch.mutedBy = 'winner_align_fade';
+  } else if (mutedByAgs) {
     patch.mutedBy = 'ags-quality-veto';
   } else if (LEGACY_UI_MUTE_VALUES.has(sd.mutedBy)) {
     patch.mutedBy = admin.firestore.FieldValue.delete();
@@ -1876,6 +2032,41 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       `PATH-D/DISSENT: contribMargin=${pathDSlice.contribMargin.toFixed(1)} `
       + `maxShare=${pathDSlice.maxShare == null ? '—' : pathDSlice.maxShare.toFixed(3)} `
       + `fo=${pathDSlice.fo} ag=${pathDSlice.ag} → ${PATH_D_UNITS}u`
+    );
+  }
+  // Winner-align diagnostics — stamp whenever computed (even pre-action dates
+  // get nulls cleared). Actions already mutated finalUnitsApplied / tier.
+  if (v121Eligible) {
+    if (winnerAlign) {
+      patch.v8_winnerAlignEdge = winnerAlign.edge;
+      patch.v8_winnerAlignMeanFor = winnerAlign.meanFor;
+      patch.v8_winnerAlignMeanAg = winnerAlign.meanAg;
+      patch.v8_winnerAlignTopFor = winnerAlign.topFor;
+      patch.v8_winnerAlignTopAg = winnerAlign.topAg;
+      patch.v8_winnerAlignFadeTop60 = winnerAlign.fadeTop60;
+      patch.v8_winnerAlignMeanBehind5 = winnerAlign.meanBehind5;
+      patch.v8_winnerAlignAction = winnerAlignAction;
+    } else {
+      if (sd.v8_winnerAlignEdge != null) patch.v8_winnerAlignEdge = admin.firestore.FieldValue.delete();
+      if (sd.v8_winnerAlignAction != null) patch.v8_winnerAlignAction = admin.firestore.FieldValue.delete();
+    }
+  }
+  if (winnerMuted) {
+    const why = winnerAlign?.fadeTop60
+      ? `fadeTop ${winnerAlign.topAg?.toFixed?.(1) ?? winnerAlign.topAg}`
+      : `meanEdge ${winnerAlign?.edge?.toFixed?.(1) ?? winnerAlign?.edge}`;
+    changes.push(`WINNER-ALIGN MUTE: ${why} → 0u`);
+  }
+  if (winnerSized) {
+    changes.push(
+      `WINNER-ALIGN SIZE: edge=${winnerAlign?.edge?.toFixed?.(1) ?? '—'} `
+      + `→ ${finalUnitsApplied}u (${hcStakeTier})`
+    );
+  }
+  if (winnerRescued) {
+    changes.push(
+      `WINNER-ALIGN RESCUE: edge=${winnerAlign?.edge?.toFixed?.(1) ?? '—'} `
+      + `→ ${finalUnitsApplied}u WINNER`
     );
   }
   // finalUnits drift logging — flag any time the canonical bet size changes

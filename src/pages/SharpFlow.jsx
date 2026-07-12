@@ -1409,9 +1409,11 @@ function starsFromAgsuTier(tier) {
   if (tier === 'RANK') return 4.0;        // STRONG PLAY (4u)
   if (tier === 'SHARP-PRIME') return 4.0; // STRONG PLAY (4u)
   if (tier === 'SHARP') return 3.0;       // SOLID PLAY (3u)
+  if (tier === 'WINNER') return 4.0;      // winner-align EDGE rescue (3-4u)
   if (tier === 'MINI') return 3.0;        // SOLID PLAY (3u)
   if (tier === 'CONFIRMED') return 2.0;   // LEAN (1u)
   if (tier === 'MINI-') return 2.0;       // LEAN (1u)
+  if (tier === 'DISSENT') return 2.0;     // Path D (1u)
   if (tier === 'MONITORING') return 0.0;
   // Legacy score-quintile tiers.
   if (tier === 'ELITE') return 5.0;
