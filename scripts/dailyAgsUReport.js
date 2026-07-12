@@ -1914,7 +1914,7 @@ const WINNER_ALIGN_LIVE_FROM = '2026-07-12';
 const WINNER_ALIGN_RESCUE_E5 = 4;
 const WINNER_ALIGN_RESCUE_E3 = 3;
 
-/** Fill missing EDGE from walletDetails × current profiles (n≥8 sport WR). */
+/** @deprecated LOOKAHEAD — do not use for historical EDGE tables. Current profiles on old dates. Kept only if needed for live ungraded diagnostics. */
 function enrichWinnerAlignEdge(rows, walletProfiles) {
   if (!walletProfiles || !walletProfiles.size) return;
   for (const r of rows) {
@@ -1968,8 +1968,11 @@ function buildV12WinnerAlign(report, stats, walletProfiles) {
   report.push('');
 
   const { v12Rows, v12RowsAll } = stats;
-  enrichWinnerAlignEdge(v12Rows, walletProfiles);
-  if (v12RowsAll) enrichWinnerAlignEdge(v12RowsAll, walletProfiles);
+  // DO NOT enrich historical rows with current sharpWalletProfiles WR.
+  // That is lookahead (same bug that inflated EDGE CFs to 74%). Profile
+  // replay manufactures a totally different E3-5 set (~4/59 overlap with
+  // causal) and printed a fake 36% WR. Stamps only below; live going
+  // forward is near-causal because today's games are unsettled.
 
   // (A) Live WINNER rescues
   const liveW = (v12RowsAll || v12Rows).filter(r => r.hcStakeTier === 'WINNER');
@@ -1990,33 +1993,37 @@ function buildV12WinnerAlign(report, stats, walletProfiles) {
   // (B) EDGE margin on EVERY V12 play (staked + muted)
   report.push(`### (B) EDGE margin on every V12 play`);
   report.push('');
-  report.push(`Mean FOR−AG sport WR (pp). Stamped \`v8_winnerAlignEdge\` when present; else replayed from walletDetails × profiles.`);
+  report.push(`Mean FOR−AG sport WR (pp) from **stamped** \`v8_winnerAlignEdge\` only (cron live write — near-causal post-cutover).`);
   report.push('');
-  const withEdge = v12Rows.filter(r => Number.isFinite(r.winnerAlignEdge));
-  const buckets = ['E5+', 'E3-5', 'E0-3', 'E-5-0', 'E≤-5', 'NA'];
+  report.push(`> ⚠️ **Never replay current profiles onto old dates for EDGE.** That is lookahead. Audit 2026-07-12: leaky "E3–5" overlapped causal on **4/59** picks and printed a fake ~37–44% WR. Honest causal: all E3–5 ~57% · muted score>0 E3–5 ~65% · leaky E5+ still inflated. Table = **stamps only** until live grades fill in.`);
+  report.push('');
+  const stamped = v12Rows.filter(r => Number.isFinite(r.winnerAlignEdge));
+  const buckets = ['E5+', 'E3-5', 'E0-3', 'E-5-0', 'E≤-5'];
   report.push(`| EDGE bucket | N | W-L | Win % | Flat 1u PnL | Staked N | Staked PnL |`);
   report.push(`|-------------|---|-----|-------|-------------|----------|------------|`);
-  for (const b of buckets) {
-    const rows = b === 'NA'
-      ? v12Rows.filter(r => !Number.isFinite(r.winnerAlignEdge))
-      : v12Rows.filter(r => edgeBucket(r.winnerAlignEdge) === b);
-    if (!rows.length) continue;
-    let w = 0, l = 0, flat = 0, sN = 0, sPnl = 0;
-    for (const r of rows) {
-      if (r.won === 1) w++; else if (r.won === 0) l++;
-      const odds = r.peakOdds || r.lockOdds;
-      if (r.won === 1) flat += odds < 0 ? 100 / Math.abs(odds) : odds / 100;
-      else if (r.won === 0) flat -= 1;
-      if ((r.units || 0) > 0 && !r.tracked) {
-        sN++;
-        sPnl += r.profit || 0;
+  if (stamped.length === 0) {
+    report.push(`| _(no stamped EDGE yet — winner-align live 2026-07-12)_ |  |  |  |  |  |  |`);
+  } else {
+    for (const b of buckets) {
+      const rows = stamped.filter(r => edgeBucket(r.winnerAlignEdge) === b);
+      if (!rows.length) continue;
+      let w = 0, l = 0, flat = 0, sN = 0, sPnl = 0;
+      for (const r of rows) {
+        if (r.won === 1) w++; else if (r.won === 0) l++;
+        const odds = r.peakOdds || r.lockOdds;
+        if (r.won === 1) flat += odds < 0 ? 100 / Math.abs(odds) : odds / 100;
+        else if (r.won === 0) flat -= 1;
+        if ((r.units || 0) > 0 && !r.tracked) {
+          sN++;
+          sPnl += r.profit || 0;
+        }
       }
+      const n = w + l;
+      report.push(`| ${b.padEnd(11)} | ${String(n).padStart(3)} | ${(w+'-'+l).padEnd(5)} | ${pct(w, n).padStart(5)} | ${fmtSigned(flat).padStart(11)} | ${String(sN).padStart(8)} | ${fmtSigned(sPnl).padStart(10)} |`);
     }
-    const n = w + l;
-    report.push(`| ${b.padEnd(11)} | ${String(n).padStart(3)} | ${(w+'-'+l).padEnd(5)} | ${pct(w, n).padStart(5)} | ${fmtSigned(flat).padStart(11)} | ${String(sN).padStart(8)} | ${fmtSigned(sPnl).padStart(10)} |`);
   }
   report.push('');
-  report.push(`_EDGE coverage: ${withEdge.length}/${v12Rows.length} graded V12 rows have a computable margin._`);
+  report.push(`_Stamped EDGE coverage: ${stamped.length}/${v12Rows.length} graded V12 rows._`);
   report.push('');
 
   // (C) Mute actions
@@ -2832,7 +2839,7 @@ function buildV12RecentLivePicks(report, stats, n = 30, walletProfiles = null) {
     .slice(0, n);
   report.push(`The last ${recent.length} picks V12 actually shipped (units > 0). This is the audit trail — every row is a real bet that risked real money, with the V12 score that drove the decision and the realised outcome.`);
   report.push('');
-  if (walletProfiles) enrichWinnerAlignEdge(recent, walletProfiles);
+  // Stamped EDGE only — do not profile-replay (lookahead).
   report.push(`| Date       | Sport | Mkt    | Pick                    | Odds  | V12   | Path     | EDGE   | Score    | Stake | Outcome | PnL (u)    |`);
   report.push(`|------------|-------|--------|-------------------------|-------|-------|----------|--------|----------|-------|---------|------------|`);
   for (const r of recent) {

@@ -91,3 +91,17 @@ Path-stamped A/B/C + rescues: same ΔPnL (~+48–57u depending on rescue ladder)
 - [x] Date gate + stamps
 - [ ] Monitor first 2 weeks: WINNER WR, mute kill rate, E3-slice PnL
 - [ ] UI badge for `WINNER` tier (if not already generic)
+
+## CRITICAL — Report vs causal (2026-07-12)
+
+The first AGS-U §5d table used **current-profile EDGE replay** on historical picks (lookahead). That is **not** the causal analysis used to size Path E.
+
+| Lens | E3–5 n | WR | Notes |
+|------|-------:|---:|-------|
+| Leaky report replay | ~41–59 | **~37–44%** | **INVALID** — different pick set |
+| Causal (honest) | ~42–51 | **~57%** | decision lens |
+| Causal muted score>0 | ~20 | **~65%** | rescue pool |
+
+Leaky vs causal E3–5 overlap was **4/59**. Most leaky "E3–5" were misfiled causal E5+ losers (27 @ 33% WR). **Trust causal; ignore that report number.**
+
+Report fixed to **stamped EDGE only** going forward.
