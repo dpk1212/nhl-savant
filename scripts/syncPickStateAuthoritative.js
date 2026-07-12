@@ -489,7 +489,7 @@ function computeRankSlice(walletDetails, mySide, sport, walletProfiles) {
 // Pre-retune dates keep legacy for≥2 + TOP boost so already-published slates
 // are not resized. Graded/COMPLETED docs are never rewritten either way.
 const SHARP_LIVE_FROM   = '2026-06-26';  // original Path C cutover
-const SHARP_C_RETUNE_FROM = '2026-07-13'; // optimal-levels cutover (forward-only)
+const SHARP_C_RETUNE_FROM = '2026-07-12'; // optimal-levels cutover (include today; was 07-13)
 const SHARP_MIN_QN      = 8;             // min settled positions for a $ROI read
 const SHARP_MIN_QROI    = 10;            // positions.dollarRoi threshold (%)
 const SHARP_MIN_PN      = 5;             // min settled picks to count toward wr
