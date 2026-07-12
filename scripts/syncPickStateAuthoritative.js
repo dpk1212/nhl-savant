@@ -471,31 +471,41 @@ function computeRankSlice(walletDetails, mySide, sport, walletProfiles) {
   return { backing, against, qualifies: backing >= 2 && against === 0 };
 }
 
-// ── SHARP-RESCUE / v12abc "c" — proven-$ + win-rate + 2-backer consensus ────
+// ── SHARP-RESCUE / v12abc "c" — proven-$ + win-rate + consensus ─────────────
 // A v12-shipped pick (score > 0) the HC sizer muted to 0u is staked when its FOR
 // side carries the wallet-QUALITY signal, built from INTERNAL stats only:
 //   • ≥1 FOR backer with positions.dollarRoi ≥ SHARP_MIN_QROI on ≥ SHARP_MIN_QN
 //     settled positions  (our grading of their real-money Polymarket trades)
 //   • mean picks.wr across FOR backers (each ≥ SHARP_MIN_PN settled picks) ≥ floor
 //   • ≥ SHARP_MIN_FOR distinct sharps on the FOR side (dissent allowed)
+//   • american odds softer than SHARP_NO_CHALK_ODDS (no ≤-150 chalk rescues)
 // Profiles are read AT SCORING TIME for a LIVE pick (today's games unsettled), so
 // — exactly like RANK-RESCUE — the read is leak-free / point-in-time.
-// v12-era backtest: BASE +24.1% / 67% (holdout TEST +31.6%), PRIME +38.2% / 77%.
-// Also drives two HC-book overlays: TOP boost (HC-1 + proven-$) and MINI cut
-// (gate-fail MINI). Internal stats live at profile.positions.* / profile.picks.*.
+//
+// Live calibration (graded Path C 2026-06-26→07-11, 78 sides): defaults ran
+// 39-39 / −24.5u / −9.6% ROI. Grid + leak-free walk-forward retune:
+//   for≥3 + no-chalk rescue + TOP boost OFF + keep MINI- cut
+// → 35-26 / +8.8u / +5.0% ROI (both date halves green). Raising $ROI/WR floors
+// alone did not beat that package; disabling TOP+ and requiring 3+ FOR did.
+// Also drives the MINI cut (gate-fail MINI). TOP boost stays coded but OFF.
 const SHARP_LIVE_FROM   = '2026-06-26';  // cutover — history is never rewritten
 const SHARP_MIN_QN      = 8;             // min settled positions for a $ROI read
 const SHARP_MIN_QROI    = 10;            // positions.dollarRoi threshold (%)
 const SHARP_MIN_PN      = 5;             // min settled picks to count toward wr
 const SHARP_WR_BASE     = 50;            // mean picks.wr floor — SHARP
 const SHARP_WR_PRIME    = 55;            // mean picks.wr floor — SHARP-PRIME boost
-const SHARP_MIN_FOR     = 2;             // ≥2 distinct FOR-side sharps (consensus)
+const SHARP_MIN_FOR     = 3;             // ≥3 distinct FOR-side sharps (was 2; for=2 ran −36% live)
+const SHARP_NO_CHALK_ODDS = -150;        // skip SHARP rescue when odds ≤ this (chalk)
 const SHARP_UNITS       = 3;             // SHARP rescue stake
 const SHARP_PRIME_UNITS = 4;             // SHARP-PRIME rescue stake
-const TOP_BOOST_UNITS   = 5;             // HC-1 TOP + proven-$ → boost 4u → 5u
+const TOP_BOOST_ENABLED = false;         // live: TOP+ boost ran −9% ROI — leave at HC TOP 4u
+const TOP_BOOST_UNITS   = 5;             // HC-1 TOP + proven-$ → boost 4u → 5u (inert while OFF)
 const MINI_REDUCED_UNITS = 1;            // gate-fail MINI (no proven-$) → 3u → 1u
 function isSharpRescueLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= SHARP_LIVE_FROM;
+}
+function isSharpChalk(odds) {
+  return Number.isFinite(odds) && odds <= SHARP_NO_CHALK_ODDS;
 }
 function computeSharpQuality(walletDetails, mySide, sport, walletProfiles) {
   const empty = { forCount: 0, maxQRoi: -Infinity, meanPWr: null, provenDollar: false, qualifies: false, prime: false };
@@ -1468,18 +1478,19 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     finalUnitsApplied = hc.units;      // odds-capped; MONITORING → 0u
   }
 
-  // ─── v12abc HC-book overlays — TOP boost + MINI reduction ─────────────
+  // ─── v12abc HC-book overlays — TOP boost (optional) + MINI reduction ──
   // Internal wallet-quality slice (proven-$ ROI + featured win-rate), same
   // point-in-time read as RANK-RESCUE. Computed once here, reused by the
   // SHARP-RESCUE block below. Inert before the SHARP_LIVE_FROM cutover.
   //   • TOP (HC margin 1) + proven-$ backer & mean wr ≥ floor → boost 4u → 5u
-  //     (backtest: SHARP-pass TOP +41% vs +25% gate-fail).
-  //   • MINI with NO proven-$ backer → cut 3u → 1u (gate-fail MINI ran −56%).
+  //     ONLY when TOP_BOOST_ENABLED (live Path C: boost OFF — TOP+ was −9% ROI).
+  //   • MINI with NO proven-$ backer → cut 3u → 1u (gate-fail MINI ran −56%;
+  //     live MINI- kept +27% ROI — this lever stays ON).
   let sharpQ = null;
   if (isSharpRescueLive(pickDate) && appliedStatus === 'ACTIVE'
       && scoreV12Live != null && scoreV12Live > 0) {
     sharpQ = computeSharpQuality(wd, side, pick.sport, walletProfiles);
-    if (hcStakeTier === 'TOP' && sharpQ.provenDollar
+    if (TOP_BOOST_ENABLED && hcStakeTier === 'TOP' && sharpQ.provenDollar
         && sharpQ.meanPWr != null && sharpQ.meanPWr >= SHARP_WR_BASE) {
       finalUnitsApplied = Math.round(oddsCap(TOP_BOOST_UNITS, sideOdds) * 100) / 100;
       hcStakeTier = 'TOP+';
@@ -1526,16 +1537,18 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     }
   }
 
-  // ─── SHARP-RESCUE: v12abc "c" proven-$ + win-rate + 2-backer consensus ──
+  // ─── SHARP-RESCUE: v12abc "c" proven-$ + win-rate + ≥3-backer consensus ─
   // Rescues a v12-shipped pick the HC sizer (and RANK) left muted at 0u, when
-  // the FOR side clears the internal wallet-quality gate. PRIME (mean wr ≥ 55)
-  // sizes one notch up. Only ever rescues muted picks — never up-sizes.
+  // the FOR side clears the internal wallet-quality gate AND the price is not
+  // heavy chalk (≤ SHARP_NO_CHALK_ODDS). PRIME (mean wr ≥ 55) sizes one notch
+  // up. Only ever rescues muted picks — never up-sizes.
   let sharpRescued = false;
   const sharpCensus = sharpQ || computeSharpQuality(wd, side, pick.sport, walletProfiles);
   if (isSharpRescueLive(pickDate) && appliedStatus === 'ACTIVE'
       && scoreV12Live != null && scoreV12Live > 0
       && finalUnitsApplied === 0 && !rankRescued
-      && !(Number.isFinite(sd.manualStake) && sd.manualStake > 0)) {
+      && !(Number.isFinite(sd.manualStake) && sd.manualStake > 0)
+      && !isSharpChalk(sideOdds)) {
     const q = sharpCensus;
     if (q.qualifies) {
       const u = q.prime ? SHARP_PRIME_UNITS : SHARP_UNITS;
