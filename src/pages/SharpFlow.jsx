@@ -5330,11 +5330,11 @@ function V12ConvictionPanel({ tier, tierColor, tierBg, forW, agW, qFor, qAg, hcF
 
 // ════════════════════════════════════════════════════════════════════════
 // SharpLockCardV2 — premium flagship locked-pick card.
-// Collapsed row scans fast (crest · pick · price · edge · conviction tier);
-// expanding unseals a cinematic verdict band with an animated AGSU V12
-// conviction gauge (1–100), the payoff numbers, the receipts, the sharp-
-// money split, line history and lifecycle. Reuses BackingWalletStrip for the
-// proven-wallet enrichment so the receipts stay authoritative.
+// Collapsed row scans fast (crest · pick · price · EDGE · stake tier);
+// expanding unseals a cinematic verdict band with the winner-align EDGE
+// gauge, the payoff numbers, the receipts, the sharp-money split, line
+// history and lifecycle. Reuses BackingWalletStrip for the proven-wallet
+// enrichment so the receipts stay authoritative.
 // ════════════════════════════════════════════════════════════════════════
 function useSlkCountUp(target, run, ms = 1100) {
   const [v, setV] = useState(0);
@@ -5357,10 +5357,10 @@ function useSlkCountUp(target, run, ms = 1100) {
   return v;
 }
 
-// Semicircle gauge — same geometry/feel as the live card's ConvictionGauge
-// so the locked card reads as a sibling of the Sharp Position card. The
-// number is the literal AGSU V12 score on a 0–100 face.
-function SlkRing({ value, color, tier, run, size = 124 }) {
+// Semicircle gauge — same geometry as the live card. Center number is
+// winner-align EDGE (FOR−AG sport WR pp). Arc fill is a soft map of EDGE
+// onto 0–100 for visual weight only (`value`), not the model score.
+function SlkRing({ value, color, tier, run, size = 124, label = 'EDGE', displayText = null }) {
   const sw = 9;
   const r = (size - sw) / 2 - 2;
   const cx = size / 2;
@@ -5369,6 +5369,7 @@ function SlkRing({ value, color, tier, run, size = 124 }) {
   const animated = useSlkCountUp(value, run, 1100);
   const dash = (Math.max(0, Math.min(100, animated)) / 100) * semicirc;
   const h = cy + sw / 2 + 2;
+  const centerLabel = displayText != null ? displayText : Math.round(animated);
   return (
     <div style={{ position: 'relative', width: size, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <svg width={size} height={h} viewBox={`0 0 ${size} ${h}`} style={{ display: 'block', overflow: 'visible' }}>
@@ -5378,11 +5379,11 @@ function SlkRing({ value, color, tier, run, size = 124 }) {
           fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round"
           strokeDasharray={`${dash} ${semicirc}`}
           style={{ filter: `drop-shadow(0 0 5px ${color}88)`, transition: 'stroke-dasharray 0.9s cubic-bezier(0.4,0,0.2,1)' }} />
-        <text x={cx} y={cy - 9} textAnchor="middle" fill={B.text} fontSize="30" fontWeight="900"
-          style={{ fontFeatureSettings: "'tnum'", letterSpacing: '-0.03em' }}>{Math.round(animated)}</text>
+        <text x={cx} y={cy - 9} textAnchor="middle" fill={B.text} fontSize={displayText != null ? '22' : '30'} fontWeight="900"
+          style={{ fontFeatureSettings: "'tnum'", letterSpacing: '-0.03em' }}>{centerLabel}</text>
       </svg>
       <div style={{ marginTop: '-2px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
-        <span style={{ fontSize: '0.46rem', color: B.textSubtle, letterSpacing: '0.14em', fontWeight: 800 }}>AGSU V12</span>
+        <span style={{ fontSize: '0.46rem', color: B.textSubtle, letterSpacing: '0.14em', fontWeight: 800 }}>{label}</span>
         <span style={{ fontSize: '0.56rem', fontWeight: 800, color, letterSpacing: '0.07em' }}>{tier}</span>
       </div>
     </div>
@@ -5531,6 +5532,7 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
     pinnacleOdds, marketType, line, superseded, health, lockTier, trackedOnly,
     agsValueV12, agsValue, agsTierV12, agsTier, backingWallets, hcConfFor,
     isTopPick: isTopPickPre, isSuperTopPick: isSuperTopPickPre, hcStakeTier,
+    winnerAlignEdge,
   } = pick;
   const isTopPick = !!isTopPickPre;
   const isSuperTopPick = !!isSuperTopPickPre;
@@ -5573,12 +5575,19 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
     : useStakeStrip ? stakeMeta.color
     : (LOCK_TIER_ACCENT[tierKey] || tierMeta.color || B.green);
 
-  const score = agsValueV12 != null ? agsValueV12 : agsValue;
-  // Display the literal AGSU V12 score on a 0–100 face (raw score ×100),
-  // so the number on the gauge IS the real model score, not a re-mapping.
-  const conviction = (score != null && Number.isFinite(score))
-    ? Math.max(0, Math.min(100, Math.round(score * 100)))
-    : 0;
+  // Winner-align EDGE margin (mean FOR−AG sport WR, pp). Primary card score.
+  const edgeNum = Number.isFinite(winnerAlignEdge) ? winnerAlignEdge : null;
+  const edgeDisplay = edgeNum == null
+    ? null
+    : `${edgeNum > 0 ? '+' : ''}${Math.abs(edgeNum) >= 10 ? edgeNum.toFixed(0) : edgeNum.toFixed(1)}`;
+  // Soft map EDGE (−15…+20) → 0–100 for the meter / ring fill only.
+  const edgeMeter = edgeNum == null
+    ? 0
+    : Math.max(0, Math.min(100, Math.round(((edgeNum + 15) / 35) * 100)));
+  const edgeColor = edgeNum == null ? accent
+    : edgeNum < 0 ? B.red
+    : edgeNum >= 10 ? B.green
+    : accent;
   const backers = Array.isArray(backingWallets) ? backingWallets.length : 0;
   // Qualified backers = proven sport winners (whitelist CONFIRMED/FLAT) that
   // the model actually COUNTED (≥ 0.10× conviction) — matches the cron's
@@ -5690,15 +5699,14 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
     </span>
   );
 
-  // Bettor-first stat block: the stake and price read as boldly as our
-  // AGSU conviction, so the actionable numbers don't take a back seat.
+  // Bettor-first stat block: odds · stake · EDGE margin.
   const StatCol = ({ label, value, color, meter }) => (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.26rem', minWidth: '40px' }}>
       <span style={{ fontSize: '1.18rem', fontWeight: 800, color, fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em', lineHeight: 1 }}>{value}</span>
       <span style={{ fontSize: '0.42rem', fontWeight: 800, color: B.textSubtle, letterSpacing: '0.11em', lineHeight: 1, whiteSpace: 'nowrap' }}>{label}</span>
       {meter && (
         <div style={{ width: '30px', height: '2.5px', borderRadius: '2px', background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
-          <div style={{ width: `${Math.max(0, Math.min(100, conviction))}%`, height: '100%', background: accent, borderRadius: '2px' }} />
+          <div style={{ width: `${Math.max(0, Math.min(100, edgeMeter))}%`, height: '100%', background: edgeColor, borderRadius: '2px' }} />
         </div>
       )}
     </div>
@@ -5712,9 +5720,7 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
         ? <StatCol label="P&L" value={`${(isTrackedGrade ? 0 : (profit || 0)) > 0 ? '+' : ''}${(isTrackedGrade ? 0 : (profit || 0)).toFixed(1)}u`} color={isWin ? B.green : isLoss ? B.red : B.textSec} />
         : <StatCol label="STAKE" value={Number.isFinite(units) && units > 0 ? `${fmtU(units)}u` : '—'} color={B.text} />}
       <StatDivider />
-      {(isRank || isSharp)
-        ? <StatCol label="QUALIFIED" value={provenBackers > 0 ? provenBackers : (backers > 0 ? backers : '—')} color={accent} />
-        : <StatCol label="AGSU V12" value={conviction > 0 ? conviction : '—'} color={accent} meter />}
+      <StatCol label="EDGE" value={edgeDisplay || '—'} color={edgeColor} meter />
     </div>
   );
 
@@ -5844,8 +5850,7 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
       {/* Expanded sheet */}
       {open && (
         <div className="sf-reveal" style={{ position: 'relative' }}>
-          {/* Sharp consensus + AGSU V12 verdict — brand-matched to the
-              live Sharp Position card (checklist drivers + semicircle gauge). */}
+          {/* Sharp consensus + winner-align EDGE verdict */}
           <div style={{ position: 'relative', borderTop: `1px solid ${B.border}`, padding: '0.9rem 1rem 0' }}>
             <div style={{
               borderRadius: '12px', padding: '0.8rem 0.85rem',
@@ -5856,7 +5861,7 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
                 <span style={{ fontSize: '0.55rem', color: B.textSubtle, letterSpacing: '0.12em', fontWeight: 800 }}>SHARP CONSENSUS</span>
                 {evEdge != null && (
                   <span style={{ fontSize: '0.62rem', fontWeight: 800, color: evEdge > 0 ? B.green : B.textSec, fontFeatureSettings: "'tnum'", letterSpacing: '0.02em' }}>
-                    {evEdge > 0 ? '+' : ''}{evEdge}% EDGE
+                    {evEdge > 0 ? '+' : ''}{evEdge}% EV
                   </span>
                 )}
               </div>
@@ -5866,7 +5871,14 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
                   <SlkDriver met={(hcConfFor || 0) > 0} label="High-conviction sharps confirming" detail={(hcConfFor || 0) > 0 ? `${hcConfFor} HC` : '—'} color={accent} />
                   <SlkDriver met={moneyPct != null && moneyPct >= 60} label="Money concentrated on this side" detail={moneyPct != null ? `${moneyPct}%` : '—'} color={accent} />
                 </div>
-                <SlkRing value={conviction} color={accent} tier={isGraded ? outcome : tierMeta.label} run={open} />
+                <SlkRing
+                  value={edgeMeter}
+                  color={edgeColor}
+                  tier={isGraded ? outcome : tierMeta.label}
+                  run={open}
+                  label="EDGE"
+                  displayText={edgeDisplay || '—'}
+                />
               </div>
             </div>
 
@@ -14462,6 +14474,8 @@ export default function SharpFlow() {
                           agsValueV12: Number.isFinite(sd.v8_agsV12) ? sd.v8_agsV12 : null,
                           agsTierV12: sd.v8_agsV12Tier || null,
                           agsQuintileV12: Number.isFinite(sd.v8_agsV12Quintile) ? sd.v8_agsV12Quintile : null,
+                          // Winner-align EDGE margin (mean FOR−AG sport WR pp).
+                          winnerAlignEdge: Number.isFinite(sd.v8_winnerAlignEdge) ? sd.v8_winnerAlignEdge : null,
                           // v12.1 — product stake tier from the HC margin
                           // (cron-authoritative; null on pre-cutover picks).
                           // SUPER / TOP / CONFIRMED / MONITORING / FADE.
