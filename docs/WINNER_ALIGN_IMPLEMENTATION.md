@@ -134,5 +134,11 @@ Every pre-T-15 reconcile (and create) stamps on the side:
 | `v8_winnerAlignForN` / `AgN` | wallets with sport WR n≥8 |
 | `v8_winnerAlignHasBoth` | both sides contributed |
 | `v8_winnerAlignFadeTop60` / `MeanBehind5` | mute triggers |
-| `v8_winnerAlignAction` | `mute` \| `size` \| `rescue` \| null |
+| `v8_winnerAlignHasTop5For` / `HasTop5Ag` | sport-board Top-5 membership |
+| `v8_winnerAlignTopUnopp` | Top5 FOR and no Top5 AG |
+| `v8_winnerAlignEliteUnopp` | WR≥60 FOR and no WR≥60 AG |
+| `v8_winnerAlignTopVsTop` | Top5 on both sides |
+| `v8_winnerAlignAction` | `mute` \| `size` \| `rescue` \| `top_floor` \| `top_cap` \| `top_junk` \| null |
 | `v8_winnerAlignEvaluatedAt` | last compute time |
+
+**Daily AGS-U report (§5d / F):** action scoreboard, state tables (elite/topUnopp/TvT), sizing discipline, today pick-level audit (action + flags), helping/hurting verdicts vs stamped-EDGE book.

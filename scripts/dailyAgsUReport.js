@@ -642,9 +642,18 @@ async function loadAllAgsuGradedPicks() {
           winnerAlignMeanAg: Number.isFinite(sd.v8_winnerAlignMeanAg) ? sd.v8_winnerAlignMeanAg : null,
           winnerAlignTopFor: Number.isFinite(sd.v8_winnerAlignTopFor) ? sd.v8_winnerAlignTopFor : null,
           winnerAlignTopAg: Number.isFinite(sd.v8_winnerAlignTopAg) ? sd.v8_winnerAlignTopAg : null,
+          winnerAlignForN: Number.isFinite(sd.v8_winnerAlignForN) ? sd.v8_winnerAlignForN : null,
+          winnerAlignAgN: Number.isFinite(sd.v8_winnerAlignAgN) ? sd.v8_winnerAlignAgN : null,
+          winnerAlignHasBoth: sd.v8_winnerAlignHasBoth === true,
           winnerAlignFadeTop60: sd.v8_winnerAlignFadeTop60 === true,
           winnerAlignMeanBehind5: sd.v8_winnerAlignMeanBehind5 === true,
+          winnerAlignHasTop5For: sd.v8_winnerAlignHasTop5For === true,
+          winnerAlignHasTop5Ag: sd.v8_winnerAlignHasTop5Ag === true,
+          winnerAlignTopUnopp: sd.v8_winnerAlignTopUnopp === true,
+          winnerAlignEliteUnopp: sd.v8_winnerAlignEliteUnopp === true,
+          winnerAlignTopVsTop: sd.v8_winnerAlignTopVsTop === true,
           winnerAlignAction: sd.v8_winnerAlignAction || null,
+          winnerAlignEvaluatedAt: sd.v8_winnerAlignEvaluatedAt || null,
           mutedBy: sd.mutedBy || null,
           provenFor, provenAg,
           provenTotal: (provenFor ?? 0) + (provenAg ?? 0),
@@ -1440,6 +1449,14 @@ async function loadAllGradedAndShadowPicks() {
           hcStakeTier: sd.v8_hcStakeTier || null,
           winnerAlignEdge: Number.isFinite(sd.v8_winnerAlignEdge) ? sd.v8_winnerAlignEdge : null,
           winnerAlignAction: sd.v8_winnerAlignAction || null,
+          winnerAlignHasBoth: sd.v8_winnerAlignHasBoth === true,
+          winnerAlignHasTop5For: sd.v8_winnerAlignHasTop5For === true,
+          winnerAlignHasTop5Ag: sd.v8_winnerAlignHasTop5Ag === true,
+          winnerAlignTopUnopp: sd.v8_winnerAlignTopUnopp === true,
+          winnerAlignEliteUnopp: sd.v8_winnerAlignEliteUnopp === true,
+          winnerAlignTopVsTop: sd.v8_winnerAlignTopVsTop === true,
+          winnerAlignFadeTop60: sd.v8_winnerAlignFadeTop60 === true,
+          winnerAlignMeanBehind5: sd.v8_winnerAlignMeanBehind5 === true,
           mutedBy: sd.mutedBy || null,
           agsV12: Number.isFinite(sd.v8_agsV12) ? sd.v8_agsV12 : null,
           team: sd.team || sideKey,
@@ -1987,16 +2004,16 @@ function stakedPnl(rows) {
 }
 
 function buildV12WinnerAlign(report, stats, walletProfiles) {
-  report.push(`## § 5d — WINNER-ALIGN (EDGE mute / size / rescue · v12abcde)`);
+  report.push(`## § 5d — WINNER-ALIGN (EDGE + Top-Winner Policy E · v12abcde)`);
   report.push('');
   if (!stats) {
     report.push(`_(no V12-era graded picks yet.)_`);
     report.push('');
     return;
   }
-  report.push(`> **What this is.** \`v12abcde\` = v12abcd **plus** winner-align. Live **${WINNER_ALIGN_LIVE_FROM}**. After Paths A–D: **MUTE** A/B/C if fadeTop≥60 **or** EDGE≤−5 → 0u; **SIZE** survivors (E10+→**6u** · E5→+1/keep · EDGE&lt;0→**≤1u**); **RESCUE** still-muted score>0 + EDGE≥3 as \`WINNER\` @ **${WINNER_ALIGN_RESCUE_E10}u** (E10+) / **${WINNER_ALIGN_RESCUE_E5}u** (E5–10) / **${WINNER_ALIGN_RESCUE_E3}u** (E3–5). EDGE = mean FOR−AG sport WR (n≥8). Does not flip sides.`);
+  report.push(`> **What this is.** \`v12abcde\` = v12abcd **plus** winner-align. Live **${WINNER_ALIGN_LIVE_FROM}**. After Paths A–D: **MUTE** A/B/C if fadeTop≥60 **or** EDGE≤−5 → 0u; **SIZE** survivors (E10+→**6u** · E5→+1/keep · EDGE&lt;0→**≤1u**); **RESCUE** still-muted score>0 + EDGE≥3 as \`WINNER\` @ **${WINNER_ALIGN_RESCUE_E10}u** / **${WINNER_ALIGN_RESCUE_E5}u** / **${WINNER_ALIGN_RESCUE_E3}u**; **TOP-WINNER E** — cap opposed Top5 @1u · floor elite/Top5-unopp @E5 to 4/6u · junk-cut no-Top5+EDGE&lt;5 on A/B/C/D. EDGE = mean FOR−AG sport WR (n≥8). Does not flip sides.`);
   report.push('');
-  report.push(`> **Findings to watch (causal Jun1+):** EDGE predicts winners better than AGS/HC/Δw (AUC~0.58). Not linear — money in **E10+ (Q5)**; toxic zone **E−5→0**. Market implied beats EDGE on WR but loses in top quintile. AGS alone ~coin-flip on EDGE-eligible slice.`);
+  report.push(`> **Findings to watch (causal Jun1+):** EDGE predicts winners better than AGS/HC/Δw (AUC~0.58). Not linear — money in **E10+ (Q5)**; toxic zone **E−5→0**. **Top-Winner E CF ≈ +30u** vs v12abcd production — watch §F whether live stamps match.`);
   report.push('');
 
   const { v12Rows, v12RowsAll } = stats;
@@ -2110,21 +2127,34 @@ function buildV12WinnerAlign(report, stats, walletProfiles) {
   }
   report.push('');
 
-  // (D) Action mix — mute / size / rescue / none
+  // (D) Action mix — mute / size / rescue / top_* / none
   report.push(`### (D) Winner-align actions (stamped)`);
   report.push('');
   const withAction = v12Rows.filter(r => r.winnerAlignAction);
+  const ALL_ACTIONS = ['mute', 'size', 'rescue', 'top_floor', 'top_cap', 'top_junk'];
   if (!withAction.length) {
     report.push(`_No \`v8_winnerAlignAction\` stamps on graded rows yet._`);
   } else {
-    report.push(`| Action | N | W-L | Win % | Staked PnL |`);
-    report.push(`|--------|---|-----|-------|------------|`);
-    for (const act of ['mute', 'size', 'rescue']) {
+    report.push(`| Action | N | W-L | Win % | Avg u | Staked N | Staked PnL | Staked ROI | vs book WR |`);
+    report.push(`|--------|---|-----|-------|-------|----------|------------|------------|------------|`);
+    const bookFlat = flat1uPnl(stamped.length ? stamped : v12Rows);
+    const bookWr = bookFlat.n > 0 ? (100 * bookFlat.w / bookFlat.n) : null;
+    for (const act of ALL_ACTIONS) {
       const rows = withAction.filter(r => r.winnerAlignAction === act);
       if (!rows.length) continue;
       const f = flat1uPnl(rows);
       const s = stakedPnl(rows);
-      report.push(`| ${act.padEnd(6)} | ${f.n} | ${f.w}-${f.l} | ${pct(f.w, f.n)} | ${fmtSigned(s.pnl)}u |`);
+      const avgU = s.n > 0 ? (s.stake / s.n) : 0;
+      const wr = f.n > 0 ? (100 * f.w / f.n) : null;
+      const dWr = wr != null && bookWr != null ? wr - bookWr : null;
+      report.push(
+        `| ${act.padEnd(9)} | ${f.n} | ${f.w}-${f.l} | ${pct(f.w, f.n)} | ${avgU.toFixed(2)} | ${s.n} | ${fmtSigned(s.pnl)}u | ${s.roi != null ? ((s.roi>=0?'+':'')+s.roi.toFixed(1)+'%') : '—'} | ${dWr != null ? ((dWr>=0?'+':'')+dWr.toFixed(1)+'pp') : '—'} |`
+      );
+    }
+    const other = withAction.filter(r => !ALL_ACTIONS.includes(r.winnerAlignAction));
+    if (other.length) {
+      const f = flat1uPnl(other);
+      report.push(`| _(other)_ | ${f.n} | ${f.w}-${f.l} | ${pct(f.w, f.n)} | — | — | — | — | — |`);
     }
   }
   report.push('');
@@ -2152,7 +2182,198 @@ function buildV12WinnerAlign(report, stats, walletProfiles) {
     report.push(`_If EDGE≥5 / low-AGS stays green while high-AGS / low-EDGE fades, EDGE is doing real work — not AGS in disguise._`);
   }
   report.push('');
-  report.push(`> Track WINNER ROI separately from RANK/SHARP/DISSENT — same mute pool, different gate (sport-WR EDGE).`);
+
+  // ── (F) TOP-WINNER POLICY E — the new rules ────────────────────────────
+  report.push(`### (F) Top-Winner Policy E — is each rule helping or hurting?`);
+  report.push('');
+  report.push(`> **How to read.** Each row is picks where that **state** or **action** was stamped. Compare Win % / staked ROI to the stamped-EDGE book baseline. Green = helping; red = hurting. Actions (\`top_floor\` / \`top_cap\` / \`top_junk\`) are what the live sizer actually did.`);
+  report.push('');
+
+  const allPool = v12RowsAll || v12Rows;
+  const bookBase = stamped.length ? stamped : v12Rows;
+  const bookF = flat1uPnl(bookBase);
+  const bookS = stakedPnl(bookBase);
+  const bookWrPct = bookF.n > 0 ? (100 * bookF.w / bookF.n) : null;
+
+  function rowImpact(label, rows, note = '') {
+    const f = flat1uPnl(rows);
+    const s = stakedPnl(rows);
+    const avgU = s.n > 0 ? s.stake / s.n : 0;
+    const wr = f.n > 0 ? (100 * f.w / f.n) : null;
+    const dWr = wr != null && bookWrPct != null ? wr - bookWrPct : null;
+    const dRoi = s.roi != null && bookS.roi != null ? s.roi - bookS.roi : null;
+    const flag = dWr == null ? '' : dWr >= 3 ? ' ✅' : dWr <= -3 ? ' ⚠️' : '';
+    return (
+      `| ${label} | ${f.n} | ${f.w}-${f.l} | ${pct(f.w, f.n)}${flag} | ${avgU.toFixed(2)} | ${s.n} | ${fmtSigned(s.pnl)}u | ${s.roi != null ? ((s.roi>=0?'+':'')+s.roi.toFixed(1)+'%') : '—'} | ${dWr != null ? ((dWr>=0?'+':'')+dWr.toFixed(1)+'pp') : '—'} | ${dRoi != null ? ((dRoi>=0?'+':'')+dRoi.toFixed(1)+'pp') : '—'} |${note ? ` ${note}` : ''}`
+    );
+  }
+
+  report.push(`_Baseline (stamped EDGE book): **${bookF.n}** graded · **${pct(bookF.w, bookF.n)}** WR · staked ROI **${bookS.roi != null ? ((bookS.roi>=0?'+':'')+bookS.roi.toFixed(1)+'%') : '—'}**_`);
+  report.push('');
+  report.push(`#### (F1) Actions — what Policy E actually did`);
+  report.push('');
+  report.push(`| Rule applied | N | W-L | Win % | Avg u | Staked N | Staked PnL | ROI | ΔWR vs book | ΔROI vs book |`);
+  report.push(`|--------------|---|-----|-------|-------|----------|------------|-----|-------------|--------------|`);
+  const topActions = [
+    ['top_floor (size UP unopposed)', r => r.winnerAlignAction === 'top_floor'],
+    ['top_cap (opposed → ≤1u)', r => r.winnerAlignAction === 'top_cap'],
+    ['top_junk (no-Top5 + EDGE&lt;5 → 0)', r => r.winnerAlignAction === 'top_junk'],
+    ['rescue (EDGE≥3 WINNER)', r => r.winnerAlignAction === 'rescue'],
+    ['mute (fadeTop / meanBehind)', r => r.winnerAlignAction === 'mute'],
+    ['size (EDGE ladder resize)', r => r.winnerAlignAction === 'size'],
+  ];
+  let anyTopAct = false;
+  for (const [label, pred] of topActions) {
+    const rows = v12Rows.filter(pred);
+    if (!rows.length) continue;
+    anyTopAct = true;
+    report.push(rowImpact(label, rows));
+  }
+  if (!anyTopAct) {
+    report.push(`| _(no Policy E / WA actions on graded rows yet — fills as post-cutover picks grade)_ |  |  |  |  |  |  |  |  |  |`);
+  }
+  report.push('');
+
+  report.push(`#### (F2) States — ticket shape flags (even if action was something else)`);
+  report.push('');
+  report.push(`These are the **conditions** Policy E looks at. A ticket can be elite-unopposed without \`top_floor\` if Path A/B/C already sized it high enough.`);
+  report.push('');
+  report.push(`| State | N | W-L | Win % | Avg u | Staked N | Staked PnL | ROI | ΔWR vs book | ΔROI vs book |`);
+  report.push(`|-------|---|-----|-------|-------|----------|------------|-----|-------------|--------------|`);
+  const stateRows = [
+    ['Elite unopposed (WR60+ FOR, no WR60 AG)', r => r.winnerAlignEliteUnopp],
+    ['Top5 unopposed (Top5 FOR, no Top5 AG)', r => r.winnerAlignTopUnopp],
+    ['Top vs Top (Top5 both sides)', r => r.winnerAlignTopVsTop],
+    ['Has Top5 FOR', r => r.winnerAlignHasTop5For],
+    ['No Top5 FOR', r => r.winnerAlignHasBoth && !r.winnerAlignHasTop5For],
+    ['Top5 on AG only', r => r.winnerAlignHasTop5Ag && !r.winnerAlignHasTop5For],
+    ['Elite unopp + EDGE≥5', r => r.winnerAlignEliteUnopp && Number.isFinite(r.winnerAlignEdge) && r.winnerAlignEdge >= 5],
+    ['Top5 unopp + EDGE≥5', r => r.winnerAlignTopUnopp && Number.isFinite(r.winnerAlignEdge) && r.winnerAlignEdge >= 5],
+    ['No Top5 + EDGE&lt;5 (junk zone)', r => r.winnerAlignHasBoth && !r.winnerAlignHasTop5For && Number.isFinite(r.winnerAlignEdge) && r.winnerAlignEdge < 5],
+  ];
+  let anyState = false;
+  for (const [label, pred] of stateRows) {
+    const rows = v12Rows.filter(pred);
+    if (!rows.length) continue;
+    anyState = true;
+    report.push(rowImpact(label, rows));
+  }
+  if (!anyState) {
+    report.push(`| _(no Top5/elite stamps on graded rows yet)_ |  |  |  |  |  |  |  |  |  |`);
+  }
+  report.push('');
+
+  report.push(`#### (F3) Sizing discipline — are floors/caps landing on the right sizes?`);
+  report.push('');
+  const floorRows = v12Rows.filter(r => r.winnerAlignAction === 'top_floor');
+  const capRows = v12Rows.filter(r => r.winnerAlignAction === 'top_cap');
+  const junkRows = v12Rows.filter(r => r.winnerAlignAction === 'top_junk');
+  if (!floorRows.length && !capRows.length && !junkRows.length) {
+    report.push(`_No top_floor / top_cap / top_junk graded yet._`);
+  } else {
+    report.push(`| Action | Target size | Avg actual u | % at target | N |`);
+    report.push(`|--------|-------------|--------------|-------------|---|`);
+    if (floorRows.length) {
+      const atE10 = floorRows.filter(r => Number.isFinite(r.winnerAlignEdge) && r.winnerAlignEdge >= 10);
+      const atE5 = floorRows.filter(r => Number.isFinite(r.winnerAlignEdge) && r.winnerAlignEdge >= 5 && r.winnerAlignEdge < 10);
+      for (const [lab, rows, target] of [
+        ['top_floor @ E10+', atE10, 6],
+        ['top_floor @ E5–10', atE5, 4],
+      ]) {
+        if (!rows.length) continue;
+        const avg = rows.reduce((s, r) => s + (r.units || 0), 0) / rows.length;
+        const hit = rows.filter(r => Math.abs((r.units || 0) - target) < 0.15).length;
+        report.push(`| ${lab} | ${target}u | ${avg.toFixed(2)}u | ${pct(hit, rows.length)} | ${rows.length} |`);
+      }
+    }
+    if (capRows.length) {
+      const avg = capRows.reduce((s, r) => s + (r.units || 0), 0) / capRows.length;
+      const hit = capRows.filter(r => (r.units || 0) <= 1.05).length;
+      report.push(`| top_cap | ≤1u | ${avg.toFixed(2)}u | ${pct(hit, capRows.length)} | ${capRows.length} |`);
+    }
+    if (junkRows.length) {
+      const avg = junkRows.reduce((s, r) => s + (r.units || 0), 0) / junkRows.length;
+      const hit = junkRows.filter(r => (r.units || 0) <= 0).length;
+      report.push(`| top_junk | 0u | ${avg.toFixed(2)}u | ${pct(hit, junkRows.length)} | ${junkRows.length} |`);
+    }
+  }
+  report.push('');
+
+  // Counterfactual: junk cuts — if we HAD bet them (flat 1u)
+  if (junkRows.length) {
+    const jf = flat1uPnl(junkRows);
+    report.push(`_Junk-cut counterfactual (if we had bet flat 1u instead of cutting): **${jf.w}-${jf.l}** · ${pct(jf.w, jf.n)} · flat ${fmtSigned(jf.flat)}u — want this **red** (cutting helped)._`);
+    report.push('');
+  }
+
+  report.push(`#### (F4) Today / in-flight — rules applied (ungraded + graded)`);
+  report.push('');
+  const todayEt = (() => {
+    try {
+      return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+    } catch {
+      return new Date().toISOString().slice(0, 10);
+    }
+  })();
+  const recentDates = [...new Set(allPool.map(r => r.date))].sort().slice(-3);
+  const focusDates = recentDates.includes(todayEt) ? recentDates : [...recentDates, todayEt].filter(Boolean);
+  const focus = allPool.filter(r => focusDates.includes(r.date) && r.winnerAlignAction);
+  if (!focus.length) {
+    report.push(`_No winner-align actions stamped on last ${focusDates.join(', ') || 'dates'} yet (pre-T-15 cycles write stamps as they fire)._`);
+  } else {
+    report.push(`Picks on **${focusDates.join(', ')}** with a stamped action. Outcome blank = still in flight.`);
+    report.push('');
+    report.push(`| Date | Sport | Mkt | Pick | EDGE | Action | Flags | Path | u | Out | PnL |`);
+    report.push(`|------|-------|-----|------|------|--------|-------|------|---|-----|-----|`);
+    const sorted = [...focus].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+    for (const r of sorted.slice(0, 60)) {
+      const flags = [
+        r.winnerAlignEliteUnopp ? 'eliteU' : null,
+        r.winnerAlignTopUnopp ? 'topU' : null,
+        r.winnerAlignTopVsTop ? 'TvT' : null,
+        r.winnerAlignHasTop5For ? 'T5for' : null,
+        r.winnerAlignHasTop5Ag && !r.winnerAlignHasTop5For ? 'T5ag' : null,
+      ].filter(Boolean).join(',') || '—';
+      const team = `${r.team || r.sideKey || ''}`.substring(0, 16);
+      const edgeStr = Number.isFinite(r.winnerAlignEdge) ? fmtSigned(r.winnerAlignEdge, 1) : '—';
+      const out = r.won === 1 ? 'W' : r.won === 0 ? 'L' : '·';
+      const pnl = r.won != null ? fmtSigned(r.profit) : '—';
+      report.push(
+        `| ${r.date} | ${(r.sport || '').padEnd(3)} | ${(r.marketType || '').padEnd(3)} | ${team.padEnd(16)} | ${edgeStr.padStart(5)} | ${(r.winnerAlignAction || '—').padEnd(9)} | ${flags.padEnd(18)} | ${pathShort(r.hcStakeTier).padEnd(6)} | ${((r.units || 0).toFixed(1))} | ${out} | ${pnl} |`
+      );
+    }
+    if (sorted.length > 60) report.push(`_… +${sorted.length - 60} more_`);
+  }
+  report.push('');
+
+  report.push(`#### (F5) Helping / hurting scoreboard (quick verdict)`);
+  report.push('');
+  const verdicts = [];
+  function pushVerdict(name, rows, wantHighWr) {
+    if (rows.length < 5) {
+      verdicts.push(`- **${name}**: n=${rows.length} — _need ≥5 graded to call_`);
+      return;
+    }
+    const f = flat1uPnl(rows);
+    const wr = f.n ? (100 * f.w / f.n) : null;
+    const s = stakedPnl(rows);
+    if (wantHighWr) {
+      const ok = wr != null && bookWrPct != null && wr >= bookWrPct;
+      verdicts.push(`- **${name}**: ${f.w}-${f.l} (${pct(f.w, f.n)}) · staked ${fmtSigned(s.pnl)}u · ${ok ? '✅ helping (≥ book WR)' : '⚠️ underperforming book WR'}`);
+    } else {
+      // junk cut / mute — want LOW CF WR (cutting dogs)
+      const ok = wr != null && wr < 48;
+      verdicts.push(`- **${name}** (want weak CF WR): ${f.w}-${f.l} (${pct(f.w, f.n)}) CF flat ${fmtSigned(f.flat)}u · ${ok ? '✅ cutting dogs' : '⚠️ may be cutting winners'}`);
+    }
+  }
+  pushVerdict('top_floor', floorRows, true);
+  pushVerdict('elite unopp @ E5+', v12Rows.filter(r => r.winnerAlignEliteUnopp && Number.isFinite(r.winnerAlignEdge) && r.winnerAlignEdge >= 5), true);
+  pushVerdict('top_cap / topVsTop', [...capRows, ...v12Rows.filter(r => r.winnerAlignTopVsTop)], false);
+  pushVerdict('top_junk', junkRows, false);
+  for (const v of verdicts) report.push(v);
+  report.push('');
+
+  report.push(`> Track WINNER ROI separately from RANK/SHARP/DISSENT — same mute pool, different gate (sport-WR EDGE). Policy E actions must stay green on §F1/F5 or we roll back the junk cut / floors.`);
   report.push('');
 }
 
@@ -2437,9 +2658,9 @@ function buildV12TierAnalysis(report, stats) {
     report.push(`- **Path B (v12ab, live 2026-06-21)** — RANK 2-for-0 rescue: muted score>0 pick with ≥2 eligible whitelist FOR and 0 AGAINST → **4u**.`);
     report.push(`- **Path C (v12abc, live 2026-06-26; retune 2026-07-12)** — SHARP / SHARP-PRIME proven-$ rescue (+ MINI- cut). Retune: ≥3 FOR sharps, skip odds ≤ −150, TOP+ boost OFF.`);
     report.push(`- **Path D (v12abcd, live 2026-07-12)** — DISSENT mute rescue: MLB · odds ≤ +200 · \`contribMargin ≤ 0\` · \`maxShare < 0.35\` → **1u** (tier key \`DISSENT\`). Uses wallet contribution dissent — not proven-$ forCount.`);
-    report.push(`- **Path E (v12abcde, live 2026-07-12; retune extreme/bad)** — WINNER-ALIGN: mute fadeTop≥60 / EDGE≤−5; size by EDGE (E10→6u · EDGE&lt;0→≤1u); rescue EDGE≥3 as \`WINNER\` @ **6u / 4u / 3u**.`);
+    report.push(`- **Path E (v12abcde, live 2026-07-12; + Top-Winner Policy E)** — WINNER-ALIGN: mute fadeTop≥60 / EDGE≤−5; size by EDGE (E10→6u · EDGE&lt;0→≤1u); rescue EDGE≥3 as \`WINNER\` @ **6u / 4u / 3u**; **top_cap** opposed Top5 ≤1u; **top_floor** elite/Top5-unopp @E5 → 4/6u; **top_junk** no-Top5+EDGE&lt;5 → 0u. Monitor in §5d (F).`);
     report.push('');
-    report.push(`Post-cutover picks size off the **HC margin** — SUPER (margin 2 · 6u), TOP (margin 1 · 4u), MINI (mini-HC 1.0–1.5× · 3u), CONFIRMED (margin 3+ · 1u) — **plus** the **RANK (2-for-0)** wallet-rescue path at **${RANK_RESCUE_UNITS}u**. From **2026-06-26** the **v12abc proven-$ overlay** (internal stats: backer \`positions.dollarRoi\` + featured \`picks.wr\`) adds: **SHARP / SHARP-PRIME** ($-rescue of HC-muted picks at 3u / 4u when sharps back it incl. a proven-money winner and mean win-rate ≥ 50 / 55; from **2026-07-12** requires ≥3 FOR sharps and odds softer than −150), **TOP+** (HC-1 boosted 4u → 5u when a proven-$ backer is present — **disabled from 2026-07-12**), and **MINI-** (MINI cut 3u → 1u when no proven-$ backer is on it). From **2026-07-12** **Path D / DISSENT** adds a 1u mute rescue on contested MLB books (\`contribMargin ≤ 0\`, dispersed). From **2026-07-12** **Path E / WINNER-ALIGN** mutes toxic fades, resizes by EDGE (E10→6u · EDGE&lt;0→≤1u), and rescues EDGE≥3 as \`WINNER\` @ **6u / 4u / 3u**. Together these paths ARE the **v12abcde** staked book. **MONITORING** (non-HC or WEAK-tier HC, no rescue path) is tracked at **0u** and excluded from the staked record/ROI below.`);
+    report.push(`Post-cutover picks size off the **HC margin** — SUPER (margin 2 · 6u), TOP (margin 1 · 4u), MINI (mini-HC 1.0–1.5× · 3u), CONFIRMED (margin 3+ · 1u) — **plus** the **RANK (2-for-0)** wallet-rescue path at **${RANK_RESCUE_UNITS}u**. From **2026-06-26** the **v12abc proven-$ overlay** (internal stats: backer \`positions.dollarRoi\` + featured \`picks.wr\`) adds: **SHARP / SHARP-PRIME** ($-rescue of HC-muted picks at 3u / 4u when sharps back it incl. a proven-money winner and mean win-rate ≥ 50 / 55; from **2026-07-12** requires ≥3 FOR sharps and odds softer than −150), **TOP+** (HC-1 boosted 4u → 5u when a proven-$ backer is present — **disabled from 2026-07-12**), and **MINI-** (MINI cut 3u → 1u when no proven-$ backer is on it). From **2026-07-12** **Path D / DISSENT** adds a 1u mute rescue on contested MLB books (\`contribMargin ≤ 0\`, dispersed). From **2026-07-12** **Path E / WINNER-ALIGN** mutes toxic fades, resizes by EDGE, rescues EDGE≥3 as \`WINNER\`, and applies **Top-Winner Policy E** (opposed cap / unopposed floor / junk cut) — see **§5d (F)** for per-rule helping/hurting. Together these paths ARE the **v12abcde** staked book. **MONITORING** (non-HC or WEAK-tier HC, no rescue path) is tracked at **0u** and excluded from the staked record/ROI below.`);
     report.push('');
     report.push(`| Tier (paths)              | Units | N   | W-L    | Win %  | Total Stake | PnL (u)    | ROI       |`);
     report.push(`|---------------------------|-------|-----|--------|--------|-------------|------------|-----------|`);
@@ -2945,17 +3166,27 @@ function buildV12RecentLivePicks(report, stats, n = 30, walletProfiles = null) {
     .slice()
     .sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0)
     .slice(0, n);
-  report.push(`The last ${recent.length} picks V12 actually shipped (units > 0). This is the audit trail — every row is a real bet that risked real money, with the V12 score that drove the decision and the realised outcome.`);
+  report.push(`The last ${recent.length} picks V12 actually shipped (units > 0). Audit trail: V12 score, EDGE, **which WA / Policy E action fired**, Top-Winner flags, stake, outcome.`);
   report.push('');
   // Stamped EDGE only — do not profile-replay (lookahead).
-  report.push(`| Date       | Sport | Mkt    | Pick                    | Odds  | V12   | Path     | EDGE   | Score    | Stake | Outcome | PnL (u)    |`);
-  report.push(`|------------|-------|--------|-------------------------|-------|-------|----------|--------|----------|-------|---------|------------|`);
+  report.push(`| Date       | Sport | Mkt    | Pick                    | Odds  | V12   | Path     | EDGE   | Action   | Top flags          | Stake | Outcome | PnL (u)    |`);
+  report.push(`|------------|-------|--------|-------------------------|-------|-------|----------|--------|----------|--------------------|-------|---------|------------|`);
   for (const r of recent) {
     const teamLabel = `${r.team || r.sideKey || ''}`.substring(0, 23);
     const oddsStr = r.peakOdds > 0 ? `+${r.peakOdds}` : `${r.peakOdds}`;
     const outcome = r.won === 1 ? 'WIN' : r.won === 0 ? 'LOSS' : '—';
     const edgeStr = Number.isFinite(r.winnerAlignEdge) ? fmtSigned(r.winnerAlignEdge, 1) : '—';
-    report.push(`| ${r.date.padEnd(10)} | ${(r.sport || '').padEnd(5)} | ${(r.marketType || '').padEnd(6)} | ${teamLabel.padEnd(23)} | ${oddsStr.padStart(5)} | ${(Number.isFinite(r.agsV12) ? fmtSigned(r.agsV12, 3) : '—').padStart(5)} | ${pathShort(r.hcStakeTier).padEnd(8)} | ${edgeStr.padStart(6)} | ${(r.agsV12Tier || '—').padEnd(8)} | ${((r.units||0).toFixed(2)+'u').padStart(5)} | ${outcome.padEnd(7)} | ${fmtSigned(r.profit).padStart(10)} |`);
+    const act = r.winnerAlignAction || '—';
+    const flags = [
+      r.winnerAlignEliteUnopp ? 'eliteU' : null,
+      r.winnerAlignTopUnopp ? 'topU' : null,
+      r.winnerAlignTopVsTop ? 'TvT' : null,
+      r.winnerAlignHasTop5For ? 'T5for' : null,
+      r.winnerAlignHasTop5Ag && !r.winnerAlignHasTop5For ? 'T5ag' : null,
+    ].filter(Boolean).join(',') || '—';
+    report.push(
+      `| ${r.date.padEnd(10)} | ${(r.sport || '').padEnd(5)} | ${(r.marketType || '').padEnd(6)} | ${teamLabel.padEnd(23)} | ${oddsStr.padStart(5)} | ${(Number.isFinite(r.agsV12) ? fmtSigned(r.agsV12, 3) : '—').padStart(5)} | ${pathShort(r.hcStakeTier).padEnd(8)} | ${edgeStr.padStart(6)} | ${act.padEnd(9)} | ${flags.padEnd(18)} | ${((r.units||0).toFixed(2)+'u').padStart(5)} | ${outcome.padEnd(7)} | ${fmtSigned(r.profit).padStart(10)} |`
+    );
   }
   report.push('');
 }
