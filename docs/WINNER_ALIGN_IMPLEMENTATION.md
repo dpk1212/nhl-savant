@@ -105,3 +105,20 @@ The first AGS-U §5d table used **current-profile EDGE replay** on historical pi
 Leaky vs causal E3–5 overlap was **4/59**. Most leaky "E3–5" were misfiled causal E5+ losers (27 @ 33% WR). **Trust causal; ignore that report number.**
 
 Report fixed to **stamped EDGE only** going forward.
+
+## EDGE as stored feature (cron)
+
+Every pre-T-15 reconcile (and create) stamps on the side:
+
+| Field | Meaning |
+|-------|---------|
+| `v8_winnerAlignEdge` | mean FOR sport WR − mean AG sport WR (pp), or `null` if !hasBoth |
+| `v8_winnerAlignMeanFor` / `MeanAg` | component means |
+| `v8_winnerAlignTopFor` / `TopAg` | max WR each side |
+| `v8_winnerAlignForN` / `AgN` | wallets with sport WR n≥8 |
+| `v8_winnerAlignHasBoth` | both sides contributed |
+| `v8_winnerAlignFadeTop60` / `MeanBehind5` | mute triggers |
+| `v8_winnerAlignAction` | `mute` \| `size` \| `rescue` \| null |
+| `v8_winnerAlignEvaluatedAt` | last compute time |
+
+T-15 freeze locks the last stamp with the pick (point-in-time). Live WR read is near-causal (today unsettled).
