@@ -1,5 +1,5 @@
 {
-  "scannedAt": "2026-07-12T23:26:48.491Z",
+  "scannedAt": "2026-07-12T23:30:53.101Z",
   "elapsedSec": 14.7,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 8,
@@ -7,13 +7,13 @@
     "total": 194,
     "coveredByMain": 9,
     "recovered": 11,
-    "recoveredPositions": 33,
+    "recoveredPositions": 34,
     "noPositions": 174,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 8,
+      "ml": 9,
       "spread": 5,
       "total": 4,
       "dropped_shadow_gate": 14,
@@ -377,10 +377,10 @@
       "sports": "MLB",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xf7f0b0b1e9c0fe02ccad926916ee31aef74b912c",
-      "positionsCount": 7,
+      "positionsCount": 8,
       "statsSource": "sports_sharps",
       "avgSportBet": 1096,
-      "willPassShadowGate": 4,
+      "willPassShadowGate": 5,
       "willDropAtShadowGate": 3,
       "positions": [
         {
@@ -390,6 +390,15 @@
           "side": "over",
           "invested": 492,
           "entryLine": 180.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "WNBA",
+          "gameKey": "ind_lva",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 676,
+          "entryLine": null,
           "passesShadow": true
         },
         {
@@ -570,7 +579,7 @@
           "gameKey": "ind_lva",
           "marketType": "total",
           "side": "over",
-          "invested": 916,
+          "invested": 919,
           "entryLine": 180.5,
           "passesShadow": true
         },
@@ -1168,7 +1177,7 @@
           "gameKey": "esp_fra",
           "marketType": "ml",
           "side": "home",
-          "invested": 27625,
+          "invested": 27635,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1203,15 +1212,6 @@
           "sport": "SOC",
           "gameKey": "arg_eng",
           "marketType": "ml",
-          "side": "home",
-          "invested": 237,
-          "entryLine": null,
-          "passesShadow": false
-        },
-        {
-          "sport": "SOC",
-          "gameKey": "arg_eng",
-          "marketType": "ml",
           "side": "away",
           "invested": 437,
           "entryLine": null,
@@ -1222,7 +1222,16 @@
           "gameKey": "arg_eng",
           "marketType": "ml",
           "side": "draw",
-          "invested": 444,
+          "invested": 454,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "WNBA",
+          "gameKey": "ind_lva",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 352,
           "entryLine": null,
           "passesShadow": false
         },
