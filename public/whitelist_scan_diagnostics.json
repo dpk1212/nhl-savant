@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-07-12T22:56:47.215Z",
-  "elapsedSec": 12.7,
+  "scannedAt": "2026-07-12T23:00:50.692Z",
+  "elapsedSec": 13.3,
   "phase": "PHASE_2_MERGE_ENABLED",
-  "todayGamesCount": 8,
+  "todayGamesCount": 7,
   "summary": {
     "total": 194,
     "coveredByMain": 9,
-    "recovered": 14,
-    "recoveredPositions": 53,
-    "noPositions": 171,
+    "recovered": 15,
+    "recoveredPositions": 54,
+    "noPositions": 170,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,7 +16,7 @@
       "ml": 11,
       "spread": 10,
       "total": 6,
-      "dropped_shadow_gate": 25,
+      "dropped_shadow_gate": 26,
       "dropped_duplicate": 1
     }
   },
@@ -1337,7 +1337,7 @@
           "gameKey": "chi_dal",
           "marketType": "spread",
           "side": "away",
-          "invested": 319,
+          "invested": 313,
           "entryLine": 9.5,
           "passesShadow": false
         },
@@ -1663,8 +1663,24 @@
       "tier": "FLAT",
       "name": "pedroBala",
       "sports": "NBA,MLB",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x1df231bd33dae91463e1682927e8096b82c289a0"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x1df231bd33dae91463e1682927e8096b82c289a0",
+      "positionsCount": 1,
+      "statsSource": "sports_sharps",
+      "avgSportBet": 1788,
+      "willPassShadowGate": 0,
+      "willDropAtShadowGate": 1,
+      "positions": [
+        {
+          "sport": "WNBA",
+          "gameKey": "chi_dal",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 3,
+          "entryLine": null,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "c29d59",
@@ -1740,7 +1756,7 @@
           "gameKey": "esp_fra",
           "marketType": "ml",
           "side": "home",
-          "invested": 3389,
+          "invested": 6497,
           "entryLine": null,
           "passesShadow": true
         }
