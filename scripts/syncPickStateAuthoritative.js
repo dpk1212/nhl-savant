@@ -2069,6 +2069,25 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       + `→ ${finalUnitsApplied}u WINNER`
     );
   }
+  // Always persist EDGE diagnostics when they drift — even if units unchanged —
+  // so the AGS-U daily report can track margin on every play.
+  if (winnerAlign) {
+    const prevEdge = sd.v8_winnerAlignEdge;
+    const edgeDrift = (prevEdge == null && winnerAlign.edge != null)
+      || (Number.isFinite(prevEdge) && Number.isFinite(winnerAlign.edge)
+          && Math.abs(prevEdge - winnerAlign.edge) >= 0.05)
+      || (sd.v8_winnerAlignAction || null) !== (winnerAlignAction || null)
+      || !!sd.v8_winnerAlignFadeTop60 !== !!winnerAlign.fadeTop60
+      || !!sd.v8_winnerAlignMeanBehind5 !== !!winnerAlign.meanBehind5;
+    if (edgeDrift) {
+      changes.push(
+        `WINNER-ALIGN stamp: edge=${winnerAlign.edge == null ? '—' : winnerAlign.edge.toFixed(1)}`
+        + ` action=${winnerAlignAction || 'none'}`
+      );
+    }
+  } else if (sd.v8_winnerAlignEdge != null || sd.v8_winnerAlignAction != null) {
+    changes.push('WINNER-ALIGN stamp: clear');
+  }
   // finalUnits drift logging — flag any time the canonical bet size changes
   // by ≥0.05u so cycle output makes the change visible.
   if (Number.isFinite(sd.finalUnits) && Math.abs(sd.finalUnits - finalUnitsApplied) >= 0.05) {
