@@ -5532,7 +5532,7 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
     pinnacleOdds, marketType, line, superseded, health, lockTier, trackedOnly,
     agsValueV12, agsValue, agsTierV12, agsTier, backingWallets, hcConfFor,
     isTopPick: isTopPickPre, isSuperTopPick: isSuperTopPickPre, hcStakeTier,
-    winnerAlignEdge,
+    winnerAlignEdge, winnerAlignMeanFor, winnerAlignMeanAg, winnerAlignHasBoth,
   } = pick;
   const isTopPick = !!isTopPickPre;
   const isSuperTopPick = !!isSuperTopPickPre;
@@ -5575,11 +5575,23 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
     : useStakeStrip ? stakeMeta.color
     : (LOCK_TIER_ACCENT[tierKey] || tierMeta.color || B.green);
 
-  // Winner-align EDGE margin (mean FOR−AG sport WR, pp). Primary card score.
-  const edgeNum = Number.isFinite(winnerAlignEdge) ? winnerAlignEdge : null;
+  // Winner-align EDGE margin (mean FOR−AG sport WR, pp).
+  // Strict EDGE needs both sides (n≥8). When only one side has eligible
+  // wallets, soft-fill the missing side at 50% so the card still shows a
+  // readable number (display-only — sizing still requires hasBoth).
+  const strictEdge = Number.isFinite(winnerAlignEdge) ? winnerAlignEdge : null;
+  const softEdge = (() => {
+    if (strictEdge != null) return strictEdge;
+    const f = Number.isFinite(winnerAlignMeanFor) ? winnerAlignMeanFor : null;
+    const a = Number.isFinite(winnerAlignMeanAg) ? winnerAlignMeanAg : null;
+    if (f == null && a == null) return null;
+    return (f ?? 50) - (a ?? 50);
+  })();
+  const edgeIsSoft = strictEdge == null && softEdge != null;
+  const edgeNum = softEdge;
   const edgeDisplay = edgeNum == null
     ? null
-    : `${edgeNum > 0 ? '+' : ''}${Math.abs(edgeNum) >= 10 ? edgeNum.toFixed(0) : edgeNum.toFixed(1)}`;
+    : `${edgeIsSoft ? '~' : ''}${edgeNum > 0 ? '+' : ''}${Math.abs(edgeNum) >= 10 ? edgeNum.toFixed(0) : edgeNum.toFixed(1)}`;
   // Soft map EDGE (−15…+20) → 0–100 for the meter / ring fill only.
   const edgeMeter = edgeNum == null
     ? 0
@@ -5588,6 +5600,11 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
     : edgeNum < 0 ? B.red
     : edgeNum >= 10 ? B.green
     : accent;
+  const edgeTitle = edgeNum == null
+    ? 'EDGE unavailable — need sport WR (n≥8) wallets on the ticket'
+    : edgeIsSoft
+      ? `One-sided EDGE (missing side filled at 50%). FOR ${Number.isFinite(winnerAlignMeanFor) ? winnerAlignMeanFor.toFixed(1) : '50'} − AG ${Number.isFinite(winnerAlignMeanAg) ? winnerAlignMeanAg.toFixed(1) : '50'} = ${edgeNum >= 0 ? '+' : ''}${edgeNum.toFixed(1)} pp. Not used for sizing.`
+      : `Winner-align EDGE: mean FOR sport WR − mean AG sport WR = ${edgeNum >= 0 ? '+' : ''}${edgeNum.toFixed(1)} pp`;
   const backers = Array.isArray(backingWallets) ? backingWallets.length : 0;
   // Qualified backers = proven sport winners (whitelist CONFIRMED/FLAT) that
   // the model actually COUNTED (≥ 0.10× conviction) — matches the cron's
@@ -5700,8 +5717,8 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
   );
 
   // Bettor-first stat block: odds · stake · EDGE margin.
-  const StatCol = ({ label, value, color, meter }) => (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.26rem', minWidth: '40px' }}>
+  const StatCol = ({ label, value, color, meter, title }) => (
+    <div title={title} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.26rem', minWidth: '40px' }}>
       <span style={{ fontSize: '1.18rem', fontWeight: 800, color, fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em', lineHeight: 1 }}>{value}</span>
       <span style={{ fontSize: '0.42rem', fontWeight: 800, color: B.textSubtle, letterSpacing: '0.11em', lineHeight: 1, whiteSpace: 'nowrap' }}>{label}</span>
       {meter && (
@@ -5720,7 +5737,7 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
         ? <StatCol label="P&L" value={`${(isTrackedGrade ? 0 : (profit || 0)) > 0 ? '+' : ''}${(isTrackedGrade ? 0 : (profit || 0)).toFixed(1)}u`} color={isWin ? B.green : isLoss ? B.red : B.textSec} />
         : <StatCol label="STAKE" value={Number.isFinite(units) && units > 0 ? `${fmtU(units)}u` : '—'} color={B.text} />}
       <StatDivider />
-      <StatCol label="EDGE" value={edgeDisplay || '—'} color={edgeColor} meter />
+      <StatCol label="EDGE" value={edgeDisplay || '—'} color={edgeColor} meter title={edgeTitle} />
     </div>
   );
 
@@ -14476,6 +14493,9 @@ export default function SharpFlow() {
                           agsQuintileV12: Number.isFinite(sd.v8_agsV12Quintile) ? sd.v8_agsV12Quintile : null,
                           // Winner-align EDGE margin (mean FOR−AG sport WR pp).
                           winnerAlignEdge: Number.isFinite(sd.v8_winnerAlignEdge) ? sd.v8_winnerAlignEdge : null,
+                          winnerAlignMeanFor: Number.isFinite(sd.v8_winnerAlignMeanFor) ? sd.v8_winnerAlignMeanFor : null,
+                          winnerAlignMeanAg: Number.isFinite(sd.v8_winnerAlignMeanAg) ? sd.v8_winnerAlignMeanAg : null,
+                          winnerAlignHasBoth: sd.v8_winnerAlignHasBoth === true,
                           // v12.1 — product stake tier from the HC margin
                           // (cron-authoritative; null on pre-cutover picks).
                           // SUPER / TOP / CONFIRMED / MONITORING / FADE.
