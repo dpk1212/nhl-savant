@@ -573,16 +573,22 @@ function computePathDSlice(walletDetails, mySide) {
 // Pipeline order (after Path A/B/C/D):
 //   1. MUTE  — A/B/C stakes → 0u if fadeTop WR≥60 OR meanEdge≤−5
 //   2. SIZE  — survivors resized by path × EDGE class
-//   3. RESCUE — still 0u + score>0 + EDGE≥3 → WINNER @ 4u (E5+) / 3u (E3–5)
+//        · EDGE≥10 (Q5 extreme) → 6u on A/B/C
+//        · EDGE<0 (toxic mid) → hard-cap 1u on A/B/C (DISSENT → 0)
+//   3. RESCUE — still 0u + score>0 + EDGE≥3 → WINNER @ 6u (E10+) / 4u (E5–10) / 3u (E3–5)
 // CF Jun1–Jul11 (causal): E5@4/E3@3 pack ≈ +50u vs actual on full book.
+// E10→6u / EDGE<0 cap: utilization of quintile findings (2026-07-12).
 const WINNER_ALIGN_LIVE_FROM = '2026-07-12';
 const WINNER_ALIGN_MIN_N = 8;
 const WINNER_ALIGN_FADE_TOP_WR = 60;
 const WINNER_ALIGN_MEAN_BEHIND = -5;
+const WINNER_ALIGN_EDGE10 = 10; // ~Q5 floor on Jun1+ score>0 causal sample
 const WINNER_ALIGN_EDGE5 = 5;
 const WINNER_ALIGN_EDGE3 = 3;
+const WINNER_ALIGN_RESCUE_E10_UNITS = 6;
 const WINNER_ALIGN_RESCUE_E5_UNITS = 4;
 const WINNER_ALIGN_RESCUE_E3_UNITS = 3;
+const WINNER_ALIGN_BAD_EDGE_CAP = 1; // EDGE < 0 → max stake (A/B/C)
 const WINNER_ALIGN_MUTE_TIERS = new Set([
   'SUPER', 'TOP', 'TOP+', 'MINI', 'MINI-', 'CONFIRMED',
   'RANK', 'SHARP', 'SHARP-PRIME',
@@ -1760,24 +1766,36 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       const e = wa.edge;
       const before = finalUnitsApplied;
       if (WINNER_ALIGN_PATH_A.has(tierNow)) {
-        if (e >= WINNER_ALIGN_EDGE5) {
+        if (e >= WINNER_ALIGN_EDGE10) {
+          finalUnitsApplied = 6; // extreme Q5 bump
+        } else if (e >= WINNER_ALIGN_EDGE5) {
           finalUnitsApplied = Math.min(finalUnitsApplied + 1, 6);
         } else if (e >= WINNER_ALIGN_EDGE3) {
           // keep
         } else if (e >= 0) {
           finalUnitsApplied = Math.max(1, finalUnitsApplied - 1);
         } else {
-          finalUnitsApplied = 1;
+          finalUnitsApplied = WINNER_ALIGN_BAD_EDGE_CAP;
         }
       } else if (tierNow === 'RANK') {
-        finalUnitsApplied = e >= WINNER_ALIGN_EDGE5
-          ? 4
-          : Math.min(finalUnitsApplied, 2);
+        if (e >= WINNER_ALIGN_EDGE10) {
+          finalUnitsApplied = 6;
+        } else if (e >= WINNER_ALIGN_EDGE5) {
+          finalUnitsApplied = 4;
+        } else if (e < 0) {
+          finalUnitsApplied = WINNER_ALIGN_BAD_EDGE_CAP;
+        } else {
+          finalUnitsApplied = Math.min(finalUnitsApplied, 2);
+        }
       } else if (tierNow === 'SHARP' || tierNow === 'SHARP-PRIME') {
-        if (e >= WINNER_ALIGN_EDGE5) {
+        if (e >= WINNER_ALIGN_EDGE10) {
+          finalUnitsApplied = 6;
+        } else if (e >= WINNER_ALIGN_EDGE5) {
           // keep full
         } else if (e >= WINNER_ALIGN_EDGE3) {
           finalUnitsApplied = Math.min(finalUnitsApplied, 2);
+        } else if (e < 0) {
+          finalUnitsApplied = WINNER_ALIGN_BAD_EDGE_CAP;
         } else {
           finalUnitsApplied = 1;
         }
@@ -1787,6 +1805,23 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         } else if (e < 0) {
           finalUnitsApplied = 0;
         }
+      } else if (tierNow === 'WINNER') {
+        // Re-size already-rescued WINNER if EDGE drifts pre-T-15
+        if (e >= WINNER_ALIGN_EDGE10) {
+          finalUnitsApplied = WINNER_ALIGN_RESCUE_E10_UNITS;
+        } else if (e >= WINNER_ALIGN_EDGE5) {
+          finalUnitsApplied = WINNER_ALIGN_RESCUE_E5_UNITS;
+        } else if (e >= WINNER_ALIGN_EDGE3) {
+          finalUnitsApplied = WINNER_ALIGN_RESCUE_E3_UNITS;
+        } else if (e < 0) {
+          finalUnitsApplied = WINNER_ALIGN_BAD_EDGE_CAP;
+        }
+      }
+      // Universal bad-EDGE shrink for any remaining A/B/C stake still >1u
+      if (e < 0
+          && finalUnitsApplied > WINNER_ALIGN_BAD_EDGE_CAP
+          && WINNER_ALIGN_MUTE_TIERS.has(tierNow)) {
+        finalUnitsApplied = WINNER_ALIGN_BAD_EDGE_CAP;
       }
       finalUnitsApplied = Math.round(oddsCap(finalUnitsApplied, sideOdds) * 100) / 100;
       if (Math.abs(finalUnitsApplied - before) >= 0.05) {
@@ -1795,14 +1830,16 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       }
     }
 
-    // 3) RESCUE — still muted, score>0, EDGE≥3 → WINNER @ 4u / 3u
+    // 3) RESCUE — still muted, score>0, EDGE≥3 → WINNER @ 6u / 4u / 3u
     if (finalUnitsApplied === 0
         && wa.hasBoth
         && wa.edge >= WINNER_ALIGN_EDGE3
         && !(Number.isFinite(sd.manualStake) && sd.manualStake > 0)) {
-      const u = wa.edge >= WINNER_ALIGN_EDGE5
-        ? WINNER_ALIGN_RESCUE_E5_UNITS
-        : WINNER_ALIGN_RESCUE_E3_UNITS;
+      const u = wa.edge >= WINNER_ALIGN_EDGE10
+        ? WINNER_ALIGN_RESCUE_E10_UNITS
+        : wa.edge >= WINNER_ALIGN_EDGE5
+          ? WINNER_ALIGN_RESCUE_E5_UNITS
+          : WINNER_ALIGN_RESCUE_E3_UNITS;
       finalUnitsApplied = Math.round(oddsCap(u, sideOdds) * 100) / 100;
       hcStakeTier = 'WINNER';
       winnerRescued = true;

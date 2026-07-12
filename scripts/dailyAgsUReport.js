@@ -1911,6 +1911,7 @@ function buildV12PathD(report, stats) {
 
 // ── § 5d — WINNER-ALIGN (EDGE mute / size / rescue · v12abcde) ─────────────
 const WINNER_ALIGN_LIVE_FROM = '2026-07-12';
+const WINNER_ALIGN_RESCUE_E10 = 6;
 const WINNER_ALIGN_RESCUE_E5 = 4;
 const WINNER_ALIGN_RESCUE_E3 = 3;
 
@@ -1949,11 +1950,40 @@ function enrichWinnerAlignEdge(rows, walletProfiles) {
 
 function edgeBucket(edge) {
   if (!Number.isFinite(edge)) return 'NA';
-  if (edge >= 5) return 'E5+';
+  if (edge >= 10) return 'E10+';
+  if (edge >= 5) return 'E5-10';
   if (edge >= 3) return 'E3-5';
   if (edge >= 0) return 'E0-3';
   if (edge > -5) return 'E-5-0';
   return 'E≤-5';
+}
+
+function flat1uPnl(rows) {
+  let flat = 0, w = 0, l = 0;
+  for (const r of rows) {
+    if (r.won === 1) {
+      w++;
+      const o = r.peakOdds || r.lockOdds;
+      flat += o < 0 ? 100 / Math.abs(o) : o / 100;
+    } else if (r.won === 0) {
+      l++;
+      flat -= 1;
+    }
+  }
+  return { w, l, n: w + l, flat };
+}
+
+function stakedPnl(rows) {
+  let n = 0, pnl = 0, stake = 0, w = 0, l = 0;
+  for (const r of rows) {
+    if ((r.units || 0) <= 0 || r.tracked) continue;
+    if (r.won == null) continue;
+    n++;
+    stake += r.units || 0;
+    pnl += r.profit || 0;
+    if (r.won === 1) w++; else if (r.won === 0) l++;
+  }
+  return { n, w, l, stake, pnl, roi: stake > 0 ? (pnl / stake) * 100 : null };
 }
 
 function buildV12WinnerAlign(report, stats, walletProfiles) {
@@ -1964,17 +1994,16 @@ function buildV12WinnerAlign(report, stats, walletProfiles) {
     report.push('');
     return;
   }
-  report.push(`> **What this is.** \`v12abcde\` = v12abcd **plus** winner-align. Live **${WINNER_ALIGN_LIVE_FROM}**. After Paths A–D: **MUTE** A/B/C stakes if fadeTop sport-WR ≥ 60 **or** mean EDGE ≤ −5 → 0u (\`mutedBy=winner_align_fade\`); **SIZE** survivors by path × EDGE; **RESCUE** still-muted score>0 with EDGE≥3 as \`WINNER\` @ **${WINNER_ALIGN_RESCUE_E5}u** (E5+) / **${WINNER_ALIGN_RESCUE_E3}u** (E3–5). EDGE = mean FOR sport WR − mean AG sport WR (n≥8). Does not flip sides.`);
+  report.push(`> **What this is.** \`v12abcde\` = v12abcd **plus** winner-align. Live **${WINNER_ALIGN_LIVE_FROM}**. After Paths A–D: **MUTE** A/B/C if fadeTop≥60 **or** EDGE≤−5 → 0u; **SIZE** survivors (E10+→**6u** · E5→+1/keep · EDGE&lt;0→**≤1u**); **RESCUE** still-muted score>0 + EDGE≥3 as \`WINNER\` @ **${WINNER_ALIGN_RESCUE_E10}u** (E10+) / **${WINNER_ALIGN_RESCUE_E5}u** (E5–10) / **${WINNER_ALIGN_RESCUE_E3}u** (E3–5). EDGE = mean FOR−AG sport WR (n≥8). Does not flip sides.`);
+  report.push('');
+  report.push(`> **Findings to watch (causal Jun1+):** EDGE predicts winners better than AGS/HC/Δw (AUC~0.58). Not linear — money in **E10+ (Q5)**; toxic zone **E−5→0**. Market implied beats EDGE on WR but loses in top quintile. AGS alone ~coin-flip on EDGE-eligible slice.`);
   report.push('');
 
   const { v12Rows, v12RowsAll } = stats;
   // DO NOT enrich historical rows with current sharpWalletProfiles WR.
-  // That is lookahead (same bug that inflated EDGE CFs to 74%). Profile
-  // replay manufactures a totally different E3-5 set (~4/59 overlap with
-  // causal) and printed a fake 36% WR. Stamps only below; live going
-  // forward is near-causal because today's games are unsettled.
+  // That is lookahead (same bug that inflated EDGE CFs to 74%). Stamps only.
 
-  // (A) Live WINNER rescues
+  // (A) Live WINNER rescues — overall + by EDGE band
   const liveW = (v12RowsAll || v12Rows).filter(r => r.hcStakeTier === 'WINNER');
   const liveGraded = liveW.filter(r => r.won != null);
   report.push(`### (A) Live stamped WINNER rescues`);
@@ -1984,46 +2013,77 @@ function buildV12WinnerAlign(report, stats, walletProfiles) {
     report.push(`_No graded WINNER picks yet${pending ? ` (${pending} ungraded in flight)` : ''}. Fills in as \`hcStakeTier=WINNER\` grades._`);
   } else {
     const a = aggregate(liveGraded);
-    report.push(`| Picks | W-L | Win % | Stake | PnL | ROI |`);
-    report.push(`|-------|-----|-------|-------|-----|-----|`);
-    report.push(`| ${a.n} | ${a.w}-${a.l} | ${pct(a.w, a.n)} | ${a.totalStake.toFixed(1)}u | ${fmtSigned(a.profit)}u | ${a.roi != null ? (a.roi>=0?'+':'')+a.roi.toFixed(1)+'%' : '—'} |`);
-  }
-  report.push('');
-
-  // (B) EDGE margin on EVERY V12 play (staked + muted)
-  report.push(`### (B) EDGE margin on every V12 play`);
-  report.push('');
-  report.push(`Mean FOR−AG sport WR (pp) from **stamped** \`v8_winnerAlignEdge\` only (cron live write — near-causal post-cutover).`);
-  report.push('');
-  report.push(`> ⚠️ **Never replay current profiles onto old dates for EDGE.** That is lookahead. Audit 2026-07-12: leaky "E3–5" overlapped causal on **4/59** picks and printed a fake ~37–44% WR. Honest causal: all E3–5 ~57% · muted score>0 E3–5 ~65% · leaky E5+ still inflated. Table = **stamps only** until live grades fill in.`);
-  report.push('');
-  const stamped = v12Rows.filter(r => Number.isFinite(r.winnerAlignEdge));
-  const buckets = ['E5+', 'E3-5', 'E0-3', 'E-5-0', 'E≤-5'];
-  report.push(`| EDGE bucket | N | W-L | Win % | Flat 1u PnL | Staked N | Staked PnL |`);
-  report.push(`|-------------|---|-----|-------|-------------|----------|------------|`);
-  if (stamped.length === 0) {
-    report.push(`| _(no stamped EDGE yet — winner-align live 2026-07-12)_ |  |  |  |  |  |  |`);
-  } else {
-    for (const b of buckets) {
-      const rows = stamped.filter(r => edgeBucket(r.winnerAlignEdge) === b);
-      if (!rows.length) continue;
-      let w = 0, l = 0, flat = 0, sN = 0, sPnl = 0;
-      for (const r of rows) {
-        if (r.won === 1) w++; else if (r.won === 0) l++;
-        const odds = r.peakOdds || r.lockOdds;
-        if (r.won === 1) flat += odds < 0 ? 100 / Math.abs(odds) : odds / 100;
-        else if (r.won === 0) flat -= 1;
-        if ((r.units || 0) > 0 && !r.tracked) {
-          sN++;
-          sPnl += r.profit || 0;
-        }
-      }
-      const n = w + l;
-      report.push(`| ${b.padEnd(11)} | ${String(n).padStart(3)} | ${(w+'-'+l).padEnd(5)} | ${pct(w, n).padStart(5)} | ${fmtSigned(flat).padStart(11)} | ${String(sN).padStart(8)} | ${fmtSigned(sPnl).padStart(10)} |`);
+    report.push(`| Slice | Picks | W-L | Win % | Stake | PnL | ROI |`);
+    report.push(`|-------|-------|-----|-------|-------|-----|-----|`);
+    report.push(`| ALL WINNER | ${a.n} | ${a.w}-${a.l} | ${pct(a.w, a.n)} | ${a.totalStake.toFixed(1)}u | ${fmtSigned(a.profit)}u | ${a.roi != null ? (a.roi>=0?'+':'')+a.roi.toFixed(1)+'%' : '—'} |`);
+    for (const [label, pred] of [
+      ['E10+ (6u target)', r => Number.isFinite(r.winnerAlignEdge) && r.winnerAlignEdge >= 10],
+      ['E5–10 (4u)', r => Number.isFinite(r.winnerAlignEdge) && r.winnerAlignEdge >= 5 && r.winnerAlignEdge < 10],
+      ['E3–5 (3u)', r => Number.isFinite(r.winnerAlignEdge) && r.winnerAlignEdge >= 3 && r.winnerAlignEdge < 5],
+    ]) {
+      const sub = aggregate(liveGraded.filter(pred));
+      if (sub.n + sub.trackedN === 0) continue;
+      report.push(`| ${label} | ${sub.n} | ${sub.w}-${sub.l} | ${pct(sub.w, sub.n)} | ${sub.totalStake.toFixed(1)}u | ${fmtSigned(sub.profit)}u | ${sub.roi != null ? (sub.roi>=0?'+':'')+sub.roi.toFixed(1)+'%' : '—'} |`);
     }
   }
   report.push('');
-  report.push(`_Stamped EDGE coverage: ${stamped.length}/${v12Rows.length} graded V12 rows._`);
+
+  // (B) EDGE margin ladder — full monitoring
+  report.push(`### (B) EDGE margin ladder (every stamped V12 play)`);
+  report.push('');
+  report.push(`Mean FOR−AG sport WR (pp) from **stamped** \`v8_winnerAlignEdge\` only (cron live write — near-causal post-cutover).`);
+  report.push('');
+  report.push(`> ⚠️ **Never replay current profiles onto old dates for EDGE.** That is lookahead. Table = **stamps only**. Pre-cutover graded rows will show low coverage until post-2026-07-12 fills in.`);
+  report.push('');
+  const stamped = v12Rows.filter(r => Number.isFinite(r.winnerAlignEdge));
+  const buckets = ['E10+', 'E5-10', 'E3-5', 'E0-3', 'E-5-0', 'E≤-5'];
+  report.push(`| EDGE bucket | N | W-L | Win % | Flat 1u PnL | Staked N | Staked PnL | Staked ROI |`);
+  report.push(`|-------------|---|-----|-------|-------------|----------|------------|------------|`);
+  if (stamped.length === 0) {
+    report.push(`| _(no stamped EDGE yet — winner-align live 2026-07-12)_ |  |  |  |  |  |  |  |`);
+  } else {
+    const wrByBucket = [];
+    for (const b of buckets) {
+      const rows = stamped.filter(r => edgeBucket(r.winnerAlignEdge) === b);
+      if (!rows.length) {
+        report.push(`| ${b.padEnd(11)} |   0 | —     |     — |           — |        0 |          — |          — |`);
+        continue;
+      }
+      const f = flat1uPnl(rows);
+      const s = stakedPnl(rows);
+      const wr = f.n > 0 ? (100 * f.w / f.n) : null;
+      if (wr != null) wrByBucket.push({ b, wr });
+      report.push(`| ${b.padEnd(11)} | ${String(f.n).padStart(3)} | ${(f.w+'-'+f.l).padEnd(5)} | ${pct(f.w, f.n).padStart(5)} | ${fmtSigned(f.flat).padStart(11)} | ${String(s.n).padStart(8)} | ${fmtSigned(s.pnl).padStart(10)} | ${s.roi != null ? ((s.roi>=0?'+':'')+s.roi.toFixed(1)+'%').padStart(10) : '—'.padStart(10)} |`);
+    }
+    // Monotonicity on the ordered buckets that have data (low→high EDGE)
+    const ordered = [...wrByBucket].reverse(); // E≤-5 … E10+ already listed high→low; reverse for low→high
+    let steps = 0, ok = 0;
+    for (let i = 1; i < ordered.length; i++) {
+      steps++;
+      if (ordered[i].wr >= ordered[i - 1].wr) ok++;
+    }
+    report.push('');
+    report.push(`_Monotonicity (WR rises with EDGE bucket, low→high): **${ok}/${steps}** steps. Expect stepwise climb; toxic mid (E−5→0) can undercut E≤−5._`);
+  }
+  report.push('');
+  report.push(`_Stamped EDGE coverage: **${stamped.length}/${v12Rows.length}** graded V12 rows (${v12Rows.length ? ((100 * stamped.length / v12Rows.length).toFixed(0)) : 0}%)._`);
+  report.push('');
+
+  // (B2) Findings watch — Q5 / toxic / bad-staked
+  report.push(`### (B2) Findings watch`);
+  report.push('');
+  const e10 = stamped.filter(r => r.winnerAlignEdge >= 10);
+  const eNegMid = stamped.filter(r => r.winnerAlignEdge > -5 && r.winnerAlignEdge < 0);
+  const eNeg = stamped.filter(r => r.winnerAlignEdge < 0);
+  const eNegStaked = eNeg.filter(r => (r.units || 0) > 0 && !r.tracked);
+  const f10 = flat1uPnl(e10);
+  const fMid = flat1uPnl(eNegMid);
+  const sNeg = stakedPnl(eNegStaked);
+  report.push(`| Watch | N | W-L | Win % | Flat / Staked PnL | Target |`);
+  report.push(`|-------|---|-----|-------|-------------------|--------|`);
+  report.push(`| **E10+ (extreme / Q5)** | ${f10.n} | ${f10.w}-${f10.l} | ${pct(f10.w, f10.n)} | flat ${fmtSigned(f10.flat)}u | Should lead book — sized to **6u** |`);
+  report.push(`| **E−5→0 (toxic mid)** | ${fMid.n} | ${fMid.w}-${fMid.l} | ${pct(fMid.w, fMid.n)} | flat ${fmtSigned(fMid.flat)}u | Worst WR zone historically — shrink/mute |`);
+  report.push(`| **EDGE&lt;0 still staked** | ${sNeg.n} | ${sNeg.w}-${sNeg.l} | ${pct(sNeg.w, sNeg.n)} | staked ${fmtSigned(sNeg.pnl)}u | Should be **≤1u** after bad-EDGE shrink |`);
   report.push('');
 
   // (C) Mute actions
@@ -2033,15 +2093,63 @@ function buildV12WinnerAlign(report, stats, walletProfiles) {
   if (!mutedWA.length) {
     report.push(`_No graded picks stamped \`mutedBy=winner_align_fade\` yet (pre-cutover history won’t carry the stamp)._`);
   } else {
-    const a = aggregate(mutedWA);
-    report.push(`| Muted N | Counterfactual flat 1u (if we had bet) |`);
-    report.push(`|---------|----------------------------------------|`);
-    let flat = 0, w = 0, l = 0;
-    for (const r of mutedWA) {
-      if (r.won === 1) { w++; const o = r.peakOdds || r.lockOdds; flat += o < 0 ? 100/Math.abs(o) : o/100; }
-      else if (r.won === 0) { l++; flat -= 1; }
+    const f = flat1uPnl(mutedWA);
+    report.push(`| Muted N | W-L | Counterfactual flat 1u (if we had bet) |`);
+    report.push(`|---------|-----|----------------------------------------|`);
+    report.push(`| ${f.n} | ${f.w}-${f.l} | ${fmtSigned(f.flat)}u |`);
+    const byWhy = [
+      ['fadeTop60', r => r.winnerAlignFadeTop60],
+      ['meanBehind5', r => r.winnerAlignMeanBehind5],
+    ];
+    for (const [why, pred] of byWhy) {
+      const sub = mutedWA.filter(pred);
+      if (!sub.length) continue;
+      const sf = flat1uPnl(sub);
+      report.push(`- ${why}: ${sf.n} picks · CF flat ${fmtSigned(sf.flat)}u · ${pct(sf.w, sf.n)} WR`);
     }
-    report.push(`| ${w+l} (${w}-${l}) | ${fmtSigned(flat)}u |`);
+  }
+  report.push('');
+
+  // (D) Action mix — mute / size / rescue / none
+  report.push(`### (D) Winner-align actions (stamped)`);
+  report.push('');
+  const withAction = v12Rows.filter(r => r.winnerAlignAction);
+  if (!withAction.length) {
+    report.push(`_No \`v8_winnerAlignAction\` stamps on graded rows yet._`);
+  } else {
+    report.push(`| Action | N | W-L | Win % | Staked PnL |`);
+    report.push(`|--------|---|-----|-------|------------|`);
+    for (const act of ['mute', 'size', 'rescue']) {
+      const rows = withAction.filter(r => r.winnerAlignAction === act);
+      if (!rows.length) continue;
+      const f = flat1uPnl(rows);
+      const s = stakedPnl(rows);
+      report.push(`| ${act.padEnd(6)} | ${f.n} | ${f.w}-${f.l} | ${pct(f.w, f.n)} | ${fmtSigned(s.pnl)}u |`);
+    }
+  }
+  report.push('');
+
+  // (E) Independence vs AGS — EDGE works when AGS is weak?
+  report.push(`### (E) EDGE vs AGS independence`);
+  report.push('');
+  const withBoth = stamped.filter(r => Number.isFinite(r.agsV12));
+  if (withBoth.length < 20) {
+    report.push(`_Need more stamped EDGE + AGS rows (have ${withBoth.length})._`);
+  } else {
+    const scores = withBoth.map(r => r.agsV12).sort((a, b) => a - b);
+    const med = scores[Math.floor(scores.length / 2)];
+    const edge5 = withBoth.filter(r => r.winnerAlignEdge >= 5);
+    const edge5LowAgs = edge5.filter(r => r.agsV12 < med);
+    const agsTop = [...withBoth].sort((a, b) => b.agsV12 - a.agsV12).slice(0, Math.max(1, Math.floor(withBoth.length / 5)));
+    const agsTopNoE5 = agsTop.filter(r => r.winnerAlignEdge < 5);
+    const fE5lo = flat1uPnl(edge5LowAgs);
+    const fAgsNo = flat1uPnl(agsTopNoE5);
+    report.push(`| Slice | N | W-L | Win % | Flat 1u |`);
+    report.push(`|-------|---|-----|-------|---------|`);
+    report.push(`| EDGE≥5 + below-median AGS | ${fE5lo.n} | ${fE5lo.w}-${fE5lo.l} | ${pct(fE5lo.w, fE5lo.n)} | ${fmtSigned(fE5lo.flat)}u |`);
+    report.push(`| AGS top-quintile, EDGE&lt;5 | ${fAgsNo.n} | ${fAgsNo.w}-${fAgsNo.l} | ${pct(fAgsNo.w, fAgsNo.n)} | ${fmtSigned(fAgsNo.flat)}u |`);
+    report.push('');
+    report.push(`_If EDGE≥5 / low-AGS stays green while high-AGS / low-EDGE fades, EDGE is doing real work — not AGS in disguise._`);
   }
   report.push('');
   report.push(`> Track WINNER ROI separately from RANK/SHARP/DISSENT — same mute pool, different gate (sport-WR EDGE).`);
@@ -2329,9 +2437,9 @@ function buildV12TierAnalysis(report, stats) {
     report.push(`- **Path B (v12ab, live 2026-06-21)** — RANK 2-for-0 rescue: muted score>0 pick with ≥2 eligible whitelist FOR and 0 AGAINST → **4u**.`);
     report.push(`- **Path C (v12abc, live 2026-06-26; retune 2026-07-12)** — SHARP / SHARP-PRIME proven-$ rescue (+ MINI- cut). Retune: ≥3 FOR sharps, skip odds ≤ −150, TOP+ boost OFF.`);
     report.push(`- **Path D (v12abcd, live 2026-07-12)** — DISSENT mute rescue: MLB · odds ≤ +200 · \`contribMargin ≤ 0\` · \`maxShare < 0.35\` → **1u** (tier key \`DISSENT\`). Uses wallet contribution dissent — not proven-$ forCount.`);
-    report.push(`- **Path E (v12abcde, live 2026-07-12)** — WINNER-ALIGN: mute fadeTop≥60 / EDGE≤−5; size by EDGE; rescue EDGE≥3 as \`WINNER\` @ **4u / 3u**.`);
+    report.push(`- **Path E (v12abcde, live 2026-07-12; retune extreme/bad)** — WINNER-ALIGN: mute fadeTop≥60 / EDGE≤−5; size by EDGE (E10→6u · EDGE&lt;0→≤1u); rescue EDGE≥3 as \`WINNER\` @ **6u / 4u / 3u**.`);
     report.push('');
-    report.push(`Post-cutover picks size off the **HC margin** — SUPER (margin 2 · 6u), TOP (margin 1 · 4u), MINI (mini-HC 1.0–1.5× · 3u), CONFIRMED (margin 3+ · 1u) — **plus** the **RANK (2-for-0)** wallet-rescue path at **${RANK_RESCUE_UNITS}u**. From **2026-06-26** the **v12abc proven-$ overlay** (internal stats: backer \`positions.dollarRoi\` + featured \`picks.wr\`) adds: **SHARP / SHARP-PRIME** ($-rescue of HC-muted picks at 3u / 4u when sharps back it incl. a proven-money winner and mean win-rate ≥ 50 / 55; from **2026-07-12** requires ≥3 FOR sharps and odds softer than −150), **TOP+** (HC-1 boosted 4u → 5u when a proven-$ backer is present — **disabled from 2026-07-12**), and **MINI-** (MINI cut 3u → 1u when no proven-$ backer is on it). From **2026-07-12** **Path D / DISSENT** adds a 1u mute rescue on contested MLB books (\`contribMargin ≤ 0\`, dispersed). From **2026-07-12** **Path E / WINNER-ALIGN** mutes toxic fades, resizes by EDGE, and rescues EDGE≥3 as \`WINNER\` @ 4u/3u. Together these paths ARE the **v12abcde** staked book. **MONITORING** (non-HC or WEAK-tier HC, no rescue path) is tracked at **0u** and excluded from the staked record/ROI below.`);
+    report.push(`Post-cutover picks size off the **HC margin** — SUPER (margin 2 · 6u), TOP (margin 1 · 4u), MINI (mini-HC 1.0–1.5× · 3u), CONFIRMED (margin 3+ · 1u) — **plus** the **RANK (2-for-0)** wallet-rescue path at **${RANK_RESCUE_UNITS}u**. From **2026-06-26** the **v12abc proven-$ overlay** (internal stats: backer \`positions.dollarRoi\` + featured \`picks.wr\`) adds: **SHARP / SHARP-PRIME** ($-rescue of HC-muted picks at 3u / 4u when sharps back it incl. a proven-money winner and mean win-rate ≥ 50 / 55; from **2026-07-12** requires ≥3 FOR sharps and odds softer than −150), **TOP+** (HC-1 boosted 4u → 5u when a proven-$ backer is present — **disabled from 2026-07-12**), and **MINI-** (MINI cut 3u → 1u when no proven-$ backer is on it). From **2026-07-12** **Path D / DISSENT** adds a 1u mute rescue on contested MLB books (\`contribMargin ≤ 0\`, dispersed). From **2026-07-12** **Path E / WINNER-ALIGN** mutes toxic fades, resizes by EDGE (E10→6u · EDGE&lt;0→≤1u), and rescues EDGE≥3 as \`WINNER\` @ **6u / 4u / 3u**. Together these paths ARE the **v12abcde** staked book. **MONITORING** (non-HC or WEAK-tier HC, no rescue path) is tracked at **0u** and excluded from the staked record/ROI below.`);
     report.push('');
     report.push(`| Tier (paths)              | Units | N   | W-L    | Win %  | Total Stake | PnL (u)    | ROI       |`);
     report.push(`|---------------------------|-------|-----|--------|--------|-------------|------------|-----------|`);
@@ -2369,7 +2477,7 @@ function buildV12TierAnalysis(report, stats) {
       { key: 'MINI-',       u: '1u', label: 'C · mini gate-cut' },
       { key: 'CONFIRMED',   u: '1u', label: 'A · margin 3+' },
       { key: 'DISSENT',     u: '1u', label: 'D · CM≤0 dissent' },
-      { key: 'WINNER',      u: '3-4u', label: 'E · winner-align EDGE' },
+      { key: 'WINNER',      u: '3-6u', label: 'E · winner-align EDGE' },
     ];
     report.push(`#### Granular — by individual staking path`);
     report.push('');

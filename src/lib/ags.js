@@ -1073,7 +1073,7 @@ export const AGS_V12_STAKE_PATH = {
 export const AGS_V12_DISPLAY_TIERS = [
   { key: 'MAX',    label: 'MAX PLAY',   color: '#E8B85C', unitsLabel: '6u',   sub: 'HC-2 model',      paths: ['SUPER'] },
   { key: 'TOP',    label: 'TOP PICK',   color: '#E8B85C', unitsLabel: '4-5u', sub: 'HC-margin model', paths: ['TOP+', 'TOP'] },
-  { key: 'SHARP',  label: 'SHARP PLAY', color: '#A855F7', unitsLabel: '3-4u', sub: 'sharp money',     paths: ['RANK', 'SHARP-PRIME', 'SHARP', 'WINNER'] },
+  { key: 'SHARP',  label: 'SHARP PLAY', color: '#A855F7', unitsLabel: '3-6u', sub: 'sharp money',     paths: ['RANK', 'SHARP-PRIME', 'SHARP', 'WINNER'] },
   { key: 'STRONG', label: 'STRONG',     color: '#14B8A6', unitsLabel: '3u',   sub: 'mini-HC',         paths: ['MINI'] },
   { key: 'LEAN',   label: 'LEAN',       color: '#6B7280', unitsLabel: '1u',   sub: 'confirmed / cut / Path D', paths: ['CONFIRMED', 'MINI-', 'DISSENT'] },
 ];
