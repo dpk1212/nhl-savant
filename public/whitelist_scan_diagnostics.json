@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-07-13T03:32:30.259Z",
-  "elapsedSec": 16.8,
+  "scannedAt": "2026-07-13T03:36:30.774Z",
+  "elapsedSec": 16.1,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 6,
   "summary": {
     "total": 194,
     "coveredByMain": 7,
     "recovered": 7,
-    "recoveredPositions": 16,
+    "recoveredPositions": 17,
     "noPositions": 180,
     "apiError": 0,
     "addressNotFound": 0,
@@ -16,7 +16,7 @@
       "ml": 6,
       "spread": 2,
       "total": 0,
-      "dropped_shadow_gate": 7,
+      "dropped_shadow_gate": 8,
       "dropped_duplicate": 1
     }
   },
@@ -606,11 +606,11 @@
       "sports": "MLB,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
-      "positionsCount": 1,
+      "positionsCount": 2,
       "statsSource": "sports_sharps",
       "avgSportBet": 6219,
       "willPassShadowGate": 0,
-      "willDropAtShadowGate": 1,
+      "willDropAtShadowGate": 2,
       "positions": [
         {
           "sport": "WNBA",
@@ -619,6 +619,15 @@
           "side": "home",
           "invested": 202,
           "entryLine": -2.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "WNBA",
+          "gameKey": "las_atl",
+          "marketType": "total",
+          "side": "over",
+          "invested": 183,
+          "entryLine": 180.5,
           "passesShadow": false
         }
       ]
@@ -1022,19 +1031,19 @@
         },
         {
           "sport": "SOC",
-          "gameKey": "esp_fra",
+          "gameKey": "arg_eng",
           "marketType": "ml",
-          "side": "draw",
-          "invested": 2208,
+          "side": "home",
+          "invested": 3001,
           "entryLine": null,
           "passesShadow": true
         },
         {
           "sport": "SOC",
-          "gameKey": "arg_eng",
+          "gameKey": "esp_fra",
           "marketType": "ml",
-          "side": "home",
-          "invested": 2726,
+          "side": "draw",
+          "invested": 2208,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1061,7 +1070,7 @@
           "gameKey": "arg_eng",
           "marketType": "ml",
           "side": "away",
-          "invested": 552,
+          "invested": 557,
           "entryLine": null,
           "passesShadow": false
         }
