@@ -1,19 +1,19 @@
 {
-  "scannedAt": "2026-07-13T19:24:58.158Z",
-  "elapsedSec": 13.9,
+  "scannedAt": "2026-07-13T19:28:59.061Z",
+  "elapsedSec": 14.1,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 6,
   "summary": {
     "total": 194,
     "coveredByMain": 9,
-    "recovered": 9,
-    "recoveredPositions": 37,
-    "noPositions": 176,
+    "recovered": 10,
+    "recoveredPositions": 39,
+    "noPositions": 175,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 10,
+      "ml": 12,
       "spread": 7,
       "total": 0,
       "dropped_shadow_gate": 12,
@@ -387,10 +387,10 @@
       "sports": "MLB",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xf7f0b0b1e9c0fe02ccad926916ee31aef74b912c",
-      "positionsCount": 8,
+      "positionsCount": 9,
       "statsSource": "sports_sharps",
       "avgSportBet": 1142,
-      "willPassShadowGate": 5,
+      "willPassShadowGate": 6,
       "willDropAtShadowGate": 3,
       "positions": [
         {
@@ -418,6 +418,15 @@
           "side": "away",
           "invested": 492,
           "entryLine": 7.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "WNBA",
+          "gameKey": "las_atl",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 192,
+          "entryLine": null,
           "passesShadow": true
         },
         {
@@ -1131,8 +1140,24 @@
       "tier": "FLAT",
       "name": "oudine2",
       "sports": "SOC",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x64e93f87d8a0c1b2cde6f20d71f211372a95eb4c"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x64e93f87d8a0c1b2cde6f20d71f211372a95eb4c",
+      "positionsCount": 1,
+      "statsSource": "sharpWalletProfiles_derived",
+      "avgSportBet": 7080,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "WNBA",
+          "gameKey": "las_atl",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 2400,
+          "entryLine": null,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "972768",
@@ -1235,7 +1260,7 @@
           "gameKey": "arg_eng",
           "marketType": "ml",
           "side": "home",
-          "invested": 3867,
+          "invested": 3872,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1244,7 +1269,7 @@
           "gameKey": "arg_eng",
           "marketType": "ml",
           "side": "away",
-          "invested": 1292,
+          "invested": 1297,
           "entryLine": null,
           "passesShadow": false
         },
