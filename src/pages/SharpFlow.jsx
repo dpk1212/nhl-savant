@@ -5328,82 +5328,6 @@ function V12ConvictionPanel({ tier, tierColor, tierBg, forW, agW, qFor, qAg, hcF
   );
 }
 
-/** Score → path → modifier summary from cron stamps (operator-facing). */
-function buildSizingPipeline({
-  agsValueV12, agsTierV12, hcStakeTier, hcMargin, miniHcMargin,
-  units, odds, winnerAlignAction, winnerAlignEdge, winnerAlignTopVsTop,
-  winnerAlignTopFor, winnerAlignTopAg, clvTop2Action, forTop2PctPos, forTop2NSkill,
-}) {
-  const score = Number.isFinite(agsValueV12) ? agsValueV12 : null;
-  const scoreTier = agsTierV12 || null;
-  const path = hcStakeTier || null;
-  const pathDesc = path ? (AGS_V12_STAKE_PATH[path] || path) : null;
-  const displayKey = path ? (AGS_V12_PATH_TO_DISPLAY[path] || null) : null;
-  const displayMeta = displayKey
-    ? AGS_V12_DISPLAY_TIERS.find(t => t.key === displayKey)
-    : null;
-
-  const mods = [];
-  const o = Number(odds);
-  if (Number.isFinite(o) && o >= 100) {
-    const cap = o >= 200 ? 1 : o >= 151 ? 1.5 : 2.5;
-    mods.push({ key: 'odds', label: `odds cap ${cap}u`, detail: `${o > 0 ? '+' : ''}${o}` });
-  }
-  if (winnerAlignAction) {
-    const edgeStr = Number.isFinite(winnerAlignEdge) ? `EDGE ${winnerAlignEdge >= 0 ? '+' : ''}${winnerAlignEdge.toFixed(1)}` : null;
-    if (winnerAlignAction === 'top_cap') {
-      mods.push({
-        key: 'wa',
-        label: 'top-vs-top → 1u',
-        detail: [edgeStr, winnerAlignTopFor != null && winnerAlignTopAg != null
-          ? `top ${winnerAlignTopFor}/${winnerAlignTopAg}` : null].filter(Boolean).join(' · ') || null,
-      });
-    } else if (winnerAlignAction === 'mute') {
-      mods.push({ key: 'wa', label: 'winner mute → 0u', detail: edgeStr });
-    } else if (winnerAlignAction === 'size') {
-      mods.push({ key: 'wa', label: 'winner size', detail: edgeStr });
-    } else if (winnerAlignAction === 'rescue') {
-      mods.push({ key: 'wa', label: 'winner rescue', detail: edgeStr });
-    } else {
-      mods.push({ key: 'wa', label: String(winnerAlignAction), detail: edgeStr });
-    }
-  } else if (winnerAlignTopVsTop) {
-    mods.push({ key: 'wa', label: 'top-vs-top', detail: 'flagged' });
-  }
-  if (clvTop2Action) {
-    const t2 = Number.isFinite(forTop2PctPos) ? `top2 ${forTop2PctPos}%` : null;
-    const n = Number.isFinite(forTop2NSkill) ? `n=${forTop2NSkill}` : null;
-    const detail = [t2, n].filter(Boolean).join(' · ') || null;
-    if (clvTop2Action === 'CANCEL') mods.push({ key: 'clv', label: 'CLV cancel → 0u', detail });
-    else if (clvTop2Action === 'BOOST') mods.push({ key: 'clv', label: 'CLV boost', detail });
-    else if (clvTop2Action === 'HOLD' || clvTop2Action === 'PASS') {
-      mods.push({ key: 'clv', label: `CLV ${clvTop2Action.toLowerCase()}`, detail });
-    } else {
-      mods.push({ key: 'clv', label: `CLV ${clvTop2Action}`, detail });
-    }
-  } else if (Number.isFinite(forTop2PctPos)) {
-    mods.push({ key: 'clv', label: `top2 ${forTop2PctPos}%`, detail: null });
-  }
-
-  const hcBits = [];
-  if (Number.isFinite(hcMargin)) hcBits.push(`HC ${hcMargin >= 0 ? '+' : ''}${hcMargin}`);
-  if (Number.isFinite(miniHcMargin) && miniHcMargin !== 0) {
-    hcBits.push(`mini ${miniHcMargin >= 0 ? '+' : ''}${miniHcMargin}`);
-  }
-
-  return {
-    score,
-    scoreTier,
-    path,
-    pathDesc,
-    displayLabel: displayMeta?.label || null,
-    displayColor: displayMeta?.color || null,
-    units: Number.isFinite(units) ? units : null,
-    hcBits,
-    mods,
-  };
-}
-
 // ════════════════════════════════════════════════════════════════════════
 // SharpLockCardV2 — premium flagship locked-pick card.
 // Collapsed row scans fast (crest · pick · price · EDGE · stake tier);
@@ -5607,17 +5531,9 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
     status, outcome, profit, closingOdds, totalInvested, evEdge, consensusStrength,
     pinnacleOdds, marketType, line, superseded, health, lockTier, trackedOnly,
     agsValueV12, agsValue, agsTierV12, agsTier, backingWallets, hcConfFor,
-    hcMargin, miniHcMargin,
     isTopPick: isTopPickPre, isSuperTopPick: isSuperTopPickPre, hcStakeTier,
     winnerAlignEdge, winnerAlignMeanFor, winnerAlignMeanAg, winnerAlignHasBoth,
-    winnerAlignAction, winnerAlignTopVsTop, winnerAlignTopFor, winnerAlignTopAg,
-    clvTop2Action, forTop2PctPos, forTop2NSkill,
   } = pick;
-  const pipeline = buildSizingPipeline({
-    agsValueV12, agsTierV12, hcStakeTier, hcMargin, miniHcMargin,
-    units, odds, winnerAlignAction, winnerAlignEdge, winnerAlignTopVsTop,
-    winnerAlignTopFor, winnerAlignTopAg, clvTop2Action, forTop2PctPos, forTop2NSkill,
-  });
   const isTopPick = !!isTopPickPre;
   const isSuperTopPick = !!isSuperTopPickPre;
   // v12.1 product stake tier (cron-authoritative). When present it drives the
@@ -5841,44 +5757,6 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
     </span>
   );
 
-
-  const pipeChip = (t, color = B.textMuted, title) => (
-    <span title={title || undefined} style={{
-      fontSize: '0.5rem', fontWeight: 800, letterSpacing: '0.04em', lineHeight: 1.2,
-      padding: '0.22rem 0.4rem', borderRadius: '4px',
-      background: `${color}18`, border: `1px solid ${color}40`, color,
-      fontFeatureSettings: "'tnum'", whiteSpace: 'nowrap',
-    }}>{t}</span>
-  );
-  const pipelineStrip = (pipeline.score != null || pipeline.path) ? (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.28rem', flexWrap: 'wrap', marginTop: '0.28rem' }}>
-      {pipeline.score != null && pipeChip(
-        `V12 ${Math.round(pipeline.score * 100)}${pipeline.scoreTier ? ` · ${pipeline.scoreTier}` : ''}`,
-        pipeline.scoreTier === 'WEAK' ? '#f97316' : pipeline.scoreTier === 'FADE' ? B.red : B.textSec,
-        'AGS-U v12 score + quintile tier',
-      )}
-      {pipeline.hcBits?.length > 0 && pipeChip(pipeline.hcBits.join(' · '), B.textMuted, 'HC / mini-HC margins')}
-      {pipeline.path && pipeChip(
-        `${pipeline.path}${pipeline.pathDesc ? ` · ${pipeline.pathDesc}` : ''}`,
-        pipeline.displayColor || accent,
-        'Stake path (v8_hcStakeTier)',
-      )}
-      {pipeline.mods.map(m => pipeChip(
-        m.label,
-        m.key === 'clv' && String(m.label).includes('cancel') ? B.red
-          : m.key === 'wa' && String(m.label).includes('mute') ? '#F59E0B'
-          : m.key === 'wa' ? '#A855F7'
-          : B.textMuted,
-        m.detail || m.label,
-      ))}
-      {pipeline.units != null && pipeChip(
-        `→ ${pipeline.units < 1 && pipeline.units > 0 ? pipeline.units.toFixed(2) : pipeline.units}u`,
-        B.text,
-        'finalUnits after modifiers',
-      )}
-    </div>
-  ) : null;
-
   return (
     <div
       onMouseEnter={() => setHover(true)}
@@ -5953,7 +5831,6 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
                 {metaLine}
                 {!isMonitoring && <LockCountdown gameTime={gameTime} isGraded={isGraded} />}
               </div>
-              {pipelineStrip}
             </div>
             {/* bettor stat block — full width, the actionable numbers */}
             <div style={{
@@ -5978,7 +5855,6 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
                 {metaLine}
                 {!isMonitoring && <LockCountdown gameTime={gameTime} isGraded={isGraded} />}
               </div>
-              {pipelineStrip}
             </div>
 
             {statBlock}
@@ -6033,57 +5909,6 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
               />
             </div>
           </div>
-
-          {/* Sizing pipeline — score → path → modifiers → finalUnits */}
-          {(pipeline.score != null || pipeline.path) && (
-            <div style={{ padding: '1.1rem 1rem 0' }}>
-              <SlkLabel>SIZING PIPELINE</SlkLabel>
-              <div style={{
-                marginTop: '0.55rem', borderRadius: '10px', padding: '0.7rem 0.8rem',
-                background: 'rgba(255,255,255,0.03)', border: `1px solid ${B.borderSubtle}`,
-                display: 'flex', flexDirection: 'column', gap: '0.45rem',
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '0.72rem', color: B.textSec }}>
-                    <span style={{ color: B.textSubtle, fontWeight: 700, fontSize: '0.52rem', letterSpacing: '0.1em' }}>SCORE </span>
-                    {pipeline.score != null
-                      ? <><b style={{ color: B.text, fontFeatureSettings: "'tnum'" }}>{pipeline.score.toFixed(3)}</b>{pipeline.scoreTier ? <span style={{ color: pipeline.scoreTier === 'WEAK' ? '#f97316' : B.textMuted }}> · {pipeline.scoreTier}</span> : null}</>
-                      : '—'}
-                    {pipeline.hcBits?.length ? <span style={{ color: B.textMuted }}> · {pipeline.hcBits.join(' · ')}</span> : null}
-                  </span>
-                  <span style={{ fontSize: '0.72rem', color: B.textSec }}>
-                    <span style={{ color: B.textSubtle, fontWeight: 700, fontSize: '0.52rem', letterSpacing: '0.1em' }}>PATH </span>
-                    {pipeline.path
-                      ? <b style={{ color: pipeline.displayColor || accent }}>{pipeline.path}</b>
-                      : '—'}
-                    {pipeline.pathDesc ? <span style={{ color: B.textMuted }}> · {pipeline.pathDesc}</span> : null}
-                  </span>
-                  <span style={{ fontSize: '0.72rem', color: B.text }}>
-                    <span style={{ color: B.textSubtle, fontWeight: 700, fontSize: '0.52rem', letterSpacing: '0.1em' }}>FINAL </span>
-                    <b style={{ fontFeatureSettings: "'tnum'" }}>{pipeline.units != null ? `${fmtU(pipeline.units)}u` : '—'}</b>
-                  </span>
-                </div>
-                {pipeline.mods.length > 0 && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', paddingTop: '0.15rem', borderTop: `1px solid ${B.borderSubtle}` }}>
-                    {pipeline.mods.map(mm => (
-                      <span key={mm.key + mm.label} title={mm.detail || undefined} style={{
-                        fontSize: '0.58rem', fontWeight: 700, color: B.textSec,
-                        padding: '0.2rem 0.45rem', borderRadius: '4px',
-                        background: 'rgba(255,255,255,0.04)', border: `1px solid ${B.borderSubtle}`,
-                      }}>
-                        {mm.label}{mm.detail ? <span style={{ color: B.textMuted, fontWeight: 500 }}> · {mm.detail}</span> : null}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                {!pipeline.mods.some(mm => mm.key === 'clv') && (
-                  <div style={{ fontSize: '0.55rem', color: B.textSubtle, letterSpacing: '0.02em' }}>
-                    CLV top2 not stamped yet — waiting on next sync cycle
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
 
           {/* Why locked */}
           <div style={{ padding: '1.1rem 1rem 0' }}>
@@ -14676,14 +14501,6 @@ export default function SharpFlow() {
                           // SUPER / TOP / CONFIRMED / MONITORING / FADE.
                           hcStakeTier: sd.v8_hcStakeTier || null,
                           isMonitoring: sd.v8_hcStakeTier === 'MONITORING',
-                          miniHcMargin: Number.isFinite(sd.v8_miniHcMargin) ? sd.v8_miniHcMargin : null,
-                          winnerAlignAction: sd.v8_winnerAlignAction || null,
-                          winnerAlignTopVsTop: !!sd.v8_winnerAlignTopVsTop,
-                          winnerAlignTopFor: Number.isFinite(sd.v8_winnerAlignTopFor) ? sd.v8_winnerAlignTopFor : null,
-                          winnerAlignTopAg: Number.isFinite(sd.v8_winnerAlignTopAg) ? sd.v8_winnerAlignTopAg : null,
-                          clvTop2Action: sd.v8_clvTop2Action || null,
-                          forTop2PctPos: Number.isFinite(sd.v8_forTop2PctPos) ? sd.v8_forTop2PctPos : null,
-                          forTop2NSkill: Number.isFinite(sd.v8_forTop2NSkill) ? sd.v8_forTop2NSkill : null,
                         });
                       }
                     }
