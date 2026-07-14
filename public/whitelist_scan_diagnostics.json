@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-07-14T13:44:47.140Z",
-  "elapsedSec": 14.1,
+  "scannedAt": "2026-07-14T13:46:45.442Z",
+  "elapsedSec": 11.4,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 7,
   "summary": {
     "total": 194,
     "coveredByMain": 12,
-    "recovered": 11,
-    "recoveredPositions": 33,
-    "noPositions": 171,
+    "recovered": 12,
+    "recoveredPositions": 34,
+    "noPositions": 170,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,7 +16,7 @@
       "ml": 17,
       "spread": 3,
       "total": 3,
-      "dropped_shadow_gate": 9,
+      "dropped_shadow_gate": 10,
       "dropped_duplicate": 1
     }
   },
@@ -970,8 +970,24 @@
       "tier": "CONFIRMED",
       "name": "CandleHammerDrums",
       "sports": "SOC",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x7c1ee865a785de4c00ee90ed86a38489fb8bbab3"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x7c1ee865a785de4c00ee90ed86a38489fb8bbab3",
+      "positionsCount": 1,
+      "statsSource": "sports_sharps",
+      "avgSportBet": 81823,
+      "willPassShadowGate": 0,
+      "willDropAtShadowGate": 1,
+      "positions": [
+        {
+          "sport": "SOC",
+          "gameKey": "esp_fra",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 35,
+          "entryLine": null,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "8c1eae",
@@ -1183,7 +1199,7 @@
           "gameKey": "esp_fra",
           "marketType": "ml",
           "side": "home",
-          "invested": 73617,
+          "invested": 74118,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1201,7 +1217,7 @@
           "gameKey": "esp_fra",
           "marketType": "ml",
           "side": "draw",
-          "invested": 6280,
+          "invested": 6282,
           "entryLine": null,
           "passesShadow": true
         },
