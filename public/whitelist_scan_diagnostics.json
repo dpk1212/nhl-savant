@@ -1,20 +1,20 @@
 {
-  "scannedAt": "2026-07-14T12:12:37.158Z",
-  "elapsedSec": 12.8,
+  "scannedAt": "2026-07-14T12:14:43.374Z",
+  "elapsedSec": 13.6,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 7,
   "summary": {
     "total": 194,
     "coveredByMain": 9,
-    "recovered": 9,
-    "recoveredPositions": 29,
-    "noPositions": 176,
+    "recovered": 10,
+    "recoveredPositions": 30,
+    "noPositions": 175,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
       "ml": 14,
-      "spread": 2,
+      "spread": 3,
       "total": 3,
       "dropped_shadow_gate": 9,
       "dropped_duplicate": 1
@@ -419,20 +419,20 @@
       "positions": [
         {
           "sport": "WNBA",
+          "gameKey": "was_tor",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 1464,
+          "entryLine": 1.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "WNBA",
           "gameKey": "por_con",
           "marketType": "ml",
           "side": "away",
           "invested": 1130,
           "entryLine": null,
-          "passesShadow": true
-        },
-        {
-          "sport": "WNBA",
-          "gameKey": "was_tor",
-          "marketType": "spread",
-          "side": "home",
-          "invested": 983,
-          "entryLine": 1.5,
           "passesShadow": true
         },
         {
@@ -591,8 +591,24 @@
       "tier": "CONFIRMED",
       "name": "sentrio",
       "sports": "MLB,SOC,NBA",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xdb83e85ffd22faa4009273034770f96ffc5b1e50"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0xdb83e85ffd22faa4009273034770f96ffc5b1e50",
+      "positionsCount": 1,
+      "statsSource": "sharpWalletProfiles_derived",
+      "avgSportBet": 1532,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "WNBA",
+          "gameKey": "was_tor",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 606,
+          "entryLine": 1.5,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "5c32f2",
@@ -700,7 +716,7 @@
           "gameKey": "was_tor",
           "marketType": "spread",
           "side": "home",
-          "invested": 1349,
+          "invested": 1348,
           "entryLine": 1.5,
           "passesShadow": true
         },
@@ -1151,7 +1167,7 @@
           "gameKey": "esp_fra",
           "marketType": "ml",
           "side": "home",
-          "invested": 67083,
+          "invested": 67228,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1169,7 +1185,7 @@
           "gameKey": "esp_fra",
           "marketType": "ml",
           "side": "draw",
-          "invested": 5719,
+          "invested": 5700,
           "entryLine": null,
           "passesShadow": true
         },
