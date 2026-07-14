@@ -1,36 +1,36 @@
 # AGS-Unified — V12 Performance Monitor
 
-**Generated:** Monday, July 13, 2026 at 11:23 AM ET
+**Generated:** Tuesday, July 14, 2026 at 10:25 AM ET
 
-**Active model:** `ags-unified-v12` · **V12 went live:** 2026-06-01 · **Days live:** 43
+**Active model:** `ags-unified-v12` · **V12 went live:** 2026-06-01 · **Days live:** 44
 
 > This report is a **CEO-grade monitor of V12 in production** (stacking era **v12abcde**: Path A HC · Path B RANK · Path C SHARP · Path D DISSENT · Path E WINNER-ALIGN). The only non-V12 section is § 2 (model version comparison), kept so you can see V12's results in the context of every prior model bump. Everything else — daily trajectory, tier scoreboard, stake calibration, mute-rule audit, wallet-quality inputs, operational health — is **strictly V12-scoped** (pick date ≥ 2026-06-01) so cron back-fill of V12 stamps onto older picks can't contaminate the production numbers.
 
 ## § 1 — Executive Summary
 
-> 🟢 **V12 is currently WINNING.** Since going live on **2026-06-01** (43 days ago), V12 has evaluated **1312** picks, shipped **428** for real money (32.6% ship rate), and muted the other **884**. On the shipped picks V12 has gone **236-192** (55.1% win), staked **1175.25u**, and returned **+47.61u** at **+4.1% ROI**.
+> 🟢 **V12 is currently WINNING.** Since going live on **2026-06-01** (44 days ago), V12 has evaluated **1314** picks, shipped **428** for real money (32.6% ship rate), and muted the other **886**. On the shipped picks V12 has gone **236-192** (55.1% win), staked **1175.25u**, and returned **+47.61u** at **+4.1% ROI**.
 
 ### Snapshot
 
 | Metric                              | Value                          |
 |-------------------------------------|--------------------------------|
-| Days V12 has been authoritative     |                             43 |
-| Picks V12 has evaluated             |                           1312 |
+| Days V12 has been authoritative     |                             44 |
+| Picks V12 has evaluated             |                           1314 |
 | Picks SHIPPED (units > 0)           |                            428 |
-| Picks MUTED (score ≤ 0, FADE)       |                            884 |
+| Picks MUTED (score ≤ 0, FADE)       |                            886 |
 | Ship rate                           |                          32.6% |
 | Live W-L                            |                        236-192 |
 | Live Win %                          |                          55.1% |
 | Live PnL (units)                    |                         +47.61 |
 | Live ROI                            |                          +4.1% |
-| Avg PnL / day                       |                         +1.11u |
+| Avg PnL / day                       |                         +1.08u |
 | Most recent action (2026-07-15)  |            0 live, 0-0, +0.00u |
 
 ### What's working
 
 - V12 is profitable at **4.1% ROI** across 428 live picks (+47.61u real PnL).
 - Mute rule is **saving money** — the 546 muted picks would have lost -54.41u at flat 1u (-10.0% counterfactual ROI). V12 correctly rejected losers.
-- V12 is generating **+1.11u/day** on average since launch.
+- V12 is generating **+1.08u/day** on average since launch.
 - **NHL** is V12's strongest sport: 6 live, 5-1, 38.2% ROI, +6.30u.
 - **NBA** is V12's strongest sport: 10 live, 3-7, 29.1% ROI, +2.33u.
 
@@ -45,7 +45,7 @@ How does the latest model (**ags-unified-v12**) compare against prior versions? 
 | v9      | 05-15 → 05-22        |    7 |     60 |  12 | 32-28  |  53.3% |     -9.0% |     -10.38 |    -0.17 | 0.549 |        0.3400 | ⚪ retired |
 | v10     | 05-22 → 05-25        |    3 |     62 |  14 | 30-32  |  48.4% |    -18.8% |     -19.42 |    -0.31 | 0.394 |        0.2804 | ⚪ retired |
 | v11     | 05-25 → 06-01        |    7 |    111 |  22 | 61-50  |  55.0% |      2.8% |      +6.76 |    +0.06 | 0.444 |        0.2642 | ⚪ retired |
-| v12     | 06-01 → present      |   43 |    428 | 546 | 236-192 |  55.1% |      4.1% |     +47.61 |    +0.11 | 0.505 |        0.2499 | 🟢 LIVE  |
+| v12     | 06-01 → present      |   44 |    428 | 546 | 236-192 |  55.1% |      4.1% |     +47.61 |    +0.11 | 0.505 |        0.2499 | 🟢 LIVE  |
 
 ### v12 vs prior versions
 
@@ -147,12 +147,12 @@ Day-by-day production since V12 went live. **Evaluated** = picks V12 scored that
 | 2026-07-10 |        37 |    8 |    16 | 5-3        |  62.5% |     34.00 |      +4.96 |     14.6% |     +74.04 |
 | 2026-07-11 |        23 |    5 |    10 | 0-5        |   0.0% |     18.00 |     -18.00 |   -100.0% |     +56.04 |
 | 2026-07-12 |        29 |    5 |    16 | 1-4        |  20.0% |     13.50 |      -8.43 |    -62.4% |     +47.61 |
-| 2026-07-14 |         2 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +47.61 |
-| 2026-07-15 |         1 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +47.61 |
+| 2026-07-14 |         3 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +47.61 |
+| 2026-07-15 |         2 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +47.61 |
 
 > **Trajectory.** 🟡 Last 3 days (-62.4% ROI) is **-67.3pp worse** than the prior window (4.8%). Watch for further regression.
 
-> **Bottom line.** 43 days live, 428 live picks shipped, **+47.61u total PnL** at **+4.1% ROI**, averaging **+1.11u per day**.
+> **Bottom line.** 44 days live, 428 live picks shipped, **+47.61u total PnL** at **+4.1% ROI**, averaging **+1.08u per day**.
 
 ## § 5 — V12 By Tier (Where The Money Comes From)
 
@@ -255,7 +255,7 @@ xychart-beta
 
 | Bucket | Picks | W-L | Win % | Stake | PnL | ROI | Per day |
 |--------|------:|:---:|:-----:|------:|----:|----:|--------:|
-| RANK-RESCUE (HC-muted → 4u) | 51 | 33-18 | 64.7% | 204u | +52.05u | +25.5% | 1.19 |
+| RANK-RESCUE (HC-muted → 4u) | 51 | 33-18 | 64.7% | 204u | +52.05u | +25.5% | 1.16 |
 
 **2-for-0 picks the HC ladder ALREADY staked (NOT rescued — no hammer): 58** (39-19). These are left at their HC size — the slice adds no edge inside the HC book.
 
@@ -309,7 +309,7 @@ xychart-beta
 
 ### Incremental impact
 
-> RANK-RESCUE sits **on top of the v12a HC book** — it stakes 4u on picks the HC ladder would mute (0u), so every rescue is net-new volume, never an up-size. Reconstruction: **+1.19 picks/day** (51 over 43 days) at **+25.5% ROI** / **+52.05u**, pulled from the muted pool — so no existing HC pick's size or grade changes. (The § 1 / § 4–5 headline book still reflects historical score-ladder sizing for picks shipped before v12a; only NEW picks size under v12a + RANK.)
+> RANK-RESCUE sits **on top of the v12a HC book** — it stakes 4u on picks the HC ladder would mute (0u), so every rescue is net-new volume, never an up-size. Reconstruction: **+1.16 picks/day** (51 over 44 days) at **+25.5% ROI** / **+52.05u**, pulled from the muted pool — so no existing HC pick's size or grade changes. (The § 1 / § 4–5 headline book still reflects historical score-ladder sizing for picks shipped before v12a; only NEW picks size under v12a + RANK.)
 
 ## § 5c — PATH-D / DISSENT (contribMargin ≤ 0 · v12abcd book)
 
@@ -398,7 +398,7 @@ _No top_floor / top_cap / top_junk graded yet._
 
 #### (F4) Today / in-flight — rules applied (ungraded + graded)
 
-_No winner-align actions stamped on last 2026-07-12, 2026-07-14, 2026-07-15, 2026-07-13 yet (pre-T-15 cycles write stamps as they fire)._
+_No winner-align actions stamped on last 2026-07-12, 2026-07-14, 2026-07-15 yet (pre-T-15 cycles write stamps as they fire)._
 
 #### (F5) Helping / hurting scoreboard (quick verdict)
 
@@ -800,7 +800,7 @@ Same filter, sorted ROI ascending. Wallets that consistently lose when they're o
 | LOCK+ tier picks with `finalUnits == 0` (sizing regression)   |   138 | 🚨 sizing regression — agsSizeMultiplier returning 0 for strong AGS-U |
 | Live picks (not graded yet) with `finalUnits > 0`             |     1 | 🟢 picks queued for grading |
 | AGS-U promoted picks missing `v8_ags` value                   |    40 | 🟡 some picks missing AGS-U — cron lag or stale doc |
-| AGS-U promoted picks missing `agsTier`                        |    10 | 🟡 some picks missing tier classification |
+| AGS-U promoted picks missing `agsTier`                        |     9 | 🟡 some picks missing tier classification |
 | Single-wallet shipped picks (`provenWalletCount == 1`)       |   170 | 🟡 informational — AGS-U calibration controls sample adequacy |
 
 **Tracked-shipped detail (these are the picks the grader wrongly marked 0u):**
