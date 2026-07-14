@@ -77,6 +77,16 @@ import {
   positionToWalletDetail,
 } from '../src/lib/ags.js';
 
+import {
+  CLV_HIST_FROM,
+  CLV_TOP2_BOOST_MIN,
+  CLV_TOP2_CANCEL_MAX,
+  GLOBAL_UNIT_CAP,
+  applyClvTop2UnitPolicy,
+  buildClvLedgerFromPositions,
+  computeForTop2PctPos,
+} from '../src/lib/walletClvSkill.js';
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '../public');
 
@@ -1064,6 +1074,7 @@ async function createMissingLockedPicks({
   walletStatsFn, walletPriorStatsFn,
   existingDocIds, gameMeta, now, dryRun, force,
   sportWinnerBoards = null,
+  clvLedger = null,
 }) {
   const created = []; // { col, docId, side, ags, agsTotal }
   const skipped = []; // { reason, ... }
@@ -1211,6 +1222,18 @@ async function createMissingLockedPicks({
         peakUnitsApplied = hc.units;          // odds-capped; MONITORING → 0u
       }
 
+      // CLV top2 on create — stamp + size so brand-new docs aren't missing
+      // the skill gate until the next reconcile cycle.
+      const top2Create = computeForTop2PctPos(walletDetails, side, TARGET_DATE, clvLedger);
+      const clvPolicyCreate = applyClvTop2UnitPolicy({
+        units: peakUnitsApplied,
+        odds: odds ?? null,
+        top2Pct: top2Create.top2Pct,
+        oddsCapFn: oddsCap,
+        unitCap: GLOBAL_UNIT_CAP,
+      });
+      peakUnitsApplied = clvPolicyCreate.units;
+
       // Determine team label for the side.
       //
       // For TOTAL picks: write the canonical "Over <line>" form ONLY when
@@ -1355,6 +1378,12 @@ async function createMissingLockedPicks({
         v8Stamps.v8_winnerAlignTopVsTop = waCreate.topVsTop;
         v8Stamps.v8_winnerAlignAction = null;
         v8Stamps.v8_winnerAlignEvaluatedAt = now;
+      v8Stamps.v8_forTop2PctPos = top2Create.top2Pct;
+      v8Stamps.v8_forTop2NSkill = top2Create.nForSkill;
+      v8Stamps.v8_clvTop2Action = clvPolicyCreate.action;
+      if (clvPolicyCreate.mutedBy) {
+        v8Stamps.mutedBy = clvPolicyCreate.mutedBy;
+      }
       }
       // Health stamp — gives the dashboard a non-undefined health.status
       // immediately. reconcileSide will overwrite next cycle (same shape).
@@ -1517,7 +1546,7 @@ function spreadLockLooksLikeMlBleed(lockOdds, peakOdds, spreadOdds, mlOdds) {
   return false;
 }
 
-function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn, walletPriorStatsFn, gameMeta = null, sportWinnerBoards = null }) {
+function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn, walletPriorStatsFn, gameMeta = null, sportWinnerBoards = null, clvLedger = null }) {
   const pickDate = pick.date || TARGET_DATE;
   const sport = pick.sport;
   const lockStage = sd.lockStage || null;
@@ -1981,6 +2010,23 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     }
   }
 
+  // ─── CLV top2 unit policy — cancel ≤59 / boost ≥74 / global cap 6u ─────
+  // Applied AFTER HC / RANK / SHARP / DISSENT / WINNER-ALIGN so every stake
+  // path is screened. Fail-closed when top2 cannot be measured.
+  const top2Live = computeForTop2PctPos(wd, side, pickDate, clvLedger);
+  const clvPolicy = applyClvTop2UnitPolicy({
+    units: finalUnitsApplied,
+    odds: sideOdds,
+    top2Pct: top2Live.top2Pct,
+    oddsCapFn: oddsCap,
+    unitCap: GLOBAL_UNIT_CAP,
+  });
+  const unitsBeforeClv = finalUnitsApplied;
+  finalUnitsApplied = clvPolicy.units;
+  if (clvPolicy.action !== 'CANCEL') {
+    finalUnitsApplied = Math.min(GLOBAL_UNIT_CAP, finalUnitsApplied);
+  }
+
   // ─── lockStage promote/demote — v12 gate ──────────────────────────────
   // Ship floor: v12 score > 0 (the mute boundary). Picks above 0 LOCK
   // with units determined by the ladder (SMALL 0.25u → ELITE 5u).
@@ -2027,6 +2073,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // truth. UI reads `health.status` to decide lock display state.
   const reasons = [];
   if (appliedReason) reasons.push(appliedReason);
+  if (clvPolicy.reason && !reasons.includes(clvPolicy.reason)) reasons.push(clvPolicy.reason);
   // Preserve diagnostic-only badge signals from prior cycles (they don't
   // change status but the UI uses them for chip rendering).
   if (sd.health?.reasons) {
@@ -2036,8 +2083,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       }
     }
   }
+  // CLV cancel → MUTED so Locked Picks treats it like other 0u mutes.
+  const healthStatusOut = (clvPolicy.action === 'CANCEL' && unitsBeforeClv > 0)
+    ? 'MUTED'
+    : appliedStatus;
   patch.health = {
-    status: appliedStatus,
+    status: healthStatusOut,
     reasons,
     currentStars: liveStars,
     walletDelta: live.delta,
@@ -2062,16 +2113,19 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // `mutedBy != null` filter — manifesting as "biggest pick of the day
   // missing from the Locked Picks list".
   const LEGACY_UI_MUTE_VALUES = new Set(['ags-quality-veto', 'ags-hard-mute', 'winner_align_fade']);
+  const CLV_MUTE_VALUES = new Set(['clv-top2-cancel', 'clv-top2-missing']);
   if (winnerMuted) {
     patch.mutedBy = 'winner_align_fade';
+  } else if (clvPolicy.mutedBy) {
+    patch.mutedBy = clvPolicy.mutedBy;
   } else if (mutedByAgs) {
     patch.mutedBy = 'ags-quality-veto';
-  } else if (LEGACY_UI_MUTE_VALUES.has(sd.mutedBy)) {
+  } else if (LEGACY_UI_MUTE_VALUES.has(sd.mutedBy) || CLV_MUTE_VALUES.has(sd.mutedBy)) {
     patch.mutedBy = admin.firestore.FieldValue.delete();
   }
-  if (stampedStatus !== appliedStatus) {
-    const reasonNote = appliedReason ? ` (${appliedReason})` : '';
-    changes.push(`status: ${stampedStatus || '∅'} → ${appliedStatus}${reasonNote}`);
+  if (stampedStatus !== healthStatusOut) {
+    const reasonNote = (appliedReason || clvPolicy.reason) ? ` (${appliedReason || clvPolicy.reason})` : '';
+    changes.push(`status: ${stampedStatus || '∅'} → ${healthStatusOut}${reasonNote}`);
   }
 
   // Strip any leftover hysteresis counter from older script versions so the
@@ -2335,6 +2389,19 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   }
   // finalUnits drift logging — flag any time the canonical bet size changes
   // by ≥0.05u so cycle output makes the change visible.
+  // CLV top2 skill stamps — always written so the dashboard / grader can audit.
+  patch.v8_forTop2PctPos = top2Live.top2Pct;
+  patch.v8_forTop2NSkill = top2Live.nForSkill;
+  patch.v8_clvTop2Action = clvPolicy.action;
+  if (clvPolicy.action === 'CANCEL' && unitsBeforeClv > 0) {
+    changes.push(`CLV-TOP2 CANCEL: top2=${top2Live.top2Pct ?? '∅'} ≤${CLV_TOP2_CANCEL_MAX} → 0u (was ${unitsBeforeClv}u)`);
+  } else if (clvPolicy.action === 'BOOST') {
+    changes.push(`CLV-TOP2 BOOST: top2=${top2Live.top2Pct} ≥${CLV_TOP2_BOOST_MIN} → ${unitsBeforeClv}u → ${finalUnitsApplied}u (cap ${GLOBAL_UNIT_CAP})`);
+  } else if (unitsBeforeClv > 0 && finalUnitsApplied !== unitsBeforeClv) {
+    changes.push(`CLV-TOP2 cap: ${unitsBeforeClv}u → ${finalUnitsApplied}u (cap ${GLOBAL_UNIT_CAP})`);
+  }
+
+
   if (Number.isFinite(sd.finalUnits) && Math.abs(sd.finalUnits - finalUnitsApplied) >= 0.05) {
     changes.push(`finalUnits: ${sd.finalUnits}u → ${finalUnitsApplied}u`);
   } else if (sd.finalUnits == null) {
@@ -2623,6 +2690,20 @@ async function main() {
   const v12Src = agsCalibration.v12Quintiles ? agsCalibration.source : 'fallback';
   console.log(`AGS-U v12 quintiles:   q20=${v12Q.q20.toFixed(3)}(WEAK→LEAN) q40=${v12Q.q40.toFixed(3)}(LEAN→LOCK) q60=${v12Q.q60.toFixed(3)}(LOCK→PREMIUM) q80=${v12Q.q80.toFixed(3)}(PREMIUM→ELITE)  source=${v12Src}  (positive-only; score≤0 → FADE/muted)`);
 
+  // Causal CLV skill ledger — graded positions since Apr 1, used for top2% +CLV
+  // cancel (≤59) / boost (≥74) / 6u cap. Loaded once per cron cycle.
+  console.log(`Loading CLV skill ledger (GRADED ≥ ${CLV_HIST_FROM})…`);
+  const gradedClvSnap = await db.collection('sharp_action_positions')
+    .where('status', '==', 'GRADED')
+    .get();
+  const gradedForClv = [];
+  gradedClvSnap.forEach((d) => {
+    const p = d.data();
+    if (p?.date && p.date >= CLV_HIST_FROM) gradedForClv.push(p);
+  });
+  const clvLedger = buildClvLedgerFromPositions(gradedForClv, { since: CLV_HIST_FROM });
+  console.log(`CLV skill ledger: ${clvLedger.size} wallets · ${gradedForClv.length} graded rows (cancel≤${CLV_TOP2_CANCEL_MAX} / boost≥${CLV_TOP2_BOOST_MIN} / cap ${GLOBAL_UNIT_CAP}u)`);
+
   // Load today's positions (live wallet activity) from Firestore.
   // (Could also read from public/sharp_positions.json but Firestore stays
   // closer to truth post-writeSharpActions.)
@@ -2768,7 +2849,7 @@ async function main() {
           sd, side: sideKey, pick, mkt, group, walletProfiles, now,
           force: FORCE,
           agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn, walletPriorStatsFn,
-          gameMeta, sportWinnerBoards,
+          gameMeta, sportWinnerBoards, clvLedger,
         });
         if (result.skipped) {
           if (result.reason === 'not_locked_or_lean') stats.skipped_not_locked++;
@@ -2965,6 +3046,7 @@ async function main() {
     existingDocIds, gameMeta, now,
     dryRun: DRY_RUN, force: FORCE,
     sportWinnerBoards,
+    clvLedger,
   });
   stats.created_missing = cm.created.length;
   if (cm.created.length === 0) {
