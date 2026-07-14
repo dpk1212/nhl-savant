@@ -1,7 +1,7 @@
 [![Logo](https://otcdn.virginia.us-east-1.oddstrader.com/OT-LogoWhiteGreen.svg)](https://www.oddstrader.com/)
 
 - [ODDS](https://www.oddstrader.com/)
-- [OFFSHORE-SPORTSBOOKS](https://www.oddstrader.com/sportsbooks/)
+- [OFFSHORE-SPORTSBOOKS](https://www.oddstrader.com/sportsbooks/offshore-versus-regulated/)
 - [NEWS](https://www.oddstrader.com/news/)
 - [PICKS](https://www.oddstrader.com/today/picks/)
 - [BETTING](https://www.oddstrader.com/betting/)
@@ -164,8 +164,6 @@ It depends on the matchup. If the favorite is strong but overpriced, puck line b
 Look for short answers to common questions like how the puck line works or how to track movement across sportsbooks.
 
 [![icon](https://otcdn.virginia.us-east-1.oddstrader.com/ot-app-icon.svg)Download the app](https://get-app.oddstrader.com/ot-app-link)
-
-What are the top NHL predictions for today?Generate
 
 ![BetStation](https://otcdn.virginia.us-east-1.oddstrader.com/otTurbo/assistant-logo.svg)
 
