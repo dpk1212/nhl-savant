@@ -1,23 +1,23 @@
 {
-  "scannedAt": "2026-07-15T20:37:45.795Z",
-  "elapsedSec": 15.7,
+  "scannedAt": "2026-07-15T20:41:46.703Z",
+  "elapsedSec": 15.5,
   "phase": "PHASE_2_MERGE_ENABLED",
-  "todayGamesCount": 7,
+  "todayGamesCount": 8,
   "summary": {
     "total": 196,
     "coveredByMain": 13,
-    "recovered": 5,
-    "recoveredPositions": 19,
-    "noPositions": 178,
+    "recovered": 6,
+    "recoveredPositions": 25,
+    "noPositions": 177,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
       "ml": 1,
-      "spread": 3,
+      "spread": 5,
       "total": 1,
-      "dropped_shadow_gate": 12,
-      "dropped_duplicate": 2
+      "dropped_shadow_gate": 15,
+      "dropped_duplicate": 3
     }
   },
   "perWallet": [
@@ -367,11 +367,11 @@
       "sports": "MLB",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xf7f0b0b1e9c0fe02ccad926916ee31aef74b912c",
-      "positionsCount": 5,
+      "positionsCount": 9,
       "statsSource": "sports_sharps",
       "avgSportBet": 1097,
-      "willPassShadowGate": 3,
-      "willDropAtShadowGate": 2,
+      "willPassShadowGate": 5,
+      "willDropAtShadowGate": 4,
       "positions": [
         {
           "sport": "WNBA",
@@ -393,11 +393,29 @@
         },
         {
           "sport": "WNBA",
+          "gameKey": "atl_tor",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 305,
+          "entryLine": 1.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "WNBA",
           "gameKey": "gsv_ind",
           "marketType": "spread",
           "side": "home",
           "invested": 238,
           "entryLine": -2.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "WNBA",
+          "gameKey": "atl_tor",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 252,
+          "entryLine": 1.5,
           "passesShadow": true
         },
         {
@@ -407,6 +425,24 @@
           "side": "away",
           "invested": 24,
           "entryLine": -2.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "WNBA",
+          "gameKey": "atl_tor",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 52,
+          "entryLine": 3.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "WNBA",
+          "gameKey": "atl_tor",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 5,
+          "entryLine": 4.5,
           "passesShadow": false
         },
         {
@@ -601,11 +637,11 @@
       "sports": "MLB,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
-      "positionsCount": 10,
+      "positionsCount": 11,
       "statsSource": "sports_sharps",
       "avgSportBet": 6251,
       "willPassShadowGate": 4,
-      "willDropAtShadowGate": 6,
+      "willDropAtShadowGate": 7,
       "positions": [
         {
           "sport": "WNBA",
@@ -668,6 +704,15 @@
           "side": "away",
           "invested": 602,
           "entryLine": 3.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "WNBA",
+          "gameKey": "atl_tor",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 202,
+          "entryLine": -2.5,
           "passesShadow": false
         },
         {
@@ -1317,8 +1362,24 @@
       "tier": "CONFIRMED",
       "name": null,
       "sports": "WNBA,NBA,SOC",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x27f738fe203827445690339104aae35b20bc44b0"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x27f738fe203827445690339104aae35b20bc44b0",
+      "positionsCount": 1,
+      "statsSource": "sharpWalletProfiles_derived",
+      "avgSportBet": 7523,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "WNBA",
+          "gameKey": "atl_tor",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 1667,
+          "entryLine": -1.5,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "bd2d54",
