@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-07-15T22:53:17.459Z",
+  "scannedAt": "2026-07-15T22:57:18.332Z",
   "elapsedSec": 13.6,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 8,
   "summary": {
     "total": 196,
     "coveredByMain": 2,
-    "recovered": 11,
-    "recoveredPositions": 40,
-    "noPositions": 183,
+    "recovered": 12,
+    "recoveredPositions": 41,
+    "noPositions": 182,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,7 +16,7 @@
       "ml": 8,
       "spread": 7,
       "total": 2,
-      "dropped_shadow_gate": 20,
+      "dropped_shadow_gate": 21,
       "dropped_duplicate": 3
     }
   },
@@ -138,8 +138,24 @@
       "tier": "WR50",
       "name": null,
       "sports": "",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x0eb75bf6f54794a83bd26095811f30b530161f17"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x0eb75bf6f54794a83bd26095811f30b530161f17",
+      "positionsCount": 1,
+      "statsSource": "sharpWalletProfiles_derived",
+      "avgSportBet": 33108,
+      "willPassShadowGate": 0,
+      "willDropAtShadowGate": 1,
+      "positions": [
+        {
+          "sport": "WNBA",
+          "gameKey": "gsv_ind",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 400,
+          "entryLine": null,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "1bde7b",
@@ -415,7 +431,7 @@
           "gameKey": "gsv_ind",
           "marketType": "ml",
           "side": "away",
-          "invested": 1028,
+          "invested": 1130,
           "entryLine": null,
           "passesShadow": true
         },
@@ -608,7 +624,7 @@
           "gameKey": "gsv_ind",
           "marketType": "ml",
           "side": "away",
-          "invested": 5975,
+          "invested": 6024,
           "entryLine": null,
           "passesShadow": true
         },
@@ -721,7 +737,7 @@
           "gameKey": "gsv_ind",
           "marketType": "ml",
           "side": "away",
-          "invested": 6188,
+          "invested": 7119,
           "entryLine": null,
           "passesShadow": true
         },
