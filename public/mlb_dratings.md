@@ -36,24 +36,24 @@ Close
 
 # MLB Baseball Predictions
 
-Updated 7 hr ago
+Updated 1 sec ago
 
 All ConferencesALNL
 
-- [Upcoming](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1784045987470#scroll-upcoming)
-- [Completed](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1784045987470#scroll-completed)
-- [Season](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1784045987470#scroll-season)
-- [Simulation](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1784045987470#scroll-simulation)
-- [Methodology](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1784045987470#scroll-methodology)
-- [Related](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1784045987470#scroll-related)
+- [Upcoming](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1784132825056#scroll-upcoming)
+- [Completed](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1784132825056#scroll-completed)
+- [Season](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1784132825056#scroll-season)
+- [Simulation](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1784132825056#scroll-simulation)
+- [Methodology](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1784132825056#scroll-methodology)
+- [Related](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1784132825056#scroll-related)
 
 ## Upcoming Games for July 16, 2026
 
-[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1784045987470#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1784045987470#)
+[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1784132825056#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1784132825056#)
 
 | Time | Teams | Pitchers | Win | Best<br>ML | Best<br>Spread | Runs | Total<br>Runs | Best<br>O/U | Bet<br>Value<br>#### Bet Value<br>We use three different graphics to describe Bet Value within a matchup.<br>[More on Bet Value](https://www.dratings.com/a-quick-primer-on-bet-value/) Close | More Details |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| [07/16/2026\<br>\<br>07:10 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/08ea019f-357f-5b31-bb64-bd66e00a65eb) | [New York Mets](https://www.dratings.com/teams/mlb-baseball-ratings/18-new-york-mets)(40-57)<br>[Philadelphia Phillies](https://www.dratings.com/teams/mlb-baseball-ratings/19-philadelphia-phillies)(54-43) | Unknown<br>Unknown | 41.2%<br>58.8% |  |  | 3.87<br>4.80 | 8.67 |  |  |  |
+| [07/16/2026\<br>\<br>07:10 PM](https://www.dratings.com/predictor/mlb-baseball-predictions/08ea019f-357f-5b31-bb64-bd66e00a65eb) | [New York Mets](https://www.dratings.com/teams/mlb-baseball-ratings/18-new-york-mets)(40-57)<br>[Philadelphia Phillies](https://www.dratings.com/teams/mlb-baseball-ratings/19-philadelphia-phillies)(54-43) | Unknown<br>Unknown | 41.2%<br>58.8% | +123<br>-128<br>+120<br>-130 | +1½-175<br>-1½+165<br>+1½-175<br>-1½+160 | 3.82<br>4.75 | 8.57 | o10-105<br>u10-115<br>o9½-120<br>u9½+100 |  |  |
 
 Games for Jul 15, 2026
 
@@ -61,7 +61,7 @@ Games for Jul 15, 2026
 
 ## Completed Games
 
-[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1784045987470#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1784045987470#)
+[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1784132825056#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1784132825056#)
 
 | Time | Teams | Win | Best<br>ML | Best<br>Spread | Final<br>Runs | Sportsbook<br>Log Loss | DRatings<br>Log Loss |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -88,7 +88,7 @@ Games for Jul 15, 2026
 
 Time PeriodLast 24 HoursLast WeekLast MonthThis SeasonAll Time
 
-[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1784045987470#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1784045987470#)
+[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1784132825056#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1784132825056#)
 
 |  | Games | Record (Pct) | No Pick | Log Loss<br>#### Log Loss<br>Log loss is used to determine the accuracy of a model.<br>[More on Log Loss](https://www.dratings.com/explaining-log-loss/) Close | +/- |
 | --- | --- | --- | --- | --- | --- |
