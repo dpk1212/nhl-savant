@@ -82,9 +82,17 @@ import {
   CLV_TOP2_BOOST_MIN,
   CLV_TOP2_CANCEL_MAX,
   GLOBAL_UNIT_CAP,
+  TAPE_MUTE_BELOW,
+  TAPE_BOOST_ABOVE,
+  TAPE_BOOST_MULT,
+  TAPE_SIZING_LIVE_FROM,
   applyClvTop2UnitPolicy,
+  applyTapeUnitPolicy,
   buildClvLedgerFromPositions,
   computeForTop2PctPos,
+  computeNetMeanPrior,
+  computeTapeScore,
+  isTapeSizingLive,
 } from '../src/lib/walletClvSkill.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -574,24 +582,21 @@ function computePathDSlice(walletDetails, mySide) {
   return { fo, ag, contribFor, contribAg, contribMargin, maxShare, qualifies };
 }
 
-// ── WINNER-ALIGN (v12abcde) — mute toxic fades, size by EDGE, rescue WINNER ─
-// Site thesis: follow real winners. Uses per-sport featured-pick WR from
-// sharpWalletProfiles (n≥8). For LIVE picks today's games are unsettled, so
-// the profile read is near-causal (same contract as RANK / SHARP).
+// ── WINNER-ALIGN (v12abcde) — EDGE feature + limited mute ─────────────────
+// Site thesis: follow real winners. EDGE = mean FOR−AG sport WR (n≥8).
 //
 // Cutover: WINNER_ALIGN_LIVE_FROM. Pre-cutover history is never rewritten.
-// Pipeline order (after Path A/B/C/D):
+//
+// From TAPE_SIZING_LIVE_FROM (2026-07-15): EDGE stake overrides are FROZEN.
+// Pipeline becomes: Paths A–D → fadeTop60 mute only → TAPE mute/boost on
+// path units. EDGE is still stamped (tape input). No EDGE size ladder,
+// WINNER rescue, or Top-Winner Policy E unit effects.
+//
+// Pre-tape era (2026-07-12 .. 2026-07-14):
 //   1. MUTE  — A/B/C stakes → 0u if fadeTop WR≥60 OR meanEdge≤−5
 //   2. SIZE  — survivors resized by path × EDGE class
-//        · EDGE≥10 (Q5 extreme) → 6u on A/B/C
-//        · EDGE<0 (toxic mid) → hard-cap 1u on A/B/C (DISSENT → 0)
-//   3. RESCUE — still 0u + score>0 + EDGE≥3 → WINNER @ 6u (E10+) / 4u (E5–10) / 3u (E3–5)
-//   4. TOP-WINNER E (2026-07-12) — follow unopposed elites / cut junk
-//        · topVsTop OR (Top5 on AG only) → cap 1u
-//        · elite-unopp OR Top5-unopp @ EDGE≥5 → floor 4u (E10→6u); muted → WINNER
-//        · EDGE≥10 + Top5 FOR (not opposed) → floor 6u
-//        · A/B/C/D stake + no Top5 FOR + EDGE<5 → 0u (junk cut; keeps WINNER@E3+)
-// CF vs v12abcd production Jun1–Jul12: policy E ≈ +30u; OOS ≈ +33u.
+//   3. RESCUE — still 0u + score>0 + EDGE≥3 → WINNER @ 6/4/3
+//   4. TOP-WINNER E — top_cap / top_floor / top_junk
 const WINNER_ALIGN_LIVE_FROM = '2026-07-12';
 const WINNER_ALIGN_MIN_N = 8;
 const WINNER_ALIGN_FADE_TOP_WR = 60;
@@ -617,6 +622,10 @@ const WINNER_ALIGN_JUNK_CUT_TIERS = new Set([
 ]);
 function isWinnerAlignLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= WINNER_ALIGN_LIVE_FROM;
+}
+/** EDGE size / rescue / Policy E unit effects — frozen once tape sizing ships. */
+function isWinnerAlignEdgeStakeLive(pickDate) {
+  return isWinnerAlignLive(pickDate) && !isTapeSizingLive(pickDate);
 }
 function sportFeaturedWr(profile, sport) {
   const rec = profile?.bySport?.[sport];
@@ -1222,17 +1231,36 @@ async function createMissingLockedPicks({
         peakUnitsApplied = hc.units;          // odds-capped; MONITORING → 0u
       }
 
-      // CLV top2 on create — stamp + size so brand-new docs aren't missing
+      // CLV / tape on create — stamp + size so brand-new docs aren't missing
       // the skill gate until the next reconcile cycle.
       const top2Create = computeForTop2PctPos(walletDetails, side, TARGET_DATE, clvLedger);
-      const clvPolicyCreate = applyClvTop2UnitPolicy({
-        units: peakUnitsApplied,
-        odds: odds ?? null,
-        top2Pct: top2Create.top2Pct,
-        oddsCapFn: oddsCap,
-        unitCap: GLOBAL_UNIT_CAP,
-      });
-      peakUnitsApplied = clvPolicyCreate.units;
+      const waCreateEdge = createV121Eligible
+        ? computeWinnerAlign(walletDetails, side, sport, walletProfiles, sportWinnerBoards)
+        : null;
+      const netCreate = computeNetMeanPrior(walletDetails, side, TARGET_DATE, clvLedger);
+      const tapeCreate = computeTapeScore(waCreateEdge?.edge ?? null, netCreate.netMeanPrior);
+      let clvPolicyCreate;
+      if (isTapeSizingLive(TARGET_DATE)) {
+        clvPolicyCreate = applyTapeUnitPolicy({
+          units: peakUnitsApplied,
+          odds: odds ?? null,
+          tape: tapeCreate,
+          oddsCapFn: oddsCap,
+          unitCap: GLOBAL_UNIT_CAP,
+        });
+        // Map tape action into create stamps (reuse clvTop2Action field sparingly —
+        // primary action lives on v8_tapeAction).
+        peakUnitsApplied = clvPolicyCreate.units;
+      } else {
+        clvPolicyCreate = applyClvTop2UnitPolicy({
+          units: peakUnitsApplied,
+          odds: odds ?? null,
+          top2Pct: top2Create.top2Pct,
+          oddsCapFn: oddsCap,
+          unitCap: GLOBAL_UNIT_CAP,
+        });
+        peakUnitsApplied = clvPolicyCreate.units;
+      }
 
       // Determine team label for the side.
       //
@@ -1358,9 +1386,9 @@ async function createMissingLockedPicks({
       if (createV121Eligible) {
         v8Stamps.v8_hcStakeTier = hcStakeTierCreate;
       }
-      // EDGE feature — stamp at create so the datapoint exists from first write.
+      // EDGE + tape features — stamp at create so datapoints exist from first write.
       if (createV121Eligible && Array.isArray(walletDetails) && walletDetails.length > 0) {
-        const waCreate = computeWinnerAlign(walletDetails, side, sport, walletProfiles, sportWinnerBoards);
+        const waCreate = waCreateEdge || computeWinnerAlign(walletDetails, side, sport, walletProfiles, sportWinnerBoards);
         v8Stamps.v8_winnerAlignEdge = waCreate.edge;
         v8Stamps.v8_winnerAlignMeanFor = waCreate.meanFor;
         v8Stamps.v8_winnerAlignMeanAg = waCreate.meanAg;
@@ -1378,12 +1406,19 @@ async function createMissingLockedPicks({
         v8Stamps.v8_winnerAlignTopVsTop = waCreate.topVsTop;
         v8Stamps.v8_winnerAlignAction = null;
         v8Stamps.v8_winnerAlignEvaluatedAt = now;
+      }
       v8Stamps.v8_forTop2PctPos = top2Create.top2Pct;
       v8Stamps.v8_forTop2NSkill = top2Create.nForSkill;
-      v8Stamps.v8_clvTop2Action = clvPolicyCreate.action;
+      v8Stamps.v8_clvTop2Action = isTapeSizingLive(TARGET_DATE) ? 'PASS' : clvPolicyCreate.action;
+      v8Stamps.v8_netMeanPrior = netCreate.netMeanPrior;
+      v8Stamps.v8_netClvMeanFor = netCreate.meanFor;
+      v8Stamps.v8_netClvMeanAg = netCreate.meanAg;
+      v8Stamps.v8_netClvNFor = netCreate.nFor;
+      v8Stamps.v8_netClvNAg = netCreate.nAg;
+      v8Stamps.v8_tapeScore = tapeCreate;
+      v8Stamps.v8_tapeAction = isTapeSizingLive(TARGET_DATE) ? clvPolicyCreate.action : null;
       if (clvPolicyCreate.mutedBy) {
         v8Stamps.mutedBy = clvPolicyCreate.mutedBy;
-      }
       }
       // Health stamp — gives the dashboard a non-undefined health.status
       // immediately. reconcileSide will overwrite next cycle (same shape).
@@ -1828,11 +1863,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     pathDRescued = true;
   }
 
-  // ─── WINNER-ALIGN — EDGE datapoint + mute / size / rescue ─────────────
+  // ─── WINNER-ALIGN — EDGE datapoint + mute / (legacy) size / rescue ────
   // EDGE is a FIRST-CLASS stored feature on every side with walletDetails
   // (v12.1+). Computed every pre-T-15 cycle from sport WR (n≥8); always
   // stamped to Firestore (even when units unchanged / score ≤ 0).
-  // Mute/size/rescue still require ACTIVE + score>0 + WINNER_ALIGN_LIVE_FROM.
+  // From TAPE_SIZING_LIVE_FROM: only fadeTop60 mute applies; EDGE size /
+  // rescue / Policy E unit effects are frozen. Tape owns sizing after paths.
   // Does NOT flip sides. T-15 freeze locks the last pre-freeze EDGE stamp.
   let winnerAlign = null;
   let winnerMuted = false;
@@ -1842,6 +1878,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   let winnerTopCapped = false;
   let winnerTopJunkCut = false;
   let winnerAlignAction = null; // 'mute' | 'size' | 'rescue' | 'top_floor' | 'top_cap' | 'top_junk' | null
+  const tapeSizingLive = isTapeSizingLive(pickDate);
+  const edgeStakeLive = isWinnerAlignEdgeStakeLive(pickDate);
   if (v121Eligible && Array.isArray(wd) && wd.length > 0) {
     winnerAlign = computeWinnerAlign(wd, side, pick.sport, walletProfiles, sportWinnerBoards);
   }
@@ -1852,179 +1890,198 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     const tierNow = hcStakeTier;
     const wa = winnerAlign;
 
-    // 1) MUTE toxic A/B/C stakes
+    // 1) MUTE — tape era: fadeTop60 only. Pre-tape: fadeTop60 OR EDGE≤−5.
+    const muteToxic = tapeSizingLive
+      ? wa.fadeTop60
+      : (wa.fadeTop60 || wa.meanBehind5);
     if (finalUnitsApplied > 0
         && tierNow
         && WINNER_ALIGN_MUTE_TIERS.has(tierNow)
-        && (wa.fadeTop60 || wa.meanBehind5)) {
+        && muteToxic) {
       finalUnitsApplied = 0;
       winnerMuted = true;
       winnerAlignAction = 'mute';
     }
 
-    // 2) SIZE survivors by path × EDGE
-    if (finalUnitsApplied > 0 && wa.hasBoth && tierNow) {
-      const e = wa.edge;
-      const before = finalUnitsApplied;
-      if (WINNER_ALIGN_PATH_A.has(tierNow)) {
-        if (e >= WINNER_ALIGN_EDGE10) {
-          finalUnitsApplied = 6; // extreme Q5 bump
-        } else if (e >= WINNER_ALIGN_EDGE5) {
-          finalUnitsApplied = Math.min(finalUnitsApplied + 1, 6);
-        } else if (e >= WINNER_ALIGN_EDGE3) {
-          // keep
-        } else if (e >= 0) {
-          finalUnitsApplied = Math.max(1, finalUnitsApplied - 1);
-        } else {
-          finalUnitsApplied = WINNER_ALIGN_BAD_EDGE_CAP;
-        }
-      } else if (tierNow === 'RANK') {
-        if (e >= WINNER_ALIGN_EDGE10) {
-          finalUnitsApplied = 6;
-        } else if (e >= WINNER_ALIGN_EDGE5) {
-          finalUnitsApplied = 4;
-        } else if (e < 0) {
-          finalUnitsApplied = WINNER_ALIGN_BAD_EDGE_CAP;
-        } else {
-          finalUnitsApplied = Math.min(finalUnitsApplied, 2);
-        }
-      } else if (tierNow === 'SHARP' || tierNow === 'SHARP-PRIME') {
-        if (e >= WINNER_ALIGN_EDGE10) {
-          finalUnitsApplied = 6;
-        } else if (e >= WINNER_ALIGN_EDGE5) {
-          // keep full
-        } else if (e >= WINNER_ALIGN_EDGE3) {
-          finalUnitsApplied = Math.min(finalUnitsApplied, 2);
-        } else if (e < 0) {
-          finalUnitsApplied = WINNER_ALIGN_BAD_EDGE_CAP;
-        } else {
-          finalUnitsApplied = 1;
-        }
-      } else if (tierNow === 'DISSENT') {
-        if (e >= WINNER_ALIGN_EDGE3) {
-          finalUnitsApplied = 1;
-        } else if (e < 0) {
-          finalUnitsApplied = 0;
-        }
-      } else if (tierNow === 'WINNER') {
-        // Re-size already-rescued WINNER if EDGE drifts pre-T-15
-        if (e >= WINNER_ALIGN_EDGE10) {
-          finalUnitsApplied = WINNER_ALIGN_RESCUE_E10_UNITS;
-        } else if (e >= WINNER_ALIGN_EDGE5) {
-          finalUnitsApplied = WINNER_ALIGN_RESCUE_E5_UNITS;
-        } else if (e >= WINNER_ALIGN_EDGE3) {
-          finalUnitsApplied = WINNER_ALIGN_RESCUE_E3_UNITS;
-        } else if (e < 0) {
-          finalUnitsApplied = WINNER_ALIGN_BAD_EDGE_CAP;
-        }
-      }
-      // Universal bad-EDGE shrink for any remaining A/B/C stake still >1u
-      if (e < 0
-          && finalUnitsApplied > WINNER_ALIGN_BAD_EDGE_CAP
-          && WINNER_ALIGN_MUTE_TIERS.has(tierNow)) {
-        finalUnitsApplied = WINNER_ALIGN_BAD_EDGE_CAP;
-      }
-      finalUnitsApplied = Math.round(oddsCap(finalUnitsApplied, sideOdds) * 100) / 100;
-      if (Math.abs(finalUnitsApplied - before) >= 0.05) {
-        winnerSized = true;
-        if (!winnerAlignAction) winnerAlignAction = 'size';
-      }
-    }
-
-    // 3) RESCUE — still muted, score>0, EDGE≥3 → WINNER @ 6u / 4u / 3u
-    if (finalUnitsApplied === 0
-        && wa.hasBoth
-        && wa.edge >= WINNER_ALIGN_EDGE3
-        && !(Number.isFinite(sd.manualStake) && sd.manualStake > 0)) {
-      const u = wa.edge >= WINNER_ALIGN_EDGE10
-        ? WINNER_ALIGN_RESCUE_E10_UNITS
-        : wa.edge >= WINNER_ALIGN_EDGE5
-          ? WINNER_ALIGN_RESCUE_E5_UNITS
-          : WINNER_ALIGN_RESCUE_E3_UNITS;
-      finalUnitsApplied = Math.round(oddsCap(u, sideOdds) * 100) / 100;
-      hcStakeTier = 'WINNER';
-      winnerRescued = true;
-      winnerMuted = false;
-      winnerAlignAction = 'rescue';
-    }
-
-    // 4) TOP-WINNER POLICY E — caps first, then floors, then junk cut
-    //    Caps never get overwritten by floors (opposed fights stay capped).
-    if (wa.hasBoth && !(Number.isFinite(sd.manualStake) && sd.manualStake > 0)) {
-      const e = wa.edge;
-      const beforeTop = finalUnitsApplied;
-      const opposed = wa.topVsTop || (wa.hasTop5Ag && !wa.hasTop5For);
-
-      if (opposed && finalUnitsApplied > WINNER_ALIGN_OPPOSED_CAP) {
-        finalUnitsApplied = Math.round(oddsCap(WINNER_ALIGN_OPPOSED_CAP, sideOdds) * 100) / 100;
-        winnerTopCapped = true;
-        winnerAlignAction = 'top_cap';
-      } else if (!opposed) {
-        let floor = null;
-        if ((wa.eliteUnopp || wa.topUnopp) && e >= WINNER_ALIGN_EDGE5) {
-          floor = e >= WINNER_ALIGN_EDGE10
-            ? WINNER_ALIGN_RESCUE_E10_UNITS
-            : WINNER_ALIGN_RESCUE_E5_UNITS;
-        } else if (e >= WINNER_ALIGN_EDGE10 && wa.hasTop5For) {
-          floor = WINNER_ALIGN_RESCUE_E10_UNITS;
-        }
-        if (floor != null && finalUnitsApplied < floor) {
-          const wasMuted = finalUnitsApplied <= 0;
-          finalUnitsApplied = Math.round(oddsCap(floor, sideOdds) * 100) / 100;
-          if (wasMuted) {
-            hcStakeTier = 'WINNER';
-            winnerRescued = true;
-            winnerMuted = false;
+    // 2–4) EDGE size / rescue / Top-Winner Policy E — FROZEN once tape ships
+    if (edgeStakeLive) {
+      // 2) SIZE survivors by path × EDGE
+      if (finalUnitsApplied > 0 && wa.hasBoth && tierNow) {
+        const e = wa.edge;
+        const before = finalUnitsApplied;
+        if (WINNER_ALIGN_PATH_A.has(tierNow)) {
+          if (e >= WINNER_ALIGN_EDGE10) {
+            finalUnitsApplied = 6;
+          } else if (e >= WINNER_ALIGN_EDGE5) {
+            finalUnitsApplied = Math.min(finalUnitsApplied + 1, 6);
+          } else if (e >= WINNER_ALIGN_EDGE3) {
+            // keep
+          } else if (e >= 0) {
+            finalUnitsApplied = Math.max(1, finalUnitsApplied - 1);
+          } else {
+            finalUnitsApplied = WINNER_ALIGN_BAD_EDGE_CAP;
           }
-          winnerTopFloored = true;
-          winnerAlignAction = 'top_floor';
+        } else if (tierNow === 'RANK') {
+          if (e >= WINNER_ALIGN_EDGE10) {
+            finalUnitsApplied = 6;
+          } else if (e >= WINNER_ALIGN_EDGE5) {
+            finalUnitsApplied = 4;
+          } else if (e < 0) {
+            finalUnitsApplied = WINNER_ALIGN_BAD_EDGE_CAP;
+          } else {
+            finalUnitsApplied = Math.min(finalUnitsApplied, 2);
+          }
+        } else if (tierNow === 'SHARP' || tierNow === 'SHARP-PRIME') {
+          if (e >= WINNER_ALIGN_EDGE10) {
+            finalUnitsApplied = 6;
+          } else if (e >= WINNER_ALIGN_EDGE5) {
+            // keep full
+          } else if (e >= WINNER_ALIGN_EDGE3) {
+            finalUnitsApplied = Math.min(finalUnitsApplied, 2);
+          } else if (e < 0) {
+            finalUnitsApplied = WINNER_ALIGN_BAD_EDGE_CAP;
+          } else {
+            finalUnitsApplied = 1;
+          }
+        } else if (tierNow === 'DISSENT') {
+          if (e >= WINNER_ALIGN_EDGE3) {
+            finalUnitsApplied = 1;
+          } else if (e < 0) {
+            finalUnitsApplied = 0;
+          }
+        } else if (tierNow === 'WINNER') {
+          if (e >= WINNER_ALIGN_EDGE10) {
+            finalUnitsApplied = WINNER_ALIGN_RESCUE_E10_UNITS;
+          } else if (e >= WINNER_ALIGN_EDGE5) {
+            finalUnitsApplied = WINNER_ALIGN_RESCUE_E5_UNITS;
+          } else if (e >= WINNER_ALIGN_EDGE3) {
+            finalUnitsApplied = WINNER_ALIGN_RESCUE_E3_UNITS;
+          } else if (e < 0) {
+            finalUnitsApplied = WINNER_ALIGN_BAD_EDGE_CAP;
+          }
+        }
+        if (e < 0
+            && finalUnitsApplied > WINNER_ALIGN_BAD_EDGE_CAP
+            && WINNER_ALIGN_MUTE_TIERS.has(tierNow)) {
+          finalUnitsApplied = WINNER_ALIGN_BAD_EDGE_CAP;
+        }
+        finalUnitsApplied = Math.round(oddsCap(finalUnitsApplied, sideOdds) * 100) / 100;
+        if (Math.abs(finalUnitsApplied - before) >= 0.05) {
+          winnerSized = true;
+          if (!winnerAlignAction) winnerAlignAction = 'size';
         }
       }
 
-      // Junk cut: A/B/C/D stake with no Top-5 FOR and EDGE<5 → 0.
-      // Preserve WINNER rescues at EDGE≥3 (Path E ladder).
-      const tierForJunk = hcStakeTier;
-      if (finalUnitsApplied > 0
-          && tierForJunk
-          && WINNER_ALIGN_JUNK_CUT_TIERS.has(tierForJunk)
-          && !wa.hasTop5For
-          && e < WINNER_ALIGN_EDGE5) {
-        finalUnitsApplied = 0;
-        winnerTopJunkCut = true;
-        winnerMuted = true;
-        winnerAlignAction = 'top_junk';
-      } else if (finalUnitsApplied > 0
-          && tierForJunk === 'WINNER'
-          && !wa.hasTop5For
-          && e < WINNER_ALIGN_EDGE3) {
-        // WINNER that drifted below E3 with no Top-5 — kill
-        finalUnitsApplied = 0;
-        winnerTopJunkCut = true;
-        winnerMuted = true;
-        winnerAlignAction = 'top_junk';
+      // 3) RESCUE — still muted, score>0, EDGE≥3 → WINNER @ 6u / 4u / 3u
+      if (finalUnitsApplied === 0
+          && wa.hasBoth
+          && wa.edge >= WINNER_ALIGN_EDGE3
+          && !(Number.isFinite(sd.manualStake) && sd.manualStake > 0)) {
+        const u = wa.edge >= WINNER_ALIGN_EDGE10
+          ? WINNER_ALIGN_RESCUE_E10_UNITS
+          : wa.edge >= WINNER_ALIGN_EDGE5
+            ? WINNER_ALIGN_RESCUE_E5_UNITS
+            : WINNER_ALIGN_RESCUE_E3_UNITS;
+        finalUnitsApplied = Math.round(oddsCap(u, sideOdds) * 100) / 100;
+        hcStakeTier = 'WINNER';
+        winnerRescued = true;
+        winnerMuted = false;
+        winnerAlignAction = 'rescue';
       }
 
-      if (Math.abs(finalUnitsApplied - beforeTop) < 0.05) {
-        // no-op
+      // 4) TOP-WINNER POLICY E
+      if (wa.hasBoth && !(Number.isFinite(sd.manualStake) && sd.manualStake > 0)) {
+        const e = wa.edge;
+        const opposed = wa.topVsTop || (wa.hasTop5Ag && !wa.hasTop5For);
+
+        if (opposed && finalUnitsApplied > WINNER_ALIGN_OPPOSED_CAP) {
+          finalUnitsApplied = Math.round(oddsCap(WINNER_ALIGN_OPPOSED_CAP, sideOdds) * 100) / 100;
+          winnerTopCapped = true;
+          winnerAlignAction = 'top_cap';
+        } else if (!opposed) {
+          let floor = null;
+          if ((wa.eliteUnopp || wa.topUnopp) && e >= WINNER_ALIGN_EDGE5) {
+            floor = e >= WINNER_ALIGN_EDGE10
+              ? WINNER_ALIGN_RESCUE_E10_UNITS
+              : WINNER_ALIGN_RESCUE_E5_UNITS;
+          } else if (e >= WINNER_ALIGN_EDGE10 && wa.hasTop5For) {
+            floor = WINNER_ALIGN_RESCUE_E10_UNITS;
+          }
+          if (floor != null && finalUnitsApplied < floor) {
+            const wasMuted = finalUnitsApplied <= 0;
+            finalUnitsApplied = Math.round(oddsCap(floor, sideOdds) * 100) / 100;
+            if (wasMuted) {
+              hcStakeTier = 'WINNER';
+              winnerRescued = true;
+              winnerMuted = false;
+            }
+            winnerTopFloored = true;
+            winnerAlignAction = 'top_floor';
+          }
+        }
+
+        const tierForJunk = hcStakeTier;
+        if (finalUnitsApplied > 0
+            && tierForJunk
+            && WINNER_ALIGN_JUNK_CUT_TIERS.has(tierForJunk)
+            && !wa.hasTop5For
+            && e < WINNER_ALIGN_EDGE5) {
+          finalUnitsApplied = 0;
+          winnerTopJunkCut = true;
+          winnerMuted = true;
+          winnerAlignAction = 'top_junk';
+        } else if (finalUnitsApplied > 0
+            && tierForJunk === 'WINNER'
+            && !wa.hasTop5For
+            && e < WINNER_ALIGN_EDGE3) {
+          finalUnitsApplied = 0;
+          winnerTopJunkCut = true;
+          winnerMuted = true;
+          winnerAlignAction = 'top_junk';
+        }
       }
     }
   }
 
-  // ─── CLV top2 unit policy — cancel ≤59 / boost ≥74 / global cap 6u ─────
-  // Applied AFTER HC / RANK / SHARP / DISSENT / WINNER-ALIGN so every stake
-  // path is screened. Fail-closed when top2 cannot be measured.
+  // ─── TAPE / CLV unit policy (after paths + winner-align mute) ──────────
+  // Tape era (2026-07-15+): mute weak / keep mid / boost strong on path units.
+  //   tape = 1.5·(EDGE/10) + 2·(netCLV/10); fail-open when unscored.
+  // Pre-tape: legacy CLV top2 cancel≤59 / boost≥74 (fail-closed if missing).
   const top2Live = computeForTop2PctPos(wd, side, pickDate, clvLedger);
-  const clvPolicy = applyClvTop2UnitPolicy({
-    units: finalUnitsApplied,
-    odds: sideOdds,
-    top2Pct: top2Live.top2Pct,
-    oddsCapFn: oddsCap,
-    unitCap: GLOBAL_UNIT_CAP,
-  });
+  const netLive = computeNetMeanPrior(wd, side, pickDate, clvLedger);
+  const tapeLive = computeTapeScore(winnerAlign?.edge ?? null, netLive.netMeanPrior);
+  let clvPolicy;
+  let tapePolicy = null;
   const unitsBeforeClv = finalUnitsApplied;
-  finalUnitsApplied = clvPolicy.units;
-  if (clvPolicy.action !== 'CANCEL') {
-    finalUnitsApplied = Math.min(GLOBAL_UNIT_CAP, finalUnitsApplied);
+  if (tapeSizingLive) {
+    tapePolicy = applyTapeUnitPolicy({
+      units: finalUnitsApplied,
+      odds: sideOdds,
+      tape: tapeLive,
+      oddsCapFn: oddsCap,
+      unitCap: GLOBAL_UNIT_CAP,
+    });
+    finalUnitsApplied = tapePolicy.units;
+    // Diagnostic-only top2 stamp (no unit effect)
+    clvPolicy = {
+      units: finalUnitsApplied,
+      action: 'PASS',
+      reason: 'tape_sizing_live',
+      mutedBy: null,
+      unitsPrePolicy: unitsBeforeClv,
+    };
+  } else {
+    clvPolicy = applyClvTop2UnitPolicy({
+      units: finalUnitsApplied,
+      odds: sideOdds,
+      top2Pct: top2Live.top2Pct,
+      oddsCapFn: oddsCap,
+      unitCap: GLOBAL_UNIT_CAP,
+    });
+    finalUnitsApplied = clvPolicy.units;
+    if (clvPolicy.action !== 'CANCEL') {
+      finalUnitsApplied = Math.min(GLOBAL_UNIT_CAP, finalUnitsApplied);
+    }
   }
 
   // ─── lockStage promote/demote — v12 gate ──────────────────────────────
@@ -2074,6 +2131,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const reasons = [];
   if (appliedReason) reasons.push(appliedReason);
   if (clvPolicy.reason && !reasons.includes(clvPolicy.reason)) reasons.push(clvPolicy.reason);
+  if (tapePolicy?.reason && !reasons.includes(tapePolicy.reason)) reasons.push(tapePolicy.reason);
   // Preserve diagnostic-only badge signals from prior cycles (they don't
   // change status but the UI uses them for chip rendering).
   if (sd.health?.reasons) {
@@ -2083,8 +2141,11 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       }
     }
   }
-  // CLV cancel → MUTED so Locked Picks treats it like other 0u mutes.
-  const healthStatusOut = (clvPolicy.action === 'CANCEL' && unitsBeforeClv > 0)
+  // CLV/tape cancel → MUTED so Locked Picks treats it like other 0u mutes.
+  const sizeMuted = tapeSizingLive
+    ? (tapePolicy?.action === 'MUTE' && unitsBeforeClv > 0)
+    : (clvPolicy.action === 'CANCEL' && unitsBeforeClv > 0);
+  const healthStatusOut = sizeMuted
     ? 'MUTED'
     : appliedStatus;
   patch.health = {
@@ -2114,13 +2175,18 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // missing from the Locked Picks list".
   const LEGACY_UI_MUTE_VALUES = new Set(['ags-quality-veto', 'ags-hard-mute', 'winner_align_fade']);
   const CLV_MUTE_VALUES = new Set(['clv-top2-cancel', 'clv-top2-missing']);
+  const TAPE_MUTE_VALUES = new Set(['tape-weak']);
   if (winnerMuted) {
     patch.mutedBy = 'winner_align_fade';
+  } else if (tapePolicy?.mutedBy) {
+    patch.mutedBy = tapePolicy.mutedBy;
   } else if (clvPolicy.mutedBy) {
     patch.mutedBy = clvPolicy.mutedBy;
   } else if (mutedByAgs) {
     patch.mutedBy = 'ags-quality-veto';
-  } else if (LEGACY_UI_MUTE_VALUES.has(sd.mutedBy) || CLV_MUTE_VALUES.has(sd.mutedBy)) {
+  } else if (LEGACY_UI_MUTE_VALUES.has(sd.mutedBy)
+      || CLV_MUTE_VALUES.has(sd.mutedBy)
+      || TAPE_MUTE_VALUES.has(sd.mutedBy)) {
     patch.mutedBy = admin.firestore.FieldValue.delete();
   }
   if (stampedStatus !== healthStatusOut) {
@@ -2389,15 +2455,36 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   }
   // finalUnits drift logging — flag any time the canonical bet size changes
   // by ≥0.05u so cycle output makes the change visible.
-  // CLV top2 skill stamps — always written so the dashboard / grader can audit.
+  // CLV top2 + tape skill stamps — always written for dashboard / grader audit.
   patch.v8_forTop2PctPos = top2Live.top2Pct;
   patch.v8_forTop2NSkill = top2Live.nForSkill;
   patch.v8_clvTop2Action = clvPolicy.action;
-  if (clvPolicy.action === 'CANCEL' && unitsBeforeClv > 0) {
+  patch.v8_netMeanPrior = netLive.netMeanPrior;
+  patch.v8_netClvMeanFor = netLive.meanFor;
+  patch.v8_netClvMeanAg = netLive.meanAg;
+  patch.v8_netClvNFor = netLive.nFor;
+  patch.v8_netClvNAg = netLive.nAg;
+  patch.v8_tapeScore = tapeLive;
+  patch.v8_tapeAction = tapePolicy?.action ?? null;
+  if (tapeSizingLive && tapePolicy) {
+    if (tapePolicy.action === 'MUTE' && unitsBeforeClv > 0) {
+      changes.push(
+        `TAPE MUTE: tape=${tapeLive ?? '∅'} <${TAPE_MUTE_BELOW} → 0u (was ${unitsBeforeClv}u)`
+        + ` edge=${winnerAlign?.edge?.toFixed?.(1) ?? '—'} net=${netLive.netMeanPrior ?? '—'}`,
+      );
+    } else if (tapePolicy.action === 'BOOST') {
+      changes.push(
+        `TAPE BOOST: tape=${tapeLive} ≥${TAPE_BOOST_ABOVE} → ${unitsBeforeClv}u → ${finalUnitsApplied}u`
+        + ` (×${TAPE_BOOST_MULT}, cap ${GLOBAL_UNIT_CAP})`,
+      );
+    } else if (tapePolicy.action === 'FAIL_OPEN' && unitsBeforeClv > 0) {
+      // quiet — common when opposed skill missing
+    }
+  } else if (clvPolicy.action === 'CANCEL' && unitsBeforeClv > 0) {
     changes.push(`CLV-TOP2 CANCEL: top2=${top2Live.top2Pct ?? '∅'} ≤${CLV_TOP2_CANCEL_MAX} → 0u (was ${unitsBeforeClv}u)`);
   } else if (clvPolicy.action === 'BOOST') {
     changes.push(`CLV-TOP2 BOOST: top2=${top2Live.top2Pct} ≥${CLV_TOP2_BOOST_MIN} → ${unitsBeforeClv}u → ${finalUnitsApplied}u (cap ${GLOBAL_UNIT_CAP})`);
-  } else if (unitsBeforeClv > 0 && finalUnitsApplied !== unitsBeforeClv) {
+  } else if (!tapeSizingLive && unitsBeforeClv > 0 && finalUnitsApplied !== unitsBeforeClv) {
     changes.push(`CLV-TOP2 cap: ${unitsBeforeClv}u → ${finalUnitsApplied}u (cap ${GLOBAL_UNIT_CAP})`);
   }
 
@@ -2640,7 +2727,14 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         eliteUnopp: winnerAlign.eliteUnopp,
         topVsTop: winnerAlign.topVsTop,
         action: winnerAlignAction,
+        edgeStakeLive,
+        tapeSizingLive,
       } : null,
+      tape: {
+        score: tapeLive,
+        net: netLive.netMeanPrior,
+        action: tapePolicy?.action ?? null,
+      },
       winnerRescued,
       score: scoreV12Live,
       stakeTier: hcStakeTier,
@@ -2702,7 +2796,10 @@ async function main() {
     if (p?.date && p.date >= CLV_HIST_FROM) gradedForClv.push(p);
   });
   const clvLedger = buildClvLedgerFromPositions(gradedForClv, { since: CLV_HIST_FROM });
-  console.log(`CLV skill ledger: ${clvLedger.size} wallets · ${gradedForClv.length} graded rows (cancel≤${CLV_TOP2_CANCEL_MAX} / boost≥${CLV_TOP2_BOOST_MIN} / cap ${GLOBAL_UNIT_CAP}u)`);
+  console.log(`CLV skill ledger: ${clvLedger.size} wallets · ${gradedForClv.length} graded rows`
+    + (isTapeSizingLive(TARGET_DATE)
+      ? ` · TAPE sizing LIVE (mute<${TAPE_MUTE_BELOW} / boost≥${TAPE_BOOST_ABOVE} ×${TAPE_BOOST_MULT} / cap ${GLOBAL_UNIT_CAP}u) · EDGE stake FROZEN`
+      : ` · CLV-top2 (cancel≤${CLV_TOP2_CANCEL_MAX} / boost≥${CLV_TOP2_BOOST_MIN} / cap ${GLOBAL_UNIT_CAP}u)`));
 
   // Load today's positions (live wallet activity) from Firestore.
   // (Could also read from public/sharp_positions.json but Firestore stays

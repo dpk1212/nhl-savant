@@ -1,15 +1,18 @@
 /**
- * Wallet CLV skill — causal % +CLV for FOR-side wallets, used to gate stake size.
+ * Wallet CLV skill — causal % +CLV for stake sizing.
  *
- * Research (June 1+ staked UI book):
- *   • Cancel top2Pct ≤ 59  → left-tail poison (42% WR / −14% ROI)
- *   • Boost  top2Pct ≥ 74  → right-tail (60% WR / +19% ROI), size up
- *   • Mid band            → hold base size
+ * Legacy top2 FOR-only gate (kept for stamps / audit):
+ *   • Cancel top2Pct ≤ 59  → left-tail poison
+ *   • Boost  top2Pct ≥ 74  → right-tail size up
+ *
+ * Ship (2026-07-15+): TAPE = 1.5·(EDGE/10) + 2·(netCLV/10)
+ *   netCLV = mean(FOR %+CLV) − (mean(AG %+CLV) ?? PRIOR_AG=62)
+ *   • Mute  tape < 0     → 0u (fail-open if tape missing)
+ *   • Hold  mid tape     → keep path units
+ *   • Boost tape ≥ 2.89  → path × 1.35 (oddsCap, 6u cap)
  *
  * top2Pct = mean of the two highest FOR wallets' causal % of graded
  * positions with CLV > 0 (n ≥ MIN_N, as-of before the pick date).
- *
- * Unit policy also enforces GLOBAL_UNIT_CAP (6u) after odds-aware boost.
  */
 
 export const CLV_HIST_FROM = '2026-04-01';
@@ -19,6 +22,19 @@ export const CLV_TOP2_BOOST_MIN = 74;    // inclusive: ≥ 74 → boost
 export const CLV_TOP2_BOOST_MULT = 1.35;
 export const CLV_TOP2_BOOST_ADD = 2;
 export const GLOBAL_UNIT_CAP = 6;
+
+/** netCLV / tape sizing (replaces top2 unit effects from TAPE_SIZING_LIVE_FROM). */
+export const NET_CLV_PRIOR_AG = 62;
+export const TAPE_EDGE_WEIGHT = 1.5;
+export const TAPE_NET_WEIGHT = 2;
+export const TAPE_MUTE_BELOW = 0;       // ≈ June15+ path-stamped p40
+export const TAPE_BOOST_ABOVE = 2.89;   // ≈ June15+ path-stamped p80
+export const TAPE_BOOST_MULT = 1.35;
+export const TAPE_SIZING_LIVE_FROM = '2026-07-15';
+
+export function isTapeSizingLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= TAPE_SIZING_LIVE_FROM;
+}
 
 export function shortWalletId(w) {
   return String(w || '').toLowerCase().slice(-6);
@@ -187,6 +203,119 @@ export function applyClvTop2UnitPolicy({
   out = Math.min(unitCap, out);
   out = Math.round(out * 100) / 100;
 
+  return {
+    units: out,
+    action,
+    reason,
+    mutedBy: null,
+    unitsPrePolicy: pre,
+  };
+}
+
+/**
+ * netMeanPrior = mean(FOR causal %+CLV) − (mean(AG) ?? PRIOR_AG).
+ * Needs at least one FOR wallet with skill; AG defaults to prior when missing.
+ */
+export function computeNetMeanPrior(walletDetails, side, asOfDate, ledger, opts = {}) {
+  const minN = opts.minN ?? CLV_SKILL_MIN_N;
+  const priorAg = opts.priorAg ?? NET_CLV_PRIOR_AG;
+  if (!Array.isArray(walletDetails) || !side || !asOfDate || !ledger) {
+    return { netMeanPrior: null, meanFor: null, meanAg: null, nFor: 0, nAg: 0 };
+  }
+  const forClean = [];
+  const agClean = [];
+  const seen = new Set();
+  for (const w of walletDetails) {
+    if (!w) continue;
+    const short = shortWalletId(w.wallet || w.walletShort);
+    if (!short || seen.has(short)) continue;
+    seen.add(short);
+    const pct = causalPctPos(ledger, short, asOfDate, { minN });
+    if (pct == null) continue;
+    // Missing side treated as FOR (same contract as computeForTop2PctPos)
+    if (!w.side || w.side === side) forClean.push(pct);
+    else agClean.push(pct);
+  }
+  if (!forClean.length) {
+    return { netMeanPrior: null, meanFor: null, meanAg: null, nFor: 0, nAg: agClean.length };
+  }
+  const meanFor = forClean.reduce((a, b) => a + b, 0) / forClean.length;
+  const meanAg = agClean.length ? agClean.reduce((a, b) => a + b, 0) / agClean.length : null;
+  const netMeanPrior = meanFor - (meanAg != null ? meanAg : priorAg);
+  return {
+    netMeanPrior: Math.round(netMeanPrior * 100) / 100,
+    meanFor: Math.round(meanFor * 100) / 100,
+    meanAg: meanAg != null ? Math.round(meanAg * 100) / 100 : null,
+    nFor: forClean.length,
+    nAg: agClean.length,
+  };
+}
+
+/** tape = 1.5·(EDGE/10) + 2·(netCLV/10). null if either input missing. */
+export function computeTapeScore(edge, netMeanPrior, {
+  we = TAPE_EDGE_WEIGHT,
+  wc = TAPE_NET_WEIGHT,
+} = {}) {
+  if (edge == null || netMeanPrior == null) return null;
+  if (!Number.isFinite(Number(edge)) || !Number.isFinite(Number(netMeanPrior))) return null;
+  const tape = we * (Number(edge) / 10) + wc * (Number(netMeanPrior) / 10);
+  return Math.round(tape * 1000) / 1000;
+}
+
+/**
+ * Tape unit policy — mute weak / hold mid / boost strong.
+ * FAIL-OPEN when tape cannot be scored (keep path units).
+ */
+export function applyTapeUnitPolicy({
+  units,
+  odds = null,
+  tape = null,
+  oddsCapFn = null,
+  unitCap = GLOBAL_UNIT_CAP,
+  muteBelow = TAPE_MUTE_BELOW,
+  boostAbove = TAPE_BOOST_ABOVE,
+  boostMult = TAPE_BOOST_MULT,
+} = {}) {
+  const pre = Number.isFinite(units) ? Math.max(0, units) : 0;
+  if (!(pre > 0)) {
+    return {
+      units: 0,
+      action: 'PASS',
+      reason: null,
+      mutedBy: null,
+      unitsPrePolicy: pre,
+    };
+  }
+  // Fail-open: missing tape → keep path size
+  if (tape == null || !Number.isFinite(tape)) {
+    return {
+      units: pre,
+      action: 'FAIL_OPEN',
+      reason: 'tape_missing',
+      mutedBy: null,
+      unitsPrePolicy: pre,
+    };
+  }
+  if (tape < muteBelow) {
+    return {
+      units: 0,
+      action: 'MUTE',
+      reason: 'tape_weak',
+      mutedBy: 'tape-weak',
+      unitsPrePolicy: pre,
+    };
+  }
+  let out = pre;
+  let action = 'HOLD';
+  let reason = null;
+  if (tape >= boostAbove) {
+    out = pre * boostMult;
+    action = 'BOOST';
+    reason = 'tape_boost';
+    if (typeof oddsCapFn === 'function') out = oddsCapFn(out, odds);
+  }
+  out = Math.min(unitCap, out);
+  out = Math.round(out * 100) / 100;
   return {
     units: out,
     action,
