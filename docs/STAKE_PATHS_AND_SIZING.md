@@ -2,7 +2,7 @@
 
 _Status: **LIVE** · stack `v12abcde` + **tape sizing** from **2026-07-15**_  
 _Code: `scripts/syncPickStateAuthoritative.js` · HC ladder: `src/lib/ags.js` (`agsV12HcStake`) · tape: `src/lib/walletClvSkill.js`_  
-_Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`WINNER_ALIGN_IMPLEMENTATION.md`](./WINNER_ALIGN_IMPLEMENTATION.md)_
+_Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`WINNER_ALIGN_IMPLEMENTATION.md`](./WINNER_ALIGN_IMPLEMENTATION.md) · [`DATA_ASSET_MAP.md`](./DATA_ASSET_MAP.md)_
 
 ---
 
