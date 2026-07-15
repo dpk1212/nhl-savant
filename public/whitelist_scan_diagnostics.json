@@ -1,20 +1,20 @@
 {
-  "scannedAt": "2026-07-15T13:05:39.122Z",
-  "elapsedSec": 13.5,
+  "scannedAt": "2026-07-15T13:09:36.904Z",
+  "elapsedSec": 11.5,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 6,
   "summary": {
     "total": 196,
     "coveredByMain": 10,
-    "recovered": 7,
-    "recoveredPositions": 31,
-    "noPositions": 179,
+    "recovered": 8,
+    "recoveredPositions": 32,
+    "noPositions": 178,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
       "ml": 12,
-      "spread": 5,
+      "spread": 6,
       "total": 2,
       "dropped_shadow_gate": 11,
       "dropped_duplicate": 1
@@ -569,8 +569,24 @@
       "tier": "CONFIRMED",
       "name": "sentrio",
       "sports": "MLB,SOC,NBA",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xdb83e85ffd22faa4009273034770f96ffc5b1e50"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0xdb83e85ffd22faa4009273034770f96ffc5b1e50",
+      "positionsCount": 1,
+      "statsSource": "sharpWalletProfiles_derived",
+      "avgSportBet": 1534,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "WNBA",
+          "gameKey": "las_min",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 759,
+          "entryLine": -12.5,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "5c32f2",
@@ -1148,7 +1164,7 @@
           "gameKey": "arg_eng",
           "marketType": "ml",
           "side": "home",
-          "invested": 28741,
+          "invested": 28774,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1157,7 +1173,7 @@
           "gameKey": "arg_eng",
           "marketType": "ml",
           "side": "away",
-          "invested": 12674,
+          "invested": 13537,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1166,7 +1182,7 @@
           "gameKey": "arg_eng",
           "marketType": "ml",
           "side": "draw",
-          "invested": 4864,
+          "invested": 4932,
           "entryLine": null,
           "passesShadow": true
         }
