@@ -1,19 +1,19 @@
 {
-  "scannedAt": "2026-07-15T02:02:18.886Z",
-  "elapsedSec": 13.5,
+  "scannedAt": "2026-07-15T02:05:15.199Z",
+  "elapsedSec": 15.6,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 6,
   "summary": {
     "total": 194,
-    "coveredByMain": 7,
+    "coveredByMain": 8,
     "recovered": 5,
-    "recoveredPositions": 11,
-    "noPositions": 182,
+    "recoveredPositions": 12,
+    "noPositions": 181,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 8,
+      "ml": 9,
       "spread": 0,
       "total": 0,
       "dropped_shadow_gate": 3,
@@ -68,10 +68,10 @@
       "sports": "NHL,MLB,NBA,SOC",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x0a77bc0638f13892c8b1d1d2c13ba178540f9d74",
-      "positionsCount": 1,
+      "positionsCount": 2,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 2395,
-      "willPassShadowGate": 1,
+      "willPassShadowGate": 2,
       "willDropAtShadowGate": 0,
       "positions": [
         {
@@ -80,6 +80,15 @@
           "marketType": "ml",
           "side": "away",
           "invested": 2897,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "SOC",
+          "gameKey": "arg_eng",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 2000,
           "entryLine": null,
           "passesShadow": true
         }
@@ -736,8 +745,7 @@
       "tier": "CONFIRMED",
       "name": "allegiant123",
       "sports": "SOC",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xa80e584e189865e8289403bd96ed52d67e816aa1"
+      "status": "COVERED_BY_MAIN"
     },
     {
       "walletShort": "8221cc",
@@ -981,7 +989,7 @@
           "gameKey": "arg_eng",
           "marketType": "ml",
           "side": "home",
-          "invested": 14671,
+          "invested": 14676,
           "entryLine": null,
           "passesShadow": true
         },
