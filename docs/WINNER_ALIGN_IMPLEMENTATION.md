@@ -5,7 +5,8 @@ _Status: **EDGE stamps LIVE** · **EDGE stake overrides FROZEN** from **2026-07-
 Site thesis: **follow the real winners.**
 
 Code: `scripts/syncPickStateAuthoritative.js` (WINNER-ALIGN block after Path D).  
-Sizing owner from 2026-07-15: [`TAPE_SIZING.md`](./TAPE_SIZING.md).
+Sizing owner from 2026-07-15: [`TAPE_SIZING.md`](./TAPE_SIZING.md).  
+Full stack: [`STAKE_PATHS_AND_SIZING.md`](./STAKE_PATHS_AND_SIZING.md).
 
 ---
 

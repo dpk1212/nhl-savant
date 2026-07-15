@@ -1,6 +1,7 @@
 # Tape sizing (shipped 2026-07-15)
 
-_Status: **LIVE** from `TAPE_SIZING_LIVE_FROM = 2026-07-15` · paths keep base units · tape mutes/boosts._
+_Status: **LIVE** from `TAPE_SIZING_LIVE_FROM = 2026-07-15` · paths keep base units · tape mutes/boosts._  
+_Full path + unit walkthrough: [`STAKE_PATHS_AND_SIZING.md`](./STAKE_PATHS_AND_SIZING.md)._
 
 ## Rule
 
