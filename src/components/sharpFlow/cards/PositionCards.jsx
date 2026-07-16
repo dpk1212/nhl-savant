@@ -899,11 +899,6 @@ export function LivePositionCardView({ f, markets, onMarket }) {
           </div>
 
           <div style={{ marginTop: 12, position: 'relative' }}>
-            <div style={{
-              position: 'absolute', left: '50%', top: 8, bottom: 8, width: 1,
-              transform: 'translateX(-50%)', pointerEvents: 'none',
-              background: 'linear-gradient(180deg, transparent, rgba(255,255,255,0.16) 20%, rgba(255,255,255,0.16) 80%, transparent)',
-            }} />
             <BattleRowV12
               label="PROVEN WINNERS"
               awayVal={String(f.sides.away.sharps)}
