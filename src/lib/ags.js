@@ -1092,9 +1092,12 @@ export const AGS_V12_STAKE_TIER_META = {
   'SHARP-PRIME': { label: 'SHARP PLAY', short: 'SHARP', color: '#A855F7', bg: 'rgba(168,85,247,0.15)',  units: 4,                     ribbon: null, stars: 4 },
   SHARP:         { label: 'SHARP PLAY', short: 'SHARP', color: '#A855F7', bg: 'rgba(168,85,247,0.12)',  units: 3,                     ribbon: null, stars: 3 },
   MINI:          { label: 'STRONG',    short: 'STRONG', color: '#14B8A6', bg: 'rgba(20,184,166,0.14)',  units: V12_1_MINI_UNITS,      ribbon: null, stars: 3 },
-  CONFIRMED:     { label: 'CONFIRMED', short: 'CONF',   color: '#3B82F6', bg: 'rgba(59,130,246,0.14)',  units: V12_1_CONFIRMED_UNITS, ribbon: null, stars: 2 },
+  // CONFIRMED / MINI- / DISSENT all roll up to the LEAN display band
+  // (AGS_V12_DISPLAY_TIERS) — keep the user-facing label identical so cards
+  // and the Tier Performance scoreboard never disagree on vocabulary.
+  CONFIRMED:     { label: 'LEAN',      short: 'LEAN',   color: '#6B7280', bg: 'rgba(107,114,128,0.12)', units: V12_1_CONFIRMED_UNITS, ribbon: null, stars: 2 },
   'MINI-':       { label: 'LEAN',      short: 'LEAN',   color: '#6B7280', bg: 'rgba(107,114,128,0.12)', units: 1,                     ribbon: null, stars: 2 },
-  DISSENT:       { label: 'LEAN',      short: 'PATH-D', color: '#0EA5E9', bg: 'rgba(14,165,233,0.12)',  units: 1,                     ribbon: null, stars: 2 },
+  DISSENT:       { label: 'LEAN',      short: 'LEAN',   color: '#6B7280', bg: 'rgba(107,114,128,0.12)', units: 1,                     ribbon: null, stars: 2 },
   WINNER:        { label: 'SHARP PLAY', short: 'WIN',  color: '#A855F7', bg: 'rgba(168,85,247,0.15)',  units: 4,                     ribbon: null, stars: 4 },
   MONITORING:    { label: 'MONITORING', short: 'WATCH', color: '#6B7280', bg: 'rgba(107,114,128,0.12)', units: 0,                     ribbon: null, stars: 0 },
   FADE:          { label: 'PASS',      short: 'PASS',   color: '#ef4444', bg: 'rgba(239,68,68,0.12)',   units: 0,                     ribbon: null, stars: 0 },

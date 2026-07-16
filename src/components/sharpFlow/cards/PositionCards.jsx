@@ -5,6 +5,14 @@
  */
 import { useState, useEffect } from 'react';
 import { Check, Lock, ChevronDown } from 'lucide-react';
+import { AGS_V12_DISPLAY_TIERS, AGS_V12_PATH_TO_DISPLAY } from '../../../lib/ags.js';
+
+/** Same 5-band labels as the Tier Performance scoreboard (MAX / TOP / SHARP / STRONG / LEAN). */
+function displayTierFromPath(stakePath) {
+  const key = AGS_V12_PATH_TO_DISPLAY[stakePath];
+  if (!key) return null;
+  return AGS_V12_DISPLAY_TIERS.find((d) => d.key === key) || null;
+}
 
 // Anchored to the Sharp Flow page palette (see B tokens in SharpFlow.jsx):
 // page #0B0F1F, panels #151923, borders rgba(37,43,59,*), gold #D4AF37.
@@ -327,8 +335,13 @@ export const PROPOSED_META = {
 // block when the market rail swapped fixtures in place.
 function TicketStub({ units, toWin, odds, stakePath, tapeAction, centsEdge }) {
   const risk = useCountUp(units, true, 900);
-  const sizeLabel = tapeAction === 'boost' ? 'Sized up' : tapeAction === 'mute' ? 'Pass' : 'Standard';
-  const sizeColor = tapeAction === 'boost' ? B.profit : tapeAction === 'mute' ? B.loss : C.textSec;
+  // Product tier (LEAN / STRONG / …) — same labels as the scoreboard. Internal
+  // path names (DISSENT, RANK, MINI-) and tape sizing ("Standard") stay out of
+  // this header so users aren't taught two vocabularies for one ticket.
+  const tier = displayTierFromPath(stakePath);
+  const tierLabel = tier?.label || stakePath || 'PLAY';
+  const tierColor = tier?.color || B.gold;
+  const tapeNote = tapeAction === 'boost' ? ' · Sized up' : tapeAction === 'mute' ? ' · Pass' : '';
   const cellLabel = { fontSize: '0.52rem', fontWeight: 800, letterSpacing: '0.13em', color: C.textMuted, marginBottom: 4 };
   return (
     <div style={{
@@ -349,10 +362,13 @@ function TicketStub({ units, toWin, odds, stakePath, tapeAction, centsEdge }) {
           <Check size={11} strokeWidth={3.2} />
           TICKET IN
         </span>
-        <span style={{ fontSize: '0.56rem', fontWeight: 800, letterSpacing: '0.08em' }}>
-          <span style={{ color: C.textSec }}>{stakePath}</span>
-          <span style={{ color: C.textFaint }}> · </span>
-          <span style={{ color: sizeColor }}>{sizeLabel}</span>
+        <span style={{
+          fontSize: '0.56rem', fontWeight: 900, letterSpacing: '0.12em',
+          color: tierColor,
+          padding: '3px 8px', borderRadius: 6,
+          background: `${tierColor}18`, border: `1px solid ${tierColor}44`,
+        }}>
+          {tierLabel}{tapeNote}
         </span>
         {/* punched notches on the perforation line */}
         <span style={{ position: 'absolute', left: -6, bottom: -6, width: 11, height: 11, borderRadius: '50%', background: '#12172a', border: '1px solid rgba(212,175,55,0.30)' }} />
@@ -1040,7 +1056,10 @@ export function LivePositionCardView({ f, markets, onMarket }) {
   const showClvTag = showClvBattle && hasClv;
 
   // Split verdict into a bold lead (the receipts) and a quieter action line
-  // so the eye lands on the proof first.
+  // so the eye lands on the proof first. Staked tickets name the product tier
+  // (LEAN / STRONG / …) — same words as the scoreboard — not path jargon.
+  const productTier = displayTierFromPath(f.stakePath);
+  const productTierLabel = productTier?.label || null;
   const verdict = (() => {
     const vault = f.vaultOnSide > 0 ? `${f.vaultOnSide} betting well above their usual` : null;
     const winners = `${f.confirmedOnSide} proven ${f.sport} winner${f.confirmedOnSide === 1 ? '' : 's'} on ${playSide}`;
@@ -1051,8 +1070,13 @@ export function LivePositionCardView({ f, markets, onMarket }) {
     if (isWatch) {
       return { lead, rest: "The money hasn't crossed a stake path yet, so we watch." };
     }
-    if (f.tapeAction === 'boost') return { lead, rest: `The skill read is strong, so we ${sizeWord}.` };
     if (f.displayState === 'TRACKING') return { lead, rest: 'Watching with a light stake.' };
+    if (productTierLabel) {
+      if (f.tapeAction === 'boost') return { lead, rest: `We took a ${productTierLabel} and sized up.` };
+      if (f.tapeAction === 'mute') return { lead, rest: `We took a ${productTierLabel}, then the skill read passed.` };
+      return { lead, rest: `We took a ${productTierLabel}.` };
+    }
+    if (f.tapeAction === 'boost') return { lead, rest: `The skill read is strong, so we ${sizeWord}.` };
     return { lead, rest: `We took ${sizeWord}.` };
   })();
 
