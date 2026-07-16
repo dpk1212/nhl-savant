@@ -902,6 +902,73 @@ const AGS_U_CUTOVER = '2026-05-14';
 // stars system and are bucketed into the archive view.
 const V12_LAUNCH = '2026-06-01';
 
+/** ET calendar date string N days ago (en-CA → YYYY-MM-DD). */
+function etDateDaysAgo(days) {
+  const d = new Date(Date.now() - days * 86400000);
+  return d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+}
+
+/**
+ * Display-tier (MAX/TOP/SHARP/STRONG/LEAN) W-L / WR / ROI over a date window.
+ * Same path→display grouping as the Tier Performance scoreboard.
+ */
+function aggregateDisplayTierSince(picks, sinceDate) {
+  const agg = {};
+  for (const dt of AGS_V12_DISPLAY_TIERS) {
+    agg[dt.key] = {
+      key: dt.key, label: dt.label, color: dt.color,
+      wins: 0, losses: 0, pushes: 0, units: 0, profit: 0,
+    };
+  }
+  if (!Array.isArray(picks)) return agg;
+  for (const p of picks) {
+    if (!p?.date || p.date < sinceDate || p.date < V12_LAUNCH) continue;
+    if (p.cancelled || p.tracked || !p.outcome) continue;
+    const stake = typeof p.v8_hcStakeTier === 'string' ? p.v8_hcStakeTier
+      : (typeof p.hcStakeTier === 'string' ? p.hcStakeTier : null);
+    const display = stake ? AGS_V12_PATH_TO_DISPLAY[stake] : null;
+    if (!display || !agg[display]) continue;
+    const b = agg[display];
+    const u = Number(p.units) || 0;
+    if (p.outcome === 'WIN') {
+      b.wins += 1;
+      b.units += u;
+      b.profit += Number.isFinite(p.profit) ? p.profit : 0;
+    } else if (p.outcome === 'LOSS') {
+      b.losses += 1;
+      b.units += u;
+      b.profit += Number.isFinite(p.profit) ? p.profit : -u;
+    } else if (p.outcome === 'PUSH') {
+      b.pushes += 1;
+    }
+  }
+  for (const b of Object.values(agg)) {
+    const graded = b.wins + b.losses;
+    b.n = graded;
+    b.record = `${b.wins}-${b.losses}`;
+    b.wr = graded > 0 ? Math.round((b.wins / graded) * 100) : null;
+    b.roi = b.units > 0 ? Math.round((b.profit / b.units) * 1000) / 10 : null;
+    b.profitU = Math.round(b.profit * 10) / 10;
+  }
+  return agg;
+}
+
+/**
+ * Pick the best window for a stake path: L30 if ≥5 graded, else L7 if ≥3,
+ * else L30 with ≥2. Returns null when there's nothing trustworthy to show.
+ */
+function resolveDisplayTierPerf(stakePath, windows) {
+  if (!stakePath || !windows) return null;
+  const display = AGS_V12_PATH_TO_DISPLAY[stakePath];
+  if (!display) return null;
+  const l30 = windows.l30?.[display];
+  const l7 = windows.l7?.[display];
+  if (l30 && l30.n >= 5 && l30.wr != null) return { ...l30, window: 'L30' };
+  if (l7 && l7.n >= 3 && l7.wr != null) return { ...l7, window: 'L7' };
+  if (l30 && l30.n >= 2 && l30.wr != null) return { ...l30, window: 'L30' };
+  return null;
+}
+
 // Resolve the cron-stamped AGS-U tier on a graded pick (v8_agsTier preferred,
 // v8_lockTier fallback). Shared by the performance dashboard and paywall so
 // both surfaces count the exact same v12-era pick population.
@@ -5543,7 +5610,7 @@ const LockCountdown = memo(function LockCountdown({ gameTime, isGraded }) {
   );
 });
 
-const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
+const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile, tierWindows }) {
   const {
     team, away, home, sport, units, odds, book, lockedAt, peakAt, gameTime,
     status, outcome, profit, closingOdds, totalInvested, evEdge, consensusStrength,
@@ -5767,12 +5834,18 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
 
   // Secondary context only retained for graded CLV math above.
   // Presentation: LockedPositionCardView (lab port).
+  const tierPerf = resolveDisplayTierPerf(hcStakeTier, tierWindows);
   const lockedFixture = mapLockedPickToCardFixture({
     ...pick,
     tapeAction: pick.tapeAction || pick.v8_tapeAction,
     tapeScore: pick.tapeScore ?? pick.v8_tapeScore,
     netClv: pick.netClv ?? pick.v8_netMeanPrior,
-  }, { getWalletProfile, isSportWinner, getRecordForDisplay: whitelistRecordForDisplay });
+  }, {
+    getWalletProfile,
+    isSportWinner,
+    getRecordForDisplay: whitelistRecordForDisplay,
+    tierPerf,
+  });
   return <LockedPositionCardView f={lockedFixture} />;
 });
 
@@ -6981,6 +7054,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   mlCronTier = null, mlCronUnits = null, mlCronStakeTier = null, mlCronStamps = null,
   spreadCronTier = null, spreadCronUnits = null, spreadCronStakeTier = null,
   totalCronTier = null, totalCronUnits = null, totalCronStakeTier = null,
+  tierWindows = null,
 }) {
   const [showWallets, setShowWallets] = useState(false);
   const [walletSideFilter, setWalletSideFilter] = useState('all');
@@ -8211,6 +8285,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     pathBase: AGS_V12_STAKE_TIER_META[mlCronStakeTier || displayTier]?.units,
     pinSeries: mlPinSeries,
     commenceMs: commenceTime,
+    tierPerf: resolveDisplayTierPerf(mlCronStakeTier || displayTier, tierWindows),
   });
 
   // Spread / total: same board census as ML so tab switches keep header
@@ -8283,6 +8358,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       : 'Spread',
     pathBase: AGS_V12_STAKE_TIER_META[displaySpread.tier || spreadCronStakeTier]?.units,
     commenceMs: commenceTime,
+    tierPerf: resolveDisplayTierPerf(displaySpread.tier || spreadCronStakeTier, tierWindows),
   }) : null;
 
   // Odds/book follow the play side (not a stale null consensus).
@@ -8349,6 +8425,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     pickLabel: totalPickLabel,
     pathBase: AGS_V12_STAKE_TIER_META[displayTotal.tier || totalCronStakeTier]?.units,
     commenceMs: commenceTime,
+    tierPerf: resolveDisplayTierPerf(displayTotal.tier || totalCronStakeTier, tierWindows),
   }) : null;
 
   const marketFixtures = [mlFixture, spreadFixture, totalFixture].filter(Boolean);
@@ -8846,15 +8923,27 @@ export default function SharpFlow() {
   const pnlLoadedRef = useRef(false);
   useEffect(() => {
     // Load the all-time P&L bundle as soon as the user lands on a
-    // surface that consumes it: the Performance tab, the free-user
-    // paywall (uses pregame totals), or the Locked Picks list (uses
-    // `byAgsTier` for the post-cutover Q-tier scorecard). One fetch
+    // surface that consumes it: Performance, paywall, Locked Picks,
+    // or Live Positions (tier L7/L30 strips on tickets). One fetch
     // serves them all; sessionStorage caches for 30 min.
-    if ((showAgsuPerf || !isPremium || sortBy === 'locked') && !pnlLoadedRef.current) {
+    const needsPnL = showAgsuPerf || !isPremium || sortBy === 'locked'
+      || sortBy === 'stars' || sortBy === 'live' || sortBy === 'myPicks'
+      || sortBy === 'time' || sortBy === 'edge' || sortBy === 'size';
+    if (needsPnL && !pnlLoadedRef.current) {
       pnlLoadedRef.current = true;
       loadAllTimePnL().then(setAllTimePnL);
     }
   }, [showAgsuPerf, isPremium, sortBy]);
+
+  // Display-tier L7 / L30 from graded v12 picks — same buckets as the
+  // Tier Performance scoreboard. Cards pick the best window per path.
+  const displayTierWindows = useMemo(() => {
+    const picks = allTimePnL?.picks || [];
+    return {
+      l30: aggregateDisplayTierSince(picks, etDateDaysAgo(30)),
+      l7: aggregateDisplayTierSince(picks, etDateDaysAgo(7)),
+    };
+  }, [allTimePnL]);
 
 
   const onPickSynced = useCallback((docId, side, snap, meta, action) => {
@@ -12390,7 +12479,7 @@ export default function SharpFlow() {
                         const gdTotalCronTier = pickV12Tier(gdTotalCronSide);
                         const gdTotalCronUnits = pickV12Units(gdTotalCronSide);
                         const gdTotalCronStakeTier = pickHcStakeTier(gdTotalCronSide);
-                        return <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} onHealthSynced={onHealthSynced} isMyPick={!!userPicks[gd.key]} onToggleMyPick={onToggleMyPick} canPickGames={!!(user && isPremium)} gameFlowMap={gameFlowMap} spreadPositions={spreadPositions} totalPositions={totalPositions} originalLockedSide={gdOriginalSide} originalLockStars={gdLockStars} originalLockWPS={gdLockWPS} originalFlipBeatThreshold={gdFlipBeatThreshold} originalSpreadLockStars={gdSpreadLockStars} originalSpreadLockWPS={gdSpreadLockWPS} originalTotalLockStars={gdTotalLockStars} originalTotalLockWPS={gdTotalLockWPS} v8Norm={v8Norm} walletProfiles={walletProfiles} mlCronTier={gdMlCronTier} mlCronUnits={gdMlCronUnits} mlCronStakeTier={gdMlCronStakeTier} mlCronStamps={gdMlCronStamps} spreadCronTier={gdSpreadCronTier} spreadCronUnits={gdSpreadCronUnits} spreadCronStakeTier={gdSpreadCronStakeTier} totalCronTier={gdTotalCronTier} totalCronUnits={gdTotalCronUnits} totalCronStakeTier={gdTotalCronStakeTier} />;
+                        return <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} onHealthSynced={onHealthSynced} isMyPick={!!userPicks[gd.key]} onToggleMyPick={onToggleMyPick} canPickGames={!!(user && isPremium)} gameFlowMap={gameFlowMap} spreadPositions={spreadPositions} totalPositions={totalPositions} originalLockedSide={gdOriginalSide} originalLockStars={gdLockStars} originalLockWPS={gdLockWPS} originalFlipBeatThreshold={gdFlipBeatThreshold} originalSpreadLockStars={gdSpreadLockStars} originalSpreadLockWPS={gdSpreadLockWPS} originalTotalLockStars={gdTotalLockStars} originalTotalLockWPS={gdTotalLockWPS} v8Norm={v8Norm} walletProfiles={walletProfiles} mlCronTier={gdMlCronTier} mlCronUnits={gdMlCronUnits} mlCronStakeTier={gdMlCronStakeTier} mlCronStamps={gdMlCronStamps} spreadCronTier={gdSpreadCronTier} spreadCronUnits={gdSpreadCronUnits} spreadCronStakeTier={gdSpreadCronStakeTier} totalCronTier={gdTotalCronTier} totalCronUnits={gdTotalCronUnits} totalCronStakeTier={gdTotalCronStakeTier} tierWindows={displayTierWindows} />;
                       })}
                     </div>
                     {isFreeUser && <SharpFlowPaywall isMobile={isMobile} lockedCount={allPosGames.length > 1 ? allPosGames.length - 1 : 0} pnlData={allTimePnL} />}
@@ -13200,7 +13289,7 @@ export default function SharpFlow() {
                                   gap: '0.75rem',
                                 }}>
                                   {stakedCards.map(p => (
-                                    <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} />
+                                    <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} tierWindows={displayTierWindows} />
                                   ))}
                                 </div>
                               )}
@@ -13226,7 +13315,7 @@ export default function SharpFlow() {
                                     opacity: 0.78,
                                   }}>
                                     {monitoringCards.map(p => (
-                                      <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} />
+                                      <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} tierWindows={displayTierWindows} />
                                     ))}
                                   </div>
                                 </div>

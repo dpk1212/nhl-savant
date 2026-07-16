@@ -1379,6 +1379,8 @@ export function LivePositionCardView({ f, markets, onMarket }) {
             />
           )}
 
+          {!isWatch && f.units > 0 && <TierPerfStrip tierPerf={f.tierPerf} compact />}
+
           <p style={{ margin: '10px 0 0', fontSize: '0.88rem', lineHeight: 1.5, maxWidth: 460 }}>
             <span style={{ color: C.text, fontWeight: 700 }}>{verdict.lead}</span>
             {' '}
@@ -1913,6 +1915,58 @@ function KeyReadCell({ label, value, color = C.text, sub }) {
   );
 }
 
+/** Display-tier L7/L30 strip — same buckets as the Tier Performance scoreboard. */
+function TierPerfStrip({ tierPerf, compact }) {
+  if (!tierPerf || !(tierPerf.n > 0) || tierPerf.wr == null) return null;
+  const roi = tierPerf.roi;
+  const roiColor = Number.isFinite(roi) ? (roi >= 0 ? B.profit : B.loss) : C.textMuted;
+  const accent = tierPerf.color || B.gold;
+  return (
+    <div style={{
+      marginTop: compact ? 8 : 12,
+      padding: compact ? '8px 10px' : '10px 12px',
+      borderRadius: 10,
+      background: `linear-gradient(135deg, ${accent}14 0%, rgba(255,255,255,0.02) 100%)`,
+      border: `1px solid ${accent}44`,
+      fontFeatureSettings: "'tnum'",
+    }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+        marginBottom: 5,
+      }}>
+        <span style={{
+          fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.12em', color: accent,
+        }}>
+          {tierPerf.label} · {tierPerf.window}
+        </span>
+        <span style={{ fontSize: '0.5rem', fontWeight: 700, color: C.textFaint }}>
+          {tierPerf.n} graded
+        </span>
+      </div>
+      <div style={{
+        display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '6px 12px',
+      }}>
+        <span style={{ fontSize: compact ? '0.95rem' : '1.05rem', fontWeight: 900, color: C.text }}>
+          {tierPerf.record}
+        </span>
+        <span style={{ fontSize: '0.72rem', fontWeight: 800, color: C.textSec }}>
+          {tierPerf.wr}% W
+        </span>
+        {Number.isFinite(roi) && (
+          <span style={{ fontSize: '0.78rem', fontWeight: 900, color: roiColor }}>
+            {roi >= 0 ? '+' : ''}{roi}% ROI
+          </span>
+        )}
+        {Number.isFinite(tierPerf.profitU) && (
+          <span style={{ fontSize: '0.62rem', fontWeight: 700, color: C.textMuted }}>
+            {tierPerf.profitU >= 0 ? '+' : ''}{tierPerf.profitU.toFixed(1)}u
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function LockedPositionCardView({ f, defaultExpanded = false }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const tracked = !(f.units > 0);
@@ -2069,6 +2123,9 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
     Number.isFinite(centsEdge) && centsEdge > 0 ? `${Math.round(centsEdge)}¢ better than fair` : null,
     Number.isFinite(f.hcMargin) && f.hcMargin >= 1 ? `HC +${f.hcMargin}` : null,
     Number.isFinite(f.edge) && f.edge > 0 ? `EDGE +${f.edge.toFixed(1)}` : null,
+    f.tierPerf?.wr != null
+      ? `${f.tierPerf.label} ${f.tierPerf.window} ${f.tierPerf.wr}% W`
+      : null,
   ].filter(Boolean);
 
   const keyReads = [
@@ -2287,6 +2344,8 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
               )}
             </div>
           )}
+
+          {!tracked && <TierPerfStrip tierPerf={f.tierPerf} />}
         </div>
       </div>
 

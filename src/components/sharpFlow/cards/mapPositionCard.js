@@ -129,6 +129,7 @@ export function mapLockedPickToCardFixture(pick, {
   isSportWinner,
   getRecordForDisplay,
   record30d = null,
+  tierPerf = null,
 } = {}) {
   const units = Number.isFinite(pick.units) ? pick.units : 0;
   const odds = Number.isFinite(pick.odds) ? pick.odds : null;
@@ -278,6 +279,7 @@ export function mapLockedPickToCardFixture(pick, {
     // Odds we "got" at lock vs fair/pinnacle for the price-check strip.
     gotOdds: lockOdds,
     fairLine: Number.isFinite(pick.pinnacleOdds) ? pick.pinnacleOdds : peakOdds,
+    tierPerf: tierPerf || null,
   };
 }
 
@@ -319,6 +321,7 @@ export function mapLiveGameToCardFixture({
   pinSeries,
   mapWallets, // both-sides enriched wallets (each tagged side:'away'|'home') for the quadrant map
   commenceMs, // game start epoch ms — ticket stub uses this for the T-15 freeze countdown
+  tierPerf, // display-tier L7/L30 { label, window, record, wr, roi, n, color }
 }) {
   const isTotal = marketType === 'TOTAL';
   const awayShort = isTotal ? 'Under' : shortTeam(gd.away);
@@ -393,5 +396,6 @@ export function mapLiveGameToCardFixture({
     // Real Pinnacle odds series for our side (null hides the charts).
     pinSeries: Array.isArray(pinSeries) && pinSeries.length >= 2 ? pinSeries : null,
     commenceMs: Number.isFinite(commenceMs) ? commenceMs : null,
+    tierPerf: tierPerf || null,
   };
 }
