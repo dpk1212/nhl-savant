@@ -192,18 +192,20 @@ function WalletListRow({ w, side, sport, accent, defaultOpen = false }) {
             {sizedUp && <span style={{ fontSize: '0.5rem', fontWeight: 800, color: accent }}>High conviction</span>}
           </div>
           <div style={{ fontSize: '0.58rem', color: C.textMuted, marginTop: 2, fontFeatureSettings: "'tnum'" }}>
-            {w.record} · {w.wr}% win · <span style={{ color: C.green }}>+{w.dollarRoi ?? w.roi}% ROI</span>
+            {w.record}{Number.isFinite(w.wr) ? ` · ${w.wr}% win` : ''} · <span style={{ color: C.green }}>+{w.dollarRoi ?? w.roi}% ROI</span>
           </div>
         </div>
-        <div style={{ textAlign: 'right', flexShrink: 0, minWidth: 56 }}>
-          <div style={{
-            fontSize: '0.62rem', fontWeight: 800, color: sizedUp ? accent : C.textSec,
-            fontFeatureSettings: "'tnum'",
-          }}>
-            {w.sizeRatio.toFixed(1)}×
+        {Number.isFinite(w.sizeRatio) && (
+          <div style={{ textAlign: 'right', flexShrink: 0, minWidth: 56 }}>
+            <div style={{
+              fontSize: '0.62rem', fontWeight: 800, color: sizedUp ? accent : C.textSec,
+              fontFeatureSettings: "'tnum'",
+            }}>
+              {w.sizeRatio.toFixed(1)}×
+            </div>
+            <div style={{ fontSize: '0.48rem', color: C.textFaint, marginTop: 1 }}>vs usual</div>
           </div>
-          <div style={{ fontSize: '0.48rem', color: C.textFaint, marginTop: 1 }}>vs usual</div>
-        </div>
+        )}
         <div style={{
           flexShrink: 0, padding: '6px 10px', borderRadius: 8,
           background: sizedUp ? accent : 'rgba(255,255,255,0.08)',
@@ -223,10 +225,12 @@ function WalletListRow({ w, side, sport, accent, defaultOpen = false }) {
       </button>
       {open && (
         <div style={{ padding: '0 0 12px' }}>
-          <DetailRow label="Size vs usual" value={`${w.sizeRatio.toFixed(1)}× · ${sizeLabel}`} color={sizedUp ? accent : C.text} />
-          <DetailRow label={`Usual ${sport} bet`} value={fmtMoney(w.avgSportBet)} />
-          <DetailRow label="This ticket" value={`${side} @ ${w.cents}¢`} />
-          <DetailRow label="Beats the close" value={`${w.priorClvPct}% of the time`} />
+          {Number.isFinite(w.sizeRatio) && (
+            <DetailRow label="Size vs usual" value={`${w.sizeRatio.toFixed(1)}× · ${sizeLabel}`} color={sizedUp ? accent : C.text} />
+          )}
+          {w.avgSportBet != null && <DetailRow label={`Usual ${sport} bet`} value={fmtMoney(w.avgSportBet)} />}
+          {w.cents != null && <DetailRow label="This ticket" value={`${side} @ ${w.cents}¢`} />}
+          {Number.isFinite(w.priorClvPct) && <DetailRow label="Beats the close" value={`${w.priorClvPct}% of the time`} />}
           <DetailRow
             label="Ticket P&L"
             value={`${w.pnl >= 0 ? '+' : ''}${fmtMoney(w.pnl)}`}
@@ -313,8 +317,8 @@ function ZoneHead({ children, right, accent }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 }}>
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
-        <span style={{ width: 3, height: 10, borderRadius: 2, background: accent, boxShadow: `0 0 8px ${accent}88` }} />
-        <span style={{ fontSize: '0.56rem', fontWeight: 800, letterSpacing: '0.14em', color: C.textMuted }}>
+        <span style={{ width: 3, height: 11, borderRadius: 2, background: accent, boxShadow: `0 0 8px ${accent}88` }} />
+        <span style={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.14em', color: C.textSec }}>
           {children}
         </span>
       </span>
@@ -350,21 +354,21 @@ function BattleRowV12({ label, tag, awayVal, homeVal, awayNum, homeNum, accent, 
         marginBottom: 7, fontFeatureSettings: "'tnum'",
       }}>
         <span style={{
-          fontSize: '0.82rem', fontWeight: 800, letterSpacing: '-0.02em',
+          fontSize: '0.98rem', fontWeight: 800, letterSpacing: '-0.02em',
           color: !homeWins ? C.text : C.textMuted,
         }}>{awayVal}</span>
-        <span style={{ fontSize: '0.52rem', fontWeight: 800, letterSpacing: '0.12em', color: C.textFaint, textAlign: 'center' }}>
+        <span style={{ fontSize: '0.58rem', fontWeight: 800, letterSpacing: '0.12em', color: C.textMuted, textAlign: 'center' }}>
           {label}
           {tag && (
             <span style={{
               marginLeft: 7, padding: '2px 6px', borderRadius: 5, letterSpacing: '0.04em',
               background: `${tag.color}18`, color: tag.color, border: `1px solid ${tag.color}38`,
-              fontSize: '0.48rem',
+              fontSize: '0.52rem',
             }}>{tag.text}</span>
           )}
         </span>
         <span style={{
-          fontSize: '0.82rem', fontWeight: 800, letterSpacing: '-0.02em',
+          fontSize: '0.98rem', fontWeight: 800, letterSpacing: '-0.02em',
           color: homeWins ? C.text : C.textMuted,
         }}>{homeVal}</span>
       </div>
@@ -426,13 +430,13 @@ function BattleHeader({ f, accent }) {
               )}
             </div>
             <div style={{
-              fontSize: '1.35rem', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1,
+              fontSize: '1.65rem', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1,
               fontFeatureSettings: "'tnum'", color: ours ? C.text : C.textMuted,
               textShadow: ours ? `0 0 30px ${accent}55` : 'none',
             }}>
               {fmtMoney(c.s.invested)}
             </div>
-            <div style={{ fontSize: '0.55rem', color: ours ? C.textSec : C.textFaint, marginTop: 5 }}>
+            <div style={{ fontSize: '0.64rem', color: ours ? C.textSec : C.textFaint, marginTop: 6 }}>
               {c.s.sharps} proven · +{fmtMoney(c.s.pnl)} life
             </div>
           </div>
@@ -530,8 +534,10 @@ function TapeMeter({ tapeScore, action }) {
 }
 
 function ConvictionRow({ w, accent, maxRatio, last }) {
+  const hasRatio = Number.isFinite(w.sizeRatio);
+  const hasClv = Number.isFinite(w.priorClvPct);
   const ratioColor = w.sizeRatio >= 1.5 ? B.profit : w.sizeRatio >= 1 ? accent : C.textMuted;
-  const barPct = Math.min(100, (w.sizeRatio / Math.max(maxRatio, 1.01)) * 100);
+  const barPct = hasRatio ? Math.min(100, (w.sizeRatio / Math.max(maxRatio, 1.01)) * 100) : 0;
   return (
     <div style={{ padding: '11px 0', borderBottom: last ? 'none' : `1px solid ${C.hairSoft}` }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
@@ -540,33 +546,42 @@ function ConvictionRow({ w, accent, maxRatio, last }) {
           background: `hsl(${(parseInt(w.short, 16) || 0) % 360} 46% 62%)`,
           boxShadow: `0 0 8px hsl(${(parseInt(w.short, 16) || 0) % 360} 46% 62% / 0.6)`,
         }} />
-        <span style={{ fontFamily: MONO, fontSize: '0.64rem', fontWeight: 700, color: C.text }}>…{w.short}</span>
-        <span style={{ fontSize: '0.5rem', fontWeight: 800, letterSpacing: '0.08em', color: B.profit }}>PROVEN</span>
+        <span style={{ fontFamily: MONO, fontSize: '0.72rem', fontWeight: 700, color: C.text }}>…{w.short}</span>
+        <span style={{ fontSize: '0.54rem', fontWeight: 800, letterSpacing: '0.08em', color: B.profit }}>PROVEN</span>
         <span style={{ flex: 1 }} />
         <span style={{
-          fontSize: '0.6rem', fontWeight: 800, fontFeatureSettings: "'tnum'",
+          fontSize: '0.66rem', fontWeight: 800, fontFeatureSettings: "'tnum'",
           color: w.dollarRoi >= 0 ? B.profit : B.loss, marginRight: 10,
         }}>
           {w.dollarRoi >= 0 ? '+' : ''}{w.dollarRoi}% ROI
         </span>
-        <span style={{ fontSize: '0.76rem', fontWeight: 800, fontFeatureSettings: "'tnum'" }}>{fmtMoney(w.invested)}</span>
+        <span style={{ fontSize: '0.86rem', fontWeight: 800, fontFeatureSettings: "'tnum'" }}>{fmtMoney(w.invested)}</span>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ flex: 1, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-          <div className="pos-bar" style={{
-            width: `${barPct}%`, height: '100%', borderRadius: 2,
-            background: `linear-gradient(90deg, ${ratioColor}44, ${ratioColor})`,
-          }} />
+      {(hasRatio || hasClv) && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {hasRatio && (
+            <>
+              <div style={{ flex: 1, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                <div className="pos-bar" style={{
+                  width: `${barPct}%`, height: '100%', borderRadius: 2,
+                  background: `linear-gradient(90deg, ${ratioColor}44, ${ratioColor})`,
+                }} />
+              </div>
+              <span style={{
+                fontSize: '0.7rem', fontWeight: 800, color: ratioColor,
+                fontFeatureSettings: "'tnum'", minWidth: 64, textAlign: 'right',
+              }}>{w.sizeRatio.toFixed(1)}× usual</span>
+            </>
+          )}
+          {!hasRatio && <span style={{ flex: 1 }} />}
+          {hasClv && (
+            <span style={{
+              fontSize: '0.62rem', color: w.priorClvPct >= 55 ? C.textSec : C.textMuted,
+              fontFeatureSettings: "'tnum'", minWidth: 86, textAlign: 'right',
+            }}>beats close {w.priorClvPct}%</span>
+          )}
         </div>
-        <span style={{
-          fontSize: '0.66rem', fontWeight: 800, color: ratioColor,
-          fontFeatureSettings: "'tnum'", minWidth: 64, textAlign: 'right',
-        }}>{w.sizeRatio.toFixed(1)}× usual</span>
-        <span style={{
-          fontSize: '0.58rem', color: w.priorClvPct >= 55 ? C.textSec : C.textMuted,
-          fontFeatureSettings: "'tnum'", minWidth: 86, textAlign: 'right',
-        }}>beats close {w.priorClvPct}%</span>
-      </div>
+      )}
     </div>
   );
 }
@@ -620,11 +635,13 @@ function MarketRail({ markets, activeId, onSelect }) {
 
 export function LivePositionCardView({ f, markets, onMarket }) {
   const meta = PROPOSED_META[f.displayState] || PROPOSED_META.PLAY;
-  const accent = meta.color;
   const playSide = f.side === 'home' ? f.homeShort : f.awayShort;
   const playIsHome = f.side === 'home';
   const isMuted = f.displayState === 'MUTED';
   const isWatch = f.units <= 0 && !isMuted;
+  // The battle is the product. Watch cards keep the champagne accent so the
+  // side-v-side money stays lit; only the state pill goes gray.
+  const accent = isWatch ? B.gold : meta.color;
   const hasEdge = Number.isFinite(f.edge);
   const hasClv = Number.isFinite(f.netClv);
   const hasTape = Number.isFinite(f.tapeScore);
@@ -642,12 +659,14 @@ export function LivePositionCardView({ f, markets, onMarket }) {
     : null;
 
   // Proprietary skill splits — FOR vs AGAINST, mapped onto away/home lanes.
-  // Only rendered when the stamps are actually on the pick (no fake zeros).
-  const showWrRow = hasEdge && f.wallets.length > 0;
-  const showClvRow = hasClv && f.wallets.length > 0;
-  const forWr = Math.round(f.wallets.reduce((s, w) => s + (w.wr || 0), 0) / Math.max(1, f.wallets.length));
+  // Only rendered when the stamps AND wallet stats actually exist (no fake zeros).
+  const wrVals = f.wallets.map((w) => w.wr).filter(Number.isFinite);
+  const clvVals = f.wallets.map((w) => w.priorClvPct).filter(Number.isFinite);
+  const showWrRow = hasEdge && wrVals.length > 0;
+  const showClvRow = hasClv && clvVals.length > 0;
+  const forWr = wrVals.length ? Math.round(wrVals.reduce((s, v) => s + v, 0) / wrVals.length) : 0;
   const agWr = Math.round(forWr - (f.edge || 0));
-  const forClv = Math.round(f.wallets.reduce((s, w) => s + (w.priorClvPct || 0), 0) / Math.max(1, f.wallets.length));
+  const forClv = clvVals.length ? Math.round(clvVals.reduce((s, v) => s + v, 0) / clvVals.length) : 0;
   const agClv = Math.round(forClv - (f.netClv || 0));
   const lane = (forV, agV) => (playIsHome ? { away: agV, home: forV } : { away: forV, home: agV });
   const wrLane = lane(forWr, agWr);
@@ -660,7 +679,7 @@ export function LivePositionCardView({ f, markets, onMarket }) {
       return `${winners}, but the skill read is weak, so we passed.`;
     }
     if (isWatch) {
-      return `${winners}${vault ? `, ${vault}` : ''}. Tracked, not staked. We follow the money until a stake path fires.`;
+      return `${winners}${vault ? `, ${vault}` : ''}. The money hasn't crossed a stake path yet, so we watch.`;
     }
     const base = `${winners}${vault ? `, ${vault}` : ''}.`;
     if (f.tapeAction === 'boost') return `${base} The skill read is strong, so we ${sizeWord}.`;
@@ -672,9 +691,8 @@ export function LivePositionCardView({ f, markets, onMarket }) {
 
   return (
     <div style={{
-      borderRadius: 20, overflow: 'hidden',
-      background: 'linear-gradient(165deg, #12172400 0%, #0a0e18 0%), linear-gradient(160deg, rgba(26,31,46,0.85) 0%, rgba(14,18,28,0.97) 55%, rgba(10,13,22,1) 100%)',
-      border: `1px solid ${meta.border}`, position: 'relative',
+      borderRadius: 24, overflow: 'hidden', background: '#000',
+      border: `1px solid ${isWatch ? 'rgba(212,175,55,0.18)' : meta.border}`, position: 'relative',
       boxShadow: '0 40px 80px -36px rgba(0,0,0,0.98), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.06)',
     }}>
       <CardStyles />
@@ -695,7 +713,7 @@ export function LivePositionCardView({ f, markets, onMarket }) {
       <div {...zone(0)}>
         <div style={{ padding: '22px 20px 20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <span style={{ fontSize: '0.54rem', fontWeight: 800, letterSpacing: '0.14em', color: C.textMuted }}>
+            <span style={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.12em', color: C.textMuted }}>
               {f.sport}
               <span style={{ color: isLive ? B.loss : C.textFaint, marginLeft: 9 }}>
                 {isLive && (
@@ -708,14 +726,24 @@ export function LivePositionCardView({ f, markets, onMarket }) {
               </span>
               <span style={{ color: C.textFaint, marginLeft: 9 }}>{f.away} @ {f.home}</span>
             </span>
-            <span style={{
-              fontSize: '0.58rem', fontWeight: 900, letterSpacing: '0.08em',
-              padding: '5px 12px', borderRadius: 8, color: '#06100a',
-              background: `linear-gradient(180deg, ${accent === B.gold ? B.goldHi : accent} 0%, ${accent} 55%, ${accent}bb 100%)`,
-              boxShadow: `0 10px 28px -10px ${accent}, inset 0 1px 0 rgba(255,255,255,0.4)`,
-            }}>
-              {meta.pill}
-            </span>
+            {isWatch ? (
+              <span style={{
+                fontSize: '0.58rem', fontWeight: 900, letterSpacing: '0.08em',
+                padding: '5px 12px', borderRadius: 8, color: '#aeb8cb',
+                background: 'rgba(139,150,171,0.10)', border: '1px solid rgba(139,150,171,0.26)',
+              }}>
+                {meta.pill}
+              </span>
+            ) : (
+              <span style={{
+                fontSize: '0.58rem', fontWeight: 900, letterSpacing: '0.08em',
+                padding: '5px 12px', borderRadius: 8, color: '#06100a',
+                background: `linear-gradient(180deg, ${accent === B.gold ? B.goldHi : accent} 0%, ${accent} 55%, ${accent}bb 100%)`,
+                boxShadow: `0 10px 28px -10px ${accent}, inset 0 1px 0 rgba(255,255,255,0.4)`,
+              }}>
+                {meta.pill}
+              </span>
+            )}
           </div>
 
           {markets && markets.length > 1 && (
@@ -725,22 +753,30 @@ export function LivePositionCardView({ f, markets, onMarket }) {
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 20 }}>
             <div>
               <div style={{
-                fontSize: '1.3rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 10,
+                fontSize: '1.45rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 10,
               }}>
                 {f.pickLabel}
-                <span style={{ fontSize: '0.88rem', color: C.textSec, fontWeight: 700, marginLeft: 9, fontFeatureSettings: "'tnum'" }}>
+                <span style={{ fontSize: '0.95rem', color: C.textSec, fontWeight: 700, marginLeft: 9, fontFeatureSettings: "'tnum'" }}>
                   {fmtOdds(f.odds)}
                 </span>
               </div>
               {isWatch ? (
                 <div>
                   <div style={{
-                    fontSize: '2.1rem', fontWeight: 800, letterSpacing: '-0.045em', lineHeight: 1,
-                    fontFeatureSettings: "'tnum'", color: C.textSec,
+                    fontSize: '3.4rem', fontWeight: 800, letterSpacing: '-0.06em', lineHeight: 0.9,
+                    fontFeatureSettings: "'tnum'",
+                    filter: `drop-shadow(0 0 26px ${accent}40)`,
                   }}>
-                    No ticket
+                    <span style={{
+                      background: 'linear-gradient(180deg, #ffffff 12%, #b9c6dc 100%)',
+                      WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                    }}>
+                      {fmtMoney(f.sideInvested)}
+                    </span>
                   </div>
-                  <div style={{ fontSize: '0.6rem', color: C.textMuted, marginTop: 8 }}>tracked, not staked</div>
+                  <div style={{ fontSize: '0.66rem', color: C.textMuted, marginTop: 8 }}>
+                    sharp money on <span style={{ color: accent, fontWeight: 800 }}>{playSide}</span>
+                  </div>
                 </div>
               ) : (
                 <div>
@@ -759,7 +795,7 @@ export function LivePositionCardView({ f, markets, onMarket }) {
                     </span>
                     <span style={{ fontSize: '1.1rem', fontWeight: 700, color: C.textMuted, marginLeft: 5 }}>u</span>
                   </div>
-                  <div style={{ fontSize: '0.6rem', color: C.textMuted, marginTop: 8 }}>
+                  <div style={{ fontSize: '0.66rem', color: C.textMuted, marginTop: 8 }}>
                     {f.units > 0 ? 'our ticket' : 'we passed'}
                   </div>
                 </div>
@@ -767,30 +803,43 @@ export function LivePositionCardView({ f, markets, onMarket }) {
             </div>
             <div style={{ flex: 1 }} />
             <div style={{ textAlign: 'right', paddingBottom: 5 }}>
-              <div style={{
-                fontSize: '1.2rem', fontWeight: 800, color: f.units > 0 ? B.profit : C.textMuted,
-                fontFeatureSettings: "'tnum'", letterSpacing: '-0.03em',
-              }}>
-                {f.units > 0 ? `+${f.toWin.toFixed(2)}u` : '—'}
-              </div>
-              <div style={{ fontSize: '0.6rem', color: C.textMuted, marginTop: 5, marginBottom: 10 }}>to win</div>
-              <div style={{ fontSize: '0.62rem', fontWeight: 700 }}>
-                {isWatch ? (
-                  <span style={{ color: C.textMuted }}>Watching the money</span>
-                ) : (
-                  <>
+              {isWatch ? (
+                <>
+                  <div style={{
+                    fontSize: '1.7rem', fontWeight: 800, color: C.text,
+                    fontFeatureSettings: "'tnum'", letterSpacing: '-0.03em',
+                  }}>
+                    {f.confirmedOnSide}
+                  </div>
+                  <div style={{ fontSize: '0.62rem', color: C.textMuted, marginTop: 5, marginBottom: 10 }}>
+                    proven winner{f.confirmedOnSide === 1 ? '' : 's'}
+                  </div>
+                  <div style={{ fontSize: '0.62rem', fontWeight: 700, color: C.textMuted }}>
+                    no ticket yet
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{
+                    fontSize: '1.2rem', fontWeight: 800, color: f.units > 0 ? B.profit : C.textMuted,
+                    fontFeatureSettings: "'tnum'", letterSpacing: '-0.03em',
+                  }}>
+                    {f.units > 0 ? `+${f.toWin.toFixed(2)}u` : '—'}
+                  </div>
+                  <div style={{ fontSize: '0.6rem', color: C.textMuted, marginTop: 5, marginBottom: 10 }}>to win</div>
+                  <div style={{ fontSize: '0.62rem', fontWeight: 700 }}>
                     <span style={{ color: C.textMuted }}>{f.stakePath}</span>
                     <span style={{ color: C.textFaint }}> · </span>
                     <span style={{ color: sizeColor }}>
                       {f.tapeAction === 'boost' ? 'Sized up' : f.tapeAction === 'mute' ? 'Pass' : 'Standard'}
                     </span>
-                  </>
-                )}
-              </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
-          <p style={{ margin: '16px 0 0', fontSize: '0.84rem', color: '#c6d0e2', lineHeight: 1.55, maxWidth: 420 }}>
+          <p style={{ margin: '16px 0 0', fontSize: '0.92rem', color: '#c6d0e2', lineHeight: 1.55, maxWidth: 460 }}>
             {verdict}
           </p>
         </div>
@@ -914,7 +963,7 @@ export function LivePositionCardView({ f, markets, onMarket }) {
           </ZoneHead>
 
           {isWatch ? (
-            <p style={{ fontSize: '0.72rem', color: C.textSec, lineHeight: 1.6, margin: 0 }}>
+            <p style={{ fontSize: '0.8rem', color: C.textSec, lineHeight: 1.6, margin: 0 }}>
               The money on this game hasn't crossed a stake path yet. We track it for context
               and only put units down when proven winners commit at real size.
             </p>
@@ -1193,7 +1242,8 @@ function JourneyStop({ label, time, odds, color, active }) {
 
 export function LockedPositionCardView({ f }) {
   const tracked = !(f.units > 0);
-  const accent = tracked ? '#8b96ab' : B.gold;
+  // Champagne accents stay even on tracked picks; only the pill goes gray.
+  const accent = B.gold;
   const playSide = f.side === 'home' ? f.homeShort : f.awayShort;
   const riskAnim = useCountUp(f.units, true, 1000);
   const clvGood = f.clvPct >= 0;
@@ -1214,8 +1264,7 @@ export function LockedPositionCardView({ f }) {
 
   return (
     <div style={{
-      borderRadius: 20, overflow: 'hidden',
-      background: 'linear-gradient(165deg, #12172400 0%, #0a0e18 0%), linear-gradient(160deg, rgba(26,31,46,0.85) 0%, rgba(14,18,28,0.97) 55%, rgba(10,13,22,1) 100%)',
+      borderRadius: 24, overflow: 'hidden', background: '#000',
       border: `1px solid ${tracked ? 'rgba(139,150,171,0.26)' : 'rgba(212,175,55,0.32)'}`, position: 'relative',
       boxShadow: '0 40px 80px -36px rgba(0,0,0,0.98), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.06)',
     }}>
@@ -1236,7 +1285,7 @@ export function LockedPositionCardView({ f }) {
       <div {...zone(0)}>
         <div style={{ padding: '22px 20px 20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <span style={{ fontSize: '0.54rem', fontWeight: 800, letterSpacing: '0.14em', color: C.textMuted }}>
+            <span style={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.12em', color: C.textMuted }}>
               {f.sport}
               <span style={{ color: C.textFaint, marginLeft: 9 }}>{f.away} @ {f.home}</span>
               <span style={{ color: C.textFaint, marginLeft: 9 }}>{f.gameTime}</span>
@@ -1335,7 +1384,7 @@ export function LockedPositionCardView({ f }) {
             </div>
           </div>
 
-          <p style={{ margin: '16px 0 0', fontSize: '0.84rem', color: '#c6d0e2', lineHeight: 1.55, maxWidth: 420 }}>
+          <p style={{ margin: '16px 0 0', fontSize: '0.92rem', color: '#c6d0e2', lineHeight: 1.55, maxWidth: 460 }}>
             {verdict}
           </p>
 

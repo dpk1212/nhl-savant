@@ -52,17 +52,19 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
       const positions = sportRec?.positions;
       const wr = Number.isFinite(picks?.wr) ? picks.wr
         : Number.isFinite(positions?.wr) ? positions.wr
-        : Number.isFinite(w.wr) ? w.wr : 55;
+        : Number.isFinite(w.wr) ? w.wr : null;
       const dollarRoi = Number.isFinite(positions?.dollarRoi) ? Math.round(positions.dollarRoi)
         : Number.isFinite(w.dollarRoi) ? Math.round(w.dollarRoi)
         : Number.isFinite(w.roi) ? Math.round(w.roi) : 0;
+      // null when we genuinely don't know — the card hides the element
+      // instead of showing a fabricated "1.0x usual / beats close 55%".
       const sizeRatio = Number.isFinite(w.sizeRatio) ? w.sizeRatio
         : (w.invested && sportRec?.positions?.avgInvested)
           ? w.invested / sportRec.positions.avgInvested
-          : 1;
+          : null;
       const priorClvPct = Number.isFinite(w.priorClvPct) ? Math.round(w.priorClvPct)
         : Number.isFinite(w.causalPctPos) ? Math.round(w.causalPctPos)
-        : 55;
+        : null;
       const proven = isSportWinner ? isSportWinner(short, sport) : true;
       return {
         short,
@@ -75,7 +77,7 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
           : positions?.n
             ? `${positions.wins || 0}-${positions.losses || 0}`
             : (w.record || '—'),
-        wr: Math.round(wr),
+        wr: Number.isFinite(wr) ? Math.round(wr) : null,
         roi: Number.isFinite(picks?.flatRoi) ? Math.round(picks.flatRoi) : dollarRoi,
         dollarRoi,
         invested: w.invested || 0,
