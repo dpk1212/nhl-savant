@@ -2810,6 +2810,20 @@ async function main() {
   const rawPositions = [];
   posSnap.forEach(d => rawPositions.push({ _id: d.id, ...d.data() }));
 
+  // Live consensus only uses open PENDING rows. EXITED is stamped by
+  // writeSharpActions when a scanned wallet no longer holds the asset;
+  // GRADED is post-settle. Both must stay out of HC / RANK / AGS.
+  let prunedClosed = 0;
+  const openOnly = rawPositions.filter((p) => {
+    const st = p.status || 'PENDING';
+    if (st === 'PENDING') return true;
+    prunedClosed++;
+    return false;
+  });
+  if (prunedClosed > 0) {
+    console.log(`  ↳ pruned ${prunedClosed} non-PENDING position(s) (EXITED/GRADED/other)`);
+  }
+
   // ── Exclusion list (same as writeSharpActions + Sharp Flow UI) ──────────
   // MM + clear-trader wallets land in sharp_intel_excluded_wallets.json.
   // writeSharpActions skips them on *new* writes, but PENDING docs written
@@ -2831,46 +2845,28 @@ async function main() {
   }
   let prunedExcluded = 0;
   const rawAfterExclusion = excludedSet
-    ? rawPositions.filter((p) => {
+    ? openOnly.filter((p) => {
         const w = String(p.wallet || '').toLowerCase();
         if (w && excludedSet.has(w)) { prunedExcluded++; return false; }
         return true;
       })
-    : rawPositions;
+    : openOnly;
   if (prunedExcluded > 0) {
     console.log(`  ↳ pruned ${prunedExcluded} excluded wallet position(s) (MM/trader list)`);
   }
 
   // ── Stale-position freshness filter ────────────────────────────────────
-  // writeSharpActions doesn't delete positions when a wallet closes them
-  // (the scanner only reports OPEN positions, so a closed position simply
-  // disappears from subsequent scans without ever being marked closed in
-  // Firestore). That's how 52aeeb on cle_det/SPREAD/home shows up at
-  // updatedAt=6:04 PM (its last scan-of-record) while the wallet has
-  // since flipped to away — the home doc is a phantom that
-  // buildPeakStatsFromPositions would happily add into the proven-NBA
-  // total, double-counting the same wallet on both sides and inflating
-  // peak.totalInvested.
+  // Safety net for wallets that were NOT successfully scanned this cycle
+  // (API failure / rate limit). True closes are stamped EXITED by
+  // writeSharpActions via scanHeartbeat (asset absent after ok fetch) and
+  // already filtered above. Freshness only covers scanner silence.
   //
   // 2026-05-10 — widened from 90s → 30 min. The original 90s window
   // assumed every wallet gets re-scanned every cycle. In reality the
-  // Polymarket activity feed is rate-limited and noisy: wallets that
-  // didn't trade this cycle simply don't reappear in the new scan,
-  // even when they're still holding the same position. The 90s window
-  // was treating "scanner silence" as "wallet exited" and pruning
-  // legitimate live positions, which then demoted LOCKED picks to
-  // SHADOW pre-T-15 (Tampa Bay Rays / Toronto Blue Jays / COL-PHI /
-  // HOU-CIN incidents on 2026-05-10 all had this signature: forW
-  // collapsed because b19a27 + others were stale-pruned despite
-  // currently holding positions worth $20k–$269k each).
-  //
-  // 30 min ≈ 4 cron cycles, which is generous enough to ride out a
-  // wallet that goes 2-3 scans without showing up in the activity feed
-  // but still tight enough that an actually-closed position will fall
-  // out within ~half a game window. The proper fix is a per-wallet
-  // scan heartbeat in writeSharpActions so we can distinguish "wallet
-  // scanned, no position" (true exit) from "wallet not scanned"
-  // (presumed active) — see TODO_SCANNER_HEARTBEAT.md.
+  // Polymarket feed is rate-limited and noisy: wallets that didn't trade
+  // this cycle simply don't reappear, even when still holding. The 90s
+  // window treated silence as exit and demoted LOCKED picks pre-T-15.
+  // See docs/CLOSED_POSITIONS.md.
   const tsMs = (p) => {
     const ts = p.updatedAt;
     if (!ts) return 0;

@@ -5,7 +5,10 @@
  * applies the same 0.75x avg-bet filter as the UI, and writes each qualifying
  * position to Firestore collection `sharp_action_positions`.
  *
- * Idempotent: skips documents that already exist for the same wallet/game/side/market.
+ * Idempotent upserts for open positions. After the write pass, stamps EXITED
+ * on PENDING docs whose wallet was successfully scanned this cycle and whose
+ * Polymarket `asset` (or soft key, for legacy docs) is no longer open.
+ * Scanner silence (wallet not in scanHeartbeat.okWallets) does NOT exit.
  *
  * Usage: node scripts/writeSharpActions.js
  * Schedule: run after scan-sharp-positions (every 2h)
@@ -74,6 +77,36 @@ function americanOddsFromProb(prob) {
 
 function todayStr() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function positionDocId(pos) {
+  return `${pos.date}_${pos.sport}_${pos.gameKey}_${pos.wallet.slice(-8)}_${pos.marketType}_${pos.side}`;
+}
+
+/** Soft key used when a legacy PENDING doc has no Polymarket asset id yet. */
+function softPositionKey(wallet, sport, gameKey, marketType, side) {
+  return `${String(wallet || '').toLowerCase()}|${sport}|${gameKey}|${marketType}|${side}`;
+}
+
+/**
+ * Collect soft keys for every position in the scan JSONs (not just SHADOW+).
+ * Used as EXITED fallback when asset is missing on the Firestore doc.
+ */
+function collectScanSoftKeys(posFiles) {
+  const keys = new Set();
+  for (const { data: posData, mkt } of posFiles) {
+    if (!posData) continue;
+    for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'NFL', 'SOC', 'UFC', 'WNBA']) {
+      const sportGames = posData[sport] || {};
+      for (const [gameKey, gd] of Object.entries(sportGames)) {
+        for (const pos of (gd.positions || [])) {
+          if (!pos.wallet || !pos.side) continue;
+          keys.add(softPositionKey(pos.wallet, sport, gameKey, mkt, pos.side));
+        }
+      }
+    }
+  }
+  return keys;
 }
 
 // ── V8 Wallet-Contribution Scoring (server-side port) ────────────────────────
@@ -683,6 +716,11 @@ async function main() {
             vault_hcMargin: vaultHc.hcMargin,
             vault_hcTier: vaultHc.hcTier,
             vault_isHcWallet: vaultHc.isHcWallet,
+            // Polymarket identity — deterministic EXITED matching
+            asset: pos.asset || null,
+            conditionId: pos.conditionId || null,
+            outcomeIndex: pos.outcomeIndex ?? null,
+            eventId: pos.eventId || null,
             status: 'PENDING',
             result: null,
             gradedAt: null,
@@ -701,8 +739,9 @@ async function main() {
   console.log(`Found ${positions.length} qualifying positions for Today's Action (VAULT=${vaultCt}, SHADOW=${shadowCt})`);
 
   // Write to Firebase in batches
-  let written = 0, skipped = 0, updated = 0;
+  let written = 0, skipped = 0, updated = 0, reopened = 0;
   const BATCH_SIZE = 400;
+  const presentDocIds = new Set(positions.map(positionDocId));
 
   for (let i = 0; i < positions.length; i += BATCH_SIZE) {
     const chunk = positions.slice(i, i + BATCH_SIZE);
@@ -710,7 +749,7 @@ async function main() {
     let batchOps = 0;
 
     for (const pos of chunk) {
-      const docId = `${pos.date}_${pos.sport}_${pos.gameKey}_${pos.wallet.slice(-8)}_${pos.marketType}_${pos.side}`;
+      const docId = positionDocId(pos);
       const ref = db.collection(COLLECTION).doc(docId);
       const existing = await ref.get();
 
@@ -882,6 +921,18 @@ async function main() {
         if (pos.entryLine != null) updatePayload.entryLine = pos.entryLine;
         if (pos.spreadLine != null && !data.spreadLine) updatePayload.spreadLine = pos.spreadLine;
         if (pos.totalLine != null && !data.totalLine) updatePayload.totalLine = pos.totalLine;
+        // Backfill Polymarket IDs once we have them (legacy PENDING docs).
+        if (pos.asset && !data.asset) updatePayload.asset = pos.asset;
+        if (pos.conditionId && !data.conditionId) updatePayload.conditionId = pos.conditionId;
+        if (pos.outcomeIndex != null && data.outcomeIndex == null) updatePayload.outcomeIndex = pos.outcomeIndex;
+        if (pos.eventId && !data.eventId) updatePayload.eventId = pos.eventId;
+        // Re-open if this wallet re-entered after an EXITED stamp.
+        if (data.status === 'EXITED') {
+          updatePayload.status = 'PENDING';
+          updatePayload.exitedAt = null;
+          updatePayload.exitReason = null;
+          reopened++;
+        }
         batch.update(ref, updatePayload);
         updated++;
       } else {
@@ -894,12 +945,102 @@ async function main() {
     if (batchOps > 0) await batch.commit();
   }
 
+  // ── Stamp EXITED for true closes (scan heartbeat required) ─────────────
+  const exited = await markExitedPositions(db, date, {
+    sharpPositions,
+    posFiles,
+    presentDocIds,
+  });
+
   console.log(`\nResults:`);
   console.log(`  Written:  ${written} new positions`);
   console.log(`  Updated:  ${updated} existing positions (live fields)`);
+  console.log(`  Reopened: ${reopened} EXITED → PENDING (position returned)`);
+  console.log(`  Exited:   ${exited} PENDING → EXITED (scanned, asset/soft-key gone)`);
   console.log(`  Skipped:  ${skipped} already graded`);
   console.log(`  Total:    ${positions.length}`);
   console.log(`\nDone.`);
+}
+
+/**
+ * Mark PENDING docs EXITED when their wallet was successfully scanned this
+ * cycle and the position is no longer open.
+ *
+ * Prefer asset identity from Polymarket. Soft-key fallback only for legacy
+ * docs that predate asset storage. Never exit on scanner silence.
+ */
+async function markExitedPositions(db, date, { sharpPositions, posFiles, presentDocIds }) {
+  const hb = sharpPositions?.scanHeartbeat;
+  const okWallets = new Set(
+    (Array.isArray(hb?.okWallets) ? hb.okWallets : []).map((w) => String(w || '').toLowerCase()).filter(Boolean),
+  );
+  if (okWallets.size === 0) {
+    console.log('EXITED pass skipped — no scanHeartbeat.okWallets (fail-safe; freshness prune still applies)');
+    return 0;
+  }
+
+  const openAssetsByWallet = {};
+  const rawAssets = hb?.openAssets && typeof hb.openAssets === 'object' ? hb.openAssets : {};
+  for (const [w, arr] of Object.entries(rawAssets)) {
+    openAssetsByWallet[String(w).toLowerCase()] = new Set(
+      (Array.isArray(arr) ? arr : []).map(String),
+    );
+  }
+  const scanSoftKeys = collectScanSoftKeys(posFiles);
+
+  const pendingSnap = await db.collection(COLLECTION)
+    .where('date', '==', date)
+    .where('status', '==', 'PENDING')
+    .get();
+
+  let exited = 0;
+  let batch = db.batch();
+  let batchOps = 0;
+
+  for (const doc of pendingSnap.docs) {
+    if (presentDocIds.has(doc.id)) continue; // still open / just refreshed
+    const data = doc.data() || {};
+    const wLower = String(data.wallet || '').toLowerCase();
+    if (!wLower || !okWallets.has(wLower)) continue; // not scanned this cycle
+
+    let shouldExit = false;
+    let exitReason = null;
+    if (data.asset) {
+      const stillOpen = openAssetsByWallet[wLower]?.has(String(data.asset));
+      if (!stillOpen) {
+        shouldExit = true;
+        exitReason = 'asset_absent';
+      }
+    } else {
+      const soft = softPositionKey(data.wallet, data.sport, data.gameKey, data.marketType, data.side);
+      if (!scanSoftKeys.has(soft)) {
+        shouldExit = true;
+        exitReason = 'soft_key_absent_legacy';
+      }
+    }
+    if (!shouldExit) continue;
+
+    batch.update(doc.ref, {
+      status: 'EXITED',
+      exitedAt: admin.firestore.FieldValue.serverTimestamp(),
+      exitReason,
+      // Keep size snapshot; stop looking "live" for freshness consumers.
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    batchOps++;
+    exited++;
+    if (batchOps >= 400) {
+      await batch.commit();
+      batch = db.batch();
+      batchOps = 0;
+    }
+  }
+
+  if (batchOps > 0) await batch.commit();
+  if (exited > 0) {
+    console.log(`EXITED stamp: ${exited} position(s) closed (okWallets=${okWallets.size})`);
+  }
+  return exited;
 }
 
 main().catch(err => {

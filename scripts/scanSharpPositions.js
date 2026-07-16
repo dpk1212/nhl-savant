@@ -711,6 +711,12 @@ async function run() {
   const result = { NHL: {}, CBB: {}, MLB: {}, NBA: {}, SOC: {}, UFC: {}, WNBA: {} };
   const spreadResult = { NHL: {}, CBB: {}, MLB: {}, NBA: {}, SOC: {}, UFC: {}, WNBA: {} };
   const totalResult = { NHL: {}, CBB: {}, MLB: {}, NBA: {}, SOC: {}, UFC: {}, WNBA: {} };
+  // Per-wallet open-asset inventory from this scan — writeSharpActions uses
+  // this to stamp EXITED when a previously-open token is gone after a
+  // successful fetch (true exit), vs wallets that never appeared this cycle
+  // (scanner silence — keep PENDING, freshness prune still applies).
+  const heartbeatOkWallets = new Set();
+  const heartbeatOpenAssets = {}; // walletLower → Set<assetId>
   let matchCount = 0;
   let spreadMatchCount = 0;
   let totalMatchCount = 0;
@@ -740,6 +746,16 @@ async function run() {
       console.log('no data');
       errorCount++;
       continue;
+    }
+
+    const wLower = (wallet.addr || '').toLowerCase();
+    if (wLower) {
+      heartbeatOkWallets.add(wLower);
+      const assetSet = heartbeatOpenAssets[wLower] || new Set();
+      for (const p of positions) {
+        if (p?.asset != null && p.asset !== '') assetSet.add(String(p.asset));
+      }
+      heartbeatOpenAssets[wLower] = assetSet;
     }
 
     let walletMatches = 0;
@@ -893,6 +909,11 @@ async function run() {
         pnl: Math.round(cashPnl),
         firstSeen: prevFirstSeen || new Date().toISOString(),
         ...(entryLine != null && { entryLine }),
+        // Polymarket position identity — used for deterministic EXITED stamps
+        ...(pos.asset != null && pos.asset !== '' && { asset: String(pos.asset) }),
+        ...(pos.conditionId != null && pos.conditionId !== '' && { conditionId: String(pos.conditionId) }),
+        ...(pos.outcomeIndex != null && pos.outcomeIndex !== '' && { outcomeIndex: Number(pos.outcomeIndex) }),
+        ...(pos.eventId != null && pos.eventId !== '' && { eventId: String(pos.eventId) }),
         sportPnl: eff.sportPnl,
         sportVerified: eff.sportVerified,
         sportROI: eff.sportROI,
@@ -1049,14 +1070,25 @@ async function run() {
   finalizeResult(spreadResult);
   finalizeResult(totalResult, true);
 
-  const meta = {
+  const openAssetsOut = {};
+  for (const [w, set] of Object.entries(heartbeatOpenAssets)) {
+    openAssetsOut[w] = [...set];
+  }
+  const scanHeartbeat = {
     scannedAt: new Date().toISOString(),
+    okWallets: [...heartbeatOkWallets],
+    openAssets: openAssetsOut,
+  };
+
+  const meta = {
+    scannedAt: scanHeartbeat.scannedAt,
     walletsScanned: walletsToScan.length,
     mmExcluded: mmFiltered.length,
     sportLosersExcluded: sportLosers.length,
     noSportExcluded: noSport.length,
     tradersExcluded: tradersRemoved,
     totalExcluded: mmFiltered.length + sportLosers.length + noSport.length + tradersRemoved,
+    scanHeartbeat,
   };
 
   Object.assign(result, meta);

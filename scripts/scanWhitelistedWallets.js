@@ -632,6 +632,10 @@ async function run() {
   let apiError = 0;
   let recoveredPositionsTotal = 0;
   const recoveredAll = []; // Flat list of all recovered positions (for merge step).
+  // Supplemental-scan heartbeat — merged into sharp_positions*.json so
+  // writeSharpActions can EXITED-stamp wallets the main scan missed.
+  const heartbeatOkWallets = new Set();
+  const heartbeatOpenAssets = {}; // walletLower → Set<assetId>
 
   console.log(`Promoted wallets total: ${whitelist.length}`);
   console.log(`Today's games: ${todayGamesCount}`);
@@ -706,6 +710,17 @@ async function run() {
 
     // Walk wallet's open positions, identify any that match today's games,
     // and build the full position object writeSharpActions expects.
+    // Always record a successful fetch into the scan heartbeat (even when
+    // nothing matches today) so writeSharpActions can stamp EXITED on
+    // previously-open docs for this wallet.
+    const wLower = fullAddr.toLowerCase();
+    heartbeatOkWallets.add(wLower);
+    const assetSet = heartbeatOpenAssets[wLower] || new Set();
+    for (const p of fetched.data) {
+      if (p?.asset != null && p.asset !== '') assetSet.add(String(p.asset));
+    }
+    heartbeatOpenAssets[wLower] = assetSet;
+
     const matched = [];
     for (const pos of fetched.data) {
       const title = pos.title || '';
@@ -848,6 +863,10 @@ async function run() {
         statsSource: stats.source,
         recoveredVia: 'whitelist_scan',
         ...(entryLine != null && { entryLine }),
+        ...(pos.asset != null && pos.asset !== '' && { asset: String(pos.asset) }),
+        ...(pos.conditionId != null && pos.conditionId !== '' && { conditionId: String(pos.conditionId) }),
+        ...(pos.outcomeIndex != null && pos.outcomeIndex !== '' && { outcomeIndex: Number(pos.outcomeIndex) }),
+        ...(pos.eventId != null && pos.eventId !== '' && { eventId: String(pos.eventId) }),
         title,
       });
     }
@@ -940,6 +959,13 @@ async function run() {
   } else if (!MERGE) {
     console.log('');
     console.log('Merge skipped (--no-merge flag) — sharp_positions*.json unchanged.');
+  }
+
+  // Always merge supplemental heartbeat (even when zero positions recovered)
+  // so EXITED detection covers wallets scanned only by the whitelist pass.
+  if (MERGE && heartbeatOkWallets.size > 0) {
+    const hbMerged = mergeHeartbeatIntoScanFiles(heartbeatOkWallets, heartbeatOpenAssets);
+    console.log(`  Heartbeat wallets merged:   ${hbMerged}`);
   }
 
   // ── Write diagnostic file (atomic) ──
@@ -1083,6 +1109,10 @@ function mergeRecoveredIntoScanFiles(positions, polyData) {
           pnl: pos.pnl,
           recoveredVia: 'whitelist_scan',
           ...(pos.entryLine != null && { entryLine: pos.entryLine }),
+          ...(pos.asset != null && { asset: pos.asset }),
+          ...(pos.conditionId != null && { conditionId: pos.conditionId }),
+          ...(pos.outcomeIndex != null && { outcomeIndex: pos.outcomeIndex }),
+          ...(pos.eventId != null && { eventId: pos.eventId }),
         });
         stats.dropped_duplicate++;
         continue;
@@ -1115,6 +1145,10 @@ function mergeRecoveredIntoScanFiles(positions, polyData) {
         sportVol: pos.sportVol,
         recoveredVia: 'whitelist_scan',
         ...(pos.entryLine != null && { entryLine: pos.entryLine }),
+        ...(pos.asset != null && { asset: pos.asset }),
+        ...(pos.conditionId != null && { conditionId: pos.conditionId }),
+        ...(pos.outcomeIndex != null && { outcomeIndex: pos.outcomeIndex }),
+        ...(pos.eventId != null && { eventId: pos.eventId }),
       };
       game.positions.push(out);
       // Update summary counters.
@@ -1132,6 +1166,50 @@ function mergeRecoveredIntoScanFiles(positions, polyData) {
     atomicWriteJSON(path, data);
   }
   return stats;
+}
+
+// Merge supplemental-scan heartbeat into all three sharp_positions*.json files.
+// Returns number of wallets newly added to okWallets across the primary file.
+function mergeHeartbeatIntoScanFiles(okWallets, openAssets) {
+  if (!okWallets?.size) return 0;
+  const files = [
+    'sharp_positions.json',
+    'sharp_spread_positions.json',
+    'sharp_total_positions.json',
+  ];
+  let added = 0;
+  for (const file of files) {
+    const data = loadJSON(file);
+    if (!data) continue;
+    const hb = data.scanHeartbeat && typeof data.scanHeartbeat === 'object'
+      ? data.scanHeartbeat
+      : { scannedAt: new Date().toISOString(), okWallets: [], openAssets: {} };
+    const okSet = new Set(Array.isArray(hb.okWallets) ? hb.okWallets.map((w) => String(w).toLowerCase()) : []);
+    const assetsMap = hb.openAssets && typeof hb.openAssets === 'object' ? { ...hb.openAssets } : {};
+    for (const w of okWallets) {
+      const wl = String(w).toLowerCase();
+      if (!okSet.has(wl)) {
+        okSet.add(wl);
+        if (file === 'sharp_positions.json') added++;
+      }
+      const incoming = openAssets[wl];
+      const prev = new Set(Array.isArray(assetsMap[wl]) ? assetsMap[wl] : []);
+      if (incoming instanceof Set) {
+        for (const a of incoming) prev.add(a);
+      } else if (Array.isArray(incoming)) {
+        for (const a of incoming) prev.add(a);
+      }
+      assetsMap[wl] = [...prev];
+    }
+    data.scanHeartbeat = {
+      scannedAt: hb.scannedAt || new Date().toISOString(),
+      okWallets: [...okSet],
+      openAssets: assetsMap,
+      whitelistMergedAt: new Date().toISOString(),
+    };
+    atomicWriteJSON(join(PUBLIC, file), data);
+  }
+  return added;
 }
 
 run().catch(e => {
