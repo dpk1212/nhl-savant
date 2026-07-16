@@ -616,17 +616,21 @@ function WalletMapPanel({ f, accent, pts }) {
   const playSide = f.side === 'home' ? f.homeShort : f.awayShort;
   const oppSide = f.side === 'home' ? f.awayShort : f.homeShort;
 
+  const keyOf = (p) => `${p.side}-${p.short}`;
   const defaultSel = (() => {
     const ours = pts.filter((p) => p.side === f.side);
     const pool = ours.length ? ours : pts;
-    return [...pool].sort((a, b) => (b.sizeRatio || 0) - (a.sizeRatio || 0))[0]?.short || null;
+    const top = [...pool].sort((a, b) => (b.sizeRatio || 0) - (a.sizeRatio || 0))[0];
+    return top ? keyOf(top) : null;
   })();
   const [sel, setSel] = useState(defaultSel);
-  const selected = pts.find((p) => p.short === sel) || pts[0];
+  const selected = pts.find((p) => keyOf(p) === sel) || pts[0];
 
-  const W = 560;
-  const H = 340;
-  const pad = { t: 24, r: 20, b: 36, l: 44 };
+  // 440-wide viewBox keeps SVG text readable when the card scales down to
+  // a ~340px phone column (0.77x) instead of the 0.6x a 560 box would get.
+  const W = 440;
+  const H = 350;
+  const pad = { t: 24, r: 18, b: 36, l: 42 };
   const iw = W - pad.l - pad.r;
   const ih = H - pad.t - pad.b;
 
@@ -652,7 +656,7 @@ function WalletMapPanel({ f, accent, pts }) {
   const rFor = (p) => {
     const raw = Number.isFinite(p.sizeRatio) ? p.sizeRatio : 1;
     const t = rMax === rMin ? 0.5 : (raw - rMin) / (rMax - rMin);
-    return 7 + t * 15;
+    return 8 + t * 14;
   };
   const jitter = (id, axis) => {
     let h = 0;
@@ -730,9 +734,12 @@ function WalletMapPanel({ f, accent, pts }) {
           const cy = yS(roiOf(p)) + jitter(p.short, 'y');
           const r = rFor(p);
           const ours = p.side === f.side;
-          const isSel = p.short === sel;
+          const k = keyOf(p);
+          const isSel = k === sel;
           return (
-            <g key={p.short} onClick={() => setSel(p.short)} style={{ cursor: 'pointer' }}>
+            <g key={k} onClick={() => setSel(k)} style={{ cursor: 'pointer' }}>
+              {/* invisible expanded hit area — finger-sized taps on mobile */}
+              <circle cx={cx} cy={cy} r={Math.max(r + 8, 18)} fill="transparent" />
               {isSel && <circle cx={cx} cy={cy} r={r + 4} fill="none" stroke={B.goldHi} strokeWidth={1} opacity={0.85} />}
               <circle
                 cx={cx} cy={cy} r={r}
@@ -755,8 +762,8 @@ function WalletMapPanel({ f, accent, pts }) {
       </svg>
 
       <div style={{
-        display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center',
-        padding: '6px 0 10px', fontSize: '0.58rem', color: C.textMuted,
+        display: 'flex', flexWrap: 'wrap', gap: '4px 12px', alignItems: 'center',
+        padding: '6px 0 10px', fontSize: '0.6rem', color: C.textMuted, lineHeight: 1.5,
       }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: accent, boxShadow: `0 0 6px ${accent}` }} />
@@ -797,7 +804,11 @@ function WalletMapPanel({ f, accent, pts }) {
               {MAP_QUAD[quadOf(selected)].title}
             </span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, fontFeatureSettings: "'tnum'" }}>
+          {/* auto-fit grid: 4-up on desktop, wraps to 2×2 on narrow phones */}
+          <div style={{
+            display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(76px, 1fr))',
+            gap: '10px 8px', fontFeatureSettings: "'tnum'",
+          }}>
             {[
               { label: 'BEATS CLOSE', val: `${selected.priorClvPct}%`, hot: selected.priorClvPct >= X_BREAK },
               { label: 'ROI', val: `${roiOf(selected) >= 0 ? '+' : ''}${roiOf(selected)}%`, hot: roiOf(selected) >= 0 },
@@ -807,7 +818,7 @@ function WalletMapPanel({ f, accent, pts }) {
               { label: 'THIS TICKET', val: fmtMoney(selected.invested) },
             ].map((s) => (
               <div key={s.label}>
-                <div style={{ fontSize: '0.44rem', color: C.textFaint, letterSpacing: '0.1em', marginBottom: 3 }}>{s.label}</div>
+                <div style={{ fontSize: '0.44rem', color: C.textFaint, letterSpacing: '0.1em', marginBottom: 3, whiteSpace: 'nowrap' }}>{s.label}</div>
                 <div style={{
                   fontSize: '0.85rem', fontWeight: 800, letterSpacing: '-0.02em',
                   color: s.hot ? accent : C.text,
@@ -887,12 +898,27 @@ export function LivePositionCardView({ f, markets, onMarket }) {
   // Quadrant map points: every sharp on the game (both sides when the
   // adapter provides them) that has a REAL beats-close % and ROI. No
   // invented coordinates — wallets missing either stat stay off the map.
-  const mapPts = (Array.isArray(f.mapWallets) && f.mapWallets.length
-    ? f.mapWallets
-    : f.wallets.map((w) => ({ ...w, side: w.side || f.side })))
-    .filter((w) => Number.isFinite(w.priorClvPct) && (Number.isFinite(w.roi) || Number.isFinite(w.dollarRoi)));
+  // gd.positions can carry multiple positions per wallet per side, so
+  // dedupe by side+wallet keeping the largest ticket.
+  const mapPts = (() => {
+    const src = Array.isArray(f.mapWallets) && f.mapWallets.length
+      ? f.mapWallets
+      : f.wallets.map((w) => ({ ...w, side: w.side || f.side }));
+    const best = new Map();
+    for (const w of src) {
+      if (!Number.isFinite(w.priorClvPct)) continue;
+      if (!Number.isFinite(w.roi) && !Number.isFinite(w.dollarRoi)) continue;
+      const k = `${w.side}-${w.short}`;
+      const cur = best.get(k);
+      if (!cur || (w.invested || 0) > (cur.invested || 0)) best.set(k, w);
+    }
+    return [...best.values()];
+  })();
   const hasMap = mapPts.length >= 2;
   const [tab, setTab] = useState(hasMap ? 'map' : 'flow');
+  // Market rail swaps `f` without remounting — if the new market has no
+  // map data, fall back to Money flow instead of an empty panel.
+  const activeTab = tab === 'map' && !hasMap ? 'flow' : tab;
   // Real Pinnacle odds series only — no fabricated chart shapes.
   const pinSeries = Array.isArray(f.pinSeries) && f.pinSeries.length >= 2 ? f.pinSeries : null;
   const moveColor = f.pinnacleOpposes ? B.loss : B.profit;
@@ -1349,10 +1375,11 @@ export function LivePositionCardView({ f, markets, onMarket }) {
                 type="button"
                 onClick={() => setTab(t.id)}
                 style={{
-                  flex: 1, padding: '10px 0', cursor: 'pointer', border: 'none',
-                  background: 'transparent', fontSize: '0.7rem', fontWeight: 800,
-                  color: tab === t.id ? C.text : C.textMuted,
-                  borderBottom: tab === t.id ? `2px solid ${accent}` : `1px solid ${C.hairSoft}`,
+                  flex: 1, padding: '10px 2px', cursor: 'pointer', border: 'none',
+                  background: 'transparent', fontSize: hasMap ? '0.64rem' : '0.7rem', fontWeight: 800,
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                  color: activeTab === t.id ? C.text : C.textMuted,
+                  borderBottom: activeTab === t.id ? `2px solid ${accent}` : `1px solid ${C.hairSoft}`,
                   transition: 'color .18s ease, border-color .18s ease',
                 }}
               >
@@ -1361,12 +1388,12 @@ export function LivePositionCardView({ f, markets, onMarket }) {
             ))}
           </div>
 
-          <div className="pos-reveal" key={tab}>
-            {tab === 'map' && hasMap && (
+          <div className="pos-reveal" key={activeTab}>
+            {activeTab === 'map' && hasMap && (
               <WalletMapPanel f={f} accent={accent} pts={mapPts} />
             )}
 
-            {tab === 'history' && (
+            {activeTab === 'history' && (
               <div>
                 {pinSeries ? (
                   <>
@@ -1400,7 +1427,7 @@ export function LivePositionCardView({ f, markets, onMarket }) {
               </div>
             )}
 
-            {tab === 'flow' && (
+            {activeTab === 'flow' && (
               <div>
                 <BattleStatRow
                   label="SHARP $"
@@ -1438,7 +1465,7 @@ export function LivePositionCardView({ f, markets, onMarket }) {
               </div>
             )}
 
-            {tab === 'wallets' && (
+            {activeTab === 'wallets' && (
               <div>
                 {sortedWallets.map((w, i) => (
                   <WalletListRow
