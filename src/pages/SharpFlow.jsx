@@ -8029,23 +8029,28 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const homeSideWr = sideWr(homeSharps);
   const awaySideClv = sideClv(awaySharps);
   const homeSideClv = sideClv(homeSharps);
-  // Prefer cron-stamped means when present (authoritative as-of pick date);
-  // else fall back to live profile averages of wallets on each side.
+  // Prefer cron-stamped means when present — BUT never paint a stamped
+  // AG/FOR mean onto a side with zero proven wallets on the board.
+  // That recreated the phantom "65% beats close" on Mets with $0 / 0 proven
+  // (cron had stamped clvMeanAg, often vs prior 62).
   const stampedForClv = Number.isFinite(mlCronStamps?.clvMeanFor) ? Math.round(mlCronStamps.clvMeanFor) : null;
   const stampedAgClv = Number.isFinite(mlCronStamps?.clvMeanAg) ? Math.round(mlCronStamps.clvMeanAg) : null;
   const playIsHomeSide = consensusSide === 'home' || consensusSide === 'over';
-  const awayClvFinal = stampedForClv != null || stampedAgClv != null
-    ? (playIsHomeSide ? (stampedAgClv ?? awaySideClv) : (stampedForClv ?? awaySideClv))
-    : awaySideClv;
-  const homeClvFinal = stampedForClv != null || stampedAgClv != null
-    ? (playIsHomeSide ? (stampedForClv ?? homeSideClv) : (stampedAgClv ?? homeSideClv))
-    : homeSideClv;
-  // netCLV for the card: only when BOTH sides have a real mean. Do NOT
-  // invent AG as prior 62 — that painted a phantom "62% beats close" on
-  // empty sides (and a fake −5.4 delta tag against it).
+  const awayHasProven = awaySharps.length > 0;
+  const homeHasProven = homeSharps.length > 0;
+  const awayClvFinal = !awayHasProven ? null
+    : (playIsHomeSide
+      ? (Number.isFinite(stampedAgClv) ? stampedAgClv : awaySideClv)
+      : (Number.isFinite(stampedForClv) ? stampedForClv : awaySideClv));
+  const homeClvFinal = !homeHasProven ? null
+    : (playIsHomeSide
+      ? (Number.isFinite(stampedForClv) ? stampedForClv : homeSideClv)
+      : (Number.isFinite(stampedAgClv) ? stampedAgClv : homeSideClv));
+  // netCLV tag only when BOTH sides have proven wallets + a real mean.
   const derivedNetClv = (() => {
     const forV = playIsHomeSide ? homeClvFinal : awayClvFinal;
     const agV = playIsHomeSide ? awayClvFinal : homeClvFinal;
+    if (!awayHasProven || !homeHasProven) return null;
     if (Number.isFinite(forV) && Number.isFinite(agV)) {
       if (Number.isFinite(mlCronStamps?.netClv)
         && Number.isFinite(mlCronStamps?.clvMeanFor)

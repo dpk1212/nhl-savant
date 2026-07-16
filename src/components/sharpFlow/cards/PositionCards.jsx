@@ -954,12 +954,11 @@ export function LivePositionCardView({ f, markets, onMarket }) {
   const showWrRow = Number.isFinite(awayWr) && Number.isFinite(homeWr);
   const awayClv = f.sides.away?.clv;
   const homeClv = f.sides.home?.clv;
-  // Both sides must have REAL wallet-derived %+CLV. Never invent the empty
-  // side from netClv − prior(62) — that painted a phantom "62%" on Mets
-  // with $0 / 0 proven winners.
-  const showClvBattle = Number.isFinite(awayClv) && Number.isFinite(homeClv);
-  // Only trust the netCLV tag when both lanes are real (otherwise the
-  // stamp may be FOR − 62 prior, not FOR − actual AG).
+  // Both sides must have proven wallets ON THE BOARD and a real %+CLV.
+  // A cron-stamped AG mean alone is not enough — that painted phantom
+  // "65%" on Mets with $0 / 0 proven.
+  const showClvBattle = Number.isFinite(awayClv) && Number.isFinite(homeClv)
+    && (f.sides.away?.sharps || 0) > 0 && (f.sides.home?.sharps || 0) > 0;
   const showClvTag = showClvBattle && hasClv;
 
   // Split verdict into a bold lead (the receipts) and a quieter action line
