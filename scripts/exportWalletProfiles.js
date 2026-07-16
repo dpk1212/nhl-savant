@@ -17,6 +17,15 @@
  *                         `sharpWalletProfiles` (default: skipped).
  *   --collection=xxx      Override target collection name.
  *
+ * Cadence: every 2h via `.github/workflows/grade-sharp-actions.yml`
+ * (after gradeSharpActions + syncWalletBets). Always runs with
+ * `--write-firebase` in CI so live UI + TAPE sizing share one profile.
+ *
+ * CRITICAL — profile.clvSkill (causal %+CLV / "beats the close"):
+ *   Same definition as `src/lib/walletClvSkill.js` used by the TAPE cron
+ *   (`computeNetMeanPrior` → `v8_netMeanPrior`). Rebuilt every cycle from
+ *   graded positions so Sharp Flow cards and tape edge never drift.
+ *
  * Usage:
  *   node scripts/exportWalletProfiles.js                    # JSON + MD only
  *   node scripts/exportWalletProfiles.js --write-firebase   # also push
@@ -63,6 +72,13 @@ import admin from 'firebase-admin';
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import {
+  CLV_HIST_FROM,
+  CLV_SKILL_MIN_N,
+  buildClvLedgerFromPositions,
+  causalPctPos,
+  shortWalletId,
+} from '../src/lib/walletClvSkill.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -179,7 +195,8 @@ async function loadPositions() {
     const invested = Number(d.invested ?? d.size ?? 0);
     const settledPnl = Number(d.settledPnl ?? d.positionPnl ?? 0);
     if (invested <= 0) return;
-    const walletShort = d.walletShort || String(d.wallet).slice(0, 6);
+    // Join key is last-6 hex — same as shortWalletId / sharpWalletProfiles doc id.
+    const walletShort = d.walletShort || shortWalletId(d.wallet);
     // Vault/Shadow tier — treat missing field (pre-shadow docs) as VAULT.
     const vaultQualified = d.vaultQualified !== false;
     // Per-position unit return — Source-B equivalent of Source A's `flat`.
@@ -217,51 +234,34 @@ async function loadPositions() {
   return rows;
 }
 
-/** Implied prob from American odds — mirrors src/lib/walletClvSkill.js */
-function impliedProb(odds) {
-  if (odds == null || odds === 0 || !Number.isFinite(Number(odds))) return null;
-  const o = Number(odds);
-  return o < 0 ? Math.abs(o) / (Math.abs(o) + 100) : 100 / (o + 100);
-}
-
-/** Position CLV in probability points — mirrors computePositionClv */
-function computePositionClv(pos) {
-  if (!pos || typeof pos !== 'object') return null;
-  if (pos.clv != null && Number.isFinite(Number(pos.clv))) return Number(pos.clv);
-  const closeProb = impliedProb(pos.closingPinnacleOdds);
-  if (closeProb == null) return null;
-  if (pos.entryPinnacleOdds != null && impliedProb(pos.entryPinnacleOdds) != null) {
-    return (closeProb - impliedProb(pos.entryPinnacleOdds)) * 100;
-  }
-  const entryPm = pos.entryAvgPrice;
-  if (entryPm != null && entryPm > 0.01 && entryPm < 0.99) {
-    return (closeProb - entryPm) * 100;
-  }
-  return null;
-}
-
 /**
- * Causal %+CLV skill: % of graded positions with CLV > 0 since CLV_HIST_FROM,
- * requiring ≥ CLV_SKILL_MIN_N events. Same definition the tape/netCLV cron uses.
+ * Causal %+CLV skill ("beats the close") — SINGLE SOURCE OF TRUTH with TAPE.
+ * Uses buildClvLedgerFromPositions + causalPctPos from walletClvSkill.js so
+ * profile.clvSkill.pctPos === the % the sync cron uses for netCLV / tape.
+ *
+ * asOf = tomorrow ET → include every graded event through today (profile is
+ * the standing skill score; pick-time as-of is applied in the sync cron).
  */
-const CLV_HIST_FROM = '2026-04-01';
-const CLV_SKILL_MIN_N = 5;
-function computeClvSkill(posBets) {
-  const events = [];
-  for (const b of posBets || []) {
-    if (!b?.date || b.date < CLV_HIST_FROM) continue;
-    const clv = computePositionClv(b);
-    if (clv == null || !Number.isFinite(clv)) continue;
-    events.push({ date: b.date, clv });
-  }
-  if (events.length < CLV_SKILL_MIN_N) {
-    return { pctPos: null, n: events.length, since: CLV_HIST_FROM };
-  }
-  const nPos = events.filter((e) => e.clv > 0).length;
+function etTomorrowDateStr() {
+  const d = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  return d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+}
+
+function computeClvSkill(posBets, walletShort) {
+  const short = shortWalletId(walletShort);
+  const ledger = buildClvLedgerFromPositions(posBets || [], { since: CLV_HIST_FROM });
+  const asOf = etTomorrowDateStr();
+  const pct = causalPctPos(ledger, short, asOf, { minN: CLV_SKILL_MIN_N });
+  const arr = ledger.get(short) || [];
+  const nPos = arr.filter((e) => e.clv > 0).length;
   return {
-    pctPos: Math.round((100 * nPos) / events.length * 10) / 10,
-    n: events.length,
+    pctPos: pct == null ? null : Math.round(pct * 10) / 10,
+    n: arr.length,
+    nPos,
     since: CLV_HIST_FROM,
+    minN: CLV_SKILL_MIN_N,
+    // ISO date the score was rebuilt — UI/cron can detect freshness.
+    asOfDate: new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' }),
   };
 }
 
@@ -471,8 +471,9 @@ function buildProfile(walletShort, pickBets, posBets) {
   } : null;
 
   // Causal %+CLV skill — % of prior graded positions that beat the close.
-  // Surfaced on live cards as "beats close X%" / BEATS THE CLOSE battle row.
-  const clvSkill = computeClvSkill(posBets);
+  // Surfaced on live cards as "beats close X%" / BEATS THE CLOSE battle row,
+  // and is the same input the TAPE cron averages into netCLV.
+  const clvSkill = computeClvSkill(posBets, walletShort);
 
   // Date spans
   const allDates = [...pickBets, ...posBets].map(b => b.date).filter(Boolean).sort();
@@ -540,7 +541,7 @@ function buildProfile(walletShort, pickBets, posBets) {
     positions,           // ALL graded positions (VAULT + SHADOW) — feeds dollarRoi / WR
     sizeSignal,          // VAULT-only conviction bucketing
     shadowSignal,        // SHADOW-only tracking aggregate (may be null)
-    clvSkill,            // causal %+CLV (beats the close) — null pctPos when n < 5
+    clvSkill,            // TAPE input: causal %+CLV (beats the close); null pctPos when n < minN
     bySport,
     byMarket,
     verdict: verdict(picks, positions),
@@ -582,6 +583,17 @@ function buildProfile(walletShort, pickBets, posBets) {
     profiles[walletShort] = buildProfile(walletShort, pickBets, posBets);
   }
 
+  // CLV skill coverage — must stay high; this feeds TAPE + live cards.
+  const clvScored = Object.values(profiles).filter((p) => Number.isFinite(p.clvSkill?.pctPos));
+  const clvAvg = clvScored.length
+    ? clvScored.reduce((s, p) => s + p.clvSkill.pctPos, 0) / clvScored.length
+    : null;
+  console.log(
+    `CLV skill (beats the close): ${clvScored.length}/${Object.keys(profiles).length} wallets scored`
+    + (clvAvg != null ? ` · mean pctPos ${clvAvg.toFixed(1)}%` : '')
+    + ` · minN=${CLV_SKILL_MIN_N} since ${CLV_HIST_FROM}`,
+  );
+
   // ── Write JSON ───────────────────────────────────────────────────
   const dataDir = join(__dirname, '..', 'data');
   if (!existsSync(dataDir)) mkdirSync(dataDir, { recursive: true });
@@ -605,6 +617,10 @@ function buildProfile(walletShort, pickBets, posBets) {
       wallets: Object.keys(profiles).length,
       walletBets: walletBets.length,
       positions: positions.length,
+      clvSkillScored: clvScored.length,
+      clvSkillMeanPctPos: clvAvg != null ? +clvAvg.toFixed(1) : null,
+      clvHistFrom: CLV_HIST_FROM,
+      clvSkillMinN: CLV_SKILL_MIN_N,
     },
     profiles,
   }, null, 2));
@@ -620,6 +636,8 @@ function buildProfile(walletShort, pickBets, posBets) {
   out.push('Every sharp wallet we have V8-era data on, sorted by combined conviction score. This is the **full roster** (no minimum-bets filter) — noisy at the tail, but that\'s the point for a tracking dataset. Verdict column reflects the ≥3-bet threshold.');
   out.push('');
   out.push(`> **Promotion policy (v${WHITELIST_VERSION}, continuous gate)**: rebuilt every 2h via \`grade-sharp-actions\`. Tier = CONFIRMED if flat-positive in either source AND $-positive in B; FLAT if flat-positive in either source; WR50 if WR ≥ 50% in either source. Source A min ${WHITELIST_MIN_BETS} bets, Source-B-only min ${B_ONLY_MIN_BETS} bets. \`whitelistSource\` (A/A+B/B) attributes which path drove each promotion. Roll-back: set \`B_ONLY_MIN_BETS = Infinity\` in \`scripts/exportWalletProfiles.js\`.`);
+  out.push('');
+  out.push(`> **TAPE / beats-the-close**: every profile carries \`clvSkill.pctPos\` — causal % of graded positions with CLV > 0 since ${CLV_HIST_FROM} (min n=${CLV_SKILL_MIN_N}). Same definition as \`walletClvSkill.js\` / netCLV. Rebuilt every cycle. Coverage this run: **${clvScored.length}/${Object.keys(profiles).length}** wallets scored${clvAvg != null ? ` · mean **${clvAvg.toFixed(1)}%**` : ''}.`);
   out.push('');
   const verdictCounts = {};
   Object.values(profiles).forEach(p => {
@@ -834,6 +852,25 @@ function buildProfile(walletShort, pickBets, posBets) {
       const dRoiStr = r.positions.dollarRoi == null ? '—' : ((r.positions.dollarRoi >= 0 ? '+' : '') + r.positions.dollarRoi + '%');
       const dPnlStr = r.positions.settledPnl == null ? '—' : ((r.positions.settledPnl >= 0 ? '+' : '') + r.positions.settledPnl);
       sum.push(`| ${i + 1} | ${r.walletShort} | ${r.tier} | ${r.picks.n} | ${r.picks.wr}% | ${roiStr} | ${flatPnlStr} | ${dRoiStr} | ${dPnlStr} |`);
+    });
+    sum.push('');
+  }
+
+  // Causal %+CLV skill — TAPE input, rebuilt every cycle
+  sum.push('## Causal %+CLV skill (beats the close) — TAPE input');
+  sum.push('');
+  sum.push(`Definition: \`causalPctPos\` from \`src/lib/walletClvSkill.js\` — % of graded positions since **${CLV_HIST_FROM}** with CLV > 0, requiring ≥ **${CLV_SKILL_MIN_N}** events. Stored on every profile as \`clvSkill\` and upserted to \`sharpWalletProfiles\` each \`grade-sharp-actions\` run.`);
+  sum.push('');
+  sum.push(`**Coverage:** ${clvScored.length} / ${list.length} wallets scored${clvAvg != null ? ` · mean pctPos **${clvAvg.toFixed(1)}%**` : ''}.`);
+  sum.push('');
+  const clvTop = [...clvScored]
+    .sort((a, b) => (b.clvSkill.pctPos - a.clvSkill.pctPos) || (b.clvSkill.n - a.clvSkill.n))
+    .slice(0, 15);
+  if (clvTop.length) {
+    sum.push('| # | Wallet | Beats close % | n (CLV grades) | nPos | Verdict |');
+    sum.push('|---|---|---|---|---|---|');
+    clvTop.forEach((p, i) => {
+      sum.push(`| ${i + 1} | ${p.walletShort} | ${p.clvSkill.pctPos}% | ${p.clvSkill.n} | ${p.clvSkill.nPos ?? '—'} | ${p.verdict} |`);
     });
     sum.push('');
   }

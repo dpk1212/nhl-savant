@@ -36,7 +36,10 @@ jobs:
           FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
         run: node scripts/syncWalletBets.js --write
 
-      - name: Rebuild sharp wallet profiles
+      # Rebuilds whitelist tiers + profile.clvSkill (causal %+CLV / beats-the-close).
+      # clvSkill is the standing TAPE input consumed by Sharp Flow cards and
+      # must stay in lock-step with src/lib/walletClvSkill.js.
+      - name: Rebuild sharp wallet profiles (whitelist + clvSkill)
         env:
           VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
           FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}

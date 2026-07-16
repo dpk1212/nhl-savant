@@ -50,8 +50,11 @@ Cadence: fetch loop ~every 4 min (daytime) · grade/export profiles several time
 | `bySport[SPORT].whitelistTier` | `CONFIRMED` / `FLAT` / `WR50` / null | Who counts as “proven” for HC / RANK / EDGE |
 | `bySport.*.picks` | Featured-pick n, WR, flat ROI (Source A) | Win-rate skill on *our* stamped book |
 | `bySport.*.positions` | On-chain n, WR, $ROI, flat ROI (Source B) | Real-money skill |
+| **`clvSkill`** | `pctPos`, `n`, `nPos`, `since`, `minN`, `asOfDate` | **Causal %+CLV (“beats the close”) — TAPE / netCLV building block** |
 | `picks` / `positions` | All-sport aggregates | Cross-sport whale quality |
 | `verdict`, `confirmedSports`, … | Narrative labels | Roster / intel UI |
+
+**`clvSkill` (critical for TAPE):** rebuilt every `grade-sharp-actions` cycle (~2h) by `exportWalletProfiles.js` using the same `causalPctPos` helper as `syncPickStateAuthoritative` (`src/lib/walletClvSkill.js`). `pctPos` = % of graded positions since `CLV_HIST_FROM` with CLV > 0 (null when `n < CLV_SKILL_MIN_N`). Consumers: Sharp Flow live/locked cards (wallet rows + BEATS THE CLOSE battle), and any client-side netCLV fallback when cron means are absent.
 
 **Whitelist v2 (do not conflate with SUPER/TOP stake tiers):**
 

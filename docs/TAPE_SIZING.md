@@ -50,8 +50,9 @@ EDGE is still **computed and stamped** — it feeds tape.
 
 ## Code
 
-- `src/lib/walletClvSkill.js` — `computeNetMeanPrior`, `computeTapeScore`, `applyTapeUnitPolicy`
-- `scripts/syncPickStateAuthoritative.js` — create + reconcile
+- `src/lib/walletClvSkill.js` — `computeNetMeanPrior`, `computeTapeScore`, `applyTapeUnitPolicy`, `causalPctPos`
+- `scripts/syncPickStateAuthoritative.js` — create + reconcile (stamps netCLV / tape from live ledger)
+- `scripts/exportWalletProfiles.js` — persists per-wallet `clvSkill.pctPos` to `sharpWalletProfiles` every 2h (`grade-sharp-actions`) so UI + tape share one standing skill score
 
 ## Evidence (June 15+ path-stamped CF)
 

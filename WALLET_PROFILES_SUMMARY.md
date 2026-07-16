@@ -1,6 +1,6 @@
 # Wallet Profiles Summary
 
-Generated: 7/16/2026, 11:12:55 AM ET · V8 cutover: 2026-04-18 · whitelistVersion: 2
+Generated: 7/16/2026, 11:19:47 AM ET · V8 cutover: 2026-04-18 · whitelistVersion: 2
 
 Monitoring artifact for the nightly `sharpWalletProfiles` rebuild. Shows how many wallets qualify for each whitelist tier per sport, who the top performers are, and what changed since the last run.
 
@@ -120,6 +120,30 @@ Per-sport breakdown of how each FLAT-or-better wallet earned its tier. **B (new)
 | 2 | 2e8da5 | FLAT | 2 | 50% | +18% | +0.36 | -12.6% | -11802 |
 | 3 | 7da3d5 | CONFIRMED | 12 | 58.3% | +11.7% | +1.40 | +51.1% | +58407 |
 | 4 | 348973 | CONFIRMED | 4 | 50% | -5.5% | -0.22 | +7.7% | +4687 |
+
+## Causal %+CLV skill (beats the close) — TAPE input
+
+Definition: `causalPctPos` from `src/lib/walletClvSkill.js` — % of graded positions since **2026-04-01** with CLV > 0, requiring ≥ **5** events. Stored on every profile as `clvSkill` and upserted to `sharpWalletProfiles` each `grade-sharp-actions` run.
+
+**Coverage:** 211 / 372 wallets scored · mean pctPos **58.8%**.
+
+| # | Wallet | Beats close % | n (CLV grades) | nPos | Verdict |
+|---|---|---|---|---|---|
+| 1 | 11b032 | 100% | 16 | 16 | CONFIRMED_WINNER |
+| 2 | 842db4 | 100% | 13 | 13 | POSITIONS_ONLY_POSITIVE |
+| 3 | 4a9953 | 100% | 11 | 11 | CONFIRMED_WINNER |
+| 4 | 308a06 | 100% | 8 | 8 | CONFIRMED_WINNER |
+| 5 | 92f6e1 | 100% | 7 | 7 | POSITIONS_ONLY_POSITIVE |
+| 6 | 41ac37 | 100% | 6 | 6 | POSITIONS_ONLY_POSITIVE |
+| 7 | c29d59 | 100% | 5 | 5 | MIXED_PICKS_GOOD_$_BAD |
+| 8 | eff402 | 100% | 5 | 5 | POSITIONS_ONLY_POSITIVE |
+| 9 | 468c33 | 93.8% | 16 | 15 | CONFIRMED_BLEEDER |
+| 10 | fb433f | 92.9% | 28 | 26 | CONFIRMED_BLEEDER |
+| 11 | b70f9a | 88.9% | 18 | 16 | CONFIRMED_WINNER |
+| 12 | d6f293 | 87.8% | 41 | 36 | POSITIONS_ONLY_POSITIVE |
+| 13 | c19b3c | 87.5% | 16 | 14 | POSITIONS_ONLY_POSITIVE |
+| 14 | 53b215 | 87.5% | 8 | 7 | POSITIONS_ONLY_NEGATIVE |
+| 15 | a82a75 | 86.4% | 66 | 57 | CONFIRMED_WINNER |
 
 ## Churn since last run
 
