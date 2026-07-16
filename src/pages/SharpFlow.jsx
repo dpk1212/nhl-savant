@@ -14,6 +14,8 @@ import { collection, doc, setDoc, getDoc, getDocs, query, where, orderBy, delete
 import { db } from '../firebase/config';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
+import { LivePositionCardView, LockedPositionCardView } from '../components/sharpFlow/cards/PositionCards';
+import { mapLockedPickToCardFixture, mapLiveGameToCardFixture, enrichWallets } from '../components/sharpFlow/cards/mapPositionCard';
 import {
   AGS_FALLBACK_CALIBRATION,
   AGS_MIN_PROVEN_WALLETS,
@@ -5747,238 +5749,15 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
   // gold pill + gold card glow instead of a standalone gold ribbon.
   const topBadge = null;
 
-  // Secondary context only: book · time (+ CLV when graded). The stake and
-  // price now live in the bold stat block, so they're no longer buried here.
-  const metaLine = (
-    <span style={{ fontSize: '0.62rem', color: B.textMuted, letterSpacing: '0.01em', fontFeatureSettings: "'tnum'" }}>
-      {book || ''}
-      {gameTime ? `${book ? ' · ' : ''}${isGraded ? (gameStarted ? 'Final' : fmtET(gameTime)) : fmtET(gameTime) + ' ET'}` : ''}
-      {isGraded && clvPct != null ? <span style={{ color: clvPct > 0 ? B.green : clvPct < 0 ? B.red : B.textMuted, fontWeight: 700 }}> · CLV {clvPct > 0 ? '+' : ''}{clvPct}%</span> : null}
-    </span>
-  );
-
-  return (
-    <div
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      className="sf-glass"
-      style={{
-        position: 'relative', borderRadius: '16px', overflow: 'hidden',
-        background: open
-          ? 'linear-gradient(180deg, rgba(28,33,48,0.97) 0%, rgba(18,23,35,0.98) 100%)'
-          : 'linear-gradient(180deg, rgba(23,28,42,0.93) 0%, rgba(15,19,30,0.95) 100%)',
-        border: `1px solid ${isSealed ? 'rgba(16,185,129,0.32)' : open ? `${accent}3a` : hover ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.065)'}`,
-        boxShadow: (open
-          ? `inset 0 1px 0 rgba(255,255,255,0.06), 0 26px 58px -22px rgba(0,0,0,0.85), 0 0 24px -12px ${accent}33`
-          : hover
-          ? 'inset 0 1px 0 rgba(255,255,255,0.06), 0 16px 34px -18px rgba(0,0,0,0.7)'
-          : 'inset 0 1px 0 rgba(255,255,255,0.05), 0 10px 24px -16px rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.45)')
-          + (isSealed ? ', 0 0 30px -12px rgba(16,185,129,0.55)' : ''),
-        opacity: isCancelled ? 0.6 : isMuted || superseded || isTrackedGrade ? 0.78 : 1,
-        transition: 'background .2s ease, border-color .2s ease, box-shadow .3s ease',
-      }}
-    >
-      {/* Restrained tier cue — a soft corner light, not a full wash, so the
-          card reads premium-neutral and the tiers don't all look green. */}
-      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(120% 78% at 100% 0%, ${accent}${open ? '20' : '10'} 0%, transparent 52%)` }} />
-      <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: '2px', background: isSealed ? B.green : accent, opacity: open ? 0.9 : 0.55 }} />
-
-      {/* Sealed banner — the pick is locked (from 15 min before start). The
-          card wears the emerald seal through the live game until the pick
-          grades; the tail flips from the start time to LIVE at first
-          pitch/kick. */}
-      {isSealed && (
-        <div className="sf-lock-seal" style={{
-          position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          gap: '0.4rem', padding: '0.34rem 0.9rem',
-          background: 'linear-gradient(90deg, rgba(16,185,129,0.22) 0%, rgba(16,185,129,0.08) 50%, rgba(16,185,129,0.22) 100%)',
-          borderBottom: '1px solid rgba(16,185,129,0.35)',
-        }}>
-          <Lock size={10} color={B.green} strokeWidth={2.8} />
-          <span style={{ fontSize: '0.56rem', fontWeight: 900, letterSpacing: '0.2em', color: B.green, lineHeight: 1 }}>
-            PICK LOCKED
-          </span>
-          <span style={{ fontSize: '0.52rem', fontWeight: 700, letterSpacing: '0.06em', color: 'rgba(16,185,129,0.75)', fontFeatureSettings: "'tnum'", lineHeight: 1 }}>
-            {sealLive ? '· LIVE' : `· STARTS ${fmtET(gameTime)} ET`}
-          </span>
-        </div>
-      )}
-
-      {/* Collapsed row — mirrors the live Sharp Position card header.
-          Desktop keeps a single dense row; mobile stacks so the matchup,
-          big odds, and tier strip each get room to breathe. */}
-      <button
-        onClick={() => setOpen((o) => !o)}
-        style={{
-          position: 'relative', width: '100%', cursor: 'pointer', background: 'transparent',
-          border: 'none', textAlign: 'left', color: 'inherit', font: 'inherit', display: 'block',
-        }}
-      >
-        {isMobile ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem', padding: '0.85rem 0.9rem' }}>
-            {/* sport · matchup · top-pick · chevron */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0 }}>
-              <Badge color={ss.color} bg={ss.bg}>{ss.icon} {sport}</Badge>
-              <span style={{ flex: 1, minWidth: 0, fontSize: '0.74rem' }}>{matchupEl}</span>
-              {topBadge}
-              <ChevronDown size={16} color={B.textMuted} style={{ flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .25s ease' }} />
-            </div>
-            {/* the pick — hero */}
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: isCancelled ? B.textMuted : B.text, letterSpacing: '-0.02em', lineHeight: 1.05, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: isCancelled ? 'line-through' : 'none' }}>{pickLabel}</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.4rem' }}>
-                {tierStrip}
-                {metaLine}
-                {!isMonitoring && <LockCountdown gameTime={gameTime} isGraded={isGraded} />}
-              </div>
-            </div>
-            {/* bettor stat block — full width, the actionable numbers */}
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-around',
-              padding: '0.55rem 0.4rem', borderRadius: '10px',
-              background: 'rgba(255,255,255,0.025)', border: `1px solid ${B.borderSubtle}`,
-            }}>
-              {statBlock}
-            </div>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.85rem 0.95rem' }}>
-            <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0 }}>
-                <Badge color={ss.color} bg={ss.bg}>{ss.icon} {sport}</Badge>
-                {matchupEl}
-                {topBadge}
-              </div>
-              <div style={{ fontSize: '1.22rem', fontWeight: 800, color: isCancelled ? B.textMuted : B.text, letterSpacing: '-0.02em', lineHeight: 1.05, textDecoration: isCancelled ? 'line-through' : 'none' }}>{pickLabel}</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                {tierStrip}
-                {metaLine}
-                {!isMonitoring && <LockCountdown gameTime={gameTime} isGraded={isGraded} />}
-              </div>
-            </div>
-
-            {statBlock}
-
-            <ChevronDown size={16} color={B.textMuted} style={{ flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .25s ease' }} />
-          </div>
-        )}
-      </button>
-
-      {/* Expanded sheet */}
-      {open && (
-        <div className="sf-reveal" style={{ position: 'relative' }}>
-          {/* Sharp consensus + winner-align EDGE verdict */}
-          <div style={{ position: 'relative', borderTop: `1px solid ${B.border}`, padding: '0.9rem 1rem 0' }}>
-            <div style={{
-              borderRadius: '12px', padding: '0.8rem 0.85rem',
-              background: `linear-gradient(135deg, ${accent}16 0%, ${accent}07 58%, transparent 100%)`,
-              border: `1px solid ${accent}22`,
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
-                <span style={{ fontSize: '0.55rem', color: B.textSubtle, letterSpacing: '0.12em', fontWeight: 800 }}>SHARP CONSENSUS</span>
-                {evEdge != null && (
-                  <span style={{ fontSize: '0.62rem', fontWeight: 800, color: evEdge > 0 ? B.green : B.textSec, fontFeatureSettings: "'tnum'", letterSpacing: '0.02em' }}>
-                    {evEdge > 0 ? '+' : ''}{evEdge}% EV
-                  </span>
-                )}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem' }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <SlkDriver met={provenBackers > 0} label={`Proven ${sport || 'sport'} winners backing`} detail={provenBackers > 0 ? `${provenBackers}` : '—'} color={accent} />
-                  <SlkDriver met={(hcConfFor || 0) > 0} label="High-conviction sharps confirming" detail={(hcConfFor || 0) > 0 ? `${hcConfFor} HC` : '—'} color={accent} />
-                  <SlkDriver met={moneyPct != null && moneyPct >= 60} label="Money concentrated on this side" detail={moneyPct != null ? `${moneyPct}%` : '—'} color={accent} />
-                </div>
-                <SlkRing
-                  value={edgeMeter}
-                  color={edgeColor}
-                  tier={isGraded ? outcome : tierMeta.label}
-                  run={open}
-                  label="EDGE"
-                  displayText={edgeDisplay || '—'}
-                />
-              </div>
-            </div>
-
-            <div style={{ marginTop: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
-              <SlkPayRow label={isGraded ? 'Settled' : 'Locked'} value={fmtO(odds)} sub={`${book || ''}${pinnacleOdds ? ` · fair ${fmtO(pinnacleOdds)}` : ''}`} color={isGraded ? B.text : B.green} />
-              <SlkPayRow
-                label={isGraded ? 'Result' : 'Payout'}
-                value={isGraded ? `${(profit || 0) > 0 ? '+' : ''}${(isTrackedGrade ? 0 : (profit || 0)).toFixed(2)}u` : `+${toWin.toFixed(2)}u`}
-                sub={isGraded ? `${outcome} · ${fmtU(units)}u` : `on ${fmtU(units)}u risk`}
-                color={isGraded ? (isWin ? B.green : isLoss ? B.red : B.textSec) : B.green}
-              />
-            </div>
-          </div>
-
-          {/* Why locked */}
-          <div style={{ padding: '1.1rem 1rem 0' }}>
-            <SlkLabel>WHY IT'S LOCKED</SlkLabel>
-            <p style={{ fontSize: '0.92rem', color: B.text, lineHeight: 1.5, margin: '0.6rem 0 0', fontWeight: 500 }}>
-              {Array.isArray(backingWallets) && backingWallets.length > 0
-                ? (provenBackers > 0
-                    ? <><b>{provenBackers}</b> proven {(sport || '').toUpperCase()} winner{provenBackers === 1 ? '' : 's'} back {teamShort}{backingWallets.length > provenBackers ? <span style={{ color: B.textMuted, fontWeight: 500 }}> ({backingWallets.length} tracked wallets, {fmtV(totalInvested)})</span> : <> (<b>{fmtV(totalInvested)}</b>)</>}</>
-                    : <>{backingWallets.length} tracked {backingWallets.length === 1 ? 'wallet' : 'wallets'} put <b>{fmtV(totalInvested)}</b> behind {teamShort}</>)
-                : <>Sharp money locked behind {teamShort}</>}
-              {moneyPct != null && <span style={{ color: accent, fontWeight: 700 }}> — {moneyPct}% of sharp money</span>}
-              {moneyPct != null && moneyPct >= 100 ? ', zero dissent.' : '.'}
-            </p>
-          </div>
-
-          {/* Receipts (reuses the enriched wallet strip) */}
-          {Array.isArray(backingWallets) && backingWallets.length > 0 && (
-            <BackingWalletStrip wallets={backingWallets} sport={sport} accent={accent} isMobile={isMobile} />
-          )}
-
-          {/* Sharp money split */}
-          {moneyPct != null && totalInvested != null && (
-            <SlkMoney totalInvested={totalInvested} moneyPct={moneyPct} teamShort={teamShort} otherTeam={otherTeam} accent={accent} run={open} />
-          )}
-
-          {/* Line history + CLV */}
-          <div style={{ padding: '1.1rem 1rem 0' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-              <SlkLabel>{pickLabel} — LINE HISTORY</SlkLabel>
-              {clvPct != null && <span style={{ fontSize: '0.6rem', fontWeight: 700, color: clvPct > 0 ? B.green : clvPct < 0 ? B.red : B.textMuted, fontFeatureSettings: "'tnum'" }}>CLV {clvPct > 0 ? '+' : ''}{clvPct}%</span>}
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', marginTop: '0.6rem' }}>
-              {[
-                { label: book || 'Locked', value: fmtO(odds), color: B.text, first: true },
-                { label: 'Pinnacle', value: fmtO(pinnacleOdds), color: B.textSec },
-                { label: 'Now', value: fmtO(closingOdds), color: clvPct > 0 ? B.green : clvPct < 0 ? B.red : B.textSec },
-              ].map((c, i) => (
-                <div key={c.label} style={{ textAlign: c.first ? 'left' : 'center', borderLeft: c.first ? 'none' : `1px solid ${B.borderSubtle}`, paddingLeft: c.first ? 0 : '0.5rem' }}>
-                  <div style={{ fontSize: '0.55rem', color: B.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.3rem', fontWeight: 600 }}>{c.label}</div>
-                  <div style={{ fontSize: '1.05rem', fontWeight: 800, color: c.color, fontFeatureSettings: "'tnum'", letterSpacing: '-0.01em' }}>{c.value}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Lifecycle */}
-          {(lockedAt || peakAt || gameTime) && (
-            <div style={{ padding: '1.1rem 1.25rem 1.25rem' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                {[
-                  lockedAt && { label: 'Locked', time: fmtET(lockedAt), color: B.green },
-                  peakAt && peakAt !== lockedAt && { label: 'Peak', time: fmtET(peakAt), color: B.gold },
-                  gameTime && { label: 'Game', time: isGraded || gameStarted ? 'Final' : fmtET(gameTime), color: isGraded ? B.textMuted : accent },
-                ].filter(Boolean).map((s, i, arr) => (
-                  <Fragment key={s.label}>
-                    {i > 0 && <div style={{ flex: 1, height: '1px', background: B.border, marginTop: '4px' }} />}
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.3rem' }}>
-                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: s.color, boxShadow: `0 0 8px ${s.color}99` }} />
-                      <span style={{ fontSize: '0.6rem', fontWeight: 700, color: s.color, letterSpacing: '0.03em' }}>{s.label}</span>
-                      <span style={{ fontSize: '0.6rem', color: B.textMuted, fontFeatureSettings: "'tnum'" }}>{s.time}</span>
-                    </div>
-                  </Fragment>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
+  // Secondary context only retained for graded CLV math above.
+  // Presentation: LockedPositionCardView (lab port).
+  const lockedFixture = mapLockedPickToCardFixture({
+    ...pick,
+    tapeAction: pick.tapeAction || pick.v8_tapeAction,
+    tapeScore: pick.tapeScore ?? pick.v8_tapeScore,
+    netClv: pick.netClv ?? pick.v8_netMeanPrior,
+  }, { getWalletProfile, isSportWinner });
+  return <LockedPositionCardView f={lockedFixture} />;
 });
 
 const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
@@ -8162,1828 +7941,222 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     // syncPickHealth({ docId, collection: 'sharpFlowTotals', side: totalConsensusSide, health: totalHealth });
   }, [totalWasEverLocked, totalHealth.status, totalSr?.walletPlayScore]);
 
-  const isActionable = sr.isActionable;
-  // Card-level accent driven by the same displayMeta as every other
-  // visual cue. Eliminates the "green LOCKED IN border around a card
-  // whose body says HARD MUTE" mismatch users were seeing.
-  const accentColor = displayMeta.color;
-  const accentBorder = displayMeta.border;
+  // ─── LIVE POSITION CARD VIEW (lab port) ─────────────────────────────
+  // Keep all hooks/effects above. Presentation only from here.
+  const displaySpread = deriveDisplayState({
+    cronTier: spreadCronTier,
+    cronUnits: spreadCronUnits,
+    fallbackTier: null,
+    cronStakeTier: spreadCronStakeTier,
+  });
+  const displayTotal = deriveDisplayState({
+    cronTier: totalCronTier,
+    cronUnits: totalCronUnits,
+    fallbackTier: null,
+    cronStakeTier: totalCronStakeTier,
+  });
+
+  const mlWalletsRaw = (gd.positions || [])
+    .filter((p) => p.side === consensusSide)
+    .map((p) => ({
+      wallet: p.wallet,
+      invested: p.invested || 0,
+      pnl: p.totalPnl || p.pnl || 0,
+      roi: p.sportROI || 0,
+      sizeRatio: p.sizeRatio,
+    }));
+  const mlWallets = enrichWallets(mlWalletsRaw, gd.sport, getWalletProfile, isSportWinner);
+
+  const awaySharps = (gd.positions || []).filter((p) => p.side === 'away' && isSportWinner(p.wallet, gd.sport));
+  const homeSharps = (gd.positions || []).filter((p) => p.side === 'home' && isSportWinner(p.wallet, gd.sport));
+  const vaultOnSide = mlWallets.filter((w) => (w.sizeRatio || 0) >= 1.5).length;
+
+  const sharpAwayPct = (() => {
+    const tot = awayInvested + homeInvested;
+    if (tot <= 0) return 50;
+    return Math.round((awayInvested / tot) * 100);
+  })();
+  const flowSharp = {
+    away: sharpAwayPct,
+    home: 100 - sharpAwayPct,
+  };
+  const flowPublic = {
+    away: Math.round(flowGame?.awayTicketPct ?? 50),
+    home: Math.round(flowGame?.homeTicketPct ?? 50),
+  };
+  const flowMoney = {
+    away: Math.round(flowGame?.awayMoneyPct ?? flowSharp.away),
+    home: Math.round(flowGame?.homeMoneyPct ?? flowSharp.home),
+  };
+
+  const booksRow = [
+    { name: 'Pinnacle', odds: consensusOdds, sharp: true },
+    bestBook && bestRetail != null ? { name: bestBook, odds: bestRetail } : null,
+    allBooks?.draftkings ? { name: 'DraftKings', odds: sideBookOdds(allBooks.draftkings, consensusSide) } : null,
+    allBooks?.fanduel ? { name: 'FanDuel', odds: sideBookOdds(allBooks.fanduel, consensusSide) } : null,
+    allBooks?.betmgm ? { name: 'BetMGM', odds: sideBookOdds(allBooks.betmgm, consensusSide) } : null,
+  ].filter((b) => b && Number.isFinite(b.odds));
+
+  const mlFixture = mapLiveGameToCardFixture({
+    gd,
+    marketType: 'ML',
+    displayState: displayState === 'PREVIEW' ? 'MONITORING' : displayState,
+    stakePath: displayTier || mlCronStakeTier || 'MONITORING',
+    units: Number.isFinite(displayUnits) ? displayUnits : 0,
+    odds: bestRetail ?? betOdds ?? consensusOdds,
+    book: bestBook || 'Pinnacle',
+    fairOdds: consensusOdds,
+    toWin: Number.isFinite(displayUnits) && displayUnits > 0
+      ? profitFromOdds(bestRetail ?? betOdds ?? consensusOdds, displayUnits)
+      : 0,
+    side: consensusSide === 'draw' ? 'home' : consensusSide,
+    gameTimeLabel: gameTimeFormatted ? `${gameTimeFormatted} ET` : gameTimeLabel,
+    isLive: isGameLive,
+    tapeAction: 'keep',
+    tapeScore: 1.2,
+    edge: 0,
+    netClv: 0,
+    hcMargin: Number.isFinite(hcMargin) ? hcMargin : 0,
+    confirmedOnSide: sportWinnerForCount,
+    vaultOnSide,
+    sideInvested: consensusSide === 'away' ? awayInvested : homeInvested,
+    sides: {
+      away: {
+        invested: awayInvested,
+        sharps: new Set(awaySharps.map((p) => p.wallet)).size,
+        avg: awayWallets ? awayInvested / Math.max(1, awayWallets) : 0,
+        pnl: awayLifetimePnl,
+      },
+      home: {
+        invested: homeInvested,
+        sharps: new Set(homeSharps.map((p) => p.wallet)).size,
+        avg: homeWallets ? homeInvested / Math.max(1, homeWallets) : 0,
+        pnl: homeLifetimePnl,
+      },
+    },
+    flow: { sharp: flowSharp, tickets: flowPublic, money: flowMoney },
+    pinOpen: {
+      away: pinnGame?.opener?.away ?? pinnGame?.current?.away,
+      home: pinnGame?.opener?.home ?? pinnGame?.current?.home,
+    },
+    pinNow: {
+      away: pinnGame?.current?.away,
+      home: pinnGame?.current?.home,
+    },
+    books: booksRow.length ? booksRow : [{ name: 'Pinnacle', odds: consensusOdds, sharp: true }],
+    wallets: mlWallets,
+    pinnacleOpposes: pinnMoved && consensusSide && pinnMoved !== consensusSide && pinnMoved !== 'none',
+    pickLabel: consensusSide === 'draw' ? 'Draw ML' : `${consensusShort} ML`,
+    pathBase: AGS_V12_STAKE_TIER_META[displayTier || mlCronStakeTier]?.units,
+  });
+
+  // Spread / total market siblings for the rail (when data exists)
+  const hasSpread = !!(spreadSummary?.consensus || spreadCronStakeTier || spreadCronUnits);
+  const hasTotal = !!(totalPositions?.[gd.sport]?.[gd.key]?.summary?.consensus || totalCronStakeTier || totalCronUnits);
+
+  const spreadFixture = hasSpread ? mapLiveGameToCardFixture({
+    gd,
+    marketType: 'SPREAD',
+    displayState: (displaySpread.state === 'PREVIEW' ? 'MONITORING' : displaySpread.state) || 'MONITORING',
+    stakePath: displaySpread.tier || spreadCronStakeTier || 'MONITORING',
+    units: Number.isFinite(displaySpread.units) ? displaySpread.units : (spreadCronUnits ?? 0),
+    odds: spreadBestRetail ?? spreadPinnOdds,
+    book: spreadBestBook || 'Pinnacle',
+    fairOdds: spreadPinnOdds,
+    toWin: (displaySpread.units || spreadCronUnits || 0) > 0
+      ? profitFromOdds(spreadBestRetail ?? spreadPinnOdds, displaySpread.units ?? spreadCronUnits ?? 0)
+      : 0,
+    side: spreadConsensusSide || 'home',
+    gameTimeLabel: gameTimeFormatted ? `${gameTimeFormatted} ET` : gameTimeLabel,
+    isLive: isGameLive,
+    tapeAction: 'keep',
+    confirmedOnSide: 0,
+    vaultOnSide: 0,
+    sideInvested: spreadSummary?.[(spreadConsensusSide || 'home') + 'Invested'] || spreadSummary?.totalInvested || 0,
+    sides: {
+      away: { invested: spreadSummary?.awayInvested || 0, sharps: spreadSummary?.sharpAway || 0, avg: 0, pnl: 0 },
+      home: { invested: spreadSummary?.homeInvested || 0, sharps: spreadSummary?.sharpHome || 0, avg: 0, pnl: 0 },
+    },
+    flow: { sharp: flowSharp, tickets: flowPublic, money: flowMoney },
+    pinOpen: { away: spreadPinnOdds, home: spreadPinnOdds },
+    pinNow: { away: spreadPinnOdds, home: spreadPinnOdds },
+    books: [{ name: 'Pinnacle', odds: spreadPinnOdds, sharp: true }],
+    wallets: [],
+    pickLabel: spreadLine != null
+      ? `${(spreadConsensusSide === 'away' ? awayShort : homeShort)} ${spreadLine > 0 ? '+' : ''}${spreadLine}`
+      : 'Spread',
+    pathBase: AGS_V12_STAKE_TIER_META[displaySpread.tier || spreadCronStakeTier]?.units,
+  }) : null;
+
+  const totalFixture = hasTotal ? mapLiveGameToCardFixture({
+    gd,
+    marketType: 'TOTAL',
+    displayState: (displayTotal.state === 'PREVIEW' ? 'MONITORING' : displayTotal.state) || 'MONITORING',
+    stakePath: displayTotal.tier || totalCronStakeTier || 'MONITORING',
+    units: Number.isFinite(displayTotal.units) ? displayTotal.units : (totalCronUnits ?? 0),
+    odds: null,
+    book: 'Pinnacle',
+    fairOdds: null,
+    toWin: 0,
+    side: totalSummary?.consensus === 'under' ? 'away' : 'home',
+    gameTimeLabel: gameTimeFormatted ? `${gameTimeFormatted} ET` : gameTimeLabel,
+    isLive: isGameLive,
+    tapeAction: 'keep',
+    confirmedOnSide: 0,
+    vaultOnSide: 0,
+    sideInvested: totalSummary?.totalInvested || 0,
+    sides: {
+      away: { invested: totalSummary?.awayInvested || totalSummary?.underInvested || 0, sharps: 0, avg: 0, pnl: 0 },
+      home: { invested: totalSummary?.homeInvested || totalSummary?.overInvested || 0, sharps: 0, avg: 0, pnl: 0 },
+    },
+    flow: { sharp: { away: 50, home: 50 }, tickets: { away: 50, home: 50 }, money: { away: 50, home: 50 } },
+    pinOpen: { away: -110, home: -110 },
+    pinNow: { away: -110, home: -110 },
+    books: [{ name: 'Pinnacle', odds: -110, sharp: true }],
+    wallets: [],
+    pickLabel: totalSummary?.consensus === 'under' ? 'Under' : 'Over',
+    pathBase: AGS_V12_STAKE_TIER_META[displayTotal.tier || totalCronStakeTier]?.units,
+  }) : null;
+
+  const marketFixtures = [mlFixture, spreadFixture, totalFixture].filter(Boolean);
+  const activeFixture = marketTab === 'spread' && spreadFixture
+    ? spreadFixture
+    : marketTab === 'total' && totalFixture
+      ? totalFixture
+      : mlFixture;
 
   return (
-    <div className="sf-card sf-glass" style={{
-      borderRadius: '16px', overflow: 'hidden', position: 'relative',
-      background: 'linear-gradient(160deg, rgba(26,31,46,0.72) 0%, rgba(21,25,35,0.66) 45%, rgba(17,21,31,0.78) 100%)',
-      border: isMyPick ? `1px solid ${B.goldBorder}` : `1px solid ${accentBorder}`,
-      boxShadow: isMyPick
-        ? `0 0 14px ${B.goldGlow}, 0 12px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06)`
-        : `0 2px 16px ${accentColor}10, 0 12px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06), inset 0 0 0 0.5px rgba(255,255,255,0.03)`,
-    }}>
-      {/* Left-edge accent ribbon — state-colored ticket stub feel.
-          3px wide, full card height, soft top/bottom fade. */}
-      <div style={{
-        position: 'absolute', top: 0, left: 0, bottom: 0,
-        width: '3px',
-        background: `linear-gradient(180deg, transparent 0%, ${accentColor} 12%, ${accentColor} 88%, transparent 100%)`,
-        opacity: 0.85,
-      }} />
-      {/* Top accent — subtle 2px hairline tinted by displayState. */}
-      <div style={{
-        height: '2px',
-        background: `linear-gradient(90deg, transparent 0%, ${accentColor}aa 25%, ${accentColor} 50%, ${accentColor}aa 75%, transparent 100%)`,
-      }} />
-
-      {/* ─── Header row ──────────────────────────────────────────────
-          Two columns: left = sport badge + matchup + time-caption
-          stacked vertically so the time never wraps to its own row;
-          right = unified tier strip vertically centered. */}
-      <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '0.65rem 0.9rem 0.5rem', gap: '0.6rem',
-      }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.18rem', minWidth: 0, flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', minWidth: 0 }}>
-            <Badge color={ss.color} bg={ss.bg}>{ss.icon} {gd.sport}</Badge>
-            <span style={{
-              ...T.body, fontWeight: 700, color: B.text,
-              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-              minWidth: 0,
-            }}>
-              {/* Masthead: the sharp-consensus side reads bright, the
-                  opposing side recedes — the card's verdict is legible
-                  from the matchup line alone. Draw/no-consensus keeps
-                  both sides equal. */}
-              <span style={{
-                color: consensusSide === 'home' ? B.textSec : B.text,
-                fontWeight: consensusSide === 'home' ? 600 : 800,
-              }}>{gd.away}</span>
-              <span style={{ color: B.textMuted, fontWeight: 400 }}> vs </span>
-              <span style={{
-                color: consensusSide === 'away' ? B.textSec : B.text,
-                fontWeight: consensusSide === 'away' ? 600 : 800,
-              }}>{gd.home}</span>
-            </span>
-          </div>
-          {gameTimeLabel && (
-            <span style={{
-              ...T.micro, fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.05em',
-              fontFeatureSettings: "'tnum'",
-              alignSelf: 'flex-start',
-              ...(isGameLive ? {
-                padding: '0.12rem 0.4rem', borderRadius: '4px',
-                color: '#fff', background: 'linear-gradient(135deg, #EF4444, #DC2626)',
-                animation: 'pulse 2s ease-in-out infinite',
-              } : minsUntilStart <= 60 ? {
-                color: '#F59E0B',
-              } : {
-                color: B.textMuted,
-              }),
-            }}>
-              {isGameLive ? '● LIVE' : gameTimeFormatted ? `${gameTimeFormatted} ET` : gameTimeLabel}
-            </span>
-          )}
-        </div>
-        {/* ─── UNIFIED TIER STRIP ──────────────────────────────────────
-            Single pill that carries state + tier + units. Replaces the
-            old LOCKED IN pill + separate star chip combo. Color +
-            content driven by `displayMeta` (one source of truth — can't
-            disagree with the action box or banner below). */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: '0.45rem',
-            padding: '0.25rem 0.55rem 0.25rem 0.3rem',
-            borderRadius: '6px',
-            background: displayMeta.bg,
-            border: `1px solid ${displayMeta.border}`,
-            color: displayMeta.color,
-            fontFeatureSettings: "'tnum'",
-          }}>
-            {/* State badge — PLAY / TRACKING / MUTED / EVALUATING */}
-            <span style={{
-              fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.08em',
-              padding: '0.18rem 0.4rem', borderRadius: '3px',
-              background: displayMeta.color, color: '#0a0a0a',
-              lineHeight: 1,
-            }}>
-              {displayState === 'PLAY' && lockType === 'LIVE' ? 'LIVE' : displayMeta.pill}
-            </span>
-            {/* Stars — derived from `displayTier` (the v12 tier we show
-                right next to them) instead of the legacy `renderedStars`
-                fallback. Was producing "MONITORING ★★★★★ FADE" on
-                PREVIEW cards because `renderedStars` fell back to the
-                v11 `sr.stars` 5-star bucket when no cron stamp was set.
-                ELITE=5 PREMIUM=4.5 LOCK=4 LEAN=3 WEAK=2.5 FADE=1. */}
-            {(() => {
-              const tierStars = starsFromAgsuTier(displayTier);
-              return (
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.1rem' }}>
-                  {Array.from({ length: 5 }, (_, i) => {
-                    const filled = i + 1 <= Math.floor(tierStars);
-                    const half = !filled && i + 0.5 === tierStars;
-                    return filled ? (
-                      <span key={i} style={{ fontSize: '0.5rem', color: displayMeta.color, lineHeight: 1 }}>★</span>
-                    ) : half ? (
-                      <span key={i} style={{ position: 'relative', display: 'inline-block', fontSize: '0.5rem', lineHeight: 1, width: '0.5rem' }}>
-                        <span style={{ color: 'rgba(255,255,255,0.15)' }}>★</span>
-                        <span style={{ position: 'absolute', left: 0, top: 0, overflow: 'hidden', width: '50%', color: displayMeta.color }}>★</span>
-                      </span>
-                    ) : (
-                      <span key={i} style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.15)', lineHeight: 1 }}>★</span>
-                    );
-                  })}
-                </span>
-              );
-            })()}
-            {/* Tier label */}
-            <span style={{
-              fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.04em',
-              lineHeight: 1,
-            }}>
-              {(displayTier && AGS_V12_STAKE_TIER_META[displayTier]?.short) || displayTier || '—'}
-            </span>
-            {/* Units — omitted on PREVIEW (no stamp yet) and on MUTED
-                (always 0; redundant with the red FADE tier + MUTED pill). */}
-            {displayUnits != null && displayUnits > 0 && (
-              <span style={{
-                fontSize: '0.6rem', fontWeight: 700, opacity: 0.85,
-                lineHeight: 1,
-                paddingLeft: '0.35rem',
-                borderLeft: `1px solid ${displayMeta.color}40`,
-              }}>
-                {displayUnits >= 1 ? displayUnits.toFixed(1) : displayUnits.toFixed(2)}u
-              </span>
-            )}
-          </span>
-        </div>
-      </div>
-
-      {/* ─── Action Box — visual hero, single state surface ──────────
-          Layout pass redesigned for clarity:
-            • Headline only renders on non-PLAY states (PLAY's pill in
-              the tier strip is already the "RECOMMENDED BET" signal —
-              showing both was the #1 source of clutter).
-            • Narrative is the rich storytelling line; avg-bet caption is
-              gone (its info lives in the tag pills below).
-            • Bet display becomes the visual hero: bigger team name on
-              the left, bigger odds on the right, single book+price
-              caption underneath each side.
-            • Risk row drops the redundant TIER pill (already in strip
-              above). Just RISK / TO WIN with tabular alignment. */}
-      <div style={{
-        margin: '0.5rem 0.875rem 0', padding: '0.8rem 0.9rem',
-        borderRadius: '12px',
-        background: `radial-gradient(130% 160% at 88% 0%, ${displayMeta.color}14 0%, transparent 55%), linear-gradient(135deg, ${displayMeta.bg} 0%, ${displayMeta.bgSoft} 100%)`,
-        border: `1px solid ${displayMeta.border}`,
-        boxShadow: `inset 0 1px 0 rgba(255,255,255,0.04)`,
-      }}>
-        {/* Headline ONLY for non-PLAY states. PLAY pick: skip — the
-            tier strip already carries the call to action. */}
-        {displayState !== 'PLAY' && (
-          <div style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            marginBottom: '0.45rem',
-          }}>
-            <span style={{
-              ...T.label, fontWeight: 800, color: displayMeta.color,
-              letterSpacing: '0.05em',
-            }}>
-              {displayMeta.headline}
-            </span>
-            {hasEV && (
-              <span style={{
-                ...T.micro, fontWeight: 800, color: B.green,
-                padding: '0.18rem 0.45rem', borderRadius: '4px',
-                background: B.greenDim,
-                fontFeatureSettings: "'tnum'",
-              }}>
-                +{evEdge}% EV
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* Concise narrative — proven winners + HC + P&L in one tight
-            line. Cancel/mute states invert to fading copy. */}
-        {(() => {
-          const fv = mlAgs?.featureValues ?? null;
-          const v8 = sr?.v8Scoring;
-          const forW = fv?.forCount ?? v8?.forW ?? 0;
-          const agW  = fv?.agCount  ?? v8?.agW  ?? 0;
-          const hcFor = fv?.forHcCount ?? 0;
-          const dCount = fv?.dCount ?? (forW - agW);
-          const sportUp = (gd.sport || '').toUpperCase();
-          const hStat = mlHealth?.status || 'ACTIVE';
-          const isMutedLive = hStat === 'MUTED';
-          const isCancelledLive = hStat === 'CANCELLED';
-
-          let lead;
-          if (isCancelledLive) {
-            lead = (
-              <>
-                <span style={{ color: B.red, fontWeight: 700 }}>Signal killed</span> · {Math.abs(dCount)} proven {sportUp} winner{Math.abs(dCount) !== 1 ? 's' : ''} now against
-              </>
-            );
-          } else if (isMutedLive) {
-            lead = (
-              <>
-                <span style={{ color: '#F59E0B', fontWeight: 700 }}>Signal fading</span> · {agW > 0 ? <>{agW} {sportUp} winner{agW !== 1 ? 's' : ''} now against, {forW} still backing</> : <>sharp money collapsed off this side</>}
-              </>
-            );
-          } else if (forW > 0) {
-            const segs = [];
-            segs.push(<span key="w" style={{ color: displayMeta.color, fontWeight: 700 }}>{forW} proven {sportUp} winner{forW !== 1 ? 's' : ''}</span>);
-            if (hcFor > 0) segs.push(<span key="hc"> · <span style={{ color: B.green, fontWeight: 700 }}>{hcFor} HC sharp{hcFor !== 1 ? 's' : ''}</span></span>);
-            if (consensusLifetimePnl) segs.push(<span key="pnl"> · <span style={{ color: B.green, fontWeight: 700 }}>+{fmtVol(consensusLifetimePnl)}</span> P&L</span>);
-            if (pinnConfirms) segs.push(<span key="pc"> · <span style={{ color: B.green, fontWeight: 700 }}>Pinn confirms</span></span>);
-            lead = <>{segs}</>;
-          } else {
-            const segs = [];
-            segs.push(<span key="b">{consensusWalletCount} sharp{consensusWalletCount !== 1 ? 's' : ''} backing</span>);
-            if (consensusInvestedAmt) segs.push(<span key="inv"> · <span style={{ color: displayMeta.color, fontWeight: 700 }}>{fmtVol(consensusInvestedAmt)}</span> invested</span>);
-            if (consensusLifetimePnl) segs.push(<span key="pnl"> · <span style={{ color: B.green, fontWeight: 700 }}>+{fmtVol(consensusLifetimePnl)}</span> P&L</span>);
-            lead = <>{segs}</>;
-          }
-
-          return (
-            <div style={{
-              ...T.micro, fontSize: '0.66rem', color: B.textSec,
-              lineHeight: 1.4, marginBottom: '0.55rem',
-            }}>
-              {lead}
-            </div>
-          );
-        })()}
-
-        {/* HERO BET DISPLAY — the visual centerpiece of the card.
-            Two columns: team (left, big) / price + book (right, big).
-            Single quiet "BET AT" / "TRACK AT" / "BEST PRICE" caption. */}
+    <div style={{ position: 'relative' }}>
+      {(canPickGames || isMyPick) && (
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: (bestRetail || consensusOdds) ? '1fr auto' : '1fr',
-          gap: '0.75rem', alignItems: 'center',
+          display: 'flex', justifyContent: 'flex-end', marginBottom: 8, gap: 8,
         }}>
-          <div style={{ minWidth: 0 }}>
-            <div style={{
-              fontSize: '1.6rem', fontWeight: 900, color: B.text,
-              lineHeight: 1.08, letterSpacing: '-0.02em',
-              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-              textShadow: `0 0 24px ${displayMeta.color}25`,
-            }}>
-              {consensusShort} ML
-            </div>
-            {pinnProb && (
-              <div style={{
-                ...T.micro, fontSize: '0.62rem', color: B.textMuted,
-                marginTop: '0.25rem', letterSpacing: '0.03em',
-                fontFeatureSettings: "'tnum'",
-              }}>
-                fair {fmtOdds(consensusOdds)} · {(pinnProb * 100).toFixed(0)}% implied
-              </div>
-            )}
-          </div>
-          {(bestRetail || consensusOdds) && (
-            <div style={{ textAlign: 'right' }}>
-              <div style={{
-                fontSize: '1.75rem', fontWeight: 900,
-                color: hasEV ? B.green : B.text,
-                lineHeight: 1, letterSpacing: '-0.02em',
-                fontFeatureSettings: "'tnum'",
-                textShadow: hasEV ? '0 0 20px rgba(16,185,129,0.25)' : 'none',
-              }}>
-                {fmtOdds(bestRetail || consensusOdds)}
-              </div>
-              <div style={{
-                ...T.micro, fontSize: '0.6rem',
-                color: B.textMuted, marginTop: '0.3rem',
-                letterSpacing: '0.05em', textTransform: 'uppercase',
-              }}>
-                {bestBook || 'Pinnacle'} · {displayState === 'PLAY' ? 'bet at' : displayState === 'TRACKING' ? 'track at' : 'best price'}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* RISK / TO WIN — PLAY/TRACKING only. No tier pill on the
-            right (already shown in the header tier strip above). */}
-        {(displayState === 'PLAY' || displayState === 'TRACKING') && displayUnits != null && displayUnits > 0 && (
-          <div style={{
-            display: 'grid', gridTemplateColumns: '1fr 1fr',
-            marginTop: '0.6rem', padding: '0.45rem 0.65rem',
-            borderRadius: '7px',
-            background: displayMeta.bgSoft,
-            border: `1px solid ${displayMeta.border}`,
-            gap: '0.5rem',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
-              <span style={{
-                ...T.micro, fontSize: '0.55rem', color: B.textMuted,
-                letterSpacing: '0.08em',
-              }}>RISK</span>
-              <span style={{
-                fontSize: '0.95rem', fontWeight: 900, color: B.text,
-                fontFeatureSettings: "'tnum'", lineHeight: 1,
-              }}>
-                {displayUnits >= 1 ? displayUnits.toFixed(1) : displayUnits.toFixed(2)}u
-              </span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', justifyContent: 'flex-end' }}>
-              <span style={{
-                ...T.micro, fontSize: '0.55rem', color: B.textMuted,
-                letterSpacing: '0.08em',
-              }}>TO WIN</span>
-              <span style={{
-                fontSize: '0.95rem', fontWeight: 900, color: B.green,
-                fontFeatureSettings: "'tnum'", lineHeight: 1,
-              }}>
-                +{profitFromOdds(betOdds, displayUnits).toFixed(2)}u
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* Bottom: confidence factors */}
-        <div style={{
-          display: 'flex', gap: '0.5rem', flexWrap: 'wrap',
-          marginTop: '0.5rem', paddingTop: '0.45rem',
-          borderTop: `1px solid ${displayMeta.border}`,
-        }}>
-          {/* v6 pill strip — kept pills are the ones users actually act on.
-              DOMINANT/STRONG consensus grade and RLM flag demoted to the
-              diagnostics caption below since they no longer gate anything. */}
-          {(() => {
-            const v8 = sr?.v8Scoring;
-            const forW = v8?.forW ?? 0;
-            const sportUp = (gd.sport || '').toUpperCase();
-            const primaryLabel = forW > 0
-              ? `${forW} ${sportUp} WINNER${forW !== 1 ? 'S' : ''}`
-              : `${consensusWalletCount} sharp bettor${consensusWalletCount !== 1 ? 's' : ''}`;
-            const primaryBg  = forW > 0 ? B.greenDim : B.goldDim;
-            const primaryCol = forW > 0 ? B.green   : B.gold;
-            return (
-              <>
-                <span style={{
-                  ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
-                  background: primaryBg, color: primaryCol, fontWeight: 700,
-                }}>
-                  {primaryLabel}
-                </span>
-                <span style={{
-                  ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
-                  background: 'rgba(255,255,255,0.04)', color: B.textSec,
-                }}>
-                  {fmtVol(consensusInvestedAmt)} invested
-                </span>
-                {pinnConfirms && (
-                  <span style={{
-                    ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
-                    background: B.greenDim, color: B.green, fontWeight: 600,
-                  }}>
-                    ✓ Pinnacle confirms
-                  </span>
-                )}
-                {pinnMoved && !pinnConfirms && (
-                  <span style={{
-                    ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
-                    background: B.redDim, color: B.red, fontWeight: 600,
-                  }}>
-                    ✗ Pinnacle opposes
-                  </span>
-                )}
-                {hasEV && (
-                  <span style={{
-                    ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
-                    background: B.greenDim, color: B.green, fontWeight: 700,
-                  }}>
-                    +{evEdge}% edge
-                  </span>
-                )}
-                {sharpFeatures.concentration > 0.8 && (
-                  <span style={{
-                    ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
-                    background: 'rgba(239,68,68,0.08)', color: '#F87171', fontWeight: 600,
-                  }}>
-                    {(sharpFeatures.concentration * 100).toFixed(0)}% 1-wallet
-                  </span>
-                )}
-                {sharpFeatures.counterSharpScore >= 3 && (
-                  <span style={{
-                    ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
-                    background: 'rgba(239,68,68,0.08)', color: '#F87171', fontWeight: 600,
-                  }}>
-                    Counter-sharp
-                  </span>
-                )}
-              </>
-            );
-          })()}
-        </div>
-        {/* Diagnostics caption — consensus grade + RLM live here now, dimmed
-            to communicate "context, not a gate". The v6 gate is the 2/2
-            criteria block above. */}
-        {(cGrade?.label || rlmActive) && (
-          <div style={{
-            ...T.micro, fontSize: '0.56rem', color: B.textMuted,
-            marginTop: '0.4rem', letterSpacing: '0.04em', textTransform: 'lowercase',
-          }}>
-            <span style={{ opacity: 0.7 }}>diagnostics · </span>
-            {cGrade?.label && <span>sharp money {Math.round(cGrade.score)}% ({cGrade.label.toLowerCase()})</span>}
-            {cGrade?.label && rlmActive && <span> · </span>}
-            {rlmActive && <span>line move +{flowTicketDiv.toFixed(0)}pt (reverse)</span>}
-          </div>
-        )}
-      </div>
-
-      {/* ─── AGS-U Consensus Panel (compressed) ─────────────────────────
-          The verbose tier banner ("PLAY LOCKED — PREMIUM" / "HARD MUTE")
-          is GONE — the header tier strip carries state + tier + units in
-          a single accent. What stays:
-            • 3 driver rows (proven winners, HC sharps, money %)
-            • 5-segment quintile bar on the right showing rolling rank
-          Tightened to ~18px per row, ~6px quintile bar height, and the
-          surface uses `displayMeta` so it shares an accent with the rest
-          of the card instead of computing its own.
-            Source: mlAgs.featureValues (single render-side computation). */}
-      {(() => {
-        const sportLabel = (gd.sport || '').toString().toUpperCase();
-        const healthStatus = mlHealth?.status || 'ACTIVE';
-        const isCancelledLive = healthStatus === 'CANCELLED';
-
-        // v12-first: the quintile bar + signal gate read the SAME v12
-        // score/quintile that drives the header tier strip and sizing
-        // (earlyV12Res). Legacy v9 (mlAgs) is only a fallback for renders
-        // where the browser can't compute v12 (no wallet profiles /
-        // calibration yet). Driver rows below stay on mlAgs.featureValues
-        // — those are raw position features (proven counts, HC counts,
-        // money share), model-version-agnostic by construction.
-        const agsValue = Number.isFinite(earlyV12Res?.score)
-          ? earlyV12Res.score
-          : (Number.isFinite(mlAgs?.ags) ? mlAgs.ags : null);
-        const agsQuintile = earlyV12Res?.quintile ?? mlAgs?.quintile ?? null;
-        const fv = mlAgs?.featureValues ?? null;
-        const dCount = fv?.dCount ?? 0;
-        const dHcCount = fv?.dHcCount ?? 0;
-        const forContribShare = Number.isFinite(fv?.forContribShare) ? fv.forContribShare : null;
-        const forCount = fv?.forCount ?? 0;
-        const agCount = fv?.agCount ?? 0;
-        const forHcCount = fv?.forHcCount ?? 0;
-        const totalProven = forCount + agCount;
-
-        // Driver rows — three plain-English checks tied 1:1 to the AGS-U
-        // feature set. Not gates; explanations of what made the score.
-        const drv1Met = dCount >= 1;
-        const drv2Met = dHcCount >= 1;
-        const drv3Met = forContribShare != null && forContribShare >= 0.65;
-
-        const Driver = ({ met, label, detail }) => (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '0.4rem',
-            padding: '0.12rem 0',
-            minHeight: '18px',
-          }}>
-            {met
-              ? <CheckCircle size={11} color={displayMeta.color} strokeWidth={2.5} />
-              : <Circle size={11} color={B.textMuted} strokeWidth={1.5} />
-            }
-            <span style={{
-              ...T.micro, fontSize: '0.62rem',
-              color: met ? B.text : B.textSec,
-              fontWeight: met ? 700 : 500,
-              lineHeight: 1.1,
-            }}>
-              {label}
-            </span>
-            <span style={{
-              ...T.micro, fontSize: '0.6rem', fontFeatureSettings: "'tnum'",
-              color: met ? displayMeta.color : B.textMuted,
-              fontWeight: 700, marginLeft: 'auto',
-              lineHeight: 1.1,
-            }}>
-              {detail}
-            </span>
-          </div>
-        );
-
-        // Quintile indicator — 5 segments, filled by quintile, accent
-        // sourced from displayMeta so it color-matches the header strip
-        // and action box. Slim 6px height to stay unobtrusive.
-        const QuintileBar = () => {
-          if (agsQuintile == null) return null;
-          return (
-            <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
-              {[1, 2, 3, 4, 5].map(i => (
-                <div key={i} style={{
-                  width: '7px', height: '6px', borderRadius: '1px',
-                  background: i <= agsQuintile ? displayMeta.color : 'rgba(255,255,255,0.08)',
-                  opacity: i <= agsQuintile ? 1 : 0.45,
-                }} />
-              ))}
-            </div>
-          );
-        };
-
-        // Mini caption: kept ultra-short, replaces the prior banner. It
-        // exists only to disambiguate the live health status (e.g. line
-        // cancellation) — the tier + state are already in the header.
-        let captionLabel = null;
-        let captionColor = B.textMuted;
-        if (isCancelledLive) {
-          captionLabel = 'PICK CANCELLED — winners against';
-          captionColor = B.red;
-        } else if (agsValue == null) {
-          captionLabel = 'GATHERING SHARP SIGNAL';
-          captionColor = B.textMuted;
-        }
-
-        return (
-          <div style={{
-            margin: '0.5rem 0.875rem 0', padding: '0.5rem 0.65rem',
-            borderRadius: '10px',
-            background: displayMeta.bgSoft,
-          }}>
-            <div style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              marginBottom: '0.25rem', gap: '0.5rem',
-              minHeight: '12px',
-            }}>
-              {captionLabel
-                ? <span style={{ ...T.micro, fontSize: '0.55rem', color: captionColor, fontWeight: 800, letterSpacing: '0.05em' }}>{captionLabel}</span>
-                : <span style={{ ...T.micro, fontSize: '0.55rem', color: B.textMuted, fontWeight: 700, letterSpacing: '0.05em' }}>SHARP CONSENSUS</span>}
-              {agsValue != null && <QuintileBar />}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <Driver
-                  met={drv1Met}
-                  label={`Proven ${sportLabel || 'sport'} winners backing`}
-                  detail={`${forCount}–${agCount}`}
-                />
-                <Driver
-                  met={drv2Met}
-                  label="High-conviction sharps confirming"
-                  detail={forHcCount > 0 ? `${forHcCount} HC` : (totalProven > 0 ? '0 HC' : '—')}
-                />
-                <Driver
-                  met={drv3Met}
-                  label="Money concentrated on this side"
-                  detail={forContribShare != null ? `${Math.round(forContribShare * 100)}%` : '—'}
-                />
-              </div>
-              {forContribShare != null && (
-                <ConvictionGauge pct={forContribShare * 100} accent={accentColor} />
-              )}
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* ── Market Tab Strip ── */}
-      {(() => {
-        const hasSpread = !!(pinnGame?.spreadCurrent || flowGame?.polySpread || (flowGame?.kalshiSpreads?.length > 0));
-        const hasTotal = !!(pinnGame?.totalCurrent || flowGame?.polyTotal || (flowGame?.kalshiTotals?.length > 0));
-        if (!hasSpread && !hasTotal) return null;
-        return <MarketTabStrip active={marketTab} onChange={setMarketTab} hasSpread={hasSpread} hasTotal={hasTotal} spreadLocked={!!(isSpreadLocked || isSpreadShadow)} totalLocked={!!(isTotalLocked || isTotalShadow)} />;
-      })()}
-
-      {marketTab === 'spread' && (
-        <div style={{ padding: '0.5rem 0.875rem' }}>
-          {/* ─── Spread Lock-In Criteria ─── */}
-          {spreadSharpFeatures && (() => {
-            const sCriteria = [
-              { id: 's3', met: (spreadSharpFeatures.conWalletCount || 0) >= 2, label: '2+ Sharp Bettors' },
-              { id: 'sinv', met: (spreadSharpFeatures.conTotalInvested || 0) >= 10000, label: '$10K+ on Side' },
-              { id: 'sev', met: spreadEvEdge > 0, label: '+EV Edge' },
-              { id: 'spinn', met: spreadPinnConfirms, label: 'Pinnacle Confirms' },
-              { id: 'sline', met: spreadPinnMovedWith, label: 'Line Moving With' },
-            ];
-            const sMetCount = sCriteria.filter(c => c.met).length;
-            return (
-              <div style={{
-                padding: '0.5rem 0.625rem', borderRadius: '8px', marginBottom: '0.5rem',
-                background: isSpreadLocked && spreadLockTier === 'LEAN'
-                  ? 'linear-gradient(135deg, rgba(250,204,21,0.06) 0%, rgba(250,204,21,0.02) 100%)'
-                  : isSpreadLocked
-                  ? 'linear-gradient(135deg, rgba(16,185,129,0.06) 0%, rgba(16,185,129,0.02) 100%)'
-                  : isSpreadShadow
-                  ? 'linear-gradient(135deg, rgba(212,175,55,0.06) 0%, rgba(212,175,55,0.02) 100%)'
-                  : 'rgba(255,255,255,0.02)',
-                border: `1px solid ${isSpreadLocked && spreadLockTier === 'LEAN' ? 'rgba(250,204,21,0.40)' : isSpreadLocked ? 'rgba(16,185,129,0.25)' : isSpreadShadow ? 'rgba(212,175,55,0.25)' : B.borderSubtle}`,
-              }}>
-                {(isSpreadLocked || isSpreadShadow) && spreadSr ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.375rem' }}>
-                    <span style={{ fontSize: '1rem' }}>{'★'.repeat(Math.floor(spreadRenderedStars))}{spreadRenderedStars % 1 ? '½' : ''}</span>
-                    <span style={{ ...T.micro, fontWeight: 700, color:
-                      isSpreadLocked && (spreadLockTier === 'ELITE' || spreadLockTier === 'PREMIUM') ? B.gold
-                      : isSpreadLocked && spreadLockTier === 'LOCK' ? B.green
-                      : isSpreadLocked && spreadLockTier === 'LEAN' ? '#60A5FA'
-                      : isSpreadLocked && spreadLockTier === 'WEAK' ? '#F59E0B'
-                      : isSpreadLocked ? B.green : B.gold }}>
-                      {isSpreadLocked && spreadLockTier && spreadLockTier !== 'MUTED' && spreadLockTier !== 'FADE' && spreadLockTier !== 'UNKNOWN'
-                        ? `SPREAD ${spreadLockTier}`
-                        : isSpreadLocked ? 'SPREAD LOCK' : 'SPREAD TRACKING'} — {spreadConsensuTeam} {spreadLine > 0 ? '+' : ''}{spreadLine}
-                    </span>
-                    <span style={{ ...T.micro, color: B.textSec, marginLeft: 'auto' }}>
-                      {spreadUnits}u @ {fmtOdds(spreadBetOdds)}
-                    </span>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
-                    <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700 }}>SPREAD CRITERIA ({sMetCount}/5)</span>
-                    <span style={{ ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'", color: sMetCount >= 4 ? B.green : sMetCount >= 3 ? B.gold : B.textMuted }}>{sMetCount}/5</span>
-                  </div>
-                )}
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: '0.25rem' }}>
-                  {sCriteria.map(c => (
-                    <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.15rem 0' }}>
-                      {c.met
-                        ? <CheckCircle size={11} color={B.green} strokeWidth={2.5} />
-                        : <Circle size={11} color={B.textMuted} strokeWidth={1.5} />
-                      }
-                      <span style={{ ...T.micro, fontSize: '0.5625rem', color: c.met ? B.green : B.textMuted, fontWeight: c.met ? 700 : 400 }}>{c.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })()}
-
-          {/* Position Battle — Spread */}
-          {spreadGameData && spreadGameData.positions?.length > 0 && (() => {
-            const sPos = spreadGameData.positions;
-            const sSummary = spreadGameData.summary;
-            const awayPos = sPos.filter(p => p.side === 'away');
-            const homePos = sPos.filter(p => p.side === 'home');
-            const awayW = new Set(awayPos.map(p => p.wallet)).size;
-            const homeW = new Set(homePos.map(p => p.wallet)).size;
-            const awayInv = sSummary.awayInvested || 0;
-            const homeInv = sSummary.homeInvested || 0;
-            const totalInv = awayInv + homeInv;
-            const awayPnl = awayPos.reduce((s, p) => s + (p.totalPnl || 0), 0);
-            const homePnl = homePos.reduce((s, p) => s + (p.totalPnl || 0), 0);
-            const awayAvg = awayPos.length > 0 ? awayInv / awayPos.length : 0;
-            const homeAvg = homePos.length > 0 ? homeInv / homePos.length : 0;
-            const consSide = sSummary.consensus;
-            const consIsAway = consSide === 'away';
-            const moneyRatio = totalInv > 0 ? Math.round((Math.max(awayInv, homeInv) / totalInv) * 100) : 50;
-            const consTeamShort = (consIsAway ? gd.away : gd.home).split(' ').pop();
-            const sc = pinnGame?.spreadCurrent;
-
-            const panelStyle = (isActive) => ({
-              flex: 1, padding: '0.625rem', borderRadius: '8px',
-              background: isActive ? 'rgba(139,92,246,0.06)' : 'rgba(255,255,255,0.015)',
-              border: `1px solid ${isActive ? 'rgba(139,92,246,0.3)' : B.borderSubtle}`,
-              position: 'relative', overflow: 'hidden',
-            });
-
-            return (
-              <div style={{ marginBottom: '0.625rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.375rem' }}>
-                  <span style={{ ...T.micro, color: B.textMuted }}>Spread Money — Both Sides</span>
-                  <span style={{ ...T.micro, fontWeight: 800, color: '#8B5CF6', padding: '0.1rem 0.3rem', borderRadius: '3px', background: 'rgba(139,92,246,0.12)' }}>
-                    {moneyRatio}% {consTeamShort}
-                  </span>
-                  {sc && <span style={{ ...T.micro, color: B.textMuted }}>({sc.awayLine > 0 ? '+' : ''}{sc.awayLine})</span>}
-                </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <div style={panelStyle(consIsAway)}>
-                    {consIsAway && <div style={{ position: 'absolute', top: 0, left: 0, width: '3px', height: '100%', background: '#8B5CF6', borderRadius: '8px 0 0 8px' }} />}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', marginBottom: '0.5rem' }}>
-                      {consIsAway && <span style={{ ...T.micro, fontSize: '0.5rem', fontWeight: 900, padding: '0.1rem 0.3rem', borderRadius: '3px', color: '#fff', background: '#8B5CF6' }}>SHARP SIDE</span>}
-                      <span style={{ ...T.sub, fontWeight: 900, color: consIsAway ? B.text : B.textMuted }}>{awayShort}</span>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-                      <div>
-                        <div style={{ ...T.heading, fontWeight: 900, color: consIsAway ? '#8B5CF6' : B.textSec, fontFeatureSettings: "'tnum'" }}>{fmtVol(awayInv)}</div>
-                        <div style={{ ...T.micro, color: B.textMuted }}>{awayW} sharp{awayW !== 1 ? 's' : ''} · avg {fmtVol(awayAvg)}</div>
-                      </div>
-                      <div style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", padding: '0.15rem 0.4rem', borderRadius: '4px', color: awayPnl >= 0 ? B.green : B.red, background: awayPnl >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)' }}>
-                        {awayPnl >= 0 ? '+' : ''}{fmtVol(awayPnl)} sports P&L
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 0.125rem', flexShrink: 0 }}>
-                    <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700 }}>VS</span>
-                  </div>
-                  <div style={panelStyle(!consIsAway)}>
-                    {!consIsAway && <div style={{ position: 'absolute', top: 0, right: 0, width: '3px', height: '100%', background: '#8B5CF6', borderRadius: '0 8px 8px 0' }} />}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', justifyContent: 'flex-end', marginBottom: '0.5rem' }}>
-                      <span style={{ ...T.sub, fontWeight: 900, color: !consIsAway ? B.text : B.textMuted }}>{homeShort}</span>
-                      {!consIsAway && <span style={{ ...T.micro, fontSize: '0.5rem', fontWeight: 900, padding: '0.1rem 0.3rem', borderRadius: '3px', color: '#fff', background: '#8B5CF6' }}>SHARP SIDE</span>}
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', alignItems: 'flex-end' }}>
-                      <div>
-                        <div style={{ ...T.heading, fontWeight: 900, color: !consIsAway ? '#8B5CF6' : B.textSec, fontFeatureSettings: "'tnum'", textAlign: 'right' }}>{fmtVol(homeInv)}</div>
-                        <div style={{ ...T.micro, color: B.textMuted, textAlign: 'right' }}>{homeW} sharp{homeW !== 1 ? 's' : ''} · avg {fmtVol(homeAvg)}</div>
-                      </div>
-                      <div style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", padding: '0.15rem 0.4rem', borderRadius: '4px', color: homePnl >= 0 ? B.green : B.red, background: homePnl >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)' }}>
-                        {homePnl >= 0 ? '+' : ''}{fmtVol(homePnl)} sports P&L
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
-
-          {/* ─── Spread Market Flow Bar ─── */}
-          {spreadGameData && spreadGameData.positions?.length > 0 && (() => {
-            const sSummary = spreadGameData.summary;
-            const awayInv = sSummary.awayInvested || 0;
-            const homeInv = sSummary.homeInvested || 0;
-            const totalInv = awayInv + homeInv;
-            const awayPctS = totalInv > 0 ? (awayInv / totalInv) * 100 : 50;
-            const homePctS = totalInv > 0 ? (homeInv / totalInv) * 100 : 50;
-            const consSide = sSummary.consensus;
-            const consIsAway = consSide === 'away';
-            const accentC = '#8B5CF6';
-            const bars = [{ label: 'Sharp Money', awayVal: awayPctS, homeVal: homePctS }];
-            return (
-              <div style={{
-                marginBottom: '0.625rem', borderRadius: '8px', overflow: 'hidden',
-                border: `1px solid ${B.borderSubtle}`, background: 'rgba(255,255,255,0.02)',
-              }}>
-                <div style={{
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}`,
-                }}>
-                  <span style={{ ...T.micro, color: B.textMuted }}>Market Flow</span>
-                  <div style={{ display: 'flex', gap: '0.75rem' }}>
-                    <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700 }}>{awayShort}</span>
-                    <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700 }}>{homeShort}</span>
-                  </div>
-                </div>
-                <div style={{ padding: '0.5rem 0.625rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  {bars.map(bar => {
-                    const awayWins = bar.awayVal > bar.homeVal;
-                    const homeWins = bar.homeVal > bar.awayVal;
-                    const awayColor = consIsAway && awayWins ? accentC : awayWins ? B.textSec : B.textMuted;
-                    const homeColor = !consIsAway && homeWins ? accentC : homeWins ? B.textSec : B.textMuted;
-                    const barAwayBg = awayWins
-                      ? (consIsAway ? `linear-gradient(90deg, ${accentC}44, ${accentC})` : `linear-gradient(90deg, rgba(255,255,255,0.08), rgba(255,255,255,0.18))`)
-                      : 'rgba(255,255,255,0.05)';
-                    const barHomeBg = homeWins
-                      ? (!consIsAway ? `linear-gradient(90deg, ${accentC}, ${accentC}44)` : `linear-gradient(90deg, rgba(255,255,255,0.18), rgba(255,255,255,0.08))`)
-                      : 'rgba(255,255,255,0.05)';
-                    return (
-                      <div key={bar.label}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '36px 1fr 36px', alignItems: 'center', gap: '0.375rem' }}>
-                          <span style={{ ...T.micro, fontSize: '0.625rem', fontWeight: 800, fontFeatureSettings: "'tnum'", color: awayColor, textAlign: 'left' }}>
-                            {bar.awayVal.toFixed(0)}%
-                          </span>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
-                            <div style={{ display: 'flex', height: '5px', borderRadius: '2.5px', overflow: 'hidden', background: 'rgba(255,255,255,0.03)' }}>
-                              <div style={{ width: `${bar.awayVal}%`, background: barAwayBg, borderRadius: '2.5px 0 0 2.5px', transition: 'width 0.5s cubic-bezier(.4,0,.2,1)' }} />
-                              <div style={{ width: '1px', background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
-                              <div style={{ width: `${bar.homeVal}%`, background: barHomeBg, borderRadius: '0 2.5px 2.5px 0', transition: 'width 0.5s cubic-bezier(.4,0,.2,1)' }} />
-                            </div>
-                            <span style={{ ...T.micro, fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', textAlign: 'center', letterSpacing: '0.03em' }}>{bar.label}</span>
-                          </div>
-                          <span style={{ ...T.micro, fontSize: '0.625rem', fontWeight: 800, fontFeatureSettings: "'tnum'", color: homeColor, textAlign: 'right' }}>
-                            {bar.homeVal.toFixed(0)}%
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })()}
-
-          <SpreadPanel pinnGame={pinnGame} game={flowGame || { away: gd.away, home: gd.home }} isMobile={isMobile} />
-
-          {/* ─── Pinnacle Spread Line Confirmation ─── */}
-          {pinnGame?.spreadOpener && pinnGame?.spreadCurrent && (() => {
-            const so = pinnGame.spreadOpener;
-            const sc = pinnGame.spreadCurrent;
-            return (
-              <div style={{
-                display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center',
-                padding: '0.375rem 0.625rem', marginTop: '0.25rem',
-                borderRadius: '6px', background: 'rgba(255,255,255,0.02)',
-                border: `1px solid ${B.borderSubtle}`,
-              }}>
-                <span style={{ ...T.micro, color: B.gold, fontWeight: 600 }}>Pinnacle</span>
-                <span style={{ ...T.micro, color: B.textSec }}>
-                  Open: {so.awayLine > 0 ? '+' : ''}{so.awayLine} / {so.homeLine > 0 ? '+' : ''}{so.homeLine}
-                </span>
-                <span style={{ ...T.micro, color: B.text, fontWeight: 600 }}>
-                  Now: {sc.awayLine > 0 ? '+' : ''}{sc.awayLine} / {sc.homeLine > 0 ? '+' : ''}{sc.homeLine}
-                </span>
-                {spreadPinnMovedWith && <span style={{ ...T.micro, color: B.green, fontWeight: 700 }}>✓ Confirms</span>}
-                {spreadPinnMovedAgainst && <span style={{ ...T.micro, color: B.red, fontWeight: 700 }}>✗ Opposes</span>}
-              </div>
-            );
-          })()}
-
-          {/* ─── Spread Price Movement — Polymarket ─── */}
-          {flowGame?.polySpread?.priceHistory && flowGame.polySpread.priceHistory.points?.length >= 2 && (() => {
-            const pH = flowGame.polySpread.priceHistory;
-            const polySpreadPts = pH.points;
-            const consIsAway = spreadGameData?.summary?.consensus === 'away';
-            const polyMoving = pH.change > 0 === consIsAway;
-            const polyAgainst = pH.change > 0 !== consIsAway && pH.change !== 0;
-            return (
-              <div style={{
-                borderRadius: '8px', overflow: 'hidden', marginTop: '0.5rem',
-                border: `1px solid ${B.borderSubtle}`, background: 'rgba(255,255,255,0.02)',
-              }}>
-                <div style={{ padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}` }}>
-                  <span style={{ ...T.micro, color: B.textMuted }}>Prediction Market — Spread</span>
-                </div>
-                <div style={{ padding: '0.5rem 0.625rem' }}>
-                  <MiniSparkline
-                    points={polySpreadPts}
-                    color={polyMoving ? B.green : polyAgainst ? B.red : B.sky}
-                    label={`${flowGame.polySpread.title || 'Spread'}`}
-                    startLabel={`${pH.open}¢`}
-                    endLabel={`${pH.current}¢`}
-                    width={isMobile ? 120 : 140}
-                    height={32}
-                  />
-                  <span style={{
-                    ...T.micro, fontSize: '0.5rem', fontWeight: 700, marginTop: '0.15rem', display: 'block',
-                    color: polyMoving ? B.green : polyAgainst ? B.red : B.textMuted,
-                  }}>
-                    {polyMoving ? '↑ Moving with play' : polyAgainst ? '↓ Moving against play' : '— Stable'}
-                  </span>
-                </div>
-              </div>
-            );
-          })()}
-
-          {/* Spread Wallet Trades */}
-          {spreadGameData && spreadGameData.positions?.length > 0 && (() => {
-            const sPos = spreadGameData.positions;
-            const uniqueSpreadWallets = new Set(sPos.map(p => p.wallet)).size;
-            const sSummary = spreadGameData.summary;
-            const consSide = sSummary.consensus;
-            // Phase 2: {SPORT} WINNER counts for this spread market
-            const sprWinFor = new Set();
-            const sprWinAg = new Set();
-            sPos.forEach(p => {
-              if (!isSportWinner(p.wallet, gd.sport)) return;
-              if (p.side === consSide) sprWinFor.add(p.wallet);
-              else if (p.side) sprWinAg.add(p.wallet);
-            });
-            const sprWinForCt = sprWinFor.size, sprWinAgCt = sprWinAg.size;
-            const consShort = (consSide === 'away' ? gd.away : gd.home).split(' ').pop();
-            const oppShort2 = (consSide === 'away' ? gd.home : gd.away).split(' ').pop();
-            const totalPnl = sPos.reduce((s, p) => s + (p.totalPnl || 0), 0);
-            const now = Date.now();
-            const sideOpts = [
-              { key: 'all', label: 'All Bets' },
-              { key: 'consensus', label: consShort },
-              { key: 'opposing', label: oppShort2 },
-            ];
-            const filtered = sPos.filter(p => {
-              if (spreadWalletFilter === 'consensus' && p.side !== consSide) return false;
-              if (spreadWalletFilter === 'opposing' && p.side === consSide) return false;
-              return true;
-            }).sort((a, b) => (b.sportVerified ? 1 : 0) - (a.sportVerified ? 1 : 0));
-
-            return <>
-              <button onClick={() => setShowSpreadWallets(!showSpreadWallets)} style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                width: '100%', cursor: 'pointer', padding: '0.5rem 0.625rem', borderRadius: '8px',
-                background: 'rgba(139,92,246,0.04)', border: `1px solid ${B.borderSubtle}`, marginTop: '0.5rem',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                  {showSpreadWallets ? <ChevronUp size={12} color="#8B5CF6" /> : <ChevronDown size={12} color="#8B5CF6" />}
-                  <span style={{ ...T.micro, color: '#8B5CF6', fontWeight: 700 }}>
-                    {uniqueSpreadWallets} SPREAD SHARP{uniqueSpreadWallets !== 1 ? 'S' : ''}
-                    {sprWinForCt > 0 && <span style={{ color: B.gold, fontWeight: 900 }}> · {sprWinForCt} {gd.sport} WINNER{sprWinForCt !== 1 ? 'S' : ''}</span>}
-                    {sprWinAgCt > sprWinForCt && <span style={{ color: B.red, fontWeight: 900 }}> · {sprWinAgCt} {gd.sport} FADING</span>}
-                  </span>
-                </div>
-                <span style={{ ...T.micro, color: B.textSec }}>
-                  Combined P&L: <span style={{ fontWeight: 700, color: totalPnl >= 0 ? B.green : B.red }}>{totalPnl >= 0 ? '+' : ''}{fmtVol(totalPnl)}</span>
-                </span>
-              </button>
-              {showSpreadWallets && (
-                <div style={{ marginTop: '0.375rem', borderRadius: '8px', overflow: 'hidden', border: `1px solid ${B.borderSubtle}` }}>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', alignItems: 'center', padding: '0.5rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}`, background: 'rgba(255,255,255,0.02)' }}>
-                    <span style={{ ...T.micro, color: B.textMuted, marginRight: '0.25rem' }}>Side:</span>
-                    {sideOpts.map(o => (
-                      <button key={o.key} onClick={() => setSpreadWalletFilter(o.key)} style={{ ...T.micro, fontWeight: spreadWalletFilter === o.key ? 700 : 400, padding: '0.15rem 0.45rem', borderRadius: '4px', cursor: 'pointer', border: 'none', color: spreadWalletFilter === o.key ? '#8B5CF6' : B.textMuted, background: spreadWalletFilter === o.key ? 'rgba(139,92,246,0.12)' : 'rgba(255,255,255,0.04)' }}>{o.label}</button>
-                    ))}
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.6rem' }}>
-                    {filtered.map((p, i) => (
-                      <WalletDossierRow key={`${p.wallet}-${i}`} p={p} gd={gd} now={now} isMobile={isMobile} market="spread" accent="#8B5CF6" />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>;
-          })()}
-        </div>
-      )}
-      {marketTab === 'total' && (
-        <div style={{ padding: '0.5rem 0.875rem' }}>
-          {/* ─── Total Lock-In Criteria ─── */}
-          {totalSharpFeatures && (() => {
-            const tCriteria = [
-              { id: 't3', met: (totalSharpFeatures.conWalletCount || 0) >= 2, label: '2+ Sharp Bettors' },
-              { id: 'tinv', met: (totalSharpFeatures.conTotalInvested || 0) >= 10000, label: '$10K+ on Side' },
-              { id: 'tev', met: totalEvEdge > 0, label: '+EV Edge' },
-              { id: 'tpinn', met: totalPinnConfirms, label: 'Pinnacle Confirms' },
-              { id: 'tline', met: totalPinnMovedWith, label: 'Line Moving With' },
-            ];
-            const tMetCount = tCriteria.filter(c => c.met).length;
-            return (
-              <div style={{
-                padding: '0.5rem 0.625rem', borderRadius: '8px', marginBottom: '0.5rem',
-                background: isTotalLocked && totalLockTier === 'LEAN'
-                  ? 'linear-gradient(135deg, rgba(250,204,21,0.06) 0%, rgba(250,204,21,0.02) 100%)'
-                  : isTotalLocked
-                  ? 'linear-gradient(135deg, rgba(16,185,129,0.06) 0%, rgba(16,185,129,0.02) 100%)'
-                  : isTotalShadow
-                  ? 'linear-gradient(135deg, rgba(212,175,55,0.06) 0%, rgba(212,175,55,0.02) 100%)'
-                  : 'rgba(255,255,255,0.02)',
-                border: `1px solid ${isTotalLocked && totalLockTier === 'LEAN' ? 'rgba(250,204,21,0.40)' : isTotalLocked ? 'rgba(16,185,129,0.25)' : isTotalShadow ? 'rgba(212,175,55,0.25)' : B.borderSubtle}`,
-              }}>
-                {(isTotalLocked || isTotalShadow) && totalSr ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.375rem' }}>
-                    <span style={{ fontSize: '1rem' }}>{'★'.repeat(Math.floor(totalRenderedStars))}{totalRenderedStars % 1 ? '½' : ''}</span>
-                    <span style={{ ...T.micro, fontWeight: 700, color:
-                      isTotalLocked && (totalLockTier === 'ELITE' || totalLockTier === 'PREMIUM') ? B.gold
-                      : isTotalLocked && totalLockTier === 'LOCK' ? B.green
-                      : isTotalLocked && totalLockTier === 'LEAN' ? '#60A5FA'
-                      : isTotalLocked && totalLockTier === 'WEAK' ? '#F59E0B'
-                      : isTotalLocked ? B.green : B.gold }}>
-                      {isTotalLocked && totalLockTier && totalLockTier !== 'MUTED' && totalLockTier !== 'FADE' && totalLockTier !== 'UNKNOWN'
-                        ? `TOTAL ${totalLockTier}`
-                        : isTotalLocked ? 'TOTAL LOCK' : 'TOTAL TRACKING'} — {totalConsensusSide === 'over' ? 'Over' : 'Under'} {totalLine}
-                    </span>
-                    <span style={{ ...T.micro, color: B.textSec, marginLeft: 'auto' }}>
-                      {totalUnits}u @ {fmtOdds(totalBetOdds)}
-                    </span>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
-                    <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700 }}>TOTAL CRITERIA ({tMetCount}/5)</span>
-                    <span style={{ ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'", color: tMetCount >= 4 ? B.green : tMetCount >= 3 ? B.gold : B.textMuted }}>{tMetCount}/5</span>
-                  </div>
-                )}
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: '0.25rem' }}>
-                  {tCriteria.map(c => (
-                    <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.15rem 0' }}>
-                      {c.met
-                        ? <CheckCircle size={11} color={B.green} strokeWidth={2.5} />
-                        : <Circle size={11} color={B.textMuted} strokeWidth={1.5} />
-                      }
-                      <span style={{ ...T.micro, fontSize: '0.5625rem', color: c.met ? B.green : B.textMuted, fontWeight: c.met ? 700 : 400 }}>{c.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })()}
-
-          {/* Position Battle — Totals */}
-          {totalGameData && totalGameData.positions?.length > 0 && (() => {
-            const tPos = totalGameData.positions;
-            const tSummary = totalGameData.summary;
-            const overPos = tPos.filter(p => p.side === 'over');
-            const underPos = tPos.filter(p => p.side === 'under');
-            // NET-after-dedup totals (matches the cron / sizing math
-            // exactly so the locked card and live card never disagree).
-            // The legacy raw-sum (tSummary.overInvested / underInvested)
-            // double-counts wallets that hedged both sides — produced
-            // today's $69.8K live vs $56.1K locked mismatch on the
-            // Cavs/Pistons total. computeSharpFeatures nets each wallet
-            // to its dominant side so a $10K-Over / $20K-Under wallet
-            // contributes $10K to Under (its true conviction), matching
-            // exactly what the cron stamps as peak.totalInvested.
-            const overSf = computeSharpFeatures(tPos, 'over');
-            const overW = overSf.conWalletCount;
-            const underW = overSf.oppWalletCount;
-            const overInv = overSf.conTotalInvested;
-            const underInv = overSf.oppTotalInv;
-            const totalInv = overInv + underInv;
-            const overPnl = overPos.reduce((s, p) => s + (p.totalPnl || 0), 0);
-            const underPnl = underPos.reduce((s, p) => s + (p.totalPnl || 0), 0);
-            const overAvg = overW > 0 ? overInv / overW : 0;
-            const underAvg = underW > 0 ? underInv / underW : 0;
-            const consSide = tSummary.consensus;
-            const isOver = consSide === 'over';
-            const moneyRatio = totalInv > 0 ? Math.round((Math.max(overInv, underInv) / totalInv) * 100) : 50;
-            const tl = pinnGame?.totalCurrent?.line;
-
-            const panelStyle = (isActive) => ({
-              flex: 1, padding: '0.625rem', borderRadius: '8px',
-              background: isActive ? 'rgba(245,158,11,0.06)' : 'rgba(255,255,255,0.015)',
-              border: `1px solid ${isActive ? 'rgba(245,158,11,0.3)' : B.borderSubtle}`,
-              position: 'relative', overflow: 'hidden',
-            });
-
-            return (
-              <div style={{ marginBottom: '0.625rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.375rem' }}>
-                  <span style={{ ...T.micro, color: B.textMuted }}>Total Money — Both Sides</span>
-                  <span style={{ ...T.micro, fontWeight: 800, color: '#F59E0B', padding: '0.1rem 0.3rem', borderRadius: '3px', background: 'rgba(245,158,11,0.12)' }}>
-                    {moneyRatio}% {isOver ? 'Over' : 'Under'}
-                  </span>
-                  {tl && <span style={{ ...T.micro, color: B.textMuted }}>({tl})</span>}
-                </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <div style={panelStyle(isOver)}>
-                    {isOver && <div style={{ position: 'absolute', top: 0, left: 0, width: '3px', height: '100%', background: '#F59E0B', borderRadius: '8px 0 0 8px' }} />}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', marginBottom: '0.5rem' }}>
-                      {isOver && <span style={{ ...T.micro, fontSize: '0.5rem', fontWeight: 900, padding: '0.1rem 0.3rem', borderRadius: '3px', color: '#fff', background: '#F59E0B' }}>SHARP SIDE</span>}
-                      <span style={{ ...T.sub, fontWeight: 900, color: isOver ? B.text : B.textMuted }}>Over{tl ? ` ${tl}` : ''}</span>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-                      <div>
-                        <div style={{ ...T.heading, fontWeight: 900, color: isOver ? '#F59E0B' : B.textSec, fontFeatureSettings: "'tnum'" }}>{fmtVol(overInv)}</div>
-                        <div style={{ ...T.micro, color: B.textMuted }}>{overW} sharp{overW !== 1 ? 's' : ''} · avg {fmtVol(overAvg)}</div>
-                      </div>
-                      <div style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", padding: '0.15rem 0.4rem', borderRadius: '4px', color: overPnl >= 0 ? B.green : B.red, background: overPnl >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)' }}>
-                        {overPnl >= 0 ? '+' : ''}{fmtVol(overPnl)} sports P&L
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 0.125rem', flexShrink: 0 }}>
-                    <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700 }}>VS</span>
-                  </div>
-                  <div style={panelStyle(!isOver)}>
-                    {!isOver && <div style={{ position: 'absolute', top: 0, right: 0, width: '3px', height: '100%', background: '#F59E0B', borderRadius: '0 8px 8px 0' }} />}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', justifyContent: 'flex-end', marginBottom: '0.5rem' }}>
-                      <span style={{ ...T.sub, fontWeight: 900, color: !isOver ? B.text : B.textMuted }}>Under{tl ? ` ${tl}` : ''}</span>
-                      {!isOver && <span style={{ ...T.micro, fontSize: '0.5rem', fontWeight: 900, padding: '0.1rem 0.3rem', borderRadius: '3px', color: '#fff', background: '#F59E0B' }}>SHARP SIDE</span>}
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', alignItems: 'flex-end' }}>
-                      <div>
-                        <div style={{ ...T.heading, fontWeight: 900, color: !isOver ? '#F59E0B' : B.textSec, fontFeatureSettings: "'tnum'", textAlign: 'right' }}>{fmtVol(underInv)}</div>
-                        <div style={{ ...T.micro, color: B.textMuted, textAlign: 'right' }}>{underW} sharp{underW !== 1 ? 's' : ''} · avg {fmtVol(underAvg)}</div>
-                      </div>
-                      <div style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", padding: '0.15rem 0.4rem', borderRadius: '4px', color: underPnl >= 0 ? B.green : B.red, background: underPnl >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)' }}>
-                        {underPnl >= 0 ? '+' : ''}{fmtVol(underPnl)} sports P&L
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
-
-          {/* ─── Total Market Flow Bar ─── */}
-          {totalGameData && totalGameData.positions?.length > 0 && (() => {
-            const tSummary = totalGameData.summary;
-            const overInv = tSummary.overInvested || 0;
-            const underInv = tSummary.underInvested || 0;
-            const totalInvT = overInv + underInv;
-            const overPctT = totalInvT > 0 ? (overInv / totalInvT) * 100 : 50;
-            const underPctT = totalInvT > 0 ? (underInv / totalInvT) * 100 : 50;
-            const consSide = tSummary.consensus;
-            const consIsOver = consSide === 'over';
-            const accentC = '#8B5CF6';
-            const bars = [{ label: 'Sharp Money', awayVal: overPctT, homeVal: underPctT }];
-            return (
-              <div style={{
-                marginBottom: '0.625rem', borderRadius: '8px', overflow: 'hidden',
-                border: `1px solid ${B.borderSubtle}`, background: 'rgba(255,255,255,0.02)',
-              }}>
-                <div style={{
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}`,
-                }}>
-                  <span style={{ ...T.micro, color: B.textMuted }}>Market Flow</span>
-                  <div style={{ display: 'flex', gap: '0.75rem' }}>
-                    <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700 }}>Over</span>
-                    <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700 }}>Under</span>
-                  </div>
-                </div>
-                <div style={{ padding: '0.5rem 0.625rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  {bars.map(bar => {
-                    const overWins = bar.awayVal > bar.homeVal;
-                    const underWins = bar.homeVal > bar.awayVal;
-                    const overColor = consIsOver && overWins ? accentC : overWins ? B.textSec : B.textMuted;
-                    const underColor = !consIsOver && underWins ? accentC : underWins ? B.textSec : B.textMuted;
-                    const barOverBg = overWins
-                      ? (consIsOver ? `linear-gradient(90deg, ${accentC}44, ${accentC})` : `linear-gradient(90deg, rgba(255,255,255,0.08), rgba(255,255,255,0.18))`)
-                      : 'rgba(255,255,255,0.05)';
-                    const barUnderBg = underWins
-                      ? (!consIsOver ? `linear-gradient(90deg, ${accentC}, ${accentC}44)` : `linear-gradient(90deg, rgba(255,255,255,0.18), rgba(255,255,255,0.08))`)
-                      : 'rgba(255,255,255,0.05)';
-                    return (
-                      <div key={bar.label}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '36px 1fr 36px', alignItems: 'center', gap: '0.375rem' }}>
-                          <span style={{ ...T.micro, fontSize: '0.625rem', fontWeight: 800, fontFeatureSettings: "'tnum'", color: overColor, textAlign: 'left' }}>
-                            {bar.awayVal.toFixed(0)}%
-                          </span>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
-                            <div style={{ display: 'flex', height: '5px', borderRadius: '2.5px', overflow: 'hidden', background: 'rgba(255,255,255,0.03)' }}>
-                              <div style={{ width: `${bar.awayVal}%`, background: barOverBg, borderRadius: '2.5px 0 0 2.5px', transition: 'width 0.5s cubic-bezier(.4,0,.2,1)' }} />
-                              <div style={{ width: '1px', background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
-                              <div style={{ width: `${bar.homeVal}%`, background: barUnderBg, borderRadius: '0 2.5px 2.5px 0', transition: 'width 0.5s cubic-bezier(.4,0,.2,1)' }} />
-                            </div>
-                            <span style={{ ...T.micro, fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', textAlign: 'center', letterSpacing: '0.03em' }}>{bar.label}</span>
-                          </div>
-                          <span style={{ ...T.micro, fontSize: '0.625rem', fontWeight: 800, fontFeatureSettings: "'tnum'", color: underColor, textAlign: 'right' }}>
-                            {bar.homeVal.toFixed(0)}%
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })()}
-
-          <TotalPanel pinnGame={pinnGame} game={flowGame || { away: gd.away, home: gd.home }} isMobile={isMobile} />
-
-          {/* ─── Pinnacle Total Line Confirmation ─── */}
-          {pinnGame?.totalOpener && pinnGame?.totalCurrent && (() => {
-            const to = pinnGame.totalOpener;
-            const tc = pinnGame.totalCurrent;
-            return (
-              <div style={{
-                display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center',
-                padding: '0.375rem 0.625rem', marginTop: '0.25rem',
-                borderRadius: '6px', background: 'rgba(255,255,255,0.02)',
-                border: `1px solid ${B.borderSubtle}`,
-              }}>
-                <span style={{ ...T.micro, color: B.gold, fontWeight: 600 }}>Pinnacle</span>
-                <span style={{ ...T.micro, color: B.textSec }}>
-                  Open: {to.line}
-                </span>
-                <span style={{ ...T.micro, color: B.text, fontWeight: 600 }}>
-                  Now: {tc.line}
-                </span>
-                {totalPinnMovedWith && <span style={{ ...T.micro, color: B.green, fontWeight: 700 }}>✓ Confirms</span>}
-                {totalPinnMovedAgainst && <span style={{ ...T.micro, color: B.red, fontWeight: 700 }}>✗ Opposes</span>}
-              </div>
-            );
-          })()}
-
-          {/* ─── Total Price Movement — Polymarket ─── */}
-          {flowGame?.polyTotal?.priceHistory && flowGame.polyTotal.priceHistory.points?.length >= 2 && (() => {
-            const pH = flowGame.polyTotal.priceHistory;
-            const polyTotalPts = pH.points;
-            const consIsOver = totalGameData?.summary?.consensus === 'over';
-            const polyMoving = consIsOver ? pH.change > 0 : pH.change < 0;
-            const polyAgainst = consIsOver ? pH.change < 0 : pH.change > 0;
-            return (
-              <div style={{
-                borderRadius: '8px', overflow: 'hidden', marginTop: '0.5rem',
-                border: `1px solid ${B.borderSubtle}`, background: 'rgba(255,255,255,0.02)',
-              }}>
-                <div style={{ padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}` }}>
-                  <span style={{ ...T.micro, color: B.textMuted }}>Prediction Market — Total</span>
-                </div>
-                <div style={{ padding: '0.5rem 0.625rem' }}>
-                  <MiniSparkline
-                    points={polyTotalPts}
-                    color={polyMoving ? B.green : polyAgainst ? B.red : B.sky}
-                    label={`${flowGame.polyTotal.title || 'O/U'}`}
-                    startLabel={`${pH.open}¢`}
-                    endLabel={`${pH.current}¢`}
-                    width={isMobile ? 120 : 140}
-                    height={32}
-                  />
-                  <span style={{
-                    ...T.micro, fontSize: '0.5rem', fontWeight: 700, marginTop: '0.15rem', display: 'block',
-                    color: polyMoving ? B.green : polyAgainst ? B.red : B.textMuted,
-                  }}>
-                    {polyMoving ? '↑ Moving with play' : polyAgainst ? '↓ Moving against play' : '— Stable'}
-                  </span>
-                </div>
-              </div>
-            );
-          })()}
-
-          {/* Total Wallet Trades */}
-          {totalGameData && totalGameData.positions?.length > 0 && (() => {
-            const tPos = totalGameData.positions;
-            const uniqueTotalWallets = new Set(tPos.map(p => p.wallet)).size;
-            const tSummary = totalGameData.summary;
-            const consSide = tSummary.consensus;
-            // Phase 2: {SPORT} WINNER counts for this totals market
-            const totWinFor = new Set();
-            const totWinAg = new Set();
-            tPos.forEach(p => {
-              if (!isSportWinner(p.wallet, gd.sport)) return;
-              if (p.side === consSide) totWinFor.add(p.wallet);
-              else if (p.side) totWinAg.add(p.wallet);
-            });
-            const totWinForCt = totWinFor.size, totWinAgCt = totWinAg.size;
-            const totalPnl = tPos.reduce((s, p) => s + (p.totalPnl || 0), 0);
-            const now = Date.now();
-            const sideOpts = [
-              { key: 'all', label: 'All Bets' },
-              { key: 'consensus', label: consSide === 'over' ? 'Over' : 'Under' },
-              { key: 'opposing', label: consSide === 'over' ? 'Under' : 'Over' },
-            ];
-            const filtered = tPos.filter(p => {
-              if (totalWalletFilter === 'consensus' && p.side !== consSide) return false;
-              if (totalWalletFilter === 'opposing' && p.side === consSide) return false;
-              return true;
-            }).sort((a, b) => (b.sportVerified ? 1 : 0) - (a.sportVerified ? 1 : 0));
-
-            return <>
-              <button onClick={() => setShowTotalWallets(!showTotalWallets)} style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                width: '100%', cursor: 'pointer', padding: '0.5rem 0.625rem', borderRadius: '8px',
-                background: 'rgba(245,158,11,0.04)', border: `1px solid ${B.borderSubtle}`, marginTop: '0.5rem',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                  {showTotalWallets ? <ChevronUp size={12} color="#F59E0B" /> : <ChevronDown size={12} color="#F59E0B" />}
-                  <span style={{ ...T.micro, color: '#F59E0B', fontWeight: 700 }}>
-                    {uniqueTotalWallets} TOTAL SHARP{uniqueTotalWallets !== 1 ? 'S' : ''}
-                    {totWinForCt > 0 && <span style={{ color: B.gold, fontWeight: 900 }}> · {totWinForCt} {gd.sport} WINNER{totWinForCt !== 1 ? 'S' : ''}</span>}
-                    {totWinAgCt > totWinForCt && <span style={{ color: B.red, fontWeight: 900 }}> · {totWinAgCt} {gd.sport} FADING</span>}
-                  </span>
-                </div>
-                <span style={{ ...T.micro, color: B.textSec }}>
-                  Combined P&L: <span style={{ fontWeight: 700, color: totalPnl >= 0 ? B.green : B.red }}>{totalPnl >= 0 ? '+' : ''}{fmtVol(totalPnl)}</span>
-                </span>
-              </button>
-              {showTotalWallets && (
-                <div style={{ marginTop: '0.375rem', borderRadius: '8px', overflow: 'hidden', border: `1px solid ${B.borderSubtle}` }}>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', alignItems: 'center', padding: '0.5rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}`, background: 'rgba(255,255,255,0.02)' }}>
-                    <span style={{ ...T.micro, color: B.textMuted, marginRight: '0.25rem' }}>Side:</span>
-                    {sideOpts.map(o => (
-                      <button key={o.key} onClick={() => setTotalWalletFilter(o.key)} style={{ ...T.micro, fontWeight: totalWalletFilter === o.key ? 700 : 400, padding: '0.15rem 0.45rem', borderRadius: '4px', cursor: 'pointer', border: 'none', color: totalWalletFilter === o.key ? '#F59E0B' : B.textMuted, background: totalWalletFilter === o.key ? 'rgba(245,158,11,0.12)' : 'rgba(255,255,255,0.04)' }}>{o.label}</button>
-                    ))}
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.6rem' }}>
-                    {filtered.map((p, i) => (
-                      <WalletDossierRow key={`${p.wallet}-${i}`} p={p} gd={gd} now={now} isMobile={isMobile} market="total" accent="#F59E0B" />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>;
-          })()}
-        </div>
-      )}
-
-      {marketTab === 'ml' && <div style={{ padding: '0.75rem 0.875rem' }}>
-        {/* ─── Position Battle — Both Sides ─── */}
-        {(awayWallets > 0 || homeWallets > 0) && (() => {
-          const awaySide = consensusSide === 'away';
-          const homeSide = consensusSide === 'home';
-          const moneyRatio = totalInvested > 0 ? Math.round((Math.max(awayInvested, homeInvested) / totalInvested) * 100) : 50;
-
-          // ── Qualified sharp money (proven winners we actually follow) ──────
-          // The $ bars above are ALL tracked sharp money — they can pile onto
-          // the favorite even when the proven, whitelisted winners (the wallets
-          // the model trusts) sit on the OTHER side. This callout isolates the
-          // qualified signal and anchors to the locked/AGS side so the card can
-          // never imply the opposite side is "the play".
-          const provenSideAgg = (side) => {
-            let n = 0, money = 0, pnl = 0; const seen = new Set();
-            for (const p of gd.positions) {
-              if (!p || p.side !== side || !(p.invested > 0)) continue;
-              if (!isSportWinner(p.wallet, gd.sport)) continue;
-              if (seen.has(p.wallet)) continue; seen.add(p.wallet);
-              n++; money += p.invested || 0; pnl += (p.totalPnl || p.sportPnlTotal || 0);
-            }
-            return { n, money, pnl };
-          };
-          const qLockSide = (liveLockedSideKey === 'away' || liveLockedSideKey === 'home') ? liveLockedSideKey : consensusSide;
-          const qOffSide = qLockSide === 'away' ? 'home' : 'away';
-          const qLockShort = qLockSide === 'away' ? awayShort : homeShort;
-          const qOffShort = qOffSide === 'away' ? awayShort : homeShort;
-          const provLock = provenSideAgg(qLockSide);
-          const provOff = provenSideAgg(qOffSide);
-          const fvQ = mlAgs?.featureValues ?? null;
-          const qForCount = fvQ?.forCount ?? provLock.n;
-          const qAgCount = fvQ?.agCount ?? provOff.n;
-          const qHcCount = fvQ?.forHcCount ?? 0;
-          const qContrib = Number.isFinite(fvQ?.forContribShare) ? Math.round(fvQ.forContribShare * 100) : null;
-          const qHasData = (qForCount + qAgCount) > 0 || (provLock.n + provOff.n) > 0;
-          const qDisagrees = qHasData && qLockSide !== consensusSide;
-          // Asymmetry follows the data: the sharp side takes ~60% of the
-          // row and glows; the dead side compresses and dims.
-          const panelStyle = (isActive) => ({
-            flex: isActive ? 1.55 : 1, padding: isActive ? '0.5rem 0.6rem' : '0.4rem 0.5rem',
-            borderRadius: '10px',
-            background: isActive
-              ? `radial-gradient(120% 150% at 50% 0%, ${accentColor}12 0%, transparent 60%), linear-gradient(135deg, ${accentColor}0e 0%, ${accentColor}03 100%)`
-              : 'rgba(255,255,255,0.015)',
-            border: `1px solid ${isActive ? `${accentColor}40` : B.borderSubtle}`,
-            boxShadow: isActive ? `0 0 14px ${accentColor}14, inset 0 1px 0 rgba(255,255,255,0.04)` : 'none',
-            opacity: isActive ? 1 : 0.7,
-            position: 'relative',
-            overflow: 'hidden',
-            transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)',
-          });
-
-          const SidePanel = ({ team, wallets, invested, pnl, avgBet, isActive, align }) => (
-            <div style={panelStyle(isActive)}>
-              {isActive && (
-                <div style={{
-                  position: 'absolute', top: 0, [align === 'left' ? 'left' : 'right']: 0,
-                  width: '2px', height: '100%',
-                  background: accentColor,
-                  borderRadius: align === 'left' ? '8px 0 0 8px' : '0 8px 8px 0',
-                }} />
-              )}
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: '0.3rem',
-                justifyContent: align === 'right' ? 'flex-end' : 'flex-start',
-                marginBottom: '0.3rem',
-              }}>
-                {isActive && align === 'left' && (
-                  <span style={{
-                    ...T.micro, fontSize: '0.46rem', fontWeight: 900,
-                    padding: '0.08rem 0.28rem', borderRadius: '3px',
-                    color: '#fff', background: accentColor,
-                  }}>MOST $</span>
-                )}
-                <span style={{
-                  ...T.sub, fontWeight: 900,
-                  color: isActive ? B.text : B.textMuted,
-                }}>
-                  {team}
-                </span>
-                {isActive && align === 'right' && (
-                  <span style={{
-                    ...T.micro, fontSize: '0.46rem', fontWeight: 900,
-                    padding: '0.08rem 0.28rem', borderRadius: '3px',
-                    color: '#fff', background: accentColor,
-                  }}>MOST $</span>
-                )}
-              </div>
-
-              <div style={{
-                display: 'flex', flexDirection: 'column', gap: '0.2rem',
-                alignItems: align === 'right' ? 'flex-end' : 'flex-start',
-              }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: align === 'right' ? 'flex-end' : 'flex-start' }}>
-                  <div style={{
-                    fontSize: isActive ? '1.25rem' : '0.875rem', fontWeight: 900,
-                    color: isActive ? accentColor : B.textSec,
-                    fontFeatureSettings: "'tnum'", lineHeight: 1.1, letterSpacing: '-0.01em',
-                    textShadow: isActive ? `0 0 18px ${accentColor}30` : 'none',
-                  }}>
-                    {fmtVol(invested)}
-                  </div>
-                  <div style={{ ...T.micro, fontSize: '0.55rem', color: B.textMuted, lineHeight: 1.15 }}>
-                    {wallets} sharp{wallets !== 1 ? 's' : ''} · avg {fmtVol(avgBet)}
-                  </div>
-                </div>
-                <div style={{
-                  ...T.micro, fontSize: '0.58rem',
-                  fontWeight: 700, fontFeatureSettings: "'tnum'",
-                  padding: '0.1rem 0.32rem', borderRadius: '4px',
-                  color: pnl >= 0 ? B.green : B.red,
-                  background: pnl >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
-                  lineHeight: 1.1,
-                }}>
-                  {pnl >= 0 ? '+' : ''}{fmtVol(pnl)} P&L
-                </div>
-              </div>
-            </div>
-          );
-
-          return (
-            <div style={{ marginBottom: '0.625rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.4rem' }}>
-                <span style={{ ...T.tiny, fontSize: '0.55rem', color: B.textSubtle, letterSpacing: '0.09em' }}>ALL TRACKED MONEY — BOTH SIDES</span>
-                <span style={{
-                  ...T.micro, fontWeight: 800, color: B.textSec,
-                  padding: '0.1rem 0.32rem', borderRadius: '3px',
-                  background: 'rgba(255,255,255,0.05)', fontFeatureSettings: "'tnum'",
-                }}>
-                  {moneyRatio}% {consensusShort}
-                </span>
-              </div>
-
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'stretch' }}>
-                <SidePanel team={awayShort} wallets={awayWallets} invested={awayInvested} pnl={awayLifetimePnl} avgBet={awayAvgBet} isActive={awaySide} align="left" />
-
-                <div style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                  padding: '0 0.05rem', flexShrink: 0,
-                }}>
-                  <span style={{
-                    ...T.micro, fontSize: '0.52rem', color: B.textMuted, fontWeight: 800,
-                    width: '22px', height: '22px', borderRadius: '50%',
-                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                    border: `1px solid ${B.border}`, background: 'rgba(255,255,255,0.02)',
-                    letterSpacing: '0.02em',
-                  }}>VS</span>
-                </div>
-
-                <SidePanel team={homeShort} wallets={homeWallets} invested={homeInvested} pnl={homeLifetimePnl} avgBet={homeAvgBet} isActive={homeSide} align="right" />
-              </div>
-
-              {/* ─── Qualified sharp money (proven winners we follow) ─── */}
-              {qHasData && (
-                <div style={{
-                  marginTop: '0.5rem', padding: '0.5rem 0.6rem', borderRadius: '10px',
-                  background: `${accentColor}0c`, border: `1px solid ${accentColor}33`,
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.4rem' }}>
-                    <ShieldCheck size={11} color={accentColor} strokeWidth={2.5} />
-                    <span style={{ ...T.tiny, fontSize: '0.55rem', color: accentColor, letterSpacing: '0.08em', fontWeight: 900 }}>QUALIFIED SHARP MONEY</span>
-                    <span style={{ ...T.micro, fontSize: '0.5rem', color: B.textMuted, fontWeight: 600 }}>proven winners we follow</span>
-                    {qContrib != null && (
-                      <span style={{
-                        marginLeft: 'auto', ...T.micro, fontWeight: 800, color: accentColor,
-                        padding: '0.1rem 0.32rem', borderRadius: '3px',
-                        background: `${accentColor}15`, fontFeatureSettings: "'tnum'",
-                      }}>
-                        {qContrib}% {qLockShort}
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'stretch' }}>
-                    <div style={{ flex: 1.4, padding: '0.4rem 0.5rem', borderRadius: '8px', background: `${accentColor}10`, border: `1px solid ${accentColor}40` }}>
-                      <div style={{ ...T.sub, fontWeight: 900, color: B.text, lineHeight: 1.1 }}>{qLockShort}</div>
-                      <div style={{ ...T.micro, fontSize: '0.6rem', color: accentColor, fontWeight: 800, lineHeight: 1.3 }}>
-                        {qForCount} proven winner{qForCount !== 1 ? 's' : ''}{qHcCount > 0 ? ` · ${qHcCount} HC` : ''}
-                      </div>
-                      <div style={{ ...T.micro, fontSize: '0.58rem', color: provLock.pnl >= 0 ? B.green : B.red, fontWeight: 700, fontFeatureSettings: "'tnum'" }}>
-                        {fmtVol(provLock.money)} · {provLock.pnl >= 0 ? '+' : ''}{fmtVol(provLock.pnl)} net
-                      </div>
-                    </div>
-                    <div style={{ flex: 1, padding: '0.4rem 0.5rem', borderRadius: '8px', background: 'rgba(255,255,255,0.015)', border: `1px solid ${B.borderSubtle}`, opacity: 0.75 }}>
-                      <div style={{ ...T.sub, fontWeight: 800, color: B.textMuted, lineHeight: 1.1 }}>{qOffShort}</div>
-                      <div style={{ ...T.micro, fontSize: '0.6rem', color: B.textMuted, fontWeight: 700, lineHeight: 1.3 }}>
-                        {qAgCount} proven{qAgCount !== 1 ? 's' : ''}
-                      </div>
-                      <div style={{ ...T.micro, fontSize: '0.58rem', color: provOff.pnl >= 0 ? B.green : B.red, fontWeight: 700, fontFeatureSettings: "'tnum'" }}>
-                        {fmtVol(provOff.money)} · {provOff.pnl >= 0 ? '+' : ''}{fmtVol(provOff.pnl)} net
-                      </div>
-                    </div>
-                  </div>
-                  {qDisagrees && (
-                    <div style={{ marginTop: '0.4rem', ...T.micro, fontSize: '0.58rem', color: B.gold, fontWeight: 600, lineHeight: 1.35 }}>
-                      Most tracked money is on {consensusShort} ({moneyRatio}%), but the proven winners — and our model — back {qLockShort}.
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* ─── Market Flow Split ─── */}
-              {(() => {
-                const bars = [
-                  { label: 'Sharp Money', awayVal: awayPct, homeVal: 100 - awayPct },
-                  ...(flowGame ? [
-                    { label: 'Public Tickets', awayVal: flowGame.awayTicketPct || 50, homeVal: flowGame.homeTicketPct || 50 },
-                    { label: 'Public Money', awayVal: flowGame.awayMoneyPct || 50, homeVal: flowGame.homeMoneyPct || 50 },
-                  ] : []),
-                ];
-                return (
-                  <div style={{
-                    marginTop: '0.55rem', paddingTop: '0.5rem',
-                    borderTop: `1px solid ${B.borderSubtle}`,
-                  }}>
-                    <div style={{
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                      padding: '0 0.1rem 0.3rem',
-                    }}>
-                      <span style={{ ...T.tiny, fontSize: '0.55rem', color: B.textSubtle, letterSpacing: '0.09em' }}>MARKET FLOW</span>
-                      <div style={{ display: 'flex', gap: '0.7rem' }}>
-                        <span style={{ ...T.micro, fontSize: '0.58rem', color: B.textMuted, fontWeight: 700 }}>{awayShort}</span>
-                        <span style={{ ...T.micro, fontSize: '0.58rem', color: B.textMuted, fontWeight: 700 }}>{homeShort}</span>
-                      </div>
-                    </div>
-                    <div style={{ padding: '0 0.1rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                      {bars.map(bar => {
-                        const awayWins = bar.awayVal > bar.homeVal;
-                        const homeWins = bar.homeVal > bar.awayVal;
-                        const awayColor = awaySide && awayWins ? accentColor : awayWins ? B.textSec : B.textMuted;
-                        const homeColor = homeSide && homeWins ? accentColor : homeWins ? B.textSec : B.textMuted;
-                        const barAwayBg = awayWins
-                          ? (awaySide ? `linear-gradient(90deg, ${accentColor}44, ${accentColor})` : `linear-gradient(90deg, rgba(255,255,255,0.08), rgba(255,255,255,0.18))`)
-                          : 'rgba(255,255,255,0.05)';
-                        const barHomeBg = homeWins
-                          ? (homeSide ? `linear-gradient(90deg, ${accentColor}, ${accentColor}44)` : `linear-gradient(90deg, rgba(255,255,255,0.18), rgba(255,255,255,0.08))`)
-                          : 'rgba(255,255,255,0.05)';
-                        return (
-                          <div key={bar.label}>
-                            <div style={{
-                              display: 'grid', gridTemplateColumns: '36px 1fr 36px',
-                              alignItems: 'center', gap: '0.375rem',
-                            }}>
-                              <span style={{
-                                ...T.micro, fontSize: '0.625rem', fontWeight: 800, fontFeatureSettings: "'tnum'",
-                                color: awayColor, textAlign: 'left',
-                              }}>
-                                {bar.awayVal.toFixed(0)}%
-                              </span>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
-                                <div style={{
-                                  display: 'flex', height: '7px', borderRadius: '3.5px', overflow: 'hidden',
-                                  background: 'rgba(255,255,255,0.04)',
-                                  boxShadow: 'inset 0 1px 1px rgba(0,0,0,0.3)',
-                                }}>
-                                  <div className="sf-bar-left" style={{
-                                    width: `${bar.awayVal}%`, background: barAwayBg,
-                                    borderRadius: awayWins ? '3.5px' : '3.5px 0 0 3.5px',
-                                    boxShadow: awaySide && awayWins ? `0 0 8px ${accentColor}50` : 'none',
-                                    transition: 'width 0.5s cubic-bezier(.4,0,.2,1)',
-                                  }} />
-                                  <div style={{ width: '2px', background: 'rgba(11,15,31,0.9)', flexShrink: 0 }} />
-                                  <div className="sf-bar-right" style={{
-                                    width: `${bar.homeVal}%`, background: barHomeBg,
-                                    borderRadius: homeWins ? '3.5px' : '0 3.5px 3.5px 0',
-                                    boxShadow: homeSide && homeWins ? `0 0 8px ${accentColor}50` : 'none',
-                                    transition: 'width 0.5s cubic-bezier(.4,0,.2,1)',
-                                  }} />
-                                </div>
-                                <span style={{
-                                  ...T.micro, fontSize: '0.5rem', color: 'rgba(255,255,255,0.35)',
-                                  textAlign: 'center', letterSpacing: '0.05em', textTransform: 'uppercase',
-                                }}>
-                                  {bar.label}
-                                </span>
-                              </div>
-                              <span style={{
-                                ...T.micro, fontSize: '0.625rem', fontWeight: 800, fontFeatureSettings: "'tnum'",
-                                color: homeColor, textAlign: 'right',
-                              }}>
-                                {bar.homeVal.toFixed(0)}%
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
-          );
-        })()}
-
-        {/* ─── Price Movement — Sparklines with directional context ─── */}
-        {(pinnConsensusPoints.length >= 2 || polyPoints.length >= 2) && (
-          <div style={{
-            marginBottom: '0.5rem', paddingTop: '0.5rem',
-            borderTop: `1px solid ${B.borderSubtle}`,
-          }}>
-            <div style={{ padding: '0 0.1rem 0.35rem' }}>
-              <span style={{ ...T.tiny, fontSize: '0.55rem', color: B.textSubtle, letterSpacing: '0.09em' }}>PRICE MOVEMENT</span>
-            </div>
-            <div style={{
-              display: 'flex', gap: '0.65rem', padding: '0 0.1rem',
-              flexWrap: 'wrap', alignItems: 'flex-start',
-            }}>
-              {pinnConsensusPoints.length >= 2 && (
-                <div style={{ flex: '1 1 130px' }}>
-                  <MiniSparkline
-                    points={pinnConsensusPoints}
-                    color={pinnMovingWith ? B.green : pinnMovingAgainst ? B.red : B.gold}
-                    label={`Pinnacle — ${consensusShort} ML`}
-                    startLabel={fmtOdds(pinnConsensusPoints[0])}
-                    endLabel={fmtOdds(pinnConsensusPoints[pinnConsensusPoints.length - 1])}
-                    width={isMobile ? 120 : 140}
-                    height={32}
-                  />
-                  <span style={{
-                    ...T.micro, fontSize: '0.5rem', fontWeight: 700, marginTop: '0.15rem', display: 'block',
-                    color: pinnMovingWith ? B.green : pinnMovingAgainst ? B.red : B.textMuted,
-                  }}>
-                    {pinnMovingWith ? '↑ Moving with play' : pinnMovingAgainst ? '↓ Moving against play' : '— No movement'}
-                  </span>
-                </div>
-              )}
-              {polyPoints.length >= 2 && (
-                <div style={{ flex: '1 1 130px' }}>
-                  <MiniSparkline
-                    points={polyPoints}
-                    color={polyMovingWith ? B.green : polyMovingAgainst ? B.red : B.sky}
-                    label={`Prediction Market — ${awayShort}`}
-                    startLabel={`${polyPriceHistory.open}¢`}
-                    endLabel={`${polyPriceHistory.current}¢`}
-                    width={isMobile ? 120 : 140}
-                    height={32}
-                  />
-                  <span style={{
-                    ...T.micro, fontSize: '0.5rem', fontWeight: 700, marginTop: '0.15rem', display: 'block',
-                    color: polyMovingWith ? B.green : polyMovingAgainst ? B.red : B.textMuted,
-                  }}>
-                    {polyMovingWith ? '↑ Moving with play' : polyMovingAgainst ? '↓ Moving against play' : '— No movement'}
-                  </span>
-                </div>
-              )}
-              {pinnGame?.opener && pinnGame?.current && (
-                <div style={{
-                  flex: '1 1 100%', display: 'flex', gap: '0.5rem', flexWrap: 'wrap',
-                  alignItems: 'center', paddingTop: '0.25rem',
-                  borderTop: `1px solid ${B.borderSubtle}`,
-                }}>
-                  <span style={{ ...T.micro, color: B.gold, fontWeight: 600 }}>Pinnacle</span>
-                  <span style={{ ...T.micro, color: B.textSec }}>
-                    Open: {fmtOdds(pinnGame.opener.away)} / {fmtOdds(pinnGame.opener.home)}
-                  </span>
-                  <span style={{ ...T.micro, color: B.text, fontWeight: 600 }}>
-                    Now: {fmtOdds(pinnGame.current.away)} / {fmtOdds(pinnGame.current.home)}
-                  </span>
-                  {pinnConfirms && (
-                    <span style={{ ...T.micro, color: B.green, fontWeight: 700 }}>✓ Confirms</span>
-                  )}
-                  {pinnMoved && !pinnConfirms && (
-                    <span style={{ ...T.micro, color: B.red, fontWeight: 700 }}>✗ Opposes</span>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>}
-
-      <div style={{ padding: '0 0.875rem 0.75rem' }}>
-        {/* ─── Book Prices ─── */}
-        {pinnGame && Object.keys(allBooks).length > 1 && (
-          <div style={{
-            marginBottom: '0.5rem', paddingTop: '0.5rem',
-            borderTop: `1px solid ${B.borderSubtle}`,
-          }}>
-            <div style={{ padding: '0 0.1rem 0.35rem' }}>
-              <span style={{ ...T.tiny, fontSize: '0.55rem', color: B.textSubtle, letterSpacing: '0.09em' }}>
-                BOOK PRICES — {consensusShort} ML
-              </span>
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', borderRadius: '8px', overflow: 'hidden', background: 'rgba(255,255,255,0.02)' }}>
-              {Object.entries(allBooks)
-                .filter(([, b]) => sideBookOdds(b, consensusSide) != null)
-                .sort(([, a], [, b]) => {
-                  const aO = sideBookOdds(a, consensusSide);
-                  const bO = sideBookOdds(b, consensusSide);
-                  return bO - aO;
-                })
-                .map(([key, book]) => {
-                  const odds = sideBookOdds(book, consensusSide);
-                  const isBest = odds === bestRetail && hasEV;
-                  const isPinn = key === 'pinnacle';
-                  return (
-                    <div key={key} style={{
-                      flex: '1 1 auto', minWidth: '60px',
-                      padding: '0.3rem 0.4rem',
-                      borderRight: `1px solid ${B.borderSubtle}`,
-                      background: isBest
-                        ? 'linear-gradient(180deg, rgba(16,185,129,0.14) 0%, rgba(16,185,129,0.04) 100%)'
-                        : 'transparent',
-                      boxShadow: isBest ? 'inset 0 0 0 1px rgba(16,185,129,0.35)' : 'none',
-                      position: 'relative',
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <span style={{ ...T.micro, fontSize: '0.55rem', color: isPinn ? B.gold : B.textMuted, fontWeight: isPinn ? 700 : 400, lineHeight: 1.15 }}>
-                          {book.name}
-                        </span>
-                        {isBest && (
-                          <span style={{
-                            fontSize: '0.42rem', fontWeight: 900, letterSpacing: '0.08em',
-                            padding: '0.05rem 0.22rem', borderRadius: '2.5px',
-                            color: '#04110B', background: B.green,
-                            lineHeight: 1.3,
-                          }}>BEST</span>
-                        )}
-                      </div>
-                      <div style={{
-                        ...T.caption, fontWeight: isBest ? 900 : 700,
-                        color: isBest ? B.green : isPinn ? B.gold : B.text,
-                        lineHeight: 1.1, fontFeatureSettings: "'tnum'",
-                        textShadow: isBest ? '0 0 10px rgba(16,185,129,0.35)' : 'none',
-                      }}>
-                        {fmtOdds(odds)}
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
-          </div>
-        )}
-
-        {/* ─── Verified Sharps (collapsible, with filters) ─── */}
-        <button onClick={() => setShowWallets(!showWallets)} style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          width: '100%', cursor: 'pointer',
-          padding: '0.5rem 0.625rem', borderRadius: '8px',
-          background: 'rgba(212,175,55,0.04)',
-          border: `1px solid ${B.borderSubtle}`,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-            {showWallets ? <ChevronUp size={12} color={B.gold} /> : <ChevronDown size={12} color={B.gold} />}
-            {/* v6 — the hero chip up top already carries the winner/fading story.
-                This toggle stays as a plain affordance to expand the wallet list. */}
-            <span style={{ ...T.micro, color: B.gold, fontWeight: 700 }}>
-              {showWallets ? 'HIDE' : 'VIEW'} {uniqueWallets} SHARP {uniqueWallets !== 1 ? 'WALLETS' : 'WALLET'}
-            </span>
-          </div>
-          <span style={{ ...T.micro, color: B.textSec }}>
-            Combined P&L: <span style={{ fontWeight: 700, color: totalLifetimePnl >= 0 ? B.green : B.red }}>
-              {totalLifetimePnl >= 0 ? '+' : ''}{fmtVol(totalLifetimePnl)}
-            </span>
-          </span>
-        </button>
-        {showWallets && (() => {
-          const sideOpts = [
-            { key: 'all', label: 'All Bets' },
-            { key: 'consensus', label: consensusShort },
-            { key: 'opposing', label: gd.sport === 'SOC' ? 'Opposing' : consensusSide === 'away' ? homeShort : awayShort },
-          ];
-          const now = Date.now();
-          const filtered = gd.positions.filter(p => {
-            if (walletSideFilter === 'consensus' && p.side !== consensusSide) return false;
-            if (walletSideFilter === 'opposing' && p.side === consensusSide) return false;
-            return true;
-          }).sort((a, b) => (b.sportVerified ? 1 : 0) - (a.sportVerified ? 1 : 0));
-
-          return (
-            <div style={{
-              marginTop: '0.375rem', borderRadius: '10px', overflow: 'hidden',
-              border: `1px solid ${B.borderSubtle}`,
-              animation: 'fadeIn 0.3s ease both',
-            }}>
-              {/* Filter bar */}
-              <div style={{
-                display: 'flex', flexWrap: 'wrap', gap: '0.375rem', alignItems: 'center',
-                padding: '0.5rem 0.625rem',
-                borderBottom: `1px solid ${B.borderSubtle}`,
-                background: 'rgba(255,255,255,0.02)',
-              }}>
-                <span style={{ ...T.micro, color: B.textMuted, marginRight: '0.25rem' }}>Side:</span>
-                {sideOpts.map(o => (
-                  <button key={o.key} onClick={() => setWalletSideFilter(o.key)} style={{
-                    ...T.micro, fontWeight: walletSideFilter === o.key ? 700 : 400,
-                    padding: '0.15rem 0.45rem', borderRadius: '4px', cursor: 'pointer',
-                    border: 'none',
-                    color: walletSideFilter === o.key ? B.gold : B.textMuted,
-                    background: walletSideFilter === o.key ? B.goldDim : 'rgba(255,255,255,0.04)',
-                  }}>
-                    {o.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Filtered count */}
-              {walletSideFilter !== 'all' && (
-                <div style={{
-                  padding: '0.25rem 0.625rem',
-                  borderBottom: `1px solid ${B.borderSubtle}`,
-                  background: 'rgba(255,255,255,0.015)',
-                }}>
-                  <span style={{ ...T.micro, color: B.textMuted }}>
-                    Showing {filtered.length} of {gd.positions.length} positions
-                  </span>
-                </div>
-              )}
-
-              {/* Position rows — premium wallet dossiers */}
-              {filtered.length === 0 ? (
-                <div style={{ padding: '1rem 0.625rem', textAlign: 'center' }}>
-                  <span style={{ ...T.micro, color: B.textMuted }}>No positions match filters</span>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.6rem' }}>
-                  {filtered.map((p, i) => (
-                    <WalletDossierRow key={`${p.wallet}-${i}`} p={p} gd={gd} now={now} isMobile={isMobile} market="ml" accent={B.gold} />
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })()}
-
-        <div style={{ padding: '0 0.875rem 0.875rem', marginTop: '0.375rem' }}>
           {canPickGames ? (
             <button
-              onClick={() => onToggleMyPick(gd.key, isMyPick ? null : { side: consensusSide, team: consensusTeam, sport: gd.sport })}
+              type="button"
+              onClick={() => onToggleMyPick && onToggleMyPick(gd.key)}
               style={{
-                width: '100%', padding: '0.625rem 0.75rem', borderRadius: '10px', cursor: 'pointer',
-                fontSize: '0.8rem', fontWeight: 800, letterSpacing: '0.04em',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                border: isMyPick ? `1.5px solid rgba(212,175,55,0.55)` : `1.5px solid ${B.goldBorder}`,
-                background: isMyPick
-                  ? 'linear-gradient(135deg, rgba(212,175,55,0.16) 0%, rgba(212,175,55,0.08) 100%)'
-                  : 'linear-gradient(135deg, rgba(212,175,55,0.05) 0%, rgba(212,175,55,0.01) 100%)',
-                color: isMyPick ? B.goldHover : B.gold,
-                boxShadow: isMyPick ? `0 0 12px ${B.goldGlow}` : 'none',
-                transition: 'all 0.2s ease',
+                padding: '6px 12px', borderRadius: 8, cursor: 'pointer',
+                fontSize: '0.65rem', fontWeight: 800,
+                border: `1px solid ${isMyPick ? B.goldBorder : B.border}`,
+                background: isMyPick ? B.goldDim : 'rgba(255,255,255,0.03)',
+                color: isMyPick ? B.gold : B.textSec,
               }}
             >
-              <CheckCircle size={15} style={{ strokeWidth: isMyPick ? 2.5 : 2 }} />
-              {isMyPick ? '✓ On Watchlist' : '+ Add to Watchlist'}
+              {isMyPick ? '✓ On Watchlist' : '+ Watchlist'}
             </button>
-          ) : (
-            <a
-              href="#/pricing"
-              style={{
-                width: '100%', padding: '0.625rem 0.75rem', borderRadius: '10px', cursor: 'pointer',
-                fontSize: '0.8rem', fontWeight: 800, letterSpacing: '0.04em',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                border: `1.5px solid ${B.goldBorder}`,
-                background: 'linear-gradient(135deg, rgba(212,175,55,0.05) 0%, rgba(212,175,55,0.01) 100%)',
-                color: B.gold,
-                transition: 'all 0.2s ease',
-                textDecoration: 'none',
-              }}
-            >
-              <Lock size={13} />
-              + Add to Watchlist
-              <span style={{ fontSize: '0.65rem', fontWeight: 600, opacity: 0.7, marginLeft: '0.15rem' }}>PRO</span>
-            </a>
-          )}
+          ) : null}
         </div>
-      </div>
+      )}
+      <LivePositionCardView
+        f={activeFixture}
+        markets={marketFixtures.length > 1 ? marketFixtures : null}
+        onMarket={(id) => {
+          if (id?.includes('-SPREAD') || id?.endsWith('-SPREAD')) setMarketTab('spread');
+          else if (id?.includes('-TOTAL') || id?.endsWith('-TOTAL')) setMarketTab('total');
+          else setMarketTab('ml');
+        }}
+      />
     </div>
   );
 });
@@ -14501,6 +12674,13 @@ export default function SharpFlow() {
                           // SUPER / TOP / CONFIRMED / MONITORING / FADE.
                           hcStakeTier: sd.v8_hcStakeTier || null,
                           isMonitoring: sd.v8_hcStakeTier === 'MONITORING',
+                          // Tape + netCLV stamps (display on locked card)
+                          tapeAction: sd.v8_tapeAction || null,
+                          tapeScore: Number.isFinite(sd.v8_tapeScore) ? sd.v8_tapeScore : null,
+                          v8_tapeAction: sd.v8_tapeAction || null,
+                          v8_tapeScore: Number.isFinite(sd.v8_tapeScore) ? sd.v8_tapeScore : null,
+                          v8_netMeanPrior: Number.isFinite(sd.v8_netMeanPrior) ? sd.v8_netMeanPrior : null,
+                          netClv: Number.isFinite(sd.v8_netMeanPrior) ? sd.v8_netMeanPrior : null,
                         });
                       }
                     }

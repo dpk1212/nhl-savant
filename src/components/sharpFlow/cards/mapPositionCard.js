@@ -1,0 +1,334 @@
+/**
+ * Adapters: production Sharp Flow data → PositionCards fixture shape.
+ * Display-only. Never changes stake formulas or stamps.
+ */
+import { AGS_V12_STAKE_TIER_META } from '../../../lib/ags.js';
+
+const shortTeam = (name) => {
+  if (!name) return '—';
+  const parts = String(name).trim().split(/\s+/);
+  return parts[parts.length - 1] || name;
+};
+
+const ip = (o) => {
+  if (o == null || !Number.isFinite(Number(o))) return null;
+  const n = Number(o);
+  return n < 0 ? Math.abs(n) / (Math.abs(n) + 100) : 100 / (n + 100);
+};
+
+const fmtEt = (ts) => {
+  if (!ts) return '';
+  if (typeof ts === 'string' && /AM|PM/i.test(ts) && !ts.includes('T')) return ts;
+  const e = typeof ts === 'number' ? ts : Date.parse(ts);
+  if (Number.isNaN(e)) return typeof ts === 'string' ? ts : '';
+  return new Date(e).toLocaleTimeString('en-US', {
+    timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', hour12: true,
+  });
+};
+
+const normTape = (action) => {
+  const a = String(action || '').toLowerCase();
+  if (a === 'boost' || a === 'mute' || a === 'keep') return a;
+  if (a === 'fail_open' || a === 'hold') return 'keep';
+  return 'keep';
+};
+
+const pathBaseUnits = (stakeTier) => {
+  if (!stakeTier) return 0;
+  const meta = AGS_V12_STAKE_TIER_META[stakeTier];
+  return Number.isFinite(meta?.units) ? meta.units : 0;
+};
+
+/** Enrich walletDetails / backing wallets with profile fields for ConvictionRow */
+export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner) {
+  if (!Array.isArray(rawWallets)) return [];
+  return rawWallets
+    .filter((w) => w && (w.invested || 0) > 0)
+    .map((w) => {
+      const short = String(w.wallet || w.short || '').slice(-6);
+      const profile = getWalletProfile?.(short);
+      const sportRec = profile?.bySport?.[sport];
+      const picks = sportRec?.picks;
+      const positions = sportRec?.positions;
+      const wr = Number.isFinite(picks?.wr) ? picks.wr
+        : Number.isFinite(positions?.wr) ? positions.wr
+        : Number.isFinite(w.wr) ? w.wr : 55;
+      const dollarRoi = Number.isFinite(positions?.dollarRoi) ? Math.round(positions.dollarRoi)
+        : Number.isFinite(w.dollarRoi) ? Math.round(w.dollarRoi)
+        : Number.isFinite(w.roi) ? Math.round(w.roi) : 0;
+      const sizeRatio = Number.isFinite(w.sizeRatio) ? w.sizeRatio
+        : (w.invested && sportRec?.positions?.avgInvested)
+          ? w.invested / sportRec.positions.avgInvested
+          : 1;
+      const priorClvPct = Number.isFinite(w.priorClvPct) ? Math.round(w.priorClvPct)
+        : Number.isFinite(w.causalPctPos) ? Math.round(w.causalPctPos)
+        : 55;
+      const proven = isSportWinner ? isSportWinner(short, sport) : true;
+      return {
+        short,
+        badges: proven ? ['SHARP', `${sport} WINNER`] : ['SHARP'],
+        whitelist: sportRec?.whitelistTier || (proven ? 'CONFIRMED' : null),
+        qualify: sizeRatio >= 0.75 ? 'VAULT' : 'SHADOW',
+        sizeRatio,
+        record: picks?.n >= 2
+          ? `${picks.wins || 0}-${picks.losses || 0}`
+          : positions?.n
+            ? `${positions.wins || 0}-${positions.losses || 0}`
+            : (w.record || '—'),
+        wr: Math.round(wr),
+        roi: Number.isFinite(picks?.flatRoi) ? Math.round(picks.flatRoi) : dollarRoi,
+        dollarRoi,
+        invested: w.invested || 0,
+        avgSportBet: sportRec?.positions?.avgInvested || w.avgSportBet || null,
+        cents: w.cents ?? null,
+        pnl: w.pnl || 0,
+        priorClvPct,
+      };
+    })
+    .sort((a, b) => (b.sizeRatio || 0) - (a.sizeRatio || 0));
+}
+
+/**
+ * Locked pick (allLockedArr entry) → LockedPositionCardView fixture
+ */
+export function mapLockedPickToCardFixture(pick, {
+  getWalletProfile,
+  isSportWinner,
+  record30d = null,
+} = {}) {
+  const units = Number.isFinite(pick.units) ? pick.units : 0;
+  const odds = Number.isFinite(pick.odds) ? pick.odds : null;
+  const lockOdds = odds;
+  const peakOdds = Number.isFinite(pick.lockPinnOdds) ? pick.lockPinnOdds
+    : Number.isFinite(pick.pinnacleOdds) ? pick.pinnacleOdds : lockOdds;
+  const nowOdds = Number.isFinite(pick.closingOdds) ? pick.closingOdds
+    : Number.isFinite(pick.pinnacleOdds) ? pick.pinnacleOdds : peakOdds;
+
+  const lockProb = ip(lockOdds);
+  const closeProb = ip(pick.closingOdds ?? nowOdds);
+  let clvPct = null;
+  if (Number.isFinite(pick.clv)) {
+    clvPct = +(pick.clv * (Math.abs(pick.clv) <= 1 ? 100 : 1)).toFixed(1);
+  } else if (lockProb != null && closeProb != null) {
+    clvPct = +((closeProb - lockProb) * 100).toFixed(1);
+  } else {
+    clvPct = 0;
+  }
+
+  const isTotal = pick.marketType === 'total';
+  const isSpread = pick.marketType === 'spread';
+  const teamShort = isTotal
+    ? ((pick.team || '').toLowerCase().startsWith('under') ? 'Under' : 'Over')
+    : shortTeam(pick.team);
+  const awayShort = isTotal ? 'Under' : shortTeam(pick.away);
+  const homeShort = isTotal ? 'Over' : shortTeam(pick.home);
+  const side = isTotal
+    ? (teamShort === 'Over' ? 'home' : 'away')
+    : (teamShort === awayShort ? 'away' : 'home');
+
+  const pickLabel = isSpread
+    ? `${teamShort} ${pick.line > 0 ? '+' : ''}${pick.line}`
+    : isTotal ? (pick.team || 'Total')
+    : `${teamShort} ML`;
+
+  const stakePath = pick.hcStakeTier || pick.lockTier || 'LOCK';
+  const tapeAction = normTape(pick.tapeAction || pick.v8_tapeAction);
+  const tapeScore = Number.isFinite(pick.tapeScore) ? pick.tapeScore
+    : Number.isFinite(pick.v8_tapeScore) ? pick.v8_tapeScore
+    : tapeAction === 'boost' ? 3.1 : tapeAction === 'mute' ? -0.4 : 1.2;
+
+  const edge = Number.isFinite(pick.winnerAlignEdge) ? pick.winnerAlignEdge : 0;
+  const netClv = Number.isFinite(pick.netClv) ? pick.netClv
+    : Number.isFinite(pick.v8_netMeanPrior) ? pick.v8_netMeanPrior : 0;
+
+  const wallets = enrichWallets(
+    pick.backingWallets || [],
+    pick.sport,
+    getWalletProfile,
+    isSportWinner,
+  );
+
+  const confirmedOnSide = Number.isFinite(pick.agsProvenForCount)
+    ? pick.agsProvenForCount
+    : wallets.filter((w) => w.whitelist === 'CONFIRMED' || w.whitelist === 'FLAT').length || wallets.length;
+  const vaultOnSide = wallets.filter((w) => (w.sizeRatio || 0) >= 1.5).length;
+  const base = pathBaseUnits(stakePath);
+
+  const toWin = (() => {
+    if (!Number.isFinite(odds) || units <= 0) return 0;
+    if (odds < 0) return units * (100 / Math.abs(odds));
+    return units * (odds / 100);
+  })();
+
+  const gameTime = fmtEt(pick.gameTime) || 'TBD';
+  const lockedAt = fmtEt(pick.lockedAt) || '—';
+  const peakAt = fmtEt(pick.peakAt) || lockedAt;
+
+  const dateStr = (() => {
+    const e = typeof pick.gameTime === 'number' ? pick.gameTime : Date.parse(pick.gameTime);
+    if (Number.isNaN(e)) return 'XXXX';
+    const d = new Date(e);
+    const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(d.getUTCDate()).padStart(2, '0');
+    return `${mm}${dd}`;
+  })();
+  const mkt = isSpread ? 'SP' : isTotal ? 'TOT' : 'ML';
+  const serial = `SF-${pick.sport || 'XX'}-${dateStr}-${mkt}`;
+
+  const lockChecks = [];
+  if (confirmedOnSide >= 1) lockChecks.push('Proven winners backing');
+  if ((pick.hcMargin || 0) >= 1 || vaultOnSide >= 1) lockChecks.push('High conviction');
+  if ((pick.consensusStrength?.moneyPct || 0) >= 60) lockChecks.push('Money concentrated');
+
+  return {
+    id: pick.key || `${pick.sport}-${pickLabel}`,
+    sport: pick.sport,
+    away: pick.away || '',
+    home: pick.home || '',
+    awayShort,
+    homeShort,
+    pickLabel,
+    side,
+    displayState: 'LOCKED',
+    stakePath,
+    units,
+    toWin,
+    odds: lockOdds,
+    book: pick.book || 'Pinnacle',
+    fairOdds: Number.isFinite(pick.pinnacleOdds) ? pick.pinnacleOdds : peakOdds,
+    fairProb: Math.round((ip(pick.pinnacleOdds ?? peakOdds) || 0.5) * 100),
+    tapeAction,
+    tapeScore,
+    pathBaseUnits: base || units,
+    hcMargin: Number.isFinite(pick.hcMargin) ? pick.hcMargin : 0,
+    edge,
+    netClv,
+    confirmedOnSide,
+    vaultOnSide,
+    setupHitRate: confirmedOnSide >= 2 ? 58 : 50,
+    sideInvested: pick.totalInvested || pick.lockTotalInvested || 0,
+    wallets,
+    combinedWalletPnl: wallets.reduce((s, w) => s + (w.pnl || 0), 0),
+    gameTime,
+    lockedAt,
+    lockOdds,
+    peakOdds,
+    peakAt,
+    nowOdds,
+    clvPct,
+    serial,
+    record30d: record30d || {
+      record: '—',
+      units: '—',
+      scope: `${pick.sport || 'ALL'} · last 30 days`,
+    },
+    lockChecks: lockChecks.length ? lockChecks : ['Locked ticket'],
+  };
+}
+
+/**
+ * Live game card fields → LivePositionCardView fixture (one market)
+ */
+export function mapLiveGameToCardFixture({
+  gd,
+  marketType = 'ML', // ML | SPREAD | TOTAL
+  displayState,
+  stakePath,
+  units,
+  odds,
+  book,
+  fairOdds,
+  toWin,
+  side, // 'home' | 'away' | 'over' | 'under'
+  gameTimeLabel,
+  isLive,
+  tapeAction,
+  tapeScore,
+  edge,
+  netClv,
+  hcMargin,
+  confirmedOnSide,
+  vaultOnSide,
+  sideInvested,
+  sides, // { away: {invested, sharps, avg, pnl}, home: {...} }
+  flow, // { sharp, tickets, money } each {away, home}
+  pinOpen,
+  pinNow,
+  books,
+  wallets,
+  pinnacleOpposes,
+  pickLabel,
+  pathBase,
+  setupHitRate,
+  updatedLabel,
+}) {
+  const isTotal = marketType === 'TOTAL';
+  const awayShort = isTotal ? 'Under' : shortTeam(gd.away);
+  const homeShort = isTotal ? 'Over' : shortTeam(gd.home);
+  const normSide = side === 'over' ? 'home' : side === 'under' ? 'away' : side;
+
+  const u = Number.isFinite(units) ? units : 0;
+  const stake = stakePath || 'MONITORING';
+  const base = Number.isFinite(pathBase) ? pathBase : pathBaseUnits(stake);
+  const tape = normTape(tapeAction);
+  const score = Number.isFinite(tapeScore)
+    ? tapeScore
+    : tape === 'boost' ? 3.1 : tape === 'mute' ? -0.4 : 1.2;
+
+  const fair = Number.isFinite(fairOdds) ? fairOdds : odds;
+  const fairProb = Math.round((ip(fair) || 0.5) * 100);
+
+  const emptySide = { invested: 0, sharps: 0, avg: 0, pnl: 0 };
+  const s = sides || { away: emptySide, home: emptySide };
+  const f = flow || {
+    sharp: { away: 50, home: 50 },
+    tickets: { away: 50, home: 50 },
+    money: { away: 50, home: 50 },
+  };
+
+  return {
+    id: `${gd.sport}-${gd.key}-${marketType}`,
+    sport: gd.sport,
+    away: gd.away,
+    home: gd.home,
+    awayShort,
+    homeShort,
+    pickLabel: pickLabel || (isTotal
+      ? (normSide === 'home' ? 'Over' : 'Under')
+      : `${normSide === 'home' ? homeShort : awayShort} ML`),
+    side: normSide || 'home',
+    marketType,
+    displayState: displayState || 'MONITORING',
+    stakePath: stake,
+    units: u,
+    toWin: Number.isFinite(toWin) ? toWin : 0,
+    odds: Number.isFinite(odds) ? odds : -110,
+    book: book || 'Pinnacle',
+    fairOdds: fair ?? -110,
+    fairProb,
+    tapeAction: tape,
+    tapeScore: score,
+    pathBaseUnits: base,
+    hcMargin: Number.isFinite(hcMargin) ? hcMargin : 0,
+    edge: Number.isFinite(edge) ? edge : 0,
+    netClv: Number.isFinite(netClv) ? netClv : 0,
+    confirmedOnSide: confirmedOnSide || 0,
+    vaultOnSide: vaultOnSide || 0,
+    setupHitRate: Number.isFinite(setupHitRate) ? setupHitRate : 52,
+    sideInvested: sideInvested || s[normSide === 'home' ? 'home' : 'away']?.invested || 0,
+    pinnacleOpposes: !!pinnacleOpposes,
+    sharpMoneyPct: f.sharp?.[normSide === 'home' ? 'home' : 'away'] ?? 50,
+    sides: s,
+    flow: f,
+    pinOpen: pinOpen || { away: odds, home: odds },
+    pinNow: pinNow || { away: fair, home: fair },
+    books: Array.isArray(books) && books.length
+      ? books
+      : [{ name: 'Pinnacle', odds: fair, sharp: true }],
+    wallets: wallets || [],
+    combinedWalletPnl: (wallets || []).reduce((acc, w) => acc + (w.pnl || 0), 0),
+    gameTime: isLive ? 'LIVE' : (gameTimeLabel || ''),
+    isLive: !!isLive,
+    updatedLabel: updatedLabel || null,
+  };
+}

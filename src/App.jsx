@@ -44,6 +44,8 @@ const SplashScreen = lazy(() => import('./components/SplashScreen'));
 
 // Design sandbox for the AGSU V12 locked-pick card redesign — #/card-lab
 const LockedPickCardLab = lazy(() => import('./components/preview/LockedPickCardLab'));
+// Design sandbox for Live Position card redesign — #/position-lab (isolated; no SharpFlow changes)
+const LivePositionCardLab = lazy(() => import('./components/preview/LivePositionCardLab'));
 
 function App() {
   // ALL HOOKS FIRST - Called on every render
@@ -369,6 +371,7 @@ function AppContent({ dataProcessor, oddsData, startingGoalies, goalieData, stat
               <Route path="/data" element={<Data />} />
               <Route path="/disclaimer" element={<Disclaimer />} />
               <Route path="/card-lab" element={<Suspense fallback={<LoadingSpinner />}><LockedPickCardLab /></Suspense>} />
+              <Route path="/position-lab" element={<Suspense fallback={<LoadingSpinner />}><LivePositionCardLab /></Suspense>} />
           </Routes>
         </main>
         
