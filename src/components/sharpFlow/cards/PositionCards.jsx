@@ -371,7 +371,7 @@ function TicketStub({ units, toWin, odds, stakePath, tapeAction, centsEdge, comm
 
   return (
     <div style={{
-      marginTop: 12, borderRadius: 12, position: 'relative',
+      marginTop: 8, borderRadius: 12, position: 'relative',
       background: 'linear-gradient(160deg, rgba(212,175,55,0.11) 0%, rgba(212,175,55,0.04) 42%, rgba(255,255,255,0.015) 100%)',
       border: '1px solid rgba(212,175,55,0.32)',
       boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 18px 40px -22px rgba(212,175,55,0.5)',
@@ -382,12 +382,32 @@ function TicketStub({ units, toWin, odds, stakePath, tapeAction, centsEdge, comm
       }} />
       <div style={{
         position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
-        padding: '8px 14px', borderBottom: '1px dashed rgba(212,175,55,0.28)',
+        padding: '7px 14px', borderBottom: '1px dashed rgba(212,175,55,0.28)',
       }}>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.56rem', fontWeight: 900, letterSpacing: '0.14em', color: isFrozen ? B.profit : B.goldHi }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.56rem', fontWeight: 900, letterSpacing: '0.14em', color: isFrozen ? B.profit : B.goldHi, flexShrink: 0 }}>
           {isFrozen ? <Lock size={11} strokeWidth={3} /> : <Clock size={11} strokeWidth={2.8} />}
           {isFrozen ? 'LOCKED' : 'OPEN TICKET'}
         </span>
+        {/* countdown lives in the header row — one row, not two */}
+        {lockEpoch != null && (
+          isFrozen ? (
+            <span style={{ fontSize: '0.56rem', fontWeight: 700, color: B.profit, minWidth: 0 }}>
+              frozen at T-15
+            </span>
+          ) : (
+            <span
+              title="Stake, path, and side can still change until T-15"
+              style={{ display: 'inline-flex', alignItems: 'baseline', gap: 5, minWidth: 0, fontFeatureSettings: "'tnum'" }}
+            >
+              <span style={{ fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.12em', color: B.goldHi }}>
+                LOCKS
+              </span>
+              <span style={{ fontSize: '0.82rem', fontWeight: 900, letterSpacing: '-0.02em', color: C.text }}>
+                {remLabel || '—'}
+              </span>
+            </span>
+          )
+        )}
         <span style={{
           fontSize: '0.56rem', fontWeight: 900, letterSpacing: '0.12em',
           color: tierColor, flexShrink: 0,
@@ -400,44 +420,8 @@ function TicketStub({ units, toWin, odds, stakePath, tapeAction, centsEdge, comm
         <span style={{ position: 'absolute', left: -6, bottom: -6, width: 11, height: 11, borderRadius: '50%', background: '#12172a', border: '1px solid rgba(212,175,55,0.30)' }} />
         <span style={{ position: 'absolute', right: -6, bottom: -6, width: 11, height: 11, borderRadius: '50%', background: '#12172a', border: '1px solid rgba(212,175,55,0.30)' }} />
       </div>
-      {lockEpoch != null && (
-        <div style={{
-          margin: '8px 12px 0',
-          padding: '7px 11px',
-          borderRadius: 8,
-          display: 'flex', alignItems: 'center', gap: 8,
-          background: isFrozen ? 'rgba(47,213,126,0.10)' : 'rgba(212,175,55,0.10)',
-          border: `1px solid ${isFrozen ? 'rgba(47,213,126,0.32)' : 'rgba(212,175,55,0.38)'}`,
-        }}>
-          {isFrozen ? <Lock size={13} strokeWidth={2.8} style={{ color: B.profit, flexShrink: 0 }} />
-            : <Clock size={13} strokeWidth={2.6} style={{ color: B.goldHi, flexShrink: 0 }} />}
-          {isFrozen ? (
-            <span style={{ fontSize: '0.62rem', fontWeight: 700, color: B.profit }}>
-              Final ticket · frozen at T-15
-            </span>
-          ) : (
-            <>
-              <span style={{
-                fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.12em',
-                color: B.goldHi, flexShrink: 0,
-              }}>
-                LOCKS
-              </span>
-              <span style={{
-                fontSize: '0.95rem', fontWeight: 900, letterSpacing: '-0.02em',
-                fontFeatureSettings: "'tnum'", color: C.text,
-              }}>
-                {remLabel || '—'}
-              </span>
-              <span style={{ fontSize: '0.55rem', fontWeight: 600, color: C.textMuted, marginLeft: 'auto' }}>
-                can still change
-              </span>
-            </>
-          )}
-        </div>
-      )}
       <div style={{ display: 'flex', alignItems: 'stretch' }}>
-        <div style={{ flex: 1.15, padding: '10px 14px 12px' }}>
+        <div style={{ flex: 1.15, padding: '8px 14px 10px' }}>
           <div style={cellLabel}>RISK</div>
           <div style={{
             fontSize: '1.55rem', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 0.95,
@@ -452,15 +436,15 @@ function TicketStub({ units, toWin, odds, stakePath, tapeAction, centsEdge, comm
             <span style={{ fontSize: '0.78rem', fontWeight: 700, color: C.textMuted, marginLeft: 3 }}>u</span>
           </div>
         </div>
-        <div style={{ width: 1, background: 'rgba(212,175,55,0.16)', margin: '10px 0' }} />
-        <div style={{ flex: 1, padding: '10px 14px 12px' }}>
+        <div style={{ width: 1, background: 'rgba(212,175,55,0.16)', margin: '8px 0' }} />
+        <div style={{ flex: 1, padding: '8px 14px 10px' }}>
           <div style={cellLabel}>TO WIN</div>
           <div style={{ fontSize: '1.15rem', fontWeight: 800, color: B.profit, fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em', lineHeight: 1.3 }}>
             {Number.isFinite(toWin) ? `+${toWin.toFixed(2)}u` : '—'}
           </div>
         </div>
-        <div style={{ width: 1, background: 'rgba(212,175,55,0.16)', margin: '10px 0' }} />
-        <div style={{ flex: 1, padding: '10px 14px 12px' }}>
+        <div style={{ width: 1, background: 'rgba(212,175,55,0.16)', margin: '8px 0' }} />
+        <div style={{ flex: 1, padding: '8px 14px 10px' }}>
           <div style={cellLabel}>PRICE</div>
           <div style={{ fontSize: '1.15rem', fontWeight: 800, color: C.text, fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em', lineHeight: 1.3 }}>
             {fmtOdds(odds)}
@@ -1259,113 +1243,110 @@ export function LivePositionCardView({ f, markets, onMarket }) {
             <MarketRail markets={markets} activeId={f.id} onSelect={onMarket} />
           )}
 
-          {/* Hero call: pick first, then price / units / book. Sharp $ is
-              secondary on watch cards so the play isn't buried under $4.7K. */}
-          <div style={{ marginTop: 2 }}>
-            <div style={{
-              fontSize: isWatch ? '1.55rem' : '1.7rem',
+          {/* Hero call: pick + price + units + book share one baseline row —
+              two stacked rows here cost ~30px per card for no extra info. */}
+          <div style={{
+            marginTop: 2, display: 'flex', flexWrap: 'wrap', alignItems: 'baseline',
+            gap: '4px 12px', fontFeatureSettings: "'tnum'",
+          }}>
+            <span style={{
+              fontSize: isWatch ? '1.4rem' : '1.5rem',
               fontWeight: 800, letterSpacing: '-0.035em', lineHeight: 1.1,
               color: C.text,
             }}>
               {f.pickLabel}
-            </div>
-            <div style={{
-              display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '6px 12px',
-              marginTop: 6, fontFeatureSettings: "'tnum'",
-            }}>
-              {Number.isFinite(f.odds) && (
-                <span style={{
-                  fontSize: '1.2rem', fontWeight: 800, letterSpacing: '-0.02em', color: C.text,
-                }}>
-                  {fmtOdds(f.odds)}
-                </span>
-              )}
-              {!isWatch && f.units > 0 && (
-                <span style={{
-                  fontSize: '1.15rem', fontWeight: 900, letterSpacing: '-0.02em',
-                  color: B.goldHi,
-                }}>
-                  {f.units.toFixed(1)}u
-                </span>
-              )}
-              {f.book && (
-                <span style={{
-                  fontSize: '0.72rem', fontWeight: 700, color: C.textSec,
-                  padding: '3px 8px', borderRadius: 6,
-                  background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.hair}`,
-                }}>
-                  {f.book}
-                </span>
-              )}
-              {centsEdge && !isWatch && (
-                <span style={{ fontSize: '0.62rem', fontWeight: 700, color: B.profit }}>
-                  {centsEdge}
-                </span>
-              )}
-            </div>
+            </span>
+            {Number.isFinite(f.odds) && (
+              <span style={{
+                fontSize: '1.05rem', fontWeight: 800, letterSpacing: '-0.02em', color: C.text,
+              }}>
+                {fmtOdds(f.odds)}
+              </span>
+            )}
+            {!isWatch && f.units > 0 && (
+              <span style={{
+                fontSize: '1.05rem', fontWeight: 900, letterSpacing: '-0.02em',
+                color: B.goldHi,
+              }}>
+                {f.units.toFixed(1)}u
+              </span>
+            )}
+            {f.book && (
+              <span style={{
+                fontSize: '0.68rem', fontWeight: 700, color: C.textSec,
+                padding: '2px 8px', borderRadius: 6, alignSelf: 'center',
+                background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.hair}`,
+              }}>
+                {f.book}
+              </span>
+            )}
+            {centsEdge && !isWatch && (
+              <span style={{ fontSize: '0.62rem', fontWeight: 700, color: B.profit }}>
+                {centsEdge}
+              </span>
+            )}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, marginTop: isWatch ? 10 : 0 }}>
-            {isWatch ? (
-              <>
+          {(isWatch || f.units <= 0) && (
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, marginTop: 8 }}>
+              {isWatch ? (
+                <>
+                  <div>
+                    <div style={{
+                      fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-0.05em', lineHeight: 0.95,
+                      fontFeatureSettings: "'tnum'",
+                      filter: `drop-shadow(0 0 22px ${accent}40)`,
+                    }}>
+                      {/* backgroundImage (not the `background` shorthand): updating the
+                          shorthand resets background-clip to border-box while React
+                          skips the unchanged WebkitBackgroundClip prop — that painted
+                          this number as a solid block when the market rail swapped
+                          fixtures without remounting. */}
+                      <span style={{
+                        backgroundImage: `linear-gradient(180deg, #ffffff 8%, ${B.goldHi} 96%)`,
+                        backgroundClip: 'text', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                      }}>
+                        {fmtMoney(f.sideInvested)}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.6rem', color: C.textMuted, marginTop: 3 }}>
+                      sharp money on <span style={{ color: accent, fontWeight: 800 }}>{playSide}</span>
+                    </div>
+                  </div>
+                  <div style={{ flex: 1 }} />
+                  <div style={{ textAlign: 'right', paddingBottom: 2, fontFeatureSettings: "'tnum'" }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 800, color: C.text }}>
+                      <span style={{ fontSize: '1.05rem', letterSpacing: '-0.03em' }}>{f.confirmedOnSide}</span>
+                      <span style={{ fontSize: '0.6rem', fontWeight: 600, color: C.textMuted, marginLeft: 5 }}>
+                        proven winner{f.confirmedOnSide === 1 ? '' : 's'}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.58rem', fontWeight: 700, color: C.textMuted, marginTop: 2 }}>
+                      no ticket yet
+                    </div>
+                  </div>
+                </>
+              ) : (
                 <div>
                   <div style={{
-                    fontSize: '2.1rem', fontWeight: 800, letterSpacing: '-0.05em', lineHeight: 0.92,
+                    fontSize: '1.7rem', fontWeight: 800, letterSpacing: '-0.05em', lineHeight: 0.95,
                     fontFeatureSettings: "'tnum'",
-                    filter: `drop-shadow(0 0 22px ${accent}40)`,
                   }}>
-                    {/* backgroundImage (not the `background` shorthand): updating the
-                        shorthand resets background-clip to border-box while React
-                        skips the unchanged WebkitBackgroundClip prop — that painted
-                        this number as a solid block when the market rail swapped
-                        fixtures without remounting. */}
                     <span style={{
-                      backgroundImage: `linear-gradient(180deg, #ffffff 8%, ${B.goldHi} 96%)`,
+                      backgroundImage: `linear-gradient(180deg, ${B.loss} 12%, #7f1d1d 100%)`,
                       backgroundClip: 'text', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
                     }}>
-                      {fmtMoney(f.sideInvested)}
+                      0.0
                     </span>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: C.textMuted, marginLeft: 5 }}>u</span>
                   </div>
-                  <div style={{ fontSize: '0.62rem', color: C.textMuted, marginTop: 4 }}>
-                    sharp money on <span style={{ color: accent, fontWeight: 800 }}>{playSide}</span>
-                  </div>
-                </div>
-                <div style={{ flex: 1 }} />
-                <div style={{ textAlign: 'right', paddingBottom: 3 }}>
-                  <div style={{
-                    fontSize: '1.35rem', fontWeight: 800, color: C.text,
-                    fontFeatureSettings: "'tnum'", letterSpacing: '-0.03em',
-                  }}>
-                    {f.confirmedOnSide}
-                  </div>
-                  <div style={{ fontSize: '0.58rem', color: C.textMuted, marginTop: 3, marginBottom: 4 }}>
-                    proven winner{f.confirmedOnSide === 1 ? '' : 's'}
-                  </div>
-                  <div style={{ fontSize: '0.58rem', fontWeight: 700, color: C.textMuted }}>
-                    no ticket yet
+                  <div style={{ fontSize: '0.6rem', color: C.textMuted, marginTop: 3 }}>
+                    we passed
                   </div>
                 </div>
-              </>
-            ) : f.units <= 0 ? (
-              <div>
-                <div style={{
-                  fontSize: '2.2rem', fontWeight: 800, letterSpacing: '-0.05em', lineHeight: 0.9,
-                  fontFeatureSettings: "'tnum'",
-                }}>
-                  <span style={{
-                    backgroundImage: `linear-gradient(180deg, ${B.loss} 12%, #7f1d1d 100%)`,
-                    backgroundClip: 'text', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                  }}>
-                    0.0
-                  </span>
-                  <span style={{ fontSize: '0.95rem', fontWeight: 700, color: C.textMuted, marginLeft: 5 }}>u</span>
-                </div>
-                <div style={{ fontSize: '0.62rem', color: C.textMuted, marginTop: 4 }}>
-                  we passed
-                </div>
-              </div>
-            ) : null}
-          </div>
+              )}
+            </div>
+          )}
 
           {!isWatch && f.units > 0 && (
             <TicketStub
@@ -1381,7 +1362,7 @@ export function LivePositionCardView({ f, markets, onMarket }) {
 
           {!isWatch && f.units > 0 && <TierPerfStrip tierPerf={f.tierPerf} compact />}
 
-          <p style={{ margin: '10px 0 0', fontSize: '0.88rem', lineHeight: 1.5, maxWidth: 460 }}>
+          <p style={{ margin: '8px 0 0', fontSize: '0.85rem', lineHeight: 1.45, maxWidth: 460 }}>
             <span style={{ color: C.text, fontWeight: 700 }}>{verdict.lead}</span>
             {' '}
             <span style={{ color: '#9fabc2' }}>{verdict.rest}</span>
@@ -1930,30 +1911,24 @@ function TierPerfStrip({ tierPerf, compact }) {
       border: `1px solid ${accent}44`,
       fontFeatureSettings: "'tnum'",
     }}>
+      {/* single row: label · record · WR · ROI · units, graded count at right */}
       <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
-        marginBottom: 5,
+        display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '4px 10px',
       }}>
         <span style={{
           fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.12em', color: accent,
+          alignSelf: 'center',
         }}>
           {tierPerf.label} · {tierPerf.window}
         </span>
-        <span style={{ fontSize: '0.5rem', fontWeight: 700, color: C.textFaint }}>
-          {tierPerf.n} graded
-        </span>
-      </div>
-      <div style={{
-        display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '6px 12px',
-      }}>
-        <span style={{ fontSize: compact ? '0.95rem' : '1.05rem', fontWeight: 900, color: C.text }}>
+        <span style={{ fontSize: compact ? '0.9rem' : '1rem', fontWeight: 900, color: C.text }}>
           {tierPerf.record}
         </span>
-        <span style={{ fontSize: '0.72rem', fontWeight: 800, color: C.textSec }}>
+        <span style={{ fontSize: '0.7rem', fontWeight: 800, color: C.textSec }}>
           {tierPerf.wr}% W
         </span>
         {Number.isFinite(roi) && (
-          <span style={{ fontSize: '0.78rem', fontWeight: 900, color: roiColor }}>
+          <span style={{ fontSize: '0.74rem', fontWeight: 900, color: roiColor }}>
             {roi >= 0 ? '+' : ''}{roi}% ROI
           </span>
         )}
@@ -1962,6 +1937,9 @@ function TierPerfStrip({ tierPerf, compact }) {
             {tierPerf.profitU >= 0 ? '+' : ''}{tierPerf.profitU.toFixed(1)}u
           </span>
         )}
+        <span style={{ fontSize: '0.5rem', fontWeight: 700, color: C.textFaint, marginLeft: 'auto', alignSelf: 'center' }}>
+          {tierPerf.n} graded
+        </span>
       </div>
     </div>
   );
@@ -2176,12 +2154,17 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
 
       {/* ── THE TICKET ── */}
       <div {...zone(0)}>
-        <div style={{ padding: '18px 20px 18px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, gap: 8 }}>
+        <div style={{ padding: '14px 18px 14px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, gap: 8 }}>
             <span style={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.12em', color: C.textMuted, minWidth: 0 }}>
               {f.sport}
               <span style={{ color: C.textFaint, marginLeft: 9 }}>{f.away} @ {f.home}</span>
               <span style={{ color: C.textFaint, marginLeft: 9 }}>{f.gameTime}</span>
+              {f.lockedAt && (
+                <span style={{ color: C.textFaint, marginLeft: 9, letterSpacing: 0, fontWeight: 600 }}>
+                  {tracked ? 'tracked' : 'flagged'} {f.lockedAt}
+                </span>
+              )}
             </span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
               {tracked ? (
@@ -2218,44 +2201,42 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
             </span>
           </div>
 
-          <div style={{ marginBottom: 6 }}>
-            <div style={{
-              fontSize: '1.65rem', fontWeight: 800, letterSpacing: '-0.035em', lineHeight: 1.1,
+          {/* Pick + price + units + book + CLV share one baseline row — the
+              stacked layout cost ~40px of hero space per card. */}
+          <div style={{
+            display: 'flex', flexWrap: 'wrap', alignItems: 'baseline',
+            gap: '4px 12px', marginBottom: 2, fontFeatureSettings: "'tnum'",
+          }}>
+            <span style={{
+              fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.035em', lineHeight: 1.1,
             }}>
               {f.pickLabel}
-            </div>
-            <div style={{
-              display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '6px 12px',
-              marginTop: 6, fontFeatureSettings: "'tnum'",
-            }}>
-              <span style={{ fontSize: '1.2rem', fontWeight: 800 }}>{fmtOdds(f.lockOdds)}</span>
-              {!tracked && f.units > 0 && (
-                <span style={{ fontSize: '1.15rem', fontWeight: 900, color: B.goldHi }}>
-                  {f.units.toFixed(1)}u
-                </span>
-              )}
-              {f.book && (
-                <span style={{
-                  fontSize: '0.68rem', fontWeight: 700, color: C.textSec,
-                  padding: '3px 8px', borderRadius: 6,
-                  background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.hair}`,
-                }}>
-                  {f.book}
-                </span>
-              )}
-              {Number.isFinite(f.clvPct) && (
-                <span style={{
-                  fontSize: '0.58rem', fontWeight: 800, padding: '3px 8px',
-                  borderRadius: 6, background: `${clvColor}18`, color: clvColor,
-                  border: `1px solid ${clvColor}40`,
-                }}>
-                  CLV {clvGood ? '+' : ''}{f.clvPct.toFixed(1)}%
-                </span>
-              )}
-            </div>
-            <div style={{ fontSize: '0.58rem', color: C.textMuted, marginTop: 6 }}>
-              {tracked ? `tracked ${f.lockedAt}` : `flagged ${f.lockedAt}`}
-            </div>
+            </span>
+            <span style={{ fontSize: '1.05rem', fontWeight: 800 }}>{fmtOdds(f.lockOdds)}</span>
+            {!tracked && f.units > 0 && (
+              <span style={{ fontSize: '1.05rem', fontWeight: 900, color: B.goldHi }}>
+                {f.units.toFixed(1)}u
+              </span>
+            )}
+            {f.book && (
+              <span style={{
+                fontSize: '0.66rem', fontWeight: 700, color: C.textSec,
+                padding: '2px 8px', borderRadius: 6, alignSelf: 'center',
+                background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.hair}`,
+              }}>
+                {f.book}
+              </span>
+            )}
+            {Number.isFinite(f.clvPct) && (
+              <span style={{
+                fontSize: '0.58rem', fontWeight: 800, padding: '2px 8px',
+                borderRadius: 6, alignSelf: 'center',
+                background: `${clvColor}18`, color: clvColor,
+                border: `1px solid ${clvColor}40`,
+              }}>
+                CLV {clvGood ? '+' : ''}{f.clvPct.toFixed(1)}%
+              </span>
+            )}
           </div>
 
           {!tracked ? (
@@ -2270,31 +2251,34 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
             />
           ) : (
             <div style={{
-              marginTop: 12, padding: '14px 16px', borderRadius: 12,
+              marginTop: 8, padding: '10px 14px', borderRadius: 12,
+              display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap',
               background: 'rgba(139,150,171,0.06)', border: '1px solid rgba(139,150,171,0.22)',
             }}>
-              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: C.textSec }}>No ticket</div>
-              <div style={{ fontSize: '0.6rem', color: C.textMuted, marginTop: 4 }}>Watching for context — 0u staked</div>
-              <LockFreezeStatus commenceMs={f.commenceMs} />
+              <span style={{ fontSize: '1.1rem', fontWeight: 800, color: C.textSec }}>No ticket</span>
+              <span style={{ fontSize: '0.6rem', color: C.textMuted }}>Watching for context — 0u staked</span>
+              <span style={{ marginLeft: 'auto', alignSelf: 'center' }}>
+                <LockFreezeStatus commenceMs={f.commenceMs} compact />
+              </span>
             </div>
           )}
 
           {/* WHY THIS PLAY — the premium thesis */}
-          <div style={{ marginTop: 16 }}>
+          <div style={{ marginTop: 12 }}>
             <div style={{
               fontSize: '0.52rem', fontWeight: 900, letterSpacing: '0.16em',
-              color: B.goldHi, marginBottom: 8,
+              color: B.goldHi, marginBottom: 6,
             }}>
               WHY THIS PLAY
             </div>
-            <p style={{ margin: 0, fontSize: '0.92rem', color: C.text, lineHeight: 1.5, fontWeight: 700 }}>
+            <p style={{ margin: 0, fontSize: '0.9rem', color: C.text, lineHeight: 1.45, fontWeight: 700 }}>
               {verdictLead}
             </p>
-            <p style={{ margin: '6px 0 0', fontSize: '0.8rem', color: '#9fabc2', lineHeight: 1.5 }}>
+            <p style={{ margin: '5px 0 0', fontSize: '0.78rem', color: '#9fabc2', lineHeight: 1.45 }}>
               {verdictRest}
             </p>
             {whyChips.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
                 {whyChips.map((c) => (
                   <span key={c} style={{
                     display: 'inline-flex', alignItems: 'center', gap: 5,
@@ -2314,8 +2298,8 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(88px, 1fr))',
-              gap: '14px 12px',
-              marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C.hairSoft}`,
+              gap: '10px 12px',
+              marginTop: 12, paddingTop: 10, borderTop: `1px solid ${C.hairSoft}`,
             }}>
               {keyReads.map((r) => (
                 <KeyReadCell key={r.label} label={r.label} value={r.value} color={r.color} sub={r.sub} />
@@ -2326,7 +2310,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
           {!tracked && (
             <div style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              marginTop: 14, fontFeatureSettings: "'tnum'",
+              marginTop: 10, fontFeatureSettings: "'tnum'",
             }}>
               <span style={{ fontSize: '0.62rem', fontWeight: 700, color: C.textSec }}>
                 {f.pathBaseUnits.toFixed(1)}u base
@@ -2345,7 +2329,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
             </div>
           )}
 
-          {!tracked && <TierPerfStrip tierPerf={f.tierPerf} />}
+          {!tracked && <TierPerfStrip tierPerf={f.tierPerf} compact />}
         </div>
       </div>
 
