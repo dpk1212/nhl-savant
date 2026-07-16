@@ -5756,7 +5756,7 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile }) {
     tapeAction: pick.tapeAction || pick.v8_tapeAction,
     tapeScore: pick.tapeScore ?? pick.v8_tapeScore,
     netClv: pick.netClv ?? pick.v8_netMeanPrior,
-  }, { getWalletProfile, isSportWinner });
+  }, { getWalletProfile, isSportWinner, getRecordForDisplay: whitelistRecordForDisplay });
   return <LockedPositionCardView f={lockedFixture} />;
 });
 
@@ -7965,7 +7965,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       roi: p.sportROI || 0,
       sizeRatio: p.sizeRatio,
     }));
-  const mlWallets = enrichWallets(mlWalletsRaw, gd.sport, getWalletProfile, isSportWinner);
+  const mlWallets = enrichWallets(mlWalletsRaw, gd.sport, getWalletProfile, isSportWinner, whitelistRecordForDisplay);
 
   const awaySharps = (gd.positions || []).filter((p) => p.side === 'away' && isSportWinner(p.wallet, gd.sport));
   const homeSharps = (gd.positions || []).filter((p) => p.side === 'home' && isSportWinner(p.wallet, gd.sport));

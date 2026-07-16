@@ -168,6 +168,18 @@ function TeamMark({ code, active, accent }) {
 
 
 /** Fidelity / Public label–value row */
+function DetailRow({ label, value, color = C.text, last }) {
+  return (
+    <div style={{
+      display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12,
+      padding: '10px 0',
+      borderBottom: last ? 'none' : `1px solid ${C.hairSoft}`,
+    }}>
+      <span style={{ fontSize: '0.7rem', color: C.textMuted }}>{label}</span>
+      <span style={{ fontSize: '0.76rem', fontWeight: 700, color, fontFeatureSettings: "'tnum'", textAlign: 'right' }}>{value}</span>
+    </div>
+  );
+}
 
 function WalletListRow({ w, side, sport, accent, defaultOpen = false }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -194,7 +206,15 @@ function WalletListRow({ w, side, sport, accent, defaultOpen = false }) {
             {sizedUp && <span style={{ fontSize: '0.5rem', fontWeight: 800, color: accent }}>High conviction</span>}
           </div>
           <div style={{ fontSize: '0.58rem', color: C.textMuted, marginTop: 2, fontFeatureSettings: "'tnum'" }}>
-            {w.record}{Number.isFinite(w.wr) ? ` · ${w.wr}% win` : ''} · <span style={{ color: C.green }}>+{w.dollarRoi ?? w.roi}% ROI</span>
+            {w.record}{Number.isFinite(w.wr) ? ` · ${w.wr}% win` : ''}
+            {Number.isFinite(w.roi ?? w.dollarRoi) && (
+              <>
+                {' · '}
+                <span style={{ color: (w.roi ?? w.dollarRoi) >= 0 ? C.green : C.red }}>
+                  {(w.roi ?? w.dollarRoi) >= 0 ? '+' : ''}{w.roi ?? w.dollarRoi}% ROI
+                </span>
+              </>
+            )}
           </div>
         </div>
         {Number.isFinite(w.sizeRatio) && (
@@ -203,7 +223,7 @@ function WalletListRow({ w, side, sport, accent, defaultOpen = false }) {
               fontSize: '0.62rem', fontWeight: 800, color: sizedUp ? accent : C.textSec,
               fontFeatureSettings: "'tnum'",
             }}>
-              {w.sizeRatio.toFixed(1)}×
+              {fmtRatio(w.sizeRatio)}×
             </div>
             <div style={{ fontSize: '0.48rem', color: C.textFaint, marginTop: 1 }}>vs usual</div>
           </div>
@@ -228,7 +248,7 @@ function WalletListRow({ w, side, sport, accent, defaultOpen = false }) {
       {open && (
         <div style={{ padding: '0 0 12px' }}>
           {Number.isFinite(w.sizeRatio) && (
-            <DetailRow label="Size vs usual" value={`${w.sizeRatio.toFixed(1)}× · ${sizeLabel}`} color={sizedUp ? accent : C.text} />
+            <DetailRow label="Size vs usual" value={`${fmtRatio(w.sizeRatio)}× · ${sizeLabel}`} color={sizedUp ? accent : C.text} />
           )}
           {w.avgSportBet != null && <DetailRow label={`Usual ${sport} bet`} value={fmtMoney(w.avgSportBet)} />}
           {w.cents != null && <DetailRow label="This ticket" value={`${side} @ ${w.cents}¢`} />}
@@ -409,15 +429,17 @@ function BattleHeader({ f, accent }) {
         const ours = f.side === c.key;
         return (
           <div key={c.key} style={{
-            flex: 1, textAlign: i === 0 ? 'left' : 'right',
-            padding: '14px 14px 12px', borderRadius: 16, position: 'relative', overflow: 'hidden',
+            flex: ours ? 1.15 : 1, textAlign: i === 0 ? 'left' : 'right',
+            padding: ours ? '16px 15px 14px' : '14px 14px 12px',
+            borderRadius: 16, position: 'relative', overflow: 'hidden',
             background: ours
-              ? `linear-gradient(${i === 0 ? '135deg' : '225deg'}, ${accent}1e 0%, rgba(0,0,0,0.2) 70%)`
-              : 'rgba(255,255,255,0.02)',
-            border: `1px solid ${ours ? `${accent}45` : C.hairSoft}`,
+              ? `linear-gradient(${i === 0 ? '135deg' : '225deg'}, ${accent}28 0%, rgba(0,0,0,0.25) 70%)`
+              : 'rgba(255,255,255,0.015)',
+            border: `1px solid ${ours ? `${accent}60` : C.hairSoft}`,
             boxShadow: ours
-              ? `0 16px 40px -24px ${accent}88, inset 0 1px 0 rgba(255,255,255,0.08)`
-              : 'inset 0 1px 0 rgba(255,255,255,0.04)',
+              ? `0 18px 44px -22px ${accent}aa, 0 0 0 1px ${accent}22, inset 0 1px 0 rgba(255,255,255,0.1)`
+              : 'inset 0 1px 0 rgba(255,255,255,0.03)',
+            opacity: ours ? 1 : 0.82,
           }}>
             <div style={{
               display: 'flex', alignItems: 'center', gap: 8,
@@ -432,9 +454,9 @@ function BattleHeader({ f, accent }) {
               )}
             </div>
             <div style={{
-              fontSize: '1.65rem', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1,
+              fontSize: ours ? '1.9rem' : '1.5rem', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1,
               fontFeatureSettings: "'tnum'", color: ours ? C.text : C.textMuted,
-              textShadow: ours ? `0 0 30px ${accent}55` : 'none',
+              textShadow: ours ? `0 0 34px ${accent}70` : 'none',
             }}>
               {fmtMoney(c.s.invested)}
             </div>
@@ -535,11 +557,14 @@ function TapeMeter({ tapeScore, action }) {
   );
 }
 
+const fmtRatio = (r) => (r < 0.1 ? '<0.1' : r.toFixed(1));
+
 function ConvictionRow({ w, accent, maxRatio, last }) {
   const hasRatio = Number.isFinite(w.sizeRatio);
   const hasClv = Number.isFinite(w.priorClvPct);
+  const roiDisp = Number.isFinite(w.roi) ? w.roi : w.dollarRoi;
   const ratioColor = w.sizeRatio >= 1.5 ? B.profit : w.sizeRatio >= 1 ? accent : C.textMuted;
-  const barPct = hasRatio ? Math.min(100, (w.sizeRatio / Math.max(maxRatio, 1.01)) * 100) : 0;
+  const barPct = hasRatio ? Math.min(100, Math.max(3, (w.sizeRatio / Math.max(maxRatio, 1.01)) * 100)) : 0;
   return (
     <div style={{ padding: '11px 0', borderBottom: last ? 'none' : `1px solid ${C.hairSoft}` }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
@@ -551,12 +576,14 @@ function ConvictionRow({ w, accent, maxRatio, last }) {
         <span style={{ fontFamily: MONO, fontSize: '0.72rem', fontWeight: 700, color: C.text }}>…{w.short}</span>
         <span style={{ fontSize: '0.54rem', fontWeight: 800, letterSpacing: '0.08em', color: B.profit }}>PROVEN</span>
         <span style={{ flex: 1 }} />
-        <span style={{
-          fontSize: '0.66rem', fontWeight: 800, fontFeatureSettings: "'tnum'",
-          color: w.dollarRoi >= 0 ? B.profit : B.loss, marginRight: 10,
-        }}>
-          {w.dollarRoi >= 0 ? '+' : ''}{w.dollarRoi}% ROI
-        </span>
+        {Number.isFinite(roiDisp) && (
+          <span style={{
+            fontSize: '0.66rem', fontWeight: 800, fontFeatureSettings: "'tnum'",
+            color: roiDisp >= 0 ? B.profit : B.loss, marginRight: 10,
+          }}>
+            {roiDisp >= 0 ? '+' : ''}{roiDisp}% ROI
+          </span>
+        )}
         <span style={{ fontSize: '0.86rem', fontWeight: 800, fontFeatureSettings: "'tnum'" }}>{fmtMoney(w.invested)}</span>
       </div>
       {(hasRatio || hasClv) && (
@@ -572,7 +599,7 @@ function ConvictionRow({ w, accent, maxRatio, last }) {
               <span style={{
                 fontSize: '0.7rem', fontWeight: 800, color: ratioColor,
                 fontFeatureSettings: "'tnum'", minWidth: 64, textAlign: 'right',
-              }}>{w.sizeRatio.toFixed(1)}× usual</span>
+              }}>{fmtRatio(w.sizeRatio)}× usual</span>
             </>
           )}
           {!hasRatio && <span style={{ flex: 1 }} />}
@@ -694,20 +721,20 @@ export function LivePositionCardView({ f, markets, onMarket }) {
     <div className="sf-card" style={{
       borderRadius: 16, overflow: 'hidden',
       background: 'linear-gradient(180deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0) 42%), linear-gradient(180deg, #161B29 0%, #10141F 55%, #0D111C 100%)',
-      border: `1px solid ${isWatch ? 'rgba(212,175,55,0.16)' : meta.border}`, position: 'relative',
-      boxShadow: '0 24px 60px -30px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.05)',
+      border: `1px solid ${isWatch ? 'rgba(212,175,55,0.22)' : meta.border}`, position: 'relative',
+      boxShadow: `0 30px 70px -32px rgba(0,0,0,0.9), 0 0 50px -22px ${accent}38, inset 0 1px 0 rgba(255,255,255,0.06)`,
     }}>
       <CardStyles />
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
         background: `
-          radial-gradient(130% 60% at 50% -15%, ${accent}22 0%, transparent 52%),
+          radial-gradient(130% 60% at 50% -15%, ${accent}28 0%, transparent 52%),
           radial-gradient(60% 30% at 85% 8%, rgba(255,255,255,0.04) 0%, transparent 55%)
         `,
       }} />
       <div style={{
-        position: 'absolute', top: 0, left: '12%', right: '12%', height: 1.5, pointerEvents: 'none',
-        background: `linear-gradient(90deg, transparent, ${accent}, transparent)`, opacity: 0.85,
+        position: 'absolute', top: 0, left: '10%', right: '10%', height: 2, pointerEvents: 'none',
+        background: `linear-gradient(90deg, transparent, ${accent}, transparent)`, opacity: 1,
       }} />
 
       {/* ── ZONE 1 · THE CALL ── */}
@@ -764,12 +791,12 @@ export function LivePositionCardView({ f, markets, onMarket }) {
               {isWatch ? (
                 <div>
                   <div style={{
-                    fontSize: '3.4rem', fontWeight: 800, letterSpacing: '-0.06em', lineHeight: 0.9,
+                    fontSize: '3.8rem', fontWeight: 800, letterSpacing: '-0.06em', lineHeight: 0.9,
                     fontFeatureSettings: "'tnum'",
-                    filter: `drop-shadow(0 0 26px ${accent}40)`,
+                    filter: `drop-shadow(0 0 30px ${accent}50)`,
                   }}>
                     <span style={{
-                      background: 'linear-gradient(180deg, #ffffff 12%, #b9c6dc 100%)',
+                      background: `linear-gradient(180deg, #ffffff 8%, ${B.goldHi} 96%)`,
                       WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
                     }}>
                       {fmtMoney(f.sideInvested)}
@@ -1252,14 +1279,93 @@ function JourneyStop({ label, time, odds, color, active }) {
   );
 }
 
-export function LockedPositionCardView({ f }) {
+export function LockedPositionCardView({ f, defaultExpanded = false }) {
+  const [expanded, setExpanded] = useState(defaultExpanded);
   const tracked = !(f.units > 0);
   // Champagne accents stay even on tracked picks; only the pill goes gray.
   const accent = B.gold;
   const playSide = f.side === 'home' ? f.homeShort : f.awayShort;
-  const riskAnim = useCountUp(f.units, true, 1000);
+  const riskAnim = useCountUp(f.units, expanded, 1000);
   const clvGood = f.clvPct >= 0;
   const clvColor = clvGood ? B.profit : B.loss;
+
+  if (!expanded) {
+    return (
+      <div
+        className="sf-card"
+        onClick={() => setExpanded(true)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setExpanded(true); }}
+        style={{
+          borderRadius: 14, overflow: 'hidden', cursor: 'pointer',
+          background: 'linear-gradient(180deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0) 42%), linear-gradient(180deg, #161B29 0%, #10141F 100%)',
+          border: `1px solid ${tracked ? 'rgba(139,150,171,0.22)' : 'rgba(212,175,55,0.28)'}`,
+          position: 'relative', padding: '14px 18px',
+        }}
+      >
+        <CardStyles />
+        <div style={{
+          position: 'absolute', top: 0, left: '12%', right: '12%', height: 1.5, pointerEvents: 'none',
+          background: `linear-gradient(90deg, transparent, ${tracked ? '#8b96ab' : accent}, transparent)`, opacity: 0.7,
+        }} />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <span style={{ fontSize: '0.56rem', fontWeight: 800, letterSpacing: '0.1em', color: C.textMuted }}>
+            {f.sport}
+            <span style={{ color: C.textFaint, marginLeft: 8 }}>{f.away} @ {f.home}</span>
+            <span style={{ color: C.textFaint, marginLeft: 8 }}>{f.gameTime}</span>
+          </span>
+          {tracked ? (
+            <span style={{
+              fontSize: '0.52rem', fontWeight: 900, letterSpacing: '0.08em',
+              padding: '4px 10px', borderRadius: 7, color: '#aeb8cb',
+              background: 'rgba(139,150,171,0.10)', border: '1px solid rgba(139,150,171,0.26)',
+            }}>
+              TRACKED
+            </span>
+          ) : (
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              fontSize: '0.52rem', fontWeight: 900, letterSpacing: '0.08em',
+              padding: '4px 10px', borderRadius: 7, color: '#06100a',
+              background: `linear-gradient(180deg, ${B.goldHi} 0%, ${accent} 55%, ${accent}bb 100%)`,
+              boxShadow: `0 8px 22px -10px ${accent}`,
+            }}>
+              <Lock size={8} strokeWidth={3} />
+              LOCKED
+            </span>
+          )}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: '1.05rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
+            {f.pickLabel}
+            <span style={{ fontSize: '0.8rem', color: C.textSec, fontWeight: 700, marginLeft: 8, fontFeatureSettings: "'tnum'" }}>
+              {fmtOdds(f.lockOdds)}
+            </span>
+          </span>
+          {Number.isFinite(f.clvPct) && (
+            <span style={{
+              fontSize: '0.52rem', fontWeight: 800, padding: '3px 7px',
+              borderRadius: 6, background: `${clvColor}18`, color: clvColor,
+              border: `1px solid ${clvColor}40`, fontFeatureSettings: "'tnum'",
+            }}>
+              CLV {clvGood ? '+' : ''}{f.clvPct.toFixed(1)}%
+            </span>
+          )}
+          <span style={{ flex: 1 }} />
+          <span style={{ fontSize: '0.9rem', fontWeight: 800, fontFeatureSettings: "'tnum'", color: tracked ? C.textMuted : C.text }}>
+            {tracked ? 'No ticket' : `${f.units.toFixed(1)}u`}
+          </span>
+          {!tracked && (
+            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: B.profit, fontFeatureSettings: "'tnum'" }}>
+              +{f.toWin.toFixed(2)}u
+            </span>
+          )}
+          <ChevronDown size={15} style={{ color: C.textMuted, flexShrink: 0 }} />
+        </div>
+      </div>
+    );
+  }
   const pinSeries = [144, 143, 143, 141, 139, 137, 138, 137, 137, 137];
   const sortedWallets = [...f.wallets].sort((a, b) => (b.sizeRatio || 0) - (a.sizeRatio || 0));
   const maxRatio = sortedWallets[0]?.sizeRatio || 1;
@@ -1303,27 +1409,42 @@ export function LockedPositionCardView({ f }) {
               <span style={{ color: C.textFaint, marginLeft: 9 }}>{f.away} @ {f.home}</span>
               <span style={{ color: C.textFaint, marginLeft: 9 }}>{f.gameTime}</span>
             </span>
-            {tracked ? (
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: 5,
-                fontSize: '0.58rem', fontWeight: 900, letterSpacing: '0.08em',
-                padding: '5px 12px', borderRadius: 8, color: '#aeb8cb',
-                background: 'rgba(139,150,171,0.10)', border: '1px solid rgba(139,150,171,0.26)',
-              }}>
-                TRACKED
-              </span>
-            ) : (
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: 5,
-                fontSize: '0.58rem', fontWeight: 900, letterSpacing: '0.08em',
-                padding: '5px 12px', borderRadius: 8, color: '#06100a',
-                background: `linear-gradient(180deg, ${B.goldHi} 0%, ${accent} 55%, ${accent}bb 100%)`,
-                boxShadow: `0 10px 28px -10px ${accent}, inset 0 1px 0 rgba(255,255,255,0.4)`,
-              }}>
-                <Lock size={9} strokeWidth={3} />
-                LOCKED
-              </span>
-            )}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              {tracked ? (
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                  fontSize: '0.58rem', fontWeight: 900, letterSpacing: '0.08em',
+                  padding: '5px 12px', borderRadius: 8, color: '#aeb8cb',
+                  background: 'rgba(139,150,171,0.10)', border: '1px solid rgba(139,150,171,0.26)',
+                }}>
+                  TRACKED
+                </span>
+              ) : (
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                  fontSize: '0.58rem', fontWeight: 900, letterSpacing: '0.08em',
+                  padding: '5px 12px', borderRadius: 8, color: '#06100a',
+                  background: `linear-gradient(180deg, ${B.goldHi} 0%, ${accent} 55%, ${accent}bb 100%)`,
+                  boxShadow: `0 10px 28px -10px ${accent}, inset 0 1px 0 rgba(255,255,255,0.4)`,
+                }}>
+                  <Lock size={9} strokeWidth={3} />
+                  LOCKED
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => setExpanded(false)}
+                aria-label="Collapse"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  width: 24, height: 24, borderRadius: '50%', cursor: 'pointer',
+                  background: 'rgba(255,255,255,0.05)', border: `1px solid ${C.hair}`,
+                  color: C.textMuted, padding: 0,
+                }}
+              >
+                <ChevronDown size={13} style={{ transform: 'rotate(180deg)' }} />
+              </button>
+            </span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 20 }}>

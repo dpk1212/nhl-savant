@@ -39,8 +39,13 @@ const pathBaseUnits = (stakeTier) => {
   return Number.isFinite(meta?.units) ? meta.units : 0;
 };
 
-/** Enrich walletDetails / backing wallets with profile fields for ConvictionRow */
-export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner) {
+/**
+ * Enrich walletDetails / backing wallets with profile fields for ConvictionRow.
+ * `getRecordForDisplay(short, sport)` is the whitelist-coherent record helper
+ * (whitelistRecordForDisplay in SharpFlow) — the same numbers BackingWalletStrip
+ * shows, so a PROVEN wallet never renders with a record that contradicts its badge.
+ */
+export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner, getRecordForDisplay) {
   if (!Array.isArray(rawWallets)) return [];
   return rawWallets
     .filter((w) => w && (w.invested || 0) > 0)
@@ -50,22 +55,35 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
       const sportRec = profile?.bySport?.[sport];
       const picks = sportRec?.picks;
       const positions = sportRec?.positions;
-      const wr = Number.isFinite(picks?.wr) ? picks.wr
-        : Number.isFinite(positions?.wr) ? positions.wr
+
+      // Whitelist-coherent record first (the record that EARNED the badge).
+      const wlRec = getRecordForDisplay?.(short, sport) || null;
+      const wr = Number.isFinite(wlRec?.wr) ? wlRec.wr
+        : Number.isFinite(picks?.wr) && (picks.n || 0) >= 2 ? picks.wr
+        : Number.isFinite(positions?.wr) && (positions.n || 0) >= 2 ? positions.wr
         : Number.isFinite(w.wr) ? w.wr : null;
+      const roi = Number.isFinite(wlRec?.roi) ? Math.round(wlRec.roi)
+        : Number.isFinite(picks?.flatRoi) ? Math.round(picks.flatRoi)
+        : Number.isFinite(positions?.positionFlatRoi) ? Math.round(positions.positionFlatRoi)
+        : Number.isFinite(w.roi) ? Math.round(w.roi) : null;
       const dollarRoi = Number.isFinite(positions?.dollarRoi) ? Math.round(positions.dollarRoi)
-        : Number.isFinite(w.dollarRoi) ? Math.round(w.dollarRoi)
-        : Number.isFinite(w.roi) ? Math.round(w.roi) : 0;
-      // null when we genuinely don't know — the card hides the element
-      // instead of showing a fabricated "1.0x usual / beats close 55%".
-      // Real size baseline lives in profile.sizeSignal.medianInvested
-      // (wallet's own cross-sport median bet), same source the staking
-      // cron and BackingWalletStrip use.
+        : Number.isFinite(w.dollarRoi) ? Math.round(w.dollarRoi) : null;
+      const record = wlRec ? `${wlRec.wins}-${wlRec.losses}`
+        : (picks?.n || 0) >= 2 ? `${picks.wins || 0}-${picks.losses || 0}`
+        : positions?.n ? `${positions.wins || 0}-${positions.losses || 0}`
+        : (w.record || '—');
+
+      // "vs usual" baseline: this wallet's average bet IN THIS SPORT
+      // (positions.invested / positions.n), falling back to their
+      // cross-sport median (sizeSignal). null hides the element.
+      const sportAvgBet = (positions?.n || 0) > 0 && Number.isFinite(positions?.invested)
+        ? positions.invested / positions.n
+        : null;
       const medianBet = profile?.sizeSignal?.medianInvested;
+      const usualBet = Number.isFinite(sportAvgBet) && sportAvgBet > 0 ? sportAvgBet
+        : Number.isFinite(medianBet) && medianBet > 0 ? medianBet : null;
       const sizeRatio = Number.isFinite(w.sizeRatio) ? w.sizeRatio
-        : (Number.isFinite(medianBet) && medianBet > 0 && (w.invested || 0) > 0)
-          ? w.invested / medianBet
-          : null;
+        : (usualBet != null && (w.invested || 0) > 0) ? w.invested / usualBet : null;
       const priorClvPct = Number.isFinite(w.priorClvPct) ? Math.round(w.priorClvPct)
         : Number.isFinite(w.causalPctPos) ? Math.round(w.causalPctPos)
         : null;
@@ -76,16 +94,12 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
         whitelist: sportRec?.whitelistTier || (proven ? 'CONFIRMED' : null),
         qualify: sizeRatio >= 0.75 ? 'VAULT' : 'SHADOW',
         sizeRatio,
-        record: picks?.n >= 2
-          ? `${picks.wins || 0}-${picks.losses || 0}`
-          : positions?.n
-            ? `${positions.wins || 0}-${positions.losses || 0}`
-            : (w.record || '—'),
+        record,
         wr: Number.isFinite(wr) ? Math.round(wr) : null,
-        roi: Number.isFinite(picks?.flatRoi) ? Math.round(picks.flatRoi) : dollarRoi,
+        roi,
         dollarRoi,
         invested: w.invested || 0,
-        avgSportBet: Number.isFinite(medianBet) && medianBet > 0 ? medianBet : (w.avgSportBet || null),
+        avgSportBet: usualBet,
         cents: w.cents ?? null,
         pnl: w.pnl || 0,
         priorClvPct,
@@ -100,6 +114,7 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
 export function mapLockedPickToCardFixture(pick, {
   getWalletProfile,
   isSportWinner,
+  getRecordForDisplay,
   record30d = null,
 } = {}) {
   const units = Number.isFinite(pick.units) ? pick.units : 0;
@@ -153,6 +168,7 @@ export function mapLockedPickToCardFixture(pick, {
     pick.sport,
     getWalletProfile,
     isSportWinner,
+    getRecordForDisplay,
   );
 
   const confirmedOnSide = Number.isFinite(pick.agsProvenForCount)
