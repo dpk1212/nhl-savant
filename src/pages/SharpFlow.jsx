@@ -7074,9 +7074,18 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const awayInvested = s.awayInvested || 0;
   const homeInvested = s.homeInvested || 0;
   const drawInvested = s.drawInvested || 0;
-  const awayLifetimePnl = awayPositions.reduce((sum, p) => sum + (p.totalPnl || 0), 0);
-  const homeLifetimePnl = homePositions.reduce((sum, p) => sum + (p.totalPnl || 0), 0);
-  const drawLifetimePnl = drawPositions.reduce((sum, p) => sum + (p.totalPnl || 0), 0);
+  // Dedupe by wallet: totalPnl is the wallet's LIFETIME P&L, so a wallet with
+  // multiple positions on one side must only count once toward the side sum.
+  const sideLifetimePnl = (list) => {
+    const seen = new Map();
+    list.forEach((p) => { if (!seen.has(p.wallet)) seen.set(p.wallet, p.totalPnl || 0); });
+    let sum = 0;
+    seen.forEach((v) => { sum += v; });
+    return sum;
+  };
+  const awayLifetimePnl = sideLifetimePnl(awayPositions);
+  const homeLifetimePnl = sideLifetimePnl(homePositions);
+  const drawLifetimePnl = sideLifetimePnl(drawPositions);
   const totalLifetimePnl = awayLifetimePnl + homeLifetimePnl + drawLifetimePnl;
   const totalInvested = awayInvested + homeInvested + drawInvested;
   const awayPct = totalInvested > 0 ? (awayInvested / totalInvested) * 100 : 50;
@@ -7996,14 +8005,25 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     away: sharpAwayPct,
     home: 100 - sharpAwayPct,
   };
-  const flowPublic = {
-    away: Math.round(flowGame?.awayTicketPct ?? 50),
-    home: Math.round(flowGame?.homeTicketPct ?? 50),
-  };
-  const flowMoney = {
-    away: Math.round(flowGame?.awayMoneyPct ?? flowSharp.away),
-    home: Math.round(flowGame?.homeMoneyPct ?? flowSharp.home),
-  };
+  // Only pass public splits when the flow feed actually has them — the card
+  // hides those rows rather than showing a fabricated 50/50.
+  const flowPublic = Number.isFinite(flowGame?.awayTicketPct)
+    ? { away: Math.round(flowGame.awayTicketPct), home: Math.round(flowGame.homeTicketPct ?? (100 - flowGame.awayTicketPct)) }
+    : null;
+  const flowMoney = Number.isFinite(flowGame?.awayMoneyPct)
+    ? { away: Math.round(flowGame.awayMoneyPct), home: Math.round(flowGame.homeMoneyPct ?? (100 - flowGame.awayMoneyPct)) }
+    : null;
+
+  // Real Pinnacle odds series for our side (from the same history the old
+  // timeline chart used). null → the card hides its charts.
+  const mlPinSeries = (() => {
+    const hist = pinnGame?.history || [];
+    if (hist.length < 2) return null;
+    const pts = hist
+      .map((h) => (consensusSide === 'away' ? h.away : consensusSide === 'draw' ? h.draw : h.home))
+      .filter(Number.isFinite);
+    return pts.length >= 2 ? pts : null;
+  })();
 
   const booksRow = [
     { name: 'Pinnacle', odds: consensusOdds, sharp: true },
@@ -8066,6 +8086,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     pinnacleOpposes: pinnMoved && consensusSide && pinnMoved !== consensusSide && pinnMoved !== 'none',
     pickLabel: consensusSide === 'draw' ? 'Draw ML' : `${consensusShort} ML`,
     pathBase: AGS_V12_STAKE_TIER_META[mlCronStakeTier || displayTier]?.units,
+    pinSeries: mlPinSeries,
   });
 
   // Spread / total market siblings for the rail (when data exists)
@@ -8095,10 +8116,19 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       away: { invested: spreadSummary?.awayInvested || 0, sharps: spreadSummary?.sharpAway || 0, avg: 0, pnl: 0 },
       home: { invested: spreadSummary?.homeInvested || 0, sharps: spreadSummary?.sharpHome || 0, avg: 0, pnl: 0 },
     },
-    flow: { sharp: flowSharp, tickets: flowPublic, money: flowMoney },
-    pinOpen: { away: spreadPinnOdds, home: spreadPinnOdds },
-    pinNow: { away: spreadPinnOdds, home: spreadPinnOdds },
-    books: [{ name: 'Pinnacle', odds: spreadPinnOdds, sharp: true }],
+    flow: {
+      sharp: (() => {
+        const a = spreadSummary?.awayInvested || 0;
+        const h = spreadSummary?.homeInvested || 0;
+        const tot = a + h;
+        if (tot <= 0) return { away: 50, home: 50 };
+        const ap = Math.round((a / tot) * 100);
+        return { away: ap, home: 100 - ap };
+      })(),
+      tickets: null,
+      money: null,
+    },
+    books: Number.isFinite(spreadPinnOdds) ? [{ name: 'Pinnacle', odds: spreadPinnOdds, sharp: true }] : [],
     wallets: [],
     pickLabel: spreadLine != null
       ? `${(spreadConsensusSide === 'away' ? awayShort : homeShort)} ${spreadLine > 0 ? '+' : ''}${spreadLine}`
@@ -8127,10 +8157,19 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       away: { invested: totalSummary?.awayInvested || totalSummary?.underInvested || 0, sharps: 0, avg: 0, pnl: 0 },
       home: { invested: totalSummary?.homeInvested || totalSummary?.overInvested || 0, sharps: 0, avg: 0, pnl: 0 },
     },
-    flow: { sharp: { away: 50, home: 50 }, tickets: { away: 50, home: 50 }, money: { away: 50, home: 50 } },
-    pinOpen: { away: -110, home: -110 },
-    pinNow: { away: -110, home: -110 },
-    books: [{ name: 'Pinnacle', odds: -110, sharp: true }],
+    flow: {
+      sharp: (() => {
+        const u = totalSummary?.awayInvested || totalSummary?.underInvested || 0;
+        const o = totalSummary?.homeInvested || totalSummary?.overInvested || 0;
+        const tot = u + o;
+        if (tot <= 0) return { away: 50, home: 50 };
+        const up = Math.round((u / tot) * 100);
+        return { away: up, home: 100 - up };
+      })(),
+      tickets: null,
+      money: null,
+    },
+    books: [],
     wallets: [],
     pickLabel: totalSummary?.consensus === 'under' ? 'Under' : 'Over',
     pathBase: AGS_V12_STAKE_TIER_META[displayTotal.tier || totalCronStakeTier]?.units,

@@ -240,11 +240,7 @@ export function mapLockedPickToCardFixture(pick, {
     nowOdds,
     clvPct,
     serial,
-    record30d: record30d || {
-      record: '—',
-      units: '—',
-      scope: `${pick.sport || 'ALL'} · last 30 days`,
-    },
+    record30d: record30d || null,
     lockChecks: lockChecks.length ? lockChecks : ['Locked ticket'],
   };
 }
@@ -284,6 +280,7 @@ export function mapLiveGameToCardFixture({
   pathBase,
   setupHitRate,
   updatedLabel,
+  pinSeries,
 }) {
   const isTotal = marketType === 'TOTAL';
   const awayShort = isTotal ? 'Under' : shortTeam(gd.away);
@@ -297,15 +294,17 @@ export function mapLiveGameToCardFixture({
   // No fake tape scores: only show the meter when a real stamp exists.
   const score = Number.isFinite(tapeScore) ? tapeScore : null;
 
-  const fair = Number.isFinite(fairOdds) ? fairOdds : odds;
-  const fairProb = Math.round((ip(fair) || 0.5) * 100);
+  const fair = Number.isFinite(fairOdds) ? fairOdds : (Number.isFinite(odds) ? odds : null);
+  const fairProb = fair != null ? Math.round((ip(fair) || 0.5) * 100) : null;
 
   const emptySide = { invested: 0, sharps: 0, avg: 0, pnl: 0 };
   const s = sides || { away: emptySide, home: emptySide };
-  const f = flow || {
-    sharp: { away: 50, home: 50 },
-    tickets: { away: 50, home: 50 },
-    money: { away: 50, home: 50 },
+  // sharp split always exists (derived from our own invested totals);
+  // public tickets/money stay null unless a real flow feed provided them.
+  const f = {
+    sharp: flow?.sharp || { away: 50, home: 50 },
+    tickets: flow?.tickets || null,
+    money: flow?.money || null,
   };
 
   return {
@@ -324,9 +323,9 @@ export function mapLiveGameToCardFixture({
     stakePath: stake,
     units: u,
     toWin: Number.isFinite(toWin) ? toWin : 0,
-    odds: Number.isFinite(odds) ? odds : -110,
+    odds: Number.isFinite(odds) ? odds : null,
     book: book || 'Pinnacle',
-    fairOdds: fair ?? -110,
+    fairOdds: fair,
     fairProb,
     tapeAction: tape,
     tapeScore: score,
@@ -342,15 +341,17 @@ export function mapLiveGameToCardFixture({
     sharpMoneyPct: f.sharp?.[normSide === 'home' ? 'home' : 'away'] ?? 50,
     sides: s,
     flow: f,
-    pinOpen: pinOpen || { away: odds, home: odds },
-    pinNow: pinNow || { away: fair, home: fair },
+    pinOpen: pinOpen || null,
+    pinNow: pinNow || null,
     books: Array.isArray(books) && books.length
-      ? books
-      : [{ name: 'Pinnacle', odds: fair, sharp: true }],
+      ? books.filter((b) => b && Number.isFinite(b.odds))
+      : (Number.isFinite(fair) ? [{ name: 'Pinnacle', odds: fair, sharp: true }] : []),
     wallets: wallets || [],
     combinedWalletPnl: (wallets || []).reduce((acc, w) => acc + (w.pnl || 0), 0),
     gameTime: isLive ? 'LIVE' : (gameTimeLabel || ''),
     isLive: !!isLive,
     updatedLabel: updatedLabel || null,
+    // Real Pinnacle odds series for our side (null hides the charts).
+    pinSeries: Array.isArray(pinSeries) && pinSeries.length >= 2 ? pinSeries : null,
   };
 }

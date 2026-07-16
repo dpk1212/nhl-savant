@@ -125,24 +125,6 @@ function HeroChart({ points, color, h = 72, gid = 'posChart' }) {
   );
 }
 
-function RangeRail({ lowLabel, highLabel, pct, color }) {
-  const p = Math.max(4, Math.min(96, pct));
-  return (
-    <div style={{ marginTop: 6 }}>
-      <div style={{ height: 4, borderRadius: 999, background: 'rgba(148,163,184,0.18)', position: 'relative' }}>
-        <div style={{
-          position: 'absolute', left: `${p}%`, top: '50%', transform: 'translate(-50%, -50%)',
-          width: 10, height: 10, borderRadius: '50%', background: color, boxShadow: `0 0 0 3px ${color}33`,
-        }} />
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5, fontSize: '0.55rem', color: C.textMuted, fontFeatureSettings: "'tnum'" }}>
-        <span>{lowLabel}</span>
-        <span>{highLabel}</span>
-      </div>
-    </div>
-  );
-}
-
 /** Team monogram — Apple Sports crest stand-in */
 function TeamMark({ code, active, accent }) {
   return (
@@ -367,6 +349,10 @@ function BattleRowV12({ label, tag, awayVal, homeVal, awayNum, homeNum, accent, 
   const awayPct = (Math.abs(awayNum) / total) * 100;
   const homePct = (Math.abs(homeNum) / total) * 100;
   const homeWins = higherWins ? homeNum >= awayNum : homeNum <= awayNum;
+  // When OUR side wins the row, its value glows accent — the eye tracks our
+  // column's dominance down the battle.
+  const oursWins = homeWins === !!playIsHome;
+  const winValColor = oursWins ? accent : C.text;
   const winColor = accent;
   const loseColor = 'rgba(148,163,184,0.35)';
   return (
@@ -377,7 +363,7 @@ function BattleRowV12({ label, tag, awayVal, homeVal, awayNum, homeNum, accent, 
       }}>
         <span style={{
           fontSize: '0.98rem', fontWeight: 800, letterSpacing: '-0.02em',
-          color: !homeWins ? C.text : C.textMuted,
+          color: !homeWins ? winValColor : C.textMuted,
         }}>{awayVal}</span>
         <span style={{ fontSize: '0.58rem', fontWeight: 800, letterSpacing: '0.12em', color: C.textMuted, textAlign: 'center' }}>
           {label}
@@ -391,7 +377,7 @@ function BattleRowV12({ label, tag, awayVal, homeVal, awayNum, homeNum, accent, 
         </span>
         <span style={{
           fontSize: '0.98rem', fontWeight: 800, letterSpacing: '-0.02em',
-          color: homeWins ? C.text : C.textMuted,
+          color: homeWins ? winValColor : C.textMuted,
         }}>{homeVal}</span>
       </div>
       <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
@@ -676,16 +662,23 @@ export function LivePositionCardView({ f, markets, onMarket }) {
   const hasTape = Number.isFinite(f.tapeScore);
   const riskAnim = useCountUp(f.units, true, 1000);
   const [tab, setTab] = useState('history');
-  const pinSeries = [148, 147, 146, 145, 144, 142, 140, 139, 138, 137];
+  // Real Pinnacle odds series only — no fabricated chart shapes.
+  const pinSeries = Array.isArray(f.pinSeries) && f.pinSeries.length >= 2 ? f.pinSeries : null;
   const moveColor = f.pinnacleOpposes ? B.loss : B.profit;
   const sortedWallets = [...f.wallets].sort((a, b) => (b.sizeRatio || 0) - (a.sizeRatio || 0));
   const maxRatio = sortedWallets[0]?.sizeRatio || 1;
   const sizeColor = f.tapeAction === 'boost' ? B.profit : f.tapeAction === 'mute' ? B.loss : C.textSec;
   const sizeWord = f.tapeAction === 'boost' ? 'sized up' : f.tapeAction === 'mute' ? 'passed' : 'standard size';
   const isLive = f.isLive || f.gameTime === 'LIVE';
-  const centsEdge = Math.abs(f.odds) < Math.abs(f.fairOdds)
-    ? `${Math.abs(Math.abs(f.fairOdds) - Math.abs(f.odds))}¢ better than fair`
-    : null;
+  const hasPrice = Number.isFinite(f.odds) || Number.isFinite(f.fairOdds);
+  // Higher American odds always pay the bettor more, so "better than fair"
+  // is odds > fairOdds. Crossing +100/-100 skips the dead 200-cent band.
+  const centsEdge = (() => {
+    if (!Number.isFinite(f.odds) || !Number.isFinite(f.fairOdds)) return null;
+    let diff = f.odds - f.fairOdds;
+    if ((f.odds > 0) !== (f.fairOdds > 0)) diff -= Math.sign(diff) * 200;
+    return diff > 0 ? `${Math.round(diff)}¢ better than fair` : null;
+  })();
 
   // Per-side skill: real graded win rates of the proven wallets on each side
   // (from stored profiles). Rendered only when both sides have a real number.
@@ -700,19 +693,21 @@ export function LivePositionCardView({ f, markets, onMarket }) {
   const agClv = Math.round(forClv - (f.netClv || 0));
   const clvLane = playIsHome ? { away: agClv, home: forClv } : { away: forClv, home: agClv };
 
+  // Split verdict into a bold lead (the receipts) and a quieter action line
+  // so the eye lands on the proof first.
   const verdict = (() => {
     const vault = f.vaultOnSide > 0 ? `${f.vaultOnSide} betting well above their usual` : null;
     const winners = `${f.confirmedOnSide} proven ${f.sport} winner${f.confirmedOnSide === 1 ? '' : 's'} on ${playSide}`;
+    const lead = `${winners}${vault ? `, ${vault}` : ''}.`;
     if (f.tapeAction === 'mute' && isMuted) {
-      return `${winners}, but the skill read is weak, so we passed.`;
+      return { lead, rest: 'The skill read is weak, so we passed.' };
     }
     if (isWatch) {
-      return `${winners}${vault ? `, ${vault}` : ''}. The money hasn't crossed a stake path yet, so we watch.`;
+      return { lead, rest: "The money hasn't crossed a stake path yet, so we watch." };
     }
-    const base = `${winners}${vault ? `, ${vault}` : ''}.`;
-    if (f.tapeAction === 'boost') return `${base} The skill read is strong, so we ${sizeWord}.`;
-    if (f.displayState === 'TRACKING') return `${base} Watching with a light stake.`;
-    return `${base} We took ${sizeWord}.`;
+    if (f.tapeAction === 'boost') return { lead, rest: `The skill read is strong, so we ${sizeWord}.` };
+    if (f.displayState === 'TRACKING') return { lead, rest: 'Watching with a light stake.' };
+    return { lead, rest: `We took ${sizeWord}.` };
   })();
 
   const zone = (i) => ({ className: 'pos-reveal', style: { animationDelay: `${i * 70}ms`, position: 'relative' } });
@@ -867,8 +862,10 @@ export function LivePositionCardView({ f, markets, onMarket }) {
             </div>
           </div>
 
-          <p style={{ margin: '16px 0 0', fontSize: '0.92rem', color: '#c6d0e2', lineHeight: 1.55, maxWidth: 460 }}>
-            {verdict}
+          <p style={{ margin: '16px 0 0', fontSize: '0.92rem', lineHeight: 1.55, maxWidth: 460 }}>
+            <span style={{ color: C.text, fontWeight: 700 }}>{verdict.lead}</span>
+            {' '}
+            <span style={{ color: '#9fabc2' }}>{verdict.rest}</span>
           </p>
         </div>
       </div>
@@ -879,8 +876,13 @@ export function LivePositionCardView({ f, markets, onMarket }) {
       <div {...zone(1)}>
         <div style={{ padding: '20px 20px 12px', position: 'relative' }}>
           <ZoneHead accent={accent} right={(
-            <span style={{ fontSize: '0.6rem', fontWeight: 800, color: accent, fontFeatureSettings: "'tnum'" }}>
-              {f.flow.sharp[f.side]}% of sharp $ on {playSide}
+            <span style={{
+              fontSize: '0.58rem', fontWeight: 900, fontFeatureSettings: "'tnum'",
+              padding: '4px 10px', borderRadius: 7, color: '#06100a',
+              background: `linear-gradient(180deg, ${accent === B.gold ? B.goldHi : accent} 0%, ${accent} 100%)`,
+              boxShadow: `0 8px 20px -10px ${accent}`,
+            }}>
+              {f.flow.sharp[f.side]}% on {playSide}
             </span>
           )}>
             THE BATTLE
@@ -1052,38 +1054,48 @@ export function LivePositionCardView({ f, markets, onMarket }) {
         </div>
       </div>
 
-      <ZoneRule />
+      {hasPrice && (
+        <>
+          <ZoneRule />
 
-      {/* ── ZONE 4 · PRICE CHECK ── */}
-      <div {...zone(3)}>
-        <div style={{ padding: '20px 20px 18px' }}>
-          <ZoneHead accent={accent} right={(
-            <span style={{ fontSize: '0.58rem', fontWeight: 800, color: moveColor }}>
-              {f.pinnacleOpposes ? 'market moving against us' : 'market moving with us'}
-            </span>
-          )}>
-            PRICE CHECK
-          </ZoneHead>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontFeatureSettings: "'tnum'" }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '0.48rem', color: C.textFaint, letterSpacing: '0.08em', marginBottom: 4 }}>WE GOT</div>
-              <div style={{ fontSize: '1.15rem', fontWeight: 800, letterSpacing: '-0.02em' }}>{fmtOdds(f.odds)}</div>
-              <div style={{ fontSize: '0.52rem', color: C.textMuted, marginTop: 3 }}>{f.book}</div>
-            </div>
-            <MiniSpark points={pinSeries.slice(0, 7)} color={moveColor} against={f.pinnacleOpposes} compact />
-            <div style={{ flex: 1, textAlign: 'right' }}>
-              <div style={{ fontSize: '0.48rem', color: C.textFaint, letterSpacing: '0.08em', marginBottom: 4 }}>FAIR LINE</div>
-              <div style={{ fontSize: '1.15rem', fontWeight: 800, color: moveColor, letterSpacing: '-0.02em' }}>{fmtOdds(f.fairOdds)}</div>
-              <div style={{ fontSize: '0.52rem', color: C.textMuted, marginTop: 3 }}>{f.fairProb}% implied</div>
+          {/* ── ZONE 4 · PRICE CHECK ── */}
+          <div {...zone(3)}>
+            <div style={{ padding: '20px 20px 18px' }}>
+              <ZoneHead accent={accent} right={(
+                <span style={{ fontSize: '0.58rem', fontWeight: 800, color: moveColor }}>
+                  {f.pinnacleOpposes ? 'market moving against us' : 'market moving with us'}
+                </span>
+              )}>
+                PRICE CHECK
+              </ZoneHead>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontFeatureSettings: "'tnum'" }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '0.48rem', color: C.textFaint, letterSpacing: '0.08em', marginBottom: 4 }}>WE GOT</div>
+                  <div style={{ fontSize: '1.15rem', fontWeight: 800, letterSpacing: '-0.02em' }}>{fmtOdds(f.odds)}</div>
+                  <div style={{ fontSize: '0.52rem', color: C.textMuted, marginTop: 3 }}>{f.book}</div>
+                </div>
+                {pinSeries ? (
+                  <MiniSpark points={pinSeries.slice(-7)} color={moveColor} against={f.pinnacleOpposes} compact />
+                ) : (
+                  <div style={{ flex: '0 0 72px' }} />
+                )}
+                <div style={{ flex: 1, textAlign: 'right' }}>
+                  <div style={{ fontSize: '0.48rem', color: C.textFaint, letterSpacing: '0.08em', marginBottom: 4 }}>FAIR LINE</div>
+                  <div style={{ fontSize: '1.15rem', fontWeight: 800, color: moveColor, letterSpacing: '-0.02em' }}>{fmtOdds(f.fairOdds)}</div>
+                  {f.fairProb != null && (
+                    <div style={{ fontSize: '0.52rem', color: C.textMuted, marginTop: 3 }}>{f.fairProb}% implied</div>
+                  )}
+                </div>
+              </div>
+              {centsEdge && (
+                <div style={{ marginTop: 12, fontSize: '0.64rem', color: B.profit, fontWeight: 700 }}>
+                  ✓ {centsEdge}
+                </div>
+              )}
             </div>
           </div>
-          {centsEdge && (
-            <div style={{ marginTop: 12, fontSize: '0.64rem', color: B.profit, fontWeight: 700 }}>
-              ✓ {centsEdge}
-            </div>
-          )}
-        </div>
-      </div>
+        </>
+      )}
 
       <ZoneRule />
 
@@ -1116,15 +1128,19 @@ export function LivePositionCardView({ f, markets, onMarket }) {
           <div className="pos-reveal" key={tab}>
             {tab === 'history' && (
               <div>
-                <HeroChart points={pinSeries} color={moveColor} h={68} gid={`v12-${f.id}`} />
-                <div style={{ marginTop: 10, marginBottom: 16 }}>
-                  <RangeRail
-                    lowLabel={`Open ${fmtOdds(f.pinOpen.home)}`}
-                    highLabel={`Now ${fmtOdds(f.pinNow.home)}`}
-                    pct={72}
-                    color={moveColor}
-                  />
-                </div>
+                {pinSeries ? (
+                  <>
+                    <HeroChart points={pinSeries} color={moveColor} h={68} gid={`v12-${f.id}`} />
+                    <div style={{ marginTop: 10, marginBottom: 16, display: 'flex', justifyContent: 'space-between', fontSize: '0.56rem', color: C.textMuted, fontFeatureSettings: "'tnum'" }}>
+                      <span>Open {fmtOdds(pinSeries[0])}</span>
+                      <span>Now {fmtOdds(pinSeries[pinSeries.length - 1])}</span>
+                    </div>
+                  </>
+                ) : (
+                  <p style={{ fontSize: '0.64rem', color: C.textMuted, margin: '0 0 14px' }}>
+                    Line movement will chart here once the sharp book posts more prices.
+                  </p>
+                )}
                 <div style={{ display: 'flex', fontFeatureSettings: "'tnum'" }}>
                   {f.books.map((b, i) => (
                     <div key={b.name} style={{
@@ -1154,25 +1170,30 @@ export function LivePositionCardView({ f, markets, onMarket }) {
                   accent={accent}
                   homeWins={f.flow.sharp.home >= f.flow.sharp.away}
                 />
-                <BattleStatRow
-                  label="PUBLIC TIX"
-                  awayVal={`${f.flow.tickets.away}%`}
-                  homeVal={`${f.flow.tickets.home}%`}
-                  awayShare={f.flow.tickets.away}
-                  accent={accent}
-                  homeWins={f.flow.tickets.home >= f.flow.tickets.away}
-                />
-                <BattleStatRow
-                  label="PUBLIC $"
-                  awayVal={`${f.flow.money.away}%`}
-                  homeVal={`${f.flow.money.home}%`}
-                  awayShare={f.flow.money.away}
-                  accent={accent}
-                  homeWins={f.flow.money.home >= f.flow.money.away}
-                />
+                {f.flow.tickets && (
+                  <BattleStatRow
+                    label="PUBLIC TIX"
+                    awayVal={`${f.flow.tickets.away}%`}
+                    homeVal={`${f.flow.tickets.home}%`}
+                    awayShare={f.flow.tickets.away}
+                    accent={accent}
+                    homeWins={f.flow.tickets.home >= f.flow.tickets.away}
+                  />
+                )}
+                {f.flow.money && (
+                  <BattleStatRow
+                    label="PUBLIC $"
+                    awayVal={`${f.flow.money.away}%`}
+                    homeVal={`${f.flow.money.home}%`}
+                    awayShare={f.flow.money.away}
+                    accent={accent}
+                    homeWins={f.flow.money.home >= f.flow.money.away}
+                  />
+                )}
                 <p style={{ fontSize: '0.64rem', color: C.textMuted, lineHeight: 1.55, margin: '12px 0 0' }}>
-                  Sharp money vs public split. When the crowd is on one side and proven wallets are on
-                  the other, we follow the wallets.
+                  {f.flow.tickets || f.flow.money
+                    ? 'Sharp money vs public split. When the crowd is on one side and proven wallets are on the other, we follow the wallets.'
+                    : 'Verified sharp money split for this game. Public ticket data will appear here when available.'}
                 </p>
               </div>
             )}
@@ -1288,6 +1309,9 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
   const riskAnim = useCountUp(f.units, expanded, 1000);
   const clvGood = f.clvPct >= 0;
   const clvColor = clvGood ? B.profit : B.loss;
+  // Journey chart through the three REAL price stops (lock → peak → now).
+  const journeySeries = [f.lockOdds, f.peakOdds, f.nowOdds].filter(Number.isFinite);
+  const hasJourney = journeySeries.length >= 2;
 
   if (!expanded) {
     return (
@@ -1366,7 +1390,6 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
       </div>
     );
   }
-  const pinSeries = [144, 143, 143, 141, 139, 137, 138, 137, 137, 137];
   const sortedWallets = [...f.wallets].sort((a, b) => (b.sizeRatio || 0) - (a.sizeRatio || 0));
   const maxRatio = sortedWallets[0]?.sizeRatio || 1;
 
@@ -1576,7 +1599,9 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
             PRICE JOURNEY
           </ZoneHead>
 
-          <HeroChart points={pinSeries} color={clvColor} h={64} gid={`locked-${f.id}`} />
+          {hasJourney && (
+            <HeroChart points={journeySeries} color={clvColor} h={64} gid={`locked-${f.id}`} />
+          )}
 
           <div style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
@@ -1631,15 +1656,17 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
               {f.serial}
             </div>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '0.46rem', fontWeight: 800, letterSpacing: '0.14em', color: C.textFaint, marginBottom: 4 }}>
-              {f.record30d.scope.toUpperCase()}
+          {f.record30d && (
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '0.46rem', fontWeight: 800, letterSpacing: '0.14em', color: C.textFaint, marginBottom: 4 }}>
+                {f.record30d.scope.toUpperCase()}
+              </div>
+              <div style={{ fontSize: '0.78rem', fontWeight: 800, fontFeatureSettings: "'tnum'" }}>
+                {f.record30d.record}
+                <span style={{ color: B.profit, marginLeft: 7 }}>{f.record30d.units}</span>
+              </div>
             </div>
-            <div style={{ fontSize: '0.78rem', fontWeight: 800, fontFeatureSettings: "'tnum'" }}>
-              {f.record30d.record}
-              <span style={{ color: B.profit, marginLeft: 7 }}>{f.record30d.units}</span>
-            </div>
-          </div>
+          )}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
