@@ -935,6 +935,7 @@ async function run() {
     console.log(`  Spread positions merged:    ${mergeStats.spread}`);
     console.log(`  Total positions merged:     ${mergeStats.total}`);
     console.log(`  Dropped (SHADOW gate ahead): ${mergeStats.dropped_shadow_gate}  (avgSportBet=0)`);
+    console.log(`  Dropped (MM/trader excluded): ${mergeStats.dropped_excluded || 0}`);
     console.log(`  Dropped (already in file):   ${mergeStats.dropped_duplicate}`);
   } else if (!MERGE) {
     console.log('');
@@ -989,9 +990,20 @@ function atomicWriteJSON(path, body) {
 // output files. We update both the per-game positions[] array AND the
 // summary counters to match what the main scanner would have produced.
 //
-// Returns: { ml, spread, total, dropped_shadow_gate, dropped_duplicate }
+// Returns: { ml, spread, total, dropped_shadow_gate, dropped_excluded, dropped_duplicate }
 function mergeRecoveredIntoScanFiles(positions, polyData) {
-  const stats = { ml: 0, spread: 0, total: 0, dropped_shadow_gate: 0, dropped_duplicate: 0 };
+  const stats = { ml: 0, spread: 0, total: 0, dropped_shadow_gate: 0, dropped_excluded: 0, dropped_duplicate: 0 };
+  // Same list writeSharpActions + Sharp Flow UI drop (MM ∪ clear-trader).
+  // Recovering these into sharp_positions*.json recreated the fake "2 proven"
+  // / UI-vs-cron census mismatch (e.g. mmExcluded wallet painted as proven).
+  let excludedSet = null;
+  try {
+    const excl = loadJSON('sharp_intel_excluded_wallets.json');
+    const xs = Array.isArray(excl?.excluded) ? excl.excluded : [];
+    if (xs.length > 0) {
+      excludedSet = new Set(xs.map((a) => String(a || '').toLowerCase()).filter(Boolean));
+    }
+  } catch { /* fail open — merge without exclusion if file unreadable */ }
   const buckets = {
     ml:     { file: 'sharp_positions.json',        positions: [] },
     spread: { file: 'sharp_spread_positions.json', positions: [] },
@@ -1003,6 +1015,11 @@ function mergeRecoveredIntoScanFiles(positions, polyData) {
     // them in the diagnostic so the user knows the coverage gap exists.
     if (!(pos.avgSportBet > 0) || (pos.invested / pos.avgSportBet) < 0.10) {
       stats.dropped_shadow_gate++;
+      continue;
+    }
+    const w = String(pos.wallet || '').toLowerCase();
+    if (w && excludedSet?.has(w)) {
+      stats.dropped_excluded++;
       continue;
     }
     buckets[pos.marketType]?.positions.push(pos);

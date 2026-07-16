@@ -317,6 +317,85 @@ export const PROPOSED_META = {
 //     with the live tape needle: the sizing brain, finally visible
 // ═══════════════════════════════════════════════════════════════════════════
 
+// Locked-ticket header stub — when we actually hold a position, the card
+// leads with a real betslip instead of a lone number: dashed perforation +
+// punched notches read "ticket" instantly, and RISK / TO WIN / PRICE are the
+// three numbers a bettor checks first. NOTE: the clipped-gradient number uses
+// backgroundImage (NOT the `background` shorthand) — updating the shorthand
+// resets background-clip to border-box while React leaves the unchanged
+// WebkitBackgroundClip prop alone, which painted the gradient as a solid
+// block when the market rail swapped fixtures in place.
+function TicketStub({ units, toWin, odds, stakePath, tapeAction, centsEdge }) {
+  const risk = useCountUp(units, true, 900);
+  const sizeLabel = tapeAction === 'boost' ? 'Sized up' : tapeAction === 'mute' ? 'Pass' : 'Standard';
+  const sizeColor = tapeAction === 'boost' ? B.profit : tapeAction === 'mute' ? B.loss : C.textSec;
+  const cellLabel = { fontSize: '0.52rem', fontWeight: 800, letterSpacing: '0.13em', color: C.textMuted, marginBottom: 4 };
+  return (
+    <div style={{
+      marginTop: 12, borderRadius: 12, position: 'relative',
+      background: 'linear-gradient(160deg, rgba(212,175,55,0.11) 0%, rgba(212,175,55,0.04) 42%, rgba(255,255,255,0.015) 100%)',
+      border: '1px solid rgba(212,175,55,0.32)',
+      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 18px 40px -22px rgba(212,175,55,0.5)',
+    }}>
+      <div style={{
+        position: 'absolute', top: 0, left: '10%', right: '10%', height: 1.5,
+        background: `linear-gradient(90deg, transparent, ${B.gold}88, transparent)`, pointerEvents: 'none',
+      }} />
+      <div style={{
+        position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '8px 14px', borderBottom: '1px dashed rgba(212,175,55,0.28)',
+      }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.56rem', fontWeight: 900, letterSpacing: '0.16em', color: B.goldHi }}>
+          <Check size={11} strokeWidth={3.2} />
+          TICKET IN
+        </span>
+        <span style={{ fontSize: '0.56rem', fontWeight: 800, letterSpacing: '0.08em' }}>
+          <span style={{ color: C.textSec }}>{stakePath}</span>
+          <span style={{ color: C.textFaint }}> · </span>
+          <span style={{ color: sizeColor }}>{sizeLabel}</span>
+        </span>
+        {/* punched notches on the perforation line */}
+        <span style={{ position: 'absolute', left: -6, bottom: -6, width: 11, height: 11, borderRadius: '50%', background: '#12172a', border: '1px solid rgba(212,175,55,0.30)' }} />
+        <span style={{ position: 'absolute', right: -6, bottom: -6, width: 11, height: 11, borderRadius: '50%', background: '#12172a', border: '1px solid rgba(212,175,55,0.30)' }} />
+      </div>
+      <div style={{ display: 'flex', alignItems: 'stretch' }}>
+        <div style={{ flex: 1.15, padding: '10px 14px 12px' }}>
+          <div style={cellLabel}>RISK</div>
+          <div style={{
+            fontSize: '1.9rem', fontWeight: 800, letterSpacing: '-0.05em', lineHeight: 0.95,
+            fontFeatureSettings: "'tnum'", filter: `drop-shadow(0 0 22px ${B.gold}45)`,
+          }}>
+            <span style={{
+              backgroundImage: `linear-gradient(180deg, #ffffff 10%, ${B.goldHi} 95%)`,
+              backgroundClip: 'text', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            }}>
+              {risk.toFixed(1)}
+            </span>
+            <span style={{ fontSize: '0.9rem', fontWeight: 700, color: C.textMuted, marginLeft: 4 }}>u</span>
+          </div>
+        </div>
+        <div style={{ width: 1, background: 'rgba(212,175,55,0.16)', margin: '10px 0' }} />
+        <div style={{ flex: 1, padding: '10px 14px 12px' }}>
+          <div style={cellLabel}>TO WIN</div>
+          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: B.profit, fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em', lineHeight: 1.3 }}>
+            {Number.isFinite(toWin) ? `+${toWin.toFixed(2)}u` : '—'}
+          </div>
+        </div>
+        <div style={{ width: 1, background: 'rgba(212,175,55,0.16)', margin: '10px 0' }} />
+        <div style={{ flex: 1, padding: '10px 14px 12px' }}>
+          <div style={cellLabel}>PRICE</div>
+          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: C.text, fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em', lineHeight: 1.3 }}>
+            {fmtOdds(odds)}
+          </div>
+          {centsEdge && (
+            <div style={{ fontSize: '0.55rem', fontWeight: 700, color: B.profit, marginTop: 2 }}>{centsEdge}</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ZoneHead({ children, right, accent }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
@@ -904,7 +983,6 @@ export function LivePositionCardView({ f, markets, onMarket }) {
   const hasEdge = Number.isFinite(f.edge);
   const hasClv = Number.isFinite(f.netClv);
   const hasTape = Number.isFinite(f.tapeScore);
-  const riskAnim = useCountUp(f.units, true, 1000);
   // Quadrant map points: every sharp on the game (both sides when the
   // adapter provides them) that has a REAL beats-close % and ROI. No
   // invented coordinates — wallets missing either stat stay off the map.
@@ -1058,9 +1136,14 @@ export function LivePositionCardView({ f, markets, onMarket }) {
                     fontFeatureSettings: "'tnum'",
                     filter: `drop-shadow(0 0 30px ${accent}50)`,
                   }}>
+                    {/* backgroundImage (not the `background` shorthand): updating the
+                        shorthand resets background-clip to border-box while React
+                        skips the unchanged WebkitBackgroundClip prop — that painted
+                        this number as a solid block when the market rail swapped
+                        fixtures without remounting. */}
                     <span style={{
-                      background: `linear-gradient(180deg, #ffffff 8%, ${B.goldHi} 96%)`,
-                      WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                      backgroundImage: `linear-gradient(180deg, #ffffff 8%, ${B.goldHi} 96%)`,
+                      backgroundClip: 'text', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
                     }}>
                       {fmtMoney(f.sideInvested)}
                     </span>
@@ -1069,66 +1152,55 @@ export function LivePositionCardView({ f, markets, onMarket }) {
                     sharp money on <span style={{ color: accent, fontWeight: 800 }}>{playSide}</span>
                   </div>
                 </div>
-              ) : (
+              ) : f.units <= 0 ? (
                 <div>
                   <div style={{
                     fontSize: '2.85rem', fontWeight: 800, letterSpacing: '-0.065em', lineHeight: 0.88,
                     fontFeatureSettings: "'tnum'",
-                    filter: f.units > 0 ? `drop-shadow(0 0 26px ${accent}45)` : 'none',
                   }}>
                     <span style={{
-                      background: f.units > 0
-                        ? 'linear-gradient(180deg, #ffffff 12%, #b9c6dc 100%)'
-                        : `linear-gradient(180deg, ${B.loss} 12%, #7f1d1d 100%)`,
-                      WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                      backgroundImage: `linear-gradient(180deg, ${B.loss} 12%, #7f1d1d 100%)`,
+                      backgroundClip: 'text', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
                     }}>
-                      {f.units > 0 ? riskAnim.toFixed(1) : '0.0'}
+                      0.0
                     </span>
                     <span style={{ fontSize: '1.05rem', fontWeight: 700, color: C.textMuted, marginLeft: 5 }}>u</span>
                   </div>
                   <div style={{ fontSize: '0.62rem', color: C.textMuted, marginTop: 4 }}>
-                    {f.units > 0 ? 'our ticket' : 'we passed'}
+                    we passed
                   </div>
                 </div>
-              )}
+              ) : null}
             </div>
             <div style={{ flex: 1 }} />
-            <div style={{ textAlign: 'right', paddingBottom: 3 }}>
-              {isWatch ? (
-                <>
-                  <div style={{
-                    fontSize: '1.55rem', fontWeight: 800, color: C.text,
-                    fontFeatureSettings: "'tnum'", letterSpacing: '-0.03em',
-                  }}>
-                    {f.confirmedOnSide}
-                  </div>
-                  <div style={{ fontSize: '0.62rem', color: C.textMuted, marginTop: 4, marginBottom: 6 }}>
-                    proven winner{f.confirmedOnSide === 1 ? '' : 's'}
-                  </div>
-                  <div style={{ fontSize: '0.62rem', fontWeight: 700, color: C.textMuted }}>
-                    no ticket yet
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div style={{
-                    fontSize: '1.2rem', fontWeight: 800, color: f.units > 0 ? B.profit : C.textMuted,
-                    fontFeatureSettings: "'tnum'", letterSpacing: '-0.03em',
-                  }}>
-                    {f.units > 0 ? `+${f.toWin.toFixed(2)}u` : '—'}
-                  </div>
-                  <div style={{ fontSize: '0.6rem', color: C.textMuted, marginTop: 4, marginBottom: 6 }}>to win</div>
-                  <div style={{ fontSize: '0.62rem', fontWeight: 700 }}>
-                    <span style={{ color: C.textMuted }}>{f.stakePath}</span>
-                    <span style={{ color: C.textFaint }}> · </span>
-                    <span style={{ color: sizeColor }}>
-                      {f.tapeAction === 'boost' ? 'Sized up' : f.tapeAction === 'mute' ? 'Pass' : 'Standard'}
-                    </span>
-                  </div>
-                </>
-              )}
-            </div>
+            {isWatch && (
+              <div style={{ textAlign: 'right', paddingBottom: 3 }}>
+                <div style={{
+                  fontSize: '1.55rem', fontWeight: 800, color: C.text,
+                  fontFeatureSettings: "'tnum'", letterSpacing: '-0.03em',
+                }}>
+                  {f.confirmedOnSide}
+                </div>
+                <div style={{ fontSize: '0.62rem', color: C.textMuted, marginTop: 4, marginBottom: 6 }}>
+                  proven winner{f.confirmedOnSide === 1 ? '' : 's'}
+                </div>
+                <div style={{ fontSize: '0.62rem', fontWeight: 700, color: C.textMuted }}>
+                  no ticket yet
+                </div>
+              </div>
+            )}
           </div>
+
+          {!isWatch && f.units > 0 && (
+            <TicketStub
+              units={f.units}
+              toWin={f.toWin}
+              odds={f.odds}
+              stakePath={f.stakePath}
+              tapeAction={f.tapeAction}
+              centsEdge={centsEdge}
+            />
+          )}
 
           <p style={{ margin: '10px 0 0', fontSize: '0.88rem', lineHeight: 1.5, maxWidth: 460 }}>
             <span style={{ color: C.text, fontWeight: 700 }}>{verdict.lead}</span>
@@ -1777,8 +1849,8 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
                     filter: `drop-shadow(0 0 26px ${accent}45)`,
                   }}>
                     <span style={{
-                      background: 'linear-gradient(180deg, #ffffff 12%, #b9c6dc 100%)',
-                      WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                      backgroundImage: 'linear-gradient(180deg, #ffffff 12%, #b9c6dc 100%)',
+                      backgroundClip: 'text', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
                     }}>
                       {riskAnim.toFixed(1)}
                     </span>

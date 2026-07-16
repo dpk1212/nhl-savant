@@ -3020,8 +3020,13 @@ async function toggleUserPick(uid, date, gameKey, pickData) {
 // "T30+ contributor AND whitelisted" — a slight tightening. forW/agW,
 // HC margin, hcDominant are unaffected (they already filtered to
 // whitelisted/CONFIRMED wallets only).
+//
+// Also drops sharp_intel_excluded_wallets (MM + trader exclusion) — the
+// same list writeSharpActions skips before sharp_action_positions. Without
+// this, cards can paint "2 proven" / fake 2–0 stacks that staking never
+// sees (e.g. whitelist-recovered MM still in sharp_positions.json).
 const SHARP_INTEL_SPORTS = new Set(['NHL', 'CBB', 'MLB', 'NBA', 'NFL', 'SOC', 'UFC', 'WNBA']);
-function filterToQualifiedWallets(rawData, profilesMap) {
+function filterToQualifiedWallets(rawData, profilesMap, excludedSet = null) {
   if (!rawData) return null;
   if (!profilesMap || profilesMap.size === 0) return null;
   const out = {};
@@ -3040,8 +3045,10 @@ function filterToQualifiedWallets(rawData, profilesMap) {
     for (const [gameKey, gd] of Object.entries(v)) {
       if (!gd || typeof gd !== 'object' || !Array.isArray(gd.positions)) continue;
       const positions = gd.positions.filter(p => {
-        const short = String(p?.wallet || '').slice(-6).toLowerCase();
-        if (!short) return false;
+        const wallet = String(p?.wallet || '').toLowerCase();
+        if (!wallet) return false;
+        if (excludedSet?.has(wallet)) return false;
+        const short = wallet.slice(-6);
         const profile = profilesMap.get(short);
         const tier = profile?.bySport?.[sport]?.whitelistTier;
         return tier === 'CONFIRMED' || tier === 'FLAT';
@@ -3251,22 +3258,31 @@ function useMarketData() {
     };
   }, []);
 
+  // Same exclusion set writeSharpActions uses (mmExcluded ∪ tradersExcluded
+  // flattened into `.excluded`). Built here so the qualified-position filter
+  // matches the cron board before any card / sharpStats consumer runs.
+  const intelExcludedSet = useMemo(() => {
+    const xs = intelExcludedWallets?.excluded;
+    if (!Array.isArray(xs) || xs.length === 0) return null;
+    return new Set(xs.map((a) => (a || '').toLowerCase()));
+  }, [intelExcludedWallets]);
+
   // Apply qualified-wallet filter ONCE here so every downstream
   // consumer (cards, sharpStats, vault convergences, locked-list
   // builders) sees the same filtered view. Returns null until both
   // the position JSON and walletProfiles cache are loaded; existing
   // null-safe access patterns throughout the consumer handle that.
   const qualifiedSharpPositions = useMemo(
-    () => filterToQualifiedWallets(sharpPositions, walletProfiles),
-    [sharpPositions, walletProfiles]
+    () => filterToQualifiedWallets(sharpPositions, walletProfiles, intelExcludedSet),
+    [sharpPositions, walletProfiles, intelExcludedSet]
   );
   const qualifiedSpreadPositions = useMemo(
-    () => filterToQualifiedWallets(spreadPositions, walletProfiles),
-    [spreadPositions, walletProfiles]
+    () => filterToQualifiedWallets(spreadPositions, walletProfiles, intelExcludedSet),
+    [spreadPositions, walletProfiles, intelExcludedSet]
   );
   const qualifiedTotalPositions = useMemo(
-    () => filterToQualifiedWallets(totalPositions, walletProfiles),
-    [totalPositions, walletProfiles]
+    () => filterToQualifiedWallets(totalPositions, walletProfiles, intelExcludedSet),
+    [totalPositions, walletProfiles, intelExcludedSet]
   );
 
   return {

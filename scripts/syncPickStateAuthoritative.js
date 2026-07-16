@@ -2810,6 +2810,37 @@ async function main() {
   const rawPositions = [];
   posSnap.forEach(d => rawPositions.push({ _id: d.id, ...d.data() }));
 
+  // ── Exclusion list (same as writeSharpActions + Sharp Flow UI) ──────────
+  // MM + clear-trader wallets land in sharp_intel_excluded_wallets.json.
+  // writeSharpActions skips them on *new* writes, but PENDING docs written
+  // before a wallet was flagged (or re-merged via whitelist recovery) can
+  // linger and still drive RANK / HC / AGS. Drop them here so staking
+  // census matches the live card filter.
+  let excludedSet = null;
+  try {
+    const exclPath = join(PUBLIC, 'sharp_intel_excluded_wallets.json');
+    if (existsSync(exclPath)) {
+      const excl = JSON.parse(readFileSync(exclPath, 'utf8'));
+      const xs = Array.isArray(excl?.excluded) ? excl.excluded : [];
+      if (xs.length > 0) {
+        excludedSet = new Set(xs.map((a) => String(a || '').toLowerCase()).filter(Boolean));
+      }
+    }
+  } catch (err) {
+    console.warn('WARNING: failed to load sharp_intel_excluded_wallets.json — exclusion filter skipped:', err.message);
+  }
+  let prunedExcluded = 0;
+  const rawAfterExclusion = excludedSet
+    ? rawPositions.filter((p) => {
+        const w = String(p.wallet || '').toLowerCase();
+        if (w && excludedSet.has(w)) { prunedExcluded++; return false; }
+        return true;
+      })
+    : rawPositions;
+  if (prunedExcluded > 0) {
+    console.log(`  ↳ pruned ${prunedExcluded} excluded wallet position(s) (MM/trader list)`);
+  }
+
   // ── Stale-position freshness filter ────────────────────────────────────
   // writeSharpActions doesn't delete positions when a wallet closes them
   // (the scanner only reports OPEN positions, so a closed position simply
@@ -2848,18 +2879,18 @@ async function main() {
     if (ts instanceof Date) return ts.getTime();
     return 0;
   };
-  const maxUpdatedMs = rawPositions.reduce((m, p) => Math.max(m, tsMs(p)), 0);
+  const maxUpdatedMs = rawAfterExclusion.reduce((m, p) => Math.max(m, tsMs(p)), 0);
   const FRESHNESS_WINDOW_MS = 30 * 60 * 1000; // 30 min — see comment above (was 90s pre-2026-05-10)
   let prunedStale = 0;
   const positions = maxUpdatedMs > 0
-    ? rawPositions.filter(p => {
+    ? rawAfterExclusion.filter(p => {
         const t = tsMs(p);
         if (t === 0) return true; // missing updatedAt — keep, can't judge
         const fresh = t >= maxUpdatedMs - FRESHNESS_WINDOW_MS;
         if (!fresh) prunedStale++;
         return fresh;
       })
-    : rawPositions;
+    : rawAfterExclusion;
   if (prunedStale > 0) {
     console.log(`  ↳ pruned ${prunedStale} stale position(s) outside ${FRESHNESS_WINDOW_MS/60000}min of latest scan (${new Date(maxUpdatedMs).toISOString()})`);
   }
