@@ -96,12 +96,19 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
         : Number.isFinite(w.causalPctPos) ? Math.round(w.causalPctPos)
         : Number.isFinite(profileClv) ? Math.round(profileClv)
         : null;
-      const proven = isSportWinner ? isSportWinner(short, sport) : true;
+      // PROVEN badge must match header / battle proven counts: whitelist
+      // winner AND ≥0.10× usual (writeSharpActions SHADOW floor). Token
+      // bets from whitelist wallets stay on the CARRYING list as TRACKING.
+      const MODEL_MIN = 0.10;
+      const whitelisted = isSportWinner ? !!isSportWinner(short, sport) : true;
+      const counted = !Number.isFinite(sizeRatio) || sizeRatio <= 0 || sizeRatio >= MODEL_MIN;
+      const proven = whitelisted && counted;
       return {
         short,
         proven,
-        badges: proven ? ['SHARP', `${sport} WINNER`] : ['SHARP'],
-        whitelist: sportRec?.whitelistTier || (proven ? 'CONFIRMED' : null),
+        whitelisted,
+        badges: proven ? ['SHARP', `${sport} WINNER`] : whitelisted ? ['SHARP', 'LIGHT'] : ['SHARP'],
+        whitelist: sportRec?.whitelistTier || (whitelisted ? 'CONFIRMED' : null),
         qualify: sizeRatio >= 0.75 ? 'VAULT' : 'SHADOW',
         sizeRatio,
         record,
@@ -152,18 +159,22 @@ export function mapLockedPickToCardFixture(pick, {
 
   const isTotal = pick.marketType === 'total';
   const isSpread = pick.marketType === 'spread';
+  const teamRaw = (pick.team || '').trim();
+  const isDraw = !isTotal && !isSpread && /^draw$/i.test(teamRaw);
   const teamShort = isTotal
     ? ((pick.team || '').toLowerCase().startsWith('under') ? 'Under' : 'Over')
-    : shortTeam(pick.team);
+    : isDraw ? 'Draw' : shortTeam(pick.team);
   const awayShort = isTotal ? 'Under' : shortTeam(pick.away);
   const homeShort = isTotal ? 'Over' : shortTeam(pick.home);
   const side = isTotal
     ? (teamShort === 'Over' ? 'home' : 'away')
+    : isDraw ? 'draw'
     : (teamShort === awayShort ? 'away' : 'home');
 
   const pickLabel = isSpread
     ? `${teamShort} ${pick.line > 0 ? '+' : ''}${pick.line}`
     : isTotal ? (pick.team || 'Total')
+    : isDraw ? 'Draw ML'
     : `${teamShort} ML`;
 
   const stakePath = pick.hcStakeTier || pick.lockTier || 'LOCK';
@@ -347,6 +358,11 @@ export function mapLiveGameToCardFixture({
     tickets: flow?.tickets || null,
     money: flow?.money || null,
   };
+  const sideKey = normSide === 'draw' ? 'draw' : normSide === 'home' ? 'home' : 'away';
+  const defaultPickLabel = isTotal
+    ? (normSide === 'home' ? 'Over' : 'Under')
+    : normSide === 'draw' ? 'Draw ML'
+    : `${normSide === 'home' ? homeShort : awayShort} ML`;
 
   return {
     id: `${gd.sport}-${gd.key}-${marketType}`,
@@ -355,9 +371,7 @@ export function mapLiveGameToCardFixture({
     home: gd.home,
     awayShort,
     homeShort,
-    pickLabel: pickLabel || (isTotal
-      ? (normSide === 'home' ? 'Over' : 'Under')
-      : `${normSide === 'home' ? homeShort : awayShort} ML`),
+    pickLabel: pickLabel || defaultPickLabel,
     side: normSide || 'home',
     marketType,
     displayState: displayState || 'MONITORING',
@@ -377,9 +391,9 @@ export function mapLiveGameToCardFixture({
     confirmedOnSide: confirmedOnSide || 0,
     vaultOnSide: vaultOnSide || 0,
     setupHitRate: Number.isFinite(setupHitRate) ? setupHitRate : null,
-    sideInvested: sideInvested || s[normSide === 'home' ? 'home' : 'away']?.invested || 0,
+    sideInvested: sideInvested || s[sideKey]?.invested || 0,
     pinnacleOpposes: !!pinnacleOpposes,
-    sharpMoneyPct: f.sharp?.[normSide === 'home' ? 'home' : 'away'] ?? 50,
+    sharpMoneyPct: f.sharp?.[sideKey] ?? 50,
     sides: s,
     flow: f,
     pinOpen: pinOpen || null,

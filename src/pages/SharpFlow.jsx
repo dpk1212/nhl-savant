@@ -7083,13 +7083,13 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const ss = sportStyle(gd.sport);
   const s = gd.summary;
   const consensusSide = s.consensus;
-  // 2-way battle chrome (OUR SIDE / carrying / header proven) is always
-  // away|home. SOC summary.consensus can be null (3-way money tie) or
-  // 'draw' — both used to desync the header from THE BATTLE when play
-  // side was gated on raw consensus. Resolve a stable card side from
-  // 2-way money when consensus isn't away/home.
+  // Play side for battle chrome / CARRYING / header proven. Prefer raw
+  // consensus when it's a real outcome — including SOC 'draw'. Only fall
+  // back to 2-way money when consensus is null (3-way money tie).
   const cardSideKey = (() => {
-    if (consensusSide === 'away' || consensusSide === 'home') return consensusSide;
+    if (consensusSide === 'away' || consensusSide === 'home' || consensusSide === 'draw') {
+      return consensusSide;
+    }
     if (consensusSide === 'over') return 'home';
     if (consensusSide === 'under') return 'away';
     const awayInv = s.awayInvested || 0;
@@ -8098,12 +8098,16 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     const all = Array.isArray(positions) ? positions : [];
     const awayPos = all.filter((p) => p.side === mapAway);
     const homePos = all.filter((p) => p.side === mapHome);
+    const drawPos = all.filter((p) => p.side === 'draw');
     const awayProven = awayPos.filter(isBoardProvenPos);
     const homeProven = homePos.filter(isBoardProvenPos);
+    const drawProven = drawPos.filter(isBoardProvenPos);
     const awayInv = awayPos.reduce((s, p) => s + (p.invested || 0), 0);
     const homeInv = homePos.reduce((s, p) => s + (p.invested || 0), 0);
+    const drawInv = drawPos.reduce((s, p) => s + (p.invested || 0), 0);
     const awayW = new Set(awayPos.map((p) => p.wallet)).size;
     const homeW = new Set(homePos.map((p) => p.wallet)).size;
+    const drawW = new Set(drawPos.map((p) => p.wallet)).size;
     const playPos = all.filter((p) => p.side === playSide);
     const walletsRaw = playPos.map((p) => ({
       wallet: p.wallet,
@@ -8124,33 +8128,46 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
         avgSportBet: p.avgSportBet,
       }));
     const tag = (list, side) => enrichWallets(list, gd.sport, getWalletProfile, isSportWinner, whitelistRecordForDisplay)
-      .map((w) => ({ ...w, side: side === mapAway ? 'away' : 'home' }));
+      .map((w) => ({
+        ...w,
+        side: side === mapAway ? 'away' : side === mapHome ? 'home' : side,
+      }));
+    const sideBucket = (pos, proven, inv, wCount) => ({
+      invested: inv,
+      sharps: new Set(proven.map((p) => p.wallet)).size,
+      avg: wCount ? inv / Math.max(1, wCount) : 0,
+      pnl: lifetimePnlUnique(pos),
+      wr: sideWr(proven),
+      clv: proven.length ? sideClv(proven) : null,
+    });
+    const playProven = playSide === 'draw' ? drawProven
+      : playSide === mapAway ? awayProven
+      : homeProven;
+    const playInv = playSide === 'draw' ? drawInv
+      : playSide === mapAway ? awayInv
+      : homeInv;
+    const sides = {
+      away: sideBucket(awayPos, awayProven, awayInv, awayW),
+      home: sideBucket(homePos, homeProven, homeInv, homeW),
+    };
+    // Only attach a draw column when the board actually has draw money —
+    // keeps 2-way sports / totals unchanged.
+    if (drawInv > 0 || playSide === 'draw') {
+      sides.draw = sideBucket(drawPos, drawProven, drawInv, drawW);
+    }
     return {
-      sides: {
-        away: {
-          invested: awayInv,
-          sharps: new Set(awayProven.map((p) => p.wallet)).size,
-          avg: awayW ? awayInv / Math.max(1, awayW) : 0,
-          pnl: lifetimePnlUnique(awayPos),
-          wr: sideWr(awayProven),
-          clv: awayProven.length ? sideClv(awayProven) : null,
-        },
-        home: {
-          invested: homeInv,
-          sharps: new Set(homeProven.map((p) => p.wallet)).size,
-          avg: homeW ? homeInv / Math.max(1, homeW) : 0,
-          pnl: lifetimePnlUnique(homePos),
-          wr: sideWr(homeProven),
-          clv: homeProven.length ? sideClv(homeProven) : null,
-        },
-      },
+      sides,
       wallets,
-      mapWallets: [...tag(mapRaw(mapAway), mapAway), ...tag(mapRaw(mapHome), mapHome)],
-      confirmedOnSide: new Set(
-        (playSide === mapAway ? awayProven : homeProven).map((p) => p.wallet),
-      ).size,
+      mapWallets: [
+        ...tag(mapRaw(mapAway), mapAway),
+        ...tag(mapRaw(mapHome), mapHome),
+        ...(drawInv > 0 || playSide === 'draw' ? tag(mapRaw('draw'), 'draw') : []),
+      ],
+      // Count from enriched wallets (same proven flag the CARRYING badges
+      // use) so "1 proven" never disagrees with how many PROVEN chips paint.
+      confirmedOnSide: wallets.filter((w) => w.proven).length,
       vaultOnSide: wallets.filter((w) => (w.sizeRatio || 0) >= 1.5).length,
-      sideInvested: playSide === mapAway ? awayInv : homeInv,
+      sideInvested: playInv,
     };
   };
 
@@ -8163,6 +8180,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const mlMapWallets = mlBoard.mapWallets;
   const awaySharps = (gd.positions || []).filter((p) => p.side === 'away' && isBoardProvenPos(p));
   const homeSharps = (gd.positions || []).filter((p) => p.side === 'home' && isBoardProvenPos(p));
+  const drawProven = (gd.positions || []).filter((p) => p.side === 'draw' && isBoardProvenPos(p));
   const vaultOnSide = mlBoard.vaultOnSide;
   const awaySideWr = mlBoard.sides.away.wr;
   const homeSideWr = mlBoard.sides.home.wr;
@@ -8201,15 +8219,18 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     return null;
   })();
 
-  const sharpAwayPct = (() => {
-    const tot = awayInvested + homeInvested;
-    if (tot <= 0) return 50;
-    return Math.round((awayInvested / tot) * 100);
+  // Sharp split: 3-way when draw money is on the board (SOC), else 2-way.
+  const flowSharp = (() => {
+    const dInv = drawInvested || 0;
+    const tot = awayInvested + homeInvested + dInv;
+    if (tot <= 0) return { away: 50, home: 50 };
+    const awayPct = Math.round((awayInvested / tot) * 100);
+    const drawPct = dInv > 0 ? Math.round((dInv / tot) * 100) : 0;
+    const homePct = Math.max(0, 100 - awayPct - drawPct);
+    return dInv > 0
+      ? { away: awayPct, home: homePct, draw: drawPct }
+      : { away: awayPct, home: 100 - awayPct };
   })();
-  const flowSharp = {
-    away: sharpAwayPct,
-    home: 100 - sharpAwayPct,
-  };
   // Only pass public splits when the flow feed actually has them — the card
   // hides those rows rather than showing a fabricated 50/50.
   const flowPublic = Number.isFinite(flowGame?.awayTicketPct)
@@ -8265,21 +8286,32 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     sides: {
       away: { ...mlBoard.sides.away, pnl: awayLifetimePnl, clv: awayClvFinal },
       home: { ...mlBoard.sides.home, pnl: homeLifetimePnl, clv: homeClvFinal },
+      ...(mlBoard.sides.draw ? {
+        draw: {
+          ...mlBoard.sides.draw,
+          pnl: drawLifetimePnl,
+          clv: drawProven.length ? sideClv(drawProven) : null,
+        },
+      } : {}),
     },
     flow: { sharp: flowSharp, tickets: flowPublic, money: flowMoney },
     pinOpen: {
       away: pinnGame?.opener?.away ?? pinnGame?.current?.away,
       home: pinnGame?.opener?.home ?? pinnGame?.current?.home,
+      ...(Number.isFinite(pinnGame?.opener?.draw) || Number.isFinite(pinnGame?.current?.draw)
+        ? { draw: pinnGame?.opener?.draw ?? pinnGame?.current?.draw }
+        : {}),
     },
     pinNow: {
       away: pinnGame?.current?.away,
       home: pinnGame?.current?.home,
+      ...(Number.isFinite(pinnGame?.current?.draw) ? { draw: pinnGame.current.draw } : {}),
     },
     books: booksRow.length ? booksRow : [{ name: 'Pinnacle', odds: consensusOdds, sharp: true }],
     wallets: mlWallets,
     mapWallets: mlMapWallets,
     pinnacleOpposes: pinnMoved && consensusSide && pinnMoved !== consensusSide && pinnMoved !== 'none',
-    pickLabel: consensusSide === 'draw'
+    pickLabel: cardSideKey === 'draw'
       ? 'Draw ML'
       : `${cardSideKey === 'away' ? awayShort : homeShort} ML`,
     pathBase: AGS_V12_STAKE_TIER_META[mlCronStakeTier || displayTier]?.units,

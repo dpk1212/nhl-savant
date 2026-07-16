@@ -490,11 +490,12 @@ function BattleRowV12({ label, tag, awayVal, homeVal, awayNum, homeNum, accent, 
   const awayPct = (Math.abs(awayNum) / total) * 100;
   const homePct = (Math.abs(homeNum) / total) * 100;
   const homeWins = higherWins ? homeNum >= awayNum : homeNum <= awayNum;
-  // When OUR side wins the row, its value glows accent — the eye tracks our
-  // column's dominance down the battle.
-  const oursWins = homeWins === !!playIsHome;
+  // playIsHome null/undefined = draw (or no 2-way play side): light the
+  // numeric winner neutrally — never claim away/home is "ours".
+  const hasPlaySide = playIsHome === true || playIsHome === false;
+  const oursWins = hasPlaySide && (homeWins === playIsHome);
   const winValColor = oursWins ? accent : C.text;
-  const winColor = accent;
+  const winColor = hasPlaySide ? accent : 'rgba(212,175,55,0.75)';
   const loseColor = 'rgba(148,163,184,0.35)';
   return (
     <div style={{ padding: '10px 0' }}>
@@ -544,23 +545,33 @@ function BattleRowV12({ label, tag, awayVal, homeVal, awayNum, homeNum, accent, 
   );
 }
 
-/** Facing team columns above the battle rows — money is the scoreboard */
+/** Facing team columns above the battle rows — money is the scoreboard.
+ *  SOC draw boards get a 3-column layout (away · DRAW · home). */
 function BattleHeader({ f, accent }) {
-  const cols = [
-    { key: 'away', code: f.awayShort, s: f.sides.away },
-    { key: 'home', code: f.homeShort, s: f.sides.home },
-  ];
+  const empty = { invested: 0, sharps: 0, pnl: 0 };
+  const hasDraw = !!(f.sides?.draw) || f.side === 'draw';
+  const cols = hasDraw
+    ? [
+      { key: 'away', code: f.awayShort, s: f.sides.away || empty, align: 'left' },
+      { key: 'draw', code: 'DRAW', s: f.sides.draw || empty, align: 'center' },
+      { key: 'home', code: f.homeShort, s: f.sides.home || empty, align: 'right' },
+    ]
+    : [
+      { key: 'away', code: f.awayShort, s: f.sides.away || empty, align: 'left' },
+      { key: 'home', code: f.homeShort, s: f.sides.home || empty, align: 'right' },
+    ];
   return (
-    <div style={{ display: 'flex', alignItems: 'stretch', gap: 10, marginBottom: 6 }}>
-      {cols.map((c, i) => {
+    <div style={{ display: 'flex', alignItems: 'stretch', gap: hasDraw ? 6 : 10, marginBottom: 6, position: 'relative' }}>
+      {cols.map((c) => {
         const ours = f.side === c.key;
+        const align = c.align;
         return (
           <div key={c.key} style={{
-            flex: ours ? 1.15 : 1, textAlign: i === 0 ? 'left' : 'right',
-            padding: ours ? '16px 15px 14px' : '14px 14px 12px',
+            flex: ours ? 1.2 : 1, textAlign: align,
+            padding: ours ? '14px 12px 12px' : '12px 10px 10px',
             borderRadius: 16, position: 'relative', overflow: 'hidden',
             background: ours
-              ? `linear-gradient(${i === 0 ? '135deg' : '225deg'}, ${accent}28 0%, rgba(0,0,0,0.25) 70%)`
+              ? `linear-gradient(${align === 'left' ? '135deg' : align === 'right' ? '225deg' : '180deg'}, ${accent}28 0%, rgba(0,0,0,0.25) 70%)`
               : 'rgba(255,255,255,0.015)',
             border: `1px solid ${ours ? `${accent}60` : C.hairSoft}`,
             boxShadow: ours
@@ -569,8 +580,9 @@ function BattleHeader({ f, accent }) {
             opacity: ours ? 1 : 0.82,
           }}>
             <div style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              flexDirection: i === 0 ? 'row' : 'row-reverse', marginBottom: 10,
+              display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8,
+              justifyContent: align === 'left' ? 'flex-start' : align === 'right' ? 'flex-end' : 'center',
+              flexDirection: align === 'right' ? 'row-reverse' : 'row',
             }}>
               <TeamMark code={c.code} active={ours} accent={accent} />
               {ours && (
@@ -581,29 +593,46 @@ function BattleHeader({ f, accent }) {
               )}
             </div>
             <div style={{
-              fontSize: ours ? '1.9rem' : '1.5rem', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1,
+              fontSize: ours ? (hasDraw ? '1.55rem' : '1.9rem') : (hasDraw ? '1.25rem' : '1.5rem'),
+              fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1,
               fontFeatureSettings: "'tnum'", color: ours ? C.text : C.textMuted,
               textShadow: ours ? `0 0 34px ${accent}70` : 'none',
             }}>
               {fmtMoney(c.s.invested)}
             </div>
-            <div style={{ fontSize: '0.64rem', color: ours ? C.textSec : C.textFaint, marginTop: 6 }}>
+            <div style={{ fontSize: hasDraw ? '0.56rem' : '0.64rem', color: ours ? C.textSec : C.textFaint, marginTop: 5 }}>
               {c.s.sharps} proven · +{fmtMoney(c.s.pnl)} life
             </div>
           </div>
         );
       })}
-      <div style={{
-        position: 'absolute', left: '50%', transform: 'translateX(-50%)',
-        alignSelf: 'center', width: 28, height: 28, borderRadius: '50%',
-        background: 'radial-gradient(circle at 50% 30%, #1a2030 0%, #05070c 75%)',
-        border: '1px solid rgba(255,255,255,0.14)',
-        boxShadow: '0 6px 18px -4px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.12)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: '0.45rem', fontWeight: 900, color: C.textSec, letterSpacing: '0.05em',
-      }}>VS</div>
+      {!hasDraw && (
+        <div style={{
+          position: 'absolute', left: '50%', transform: 'translateX(-50%)',
+          alignSelf: 'center', width: 28, height: 28, borderRadius: '50%',
+          background: 'radial-gradient(circle at 50% 30%, #1a2030 0%, #05070c 75%)',
+          border: '1px solid rgba(255,255,255,0.14)',
+          boxShadow: '0 6px 18px -4px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.12)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: '0.45rem', fontWeight: 900, color: C.textSec, letterSpacing: '0.05em',
+        }}>VS</div>
+      )}
     </div>
   );
+}
+
+/** Human label for the card's play side (team short, Over/Under, or Draw). */
+function playSideLabel(f) {
+  if (f.side === 'draw') return 'Draw';
+  if (f.side === 'home') return f.homeShort;
+  return f.awayShort;
+}
+
+/** true/false for home/away; null when play side is draw (no 2-way winner). */
+function playIsHomeFlag(f) {
+  if (f.side === 'home') return true;
+  if (f.side === 'away') return false;
+  return null;
 }
 
 /**
@@ -713,6 +742,15 @@ function ConvictionRow({ w, accent, maxRatio, last, sport }) {
             padding: '2px 6px', borderRadius: 4,
             background: 'rgba(47,213,126,0.12)', border: '1px solid rgba(47,213,126,0.28)',
           }}>PROVEN</span>
+        ) : w.whitelisted ? (
+          <span
+            title="Whitelisted winner, but this ticket is under 0.10× their usual — not counted as proven for staking"
+            style={{
+              fontSize: '0.54rem', fontWeight: 800, letterSpacing: '0.08em', color: C.amber || '#d4a574',
+              padding: '2px 6px', borderRadius: 4,
+              background: 'rgba(212,175,55,0.10)', border: '1px solid rgba(212,175,55,0.28)',
+            }}
+          >LIGHT</span>
         ) : (
           <span style={{
             fontSize: '0.54rem', fontWeight: 700, letterSpacing: '0.08em', color: C.textMuted,
@@ -807,8 +845,9 @@ const MAP_QUAD = {
 
 function WalletMapPanel({ f, accent, pts }) {
   const oppColor = '#8ba7d6';
-  const playSide = f.side === 'home' ? f.homeShort : f.awayShort;
-  const oppSide = f.side === 'home' ? f.awayShort : f.homeShort;
+  const playSide = playSideLabel(f);
+  const oppSide = f.side === 'draw' ? `${f.awayShort}/${f.homeShort}`
+    : f.side === 'home' ? f.awayShort : f.homeShort;
 
   const keyOf = (p) => `${p.side}-${p.short}`;
   const defaultSel = (() => {
@@ -1086,8 +1125,8 @@ function MarketRail({ markets, activeId, onSelect }) {
 
 export function LivePositionCardView({ f, markets, onMarket }) {
   const meta = PROPOSED_META[f.displayState] || PROPOSED_META.PLAY;
-  const playSide = f.side === 'home' ? f.homeShort : f.awayShort;
-  const playIsHome = f.side === 'home';
+  const playSide = playSideLabel(f);
+  const playIsHome = playIsHomeFlag(f);
   const isMuted = f.displayState === 'MUTED';
   const isWatch = f.units <= 0 && !isMuted;
   // The battle is the product. Watch cards keep the champagne accent so the
@@ -1382,7 +1421,7 @@ export function LivePositionCardView({ f, markets, onMarket }) {
               background: `linear-gradient(180deg, ${accent === B.gold ? B.goldHi : accent} 0%, ${accent} 100%)`,
               boxShadow: `0 8px 20px -10px ${accent}`,
             }}>
-              {f.flow.sharp[f.side]}% on {playSide}
+              {Number.isFinite(f.flow.sharp?.[f.side]) ? f.flow.sharp[f.side] : f.sharpMoneyPct}% on {playSide}
             </span>
           )}>
             THE BATTLE
@@ -1950,7 +1989,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
   const tracked = !(f.units > 0);
   // Champagne accents stay even on tracked picks; only the pill goes gray.
   const accent = B.gold;
-  const playSide = f.side === 'home' ? f.homeShort : f.awayShort;
+  const playSide = playSideLabel(f);
   const clvGood = f.clvPct >= 0;
   const clvColor = clvGood ? B.profit : B.loss;
   const productTier = displayTierFromPath(f.stakePath);

@@ -1459,6 +1459,14 @@ async function createMissingLockedPicks({
         // Flag so we know this came from the cron auto-create path.
         cronCreated: true,
         cronCreatedAt: now,
+        // CRITICAL: ghost recovery merge:true's onto a side that was earlier
+        // superseded in a v12 live side-flip. If we omit these, Firestore
+        // keeps superseded:true and Locked Picks hides the brand-new TOP
+        // (Phillies ML 2026-07-16 — create logged 5.4u TOP, UI showed nothing).
+        superseded: false,
+        supersededAt: admin.firestore.FieldValue.delete(),
+        supersededReason: admin.firestore.FieldValue.delete(),
+        supersededFlipTo: admin.firestore.FieldValue.delete(),
         ...v8Stamps,
         health: healthStamp,
       };
@@ -2684,6 +2692,15 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     patch.supersededReason = 'v12_live_side_flip';
     patch.supersededFlipTo = flipToSide;
     changes.push(`superseded: live side-flip → ${flipToSide} (this side ${scoreV12Live == null ? '∅' : scoreV12Live.toFixed(2)} ≤ 0)`);
+  } else if (!flipSupersede && appliedLockStage === 'LOCKED' && sd.superseded) {
+    // Money flipped back onto this side — clear the stale supersede so the
+    // Locked list can show it again. Without this, a SHADOW+superseded side
+    // that re-scores > 0 stays invisible forever even at TOP units.
+    patch.superseded = false;
+    patch.supersededAt = admin.firestore.FieldValue.delete();
+    patch.supersededReason = admin.firestore.FieldValue.delete();
+    patch.supersededFlipTo = admin.firestore.FieldValue.delete();
+    changes.push('superseded: cleared (live side re-locked)');
   }
 
   wroteAnything = changes.length > 0 || stampedStatus !== appliedStatus;
