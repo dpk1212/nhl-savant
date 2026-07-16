@@ -206,9 +206,63 @@ async function loadPositions() {
       sportsLbPercentileTop: d.sportsLbPercentileTop,
       vaultQualified,
       qualificationTier: d.qualificationTier || (vaultQualified ? 'VAULT' : 'SHADOW'),
+      // CLV inputs for causal %+CLV skill (same contract as walletClvSkill.js).
+      // IMPORTANT: Number(null) === 0 — never coerce null through Number().
+      clv: (d.clv != null && Number.isFinite(Number(d.clv))) ? Number(d.clv) : null,
+      closingPinnacleOdds: d.closingPinnacleOdds ?? null,
+      entryPinnacleOdds: d.entryPinnacleOdds ?? d.pinnacleOdds ?? null,
+      entryAvgPrice: d.entryAvgPrice ?? d.avgPrice ?? null,
     });
   });
   return rows;
+}
+
+/** Implied prob from American odds — mirrors src/lib/walletClvSkill.js */
+function impliedProb(odds) {
+  if (odds == null || odds === 0 || !Number.isFinite(Number(odds))) return null;
+  const o = Number(odds);
+  return o < 0 ? Math.abs(o) / (Math.abs(o) + 100) : 100 / (o + 100);
+}
+
+/** Position CLV in probability points — mirrors computePositionClv */
+function computePositionClv(pos) {
+  if (!pos || typeof pos !== 'object') return null;
+  if (pos.clv != null && Number.isFinite(Number(pos.clv))) return Number(pos.clv);
+  const closeProb = impliedProb(pos.closingPinnacleOdds);
+  if (closeProb == null) return null;
+  if (pos.entryPinnacleOdds != null && impliedProb(pos.entryPinnacleOdds) != null) {
+    return (closeProb - impliedProb(pos.entryPinnacleOdds)) * 100;
+  }
+  const entryPm = pos.entryAvgPrice;
+  if (entryPm != null && entryPm > 0.01 && entryPm < 0.99) {
+    return (closeProb - entryPm) * 100;
+  }
+  return null;
+}
+
+/**
+ * Causal %+CLV skill: % of graded positions with CLV > 0 since CLV_HIST_FROM,
+ * requiring ≥ CLV_SKILL_MIN_N events. Same definition the tape/netCLV cron uses.
+ */
+const CLV_HIST_FROM = '2026-04-01';
+const CLV_SKILL_MIN_N = 5;
+function computeClvSkill(posBets) {
+  const events = [];
+  for (const b of posBets || []) {
+    if (!b?.date || b.date < CLV_HIST_FROM) continue;
+    const clv = computePositionClv(b);
+    if (clv == null || !Number.isFinite(clv)) continue;
+    events.push({ date: b.date, clv });
+  }
+  if (events.length < CLV_SKILL_MIN_N) {
+    return { pctPos: null, n: events.length, since: CLV_HIST_FROM };
+  }
+  const nPos = events.filter((e) => e.clv > 0).length;
+  return {
+    pctPos: Math.round((100 * nPos) / events.length * 10) / 10,
+    n: events.length,
+    since: CLV_HIST_FROM,
+  };
 }
 
 // ── Aggregation helpers ────────────────────────────────────────────
@@ -416,6 +470,10 @@ function buildProfile(walletShort, pickBets, posBets) {
     medianInvested: shadowPosBets.length ? Math.round(median(shadowPosBets.map(b => b.invested))) : null,
   } : null;
 
+  // Causal %+CLV skill — % of prior graded positions that beat the close.
+  // Surfaced on live cards as "beats close X%" / BEATS THE CLOSE battle row.
+  const clvSkill = computeClvSkill(posBets);
+
   // Date spans
   const allDates = [...pickBets, ...posBets].map(b => b.date).filter(Boolean).sort();
   const firstDate = allDates[0] || null;
@@ -482,6 +540,7 @@ function buildProfile(walletShort, pickBets, posBets) {
     positions,           // ALL graded positions (VAULT + SHADOW) — feeds dollarRoi / WR
     sizeSignal,          // VAULT-only conviction bucketing
     shadowSignal,        // SHADOW-only tracking aggregate (may be null)
+    clvSkill,            // causal %+CLV (beats the close) — null pctPos when n < 5
     bySport,
     byMarket,
     verdict: verdict(picks, positions),

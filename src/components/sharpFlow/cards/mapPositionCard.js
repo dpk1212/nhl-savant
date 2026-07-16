@@ -84,8 +84,12 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
         : Number.isFinite(medianBet) && medianBet > 0 ? medianBet : null;
       const sizeRatio = Number.isFinite(w.sizeRatio) ? w.sizeRatio
         : (usualBet != null && (w.invested || 0) > 0) ? w.invested / usualBet : null;
+      // Causal %+CLV ("beats the close"): profile.clvSkill from exportWalletProfiles
+      // (same definition as the tape/netCLV cron). Never invent a default %.
+      const profileClv = profile?.clvSkill?.pctPos;
       const priorClvPct = Number.isFinite(w.priorClvPct) ? Math.round(w.priorClvPct)
         : Number.isFinite(w.causalPctPos) ? Math.round(w.causalPctPos)
+        : Number.isFinite(profileClv) ? Math.round(profileClv)
         : null;
       const proven = isSportWinner ? isSportWinner(short, sport) : true;
       return {

@@ -7972,7 +7972,12 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       invested: p.invested || 0,
       pnl: p.totalPnl || p.pnl || 0,
       roi: p.sportROI || 0,
-      sizeRatio: p.sizeRatio,
+      // Prefer live sizeRatio; else invested / this-sport avg from the position JSON.
+      sizeRatio: Number.isFinite(p.sizeRatio) ? p.sizeRatio
+        : (Number.isFinite(p.avgSportBet) && p.avgSportBet > 0 && (p.invested || 0) > 0)
+          ? p.invested / p.avgSportBet
+          : undefined,
+      avgSportBet: p.avgSportBet,
     }));
   const mlWallets = enrichWallets(mlWalletsRaw, gd.sport, getWalletProfile, isSportWinner, whitelistRecordForDisplay);
 
@@ -7980,8 +7985,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const homeSharps = (gd.positions || []).filter((p) => p.side === 'home' && isSportWinner(p.wallet, gd.sport));
   const vaultOnSide = mlWallets.filter((w) => (w.sizeRatio || 0) >= 1.5).length;
 
-  // Real per-side skill: mean graded win rate of the proven wallets on each
-  // side, from stored profiles (same source the whitelist gates use).
+  // Real per-side skill from stored profiles (same sources the cron uses).
   const sideWr = (list) => {
     const vals = [...new Set(list.map((p) => String(p.wallet).slice(-6)))]
       .map((short) => {
@@ -7993,8 +7997,36 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       .filter(Number.isFinite);
     return vals.length ? Math.round(vals.reduce((s, v) => s + v, 0) / vals.length) : null;
   };
+  // Causal %+CLV ("beats the close") — profile.clvSkill written by exportWalletProfiles.
+  const sideClv = (list) => {
+    const vals = [...new Set(list.map((p) => String(p.wallet).slice(-6)))]
+      .map((short) => getWalletProfile(short)?.clvSkill?.pctPos)
+      .filter(Number.isFinite);
+    return vals.length ? Math.round(vals.reduce((s, v) => s + v, 0) / vals.length) : null;
+  };
   const awaySideWr = sideWr(awaySharps);
   const homeSideWr = sideWr(homeSharps);
+  const awaySideClv = sideClv(awaySharps);
+  const homeSideClv = sideClv(homeSharps);
+  // Prefer cron-stamped means when present (authoritative as-of pick date);
+  // else fall back to live profile averages of wallets on each side.
+  const stampedForClv = Number.isFinite(mlCronStamps?.clvMeanFor) ? Math.round(mlCronStamps.clvMeanFor) : null;
+  const stampedAgClv = Number.isFinite(mlCronStamps?.clvMeanAg) ? Math.round(mlCronStamps.clvMeanAg) : null;
+  const playIsHomeSide = consensusSide === 'home' || consensusSide === 'over';
+  const awayClvFinal = stampedForClv != null || stampedAgClv != null
+    ? (playIsHomeSide ? (stampedAgClv ?? awaySideClv) : (stampedForClv ?? awaySideClv))
+    : awaySideClv;
+  const homeClvFinal = stampedForClv != null || stampedAgClv != null
+    ? (playIsHomeSide ? (stampedForClv ?? homeSideClv) : (stampedAgClv ?? homeSideClv))
+    : homeSideClv;
+  // netCLV = mean(FOR) − (mean(AG) ?? prior 62) — same as computeNetMeanPrior.
+  const derivedNetClv = (() => {
+    if (Number.isFinite(mlCronStamps?.netClv)) return mlCronStamps.netClv;
+    const forV = playIsHomeSide ? homeClvFinal : awayClvFinal;
+    const agV = playIsHomeSide ? awayClvFinal : homeClvFinal;
+    if (!Number.isFinite(forV)) return null;
+    return Math.round((forV - (Number.isFinite(agV) ? agV : 62)) * 10) / 10;
+  })();
 
   const sharpAwayPct = (() => {
     const tot = awayInvested + homeInvested;
@@ -8051,7 +8083,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     tapeAction: mlCronStamps?.tapeAction || 'keep',
     tapeScore: mlCronStamps?.tapeScore ?? null,
     edge: mlCronStamps?.edge ?? null,
-    netClv: mlCronStamps?.netClv ?? null,
+    netClv: derivedNetClv,
     hcMargin: Number.isFinite(hcMargin) ? hcMargin : 0,
     confirmedOnSide: sportWinnerForCount,
     vaultOnSide,
@@ -8063,6 +8095,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
         avg: awayWallets ? awayInvested / Math.max(1, awayWallets) : 0,
         pnl: awayLifetimePnl,
         wr: awaySideWr,
+        clv: awayClvFinal,
       },
       home: {
         invested: homeInvested,
@@ -8070,6 +8103,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
         avg: homeWallets ? homeInvested / Math.max(1, homeWallets) : 0,
         pnl: homeLifetimePnl,
         wr: homeSideWr,
+        clv: homeClvFinal,
       },
     },
     flow: { sharp: flowSharp, tickets: flowPublic, money: flowMoney },
@@ -12178,12 +12212,33 @@ export default function SharpFlow() {
                         const gdMlCronTier = pickV12Tier(gdMlCronSide);
                         const gdMlCronUnits = pickV12Units(gdMlCronSide);
                         const gdMlCronStakeTier = pickHcStakeTier(gdMlCronSide);
-                        // Real cron stamps for the card's skill rows — never fake these.
+                        // Skill stamps (netCLV / EDGE / tape / mean FOR·AG %+CLV) are
+                        // written by the cron on LOCKED *and* recently-reconciled sides.
+                        // Units/tier still require isLiveLockedSide; skill can ride on
+                        // any non-superseded side that actually has the stamps.
+                        const gdSkillSide = (() => {
+                          const sides = gdLock?.sides || {};
+                          const prefer = gdOriginalSide && sides[gdOriginalSide] && !sides[gdOriginalSide].superseded
+                            ? sides[gdOriginalSide] : null;
+                          if (prefer && (Number.isFinite(prefer.v8_netMeanPrior) || Number.isFinite(prefer.v8_netClvMeanFor)
+                            || Number.isFinite(prefer.v8_winnerAlignEdge))) {
+                            return prefer;
+                          }
+                          if (gdMlCronSide && (Number.isFinite(gdMlCronSide.v8_netMeanPrior)
+                            || Number.isFinite(gdMlCronSide.v8_netClvMeanFor))) {
+                            return gdMlCronSide;
+                          }
+                          return Object.values(sides).find((sd) => sd && !sd.superseded
+                            && (Number.isFinite(sd.v8_netMeanPrior) || Number.isFinite(sd.v8_netClvMeanFor)
+                              || Number.isFinite(sd.v8_winnerAlignEdge))) || null;
+                        })();
                         const gdMlCronStamps = {
-                          tapeAction: gdMlCronSide?.v8_tapeAction || null,
-                          tapeScore: Number.isFinite(gdMlCronSide?.v8_tapeScore) ? gdMlCronSide.v8_tapeScore : null,
-                          edge: Number.isFinite(gdMlCronSide?.v8_winnerAlignEdge) ? gdMlCronSide.v8_winnerAlignEdge : null,
-                          netClv: Number.isFinite(gdMlCronSide?.v8_netMeanPrior) ? gdMlCronSide.v8_netMeanPrior : null,
+                          tapeAction: gdSkillSide?.v8_tapeAction || null,
+                          tapeScore: Number.isFinite(gdSkillSide?.v8_tapeScore) ? gdSkillSide.v8_tapeScore : null,
+                          edge: Number.isFinite(gdSkillSide?.v8_winnerAlignEdge) ? gdSkillSide.v8_winnerAlignEdge : null,
+                          netClv: Number.isFinite(gdSkillSide?.v8_netMeanPrior) ? gdSkillSide.v8_netMeanPrior : null,
+                          clvMeanFor: Number.isFinite(gdSkillSide?.v8_netClvMeanFor) ? gdSkillSide.v8_netClvMeanFor : null,
+                          clvMeanAg: Number.isFinite(gdSkillSide?.v8_netClvMeanAg) ? gdSkillSide.v8_netClvMeanAg : null,
                         };
                         const gdSpreadCronSide = gdSpreadSideEntry?.[1];
                         const gdSpreadCronTier = pickV12Tier(gdSpreadCronSide);

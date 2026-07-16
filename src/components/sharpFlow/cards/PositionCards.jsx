@@ -680,18 +680,24 @@ export function LivePositionCardView({ f, markets, onMarket }) {
     return diff > 0 ? `${Math.round(diff)}¢ better than fair` : null;
   })();
 
-  // Per-side skill: real graded win rates of the proven wallets on each side
-  // (from stored profiles). Rendered only when both sides have a real number.
+  // Per-side skill: real graded win rates + causal %+CLV of proven wallets
+  // on each side (from stored profiles / cron stamps). No invented defaults.
   const awayWr = f.sides.away?.wr;
   const homeWr = f.sides.home?.wr;
   const showWrRow = Number.isFinite(awayWr) && Number.isFinite(homeWr);
-  // Beats-the-close split needs per-wallet CLV stats; only render when the
-  // netCLV stamp AND wallet-level numbers exist (no fake zeros).
-  const clvVals = f.wallets.map((w) => w.priorClvPct).filter(Number.isFinite);
-  const showClvRow = hasClv && clvVals.length > 0;
-  const forClv = clvVals.length ? Math.round(clvVals.reduce((s, v) => s + v, 0) / clvVals.length) : 0;
-  const agClv = Math.round(forClv - (f.netClv || 0));
-  const clvLane = playIsHome ? { away: agClv, home: forClv } : { away: forClv, home: agClv };
+  const awayClv = f.sides.away?.clv;
+  const homeClv = f.sides.home?.clv;
+  // Show BEATS THE CLOSE when at least our side has a real %+CLV; opposing
+  // side can fall back to the netCLV prior (62) for the lane display only
+  // when the cron stamped netCLV with a missing AG mean.
+  const showClvRow = Number.isFinite(awayClv) || Number.isFinite(homeClv);
+  const clvLane = {
+    away: Number.isFinite(awayClv) ? awayClv : (Number.isFinite(homeClv) && hasClv ? Math.round(homeClv - f.netClv) : null),
+    home: Number.isFinite(homeClv) ? homeClv : (Number.isFinite(awayClv) && hasClv ? Math.round(awayClv - f.netClv) : null),
+  };
+  const showClvBattle = showClvRow
+    && Number.isFinite(clvLane.away)
+    && Number.isFinite(clvLane.home);
 
   // Split verdict into a bold lead (the receipts) and a quieter action line
   // so the eye lands on the proof first.
@@ -939,10 +945,13 @@ export function LivePositionCardView({ f, markets, onMarket }) {
                 playIsHome={playIsHome}
               />
             )}
-            {showClvRow && (
+            {showClvBattle && (
               <BattleRowV12
                 label="BEATS THE CLOSE"
-                tag={{ text: `${f.netClv > 0 ? '+' : ''}${f.netClv.toFixed(1)}`, color: f.netClv >= 0 ? B.profit : B.loss }}
+                tag={hasClv ? {
+                  text: `${f.netClv > 0 ? '+' : ''}${Number(f.netClv).toFixed(1)}`,
+                  color: f.netClv >= 0 ? B.profit : B.loss,
+                } : null}
                 awayVal={`${clvLane.away}%`}
                 homeVal={`${clvLane.home}%`}
                 awayNum={clvLane.away}
