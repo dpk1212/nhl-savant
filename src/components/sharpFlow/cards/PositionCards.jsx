@@ -702,15 +702,21 @@ function TapeMeter({ tapeScore, action }) {
 
 const fmtRatio = (r) => (r < 0.1 ? '<0.1' : r.toFixed(1));
 
-function ConvictionRow({ w, accent, maxRatio, last }) {
+function ConvictionRow({ w, accent, maxRatio, last, sport }) {
   const hasRatio = Number.isFinite(w.sizeRatio);
   const hasClv = Number.isFinite(w.priorClvPct);
   const roiDisp = Number.isFinite(w.roi) ? w.roi : w.dollarRoi;
   const ratioColor = w.sizeRatio >= 1.5 ? B.profit : w.sizeRatio >= 1 ? accent : C.textMuted;
   const barPct = hasRatio ? Math.min(100, Math.max(3, (w.sizeRatio / Math.max(maxRatio, 1.01)) * 100)) : 0;
+  const hasRecord = !!w.record && w.record !== '—' && (w.decided == null || w.decided > 0);
   return (
-    <div style={{ padding: '11px 0', borderBottom: last ? 'none' : `1px solid ${C.hairSoft}` }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+    <div style={{
+      padding: '12px 0',
+      borderBottom: last ? 'none' : `1px solid ${C.hairSoft}`,
+      borderLeft: w.proven ? `2px solid ${B.profit}` : '2px solid transparent',
+      paddingLeft: 10, marginLeft: -2,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
         <span style={{
           width: 9, height: 9, borderRadius: '50%', flexShrink: 0,
           background: `hsl(${(parseInt(w.short, 16) || 0) % 360} 46% 62%)`,
@@ -731,15 +737,48 @@ function ConvictionRow({ w, accent, maxRatio, last }) {
           }}>TRACKING</span>
         )}
         <span style={{ flex: 1 }} />
-        {Number.isFinite(roiDisp) && (
-          <span style={{
-            fontSize: '0.66rem', fontWeight: 800, fontFeatureSettings: "'tnum'",
-            color: roiDisp >= 0 ? B.profit : B.loss, marginRight: 10,
-          }}>
-            {roiDisp >= 0 ? '+' : ''}{roiDisp}% ROI
-          </span>
+        <span style={{
+          fontSize: '0.92rem', fontWeight: 800, fontFeatureSettings: "'tnum'",
+          color: w.proven ? accent : C.text,
+        }}>
+          {fmtMoney(w.invested)}
+        </span>
+      </div>
+      {/* Record is the product: W-L first for proven sharps */}
+      <div style={{
+        display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '4px 10px',
+        marginBottom: (hasRatio || hasClv) ? 8 : 0, fontFeatureSettings: "'tnum'",
+      }}>
+        {hasRecord ? (
+          <>
+            <span style={{ fontSize: '0.88rem', fontWeight: 900, color: C.text }}>{w.record}</span>
+            {Number.isFinite(w.wr) && (
+              <span style={{ fontSize: '0.68rem', fontWeight: 700, color: C.textSec }}>{w.wr}% W</span>
+            )}
+            {Number.isFinite(roiDisp) && (
+              <span style={{
+                fontSize: '0.68rem', fontWeight: 800,
+                color: roiDisp >= 0 ? B.profit : B.loss,
+              }}>
+                {roiDisp >= 0 ? '+' : ''}{roiDisp}% ROI
+              </span>
+            )}
+            {sport && (
+              <span style={{ fontSize: '0.52rem', fontWeight: 700, letterSpacing: '0.06em', color: C.textFaint }}>
+                {String(sport).toUpperCase()} record
+              </span>
+            )}
+          </>
+        ) : (
+          Number.isFinite(roiDisp) && (
+            <span style={{
+              fontSize: '0.72rem', fontWeight: 800,
+              color: roiDisp >= 0 ? B.profit : B.loss,
+            }}>
+              {roiDisp >= 0 ? '+' : ''}{roiDisp}% ROI
+            </span>
+          )
         )}
-        <span style={{ fontSize: '0.86rem', fontWeight: 800, fontFeatureSettings: "'tnum'" }}>{fmtMoney(w.invested)}</span>
       </div>
       {(hasRatio || hasClv) && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -1460,7 +1499,7 @@ export function LivePositionCardView({ f, markets, onMarket }) {
               )}
             </div>
             {sortedWallets.slice(0, 3).map((w, i, arr) => (
-              <ConvictionRow key={w.short} w={w} accent={accent} maxRatio={maxRatio} last={i === arr.length - 1} />
+              <ConvictionRow key={w.short} w={w} accent={accent} maxRatio={maxRatio} last={i === arr.length - 1} sport={f.sport} />
             ))}
           </div>
         </div>
@@ -1989,22 +2028,48 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
   // Proven first (matches the count / badges), then conviction size.
   const sortedWallets = [...f.wallets].sort((a, b) =>
     (Number(!!b.proven) - Number(!!a.proven))
+    || ((b.decided || 0) - (a.decided || 0))
     || ((b.sizeRatio || 0) - (a.sizeRatio || 0))
     || ((b.invested || 0) - (a.invested || 0))
   );
-  const maxRatio = sortedWallets[0]?.sizeRatio || 1;
-  const provenInReceipts = sortedWallets.filter((w) => w.proven).length;
-  const provenCount = provenInReceipts > 0 ? provenInReceipts : (f.confirmedOnSide || 0);
+  const maxRatio = Math.max(...sortedWallets.map((w) => w.sizeRatio || 0), 1);
+  const provenWallets = sortedWallets.filter((w) => w.proven);
+  const provenCount = provenWallets.length > 0 ? provenWallets.length : (f.confirmedOnSide || 0);
+  const provenWithRecord = provenWallets.filter((w) => w.record && w.record !== '—');
+  const provenRecSummary = provenWithRecord
+    .slice(0, 2)
+    .map((w) => `${w.record}${Number.isFinite(w.wr) ? ` (${w.wr}% W)` : ''}`)
+    .join(' · ');
+  const provenRoiAvg = (() => {
+    const rois = provenWallets.map((w) => w.roi).filter(Number.isFinite);
+    if (!rois.length) return null;
+    return Math.round(rois.reduce((s, v) => s + v, 0) / rois.length);
+  })();
 
   const winners = `${provenCount} proven ${f.sport} winner${provenCount === 1 ? '' : 's'}`;
   const clvLine = Number.isFinite(f.clvPct)
     ? (clvGood
-      ? `The market moved our way — beating the close by ${f.clvPct.toFixed(1)}%.`
-      : `The market has drifted ${Math.abs(f.clvPct).toFixed(1)}% against the ticket.`)
+      ? `Market already moved our way (+${f.clvPct.toFixed(1)}% CLV).`
+      : `Price has drifted ${Math.abs(f.clvPct).toFixed(1)}% against since flag.`)
     : '';
-  const verdict = tracked
-    ? `Tracked at ${fmtOdds(f.lockOdds)} with ${winners} behind it. No stake — we follow the price for context. ${clvLine}`
-    : `${tierLabel ? `${tierLabel} ticket` : 'Ticket'} at ${fmtOdds(f.lockOdds)} with ${winners} behind it. ${clvLine}`;
+  const verdictLead = tracked
+    ? `Watching ${playSide} at ${fmtOdds(f.lockOdds)} — ${winners} on the board.`
+    : `${winners} on ${playSide}${provenRecSummary ? ` — ${provenRecSummary}` : ''}.`;
+  const verdictRest = tracked
+    ? `No stake — price only. ${clvLine}`
+    : `We took a ${tierLabel || 'ticket'} at ${fmtOdds(f.lockOdds)}${Number.isFinite(provenRoiAvg) ? ` behind wallets averaging ${provenRoiAvg >= 0 ? '+' : ''}${provenRoiAvg}% ROI` : ''}. ${clvLine}`;
+
+  // Why-this-play proof chips — only real signals that sell the ticket.
+  const whyChips = [
+    provenCount > 0 ? `${provenCount} proven ${f.sport} winner${provenCount === 1 ? '' : 's'}` : null,
+    (f.sideInvested || 0) > 0
+      ? `${fmtMoney(f.sideInvested)} sharp${Number.isFinite(f.moneyPct) && f.moneyPct >= 70 ? ` · ${Math.round(f.moneyPct)}% of board` : ''}`
+      : null,
+    Number.isFinite(f.clvPct) && clvGood ? `+${f.clvPct.toFixed(1)}% CLV` : null,
+    Number.isFinite(centsEdge) && centsEdge > 0 ? `${Math.round(centsEdge)}¢ better than fair` : null,
+    Number.isFinite(f.hcMargin) && f.hcMargin >= 1 ? `HC +${f.hcMargin}` : null,
+    Number.isFinite(f.edge) && f.edge > 0 ? `EDGE +${f.edge.toFixed(1)}` : null,
+  ].filter(Boolean);
 
   const keyReads = [
     Number.isFinite(f.gotOdds) || Number.isFinite(f.lockOdds)
@@ -2016,10 +2081,10 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
     Number.isFinite(f.clvPct)
       ? { label: 'CLV', value: `${clvGood ? '+' : ''}${f.clvPct.toFixed(1)}%`, color: clvColor, sub: clvGood ? 'beating close' : 'behind close' }
       : null,
-    Number.isFinite(f.edge)
+    Number.isFinite(f.edge) && Math.abs(f.edge) >= 1
       ? { label: 'EDGE', value: `${f.edge >= 0 ? '+' : ''}${f.edge.toFixed(1)}`, color: f.edge >= 0 ? B.profit : B.loss, sub: 'winner align' }
       : null,
-    Number.isFinite(f.hcMargin)
+    Number.isFinite(f.hcMargin) && f.hcMargin !== 0
       ? { label: 'HC', value: `${f.hcMargin >= 0 ? '+' : ''}${f.hcMargin}`, sub: 'conviction margin' }
       : null,
     provenCount > 0
@@ -2027,9 +2092,6 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
       : null,
     (f.sideInvested || 0) > 0
       ? { label: 'SHARP $', value: fmtMoney(f.sideInvested), sub: Number.isFinite(f.moneyPct) ? `${Math.round(f.moneyPct)}% of board` : 'on our side' }
-      : null,
-    Number.isFinite(f.tapeScore)
-      ? { label: 'TAPE', value: f.tapeScore.toFixed(2), sub: f.tapeAction === 'boost' ? 'sized up' : f.tapeAction === 'mute' ? 'pass' : 'hold' }
       : null,
   ].filter(Boolean);
 
@@ -2099,24 +2161,44 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
             </span>
           </div>
 
-          <div style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 4 }}>
-            {f.pickLabel}
-            <span style={{ fontSize: '0.88rem', color: C.textSec, fontWeight: 700, marginLeft: 9, fontFeatureSettings: "'tnum'" }}>
-              {fmtOdds(f.lockOdds)}
-            </span>
-            {Number.isFinite(f.clvPct) && (
-              <span style={{
-                fontSize: '0.55rem', fontWeight: 800, marginLeft: 9, padding: '3px 8px',
-                borderRadius: 6, background: `${clvColor}18`, color: clvColor,
-                border: `1px solid ${clvColor}40`, fontFeatureSettings: "'tnum'",
-              }}>
-                CLV {clvGood ? '+' : ''}{f.clvPct.toFixed(1)}%
-              </span>
-            )}
-          </div>
-          <div style={{ fontSize: '0.58rem', color: C.textMuted, marginBottom: tracked ? 0 : 4 }}>
-            {tracked ? `tracked ${f.lockedAt}` : `flagged ${f.lockedAt}`}
-            {f.book ? ` · ${f.book}` : ''}
+          <div style={{ marginBottom: 6 }}>
+            <div style={{
+              fontSize: '1.65rem', fontWeight: 800, letterSpacing: '-0.035em', lineHeight: 1.1,
+            }}>
+              {f.pickLabel}
+            </div>
+            <div style={{
+              display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '6px 12px',
+              marginTop: 6, fontFeatureSettings: "'tnum'",
+            }}>
+              <span style={{ fontSize: '1.2rem', fontWeight: 800 }}>{fmtOdds(f.lockOdds)}</span>
+              {!tracked && f.units > 0 && (
+                <span style={{ fontSize: '1.15rem', fontWeight: 900, color: B.goldHi }}>
+                  {f.units.toFixed(1)}u
+                </span>
+              )}
+              {f.book && (
+                <span style={{
+                  fontSize: '0.68rem', fontWeight: 700, color: C.textSec,
+                  padding: '3px 8px', borderRadius: 6,
+                  background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.hair}`,
+                }}>
+                  {f.book}
+                </span>
+              )}
+              {Number.isFinite(f.clvPct) && (
+                <span style={{
+                  fontSize: '0.58rem', fontWeight: 800, padding: '3px 8px',
+                  borderRadius: 6, background: `${clvColor}18`, color: clvColor,
+                  border: `1px solid ${clvColor}40`,
+                }}>
+                  CLV {clvGood ? '+' : ''}{f.clvPct.toFixed(1)}%
+                </span>
+              )}
+            </div>
+            <div style={{ fontSize: '0.58rem', color: C.textMuted, marginTop: 6 }}>
+              {tracked ? `tracked ${f.lockedAt}` : `flagged ${f.lockedAt}`}
+            </div>
           </div>
 
           {!tracked ? (
@@ -2140,9 +2222,36 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
             </div>
           )}
 
-          <p style={{ margin: '14px 0 0', fontSize: '0.88rem', color: '#c6d0e2', lineHeight: 1.55, maxWidth: 480 }}>
-            {verdict}
-          </p>
+          {/* WHY THIS PLAY — the premium thesis */}
+          <div style={{ marginTop: 16 }}>
+            <div style={{
+              fontSize: '0.52rem', fontWeight: 900, letterSpacing: '0.16em',
+              color: B.goldHi, marginBottom: 8,
+            }}>
+              WHY THIS PLAY
+            </div>
+            <p style={{ margin: 0, fontSize: '0.92rem', color: C.text, lineHeight: 1.5, fontWeight: 700 }}>
+              {verdictLead}
+            </p>
+            <p style={{ margin: '6px 0 0', fontSize: '0.8rem', color: '#9fabc2', lineHeight: 1.5 }}>
+              {verdictRest}
+            </p>
+            {whyChips.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
+                {whyChips.map((c) => (
+                  <span key={c} style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                    fontSize: '0.58rem', fontWeight: 700, color: C.text,
+                    padding: '5px 10px', borderRadius: 7,
+                    background: 'rgba(47,213,126,0.08)', border: '1px solid rgba(47,213,126,0.28)',
+                  }}>
+                    <Check size={10} strokeWidth={3.5} color={B.profit} />
+                    {c}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
 
           {keyReads.length > 0 && (
             <div style={{
@@ -2178,28 +2287,49 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
               )}
             </div>
           )}
-          {f.lockChecks && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
-              {f.lockChecks.map((c) => (
-                <span key={c} style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 5,
-                  fontSize: '0.55rem', fontWeight: 700, color: C.textSec,
-                  padding: '4px 9px', borderRadius: 7,
-                  background: 'rgba(47,213,126,0.07)', border: '1px solid rgba(47,213,126,0.22)',
-                }}>
-                  <Check size={9} strokeWidth={3.5} color={B.profit} />
-                  {c}
-                </span>
-              ))}
-            </div>
-          )}
         </div>
       </div>
 
       <TicketPerf />
 
-      {/* ── PRICE JOURNEY ── */}
+      {/* ── THE RECEIPTS — proof before price ── */}
       <div {...zone(1)}>
+        <div style={{ padding: '20px 20px 12px' }}>
+          <ZoneHead accent={accent} right={(
+            <span style={{ fontSize: '0.62rem', fontWeight: 800, color: B.profit, fontFeatureSettings: "'tnum'" }}>
+              {provenCount > 0
+                ? <><span style={{ color: B.profit }}>{provenCount} proven</span>
+                  <span style={{ color: C.textFaint }}> · </span></>
+                : null}
+              {fmtMoney(f.sideInvested)} at lock
+            </span>
+          )}>
+            THE RECEIPTS
+          </ZoneHead>
+          <p style={{
+            margin: '0 0 10px', fontSize: '0.68rem', color: C.textSec, lineHeight: 1.45,
+          }}>
+            {provenCount > 0
+              ? `These are the ${f.sport} winners behind the ticket — real records, real size.`
+              : 'Wallets on this side at lock. Proven winners earn the badge.'}
+          </p>
+          {sortedWallets.slice(0, Math.max(provenWallets.length, 4)).map((w, i, arr) => (
+            <ConvictionRow
+              key={w.short}
+              w={w}
+              accent={accent}
+              maxRatio={maxRatio}
+              last={i === arr.length - 1}
+              sport={f.sport}
+            />
+          ))}
+        </div>
+      </div>
+
+      <ZoneRule />
+
+      {/* ── PRICE JOURNEY ── */}
+      <div {...zone(2)}>
         <div style={{ padding: '20px 20px 18px' }}>
           <ZoneHead accent={accent} right={(
             <span style={{ fontSize: '0.58rem', fontWeight: 800, color: clvColor }}>
@@ -2230,28 +2360,6 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
             We {tracked ? 'flagged' : 'locked'} {fmtOdds(f.lockOdds)}. The sharp book now sits at {fmtOdds(f.nowOdds)}.
             {clvGood ? ' Anyone betting now gets a worse price.' : ' The price has moved since then.'}
           </p>
-        </div>
-      </div>
-
-      <ZoneRule />
-
-      {/* ── THE RECEIPTS ── */}
-      <div {...zone(2)}>
-        <div style={{ padding: '20px 20px 12px' }}>
-          <ZoneHead accent={accent} right={(
-            <span style={{ fontSize: '0.62rem', fontWeight: 800, color: B.profit, fontFeatureSettings: "'tnum'" }}>
-              {provenCount > 0
-                ? <><span style={{ color: B.profit }}>{provenCount} proven</span>
-                  <span style={{ color: C.textFaint }}> · </span></>
-                : null}
-              {fmtMoney(f.sideInvested)} at lock
-            </span>
-          )}>
-            THE RECEIPTS
-          </ZoneHead>
-          {sortedWallets.slice(0, 4).map((w, i, arr) => (
-            <ConvictionRow key={w.short} w={w} accent={accent} maxRatio={maxRatio} last={i === arr.length - 1} />
-          ))}
         </div>
       </div>
 

@@ -68,10 +68,16 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
         : Number.isFinite(w.roi) ? Math.round(w.roi) : null;
       const dollarRoi = Number.isFinite(positions?.dollarRoi) ? Math.round(positions.dollarRoi)
         : Number.isFinite(w.dollarRoi) ? Math.round(w.dollarRoi) : null;
-      const record = wlRec ? `${wlRec.wins}-${wlRec.losses}`
-        : (picks?.n || 0) >= 2 ? `${picks.wins || 0}-${picks.losses || 0}`
-        : positions?.n ? `${positions.wins || 0}-${positions.losses || 0}`
-        : (w.record || '—');
+      const wins = Number.isFinite(wlRec?.wins) ? wlRec.wins
+        : (picks?.n || 0) >= 2 ? (picks.wins || 0)
+        : positions?.n ? (positions.wins || 0)
+        : null;
+      const losses = Number.isFinite(wlRec?.losses) ? wlRec.losses
+        : (picks?.n || 0) >= 2 ? (picks.losses || 0)
+        : positions?.n ? (positions.losses || 0)
+        : null;
+      const decided = (Number.isFinite(wins) && Number.isFinite(losses)) ? wins + losses : 0;
+      const record = decided > 0 ? `${wins}-${losses}` : (w.record && w.record !== '—' ? w.record : null);
 
       // "vs usual" MUST match cron / HC: invested / cross-sport avgSportBet
       // (sports_sharps.avgSportBet stamped on the position). Do not use
@@ -99,6 +105,9 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
         qualify: sizeRatio >= 0.75 ? 'VAULT' : 'SHADOW',
         sizeRatio,
         record,
+        wins: Number.isFinite(wins) ? wins : null,
+        losses: Number.isFinite(losses) ? losses : null,
+        decided,
         wr: Number.isFinite(wr) ? Math.round(wr) : null,
         roi,
         dollarRoi,
