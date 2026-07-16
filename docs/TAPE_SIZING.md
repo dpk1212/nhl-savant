@@ -43,16 +43,20 @@ EDGE is still **computed and stamped** — it feeds tape.
 |-------|---------|
 | `v8_tapeScore` | composite tape |
 | `v8_tapeAction` | `MUTE` \| `HOLD` \| `BOOST` \| `FAIL_OPEN` \| `PASS` |
+| `v8_unitsPreTape` | path units before tape mute/boost (daily-report CF) |
 | `v8_netMeanPrior` | netCLV |
 | `v8_netClvMeanFor` / `MeanAg` / `NFor` / `NAg` | components |
 | `v8_winnerAlignEdge` | EDGE (input) |
 | `v8_forTop2PctPos` | legacy top2 (diagnostic only; no unit effect post-cutover) |
 
+**Daily report:** `DAILY_AGSU_REPORT.md` § 5e (TAPE impact) + § 11 columns Tape / TapeAct.
+
 ## Code
 
 - `src/lib/walletClvSkill.js` — `computeNetMeanPrior`, `computeTapeScore`, `applyTapeUnitPolicy`, `causalPctPos`
-- `scripts/syncPickStateAuthoritative.js` — create + reconcile (stamps netCLV / tape from live ledger)
+- `scripts/syncPickStateAuthoritative.js` — create + reconcile (stamps netCLV / tape / unitsPreTape)
 - `scripts/exportWalletProfiles.js` — persists per-wallet `clvSkill.pctPos` to `sharpWalletProfiles` every 2h (`grade-sharp-actions`) so UI + tape share one standing skill score
+- `scripts/dailyAgsUReport.js` — § 5e impact + § 11 audit trail
 
 ## Evidence (June 15+ path-stamped CF)
 

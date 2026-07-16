@@ -38,7 +38,15 @@ import {
   AGS_FALLBACK_CALIBRATION,
   AGS_ABSOLUTE_MUTE_FLOOR,
   AGS_V12_DISPLAY_TIERS,
+  AGS_V12_STAKE_TIER_META,
 } from '../src/lib/ags.js';
+import {
+  TAPE_MUTE_BELOW,
+  TAPE_BOOST_ABOVE,
+  TAPE_BOOST_MULT,
+  TAPE_SIZING_LIVE_FROM,
+  isTapeSizingLive,
+} from '../src/lib/walletClvSkill.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..');
@@ -655,6 +663,11 @@ async function loadAllAgsuGradedPicks() {
           winnerAlignAction: sd.v8_winnerAlignAction || null,
           winnerAlignEvaluatedAt: sd.v8_winnerAlignEvaluatedAt || null,
           mutedBy: sd.mutedBy || null,
+          // TAPE sizing (live 2026-07-15+) — score / action / pre-tape path units
+          tapeScore: Number.isFinite(sd.v8_tapeScore) ? sd.v8_tapeScore : null,
+          tapeAction: sd.v8_tapeAction || null,
+          unitsPreTape: Number.isFinite(sd.v8_unitsPreTape) ? sd.v8_unitsPreTape : null,
+          netMeanPrior: Number.isFinite(sd.v8_netMeanPrior) ? sd.v8_netMeanPrior : null,
           provenFor, provenAg,
           provenTotal: (provenFor ?? 0) + (provenAg ?? 0),
           hcMargin, miniHcMargin,
@@ -1458,6 +1471,10 @@ async function loadAllGradedAndShadowPicks() {
           winnerAlignFadeTop60: sd.v8_winnerAlignFadeTop60 === true,
           winnerAlignMeanBehind5: sd.v8_winnerAlignMeanBehind5 === true,
           mutedBy: sd.mutedBy || null,
+          tapeScore: Number.isFinite(sd.v8_tapeScore) ? sd.v8_tapeScore : null,
+          tapeAction: sd.v8_tapeAction || null,
+          unitsPreTape: Number.isFinite(sd.v8_unitsPreTape) ? sd.v8_unitsPreTape : null,
+          netMeanPrior: Number.isFinite(sd.v8_netMeanPrior) ? sd.v8_netMeanPrior : null,
           agsV12: Number.isFinite(sd.v8_agsV12) ? sd.v8_agsV12 : null,
           team: sd.team || sideKey,
           sideKey,
@@ -1736,7 +1753,7 @@ function buildVersionComparison(report, rows, eras) {
 //   §2  Model version comparison (kept — see buildVersionComparison)
 //   §3  What V12 actually is (plain-English primer)
 //   §4  Daily trajectory (cumulative PnL since launch)
-//   §5  Tier scoreboard (which tiers earn, sizing drift detection)
+//   §5  Tier scoreboard + path slices (RANK / PATH-D / EDGE / TAPE)
 //   §6  Sport × market matrix (where edge lives)
 //   §7  Score-band reliability (is V12 score predictive?)
 //   §8  Mute-rule effectiveness (counterfactual on muted picks)
@@ -3153,6 +3170,175 @@ function buildV12WalletQualityInputs(report, stats) {
   report.push('');
 }
 
+// ── § 5e — TAPE sizing impact (mute / hold / boost · live 2026-07-15+) ────
+function pathUnitsGuess(r) {
+  if (Number.isFinite(r.unitsPreTape) && r.unitsPreTape > 0) return r.unitsPreTape;
+  const meta = AGS_V12_STAKE_TIER_META[r.hcStakeTier];
+  return Number.isFinite(meta?.units) && meta.units > 0 ? meta.units : null;
+}
+
+function cfProfitAtUnits(won, odds, units) {
+  if (won == null || !(units > 0)) return null;
+  if (won === 1) {
+    if (!Number.isFinite(odds) || odds === 0) return units; // flat 1u fallback
+    return odds < 0 ? units * (100 / Math.abs(odds)) : units * (odds / 100);
+  }
+  return -units;
+}
+
+function tapeAgg(rows) {
+  let n = 0, w = 0, l = 0, stake = 0, pnl = 0;
+  for (const r of rows) {
+    if (r.won == null) continue;
+    n++;
+    stake += r.units || 0;
+    pnl += Number.isFinite(r.profit) ? r.profit : 0;
+    if (r.won === 1) w++; else if (r.won === 0) l++;
+  }
+  return { n, w, l, stake, pnl, roi: stake > 0 ? (pnl / stake) * 100 : null };
+}
+
+function buildV12TapeSizing(report, stats) {
+  report.push(`## § 5e — TAPE Sizing Impact (mute / hold / boost · live ${TAPE_SIZING_LIVE_FROM}+)`);
+  report.push('');
+  if (!stats) {
+    report.push(`_(no V12-era picks yet.)_`);
+    report.push('');
+    return;
+  }
+  report.push(`> **What this is.** From **${TAPE_SIZING_LIVE_FROM}**, path units (A–D) are resized by **TAPE** = \`1.5·(EDGE/10) + 2·(netCLV/10)\`: **mute** if tape &lt; ${TAPE_MUTE_BELOW} → 0u · **hold** mid · **boost** if tape ≥ ${TAPE_BOOST_ABOVE} → ×${TAPE_BOOST_MULT} (6u cap). Missing tape = fail-open (keep path size). See \`docs/TAPE_SIZING.md\`.`);
+  report.push('');
+
+  const era = (stats.v12RowsAll || stats.v12Rows || []).filter(r => isTapeSizingLive(r.date));
+  const stamped = era.filter(r => r.tapeAction || Number.isFinite(r.tapeScore) || r.mutedBy === 'tape-weak');
+  const graded = stamped.filter(r => r.won != null);
+  report.push(`### Coverage`);
+  report.push('');
+  report.push(`| Window | Sides | With tape stamp | Graded w/ stamp |`);
+  report.push(`|--------|------:|----------------:|----------------:|`);
+  report.push(`| ≥ ${TAPE_SIZING_LIVE_FROM} | ${era.length} | ${stamped.length} | ${graded.length} |`);
+  report.push('');
+  if (stamped.length === 0) {
+    report.push(`_No TAPE stamps yet in the live window — fills as the cron writes \`v8_tapeScore\` / \`v8_tapeAction\` / \`v8_unitsPreTape\`._`);
+    report.push('');
+    return;
+  }
+
+  // (A) By action — include 0u mutes (not just units>0 live book)
+  report.push(`### (A) By tape action (stamped + graded)`);
+  report.push('');
+  if (graded.length === 0) {
+    report.push(`_No graded tape-stamped picks yet in the live window — tables fill as ${TAPE_SIZING_LIVE_FROM}+ locks settle._`);
+    report.push('');
+  } else {
+    report.push(`| Action | N | W-L | Win % | Stake | PnL (u) | ROI |`);
+    report.push(`|--------|--:|:---:|------:|------:|--------:|----:|`);
+    const ACTIONS = ['MUTE', 'HOLD', 'BOOST', 'FAIL_OPEN', 'PASS'];
+    for (const act of ACTIONS) {
+      const rows = graded.filter(r => (r.tapeAction || (r.mutedBy === 'tape-weak' ? 'MUTE' : null)) === act);
+      if (!rows.length) continue;
+      const a = tapeAgg(rows);
+      report.push(
+        `| ${act.padEnd(9)} | ${a.n} | ${a.w}-${a.l} | ${a.n ? ((100 * a.w / a.n).toFixed(1) + '%') : '—'} | ${a.stake.toFixed(2)}u | ${fmtSigned(a.pnl)}u | ${a.roi != null ? ((a.roi >= 0 ? '+' : '') + a.roi.toFixed(1) + '%') : '—'} |`,
+      );
+    }
+    report.push('');
+  }
+
+  // (B) Score ladder
+  report.push(`### (B) Tape score ladder (graded, score present)`);
+  report.push('');
+  report.push(`| Tape bucket | Rule | N | W-L | Win % | Staked PnL |`);
+  report.push(`|-------------|------|--:|:---:|------:|-----------:|`);
+  const buckets = [
+    { key: `mute (<${TAPE_MUTE_BELOW})`, test: (t) => t < TAPE_MUTE_BELOW },
+    { key: `hold (${TAPE_MUTE_BELOW}–${TAPE_BOOST_ABOVE})`, test: (t) => t >= TAPE_MUTE_BELOW && t < TAPE_BOOST_ABOVE },
+    { key: `boost (≥${TAPE_BOOST_ABOVE})`, test: (t) => t >= TAPE_BOOST_ABOVE },
+  ];
+  const withScore = graded.filter(r => Number.isFinite(r.tapeScore));
+  for (const b of buckets) {
+    const rows = withScore.filter(r => b.test(r.tapeScore));
+    const a = tapeAgg(rows);
+    report.push(
+      `| ${b.key} | ${b.key.startsWith('mute') ? '→ 0u' : b.key.startsWith('boost') ? `×${TAPE_BOOST_MULT}` : 'path u'} | ${a.n} | ${a.w}-${a.l} | ${a.n ? ((100 * a.w / a.n).toFixed(1) + '%') : '—'} | ${fmtSigned(a.pnl)}u |`,
+    );
+  }
+  report.push('');
+  report.push(`_Score coverage: **${withScore.length}/${graded.length}** graded stamped rows have \`v8_tapeScore\`._`);
+  report.push('');
+
+  // (C) Counterfactual impact
+  report.push(`### (C) Counterfactual impact vs path units`);
+  report.push('');
+  report.push(`> **Mute CF:** path units that tape zeroed — if those had shipped, what PnL? Positive Δ = tape saved money (avoided losses). **Boost CF:** actual PnL − PnL at path size (pre-boost). Positive Δ = boost added value.`);
+  report.push('');
+
+  const mutes = graded.filter(r =>
+    r.tapeAction === 'MUTE' || r.mutedBy === 'tape-weak',
+  );
+  let muteCf = 0, muteN = 0, muteSaved = 0, muteMissed = 0;
+  for (const r of mutes) {
+    const pu = pathUnitsGuess(r);
+    if (!(pu > 0) || r.won == null) continue;
+    const would = cfProfitAtUnits(r.won, r.peakOdds || r.lockOdds, pu);
+    if (would == null) continue;
+    muteN++;
+    muteCf += -would; // actual 0 − would
+    if (would < 0) muteSaved += -would;
+    else muteMissed += would;
+  }
+  report.push(`| Mute CF | N | PnL if path had shipped | Δ vs actual (0u) | Avoided losses | Missed wins |`);
+  report.push(`|---------|--:|------------------------:|-----------------:|---------------:|------------:|`);
+  report.push(
+    `| tape-weak → 0u | ${muteN} | ${fmtSigned(-muteCf)}u | ${fmtSigned(muteCf)}u | ${fmtSigned(muteSaved)}u | ${fmtSigned(muteMissed)}u |`,
+  );
+  report.push('');
+
+  const boosts = graded.filter(r => r.tapeAction === 'BOOST' && (r.units || 0) > 0 && r.won != null);
+  let boostN = 0, boostAct = 0, boostPath = 0;
+  for (const r of boosts) {
+    const pu = pathUnitsGuess(r)
+      || (Number.isFinite(r.units) ? r.units / TAPE_BOOST_MULT : null);
+    if (!(pu > 0)) continue;
+    const pathP = cfProfitAtUnits(r.won, r.peakOdds || r.lockOdds, pu);
+    const actP = Number.isFinite(r.profit) ? r.profit : cfProfitAtUnits(r.won, r.peakOdds || r.lockOdds, r.units);
+    if (pathP == null || actP == null) continue;
+    boostN++;
+    boostAct += actP;
+    boostPath += pathP;
+  }
+  report.push(`| Boost CF | N | PnL @ path u | PnL @ boosted | Δ (boost value) |`);
+  report.push(`|----------|--:|-------------:|--------------:|----------------:|`);
+  report.push(
+    `| tape ≥ ${TAPE_BOOST_ABOVE} ×${TAPE_BOOST_MULT} | ${boostN} | ${fmtSigned(boostPath)}u | ${fmtSigned(boostAct)}u | ${fmtSigned(boostAct - boostPath)}u |`,
+  );
+  report.push('');
+  report.push(`> Path units for CF prefer stamped \`v8_unitsPreTape\`; else ladder default for \`v8_hcStakeTier\`. Early tape-era picks may lack \`unitsPreTape\` until the next cron cycle backfills.`);
+  report.push('');
+
+  // Recent mutes/boosts list
+  const notable = stamped
+    .filter(r => r.tapeAction === 'MUTE' || r.tapeAction === 'BOOST' || r.mutedBy === 'tape-weak')
+    .slice()
+    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
+    .slice(0, 15);
+  if (notable.length) {
+    report.push(`### (D) Recent mute / boost events`);
+    report.push('');
+    report.push(`| Date | Sport | Pick | Path | Tape | Act | Pre-u | Final | Outcome |`);
+    report.push(`|------|-------|------|------|-----:|-----|------:|------:|---------|`);
+    for (const r of notable) {
+      const pre = pathUnitsGuess(r);
+      const act = r.tapeAction || (r.mutedBy === 'tape-weak' ? 'MUTE' : '—');
+      const out = r.won === 1 ? 'WIN' : r.won === 0 ? 'LOSS' : '—';
+      report.push(
+        `| ${r.date} | ${r.sport || ''} | ${(r.team || r.sideKey || '').substring(0, 22)} | ${pathShort(r.hcStakeTier)} | ${Number.isFinite(r.tapeScore) ? r.tapeScore.toFixed(2) : '—'} | ${act} | ${pre != null ? pre.toFixed(2) + 'u' : '—'} | ${((r.units || 0).toFixed(2))}u | ${out} |`,
+      );
+    }
+    report.push('');
+  }
+}
+
 // § 11 — Recent V12 live picks (audit trail)
 function buildV12RecentLivePicks(report, stats, n = 30, walletProfiles = null) {
   report.push(`## § 11 — Recent V12 Live Picks (Audit Trail)`);
@@ -3167,26 +3353,20 @@ function buildV12RecentLivePicks(report, stats, n = 30, walletProfiles = null) {
     .slice()
     .sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0)
     .slice(0, n);
-  report.push(`The last ${recent.length} picks V12 actually shipped (units > 0). Audit trail: V12 score, EDGE, **which WA / Policy E action fired**, Top-Winner flags, stake, outcome.`);
+  report.push(`The last ${recent.length} picks V12 actually shipped (units > 0). Audit trail: V12 score, EDGE (TAPE input), **TAPE score/action**, path, stake, outcome.`);
   report.push('');
-  // Stamped EDGE only — do not profile-replay (lookahead).
-  report.push(`| Date       | Sport | Mkt    | Pick                    | Odds  | V12   | Path     | EDGE   | Action   | Top flags          | Stake | Outcome | PnL (u)    |`);
-  report.push(`|------------|-------|--------|-------------------------|-------|-------|----------|--------|----------|--------------------|-------|---------|------------|`);
+  // Stamped EDGE + TAPE only — do not profile-replay (lookahead).
+  report.push(`| Date       | Sport | Mkt    | Pick                    | Odds  | V12   | Path     | EDGE   | Tape  | TapeAct  | Stake | Outcome | PnL (u)    |`);
+  report.push(`|------------|-------|--------|-------------------------|-------|-------|----------|--------|-------|----------|-------|---------|------------|`);
   for (const r of recent) {
     const teamLabel = `${r.team || r.sideKey || ''}`.substring(0, 23);
     const oddsStr = r.peakOdds > 0 ? `+${r.peakOdds}` : `${r.peakOdds}`;
     const outcome = r.won === 1 ? 'WIN' : r.won === 0 ? 'LOSS' : '—';
     const edgeStr = Number.isFinite(r.winnerAlignEdge) ? fmtSigned(r.winnerAlignEdge, 1) : '—';
-    const act = r.winnerAlignAction || '—';
-    const flags = [
-      r.winnerAlignEliteUnopp ? 'eliteU' : null,
-      r.winnerAlignTopUnopp ? 'topU' : null,
-      r.winnerAlignTopVsTop ? 'TvT' : null,
-      r.winnerAlignHasTop5For ? 'T5for' : null,
-      r.winnerAlignHasTop5Ag && !r.winnerAlignHasTop5For ? 'T5ag' : null,
-    ].filter(Boolean).join(',') || '—';
+    const tapeStr = Number.isFinite(r.tapeScore) ? r.tapeScore.toFixed(2) : '—';
+    const tapeAct = r.tapeAction || (r.mutedBy === 'tape-weak' ? 'MUTE' : '—');
     report.push(
-      `| ${r.date.padEnd(10)} | ${(r.sport || '').padEnd(5)} | ${(r.marketType || '').padEnd(6)} | ${teamLabel.padEnd(23)} | ${oddsStr.padStart(5)} | ${(Number.isFinite(r.agsV12) ? fmtSigned(r.agsV12, 3) : '—').padStart(5)} | ${pathShort(r.hcStakeTier).padEnd(8)} | ${edgeStr.padStart(6)} | ${act.padEnd(9)} | ${flags.padEnd(18)} | ${((r.units||0).toFixed(2)+'u').padStart(5)} | ${outcome.padEnd(7)} | ${fmtSigned(r.profit).padStart(10)} |`
+      `| ${r.date.padEnd(10)} | ${(r.sport || '').padEnd(5)} | ${(r.marketType || '').padEnd(6)} | ${teamLabel.padEnd(23)} | ${oddsStr.padStart(5)} | ${(Number.isFinite(r.agsV12) ? fmtSigned(r.agsV12, 3) : '—').padStart(5)} | ${pathShort(r.hcStakeTier).padEnd(8)} | ${edgeStr.padStart(6)} | ${tapeStr.padStart(5)} | ${tapeAct.padEnd(8)} | ${((r.units||0).toFixed(2)+'u').padStart(5)} | ${outcome.padEnd(7)} | ${fmtSigned(r.profit).padStart(10)} |`
     );
   }
   report.push('');
@@ -4537,6 +4717,7 @@ async function main() {
   buildV12RankRescue(report, v12Stats, walletProfiles);
   buildV12PathD(report, v12Stats);
   buildV12WinnerAlign(report, v12Stats, walletProfiles);
+  buildV12TapeSizing(report, v12Stats);
   buildV12SportMarketAnalysis(report, v12Stats);
   buildV12StakeCalibration(report, v12Stats);
   buildV12MuteAudit(report, v12Stats);

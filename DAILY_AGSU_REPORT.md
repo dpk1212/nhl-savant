@@ -1,6 +1,6 @@
 # AGS-Unified — V12 Performance Monitor
 
-**Generated:** Thursday, July 16, 2026 at 10:33 AM ET
+**Generated:** Thursday, July 16, 2026 at 4:03 PM ET
 
 **Active model:** `ags-unified-v12` · **V12 went live:** 2026-06-01 · **Days live:** 46
 
@@ -8,23 +8,23 @@
 
 ## § 1 — Executive Summary
 
-> 🟢 **V12 is currently WINNING.** Since going live on **2026-06-01** (46 days ago), V12 has evaluated **1319** picks, shipped **430** for real money (32.6% ship rate), and muted the other **889**. On the shipped picks V12 has gone **237-193** (55.1% win), staked **1178.75u**, and returned **+50.01u** at **+4.2% ROI**.
+> 🟢 **V12 is currently WINNING.** Since going live on **2026-06-01** (46 days ago), V12 has evaluated **1326** picks, shipped **430** for real money (32.4% ship rate), and muted the other **896**. On the shipped picks V12 has gone **237-193** (55.1% win), staked **1178.75u**, and returned **+50.01u** at **+4.2% ROI**.
 
 ### Snapshot
 
 | Metric                              | Value                          |
 |-------------------------------------|--------------------------------|
 | Days V12 has been authoritative     |                             46 |
-| Picks V12 has evaluated             |                           1319 |
+| Picks V12 has evaluated             |                           1326 |
 | Picks SHIPPED (units > 0)           |                            430 |
-| Picks MUTED (score ≤ 0, FADE)       |                            889 |
-| Ship rate                           |                          32.6% |
+| Picks MUTED (score ≤ 0, FADE)       |                            896 |
+| Ship rate                           |                          32.4% |
 | Live W-L                            |                        237-193 |
 | Live Win %                          |                          55.1% |
 | Live PnL (units)                    |                         +50.01 |
 | Live ROI                            |                          +4.2% |
 | Avg PnL / day                       |                         +1.09u |
-| Most recent action (2026-07-18)  |            0 live, 0-0, +0.00u |
+| Most recent action (2026-07-19)  |            0 live, 0-0, +0.00u |
 
 ### What's working
 
@@ -149,10 +149,10 @@ Day-by-day production since V12 went live. **Evaluated** = picks V12 scored that
 | 2026-07-12 |        29 |    5 |    16 | 1-4        |  20.0% |     13.50 |      -8.43 |    -62.4% |     +47.61 |
 | 2026-07-14 |         3 |    1 |     0 | 0-1        |   0.0% |      1.00 |      -1.00 |   -100.0% |     +46.61 |
 | 2026-07-15 |         5 |    1 |     1 | 1-0        | 100.0% |      2.50 |      +3.40 |    136.0% |     +50.01 |
-| 2026-07-16 |         1 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +50.01 |
-| 2026-07-18 |         1 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +50.01 |
-
-> **Trajectory.** 🟢 Last 3 days (136.0% ROI) is **+132.0pp better** than the prior window (4.0%). V12 is accelerating.
+| 2026-07-16 |         5 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +50.01 |
+| 2026-07-17 |         1 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +50.01 |
+| 2026-07-18 |         2 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +50.01 |
+| 2026-07-19 |         1 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +50.01 |
 
 > **Bottom line.** 46 days live, 430 live picks shipped, **+50.01u total PnL** at **+4.2% ROI**, averaging **+1.09u per day**.
 
@@ -407,7 +407,7 @@ These are the **conditions** Policy E looks at. A ticket can be elite-unopposed 
 
 #### (F4) Today / in-flight — rules applied (ungraded + graded)
 
-_No winner-align actions stamped on last 2026-07-15, 2026-07-16, 2026-07-18 yet (pre-T-15 cycles write stamps as they fire)._
+_No winner-align actions stamped on last 2026-07-17, 2026-07-18, 2026-07-19, 2026-07-16 yet (pre-T-15 cycles write stamps as they fire)._
 
 #### (F5) Helping / hurting scoreboard (quick verdict)
 
@@ -417,6 +417,44 @@ _No winner-align actions stamped on last 2026-07-15, 2026-07-16, 2026-07-18 yet 
 - **top_junk**: n=0 — _need ≥5 graded to call_
 
 > Track WINNER ROI separately from RANK/SHARP/DISSENT — same mute pool, different gate (sport-WR EDGE). Policy E actions must stay green on §F1/F5 or we roll back the junk cut / floors.
+
+## § 5e — TAPE Sizing Impact (mute / hold / boost · live 2026-07-15+)
+
+> **What this is.** From **2026-07-15**, path units (A–D) are resized by **TAPE** = `1.5·(EDGE/10) + 2·(netCLV/10)`: **mute** if tape &lt; 0 → 0u · **hold** mid · **boost** if tape ≥ 2.89 → ×1.35 (6u cap). Missing tape = fail-open (keep path size). See `docs/TAPE_SIZING.md`.
+
+### Coverage
+
+| Window | Sides | With tape stamp | Graded w/ stamp |
+|--------|------:|----------------:|----------------:|
+| ≥ 2026-07-15 | 14 | 5 | 0 |
+
+### (A) By tape action (stamped + graded)
+
+_No graded tape-stamped picks yet in the live window — tables fill as 2026-07-15+ locks settle._
+
+### (B) Tape score ladder (graded, score present)
+
+| Tape bucket | Rule | N | W-L | Win % | Staked PnL |
+|-------------|------|--:|:---:|------:|-----------:|
+| mute (<0) | → 0u | 0 | 0-0 | — | +0.00u |
+| hold (0–2.89) | path u | 0 | 0-0 | — | +0.00u |
+| boost (≥2.89) | ×1.35 | 0 | 0-0 | — | +0.00u |
+
+_Score coverage: **0/0** graded stamped rows have `v8_tapeScore`._
+
+### (C) Counterfactual impact vs path units
+
+> **Mute CF:** path units that tape zeroed — if those had shipped, what PnL? Positive Δ = tape saved money (avoided losses). **Boost CF:** actual PnL − PnL at path size (pre-boost). Positive Δ = boost added value.
+
+| Mute CF | N | PnL if path had shipped | Δ vs actual (0u) | Avoided losses | Missed wins |
+|---------|--:|------------------------:|-----------------:|---------------:|------------:|
+| tape-weak → 0u | 0 | +0.00u | +0.00u | +0.00u | +0.00u |
+
+| Boost CF | N | PnL @ path u | PnL @ boosted | Δ (boost value) |
+|----------|--:|-------------:|--------------:|----------------:|
+| tape ≥ 2.89 ×1.35 | 0 | +0.00u | +0.00u | +0.00u |
+
+> Path units for CF prefer stamped `v8_unitsPreTape`; else ladder default for `v8_hcStakeTier`. Early tape-era picks may lack `unitsPreTape` until the next cron cycle backfills.
 
 ## § 6 — V12 By Sport & Market (Where The Edge Is)
 
@@ -530,40 +568,40 @@ V12's score is the bounded difference of two averages: the mean wallet quality F
 
 ## § 11 — Recent V12 Live Picks (Audit Trail)
 
-The last 30 picks V12 actually shipped (units > 0). Audit trail: V12 score, EDGE, **which WA / Policy E action fired**, Top-Winner flags, stake, outcome.
+The last 30 picks V12 actually shipped (units > 0). Audit trail: V12 score, EDGE (TAPE input), **TAPE score/action**, path, stake, outcome.
 
-| Date       | Sport | Mkt    | Pick                    | Odds  | V12   | Path     | EDGE   | Action   | Top flags          | Stake | Outcome | PnL (u)    |
-|------------|-------|--------|-------------------------|-------|-------|----------|--------|----------|--------------------|-------|---------|------------|
-| 2026-07-15 | WNBA  | ML     | Golden State Valkyries  |  +136 | +0.946 | HC-2     |      — | —         | topU,T5for         | 2.50u | WIN     |      +3.40 |
-| 2026-07-14 | SOC   | ML     | France                  |  +155 | +0.697 | HC-2     |  +21.2 | top_cap   | TvT,T5for          | 1.00u | LOSS    |      -1.00 |
-| 2026-07-12 | MLB   | ML     | St. Louis Cardinals     |  -128 | +0.993 | MINI     |      — | —         | —                  | 3.00u | LOSS    |      -3.00 |
-| 2026-07-12 | MLB   | ML     | San Francisco Giants    |  -145 | +0.993 | MINI     |      — | —         | —                  | 3.00u | WIN     |      +2.07 |
-| 2026-07-12 | MLB   | ML     | Milwaukee Brewers       |  +106 | +0.792 | HC-1     |      — | —         | —                  | 2.50u | LOSS    |      -2.50 |
-| 2026-07-12 | MLB   | SPREAD | St. Louis Cardinals     |  +168 | +0.758 | PATH-D   |  +20.3 | —         | —                  | 1.00u | LOSS    |      -1.00 |
-| 2026-07-12 | MLB   | TOTAL  | Under 7.5               |  -110 | +0.980 | HC-1     |      — | —         | —                  | 4.00u | LOSS    |      -4.00 |
-| 2026-07-11 | MLB   | ML     | New York Mets           |  -144 | +0.660 | 2-for-0  |      — | —         | —                  | 4.00u | LOSS    |      -4.00 |
-| 2026-07-11 | MLB   | ML     | Texas Rangers           |  -117 | +0.962 | SHARP    |      — | —         | —                  | 3.00u | LOSS    |      -3.00 |
-| 2026-07-11 | MLB   | ML     | Washington Nationals    |  +165 | +0.929 | 2-for-0  |      — | —         | —                  | 4.00u | LOSS    |      -4.00 |
-| 2026-07-11 | SOC   | ML     | Argentina               |  -145 | +0.986 | SHARP+   |      — | —         | —                  | 4.00u | LOSS    |      -4.00 |
-| 2026-07-11 | MLB   | TOTAL  | Over 8.5                |  -107 | +0.821 | SHARP    |      — | —         | —                  | 3.00u | LOSS    |      -3.00 |
-| 2026-07-10 | MLB   | ML     | Cleveland Guardians     |  +107 | +0.990 | HC-1     |      — | —         | —                  | 2.50u | WIN     |      +2.68 |
-| 2026-07-10 | MLB   | ML     | Chicago White Sox       |  -178 | +0.838 | HC-1+$   |      — | —         | —                  | 5.00u | WIN     |      +2.81 |
-| 2026-07-10 | MLB   | ML     | Detroit Tigers          |  -118 | +0.994 | HC-2     |      — | —         | —                  | 6.00u | WIN     |      +5.08 |
-| 2026-07-10 | MLB   | ML     | Seattle Mariners        |  +108 | +0.868 | HC-1+$   |      — | —         | —                  | 2.50u | LOSS    |      -2.50 |
-| 2026-07-10 | MLB   | SPREAD | St. Louis Cardinals     |  -123 | +0.969 | HC-1     |      — | —         | —                  | 4.00u | WIN     |      +3.25 |
-| 2026-07-10 | MLB   | SPREAD | Athletics               |  -137 | +0.984 | HC-1+$   |      — | —         | —                  | 5.00u | LOSS    |      -5.00 |
-| 2026-07-10 | MLB   | TOTAL  | Under 7.5               |  -110 | +0.998 | HC-1     |      — | —         | —                  | 4.00u | WIN     |      +3.64 |
-| 2026-07-10 | MLB   | TOTAL  | Over 10.5               |  -104 | +0.938 | HC-1+$   |      — | —         | —                  | 5.00u | LOSS    |      -5.00 |
-| 2026-07-09 | MLB   | ML     | Arizona Diamondbacks    |  +110 | +0.985 | MINI     |      — | —         | —                  | 2.50u | WIN     |      +2.75 |
-| 2026-07-09 | MLB   | ML     | San Francisco Giants    |  -132 | +0.987 | MINI-    |      — | —         | —                  | 1.00u | WIN     |      +0.76 |
-| 2026-07-09 | SOC   | ML     | France                  |  -170 | +0.992 | HC-2     |      — | —         | —                  | 6.00u | WIN     |      +3.53 |
-| 2026-07-09 | MLB   | SPREAD | Atlanta Braves          |  +140 | +0.795 | SHARP    |      — | —         | —                  | 2.50u | WIN     |      +3.50 |
-| 2026-07-09 | MLB   | SPREAD | Philadelphia Phillies   |  -105 | +0.853 | 2-for-0  |      — | —         | —                  | 4.00u | LOSS    |      -4.00 |
-| 2026-07-09 | MLB   | TOTAL  | Over 9.5                |  +100 | +0.908 | HC-1     |      — | —         | —                  | 4.00u | LOSS    |      -4.00 |
-| 2026-07-09 | MLB   | TOTAL  | Over 8.5                |  -102 | +0.871 | HC-1+$   |      — | —         | —                  | 5.00u | WIN     |      +4.90 |
-| 2026-07-08 | MLB   | ML     | Cleveland Guardians     |  +110 | +0.875 | HC-1     |      — | —         | —                  | 2.50u | LOSS    |      -2.50 |
-| 2026-07-08 | MLB   | ML     | Los Angeles Dodgers     |  -255 | +0.890 | HC-1+$   |      — | —         | —                  | 5.00u | WIN     |      +1.96 |
-| 2026-07-08 | MLB   | ML     | San Francisco Giants    |  +110 | +0.700 | HC-1     |      — | —         | —                  | 2.50u | LOSS    |      -2.50 |
+| Date       | Sport | Mkt    | Pick                    | Odds  | V12   | Path     | EDGE   | Tape  | TapeAct  | Stake | Outcome | PnL (u)    |
+|------------|-------|--------|-------------------------|-------|-------|----------|--------|-------|----------|-------|---------|------------|
+| 2026-07-15 | WNBA  | ML     | Golden State Valkyries  |  +136 | +0.946 | HC-2     |      — |     — | —        | 2.50u | WIN     |      +3.40 |
+| 2026-07-14 | SOC   | ML     | France                  |  +155 | +0.697 | HC-2     |  +21.2 |     — | —        | 1.00u | LOSS    |      -1.00 |
+| 2026-07-12 | MLB   | ML     | St. Louis Cardinals     |  -128 | +0.993 | MINI     |      — |     — | —        | 3.00u | LOSS    |      -3.00 |
+| 2026-07-12 | MLB   | ML     | San Francisco Giants    |  -145 | +0.993 | MINI     |      — |     — | —        | 3.00u | WIN     |      +2.07 |
+| 2026-07-12 | MLB   | ML     | Milwaukee Brewers       |  +106 | +0.792 | HC-1     |      — |     — | —        | 2.50u | LOSS    |      -2.50 |
+| 2026-07-12 | MLB   | SPREAD | St. Louis Cardinals     |  +168 | +0.758 | PATH-D   |  +20.3 |     — | —        | 1.00u | LOSS    |      -1.00 |
+| 2026-07-12 | MLB   | TOTAL  | Under 7.5               |  -110 | +0.980 | HC-1     |      — |     — | —        | 4.00u | LOSS    |      -4.00 |
+| 2026-07-11 | MLB   | ML     | New York Mets           |  -144 | +0.660 | 2-for-0  |      — |     — | —        | 4.00u | LOSS    |      -4.00 |
+| 2026-07-11 | MLB   | ML     | Texas Rangers           |  -117 | +0.962 | SHARP    |      — |     — | —        | 3.00u | LOSS    |      -3.00 |
+| 2026-07-11 | MLB   | ML     | Washington Nationals    |  +165 | +0.929 | 2-for-0  |      — |     — | —        | 4.00u | LOSS    |      -4.00 |
+| 2026-07-11 | SOC   | ML     | Argentina               |  -145 | +0.986 | SHARP+   |      — |     — | —        | 4.00u | LOSS    |      -4.00 |
+| 2026-07-11 | MLB   | TOTAL  | Over 8.5                |  -107 | +0.821 | SHARP    |      — |     — | —        | 3.00u | LOSS    |      -3.00 |
+| 2026-07-10 | MLB   | ML     | Cleveland Guardians     |  +107 | +0.990 | HC-1     |      — |     — | —        | 2.50u | WIN     |      +2.68 |
+| 2026-07-10 | MLB   | ML     | Chicago White Sox       |  -178 | +0.838 | HC-1+$   |      — |     — | —        | 5.00u | WIN     |      +2.81 |
+| 2026-07-10 | MLB   | ML     | Detroit Tigers          |  -118 | +0.994 | HC-2     |      — |     — | —        | 6.00u | WIN     |      +5.08 |
+| 2026-07-10 | MLB   | ML     | Seattle Mariners        |  +108 | +0.868 | HC-1+$   |      — |     — | —        | 2.50u | LOSS    |      -2.50 |
+| 2026-07-10 | MLB   | SPREAD | St. Louis Cardinals     |  -123 | +0.969 | HC-1     |      — |     — | —        | 4.00u | WIN     |      +3.25 |
+| 2026-07-10 | MLB   | SPREAD | Athletics               |  -137 | +0.984 | HC-1+$   |      — |     — | —        | 5.00u | LOSS    |      -5.00 |
+| 2026-07-10 | MLB   | TOTAL  | Under 7.5               |  -110 | +0.998 | HC-1     |      — |     — | —        | 4.00u | WIN     |      +3.64 |
+| 2026-07-10 | MLB   | TOTAL  | Over 10.5               |  -104 | +0.938 | HC-1+$   |      — |     — | —        | 5.00u | LOSS    |      -5.00 |
+| 2026-07-09 | MLB   | ML     | Arizona Diamondbacks    |  +110 | +0.985 | MINI     |      — |     — | —        | 2.50u | WIN     |      +2.75 |
+| 2026-07-09 | MLB   | ML     | San Francisco Giants    |  -132 | +0.987 | MINI-    |      — |     — | —        | 1.00u | WIN     |      +0.76 |
+| 2026-07-09 | SOC   | ML     | France                  |  -170 | +0.992 | HC-2     |      — |     — | —        | 6.00u | WIN     |      +3.53 |
+| 2026-07-09 | MLB   | SPREAD | Atlanta Braves          |  +140 | +0.795 | SHARP    |      — |     — | —        | 2.50u | WIN     |      +3.50 |
+| 2026-07-09 | MLB   | SPREAD | Philadelphia Phillies   |  -105 | +0.853 | 2-for-0  |      — |     — | —        | 4.00u | LOSS    |      -4.00 |
+| 2026-07-09 | MLB   | TOTAL  | Over 9.5                |  +100 | +0.908 | HC-1     |      — |     — | —        | 4.00u | LOSS    |      -4.00 |
+| 2026-07-09 | MLB   | TOTAL  | Over 8.5                |  -102 | +0.871 | HC-1+$   |      — |     — | —        | 5.00u | WIN     |      +4.90 |
+| 2026-07-08 | MLB   | ML     | Cleveland Guardians     |  +110 | +0.875 | HC-1     |      — |     — | —        | 2.50u | LOSS    |      -2.50 |
+| 2026-07-08 | MLB   | ML     | Los Angeles Dodgers     |  -255 | +0.890 | HC-1+$   |      — |     — | —        | 5.00u | WIN     |      +1.96 |
+| 2026-07-08 | MLB   | ML     | San Francisco Giants    |  +110 | +0.700 | HC-1     |      — |     — | —        | 2.50u | LOSS    |      -2.50 |
 
 ## § 12 — Trust the Process: Predictive Edge Over Time
 
@@ -810,7 +848,7 @@ Same filter, sorted ROI ascending. Wallets that consistently lose when they're o
 | LOCK+ tier picks with `finalUnits == 0` (sizing regression)   |   139 | 🚨 sizing regression — agsSizeMultiplier returning 0 for strong AGS-U |
 | Live picks (not graded yet) with `finalUnits > 0`             |     1 | 🟢 picks queued for grading |
 | AGS-U promoted picks missing `v8_ags` value                   |    40 | 🟡 some picks missing AGS-U — cron lag or stale doc |
-| AGS-U promoted picks missing `agsTier`                        |     8 | 🟡 some picks missing tier classification |
+| AGS-U promoted picks missing `agsTier`                        |    11 | 🟡 some picks missing tier classification |
 | Single-wallet shipped picks (`provenWalletCount == 1`)       |   170 | 🟡 informational — AGS-U calibration controls sample adequacy |
 
 **Tracked-shipped detail (these are the picks the grader wrongly marked 0u):**

@@ -1417,6 +1417,10 @@ async function createMissingLockedPicks({
       v8Stamps.v8_netClvNAg = netCreate.nAg;
       v8Stamps.v8_tapeScore = tapeCreate;
       v8Stamps.v8_tapeAction = isTapeSizingLive(TARGET_DATE) ? clvPolicyCreate.action : null;
+      // Path units before tape mute/boost — daily report uses this for TAPE CF.
+      if (isTapeSizingLive(TARGET_DATE) && Number.isFinite(clvPolicyCreate.unitsPrePolicy)) {
+        v8Stamps.v8_unitsPreTape = clvPolicyCreate.unitsPrePolicy;
+      }
       if (clvPolicyCreate.mutedBy) {
         v8Stamps.mutedBy = clvPolicyCreate.mutedBy;
       }
@@ -2466,6 +2470,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   patch.v8_netClvNAg = netLive.nAg;
   patch.v8_tapeScore = tapeLive;
   patch.v8_tapeAction = tapePolicy?.action ?? null;
+  if (tapeSizingLive && tapePolicy && Number.isFinite(tapePolicy.unitsPrePolicy)) {
+    patch.v8_unitsPreTape = tapePolicy.unitsPrePolicy;
+  }
   if (tapeSizingLive && tapePolicy) {
     if (tapePolicy.action === 'MUTE' && unitsBeforeClv > 0) {
       changes.push(
