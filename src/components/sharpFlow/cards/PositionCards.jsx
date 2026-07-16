@@ -704,7 +704,9 @@ function ConvictionRow({ w, accent, maxRatio, last }) {
           boxShadow: `0 0 8px hsl(${(parseInt(w.short, 16) || 0) % 360} 46% 62% / 0.6)`,
         }} />
         <span style={{ fontFamily: MONO, fontSize: '0.72rem', fontWeight: 700, color: C.text }}>…{w.short}</span>
-        <span style={{ fontSize: '0.54rem', fontWeight: 800, letterSpacing: '0.08em', color: B.profit }}>PROVEN</span>
+        {w.proven !== false && (
+          <span style={{ fontSize: '0.54rem', fontWeight: 800, letterSpacing: '0.08em', color: B.profit }}>PROVEN</span>
+        )}
         <span style={{ flex: 1 }} />
         {Number.isFinite(roiDisp) && (
           <span style={{
