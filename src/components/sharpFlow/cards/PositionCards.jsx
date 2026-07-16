@@ -319,7 +319,7 @@ export const PROPOSED_META = {
 
 function ZoneHead({ children, right, accent }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
         <span style={{ width: 3, height: 11, borderRadius: 2, background: accent, boxShadow: `0 0 8px ${accent}88` }} />
         <span style={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.14em', color: C.textSec }}>
@@ -606,7 +606,7 @@ function MarketRail({ markets, activeId, onSelect }) {
   const NAMES = { ML: 'Moneyline', SPREAD: 'Run line', TOTAL: 'Total' };
   return (
     <div style={{
-      display: 'flex', gap: 4, padding: 3, borderRadius: 12, marginBottom: 16,
+      display: 'flex', gap: 3, padding: 2, borderRadius: 9, marginBottom: 8,
       background: 'rgba(255,255,255,0.03)', border: `1px solid ${C.hairSoft}`,
     }}>
       {markets.map((m) => {
@@ -618,15 +618,15 @@ function MarketRail({ markets, activeId, onSelect }) {
             type="button"
             onClick={() => onSelect(m.id)}
             style={{
-              flex: 1, padding: '8px 4px', borderRadius: 9, cursor: 'pointer',
+              flex: 1, padding: '4px 4px', borderRadius: 7, cursor: 'pointer',
               border: `1px solid ${active ? `${B.gold}55` : 'transparent'}`,
               background: active ? 'rgba(212,175,55,0.1)' : 'transparent',
               transition: 'background .18s ease, border-color .18s ease',
             }}
           >
             <div style={{
-              fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.02em',
-              color: active ? C.text : C.textMuted, marginBottom: 3,
+              fontSize: '0.56rem', fontWeight: 800, letterSpacing: '0.02em',
+              color: active ? C.text : C.textMuted, marginBottom: 0,
             }}>
               {NAMES[m.marketType] || m.marketType}
             </div>
@@ -661,7 +661,7 @@ export function LivePositionCardView({ f, markets, onMarket }) {
   const hasClv = Number.isFinite(f.netClv);
   const hasTape = Number.isFinite(f.tapeScore);
   const riskAnim = useCountUp(f.units, true, 1000);
-  const [tab, setTab] = useState('history');
+  const [tab, setTab] = useState('flow');
   // Real Pinnacle odds series only — no fabricated chart shapes.
   const pinSeries = Array.isArray(f.pinSeries) && f.pinSeries.length >= 2 ? f.pinSeries : null;
   const moveColor = f.pinnacleOpposes ? B.loss : B.profit;
@@ -740,9 +740,9 @@ export function LivePositionCardView({ f, markets, onMarket }) {
 
       {/* ── ZONE 1 · THE CALL ── */}
       <div {...zone(0)}>
-        <div style={{ padding: '22px 20px 20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <span style={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.12em', color: C.textMuted }}>
+        <div style={{ padding: '12px 18px 12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ fontSize: '0.58rem', fontWeight: 800, letterSpacing: '0.12em', color: C.textMuted }}>
               {f.sport}
               <span style={{ color: isLive ? B.loss : C.textFaint, marginLeft: 9 }}>
                 {isLive && (
@@ -757,16 +757,16 @@ export function LivePositionCardView({ f, markets, onMarket }) {
             </span>
             {isWatch ? (
               <span style={{
-                fontSize: '0.58rem', fontWeight: 900, letterSpacing: '0.08em',
-                padding: '5px 12px', borderRadius: 8, color: '#aeb8cb',
+                fontSize: '0.54rem', fontWeight: 900, letterSpacing: '0.08em',
+                padding: '3px 9px', borderRadius: 7, color: '#aeb8cb',
                 background: 'rgba(139,150,171,0.10)', border: '1px solid rgba(139,150,171,0.26)',
               }}>
                 {meta.pill}
               </span>
             ) : (
               <span style={{
-                fontSize: '0.58rem', fontWeight: 900, letterSpacing: '0.08em',
-                padding: '5px 12px', borderRadius: 8, color: '#06100a',
+                fontSize: '0.54rem', fontWeight: 900, letterSpacing: '0.08em',
+                padding: '3px 9px', borderRadius: 7, color: '#06100a',
                 background: `linear-gradient(180deg, ${accent === B.gold ? B.goldHi : accent} 0%, ${accent} 55%, ${accent}bb 100%)`,
                 boxShadow: `0 10px 28px -10px ${accent}, inset 0 1px 0 rgba(255,255,255,0.4)`,
               }}>
@@ -779,20 +779,20 @@ export function LivePositionCardView({ f, markets, onMarket }) {
             <MarketRail markets={markets} activeId={f.id} onSelect={onMarket} />
           )}
 
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16 }}>
             <div>
               <div style={{
-                fontSize: '1.45rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 10,
+                fontSize: '1.2rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 4,
               }}>
                 {f.pickLabel}
-                <span style={{ fontSize: '0.95rem', color: C.textSec, fontWeight: 700, marginLeft: 9, fontFeatureSettings: "'tnum'" }}>
+                <span style={{ fontSize: '0.85rem', color: C.textSec, fontWeight: 700, marginLeft: 9, fontFeatureSettings: "'tnum'" }}>
                   {fmtOdds(f.odds)}
                 </span>
               </div>
               {isWatch ? (
                 <div>
                   <div style={{
-                    fontSize: '3.8rem', fontWeight: 800, letterSpacing: '-0.06em', lineHeight: 0.9,
+                    fontSize: '2.85rem', fontWeight: 800, letterSpacing: '-0.06em', lineHeight: 0.9,
                     fontFeatureSettings: "'tnum'",
                     filter: `drop-shadow(0 0 30px ${accent}50)`,
                   }}>
@@ -803,14 +803,14 @@ export function LivePositionCardView({ f, markets, onMarket }) {
                       {fmtMoney(f.sideInvested)}
                     </span>
                   </div>
-                  <div style={{ fontSize: '0.66rem', color: C.textMuted, marginTop: 8 }}>
+                  <div style={{ fontSize: '0.62rem', color: C.textMuted, marginTop: 4 }}>
                     sharp money on <span style={{ color: accent, fontWeight: 800 }}>{playSide}</span>
                   </div>
                 </div>
               ) : (
                 <div>
                   <div style={{
-                    fontSize: '3.7rem', fontWeight: 800, letterSpacing: '-0.065em', lineHeight: 0.88,
+                    fontSize: '2.85rem', fontWeight: 800, letterSpacing: '-0.065em', lineHeight: 0.88,
                     fontFeatureSettings: "'tnum'",
                     filter: f.units > 0 ? `drop-shadow(0 0 26px ${accent}45)` : 'none',
                   }}>
@@ -822,25 +822,25 @@ export function LivePositionCardView({ f, markets, onMarket }) {
                     }}>
                       {f.units > 0 ? riskAnim.toFixed(1) : '0.0'}
                     </span>
-                    <span style={{ fontSize: '1.1rem', fontWeight: 700, color: C.textMuted, marginLeft: 5 }}>u</span>
+                    <span style={{ fontSize: '1.05rem', fontWeight: 700, color: C.textMuted, marginLeft: 5 }}>u</span>
                   </div>
-                  <div style={{ fontSize: '0.66rem', color: C.textMuted, marginTop: 8 }}>
+                  <div style={{ fontSize: '0.62rem', color: C.textMuted, marginTop: 4 }}>
                     {f.units > 0 ? 'our ticket' : 'we passed'}
                   </div>
                 </div>
               )}
             </div>
             <div style={{ flex: 1 }} />
-            <div style={{ textAlign: 'right', paddingBottom: 5 }}>
+            <div style={{ textAlign: 'right', paddingBottom: 3 }}>
               {isWatch ? (
                 <>
                   <div style={{
-                    fontSize: '1.7rem', fontWeight: 800, color: C.text,
+                    fontSize: '1.55rem', fontWeight: 800, color: C.text,
                     fontFeatureSettings: "'tnum'", letterSpacing: '-0.03em',
                   }}>
                     {f.confirmedOnSide}
                   </div>
-                  <div style={{ fontSize: '0.62rem', color: C.textMuted, marginTop: 5, marginBottom: 10 }}>
+                  <div style={{ fontSize: '0.62rem', color: C.textMuted, marginTop: 4, marginBottom: 6 }}>
                     proven winner{f.confirmedOnSide === 1 ? '' : 's'}
                   </div>
                   <div style={{ fontSize: '0.62rem', fontWeight: 700, color: C.textMuted }}>
@@ -855,7 +855,7 @@ export function LivePositionCardView({ f, markets, onMarket }) {
                   }}>
                     {f.units > 0 ? `+${f.toWin.toFixed(2)}u` : '—'}
                   </div>
-                  <div style={{ fontSize: '0.6rem', color: C.textMuted, marginTop: 5, marginBottom: 10 }}>to win</div>
+                  <div style={{ fontSize: '0.6rem', color: C.textMuted, marginTop: 4, marginBottom: 6 }}>to win</div>
                   <div style={{ fontSize: '0.62rem', fontWeight: 700 }}>
                     <span style={{ color: C.textMuted }}>{f.stakePath}</span>
                     <span style={{ color: C.textFaint }}> · </span>
@@ -868,7 +868,7 @@ export function LivePositionCardView({ f, markets, onMarket }) {
             </div>
           </div>
 
-          <p style={{ margin: '16px 0 0', fontSize: '0.92rem', lineHeight: 1.55, maxWidth: 460 }}>
+          <p style={{ margin: '10px 0 0', fontSize: '0.88rem', lineHeight: 1.5, maxWidth: 460 }}>
             <span style={{ color: C.text, fontWeight: 700 }}>{verdict.lead}</span>
             {' '}
             <span style={{ color: '#9fabc2' }}>{verdict.rest}</span>
@@ -1003,7 +1003,7 @@ export function LivePositionCardView({ f, markets, onMarket }) {
 
       {/* ── ZONE 3 · WHY THIS SIZE ── */}
       <div {...zone(2)}>
-        <div style={{ padding: '20px 20px 18px' }}>
+        <div style={{ padding: '14px 18px 14px' }}>
           <ZoneHead accent={accent} right={Number.isFinite(f.setupHitRate) ? (
             <span style={{ fontSize: '0.6rem', color: C.textMuted, fontFeatureSettings: "'tnum'" }}>
               setups like this hit <span style={{ color: f.setupHitRate >= 55 ? B.profit : C.textSec, fontWeight: 800 }}>{f.setupHitRate}%</span>
@@ -1013,7 +1013,7 @@ export function LivePositionCardView({ f, markets, onMarket }) {
           </ZoneHead>
 
           {isWatch ? (
-            <p style={{ fontSize: '0.8rem', color: C.textSec, lineHeight: 1.6, margin: 0 }}>
+            <p style={{ fontSize: '0.78rem', color: C.textSec, lineHeight: 1.5, margin: 0 }}>
               The money on this game hasn't crossed a stake path yet. We track it for context
               and only put units down when proven winners commit at real size.
             </p>
@@ -1110,11 +1110,11 @@ export function LivePositionCardView({ f, markets, onMarket }) {
 
       {/* ── ZONE 5 · DEPTH ── */}
       <div {...zone(4)}>
-        <div style={{ padding: '10px 20px 22px' }}>
-          <div style={{ display: 'flex', marginBottom: 16 }}>
+        <div style={{ padding: '8px 18px 18px' }}>
+          <div style={{ display: 'flex', marginBottom: 12 }}>
             {[
-              { id: 'history', label: 'Line history' },
               { id: 'flow', label: 'Money flow' },
+              { id: 'history', label: 'Line history' },
               { id: 'wallets', label: 'Wallets' },
             ].map((t) => (
               <button
@@ -1122,8 +1122,8 @@ export function LivePositionCardView({ f, markets, onMarket }) {
                 type="button"
                 onClick={() => setTab(t.id)}
                 style={{
-                  flex: 1, padding: '12px 0', cursor: 'pointer', border: 'none',
-                  background: 'transparent', fontSize: '0.72rem', fontWeight: 800,
+                  flex: 1, padding: '10px 0', cursor: 'pointer', border: 'none',
+                  background: 'transparent', fontSize: '0.7rem', fontWeight: 800,
                   color: tab === t.id ? C.text : C.textMuted,
                   borderBottom: tab === t.id ? `2px solid ${accent}` : `1px solid ${C.hairSoft}`,
                   transition: 'color .18s ease, border-color .18s ease',
