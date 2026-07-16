@@ -151,17 +151,35 @@ function isAlertableSide(sd) {
 /**
  * Parse display-tier Win % from DAILY_AGSU_REPORT.md (same table as Tier Performance).
  * Returns Map displayKey → { label, winPct, record } e.g. MAX → { label:'MAX PLAY', winPct:77.8, record:'7-2' }
+ *
+ * Section header has evolved (v12abc → v12abcde …) — match on "By Stake Tier"
+ * under the Paths A/B/C/D/E scoreboard, not a frozen version string.
  */
 function loadDisplayTierWinRates() {
   const reportPath = join(REPO_ROOT, 'DAILY_AGSU_REPORT.md');
   const out = new Map();
   if (!existsSync(reportPath)) return out;
   const md = readFileSync(reportPath, 'utf8');
-  const start = md.indexOf('### v12abc — By Stake Tier');
+  // Prefer the product path ladder table; fall back to any "By Stake Tier" H3.
+  const markers = [
+    /###\s+v12[a-z]*\s*—\s*By Stake Tier[^\n]*/i,
+    /###\s+[^\n]*By Stake Tier[^\n]*/i,
+  ];
+  let start = -1;
+  for (const re of markers) {
+    const m = md.match(re);
+    if (m && m.index != null) {
+      start = m.index;
+      break;
+    }
+  }
   if (start < 0) return out;
-  const chunk = md.slice(start, start + 2500);
+  // Stop before the granular-by-path table so we don't match SUPER/TOP path rows.
+  const rest = md.slice(start, start + 4000);
+  const granularAt = rest.search(/####\s*Granular/i);
+  const chunk = granularAt > 0 ? rest.slice(0, granularAt) : rest.slice(0, 2500);
   for (const dt of AGS_V12_DISPLAY_TIERS) {
-    // Row like: | MAX PLAY (SUPER) ... | 77.8% |
+    // Row: | MAX PLAY (SUPER) | 6u | 13 | 10-3 | 76.9% | …
     const re = new RegExp(
       `\\|\\s*${dt.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[^|]*\\|[^|]*\\|[^|]*\\|\\s*([\\d-]+)\\s*\\|\\s*([\\d.]+)%`,
     );
@@ -177,6 +195,14 @@ function loadDisplayTierWinRates() {
   return out;
 }
 
+/** Format stake units for push copy (4 → "4u", 5.4 → "5.4u"). */
+function formatUnits(u) {
+  if (!Number.isFinite(u) || u <= 0) return null;
+  const n = Math.round(u * 100) / 100;
+  const s = Number.isInteger(n) ? String(n) : String(n);
+  return `${s}u`;
+}
+
 function tierLineForSide(sd, tierStats) {
   const path = typeof sd?.v8_hcStakeTier === 'string' ? sd.v8_hcStakeTier : null;
   if (!path) return null;
@@ -184,22 +210,33 @@ function tierLineForSide(sd, tierStats) {
   if (!displayKey) return null;
   const meta = AGS_V12_STAKE_TIER_META[path];
   const label = meta?.label || displayKey;
+  const units = sideStakeUnits(sd);
+  const unitsText = formatUnits(units);
   const stats = tierStats.get(displayKey);
+  const parts = [stats?.label || label];
+  if (unitsText) parts.push(unitsText);
   if (stats && Number.isFinite(stats.winPct)) {
+    parts.push(`${stats.winPct.toFixed(1)}% WR`);
     return {
       label: stats.label || label,
       winPct: stats.winPct,
       record: stats.record || null,
-      text: `${stats.label || label} · ${stats.winPct.toFixed(1)}% WR`,
+      units,
+      unitsText,
+      text: parts.join(' · '),
     };
   }
-  return { label, winPct: null, record: null, text: label };
+  return {
+    label,
+    winPct: null,
+    record: null,
+    units,
+    unitsText,
+    text: parts.join(' · '),
+  };
 }
 
 function buildContents({ pickText, tier }) {
-  if (tier?.winPct != null) {
-    return `${pickText} just locked — ${tier.text}. ~15 min to gametime.`;
-  }
   if (tier?.text) {
     return `${pickText} just locked — ${tier.text}. ~15 min to gametime.`;
   }
@@ -222,6 +259,7 @@ async function sendOneSignal({ pickText, detail, tier }) {
       pick: pickText,
       detail: detail || '',
       tier: tier?.label || '',
+      units: tier?.unitsText || '',
       tierWinPct: tier?.winPct != null ? String(tier.winPct) : '',
       tierRecord: tier?.record || '',
       templateId: TEMPLATE_ID, // reference only — not applied
@@ -349,7 +387,9 @@ async function main() {
         const detail = tier?.text ? ` ${tier.text}.` : ' Open Sharp Flow.';
         const preview = buildContents({ pickText, tier });
         console.log(`  → ${DRY_RUN ? 'WOULD SEND' : 'SEND'} ${col}/${pick._id} ${sideKey}`);
-        console.log(`     path=${sd.v8_hcStakeTier || '—'} · ${preview}`);
+        console.log(
+          `     path=${sd.v8_hcStakeTier || '—'} · units=${tier?.unitsText || formatUnits(sideStakeUnits(sd)) || '0u'} · ${preview}`,
+        );
 
         if (DRY_RUN) continue;
 

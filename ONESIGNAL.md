@@ -55,8 +55,11 @@ Free visitors never see a permission dialog. Paid users opt in from **Account �
    - Inside T−15 freeze (`now >= commenceTime - 15m` and `now <= commenceTime`)
    - Not yet stamped `sides[side].lockAlertSentAt`
 3. Sends push with filter `paid=true`. Body is set explicitly (not the
-   dashboard template body) so tier win-rate copy is not stripped:
-   `{pick} just locked — {TIER} · {WR}% WR. ~15 min to gametime.`
+   dashboard template body) so tier / units / win-rate copy is not stripped:
+   `{pick} just locked — {TIER} · {Nu} · {WR}% WR. ~15 min to gametime.`
+   - **Tier** = product label from `v8_hcStakeTier` (MAX PLAY / TOP PICK / …)
+   - **Units** = live `finalUnits` on that side (post tape/odds cap)
+   - **WR** = display-tier win % from `DAILY_AGSU_REPORT.md` § By Stake Tier
 4. On success, stamps `lockAlertSentAt` + `lockAlertMessageId` (idempotent).
 
 Owner-only test (no paid audience, no Firestore stamp):
@@ -115,7 +118,7 @@ ONESIGNAL_REST_API_KEY=... node scripts/syncOnesignalPaidTags.mjs --uid=FIREBASE
 | Asset | ID / name |
 |---|---|
 | Lock template | **15-Min Lock Alert** · `451e41a3-2bdf-4758-a779-ec59a8fecf36` |
-| Lock copy | Title `Sharp Flow · Locked` · `{pick} just locked — {TIER} · {WR}% WR. ~15 min to gametime.` (WR from `DAILY_AGSU_REPORT.md`; script sets `contents` directly — do not rely on template body) |
+| Lock copy | Title `Sharp Flow · Locked` · `{pick} just locked — {TIER} · {Nu} · {WR}% WR. ~15 min to gametime.` (units from `finalUnits`; WR from `DAILY_AGSU_REPORT.md` By Stake Tier table; script sets `contents` directly — do not rely on template body) |
 | Enable template | **Lock Alerts Enabled** · `43652cb9-f99a-47a7-a0ce-2eea9a1001e4` |
 | Enable copy | Title `You're on for lock alerts` · welcome body |
 | Stake gate | Alert only if Locked Picks would show it (`finalUnits > 0` + stake tier) |
