@@ -8285,17 +8285,41 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     commenceMs: commenceTime,
   }) : null;
 
+  // Odds/book follow the play side (not a stale null consensus).
+  const totalPlayPinnOdds = totalPlaySide === 'under'
+    ? pinnGame?.totalCurrent?.underOdds
+    : pinnGame?.totalCurrent?.overOdds;
+  const totalPlayBestRetail = totalPlaySide === 'under'
+    ? pinnGame?.bestUnderTotal?.odds
+    : pinnGame?.bestOverTotal?.odds;
+  const totalPlayBestBook = totalPlaySide === 'under'
+    ? pinnGame?.bestUnderTotal?.book
+    : pinnGame?.bestOverTotal?.book;
+  // Line for "Over 9.5" — Pinnacle first; reject entryLine=1 Polymarket junk.
+  const totalPlayLine = (() => {
+    if (Number.isFinite(totalLine) && totalLine > 1) return totalLine;
+    const fromPos = (totalGameData?.positions || [])
+      .find((p) => p.side === totalPlaySide && Number.isFinite(p.entryLine) && p.entryLine > 1);
+    return Number.isFinite(fromPos?.entryLine) ? fromPos.entryLine : null;
+  })();
+  const totalPickLabel = totalPlayLine != null
+    ? `${totalPlaySide === 'under' ? 'Under' : 'Over'} ${totalPlayLine}`
+    : (totalPlaySide === 'under' ? 'Under' : 'Over');
+
   const totalFixture = hasTotal ? mapLiveGameToCardFixture({
     gd,
     marketType: 'TOTAL',
     displayState: (displayTotal.state === 'PREVIEW' ? 'MONITORING' : displayTotal.state) || 'MONITORING',
     stakePath: displayTotal.tier || totalCronStakeTier || 'MONITORING',
     units: Number.isFinite(displayTotal.units) ? displayTotal.units : (totalCronUnits ?? 0),
-    odds: totalBestRetail ?? totalPinnOdds,
-    book: totalBestBook || 'Pinnacle',
-    fairOdds: totalPinnOdds,
+    odds: totalPlayBestRetail ?? totalPlayPinnOdds ?? totalBestRetail ?? totalPinnOdds,
+    book: totalPlayBestBook || totalBestBook || 'Pinnacle',
+    fairOdds: totalPlayPinnOdds ?? totalPinnOdds,
     toWin: (displayTotal.units || totalCronUnits || 0) > 0
-      ? profitFromOdds(totalBestRetail ?? totalPinnOdds, displayTotal.units ?? totalCronUnits ?? 0)
+      ? profitFromOdds(
+        totalPlayBestRetail ?? totalPlayPinnOdds ?? totalBestRetail ?? totalPinnOdds,
+        displayTotal.units ?? totalCronUnits ?? 0,
+      )
       : 0,
     side: totalPlaySide,
     gameTimeLabel: gameTimeFormatted ? `${gameTimeFormatted} ET` : gameTimeLabel,
@@ -8317,12 +8341,12 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       tickets: null,
       money: null,
     },
-    books: Number.isFinite(totalPinnOdds)
-      ? [{ name: 'Pinnacle', odds: totalPinnOdds, sharp: true }]
+    books: Number.isFinite(totalPlayPinnOdds ?? totalPinnOdds)
+      ? [{ name: 'Pinnacle', odds: totalPlayPinnOdds ?? totalPinnOdds, sharp: true }]
       : [],
     wallets: totalBoard.wallets,
     mapWallets: totalBoard.mapWallets.length ? totalBoard.mapWallets : mlMapWallets,
-    pickLabel: totalPlaySide === 'under' ? 'Under' : 'Over',
+    pickLabel: totalPickLabel,
     pathBase: AGS_V12_STAKE_TIER_META[displayTotal.tier || totalCronStakeTier]?.units,
     commenceMs: commenceTime,
   }) : null;

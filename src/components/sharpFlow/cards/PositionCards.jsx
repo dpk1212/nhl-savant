@@ -402,50 +402,37 @@ function TicketStub({ units, toWin, odds, stakePath, tapeAction, centsEdge, comm
       </div>
       {lockEpoch != null && (
         <div style={{
-          margin: '10px 12px 0',
-          padding: isFrozen ? '10px 12px' : '12px 14px',
-          borderRadius: 10,
-          background: isFrozen
-            ? 'rgba(47,213,126,0.10)'
-            : 'linear-gradient(135deg, rgba(212,175,55,0.22) 0%, rgba(212,175,55,0.08) 100%)',
-          border: `1px solid ${isFrozen ? 'rgba(47,213,126,0.35)' : 'rgba(212,175,55,0.55)'}`,
-          boxShadow: isFrozen ? 'none' : `0 0 28px -8px ${B.gold}66, inset 0 1px 0 rgba(255,255,255,0.08)`,
+          margin: '8px 12px 0',
+          padding: '7px 11px',
+          borderRadius: 8,
+          display: 'flex', alignItems: 'center', gap: 8,
+          background: isFrozen ? 'rgba(47,213,126,0.10)' : 'rgba(212,175,55,0.10)',
+          border: `1px solid ${isFrozen ? 'rgba(47,213,126,0.32)' : 'rgba(212,175,55,0.38)'}`,
         }}>
+          {isFrozen ? <Lock size={13} strokeWidth={2.8} style={{ color: B.profit, flexShrink: 0 }} />
+            : <Clock size={13} strokeWidth={2.6} style={{ color: B.goldHi, flexShrink: 0 }} />}
           {isFrozen ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Lock size={14} strokeWidth={2.8} style={{ color: B.profit, flexShrink: 0 }} />
-              <div>
-                <div style={{ fontSize: '0.72rem', fontWeight: 900, letterSpacing: '0.06em', color: B.profit }}>
-                  FINAL TICKET
-                </div>
-                <div style={{ fontSize: '0.58rem', fontWeight: 600, color: C.textSec, marginTop: 2 }}>
-                  Frozen at T-15 — units, path, and side are set for grading
-                </div>
-              </div>
-            </div>
+            <span style={{ fontSize: '0.62rem', fontWeight: 700, color: B.profit }}>
+              Final ticket · frozen at T-15
+            </span>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-              <div style={{ minWidth: 0 }}>
-                <div style={{
-                  fontSize: '0.52rem', fontWeight: 900, letterSpacing: '0.16em',
-                  color: B.goldHi, marginBottom: 4,
-                }}>
-                  LOCKS IN
-                </div>
-                <div style={{
-                  fontSize: '1.55rem', fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1,
-                  fontFeatureSettings: "'tnum'",
-                  color: C.text,
-                  textShadow: `0 0 24px ${B.gold}55`,
-                }}>
-                  {remLabel || '—'}
-                </div>
-                <div style={{ fontSize: '0.58rem', fontWeight: 600, color: C.textSec, marginTop: 5, lineHeight: 1.35 }}>
-                  Not final yet — stake, path, and side can still change until T-15
-                </div>
-              </div>
-              <Clock size={28} strokeWidth={1.8} style={{ color: B.goldHi, flexShrink: 0, opacity: 0.9 }} />
-            </div>
+            <>
+              <span style={{
+                fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.12em',
+                color: B.goldHi, flexShrink: 0,
+              }}>
+                LOCKS
+              </span>
+              <span style={{
+                fontSize: '0.95rem', fontWeight: 900, letterSpacing: '-0.02em',
+                fontFeatureSettings: "'tnum'", color: C.text,
+              }}>
+                {remLabel || '—'}
+              </span>
+              <span style={{ fontSize: '0.55rem', fontWeight: 600, color: C.textMuted, marginLeft: 'auto' }}>
+                can still change
+              </span>
+            </>
           )}
         </div>
       )}
@@ -453,8 +440,8 @@ function TicketStub({ units, toWin, odds, stakePath, tapeAction, centsEdge, comm
         <div style={{ flex: 1.15, padding: '10px 14px 12px' }}>
           <div style={cellLabel}>RISK</div>
           <div style={{
-            fontSize: '1.9rem', fontWeight: 800, letterSpacing: '-0.05em', lineHeight: 0.95,
-            fontFeatureSettings: "'tnum'", filter: `drop-shadow(0 0 22px ${B.gold}45)`,
+            fontSize: '1.55rem', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 0.95,
+            fontFeatureSettings: "'tnum'",
           }}>
             <span style={{
               backgroundImage: `linear-gradient(180deg, #ffffff 10%, ${B.goldHi} 95%)`,
@@ -462,20 +449,20 @@ function TicketStub({ units, toWin, odds, stakePath, tapeAction, centsEdge, comm
             }}>
               {risk.toFixed(1)}
             </span>
-            <span style={{ fontSize: '0.9rem', fontWeight: 700, color: C.textMuted, marginLeft: 4 }}>u</span>
+            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: C.textMuted, marginLeft: 3 }}>u</span>
           </div>
         </div>
         <div style={{ width: 1, background: 'rgba(212,175,55,0.16)', margin: '10px 0' }} />
         <div style={{ flex: 1, padding: '10px 14px 12px' }}>
           <div style={cellLabel}>TO WIN</div>
-          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: B.profit, fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em', lineHeight: 1.3 }}>
+          <div style={{ fontSize: '1.15rem', fontWeight: 800, color: B.profit, fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em', lineHeight: 1.3 }}>
             {Number.isFinite(toWin) ? `+${toWin.toFixed(2)}u` : '—'}
           </div>
         </div>
         <div style={{ width: 1, background: 'rgba(212,175,55,0.16)', margin: '10px 0' }} />
         <div style={{ flex: 1, padding: '10px 14px 12px' }}>
           <div style={cellLabel}>PRICE</div>
-          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: C.text, fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em', lineHeight: 1.3 }}>
+          <div style={{ fontSize: '1.15rem', fontWeight: 800, color: C.text, fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em', lineHeight: 1.3 }}>
             {fmtOdds(odds)}
           </div>
           {centsEdge && (
@@ -1233,22 +1220,60 @@ export function LivePositionCardView({ f, markets, onMarket }) {
             <MarketRail markets={markets} activeId={f.id} onSelect={onMarket} />
           )}
 
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16 }}>
-            <div>
-              <div style={{
-                fontSize: '1.2rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 4,
-              }}>
-                {f.pickLabel}
-                <span style={{ fontSize: '0.85rem', color: C.textSec, fontWeight: 700, marginLeft: 9, fontFeatureSettings: "'tnum'" }}>
+          {/* Hero call: pick first, then price / units / book. Sharp $ is
+              secondary on watch cards so the play isn't buried under $4.7K. */}
+          <div style={{ marginTop: 2 }}>
+            <div style={{
+              fontSize: isWatch ? '1.55rem' : '1.7rem',
+              fontWeight: 800, letterSpacing: '-0.035em', lineHeight: 1.1,
+              color: C.text,
+            }}>
+              {f.pickLabel}
+            </div>
+            <div style={{
+              display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '6px 12px',
+              marginTop: 6, fontFeatureSettings: "'tnum'",
+            }}>
+              {Number.isFinite(f.odds) && (
+                <span style={{
+                  fontSize: '1.2rem', fontWeight: 800, letterSpacing: '-0.02em', color: C.text,
+                }}>
                   {fmtOdds(f.odds)}
                 </span>
-              </div>
-              {isWatch ? (
+              )}
+              {!isWatch && f.units > 0 && (
+                <span style={{
+                  fontSize: '1.15rem', fontWeight: 900, letterSpacing: '-0.02em',
+                  color: B.goldHi,
+                }}>
+                  {f.units.toFixed(1)}u
+                </span>
+              )}
+              {f.book && (
+                <span style={{
+                  fontSize: '0.72rem', fontWeight: 700, color: C.textSec,
+                  padding: '3px 8px', borderRadius: 6,
+                  background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.hair}`,
+                }}>
+                  {f.book}
+                </span>
+              )}
+              {centsEdge && !isWatch && (
+                <span style={{ fontSize: '0.62rem', fontWeight: 700, color: B.profit }}>
+                  {centsEdge}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, marginTop: isWatch ? 10 : 0 }}>
+            {isWatch ? (
+              <>
                 <div>
                   <div style={{
-                    fontSize: '2.85rem', fontWeight: 800, letterSpacing: '-0.06em', lineHeight: 0.9,
+                    fontSize: '2.1rem', fontWeight: 800, letterSpacing: '-0.05em', lineHeight: 0.92,
                     fontFeatureSettings: "'tnum'",
-                    filter: `drop-shadow(0 0 30px ${accent}50)`,
+                    filter: `drop-shadow(0 0 22px ${accent}40)`,
                   }}>
                     {/* backgroundImage (not the `background` shorthand): updating the
                         shorthand resets background-clip to border-box while React
@@ -1266,43 +1291,41 @@ export function LivePositionCardView({ f, markets, onMarket }) {
                     sharp money on <span style={{ color: accent, fontWeight: 800 }}>{playSide}</span>
                   </div>
                 </div>
-              ) : f.units <= 0 ? (
-                <div>
+                <div style={{ flex: 1 }} />
+                <div style={{ textAlign: 'right', paddingBottom: 3 }}>
                   <div style={{
-                    fontSize: '2.85rem', fontWeight: 800, letterSpacing: '-0.065em', lineHeight: 0.88,
-                    fontFeatureSettings: "'tnum'",
+                    fontSize: '1.35rem', fontWeight: 800, color: C.text,
+                    fontFeatureSettings: "'tnum'", letterSpacing: '-0.03em',
                   }}>
-                    <span style={{
-                      backgroundImage: `linear-gradient(180deg, ${B.loss} 12%, #7f1d1d 100%)`,
-                      backgroundClip: 'text', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                    }}>
-                      0.0
-                    </span>
-                    <span style={{ fontSize: '1.05rem', fontWeight: 700, color: C.textMuted, marginLeft: 5 }}>u</span>
+                    {f.confirmedOnSide}
                   </div>
-                  <div style={{ fontSize: '0.62rem', color: C.textMuted, marginTop: 4 }}>
-                    we passed
+                  <div style={{ fontSize: '0.58rem', color: C.textMuted, marginTop: 3, marginBottom: 4 }}>
+                    proven winner{f.confirmedOnSide === 1 ? '' : 's'}
+                  </div>
+                  <div style={{ fontSize: '0.58rem', fontWeight: 700, color: C.textMuted }}>
+                    no ticket yet
                   </div>
                 </div>
-              ) : null}
-            </div>
-            <div style={{ flex: 1 }} />
-            {isWatch && (
-              <div style={{ textAlign: 'right', paddingBottom: 3 }}>
+              </>
+            ) : f.units <= 0 ? (
+              <div>
                 <div style={{
-                  fontSize: '1.55rem', fontWeight: 800, color: C.text,
-                  fontFeatureSettings: "'tnum'", letterSpacing: '-0.03em',
+                  fontSize: '2.2rem', fontWeight: 800, letterSpacing: '-0.05em', lineHeight: 0.9,
+                  fontFeatureSettings: "'tnum'",
                 }}>
-                  {f.confirmedOnSide}
+                  <span style={{
+                    backgroundImage: `linear-gradient(180deg, ${B.loss} 12%, #7f1d1d 100%)`,
+                    backgroundClip: 'text', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                  }}>
+                    0.0
+                  </span>
+                  <span style={{ fontSize: '0.95rem', fontWeight: 700, color: C.textMuted, marginLeft: 5 }}>u</span>
                 </div>
-                <div style={{ fontSize: '0.62rem', color: C.textMuted, marginTop: 4, marginBottom: 6 }}>
-                  proven winner{f.confirmedOnSide === 1 ? '' : 's'}
-                </div>
-                <div style={{ fontSize: '0.62rem', fontWeight: 700, color: C.textMuted }}>
-                  no ticket yet
+                <div style={{ fontSize: '0.62rem', color: C.textMuted, marginTop: 4 }}>
+                  we passed
                 </div>
               </div>
-            )}
+            ) : null}
           </div>
 
           {!isWatch && f.units > 0 && (
