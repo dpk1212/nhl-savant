@@ -6,9 +6,11 @@
 import { useState, useEffect } from 'react';
 import { Check, Lock, ChevronDown } from 'lucide-react';
 
+// Anchored to the Sharp Flow page palette (see B tokens in SharpFlow.jsx):
+// page #0B0F1F, panels #151923, borders rgba(37,43,59,*), gold #D4AF37.
 const C = {
-  page: '#070912',
-  card: '#0f1420',
+  page: '#0B0F1F',
+  card: '#151923',
   text: '#F4F7FB',
   textSec: '#9aa6bd',
   textMuted: '#647089',
@@ -658,19 +660,18 @@ export function LivePositionCardView({ f, markets, onMarket }) {
     ? `${Math.abs(Math.abs(f.fairOdds) - Math.abs(f.odds))}¢ better than fair`
     : null;
 
-  // Proprietary skill splits — FOR vs AGAINST, mapped onto away/home lanes.
-  // Only rendered when the stamps AND wallet stats actually exist (no fake zeros).
-  const wrVals = f.wallets.map((w) => w.wr).filter(Number.isFinite);
+  // Per-side skill: real graded win rates of the proven wallets on each side
+  // (from stored profiles). Rendered only when both sides have a real number.
+  const awayWr = f.sides.away?.wr;
+  const homeWr = f.sides.home?.wr;
+  const showWrRow = Number.isFinite(awayWr) && Number.isFinite(homeWr);
+  // Beats-the-close split needs per-wallet CLV stats; only render when the
+  // netCLV stamp AND wallet-level numbers exist (no fake zeros).
   const clvVals = f.wallets.map((w) => w.priorClvPct).filter(Number.isFinite);
-  const showWrRow = hasEdge && wrVals.length > 0;
   const showClvRow = hasClv && clvVals.length > 0;
-  const forWr = wrVals.length ? Math.round(wrVals.reduce((s, v) => s + v, 0) / wrVals.length) : 0;
-  const agWr = Math.round(forWr - (f.edge || 0));
   const forClv = clvVals.length ? Math.round(clvVals.reduce((s, v) => s + v, 0) / clvVals.length) : 0;
   const agClv = Math.round(forClv - (f.netClv || 0));
-  const lane = (forV, agV) => (playIsHome ? { away: agV, home: forV } : { away: forV, home: agV });
-  const wrLane = lane(forWr, agWr);
-  const clvLane = lane(forClv, agClv);
+  const clvLane = playIsHome ? { away: agClv, home: forClv } : { away: forClv, home: agClv };
 
   const verdict = (() => {
     const vault = f.vaultOnSide > 0 ? `${f.vaultOnSide} betting well above their usual` : null;
@@ -690,18 +691,18 @@ export function LivePositionCardView({ f, markets, onMarket }) {
   const zone = (i) => ({ className: 'pos-reveal', style: { animationDelay: `${i * 70}ms`, position: 'relative' } });
 
   return (
-    <div style={{
-      borderRadius: 24, overflow: 'hidden', background: '#000',
-      border: `1px solid ${isWatch ? 'rgba(212,175,55,0.18)' : meta.border}`, position: 'relative',
-      boxShadow: '0 40px 80px -36px rgba(0,0,0,0.98), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.06)',
+    <div className="sf-card" style={{
+      borderRadius: 16, overflow: 'hidden',
+      background: 'linear-gradient(180deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0) 42%), linear-gradient(180deg, #161B29 0%, #10141F 55%, #0D111C 100%)',
+      border: `1px solid ${isWatch ? 'rgba(212,175,55,0.16)' : meta.border}`, position: 'relative',
+      boxShadow: '0 24px 60px -30px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.05)',
     }}>
       <CardStyles />
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
         background: `
-          radial-gradient(130% 60% at 50% -15%, ${accent}30 0%, transparent 52%),
-          radial-gradient(60% 30% at 85% 8%, rgba(255,255,255,0.05) 0%, transparent 55%),
-          radial-gradient(90% 40% at 50% 108%, rgba(255,255,255,0.03) 0%, transparent 60%)
+          radial-gradient(130% 60% at 50% -15%, ${accent}22 0%, transparent 52%),
+          radial-gradient(60% 30% at 85% 8%, rgba(255,255,255,0.04) 0%, transparent 55%)
         `,
       }} />
       <div style={{
@@ -886,14 +887,25 @@ export function LivePositionCardView({ f, markets, onMarket }) {
               accent={accent}
               playIsHome={playIsHome}
             />
+            {(f.sides.away.avg > 0 || f.sides.home.avg > 0) && (
+              <BattleRowV12
+                label="AVG TICKET"
+                awayVal={fmtMoney(f.sides.away.avg)}
+                homeVal={fmtMoney(f.sides.home.avg)}
+                awayNum={f.sides.away.avg || 0}
+                homeNum={f.sides.home.avg || 0}
+                accent={accent}
+                playIsHome={playIsHome}
+              />
+            )}
             {showWrRow && (
               <BattleRowV12
                 label="WIN RATE"
-                tag={{ text: `EDGE ${f.edge > 0 ? '+' : ''}${f.edge.toFixed(1)}`, color: f.edge >= 0 ? B.profit : B.loss }}
-                awayVal={`${wrLane.away}%`}
-                homeVal={`${wrLane.home}%`}
-                awayNum={wrLane.away}
-                homeNum={wrLane.home}
+                tag={hasEdge ? { text: `EDGE ${f.edge > 0 ? '+' : ''}${f.edge.toFixed(1)}`, color: f.edge >= 0 ? B.profit : B.loss } : null}
+                awayVal={`${awayWr}%`}
+                homeVal={`${homeWr}%`}
+                awayNum={awayWr}
+                homeNum={homeWr}
                 accent={accent}
                 playIsHome={playIsHome}
               />
@@ -1264,16 +1276,17 @@ export function LockedPositionCardView({ f }) {
 
   return (
     <div style={{
-      borderRadius: 24, overflow: 'hidden', background: '#000',
-      border: `1px solid ${tracked ? 'rgba(139,150,171,0.26)' : 'rgba(212,175,55,0.32)'}`, position: 'relative',
-      boxShadow: '0 40px 80px -36px rgba(0,0,0,0.98), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.06)',
+      borderRadius: 16, overflow: 'hidden',
+      background: 'linear-gradient(180deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0) 42%), linear-gradient(180deg, #161B29 0%, #10141F 55%, #0D111C 100%)',
+      border: `1px solid ${tracked ? 'rgba(139,150,171,0.24)' : 'rgba(212,175,55,0.30)'}`, position: 'relative',
+      boxShadow: '0 24px 60px -30px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.05)',
     }}>
       <CardStyles />
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
         background: `
-          radial-gradient(130% 60% at 50% -15%, ${accent}2a 0%, transparent 52%),
-          radial-gradient(60% 30% at 85% 8%, rgba(255,255,255,0.05) 0%, transparent 55%)
+          radial-gradient(130% 60% at 50% -15%, ${accent}1e 0%, transparent 52%),
+          radial-gradient(60% 30% at 85% 8%, rgba(255,255,255,0.04) 0%, transparent 55%)
         `,
       }} />
       <div style={{

@@ -58,9 +58,13 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
         : Number.isFinite(w.roi) ? Math.round(w.roi) : 0;
       // null when we genuinely don't know — the card hides the element
       // instead of showing a fabricated "1.0x usual / beats close 55%".
+      // Real size baseline lives in profile.sizeSignal.medianInvested
+      // (wallet's own cross-sport median bet), same source the staking
+      // cron and BackingWalletStrip use.
+      const medianBet = profile?.sizeSignal?.medianInvested;
       const sizeRatio = Number.isFinite(w.sizeRatio) ? w.sizeRatio
-        : (w.invested && sportRec?.positions?.avgInvested)
-          ? w.invested / sportRec.positions.avgInvested
+        : (Number.isFinite(medianBet) && medianBet > 0 && (w.invested || 0) > 0)
+          ? w.invested / medianBet
           : null;
       const priorClvPct = Number.isFinite(w.priorClvPct) ? Math.round(w.priorClvPct)
         : Number.isFinite(w.causalPctPos) ? Math.round(w.causalPctPos)
@@ -81,7 +85,7 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
         roi: Number.isFinite(picks?.flatRoi) ? Math.round(picks.flatRoi) : dollarRoi,
         dollarRoi,
         invested: w.invested || 0,
-        avgSportBet: sportRec?.positions?.avgInvested || w.avgSportBet || null,
+        avgSportBet: Number.isFinite(medianBet) && medianBet > 0 ? medianBet : (w.avgSportBet || null),
         cents: w.cents ?? null,
         pnl: w.pnl || 0,
         priorClvPct,

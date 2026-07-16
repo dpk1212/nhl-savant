@@ -7971,6 +7971,22 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const homeSharps = (gd.positions || []).filter((p) => p.side === 'home' && isSportWinner(p.wallet, gd.sport));
   const vaultOnSide = mlWallets.filter((w) => (w.sizeRatio || 0) >= 1.5).length;
 
+  // Real per-side skill: mean graded win rate of the proven wallets on each
+  // side, from stored profiles (same source the whitelist gates use).
+  const sideWr = (list) => {
+    const vals = [...new Set(list.map((p) => String(p.wallet).slice(-6)))]
+      .map((short) => {
+        const rec = getWalletProfile(short)?.bySport?.[gd.sport];
+        if (Number.isFinite(rec?.picks?.wr) && (rec.picks.n || 0) >= 2) return rec.picks.wr;
+        if (Number.isFinite(rec?.positions?.wr) && (rec.positions.n || 0) >= 2) return rec.positions.wr;
+        return null;
+      })
+      .filter(Number.isFinite);
+    return vals.length ? Math.round(vals.reduce((s, v) => s + v, 0) / vals.length) : null;
+  };
+  const awaySideWr = sideWr(awaySharps);
+  const homeSideWr = sideWr(homeSharps);
+
   const sharpAwayPct = (() => {
     const tot = awayInvested + homeInvested;
     if (tot <= 0) return 50;
@@ -8026,12 +8042,14 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
         sharps: new Set(awaySharps.map((p) => p.wallet)).size,
         avg: awayWallets ? awayInvested / Math.max(1, awayWallets) : 0,
         pnl: awayLifetimePnl,
+        wr: awaySideWr,
       },
       home: {
         invested: homeInvested,
         sharps: new Set(homeSharps.map((p) => p.wallet)).size,
         avg: homeWallets ? homeInvested / Math.max(1, homeWallets) : 0,
         pnl: homeLifetimePnl,
+        wr: homeSideWr,
       },
     },
     flow: { sharp: flowSharp, tickets: flowPublic, money: flowMoney },
