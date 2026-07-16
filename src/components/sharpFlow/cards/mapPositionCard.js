@@ -73,29 +73,16 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
         : positions?.n ? `${positions.wins || 0}-${positions.losses || 0}`
         : (w.record || '—');
 
-      // "vs usual" baseline — THIS SPORT first. Preferring the feed's
-      // precomputed sizeRatio (invested / cross-sport avgSportBet) made
-      // SOC/NBA whales look like 0.2× on a $5.5K MLB ticket when their
-      // real MLB usual was ~$12K (~0.5×). Priority:
-      //   1) profile bySport[sport] avg (graded ledger)
-      //   2) caller sportAvgBet (sports_sharps.perSport[sport].avgBet)
-      //   3) cross-sport avgSportBet / sizeSignal median (last resort)
-      const profileSportAvg = (positions?.n || 0) > 0 && Number.isFinite(positions?.invested)
-        ? positions.invested / positions.n
-        : null;
-      const feedSportAvg = Number.isFinite(w.sportAvgBet) && w.sportAvgBet > 0 ? w.sportAvgBet : null;
+      // "vs usual" MUST match cron / HC: invested / cross-sport avgSportBet
+      // (sports_sharps.avgSportBet stamped on the position). Do not use
+      // perSport[sport] here — Path A HC and v8_sizeRatio use the same
+      // cross-sport denominator.
       const feedCrossAvg = Number.isFinite(w.avgSportBet) && w.avgSportBet > 0 ? w.avgSportBet : null;
       const medianBet = profile?.sizeSignal?.medianInvested;
-      const usualBet = (Number.isFinite(profileSportAvg) && profileSportAvg > 0)
-        ? profileSportAvg
-        : (feedSportAvg
-          || feedCrossAvg
-          || (Number.isFinite(medianBet) && medianBet > 0 ? medianBet : null));
-      // Always recompute from usual when we have it — never trust a feed
-      // sizeRatio that may have used the cross-sport denominator.
-      const sizeRatio = (usualBet != null && (w.invested || 0) > 0)
-        ? +(w.invested / usualBet).toFixed(2)
-        : (Number.isFinite(w.sizeRatio) ? w.sizeRatio : null);
+      const usualBet = feedCrossAvg
+        || (Number.isFinite(medianBet) && medianBet > 0 ? medianBet : null);
+      const sizeRatio = Number.isFinite(w.sizeRatio) ? w.sizeRatio
+        : (usualBet != null && (w.invested || 0) > 0) ? +(w.invested / usualBet).toFixed(2) : null;
       // Causal %+CLV ("beats the close"): profile.clvSkill from exportWalletProfiles
       // (same definition as the tape/netCLV cron). Never invent a default %.
       const profileClv = profile?.clvSkill?.pctPos;
