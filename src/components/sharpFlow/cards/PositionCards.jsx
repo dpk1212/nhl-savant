@@ -601,6 +601,229 @@ function ConvictionRow({ w, accent, maxRatio, last }) {
   );
 }
 
+// ── WALLET MAP — quadrant bubble map of every sharp on the game ──
+// X = beats the close (causal %+CLV) · Y = ROI · r = × usual (conviction).
+// Only wallets with BOTH a real clv and a real ROI are plotted — no defaults.
+const MAP_QUAD = {
+  elite: { title: 'ELITE', blurb: 'Beats the close and prints. The wallets we follow hard.' },
+  lucky: { title: 'RESULTS ONLY', blurb: 'Winning without a price edge — results can be fragile.' },
+  sharp: { title: 'PRICE EDGE', blurb: 'Beats the close but results are cold. Variance, or a filter.' },
+  noise: { title: 'NOISE', blurb: 'Neither price skill nor results. We track, we don\u2019t follow.' },
+};
+
+function WalletMapPanel({ f, accent, pts }) {
+  const oppColor = '#8ba7d6';
+  const playSide = f.side === 'home' ? f.homeShort : f.awayShort;
+  const oppSide = f.side === 'home' ? f.awayShort : f.homeShort;
+
+  const defaultSel = (() => {
+    const ours = pts.filter((p) => p.side === f.side);
+    const pool = ours.length ? ours : pts;
+    return [...pool].sort((a, b) => (b.sizeRatio || 0) - (a.sizeRatio || 0))[0]?.short || null;
+  })();
+  const [sel, setSel] = useState(defaultSel);
+  const selected = pts.find((p) => p.short === sel) || pts[0];
+
+  const W = 560;
+  const H = 340;
+  const pad = { t: 24, r: 20, b: 36, l: 44 };
+  const iw = W - pad.l - pad.r;
+  const ih = H - pad.t - pad.b;
+
+  const roiOf = (p) => (Number.isFinite(p.roi) ? p.roi : p.dollarRoi);
+  const clvs = pts.map((p) => p.priorClvPct);
+  const rois = pts.map(roiOf);
+  const xMin = Math.min(40, Math.floor(Math.min(...clvs) / 5) * 5 - 5);
+  const xMax = Math.max(70, Math.ceil(Math.max(...clvs) / 5) * 5 + 5);
+  const yMin = Math.min(-10, Math.floor(Math.min(...rois) / 10) * 10 - 5);
+  const yMax = Math.max(15, Math.ceil(Math.max(...rois) / 10) * 10 + 5);
+  const X_BREAK = 55;
+  const Y_BREAK = 0;
+
+  const clampV = (n, a, b) => Math.max(a, Math.min(b, n));
+  const xS = (v) => pad.l + ((clampV(v, xMin, xMax) - xMin) / (xMax - xMin)) * iw;
+  const yS = (v) => pad.t + (1 - (clampV(v, yMin, yMax) - yMin) / (yMax - yMin)) * ih;
+  const xB = xS(X_BREAK);
+  const yB = yS(Y_BREAK);
+
+  const ratios = pts.map((p) => (Number.isFinite(p.sizeRatio) ? p.sizeRatio : 1));
+  const rMin = Math.min(...ratios);
+  const rMax = Math.max(...ratios);
+  const rFor = (p) => {
+    const raw = Number.isFinite(p.sizeRatio) ? p.sizeRatio : 1;
+    const t = rMax === rMin ? 0.5 : (raw - rMin) / (rMax - rMin);
+    return 7 + t * 15;
+  };
+  const jitter = (id, axis) => {
+    let h = 0;
+    for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
+    return ((((h >> (axis === 'x' ? 0 : 8)) & 255) / 255) - 0.5) * 9;
+  };
+
+  const quadOf = (p) => {
+    const hiX = p.priorClvPct >= X_BREAK;
+    const hiY = roiOf(p) >= Y_BREAK;
+    if (hiX && hiY) return 'elite';
+    if (!hiX && hiY) return 'lucky';
+    if (hiX && !hiY) return 'sharp';
+    return 'noise';
+  };
+
+  const gid = `wmap-${f.id}`.replace(/[^a-zA-Z0-9-]/g, '');
+  const oursCount = pts.filter((p) => p.side === f.side).length;
+  const oppCount = pts.length - oursCount;
+
+  return (
+    <div>
+      <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block' }}>
+        <defs>
+          <radialGradient id={gid} cx="80%" cy="0%" r="90%">
+            <stop offset="0%" stopColor={`${accent}1a`} />
+            <stop offset="100%" stopColor={`${accent}05`} />
+          </radialGradient>
+        </defs>
+        <rect x={xB} y={pad.t} width={Math.max(0, pad.l + iw - xB)} height={Math.max(0, yB - pad.t)} fill={`url(#${gid})`} />
+        {[0.25, 0.5, 0.75].map((t) => (
+          <g key={t}>
+            <line x1={pad.l + iw * t} y1={pad.t} x2={pad.l + iw * t} y2={pad.t + ih} stroke={C.hairSoft} strokeWidth={1} />
+            <line x1={pad.l} y1={pad.t + ih * t} x2={pad.l + iw} y2={pad.t + ih * t} stroke={C.hairSoft} strokeWidth={1} />
+          </g>
+        ))}
+        <line x1={xB} y1={pad.t} x2={xB} y2={pad.t + ih} stroke="rgba(255,255,255,0.14)" strokeWidth={1} strokeDasharray="3 6" />
+        <line x1={pad.l} y1={yB} x2={pad.l + iw} y2={yB} stroke="rgba(255,255,255,0.14)" strokeWidth={1} strokeDasharray="3 6" />
+        <line x1={pad.l} y1={pad.t + ih} x2={pad.l + iw} y2={pad.t + ih} stroke={C.hair} strokeWidth={1} />
+        <line x1={pad.l} y1={pad.t} x2={pad.l} y2={pad.t + ih} stroke={C.hair} strokeWidth={1} />
+
+        <text x={pad.l + iw / 2} y={H - 7} textAnchor="middle" fill={C.textMuted} fontSize={9.5} fontWeight={800} letterSpacing="0.14em">
+          BEATS THE CLOSE →
+        </text>
+        <text
+          x={11} y={pad.t + ih / 2} textAnchor="middle" fill={C.textMuted} fontSize={9.5} fontWeight={800}
+          letterSpacing="0.14em" transform={`rotate(-90 11 ${pad.t + ih / 2})`}
+        >
+          ROI →
+        </text>
+        <text x={pad.l} y={pad.t + ih + 14} textAnchor="start" fill={C.textFaint} fontSize={9} fontFamily={MONO}>{xMin}%</text>
+        <text x={xB} y={pad.t + ih + 14} textAnchor="middle" fill={C.textSec} fontSize={9} fontFamily={MONO}>{X_BREAK}%</text>
+        <text x={pad.l + iw} y={pad.t + ih + 14} textAnchor="end" fill={C.textFaint} fontSize={9} fontFamily={MONO}>{xMax}%</text>
+        <text x={pad.l - 7} y={pad.t + 4} textAnchor="end" fill={C.textFaint} fontSize={9} fontFamily={MONO}>+{yMax}%</text>
+        <text x={pad.l - 7} y={yB + 3} textAnchor="end" fill={C.textSec} fontSize={9} fontFamily={MONO}>0%</text>
+        <text x={pad.l - 7} y={pad.t + ih} textAnchor="end" fill={C.textFaint} fontSize={9} fontFamily={MONO}>{yMin}%</text>
+
+        {[
+          { key: 'elite', x: xB + (pad.l + iw - xB) / 2, y: pad.t + 13, gold: true },
+          { key: 'lucky', x: pad.l + (xB - pad.l) / 2, y: pad.t + 13 },
+          { key: 'sharp', x: xB + (pad.l + iw - xB) / 2, y: pad.t + ih - 7 },
+          { key: 'noise', x: pad.l + (xB - pad.l) / 2, y: pad.t + ih - 7 },
+        ].map((q) => (
+          <text
+            key={q.key} x={q.x} y={q.y} textAnchor="middle"
+            fill={q.gold ? `${accent}61` : 'rgba(255,255,255,0.12)'}
+            fontSize={8.5} fontWeight={800} letterSpacing="0.16em"
+          >
+            {MAP_QUAD[q.key].title}
+          </text>
+        ))}
+
+        {[...pts].sort((a, b) => (a.side === f.side) - (b.side === f.side)).map((p) => {
+          const cx = xS(p.priorClvPct) + jitter(p.short, 'x');
+          const cy = yS(roiOf(p)) + jitter(p.short, 'y');
+          const r = rFor(p);
+          const ours = p.side === f.side;
+          const isSel = p.short === sel;
+          return (
+            <g key={p.short} onClick={() => setSel(p.short)} style={{ cursor: 'pointer' }}>
+              {isSel && <circle cx={cx} cy={cy} r={r + 4} fill="none" stroke={B.goldHi} strokeWidth={1} opacity={0.85} />}
+              <circle
+                cx={cx} cy={cy} r={r}
+                fill={ours ? `${accent}4d` : 'rgba(139,167,214,0.16)'}
+                stroke={ours ? accent : 'rgba(139,167,214,0.75)'}
+                strokeWidth={p.proven ? 1.4 : 1}
+                strokeDasharray={p.proven ? undefined : '3 2.5'}
+                style={{ filter: ours ? `drop-shadow(0 0 8px ${accent}73)` : 'none' }}
+              />
+              <text
+                x={cx} y={cy + 2.5} textAnchor="middle"
+                fill={ours ? '#f7ecc9' : '#c6d4ea'}
+                fontSize={r > 13 ? 8 : 6.5} fontWeight={800} fontFamily={MONO}
+              >
+                {p.short.slice(0, 4)}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+
+      <div style={{
+        display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center',
+        padding: '6px 0 10px', fontSize: '0.58rem', color: C.textMuted,
+      }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: accent, boxShadow: `0 0 6px ${accent}` }} />
+          <span style={{ color: accent, fontWeight: 800 }}>{playSide}</span>
+          <span style={{ fontFeatureSettings: "'tnum'" }}>{oursCount}</span>
+        </span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: oppColor }} />
+          <span style={{ color: oppColor, fontWeight: 800 }}>{oppSide}</span>
+          <span style={{ fontFeatureSettings: "'tnum'" }}>{oppCount}</span>
+        </span>
+        <span>solid = proven · dashed = tracking · size = conviction</span>
+      </div>
+
+      {selected && (
+        <div style={{ borderTop: `1px solid ${C.hairSoft}`, paddingTop: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <span style={{
+              width: 7, height: 7, borderRadius: '50%',
+              background: selected.side === f.side ? accent : oppColor,
+            }} />
+            <span style={{ fontFamily: MONO, fontSize: '0.8rem', fontWeight: 800 }}>…{selected.short}</span>
+            <span style={{
+              fontSize: '0.5rem', fontWeight: 800, letterSpacing: '0.08em',
+              color: selected.proven ? B.profit : C.textMuted,
+            }}>
+              {selected.proven ? 'PROVEN' : 'TRACKING'}
+            </span>
+            <span style={{ flex: 1 }} />
+            <span style={{
+              fontSize: '0.52rem', fontWeight: 900, letterSpacing: '0.08em',
+              padding: '2px 8px', borderRadius: 6,
+              color: quadOf(selected) === 'elite' ? '#06100a' : C.textSec,
+              background: quadOf(selected) === 'elite'
+                ? `linear-gradient(180deg, ${B.goldHi} 0%, ${accent} 100%)`
+                : 'rgba(255,255,255,0.06)',
+            }}>
+              {MAP_QUAD[quadOf(selected)].title}
+            </span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, fontFeatureSettings: "'tnum'" }}>
+            {[
+              { label: 'BEATS CLOSE', val: `${selected.priorClvPct}%`, hot: selected.priorClvPct >= X_BREAK },
+              { label: 'ROI', val: `${roiOf(selected) >= 0 ? '+' : ''}${roiOf(selected)}%`, hot: roiOf(selected) >= 0 },
+              ...(Number.isFinite(selected.sizeRatio)
+                ? [{ label: '× USUAL', val: `${fmtRatio(selected.sizeRatio)}×`, hot: selected.sizeRatio >= 1.5 }]
+                : []),
+              { label: 'THIS TICKET', val: fmtMoney(selected.invested) },
+            ].map((s) => (
+              <div key={s.label}>
+                <div style={{ fontSize: '0.44rem', color: C.textFaint, letterSpacing: '0.1em', marginBottom: 3 }}>{s.label}</div>
+                <div style={{
+                  fontSize: '0.85rem', fontWeight: 800, letterSpacing: '-0.02em',
+                  color: s.hot ? accent : C.text,
+                  textShadow: s.hot ? `0 0 16px ${accent}55` : 'none',
+                }}>
+                  {s.val}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** Market rail — one game, three markets. State dot + units per market. */
 function MarketRail({ markets, activeId, onSelect }) {
   const NAMES = { ML: 'Moneyline', SPREAD: 'Run line', TOTAL: 'Total' };
@@ -661,7 +884,15 @@ export function LivePositionCardView({ f, markets, onMarket }) {
   const hasClv = Number.isFinite(f.netClv);
   const hasTape = Number.isFinite(f.tapeScore);
   const riskAnim = useCountUp(f.units, true, 1000);
-  const [tab, setTab] = useState('flow');
+  // Quadrant map points: every sharp on the game (both sides when the
+  // adapter provides them) that has a REAL beats-close % and ROI. No
+  // invented coordinates — wallets missing either stat stay off the map.
+  const mapPts = (Array.isArray(f.mapWallets) && f.mapWallets.length
+    ? f.mapWallets
+    : f.wallets.map((w) => ({ ...w, side: w.side || f.side })))
+    .filter((w) => Number.isFinite(w.priorClvPct) && (Number.isFinite(w.roi) || Number.isFinite(w.dollarRoi)));
+  const hasMap = mapPts.length >= 2;
+  const [tab, setTab] = useState(hasMap ? 'map' : 'flow');
   // Real Pinnacle odds series only — no fabricated chart shapes.
   const pinSeries = Array.isArray(f.pinSeries) && f.pinSeries.length >= 2 ? f.pinSeries : null;
   const moveColor = f.pinnacleOpposes ? B.loss : B.profit;
@@ -1108,6 +1339,7 @@ export function LivePositionCardView({ f, markets, onMarket }) {
         <div style={{ padding: '8px 18px 18px' }}>
           <div style={{ display: 'flex', marginBottom: 12 }}>
             {[
+              ...(hasMap ? [{ id: 'map', label: 'Wallet map' }] : []),
               { id: 'flow', label: 'Money flow' },
               { id: 'history', label: 'Line history' },
               { id: 'wallets', label: 'Wallets' },
@@ -1130,6 +1362,10 @@ export function LivePositionCardView({ f, markets, onMarket }) {
           </div>
 
           <div className="pos-reveal" key={tab}>
+            {tab === 'map' && hasMap && (
+              <WalletMapPanel f={f} accent={accent} pts={mapPts} />
+            )}
+
             {tab === 'history' && (
               <div>
                 {pinSeries ? (

@@ -46,6 +46,8 @@ const SplashScreen = lazy(() => import('./components/SplashScreen'));
 const LockedPickCardLab = lazy(() => import('./components/preview/LockedPickCardLab'));
 // Design sandbox for Live Position card redesign — #/position-lab (isolated; no SharpFlow changes)
 const LivePositionCardLab = lazy(() => import('./components/preview/LivePositionCardLab'));
+// Design sandbox for sharp wallet quadrant map — #/sharp-map-lab
+const SharpMapLab = lazy(() => import('./components/preview/SharpMapLab'));
 
 function App() {
   // ALL HOOKS FIRST - Called on every render
@@ -372,6 +374,7 @@ function AppContent({ dataProcessor, oddsData, startingGoalies, goalieData, stat
               <Route path="/disclaimer" element={<Disclaimer />} />
               <Route path="/card-lab" element={<Suspense fallback={<LoadingSpinner />}><LockedPickCardLab /></Suspense>} />
               <Route path="/position-lab" element={<Suspense fallback={<LoadingSpinner />}><LivePositionCardLab /></Suspense>} />
+              <Route path="/sharp-map-lab" element={<Suspense fallback={<LoadingSpinner />}><SharpMapLab /></Suspense>} />
           </Routes>
         </main>
         

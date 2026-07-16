@@ -7981,6 +7981,26 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     }));
   const mlWallets = enrichWallets(mlWalletsRaw, gd.sport, getWalletProfile, isSportWinner, whitelistRecordForDisplay);
 
+  // Wallet-map input: BOTH sides' sharps, each tagged with its side, run
+  // through the same enrichment (real clv/roi/sizeRatio from profiles).
+  const mlMapWallets = (() => {
+    const rawFor = (side) => (gd.positions || [])
+      .filter((p) => p.side === side)
+      .map((p) => ({
+        wallet: p.wallet,
+        invested: p.invested || 0,
+        pnl: p.totalPnl || p.pnl || 0,
+        sizeRatio: Number.isFinite(p.sizeRatio) ? p.sizeRatio
+          : (Number.isFinite(p.avgSportBet) && p.avgSportBet > 0 && (p.invested || 0) > 0)
+            ? p.invested / p.avgSportBet
+            : undefined,
+        avgSportBet: p.avgSportBet,
+      }));
+    const tag = (list, side) => enrichWallets(list, gd.sport, getWalletProfile, isSportWinner, whitelistRecordForDisplay)
+      .map((w) => ({ ...w, side }));
+    return [...tag(rawFor('away'), 'away'), ...tag(rawFor('home'), 'home')];
+  })();
+
   const awaySharps = (gd.positions || []).filter((p) => p.side === 'away' && isSportWinner(p.wallet, gd.sport));
   const homeSharps = (gd.positions || []).filter((p) => p.side === 'home' && isSportWinner(p.wallet, gd.sport));
   const vaultOnSide = mlWallets.filter((w) => (w.sizeRatio || 0) >= 1.5).length;
@@ -8117,6 +8137,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     },
     books: booksRow.length ? booksRow : [{ name: 'Pinnacle', odds: consensusOdds, sharp: true }],
     wallets: mlWallets,
+    mapWallets: mlMapWallets,
     pinnacleOpposes: pinnMoved && consensusSide && pinnMoved !== consensusSide && pinnMoved !== 'none',
     pickLabel: consensusSide === 'draw' ? 'Draw ML' : `${consensusShort} ML`,
     pathBase: AGS_V12_STAKE_TIER_META[mlCronStakeTier || displayTier]?.units,

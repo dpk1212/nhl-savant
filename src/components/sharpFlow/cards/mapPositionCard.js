@@ -94,6 +94,7 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
       const proven = isSportWinner ? isSportWinner(short, sport) : true;
       return {
         short,
+        proven,
         badges: proven ? ['SHARP', `${sport} WINNER`] : ['SHARP'],
         whitelist: sportRec?.whitelistTier || (proven ? 'CONFIRMED' : null),
         qualify: sizeRatio >= 0.75 ? 'VAULT' : 'SHADOW',
@@ -285,6 +286,7 @@ export function mapLiveGameToCardFixture({
   setupHitRate,
   updatedLabel,
   pinSeries,
+  mapWallets, // both-sides enriched wallets (each tagged side:'away'|'home') for the quadrant map
 }) {
   const isTotal = marketType === 'TOTAL';
   const awayShort = isTotal ? 'Under' : shortTeam(gd.away);
@@ -351,6 +353,7 @@ export function mapLiveGameToCardFixture({
       ? books.filter((b) => b && Number.isFinite(b.odds))
       : (Number.isFinite(fair) ? [{ name: 'Pinnacle', odds: fair, sharp: true }] : []),
     wallets: wallets || [],
+    mapWallets: Array.isArray(mapWallets) && mapWallets.length ? mapWallets : null,
     combinedWalletPnl: (wallets || []).reduce((acc, w) => acc + (w.pnl || 0), 0),
     gameTime: isLive ? 'LIVE' : (gameTimeLabel || ''),
     isLive: !!isLive,
