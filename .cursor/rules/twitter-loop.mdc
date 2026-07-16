@@ -1,0 +1,107 @@
+---
+description: Twitter loop — run whenever user asks to tweet, draft X/Twitter, run the twitter loop, or work in twitter_drafts / TWITTER.md / twitter_agents
+globs: TWITTER.md,twitter_drafts/**/*,twitter_agents/**/*,**/COPY_PASTE.md
+alwaysApply: false
+---
+
+# Twitter Loop (mandatory) — closed loop + 4-agent org
+
+Read and follow `TWITTER.md` end-to-end every run. Never auto-publish.
+Org map: `twitter_agents/README.md`.
+
+## Closed-loop pipeline (non-negotiable order)
+
+```
+Pulse → Learn → Coach → Researcher(Ideate queue + angle_candidates)
+  → Strategist(pick) → Editor → BrandGate → Save
+```
+
+| Step | Owner | Rule / script | Output |
+|------|-------|---------------|--------|
+| −2 | Pulse | `scripts/growthPulse.mjs --save` | `twitter_drafts/growth_pulse.json` |
+| −1 | Learn | `scripts/twitterLearn.mjs` (auto after pulse `--save`) | `SHARED/learning_ledger.json` + `learn_brief_latest.md` |
+| 0 | **Coach** | `.cursor/rules/twitter-coach.mdc` | COACH BRIEF (`hook_gap` + write-better) |
+| 1 | **Researcher** | `.cursor/rules/twitter-researcher.mdc` | **idea_queue (8–15)** + **`angle_candidates` (3–5)** |
+| 2 | **Strategist** | `.cursor/rules/twitter-strategist.mdc` | **`chosen_angle`** + strategyPass |
+| 3 | **Editor** | `.cursor/rules/twitter-editor.mdc` | Coherent hook→body→close + brand gate |
+
+**Org product:** decide *what we're trying to do*, *what's viral/engaging*,
+*what to write about*, then craft a hard-to-copy tweet where **hook and body
+keep one promise**. Spec: `twitter_agents/researcher/knowledge/angle_architecture.md`
++ `ALGO_PSYCH_PLAYBOOK.md`. Learn weights bias Ideate.
+
+Flow: Analyze → Learn → Ideate → job → topic → viral_why → hook_promise →
+tension/proof → engage close → Brand gate → Save.
+Dale spine/angle = **override** when he dumps one — not the default.
+Missing learn brief / empty idea_queue / missing `angle_candidates` /
+`chosen_angle` → FAIL (unless Dale override); do not proceed.
+
+Launch each agent as a **Task subagent** with **`model: grok-4.5-fast-xhigh`**
+(Grok — Dale 2026-07-12). Do **not** use Claude/GPT/Composer for Coach /
+Researcher / Strategist / Editor unless Dale explicitly overrides for that run.
+Drafting agent may NOT self-certify passes.
+FAIL → fix → re-run that agent (max 2). Do not save or present FAIL copy.
+
+**Interviews first:** if any agent's `INTERVIEW.md` is not COMPLETE, run that
+interview before using them in the loop
+(Coach → Researcher → Strategist → Editor).
+
+## HARD PROCESS LAW (2026-07-10 — stop hollow shipping)
+
+**Root fail we just hit:** parent agent skipped real Editor craft, filled
+Rule 7/8 metadata to satisfy the saver, rubber-stamped `editorPass: 8.7`,
+and shipped a ✅/❌ scoreboard with a stock “fade or ride” close.
+
+1. **Parent does NOT invent hero `text`.** Final copy comes from the
+   **Editor Task** — **except** when Dale dumps a spine/hook in chat
+   (`daleAuthoredSpine`): then shape Dale’s words + receipts; never overwrite.
+2. **No self-certify.** `strategyPass` / `editorPass` only after that
+   agent’s Task returns PASS. Parent inventing those flags = fraud.
+3. **Mute-receipts test before save:** delete every number/$/✅ from the
+   hero — if the remaining spine wouldn’t stop a stranger, FAIL and rewrite.
+4. **Recap ban:** a naked W/L checklist is never a hero. Full morning
+   greens/reds belong under a real scroll-stop (Dale hook / scene) — usually SR.
+5. **Gold standard to beat:** Tigers receipt hero
+   (`twitter_drafts/2026-07-10_pm_tigers_receipts`) — confession line 1 +
+   eye-popping $ / % / load-up + specific stakes close. New heroes must
+   clear that bar on heat, not just field completeness.
+6. **Coach runs after Learn.** No Researcher/Strategist/Editor until
+   `learn_brief_latest.md` exists (or Dale override) **and** Coach Brief
+   exists for this run. Editor must obey `write_better_now` + `kill_echoes`
+   — unless Dale spine overrides a conflicting agent confession template.
+7. **Dale spine law:** If Dale provides a hook/angle, that is the authorship.
+   Agents find angles, recognize hooks, craft around it — they do not invent
+   a competing feltMoment.
+8. **Saver will hard-fail** naked scoreboard heroes, thin spines, stock
+   fade/ride on ledgers, record-furniture line 1s, **and Brand Brain bans**
+   (tipster-secret, lame “board”, promo/$ in hero, MAX-on-RANK, vibe-check,
+   site link in hero). Greens/reds Dale asked for go in self-reply under his hook.
+9. **Ideate before craft:** Researcher fills `idea_queue.json` (8–15) before
+   expanding 3–5 `angle_candidates`. Strategist picks from queue. Do not jump
+   straight to Editor on one invented spine unless Dale override.
+
+## Rule 7 — dual job + context
+
+Every **hero** embeds BOTH jobs in the copy:
+1. **Engage** — Arsenal lever + answerable close (stranger must take a side)
+2. **Convert** — plant product pain in hero; CTA + link only in self-reply
+
+Context = WHY sized (sharps/HC/ROI/avg/sized-WR/path/AGSU). UI $ only. Human, not salesy.
+
+## Rule 8 — authorship that STOPS THE SCROLL
+
+Correct ≠ alive. Checklist / tipster-shop copy = FAIL.
+
+**Draft order:** feltMoment → cold spine → earn receipts → forced take (stakes > curiosity).
+
+**Line 1** interrupts feed trance in &lt;1s. Not `Locked. Team -1.5.` Furniture that works under any sportsbook logo = kill.
+
+**Length (heroes):** default **220–280**. Punch **71–100** only for one-claim posts. **Valley 101–219 banned** without `lengthException`.
+**Emojis:** structural craft, not ban — receipt/pin heroes **2–4** markers (📊📈✅); punch **0–1**; kill 🔥💰👀 spam / emoji walls. Zero emoji on a dual number-block pin = VISUAL fail.
+
+Required hero fields: `jobEngage`, `jobConvert`, `whyContext`, `feltMoment`, `spine`, `scrollStop`.
+
+## Legacy
+
+`twitter-conversion-expert.mdc` and `twitter-brand-editor.mdc` are **retired** —
+duties moved to Strategist and Editor. Do not launch them.

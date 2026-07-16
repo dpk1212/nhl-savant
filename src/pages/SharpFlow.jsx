@@ -6962,7 +6962,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   // which produces the "WEAK on lock card vs 5★ LOCK on live card" bug
   // (Cavs/Pistons total, 2026-05-17). Cron-stamped values are derived from
   // the live Firestore calibration that the grader and bankroll math use.
-  mlCronTier = null, mlCronUnits = null, mlCronStakeTier = null,
+  mlCronTier = null, mlCronUnits = null, mlCronStakeTier = null, mlCronStamps = null,
   spreadCronTier = null, spreadCronUnits = null, spreadCronStakeTier = null,
   totalCronTier = null, totalCronUnits = null, totalCronStakeTier = null,
 }) {
@@ -8001,7 +8001,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     gd,
     marketType: 'ML',
     displayState: displayState === 'PREVIEW' ? 'MONITORING' : displayState,
-    stakePath: displayTier || mlCronStakeTier || 'MONITORING',
+    stakePath: mlCronStakeTier || displayTier || 'MONITORING',
     units: Number.isFinite(displayUnits) ? displayUnits : 0,
     odds: bestRetail ?? betOdds ?? consensusOdds,
     book: bestBook || 'Pinnacle',
@@ -8012,10 +8012,10 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     side: consensusSide === 'draw' ? 'home' : consensusSide,
     gameTimeLabel: gameTimeFormatted ? `${gameTimeFormatted} ET` : gameTimeLabel,
     isLive: isGameLive,
-    tapeAction: 'keep',
-    tapeScore: 1.2,
-    edge: 0,
-    netClv: 0,
+    tapeAction: mlCronStamps?.tapeAction || 'keep',
+    tapeScore: mlCronStamps?.tapeScore ?? null,
+    edge: mlCronStamps?.edge ?? null,
+    netClv: mlCronStamps?.netClv ?? null,
     hcMargin: Number.isFinite(hcMargin) ? hcMargin : 0,
     confirmedOnSide: sportWinnerForCount,
     vaultOnSide,
@@ -8047,7 +8047,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     wallets: mlWallets,
     pinnacleOpposes: pinnMoved && consensusSide && pinnMoved !== consensusSide && pinnMoved !== 'none',
     pickLabel: consensusSide === 'draw' ? 'Draw ML' : `${consensusShort} ML`,
-    pathBase: AGS_V12_STAKE_TIER_META[displayTier || mlCronStakeTier]?.units,
+    pathBase: AGS_V12_STAKE_TIER_META[mlCronStakeTier || displayTier]?.units,
   });
 
   // Spread / total market siblings for the rail (when data exists)
@@ -12121,6 +12121,13 @@ export default function SharpFlow() {
                         const gdMlCronTier = pickV12Tier(gdMlCronSide);
                         const gdMlCronUnits = pickV12Units(gdMlCronSide);
                         const gdMlCronStakeTier = pickHcStakeTier(gdMlCronSide);
+                        // Real cron stamps for the card's skill rows — never fake these.
+                        const gdMlCronStamps = {
+                          tapeAction: gdMlCronSide?.v8_tapeAction || null,
+                          tapeScore: Number.isFinite(gdMlCronSide?.v8_tapeScore) ? gdMlCronSide.v8_tapeScore : null,
+                          edge: Number.isFinite(gdMlCronSide?.v8_winnerAlignEdge) ? gdMlCronSide.v8_winnerAlignEdge : null,
+                          netClv: Number.isFinite(gdMlCronSide?.v8_netMeanPrior) ? gdMlCronSide.v8_netMeanPrior : null,
+                        };
                         const gdSpreadCronSide = gdSpreadSideEntry?.[1];
                         const gdSpreadCronTier = pickV12Tier(gdSpreadCronSide);
                         const gdSpreadCronUnits = pickV12Units(gdSpreadCronSide);
@@ -12129,7 +12136,7 @@ export default function SharpFlow() {
                         const gdTotalCronTier = pickV12Tier(gdTotalCronSide);
                         const gdTotalCronUnits = pickV12Units(gdTotalCronSide);
                         const gdTotalCronStakeTier = pickHcStakeTier(gdTotalCronSide);
-                        return <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} onHealthSynced={onHealthSynced} isMyPick={!!userPicks[gd.key]} onToggleMyPick={onToggleMyPick} canPickGames={!!(user && isPremium)} gameFlowMap={gameFlowMap} spreadPositions={spreadPositions} totalPositions={totalPositions} originalLockedSide={gdOriginalSide} originalLockStars={gdLockStars} originalLockWPS={gdLockWPS} originalFlipBeatThreshold={gdFlipBeatThreshold} originalSpreadLockStars={gdSpreadLockStars} originalSpreadLockWPS={gdSpreadLockWPS} originalTotalLockStars={gdTotalLockStars} originalTotalLockWPS={gdTotalLockWPS} v8Norm={v8Norm} walletProfiles={walletProfiles} mlCronTier={gdMlCronTier} mlCronUnits={gdMlCronUnits} mlCronStakeTier={gdMlCronStakeTier} spreadCronTier={gdSpreadCronTier} spreadCronUnits={gdSpreadCronUnits} spreadCronStakeTier={gdSpreadCronStakeTier} totalCronTier={gdTotalCronTier} totalCronUnits={gdTotalCronUnits} totalCronStakeTier={gdTotalCronStakeTier} />;
+                        return <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} onHealthSynced={onHealthSynced} isMyPick={!!userPicks[gd.key]} onToggleMyPick={onToggleMyPick} canPickGames={!!(user && isPremium)} gameFlowMap={gameFlowMap} spreadPositions={spreadPositions} totalPositions={totalPositions} originalLockedSide={gdOriginalSide} originalLockStars={gdLockStars} originalLockWPS={gdLockWPS} originalFlipBeatThreshold={gdFlipBeatThreshold} originalSpreadLockStars={gdSpreadLockStars} originalSpreadLockWPS={gdSpreadLockWPS} originalTotalLockStars={gdTotalLockStars} originalTotalLockWPS={gdTotalLockWPS} v8Norm={v8Norm} walletProfiles={walletProfiles} mlCronTier={gdMlCronTier} mlCronUnits={gdMlCronUnits} mlCronStakeTier={gdMlCronStakeTier} mlCronStamps={gdMlCronStamps} spreadCronTier={gdSpreadCronTier} spreadCronUnits={gdSpreadCronUnits} spreadCronStakeTier={gdSpreadCronStakeTier} totalCronTier={gdTotalCronTier} totalCronUnits={gdTotalCronUnits} totalCronStakeTier={gdTotalCronStakeTier} />;
                       })}
                     </div>
                     {isFreeUser && <SharpFlowPaywall isMobile={isMobile} lockedCount={allPosGames.length > 1 ? allPosGames.length - 1 : 0} pnlData={allTimePnL} />}

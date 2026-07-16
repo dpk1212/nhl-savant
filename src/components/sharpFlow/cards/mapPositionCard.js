@@ -133,13 +133,14 @@ export function mapLockedPickToCardFixture(pick, {
 
   const stakePath = pick.hcStakeTier || pick.lockTier || 'LOCK';
   const tapeAction = normTape(pick.tapeAction || pick.v8_tapeAction);
+  // Only surface tape/edge/CLV when the stamp is actually on the pick — no fake defaults.
   const tapeScore = Number.isFinite(pick.tapeScore) ? pick.tapeScore
     : Number.isFinite(pick.v8_tapeScore) ? pick.v8_tapeScore
-    : tapeAction === 'boost' ? 3.1 : tapeAction === 'mute' ? -0.4 : 1.2;
+    : null;
 
-  const edge = Number.isFinite(pick.winnerAlignEdge) ? pick.winnerAlignEdge : 0;
+  const edge = Number.isFinite(pick.winnerAlignEdge) ? pick.winnerAlignEdge : null;
   const netClv = Number.isFinite(pick.netClv) ? pick.netClv
-    : Number.isFinite(pick.v8_netMeanPrior) ? pick.v8_netMeanPrior : 0;
+    : Number.isFinite(pick.v8_netMeanPrior) ? pick.v8_netMeanPrior : null;
 
   const wallets = enrichWallets(
     pick.backingWallets || [],
@@ -205,7 +206,7 @@ export function mapLockedPickToCardFixture(pick, {
     netClv,
     confirmedOnSide,
     vaultOnSide,
-    setupHitRate: confirmedOnSide >= 2 ? 58 : 50,
+    setupHitRate: null,
     sideInvested: pick.totalInvested || pick.lockTotalInvested || 0,
     wallets,
     combinedWalletPnl: wallets.reduce((s, w) => s + (w.pnl || 0), 0),
@@ -271,9 +272,8 @@ export function mapLiveGameToCardFixture({
   const stake = stakePath || 'MONITORING';
   const base = Number.isFinite(pathBase) ? pathBase : pathBaseUnits(stake);
   const tape = normTape(tapeAction);
-  const score = Number.isFinite(tapeScore)
-    ? tapeScore
-    : tape === 'boost' ? 3.1 : tape === 'mute' ? -0.4 : 1.2;
+  // No fake tape scores: only show the meter when a real stamp exists.
+  const score = Number.isFinite(tapeScore) ? tapeScore : null;
 
   const fair = Number.isFinite(fairOdds) ? fairOdds : odds;
   const fairProb = Math.round((ip(fair) || 0.5) * 100);
@@ -310,11 +310,11 @@ export function mapLiveGameToCardFixture({
     tapeScore: score,
     pathBaseUnits: base,
     hcMargin: Number.isFinite(hcMargin) ? hcMargin : 0,
-    edge: Number.isFinite(edge) ? edge : 0,
-    netClv: Number.isFinite(netClv) ? netClv : 0,
+    edge: Number.isFinite(edge) ? edge : null,
+    netClv: Number.isFinite(netClv) ? netClv : null,
     confirmedOnSide: confirmedOnSide || 0,
     vaultOnSide: vaultOnSide || 0,
-    setupHitRate: Number.isFinite(setupHitRate) ? setupHitRate : 52,
+    setupHitRate: Number.isFinite(setupHitRate) ? setupHitRate : null,
     sideInvested: sideInvested || s[normSide === 'home' ? 'home' : 'away']?.invested || 0,
     pinnacleOpposes: !!pinnacleOpposes,
     sharpMoneyPct: f.sharp?.[normSide === 'home' ? 'home' : 'away'] ?? 50,

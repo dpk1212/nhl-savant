@@ -1,0 +1,663 @@
+{
+  "meta": {
+    "fitFrom": "2026-05-10",
+    "deployFrom": "2026-06-01",
+    "priorAg": 62,
+    "boost": 1.35,
+    "generatedAt": "2026-07-14T20:21:30.205Z",
+    "note": "May-fit EDGE×netCLV thresholds frozen on June+ UI staked book"
+  },
+  "TH": {
+    "edgeMed": 1.25,
+    "netMed": -1.27,
+    "edgeLo": -3.83,
+    "edgeHi": 6.21,
+    "netLo": -5.05,
+    "netHi": 4.05,
+    "netP25": -6.11,
+    "netP75": 7.46,
+    "top2P25": 65.08,
+    "top2P75": 72.03,
+    "mayN": 272,
+    "mayBothN": 97,
+    "mayPnl": -29.5,
+    "tapeP20": -1.22,
+    "tapeP80": 1.94,
+    "tapeMed": 0.37
+  },
+  "coverage": {
+    "juneN": 423,
+    "hasBoth": 220,
+    "pctBoth": 52,
+    "bothHighN": 70,
+    "bothLowN": 22,
+    "bothHigh": {
+      "n": 70,
+      "wr": 62.9,
+      "units": 178.5,
+      "pnl": 45.1,
+      "roi": 25.2
+    },
+    "bothLow": {
+      "n": 22,
+      "wr": 45.5,
+      "units": 54,
+      "pnl": -8,
+      "roi": -14.7
+    },
+    "tapeHigh": {
+      "n": 68,
+      "wr": 64.7,
+      "units": 190,
+      "pnl": 52.1,
+      "roi": 27.4
+    },
+    "tapeLow": {
+      "n": 37,
+      "wr": 45.9,
+      "units": 95.8,
+      "pnl": -7.1,
+      "roi": -7.4
+    }
+  },
+  "june": {
+    "BASELINE": {
+      "n": 423,
+      "wr": 55.1,
+      "units": 1168.5,
+      "pnl": 40.9,
+      "roi": 3.5,
+      "dPnl": 0,
+      "dN": 0
+    },
+    "DROP_BOTH_LOW": {
+      "n": 401,
+      "wr": 55.6,
+      "units": 1114.5,
+      "pnl": 48.9,
+      "roi": 4.4,
+      "dPnl": 8,
+      "dN": -22
+    },
+    "KEEP_BOTH_HIGH": {
+      "n": 70,
+      "wr": 62.9,
+      "units": 178.5,
+      "pnl": 45.1,
+      "roi": 25.2,
+      "dPnl": 4.2,
+      "dN": -353
+    },
+    "BOOST_BOTH_HIGH": {
+      "n": 401,
+      "wr": 55.6,
+      "units": 1157.2,
+      "pnl": 58.4,
+      "roi": 5,
+      "dPnl": 17.5,
+      "dN": -22
+    },
+    "DROP_TAPE_LOW": {
+      "n": 386,
+      "wr": 56,
+      "units": 1072.8,
+      "pnl": 48,
+      "roi": 4.5,
+      "dPnl": 7.1,
+      "dN": -37
+    },
+    "BOOST_TAPE_HIGH": {
+      "n": 386,
+      "wr": 56,
+      "units": 1119.5,
+      "pnl": 58.2,
+      "roi": 5.2,
+      "dPnl": 17.3,
+      "dN": -37
+    },
+    "DROP_NET_LOW": {
+      "n": 310,
+      "wr": 57.1,
+      "units": 846,
+      "pnl": 70.6,
+      "roi": 8.3,
+      "dPnl": 29.7,
+      "dN": -113
+    },
+    "BOOST_NET_HIGH": {
+      "n": 310,
+      "wr": 57.1,
+      "units": 885.5,
+      "pnl": 78.9,
+      "roi": 8.9,
+      "dPnl": 38,
+      "dN": -113
+    },
+    "COMBO_JOINT": {
+      "n": 401,
+      "wr": 55.6,
+      "units": 1157.2,
+      "pnl": 58.4,
+      "roi": 5,
+      "dPnl": 17.5,
+      "dN": -22
+    },
+    "DROP_TOP2_LOW": {
+      "n": 239,
+      "wr": 57.3,
+      "units": 683.3,
+      "pnl": 50.2,
+      "roi": 7.3,
+      "dPnl": 9.3,
+      "dN": -184
+    },
+    "DROP_SHARP": {
+      "n": 384,
+      "wr": 56.3,
+      "units": 1055,
+      "pnl": 58.5,
+      "roi": 5.5,
+      "dPnl": 17.6,
+      "dN": -39
+    },
+    "DROP_BOTH_LOW_AND_SHARP": {
+      "n": 366,
+      "wr": 56.6,
+      "units": 1012,
+      "pnl": 60.3,
+      "roi": 6,
+      "dPnl": 19.4,
+      "dN": -57
+    },
+    "COMBO_JOINT_NO_SHARP": {
+      "n": 366,
+      "wr": 56.6,
+      "units": 1049.8,
+      "pnl": 67.7,
+      "roi": 6.4,
+      "dPnl": 26.8,
+      "dN": -57
+    },
+    "ONLY_TAPE_ABOVE_MED": {
+      "n": 328,
+      "wr": 59.5,
+      "units": 922.8,
+      "pnl": 86.9,
+      "roi": 9.4,
+      "dPnl": 46,
+      "dN": -95
+    }
+  },
+  "ranked": [
+    {
+      "name": "ONLY_TAPE_ABOVE_MED",
+      "n": 328,
+      "wr": 59.5,
+      "units": 922.8,
+      "pnl": 86.9,
+      "roi": 9.4,
+      "dPnl": 46,
+      "dN": -95
+    },
+    {
+      "name": "BOOST_NET_HIGH",
+      "n": 310,
+      "wr": 57.1,
+      "units": 885.5,
+      "pnl": 78.9,
+      "roi": 8.9,
+      "dPnl": 38,
+      "dN": -113
+    },
+    {
+      "name": "DROP_NET_LOW",
+      "n": 310,
+      "wr": 57.1,
+      "units": 846,
+      "pnl": 70.6,
+      "roi": 8.3,
+      "dPnl": 29.7,
+      "dN": -113
+    },
+    {
+      "name": "COMBO_JOINT_NO_SHARP",
+      "n": 366,
+      "wr": 56.6,
+      "units": 1049.8,
+      "pnl": 67.7,
+      "roi": 6.4,
+      "dPnl": 26.8,
+      "dN": -57
+    },
+    {
+      "name": "DROP_BOTH_LOW_AND_SHARP",
+      "n": 366,
+      "wr": 56.6,
+      "units": 1012,
+      "pnl": 60.3,
+      "roi": 6,
+      "dPnl": 19.4,
+      "dN": -57
+    },
+    {
+      "name": "DROP_SHARP",
+      "n": 384,
+      "wr": 56.3,
+      "units": 1055,
+      "pnl": 58.5,
+      "roi": 5.5,
+      "dPnl": 17.6,
+      "dN": -39
+    },
+    {
+      "name": "BOOST_BOTH_HIGH",
+      "n": 401,
+      "wr": 55.6,
+      "units": 1157.2,
+      "pnl": 58.4,
+      "roi": 5,
+      "dPnl": 17.5,
+      "dN": -22
+    },
+    {
+      "name": "COMBO_JOINT",
+      "n": 401,
+      "wr": 55.6,
+      "units": 1157.2,
+      "pnl": 58.4,
+      "roi": 5,
+      "dPnl": 17.5,
+      "dN": -22
+    },
+    {
+      "name": "BOOST_TAPE_HIGH",
+      "n": 386,
+      "wr": 56,
+      "units": 1119.5,
+      "pnl": 58.2,
+      "roi": 5.2,
+      "dPnl": 17.3,
+      "dN": -37
+    },
+    {
+      "name": "DROP_TOP2_LOW",
+      "n": 239,
+      "wr": 57.3,
+      "units": 683.3,
+      "pnl": 50.2,
+      "roi": 7.3,
+      "dPnl": 9.3,
+      "dN": -184
+    },
+    {
+      "name": "DROP_BOTH_LOW",
+      "n": 401,
+      "wr": 55.6,
+      "units": 1114.5,
+      "pnl": 48.9,
+      "roi": 4.4,
+      "dPnl": 8,
+      "dN": -22
+    },
+    {
+      "name": "DROP_TAPE_LOW",
+      "n": 386,
+      "wr": 56,
+      "units": 1072.8,
+      "pnl": 48,
+      "roi": 4.5,
+      "dPnl": 7.1,
+      "dN": -37
+    },
+    {
+      "name": "KEEP_BOTH_HIGH",
+      "n": 70,
+      "wr": 62.9,
+      "units": 178.5,
+      "pnl": 45.1,
+      "roi": 25.2,
+      "dPnl": 4.2,
+      "dN": -353
+    },
+    {
+      "name": "BASELINE",
+      "n": 423,
+      "wr": 55.1,
+      "units": 1168.5,
+      "pnl": 40.9,
+      "roi": 3.5,
+      "dPnl": 0,
+      "dN": 0
+    }
+  ],
+  "walkForward": {
+    "weeks": [
+      {
+        "week": "2026-06-01",
+        "priorN": 97,
+        "edgeMed": 1.25,
+        "netMed": -1.27,
+        "n": 103,
+        "BASELINE": {
+          "n": 103,
+          "wr": 56.3,
+          "units": 207,
+          "pnl": 14.7,
+          "roi": 7.1
+        },
+        "DROP_BOTH_LOW": {
+          "n": 100,
+          "wr": 56,
+          "units": 205.5,
+          "pnl": 13.8,
+          "roi": 6.7
+        },
+        "COMBO_JOINT": {
+          "n": 100,
+          "wr": 56,
+          "units": 217.5,
+          "pnl": 11.8,
+          "roi": 5.4
+        },
+        "BOOST_TAPE_HIGH": {
+          "n": 99,
+          "wr": 56.6,
+          "units": 216.6,
+          "pnl": 12.8,
+          "roi": 5.9
+        },
+        "DROP_SHARP": {
+          "n": 103,
+          "wr": 56.3,
+          "units": 207,
+          "pnl": 14.7,
+          "roi": 7.1
+        },
+        "COMBO_JOINT_NO_SHARP": {
+          "n": 100,
+          "wr": 56,
+          "units": 217.5,
+          "pnl": 11.8,
+          "roi": 5.4
+        }
+      },
+      {
+        "week": "2026-06-08",
+        "priorN": 156,
+        "edgeMed": 5.89,
+        "netMed": -1.57,
+        "n": 111,
+        "BASELINE": {
+          "n": 111,
+          "wr": 52.3,
+          "units": 243,
+          "pnl": 5.1,
+          "roi": 2.1
+        },
+        "DROP_BOTH_LOW": {
+          "n": 100,
+          "wr": 54,
+          "units": 228.3,
+          "pnl": 15,
+          "roi": 6.6
+        },
+        "COMBO_JOINT": {
+          "n": 100,
+          "wr": 54,
+          "units": 239.2,
+          "pnl": 17.1,
+          "roi": 7.2
+        },
+        "BOOST_TAPE_HIGH": {
+          "n": 92,
+          "wr": 52.2,
+          "units": 207.4,
+          "pnl": -2.9,
+          "roi": -1.4
+        },
+        "DROP_SHARP": {
+          "n": 111,
+          "wr": 52.3,
+          "units": 243,
+          "pnl": 5.1,
+          "roi": 2.1
+        },
+        "COMBO_JOINT_NO_SHARP": {
+          "n": 100,
+          "wr": 54,
+          "units": 239.2,
+          "pnl": 17.1,
+          "roi": 7.2
+        }
+      },
+      {
+        "week": "2026-06-15",
+        "priorN": 220,
+        "edgeMed": 6.58,
+        "netMed": -1.57,
+        "n": 30,
+        "BASELINE": {
+          "n": 30,
+          "wr": 63.3,
+          "units": 98.5,
+          "pnl": 13.2,
+          "roi": 13.4
+        },
+        "DROP_BOTH_LOW": {
+          "n": 25,
+          "wr": 60,
+          "units": 77.5,
+          "pnl": 5.6,
+          "roi": 7.2
+        },
+        "COMBO_JOINT": {
+          "n": 25,
+          "wr": 60,
+          "units": 80,
+          "pnl": 7,
+          "roi": 8.8
+        },
+        "BOOST_TAPE_HIGH": {
+          "n": 23,
+          "wr": 65.2,
+          "units": 72.5,
+          "pnl": 9.7,
+          "roi": 13.3
+        },
+        "DROP_SHARP": {
+          "n": 30,
+          "wr": 63.3,
+          "units": 98.5,
+          "pnl": 13.2,
+          "roi": 13.4
+        },
+        "COMBO_JOINT_NO_SHARP": {
+          "n": 25,
+          "wr": 60,
+          "units": 80,
+          "pnl": 7,
+          "roi": 8.8
+        }
+      },
+      {
+        "week": "2026-06-22",
+        "priorN": 238,
+        "edgeMed": 6.69,
+        "netMed": -1.82,
+        "n": 48,
+        "BASELINE": {
+          "n": 48,
+          "wr": 52.1,
+          "units": 166,
+          "pnl": -10.2,
+          "roi": -6.1
+        },
+        "DROP_BOTH_LOW": {
+          "n": 45,
+          "wr": 55.6,
+          "units": 156,
+          "pnl": -0.2,
+          "roi": -0.1
+        },
+        "COMBO_JOINT": {
+          "n": 45,
+          "wr": 55.6,
+          "units": 160.2,
+          "pnl": 1.8,
+          "roi": 1.1
+        },
+        "BOOST_TAPE_HIGH": {
+          "n": 43,
+          "wr": 58.1,
+          "units": 154.7,
+          "pnl": 7.3,
+          "roi": 4.7
+        },
+        "DROP_SHARP": {
+          "n": 43,
+          "wr": 53.5,
+          "units": 150.5,
+          "pnl": -7.4,
+          "roi": -4.9
+        },
+        "COMBO_JOINT_NO_SHARP": {
+          "n": 41,
+          "wr": 56.1,
+          "units": 147.6,
+          "pnl": 1.6,
+          "roi": 1.1
+        }
+      },
+      {
+        "week": "2026-06-29",
+        "priorN": 253,
+        "edgeMed": 6.98,
+        "netMed": -1.82,
+        "n": 81,
+        "BASELINE": {
+          "n": 81,
+          "wr": 59.3,
+          "units": 288,
+          "pnl": 27.9,
+          "roi": 9.7
+        },
+        "DROP_BOTH_LOW": {
+          "n": 71,
+          "wr": 64.8,
+          "units": 260.5,
+          "pnl": 41.9,
+          "roi": 16.1
+        },
+        "COMBO_JOINT": {
+          "n": 71,
+          "wr": 64.8,
+          "units": 261.5,
+          "pnl": 42.8,
+          "roi": 16.4
+        },
+        "BOOST_TAPE_HIGH": {
+          "n": 73,
+          "wr": 63,
+          "units": 274,
+          "pnl": 40,
+          "roi": 14.6
+        },
+        "DROP_SHARP": {
+          "n": 64,
+          "wr": 60.9,
+          "units": 240.5,
+          "pnl": 25.6,
+          "roi": 10.7
+        },
+        "COMBO_JOINT_NO_SHARP": {
+          "n": 60,
+          "wr": 63.3,
+          "units": 230.5,
+          "pnl": 28.7,
+          "roi": 12.5
+        }
+      },
+      {
+        "week": "2026-07-06",
+        "priorN": 289,
+        "edgeMed": 6.58,
+        "netMed": -1.74,
+        "n": 50,
+        "BASELINE": {
+          "n": 50,
+          "wr": 50,
+          "units": 166,
+          "pnl": -9.8,
+          "roi": -5.9
+        },
+        "DROP_BOTH_LOW": {
+          "n": 47,
+          "wr": 51.1,
+          "units": 154.5,
+          "pnl": -7.8,
+          "roi": -5.1
+        },
+        "COMBO_JOINT": {
+          "n": 47,
+          "wr": 51.1,
+          "units": 157.6,
+          "pnl": -5.6,
+          "roi": -3.6
+        },
+        "BOOST_TAPE_HIGH": {
+          "n": 49,
+          "wr": 51,
+          "units": 167.6,
+          "pnl": -4.7,
+          "roi": -2.8
+        },
+        "DROP_SHARP": {
+          "n": 33,
+          "wr": 57.6,
+          "units": 115.5,
+          "pnl": 7.3,
+          "roi": 6.3
+        },
+        "COMBO_JOINT_NO_SHARP": {
+          "n": 31,
+          "wr": 58.1,
+          "units": 109.6,
+          "pnl": 9,
+          "roi": 8.2
+        }
+      }
+    ],
+    "totals": {
+      "BASELINE": {
+        "pnl": 40.9,
+        "n": 423,
+        "units": 1168.5
+      },
+      "DROP_BOTH_LOW": {
+        "pnl": 68.3,
+        "n": 388,
+        "units": 1082.3
+      },
+      "COMBO_JOINT": {
+        "pnl": 74.9,
+        "n": 388,
+        "units": 1116
+      },
+      "BOOST_TAPE_HIGH": {
+        "pnl": 62.2,
+        "n": 379,
+        "units": 1092.8
+      },
+      "DROP_SHARP": {
+        "pnl": 58.5,
+        "n": 384,
+        "units": 1055
+      },
+      "COMBO_JOINT_NO_SHARP": {
+        "pnl": 75.2,
+        "n": 357,
+        "units": 1024.4
+      }
+    }
+  }
+}

@@ -1,0 +1,916 @@
+{
+  "meta": {
+    "rule": "CANCEL staked June+ picks with top2Pct ≤ 59",
+    "universe": "UI-like: units>0, AGS tier, graded outcome, June 1+",
+    "n": 430,
+    "generatedAt": "2026-07-14T16:59:40.383Z"
+  },
+  "compare": {
+    "≤59": {
+      "cancel": {
+        "n": 45,
+        "record": "19-26",
+        "wr": 42.2,
+        "units": 135.5,
+        "profit": -18.28,
+        "roi": -13.5,
+        "perDay": 1
+      },
+      "keep": {
+        "n": 385,
+        "record": "214-164-7",
+        "wr": 56.6,
+        "units": 1047,
+        "profit": 63.07,
+        "roi": 6,
+        "perDay": 8.8
+      },
+      "deltaProfit": 18.28,
+      "deltaRoi": 2.2
+    },
+    "<59": {
+      "cancel": {
+        "n": 45,
+        "record": "19-26",
+        "wr": 42.2,
+        "units": 135.5,
+        "profit": -18.28,
+        "roi": -13.5,
+        "perDay": 1
+      },
+      "keep": {
+        "n": 385,
+        "record": "214-164-7",
+        "wr": 56.6,
+        "units": 1047,
+        "profit": 63.07,
+        "roi": 6,
+        "perDay": 8.8
+      },
+      "deltaProfit": 18.28,
+      "deltaRoi": 2.2
+    }
+  },
+  "baseline": {
+    "label": "baseline staked",
+    "n": 430,
+    "record": "233-190-7",
+    "wr": 55.1,
+    "units": 1182.5,
+    "profit": 44.79,
+    "roi": 3.8,
+    "perDay": 9.8
+  },
+  "byPath": {
+    "UNTIERED": {
+      "base": {
+        "n": 219,
+        "record": "116-98-5",
+        "wr": 54.2,
+        "units": 457.5,
+        "profit": 17.43,
+        "roi": 3.8,
+        "perDay": 5
+      },
+      "cancel": {
+        "n": 14,
+        "record": "4-10",
+        "wr": 28.6,
+        "units": 33,
+        "profit": -10.46,
+        "roi": -31.7,
+        "perDay": 0.3
+      },
+      "keep": {
+        "n": 205,
+        "record": "112-88-5",
+        "wr": 56,
+        "units": 424.5,
+        "profit": 27.89,
+        "roi": 6.6,
+        "perDay": 4.7
+      }
+    },
+    "A": {
+      "base": {
+        "n": 132,
+        "record": "77-54-1",
+        "wr": 58.8,
+        "units": 456.5,
+        "profit": 26.98,
+        "roi": 5.9,
+        "perDay": 3
+      },
+      "cancel": {
+        "n": 19,
+        "record": "9-10",
+        "wr": 47.4,
+        "units": 60.5,
+        "profit": -7,
+        "roi": -11.6,
+        "perDay": 0.4
+      },
+      "keep": {
+        "n": 113,
+        "record": "68-44-1",
+        "wr": 60.7,
+        "units": 396,
+        "profit": 33.98,
+        "roi": 8.6,
+        "perDay": 2.6
+      }
+    },
+    "B": {
+      "base": {
+        "n": 39,
+        "record": "23-15-1",
+        "wr": 60.5,
+        "units": 154,
+        "profit": 16.64,
+        "roi": 10.8,
+        "perDay": 0.9
+      },
+      "cancel": {
+        "n": 5,
+        "record": "5-0",
+        "wr": 100,
+        "units": 20,
+        "profit": 15.98,
+        "roi": 79.9,
+        "perDay": 0.1
+      },
+      "keep": {
+        "n": 34,
+        "record": "18-15-1",
+        "wr": 54.5,
+        "units": 134,
+        "profit": 0.66,
+        "roi": 0.5,
+        "perDay": 0.8
+      }
+    },
+    "C": {
+      "base": {
+        "n": 39,
+        "record": "17-22",
+        "wr": 43.6,
+        "units": 113.5,
+        "profit": -15.26,
+        "roi": -13.4,
+        "perDay": 0.9
+      },
+      "cancel": {
+        "n": 7,
+        "record": "1-6",
+        "wr": 14.3,
+        "units": 22,
+        "profit": -16.8,
+        "roi": -76.4,
+        "perDay": 0.2
+      },
+      "keep": {
+        "n": 32,
+        "record": "16-16",
+        "wr": 50,
+        "units": 91.5,
+        "profit": 1.54,
+        "roi": 1.7,
+        "perDay": 0.7
+      }
+    },
+    "D": {
+      "base": {
+        "n": 1,
+        "record": "0-1",
+        "wr": 0,
+        "units": 1,
+        "profit": -1,
+        "roi": -100,
+        "perDay": 0
+      },
+      "cancel": {
+        "n": 0,
+        "record": "0-0",
+        "wr": null,
+        "units": 0,
+        "profit": 0,
+        "roi": null,
+        "perDay": 0
+      },
+      "keep": {
+        "n": 1,
+        "record": "0-1",
+        "wr": 0,
+        "units": 1,
+        "profit": -1,
+        "roi": -100,
+        "perDay": 0
+      }
+    }
+  },
+  "bySport": {
+    "MLB": {
+      "base": {
+        "n": 380,
+        "record": "202-172-6",
+        "wr": 54,
+        "units": 1050,
+        "profit": 10.65,
+        "roi": 1,
+        "perDay": 8.6
+      },
+      "cancel": {
+        "n": 44,
+        "record": "19-25",
+        "wr": 43.2,
+        "units": 131.5,
+        "profit": -14.28,
+        "roi": -10.9,
+        "perDay": 1
+      },
+      "keep": {
+        "n": 336,
+        "record": "183-147-6",
+        "wr": 55.5,
+        "units": 918.5,
+        "profit": 24.93,
+        "roi": 2.7,
+        "perDay": 7.6
+      }
+    },
+    "NBA": {
+      "base": {
+        "n": 10,
+        "record": "3-7",
+        "wr": 30,
+        "units": 8,
+        "profit": 2.33,
+        "roi": 29.1,
+        "perDay": 0.2
+      },
+      "cancel": {
+        "n": 0,
+        "record": "0-0",
+        "wr": null,
+        "units": 0,
+        "profit": 0,
+        "roi": null,
+        "perDay": 0
+      },
+      "keep": {
+        "n": 10,
+        "record": "3-7",
+        "wr": 30,
+        "units": 8,
+        "profit": 2.33,
+        "roi": 29.1,
+        "perDay": 0.2
+      }
+    },
+    "NHL": {
+      "base": {
+        "n": 7,
+        "record": "5-1-1",
+        "wr": 83.3,
+        "units": 17,
+        "profit": 6.3,
+        "roi": 37.1,
+        "perDay": 0.2
+      },
+      "cancel": {
+        "n": 0,
+        "record": "0-0",
+        "wr": null,
+        "units": 0,
+        "profit": 0,
+        "roi": null,
+        "perDay": 0
+      },
+      "keep": {
+        "n": 7,
+        "record": "5-1-1",
+        "wr": 83.3,
+        "units": 17,
+        "profit": 6.3,
+        "roi": 37.1,
+        "perDay": 0.2
+      }
+    },
+    "SOC": {
+      "base": {
+        "n": 33,
+        "record": "23-10",
+        "wr": 69.7,
+        "units": 107.5,
+        "profit": 25.51,
+        "roi": 23.7,
+        "perDay": 0.8
+      },
+      "cancel": {
+        "n": 1,
+        "record": "0-1",
+        "wr": 0,
+        "units": 4,
+        "profit": -4,
+        "roi": -100,
+        "perDay": 0
+      },
+      "keep": {
+        "n": 32,
+        "record": "23-9",
+        "wr": 71.9,
+        "units": 103.5,
+        "profit": 29.51,
+        "roi": 28.5,
+        "perDay": 0.7
+      }
+    }
+  },
+  "cancelled": [
+    {
+      "date": "2026-06-30",
+      "sport": "MLB",
+      "matchup": "Minnesota Twins @ Houston Astros",
+      "side": "away",
+      "path": "A",
+      "ags": "LOCK",
+      "units": 3,
+      "outcome": "LOSS",
+      "profit": -3,
+      "top2": 40.27,
+      "for": "1e8f33:51%,ac9705:30%"
+    },
+    {
+      "date": "2026-07-05",
+      "sport": "MLB",
+      "matchup": "Minnesota Twins @ New York Yankees",
+      "side": "under",
+      "path": "A",
+      "ags": "ELITE",
+      "units": 3,
+      "outcome": "WIN",
+      "profit": 2.73,
+      "top2": 46.92,
+      "for": "a10ff5:52%,f2f960:42%"
+    },
+    {
+      "date": "2026-06-17",
+      "sport": "MLB",
+      "matchup": "Baltimore Orioles @ Seattle Mariners",
+      "side": "over",
+      "path": "A",
+      "ags": "ELITE",
+      "units": 3,
+      "outcome": "WIN",
+      "profit": 2.73,
+      "top2": 47.88,
+      "for": "1e8f33:54%,491f30:42%"
+    },
+    {
+      "date": "2026-06-20",
+      "sport": "MLB",
+      "matchup": "Cincinnati Reds @ New York Yankees",
+      "side": "home",
+      "path": "A",
+      "ags": "PREMIUM",
+      "units": 4,
+      "outcome": "LOSS",
+      "profit": -4,
+      "top2": 48.1,
+      "for": "2f2a9e:53%,b839b3:44%"
+    },
+    {
+      "date": "2026-06-12",
+      "sport": "MLB",
+      "matchup": "St. Louis Cardinals @ Minnesota Twins",
+      "side": "over",
+      "path": "UNTIERED",
+      "ags": "PREMIUM",
+      "units": 3,
+      "outcome": "WIN",
+      "profit": 2.73,
+      "top2": 49.78,
+      "for": "cd2f63:57%,491f30:43%"
+    },
+    {
+      "date": "2026-06-12",
+      "sport": "MLB",
+      "matchup": "Chicago Cubs @ San Francisco Giants",
+      "side": "home",
+      "path": "UNTIERED",
+      "ags": "PREMIUM",
+      "units": 3,
+      "outcome": "LOSS",
+      "profit": -3,
+      "top2": 50.46,
+      "for": "2f2a9e:58%,491f30:43%"
+    },
+    {
+      "date": "2026-06-28",
+      "sport": "MLB",
+      "matchup": "Los Angeles Dodgers @ San Diego Padres",
+      "side": "home",
+      "path": "A",
+      "ags": "LEAN",
+      "units": 3,
+      "outcome": "LOSS",
+      "profit": -3,
+      "top2": 50.55,
+      "for": "1e8f33:51%"
+    },
+    {
+      "date": "2026-06-24",
+      "sport": "MLB",
+      "matchup": "Philadelphia Phillies @ Washington Nationals",
+      "side": "over",
+      "path": "A",
+      "ags": "PREMIUM",
+      "units": 3,
+      "outcome": "LOSS",
+      "profit": -3,
+      "top2": 50.68,
+      "for": "1e8f33:51%"
+    },
+    {
+      "date": "2026-07-01",
+      "sport": "MLB",
+      "matchup": "Los Angeles Dodgers @ Athletics",
+      "side": "away",
+      "path": "C",
+      "ags": "WEAK",
+      "units": 3,
+      "outcome": "LOSS",
+      "profit": -3,
+      "top2": 51.06,
+      "for": "1e8f33:51%"
+    },
+    {
+      "date": "2026-06-13",
+      "sport": "MLB",
+      "matchup": "Detroit Tigers @ Cleveland Guardians",
+      "side": "home",
+      "path": "UNTIERED",
+      "ags": "ELITE",
+      "units": 2.5,
+      "outcome": "WIN",
+      "profit": 3.35,
+      "top2": 51.19,
+      "for": "1e8f33:62%,491f30:40%"
+    },
+    {
+      "date": "2026-06-23",
+      "sport": "MLB",
+      "matchup": "Milwaukee Brewers @ Cincinnati Reds",
+      "side": "over",
+      "path": "A",
+      "ags": "LOCK",
+      "units": 2.5,
+      "outcome": "LOSS",
+      "profit": -2.5,
+      "top2": 51.47,
+      "for": "1e8f33:51%"
+    },
+    {
+      "date": "2026-07-11",
+      "sport": "SOC",
+      "matchup": "Switzerland @ Argentina",
+      "side": "home",
+      "path": "C",
+      "ags": "ELITE",
+      "units": 4,
+      "outcome": "LOSS",
+      "profit": -4,
+      "top2": 51.66,
+      "for": "c911a4:56%,a0cff6:47%"
+    },
+    {
+      "date": "2026-07-03",
+      "sport": "MLB",
+      "matchup": "San Francisco Giants @ Colorado Rockies",
+      "side": "under",
+      "path": "A",
+      "ags": "PREMIUM",
+      "units": 5,
+      "outcome": "LOSS",
+      "profit": -5,
+      "top2": 51.68,
+      "for": "1e8f33:52%"
+    },
+    {
+      "date": "2026-06-22",
+      "sport": "MLB",
+      "matchup": "Baltimore Orioles @ Los Angeles Angels",
+      "side": "over",
+      "path": "A",
+      "ags": "PREMIUM",
+      "units": 3,
+      "outcome": "LOSS",
+      "profit": -3,
+      "top2": 52.24,
+      "for": "1e8f33:52%"
+    },
+    {
+      "date": "2026-06-20",
+      "sport": "MLB",
+      "matchup": "San Francisco Giants @ Miami Marlins",
+      "side": "home",
+      "path": "A",
+      "ags": "ELITE",
+      "units": 3,
+      "outcome": "WIN",
+      "profit": 2.19,
+      "top2": 52.43,
+      "for": "1e8f33:52%"
+    },
+    {
+      "date": "2026-06-19",
+      "sport": "MLB",
+      "matchup": "Chicago White Sox @ Detroit Tigers",
+      "side": "away",
+      "path": "A",
+      "ags": "LOCK",
+      "units": 3,
+      "outcome": "WIN",
+      "profit": 2.54,
+      "top2": 53.11,
+      "for": "1e8f33:53%"
+    },
+    {
+      "date": "2026-06-19",
+      "sport": "MLB",
+      "matchup": "Pittsburgh Pirates @ Colorado Rockies",
+      "side": "over",
+      "path": "A",
+      "ags": "ELITE",
+      "units": 3,
+      "outcome": "LOSS",
+      "profit": -3,
+      "top2": 53.11,
+      "for": "1e8f33:53%"
+    },
+    {
+      "date": "2026-06-17",
+      "sport": "MLB",
+      "matchup": "Los Angeles Angels @ Arizona Diamondbacks",
+      "side": "under",
+      "path": "A",
+      "ags": "ELITE",
+      "units": 3,
+      "outcome": "WIN",
+      "profit": 2.73,
+      "top2": 53.75,
+      "for": "1e8f33:54%"
+    },
+    {
+      "date": "2026-07-08",
+      "sport": "MLB",
+      "matchup": "Cleveland Guardians @ Minnesota Twins",
+      "side": "away",
+      "path": "A",
+      "ags": "LOCK",
+      "units": 2.5,
+      "outcome": "LOSS",
+      "profit": -2.5,
+      "top2": 53.76,
+      "for": "4c64aa:58%,f2f960:50%"
+    },
+    {
+      "date": "2026-06-26",
+      "sport": "MLB",
+      "matchup": "Atlanta Braves @ San Francisco Giants",
+      "side": "away",
+      "path": "B",
+      "ags": "PREMIUM",
+      "units": 4,
+      "outcome": "WIN",
+      "profit": 3.33,
+      "top2": 53.83,
+      "for": "4c64aa:57%,2f2a9e:50%"
+    },
+    {
+      "date": "2026-06-17",
+      "sport": "MLB",
+      "matchup": "Miami Marlins @ Philadelphia Phillies",
+      "side": "away",
+      "path": "A",
+      "ags": "ELITE",
+      "units": 2.5,
+      "outcome": "WIN",
+      "profit": 2.5,
+      "top2": 55.12,
+      "for": "cd2f63:56%,1e8f33:54%"
+    },
+    {
+      "date": "2026-06-19",
+      "sport": "MLB",
+      "matchup": "Cincinnati Reds @ New York Yankees",
+      "side": "home",
+      "path": "A",
+      "ags": "PREMIUM",
+      "units": 4,
+      "outcome": "WIN",
+      "profit": 3.08,
+      "top2": 55.84,
+      "for": "cd2f63:57%,f2d227:55%"
+    },
+    {
+      "date": "2026-06-07",
+      "sport": "MLB",
+      "matchup": "Cincinnati Reds @ St. Louis Cardinals",
+      "side": "home",
+      "path": "UNTIERED",
+      "ags": "ELITE",
+      "units": 5,
+      "outcome": "WIN",
+      "profit": 3.5,
+      "top2": 55.86,
+      "for": "1e8f33:66%,f2d227:46%"
+    },
+    {
+      "date": "2026-06-28",
+      "sport": "MLB",
+      "matchup": "Chicago Cubs @ Milwaukee Brewers",
+      "side": "under",
+      "path": "A",
+      "ags": "LOCK",
+      "units": 4,
+      "outcome": "WIN",
+      "profit": 3.64,
+      "top2": 56.41,
+      "for": "5b1e50:64%,2f2a9e:48%"
+    },
+    {
+      "date": "2026-06-29",
+      "sport": "MLB",
+      "matchup": "San Francisco Giants @ Arizona Diamondbacks",
+      "side": "home",
+      "path": "B",
+      "ags": "WEAK",
+      "units": 4,
+      "outcome": "WIN",
+      "profit": 3.05,
+      "top2": 56.5,
+      "for": "5b1e50:64%,b839b3:49%"
+    },
+    {
+      "date": "2026-06-10",
+      "sport": "MLB",
+      "matchup": "Houston Astros @ Los Angeles Angels",
+      "side": "over",
+      "path": "UNTIERED",
+      "ags": "ELITE",
+      "units": 5,
+      "outcome": "LOSS",
+      "profit": -5,
+      "top2": 56.71,
+      "for": "1e8f33:61%,491f30:52%"
+    },
+    {
+      "date": "2026-06-15",
+      "sport": "MLB",
+      "matchup": "Colorado Rockies @ Chicago Cubs",
+      "side": "away",
+      "path": "A",
+      "ags": "PREMIUM",
+      "units": 3,
+      "outcome": "WIN",
+      "profit": 2.86,
+      "top2": 56.72,
+      "for": "1e8f33:57%"
+    },
+    {
+      "date": "2026-06-27",
+      "sport": "MLB",
+      "matchup": "Athletics @ Los Angeles Angels",
+      "side": "away",
+      "path": "C",
+      "ags": "LOCK",
+      "units": 4,
+      "outcome": "LOSS",
+      "profit": -4,
+      "top2": 56.97,
+      "for": "4c64aa:57%"
+    },
+    {
+      "date": "2026-06-14",
+      "sport": "MLB",
+      "matchup": "Houston Astros @ Kansas City Royals",
+      "side": "away",
+      "path": "UNTIERED",
+      "ags": "PREMIUM",
+      "units": 2.5,
+      "outcome": "LOSS",
+      "profit": -2.5,
+      "top2": 57.36,
+      "for": "1e8f33:57%"
+    },
+    {
+      "date": "2026-06-14",
+      "sport": "MLB",
+      "matchup": "St. Louis Cardinals @ Minnesota Twins",
+      "side": "away",
+      "path": "UNTIERED",
+      "ags": "PREMIUM",
+      "units": 3,
+      "outcome": "LOSS",
+      "profit": -3,
+      "top2": 57.36,
+      "for": "1e8f33:57%"
+    },
+    {
+      "date": "2026-07-11",
+      "sport": "MLB",
+      "matchup": "Milwaukee Brewers @ Pittsburgh Pirates",
+      "side": "over",
+      "path": "C",
+      "ags": "LEAN",
+      "units": 3,
+      "outcome": "LOSS",
+      "profit": -3,
+      "top2": 57.72,
+      "for": "7da3d5:65%,a10ff5:50%"
+    },
+    {
+      "date": "2026-06-27",
+      "sport": "MLB",
+      "matchup": "Chicago Cubs @ Milwaukee Brewers",
+      "side": "home",
+      "path": "C",
+      "ags": "WEAK",
+      "units": 3,
+      "outcome": "LOSS",
+      "profit": -3,
+      "top2": 57.79,
+      "for": "5b1e50:65%,1e8f33:50%"
+    },
+    {
+      "date": "2026-06-09",
+      "sport": "MLB",
+      "matchup": "Chicago Cubs @ Colorado Rockies",
+      "side": "away",
+      "path": "UNTIERED",
+      "ags": "LOCK",
+      "units": 1,
+      "outcome": "LOSS",
+      "profit": -1,
+      "top2": 57.84,
+      "for": "4c64aa:59%,cd2f63:57%"
+    },
+    {
+      "date": "2026-06-17",
+      "sport": "MLB",
+      "matchup": "Toronto Blue Jays @ Boston Red Sox",
+      "side": "home",
+      "path": "A",
+      "ags": "ELITE",
+      "units": 3,
+      "outcome": "LOSS",
+      "profit": -3,
+      "top2": 58.24,
+      "for": "77f662:60%,cd2f63:56%"
+    },
+    {
+      "date": "2026-06-10",
+      "sport": "MLB",
+      "matchup": "Minnesota Twins @ Detroit Tigers",
+      "side": "away",
+      "path": "UNTIERED",
+      "ags": "LOCK",
+      "units": 1,
+      "outcome": "WIN",
+      "profit": 1.46,
+      "top2": 58.33,
+      "for": "4c64aa:58%"
+    },
+    {
+      "date": "2026-06-10",
+      "sport": "MLB",
+      "matchup": "St. Louis Cardinals @ New York Mets",
+      "side": "home",
+      "path": "UNTIERED",
+      "ags": "LOCK",
+      "units": 1,
+      "outcome": "LOSS",
+      "profit": -1,
+      "top2": 58.33,
+      "for": "4c64aa:58%"
+    },
+    {
+      "date": "2026-06-28",
+      "sport": "MLB",
+      "matchup": "Miami Marlins @ St. Louis Cardinals",
+      "side": "away",
+      "path": "B",
+      "ags": "LOCK",
+      "units": 4,
+      "outcome": "WIN",
+      "profit": 2.11,
+      "top2": 58.67,
+      "for": "8ec926:63%,f2d227:54%"
+    },
+    {
+      "date": "2026-07-08",
+      "sport": "MLB",
+      "matchup": "Colorado Rockies @ Los Angeles Dodgers",
+      "side": "under",
+      "path": "B",
+      "ags": "LOCK",
+      "units": 4,
+      "outcome": "WIN",
+      "profit": 3.85,
+      "top2": 58.71,
+      "for": "7da3d5:64%,2f2a9e:54%"
+    },
+    {
+      "date": "2026-06-27",
+      "sport": "MLB",
+      "matchup": "Cincinnati Reds @ Pittsburgh Pirates",
+      "side": "away",
+      "path": "B",
+      "ags": "WEAK",
+      "units": 4,
+      "outcome": "WIN",
+      "profit": 3.64,
+      "top2": 58.79,
+      "for": "eeabaf:67%,1e8f33:50%"
+    },
+    {
+      "date": "2026-07-02",
+      "sport": "MLB",
+      "matchup": "Los Angeles Angels @ Seattle Mariners",
+      "side": "under",
+      "path": "C",
+      "ags": "WEAK",
+      "units": 2.5,
+      "outcome": "WIN",
+      "profit": 2.7,
+      "top2": 58.81,
+      "for": "eeabaf:66%,a10ff5:52%"
+    },
+    {
+      "date": "2026-06-02",
+      "sport": "MLB",
+      "matchup": "Pittsburgh Pirates @ Houston Astros",
+      "side": "home",
+      "path": "UNTIERED",
+      "ags": "LOCK",
+      "units": 1,
+      "outcome": "LOSS",
+      "profit": -1,
+      "top2": 58.9,
+      "for": "4c64aa:59%"
+    },
+    {
+      "date": "2026-06-02",
+      "sport": "MLB",
+      "matchup": "Texas Rangers @ St. Louis Cardinals",
+      "side": "home",
+      "path": "UNTIERED",
+      "ags": "LOCK",
+      "units": 1,
+      "outcome": "LOSS",
+      "profit": -1,
+      "top2": 58.9,
+      "for": "4c64aa:59%"
+    },
+    {
+      "date": "2026-07-07",
+      "sport": "MLB",
+      "matchup": "Atlanta Braves @ Pittsburgh Pirates",
+      "side": "away",
+      "path": "C",
+      "ags": "PREMIUM",
+      "units": 2.5,
+      "outcome": "LOSS",
+      "profit": -2.5,
+      "top2": 58.94,
+      "for": "eeabaf:66%,a10ff5:52%"
+    },
+    {
+      "date": "2026-06-07",
+      "sport": "MLB",
+      "matchup": "Chicago White Sox @ Philadelphia Phillies",
+      "side": "under",
+      "path": "UNTIERED",
+      "ags": "PREMIUM",
+      "units": 3,
+      "outcome": "LOSS",
+      "profit": -3,
+      "top2": 58.95,
+      "for": "8c1eae:61%,cd2f63:57%"
+    },
+    {
+      "date": "2026-06-07",
+      "sport": "MLB",
+      "matchup": "Athletics @ Houston Astros",
+      "side": "home",
+      "path": "UNTIERED",
+      "ags": "LOCK",
+      "units": 1,
+      "outcome": "LOSS",
+      "profit": -1,
+      "top2": 58.97,
+      "for": "4c64aa:59%"
+    }
+  ]
+}

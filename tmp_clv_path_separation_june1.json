@@ -1,0 +1,2426 @@
+{
+  "meta": {
+    "generatedAt": "2026-07-14T15:37:06.480Z",
+    "baselineDef": "UI-exact June1+ live graded (computeV12EraStats)",
+    "question": "How does FOR-wallet CLV profile further separate W/L inside each staking path?"
+  },
+  "bookBaseline": {
+    "n": 430,
+    "w": 233,
+    "l": 190,
+    "pu": 7,
+    "record": "233-190-7",
+    "units": 1182.5,
+    "profit": 44.79,
+    "wr": 55.1,
+    "roi": 3.8
+  },
+  "byPath": {
+    "A": {
+      "label": "Path A (HC: SUPER/TOP/MINI/CONFIRMED)",
+      "baseline": {
+        "n": 132,
+        "w": 77,
+        "l": 54,
+        "pu": 1,
+        "record": "77-54-1",
+        "units": 456.5,
+        "profit": 26.98,
+        "wr": 58.8,
+        "roi": 5.9
+      },
+      "opposedRate": 59.1,
+      "meanMeanPct": 61.2,
+      "separation": {
+        "meanPct60": {
+          "PASS": {
+            "n": 80,
+            "w": 52,
+            "l": 27,
+            "pu": 1,
+            "record": "52-27-1",
+            "units": 280,
+            "profit": 55.94,
+            "wr": 65.8,
+            "roi": 20
+          },
+          "FAIL": {
+            "n": 52,
+            "w": 25,
+            "l": 27,
+            "pu": 0,
+            "record": "25-27",
+            "units": 176.5,
+            "profit": -28.96,
+            "wr": 48.1,
+            "roi": -16.4
+          },
+          "deltaWr": 17.7,
+          "deltaRoi": 36.4,
+          "deltaProfitIfCutFail": 28.96,
+          "keepPass_vs_baseline": {
+            "baseline": {
+              "n": 132,
+              "w": 77,
+              "l": 54,
+              "pu": 1,
+              "record": "77-54-1",
+              "units": 456.5,
+              "profit": 26.98,
+              "wr": 58.8,
+              "roi": 5.9
+            },
+            "keepPass": {
+              "n": 80,
+              "w": 52,
+              "l": 27,
+              "pu": 1,
+              "record": "52-27-1",
+              "units": 280,
+              "profit": 55.94,
+              "wr": 65.8,
+              "roi": 20
+            },
+            "profitLift": 28.96,
+            "roiLiftPts": 14.1,
+            "cutN": 52
+          }
+        },
+        "top2_65": {
+          "PASS": {
+            "n": 83,
+            "w": 53,
+            "l": 29,
+            "pu": 1,
+            "record": "53-29-1",
+            "units": 288,
+            "profit": 45.59,
+            "wr": 64.6,
+            "roi": 15.8
+          },
+          "FAIL": {
+            "n": 49,
+            "w": 24,
+            "l": 25,
+            "pu": 0,
+            "record": "24-25",
+            "units": 168.5,
+            "profit": -18.61,
+            "wr": 49,
+            "roi": -11
+          },
+          "deltaWr": 15.6,
+          "deltaRoi": 26.8,
+          "deltaProfitIfCutFail": 18.61,
+          "keepPass_vs_baseline": {
+            "baseline": {
+              "n": 132,
+              "w": 77,
+              "l": 54,
+              "pu": 1,
+              "record": "77-54-1",
+              "units": 456.5,
+              "profit": 26.98,
+              "wr": 58.8,
+              "roi": 5.9
+            },
+            "keepPass": {
+              "n": 83,
+              "w": 53,
+              "l": 29,
+              "pu": 1,
+              "record": "53-29-1",
+              "units": 288,
+              "profit": 45.59,
+              "wr": 64.6,
+              "roi": 15.8
+            },
+            "profitLift": 18.61,
+            "roiLiftPts": 9.9,
+            "cutN": 49
+          }
+        },
+        "nElite2": {
+          "PASS": {
+            "n": 61,
+            "w": 37,
+            "l": 23,
+            "pu": 1,
+            "record": "37-23-1",
+            "units": 220.5,
+            "profit": 23.81,
+            "wr": 61.7,
+            "roi": 10.8
+          },
+          "FAIL": {
+            "n": 71,
+            "w": 40,
+            "l": 31,
+            "pu": 0,
+            "record": "40-31",
+            "units": 236,
+            "profit": 3.17,
+            "wr": 56.3,
+            "roi": 1.3
+          },
+          "deltaWr": 5.4,
+          "deltaRoi": 9.5,
+          "deltaProfitIfCutFail": -3.17,
+          "keepPass_vs_baseline": {
+            "baseline": {
+              "n": 132,
+              "w": 77,
+              "l": 54,
+              "pu": 1,
+              "record": "77-54-1",
+              "units": 456.5,
+              "profit": 26.98,
+              "wr": 58.8,
+              "roi": 5.9
+            },
+            "keepPass": {
+              "n": 61,
+              "w": 37,
+              "l": 23,
+              "pu": 1,
+              "record": "37-23-1",
+              "units": 220.5,
+              "profit": 23.81,
+              "wr": 61.7,
+              "roi": 10.8
+            },
+            "profitLift": -3.17,
+            "roiLiftPts": 4.9,
+            "cutN": 71
+          }
+        },
+        "nHigh2": {
+          "PASS": {
+            "n": 66,
+            "w": 42,
+            "l": 23,
+            "pu": 1,
+            "record": "42-23-1",
+            "units": 240,
+            "profit": 32.16,
+            "wr": 64.6,
+            "roi": 13.4
+          },
+          "FAIL": {
+            "n": 66,
+            "w": 35,
+            "l": 31,
+            "pu": 0,
+            "record": "35-31",
+            "units": 216.5,
+            "profit": -5.18,
+            "wr": 53,
+            "roi": -2.4
+          },
+          "deltaWr": 11.6,
+          "deltaRoi": 15.8,
+          "deltaProfitIfCutFail": 5.18,
+          "keepPass_vs_baseline": {
+            "baseline": {
+              "n": 132,
+              "w": 77,
+              "l": 54,
+              "pu": 1,
+              "record": "77-54-1",
+              "units": 456.5,
+              "profit": 26.98,
+              "wr": 58.8,
+              "roi": 5.9
+            },
+            "keepPass": {
+              "n": 66,
+              "w": 42,
+              "l": 23,
+              "pu": 1,
+              "record": "42-23-1",
+              "units": 240,
+              "profit": 32.16,
+              "wr": 64.6,
+              "roi": 13.4
+            },
+            "profitLift": 5.18,
+            "roiLiftPts": 7.5,
+            "cutN": 66
+          }
+        },
+        "edgeGe0": {
+          "PASS": {
+            "n": 89,
+            "w": 56,
+            "l": 32,
+            "pu": 1,
+            "record": "56-32-1",
+            "units": 301.5,
+            "profit": 42.35,
+            "wr": 63.6,
+            "roi": 14
+          },
+          "FAIL": {
+            "n": 43,
+            "w": 21,
+            "l": 22,
+            "pu": 0,
+            "record": "21-22",
+            "units": 155,
+            "profit": -15.37,
+            "wr": 48.8,
+            "roi": -9.9
+          },
+          "deltaWr": 14.8,
+          "deltaRoi": 23.9,
+          "deltaProfitIfCutFail": 15.37,
+          "keepPass_vs_baseline": {
+            "baseline": {
+              "n": 132,
+              "w": 77,
+              "l": 54,
+              "pu": 1,
+              "record": "77-54-1",
+              "units": 456.5,
+              "profit": 26.98,
+              "wr": 58.8,
+              "roi": 5.9
+            },
+            "keepPass": {
+              "n": 89,
+              "w": 56,
+              "l": 32,
+              "pu": 1,
+              "record": "56-32-1",
+              "units": 301.5,
+              "profit": 42.35,
+              "wr": 63.6,
+              "roi": 14
+            },
+            "profitLift": 15.37,
+            "roiLiftPts": 8.1,
+            "cutN": 43
+          }
+        }
+      },
+      "tertiles_meanPct": {
+        "low": {
+          "n": 43,
+          "w": 21,
+          "l": 22,
+          "pu": 0,
+          "record": "21-22",
+          "units": 152,
+          "profit": -20.89,
+          "wr": 48.8,
+          "roi": -13.7
+        },
+        "mid": {
+          "n": 43,
+          "w": 27,
+          "l": 15,
+          "pu": 1,
+          "record": "27-15-1",
+          "units": 151,
+          "profit": 11.11,
+          "wr": 64.3,
+          "roi": 7.4
+        },
+        "high": {
+          "n": 45,
+          "w": 29,
+          "l": 16,
+          "pu": 0,
+          "record": "29-16",
+          "units": 151,
+          "profit": 39.26,
+          "wr": 64.4,
+          "roi": 26
+        },
+        "lowRange": [
+          38.5,
+          58
+        ],
+        "midRange": [
+          58.1,
+          64.6
+        ],
+        "highRange": [
+          65.3,
+          81.3
+        ]
+      },
+      "byTier": {
+        "SUPER": {
+          "base": {
+            "n": 11,
+            "w": 9,
+            "l": 2,
+            "pu": 0,
+            "record": "9-2",
+            "units": 58,
+            "profit": 25.48,
+            "wr": 81.8,
+            "roi": 43.9
+          },
+          "pass_mean60": {
+            "n": 8,
+            "w": 6,
+            "l": 2,
+            "pu": 0,
+            "record": "6-2",
+            "units": 43.5,
+            "profit": 18.16,
+            "wr": 75,
+            "roi": 41.7
+          },
+          "fail_mean60": {
+            "n": 3,
+            "w": 3,
+            "l": 0,
+            "pu": 0,
+            "record": "3-0",
+            "units": 14.5,
+            "profit": 7.32,
+            "wr": 100,
+            "roi": 50.5
+          },
+          "pass_elite2": {
+            "n": 10,
+            "w": 8,
+            "l": 2,
+            "pu": 0,
+            "record": "8-2",
+            "units": 55.5,
+            "profit": 22.83,
+            "wr": 80,
+            "roi": 41.1
+          }
+        },
+        "TOP": {
+          "base": {
+            "n": 39,
+            "w": 26,
+            "l": 13,
+            "pu": 0,
+            "record": "26-13",
+            "units": 141,
+            "profit": 22.34,
+            "wr": 66.7,
+            "roi": 15.8
+          },
+          "pass_mean60": {
+            "n": 27,
+            "w": 20,
+            "l": 7,
+            "pu": 0,
+            "record": "20-7",
+            "units": 99,
+            "profit": 25.47,
+            "wr": 74.1,
+            "roi": 25.7
+          },
+          "fail_mean60": {
+            "n": 12,
+            "w": 6,
+            "l": 6,
+            "pu": 0,
+            "record": "6-6",
+            "units": 42,
+            "profit": -3.13,
+            "wr": 50,
+            "roi": -7.5
+          },
+          "pass_elite2": {
+            "n": 18,
+            "w": 13,
+            "l": 5,
+            "pu": 0,
+            "record": "13-5",
+            "units": 64.5,
+            "profit": 11.01,
+            "wr": 72.2,
+            "roi": 17.1
+          }
+        },
+        "TOP+": {
+          "base": {
+            "n": 30,
+            "w": 15,
+            "l": 14,
+            "pu": 1,
+            "record": "15-14-1",
+            "units": 135,
+            "profit": -11.94,
+            "wr": 51.7,
+            "roi": -8.8
+          },
+          "pass_mean60": {
+            "n": 19,
+            "w": 11,
+            "l": 7,
+            "pu": 1,
+            "record": "11-7-1",
+            "units": 82.5,
+            "profit": 8.88,
+            "wr": 61.1,
+            "roi": 10.8
+          },
+          "fail_mean60": {
+            "n": 11,
+            "w": 4,
+            "l": 7,
+            "pu": 0,
+            "record": "4-7",
+            "units": 52.5,
+            "profit": -20.82,
+            "wr": 36.4,
+            "roi": -39.7
+          },
+          "pass_elite2": {
+            "n": 16,
+            "w": 7,
+            "l": 8,
+            "pu": 1,
+            "record": "7-8-1",
+            "units": 67.5,
+            "profit": -10.25,
+            "wr": 46.7,
+            "roi": -15.2
+          }
+        },
+        "MINI": {
+          "base": {
+            "n": 37,
+            "w": 18,
+            "l": 19,
+            "pu": 0,
+            "record": "18-19",
+            "units": 107.5,
+            "profit": -9.61,
+            "wr": 48.6,
+            "roi": -8.9
+          },
+          "pass_mean60": {
+            "n": 15,
+            "w": 9,
+            "l": 6,
+            "pu": 0,
+            "record": "9-6",
+            "units": 44,
+            "profit": 3.46,
+            "wr": 60,
+            "roi": 7.9
+          },
+          "fail_mean60": {
+            "n": 22,
+            "w": 9,
+            "l": 13,
+            "pu": 0,
+            "record": "9-13",
+            "units": 63.5,
+            "profit": -13.07,
+            "wr": 40.9,
+            "roi": -20.6
+          },
+          "pass_elite2": {
+            "n": 9,
+            "w": 5,
+            "l": 4,
+            "pu": 0,
+            "record": "5-4",
+            "units": 25,
+            "profit": 1.24,
+            "wr": 55.6,
+            "roi": 5
+          }
+        },
+        "MINI-": {
+          "base": {
+            "n": 10,
+            "w": 7,
+            "l": 3,
+            "pu": 0,
+            "record": "7-3",
+            "units": 10,
+            "profit": 2.73,
+            "wr": 70,
+            "roi": 27.3
+          },
+          "pass_mean60": {
+            "n": 9,
+            "w": 6,
+            "l": 3,
+            "pu": 0,
+            "record": "6-3",
+            "units": 9,
+            "profit": 1.97,
+            "wr": 66.7,
+            "roi": 21.9
+          },
+          "fail_mean60": {
+            "n": 1,
+            "w": 1,
+            "l": 0,
+            "pu": 0,
+            "record": "1-0",
+            "units": 1,
+            "profit": 0.76,
+            "wr": 100,
+            "roi": 76
+          },
+          "pass_elite2": {
+            "n": 4,
+            "w": 3,
+            "l": 1,
+            "pu": 0,
+            "record": "3-1",
+            "units": 4,
+            "profit": 1.29,
+            "wr": 75,
+            "roi": 32.3
+          }
+        },
+        "CONFIRMED": {
+          "base": {
+            "n": 5,
+            "w": 2,
+            "l": 3,
+            "pu": 0,
+            "record": "2-3",
+            "units": 5,
+            "profit": -2.02,
+            "wr": 40,
+            "roi": -40.4
+          },
+          "pass_mean60": {
+            "n": 2,
+            "w": 0,
+            "l": 2,
+            "pu": 0,
+            "record": "0-2",
+            "units": 2,
+            "profit": -2,
+            "wr": 0,
+            "roi": -100
+          },
+          "fail_mean60": {
+            "n": 3,
+            "w": 2,
+            "l": 1,
+            "pu": 0,
+            "record": "2-1",
+            "units": 3,
+            "profit": -0.02,
+            "wr": 66.7,
+            "roi": -0.7
+          },
+          "pass_elite2": {
+            "n": 4,
+            "w": 1,
+            "l": 3,
+            "pu": 0,
+            "record": "1-3",
+            "units": 4,
+            "profit": -2.31,
+            "wr": 25,
+            "roi": -57.7
+          }
+        }
+      },
+      "recommended": {
+        "gate": "meanPct60",
+        "PASS": {
+          "n": 80,
+          "w": 52,
+          "l": 27,
+          "pu": 1,
+          "record": "52-27-1",
+          "units": 280,
+          "profit": 55.94,
+          "wr": 65.8,
+          "roi": 20
+        },
+        "FAIL": {
+          "n": 52,
+          "w": 25,
+          "l": 27,
+          "pu": 0,
+          "record": "25-27",
+          "units": 176.5,
+          "profit": -28.96,
+          "wr": 48.1,
+          "roi": -16.4
+        },
+        "deltaWr": 17.7,
+        "deltaRoi": 36.4,
+        "profitIfKeepPassOnly": 55.94,
+        "profitLiftVsPathBaseline": 28.96
+      }
+    },
+    "B": {
+      "label": "Path B (RANK)",
+      "baseline": {
+        "n": 39,
+        "w": 23,
+        "l": 15,
+        "pu": 1,
+        "record": "23-15-1",
+        "units": 154,
+        "profit": 16.64,
+        "wr": 60.5,
+        "roi": 10.8
+      },
+      "opposedRate": 59,
+      "meanMeanPct": 62.5,
+      "separation": {
+        "meanPct60": {
+          "PASS": {
+            "n": 25,
+            "w": 14,
+            "l": 10,
+            "pu": 1,
+            "record": "14-10-1",
+            "units": 98,
+            "profit": 5.22,
+            "wr": 58.3,
+            "roi": 5.3
+          },
+          "FAIL": {
+            "n": 14,
+            "w": 9,
+            "l": 5,
+            "pu": 0,
+            "record": "9-5",
+            "units": 56,
+            "profit": 11.42,
+            "wr": 64.3,
+            "roi": 20.4
+          },
+          "deltaWr": -6,
+          "deltaRoi": -15.1,
+          "deltaProfitIfCutFail": -11.42,
+          "keepPass_vs_baseline": {
+            "baseline": {
+              "n": 39,
+              "w": 23,
+              "l": 15,
+              "pu": 1,
+              "record": "23-15-1",
+              "units": 154,
+              "profit": 16.64,
+              "wr": 60.5,
+              "roi": 10.8
+            },
+            "keepPass": {
+              "n": 25,
+              "w": 14,
+              "l": 10,
+              "pu": 1,
+              "record": "14-10-1",
+              "units": 98,
+              "profit": 5.22,
+              "wr": 58.3,
+              "roi": 5.3
+            },
+            "profitLift": -11.42,
+            "roiLiftPts": -5.5,
+            "cutN": 14
+          }
+        },
+        "top2_65": {
+          "PASS": {
+            "n": 25,
+            "w": 15,
+            "l": 10,
+            "pu": 0,
+            "record": "15-10",
+            "units": 100,
+            "profit": 13.02,
+            "wr": 60,
+            "roi": 13
+          },
+          "FAIL": {
+            "n": 14,
+            "w": 8,
+            "l": 5,
+            "pu": 1,
+            "record": "8-5-1",
+            "units": 54,
+            "profit": 3.62,
+            "wr": 61.5,
+            "roi": 6.7
+          },
+          "deltaWr": -1.5,
+          "deltaRoi": 6.3,
+          "deltaProfitIfCutFail": -3.62,
+          "keepPass_vs_baseline": {
+            "baseline": {
+              "n": 39,
+              "w": 23,
+              "l": 15,
+              "pu": 1,
+              "record": "23-15-1",
+              "units": 154,
+              "profit": 16.64,
+              "wr": 60.5,
+              "roi": 10.8
+            },
+            "keepPass": {
+              "n": 25,
+              "w": 15,
+              "l": 10,
+              "pu": 0,
+              "record": "15-10",
+              "units": 100,
+              "profit": 13.02,
+              "wr": 60,
+              "roi": 13
+            },
+            "profitLift": -3.62,
+            "roiLiftPts": 2.2,
+            "cutN": 14
+          }
+        },
+        "nElite2": {
+          "PASS": {
+            "n": 22,
+            "w": 15,
+            "l": 7,
+            "pu": 0,
+            "record": "15-7",
+            "units": 88,
+            "profit": 25.02,
+            "wr": 68.2,
+            "roi": 28.4
+          },
+          "FAIL": {
+            "n": 17,
+            "w": 8,
+            "l": 8,
+            "pu": 1,
+            "record": "8-8-1",
+            "units": 66,
+            "profit": -8.38,
+            "wr": 50,
+            "roi": -12.7
+          },
+          "deltaWr": 18.2,
+          "deltaRoi": 41.1,
+          "deltaProfitIfCutFail": 8.38,
+          "keepPass_vs_baseline": {
+            "baseline": {
+              "n": 39,
+              "w": 23,
+              "l": 15,
+              "pu": 1,
+              "record": "23-15-1",
+              "units": 154,
+              "profit": 16.64,
+              "wr": 60.5,
+              "roi": 10.8
+            },
+            "keepPass": {
+              "n": 22,
+              "w": 15,
+              "l": 7,
+              "pu": 0,
+              "record": "15-7",
+              "units": 88,
+              "profit": 25.02,
+              "wr": 68.2,
+              "roi": 28.4
+            },
+            "profitLift": 8.38,
+            "roiLiftPts": 17.6,
+            "cutN": 17
+          }
+        },
+        "nHigh2": {
+          "PASS": {
+            "n": 22,
+            "w": 14,
+            "l": 8,
+            "pu": 0,
+            "record": "14-8",
+            "units": 88,
+            "profit": 15.22,
+            "wr": 63.6,
+            "roi": 17.3
+          },
+          "FAIL": {
+            "n": 17,
+            "w": 9,
+            "l": 7,
+            "pu": 1,
+            "record": "9-7-1",
+            "units": 66,
+            "profit": 1.42,
+            "wr": 56.3,
+            "roi": 2.2
+          },
+          "deltaWr": 7.3,
+          "deltaRoi": 15.1,
+          "deltaProfitIfCutFail": -1.42,
+          "keepPass_vs_baseline": {
+            "baseline": {
+              "n": 39,
+              "w": 23,
+              "l": 15,
+              "pu": 1,
+              "record": "23-15-1",
+              "units": 154,
+              "profit": 16.64,
+              "wr": 60.5,
+              "roi": 10.8
+            },
+            "keepPass": {
+              "n": 22,
+              "w": 14,
+              "l": 8,
+              "pu": 0,
+              "record": "14-8",
+              "units": 88,
+              "profit": 15.22,
+              "wr": 63.6,
+              "roi": 17.3
+            },
+            "profitLift": -1.42,
+            "roiLiftPts": 6.5,
+            "cutN": 17
+          }
+        },
+        "edgeGe0": {
+          "PASS": {
+            "n": 28,
+            "w": 16,
+            "l": 12,
+            "pu": 0,
+            "record": "16-12",
+            "units": 112,
+            "profit": 4.18,
+            "wr": 57.1,
+            "roi": 3.7
+          },
+          "FAIL": {
+            "n": 11,
+            "w": 7,
+            "l": 3,
+            "pu": 1,
+            "record": "7-3-1",
+            "units": 42,
+            "profit": 12.46,
+            "wr": 70,
+            "roi": 29.7
+          },
+          "deltaWr": -12.9,
+          "deltaRoi": -26,
+          "deltaProfitIfCutFail": -12.46,
+          "keepPass_vs_baseline": {
+            "baseline": {
+              "n": 39,
+              "w": 23,
+              "l": 15,
+              "pu": 1,
+              "record": "23-15-1",
+              "units": 154,
+              "profit": 16.64,
+              "wr": 60.5,
+              "roi": 10.8
+            },
+            "keepPass": {
+              "n": 28,
+              "w": 16,
+              "l": 12,
+              "pu": 0,
+              "record": "16-12",
+              "units": 112,
+              "profit": 4.18,
+              "wr": 57.1,
+              "roi": 3.7
+            },
+            "profitLift": -12.46,
+            "roiLiftPts": -7.1,
+            "cutN": 11
+          }
+        }
+      },
+      "tertiles_meanPct": {
+        "low": {
+          "n": 13,
+          "w": 8,
+          "l": 5,
+          "pu": 0,
+          "record": "8-5",
+          "units": 52,
+          "profit": 7.78,
+          "wr": 61.5,
+          "roi": 15
+        },
+        "mid": {
+          "n": 13,
+          "w": 8,
+          "l": 4,
+          "pu": 1,
+          "record": "8-4-1",
+          "units": 50,
+          "profit": 7.1,
+          "wr": 66.7,
+          "roi": 14.2
+        },
+        "high": {
+          "n": 13,
+          "w": 7,
+          "l": 6,
+          "pu": 0,
+          "record": "7-6",
+          "units": 52,
+          "profit": 1.76,
+          "wr": 53.8,
+          "roi": 3.4
+        },
+        "lowRange": [
+          52.1,
+          59.9
+        ],
+        "midRange": [
+          59.9,
+          64.2
+        ],
+        "highRange": [
+          65.1,
+          80.8
+        ]
+      },
+      "byTier": null,
+      "recommended": {
+        "gate": "nElite2",
+        "PASS": {
+          "n": 22,
+          "w": 15,
+          "l": 7,
+          "pu": 0,
+          "record": "15-7",
+          "units": 88,
+          "profit": 25.02,
+          "wr": 68.2,
+          "roi": 28.4
+        },
+        "FAIL": {
+          "n": 17,
+          "w": 8,
+          "l": 8,
+          "pu": 1,
+          "record": "8-8-1",
+          "units": 66,
+          "profit": -8.38,
+          "wr": 50,
+          "roi": -12.7
+        },
+        "deltaWr": 18.2,
+        "deltaRoi": 41.1,
+        "profitIfKeepPassOnly": 25.02,
+        "profitLiftVsPathBaseline": 8.38
+      }
+    },
+    "C": {
+      "label": "Path C (SHARP/SHARP-PRIME)",
+      "baseline": {
+        "n": 39,
+        "w": 17,
+        "l": 22,
+        "pu": 0,
+        "record": "17-22",
+        "units": 113.5,
+        "profit": -15.26,
+        "wr": 43.6,
+        "roi": -13.4
+      },
+      "opposedRate": 82.1,
+      "meanMeanPct": 60.7,
+      "separation": {
+        "meanPct60": {
+          "PASS": {
+            "n": 21,
+            "w": 9,
+            "l": 12,
+            "pu": 0,
+            "record": "9-12",
+            "units": 62.5,
+            "profit": -5.94,
+            "wr": 42.9,
+            "roi": -9.5
+          },
+          "FAIL": {
+            "n": 18,
+            "w": 8,
+            "l": 10,
+            "pu": 0,
+            "record": "8-10",
+            "units": 51,
+            "profit": -9.32,
+            "wr": 44.4,
+            "roi": -18.3
+          },
+          "deltaWr": -1.5,
+          "deltaRoi": 8.8,
+          "deltaProfitIfCutFail": 9.32,
+          "keepPass_vs_baseline": {
+            "baseline": {
+              "n": 39,
+              "w": 17,
+              "l": 22,
+              "pu": 0,
+              "record": "17-22",
+              "units": 113.5,
+              "profit": -15.26,
+              "wr": 43.6,
+              "roi": -13.4
+            },
+            "keepPass": {
+              "n": 21,
+              "w": 9,
+              "l": 12,
+              "pu": 0,
+              "record": "9-12",
+              "units": 62.5,
+              "profit": -5.94,
+              "wr": 42.9,
+              "roi": -9.5
+            },
+            "profitLift": 9.32,
+            "roiLiftPts": 3.9,
+            "cutN": 18
+          }
+        },
+        "top2_65": {
+          "PASS": {
+            "n": 26,
+            "w": 15,
+            "l": 11,
+            "pu": 0,
+            "record": "15-11",
+            "units": 75,
+            "profit": 12.55,
+            "wr": 57.7,
+            "roi": 16.7
+          },
+          "FAIL": {
+            "n": 13,
+            "w": 2,
+            "l": 11,
+            "pu": 0,
+            "record": "2-11",
+            "units": 38.5,
+            "profit": -27.81,
+            "wr": 15.4,
+            "roi": -72.2
+          },
+          "deltaWr": 42.3,
+          "deltaRoi": 88.9,
+          "deltaProfitIfCutFail": 27.81,
+          "keepPass_vs_baseline": {
+            "baseline": {
+              "n": 39,
+              "w": 17,
+              "l": 22,
+              "pu": 0,
+              "record": "17-22",
+              "units": 113.5,
+              "profit": -15.26,
+              "wr": 43.6,
+              "roi": -13.4
+            },
+            "keepPass": {
+              "n": 26,
+              "w": 15,
+              "l": 11,
+              "pu": 0,
+              "record": "15-11",
+              "units": 75,
+              "profit": 12.55,
+              "wr": 57.7,
+              "roi": 16.7
+            },
+            "profitLift": 27.81,
+            "roiLiftPts": 30.1,
+            "cutN": 13
+          }
+        },
+        "nElite2": {
+          "PASS": {
+            "n": 23,
+            "w": 13,
+            "l": 10,
+            "pu": 0,
+            "record": "13-10",
+            "units": 68,
+            "profit": 9.65,
+            "wr": 56.5,
+            "roi": 14.2
+          },
+          "FAIL": {
+            "n": 16,
+            "w": 4,
+            "l": 12,
+            "pu": 0,
+            "record": "4-12",
+            "units": 45.5,
+            "profit": -24.91,
+            "wr": 25,
+            "roi": -54.7
+          },
+          "deltaWr": 31.5,
+          "deltaRoi": 68.9,
+          "deltaProfitIfCutFail": 24.91,
+          "keepPass_vs_baseline": {
+            "baseline": {
+              "n": 39,
+              "w": 17,
+              "l": 22,
+              "pu": 0,
+              "record": "17-22",
+              "units": 113.5,
+              "profit": -15.26,
+              "wr": 43.6,
+              "roi": -13.4
+            },
+            "keepPass": {
+              "n": 23,
+              "w": 13,
+              "l": 10,
+              "pu": 0,
+              "record": "13-10",
+              "units": 68,
+              "profit": 9.65,
+              "wr": 56.5,
+              "roi": 14.2
+            },
+            "profitLift": 24.91,
+            "roiLiftPts": 27.6,
+            "cutN": 16
+          }
+        },
+        "nHigh2": {
+          "PASS": {
+            "n": 25,
+            "w": 14,
+            "l": 11,
+            "pu": 0,
+            "record": "14-11",
+            "units": 72.5,
+            "profit": 11.14,
+            "wr": 56,
+            "roi": 15.4
+          },
+          "FAIL": {
+            "n": 14,
+            "w": 3,
+            "l": 11,
+            "pu": 0,
+            "record": "3-11",
+            "units": 41,
+            "profit": -26.4,
+            "wr": 21.4,
+            "roi": -64.4
+          },
+          "deltaWr": 34.6,
+          "deltaRoi": 79.8,
+          "deltaProfitIfCutFail": 26.4,
+          "keepPass_vs_baseline": {
+            "baseline": {
+              "n": 39,
+              "w": 17,
+              "l": 22,
+              "pu": 0,
+              "record": "17-22",
+              "units": 113.5,
+              "profit": -15.26,
+              "wr": 43.6,
+              "roi": -13.4
+            },
+            "keepPass": {
+              "n": 25,
+              "w": 14,
+              "l": 11,
+              "pu": 0,
+              "record": "14-11",
+              "units": 72.5,
+              "profit": 11.14,
+              "wr": 56,
+              "roi": 15.4
+            },
+            "profitLift": 26.4,
+            "roiLiftPts": 28.8,
+            "cutN": 14
+          }
+        },
+        "edgeGe0": {
+          "PASS": {
+            "n": 22,
+            "w": 12,
+            "l": 10,
+            "pu": 0,
+            "record": "12-10",
+            "units": 64.5,
+            "profit": 8.44,
+            "wr": 54.5,
+            "roi": 13.1
+          },
+          "FAIL": {
+            "n": 17,
+            "w": 5,
+            "l": 12,
+            "pu": 0,
+            "record": "5-12",
+            "units": 49,
+            "profit": -23.7,
+            "wr": 29.4,
+            "roi": -48.4
+          },
+          "deltaWr": 25.1,
+          "deltaRoi": 61.5,
+          "deltaProfitIfCutFail": 23.7,
+          "keepPass_vs_baseline": {
+            "baseline": {
+              "n": 39,
+              "w": 17,
+              "l": 22,
+              "pu": 0,
+              "record": "17-22",
+              "units": 113.5,
+              "profit": -15.26,
+              "wr": 43.6,
+              "roi": -13.4
+            },
+            "keepPass": {
+              "n": 22,
+              "w": 12,
+              "l": 10,
+              "pu": 0,
+              "record": "12-10",
+              "units": 64.5,
+              "profit": 8.44,
+              "wr": 54.5,
+              "roi": 13.1
+            },
+            "profitLift": 23.7,
+            "roiLiftPts": 26.5,
+            "cutN": 17
+          }
+        }
+      },
+      "tertiles_meanPct": {
+        "low": {
+          "n": 13,
+          "w": 6,
+          "l": 7,
+          "pu": 0,
+          "record": "6-7",
+          "units": 37.5,
+          "profit": -6.52,
+          "wr": 46.2,
+          "roi": -17.4
+        },
+        "mid": {
+          "n": 13,
+          "w": 5,
+          "l": 8,
+          "pu": 0,
+          "record": "5-8",
+          "units": 37,
+          "profit": -8.98,
+          "wr": 38.5,
+          "roi": -24.3
+        },
+        "high": {
+          "n": 13,
+          "w": 6,
+          "l": 7,
+          "pu": 0,
+          "record": "6-7",
+          "units": 39,
+          "profit": 0.24,
+          "wr": 46.2,
+          "roi": 0.6
+        },
+        "lowRange": [
+          23.1,
+          57.8
+        ],
+        "midRange": [
+          58,
+          63.3
+        ],
+        "highRange": [
+          63.8,
+          83
+        ]
+      },
+      "byTier": null,
+      "recommended": {
+        "gate": "top2_65",
+        "PASS": {
+          "n": 26,
+          "w": 15,
+          "l": 11,
+          "pu": 0,
+          "record": "15-11",
+          "units": 75,
+          "profit": 12.55,
+          "wr": 57.7,
+          "roi": 16.7
+        },
+        "FAIL": {
+          "n": 13,
+          "w": 2,
+          "l": 11,
+          "pu": 0,
+          "record": "2-11",
+          "units": 38.5,
+          "profit": -27.81,
+          "wr": 15.4,
+          "roi": -72.2
+        },
+        "deltaWr": 42.3,
+        "deltaRoi": 88.9,
+        "profitIfKeepPassOnly": 12.55,
+        "profitLiftVsPathBaseline": 27.81
+      }
+    },
+    "D": {
+      "label": "Path D (DISSENT)",
+      "baseline": {
+        "n": 1,
+        "w": 0,
+        "l": 1,
+        "pu": 0,
+        "record": "0-1",
+        "units": 1,
+        "profit": -1,
+        "wr": 0,
+        "roi": -100
+      },
+      "opposedRate": 100,
+      "meanMeanPct": 66.7,
+      "separation": {
+        "meanPct60": {
+          "PASS": {
+            "n": 1,
+            "w": 0,
+            "l": 1,
+            "pu": 0,
+            "record": "0-1",
+            "units": 1,
+            "profit": -1,
+            "wr": 0,
+            "roi": -100
+          },
+          "FAIL": {
+            "n": 0,
+            "w": 0,
+            "l": 0,
+            "pu": 0,
+            "record": "0-0",
+            "units": 0,
+            "profit": 0,
+            "wr": null,
+            "roi": null
+          },
+          "deltaWr": null,
+          "deltaRoi": null,
+          "deltaProfitIfCutFail": 0,
+          "keepPass_vs_baseline": {
+            "baseline": {
+              "n": 1,
+              "w": 0,
+              "l": 1,
+              "pu": 0,
+              "record": "0-1",
+              "units": 1,
+              "profit": -1,
+              "wr": 0,
+              "roi": -100
+            },
+            "keepPass": {
+              "n": 1,
+              "w": 0,
+              "l": 1,
+              "pu": 0,
+              "record": "0-1",
+              "units": 1,
+              "profit": -1,
+              "wr": 0,
+              "roi": -100
+            },
+            "profitLift": 0,
+            "roiLiftPts": 0,
+            "cutN": 0
+          }
+        },
+        "top2_65": {
+          "PASS": {
+            "n": 1,
+            "w": 0,
+            "l": 1,
+            "pu": 0,
+            "record": "0-1",
+            "units": 1,
+            "profit": -1,
+            "wr": 0,
+            "roi": -100
+          },
+          "FAIL": {
+            "n": 0,
+            "w": 0,
+            "l": 0,
+            "pu": 0,
+            "record": "0-0",
+            "units": 0,
+            "profit": 0,
+            "wr": null,
+            "roi": null
+          },
+          "deltaWr": null,
+          "deltaRoi": null,
+          "deltaProfitIfCutFail": 0,
+          "keepPass_vs_baseline": {
+            "baseline": {
+              "n": 1,
+              "w": 0,
+              "l": 1,
+              "pu": 0,
+              "record": "0-1",
+              "units": 1,
+              "profit": -1,
+              "wr": 0,
+              "roi": -100
+            },
+            "keepPass": {
+              "n": 1,
+              "w": 0,
+              "l": 1,
+              "pu": 0,
+              "record": "0-1",
+              "units": 1,
+              "profit": -1,
+              "wr": 0,
+              "roi": -100
+            },
+            "profitLift": 0,
+            "roiLiftPts": 0,
+            "cutN": 0
+          }
+        },
+        "nElite2": {
+          "PASS": {
+            "n": 0,
+            "w": 0,
+            "l": 0,
+            "pu": 0,
+            "record": "0-0",
+            "units": 0,
+            "profit": 0,
+            "wr": null,
+            "roi": null
+          },
+          "FAIL": {
+            "n": 1,
+            "w": 0,
+            "l": 1,
+            "pu": 0,
+            "record": "0-1",
+            "units": 1,
+            "profit": -1,
+            "wr": 0,
+            "roi": -100
+          },
+          "deltaWr": null,
+          "deltaRoi": null,
+          "deltaProfitIfCutFail": 1,
+          "keepPass_vs_baseline": {
+            "baseline": {
+              "n": 1,
+              "w": 0,
+              "l": 1,
+              "pu": 0,
+              "record": "0-1",
+              "units": 1,
+              "profit": -1,
+              "wr": 0,
+              "roi": -100
+            },
+            "keepPass": {
+              "n": 0,
+              "w": 0,
+              "l": 0,
+              "pu": 0,
+              "record": "0-0",
+              "units": 0,
+              "profit": 0,
+              "wr": null,
+              "roi": null
+            },
+            "profitLift": 1,
+            "roiLiftPts": 100,
+            "cutN": 1
+          }
+        },
+        "nHigh2": {
+          "PASS": {
+            "n": 0,
+            "w": 0,
+            "l": 0,
+            "pu": 0,
+            "record": "0-0",
+            "units": 0,
+            "profit": 0,
+            "wr": null,
+            "roi": null
+          },
+          "FAIL": {
+            "n": 1,
+            "w": 0,
+            "l": 1,
+            "pu": 0,
+            "record": "0-1",
+            "units": 1,
+            "profit": -1,
+            "wr": 0,
+            "roi": -100
+          },
+          "deltaWr": null,
+          "deltaRoi": null,
+          "deltaProfitIfCutFail": 1,
+          "keepPass_vs_baseline": {
+            "baseline": {
+              "n": 1,
+              "w": 0,
+              "l": 1,
+              "pu": 0,
+              "record": "0-1",
+              "units": 1,
+              "profit": -1,
+              "wr": 0,
+              "roi": -100
+            },
+            "keepPass": {
+              "n": 0,
+              "w": 0,
+              "l": 0,
+              "pu": 0,
+              "record": "0-0",
+              "units": 0,
+              "profit": 0,
+              "wr": null,
+              "roi": null
+            },
+            "profitLift": 1,
+            "roiLiftPts": 100,
+            "cutN": 1
+          }
+        },
+        "edgeGe0": {
+          "PASS": {
+            "n": 1,
+            "w": 0,
+            "l": 1,
+            "pu": 0,
+            "record": "0-1",
+            "units": 1,
+            "profit": -1,
+            "wr": 0,
+            "roi": -100
+          },
+          "FAIL": {
+            "n": 0,
+            "w": 0,
+            "l": 0,
+            "pu": 0,
+            "record": "0-0",
+            "units": 0,
+            "profit": 0,
+            "wr": null,
+            "roi": null
+          },
+          "deltaWr": null,
+          "deltaRoi": null,
+          "deltaProfitIfCutFail": 0,
+          "keepPass_vs_baseline": {
+            "baseline": {
+              "n": 1,
+              "w": 0,
+              "l": 1,
+              "pu": 0,
+              "record": "0-1",
+              "units": 1,
+              "profit": -1,
+              "wr": 0,
+              "roi": -100
+            },
+            "keepPass": {
+              "n": 1,
+              "w": 0,
+              "l": 1,
+              "pu": 0,
+              "record": "0-1",
+              "units": 1,
+              "profit": -1,
+              "wr": 0,
+              "roi": -100
+            },
+            "profitLift": 0,
+            "roiLiftPts": 0,
+            "cutN": 0
+          }
+        }
+      },
+      "tertiles_meanPct": null,
+      "byTier": null,
+      "recommended": null
+    },
+    "UNTIERED": {
+      "label": "UNTIERED (live units, no hcStakeTier stamp)",
+      "baseline": {
+        "n": 219,
+        "w": 116,
+        "l": 98,
+        "pu": 5,
+        "record": "116-98-5",
+        "units": 457.5,
+        "profit": 17.43,
+        "wr": 54.2,
+        "roi": 3.8
+      },
+      "opposedRate": 67.6,
+      "meanMeanPct": 63.7,
+      "separation": {
+        "meanPct60": {
+          "PASS": {
+            "n": 167,
+            "w": 90,
+            "l": 72,
+            "pu": 5,
+            "record": "90-72-5",
+            "units": 350.5,
+            "profit": 14.09,
+            "wr": 55.6,
+            "roi": 4
+          },
+          "FAIL": {
+            "n": 52,
+            "w": 26,
+            "l": 26,
+            "pu": 0,
+            "record": "26-26",
+            "units": 107,
+            "profit": 3.34,
+            "wr": 50,
+            "roi": 3.1
+          },
+          "deltaWr": 5.6,
+          "deltaRoi": 0.9,
+          "deltaProfitIfCutFail": -3.34,
+          "keepPass_vs_baseline": {
+            "baseline": {
+              "n": 219,
+              "w": 116,
+              "l": 98,
+              "pu": 5,
+              "record": "116-98-5",
+              "units": 457.5,
+              "profit": 17.43,
+              "wr": 54.2,
+              "roi": 3.8
+            },
+            "keepPass": {
+              "n": 167,
+              "w": 90,
+              "l": 72,
+              "pu": 5,
+              "record": "90-72-5",
+              "units": 350.5,
+              "profit": 14.09,
+              "wr": 55.6,
+              "roi": 4
+            },
+            "profitLift": -3.34,
+            "roiLiftPts": 0.2,
+            "cutN": 52
+          }
+        },
+        "top2_65": {
+          "PASS": {
+            "n": 113,
+            "w": 56,
+            "l": 52,
+            "pu": 5,
+            "record": "56-52-5",
+            "units": 236.3,
+            "profit": -10.63,
+            "wr": 51.9,
+            "roi": -4.5
+          },
+          "FAIL": {
+            "n": 106,
+            "w": 60,
+            "l": 46,
+            "pu": 0,
+            "record": "60-46",
+            "units": 221.3,
+            "profit": 28.06,
+            "wr": 56.6,
+            "roi": 12.7
+          },
+          "deltaWr": -4.7,
+          "deltaRoi": -17.2,
+          "deltaProfitIfCutFail": -28.06,
+          "keepPass_vs_baseline": {
+            "baseline": {
+              "n": 219,
+              "w": 116,
+              "l": 98,
+              "pu": 5,
+              "record": "116-98-5",
+              "units": 457.5,
+              "profit": 17.43,
+              "wr": 54.2,
+              "roi": 3.8
+            },
+            "keepPass": {
+              "n": 113,
+              "w": 56,
+              "l": 52,
+              "pu": 5,
+              "record": "56-52-5",
+              "units": 236.3,
+              "profit": -10.63,
+              "wr": 51.9,
+              "roi": -4.5
+            },
+            "profitLift": -28.06,
+            "roiLiftPts": -8.3,
+            "cutN": 106
+          }
+        },
+        "nElite2": {
+          "PASS": {
+            "n": 83,
+            "w": 45,
+            "l": 35,
+            "pu": 3,
+            "record": "45-35-3",
+            "units": 134.5,
+            "profit": 10.53,
+            "wr": 56.3,
+            "roi": 7.8
+          },
+          "FAIL": {
+            "n": 136,
+            "w": 71,
+            "l": 63,
+            "pu": 2,
+            "record": "71-63-2",
+            "units": 323,
+            "profit": 6.9,
+            "wr": 53,
+            "roi": 2.1
+          },
+          "deltaWr": 3.3,
+          "deltaRoi": 5.7,
+          "deltaProfitIfCutFail": -6.9,
+          "keepPass_vs_baseline": {
+            "baseline": {
+              "n": 219,
+              "w": 116,
+              "l": 98,
+              "pu": 5,
+              "record": "116-98-5",
+              "units": 457.5,
+              "profit": 17.43,
+              "wr": 54.2,
+              "roi": 3.8
+            },
+            "keepPass": {
+              "n": 83,
+              "w": 45,
+              "l": 35,
+              "pu": 3,
+              "record": "45-35-3",
+              "units": 134.5,
+              "profit": 10.53,
+              "wr": 56.3,
+              "roi": 7.8
+            },
+            "profitLift": -6.9,
+            "roiLiftPts": 4,
+            "cutN": 136
+          }
+        },
+        "nHigh2": {
+          "PASS": {
+            "n": 77,
+            "w": 37,
+            "l": 36,
+            "pu": 4,
+            "record": "37-36-4",
+            "units": 125.8,
+            "profit": -3.04,
+            "wr": 50.7,
+            "roi": -2.4
+          },
+          "FAIL": {
+            "n": 142,
+            "w": 79,
+            "l": 62,
+            "pu": 1,
+            "record": "79-62-1",
+            "units": 331.8,
+            "profit": 20.47,
+            "wr": 56,
+            "roi": 6.2
+          },
+          "deltaWr": -5.3,
+          "deltaRoi": -8.6,
+          "deltaProfitIfCutFail": -20.47,
+          "keepPass_vs_baseline": {
+            "baseline": {
+              "n": 219,
+              "w": 116,
+              "l": 98,
+              "pu": 5,
+              "record": "116-98-5",
+              "units": 457.5,
+              "profit": 17.43,
+              "wr": 54.2,
+              "roi": 3.8
+            },
+            "keepPass": {
+              "n": 77,
+              "w": 37,
+              "l": 36,
+              "pu": 4,
+              "record": "37-36-4",
+              "units": 125.8,
+              "profit": -3.04,
+              "wr": 50.7,
+              "roi": -2.4
+            },
+            "profitLift": -20.47,
+            "roiLiftPts": -6.2,
+            "cutN": 142
+          }
+        },
+        "edgeGe0": {
+          "PASS": {
+            "n": 130,
+            "w": 67,
+            "l": 60,
+            "pu": 3,
+            "record": "67-60-3",
+            "units": 269.5,
+            "profit": -1.26,
+            "wr": 52.8,
+            "roi": -0.5
+          },
+          "FAIL": {
+            "n": 89,
+            "w": 49,
+            "l": 38,
+            "pu": 2,
+            "record": "49-38-2",
+            "units": 188,
+            "profit": 18.69,
+            "wr": 56.3,
+            "roi": 9.9
+          },
+          "deltaWr": -3.5,
+          "deltaRoi": -10.4,
+          "deltaProfitIfCutFail": -18.69,
+          "keepPass_vs_baseline": {
+            "baseline": {
+              "n": 219,
+              "w": 116,
+              "l": 98,
+              "pu": 5,
+              "record": "116-98-5",
+              "units": 457.5,
+              "profit": 17.43,
+              "wr": 54.2,
+              "roi": 3.8
+            },
+            "keepPass": {
+              "n": 130,
+              "w": 67,
+              "l": 60,
+              "pu": 3,
+              "record": "67-60-3",
+              "units": 269.5,
+              "profit": -1.26,
+              "wr": 52.8,
+              "roi": -0.5
+            },
+            "profitLift": -18.69,
+            "roiLiftPts": -4.3,
+            "cutN": 89
+          }
+        }
+      },
+      "tertiles_meanPct": {
+        "low": {
+          "n": 73,
+          "w": 37,
+          "l": 35,
+          "pu": 1,
+          "record": "37-35-1",
+          "units": 150.3,
+          "profit": -3.73,
+          "wr": 51.4,
+          "roi": -2.5
+        },
+        "mid": {
+          "n": 73,
+          "w": 39,
+          "l": 32,
+          "pu": 2,
+          "record": "39-32-2",
+          "units": 131.5,
+          "profit": 27.58,
+          "wr": 54.9,
+          "roi": 21
+        },
+        "high": {
+          "n": 73,
+          "w": 40,
+          "l": 31,
+          "pu": 2,
+          "record": "40-31-2",
+          "units": 175.8,
+          "profit": -6.42,
+          "wr": 56.3,
+          "roi": -3.7
+        },
+        "lowRange": [
+          40,
+          61
+        ],
+        "midRange": [
+          61,
+          66.4
+        ],
+        "highRange": [
+          66.4,
+          80
+        ]
+      },
+      "byTier": null,
+      "recommended": {
+        "gate": "nElite2",
+        "PASS": {
+          "n": 83,
+          "w": 45,
+          "l": 35,
+          "pu": 3,
+          "record": "45-35-3",
+          "units": 134.5,
+          "profit": 10.53,
+          "wr": 56.3,
+          "roi": 7.8
+        },
+        "FAIL": {
+          "n": 136,
+          "w": 71,
+          "l": 63,
+          "pu": 2,
+          "record": "71-63-2",
+          "units": 323,
+          "profit": 6.9,
+          "wr": 53,
+          "roi": 2.1
+        },
+        "deltaWr": 3.3,
+        "deltaRoi": 5.7,
+        "profitIfKeepPassOnly": 10.53,
+        "profitLiftVsPathBaseline": -6.9
+      }
+    }
+  },
+  "portfolio": {
+    "P1_A60_B_elite2_C_elite2_U60": {
+      "name": "A≥60% | B≥2 elite | C≥2 elite | UNTIERED≥60%",
+      "kept": {
+        "n": 292,
+        "w": 170,
+        "l": 116,
+        "pu": 6,
+        "record": "170-116-6",
+        "units": 786.5,
+        "profit": 104.7,
+        "wr": 59.4,
+        "roi": 13.3
+      },
+      "cut": {
+        "n": 138,
+        "w": 63,
+        "l": 74,
+        "pu": 1,
+        "record": "63-74-1",
+        "units": 396,
+        "profit": -59.91,
+        "wr": 46,
+        "roi": -15.1
+      },
+      "deltaProfit": 59.91,
+      "deltaRoiPts": 9.5,
+      "byPath_kept": {
+        "A": {
+          "n": 80,
+          "w": 52,
+          "l": 27,
+          "pu": 1,
+          "record": "52-27-1",
+          "units": 280,
+          "profit": 55.94,
+          "wr": 65.8,
+          "roi": 20
+        },
+        "B": {
+          "n": 22,
+          "w": 15,
+          "l": 7,
+          "pu": 0,
+          "record": "15-7",
+          "units": 88,
+          "profit": 25.02,
+          "wr": 68.2,
+          "roi": 28.4
+        },
+        "C": {
+          "n": 23,
+          "w": 13,
+          "l": 10,
+          "pu": 0,
+          "record": "13-10",
+          "units": 68,
+          "profit": 9.65,
+          "wr": 56.5,
+          "roi": 14.2
+        },
+        "UNTIERED": {
+          "n": 167,
+          "w": 90,
+          "l": 72,
+          "pu": 5,
+          "record": "90-72-5",
+          "units": 350.5,
+          "profit": 14.09,
+          "wr": 55.6,
+          "roi": 4
+        }
+      }
+    },
+    "P2_A60_B_top2_C_elite2_U60": {
+      "name": "A≥60% | B top2≥65 | C≥2 elite | UNTIERED≥60%",
+      "kept": {
+        "n": 295,
+        "w": 170,
+        "l": 119,
+        "pu": 6,
+        "record": "170-119-6",
+        "units": 798.5,
+        "profit": 92.7,
+        "wr": 58.8,
+        "roi": 11.6
+      },
+      "cut": {
+        "n": 135,
+        "w": 63,
+        "l": 71,
+        "pu": 1,
+        "record": "63-71-1",
+        "units": 384,
+        "profit": -47.91,
+        "wr": 47,
+        "roi": -12.5
+      },
+      "deltaProfit": 47.91,
+      "deltaRoiPts": 7.8,
+      "byPath_kept": {
+        "A": {
+          "n": 80,
+          "w": 52,
+          "l": 27,
+          "pu": 1,
+          "record": "52-27-1",
+          "units": 280,
+          "profit": 55.94,
+          "wr": 65.8,
+          "roi": 20
+        },
+        "B": {
+          "n": 25,
+          "w": 15,
+          "l": 10,
+          "pu": 0,
+          "record": "15-10",
+          "units": 100,
+          "profit": 13.02,
+          "wr": 60,
+          "roi": 13
+        },
+        "C": {
+          "n": 23,
+          "w": 13,
+          "l": 10,
+          "pu": 0,
+          "record": "13-10",
+          "units": 68,
+          "profit": 9.65,
+          "wr": 56.5,
+          "roi": 14.2
+        },
+        "UNTIERED": {
+          "n": 167,
+          "w": 90,
+          "l": 72,
+          "pu": 5,
+          "record": "90-72-5",
+          "units": 350.5,
+          "profit": 14.09,
+          "wr": 55.6,
+          "roi": 4
+        }
+      }
+    },
+    "P3_all_mean60": {
+      "name": "All paths: meanPct ≥ 60",
+      "kept": {
+        "n": 294,
+        "w": 165,
+        "l": 122,
+        "pu": 7,
+        "record": "165-122-7",
+        "units": 792,
+        "profit": 68.31,
+        "wr": 57.5,
+        "roi": 8.6
+      },
+      "cut": {
+        "n": 136,
+        "w": 68,
+        "l": 68,
+        "pu": 0,
+        "record": "68-68",
+        "units": 390.5,
+        "profit": -23.52,
+        "wr": 50,
+        "roi": -6
+      },
+      "deltaProfit": 23.52,
+      "deltaRoiPts": 4.8,
+      "byPath_kept": {
+        "A": {
+          "n": 80,
+          "w": 52,
+          "l": 27,
+          "pu": 1,
+          "record": "52-27-1",
+          "units": 280,
+          "profit": 55.94,
+          "wr": 65.8,
+          "roi": 20
+        },
+        "B": {
+          "n": 25,
+          "w": 14,
+          "l": 10,
+          "pu": 1,
+          "record": "14-10-1",
+          "units": 98,
+          "profit": 5.22,
+          "wr": 58.3,
+          "roi": 5.3
+        },
+        "C": {
+          "n": 21,
+          "w": 9,
+          "l": 12,
+          "pu": 0,
+          "record": "9-12",
+          "units": 62.5,
+          "profit": -5.94,
+          "wr": 42.9,
+          "roi": -9.5
+        },
+        "D": {
+          "n": 1,
+          "w": 0,
+          "l": 1,
+          "pu": 0,
+          "record": "0-1",
+          "units": 1,
+          "profit": -1,
+          "wr": 0,
+          "roi": -100
+        },
+        "UNTIERED": {
+          "n": 167,
+          "w": 90,
+          "l": 72,
+          "pu": 5,
+          "record": "90-72-5",
+          "units": 350.5,
+          "profit": 14.09,
+          "wr": 55.6,
+          "roi": 4
+        }
+      }
+    },
+    "P4_all_elite2": {
+      "name": "All paths: ≥2 elite",
+      "kept": {
+        "n": 189,
+        "w": 110,
+        "l": 75,
+        "pu": 4,
+        "record": "110-75-4",
+        "units": 511,
+        "profit": 69.01,
+        "wr": 59.5,
+        "roi": 13.5
+      },
+      "cut": {
+        "n": 241,
+        "w": 123,
+        "l": 115,
+        "pu": 3,
+        "record": "123-115-3",
+        "units": 671.5,
+        "profit": -24.22,
+        "wr": 51.7,
+        "roi": -3.6
+      },
+      "deltaProfit": 24.22,
+      "deltaRoiPts": 9.7,
+      "byPath_kept": {
+        "A": {
+          "n": 61,
+          "w": 37,
+          "l": 23,
+          "pu": 1,
+          "record": "37-23-1",
+          "units": 220.5,
+          "profit": 23.81,
+          "wr": 61.7,
+          "roi": 10.8
+        },
+        "B": {
+          "n": 22,
+          "w": 15,
+          "l": 7,
+          "pu": 0,
+          "record": "15-7",
+          "units": 88,
+          "profit": 25.02,
+          "wr": 68.2,
+          "roi": 28.4
+        },
+        "C": {
+          "n": 23,
+          "w": 13,
+          "l": 10,
+          "pu": 0,
+          "record": "13-10",
+          "units": 68,
+          "profit": 9.65,
+          "wr": 56.5,
+          "roi": 14.2
+        },
+        "UNTIERED": {
+          "n": 83,
+          "w": 45,
+          "l": 35,
+          "pu": 3,
+          "record": "45-35-3",
+          "units": 134.5,
+          "profit": 10.53,
+          "wr": 56.3,
+          "roi": 7.8
+        }
+      }
+    },
+    "P5_A_edge_B_elite_C_elite_U60": {
+      "name": "A: mean≥60 & (unopp|edge≥0) | B/C ≥2 elite | U≥60",
+      "kept": {
+        "n": 270,
+        "w": 157,
+        "l": 107,
+        "pu": 6,
+        "record": "157-107-6",
+        "units": 709.5,
+        "profit": 100.96,
+        "wr": 59.5,
+        "roi": 14.2
+      },
+      "cut": {
+        "n": 160,
+        "w": 76,
+        "l": 83,
+        "pu": 1,
+        "record": "76-83-1",
+        "units": 473,
+        "profit": -56.17,
+        "wr": 47.8,
+        "roi": -11.9
+      },
+      "deltaProfit": 56.17,
+      "deltaRoiPts": 10.4,
+      "byPath_kept": {
+        "A": {
+          "n": 58,
+          "w": 39,
+          "l": 18,
+          "pu": 1,
+          "record": "39-18-1",
+          "units": 203,
+          "profit": 52.2,
+          "wr": 68.4,
+          "roi": 25.7
+        },
+        "B": {
+          "n": 22,
+          "w": 15,
+          "l": 7,
+          "pu": 0,
+          "record": "15-7",
+          "units": 88,
+          "profit": 25.02,
+          "wr": 68.2,
+          "roi": 28.4
+        },
+        "C": {
+          "n": 23,
+          "w": 13,
+          "l": 10,
+          "pu": 0,
+          "record": "13-10",
+          "units": 68,
+          "profit": 9.65,
+          "wr": 56.5,
+          "roi": 14.2
+        },
+        "UNTIERED": {
+          "n": 167,
+          "w": 90,
+          "l": 72,
+          "pu": 5,
+          "record": "90-72-5",
+          "units": 350.5,
+          "profit": 14.09,
+          "wr": 55.6,
+          "roi": 4
+        }
+      }
+    }
+  }
+}

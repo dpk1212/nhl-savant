@@ -1,0 +1,16 @@
+---
+description: Task subagents must use Grok (grok-4.5-fast-xhigh) unless Dale overrides
+alwaysApply: true
+---
+
+# Subagent model — Grok
+
+When launching **Task** subagents (Coach, Researcher, Strategist, Editor, explore, generalPurpose, shell, etc.), set:
+
+```
+model: grok-4.5-fast-xhigh
+```
+
+**Default for this repo (Dale 2026-07-12).** Do not use Claude / GPT / Composer for subagents unless Dale explicitly names a different model for that run.
+
+Parent agent may stay on whatever model the chat is using; this rule is for **Task tool** `model` only.

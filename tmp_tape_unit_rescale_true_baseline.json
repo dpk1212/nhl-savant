@@ -1,0 +1,149 @@
+{
+  "meta": {
+    "from": "2026-06-01",
+    "nAll": 423,
+    "nWithOdds": 417,
+    "nNoOdds": 6,
+    "nTape": 220,
+    "nNoTape": 203,
+    "thr": 0.22,
+    "generatedAt": "2026-07-14T21:04:58.929Z",
+    "note": "TRUE baseline = full June1+ UI staked book actual units. Tape policies FAIL-OPEN (no tape → keep actual units)."
+  },
+  "TRUE_BASE": {
+    "n": 417,
+    "wr": 55.4,
+    "units": 1127,
+    "pnl": 47.5,
+    "roi": 4.2
+  },
+  "slices": {
+    "all": {
+      "n": 417,
+      "wr": 55.4,
+      "units": 1127,
+      "pnl": 47.5,
+      "roi": 4.2
+    },
+    "hasTape": {
+      "n": 217,
+      "wr": 54.4,
+      "units": 558.3,
+      "pnl": 17.5,
+      "roi": 3.1
+    },
+    "noTape": {
+      "n": 200,
+      "wr": 56.5,
+      "units": 568.8,
+      "pnl": 30,
+      "roi": 5.3
+    },
+    "d5plus": {
+      "n": 130,
+      "wr": 64.6,
+      "units": 337.5,
+      "pnl": 66.7,
+      "roi": 19.8
+    },
+    "d14": {
+      "n": 87,
+      "wr": 39.1,
+      "units": 220.8,
+      "pnl": -49.2,
+      "roi": -22.3
+    }
+  },
+  "ranked": [
+    {
+      "name": "FO_BOOST_D5_1_35_ZERO_D14",
+      "n": 330,
+      "wr": 59.7,
+      "units": 992,
+      "pnl": 113.2,
+      "roi": 11.4,
+      "dPnl": 65.7,
+      "dUnits": -135
+    },
+    {
+      "name": "FO_PATH_x_TAPE_MULT",
+      "n": 330,
+      "wr": 59.7,
+      "units": 968.1,
+      "pnl": 110.2,
+      "roi": 11.4,
+      "dPnl": 62.7,
+      "dUnits": -158.9
+    },
+    {
+      "name": "FO_KEEP_D5_ZERO_D14",
+      "n": 330,
+      "wr": 59.7,
+      "units": 906.3,
+      "pnl": 96.8,
+      "roi": 10.7,
+      "dPnl": 49.3,
+      "dUnits": -220.7
+    },
+    {
+      "name": "FO_LADDER_D5RAMP",
+      "n": 330,
+      "wr": 59.7,
+      "units": 860.3,
+      "pnl": 90.1,
+      "roi": 10.5,
+      "dPnl": 42.6,
+      "dUnits": -266.7
+    },
+    {
+      "name": "FO_FLAT_D5_2U",
+      "n": 330,
+      "wr": 59.7,
+      "units": 826.8,
+      "pnl": 84.5,
+      "roi": 10.2,
+      "dPnl": 37,
+      "dUnits": -300.2
+    },
+    {
+      "name": "FO_KEEP_D5_HALF_D14",
+      "n": 417,
+      "wr": 55.4,
+      "units": 1021.2,
+      "pnl": 74.7,
+      "roi": 7.3,
+      "dPnl": 27.2,
+      "dUnits": -105.8
+    },
+    {
+      "name": "FC_KEEP_D5_ZERO_D14",
+      "n": 130,
+      "wr": 64.6,
+      "units": 337.5,
+      "pnl": 66.7,
+      "roi": 19.8,
+      "dPnl": 19.2,
+      "dUnits": -789.5
+    },
+    {
+      "name": "FO_BOOST_D5_KEEP_D14",
+      "n": 417,
+      "wr": 55.4,
+      "units": 1212.7,
+      "pnl": 64,
+      "roi": 5.3,
+      "dPnl": 16.5,
+      "dUnits": 85.7
+    },
+    {
+      "name": "TRUE_BASELINE",
+      "n": 417,
+      "wr": 55.4,
+      "units": 1127,
+      "pnl": 47.5,
+      "roi": 4.2,
+      "dPnl": 0,
+      "dUnits": 0
+    }
+  ]
+}

@@ -1,0 +1,875 @@
+{
+  "meta": {
+    "from": "2026-06-01",
+    "answer": "YES — non-staked June+ games live as trackedOnly AGS-scored sides with wallet backing. Including them ~2.4× sample.",
+    "def": "Universe = every side with AGS-U tier + outcome + ≥1 FOR wallet with causal % +CLV (n≥5). Includes trackedOnly (0u). Flat ±1 for WR; staked $ kept separately.",
+    "generatedAt": "2026-07-14T16:54:45.766Z"
+  },
+  "counts": {
+    "expanded": 1017,
+    "staked": 430,
+    "trackedOnly": 587,
+    "nFor2plus": 726,
+    "tierDist": {
+      "staked": {
+        "PREMIUM": 125,
+        "LOCK": 87,
+        "LEAN": 64,
+        "WEAK": 59,
+        "ELITE": 95
+      },
+      "tracked": {
+        "FADE": 267,
+        "LOCK": 63,
+        "LEAN": 51,
+        "WEAK": 66,
+        "PREMIUM": 91,
+        "ELITE": 49
+      }
+    }
+  },
+  "empiricalCuts_expanded": {
+    "q1_hi": 59.52,
+    "q2_hi": 65.19,
+    "q3_hi": 69.23,
+    "q4_hi": 73.33
+  },
+  "baseline": {
+    "expanded": {
+      "n": 1017,
+      "record": "512-495-10",
+      "wr": 50.8,
+      "flatRoi": 1.7
+    },
+    "staked": {
+      "n": 430,
+      "record": "233-190-7",
+      "wr": 55.1,
+      "units": 1182.5,
+      "profit": 44.79,
+      "roi": 3.8
+    },
+    "tracked": {
+      "n": 587,
+      "record": "279-305-3",
+      "wr": 47.8,
+      "flatRoi": -4.4
+    }
+  },
+  "quintiles": {
+    "expanded_flat": {
+      "monoWrStrict": false,
+      "deltaWr": -0.5,
+      "deltaFlatRoi": -1,
+      "buckets": [
+        {
+          "q": 1,
+          "lo": 33.33,
+          "hi": 59.45,
+          "mean": 54.4,
+          "n": 203,
+          "record": "109-94",
+          "wr": 53.7,
+          "flatRoi": 7.4,
+          "stakedN": 50,
+          "stakedUnits": 149.5,
+          "stakedProfit": -12.71,
+          "stakedRoi": -8.5
+        },
+        {
+          "q": 2,
+          "lo": 59.52,
+          "hi": 65.19,
+          "mean": 62.61,
+          "n": 203,
+          "record": "92-109-2",
+          "wr": 45.8,
+          "flatRoi": -8.4,
+          "stakedN": 83,
+          "stakedUnits": 216,
+          "stakedProfit": 5.01,
+          "stakedRoi": 2.3
+        },
+        {
+          "q": 3,
+          "lo": 65.19,
+          "hi": 69.23,
+          "mean": 67.36,
+          "n": 204,
+          "record": "101-102-1",
+          "wr": 49.8,
+          "flatRoi": -0.5,
+          "stakedN": 106,
+          "stakedUnits": 310,
+          "stakedProfit": -21.36,
+          "stakedRoi": -6.9
+        },
+        {
+          "q": 4,
+          "lo": 69.23,
+          "hi": 73.33,
+          "mean": 71.27,
+          "n": 203,
+          "record": "103-96-4",
+          "wr": 51.8,
+          "flatRoi": 3.4,
+          "stakedN": 92,
+          "stakedUnits": 222.5,
+          "stakedProfit": 20.61,
+          "stakedRoi": 9.3
+        },
+        {
+          "q": 5,
+          "lo": 73.33,
+          "hi": 100,
+          "mean": 79.02,
+          "n": 204,
+          "record": "107-94-3",
+          "wr": 53.2,
+          "flatRoi": 6.4,
+          "stakedN": 99,
+          "stakedUnits": 284.5,
+          "stakedProfit": 53.24,
+          "stakedRoi": 18.7
+        }
+      ]
+    },
+    "expanded_nFor2plus": {
+      "monoWrStrict": false,
+      "deltaWr": 7.3,
+      "deltaFlatRoi": 14.4,
+      "buckets": [
+        {
+          "q": 1,
+          "lo": 40.27,
+          "hi": 62.35,
+          "mean": 57.98,
+          "n": 145,
+          "record": "67-77-1",
+          "wr": 46.5,
+          "flatRoi": -6.9,
+          "stakedN": 55,
+          "stakedUnits": 158.3,
+          "stakedProfit": -0.67,
+          "stakedRoi": -0.4
+        },
+        {
+          "q": 2,
+          "lo": 62.36,
+          "hi": 66.6,
+          "mean": 64.56,
+          "n": 145,
+          "record": "64-80-1",
+          "wr": 44.4,
+          "flatRoi": -11,
+          "stakedN": 66,
+          "stakedUnits": 197.3,
+          "stakedProfit": -2.51,
+          "stakedRoi": -1.3
+        },
+        {
+          "q": 3,
+          "lo": 66.65,
+          "hi": 69.81,
+          "mean": 68.41,
+          "n": 145,
+          "record": "73-71-1",
+          "wr": 50.7,
+          "flatRoi": 1.4,
+          "stakedN": 87,
+          "stakedUnits": 246.3,
+          "stakedProfit": 5.86,
+          "stakedRoi": 2.4
+        },
+        {
+          "q": 4,
+          "lo": 69.83,
+          "hi": 74.13,
+          "mean": 72.06,
+          "n": 145,
+          "record": "78-65-2",
+          "wr": 54.5,
+          "flatRoi": 9,
+          "stakedN": 83,
+          "stakedUnits": 225.5,
+          "stakedProfit": 26.17,
+          "stakedRoi": 11.6
+        },
+        {
+          "q": 5,
+          "lo": 74.13,
+          "hi": 93.75,
+          "mean": 79.22,
+          "n": 146,
+          "record": "77-66-3",
+          "wr": 53.8,
+          "flatRoi": 7.5,
+          "stakedN": 78,
+          "stakedUnits": 208.3,
+          "stakedProfit": 30.4,
+          "stakedRoi": 14.6
+        }
+      ]
+    },
+    "staked_only": {
+      "monoWrStrict": true,
+      "deltaWr": 12.5,
+      "deltaFlatRoi": 24.4,
+      "buckets": [
+        {
+          "q": 1,
+          "lo": 40.27,
+          "hi": 62.39,
+          "mean": 57.6,
+          "n": 86,
+          "record": "41-44-1",
+          "wr": 48.2,
+          "flatRoi": -3.5,
+          "stakedN": 86,
+          "stakedUnits": 230.3,
+          "stakedProfit": -18.12,
+          "stakedRoi": -7.9
+        },
+        {
+          "q": 2,
+          "lo": 62.39,
+          "hi": 67.09,
+          "mean": 64.9,
+          "n": 86,
+          "record": "45-41",
+          "wr": 52.3,
+          "flatRoi": 4.7,
+          "stakedN": 86,
+          "stakedUnits": 249,
+          "stakedProfit": -0.69,
+          "stakedRoi": -0.3
+        },
+        {
+          "q": 3,
+          "lo": 67.12,
+          "hi": 70.04,
+          "mean": 68.5,
+          "n": 86,
+          "record": "47-38-1",
+          "wr": 55.3,
+          "flatRoi": 10.5,
+          "stakedN": 86,
+          "stakedUnits": 238.5,
+          "stakedProfit": -7.99,
+          "stakedRoi": -3.4
+        },
+        {
+          "q": 4,
+          "lo": 70.04,
+          "hi": 73.96,
+          "mean": 72.09,
+          "n": 86,
+          "record": "49-34-3",
+          "wr": 59,
+          "flatRoi": 17.4,
+          "stakedN": 86,
+          "stakedUnits": 233,
+          "stakedProfit": 25.31,
+          "stakedRoi": 10.9
+        },
+        {
+          "q": 5,
+          "lo": 73.96,
+          "hi": 93.75,
+          "mean": 79.05,
+          "n": 86,
+          "record": "51-33-2",
+          "wr": 60.7,
+          "flatRoi": 20.9,
+          "stakedN": 86,
+          "stakedUnits": 231.8,
+          "stakedProfit": 46.28,
+          "stakedRoi": 20
+        }
+      ]
+    },
+    "tracked_only": {
+      "monoWrStrict": false,
+      "deltaWr": -8.5,
+      "deltaFlatRoi": -17,
+      "buckets": [
+        {
+          "q": 1,
+          "lo": 33.33,
+          "hi": 56.88,
+          "mean": 52.88,
+          "n": 117,
+          "record": "68-49",
+          "wr": 58.1,
+          "flatRoi": 16.2,
+          "stakedN": 0,
+          "stakedUnits": 0,
+          "stakedProfit": 0,
+          "stakedRoi": null
+        },
+        {
+          "q": 2,
+          "lo": 57.38,
+          "hi": 63.71,
+          "mean": 60.74,
+          "n": 117,
+          "record": "52-65",
+          "wr": 44.4,
+          "flatRoi": -11.1,
+          "stakedN": 0,
+          "stakedUnits": 0,
+          "stakedProfit": 0,
+          "stakedRoi": null
+        },
+        {
+          "q": 3,
+          "lo": 63.78,
+          "hi": 68.71,
+          "mean": 65.99,
+          "n": 118,
+          "record": "51-66-1",
+          "wr": 43.6,
+          "flatRoi": -12.7,
+          "stakedN": 0,
+          "stakedUnits": 0,
+          "stakedProfit": 0,
+          "stakedRoi": null
+        },
+        {
+          "q": 4,
+          "lo": 68.71,
+          "hi": 72.95,
+          "mean": 70.63,
+          "n": 117,
+          "record": "50-66-1",
+          "wr": 43.1,
+          "flatRoi": -13.7,
+          "stakedN": 0,
+          "stakedUnits": 0,
+          "stakedProfit": 0,
+          "stakedRoi": null
+        },
+        {
+          "q": 5,
+          "lo": 72.96,
+          "hi": 100,
+          "mean": 78.94,
+          "n": 118,
+          "record": "58-59-1",
+          "wr": 49.6,
+          "flatRoi": -0.8,
+          "stakedN": 0,
+          "stakedUnits": 0,
+          "stakedProfit": 0,
+          "stakedRoi": null
+        }
+      ]
+    }
+  },
+  "priorShipLadder_onExpanded": [
+    {
+      "name": "Q1 mute <59",
+      "expanded": {
+        "n": 190,
+        "record": "101-89",
+        "wr": 53.2,
+        "flatRoi": 6.3
+      },
+      "staked": {
+        "n": 45,
+        "record": "19-26",
+        "wr": 42.2,
+        "units": 135.5,
+        "profit": -18.28,
+        "roi": -13.5
+      },
+      "tracked": {
+        "n": 145,
+        "record": "82-63",
+        "wr": 56.6,
+        "flatRoi": 13.1
+      }
+    },
+    {
+      "name": "Q2 half 59-63.5",
+      "expanded": {
+        "n": 142,
+        "record": "68-73-1",
+        "wr": 48.2,
+        "flatRoi": -3.5
+      },
+      "staked": {
+        "n": 65,
+        "record": "33-31-1",
+        "wr": 51.6,
+        "units": 151,
+        "profit": -14.26,
+        "roi": -9.4
+      },
+      "tracked": {
+        "n": 77,
+        "record": "35-42",
+        "wr": 45.5,
+        "flatRoi": -9.1
+      }
+    },
+    {
+      "name": "Q3-4 full 63.5-71.5",
+      "expanded": {
+        "n": 392,
+        "record": "195-193-4",
+        "wr": 50.3,
+        "flatRoi": 0.5
+      },
+      "staked": {
+        "n": 178,
+        "record": "102-73-3",
+        "wr": 58.3,
+        "units": 522,
+        "profit": 41.26,
+        "roi": 7.9
+      },
+      "tracked": {
+        "n": 214,
+        "record": "93-120-1",
+        "wr": 43.7,
+        "flatRoi": -12.6
+      }
+    },
+    {
+      "name": "Q5 boost ≥71.5",
+      "expanded": {
+        "n": 293,
+        "record": "148-140-5",
+        "wr": 51.4,
+        "flatRoi": 2.7
+      },
+      "staked": {
+        "n": 142,
+        "record": "79-60-3",
+        "wr": 56.8,
+        "units": 374,
+        "profit": 36.07,
+        "roi": 9.6
+      },
+      "tracked": {
+        "n": 151,
+        "record": "69-80-2",
+        "wr": 46.3,
+        "flatRoi": -7.3
+      }
+    }
+  ],
+  "bySport": {
+    "MLB": {
+      "n": 908,
+      "staked": 380,
+      "tracked": 528,
+      "q": {
+        "monoWrStrict": false,
+        "deltaWr": -0.8,
+        "deltaFlatRoi": -1.7,
+        "buckets": [
+          {
+            "q": 1,
+            "lo": 33.33,
+            "hi": 58.95,
+            "mean": 54,
+            "n": 181,
+            "record": "99-82",
+            "wr": 54.7,
+            "flatRoi": 9.4,
+            "stakedN": 43,
+            "stakedUnits": 130.5,
+            "stakedProfit": -13.28,
+            "stakedRoi": -10.2
+          },
+          {
+            "q": 2,
+            "lo": 58.97,
+            "hi": 64.62,
+            "mean": 62.08,
+            "n": 182,
+            "record": "83-98-1",
+            "wr": 45.9,
+            "flatRoi": -8.2,
+            "stakedN": 80,
+            "stakedUnits": 202,
+            "stakedProfit": 2.7,
+            "stakedRoi": 1.3
+          },
+          {
+            "q": 3,
+            "lo": 64.71,
+            "hi": 68.84,
+            "mean": 66.9,
+            "n": 181,
+            "record": "91-90",
+            "wr": 50.3,
+            "flatRoi": 0.6,
+            "stakedN": 90,
+            "stakedUnits": 255.5,
+            "stakedProfit": -15.17,
+            "stakedRoi": -5.9
+          },
+          {
+            "q": 4,
+            "lo": 68.85,
+            "hi": 72.88,
+            "mean": 70.76,
+            "n": 182,
+            "record": "88-91-3",
+            "wr": 49.2,
+            "flatRoi": -1.6,
+            "stakedN": 79,
+            "stakedUnits": 199.8,
+            "stakedProfit": 18.35,
+            "stakedRoi": 9.2
+          },
+          {
+            "q": 5,
+            "lo": 72.95,
+            "hi": 100,
+            "mean": 78.36,
+            "n": 182,
+            "record": "96-82-4",
+            "wr": 53.9,
+            "flatRoi": 7.7,
+            "stakedN": 88,
+            "stakedUnits": 262.3,
+            "stakedProfit": 18.05,
+            "stakedRoi": 6.9
+          }
+        ]
+      }
+    },
+    "NBA": {
+      "n": 15,
+      "staked": 10,
+      "tracked": 5,
+      "q": {
+        "monoWrStrict": false,
+        "deltaWr": 0,
+        "deltaFlatRoi": 0,
+        "buckets": [
+          {
+            "q": 1,
+            "lo": 69.29,
+            "hi": 73.16,
+            "mean": 71.07,
+            "n": 3,
+            "record": "0-3",
+            "wr": 0,
+            "flatRoi": -100,
+            "stakedN": 1,
+            "stakedUnits": 0.3,
+            "stakedProfit": -0.25,
+            "stakedRoi": -100
+          },
+          {
+            "q": 2,
+            "lo": 73.32,
+            "hi": 73.96,
+            "mean": 73.54,
+            "n": 3,
+            "record": "0-3",
+            "wr": 0,
+            "flatRoi": -100,
+            "stakedN": 3,
+            "stakedUnits": 1.5,
+            "stakedProfit": -1.5,
+            "stakedRoi": -100
+          },
+          {
+            "q": 3,
+            "lo": 75.13,
+            "hi": 78.51,
+            "mean": 77.32,
+            "n": 3,
+            "record": "1-2",
+            "wr": 33.3,
+            "flatRoi": -33.3,
+            "stakedN": 1,
+            "stakedUnits": 0.3,
+            "stakedProfit": 0.24,
+            "stakedRoi": 96
+          },
+          {
+            "q": 4,
+            "lo": 78.75,
+            "hi": 79.72,
+            "mean": 79.34,
+            "n": 3,
+            "record": "2-1",
+            "wr": 66.7,
+            "flatRoi": 33.3,
+            "stakedN": 3,
+            "stakedUnits": 5.5,
+            "stakedProfit": 4.34,
+            "stakedRoi": 78.9
+          },
+          {
+            "q": 5,
+            "lo": 83.06,
+            "hi": 93.75,
+            "mean": 88.58,
+            "n": 3,
+            "record": "0-3",
+            "wr": 0,
+            "flatRoi": -100,
+            "stakedN": 2,
+            "stakedUnits": 0.5,
+            "stakedProfit": -0.5,
+            "stakedRoi": -100
+          }
+        ]
+      }
+    },
+    "NHL": {
+      "n": 11,
+      "staked": 7,
+      "tracked": 4,
+      "q": {
+        "monoWrStrict": false,
+        "deltaWr": 16.7,
+        "deltaFlatRoi": 33.3,
+        "buckets": [
+          {
+            "q": 1,
+            "lo": 64.07,
+            "hi": 66.14,
+            "mean": 65.1,
+            "n": 2,
+            "record": "1-1",
+            "wr": 50,
+            "flatRoi": 0,
+            "stakedN": 1,
+            "stakedUnits": 1,
+            "stakedProfit": 2.15,
+            "stakedRoi": 215
+          },
+          {
+            "q": 2,
+            "lo": 67.75,
+            "hi": 69.05,
+            "mean": 68.4,
+            "n": 2,
+            "record": "0-1-1",
+            "wr": 0,
+            "flatRoi": -50,
+            "stakedN": 2,
+            "stakedUnits": 5.5,
+            "stakedProfit": -5,
+            "stakedRoi": -90.9
+          },
+          {
+            "q": 3,
+            "lo": 72.61,
+            "hi": 74.18,
+            "mean": 73.4,
+            "n": 2,
+            "record": "2-0",
+            "wr": 100,
+            "flatRoi": 100,
+            "stakedN": 2,
+            "stakedUnits": 5.3,
+            "stakedProfit": 4.57,
+            "stakedRoi": 87
+          },
+          {
+            "q": 4,
+            "lo": 74.33,
+            "hi": 75.13,
+            "mean": 74.73,
+            "n": 2,
+            "record": "2-0",
+            "wr": 100,
+            "flatRoi": 100,
+            "stakedN": 1,
+            "stakedUnits": 0.3,
+            "stakedProfit": 0.16,
+            "stakedRoi": 64
+          },
+          {
+            "q": 5,
+            "lo": 75.48,
+            "hi": 80,
+            "mean": 77.17,
+            "n": 3,
+            "record": "2-1",
+            "wr": 66.7,
+            "flatRoi": 33.3,
+            "stakedN": 1,
+            "stakedUnits": 5,
+            "stakedProfit": 4.42,
+            "stakedRoi": 88.4
+          }
+        ]
+      }
+    },
+    "SOC": {
+      "n": 75,
+      "staked": 33,
+      "tracked": 42,
+      "q": {
+        "monoWrStrict": false,
+        "deltaWr": 13.4,
+        "deltaFlatRoi": 26.6,
+        "buckets": [
+          {
+            "q": 1,
+            "lo": 48.41,
+            "hi": 63.68,
+            "mean": 58.01,
+            "n": 15,
+            "record": "5-10",
+            "wr": 33.3,
+            "flatRoi": -33.3,
+            "stakedN": 2,
+            "stakedUnits": 10,
+            "stakedProfit": -2.86,
+            "stakedRoi": -28.6
+          },
+          {
+            "q": 2,
+            "lo": 63.94,
+            "hi": 69.02,
+            "mean": 66.89,
+            "n": 15,
+            "record": "10-5",
+            "wr": 66.7,
+            "flatRoi": 33.3,
+            "stakedN": 10,
+            "stakedUnits": 34.5,
+            "stakedProfit": 11.44,
+            "stakedRoi": 33.2
+          },
+          {
+            "q": 3,
+            "lo": 69.18,
+            "hi": 72.97,
+            "mean": 70.63,
+            "n": 15,
+            "record": "12-3",
+            "wr": 80,
+            "flatRoi": 60,
+            "stakedN": 9,
+            "stakedUnits": 27,
+            "stakedProfit": 10.73,
+            "stakedRoi": 39.7
+          },
+          {
+            "q": 4,
+            "lo": 73.01,
+            "hi": 76.5,
+            "mean": 74.98,
+            "n": 15,
+            "record": "8-7",
+            "wr": 53.3,
+            "flatRoi": 6.7,
+            "stakedN": 4,
+            "stakedUnits": 16.5,
+            "stakedProfit": 4.14,
+            "stakedRoi": 25.1
+          },
+          {
+            "q": 5,
+            "lo": 76.6,
+            "hi": 87.34,
+            "mean": 81.64,
+            "n": 15,
+            "record": "7-8",
+            "wr": 46.7,
+            "flatRoi": -6.7,
+            "stakedN": 8,
+            "stakedUnits": 19.5,
+            "stakedProfit": 2.06,
+            "stakedRoi": 10.6
+          }
+        ]
+      }
+    },
+    "WNBA": {
+      "n": 8,
+      "staked": 0,
+      "tracked": 8,
+      "q": {
+        "monoWrStrict": false,
+        "deltaWr": -50,
+        "deltaFlatRoi": -100,
+        "buckets": [
+          {
+            "q": 1,
+            "lo": 63.71,
+            "hi": 63.71,
+            "mean": 63.71,
+            "n": 1,
+            "record": "1-0",
+            "wr": 100,
+            "flatRoi": 100,
+            "stakedN": 0,
+            "stakedUnits": 0,
+            "stakedProfit": 0,
+            "stakedRoi": null
+          },
+          {
+            "q": 2,
+            "lo": 63.71,
+            "hi": 63.71,
+            "mean": 63.71,
+            "n": 2,
+            "record": "0-2",
+            "wr": 0,
+            "flatRoi": -100,
+            "stakedN": 0,
+            "stakedUnits": 0,
+            "stakedProfit": 0,
+            "stakedRoi": null
+          },
+          {
+            "q": 3,
+            "lo": 63.71,
+            "hi": 63.71,
+            "mean": 63.71,
+            "n": 1,
+            "record": "1-0",
+            "wr": 100,
+            "flatRoi": 100,
+            "stakedN": 0,
+            "stakedUnits": 0,
+            "stakedProfit": 0,
+            "stakedRoi": null
+          },
+          {
+            "q": 4,
+            "lo": 64.95,
+            "hi": 64.95,
+            "mean": 64.95,
+            "n": 2,
+            "record": "0-1-1",
+            "wr": 0,
+            "flatRoi": -50,
+            "stakedN": 0,
+            "stakedUnits": 0,
+            "stakedProfit": 0,
+            "stakedRoi": null
+          },
+          {
+            "q": 5,
+            "lo": 65.05,
+            "hi": 65.47,
+            "mean": 65.26,
+            "n": 2,
+            "record": "1-1",
+            "wr": 50,
+            "flatRoi": 0,
+            "stakedN": 0,
+            "stakedUnits": 0,
+            "stakedProfit": 0,
+            "stakedRoi": null
+          }
+        ]
+      }
+    }
+  }
+}

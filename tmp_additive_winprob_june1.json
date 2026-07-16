@@ -1,0 +1,531 @@
+{
+  "meta": {
+    "generatedAt": "2026-07-14T19:20:19.617Z",
+    "deployFrom": "2026-06-01",
+    "model": "additive_ridge_logistic_zscored",
+    "lambda": 8,
+    "featsFull": [
+      "agsV12",
+      "conviction",
+      "top2MinusMean",
+      "edge",
+      "clvTop2",
+      "isRank",
+      "isSharp",
+      "hcMargin",
+      "topUnopp",
+      "topVsTop",
+      "deltaQ",
+      "isMLB",
+      "isSOC"
+    ],
+    "featsCore5": [
+      "agsV12",
+      "conviction",
+      "edge",
+      "clvTop2",
+      "isRank"
+    ],
+    "note": "Market odds NOT used as training features. Edge = p_hat - p_mkt. Causal EDGE/CLV when stamps missing. Nulls → train-fold median."
+  },
+  "baseline": {
+    "n": 422,
+    "w": 233,
+    "l": 189,
+    "wr": 55.2,
+    "units": 1163.5,
+    "profit": 49.79,
+    "roi": 4.3
+  },
+  "missingness": {
+    "n": 422,
+    "edgeMissing": 202,
+    "clvMissing": 1,
+    "zeroConviction": 1,
+    "stampedEdge": 1,
+    "stampedClv": 0,
+    "bySport": {
+      "MLB": 373,
+      "NHL": 6,
+      "NBA": 10,
+      "SOC": 33
+    },
+    "byPath": {
+      "UNTIERED": 213,
+      "MINI": 37,
+      "TOP": 39,
+      "SUPER": 11,
+      "RANK": 38,
+      "CONFIRMED": 5,
+      "SHARP-PRIME": 14,
+      "TOP+": 29,
+      "SHARP": 25,
+      "MINI-": 10,
+      "DISSENT": 1
+    }
+  },
+  "cvSummary": {
+    "folds": 3,
+    "lambda": 8,
+    "market": {
+      "meanAuc": 0.5839,
+      "folds": [
+        {
+          "n": 84,
+          "auc": 0.5538,
+          "logloss": 0.6931,
+          "brier": 0.2496
+        },
+        {
+          "n": 84,
+          "auc": 0.6409,
+          "logloss": 0.6532,
+          "brier": 0.2329
+        },
+        {
+          "n": 84,
+          "auc": 0.5569,
+          "logloss": 0.685,
+          "brier": 0.2451
+        }
+      ]
+    },
+    "agsV12": {
+      "meanAuc": 0.4967,
+      "folds": [
+        {
+          "n": 84,
+          "auc": 0.4554,
+          "logloss": 0.691,
+          "brier": 0.2489
+        },
+        {
+          "n": 84,
+          "auc": 0.4675,
+          "logloss": 0.691,
+          "brier": 0.2489
+        },
+        {
+          "n": 84,
+          "auc": 0.5673,
+          "logloss": 0.6881,
+          "brier": 0.2475
+        }
+      ]
+    },
+    "edge": {
+      "meanAuc": 0.4915,
+      "folds": [
+        {
+          "n": 84,
+          "auc": 0.4267,
+          "logloss": 0.6964,
+          "brier": 0.2516
+        },
+        {
+          "n": 84,
+          "auc": 0.5397,
+          "logloss": 0.6854,
+          "brier": 0.2462
+        },
+        {
+          "n": 84,
+          "auc": 0.5081,
+          "logloss": 0.6855,
+          "brier": 0.2462
+        }
+      ]
+    },
+    "core5": {
+      "meanAuc": 0.465,
+      "folds": [
+        {
+          "n": 84,
+          "auc": 0.3634,
+          "logloss": 0.7122,
+          "brier": 0.2593
+        },
+        {
+          "n": 84,
+          "auc": 0.5003,
+          "logloss": 0.8507,
+          "brier": 0.2905
+        },
+        {
+          "n": 84,
+          "auc": 0.5313,
+          "logloss": 0.6853,
+          "brier": 0.2461
+        }
+      ]
+    },
+    "full": {
+      "meanAuc": 0.4938,
+      "folds": [
+        {
+          "n": 84,
+          "auc": 0.3951,
+          "logloss": 0.713,
+          "brier": 0.26
+        },
+        {
+          "n": 84,
+          "auc": 0.4951,
+          "logloss": 0.9124,
+          "brier": 0.3027
+        },
+        {
+          "n": 84,
+          "auc": 0.5911,
+          "logloss": 0.7135,
+          "brier": 0.2525
+        }
+      ]
+    },
+    "completeCase": {
+      "n": 220,
+      "folds": 3,
+      "market": 0.5923,
+      "full": 0.4499
+    },
+    "univariateAuc": {
+      "agsV12": 0.5232,
+      "conviction": 0.5498,
+      "top2MinusMean": 0.498,
+      "edge": 0.5077,
+      "clvTop2": 0.5496,
+      "isRank": 0.5097,
+      "isSharp": 0.4783,
+      "hcMargin": 0.5263,
+      "topUnopp": 0.5338,
+      "topVsTop": 0.494,
+      "deltaQ": 0.5198,
+      "isMLB": 0.4811,
+      "isSOC": 0.5229
+    }
+  },
+  "holdout30": {
+    "market": {
+      "n": 127,
+      "auc": 0.5401,
+      "logloss": 0.6904,
+      "brier": 0.2481
+    },
+    "agsV12": {
+      "n": 127,
+      "auc": 0.5164,
+      "logloss": 0.6915,
+      "brier": 0.2492
+    },
+    "edge": {
+      "n": 127,
+      "auc": 0.5404,
+      "logloss": 0.6867,
+      "brier": 0.2468
+    },
+    "core5": {
+      "n": 127,
+      "auc": 0.5216,
+      "logloss": 0.6915,
+      "brier": 0.2491
+    },
+    "full": {
+      "n": 127,
+      "auc": 0.5569,
+      "logloss": 0.727,
+      "brier": 0.2588
+    }
+  },
+  "intercept": 0.2188,
+  "coefficientRank": [
+    {
+      "feature": "top2MinusMean",
+      "beta_z": -0.3619,
+      "abs": 0.3618814829998075,
+      "trainMean": 0.4962,
+      "trainSd": 1.5275,
+      "rank": 1
+    },
+    {
+      "feature": "deltaQ",
+      "beta_z": 0.315,
+      "abs": 0.3149780617096138,
+      "trainMean": 1.0814,
+      "trainSd": 1.9693,
+      "rank": 2
+    },
+    {
+      "feature": "isSOC",
+      "beta_z": 0.2078,
+      "abs": 0.2077516808233653,
+      "trainMean": 0.0542,
+      "trainSd": 0.2265,
+      "rank": 3
+    },
+    {
+      "feature": "isRank",
+      "beta_z": 0.0911,
+      "abs": 0.0910803965640765,
+      "trainMean": 0.0644,
+      "trainSd": 0.2455,
+      "rank": 4
+    },
+    {
+      "feature": "hcMargin",
+      "beta_z": -0.0896,
+      "abs": 0.08962706208111224,
+      "trainMean": 0.3254,
+      "trainSd": 0.9402,
+      "rank": 5
+    },
+    {
+      "feature": "isSharp",
+      "beta_z": -0.0613,
+      "abs": 0.06134088221566049,
+      "trainMean": 0.0203,
+      "trainSd": 0.1412,
+      "rank": 6
+    },
+    {
+      "feature": "topVsTop",
+      "beta_z": 0.0569,
+      "abs": 0.056924948719665414,
+      "trainMean": 0.0542,
+      "trainSd": 0.2265,
+      "rank": 7
+    },
+    {
+      "feature": "clvTop2",
+      "beta_z": 0.0552,
+      "abs": 0.05522120196904273,
+      "trainMean": 64.7475,
+      "trainSd": 7.7441,
+      "rank": 8
+    },
+    {
+      "feature": "agsV12",
+      "beta_z": 0.0531,
+      "abs": 0.05305454477758488,
+      "trainMean": 0.8866,
+      "trainSd": 0.1962,
+      "rank": 9
+    },
+    {
+      "feature": "isMLB",
+      "beta_z": -0.0525,
+      "abs": 0.05253881126112109,
+      "trainMean": 0.8915,
+      "trainSd": 0.311,
+      "rank": 10
+    },
+    {
+      "feature": "topUnopp",
+      "beta_z": 0.0389,
+      "abs": 0.03886622132718376,
+      "trainMean": 0.5729,
+      "trainSd": 0.4947,
+      "rank": 11
+    },
+    {
+      "feature": "edge",
+      "beta_z": 0.0178,
+      "abs": 0.017751219340693312,
+      "trainMean": 5.2303,
+      "trainSd": 8.9564,
+      "rank": 12
+    },
+    {
+      "feature": "conviction",
+      "beta_z": -0.004,
+      "abs": 0.004006967473108602,
+      "trainMean": 1.1269,
+      "trainSd": 1.2136,
+      "rank": 13
+    }
+  ],
+  "edgeBucketsOos": [
+    {
+      "quintile": 1,
+      "label": "bottom_edge",
+      "n": 50,
+      "wr": 58,
+      "flatRoi": -3.2,
+      "flatPnl": -1.62,
+      "unitsRoi": -6.6,
+      "unitsPnl": -10.98,
+      "units": 165.5,
+      "meanEdgePp": -17.58,
+      "meanPHat": 0.436,
+      "meanPMkt": 0.612
+    },
+    {
+      "quintile": 2,
+      "label": "Q2",
+      "n": 50,
+      "wr": 60,
+      "flatRoi": 12.8,
+      "flatPnl": 6.38,
+      "unitsRoi": 6,
+      "unitsPnl": 9.78,
+      "units": 164,
+      "meanEdgePp": -2.52,
+      "meanPHat": 0.517,
+      "meanPMkt": 0.542
+    },
+    {
+      "quintile": 3,
+      "label": "Q3",
+      "n": 51,
+      "wr": 58.8,
+      "flatRoi": 11.3,
+      "flatPnl": 5.78,
+      "unitsRoi": 11,
+      "unitsPnl": 16.06,
+      "units": 146,
+      "meanEdgePp": 2.33,
+      "meanPHat": 0.552,
+      "meanPMkt": 0.529
+    },
+    {
+      "quintile": 4,
+      "label": "Q4",
+      "n": 50,
+      "wr": 48,
+      "flatRoi": -8.4,
+      "flatPnl": -4.19,
+      "unitsRoi": 1.3,
+      "unitsPnl": 1.85,
+      "units": 147.8,
+      "meanEdgePp": 7.27,
+      "meanPHat": 0.598,
+      "meanPMkt": 0.526
+    },
+    {
+      "quintile": 5,
+      "label": "top_edge",
+      "n": 51,
+      "wr": 54.9,
+      "flatRoi": 4.6,
+      "flatPnl": 2.34,
+      "unitsRoi": 3.2,
+      "unitsPnl": 5.82,
+      "units": 182,
+      "meanEdgePp": 29.93,
+      "meanPHat": 0.806,
+      "meanPMkt": 0.506
+    }
+  ],
+  "passBar": {
+    "fullBeatsMarket": false,
+    "fullBeatsBestSingle": false,
+    "topEdgePositiveRoi": true,
+    "topEdgeN": 51,
+    "verdict": "MIXED — directional signal, not full bar"
+  },
+  "sampleTopEdge": [
+    {
+      "date": "2026-06-30",
+      "sport": "MLB",
+      "odds": 110,
+      "won": 0,
+      "pHat": 0.941,
+      "pMkt": 0.476,
+      "edgePp": 46.5,
+      "agsV12": 0.971,
+      "edge": null,
+      "clvTop2": 65.9,
+      "conviction": 0.33
+    },
+    {
+      "date": "2026-06-30",
+      "sport": "SOC",
+      "odds": 105,
+      "won": 1,
+      "pHat": 0.953,
+      "pMkt": 0.488,
+      "edgePp": 46.5,
+      "agsV12": 0.528,
+      "edge": null,
+      "clvTop2": 71.1,
+      "conviction": 2.19
+    },
+    {
+      "date": "2026-06-25",
+      "sport": "MLB",
+      "odds": 114,
+      "won": 0,
+      "pHat": 0.942,
+      "pMkt": 0.467,
+      "edgePp": 47.4,
+      "agsV12": 0.988,
+      "edge": -7.1,
+      "clvTop2": 59.9,
+      "conviction": 0.85
+    },
+    {
+      "date": "2026-06-28",
+      "sport": "MLB",
+      "odds": 115,
+      "won": 1,
+      "pHat": 0.942,
+      "pMkt": 0.465,
+      "edgePp": 47.7,
+      "agsV12": 0.971,
+      "edge": -6.4,
+      "clvTop2": 65.4,
+      "conviction": 0.58
+    },
+    {
+      "date": "2026-06-30",
+      "sport": "MLB",
+      "odds": 120,
+      "won": 1,
+      "pHat": 0.939,
+      "pMkt": 0.455,
+      "edgePp": 48.4,
+      "agsV12": 0.979,
+      "edge": -6.4,
+      "clvTop2": 57.4,
+      "conviction": 0.69
+    },
+    {
+      "date": "2026-07-01",
+      "sport": "MLB",
+      "odds": 119,
+      "won": 1,
+      "pHat": 0.951,
+      "pMkt": 0.457,
+      "edgePp": 49.4,
+      "agsV12": 0.945,
+      "edge": null,
+      "clvTop2": 67.9,
+      "conviction": 0.63
+    },
+    {
+      "date": "2026-06-28",
+      "sport": "MLB",
+      "odds": 1210,
+      "won": 0,
+      "pHat": 0.576,
+      "pMkt": 0.076,
+      "edgePp": 50,
+      "agsV12": 0.98,
+      "edge": 12.8,
+      "clvTop2": 66.1,
+      "conviction": 1.07
+    },
+    {
+      "date": "2026-06-24",
+      "sport": "MLB",
+      "odds": 152,
+      "won": 1,
+      "pHat": 0.954,
+      "pMkt": 0.397,
+      "edgePp": 55.7,
+      "agsV12": 0.977,
+      "edge": null,
+      "clvTop2": 65.1,
+      "conviction": 0.54
+    }
+  ]
+}

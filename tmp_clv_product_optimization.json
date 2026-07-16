@@ -1,0 +1,1237 @@
+{
+  "meta": {
+    "objective": "Maximize product quality: WR lift + PnL lift + enough daily volume to feel alive",
+    "book": "UI-exact June1+ live graded",
+    "baselineDays": 42,
+    "note": "WIN profit scaled with units; LOSS = -newUnits. Fail-open on null only where stated."
+  },
+  "baseline": {
+    "name": "BASELINE (current product)",
+    "nLive": 430,
+    "record": "233-190-7",
+    "wr": 55.1,
+    "units": 1182.5,
+    "profit": 44.79,
+    "roi": 3.8,
+    "picksPerDay": 10.24,
+    "byBand": {
+      "63-68": {
+        "n": 112,
+        "wr": 56.8,
+        "units": 345.5,
+        "profit": 12.29,
+        "roi": 3.6
+      },
+      "<59": {
+        "n": 85,
+        "wr": 44.7,
+        "units": 232.5,
+        "profit": -33.15,
+        "roi": -14.3
+      },
+      "68-72": {
+        "n": 81,
+        "wr": 61,
+        "units": 202.3,
+        "profit": 21.9,
+        "roi": 10.8
+      },
+      "59-63": {
+        "n": 68,
+        "wr": 53.7,
+        "units": 169.3,
+        "profit": -4.13,
+        "roi": -2.4
+      },
+      "72+": {
+        "n": 83,
+        "wr": 59.8,
+        "units": 230.5,
+        "profit": 50.38,
+        "roi": 21.9
+      },
+      "null": {
+        "n": 1,
+        "wr": 0,
+        "units": 2.5,
+        "profit": -2.5,
+        "roi": -100
+      }
+    }
+  },
+  "rankedByProductScore": [
+    {
+      "name": "SOFT L4 kill<63 boost≥68",
+      "n": 276,
+      "perDay": 6.57,
+      "wr": 58.9,
+      "profit": 112.34,
+      "roi": 11.8,
+      "units": 949,
+      "dProfit": 67.55,
+      "dWr": 3.8,
+      "dRoi": 8,
+      "productScore": 0.811
+    },
+    {
+      "name": "SOFT L2 shrink+boost",
+      "n": 345,
+      "perDay": 8.21,
+      "wr": 57.7,
+      "profit": 102.76,
+      "roi": 10.4,
+      "units": 987.9,
+      "dProfit": 57.97,
+      "dWr": 2.6,
+      "dRoi": 6.6,
+      "productScore": 0.734
+    },
+    {
+      "name": "Hard gate top2≥63",
+      "n": 276,
+      "perDay": 6.57,
+      "wr": 58.9,
+      "profit": 84.57,
+      "roi": 10.9,
+      "units": 778.3,
+      "dProfit": 39.78,
+      "dWr": 3.8,
+      "dRoi": 7.1,
+      "productScore": 0.7
+    },
+    {
+      "name": "SOFT L3 Core/Standard ladder",
+      "n": 276,
+      "perDay": 6.57,
+      "wr": 58.9,
+      "profit": 81.5,
+      "roi": 11.8,
+      "units": 691.9,
+      "dProfit": 36.71,
+      "dWr": 3.8,
+      "dRoi": 8,
+      "productScore": 0.688
+    },
+    {
+      "name": "Hard gate top2≥68",
+      "n": 164,
+      "perDay": 3.9,
+      "wr": 60.4,
+      "profit": 72.28,
+      "roi": 16.7,
+      "units": 432.8,
+      "dProfit": 27.49,
+      "dWr": 5.3,
+      "dRoi": 12.9,
+      "productScore": 0.685
+    },
+    {
+      "name": "PRODUCT Core feed only (≥68)",
+      "n": 164,
+      "perDay": 3.9,
+      "wr": 60.4,
+      "profit": 72.28,
+      "roi": 16.7,
+      "units": 432.8,
+      "dProfit": 27.49,
+      "dWr": 5.3,
+      "dRoi": 12.9,
+      "productScore": 0.685
+    },
+    {
+      "name": "SOFT L5 WR-hero (≥68 full, 63-68 half)",
+      "n": 276,
+      "perDay": 6.57,
+      "wr": 58.9,
+      "profit": 78.43,
+      "roi": 13,
+      "units": 605.5,
+      "dProfit": 33.64,
+      "dWr": 3.8,
+      "dRoi": 9.2,
+      "productScore": 0.676
+    },
+    {
+      "name": "SOFT L1 shrink-only",
+      "n": 345,
+      "perDay": 8.21,
+      "wr": 57.7,
+      "profit": 80.01,
+      "roi": 9.2,
+      "units": 865.4,
+      "dProfit": 35.22,
+      "dWr": 2.6,
+      "dRoi": 5.4,
+      "productScore": 0.643
+    },
+    {
+      "name": "Hard gate top2≥60",
+      "n": 334,
+      "perDay": 7.95,
+      "wr": 57.5,
+      "profit": 71.73,
+      "roi": 7.8,
+      "units": 921,
+      "dProfit": 26.94,
+      "dWr": 2.4,
+      "dRoi": 4,
+      "productScore": 0.59
+    },
+    {
+      "name": "Hard gate top2≥70",
+      "n": 112,
+      "perDay": 2.67,
+      "wr": 59.6,
+      "profit": 57.48,
+      "roi": 18.6,
+      "units": 308.3,
+      "dProfit": 12.69,
+      "dWr": 4.5,
+      "dRoi": 14.8,
+      "productScore": 0.543
+    },
+    {
+      "name": "Hard gate top2≥65",
+      "n": 249,
+      "perDay": 5.93,
+      "wr": 57.6,
+      "profit": 58.56,
+      "roi": 8.3,
+      "units": 705.5,
+      "dProfit": 13.77,
+      "dWr": 2.5,
+      "dRoi": 4.5,
+      "productScore": 0.495
+    },
+    {
+      "name": "Hard gate top2≥58",
+      "n": 369,
+      "perDay": 8.79,
+      "wr": 56.1,
+      "profit": 56.02,
+      "roi": 5.7,
+      "units": 988,
+      "dProfit": 11.23,
+      "dWr": 1,
+      "dRoi": 1.9,
+      "productScore": 0.455
+    },
+    {
+      "name": "BASELINE (current product)",
+      "n": 430,
+      "perDay": 10.24,
+      "wr": 55.1,
+      "profit": 44.79,
+      "roi": 3.8,
+      "units": 1182.5,
+      "dProfit": 0,
+      "dWr": 0,
+      "dRoi": 0,
+      "productScore": 0.38
+    },
+    {
+      "name": "PRODUCT Standard band (63-68)",
+      "n": 112,
+      "perDay": 2.67,
+      "wr": 56.8,
+      "profit": 12.29,
+      "roi": 3.6,
+      "units": 345.5,
+      "dProfit": -32.5,
+      "dWr": 1.7,
+      "dRoi": -0.2,
+      "productScore": 0.177
+    }
+  ],
+  "recommended": {
+    "primary": {
+      "name": "SOFT L4 kill<63 boost≥68",
+      "n": 276,
+      "perDay": 6.57,
+      "wr": 58.9,
+      "profit": 112.34,
+      "roi": 11.8,
+      "units": 949,
+      "dProfit": 67.55,
+      "dWr": 3.8,
+      "dRoi": 8,
+      "productScore": 0.811
+    },
+    "dualSurface": {
+      "core": {
+        "name": "PRODUCT Core feed only (≥68)",
+        "nLive": 164,
+        "record": "96-63-5",
+        "wr": 60.4,
+        "units": 432.8,
+        "profit": 72.28,
+        "roi": 16.7,
+        "picksPerDay": 3.9,
+        "byBand": {
+          "63-68": {
+            "n": 0,
+            "wr": null,
+            "units": 0,
+            "profit": 0,
+            "roi": null
+          },
+          "<59": {
+            "n": 0,
+            "wr": null,
+            "units": 0,
+            "profit": 0,
+            "roi": null
+          },
+          "68-72": {
+            "n": 81,
+            "wr": 61,
+            "units": 202.3,
+            "profit": 21.9,
+            "roi": 10.8
+          },
+          "59-63": {
+            "n": 0,
+            "wr": null,
+            "units": 0,
+            "profit": 0,
+            "roi": null
+          },
+          "72+": {
+            "n": 83,
+            "wr": 59.8,
+            "units": 230.5,
+            "profit": 50.38,
+            "roi": 21.9
+          },
+          "null": {
+            "n": 0,
+            "wr": null,
+            "units": 0,
+            "profit": 0,
+            "roi": null
+          }
+        }
+      },
+      "fullBook_L3": {
+        "name": "SOFT L3 Core/Standard ladder",
+        "nLive": 276,
+        "record": "159-111-6",
+        "wr": 58.9,
+        "units": 691.9,
+        "profit": 81.5,
+        "roi": 11.8,
+        "picksPerDay": 6.57,
+        "byBand": {
+          "63-68": {
+            "n": 112,
+            "wr": 56.8,
+            "units": 259.1,
+            "profit": 9.22,
+            "roi": 3.6
+          },
+          "<59": {
+            "n": 0,
+            "wr": null,
+            "units": 0,
+            "profit": 0,
+            "roi": null
+          },
+          "68-72": {
+            "n": 81,
+            "wr": 61,
+            "units": 202.3,
+            "profit": 21.9,
+            "roi": 10.8
+          },
+          "59-63": {
+            "n": 0,
+            "wr": null,
+            "units": 0,
+            "profit": 0,
+            "roi": null
+          },
+          "72+": {
+            "n": 83,
+            "wr": 59.8,
+            "units": 230.5,
+            "profit": 50.38,
+            "roi": 21.9
+          },
+          "null": {
+            "n": 0,
+            "wr": null,
+            "units": 0,
+            "profit": 0,
+            "roi": null
+          }
+        }
+      },
+      "fullBook_L4": {
+        "name": "SOFT L4 kill<63 boost≥68",
+        "nLive": 276,
+        "record": "159-111-6",
+        "wr": 58.9,
+        "units": 949,
+        "profit": 112.34,
+        "roi": 11.8,
+        "picksPerDay": 6.57,
+        "byBand": {
+          "63-68": {
+            "n": 112,
+            "wr": 56.8,
+            "units": 345.5,
+            "profit": 12.29,
+            "roi": 3.6
+          },
+          "<59": {
+            "n": 0,
+            "wr": null,
+            "units": 0,
+            "profit": 0,
+            "roi": null
+          },
+          "68-72": {
+            "n": 81,
+            "wr": 61,
+            "units": 281.9,
+            "profit": 30.42,
+            "roi": 10.8
+          },
+          "59-63": {
+            "n": 0,
+            "wr": null,
+            "units": 0,
+            "profit": 0,
+            "roi": null
+          },
+          "72+": {
+            "n": 83,
+            "wr": 59.8,
+            "units": 321.5,
+            "profit": 69.63,
+            "roi": 21.7
+          },
+          "null": {
+            "n": 0,
+            "wr": null,
+            "units": 0,
+            "profit": 0,
+            "roi": null
+          }
+        }
+      },
+      "fullBook_L2": {
+        "name": "SOFT L2 shrink+boost",
+        "nLive": 345,
+        "record": "195-143-7",
+        "wr": 57.7,
+        "units": 987.9,
+        "profit": 102.76,
+        "roi": 10.4,
+        "picksPerDay": 8.21,
+        "byBand": {
+          "63-68": {
+            "n": 112,
+            "wr": 56.8,
+            "units": 345.5,
+            "profit": 12.29,
+            "roi": 3.6
+          },
+          "<59": {
+            "n": 0,
+            "wr": null,
+            "units": 0,
+            "profit": 0,
+            "roi": null
+          },
+          "68-72": {
+            "n": 81,
+            "wr": 61,
+            "units": 249.3,
+            "profit": 27.73,
+            "roi": 11.1
+          },
+          "59-63": {
+            "n": 68,
+            "wr": 53.7,
+            "units": 84.6,
+            "profit": -2.06,
+            "roi": -2.4
+          },
+          "72+": {
+            "n": 83,
+            "wr": 59.8,
+            "units": 306.6,
+            "profit": 66.68,
+            "roi": 21.7
+          },
+          "null": {
+            "n": 1,
+            "wr": 0,
+            "units": 1.9,
+            "profit": -1.87,
+            "roi": -100
+          }
+        }
+      }
+    }
+  },
+  "policies": {
+    "baseline": {
+      "name": "BASELINE (current product)",
+      "nLive": 430,
+      "record": "233-190-7",
+      "wr": 55.1,
+      "units": 1182.5,
+      "profit": 44.79,
+      "roi": 3.8,
+      "picksPerDay": 10.24,
+      "byBand": {
+        "63-68": {
+          "n": 112,
+          "wr": 56.8,
+          "units": 345.5,
+          "profit": 12.29,
+          "roi": 3.6
+        },
+        "<59": {
+          "n": 85,
+          "wr": 44.7,
+          "units": 232.5,
+          "profit": -33.15,
+          "roi": -14.3
+        },
+        "68-72": {
+          "n": 81,
+          "wr": 61,
+          "units": 202.3,
+          "profit": 21.9,
+          "roi": 10.8
+        },
+        "59-63": {
+          "n": 68,
+          "wr": 53.7,
+          "units": 169.3,
+          "profit": -4.13,
+          "roi": -2.4
+        },
+        "72+": {
+          "n": 83,
+          "wr": 59.8,
+          "units": 230.5,
+          "profit": 50.38,
+          "roi": 21.9
+        },
+        "null": {
+          "n": 1,
+          "wr": 0,
+          "units": 2.5,
+          "profit": -2.5,
+          "roi": -100
+        }
+      }
+    },
+    "HARD_58": {
+      "name": "Hard gate top2≥58",
+      "nLive": 369,
+      "record": "203-159-7",
+      "wr": 56.1,
+      "units": 988,
+      "profit": 56.02,
+      "roi": 5.7,
+      "picksPerDay": 8.79,
+      "byBand": {
+        "63-68": {
+          "n": 112,
+          "wr": 56.8,
+          "units": 345.5,
+          "profit": 12.29,
+          "roi": 3.6
+        },
+        "<59": {
+          "n": 25,
+          "wr": 32,
+          "units": 40.5,
+          "profit": -24.42,
+          "roi": -60.3
+        },
+        "68-72": {
+          "n": 81,
+          "wr": 61,
+          "units": 202.3,
+          "profit": 21.9,
+          "roi": 10.8
+        },
+        "59-63": {
+          "n": 68,
+          "wr": 53.7,
+          "units": 169.3,
+          "profit": -4.13,
+          "roi": -2.4
+        },
+        "72+": {
+          "n": 83,
+          "wr": 59.8,
+          "units": 230.5,
+          "profit": 50.38,
+          "roi": 21.9
+        },
+        "null": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        }
+      }
+    },
+    "HARD_60": {
+      "name": "Hard gate top2≥60",
+      "nLive": 334,
+      "record": "188-139-7",
+      "wr": 57.5,
+      "units": 921,
+      "profit": 71.73,
+      "roi": 7.8,
+      "picksPerDay": 7.95,
+      "byBand": {
+        "63-68": {
+          "n": 112,
+          "wr": 56.8,
+          "units": 345.5,
+          "profit": 12.29,
+          "roi": 3.6
+        },
+        "<59": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        },
+        "68-72": {
+          "n": 81,
+          "wr": 61,
+          "units": 202.3,
+          "profit": 21.9,
+          "roi": 10.8
+        },
+        "59-63": {
+          "n": 58,
+          "wr": 50.9,
+          "units": 142.8,
+          "profit": -12.84,
+          "roi": -9
+        },
+        "72+": {
+          "n": 83,
+          "wr": 59.8,
+          "units": 230.5,
+          "profit": 50.38,
+          "roi": 21.9
+        },
+        "null": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        }
+      }
+    },
+    "HARD_63": {
+      "name": "Hard gate top2≥63",
+      "nLive": 276,
+      "record": "159-111-6",
+      "wr": 58.9,
+      "units": 778.3,
+      "profit": 84.57,
+      "roi": 10.9,
+      "picksPerDay": 6.57,
+      "byBand": {
+        "63-68": {
+          "n": 112,
+          "wr": 56.8,
+          "units": 345.5,
+          "profit": 12.29,
+          "roi": 3.6
+        },
+        "<59": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        },
+        "68-72": {
+          "n": 81,
+          "wr": 61,
+          "units": 202.3,
+          "profit": 21.9,
+          "roi": 10.8
+        },
+        "59-63": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        },
+        "72+": {
+          "n": 83,
+          "wr": 59.8,
+          "units": 230.5,
+          "profit": 50.38,
+          "roi": 21.9
+        },
+        "null": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        }
+      }
+    },
+    "HARD_65": {
+      "name": "Hard gate top2≥65",
+      "nLive": 249,
+      "record": "140-103-6",
+      "wr": 57.6,
+      "units": 705.5,
+      "profit": 58.56,
+      "roi": 8.3,
+      "picksPerDay": 5.93,
+      "byBand": {
+        "63-68": {
+          "n": 85,
+          "wr": 52.4,
+          "units": 272.8,
+          "profit": -13.72,
+          "roi": -5
+        },
+        "<59": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        },
+        "68-72": {
+          "n": 81,
+          "wr": 61,
+          "units": 202.3,
+          "profit": 21.9,
+          "roi": 10.8
+        },
+        "59-63": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        },
+        "72+": {
+          "n": 83,
+          "wr": 59.8,
+          "units": 230.5,
+          "profit": 50.38,
+          "roi": 21.9
+        },
+        "null": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        }
+      }
+    },
+    "HARD_68": {
+      "name": "Hard gate top2≥68",
+      "nLive": 164,
+      "record": "96-63-5",
+      "wr": 60.4,
+      "units": 432.8,
+      "profit": 72.28,
+      "roi": 16.7,
+      "picksPerDay": 3.9,
+      "byBand": {
+        "63-68": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        },
+        "<59": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        },
+        "68-72": {
+          "n": 81,
+          "wr": 61,
+          "units": 202.3,
+          "profit": 21.9,
+          "roi": 10.8
+        },
+        "59-63": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        },
+        "72+": {
+          "n": 83,
+          "wr": 59.8,
+          "units": 230.5,
+          "profit": 50.38,
+          "roi": 21.9
+        },
+        "null": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        }
+      }
+    },
+    "HARD_70": {
+      "name": "Hard gate top2≥70",
+      "nLive": 112,
+      "record": "65-44-3",
+      "wr": 59.6,
+      "units": 308.3,
+      "profit": 57.48,
+      "roi": 18.6,
+      "picksPerDay": 2.67,
+      "byBand": {
+        "63-68": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        },
+        "<59": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        },
+        "68-72": {
+          "n": 29,
+          "wr": 59.3,
+          "units": 77.8,
+          "profit": 7.1,
+          "roi": 9.1
+        },
+        "59-63": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        },
+        "72+": {
+          "n": 83,
+          "wr": 59.8,
+          "units": 230.5,
+          "profit": 50.38,
+          "roi": 21.9
+        },
+        "null": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        }
+      }
+    },
+    "L1": {
+      "name": "SOFT L1 shrink-only",
+      "nLive": 345,
+      "record": "195-143-7",
+      "wr": 57.7,
+      "units": 865.4,
+      "profit": 80.01,
+      "roi": 9.2,
+      "picksPerDay": 8.21,
+      "byBand": {
+        "63-68": {
+          "n": 112,
+          "wr": 56.8,
+          "units": 345.5,
+          "profit": 12.29,
+          "roi": 3.6
+        },
+        "<59": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        },
+        "68-72": {
+          "n": 81,
+          "wr": 61,
+          "units": 202.3,
+          "profit": 21.9,
+          "roi": 10.8
+        },
+        "59-63": {
+          "n": 68,
+          "wr": 53.7,
+          "units": 84.6,
+          "profit": -2.06,
+          "roi": -2.4
+        },
+        "72+": {
+          "n": 83,
+          "wr": 59.8,
+          "units": 230.5,
+          "profit": 50.38,
+          "roi": 21.9
+        },
+        "null": {
+          "n": 1,
+          "wr": 0,
+          "units": 2.5,
+          "profit": -2.5,
+          "roi": -100
+        }
+      }
+    },
+    "L2": {
+      "name": "SOFT L2 shrink+boost",
+      "nLive": 345,
+      "record": "195-143-7",
+      "wr": 57.7,
+      "units": 987.9,
+      "profit": 102.76,
+      "roi": 10.4,
+      "picksPerDay": 8.21,
+      "byBand": {
+        "63-68": {
+          "n": 112,
+          "wr": 56.8,
+          "units": 345.5,
+          "profit": 12.29,
+          "roi": 3.6
+        },
+        "<59": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        },
+        "68-72": {
+          "n": 81,
+          "wr": 61,
+          "units": 249.3,
+          "profit": 27.73,
+          "roi": 11.1
+        },
+        "59-63": {
+          "n": 68,
+          "wr": 53.7,
+          "units": 84.6,
+          "profit": -2.06,
+          "roi": -2.4
+        },
+        "72+": {
+          "n": 83,
+          "wr": 59.8,
+          "units": 306.6,
+          "profit": 66.68,
+          "roi": 21.7
+        },
+        "null": {
+          "n": 1,
+          "wr": 0,
+          "units": 1.9,
+          "profit": -1.87,
+          "roi": -100
+        }
+      }
+    },
+    "L3": {
+      "name": "SOFT L3 Core/Standard ladder",
+      "nLive": 276,
+      "record": "159-111-6",
+      "wr": 58.9,
+      "units": 691.9,
+      "profit": 81.5,
+      "roi": 11.8,
+      "picksPerDay": 6.57,
+      "byBand": {
+        "63-68": {
+          "n": 112,
+          "wr": 56.8,
+          "units": 259.1,
+          "profit": 9.22,
+          "roi": 3.6
+        },
+        "<59": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        },
+        "68-72": {
+          "n": 81,
+          "wr": 61,
+          "units": 202.3,
+          "profit": 21.9,
+          "roi": 10.8
+        },
+        "59-63": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        },
+        "72+": {
+          "n": 83,
+          "wr": 59.8,
+          "units": 230.5,
+          "profit": 50.38,
+          "roi": 21.9
+        },
+        "null": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        }
+      }
+    },
+    "L4": {
+      "name": "SOFT L4 kill<63 boost≥68",
+      "nLive": 276,
+      "record": "159-111-6",
+      "wr": 58.9,
+      "units": 949,
+      "profit": 112.34,
+      "roi": 11.8,
+      "picksPerDay": 6.57,
+      "byBand": {
+        "63-68": {
+          "n": 112,
+          "wr": 56.8,
+          "units": 345.5,
+          "profit": 12.29,
+          "roi": 3.6
+        },
+        "<59": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        },
+        "68-72": {
+          "n": 81,
+          "wr": 61,
+          "units": 281.9,
+          "profit": 30.42,
+          "roi": 10.8
+        },
+        "59-63": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        },
+        "72+": {
+          "n": 83,
+          "wr": 59.8,
+          "units": 321.5,
+          "profit": 69.63,
+          "roi": 21.7
+        },
+        "null": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        }
+      }
+    },
+    "L5": {
+      "name": "SOFT L5 WR-hero (≥68 full, 63-68 half)",
+      "nLive": 276,
+      "record": "159-111-6",
+      "wr": 58.9,
+      "units": 605.5,
+      "profit": 78.43,
+      "roi": 13,
+      "picksPerDay": 6.57,
+      "byBand": {
+        "63-68": {
+          "n": 112,
+          "wr": 56.8,
+          "units": 172.8,
+          "profit": 6.15,
+          "roi": 3.6
+        },
+        "<59": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        },
+        "68-72": {
+          "n": 81,
+          "wr": 61,
+          "units": 202.3,
+          "profit": 21.9,
+          "roi": 10.8
+        },
+        "59-63": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        },
+        "72+": {
+          "n": 83,
+          "wr": 59.8,
+          "units": 230.5,
+          "profit": 50.38,
+          "roi": 21.9
+        },
+        "null": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        }
+      }
+    },
+    "coreOnly": {
+      "name": "PRODUCT Core feed only (≥68)",
+      "nLive": 164,
+      "record": "96-63-5",
+      "wr": 60.4,
+      "units": 432.8,
+      "profit": 72.28,
+      "roi": 16.7,
+      "picksPerDay": 3.9,
+      "byBand": {
+        "63-68": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        },
+        "<59": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        },
+        "68-72": {
+          "n": 81,
+          "wr": 61,
+          "units": 202.3,
+          "profit": 21.9,
+          "roi": 10.8
+        },
+        "59-63": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        },
+        "72+": {
+          "n": 83,
+          "wr": 59.8,
+          "units": 230.5,
+          "profit": 50.38,
+          "roi": 21.9
+        },
+        "null": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        }
+      }
+    },
+    "standardBand": {
+      "name": "PRODUCT Standard band (63-68)",
+      "nLive": 112,
+      "record": "63-48-1",
+      "wr": 56.8,
+      "units": 345.5,
+      "profit": 12.29,
+      "roi": 3.6,
+      "picksPerDay": 2.67,
+      "byBand": {
+        "63-68": {
+          "n": 112,
+          "wr": 56.8,
+          "units": 345.5,
+          "profit": 12.29,
+          "roi": 3.6
+        },
+        "<59": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        },
+        "68-72": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        },
+        "59-63": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        },
+        "72+": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        },
+        "null": {
+          "n": 0,
+          "wr": null,
+          "units": 0,
+          "profit": 0,
+          "roi": null
+        }
+      }
+    }
+  }
+}

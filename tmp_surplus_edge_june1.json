@@ -1,0 +1,736 @@
+{
+  "meta": {
+    "generatedAt": "2026-07-14T19:42:01.505Z",
+    "source": "tmp_additive_winprob_june1_rows.csv",
+    "clvHi": 70.11,
+    "clvLo": 60.53,
+    "convHi": 1.4717,
+    "keepCoreDef": "(topUnopp OR RANK OR SUPER/TOP) AND NOT clvLow AND NOT SHARP"
+  },
+  "book": {
+    "label": "ALL book",
+    "n": 422,
+    "wr": 55.2,
+    "units": 1163.5,
+    "pnl": 49.79,
+    "roi": 4.3,
+    "flatPnl": 15.34,
+    "flatRoi": 3.6,
+    "residualPp": 1.39,
+    "flatSurplus": 15.34,
+    "unitSurplus": 49.8,
+    "expectedFlatPnl": 0
+  },
+  "selSize": {
+    "flat1u": {
+      "n": 422,
+      "pnl": 15.34,
+      "surplus": 15.34,
+      "roi": 3.6
+    },
+    "evenSizeAtAvgU": {
+      "avgU": 2.76,
+      "pnl": 42.29,
+      "surplus": 42.29,
+      "roi": 3.6
+    },
+    "actual": {
+      "units": 1163.5,
+      "pnl": 49.79,
+      "surplus": 49.8,
+      "roi": 4.3
+    },
+    "attribution": {
+      "selectionSurplus_flat1u": 15.34,
+      "sizingSkill_vsEven": 7.5,
+      "note": "selectionSurplus = flat1u surplus vs efficient market; sizingSkill = actual PnL − even-size PnL on same picks"
+    }
+  },
+  "featureCorrVsResidual": [
+    {
+      "feature": "pMkt",
+      "n": 422,
+      "r": -0.0789
+    },
+    {
+      "feature": "isSharp",
+      "n": 422,
+      "r": -0.0643
+    },
+    {
+      "feature": "topUnopp",
+      "n": 422,
+      "r": 0.0579
+    },
+    {
+      "feature": "superTop",
+      "n": 422,
+      "r": 0.0571
+    },
+    {
+      "feature": "edge",
+      "n": 220,
+      "r": 0.0537
+    },
+    {
+      "feature": "clvTop2",
+      "n": 421,
+      "r": 0.0532
+    },
+    {
+      "feature": "conviction",
+      "n": 421,
+      "r": -0.0418
+    },
+    {
+      "feature": "isRank",
+      "n": 422,
+      "r": 0.034
+    },
+    {
+      "feature": "topVsTop",
+      "n": 422,
+      "r": -0.0295
+    },
+    {
+      "feature": "pathA",
+      "n": 422,
+      "r": 0.0252
+    },
+    {
+      "feature": "hcMargin",
+      "n": 422,
+      "r": -0.0166
+    },
+    {
+      "feature": "agsV12",
+      "n": 422,
+      "r": 0.0165
+    },
+    {
+      "feature": "deltaQ",
+      "n": 422,
+      "r": 0.0085
+    }
+  ],
+  "surplusModel": {
+    "meanOosR2": -15.7184,
+    "foldR2": [
+      -0.1017,
+      -0.0041,
+      -47.0493
+    ],
+    "intercept": 0.0128,
+    "coefRank": [
+      {
+        "feature": "deltaQ",
+        "beta_z": 0.031,
+        "abs": 0.03100564063815398,
+        "rank": 1
+      },
+      {
+        "feature": "agsV12",
+        "beta_z": 0.0297,
+        "abs": 0.029722775662321208,
+        "rank": 2
+      },
+      {
+        "feature": "topVsTop",
+        "beta_z": 0.0178,
+        "abs": 0.017768669234800794,
+        "rank": 3
+      },
+      {
+        "feature": "isRank",
+        "beta_z": 0.0161,
+        "abs": 0.016073288339526513,
+        "rank": 4
+      },
+      {
+        "feature": "conviction",
+        "beta_z": -0.0144,
+        "abs": 0.014389312807490952,
+        "rank": 5
+      },
+      {
+        "feature": "clvTop2",
+        "beta_z": 0.0108,
+        "abs": 0.010784633880459207,
+        "rank": 6
+      },
+      {
+        "feature": "pathA",
+        "beta_z": -0.0078,
+        "abs": 0.007847990518594207,
+        "rank": 7
+      },
+      {
+        "feature": "hcMargin",
+        "beta_z": -0.0045,
+        "abs": 0.004542910339005815,
+        "rank": 8
+      },
+      {
+        "feature": "topUnopp",
+        "beta_z": 0.0026,
+        "abs": 0.00262295410792181,
+        "rank": 9
+      },
+      {
+        "feature": "edge",
+        "beta_z": -0.0005,
+        "abs": 0.000544207301026214,
+        "rank": 10
+      },
+      {
+        "feature": "isSharp",
+        "beta_z": 0,
+        "abs": 0,
+        "rank": 11
+      }
+    ],
+    "oosBuckets": [
+      {
+        "label": "bot_pred_surplus",
+        "n": 42,
+        "wr": 61.9,
+        "units": 136,
+        "pnl": 25.09,
+        "roi": 18.4,
+        "flatPnl": 7.73,
+        "flatRoi": 18.4,
+        "residualPp": 8.83,
+        "flatSurplus": 7.73,
+        "unitSurplus": 25.09,
+        "expectedFlatPnl": 0
+      },
+      {
+        "label": "Q2",
+        "n": 42,
+        "wr": 59.5,
+        "units": 130,
+        "pnl": 9.15,
+        "roi": 7,
+        "flatPnl": 4.32,
+        "flatRoi": 10.3,
+        "residualPp": 6.89,
+        "flatSurplus": 4.32,
+        "unitSurplus": 9.15,
+        "expectedFlatPnl": 0
+      },
+      {
+        "label": "Q3",
+        "n": 43,
+        "wr": 51.2,
+        "units": 156.5,
+        "pnl": -6.14,
+        "roi": -3.9,
+        "flatPnl": -2.85,
+        "flatRoi": -6.6,
+        "residualPp": -3.5,
+        "flatSurplus": -2.85,
+        "unitSurplus": -6.14,
+        "expectedFlatPnl": 0
+      },
+      {
+        "label": "Q4",
+        "n": 42,
+        "wr": 52.4,
+        "units": 163,
+        "pnl": -3.7,
+        "roi": -2.3,
+        "flatPnl": -3.13,
+        "flatRoi": -7.5,
+        "residualPp": -3.85,
+        "flatSurplus": -3.13,
+        "unitSurplus": -3.7,
+        "expectedFlatPnl": 0
+      },
+      {
+        "label": "top_pred_surplus",
+        "n": 43,
+        "wr": 55.8,
+        "units": 142,
+        "pnl": 5,
+        "roi": 3.5,
+        "flatPnl": 0.66,
+        "flatRoi": 1.5,
+        "residualPp": -0.11,
+        "flatSurplus": 0.66,
+        "unitSurplus": 5,
+        "expectedFlatPnl": 0
+      }
+    ]
+  },
+  "tapeScoreBuckets": [
+    {
+      "label": "bot_tapeScore",
+      "n": 84,
+      "wr": 51.2,
+      "units": 197.3,
+      "pnl": -3.3,
+      "roi": -1.7,
+      "flatPnl": 0.77,
+      "flatRoi": 0.9,
+      "residualPp": -0.81,
+      "flatSurplus": 0.77,
+      "unitSurplus": -3.3,
+      "expectedFlatPnl": 0
+    },
+    {
+      "label": "tape_Q2",
+      "n": 84,
+      "wr": 48.8,
+      "units": 225.3,
+      "pnl": -19.1,
+      "roi": -8.5,
+      "flatPnl": -6.47,
+      "flatRoi": -7.7,
+      "residualPp": -4.54,
+      "flatSurplus": -6.46,
+      "unitSurplus": -19.1,
+      "expectedFlatPnl": 0
+    },
+    {
+      "label": "tape_Q3",
+      "n": 85,
+      "wr": 48.2,
+      "units": 208.3,
+      "pnl": -21.51,
+      "roi": -10.3,
+      "flatPnl": -6.24,
+      "flatRoi": -7.3,
+      "residualPp": -5.23,
+      "flatSurplus": -6.24,
+      "unitSurplus": -21.51,
+      "expectedFlatPnl": 0
+    },
+    {
+      "label": "tape_Q4",
+      "n": 84,
+      "wr": 57.1,
+      "units": 239.3,
+      "pnl": 0.22,
+      "roi": 0.1,
+      "flatPnl": 2.2,
+      "flatRoi": 2.6,
+      "residualPp": 1.67,
+      "flatSurplus": 2.2,
+      "unitSurplus": 0.22,
+      "expectedFlatPnl": 0
+    },
+    {
+      "label": "top_tapeScore",
+      "n": 85,
+      "wr": 70.6,
+      "units": 293.5,
+      "pnl": 93.48,
+      "roi": 31.9,
+      "flatPnl": 25.07,
+      "flatRoi": 29.5,
+      "residualPp": 15.75,
+      "flatSurplus": 25.07,
+      "unitSurplus": 93.48,
+      "expectedFlatPnl": 0
+    }
+  ],
+  "oracles": [
+    {
+      "label": "keep_topUnopp",
+      "n": 210,
+      "wr": 58.6,
+      "units": 553.5,
+      "pnl": 76.24,
+      "roi": 13.8,
+      "flatPnl": 17.85,
+      "flatRoi": 8.5,
+      "residualPp": 4.28,
+      "flatSurplus": 17.86,
+      "unitSurplus": 76.24,
+      "expectedFlatPnl": 0,
+      "flat1uPnl": 17.85,
+      "flat1uSurplus": 17.86,
+      "pctOfBookN": 49.8,
+      "pctOfBookUnits": 47.6
+    },
+    {
+      "label": "keep_clvHigh",
+      "n": 106,
+      "wr": 59.4,
+      "units": 287.8,
+      "pnl": 56,
+      "roi": 19.5,
+      "flatPnl": 12.99,
+      "flatRoi": 12.3,
+      "residualPp": 5.51,
+      "flatSurplus": 12.99,
+      "unitSurplus": 56,
+      "expectedFlatPnl": 0,
+      "flat1uPnl": 12.99,
+      "flat1uSurplus": 12.99,
+      "pctOfBookN": 25.1,
+      "pctOfBookUnits": 24.7
+    },
+    {
+      "label": "keep_rank_or_superTop",
+      "n": 117,
+      "wr": 62.4,
+      "units": 481.5,
+      "pnl": 52.52,
+      "roi": 10.9,
+      "flatPnl": 14.83,
+      "flatRoi": 12.7,
+      "residualPp": 7.12,
+      "flatSurplus": 14.83,
+      "unitSurplus": 52.52,
+      "expectedFlatPnl": 0,
+      "flat1uPnl": 14.83,
+      "flat1uSurplus": 14.83,
+      "pctOfBookN": 27.7,
+      "pctOfBookUnits": 41.4
+    },
+    {
+      "label": "keep_core",
+      "n": 202,
+      "wr": 60.4,
+      "units": 619.8,
+      "pnl": 79.98,
+      "roi": 12.9,
+      "flatPnl": 21.72,
+      "flatRoi": 10.8,
+      "residualPp": 5.76,
+      "flatSurplus": 21.73,
+      "unitSurplus": 79.99,
+      "expectedFlatPnl": 0,
+      "flat1uPnl": 21.72,
+      "flat1uSurplus": 21.73,
+      "pctOfBookN": 47.9,
+      "pctOfBookUnits": 53.3
+    },
+    {
+      "label": "keep_convHigh",
+      "n": 106,
+      "wr": 59.4,
+      "units": 328,
+      "pnl": 33.48,
+      "roi": 10.2,
+      "flatPnl": 8.35,
+      "flatRoi": 7.9,
+      "residualPp": 3.64,
+      "flatSurplus": 8.35,
+      "unitSurplus": 33.48,
+      "expectedFlatPnl": 0,
+      "flat1uPnl": 8.35,
+      "flat1uSurplus": 8.35,
+      "pctOfBookN": 25.1,
+      "pctOfBookUnits": 28.2
+    },
+    {
+      "label": "drop_nothing",
+      "n": 422,
+      "wr": 55.2,
+      "units": 1163.5,
+      "pnl": 49.79,
+      "roi": 4.3,
+      "flatPnl": 15.34,
+      "flatRoi": 3.6,
+      "residualPp": 1.39,
+      "flatSurplus": 15.34,
+      "unitSurplus": 49.8,
+      "expectedFlatPnl": 0,
+      "flat1uPnl": 15.34,
+      "flat1uSurplus": 15.34,
+      "pctOfBookN": 100,
+      "pctOfBookUnits": 100
+    }
+  ],
+  "ablations": [
+    {
+      "name": "baseline",
+      "n": 422,
+      "nDropped": 0,
+      "nDownsized": 0,
+      "units": 1163.5,
+      "pnl": 49.79,
+      "roi": 4.3,
+      "unitSurplus": 49.8,
+      "deltaPnl": 0,
+      "deltaSurplus": 0,
+      "deltaUnits": 0
+    },
+    {
+      "name": "drop_clvLow",
+      "n": 316,
+      "nDropped": 106,
+      "nDownsized": 0,
+      "units": 871.5,
+      "pnl": 76.22,
+      "roi": 8.7,
+      "unitSurplus": 76.23,
+      "deltaPnl": 26.43,
+      "deltaSurplus": 26.43,
+      "deltaUnits": -292
+    },
+    {
+      "name": "drop_SHARP",
+      "n": 383,
+      "nDropped": 39,
+      "nDownsized": 0,
+      "units": 1050,
+      "pnl": 65.05,
+      "roi": 6.2,
+      "unitSurplus": 65.06,
+      "deltaPnl": 15.26,
+      "deltaSurplus": 15.26,
+      "deltaUnits": -113.5
+    },
+    {
+      "name": "drop_topVsTop",
+      "n": 398,
+      "nDropped": 24,
+      "nDownsized": 0,
+      "units": 1132,
+      "pnl": 52.22,
+      "roi": 4.6,
+      "unitSurplus": 52.23,
+      "deltaPnl": 2.43,
+      "deltaSurplus": 2.43,
+      "deltaUnits": -31.5
+    },
+    {
+      "name": "topVsTop_to_1u",
+      "n": 422,
+      "nDropped": 0,
+      "nDownsized": 7,
+      "units": 1147.5,
+      "pnl": 51.26,
+      "roi": 4.5,
+      "unitSurplus": 51.27,
+      "deltaPnl": 1.47,
+      "deltaSurplus": 1.47,
+      "deltaUnits": -16
+    },
+    {
+      "name": "drop_clvLow_and_SHARP",
+      "n": 286,
+      "nDropped": 136,
+      "nDownsized": 0,
+      "units": 783.5,
+      "pnl": 69.28,
+      "roi": 8.8,
+      "unitSurplus": 69.29,
+      "deltaPnl": 19.49,
+      "deltaSurplus": 19.49,
+      "deltaUnits": -380
+    },
+    {
+      "name": "combo_kill",
+      "n": 286,
+      "nDropped": 136,
+      "nDownsized": 2,
+      "units": 777,
+      "pnl": 67.84,
+      "roi": 8.7,
+      "unitSurplus": 67.85,
+      "deltaPnl": 18.05,
+      "deltaSurplus": 18.05,
+      "deltaUnits": -386.5
+    },
+    {
+      "name": "only_keepCore",
+      "n": 202,
+      "nDropped": 220,
+      "nDownsized": 0,
+      "units": 619.8,
+      "pnl": 79.98,
+      "roi": 12.9,
+      "unitSurplus": 79.99,
+      "deltaPnl": 30.19,
+      "deltaSurplus": 30.19,
+      "deltaUnits": -543.7
+    },
+    {
+      "name": "boost_keepCore_1p35",
+      "n": 286,
+      "nDropped": 136,
+      "nDownsized": 2,
+      "units": 948,
+      "pnl": 87.87,
+      "roi": 9.3,
+      "unitSurplus": 87.88,
+      "deltaPnl": 38.08,
+      "deltaSurplus": 38.08,
+      "deltaUnits": -215.5
+    }
+  ],
+  "joints": [
+    {
+      "label": "TopUnopp × CLV high",
+      "n": 54,
+      "wr": 63,
+      "units": 156.5,
+      "pnl": 52.21,
+      "roi": 33.4,
+      "flatPnl": 10.36,
+      "flatRoi": 19.2,
+      "residualPp": 9.43,
+      "flatSurplus": 10.36,
+      "unitSurplus": 52.21,
+      "expectedFlatPnl": 0
+    },
+    {
+      "label": "TopUnopp × CLV low",
+      "n": 53,
+      "wr": 54.7,
+      "units": 129.8,
+      "pnl": 12.01,
+      "roi": 9.3,
+      "flatPnl": 1.92,
+      "flatRoi": 3.6,
+      "residualPp": 1.2,
+      "flatSurplus": 1.92,
+      "unitSurplus": 12.01,
+      "expectedFlatPnl": 0
+    },
+    {
+      "label": "TopUnopp × mid CLV",
+      "n": 103,
+      "wr": 58.3,
+      "units": 267.3,
+      "pnl": 12.02,
+      "roi": 4.5,
+      "flatPnl": 5.57,
+      "flatRoi": 5.4,
+      "residualPp": 3.16,
+      "flatSurplus": 5.57,
+      "unitSurplus": 12.02,
+      "expectedFlatPnl": 0
+    },
+    {
+      "label": "TopVsTop × any",
+      "n": 24,
+      "wr": 50,
+      "units": 31.5,
+      "pnl": -2.43,
+      "roi": -7.7,
+      "flatPnl": -2.05,
+      "flatRoi": -8.5,
+      "residualPp": -4.59,
+      "flatSurplus": -2.05,
+      "unitSurplus": -2.43,
+      "expectedFlatPnl": 0
+    },
+    {
+      "label": "PathA × TopUnopp",
+      "n": 43,
+      "wr": 67.4,
+      "units": 166,
+      "pnl": 35.04,
+      "roi": 21.1,
+      "flatPnl": 8.44,
+      "flatRoi": 19.6,
+      "residualPp": 11.51,
+      "flatSurplus": 8.44,
+      "unitSurplus": 35.04,
+      "expectedFlatPnl": 0
+    },
+    {
+      "label": "PathA × TopVsTop",
+      "n": 5,
+      "wr": 60,
+      "units": 10,
+      "pnl": 2.51,
+      "roi": 25.1,
+      "flatPnl": -0.42,
+      "flatRoi": -8.4,
+      "residualPp": -6.93,
+      "flatSurplus": -0.42,
+      "unitSurplus": 2.51,
+      "expectedFlatPnl": 0
+    },
+    {
+      "label": "RANK × CLV high",
+      "n": 9,
+      "wr": 44.4,
+      "units": 36,
+      "pnl": -4.58,
+      "roi": -12.7,
+      "flatPnl": -1.28,
+      "flatRoi": -14.3,
+      "residualPp": -5.62,
+      "flatSurplus": -1.28,
+      "unitSurplus": -4.58,
+      "expectedFlatPnl": 0
+    },
+    {
+      "label": "SHARP × CLV high",
+      "n": 16,
+      "wr": 56.3,
+      "units": 52,
+      "pnl": 3.54,
+      "roi": 6.8,
+      "flatPnl": 0.44,
+      "flatRoi": 2.8,
+      "residualPp": 0.84,
+      "flatSurplus": 0.44,
+      "unitSurplus": 3.54,
+      "expectedFlatPnl": 0
+    },
+    {
+      "label": "SHARP × CLV low",
+      "n": 9,
+      "wr": 11.1,
+      "units": 25.5,
+      "pnl": -22.2,
+      "roi": -87.1,
+      "flatPnl": -5.7,
+      "flatRoi": -63.3,
+      "residualPp": -38.65,
+      "flatSurplus": -5.7,
+      "unitSurplus": -22.2,
+      "expectedFlatPnl": 0
+    },
+    {
+      "label": "SUPER/TOP × TopUnopp",
+      "n": 31,
+      "wr": 71,
+      "units": 135,
+      "pnl": 32.08,
+      "roi": 23.8,
+      "flatPnl": 7.44,
+      "flatRoi": 24,
+      "residualPp": 14.17,
+      "flatSurplus": 7.44,
+      "unitSurplus": 32.08,
+      "expectedFlatPnl": 0
+    },
+    {
+      "label": "SUPER/TOP × TopVsTop",
+      "n": 1,
+      "wr": 100,
+      "units": 6,
+      "pnl": 3.53,
+      "roi": 58.8,
+      "flatPnl": 0.59,
+      "flatRoi": 58.8,
+      "residualPp": 37.04,
+      "flatSurplus": 0.59,
+      "unitSurplus": 3.53,
+      "expectedFlatPnl": 0
+    },
+    {
+      "label": "keepCore",
+      "n": 202,
+      "wr": 60.4,
+      "units": 619.8,
+      "pnl": 79.98,
+      "roi": 12.9,
+      "flatPnl": 21.72,
+      "flatRoi": 10.8,
+      "residualPp": 5.76,
+      "flatSurplus": 21.73,
+      "unitSurplus": 79.99,
+      "expectedFlatPnl": 0
+    }
+  ]
+}
