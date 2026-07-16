@@ -7965,20 +7965,28 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     cronStakeTier: totalCronStakeTier,
   });
 
+  // Sport-specific usual bet from sports_sharps.perSport — the cross-sport
+  // avgSportBet on the position JSON is inflated by SOC/NBA whales and
+  // must not be the primary denominator for an MLB card.
+  const ssTable = v8Norm?.sportsSharps || null;
+  const sportAvgForWallet = (wallet) => {
+    if (!ssTable || !wallet) return null;
+    const row = ssTable[wallet] || ssTable[String(wallet).toLowerCase()];
+    const avg = row?.perSport?.[gd.sport]?.avgBet;
+    return Number.isFinite(avg) && avg > 0 ? avg : null;
+  };
+  const walletRawFields = (p) => ({
+    wallet: p.wallet,
+    invested: p.invested || 0,
+    pnl: p.totalPnl || p.pnl || 0,
+    roi: p.sportROI || 0,
+    sportAvgBet: sportAvgForWallet(p.wallet),
+    avgSportBet: p.avgSportBet, // cross-sport fallback only
+  });
+
   const mlWalletsRaw = (gd.positions || [])
     .filter((p) => p.side === consensusSide)
-    .map((p) => ({
-      wallet: p.wallet,
-      invested: p.invested || 0,
-      pnl: p.totalPnl || p.pnl || 0,
-      roi: p.sportROI || 0,
-      // Prefer live sizeRatio; else invested / this-sport avg from the position JSON.
-      sizeRatio: Number.isFinite(p.sizeRatio) ? p.sizeRatio
-        : (Number.isFinite(p.avgSportBet) && p.avgSportBet > 0 && (p.invested || 0) > 0)
-          ? p.invested / p.avgSportBet
-          : undefined,
-      avgSportBet: p.avgSportBet,
-    }));
+    .map(walletRawFields);
   const mlWallets = enrichWallets(mlWalletsRaw, gd.sport, getWalletProfile, isSportWinner, whitelistRecordForDisplay);
 
   // Wallet-map input: BOTH sides' sharps, each tagged with its side, run
@@ -7986,16 +7994,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const mlMapWallets = (() => {
     const rawFor = (side) => (gd.positions || [])
       .filter((p) => p.side === side)
-      .map((p) => ({
-        wallet: p.wallet,
-        invested: p.invested || 0,
-        pnl: p.totalPnl || p.pnl || 0,
-        sizeRatio: Number.isFinite(p.sizeRatio) ? p.sizeRatio
-          : (Number.isFinite(p.avgSportBet) && p.avgSportBet > 0 && (p.invested || 0) > 0)
-            ? p.invested / p.avgSportBet
-            : undefined,
-        avgSportBet: p.avgSportBet,
-      }));
+      .map(walletRawFields);
     const tag = (list, side) => enrichWallets(list, gd.sport, getWalletProfile, isSportWinner, whitelistRecordForDisplay)
       .map((w) => ({ ...w, side }));
     return [...tag(rawFor('away'), 'away'), ...tag(rawFor('home'), 'home')];

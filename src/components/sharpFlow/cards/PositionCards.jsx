@@ -585,7 +585,9 @@ function ConvictionRow({ w, accent, maxRatio, last }) {
               <span style={{
                 fontSize: '0.7rem', fontWeight: 800, color: ratioColor,
                 fontFeatureSettings: "'tnum'", minWidth: 64, textAlign: 'right',
-              }}>{fmtRatio(w.sizeRatio)}× usual</span>
+              }} title={Number.isFinite(w.avgSportBet) ? `usual ${fmtMoney(w.avgSportBet)}` : undefined}>
+                {fmtRatio(w.sizeRatio)}× usual
+              </span>
             </>
           )}
           {!hasRatio && <span style={{ flex: 1 }} />}
@@ -813,7 +815,12 @@ function WalletMapPanel({ f, accent, pts }) {
               { label: 'BEATS CLOSE', val: `${selected.priorClvPct}%`, hot: selected.priorClvPct >= X_BREAK },
               { label: 'ROI', val: `${roiOf(selected) >= 0 ? '+' : ''}${roiOf(selected)}%`, hot: roiOf(selected) >= 0 },
               ...(Number.isFinite(selected.sizeRatio)
-                ? [{ label: '× USUAL', val: `${fmtRatio(selected.sizeRatio)}×`, hot: selected.sizeRatio >= 1.5 }]
+                ? [{
+                  label: '× USUAL',
+                  val: `${fmtRatio(selected.sizeRatio)}×`,
+                  hot: selected.sizeRatio >= 1.5,
+                  sub: Number.isFinite(selected.avgSportBet) ? `of ${fmtMoney(selected.avgSportBet)}` : null,
+                }]
                 : []),
               { label: 'THIS TICKET', val: fmtMoney(selected.invested) },
             ].map((s) => (
@@ -826,6 +833,9 @@ function WalletMapPanel({ f, accent, pts }) {
                 }}>
                   {s.val}
                 </div>
+                {s.sub && (
+                  <div style={{ fontSize: '0.48rem', color: C.textFaint, marginTop: 2, fontFeatureSettings: "'tnum'" }}>{s.sub}</div>
+                )}
               </div>
             ))}
           </div>
