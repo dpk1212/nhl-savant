@@ -1,22 +1,22 @@
 {
-  "scannedAt": "2026-07-16T22:33:09.193Z",
-  "elapsedSec": 12.7,
+  "scannedAt": "2026-07-16T22:37:13.883Z",
+  "elapsedSec": 15.1,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 20,
   "summary": {
     "total": 197,
     "coveredByMain": 10,
-    "recovered": 15,
-    "recoveredPositions": 59,
-    "noPositions": 172,
+    "recovered": 16,
+    "recoveredPositions": 60,
+    "noPositions": 171,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 5,
-      "spread": 1,
+      "ml": 6,
+      "spread": 2,
       "total": 1,
-      "dropped_shadow_gate": 29,
+      "dropped_shadow_gate": 28,
       "dropped_excluded": 23,
       "dropped_duplicate": 0
     }
@@ -1590,8 +1590,8 @@
       "positionsCount": 2,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 7585,
-      "willPassShadowGate": 1,
-      "willDropAtShadowGate": 1,
+      "willPassShadowGate": 2,
+      "willDropAtShadowGate": 0,
       "positions": [
         {
           "sport": "MLB",
@@ -1607,9 +1607,9 @@
           "gameKey": "por_was",
           "marketType": "spread",
           "side": "away",
-          "invested": 0,
+          "invested": 2081,
           "entryLine": 6.5,
-          "passesShadow": false
+          "passesShadow": true
         }
       ]
     },
@@ -1706,8 +1706,24 @@
       "tier": "CONFIRMED",
       "name": "neutralwave23",
       "sports": "NBA,SOC",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x5b6331e7ff0831a3fe2ed12004747db1a9c911a4"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x5b6331e7ff0831a3fe2ed12004747db1a9c911a4",
+      "positionsCount": 1,
+      "statsSource": "sharpWalletProfiles_derived",
+      "avgSportBet": 11728,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "SOC",
+          "gameKey": "arg_esp",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 1509,
+          "entryLine": null,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "c9bba3",
