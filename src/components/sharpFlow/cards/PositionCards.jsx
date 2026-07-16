@@ -944,17 +944,13 @@ export function LivePositionCardView({ f, markets, onMarket }) {
   const showWrRow = Number.isFinite(awayWr) && Number.isFinite(homeWr);
   const awayClv = f.sides.away?.clv;
   const homeClv = f.sides.home?.clv;
-  // Show BEATS THE CLOSE when at least our side has a real %+CLV; opposing
-  // side can fall back to the netCLV prior (62) for the lane display only
-  // when the cron stamped netCLV with a missing AG mean.
-  const showClvRow = Number.isFinite(awayClv) || Number.isFinite(homeClv);
-  const clvLane = {
-    away: Number.isFinite(awayClv) ? awayClv : (Number.isFinite(homeClv) && hasClv ? Math.round(homeClv - f.netClv) : null),
-    home: Number.isFinite(homeClv) ? homeClv : (Number.isFinite(awayClv) && hasClv ? Math.round(awayClv - f.netClv) : null),
-  };
-  const showClvBattle = showClvRow
-    && Number.isFinite(clvLane.away)
-    && Number.isFinite(clvLane.home);
+  // Both sides must have REAL wallet-derived %+CLV. Never invent the empty
+  // side from netClv − prior(62) — that painted a phantom "62%" on Mets
+  // with $0 / 0 proven winners.
+  const showClvBattle = Number.isFinite(awayClv) && Number.isFinite(homeClv);
+  // Only trust the netCLV tag when both lanes are real (otherwise the
+  // stamp may be FOR − 62 prior, not FOR − actual AG).
+  const showClvTag = showClvBattle && hasClv;
 
   // Split verdict into a bold lead (the receipts) and a quieter action line
   // so the eye lands on the proof first.
@@ -1200,14 +1196,14 @@ export function LivePositionCardView({ f, markets, onMarket }) {
             {showClvBattle && (
               <BattleRowV12
                 label="BEATS THE CLOSE"
-                tag={hasClv ? {
+                tag={showClvTag ? {
                   text: `${f.netClv > 0 ? '+' : ''}${Number(f.netClv).toFixed(1)}`,
                   color: f.netClv >= 0 ? B.profit : B.loss,
                 } : null}
-                awayVal={`${clvLane.away}%`}
-                homeVal={`${clvLane.home}%`}
-                awayNum={clvLane.away}
-                homeNum={clvLane.home}
+                awayVal={`${awayClv}%`}
+                homeVal={`${homeClv}%`}
+                awayNum={awayClv}
+                homeNum={homeClv}
                 accent={accent}
                 playIsHome={playIsHome}
               />

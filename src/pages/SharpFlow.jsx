@@ -8039,13 +8039,21 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const homeClvFinal = stampedForClv != null || stampedAgClv != null
     ? (playIsHomeSide ? (stampedForClv ?? homeSideClv) : (stampedAgClv ?? homeSideClv))
     : homeSideClv;
-  // netCLV = mean(FOR) − (mean(AG) ?? prior 62) — same as computeNetMeanPrior.
+  // netCLV for the card: only when BOTH sides have a real mean. Do NOT
+  // invent AG as prior 62 — that painted a phantom "62% beats close" on
+  // empty sides (and a fake −5.4 delta tag against it).
   const derivedNetClv = (() => {
-    if (Number.isFinite(mlCronStamps?.netClv)) return mlCronStamps.netClv;
     const forV = playIsHomeSide ? homeClvFinal : awayClvFinal;
     const agV = playIsHomeSide ? awayClvFinal : homeClvFinal;
-    if (!Number.isFinite(forV)) return null;
-    return Math.round((forV - (Number.isFinite(agV) ? agV : 62)) * 10) / 10;
+    if (Number.isFinite(forV) && Number.isFinite(agV)) {
+      if (Number.isFinite(mlCronStamps?.netClv)
+        && Number.isFinite(mlCronStamps?.clvMeanFor)
+        && Number.isFinite(mlCronStamps?.clvMeanAg)) {
+        return mlCronStamps.netClv;
+      }
+      return Math.round((forV - agV) * 10) / 10;
+    }
+    return null;
   })();
 
   const sharpAwayPct = (() => {
