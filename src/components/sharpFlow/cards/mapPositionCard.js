@@ -175,9 +175,19 @@ export function mapLockedPickToCardFixture(pick, {
     getRecordForDisplay,
   );
 
-  const confirmedOnSide = Number.isFinite(pick.agsProvenForCount)
-    ? pick.agsProvenForCount
-    : wallets.filter((w) => w.whitelist === 'CONFIRMED' || w.whitelist === 'FLAT').length || wallets.length;
+  // Proven count MUST equal PROVEN badges on THE RECEIPTS (and the live
+  // board's confirmedOnSide): whitelist winner + ≥0.10× usual. Prefer that
+  // census over a stamped agsProvenForCount that can drift from who we paint.
+  const MODEL_MIN = 0.10;
+  const isCounted = (w) => {
+    const sr = Number(w?.sizeRatio);
+    return !Number.isFinite(sr) || sr <= 0 || sr >= MODEL_MIN;
+  };
+  const provenFromWallets = wallets.filter((w) => w.proven && isCounted(w)).length;
+  // When receipts exist, count equals badges — never prefer a stale stamp.
+  const confirmedOnSide = wallets.length > 0
+    ? provenFromWallets
+    : (Number.isFinite(pick.agsProvenForCount) ? pick.agsProvenForCount : 0);
   const vaultOnSide = wallets.filter((w) => (w.sizeRatio || 0) >= 1.5).length;
   const base = pathBaseUnits(stakePath);
 

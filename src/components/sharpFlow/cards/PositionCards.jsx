@@ -357,7 +357,7 @@ function TicketStub({ units, toWin, odds, stakePath, tapeAction, centsEdge, comm
   const tapeNote = tapeAction === 'boost' ? ' · Sized up' : tapeAction === 'mute' ? ' · Pass' : '';
   const cellLabel = { fontSize: '0.52rem', fontWeight: 800, letterSpacing: '0.13em', color: C.textMuted, marginBottom: 4 };
 
-  // Size is live until T-15; after that the cron freezes the ticket.
+  // Ticket is provisional until T-15; cron freezes units/path/side then.
   const lockEpoch = Number.isFinite(commenceMs) ? commenceMs - LOCK_LEAD_MS : null;
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -385,8 +385,8 @@ function TicketStub({ units, toWin, odds, stakePath, tapeAction, centsEdge, comm
         padding: '8px 14px', borderBottom: '1px dashed rgba(212,175,55,0.28)',
       }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.56rem', fontWeight: 900, letterSpacing: '0.14em', color: isFrozen ? B.profit : B.goldHi }}>
-          {isFrozen ? <Lock size={11} strokeWidth={3} /> : <Check size={11} strokeWidth={3.2} />}
-          {isFrozen ? 'LOCKED' : 'LIVE TICKET'}
+          {isFrozen ? <Lock size={11} strokeWidth={3} /> : <Clock size={11} strokeWidth={2.8} />}
+          {isFrozen ? 'LOCKED' : 'OPEN TICKET'}
         </span>
         <span style={{
           fontSize: '0.56rem', fontWeight: 900, letterSpacing: '0.12em',
@@ -402,25 +402,51 @@ function TicketStub({ units, toWin, odds, stakePath, tapeAction, centsEdge, comm
       </div>
       {lockEpoch != null && (
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 6,
-          padding: '6px 14px 0',
-          fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.04em',
-          color: isFrozen ? B.profit : C.textSec, fontFeatureSettings: "'tnum'",
+          margin: '10px 12px 0',
+          padding: isFrozen ? '10px 12px' : '12px 14px',
+          borderRadius: 10,
+          background: isFrozen
+            ? 'rgba(47,213,126,0.10)'
+            : 'linear-gradient(135deg, rgba(212,175,55,0.22) 0%, rgba(212,175,55,0.08) 100%)',
+          border: `1px solid ${isFrozen ? 'rgba(47,213,126,0.35)' : 'rgba(212,175,55,0.55)'}`,
+          boxShadow: isFrozen ? 'none' : `0 0 28px -8px ${B.gold}66, inset 0 1px 0 rgba(255,255,255,0.08)`,
         }}>
-          <Clock size={11} strokeWidth={2.4} style={{ flexShrink: 0, opacity: 0.85 }} />
-          {isFrozen
-            ? 'Size frozen at T-15 — this is the final ticket'
-            : (
-              <>
-                Size can still move
-                {remLabel ? (
-                  <>
-                    <span style={{ color: C.textFaint }}> · </span>
-                    <span style={{ color: B.goldHi }}>locks in {remLabel}</span>
-                  </>
-                ) : null}
-              </>
-            )}
+          {isFrozen ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Lock size={14} strokeWidth={2.8} style={{ color: B.profit, flexShrink: 0 }} />
+              <div>
+                <div style={{ fontSize: '0.72rem', fontWeight: 900, letterSpacing: '0.06em', color: B.profit }}>
+                  FINAL TICKET
+                </div>
+                <div style={{ fontSize: '0.58rem', fontWeight: 600, color: C.textSec, marginTop: 2 }}>
+                  Frozen at T-15 — units, path, and side are set for grading
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{
+                  fontSize: '0.52rem', fontWeight: 900, letterSpacing: '0.16em',
+                  color: B.goldHi, marginBottom: 4,
+                }}>
+                  LOCKS IN
+                </div>
+                <div style={{
+                  fontSize: '1.55rem', fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1,
+                  fontFeatureSettings: "'tnum'",
+                  color: C.text,
+                  textShadow: `0 0 24px ${B.gold}55`,
+                }}>
+                  {remLabel || '—'}
+                </div>
+                <div style={{ fontSize: '0.58rem', fontWeight: 600, color: C.textSec, marginTop: 5, lineHeight: 1.35 }}>
+                  Not final yet — stake, path, and side can still change until T-15
+                </div>
+              </div>
+              <Clock size={28} strokeWidth={1.8} style={{ color: B.goldHi, flexShrink: 0, opacity: 0.9 }} />
+            </div>
+          )}
         </div>
       )}
       <div style={{ display: 'flex', alignItems: 'stretch' }}>
@@ -704,8 +730,18 @@ function ConvictionRow({ w, accent, maxRatio, last }) {
           boxShadow: `0 0 8px hsl(${(parseInt(w.short, 16) || 0) % 360} 46% 62% / 0.6)`,
         }} />
         <span style={{ fontFamily: MONO, fontSize: '0.72rem', fontWeight: 700, color: C.text }}>…{w.short}</span>
-        {w.proven !== false && (
-          <span style={{ fontSize: '0.54rem', fontWeight: 800, letterSpacing: '0.08em', color: B.profit }}>PROVEN</span>
+        {w.proven ? (
+          <span style={{
+            fontSize: '0.54rem', fontWeight: 800, letterSpacing: '0.08em', color: B.profit,
+            padding: '2px 6px', borderRadius: 4,
+            background: 'rgba(47,213,126,0.12)', border: '1px solid rgba(47,213,126,0.28)',
+          }}>PROVEN</span>
+        ) : (
+          <span style={{
+            fontSize: '0.54rem', fontWeight: 700, letterSpacing: '0.08em', color: C.textMuted,
+            padding: '2px 6px', borderRadius: 4,
+            background: 'rgba(148,163,184,0.08)', border: '1px solid rgba(148,163,184,0.18)',
+          }}>TRACKING</span>
         )}
         <span style={{ flex: 1 }} />
         {Number.isFinite(roiDisp) && (
@@ -1729,7 +1765,7 @@ function JourneyStop({ label, time, odds, color, active }) {
   );
 }
 
-/** Compact T-15 status for locked-list cards (live until freeze, then sealed). */
+/** Compact T-15 status for locked-list cards (open until freeze, then sealed). */
 function LockFreezeStatus({ commenceMs, compact }) {
   const lockEpoch = Number.isFinite(commenceMs) ? commenceMs - LOCK_LEAD_MS : null;
   const [now, setNow] = useState(() => Date.now());
@@ -1745,30 +1781,51 @@ function LockFreezeStatus({ commenceMs, compact }) {
   if (compact) {
     return (
       <span style={{
-        display: 'inline-flex', alignItems: 'center', gap: 4,
-        fontSize: '0.5rem', fontWeight: 800, letterSpacing: '0.06em',
-        color: frozen ? B.profit : B.goldHi, fontFeatureSettings: "'tnum'",
+        display: 'inline-flex', alignItems: 'center', gap: 5,
+        fontSize: '0.58rem', fontWeight: 900, letterSpacing: '0.04em',
+        padding: '4px 8px', borderRadius: 7,
+        color: frozen ? B.profit : '#1a1408',
+        background: frozen
+          ? 'rgba(47,213,126,0.14)'
+          : `linear-gradient(180deg, ${B.goldHi} 0%, ${B.gold} 100%)`,
+        border: `1px solid ${frozen ? 'rgba(47,213,126,0.40)' : 'rgba(212,175,55,0.65)'}`,
+        boxShadow: frozen ? 'none' : `0 6px 16px -8px ${B.gold}`,
+        fontFeatureSettings: "'tnum'",
       }}>
-        <Clock size={9} strokeWidth={2.6} />
-        {frozen ? 'FROZEN' : `LOCKS ${rem}`}
+        <Clock size={11} strokeWidth={2.8} />
+        {frozen ? 'LOCKED' : `LOCKS ${rem}`}
       </span>
     );
   }
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', gap: 7, marginTop: 10,
-      fontSize: '0.6rem', fontWeight: 700, color: frozen ? B.profit : C.textSec,
+      display: 'flex', alignItems: 'center', gap: 10, marginTop: 12,
+      padding: '10px 12px', borderRadius: 10,
+      background: frozen
+        ? 'rgba(47,213,126,0.10)'
+        : 'linear-gradient(135deg, rgba(212,175,55,0.20) 0%, rgba(212,175,55,0.07) 100%)',
+      border: `1px solid ${frozen ? 'rgba(47,213,126,0.35)' : 'rgba(212,175,55,0.50)'}`,
       fontFeatureSettings: "'tnum'",
     }}>
-      <Clock size={12} strokeWidth={2.4} style={{ flexShrink: 0, color: frozen ? B.profit : B.goldHi }} />
-      {frozen
-        ? 'Size frozen at T-15 — final ticket for grading'
-        : (
-          <>
-            Size can still move until T-15
-            {rem ? <span style={{ color: B.goldHi }}> · locks in {rem}</span> : null}
-          </>
-        )}
+      <Clock size={16} strokeWidth={2.4} style={{ flexShrink: 0, color: frozen ? B.profit : B.goldHi }} />
+      {frozen ? (
+        <div>
+          <div style={{ fontSize: '0.7rem', fontWeight: 900, color: B.profit }}>FINAL TICKET</div>
+          <div style={{ fontSize: '0.56rem', fontWeight: 600, color: C.textSec, marginTop: 2 }}>
+            Frozen at T-15 — set for grading
+          </div>
+        </div>
+      ) : (
+        <div>
+          <div style={{ fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.14em', color: B.goldHi }}>LOCKS IN</div>
+          <div style={{ fontSize: '1.15rem', fontWeight: 900, color: C.text, letterSpacing: '-0.03em', lineHeight: 1.1 }}>
+            {rem || '—'}
+          </div>
+          <div style={{ fontSize: '0.56rem', fontWeight: 600, color: C.textSec, marginTop: 2 }}>
+            Stake, path, and side can still change
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1906,10 +1963,17 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
       </div>
     );
   }
-  const sortedWallets = [...f.wallets].sort((a, b) => (b.sizeRatio || 0) - (a.sizeRatio || 0));
+  // Proven first (matches the count / badges), then conviction size.
+  const sortedWallets = [...f.wallets].sort((a, b) =>
+    (Number(!!b.proven) - Number(!!a.proven))
+    || ((b.sizeRatio || 0) - (a.sizeRatio || 0))
+    || ((b.invested || 0) - (a.invested || 0))
+  );
   const maxRatio = sortedWallets[0]?.sizeRatio || 1;
+  const provenInReceipts = sortedWallets.filter((w) => w.proven).length;
+  const provenCount = provenInReceipts > 0 ? provenInReceipts : (f.confirmedOnSide || 0);
 
-  const winners = `${f.confirmedOnSide} proven ${f.sport} winner${f.confirmedOnSide === 1 ? '' : 's'}`;
+  const winners = `${provenCount} proven ${f.sport} winner${provenCount === 1 ? '' : 's'}`;
   const clvLine = Number.isFinite(f.clvPct)
     ? (clvGood
       ? `The market moved our way — beating the close by ${f.clvPct.toFixed(1)}%.`
@@ -1935,8 +1999,8 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
     Number.isFinite(f.hcMargin)
       ? { label: 'HC', value: `${f.hcMargin >= 0 ? '+' : ''}${f.hcMargin}`, sub: 'conviction margin' }
       : null,
-    f.confirmedOnSide > 0
-      ? { label: 'PROVEN', value: String(f.confirmedOnSide), sub: playSide }
+    provenCount > 0
+      ? { label: 'PROVEN', value: String(provenCount), sub: playSide }
       : null,
     (f.sideInvested || 0) > 0
       ? { label: 'SHARP $', value: fmtMoney(f.sideInvested), sub: Number.isFinite(f.moneyPct) ? `${Math.round(f.moneyPct)}% of board` : 'on our side' }
@@ -2153,12 +2217,16 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
         <div style={{ padding: '20px 20px 12px' }}>
           <ZoneHead accent={accent} right={(
             <span style={{ fontSize: '0.62rem', fontWeight: 800, color: B.profit, fontFeatureSettings: "'tnum'" }}>
+              {provenCount > 0
+                ? <><span style={{ color: B.profit }}>{provenCount} proven</span>
+                  <span style={{ color: C.textFaint }}> · </span></>
+                : null}
               {fmtMoney(f.sideInvested)} at lock
             </span>
           )}>
             THE RECEIPTS
           </ZoneHead>
-          {sortedWallets.slice(0, 3).map((w, i, arr) => (
+          {sortedWallets.slice(0, 4).map((w, i, arr) => (
             <ConvictionRow key={w.short} w={w} accent={accent} maxRatio={maxRatio} last={i === arr.length - 1} />
           ))}
         </div>

@@ -7011,10 +7011,9 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const consensusSide = s.consensus;
   // 2-way battle chrome (OUR SIDE / carrying / header proven) is always
   // away|home. SOC summary.consensus can be null (3-way money tie) or
-  // 'draw' — both used to desync the header ("0 proven") from THE BATTLE
-  // ("1 proven" on home) because sportWinnerForCount early-returned on
-  // !consensusSide while the card defaulted side→home. Resolve a stable
-  // card side from 2-way money when consensus isn't away/home.
+  // 'draw' — both used to desync the header from THE BATTLE when play
+  // side was gated on raw consensus. Resolve a stable card side from
+  // 2-way money when consensus isn't away/home.
   const cardSideKey = (() => {
     if (consensusSide === 'away' || consensusSide === 'home') return consensusSide;
     if (consensusSide === 'over') return 'home';
@@ -7078,23 +7077,6 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
 
   const pinnMoved = pinnGame?.movement?.direction;
   const pinnConfirms = pinnMoved === consensusSide;
-
-  const uniqueWallets = new Set(gd.positions.map(p => p.wallet)).size;
-  // Phase 2: count {SPORT} WINNER wallets on OUR SIDE (cardSideKey).
-  // Must match THE BATTLE's sides.*.sharps — never gate on raw consensus
-  // being non-null (SOC 3-way ties used to paint "0 proven" here).
-  const sportWinnerForCount = (() => {
-    if (!gd.sport || !cardSideKey) return 0;
-    const set = new Set();
-    gd.positions.forEach(p => { if (p.side === cardSideKey && isSportWinner(p.wallet, gd.sport)) set.add(p.wallet); });
-    return set.size;
-  })();
-  const sportWinnerAgCount = (() => {
-    if (!gd.sport || !cardSideKey) return 0;
-    const set = new Set();
-    gd.positions.forEach(p => { if (p.side && p.side !== cardSideKey && isSportWinner(p.wallet, gd.sport)) set.add(p.wallet); });
-    return set.size;
-  })();
 
   // Per-side aggregation (3-way aware: draw* stay 0 outside SOC)
   const awayPositions = gd.positions.filter(p => p.side === 'away');
@@ -7997,50 +7979,29 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     cronStakeTier: totalCronStakeTier,
   });
 
-  // sizeRatio / avgSportBet: same cross-sport denominator cron + HC use
-  // (invested / sports_sharps.avgSportBet on the position JSON).
-  // Filter to cardSideKey (not raw consensus) so CARRYING matches OUR SIDE
-  // when SOC consensus is null/draw.
-  const mlWalletsRaw = (gd.positions || [])
-    .filter((p) => p.side === cardSideKey)
-    .map((p) => ({
-      wallet: p.wallet,
-      invested: p.invested || 0,
-      pnl: p.totalPnl || p.pnl || 0,
-      roi: p.sportROI || 0,
-      sizeRatio: Number.isFinite(p.sizeRatio) ? p.sizeRatio
-        : (Number.isFinite(p.avgSportBet) && p.avgSportBet > 0 && (p.invested || 0) > 0)
-          ? p.invested / p.avgSportBet
-          : undefined,
-      avgSportBet: p.avgSportBet,
-    }));
-  const mlWallets = enrichWallets(mlWalletsRaw, gd.sport, getWalletProfile, isSportWinner, whitelistRecordForDisplay);
-
-  // Wallet-map input: BOTH sides' sharps, each tagged with its side, run
-  // through the same enrichment (real clv/roi/sizeRatio from profiles).
-  const mlMapWallets = (() => {
-    const rawFor = (side) => (gd.positions || [])
-      .filter((p) => p.side === side)
-      .map((p) => ({
-        wallet: p.wallet,
-        invested: p.invested || 0,
-        pnl: p.totalPnl || p.pnl || 0,
-        sizeRatio: Number.isFinite(p.sizeRatio) ? p.sizeRatio
-          : (Number.isFinite(p.avgSportBet) && p.avgSportBet > 0 && (p.invested || 0) > 0)
-            ? p.invested / p.avgSportBet
-            : undefined,
-        avgSportBet: p.avgSportBet,
-      }));
-    const tag = (list, side) => enrichWallets(list, gd.sport, getWalletProfile, isSportWinner, whitelistRecordForDisplay)
-      .map((w) => ({ ...w, side }));
-    return [...tag(rawFor('away'), 'away'), ...tag(rawFor('home'), 'home')];
-  })();
-
-  const awaySharps = (gd.positions || []).filter((p) => p.side === 'away' && isSportWinner(p.wallet, gd.sport));
-  const homeSharps = (gd.positions || []).filter((p) => p.side === 'home' && isSportWinner(p.wallet, gd.sport));
-  const vaultOnSide = mlWallets.filter((w) => (w.sizeRatio || 0) >= 1.5).length;
-
-  // Real per-side skill from stored profiles (same sources the cron uses).
+  // ── Shared board census for ML / Spread / Total tab fixtures ───────────
+  // Proven = whitelist CONFIRMED|FLAT AND ≥0.10× avgSportBet (same floor as
+  // writeSharpActions). Header confirmedOnSide MUST equal sides[play].sharps
+  // or tab switches paint "0 proven" next to "1 proven" in THE BATTLE.
+  const posSizeRatio = (p) => {
+    if (Number.isFinite(p?.sizeRatio)) return p.sizeRatio;
+    if (Number.isFinite(p?.avgSportBet) && p.avgSportBet > 0 && (p.invested || 0) > 0) {
+      return p.invested / p.avgSportBet;
+    }
+    return undefined;
+  };
+  const isBoardProvenPos = (p) => (
+    !!p?.wallet
+    && isSportWinner(p.wallet, gd.sport)
+    && isModelCounted({ sizeRatio: posSizeRatio(p) })
+  );
+  const lifetimePnlUnique = (list) => {
+    const seen = new Map();
+    list.forEach((p) => { if (!seen.has(p.wallet)) seen.set(p.wallet, p.totalPnl || 0); });
+    let sum = 0;
+    seen.forEach((v) => { sum += v; });
+    return sum;
+  };
   const sideWr = (list) => {
     const vals = [...new Set(list.map((p) => String(p.wallet).slice(-6)))]
       .map((short) => {
@@ -8052,17 +8013,87 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       .filter(Number.isFinite);
     return vals.length ? Math.round(vals.reduce((s, v) => s + v, 0) / vals.length) : null;
   };
-  // Causal %+CLV ("beats the close") — profile.clvSkill written by exportWalletProfiles.
   const sideClv = (list) => {
     const vals = [...new Set(list.map((p) => String(p.wallet).slice(-6)))]
       .map((short) => getWalletProfile(short)?.clvSkill?.pctPos)
       .filter(Number.isFinite);
     return vals.length ? Math.round(vals.reduce((s, v) => s + v, 0) / vals.length) : null;
   };
-  const awaySideWr = sideWr(awaySharps);
-  const homeSideWr = sideWr(homeSharps);
-  const awaySideClv = sideClv(awaySharps);
-  const homeSideClv = sideClv(homeSharps);
+  /** Build battle sides + enriched play-side wallets for one market. */
+  const buildMarketBoard = (positions, playSide, { mapAway = 'away', mapHome = 'home' } = {}) => {
+    const all = Array.isArray(positions) ? positions : [];
+    const awayPos = all.filter((p) => p.side === mapAway);
+    const homePos = all.filter((p) => p.side === mapHome);
+    const awayProven = awayPos.filter(isBoardProvenPos);
+    const homeProven = homePos.filter(isBoardProvenPos);
+    const awayInv = awayPos.reduce((s, p) => s + (p.invested || 0), 0);
+    const homeInv = homePos.reduce((s, p) => s + (p.invested || 0), 0);
+    const awayW = new Set(awayPos.map((p) => p.wallet)).size;
+    const homeW = new Set(homePos.map((p) => p.wallet)).size;
+    const playPos = all.filter((p) => p.side === playSide);
+    const walletsRaw = playPos.map((p) => ({
+      wallet: p.wallet,
+      invested: p.invested || 0,
+      pnl: p.totalPnl || p.pnl || 0,
+      roi: p.sportROI || 0,
+      sizeRatio: posSizeRatio(p),
+      avgSportBet: p.avgSportBet,
+    }));
+    const wallets = enrichWallets(walletsRaw, gd.sport, getWalletProfile, isSportWinner, whitelistRecordForDisplay);
+    const mapRaw = (side) => all
+      .filter((p) => p.side === side)
+      .map((p) => ({
+        wallet: p.wallet,
+        invested: p.invested || 0,
+        pnl: p.totalPnl || p.pnl || 0,
+        sizeRatio: posSizeRatio(p),
+        avgSportBet: p.avgSportBet,
+      }));
+    const tag = (list, side) => enrichWallets(list, gd.sport, getWalletProfile, isSportWinner, whitelistRecordForDisplay)
+      .map((w) => ({ ...w, side: side === mapAway ? 'away' : 'home' }));
+    return {
+      sides: {
+        away: {
+          invested: awayInv,
+          sharps: new Set(awayProven.map((p) => p.wallet)).size,
+          avg: awayW ? awayInv / Math.max(1, awayW) : 0,
+          pnl: lifetimePnlUnique(awayPos),
+          wr: sideWr(awayProven),
+          clv: awayProven.length ? sideClv(awayProven) : null,
+        },
+        home: {
+          invested: homeInv,
+          sharps: new Set(homeProven.map((p) => p.wallet)).size,
+          avg: homeW ? homeInv / Math.max(1, homeW) : 0,
+          pnl: lifetimePnlUnique(homePos),
+          wr: sideWr(homeProven),
+          clv: homeProven.length ? sideClv(homeProven) : null,
+        },
+      },
+      wallets,
+      mapWallets: [...tag(mapRaw(mapAway), mapAway), ...tag(mapRaw(mapHome), mapHome)],
+      confirmedOnSide: new Set(
+        (playSide === mapAway ? awayProven : homeProven).map((p) => p.wallet),
+      ).size,
+      vaultOnSide: wallets.filter((w) => (w.sizeRatio || 0) >= 1.5).length,
+      sideInvested: playSide === mapAway ? awayInv : homeInv,
+    };
+  };
+
+  // sizeRatio / avgSportBet: same cross-sport denominator cron + HC use
+  // (invested / sports_sharps.avgSportBet on the position JSON).
+  // Filter to cardSideKey (not raw consensus) so CARRYING matches OUR SIDE
+  // when SOC consensus is null/draw.
+  const mlBoard = buildMarketBoard(gd.positions || [], cardSideKey);
+  const mlWallets = mlBoard.wallets;
+  const mlMapWallets = mlBoard.mapWallets;
+  const awaySharps = (gd.positions || []).filter((p) => p.side === 'away' && isBoardProvenPos(p));
+  const homeSharps = (gd.positions || []).filter((p) => p.side === 'home' && isBoardProvenPos(p));
+  const vaultOnSide = mlBoard.vaultOnSide;
+  const awaySideWr = mlBoard.sides.away.wr;
+  const homeSideWr = mlBoard.sides.home.wr;
+  const awaySideClv = mlBoard.sides.away.clv;
+  const homeSideClv = mlBoard.sides.home.clv;
   // Prefer cron-stamped means when present — BUT never paint a stamped
   // AG/FOR mean onto a side with zero proven wallets on the board.
   // That recreated the phantom "65% beats close" on Mets with $0 / 0 proven
@@ -8153,27 +8184,13 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     edge: mlCronStamps?.edge ?? null,
     netClv: derivedNetClv,
     hcMargin: Number.isFinite(hcMargin) ? hcMargin : 0,
-    // Same count as THE BATTLE → sides[cardSideKey].sharps (not consensus-gated).
-    confirmedOnSide: sportWinnerForCount,
-    vaultOnSide,
-    sideInvested: cardSideKey === 'away' ? awayInvested : homeInvested,
+    // Same census as THE BATTLE (buildMarketBoard) — never diverge on tab chrome.
+    confirmedOnSide: mlBoard.confirmedOnSide,
+    vaultOnSide: mlBoard.vaultOnSide,
+    sideInvested: mlBoard.sideInvested,
     sides: {
-      away: {
-        invested: awayInvested,
-        sharps: new Set(awaySharps.map((p) => p.wallet)).size,
-        avg: awayWallets ? awayInvested / Math.max(1, awayWallets) : 0,
-        pnl: awayLifetimePnl,
-        wr: awaySideWr,
-        clv: awayClvFinal,
-      },
-      home: {
-        invested: homeInvested,
-        sharps: new Set(homeSharps.map((p) => p.wallet)).size,
-        avg: homeWallets ? homeInvested / Math.max(1, homeWallets) : 0,
-        pnl: homeLifetimePnl,
-        wr: homeSideWr,
-        clv: homeClvFinal,
-      },
+      away: { ...mlBoard.sides.away, pnl: awayLifetimePnl, clv: awayClvFinal },
+      home: { ...mlBoard.sides.home, pnl: homeLifetimePnl, clv: homeClvFinal },
     },
     flow: { sharp: flowSharp, tickets: flowPublic, money: flowMoney },
     pinOpen: {
@@ -8196,9 +8213,35 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     commenceMs: commenceTime,
   });
 
+  // Spread / total: same board census as ML so tab switches keep header
+  // proven / CARRYING / battle bars on one source of truth.
+  const spreadPlaySide = (() => {
+    if (spreadConsensusSide === 'away' || spreadConsensusSide === 'home') return spreadConsensusSide;
+    const a = spreadSummary?.awayInvested || 0;
+    const h = spreadSummary?.homeInvested || 0;
+    if (a <= 0 && h <= 0) return 'home';
+    return a >= h ? 'away' : 'home';
+  })();
+  const spreadBoard = buildMarketBoard(spreadGameData?.positions || [], spreadPlaySide);
+
+  const totalPlaySide = (() => {
+    if (totalConsensusSide === 'over' || totalConsensusSide === 'under') return totalConsensusSide;
+    const o = totalSummary?.overInvested || 0;
+    const u = totalSummary?.underInvested || 0;
+    if (o <= 0 && u <= 0) return 'over';
+    return o >= u ? 'over' : 'under';
+  })();
+  const totalBoard = buildMarketBoard(
+    totalGameData?.positions || [],
+    totalPlaySide,
+    { mapAway: 'under', mapHome: 'over' },
+  );
+
   // Spread / total market siblings for the rail (when data exists)
-  const hasSpread = !!(spreadSummary?.consensus || spreadCronStakeTier || spreadCronUnits);
-  const hasTotal = !!(totalPositions?.[gd.sport]?.[gd.key]?.summary?.consensus || totalCronStakeTier || totalCronUnits);
+  const hasSpread = !!(spreadSummary?.consensus || spreadCronStakeTier || spreadCronUnits
+    || (spreadBoard.sides.away.invested + spreadBoard.sides.home.invested) > 0);
+  const hasTotal = !!(totalSummary?.consensus || totalCronStakeTier || totalCronUnits
+    || (totalBoard.sides.away.invested + totalBoard.sides.home.invested) > 0);
 
   const spreadFixture = hasSpread ? mapLiveGameToCardFixture({
     gd,
@@ -8212,21 +8255,18 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     toWin: (displaySpread.units || spreadCronUnits || 0) > 0
       ? profitFromOdds(spreadBestRetail ?? spreadPinnOdds, displaySpread.units ?? spreadCronUnits ?? 0)
       : 0,
-    side: spreadConsensusSide || 'home',
+    side: spreadPlaySide,
     gameTimeLabel: gameTimeFormatted ? `${gameTimeFormatted} ET` : gameTimeLabel,
     isLive: isGameLive,
     tapeAction: 'keep',
-    confirmedOnSide: 0,
-    vaultOnSide: 0,
-    sideInvested: spreadSummary?.[(spreadConsensusSide || 'home') + 'Invested'] || spreadSummary?.totalInvested || 0,
-    sides: {
-      away: { invested: spreadSummary?.awayInvested || 0, sharps: spreadSummary?.sharpAway || 0, avg: 0, pnl: 0 },
-      home: { invested: spreadSummary?.homeInvested || 0, sharps: spreadSummary?.sharpHome || 0, avg: 0, pnl: 0 },
-    },
+    confirmedOnSide: spreadBoard.confirmedOnSide,
+    vaultOnSide: spreadBoard.vaultOnSide,
+    sideInvested: spreadBoard.sideInvested,
+    sides: spreadBoard.sides,
     flow: {
       sharp: (() => {
-        const a = spreadSummary?.awayInvested || 0;
-        const h = spreadSummary?.homeInvested || 0;
+        const a = spreadBoard.sides.away.invested;
+        const h = spreadBoard.sides.home.invested;
         const tot = a + h;
         if (tot <= 0) return { away: 50, home: 50 };
         const ap = Math.round((a / tot) * 100);
@@ -8236,12 +8276,10 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       money: null,
     },
     books: Number.isFinite(spreadPinnOdds) ? [{ name: 'Pinnacle', odds: spreadPinnOdds, sharp: true }] : [],
-    wallets: [],
-    // Keep the game-level wallet map when the rail switches markets — the
-    // map is about the game's sharp stack, not the ML/spread/total market.
-    mapWallets: mlMapWallets,
+    wallets: spreadBoard.wallets,
+    mapWallets: spreadBoard.mapWallets.length ? spreadBoard.mapWallets : mlMapWallets,
     pickLabel: spreadLine != null
-      ? `${(spreadConsensusSide === 'away' ? awayShort : homeShort)} ${spreadLine > 0 ? '+' : ''}${spreadLine}`
+      ? `${(spreadPlaySide === 'away' ? awayShort : homeShort)} ${spreadLine > 0 ? '+' : ''}${spreadLine}`
       : 'Spread',
     pathBase: AGS_V12_STAKE_TIER_META[displaySpread.tier || spreadCronStakeTier]?.units,
     commenceMs: commenceTime,
@@ -8253,25 +8291,24 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     displayState: (displayTotal.state === 'PREVIEW' ? 'MONITORING' : displayTotal.state) || 'MONITORING',
     stakePath: displayTotal.tier || totalCronStakeTier || 'MONITORING',
     units: Number.isFinite(displayTotal.units) ? displayTotal.units : (totalCronUnits ?? 0),
-    odds: null,
-    book: 'Pinnacle',
-    fairOdds: null,
-    toWin: 0,
-    side: totalSummary?.consensus === 'under' ? 'away' : 'home',
+    odds: totalBestRetail ?? totalPinnOdds,
+    book: totalBestBook || 'Pinnacle',
+    fairOdds: totalPinnOdds,
+    toWin: (displayTotal.units || totalCronUnits || 0) > 0
+      ? profitFromOdds(totalBestRetail ?? totalPinnOdds, displayTotal.units ?? totalCronUnits ?? 0)
+      : 0,
+    side: totalPlaySide,
     gameTimeLabel: gameTimeFormatted ? `${gameTimeFormatted} ET` : gameTimeLabel,
     isLive: isGameLive,
     tapeAction: 'keep',
-    confirmedOnSide: 0,
-    vaultOnSide: 0,
-    sideInvested: totalSummary?.totalInvested || 0,
-    sides: {
-      away: { invested: totalSummary?.awayInvested || totalSummary?.underInvested || 0, sharps: 0, avg: 0, pnl: 0 },
-      home: { invested: totalSummary?.homeInvested || totalSummary?.overInvested || 0, sharps: 0, avg: 0, pnl: 0 },
-    },
+    confirmedOnSide: totalBoard.confirmedOnSide,
+    vaultOnSide: totalBoard.vaultOnSide,
+    sideInvested: totalBoard.sideInvested,
+    sides: totalBoard.sides,
     flow: {
       sharp: (() => {
-        const u = totalSummary?.awayInvested || totalSummary?.underInvested || 0;
-        const o = totalSummary?.homeInvested || totalSummary?.overInvested || 0;
+        const u = totalBoard.sides.away.invested;
+        const o = totalBoard.sides.home.invested;
         const tot = u + o;
         if (tot <= 0) return { away: 50, home: 50 };
         const up = Math.round((u / tot) * 100);
@@ -8280,10 +8317,12 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       tickets: null,
       money: null,
     },
-    books: [],
-    wallets: [],
-    mapWallets: mlMapWallets,
-    pickLabel: totalSummary?.consensus === 'under' ? 'Under' : 'Over',
+    books: Number.isFinite(totalPinnOdds)
+      ? [{ name: 'Pinnacle', odds: totalPinnOdds, sharp: true }]
+      : [],
+    wallets: totalBoard.wallets,
+    mapWallets: totalBoard.mapWallets.length ? totalBoard.mapWallets : mlMapWallets,
+    pickLabel: totalPlaySide === 'under' ? 'Under' : 'Over',
     pathBase: AGS_V12_STAKE_TIER_META[displayTotal.tier || totalCronStakeTier]?.units,
     commenceMs: commenceTime,
   }) : null;
