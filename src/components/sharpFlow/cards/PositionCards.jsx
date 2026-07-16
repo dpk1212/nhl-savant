@@ -1727,18 +1727,93 @@ function JourneyStop({ label, time, odds, color, active }) {
   );
 }
 
+/** Compact T-15 status for locked-list cards (live until freeze, then sealed). */
+function LockFreezeStatus({ commenceMs, compact }) {
+  const lockEpoch = Number.isFinite(commenceMs) ? commenceMs - LOCK_LEAD_MS : null;
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (lockEpoch == null || Date.now() >= lockEpoch) return undefined;
+    const fast = lockEpoch - Date.now() < 10 * 60 * 1000;
+    const id = setInterval(() => setNow(Date.now()), fast ? 1000 : 30000);
+    return () => clearInterval(id);
+  }, [lockEpoch]);
+  if (lockEpoch == null) return null;
+  const frozen = now >= lockEpoch;
+  const rem = formatLockCountdown(lockEpoch - now);
+  if (compact) {
+    return (
+      <span style={{
+        display: 'inline-flex', alignItems: 'center', gap: 4,
+        fontSize: '0.5rem', fontWeight: 800, letterSpacing: '0.06em',
+        color: frozen ? B.profit : B.goldHi, fontFeatureSettings: "'tnum'",
+      }}>
+        <Clock size={9} strokeWidth={2.6} />
+        {frozen ? 'FROZEN' : `LOCKS ${rem}`}
+      </span>
+    );
+  }
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 7, marginTop: 10,
+      fontSize: '0.6rem', fontWeight: 700, color: frozen ? B.profit : C.textSec,
+      fontFeatureSettings: "'tnum'",
+    }}>
+      <Clock size={12} strokeWidth={2.4} style={{ flexShrink: 0, color: frozen ? B.profit : B.goldHi }} />
+      {frozen
+        ? 'Size frozen at T-15 — final ticket for grading'
+        : (
+          <>
+            Size can still move until T-15
+            {rem ? <span style={{ color: B.goldHi }}> · locks in {rem}</span> : null}
+          </>
+        )}
+    </div>
+  );
+}
+
+function KeyReadCell({ label, value, color = C.text, sub }) {
+  return (
+    <div style={{ minWidth: 0 }}>
+      <div style={{ fontSize: '0.48rem', fontWeight: 800, letterSpacing: '0.12em', color: C.textMuted, marginBottom: 4 }}>
+        {label}
+      </div>
+      <div style={{
+        fontSize: '0.92rem', fontWeight: 800, color, letterSpacing: '-0.02em',
+        fontFeatureSettings: "'tnum'", lineHeight: 1.15,
+      }}>
+        {value}
+      </div>
+      {sub && (
+        <div style={{ fontSize: '0.52rem', color: C.textFaint, marginTop: 3, fontFeatureSettings: "'tnum'" }}>
+          {sub}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function LockedPositionCardView({ f, defaultExpanded = false }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const tracked = !(f.units > 0);
   // Champagne accents stay even on tracked picks; only the pill goes gray.
   const accent = B.gold;
   const playSide = f.side === 'home' ? f.homeShort : f.awayShort;
-  const riskAnim = useCountUp(f.units, expanded, 1000);
   const clvGood = f.clvPct >= 0;
   const clvColor = clvGood ? B.profit : B.loss;
+  const productTier = displayTierFromPath(f.stakePath);
+  const tierLabel = productTier?.label || null;
+  const tierColor = productTier?.color || C.textMuted;
   // Journey chart through the three REAL price stops (lock → peak → now).
   const journeySeries = [f.lockOdds, f.peakOdds, f.nowOdds].filter(Number.isFinite);
   const hasJourney = journeySeries.length >= 2;
+  const centsEdge = (() => {
+    const got = f.gotOdds ?? f.lockOdds;
+    const fair = f.fairLine ?? f.fairOdds;
+    if (!Number.isFinite(got) || !Number.isFinite(fair)) return null;
+    let diff = got - fair;
+    if ((got > 0) !== (fair > 0)) diff -= Math.sign(diff) * 200;
+    return diff;
+  })();
 
   if (!expanded) {
     return (
@@ -1760,32 +1835,44 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
           position: 'absolute', top: 0, left: '12%', right: '12%', height: 1.5, pointerEvents: 'none',
           background: `linear-gradient(90deg, transparent, ${tracked ? '#8b96ab' : accent}, transparent)`, opacity: 0.7,
         }} />
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-          <span style={{ fontSize: '0.56rem', fontWeight: 800, letterSpacing: '0.1em', color: C.textMuted }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, gap: 8 }}>
+          <span style={{ fontSize: '0.56rem', fontWeight: 800, letterSpacing: '0.1em', color: C.textMuted, minWidth: 0 }}>
             {f.sport}
             <span style={{ color: C.textFaint, marginLeft: 8 }}>{f.away} @ {f.home}</span>
             <span style={{ color: C.textFaint, marginLeft: 8 }}>{f.gameTime}</span>
           </span>
-          {tracked ? (
-            <span style={{
-              fontSize: '0.52rem', fontWeight: 900, letterSpacing: '0.08em',
-              padding: '4px 10px', borderRadius: 7, color: '#aeb8cb',
-              background: 'rgba(139,150,171,0.10)', border: '1px solid rgba(139,150,171,0.26)',
-            }}>
-              TRACKED
-            </span>
-          ) : (
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: 4,
-              fontSize: '0.52rem', fontWeight: 900, letterSpacing: '0.08em',
-              padding: '4px 10px', borderRadius: 7, color: '#06100a',
-              background: `linear-gradient(180deg, ${B.goldHi} 0%, ${accent} 55%, ${accent}bb 100%)`,
-              boxShadow: `0 8px 22px -10px ${accent}`,
-            }}>
-              <Lock size={8} strokeWidth={3} />
-              LOCKED
-            </span>
-          )}
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+            {!tracked && tierLabel && (
+              <span style={{
+                fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.1em',
+                padding: '3px 7px', borderRadius: 6, color: tierColor,
+                background: `${tierColor}18`, border: `1px solid ${tierColor}40`,
+              }}>
+                {tierLabel}
+              </span>
+            )}
+            {!tracked && <LockFreezeStatus commenceMs={f.commenceMs} compact />}
+            {tracked ? (
+              <span style={{
+                fontSize: '0.52rem', fontWeight: 900, letterSpacing: '0.08em',
+                padding: '4px 10px', borderRadius: 7, color: '#aeb8cb',
+                background: 'rgba(139,150,171,0.10)', border: '1px solid rgba(139,150,171,0.26)',
+              }}>
+                TRACKED
+              </span>
+            ) : (
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                fontSize: '0.52rem', fontWeight: 900, letterSpacing: '0.08em',
+                padding: '4px 10px', borderRadius: 7, color: '#06100a',
+                background: `linear-gradient(180deg, ${B.goldHi} 0%, ${accent} 55%, ${accent}bb 100%)`,
+                boxShadow: `0 8px 22px -10px ${accent}`,
+              }}>
+                <Lock size={8} strokeWidth={3} />
+                IN
+              </span>
+            )}
+          </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: '1.05rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
@@ -1821,12 +1908,41 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
   const maxRatio = sortedWallets[0]?.sizeRatio || 1;
 
   const winners = `${f.confirmedOnSide} proven ${f.sport} winner${f.confirmedOnSide === 1 ? '' : 's'}`;
-  const clvLine = clvGood
-    ? `The market moved our way. This ticket beats the close by ${f.clvPct.toFixed(1)}%.`
-    : `The market has drifted ${Math.abs(f.clvPct).toFixed(1)}% against the lock.`;
+  const clvLine = Number.isFinite(f.clvPct)
+    ? (clvGood
+      ? `The market moved our way — beating the close by ${f.clvPct.toFixed(1)}%.`
+      : `The market has drifted ${Math.abs(f.clvPct).toFixed(1)}% against the ticket.`)
+    : '';
   const verdict = tracked
-    ? `Tracked at ${fmtOdds(f.lockOdds)} with ${winners} behind it. No stake on this one. We follow the price for context. ${clvLine}`
-    : `Locked at ${fmtOdds(f.lockOdds)} with ${winners} behind it. ${clvLine}`;
+    ? `Tracked at ${fmtOdds(f.lockOdds)} with ${winners} behind it. No stake — we follow the price for context. ${clvLine}`
+    : `${tierLabel ? `${tierLabel} ticket` : 'Ticket'} at ${fmtOdds(f.lockOdds)} with ${winners} behind it. ${clvLine}`;
+
+  const keyReads = [
+    Number.isFinite(f.gotOdds) || Number.isFinite(f.lockOdds)
+      ? { label: 'WE GOT', value: fmtOdds(f.gotOdds ?? f.lockOdds), sub: f.book || null }
+      : null,
+    Number.isFinite(f.fairLine) || Number.isFinite(f.fairOdds)
+      ? { label: 'FAIR LINE', value: fmtOdds(f.fairLine ?? f.fairOdds), sub: Number.isFinite(centsEdge) ? `${centsEdge > 0 ? '+' : ''}${Math.round(centsEdge)}¢ vs fair` : 'Pinnacle' }
+      : null,
+    Number.isFinite(f.clvPct)
+      ? { label: 'CLV', value: `${clvGood ? '+' : ''}${f.clvPct.toFixed(1)}%`, color: clvColor, sub: clvGood ? 'beating close' : 'behind close' }
+      : null,
+    Number.isFinite(f.edge)
+      ? { label: 'EDGE', value: `${f.edge >= 0 ? '+' : ''}${f.edge.toFixed(1)}`, color: f.edge >= 0 ? B.profit : B.loss, sub: 'winner align' }
+      : null,
+    Number.isFinite(f.hcMargin)
+      ? { label: 'HC', value: `${f.hcMargin >= 0 ? '+' : ''}${f.hcMargin}`, sub: 'conviction margin' }
+      : null,
+    f.confirmedOnSide > 0
+      ? { label: 'PROVEN', value: String(f.confirmedOnSide), sub: playSide }
+      : null,
+    (f.sideInvested || 0) > 0
+      ? { label: 'SHARP $', value: fmtMoney(f.sideInvested), sub: Number.isFinite(f.moneyPct) ? `${Math.round(f.moneyPct)}% of board` : 'on our side' }
+      : null,
+    Number.isFinite(f.tapeScore)
+      ? { label: 'TAPE', value: f.tapeScore.toFixed(2), sub: f.tapeAction === 'boost' ? 'sized up' : f.tapeAction === 'mute' ? 'pass' : 'hold' }
+      : null,
+  ].filter(Boolean);
 
   const zone = (i) => ({ className: 'pos-reveal', style: { animationDelay: `${i * 70}ms`, position: 'relative' } });
 
@@ -1850,16 +1966,16 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
         background: `linear-gradient(90deg, transparent, ${accent}, transparent)`, opacity: 0.85,
       }} />
 
-      {/* ── THE TICKET (frozen) ── */}
+      {/* ── THE TICKET ── */}
       <div {...zone(0)}>
-        <div style={{ padding: '22px 20px 20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <span style={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.12em', color: C.textMuted }}>
+        <div style={{ padding: '18px 20px 18px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, gap: 8 }}>
+            <span style={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.12em', color: C.textMuted, minWidth: 0 }}>
               {f.sport}
               <span style={{ color: C.textFaint, marginLeft: 9 }}>{f.away} @ {f.home}</span>
               <span style={{ color: C.textFaint, marginLeft: 9 }}>{f.gameTime}</span>
             </span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
               {tracked ? (
                 <span style={{
                   display: 'inline-flex', alignItems: 'center', gap: 5,
@@ -1869,18 +1985,15 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
                 }}>
                   TRACKED
                 </span>
-              ) : (
+              ) : tierLabel ? (
                 <span style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 5,
-                  fontSize: '0.58rem', fontWeight: 900, letterSpacing: '0.08em',
-                  padding: '5px 12px', borderRadius: 8, color: '#06100a',
-                  background: `linear-gradient(180deg, ${B.goldHi} 0%, ${accent} 55%, ${accent}bb 100%)`,
-                  boxShadow: `0 10px 28px -10px ${accent}, inset 0 1px 0 rgba(255,255,255,0.4)`,
+                  fontSize: '0.56rem', fontWeight: 900, letterSpacing: '0.12em',
+                  padding: '5px 10px', borderRadius: 7, color: tierColor,
+                  background: `${tierColor}18`, border: `1px solid ${tierColor}44`,
                 }}>
-                  <Lock size={9} strokeWidth={3} />
-                  LOCKED
+                  {tierLabel}
                 </span>
-              )}
+              ) : null}
               <button
                 type="button"
                 onClick={() => setExpanded(false)}
@@ -1897,87 +2010,68 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
             </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 20 }}>
-            <div>
-              <div style={{ fontSize: '1.3rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 10 }}>
-                {f.pickLabel}
-                <span style={{ fontSize: '0.88rem', color: C.textSec, fontWeight: 700, marginLeft: 9, fontFeatureSettings: "'tnum'" }}>
-                  {fmtOdds(f.lockOdds)}
-                </span>
-                <span style={{
-                  fontSize: '0.55rem', fontWeight: 800, marginLeft: 9, padding: '3px 8px',
-                  borderRadius: 6, background: `${clvColor}18`, color: clvColor,
-                  border: `1px solid ${clvColor}40`, fontFeatureSettings: "'tnum'",
-                }}>
-                  CLV {clvGood ? '+' : ''}{f.clvPct.toFixed(1)}%
-                </span>
-              </div>
-              {tracked ? (
-                <div>
-                  <div style={{
-                    fontSize: '2.1rem', fontWeight: 800, letterSpacing: '-0.045em', lineHeight: 1,
-                    fontFeatureSettings: "'tnum'", color: C.textSec,
-                  }}>
-                    No ticket
-                  </div>
-                  <div style={{ fontSize: '0.6rem', color: C.textMuted, marginTop: 8 }}>
-                    tracked {f.lockedAt} · {f.book}
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <div style={{
-                    fontSize: '3.7rem', fontWeight: 800, letterSpacing: '-0.065em', lineHeight: 0.88,
-                    fontFeatureSettings: "'tnum'",
-                    filter: `drop-shadow(0 0 26px ${accent}45)`,
-                  }}>
-                    <span style={{
-                      backgroundImage: 'linear-gradient(180deg, #ffffff 12%, #b9c6dc 100%)',
-                      backgroundClip: 'text', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                    }}>
-                      {riskAnim.toFixed(1)}
-                    </span>
-                    <span style={{ fontSize: '1.1rem', fontWeight: 700, color: C.textMuted, marginLeft: 5 }}>u</span>
-                  </div>
-                  <div style={{ fontSize: '0.6rem', color: C.textMuted, marginTop: 8 }}>
-                    locked {f.lockedAt} · {f.book}
-                  </div>
-                </div>
-              )}
-            </div>
-            <div style={{ flex: 1 }} />
-            <div style={{ textAlign: 'right', paddingBottom: 5 }}>
-              <div style={{
-                fontSize: '1.2rem', fontWeight: 800, color: tracked ? C.textMuted : B.profit,
-                fontFeatureSettings: "'tnum'", letterSpacing: '-0.03em',
+          <div style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 4 }}>
+            {f.pickLabel}
+            <span style={{ fontSize: '0.88rem', color: C.textSec, fontWeight: 700, marginLeft: 9, fontFeatureSettings: "'tnum'" }}>
+              {fmtOdds(f.lockOdds)}
+            </span>
+            {Number.isFinite(f.clvPct) && (
+              <span style={{
+                fontSize: '0.55rem', fontWeight: 800, marginLeft: 9, padding: '3px 8px',
+                borderRadius: 6, background: `${clvColor}18`, color: clvColor,
+                border: `1px solid ${clvColor}40`, fontFeatureSettings: "'tnum'",
               }}>
-                {tracked ? '—' : `+${f.toWin.toFixed(2)}u`}
-              </div>
-              <div style={{ fontSize: '0.6rem', color: C.textMuted, marginTop: 5, marginBottom: 10 }}>to win</div>
-              <div style={{ fontSize: '0.62rem', fontWeight: 700 }}>
-                {tracked ? (
-                  <span style={{ color: C.textMuted }}>Watching the price</span>
-                ) : (
-                  <>
-                    <span style={{ color: C.textMuted }}>{f.stakePath}</span>
-                    <span style={{ color: C.textFaint }}> · </span>
-                    <span style={{ color: C.textSec }}>frozen at T-15</span>
-                  </>
-                )}
-              </div>
-            </div>
+                CLV {clvGood ? '+' : ''}{f.clvPct.toFixed(1)}%
+              </span>
+            )}
+          </div>
+          <div style={{ fontSize: '0.58rem', color: C.textMuted, marginBottom: tracked ? 0 : 4 }}>
+            {tracked ? `tracked ${f.lockedAt}` : `flagged ${f.lockedAt}`}
+            {f.book ? ` · ${f.book}` : ''}
           </div>
 
-          <p style={{ margin: '16px 0 0', fontSize: '0.92rem', color: '#c6d0e2', lineHeight: 1.55, maxWidth: 460 }}>
+          {!tracked ? (
+            <TicketStub
+              units={f.units}
+              toWin={f.toWin}
+              odds={f.lockOdds}
+              stakePath={f.stakePath}
+              tapeAction={f.tapeAction}
+              centsEdge={Number.isFinite(centsEdge) && centsEdge > 0 ? `${Math.round(centsEdge)}¢ better than fair` : null}
+              commenceMs={f.commenceMs}
+            />
+          ) : (
+            <div style={{
+              marginTop: 12, padding: '14px 16px', borderRadius: 12,
+              background: 'rgba(139,150,171,0.06)', border: '1px solid rgba(139,150,171,0.22)',
+            }}>
+              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: C.textSec }}>No ticket</div>
+              <div style={{ fontSize: '0.6rem', color: C.textMuted, marginTop: 4 }}>Watching for context — 0u staked</div>
+              <LockFreezeStatus commenceMs={f.commenceMs} />
+            </div>
+          )}
+
+          <p style={{ margin: '14px 0 0', fontSize: '0.88rem', color: '#c6d0e2', lineHeight: 1.55, maxWidth: 480 }}>
             {verdict}
           </p>
 
-          {/* Size story + lock-time checks, one compact strip (staked picks only) */}
+          {keyReads.length > 0 && (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(88px, 1fr))',
+              gap: '14px 12px',
+              marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C.hairSoft}`,
+            }}>
+              {keyReads.map((r) => (
+                <KeyReadCell key={r.label} label={r.label} value={r.value} color={r.color} sub={r.sub} />
+              ))}
+            </div>
+          )}
+
           {!tracked && (
             <div style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C.hairSoft}`,
-              fontFeatureSettings: "'tnum'",
+              marginTop: 14, fontFeatureSettings: "'tnum'",
             }}>
               <span style={{ fontSize: '0.62rem', fontWeight: 700, color: C.textSec }}>
                 {f.pathBaseUnits.toFixed(1)}u base
@@ -2070,10 +2164,10 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
 
       <TicketPerf />
 
-      {/* ── SHARE STUB — serial, barcode, record, brand ── */}
-      <div style={{ position: 'relative', padding: '6px 20px 20px' }}>
+      {/* ── FOOTER — serial + brand (no share) ── */}
+      <div style={{ position: 'relative', padding: '6px 20px 18px' }}>
         <div style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14,
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 12,
         }}>
           <div>
             <div style={{ fontSize: '0.46rem', fontWeight: 800, letterSpacing: '0.14em', color: C.textFaint, marginBottom: 4 }}>
@@ -2095,31 +2189,10 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
             </div>
           )}
         </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <TicketBarcode serial={f.serial} />
-          <span style={{ flex: 1 }} />
-          {!tracked && (
-            <button
-              type="button"
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer',
-                padding: '9px 16px', borderRadius: 10,
-                fontSize: '0.66rem', fontWeight: 800, letterSpacing: '0.02em',
-                color: '#06100a',
-                background: `linear-gradient(180deg, ${B.goldHi} 0%, ${B.gold} 55%, ${B.gold}bb 100%)`,
-                border: 'none',
-                boxShadow: `0 12px 30px -12px ${B.gold}, inset 0 1px 0 rgba(255,255,255,0.4)`,
-              }}
-            >
-              Share ticket ↗
-            </button>
-          )}
-        </div>
-
+        <TicketBarcode serial={f.serial} />
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          marginTop: 16, paddingTop: 12, borderTop: `1px solid ${C.hairSoft}`,
+          marginTop: 14, paddingTop: 12, borderTop: `1px solid ${C.hairSoft}`,
         }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
             <span style={{

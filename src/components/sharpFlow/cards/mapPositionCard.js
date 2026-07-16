@@ -190,6 +190,14 @@ export function mapLockedPickToCardFixture(pick, {
   const gameTime = fmtEt(pick.gameTime) || 'TBD';
   const lockedAt = fmtEt(pick.lockedAt) || '—';
   const peakAt = fmtEt(pick.peakAt) || lockedAt;
+  const commenceMs = (() => {
+    if (typeof pick.gameTime === 'number' && Number.isFinite(pick.gameTime)) return pick.gameTime;
+    const e = Date.parse(pick.gameTime);
+    return Number.isFinite(e) ? e : null;
+  })();
+  const moneyPct = Number.isFinite(pick.consensusStrength?.moneyPct)
+    ? pick.consensusStrength.moneyPct
+    : null;
 
   const dateStr = (() => {
     const e = typeof pick.gameTime === 'number' ? pick.gameTime : Date.parse(pick.gameTime);
@@ -246,6 +254,11 @@ export function mapLockedPickToCardFixture(pick, {
     serial,
     record30d: record30d || null,
     lockChecks: lockChecks.length ? lockChecks : ['Locked ticket'],
+    commenceMs,
+    moneyPct,
+    // Odds we "got" at lock vs fair/pinnacle for the price-check strip.
+    gotOdds: lockOdds,
+    fairLine: Number.isFinite(pick.pinnacleOdds) ? pick.pinnacleOdds : peakOdds,
   };
 }
 
