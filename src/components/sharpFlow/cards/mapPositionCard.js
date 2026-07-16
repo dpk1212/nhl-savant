@@ -86,10 +86,11 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
       const feedSportAvg = Number.isFinite(w.sportAvgBet) && w.sportAvgBet > 0 ? w.sportAvgBet : null;
       const feedCrossAvg = Number.isFinite(w.avgSportBet) && w.avgSportBet > 0 ? w.avgSportBet : null;
       const medianBet = profile?.sizeSignal?.medianInvested;
-      const usualBet = (Number.isFinite(profileSportAvg) && profileSportAvg > 0) ? profileSportAvg
-        : feedSportAvg
-        : feedCrossAvg
-        : (Number.isFinite(medianBet) && medianBet > 0 ? medianBet : null);
+      const usualBet = (Number.isFinite(profileSportAvg) && profileSportAvg > 0)
+        ? profileSportAvg
+        : (feedSportAvg
+          || feedCrossAvg
+          || (Number.isFinite(medianBet) && medianBet > 0 ? medianBet : null));
       // Always recompute from usual when we have it — never trust a feed
       // sizeRatio that may have used the cross-sport denominator.
       const sizeRatio = (usualBet != null && (w.invested || 0) > 0)
