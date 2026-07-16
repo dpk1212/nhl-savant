@@ -4,8 +4,21 @@
  * Pure UI: expects a normalized fixture `f`. Adapters map production data.
  */
 import { useState, useEffect } from 'react';
-import { Check, Lock, ChevronDown } from 'lucide-react';
+import { Check, Lock, ChevronDown, Clock } from 'lucide-react';
 import { AGS_V12_DISPLAY_TIERS, AGS_V12_PATH_TO_DISPLAY } from '../../../lib/ags.js';
+
+/** Ticket freezes 15 min before first pitch/kick — same gate as the cron. */
+const LOCK_LEAD_MS = 15 * 60 * 1000;
+
+function formatLockCountdown(ms) {
+  if (ms <= 0) return null;
+  const h = Math.floor(ms / 36e5);
+  const m = Math.floor((ms % 36e5) / 6e4);
+  const s = Math.floor((ms % 6e4) / 1e3);
+  if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m`;
+  if (ms >= 10 * 60 * 1000) return `${m}m`;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
 
 /** Same 5-band labels as the Tier Performance scoreboard (MAX / TOP / SHARP / STRONG / LEAN). */
 function displayTierFromPath(stakePath) {
@@ -333,7 +346,7 @@ export const PROPOSED_META = {
 // resets background-clip to border-box while React leaves the unchanged
 // WebkitBackgroundClip prop alone, which painted the gradient as a solid
 // block when the market rail swapped fixtures in place.
-function TicketStub({ units, toWin, odds, stakePath, tapeAction, centsEdge }) {
+function TicketStub({ units, toWin, odds, stakePath, tapeAction, centsEdge, commenceMs }) {
   const risk = useCountUp(units, true, 900);
   // Product tier (LEAN / STRONG / …) — same labels as the scoreboard. Internal
   // path names (DISSENT, RANK, MINI-) and tape sizing ("Standard") stay out of
@@ -343,6 +356,19 @@ function TicketStub({ units, toWin, odds, stakePath, tapeAction, centsEdge }) {
   const tierColor = tier?.color || B.gold;
   const tapeNote = tapeAction === 'boost' ? ' · Sized up' : tapeAction === 'mute' ? ' · Pass' : '';
   const cellLabel = { fontSize: '0.52rem', fontWeight: 800, letterSpacing: '0.13em', color: C.textMuted, marginBottom: 4 };
+
+  // Size is live until T-15; after that the cron freezes the ticket.
+  const lockEpoch = Number.isFinite(commenceMs) ? commenceMs - LOCK_LEAD_MS : null;
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (lockEpoch == null || Date.now() >= lockEpoch) return undefined;
+    const fast = lockEpoch - Date.now() < 10 * 60 * 1000;
+    const id = setInterval(() => setNow(Date.now()), fast ? 1000 : 30000);
+    return () => clearInterval(id);
+  }, [lockEpoch]);
+  const isFrozen = lockEpoch != null && now >= lockEpoch;
+  const remLabel = !isFrozen && lockEpoch != null ? formatLockCountdown(lockEpoch - now) : null;
+
   return (
     <div style={{
       marginTop: 12, borderRadius: 12, position: 'relative',
@@ -355,16 +381,16 @@ function TicketStub({ units, toWin, odds, stakePath, tapeAction, centsEdge }) {
         background: `linear-gradient(90deg, transparent, ${B.gold}88, transparent)`, pointerEvents: 'none',
       }} />
       <div style={{
-        position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
         padding: '8px 14px', borderBottom: '1px dashed rgba(212,175,55,0.28)',
       }}>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.56rem', fontWeight: 900, letterSpacing: '0.16em', color: B.goldHi }}>
-          <Check size={11} strokeWidth={3.2} />
-          TICKET IN
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.56rem', fontWeight: 900, letterSpacing: '0.14em', color: isFrozen ? B.profit : B.goldHi }}>
+          {isFrozen ? <Lock size={11} strokeWidth={3} /> : <Check size={11} strokeWidth={3.2} />}
+          {isFrozen ? 'LOCKED' : 'LIVE TICKET'}
         </span>
         <span style={{
           fontSize: '0.56rem', fontWeight: 900, letterSpacing: '0.12em',
-          color: tierColor,
+          color: tierColor, flexShrink: 0,
           padding: '3px 8px', borderRadius: 6,
           background: `${tierColor}18`, border: `1px solid ${tierColor}44`,
         }}>
@@ -374,6 +400,29 @@ function TicketStub({ units, toWin, odds, stakePath, tapeAction, centsEdge }) {
         <span style={{ position: 'absolute', left: -6, bottom: -6, width: 11, height: 11, borderRadius: '50%', background: '#12172a', border: '1px solid rgba(212,175,55,0.30)' }} />
         <span style={{ position: 'absolute', right: -6, bottom: -6, width: 11, height: 11, borderRadius: '50%', background: '#12172a', border: '1px solid rgba(212,175,55,0.30)' }} />
       </div>
+      {lockEpoch != null && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          padding: '6px 14px 0',
+          fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.04em',
+          color: isFrozen ? B.profit : C.textSec, fontFeatureSettings: "'tnum'",
+        }}>
+          <Clock size={11} strokeWidth={2.4} style={{ flexShrink: 0, opacity: 0.85 }} />
+          {isFrozen
+            ? 'Size frozen at T-15 — this is the final ticket'
+            : (
+              <>
+                Size can still move
+                {remLabel ? (
+                  <>
+                    <span style={{ color: C.textFaint }}> · </span>
+                    <span style={{ color: B.goldHi }}>locks in {remLabel}</span>
+                  </>
+                ) : null}
+              </>
+            )}
+        </div>
+      )}
       <div style={{ display: 'flex', alignItems: 'stretch' }}>
         <div style={{ flex: 1.15, padding: '10px 14px 12px' }}>
           <div style={cellLabel}>RISK</div>
@@ -1018,11 +1067,14 @@ export function LivePositionCardView({ f, markets, onMarket }) {
     }
     return [...best.values()];
   })();
-  const hasMap = mapPts.length >= 2;
-  const [tab, setTab] = useState(hasMap ? 'map' : 'flow');
+  // Show the map tab whenever we have plottable points (even one wallet).
+  // Hide-only when there is truly nothing to plot — never disappear just
+  // because the card flipped into a ticketed/LEAN state.
+  const hasMapPts = mapPts.length >= 1;
+  const [tab, setTab] = useState(hasMapPts ? 'map' : 'flow');
   // Market rail swaps `f` without remounting — if the new market has no
   // map data, fall back to Money flow instead of an empty panel.
-  const activeTab = tab === 'map' && !hasMap ? 'flow' : tab;
+  const activeTab = tab === 'map' && !hasMapPts ? 'flow' : tab;
   // Real Pinnacle odds series only — no fabricated chart shapes.
   const pinSeries = Array.isArray(f.pinSeries) && f.pinSeries.length >= 2 ? f.pinSeries : null;
   const moveColor = f.pinnacleOpposes ? B.loss : B.profit;
@@ -1223,6 +1275,7 @@ export function LivePositionCardView({ f, markets, onMarket }) {
               stakePath={f.stakePath}
               tapeAction={f.tapeAction}
               centsEdge={centsEdge}
+              commenceMs={f.commenceMs}
             />
           )}
 
@@ -1466,7 +1519,7 @@ export function LivePositionCardView({ f, markets, onMarket }) {
         <div style={{ padding: '8px 18px 18px' }}>
           <div style={{ display: 'flex', marginBottom: 12 }}>
             {[
-              ...(hasMap ? [{ id: 'map', label: 'Wallet map' }] : []),
+              { id: 'map', label: 'Wallet map' },
               { id: 'flow', label: 'Money flow' },
               { id: 'history', label: 'Line history' },
               { id: 'wallets', label: 'Wallets' },
@@ -1477,7 +1530,7 @@ export function LivePositionCardView({ f, markets, onMarket }) {
                 onClick={() => setTab(t.id)}
                 style={{
                   flex: 1, padding: '10px 2px', cursor: 'pointer', border: 'none',
-                  background: 'transparent', fontSize: hasMap ? '0.64rem' : '0.7rem', fontWeight: 800,
+                  background: 'transparent', fontSize: '0.64rem', fontWeight: 800,
                   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                   color: activeTab === t.id ? C.text : C.textMuted,
                   borderBottom: activeTab === t.id ? `2px solid ${accent}` : `1px solid ${C.hairSoft}`,
@@ -1490,8 +1543,14 @@ export function LivePositionCardView({ f, markets, onMarket }) {
           </div>
 
           <div className="pos-reveal" key={activeTab}>
-            {activeTab === 'map' && hasMap && (
-              <WalletMapPanel f={f} accent={accent} pts={mapPts} />
+            {activeTab === 'map' && (
+              hasMapPts ? (
+                <WalletMapPanel f={f} accent={accent} pts={mapPts} />
+              ) : (
+                <p style={{ fontSize: '0.64rem', color: C.textMuted, lineHeight: 1.55, margin: '4px 0 8px' }}>
+                  Wallet map needs proven wallets with a beats-close % and ROI on this board. None are plottable yet — check back as money comes in.
+                </p>
+              )
             )}
 
             {activeTab === 'history' && (

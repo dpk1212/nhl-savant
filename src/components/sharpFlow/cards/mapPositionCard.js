@@ -286,6 +286,7 @@ export function mapLiveGameToCardFixture({
   updatedLabel,
   pinSeries,
   mapWallets, // both-sides enriched wallets (each tagged side:'away'|'home') for the quadrant map
+  commenceMs, // game start epoch ms — ticket stub uses this for the T-15 freeze countdown
 }) {
   const isTotal = marketType === 'TOTAL';
   const awayShort = isTotal ? 'Under' : shortTeam(gd.away);
@@ -359,5 +360,6 @@ export function mapLiveGameToCardFixture({
     updatedLabel: updatedLabel || null,
     // Real Pinnacle odds series for our side (null hides the charts).
     pinSeries: Array.isArray(pinSeries) && pinSeries.length >= 2 ? pinSeries : null,
+    commenceMs: Number.isFinite(commenceMs) ? commenceMs : null,
   };
 }

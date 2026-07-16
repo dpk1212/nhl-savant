@@ -8172,6 +8172,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     pickLabel: consensusSide === 'draw' ? 'Draw ML' : `${consensusShort} ML`,
     pathBase: AGS_V12_STAKE_TIER_META[mlCronStakeTier || displayTier]?.units,
     pinSeries: mlPinSeries,
+    commenceMs: commenceTime,
   });
 
   // Spread / total market siblings for the rail (when data exists)
@@ -8215,10 +8216,14 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     },
     books: Number.isFinite(spreadPinnOdds) ? [{ name: 'Pinnacle', odds: spreadPinnOdds, sharp: true }] : [],
     wallets: [],
+    // Keep the game-level wallet map when the rail switches markets — the
+    // map is about the game's sharp stack, not the ML/spread/total market.
+    mapWallets: mlMapWallets,
     pickLabel: spreadLine != null
       ? `${(spreadConsensusSide === 'away' ? awayShort : homeShort)} ${spreadLine > 0 ? '+' : ''}${spreadLine}`
       : 'Spread',
     pathBase: AGS_V12_STAKE_TIER_META[displaySpread.tier || spreadCronStakeTier]?.units,
+    commenceMs: commenceTime,
   }) : null;
 
   const totalFixture = hasTotal ? mapLiveGameToCardFixture({
@@ -8256,8 +8261,10 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     },
     books: [],
     wallets: [],
+    mapWallets: mlMapWallets,
     pickLabel: totalSummary?.consensus === 'under' ? 'Under' : 'Over',
     pathBase: AGS_V12_STAKE_TIER_META[displayTotal.tier || totalCronStakeTier]?.units,
+    commenceMs: commenceTime,
   }) : null;
 
   const marketFixtures = [mlFixture, spreadFixture, totalFixture].filter(Boolean);
