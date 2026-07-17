@@ -53,7 +53,6 @@ import { useSubscription } from '../hooks/useSubscription';
 import { trackGameCardView, getUsageForToday } from '../utils/usageTracker';
 import UpgradeModal from './UpgradeModal';
 import ConversionButtons from './ConversionButtons';
-import QuizFunnelModal from './modals/QuizFunnelModal';
 import DailySpinModal from './modals/DailySpinModal';
 import { analytics, logEvent as firebaseLogEvent } from '../firebase/config';
 
@@ -2578,8 +2577,10 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   const [pendingGameExpand, setPendingGameExpand] = useState(null);
   const [hasAcknowledged, setHasAcknowledged] = useState(false);
   
-  // WELCOME POPUP: State for first-time visitor conversion modal
-  const [showWelcomePopup, setShowWelcomePopup] = useState(false);
+  // PROOF BANNER: slim dismissible strip for anonymous visitors — replaced
+  // the old interrupt-quiz modal (2026-07). Product-first funnel: let the
+  // board + Sharp Flow paywall do the selling instead of blocking it.
+  const [showProofBanner, setShowProofBanner] = useState(false);
   
   // DAILY SPIN: State for returning user daily spin modal
   const [showDailySpinModal, setShowDailySpinModal] = useState(false);
@@ -2627,30 +2628,21 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
     setHasAcknowledged(!!acknowledged);
   }, []);
   
-  // Auto-show welcome popup for new visitors (3 seconds after page load)
+  // Show proof banner for anonymous non-premium visitors who haven't dismissed it
   useEffect(() => {
-    const hasSeenPopup = localStorage.getItem('nhlsavant_welcome_popup_seen');
-    
-    // Only show for non-premium users who haven't seen it
-    if (!hasSeenPopup && !isPremium && user === null) {
-      const timer = setTimeout(() => {
-        setShowWelcomePopup(true);
-        logEvent('welcome_popup_shown', {
-          user_type: 'new_visitor'
-        });
-      }, 3000); // 3 seconds delay
-      
-      return () => clearTimeout(timer);
+    const dismissed = localStorage.getItem('nhlsavant_proof_banner_dismissed');
+    if (!dismissed && !isPremium && user === null) {
+      setShowProofBanner(true);
+      logEvent('proof_banner_shown', { user_type: 'anonymous_visitor' });
+    } else {
+      setShowProofBanner(false);
     }
   }, [isPremium, user]);
-  
-  // Handle welcome popup close
-  const handleWelcomePopupClose = () => {
-    setShowWelcomePopup(false);
-    localStorage.setItem('nhlsavant_welcome_popup_seen', 'true');
-    logEvent('welcome_popup_closed', {
-      action: 'dismissed'
-    });
+
+  const handleProofBannerDismiss = () => {
+    setShowProofBanner(false);
+    localStorage.setItem('nhlsavant_proof_banner_dismissed', 'true');
+    logEvent('proof_banner_closed', { action: 'dismissed' });
   };
   
   // DAILY SPIN: Removed auto-popup - users can now spin from the Pricing page instead
@@ -3249,6 +3241,83 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
 
   return (
     <div style={{ maxWidth: '80rem', margin: '0 auto', padding: isMobile ? '1rem' : '1.5rem 1rem' }} className="animate-fade-in">
+      {/* PROOF BANNER — anonymous visitors only. Sets context in 2 seconds,
+          blocks nothing, routes into Sharp Flow where the paywall closes. */}
+      {showProofBanner && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: isMobile ? '0.625rem' : '0.875rem',
+          background: 'linear-gradient(135deg, rgba(16,185,129,0.10), rgba(17,24,39,0.85))',
+          border: '1px solid rgba(16,185,129,0.30)',
+          borderRadius: '12px',
+          padding: isMobile ? '0.625rem 0.75rem' : '0.75rem 1rem',
+          marginBottom: isMobile ? '0.875rem' : '1rem',
+        }}>
+          <span style={{
+            flexShrink: 0,
+            width: '8px', height: '8px', borderRadius: '50%',
+            background: '#10B981',
+            boxShadow: '0 0 8px rgba(16,185,129,0.8)',
+          }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{
+              fontSize: isMobile ? '0.78rem' : '0.85rem',
+              fontWeight: 700,
+              color: 'rgba(255,255,255,0.95)',
+              letterSpacing: '-0.01em',
+              lineHeight: 1.3,
+            }}>
+              Tonight's sharp locks are live on Sharp Flow
+            </div>
+            <div style={{
+              fontSize: isMobile ? '0.7rem' : '0.75rem',
+              color: 'rgba(255,255,255,0.55)',
+              lineHeight: 1.3,
+              marginTop: '1px',
+            }}>
+              Every pick graded in public — wins and losses included
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              logEvent('proof_banner_cta_clicked', { destination: 'sharp_flow' });
+              navigate('/sharp-flow');
+            }}
+            style={{
+              flexShrink: 0,
+              display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+              background: 'linear-gradient(135deg, #10B981, #059669)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '8px',
+              padding: isMobile ? '0.45rem 0.7rem' : '0.5rem 0.9rem',
+              fontSize: isMobile ? '0.72rem' : '0.78rem',
+              fontWeight: 800,
+              letterSpacing: '0.01em',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            See the proof
+            <ChevronRight size={14} strokeWidth={3} />
+          </button>
+          <button
+            onClick={handleProofBannerDismiss}
+            aria-label="Dismiss"
+            style={{
+              flexShrink: 0,
+              background: 'none', border: 'none',
+              color: 'rgba(255,255,255,0.4)',
+              fontSize: '1.1rem', lineHeight: 1,
+              cursor: 'pointer', padding: '0.2rem',
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       {/* ✨ MINIMAL PREMIUM HEADER - Apple/Linear level simplicity */}
       <div style={{
         background: 'rgba(17, 24, 39, 0.6)',
@@ -4170,14 +4239,6 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
           }
         }}
         user={user}
-      />
-      
-      {/* Quiz Funnel Modal - qualifies leads with 4-screen flow before paywall */}
-      <QuizFunnelModal 
-        isOpen={showWelcomePopup}
-        onClose={handleWelcomePopupClose}
-        todaysGames={allGamesToDisplay}
-        isMobile={isMobile}
       />
       
       {/* Daily Spin Modal - shown to returning non-subscribers with available spins */}
