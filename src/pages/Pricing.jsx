@@ -25,8 +25,7 @@ const logEvent = (eventName, params) => {
 };
 
 const PROMO_CODES = {
-  PLAYOFFS: { code: 'PLAYOFFS', discount: 37, label: 'NBA & NHL Playoff Launch', forLife: true, expires: new Date('2026-04-21T04:00:00Z') },
-  SUMMER:   { code: 'SUMMER',   discount: 33, label: 'Summer Launch', forLife: true, expires: new Date('2026-09-01T04:00:00Z') },
+  SUMMER: { code: 'SUMMER', discount: 33, label: 'Summer Launch', forLife: true, expires: new Date('2026-07-28T04:00:00Z') }, // midnight ET July 27
 };
 
 const Pricing = () => {
@@ -191,11 +190,11 @@ const Pricing = () => {
       price: '$7.99',
       period: 'week',
       trial: '5-day free trial',
-      description: 'Test drive, no commitment',
-      priceAnchor: 'Less than 1 Starbucks/day',
+      description: 'Follow the sharps, week to week',
+      priceAnchor: 'For the price of 1 coffee a week, you bet with the sharps',
       pricePerDay: '$1.14/day',
       cta: 'Start 5-Day Trial',
-      highlight: 'Week-to-week flexibility'
+      highlight: 'No commitment — cancel any week'
     },
     {
       id: 'elite',
@@ -204,13 +203,12 @@ const Pricing = () => {
       price: '$25.99',
       period: 'month',
       trial: '7-day free trial',
-      description: 'Best value for monthly',
-      popular: true,
+      description: 'The full edge, month to month',
       priceAnchor: 'Less than 1 coffee/day',
       pricePerDay: '87¢/day',
       savings: 'Save $9/month vs weekly',
       cta: 'Start 7-Day Trial',
-      highlight: 'Perfect for serious bettors'
+      highlight: 'Most popular with serious bettors'
     },
     {
       id: 'pro',
@@ -219,13 +217,15 @@ const Pricing = () => {
       price: '$150',
       period: 'year',
       trial: '10-day free trial',
-      description: 'Maximum savings',
-      priceAnchor: 'Less than 1 pizza/month',
+      description: 'Lock in the lowest rate all season',
+      popular: true,
+      popularLabel: 'Best Value',
+      priceAnchor: 'Under 3 coffees a month for a season-long edge',
       pricePerDay: '41¢/day',
       savings: 'Save $161.88/year',
       badge: 'Just $12.50/month',
       cta: 'Start 10-Day Trial',
-      highlight: 'Season-long edge'
+      highlight: 'One bet won covers the whole year'
     }
   ];
 
@@ -240,7 +240,7 @@ const Pricing = () => {
         maxWidth: '1200px',
         margin: '0 auto'
       }}>
-        {/* Playoff Promo Banner */}
+        {/* For-life promo banner (SUMMER) */}
         {activeDiscount?.forLife && (
           <div style={{
             background: 'linear-gradient(135deg, rgba(212,175,55,0.15) 0%, rgba(16,185,129,0.1) 100%)',
@@ -253,7 +253,7 @@ const Pricing = () => {
             <div style={{
               fontSize: window.innerWidth < 640 ? '1.5rem' : '1.75rem',
               marginBottom: '0.4rem',
-            }}>🏒🏀</div>
+            }}>☀️</div>
             <div style={{
               fontSize: window.innerWidth < 640 ? '1.1rem' : '1.3rem',
               fontWeight: 900,
@@ -268,7 +268,7 @@ const Pricing = () => {
               color: 'rgba(241,245,249,0.8)',
               lineHeight: 1.5,
             }}>
-              <strong style={{ color: '#10B981' }}>{activeDiscount.discount}% off for life</strong> — locked in forever for being here for our first set of playoffs.
+              <strong style={{ color: '#10B981' }}>{activeDiscount.discount}% off for life</strong> — locked in forever for joining during our summer launch. Offer ends July 27.
               <br />Use code <strong style={{
                 color: '#D4AF37',
                 padding: '0.1rem 0.4rem',
@@ -756,7 +756,7 @@ const Pricing = () => {
           }}>
             {activeDiscount?.forLife
               ? `Every plan includes everything. ${activeDiscount.discount}% off is locked forever with code ${activeDiscount.code}.`
-              : 'Every plan includes everything. Save more with longer commitments.'}
+              : 'Every plan includes everything — annual just costs the least per day.'}
           </p>
           <div style={{
             display: 'inline-flex',
@@ -841,7 +841,7 @@ const Pricing = () => {
                     letterSpacing: '0.05em',
                     boxShadow: '0 4px 14px rgba(212, 175, 55, 0.4)'
                   }}>
-                    Most Popular
+                    {tierInfo.popularLabel || 'Most Popular'}
                   </div>
                 )}
 

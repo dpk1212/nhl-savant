@@ -14,6 +14,8 @@ import { collection, doc, setDoc, getDoc, getDocs, query, where, orderBy, delete
 import { db } from '../firebase/config';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
+import { redirectToCheckout } from '../utils/stripe';
+import AuthModal from '../components/AuthModal';
 import { LivePositionCardView, LockedPositionCardView } from '../components/sharpFlow/cards/PositionCards';
 import { mapLockedPickToCardFixture, mapLiveGameToCardFixture, enrichWallets } from '../components/sharpFlow/cards/mapPositionCard';
 import {
@@ -1015,9 +1017,46 @@ const PAYWALL_PROMO = {
   code: 'SUMMER',
   discount: 0.33,
   label: 'Summer Launch',
-  fullPrice: 25.99,
-  endMs: new Date('2026-09-01T04:00:00Z').getTime(), // midnight ET Aug 31
+  endMs: new Date('2026-07-28T04:00:00Z').getTime(), // midnight ET July 27
 };
+
+// Paywall plan picker — mirrors PRICING in src/utils/stripe.js.
+// Annual is listed first and preselected: it's the plan we push hardest.
+const PAYWALL_PLANS = [
+  {
+    id: 'pro',
+    name: 'Annual',
+    fullPrice: 150,
+    per: '/yr',
+    trialDays: 10,
+    badge: 'BEST VALUE · SAVE 52%',
+    equivFull: '$12.50/mo',
+    equivPromo: '$8.38/mo',
+    sub: 'Season-long edge — under 3 coffees a month',
+  },
+  {
+    id: 'elite',
+    name: 'Monthly',
+    fullPrice: 25.99,
+    per: '/mo',
+    trialDays: 7,
+    badge: 'MOST POPULAR',
+    equivFull: '87¢/day',
+    equivPromo: '58¢/day',
+    sub: 'Less than one coffee a day',
+  },
+  {
+    id: 'scout',
+    name: 'Weekly',
+    fullPrice: 7.99,
+    per: '/wk',
+    trialDays: 5,
+    badge: null,
+    equivFull: null,
+    equivPromo: null,
+    sub: 'One coffee a week to follow the sharps',
+  },
+];
 //
 // Stubbed eligibility helpers below return `true` unconditionally so
 // any straggling caller that hasn't been swept will short-circuit to
@@ -13742,9 +13781,12 @@ function SportTabs({ active, onChange, isMobile }) {
 
 function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
   const [now, setNow] = useState(Date.now());
+  const { user } = useAuth();
+  const [selectedPlan, setSelectedPlan] = useState('pro');
+  const [authOpen, setAuthOpen] = useState(false);
+  const [checkingOut, setCheckingOut] = useState(false);
 
-  const { fullPrice, discount, endMs, code: promoCode, label: promoLabel } = PAYWALL_PROMO;
-  const promoPrice = (fullPrice * (1 - discount)).toFixed(2);
+  const { discount, endMs, code: promoCode, label: promoLabel } = PAYWALL_PROMO;
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -14112,120 +14154,181 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
 
           {/* Countdown timer */}
           {promoActive && (
-            <>
-              <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-                <div style={{ ...T.micro, color: B.gold, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.6rem', fontSize: '0.62rem' }}>
-                  SUMMER LAUNCH OFFER ENDS IN
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem' }}>
-                  {[
-                    { val: days, label: 'DAYS' },
-                    { val: hours, label: 'HRS' },
-                    { val: minutes, label: 'MIN' },
-                    { val: seconds, label: 'SEC' },
-                  ].map(t => (
-                    <div key={t.label} style={{
-                      background: 'linear-gradient(180deg, rgba(212,175,55,0.14) 0%, rgba(212,175,55,0.04) 100%)',
-                      border: '1px solid rgba(212,175,55,0.30)',
-                      borderRadius: '8px', padding: '0.5rem 0.6rem', minWidth: isMobile ? '50px' : '58px',
-                      textAlign: 'center',
-                      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+            <div style={{ textAlign: 'center', marginBottom: '1.1rem' }}>
+              <div style={{ ...T.micro, color: B.gold, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.6rem', fontSize: '0.62rem' }}>
+                SUMMER LAUNCH OFFER ENDS IN
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem' }}>
+                {[
+                  { val: days, label: 'DAYS' },
+                  { val: hours, label: 'HRS' },
+                  { val: minutes, label: 'MIN' },
+                  { val: seconds, label: 'SEC' },
+                ].map(t => (
+                  <div key={t.label} style={{
+                    background: 'linear-gradient(180deg, rgba(212,175,55,0.14) 0%, rgba(212,175,55,0.04) 100%)',
+                    border: '1px solid rgba(212,175,55,0.30)',
+                    borderRadius: '8px', padding: '0.5rem 0.6rem', minWidth: isMobile ? '50px' : '58px',
+                    textAlign: 'center',
+                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+                  }}>
+                    <div style={{
+                      fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: 900, color: B.gold,
+                      fontFeatureSettings: "'tnum'", lineHeight: 1, letterSpacing: '-0.02em',
                     }}>
-                      <div style={{
-                        fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: 900, color: B.gold,
-                        fontFeatureSettings: "'tnum'", lineHeight: 1, letterSpacing: '-0.02em',
-                      }}>
-                        {String(t.val).padStart(2, '0')}
-                      </div>
-                      <div style={{ fontSize: '0.5rem', fontWeight: 700, color: B.textMuted, letterSpacing: '0.1em', marginTop: '0.2rem' }}>
-                        {t.label}
-                      </div>
+                      {String(t.val).padStart(2, '0')}
                     </div>
-                  ))}
-                </div>
+                    <div style={{ fontSize: '0.5rem', fontWeight: 700, color: B.textMuted, letterSpacing: '0.1em', marginTop: '0.2rem' }}>
+                      {t.label}
+                    </div>
+                  </div>
+                ))}
               </div>
-
-              {/* Price display with discount — green gradient hero */}
-              <div style={{
-                display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '0.5rem',
-                marginBottom: '0.6rem',
-              }}>
-                <span style={{
-                  display: 'inline-block',
-                  fontSize: isMobile ? '2.1rem' : '2.5rem', fontWeight: 900,
-                  color: B.green,
-                  backgroundImage: `linear-gradient(135deg, ${B.green} 0%, #34D399 100%)`,
-                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-                  fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em',
-                }}>
-                  ${promoPrice}
-                </span>
-                <span style={{ ...T.body, color: B.textSec, fontWeight: 600 }}>/mo</span>
-                <span style={{
-                  fontSize: '1.05rem', color: B.textMuted, textDecoration: 'line-through', fontWeight: 600,
-                  opacity: 0.55, fontFeatureSettings: "'tnum'",
-                }}>
-                  ${fullPrice}
-                </span>
-              </div>
-
-              {/* Promo code callout */}
-              <div style={{
-                textAlign: 'center', marginBottom: '1rem',
-                padding: '0.6rem 0.75rem', borderRadius: '8px',
-                background: 'linear-gradient(135deg, rgba(212,175,55,0.16) 0%, rgba(212,175,55,0.04) 100%)',
-                border: '1px solid rgba(212,175,55,0.30)',
-              }}>
-                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: B.textSec }}>
-                  Use code </span>
-                <span style={{
-                  fontSize: '0.88rem', fontWeight: 900, color: B.gold,
-                  padding: '0.15rem 0.5rem', borderRadius: '4px',
-                  background: 'rgba(212,175,55,0.18)', letterSpacing: '0.08em',
-                }}>{promoCode}</span>
-                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: B.textSec }}>
-                  {' '}— </span>
-                <span style={{ fontSize: '0.78rem', fontWeight: 800, color: B.green }}>
-                  33% off for life
-                </span>
-              </div>
-            </>
-          )}
-
-          {/* Non-promo pricing */}
-          {!promoActive && (
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.85rem' }}>
-              <span style={{
-                display: 'inline-block',
-                fontSize: isMobile ? '2.1rem' : '2.4rem', fontWeight: 900,
-                color: B.green,
-                backgroundImage: `linear-gradient(135deg, ${B.green} 0%, #34D399 100%)`,
-                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-                fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em',
-              }}>
-                $25.99
-              </span>
-              <span style={{ ...T.body, color: B.textSec, fontWeight: 600 }}>/mo</span>
             </div>
           )}
 
-          {/* Free trial badge */}
-          <div style={{
-            textAlign: 'center', marginBottom: '0.85rem',
-            padding: '0.55rem 0.75rem', borderRadius: '8px',
-            background: 'linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(99,102,241,0.04) 100%)',
-            border: '1px solid rgba(99,102,241,0.28)',
-          }}>
-            <span style={{ ...T.label, color: '#A5B4FC', fontWeight: 800, letterSpacing: '0.05em' }}>5-DAY FREE TRIAL</span>
-            <span style={{ ...T.micro, color: B.textSec, marginLeft: '0.4rem' }}>— full access, cancel anytime</span>
+          {/* Plan picker — annual first + preselected, one tap to checkout */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', marginBottom: '1rem' }}>
+            {PAYWALL_PLANS.map((plan) => {
+              const isSelected = selectedPlan === plan.id;
+              const promoPrice = (plan.fullPrice * (1 - discount)).toFixed(2);
+              const equiv = promoActive ? plan.equivPromo : plan.equivFull;
+              return (
+                <button
+                  key={plan.id}
+                  onClick={() => setSelectedPlan(plan.id)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '0.75rem',
+                    width: '100%', textAlign: 'left', cursor: 'pointer',
+                    padding: isMobile ? '0.75rem 0.85rem' : '0.85rem 1rem',
+                    borderRadius: '11px',
+                    background: isSelected
+                      ? 'linear-gradient(140deg, rgba(212,175,55,0.14) 0%, rgba(15,23,42,0.55) 100%)'
+                      : 'linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(15,23,42,0.45) 100%)',
+                    border: isSelected ? `1.5px solid ${B.gold}` : `1px solid ${B.borderSubtle}`,
+                    boxShadow: isSelected
+                      ? '0 4px 18px -6px rgba(212,175,55,0.35), inset 0 1px 0 rgba(255,255,255,0.05)'
+                      : 'inset 0 1px 0 rgba(255,255,255,0.02)',
+                    transition: 'border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease',
+                  }}
+                >
+                  {/* Radio dot */}
+                  <span style={{
+                    flexShrink: 0, width: '16px', height: '16px', borderRadius: '50%',
+                    border: isSelected ? `5px solid ${B.gold}` : `1.5px solid ${B.textMuted}`,
+                    background: isSelected ? '#0B1120' : 'transparent',
+                    transition: 'border 0.15s ease',
+                  }} />
+
+                  {/* Name + badge + sub */}
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '0.92rem', fontWeight: 800, color: B.text, letterSpacing: '-0.01em' }}>
+                        {plan.name}
+                      </span>
+                      {plan.badge && (
+                        <span style={{
+                          fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.08em',
+                          padding: '0.14rem 0.42rem', borderRadius: '4px',
+                          background: plan.id === 'pro' ? 'rgba(212,175,55,0.18)' : 'rgba(16,185,129,0.14)',
+                          border: plan.id === 'pro' ? '1px solid rgba(212,175,55,0.40)' : '1px solid rgba(16,185,129,0.35)',
+                          color: plan.id === 'pro' ? B.gold : B.green,
+                        }}>
+                          {plan.badge}
+                        </span>
+                      )}
+                    </span>
+                    <span style={{ display: 'block', ...T.micro, color: B.textMuted, fontSize: '0.6rem', marginTop: '0.2rem' }}>
+                      {plan.sub}
+                    </span>
+                  </span>
+
+                  {/* Price */}
+                  <span style={{ flexShrink: 0, textAlign: 'right' }}>
+                    <span style={{ display: 'flex', alignItems: 'baseline', gap: '0.3rem', justifyContent: 'flex-end' }}>
+                      {promoActive && (
+                        <span style={{
+                          fontSize: '0.7rem', color: B.textMuted, textDecoration: 'line-through',
+                          fontWeight: 600, opacity: 0.55, fontFeatureSettings: "'tnum'",
+                        }}>
+                          ${plan.fullPrice % 1 === 0 ? plan.fullPrice : plan.fullPrice.toFixed(2)}
+                        </span>
+                      )}
+                      <span style={{
+                        fontSize: isMobile ? '1.05rem' : '1.15rem', fontWeight: 900,
+                        color: promoActive ? B.green : B.text,
+                        fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em',
+                      }}>
+                        ${promoActive ? promoPrice : (plan.fullPrice % 1 === 0 ? plan.fullPrice : plan.fullPrice.toFixed(2))}
+                      </span>
+                      <span style={{ ...T.micro, color: B.textSec, fontWeight: 600, fontSize: '0.62rem' }}>{plan.per}</span>
+                    </span>
+                    {equiv && (
+                      <span style={{ display: 'block', ...T.micro, color: plan.id === 'pro' ? B.gold : B.textMuted, fontSize: '0.58rem', marginTop: '0.15rem', fontWeight: 700 }}>
+                        ≈ {equiv}
+                      </span>
+                    )}
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
-          {/* CTA — green gradient w/ gold-halo hover */}
-          <a
-            href={promoActive ? `#/pricing?promo=${promoCode}` : '#/pricing'}
+          {/* Promo code callout */}
+          {promoActive && (
+            <div style={{
+              textAlign: 'center', marginBottom: '1rem',
+              padding: '0.6rem 0.75rem', borderRadius: '8px',
+              background: 'linear-gradient(135deg, rgba(212,175,55,0.16) 0%, rgba(212,175,55,0.04) 100%)',
+              border: '1px solid rgba(212,175,55,0.30)',
+            }}>
+              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: B.textSec }}>
+                Use code </span>
+              <span style={{
+                fontSize: '0.88rem', fontWeight: 900, color: B.gold,
+                padding: '0.15rem 0.5rem', borderRadius: '4px',
+                background: 'rgba(212,175,55,0.18)', letterSpacing: '0.08em',
+              }}>{promoCode}</span>
+              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: B.textSec }}>
+                {' '}at checkout — </span>
+              <span style={{ fontSize: '0.78rem', fontWeight: 800, color: B.green }}>
+                33% off for life
+              </span>
+            </div>
+          )}
+
+          {/* Free trial badge — tracks the selected plan's actual trial length */}
+          {(() => {
+            const plan = PAYWALL_PLANS.find(p => p.id === selectedPlan) || PAYWALL_PLANS[0];
+            return (
+              <div style={{
+                textAlign: 'center', marginBottom: '0.85rem',
+                padding: '0.55rem 0.75rem', borderRadius: '8px',
+                background: 'linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(99,102,241,0.04) 100%)',
+                border: '1px solid rgba(99,102,241,0.28)',
+              }}>
+                <span style={{ ...T.label, color: '#A5B4FC', fontWeight: 800, letterSpacing: '0.05em' }}>{plan.trialDays}-DAY FREE TRIAL</span>
+                <span style={{ ...T.micro, color: B.textSec, marginLeft: '0.4rem' }}>— no payment due today, cancel anytime</span>
+              </div>
+            );
+          })()}
+
+          {/* CTA — direct to Stripe checkout (auth modal first if logged out) */}
+          <button
+            onClick={async () => {
+              if (checkingOut) return;
+              if (!user) { setAuthOpen(true); return; }
+              setCheckingOut(true);
+              try {
+                await redirectToCheckout(selectedPlan, user);
+              } finally {
+                setCheckingOut(false);
+              }
+            }}
             className="sharpflow-paywall-cta"
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.55rem',
+              width: '100%', cursor: checkingOut ? 'wait' : 'pointer',
               padding: '0.95rem 1.5rem', borderRadius: '11px',
               background: `linear-gradient(135deg, ${B.green} 0%, #059669 100%)`,
               color: '#fff', fontWeight: 900, fontSize: isMobile ? '1.05rem' : '1.02rem',
@@ -14233,22 +14336,40 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
               boxShadow: '0 6px 24px rgba(16,185,129,0.40), inset 0 1px 0 rgba(255,255,255,0.18)',
               transition: 'transform 0.18s ease, box-shadow 0.18s ease',
               border: '1px solid rgba(255,255,255,0.10)',
+              opacity: checkingOut ? 0.7 : 1,
             }}
           >
-            {promoActive ? 'Claim Summer Offer →' : 'Start Free Trial →'}
-          </a>
+            {checkingOut ? 'Opening checkout…' : promoActive ? 'Claim Summer Offer →' : 'Start Free Trial →'}
+          </button>
 
           {/* Trust badges */}
           <div style={{
             display: 'flex', justifyContent: 'center', gap: '1.1rem',
             marginTop: '0.85rem', flexWrap: 'wrap',
           }}>
-            <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem' }}>✓ 5 days free</span>
+            <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem' }}>✓ Free trial included</span>
             <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem' }}>✓ Cancel anytime</span>
             <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem' }}>✓ Auto-graded results</span>
           </div>
+
+          {/* Fallback: full pricing page */}
+          <div style={{ textAlign: 'center', marginTop: '0.7rem' }}>
+            <a
+              href={promoActive ? `#/pricing?promo=${promoCode}` : '#/pricing'}
+              style={{ ...T.micro, color: B.textMuted, fontSize: '0.62rem', textDecoration: 'underline', textUnderlineOffset: '2px' }}
+            >
+              Compare all plans
+            </a>
+          </div>
         </div>
       </div>
+
+      {/* Auth modal — after sign-in it auto-continues to checkout for the selected plan */}
+      <AuthModal
+        isOpen={authOpen}
+        onClose={() => setAuthOpen(false)}
+        tier={selectedPlan}
+      />
     </div>
   );
 }
