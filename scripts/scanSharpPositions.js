@@ -688,21 +688,13 @@ async function run() {
     if (bs >= 3) score += 20; else if (bs >= 2) score += 15;
     if (sportWinRate != null && sportWinRate < 5 && sportBets > 50) score += 15;
 
-    // Protect genuine directional sharps only. Aggregate sportROI can be
-    // diluted by grinding — BUT a strong perSport ROI alone is NOT enough:
-    // closed-positions audit (2026-07) showed HomeRunHazard at +85% WNBA
-    // catalog ROI while holding BOTH outcomes on ~97% of markets (hedge/MM).
-    // Require low both-sides today (bs < 2) AND either overall or per-sport
-    // edge. Per-sport protection also requires the wallet is NOT already
-    // scoring as a high-volume churner (vol/pnl > 100×) — those books are
-    // usually two-sided even when one sport prints green.
-    const strongSportBook = Object.values(w.perSport || {}).some((s) =>
-      (s?.pnl || 0) > 10000 && (s?.roi || 0) > 10 && (s?.bets || 0) >= 20
-    );
+    // Protect genuine directional sharps using LB sportPnl/ROI only.
+    // Do NOT trust perSport.pnl/roi from sports_sharps — those were historically
+    // summed from REALIZEDPNL-sorted closed pages and do not reconcile to the
+    // SPORTS leaderboard (winner-bias). Require low both-sides today + no
+    // high-volume churn (vol/pnl > 100×).
     const highChurn = ratio > 100;
-    const isProfitableSharp = bs < 2 && !highChurn && (
-      (sportPnl > 10000 && sportROI > 10) || strongSportBook
-    );
+    const isProfitableSharp = bs < 2 && !highChurn && sportPnl > 10000 && sportROI > 10;
     return score >= 35 && !isProfitableSharp;
   };
 

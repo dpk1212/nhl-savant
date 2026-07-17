@@ -130,6 +130,21 @@ async function fetchLeaderboard(timePeriod = 'ALL', depth = LB_DEPTH, category =
   })).filter(w => w.wallet.length > 0);
 }
 
+/** Parse curPrice without coercing 0 → 0.5 (0 is a real settled loss). */
+function parseCurPrice(raw) {
+  if (raw === null || raw === undefined || raw === '') return null;
+  const n = typeof raw === 'number' ? raw : parseFloat(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Profile closed-positions HONESTLY:
+ * - Always page sortBy=TIMESTAMP DESC (API default is REALIZEDPNL DESC —
+ *   that bias inflated perSport $ and painted fake 20W-0L "recent" form).
+ * - perSport is activity only (bets / invested) — never sum realizedPnl as
+ *   sport P&L (does not reconcile to SPORTS leaderboard).
+ * - recentResults = newest settled sport legs only.
+ */
 async function buildProfile(wallet) {
   let currentPositions = [];
   for (let offset = 0; offset < 10000; offset += 500) {
@@ -142,10 +157,11 @@ async function buildProfile(wallet) {
     if (page.length < 500) break;
   }
 
+  // TIMESTAMP DESC — chronological, not winner-highlight reel.
   let closedPositions = [];
   for (let offset = 0; offset < MAX_CLOSED_POSITIONS; offset += 50) {
     const page = await fetchWithRetry(
-      `${DATA_API}/closed-positions?user=${wallet}&limit=50&offset=${offset}`
+      `${DATA_API}/closed-positions?user=${wallet}&limit=50&offset=${offset}&sortBy=TIMESTAMP&sortDirection=DESC`
     );
     await sleep(PAGE_DELAY_MS);
     if (!page || !Array.isArray(page) || page.length === 0) break;
@@ -163,8 +179,11 @@ async function buildProfile(wallet) {
   const perSport = {};
   let sportInvested = 0;
   let sportPositionCount = 0;
-  const recentSportBets = [];
+  const recentResults = [];
+  const MIN_RECENT_RESULTS = 5;
+  const MAX_RECENT_RESULTS = 20;
 
+  // Pages are newest-first; collect recent settled form in pass order.
   for (const p of closedPositions) {
     const sport = classifySport(p.title || '');
     if (!sport) continue;
@@ -175,17 +194,16 @@ async function buildProfile(wallet) {
     const price = parseFloat(p.avgPrice || '0');
     const invested = (bought > 0 && price > 0) ? bought * price : 0;
     if (invested > 0) sportInvested += invested;
-    const realizedPnl = parseFloat(p.realizedPnl || '0');
 
-    if (!perSport[sport]) perSport[sport] = { bets: 0, invested: 0, pnl: 0 };
+    if (!perSport[sport]) perSport[sport] = { bets: 0, invested: 0 };
     perSport[sport].bets++;
     perSport[sport].invested += invested;
-    perSport[sport].pnl += realizedPnl;
 
-    const curPrice = parseFloat(p.curPrice || '0.5');
-    const isSettled = curPrice >= 0.95 || curPrice <= 0.05;
-    if (isSettled) {
-      recentSportBets.push({
+    const curPrice = parseCurPrice(p.curPrice);
+    const isSettled = curPrice != null && (curPrice >= 0.95 || curPrice <= 0.05);
+    if (isSettled && recentResults.length < MAX_RECENT_RESULTS) {
+      const realizedPnl = parseFloat(p.realizedPnl || '0');
+      recentResults.push({
         title: p.title || '',
         sport,
         outcome: p.outcome || '',
@@ -213,13 +231,9 @@ async function buildProfile(wallet) {
   for (const sp of Object.keys(perSport)) {
     const s = perSport[sp];
     s.invested = Math.round(s.invested);
-    s.pnl = Math.round(s.pnl);
     s.avgBet = s.bets > 0 ? Math.round(s.invested / s.bets) : 0;
-    s.roi = s.invested > 0 ? +((s.pnl / s.invested) * 100).toFixed(1) : 0;
+    // Intentionally omit pnl / roi — not reconcilable to LB sportPnlTotal.
   }
-
-  recentSportBets.sort((a, b) => b.timestamp - a.timestamp);
-  const recentResults = recentSportBets.slice(0, 20);
 
   return {
     sportMarkets,
@@ -227,7 +241,8 @@ async function buildProfile(wallet) {
     sportPositionCount,
     sportInvested: Math.round(sportInvested),
     perSport,
-    recentResults,
+    // Thin samples omit the feed rather than paint a fake streak.
+    recentResults: recentResults.length >= MIN_RECENT_RESULTS ? recentResults : [],
     closedCapped,
     closedCount: closedPositions.length,
     openCount: currentPositions.length,

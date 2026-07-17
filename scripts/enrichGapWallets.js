@@ -93,11 +93,18 @@ async function fetchWithRetry(url, retries = RETRY_LIMIT) {
   return null;
 }
 
+function parseCurPrice(raw) {
+  if (raw === null || raw === undefined || raw === '') return null;
+  const n = typeof raw === 'number' ? raw : parseFloat(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
 async function buildProfile(wallet) {
+  // TIMESTAMP DESC — never default REALIZEDPNL (winner-bias).
   let closedPositions = [];
   for (let offset = 0; offset < MAX_CLOSED_POSITIONS; offset += 50) {
     const page = await fetchWithRetry(
-      `${DATA_API}/closed-positions?user=${wallet}&limit=50&offset=${offset}`
+      `${DATA_API}/closed-positions?user=${wallet}&limit=50&offset=${offset}&sortBy=TIMESTAMP&sortDirection=DESC`
     );
     await sleep(PAGE_DELAY_MS);
     if (!page || !Array.isArray(page) || page.length === 0) break;
@@ -112,7 +119,9 @@ async function buildProfile(wallet) {
   const perSport = {};
   let sportInvested = 0;
   let sportPositionCount = 0;
-  const recentSportBets = [];
+  const recentResults = [];
+  const MIN_RECENT_RESULTS = 5;
+  const MAX_RECENT_RESULTS = 20;
 
   for (const p of closedPositions) {
     const sport = classifySport(p.title || '');
@@ -124,17 +133,16 @@ async function buildProfile(wallet) {
     const price = parseFloat(p.avgPrice || '0');
     const invested = (bought > 0 && price > 0) ? bought * price : 0;
     if (invested > 0) sportInvested += invested;
-    const realizedPnl = parseFloat(p.realizedPnl || '0');
 
-    if (!perSport[sport]) perSport[sport] = { bets: 0, invested: 0, pnl: 0 };
+    if (!perSport[sport]) perSport[sport] = { bets: 0, invested: 0 };
     perSport[sport].bets++;
     perSport[sport].invested += invested;
-    perSport[sport].pnl += realizedPnl;
 
-    const curPrice = parseFloat(p.curPrice || '0.5');
-    const isSettled = curPrice >= 0.95 || curPrice <= 0.05;
-    if (isSettled) {
-      recentSportBets.push({
+    const curPrice = parseCurPrice(p.curPrice);
+    const isSettled = curPrice != null && (curPrice >= 0.95 || curPrice <= 0.05);
+    if (isSettled && recentResults.length < MAX_RECENT_RESULTS) {
+      const realizedPnl = parseFloat(p.realizedPnl || '0');
+      recentResults.push({
         title: p.title || '',
         sport,
         outcome: p.outcome || '',
@@ -151,12 +159,8 @@ async function buildProfile(wallet) {
   for (const sp of Object.keys(perSport)) {
     const s = perSport[sp];
     s.invested = Math.round(s.invested);
-    s.pnl = Math.round(s.pnl);
     s.avgBet = s.bets > 0 ? Math.round(s.invested / s.bets) : 0;
-    s.roi = s.invested > 0 ? +((s.pnl / s.invested) * 100).toFixed(1) : 0;
   }
-
-  recentSportBets.sort((a, b) => b.timestamp - a.timestamp);
 
   return {
     sportMarkets,
@@ -164,7 +168,7 @@ async function buildProfile(wallet) {
     sportPositionCount,
     sportInvested: Math.round(sportInvested),
     perSport,
-    recentResults: recentSportBets.slice(0, 20),
+    recentResults: recentResults.length >= MIN_RECENT_RESULTS ? recentResults : [],
     closedCount: closedPositions.length,
   };
 }
@@ -212,17 +216,18 @@ async function run() {
     try {
       const profile = await buildProfile(gw.addr);
       const sportMarketCount = Object.values(profile.sportMarkets || {}).reduce((s, v) => s + v, 0);
+      // Money stats from whale_profiles aggregate — NOT closed-position realized sums
+      // (those do not reconcile to Polymarket SPORTS leaderboard accounting).
+      const totalPnl = Math.round(gw.aggSportPnl || 0);
       const vol = profile.sportInvested || 0;
-      const netPnlTotal = Object.values(profile.perSport || {}).reduce((s, ps) => s + (ps.pnl || 0), 0);
-      const totalPnl = netPnlTotal || 0;
       const roi = vol > 0 ? +((totalPnl / vol) * 100).toFixed(1) : 0;
 
-      if (roi <= 0) {
-        console.log(`SKIP — negative ROI (${roi}%) after enrichment`);
+      if (totalPnl <= 0) {
+        console.log(`SKIP — non-positive agg sport PnL`);
         continue;
       }
-      if (roi > 50) {
-        console.log(`SKIP — unrealistic ROI (${roi}%), likely bad data or tiny sample`);
+      if (vol > 0 && roi > 50) {
+        console.log(`SKIP — unrealistic ROI (${roi}%) vs closed invested sample`);
         continue;
       }
 
