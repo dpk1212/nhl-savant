@@ -34,6 +34,13 @@ const UFC_ALIASES = {
   // Nickname / legal-name bridges (expand as needed)
   bobbygreen: 'kinggreen',
   kinggreen: 'kinggreen',
+  // Polymarket full legal name ↔ Odds/Pinnacle short form (UFC FN 2026-07-18)
+  josemigueldelgado: 'josedelgado',
+  josedelgado: 'josedelgado',
+  levirodriguesjr: 'levirodrigues',
+  levirodrigues: 'levirodrigues',
+  seokhyeonko: 'seokhyunko',
+  seokhyunko: 'seokhyunko',
 };
 
 /** Resolve a raw fighter string to a canonical normalized key, or null. */
@@ -41,7 +48,8 @@ export function resolveUFCFighter(raw) {
   if (!raw) return null;
   const cleaned = String(raw)
     .replace(/\s*\([^)]*\)\s*$/g, '') // strip trailing (Welterweight) etc.
-    .replace(/^ufc\s*\d+\s*:\s*/i, '')
+    .replace(/^ufc\s*(?:fight\s+night|on\s+[^:]+|\d+)\s*:\s*/i, '')
+    .replace(/\s+,?\s*(jr\.?|sr\.?|ii|iii|iv)\s*$/i, '')
     .trim();
   const n = normalizeFighterName(cleaned);
   if (!n || n.length < 3) return null;
@@ -64,7 +72,14 @@ export function makeUFCGameKey(a, b) {
 export function extractUFCFightersFromTitle(title) {
   let t = (title || '').trim();
   if (!t) return null;
+  // Numbered cards ("UFC 329:") and Fight Night / Apex branding
+  // ("UFC Fight Night:") — without the Fight Night strip, fighter A becomes
+  // "UFC Fight Night: Kamaru Usman" and the game key never matches Odds API
+  // / Pinnacle (`kamaruusman_dricusduplessis`), so the whole UFC bucket
+  // fetches empty on Sharp Flow.
   t = t.replace(/^ufc\s*\d+\s*:\s*/i, '');
+  t = t.replace(/^ufc\s+fight\s+night\s*:\s*/i, '');
+  t = t.replace(/^ufc\s+on\s+[^:]+:\s*/i, '');
   t = t.replace(
     /\s*\([^)]*(?:weight|prelim|main\s*card|early\s*prelim|co-?main)[^)]*\)\s*$/i,
     '',
