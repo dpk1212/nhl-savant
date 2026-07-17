@@ -9704,7 +9704,7 @@ export default function SharpFlow() {
                   <span style={{ ...T.heading, color: B.text, letterSpacing: '-0.01em' }}>Sharp Vault</span>
                 </div>
                 <p style={{ ...T.label, color: B.textMuted, margin: 0, lineHeight: 1.6 }}>
-                  CONFIRMED + FLAT wallets · money from Polymarket sports leaderboard
+                  Verified sharp wallets · lifetime sports profit and ROI
                 </p>
 
                 <div className="sf-stagger" style={{
@@ -9714,7 +9714,7 @@ export default function SharpFlow() {
                   paddingTop: '1rem', borderTop: `1px solid ${B.border}`,
                 }}>
                   {[
-                    { label: 'WHITELISTED', value: String(entries.length), color: B.gold },
+                    { label: 'IN VAULT', value: String(entries.length), color: B.gold },
                     { label: 'COMBINED P&L', value: `${combinedPnl >= 0 ? '+' : ''}${fmtVol(combinedPnl)}`, color: combinedPnl >= 0 ? B.green : B.red },
                     { label: 'AVG ROI', value: avgRoi == null ? '—' : `${avgRoi >= 0 ? '+' : ''}${avgRoi.toFixed(1)}%`, color: avgRoi == null ? B.textMuted : avgRoi >= 5 ? B.green : avgRoi < 0 ? B.red : '#22D3EE' },
                     { label: 'THIS WEEK', value: weeklyTotal == null || weeklyTotal === 0 ? '—' : `${weeklyTotal >= 0 ? '+' : ''}${fmtVol(weeklyTotal)}`, color: weeklyTotal == null || weeklyTotal === 0 ? B.textMuted : weeklyTotal > 0 ? B.green : B.red },
@@ -9734,7 +9734,7 @@ export default function SharpFlow() {
                   marginTop: '1rem', paddingTop: '0.85rem', borderTop: `1px solid ${B.borderSubtle}`,
                 }}>
                   <span style={{ ...T.tiny, color: B.textSubtle, alignSelf: 'center', marginRight: '0.25rem' }}>
-                    Field sport
+                    Sport
                   </span>
                   {vaultSports.map((sp) => (
                     <button

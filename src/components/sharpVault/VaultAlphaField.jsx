@@ -9,7 +9,7 @@ const CLV_N_MIN = 8;
 const TOGGLES = [
   { id: 'all', label: 'All' },
   { id: 'active', label: 'Active today' },
-  { id: 'hc', label: 'HC wallets' },
+  { id: 'hc', label: 'Heavy size' },
 ];
 
 function topLegLine(legs, sportFilter) {
@@ -119,7 +119,7 @@ export default function VaultAlphaField({
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.35rem' }}>
           <span style={{ ...T.label, color: B.gold, fontWeight: 800 }}>{d.name}</span>
           {d.isHc && (
-            <span style={{ ...T.tiny, color: B.gold, letterSpacing: '0.04em' }}>HC</span>
+            <span style={{ ...T.tiny, color: B.gold, letterSpacing: '0.04em' }}>Heavy</span>
           )}
           {d.isLive && !d.isHc && (
             <span style={{
@@ -129,13 +129,13 @@ export default function VaultAlphaField({
           )}
         </div>
         <div style={{ ...T.micro, color: B.textSec, lineHeight: 1.7 }}>
-          <div>CLV {d.x.toFixed(1)}% · n={d.clvN}</div>
+          <div>Beat close {d.x.toFixed(1)}% · {d.clvN} bets</div>
           <div>Sports ROI {d.y >= 0 ? '+' : ''}{d.y.toFixed(1)}%</div>
           {d.picksN >= 10 && d.picksWr != null && (
-            <div>Pick WR {d.picksWr.toFixed(0)}% · {d.picksN}</div>
+            <div>Win rate {d.picksWr.toFixed(0)}% · {d.picksN} picks</div>
           )}
           <div>Sports: {d.sports || '—'}</div>
-          <div>Open {d.open > 0 ? fmtVol(d.open) : '—'}</div>
+          <div>Open now {d.open > 0 ? fmtVol(d.open) : '—'}</div>
           {d.liveLine && (
             <div style={{ color: B.gold, fontWeight: 700, marginTop: '0.2rem' }}>
               {d.liveLine}
@@ -172,12 +172,12 @@ export default function VaultAlphaField({
             )}
             {hcCount > 0 && (
               <span style={{ ...T.micro, color: B.gold, fontWeight: 700 }}>
-                {hcCount} HC
+                {hcCount} heavy
               </span>
             )}
           </div>
           <div style={{ ...T.label, color: B.textMuted, fontWeight: 500 }}>
-            Beats-close × sports ROI · gold ring = sized today · bright ring = HC
+            Beat the close vs sports ROI · ring = betting today · bright = heavy size
           </div>
         </div>
         <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
@@ -236,18 +236,18 @@ export default function VaultAlphaField({
             height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
             ...T.body, color: B.textMuted, textAlign: 'center', padding: '1rem',
           }}>
-            Not enough wallets with CLV + ROI samples for this filter
+            Not enough wallets with a clear track record for this filter
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <ScatterChart margin={{ top: 16, right: 16, bottom: 28, left: 8 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(100,116,139,0.12)" />
               <XAxis
-                type="number" dataKey="x" name="CLV"
+                type="number" dataKey="x" name="Beat close"
                 domain={['auto', 'auto']}
                 tick={{ fill: B.textMuted, fontSize: 10 }}
                 tickFormatter={(v) => `${v}%`}
-                label={{ value: 'Beats close %', position: 'insideBottom', offset: -12, fill: B.textSubtle, fontSize: 10 }}
+                label={{ value: 'Beat the close %', position: 'insideBottom', offset: -12, fill: B.textSubtle, fontSize: 10 }}
               />
               <YAxis
                 type="number" dataKey="y" name="ROI"
@@ -300,8 +300,8 @@ export default function VaultAlphaField({
         )}
       </div>
       <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.45rem', lineHeight: 1.5 }}>
-        Axes require real samples (CLV n ≥ {CLV_N_MIN}, LB volume &gt; 0). Thin wallets omitted.
-        Hover a live node for its top sized leg — full markets stay on Locked / Live.
+        Only wallets with enough history to trust ({CLV_N_MIN}+ graded bets and real sports volume).
+        Hover a live wallet for its largest open bet — full markets are on Locked Picks and Live.
       </div>
     </section>
   );

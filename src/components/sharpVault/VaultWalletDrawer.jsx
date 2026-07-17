@@ -79,7 +79,7 @@ export default function VaultWalletDrawer({
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem' }}>
             <div>
               <div style={{ ...T.tiny, color: B.gold, letterSpacing: '0.08em', marginBottom: '0.25rem' }}>
-                Whitelist wallet
+                Vault wallet
               </div>
               <div style={{ ...T.heading, color: B.text, fontSize: '1.25rem' }}>
                 {entry.name || `***${wallet.slice(-4)}`}
@@ -144,7 +144,7 @@ export default function VaultWalletDrawer({
           {tab === 'open' && (
             sortedLegs.length === 0 ? (
               <div style={{ ...T.body, color: B.textMuted, textAlign: 'center', padding: '2rem 0.5rem' }}>
-                No sized open legs in today’s ML / spread / total feeds
+                No open sports bets for this wallet right now
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
@@ -176,7 +176,7 @@ export default function VaultWalletDrawer({
                           <span style={{ color: B.gold }}> · {leg.betMultiplier.toFixed(1)}×</span>
                         )}
                         {leg.vault_isHcWallet && (
-                          <span style={{ color: B.gold, fontWeight: 800 }}> · HC</span>
+                          <span style={{ color: B.gold, fontWeight: 800 }}> · Heavy</span>
                         )}
                       </div>
                     </div>
@@ -189,31 +189,31 @@ export default function VaultWalletDrawer({
           {tab === 'track' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <TrackBlock
-                title="Source A — picks"
-                subtitle="Graded pick history from sharpFlow wallet details"
+                title="Pick record"
+                subtitle="How their featured picks have finished"
                 rows={[
                   { label: 'Win rate', value: entry.picks?.n ? `${entry.picks.wr}%` : '—' },
-                  { label: 'Sample', value: entry.picks?.n ? String(entry.picks.n) : '—' },
-                  { label: 'Flat ROI', value: entry.picks?.n ? `${entry.picks.flatRoi}%` : '—' },
-                  { label: 'W–L', value: entry.picks?.n ? `${entry.picks.wins}-${entry.picks.losses}` : '—' },
+                  { label: 'Picks graded', value: entry.picks?.n ? String(entry.picks.n) : '—' },
+                  { label: 'Even-stake ROI', value: entry.picks?.n ? `${entry.picks.flatRoi}%` : '—' },
+                  { label: 'Record', value: entry.picks?.n ? `${entry.picks.wins}-${entry.picks.losses}` : '—' },
                 ]}
               />
               <TrackBlock
-                title="Source B — positions"
-                subtitle="Dollar-settled position aggregate from profile"
+                title="Position record"
+                subtitle="How their real-money sports positions have settled"
                 rows={[
                   { label: 'Win rate', value: entry.positionsTrack?.n ? `${entry.positionsTrack.wr}%` : '—' },
-                  { label: 'Sample', value: entry.positionsTrack?.n ? String(entry.positionsTrack.n) : '—' },
+                  { label: 'Positions graded', value: entry.positionsTrack?.n ? String(entry.positionsTrack.n) : '—' },
                   { label: 'Dollar ROI', value: entry.positionsTrack?.dollarRoi != null ? `${entry.positionsTrack.dollarRoi}%` : '—' },
                   { label: 'Settled P&L', value: entry.positionsTrack?.settledPnl != null ? signedVol(entry.positionsTrack.settledPnl) : '—' },
                 ]}
               />
               <TrackBlock
-                title="CLV skill"
-                subtitle="Causal % of graded positions that beat the close"
+                title="Beat the close"
+                subtitle="Share of graded bets that got a better price than the closing line"
                 rows={[
-                  { label: 'Beats close', value: entry.clvSkill?.pctPos != null ? `${entry.clvSkill.pctPos}%` : '—' },
-                  { label: 'Sample', value: entry.clvSkill?.n != null ? String(entry.clvSkill.n) : '—' },
+                  { label: 'Beat close', value: entry.clvSkill?.pctPos != null ? `${entry.clvSkill.pctPos}%` : '—' },
+                  { label: 'Bets graded', value: entry.clvSkill?.n != null ? String(entry.clvSkill.n) : '—' },
                   { label: 'Since', value: entry.clvSkill?.since || '—' },
                 ]}
               />
@@ -223,7 +223,7 @@ export default function VaultWalletDrawer({
           {tab === 'sports' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
               <div style={{ ...T.micro, color: B.textSubtle, marginBottom: '0.35rem' }}>
-                Whitelist tier + activity counts only — never per-sport $
+                Sports where this wallet qualifies · activity only, not profit by sport
               </div>
               {Object.entries(entry.bySport || {})
                 .filter(([, rec]) => rec?.whitelistTier === 'CONFIRMED' || rec?.whitelistTier === 'FLAT')
@@ -231,6 +231,7 @@ export default function VaultWalletDrawer({
                 .map(([sport, rec]) => {
                   const sc = SPORT_COLORS[sport] || B.gold;
                   const bets = rec?.picks?.n ?? entry.perSport?.[sport]?.bets ?? null;
+                  const tierLabel = rec.whitelistTier === 'CONFIRMED' ? 'Proven' : 'Steady';
                   return (
                     <div
                       key={sport}
@@ -252,7 +253,7 @@ export default function VaultWalletDrawer({
                             ? `linear-gradient(135deg, ${B.gold}, #F5D77B)`
                             : 'rgba(148,163,184,0.12)',
                         }}>
-                          {rec.whitelistTier}
+                          {tierLabel}
                         </span>
                       </div>
                       <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>

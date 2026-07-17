@@ -5,7 +5,7 @@ const SORTS = [
   { id: 'pnl', label: 'P&L' },
   { id: 'roi', label: 'ROI' },
   { id: 'weekly', label: 'Weekly' },
-  { id: 'clv', label: 'CLV' },
+  { id: 'clv', label: 'Beat close' },
   { id: 'active', label: 'Active' },
 ];
 
@@ -82,7 +82,7 @@ export default function VaultRoster({
             }}>{entries.length}</span>
           </div>
           <div style={{ ...T.label, color: B.textMuted, fontWeight: 500 }}>
-            Full whitelist · money from Polymarket sports LB · no per-sport $
+            Every verified wallet · sports profit and ROI · not split by sport
           </div>
         </div>
         <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
@@ -145,7 +145,7 @@ export default function VaultRoster({
                       boxShadow: '0 0 6px rgba(16,185,129,0.6)',
                     }} />
                     {isHc && (
-                      <span style={{ ...T.tiny, color: B.gold }}>HC</span>
+                      <span style={{ ...T.tiny, color: B.gold }}>Heavy</span>
                     )}
                   </span>
                 </div>
@@ -156,7 +156,7 @@ export default function VaultRoster({
                   {fmtVol(e.openInvested)}
                 </div>
                 <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.15rem', fontFeatureSettings: "'tnum'" }}>
-                  {clv != null && (e.clvSkill?.n || 0) >= CLV_N_MIN ? `CLV ${clv.toFixed(0)}%` : 'CLV —'}
+                  {clv != null && (e.clvSkill?.n || 0) >= CLV_N_MIN ? `Beat close ${clv.toFixed(0)}%` : 'Beat close —'}
                   {' · '}
                   {e.roi != null ? `ROI ${e.roi.toFixed(1)}%` : 'ROI —'}
                 </div>
@@ -179,7 +179,7 @@ export default function VaultRoster({
             borderBottom: `1px solid ${B.borderSubtle}`,
             background: 'rgba(0,0,0,0.2)',
           }}>
-            {['Wallet', 'Sports P&L', 'ROI', 'Vol', 'Week', 'Pick WR', 'CLV', 'Open'].map((h) => (
+            {['Wallet', 'Sports P&L', 'ROI', 'Volume', 'Week', 'Win rate', 'Beat close', 'Open'].map((h) => (
               <span key={h} style={{ ...T.tiny, color: B.textSubtle }}>{h}</span>
             ))}
           </div>
@@ -196,8 +196,8 @@ export default function VaultRoster({
             const isHc = hcWallets.has(w);
             const isSel = selected === w;
             const tiers = [
-              ...(e.confirmedSports || []).map((s) => ({ s, t: 'C' })),
-              ...(e.flatSports || []).filter((s) => !(e.confirmedSports || []).includes(s)).map((s) => ({ s, t: 'F' })),
+              ...(e.confirmedSports || []).map((s) => ({ s, t: 'Proven' })),
+              ...(e.flatSports || []).filter((s) => !(e.confirmedSports || []).includes(s)).map((s) => ({ s, t: 'Steady' })),
             ].slice(0, 4);
 
             return (
@@ -235,18 +235,18 @@ export default function VaultRoster({
                       {e.name || `***${String(e.wallet || '').slice(-4)}`}
                     </span>
                     {isHc && (
-                      <span style={{ ...T.tiny, color: B.gold, letterSpacing: '0.04em' }}>HC</span>
+                      <span style={{ ...T.tiny, color: B.gold, letterSpacing: '0.04em' }}>Heavy</span>
                     )}
                   </div>
                   <div style={{ display: 'flex', gap: '0.2rem', flexWrap: 'wrap', marginTop: '0.15rem' }}>
                     {tiers.map(({ s, t }) => (
                       <span key={`${s}-${t}`} style={{
                         ...T.tiny, letterSpacing: '0.02em', padding: '0.05rem 0.3rem', borderRadius: '3px',
-                        color: t === 'C' ? B.gold : B.textSec,
-                        background: t === 'C' ? B.goldDim : 'rgba(148,163,184,0.1)',
-                        border: `1px solid ${t === 'C' ? B.goldBorder : B.border}`,
+                        color: t === 'Proven' ? B.gold : B.textSec,
+                        background: t === 'Proven' ? B.goldDim : 'rgba(148,163,184,0.1)',
+                        border: `1px solid ${t === 'Proven' ? B.goldBorder : B.border}`,
                       }}>
-                        {s} {t}
+                        {s} · {t}
                       </span>
                     ))}
                   </div>
