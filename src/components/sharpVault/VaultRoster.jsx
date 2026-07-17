@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { B, T, fmtVol, signedVol } from './vaultTheme';
 
 const SORTS = [
@@ -11,13 +11,40 @@ const SORTS = [
 
 const PICK_N_MIN = 10;
 const CLV_N_MIN = 8;
+const HOT_N = 5;
+
+const DESKTOP_COLS = 'minmax(130px,1.5fr) 0.85fr 0.65fr 0.7fr 0.7fr 0.75fr 0.65fr 0.9fr';
 
 /**
- * Full whitelist roster — truth-bound columns only.
+ * Full whitelist roster — Hot strip + truth-bound columns.
  * Money from LB / positionsContext; no per-sport $.
  */
-export default function VaultRoster({ entries = [], isMobile, onSelectWallet }) {
+export default function VaultRoster({
+  entries = [],
+  actionPositions = [],
+  selectedWallet = null,
+  isMobile,
+  onSelectWallet,
+}) {
   const [sortBy, setSortBy] = useState('pnl');
+  const rowRefs = useRef({});
+
+  const hcWallets = useMemo(() => {
+    const s = new Set();
+    for (const p of actionPositions) {
+      if (p.vault_isHcWallet) s.add((p.wallet || '').toLowerCase());
+    }
+    return s;
+  }, [actionPositions]);
+
+  const selected = selectedWallet ? String(selectedWallet).toLowerCase() : null;
+
+  const hot = useMemo(() => {
+    return [...entries]
+      .filter((e) => (e.openInvested || 0) > 0)
+      .sort((a, b) => (b.openInvested || 0) - (a.openInvested || 0))
+      .slice(0, HOT_N);
+  }, [entries]);
 
   const sorted = useMemo(() => {
     const list = [...entries];
@@ -30,6 +57,14 @@ export default function VaultRoster({ entries = [], isMobile, onSelectWallet }) 
     });
     return list;
   }, [entries, sortBy]);
+
+  useEffect(() => {
+    if (!selected) return;
+    const el = rowRefs.current[selected];
+    if (el?.scrollIntoView) {
+      el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }, [selected]);
 
   return (
     <section style={{ marginBottom: '1.75rem' }}>
@@ -69,6 +104,68 @@ export default function VaultRoster({ entries = [], isMobile, onSelectWallet }) 
         </div>
       </div>
 
+      {/* Hot now — live size without a second board */}
+      {hot.length > 0 && (
+        <div className="sf-stagger" style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : `repeat(${Math.min(hot.length, 5)}, 1fr)`,
+          gap: '0.45rem',
+          marginBottom: '0.85rem',
+        }}>
+          {hot.map((e) => {
+            const w = e.wallet.toLowerCase();
+            const isHc = hcWallets.has(w);
+            const isSel = selected === w;
+            const clv = e.clvSkill?.pctPos;
+            return (
+              <button
+                key={w}
+                type="button"
+                onClick={() => onSelectWallet?.(e.wallet)}
+                style={{
+                  textAlign: 'left', cursor: 'pointer', color: 'inherit',
+                  padding: '0.65rem 0.75rem', borderRadius: '10px',
+                  background: isSel
+                    ? 'rgba(212,175,55,0.12)'
+                    : `linear-gradient(145deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
+                  border: isSel
+                    ? `1px solid ${B.gold}`
+                    : isHc
+                      ? `1px solid ${B.goldBorder}`
+                      : `1px solid ${B.border}`,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.35rem' }}>
+                  <span style={{ ...T.label, color: B.text, fontWeight: 800 }}>
+                    {e.name || `***${w.slice(-4)}`}
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <span style={{
+                      width: 6, height: 6, borderRadius: '50%', background: B.green,
+                      boxShadow: '0 0 6px rgba(16,185,129,0.6)',
+                    }} />
+                    {isHc && (
+                      <span style={{ ...T.tiny, color: B.gold }}>HC</span>
+                    )}
+                  </span>
+                </div>
+                <div style={{
+                  ...T.sub, color: B.gold, fontWeight: 900, fontFeatureSettings: "'tnum'",
+                  marginTop: '0.3rem', fontSize: '0.95rem',
+                }}>
+                  {fmtVol(e.openInvested)}
+                </div>
+                <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.15rem', fontFeatureSettings: "'tnum'" }}>
+                  {clv != null && (e.clvSkill?.n || 0) >= CLV_N_MIN ? `CLV ${clv.toFixed(0)}%` : 'CLV —'}
+                  {' · '}
+                  {e.roi != null ? `ROI ${e.roi.toFixed(1)}%` : 'ROI —'}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       <div style={{
         borderRadius: '12px', overflow: 'hidden',
         border: `1px solid ${B.border}`,
@@ -77,50 +174,69 @@ export default function VaultRoster({ entries = [], isMobile, onSelectWallet }) 
         {!isMobile && (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'minmax(120px,1.4fr) 0.9fr 0.7fr 0.7fr 0.8fr 0.7fr 0.9fr',
+            gridTemplateColumns: DESKTOP_COLS,
             gap: '0.5rem', padding: '0.55rem 0.85rem',
             borderBottom: `1px solid ${B.borderSubtle}`,
             background: 'rgba(0,0,0,0.2)',
           }}>
-            {['Wallet', 'Sports P&L', 'ROI', 'Week', 'Pick WR', 'CLV', 'Open'].map((h) => (
+            {['Wallet', 'Sports P&L', 'ROI', 'Vol', 'Week', 'Pick WR', 'CLV', 'Open'].map((h) => (
               <span key={h} style={{ ...T.tiny, color: B.textSubtle }}>{h}</span>
             ))}
           </div>
         )}
         <div style={{ maxHeight: isMobile ? 'none' : '420px', overflowY: 'auto' }}>
           {sorted.map((e, i) => {
+            const w = e.wallet.toLowerCase();
             const picksN = e.picks?.n || 0;
             const picksWr = e.picks?.wr;
             const clvN = e.clvSkill?.n || 0;
             const clvPct = e.clvSkill?.pctPos;
             const week = e.weeklyPnl;
+            const isLive = (e.openInvested || 0) > 0;
+            const isHc = hcWallets.has(w);
+            const isSel = selected === w;
             const tiers = [
               ...(e.confirmedSports || []).map((s) => ({ s, t: 'C' })),
               ...(e.flatSports || []).filter((s) => !(e.confirmedSports || []).includes(s)).map((s) => ({ s, t: 'F' })),
-            ].slice(0, 5);
+            ].slice(0, 4);
 
             return (
               <button
                 key={e.wallet}
                 type="button"
+                ref={(el) => { rowRefs.current[w] = el; }}
                 onClick={() => onSelectWallet?.(e.wallet)}
                 className="sf-fade-in"
                 style={{
                   width: '100%', display: isMobile ? 'flex' : 'grid',
-                  gridTemplateColumns: 'minmax(120px,1.4fr) 0.9fr 0.7fr 0.7fr 0.8fr 0.7fr 0.9fr',
+                  gridTemplateColumns: DESKTOP_COLS,
                   flexDirection: isMobile ? 'column' : undefined,
                   gap: isMobile ? '0.35rem' : '0.5rem',
                   alignItems: isMobile ? 'stretch' : 'center',
                   padding: isMobile ? '0.75rem 0.85rem' : '0.55rem 0.85rem',
                   cursor: 'pointer', textAlign: 'left', color: 'inherit',
-                  background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)',
+                  background: isSel
+                    ? 'rgba(212,175,55,0.10)'
+                    : i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)',
                   border: 'none',
+                  borderLeft: isSel ? `2px solid ${B.gold}` : '2px solid transparent',
                   borderBottom: `1px solid ${B.borderSubtle}`,
                 }}
               >
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ ...T.label, color: B.text, fontWeight: 800 }}>
-                    ***{String(e.wallet || '').slice(-4)}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    {isLive && (
+                      <span style={{
+                        width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
+                        background: B.green, boxShadow: '0 0 6px rgba(16,185,129,0.55)',
+                      }} />
+                    )}
+                    <span style={{ ...T.label, color: B.text, fontWeight: 800 }}>
+                      {e.name || `***${String(e.wallet || '').slice(-4)}`}
+                    </span>
+                    {isHc && (
+                      <span style={{ ...T.tiny, color: B.gold, letterSpacing: '0.04em' }}>HC</span>
+                    )}
                   </div>
                   <div style={{ display: 'flex', gap: '0.2rem', flexWrap: 'wrap', marginTop: '0.15rem' }}>
                     {tiers.map(({ s, t }) => (
@@ -145,11 +261,11 @@ export default function VaultRoster({ entries = [], isMobile, onSelectWallet }) 
                         {signedVol(e.sportPnlTotal)}
                       </span>
                     </span>
-                    <span><span style={{ color: B.textSubtle }}>ROI </span>
-                      {e.roi != null ? `${e.roi.toFixed(1)}%` : '—'}
+                    <span><span style={{ color: B.textSubtle }}>Vol </span>
+                      {(e.vol || 0) > 0 ? fmtVol(e.vol) : '—'}
                     </span>
                     <span><span style={{ color: B.textSubtle }}>Open </span>
-                      {(e.openInvested || 0) > 0 ? fmtVol(e.openInvested) : '—'}
+                      {isLive ? fmtVol(e.openInvested) : '—'}
                     </span>
                   </div>
                 ) : (
@@ -162,6 +278,9 @@ export default function VaultRoster({ entries = [], isMobile, onSelectWallet }) 
                     </span>
                     <span style={{ ...T.label, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
                       {e.roi != null ? `${e.roi.toFixed(1)}%` : '—'}
+                    </span>
+                    <span style={{ ...T.label, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
+                      {(e.vol || 0) > 0 ? fmtVol(e.vol) : '—'}
                     </span>
                     <span style={{
                       ...T.label, fontFeatureSettings: "'tnum'",
@@ -180,7 +299,7 @@ export default function VaultRoster({ entries = [], isMobile, onSelectWallet }) 
                         : '—'}
                     </span>
                     <span style={{ ...T.label, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
-                      {(e.openInvested || 0) > 0
+                      {isLive
                         ? `${fmtVol(e.openInvested)} · ${e.openMarkets || 0}`
                         : '—'}
                     </span>

@@ -20,7 +20,6 @@ import { redirectToCheckout } from '../utils/stripe';
 import AuthModal from '../components/AuthModal';
 import { LivePositionCardView, LockedPositionCardView } from '../components/sharpFlow/cards/PositionCards';
 import { mapLockedPickToCardFixture, mapLiveGameToCardFixture, enrichWallets } from '../components/sharpFlow/cards/mapPositionCard';
-import VaultLiveBoard from '../components/sharpVault/VaultLiveBoard';
 import VaultAlphaField from '../components/sharpVault/VaultAlphaField';
 import VaultRoster from '../components/sharpVault/VaultRoster';
 import VaultWalletDrawer from '../components/sharpVault/VaultWalletDrawer';
@@ -9670,7 +9669,7 @@ export default function SharpFlow() {
         <SharpFlowPaywall isMobile={isMobile} pnlData={allTimePnL} />
       )}
       {viewMode === 'sharpVault' && !isFreeUser && vaultData && (() => {
-        const { entries, combinedPnl, actionPositions, openLegsByWallet } = vaultData;
+        const { entries, combinedPnl, actionPositions, openLegsByWallet = {} } = vaultData;
 
         // Avg ROI over wallets with real volume — avoid diluting with zero-filled gaps.
         const roiSample = entries.filter(e => (e.vol || 0) > 0);
@@ -9735,7 +9734,7 @@ export default function SharpFlow() {
                   marginTop: '1rem', paddingTop: '0.85rem', borderTop: `1px solid ${B.borderSubtle}`,
                 }}>
                   <span style={{ ...T.tiny, color: B.textSubtle, alignSelf: 'center', marginRight: '0.25rem' }}>
-                    Board / Field
+                    Field sport
                   </span>
                   {vaultSports.map((sp) => (
                     <button
@@ -9756,23 +9755,20 @@ export default function SharpFlow() {
               </div>
             </div>
 
-            <VaultLiveBoard
-              actionPositions={actionPositions}
-              sportFilter={vaultSportFilter}
-              isMobile={isMobile}
-              onSelectWallet={setVaultSelectedWallet}
-            />
-
             <VaultAlphaField
               entries={entries}
               actionPositions={actionPositions}
+              openLegsByWallet={openLegsByWallet}
               sportFilter={vaultSportFilter}
+              selectedWallet={vaultSelectedWallet}
               isMobile={isMobile}
               onSelectWallet={setVaultSelectedWallet}
             />
 
             <VaultRoster
               entries={entries}
+              actionPositions={actionPositions}
+              selectedWallet={vaultSelectedWallet}
               isMobile={isMobile}
               onSelectWallet={setVaultSelectedWallet}
             />

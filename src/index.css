@@ -1216,6 +1216,18 @@ p {
   animation: sf-card-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* Sharp Vault — live halo pulse on Alpha Field nodes with open size */
+@keyframes vault-halo-pulse {
+  0%, 100% { stroke-opacity: 0.85; }
+  50% { stroke-opacity: 0.35; }
+}
+.vault-live-halo {
+  animation: vault-halo-pulse 2.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .vault-live-halo { animation: none; }
+}
+
 /* Sharp Tape — trading-floor ticker. Track holds two copies of the
    run; sliding -50% loops seamlessly. Edge mask fades entries in/out. */
 .sf-tape {
