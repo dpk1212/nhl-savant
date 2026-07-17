@@ -256,15 +256,21 @@ function verdict(stats) {
   };
 }
 
-function pickTargets({ prototype, limit }) {
+function pickTargets({ prototype, limit, offset }) {
   const excl = loadJSON('sharp_intel_excluded_wallets.json');
   const ss = loadJSON('sports_sharps.json') || {};
   const wp = loadJSON('whale_profiles.json') || {};
   if (!excl) throw new Error('missing sharp_intel_excluded_wallets.json');
 
+  const force = new Set(
+    ((loadJSON('sharp_intel_force_include.json') || {}).wallets || [])
+      .map((w) => String(w?.addr || '').toLowerCase())
+      .filter(Boolean),
+  );
   const mm = new Set((excl.mmExcluded || []).map((a) => a.toLowerCase()));
   const traders = new Set((excl.tradersExcluded || []).map((a) => a.toLowerCase()));
   const all = new Set((excl.excluded || []).map((a) => a.toLowerCase()));
+  for (const a of force) all.delete(a); // already reinstated — skip in ranked audits
 
   const PROTO = [
     '0x5268527977f700f9bf9b6d5cd843859e4e70135d', // HomeRunHazard TRADER
@@ -318,17 +324,19 @@ function pickTargets({ prototype, limit }) {
     });
   }
   scored.sort((a, b) => b.score - a.score);
-  return scored.slice(0, limit);
+  return scored.slice(offset, offset + limit);
 }
 
 async function main() {
   const prototype = process.argv.includes('--prototype');
   const limit = Number(argVal('--limit', prototype ? 10 : 40));
+  const offset = Number(argVal('--offset', 0));
   const maxClosed = Number(argVal('--max-closed', 400));
+  const outOverride = argVal('--out', null);
 
-  const targets = pickTargets({ prototype, limit });
+  const targets = pickTargets({ prototype, limit, offset });
   console.log(`\nAuditing ${targets.length} excluded wallets via closed-positions API`);
-  console.log(`maxClosed=${maxClosed}  mode=${prototype ? 'prototype' : 'ranked'}\n`);
+  console.log(`maxClosed=${maxClosed}  mode=${prototype ? 'prototype' : 'ranked'} offset=${offset} limit=${limit}\n`);
 
   const results = [];
   for (let i = 0; i < targets.length; i++) {
@@ -375,11 +383,14 @@ async function main() {
   const out = {
     auditedAt: new Date().toISOString(),
     mode: prototype ? 'prototype' : 'ranked',
+    offset,
+    limit,
     maxClosed,
     summary: { wallets: results.length, byVerdict, byRec },
     results,
   };
-  writeFileSync(OUT_PATH, JSON.stringify(out, null, 2), 'utf8');
+  const dest = outOverride ? join(ROOT, outOverride) : OUT_PATH;
+  writeFileSync(dest, JSON.stringify(out, null, 2), 'utf8');
 
   console.log('\n════════════════════════════════════════');
   console.log('SUMMARY');
@@ -400,7 +411,7 @@ async function main() {
       `ROI=${r.roi}%  ${r.why}`
     );
   }
-  console.log(`\nWrote ${OUT_PATH}`);
+  console.log(`\nWrote ${dest}`);
 }
 
 main().catch((e) => {

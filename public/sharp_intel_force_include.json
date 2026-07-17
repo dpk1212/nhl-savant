@@ -1,0 +1,18 @@
+{
+  "updatedAt": "2026-07-17T19:20:00Z",
+  "note": "Wallets that pass closed-positions behavior audit as directional (low both-sides, high hold-to-resolve) but trip mmScore/trader heuristics. Never write these into sharp_intel_excluded_wallets; always scan/merge their sports positions.",
+  "wallets": [
+    {
+      "addr": "0x9c76cdb43fb46454da005fbc82047a64a18ec926",
+      "name": "Bagwell306",
+      "reason": "API audit: 94% hold-to-resolve, 3% both-sides, +138% sample ROI (WNBA/MLB directional)",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0x6a72f61820b26b1fe4d956e17b6dc2a1ea3033ee",
+      "name": "kch123",
+      "reason": "API audit: 79% hold-to-resolve, 4% both-sides, +35% sample ROI (NBA/NHL directional)",
+      "auditedAt": "2026-07-17"
+    }
+  ]
+}

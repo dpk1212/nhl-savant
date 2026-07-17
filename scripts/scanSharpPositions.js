@@ -302,17 +302,35 @@ function loadJSON(filename) {
   try { return JSON.parse(readFileSync(path, 'utf8')); } catch { return null; }
 }
 
+/** Persistent allowlist — directional wallets falsely tagged MM/trader by heuristics. */
+function loadForceIncludeSet() {
+  const doc = loadJSON('sharp_intel_force_include.json');
+  const list = Array.isArray(doc?.wallets) ? doc.wallets : [];
+  return new Set(
+    list.map((w) => String(w?.addr || w || '').toLowerCase()).filter(Boolean),
+  );
+}
+
 /** MM + clear-trader addresses for Sharp Vault (same rules as scan / strip). */
 function writeIntelExcludedWallets(mmAddrs, traderAddrs) {
   const norm = (a) => (a || '').toLowerCase();
-  const mm = [...new Set((mmAddrs || []).map(norm))].filter(Boolean);
-  const tr = [...new Set((traderAddrs || []).map(norm))].filter(Boolean);
+  const force = loadForceIncludeSet();
+  const mm = [...new Set((mmAddrs || []).map(norm))]
+    .filter((a) => a && !force.has(a));
+  const tr = [...new Set((traderAddrs || []).map(norm))]
+    .filter((a) => a && !force.has(a));
   const excluded = [...new Set([...mm, ...tr])];
   const outPath = join(ROOT, 'public', 'sharp_intel_excluded_wallets.json');
   writeFileSync(
     outPath,
     JSON.stringify(
-      { updatedAt: new Date().toISOString(), mmExcluded: mm, tradersExcluded: tr, excluded },
+      {
+        updatedAt: new Date().toISOString(),
+        mmExcluded: mm,
+        tradersExcluded: tr,
+        excluded,
+        forceIncludeSkipped: [...force],
+      },
       null,
       2,
     ),
@@ -597,11 +615,16 @@ async function run() {
   // Existing pipeline: tier + mmScore + sport PnL floor (needed before no-games exit for Vault exclusions)
   const MM_THRESHOLD = 40;
   const SPORT_PNL_FLOOR = -50000;
+  const forceInclude = loadForceIncludeSet();
+  if (forceInclude.size > 0) {
+    console.log(`Force-include allowlist: ${forceInclude.size} wallet(s) exempt from MM/trader exclusion`);
+  }
 
   const allEligible = Object.entries(profiles)
     .filter(([, p]) => TIERS_TO_SCAN.includes(p.tier));
 
   const isExcluded = (p, addr) => {
+    if (forceInclude.has((addr || '').toLowerCase())) return false;
     if ((p.mmScore || 0) > MM_THRESHOLD) return 'mm';
     const lookup = sportPnlLookup[addr];
     if (lookup) {
@@ -625,15 +648,16 @@ async function run() {
 
   // Merge in sport sharps that aren't already in the base list
   // Must have positive sport PnL OR be monthly-qualified to count
-  // NEVER re-introduce wallets that were excluded as MMs
+  // NEVER re-introduce wallets that were excluded as MMs (unless force-included)
   const baseAddrs = new Set(baseWallets.map(w => w.addr));
   const mmAddressSet = new Set(mmFiltered.map(([a]) => (a || '').toLowerCase()));
   let supplementalCount = 0;
   for (const [addr, p] of Object.entries(sportsSharps)) {
     if (addr === '_meta') continue;
     if (baseAddrs.has(addr)) continue;
-    if (mmAddressSet.has((addr || '').toLowerCase())) continue;
-    if ((p.sportPnlTotal || 0) <= 0 && !p.monthlyQualified) continue;
+    const al = (addr || '').toLowerCase();
+    if (mmAddressSet.has(al) && !forceInclude.has(al)) continue;
+    if ((p.sportPnlTotal || 0) <= 0 && !p.monthlyQualified && !forceInclude.has(al)) continue;
     baseWallets.push({ addr, name: p.name, tier: 'SHARP', totalPnl: p.totalPnl, sportPnl: {}, sportPnlTotal: p.sportPnlTotal || 0, mmScore: 0, monthlyQualified: p.monthlyQualified, monthlyPnl: p.monthlyPnl });
     supplementalCount++;
   }
@@ -642,6 +666,7 @@ async function run() {
 
   /** Clear-trader / arb-style heuristic (must match strip logic below). */
   const buildTraderVerdict = (addr, bothSidesMap) => {
+    if (forceInclude.has((addr || '').toLowerCase())) return false;
     const w = sportsSharpsLower[(addr || '').toLowerCase()] || {};
     let score = 0;
     const vol = w.vol || 0;
