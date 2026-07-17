@@ -9507,7 +9507,7 @@ export default function SharpFlow() {
               ...T.micro, fontWeight: 900, letterSpacing: '0.12em',
               color: B.gold, fontSize: '0.6rem',
             }}>
-              NEW HERE? HOW SHARP FLOW WORKS
+              HOW THIS WORKS
             </span>
             <button
               onClick={dismissOrientation}
@@ -9528,20 +9528,20 @@ export default function SharpFlow() {
             {[
               {
                 n: '1',
-                head: 'We track proven winners\u2019 real money',
-                sub: '200+ verified profitable bettors, positions refreshed 4\u00d7 a day',
+                head: 'We don\u2019t handicap. We follow money.',
+                sub: '200+ wallets with winning records, tracked bet by bet.',
               },
               {
                 n: '2',
-                head: 'When they pound one side, we lock a pick',
-                sub: 'Exact side, odds, and bet size \u2014 frozen 15 min before start',
+                head: 'Enough winners on one side, it locks.',
+                sub: 'You get the side, the price, and the size. Frozen 15 min before tip.',
               },
               {
                 n: '3',
                 head: orientationProof.ready
-                  ? `Graded in public: ${orientationProof.record}, ${orientationProof.profit >= 0 ? '+' : ''}${orientationProof.profit.toFixed(1)}u in ${orientationProof.daysLive} days`
-                  : 'Every pick graded in public',
-                sub: 'Auto-graded nightly \u2014 losses included, nothing deleted',
+                  ? `${orientationProof.record}. ${orientationProof.profit >= 0 ? '+' : ''}${orientationProof.profit.toFixed(1)}u in ${orientationProof.daysLive} days.`
+                  : 'Every pick graded overnight.',
+                sub: 'Every grade is public. Losses stay up.',
               },
             ].map((s) => (
               <div key={s.n} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.55rem' }}>
@@ -14793,7 +14793,7 @@ function PageHeader({ sportFilter, setSportFilter, viewMode, setViewMode, isMobi
             Sharp Flow
           </h1>
           <p style={{ ...T.label, color: B.textSec, margin: '0.375rem 0 0 0' }}>
-            Follow the real money of proven sharp bettors — every pick graded in public
+            We follow winning bettors&rsquo; money. Every result posted, losses included.
           </p>
         </div>
         <div style={{

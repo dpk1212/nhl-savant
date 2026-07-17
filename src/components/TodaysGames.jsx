@@ -3276,7 +3276,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
               lineHeight: 1.3,
               marginTop: '1px',
             }}>
-              Every pick graded in public — wins and losses included
+              Every result posted. Losses stay up.
             </div>
           </div>
           <button
