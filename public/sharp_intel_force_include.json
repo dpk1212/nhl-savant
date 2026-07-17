@@ -1,6 +1,6 @@
 {
-  "updatedAt": "2026-07-17T19:40:00Z",
-  "note": "Directional wallets falsely tagged MM/trader. Primary gate: closed-positions both-sides rate on sports markets (conditionId with ≥2 outcomes). Hold-to-resolve is secondary — nearly all closed sports legs eventually settle. Never write these into sharp_intel_excluded_wallets. Batch3 reinstates were hardened with fuller history (maxClosed 1500) after sport-classifier gaps undercounted both-sides on some names.",
+  "updatedAt": "2026-07-17T19:50:00Z",
+  "note": "Directional wallets falsely tagged MM/trader. Primary gate: closed-positions both-sides rate on sports markets (conditionId with ≥2 outcomes). Hold-to-resolve is secondary — nearly all closed sports legs eventually settle. Never write these into sharp_intel_excluded_wallets. Batch3/4 reinstates hardened with fuller history (maxClosed 1500–2000) and broad sport filter after classifier gaps undercounted both-sides on some names.",
   "wallets": [
     {
       "addr": "0x9c76cdb43fb46454da005fbc82047a64a18ec926",
@@ -78,6 +78,54 @@
       "addr": "0xf5f232033c51448e17ced9f2ff7c91b78b620234",
       "name": "GP18",
       "reason": "Batch3 hardened: both-sides ~1-2% fuller history, directional ROI ~2-6%",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0xe5efd6543002653b2eef940d8254911862ad9e7a",
+      "name": "0xE5ef…9e7A",
+      "reason": "Batch4 recheck: both 0.6%, game 290-230 ROI ~91% via sizing; strong WNBA",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0xd38ad20037839959d89165cf448568d584b28d26",
+      "name": "johnny234",
+      "reason": "Batch4 recheck: both 1.1%, game 138-28 ROI ~58%, both time-halves green",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0x1bc0d88ca86b9049cf05d642e634836d5ddf4429",
+      "name": "212121212121212121212",
+      "reason": "Batch4 recheck: both 2%, NBA-heavy game ROI ~79%",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0xa974826f82380f9bb3d5b9c722c50f82fb1aef79",
+      "name": "tmoneeey",
+      "reason": "Batch4 recheck: both 1.1%, game 227-46 ROI ~62%, MLB/WNBA",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0x2c57db9e442ef5ffb2651f03afd551171738c94d",
+      "name": "ZerOptimist",
+      "reason": "Batch4 recheck: both 2.5%, game 201-40 ROI ~39%",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0x5d58e38cd0a7e6f5fa67b7f9c2f70dd70df09a15",
+      "name": "Dhdhsjsj",
+      "reason": "Batch4 recheck: both 2.5%; tennis-heavy but non-tennis still ~41% ROI",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0x161a7f666ca49d592848cf415b42f49a84714103",
+      "name": "torta.tech",
+      "reason": "Batch4 recheck: both 2.8%, game-day directional (anomalous WR/Under specialist; short hot window)",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0x777d9f00c2b4f7b829c9de0049ca3e707db05143",
+      "name": "05143",
+      "reason": "Batch4 recheck: both 1.1%, overall game ROI ~29% (recent hot / older half negative)",
       "auditedAt": "2026-07-17"
     }
   ]
