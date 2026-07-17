@@ -9045,6 +9045,21 @@ export default function SharpFlow() {
     };
   }, [allTimePnL]);
 
+  // First-visit orientation strip for free users — replaced the interrupt
+  // quiz (2026-07). Compresses "what is this / why trust it" into one glance
+  // without blocking the board. Dismissal persists in localStorage.
+  const [orientationDismissed, setOrientationDismissed] = useState(() => {
+    try { return localStorage.getItem('sf_orientation_dismissed_v1') === 'true'; } catch { return true; }
+  });
+  const dismissOrientation = useCallback(() => {
+    setOrientationDismissed(true);
+    try { localStorage.setItem('sf_orientation_dismissed_v1', 'true'); } catch { /* private mode */ }
+  }, []);
+  const orientationProof = useMemo(
+    () => computeV12EraStats(allTimePnL?.picks || []),
+    [allTimePnL]
+  );
+
 
   const onPickSynced = useCallback((docId, side, snap, meta, action) => {
     setLockedPicks(prev => {
@@ -9473,6 +9488,91 @@ export default function SharpFlow() {
           z-index below content; honors prefers-reduced-motion via CSS. */}
       <div className="sf-aurora" aria-hidden="true" />
       <PageHeader sportFilter={sportFilter} setSportFilter={setSportFilter} viewMode={viewMode} setViewMode={setViewMode} isMobile={isMobile} />
+
+      {/* ─── Orientation strip — free users, dismissible ───
+          Layer-1 onboarding: answers "what is this and why trust it" in one
+          glance, right where a first-timer's eyes land. The free card below
+          is layer 2 (learn by touching one real game); the paywall closes. */}
+      {isFreeUser && !orientationDismissed && (
+        <div style={{
+          display: 'flex', flexDirection: 'column',
+          background: 'linear-gradient(135deg, rgba(212,175,55,0.07), rgba(15,23,42,0.6))',
+          border: '1px solid rgba(212,175,55,0.22)',
+          borderRadius: '12px',
+          padding: isMobile ? '0.75rem 0.875rem' : '0.875rem 1.125rem',
+          marginBottom: '1.25rem',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.55rem' }}>
+            <span style={{
+              ...T.micro, fontWeight: 900, letterSpacing: '0.12em',
+              color: B.gold, fontSize: '0.6rem',
+            }}>
+              NEW HERE? HOW SHARP FLOW WORKS
+            </span>
+            <button
+              onClick={dismissOrientation}
+              aria-label="Dismiss"
+              style={{
+                background: 'none', border: 'none', color: B.textMuted,
+                fontSize: '1rem', lineHeight: 1, cursor: 'pointer', padding: '0.1rem 0.2rem',
+              }}
+            >
+              ×
+            </button>
+          </div>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+            gap: isMobile ? '0.5rem' : '1rem',
+          }}>
+            {[
+              {
+                n: '1',
+                head: 'We track proven winners\u2019 real money',
+                sub: '200+ verified profitable bettors, positions refreshed 4\u00d7 a day',
+              },
+              {
+                n: '2',
+                head: 'When they pound one side, we lock a pick',
+                sub: 'Exact side, odds, and bet size \u2014 frozen 15 min before start',
+              },
+              {
+                n: '3',
+                head: orientationProof.ready
+                  ? `Graded in public: ${orientationProof.record}, ${orientationProof.profit >= 0 ? '+' : ''}${orientationProof.profit.toFixed(1)}u in ${orientationProof.daysLive} days`
+                  : 'Every pick graded in public',
+                sub: 'Auto-graded nightly \u2014 losses included, nothing deleted',
+              },
+            ].map((s) => (
+              <div key={s.n} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.55rem' }}>
+                <span style={{
+                  flexShrink: 0,
+                  width: '18px', height: '18px', borderRadius: '50%',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.35)',
+                  color: B.gold, fontSize: '0.62rem', fontWeight: 900, marginTop: '0.05rem',
+                }}>
+                  {s.n}
+                </span>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{
+                    fontSize: isMobile ? '0.78rem' : '0.8rem', fontWeight: 700,
+                    color: B.text, lineHeight: 1.35,
+                  }}>
+                    {s.head}
+                  </div>
+                  <div style={{
+                    fontSize: isMobile ? '0.68rem' : '0.7rem',
+                    color: B.textMuted, lineHeight: 1.4, marginTop: '1px',
+                  }}>
+                    {s.sub}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ─── Sharp Vault View ─── */}
       {viewMode === 'sharpVault' && isFreeUser && (
@@ -14693,7 +14793,7 @@ function PageHeader({ sportFilter, setSportFilter, viewMode, setViewMode, isMobi
             Sharp Flow
           </h1>
           <p style={{ ...T.label, color: B.textSec, margin: '0.375rem 0 0 0' }}>
-            Real-time market intelligence across prediction markets
+            Follow the real money of proven sharp bettors — every pick graded in public
           </p>
         </div>
         <div style={{
