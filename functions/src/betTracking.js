@@ -85,18 +85,35 @@ function resolveWNBATeam(raw) {
       .replace(/\s*\((?:w|women|wnba)\)\s*$/i, "")
       .replace(/^wnba\s*:\s*/i, "")
       .trim();
+  // Hard reject non-basketball titles (por∈esports / min∈gaming false matches).
+  if (/\b(esports?|dota|csgo|counter[\s-]?strike|valorant|lol|league\s+of\s+legends|gaming)\b/i.test(cleaned)) {
+    return null;
+  }
   const n = normalizeWNBAName(cleaned);
+  if (!n) return null;
   if (WNBA_NAME_TO_CODE[n]) return WNBA_NAME_TO_CODE[n];
+  // Prefix or long-alias contains only — never short substring includes.
   let best = null;
   let bestLen = 0;
   for (const [alias, code] of Object.entries(WNBA_NAME_TO_CODE)) {
     if (alias.length < 3) continue;
-    if ((n === alias || n.startsWith(alias) || n.includes(alias)) && alias.length > bestLen) {
+    const prefixHit = n === alias || n.startsWith(alias);
+    const longContains = alias.length >= 6 && n.includes(alias);
+    if ((prefixHit || longContains) && alias.length > bestLen) {
       best = code;
       bestLen = alias.length;
     }
   }
-  return best;
+  if (best) return best;
+  const words = cleaned
+      .replace(/([a-z])([A-Z])/g, "$1 $2")
+      .split(/[\s/_.,\-]+/)
+      .filter(Boolean);
+  for (const w of words) {
+    const wn = normalizeWNBAName(w);
+    if (wn.length >= 3 && WNBA_NAME_TO_CODE[wn]) return WNBA_NAME_TO_CODE[wn];
+  }
+  return null;
 }
 
 function wnbaTeamsMatch(rawA, rawB) {

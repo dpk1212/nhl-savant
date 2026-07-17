@@ -55,8 +55,13 @@ for (const { code, names } of WNBA_TEAMS) WNBA_CODE_TO_NAME[code] = names[0];
 
 /**
  * Resolve a raw team string to a WNBA code, or null.
- * Exact normalized match first, then longest-prefix / word fallback for
- * "Las Vegas Aces" style titles. Never returns an NBA code.
+ * Exact normalized match first, then longest safe prefix / whole-word
+ * fallback for "Las Vegas Aces" / "PortlandFire" style titles.
+ *
+ * Never use bare substring includes on short aliases — `por` matches
+ * inside "esports" and `min` inside "gaming", which polluted WNBA
+ * game keys with Dota/Esports World Cup positions (2026-07).
+ * Never returns an NBA code.
  */
 export function resolveWNBATeam(raw) {
   if (!raw) return null;
@@ -64,23 +69,37 @@ export function resolveWNBATeam(raw) {
     .replace(/\s*\((?:w|women|wnba)\)\s*$/i, '')
     .replace(/^wnba\s*:\s*/i, '')
     .trim();
+  // Hard reject non-basketball titles that used to false-match short codes.
+  if (/\b(esports?|dota|csgo|counter[\s-]?strike|valorant|lol|league\s+of\s+legends|gaming)\b/i.test(cleaned)) {
+    return null;
+  }
   const n = normalizeWNBAName(cleaned);
+  if (!n) return null;
   if (WNBA_NAME_TO_CODE[n]) return WNBA_NAME_TO_CODE[n];
 
-  // Longest alias that is a prefix or contained as a whole phrase
+  // Longest alias that is an exact match or a PREFIX of the full string.
+  // Substring includes only for long aliases (≥6) so "minnesota"/"portland"
+  // still hit inside glued names, but "por"/"min"/"sea" cannot.
   let best = null;
   let bestLen = 0;
   for (const [alias, code] of Object.entries(WNBA_NAME_TO_CODE)) {
     if (alias.length < 3) continue;
-    if ((n === alias || n.startsWith(alias) || n.includes(alias)) && alias.length > bestLen) {
+    const prefixHit = n === alias || n.startsWith(alias);
+    const longContains = alias.length >= 6 && n.includes(alias);
+    if ((prefixHit || longContains) && alias.length > bestLen) {
       best = code;
       bestLen = alias.length;
     }
   }
   if (best) return best;
 
-  // Word fallback for short nicknames (Fever, Lynx, …)
-  for (const w of cleaned.split(/\s+/)) {
+  // Whole-word fallback for short nicknames (Fever, Lynx, Aces, …).
+  // Split on spaces AND camelCase / glued boundaries ("PortlandFire").
+  const words = cleaned
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .split(/[\s/_.,\-]+/)
+    .filter(Boolean);
+  for (const w of words) {
     const wn = normalizeWNBAName(w);
     if (wn.length >= 3 && WNBA_NAME_TO_CODE[wn]) return WNBA_NAME_TO_CODE[wn];
   }

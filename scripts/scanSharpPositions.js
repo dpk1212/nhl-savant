@@ -650,7 +650,7 @@ async function run() {
     const marketsTraded = w.marketsTraded || 0;
     const sportROI = w.sportROI || 0;
     const sportWinRate = w.sportWinRate;
-    const bs = bothSidesMap[addr] || 0;
+    const bs = bothSidesMap[addr] || bothSidesMap[(addr || '').toLowerCase()] || 0;
 
     const ratio = vol > 0 && sportPnl > 0 ? vol / sportPnl : 0;
     if (ratio > 200) score += 30; else if (ratio > 100) score += 20;
@@ -663,7 +663,17 @@ async function run() {
     if (bs >= 3) score += 20; else if (bs >= 2) score += 15;
     if (sportWinRate != null && sportWinRate < 5 && sportBets > 50) score += 15;
 
-    const isProfitableSharp = sportPnl > 10000 && sportROI > 10 && bs < 2;
+    // Protect genuine directional sharps. Aggregate sportROI can be diluted
+    // by high-volume grinding in one sport while the wallet is a monster in
+    // another (e.g. HomeRunHazard: overall ROI 0.8% but WNBA +85% / +$2M).
+    // Accept either the overall book or any single-sport book that clears
+    // the bar with a meaningful sample.
+    const strongSportBook = Object.values(w.perSport || {}).some((s) =>
+      (s?.pnl || 0) > 10000 && (s?.roi || 0) > 10 && (s?.bets || 0) >= 20
+    );
+    const isProfitableSharp = bs < 2 && (
+      (sportPnl > 10000 && sportROI > 10) || strongSportBook
+    );
     return score >= 35 && !isProfitableSharp;
   };
 
