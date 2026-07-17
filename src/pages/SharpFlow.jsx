@@ -1012,6 +1012,29 @@ function computeV12EraStats(picks) {
   };
 }
 
+// Recent-window stats for the paywall FOMO strip — same gates as
+// computeV12EraStats but restricted to the trailing N days. Only shown
+// when the window is profitable (we lead with the strongest true stat).
+function computeRecentWindowStats(picks, daysBack = 7) {
+  if (!Array.isArray(picks) || picks.length === 0) return { ready: false };
+  const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  const cutoffMs = new Date(todayStr + 'T12:00:00').getTime() - daysBack * 86400000;
+  const cutoff = new Date(cutoffMs).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  const graded = picks.filter(p =>
+    p && p.date && !p.cancelled && p.date >= V12_LAUNCH && p.date >= cutoff && !p.tracked && p.outcome && resolveAgsuTier(p)
+  );
+  let w = 0, l = 0, pu = 0, profit = 0;
+  for (const p of graded) {
+    profit += (p.profit || 0);
+    if (p.outcome === 'WIN') w++;
+    else if (p.outcome === 'LOSS') l++;
+    else if (p.outcome === 'PUSH') pu++;
+  }
+  const total = w + l + pu;
+  if (total < 3) return { ready: false };
+  return { ready: true, w, l, pu, total, profit, record: `${w}-${l}${pu ? `-${pu}` : ''}` };
+}
+
 // Sharp Flow paywall — limited-time promo (mirrors Pricing.jsx PROMO_CODES.SUMMER).
 const PAYWALL_PROMO = {
   code: 'SUMMER',
@@ -1035,6 +1058,7 @@ const PAYWALL_PLANS = [
     billFull: 'billed $150/yr', billPromo: 'billed $100.50/yr',
     chargeFull: '$150/yr', chargePromo: '$100.50/yr',
     sub: 'Under 3 coffees a month, all season',
+    winMath: 'One 1u win (+$91 at $100/unit) covers 90% of your entire year',
   },
   {
     id: 'elite',
@@ -1046,6 +1070,7 @@ const PAYWALL_PLANS = [
     billFull: null, billPromo: null,
     chargeFull: '$25.99/mo', chargePromo: '$17.41/mo',
     sub: 'Less than one coffee a day',
+    winMath: 'One 1u win (+$91 at $100/unit) covers your next 5 months',
   },
   {
     id: 'scout',
@@ -1057,6 +1082,7 @@ const PAYWALL_PLANS = [
     billFull: null, billPromo: null,
     chargeFull: '$7.99/wk', chargePromo: '$5.35/wk',
     sub: 'One coffee a week to follow the sharps',
+    winMath: 'One 1u win (+$91 at $100/unit) covers 4 months of access',
   },
 ];
 //
@@ -13803,6 +13829,9 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
   const promoActive = remaining > 0;
 
   const v12Proof = computeV12EraStats(pnlData?.picks || []);
+  // Hot-streak strip: trailing 7 days, only shown when profitable.
+  const recent7 = computeRecentWindowStats(pnlData?.picks || [], 7);
+  const showHotStreak = recent7.ready && recent7.profit > 0;
 
   // Features rewritten as proof-backed bullets. Numbers come straight
   // from v12Proof when available, fall back to neutral copy otherwise.
@@ -13846,7 +13875,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
           letterSpacing: '0.06em',
         }}>
           <span style={{ fontSize: '0.72rem', fontWeight: 900, color: '#0B1120', textTransform: 'uppercase' }}>
-            {promoLabel.toUpperCase()} · 33% OFF FOR LIFE
+            {promoLabel.toUpperCase()} · 33% OFF FOR LIFE · ENDS JULY 27
           </span>
         </div>
       )}
@@ -14086,20 +14115,20 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
             color: B.text, margin: '0 0 0.55rem 0', letterSpacing: '-0.02em', lineHeight: 1.2,
           }}>
             {lockedCount
-              ? <><span style={{ color: B.gold }}>{lockedCount} more game{lockedCount !== 1 ? 's' : ''}</span> locked behind Sharp Flow</>
-              : <>Unlock the <span style={{
+              ? <><span style={{ color: B.gold }}>{lockedCount} lock{lockedCount !== 1 ? 's are' : ' is'} live right now</span> — and you can't see {lockedCount !== 1 ? 'them' : 'it'}</>
+              : <>You've seen the results.<br />Now get the <span style={{
                   display: 'inline-block',
                   color: B.gold,
                   backgroundImage: `linear-gradient(135deg, ${B.gold} 0%, ${B.goldHover} 100%)`,
                   WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-                }}>live signal</span></>}
+                }}>picks</span>.</>}
           </h2>
           <p style={{
             ...T.body, color: B.textSec, margin: '0 auto', maxWidth: '540px', lineHeight: 1.7,
           }}>
             {v12Proof.ready
-              ? <>The numbers above are <span style={{ color: B.text, fontWeight: 700 }}>real picks</span>, auto-graded every night
-                  against closing lines. Sharp Flow surfaces the same locks in real time — sized, tagged, and ready to bet.</>
+              ? <>Every number above is a <span style={{ color: B.text, fontWeight: 700 }}>real pick, graded in public</span> — we can't
+                  hide a loss. Members get the same locks in real time, sized and tagged before the market moves.</>
               : <>We track <span style={{ color: B.text, fontWeight: 700 }}>200+ verified sharp bettors</span>, score every pick by conviction,
                   and auto-size the locks. Every result is graded the same way the dashboard above shows it.</>}
           </p>
@@ -14193,6 +14222,26 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Hot-streak FOMO strip — real trailing-7-day results, loss-framed:
+              these wins already happened and the reader wasn't on them. */}
+          {showHotStreak && (
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+              flexWrap: 'wrap', textAlign: 'center',
+              marginBottom: '1rem', padding: '0.55rem 0.75rem', borderRadius: '9px',
+              background: 'linear-gradient(135deg, rgba(16,185,129,0.14) 0%, rgba(16,185,129,0.04) 100%)',
+              border: '1px solid rgba(16,185,129,0.35)',
+            }}>
+              <Flame size={13} color={B.green} />
+              <span style={{ fontSize: '0.72rem', fontWeight: 800, color: B.text, letterSpacing: '0.02em', fontFeatureSettings: "'tnum'" }}>
+                LAST 7 DAYS: <span style={{ color: B.green }}>{recent7.record} · +{recent7.profit.toFixed(1)}u</span>
+              </span>
+              <span style={{ ...T.micro, color: B.textSec, fontSize: '0.64rem' }}>
+                — every one hit members' dashboards before lock
+              </span>
             </div>
           )}
 
@@ -14311,7 +14360,44 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
             const charge = promoActive ? plan.chargePromo : plan.chargeFull;
             return (
               <>
-                <div style={{ textAlign: 'center', marginBottom: '0.8rem' }}>
+                {/* Trial timeline — kills "what if I forget to cancel" anxiety */}
+                <div style={{
+                  display: 'flex', flexDirection: 'column', gap: 0,
+                  margin: '0 auto 1rem', maxWidth: '400px',
+                  padding: '0.8rem 1rem', borderRadius: '10px',
+                  background: 'rgba(255,255,255,0.02)',
+                  border: `1px solid ${B.borderSubtle}`,
+                }}>
+                  {[
+                    { day: 'TODAY', text: 'Full access — every lock, every sport, $0 due', active: true },
+                    { day: `DAYS 1–${plan.trialDays}`, text: 'Bet alongside the locks. Not winning? Cancel in 2 clicks', active: false },
+                    { day: `DAY ${plan.trialDays}`, text: `First charge (${charge}) — only if you stay`, active: false },
+                  ].map((step, i, arr) => (
+                    <div key={step.day} style={{ display: 'flex', gap: '0.7rem', alignItems: 'stretch' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '12px', flexShrink: 0 }}>
+                        <span style={{
+                          width: '9px', height: '9px', borderRadius: '50%', marginTop: '3px', flexShrink: 0,
+                          background: step.active ? B.green : 'transparent',
+                          border: step.active ? 'none' : `1.5px solid ${B.textMuted}`,
+                          boxShadow: step.active ? `0 0 8px ${B.green}` : 'none',
+                        }} />
+                        {i < arr.length - 1 && (
+                          <span style={{ width: '1.5px', flex: 1, minHeight: '10px', background: B.borderSubtle, margin: '2px 0' }} />
+                        )}
+                      </div>
+                      <div style={{ paddingBottom: i < arr.length - 1 ? '0.55rem' : 0, minWidth: 0 }}>
+                        <span style={{ ...T.micro, color: step.active ? B.green : B.gold, fontWeight: 900, letterSpacing: '0.08em', fontSize: '0.56rem' }}>
+                          {step.day}
+                        </span>
+                        <span style={{ display: 'block', fontSize: '0.72rem', color: step.active ? B.text : B.textSec, fontWeight: step.active ? 700 : 500, lineHeight: 1.4, marginTop: '0.1rem' }}>
+                          {step.text}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ textAlign: 'center', marginBottom: '0.45rem' }}>
                   <span style={{ fontSize: '0.78rem', color: B.textSec, fontWeight: 600 }}>
                     <span style={{ color: B.text, fontWeight: 800 }}>{plan.trialDays} days free</span>
                     {', then '}
@@ -14326,6 +14412,13 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
                         <span style={{ color: B.green, fontWeight: 800 }}> locks 33% off for life</span>
                       </>
                     )}
+                  </span>
+                </div>
+
+                {/* One-win math — reframes the price against a single graded win */}
+                <div style={{ textAlign: 'center', marginBottom: '0.85rem' }}>
+                  <span style={{ ...T.micro, color: B.gold, fontSize: '0.64rem', fontWeight: 700, letterSpacing: '0.02em' }}>
+                    {plan.winMath}
                   </span>
                 </div>
 
@@ -14375,16 +14468,20 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
             display: 'flex', justifyContent: 'center', gap: '1.1rem',
             marginTop: '0.85rem', flexWrap: 'wrap',
           }}>
-            <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.62rem' }}>✓ No payment due today</span>
-            <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.62rem' }}>✓ Cancel anytime</span>
-            <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.62rem' }}>✓ Auto-graded results</span>
+            <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.62rem' }}>✓ $0 due today</span>
+            <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.62rem' }}>✓ Cancel in 2 clicks</span>
+            <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.62rem' }}>✓ 7-day money-back guarantee</span>
           </div>
 
-          {/* Fallback: full pricing page */}
-          <div style={{ textAlign: 'center', marginTop: '0.7rem' }}>
+          {/* Objection killers + fallback pricing link */}
+          <div style={{ textAlign: 'center', marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: `1px solid ${B.borderSubtle}` }}>
+            <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem', lineHeight: 1.7, maxWidth: '380px', margin: '0 auto' }}>
+              Results are auto-graded nightly against closing lines — we can't edit a loss.
+              Google sign-in takes 10 seconds. Cancel from your account page, no emails, no calls.
+            </div>
             <a
               href={promoActive ? `#/pricing?promo=${promoCode}` : '#/pricing'}
-              style={{ ...T.micro, color: B.textMuted, fontSize: '0.62rem', textDecoration: 'underline', textUnderlineOffset: '2px' }}
+              style={{ ...T.micro, color: B.textMuted, fontSize: '0.62rem', textDecoration: 'underline', textUnderlineOffset: '2px', display: 'inline-block', marginTop: '0.5rem' }}
             >
               Compare all plans
             </a>
