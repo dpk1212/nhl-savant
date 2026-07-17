@@ -29,6 +29,11 @@ const safeLogEvent = (eventName, params = {}) => {
   }
 };
 
+/**
+ * Generic event tracker for one-off funnel events.
+ */
+export const trackEvent = (eventName, params = {}) => safeLogEvent(eventName, params);
+
 // ============================================================================
 // PAGE TRACKING
 // ============================================================================
@@ -38,10 +43,15 @@ const safeLogEvent = (eventName, params = {}) => {
  * Automatically called when user navigates to a new page
  */
 export const trackPageView = (pageName, additionalParams = {}) => {
+  // HashRouter: the real route lives in the hash (nhlsavant.com/#/pricing),
+  // so window.location.pathname is always "/" and GA4's pagePath dimension
+  // collapses every page into one row. Send a synthetic page_location with
+  // the hash route promoted to a path so GA reports per-page traffic.
+  const hashPath = (window.location.hash || '').replace(/^#/, '') || '/';
   safeLogEvent('page_view', {
     page_title: pageName,
-    page_location: window.location.href,
-    page_path: window.location.pathname,
+    page_location: window.location.origin + hashPath,
+    page_path: hashPath,
     ...additionalParams
   });
 };
@@ -345,7 +355,15 @@ export const trackBetsLoaded = (gamesCount, betsWithEV) => {
  */
 export const getPageName = (pathname) => {
   const routes = {
-    '/': 'Today\'s Games',
+    '/': 'Sharp Flow',
+    '/sharp-flow': 'Sharp Flow',
+    '/todays-games': 'Today\'s Games',
+    '/pricing': 'Pricing',
+    '/account': 'Account',
+    '/my-picks': 'My Picks',
+    '/mlb': 'MLB',
+    '/basketball': 'Basketball',
+    '/faq': 'FAQ',
     '/dashboard': 'Analytics Dashboard',
     '/performance': 'Performance Dashboard',
     '/methodology': 'Methodology',

@@ -13,6 +13,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import { resolveOutcomeSide } from '../utils/teamNameMapper';
 import { collection, doc, setDoc, getDoc, getDocs, query, where, orderBy, deleteField } from 'firebase/firestore';
 import { db } from '../firebase/config';
+import { trackEvent } from '../utils/analytics';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
 import { redirectToCheckout } from '../utils/stripe';
@@ -13947,8 +13948,10 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
     return () => clearInterval(id);
   }, []);
 
+  // Runs on desktop too (not just mobile) so paywall_viewed captures every
+  // device; the sticky CTA below still gates on isMobile separately.
   useEffect(() => {
-    if (!isMobile || !paywallRef.current) return;
+    if (!paywallRef.current) return;
     const obs = new IntersectionObserver(
       ([e]) => { if (e.isIntersecting) setPaywallSeen(true); },
       { threshold: 0.1 }
@@ -13956,6 +13959,10 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
     obs.observe(paywallRef.current);
     return () => obs.disconnect();
   }, [isMobile]);
+
+  useEffect(() => {
+    if (paywallSeen) trackEvent('paywall_viewed', { locked_count: lockedCount || 0 });
+  }, [paywallSeen, lockedCount]);
 
   useEffect(() => {
     if (!isMobile || !ctaRef.current) return;
@@ -14481,7 +14488,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
               return (
                 <button
                   key={plan.id}
-                  onClick={() => setSelectedPlan(plan.id)}
+                  onClick={() => { setSelectedPlan(plan.id); trackEvent('plan_selected', { plan: plan.id }); }}
                   style={{
                     display: 'flex', alignItems: 'center', gap: isMobile ? '0.7rem' : '0.85rem',
                     width: '100%', textAlign: 'left', cursor: 'pointer',

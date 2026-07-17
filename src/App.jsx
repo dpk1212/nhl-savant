@@ -1,7 +1,7 @@
 import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import Papa from 'papaparse';
-import { trackPageView, trackEngagement, trackFirstVisit, getPageName } from './utils/analytics';
+import { trackPageView, trackEngagement, trackFirstVisit, trackEvent, getPageName } from './utils/analytics';
 import { loadNHLData, loadOddsFiles, loadStartingGoalies, loadGoaliesCSV } from './utils/dataProcessing';
 import { GoalieProcessor } from './utils/goalieProcessor';
 import { ScheduleHelper } from './utils/scheduleHelper';
@@ -73,6 +73,7 @@ function App() {
     if (checkoutParam === 'success') {
       console.log('🎉 Checkout success detected!');
       setCheckoutSuccess(true);
+      trackEvent('trial_started');
       
       // Clean up URL
       const url = new URL(window.location.href);

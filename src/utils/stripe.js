@@ -1,5 +1,6 @@
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../firebase/config';
+import { trackEvent } from './analytics';
 
 /**
  * Redirect to Stripe Checkout via Cloud Function
@@ -22,6 +23,14 @@ export async function redirectToCheckout(tier, user) {
 
   try {
     console.log('Creating checkout session for tier:', tier);
+    // GA4 recommended event — single choke point covering every checkout
+    // entry (Sharp Flow paywall, Pricing page, post-auth continuation).
+    trackEvent('begin_checkout', {
+      currency: 'USD',
+      value: PRICING[tier].price,
+      items: [{ item_id: tier, item_name: PRICING[tier].name }],
+      trial_days: PRICING[tier].trialDays,
+    });
     const createCheckoutSession = httpsCallable(functions, 'createCheckoutSession');
     const result = await createCheckoutSession({ tier });
 
