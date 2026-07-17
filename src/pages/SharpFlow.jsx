@@ -12581,7 +12581,25 @@ export default function SharpFlow() {
                         return <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} onHealthSynced={onHealthSynced} isMyPick={!!userPicks[gd.key]} onToggleMyPick={onToggleMyPick} canPickGames={!!(user && isPremium)} gameFlowMap={gameFlowMap} spreadPositions={spreadPositions} totalPositions={totalPositions} originalLockedSide={gdOriginalSide} originalLockStars={gdLockStars} originalLockWPS={gdLockWPS} originalFlipBeatThreshold={gdFlipBeatThreshold} originalSpreadLockStars={gdSpreadLockStars} originalSpreadLockWPS={gdSpreadLockWPS} originalTotalLockStars={gdTotalLockStars} originalTotalLockWPS={gdTotalLockWPS} v8Norm={v8Norm} walletProfiles={walletProfiles} mlCronTier={gdMlCronTier} mlCronUnits={gdMlCronUnits} mlCronStakeTier={gdMlCronStakeTier} mlCronStamps={gdMlCronStamps} spreadCronTier={gdSpreadCronTier} spreadCronUnits={gdSpreadCronUnits} spreadCronStakeTier={gdSpreadCronStakeTier} totalCronTier={gdTotalCronTier} totalCronUnits={gdTotalCronUnits} totalCronStakeTier={gdTotalCronStakeTier} tierWindows={displayTierWindows} />;
                       })}
                     </div>
-                    {isFreeUser && <SharpFlowPaywall isMobile={isMobile} lockedCount={allPosGames.length > 1 ? allPosGames.length - 1 : 0} pnlData={allTimePnL} />}
+                    {isFreeUser && (() => {
+                      // Teaser payload: the games hidden behind the wall,
+                      // matchup passed raw (the paywall blurs it) plus the
+                      // cron-stamped tier/units when a side is truly LOCKED.
+                      const hiddenGames = allPosGames.slice(1);
+                      const teaserGames = hiddenGames.map((gd) => {
+                        const doc = lockedPicks[`${todayET()}_${gd.sport}_${gd.key}`];
+                        const sd = doc ? Object.values(doc.sides || {}).find(s => s
+                          && s.lockStage === 'LOCKED' && !s.superseded
+                          && Number.isFinite(s.finalUnits) && s.finalUnits > 0) : null;
+                        return {
+                          sport: gd.sport,
+                          matchup: String(gd.key).replace(/[_-]+/g, ' @ '),
+                          units: sd?.finalUnits ?? null,
+                          tier: (typeof sd?.v8_agsV12Tier === 'string' && sd.v8_agsV12Tier !== 'UNKNOWN') ? sd.v8_agsV12Tier : null,
+                        };
+                      });
+                      return <SharpFlowPaywall isMobile={isMobile} lockedCount={hiddenGames.length} pnlData={allTimePnL} teaserGames={teaserGames} />;
+                    })()}
                   </div>
 
                   {sortBy === 'locked' && isFreeUser ? (
@@ -13807,7 +13825,7 @@ function SportTabs({ active, onChange, isMobile }) {
   );
 }
 
-function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
+function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
   const [now, setNow] = useState(Date.now());
   const { user } = useAuth();
   const [selectedPlan, setSelectedPlan] = useState('pro');
@@ -13833,22 +13851,23 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
   const recent7 = computeRecentWindowStats(pnlData?.picks || [], 7);
   const showHotStreak = recent7.ready && recent7.profit > 0;
 
-  // Features rewritten as proof-backed bullets. Numbers come straight
-  // from v12Proof when available, fall back to neutral copy otherwise.
+  // Features as plain-English benefits — a prospect shouldn't need to
+  // know what "5u ladder" or "RLM" means to want this. Numbers come
+  // straight from v12Proof when available.
   const features = v12Proof.ready ? [
-    { label: `Verified track record · ${v12Proof.record} (${v12Proof.winPct.toFixed(1)}%)`, sub: `${v12Proof.totalGraded} graded picks since v12 launch` },
-    { label: `Conviction-sized auto-locks · 5u → 0.25u ladder`, sub: 'ELITE plays at 5u, weak edges at 0.25u, fades muted' },
-    { label: '200+ sharp wallets tracked nightly', sub: 'Verified profitable accounts, refreshed 4× per day' },
-    { label: 'Pinnacle fair odds + best-retail EV scoring', sub: 'Every lock is graded against closing-line value' },
-    { label: 'Full audit trail · every pick, every day', sub: 'Auto-graded each night, no cherry-picking, no edits' },
-    { label: 'Live market flow · tickets, money, whale action', sub: 'Reverse line moves and conviction alerts as they happen' },
+    { label: 'Tonight\'s picks, sized and ready to bet', sub: 'Exact side, odds, and bet size on every lock — no decoding' },
+    { label: `${v12Proof.record} record, graded in public`, sub: `${v12Proof.totalGraded} picks auto-graded nightly — losses included` },
+    { label: 'Follow 200+ proven winners\' real money', sub: 'Verified profitable bettors, positions refreshed 4× a day' },
+    { label: 'Know how much to trust each play', sub: 'Strongest edges bet 5u, thin edges 0.25u, bad ones muted' },
+    { label: 'Always bet the best available number', sub: 'Pinnacle fair value + the best retail price, on every pick' },
+    { label: 'See when sharps disagree with the public', sub: 'Live money vs. tickets, line-move alerts, whale action' },
   ] : [
-    { label: 'Verified sharp bettor tracking in real time', sub: '200+ profitable wallets refreshed nightly' },
-    { label: 'Pinnacle fair value + best retail EV edge', sub: 'Every lock graded against closing line' },
-    { label: 'Auto-locked plays with smart unit sizing', sub: 'Conviction tier drives 0.25u → 5u sizing' },
-    { label: 'Full market flow — tickets, money, whale action', sub: 'Reverse line moves and conviction alerts' },
-    { label: 'Line movement alerts + RLM detection', sub: 'Real-time when the market moves against the public' },
-    { label: 'Complete performance dashboard with ROI tracking', sub: 'Equity curve, tier breakdown, full audit trail' },
+    { label: 'Tonight\'s picks, sized and ready to bet', sub: 'Exact side, odds, and bet size on every lock — no decoding' },
+    { label: 'Every result graded in public', sub: 'Auto-graded nightly against closing lines — losses included' },
+    { label: 'Follow 200+ proven winners\' real money', sub: 'Verified profitable bettors, positions refreshed 4× a day' },
+    { label: 'Know how much to trust each play', sub: 'Strongest edges bet 5u, thin edges 0.25u, bad ones muted' },
+    { label: 'Always bet the best available number', sub: 'Pinnacle fair value + the best retail price, on every pick' },
+    { label: 'See when sharps disagree with the public', sub: 'Live money vs. tickets, line-move alerts, whale action' },
   ];
 
   return (
@@ -13912,7 +13931,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
                 </span>
               </span>
               <span style={{ ...T.micro, color: B.gold, fontWeight: 900, letterSpacing: '0.12em', fontSize: '0.58rem' }}>
-                ◆ AGS-U v12 PERFORMANCE
+                ◆ REAL RESULTS — AUDITED NIGHTLY
               </span>
               <span style={{ ...T.micro, color: B.textSec, fontSize: '0.58rem', letterSpacing: '0.05em' }}>
                 <span style={{ color: B.text, fontWeight: 800 }}>{v12Proof.daysLive}</span> day{v12Proof.daysLive === 1 ? '' : 's'} live
@@ -14009,7 +14028,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
                         ...T.micro, color: B.gold, fontWeight: 900,
                         letterSpacing: '0.12em', fontSize: '0.55rem',
                       }}>
-                        ◆ TOTAL PROFIT · v12 ERA
+                        ◆ TOTAL PROFIT · {v12Proof.daysLive} DAYS
                       </span>
                       {v12Proof.isProfit
                         ? <TrendingUp size={13} color={B.green} />
@@ -14089,7 +14108,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
               </span>
             </span>
             <span style={{ ...T.micro, color: B.gold, fontWeight: 900, letterSpacing: '0.1em', fontSize: '0.65rem' }}>
-              AGS-U v12 TRACKING
+              LIVE SYSTEM TRACKING
             </span>
           </div>
         )}
@@ -14133,6 +14152,56 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
                   and auto-size the locks. Every result is graded the same way the dashboard above shows it.</>}
           </p>
         </div>
+
+        {/* ── Behind-the-wall teaser — REAL locked games, matchup blurred.
+            The most concrete FOMO available: these plays exist right now
+            and the reader can almost see them. ─────────────────────── */}
+        {Array.isArray(teaserGames) && teaserGames.length > 0 && (
+          <div style={{ marginBottom: '1.4rem' }}>
+            <div style={{ textAlign: 'center', marginBottom: '0.55rem' }}>
+              <span style={{ ...T.micro, color: B.gold, fontWeight: 900, letterSpacing: '0.12em', fontSize: '0.58rem' }}>
+                ◆ BEHIND THE WALL RIGHT NOW
+              </span>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center' }}>
+              {teaserGames.slice(0, 4).map((t, i) => (
+                <div key={i} style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+                  padding: '0.45rem 0.7rem', borderRadius: '9px',
+                  background: 'linear-gradient(140deg, rgba(212,175,55,0.08) 0%, rgba(15,23,42,0.55) 100%)',
+                  border: '1px solid rgba(212,175,55,0.28)',
+                }}>
+                  <Lock size={11} color={B.gold} strokeWidth={2.5} />
+                  <span style={{ fontSize: '0.68rem', fontWeight: 800, color: B.textSec }}>{t.sport}</span>
+                  <span aria-hidden="true" style={{
+                    fontSize: '0.68rem', fontWeight: 800, color: B.text,
+                    filter: 'blur(5px)', userSelect: 'none', pointerEvents: 'none',
+                    maxWidth: '110px', overflow: 'hidden', whiteSpace: 'nowrap',
+                  }}>
+                    {t.matchup}
+                  </span>
+                  {t.tier && (
+                    <span style={{ fontSize: '0.56rem', fontWeight: 900, color: B.gold, letterSpacing: '0.06em' }}>{t.tier}</span>
+                  )}
+                  {Number.isFinite(t.units) && t.units > 0 && (
+                    <span style={{ fontSize: '0.68rem', fontWeight: 900, color: B.green, fontFeatureSettings: "'tnum'" }}>{t.units}u</span>
+                  )}
+                </div>
+              ))}
+              {teaserGames.length > 4 && (
+                <div style={{
+                  display: 'inline-flex', alignItems: 'center',
+                  padding: '0.45rem 0.7rem', borderRadius: '9px',
+                  border: `1px dashed ${B.borderSubtle}`,
+                }}>
+                  <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.64rem', fontWeight: 700 }}>
+                    +{teaserGames.length - 4} more
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* ── Features grid — proof-backed bullets ──────────── */}
         <div style={{
