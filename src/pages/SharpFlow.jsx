@@ -9221,8 +9221,6 @@ export default function SharpFlow() {
     };
   }, [whaleProfiles, sharpPositions, sportsSharps]);
 
-  const VAULT_SIZE = 25;
-
   const v8Norm = useMemo(() => buildV8Normalization(sportsSharps), [sportsSharps]);
 
   const intelExcludedSet = useMemo(() => {
@@ -9231,40 +9229,71 @@ export default function SharpFlow() {
     return new Set(xs.map((a) => (a || '').toLowerCase()));
   }, [intelExcludedWallets]);
 
+  // Vault universe = full Phase-2 whitelist (CONFIRMED + FLAT in any sport),
+  // NOT Polymarket sports-leaderboard top-N. Money fields prefer sports_sharps
+  // LB rows when present; otherwise sharpWalletProfiles.positionsContext.
   const vaultData = useMemo(() => {
-    if (!sportsSharps) return null;
-    const entries = Object.entries(sportsSharps)
-      .filter(([k]) => k !== '_meta')
-      .filter(([addr]) => !intelExcludedSet?.has(addr.toLowerCase()))
-      .map(([addr, w]) => ({
+    if (!sportsSharps || !walletProfiles || walletProfiles.size === 0) return null;
+
+    const sharpsByShort = new Map();
+    for (const [addr, w] of Object.entries(sportsSharps)) {
+      if (addr === '_meta' || !w || typeof w !== 'object') continue;
+      const short = addr.toLowerCase().slice(-6);
+      sharpsByShort.set(short, { addr: addr.toLowerCase(), w });
+    }
+
+    const entries = [];
+    for (const [short, profile] of walletProfiles.entries()) {
+      if (!profile?.bySport) continue;
+      const whitelistSports = Object.entries(profile.bySport)
+        .filter(([, rec]) => rec?.whitelistTier === 'CONFIRMED' || rec?.whitelistTier === 'FLAT')
+        .map(([sport]) => sport);
+      if (whitelistSports.length === 0) continue;
+
+      const lb = sharpsByShort.get(String(short).toLowerCase());
+      const addr = (lb?.addr || profile.walletAddress || '').toLowerCase();
+      if (!addr) continue;
+      if (intelExcludedSet?.has(addr)) continue;
+
+      const w = lb?.w;
+      const ctx = profile.positionsContext || {};
+      const sportPnlTotal = w?.sportPnlTotal ?? ctx.sportPnlTotal ?? 0;
+      const vol = w?.vol ?? ctx.sportVol ?? 0;
+      const roi = w?.sportROI ?? ctx.sportROI
+        ?? (vol > 0 && sportPnlTotal ? (sportPnlTotal / vol) * 100 : 0);
+
+      entries.push({
         wallet: addr,
+        walletShort: String(short).toLowerCase(),
         name: '***' + addr.slice(-4),
-        totalPnl: w.totalPnl || 0,
-        sportPnlTotal: w.sportPnlTotal || 0,
-        overallPnl: w.overallPnl ?? w.totalPnl ?? 0,
-        overallVol: w.overallVol ?? w.vol ?? 0,
-        sportMarkets: w.sportMarkets || {},
-        marketsTraded: w.marketsTraded || 0,
-        vol: w.vol || 0,
-        roi: w.sportROI || (w.vol > 0 ? (w.totalPnl / w.vol) * 100 : 0),
-        avgBet: w.avgSportBet || (w.marketsTraded > 0 ? w.vol / w.marketsTraded : 0),
-        sportBets: w.sportBetCount || Object.values(w.sportMarkets || {}).reduce((s, v) => s + v, 0),
-        sportsActive: Object.keys(w.sportMarkets || {}).length,
-        leaderboardRank: w.leaderboardRank || null,
-        perSport: w.perSport || {},
-        recentResults: w.recentResults || [],
-        weeklyPnl: w.weeklyPnl ?? null,
-        weeklyRank: w.weeklyRank ?? null,
-        dailyPnl: w.dailyPnl ?? null,
-      }))
-      .sort((a, b) => b.sportPnlTotal - a.sportPnlTotal)
-      .slice(0, VAULT_SIZE);
+        totalPnl: w?.totalPnl ?? sportPnlTotal,
+        sportPnlTotal: sportPnlTotal || 0,
+        overallPnl: w?.overallPnl ?? w?.totalPnl ?? null,
+        overallVol: w?.overallVol ?? w?.vol ?? null,
+        sportMarkets: w?.sportMarkets || {},
+        marketsTraded: w?.marketsTraded || 0,
+        vol: vol || 0,
+        roi: Number.isFinite(roi) ? roi : 0,
+        avgBet: w?.avgSportBet || 0,
+        sportBets: w?.sportBetCount || 0,
+        sportsActive: whitelistSports.length,
+        whitelistSports,
+        leaderboardRank: w?.leaderboardRank ?? profile.latestLbRank ?? null,
+        perSport: w?.perSport || {},
+        recentResults: w?.recentResults || [],
+        weeklyPnl: w?.weeklyPnl ?? null,
+        weeklyRank: w?.weeklyRank ?? null,
+        dailyPnl: w?.dailyPnl ?? null,
+      });
+    }
+
+    entries.sort((a, b) => b.sportPnlTotal - a.sportPnlTotal);
 
     const walletSet = new Set(entries.map(e => e.wallet.toLowerCase()));
 
     const todayPositions = {};
     const convergenceMap = {};
-    for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'NFL']) {
+    for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'NFL', 'SOC', 'UFC', 'WNBA']) {
       const sportGames = sharpPositions?.[sport] || {};
       for (const [gameKey, gd] of Object.entries(sportGames)) {
         if (!gd.positions) continue;
@@ -9302,7 +9331,7 @@ export default function SharpFlow() {
     ];
     for (const { data: posData, mkt } of posFiles) {
       if (!posData) continue;
-      for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'NFL']) {
+      for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'NFL', 'SOC', 'UFC', 'WNBA']) {
         const sportGames = posData[sport] || {};
         for (const [gameKey, gd] of Object.entries(sportGames)) {
           if (!gd.positions) continue;
@@ -9314,6 +9343,8 @@ export default function SharpFlow() {
           for (const pos of gd.positions) {
             const wLower = pos.wallet?.toLowerCase();
             if (!wLower) continue;
+            // Vault / HC feed = whitelist wallets only (CONFIRMED+FLAT set above).
+            if (!walletSet.has(wLower)) continue;
             if (intelExcludedSet?.has(wLower)) continue;
             if (gameCommence && pos.firstSeen && new Date(pos.firstSeen).getTime() >= gameCommence) continue;
             const avgBet = pos.avgSportBet || 0;
@@ -9358,7 +9389,7 @@ export default function SharpFlow() {
     ];
     for (const { data: posData, mkt } of posFilesForHc) {
       if (!posData) continue;
-      for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'NFL']) {
+      for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'NFL', 'SOC', 'UFC', 'WNBA']) {
         const sportGames = posData[sport] || {};
         for (const [gameKey, gd] of Object.entries(sportGames)) {
           if (!gd.positions) continue;
@@ -9581,7 +9612,11 @@ export default function SharpFlow() {
         const SPORT_COLORS = { NBA: '#FF8C00', WNBA: '#F472B6', NHL: '#D4AF37', MLB: '#E31837', CBB: '#FF6B35', NFL: '#4CAF50', SOC: '#2ECC71', UFC: '#C0392B' };
         const sportIcons = { NBA: '\u{1F3C0}', WNBA: '\u{1F3C0}', NHL: '\u{1F3D2}', MLB: '\u26BE', CBB: '\u{1F3C0}', NFL: '\u{1F3C8}', SOC: '\u26BD', UFC: '\u{1F94A}' };
 
-        const avgRoi = entries.length > 0 ? entries.reduce((s, e) => s + e.roi, 0) / entries.length : 0;
+        // Avg ROI over wallets with real volume — avoid diluting with zero-filled gaps.
+        const roiSample = entries.filter(e => (e.vol || 0) > 0);
+        const avgRoi = roiSample.length > 0
+          ? roiSample.reduce((s, e) => s + e.roi, 0) / roiSample.length
+          : 0;
         const weeklyTotal = entries.reduce((s, e) => s + (e.weeklyPnl || 0), 0);
 
         return (
@@ -9602,7 +9637,7 @@ export default function SharpFlow() {
                   <span style={{ ...T.heading, color: B.text, letterSpacing: '-0.01em' }}>Sharp Vault</span>
                 </div>
                 <p style={{ ...T.label, color: B.textMuted, margin: 0, lineHeight: 1.6 }}>
-                  Tracking the top {entries.length} Polymarket sports-leaderboard wallets. When multiple specialists converge on the same game, pay attention.
+                  Full whitelist — {entries.length} CONFIRMED / FLAT wallets from sharpWalletProfiles. Convergence and vault stats use only this set.
                 </p>
 
                 {/* Inline Hero Stats */}
@@ -9613,7 +9648,7 @@ export default function SharpFlow() {
                   paddingTop: '1rem', borderTop: `1px solid ${B.border}`,
                 }}>
                   {[
-                    { label: 'ELITE SHARPS', value: String(entries.length), color: B.gold },
+                    { label: 'WHITELISTED', value: String(entries.length), color: B.gold },
                     { label: 'COMBINED P&L', value: `${combinedPnl >= 0 ? '+' : ''}${fmtVol(combinedPnl)}`, color: combinedPnl >= 0 ? B.green : B.red },
                     { label: 'AVG ROI', value: `${avgRoi >= 0 ? '+' : ''}${avgRoi.toFixed(1)}%`, color: avgRoi >= 5 ? B.green : avgRoi < 0 ? B.red : '#22D3EE' },
                     { label: 'THIS WEEK', value: weeklyTotal !== 0 ? `${weeklyTotal >= 0 ? '+' : ''}${fmtVol(weeklyTotal)}` : '—', color: weeklyTotal > 0 ? B.green : weeklyTotal < 0 ? B.red : B.textMuted },
