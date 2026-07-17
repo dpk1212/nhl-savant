@@ -8901,7 +8901,6 @@ export default function SharpFlow() {
   const { isPremium, loading: subLoading } = useSubscription(user);
   const [sportFilter, setSportFilter] = useState('All');
   const [viewMode, setViewMode] = useState('whaleSignals');
-  const [showConvergence, setShowConvergence] = useState(true);
   const [actionSortMode, setActionSortMode] = useState('size');
   const [actionSportFilter, setActionSportFilter] = useState('ALL');
   const [actionMarketFilter, setActionMarketFilter] = useState('ALL');
@@ -9608,9 +9607,7 @@ export default function SharpFlow() {
         <SharpFlowPaywall isMobile={isMobile} pnlData={allTimePnL} />
       )}
       {viewMode === 'sharpVault' && !isFreeUser && vaultData && (() => {
-        const { entries, convergences, combinedPnl } = vaultData;
-        const SPORT_COLORS = { NBA: '#FF8C00', WNBA: '#F472B6', NHL: '#D4AF37', MLB: '#E31837', CBB: '#FF6B35', NFL: '#4CAF50', SOC: '#2ECC71', UFC: '#C0392B' };
-        const sportIcons = { NBA: '\u{1F3C0}', WNBA: '\u{1F3C0}', NHL: '\u{1F3D2}', MLB: '\u26BE', CBB: '\u{1F3C0}', NFL: '\u{1F3C8}', SOC: '\u26BD', UFC: '\u{1F94A}' };
+        const { entries, combinedPnl } = vaultData;
 
         // Avg ROI over wallets with real volume — avoid diluting with zero-filled gaps.
         const roiSample = entries.filter(e => (e.vol || 0) > 0);
@@ -9637,7 +9634,7 @@ export default function SharpFlow() {
                   <span style={{ ...T.heading, color: B.text, letterSpacing: '-0.01em' }}>Sharp Vault</span>
                 </div>
                 <p style={{ ...T.label, color: B.textMuted, margin: 0, lineHeight: 1.6 }}>
-                  Full whitelist — {entries.length} CONFIRMED / FLAT wallets from sharpWalletProfiles. Convergence and vault stats use only this set.
+                  Full whitelist — {entries.length} CONFIRMED / FLAT wallets from sharpWalletProfiles.
                 </p>
 
                 {/* Inline Hero Stats */}
@@ -9662,98 +9659,6 @@ export default function SharpFlow() {
                   ))}
                 </div>
               </div>
-            </div>
-
-            {/* Today's Convergence — Collapsible */}
-            <div style={{ marginBottom: '1.25rem' }}>
-              <button onClick={() => setShowConvergence(!showConvergence)} style={{
-                width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '0.625rem 0.875rem', borderRadius: '10px', cursor: 'pointer',
-                background: convergences.length > 0 ? 'rgba(212,175,55,0.04)' : 'rgba(255,255,255,0.02)',
-                border: `1px solid ${convergences.length > 0 ? B.goldBorder : B.borderSubtle}`,
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <div style={{ width: '3px', height: '14px', borderRadius: '2px', background: B.gold }} />
-                  <span style={{ ...T.label, color: B.gold, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                    Today's Convergence
-                  </span>
-                  {convergences.length > 0 && (
-                    <span style={{
-                      ...T.micro, padding: '0.1rem 0.4rem', borderRadius: '4px',
-                      background: B.goldDim, color: B.gold, fontWeight: 800,
-                    }}>{convergences.length}</span>
-                  )}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  {convergences.length === 0 && (
-                    <span style={{ ...T.micro, color: B.textMuted }}>No convergence detected</span>
-                  )}
-                  {showConvergence
-                    ? <ChevronUp size={14} color={B.gold} />
-                    : <ChevronDown size={14} color={B.gold} />}
-                </div>
-              </button>
-              {showConvergence && convergences.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', marginTop: '0.625rem' }}>
-                  {convergences.map((c, ci) => (
-                    <div key={ci} style={{
-                      background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
-                      border: `1px solid ${B.goldBorder}`, borderRadius: '12px',
-                      overflow: 'hidden',
-                    }}>
-                      <div style={{
-                        height: '3px',
-                        background: `linear-gradient(90deg, transparent, ${B.gold}, transparent)`,
-                      }} />
-                      <div style={{ padding: '0.875rem 1rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.625rem' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <span style={{
-                              ...T.micro, padding: '0.2rem 0.5rem', borderRadius: '5px',
-                              background: (SPORT_COLORS[c.sport] || B.gold) + '18',
-                              color: SPORT_COLORS[c.sport] || B.gold, fontWeight: 700,
-                              border: `1px solid ${(SPORT_COLORS[c.sport] || B.gold)}30`,
-                            }}>{sportIcons[c.sport] || ''} {c.sport}</span>
-                            <span style={{ ...T.body, color: B.text, fontWeight: 700 }}>
-                              {c.away} <span style={{ color: B.textMuted, fontWeight: 400 }}>vs</span> {c.home}
-                            </span>
-                          </div>
-                          <span style={{
-                            ...T.micro, padding: '0.2rem 0.6rem', borderRadius: '6px',
-                            background: 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05))',
-                            color: B.gold, fontWeight: 800, letterSpacing: '0.04em',
-                            border: `1px solid ${B.goldBorder}`,
-                          }}>
-                            {c.sharps.length} ALIGNED
-                          </span>
-                        </div>
-                        <div style={{ ...T.sub, color: B.text, marginBottom: '0.625rem', fontWeight: 700 }}>
-                          {c.sharps.length} specialists on <span style={{ color: B.gold }}>{c.team}</span>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-                          {c.sharps.map((sh, si) => (
-                            <div key={si} style={{
-                              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                              padding: '0.375rem 0.5rem', borderRadius: '6px',
-                              background: 'rgba(255,255,255,0.02)',
-                            }}>
-                              <span style={{ ...T.label, color: B.textSec, fontWeight: 600 }}>{sh.name}</span>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-                                <span style={{ ...T.micro, color: B.green, fontWeight: 700, fontFeatureSettings: "'tnum'" }}>
-                                  +{fmtVol(sh.sportPnl)} sports
-                                </span>
-                                <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
-                                  {fmtVol(sh.invested)}
-                                </span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
 
           </div>
