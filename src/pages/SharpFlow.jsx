@@ -7,6 +7,7 @@
  */
 
 import React, { useState, useEffect, useMemo, useCallback, useRef, memo, Fragment } from 'react';
+import { createPortal } from 'react-dom';
 import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Activity, Zap, BarChart3, Eye, ArrowUpRight, ArrowDownRight, Minus, DollarSign, Workflow, Lock, CheckCircle, Circle, Clock, AlertTriangle, ShieldCheck, Sparkles, Flame, Check, X } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ComposedChart, Bar, ReferenceDot, Cell, Area, AreaChart, ReferenceLine } from 'recharts';
 import { resolveOutcomeSide } from '../utils/teamNameMapper';
@@ -13832,12 +13833,52 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
   const [authOpen, setAuthOpen] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
 
+  // Mobile sticky CTA: appears once the paywall has scrolled into view,
+  // hides while the real CTA button is on screen (no duplicate buttons).
+  const paywallRef = useRef(null);
+  const ctaRef = useRef(null);
+  const [paywallSeen, setPaywallSeen] = useState(false);
+  const [ctaVisible, setCtaVisible] = useState(false);
+
   const { endMs, code: promoCode, label: promoLabel } = PAYWALL_PROMO;
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    if (!isMobile || !paywallRef.current) return;
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) setPaywallSeen(true); },
+      { threshold: 0.1 }
+    );
+    obs.observe(paywallRef.current);
+    return () => obs.disconnect();
+  }, [isMobile]);
+
+  useEffect(() => {
+    if (!isMobile || !ctaRef.current) return;
+    const obs = new IntersectionObserver(
+      ([e]) => setCtaVisible(e.isIntersecting),
+      { threshold: 0.05 }
+    );
+    obs.observe(ctaRef.current);
+    return () => obs.disconnect();
+  }, [isMobile]);
+
+  const startCheckout = async () => {
+    if (checkingOut) return;
+    if (!user) { setAuthOpen(true); return; }
+    setCheckingOut(true);
+    try {
+      await redirectToCheckout(selectedPlan, user);
+    } finally {
+      setCheckingOut(false);
+    }
+  };
+
+  const showStickyCta = isMobile && paywallSeen && !ctaVisible && !authOpen;
 
   const remaining = Math.max(0, endMs - now);
   const days = Math.floor(remaining / 86400000);
@@ -13870,8 +13911,49 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
     { label: 'See when sharps disagree with the public', sub: 'Live money vs. tickets, line-move alerts, whale action' },
   ];
 
-  return (
+  const featuresGrid = (
     <div style={{
+      display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+      gap: '0.45rem 1.25rem', marginBottom: isMobile ? 0 : '1.4rem',
+      marginTop: isMobile ? '1.5rem' : 0,
+      maxWidth: '600px', marginLeft: 'auto', marginRight: 'auto',
+    }}>
+      {isMobile && (
+        <div style={{ textAlign: 'center', marginBottom: '0.2rem' }}>
+          <span style={{ ...T.micro, color: B.gold, fontWeight: 900, letterSpacing: '0.12em', fontSize: '0.58rem' }}>
+            ◆ EVERYTHING INCLUDED
+          </span>
+        </div>
+      )}
+      {features.map((f, i) => (
+        <div key={i} style={{
+          display: 'flex', alignItems: 'flex-start', gap: '0.55rem',
+          padding: '0.2rem 0',
+        }}>
+          <div style={{
+            flexShrink: 0, marginTop: '0.1rem',
+            width: '16px', height: '16px', borderRadius: '50%',
+            background: 'rgba(16,185,129,0.12)',
+            border: '1px solid rgba(16,185,129,0.30)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <CheckCircle size={10} color={B.green} strokeWidth={3} />
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ ...T.label, color: B.text, fontWeight: 700, lineHeight: 1.35, fontSize: '0.78rem' }}>
+              {f.label}
+            </div>
+            <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.62rem', lineHeight: 1.45, marginTop: '0.15rem' }}>
+              {f.sub}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  return (
+    <div ref={paywallRef} style={{
       marginTop: '2rem', borderRadius: '16px', overflow: 'hidden',
       background: `linear-gradient(145deg, rgba(212,175,55,0.08) 0%, ${B.card} 35%, rgba(16,185,129,0.05) 100%)`,
       border: `1px solid rgba(212,175,55,0.3)`,
@@ -14203,37 +14285,10 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
           </div>
         )}
 
-        {/* ── Features grid — proof-backed bullets ──────────── */}
-        <div style={{
-          display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-          gap: '0.45rem 1.25rem', marginBottom: '1.4rem',
-          maxWidth: '600px', marginLeft: 'auto', marginRight: 'auto',
-        }}>
-          {features.map((f, i) => (
-            <div key={i} style={{
-              display: 'flex', alignItems: 'flex-start', gap: '0.55rem',
-              padding: '0.2rem 0',
-            }}>
-              <div style={{
-                flexShrink: 0, marginTop: '0.1rem',
-                width: '16px', height: '16px', borderRadius: '50%',
-                background: 'rgba(16,185,129,0.12)',
-                border: '1px solid rgba(16,185,129,0.30)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <CheckCircle size={10} color={B.green} strokeWidth={3} />
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ ...T.label, color: B.text, fontWeight: 700, lineHeight: 1.35, fontSize: '0.78rem' }}>
-                  {f.label}
-                </div>
-                <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.62rem', lineHeight: 1.45, marginTop: '0.15rem' }}>
-                  {f.sub}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+        {/* ── Features grid — desktop only in this slot. On mobile the
+            plan picker moves up and the features render BELOW the CTA
+            as reassurance instead of blocking the path to the price. */}
+        {!isMobile && featuresGrid}
 
         {/* ── Pricing + promo card ──────────────────────────── */}
         <div style={{
@@ -14493,16 +14548,8 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
 
                 {/* CTA — direct to Stripe checkout (auth modal first if logged out) */}
                 <button
-                  onClick={async () => {
-                    if (checkingOut) return;
-                    if (!user) { setAuthOpen(true); return; }
-                    setCheckingOut(true);
-                    try {
-                      await redirectToCheckout(selectedPlan, user);
-                    } finally {
-                      setCheckingOut(false);
-                    }
-                  }}
+                  ref={ctaRef}
+                  onClick={startCheckout}
                   className="sharpflow-paywall-cta"
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem',
@@ -14556,6 +14603,9 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
             </a>
           </div>
         </div>
+
+        {/* Mobile: features render below the CTA as reassurance */}
+        {isMobile && featuresGrid}
       </div>
 
       {/* Auth modal — after sign-in it auto-continues to checkout for the selected plan */}
@@ -14564,6 +14614,55 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
         onClose={() => setAuthOpen(false)}
         tier={selectedPlan}
       />
+
+      {/* Mobile sticky CTA — portal to body so ancestor transforms/overflow
+          can't break position:fixed. Mirrors the main CTA exactly. */}
+      {showStickyCta && createPortal(
+        (() => {
+          const plan = PAYWALL_PLANS.find(p => p.id === selectedPlan) || PAYWALL_PLANS[0];
+          const charge = promoActive ? plan.chargePromo : plan.chargeFull;
+          return (
+            <div style={{
+              position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 9999,
+              padding: '0.6rem 0.85rem calc(0.6rem + env(safe-area-inset-bottom, 0px))',
+              background: 'linear-gradient(180deg, rgba(11,17,32,0.92) 0%, rgba(11,17,32,0.99) 100%)',
+              backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+              borderTop: '1px solid rgba(212,175,55,0.35)',
+              boxShadow: '0 -8px 32px rgba(0,0,0,0.55)',
+            }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '0.75rem',
+                maxWidth: '520px', margin: '0 auto',
+              }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#F1F5F9', lineHeight: 1.2 }}>
+                    {plan.trialDays} days free · $0 today
+                  </div>
+                  <div style={{ fontSize: '0.6rem', fontWeight: 600, color: 'rgba(241,245,249,0.55)', marginTop: '0.1rem', fontFeatureSettings: "'tnum'" }}>
+                    then {charge}{promoActive ? ' · 33% off locked for life' : ''}
+                  </div>
+                </div>
+                <button
+                  onClick={startCheckout}
+                  style={{
+                    flexShrink: 0, cursor: checkingOut ? 'wait' : 'pointer',
+                    padding: '0.75rem 1.15rem', borderRadius: '11px',
+                    background: `linear-gradient(135deg, ${B.green} 0%, #059669 100%)`,
+                    color: '#fff', fontWeight: 900, fontSize: '0.88rem', letterSpacing: '0.01em',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    boxShadow: '0 4px 18px rgba(16,185,129,0.45)',
+                    opacity: checkingOut ? 0.7 : 1,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {checkingOut ? 'Opening…' : 'Start Free Trial'}
+                </button>
+              </div>
+            </div>
+          );
+        })(),
+        document.body
+      )}
     </div>
   );
 }
