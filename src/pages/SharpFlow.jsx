@@ -11634,6 +11634,12 @@ export default function SharpFlow() {
 
                   {/* ─── HC Positions Feed (vault tab) ─── */}
                   {sortBy === 'hcPositions' && (() => {
+                    // Local copy — SPORT_COLORS is scoped to the sharpVault IIFE,
+                    // but this feed renders inside whaleSignals / Sharp Positions.
+                    const SPORT_COLORS = {
+                      NBA: '#FF8C00', WNBA: '#F472B6', NHL: '#D4AF37', MLB: '#E31837',
+                      CBB: '#FF6B35', NFL: '#4CAF50', SOC: '#2ECC71', UFC: '#C0392B',
+                    };
                     const actionSortFns = {
                       size: (a, b) => (b.invested || 0) - (a.invested || 0),
                       roi: (a, b) => (b.displayRoi || 0) - (a.displayRoi || 0),
