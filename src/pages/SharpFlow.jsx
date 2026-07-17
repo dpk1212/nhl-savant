@@ -1058,7 +1058,7 @@ const PAYWALL_PLANS = [
     heroFull: '$12.50', heroPromo: '$8.38', heroPer: '/mo',
     billFull: 'billed $150/yr', billPromo: 'billed $100.50/yr',
     chargeFull: '$150/yr', chargePromo: '$100.50/yr',
-    sub: '6 months free vs. paying monthly',
+    sub: 'Cheaper per month than Netflix',
     winMath: 'One 1u win (+$91 at $100/unit) covers 90% of your entire year',
   },
   {
@@ -1070,7 +1070,7 @@ const PAYWALL_PLANS = [
     heroFull: '$25.99', heroPromo: '$17.41', heroPer: '/mo',
     billFull: null, billPromo: null,
     chargeFull: '$25.99/mo', chargePromo: '$17.41/mo',
-    sub: 'Less than a single 0.25u play',
+    sub: 'One blown $20 parlay costs more',
     winMath: 'One 1u win (+$91 at $100/unit) covers your next 5 months',
   },
   {
@@ -1082,7 +1082,7 @@ const PAYWALL_PLANS = [
     heroFull: '$7.99', heroPromo: '$5.35', heroPer: '/wk',
     billFull: null, billPromo: null,
     chargeFull: '$7.99/wk', chargePromo: '$5.35/wk',
-    sub: 'Less than the juice on one bet',
+    sub: 'Less than one stadium beer',
     winMath: 'One 1u win (+$91 at $100/unit) covers 4 months of access',
   },
 ];
