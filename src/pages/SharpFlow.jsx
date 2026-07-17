@@ -1022,38 +1022,40 @@ const PAYWALL_PROMO = {
 
 // Paywall plan picker — mirrors PRICING in src/utils/stripe.js.
 // Annual is listed first and preselected: it's the plan we push hardest.
+// The hero number on each card is the monthly-equivalent (or weekly) rate —
+// the pattern top-converting paywalls use to make annual feel cheapest.
 const PAYWALL_PLANS = [
   {
     id: 'pro',
     name: 'Annual',
-    fullPrice: 150,
-    per: '/yr',
     trialDays: 10,
-    badge: 'BEST VALUE · SAVE 52%',
-    equivFull: '$12.50/mo',
-    equivPromo: '$8.38/mo',
-    sub: 'Season-long edge — under 3 coffees a month',
+    badge: 'BEST VALUE',
+    save: 'SAVE 52%',
+    heroFull: '$12.50', heroPromo: '$8.38', heroPer: '/mo',
+    billFull: 'billed $150/yr', billPromo: 'billed $100.50/yr',
+    chargeFull: '$150/yr', chargePromo: '$100.50/yr',
+    sub: 'Under 3 coffees a month, all season',
   },
   {
     id: 'elite',
     name: 'Monthly',
-    fullPrice: 25.99,
-    per: '/mo',
     trialDays: 7,
     badge: 'MOST POPULAR',
-    equivFull: '87¢/day',
-    equivPromo: '58¢/day',
+    save: null,
+    heroFull: '$25.99', heroPromo: '$17.41', heroPer: '/mo',
+    billFull: null, billPromo: null,
+    chargeFull: '$25.99/mo', chargePromo: '$17.41/mo',
     sub: 'Less than one coffee a day',
   },
   {
     id: 'scout',
     name: 'Weekly',
-    fullPrice: 7.99,
-    per: '/wk',
     trialDays: 5,
     badge: null,
-    equivFull: null,
-    equivPromo: null,
+    save: null,
+    heroFull: '$7.99', heroPromo: '$5.35', heroPer: '/wk',
+    billFull: null, billPromo: null,
+    chargeFull: '$7.99/wk', chargePromo: '$5.35/wk',
     sub: 'One coffee a week to follow the sharps',
   },
 ];
@@ -13786,7 +13788,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
   const [authOpen, setAuthOpen] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
 
-  const { discount, endMs, code: promoCode, label: promoLabel } = PAYWALL_PROMO;
+  const { endMs, code: promoCode, label: promoLabel } = PAYWALL_PROMO;
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -14064,20 +14066,20 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
         )}
 
         {/* ── Headline + subhead ────────────────────────────── */}
-        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
           {/* Lock badge — replaces the old 🏒🏀 emoji.
               Circular gold-haloed glyph that visually anchors
               the "unlock" idea and stays on-brand with the
               dashboard's gold/dark palette. */}
           <div style={{
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            width: '54px', height: '54px', borderRadius: '50%',
+            width: '44px', height: '44px', borderRadius: '50%',
             background: 'linear-gradient(140deg, rgba(212,175,55,0.18) 0%, rgba(15,23,42,0.55) 100%)',
             border: '1px solid rgba(212,175,55,0.35)',
             boxShadow: '0 6px 24px -6px rgba(212,175,55,0.30), inset 0 1px 0 rgba(255,255,255,0.06)',
-            marginBottom: '0.85rem', position: 'relative',
+            marginBottom: '0.7rem', position: 'relative',
           }}>
-            <Lock size={22} color={B.gold} strokeWidth={2.2} />
+            <Lock size={18} color={B.gold} strokeWidth={2.2} />
           </div>
           <h2 style={{
             fontSize: isMobile ? '1.4rem' : '1.75rem', fontWeight: 900,
@@ -14106,13 +14108,13 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
         {/* ── Features grid — proof-backed bullets ──────────── */}
         <div style={{
           display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-          gap: '0.65rem 1.25rem', marginBottom: '1.75rem',
+          gap: '0.45rem 1.25rem', marginBottom: '1.4rem',
           maxWidth: '600px', marginLeft: 'auto', marginRight: 'auto',
         }}>
           {features.map((f, i) => (
             <div key={i} style={{
               display: 'flex', alignItems: 'flex-start', gap: '0.55rem',
-              padding: '0.35rem 0',
+              padding: '0.2rem 0',
             }}>
               <div style={{
                 flexShrink: 0, marginTop: '0.1rem',
@@ -14138,9 +14140,9 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
         {/* ── Pricing + promo card ──────────────────────────── */}
         <div style={{
           background: 'linear-gradient(145deg, rgba(0,0,0,0.40) 0%, rgba(0,0,0,0.20) 100%)',
-          borderRadius: '14px', padding: isMobile ? '1.5rem 1.25rem' : '1.75rem 2rem',
-          border: `1px solid rgba(212,175,55,0.25)`,
-          maxWidth: '480px', margin: '0 auto',
+          borderRadius: '14px', padding: isMobile ? '1.5rem 1.1rem' : '1.75rem 1.9rem',
+          border: `1px solid rgba(212,175,55,0.35)`,
+          maxWidth: '520px', margin: '0 auto',
           position: 'relative', overflow: 'hidden',
           boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
         }}>
@@ -14154,9 +14156,16 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
 
           {/* Countdown timer */}
           {promoActive && (
-            <div style={{ textAlign: 'center', marginBottom: '1.1rem' }}>
-              <div style={{ ...T.micro, color: B.gold, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.6rem', fontSize: '0.62rem' }}>
-                SUMMER LAUNCH OFFER ENDS IN
+            <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: '0.45rem',
+                marginBottom: '0.65rem',
+              }}>
+                <Flame size={13} color={B.gold} />
+                <span style={{ ...T.micro, color: B.gold, fontWeight: 900, letterSpacing: '0.12em', textTransform: 'uppercase', fontSize: '0.68rem' }}>
+                  33% OFF FOR LIFE — ENDS IN
+                </span>
+                <Flame size={13} color={B.gold} />
               </div>
               <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem' }}>
                 {[
@@ -14166,14 +14175,14 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
                   { val: seconds, label: 'SEC' },
                 ].map(t => (
                   <div key={t.label} style={{
-                    background: 'linear-gradient(180deg, rgba(212,175,55,0.14) 0%, rgba(212,175,55,0.04) 100%)',
-                    border: '1px solid rgba(212,175,55,0.30)',
-                    borderRadius: '8px', padding: '0.5rem 0.6rem', minWidth: isMobile ? '50px' : '58px',
+                    background: 'linear-gradient(180deg, rgba(212,175,55,0.16) 0%, rgba(212,175,55,0.04) 100%)',
+                    border: '1px solid rgba(212,175,55,0.35)',
+                    borderRadius: '8px', padding: '0.5rem 0.6rem', minWidth: isMobile ? '52px' : '58px',
                     textAlign: 'center',
                     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
                   }}>
                     <div style={{
-                      fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: 900, color: B.gold,
+                      fontSize: isMobile ? '1.3rem' : '1.5rem', fontWeight: 900, color: B.gold,
                       fontFeatureSettings: "'tnum'", lineHeight: 1, letterSpacing: '-0.02em',
                     }}>
                       {String(t.val).padStart(2, '0')}
@@ -14187,169 +14196,188 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
             </div>
           )}
 
-          {/* Plan picker — annual first + preselected, one tap to checkout */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', marginBottom: '1rem' }}>
+          {/* Plan picker — annual first + preselected, hero number is the
+              monthly-equivalent rate (the anchor that sells annual) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', marginBottom: '1.1rem' }}>
             {PAYWALL_PLANS.map((plan) => {
               const isSelected = selectedPlan === plan.id;
-              const promoPrice = (plan.fullPrice * (1 - discount)).toFixed(2);
-              const equiv = promoActive ? plan.equivPromo : plan.equivFull;
+              const isAnnual = plan.id === 'pro';
+              const hero = promoActive ? plan.heroPromo : plan.heroFull;
+              const struck = promoActive ? plan.heroFull : null;
+              const bill = promoActive ? plan.billPromo : plan.billFull;
               return (
                 <button
                   key={plan.id}
                   onClick={() => setSelectedPlan(plan.id)}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: '0.75rem',
+                    display: 'flex', alignItems: 'center', gap: isMobile ? '0.7rem' : '0.85rem',
                     width: '100%', textAlign: 'left', cursor: 'pointer',
-                    padding: isMobile ? '0.75rem 0.85rem' : '0.85rem 1rem',
-                    borderRadius: '11px',
+                    padding: isMobile ? '0.95rem 0.95rem' : '1.05rem 1.15rem',
+                    borderRadius: '13px', position: 'relative', overflow: 'visible',
                     background: isSelected
-                      ? 'linear-gradient(140deg, rgba(212,175,55,0.14) 0%, rgba(15,23,42,0.55) 100%)'
-                      : 'linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(15,23,42,0.45) 100%)',
-                    border: isSelected ? `1.5px solid ${B.gold}` : `1px solid ${B.borderSubtle}`,
+                      ? 'linear-gradient(140deg, rgba(212,175,55,0.20) 0%, rgba(212,175,55,0.06) 45%, rgba(15,23,42,0.65) 100%)'
+                      : 'linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(15,23,42,0.5) 100%)',
+                    border: isSelected ? `2px solid ${B.gold}` : `1px solid ${B.borderSubtle}`,
                     boxShadow: isSelected
-                      ? '0 4px 18px -6px rgba(212,175,55,0.35), inset 0 1px 0 rgba(255,255,255,0.05)'
+                      ? '0 0 0 3px rgba(212,175,55,0.14), 0 8px 28px -8px rgba(212,175,55,0.45), inset 0 1px 0 rgba(255,255,255,0.06)'
                       : 'inset 0 1px 0 rgba(255,255,255,0.02)',
-                    transition: 'border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease',
+                    transform: isSelected && !isMobile ? 'scale(1.015)' : 'scale(1)',
+                    transition: 'border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease',
                   }}
                 >
+                  {/* Floating badge — sits on the card's top edge like the Mobbin refs */}
+                  {plan.badge && (
+                    <span style={{
+                      position: 'absolute', top: '-9px', left: '42px',
+                      fontSize: '0.55rem', fontWeight: 900, letterSpacing: '0.1em',
+                      padding: '0.2rem 0.55rem', borderRadius: '5px', lineHeight: 1,
+                      background: isAnnual
+                        ? `linear-gradient(135deg, ${B.gold} 0%, #F5D060 100%)`
+                        : `linear-gradient(135deg, ${B.green} 0%, #34D399 100%)`,
+                      color: '#0B1120',
+                      boxShadow: isAnnual ? '0 3px 10px rgba(212,175,55,0.45)' : '0 3px 10px rgba(16,185,129,0.40)',
+                    }}>
+                      {plan.badge}
+                    </span>
+                  )}
+
                   {/* Radio dot */}
                   <span style={{
-                    flexShrink: 0, width: '16px', height: '16px', borderRadius: '50%',
-                    border: isSelected ? `5px solid ${B.gold}` : `1.5px solid ${B.textMuted}`,
+                    flexShrink: 0, width: '18px', height: '18px', borderRadius: '50%',
+                    border: isSelected ? `6px solid ${B.gold}` : `2px solid ${B.textMuted}`,
                     background: isSelected ? '#0B1120' : 'transparent',
                     transition: 'border 0.15s ease',
                   }} />
 
-                  {/* Name + badge + sub */}
+                  {/* Name + save pill + sub */}
                   <span style={{ flex: 1, minWidth: 0 }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: '0.92rem', fontWeight: 800, color: B.text, letterSpacing: '-0.01em' }}>
+                      <span style={{ fontSize: isMobile ? '1rem' : '1.05rem', fontWeight: 900, color: B.text, letterSpacing: '-0.01em' }}>
                         {plan.name}
                       </span>
-                      {plan.badge && (
+                      {plan.save && (
                         <span style={{
-                          fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.08em',
-                          padding: '0.14rem 0.42rem', borderRadius: '4px',
-                          background: plan.id === 'pro' ? 'rgba(212,175,55,0.18)' : 'rgba(16,185,129,0.14)',
-                          border: plan.id === 'pro' ? '1px solid rgba(212,175,55,0.40)' : '1px solid rgba(16,185,129,0.35)',
-                          color: plan.id === 'pro' ? B.gold : B.green,
+                          fontSize: '0.58rem', fontWeight: 900, letterSpacing: '0.06em',
+                          padding: '0.18rem 0.45rem', borderRadius: '5px',
+                          background: 'rgba(16,185,129,0.16)',
+                          border: '1px solid rgba(16,185,129,0.40)',
+                          color: B.green,
                         }}>
-                          {plan.badge}
+                          {plan.save}
                         </span>
                       )}
                     </span>
-                    <span style={{ display: 'block', ...T.micro, color: B.textMuted, fontSize: '0.6rem', marginTop: '0.2rem' }}>
+                    <span style={{ display: 'block', ...T.micro, color: isSelected ? B.textSec : B.textMuted, fontSize: '0.64rem', marginTop: '0.25rem', lineHeight: 1.35 }}>
                       {plan.sub}
                     </span>
                   </span>
 
-                  {/* Price */}
+                  {/* Price — hero monthly-equivalent, strikethrough, billing note */}
                   <span style={{ flexShrink: 0, textAlign: 'right' }}>
-                    <span style={{ display: 'flex', alignItems: 'baseline', gap: '0.3rem', justifyContent: 'flex-end' }}>
-                      {promoActive && (
+                    <span style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem', justifyContent: 'flex-end' }}>
+                      {struck && (
                         <span style={{
-                          fontSize: '0.7rem', color: B.textMuted, textDecoration: 'line-through',
-                          fontWeight: 600, opacity: 0.55, fontFeatureSettings: "'tnum'",
+                          fontSize: '0.78rem', color: B.textMuted, textDecoration: 'line-through',
+                          fontWeight: 700, opacity: 0.6, fontFeatureSettings: "'tnum'",
                         }}>
-                          ${plan.fullPrice % 1 === 0 ? plan.fullPrice : plan.fullPrice.toFixed(2)}
+                          {struck}
                         </span>
                       )}
                       <span style={{
-                        fontSize: isMobile ? '1.05rem' : '1.15rem', fontWeight: 900,
+                        fontSize: isMobile ? '1.45rem' : '1.6rem', fontWeight: 900,
                         color: promoActive ? B.green : B.text,
-                        fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em',
+                        backgroundImage: promoActive ? `linear-gradient(135deg, ${B.green} 0%, #34D399 100%)` : 'none',
+                        WebkitBackgroundClip: promoActive ? 'text' : 'unset',
+                        WebkitTextFillColor: promoActive ? 'transparent' : 'unset',
+                        backgroundClip: promoActive ? 'text' : 'unset',
+                        fontFeatureSettings: "'tnum'", letterSpacing: '-0.03em', lineHeight: 1,
                       }}>
-                        ${promoActive ? promoPrice : (plan.fullPrice % 1 === 0 ? plan.fullPrice : plan.fullPrice.toFixed(2))}
+                        {hero}
                       </span>
-                      <span style={{ ...T.micro, color: B.textSec, fontWeight: 600, fontSize: '0.62rem' }}>{plan.per}</span>
+                      <span style={{ fontSize: '0.72rem', color: B.textSec, fontWeight: 700 }}>{plan.heroPer}</span>
                     </span>
-                    {equiv && (
-                      <span style={{ display: 'block', ...T.micro, color: plan.id === 'pro' ? B.gold : B.textMuted, fontSize: '0.58rem', marginTop: '0.15rem', fontWeight: 700 }}>
-                        ≈ {equiv}
-                      </span>
-                    )}
+                    <span style={{ display: 'block', ...T.micro, color: isAnnual ? B.gold : B.textMuted, fontSize: '0.6rem', marginTop: '0.25rem', fontWeight: 700 }}>
+                      {bill || `${plan.trialDays} days free first`}
+                    </span>
                   </span>
                 </button>
               );
             })}
           </div>
 
-          {/* Promo code callout */}
-          {promoActive && (
-            <div style={{
-              textAlign: 'center', marginBottom: '1rem',
-              padding: '0.6rem 0.75rem', borderRadius: '8px',
-              background: 'linear-gradient(135deg, rgba(212,175,55,0.16) 0%, rgba(212,175,55,0.04) 100%)',
-              border: '1px solid rgba(212,175,55,0.30)',
-            }}>
-              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: B.textSec }}>
-                Use code </span>
-              <span style={{
-                fontSize: '0.88rem', fontWeight: 900, color: B.gold,
-                padding: '0.15rem 0.5rem', borderRadius: '4px',
-                background: 'rgba(212,175,55,0.18)', letterSpacing: '0.08em',
-              }}>{promoCode}</span>
-              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: B.textSec }}>
-                {' '}at checkout — </span>
-              <span style={{ fontSize: '0.78rem', fontWeight: 800, color: B.green }}>
-                33% off for life
-              </span>
-            </div>
-          )}
-
-          {/* Free trial badge — tracks the selected plan's actual trial length */}
+          {/* Dynamic charge summary — exact terms for the selected plan */}
           {(() => {
             const plan = PAYWALL_PLANS.find(p => p.id === selectedPlan) || PAYWALL_PLANS[0];
+            const charge = promoActive ? plan.chargePromo : plan.chargeFull;
             return (
-              <div style={{
-                textAlign: 'center', marginBottom: '0.85rem',
-                padding: '0.55rem 0.75rem', borderRadius: '8px',
-                background: 'linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(99,102,241,0.04) 100%)',
-                border: '1px solid rgba(99,102,241,0.28)',
-              }}>
-                <span style={{ ...T.label, color: '#A5B4FC', fontWeight: 800, letterSpacing: '0.05em' }}>{plan.trialDays}-DAY FREE TRIAL</span>
-                <span style={{ ...T.micro, color: B.textSec, marginLeft: '0.4rem' }}>— no payment due today, cancel anytime</span>
-              </div>
+              <>
+                <div style={{ textAlign: 'center', marginBottom: '0.8rem' }}>
+                  <span style={{ fontSize: '0.78rem', color: B.textSec, fontWeight: 600 }}>
+                    <span style={{ color: B.text, fontWeight: 800 }}>{plan.trialDays} days free</span>
+                    {', then '}
+                    <span style={{ color: B.text, fontWeight: 800, fontFeatureSettings: "'tnum'" }}>{charge}</span>
+                    {promoActive && (
+                      <>
+                        {' · code '}
+                        <span style={{
+                          fontWeight: 900, color: B.gold, letterSpacing: '0.06em',
+                          padding: '0.1rem 0.4rem', borderRadius: '4px', background: 'rgba(212,175,55,0.16)',
+                        }}>{promoCode}</span>
+                        <span style={{ color: B.green, fontWeight: 800 }}> locks 33% off for life</span>
+                      </>
+                    )}
+                  </span>
+                </div>
+
+                {/* CTA — direct to Stripe checkout (auth modal first if logged out) */}
+                <button
+                  onClick={async () => {
+                    if (checkingOut) return;
+                    if (!user) { setAuthOpen(true); return; }
+                    setCheckingOut(true);
+                    try {
+                      await redirectToCheckout(selectedPlan, user);
+                    } finally {
+                      setCheckingOut(false);
+                    }
+                  }}
+                  className="sharpflow-paywall-cta"
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem',
+                    width: '100%', cursor: checkingOut ? 'wait' : 'pointer',
+                    padding: isMobile ? '1.05rem 1.25rem' : '1.1rem 1.5rem', borderRadius: '13px',
+                    background: `linear-gradient(135deg, ${B.green} 0%, #059669 100%)`,
+                    color: '#fff', fontWeight: 900, fontSize: isMobile ? '1.08rem' : '1.12rem',
+                    textDecoration: 'none', letterSpacing: '0.01em',
+                    boxShadow: '0 8px 32px rgba(16,185,129,0.45), 0 0 0 1px rgba(16,185,129,0.25), inset 0 1px 0 rgba(255,255,255,0.20)',
+                    transition: 'transform 0.18s ease, box-shadow 0.18s ease',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    opacity: checkingOut ? 0.7 : 1,
+                  }}
+                >
+                  <span>{checkingOut ? 'Opening checkout…' : `Start My ${plan.trialDays}-Day Free Trial`}</span>
+                  {!checkingOut && (
+                    <span style={{
+                      fontSize: '0.62rem', fontWeight: 900, letterSpacing: '0.06em',
+                      padding: '0.25rem 0.5rem', borderRadius: '6px', lineHeight: 1,
+                      background: 'rgba(255,255,255,0.18)', color: '#fff',
+                    }}>
+                      $0 TODAY
+                    </span>
+                  )}
+                </button>
+              </>
             );
           })()}
-
-          {/* CTA — direct to Stripe checkout (auth modal first if logged out) */}
-          <button
-            onClick={async () => {
-              if (checkingOut) return;
-              if (!user) { setAuthOpen(true); return; }
-              setCheckingOut(true);
-              try {
-                await redirectToCheckout(selectedPlan, user);
-              } finally {
-                setCheckingOut(false);
-              }
-            }}
-            className="sharpflow-paywall-cta"
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.55rem',
-              width: '100%', cursor: checkingOut ? 'wait' : 'pointer',
-              padding: '0.95rem 1.5rem', borderRadius: '11px',
-              background: `linear-gradient(135deg, ${B.green} 0%, #059669 100%)`,
-              color: '#fff', fontWeight: 900, fontSize: isMobile ? '1.05rem' : '1.02rem',
-              textDecoration: 'none', letterSpacing: '0.01em',
-              boxShadow: '0 6px 24px rgba(16,185,129,0.40), inset 0 1px 0 rgba(255,255,255,0.18)',
-              transition: 'transform 0.18s ease, box-shadow 0.18s ease',
-              border: '1px solid rgba(255,255,255,0.10)',
-              opacity: checkingOut ? 0.7 : 1,
-            }}
-          >
-            {checkingOut ? 'Opening checkout…' : promoActive ? 'Claim Summer Offer →' : 'Start Free Trial →'}
-          </button>
 
           {/* Trust badges */}
           <div style={{
             display: 'flex', justifyContent: 'center', gap: '1.1rem',
             marginTop: '0.85rem', flexWrap: 'wrap',
           }}>
-            <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem' }}>✓ Free trial included</span>
-            <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem' }}>✓ Cancel anytime</span>
-            <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem' }}>✓ Auto-graded results</span>
+            <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.62rem' }}>✓ No payment due today</span>
+            <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.62rem' }}>✓ Cancel anytime</span>
+            <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.62rem' }}>✓ Auto-graded results</span>
           </div>
 
           {/* Fallback: full pricing page */}
