@@ -1,17 +1,53 @@
 {
-  "updatedAt": "2026-07-17T19:20:00Z",
-  "note": "Wallets that pass closed-positions behavior audit as directional (low both-sides, high hold-to-resolve) but trip mmScore/trader heuristics. Never write these into sharp_intel_excluded_wallets; always scan/merge their sports positions.",
+  "updatedAt": "2026-07-17T19:30:00Z",
+  "note": "Directional wallets falsely tagged MM/trader. Primary gate: closed-positions both-sides rate on sports markets (conditionId with ≥2 outcomes). Hold-to-resolve is secondary — nearly all closed sports legs eventually settle. Never write these into sharp_intel_excluded_wallets.",
   "wallets": [
     {
       "addr": "0x9c76cdb43fb46454da005fbc82047a64a18ec926",
       "name": "Bagwell306",
-      "reason": "API audit: 94% hold-to-resolve, 3% both-sides, +138% sample ROI (WNBA/MLB directional)",
+      "reason": "Batch1: both-sides ~3%, directional + edge",
       "auditedAt": "2026-07-17"
     },
     {
       "addr": "0x6a72f61820b26b1fe4d956e17b6dc2a1ea3033ee",
       "name": "kch123",
-      "reason": "API audit: 79% hold-to-resolve, 4% both-sides, +35% sample ROI (NBA/NHL directional)",
+      "reason": "Batch1: both-sides ~4%, directional + edge",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0xdb27bf2ac5d428a9c63dbc914611036855a6c56e",
+      "name": "DrPufferfish",
+      "reason": "Batch2 revalidated: both-sides 3.9%, one-sided 290-5, ROI +108%",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0x2652dd1140c3b9e69c8852264cf8dbe727672a1d",
+      "name": "Punisher2022",
+      "reason": "Batch2 revalidated: both-sides 0%, one-sided only, ROI +34.5%",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0x8c818a866e6a4e5821a4faac8418903e33e3dcd3",
+      "name": "Sharkbets.pro",
+      "reason": "Batch2 revalidated: both-sides 10.5%, one-sided 129-15, ROI +45%",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0x57a8d63731277200ed26cfde9a8a830d94f36933",
+      "name": "statwC00KS",
+      "reason": "Batch2 revalidated: both-sides 8.4%, one-sided 335-2, ROI +48%",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0xea2b4224411e723499a803ce3f4758779fb31fc6",
+      "name": "frankfrankfrank",
+      "reason": "Batch2 revalidated: both-sides 2.7%, one-sided 162-53, ROI +53%",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0xc8b438e4a1c10643ea0ea3e59bcaadc73174f05d",
+      "name": "gamblingdebt",
+      "reason": "Batch2 revalidated: both-sides 3.9%, one-sided 159-86, ROI +14%",
       "auditedAt": "2026-07-17"
     }
   ]

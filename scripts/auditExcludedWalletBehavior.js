@@ -119,9 +119,14 @@ function analyzeClosed(closed) {
     const bought = Number(p.totalBought || 0);
     const avgPrice = Number(p.avgPrice || 0);
     const invested = bought > 0 && avgPrice > 0 ? bought * avgPrice : 0;
-    const curPrice = Number(p.curPrice || 0.5);
+    // IMPORTANT: curPrice=0 is a real LOSS settle — never use `x || 0.5`
+    // (0 is falsy and was mis-classifying every loss as mid-market).
+    const curRaw = p.curPrice;
+    const curPrice = (curRaw === null || curRaw === undefined || curRaw === '')
+      ? 0.5
+      : Number(curRaw);
     const realizedPnl = Number(p.realizedPnl || 0);
-    const settled = curPrice >= 0.95 || curPrice <= 0.05;
+    const settled = Number.isFinite(curPrice) && (curPrice >= 0.95 || curPrice <= 0.05);
     sports.push({
       sport,
       title: p.title || '',
