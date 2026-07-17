@@ -20,6 +20,10 @@ import { redirectToCheckout } from '../utils/stripe';
 import AuthModal from '../components/AuthModal';
 import { LivePositionCardView, LockedPositionCardView } from '../components/sharpFlow/cards/PositionCards';
 import { mapLockedPickToCardFixture, mapLiveGameToCardFixture, enrichWallets } from '../components/sharpFlow/cards/mapPositionCard';
+import VaultLiveBoard from '../components/sharpVault/VaultLiveBoard';
+import VaultAlphaField from '../components/sharpVault/VaultAlphaField';
+import VaultRoster from '../components/sharpVault/VaultRoster';
+import VaultWalletDrawer from '../components/sharpVault/VaultWalletDrawer';
 import {
   AGS_FALLBACK_CALIBRATION,
   AGS_MIN_PROVEN_WALLETS,
@@ -8906,6 +8910,8 @@ export default function SharpFlow() {
   const [actionMarketFilter, setActionMarketFilter] = useState('ALL');
   const [actionStatusFilter, setActionStatusFilter] = useState('PREGAME');
   const [expandedActionCard, setExpandedActionCard] = useState(null);
+  const [vaultSportFilter, setVaultSportFilter] = useState('ALL');
+  const [vaultSelectedWallet, setVaultSelectedWallet] = useState(null);
   const [gameSort, setGameSort] = useState('time');
   const [signalType, setSignalType] = useState('upcoming');
   // View/sort selection survives refresh — landing on Locked Picks
@@ -9267,6 +9273,7 @@ export default function SharpFlow() {
         name: '***' + addr.slice(-4),
         totalPnl: w?.totalPnl ?? sportPnlTotal,
         sportPnlTotal: sportPnlTotal || 0,
+        sportROI: Number.isFinite(roi) ? roi : null,
         overallPnl: w?.overallPnl ?? w?.totalPnl ?? null,
         overallVol: w?.overallVol ?? w?.vol ?? null,
         sportMarkets: w?.sportMarkets || {},
@@ -9283,43 +9290,76 @@ export default function SharpFlow() {
         weeklyPnl: w?.weeklyPnl ?? null,
         weeklyRank: w?.weeklyRank ?? null,
         dailyPnl: w?.dailyPnl ?? null,
+        // Profile join — CLV / picks / tiers for Alpha Field, Roster, Drawer
+        clvSkill: profile.clvSkill || null,
+        picks: profile.picks || null,
+        positionsTrack: profile.positions || null,
+        bySport: profile.bySport || {},
+        confirmedSports: profile.confirmedSports || [],
+        flatSports: profile.flatSports || [],
+        openInvested: 0,
+        openMarkets: 0,
       });
     }
 
     entries.sort((a, b) => b.sportPnlTotal - a.sportPnlTotal);
 
     const walletSet = new Set(entries.map(e => e.wallet.toLowerCase()));
+    const entryByWallet = new Map(entries.map(e => [e.wallet.toLowerCase(), e]));
 
+    // Open exposure across ML / spread / total — roster KPIs + drawer legs
     const todayPositions = {};
-    const convergenceMap = {};
-    for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'NFL', 'SOC', 'UFC', 'WNBA']) {
-      const sportGames = sharpPositions?.[sport] || {};
-      for (const [gameKey, gd] of Object.entries(sportGames)) {
-        if (!gd.positions) continue;
-        for (const pos of gd.positions) {
-          const wLower = pos.wallet?.toLowerCase();
-          if (!wLower || !walletSet.has(wLower)) continue;
-          if (!todayPositions[wLower]) todayPositions[wLower] = [];
-          todayPositions[wLower].push({ ...pos, sport, gameKey, away: gd.away, home: gd.home });
-          const convKey = `${sport}_${gameKey}_${pos.side}`;
-          if (!convergenceMap[convKey]) convergenceMap[convKey] = {
-            sport, gameKey, away: gd.away, home: gd.home, side: pos.side,
-            team: pos.side === 'home' ? gd.home : gd.away, sharps: [],
-          };
-          const entry = entries.find(e => e.wallet.toLowerCase() === wLower);
-          convergenceMap[convKey].sharps.push({
-            name: entry?.name || pos.name, sportPnl: entry?.sportPnlTotal || 0,
-            invested: pos.invested || 0, wallet: wLower,
-          });
+    const openLegsByWallet = {};
+    const openMarketKeys = {};
+    const exposureFiles = [
+      { data: sharpPositions, mkt: 'ML' },
+      { data: spreadPositions, mkt: 'SPREAD' },
+      { data: totalPositions, mkt: 'TOTAL' },
+    ];
+    for (const { data: posData, mkt } of exposureFiles) {
+      if (!posData) continue;
+      for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'NFL', 'SOC', 'UFC', 'WNBA']) {
+        const sportGames = posData[sport] || {};
+        for (const [gameKey, gd] of Object.entries(sportGames)) {
+          if (!gd.positions) continue;
+          for (const pos of gd.positions) {
+            const wLower = pos.wallet?.toLowerCase();
+            if (!wLower || !walletSet.has(wLower)) continue;
+            const teamName = pos.side === 'home' || pos.side === 'over'
+              ? (pos.side === 'over' ? 'Over' : gd.home)
+              : (pos.side === 'under' ? 'Under' : gd.away);
+            const avgBet = pos.avgSportBet || 0;
+            const leg = {
+              ...pos,
+              sport,
+              gameKey,
+              away: gd.away,
+              home: gd.home,
+              marketType: mkt,
+              teamName,
+              betMultiplier: avgBet > 0 ? (pos.invested || 0) / avgBet : 0,
+            };
+            if (!openLegsByWallet[wLower]) openLegsByWallet[wLower] = [];
+            openLegsByWallet[wLower].push(leg);
+            if (mkt === 'ML') {
+              if (!todayPositions[wLower]) todayPositions[wLower] = [];
+              todayPositions[wLower].push(leg);
+            }
+            if (!openMarketKeys[wLower]) openMarketKeys[wLower] = new Set();
+            openMarketKeys[wLower].add(`${sport}|${gameKey}|${mkt}|${pos.side}`);
+            const entry = entryByWallet.get(wLower);
+            if (entry) entry.openInvested += pos.invested || 0;
+          }
         }
       }
     }
+    for (const e of entries) {
+      const keys = openMarketKeys[e.wallet.toLowerCase()];
+      e.openMarkets = keys ? keys.size : 0;
+    }
 
-    const convergences = Object.values(convergenceMap)
-      .filter(c => c.sharps.length >= 2)
-      .sort((a, b) => b.sharps.length - a.sharps.length);
-
-    const activeCount = entries.filter(e => todayPositions[e.wallet.toLowerCase()]?.length > 0).length;
+    const convergences = [];
+    const activeCount = entries.filter(e => (e.openInvested || 0) > 0).length;
     const combinedPnl = entries.reduce((s, e) => s + e.sportPnlTotal, 0);
 
     const actionPositions = [];
@@ -9460,7 +9500,30 @@ export default function SharpFlow() {
       ap.vault_isHcWallet = isHcWallet;
     }
 
-    return { entries, todayPositions, convergences, activeCount, combinedPnl, actionPositions };
+    // Mirror HC stamps onto drawer open legs (same game|market|side).
+    for (const legs of Object.values(openLegsByWallet)) {
+      for (const leg of legs) {
+        const groupKey = `${leg.sport}|${leg.gameKey}|${leg.marketType}`;
+        const sideKey = `${groupKey}|${leg.side}`;
+        const counts = hcCountsByGroup.get(sideKey) || { hcConfFor: 0, hcConfAg: 0 };
+        const hcMargin = counts.hcConfFor - counts.hcConfAg;
+        let hcTier = null;
+        if (hcMargin >= 2) hcTier = 'HC_DOMINANT';
+        else if (hcMargin === 1) hcTier = 'HC_STANDARD';
+        else if (hcMargin <= -1) hcTier = 'HC_FADE';
+        const myAvgBet = leg.avgSportBet || 0;
+        const mySizeRatio = myAvgBet > 0 ? (leg.invested || 0) / myAvgBet : 0;
+        const myTier = getWalletProfile(String(leg.wallet).slice(-6))?.bySport?.[leg.sport]?.whitelistTier || null;
+        leg.vault_hcMargin = hcMargin;
+        leg.vault_hcTier = hcTier;
+        leg.vault_isHcWallet = myTier === 'CONFIRMED' && mySizeRatio >= HC_RATIO;
+      }
+    }
+
+    return {
+      entries, todayPositions, convergences, activeCount, combinedPnl,
+      actionPositions, openLegsByWallet,
+    };
     // walletProfiles is intentionally in deps so vaultData re-computes once the
     // sharpWalletProfiles cache populates — this drives HC badge availability.
   }, [sportsSharps, sharpPositions, spreadPositions, totalPositions, intelExcludedSet, polyData, pinnacleHistory, walletProfiles]);
@@ -9607,22 +9670,30 @@ export default function SharpFlow() {
         <SharpFlowPaywall isMobile={isMobile} pnlData={allTimePnL} />
       )}
       {viewMode === 'sharpVault' && !isFreeUser && vaultData && (() => {
-        const { entries, combinedPnl } = vaultData;
+        const { entries, combinedPnl, actionPositions, openLegsByWallet } = vaultData;
 
         // Avg ROI over wallets with real volume — avoid diluting with zero-filled gaps.
         const roiSample = entries.filter(e => (e.vol || 0) > 0);
         const avgRoi = roiSample.length > 0
           ? roiSample.reduce((s, e) => s + e.roi, 0) / roiSample.length
-          : 0;
-        const weeklyTotal = entries.reduce((s, e) => s + (e.weeklyPnl || 0), 0);
+          : null;
+        const weeklySample = entries.filter(e => e.weeklyPnl != null);
+        const weeklyTotal = weeklySample.length > 0
+          ? weeklySample.reduce((s, e) => s + (e.weeklyPnl || 0), 0)
+          : null;
+
+        const vaultSports = ['ALL', 'NHL', 'NBA', 'MLB', 'CBB', 'NFL', 'SOC', 'UFC', 'WNBA'];
+        const selectedEntry = vaultSelectedWallet
+          ? entries.find(e => e.wallet.toLowerCase() === vaultSelectedWallet.toLowerCase())
+          : null;
 
         return (
           <div>
-            {/* Vault Header */}
-            <div style={{
+            {/* Hero — fund pulse */}
+            <div className="sf-fade-in" style={{
               background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
               border: `1px solid ${B.goldBorder}`, borderRadius: '14px',
-              overflow: 'hidden', marginBottom: '1.25rem',
+              overflow: 'hidden', marginBottom: '1.5rem',
             }}>
               <div style={{
                 height: '3px',
@@ -9634,11 +9705,10 @@ export default function SharpFlow() {
                   <span style={{ ...T.heading, color: B.text, letterSpacing: '-0.01em' }}>Sharp Vault</span>
                 </div>
                 <p style={{ ...T.label, color: B.textMuted, margin: 0, lineHeight: 1.6 }}>
-                  Full whitelist — {entries.length} CONFIRMED / FLAT wallets from sharpWalletProfiles.
+                  CONFIRMED + FLAT wallets · money from Polymarket sports leaderboard
                 </p>
 
-                {/* Inline Hero Stats */}
-                <div style={{
+                <div className="sf-stagger" style={{
                   display: 'grid',
                   gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
                   gap: '0.75rem', marginTop: '1rem',
@@ -9647,10 +9717,10 @@ export default function SharpFlow() {
                   {[
                     { label: 'WHITELISTED', value: String(entries.length), color: B.gold },
                     { label: 'COMBINED P&L', value: `${combinedPnl >= 0 ? '+' : ''}${fmtVol(combinedPnl)}`, color: combinedPnl >= 0 ? B.green : B.red },
-                    { label: 'AVG ROI', value: `${avgRoi >= 0 ? '+' : ''}${avgRoi.toFixed(1)}%`, color: avgRoi >= 5 ? B.green : avgRoi < 0 ? B.red : '#22D3EE' },
-                    { label: 'THIS WEEK', value: weeklyTotal !== 0 ? `${weeklyTotal >= 0 ? '+' : ''}${fmtVol(weeklyTotal)}` : '—', color: weeklyTotal > 0 ? B.green : weeklyTotal < 0 ? B.red : B.textMuted },
+                    { label: 'AVG ROI', value: avgRoi == null ? '—' : `${avgRoi >= 0 ? '+' : ''}${avgRoi.toFixed(1)}%`, color: avgRoi == null ? B.textMuted : avgRoi >= 5 ? B.green : avgRoi < 0 ? B.red : '#22D3EE' },
+                    { label: 'THIS WEEK', value: weeklyTotal == null || weeklyTotal === 0 ? '—' : `${weeklyTotal >= 0 ? '+' : ''}${fmtVol(weeklyTotal)}`, color: weeklyTotal == null || weeklyTotal === 0 ? B.textMuted : weeklyTotal > 0 ? B.green : B.red },
                   ].map((s, i) => (
-                    <div key={i} style={{ textAlign: isMobile && i > 1 ? 'center' : undefined }}>
+                    <div key={i}>
                       <div style={{ ...T.heading, color: s.color, fontFeatureSettings: "'tnum'", fontSize: isMobile ? '1rem' : '1.125rem' }}>
                         {s.value}
                       </div>
@@ -9658,9 +9728,64 @@ export default function SharpFlow() {
                     </div>
                   ))}
                 </div>
+
+                {/* Sport filter — Live Board + Alpha Field only (not fake per-sport $) */}
+                <div style={{
+                  display: 'flex', gap: '0.3rem', flexWrap: 'wrap',
+                  marginTop: '1rem', paddingTop: '0.85rem', borderTop: `1px solid ${B.borderSubtle}`,
+                }}>
+                  <span style={{ ...T.tiny, color: B.textSubtle, alignSelf: 'center', marginRight: '0.25rem' }}>
+                    Board / Field
+                  </span>
+                  {vaultSports.map((sp) => (
+                    <button
+                      key={sp}
+                      type="button"
+                      onClick={() => setVaultSportFilter(sp)}
+                      style={{
+                        ...T.micro, padding: '0.25rem 0.55rem', borderRadius: '999px', cursor: 'pointer',
+                        border: vaultSportFilter === sp ? `1px solid ${B.goldBorder}` : `1px solid ${B.border}`,
+                        background: vaultSportFilter === sp ? B.goldDim : 'transparent',
+                        color: vaultSportFilter === sp ? B.gold : B.textMuted, fontWeight: 700,
+                      }}
+                    >
+                      {sp}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
+            <VaultLiveBoard
+              actionPositions={actionPositions}
+              sportFilter={vaultSportFilter}
+              isMobile={isMobile}
+              onSelectWallet={setVaultSelectedWallet}
+            />
+
+            <VaultAlphaField
+              entries={entries}
+              actionPositions={actionPositions}
+              sportFilter={vaultSportFilter}
+              isMobile={isMobile}
+              onSelectWallet={setVaultSelectedWallet}
+            />
+
+            <VaultRoster
+              entries={entries}
+              isMobile={isMobile}
+              onSelectWallet={setVaultSelectedWallet}
+            />
+
+            <VaultWalletDrawer
+              wallet={vaultSelectedWallet}
+              entry={selectedEntry}
+              openLegs={vaultSelectedWallet
+                ? (openLegsByWallet?.[vaultSelectedWallet.toLowerCase()] || [])
+                : []}
+              isMobile={isMobile}
+              onClose={() => setVaultSelectedWallet(null)}
+            />
           </div>
         );
       })()}

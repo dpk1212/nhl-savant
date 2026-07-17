@@ -1212,6 +1212,10 @@ p {
 .sf-stagger > *:nth-child(7) { animation-delay: 0.38s; }
 .sf-stagger > *:nth-child(8) { animation-delay: 0.42s; }
 
+.sf-fade-in {
+  animation: sf-card-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 /* Sharp Tape — trading-floor ticker. Track holds two copies of the
    run; sliding -50% loops seamlessly. Edge mask fades entries in/out. */
 .sf-tape {
