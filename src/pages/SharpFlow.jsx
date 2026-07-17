@@ -11413,6 +11413,11 @@ export default function SharpFlow() {
                 via inline style when sortBy === 'locked', so always-render
                 is safe. */}
             {(() => {
+              // HC Positions tab reads vault HC-tier cards. actionPositions
+              // lives on vaultData (computed above) — must bind here because
+              // this Sharp Positions block sits in whaleSignals, not the
+              // sharpVault IIFE that destructures vaultData.
+              const actionPositions = vaultData?.actionPositions || [];
               const allPosGames = [];
               const nowMs = Date.now();
               // v12 sort support — the cards DISPLAY the v12 tier (cron
