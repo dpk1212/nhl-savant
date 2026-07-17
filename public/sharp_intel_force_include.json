@@ -1,6 +1,6 @@
 {
-  "updatedAt": "2026-07-17T19:30:00Z",
-  "note": "Directional wallets falsely tagged MM/trader. Primary gate: closed-positions both-sides rate on sports markets (conditionId with ≥2 outcomes). Hold-to-resolve is secondary — nearly all closed sports legs eventually settle. Never write these into sharp_intel_excluded_wallets.",
+  "updatedAt": "2026-07-17T19:40:00Z",
+  "note": "Directional wallets falsely tagged MM/trader. Primary gate: closed-positions both-sides rate on sports markets (conditionId with ≥2 outcomes). Hold-to-resolve is secondary — nearly all closed sports legs eventually settle. Never write these into sharp_intel_excluded_wallets. Batch3 reinstates were hardened with fuller history (maxClosed 1500) after sport-classifier gaps undercounted both-sides on some names.",
   "wallets": [
     {
       "addr": "0x9c76cdb43fb46454da005fbc82047a64a18ec926",
@@ -48,6 +48,36 @@
       "addr": "0xc8b438e4a1c10643ea0ea3e59bcaadc73174f05d",
       "name": "gamblingdebt",
       "reason": "Batch2 revalidated: both-sides 3.9%, one-sided 159-86, ROI +14%",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0x26437896ed9dfeb2f69765edcafe8fdceaab39ae",
+      "name": "Latina",
+      "reason": "Batch3 hardened: both-sides 0% (full history), MLB/SOC/WNBA ROI ~40-57%",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0x8f037a2e4fd49d11267f4ab874ab7ba745ac64d6",
+      "name": "Anointed-Connect",
+      "reason": "Batch3 hardened: both-sides ~5% at 1154 closes, NBA-heavy ROI ~62-68%",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0xdbade4c82fb72780a0db9a38f821d8671aba9c95",
+      "name": "SwissMiss",
+      "reason": "Batch3 hardened: both-sides ~1-3% fuller history, UFC grinder ROI ~6-9%",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0x339a0e5aea39a7db5cea5b0003abab33c78c1eae",
+      "name": "Tokidoki",
+      "reason": "Batch3 hardened: both-sides ~3-4% fuller history, MLB/NBA ROI ~5-8%",
+      "auditedAt": "2026-07-17"
+    },
+    {
+      "addr": "0xf5f232033c51448e17ced9f2ff7c91b78b620234",
+      "name": "GP18",
+      "reason": "Batch3 hardened: both-sides ~1-2% fuller history, directional ROI ~2-6%",
       "auditedAt": "2026-07-17"
     }
   ]
