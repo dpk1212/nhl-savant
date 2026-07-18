@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { X } from 'lucide-react';
+import { ChevronDown, X } from 'lucide-react';
 import { B, T, SPORT_COLORS, fmtVol, signedVol } from './vaultTheme';
 
 const TABS = [
@@ -10,19 +10,25 @@ const TABS = [
 
 /**
  * Slide-over wallet profile — open legs, Source A/B track, sport tiers.
+ * When opened from a Battle Field dot, `focusLeg` pins that sport/game first;
+ * other sports sit in collapsed "More" sections below.
  */
 export default function VaultWalletDrawer({
   wallet,
   entry,
   openLegs = [],
+  focusLeg = null, // { sport, gameKey } | null
   isMobile,
   onClose,
 }) {
   const [tab, setTab] = useState('open');
+  // Sport keys expanded in the "More" accordion. Focus sport is always open.
+  const [expandedSports, setExpandedSports] = useState(() => new Set());
 
   useEffect(() => {
     setTab('open');
-  }, [wallet]);
+    setExpandedSports(new Set());
+  }, [wallet, focusLeg?.sport, focusLeg?.gameKey]);
 
   useEffect(() => {
     if (!wallet) return undefined;
@@ -41,11 +47,49 @@ export default function VaultWalletDrawer({
     [openLegs],
   );
 
+  const openSections = useMemo(() => {
+    if (!sortedLegs.length) return null;
+    const focusSport = focusLeg?.sport || null;
+    const focusKey = focusLeg?.gameKey || null;
+
+    const focusGameLegs = focusSport && focusKey
+      ? sortedLegs.filter((l) => l.sport === focusSport && l.gameKey === focusKey)
+      : [];
+    const focusSportOther = focusSport
+      ? sortedLegs.filter((l) => l.sport === focusSport && (!focusKey || l.gameKey !== focusKey))
+      : [];
+
+    const bySport = new Map();
+    for (const leg of sortedLegs) {
+      if (focusSport && leg.sport === focusSport) continue;
+      if (!bySport.has(leg.sport)) bySport.set(leg.sport, []);
+      bySport.get(leg.sport).push(leg);
+    }
+    const otherSports = [...bySport.entries()]
+      .map(([sport, legs]) => ({
+        sport,
+        legs,
+        invested: legs.reduce((s, l) => s + (l.invested || 0), 0),
+      }))
+      .sort((a, b) => b.invested - a.invested);
+
+    return { focusSport, focusGameLegs, focusSportOther, otherSports };
+  }, [sortedLegs, focusLeg]);
+
   if (!wallet || !entry) return null;
 
   const pnl = entry.sportPnlTotal || 0;
   const roi = entry.roi;
   const week = entry.weeklyPnl;
+
+  const toggleSport = (sport) => {
+    setExpandedSports((prev) => {
+      const next = new Set(prev);
+      if (next.has(sport)) next.delete(sport);
+      else next.add(sport);
+      return next;
+    });
+  };
 
   return (
     <div
@@ -146,40 +190,91 @@ export default function VaultWalletDrawer({
               <div style={{ ...T.body, color: B.textMuted, textAlign: 'center', padding: '2rem 0.5rem' }}>
                 No open sports bets for this wallet right now
               </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-                {sortedLegs.map((leg, i) => {
-                  const sc = SPORT_COLORS[leg.sport] || B.gold;
-                  return (
-                    <div
-                      key={`${leg.gameKey}-${leg.marketType}-${leg.side}-${i}`}
-                      style={{
-                        padding: '0.65rem 0.75rem', borderRadius: '10px',
-                        background: B.card, border: `1px solid ${B.border}`,
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem' }}>
-                        <span style={{
-                          ...T.micro, padding: '0.15rem 0.4rem', borderRadius: '4px',
-                          background: sc + '18', color: sc, fontWeight: 800,
-                        }}>{leg.sport}</span>
-                        <span style={{ ...T.label, color: B.gold, fontWeight: 800, fontFeatureSettings: "'tnum'" }}>
-                          {fmtVol(leg.invested)}
-                        </span>
-                      </div>
-                      <div style={{ ...T.body, color: B.text, marginTop: '0.35rem', fontWeight: 700 }}>
-                        {leg.away} vs {leg.home}
-                      </div>
-                      <div style={{ ...T.micro, color: B.textSec, marginTop: '0.2rem' }}>
-                        {leg.marketType} · <span style={{ color: B.gold }}>{leg.teamName || leg.side}</span>
-                        {leg.betMultiplier >= 1.5 && (
-                          <span style={{ color: B.gold }}> · {leg.betMultiplier.toFixed(1)}×</span>
-                        )}
-                        {leg.vault_isHcWallet && (
-                          <span style={{ color: B.gold, fontWeight: 800 }}> · Heavy</span>
-                        )}
-                      </div>
+            ) : openSections?.focusSport ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {/* Pinned game from the battle-map click */}
+                <div>
+                  <div style={{
+                    display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+                    marginBottom: '0.4rem',
+                  }}>
+                    <span style={{ ...T.tiny, color: B.gold, letterSpacing: '0.1em', fontWeight: 800 }}>
+                      THIS GAME · {openSections.focusSport}
+                    </span>
+                    <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
+                      {openSections.focusGameLegs.length} open
+                    </span>
+                  </div>
+                  {openSections.focusGameLegs.length === 0 ? (
+                    <div style={{
+                      ...T.micro, color: B.textMuted, padding: '0.75rem',
+                      borderRadius: '10px', border: `1px dashed ${B.border}`,
+                    }}>
+                      No open ticket on this matchup for this wallet
                     </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                      {openSections.focusGameLegs.map((leg, i) => (
+                        <LegCard key={`focus-${leg.gameKey}-${leg.marketType}-${leg.side}-${i}`} leg={leg} highlight />
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {openSections.focusSportOther.length > 0 && (
+                  <SportAccordion
+                    sport={openSections.focusSport}
+                    legs={openSections.focusSportOther}
+                    expanded
+                    onToggle={() => {}}
+                    label={`More ${openSections.focusSport}`}
+                    forceOpen
+                  />
+                )}
+
+                {openSections.otherSports.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    <div style={{ ...T.tiny, color: B.textSubtle, letterSpacing: '0.1em', fontWeight: 800, marginTop: '0.25rem' }}>
+                      OTHER SPORTS
+                    </div>
+                    {openSections.otherSports.map(({ sport, legs, invested }) => (
+                      <SportAccordion
+                        key={sport}
+                        sport={sport}
+                        legs={legs}
+                        invested={invested}
+                        expanded={expandedSports.has(sport)}
+                        onToggle={() => toggleSport(sport)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              // Roster / field click — group by sport, first expanded, rest collapsed
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                {groupLegsBySport(sortedLegs).map(({ sport, legs, invested }, idx) => {
+                  const open = expandedSports.size === 0
+                    ? idx === 0
+                    : expandedSports.has(sport);
+                  return (
+                    <SportAccordion
+                      key={sport}
+                      sport={sport}
+                      legs={legs}
+                      invested={invested}
+                      expanded={open}
+                      onToggle={() => {
+                        setExpandedSports((prev) => {
+                          const groups = groupLegsBySport(sortedLegs);
+                          const next = new Set(prev);
+                          if (prev.size === 0 && groups[0]) next.add(groups[0].sport);
+                          if (next.has(sport)) next.delete(sport);
+                          else next.add(sport);
+                          return next;
+                        });
+                      }}
+                    />
                   );
                 })}
               </div>
@@ -265,6 +360,115 @@ export default function VaultWalletDrawer({
             </div>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function groupLegsBySport(legs) {
+  const bySport = new Map();
+  for (const leg of legs) {
+    if (!bySport.has(leg.sport)) bySport.set(leg.sport, []);
+    bySport.get(leg.sport).push(leg);
+  }
+  return [...bySport.entries()]
+    .map(([sport, sportLegs]) => ({
+      sport,
+      legs: sportLegs,
+      invested: sportLegs.reduce((s, l) => s + (l.invested || 0), 0),
+    }))
+    .sort((a, b) => b.invested - a.invested);
+}
+
+function SportAccordion({ sport, legs, invested, expanded, onToggle, label, forceOpen }) {
+  const sc = SPORT_COLORS[sport] || B.gold;
+  const open = forceOpen || expanded;
+  const total = invested ?? legs.reduce((s, l) => s + (l.invested || 0), 0);
+  return (
+    <div style={{
+      borderRadius: '10px',
+      border: `1px solid ${B.border}`,
+      background: B.card,
+      overflow: 'hidden',
+    }}>
+      <button
+        type="button"
+        onClick={forceOpen ? undefined : onToggle}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          gap: '0.5rem', padding: '0.65rem 0.75rem', cursor: forceOpen ? 'default' : 'pointer',
+          background: 'transparent', border: 'none', color: 'inherit', textAlign: 'left',
+        }}
+      >
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}>
+          <span style={{
+            ...T.micro, padding: '0.15rem 0.4rem', borderRadius: '4px',
+            background: sc + '18', color: sc, fontWeight: 800,
+          }}>{sport}</span>
+          <span style={{ ...T.micro, color: B.textSec, fontWeight: 700 }}>
+            {label || `${legs.length} open`}
+          </span>
+        </span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+          <span style={{ ...T.micro, color: B.gold, fontWeight: 800, fontFeatureSettings: "'tnum'" }}>
+            {fmtVol(total)}
+          </span>
+          {!forceOpen && (
+            <ChevronDown
+              size={14}
+              style={{
+                color: B.textMuted,
+                transform: open ? 'rotate(180deg)' : 'none',
+                transition: 'transform 0.18s ease',
+              }}
+            />
+          )}
+        </span>
+      </button>
+      {open && (
+        <div style={{
+          display: 'flex', flexDirection: 'column', gap: '0.4rem',
+          padding: '0 0.55rem 0.55rem',
+        }}>
+          {legs.map((leg, i) => (
+            <LegCard key={`${sport}-${leg.gameKey}-${leg.marketType}-${leg.side}-${i}`} leg={leg} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LegCard({ leg, highlight }) {
+  const sc = SPORT_COLORS[leg.sport] || B.gold;
+  return (
+    <div
+      style={{
+        padding: '0.65rem 0.75rem', borderRadius: '10px',
+        background: highlight ? 'rgba(212,175,55,0.08)' : B.card,
+        border: highlight ? `1px solid ${B.goldBorder}` : `1px solid ${B.border}`,
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem' }}>
+        <span style={{
+          ...T.micro, padding: '0.15rem 0.4rem', borderRadius: '4px',
+          background: sc + '18', color: sc, fontWeight: 800,
+        }}>{leg.sport}</span>
+        <span style={{ ...T.label, color: B.gold, fontWeight: 800, fontFeatureSettings: "'tnum'" }}>
+          {fmtVol(leg.invested)}
+        </span>
+      </div>
+      <div style={{ ...T.body, color: B.text, marginTop: '0.35rem', fontWeight: 700 }}>
+        {leg.away} vs {leg.home}
+      </div>
+      <div style={{ ...T.micro, color: B.textSec, marginTop: '0.2rem' }}>
+        {leg.marketType} · <span style={{ color: B.gold }}>{leg.teamName || leg.side}</span>
+        {leg.betMultiplier >= 1.5 && (
+          <span style={{ color: B.gold }}> · {leg.betMultiplier.toFixed(1)}×</span>
+        )}
+        {leg.vault_isHcWallet && (
+          <span style={{ color: B.gold, fontWeight: 800 }}> · Heavy</span>
+        )}
       </div>
     </div>
   );

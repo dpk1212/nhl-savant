@@ -8930,6 +8930,13 @@ export default function SharpFlow() {
   const [expandedActionCard, setExpandedActionCard] = useState(null);
   const [vaultSportFilter, setVaultSportFilter] = useState('ALL');
   const [vaultSelectedWallet, setVaultSelectedWallet] = useState(null);
+  // When a Battle Field dot is clicked: pin that sport/game at the top of
+  // Open positions; other sports sit in collapsed "More" sections below.
+  const [vaultLegFocus, setVaultLegFocus] = useState(null); // { sport, gameKey } | null
+  const selectVaultWallet = (wallet, focus = null) => {
+    setVaultSelectedWallet(wallet || null);
+    setVaultLegFocus(wallet && focus?.sport ? { sport: focus.sport, gameKey: focus.gameKey || null } : null);
+  };
   const [gameSort, setGameSort] = useState('time');
   const [signalType, setSignalType] = useState('upcoming');
   // View/sort selection survives refresh — landing on Locked Picks
@@ -9941,7 +9948,7 @@ export default function SharpFlow() {
               sportFilter={vaultSportFilter}
               selectedWallet={vaultSelectedWallet}
               isMobile={isMobile}
-              onSelectWallet={setVaultSelectedWallet}
+              onSelectWallet={selectVaultWallet}
             />
 
             <VaultRoster
@@ -9949,7 +9956,7 @@ export default function SharpFlow() {
               actionPositions={actionPositions}
               selectedWallet={vaultSelectedWallet}
               isMobile={isMobile}
-              onSelectWallet={setVaultSelectedWallet}
+              onSelectWallet={selectVaultWallet}
             />
 
             <VaultWalletDrawer
@@ -9958,8 +9965,9 @@ export default function SharpFlow() {
               openLegs={vaultSelectedWallet
                 ? (openLegsByWallet?.[vaultSelectedWallet.toLowerCase()] || [])
                 : []}
+              focusLeg={vaultLegFocus}
               isMobile={isMobile}
-              onClose={() => setVaultSelectedWallet(null)}
+              onClose={() => selectVaultWallet(null)}
             />
           </div>
         );

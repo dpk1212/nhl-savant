@@ -289,7 +289,12 @@ export default function VaultAlphaField({
     if (!p?.wallet) return;
     // Battle dots always open — open legs are fed from the RAW position
     // scan so tracked / cross-sport tickets show up (not just vault-qualified).
-    onSelectWallet?.(p.wallet);
+    // Pass the active game so the drawer leads with that sport/matchup.
+    if (isBattle && game) {
+      onSelectWallet?.(p.wallet, { sport: game.sport, gameKey: game.gameKey });
+    } else {
+      onSelectWallet?.(p.wallet);
+    }
   };
 
   return (
