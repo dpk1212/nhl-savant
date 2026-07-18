@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-07-18T11:17:56.948Z",
-  "elapsedSec": 14.3,
+  "scannedAt": "2026-07-18T11:21:46.816Z",
+  "elapsedSec": 15,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 43,
   "summary": {
     "total": 199,
     "coveredByMain": 17,
-    "recovered": 27,
-    "recoveredPositions": 121,
-    "noPositions": 155,
+    "recovered": 28,
+    "recoveredPositions": 125,
+    "noPositions": 154,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -17,7 +17,7 @@
       "spread": 3,
       "total": 3,
       "dropped_shadow_gate": 38,
-      "dropped_excluded": 60,
+      "dropped_excluded": 64,
       "dropped_duplicate": 1
     }
   },
@@ -792,8 +792,24 @@
       "tier": "CONFIRMED",
       "name": "phonesculptor",
       "sports": "SOC",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xf1528f12e645462c344799b62b1b421a6a4c64aa"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0xf1528f12e645462c344799b62b1b421a6a4c64aa",
+      "positionsCount": 1,
+      "statsSource": "sports_sharps",
+      "avgSportBet": 24575,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "pit_cle",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 11221,
+          "entryLine": null,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "4c9ada",
@@ -882,10 +898,10 @@
       "sports": "MLB,SOC,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xdb83e85ffd22faa4009273034770f96ffc5b1e50",
-      "positionsCount": 2,
+      "positionsCount": 3,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 1534,
-      "willPassShadowGate": 2,
+      "willPassShadowGate": 3,
       "willDropAtShadowGate": 0,
       "positions": [
         {
@@ -904,6 +920,15 @@
           "side": "over",
           "invested": 946,
           "entryLine": 149.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "pit_cle",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 825,
+          "entryLine": null,
           "passesShadow": true
         }
       ]
@@ -1003,10 +1028,10 @@
       "sports": "MLB,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
-      "positionsCount": 33,
+      "positionsCount": 35,
       "statsSource": "sports_sharps",
       "avgSportBet": 1192,
-      "willPassShadowGate": 33,
+      "willPassShadowGate": 35,
       "willDropAtShadowGate": 0,
       "positions": [
         {
@@ -1286,6 +1311,24 @@
           "side": "away",
           "invested": 317,
           "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "WNBA",
+          "gameKey": "nyl_ind",
+          "marketType": "total",
+          "side": "over",
+          "invested": 294,
+          "entryLine": 176.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "WNBA",
+          "gameKey": "nyl_ind",
+          "marketType": "total",
+          "side": "over",
+          "invested": 299,
+          "entryLine": 177.5,
           "passesShadow": true
         },
         {
@@ -2591,7 +2634,7 @@
           "gameKey": "lad_nyy",
           "marketType": "total",
           "side": "under",
-          "invested": 9713,
+          "invested": 9718,
           "entryLine": 8.5,
           "passesShadow": true
         },
@@ -2609,7 +2652,7 @@
           "gameKey": "min_chc",
           "marketType": "ml",
           "side": "away",
-          "invested": 1953,
+          "invested": 1960,
           "entryLine": null,
           "passesShadow": false
         },
@@ -2645,7 +2688,7 @@
           "gameKey": "cws_tor",
           "marketType": "total",
           "side": "over",
-          "invested": 30,
+          "invested": 31,
           "entryLine": 8.5,
           "passesShadow": false
         },
