@@ -278,7 +278,7 @@ export default function VaultAlphaField({
           {d.roiRaw != null && <div>Sports ROI {d.roiRaw >= 0 ? '+' : ''}{d.roiRaw.toFixed(1)}%</div>}
           {d.clvPct != null && d.clvN >= CLV_N_MIN && <div>Beat close {d.clvPct.toFixed(0)}% · {d.clvN} bets</div>}
           {d.picksN >= 10 && d.picksWr != null && <div>With us {d.picksWr.toFixed(0)}% · {d.picksN} picks</div>}
-          {d.inVault && <div style={{ color: B.gold, marginTop: '0.2rem' }}>Tap to open wallet profile</div>}
+          <div style={{ color: B.gold, marginTop: '0.2rem' }}>Tap to open positions</div>
         </div>
       </div>
     );
@@ -287,7 +287,8 @@ export default function VaultAlphaField({
   const handleScatterClick = (data) => {
     const p = data?.payload || data;
     if (!p?.wallet) return;
-    if (isBattle && !p.inVault) return;
+    // Battle dots always open — open legs are fed from the RAW position
+    // scan so tracked / cross-sport tickets show up (not just vault-qualified).
     onSelectWallet?.(p.wallet);
   };
 

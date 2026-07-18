@@ -79,7 +79,7 @@ export default function VaultWalletDrawer({
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem' }}>
             <div>
               <div style={{ ...T.tiny, color: B.gold, letterSpacing: '0.08em', marginBottom: '0.25rem' }}>
-                Vault wallet
+                {entry._battleOnly ? 'Tracked wallet' : 'Vault wallet'}
               </div>
               <div style={{ ...T.heading, color: B.text, fontSize: '1.25rem' }}>
                 {entry.name || `***${wallet.slice(-4)}`}

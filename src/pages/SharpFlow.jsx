@@ -9325,52 +9325,77 @@ export default function SharpFlow() {
     const walletSet = new Set(entries.map(e => e.wallet.toLowerCase()));
     const entryByWallet = new Map(entries.map(e => [e.wallet.toLowerCase(), e]));
 
-    // Open exposure across ML / spread / total — roster KPIs + drawer legs
+    // Open exposure across ML / spread / total — roster KPIs + drawer legs.
+    // Pass 1: qualified feed + vault roster (roster openInvested / KPIs).
+    // Pass 2: RAW feed for every wallet — Battle Field dots include
+    // cross-sport / tracked tickets that the sport-qualified filter drops.
+    // Without pass 2, clicking a Bashi dot opened an empty "Open positions".
     const todayPositions = {};
     const openLegsByWallet = {};
     const openMarketKeys = {};
-    const exposureFiles = [
-      { data: sharpPositions, mkt: 'ML' },
-      { data: spreadPositions, mkt: 'SPREAD' },
-      { data: totalPositions, mkt: 'TOTAL' },
-    ];
-    for (const { data: posData, mkt } of exposureFiles) {
-      if (!posData) continue;
-      for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'NFL', 'SOC', 'UFC', 'WNBA']) {
-        const sportGames = posData[sport] || {};
-        for (const [gameKey, gd] of Object.entries(sportGames)) {
-          if (!gd.positions) continue;
-          for (const pos of gd.positions) {
-            const wLower = pos.wallet?.toLowerCase();
-            if (!wLower || !walletSet.has(wLower)) continue;
-            const teamName = pos.side === 'home' || pos.side === 'over'
-              ? (pos.side === 'over' ? 'Over' : gd.home)
-              : (pos.side === 'under' ? 'Under' : gd.away);
-            const avgBet = pos.avgSportBet || 0;
-            const leg = {
-              ...pos,
-              sport,
-              gameKey,
-              away: gd.away,
-              home: gd.home,
-              marketType: mkt,
-              teamName,
-              betMultiplier: avgBet > 0 ? (pos.invested || 0) / avgBet : 0,
-            };
-            if (!openLegsByWallet[wLower]) openLegsByWallet[wLower] = [];
-            openLegsByWallet[wLower].push(leg);
-            if (mkt === 'ML') {
-              if (!todayPositions[wLower]) todayPositions[wLower] = [];
-              todayPositions[wLower].push(leg);
+    const legKeySet = {}; // wLower → Set of sport|game|mkt|side for dedupe
+    const pushOpenLeg = (pos, sport, gameKey, gd, mkt, { countTowardRoster }) => {
+      const wLower = pos.wallet?.toLowerCase();
+      if (!wLower || !pos.side) return;
+      if (intelExcludedSet?.has(wLower)) return;
+      const k = `${sport}|${gameKey}|${mkt}|${pos.side}`;
+      if (!legKeySet[wLower]) legKeySet[wLower] = new Set();
+      if (legKeySet[wLower].has(k)) return;
+      legKeySet[wLower].add(k);
+      const teamName = pos.side === 'home' || pos.side === 'over'
+        ? (pos.side === 'over' ? 'Over' : gd.home)
+        : (pos.side === 'under' ? 'Under' : gd.away);
+      const avgBet = pos.avgSportBet || 0;
+      const leg = {
+        ...pos,
+        sport,
+        gameKey,
+        away: gd.away,
+        home: gd.home,
+        marketType: mkt,
+        teamName,
+        betMultiplier: avgBet > 0 ? (pos.invested || 0) / avgBet : 0,
+      };
+      if (!openLegsByWallet[wLower]) openLegsByWallet[wLower] = [];
+      openLegsByWallet[wLower].push(leg);
+      if (mkt === 'ML') {
+        if (!todayPositions[wLower]) todayPositions[wLower] = [];
+        todayPositions[wLower].push(leg);
+      }
+      if (!openMarketKeys[wLower]) openMarketKeys[wLower] = new Set();
+      openMarketKeys[wLower].add(k);
+      if (countTowardRoster) {
+        const entry = entryByWallet.get(wLower);
+        if (entry) entry.openInvested += pos.invested || 0;
+      }
+    };
+    const walkExposure = (files, { vaultOnly, countTowardRoster }) => {
+      for (const { data: posData, mkt } of files) {
+        if (!posData) continue;
+        for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'NFL', 'SOC', 'UFC', 'WNBA']) {
+          const sportGames = posData[sport] || {};
+          for (const [gameKey, gd] of Object.entries(sportGames)) {
+            if (!gd.positions) continue;
+            for (const pos of gd.positions) {
+              const wLower = pos.wallet?.toLowerCase();
+              if (!wLower) continue;
+              if (vaultOnly && !walletSet.has(wLower)) continue;
+              pushOpenLeg(pos, sport, gameKey, gd, mkt, { countTowardRoster });
             }
-            if (!openMarketKeys[wLower]) openMarketKeys[wLower] = new Set();
-            openMarketKeys[wLower].add(`${sport}|${gameKey}|${mkt}|${pos.side}`);
-            const entry = entryByWallet.get(wLower);
-            if (entry) entry.openInvested += pos.invested || 0;
           }
         }
       }
-    }
+    };
+    walkExposure([
+      { data: sharpPositions, mkt: 'ML' },
+      { data: spreadPositions, mkt: 'SPREAD' },
+      { data: totalPositions, mkt: 'TOTAL' },
+    ], { vaultOnly: true, countTowardRoster: true });
+    walkExposure([
+      { data: rawSharpPositions, mkt: 'ML' },
+      { data: rawSpreadPositions, mkt: 'SPREAD' },
+      { data: rawTotalPositions, mkt: 'TOTAL' },
+    ], { vaultOnly: false, countTowardRoster: false });
     for (const e of entries) {
       const keys = openMarketKeys[e.wallet.toLowerCase()];
       e.openMarkets = keys ? keys.size : 0;
@@ -9816,9 +9841,28 @@ export default function SharpFlow() {
           : null;
 
         const vaultSports = ['ALL', 'NHL', 'NBA', 'MLB', 'CBB', 'NFL', 'SOC', 'UFC', 'WNBA'];
-        const selectedEntry = vaultSelectedWallet
-          ? entries.find(e => e.wallet.toLowerCase() === vaultSelectedWallet.toLowerCase())
-          : null;
+        const selectedEntry = (() => {
+          if (!vaultSelectedWallet) return null;
+          const w = vaultSelectedWallet.toLowerCase();
+          const fromRoster = entries.find(e => e.wallet.toLowerCase() === w);
+          if (fromRoster) return fromRoster;
+          // Battle-map click on a tracked / cross-sport wallet — synthesize a
+          // minimal entry so the drawer can render open legs from the raw scan.
+          const ss = sportsSharps?.[w] || {};
+          const legs = openLegsByWallet?.[w] || [];
+          return {
+            wallet: w,
+            name: `***${w.slice(-4)}`,
+            sportPnlTotal: ss.sportPnlTotal ?? ss.totalPnl ?? 0,
+            roi: Number.isFinite(ss.sportROI) ? ss.sportROI : null,
+            weeklyPnl: ss.weeklyPnl ?? null,
+            vol: ss.vol || ss.overallVol || 0,
+            openInvested: legs.reduce((s, l) => s + (l.invested || 0), 0),
+            openMarkets: legs.length,
+            perSport: ss.perSport || {},
+            _battleOnly: true,
+          };
+        })();
 
         return (
           <div>
