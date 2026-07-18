@@ -318,7 +318,7 @@ export default function VaultAlphaField({
           </div>
           <div style={{ ...T.label, color: B.textMuted, fontWeight: 500 }}>
             {isBattle
-              ? 'Sides face off across the line · gold = proven · height = wallet ROI · distance = money'
+              ? 'Sides face off across the line · gold = proven in this sport · height = wallet ROI · distance = money'
               : 'Beat the close vs sports ROI · ring = betting today · bright = heavy size'}
           </div>
         </div>
