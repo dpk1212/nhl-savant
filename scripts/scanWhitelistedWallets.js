@@ -1168,47 +1168,40 @@ function mergeRecoveredIntoScanFiles(positions, polyData) {
   return stats;
 }
 
-// Merge supplemental-scan heartbeat into all three sharp_positions*.json files.
-// Returns number of wallets newly added to okWallets across the primary file.
+// Merge supplemental-scan heartbeat into scan_heartbeat.json (standalone file —
+// the heartbeat no longer ships inside the three position files the browser
+// downloads). Returns number of wallets newly added to okWallets.
 function mergeHeartbeatIntoScanFiles(okWallets, openAssets) {
   if (!okWallets?.size) return 0;
-  const files = [
-    'sharp_positions.json',
-    'sharp_spread_positions.json',
-    'sharp_total_positions.json',
-  ];
+  // Legacy fallback: read embedded heartbeat if the standalone file predates
+  // the split (one transition cycle only).
+  const hb = loadJSON('scan_heartbeat.json')
+    || loadJSON('sharp_positions.json')?.scanHeartbeat
+    || { scannedAt: new Date().toISOString(), okWallets: [], openAssets: {} };
+  const okSet = new Set(Array.isArray(hb.okWallets) ? hb.okWallets.map((w) => String(w).toLowerCase()) : []);
+  const assetsMap = hb.openAssets && typeof hb.openAssets === 'object' ? { ...hb.openAssets } : {};
   let added = 0;
-  for (const file of files) {
-    const data = loadJSON(file);
-    if (!data) continue;
-    const hb = data.scanHeartbeat && typeof data.scanHeartbeat === 'object'
-      ? data.scanHeartbeat
-      : { scannedAt: new Date().toISOString(), okWallets: [], openAssets: {} };
-    const okSet = new Set(Array.isArray(hb.okWallets) ? hb.okWallets.map((w) => String(w).toLowerCase()) : []);
-    const assetsMap = hb.openAssets && typeof hb.openAssets === 'object' ? { ...hb.openAssets } : {};
-    for (const w of okWallets) {
-      const wl = String(w).toLowerCase();
-      if (!okSet.has(wl)) {
-        okSet.add(wl);
-        if (file === 'sharp_positions.json') added++;
-      }
-      const incoming = openAssets[wl];
-      const prev = new Set(Array.isArray(assetsMap[wl]) ? assetsMap[wl] : []);
-      if (incoming instanceof Set) {
-        for (const a of incoming) prev.add(a);
-      } else if (Array.isArray(incoming)) {
-        for (const a of incoming) prev.add(a);
-      }
-      assetsMap[wl] = [...prev];
+  for (const w of okWallets) {
+    const wl = String(w).toLowerCase();
+    if (!okSet.has(wl)) {
+      okSet.add(wl);
+      added++;
     }
-    data.scanHeartbeat = {
-      scannedAt: hb.scannedAt || new Date().toISOString(),
-      okWallets: [...okSet],
-      openAssets: assetsMap,
-      whitelistMergedAt: new Date().toISOString(),
-    };
-    atomicWriteJSON(join(PUBLIC, file), data);
+    const incoming = openAssets[wl];
+    const prev = new Set(Array.isArray(assetsMap[wl]) ? assetsMap[wl] : []);
+    if (incoming instanceof Set) {
+      for (const a of incoming) prev.add(a);
+    } else if (Array.isArray(incoming)) {
+      for (const a of incoming) prev.add(a);
+    }
+    assetsMap[wl] = [...prev];
   }
+  atomicWriteJSON(join(PUBLIC, 'scan_heartbeat.json'), {
+    scannedAt: hb.scannedAt || new Date().toISOString(),
+    okWallets: [...okSet],
+    openAssets: assetsMap,
+    whitelistMergedAt: new Date().toISOString(),
+  });
   return added;
 }
 

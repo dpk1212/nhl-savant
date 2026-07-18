@@ -1111,6 +1111,13 @@ async function run() {
     openAssets: openAssetsOut,
   };
 
+  // Heartbeat lives in its own file — it's ~4MB of asset IDs consumed only by
+  // server-side scripts (writeSharpActions EXITED pass). Embedding it in all
+  // three position files tripled every visitor's download for data the
+  // frontend never reads.
+  const heartbeatPath = join(ROOT, 'public', 'scan_heartbeat.json');
+  writeFileSync(heartbeatPath, JSON.stringify(scanHeartbeat), 'utf8');
+
   const meta = {
     scannedAt: scanHeartbeat.scannedAt,
     walletsScanned: walletsToScan.length,
@@ -1119,7 +1126,6 @@ async function run() {
     noSportExcluded: noSport.length,
     tradersExcluded: tradersRemoved,
     totalExcluded: mmFiltered.length + sportLosers.length + noSport.length + tradersRemoved,
-    scanHeartbeat,
   };
 
   Object.assign(result, meta);

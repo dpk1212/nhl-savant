@@ -21,7 +21,6 @@ import AuthModal from '../components/AuthModal';
 import { LivePositionCardView, LockedPositionCardView } from '../components/sharpFlow/cards/PositionCards';
 import { mapLockedPickToCardFixture, mapLiveGameToCardFixture, enrichWallets } from '../components/sharpFlow/cards/mapPositionCard';
 import VaultAlphaField from '../components/sharpVault/VaultAlphaField';
-import VaultBattleField from '../components/sharpVault/VaultBattleField';
 import VaultRoster from '../components/sharpVault/VaultRoster';
 import VaultWalletDrawer from '../components/sharpVault/VaultWalletDrawer';
 import {
@@ -3430,6 +3429,11 @@ function useMarketData() {
     sharpPositions: qualifiedSharpPositions,
     spreadPositions: qualifiedSpreadPositions,
     totalPositions: qualifiedTotalPositions,
+    // Raw (unfiltered) position feeds — Battle Field needs the whole fight,
+    // including tracked/unqualified wallets the qualified filter drops.
+    rawSharpPositions: sharpPositions,
+    rawSpreadPositions: spreadPositions,
+    rawTotalPositions: totalPositions,
     sportsSharps, intelExcludedWallets, walletProfiles, loading,
   };
 }
@@ -8900,7 +8904,7 @@ const SharpTape = memo(function SharpTape({ sharpPositions }) {
 });
 
 export default function SharpFlow() {
-  const { polyData, kalshiData, whaleProfiles, pinnacleHistory, sharpPositions, spreadPositions, totalPositions, sportsSharps, intelExcludedWallets, walletProfiles, loading } = useMarketData();
+  const { polyData, kalshiData, whaleProfiles, pinnacleHistory, sharpPositions, spreadPositions, totalPositions, rawSharpPositions, rawSpreadPositions, rawTotalPositions, sportsSharps, intelExcludedWallets, walletProfiles, loading } = useMarketData();
   const { user, loading: authLoading } = useAuth();
   const { isPremium, loading: subLoading } = useSubscription(user);
   const [sportFilter, setSportFilter] = useState('All');
@@ -9521,12 +9525,17 @@ export default function SharpFlow() {
     }
 
     // ── Battle Field — per-game map of EVERY tracked wallet ────────────────
-    // Unlike actionPositions (whitelist-only, size-gated), this includes every
-    // wallet the scanner feed carries so the game field shows the whole fight:
+    // Built from the RAW position feeds (not the qualified filter) so the
+    // game field shows the whole fight, including unqualified wallets:
     //   proven  = Vault whitelist (CONFIRMED/FLAT in any sport)
     //   cold    = graded record with us is negative (10+ graded bets)
     //   tracked = in the feed, no proven/cold verdict yet
     // intel-excluded wallets (MM/arb) stay out — they aren't opinions.
+    const battlePosFiles = [
+      { data: rawSharpPositions, mkt: 'ML' },
+      { data: rawSpreadPositions, mkt: 'SPREAD' },
+      { data: rawTotalPositions, mkt: 'TOTAL' },
+    ];
     const BATTLE_MIN_INVESTED = 250;
     const classifyBattleWallet = (wLower) => {
       const prof = walletProfiles.get(wLower.slice(-6));
@@ -9540,7 +9549,7 @@ export default function SharpFlow() {
       return { cls, prof };
     };
     const battleGameMap = new Map();
-    for (const { data: posData, mkt } of posFilesForHc) {
+    for (const { data: posData, mkt } of battlePosFiles) {
       if (!posData) continue;
       for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'NFL', 'SOC', 'UFC', 'WNBA']) {
         const sportGames = posData[sport] || {};
@@ -9608,7 +9617,7 @@ export default function SharpFlow() {
     };
     // walletProfiles is intentionally in deps so vaultData re-computes once the
     // sharpWalletProfiles cache populates — this drives HC badge availability.
-  }, [sportsSharps, sharpPositions, spreadPositions, totalPositions, intelExcludedSet, polyData, pinnacleHistory, walletProfiles]);
+  }, [sportsSharps, sharpPositions, spreadPositions, totalPositions, rawSharpPositions, rawSpreadPositions, rawTotalPositions, intelExcludedSet, polyData, pinnacleHistory, walletProfiles]);
 
   // v7.4 — block render until ALL fetch sources are loaded. The lock-state
   // pipeline (decideLockStage / computeWalletConsensus) reads wallet
@@ -9842,13 +9851,6 @@ export default function SharpFlow() {
               entries={entries}
               actionPositions={actionPositions}
               openLegsByWallet={openLegsByWallet}
-              sportFilter={vaultSportFilter}
-              selectedWallet={vaultSelectedWallet}
-              isMobile={isMobile}
-              onSelectWallet={setVaultSelectedWallet}
-            />
-
-            <VaultBattleField
               battleGames={battleGames}
               sportFilter={vaultSportFilter}
               selectedWallet={vaultSelectedWallet}

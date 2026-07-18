@@ -970,7 +970,10 @@ async function main() {
  * docs that predate asset storage. Never exit on scanner silence.
  */
 async function markExitedPositions(db, date, { sharpPositions, posFiles, presentDocIds }) {
-  const hb = sharpPositions?.scanHeartbeat;
+  // Heartbeat moved to its own file (scan_heartbeat.json) so the ~4MB of
+  // open-asset IDs stop shipping to the browser. Fallback to the legacy
+  // embedded location for one transition cycle.
+  const hb = loadJSON('scan_heartbeat.json') || sharpPositions?.scanHeartbeat;
   const okWallets = new Set(
     (Array.isArray(hb?.okWallets) ? hb.okWallets : []).map((w) => String(w || '').toLowerCase()).filter(Boolean),
   );
