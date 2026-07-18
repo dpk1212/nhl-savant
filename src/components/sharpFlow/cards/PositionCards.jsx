@@ -20,6 +20,21 @@ function formatLockCountdown(ms) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
+/** Human reason a 0u / TRACKED card is not a ticket — audit + tooltip. */
+function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, stakePath } = {}) {
+  const pre = Number.isFinite(unitsPreTape) && unitsPreTape > 0
+    ? `${unitsPreTape % 1 === 0 ? unitsPreTape.toFixed(0) : unitsPreTape.toFixed(1)}u → 0u`
+    : null;
+  if (mutedBy === 'tape-weak' || tapeAction === 'mute' || tapeAction === 'MUTE') {
+    return pre ? `Tape mute · ${pre}` : 'Tape mute — weak EDGE / CLV';
+  }
+  if (mutedBy === 'ags-quality-veto') return 'AGS quality veto — never sized';
+  if (stakePath === 'FADE') return 'FADE tier — no ticket';
+  if (stakePath === 'MONITORING') return 'Monitoring — never sized';
+  if (mutedBy) return String(mutedBy).replace(/-/g, ' ');
+  return 'Tracked — no ticket';
+}
+
 /** Same 5-band labels as the Tier Performance scoreboard (MAX / TOP / SHARP / STRONG / LEAN). */
 function displayTierFromPath(stakePath) {
   const key = AGS_V12_PATH_TO_DISPLAY[stakePath];
@@ -1897,7 +1912,11 @@ function JourneyStop({ label, time, odds, color, active }) {
   );
 }
 
-/** Compact T-15 status for locked-list cards (open until freeze, then sealed). */
+/**
+ * T-15 freeze status — Mobbin Live-Activity silhouette (Tinder Boost / Flighty).
+ * Compact: glass pill with tnum countdown → green Check seal when locked.
+ * Expanded: larger digital time + progress bar to freeze (countdown) or seal copy.
+ */
 function LockFreezeStatus({ commenceMs, compact }) {
   const lockEpoch = Number.isFinite(commenceMs) ? commenceMs - LOCK_LEAD_MS : null;
   const [now, setNow] = useState(() => Date.now());
@@ -1909,55 +1928,140 @@ function LockFreezeStatus({ commenceMs, compact }) {
   }, [lockEpoch]);
   if (lockEpoch == null) return null;
   const frozen = now >= lockEpoch;
-  const rem = formatLockCountdown(lockEpoch - now);
+  const remMs = Math.max(0, lockEpoch - now);
+  const rem = formatLockCountdown(remMs);
+  const urgent = !frozen && remMs <= 15 * 60 * 1000;
+  const closing = !frozen && !urgent && remMs <= 60 * 60 * 1000;
+  // Progress toward freeze over a 6h window (caps at 0–1).
+  const WINDOW_MS = 6 * 60 * 60 * 1000;
+  const progress = frozen ? 1 : Math.max(0, Math.min(1, 1 - remMs / WINDOW_MS));
+  const lockEt = new Date(lockEpoch).toLocaleTimeString('en-US', {
+    timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit',
+  });
+
   if (compact) {
+    if (frozen) {
+      return (
+        <span
+          title={`Frozen at T-15 · ${lockEt} ET — set for grading`}
+          className="sf-lock-seal"
+          style={{
+            position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 5,
+            fontSize: '0.58rem', fontWeight: 900, letterSpacing: '0.08em',
+            padding: '5px 10px', borderRadius: 999,
+            color: B.profit,
+            background: 'linear-gradient(135deg, rgba(47,213,126,0.22) 0%, rgba(16,185,129,0.10) 100%)',
+            border: '1px solid rgba(47,213,126,0.45)',
+            boxShadow: '0 0 14px -4px rgba(47,213,126,0.55)',
+          }}
+        >
+          <Check size={11} strokeWidth={3} />
+          LOCKED
+        </span>
+      );
+    }
+    const accent = urgent ? '#F87171' : closing ? B.goldHi : C.textSec;
     return (
-      <span style={{
-        display: 'inline-flex', alignItems: 'center', gap: 5,
-        fontSize: '0.58rem', fontWeight: 900, letterSpacing: '0.04em',
-        padding: '4px 8px', borderRadius: 7,
-        color: frozen ? B.profit : '#1a1408',
-        background: frozen
-          ? 'rgba(47,213,126,0.14)'
-          : `linear-gradient(180deg, ${B.goldHi} 0%, ${B.gold} 100%)`,
-        border: `1px solid ${frozen ? 'rgba(47,213,126,0.40)' : 'rgba(212,175,55,0.65)'}`,
-        boxShadow: frozen ? 'none' : `0 6px 16px -8px ${B.gold}`,
-        fontFeatureSettings: "'tnum'",
-      }}>
-        <Clock size={11} strokeWidth={2.8} />
-        {frozen ? 'LOCKED' : `LOCKS ${rem}`}
+      <span
+        title={`Locks 15 min before start · ${lockEt} ET`}
+        className={urgent ? 'sf-lock-urgent' : undefined}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          padding: '4px 9px 4px 7px', borderRadius: 999,
+          color: urgent || closing ? (urgent ? '#FECACA' : '#1a1408') : C.textSec,
+          background: urgent
+            ? 'linear-gradient(135deg, rgba(248,113,113,0.22), rgba(220,38,38,0.10))'
+            : closing
+              ? `linear-gradient(180deg, ${B.goldHi} 0%, ${B.gold} 100%)`
+              : 'rgba(255,255,255,0.05)',
+          border: `1px solid ${urgent ? 'rgba(248,113,113,0.45)' : closing ? 'rgba(212,175,55,0.65)' : 'rgba(255,255,255,0.12)'}`,
+          boxShadow: closing ? `0 6px 16px -8px ${B.gold}` : 'none',
+          fontFeatureSettings: "'tnum'",
+        }}
+      >
+        <Clock size={11} strokeWidth={2.8} style={{ color: accent, flexShrink: 0 }} />
+        <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.05, gap: 1 }}>
+          <span style={{
+            fontSize: '0.42rem', fontWeight: 800, letterSpacing: '0.12em',
+            opacity: urgent || closing ? 0.75 : 0.65,
+          }}>
+            LOCKS
+          </span>
+          <span style={{
+            fontSize: '0.68rem', fontWeight: 900, letterSpacing: '-0.02em',
+            fontFamily: MONO, color: urgent || closing ? 'inherit' : C.text,
+          }}>
+            {rem || '—'}
+          </span>
+        </span>
       </span>
     );
   }
+
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 10, marginTop: 12,
-      padding: '10px 12px', borderRadius: 10,
-      background: frozen
-        ? 'rgba(47,213,126,0.10)'
-        : 'linear-gradient(135deg, rgba(212,175,55,0.20) 0%, rgba(212,175,55,0.07) 100%)',
-      border: `1px solid ${frozen ? 'rgba(47,213,126,0.35)' : 'rgba(212,175,55,0.50)'}`,
-      fontFeatureSettings: "'tnum'",
-    }}>
-      <Clock size={16} strokeWidth={2.4} style={{ flexShrink: 0, color: frozen ? B.profit : B.goldHi }} />
+    <div
+      className={frozen ? 'sf-lock-seal' : urgent ? 'sf-lock-urgent' : undefined}
+      style={{
+        position: 'relative', overflow: 'hidden',
+        display: 'flex', alignItems: 'center', gap: 12, marginTop: 12,
+        padding: '11px 13px', borderRadius: 12,
+        background: frozen
+          ? 'linear-gradient(135deg, rgba(47,213,126,0.14) 0%, rgba(16,185,129,0.06) 100%)'
+          : urgent
+            ? 'linear-gradient(135deg, rgba(248,113,113,0.16) 0%, rgba(220,38,38,0.06) 100%)'
+            : 'linear-gradient(135deg, rgba(212,175,55,0.18) 0%, rgba(212,175,55,0.06) 100%)',
+        border: `1px solid ${frozen ? 'rgba(47,213,126,0.40)' : urgent ? 'rgba(248,113,113,0.40)' : 'rgba(212,175,55,0.48)'}`,
+        fontFeatureSettings: "'tnum'",
+      }}
+    >
       {frozen ? (
-        <div>
-          <div style={{ fontSize: '0.7rem', fontWeight: 900, color: B.profit }}>FINAL TICKET</div>
-          <div style={{ fontSize: '0.56rem', fontWeight: 600, color: C.textSec, marginTop: 2 }}>
-            Frozen at T-15 — set for grading
-          </div>
-        </div>
+        <Check size={18} strokeWidth={2.8} style={{ flexShrink: 0, color: B.profit }} />
       ) : (
-        <div>
-          <div style={{ fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.14em', color: B.goldHi }}>LOCKS IN</div>
-          <div style={{ fontSize: '1.15rem', fontWeight: 900, color: C.text, letterSpacing: '-0.03em', lineHeight: 1.1 }}>
-            {rem || '—'}
-          </div>
-          <div style={{ fontSize: '0.56rem', fontWeight: 600, color: C.textSec, marginTop: 2 }}>
-            Stake, path, and side can still change
-          </div>
-        </div>
+        <Clock size={18} strokeWidth={2.4} style={{ flexShrink: 0, color: urgent ? '#F87171' : B.goldHi }} />
       )}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        {frozen ? (
+          <>
+            <div style={{ fontSize: '0.72rem', fontWeight: 900, color: B.profit, letterSpacing: '0.04em' }}>
+              LOCKED · FINAL TICKET
+            </div>
+            <div style={{ fontSize: '0.56rem', fontWeight: 600, color: C.textSec, marginTop: 2 }}>
+              Frozen at T-15 ({lockEt} ET) — set for grading
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{
+              fontSize: '0.48rem', fontWeight: 900, letterSpacing: '0.14em',
+              color: urgent ? '#FCA5A5' : B.goldHi,
+            }}>
+              LOCKS IN
+            </div>
+            <div style={{
+              fontSize: '1.35rem', fontWeight: 900, color: C.text,
+              letterSpacing: '-0.03em', lineHeight: 1.05, fontFamily: MONO,
+            }}>
+              {rem || '—'}
+            </div>
+            <div style={{ fontSize: '0.54rem', fontWeight: 600, color: C.textSec, marginTop: 2 }}>
+              Stake, path, and side can still change · freezes {lockEt} ET
+            </div>
+            {/* Tinder-style progress toward freeze */}
+            <div style={{
+              marginTop: 8, height: 3, borderRadius: 999, overflow: 'hidden',
+              background: 'rgba(148,163,184,0.14)',
+            }}>
+              <div style={{
+                width: `${progress * 100}%`, height: '100%', borderRadius: 999,
+                background: urgent
+                  ? 'linear-gradient(90deg, #F87171, #EF4444)'
+                  : `linear-gradient(90deg, ${B.gold}, ${B.goldHi})`,
+                transition: 'width 0.6s ease',
+              }} />
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -2067,6 +2171,14 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
     : graded
       ? `${resultColor}55`
       : 'rgba(212,175,55,0.28)';
+  const muteTip = trackedMuteLabel({
+    mutedBy: f.mutedBy,
+    tapeAction: f.tapeAction,
+    unitsPreTape: f.unitsPreTape,
+    stakePath: f.stakePath,
+  });
+  const ticketFrozen = Number.isFinite(f.commenceMs)
+    && Date.now() >= (f.commenceMs - LOCK_LEAD_MS);
 
   if (!expanded) {
     return (
@@ -2105,11 +2217,14 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
               </span>
             )}
             {tracked ? (
-              <span style={{
-                fontSize: '0.52rem', fontWeight: 900, letterSpacing: '0.08em',
-                padding: '4px 10px', borderRadius: 7, color: '#aeb8cb',
-                background: 'rgba(139,150,171,0.10)', border: '1px solid rgba(139,150,171,0.26)',
-              }}>
+              <span
+                title={muteTip}
+                style={{
+                  fontSize: '0.52rem', fontWeight: 900, letterSpacing: '0.08em',
+                  padding: '4px 10px', borderRadius: 7, color: '#aeb8cb',
+                  background: 'rgba(139,150,171,0.10)', border: '1px solid rgba(139,150,171,0.26)',
+                }}
+              >
                 TRACKED
               </span>
             ) : graded ? (
@@ -2123,16 +2238,32 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
             ) : (
               <>
                 <LockFreezeStatus commenceMs={f.commenceMs} compact />
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 4,
-                  fontSize: '0.52rem', fontWeight: 900, letterSpacing: '0.08em',
-                  padding: '4px 10px', borderRadius: 7, color: '#06100a',
-                  background: `linear-gradient(180deg, ${B.goldHi} 0%, ${accent} 55%, ${accent}bb 100%)`,
-                  boxShadow: `0 8px 22px -10px ${accent}`,
-                }}>
-                  <Lock size={8} strokeWidth={3} />
-                  IN
-                </span>
+                {ticketFrozen ? (
+                  <span
+                    title="Ticket sealed at T-15 — set for grading"
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 4,
+                      fontSize: '0.52rem', fontWeight: 900, letterSpacing: '0.08em',
+                      padding: '4px 10px', borderRadius: 999, color: '#06140c',
+                      background: 'linear-gradient(180deg, #6EE7B7 0%, #34D399 55%, #10B981 100%)',
+                      boxShadow: '0 8px 22px -10px rgba(16,185,129,0.7)',
+                    }}
+                  >
+                    <Check size={9} strokeWidth={3.2} />
+                    SET
+                  </span>
+                ) : (
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                    fontSize: '0.52rem', fontWeight: 900, letterSpacing: '0.08em',
+                    padding: '4px 10px', borderRadius: 7, color: '#06100a',
+                    background: `linear-gradient(180deg, ${B.goldHi} 0%, ${accent} 55%, ${accent}bb 100%)`,
+                    boxShadow: `0 8px 22px -10px ${accent}`,
+                  }}>
+                    <Lock size={8} strokeWidth={3} />
+                    IN
+                  </span>
+                )}
               </>
             )}
           </span>
@@ -2283,12 +2414,15 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
             </span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
               {tracked ? (
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 5,
-                  fontSize: '0.58rem', fontWeight: 900, letterSpacing: '0.08em',
-                  padding: '5px 12px', borderRadius: 8, color: '#aeb8cb',
-                  background: 'rgba(139,150,171,0.10)', border: '1px solid rgba(139,150,171,0.26)',
-                }}>
+                <span
+                  title={muteTip}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                    fontSize: '0.58rem', fontWeight: 900, letterSpacing: '0.08em',
+                    padding: '5px 12px', borderRadius: 8, color: '#aeb8cb',
+                    background: 'rgba(139,150,171,0.10)', border: '1px solid rgba(139,150,171,0.26)',
+                  }}
+                >
                   TRACKED
                 </span>
               ) : graded ? (
@@ -2379,7 +2513,12 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
               display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap',
               background: 'rgba(139,150,171,0.06)', border: '1px solid rgba(139,150,171,0.22)',
             }}>
-              <span style={{ fontSize: '1.1rem', fontWeight: 800, color: C.textSec }}>No ticket</span>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '1.1rem', fontWeight: 800, color: C.textSec }}>No ticket</div>
+                <div style={{ fontSize: '0.52rem', fontWeight: 700, color: C.textFaint, marginTop: 3, maxWidth: 160 }}>
+                  {muteTip}
+                </div>
+              </div>
               <span style={{ fontSize: '0.6rem', color: C.textMuted }}>Watching for context — 0u staked</span>
               <span style={{ marginLeft: 'auto', alignSelf: 'center' }}>
                 <LockFreezeStatus commenceMs={f.commenceMs} compact />

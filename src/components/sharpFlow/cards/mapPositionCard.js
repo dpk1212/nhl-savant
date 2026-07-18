@@ -300,6 +300,11 @@ export function mapLockedPickToCardFixture(pick, {
     gotOdds: lockOdds,
     fairLine: Number.isFinite(pick.pinnacleOdds) ? pick.pinnacleOdds : peakOdds,
     tierPerf: tierPerf || null,
+    // Mute audit — why TRACKED / 0u (tape-weak, ags-quality-veto, MONITORING…)
+    mutedBy: pick.mutedBy || null,
+    unitsPreTape: Number.isFinite(pick.unitsPreTape) ? pick.unitsPreTape
+      : Number.isFinite(pick.v8_unitsPreTape) ? pick.v8_unitsPreTape
+      : null,
   };
 }
 

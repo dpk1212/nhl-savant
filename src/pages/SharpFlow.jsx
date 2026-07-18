@@ -5613,11 +5613,11 @@ const LOCK_TIER_ACCENT = {
 
 // ─── Lock Countdown Pill ──────────────────────────────────────────────────────
 // Live countdown to the pick's lock moment (15 min before first pitch/kick).
-// Three escalating states, all speaking the card's glass-pill vocabulary:
-//   > 1h out   — quiet glass, clock icon, "LOCKS IN 2H 14M"
-//   ≤ 1h out   — gold, urgency building
-//   ≤ 15m out  — red with a soft breathing glow, seconds ticking
-//   post-lock  — green "LOCKED" seal, worn through the live game until graded
+// Mobbin Live-Activity silhouette (Tinder Boost / Flighty):
+//   > 1h out   — quiet glass, clock + stacked LOCKS / digital time
+//   ≤ 1h out   — gold urgency
+//   ≤ 15m out  — red with soft breathing glow, seconds ticking
+//   post-lock  — green Check seal "LOCKED" through the live game until graded
 const LOCK_LEAD_MS = 15 * 60 * 1000;
 const LockCountdown = memo(function LockCountdown({ gameTime, isGraded }) {
   const gameEpoch = gameTime ? (typeof gameTime === 'number' ? gameTime : Date.parse(gameTime)) : null;
@@ -5626,9 +5626,7 @@ const LockCountdown = memo(function LockCountdown({ gameTime, isGraded }) {
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
-    // Once locked the pill is static — no more ticking needed.
     if (!valid || isGraded || Date.now() >= lockEpoch) return undefined;
-    // Tick each second inside the final 10 min (seconds display), else every 30s.
     const fast = lockEpoch - Date.now() < 10 * 60 * 1000;
     const id = setInterval(() => setNow(Date.now()), fast ? 1000 : 30000);
     return () => clearInterval(id);
@@ -5637,22 +5635,26 @@ const LockCountdown = memo(function LockCountdown({ gameTime, isGraded }) {
   if (!valid || isGraded) return null;
 
   const pillBase = {
-    display: 'inline-flex', alignItems: 'center', gap: '0.3rem', flexShrink: 0,
-    padding: '0.22rem 0.5rem', borderRadius: '999px',
-    fontSize: '0.56rem', fontWeight: 800, letterSpacing: '0.07em',
+    display: 'inline-flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0,
+    padding: '0.28rem 0.55rem', borderRadius: '999px',
+    fontWeight: 800, letterSpacing: '0.04em',
     fontFeatureSettings: "'tnum'", lineHeight: 1, whiteSpace: 'nowrap',
   };
 
-  // Post-lock, pre-game: the sealed state.
   if (now >= lockEpoch) {
     return (
-      <span style={{
-        ...pillBase, color: B.green,
-        background: 'linear-gradient(135deg, rgba(16,185,129,0.16), rgba(5,150,105,0.08))',
-        border: '1px solid rgba(16,185,129,0.35)',
-        boxShadow: '0 0 12px -4px rgba(16,185,129,0.5)',
-      }}>
-        <Lock size={9} strokeWidth={2.6} /> LOCKED
+      <span
+        className="sf-lock-seal"
+        title={`Frozen at T-15 · ${new Date(lockEpoch).toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit' })} ET`}
+        style={{
+          ...pillBase, position: 'relative', overflow: 'hidden', color: B.green,
+          background: 'linear-gradient(135deg, rgba(16,185,129,0.22), rgba(5,150,105,0.10))',
+          border: '1px solid rgba(16,185,129,0.42)',
+          boxShadow: '0 0 14px -4px rgba(16,185,129,0.55)',
+          fontSize: '0.56rem', letterSpacing: '0.08em',
+        }}
+      >
+        <Check size={10} strokeWidth={3} /> LOCKED
       </span>
     );
   }
@@ -5661,28 +5663,31 @@ const LockCountdown = memo(function LockCountdown({ gameTime, isGraded }) {
   const h = Math.floor(rem / 36e5);
   const m = Math.floor((rem % 36e5) / 6e4);
   const s = Math.floor((rem % 6e4) / 1e3);
-  const label = h > 0 ? `${h}H ${String(m).padStart(2, '0')}M`
-    : rem >= 10 * 60 * 1000 ? `${m}M`
+  const label = h > 0 ? `${h}h ${String(m).padStart(2, '0')}m`
+    : rem >= 10 * 60 * 1000 ? `${m}m`
     : `${m}:${String(s).padStart(2, '0')}`;
 
-  const urgent = rem <= 15 * 60 * 1000;           // inside 15 min — red, breathing
-  const closing = !urgent && rem <= 60 * 60 * 1000; // inside the hour — gold
-  const c = urgent ? '#F87171' : closing ? B.gold : B.textSec;
+  const urgent = rem <= 15 * 60 * 1000;
+  const closing = !urgent && rem <= 60 * 60 * 1000;
+  const c = urgent ? '#FECACA' : closing ? '#1a1408' : B.textSec;
   return (
     <span
       className={urgent ? 'sf-lock-urgent' : undefined}
       title={`Locks 15 min before start · ${new Date(lockEpoch).toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit' })} ET`}
       style={{
         ...pillBase, color: c,
-        background: urgent ? 'linear-gradient(135deg, rgba(248,113,113,0.16), rgba(220,38,38,0.07))'
-          : closing ? 'linear-gradient(135deg, rgba(245,158,11,0.14), rgba(245,158,11,0.05))'
-          : 'rgba(255,255,255,0.045)',
-        border: `1px solid ${urgent ? 'rgba(248,113,113,0.4)' : closing ? 'rgba(245,158,11,0.32)' : 'rgba(255,255,255,0.1)'}`,
+        background: urgent ? 'linear-gradient(135deg, rgba(248,113,113,0.22), rgba(220,38,38,0.10))'
+          : closing ? 'linear-gradient(180deg, #E5C158 0%, #D4AF37 100%)'
+          : 'rgba(255,255,255,0.05)',
+        border: `1px solid ${urgent ? 'rgba(248,113,113,0.45)' : closing ? 'rgba(212,175,55,0.65)' : 'rgba(255,255,255,0.12)'}`,
+        boxShadow: closing ? '0 6px 16px -8px rgba(212,175,55,0.7)' : 'none',
       }}
     >
-      <Clock size={9} strokeWidth={2.6} />
-      <span style={{ opacity: 0.75, fontWeight: 700 }}>LOCKS IN</span>
-      <span style={{ fontSize: '0.62rem' }}>{label}</span>
+      <Clock size={10} strokeWidth={2.6} />
+      <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.05, gap: 1 }}>
+        <span style={{ fontSize: '0.4rem', letterSpacing: '0.12em', opacity: 0.75, fontWeight: 800 }}>LOCKS</span>
+        <span style={{ fontSize: '0.66rem', fontWeight: 900, letterSpacing: '-0.02em' }}>{label}</span>
+      </span>
     </span>
   );
 });
@@ -13003,6 +13008,9 @@ export default function SharpFlow() {
                           v8_tapeScore: Number.isFinite(sd.v8_tapeScore) ? sd.v8_tapeScore : null,
                           v8_netMeanPrior: Number.isFinite(sd.v8_netMeanPrior) ? sd.v8_netMeanPrior : null,
                           netClv: Number.isFinite(sd.v8_netMeanPrior) ? sd.v8_netMeanPrior : null,
+                          // Mute audit — why this side is TRACKED / 0u
+                          mutedBy: sd.mutedBy || null,
+                          unitsPreTape: Number.isFinite(sd.v8_unitsPreTape) ? sd.v8_unitsPreTape : null,
                         });
                       }
                     }
