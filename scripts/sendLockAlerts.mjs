@@ -41,6 +41,10 @@ if (existsSync(join(REPO_ROOT, 'functions', '.env'))) {
 }
 
 const T_MINUS_15_MIN_MS = 15 * 60 * 1000;
+// If the market cron hiccups across the freeze boundary, still deliver for a
+// short window after first pitch. Without this, a missed cycle (cancelled
+// workflow / rebase stall) permanently drops the alert once now > commence.
+const GRACE_AFTER_COMMENCE_MS = 10 * 60 * 1000;
 const TEMPLATE_ID = '451e41a3-2bdf-4758-a779-ec59a8fecf36';
 const APP_ID = process.env.ONESIGNAL_APP_ID || 'd8fcb504-8d29-4354-a9e4-8b612d3eafeb';
 const REST_KEY = process.env.ONESIGNAL_REST_API_KEY || '';
@@ -375,9 +379,17 @@ async function main() {
             stats.skipped_not_frozen++;
             continue;
           }
-          if (now > ct) {
+          // Was hard-stop at commence — that dropped Sox/Mets today when the
+          // fetch loop was cancelled across T−15. Grace keeps the push alive
+          // through a late cycle; still skip once the grace expires.
+          if (now > ct + GRACE_AFTER_COMMENCE_MS) {
             stats.skipped_started++;
             continue;
+          }
+          if (now > ct) {
+            console.log(
+              `  ⏱ ${col}/${pick._id} ${sideKey}: past commence but inside ${GRACE_AFTER_COMMENCE_MS / 60000}m grace — still sending`,
+            );
           }
         }
 

@@ -1,0 +1,70 @@
+name: Send Lock Alerts (T−15 safety net)
+
+# Dedicated cadence for paid lock pushes. The market fetch loop also runs
+# sendLockAlerts, but that job is heavy (~48 min chains) and can be cancelled
+# mid-day — which silently dropped Sox/Mets alerts on 2026-07-18. This
+# workflow only syncs pick state + fires alerts so the T−15 window cannot
+# depend on the full Polymarket cycle staying alive.
+on:
+  schedule:
+    # Every 5 minutes — GitHub may coalesce under load; still far denser than
+    # waiting on the 4-min inner loop of fetch-polymarket.
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: send-lock-alerts
+  cancel-in-progress: false
+
+jobs:
+  lock-alerts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+      FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+      FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+      ONESIGNAL_APP_ID: ${{ secrets.ONESIGNAL_APP_ID }}
+      ONESIGNAL_REST_API_KEY: ${{ secrets.ONESIGNAL_REST_API_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Skip overnight ET when nothing locks. Window = 9am–11:59pm ET.
+      - name: Gate on ET daytime
+        id: gate
+        run: |
+          hour=$(TZ=America/New_York date +%H)
+          hour=$((10#$hour))
+          et_now=$(TZ=America/New_York date '+%Y-%m-%d %H:%M:%S %Z')
+          echo "ET now: ${et_now} (hour=${hour})"
+          if [ "$hour" -lt 9 ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Outside 9am–midnight ET — skip"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: syncPickStateAuthoritative
+        if: steps.gate.outputs.skip != 'true'
+        run: node scripts/syncPickStateAuthoritative.js
+
+      - name: sendLockAlerts
+        if: steps.gate.outputs.skip != 'true'
+        run: |
+          if [ -z "${ONESIGNAL_REST_API_KEY:-}" ]; then
+            echo "::error::ONESIGNAL_REST_API_KEY secret missing — lock alerts cannot send"
+            exit 1
+          fi
+          node scripts/sendLockAlerts.mjs
