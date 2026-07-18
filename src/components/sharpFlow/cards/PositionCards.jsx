@@ -1917,7 +1917,7 @@ function JourneyStop({ label, time, odds, color, active }) {
  * Compact: glass pill with tnum countdown → green Check seal when locked.
  * Expanded: larger digital time + progress bar to freeze (countdown) or seal copy.
  */
-function LockFreezeStatus({ commenceMs, compact }) {
+function LockFreezeStatus({ commenceMs, compact, strip }) {
   const lockEpoch = Number.isFinite(commenceMs) ? commenceMs - LOCK_LEAD_MS : null;
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -1938,6 +1938,67 @@ function LockFreezeStatus({ commenceMs, compact }) {
   const lockEt = new Date(lockEpoch).toLocaleTimeString('en-US', {
     timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit',
   });
+
+  // Full-width footer strip for the collapsed card — the countdown lives on
+  // its own rail with a progress track filling toward T-15 (F1 "team lock
+  // deadline" pattern) instead of being squeezed into the header pills.
+  if (strip) {
+    const accent = frozen ? B.profit : urgent ? '#F87171' : closing ? B.goldHi : C.textSec;
+    return (
+      <div
+        title={frozen ? `Frozen at T-15 · ${lockEt} ET — set for grading` : `Locks 15 min before start · ${lockEt} ET`}
+        style={{
+          position: 'relative', display: 'flex', alignItems: 'center', gap: 7,
+          padding: '7px 16px 9px 18px',
+          borderTop: `1px solid ${C.hairSoft}`,
+          background: frozen
+            ? 'linear-gradient(90deg, rgba(47,213,126,0.10), rgba(47,213,126,0.02))'
+            : urgent
+              ? 'linear-gradient(90deg, rgba(248,113,113,0.12), rgba(248,113,113,0.02))'
+              : closing
+                ? 'linear-gradient(90deg, rgba(212,175,55,0.10), rgba(212,175,55,0.02))'
+                : 'rgba(255,255,255,0.015)',
+          fontFeatureSettings: "'tnum'",
+        }}
+      >
+        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 2, background: 'rgba(255,255,255,0.05)' }}>
+          <div
+            className={urgent ? 'pos-pulse' : undefined}
+            style={{
+              width: `${(progress * 100).toFixed(1)}%`, height: '100%',
+              background: frozen ? B.profit : urgent ? '#F87171' : `linear-gradient(90deg, ${B.gold}66, ${B.gold})`,
+              transition: 'width 1s linear',
+            }}
+          />
+        </div>
+        {frozen
+          ? <Check size={11} strokeWidth={3} style={{ color: B.profit, flexShrink: 0 }} />
+          : <Clock size={11} strokeWidth={2.8} style={{ color: accent, flexShrink: 0 }} />}
+        {frozen ? (
+          <>
+            <span style={{ fontSize: '0.56rem', fontWeight: 900, letterSpacing: '0.1em', color: B.profit }}>
+              TICKET SET
+            </span>
+            <span style={{ fontSize: '0.54rem', fontWeight: 600, color: C.textMuted, marginLeft: 'auto' }}>
+              frozen T-15 · {lockEt} ET
+            </span>
+          </>
+        ) : (
+          <>
+            <span style={{ fontSize: '0.5rem', fontWeight: 800, letterSpacing: '0.12em', color: urgent ? '#FECACA' : C.textMuted }}>
+              LOCKS
+            </span>
+            <span style={{ fontSize: '0.7rem', fontWeight: 900, fontFamily: MONO, letterSpacing: '-0.01em', color: urgent ? '#F87171' : closing ? B.goldHi : C.text }}>
+              {rem || '—'}
+            </span>
+            <span style={{ fontSize: '0.54rem', fontWeight: 600, color: C.textFaint, marginLeft: 'auto' }}>
+              {lockEt} ET
+            </span>
+          </>
+        )}
+      </div>
+    );
+  }
 
   if (compact) {
     if (frozen) {
@@ -2181,6 +2242,9 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
     && Date.now() >= (f.commenceMs - LOCK_LEAD_MS);
 
   if (!expanded) {
+    // Rail color keys the card's state: tier gold for live tickets, result
+    // color once graded, slate for tracked (no ticket).
+    const railColor = tracked ? '#8b96ab' : graded ? resultColor : (tierColor !== C.textMuted ? tierColor : B.gold);
     return (
       <div
         className="sf-card"
@@ -2192,114 +2256,155 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
           borderRadius: 14, overflow: 'hidden', cursor: 'pointer',
           background: 'linear-gradient(180deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0) 42%), linear-gradient(180deg, #161B29 0%, #10141F 100%)',
           border: `1px solid ${cardBorder}`,
-          position: 'relative', padding: '14px 18px',
+          position: 'relative',
         }}
       >
         <CardStyles />
+        {/* Tier accent rail — vertical spine so state scans down the grid. */}
         <div style={{
-          position: 'absolute', top: 0, left: '12%', right: '12%', height: 1.5, pointerEvents: 'none',
-          background: `linear-gradient(90deg, transparent, ${tracked ? '#8b96ab' : accent}, transparent)`, opacity: 0.7,
+          position: 'absolute', top: 0, bottom: 0, left: 0, width: 3, pointerEvents: 'none',
+          background: `linear-gradient(180deg, ${railColor} 0%, ${railColor}22 100%)`,
+          opacity: tracked ? 0.45 : 0.9,
         }} />
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, gap: 8 }}>
-          <span style={{ fontSize: '0.56rem', fontWeight: 800, letterSpacing: '0.1em', color: C.textMuted, minWidth: 0 }}>
-            {f.sport}
-            <span style={{ color: C.textFaint, marginLeft: 8 }}>{f.away} @ {f.home}</span>
-            <span style={{ color: C.textFaint, marginLeft: 8 }}>{f.gameTime}</span>
-          </span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-            {!tracked && !graded && tierLabel && (
+        <div style={{ padding: '12px 16px 10px 18px' }}>
+          {/* Meta row: tier badge · sport · matchup · time — status pill right */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 9, gap: 8 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, minWidth: 0, overflow: 'hidden' }}>
+              {!tracked && !graded && tierLabel && (
+                <span style={{
+                  fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.1em',
+                  padding: '3px 7px', borderRadius: 6, color: tierColor, flexShrink: 0,
+                  background: `${tierColor}18`, border: `1px solid ${tierColor}40`,
+                }}>
+                  {tierLabel}
+                </span>
+              )}
               <span style={{
-                fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.1em',
-                padding: '3px 7px', borderRadius: 6, color: tierColor,
-                background: `${tierColor}18`, border: `1px solid ${tierColor}40`,
+                fontSize: '0.56rem', fontWeight: 800, letterSpacing: '0.1em', color: C.textMuted,
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
               }}>
-                {tierLabel}
+                {f.sport}
+                <span style={{ color: C.textFaint, marginLeft: 8, fontWeight: 700 }}>{f.away} @ {f.home}</span>
+                <span style={{ color: C.textFaint, marginLeft: 8 }}>{f.gameTime}</span>
               </span>
-            )}
-            {tracked ? (
-              <span
-                title={muteTip}
-                style={{
-                  fontSize: '0.52rem', fontWeight: 900, letterSpacing: '0.08em',
-                  padding: '4px 10px', borderRadius: 7, color: '#aeb8cb',
-                  background: 'rgba(139,150,171,0.10)', border: '1px solid rgba(139,150,171,0.26)',
-                }}
-              >
-                TRACKED
-              </span>
-            ) : graded ? (
-              <GradedResultPill
-                outcome={f.outcome}
-                profit={f.profit}
-                units={f.units}
-                toWin={f.toWin}
-                compact
-              />
-            ) : (
-              <>
-                <LockFreezeStatus commenceMs={f.commenceMs} compact />
-                {ticketFrozen ? (
-                  <span
-                    title="Ticket sealed at T-15 — set for grading"
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 4,
-                      fontSize: '0.52rem', fontWeight: 900, letterSpacing: '0.08em',
-                      padding: '4px 10px', borderRadius: 999, color: '#06140c',
-                      background: 'linear-gradient(180deg, #6EE7B7 0%, #34D399 55%, #10B981 100%)',
-                      boxShadow: '0 8px 22px -10px rgba(16,185,129,0.7)',
-                    }}
-                  >
-                    <Check size={9} strokeWidth={3.2} />
-                    SET
-                  </span>
-                ) : (
-                  <span style={{
+            </span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+              {tracked ? (
+                <span
+                  title={muteTip}
+                  style={{
+                    fontSize: '0.52rem', fontWeight: 900, letterSpacing: '0.08em',
+                    padding: '4px 10px', borderRadius: 7, color: '#aeb8cb',
+                    background: 'rgba(139,150,171,0.10)', border: '1px solid rgba(139,150,171,0.26)',
+                  }}
+                >
+                  TRACKED
+                </span>
+              ) : graded ? (
+                <GradedResultPill
+                  outcome={f.outcome}
+                  profit={f.profit}
+                  units={f.units}
+                  toWin={f.toWin}
+                  compact
+                />
+              ) : ticketFrozen ? (
+                <span
+                  title="Ticket sealed at T-15 — set for grading"
+                  style={{
                     display: 'inline-flex', alignItems: 'center', gap: 4,
                     fontSize: '0.52rem', fontWeight: 900, letterSpacing: '0.08em',
-                    padding: '4px 10px', borderRadius: 7, color: '#06100a',
-                    background: `linear-gradient(180deg, ${B.goldHi} 0%, ${accent} 55%, ${accent}bb 100%)`,
-                    boxShadow: `0 8px 22px -10px ${accent}`,
-                  }}>
-                    <Lock size={8} strokeWidth={3} />
-                    IN
+                    padding: '4px 10px', borderRadius: 999, color: '#06140c',
+                    background: 'linear-gradient(180deg, #6EE7B7 0%, #34D399 55%, #10B981 100%)',
+                    boxShadow: '0 8px 22px -10px rgba(16,185,129,0.7)',
+                  }}
+                >
+                  <Check size={9} strokeWidth={3.2} />
+                  SET
+                </span>
+              ) : (
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  fontSize: '0.52rem', fontWeight: 900, letterSpacing: '0.08em',
+                  padding: '4px 10px', borderRadius: 7, color: '#06100a',
+                  background: `linear-gradient(180deg, ${B.goldHi} 0%, ${accent} 55%, ${accent}bb 100%)`,
+                  boxShadow: `0 8px 22px -10px ${accent}`,
+                }}>
+                  <Lock size={8} strokeWidth={3} />
+                  IN
+                </span>
+              )}
+            </span>
+          </div>
+          {/* Pick row: selection + odds + CLV left · labeled stake block right */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ minWidth: 0 }}>
+              <span style={{ fontSize: '1.08rem', fontWeight: 800, letterSpacing: '-0.02em', color: C.text }}>
+                {f.pickLabel}
+              </span>
+              <span style={{ fontSize: '0.8rem', color: C.textSec, fontWeight: 700, marginLeft: 8, fontFamily: MONO, fontFeatureSettings: "'tnum'" }}>
+                {fmtOdds(f.lockOdds)}
+              </span>
+              {Number.isFinite(f.clvPct) && (
+                <span style={{
+                  fontSize: '0.52rem', fontWeight: 800, padding: '3px 7px', marginLeft: 8,
+                  borderRadius: 6, background: `${clvColor}18`, color: clvColor,
+                  border: `1px solid ${clvColor}40`, fontFeatureSettings: "'tnum'",
+                  verticalAlign: 'middle',
+                }}>
+                  CLV {clvGood ? '+' : ''}{f.clvPct.toFixed(1)}%
+                </span>
+              )}
+            </span>
+            <span style={{ flex: 1 }} />
+            {/* Stake block — labeled RISK / TO WIN columns, sportsbook-slip style */}
+            {tracked ? (
+              <span style={{ fontSize: '0.72rem', fontWeight: 800, color: C.textMuted, letterSpacing: '0.04em' }}>
+                No ticket
+              </span>
+            ) : (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 14, flexShrink: 0, fontFeatureSettings: "'tnum'" }}>
+                <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: 1.15 }}>
+                  <span style={{ fontSize: '0.42rem', fontWeight: 800, letterSpacing: '0.14em', color: C.textFaint }}>
+                    RISK
                   </span>
-                )}
-              </>
+                  <span style={{ fontSize: '0.95rem', fontWeight: 900, fontFamily: MONO, color: C.text }}>
+                    {f.units.toFixed(1)}u
+                  </span>
+                </span>
+                <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: 1.15 }}>
+                  <span style={{ fontSize: '0.42rem', fontWeight: 800, letterSpacing: '0.14em', color: C.textFaint }}>
+                    {graded ? 'RESULT' : 'TO WIN'}
+                  </span>
+                  <span style={{ fontSize: '0.95rem', fontWeight: 900, fontFamily: MONO, color: graded ? resultColor : B.profit }}>
+                    {graded
+                      ? `${resultPnl >= 0 ? '+' : ''}${Number(resultPnl).toFixed(2)}u`
+                      : `+${f.toWin.toFixed(2)}u`}
+                  </span>
+                </span>
+              </span>
             )}
-          </span>
+            <ChevronDown size={15} style={{ color: C.textMuted, flexShrink: 0 }} />
+          </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: '1.05rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
-            {f.pickLabel}
-            <span style={{ fontSize: '0.8rem', color: C.textSec, fontWeight: 700, marginLeft: 8, fontFeatureSettings: "'tnum'" }}>
-              {fmtOdds(f.lockOdds)}
+        {/* Footer rail: live countdown with progress toward T-15, or the
+            mute reason for tracked picks (previously tooltip-only). */}
+        {!graded && !tracked && (
+          <LockFreezeStatus commenceMs={f.commenceMs} strip />
+        )}
+        {tracked && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 7,
+            padding: '7px 16px 8px 18px',
+            borderTop: `1px solid ${C.hairSoft}`,
+            background: 'rgba(139,150,171,0.04)',
+          }}>
+            <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#8b96ab', opacity: 0.6, flexShrink: 0 }} />
+            <span style={{ fontSize: '0.54rem', fontWeight: 700, color: C.textMuted, letterSpacing: '0.02em' }}>
+              {muteTip}
             </span>
-          </span>
-          {Number.isFinite(f.clvPct) && (
-            <span style={{
-              fontSize: '0.52rem', fontWeight: 800, padding: '3px 7px',
-              borderRadius: 6, background: `${clvColor}18`, color: clvColor,
-              border: `1px solid ${clvColor}40`, fontFeatureSettings: "'tnum'",
-            }}>
-              CLV {clvGood ? '+' : ''}{f.clvPct.toFixed(1)}%
-            </span>
-          )}
-          <span style={{ flex: 1 }} />
-          <span style={{ fontSize: '0.9rem', fontWeight: 800, fontFeatureSettings: "'tnum'", color: tracked ? C.textMuted : C.text }}>
-            {tracked ? 'No ticket' : `${f.units.toFixed(1)}u`}
-          </span>
-          {!tracked && (
-            <span style={{
-              fontSize: '0.72rem', fontWeight: 800, fontFeatureSettings: "'tnum'",
-              color: graded ? resultColor : B.profit,
-            }}>
-              {graded
-                ? `${resultPnl >= 0 ? '+' : ''}${Number(resultPnl).toFixed(2)}u`
-                : `+${f.toWin.toFixed(2)}u`}
-            </span>
-          )}
-          <ChevronDown size={15} style={{ color: C.textMuted, flexShrink: 0 }} />
-        </div>
+          </div>
+        )}
       </div>
     );
   }

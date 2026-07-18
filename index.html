@@ -42,6 +42,12 @@
     <!-- Theme Color -->
     <meta name="theme-color" content="#0A0E27" />
 
+    <!-- Preload the two biggest data files so they download in parallel with
+         the JS bundle instead of waiting for React to mount. URLs must stay
+         bare (no query string) to match the fetch() calls in SharpFlow. -->
+    <link rel="preload" href="/whale_profiles.json" as="fetch" />
+    <link rel="preload" href="/sports_sharps.json" as="fetch" />
+
     <!-- OneSignal Web Push (v16) — PAID ACTIVE USERS ONLY (see PaidPushGate.jsx) -->
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>

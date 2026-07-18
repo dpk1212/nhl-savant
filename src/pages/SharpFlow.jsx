@@ -3260,18 +3260,27 @@ function useMarketData() {
     let cancelled = false;
 
     const loadAll = async ({ initial = false } = {}) => {
+      // Hot files (positions / market snapshots) keep the cache-buster so the
+      // 4-min pipeline output is never masked by the GH Pages CDN — lock
+      // decisions must read the freshest scan. The two BIG wallet files
+      // (whale_profiles ~1MB, sports_sharps ~1MB after build-time slimming)
+      // rebuild ~daily, so they fetch WITHOUT a buster: browser + CDN can
+      // cache them, repeat visits revalidate to a 0-byte 304, and index.html
+      // can preload them in parallel with the JS bundle parse.
       const cb = `?t=${Date.now()}`;
+      const hot = (name) => fetch(`${import.meta.env.BASE_URL}${name}${cb}`).then(r => r.ok ? r.json() : null).catch(() => null);
+      const slow = (name) => fetch(`${import.meta.env.BASE_URL}${name}`).then(r => r.ok ? r.json() : null).catch(() => null);
       try {
         const [p, k, wp, ph, sp, ss, sprP, totP, excl] = await Promise.all([
-          fetch(`${import.meta.env.BASE_URL}polymarket_data.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
-          fetch(`${import.meta.env.BASE_URL}kalshi_data.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
-          fetch(`${import.meta.env.BASE_URL}whale_profiles.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
-          fetch(`${import.meta.env.BASE_URL}pinnacle_history.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
-          fetch(`${import.meta.env.BASE_URL}sharp_positions.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
-          fetch(`${import.meta.env.BASE_URL}sports_sharps.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
-          fetch(`${import.meta.env.BASE_URL}sharp_spread_positions.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
-          fetch(`${import.meta.env.BASE_URL}sharp_total_positions.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
-          fetch(`${import.meta.env.BASE_URL}sharp_intel_excluded_wallets.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
+          hot('polymarket_data.json'),
+          hot('kalshi_data.json'),
+          slow('whale_profiles.json'),
+          hot('pinnacle_history.json'),
+          hot('sharp_positions.json'),
+          slow('sports_sharps.json'),
+          hot('sharp_spread_positions.json'),
+          hot('sharp_total_positions.json'),
+          hot('sharp_intel_excluded_wallets.json'),
         ]);
         if (cancelled) return;
         if (p)    setPolyData(p);
