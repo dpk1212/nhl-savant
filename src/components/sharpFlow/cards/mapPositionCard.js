@@ -246,6 +246,12 @@ export function mapLockedPickToCardFixture(pick, {
   if ((pick.hcMargin || 0) >= 1 || vaultOnSide >= 1) lockChecks.push('High conviction');
   if ((pick.consensusStrength?.moneyPct || 0) >= 60) lockChecks.push('Money concentrated');
 
+  const outcome = pick.outcome || pick.result?.outcome || null;
+  const profit = Number.isFinite(pick.profit) ? pick.profit
+    : Number.isFinite(pick.result?.profit) ? pick.result.profit
+    : null;
+  const graded = !!outcome && (outcome === 'WIN' || outcome === 'LOSS' || outcome === 'PUSH');
+
   return {
     id: pick.key || `${pick.sport}-${pickLabel}`,
     sport: pick.sport,
@@ -255,7 +261,10 @@ export function mapLockedPickToCardFixture(pick, {
     homeShort,
     pickLabel,
     side,
-    displayState: 'LOCKED',
+    displayState: graded ? 'GRADED' : 'LOCKED',
+    outcome,
+    profit,
+    graded,
     stakePath,
     units,
     toWin,

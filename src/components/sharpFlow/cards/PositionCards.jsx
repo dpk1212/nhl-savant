@@ -4,7 +4,7 @@
  * Pure UI: expects a normalized fixture `f`. Adapters map production data.
  */
 import { useState, useEffect } from 'react';
-import { Check, Lock, ChevronDown, Clock } from 'lucide-react';
+import { Check, Lock, ChevronDown, Clock, X } from 'lucide-react';
 import { AGS_V12_DISPLAY_TIERS, AGS_V12_PATH_TO_DISPLAY } from '../../../lib/ags.js';
 
 /** Ticket freezes 15 min before first pitch/kick — same gate as the cron. */
@@ -346,7 +346,7 @@ export const PROPOSED_META = {
 // resets background-clip to border-box while React leaves the unchanged
 // WebkitBackgroundClip prop alone, which painted the gradient as a solid
 // block when the market rail swapped fixtures in place.
-function TicketStub({ units, toWin, odds, stakePath, tapeAction, centsEdge, commenceMs }) {
+function TicketStub({ units, toWin, odds, stakePath, tapeAction, centsEdge, commenceMs, outcome, profit }) {
   const risk = useCountUp(units, true, 900);
   // Product tier (LEAN / STRONG / …) — same labels as the scoreboard. Internal
   // path names (DISSENT, RANK, MINI-) and tape sizing ("Standard") stay out of
@@ -356,40 +356,63 @@ function TicketStub({ units, toWin, odds, stakePath, tapeAction, centsEdge, comm
   const tierColor = tier?.color || B.gold;
   const tapeNote = tapeAction === 'boost' ? ' · Sized up' : tapeAction === 'mute' ? ' · Pass' : '';
   const cellLabel = { fontSize: '0.52rem', fontWeight: 800, letterSpacing: '0.13em', color: C.textMuted, marginBottom: 4 };
+  const graded = outcome === 'WIN' || outcome === 'LOSS' || outcome === 'PUSH';
+  const isWin = outcome === 'WIN';
+  const isPush = outcome === 'PUSH';
+  const resultColor = isPush ? C.textSec : isWin ? B.profit : B.loss;
+  const resultProfit = Number.isFinite(profit) ? profit : (isWin ? toWin : isPush ? 0 : -units);
 
   // Ticket is provisional until T-15; cron freezes units/path/side then.
   const lockEpoch = Number.isFinite(commenceMs) ? commenceMs - LOCK_LEAD_MS : null;
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    if (lockEpoch == null || Date.now() >= lockEpoch) return undefined;
+    if (graded || lockEpoch == null || Date.now() >= lockEpoch) return undefined;
     const fast = lockEpoch - Date.now() < 10 * 60 * 1000;
     const id = setInterval(() => setNow(Date.now()), fast ? 1000 : 30000);
     return () => clearInterval(id);
-  }, [lockEpoch]);
-  const isFrozen = lockEpoch != null && now >= lockEpoch;
-  const remLabel = !isFrozen && lockEpoch != null ? formatLockCountdown(lockEpoch - now) : null;
+  }, [lockEpoch, graded]);
+  const isFrozen = graded || (lockEpoch != null && now >= lockEpoch);
+  const remLabel = !graded && !isFrozen && lockEpoch != null ? formatLockCountdown(lockEpoch - now) : null;
+  const accentBorder = graded
+    ? (isPush ? 'rgba(148,163,184,0.35)' : isWin ? 'rgba(47,213,126,0.45)' : 'rgba(239,68,68,0.45)')
+    : 'rgba(212,175,55,0.32)';
+  const accentWash = graded
+    ? (isPush
+      ? 'linear-gradient(160deg, rgba(148,163,184,0.10) 0%, rgba(148,163,184,0.03) 42%, rgba(255,255,255,0.015) 100%)'
+      : isWin
+        ? 'linear-gradient(160deg, rgba(47,213,126,0.12) 0%, rgba(47,213,126,0.04) 42%, rgba(255,255,255,0.015) 100%)'
+        : 'linear-gradient(160deg, rgba(239,68,68,0.12) 0%, rgba(239,68,68,0.04) 42%, rgba(255,255,255,0.015) 100%)')
+    : 'linear-gradient(160deg, rgba(212,175,55,0.11) 0%, rgba(212,175,55,0.04) 42%, rgba(255,255,255,0.015) 100%)';
 
   return (
     <div style={{
       marginTop: 8, borderRadius: 12, position: 'relative',
-      background: 'linear-gradient(160deg, rgba(212,175,55,0.11) 0%, rgba(212,175,55,0.04) 42%, rgba(255,255,255,0.015) 100%)',
-      border: '1px solid rgba(212,175,55,0.32)',
-      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 18px 40px -22px rgba(212,175,55,0.5)',
+      background: accentWash,
+      border: `1px solid ${accentBorder}`,
+      boxShadow: graded
+        ? `inset 0 1px 0 rgba(255,255,255,0.08), 0 18px 40px -22px ${resultColor}66`
+        : 'inset 0 1px 0 rgba(255,255,255,0.08), 0 18px 40px -22px rgba(212,175,55,0.5)',
     }}>
       <div style={{
         position: 'absolute', top: 0, left: '10%', right: '10%', height: 1.5,
-        background: `linear-gradient(90deg, transparent, ${B.gold}88, transparent)`, pointerEvents: 'none',
+        background: `linear-gradient(90deg, transparent, ${graded ? resultColor : B.gold}88, transparent)`, pointerEvents: 'none',
       }} />
       <div style={{
         position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
-        padding: '7px 14px', borderBottom: '1px dashed rgba(212,175,55,0.28)',
+        padding: '7px 14px', borderBottom: `1px dashed ${graded ? `${resultColor}44` : 'rgba(212,175,55,0.28)'}`,
       }}>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.56rem', fontWeight: 900, letterSpacing: '0.14em', color: isFrozen ? B.profit : B.goldHi, flexShrink: 0 }}>
-          {isFrozen ? <Lock size={11} strokeWidth={3} /> : <Clock size={11} strokeWidth={2.8} />}
-          {isFrozen ? 'LOCKED' : 'OPEN TICKET'}
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.56rem', fontWeight: 900, letterSpacing: '0.14em', color: graded ? resultColor : isFrozen ? B.profit : B.goldHi, flexShrink: 0 }}>
+          {graded
+            ? (isWin ? <Check size={11} strokeWidth={3} /> : isPush ? <Lock size={11} strokeWidth={3} /> : <X size={11} strokeWidth={3} />)
+            : (isFrozen ? <Lock size={11} strokeWidth={3} /> : <Clock size={11} strokeWidth={2.8} />)}
+          {graded ? (isWin ? 'WIN' : isPush ? 'PUSH' : 'LOSS') : isFrozen ? 'LOCKED' : 'OPEN TICKET'}
         </span>
         {/* countdown lives in the header row — one row, not two */}
-        {lockEpoch != null && (
+        {graded ? (
+          <span style={{ fontSize: '0.56rem', fontWeight: 700, color: resultColor, minWidth: 0 }}>
+            graded
+          </span>
+        ) : lockEpoch != null && (
           isFrozen ? (
             <span style={{ fontSize: '0.56rem', fontWeight: 700, color: B.profit, minWidth: 0 }}>
               frozen at T-15
@@ -417,8 +440,8 @@ function TicketStub({ units, toWin, odds, stakePath, tapeAction, centsEdge, comm
           {tierLabel}{tapeNote}
         </span>
         {/* punched notches on the perforation line */}
-        <span style={{ position: 'absolute', left: -6, bottom: -6, width: 11, height: 11, borderRadius: '50%', background: '#12172a', border: '1px solid rgba(212,175,55,0.30)' }} />
-        <span style={{ position: 'absolute', right: -6, bottom: -6, width: 11, height: 11, borderRadius: '50%', background: '#12172a', border: '1px solid rgba(212,175,55,0.30)' }} />
+        <span style={{ position: 'absolute', left: -6, bottom: -6, width: 11, height: 11, borderRadius: '50%', background: '#12172a', border: `1px solid ${graded ? `${resultColor}55` : 'rgba(212,175,55,0.30)'}` }} />
+        <span style={{ position: 'absolute', right: -6, bottom: -6, width: 11, height: 11, borderRadius: '50%', background: '#12172a', border: `1px solid ${graded ? `${resultColor}55` : 'rgba(212,175,55,0.30)'}` }} />
       </div>
       <div style={{ display: 'flex', alignItems: 'stretch' }}>
         <div style={{ flex: 1.15, padding: '8px 14px 10px' }}>
@@ -436,14 +459,16 @@ function TicketStub({ units, toWin, odds, stakePath, tapeAction, centsEdge, comm
             <span style={{ fontSize: '0.78rem', fontWeight: 700, color: C.textMuted, marginLeft: 3 }}>u</span>
           </div>
         </div>
-        <div style={{ width: 1, background: 'rgba(212,175,55,0.16)', margin: '8px 0' }} />
+        <div style={{ width: 1, background: graded ? `${resultColor}33` : 'rgba(212,175,55,0.16)', margin: '8px 0' }} />
         <div style={{ flex: 1, padding: '8px 14px 10px' }}>
-          <div style={cellLabel}>TO WIN</div>
-          <div style={{ fontSize: '1.15rem', fontWeight: 800, color: B.profit, fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em', lineHeight: 1.3 }}>
-            {Number.isFinite(toWin) ? `+${toWin.toFixed(2)}u` : '—'}
+          <div style={cellLabel}>{graded ? 'RESULT' : 'TO WIN'}</div>
+          <div style={{ fontSize: '1.15rem', fontWeight: 800, color: graded ? resultColor : B.profit, fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em', lineHeight: 1.3 }}>
+            {graded
+              ? `${resultProfit >= 0 ? '+' : ''}${Number(resultProfit).toFixed(2)}u`
+              : (Number.isFinite(toWin) ? `+${toWin.toFixed(2)}u` : '—')}
           </div>
         </div>
-        <div style={{ width: 1, background: 'rgba(212,175,55,0.16)', margin: '8px 0' }} />
+        <div style={{ width: 1, background: graded ? `${resultColor}33` : 'rgba(212,175,55,0.16)', margin: '8px 0' }} />
         <div style={{ flex: 1, padding: '8px 14px 10px' }}>
           <div style={cellLabel}>PRICE</div>
           <div style={{ fontSize: '1.15rem', fontWeight: 800, color: C.text, fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em', lineHeight: 1.3 }}>
@@ -455,6 +480,29 @@ function TicketStub({ units, toWin, odds, stakePath, tapeAction, centsEdge, comm
         </div>
       </div>
     </div>
+  );
+}
+
+/** Compact WIN / LOSS / PUSH pill for graded locked cards. */
+function GradedResultPill({ outcome, profit, units, toWin, compact }) {
+  const isWin = outcome === 'WIN';
+  const isPush = outcome === 'PUSH';
+  const color = isPush ? C.textSec : isWin ? B.profit : B.loss;
+  const pnl = Number.isFinite(profit) ? profit : (isWin ? toWin : isPush ? 0 : -(units || 0));
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 4,
+      fontSize: compact ? '0.52rem' : '0.58rem', fontWeight: 900, letterSpacing: '0.06em',
+      padding: compact ? '4px 9px' : '5px 11px', borderRadius: 7, color,
+      background: `${color}18`, border: `1px solid ${color}50`,
+      fontFeatureSettings: "'tnum'",
+    }}>
+      {isWin ? <Check size={compact ? 10 : 11} strokeWidth={3} /> : isPush ? null : <X size={compact ? 10 : 11} strokeWidth={3} />}
+      {isWin ? 'WIN' : isPush ? 'PUSH' : 'LOSS'}
+      <span style={{ fontWeight: 800, opacity: 0.95 }}>
+        {`${pnl >= 0 ? '+' : ''}${Number(pnl).toFixed(2)}u`}
+      </span>
+    </span>
   );
 }
 
@@ -1987,8 +2035,16 @@ function TierPerfStrip({ tierPerf, compact }) {
 export function LockedPositionCardView({ f, defaultExpanded = false }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const tracked = !(f.units > 0);
+  const graded = !!(f.graded || f.outcome === 'WIN' || f.outcome === 'LOSS' || f.outcome === 'PUSH');
+  const isWin = f.outcome === 'WIN';
+  const isPush = f.outcome === 'PUSH';
+  const resultColor = !graded ? null : isPush ? C.textSec : isWin ? B.profit : B.loss;
+  const resultPnl = graded
+    ? (Number.isFinite(f.profit) ? f.profit : (isWin ? f.toWin : isPush ? 0 : -(f.units || 0)))
+    : null;
   // Champagne accents stay even on tracked picks; only the pill goes gray.
-  const accent = B.gold;
+  // Graded tickets tint the accent to the result so the list reads at a glance.
+  const accent = graded && resultColor ? resultColor : B.gold;
   const playSide = playSideLabel(f);
   const clvGood = f.clvPct >= 0;
   const clvColor = clvGood ? B.profit : B.loss;
@@ -2006,6 +2062,11 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
     if ((got > 0) !== (fair > 0)) diff -= Math.sign(diff) * 200;
     return diff;
   })();
+  const cardBorder = tracked
+    ? 'rgba(139,150,171,0.22)'
+    : graded
+      ? `${resultColor}55`
+      : 'rgba(212,175,55,0.28)';
 
   if (!expanded) {
     return (
@@ -2018,7 +2079,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
         style={{
           borderRadius: 14, overflow: 'hidden', cursor: 'pointer',
           background: 'linear-gradient(180deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0) 42%), linear-gradient(180deg, #161B29 0%, #10141F 100%)',
-          border: `1px solid ${tracked ? 'rgba(139,150,171,0.22)' : 'rgba(212,175,55,0.28)'}`,
+          border: `1px solid ${cardBorder}`,
           position: 'relative', padding: '14px 18px',
         }}
       >
@@ -2034,7 +2095,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
             <span style={{ color: C.textFaint, marginLeft: 8 }}>{f.gameTime}</span>
           </span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-            {!tracked && tierLabel && (
+            {!tracked && !graded && tierLabel && (
               <span style={{
                 fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.1em',
                 padding: '3px 7px', borderRadius: 6, color: tierColor,
@@ -2043,7 +2104,6 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
                 {tierLabel}
               </span>
             )}
-            {!tracked && <LockFreezeStatus commenceMs={f.commenceMs} compact />}
             {tracked ? (
               <span style={{
                 fontSize: '0.52rem', fontWeight: 900, letterSpacing: '0.08em',
@@ -2052,17 +2112,28 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
               }}>
                 TRACKED
               </span>
+            ) : graded ? (
+              <GradedResultPill
+                outcome={f.outcome}
+                profit={f.profit}
+                units={f.units}
+                toWin={f.toWin}
+                compact
+              />
             ) : (
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: 4,
-                fontSize: '0.52rem', fontWeight: 900, letterSpacing: '0.08em',
-                padding: '4px 10px', borderRadius: 7, color: '#06100a',
-                background: `linear-gradient(180deg, ${B.goldHi} 0%, ${accent} 55%, ${accent}bb 100%)`,
-                boxShadow: `0 8px 22px -10px ${accent}`,
-              }}>
-                <Lock size={8} strokeWidth={3} />
-                IN
-              </span>
+              <>
+                <LockFreezeStatus commenceMs={f.commenceMs} compact />
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  fontSize: '0.52rem', fontWeight: 900, letterSpacing: '0.08em',
+                  padding: '4px 10px', borderRadius: 7, color: '#06100a',
+                  background: `linear-gradient(180deg, ${B.goldHi} 0%, ${accent} 55%, ${accent}bb 100%)`,
+                  boxShadow: `0 8px 22px -10px ${accent}`,
+                }}>
+                  <Lock size={8} strokeWidth={3} />
+                  IN
+                </span>
+              </>
             )}
           </span>
         </div>
@@ -2087,8 +2158,13 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
             {tracked ? 'No ticket' : `${f.units.toFixed(1)}u`}
           </span>
           {!tracked && (
-            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: B.profit, fontFeatureSettings: "'tnum'" }}>
-              +{f.toWin.toFixed(2)}u
+            <span style={{
+              fontSize: '0.72rem', fontWeight: 800, fontFeatureSettings: "'tnum'",
+              color: graded ? resultColor : B.profit,
+            }}>
+              {graded
+                ? `${resultPnl >= 0 ? '+' : ''}${Number(resultPnl).toFixed(2)}u`
+                : `+${f.toWin.toFixed(2)}u`}
             </span>
           )}
           <ChevronDown size={15} style={{ color: C.textMuted, flexShrink: 0 }} />
@@ -2175,7 +2251,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
     <div style={{
       borderRadius: 16, overflow: 'hidden',
       background: 'linear-gradient(180deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0) 42%), linear-gradient(180deg, #161B29 0%, #10141F 55%, #0D111C 100%)',
-      border: `1px solid ${tracked ? 'rgba(139,150,171,0.24)' : 'rgba(212,175,55,0.30)'}`, position: 'relative',
+      border: `1px solid ${tracked ? 'rgba(139,150,171,0.24)' : graded ? `${resultColor}55` : 'rgba(212,175,55,0.30)'}`, position: 'relative',
       boxShadow: '0 24px 60px -30px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.05)',
     }}>
       <CardStyles />
@@ -2215,6 +2291,13 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
                 }}>
                   TRACKED
                 </span>
+              ) : graded ? (
+                <GradedResultPill
+                  outcome={f.outcome}
+                  profit={f.profit}
+                  units={f.units}
+                  toWin={f.toWin}
+                />
               ) : tierLabel ? (
                 <span style={{
                   fontSize: '0.56rem', fontWeight: 900, letterSpacing: '0.12em',
@@ -2287,6 +2370,8 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
               tapeAction={f.tapeAction}
               centsEdge={Number.isFinite(centsEdge) && centsEdge > 0 ? `${Math.round(centsEdge)}¢ better than fair` : null}
               commenceMs={f.commenceMs}
+              outcome={f.outcome}
+              profit={f.profit}
             />
           ) : (
             <div style={{
