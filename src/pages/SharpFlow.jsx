@@ -21,7 +21,6 @@ import AuthModal from '../components/AuthModal';
 import { LivePositionCardView, LockedPositionCardView } from '../components/sharpFlow/cards/PositionCards';
 import { mapLockedPickToCardFixture, mapLiveGameToCardFixture, enrichWallets } from '../components/sharpFlow/cards/mapPositionCard';
 import VaultAlphaField from '../components/sharpVault/VaultAlphaField';
-import VaultGameBattle from '../components/sharpVault/VaultGameBattle';
 import VaultRoster from '../components/sharpVault/VaultRoster';
 import VaultWalletDrawer from '../components/sharpVault/VaultWalletDrawer';
 import {
@@ -9520,107 +9519,9 @@ export default function SharpFlow() {
       }
     }
 
-    // ── Battle Map — full per-game map of EVERY tracked wallet ──────────────
-    // Unlike actionPositions (whitelist-only, size-gated), this includes every
-    // wallet the scanner feed carries so the game view shows the whole fight:
-    //   proven  = Vault whitelist (CONFIRMED/FLAT in any sport)
-    //   cold    = graded record with us is negative (10+ graded bets)
-    //   tracked = in the feed, no proven/cold verdict yet
-    // intel-excluded wallets (MM/arb) stay out — they aren't opinions.
-    const BATTLE_MIN_INVESTED = 250;
-    const classifyBattleWallet = (wLower, sport) => {
-      const prof = walletProfiles.get(wLower.slice(-6));
-      if (!prof) return { cls: 'tracked', inSportTier: null, prof: null };
-      const bySport = prof.bySport || {};
-      const provenAny = Object.values(bySport).some(
-        (r) => r?.whitelistTier === 'CONFIRMED' || r?.whitelistTier === 'FLAT'
-      );
-      const inSportTier = bySport[sport]?.whitelistTier || null;
-      let cls = 'tracked';
-      if (provenAny) cls = 'proven';
-      else if ((prof.picks?.n || 0) >= 10 && (prof.picks?.flatRoi ?? 0) < 0) cls = 'cold';
-      return { cls, inSportTier, prof };
-    };
-    const battleGameMap = new Map();
-    for (const { data: posData, mkt } of posFilesForHc) {
-      if (!posData) continue;
-      for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'NFL', 'SOC', 'UFC', 'WNBA']) {
-        const sportGames = posData[sport] || {};
-        for (const [gameKey, gd] of Object.entries(sportGames)) {
-          if (!gd.positions?.length) continue;
-          const gid = `${sport}|${gameKey}`;
-          if (!battleGameMap.has(gid)) {
-            const commence = polyData?.[sport]?.[gameKey]?.commence
-              || pinnacleHistory?.[sport]?.[gameKey]?.commence
-              || null;
-            battleGameMap.set(gid, {
-              id: gid, sport, gameKey,
-              away: gd.away, home: gd.home, commence,
-              totalInvested: 0, provenInvested: 0, walletSetAll: new Set(),
-              markets: {},
-            });
-          }
-          const game = battleGameMap.get(gid);
-          // Dedupe wallet+side within this market, keep max invested.
-          const seen = new Map();
-          for (const pos of gd.positions) {
-            const wLower = pos.wallet?.toLowerCase();
-            if (!wLower || !pos.side) continue;
-            if (intelExcludedSet?.has(wLower)) continue;
-            if ((pos.invested || 0) < BATTLE_MIN_INVESTED) continue;
-            const k = `${wLower}|${pos.side}`;
-            const cur = seen.get(k);
-            if (!cur || (pos.invested || 0) > (cur.invested || 0)) seen.set(k, pos);
-          }
-          if (seen.size === 0) continue;
-          const mktRec = game.markets[mkt] || (game.markets[mkt] = { sides: {} });
-          for (const pos of seen.values()) {
-            const wLower = pos.wallet.toLowerCase();
-            const { cls, inSportTier, prof } = classifyBattleWallet(wLower, sport);
-            const avgBet = pos.avgSportBet || 0;
-            const side = mktRec.sides[pos.side] || (mktRec.sides[pos.side] = {
-              invested: 0, provenInvested: 0, coldInvested: 0,
-              provenCount: 0, coldCount: 0, trackedCount: 0, wallets: [],
-            });
-            const inv = pos.invested || 0;
-            side.invested += inv;
-            if (cls === 'proven') { side.provenInvested += inv; side.provenCount++; }
-            else if (cls === 'cold') { side.coldInvested += inv; side.coldCount++; }
-            else side.trackedCount++;
-            side.wallets.push({
-              wallet: wLower,
-              name: pos.name || `***${wLower.slice(-4)}`,
-              cls,
-              inSportTier,
-              invested: inv,
-              sizeRatio: avgBet > 0 ? inv / avgBet : 0,
-              clvPct: prof?.clvSkill?.pctPos ?? null,
-              clvN: prof?.clvSkill?.n || 0,
-              picksWr: prof?.picks?.wr ?? null,
-              picksN: prof?.picks?.n || 0,
-              inVault: walletSet.has(wLower),
-            });
-            game.totalInvested += inv;
-            if (cls === 'proven') game.provenInvested += inv;
-            game.walletSetAll.add(wLower);
-          }
-        }
-      }
-    }
-    const battleGames = [...battleGameMap.values()]
-      .map((g) => {
-        for (const mktRec of Object.values(g.markets)) {
-          for (const side of Object.values(mktRec.sides)) {
-            side.wallets.sort((a, b) => b.invested - a.invested);
-          }
-        }
-        return { ...g, walletCount: g.walletSetAll.size, walletSetAll: undefined };
-      })
-      .sort((a, b) => b.totalInvested - a.totalInvested);
-
     return {
       entries, todayPositions, convergences, activeCount, combinedPnl,
-      actionPositions, openLegsByWallet, battleGames,
+      actionPositions, openLegsByWallet,
     };
     // walletProfiles is intentionally in deps so vaultData re-computes once the
     // sharpWalletProfiles cache populates — this drives HC badge availability.
@@ -9768,7 +9669,7 @@ export default function SharpFlow() {
         <SharpFlowPaywall isMobile={isMobile} pnlData={allTimePnL} />
       )}
       {viewMode === 'sharpVault' && !isFreeUser && vaultData && (() => {
-        const { entries, combinedPnl, actionPositions, openLegsByWallet = {}, battleGames = [] } = vaultData;
+        const { entries, combinedPnl, actionPositions, openLegsByWallet = {} } = vaultData;
 
         // Avg ROI over wallets with real volume — avoid diluting with zero-filled gaps.
         const roiSample = entries.filter(e => (e.vol || 0) > 0);
@@ -9853,13 +9754,6 @@ export default function SharpFlow() {
                 </div>
               </div>
             </div>
-
-            <VaultGameBattle
-              battleGames={battleGames}
-              sportFilter={vaultSportFilter}
-              isMobile={isMobile}
-              onSelectWallet={setVaultSelectedWallet}
-            />
 
             <VaultAlphaField
               entries={entries}
