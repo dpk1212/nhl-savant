@@ -10,34 +10,36 @@ import { AdvancedStatsAnalyzer } from './utils/advancedStatsAnalyzer';
 import { EdgeFactorCalculator } from './utils/edgeFactorCalculator';
 import { PlayerMatchupAnalyzer, loadPlayerProps, loadSkatersData } from './utils/playerMatchupAnalyzer';
 import Navigation from './components/Navigation';
-import Dashboard from './components/Dashboard';
-import DataInspector from './components/DataInspector';
-import TodaysGames from './components/TodaysGames';
-import PerformanceDashboard from './components/PerformanceDashboard';
-import Methodology from './components/Methodology';
 import LoadingSpinner from './components/LoadingSpinner';
 import ErrorBoundary from './components/ErrorBoundary';
 import LegalFooter from './components/LegalFooter';
 import PaidPushGate from './components/PaidPushGate';
-import Disclaimer from './pages/Disclaimer';
-
-import MyPicks from './pages/MyPicks';
-import Pricing from './pages/Pricing';
-import Account from './pages/Account';
 import SharpFlow from './pages/SharpFlow';
-import Basketball from './pages/Basketball';
-import BasketballMappingAudit from './pages/BasketballMappingAudit';
-import MLB from './pages/MLB';
-import FAQ from './pages/FAQ';
-import TodaysPicksPreview from './pages/TodaysPicksPreview';
-import PDORegressionGuide from './pages/guides/PDORegressionGuide';
-import EVNHLGuide from './pages/guides/EVNHLGuide';
-import EVCBBGuide from './pages/guides/EVCBBGuide';
-import Data from './pages/Data';
 import SplashScreenFallback from './components/SplashScreenFallback';
 import { useSplashScreen } from './hooks/useSplashScreen';
 // DISABLED: WelcomeModal (replaced by WelcomePopupModal in TodaysGames)
 // import WelcomeModal from './components/WelcomeModal';
+
+// Route-level code splitting — SharpFlow is the landing page and stays eager;
+// every other page loads on navigation so "/" ships the smallest bundle.
+const Dashboard = lazy(() => import('./components/Dashboard'));
+const DataInspector = lazy(() => import('./components/DataInspector'));
+const TodaysGames = lazy(() => import('./components/TodaysGames'));
+const PerformanceDashboard = lazy(() => import('./components/PerformanceDashboard'));
+const Methodology = lazy(() => import('./components/Methodology'));
+const Disclaimer = lazy(() => import('./pages/Disclaimer'));
+const MyPicks = lazy(() => import('./pages/MyPicks'));
+const Pricing = lazy(() => import('./pages/Pricing'));
+const Account = lazy(() => import('./pages/Account'));
+const Basketball = lazy(() => import('./pages/Basketball'));
+const BasketballMappingAudit = lazy(() => import('./pages/BasketballMappingAudit'));
+const MLB = lazy(() => import('./pages/MLB'));
+const FAQ = lazy(() => import('./pages/FAQ'));
+const TodaysPicksPreview = lazy(() => import('./pages/TodaysPicksPreview'));
+const PDORegressionGuide = lazy(() => import('./pages/guides/PDORegressionGuide'));
+const EVNHLGuide = lazy(() => import('./pages/guides/EVNHLGuide'));
+const EVCBBGuide = lazy(() => import('./pages/guides/EVCBBGuide'));
+const Data = lazy(() => import('./pages/Data'));
 
 // Lazy load 3D splash screen to reduce initial bundle size
 const SplashScreen = lazy(() => import('./components/SplashScreen'));
@@ -339,6 +341,7 @@ function AppContent({ dataProcessor, oddsData, startingGoalies, goalieData, stat
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--color-background)' }}>
       <Navigation />
       <main>
+        <Suspense fallback={<LoadingSpinner />}>
         <Routes>
               {/* Sharp Flow is the primary landing page (nhlsavant.com → Sharp Flow). */}
               <Route path="/" element={<SharpFlow />} />
@@ -377,6 +380,7 @@ function AppContent({ dataProcessor, oddsData, startingGoalies, goalieData, stat
               <Route path="/position-lab" element={<Suspense fallback={<LoadingSpinner />}><LivePositionCardLab /></Suspense>} />
               <Route path="/sharp-map-lab" element={<Suspense fallback={<LoadingSpinner />}><SharpMapLab /></Suspense>} />
           </Routes>
+        </Suspense>
         </main>
         
         {/* Legal footer on every page */}
