@@ -198,6 +198,17 @@ jobs:
               echo "--- no main-branch JSON changes this cycle ---"
             fi
 
+            # Pull latest main BEFORE building. This loop checks out once at
+            # job start and runs ~12 cycles (~48 min). Without a mid-loop pull,
+            # every gh-pages deploy rebuilds that stale checkout and silently
+            # overwrites any UI/code deploys that landed on main after the job
+            # started (card redesigns, vault fixes, etc.).
+            echo "--- sync main before build ---"
+            git fetch origin main
+            git reset --hard origin/main
+            # Keep any JSON the cycle just wrote (reset would drop uncommitted
+            # work; committed JSON is already on origin/main from the push above).
+
             # Build the site (~1 min).
             echo "--- npm run build ---"
             if npm run build; then
