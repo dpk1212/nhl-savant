@@ -61,3 +61,11 @@ Max 3 true levers — do not spray:
 3. **Information gap / unfinished battle** → dwell, follow — money war unresolved at kickoff; invert Trent certainty MEGA MAX
 
 **Deprioritize tonight:** tipster secret; three-outcome menu; scoreboard ledger; soft process closers; welcome_identity as T1 (single hero); promo_price; wreckage/ATG/buzz hook echoes
+
+## Ranked for whale_battle_receipt (GOLD style — Rays `207780…` · cataloged 2026-07-18)
+Max 3 true levers — do not spray:
+1. **Status / size shock (receipt_proof)** → favorite, dwell, follow — proven wallet $ + Nx usual; proprietary Battle pane proves it
+2. **Honest controversy** → reply, quote — other side has proven winners too (not fake balance theater)
+3. **Zeigarnik unfinished hold** → dwell, follow — no ticket yet / if position holds → watch or camp
+
+**Deprioritize when shipping this style:** Vault fund numbers; scar/confession open; tipster secret; scoreboard ledger; single lock-card media without Battle pane

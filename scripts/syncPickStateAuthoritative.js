@@ -86,6 +86,7 @@ import {
   TAPE_BOOST_ABOVE,
   TAPE_BOOST_MULT,
   TAPE_SIZING_LIVE_FROM,
+  EDGE_PRIOR_AG_WR,
   applyClvTop2UnitPolicy,
   applyTapeUnitPolicy,
   buildClvLedgerFromPositions,
@@ -583,7 +584,10 @@ function computePathDSlice(walletDetails, mySide) {
 }
 
 // ── WINNER-ALIGN (v12abcde) — EDGE feature + limited mute ─────────────────
-// Site thesis: follow real winners. EDGE = mean FOR−AG sport WR (n≥8).
+// Site thesis: follow real winners. EDGE = mean FOR − (mean AG ?? 50) sport WR.
+// FOR-side mean/top/N always stamp when FOR wallets have sport WR — even with
+// nobody against — so analysis can profile underlying metrics on every W/L.
+// hasBoth stays true only when a real AG side exists (Policy E gates).
 //
 // Cutover: WINNER_ALIGN_LIVE_FROM. Pre-cutover history is never rewritten.
 //
@@ -692,7 +696,10 @@ function computeWinnerAlign(walletDetails, mySide, sport, walletProfiles, sportW
   const topFor = forWrs.length ? Math.max(...forWrs) : null;
   const topAg = agWrs.length ? Math.max(...agWrs) : null;
   const hasBoth = meanFor != null && meanAg != null;
-  const edge = hasBoth ? meanFor - meanAg : null;
+  // Unopposed: still stamp EDGE vs coin-flip prior so FOR WR + tape stay on every side.
+  const edge = meanFor != null
+    ? meanFor - (meanAg != null ? meanAg : EDGE_PRIOR_AG_WR)
+    : null;
   const fadeTop60 = topAg != null
     && topAg >= WINNER_ALIGN_FADE_TOP_WR
     && (topFor == null || topAg > topFor);
@@ -2363,7 +2370,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (v121Eligible) {
     if (winnerAlign) {
       // Canonical EDGE feature store — written every cycle until T-15.
-      patch.v8_winnerAlignEdge = winnerAlign.edge;           // null if !hasBoth
+      patch.v8_winnerAlignEdge = winnerAlign.edge;           // null only if no FOR WR; unopposed uses AG prior 50
       patch.v8_winnerAlignMeanFor = winnerAlign.meanFor;
       patch.v8_winnerAlignMeanAg = winnerAlign.meanAg;
       patch.v8_winnerAlignTopFor = winnerAlign.topFor;

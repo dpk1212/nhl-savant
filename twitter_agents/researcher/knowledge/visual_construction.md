@@ -19,6 +19,16 @@
 - Open loop above the fold; payoff after expand
 - Specificity in line 1 ("8 of 14") > superlatives ("most")
 
+## Whale battle receipt (GOLD — 2026-07-16 / cataloged 2026-07-18)
+- **Cite:** Rays `2077806487376650339` — dual Sharp Flow panes are the argument
+- **Visual job:** prove *who is pressing and who fights back* — not decorate a tip
+- **Required frames:**
+  1. **THE BATTLE** — OUR SIDE vs THEM with proven winners, sharp $, avg ticket, WR, beat-close, lifetime (side-by-side bars / % money split)
+  2. **Wallet deep-dive** — the named proven wallet: record · size-vs-usual (Nx) · scatter/ROI context
+- **Optional 3rd:** same wallet strip / scatter zoom if it clarifies Nx without clutter
+- **Copy↔media law:** line 1 can stay “one proven winner put $X” because the Battle pane answers “why care / who’s against”
+- **Kill:** single lock card alone · Vault Alpha Field collage · tip-sheet multi-pick · Battle without opposing numbers (fake one-sided flex)
+
 ## Tonight-ready (2026-07-10 board)
 - **Tigers 6u SUPER:** screenshot must show SUPER/6u + HC 2 (or dual-book) + proven 5–1 — image answers "why max?" so copy can stay human
 - **Feel-vs-sharps / Over 10.5:** if QT, parent = feel theater; our media = totals card only (one visual job). If hero, single Over card — don't collage ML+total

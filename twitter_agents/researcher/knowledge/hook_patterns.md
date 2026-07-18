@@ -28,6 +28,7 @@ Strategist picks from `hook_candidates` in the latest brief — this file is mem
 | Dog + chalk same-tier | Identity fork inside one tier (opposite prices, same stake) | Coach hook_gap 7/11; France forced-take 3r > Tigers notifications 1r | Nats +165 vs Mets −144 under purple RANK |
 | Unfinished still-fire | Zeigarnik when usual conviction quiet — “would you still fire?” | Coach gap; all-time green identity ask 3r; kill mute-receipts | Fire +165 4u with gold muted? |
 | Civil-war sizing | confession_costly one-var — path max / size tiny because sharps fight | Coach+Dale 7/14 Spain@France; beat Tigers 2658v on this var; invert Trent certainty 591K/92r | France +155 · 1u · $2.53M vs $944K/$328K · forced camp on SIZE |
+| Whale battle receipt | receipt_proof — proven wallet $ shock + Nx usual + opposing honesty + unfinished hold | Dale gold `2077806487376650339` Rays $56.3K / 3.1× · **2220v/2r** (2026-07-18); Dale cataloged style 7/18 | Whale $ line 1 → wallet teeth → other side has proven too → no ticket yet / if holds · dual-pane Battle+wallet media |
 
 ## Kill
 - Soft intro brochure
@@ -45,7 +46,28 @@ Strategist picks from `hook_candidates` in the latest brief — this file is mem
 
 
 
+
+
+
 <!-- twitterLearn:promote -->
+## Learn weights (2026-07-18)
+Prefer mechanics: confession_costly, outbound_receipt, receipt_proof.
+Avoid: tipster_secret.
+Full ledger: `twitter_agents/SHARED/learning_ledger.json`.
+
+
+## Learn weights (2026-07-18)
+Prefer mechanics: receipt_proof, confession_costly, outbound_receipt.
+Avoid: tipster_secret, scoreboard_ledger.
+Full ledger: `twitter_agents/SHARED/learning_ledger.json`.
+
+
+## Learn weights (2026-07-17)
+Prefer mechanics: confession_costly, receipt_proof, outbound_receipt.
+Avoid: tipster_secret, scoreboard_ledger.
+Full ledger: `twitter_agents/SHARED/learning_ledger.json`.
+
+
 ## Learn weights (2026-07-14)
 Prefer mechanics: confession_costly, welcome_identity.
 Avoid: promo_price, tipster_secret, scoreboard_ledger.

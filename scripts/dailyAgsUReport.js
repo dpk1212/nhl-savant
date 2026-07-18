@@ -1,15 +1,10 @@
 /**
  * Sharp Intel — AGS-Unified Daily Performance & Calibration Report
  * ──────────────────────────────────────────────────────────────────────────
- * Single canonical monitoring artifact for the AGS-U sharp-intelligence
- * pipeline. Replaces v6 / v7 / v8 dailies as the source of truth for:
- *
- *   • Is AGS-U making money? Per tier? Per quintile? Per sport?
- *   • Is AGS-U CALIBRATED — does the tier ladder predict outcomes monotonically?
- *   • Are the active L1-pruned features still earning their slot?
- *   • Is the sizing ladder (2× / 1.5× / 1.1× / 0.5× / 0.2×) capturing edge?
- *   • Is the hard-mute floor (q20) suppressing the right picks?
- *   • Are there cron / grader / sizing anomalies that need attention?
+ * Single canonical monitoring artifact for V12 production.
+ * Core read (§1–12): PnL · live stack · paths · tape era (Jul15+) side profile
+ * · sport · stake cal · mute · recent picks · score health · wallets · ops.
+ * Appendices: model versions · feature lab (research).
  *
  * VERSION-AGNOSTIC: every reference to active features / weights / quintiles
  * is loaded at runtime from `src/lib/ags.js`. When the model is bumped (v9 →
@@ -45,8 +40,13 @@ import {
   TAPE_BOOST_ABOVE,
   TAPE_BOOST_MULT,
   TAPE_SIZING_LIVE_FROM,
+  EDGE_PRIOR_AG_WR,
+  computeTapeScore,
   isTapeSizingLive,
 } from '../src/lib/walletClvSkill.js';
+
+/** Tape / side-profile analysis window (EDGE+TAPE stamps). */
+const SIDE_PROFILE_FROM = TAPE_SIZING_LIVE_FROM;
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..');
@@ -664,10 +664,15 @@ async function loadAllAgsuGradedPicks() {
           winnerAlignEvaluatedAt: sd.v8_winnerAlignEvaluatedAt || null,
           mutedBy: sd.mutedBy || null,
           // TAPE sizing (live 2026-07-15+) — score / action / pre-tape path units
+          // FOR-side components always kept for W/L profile even when unopposed.
           tapeScore: Number.isFinite(sd.v8_tapeScore) ? sd.v8_tapeScore : null,
           tapeAction: sd.v8_tapeAction || null,
           unitsPreTape: Number.isFinite(sd.v8_unitsPreTape) ? sd.v8_unitsPreTape : null,
           netMeanPrior: Number.isFinite(sd.v8_netMeanPrior) ? sd.v8_netMeanPrior : null,
+          netClvMeanFor: Number.isFinite(sd.v8_netClvMeanFor) ? sd.v8_netClvMeanFor : null,
+          netClvMeanAg: Number.isFinite(sd.v8_netClvMeanAg) ? sd.v8_netClvMeanAg : null,
+          netClvNFor: Number.isFinite(sd.v8_netClvNFor) ? sd.v8_netClvNFor : null,
+          netClvNAg: Number.isFinite(sd.v8_netClvNAg) ? sd.v8_netClvNAg : null,
           provenFor, provenAg,
           provenTotal: (provenFor ?? 0) + (provenAg ?? 0),
           hcMargin, miniHcMargin,
@@ -723,13 +728,19 @@ function buildHeader(report, cutover, liveCal, eras) {
   const v12Days = v12From
     ? Math.max(1, Math.floor((new Date(today) - new Date(v12From)) / 86400000) + 1)
     : null;
-  report.push(`# AGS-Unified — V12 Performance Monitor`);
+  report.push(`# AGS-Unified — V12 Daily Monitor`);
   report.push('');
   report.push(`**Generated:** ${new Date().toLocaleString('en-US', { timeZone: 'America/New_York', dateStyle: 'full', timeStyle: 'short' })} ET`);
   report.push('');
-  report.push(`**Active model:** \`${schemaLive}\` · **V12 went live:** ${v12From || '— (not yet shipped)'} · **Days live:** ${v12Days ?? '—'}`);
+  report.push(`**Model:** \`${schemaLive}\` · **Live since:** ${v12From || '—'} (${v12Days ?? '—'} days) · **Tape / side-profile era:** ${SIDE_PROFILE_FROM}+`);
   report.push('');
-  report.push(`> This report is a **CEO-grade monitor of V12 in production** (stacking era **v12abcde**: Path A HC · Path B RANK · Path C SHARP · Path D DISSENT · Path E WINNER-ALIGN). The only non-V12 section is § 2 (model version comparison), kept so you can see V12's results in the context of every prior model bump. Everything else — daily trajectory, tier scoreboard, stake calibration, mute-rule audit, wallet-quality inputs, operational health — is **strictly V12-scoped** (pick date ≥ ${v12From || 'TBD'}) so cron back-fill of V12 stamps onto older picks can't contaminate the production numbers.`);
+  report.push(`Production book = **Paths A–D** (HC / RANK / SHARP / DISSENT) → fadeTop mute → **TAPE** mute/boost. Numbers below are V12-scoped (pick date ≥ ${v12From || 'TBD'}) unless marked Appendix.`);
+  report.push('');
+  report.push(`## Contents`);
+  report.push('');
+  report.push(`1. Executive Summary · 2. Live Stack · 3. Daily Scoreboard · **4. Path & Modifier Board** · 5. Tape Era (${SIDE_PROFILE_FROM}+) · 6. Sport/Market · 7. Mute · 8. Recent Picks · 9. Predictive Health · 10. Wallets · 11. Ops`);
+  report.push('');
+  report.push(`Appendix A — Model Versions · Appendix B — Feature Lab`);
   report.push('');
 }
 
@@ -1345,27 +1356,27 @@ function buildCalibrationSnapshot(report, liveCal) {
   // actual production decision rules right now). The v11 logit quintiles
   // are not what V12 ships from — they're inherited cruft on the doc.
   if (isV12Active && liveCal.v12Quintiles) {
-    report.push(`### V12 wallet-quality score thresholds (live)`);
+    report.push(`### V12 score bands (diagnostic — not the live unit sizer)`);
     report.push('');
-    report.push(`These are the cuts on the V12 score (in [-1, +1]) that decide which tier each pick lands in, and therefore how many units it ships at.`);
+    report.push(`Score ≤ 0 still mutes (FADE). Positive bands below are **labels only** — live units come from Paths A–D + TAPE (§ 2 / § 4), not this ladder.`);
     report.push('');
-    report.push(`| Boundary | V12 score cut | Tier band start | Stake (absolute units) |`);
-    report.push(`|----------|---------------|-----------------|------------------------|`);
+    report.push(`| Boundary | V12 score cut | Band label |`);
+    report.push(`|----------|---------------|------------|`);
     const v12q = liveCal.v12Quintiles;
     const rows = [
-      ['q80',  v12q.q80, 'ELITE',   '5.00u'],
-      ['q60',  v12q.q60, 'PREMIUM', '3.00u'],
-      ['q40',  v12q.q40, 'LOCK',    '1.00u'],
-      ['q20',  v12q.q20, 'LEAN',    '0.50u'],
-      ['—',    0.0,      'WEAK',    '0.25u  (any score in (0, q20])'],
-      ['mute', '—',      'FADE',    '0.00u  (any score ≤ 0)'],
+      ['q80',  v12q.q80, 'ELITE'],
+      ['q60',  v12q.q60, 'PREMIUM'],
+      ['q40',  v12q.q40, 'LOCK'],
+      ['q20',  v12q.q20, 'LEAN'],
+      ['—',    0.0,      'WEAK (score > 0)'],
+      ['mute', '—',      'FADE (score ≤ 0 → 0u)'],
     ];
-    for (const [k, val, tier, stake] of rows) {
+    for (const [k, val, tier] of rows) {
       const valStr = typeof val === 'number' ? fmtSigned(val, 3) : String(val);
-      report.push(`| ${k.padEnd(8)} | ${valStr.padStart(13)} | ${tier.padEnd(15)} | ${stake.padEnd(22)} |`);
+      report.push(`| ${k.padEnd(8)} | ${valStr.padStart(13)} | ${tier} |`);
     }
     report.push('');
-    report.push(`> **Odds cap.** Regardless of tier, stake is clamped by american odds: ≤2.5u at +100, ≤1.5u at +151, ≤1.0u at +200. Keeps a long-underdog ELITE from blowing up the bankroll.`);
+    report.push(`> **Odds cap** (still live): ≤2.5u at +100 · ≤1.5u at +151 · ≤1.0u at +200.`);
     report.push('');
   } else if (liveCal.quintiles) {
     // Pre-V12 fallback: show the v11 logit quintiles & multiplier ladder.
@@ -1475,6 +1486,14 @@ async function loadAllGradedAndShadowPicks() {
           tapeAction: sd.v8_tapeAction || null,
           unitsPreTape: Number.isFinite(sd.v8_unitsPreTape) ? sd.v8_unitsPreTape : null,
           netMeanPrior: Number.isFinite(sd.v8_netMeanPrior) ? sd.v8_netMeanPrior : null,
+          netClvMeanFor: Number.isFinite(sd.v8_netClvMeanFor) ? sd.v8_netClvMeanFor : null,
+          netClvMeanAg: Number.isFinite(sd.v8_netClvMeanAg) ? sd.v8_netClvMeanAg : null,
+          netClvNFor: Number.isFinite(sd.v8_netClvNFor) ? sd.v8_netClvNFor : null,
+          netClvNAg: Number.isFinite(sd.v8_netClvNAg) ? sd.v8_netClvNAg : null,
+          winnerAlignMeanFor: Number.isFinite(sd.v8_winnerAlignMeanFor) ? sd.v8_winnerAlignMeanFor : null,
+          winnerAlignMeanAg: Number.isFinite(sd.v8_winnerAlignMeanAg) ? sd.v8_winnerAlignMeanAg : null,
+          winnerAlignForN: Number.isFinite(sd.v8_winnerAlignForN) ? sd.v8_winnerAlignForN : null,
+          winnerAlignAgN: Number.isFinite(sd.v8_winnerAlignAgN) ? sd.v8_winnerAlignAgN : null,
           agsV12: Number.isFinite(sd.v8_agsV12) ? sd.v8_agsV12 : null,
           team: sd.team || sideKey,
           sideKey,
@@ -1949,6 +1968,28 @@ const WINNER_ALIGN_RESCUE_E10 = 6;
 const WINNER_ALIGN_RESCUE_E5 = 4;
 const WINNER_ALIGN_RESCUE_E3 = 3;
 
+/**
+ * Fill EDGE / tape analysis fields from **stamped** FOR-side components when
+ * the composite was left blank (legacy unopposed FAIL_OPEN rows).
+ * Does NOT profile-replay wallets (no lookahead).
+ */
+function fillForSideEdgeTapeFromStamps(rows) {
+  if (!Array.isArray(rows)) return;
+  for (const r of rows) {
+    if (!Number.isFinite(r.winnerAlignEdge) && Number.isFinite(r.winnerAlignMeanFor)) {
+      const ag = Number.isFinite(r.winnerAlignMeanAg) ? r.winnerAlignMeanAg : EDGE_PRIOR_AG_WR;
+      r.winnerAlignEdge = r.winnerAlignMeanFor - ag;
+      r.winnerAlignEdgeSource = Number.isFinite(r.winnerAlignMeanAg) ? 'derived_stamped' : 'ag_prior_50';
+    }
+    if (!Number.isFinite(r.tapeScore)
+      && Number.isFinite(r.winnerAlignEdge)
+      && Number.isFinite(r.netMeanPrior)) {
+      r.tapeScore = computeTapeScore(r.winnerAlignEdge, r.netMeanPrior);
+      r.tapeScoreSource = 'derived_stamped';
+    }
+  }
+}
+
 /** @deprecated LOOKAHEAD — do not use for historical EDGE tables. Current profiles on old dates. Kept only if needed for live ungraded diagnostics. */
 function enrichWinnerAlignEdge(rows, walletProfiles) {
   if (!walletProfiles || !walletProfiles.size) return;
@@ -1970,15 +2011,15 @@ function enrichWinnerAlignEdge(rows, walletProfiles) {
       if (w.side === r.sideKey) fors.push(wr);
       else if (w.side) ags.push(wr);
     }
-    if (!fors.length || !ags.length) continue;
+    if (!fors.length) continue;
     const meanFor = fors.reduce((s, x) => s + x, 0) / fors.length;
-    const meanAg = ags.reduce((s, x) => s + x, 0) / ags.length;
-    r.winnerAlignEdge = meanFor - meanAg;
+    const meanAg = ags.length ? ags.reduce((s, x) => s + x, 0) / ags.length : null;
+    r.winnerAlignEdge = meanFor - (meanAg != null ? meanAg : EDGE_PRIOR_AG_WR);
     r.winnerAlignMeanFor = meanFor;
     r.winnerAlignMeanAg = meanAg;
     r.winnerAlignTopFor = Math.max(...fors);
-    r.winnerAlignTopAg = Math.max(...ags);
-    r.winnerAlignEdgeSource = 'profile_replay';
+    r.winnerAlignTopAg = ags.length ? Math.max(...ags) : null;
+    r.winnerAlignEdgeSource = meanAg != null ? 'profile_replay' : 'profile_replay_ag_prior_50';
   }
 }
 
@@ -2493,34 +2534,27 @@ function buildV12CeoExecutive(report, stats, eras) {
   if (mutedCfRoi != null && mutedCfRoi > 3) {
     watch.push(`🚨 Mute rule is **costing money** — the ${mutedCfN} muted picks would have earned ${fmtSigned(mutedCfPnl)}u at flat 1u (${mutedCfRoi.toFixed(1)}% counterfactual ROI). V12 is throwing away edge — loosen the wallet-quality threshold.`);
   }
-  // Tier inversion check
-  const posTiers = ['ELITE', 'PREMIUM', 'LOCK', 'LEAN', 'WEAK'];
-  const tierRois = posTiers.map(t => aggregate(v12Rows.filter(r => r.agsV12Tier === t)).roi).filter(v => v != null);
-  if (tierRois.length >= 3) {
-    const tierMono = monoScore(tierRois);
-    if (tierMono >= (tierRois.length - 2)) {
-      watch.push(`🚨 Tier ladder is **inverted** — high tiers are earning LESS than low tiers (monoScore = ${tierMono}). The score is upside-down on this sample; review §5.`);
-    } else if (tierMono > 0) {
-      watch.push(`🟡 Tier ladder is **partially inverted** — high tiers aren't cleanly out-earning low tiers (monoScore = ${tierMono}). Watch §5.`);
+  // Best / worst sport (single callout each — avoid "strongest" spam)
+  const sportAggs = [...new Set(v12Rows.map(r => r.sport))]
+    .map(sport => ({ sport, ...aggregate(v12Rows.filter(r => r.sport === sport)) }))
+    .filter(s => s.n >= 5 && s.roi != null);
+  if (sportAggs.length) {
+    const best = [...sportAggs].sort((a, b) => b.roi - a.roi)[0];
+    const worst = [...sportAggs].sort((a, b) => a.roi - b.roi)[0];
+    if (best.roi > 10) {
+      wins.push(`Best sport: **${best.sport}** — ${best.n} live, ${best.w}-${best.l}, ${best.roi.toFixed(1)}% ROI, ${fmtSigned(best.profit)}u.`);
+    }
+    if (worst.roi < -10 && worst.sport !== best.sport) {
+      watch.push(`🟡 Weakest sport: **${worst.sport}** — ${worst.n} live, ${worst.w}-${worst.l}, ${worst.roi.toFixed(1)}% ROI, ${fmtSigned(worst.profit)}u.`);
     }
   }
-  // Per-sport callouts
-  const sports = [...new Set(v12Rows.map(r => r.sport))];
-  for (const sport of sports) {
-    const sportAgg = aggregate(v12Rows.filter(r => r.sport === sport));
-    if (sportAgg.n >= 5 && sportAgg.roi != null) {
-      if (sportAgg.roi > 10) wins.push(`**${sport}** is V12's strongest sport: ${sportAgg.n} live, ${sportAgg.w}-${sportAgg.l}, ${sportAgg.roi.toFixed(1)}% ROI, ${fmtSigned(sportAgg.profit)}u.`);
-      if (sportAgg.roi < -10) watch.push(`🟡 **${sport}** is bleeding: ${sportAgg.n} live, ${sportAgg.w}-${sportAgg.l}, ${sportAgg.roi.toFixed(1)}% ROI, ${fmtSigned(sportAgg.profit)}u. Consider scaling back V12's exposure here while it's the active model.`);
-    }
-  }
-  // Per-market callouts
-  const markets = ['ML', 'SPREAD', 'TOTAL'];
-  for (const mkt of markets) {
-    const mktAgg = aggregate(v12Rows.filter(r => r.marketType === mkt));
-    if (mktAgg.n >= 5 && mktAgg.roi != null) {
-      if (mktAgg.roi < -10) watch.push(`🟡 **${mkt}** market is bleeding under V12: ${mktAgg.n} live, ${mktAgg.w}-${mktAgg.l}, ${mktAgg.roi.toFixed(1)}% ROI, ${fmtSigned(mktAgg.profit)}u.`);
-      if (mktAgg.roi > 15) wins.push(`**${mkt}** is V12's strongest market: ${mktAgg.n} live, ${mktAgg.w}-${mktAgg.l}, +${mktAgg.roi.toFixed(1)}% ROI.`);
-    }
+  // Tape-era snapshot (forward-looking window)
+  const tapeEra = liveRows.filter(r => r.date >= SIDE_PROFILE_FROM && (r.won === 1 || r.won === 0));
+  if (tapeEra.length >= 3) {
+    const tAgg = aggregate(tapeEra);
+    wins.push(
+      `Tape era (${SIDE_PROFILE_FROM}+): **${tAgg.w}-${tAgg.l}** · ${tAgg.roi != null ? ((tAgg.roi >= 0 ? '+' : '') + tAgg.roi.toFixed(1) + '%') : '—'} ROI · ${fmtSigned(tAgg.profit)}u on ${tAgg.n} graded — see § 5.`,
+    );
   }
   // Sample size warning
   if (agg.n < 20) {
@@ -2541,33 +2575,30 @@ function buildV12CeoExecutive(report, stats, eras) {
   }
 }
 
-// § 3 — Plain-English primer on what V12 actually is
+// § 2 — How production sizing works TODAY (not the legacy score ladder)
 function buildV12Primer(report) {
-  report.push(`## § 3 — What V12 Actually Is (Plain English)`);
+  report.push(`## § 2 — Live Stack (how picks size today)`);
   report.push('');
-  report.push(`Every prior AGS-Unified model (v9 → v11) was a **logistic regression** on a handful of hand-crafted features (count of sharp wallets FOR vs AGAINST, sum of sharp-wallet sizing ratios, leaderboard rank deltas, etc.). The score was a log-odds; ladder tiers were calibrated quintiles of that score; sizing was the v11 base × tier multiplier (2× / 1.5× / 1.1× / 0.5× / 0.2× / 0×).`);
+  report.push(`V12 still **scores** a side as a wallet-quality differential (\`forMean\` vs \`agMean\` → score in [-1, +1]). Score ≤ 0 → FADE (0u). What changed is **how positive-score sides get sized**:`);
   report.push('');
-  report.push(`**V12 is fundamentally different.** It's a **single feature** that summarises the *quality difference* between the sharp money on the FOR side and the sharp money on the AGAINST side, then maps that difference to an absolute stake.`);
+  report.push(`| Step | What runs | Units |`);
+  report.push(`|------|-----------|-------|`);
+  report.push(`| A | HC-margin path | SUPER 6u · TOP 4u · MINI 3u · CONFIRMED 1u |`);
+  report.push(`| B | RANK rescue (muted + 2-for-0 whitelist) | 4u |`);
+  report.push(`| C | SHARP / SHARP-PRIME proven-$ rescue (+ MINI- cut) | 3–4u |`);
+  report.push(`| D | DISSENT mute rescue (MLB contribMargin≤0) | 1u |`);
+  report.push(`| E | fadeTop≥60 mute only (EDGE size/rescue **frozen**) | — |`);
+  report.push(`| TAPE | From **${SIDE_PROFILE_FROM}**: mute tape&lt;0 · hold mid · boost ≥2.89 ×1.35 | path units |`);
   report.push('');
-  report.push(`Per pick:`);
+  report.push(`**Stamps we keep for analysis (every shipped side):** depth (\`#F/#A\`, proven, V12 counts) + quality (ForWR, ForCLV, EDGE, Tape). Unopposed sides still get FOR numbers (EDGE uses AG prior ${EDGE_PRIOR_AG_WR}). Compare WIN vs LOSS in § 5.`);
   report.push('');
-  report.push(`1. **Score every wallet on each side** with a quality formula \`Q = tierWeight × cappedROI × boundedSizeRatio × nReliab\`. Sharper wallets (better historical ROI, higher leaderboard tier, larger reliable sample) get bigger Qs.`);
-  report.push(`2. **Take the mean Q on each side.** \`forMean\` = average wallet quality FOR the pick; \`againstMean\` = average AGAINST.`);
-  report.push(`3. **The V12 score is the bounded ratio of the difference:** \`score = (forMean − againstMean) / max(|forMean|, |againstMean|, ε)\`. Bounded to [-1, +1]. Positive = sharp money is meaningfully better-quality on the FOR side. Negative or zero = it isn't.`);
-  report.push('');
-  report.push(`Three hard rules built on that score:`);
-  report.push('');
-  report.push(`- **Mute rule:** if score ≤ 0, the pick is FADE — **zero stake, no exception**. This replaces v11's calibrated-quintile q20 floor.`);
-  report.push(`- **Absolute ladder (no multiplier):** score band → fixed units. **ELITE 5.00u · PREMIUM 3.00u · LOCK 1.00u · LEAN 0.50u · WEAK 0.25u · FADE 0.00u.** The stake is the answer, not a multiplier on a per-market base.`);
-  report.push(`- **Odds cap:** long underdogs at +100 / +151 / +200 thresholds are capped down to 2.5 / 1.5 / 1.0u respectively, regardless of tier. Prevents one bad +200 ELITE from blowing up the bankroll.`);
-  report.push('');
-  report.push(`**Why this matters for monitoring.** V12 has no multi-feature attribution to audit — there's just **one** number, and either the wallet-quality formula is identifying sharper sides than the market is or it isn't. The sections below tell you exactly that, broken down by tier, sport, market, score band, and time.`);
+  report.push(`Odds cap still clamps long dogs (+100 / +151 / +200 → max 2.5 / 1.5 / 1.0u). Legacy ELITE→WEAK score-ladder units are **not** the live sizer — ignore them if you see them in old notes.`);
   report.push('');
 }
 
-// § 4 — V12 Daily Production Scoreboard
+// § 3 — Daily scoreboard (recent days first; full history summarized)
 function buildV12DailyScoreboard(report, stats) {
-  report.push(`## § 4 — V12 Daily Production Scoreboard`);
+  report.push(`## § 3 — Daily Scoreboard`);
   report.push('');
   if (!stats || stats.v12Rows.length === 0) {
     report.push(`_(no graded V12-era picks yet)_`);
@@ -2575,13 +2606,29 @@ function buildV12DailyScoreboard(report, stats) {
     return;
   }
   const { v12Rows, v12RowsAll, daysLive, perDayPnl, agg } = stats;
-  report.push(`Day-by-day production since V12 went live. **Evaluated** = picks V12 scored that day. **Live** = picks shipped at units > 0 (real money). **Muted** = picks V12 rejected (score ≤ 0, FADE tier). **Cumulative PnL** is the running total of live unit profit/loss since launch.`);
-  report.push('');
   const dates = [...new Set(v12RowsAll.map(r => r.date))].sort();
+  const RECENT_DAYS = 21;
+  const recentDates = dates.slice(-RECENT_DAYS);
+  const priorDates = dates.slice(0, -RECENT_DAYS);
+
+  // Cum PnL through end of prior window so recent table continues the book
+  let cumPnl = 0;
+  for (const d of priorDates) {
+    cumPnl += aggregate(v12Rows.filter(r => r.date === d)).profit;
+  }
+  if (priorDates.length) {
+    const priorAgg = aggregate(v12Rows.filter(r => priorDates.includes(r.date)));
+    report.push(`**Full book:** ${daysLive}d · ${agg.n} live · ${agg.w}-${agg.l} · **${fmtSigned(agg.profit)}u** · ${agg.roi != null ? ((agg.roi >= 0 ? '+' : '') + agg.roi.toFixed(1) + '%') : '—'} ROI · ${perDayPnl != null ? fmtSigned(perDayPnl) + 'u/day' : '—'}.`);
+    report.push('');
+    report.push(`_Prior to table (${priorDates[0]} → ${priorDates[priorDates.length - 1]}): ${priorAgg.n} live · ${priorAgg.w}-${priorAgg.l} · ${fmtSigned(priorAgg.profit)}u · cum through prior = ${fmtSigned(cumPnl)}u._`);
+    report.push('');
+  }
+
+  report.push(`Last **${recentDates.length}** calendar days with activity. **Live** = units > 0 · **Muted** = graded FADE / 0u · **Cum PnL** = running total since V12 launch.`);
+  report.push('');
   report.push(`| Date       | Evaluated | Live | Muted | W-L (live) | Win %  | Stake (u) | PnL (u)    | ROI       | Cum PnL    |`);
   report.push(`|------------|-----------|------|-------|------------|--------|-----------|------------|-----------|------------|`);
-  let cumPnl = 0;
-  for (const d of dates) {
+  for (const d of recentDates) {
     const dayAll = v12RowsAll.filter(r => r.date === d);
     const dayGraded = v12Rows.filter(r => r.date === d);
     const dayAgg = aggregate(dayGraded);
@@ -2591,34 +2638,329 @@ function buildV12DailyScoreboard(report, stats) {
   }
   report.push('');
 
-  // Narrative: trend interpretation
-  if (dates.length >= 3) {
-    const recentDays = dates.slice(-3);
-    const recentRows = v12Rows.filter(r => recentDays.includes(r.date));
-    const recentAgg = aggregate(recentRows);
-    const olderDays = dates.slice(0, -3);
-    const olderRows = v12Rows.filter(r => olderDays.includes(r.date));
-    const olderAgg = aggregate(olderRows);
-    let trendNote = '';
+  if (recentDates.length >= 3) {
+    const last3 = recentDates.slice(-3);
+    const recentAgg = aggregate(v12Rows.filter(r => last3.includes(r.date)));
+    const olderAgg = aggregate(v12Rows.filter(r => !last3.includes(r.date)));
     if (recentAgg.roi != null && olderAgg.roi != null) {
       const delta = recentAgg.roi - olderAgg.roi;
-      if (Math.abs(delta) < 3) trendNote = `Last 3 days (${recentAgg.roi.toFixed(1)}% ROI) is roughly **in-line** with the prior window (${olderAgg.roi.toFixed(1)}%). V12 is in a steady state.`;
-      else if (delta > 0) trendNote = `🟢 Last 3 days (${recentAgg.roi.toFixed(1)}% ROI) is **+${delta.toFixed(1)}pp better** than the prior window (${olderAgg.roi.toFixed(1)}%). V12 is accelerating.`;
-      else trendNote = `🟡 Last 3 days (${recentAgg.roi.toFixed(1)}% ROI) is **${delta.toFixed(1)}pp worse** than the prior window (${olderAgg.roi.toFixed(1)}%). Watch for further regression.`;
-    }
-    if (trendNote) {
+      let trendNote;
+      if (Math.abs(delta) < 3) trendNote = `Last 3 days (${recentAgg.roi.toFixed(1)}% ROI) ≈ prior book (${olderAgg.roi.toFixed(1)}%).`;
+      else if (delta > 0) trendNote = `🟢 Last 3 days (${recentAgg.roi.toFixed(1)}% ROI) **+${delta.toFixed(1)}pp** vs prior (${olderAgg.roi.toFixed(1)}%).`;
+      else trendNote = `🟡 Last 3 days (${recentAgg.roi.toFixed(1)}% ROI) **${delta.toFixed(1)}pp** vs prior (${olderAgg.roi.toFixed(1)}%).`;
       report.push(`> **Trajectory.** ${trendNote}`);
       report.push('');
     }
   }
+}
 
-  report.push(`> **Bottom line.** ${daysLive} day${daysLive === 1 ? '' : 's'} live, ${agg.n} live picks shipped, **${fmtSigned(agg.profit)}u total PnL** at **${agg.roi != null ? (agg.roi>=0?'+':'') + agg.roi.toFixed(1)+'%' : '—'} ROI**, averaging **${perDayPnl != null ? fmtSigned(perDayPnl) + 'u' : '—'} per day**.`);
+/** Flat 1u counterfactual PnL for one muted / 0u side. */
+function unitCfPnl(r) {
+  if (r.won === 1) {
+    const o = Number(r.peakOdds || r.lockOdds);
+    if (Number.isFinite(o) && o > 0) return o / 100;
+    if (Number.isFinite(o) && o < 0) return 100 / Math.abs(o);
+    return 1;
+  }
+  if (r.won === 0) return -1;
+  return null;
+}
+
+function leverBook(rows, { mode = 'staked' } = {}) {
+  // mode: 'staked' = real units/profit · 'flat1u' = mute CF
+  let n = 0, w = 0, l = 0, stake = 0, pnl = 0;
+  for (const r of rows) {
+    if (r.won !== 0 && r.won !== 1) continue;
+    n++;
+    if (r.won === 1) w++; else l++;
+    if (mode === 'flat1u') {
+      stake += 1;
+      const p = unitCfPnl(r);
+      if (p != null) pnl += p;
+    } else {
+      stake += r.units || 0;
+      pnl += Number.isFinite(r.profit) ? r.profit : 0;
+    }
+  }
+  return {
+    n, w, l, stake, pnl,
+    winPct: n ? (100 * w) / n : null,
+    roi: stake > 0 ? (pnl / stake) * 100 : null,
+    avgPnl: n ? pnl / n : null,
+  };
+}
+
+const ALL_STAKE_PATHS = [
+  { key: 'SUPER',       u: '6u',   layer: 'A', label: 'HC-2 SUPER' },
+  { key: 'TOP+',        u: '5u',   layer: 'A/C', label: 'HC-1 TOP+ ($ boost)' },
+  { key: 'TOP',         u: '4u',   layer: 'A', label: 'HC-1 TOP' },
+  { key: 'RANK',        u: '4u',   layer: 'B', label: 'RANK 2-for-0 rescue' },
+  { key: 'SHARP-PRIME', u: '4u',   layer: 'C', label: 'SHARP-PRIME rescue' },
+  { key: 'SHARP',       u: '3u',   layer: 'C', label: 'SHARP rescue' },
+  { key: 'MINI',        u: '3u',   layer: 'A', label: 'MINI (gate-pass)' },
+  { key: 'MINI-',       u: '1u',   layer: 'C', label: 'MINI- (gate-cut)' },
+  { key: 'CONFIRMED',   u: '1u',   layer: 'A', label: 'CONFIRMED margin3+' },
+  { key: 'DISSENT',     u: '1u',   layer: 'D', label: 'DISSENT rescue' },
+  { key: 'WINNER',      u: '3-6u', layer: 'E', label: 'WINNER (legacy EDGE)' },
+];
+
+/**
+ * § 4 — Path & Modifier Board
+ * Daily leaderboard of EVERY staking path + EVERY post-stack modifier
+ * (tape mute/hold/boost/fail-open, fadeTop mute, score mute).
+ */
+function buildV12PathModifierBoard(report, stats) {
+  report.push(`## § 4 — Path & Modifier Board`);
+  report.push('');
+  report.push(`> **Daily read.** Every lever that can put units on a ticket or change size after stacking. Paths A–D stamp the base; fadeTop / TAPE mute·hold·boost after. Ranked best → worst. Thin N stays listed so nothing hides.`);
+  report.push('');
+
+  if (!stats?.v12Rows?.length) {
+    report.push(`_(no V12 rows yet)_`);
+    report.push('');
+    return;
+  }
+
+  const { v12Rows, v12RowsAll } = stats;
+  const gradedStaked = v12Rows.filter(r =>
+    r.hcStakeTier && r.hcStakeTier !== 'MONITORING' && r.won != null && (r.units || 0) > 0);
+  const allGraded = (v12RowsAll || v12Rows).filter(r => r.won === 0 || r.won === 1);
+  const maxDate = gradedStaked.map(r => r.date).sort().slice(-1)[0]
+    || allGraded.map(r => r.date).sort().slice(-1)[0];
+  const d7 = maxDate
+    ? new Date(new Date(maxDate).getTime() - 7 * 86400000).toISOString().slice(0, 10)
+    : null;
+  const lastDay = maxDate;
+
+  // ── Path rows (always all keys) ──────────────────────────────────────────
+  const pathRows = ALL_STAKE_PATHS.map(p => {
+    const all = gradedStaked.filter(r => r.hcStakeTier === p.key);
+    const recent = d7 ? all.filter(r => r.date >= d7) : [];
+    const day = lastDay ? all.filter(r => r.date === lastDay) : [];
+    const book = leverBook(all);
+    const r7 = leverBook(recent);
+    const yd = leverBook(day);
+    return { ...p, book, r7, yd, all };
+  });
+
+  // ── Modifier rows ────────────────────────────────────────────────────────
+  const tapeEra = allGraded.filter(r => r.date >= SIDE_PROFILE_FROM);
+  const modifiers = [
+    {
+      key: 'tape_BOOST',
+      layer: 'TAPE',
+      label: 'Tape BOOST (≥2.89 ×1.35)',
+      mode: 'staked',
+      rows: gradedStaked.filter(r => r.tapeAction === 'BOOST' && r.date >= SIDE_PROFILE_FROM),
+      note: 'sized UP after path',
+    },
+    {
+      key: 'tape_HOLD',
+      layer: 'TAPE',
+      label: 'Tape HOLD (mid)',
+      mode: 'staked',
+      rows: gradedStaked.filter(r => r.tapeAction === 'HOLD' && r.date >= SIDE_PROFILE_FROM),
+      note: 'kept path units',
+    },
+    {
+      key: 'tape_FAIL_OPEN',
+      layer: 'TAPE',
+      label: 'Tape FAIL_OPEN (missing)',
+      mode: 'staked',
+      rows: gradedStaked.filter(r => r.tapeAction === 'FAIL_OPEN' && r.date >= SIDE_PROFILE_FROM),
+      note: 'no tape score → path size',
+    },
+    {
+      key: 'tape_MUTE',
+      layer: 'TAPE',
+      label: 'Tape MUTE (tape<0 → 0u)',
+      mode: 'flat1u',
+      rows: tapeEra.filter(r =>
+        r.tapeAction === 'MUTE' || r.mutedBy === 'tape-weak'),
+      note: 'CF = flat 1u if shipped',
+    },
+    {
+      key: 'fadeTop_MUTE',
+      layer: 'E',
+      label: 'fadeTop≥60 MUTE',
+      mode: 'flat1u',
+      rows: allGraded.filter(r =>
+        r.mutedBy === 'winner_align_fade' || r.winnerAlignAction === 'mute'),
+      note: 'CF = flat 1u if shipped',
+    },
+    {
+      key: 'score_FADE',
+      layer: 'score',
+      label: 'Score FADE (≤0 → 0u)',
+      mode: 'flat1u',
+      rows: allGraded.filter(r =>
+        (r.units || 0) === 0 && (r.agsV12 != null ? r.agsV12 <= 0 : r.tracked)),
+      note: 'CF = flat 1u if shipped',
+    },
+  ].map(m => {
+    const book = leverBook(m.rows, { mode: m.mode });
+    const recent = d7 ? m.rows.filter(r => r.date >= d7) : [];
+    const r7 = leverBook(recent, { mode: m.mode });
+    const day = lastDay ? m.rows.filter(r => r.date === lastDay) : [];
+    const yd = leverBook(day, { mode: m.mode });
+    return { ...m, book, r7, yd };
+  });
+
+  // ── At a glance ──────────────────────────────────────────────────────────
+  const rankablePaths = pathRows.filter(p => p.book.n >= 5 && p.book.roi != null)
+    .sort((a, b) => b.book.roi - a.book.roi);
+  // Staked mods: higher ROI = better. Mute CF: more negative ROI = better (saved $).
+  const stakedMods = modifiers.filter(m => m.mode === 'staked' && m.book.n >= 3 && m.book.roi != null)
+    .sort((a, b) => b.book.roi - a.book.roi);
+  const muteMods = modifiers.filter(m => m.mode === 'flat1u' && m.book.n >= 3 && m.book.roi != null)
+    .sort((a, b) => a.book.roi - b.book.roi); // most negative first = best mute
+
+  report.push(`### At a glance — BEST / WORST`);
+  report.push('');
+  report.push(`_As of last graded day **${lastDay || '—'}**. Paths ≥5 graded · modifiers ≥3. Staked ROI: higher better. Mute CF: **more negative = better** (avoided losers)._`);
+  report.push('');
+
+  report.push(`#### Paths`);
+  report.push('');
+  if (!rankablePaths.length) {
+    report.push(`_Need ≥5 graded on a path._`);
+  } else {
+    report.push(`| | Path | Layer | N | W-L | ROI | PnL | u/pick | 7d ROI |`);
+    report.push(`|-:|------|-------|--:|:---:|----:|----:|-------:|-------:|`);
+    const nShow = Math.min(3, Math.floor(rankablePaths.length / 2) || 1);
+    const best = rankablePaths.slice(0, nShow);
+    const worstKeys = new Set(best.map(p => p.key));
+    const worst = [...rankablePaths].reverse().filter(p => !worstKeys.has(p.key)).slice(0, nShow);
+    best.forEach((p, i) => {
+      report.push(
+        `| 🟢 ${i + 1} | ${p.label} | ${p.layer} | ${p.book.n} | ${p.book.w}-${p.book.l} | ${fmtSigned(p.book.roi, 1)}% | ${fmtSigned(p.book.pnl)}u | ${fmtSigned(p.book.avgPnl, 2)}u | ${p.r7.roi != null ? fmtSigned(p.r7.roi, 1) + '%' : '—'} |`,
+      );
+    });
+    worst.forEach((p, i) => {
+      report.push(
+        `| 🔴 ${i + 1} | ${p.label} | ${p.layer} | ${p.book.n} | ${p.book.w}-${p.book.l} | ${fmtSigned(p.book.roi, 1)}% | ${fmtSigned(p.book.pnl)}u | ${fmtSigned(p.book.avgPnl, 2)}u | ${p.r7.roi != null ? fmtSigned(p.r7.roi, 1) + '%' : '—'} |`,
+      );
+    });
+  }
+  report.push('');
+
+  report.push(`#### Modifiers — staked (HOLD / BOOST / FAIL_OPEN)`);
+  report.push('');
+  if (!stakedMods.length) {
+    report.push(`_Need ≥3 graded tape stamps._`);
+  } else {
+    report.push(`| | Modifier | N | W-L | ROI | PnL | Note |`);
+    report.push(`|-:|----------|--:|:---:|----:|----:|------|`);
+    // Always show every staked modifier once, tagged best→worst by ROI.
+    stakedMods.forEach((m, i) => {
+      const tag = i === 0 ? '🟢 best' : i === stakedMods.length - 1 ? '🔴 worst' : `${i + 1}`;
+      report.push(`| ${tag} | ${m.label} | ${m.book.n} | ${m.book.w}-${m.book.l} | ${fmtSigned(m.book.roi, 1)}% | ${fmtSigned(m.book.pnl)}u | ${m.note} |`);
+    });
+  }
+  report.push('');
+
+  report.push(`#### Modifiers — mutes (CF: did we dodge losers?)`);
+  report.push('');
+  if (!muteMods.length) {
+    report.push(`_No graded mute stamps yet (or N&lt;3)._`);
+  } else {
+    report.push(`| | Modifier | N | W-L | CF ROI | CF PnL | Read |`);
+    report.push(`|-:|----------|--:|:---:|-------:|-------:|------|`);
+    muteMods.forEach((m, i) => {
+      const good = m.book.roi < -3;
+      const bad = m.book.roi > 3;
+      const tag = good ? '🟢 saving $' : bad ? '🔴 costing $' : '🟡 flat';
+      report.push(
+        `| ${i + 1} | ${m.label} | ${m.book.n} | ${m.book.w}-${m.book.l} | ${fmtSigned(m.book.roi, 1)}% | ${fmtSigned(m.book.pnl)}u | ${tag} |`,
+      );
+    });
+  }
+  report.push('');
+
+  // ── (A) All paths ────────────────────────────────────────────────────────
+  report.push(`### (A) Every staking path`);
+  report.push('');
+  report.push(`| Path | Key | Layer | u | N | W-L | Win% | Stake | PnL | ROI | u/pick | 7d N | 7d ROI | Last day PnL | Verdict |`);
+  report.push(`|------|-----|-------|--:|--:|:---:|-----:|------:|----:|----:|-------:|-----:|-------:|-------------:|---------|`);
+  for (const p of pathRows) {
+    const b = p.book;
+    let verdict = '—';
+    if (b.n === 0) verdict = 'pending';
+    else if (b.n < 5) verdict = 'thin';
+    else if (b.roi <= -15 && (p.u === '6u' || p.u === '5u' || p.u === '4u' || p.u === '3u')) verdict = '🔴 cut';
+    else if (b.roi <= -8) verdict = '🟠 watch';
+    else if (b.roi >= 15 && (p.u === '1u' || p.u === '3u')) verdict = '🟢 room';
+    else if (b.roi >= 5) verdict = '🟢 OK';
+    else verdict = '🟡 flat';
+    // Flag 7d collapse
+    if (b.n >= 5 && p.r7.n >= 3 && p.r7.roi != null && b.roi != null && p.r7.roi < b.roi - 20) {
+      verdict = '🔻 cooling';
+    }
+    report.push(
+      `| ${p.label} | \`${p.key}\` | ${p.layer} | ${p.u} | ${b.n} | ${b.n ? `${b.w}-${b.l}` : '—'} | ${b.winPct != null ? b.winPct.toFixed(1) + '%' : '—'} | ${b.stake.toFixed(1)}u | ${fmtSigned(b.pnl)}u | ${b.roi != null ? fmtSigned(b.roi, 1) + '%' : '—'} | ${b.avgPnl != null ? fmtSigned(b.avgPnl, 2) + 'u' : '—'} | ${p.r7.n} | ${p.r7.roi != null ? fmtSigned(p.r7.roi, 1) + '%' : '—'} | ${p.yd.n ? fmtSigned(p.yd.pnl) + 'u' : '—'} | ${verdict} |`,
+    );
+  }
+  report.push('');
+
+  // ── (B) All modifiers ────────────────────────────────────────────────────
+  report.push(`### (B) Every post-stack modifier`);
+  report.push('');
+  report.push(`Mutes use **flat 1u CF** (what if we had shipped). Tape HOLD/BOOST/FAIL_OPEN use **real staked PnL**.`);
+  report.push('');
+  report.push(`| Modifier | Layer | Mode | N | W-L | Win% | Stake/CF | PnL | ROI | 7d N | 7d ROI | Last day |`);
+  report.push(`|----------|-------|------|--:|:---:|-----:|---------:|----:|----:|-----:|-------:|---------:|`);
+  for (const m of modifiers) {
+    const b = m.book;
+    report.push(
+      `| ${m.label} | ${m.layer} | ${m.mode === 'flat1u' ? 'CF 1u' : 'staked'} | ${b.n} | ${b.n ? `${b.w}-${b.l}` : '—'} | ${b.winPct != null ? b.winPct.toFixed(1) + '%' : '—'} | ${b.stake.toFixed(1)}u | ${fmtSigned(b.pnl)}u | ${b.roi != null ? fmtSigned(b.roi, 1) + '%' : '—'} | ${m.r7.n} | ${m.r7.roi != null ? fmtSigned(m.r7.roi, 1) + '%' : '—'} | ${m.yd.n ? fmtSigned(m.yd.pnl) + 'u' : '—'} |`,
+    );
+  }
+  report.push('');
+
+  // ── (C) Path × Tape crosstab (tape era staked) ───────────────────────────
+  report.push(`### (C) Path × Tape (staked · ${SIDE_PROFILE_FROM}+)`);
+  report.push('');
+  const tapeActs = ['HOLD', 'BOOST', 'FAIL_OPEN'];
+  const eraStaked = gradedStaked.filter(r => r.date >= SIDE_PROFILE_FROM);
+  report.push(`| Path | HOLD n/ROI | BOOST n/ROI | FAIL_OPEN n/ROI |`);
+  report.push(`|------|------------|-------------|-----------------|`);
+  for (const p of ALL_STAKE_PATHS) {
+    const cells = tapeActs.map(act => {
+      const rows = eraStaked.filter(r => r.hcStakeTier === p.key && r.tapeAction === act);
+      const b = leverBook(rows);
+      if (!b.n) return '—';
+      return `${b.n} / ${b.roi != null ? fmtSigned(b.roi, 0) + '%' : '—'}`;
+    });
+    if (cells.every(c => c === '—')) continue;
+    report.push(`| ${p.key} | ${cells[0]} | ${cells[1]} | ${cells[2]} |`);
+  }
+  report.push('');
+
+  // ── (D) Last graded day movers ───────────────────────────────────────────
+  report.push(`### (D) Last graded day movers (${lastDay || '—'})`);
+  report.push('');
+  const dayMovers = pathRows
+    .filter(p => p.yd.n > 0)
+    .sort((a, b) => b.yd.pnl - a.yd.pnl);
+  if (!dayMovers.length) {
+    report.push(`_No graded staked picks on ${lastDay || 'last day'}._`);
+  } else {
+    report.push(`| Path | N | W-L | PnL | ROI |`);
+    report.push(`|------|--:|:---:|----:|----:|`);
+    for (const p of dayMovers) {
+      report.push(
+        `| ${p.label} | ${p.yd.n} | ${p.yd.w}-${p.yd.l} | ${fmtSigned(p.yd.pnl)}u | ${p.yd.roi != null ? fmtSigned(p.yd.roi, 1) + '%' : '—'} |`,
+      );
+    }
+  }
+  report.push('');
+  report.push(`_Rollups + trajectory charts below. Tape deep-dive: § 5._`);
   report.push('');
 }
 
-// § 5 — V12 Tier scoreboard + sizing drift
+// § 4b — Display-tier rollups + trajectory (companion to Path & Modifier Board)
 function buildV12TierAnalysis(report, stats) {
-  report.push(`## § 5 — V12 By Tier (Where The Money Comes From)`);
+  report.push(`### Path rollups & trajectory`);
   report.push('');
   if (!stats || stats.v12Rows.length === 0) {
     report.push(`_(no graded V12-era picks yet)_`);
@@ -2626,59 +2968,14 @@ function buildV12TierAnalysis(report, stats) {
     return;
   }
   const { v12Rows } = stats;
-  report.push(`V12 buckets every shipped pick into a tier (ELITE → WEAK) based on the score band, then stakes an absolute number of units per the ladder. **If the model is working, ELITE picks should out-earn PREMIUM, which should out-earn LOCK, and so on** — the ladder is V12's bet that higher scores deserve more capital.`);
-  report.push('');
-  report.push(`**Expected** is the ladder target before any odds-cap. **Avg stake actual** is what was actually staked (lower on positive odds because \`oddsCap\` clamps long underdogs). **Drift** = actual − expected. If Drift is materially negative on negative-odds picks, that's a sizing pipeline bug.`);
-  report.push('');
-  report.push(`| Tier     | Ladder | N   | W-L    | Win %  | Avg V12 score | Expected | Avg stake actual | Drift  | Total Stake | PnL (u)    | ROI       |`);
-  report.push(`|----------|--------|-----|--------|--------|---------------|----------|------------------|--------|-------------|------------|-----------|`);
-  const tierStats = {};
-  for (const tier of TIER_ORDER) {
-    const tierRows = v12Rows.filter(r => r.agsV12Tier === tier);
-    const tagg = aggregate(tierRows);
-    tierStats[tier] = tagg;
-    if (tagg.n + tagg.trackedN === 0) continue;
-    const avgScore = tierRows.length ? avg(tierRows.map(r => r.agsV12).filter(Number.isFinite)) : null;
-    const expected = V12_TIER_UNITS[tier];
-    const liveRowsTier = tierRows.filter(r => (r.units || 0) > 0 && !r.tracked);
-    const avgStake = liveRowsTier.length ? avg(liveRowsTier.map(r => r.units)) : null;
-    const drift = (avgStake != null) ? avgStake - expected : null;
-    report.push(`| ${tier.padEnd(8)} | ${(expected.toFixed(2)+'u').padStart(6)} | ${String(tagg.n + tagg.trackedN).padStart(3)} | ${(tagg.w+'-'+tagg.l).padEnd(6)} | ${pct(tagg.w, tagg.n).padStart(6)} | ${(avgScore != null ? fmtSigned(avgScore, 3) : '—').padStart(13)} | ${(expected.toFixed(2)+'u').padStart(8)} | ${(avgStake != null ? avgStake.toFixed(2)+'u' : '—').padStart(16)} | ${(drift != null ? fmtSigned(drift, 2)+'u' : '—').padStart(6)} | ${tagg.totalStake.toFixed(2).padStart(11)} | ${fmtSigned(tagg.profit).padStart(10)} | ${(tagg.roi != null ? tagg.roi.toFixed(1)+'%' : '—').padStart(9)} |`);
-  }
-  report.push('');
-
-  // Monotonicity verdict
-  const posTiers = ['ELITE', 'PREMIUM', 'LOCK', 'LEAN', 'WEAK'];
-  const rois = posTiers.map(t => tierStats[t].roi).filter(v => v != null);
-  const winRates = posTiers.map(t => tierStats[t].realWinRate).filter(v => v != null);
-  if (rois.length >= 2) {
-    const roiMono = monoScore(rois);
-    const winMono = monoScore(winRates);
-    const verdict = (m, n) => m <= -(n-2) ? '🟢 monotonic' : m >= (n-2) ? '🚨 inverted' : '🟡 partial';
-    report.push(`> **Ladder monotonicity** (positive tiers ELITE → WEAK only). ROI score \`${roiMono}\` ${verdict(roiMono, rois.length)} · Win-rate score \`${winMono}\` ${verdict(winMono, winRates.length)}. **${verdict(roiMono, rois.length).includes('monotonic') ? 'The ladder is working — V12 sizes high-edge picks more and they\'re returning more.' : verdict(roiMono, rois.length).includes('inverted') ? 'The ladder is upside-down — V12 is staking the wrong picks the most. This is the #1 thing to fix.' : 'Partial — the ladder is in the right direction overall but has rough spots. Watch a few more days before reacting.'}**`);
-    report.push('');
-  }
-
-  // ── v12.1 — staked stake-tier breakdown (post-cutover only) ───────────────
-  // The full v12ab staked book has TWO paths, both shown here:
-  //   1. HC-margin ladder: SUPER (margin 2, 6u), TOP (margin 1, 4u),
-  //      MINI (mini-HC 1.0–1.5×, 3u), CONFIRMED (margin 3+, 1u).
-  //   2. RANK (2-for-0) wallet-rescue: a v12-shipped (score>0) pick the HC
-  //      sizer muted to 0u, staked at RANK_RESCUE_UNITS when ≥2 eligible
-  //      whitelist wallets back it with 0 against (live 2026-06-21).
-  // MONITORING (non-HC / WEAK-tier HC, 0u) is never staked — tracked only.
   const v121Rows = v12Rows.filter(r => r.hcStakeTier);
-  if (v121Rows.length > 0) {
-    report.push(`### v12abcde — By Stake Tier (Paths A / B / C / D / E)`);
+  if (v121Rows.length === 0) {
+    report.push(`_(no HC/path-stamped picks yet)_`);
     report.push('');
-    report.push(`**Era legend (stacking system):**`);
-    report.push(`- **Path A (v12a)** — HC-margin model sizer: SUPER 6u · TOP 4u · MINI 3u · CONFIRMED 1u · else MONITORING 0u.`);
-    report.push(`- **Path B (v12ab, live 2026-06-21)** — RANK 2-for-0 rescue: muted score>0 pick with ≥2 eligible whitelist FOR and 0 AGAINST → **4u**.`);
-    report.push(`- **Path C (v12abc, live 2026-06-26; retune 2026-07-12)** — SHARP / SHARP-PRIME proven-$ rescue (+ MINI- cut). Retune: ≥3 FOR sharps, skip odds ≤ −150, TOP+ boost OFF.`);
-    report.push(`- **Path D (v12abcd, live 2026-07-12)** — DISSENT mute rescue: MLB · odds ≤ +200 · \`contribMargin ≤ 0\` · \`maxShare < 0.35\` → **1u** (tier key \`DISSENT\`). Uses wallet contribution dissent — not proven-$ forCount.`);
-    report.push(`- **Path E (v12abcde)** — EDGE stamped; fadeTop≥60 mute kept. **From 2026-07-15:** EDGE size/rescue/Policy E **frozen**; **TAPE** mutes tape&lt;0 / boosts ≥2.89 ×1.35 on path units (fail-open). See \`docs/TAPE_SIZING.md\`.`);
-    report.push('');
-    report.push(`Post-cutover picks size off the **HC margin** — SUPER (margin 2 · 6u), TOP (margin 1 · 4u), MINI (mini-HC 1.0–1.5× · 3u), CONFIRMED (margin 3+ · 1u) — **plus** the **RANK (2-for-0)** wallet-rescue path at **${RANK_RESCUE_UNITS}u**. From **2026-06-26** the **v12abc proven-$ overlay** (internal stats: backer \`positions.dollarRoi\` + featured \`picks.wr\`) adds: **SHARP / SHARP-PRIME** ($-rescue of HC-muted picks at 3u / 4u when sharps back it incl. a proven-money winner and mean win-rate ≥ 50 / 55; from **2026-07-12** requires ≥3 FOR sharps and odds softer than −150), **TOP+** (HC-1 boosted 4u → 5u when a proven-$ backer is present — **disabled from 2026-07-12**), and **MINI-** (MINI cut 3u → 1u when no proven-$ backer is on it). From **2026-07-12** **Path D / DISSENT** adds a 1u mute rescue on contested MLB books (\`contribMargin ≤ 0\`, dispersed). From **2026-07-12** **Path E / WINNER-ALIGN** mutes toxic fades, resizes by EDGE, rescues EDGE≥3 as \`WINNER\`, and applies **Top-Winner Policy E** (opposed cap / unopposed floor / junk cut) — see **§5d (F)** for per-rule helping/hurting. Together these paths ARE the **v12abcde** staked book. **MONITORING** (non-HC or WEAK-tier HC, no rescue path) is tracked at **0u** and excluded from the staked record/ROI below.`);
+    return;
+  }
+  {
+    report.push(`Display tiers (UI buckets) — detail lives in **§ 4 Path & Modifier Board** above.`);
     report.push('');
     report.push(`| Tier (paths)              | Units | N   | W-L    | Win %  | Total Stake | PnL (u)    | ROI       |`);
     report.push(`|---------------------------|-------|-----|--------|--------|-------------|------------|-----------|`);
@@ -2751,9 +3048,9 @@ function buildV12TierAnalysis(report, stats) {
     const tsDates = [...new Set(gradedTS.map(r => r.date))].sort();
     if (tsDates.length >= 2) {
       const xLabels = '[' + tsDates.map(d => `"${d.slice(5)}"`).join(', ') + ']';
-      report.push(`### § 5b — Path Trajectory & Stake-Size Monitor (win% & PnL over time)`);
+      report.push(`### Path trajectory (cum PnL & win%)`);
       report.push('');
-      report.push(`**This is the over-time stake-size monitor.** Two charts, one line per staking tier: **cumulative PnL (units)** and **cumulative win rate (%)** across the live timeline. Read the PnL chart for "is this path making money at its current size, and is the slope still up?" — a line sloping *down* is over-staked for what it's returning. Read the win-rate chart for "is its hit-rate holding or decaying?" Pair this with the point-in-time over/under verdicts in § 7. Only tiers with graded action on ≥2 distinct days are charted.`);
+      report.push(`One line per display tier. Down-sloping PnL = path over-staked for what it returns. Pair with § 4 board.`);
       report.push('');
 
       // Fixed palette so the emoji legend below reliably maps to each line.
@@ -2819,35 +3116,11 @@ function buildV12TierAnalysis(report, stats) {
     }
   }
 
-  // Per-pick sizing drift — only flag non-odds-cap discrepancies
-  const drifters = [];
-  for (const r of v12Rows) {
-    if (!r.agsV12Tier) continue;
-    const expected = V12_TIER_UNITS[r.agsV12Tier];
-    const expectedCapped = oddsCapForReport(expected, r.peakOdds);
-    const actual = r.units || 0;
-    const diff = actual - expectedCapped;
-    if (Math.abs(diff) >= 0.05) drifters.push({ r, expected, expectedCapped, actual, diff });
-  }
-  report.push(`### Sizing pipeline integrity`);
-  report.push('');
-  if (drifters.length > 0) {
-    // NOTE: "expected" here is the legacy SCORE-ladder target (agsV12Tier →
-    // V12_TIER_UNITS). Production now sizes off the HC-margin / v12abc ladder,
-    // so most of this delta is the two ladders disagreeing by design, NOT a
-    // bug. Kept as a one-line tripwire; the full per-pick dump was removed as
-    // noise. A real regression looks like a sudden JUMP in this count.
-    report.push(`🟡 **${drifters.length} shipped picks differ from the legacy score-ladder target by > ±0.05u.** Expected once the HC-margin/v12abc ladder diverges from the old score-band ladder — this is informational, not a bug. Watch for a sudden spike (would indicate a real \`unitsFromAgsV12\` regression in \`syncPickStateAuthoritative.js\`).`);
-    report.push('');
-  } else {
-    report.push(`🟢 **No sizing drift detected** vs the legacy score-ladder target (after odds-cap).`);
-    report.push('');
-  }
 }
 
 // § 6 — V12 By Sport & Market
 function buildV12SportMarketAnalysis(report, stats) {
-  report.push(`## § 6 — V12 By Sport & Market (Where The Edge Is)`);
+  report.push(`## § 6 — Sport & Market`);
   report.push('');
   if (!stats || stats.v12Rows.length === 0) {
     report.push(`_(no graded V12-era picks yet)_`);
@@ -2903,7 +3176,7 @@ function buildV12SportMarketAnalysis(report, stats) {
 
 // § 7 — Stake calibration: are we over/under-sizing each path?
 function buildV12StakeCalibration(report, stats) {
-  report.push(`## § 7 — Stake Calibration (are any paths over- or under-sized?)`);
+  report.push(`## § 7 — Stake Calibration`);
   report.push('');
   if (!stats || stats.v12Rows.length === 0) {
     report.push(`_(no graded V12-era picks yet)_`);
@@ -2992,7 +3265,7 @@ function buildV12StakeCalibration(report, stats) {
 
 // § 8 — V12 Mute-rule effectiveness
 function buildV12MuteAudit(report, stats) {
-  report.push(`## § 8 — V12 Mute Rule: Saving Money or Throwing Away Edge?`);
+  report.push(`## § 7 — Mute Audit`);
   report.push('');
   if (!stats || stats.mutedRows.length === 0) {
     report.push(`_(no muted V12-era picks yet)_`);
@@ -3199,14 +3472,16 @@ function tapeAgg(rows) {
 }
 
 function buildV12TapeSizing(report, stats) {
-  report.push(`## § 5e — TAPE Sizing Impact (mute / hold / boost · live ${TAPE_SIZING_LIVE_FROM}+)`);
+  report.push(`## § 5 — Tape Era (sizing + side profile · ${TAPE_SIZING_LIVE_FROM}+)`);
   report.push('');
   if (!stats) {
     report.push(`_(no V12-era picks yet.)_`);
     report.push('');
     return;
   }
-  report.push(`> **What this is.** From **${TAPE_SIZING_LIVE_FROM}**, path units (A–D) are resized by **TAPE** = \`1.5·(EDGE/10) + 2·(netCLV/10)\`: **mute** if tape &lt; ${TAPE_MUTE_BELOW} → 0u · **hold** mid · **boost** if tape ≥ ${TAPE_BOOST_ABOVE} → ×${TAPE_BOOST_MULT} (6u cap). Missing tape = fail-open (keep path size). See \`docs/TAPE_SIZING.md\`.`);
+  report.push(`### 5a — TAPE sizing impact`);
+  report.push('');
+  report.push(`From **${TAPE_SIZING_LIVE_FROM}**, path units are resized by **TAPE** = \`1.5·(EDGE/10) + 2·(netCLV/10)\`: mute if tape &lt; ${TAPE_MUTE_BELOW} · hold mid · boost if ≥ ${TAPE_BOOST_ABOVE} (×${TAPE_BOOST_MULT}, 6u cap). Missing tape = fail-open. See \`docs/TAPE_SIZING.md\`.`);
   report.push('');
 
   const era = (stats.v12RowsAll || stats.v12Rows || []).filter(r => isTapeSizingLive(r.date));
@@ -3339,9 +3614,250 @@ function buildV12TapeSizing(report, stats) {
   }
 }
 
-// § 11 — Recent V12 live picks (audit trail)
+// § 5b / § 9 helpers — side profile (depth + quality) for WIN vs LOSS analysis
+function meanFinite(vals) {
+  const xs = vals.filter(Number.isFinite);
+  if (!xs.length) return null;
+  return xs.reduce((s, x) => s + x, 0) / xs.length;
+}
+
+function medianFinite(vals) {
+  const xs = vals.filter(Number.isFinite).sort((a, b) => a - b);
+  if (!xs.length) return null;
+  const mid = Math.floor(xs.length / 2);
+  return xs.length % 2 ? xs[mid] : (xs[mid - 1] + xs[mid]) / 2;
+}
+
+/** Raw sharp depth from frozen walletDetails (FOR / AGAINST). */
+function sharpDepthFromWd(r) {
+  const wd = Array.isArray(r.walletDetails) ? r.walletDetails : [];
+  if (!wd.length || !r.sideKey) return { sharpFor: null, sharpAg: null };
+  let sharpFor = 0;
+  let sharpAg = 0;
+  const seen = new Set();
+  for (const w of wd) {
+    const short = String(w.wallet || w.walletShort || '').slice(-6).toLowerCase();
+    if (!short || seen.has(short)) continue;
+    seen.add(short);
+    if (w.side === r.sideKey) sharpFor++;
+    else if (w.side) sharpAg++;
+  }
+  return { sharpFor, sharpAg };
+}
+
+/** Enrich a live row with derived side-profile fields used in §5f. */
+function enrichSideProfileRow(r) {
+  const { sharpFor, sharpAg } = sharpDepthFromWd(r);
+  const provenFor = Number.isFinite(r.provenFor) ? r.provenFor : null;
+  const provenAg = Number.isFinite(r.provenAg) ? r.provenAg : null;
+  return {
+    ...r,
+    sharpFor,
+    sharpAg,
+    sharpMargin: sharpFor != null && sharpAg != null ? sharpFor - sharpAg : null,
+    provenFor,
+    provenAg,
+    provenMargin: provenFor != null && provenAg != null ? provenFor - provenAg : null,
+    v12ForN: Number.isFinite(r.agsV12ForCount) ? r.agsV12ForCount : null,
+    v12AgN: Number.isFinite(r.agsV12AgCount) ? r.agsV12AgCount : null,
+    waForN: Number.isFinite(r.winnerAlignForN) ? r.winnerAlignForN : null,
+    waAgN: Number.isFinite(r.winnerAlignAgN) ? r.winnerAlignAgN : null,
+    clvForN: Number.isFinite(r.netClvNFor) ? r.netClvNFor : null,
+    clvAgN: Number.isFinite(r.netClvNAg) ? r.netClvNAg : null,
+    forWr: Number.isFinite(r.winnerAlignMeanFor) ? r.winnerAlignMeanFor : null,
+    agWr: Number.isFinite(r.winnerAlignMeanAg) ? r.winnerAlignMeanAg : null,
+    topFor: Number.isFinite(r.winnerAlignTopFor) ? r.winnerAlignTopFor : null,
+    topAg: Number.isFinite(r.winnerAlignTopAg) ? r.winnerAlignTopAg : null,
+    edge: Number.isFinite(r.winnerAlignEdge) ? r.winnerAlignEdge : null,
+    forClv: Number.isFinite(r.netClvMeanFor) ? r.netClvMeanFor : null,
+    agClv: Number.isFinite(r.netClvMeanAg) ? r.netClvMeanAg : null,
+    netClv: Number.isFinite(r.netMeanPrior) ? r.netMeanPrior : null,
+    tape: Number.isFinite(r.tapeScore) ? r.tapeScore : null,
+    v12Score: Number.isFinite(r.agsV12) ? r.agsV12 : null,
+    v12ForMean: Number.isFinite(r.agsV12ForMean) ? r.agsV12ForMean : null,
+    v12AgMean: Number.isFinite(r.agsV12AgMean) ? r.agsV12AgMean : null,
+    unopposed: sharpAg != null ? (sharpAg === 0 ? 1 : 0) : null,
+    hasBothWa: r.winnerAlignHasBoth === true ? 1 : (r.winnerAlignHasBoth === false ? 0 : null),
+  };
+}
+
+const SIDE_PROFILE_METRICS = [
+  { key: 'sharpFor', label: '#F sharps', family: 'depth', higherHelps: true },
+  { key: 'sharpAg', label: '#A sharps', family: 'depth', higherHelps: false },
+  { key: 'sharpMargin', label: '#F − #A', family: 'depth', higherHelps: true },
+  { key: 'provenFor', label: 'proven F', family: 'depth', higherHelps: true },
+  { key: 'provenAg', label: 'proven A', family: 'depth', higherHelps: false },
+  { key: 'provenMargin', label: 'proven F−A', family: 'depth', higherHelps: true },
+  { key: 'v12ForN', label: 'v12 F count', family: 'depth', higherHelps: true },
+  { key: 'v12AgN', label: 'v12 A count', family: 'depth', higherHelps: false },
+  { key: 'waForN', label: 'WA ForN', family: 'depth', higherHelps: true },
+  { key: 'waAgN', label: 'WA AgN', family: 'depth', higherHelps: false },
+  { key: 'clvForN', label: 'CLV ForN', family: 'depth', higherHelps: true },
+  { key: 'clvAgN', label: 'CLV AgN', family: 'depth', higherHelps: false },
+  { key: 'unopposed', label: 'unopposed (A=0)', family: 'depth', higherHelps: null },
+  { key: 'forWr', label: 'ForWR', family: 'quality', higherHelps: true },
+  { key: 'agWr', label: 'AgWR', family: 'quality', higherHelps: false },
+  { key: 'topFor', label: 'TopFor WR', family: 'quality', higherHelps: true },
+  { key: 'topAg', label: 'TopAg WR', family: 'quality', higherHelps: false },
+  { key: 'edge', label: 'EDGE', family: 'quality', higherHelps: true },
+  { key: 'forClv', label: 'ForCLV', family: 'quality', higherHelps: true },
+  { key: 'agClv', label: 'AgCLV', family: 'quality', higherHelps: false },
+  { key: 'netClv', label: 'netCLV', family: 'quality', higherHelps: true },
+  { key: 'tape', label: 'Tape', family: 'quality', higherHelps: true },
+  { key: 'v12Score', label: 'V12 score', family: 'quality', higherHelps: true },
+  { key: 'v12ForMean', label: 'V12 forMean', family: 'quality', higherHelps: true },
+  { key: 'v12AgMean', label: 'V12 agMean', family: 'quality', higherHelps: false },
+];
+
+/**
+ * § 5f — Side Profile Analysis (tape era · SIDE_PROFILE_FROM+)
+ * Track depth + quality on every shipped side; compare WIN vs LOSS means
+ * to find which underlying metrics separate winners from losers.
+ */
+function buildV12SideProfileAnalysis(report, stats) {
+  report.push(`### 5b — Side profile (WIN vs LOSS)`);
+  report.push('');
+  report.push(`From **${SIDE_PROFILE_FROM}** we stamp depth + quality on every shipped side. Compare means on **WIN vs LOSS**. Separators are gate/sizing candidates; flat metrics are noise. N is still early — treat ranks as hypotheses.`);
+  report.push('');
+
+  if (!stats?.liveRows?.length) {
+    report.push(`_(no live V12 picks yet)_`);
+    report.push('');
+    return;
+  }
+
+  const era = stats.liveRows
+    .filter(r => r.date >= SIDE_PROFILE_FROM && (r.won === 1 || r.won === 0))
+    .map(enrichSideProfileRow);
+  const wins = era.filter(r => r.won === 1);
+  const losses = era.filter(r => r.won === 0);
+  const wAgg = aggregate(era);
+
+  report.push(`### Coverage`);
+  report.push('');
+  report.push(`| Window | Graded live | W-L | Win % | Stake | PnL |`);
+  report.push(`|--------|------------:|:---:|------:|------:|----:|`);
+  report.push(
+    `| ≥ ${SIDE_PROFILE_FROM} | ${era.length} | ${wAgg.w}-${wAgg.l} | ${era.length ? ((100 * wAgg.w / era.length).toFixed(1) + '%') : '—'} | ${wAgg.totalStake.toFixed(2)}u | ${fmtSigned(wAgg.profit)}u |`,
+  );
+  report.push('');
+
+  if (era.length < 5) {
+    report.push(`_Need ≥5 graded live picks in the ${SIDE_PROFILE_FROM}+ window — tables fill as tape-era locks settle._`);
+    report.push('');
+    return;
+  }
+
+  // Per-metric WIN vs LOSS means + separation
+  const rows = [];
+  for (const m of SIDE_PROFILE_METRICS) {
+    const wVals = wins.map(r => r[m.key]).filter(Number.isFinite);
+    const lVals = losses.map(r => r[m.key]).filter(Number.isFinite);
+    const allPairs = era
+      .map(r => ({ x: r[m.key], y: r.won }))
+      .filter(p => Number.isFinite(p.x) && (p.y === 0 || p.y === 1));
+    const cov = allPairs.length;
+    if (cov < 3) {
+      rows.push({
+        ...m, cov, covPct: era.length ? cov / era.length : 0,
+        meanW: meanFinite(wVals), meanL: meanFinite(lVals),
+        medW: medianFinite(wVals), medL: medianFinite(lVals),
+        delta: null, auc: null, rho: null, pb: null, sep: 0,
+      });
+      continue;
+    }
+    const meanW = meanFinite(wVals);
+    const meanL = meanFinite(lVals);
+    const delta = meanW != null && meanL != null ? meanW - meanL : null;
+    const xs = allPairs.map(p => p.x);
+    const ys = allPairs.map(p => p.y);
+    const auc = rocAuc(xs, ys);
+    const rho = spearman(xs, ys);
+    const pb = pointBiserial(xs, ys);
+    const sep = auc != null ? Math.abs(auc - 0.5) : 0;
+    rows.push({
+      ...m, cov, covPct: cov / era.length,
+      meanW, meanL, medW: medianFinite(wVals), medL: medianFinite(lVals),
+      delta, auc, rho, pb, sep,
+    });
+  }
+
+  report.push(`### (A) Metric means — WIN side vs LOSS side`);
+  report.push('');
+  report.push(`Δ = mean(WIN) − mean(LOSS). Positive Δ on a “higher helps” metric = winners look stronger on that axis.`);
+  report.push('');
+  report.push(`| Family | Metric | Cov | mean WIN | mean LOSS | Δ (W−L) | med WIN | med LOSS |`);
+  report.push(`|--------|--------|----:|---------:|----------:|--------:|--------:|---------:|`);
+  for (const r of rows) {
+    if (r.cov < 3) continue;
+    report.push(
+      `| ${r.family.padEnd(7)} | ${r.label.padEnd(16)} | ${r.cov}/${era.length} | ${r.meanW != null ? r.meanW.toFixed(2) : '—'} | ${r.meanL != null ? r.meanL.toFixed(2) : '—'} | ${r.delta != null ? fmtSigned(r.delta, 2) : '—'} | ${r.medW != null ? r.medW.toFixed(2) : '—'} | ${r.medL != null ? r.medL.toFixed(2) : '—'} |`,
+    );
+  }
+  report.push('');
+
+  report.push(`### (B) Separation rank — which metrics tell W from L`);
+  report.push('');
+  report.push(`AUC: chance a random WIN scores higher than a random LOSS on that metric (0.50 = coin flip). Sorted by |AUC−0.5|. ρ / r_pb = Spearman / point-biserial vs won.`);
+  report.push('');
+  const ranked = rows.filter(r => r.cov >= 5 && r.auc != null).sort((a, b) => b.sep - a.sep);
+  if (!ranked.length) {
+    report.push(`_Not enough coverage yet for separation ranks._`);
+  } else {
+    report.push(`| Rank | Metric | Family | Cov | AUC | ρ | r_pb | Δ (W−L) | Read |`);
+    report.push(`|-----:|--------|--------|----:|----:|--:|-----:|--------:|------|`);
+    ranked.forEach((r, i) => {
+      let read = 'flat';
+      if (r.sep >= 0.04) {
+        const winHigher = r.auc >= 0.5;
+        const expected = r.higherHelps == null
+          ? null
+          : (r.higherHelps ? winHigher : !winHigher);
+        if (r.sep >= 0.08) {
+          read = expected == null
+            ? (winHigher ? 'WIN higher' : 'LOSS higher')
+            : (expected ? '🟢 sep OK' : '🔴 inverted');
+        } else {
+          read = expected == null
+            ? (winHigher ? 'mild WIN↑' : 'mild LOSS↑')
+            : (expected ? '🟡 mild OK' : '🟡 mild inv');
+        }
+      }
+      report.push(
+        `| ${String(i + 1).padStart(4)} | ${r.label.padEnd(16)} | ${r.family.padEnd(7)} | ${r.cov}/${era.length} | ${r.auc.toFixed(3)} | ${r.rho != null ? fmtSigned(r.rho, 3) : '—'} | ${r.pb != null ? fmtSigned(r.pb, 3) : '—'} | ${r.delta != null ? fmtSigned(r.delta, 2) : '—'} | ${read} |`,
+      );
+    });
+  }
+  report.push('');
+
+  // Headline: separators that move in the expected direction (or unopposed)
+  const strong = ranked.filter(r => {
+    if (r.sep < 0.04 || r.covPct < 0.5) return false;
+    if (r.higherHelps == null) return true;
+    const winHigher = r.auc >= 0.5;
+    return r.higherHelps ? winHigher : !winHigher;
+  });
+  report.push(`### (C) Working read`);
+  report.push('');
+  report.push(`_N=${era.length} is still early — treat ranks as hypotheses, not gates._`);
+  report.push('');
+  if (!strong.length) {
+    report.push(`_No metric yet clears mild separation (|AUC−0.5| ≥ 0.04) in the expected direction at ≥50% coverage._`);
+  } else {
+    for (const r of strong.slice(0, 8)) {
+      const dir = r.auc >= 0.5 ? 'higher on WINs' : 'higher on LOSSes';
+      report.push(
+        `- **${r.label}** — AUC ${r.auc.toFixed(3)} · Δ ${r.delta != null ? fmtSigned(r.delta, 2) : '—'} · ${dir} (cov ${r.cov}/${era.length})`,
+      );
+    }
+  }
+  report.push('');
+  report.push(`_Stamped / derived only — no wallet profile replay. Unopposed sides keep FOR quality (EDGE uses AG prior ${EDGE_PRIOR_AG_WR}). Audit trail rows: § 11._`);
+  report.push('');
+}
+
 function buildV12RecentLivePicks(report, stats, n = 30, walletProfiles = null) {
-  report.push(`## § 11 — Recent V12 Live Picks (Audit Trail)`);
+  report.push(`## § 8 — Recent Live Picks (Audit Trail)`);
   report.push('');
   if (!stats || stats.liveRows.length === 0) {
     report.push(`_(no live V12 picks yet)_`);
@@ -3353,22 +3869,34 @@ function buildV12RecentLivePicks(report, stats, n = 30, walletProfiles = null) {
     .slice()
     .sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0)
     .slice(0, n);
-  report.push(`The last ${recent.length} picks V12 actually shipped (units > 0). Audit trail: V12 score, EDGE (TAPE input), **TAPE score/action**, path, stake, outcome.`);
+  report.push(`The last ${recent.length} picks V12 actually shipped (units > 0). Audit trail keeps **quality + depth** on every row (unopposed included) so WIN vs LOSS sides can be profiled.`);
   report.push('');
-  // Stamped EDGE + TAPE only — do not profile-replay (lookahead).
-  report.push(`| Date       | Sport | Mkt    | Pick                    | Odds  | V12   | Path     | EDGE   | Tape  | TapeAct  | Stake | Outcome | PnL (u)    |`);
-  report.push(`|------------|-------|--------|-------------------------|-------|-------|----------|--------|-------|----------|-------|---------|------------|`);
+  report.push(`> **Depth:** \`#F/#A\` = unique sharps FOR/AGAINST from frozen \`walletDetails\` · \`pF/pA\` = proven (HC_BASE) counts. **Quality:** ForWR / ForCLV / EDGE / Tape (AG blanks use priors; live \`TapeAct\` stays what the sizer did).`);
+  report.push('');
+  // Stamped quality + depth — no wallet profile-replay (lookahead).
+  report.push(`| Date       | Sport | Mkt    | Pick                    | Odds  | V12   | Path     | #F/#A | pF/pA | ForWR | ForCLV | EDGE   | Tape  | TapeAct  | Stake | Outcome | PnL (u)    |`);
+  report.push(`|------------|-------|--------|-------------------------|-------|-------|----------|------:|------:|------:|-------:|--------|------:|----------|------:|---------|------------|`);
   for (const r of recent) {
     const teamLabel = `${r.team || r.sideKey || ''}`.substring(0, 23);
     const oddsStr = r.peakOdds > 0 ? `+${r.peakOdds}` : `${r.peakOdds}`;
     const outcome = r.won === 1 ? 'WIN' : r.won === 0 ? 'LOSS' : '—';
+    const { sharpFor, sharpAg } = sharpDepthFromWd(r);
+    const depthStr = sharpFor != null ? `${sharpFor}/${sharpAg}` : '—';
+    const provenStr = (r.provenFor != null || r.provenAg != null)
+      ? `${r.provenFor ?? 0}/${r.provenAg ?? 0}`
+      : '—';
+    const forWrStr = Number.isFinite(r.winnerAlignMeanFor) ? r.winnerAlignMeanFor.toFixed(1) : '—';
+    const forClvStr = Number.isFinite(r.netClvMeanFor) ? r.netClvMeanFor.toFixed(1) : '—';
     const edgeStr = Number.isFinite(r.winnerAlignEdge) ? fmtSigned(r.winnerAlignEdge, 1) : '—';
     const tapeStr = Number.isFinite(r.tapeScore) ? r.tapeScore.toFixed(2) : '—';
     const tapeAct = r.tapeAction || (r.mutedBy === 'tape-weak' ? 'MUTE' : '—');
     report.push(
-      `| ${r.date.padEnd(10)} | ${(r.sport || '').padEnd(5)} | ${(r.marketType || '').padEnd(6)} | ${teamLabel.padEnd(23)} | ${oddsStr.padStart(5)} | ${(Number.isFinite(r.agsV12) ? fmtSigned(r.agsV12, 3) : '—').padStart(5)} | ${pathShort(r.hcStakeTier).padEnd(8)} | ${edgeStr.padStart(6)} | ${tapeStr.padStart(5)} | ${tapeAct.padEnd(8)} | ${((r.units||0).toFixed(2)+'u').padStart(5)} | ${outcome.padEnd(7)} | ${fmtSigned(r.profit).padStart(10)} |`
+      `| ${r.date.padEnd(10)} | ${(r.sport || '').padEnd(5)} | ${(r.marketType || '').padEnd(6)} | ${teamLabel.padEnd(23)} | ${oddsStr.padStart(5)} | ${(Number.isFinite(r.agsV12) ? fmtSigned(r.agsV12, 3) : '—').padStart(5)} | ${pathShort(r.hcStakeTier).padEnd(8)} | ${depthStr.padStart(5)} | ${provenStr.padStart(5)} | ${forWrStr.padStart(5)} | ${forClvStr.padStart(6)} | ${edgeStr.padStart(6)} | ${tapeStr.padStart(5)} | ${tapeAct.padEnd(8)} | ${((r.units||0).toFixed(2)+'u').padStart(5)} | ${outcome.padEnd(7)} | ${fmtSigned(r.profit).padStart(10)} |`
     );
   }
+  report.push('');
+
+  report.push(`> Full WIN vs LOSS means + separation ranks: **§ 5b**.`);
   report.push('');
 }
 
@@ -3390,15 +3918,9 @@ function buildV12RecentLivePicks(report, stats, n = 30, walletProfiles = null) {
 //   F. Stability — rolling 7-day AUC across the V12 window
 //   G. Bootstrap 95% CI on overall V12 ROI
 function buildV12StatisticalMonitor(report, stats) {
-  report.push(`## § 12 — Trust the Process: Predictive Edge Over Time`);
+  report.push(`## § 9 — Predictive Health`);
   report.push('');
-  report.push(`> **What this whole section is for.** Win-rate and ROI (everything above) tell you whether V12 *made money*. This section tells you whether it made money because the score is **real signal** or because we got **lucky**. That distinction is the entire game: real signal repeats, luck doesn't. Everything below answers three questions, in order.`);
-  report.push('');
-  report.push(`1. **Does the score separate winners from losers?** (12A–12C, plus 12E per sport) — If we line up every pick by its V12 score, do the higher-scored picks actually win more? We measure this several independent ways so no single metric can fool us. 12D is a population sanity check (is the score spread normal, or are a few outliers doing all the work?).`);
-  report.push(`2. **Is that edge stable, or is it decaying?** (12F) — A score can be predictive overall but quietly losing its edge. We track the same separation on a moving window so we see decay *as it happens*.`);
-  report.push(`3. **Is the edge real or just small-sample luck?** (12G) — We resample the picks thousands of times to get an honest confidence band. If the band straddles "break-even," we don't have proof yet — we have a hopeful trend.`);
-  report.push('');
-  report.push(`> **The one number to watch:** **AUC**. Read it as "*pick a random winner and a random loser — what's the chance V12 scored the winner higher?*" 0.50 = coin-flip (no signal). 0.55 = a real, usable edge. 0.60+ = strong. If rolling AUC (12F) drifts under 0.50, the score has stopped working and the ROI line is about to follow it down.`);
+  report.push(`Does the V12 score separate winners from losers (not just make money by luck)? Watch **AUC**: 0.50 = coin flip · 0.55 = usable · 0.60+ = strong. Rolling AUC below 0.50 = score is dying before ROI does.`);
   report.push('');
   if (!stats || stats.liveRows.length < 10) {
     report.push(`_(need at least 10 graded V12 live picks for the stat tests; currently have ${stats?.liveRows.length ?? 0}.)_`);
@@ -3732,7 +4254,7 @@ function buildV12StatisticalMonitor(report, stats) {
 // time) and a walletProfilesMap loaded once at the top of main() so we can
 // enrich each wallet row with its current tier / prior ROI / prior N.
 function buildV12WalletInfluence(report, stats, walletProfiles) {
-  report.push(`## § 13 — V12 Wallet Influence & Performance`);
+  report.push(`## § 10 — Wallet Influence`);
   report.push('');
   report.push(`> **Why this section matters.** V12 is built entirely on what the qualifying wallets do — the score is literally a difference of their mean qualities on each side of the pick. If 80% of our shipped picks are driven by the same 5 wallets, V12 is concentrated risk on those wallets' continued performance. This section names who they are and how they're doing.`);
   report.push('');
@@ -4697,69 +5219,72 @@ async function main() {
   // slightly-different filters and showing different counts).
   const allRowsAgsu = allRows.filter(r => isAgsuPromotion(r.promotedBy));
   const v12Stats = computeV12Stats(agsuRows, allRowsAgsu, modelEras);
+  // Keep FOR-side EDGE/TAPE analysis numbers on unopposed / legacy FAIL_OPEN rows
+  // from stamped meanFor + netCLV (no wallet profile replay).
+  fillForSideEdgeTapeFromStamps(v12Stats.v12Rows);
+  fillForSideEdgeTapeFromStamps(v12Stats.v12RowsAll);
 
   buildHeader(report, cutover, liveCal, modelEras);
 
-  // § 1 — CEO executive summary card
+  // ── Core (read top-to-bottom) ───────────────────────────────────────────
   buildV12CeoExecutive(report, v12Stats, modelEras);
-
-  // § 2 — Model version comparison (only non-V12 section, kept per spec)
-  const verStart = report.length;
-  buildVersionComparison(report, agsuRows, modelEras);
-  for (let i = verStart; i < report.length; i++) {
-    report[i] = report[i].replace(/^## § 0b — AGS-U Model Version Comparison/, '## § 2 — Model Version Comparison (V9 → V10 → V11 → V12)');
-  }
-
-  // §§ 3-11 — V12 deep CEO monitoring
   buildV12Primer(report);
   buildV12DailyScoreboard(report, v12Stats);
+  buildV12PathModifierBoard(report, v12Stats);
   buildV12TierAnalysis(report, v12Stats);
-  buildV12RankRescue(report, v12Stats, walletProfiles);
-  buildV12PathD(report, v12Stats);
-  buildV12WinnerAlign(report, v12Stats, walletProfiles);
   buildV12TapeSizing(report, v12Stats);
+  buildV12SideProfileAnalysis(report, v12Stats);
   buildV12SportMarketAnalysis(report, v12Stats);
-  buildV12StakeCalibration(report, v12Stats);
   buildV12MuteAudit(report, v12Stats);
-  buildV12abcDiscrimination(report, v12Stats);
-  buildV12WalletQualityInputs(report, v12Stats);
   buildV12RecentLivePicks(report, v12Stats, 30, walletProfiles);
-
-  // §§ 12-13 — NEW: statistical monitor + wallet influence (the focus
-  // of this section is "is the model's score genuinely predictive" and
-  // "who is actually driving our picks", per the spec request).
   buildV12StatisticalMonitor(report, v12Stats);
   buildV12WalletInfluence(report, v12Stats, walletProfiles);
 
-  // §§ 14-16 — Operational sanity + calibration + pool health. Same
-  // builders as before, but heading numbers shifted to make room for
-  // the new §12-13 statistical and wallet-influence sections above.
+  // ── § 11 Ops (calibration + pool + pipeline) ───────────────────────────
+  report.push(`## § 11 — Ops & Calibration`);
+  report.push('');
   const opsStart = report.length;
   buildOperationalHealth(report, allRowsAgsu, agsuRows);
   for (let i = opsStart; i < report.length; i++) {
-    report[i] = report[i].replace(/^## § 10 — Operational Health/, '## § 14 — Operational Health (V12 pipeline sanity)');
+    report[i] = report[i]
+      .replace(/^## § 10 — Operational Health.*$/, '### Pipeline sanity')
+      .replace(/^## § 14 — Operational Health.*$/, '### Pipeline sanity');
   }
-
   const calStart = report.length;
   buildCalibrationSnapshot(report, liveCal);
   for (let i = calStart; i < report.length; i++) {
-    report[i] = report[i].replace(/^## § 11 — Calibration Snapshot/, '## § 15 — Live Calibration Snapshot (V12 thresholds in use)');
+    report[i] = report[i]
+      .replace(/^## § 11 — Calibration Snapshot.*$/, '### Live calibration thresholds')
+      .replace(/^## § 15 — Live Calibration Snapshot.*$/, '### Live calibration thresholds');
   }
-
   const wpStart = report.length;
   await buildWalletPoolHealth(report);
   for (let i = wpStart; i < report.length; i++) {
-    report[i] = report[i].replace(/^## § 12 — Wallet Pool Health/, '## § 16 — Wallet Pool Health (V12 input supply)');
+    report[i] = report[i]
+      .replace(/^## § 12 — Wallet Pool Health.*$/, '### Wallet pool')
+      .replace(/^## § 16 — Wallet Pool Health.*$/, '### Wallet pool');
   }
 
-  // § 17 — Full-history Feature Lab. Operates on ALL AGS-U promoted picks
-  // since cutover (not just V12-era) so we can compare what the data says
-  // about feature impact against what V12 currently uses.
+  // ── Appendices (history / research — not the daily read) ───────────────
+  report.push(`---`);
+  report.push('');
+  const verStart = report.length;
+  buildVersionComparison(report, agsuRows, modelEras);
+  for (let i = verStart; i < report.length; i++) {
+    report[i] = report[i].replace(
+      /^## § 0b — AGS-U Model Version Comparison/,
+      '## Appendix A — Model Versions',
+    );
+  }
+  const labStart = report.length;
   buildAgsFeatureLab(report, agsuRows);
+  for (let i = labStart; i < report.length; i++) {
+    report[i] = report[i].replace(/^## § 17 —/, '## Appendix B —');
+  }
 
   report.push(`---`);
   report.push('');
-  report.push(`*Report generated by \`scripts/dailyAgsUReport.js\` — single source of truth for V12 monitoring. Imports the active model surface from \`src/lib/ags.js\` at runtime so it auto-tracks model bumps. Triggered daily by \`.github/workflows/daily-agsu-report.yml\` at 8:30am ET; can also be run manually via the Actions tab "Run workflow" button.*`);
+  report.push(`*Generated by \`scripts/dailyAgsUReport.js\` · workflow \`daily-agsu-report.yml\` · V12-scoped unless Appendix.*`);
 
   const out = report.join('\n');
   const outPath = join(REPO_ROOT, 'DAILY_AGSU_REPORT.md');

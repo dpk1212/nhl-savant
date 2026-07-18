@@ -4,12 +4,91 @@ One block per Coach sprint. Cite post ids + metrics.
 
 | Date | Grade | Top win | Top fail | Write-better focus |
 |------|-------|---------|----------|--------------------|
+| 2026-07-18 Padres-extras recap | B− (Vault just shipped; recap gap open) | Rays `207780…` **2205v/2r/49pc**; wipe silhouette `207634…` **2r**; ATG **3r** | scoreboard_ledger risk; Vault echo; slate/we're-back | Dale spine: Padres extras gut punch · wipe budget · forced take; kill ledger/Vault/$107M |
+| 2026-07-18 Sharp Vault reveal | B− (no Vault hero yet; slate still top) | Rays `207780…` **2202v/2r/49pc**; Valkyries **2462v/3r**; France **4r** | SLATE `207823…` assemble; tipster `207592…` **0r** | Dale spine: Vault shock hook + Alpha Field MLB + wallet crown jewel; kill tipster/slate |
+| 2026-07-17 MLB+WNBA resume | C+ (slate UNDER fresh) | Rays `207780…` **2157v/2r/48pc**; Valkyries `207754…` **2422v/3r** | SLATE IS BACK `207823…` **~277v/0r**; WE'RE BACK `207787…` **0r** | Dale spine: variance hunger + stacking resume; kill slate/we're-back; graded record under confession |
 | 2026-07-14 WC France civil-war | B− (wipe shipped; shock still missing) | Tigers gold `207571…` **2658v**/1r; ATG **3r/eng33** | tipster `207592…` **0r**; purple thin-reply; wipe soft closer | Civil-war sizing paradox (SUPER/1u); kill tipster+ledger; force camp close |
 | 2026-07-12 wipe-to-ride (shipped) | B− | Tigers `207571…` **2658v**/1r; wipe `207634…` **2r** (budget held) | wipe soft “trusting the process”; purple dual incomplete | Wipe budget OK; forced take still required |
 | 2026-07-12 expert pack | B− | Tigers gold `207571…` **2629v**/1r; ATG **3r** | purple weekend `207603…` **1201v/0r** — confession w/o forced take | 3 distinct heroes; forced take on every confession; kill tipster/promo/scoreboard |
 | 2026-07-11 RANK | B | Tigers gold `207571…` **2524v**/1r; ATG journey 3r | top 0.1% kill 0r; dual-play assembly risk | Weekend gold-thin → purple RANK WR; one argument not menu |
 | 2026-07-11 PM | B− → moment A | Tigers still gold `2075712639636787489` 2230v/1r | Flex opens: SO back + top 0.1% tear | All-time green: costly journey + OG ask + chart; kill flex |
 | 2026-07-11 AM | B− | Tigers `2075712639636787489` 2206v/1r | Night QT scoreboard `2075762415539527896` 1043v/**0r** | Scene recap + welcome-with-take; kill ✅/❌ |
+
+---
+
+## 2026-07-18 Padres-extras confession recap — Dale spine OVERRIDE (live MCP)
+
+Scoreboard = **replies + profile/followers**. Baseline ~**1413v**. Followers **2022 (Δ0)**. Live MCP `get_users_posts` exclude=replies max=10 — newest = Vault hero just posted.
+
+| # | id | shape | impr | replies | notes |
+|---|-----|-------|------|---------|-------|
+| 1 | `2078482485571170815` | Vault shock reveal | **~82** | **0** | Fresh UNDER. Different job — do not echo $107M in recap. |
+| 2 | `2078232180279710137` | SLATE IS BACK + dual TOP | **1310** | **1** | Calendar assemble. Kill shape. |
+| 3 | `2077879759942418742` | WE'RE BACK Phillies $9.9K | **1417** | **1** | Return theater. Kill. |
+| 4 | `2077806487376650339` | Rays $56.3K / 3.1× | **2205** | **2** | OVER · **49pc**. Receipt under tension. |
+| 5 | `2077580874497888401` | slow ASG quote + ✅✅ | **1482** | **0** | Soft diary + ledger cash. |
+
+Outside last-5: wipe silhouette `207634…` **1274v / 2r**; Valkyries **2462v / 3r**; France **4r**; ATG **3r / eng33**; tipster kill `207592…` **0r**.
+
+### Craft reads
+- **Win mechanic:** wipe-to-ride budget (confession + ONE pain + process forward) — steal silhouette, upgrade soft closer to forced take. Learn promote confession_costly agrees.
+- **Fail mechanic:** scoreboard_ledger if 5-5 body dumps in hero; Vault/$107M echo steals prior beat; slate/we're-back still house death.
+- **Dale spine THIS run:** perfect recap · feltMoment = Padres blew 3-run lead in extras (5.40u BOOST dagger) · day 5-5 / −4.93u under · all-time +39.68u process forward · full ledger SR only.
+- **Hook gap:** last 5 never shipped costly mixed-day / extras-dagger confession. Sub-mechanic: **wipe_to_ride** (mixed-day variant).
+
+### Next-run mandate
+One hero: Padres-extras gut punch → ONE aggregate + ONE dagger detail → process continuity (+39.68u) → forced take on sizing-after-scar. Kill ledger/Vault/slate/tipster/vibe-check. See `SHARED/coach_brief_latest.md`.
+
+---
+
+## 2026-07-18 Sharp Vault product reveal — Dale spine OVERRIDE (live MCP)
+
+Scoreboard = **replies + profile/followers**. Baseline ~**1413v**. Followers **2022 (+2)**. Live MCP `get_users_posts` exclude=replies max=10 — newest still slate hero (no Vault post yet).
+
+| # | id | shape | impr | replies | notes |
+|---|-----|-------|------|---------|-------|
+| 1 | `2078232180279710137` | SLATE IS BACK + dual TOP | **1307** | **1** | Climbed off UNDER; still calendar assemble + record furniture. |
+| 2 | `2077879759942418742` | WE'RE BACK Phillies $9.9K | **1417** | **1** | Return theater + receipt; thin reply. |
+| 3 | `2077806487376650339` | Rays $56.3K / 3.1× | **2202** | **2** | OVER · **49pc**. Size-shock receipt_proof gold for Vault-scale $. |
+| 4 | `2077580874497888401` | slow ASG quote + ✅✅ | **1482** | **0** | Soft diary + ledger cash. |
+| 5 | `2077545445534859659` | First WNBA Valkyries | **2462** | **3** | OVER. First-edge scene + ask. |
+
+Outside last-5 but relevant: France civil-war `207710…` **1255v / 4r**; Tigers bestHero `207571…` ~2684v; tipster kill `207592…` **0r**.
+
+### Craft reads
+- **Win mechanic:** receipt_proof size shock (Rays) + first-edge scene (Valkyries) + forced camp (France **4r**). Learn promote receipt_proof / confession_costly agrees.
+- **Fail mechanic:** calendar-return opens (SLATE / WE'RE BACK); tipster_secret still house death; beat-close % wasted as slate furniture instead of Vault field story.
+- **Dale spine THIS run:** NEW Sharp Vault — 147 wallets · +$107.5M · +7.7% ROI · Alpha Field MLB (beat-close vs ROI) · wallet ***3987 crown jewel · shock hook · screenshot attach.
+- **Hook gap:** last 5 never shipped product-scale Vault shock. New sub-mechanic: **vault_shock_reveal** under receipt_proof (+ confession_costly honesty).
+
+### Next-run mandate
+One hero: shock-number open → Vault fund + Alpha Field mute proof → one MLB wallet crown jewel → forced camp (verified field vs tipster vibes). Kill slate/we're-back/tipster-secret echoes. Hot-strip open $ = SR only. See `SHARED/coach_brief_latest.md`.
+
+---
+
+## 2026-07-17 MLB back + WNBA night — Dale spine OVERRIDE (live MCP)
+
+Scoreboard = **replies + profile/followers**. Baseline ~**1366.5v**. Followers **2020 (+3)**. Live MCP `get_users_posts` exclude=replies max=10.
+
+| # | id | shape | impr | replies | notes |
+|---|-----|-------|------|---------|-------|
+| 1 | `2078232180279710137` | SLATE IS BACK + dual TOP | **~277** | **0** | UNDER. Calendar announce + record furniture. KILL shape tonight. |
+| 2 | `2077879759942418742` | WE'RE BACK Phillies $9.9K | **1326** | **0** | PAR reach, reply-death. Return theater + receipt w/o forced take. |
+| 3 | `2077806487376650339` | Rays $56.3K / 3.1× | **2157** | **2** | OVER · **48pc**. Size-shock receipt_proof + opposing winners honesty. |
+| 4 | `2077580874497888401` | slow ASG quote + ✅✅ | **1450** | **0** | PAR. Soft diary + ledger cash on own Valkyries. |
+| 5 | `2077545445534859659` | First WNBA Valkyries | **2422** | **3** | OVER. First-edge scene + $ proof + ask. Cleared reply bar. |
+
+Pulse gold (outside last-5 set): Tigers `2075712639636787489` bestHero. Best eng: ATG `207593…` **eng33**.
+
+### Craft reads
+- **Win mechanic:** receipt_proof size shock (Rays) + first-edge confession scene (Valkyries **3r**). Learn promote confession_costly / receipt_proof agrees.
+- **Fail mechanic:** calendar-return opens (SLATE / WE'RE BACK) = assemble-not-hook; ✅✅ quote inherits zero replies. Learn kill tipster_secret / scoreboard_ledger still house law.
+- **Dale spine THIS run:** break over · WNBA on · less variance + more volume to resume stacking · graded V12 record under — not a competing feltMoment.
+- **Lock discipline:** WNBA Sparks lockTier with units=0 MONITORING — cannot claim staked locked WNBA.
+- **Hook gap:** last 5 never shipped variance-hunger / unfinished-stack resume. New sub-mechanic under confession_costly: **stack_resume_variance**.
+
+### Next-run mandate
+One hero: costly pause/variance open → graded record mute under → volume-vs-wait forced take. Kill slate/we're-back echoes + naked TOP menus. See `SHARED/coach_brief_latest.md`.
 
 ---
 

@@ -7,8 +7,11 @@ _Full path + unit walkthrough: [`STAKE_PATHS_AND_SIZING.md`](./STAKE_PATHS_AND_S
 
 ```
 tape = 1.5 · (EDGE / 10) + 2 · (netCLV / 10)
+EDGE  = mean(FOR sport WR) − (mean(AG sport WR) ?? 50)
 netCLV = mean(FOR causal %+CLV) − (mean(AG %+CLV) ?? 62)
 ```
+
+FOR-side components (`v8_winnerAlignMeanFor`, `v8_netClvMeanFor`) always stamp when FOR skill exists — including unopposed sides — so WIN/LOSS analysis keeps a full underlying profile. EDGE uses AG prior **50** when nobody is against (same idea as netCLV’s AG prior 62).
 
 | Tape | Action |
 |------|--------|
@@ -49,7 +52,7 @@ EDGE is still **computed and stamped** — it feeds tape.
 | `v8_winnerAlignEdge` | EDGE (input) |
 | `v8_forTop2PctPos` | legacy top2 (diagnostic only; no unit effect post-cutover) |
 
-**Daily report:** `DAILY_AGSU_REPORT.md` § 5e (TAPE impact) + § 11 columns Tape / TapeAct.
+**Daily report:** `DAILY_AGSU_REPORT.md` § 5e (TAPE impact) · **§ 5f Side Profile** (WIN vs LOSS depth+quality from 2026-07-15+) · § 11 audit trail.
 
 ## Code
 

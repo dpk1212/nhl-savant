@@ -49,7 +49,24 @@ Patterns that underperform, get muted, or trip classifiers.
 
 
 
+
+
+
 <!-- twitterLearn:auto -->
+## Auto-kills from Learn (2026-07-18)
+- **tipster_secret** (avgWeight 0.5) — pulse ids: 2075922787684757994
+
+
+## Auto-kills from Learn (2026-07-18)
+- **tipster_secret** (avgWeight 0.5) — pulse ids: 2075922787684757994
+- **scoreboard_ledger** (avgWeight 0.5) — pulse ids: 2075762415539527896
+
+
+## Auto-kills from Learn (2026-07-17)
+- **tipster_secret** (avgWeight 0.5) — pulse ids: 2075922787684757994
+- **scoreboard_ledger** (avgWeight 0.5) — pulse ids: 2075762415539527896
+
+
 ## Auto-kills from Learn (2026-07-14)
 - **promo_price** (avgWeight 2) — pulse ids: 2075627372137611705
 - **tipster_secret** (avgWeight -0.5) — pulse ids: 2075922787684757994

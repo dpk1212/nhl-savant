@@ -115,3 +115,21 @@
 - **Certainty teacher to invert:** Trent Spain MEGA MAX `2075621098662576379` **591K/92r** — "Do not overthink it" certainty. We ship unfinished war + path honesty (not a certainty clone).
 - **House disease to escape:** wipe soft closer `207634…` 2r · purple dual menu `207603…` 1r · tipster secret 0r · scoreboard ledger 0r.
 - **Mechanic name:** **civil_war_sizing** — path says press / size says sharps at war. One tension axis. Symmetrical camp $. Forced take on SIZE.
+
+## Live-validated GOLD (2026-07-16 — whale_battle_receipt)
+
+### Whale battle receipt (receipt_proof — Dale-named house gold)
+- **Cite (ours):** Rays `2077806487376650339` — **2220v / 2r / 11♥ / 2bm** (refreshed 2026-07-18) · OVER vs hero baseline ~1413 · ~49pc
+- **Dale catalog note (2026-07-18):** this *style* is one of our best-performing tweets — do not collapse to “size dump” or Vault echo. Full recipe is the product.
+- **Mechanic name:** **whale_battle_receipt** — sub under **receipt_proof**. One proven wallet goes abnormal size → battle map proves both sides are real → unfinished hold (no ticket yet / if it sticks).
+- **Recipe (steal structure, invent words):**
+  1. **Whale interrupt (line 1):** proven winner + dollar + market (not tipster secret, not fund Vault $)
+  2. **Size-vs-usual tooth:** Nx usual sport size + “top sharp we track” status under (not the open)
+  3. **Wallet teeth (compact):** W-L · WR · ROI · lifetime $ — mute-proof under the shock
+  4. **Opposing honesty:** name that the other side also has proven winners / real $ (tension, not fake balance)
+  5. **Unfinished close:** no ticket yet · if position holds → watch / forced camp — Zeigarnik, not “thoughts?”
+  6. **Media (required):** Sharp Flow dual pane — **THE BATTLE** (OUR SIDE vs THEM: proven / $ / avg ticket / WR / beat-close / lifetime) + **wallet deep-dive** (scatter + size-vs-usual callout). Image contains the argument so copy stays human.
+- **When to ship:** live board shows one tracked proven wallet at clear size shock (Nx usual) *and* a real opposing sharp presence. Prefer pre-lock / monitoring window (“no ticket yet”).
+- **One-variable upgrades (reuse):** swap sport/market · change N× · invert which side is “our” whale · harden close to fade-vs-ride / size-in-vs-wait · keep dual-pane law
+- **Kill cousins:** naked $ flex with no battle · Vault fund-shock (`vault_shock_reveal` — different job) · tipster_secret · scoreboard_ledger · size dump as opener on confession/scar nights · collage without Battle pane
+- **Related but different:** `civil_war_sizing` = *our stake* tiny because camps fight; `whale_battle_receipt` = *their* ticket huge + we map the fight (often still 0u / no ticket)

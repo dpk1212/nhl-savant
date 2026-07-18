@@ -11,3 +11,6 @@ Seed 2026-07-10:
 - Costly admission → proprietary tier WR / $ → forced take (Tigers gold ~2249–2524v; reply bar = all-time green 3r)
 - Weekend-honest scarcity as earned confession (Dale spine) — not tipster % room
 - Dual plays under **one** felt argument (rescue path), not stacked lock cards
+
+2026-07-18 (Dale catalog — measured house gold):
+- **whale_battle_receipt** — Rays `207780…` **2220v/2r**: proven-wallet $ + Nx usual + opposing honesty + unfinished hold + dual-pane Battle/wallet media. Prefer when live Nx wallet exists; do not collapse to Vault shock or naked size flex.

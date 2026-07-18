@@ -32,7 +32,9 @@ Full stack: [`STAKE_PATHS_AND_SIZING.md`](./STAKE_PATHS_AND_SIZING.md).
 
 ## Stamps (unchanged)
 
-`v8_winnerAlignEdge`, `MeanFor/Ag`, `TopFor/Ag`, `FadeTop60`, `MeanBehind5`, `HasTop5For/Ag`, `TopUnopp`, `EliteUnopp`, `TopVsTop`, `Action`, `EvaluatedAt`.
+`v8_winnerAlignEdge`, `MeanFor/Ag`, `TopFor/Ag`, `ForN/AgN`, `HasBoth`, `FadeTop60`, `MeanBehind5`, `HasTop5For/Ag`, `TopUnopp`, `EliteUnopp`, `TopVsTop`, `Action`, `EvaluatedAt`.
+
+**EDGE rule:** `meanFor − (meanAg ?? 50)`. Unopposed sides still get `MeanFor` + `Edge` (vs coin-flip prior) so daily-report W/L profiles are complete. `HasBoth` stays false when no real AG side (Policy E gates unchanged).
 
 In tape era, `Action` is typically `mute` (fadeTop) or `null` — no `size`/`rescue`/`top_*` unit actions.
 
