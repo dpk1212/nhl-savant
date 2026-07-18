@@ -9588,7 +9588,8 @@ export default function SharpFlow() {
             const inv = pos.invested || 0;
             mktRec.wallets.push({
               wallet: wLower,
-              name: pos.name || `***${wLower.slice(-4)}`,
+              // Never expose Polymarket usernames — mask like the rest of the Vault.
+              name: `***${wLower.slice(-4)}`,
               cls,
               side: pos.side,
               invested: inv,
