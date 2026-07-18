@@ -9594,7 +9594,13 @@ export default function SharpFlow() {
             if (!cur || (pos.invested || 0) > (cur.invested || 0)) seen.set(k, pos);
           }
           if (seen.size === 0) continue;
-          const mktRec = game.markets[mkt] || (game.markets[mkt] = { wallets: [] });
+          // Per-market totals — the chip used to roll ML+SPREAD+TOTAL into one
+          // "5 wallets / $31K" number while the scatter only plotted the active
+          // market, so a TOTAL-only wallet inflated the count with no dot on
+          // MONEYLINE. Keep both: game-level for ranking, market-level for display.
+          const mktRec = game.markets[mkt] || (game.markets[mkt] = {
+            wallets: [], totalInvested: 0, provenInvested: 0, walletSet: new Set(),
+          });
           for (const pos of seen.values()) {
             const wLower = pos.wallet.toLowerCase();
             const { cls, prof } = classifyBattleWallet(wLower);
@@ -9615,6 +9621,9 @@ export default function SharpFlow() {
               picksN: prof?.picks?.n || 0,
               inVault: walletSet.has(wLower),
             });
+            mktRec.totalInvested += inv;
+            mktRec.walletSet.add(wLower);
+            if (cls === 'proven') mktRec.provenInvested += inv;
             game.totalInvested += inv;
             if (cls === 'proven') game.provenInvested += inv;
             game.walletSetAll.add(wLower);
@@ -9623,7 +9632,23 @@ export default function SharpFlow() {
       }
     }
     const battleGames = [...battleGameMap.values()]
-      .map((g) => ({ ...g, walletCount: g.walletSetAll.size, walletSetAll: undefined }))
+      .map((g) => {
+        const markets = {};
+        for (const [mk, rec] of Object.entries(g.markets || {})) {
+          markets[mk] = {
+            wallets: rec.wallets,
+            totalInvested: rec.totalInvested || 0,
+            provenInvested: rec.provenInvested || 0,
+            walletCount: rec.walletSet?.size || rec.wallets?.length || 0,
+          };
+        }
+        return {
+          ...g,
+          markets,
+          walletCount: g.walletSetAll.size,
+          walletSetAll: undefined,
+        };
+      })
       .sort((a, b) => b.totalInvested - a.totalInvested);
 
     return {

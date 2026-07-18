@@ -366,6 +366,12 @@ export default function VaultAlphaField({
           </button>
           {games.map((g) => {
             const isSel = g.id === gameId;
+            // Selected chip mirrors the active market toggle so a TOTAL-only
+            // wallet never inflates "N wallets" while the MONEYLINE map is empty of that dot.
+            const mktStats = isSel ? g.markets?.[mkt] : null;
+            const chipInvested = mktStats?.totalInvested ?? g.totalInvested;
+            const chipWallets = mktStats?.walletCount ?? g.walletCount;
+            const chipProven = mktStats?.provenInvested ?? g.provenInvested;
             return (
               <button
                 key={g.id}
@@ -389,8 +395,8 @@ export default function VaultAlphaField({
                   </span>
                 </div>
                 <div style={{ ...T.tiny, color: B.textMuted, marginTop: '0.2rem', fontFeatureSettings: "'tnum'" }}>
-                  {fmtVol(g.totalInvested)} · {g.walletCount} wallets
-                  {g.provenInvested > 0 && <span style={{ color: B.gold }}> · {fmtVol(g.provenInvested)} proven</span>}
+                  {fmtVol(chipInvested)} · {chipWallets} wallets
+                  {chipProven > 0 && <span style={{ color: B.gold }}> · {fmtVol(chipProven)} proven</span>}
                 </div>
               </button>
             );
