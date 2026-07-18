@@ -20,15 +20,15 @@ const base = {
   clvPct: -2.1,
   units: 5.4,
   toWin: 4.82,
-  stakePath: 'TOP_PICK',
+  stakePath: 'TOP',
   wallets: [],
 };
 
 const FIXTURES = [
   { title: 'Pending — locks in hours', f: { ...base, commenceMs: now + 3 * H } },
   { title: 'Closing — locks < 1h', f: { ...base, pickLabel: 'Tigers ML', lockOdds: -185, clvPct: 0.6, units: 4.0, toWin: 2.16, commenceMs: now + 0.8 * H } },
-  { title: 'Urgent — locks < 15m', f: { ...base, pickLabel: 'Over 8.5', lockOdds: -110, clvPct: 0.4, units: 4.0, toWin: 3.64, commenceMs: now + (12 * 60 * 1000) + (15 * 60 * 1000) } },
-  { title: 'Frozen — ticket SET', f: { ...base, pickLabel: 'Brewers ML', lockOdds: -126, clvPct: 1.7, units: 4.0, toWin: 3.17, commenceMs: now + 10 * 60 * 1000 } },
+  { title: 'Urgent — locks < 15m', f: { ...base, pickLabel: 'Over 8.5', stakePath: 'MINI', lockOdds: -110, clvPct: 0.4, units: 4.0, toWin: 3.64, commenceMs: now + (12 * 60 * 1000) + (15 * 60 * 1000) } },
+  { title: 'Frozen — ticket SET', f: { ...base, pickLabel: 'Brewers ML', stakePath: 'SHARP', lockOdds: -126, clvPct: 1.7, units: 4.0, toWin: 3.17, commenceMs: now + 10 * 60 * 1000 } },
   { title: 'Tracked — tape mute', f: { ...base, pickLabel: 'Mariners ML', lockOdds: -137, clvPct: 1.5, units: 0, toWin: 0, commenceMs: now + 5 * H, mutedBy: 'tape-weak', unitsPreTape: 1.5, stakePath: 'MONITORING' } },
   { title: 'Graded — WIN', f: { ...base, pickLabel: 'Rays ML', lockOdds: -106, clvPct: 0.7, units: 4.0, toWin: 3.77, commenceMs: now - 5 * H, graded: true, outcome: 'WIN', profit: 3.77 } },
   { title: 'Graded — LOSS', f: { ...base, pickLabel: 'Coria ML', sport: 'UFC', lockOdds: -1100, clvPct: -1.2, units: 3.0, toWin: 0.27, commenceMs: now - 5 * H, graded: true, outcome: 'LOSS', profit: -3.0 } },

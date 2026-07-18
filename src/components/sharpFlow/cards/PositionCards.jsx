@@ -1966,7 +1966,10 @@ function LockFreezeStatus({ commenceMs, compact, strip }) {
             className={urgent ? 'pos-pulse' : undefined}
             style={{
               width: `${(progress * 100).toFixed(1)}%`, height: '100%',
-              background: frozen ? B.profit : urgent ? '#F87171' : `linear-gradient(90deg, ${B.gold}66, ${B.gold})`,
+              // Gold is reserved for the closing window (<1h) so a scan down
+              // the grid surfaces what needs attention; far-out locks stay
+              // neutral instead of every card glowing.
+              background: frozen ? B.profit : urgent ? '#F87171' : closing ? `linear-gradient(90deg, ${B.gold}66, ${B.gold})` : 'rgba(148,163,184,0.35)',
               transition: 'width 1s linear',
             }}
           />
@@ -1975,24 +1978,16 @@ function LockFreezeStatus({ commenceMs, compact, strip }) {
           ? <Check size={11} strokeWidth={3} style={{ color: B.profit, flexShrink: 0 }} />
           : <Clock size={11} strokeWidth={2.8} style={{ color: accent, flexShrink: 0 }} />}
         {frozen ? (
-          <>
-            <span style={{ fontSize: '0.56rem', fontWeight: 900, letterSpacing: '0.1em', color: B.profit }}>
-              TICKET SET
-            </span>
-            <span style={{ fontSize: '0.54rem', fontWeight: 600, color: C.textMuted, marginLeft: 'auto' }}>
-              frozen T-15 · {lockEt} ET
-            </span>
-          </>
+          <span style={{ fontSize: '0.56rem', fontWeight: 900, letterSpacing: '0.1em', color: B.profit }}>
+            TICKET SET
+          </span>
         ) : (
           <>
             <span style={{ fontSize: '0.5rem', fontWeight: 800, letterSpacing: '0.12em', color: urgent ? '#FECACA' : C.textMuted }}>
               LOCKS
             </span>
-            <span style={{ fontSize: '0.7rem', fontWeight: 900, fontFamily: MONO, letterSpacing: '-0.01em', color: urgent ? '#F87171' : closing ? B.goldHi : C.text }}>
+            <span style={{ fontSize: '0.7rem', fontWeight: 900, fontFamily: MONO, letterSpacing: '-0.01em', color: urgent ? '#F87171' : closing ? B.goldHi : C.textSec }}>
               {rem || '—'}
-            </span>
-            <span style={{ fontSize: '0.54rem', fontWeight: 600, color: C.textFaint, marginLeft: 'auto' }}>
-              {lockEt} ET
             </span>
           </>
         )}
@@ -2227,11 +2222,13 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
     if ((got > 0) !== (fair > 0)) diff -= Math.sign(diff) * 200;
     return diff;
   })();
+  // Neutral border for live tickets — the tier badge + rail carry the accent
+  // color; a gold border on every card washed the whole grid gold.
   const cardBorder = tracked
-    ? 'rgba(139,150,171,0.22)'
+    ? 'rgba(139,150,171,0.18)'
     : graded
-      ? `${resultColor}55`
-      : 'rgba(212,175,55,0.28)';
+      ? `${resultColor}45`
+      : 'rgba(255,255,255,0.09)';
   const muteTip = trackedMuteLabel({
     mutedBy: f.mutedBy,
     tapeAction: f.tapeAction,
@@ -2322,18 +2319,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
                   <Check size={9} strokeWidth={3.2} />
                   SET
                 </span>
-              ) : (
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 4,
-                  fontSize: '0.52rem', fontWeight: 900, letterSpacing: '0.08em',
-                  padding: '4px 10px', borderRadius: 7, color: '#06100a',
-                  background: `linear-gradient(180deg, ${B.goldHi} 0%, ${accent} 55%, ${accent}bb 100%)`,
-                  boxShadow: `0 8px 22px -10px ${accent}`,
-                }}>
-                  <Lock size={8} strokeWidth={3} />
-                  IN
-                </span>
-              )}
+              ) : null}
             </span>
           </div>
           {/* Pick row: selection + odds + CLV left · labeled stake block right */}
@@ -2347,10 +2333,9 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
               </span>
               {Number.isFinite(f.clvPct) && (
                 <span style={{
-                  fontSize: '0.52rem', fontWeight: 800, padding: '3px 7px', marginLeft: 8,
-                  borderRadius: 6, background: `${clvColor}18`, color: clvColor,
-                  border: `1px solid ${clvColor}40`, fontFeatureSettings: "'tnum'",
-                  verticalAlign: 'middle',
+                  fontSize: '0.58rem', fontWeight: 800, marginLeft: 9,
+                  color: clvColor, opacity: 0.85, fontFeatureSettings: "'tnum'",
+                  verticalAlign: 'middle', letterSpacing: '0.02em',
                 }}>
                   CLV {clvGood ? '+' : ''}{f.clvPct.toFixed(1)}%
                 </span>
