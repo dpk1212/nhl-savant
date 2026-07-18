@@ -9551,14 +9551,16 @@ export default function SharpFlow() {
       { data: rawTotalPositions, mkt: 'TOTAL' },
     ];
     const BATTLE_MIN_INVESTED = 250;
-    const classifyBattleWallet = (wLower) => {
+    // Proven on the battle map = whitelist for THIS sport only — same gate as
+    // Sharp Intel / vault open legs. Cross-sport CONFIRMED (e.g. MLB winner on
+    // a UFC ticket) used to paint gold with no UFC open-leg in the vault,
+    // which made the dots look like ghosts. They still plot as tracked.
+    const classifyBattleWallet = (wLower, sport) => {
       const prof = walletProfiles.get(wLower.slice(-6));
       if (!prof) return { cls: 'tracked', prof: null };
-      const provenAny = Object.values(prof.bySport || {}).some(
-        (r) => r?.whitelistTier === 'CONFIRMED' || r?.whitelistTier === 'FLAT'
-      );
+      const tier = prof.bySport?.[sport]?.whitelistTier;
       let cls = 'tracked';
-      if (provenAny) cls = 'proven';
+      if (tier === 'CONFIRMED' || tier === 'FLAT') cls = 'proven';
       else if ((prof.picks?.n || 0) >= 10 && (prof.picks?.flatRoi ?? 0) < 0) cls = 'cold';
       return { cls, prof };
     };
@@ -9603,7 +9605,7 @@ export default function SharpFlow() {
           });
           for (const pos of seen.values()) {
             const wLower = pos.wallet.toLowerCase();
-            const { cls, prof } = classifyBattleWallet(wLower);
+            const { cls, prof } = classifyBattleWallet(wLower, sport);
             const avgBet = pos.avgSportBet || 0;
             const inv = pos.invested || 0;
             mktRec.wallets.push({

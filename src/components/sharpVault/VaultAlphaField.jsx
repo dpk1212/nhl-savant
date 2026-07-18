@@ -613,7 +613,7 @@ export default function VaultAlphaField({
 
       <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.45rem', lineHeight: 1.5 }}>
         {isBattle
-          ? 'Proven = Vault-verified winner · Cold = negative graded record with us (10+ picks) · Tracked = watched, no verdict yet. Positions under $250 omitted. Tap a proven dot for the full profile.'
+          ? 'Proven = Vault-verified winner in this sport · Cold = negative graded record with us (10+ picks) · Tracked = open ticket, not sport-proven. Positions under $250 omitted. Tap a proven dot for the full profile.'
           : `Only wallets with enough history to trust (${CLV_N_MIN}+ graded bets and real sports volume). Hover a live wallet for its largest open bet — full markets are on Locked Picks and Live.`}
       </div>
     </section>
