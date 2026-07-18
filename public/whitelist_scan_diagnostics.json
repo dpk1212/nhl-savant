@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-07-18T16:35:35.464Z",
-  "elapsedSec": 14.9,
+  "scannedAt": "2026-07-18T16:38:40.073Z",
+  "elapsedSec": 13,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 43,
   "summary": {
     "total": 199,
-    "coveredByMain": 18,
-    "recovered": 30,
-    "recoveredPositions": 176,
+    "coveredByMain": 17,
+    "recovered": 31,
+    "recoveredPositions": 179,
     "noPositions": 151,
     "apiError": 0,
     "addressNotFound": 0,
@@ -16,8 +16,8 @@
       "ml": 20,
       "spread": 3,
       "total": 5,
-      "dropped_shadow_gate": 40,
-      "dropped_excluded": 107,
+      "dropped_shadow_gate": 41,
+      "dropped_excluded": 109,
       "dropped_duplicate": 1
     }
   },
@@ -317,7 +317,33 @@
       "tier": "CONFIRMED",
       "name": "surfandturf",
       "sports": "NBA,NHL,SOC",
-      "status": "COVERED_BY_MAIN"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x9f2fe025f84839ca81dd8e0338892605702d2ca8",
+      "positionsCount": 2,
+      "statsSource": "sports_sharps",
+      "avgSportBet": 130634,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 1,
+      "positions": [
+        {
+          "sport": "SOC",
+          "gameKey": "arg_esp",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 23950,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "UFC",
+          "gameKey": "kamaruusman_dricusduplessis",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 4491,
+          "entryLine": null,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "2e8da5",
@@ -361,7 +387,7 @@
           "gameKey": "arg_esp",
           "marketType": "ml",
           "side": "away",
-          "invested": 7499,
+          "invested": 7517,
           "entryLine": null,
           "passesShadow": true
         },
@@ -912,7 +938,7 @@
           "gameKey": "pit_cle",
           "marketType": "ml",
           "side": "away",
-          "invested": 12335,
+          "invested": 12470,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1023,12 +1049,21 @@
       "sports": "MLB,SOC,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xdb83e85ffd22faa4009273034770f96ffc5b1e50",
-      "positionsCount": 8,
+      "positionsCount": 9,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 1534,
-      "willPassShadowGate": 8,
+      "willPassShadowGate": 9,
       "willDropAtShadowGate": 0,
       "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "min_chc",
+          "marketType": "total",
+          "side": "over",
+          "invested": 5262,
+          "entryLine": 9.5,
+          "passesShadow": true
+        },
         {
           "sport": "MLB",
           "gameKey": "wsh_oak",
@@ -2192,7 +2227,7 @@
           "gameKey": "pit_cle",
           "marketType": "ml",
           "side": "home",
-          "invested": 10436,
+          "invested": 10453,
           "entryLine": null,
           "passesShadow": true
         },
@@ -2267,7 +2302,7 @@
           "gameKey": "eng_fra",
           "marketType": "ml",
           "side": "away",
-          "invested": 7902,
+          "invested": 7907,
           "entryLine": null,
           "passesShadow": true
         },
@@ -2276,7 +2311,7 @@
           "gameKey": "eng_fra",
           "marketType": "ml",
           "side": "home",
-          "invested": 11739,
+          "invested": 12074,
           "entryLine": null,
           "passesShadow": true
         },
@@ -2294,7 +2329,7 @@
           "gameKey": "eng_fra",
           "marketType": "ml",
           "side": "draw",
-          "invested": 3971,
+          "invested": 3973,
           "entryLine": null,
           "passesShadow": true
         },
@@ -2810,7 +2845,7 @@
           "gameKey": "eng_fra",
           "marketType": "ml",
           "side": "home",
-          "invested": 6480,
+          "invested": 6481,
           "entryLine": null,
           "passesShadow": true
         },
