@@ -179,24 +179,42 @@ jobs:
             node scripts/auditMarketData.js || true
 
             # Commit + push JSON changes to main (retry on conflict).
+            # Include scan_heartbeat.json — leaving it unstaged used to make
+            # `git pull --rebase` fail every cycle ("unstaged changes"), so the
+            # market-data commit never reached origin/main and the hard-reset
+            # below wiped the fresh scan before build/deploy (Vault stuck ~20h).
             git add public/polymarket_data.json public/kalshi_data.json \
                     public/pinnacle_history.json public/sharp_positions.json \
                     public/sharp_spread_positions.json public/sharp_total_positions.json \
                     public/sharp_intel_excluded_wallets.json \
-                    public/whitelist_scan_diagnostics.json 2>/dev/null || true
+                    public/whitelist_scan_diagnostics.json \
+                    public/scan_heartbeat.json 2>/dev/null || true
             if ! git diff --staged --quiet; then
               git commit -m "Auto-update: Market data [$(date +'%Y-%m-%d %H:%M') cycle $i]"
               for attempt in 1 2 3; do
-                if git pull --rebase -X theirs origin main && git push origin main; then
+                if git pull --rebase --autostash -X theirs origin main && git push origin main; then
                   echo "--- main push succeeded (attempt $attempt) ---"
                   break
                 fi
                 echo "--- main push attempt $attempt failed, retrying ---"
+                git status -sb || true
                 sleep 2
               done
             else
               echo "--- no main-branch JSON changes this cycle ---"
             fi
+
+            # Keep this cycle's market JSON across reset — if the push above
+            # failed, origin/main is still stale and reset would otherwise
+            # drop the fresh scan before we build/deploy to gh-pages.
+            json_stash=$(mktemp -d)
+            cp -f public/polymarket_data.json public/kalshi_data.json \
+                  public/pinnacle_history.json public/sharp_positions.json \
+                  public/sharp_spread_positions.json public/sharp_total_positions.json \
+                  public/sharp_intel_excluded_wallets.json \
+                  public/whitelist_scan_diagnostics.json \
+                  public/scan_heartbeat.json \
+                  "$json_stash/" 2>/dev/null || true
 
             # Pull latest main BEFORE building. This loop checks out once at
             # job start and runs ~12 cycles (~48 min). Without a mid-loop pull,
@@ -206,11 +224,14 @@ jobs:
             echo "--- sync main before build ---"
             git fetch origin main
             git reset --hard origin/main
-            # Keep any JSON the cycle just wrote (reset would drop uncommitted
-            # work; committed JSON is already on origin/main from the push above).
+            cp -f "$json_stash"/* public/ 2>/dev/null || true
+            rm -rf "$json_stash"
 
-            # Build the site (~1 min).
+            # Build the site (~1 min). Wipe dist so a leftover dist/.git from
+            # a prior cycle can't make `git checkout -b gh-pages` no-op and
+            # falsely report a successful deploy of stale assets.
             echo "--- npm run build ---"
+            rm -rf dist
             if npm run build; then
               # Force-push ./dist to gh-pages. This is the same thing
               # peaceiris/actions-gh-pages does — we just inline it so it
@@ -220,6 +241,7 @@ jobs:
               (
                 cd dist
                 # CNAME is already copied by Vite from public/.
+                rm -rf .git
                 git init -q
                 git checkout -b gh-pages
                 git add -A
