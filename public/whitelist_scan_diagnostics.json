@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-07-19T22:42:35.500Z",
-  "elapsedSec": 15.3,
+  "scannedAt": "2026-07-19T22:46:24.304Z",
+  "elapsedSec": 15,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 34,
   "summary": {
     "total": 200,
     "coveredByMain": 7,
-    "recovered": 14,
-    "recoveredPositions": 66,
-    "noPositions": 179,
+    "recovered": 15,
+    "recoveredPositions": 69,
+    "noPositions": 178,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,7 +16,7 @@
       "ml": 3,
       "spread": 3,
       "total": 1,
-      "dropped_shadow_gate": 17,
+      "dropped_shadow_gate": 20,
       "dropped_excluded": 42,
       "dropped_duplicate": 0
     }
@@ -155,8 +155,33 @@
       "tier": "WR50",
       "name": null,
       "sports": "",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x0eb75bf6f54794a83bd26095811f30b530161f17"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x0eb75bf6f54794a83bd26095811f30b530161f17",
+      "positionsCount": 2,
+      "statsSource": "sharpWalletProfiles_derived",
+      "avgSportBet": 33108,
+      "willPassShadowGate": 0,
+      "willDropAtShadowGate": 2,
+      "positions": [
+        {
+          "sport": "WNBA",
+          "gameKey": "con_pho",
+          "marketType": "total",
+          "side": "over",
+          "invested": 100,
+          "entryLine": 163.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "WNBA",
+          "gameKey": "con_pho",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 100,
+          "entryLine": null,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "182fef",
@@ -900,6 +925,15 @@
           "passesShadow": true
         },
         {
+          "sport": "WNBA",
+          "gameKey": "con_pho",
+          "marketType": "total",
+          "side": "under",
+          "invested": 2122,
+          "entryLine": 163.5,
+          "passesShadow": true
+        },
+        {
           "sport": "MLB",
           "gameKey": "lad_nyy",
           "marketType": "total",
@@ -924,15 +958,6 @@
           "side": "away",
           "invested": 1481,
           "entryLine": null,
-          "passesShadow": true
-        },
-        {
-          "sport": "WNBA",
-          "gameKey": "con_pho",
-          "marketType": "total",
-          "side": "under",
-          "invested": 1264,
-          "entryLine": 163.5,
           "passesShadow": true
         },
         {
@@ -1876,11 +1901,11 @@
       "sports": "SOC,MLB,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x84cfffc3f16dcc353094de30d4a45226eccd2f63",
-      "positionsCount": 6,
+      "positionsCount": 7,
       "statsSource": "sports_sharps",
       "avgSportBet": 22453,
       "willPassShadowGate": 2,
-      "willDropAtShadowGate": 4,
+      "willDropAtShadowGate": 5,
       "positions": [
         {
           "sport": "MLB",
@@ -1916,6 +1941,15 @@
           "side": "away",
           "invested": 255,
           "entryLine": -1.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "lad_nyy",
+          "marketType": "total",
+          "side": "under",
+          "invested": 22,
+          "entryLine": 8.5,
           "passesShadow": false
         },
         {
@@ -2145,19 +2179,19 @@
         {
           "sport": "MLB",
           "gameKey": "lad_nyy",
-          "marketType": "total",
-          "side": "over",
-          "invested": 28658,
-          "entryLine": 8.5,
+          "marketType": "ml",
+          "side": "home",
+          "invested": 62780,
+          "entryLine": null,
           "passesShadow": true
         },
         {
           "sport": "MLB",
           "gameKey": "lad_nyy",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 17435,
-          "entryLine": null,
+          "marketType": "total",
+          "side": "over",
+          "invested": 56000,
+          "entryLine": 8.5,
           "passesShadow": true
         }
       ]
