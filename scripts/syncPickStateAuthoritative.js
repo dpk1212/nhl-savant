@@ -490,35 +490,35 @@ function computeRankSlice(walletDetails, mySide, sport, walletProfiles) {
   return { backing, against, qualifies: backing >= 2 && against === 0 };
 }
 
-// ── SHARP-RESCUE / v12abc "c" — proven-$ + win-rate + consensus ─────────────
-// A v12-shipped pick (score > 0) the HC sizer muted to 0u is staked when its FOR
-// side carries the wallet-QUALITY signal, built from INTERNAL stats only:
-//   • ≥1 FOR backer with positions.dollarRoi ≥ SHARP_MIN_QROI on ≥ SHARP_MIN_QN
-//     settled positions  (our grading of their real-money Polymarket trades)
-//   • mean picks.wr across FOR backers (each ≥ SHARP_MIN_PN settled picks) ≥ floor
-//   • ≥ SHARP_MIN_FOR distinct sharps on the FOR side (dissent allowed)
-//   • (retune+) american odds softer than SHARP_NO_CHALK_ODDS (no ≤-150 chalk)
-// Profiles are read AT SCORING TIME for a LIVE pick (today's games unsettled), so
-// — exactly like RANK-RESCUE — the read is leak-free / point-in-time.
-// Also drives the MINI cut (gate-fail MINI). TOP boost is date-gated OFF after
-// the retune cutover. RANK / SUPER / TOP / MINI-pass / CONFIRMED are untouched.
+// ── SHARP-RESCUE / v12abc "c" ───────────────────────────────────────────────
+// Door (unchanged): score > 0, still 0u after HC + RANK.
 //
-// Retune (SHARP_C_RETUNE_FROM onward) — live Path C 2026-06-26→07-11 ran
-// 39-39 / −24.5u; for≥3 + no-chalk + TOP boost OFF → +8.8u / +5% ROI.
-// Pre-retune dates keep legacy for≥2 + TOP boost so already-published slates
-// are not resized. Graded/COMPLETED docs are never rewritten either way.
+// From SHARP_C_EDGE_NET_FROM (2026-07-19): EDGE / netCLV two-gate replaces
+// proven-$ quality. Jun1+ CF: ~53.5% WR · +9u vs legacy Path C −23u.
+//   • BOTH  (EDGE ≥ 5 AND netCLV ≥ 5) → SHARP @ 3u
+//   • ONE   (exactly one clears)      → SHARP-LEAN @ 1.5u
+//   • NEITHER                         → stay 0u
+// EDGE = winner-align mean FOR − (mean AG ?? 50); net = causal netMeanPrior.
+//
+// Legacy (SHARP_LIVE_FROM .. pre EDGE_NET): proven-$ + mean picks.wr + forCount
+// (+ retune chalk/for≥3). Still used for MINI- cut / pre-cutover TOP+ boost.
+// Graded/COMPLETED docs are never rewritten either way.
 const SHARP_LIVE_FROM   = '2026-06-26';  // original Path C cutover
 const SHARP_C_RETUNE_FROM = '2026-07-12'; // optimal-levels cutover (include today; was 07-13)
+const SHARP_C_EDGE_NET_FROM = '2026-07-19'; // EDGE/net two-gate Path C + TOP NEITHER mute
 const SHARP_MIN_QN      = 8;             // min settled positions for a $ROI read
 const SHARP_MIN_QROI    = 10;            // positions.dollarRoi threshold (%)
 const SHARP_MIN_PN      = 5;             // min settled picks to count toward wr
-const SHARP_WR_BASE     = 50;            // mean picks.wr floor — SHARP
-const SHARP_WR_PRIME    = 55;            // mean picks.wr floor — SHARP-PRIME boost
+const SHARP_WR_BASE     = 50;            // mean picks.wr floor — legacy SHARP
+const SHARP_WR_PRIME    = 55;            // mean picks.wr floor — legacy SHARP-PRIME
 const SHARP_MIN_FOR_LEGACY = 2;          // pre-retune consensus floor
 const SHARP_MIN_FOR_RETUNE = 3;          // retune consensus floor
-const SHARP_NO_CHALK_ODDS = -150;        // retune: skip SHARP rescue when odds ≤ this
-const SHARP_UNITS       = 3;             // SHARP rescue stake
-const SHARP_PRIME_UNITS = 4;             // SHARP-PRIME rescue stake
+const SHARP_NO_CHALK_ODDS = -150;        // legacy retune: skip when odds ≤ this
+const SHARP_UNITS       = 3;             // SHARP / BOTH stake
+const SHARP_PRIME_UNITS = 4;             // legacy SHARP-PRIME only
+const SHARP_LEAN_UNITS  = 1.5;           // ONE-gate lean stake (edge-net era)
+const SHARP_EDGE_THR    = 5;
+const SHARP_NET_THR     = 5;
 const TOP_BOOST_UNITS   = 5;             // HC-1 TOP + proven-$ → boost 4u → 5u (pre-retune only)
 const MINI_REDUCED_UNITS = 1;            // gate-fail MINI (no proven-$) → 3u → 1u
 function isSharpRescueLive(pickDate) {
@@ -527,11 +527,22 @@ function isSharpRescueLive(pickDate) {
 function isSharpCRetuneLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= SHARP_C_RETUNE_FROM;
 }
+function isSharpCEdgeNetLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= SHARP_C_EDGE_NET_FROM;
+}
 function sharpMinFor(pickDate) {
   return isSharpCRetuneLive(pickDate) ? SHARP_MIN_FOR_RETUNE : SHARP_MIN_FOR_LEGACY;
 }
 function isSharpChalk(odds) {
   return Number.isFinite(odds) && odds <= SHARP_NO_CHALK_ODDS;
+}
+/** BOTH / ONE / NEITHER for EDGE≥eThr × net≥nThr two-gate. */
+function edgeNetGateBucket(edge, net, eThr = SHARP_EDGE_THR, nThr = SHARP_NET_THR) {
+  const eOk = edge != null && Number.isFinite(Number(edge)) && Number(edge) >= eThr;
+  const nOk = net != null && Number.isFinite(Number(net)) && Number(net) >= nThr;
+  if (eOk && nOk) return 'BOTH';
+  if (eOk || nOk) return 'ONE';
+  return 'NEITHER';
 }
 
 // ── PATH-D / v12abcd "d" — DISSENT-WEIGHTED rescue (contribMargin ≤ 0) ─────
@@ -617,13 +628,14 @@ const WINNER_ALIGN_TOP_N = 5; // per-sport Top-N by featured WR
 const WINNER_ALIGN_OPPOSED_CAP = 1;
 const WINNER_ALIGN_MUTE_TIERS = new Set([
   'SUPER', 'TOP', 'TOP+', 'MINI', 'MINI-', 'CONFIRMED',
-  'RANK', 'SHARP', 'SHARP-PRIME',
+  'RANK', 'SHARP', 'SHARP-PRIME', 'SHARP-LEAN',
 ]);
 const WINNER_ALIGN_PATH_A = new Set(['SUPER', 'TOP', 'TOP+', 'MINI', 'MINI-', 'CONFIRMED']);
 const WINNER_ALIGN_JUNK_CUT_TIERS = new Set([
   ...WINNER_ALIGN_MUTE_TIERS,
   'DISSENT',
 ]);
+const TOP_EDGE_NET_TIERS = new Set(['TOP', 'TOP+']);
 function isWinnerAlignLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= WINNER_ALIGN_LIVE_FROM;
 }
@@ -1238,13 +1250,43 @@ async function createMissingLockedPicks({
         peakUnitsApplied = hc.units;          // odds-capped; MONITORING → 0u
       }
 
-      // CLV / tape on create — stamp + size so brand-new docs aren't missing
-      // the skill gate until the next reconcile cycle.
+      // Path overlays on create (same gates as reconcile) so brand-new docs
+      // don't briefly show TOP NEITHER or miss Path C until the next cycle.
       const top2Create = computeForTop2PctPos(walletDetails, side, TARGET_DATE, clvLedger);
       const waCreateEdge = createV121Eligible
         ? computeWinnerAlign(walletDetails, side, sport, walletProfiles, sportWinnerBoards)
         : null;
       const netCreate = computeNetMeanPrior(walletDetails, side, TARGET_DATE, clvLedger);
+      // MINI- cut first (proven-$ gate), matching reconcile order.
+      if (createV121Eligible && isSharpRescueLive(TARGET_DATE) && hcStakeTierCreate === 'MINI') {
+        const sqCreate = computeSharpQuality(walletDetails, side, sport, walletProfiles, TARGET_DATE);
+        if (!sqCreate.provenDollar) {
+          peakUnitsApplied = Math.round(oddsCap(MINI_REDUCED_UNITS, odds ?? null) * 100) / 100;
+          hcStakeTierCreate = 'MINI-';
+        }
+      }
+      if (createV121Eligible && isSharpCEdgeNetLive(TARGET_DATE) && scoreV12 > 0) {
+        const createBucket = edgeNetGateBucket(waCreateEdge?.edge ?? null, netCreate.netMeanPrior);
+        // TOP / TOP+ NEITHER → mute
+        if (TOP_EDGE_NET_TIERS.has(hcStakeTierCreate) && peakUnitsApplied > 0 && createBucket === 'NEITHER') {
+          peakUnitsApplied = 0;
+        }
+        // Path C rescue when still muted (RANK runs on reconcile; create fills C)
+        if (peakUnitsApplied === 0 && (
+          !hcStakeTierCreate
+          || hcStakeTierCreate === 'MONITORING'
+          || hcStakeTierCreate === 'FADE'
+          || TOP_EDGE_NET_TIERS.has(hcStakeTierCreate)
+        )) {
+          if (createBucket === 'BOTH') {
+            peakUnitsApplied = Math.round(oddsCap(SHARP_UNITS, odds ?? null) * 100) / 100;
+            hcStakeTierCreate = 'SHARP';
+          } else if (createBucket === 'ONE') {
+            peakUnitsApplied = Math.round(oddsCap(SHARP_LEAN_UNITS, odds ?? null) * 100) / 100;
+            hcStakeTierCreate = 'SHARP-LEAN';
+          }
+        }
+      }
       const tapeCreate = computeTapeScore(waCreateEdge?.edge ?? null, netCreate.netMeanPrior);
       let clvPolicyCreate;
       if (isTapeSizingLive(TARGET_DATE)) {
@@ -1784,14 +1826,15 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
 
   // ─── v12abc HC-book overlays — TOP boost (pre-retune) + MINI reduction ─
   // Internal wallet-quality slice (proven-$ ROI + featured win-rate), same
-  // point-in-time read as RANK-RESCUE. Computed once here, reused by the
-  // SHARP-RESCUE block below. Inert before the SHARP_LIVE_FROM cutover.
+  // point-in-time read as RANK-RESCUE. Computed once here; still drives MINI-
+  // and legacy TOP+ / legacy Path C. Inert before the SHARP_LIVE_FROM cutover.
   //   • TOP (HC margin 1) + proven-$ backer & mean wr ≥ floor → boost 4u → 5u
   //     ONLY on pre-retune dates (TOP+ ran −9% ROI live; OFF from retune on).
   //   • MINI with NO proven-$ backer → cut 3u → 1u (kept — live MINI- +27%).
   // SUPER / RANK / CONFIRMED / gate-pass MINI / plain TOP sizing are unchanged.
   let sharpQ = null;
   const pathCRetune = isSharpCRetuneLive(pickDate);
+  const pathCEdgeNet = isSharpCEdgeNetLive(pickDate);
   if (isSharpRescueLive(pickDate) && appliedStatus === 'ACTIVE'
       && scoreV12Live != null && scoreV12Live > 0) {
     sharpQ = computeSharpQuality(wd, side, pick.sport, walletProfiles, pickDate);
@@ -1803,6 +1846,30 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       finalUnitsApplied = Math.round(oddsCap(MINI_REDUCED_UNITS, sideOdds) * 100) / 100;
       hcStakeTier = 'MINI-';
     }
+  }
+
+  // ─── EDGE + netCLV (needed for TOP mute + Path C before RANK/SHARP) ───
+  // Winner-align EDGE + causal netMeanPrior are computed once here and reused
+  // by TOP NEITHER mute, Path C edge-net rescue, winner-align mute, and tape.
+  let winnerAlign = null;
+  if (v121Eligible && Array.isArray(wd) && wd.length > 0) {
+    winnerAlign = computeWinnerAlign(wd, side, pick.sport, walletProfiles, sportWinnerBoards);
+  }
+  const netLive = computeNetMeanPrior(wd, side, pickDate, clvLedger);
+  const edgeNetBucket = edgeNetGateBucket(winnerAlign?.edge ?? null, netLive.netMeanPrior);
+  let topEdgeNetMuted = false;
+  let sharpEdgeNetBucket = null; // BOTH | ONE | null when Path C doesn't fire
+
+  // ─── TOP / TOP+ EDGE-net overlay (2026-07-19+) ───────────────────────
+  // HC still selects TOP/TOP+. If neither EDGE≥5 nor net≥5, mute to 0u.
+  // BOTH/ONE keep HC size. Jun1+ CF: TOP NEITHER was −27u / −23% ROI.
+  if (pathCEdgeNet && appliedStatus === 'ACTIVE'
+      && TOP_EDGE_NET_TIERS.has(hcStakeTier)
+      && finalUnitsApplied > 0
+      && edgeNetBucket === 'NEITHER'
+      && !(Number.isFinite(sd.manualStake) && sd.manualStake > 0)) {
+    finalUnitsApplied = 0;
+    topEdgeNetMuted = true;
   }
 
   // ─── Manual RANK-promotion override (wallet-rank coalition path) ──────
@@ -1842,25 +1909,35 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     }
   }
 
-  // ─── SHARP-RESCUE: v12abc "c" proven-$ + win-rate + consensus ─────────
-  // Rescues a v12-shipped pick the HC sizer (and RANK) left muted at 0u, when
-  // the FOR side clears the internal wallet-quality gate. From the retune
-  // cutover: require ≥3 FOR sharps and skip heavy chalk (≤ −150). PRIME
-  // (mean wr ≥ 55) sizes one notch up. Only ever rescues muted picks —
-  // never up-sizes. Does not touch RANK / SUPER / TOP / CONFIRMED.
+  // ─── SHARP-RESCUE / Path C ────────────────────────────────────────────
+  // Rescues score>0 picks still at 0u after HC + RANK. Never up-sizes.
+  // Edge-net era (2026-07-19+): BOTH→3u SHARP / ONE→1.5u SHARP-LEAN.
+  // Legacy: proven-$ + wr + forCount (+ retune chalk skip / PRIME 4u).
   let sharpRescued = false;
   const sharpCensus = sharpQ || computeSharpQuality(wd, side, pick.sport, walletProfiles, pickDate);
   if (isSharpRescueLive(pickDate) && appliedStatus === 'ACTIVE'
       && scoreV12Live != null && scoreV12Live > 0
       && finalUnitsApplied === 0 && !rankRescued
-      && !(Number.isFinite(sd.manualStake) && sd.manualStake > 0)
-      && !(pathCRetune && isSharpChalk(sideOdds))) {
-    const q = sharpCensus;
-    if (q.qualifies) {
-      const u = q.prime ? SHARP_PRIME_UNITS : SHARP_UNITS;
-      finalUnitsApplied = Math.round(oddsCap(u, sideOdds) * 100) / 100;
-      hcStakeTier = q.prime ? 'SHARP-PRIME' : 'SHARP';
-      sharpRescued = true;
+      && !(Number.isFinite(sd.manualStake) && sd.manualStake > 0)) {
+    if (pathCEdgeNet) {
+      sharpEdgeNetBucket = edgeNetBucket;
+      if (edgeNetBucket === 'BOTH') {
+        finalUnitsApplied = Math.round(oddsCap(SHARP_UNITS, sideOdds) * 100) / 100;
+        hcStakeTier = 'SHARP';
+        sharpRescued = true;
+      } else if (edgeNetBucket === 'ONE') {
+        finalUnitsApplied = Math.round(oddsCap(SHARP_LEAN_UNITS, sideOdds) * 100) / 100;
+        hcStakeTier = 'SHARP-LEAN';
+        sharpRescued = true;
+      }
+    } else if (!(pathCRetune && isSharpChalk(sideOdds))) {
+      const q = sharpCensus;
+      if (q.qualifies) {
+        const u = q.prime ? SHARP_PRIME_UNITS : SHARP_UNITS;
+        finalUnitsApplied = Math.round(oddsCap(u, sideOdds) * 100) / 100;
+        hcStakeTier = q.prime ? 'SHARP-PRIME' : 'SHARP';
+        sharpRescued = true;
+      }
     }
   }
 
@@ -1883,13 +1960,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   }
 
   // ─── WINNER-ALIGN — EDGE datapoint + mute / (legacy) size / rescue ────
-  // EDGE is a FIRST-CLASS stored feature on every side with walletDetails
-  // (v12.1+). Computed every pre-T-15 cycle from sport WR (n≥8); always
-  // stamped to Firestore (even when units unchanged / score ≤ 0).
-  // From TAPE_SIZING_LIVE_FROM: only fadeTop60 mute applies; EDGE size /
+  // EDGE already computed above (shared with Path C / TOP mute). From
+  // TAPE_SIZING_LIVE_FROM: only fadeTop60 mute applies; EDGE size /
   // rescue / Policy E unit effects are frozen. Tape owns sizing after paths.
   // Does NOT flip sides. T-15 freeze locks the last pre-freeze EDGE stamp.
-  let winnerAlign = null;
   let winnerMuted = false;
   let winnerRescued = false;
   let winnerSized = false;
@@ -1899,9 +1973,6 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   let winnerAlignAction = null; // 'mute' | 'size' | 'rescue' | 'top_floor' | 'top_cap' | 'top_junk' | null
   const tapeSizingLive = isTapeSizingLive(pickDate);
   const edgeStakeLive = isWinnerAlignEdgeStakeLive(pickDate);
-  if (v121Eligible && Array.isArray(wd) && wd.length > 0) {
-    winnerAlign = computeWinnerAlign(wd, side, pick.sport, walletProfiles, sportWinnerBoards);
-  }
   if (winnerAlign
       && isWinnerAlignLive(pickDate)
       && appliedStatus === 'ACTIVE'
@@ -1950,7 +2021,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
           } else {
             finalUnitsApplied = Math.min(finalUnitsApplied, 2);
           }
-        } else if (tierNow === 'SHARP' || tierNow === 'SHARP-PRIME') {
+        } else if (tierNow === 'SHARP' || tierNow === 'SHARP-PRIME' || tierNow === 'SHARP-LEAN') {
           if (e >= WINNER_ALIGN_EDGE10) {
             finalUnitsApplied = 6;
           } else if (e >= WINNER_ALIGN_EDGE5) {
@@ -2066,8 +2137,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // Tape era (2026-07-15+): mute weak / keep mid / boost strong on path units.
   //   tape = 1.5·(EDGE/10) + 2·(netCLV/10); fail-open when unscored.
   // Pre-tape: legacy CLV top2 cancel≤59 / boost≥74 (fail-closed if missing).
+  // netLive already computed above (shared with Path C / TOP mute).
   const top2Live = computeForTop2PctPos(wd, side, pickDate, clvLedger);
-  const netLive = computeNetMeanPrior(wd, side, pickDate, clvLedger);
   const tapeLive = computeTapeScore(winnerAlign?.edge ?? null, netLive.netMeanPrior);
   let clvPolicy;
   let tapePolicy = null;
@@ -2355,8 +2426,26 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       changes.push(`AGS-v12: ∅ → ∅ (no signal — defensively muted to FADE/0u)`);
     }
   }
+  if (topEdgeNetMuted) {
+    changes.push(
+      `TOP-EDGE-NET: NEITHER (E=${winnerAlign?.edge == null ? '—' : Number(winnerAlign.edge).toFixed(1)} `
+      + `net=${netLive.netMeanPrior == null ? '—' : Number(netLive.netMeanPrior).toFixed(1)}) → mute 0u`
+    );
+  }
   if (rankRescued) {
     changes.push(`RANK-RESCUE: 2-for-0 slice promoted HC-muted pick → ${RANK_RESCUE_UNITS}u`);
+  }
+  if (sharpRescued) {
+    if (pathCEdgeNet && sharpEdgeNetBucket) {
+      changes.push(
+        `SHARP-RESCUE/edge-net: ${sharpEdgeNetBucket} `
+        + `(E=${winnerAlign?.edge == null ? '—' : Number(winnerAlign.edge).toFixed(1)} `
+        + `net=${netLive.netMeanPrior == null ? '—' : Number(netLive.netMeanPrior).toFixed(1)}) `
+        + `→ ${hcStakeTier} ${finalUnitsApplied}u`
+      );
+    } else {
+      changes.push(`SHARP-RESCUE: proven-$ → ${hcStakeTier} ${finalUnitsApplied}u`);
+    }
   }
   if (pathDRescued) {
     changes.push(
@@ -2747,6 +2836,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       rankRescued,
       sharp: sharpCensus,
       sharpRescued,
+      sharpEdgeNetBucket,
+      topEdgeNetMuted,
+      edgeNetBucket,
       pathD: pathDSlice,
       pathDRescued,
       winnerAlign: winnerAlign ? {

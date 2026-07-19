@@ -1,6 +1,6 @@
 # Stake paths & unit sizing (production)
 
-_Status: **LIVE** · stack `v12abcde` + **tape sizing** from **2026-07-15**_  
+_Status: **LIVE** · stack `v12abcde` + **tape sizing** from **2026-07-15** · **EDGE/net Path C + TOP mute** from **2026-07-19**_  
 _Code: `scripts/syncPickStateAuthoritative.js` · HC ladder: `src/lib/ags.js` (`agsV12HcStake`) · tape: `src/lib/walletClvSkill.js`_  
 _Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`WINNER_ALIGN_IMPLEMENTATION.md`](./WINNER_ALIGN_IMPLEMENTATION.md) · [`DATA_ASSET_MAP.md`](./DATA_ASSET_MAP.md)_
 
@@ -27,10 +27,11 @@ _Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`WINNER_ALIGN_IMPLEMENTATION.
    └─ score ≤ 0 → FADE / muted → 0u  (stop)
 
 2. Path A — HC margin ladder          → SUPER/TOP/MINI/CONFIRMED/MONITORING
-   └─ Path C overlays on A:           → TOP+ (legacy) or MINI- (no proven-$)
+   └─ overlays: MINI- (no proven-$) · TOP+ (legacy pre-retune only)
+   └─ TOP/TOP+ EDGE-net mute (2026-07-19+): NEITHER (E<5 & net<5) → 0u
 
 3. If still 0u → Path B RANK rescue   → RANK @ 4u
-4. If still 0u → Path C SHARP rescue  → SHARP @ 3u / SHARP-PRIME @ 4u
+4. If still 0u → Path C SHARP rescue  → SHARP @ 3u (BOTH) / SHARP-LEAN @ 1.5u (ONE)
 5. If still 0u → Path D DISSENT       → DISSENT @ 1u  (MLB only)
 
 6. Winner-align fadeTop≥60 mute       → 0u if toxic AG top WR
@@ -53,6 +54,7 @@ Rescues **never up-size** an already-staked Path A ticket — they only fill `0u
 | **2026-06-26** | Path C SHARP rescue (+ MINI- cut; TOP+ boost on) |
 | **2026-07-12** | Path C retune · Path D · Path E winner-align (EDGE stake era) |
 | **2026-07-15** | **Tape sizing** · EDGE stake overrides **frozen** |
+| **2026-07-19** | **Path C = EDGE≥5 / net≥5 → 3u / 1.5u** · **TOP NEITHER mute** · proven-$ Path C retired |
 
 ---
 
@@ -111,23 +113,23 @@ Does **not** up-size SUPER/TOP/MINI already staked.
 
 ---
 
-## Path C — SHARP (proven-$ mute rescue)
+## Path C — SHARP (EDGE / netCLV mute rescue)
 
-**What it is:** When A and B leave **0u**, rescue if FOR-side *money quality* clears the gate.
+**What it is:** When A and B leave **0u**, rescue from wallet skill signals — **EDGE** (featured sport WR) and **netCLV** (causal %+CLV prior).
 
-**Qualifies when** (all of)
-1. `score > 0`, still `0u`, not RANK-rescued  
-2. ≥1 FOR backer with `positions.dollarRoi ≥ 10%` (n≥8 positions)  
-3. Mean FOR `picks.wr` (each n≥5 picks) ≥ **50** (SHARP) or ≥ **55** (PRIME)  
-4. Distinct FOR sharps counted ≥ floor: **3** from 2026-07-12+ (was 2 before)  
-5. From 2026-07-12+: skip if american odds **≤ −150** (no heavy chalk rescue)
+**Live from 2026-07-19** (replaces proven-$ / SHARP-PRIME Path C):
 
-| Tier | Units |
-|------|------:|
-| `SHARP` | **3u** |
-| `SHARP-PRIME` | **4u** |
+| Gate | Tier | Units |
+|------|------|------:|
+| EDGE ≥ 5 **and** netCLV ≥ 5 | `SHARP` | **3u** |
+| Exactly one of those | `SHARP-LEAN` | **1.5u** |
+| Neither (or missing both) | — | **0u** |
 
-Then oddsCap. Never up-sizes A/B.
+Requires `score > 0`, still `0u`, not RANK-rescued. Then oddsCap. Never up-sizes A/B.
+
+**Also on Path A TOP/TOP+ (same cutover):** if neither gate clears → mute to **0u** (HC still selected the side; skill overlay kills the stake). BOTH/ONE keep HC size.
+
+**Legacy** (2026-06-26 … 2026-07-18): proven-$ + mean `picks.wr` + forCount (+ chalk skip / PRIME 4u). Historical tickets keep those stamps.
 
 ---
 
@@ -253,7 +255,7 @@ Internal paths roll up to five user-facing bands (`AGS_V12_DISPLAY_TIERS`):
 |---------|-------|-----------|
 | MAX PLAY | SUPER | 6 |
 | TOP PICK | TOP, TOP+ | 4–5 |
-| SHARP PLAY | RANK, SHARP, SHARP-PRIME, WINNER | 3–6 |
+| SHARP PLAY | RANK, SHARP, SHARP-LEAN, SHARP-PRIME, WINNER | 1.5–6 |
 | STRONG | MINI | 3 |
 | LEAN | CONFIRMED, MINI-, DISSENT | 1 |
 

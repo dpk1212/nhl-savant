@@ -1055,8 +1055,9 @@ export const AGS_V12_STAKE_PATH = {
   'TOP+':        'HC-1 + $-boost',
   TOP:           'HC-1 model',
   RANK:          '2-for-0 slice',
-  'SHARP-PRIME': 'proven-$ prime',
-  SHARP:         'proven-$',
+  'SHARP-PRIME': 'proven-$ prime (legacy)',
+  SHARP:         'EDGE/net BOTH',
+  'SHARP-LEAN':  'EDGE/net ONE',
   MINI:          'mini-HC',
   CONFIRMED:     'margin 3+',
   'MINI-':       'gate-cut',
@@ -1073,7 +1074,7 @@ export const AGS_V12_STAKE_PATH = {
 export const AGS_V12_DISPLAY_TIERS = [
   { key: 'MAX',    label: 'MAX PLAY',   color: '#E8B85C', unitsLabel: '6u',   sub: 'HC-2 model',      paths: ['SUPER'] },
   { key: 'TOP',    label: 'TOP PICK',   color: '#E8B85C', unitsLabel: '4-5u', sub: 'HC-margin model', paths: ['TOP+', 'TOP'] },
-  { key: 'SHARP',  label: 'SHARP PLAY', color: '#A855F7', unitsLabel: '3-6u', sub: 'sharp money',     paths: ['RANK', 'SHARP-PRIME', 'SHARP', 'WINNER'] },
+  { key: 'SHARP',  label: 'SHARP PLAY', color: '#A855F7', unitsLabel: '1.5-6u', sub: 'sharp money',     paths: ['RANK', 'SHARP-PRIME', 'SHARP', 'SHARP-LEAN', 'WINNER'] },
   { key: 'STRONG', label: 'STRONG',     color: '#14B8A6', unitsLabel: '3u',   sub: 'mini-HC',         paths: ['MINI'] },
   { key: 'LEAN',   label: 'LEAN',       color: '#6B7280', unitsLabel: '1u',   sub: 'confirmed / cut / Path D', paths: ['CONFIRMED', 'MINI-', 'DISSENT'] },
 ];
@@ -1091,6 +1092,7 @@ export const AGS_V12_STAKE_TIER_META = {
   RANK:          { label: 'SHARP PLAY', short: 'SHARP', color: '#A855F7', bg: 'rgba(168,85,247,0.15)',  units: 4,                     ribbon: null, stars: 4 },
   'SHARP-PRIME': { label: 'SHARP PLAY', short: 'SHARP', color: '#A855F7', bg: 'rgba(168,85,247,0.15)',  units: 4,                     ribbon: null, stars: 4 },
   SHARP:         { label: 'SHARP PLAY', short: 'SHARP', color: '#A855F7', bg: 'rgba(168,85,247,0.12)',  units: 3,                     ribbon: null, stars: 3 },
+  'SHARP-LEAN':  { label: 'SHARP PLAY', short: 'LEAN',  color: '#A855F7', bg: 'rgba(168,85,247,0.10)',  units: 1.5,                   ribbon: null, stars: 2 },
   MINI:          { label: 'STRONG',    short: 'STRONG', color: '#14B8A6', bg: 'rgba(20,184,166,0.14)',  units: V12_1_MINI_UNITS,      ribbon: null, stars: 3 },
   // CONFIRMED / MINI- / DISSENT all roll up to the LEAN display band
   // (AGS_V12_DISPLAY_TIERS) — keep the user-facing label identical so cards

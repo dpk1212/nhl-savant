@@ -1550,6 +1550,7 @@ function starsFromAgsuTier(tier) {
   if (tier === 'RANK') return 4.0;        // STRONG PLAY (4u)
   if (tier === 'SHARP-PRIME') return 4.0; // STRONG PLAY (4u)
   if (tier === 'SHARP') return 3.0;       // SOLID PLAY (3u)
+  if (tier === 'SHARP-LEAN') return 2.0;  // Path C ONE-gate lean (1.5u)
   if (tier === 'WINNER') return 4.0;      // winner-align EDGE rescue (3/4/6u by band)
   if (tier === 'MINI') return 3.0;        // SOLID PLAY (3u)
   if (tier === 'CONFIRMED') return 2.0;   // LEAN (1u)
@@ -5723,10 +5724,10 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile, tierWind
   // the v12 score quintile — so the card must NOT lead with the (often WEAK)
   // score or it reads as a low-quality pick. It gets its own violet identity.
   const isRank = hcStakeTier === 'RANK';
-  // v12abc SHARP-RESCUE (proven-$ + win-rate consensus). Like RANK, these are
-  // rescued from a (usually WEAK) score, so they get their own violet identity
-  // and the stake strip rather than the misleading score-quintile strip.
-  const isSharp = hcStakeTier === 'SHARP' || hcStakeTier === 'SHARP-PRIME';
+  // v12abc SHARP-RESCUE (EDGE/net two-gate from 2026-07-19; legacy proven-$).
+  // Like RANK, these are rescued from a (usually WEAK) score, so they get their
+  // own violet identity and the stake strip rather than the score-quintile strip.
+  const isSharp = hcStakeTier === 'SHARP' || hcStakeTier === 'SHARP-PRIME' || hcStakeTier === 'SHARP-LEAN';
   const [open, setOpen] = useState(false);
   const [hover, setHover] = useState(false);
 

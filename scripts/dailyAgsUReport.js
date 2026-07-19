@@ -100,7 +100,7 @@ const isAgsuPromotion = (tag) => typeof tag === 'string' && tag.startsWith(AGSU_
 // display tiers elsewhere. Keep in sync with AGS_V12_STAKE_PATH in src/lib/ags.js.
 const PATH_SHORT = {
   SUPER: 'HC-2', 'TOP+': 'HC-1+$', TOP: 'HC-1', RANK: '2-for-0',
-  'SHARP-PRIME': 'SHARP+', SHARP: 'SHARP', MINI: 'MINI', 'MINI-': 'MINI-',
+  'SHARP-PRIME': 'SHARP+', SHARP: 'SHARP', 'SHARP-LEAN': 'SHARP~', MINI: 'MINI', 'MINI-': 'MINI-',
   CONFIRMED: 'CONF', DISSENT: 'PATH-D', WINNER: 'WIN-E', MONITORING: 'WATCH', FADE: 'PASS',
 };
 const pathShort = (k) => PATH_SHORT[k] || k || '—';
@@ -2585,7 +2585,7 @@ function buildV12Primer(report) {
   report.push(`|------|-----------|-------|`);
   report.push(`| A | HC-margin path | SUPER 6u · TOP 4u · MINI 3u · CONFIRMED 1u |`);
   report.push(`| B | RANK rescue (muted + 2-for-0 whitelist) | 4u |`);
-  report.push(`| C | SHARP / SHARP-PRIME proven-$ rescue (+ MINI- cut) | 3–4u |`);
+  report.push(`| C | SHARP / SHARP-LEAN EDGE/net rescue (+ MINI- cut) | 1.5–3u |`);
   report.push(`| D | DISSENT mute rescue (MLB contribMargin≤0) | 1u |`);
   report.push(`| E | fadeTop≥60 mute only (EDGE size/rescue **frozen**) | — |`);
   report.push(`| TAPE | From **${SIDE_PROFILE_FROM}**: mute tape&lt;0 · hold mid · boost ≥2.89 ×1.35 | path units |`);
@@ -2695,8 +2695,9 @@ const ALL_STAKE_PATHS = [
   { key: 'TOP+',        u: '5u',   layer: 'A/C', label: 'HC-1 TOP+ ($ boost)' },
   { key: 'TOP',         u: '4u',   layer: 'A', label: 'HC-1 TOP' },
   { key: 'RANK',        u: '4u',   layer: 'B', label: 'RANK 2-for-0 rescue' },
-  { key: 'SHARP-PRIME', u: '4u',   layer: 'C', label: 'SHARP-PRIME rescue' },
-  { key: 'SHARP',       u: '3u',   layer: 'C', label: 'SHARP rescue' },
+  { key: 'SHARP-PRIME', u: '4u',   layer: 'C', label: 'SHARP-PRIME rescue (legacy)' },
+  { key: 'SHARP',       u: '3u',   layer: 'C', label: 'SHARP EDGE/net BOTH' },
+  { key: 'SHARP-LEAN',  u: '1.5u', layer: 'C', label: 'SHARP-LEAN EDGE/net ONE' },
   { key: 'MINI',        u: '3u',   layer: 'A', label: 'MINI (gate-pass)' },
   { key: 'MINI-',       u: '1u',   layer: 'C', label: 'MINI- (gate-cut)' },
   { key: 'CONFIRMED',   u: '1u',   layer: 'A', label: 'CONFIRMED margin3+' },
@@ -3007,7 +3008,8 @@ function buildV12TierAnalysis(report, stats) {
       { key: 'TOP+',        u: '5u', label: 'A/C · HC-1 + $-boost' },
       { key: 'TOP',         u: '4u', label: 'A · HC-1 (model)' },
       { key: 'RANK',        u: '4u', label: 'B · 2-for-0 rescue' },
-      { key: 'SHARP-PRIME', u: '4u', label: 'C · proven-$ prime' },
+      { key: 'SHARP-PRIME', u: '4u', label: 'C · proven-$ prime (legacy)' },
+      { key: 'SHARP-LEAN',  u: '1.5u', label: 'C · EDGE/net ONE' },
       { key: 'SHARP',       u: '3u', label: 'C · proven-$ consensus' },
       { key: 'MINI',        u: '3u', label: 'A · mini-HC (gate-pass)' },
       { key: 'MINI-',       u: '1u', label: 'C · mini gate-cut' },
@@ -3323,7 +3325,7 @@ function buildV12abcDiscrimination(report, stats) {
   // Book membership by staking path (MONITORING is never staked).
   const BOOK_A   = ['SUPER', 'TOP', 'TOP+', 'MINI', 'MINI-', 'CONFIRMED']; // HC-margin core (incl. its $-modifiers)
   const BOOK_RANK = ['RANK'];                                              // ab adds 2-for-0 rescue
-  const BOOK_SHARP = ['SHARP', 'SHARP-PRIME'];                            // abc adds proven-$ rescues
+  const BOOK_SHARP = ['SHARP', 'SHARP-LEAN', 'SHARP-PRIME'];              // abc Path C (+ legacy PRIME)
   const BOOK_D = ['DISSENT'];                                              // abcd adds Path D contribMargin rescue
   const BOOK_E = ['WINNER'];                                               // abcde adds winner-align EDGE rescue
   const books = [
