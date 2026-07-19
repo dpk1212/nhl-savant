@@ -5710,13 +5710,18 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile, tierWind
     agsValueV12, agsValue, agsTierV12, agsTier, backingWallets, hcConfFor,
     isTopPick: isTopPickPre, isSuperTopPick: isSuperTopPickPre, hcStakeTier,
     winnerAlignEdge, winnerAlignMeanFor, winnerAlignMeanAg, winnerAlignHasBoth,
+    isMonitoring: isMonitoringPre,
   } = pick;
   const isTopPick = !!isTopPickPre;
   const isSuperTopPick = !!isSuperTopPickPre;
   // v12.1 product stake tier (cron-authoritative). When present it drives the
   // badge/label/units; null on pre-cutover picks (legacy score-quintile path).
   const stakeMeta = hcStakeTier ? (AGS_V12_STAKE_TIER_META[hcStakeTier] || null) : null;
-  const isMonitoring = hcStakeTier === 'MONITORING';
+  // Align with list split: no ticket → monitoring chrome (not just MONITORING tier).
+  const isMonitoring = !!isMonitoringPre
+    || hcStakeTier === 'MONITORING'
+    || !!trackedOnly
+    || !(Number.isFinite(units) && units > 0);
   const isConfirmed = hcStakeTier === 'CONFIRMED';
   const isMini = hcStakeTier === 'MINI';
   const isMiniMinus = hcStakeTier === 'MINI-';
@@ -13089,7 +13094,16 @@ export default function SharpFlow() {
                           // (cron-authoritative; null on pre-cutover picks).
                           // SUPER / TOP / CONFIRMED / MONITORING / FADE.
                           hcStakeTier: sd.v8_hcStakeTier || null,
-                          isMonitoring: sd.v8_hcStakeTier === 'MONITORING',
+                          // MONITORING section = no ticket. Not only the
+                          // MONITORING stake tier — also 0u / tracked-only
+                          // sides (tape mute, edge-net mute, TOP-shaped
+                          // never sized, etc.). Those were rendering as
+                          // muted TRACKED cards mixed into the staked
+                          // Locked Picks grid; they belong under the
+                          // bottom "tracked, not staked" band.
+                          isMonitoring: sd.v8_hcStakeTier === 'MONITORING'
+                            || isTrackedOnly
+                            || !(Number.isFinite(displayUnits) && displayUnits > 0),
                           // Tape + netCLV stamps (display on locked card)
                           tapeAction: sd.v8_tapeAction || null,
                           tapeScore: Number.isFinite(sd.v8_tapeScore) ? sd.v8_tapeScore : null,
@@ -13343,10 +13357,10 @@ export default function SharpFlow() {
                               : `No ${lockedStatusFilter === 'pending' ? 'pending' : lockedStatusFilter === 'won' ? 'winning' : 'losing'} picks`}
                           </div>
                         ) : (() => {
-                          // v12.1 — split staked picks (SUPER/TOP/CONFIRMED) from
-                          // MONITORING (0u, non-staked). Monitoring renders below
-                          // in a muted grey section so volume stays visible but is
-                          // clearly not part of the staked card / ledger.
+                          // Split staked tickets (units > 0) from no-ticket
+                          // MONITORING / TRACKED sides. Latter render below
+                          // in a muted grey section — visible for volume,
+                          // not mixed into the staked Locked Picks grid.
                           const stakedCards = filteredLocked.filter(p => !p.isMonitoring);
                           const monitoringCards = filteredLocked.filter(p => p.isMonitoring);
                           return (
