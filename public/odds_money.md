@@ -180,7 +180,7 @@ Look for short answers to common questions like how the puck line works or how t
 
 [![icon](https://otcdn.virginia.us-east-1.oddstrader.com/ot-app-icon.svg)Download the app](https://get-app.oddstrader.com/ot-app-link)
 
-What are the best available NHL odds?Generate
+What are the top NHL predictions for today?Generate
 
 ![BetStation](https://otcdn.virginia.us-east-1.oddstrader.com/otTurbo/assistant-logo.svg)
 
