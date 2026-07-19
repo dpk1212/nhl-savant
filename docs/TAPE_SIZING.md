@@ -42,15 +42,20 @@ EDGE is still **computed and stamped** — it feeds tape.
 
 ## Stamps
 
+Full EDGE / netCLV / Tape / gate schema (both poles, no rebuild): **[`SKILL_FEATURES.md`](./SKILL_FEATURES.md)**.
+
 | Field | Meaning |
 |-------|---------|
 | `v8_tapeScore` | composite tape |
+| `v8_tapeEdgeTerm` / `v8_tapeNetTerm` | Tape addends |
 | `v8_tapeAction` | `MUTE` \| `HOLD` \| `BOOST` \| `FAIL_OPEN` \| `PASS` |
 | `v8_unitsPreTape` | path units before tape mute/boost (daily-report CF) |
 | `v8_netMeanPrior` | netCLV |
 | `v8_netClvMeanFor` / `MeanAg` / `NFor` / `NAg` | components |
 | `v8_winnerAlignEdge` | EDGE (input) |
+| `v8_edgeNetBucket` | `BOTH` \| `ONE` \| `NEITHER` (E≥5 / net≥5) |
 | `v8_forTop2PctPos` | legacy top2 (diagnostic only; no unit effect post-cutover) |
+| `agsBothSides.*.tape` / `.edge` / `.netMeanPrior` | both poles on the doc |
 
 **Daily report:** `DAILY_AGSU_REPORT.md` § 5e (TAPE impact) · **§ 5f Side Profile** (WIN vs LOSS depth+quality from 2026-07-15+) · § 11 audit trail.
 

@@ -545,6 +545,120 @@ function edgeNetGateBucket(edge, net, eThr = SHARP_EDGE_THR, nThr = SHARP_NET_TH
   return 'NEITHER';
 }
 
+/** Skill-feature stamp schema version — bump when fields/thresholds change. */
+const SKILL_FEATURE_VERSION = 2; // v2: edgeNet gate stamps + all-sides metric pass
+
+/**
+ * Full EDGE / netCLV / Tape bundle for analysis without rebuild.
+ * Computed from point-in-time walletDetails + profiles + CLV ledger.
+ */
+function buildSkillFeatureBundle({
+  wd, side, sport, pickDate, walletProfiles, sportWinnerBoards, clvLedger,
+  winnerAlign = null,
+}) {
+  const wa = winnerAlign || (
+    Array.isArray(wd) && wd.length > 0 && sport
+      ? computeWinnerAlign(wd, side, sport, walletProfiles, sportWinnerBoards)
+      : null
+  );
+  const net = computeNetMeanPrior(wd, side, pickDate, clvLedger);
+  const edge = wa?.edge ?? null;
+  const netMean = net.netMeanPrior;
+  const tape = computeTapeScore(edge, netMean);
+  const top2 = computeForTop2PctPos(wd, side, pickDate, clvLedger);
+  const eOk = edge != null && Number.isFinite(Number(edge)) && Number(edge) >= SHARP_EDGE_THR;
+  const nOk = netMean != null && Number.isFinite(Number(netMean)) && Number(netMean) >= SHARP_NET_THR;
+  const bucket = edgeNetGateBucket(edge, netMean);
+  const edgeTerm = edge != null && Number.isFinite(Number(edge))
+    ? Math.round((1.5 * (Number(edge) / 10)) * 1000) / 1000
+    : null;
+  const netTerm = netMean != null && Number.isFinite(Number(netMean))
+    ? Math.round((2 * (Number(netMean) / 10)) * 1000) / 1000
+    : null;
+  return {
+    winnerAlign: wa,
+    net,
+    top2,
+    edge,
+    netMeanPrior: netMean,
+    tape,
+    edgeGateOk: eOk,
+    netGateOk: nOk,
+    edgeNetBucket: bucket,
+    tapeEdgeTerm: edgeTerm,
+    tapeNetTerm: netTerm,
+  };
+}
+
+/** Write canonical skill stamps onto a patch/create object (mutates target). */
+function applySkillFeatureStamps(target, bundle, now, { tapeAction = null, unitsPreTape = null } = {}) {
+  const wa = bundle.winnerAlign;
+  if (wa) {
+    target.v8_winnerAlignEdge = wa.edge;
+    target.v8_winnerAlignMeanFor = wa.meanFor;
+    target.v8_winnerAlignMeanAg = wa.meanAg;
+    target.v8_winnerAlignTopFor = wa.topFor;
+    target.v8_winnerAlignTopAg = wa.topAg;
+    target.v8_winnerAlignForN = wa.forN;
+    target.v8_winnerAlignAgN = wa.agN;
+    target.v8_winnerAlignHasBoth = wa.hasBoth;
+    target.v8_winnerAlignFadeTop60 = wa.fadeTop60;
+    target.v8_winnerAlignMeanBehind5 = wa.meanBehind5;
+    target.v8_winnerAlignHasTop5For = wa.hasTop5For;
+    target.v8_winnerAlignHasTop5Ag = wa.hasTop5Ag;
+    target.v8_winnerAlignTopUnopp = wa.topUnopp;
+    target.v8_winnerAlignEliteUnopp = wa.eliteUnopp;
+    target.v8_winnerAlignTopVsTop = wa.topVsTop;
+    target.v8_winnerAlignEvaluatedAt = now;
+  }
+  target.v8_forTop2PctPos = bundle.top2.top2Pct;
+  target.v8_forTop2NSkill = bundle.top2.nForSkill;
+  target.v8_netMeanPrior = bundle.net.netMeanPrior;
+  target.v8_netClvMeanFor = bundle.net.meanFor;
+  target.v8_netClvMeanAg = bundle.net.meanAg;
+  target.v8_netClvNFor = bundle.net.nFor;
+  target.v8_netClvNAg = bundle.net.nAg;
+  target.v8_tapeScore = bundle.tape;
+  target.v8_tapeEdgeTerm = bundle.tapeEdgeTerm;
+  target.v8_tapeNetTerm = bundle.tapeNetTerm;
+  if (tapeAction != null) target.v8_tapeAction = tapeAction;
+  if (unitsPreTape != null && Number.isFinite(unitsPreTape)) target.v8_unitsPreTape = unitsPreTape;
+  // Gate diagnostics — Path C / TOP overlay + free analysis without rebuild
+  target.v8_edgeGateOk = bundle.edgeGateOk;
+  target.v8_netGateOk = bundle.netGateOk;
+  target.v8_edgeNetBucket = bundle.edgeNetBucket;
+  target.v8_edgeGateThr = SHARP_EDGE_THR;
+  target.v8_netGateThr = SHARP_NET_THR;
+  target.v8_skillFeatureVersion = SKILL_FEATURE_VERSION;
+  target.v8_skillEvaluatedAt = now;
+}
+
+function skillStampsDrifted(sd, bundle, { tapeAction = null } = {}) {
+  if ((sd.v8_skillFeatureVersion || 0) !== SKILL_FEATURE_VERSION) return true;
+  if (sd.v8_skillEvaluatedAt == null) return true;
+  const edge = bundle.edge;
+  const prevEdge = sd.v8_winnerAlignEdge;
+  if ((prevEdge == null) !== (edge == null)) return true;
+  if (Number.isFinite(prevEdge) && Number.isFinite(edge) && Math.abs(prevEdge - edge) >= 0.05) return true;
+  const net = bundle.netMeanPrior;
+  const prevNet = sd.v8_netMeanPrior;
+  if ((prevNet == null) !== (net == null)) return true;
+  if (Number.isFinite(prevNet) && Number.isFinite(net) && Math.abs(prevNet - net) >= 0.05) return true;
+  const tape = bundle.tape;
+  const prevTape = sd.v8_tapeScore;
+  if ((prevTape == null) !== (tape == null)) return true;
+  if (Number.isFinite(prevTape) && Number.isFinite(tape) && Math.abs(prevTape - tape) >= 0.05) return true;
+  if ((sd.v8_edgeNetBucket || null) !== bundle.edgeNetBucket) return true;
+  if (!!sd.v8_edgeGateOk !== !!bundle.edgeGateOk) return true;
+  if (!!sd.v8_netGateOk !== !!bundle.netGateOk) return true;
+  if (tapeAction != null && (sd.v8_tapeAction || null) !== tapeAction) return true;
+  if ((sd.v8_winnerAlignForN || 0) !== (bundle.winnerAlign?.forN || 0)) return true;
+  if ((sd.v8_winnerAlignAgN || 0) !== (bundle.winnerAlign?.agN || 0)) return true;
+  if ((sd.v8_netClvNFor || 0) !== (bundle.net.nFor || 0)) return true;
+  if ((sd.v8_netClvNAg || 0) !== (bundle.net.nAg || 0)) return true;
+  return false;
+}
+
 // ── PATH-D / v12abcd "d" — DISSENT-WEIGHTED rescue (contribMargin ≤ 0) ─────
 // Mute rescue that Path A/B/C leave at 0u. Uses walletDetails contribution
 // (walletBase × convictionMult), NOT proven-$ forCount (Path C) and NOT the
@@ -1025,7 +1139,11 @@ function buildPeakStatsFromPositions(positions, side, isProvenFn, sport) {
 // Returns null when there's zero whitelist activity for or against this
 // side (so we don't litter docs with empty {ags:null} stamps when the
 // scanner has no proven-wallet signal yet).
-function computeSideAnalytics(positions, side, sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn = null, walletPriorStatsFn = null) {
+function computeSideAnalytics(
+  positions, side, sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn,
+  walletStatsFn = null, walletPriorStatsFn = null,
+  { sportWinnerBoards = null, clvLedger = null, pickDate = null } = {},
+) {
   if (!Array.isArray(positions) || positions.length === 0) return null;
   const live = computeWalletConsensus(positions, side, sport, walletProfiles);
   if (live.forW === 0 && live.agW === 0 && live.hcConfFor === 0 && live.hcConfAg === 0) {
@@ -1061,21 +1179,54 @@ function computeSideAnalytics(positions, side, sport, walletProfiles, agsCalibra
     walletForCount: live.forW,
     walletAgCount: live.agW,
   };
+  // EDGE / netCLV / Tape — both poles, every cycle (analysis without rebuild)
+  if (pickDate && clvLedger) {
+    const skill = buildSkillFeatureBundle({
+      wd: walletDetails, side, sport, pickDate, walletProfiles, sportWinnerBoards, clvLedger,
+    });
+    out.edge = skill.edge;
+    out.edgeMeanFor = skill.winnerAlign?.meanFor ?? null;
+    out.edgeMeanAg = skill.winnerAlign?.meanAg ?? null;
+    out.edgeForN = skill.winnerAlign?.forN ?? 0;
+    out.edgeAgN = skill.winnerAlign?.agN ?? 0;
+    out.netMeanPrior = skill.netMeanPrior;
+    out.netClvMeanFor = skill.net.meanFor;
+    out.netClvMeanAg = skill.net.meanAg;
+    out.netClvNFor = skill.net.nFor;
+    out.netClvNAg = skill.net.nAg;
+    out.tape = skill.tape;
+    out.tapeEdgeTerm = skill.tapeEdgeTerm;
+    out.tapeNetTerm = skill.tapeNetTerm;
+    out.edgeGateOk = skill.edgeGateOk;
+    out.netGateOk = skill.netGateOk;
+    out.edgeNetBucket = skill.edgeNetBucket;
+    out.edgeGateThr = SHARP_EDGE_THR;
+    out.netGateThr = SHARP_NET_THR;
+    out.skillFeatureVersion = SKILL_FEATURE_VERSION;
+  }
   return out;
 }
 
 // Convenience wrapper: compute analytics for BOTH sides of a given market
 // at once and return a side-keyed record ready to merge as
 // `agsBothSides` on the pick doc. Returns null when both sides are
-// empty (nothing meaningful to record).
-function computeBothSidesAnalytics(positions, marketType, sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn = null, walletPriorStatsFn = null) {
+// empty (nothing meaningful to record). Includes EDGE/net/tape per side.
+function computeBothSidesAnalytics(
+  positions, marketType, sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn,
+  walletStatsFn = null, walletPriorStatsFn = null,
+  { sportWinnerBoards = null, clvLedger = null, pickDate = null } = {},
+) {
   const sides = marketType === 'TOTAL' ? ['over', 'under']
     : sport === 'SOC' ? ['away', 'home', 'draw']
     : ['away', 'home'];
   const out = {};
   let any = false;
   for (const side of sides) {
-    const stamp = computeSideAnalytics(positions, side, sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn, walletPriorStatsFn);
+    const stamp = computeSideAnalytics(
+      positions, side, sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn,
+      walletStatsFn, walletPriorStatsFn,
+      { sportWinnerBoards, clvLedger, pickDate },
+    );
     if (stamp) {
       out[side] = stamp;
       any = true;
@@ -1435,40 +1586,35 @@ async function createMissingLockedPicks({
       if (createV121Eligible) {
         v8Stamps.v8_hcStakeTier = hcStakeTierCreate;
       }
-      // EDGE + tape features — stamp at create so datapoints exist from first write.
+      // EDGE + netCLV + tape — full skill bundle from first write (no rebuild later).
       if (createV121Eligible && Array.isArray(walletDetails) && walletDetails.length > 0) {
-        const waCreate = waCreateEdge || computeWinnerAlign(walletDetails, side, sport, walletProfiles, sportWinnerBoards);
-        v8Stamps.v8_winnerAlignEdge = waCreate.edge;
-        v8Stamps.v8_winnerAlignMeanFor = waCreate.meanFor;
-        v8Stamps.v8_winnerAlignMeanAg = waCreate.meanAg;
-        v8Stamps.v8_winnerAlignTopFor = waCreate.topFor;
-        v8Stamps.v8_winnerAlignTopAg = waCreate.topAg;
-        v8Stamps.v8_winnerAlignForN = waCreate.forN;
-        v8Stamps.v8_winnerAlignAgN = waCreate.agN;
-        v8Stamps.v8_winnerAlignHasBoth = waCreate.hasBoth;
-        v8Stamps.v8_winnerAlignFadeTop60 = waCreate.fadeTop60;
-        v8Stamps.v8_winnerAlignMeanBehind5 = waCreate.meanBehind5;
-        v8Stamps.v8_winnerAlignHasTop5For = waCreate.hasTop5For;
-        v8Stamps.v8_winnerAlignHasTop5Ag = waCreate.hasTop5Ag;
-        v8Stamps.v8_winnerAlignTopUnopp = waCreate.topUnopp;
-        v8Stamps.v8_winnerAlignEliteUnopp = waCreate.eliteUnopp;
-        v8Stamps.v8_winnerAlignTopVsTop = waCreate.topVsTop;
+        const skillCreate = buildSkillFeatureBundle({
+          wd: walletDetails, side, sport, pickDate: TARGET_DATE,
+          walletProfiles, sportWinnerBoards, clvLedger,
+          winnerAlign: waCreateEdge,
+        });
+        applySkillFeatureStamps(v8Stamps, skillCreate, now, {
+          tapeAction: isTapeSizingLive(TARGET_DATE) ? clvPolicyCreate.action : clvPolicyCreate.action,
+          unitsPreTape: (isTapeSizingLive(TARGET_DATE) && Number.isFinite(clvPolicyCreate.unitsPrePolicy))
+            ? clvPolicyCreate.unitsPrePolicy
+            : null,
+        });
         v8Stamps.v8_winnerAlignAction = null;
-        v8Stamps.v8_winnerAlignEvaluatedAt = now;
-      }
-      v8Stamps.v8_forTop2PctPos = top2Create.top2Pct;
-      v8Stamps.v8_forTop2NSkill = top2Create.nForSkill;
-      v8Stamps.v8_clvTop2Action = isTapeSizingLive(TARGET_DATE) ? 'PASS' : clvPolicyCreate.action;
-      v8Stamps.v8_netMeanPrior = netCreate.netMeanPrior;
-      v8Stamps.v8_netClvMeanFor = netCreate.meanFor;
-      v8Stamps.v8_netClvMeanAg = netCreate.meanAg;
-      v8Stamps.v8_netClvNFor = netCreate.nFor;
-      v8Stamps.v8_netClvNAg = netCreate.nAg;
-      v8Stamps.v8_tapeScore = tapeCreate;
-      v8Stamps.v8_tapeAction = isTapeSizingLive(TARGET_DATE) ? clvPolicyCreate.action : null;
-      // Path units before tape mute/boost — daily report uses this for TAPE CF.
-      if (isTapeSizingLive(TARGET_DATE) && Number.isFinite(clvPolicyCreate.unitsPrePolicy)) {
-        v8Stamps.v8_unitsPreTape = clvPolicyCreate.unitsPrePolicy;
+        v8Stamps.v8_clvTop2Action = isTapeSizingLive(TARGET_DATE) ? 'PASS' : clvPolicyCreate.action;
+      } else {
+        v8Stamps.v8_forTop2PctPos = top2Create.top2Pct;
+        v8Stamps.v8_forTop2NSkill = top2Create.nForSkill;
+        v8Stamps.v8_clvTop2Action = isTapeSizingLive(TARGET_DATE) ? 'PASS' : clvPolicyCreate.action;
+        v8Stamps.v8_netMeanPrior = netCreate.netMeanPrior;
+        v8Stamps.v8_netClvMeanFor = netCreate.meanFor;
+        v8Stamps.v8_netClvMeanAg = netCreate.meanAg;
+        v8Stamps.v8_netClvNFor = netCreate.nFor;
+        v8Stamps.v8_netClvNAg = netCreate.nAg;
+        v8Stamps.v8_tapeScore = tapeCreate;
+        v8Stamps.v8_tapeAction = isTapeSizingLive(TARGET_DATE) ? clvPolicyCreate.action : null;
+        if (isTapeSizingLive(TARGET_DATE) && Number.isFinite(clvPolicyCreate.unitsPrePolicy)) {
+          v8Stamps.v8_unitsPreTape = clvPolicyCreate.unitsPrePolicy;
+        }
       }
       if (clvPolicyCreate.mutedBy) {
         v8Stamps.mutedBy = clvPolicyCreate.mutedBy;
@@ -1648,20 +1794,21 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const lockStage = sd.lockStage || null;
   const currentStatus = sd.health?.status || sd.status || pick.status || null;
 
-  // Gate: SHADOW sides with prior lock data are still processed so a
-  // recovered pick can re-promote LOCKED → SHADOW → LOCKED in lock-step
-  // with live AGS-U each cycle (pre-T-15).
-  const isReprommotable = lockStage === 'SHADOW' && (sd.lock || sd.peak);
-  if (lockStage !== 'LOCKED' && lockStage !== 'LEAN' && !isReprommotable) {
-    return { skipped: true, reason: 'not_locked_or_lean' };
-  }
   // Gate: never touch graded/completed picks.
   if (pick.status === 'COMPLETED' || currentStatus === 'COMPLETED') {
     return { skipped: true, reason: 'completed' };
   }
+
+  // Gate: SHADOW sides with prior lock data are still processed so a
+  // recovered pick can re-promote LOCKED → SHADOW → LOCKED in lock-step
+  // with live AGS-U each cycle (pre-T-15).
+  const isReprommotable = lockStage === 'SHADOW' && (sd.lock || sd.peak);
+  const isStakeSide = lockStage === 'LOCKED' || lockStage === 'LEAN' || isReprommotable;
+
   // Gate: T-15 freeze. Once we're inside 15 min of commenceTime the doc is
   // a record of what was true at lock-in time and never moves again. --force
   // overrides for one-shot stuck-state repairs only.
+  // Metric-only sides (opposite / never-locked) also freeze — last stamp sticks.
   let ct = null;
   if (pick.commenceTime != null) {
     if (typeof pick.commenceTime === 'number') ct = pick.commenceTime;
@@ -1671,6 +1818,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     else if (typeof pick.commenceTime === 'string') ct = new Date(pick.commenceTime).getTime();
   }
   if (ct != null && now >= ct - T_MINUS_15_MIN_MS && !force) {
+    if (!isStakeSide) {
+      return { skipped: true, reason: 'within_t_minus_15' };
+    }
     // T-15 rescue stamp — surface the LOCKED/LEAN side with undefined
     // finalUnits to the caller as a special return code; the caller
     // owns the Firestore write (reconcileSide is intentionally NOT
@@ -1699,6 +1849,76 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       };
     }
     return { skipped: true, reason: 'within_t_minus_15' };
+  }
+
+  // ─── Metric-only pass (non-LOCKED / non-LEAN sides) ────────────────────
+  // Opposite sides, monitoring stubs, and never-promoted sides still get the
+  // full EDGE / netCLV / Tape stamp so analysis never needs a rebuild.
+  // Does NOT touch units, lockStage, health, or stake tier.
+  if (!isStakeSide) {
+    const liveWdMeta = Array.isArray(group) && group.length > 0
+      ? group.map(positionToWalletDetail).filter(Boolean)
+      : null;
+    const frozenWdMeta = sd.peak?.v8Scoring?.walletDetails || sd.lock?.v8Scoring?.walletDetails || null;
+    const wdMeta = (liveWdMeta && liveWdMeta.length > 0) ? liveWdMeta : frozenWdMeta;
+    if (!Array.isArray(wdMeta) || wdMeta.length === 0 || !isV121Eligible(pickDate)) {
+      return { skipped: true, reason: 'not_locked_or_lean' };
+    }
+    const skill = buildSkillFeatureBundle({
+      wd: wdMeta, side, sport, pickDate, walletProfiles, sportWinnerBoards, clvLedger,
+    });
+    let skillScoreV12 = null;
+    if (walletPriorStatsFn && agsCalibration) {
+      const aggV12 = aggregateSideV12(wdMeta, side, pick.sport, walletPriorStatsFn);
+      if (aggV12) {
+        const r = computeAgsV12(aggV12, agsCalibration);
+        if (r && Number.isFinite(r.agsV12)) skillScoreV12 = r.agsV12;
+      }
+    }
+    const patch = {};
+    applySkillFeatureStamps(patch, skill, now);
+    // Diagnostic score on this side (even if never staked) — analysis key.
+    if (skillScoreV12 != null) {
+      patch.v8_skillAgsV12 = skillScoreV12;
+    }
+    const scoreDrift = skillScoreV12 != null
+      && (sd.v8_skillAgsV12 == null || Math.abs((sd.v8_skillAgsV12 || 0) - skillScoreV12) >= 0.01);
+    const drifted = skillStampsDrifted(sd, skill) || scoreDrift;
+    if (!drifted) {
+      return { skipped: true, reason: 'not_locked_or_lean_no_skill_drift' };
+    }
+    return {
+      skipped: false,
+      wrote: true,
+      patch,
+      changes: [
+        `SKILL-FEATURES: E=${skill.edge == null ? '—' : Number(skill.edge).toFixed(1)} `
+        + `net=${skill.netMeanPrior == null ? '—' : Number(skill.netMeanPrior).toFixed(1)} `
+        + `tape=${skill.tape == null ? '—' : Number(skill.tape).toFixed(2)} `
+        + `bucket=${skill.edgeNetBucket}`
+        + (skillScoreV12 != null ? ` score=${skillScoreV12.toFixed(2)}` : ''),
+      ],
+      live: null,
+      census: {
+        skillOnly: true,
+        edge: skill.edge,
+        net: skill.netMeanPrior,
+        tape: skill.tape,
+        edgeNetBucket: skill.edgeNetBucket,
+        skillAgsV12: skillScoreV12,
+        wdCount: wdMeta.length,
+        stakeTier: sd.v8_hcStakeTier || null,
+        units: sd.finalUnits ?? 0,
+      },
+      expectedStatus: currentStatus,
+      expectedReason: 'skill_features_only',
+      expectedTier: null,
+      expectedUnits: sd.finalUnits ?? 0,
+      expectedLockStage: lockStage,
+      lockStageReason: null,
+      agsuDemoted: false,
+      agsuPromoted: false,
+    };
   }
 
   // Reconstruct live wallet consensus — Δw / Δq / HC margin computed
@@ -2454,46 +2674,30 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       + `fo=${pathDSlice.fo} ag=${pathDSlice.ag} → ${PATH_D_UNITS}u`
     );
   }
-  // Winner-align diagnostics — stamp whenever computed (even pre-action dates
-  // get nulls cleared). Actions already mutated finalUnitsApplied / tier.
+  // Skill features (EDGE / netCLV / Tape / gate bucket) — full stamp every
+  // pre-T-15 cycle so analysis never needs a rebuild. Actions already mutated units.
   if (v121Eligible) {
-    if (winnerAlign) {
-      // Canonical EDGE feature store — written every cycle until T-15.
-      patch.v8_winnerAlignEdge = winnerAlign.edge;           // null only if no FOR WR; unopposed uses AG prior 50
-      patch.v8_winnerAlignMeanFor = winnerAlign.meanFor;
-      patch.v8_winnerAlignMeanAg = winnerAlign.meanAg;
-      patch.v8_winnerAlignTopFor = winnerAlign.topFor;
-      patch.v8_winnerAlignTopAg = winnerAlign.topAg;
-      patch.v8_winnerAlignForN = winnerAlign.forN;
-      patch.v8_winnerAlignAgN = winnerAlign.agN;
-      patch.v8_winnerAlignHasBoth = winnerAlign.hasBoth;
-      patch.v8_winnerAlignFadeTop60 = winnerAlign.fadeTop60;
-      patch.v8_winnerAlignMeanBehind5 = winnerAlign.meanBehind5;
-      patch.v8_winnerAlignHasTop5For = winnerAlign.hasTop5For;
-      patch.v8_winnerAlignHasTop5Ag = winnerAlign.hasTop5Ag;
-      patch.v8_winnerAlignTopUnopp = winnerAlign.topUnopp;
-      patch.v8_winnerAlignEliteUnopp = winnerAlign.eliteUnopp;
-      patch.v8_winnerAlignTopVsTop = winnerAlign.topVsTop;
-      patch.v8_winnerAlignAction = winnerAlignAction;
-      patch.v8_winnerAlignEvaluatedAt = now;
-    } else if (sd.v8_winnerAlignEdge != null || sd.v8_winnerAlignEvaluatedAt != null) {
-      patch.v8_winnerAlignEdge = admin.firestore.FieldValue.delete();
-      patch.v8_winnerAlignMeanFor = admin.firestore.FieldValue.delete();
-      patch.v8_winnerAlignMeanAg = admin.firestore.FieldValue.delete();
-      patch.v8_winnerAlignTopFor = admin.firestore.FieldValue.delete();
-      patch.v8_winnerAlignTopAg = admin.firestore.FieldValue.delete();
-      patch.v8_winnerAlignForN = admin.firestore.FieldValue.delete();
-      patch.v8_winnerAlignAgN = admin.firestore.FieldValue.delete();
-      patch.v8_winnerAlignHasBoth = admin.firestore.FieldValue.delete();
-      patch.v8_winnerAlignFadeTop60 = admin.firestore.FieldValue.delete();
-      patch.v8_winnerAlignMeanBehind5 = admin.firestore.FieldValue.delete();
-      patch.v8_winnerAlignHasTop5For = admin.firestore.FieldValue.delete();
-      patch.v8_winnerAlignHasTop5Ag = admin.firestore.FieldValue.delete();
-      patch.v8_winnerAlignTopUnopp = admin.firestore.FieldValue.delete();
-      patch.v8_winnerAlignEliteUnopp = admin.firestore.FieldValue.delete();
-      patch.v8_winnerAlignTopVsTop = admin.firestore.FieldValue.delete();
-      patch.v8_winnerAlignAction = admin.firestore.FieldValue.delete();
-      patch.v8_winnerAlignEvaluatedAt = admin.firestore.FieldValue.delete();
+    const skillLive = buildSkillFeatureBundle({
+      wd, side, sport: pick.sport, pickDate, walletProfiles, sportWinnerBoards, clvLedger,
+      winnerAlign,
+    });
+    applySkillFeatureStamps(patch, skillLive, now, {
+      tapeAction: tapePolicy?.action ?? clvPolicy?.action ?? null,
+      unitsPreTape: (tapeSizingLive && tapePolicy && Number.isFinite(tapePolicy.unitsPrePolicy))
+        ? tapePolicy.unitsPrePolicy
+        : null,
+    });
+    patch.v8_winnerAlignAction = winnerAlignAction;
+    patch.v8_clvTop2Action = clvPolicy.action;
+    if (scoreV12Live != null) patch.v8_skillAgsV12 = scoreV12Live;
+    // Force write when schema/gate stamps are new or metrics moved — even if units flat.
+    if (skillStampsDrifted(sd, skillLive, { tapeAction: tapePolicy?.action ?? null })) {
+      changes.push(
+        `SKILL-FEATURES: E=${skillLive.edge == null ? '—' : Number(skillLive.edge).toFixed(1)} `
+        + `net=${skillLive.netMeanPrior == null ? '—' : Number(skillLive.netMeanPrior).toFixed(1)} `
+        + `tape=${skillLive.tape == null ? '—' : Number(skillLive.tape).toFixed(2)} `
+        + `bucket=${skillLive.edgeNetBucket}`,
+      );
     }
   }
   if (winnerMuted && winnerAlignAction === 'mute') {
@@ -2563,20 +2767,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   }
   // finalUnits drift logging — flag any time the canonical bet size changes
   // by ≥0.05u so cycle output makes the change visible.
-  // CLV top2 + tape skill stamps — always written for dashboard / grader audit.
-  patch.v8_forTop2PctPos = top2Live.top2Pct;
-  patch.v8_forTop2NSkill = top2Live.nForSkill;
-  patch.v8_clvTop2Action = clvPolicy.action;
-  patch.v8_netMeanPrior = netLive.netMeanPrior;
-  patch.v8_netClvMeanFor = netLive.meanFor;
-  patch.v8_netClvMeanAg = netLive.meanAg;
-  patch.v8_netClvNFor = netLive.nFor;
-  patch.v8_netClvNAg = netLive.nAg;
-  patch.v8_tapeScore = tapeLive;
-  patch.v8_tapeAction = tapePolicy?.action ?? null;
-  if (tapeSizingLive && tapePolicy && Number.isFinite(tapePolicy.unitsPrePolicy)) {
-    patch.v8_unitsPreTape = tapePolicy.unitsPrePolicy;
-  }
+  // (Skill stamps written above via applySkillFeatureStamps.)
   if (tapeSizingLive && tapePolicy) {
     if (tapePolicy.action === 'MUTE' && unitsBeforeClv > 0) {
       changes.push(
@@ -3099,8 +3290,9 @@ async function main() {
           gameMeta, sportWinnerBoards, clvLedger,
         });
         if (result.skipped) {
-          if (result.reason === 'not_locked_or_lean') stats.skipped_not_locked++;
-          else if (result.reason === 'completed') stats.skipped_completed++;
+          if (result.reason === 'not_locked_or_lean' || result.reason === 'not_locked_or_lean_no_skill_drift') {
+            stats.skipped_not_locked++;
+          } else if (result.reason === 'completed') stats.skipped_completed++;
           else if (result.reason === 'within_t_minus_15') stats.skipped_t15++;
           else if (result.reason === 'within_t_minus_15_needs_rescue') {
             // T-15 rescue write — reconcileSide flagged an undefined
@@ -3181,6 +3373,7 @@ async function main() {
         const group = groups.get(groupKey) || [];
         const stamps = computeBothSidesAnalytics(
           group, mkt, pick.sport, walletProfiles, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn, walletPriorStatsFn,
+          { sportWinnerBoards, clvLedger, pickDate: pick.date || TARGET_DATE },
         );
         if (stamps) {
           stats.ags_both_sides_refreshed++;
@@ -3204,7 +3397,9 @@ async function main() {
   }
   for (const c of changeLog) {
     console.log(`\n${c.sport} ${c.col.replace('sharpFlow', '').toUpperCase()} ${c.team} (${c.docId} / ${c.side})`);
-    console.log(`  Live:     dw=${c.live.delta} dq=${c.live.qualityMargin} HC_m=${c.live.hcMargin} (HC ${c.live.hcConfFor}/${c.live.hcConfAg})`);
+    if (c.live) {
+      console.log(`  Live:     dw=${c.live.delta} dq=${c.live.qualityMargin} HC_m=${c.live.hcMargin} (HC ${c.live.hcConfFor}/${c.live.hcConfAg})`);
+    }
     console.log(`  Expected: lockStage=${c.expectedLockStage || '∅'} · status=${c.expected.status}${c.expected.reason ? ` · ${c.expected.reason}` : ''} tier=${c.expected.tier} units=${c.expected.units}`);
     console.log(`  Changes:  ${c.changes.join(', ')}`);
   }
@@ -3223,7 +3418,19 @@ async function main() {
   console.log(`\n── Whitelist census (${censusLog.length} side(s)) ──`);
   for (const c of censusLog) {
     const cs = c.census;
-    const rankMark = cs.rankRescued ? ' ✓RESCUED' : (cs.rank.qualifies ? ' (qualifies)' : '');
+    if (cs.skillOnly) {
+      console.log(
+        `  ${c.col.replace('sharpFlow', '').toUpperCase()} ${c.docId}/${c.side}: `
+        + `SKILL-ONLY wd=${cs.wdCount} `
+        + `E=${cs.edge == null ? '—' : Number(cs.edge).toFixed(1)} `
+        + `net=${cs.net == null ? '—' : Number(cs.net).toFixed(1)} `
+        + `tape=${cs.tape == null ? '—' : Number(cs.tape).toFixed(2)} `
+        + `bucket=${cs.edgeNetBucket || '—'} `
+        + `score=${cs.skillAgsV12 == null ? '—' : cs.skillAgsV12.toFixed(2)}`
+      );
+      continue;
+    }
+    const rankMark = cs.rankRescued ? ' ✓RESCUED' : (cs.rank?.qualifies ? ' (qualifies)' : '');
     const sharpRoi = Number.isFinite(cs.sharp?.maxQRoi) ? `${cs.sharp.maxQRoi.toFixed(1)}%` : '—';
     const sharpWr = cs.sharp?.meanPWr != null ? cs.sharp.meanPWr.toFixed(1) : '—';
     const sharpMark = cs.sharpRescued ? ' ✓RESCUED' : '';
@@ -3233,7 +3440,7 @@ async function main() {
     console.log(
       `  ${c.col.replace('sharpFlow', '').toUpperCase()} ${c.docId}/${c.side}: `
       + `wd=${cs.wdCount}(${cs.wdSource}) wl=${cs.forW}-${cs.agW} hc=${cs.hcMargin} `
-      + `rank=${cs.rank.backing}-${cs.rank.against}${rankMark} `
+      + `rank=${cs.rank?.backing ?? '—'}-${cs.rank?.against ?? '—'}${rankMark} `
       + `sharp$=${sharpRoi}/wr${sharpWr}${sharpMark} `
       + `dissent=cm${cm == null ? '—' : cm.toFixed(1)}/ms${ms == null ? '—' : ms.toFixed(2)}${pathDMark} `
       + `→ ${cs.stakeTier || '∅'} ${cs.units}u (score=${cs.score == null ? '∅' : cs.score.toFixed(3)})`
