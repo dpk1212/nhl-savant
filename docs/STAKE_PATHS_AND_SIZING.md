@@ -1,22 +1,26 @@
 # Stake paths & unit sizing (production)
 
-_Status: **LIVE** · stack `v12abcde` + **tape sizing** from **2026-07-15** · **EDGE/net Path C + TOP mute** from **2026-07-19**_  
+_Status: **LIVE** · stack `v12abcde` + **tape** (2026-07-15) + **EDGE/net Path C · TOP mute · board-wide soft size** (2026-07-19)_  
 _Code: `scripts/syncPickStateAuthoritative.js` · HC ladder: `src/lib/ags.js` (`agsV12HcStake`) · tape: `src/lib/walletClvSkill.js`_  
-_Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`WINNER_ALIGN_IMPLEMENTATION.md`](./WINNER_ALIGN_IMPLEMENTATION.md) · [`DATA_ASSET_MAP.md`](./DATA_ASSET_MAP.md)_
+_Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`SKILL_FEATURES.md`](./SKILL_FEATURES.md) · [`WINNER_ALIGN_IMPLEMENTATION.md`](./WINNER_ALIGN_IMPLEMENTATION.md)_
 
 ---
 
-## Mental model
+## Where we are (2026-07-19)
 
-| Layer | Job |
-|-------|-----|
-| **AGS v12 score** | Select the side (`score > 0` required to stake) |
-| **Paths A–D** | Decide *who* gets a ticket and the **base unit size** |
-| **FadeTop mute** | Kill toxic “best wallet is against us” tickets |
-| **Tape** | Final size: mute weak / keep mid / boost strong |
-| **T-15 freeze** | Lock units; no further rewrite |
+| Layer | Role | Live rule |
+|-------|------|-----------|
+| **AGS v12** | Side select | `score > 0` or no stake |
+| **Paths A–D** | Who + base u | HC → RANK → SHARP/LEAN → DISSENT |
+| **TOP NEITHER mute** | Hard kill | TOP/TOP+ with E&lt;5 **and** net&lt;5 → **0u** |
+| **FadeTop** | Toxic AG | top AG WR ≥ 60 beating FOR → **0u** |
+| **EDGE/net size** | Soft dial | BOTH ×**1.25** · ONE hold · NEITHER ×**0.5** on MINI/SHARP/CONFIRMED · **RANK exempt** |
+| **Tape** | Final dial | `&lt;0` mute (except **RANK**) · mid hold · `≥2.89` ×**1.35** · fail-open if missing |
+| **T-15** | Freeze | No further rewrite |
 
-**Paths are routers. Tape is the size dial.** EDGE is stamped and fed into tape; it is **not** an independent stake table from 2026-07-15 onward.
+**Paths pick who. EDGE/net scales size. Tape is the last dial.**
+
+Skill metrics (EDGE / netCLV / Tape / bucket) stamp every pre–T-15 cycle — see [`SKILL_FEATURES.md`](./SKILL_FEATURES.md).
 
 ---
 
@@ -28,7 +32,7 @@ _Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`WINNER_ALIGN_IMPLEMENTATION.
 
 2. Path A — HC margin ladder          → SUPER/TOP/MINI/CONFIRMED/MONITORING
    └─ overlays: MINI- (no proven-$) · TOP+ (legacy pre-retune only)
-   └─ TOP/TOP+ EDGE-net mute (2026-07-19+): NEITHER (E<5 & net<5) → 0u
+   └─ TOP/TOP+ EDGE-net hard mute: NEITHER → 0u
 
 3. If still 0u → Path B RANK rescue   → RANK @ 4u
 4. If still 0u → Path C SHARP rescue  → SHARP @ 3u (BOTH) / SHARP-LEAN @ 1.5u (ONE)
@@ -37,9 +41,18 @@ _Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`WINNER_ALIGN_IMPLEMENTATION.
 6. Winner-align fadeTop≥60 mute       → 0u if toxic AG top WR
    └─ EDGE size / WINNER rescue / Policy E  → FROZEN (no unit effect)
 
-7. Tape mute / hold / boost           → final units
-8. Odds cap + global 6u cap
-9. T-15 → freeze
+7. EDGE/net size overlay (soft)
+   └─ BOTH → path × 1.25 (≤6u)
+   └─ ONE  → hold
+   └─ NEITHER → ×0.5 on MINI / MINI- / SHARP* / CONFIRMED
+   └─ RANK / SUPER / DISSENT / null → hold (RANK never shrunk here)
+   └─ missing EDGE and net → fail-open (hold)
+
+8. Tape mute / hold / boost           → final units
+   └─ RANK exempt from tape mute only (still boosts)
+
+9. Odds cap + global 6u cap
+10. T-15 → freeze
 ```
 
 Rescues **never up-size** an already-staked Path A ticket — they only fill `0u` holes.
@@ -54,7 +67,7 @@ Rescues **never up-size** an already-staked Path A ticket — they only fill `0u
 | **2026-06-26** | Path C SHARP rescue (+ MINI- cut; TOP+ boost on) |
 | **2026-07-12** | Path C retune · Path D · Path E winner-align (EDGE stake era) |
 | **2026-07-15** | **Tape sizing** · EDGE stake overrides **frozen** |
-| **2026-07-19** | **Path C = EDGE≥5 / net≥5 → 3u / 1.5u** · **TOP NEITHER mute** · proven-$ Path C retired |
+| **2026-07-19** | **Path C = EDGE/net two-gate** · **TOP NEITHER hard mute** · **board-wide BOTH×1.25 / NEITHER×0.5** · **RANK tape-mute exempt** · proven-$ Path C retired |
 
 ---
 
@@ -82,15 +95,13 @@ Rescues **never up-size** an already-staked Path A ticket — they only fill `0u
 
 Then **oddsCap** (see below).
 
-### Path A overlays (Path C quality gate, still on the HC ticket)
+### Path A overlays
 
-Computed when Path C is live (`≥ 2026-06-26`), using proven-$ + featured WR:
-
-| Starting tier | Gate | Result tier | Units |
-|---------------|------|-------------|------:|
-| `TOP` | proven-$ backer + mean FOR `picks.wr ≥ 50` | `TOP+` @ **5u** | **OFF from 2026-07-12** (retune) |
-| `MINI` | **no** proven-$ backer | `MINI-` | **1u** (kept) |
-| `SUPER` / gate-pass `MINI` / plain `TOP` / `CONFIRMED` | — | unchanged | — |
+| Starting tier | Gate | Result | Notes |
+|---------------|------|--------|-------|
+| `TOP` | proven-$ + mean FOR wr ≥ 50 | `TOP+` @ 5u | **OFF from 2026-07-12** |
+| `MINI` | no proven-$ backer | `MINI-` @ **1u** | kept |
+| `TOP` / `TOP+` | EDGE/net **NEITHER** | **0u** hard mute | from 2026-07-19 |
 
 **Proven-$ backer:** ≥1 FOR wallet with `positions.dollarRoi ≥ 10%` on ≥8 settled positions.
 
@@ -109,13 +120,15 @@ Computed when Path C is live (`≥ 2026-06-26`), using proven-$ + featured WR:
 |------|------:|
 | `RANK` | **4u** → oddsCap |
 
+**Skill exemptions (2026-07-19+):** RANK is **not** shrunk by EDGE/net NEITHER soft size, and is **not** muted by tape `&lt; 0` (still eligible for tape boost). Jun1+ CF: RANK NEITHER stayed ~+11% ROI.
+
 Does **not** up-size SUPER/TOP/MINI already staked.
 
 ---
 
-## Path C — SHARP (EDGE / netCLV mute rescue)
+## Path C — SHARP (EDGE / netCLV rescue door)
 
-**What it is:** When A and B leave **0u**, rescue from wallet skill signals — **EDGE** (featured sport WR) and **netCLV** (causal %+CLV prior).
+**What it is:** When A and B leave **0u**, rescue from wallet skill signals.
 
 **Live from 2026-07-19** (replaces proven-$ / SHARP-PRIME Path C):
 
@@ -123,87 +136,87 @@ Does **not** up-size SUPER/TOP/MINI already staked.
 |------|------|------:|
 | EDGE ≥ 5 **and** netCLV ≥ 5 | `SHARP` | **3u** |
 | Exactly one of those | `SHARP-LEAN` | **1.5u** |
-| Neither (or missing both) | — | **0u** |
+| Neither | — | **0u** |
 
-Requires `score > 0`, still `0u`, not RANK-rescued. Then oddsCap. Never up-sizes A/B.
+Requires `score > 0`, still `0u`, not RANK-rescued. Then oddsCap + soft size + tape. Never up-sizes A/B.
 
-**Also on Path A TOP/TOP+ (same cutover):** if neither gate clears → mute to **0u** (HC still selected the side; skill overlay kills the stake). BOTH/ONE keep HC size.
-
-**Legacy** (2026-06-26 … 2026-07-18): proven-$ + mean `picks.wr` + forCount (+ chalk skip / PRIME 4u). Historical tickets keep those stamps.
+**Legacy** (2026-06-26 … 2026-07-18): proven-$ + mean `picks.wr` + forCount. Historical tickets keep those stamps.
 
 ---
 
 ## Path D — DISSENT (contrib-margin rescue)
 
-**What it is:** Thin “book is contested / against-weighted” poke when A/B/C all miss.
-
 **Qualifies when**
 - `score > 0`, still `0u` after A/B/C  
-- **MLB only**  
-- Odds ≤ **+200**  
-- `contribMargin = Σ FOR contribution − Σ AG contribution ≤ 0`  
-- Max single FOR wallet share of total contribution **&lt; 0.35** (dispersed)
+- **MLB only** · odds ≤ **+200**  
+- `contribMargin ≤ 0` · max FOR share **&lt; 0.35**
 
 | Tier | Units |
 |------|------:|
 | `DISSENT` | **1u** → oddsCap |
 
-Live from **2026-07-12**.
+Live from **2026-07-12**. Not in the soft-NEITHER shrink set (hold through edge-net size).
 
 ---
 
 ## Path E — WINNER / winner-align (historical stake era)
 
-**What it was (2026-07-12 … 2026-07-14):** EDGE mute/size/rescue + Top-Winner Policy E could set or change units (including `WINNER` @ 6/4/3).
+**2026-07-12 … 2026-07-14:** EDGE mute/size/rescue + Policy E could change units.  
+**2026-07-15+:** EDGE still stamped; **fadeTop≥60 mute only**; EDGE size/rescue/Policy E **frozen**.
 
-**What it is now (2026-07-15+):**
-- EDGE **still computed & stamped** (feeds tape)
-- **fadeTop≥60 mute only** (top AG sport WR ≥ 60 and beats top FOR)
-- EDGE size ladders, WINNER rescue, `top_cap` / `top_floor` / `top_junk` → **no unit effect**
+---
 
-Existing T-15-frozen WINNER tickets keep historical size; new cycles do not mint new EDGE rescues.
+## EDGE/net size overlay (2026-07-19+)
+
+Runs **after** paths + fadeTop, **before** tape. Does not change path tier — only units.
+
+| Bucket | Action | Applies to |
+|--------|--------|------------|
+| **BOTH** (E≥5 & net≥5) | path × **1.25** (≤6u, oddsCap) | all staked tiers except already 0u |
+| **ONE** | hold | all |
+| **NEITHER** | path × **0.5** | `MINI`, `MINI-`, `SHARP`, `SHARP-PRIME`, `SHARP-LEAN`, `CONFIRMED` |
+| **NEITHER** | hold | `RANK`, `SUPER`, `DISSENT`, untiered |
+| no EDGE **and** no net | fail-open hold | all |
+
+**TOP/TOP+ NEITHER** is already **0u** upstream (hard mute) — soft shrink never sees those tickets.
+
+Stamps: `v8_edgeNetSizeAction` (`BOOST` \| `HALF` \| `HOLD` \| `PASS`) · `v8_unitsPreEdgeNetSize`
 
 ---
 
 ## Tape — final size modifier (2026-07-15+)
 
 ```
-EDGE   = mean(FOR sport WR) − mean(AG sport WR)     // n≥8 featured WR each
+EDGE   = mean(FOR sport WR) − (mean(AG) ?? 50)
 netCLV = mean(FOR causal %+CLV) − (mean(AG) ?? 62)
 tape   = 1.5·(EDGE/10) + 2·(netCLV/10)
 ```
 
 | Tape | Action | Units |
 |------|--------|-------|
-| missing | **FAIL_OPEN** | keep path units |
-| **&lt; 0** | **MUTE** | **0u** (`mutedBy = tape-weak`) |
-| mid | **HOLD** | path units unchanged |
-| **≥ 2.89** | **BOOST** | path × **1.35**, then oddsCap, then **≤ 6u** |
+| missing | **FAIL_OPEN** | keep post–edge-net units |
+| **&lt; 0** | **MUTE** → 0u | except **RANK** → HOLD |
+| mid | **HOLD** | unchanged |
+| **≥ 2.89** | **BOOST** | × **1.35**, oddsCap, ≤ **6u** |
 
-Thresholds ≈ June 15+ path-stamped book p40 / p80. Refresh if distribution drifts.
-
-**Replaces** the old CLV-top2 cancel/boost unit gate (top2 still stamped for audit only).
+Details: [`TAPE_SIZING.md`](./TAPE_SIZING.md).
 
 ---
 
 ## How every final unit size is reached
 
-Worked examples (illustrative; oddsCap may shrink plus-money):
+| Situation | Path | After edge-net | After tape | Final |
+|-----------|------|----------------|------------|------:|
+| TOP, BOTH, tape mid | 4u | ×1.25 → 5u | hold | **5u** |
+| TOP, NEITHER | 4u | hard mute | — | **0u** |
+| MINI, NEITHER, tape mid | 3u | ×0.5 → 1.5u | hold | **1.5u** |
+| MINI, BOTH, tape ≥2.89 | 3u | ×1.25 → 3.75u | ×1.35 | **~5.1u** |
+| RANK, tape &lt; 0 | 4u | hold | mute-exempt HOLD | **4u** |
+| RANK, tape ≥2.89 | 4u | hold | ×1.35 | **5.4u** |
+| SHARP BOTH (Path C) | 3u | ×1.25 → 3.75u | hold | **3.75u** |
+| Any, fadeTop≥60 | Nu | — | — | **0u** |
 
-| Situation | Path base | After mute/tape | Final |
-|-----------|-----------|-----------------|------:|
-| HC margin 2, tape mid | SUPER 6u | hold | **6u** |
-| HC margin 1, tape ≥ 2.89 | TOP 4u | ×1.35 | **5.4u** |
-| HC margin 1, tape &lt; 0 | TOP 4u | mute | **0u** |
-| Mini-HC, no proven-$ | MINI → MINI- 1u | hold | **1u** |
-| HC 0u, 2-for-0 whitelist | RANK 4u | hold | **4u** |
-| HC+RANK 0u, proven-$ prime, tape strong | SHARP-PRIME 4u | ×1.35 | **5.4u** |
-| A/B/C 0u, MLB dissent qualifies | DISSENT 1u | hold | **1u** |
-| Any path, fadeTop≥60 | (was Nu) | fade mute | **0u** |
-| Any path, no tape score | Nu | fail-open | **Nu** |
-| SUPER 6u already at cap, tape boost | 6u | ×1.35 → cap | **6u** |
-
-### Odds caps (applied on path sizes and again on tape boost)
+### Odds caps
 
 | American odds | Max units |
 |---------------|----------:|
@@ -216,19 +229,17 @@ Worked examples (illustrative; oddsCap may shrink plus-money):
 
 ## Unit cheat sheet (base → possible finals)
 
-| Tier | Base u | Common finals after tape |
-|------|-------:|--------------------------|
-| SUPER | 6 | 0 (mute) · 6 (hold/boost-capped) |
-| TOP | 4 | 0 · 4 · **5.4** (boost) |
-| TOP+ | 5 | legacy only (pre-2026-07-12) |
-| MINI | 3 | 0 · 3 · **4.05** (boost) |
-| MINI- | 1 | 0 · 1 · **1.35** (boost) |
-| CONFIRMED | 1 | 0 · 1 · **1.35** |
-| RANK | 4 | 0 · 4 · **5.4** |
-| SHARP | 3 | 0 · 3 · **4.05** |
-| SHARP-PRIME | 4 | 0 · 4 · **5.4** |
+| Tier | Base u | After soft size + tape (typical) |
+|------|-------:|----------------------------------|
+| SUPER | 6 | 0 (tape mute) · 6 (hold/boost-capped) |
+| TOP | 4 | 0 (NEITHER or tape) · 4 · **5** (BOTH) · **5.4** (tape boost) |
+| MINI | 3 | 0 · **1.5** (NEITHER half) · 3 · **~5** (BOTH+boost) |
+| MINI- | 1 | 0 · **0.5** · 1 · **1.35** |
+| CONFIRMED | 1 | 0 · **0.5** · 1 · **1.35** |
+| RANK | 4 | 4 (tape-mute exempt) · **5.4** (boost) |
+| SHARP | 3 | 0 · **1.5** · **3.75** · **~5** |
+| SHARP-LEAN | 1.5 | 0 · **0.75** · **1.875** · **~2.5** |
 | DISSENT | 1 | 0 · 1 · **1.35** |
-| WINNER | 3–6 | historical; not newly sized by EDGE |
 | MONITORING / FADE | 0 | 0 |
 
 ---
@@ -237,35 +248,50 @@ Worked examples (illustrative; oddsCap may shrink plus-money):
 
 | Field | Meaning |
 |-------|---------|
-| `v8_hcStakeTier` | Path product tier (`SUPER`, `RANK`, `SHARP`, …) |
-| `finalUnits` | Canonical stake size |
-| `v8_winnerAlignEdge` | EDGE (tape input) |
-| `v8_tapeScore` / `v8_tapeAction` | Tape composite + `MUTE\|HOLD\|BOOST\|FAIL_OPEN` |
-| `v8_netMeanPrior` | netCLV |
-| `v8_forTop2PctPos` | Legacy top2 (diagnostic only post-2026-07-15) |
+| `v8_hcStakeTier` | Path tier |
+| `finalUnits` | Canonical stake |
+| `v8_edgeNetBucket` | `BOTH` \| `ONE` \| `NEITHER` |
+| `v8_edgeNetSizeAction` | `BOOST` \| `HALF` \| `HOLD` \| `PASS` |
+| `v8_unitsPreEdgeNetSize` | Units before soft size |
+| `v8_tapeScore` / `v8_tapeAction` | Tape + `MUTE\|HOLD\|BOOST\|FAIL_OPEN` |
+| `v8_unitsPreTape` | Units entering tape (after soft size) |
+| `v8_winnerAlignEdge` / `v8_netMeanPrior` | EDGE / netCLV |
 | `mutedBy` | `winner_align_fade` · `tape-weak` · … |
+
+Full schema: [`SKILL_FEATURES.md`](./SKILL_FEATURES.md).
 
 ---
 
 ## Display grouping (UI / report)
 
-Internal paths roll up to five user-facing bands (`AGS_V12_DISPLAY_TIERS`):
-
 | Display | Paths | Typical u |
 |---------|-------|-----------|
 | MAX PLAY | SUPER | 6 |
-| TOP PICK | TOP, TOP+ | 4–5 |
-| SHARP PLAY | RANK, SHARP, SHARP-LEAN, SHARP-PRIME, WINNER | 1.5–6 |
-| STRONG | MINI | 3 |
-| LEAN | CONFIRMED, MINI-, DISSENT | 1 |
+| TOP PICK | TOP, TOP+ | 4–5.4 |
+| SHARP PLAY | RANK, SHARP, SHARP-LEAN, SHARP-PRIME, WINNER | 0.75–6 |
+| STRONG | MINI | 1.5–5 |
+| LEAN | CONFIRMED, MINI-, DISSENT | 0.5–1.35 |
+
+---
+
+## Evidence snapshot (Jun1+ actual staked CF)
+
+| Policy | Tickets/day | PnL | ROI |
+|--------|------------:|----:|----:|
+| Path only | ~9.7 | +43u | 3.4% |
+| Tape alone | ~7.0 | +103u | 10.5% |
+| Soft gate on tape (shipped intent) | ~7.0 | +114u | 11.9% |
+
+Soft stack ≈ **+11u / +1.4pp ROI** on top of live tape with **flat daily ticket count**.
 
 ---
 
 ## Operator checklist
 
 1. Score must be **> 0** or nothing stakes.  
-2. Prefer reading **`v8_hcStakeTier` + `finalUnits` + `v8_tapeAction`**.  
-3. `0u` with `tape-weak` = intentional skip, not a sync bug.  
-4. `0u` with `winner_align_fade` = fadeTop mute.  
-5. Missing tape → fail-open path size (by design).  
-6. Push `main` so cron runs this stack; T-15 already-frozen tickets keep old units.
+2. Read **`v8_hcStakeTier` + `finalUnits` + `v8_edgeNetBucket` + `v8_edgeNetSizeAction` + `v8_tapeAction`**.  
+3. `0u` + `tape-weak` = tape skip (RANK should not get this).  
+4. `0u` + TOP tier + bucket NEITHER = intentional TOP mute.  
+5. `HALF` = soft NEITHER shrink — ticket stays on the board at half size.  
+6. Missing tape → fail-open; missing both EDGE and net → soft-size fail-open.  
+7. Deploy `main` so fetch cron runs this SHA; restamp pre–T-15 ACTIVE; graded/T-15 frozen keep old units.

@@ -506,6 +506,7 @@ function computeRankSlice(walletDetails, mySide, sport, walletProfiles) {
 const SHARP_LIVE_FROM   = '2026-06-26';  // original Path C cutover
 const SHARP_C_RETUNE_FROM = '2026-07-12'; // optimal-levels cutover (include today; was 07-13)
 const SHARP_C_EDGE_NET_FROM = '2026-07-19'; // EDGE/net two-gate Path C + TOP NEITHER mute
+const EDGE_NET_SIZE_FROM = '2026-07-19'; // board-wide BOTH boost / soft NEITHER shrink + RANK tape-exempt
 const SHARP_MIN_QN      = 8;             // min settled positions for a $ROI read
 const SHARP_MIN_QROI    = 10;            // positions.dollarRoi threshold (%)
 const SHARP_MIN_PN      = 5;             // min settled picks to count toward wr
@@ -519,8 +520,14 @@ const SHARP_PRIME_UNITS = 4;             // legacy SHARP-PRIME only
 const SHARP_LEAN_UNITS  = 1.5;           // ONE-gate lean stake (edge-net era)
 const SHARP_EDGE_THR    = 5;
 const SHARP_NET_THR     = 5;
+const EDGE_NET_BOTH_MULT = 1.25;         // BOTH gate → path × 1.25 (cap 6u)
+const EDGE_NET_NEITHER_SOFT_MULT = 0.5;  // soft shrink (not mute) on MINI/SHARP/CONFIRMED
 const TOP_BOOST_UNITS   = 5;             // HC-1 TOP + proven-$ → boost 4u → 5u (pre-retune only)
 const MINI_REDUCED_UNITS = 1;            // gate-fail MINI (no proven-$) → 3u → 1u
+/** NEITHER soft-shrink tiers (TOP/TOP+ stay hard-muted earlier; RANK exempt). */
+const EDGE_NET_SOFT_NEITHER_TIERS = new Set([
+  'MINI', 'MINI-', 'SHARP', 'SHARP-PRIME', 'SHARP-LEAN', 'CONFIRMED',
+]);
 function isSharpRescueLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= SHARP_LIVE_FROM;
 }
@@ -529,6 +536,58 @@ function isSharpCRetuneLive(pickDate) {
 }
 function isSharpCEdgeNetLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= SHARP_C_EDGE_NET_FROM;
+}
+function isEdgeNetSizeLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= EDGE_NET_SIZE_FROM;
+}
+/**
+ * Board-wide EDGE/net size overlay (after paths + fadeTop, before tape).
+ * BOTH → ×1.25 · ONE hold · NEITHER soft ×0.5 on MINI/SHARP/CONFIRMED · RANK hold.
+ * TOP/TOP+ NEITHER hard mute stays upstream (0u before this runs).
+ */
+function applyEdgeNetSizeOverlay({
+  units,
+  bucket,
+  tier,
+  edge = null,
+  net = null,
+  odds = null,
+  oddsCapFn = null,
+  unitCap = GLOBAL_UNIT_CAP,
+} = {}) {
+  const pre = Number.isFinite(units) ? Math.max(0, units) : 0;
+  if (!(pre > 0)) {
+    return { units: 0, action: 'PASS', reason: null, unitsPrePolicy: pre };
+  }
+  if (tier === 'RANK') {
+    return { units: pre, action: 'HOLD', reason: 'rank_exempt', unitsPrePolicy: pre };
+  }
+  // Fail-open when neither metric could be scored (don't treat missing as NEITHER).
+  const hasEdge = edge != null && Number.isFinite(Number(edge));
+  const hasNet = net != null && Number.isFinite(Number(net));
+  if (!hasEdge && !hasNet) {
+    return { units: pre, action: 'HOLD', reason: 'fail_open_no_metrics', unitsPrePolicy: pre };
+  }
+  if (bucket === 'BOTH') {
+    let out = Math.min(unitCap, pre * EDGE_NET_BOTH_MULT);
+    if (typeof oddsCapFn === 'function') out = oddsCapFn(out, odds);
+    out = Math.min(unitCap, Math.round(out * 100) / 100);
+    if (Math.abs(out - pre) < 0.01) {
+      return { units: pre, action: 'HOLD', reason: null, unitsPrePolicy: pre };
+    }
+    return { units: out, action: 'BOOST', reason: 'edge_net_both', unitsPrePolicy: pre };
+  }
+  if (bucket === 'ONE') {
+    return { units: pre, action: 'HOLD', reason: null, unitsPrePolicy: pre };
+  }
+  // NEITHER
+  if (EDGE_NET_SOFT_NEITHER_TIERS.has(tier)) {
+    let out = Math.round(pre * EDGE_NET_NEITHER_SOFT_MULT * 100) / 100;
+    if (typeof oddsCapFn === 'function') out = oddsCapFn(out, odds);
+    out = Math.max(0, Math.round(out * 100) / 100);
+    return { units: out, action: 'HALF', reason: 'edge_net_neither_soft', unitsPrePolicy: pre };
+  }
+  return { units: pre, action: 'HOLD', reason: null, unitsPrePolicy: pre };
 }
 function sharpMinFor(pickDate) {
   return isSharpCRetuneLive(pickDate) ? SHARP_MIN_FOR_RETUNE : SHARP_MIN_FOR_LEGACY;
@@ -546,7 +605,7 @@ function edgeNetGateBucket(edge, net, eThr = SHARP_EDGE_THR, nThr = SHARP_NET_TH
 }
 
 /** Skill-feature stamp schema version — bump when fields/thresholds change. */
-const SKILL_FEATURE_VERSION = 2; // v2: edgeNet gate stamps + all-sides metric pass
+const SKILL_FEATURE_VERSION = 3; // v3: edge-net size overlay stamps (BOTH boost / NEITHER half)
 
 /**
  * Full EDGE / netCLV / Tape bundle for analysis without rebuild.
@@ -591,7 +650,12 @@ function buildSkillFeatureBundle({
 }
 
 /** Write canonical skill stamps onto a patch/create object (mutates target). */
-function applySkillFeatureStamps(target, bundle, now, { tapeAction = null, unitsPreTape = null } = {}) {
+function applySkillFeatureStamps(target, bundle, now, {
+  tapeAction = null,
+  unitsPreTape = null,
+  edgeNetSizeAction = null,
+  unitsPreEdgeNetSize = null,
+} = {}) {
   const wa = bundle.winnerAlign;
   if (wa) {
     target.v8_winnerAlignEdge = wa.edge;
@@ -629,6 +693,10 @@ function applySkillFeatureStamps(target, bundle, now, { tapeAction = null, units
   target.v8_edgeNetBucket = bundle.edgeNetBucket;
   target.v8_edgeGateThr = SHARP_EDGE_THR;
   target.v8_netGateThr = SHARP_NET_THR;
+  if (edgeNetSizeAction != null) target.v8_edgeNetSizeAction = edgeNetSizeAction;
+  if (unitsPreEdgeNetSize != null && Number.isFinite(unitsPreEdgeNetSize)) {
+    target.v8_unitsPreEdgeNetSize = unitsPreEdgeNetSize;
+  }
   target.v8_skillFeatureVersion = SKILL_FEATURE_VERSION;
   target.v8_skillEvaluatedAt = now;
 }
@@ -1416,6 +1484,7 @@ async function createMissingLockedPicks({
           hcStakeTierCreate = 'MINI-';
         }
       }
+      let edgeNetSizeCreate = null;
       if (createV121Eligible && isSharpCEdgeNetLive(TARGET_DATE) && scoreV12 > 0) {
         const createBucket = edgeNetGateBucket(waCreateEdge?.edge ?? null, netCreate.netMeanPrior);
         // TOP / TOP+ NEITHER → mute
@@ -1437,17 +1506,44 @@ async function createMissingLockedPicks({
             hcStakeTierCreate = 'SHARP-LEAN';
           }
         }
+        // Board-wide soft size overlay (BOTH boost / NEITHER half) before tape
+        if (isEdgeNetSizeLive(TARGET_DATE) && peakUnitsApplied > 0) {
+          edgeNetSizeCreate = applyEdgeNetSizeOverlay({
+            units: peakUnitsApplied,
+            bucket: createBucket,
+            tier: hcStakeTierCreate,
+            edge: waCreateEdge?.edge ?? null,
+            net: netCreate.netMeanPrior,
+            odds: odds ?? null,
+            oddsCapFn: oddsCap,
+            unitCap: GLOBAL_UNIT_CAP,
+          });
+          peakUnitsApplied = edgeNetSizeCreate.units;
+        }
       }
       const tapeCreate = computeTapeScore(waCreateEdge?.edge ?? null, netCreate.netMeanPrior);
       let clvPolicyCreate;
       if (isTapeSizingLive(TARGET_DATE)) {
-        clvPolicyCreate = applyTapeUnitPolicy({
-          units: peakUnitsApplied,
-          odds: odds ?? null,
-          tape: tapeCreate,
-          oddsCapFn: oddsCap,
-          unitCap: GLOBAL_UNIT_CAP,
-        });
+        // RANK exempt from tape mute (still eligible for HOLD/BOOST)
+        const rankTapeMuteExempt = hcStakeTierCreate === 'RANK'
+          && tapeCreate != null && tapeCreate < TAPE_MUTE_BELOW;
+        if (rankTapeMuteExempt) {
+          clvPolicyCreate = {
+            units: peakUnitsApplied,
+            action: 'HOLD',
+            reason: 'rank_tape_mute_exempt',
+            mutedBy: null,
+            unitsPrePolicy: peakUnitsApplied,
+          };
+        } else {
+          clvPolicyCreate = applyTapeUnitPolicy({
+            units: peakUnitsApplied,
+            odds: odds ?? null,
+            tape: tapeCreate,
+            oddsCapFn: oddsCap,
+            unitCap: GLOBAL_UNIT_CAP,
+          });
+        }
         // Map tape action into create stamps (reuse clvTop2Action field sparingly —
         // primary action lives on v8_tapeAction).
         peakUnitsApplied = clvPolicyCreate.units;
@@ -1597,6 +1693,10 @@ async function createMissingLockedPicks({
           tapeAction: isTapeSizingLive(TARGET_DATE) ? clvPolicyCreate.action : clvPolicyCreate.action,
           unitsPreTape: (isTapeSizingLive(TARGET_DATE) && Number.isFinite(clvPolicyCreate.unitsPrePolicy))
             ? clvPolicyCreate.unitsPrePolicy
+            : null,
+          edgeNetSizeAction: edgeNetSizeCreate?.action ?? null,
+          unitsPreEdgeNetSize: (edgeNetSizeCreate && Number.isFinite(edgeNetSizeCreate.unitsPrePolicy))
+            ? edgeNetSizeCreate.unitsPrePolicy
             : null,
         });
         v8Stamps.v8_winnerAlignAction = null;
@@ -2353,9 +2453,32 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     }
   }
 
-  // ─── TAPE / CLV unit policy (after paths + winner-align mute) ──────────
+  // ─── EDGE/net size overlay (after paths + fadeTop, before tape) ────────
+  // BOTH → ×1.25 · ONE hold · NEITHER ×0.5 on MINI/SHARP/CONFIRMED · RANK hold.
+  // TOP/TOP+ NEITHER already hard-muted upstream. Jun1+ CF soft stack ~+11u
+  // on top of tape with ~flat daily ticket count.
+  let edgeNetSizePolicy = null;
+  if (isEdgeNetSizeLive(pickDate)
+      && appliedStatus === 'ACTIVE'
+      && finalUnitsApplied > 0
+      && !(Number.isFinite(sd.manualStake) && sd.manualStake > 0)) {
+    edgeNetSizePolicy = applyEdgeNetSizeOverlay({
+      units: finalUnitsApplied,
+      bucket: edgeNetBucket,
+      tier: hcStakeTier,
+      edge: winnerAlign?.edge ?? null,
+      net: netLive.netMeanPrior,
+      odds: sideOdds,
+      oddsCapFn: oddsCap,
+      unitCap: GLOBAL_UNIT_CAP,
+    });
+    finalUnitsApplied = edgeNetSizePolicy.units;
+  }
+
+  // ─── TAPE / CLV unit policy (after paths + edge-net size + winner mute) ─
   // Tape era (2026-07-15+): mute weak / keep mid / boost strong on path units.
   //   tape = 1.5·(EDGE/10) + 2·(netCLV/10); fail-open when unscored.
+  // RANK exempt from tape mute (still gets HOLD/BOOST) — RANK NEITHER was +11% ROI.
   // Pre-tape: legacy CLV top2 cancel≤59 / boost≥74 (fail-closed if missing).
   // netLive already computed above (shared with Path C / TOP mute).
   const top2Live = computeForTop2PctPos(wd, side, pickDate, clvLedger);
@@ -2364,13 +2487,25 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   let tapePolicy = null;
   const unitsBeforeClv = finalUnitsApplied;
   if (tapeSizingLive) {
-    tapePolicy = applyTapeUnitPolicy({
-      units: finalUnitsApplied,
-      odds: sideOdds,
-      tape: tapeLive,
-      oddsCapFn: oddsCap,
-      unitCap: GLOBAL_UNIT_CAP,
-    });
+    const rankTapeMuteExempt = hcStakeTier === 'RANK'
+      && tapeLive != null && tapeLive < TAPE_MUTE_BELOW;
+    if (rankTapeMuteExempt) {
+      tapePolicy = {
+        units: finalUnitsApplied,
+        action: 'HOLD',
+        reason: 'rank_tape_mute_exempt',
+        mutedBy: null,
+        unitsPrePolicy: unitsBeforeClv,
+      };
+    } else {
+      tapePolicy = applyTapeUnitPolicy({
+        units: finalUnitsApplied,
+        odds: sideOdds,
+        tape: tapeLive,
+        oddsCapFn: oddsCap,
+        unitCap: GLOBAL_UNIT_CAP,
+      });
+    }
     finalUnitsApplied = tapePolicy.units;
     // Diagnostic-only top2 stamp (no unit effect)
     clvPolicy = {
@@ -2652,6 +2787,15 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       + `net=${netLive.netMeanPrior == null ? '—' : Number(netLive.netMeanPrior).toFixed(1)}) → mute 0u`
     );
   }
+  if (edgeNetSizePolicy && (edgeNetSizePolicy.action === 'BOOST' || edgeNetSizePolicy.action === 'HALF')) {
+    changes.push(
+      `EDGE-NET-SIZE: ${edgeNetBucket} ${edgeNetSizePolicy.action} `
+      + `${edgeNetSizePolicy.unitsPrePolicy}u → ${edgeNetSizePolicy.units}u (${hcStakeTier})`
+    );
+  }
+  if (tapePolicy?.reason === 'rank_tape_mute_exempt') {
+    changes.push(`TAPE: RANK mute-exempt (tape=${tapeLive == null ? '—' : Number(tapeLive).toFixed(2)}) → keep ${unitsBeforeClv}u`);
+  }
   if (rankRescued) {
     changes.push(`RANK-RESCUE: 2-for-0 slice promoted HC-muted pick → ${RANK_RESCUE_UNITS}u`);
   }
@@ -2686,17 +2830,23 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       unitsPreTape: (tapeSizingLive && tapePolicy && Number.isFinite(tapePolicy.unitsPrePolicy))
         ? tapePolicy.unitsPrePolicy
         : null,
+      edgeNetSizeAction: edgeNetSizePolicy?.action ?? null,
+      unitsPreEdgeNetSize: (edgeNetSizePolicy && Number.isFinite(edgeNetSizePolicy.unitsPrePolicy))
+        ? edgeNetSizePolicy.unitsPrePolicy
+        : null,
     });
     patch.v8_winnerAlignAction = winnerAlignAction;
     patch.v8_clvTop2Action = clvPolicy.action;
     if (scoreV12Live != null) patch.v8_skillAgsV12 = scoreV12Live;
     // Force write when schema/gate stamps are new or metrics moved — even if units flat.
-    if (skillStampsDrifted(sd, skillLive, { tapeAction: tapePolicy?.action ?? null })) {
+    if (skillStampsDrifted(sd, skillLive, { tapeAction: tapePolicy?.action ?? null })
+        || (edgeNetSizePolicy && (sd.v8_edgeNetSizeAction || null) !== edgeNetSizePolicy.action)) {
       changes.push(
         `SKILL-FEATURES: E=${skillLive.edge == null ? '—' : Number(skillLive.edge).toFixed(1)} `
         + `net=${skillLive.netMeanPrior == null ? '—' : Number(skillLive.netMeanPrior).toFixed(1)} `
         + `tape=${skillLive.tape == null ? '—' : Number(skillLive.tape).toFixed(2)} `
-        + `bucket=${skillLive.edgeNetBucket}`,
+        + `bucket=${skillLive.edgeNetBucket}`
+        + (edgeNetSizePolicy?.action ? ` size=${edgeNetSizePolicy.action}` : ''),
       );
     }
   }

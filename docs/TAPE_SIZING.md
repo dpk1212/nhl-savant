@@ -1,7 +1,7 @@
 # Tape sizing (shipped 2026-07-15)
 
-_Status: **LIVE** from `TAPE_SIZING_LIVE_FROM = 2026-07-15` · paths keep base units · tape mutes/boosts._  
-_Full path + unit walkthrough: [`STAKE_PATHS_AND_SIZING.md`](./STAKE_PATHS_AND_SIZING.md)._
+_Status: **LIVE** from `TAPE_SIZING_LIVE_FROM = 2026-07-15` · **RANK mute-exempt** from **2026-07-19**_  
+_Full stack: [`STAKE_PATHS_AND_SIZING.md`](./STAKE_PATHS_AND_SIZING.md) · metrics: [`SKILL_FEATURES.md`](./SKILL_FEATURES.md)_
 
 ## Rule
 
@@ -11,61 +11,59 @@ EDGE  = mean(FOR sport WR) − (mean(AG sport WR) ?? 50)
 netCLV = mean(FOR causal %+CLV) − (mean(AG %+CLV) ?? 62)
 ```
 
-FOR-side components (`v8_winnerAlignMeanFor`, `v8_netClvMeanFor`) always stamp when FOR skill exists — including unopposed sides — so WIN/LOSS analysis keeps a full underlying profile. EDGE uses AG prior **50** when nobody is against (same idea as netCLV’s AG prior 62).
+FOR-side components always stamp when FOR skill exists (including unopposed). EDGE uses AG prior **50** when nobody is against; netCLV uses AG prior **62**.
 
 | Tape | Action |
 |------|--------|
-| missing | **fail-open** — keep path units |
-| `< 0` | **mute** → 0u (`mutedBy = tape-weak`) |
-| mid | **hold** path units |
-| `≥ 2.89` | **boost** path × 1.35 (oddsCap, 6u max) |
+| missing | **fail-open** — keep units entering tape |
+| `< 0` | **mute** → 0u (`mutedBy = tape-weak`) · **except RANK → HOLD** |
+| mid | **hold** |
+| `≥ 2.89` | **boost** × 1.35 (oddsCap, 6u max) — all tiers including RANK |
 
-Thresholds ≈ June 15+ path-stamped p40 / p80. Refresh later if distribution drifts.
+Thresholds ≈ June 15+ path-stamped p40 / p80.
 
 ## Pipeline order (pre-T-15)
 
-1. Paths A HC → B RANK → C SHARP → D DISSENT (base units + tier)
-2. Winner-align **fadeTop≥60 mute only** (EDGE size / rescue / Policy E **frozen**)
-3. **Tape** mute / hold / boost
-4. Odds cap + global 6u already inside tape boost
+1. Paths A → B → C → D (base units + tier)  
+2. TOP/TOP+ NEITHER hard mute  
+3. Winner-align **fadeTop≥60 mute only**  
+4. **EDGE/net soft size** (BOTH ×1.25 / NEITHER ×0.5 on MINI/SHARP/CONFIRMED)  
+5. **Tape** mute / hold / boost (RANK mute-exempt)  
+6. Odds cap + global 6u inside tape boost  
 
-## What was frozen
+`v8_unitsPreTape` = units **after** edge-net soft size, **before** tape.
 
-EDGE-driven stake overrides from winner-align (live 2026-07-12 … 2026-07-14 only):
+## RANK mute exempt (2026-07-19+)
 
-- EDGE size ladders on A/B/C/D/WINNER
-- WINNER rescue @ 6/4/3 by EDGE band
-- Top-Winner Policy E (`top_cap` / `top_floor` / `top_junk`)
-- EDGE≤−5 mute (fadeTop60 mute **kept**)
+Jun1+ CF: RANK tickets with weak tape / NEITHER still printed ~**+11% ROI**. Tape still **boosts** strong RANK; it no longer zeros weak RANK.
 
-EDGE is still **computed and stamped** — it feeds tape.
+Stamp: `v8_tapeAction = HOLD` with reconcile reason `rank_tape_mute_exempt`.
+
+## What was frozen (2026-07-15)
+
+EDGE-driven stake overrides from winner-align (2026-07-12 … 2026-07-14):
+
+- EDGE size ladders · WINNER rescue · Policy E · EDGE≤−5 mute  
+
+fadeTop60 mute **kept**. EDGE still computed — feeds tape + edge-net size.
 
 ## Stamps
-
-Full EDGE / netCLV / Tape / gate schema (both poles, no rebuild): **[`SKILL_FEATURES.md`](./SKILL_FEATURES.md)**.
 
 | Field | Meaning |
 |-------|---------|
 | `v8_tapeScore` | composite tape |
-| `v8_tapeEdgeTerm` / `v8_tapeNetTerm` | Tape addends |
+| `v8_tapeEdgeTerm` / `v8_tapeNetTerm` | addends |
 | `v8_tapeAction` | `MUTE` \| `HOLD` \| `BOOST` \| `FAIL_OPEN` \| `PASS` |
-| `v8_unitsPreTape` | path units before tape mute/boost (daily-report CF) |
-| `v8_netMeanPrior` | netCLV |
-| `v8_netClvMeanFor` / `MeanAg` / `NFor` / `NAg` | components |
-| `v8_winnerAlignEdge` | EDGE (input) |
-| `v8_edgeNetBucket` | `BOTH` \| `ONE` \| `NEITHER` (E≥5 / net≥5) |
-| `v8_forTop2PctPos` | legacy top2 (diagnostic only; no unit effect post-cutover) |
-| `agsBothSides.*.tape` / `.edge` / `.netMeanPrior` | both poles on the doc |
-
-**Daily report:** `DAILY_AGSU_REPORT.md` § 5e (TAPE impact) · **§ 5f Side Profile** (WIN vs LOSS depth+quality from 2026-07-15+) · § 11 audit trail.
+| `v8_unitsPreTape` | units entering tape |
+| `v8_edgeNetBucket` | BOTH / ONE / NEITHER |
+| `v8_edgeNetSizeAction` | soft size action before tape |
 
 ## Code
 
-- `src/lib/walletClvSkill.js` — `computeNetMeanPrior`, `computeTapeScore`, `applyTapeUnitPolicy`, `causalPctPos`
-- `scripts/syncPickStateAuthoritative.js` — create + reconcile (stamps netCLV / tape / unitsPreTape)
-- `scripts/exportWalletProfiles.js` — persists per-wallet `clvSkill.pctPos` to `sharpWalletProfiles` every 2h (`grade-sharp-actions`) so UI + tape share one standing skill score
-- `scripts/dailyAgsUReport.js` — § 5e impact + § 11 audit trail
+- `src/lib/walletClvSkill.js` — `computeTapeScore`, `applyTapeUnitPolicy`
+- `scripts/syncPickStateAuthoritative.js` — create + reconcile (RANK exempt at call site)
+- `scripts/dailyAgsUReport.js` — § 5e TAPE impact
 
-## Evidence (June 15+ path-stamped CF)
+## Evidence
 
-Mute weak + boost strong on path units: **+20u → +61u** (+41u), mostly from zeroing weak-tape losses.
+Path-stamped CF: mute weak + boost strong ≈ **+60u** vs path-only on Jun1+ actuals (most of the skill-sizing lift). Soft edge-net on top adds ~**+11u** with flat ticket volume.
