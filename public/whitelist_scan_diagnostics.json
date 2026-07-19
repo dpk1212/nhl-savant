@@ -1,23 +1,23 @@
 {
-  "scannedAt": "2026-07-19T23:05:33.938Z",
-  "elapsedSec": 14,
+  "scannedAt": "2026-07-19T23:09:36.153Z",
+  "elapsedSec": 14.2,
   "phase": "PHASE_2_MERGE_ENABLED",
-  "todayGamesCount": 33,
+  "todayGamesCount": 32,
   "summary": {
     "total": 200,
     "coveredByMain": 7,
     "recovered": 17,
-    "recoveredPositions": 54,
+    "recoveredPositions": 57,
     "noPositions": 176,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 5,
+      "ml": 6,
       "spread": 3,
       "total": 0,
       "dropped_shadow_gate": 19,
-      "dropped_excluded": 27,
+      "dropped_excluded": 29,
       "dropped_duplicate": 0
     }
   },
@@ -294,12 +294,21 @@
       "sports": "SOC,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x032eb1bc893940263ad0b01889f262fc232f2a9e",
-      "positionsCount": 1,
+      "positionsCount": 2,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 18444,
-      "willPassShadowGate": 1,
+      "willPassShadowGate": 2,
       "willDropAtShadowGate": 0,
       "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "lad_nyy",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 9808,
+          "entryLine": null,
+          "passesShadow": true
+        },
         {
           "sport": "WNBA",
           "gameKey": "nyl_dal",
@@ -440,7 +449,7 @@
           "gameKey": "lad_nyy",
           "marketType": "ml",
           "side": "away",
-          "invested": 24749,
+          "invested": 33979,
           "entryLine": null,
           "passesShadow": true
         }
@@ -808,10 +817,10 @@
       "sports": "MLB,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
-      "positionsCount": 12,
+      "positionsCount": 13,
       "statsSource": "sports_sharps",
       "avgSportBet": 1284,
-      "willPassShadowGate": 12,
+      "willPassShadowGate": 13,
       "willDropAtShadowGate": 0,
       "positions": [
         {
@@ -830,6 +839,24 @@
           "side": "home",
           "invested": 9296,
           "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "lad_nyy",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 5581,
+          "entryLine": -1.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "lad_nyy",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 5378,
+          "entryLine": 1.5,
           "passesShadow": true
         },
         {
@@ -911,15 +938,6 @@
           "side": "home",
           "invested": 202,
           "entryLine": -2.5,
-          "passesShadow": true
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "lad_nyy",
-          "marketType": "spread",
-          "side": "away",
-          "invested": 223,
-          "entryLine": -1.5,
           "passesShadow": true
         }
       ]
@@ -1800,7 +1818,7 @@
           "gameKey": "lad_nyy",
           "marketType": "spread",
           "side": "away",
-          "invested": 255,
+          "invested": 594,
           "entryLine": -1.5,
           "passesShadow": false
         },
@@ -2049,10 +2067,10 @@
       "sports": "SOC,NBA,MLB",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x3dfb153c197d4c19d3b31c1ecd2c7b6860eeabaf",
-      "positionsCount": 2,
+      "positionsCount": 3,
       "statsSource": "sports_sharps",
       "avgSportBet": 32070,
-      "willPassShadowGate": 2,
+      "willPassShadowGate": 3,
       "willDropAtShadowGate": 0,
       "positions": [
         {
@@ -2069,8 +2087,17 @@
           "gameKey": "lad_nyy",
           "marketType": "ml",
           "side": "home",
-          "invested": 80309,
+          "invested": 88685,
           "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "lad_nyy",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 25094,
+          "entryLine": 1.5,
           "passesShadow": true
         }
       ]
