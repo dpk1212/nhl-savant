@@ -79,6 +79,8 @@ import {
 
 import {
   CLV_HIST_FROM,
+  CLV_LEDGER_COLLECTION,
+  CLV_LEDGER_DOC_ID,
   CLV_TOP2_BOOST_MIN,
   CLV_TOP2_CANCEL_MAX,
   GLOBAL_UNIT_CAP,
@@ -89,10 +91,10 @@ import {
   EDGE_PRIOR_AG_WR,
   applyClvTop2UnitPolicy,
   applyTapeUnitPolicy,
-  buildClvLedgerFromPositions,
   computeForTop2PctPos,
   computeNetMeanPrior,
   computeTapeScore,
+  hydrateClvLedger,
   isTapeSizingLive,
 } from '../src/lib/walletClvSkill.js';
 
@@ -3389,22 +3391,34 @@ async function main() {
   const v12Src = agsCalibration.v12Quintiles ? agsCalibration.source : 'fallback';
   console.log(`AGS-U v12 quintiles:   q20=${v12Q.q20.toFixed(3)}(WEAK→LEAN) q40=${v12Q.q40.toFixed(3)}(LEAN→LOCK) q60=${v12Q.q60.toFixed(3)}(LOCK→PREMIUM) q80=${v12Q.q80.toFixed(3)}(PREMIUM→ELITE)  source=${v12Src}  (positive-only; score≤0 → FADE/muted)`);
 
-  // Causal CLV skill ledger — graded positions since Apr 1, used for top2% +CLV
-  // cancel (≤59) / boost (≥74) / 6u cap. Loaded once per cron cycle.
-  console.log(`Loading CLV skill ledger (GRADED ≥ ${CLV_HIST_FROM})…`);
-  const gradedClvSnap = await db.collection('sharp_action_positions')
-    .where('status', '==', 'GRADED')
-    .get();
-  const gradedForClv = [];
-  gradedClvSnap.forEach((d) => {
-    const p = d.data();
-    if (p?.date && p.date >= CLV_HIST_FROM) gradedForClv.push(p);
-  });
-  const clvLedger = buildClvLedgerFromPositions(gradedForClv, { since: CLV_HIST_FROM });
-  console.log(`CLV skill ledger: ${clvLedger.size} wallets · ${gradedForClv.length} graded rows`
-    + (isTapeSizingLive(TARGET_DATE)
-      ? ` · TAPE sizing LIVE (mute<${TAPE_MUTE_BELOW} / boost≥${TAPE_BOOST_ABOVE} ×${TAPE_BOOST_MULT} / cap ${GLOBAL_UNIT_CAP}u) · EDGE stake FROZEN`
-      : ` · CLV-top2 (cancel≤${CLV_TOP2_CANCEL_MAX} / boost≥${CLV_TOP2_BOOST_MIN} / cap ${GLOBAL_UNIT_CAP}u)`));
+  // Causal CLV skill ledger — materialised by exportWalletProfiles after
+  // gradeSharpActions (clvSkillLedger/current). Was a full GRADED collection
+  // scan (~22k reads) on every sync cycle → July 2026 cost cliff. Grades only
+  // land on the grade cron (~every 2h overnight), so a cached doc is correct
+  // for causal as-of sizing (events with date < pickDate only).
+  console.log(`Loading CLV skill ledger (${CLV_LEDGER_COLLECTION}/${CLV_LEDGER_DOC_ID})…`);
+  let clvLedger = new Map();
+  try {
+    const ledgerDoc = await db.collection(CLV_LEDGER_COLLECTION).doc(CLV_LEDGER_DOC_ID).get();
+    if (ledgerDoc.exists) {
+      const data = ledgerDoc.data() || {};
+      clvLedger = hydrateClvLedger(data);
+      const updated = data.updatedAt?.toDate?.()?.toISOString?.() || data.generatedAt || '?';
+      console.log(
+        `CLV skill ledger: ${clvLedger.size} wallets · ${data.eventCount ?? '?'} events`
+        + ` · cached (since ${data.since || CLV_HIST_FROM}) · updated ${updated}`
+        + (isTapeSizingLive(TARGET_DATE)
+          ? ` · TAPE sizing LIVE (mute<${TAPE_MUTE_BELOW} / boost≥${TAPE_BOOST_ABOVE} ×${TAPE_BOOST_MULT} / cap ${GLOBAL_UNIT_CAP}u) · EDGE stake FROZEN`
+          : ` · CLV-top2 (cancel≤${CLV_TOP2_CANCEL_MAX} / boost≥${CLV_TOP2_BOOST_MIN} / cap ${GLOBAL_UNIT_CAP}u)`),
+      );
+    } else {
+      console.warn(
+        `[clv] ${CLV_LEDGER_COLLECTION}/${CLV_LEDGER_DOC_ID} missing — TAPE/netCLV fail-open until exportWalletProfiles --write-clv-ledger runs`,
+      );
+    }
+  } catch (err) {
+    console.warn(`[clv] failed to load cached ledger (fail-open): ${err.message}`);
+  }
 
   // Load today's positions (live wallet activity) from Firestore.
   // (Could also read from public/sharp_positions.json but Firestore stays

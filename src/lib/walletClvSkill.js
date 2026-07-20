@@ -88,6 +88,73 @@ export function buildClvLedgerFromPositions(positions, { since = CLV_HIST_FROM }
   return map;
 }
 
+/** Firestore doc home for the materialised CLV ledger (1 read vs ~22k GRADED). */
+export const CLV_LEDGER_COLLECTION = 'clvSkillLedger';
+export const CLV_LEDGER_DOC_ID = 'current';
+
+/**
+ * Compact serialisation for the materialised CLV ledger.
+ *
+ * Firestore rejects nested arrays, so the wallet→events map is stored as a
+ * JSON string field (`ledgerJson`) with compact [date, clv] tuples. Rebuilt
+ * by exportWalletProfiles after gradeSharpActions — NOT on every
+ * syncPickState cycle (that was the July 2026 read explosion).
+ */
+export function serializeClvLedger(ledger, { since = CLV_HIST_FROM } = {}) {
+  const byWallet = {};
+  let eventCount = 0;
+  if (ledger && typeof ledger.forEach === 'function') {
+    ledger.forEach((arr, short) => {
+      if (!Array.isArray(arr) || !short) return;
+      byWallet[short] = arr.map((e) => [e.date, e.clv]);
+      eventCount += arr.length;
+    });
+  }
+  const ledgerJson = JSON.stringify(byWallet);
+  return {
+    version: 1,
+    since,
+    walletCount: Object.keys(byWallet).length,
+    eventCount,
+    ledgerJson,
+  };
+}
+
+/** Hydrate Map<walletShort, Array<{ date, clv }>> from serializeClvLedger output. */
+export function hydrateClvLedger(doc) {
+  const map = new Map();
+  let byWallet = null;
+  if (typeof doc?.ledgerJson === 'string' && doc.ledgerJson.length) {
+    try {
+      byWallet = JSON.parse(doc.ledgerJson);
+    } catch {
+      byWallet = null;
+    }
+  } else if (doc?.byWallet && typeof doc.byWallet === 'object') {
+    byWallet = doc.byWallet;
+  }
+  if (!byWallet || typeof byWallet !== 'object') return map;
+  for (const [short, rows] of Object.entries(byWallet)) {
+    if (!Array.isArray(rows) || !short) continue;
+    const arr = [];
+    for (const row of rows) {
+      if (Array.isArray(row) && row.length >= 2) {
+        const date = row[0];
+        const clv = Number(row[1]);
+        if (typeof date === 'string' && Number.isFinite(clv)) arr.push({ date, clv });
+      } else if (row && typeof row === 'object' && typeof row.date === 'string') {
+        const clv = Number(row.clv);
+        if (Number.isFinite(clv)) arr.push({ date: row.date, clv });
+      }
+    }
+    if (arr.length) {
+      arr.sort((a, b) => a.date.localeCompare(b.date));
+      map.set(short, arr);
+    }
+  }
+  return map;
+}
+
 /** Causal % of CLV>0 grades for a wallet strictly before asOfDate. null if n < MIN_N. */
 export function causalPctPos(ledger, walletShort, asOfDate, { minN = CLV_SKILL_MIN_N } = {}) {
   const short = shortWalletId(walletShort);

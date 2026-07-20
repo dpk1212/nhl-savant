@@ -14,7 +14,10 @@
  *
  * Firebase sync (opt-in):
  *   --write-firebase      Upsert all profiles into collection
- *                         `sharpWalletProfiles` (default: skipped).
+ *                         `sharpWalletProfiles` + write `clvSkillLedger/current`
+ *                         (default: skipped).
+ *   --write-clv-ledger    Write only the materialised CLV ledger doc (cost fix;
+ *                         syncPickState loads this instead of scanning GRADED).
  *   --collection=xxx      Override target collection name.
  *
  * Cadence: every 2h via `.github/workflows/grade-sharp-actions.yml`
@@ -75,8 +78,11 @@ import { dirname, join } from 'path';
 import {
   CLV_HIST_FROM,
   CLV_SKILL_MIN_N,
+  CLV_LEDGER_COLLECTION,
+  CLV_LEDGER_DOC_ID,
   buildClvLedgerFromPositions,
   causalPctPos,
+  serializeClvLedger,
   shortWalletId,
 } from '../src/lib/walletClvSkill.js';
 
@@ -84,6 +90,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const argv = new Set(process.argv.slice(2));
 const WRITE_FB = argv.has('--write-firebase');
+// Materialise CLV ledger for syncPickState (1 read vs full GRADED scan).
+// Always written with --write-firebase; also available standalone for cost fixes.
+const WRITE_CLV_LEDGER = WRITE_FB || argv.has('--write-clv-ledger');
 const collectionArg = [...argv].find(a => a.startsWith('--collection='));
 const TARGET_COLLECTION = collectionArg ? collectionArg.split('=')[1] : 'sharpWalletProfiles';
 
@@ -247,12 +256,11 @@ function etTomorrowDateStr() {
   return d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 }
 
-function computeClvSkill(posBets, walletShort) {
+function computeClvSkill(clvLedger, walletShort) {
   const short = shortWalletId(walletShort);
-  const ledger = buildClvLedgerFromPositions(posBets || [], { since: CLV_HIST_FROM });
   const asOf = etTomorrowDateStr();
-  const pct = causalPctPos(ledger, short, asOf, { minN: CLV_SKILL_MIN_N });
-  const arr = ledger.get(short) || [];
+  const pct = causalPctPos(clvLedger, short, asOf, { minN: CLV_SKILL_MIN_N });
+  const arr = clvLedger?.get?.(short) || [];
   const nPos = arr.filter((e) => e.clv > 0).length;
   return {
     pctPos: pct == null ? null : Math.round(pct * 10) / 10,
@@ -393,7 +401,7 @@ function classifyWhitelistTier(picksInSport, positionsInSport) {
 }
 
 // ── Build per-wallet profile ───────────────────────────────────────
-function buildProfile(walletShort, pickBets, posBets) {
+function buildProfile(walletShort, pickBets, posBets, clvLedger) {
   const latestPick = pickBets.length ? pickBets.slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0] : null;
   const latestPos = posBets.length ? posBets.slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0] : null;
 
@@ -473,7 +481,7 @@ function buildProfile(walletShort, pickBets, posBets) {
   // Causal %+CLV skill — % of prior graded positions that beat the close.
   // Surfaced on live cards as "beats close X%" / BEATS THE CLOSE battle row,
   // and is the same input the TAPE cron averages into netCLV.
-  const clvSkill = computeClvSkill(posBets, walletShort);
+  const clvSkill = computeClvSkill(clvLedger, walletShort);
 
   // Date spans
   const allDates = [...pickBets, ...posBets].map(b => b.date).filter(Boolean).sort();
@@ -569,6 +577,12 @@ function buildProfile(walletShort, pickBets, posBets) {
   const shadowCt = positions.length - vaultCt;
   console.log(`  → ${positions.length} graded positions (VAULT=${vaultCt}, SHADOW=${shadowCt})`);
 
+  // Shared CLV ledger — built once (was rebuilt per-wallet inside computeClvSkill).
+  // Also materialised to clvSkillLedger/current so syncPickState can load 1 doc
+  // instead of scanning every GRADED sharp_action_positions row each cycle.
+  const clvLedger = buildClvLedgerFromPositions(positions, { since: CLV_HIST_FROM });
+  console.log(`  → CLV ledger: ${clvLedger.size} wallets · ${[...clvLedger.values()].reduce((n, a) => n + a.length, 0)} events`);
+
   // Union of all wallet short hashes
   const allWallets = new Set([
     ...walletBets.map(b => b.wallet),
@@ -580,7 +594,7 @@ function buildProfile(walletShort, pickBets, posBets) {
   for (const walletShort of allWallets) {
     const pickBets = walletBets.filter(b => b.wallet === walletShort);
     const posBets = positions.filter(p => p.walletShort === walletShort);
-    profiles[walletShort] = buildProfile(walletShort, pickBets, posBets);
+    profiles[walletShort] = buildProfile(walletShort, pickBets, posBets, clvLedger);
   }
 
   // CLV skill coverage — must stay high; this feeds TAPE + live cards.
@@ -925,11 +939,35 @@ function buildProfile(walletShort, pickBets, posBets) {
   writeFileSync(summaryPath, sum.join('\n'));
   console.log(`Wrote ${summaryPath}`);
 
+  // ── CLV ledger artefact (local + optional Firestore) ─────────────
+  // Stored as ledgerJson string (Firestore bans nested arrays). ~0.5MB today.
+  const ledgerPayload = serializeClvLedger(clvLedger, { since: CLV_HIST_FROM });
+  const ledgerPath = join(dataDir, 'clv-skill-ledger.json');
+  writeFileSync(ledgerPath, JSON.stringify({
+    generatedAt: new Date().toISOString(),
+    version: ledgerPayload.version,
+    since: ledgerPayload.since,
+    walletCount: ledgerPayload.walletCount,
+    eventCount: ledgerPayload.eventCount,
+    ledgerJson: ledgerPayload.ledgerJson,
+  }));
+  console.log(`Wrote ${ledgerPath} (${ledgerPayload.walletCount} wallets, ${ledgerPayload.eventCount} events, ${ledgerPayload.ledgerJson.length} bytes)`);
+
+  if (WRITE_CLV_LEDGER) {
+    console.log(`Writing ${CLV_LEDGER_COLLECTION}/${CLV_LEDGER_DOC_ID}…`);
+    await db.collection(CLV_LEDGER_COLLECTION).doc(CLV_LEDGER_DOC_ID).set({
+      ...ledgerPayload,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    console.log(`✓ CLV skill ledger cached (${ledgerPayload.eventCount} events → 1 doc for syncPickState)`);
+  }
+
   // ── Optional Firebase sync ───────────────────────────────────────
   if (WRITE_FB) {
     console.log(`Upserting ${Object.keys(profiles).length} profiles to Firestore collection \`${TARGET_COLLECTION}\`…`);
-    const batch = db.batch();
+    let batch = db.batch();
     let count = 0;
+    let batchOps = 0;
     for (const [walletShort, p] of Object.entries(profiles)) {
       const ref = db.collection(TARGET_COLLECTION).doc(walletShort);
       batch.set(ref, {
@@ -937,15 +975,18 @@ function buildProfile(walletShort, pickBets, posBets) {
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       }, { merge: true });
       count++;
-      if (count % 400 === 0) {
+      batchOps++;
+      if (batchOps >= 400) {
         await batch.commit();
         console.log(`  → committed ${count}`);
+        batch = db.batch();
+        batchOps = 0;
       }
     }
-    await batch.commit();
+    if (batchOps > 0) await batch.commit();
     console.log(`✓ Upserted ${count} wallet profiles.`);
-  } else {
-    console.log('\n(Dry run — pass --write-firebase to push to Firestore.)');
+  } else if (!WRITE_CLV_LEDGER) {
+    console.log('\n(Dry run — pass --write-firebase or --write-clv-ledger to push to Firestore.)');
   }
 
   process.exit(0);

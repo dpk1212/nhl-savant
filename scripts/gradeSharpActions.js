@@ -749,55 +749,9 @@ async function main() {
   console.log(`  Errors:     ${errors}`);
   console.log(`  Remaining:  ${snapshot.size - graded} still pending`);
 
-  // ─── Summary stats for graded positions ────────────────────────────────
-  if (graded > 0) {
-    const gradedDocs = await db.collection(COLLECTION)
-      .where('status', '==', 'GRADED')
-      .get();
-
-    if (!gradedDocs.empty) {
-      let wins = 0, losses = 0, pushes = 0, totalInvested = 0, totalSettledPnl = 0;
-      let clvSum = 0, clvCount = 0;
-      const byLabel = {};
-
-      gradedDocs.forEach(doc => {
-        const d = doc.data();
-        if (d.result === 'WIN') wins++;
-        else if (d.result === 'LOSS') losses++;
-        else pushes++;
-        totalInvested += d.invested || 0;
-        totalSettledPnl += d.settledPnl || 0;
-        if (d.clv != null) { clvSum += d.clv; clvCount++; }
-
-        const lbl = d.label || 'SHARP_POSITION';
-        if (!byLabel[lbl]) byLabel[lbl] = { w: 0, l: 0, p: 0, inv: 0, pnl: 0 };
-        if (d.result === 'WIN') byLabel[lbl].w++;
-        else if (d.result === 'LOSS') byLabel[lbl].l++;
-        else byLabel[lbl].p++;
-        byLabel[lbl].inv += d.invested || 0;
-        byLabel[lbl].pnl += d.settledPnl || 0;
-      });
-
-      const total = wins + losses + pushes;
-      const wr = total > 0 ? ((wins / (wins + losses)) * 100).toFixed(1) : '—';
-      const roi = totalInvested > 0 ? ((totalSettledPnl / totalInvested) * 100).toFixed(1) : '—';
-      const avgClv = clvCount > 0 ? (clvSum / clvCount).toFixed(2) : '—';
-
-      console.log(`\n─── All-Time Sharp Action Performance ───`);
-      console.log(`  Record:    ${wins}W-${losses}L-${pushes}P (${wr}% WR)`);
-      console.log(`  Invested:  $${totalInvested.toLocaleString()}`);
-      console.log(`  P&L:       $${totalSettledPnl.toLocaleString()}`);
-      console.log(`  ROI:       ${roi}%`);
-      console.log(`  Avg CLV:   ${avgClv}%`);
-
-      console.log(`\n  By Label:`);
-      for (const [lbl, s] of Object.entries(byLabel)) {
-        const lWr = (s.w + s.l) > 0 ? ((s.w / (s.w + s.l)) * 100).toFixed(1) : '—';
-        const lRoi = s.inv > 0 ? ((s.pnl / s.inv) * 100).toFixed(1) : '—';
-        console.log(`    ${lbl}: ${s.w}W-${s.l}L-${s.p}P (${lWr}%) | $${s.inv.toLocaleString()} inv | $${s.pnl.toLocaleString()} P&L (${lRoi}% ROI)`);
-      }
-    }
-  }
+  // All-time performance summary used to re-scan every GRADED doc (~22k reads).
+  // Skip that — exportWalletProfiles already rebuilds the CLV ledger + profiles
+  // from the same collection on this workflow. Per-run graded count above is enough.
 
   console.log('\nDone.');
 }
