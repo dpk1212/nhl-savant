@@ -780,7 +780,7 @@ const fmtRatio = (r) => (r < 0.1 ? '<0.1' : r.toFixed(1));
 function walletTier(w) {
   if (w?.proven) return 'PROVEN';
   if (w?.whitelisted) return 'LIGHT';
-  if (w?.skillEligible) return 'SKILL';
+  if (w?.skillEligible) return 'SECONDARY';
   return 'TRACKING';
 }
 
@@ -807,16 +807,16 @@ function WalletTierBadge({ w }) {
       >LIGHT</span>
     );
   }
-  if (tier === 'SKILL') {
+  if (tier === 'SECONDARY') {
     return (
       <span
-        title="Clears EDGE / beats-close floors used in sizing — not a whitelist proven winner"
+        title="On the board for the read — not a whitelist proven winner for staking"
         style={{
           fontSize: '0.54rem', fontWeight: 800, letterSpacing: '0.08em', color: '#8ba7d6',
           padding: '2px 6px', borderRadius: 4,
           background: 'rgba(139,167,214,0.12)', border: '1px solid rgba(139,167,214,0.30)',
         }}
-      >SKILL</span>
+      >SECONDARY</span>
     );
   }
   return (
@@ -851,7 +851,7 @@ function ConvictionRow({ w, accent, maxRatio, last, sport }) {
       padding: '12px 0',
       borderBottom: last ? 'none' : `1px solid ${C.hairSoft}`,
       borderLeft: tier === 'PROVEN' ? `2px solid ${B.profit}`
-        : tier === 'SKILL' ? `2px solid rgba(139,167,214,0.55)`
+        : tier === 'SECONDARY' ? `2px solid rgba(139,167,214,0.55)`
         : '2px solid transparent',
       paddingLeft: 10, marginLeft: -2,
     }}>
@@ -962,10 +962,10 @@ function WalletMapPanel({ f, accent, pts }) {
     return top ? keyOf(top) : null;
   })();
   const [sel, setSel] = useState(defaultSel);
-  const [mapFilter, setMapFilter] = useState('all'); // all | proven | skill | against
+  const [mapFilter, setMapFilter] = useState('all'); // all | proven | secondary | against
   const filteredPts = (() => {
     if (mapFilter === 'proven') return pts.filter((p) => p.proven);
-    if (mapFilter === 'skill') return pts.filter((p) => p.skillEligible && !p.proven);
+    if (mapFilter === 'secondary') return pts.filter((p) => p.skillEligible && !p.proven);
     if (mapFilter === 'against') return pts.filter((p) => p.side !== f.side);
     return pts;
   })();
@@ -1024,7 +1024,7 @@ function WalletMapPanel({ f, accent, pts }) {
   const gid = `wmap-${f.id}`.replace(/[^a-zA-Z0-9-]/g, '');
   const oursCount = pts.filter((p) => p.side === f.side).length;
   const oppCount = pts.length - oursCount;
-  const skillCount = pts.filter((p) => p.skillEligible && !p.proven).length;
+  const secondaryCount = pts.filter((p) => p.skillEligible && !p.proven).length;
   const dashFor = (p) => {
     if (p.proven) return undefined;
     if (p.skillEligible) return '2 2';
@@ -1033,7 +1033,7 @@ function WalletMapPanel({ f, accent, pts }) {
   const filterChips = [
     { id: 'all', label: 'All', n: pts.length },
     { id: 'proven', label: 'Proven', n: pts.filter((p) => p.proven).length },
-    { id: 'skill', label: 'Skill', n: skillCount },
+    { id: 'secondary', label: 'Secondary', n: secondaryCount },
     { id: 'against', label: 'Against', n: oppCount },
   ];
 
@@ -1162,7 +1162,7 @@ function WalletMapPanel({ f, accent, pts }) {
           <span style={{ color: oppColor, fontWeight: 800 }}>{oppSide}</span>
           <span style={{ fontFeatureSettings: "'tnum'" }}>{oppCount}</span>
         </span>
-        <span>solid = proven · short dash = skill · long dash = tracking · size = conviction</span>
+        <span>solid = proven · short dash = secondary · long dash = tracking · size = conviction</span>
       </div>
 
       {selected && (
@@ -1348,19 +1348,19 @@ export function LivePositionCardView({ f, markets, onMarket }) {
   // (LEAN / STRONG / …) — same words as the scoreboard — not path jargon.
   const productTier = displayTierFromPath(f.stakePath);
   const productTierLabel = productTier?.label || null;
-  const playSkillN = f.sides?.[f.side]?.skill || f.wallets?.filter((w) => w.skillEligible && !w.proven).length || 0;
+  const playSecondaryN = f.sides?.[f.side]?.skill || f.wallets?.filter((w) => w.skillEligible && !w.proven).length || 0;
   const verdict = (() => {
     const vault = f.vaultOnSide > 0 ? `${f.vaultOnSide} betting well above their usual` : null;
     const winners = `${f.confirmedOnSide} proven ${f.sport} winner${f.confirmedOnSide === 1 ? '' : 's'} on ${playSide}`;
-    const skillBit = playSkillN > 0
-      ? `${playSkillN} skill wallet${playSkillN === 1 ? '' : 's'} feeding EDGE`
+    const secondaryBit = playSecondaryN > 0
+      ? `${playSecondaryN} secondary wallet${playSecondaryN === 1 ? '' : 's'} on the board`
       : null;
-    const lead = [winners, skillBit, vault].filter(Boolean).join(', ') + '.';
+    const lead = [winners, secondaryBit, vault].filter(Boolean).join(', ') + '.';
     if (f.tapeAction === 'mute' && isMuted) {
       return { lead, rest: 'The skill read is weak, so we passed.' };
     }
     if (isWatch) {
-      return { lead, rest: "Proven opens a path; skill sets EDGE. Watching until a stake path clears." };
+      return { lead, rest: 'Proven opens a path; secondary wallets stay in the read. Watching until a stake path clears.' };
     }
     if (f.displayState === 'TRACKING') return { lead, rest: 'Watching with a light stake.' };
     if (productTierLabel) {
@@ -1513,9 +1513,9 @@ export function LivePositionCardView({ f, markets, onMarket }) {
                         proven winner{f.confirmedOnSide === 1 ? '' : 's'}
                       </span>
                     </div>
-                    {playSkillN > 0 ? (
+                    {playSecondaryN > 0 ? (
                       <div style={{ fontSize: '0.58rem', fontWeight: 700, color: '#8ba7d6', marginTop: 2 }}>
-                        +{playSkillN} skill · no ticket yet
+                        +{playSecondaryN} secondary · no ticket yet
                       </div>
                     ) : (
                       <div style={{ fontSize: '0.58rem', fontWeight: 700, color: C.textMuted, marginTop: 2 }}>
@@ -1602,8 +1602,7 @@ export function LivePositionCardView({ f, markets, onMarket }) {
             />
             {((f.sides.away.skill || 0) > 0 || (f.sides.home.skill || 0) > 0) && (
               <BattleRowV12
-                label="SKILL WALLETS"
-                tag={{ text: 'EDGE / CLV', color: '#8ba7d6' }}
+                label="SECONDARY"
                 awayVal={String(f.sides.away.skill || 0)}
                 homeVal={String(f.sides.home.skill || 0)}
                 awayNum={f.sides.away.skill || 0}
@@ -1678,7 +1677,7 @@ export function LivePositionCardView({ f, markets, onMarket }) {
               <span style={{ fontSize: '0.5rem', fontWeight: 800, letterSpacing: '0.12em', color: C.textFaint }}>
                 CARRYING {playSide.toUpperCase()}
                 {f.confirmedOnSide > 0 ? ` · ${f.confirmedOnSide} PROVEN` : ''}
-                {playSkillN > 0 ? ` · ${playSkillN} SKILL` : ''}
+                {playSecondaryN > 0 ? ` · ${playSecondaryN} SECONDARY` : ''}
                 {` · TOP ${Math.min(3, sortedWallets.length)}`}
               </span>
               {sortedWallets.length > 3 && (
@@ -1717,7 +1716,7 @@ export function LivePositionCardView({ f, markets, onMarket }) {
           {isWatch ? (
             <p style={{ fontSize: '0.78rem', color: C.textSec, lineHeight: 1.5, margin: 0 }}>
               The money on this game hasn't crossed a stake path yet. Proven winners open the
-              path; skill wallets still feed EDGE and size — we watch until a path clears.
+              path; secondary wallets stay in the read — we watch until a path clears.
             </p>
           ) : (
             <>

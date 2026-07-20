@@ -116,7 +116,7 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
       // PROVEN badge must match header / battle proven counts: whitelist
       // winner AND ≥0.10× usual (writeSharpActions SHADOW floor). Token
       // bets from whitelist wallets stay on the CARRYING list as LIGHT.
-      // SKILL = clears EDGE/net floors without being proven — display only.
+      // SECONDARY = clears EDGE/net floors without being proven — display only.
       const MODEL_MIN = 0.10;
       const whitelisted = isSportWinner ? !!isSportWinner(short, sport) : true;
       const counted = !Number.isFinite(sizeRatio) || sizeRatio <= 0 || sizeRatio >= MODEL_MIN;
@@ -127,7 +127,7 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
         : whitelisted
           ? ['SHARP', 'LIGHT']
           : skillEligible
-            ? ['SHARP', 'SKILL']
+            ? ['SHARP', 'SECONDARY']
             : ['SHARP', 'TRACKING'];
       return {
         short,
