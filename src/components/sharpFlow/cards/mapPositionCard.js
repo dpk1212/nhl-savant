@@ -3,6 +3,23 @@
  * Display-only. Never changes stake formulas or stamps.
  */
 import { AGS_V12_STAKE_TIER_META } from '../../../lib/ags.js';
+import { CLV_SKILL_MIN_N } from '../../../lib/walletClvSkill.js';
+
+/** Same floor as EDGE (scripts/syncPickStateAuthoritative WINNER_ALIGN_MIN_N). */
+const FEATURED_WR_MIN_N = 8;
+
+/**
+ * Display-only: wallet clears the floors that feed EDGE and/or netCLV.
+ * Does not grant whitelist / proven / Path A HC.
+ */
+export function isSkillEligibleProfile(profile, sport) {
+  if (!profile) return false;
+  const picks = profile?.bySport?.[sport]?.picks;
+  const featuredOk = Number.isFinite(picks?.wr) && (picks?.n || 0) >= FEATURED_WR_MIN_N;
+  const clv = profile?.clvSkill;
+  const clvOk = Number.isFinite(clv?.pctPos) && (clv?.n || 0) >= CLV_SKILL_MIN_N;
+  return !!(featuredOk || clvOk);
+}
 
 const shortTeam = (name) => {
   if (!name) return '—';
@@ -98,16 +115,26 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
         : null;
       // PROVEN badge must match header / battle proven counts: whitelist
       // winner AND ≥0.10× usual (writeSharpActions SHADOW floor). Token
-      // bets from whitelist wallets stay on the CARRYING list as TRACKING.
+      // bets from whitelist wallets stay on the CARRYING list as LIGHT.
+      // SKILL = clears EDGE/net floors without being proven — display only.
       const MODEL_MIN = 0.10;
       const whitelisted = isSportWinner ? !!isSportWinner(short, sport) : true;
       const counted = !Number.isFinite(sizeRatio) || sizeRatio <= 0 || sizeRatio >= MODEL_MIN;
       const proven = whitelisted && counted;
+      const skillEligible = isSkillEligibleProfile(profile, sport);
+      const badges = proven
+        ? ['SHARP', `${sport} WINNER`]
+        : whitelisted
+          ? ['SHARP', 'LIGHT']
+          : skillEligible
+            ? ['SHARP', 'SKILL']
+            : ['SHARP', 'TRACKING'];
       return {
         short,
         proven,
         whitelisted,
-        badges: proven ? ['SHARP', `${sport} WINNER`] : whitelisted ? ['SHARP', 'LIGHT'] : ['SHARP'],
+        skillEligible,
+        badges,
         whitelist: sportRec?.whitelistTier || (whitelisted ? 'CONFIRMED' : null),
         qualify: sizeRatio >= 0.75 ? 'VAULT' : 'SHADOW',
         sizeRatio,
@@ -125,7 +152,12 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
         priorClvPct,
       };
     })
-    .sort((a, b) => (b.sizeRatio || 0) - (a.sizeRatio || 0));
+    .sort((a, b) =>
+      (Number(!!b.proven) - Number(!!a.proven))
+      || (Number(!!b.skillEligible) - Number(!!a.skillEligible))
+      || (Number(!!b.whitelisted) - Number(!!a.whitelisted))
+      || ((b.sizeRatio || 0) - (a.sizeRatio || 0))
+    );
 }
 
 /**

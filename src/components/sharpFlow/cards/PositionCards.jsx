@@ -202,8 +202,6 @@ function DetailRow({ label, value, color = C.text, last }) {
 function WalletListRow({ w, side, sport, accent, defaultOpen = false }) {
   const [open, setOpen] = useState(defaultOpen);
   const sizedUp = w.sizeRatio >= 1.5;
-  const wlLabel = w.whitelist === 'CONFIRMED' ? 'Proven' : w.whitelist === 'FLAT' ? 'Solid' : 'Watch';
-  const wlColor = w.whitelist === 'CONFIRMED' ? C.gold : w.whitelist === 'FLAT' ? C.amber : C.textMuted;
   const sizeLabel = w.qualify === 'VAULT' ? 'Above their avg' : 'Light size';
 
   return (
@@ -220,7 +218,7 @@ function WalletListRow({ w, side, sport, accent, defaultOpen = false }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
             <span style={{ fontSize: '0.82rem', fontWeight: 800, letterSpacing: '-0.01em' }}>…{w.short}</span>
-            <span style={{ fontSize: '0.5rem', fontWeight: 800, color: wlColor }}>{wlLabel}</span>
+            <WalletTierBadge w={w} />
             {sizedUp && <span style={{ fontSize: '0.5rem', fontWeight: 800, color: accent }}>High conviction</span>}
           </div>
           <div style={{ fontSize: '0.58rem', color: C.textMuted, marginTop: 2, fontFeatureSettings: "'tnum'" }}>
@@ -778,6 +776,68 @@ function TapeMeter({ tapeScore, action }) {
 
 const fmtRatio = (r) => (r < 0.1 ? '<0.1' : r.toFixed(1));
 
+/** Display tier for badges — never changes stake / proven census. */
+function walletTier(w) {
+  if (w?.proven) return 'PROVEN';
+  if (w?.whitelisted) return 'LIGHT';
+  if (w?.skillEligible) return 'SKILL';
+  return 'TRACKING';
+}
+
+function WalletTierBadge({ w }) {
+  const tier = walletTier(w);
+  if (tier === 'PROVEN') {
+    return (
+      <span style={{
+        fontSize: '0.54rem', fontWeight: 800, letterSpacing: '0.08em', color: B.profit,
+        padding: '2px 6px', borderRadius: 4,
+        background: 'rgba(47,213,126,0.12)', border: '1px solid rgba(47,213,126,0.28)',
+      }}>PROVEN</span>
+    );
+  }
+  if (tier === 'LIGHT') {
+    return (
+      <span
+        title="Whitelisted winner, but this ticket is under 0.10× their usual — not counted as proven for staking"
+        style={{
+          fontSize: '0.54rem', fontWeight: 800, letterSpacing: '0.08em', color: C.amber || '#d4a574',
+          padding: '2px 6px', borderRadius: 4,
+          background: 'rgba(212,175,55,0.10)', border: '1px solid rgba(212,175,55,0.28)',
+        }}
+      >LIGHT</span>
+    );
+  }
+  if (tier === 'SKILL') {
+    return (
+      <span
+        title="Clears EDGE / beats-close floors used in sizing — not a whitelist proven winner"
+        style={{
+          fontSize: '0.54rem', fontWeight: 800, letterSpacing: '0.08em', color: '#8ba7d6',
+          padding: '2px 6px', borderRadius: 4,
+          background: 'rgba(139,167,214,0.12)', border: '1px solid rgba(139,167,214,0.30)',
+        }}
+      >SKILL</span>
+    );
+  }
+  return (
+    <span style={{
+      fontSize: '0.54rem', fontWeight: 700, letterSpacing: '0.08em', color: C.textMuted,
+      padding: '2px 6px', borderRadius: 4,
+      background: 'rgba(148,163,184,0.08)', border: '1px solid rgba(148,163,184,0.18)',
+    }}>TRACKING</span>
+  );
+}
+
+function sortWalletsForDisplay(list) {
+  return [...(list || [])].sort((a, b) =>
+    (Number(!!b.proven) - Number(!!a.proven))
+    || (Number(!!b.skillEligible) - Number(!!a.skillEligible))
+    || (Number(!!b.whitelisted) - Number(!!a.whitelisted))
+    || ((b.sizeRatio || 0) - (a.sizeRatio || 0))
+    || ((b.invested || 0) - (a.invested || 0))
+  );
+}
+
 function ConvictionRow({ w, accent, maxRatio, last, sport }) {
   const hasRatio = Number.isFinite(w.sizeRatio);
   const hasClv = Number.isFinite(w.priorClvPct);
@@ -785,11 +845,14 @@ function ConvictionRow({ w, accent, maxRatio, last, sport }) {
   const ratioColor = w.sizeRatio >= 1.5 ? B.profit : w.sizeRatio >= 1 ? accent : C.textMuted;
   const barPct = hasRatio ? Math.min(100, Math.max(3, (w.sizeRatio / Math.max(maxRatio, 1.01)) * 100)) : 0;
   const hasRecord = !!w.record && w.record !== '—' && (w.decided == null || w.decided > 0);
+  const tier = walletTier(w);
   return (
     <div style={{
       padding: '12px 0',
       borderBottom: last ? 'none' : `1px solid ${C.hairSoft}`,
-      borderLeft: w.proven ? `2px solid ${B.profit}` : '2px solid transparent',
+      borderLeft: tier === 'PROVEN' ? `2px solid ${B.profit}`
+        : tier === 'SKILL' ? `2px solid rgba(139,167,214,0.55)`
+        : '2px solid transparent',
       paddingLeft: 10, marginLeft: -2,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
@@ -799,28 +862,7 @@ function ConvictionRow({ w, accent, maxRatio, last, sport }) {
           boxShadow: `0 0 8px hsl(${(parseInt(w.short, 16) || 0) % 360} 46% 62% / 0.6)`,
         }} />
         <span style={{ fontFamily: MONO, fontSize: '0.72rem', fontWeight: 700, color: C.text }}>…{w.short}</span>
-        {w.proven ? (
-          <span style={{
-            fontSize: '0.54rem', fontWeight: 800, letterSpacing: '0.08em', color: B.profit,
-            padding: '2px 6px', borderRadius: 4,
-            background: 'rgba(47,213,126,0.12)', border: '1px solid rgba(47,213,126,0.28)',
-          }}>PROVEN</span>
-        ) : w.whitelisted ? (
-          <span
-            title="Whitelisted winner, but this ticket is under 0.10× their usual — not counted as proven for staking"
-            style={{
-              fontSize: '0.54rem', fontWeight: 800, letterSpacing: '0.08em', color: C.amber || '#d4a574',
-              padding: '2px 6px', borderRadius: 4,
-              background: 'rgba(212,175,55,0.10)', border: '1px solid rgba(212,175,55,0.28)',
-            }}
-          >LIGHT</span>
-        ) : (
-          <span style={{
-            fontSize: '0.54rem', fontWeight: 700, letterSpacing: '0.08em', color: C.textMuted,
-            padding: '2px 6px', borderRadius: 4,
-            background: 'rgba(148,163,184,0.08)', border: '1px solid rgba(148,163,184,0.18)',
-          }}>TRACKING</span>
-        )}
+        <WalletTierBadge w={w} />
         <span style={{ flex: 1 }} />
         <span style={{
           fontSize: '0.92rem', fontWeight: 800, fontFeatureSettings: "'tnum'",
@@ -920,7 +962,17 @@ function WalletMapPanel({ f, accent, pts }) {
     return top ? keyOf(top) : null;
   })();
   const [sel, setSel] = useState(defaultSel);
-  const selected = pts.find((p) => keyOf(p) === sel) || pts[0];
+  const [mapFilter, setMapFilter] = useState('all'); // all | proven | skill | against
+  const filteredPts = (() => {
+    if (mapFilter === 'proven') return pts.filter((p) => p.proven);
+    if (mapFilter === 'skill') return pts.filter((p) => p.skillEligible && !p.proven);
+    if (mapFilter === 'against') return pts.filter((p) => p.side !== f.side);
+    return pts;
+  })();
+  const selected = filteredPts.find((p) => keyOf(p) === sel)
+    || pts.find((p) => keyOf(p) === sel)
+    || filteredPts[0]
+    || pts[0];
 
   // 440-wide viewBox keeps SVG text readable when the card scales down to
   // a ~340px phone column (0.77x) instead of the 0.6x a 560 box would get.
@@ -972,9 +1024,48 @@ function WalletMapPanel({ f, accent, pts }) {
   const gid = `wmap-${f.id}`.replace(/[^a-zA-Z0-9-]/g, '');
   const oursCount = pts.filter((p) => p.side === f.side).length;
   const oppCount = pts.length - oursCount;
+  const skillCount = pts.filter((p) => p.skillEligible && !p.proven).length;
+  const dashFor = (p) => {
+    if (p.proven) return undefined;
+    if (p.skillEligible) return '2 2';
+    return '4 3';
+  };
+  const filterChips = [
+    { id: 'all', label: 'All', n: pts.length },
+    { id: 'proven', label: 'Proven', n: pts.filter((p) => p.proven).length },
+    { id: 'skill', label: 'Skill', n: skillCount },
+    { id: 'against', label: 'Against', n: oppCount },
+  ];
 
   return (
     <div>
+      <div style={{
+        display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10,
+      }}>
+        {filterChips.map((chip) => {
+          const on = mapFilter === chip.id;
+          return (
+            <button
+              key={chip.id}
+              type="button"
+              onClick={() => setMapFilter(chip.id)}
+              style={{
+                fontSize: '0.52rem', fontWeight: 800, letterSpacing: '0.06em',
+                padding: '4px 9px', borderRadius: 7, cursor: 'pointer',
+                color: on ? '#06100a' : C.textMuted,
+                background: on
+                  ? `linear-gradient(180deg, ${B.goldHi} 0%, ${accent} 100%)`
+                  : 'rgba(255,255,255,0.04)',
+                border: on ? 'none' : `1px solid ${C.hairSoft}`,
+                fontFeatureSettings: "'tnum'",
+              }}
+            >
+              {chip.label}
+              <span style={{ marginLeft: 5, opacity: on ? 0.75 : 0.55 }}>{chip.n}</span>
+            </button>
+          );
+        })}
+      </div>
       <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block' }}>
         <defs>
           <radialGradient id={gid} cx="80%" cy="0%" r="90%">
@@ -1025,7 +1116,7 @@ function WalletMapPanel({ f, accent, pts }) {
           </text>
         ))}
 
-        {[...pts].sort((a, b) => (a.side === f.side) - (b.side === f.side)).map((p) => {
+        {[...filteredPts].sort((a, b) => (a.side === f.side) - (b.side === f.side)).map((p) => {
           const cx = xS(p.priorClvPct) + jitter(p.short, 'x');
           const cy = yS(roiOf(p)) + jitter(p.short, 'y');
           const r = rFor(p);
@@ -1041,8 +1132,8 @@ function WalletMapPanel({ f, accent, pts }) {
                 cx={cx} cy={cy} r={r}
                 fill={ours ? `${accent}4d` : 'rgba(139,167,214,0.16)'}
                 stroke={ours ? accent : 'rgba(139,167,214,0.75)'}
-                strokeWidth={p.proven ? 1.4 : 1}
-                strokeDasharray={p.proven ? undefined : '3 2.5'}
+                strokeWidth={p.proven ? 1.4 : p.skillEligible ? 1.2 : 1}
+                strokeDasharray={dashFor(p)}
                 style={{ filter: ours ? `drop-shadow(0 0 8px ${accent}73)` : 'none' }}
               />
               <text
@@ -1071,7 +1162,7 @@ function WalletMapPanel({ f, accent, pts }) {
           <span style={{ color: oppColor, fontWeight: 800 }}>{oppSide}</span>
           <span style={{ fontFeatureSettings: "'tnum'" }}>{oppCount}</span>
         </span>
-        <span>solid = proven · dashed = tracking · size = conviction</span>
+        <span>solid = proven · short dash = skill · long dash = tracking · size = conviction</span>
       </div>
 
       {selected && (
@@ -1082,12 +1173,7 @@ function WalletMapPanel({ f, accent, pts }) {
               background: selected.side === f.side ? accent : oppColor,
             }} />
             <span style={{ fontFamily: MONO, fontSize: '0.8rem', fontWeight: 800 }}>…{selected.short}</span>
-            <span style={{
-              fontSize: '0.5rem', fontWeight: 800, letterSpacing: '0.08em',
-              color: selected.proven ? B.profit : C.textMuted,
-            }}>
-              {selected.proven ? 'PROVEN' : 'TRACKING'}
-            </span>
+            <WalletTierBadge w={selected} />
             <span style={{ flex: 1 }} />
             <span style={{
               fontSize: '0.52rem', fontWeight: 900, letterSpacing: '0.08em',
@@ -1228,8 +1314,8 @@ export function LivePositionCardView({ f, markets, onMarket }) {
   // Real Pinnacle odds series only — no fabricated chart shapes.
   const pinSeries = Array.isArray(f.pinSeries) && f.pinSeries.length >= 2 ? f.pinSeries : null;
   const moveColor = f.pinnacleOpposes ? B.loss : B.profit;
-  const sortedWallets = [...f.wallets].sort((a, b) => (b.sizeRatio || 0) - (a.sizeRatio || 0));
-  const maxRatio = sortedWallets[0]?.sizeRatio || 1;
+  const sortedWallets = sortWalletsForDisplay(f.wallets);
+  const maxRatio = Math.max(...sortedWallets.map((w) => w.sizeRatio || 0), 1);
   const sizeColor = f.tapeAction === 'boost' ? B.profit : f.tapeAction === 'mute' ? B.loss : C.textSec;
   const sizeWord = f.tapeAction === 'boost' ? 'sized up' : f.tapeAction === 'mute' ? 'passed' : 'standard size';
   const isLive = f.isLive || f.gameTime === 'LIVE';
@@ -1262,15 +1348,19 @@ export function LivePositionCardView({ f, markets, onMarket }) {
   // (LEAN / STRONG / …) — same words as the scoreboard — not path jargon.
   const productTier = displayTierFromPath(f.stakePath);
   const productTierLabel = productTier?.label || null;
+  const playSkillN = f.sides?.[f.side]?.skill || f.wallets?.filter((w) => w.skillEligible && !w.proven).length || 0;
   const verdict = (() => {
     const vault = f.vaultOnSide > 0 ? `${f.vaultOnSide} betting well above their usual` : null;
     const winners = `${f.confirmedOnSide} proven ${f.sport} winner${f.confirmedOnSide === 1 ? '' : 's'} on ${playSide}`;
-    const lead = `${winners}${vault ? `, ${vault}` : ''}.`;
+    const skillBit = playSkillN > 0
+      ? `${playSkillN} skill wallet${playSkillN === 1 ? '' : 's'} feeding EDGE`
+      : null;
+    const lead = [winners, skillBit, vault].filter(Boolean).join(', ') + '.';
     if (f.tapeAction === 'mute' && isMuted) {
       return { lead, rest: 'The skill read is weak, so we passed.' };
     }
     if (isWatch) {
-      return { lead, rest: "The money hasn't crossed a stake path yet, so we watch." };
+      return { lead, rest: "Proven opens a path; skill sets EDGE. Watching until a stake path clears." };
     }
     if (f.displayState === 'TRACKING') return { lead, rest: 'Watching with a light stake.' };
     if (productTierLabel) {
@@ -1423,9 +1513,15 @@ export function LivePositionCardView({ f, markets, onMarket }) {
                         proven winner{f.confirmedOnSide === 1 ? '' : 's'}
                       </span>
                     </div>
-                    <div style={{ fontSize: '0.58rem', fontWeight: 700, color: C.textMuted, marginTop: 2 }}>
-                      no ticket yet
-                    </div>
+                    {playSkillN > 0 ? (
+                      <div style={{ fontSize: '0.58rem', fontWeight: 700, color: '#8ba7d6', marginTop: 2 }}>
+                        +{playSkillN} skill · no ticket yet
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: '0.58rem', fontWeight: 700, color: C.textMuted, marginTop: 2 }}>
+                        no ticket yet
+                      </div>
+                    )}
                   </div>
                 </>
               ) : (
@@ -1504,6 +1600,18 @@ export function LivePositionCardView({ f, markets, onMarket }) {
               accent={accent}
               playIsHome={playIsHome}
             />
+            {((f.sides.away.skill || 0) > 0 || (f.sides.home.skill || 0) > 0) && (
+              <BattleRowV12
+                label="SKILL WALLETS"
+                tag={{ text: 'EDGE / CLV', color: '#8ba7d6' }}
+                awayVal={String(f.sides.away.skill || 0)}
+                homeVal={String(f.sides.home.skill || 0)}
+                awayNum={f.sides.away.skill || 0}
+                homeNum={f.sides.home.skill || 0}
+                accent={accent}
+                playIsHome={playIsHome}
+              />
+            )}
             <BattleRowV12
               label="SHARP MONEY"
               awayVal={fmtMoney(f.sides.away.invested)}
@@ -1568,7 +1676,10 @@ export function LivePositionCardView({ f, markets, onMarket }) {
               padding: '12px 0 2px',
             }}>
               <span style={{ fontSize: '0.5rem', fontWeight: 800, letterSpacing: '0.12em', color: C.textFaint }}>
-                CARRYING {playSide.toUpperCase()} · TOP {Math.min(3, sortedWallets.length)}
+                CARRYING {playSide.toUpperCase()}
+                {f.confirmedOnSide > 0 ? ` · ${f.confirmedOnSide} PROVEN` : ''}
+                {playSkillN > 0 ? ` · ${playSkillN} SKILL` : ''}
+                {` · TOP ${Math.min(3, sortedWallets.length)}`}
               </span>
               {sortedWallets.length > 3 && (
                 <button
@@ -1605,8 +1716,8 @@ export function LivePositionCardView({ f, markets, onMarket }) {
 
           {isWatch ? (
             <p style={{ fontSize: '0.78rem', color: C.textSec, lineHeight: 1.5, margin: 0 }}>
-              The money on this game hasn't crossed a stake path yet. We track it for context
-              and only put units down when proven winners commit at real size.
+              The money on this game hasn't crossed a stake path yet. Proven winners open the
+              path; skill wallets still feed EDGE and size — we watch until a path clears.
             </p>
           ) : (
             <>
@@ -2359,13 +2470,8 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
       </div>
     );
   }
-  // Proven first (matches the count / badges), then conviction size.
-  const sortedWallets = [...f.wallets].sort((a, b) =>
-    (Number(!!b.proven) - Number(!!a.proven))
-    || ((b.decided || 0) - (a.decided || 0))
-    || ((b.sizeRatio || 0) - (a.sizeRatio || 0))
-    || ((b.invested || 0) - (a.invested || 0))
-  );
+  // Proven first, then skill (EDGE/net contributors), then conviction size.
+  const sortedWallets = sortWalletsForDisplay(f.wallets);
   const maxRatio = Math.max(...sortedWallets.map((w) => w.sizeRatio || 0), 1);
   const provenWallets = sortedWallets.filter((w) => w.proven);
   const provenCount = provenWallets.length > 0 ? provenWallets.length : (f.confirmedOnSide || 0);

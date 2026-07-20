@@ -19,7 +19,7 @@ import { useSubscription } from '../hooks/useSubscription';
 import { redirectToCheckout } from '../utils/stripe';
 import AuthModal from '../components/AuthModal';
 import { LivePositionCardView, LockedPositionCardView } from '../components/sharpFlow/cards/PositionCards';
-import { mapLockedPickToCardFixture, mapLiveGameToCardFixture, enrichWallets } from '../components/sharpFlow/cards/mapPositionCard';
+import { mapLockedPickToCardFixture, mapLiveGameToCardFixture, enrichWallets, isSkillEligibleProfile } from '../components/sharpFlow/cards/mapPositionCard';
 import VaultAlphaField from '../components/sharpVault/VaultAlphaField';
 import VaultRoster from '../components/sharpVault/VaultRoster';
 import VaultWalletDrawer from '../components/sharpVault/VaultWalletDrawer';
@@ -7139,7 +7139,7 @@ function WalletDossierRow({ p, gd, now, isMobile, market = 'ml', accent = B.gold
   );
 }
 
-const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile, onPickSynced, onHealthSynced, isMyPick, onToggleMyPick, canPickGames, gameFlowMap, spreadPositions, totalPositions, originalLockedSide, originalLockStars, originalLockWPS, originalFlipBeatThreshold, originalSpreadLockStars, originalSpreadLockWPS, originalTotalLockStars, originalTotalLockWPS, v8Norm, walletProfiles,
+const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile, onPickSynced, onHealthSynced, isMyPick, onToggleMyPick, canPickGames, gameFlowMap, spreadPositions, totalPositions, rawSharpPositions = null, rawSpreadPositions = null, rawTotalPositions = null, intelExcludedSet = null, originalLockedSide, originalLockStars, originalLockWPS, originalFlipBeatThreshold, originalSpreadLockStars, originalSpreadLockWPS, originalTotalLockStars, originalTotalLockWPS, v8Norm, walletProfiles,
   // CRON-FIRST OVERRIDES (per market). When the syncPickStateAuthoritative
   // cron has stamped tier + finalUnits on the synced doc for this game/market,
   // use those values verbatim instead of the client-side rateStarsV8 +
@@ -8191,7 +8191,9 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     return vals.length ? Math.round(vals.reduce((s, v) => s + v, 0) / vals.length) : null;
   };
   /** Build battle sides + enriched play-side wallets for one market. */
-  const buildMarketBoard = (positions, playSide, { mapAway = 'away', mapHome = 'home' } = {}) => {
+  const buildMarketBoard = (positions, playSide, {
+    mapAway = 'away', mapHome = 'home', rawPositions = null,
+  } = {}) => {
     const all = Array.isArray(positions) ? positions : [];
     const awayPos = all.filter((p) => p.side === mapAway);
     const homePos = all.filter((p) => p.side === mapHome);
@@ -8214,7 +8216,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       sizeRatio: posSizeRatio(p),
       avgSportBet: p.avgSportBet,
     }));
-    const wallets = enrichWallets(walletsRaw, gd.sport, getWalletProfile, isSportWinner, whitelistRecordForDisplay);
+    let wallets = enrichWallets(walletsRaw, gd.sport, getWalletProfile, isSportWinner, whitelistRecordForDisplay);
     const mapRaw = (side) => all
       .filter((p) => p.side === side)
       .map((p) => ({
@@ -8232,14 +8234,13 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     const sideBucket = (pos, proven, inv, wCount) => ({
       invested: inv,
       sharps: new Set(proven.map((p) => p.wallet)).size,
+      // Display-only skill census — filled after map merge below.
+      skill: 0,
       avg: wCount ? inv / Math.max(1, wCount) : 0,
       pnl: lifetimePnlUnique(pos),
       wr: sideWr(proven),
       clv: proven.length ? sideClv(proven) : null,
     });
-    const playProven = playSide === 'draw' ? drawProven
-      : playSide === mapAway ? awayProven
-      : homeProven;
     const playInv = playSide === 'draw' ? drawInv
       : playSide === mapAway ? awayInv
       : homeInv;
@@ -8252,16 +8253,70 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     if (drawInv > 0 || playSide === 'draw') {
       sides.draw = sideBucket(drawPos, drawProven, drawInv, drawW);
     }
+    let mapWallets = [
+      ...tag(mapRaw(mapAway), mapAway),
+      ...tag(mapRaw(mapHome), mapHome),
+      ...(drawInv > 0 || playSide === 'draw' ? tag(mapRaw('draw'), 'draw') : []),
+    ];
+
+    // Display-only: pull skill wallets from the RAW (pre-whitelist) feed so
+    // EDGE/net contributors show on CARRYING + wallet map. Never mutates
+    // sharps / invested / confirmedOnSide / stake math.
+    if (Array.isArray(rawPositions) && rawPositions.length > 0) {
+      const seen = new Set(mapWallets.map((w) => `${w.side}-${w.short}`));
+      const playSideKey = playSide === mapAway ? 'away'
+        : playSide === mapHome ? 'home'
+        : playSide;
+      const extrasByFeedSide = new Map();
+      for (const p of rawPositions) {
+        const wLower = String(p?.wallet || '').toLowerCase();
+        if (!wLower || !p.side || !(p.invested > 0)) continue;
+        if (intelExcludedSet?.has?.(wLower)) continue;
+        const short = wLower.slice(-6);
+        const uiSide = p.side === mapAway ? 'away'
+          : p.side === mapHome ? 'home'
+          : p.side;
+        if (seen.has(`${uiSide}-${short}`)) continue;
+        const prof = getWalletProfile(short);
+        if (!isSkillEligibleProfile(prof, gd.sport)) continue;
+        if (!extrasByFeedSide.has(p.side)) extrasByFeedSide.set(p.side, []);
+        extrasByFeedSide.get(p.side).push({
+          wallet: p.wallet,
+          invested: p.invested || 0,
+          pnl: p.totalPnl || p.pnl || 0,
+          sizeRatio: posSizeRatio(p),
+          avgSportBet: p.avgSportBet,
+        });
+      }
+      for (const [feedSide, list] of extrasByFeedSide) {
+        const tagged = tag(list, feedSide).filter((w) => w.skillEligible);
+        for (const w of tagged) {
+          const k = `${w.side}-${w.short}`;
+          if (seen.has(k)) continue;
+          seen.add(k);
+          mapWallets.push(w);
+          if (w.side === playSideKey) wallets.push(w);
+        }
+      }
+      wallets = [...wallets].sort((a, b) =>
+        (Number(!!b.proven) - Number(!!a.proven))
+        || (Number(!!b.skillEligible) - Number(!!a.skillEligible))
+        || (Number(!!b.whitelisted) - Number(!!a.whitelisted))
+        || ((b.sizeRatio || 0) - (a.sizeRatio || 0))
+      );
+    }
+
+    for (const sk of Object.keys(sides)) {
+      sides[sk].skill = mapWallets.filter((w) => w.side === sk && w.skillEligible && !w.proven).length;
+    }
+
     return {
       sides,
       wallets,
-      mapWallets: [
-        ...tag(mapRaw(mapAway), mapAway),
-        ...tag(mapRaw(mapHome), mapHome),
-        ...(drawInv > 0 || playSide === 'draw' ? tag(mapRaw('draw'), 'draw') : []),
-      ],
+      mapWallets,
       // Count from enriched wallets (same proven flag the CARRYING badges
       // use) so "1 proven" never disagrees with how many PROVEN chips paint.
+      // Skill extras above are never proven — confirmedOnSide stays stable.
       confirmedOnSide: wallets.filter((w) => w.proven).length,
       vaultOnSide: wallets.filter((w) => (w.sizeRatio || 0) >= 1.5).length,
       sideInvested: playInv,
@@ -8272,7 +8327,10 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   // (invested / sports_sharps.avgSportBet on the position JSON).
   // Filter to cardSideKey (not raw consensus) so CARRYING matches OUR SIDE
   // when SOC consensus is null/draw.
-  const mlBoard = buildMarketBoard(gd.positions || [], cardSideKey);
+  const rawMlPositions = rawSharpPositions?.[gd.sport]?.[gd.key]?.positions || null;
+  const rawSpreadPos = rawSpreadPositions?.[gd.sport]?.[gd.key]?.positions || null;
+  const rawTotalPos = rawTotalPositions?.[gd.sport]?.[gd.key]?.positions || null;
+  const mlBoard = buildMarketBoard(gd.positions || [], cardSideKey, { rawPositions: rawMlPositions });
   const mlWallets = mlBoard.wallets;
   const mlMapWallets = mlBoard.mapWallets;
   const awaySharps = (gd.positions || []).filter((p) => p.side === 'away' && isBoardProvenPos(p));
@@ -8426,7 +8484,9 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     if (a <= 0 && h <= 0) return 'home';
     return a >= h ? 'away' : 'home';
   })();
-  const spreadBoard = buildMarketBoard(spreadGameData?.positions || [], spreadPlaySide);
+  const spreadBoard = buildMarketBoard(spreadGameData?.positions || [], spreadPlaySide, {
+    rawPositions: rawSpreadPos,
+  });
 
   const totalPlaySide = (() => {
     if (totalConsensusSide === 'over' || totalConsensusSide === 'under') return totalConsensusSide;
@@ -8438,7 +8498,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const totalBoard = buildMarketBoard(
     totalGameData?.positions || [],
     totalPlaySide,
-    { mapAway: 'under', mapHome: 'over' },
+    { mapAway: 'under', mapHome: 'over', rawPositions: rawTotalPos },
   );
 
   // Spread / total market siblings for the rail (when data exists)
@@ -12532,7 +12592,7 @@ export default function SharpFlow() {
                         const gdTotalCronTier = pickV12Tier(gdTotalCronSide);
                         const gdTotalCronUnits = pickV12Units(gdTotalCronSide);
                         const gdTotalCronStakeTier = pickHcStakeTier(gdTotalCronSide);
-                        return <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} onHealthSynced={onHealthSynced} isMyPick={!!userPicks[gd.key]} onToggleMyPick={onToggleMyPick} canPickGames={!!(user && isPremium)} gameFlowMap={gameFlowMap} spreadPositions={spreadPositions} totalPositions={totalPositions} originalLockedSide={gdOriginalSide} originalLockStars={gdLockStars} originalLockWPS={gdLockWPS} originalFlipBeatThreshold={gdFlipBeatThreshold} originalSpreadLockStars={gdSpreadLockStars} originalSpreadLockWPS={gdSpreadLockWPS} originalTotalLockStars={gdTotalLockStars} originalTotalLockWPS={gdTotalLockWPS} v8Norm={v8Norm} walletProfiles={walletProfiles} mlCronTier={gdMlCronTier} mlCronUnits={gdMlCronUnits} mlCronStakeTier={gdMlCronStakeTier} mlCronStamps={gdMlCronStamps} spreadCronTier={gdSpreadCronTier} spreadCronUnits={gdSpreadCronUnits} spreadCronStakeTier={gdSpreadCronStakeTier} totalCronTier={gdTotalCronTier} totalCronUnits={gdTotalCronUnits} totalCronStakeTier={gdTotalCronStakeTier} tierWindows={displayTierWindows} />;
+                        return <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} onHealthSynced={onHealthSynced} isMyPick={!!userPicks[gd.key]} onToggleMyPick={onToggleMyPick} canPickGames={!!(user && isPremium)} gameFlowMap={gameFlowMap} spreadPositions={spreadPositions} totalPositions={totalPositions} rawSharpPositions={rawSharpPositions} rawSpreadPositions={rawSpreadPositions} rawTotalPositions={rawTotalPositions} intelExcludedSet={intelExcludedSet} originalLockedSide={gdOriginalSide} originalLockStars={gdLockStars} originalLockWPS={gdLockWPS} originalFlipBeatThreshold={gdFlipBeatThreshold} originalSpreadLockStars={gdSpreadLockStars} originalSpreadLockWPS={gdSpreadLockWPS} originalTotalLockStars={gdTotalLockStars} originalTotalLockWPS={gdTotalLockWPS} v8Norm={v8Norm} walletProfiles={walletProfiles} mlCronTier={gdMlCronTier} mlCronUnits={gdMlCronUnits} mlCronStakeTier={gdMlCronStakeTier} mlCronStamps={gdMlCronStamps} spreadCronTier={gdSpreadCronTier} spreadCronUnits={gdSpreadCronUnits} spreadCronStakeTier={gdSpreadCronStakeTier} totalCronTier={gdTotalCronTier} totalCronUnits={gdTotalCronUnits} totalCronStakeTier={gdTotalCronStakeTier} tierWindows={displayTierWindows} />;
                       })}
                     </div>
                     {isFreeUser && (() => {
