@@ -1,23 +1,23 @@
 {
-  "scannedAt": "2026-07-20T20:17:26.463Z",
-  "elapsedSec": 15.7,
+  "scannedAt": "2026-07-20T20:21:27.221Z",
+  "elapsedSec": 16.8,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 32,
   "summary": {
     "total": 201,
     "coveredByMain": 9,
-    "recovered": 18,
-    "recoveredPositions": 167,
-    "noPositions": 174,
+    "recovered": 19,
+    "recoveredPositions": 169,
+    "noPositions": 173,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 9,
+      "ml": 10,
       "spread": 6,
       "total": 1,
       "dropped_shadow_gate": 26,
-      "dropped_excluded": 123,
+      "dropped_excluded": 124,
       "dropped_duplicate": 2
     }
   },
@@ -1072,10 +1072,10 @@
       "sports": "MLB,SOC,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xdb83e85ffd22faa4009273034770f96ffc5b1e50",
-      "positionsCount": 16,
+      "positionsCount": 17,
       "statsSource": "sports_sharps",
       "avgSportBet": 464,
-      "willPassShadowGate": 16,
+      "willPassShadowGate": 17,
       "willDropAtShadowGate": 0,
       "positions": [
         {
@@ -1175,6 +1175,15 @@
           "side": "over",
           "invested": 844,
           "entryLine": 175.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "WNBA",
+          "gameKey": "was_gsv",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 921,
+          "entryLine": -8.5,
           "passesShadow": true
         },
         {
@@ -1468,6 +1477,15 @@
         },
         {
           "sport": "MLB",
+          "gameKey": "sfg_kcr",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 3576,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
           "gameKey": "cws_tex",
           "marketType": "ml",
           "side": "away",
@@ -1593,15 +1611,6 @@
           "passesShadow": true
         },
         {
-          "sport": "MLB",
-          "gameKey": "sfg_kcr",
-          "marketType": "ml",
-          "side": "away",
-          "invested": 1578,
-          "entryLine": null,
-          "passesShadow": true
-        },
-        {
           "sport": "WNBA",
           "gameKey": "was_gsv",
           "marketType": "total",
@@ -1635,6 +1644,15 @@
           "side": "home",
           "invested": 1889,
           "entryLine": 1.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "WNBA",
+          "gameKey": "was_gsv",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 1585,
+          "entryLine": -8.5,
           "passesShadow": true
         },
         {
@@ -1950,15 +1968,6 @@
           "side": "home",
           "invested": 319,
           "entryLine": 2.5,
-          "passesShadow": true
-        },
-        {
-          "sport": "WNBA",
-          "gameKey": "was_gsv",
-          "marketType": "spread",
-          "side": "home",
-          "invested": 360,
-          "entryLine": -8.5,
           "passesShadow": true
         },
         {
@@ -2611,8 +2620,24 @@
       "tier": "CONFIRMED",
       "name": null,
       "sports": "MLB,NBA,SOC,UFC",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xe922473e81dbd20e3fffd7b64b51f057a9b839b3"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0xe922473e81dbd20e3fffd7b64b51f057a9b839b3",
+      "positionsCount": 1,
+      "statsSource": "sharpWalletProfiles_derived",
+      "avgSportBet": 719,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "oak_ari",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 500,
+          "entryLine": null,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "b85eee",
@@ -3109,7 +3134,7 @@
           "gameKey": "pit_nyy",
           "marketType": "ml",
           "side": "home",
-          "invested": 4166,
+          "invested": 4275,
           "entryLine": null,
           "passesShadow": true
         }
