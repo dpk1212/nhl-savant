@@ -1163,6 +1163,48 @@ function mergeRecoveredIntoScanFiles(positions, polyData) {
       stats[marketType]++;
     }
 
+    // Recompute summary FROM positions — incremental side-counter updates
+    // left totalInvested stale after merges (e.g. WNBA nyl_dal $20.3K summary
+    // vs $31.3K sum of positions) and missed invested changes on duplicates.
+    for (const sportGames of Object.values(data)) {
+      if (!sportGames || typeof sportGames !== 'object') continue;
+      for (const game of Object.values(sportGames)) {
+        if (!game?.positions) continue;
+        if (marketType === 'total') {
+          let sharpOver = 0, sharpUnder = 0, overInvested = 0, underInvested = 0;
+          for (const p of game.positions) {
+            if (p.side === 'over') { sharpOver++; overInvested += p.invested || 0; }
+            else { sharpUnder++; underInvested += p.invested || 0; }
+          }
+          game.summary = {
+            ...(game.summary || {}),
+            sharpOver, sharpUnder, overInvested, underInvested,
+            totalInvested: overInvested + underInvested,
+            consensus: overInvested > underInvested ? 'over'
+              : underInvested > overInvested ? 'under' : null,
+          };
+        } else {
+          let sharpAway = 0, sharpHome = 0, sharpDraw = 0;
+          let awayInvested = 0, homeInvested = 0, drawInvested = 0;
+          for (const p of game.positions) {
+            if (p.side === 'away') { sharpAway++; awayInvested += p.invested || 0; }
+            else if (p.side === 'draw') { sharpDraw++; drawInvested += p.invested || 0; }
+            else { sharpHome++; homeInvested += p.invested || 0; }
+          }
+          game.summary = {
+            ...(game.summary || {}),
+            sharpAway, sharpHome, ...(sharpDraw ? { sharpDraw } : {}),
+            awayInvested, homeInvested, ...(drawInvested ? { drawInvested } : {}),
+            totalInvested: awayInvested + homeInvested + drawInvested,
+            consensus: (awayInvested > homeInvested && awayInvested > drawInvested) ? 'away'
+              : (homeInvested > awayInvested && homeInvested > drawInvested) ? 'home'
+              : (drawInvested > awayInvested && drawInvested > homeInvested) ? 'draw'
+              : null,
+          };
+        }
+      }
+    }
+
     atomicWriteJSON(path, data);
   }
   return stats;

@@ -7,8 +7,9 @@ name: Fetch Market Data (Polymarket + Kalshi)
 #
 # Day window (America/New_York):
 #   • Starter cron ~6am ET (10:00 UTC during EDT / 11:00 UTC during EST)
-#   • Safety crons ~12pm + ~6pm ET in case the chain broke
+#   • Safety crons ~12pm / 4pm / 6pm / 8pm / 10pm ET if the chain broke
 #   • End-of-run: if still 5am–11pm ET and nothing is queued → `gh workflow run`
+#     (retries ×5; runs with always() so a loop warning can't kill the chain)
 #   • After 11pm ET the chain stops until the next morning starter
 #
 # concurrency cancel-in-progress:false → queued safety/cron waits; no kill.
@@ -20,9 +21,14 @@ on:
   schedule:
     # 6:00 AM ET  (EDT=10:00 UTC · EST=11:00 UTC — pinned to EDT summer)
     - cron: '0 10 * * *'
-    # Safety restarts if self-chain died: 12:00 PM + 6:00 PM ET (EDT)
-    - cron: '0 16 * * *'
-    - cron: '0 22 * * *'
+    # Safety restarts if self-chain died. Extra evening coverage — a single
+    # failed "Chain next fetch" step previously left a ~10h overnight hole
+    # (last success ~9pm ET → next ~7am ET on 2026-07-20).
+    - cron: '0 16 * * *'   # 12:00 PM ET
+    - cron: '0 20 * * *'   # 4:00 PM ET
+    - cron: '0 22 * * *'   # 6:00 PM ET
+    - cron: '0 0 * * *'    # 8:00 PM ET
+    - cron: '0 2 * * *'    # 10:00 PM ET (covers late chain breaks before 11pm stop)
   workflow_dispatch:
 
 concurrency:
@@ -106,6 +112,7 @@ jobs:
           set +e
           target_interval=240
           cycles=12
+          scan_fail_count=0
           for i in $(seq 1 "$cycles"); do
             cycle_start=$(date +%s)
             echo ""
@@ -123,7 +130,18 @@ jobs:
             node scripts/snapshotPinnacle.js || echo "pinnacle failed (cycle $i)"
 
             echo "--- scanSharpPositions ---"
-            node scripts/scanSharpPositions.js || echo "scan failed (cycle $i)"
+            scan_rc=0
+            node scripts/scanSharpPositions.js || scan_rc=$?
+            if [ "$scan_rc" -ne 0 ]; then
+              echo "::error::scanSharpPositions failed (cycle $i, exit $scan_rc)"
+              scan_fail_count=$((scan_fail_count + 1))
+            else
+              # Cadence guard — fresh scannedAt must land or the board is lying.
+              if ! node scripts/checkScanHeartbeat.js; then
+                echo "::warning::scan heartbeat stale/missing after successful scan exit (cycle $i)"
+                scan_fail_count=$((scan_fail_count + 1))
+              fi
+            fi
 
             # ── Whitelist coverage layer (Phase 2: recover + merge) ──────────
             # scanWhitelistedWallets cross-references the live promotion
@@ -286,14 +304,23 @@ jobs:
               fi
             fi
           done
-          set -e
           echo ""
           echo "### All ${cycles} cycles complete — $(date -u +%H:%M:%S) UTC"
+          echo "### scanSharpPositions failure count: ${scan_fail_count}/${cycles}"
+          # Do NOT fail the job on scan errors — that previously skipped the
+          # chain step's default success gate on some runners and opened a
+          # multi-hour hole. Surface the signal; chain step below always runs.
+          if [ "$scan_fail_count" -ge 3 ]; then
+            echo "::error::${scan_fail_count} scan failures this job — investigate Polymarket/API, but chain continues"
+          fi
+          set -e
 
       # Self-chain: keep a fetch running 5am–11pm ET without hourly cron babysitting.
+      # CRITICAL: must run even if the cycle loop warned/errored — a failed
+      # chain step on 2026-07-20 killed coverage from ~9pm→7am ET.
       # Skips if another run is already queued (safety cron / prior dispatch).
       - name: Chain next fetch (5am–11pm ET)
-        if: ${{ !cancelled() }}
+        if: ${{ always() && !cancelled() }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
@@ -322,6 +349,34 @@ jobs:
             exit 0
           fi
 
+          # Also skip if an in-progress sibling already exists beyond ourselves
+          # (race: two finishers both try to chain). Prefer queued check above;
+          # in_progress>1 means concurrency will serialize the next starter.
+          inprog=$(gh run list \
+            --workflow fetch-polymarket.yml \
+            --repo "$GH_REPO" \
+            --status in_progress \
+            --limit 10 \
+            --json databaseId \
+            --jq 'length' 2>/dev/null || echo 0)
+          inprog=$((10#${inprog:-0}))
+          if [ "$inprog" -gt 1 ]; then
+            echo "### Chain skipped — ${inprog} in_progress runs (sibling still working)"
+            exit 0
+          fi
+
           echo "### Dispatching next fetch-polymarket run…"
-          gh workflow run fetch-polymarket.yml --repo "$GH_REPO"
-          echo "### Chained OK"
+          ok=0
+          for attempt in 1 2 3 4 5; do
+            if gh workflow run fetch-polymarket.yml --repo "$GH_REPO"; then
+              echo "### Chained OK (attempt $attempt)"
+              ok=1
+              break
+            fi
+            echo "::warning::gh workflow run failed (attempt $attempt) — retrying in $((attempt * 5))s"
+            sleep $((attempt * 5))
+          done
+          if [ "$ok" -ne 1 ]; then
+            echo "::error::Chain dispatch failed after 5 attempts — safety crons must restart the loop"
+            exit 1
+          fi
