@@ -19,7 +19,14 @@ import { useSubscription } from '../hooks/useSubscription';
 import { redirectToCheckout } from '../utils/stripe';
 import AuthModal from '../components/AuthModal';
 import { LivePositionCardView, LockedPositionCardView } from '../components/sharpFlow/cards/PositionCards';
-import { mapLockedPickToCardFixture, mapLiveGameToCardFixture, enrichWallets, isSkillEligibleProfile } from '../components/sharpFlow/cards/mapPositionCard';
+import {
+  mapLockedPickToCardFixture,
+  mapLiveGameToCardFixture,
+  enrichWallets,
+  isSkillEligibleProfile,
+  EDGE_PRIOR_AG_WR,
+  NET_CLV_PRIOR_AG,
+} from '../components/sharpFlow/cards/mapPositionCard';
 import VaultAlphaField from '../components/sharpVault/VaultAlphaField';
 import VaultRoster from '../components/sharpVault/VaultRoster';
 import VaultWalletDrawer from '../components/sharpVault/VaultWalletDrawer';
@@ -8173,22 +8180,47 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     seen.forEach((v) => { sum += v; });
     return sum;
   };
-  const sideWr = (list) => {
-    const vals = [...new Set(list.map((p) => String(p.wallet).slice(-6)))]
-      .map((short) => {
-        const rec = getWalletProfile(short)?.bySport?.[gd.sport];
-        if (Number.isFinite(rec?.picks?.wr) && (rec.picks.n || 0) >= 2) return rec.picks.wr;
-        if (Number.isFinite(rec?.positions?.wr) && (rec.positions.n || 0) >= 2) return rec.positions.wr;
-        return null;
-      })
-      .filter(Number.isFinite);
+  /** Mean featured WR for EDGE — only wallets that clear the EDGE floor (n≥8). */
+  const meanEdgeWrFromWallets = (wallets, uiSide) => {
+    const seen = new Set();
+    const vals = [];
+    for (const w of wallets || []) {
+      if (w.side !== uiSide || seen.has(w.short)) continue;
+      seen.add(w.short);
+      if (w.edgeEligible && Number.isFinite(w.featuredWr)) vals.push(w.featuredWr);
+    }
     return vals.length ? Math.round(vals.reduce((s, v) => s + v, 0) / vals.length) : null;
   };
-  const sideClv = (list) => {
-    const vals = [...new Set(list.map((p) => String(p.wallet).slice(-6)))]
-      .map((short) => getWalletProfile(short)?.clvSkill?.pctPos)
-      .filter(Number.isFinite);
+  /** Mean causal %+CLV for netCLV — only wallets that clear the net floor (n≥5). */
+  const meanNetClvFromWallets = (wallets, uiSide) => {
+    const seen = new Set();
+    const vals = [];
+    for (const w of wallets || []) {
+      if (w.side !== uiSide || seen.has(w.short)) continue;
+      seen.add(w.short);
+      if (w.netEligible && Number.isFinite(w.netClvPct)) vals.push(w.netClvPct);
+    }
     return vals.length ? Math.round(vals.reduce((s, v) => s + v, 0) / vals.length) : null;
+  };
+  const countEdgeOnSide = (wallets, uiSide) => {
+    const seen = new Set();
+    let n = 0;
+    for (const w of wallets || []) {
+      if (w.side !== uiSide || !w.edgeEligible || seen.has(w.short)) continue;
+      seen.add(w.short);
+      n += 1;
+    }
+    return n;
+  };
+  const countNetOnSide = (wallets, uiSide) => {
+    const seen = new Set();
+    let n = 0;
+    for (const w of wallets || []) {
+      if (w.side !== uiSide || !w.netEligible || seen.has(w.short)) continue;
+      seen.add(w.short);
+      n += 1;
+    }
+    return n;
   };
   /** Build battle sides + enriched play-side wallets for one market. */
   const buildMarketBoard = (positions, playSide, {
@@ -8234,12 +8266,14 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     const sideBucket = (pos, proven, inv, wCount) => ({
       invested: inv,
       sharps: new Set(proven.map((p) => p.wallet)).size,
-      // Display-only skill census — filled after map merge below.
+      // Filled after map merge — EDGE/net means match staking skill floors.
       skill: 0,
+      edgeN: 0,
+      netN: 0,
       avg: wCount ? inv / Math.max(1, wCount) : 0,
       pnl: lifetimePnlUnique(pos),
-      wr: sideWr(proven),
-      clv: proven.length ? sideClv(proven) : null,
+      wr: null,
+      clv: null,
     });
     const playInv = playSide === 'draw' ? drawInv
       : playSide === mapAway ? awayInv
@@ -8259,9 +8293,9 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       ...(drawInv > 0 || playSide === 'draw' ? tag(mapRaw('draw'), 'draw') : []),
     ];
 
-    // Display-only: pull skill wallets from the RAW (pre-whitelist) feed so
-    // EDGE/net contributors show on CARRYING + wallet map. Never mutates
-    // sharps / invested / confirmedOnSide / stake math.
+    // Pull EDGE/net-eligible wallets from the RAW (pre-whitelist) feed so
+    // battle WR/CLV means match staking skill math. Never mutates sharps /
+    // invested / confirmedOnSide / stake units.
     if (Array.isArray(rawPositions) && rawPositions.length > 0) {
       const seen = new Set(mapWallets.map((w) => `${w.side}-${w.short}`));
       const playSideKey = playSide === mapAway ? 'away'
@@ -8306,8 +8340,13 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       );
     }
 
+    // Battle WR / CLV = same wallets that feed EDGE / netCLV (proven + secondary).
     for (const sk of Object.keys(sides)) {
       sides[sk].skill = mapWallets.filter((w) => w.side === sk && w.skillEligible && !w.proven).length;
+      sides[sk].edgeN = countEdgeOnSide(mapWallets, sk);
+      sides[sk].netN = countNetOnSide(mapWallets, sk);
+      sides[sk].wr = meanEdgeWrFromWallets(mapWallets, sk);
+      sides[sk].clv = meanNetClvFromWallets(mapWallets, sk);
     }
 
     return {
@@ -8341,37 +8380,52 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const homeSideWr = mlBoard.sides.home.wr;
   const awaySideClv = mlBoard.sides.away.clv;
   const homeSideClv = mlBoard.sides.home.clv;
-  // Prefer cron-stamped means when present — BUT never paint a stamped
-  // AG/FOR mean onto a side with zero proven wallets on the board.
-  // That recreated the phantom "65% beats close" on Mets with $0 / 0 proven
-  // (cron had stamped clvMeanAg, often vs prior 62).
+  // Battle WR/CLV follow EDGE/net floors (proven + secondary). Prefer cron
+  // stamps only when that side has eligible wallets on the board — never
+  // paint a stamped AG mean onto an empty side (phantom Mets bug).
   const stampedForClv = Number.isFinite(mlCronStamps?.clvMeanFor) ? Math.round(mlCronStamps.clvMeanFor) : null;
   const stampedAgClv = Number.isFinite(mlCronStamps?.clvMeanAg) ? Math.round(mlCronStamps.clvMeanAg) : null;
+  const stampedForWr = Number.isFinite(mlCronStamps?.edgeMeanFor) ? Math.round(mlCronStamps.edgeMeanFor) : null;
+  const stampedAgWr = Number.isFinite(mlCronStamps?.edgeMeanAg) ? Math.round(mlCronStamps.edgeMeanAg) : null;
   const playIsHomeSide = cardSideKey === 'home';
-  const awayHasProven = awaySharps.length > 0;
-  const homeHasProven = homeSharps.length > 0;
-  const awayClvFinal = !awayHasProven ? null
+  const awayHasEdge = (mlBoard.sides.away.edgeN || 0) > 0;
+  const homeHasEdge = (mlBoard.sides.home.edgeN || 0) > 0;
+  const awayHasNet = (mlBoard.sides.away.netN || 0) > 0;
+  const homeHasNet = (mlBoard.sides.home.netN || 0) > 0;
+  const awayWrFinal = !awayHasEdge ? null
+    : (playIsHomeSide
+      ? (Number.isFinite(stampedAgWr) ? stampedAgWr : awaySideWr)
+      : (Number.isFinite(stampedForWr) ? stampedForWr : awaySideWr));
+  const homeWrFinal = !homeHasEdge ? null
+    : (playIsHomeSide
+      ? (Number.isFinite(stampedForWr) ? stampedForWr : homeSideWr)
+      : (Number.isFinite(stampedAgWr) ? stampedAgWr : homeSideWr));
+  const awayClvFinal = !awayHasNet ? null
     : (playIsHomeSide
       ? (Number.isFinite(stampedAgClv) ? stampedAgClv : awaySideClv)
       : (Number.isFinite(stampedForClv) ? stampedForClv : awaySideClv));
-  const homeClvFinal = !homeHasProven ? null
+  const homeClvFinal = !homeHasNet ? null
     : (playIsHomeSide
       ? (Number.isFinite(stampedForClv) ? stampedForClv : homeSideClv)
       : (Number.isFinite(stampedAgClv) ? stampedAgClv : homeSideClv));
-  // netCLV tag only when BOTH sides have proven wallets + a real mean.
+  // Same formula as staking: FOR − (AG ?? prior).
+  const derivedEdge = (() => {
+    if (Number.isFinite(mlCronStamps?.edge)) return mlCronStamps.edge;
+    const forV = playIsHomeSide ? homeWrFinal : awayWrFinal;
+    const agV = playIsHomeSide ? awayWrFinal : homeWrFinal;
+    if (!Number.isFinite(forV)) return null;
+    return Math.round((forV - (Number.isFinite(agV) ? agV : EDGE_PRIOR_AG_WR)) * 10) / 10;
+  })();
   const derivedNetClv = (() => {
     const forV = playIsHomeSide ? homeClvFinal : awayClvFinal;
     const agV = playIsHomeSide ? awayClvFinal : homeClvFinal;
-    if (!awayHasProven || !homeHasProven) return null;
-    if (Number.isFinite(forV) && Number.isFinite(agV)) {
-      if (Number.isFinite(mlCronStamps?.netClv)
-        && Number.isFinite(mlCronStamps?.clvMeanFor)
-        && Number.isFinite(mlCronStamps?.clvMeanAg)) {
-        return mlCronStamps.netClv;
-      }
-      return Math.round((forV - agV) * 10) / 10;
+    if (!Number.isFinite(forV)) return null;
+    if (Number.isFinite(mlCronStamps?.netClv)
+      && Number.isFinite(mlCronStamps?.clvMeanFor)
+      && (Number.isFinite(mlCronStamps?.clvMeanAg) || !Number.isFinite(agV))) {
+      return mlCronStamps.netClv;
     }
-    return null;
+    return Math.round((forV - (Number.isFinite(agV) ? agV : NET_CLV_PRIOR_AG)) * 10) / 10;
   })();
 
   // Sharp split: 3-way when draw money is on the board (SOC), else 2-way.
@@ -8431,7 +8485,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     isLive: isGameLive,
     tapeAction: mlCronStamps?.tapeAction || 'keep',
     tapeScore: mlCronStamps?.tapeScore ?? null,
-    edge: mlCronStamps?.edge ?? null,
+    edge: derivedEdge,
     netClv: derivedNetClv,
     hcMargin: Number.isFinite(hcMargin) ? hcMargin : 0,
     // Same census as THE BATTLE (buildMarketBoard) — never diverge on tab chrome.
@@ -8439,13 +8493,24 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     vaultOnSide: mlBoard.vaultOnSide,
     sideInvested: mlBoard.sideInvested,
     sides: {
-      away: { ...mlBoard.sides.away, pnl: awayLifetimePnl, clv: awayClvFinal },
-      home: { ...mlBoard.sides.home, pnl: homeLifetimePnl, clv: homeClvFinal },
+      away: {
+        ...mlBoard.sides.away,
+        pnl: awayLifetimePnl,
+        wr: awayWrFinal,
+        clv: awayClvFinal,
+      },
+      home: {
+        ...mlBoard.sides.home,
+        pnl: homeLifetimePnl,
+        wr: homeWrFinal,
+        clv: homeClvFinal,
+      },
       ...(mlBoard.sides.draw ? {
         draw: {
           ...mlBoard.sides.draw,
           pnl: drawLifetimePnl,
-          clv: drawProven.length ? sideClv(drawProven) : null,
+          wr: mlBoard.sides.draw.wr,
+          clv: mlBoard.sides.draw.clv,
         },
       } : {}),
     },
@@ -12584,6 +12649,8 @@ export default function SharpFlow() {
                           netClv: Number.isFinite(gdSkillSide?.v8_netMeanPrior) ? gdSkillSide.v8_netMeanPrior : null,
                           clvMeanFor: Number.isFinite(gdSkillSide?.v8_netClvMeanFor) ? gdSkillSide.v8_netClvMeanFor : null,
                           clvMeanAg: Number.isFinite(gdSkillSide?.v8_netClvMeanAg) ? gdSkillSide.v8_netClvMeanAg : null,
+                          edgeMeanFor: Number.isFinite(gdSkillSide?.v8_winnerAlignMeanFor) ? gdSkillSide.v8_winnerAlignMeanFor : null,
+                          edgeMeanAg: Number.isFinite(gdSkillSide?.v8_winnerAlignMeanAg) ? gdSkillSide.v8_winnerAlignMeanAg : null,
                         };
                         const gdSpreadCronSide = gdSpreadSideEntry?.[1];
                         const gdSpreadCronTier = pickV12Tier(gdSpreadCronSide);

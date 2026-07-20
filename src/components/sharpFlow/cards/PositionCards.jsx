@@ -1329,18 +1329,31 @@ export function LivePositionCardView({ f, markets, onMarket }) {
     return diff > 0 ? `${Math.round(diff)}¢ better than fair` : null;
   })();
 
-  // Per-side skill: real graded win rates + causal %+CLV of proven wallets
-  // on each side (from stored profiles / cron stamps). No invented defaults.
-  const awayWr = f.sides.away?.wr;
-  const homeWr = f.sides.home?.wr;
-  const showWrRow = Number.isFinite(awayWr) && Number.isFinite(homeWr);
-  const awayClv = f.sides.away?.clv;
-  const homeClv = f.sides.home?.clv;
-  // Both sides must have proven wallets ON THE BOARD and a real %+CLV.
-  // A cron-stamped AG mean alone is not enough — that painted phantom
-  // "65%" on Mets with $0 / 0 proven.
-  const showClvBattle = Number.isFinite(awayClv) && Number.isFinite(homeClv)
-    && (f.sides.away?.sharps || 0) > 0 && (f.sides.home?.sharps || 0) > 0;
+  // Per-side EDGE / netCLV means — same floors as staking (featured WR n≥8,
+  // causal %+CLV n≥5). Includes proven + secondary. Unopposed sides use the
+  // same priors as sync (WR 50 / CLV 62) so the bars match the math.
+  const EDGE_PRIOR = 50;
+  const NET_PRIOR = 62;
+  const awayEdgeN = f.sides.away?.edgeN || 0;
+  const homeEdgeN = f.sides.home?.edgeN || 0;
+  const awayNetN = f.sides.away?.netN || 0;
+  const homeNetN = f.sides.home?.netN || 0;
+  const awayWr = awayEdgeN > 0 && Number.isFinite(f.sides.away?.wr)
+    ? f.sides.away.wr
+    : (homeEdgeN > 0 ? EDGE_PRIOR : null);
+  const homeWr = homeEdgeN > 0 && Number.isFinite(f.sides.home?.wr)
+    ? f.sides.home.wr
+    : (awayEdgeN > 0 ? EDGE_PRIOR : null);
+  const showWrRow = (awayEdgeN > 0 || homeEdgeN > 0)
+    && Number.isFinite(awayWr) && Number.isFinite(homeWr);
+  const awayClv = awayNetN > 0 && Number.isFinite(f.sides.away?.clv)
+    ? f.sides.away.clv
+    : (homeNetN > 0 ? NET_PRIOR : null);
+  const homeClv = homeNetN > 0 && Number.isFinite(f.sides.home?.clv)
+    ? f.sides.home.clv
+    : (awayNetN > 0 ? NET_PRIOR : null);
+  const showClvBattle = (awayNetN > 0 || homeNetN > 0)
+    && Number.isFinite(awayClv) && Number.isFinite(homeClv);
   const showClvTag = showClvBattle && hasClv;
 
   // Split verdict into a bold lead (the receipts) and a quieter action line

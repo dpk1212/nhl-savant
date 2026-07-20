@@ -3,22 +3,38 @@
  * Display-only. Never changes stake formulas or stamps.
  */
 import { AGS_V12_STAKE_TIER_META } from '../../../lib/ags.js';
-import { CLV_SKILL_MIN_N } from '../../../lib/walletClvSkill.js';
+import { CLV_SKILL_MIN_N, EDGE_PRIOR_AG_WR, NET_CLV_PRIOR_AG } from '../../../lib/walletClvSkill.js';
 
 /** Same floor as EDGE (scripts/syncPickStateAuthoritative WINNER_ALIGN_MIN_N). */
-const FEATURED_WR_MIN_N = 8;
+export const FEATURED_WR_MIN_N = 8;
+export { EDGE_PRIOR_AG_WR, NET_CLV_PRIOR_AG, CLV_SKILL_MIN_N };
+
+/** Featured sport WR when it clears the EDGE floor (n≥8). */
+export function featuredWrFromProfile(profile, sport) {
+  const picks = profile?.bySport?.[sport]?.picks;
+  const wr = Number(picks?.wr);
+  const n = Number(picks?.n) || 0;
+  if (n < FEATURED_WR_MIN_N || !Number.isFinite(wr)) return null;
+  return wr;
+}
+
+/** Causal %+CLV when it clears the netCLV floor (n≥5). */
+export function netClvPctFromProfile(profile) {
+  const clv = profile?.clvSkill;
+  const pct = Number(clv?.pctPos);
+  const n = Number(clv?.n) || 0;
+  if (n < CLV_SKILL_MIN_N || !Number.isFinite(pct)) return null;
+  return pct;
+}
 
 /**
- * Display-only: wallet clears the floors that feed EDGE and/or netCLV.
+ * Clears EDGE and/or netCLV floors (same as staking skill features).
  * Does not grant whitelist / proven / Path A HC.
  */
 export function isSkillEligibleProfile(profile, sport) {
   if (!profile) return false;
-  const picks = profile?.bySport?.[sport]?.picks;
-  const featuredOk = Number.isFinite(picks?.wr) && (picks?.n || 0) >= FEATURED_WR_MIN_N;
-  const clv = profile?.clvSkill;
-  const clvOk = Number.isFinite(clv?.pctPos) && (clv?.n || 0) >= CLV_SKILL_MIN_N;
-  return !!(featuredOk || clvOk);
+  return featuredWrFromProfile(profile, sport) != null
+    || netClvPctFromProfile(profile) != null;
 }
 
 const shortTeam = (name) => {
@@ -121,7 +137,11 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
       const whitelisted = isSportWinner ? !!isSportWinner(short, sport) : true;
       const counted = !Number.isFinite(sizeRatio) || sizeRatio <= 0 || sizeRatio >= MODEL_MIN;
       const proven = whitelisted && counted;
-      const skillEligible = isSkillEligibleProfile(profile, sport);
+      const featuredWr = featuredWrFromProfile(profile, sport);
+      const netClvPct = netClvPctFromProfile(profile);
+      const edgeEligible = featuredWr != null;
+      const netEligible = netClvPct != null;
+      const skillEligible = edgeEligible || netEligible;
       const badges = proven
         ? ['SHARP', `${sport} WINNER`]
         : whitelisted
@@ -134,6 +154,10 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
         proven,
         whitelisted,
         skillEligible,
+        edgeEligible,
+        netEligible,
+        featuredWr: edgeEligible ? Math.round(featuredWr) : null,
+        netClvPct: netEligible ? Math.round(netClvPct) : null,
         badges,
         whitelist: sportRec?.whitelistTier || (whitelisted ? 'CONFIRMED' : null),
         qualify: sizeRatio >= 0.75 ? 'VAULT' : 'SHADOW',
