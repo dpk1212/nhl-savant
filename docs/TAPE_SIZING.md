@@ -27,11 +27,11 @@ Thresholds ≈ June 15+ path-stamped p40 / p80.
 1. Paths A → B → C → D (base units + tier)  
 2. TOP/TOP+ NEITHER hard mute  
 3. Winner-align **fadeTop≥60 mute only**  
-4. **EDGE/net soft size** (BOTH ×1.25 / NEITHER ×0.5 on MINI/SHARP/CONFIRMED)  
+4. **EDGE band size on A/C** (mute E&lt;5 · half 5–10 · boost ≥10) · else EDGE/net soft size  
 5. **Tape** mute / hold / boost (RANK mute-exempt)  
 6. Odds cap + global 6u inside tape boost  
 
-`v8_unitsPreTape` = units **after** edge-net soft size, **before** tape.
+`v8_unitsPreTape` = units **after** EDGE band / soft size, **before** tape.
 
 ## RANK mute exempt (2026-07-19+)
 
@@ -45,7 +45,7 @@ EDGE-driven stake overrides from winner-align (2026-07-12 … 2026-07-14):
 
 - EDGE size ladders · WINNER rescue · Policy E · EDGE≤−5 mute  
 
-fadeTop60 mute **kept**. EDGE still computed — feeds tape + edge-net size.
+fadeTop60 mute **kept**. EDGE still computed — feeds tape + EDGE band / edge-net size.
 
 ## Stamps
 
@@ -56,7 +56,8 @@ fadeTop60 mute **kept**. EDGE still computed — feeds tape + edge-net size.
 | `v8_tapeAction` | `MUTE` \| `HOLD` \| `BOOST` \| `FAIL_OPEN` \| `PASS` |
 | `v8_unitsPreTape` | units entering tape |
 | `v8_edgeNetBucket` | BOTH / ONE / NEITHER |
-| `v8_edgeNetSizeAction` | soft size action before tape |
+| `v8_edgeBandAction` / `v8_edgeBand` | A/C EDGE ladder before tape |
+| `v8_edgeNetSizeAction` | soft size action before tape (non–A/C) |
 
 ## Code
 

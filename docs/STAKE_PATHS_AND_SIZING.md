@@ -1,12 +1,12 @@
 # Stake paths & unit sizing (production)
 
-_Status: **LIVE** · stack `v12abcde` + **tape** (2026-07-15) + **EDGE/net Path C · TOP mute · board-wide soft size** (2026-07-19)_  
+_Status: **LIVE** · stack `v12abcde` + **tape** (2026-07-15) + **EDGE/net Path C** (2026-07-19) + **EDGE band size on A/C** (2026-07-20)_  
 _Code: `scripts/syncPickStateAuthoritative.js` · HC ladder: `src/lib/ags.js` (`agsV12HcStake`) · tape: `src/lib/walletClvSkill.js`_  
 _Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`SKILL_FEATURES.md`](./SKILL_FEATURES.md) · [`WINNER_ALIGN_IMPLEMENTATION.md`](./WINNER_ALIGN_IMPLEMENTATION.md)_
 
 ---
 
-## Where we are (2026-07-19)
+## Where we are (2026-07-20)
 
 | Layer | Role | Live rule |
 |-------|------|-----------|
@@ -14,11 +14,12 @@ _Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`SKILL_FEATURES.md`](./SKILL_
 | **Paths A–D** | Who + base u | HC → RANK → SHARP/LEAN → DISSENT |
 | **TOP NEITHER mute** | Hard kill | TOP/TOP+ with E&lt;5 **and** net&lt;5 → **0u** |
 | **FadeTop** | Toxic AG | top AG WR ≥ 60 beating FOR → **0u** |
-| **EDGE/net size** | Soft dial | BOTH ×**1.25** · ONE hold · NEITHER ×**0.5** on MINI/SHARP/CONFIRMED · **RANK exempt** |
+| **EDGE band size** | A/C dial | E&lt;5 → **0u** · 5–10 → ×**0.5** · ≥10 → ×**1.25** · **RANK/DISSENT exempt** |
+| **EDGE/net size** | Soft dial (non–A/C) | BOTH ×**1.25** · ONE hold · NEITHER ×**0.5** on remaining soft tiers · **RANK exempt** |
 | **Tape** | Final dial | `&lt;0` mute (except **RANK**) · mid hold · `≥2.89` ×**1.35** · fail-open if missing |
 | **T-15** | Freeze | No further rewrite |
 
-**Paths pick who. EDGE/net scales size. Tape is the last dial.**
+**Paths pick who. EDGE band sizes A/C. Tape is the last dial.**
 
 Skill metrics (EDGE / netCLV / Tape / bucket) stamp every pre–T-15 cycle — see [`SKILL_FEATURES.md`](./SKILL_FEATURES.md).
 
@@ -41,11 +42,17 @@ Skill metrics (EDGE / netCLV / Tape / bucket) stamp every pre–T-15 cycle — s
 6. Winner-align fadeTop≥60 mute       → 0u if toxic AG top WR
    └─ EDGE size / WINNER rescue / Policy E  → FROZEN (no unit effect)
 
-7. EDGE/net size overlay (soft)
+7. EDGE band size (Path A/C, 2026-07-20+)
+   └─ EDGE < 5 or missing → 0u
+   └─ 5 ≤ EDGE < 10 → ×0.5
+   └─ EDGE ≥ 10 → ×1.25 (≤6u)
+   └─ RANK / DISSENT exempt → legacy EDGE/net soft size (step 7b)
+
+7b. EDGE/net size overlay (soft) — only when EDGE band did not apply
    └─ BOTH → path × 1.25 (≤6u)
    └─ ONE  → hold
    └─ NEITHER → ×0.5 on MINI / MINI- / SHARP* / CONFIRMED
-   └─ RANK / SUPER / DISSENT / null → hold (RANK never shrunk here)
+   └─ RANK / DISSENT / null → hold (RANK never shrunk here)
    └─ missing EDGE and net → fail-open (hold)
 
 8. Tape mute / hold / boost           → final units
@@ -68,6 +75,7 @@ Rescues **never up-size** an already-staked Path A ticket — they only fill `0u
 | **2026-07-12** | Path C retune · Path D · Path E winner-align (EDGE stake era) |
 | **2026-07-15** | **Tape sizing** · EDGE stake overrides **frozen** |
 | **2026-07-19** | **Path C = EDGE/net two-gate** · **TOP NEITHER hard mute** · **board-wide BOTH×1.25 / NEITHER×0.5** · **RANK tape-mute exempt** · proven-$ Path C retired |
+| **2026-07-20** | **EDGE band size on Path A/C** — mute E&lt;5 · half 5–10 · boost ≥10 ×1.25 · RANK/DISSENT exempt (replaces BOTH/NEITHER soft size on A/C) |
 
 ---
 
@@ -166,19 +174,41 @@ Live from **2026-07-12**. Not in the soft-NEITHER shrink set (hold through edge-
 
 ---
 
-## EDGE/net size overlay (2026-07-19+)
+## EDGE band size — Path A/C (2026-07-20+)
 
 Runs **after** paths + fadeTop, **before** tape. Does not change path tier — only units.
 
+Applies to: `SUPER` · `TOP` · `TOP+` · `MINI` · `MINI-` · `CONFIRMED` · `SHARP` · `SHARP-PRIME` · `SHARP-LEAN`
+
+| EDGE | Action | Units |
+|------|--------|-------|
+| missing or **&lt; 5** | **MUTE** | **0u** |
+| **5 ≤ E &lt; 10** | **HALF** | path × **0.5** |
+| **≥ 10** | **BOOST** | path × **1.25** (≤6u, oddsCap) |
+
+**Exempt:** `RANK` (Path B) · `DISSENT` (Path D) — keep base path size (then tape).
+
+Jun15+ CF (causal EDGE): mute&lt;5 · half mid · boost≥10 on A/C, B as-is → ~+57u vs actual shipped book. Thresholds can regress; monitor live.
+
+Stamps: `v8_edgeBandAction` (`MUTE` \| `HALF` \| `BOOST` \| `HOLD` \| `EXEMPT` \| `PASS`) · `v8_edgeBand` (`LT5` \| `MID` \| `GE10` \| `MISSING`) · `v8_unitsPreEdgeBand`
+
+This **replaces** BOTH/NEITHER soft size on A/C (no double boost).
+
+---
+
+## EDGE/net size overlay (2026-07-19+)
+
+Runs **after** paths + fadeTop, **before** tape — **only when EDGE band did not apply** (non–A/C tiers). Does not change path tier — only units.
+
 | Bucket | Action | Applies to |
 |--------|--------|------------|
-| **BOTH** (E≥5 & net≥5) | path × **1.25** (≤6u, oddsCap) | all staked tiers except already 0u |
+| **BOTH** (E≥5 & net≥5) | path × **1.25** (≤6u, oddsCap) | staked tiers not on EDGE band |
 | **ONE** | hold | all |
-| **NEITHER** | path × **0.5** | `MINI`, `MINI-`, `SHARP`, `SHARP-PRIME`, `SHARP-LEAN`, `CONFIRMED` |
-| **NEITHER** | hold | `RANK`, `SUPER`, `DISSENT`, untiered |
+| **NEITHER** | path × **0.5** | `MINI`… (legacy; A/C now on EDGE band) |
+| **NEITHER** | hold | `RANK`, `DISSENT`, untiered |
 | no EDGE **and** no net | fail-open hold | all |
 
-**TOP/TOP+ NEITHER** is already **0u** upstream (hard mute) — soft shrink never sees those tickets.
+**TOP/TOP+ NEITHER** is already **0u** upstream (hard mute).
 
 Stamps: `v8_edgeNetSizeAction` (`BOOST` \| `HALF` \| `HOLD` \| `PASS`) · `v8_unitsPreEdgeNetSize`
 
@@ -205,15 +235,17 @@ Details: [`TAPE_SIZING.md`](./TAPE_SIZING.md).
 
 ## How every final unit size is reached
 
-| Situation | Path | After edge-net | After tape | Final |
-|-----------|------|----------------|------------|------:|
-| TOP, BOTH, tape mid | 4u | ×1.25 → 5u | hold | **5u** |
-| TOP, NEITHER | 4u | hard mute | — | **0u** |
-| MINI, NEITHER, tape mid | 3u | ×0.5 → 1.5u | hold | **1.5u** |
-| MINI, BOTH, tape ≥2.89 | 3u | ×1.25 → 3.75u | ×1.35 | **~5.1u** |
-| RANK, tape &lt; 0 | 4u | hold | mute-exempt HOLD | **4u** |
-| RANK, tape ≥2.89 | 4u | hold | ×1.35 | **5.4u** |
-| SHARP BOTH (Path C) | 3u | ×1.25 → 3.75u | hold | **3.75u** |
+| Situation | Path | After EDGE band / soft | After tape | Final |
+|-----------|------|------------------------|------------|------:|
+| TOP, EDGE 3 (any net) | 4u | band MUTE | — | **0u** |
+| TOP, EDGE 7 | 4u | band ×0.5 → 2u | hold | **2u** |
+| TOP, EDGE 12, tape mid | 4u | band ×1.25 → 5u | hold | **5u** |
+| TOP, NEITHER (pre-band) | 4u | hard mute | — | **0u** |
+| MINI, EDGE 4 | 3u | band MUTE | — | **0u** |
+| RANK, tape &lt; 0 | 4u | exempt | mute-exempt HOLD | **4u** |
+| RANK, tape ≥2.89 | 4u | exempt | ×1.35 | **5.4u** |
+| SHARP, EDGE 12 | 3u | band ×1.25 → 3.75u | hold | **3.75u** |
+| SHARP-LEAN, EDGE 2 (net≥5) | 1.5u | band MUTE | — | **0u** |
 | Any, fadeTop≥60 | Nu | — | — | **0u** |
 
 ### Odds caps

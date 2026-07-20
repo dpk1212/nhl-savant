@@ -1,10 +1,10 @@
 # Skill features — EDGE · netCLV · Tape (analysis + sizing stamps)
 
-_Status: **LIVE** · schema `v8_skillFeatureVersion = 3` from **2026-07-19**_  
-_Code: `scripts/syncPickStateAuthoritative.js` (`buildSkillFeatureBundle` / `applySkillFeatureStamps` / `applyEdgeNetSizeOverlay`) · formulas: `src/lib/walletClvSkill.js`_  
+_Status: **LIVE** · schema `v8_skillFeatureVersion = 4` from **2026-07-20**_  
+_Code: `scripts/syncPickStateAuthoritative.js` (`buildSkillFeatureBundle` / `applySkillFeatureStamps` / `applyEdgeBandSizeOverlay`) · formulas: `src/lib/walletClvSkill.js`_  
 _Sizing stack: [`STAKE_PATHS_AND_SIZING.md`](./STAKE_PATHS_AND_SIZING.md)_
 
-These metrics are product core — Path C door, TOP mute, board-wide soft size, and tape all consume them. Every pre–T-15 sync stamps them so you can measure prediction / PnL **without rebuilding** from positions.
+These metrics are product core — Path C door, TOP mute, EDGE band size on A/C, and tape all consume them. Every pre–T-15 sync stamps them so you can measure prediction / PnL **without rebuilding** from positions.
 
 ---
 
@@ -24,13 +24,14 @@ Tape   = 1.5·(EDGE/10) + 2·(netCLV/10)
 
 ---
 
-## How sizing uses these metrics (2026-07-19+)
+## How sizing uses these metrics (2026-07-20+)
 
 | Consumer | Rule |
 |----------|------|
 | Path C door | BOTH → SHARP 3u · ONE → SHARP-LEAN 1.5u · NEITHER → no rescue |
 | TOP hard mute | TOP/TOP+ + NEITHER → 0u |
-| Soft size overlay | BOTH → ×1.25 · ONE hold · NEITHER → ×0.5 on MINI/SHARP/CONFIRMED · RANK exempt |
+| **EDGE band (A/C)** | E&lt;5 → **0u** · 5–10 → ×**0.5** · ≥10 → ×**1.25** · RANK/DISSENT exempt |
+| Soft size overlay | ONLY when EDGE band did not apply (non–A/C) · BOTH ×1.25 · NEITHER ×0.5 · RANK exempt |
 | Tape | `&lt;0` mute (RANK exempt) · `≥2.89` ×1.35 · else hold |
 
 ---
@@ -57,10 +58,13 @@ Written on every **LOCKED / LEAN** side each pre–T-15 cycle, and on any other 
 | `v8_netGateOk` | netCLV ≥ 5 |
 | `v8_edgeNetBucket` | `BOTH` \| `ONE` \| `NEITHER` |
 | `v8_edgeGateThr` / `v8_netGateThr` | thresholds (5 / 5) |
-| `v8_edgeNetSizeAction` | `BOOST` \| `HALF` \| `HOLD` \| `PASS` (soft size) |
+| `v8_edgeNetSizeAction` | `BOOST` \| `HALF` \| `HOLD` \| `PASS` (soft size, non–A/C) |
 | `v8_unitsPreEdgeNetSize` | units before soft size overlay |
+| `v8_edgeBandAction` | `MUTE` \| `HALF` \| `BOOST` \| `HOLD` \| `EXEMPT` \| `PASS` |
+| `v8_edgeBand` | `LT5` \| `MID` \| `GE10` \| `MISSING` |
+| `v8_unitsPreEdgeBand` | units before EDGE band overlay |
 | `v8_skillAgsV12` | AGS v12 score at stamp time |
-| `v8_skillFeatureVersion` | schema version (**3**) |
+| `v8_skillFeatureVersion` | schema version (**4**) |
 | `v8_skillEvaluatedAt` | ms timestamp of stamp |
 
 Frozen at **T-15** (last write sticks). **COMPLETED** docs never rewritten.
