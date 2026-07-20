@@ -439,8 +439,30 @@ function SportAccordion({ sport, legs, invested, expanded, onToggle, label, forc
   );
 }
 
+/** Polymarket avgPrice (0–1) → American odds string, e.g. -108 / +150. */
+function fmtProbOdds(prob) {
+  if (prob == null || !(prob > 0) || !(prob < 1)) return null;
+  const am = prob >= 0.5
+    ? Math.round(-100 * prob / (1 - prob))
+    : Math.round(100 * (1 - prob) / prob);
+  return am > 0 ? `+${am}` : `${am}`;
+}
+
+function fmtEntryLine(leg) {
+  const line = leg.entryLine;
+  if (line == null || Number.isNaN(Number(line))) return null;
+  const n = Number(line);
+  const mkt = String(leg.marketType || '').toUpperCase();
+  if (mkt === 'SPREAD') return n > 0 ? `+${n}` : `${n}`;
+  if (mkt === 'TOTAL') return `${n}`;
+  return null;
+}
+
 function LegCard({ leg, highlight }) {
   const sc = SPORT_COLORS[leg.sport] || B.gold;
+  const lineStr = fmtEntryLine(leg);
+  const oddsStr = fmtProbOdds(leg.avgPrice);
+  const pickLabel = [leg.teamName || leg.side, lineStr].filter(Boolean).join(' ');
   return (
     <div
       style={{
@@ -462,7 +484,12 @@ function LegCard({ leg, highlight }) {
         {leg.away} vs {leg.home}
       </div>
       <div style={{ ...T.micro, color: B.textSec, marginTop: '0.2rem' }}>
-        {leg.marketType} · <span style={{ color: B.gold }}>{leg.teamName || leg.side}</span>
+        {leg.marketType} · <span style={{ color: B.gold }}>{pickLabel}</span>
+        {oddsStr && (
+          <span style={{ color: B.text, fontFeatureSettings: "'tnum'", fontWeight: 700 }}>
+            {' '}· {oddsStr}
+          </span>
+        )}
         {leg.betMultiplier >= 1.5 && (
           <span style={{ color: B.gold }}> · {leg.betMultiplier.toFixed(1)}×</span>
         )}
