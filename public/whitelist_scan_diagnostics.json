@@ -1,23 +1,23 @@
 {
-  "scannedAt": "2026-07-20T14:39:25.585Z",
-  "elapsedSec": 15.4,
+  "scannedAt": "2026-07-20T14:43:31.640Z",
+  "elapsedSec": 15.5,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 32,
   "summary": {
     "total": 201,
     "coveredByMain": 9,
     "recovered": 14,
-    "recoveredPositions": 121,
+    "recoveredPositions": 125,
     "noPositions": 178,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
       "ml": 4,
-      "spread": 4,
+      "spread": 5,
       "total": 1,
-      "dropped_shadow_gate": 23,
-      "dropped_excluded": 88,
+      "dropped_shadow_gate": 24,
+      "dropped_excluded": 90,
       "dropped_duplicate": 1
     }
   },
@@ -486,11 +486,11 @@
       "sports": "MLB",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xf7f0b0b1e9c0fe02ccad926916ee31aef74b912c",
-      "positionsCount": 44,
+      "positionsCount": 45,
       "statsSource": "sports_sharps",
       "avgSportBet": 580,
       "willPassShadowGate": 31,
-      "willDropAtShadowGate": 13,
+      "willDropAtShadowGate": 14,
       "positions": [
         {
           "sport": "MLB",
@@ -887,6 +887,15 @@
           "invested": 2,
           "entryLine": 8.5,
           "passesShadow": false
+        },
+        {
+          "sport": "WNBA",
+          "gameKey": "lva_tor",
+          "marketType": "total",
+          "side": "over",
+          "invested": 1,
+          "entryLine": 183.5,
+          "passesShadow": false
         }
       ]
     },
@@ -1201,10 +1210,10 @@
       "sports": "MLB,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
-      "positionsCount": 50,
+      "positionsCount": 52,
       "statsSource": "sports_sharps",
       "avgSportBet": 1481,
-      "willPassShadowGate": 50,
+      "willPassShadowGate": 52,
       "willDropAtShadowGate": 0,
       "positions": [
         {
@@ -1286,6 +1295,24 @@
           "side": "under",
           "invested": 1780,
           "entryLine": 8.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "WNBA",
+          "gameKey": "nyl_dal",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 1633,
+          "entryLine": -4.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "min_cle",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 1889,
+          "entryLine": 1.5,
           "passesShadow": true
         },
         {
@@ -1403,15 +1430,6 @@
           "side": "under",
           "invested": 1076,
           "entryLine": 183.5,
-          "passesShadow": true
-        },
-        {
-          "sport": "WNBA",
-          "gameKey": "nyl_dal",
-          "marketType": "spread",
-          "side": "away",
-          "invested": 1019,
-          "entryLine": -4.5,
           "passesShadow": true
         },
         {
@@ -1556,6 +1574,15 @@
           "side": "over",
           "invested": 508,
           "entryLine": 7.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "bal_bos",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 411,
+          "entryLine": -1.5,
           "passesShadow": true
         },
         {
@@ -2289,10 +2316,10 @@
       "sports": "WNBA,NBA,SOC",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x27f738fe203827445690339104aae35b20bc44b0",
-      "positionsCount": 3,
+      "positionsCount": 4,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 7596,
-      "willPassShadowGate": 3,
+      "willPassShadowGate": 4,
       "willDropAtShadowGate": 0,
       "positions": [
         {
@@ -2320,6 +2347,15 @@
           "side": "home",
           "invested": 1667,
           "entryLine": -1.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "WNBA",
+          "gameKey": "nyl_dal",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 1880,
+          "entryLine": 4.5,
           "passesShadow": true
         }
       ]
