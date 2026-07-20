@@ -11329,7 +11329,8 @@ export default function SharpFlow() {
                 const sportGames = sharpPositions?.[sport] || {};
                 for (const [key, gd] of Object.entries(sportGames)) {
                   if (!gd.positions || gd.positions.length === 0) continue;
-                  if ((gd.summary?.totalInvested || 0) < 1000) continue;
+                  // Display floor for Live Positions cards (qualified sharp $).
+                  if ((gd.summary?.totalInvested || 0) < 750) continue;
                   const pg = pinnacleHistory?.[sport]?.[key];
                   const ct = pg?.commence ? new Date(pg.commence).getTime() : null;
                   const isLive = ct && nowMs >= ct;
