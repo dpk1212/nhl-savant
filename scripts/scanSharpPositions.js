@@ -15,6 +15,7 @@ import { fileURLToPath } from 'url';
 import { matchSoccerPositionTitle, resolveSoccerSide } from './lib/soccerTeams.js';
 import { matchUFCPositionTitle } from './lib/ufcFighters.js';
 import { matchWNBAPositionTitle, resolveWNBATeam, WNBA_NAME_TO_CODE } from './lib/wnbaTeams.js';
+import { resolveBinarySide, resolveSpreadEntryLine } from './lib/resolvePositionSide.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -501,34 +502,6 @@ function matchSpreadTitle(posTitle, todaysGames, cbbMap) {
   return candidates[0];
 }
 
-// ─── Determine which side the outcome is on ─────────────────────────────────
-function resolveOutcomeSide(outcome, awayName, homeName, posTitle) {
-  if (!outcome) return 'unknown';
-  const o = normalize(outcome);
-  const nAway = normalize(awayName);
-  const nHome = normalize(homeName);
-
-  if (o.includes(nAway) || nAway.includes(o) || o === 'yes') return 'away';
-  if (o.includes(nHome) || nHome.includes(o) || o === 'no') return 'home';
-
-  // Check individual words
-  for (const word of (outcome || '').split(/\s+/)) {
-    const w = normalize(word);
-    if (w.length < 3) continue;
-    if (nAway.includes(w)) return 'away';
-    if (nHome.includes(w)) return 'home';
-  }
-
-  // For binary markets, first team in title is typically "Yes"
-  const titleTeams = extractTeamsFromTitle(posTitle);
-  if (titleTeams) {
-    const firstTeam = normalize(titleTeams[0]);
-    if (o === 'yes' || o.includes(firstTeam)) return 'away';
-  }
-
-  return 'away';
-}
-
 // ─── Main ─────────────────────────────────────────────────────────────────────
 async function run() {
   console.log('Scanning sharp wallet positions on today\'s games...\n');
@@ -752,6 +725,7 @@ async function run() {
   let spreadMatchCount = 0;
   let totalMatchCount = 0;
   let errorCount = 0;
+  let unresolvedSideCount = 0;
 
   // ── Phase A: fetch every wallet's open positions in parallel (bounded) ──
   // The network call is the bottleneck (1 throttled request per wallet). A
@@ -808,6 +782,9 @@ async function run() {
 
       const outcome = pos.outcome || '';
       const outcomeNorm = normalize(outcome);
+      const outcomeIndex = pos.outcomeIndex != null && pos.outcomeIndex !== ''
+        ? Number(pos.outcomeIndex)
+        : null;
 
       const curPrice = parseFloat(pos.curPrice || '0');
       if (curPrice <= 0.01 || curPrice >= 0.99) continue;
@@ -818,81 +795,69 @@ async function run() {
       const isSpread = forcedSpread || (!isTotal && (titleLower.includes('spread') || /[+-]\d+\.?\d*/.test(outcome)));
       const marketType = isTotal ? 'total' : isSpread ? 'spread' : 'ml';
 
-      let entryLine = null;
-      if (isSpread || isTotal) {
-        const polyGame = polyData?.[match.sport]?.[match.key];
-
-        if (isSpread) {
-          // PRIMARY: parse the line from the position's own title
-          // e.g. "Spread: Celtics (-12.5)" → line = -12.5
-          const titleLineMatch = title.match(/\(([+-]?\d+\.?\d*)\)/);
-          if (titleLineMatch) {
-            const titleLine = parseFloat(titleLineMatch[1]);
-            // The title line is FROM the team's perspective named in the title.
-            // If outcome matches that team, use as-is; if outcome is the other side, negate.
-            const titleTeamMatch = title.match(/^Spread:\s+(.+?)\s*\(/i);
-            if (titleTeamMatch) {
-              const titleTeamNorm = normalize(titleTeamMatch[1]);
-              entryLine = normalize(outcome).includes(titleTeamNorm) || titleTeamNorm.includes(normalize(outcome))
-                ? titleLine : -titleLine;
-            } else {
-              entryLine = titleLine;
-            }
-          }
-
-          // FALLBACK: polySpread data (can be wrong market type like 1H)
-          if (entryLine == null && polyGame?.polySpread) {
-            const ps = polyGame.polySpread;
-            const outcomeIdx = (ps.outcomes || []).findIndex(o => normalize(o) === outcomeNorm);
-            if (outcomeIdx === 0) entryLine = ps.line;
-            else if (outcomeIdx === 1) entryLine = -ps.line;
-            else if (match.spreadLine != null) entryLine = match.spreadLine;
-          } else if (entryLine == null && match.spreadLine != null) {
-            entryLine = match.spreadLine;
-          }
-        }
-
-        if (isTotal) {
-          // PRIMARY: parse the line from the wallet's OWN position title.
-          // A single Polymarket "event" lists many O/U sub-markets per
-          // game — full game, F5, alt-lines (O/U 4.5, 5.5, 7.5, 8.5, 9.5,
-          // ...). fetchPolymarketData caches whichever O/U it sees first
-          // into polyGame.polyTotal, which is frequently NOT the line the
-          // sharp actually bet. The wallet's own position title is
-          // self-evident truth ("Detroit Tigers vs. Tampa Bay Rays: O/U
-          // 8.5" → 8.5) and is what AGS must score, what the UI must
-          // display, and what the grader must compare against the final
-          // score. Mirrors the spread branch which already parses from
-          // the position title first.
-          const titleTotalMatch = title.match(/(?:O\/U|Over|Under|Total)[^\d]*(\d+\.?\d*)/i);
-          if (titleTotalMatch) {
-            entryLine = parseFloat(titleTotalMatch[1]);
-          } else {
-            // FALLBACK: cached polyTotal — only when the position title
-            // lacks a line (rare; usually a stripped/abbreviated title).
-            const pt = polyGame?.polyTotal;
-            const isGameTotal = pt && (pt.outcomes || []).some(o => /^over$/i.test(o));
-            if (isGameTotal) entryLine = pt.line;
-          }
-        }
-      }
-
       const game = todaysGames[`${match.sport}:${match.key}`];
       const sport = match.sport;
+      const polyGame = polyData?.[match.sport]?.[match.key];
 
       let side;
+      let sideSource = null;
       if (isTotal) {
         side = outcomeNorm === 'over' ? 'over' : 'under';
+        sideSource = 'total';
       } else if (sport === 'SOC') {
         // 3-way: side comes from the negRisk market itself + Yes outcome.
         // "No" on a single side (= home OR draw) isn't attributable — skip.
         side = resolveSoccerSide(match, outcome, game.away, game.home);
+        sideSource = 'soccer';
         if (!side) continue;
       } else if (sport === 'UFC' && match.side) {
         // Prop titles ("Will Holloway win by KO?") already carry the side.
         side = match.side;
+        sideSource = 'ufc';
       } else {
-        side = resolveOutcomeSide(outcome, game.away, game.home, title);
+        // Prefer outcomeIndex + poly outcomes — never default unknown → away.
+        const marketOutcomes = isSpread
+          ? (polyGame?.polySpread?.outcomes || null)
+          : (polyGame?.polyMl?.outcomes || polyGame?.poly?.outcomes || polyGame?.outcomes || null);
+        const resolved = resolveBinarySide({
+          outcome,
+          outcomeIndex,
+          awayName: game.away,
+          homeName: game.home,
+          marketOutcomes,
+        });
+        side = resolved.side;
+        sideSource = resolved.source;
+        if (!side) {
+          unresolvedSideCount++;
+          continue;
+        }
+      }
+
+      let entryLine = null;
+      if (isSpread) {
+        entryLine = resolveSpreadEntryLine({
+          title,
+          outcome,
+          outcomeIndex,
+          side,
+          awayName: game.away,
+          homeName: game.home,
+          polySpread: polyGame?.polySpread || null,
+          matchSpreadLine: match.spreadLine ?? null,
+        });
+      } else if (isTotal) {
+        // PRIMARY: parse the line from the wallet's OWN position title.
+        // A single Polymarket "event" lists many O/U sub-markets per
+        // game — full game, F5, alt-lines. Title is self-evident truth.
+        const titleTotalMatch = title.match(/(?:O\/U|Over|Under|Total)[^\d]*(\d+\.?\d*)/i);
+        if (titleTotalMatch) {
+          entryLine = parseFloat(titleTotalMatch[1]);
+        } else {
+          const pt = polyGame?.polyTotal;
+          const isGameTotal = pt && (pt.outcomes || []).some(o => /^over$/i.test(o));
+          if (isGameTotal) entryLine = pt.line;
+        }
       }
 
       const size = parseFloat(pos.size || '0');
@@ -940,6 +905,7 @@ async function run() {
         pnl: Math.round(cashPnl),
         firstSeen: prevFirstSeen || new Date().toISOString(),
         ...(entryLine != null && { entryLine }),
+        ...(sideSource && { sideSource }),
         // Polymarket position identity — used for deterministic EXITED stamps
         ...(pos.asset != null && pos.asset !== '' && { asset: String(pos.asset) }),
         ...(pos.conditionId != null && pos.conditionId !== '' && { conditionId: String(pos.conditionId) }),
@@ -1151,6 +1117,9 @@ async function run() {
   }
 
   console.log(`\nDone — ${matchCount} ML, ${spreadMatchCount} spread, ${totalMatchCount} total positions`);
+  if (unresolvedSideCount > 0) {
+    console.log(`Skipped ${unresolvedSideCount} position(s) with unresolved side (stale outcome, no usable outcomeIndex)`);
+  }
   console.log(`Games: ${totalGamesWithPositions} ML, ${spreadGames} spread, ${totalGames} total`);
   console.log(`Wrote ${outPath}, ${spreadOutPath}, ${totalOutPath}`);
   if (errorCount > 0) console.log(`(${errorCount} wallets failed to fetch)`);

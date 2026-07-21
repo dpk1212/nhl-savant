@@ -49,13 +49,9 @@
  *   node scripts/scanWhitelistedWallets.js --no-merge    (diagnostic only, do not modify sharp_positions*.json)
  *   node scripts/scanWhitelistedWallets.js --verbose     (per-wallet stdout)
  *
- * The position-extraction helpers (NHL_MAP, MLB_MAP, NBA_MAP,
- * extractTeamsFromTitle, matchPositionToGame, matchSpreadTitle,
- * resolveOutcomeSide, buildTodaysGames, fetchWithRetry) are
- * intentionally duplicated from scanSharpPositions.js. Long-term we
- * should factor them into scripts/lib/walletScanHelpers.js so the two
- * scanners can't drift; that refactor is deferred to keep this change
- * additive-only and zero-risk to the main scanner.
+ * Side resolution is shared via scripts/lib/resolvePositionSide.js
+ * (outcomeIndex-first; never default unknown → away). Other helpers are
+ * still duplicated from scanSharpPositions.js.
  */
 
 import 'dotenv/config';
@@ -66,6 +62,7 @@ import { dirname, join } from 'path';
 import { matchSoccerPositionTitle, resolveSoccerSide } from './lib/soccerTeams.js';
 import { matchUFCPositionTitle } from './lib/ufcFighters.js';
 import { matchWNBAPositionTitle, resolveWNBATeam, WNBA_NAME_TO_CODE } from './lib/wnbaTeams.js';
+import { resolveBinarySide, resolveSpreadEntryLine } from './lib/resolvePositionSide.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -388,27 +385,6 @@ function matchSpreadTitle(posTitle, todaysGames, cbbMap) {
   return candidates[0];
 }
 
-function resolveOutcomeSide(outcome, awayName, homeName, posTitle) {
-  if (!outcome) return 'unknown';
-  const o = normalize(outcome);
-  const nAway = normalize(awayName);
-  const nHome = normalize(homeName);
-  if (o.includes(nAway) || nAway.includes(o) || o === 'yes') return 'away';
-  if (o.includes(nHome) || nHome.includes(o) || o === 'no') return 'home';
-  for (const word of (outcome || '').split(/\s+/)) {
-    const w = normalize(word);
-    if (w.length < 3) continue;
-    if (nAway.includes(w)) return 'away';
-    if (nHome.includes(w)) return 'home';
-  }
-  const titleTeams = extractTeamsFromTitle(posTitle);
-  if (titleTeams) {
-    const firstTeam = normalize(titleTeams[0]);
-    if (o === 'yes' || o.includes(firstTeam)) return 'away';
-  }
-  return 'away';
-}
-
 async function fetchWithRetry(url, retries = RETRY_LIMIT) {
   let lastErr = null;
   for (let i = 0; i <= retries; i++) {
@@ -631,6 +607,7 @@ async function run() {
   let addressNotFound = 0;
   let apiError = 0;
   let recoveredPositionsTotal = 0;
+  let unresolvedSideCount = 0;
   const recoveredAll = []; // Flat list of all recovered positions (for merge step).
   // Supplemental-scan heartbeat — merged into sharp_positions*.json so
   // writeSharpActions can EXITED-stamp wallets the main scan missed.
@@ -736,6 +713,9 @@ async function run() {
       }
       const outcome = pos.outcome || '';
       const outcomeNorm = normalize(outcome);
+      const outcomeIndex = pos.outcomeIndex != null && pos.outcomeIndex !== ''
+        ? Number(pos.outcomeIndex)
+        : null;
       const curPrice = parseFloat(pos.curPrice || '0');
       if (curPrice <= 0.01 || curPrice >= 0.99) continue;
       const titleLower = title.toLowerCase();
@@ -743,63 +723,54 @@ async function run() {
       const isSpread = forcedSpread || (!isTotal && (titleLower.includes('spread') || /[+-]\d+\.?\d*/.test(outcome)));
       const marketType = isTotal ? 'total' : isSpread ? 'spread' : 'ml';
       const game = todaysGames[`${match.sport}:${match.key}`];
+      const polyGame = polyData?.[match.sport]?.[match.key];
       let side;
+      let sideSource = null;
       if (isTotal) {
         side = outcomeNorm === 'over' ? 'over' : 'under';
+        sideSource = 'total';
       } else if (match.sport === 'SOC') {
         // 3-way: side comes from the negRisk market itself + Yes outcome.
         side = resolveSoccerSide(match, outcome, game.away, game.home);
+        sideSource = 'soccer';
         if (!side) continue;
       } else if (match.sport === 'UFC' && match.side) {
         side = match.side;
+        sideSource = 'ufc';
       } else {
-        side = resolveOutcomeSide(outcome, game.away, game.home, title);
+        const marketOutcomes = isSpread
+          ? (polyGame?.polySpread?.outcomes || null)
+          : (polyGame?.polyMl?.outcomes || polyGame?.poly?.outcomes || polyGame?.outcomes || null);
+        const resolved = resolveBinarySide({
+          outcome,
+          outcomeIndex,
+          awayName: game.away,
+          homeName: game.home,
+          marketOutcomes,
+        });
+        side = resolved.side;
+        sideSource = resolved.source;
+        if (!side) {
+          unresolvedSideCount++;
+          continue;
+        }
       }
 
-      // ── entryLine extraction (mirrors scanSharpPositions.js) ─────────
-      // For spread/total, writeSharpActions reads entryLine to stamp
-      // spreadLine/totalLine on the Firestore position doc, which the
-      // dashboard uses to render the "Over 218.5" label.
+      // ── entryLine (shared helper — outcomeIndex-first) ───────────────
       let entryLine = null;
-      const polyGame = polyData?.[match.sport]?.[match.key];
       if (isSpread) {
-        const titleLineMatch = title.match(/\(([+-]?\d+\.?\d*)\)/);
-        if (titleLineMatch) {
-          const titleLine = parseFloat(titleLineMatch[1]);
-          const titleTeamMatch = title.match(/^Spread:\s+(.+?)\s*\(/i);
-          if (titleTeamMatch) {
-            const titleTeamNorm = normalize(titleTeamMatch[1]);
-            entryLine = normalize(outcome).includes(titleTeamNorm) || titleTeamNorm.includes(normalize(outcome))
-              ? titleLine : -titleLine;
-          } else {
-            entryLine = titleLine;
-          }
-        }
-        if (entryLine == null && polyGame?.polySpread) {
-          const ps = polyGame.polySpread;
-          const outcomeIdx = (ps.outcomes || []).findIndex(o => normalize(o) === outcomeNorm);
-          if (outcomeIdx === 0) entryLine = ps.line;
-          else if (outcomeIdx === 1) entryLine = -ps.line;
-          else if (match.spreadLine != null) entryLine = match.spreadLine;
-        } else if (entryLine == null && match.spreadLine != null) {
-          entryLine = match.spreadLine;
-        }
-      }
-      if (isTotal) {
-        // PRIMARY: parse the line from the wallet's OWN position title.
-        // A single Polymarket "event" lists many O/U sub-markets per
-        // game — full game, F5, alt-lines (O/U 4.5, 5.5, 7.5, 8.5, ...).
-        // Trusting polyGame.polyTotal.line first was the wrong call: it
-        // pulled whichever sub-market fetchPolymarketData happened to
-        // cache, NOT the line this specific wallet bet. Real incident
-        // 2026-06-02 wallet 491f30 (tex_stl Under at line 7.5): main
-        // scanner correctly stamped entryLine=7.5, this whitelist re-pass
-        // then OVERWROTE it with polyTotal.line=4.5 (cache pointed at an
-        // alt-line), and the UI shipped "Under 4.5 -110" — a price/line
-        // combo that's mathematically impossible as a game total.
-        // Mirrors scanSharpPositions.js → use the wallet's own title
-        // first (regex captures "O/U 7.5" → 7.5) and only fall back to
-        // polyTotal when the title carries no line.
+        entryLine = resolveSpreadEntryLine({
+          title,
+          outcome,
+          outcomeIndex,
+          side,
+          awayName: game.away,
+          homeName: game.home,
+          polySpread: polyGame?.polySpread || null,
+          matchSpreadLine: match.spreadLine ?? null,
+        });
+      } else if (isTotal) {
+        // PRIMARY: wallet's own position title (not cached polyTotal alt-line).
         const totalMatch = title.match(/(?:O\/U|Over|Under|Total)[^\d]*(\d+\.?\d*)/i);
         if (totalMatch) {
           entryLine = parseFloat(totalMatch[1]);
@@ -863,6 +834,7 @@ async function run() {
         statsSource: stats.source,
         recoveredVia: 'whitelist_scan',
         ...(entryLine != null && { entryLine }),
+        ...(sideSource && { sideSource }),
         ...(pos.asset != null && pos.asset !== '' && { asset: String(pos.asset) }),
         ...(pos.conditionId != null && pos.conditionId !== '' && { conditionId: String(pos.conditionId) }),
         ...(pos.outcomeIndex != null && pos.outcomeIndex !== '' && { outcomeIndex: Number(pos.outcomeIndex) }),
@@ -936,6 +908,9 @@ async function run() {
   console.log(`  ✗ API errors after 3 retries:    ${apiError}  ${apiError === 0 ? '✓' : '⚠️'}`);
   console.log(`  ⚠️ Address not found:             ${addressNotFound}  ${addressNotFound === 0 ? '✓' : '(needs profile backfill)'}`);
   console.log(`  Coverage:                        ${totalScanned} / ${whitelist.length}  (${coveragePct}%)`);
+  if (unresolvedSideCount > 0) {
+    console.log(`  Skipped unresolved side:         ${unresolvedSideCount}  (stale outcome, no usable outcomeIndex)`);
+  }
   console.log(`  Phase-2 merge:                   ${MERGE ? 'ENABLED (positions WILL be merged into sharp_positions*.json)' : 'OFF (diagnostic only, no downstream change)'}`);
   console.log(`  Elapsed:                         ${elapsedSec}s`);
   console.log('───────────────────────────────────────────────────────────');
