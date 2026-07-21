@@ -887,47 +887,62 @@ export default function LockedClarityExpanded({
 
               {!againstSel && Number.isFinite(sizeRatio) && Number.isFinite(selected.invested) && selected.invested > 0 && (
                 <div style={{ marginTop: 9 }}>
-                  <div style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
-                    marginBottom: 5, fontFeatureSettings: "'tnum'",
-                  }}>
-                    <span style={{
-                      fontSize: 9, fontWeight: 700, letterSpacing: '0.06em', color: C.textMuted,
-                      textTransform: 'uppercase',
-                    }}>
-                      Size vs usual
-                    </span>
-                    <span style={{
-                      fontSize: 12, fontWeight: 700, color: sizeHot ? GREEN : GOLD_HI,
-                    }}>
-                      {sizeRatio.toFixed(1)}×
-                    </span>
-                  </div>
-                  <div style={{
-                    height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.06)',
-                    position: 'relative',
-                  }}>
-                    <div style={{
-                      position: 'absolute', inset: 0, borderRadius: 2, overflow: 'hidden',
-                      background: `linear-gradient(90deg, rgba(255,255,255,0.04), ${sizeHot ? GREEN : GOLD})`,
-                    }} />
-                    {Number.isFinite(sizeUsual) && sizeUsual > 0 && (
-                      <div style={{
-                        position: 'absolute',
-                        left: `${Math.min(92, (sizeUsual / selected.invested) * 100)}%`,
-                        top: -2, bottom: -2, width: 2, borderRadius: 1,
-                        background: C.text, transform: 'translateX(-50%)',
-                        boxShadow: '0 0 8px rgba(255,255,255,0.35)',
-                      }} />
-                    )}
-                  </div>
-                  <div style={{
-                    display: 'flex', justifyContent: 'space-between', marginTop: 4,
-                    fontSize: 10, fontWeight: 550, color: C.textMuted, fontFeatureSettings: "'tnum'",
-                  }}>
-                    <span>usual {fmtMoney(sizeUsual)}</span>
-                    <span style={{ color: sizeHot ? GREEN : C.textSec }}>this {fmtMoney(selected.invested)}</span>
-                  </div>
+                  {(() => {
+                    // Fill length = multiplier (bigger × → longer bar).
+                    // Tick = 1.0× usual on the same scale — not usual/this.
+                    const scaleMax = Math.max(3, sizeRatio);
+                    const fillPct = Math.min(100, (sizeRatio / scaleMax) * 100);
+                    const usualPct = Math.min(96, (1 / scaleMax) * 100);
+                    return (
+                      <>
+                        <div style={{
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+                          marginBottom: 5, fontFeatureSettings: "'tnum'",
+                        }}>
+                          <span style={{
+                            fontSize: 9, fontWeight: 700, letterSpacing: '0.06em', color: C.textMuted,
+                            textTransform: 'uppercase',
+                          }}>
+                            Size vs usual
+                          </span>
+                          <span style={{
+                            fontSize: 12, fontWeight: 700, color: sizeHot ? GREEN : GOLD_HI,
+                          }}>
+                            {sizeRatio.toFixed(1)}×
+                          </span>
+                        </div>
+                        <div style={{
+                          height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.06)',
+                          position: 'relative',
+                        }}>
+                          <div style={{
+                            position: 'absolute', left: 0, top: 0, bottom: 0,
+                            width: `${fillPct}%`, borderRadius: 2,
+                            background: sizeHot
+                              ? `linear-gradient(90deg, rgba(52,211,153,0.25), ${GREEN})`
+                              : `linear-gradient(90deg, rgba(212,175,55,0.2), ${GOLD})`,
+                          }} />
+                          <div
+                            title="1.0× usual"
+                            style={{
+                              position: 'absolute',
+                              left: `${usualPct}%`,
+                              top: -3, bottom: -3, width: 2, borderRadius: 1,
+                              background: C.text, transform: 'translateX(-50%)',
+                              opacity: 0.85,
+                            }}
+                          />
+                        </div>
+                        <div style={{
+                          display: 'flex', justifyContent: 'space-between', marginTop: 4,
+                          fontSize: 10, fontWeight: 550, color: C.textMuted, fontFeatureSettings: "'tnum'",
+                        }}>
+                          <span>usual {fmtMoney(sizeUsual)}</span>
+                          <span style={{ color: sizeHot ? GREEN : C.textSec }}>this {fmtMoney(selected.invested)}</span>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
               )}
             </div>
