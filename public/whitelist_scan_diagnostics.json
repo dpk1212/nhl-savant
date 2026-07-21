@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-07-21T12:21:34.515Z",
-  "elapsedSec": 16.2,
+  "scannedAt": "2026-07-21T12:25:26.548Z",
+  "elapsedSec": 16.8,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 30,
   "summary": {
     "total": 203,
-    "coveredByMain": 5,
+    "coveredByMain": 6,
     "recovered": 4,
-    "recoveredPositions": 20,
-    "noPositions": 194,
+    "recoveredPositions": 22,
+    "noPositions": 193,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -17,7 +17,7 @@
       "spread": 0,
       "total": 0,
       "dropped_shadow_gate": 5,
-      "dropped_excluded": 14,
+      "dropped_excluded": 16,
       "dropped_duplicate": 0
     }
   },
@@ -627,12 +627,21 @@
       "sports": "MLB,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
-      "positionsCount": 10,
+      "positionsCount": 11,
       "statsSource": "sports_sharps",
       "avgSportBet": 1466,
-      "willPassShadowGate": 10,
+      "willPassShadowGate": 11,
       "willDropAtShadowGate": 0,
       "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "lad_phi",
+          "marketType": "total",
+          "side": "over",
+          "invested": 2556,
+          "entryLine": 8.5,
+          "passesShadow": true
+        },
         {
           "sport": "MLB",
           "gameKey": "mia_hou",
@@ -850,8 +859,7 @@
       "tier": "CONFIRMED",
       "name": "wr0ngw4yb3tt0r",
       "sports": "SOC",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x224a89dbe0db0d6124b335edabd15b3f877da3d5"
+      "status": "COVERED_BY_MAIN"
     },
     {
       "walletShort": "7dd2e5",
@@ -1658,12 +1666,21 @@
       "sports": "SOC,NBA,MLB",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x3dfb153c197d4c19d3b31c1ecd2c7b6860eeabaf",
-      "positionsCount": 8,
+      "positionsCount": 9,
       "statsSource": "sports_sharps",
       "avgSportBet": 33368,
-      "willPassShadowGate": 4,
+      "willPassShadowGate": 5,
       "willDropAtShadowGate": 4,
       "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "lad_phi",
+          "marketType": "total",
+          "side": "under",
+          "invested": 32666,
+          "entryLine": 8.5,
+          "passesShadow": true
+        },
         {
           "sport": "MLB",
           "gameKey": "mia_hou",
