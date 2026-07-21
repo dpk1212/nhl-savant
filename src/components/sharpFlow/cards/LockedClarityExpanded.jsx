@@ -735,7 +735,6 @@ export default function LockedClarityExpanded({
               ③ OUR PRICE
             </span>
             <span style={{ marginLeft: 8, fontSize: 14, fontWeight: 650 }}>{fmtOdds(f.gotOdds ?? f.lockOdds)}</span>
-            {f.book && <span style={{ marginLeft: 5, fontSize: 10, color: C.textMuted }}>{f.book}</span>}
           </div>
           {Number.isFinite(f.clvPct) && (
             <span style={{ fontSize: 11, fontWeight: 700, color: clvGood ? GREEN : VS }}>
@@ -760,9 +759,6 @@ export default function LockedClarityExpanded({
           )}
           {Number.isFinite(f.edge) && (
             <span>EDGE <span style={{ color: f.edge >= 0 ? GREEN : VS, fontWeight: 700 }}>{f.edge >= 0 ? '+' : ''}{f.edge.toFixed(1)}</span></span>
-          )}
-          {f.fairBook && (
-            <span style={{ color: C.textFaint, marginLeft: 'auto' }}>fair via {f.fairBook}</span>
           )}
         </div>
       </div>

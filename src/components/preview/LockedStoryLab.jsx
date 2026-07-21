@@ -676,7 +676,6 @@ function ClarityCard({ f }) {
               ③ OUR PRICE
             </span>
             <span style={{ marginLeft: 8, fontSize: 14, fontWeight: 650 }}>{fmtOdds(f.gotOdds)}</span>
-            <span style={{ marginLeft: 5, fontSize: 10, color: INK_3 }}>{f.book}</span>
           </div>
           <span style={{ fontSize: 11, fontWeight: 700, color: clvGood ? GREEN : VS }}>
             {clvGood ? '+' : ''}{f.clvPct.toFixed(1)}% vs close
@@ -694,7 +693,6 @@ function ClarityCard({ f }) {
         }}>
           <span>HC <span style={{ color: GREEN, fontWeight: 700 }}>+{f.hc}</span></span>
           <span>EDGE <span style={{ color: GREEN, fontWeight: 700 }}>+{f.edge}</span></span>
-          <span style={{ color: INK_4, marginLeft: 'auto' }}>fair via {f.fairBook}</span>
         </div>
       </div>
 
