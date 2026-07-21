@@ -19,6 +19,7 @@ import admin from 'firebase-admin';
 import { readFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { loadWalletProfilesMap } from './lib/loadWalletProfiles.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '../public');
@@ -466,12 +467,13 @@ async function main() {
   const excludedSet = new Set(excludedArr.map(w => (w || '').toLowerCase()));
 
   // Phase 2 wallet whitelist — needed for Vault Quant Score winners margin.
-  // Keyed by walletShort (last 6 chars), same as doc id in Firestore.
-  const walletProfiles = new Map();
+  // Keyed by walletShort (last 6 chars). Prefer local JSON; Firestore fallback
+  // via loadWalletProfilesMap (same contract as syncPickStateAuthoritative).
+  let walletProfiles = new Map();
   try {
-    const profilesSnap = await db.collection('sharpWalletProfiles').get();
-    profilesSnap.forEach(d => walletProfiles.set(d.id, d.data()));
-    console.log(`Loaded ${walletProfiles.size} sharpWalletProfiles for vault quant scoring`);
+    const loaded = await loadWalletProfilesMap(db);
+    walletProfiles = loaded.map;
+    console.log(`Loaded ${walletProfiles.size} sharpWalletProfiles for vault quant scoring (source=${loaded.source})`);
   } catch (err) {
     console.warn('WARNING: failed to load sharpWalletProfiles — vault_* fields will be null:', err.message);
   }

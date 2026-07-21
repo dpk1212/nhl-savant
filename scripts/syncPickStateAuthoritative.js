@@ -10,10 +10,11 @@
  *
  * THIS SCRIPT runs in the GitHub Actions fetch loop every ~8 min, reads the
  * just-written JSON snapshots (same data the browser sees) plus
- * sharpWalletProfiles + sharpFlowPicks/Spreads/Totals from Firestore,
- * recomputes the canonical state for every pick side pre-T-15, and writes
- * back. Last-write-wins; the browser sync continues to write too — they
- * apply identical logic so they agree.
+ * sharpWalletProfiles (prefer data/wallet-profiles.json; Firestore fallback)
+ * and sharpFlowPicks/Spreads/Totals from Firestore, recomputes the canonical
+ * state for every pick side pre-T-15, and writes back. Last-write-wins; the
+ * browser sync continues to write too — they apply identical logic so they
+ * agree.
  *
  * BEHAVIOUR (the contract):
  *   • Every cycle is independent. Live consensus is recomputed from current
@@ -97,6 +98,7 @@ import {
   hydrateClvLedger,
   isTapeSizingLive,
 } from '../src/lib/walletClvSkill.js';
+import { loadWalletProfilesMap } from './lib/loadWalletProfiles.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '../public');
@@ -3365,11 +3367,11 @@ async function main() {
   console.log(`Mode: ${DRY_RUN ? 'DRY RUN (no writes)' : 'WRITE'}${FORCE ? ' · FORCE (bypass T-15)' : ''}`);
   console.log(`now=${new Date(now).toISOString()}\n`);
 
-  // Load wallet profiles.
-  const walletProfiles = new Map();
-  const profilesSnap = await db.collection('sharpWalletProfiles').get();
-  profilesSnap.forEach(d => walletProfiles.set(d.id.toLowerCase(), d.data()));
-  console.log(`Loaded ${walletProfiles.size} sharpWalletProfiles`);
+  // Load wallet profiles — prefer committed data/wallet-profiles.json (same
+  // artefact grade→export writes). Falls back to Firestore if stale/missing
+  // or if walletProfilesMeta says Firestore is newer (failed git push).
+  const { map: walletProfiles, source: profilesSource } = await loadWalletProfilesMap(db);
+  console.log(`Loaded ${walletProfiles.size} sharpWalletProfiles (source=${profilesSource})`);
   const sportWinnerBoards = buildSportWinnerBoards(walletProfiles);
   console.log(`Sport winner boards: ${sportWinnerBoards.size} sports (Top-${WINNER_ALIGN_TOP_N} + elite≥${WINNER_ALIGN_ELITE_WR})`);
 

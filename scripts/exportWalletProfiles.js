@@ -85,6 +85,10 @@ import {
   serializeClvLedger,
   shortWalletId,
 } from '../src/lib/walletClvSkill.js';
+import {
+  WALLET_PROFILES_META_COLLECTION,
+  WALLET_PROFILES_META_DOC_ID,
+} from './lib/loadWalletProfiles.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -623,8 +627,9 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger) {
       console.warn(`  (warning: could not parse prior ${jsonPath}: ${e.message})`);
     }
   }
+  const profilesGeneratedAt = new Date().toISOString();
   writeFileSync(jsonPath, JSON.stringify({
-    generatedAt: new Date().toISOString(),
+    generatedAt: profilesGeneratedAt,
     v8Cutover: V8_CUTOVER,
     whitelistVersion: WHITELIST_VERSION,
     totals: {
@@ -985,6 +990,16 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger) {
     }
     if (batchOps > 0) await batch.commit();
     console.log(`✓ Upserted ${count} wallet profiles.`);
+
+    // Tiny meta doc — sync/writeSharpActions compare this (1 read) to the
+    // checkout JSON so a failed git push still forces a Firestore reload.
+    await db.collection(WALLET_PROFILES_META_COLLECTION).doc(WALLET_PROFILES_META_DOC_ID).set({
+      generatedAt: profilesGeneratedAt,
+      walletCount: count,
+      whitelistVersion: WHITELIST_VERSION,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    console.log(`✓ Wrote ${WALLET_PROFILES_META_COLLECTION}/${WALLET_PROFILES_META_DOC_ID}`);
   } else if (!WRITE_CLV_LEDGER) {
     console.log('\n(Dry run — pass --write-firebase or --write-clv-ledger to push to Firestore.)');
   }
