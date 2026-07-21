@@ -992,6 +992,7 @@ async function markExitedPositions(db, date, { sharpPositions, posFiles, present
     );
   }
   const scanSoftKeys = collectScanSoftKeys(posFiles);
+  const polyData = loadJSON('polymarket_data.json');
 
   const pendingSnap = await db.collection(COLLECTION)
     .where('date', '==', date)
@@ -1003,24 +1004,40 @@ async function markExitedPositions(db, date, { sharpPositions, posFiles, present
   let batchOps = 0;
 
   for (const doc of pendingSnap.docs) {
-    if (presentDocIds.has(doc.id)) continue; // still open / just refreshed
     const data = doc.data() || {};
     const wLower = String(data.wallet || '').toLowerCase();
     if (!wLower || !okWallets.has(wLower)) continue; // not scanned this cycle
 
     let shouldExit = false;
     let exitReason = null;
-    if (data.asset) {
-      const stillOpen = openAssetsByWallet[wLower]?.has(String(data.asset));
-      if (!stillOpen) {
-        shouldExit = true;
-        exitReason = 'asset_absent';
-      }
-    } else {
-      const soft = softPositionKey(data.wallet, data.sport, data.gameKey, data.marketType, data.side);
-      if (!scanSoftKeys.has(soft)) {
-        shouldExit = true;
-        exitReason = 'soft_key_absent_legacy';
+
+    // Wrong-event attribution: position's Polymarket eventId ≠ today's game.
+    // Asset can still be open (postponed/other-date market) — still EXITED here.
+    const gameEventId = polyData?.[data.sport]?.[data.gameKey]?.eventId;
+    if (
+      data.eventId != null && data.eventId !== ''
+      && gameEventId != null && gameEventId !== ''
+      && String(data.eventId) !== String(gameEventId)
+    ) {
+      shouldExit = true;
+      exitReason = 'eventId_mismatch';
+    }
+
+    if (!shouldExit && presentDocIds.has(doc.id)) continue; // still open / just refreshed
+
+    if (!shouldExit) {
+      if (data.asset) {
+        const stillOpen = openAssetsByWallet[wLower]?.has(String(data.asset));
+        if (!stillOpen) {
+          shouldExit = true;
+          exitReason = 'asset_absent';
+        }
+      } else {
+        const soft = softPositionKey(data.wallet, data.sport, data.gameKey, data.marketType, data.side);
+        if (!scanSoftKeys.has(soft)) {
+          shouldExit = true;
+          exitReason = 'soft_key_absent_legacy';
+        }
       }
     }
     if (!shouldExit) continue;
