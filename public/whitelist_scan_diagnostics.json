@@ -1,23 +1,23 @@
 {
-  "scannedAt": "2026-07-21T14:40:16.249Z",
-  "elapsedSec": 15.7,
+  "scannedAt": "2026-07-21T14:44:08.254Z",
+  "elapsedSec": 15.2,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 31,
   "summary": {
     "total": 203,
     "coveredByMain": 6,
     "recovered": 8,
-    "recoveredPositions": 41,
+    "recoveredPositions": 42,
     "noPositions": 189,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 2,
+      "ml": 3,
       "spread": 0,
       "total": 1,
-      "dropped_shadow_gate": 8,
-      "dropped_excluded": 30,
+      "dropped_shadow_gate": 7,
+      "dropped_excluded": 31,
       "dropped_duplicate": 0
     }
   },
@@ -79,8 +79,8 @@
       "positionsCount": 3,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 2332,
-      "willPassShadowGate": 1,
-      "willDropAtShadowGate": 2,
+      "willPassShadowGate": 2,
+      "willDropAtShadowGate": 1,
       "positions": [
         {
           "sport": "MLB",
@@ -96,9 +96,9 @@
           "gameKey": "tbr_tor",
           "marketType": "ml",
           "side": "home",
-          "invested": 76,
+          "invested": 480,
           "entryLine": null,
-          "passesShadow": false
+          "passesShadow": true
         },
         {
           "sport": "MLB",
@@ -454,10 +454,10 @@
       "sports": "MLB",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xf7f0b0b1e9c0fe02ccad926916ee31aef74b912c",
-      "positionsCount": 12,
+      "positionsCount": 13,
       "statsSource": "sports_sharps",
       "avgSportBet": 576,
-      "willPassShadowGate": 10,
+      "willPassShadowGate": 11,
       "willDropAtShadowGate": 2,
       "positions": [
         {
@@ -494,6 +494,15 @@
           "side": "away",
           "invested": 440,
           "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "mia_hou",
+          "marketType": "total",
+          "side": "under",
+          "invested": 461,
+          "entryLine": 8.5,
           "passesShadow": true
         },
         {
@@ -1903,7 +1912,7 @@
           "gameKey": "sdp_atl",
           "marketType": "total",
           "side": "over",
-          "invested": 25630,
+          "invested": 25631,
           "entryLine": 9.5,
           "passesShadow": true
         },
