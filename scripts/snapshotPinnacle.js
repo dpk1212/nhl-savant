@@ -1,11 +1,12 @@
 /**
- * Sharp Odds Snapshot — captures Pinnacle (fair value) + retail book
- * prices every 15 minutes for all active sports. Piggybacked on the
- * fetch-polymarket workflow.
+ * Sharp Odds Snapshot — captures fair-value + retail book prices every
+ * 15 minutes for all active sports. Piggybacked on the fetch-polymarket
+ * workflow.
  *
- * For each game: tracks Pinnacle opener, current, movement, plus the
- * best retail price per side and which book offers it. The UI uses
- * this to calculate EV = best_retail_implied - pinnacle_implied.
+ * Fair book = most reputable quote available per game (not Pinnacle-only):
+ *   pinnacle → circa → bookmaker → lowvig → betonlineag
+ * Prices still land in opener/current/history so CLV/lock/close plumbing
+ * stays compatible. Each game stamps `fairBook` with the source key.
  *
  * Usage: node scripts/snapshotPinnacle.js
  */
@@ -43,8 +44,11 @@ const SPORTS = [
   { key: 'basketball_wnba', label: 'WNBA', markets: 'h2h,spreads,totals' },
 ];
 
-const BOOKMAKERS = 'pinnacle,draftkings,fanduel,betmgm,caesars';
+// Reputation order for fair line (highest → lowest). First with both sides wins.
+const FAIR_BOOKS = ['pinnacle', 'circa', 'bookmaker', 'lowvig', 'betonlineag'];
 const RETAIL_BOOKS = ['draftkings', 'fanduel', 'betmgm', 'caesars'];
+const BOOKMAKERS = [...FAIR_BOOKS, ...RETAIL_BOOKS].join(',');
+const ODDS_REGIONS = 'us,uk,eu';
 const MAX_HISTORY = 24;
 const STALE_HOURS = 36;
 const COMPLETED_HOURS = 6;
@@ -100,7 +104,15 @@ const BOOK_DISPLAY = {
   betmgm: 'BetMGM',
   caesars: 'Caesars',
   pinnacle: 'Pinnacle',
+  circa: 'Circa',
+  bookmaker: 'Bookmaker',
+  lowvig: 'LowVig',
+  betonlineag: 'BetOnline',
 };
+
+function fairBookDisplayName(key) {
+  return BOOK_DISPLAY[key] || (key ? String(key) : 'Fair');
+}
 
 const normalize = s => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
@@ -187,7 +199,9 @@ function impliedProb(american) {
 }
 
 async function fetchOdds(sportKey, markets = 'h2h,spreads,totals') {
-  const url = `https://api.the-odds-api.com/v4/sports/${sportKey}/odds?apiKey=${API_KEY}&bookmakers=${BOOKMAKERS}&markets=${markets}&oddsFormat=american`;
+  const url = `https://api.the-odds-api.com/v4/sports/${sportKey}/odds`
+    + `?apiKey=${API_KEY}&regions=${ODDS_REGIONS}&bookmakers=${BOOKMAKERS}`
+    + `&markets=${markets}&oddsFormat=american`;
   const res = await fetch(url);
   if (!res.ok) {
     console.warn(`  ⚠️ Odds API ${sportKey}: ${res.status}`);
@@ -204,11 +218,81 @@ function loadHistory() {
   try { return JSON.parse(readFileSync(OUT_PATH, 'utf8')); } catch { return {}; }
 }
 
+/** First FAIR_BOOKS entry with both away+home h2h prices. */
+function pickFairH2h(game) {
+  const awayName = game.away_team;
+  const homeName = game.home_team;
+  const byKey = Object.fromEntries((game.bookmakers || []).map(b => [b.key, b]));
+  for (const key of FAIR_BOOKS) {
+    const bk = byKey[key];
+    if (!bk) continue;
+    const h2h = bk.markets?.find(m => m.key === 'h2h');
+    if (!h2h) continue;
+    const aw = h2h.outcomes.find(o => o.name === awayName);
+    const hm = h2h.outcomes.find(o => o.name === homeName);
+    if (!aw || !hm || aw.price == null || hm.price == null) continue;
+    const dr = h2h.outcomes.find(o => o.name === 'Draw');
+    return {
+      fairBook: key,
+      fairAway: aw.price,
+      fairHome: hm.price,
+      fairDraw: dr?.price ?? null,
+    };
+  }
+  return null;
+}
+
+function pickFairSpread(game, preferBook = null) {
+  const awayName = game.away_team;
+  const homeName = game.home_team;
+  const byKey = Object.fromEntries((game.bookmakers || []).map(b => [b.key, b]));
+  const order = preferBook
+    ? [preferBook, ...FAIR_BOOKS.filter(k => k !== preferBook)]
+    : FAIR_BOOKS;
+  for (const key of order) {
+    const bk = byKey[key];
+    if (!bk) continue;
+    const spreadMkt = bk.markets?.find(m => m.key === 'spreads');
+    if (!spreadMkt) continue;
+    const aw = spreadMkt.outcomes.find(o => o.name === awayName);
+    const hm = spreadMkt.outcomes.find(o => o.name === homeName);
+    if (!aw || !hm || aw.price == null || hm.price == null) continue;
+    return {
+      fairBook: key,
+      fairSpread: {
+        awayLine: aw.point, awayOdds: aw.price,
+        homeLine: hm.point, homeOdds: hm.price,
+      },
+    };
+  }
+  return null;
+}
+
+function pickFairTotal(game, preferBook = null) {
+  const byKey = Object.fromEntries((game.bookmakers || []).map(b => [b.key, b]));
+  const order = preferBook
+    ? [preferBook, ...FAIR_BOOKS.filter(k => k !== preferBook)]
+    : FAIR_BOOKS;
+  for (const key of order) {
+    const bk = byKey[key];
+    if (!bk) continue;
+    const totalMkt = bk.markets?.find(m => m.key === 'totals');
+    if (!totalMkt) continue;
+    const over = totalMkt.outcomes.find(o => o.name === 'Over');
+    const under = totalMkt.outcomes.find(o => o.name === 'Under');
+    if (!over || !under || over.price == null || under.price == null) continue;
+    return {
+      fairBook: key,
+      fairTotal: { line: over.point, overOdds: over.price, underOdds: under.price },
+    };
+  }
+  return null;
+}
+
 function extractBookOdds(game) {
   const awayName = game.away_team;
   const homeName = game.home_team;
 
-  let pinnAway = null, pinnHome = null, pinnDraw = null;
   let bestAway = null, bestHome = null, bestDraw = null;
   let bestAwayBook = null, bestHomeBook = null, bestDrawBook = null;
   const allBooks = {};
@@ -219,19 +303,12 @@ function extractBookOdds(game) {
 
     const aw = h2h.outcomes.find(o => o.name === awayName);
     const hm = h2h.outcomes.find(o => o.name === homeName);
-    // 3-way soccer: the Draw outcome is named literally "Draw".
     const dr = h2h.outcomes.find(o => o.name === 'Draw');
     if (!aw || !hm) continue;
 
     const bookName = BOOK_DISPLAY[bk.key] || bk.title;
     allBooks[bk.key] = { away: aw.price, home: hm.price, name: bookName };
     if (dr) allBooks[bk.key].draw = dr.price;
-
-    if (bk.key === 'pinnacle') {
-      pinnAway = aw.price;
-      pinnHome = hm.price;
-      if (dr) pinnDraw = dr.price;
-    }
 
     if (RETAIL_BOOKS.includes(bk.key)) {
       if (bestAway === null || aw.price > bestAway) {
@@ -249,15 +326,20 @@ function extractBookOdds(game) {
     }
   }
 
-  return { pinnAway, pinnHome, pinnDraw, bestAway, bestHome, bestDraw, bestAwayBook, bestHomeBook, bestDrawBook, allBooks };
+  const fair = pickFairH2h(game);
+  return {
+    fairBook: fair?.fairBook || null,
+    fairAway: fair?.fairAway ?? null,
+    fairHome: fair?.fairHome ?? null,
+    fairDraw: fair?.fairDraw ?? null,
+    bestAway, bestHome, bestDraw, bestAwayBook, bestHomeBook, bestDrawBook, allBooks,
+  };
 }
 
-function extractSpreadOdds(game) {
+function extractSpreadOdds(game, preferFairBook = null) {
   const awayName = game.away_team;
   const homeName = game.home_team;
-  let pinnSpread = null;
   let bestAwaySpread = null, bestHomeSpread = null;
-  let bestAwaySpreadBook = null, bestHomeSpreadBook = null;
 
   for (const bk of (game.bookmakers || [])) {
     const spreadMkt = bk.markets?.find(m => m.key === 'spreads');
@@ -266,9 +348,6 @@ function extractSpreadOdds(game) {
     const hm = spreadMkt.outcomes.find(o => o.name === homeName);
     if (!aw || !hm) continue;
 
-    if (bk.key === 'pinnacle') {
-      pinnSpread = { awayLine: aw.point, awayOdds: aw.price, homeLine: hm.point, homeOdds: hm.price };
-    }
     if (RETAIL_BOOKS.includes(bk.key)) {
       const bookName = BOOK_DISPLAY[bk.key] || bk.title;
       if (bestAwaySpread === null || aw.price > bestAwaySpread.odds) {
@@ -279,11 +358,16 @@ function extractSpreadOdds(game) {
       }
     }
   }
-  return { pinnSpread, bestAwaySpread, bestHomeSpread };
+  const fair = pickFairSpread(game, preferFairBook);
+  return {
+    fairSpread: fair?.fairSpread || null,
+    fairSpreadBook: fair?.fairBook || null,
+    bestAwaySpread,
+    bestHomeSpread,
+  };
 }
 
-function extractTotalOdds(game) {
-  let pinnTotal = null;
+function extractTotalOdds(game, preferFairBook = null) {
   let bestOver = null, bestUnder = null;
 
   for (const bk of (game.bookmakers || [])) {
@@ -293,9 +377,6 @@ function extractTotalOdds(game) {
     const under = totalMkt.outcomes.find(o => o.name === 'Under');
     if (!over || !under) continue;
 
-    if (bk.key === 'pinnacle') {
-      pinnTotal = { line: over.point, overOdds: over.price, underOdds: under.price };
-    }
     if (RETAIL_BOOKS.includes(bk.key)) {
       const bookName = BOOK_DISPLAY[bk.key] || bk.title;
       if (bestOver === null || over.price > bestOver.odds) {
@@ -306,22 +387,39 @@ function extractTotalOdds(game) {
       }
     }
   }
-  return { pinnTotal, bestOver, bestUnder };
+  const fair = pickFairTotal(game, preferFairBook);
+  return {
+    fairTotal: fair?.fairTotal || null,
+    fairTotalBook: fair?.fairBook || null,
+    bestOver,
+    bestUnder,
+  };
 }
 
 async function run() {
-  console.log('📌 Sharp odds snapshot (Pinnacle + retail books)\n');
+  console.log('📌 Sharp odds snapshot (fair book cascade + retail)\n');
+  console.log(`   Fair order: ${FAIR_BOOKS.join(' → ')}`);
+  console.log(`   Regions: ${ODDS_REGIONS}\n`);
   const now = Math.floor(Date.now() / 1000);
   const history = loadHistory();
   const staleCutoff = now - STALE_HOURS * 3600;
+  const fairSourceCounts = {};
 
   for (const { key: sportKey, label, markets } of SPORTS) {
     if (!history[label]) history[label] = {};
+    let sportFair = 0;
+    let sportSkip = 0;
 
     const games = await fetchOdds(sportKey, markets || 'h2h,spreads,totals');
     for (const game of games) {
-      const { pinnAway, pinnHome, pinnDraw, bestAway, bestHome, bestDraw, bestAwayBook, bestHomeBook, bestDrawBook, allBooks } = extractBookOdds(game);
-      if (pinnAway == null || pinnHome == null) continue;
+      const {
+        fairBook, fairAway, fairHome, fairDraw,
+        bestAway, bestHome, bestDraw, bestAwayBook, bestHomeBook, bestDrawBook, allBooks,
+      } = extractBookOdds(game);
+      if (fairAway == null || fairHome == null || !fairBook) {
+        sportSkip++;
+        continue;
+      }
 
       const awayName = game.away_team;
       const homeName = game.home_team;
@@ -344,14 +442,15 @@ async function run() {
       }
 
       // ML history (draw stored only when present — 3-way soccer).
-      const snapshot = { t: now, away: pinnAway, home: pinnHome };
-      if (pinnDraw != null) snapshot.draw = pinnDraw;
+      const snapshot = { t: now, away: fairAway, home: fairHome, fairBook };
+      if (fairDraw != null) snapshot.draw = fairDraw;
       if (!existing.opener) {
         existing.opener = { ...snapshot };
       }
-      existing.current = pinnDraw != null
-        ? { away: pinnAway, home: pinnHome, draw: pinnDraw }
-        : { away: pinnAway, home: pinnHome };
+      existing.current = fairDraw != null
+        ? { away: fairAway, home: fairHome, draw: fairDraw }
+        : { away: fairAway, home: fairHome };
+      existing.fairBook = fairBook;
 
       const hist = existing.history || [];
       hist.push(snapshot);
@@ -360,13 +459,13 @@ async function run() {
 
       const opAway = existing.opener.away;
       const opHome = existing.opener.home;
-      const currAwayProb = impliedProb(pinnAway);
+      const currAwayProb = impliedProb(fairAway);
       const openAwayProb = impliedProb(opAway);
-      const currHomeProb = impliedProb(pinnHome);
+      const currHomeProb = impliedProb(fairHome);
       const openHomeProb = impliedProb(opHome);
       existing.movement = {
-        away: pinnAway - opAway,
-        home: pinnHome - opHome,
+        away: fairAway - opAway,
+        home: fairHome - opHome,
         direction: currAwayProb > openAwayProb ? 'away'
                  : currHomeProb > openHomeProb ? 'home'
                  : null,
@@ -378,14 +477,14 @@ async function run() {
       existing.bestHomeBook = bestHomeBook;
       if (bestDraw != null) { existing.bestDraw = bestDraw; existing.bestDrawBook = bestDrawBook; }
 
-      const pinnAwayProb = impliedProb(pinnAway);
-      const pinnHomeProb = impliedProb(pinnHome);
+      const fairAwayProb = impliedProb(fairAway);
+      const fairHomeProb = impliedProb(fairHome);
       const bestAwayProb = impliedProb(bestAway);
       const bestHomeProb = impliedProb(bestHome);
 
       existing.ev = {
-        away: (pinnAwayProb && bestAwayProb) ? +((pinnAwayProb - bestAwayProb) * 100).toFixed(1) : null,
-        home: (pinnHomeProb && bestHomeProb) ? +((pinnHomeProb - bestHomeProb) * 100).toFixed(1) : null,
+        away: (fairAwayProb && bestAwayProb) ? +((fairAwayProb - bestAwayProb) * 100).toFixed(1) : null,
+        home: (fairHomeProb && bestHomeProb) ? +((fairHomeProb - bestHomeProb) * 100).toFixed(1) : null,
       };
 
       existing.allBooks = allBooks;
@@ -394,20 +493,21 @@ async function run() {
       existing.commence = game.commence_time;
       existing.apiId = game.id;
 
-      // Spread data
-      const { pinnSpread, bestAwaySpread, bestHomeSpread } = extractSpreadOdds(game);
-      if (pinnSpread) {
+      // Spread data — prefer same fair book as ML when possible
+      const { fairSpread, fairSpreadBook, bestAwaySpread, bestHomeSpread } = extractSpreadOdds(game, fairBook);
+      if (fairSpread) {
         if (!existing.spreadOpener) {
-          existing.spreadOpener = { ...pinnSpread, t: now };
+          existing.spreadOpener = { ...fairSpread, t: now, fairBook: fairSpreadBook };
         }
-        existing.spreadCurrent = pinnSpread;
+        existing.spreadCurrent = fairSpread;
+        existing.fairSpreadBook = fairSpreadBook;
         existing.spreadMovement = {
-          awayLine: pinnSpread.awayLine - (existing.spreadOpener.awayLine || 0),
-          awayOdds: pinnSpread.awayOdds - (existing.spreadOpener.awayOdds || 0),
-          homeOdds: pinnSpread.homeOdds - (existing.spreadOpener.homeOdds || 0),
+          awayLine: fairSpread.awayLine - (existing.spreadOpener.awayLine || 0),
+          awayOdds: fairSpread.awayOdds - (existing.spreadOpener.awayOdds || 0),
+          homeOdds: fairSpread.homeOdds - (existing.spreadOpener.homeOdds || 0),
         };
         const sHist = existing.spreadHistory || [];
-        sHist.push({ t: now, ...pinnSpread });
+        sHist.push({ t: now, ...fairSpread, fairBook: fairSpreadBook });
         if (sHist.length > MAX_HISTORY) sHist.splice(0, sHist.length - MAX_HISTORY);
         existing.spreadHistory = sHist;
       }
@@ -415,19 +515,20 @@ async function run() {
       if (bestHomeSpread) existing.bestHomeSpread = bestHomeSpread;
 
       // Total data
-      const { pinnTotal, bestOver, bestUnder } = extractTotalOdds(game);
-      if (pinnTotal) {
+      const { fairTotal, fairTotalBook, bestOver, bestUnder } = extractTotalOdds(game, fairBook);
+      if (fairTotal) {
         if (!existing.totalOpener) {
-          existing.totalOpener = { ...pinnTotal, t: now };
+          existing.totalOpener = { ...fairTotal, t: now, fairBook: fairTotalBook };
         }
-        existing.totalCurrent = pinnTotal;
+        existing.totalCurrent = fairTotal;
+        existing.fairTotalBook = fairTotalBook;
         existing.totalMovement = {
-          line: pinnTotal.line - (existing.totalOpener.line || 0),
-          overOdds: pinnTotal.overOdds - (existing.totalOpener.overOdds || 0),
-          underOdds: pinnTotal.underOdds - (existing.totalOpener.underOdds || 0),
+          line: fairTotal.line - (existing.totalOpener.line || 0),
+          overOdds: fairTotal.overOdds - (existing.totalOpener.overOdds || 0),
+          underOdds: fairTotal.underOdds - (existing.totalOpener.underOdds || 0),
         };
         const tHist = existing.totalHistory || [];
-        tHist.push({ t: now, ...pinnTotal });
+        tHist.push({ t: now, ...fairTotal, fairBook: fairTotalBook });
         if (tHist.length > MAX_HISTORY) tHist.splice(0, tHist.length - MAX_HISTORY);
         existing.totalHistory = tHist;
       }
@@ -435,6 +536,12 @@ async function run() {
       if (bestUnder) existing.bestUnder = bestUnder;
 
       history[label][gameKey] = existing;
+      sportFair++;
+      fairSourceCounts[fairBook] = (fairSourceCounts[fairBook] || 0) + 1;
+    }
+
+    if (sportFair > 0 || sportSkip > 0) {
+      console.log(`  ${label}: ${sportFair} with fair book, ${sportSkip} skipped (no fair quote)`);
     }
 
     // Purge stale and completed games
@@ -459,7 +566,12 @@ async function run() {
       if ((gd.ev?.away > 0) || (gd.ev?.home > 0)) evSpots++;
     }
   }
+  const srcLine = Object.entries(fairSourceCounts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([k, n]) => `${k}=${n}`)
+    .join(', ') || 'none';
   console.log(`\n✅ ${totalGames} games tracked, ${evSpots} with +EV retail lines`);
+  console.log(`   Fair sources this cycle: ${srcLine}`);
 }
 
 run().catch(e => { console.error(e); process.exit(1); });

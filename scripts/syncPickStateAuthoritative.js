@@ -107,6 +107,17 @@ import { loadWalletProfilesMap } from './lib/loadWalletProfiles.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '../public');
 
+/** Display names for fair-book cascade (matches snapshotPinnacle.js). */
+const FAIR_BOOK_DISPLAY = {
+  pinnacle: 'Pinnacle',
+  circa: 'Circa',
+  bookmaker: 'Bookmaker',
+  lowvig: 'LowVig',
+  betonlineag: 'BetOnline',
+};
+function fairBookLabel(key) {
+  return FAIR_BOOK_DISPLAY[key] || (key ? String(key) : 'Pinnacle');
+}
 // ── Constants ───────────────────────────────────────────────────────────────
 // AGS-Unified v9 — every gate (lock, mute, tier, sizing) reads ONLY from the
 // AGS-U composite + calibration quintiles. The legacy v7.x routes (HC margin,
@@ -1128,6 +1139,11 @@ function loadGameMetadata() {
         } else if (g.opener) {
           cur.mlOdds = { away: g.opener.away, home: g.opener.home, draw: g.opener.draw ?? null };
         }
+        // Most reputable fair book that quoted this game (pinnacle → … → lowvig).
+        if (g.fairBook) cur.fairBook = g.fairBook;
+        else if (g.history?.[g.history.length - 1]?.fairBook) {
+          cur.fairBook = g.history[g.history.length - 1].fairBook;
+        }
         // Spread line + odds (Pinnacle opener — pinnacle_history doesn't
         // track spreads over time the way it does ML). Populated for the
         // cron's create-missing path so spread picks written without a
@@ -1148,6 +1164,7 @@ function loadGameMetadata() {
             homeOdds: g.spreadCurrent.homeOdds,
           };
         }
+        if (g.fairSpreadBook) cur.fairSpreadBook = g.fairSpreadBook;
         meta.set(key, cur);
       }
     }
@@ -1724,12 +1741,12 @@ async function createMissingLockedPicks({
       // the always-present fields, then attach line/odds/pinnacleOdds only
       // when non-null so the existing values survive a race.
       const peakStats = buildPeakStatsFromPositions(positions, side, isProvenFn, sport);
+      const fairLabel = fairBookLabel(meta.fairBook);
       const peakSnapshot = {
         team: team || side,
-        // 'Pinnacle' (capitalized) matches the browser's syncSpread/Total
-        // path. Lowercase 'pinnacle' triggered "0 · pinnacle / Pistons null"
-        // rendering on the dashboard before this fix.
-        book: 'Pinnacle',
+        // Capitalized fair-book label (Pinnacle / LowVig / …) — never blank.
+        book: fairLabel,
+        oddsSource: meta.fairBook || 'pinnacle',
         stars: peakStars,
         units: peakUnitsApplied,
         unitTier: unitTierLabel(peakUnitsApplied),
@@ -3220,6 +3237,52 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     }
   }
 
+  // ── Fair-odds backfill when lock/peak were created with no quote ─────────
+  // Odds API dropped Pinnacle for some cycles; cascade now fills history via
+  // LowVig/etc. Re-stamp missing odds pre-T-15 so cards aren't stuck at 0.
+  {
+    const metaKey = `${sport}|${pick.gameKey}`;
+    const meta = gameMeta?.get?.(metaKey) || null;
+    const liveFair = mkt === 'SPREAD'
+      ? (side === 'home'
+        ? (meta?.spreadCurrent?.homeOdds ?? meta?.spreadOpener?.homeOdds)
+        : (meta?.spreadCurrent?.awayOdds ?? meta?.spreadOpener?.awayOdds))
+      : mkt === 'TOTAL'
+        ? null
+        : (side === 'home' ? meta?.mlOdds?.home
+          : side === 'draw' ? meta?.mlOdds?.draw
+          : meta?.mlOdds?.away);
+    const fairLabel = fairBookLabel(
+      mkt === 'SPREAD' ? (meta?.fairSpreadBook || meta?.fairBook) : meta?.fairBook,
+    );
+    if (Number.isFinite(liveFair) && liveFair !== 0) {
+      const lockMissing = !Number.isFinite(sd.lock?.odds) || sd.lock.odds === 0;
+      const peakMissing = !Number.isFinite(sd.peak?.odds) || sd.peak.odds === 0;
+      if (lockMissing || peakMissing) {
+        if (lockMissing) {
+          patch.lock = {
+            ...(patch.lock || {}),
+            odds: liveFair,
+            pinnacleOdds: liveFair,
+            book: fairLabel,
+            oddsSource: meta?.fairBook || null,
+          };
+        }
+        if (peakMissing) {
+          patch.peak = {
+            ...(patch.peak || {}),
+            odds: liveFair,
+            pinnacleOdds: liveFair,
+            book: fairLabel,
+            oddsSource: meta?.fairBook || null,
+            updatedAt: now,
+          };
+        }
+        changes.push(`fairOdds backfill: ${liveFair} (${fairLabel})`);
+      }
+    }
+  }
+
   // ── SPREAD lock-odds repair (ML bleed / -110 default) ───────────────────
   // Real incident 2026-07-09 Braves -1.5: create stamped lock.odds=-110
   // (ML chalk / TOTAL-style default) while peak later correctly held +139
@@ -3240,13 +3303,15 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     if (repairFrom != null
         && spreadLockLooksLikeMlBleed(lockOdds, peakOdds, spreadOdds, mlOdds)) {
       const pinnSpread = Number.isFinite(spreadOdds) ? spreadOdds : repairFrom;
+      const fairLabel = fairBookLabel(meta?.fairBook || meta?.fairSpreadBook);
       patch.lock = {
         ...(patch.lock || {}),
         odds: repairFrom,
         pinnacleOdds: pinnSpread,
-        book: sd.lock?.book === 'Pinnacle' || !sd.lock?.book
-          ? 'Pinnacle'
-          : sd.lock.book,
+        book: sd.lock?.book && sd.lock.book !== 'Pinnacle'
+          ? sd.lock.book
+          : fairLabel,
+        oddsSource: meta?.fairBook || meta?.fairSpreadBook || sd.lock?.oddsSource || null,
       };
       // Keep peak.pinnacleOdds on the spread number too when it was ML-bleed.
       if (sd.peak?.pinnacleOdds === -110 || sd.peak?.pinnacleOdds === mlOdds) {

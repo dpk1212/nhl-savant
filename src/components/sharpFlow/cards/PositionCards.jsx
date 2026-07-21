@@ -2531,7 +2531,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
       ? { label: 'WE GOT', value: fmtOdds(f.gotOdds ?? f.lockOdds), sub: f.book || null }
       : null,
     Number.isFinite(f.fairLine) || Number.isFinite(f.fairOdds)
-      ? { label: 'FAIR LINE', value: fmtOdds(f.fairLine ?? f.fairOdds), sub: Number.isFinite(centsEdge) ? `${centsEdge > 0 ? '+' : ''}${Math.round(centsEdge)}¢ vs fair` : 'Pinnacle' }
+      ? { label: 'FAIR LINE', value: fmtOdds(f.fairLine ?? f.fairOdds), sub: Number.isFinite(centsEdge) ? `${centsEdge > 0 ? '+' : ''}${Math.round(centsEdge)}¢ vs fair` : (f.fairBook || f.book || 'Fair') }
       : null,
     Number.isFinite(f.clvPct)
       ? { label: 'CLV', value: `${clvGood ? '+' : ''}${f.clvPct.toFixed(1)}%`, color: clvColor, sub: clvGood ? 'beating close' : 'behind close' }

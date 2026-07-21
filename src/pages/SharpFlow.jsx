@@ -3844,6 +3844,12 @@ const GameFlowCard = memo(function GameFlowCard({ game, isMobile, whaleProfiles,
   const awayShort = game.away.split(' ').pop();
   const homeShort = game.home.split(' ').pop();
   const pinnGame = pinnacleHistory?.[game.sport]?.[game.key];
+  const fairBookKey = pinnGame?.fairBook || 'pinnacle';
+  const FAIR_BOOK_LABELS = {
+    pinnacle: 'Pinnacle', circa: 'Circa', bookmaker: 'Bookmaker',
+    lowvig: 'LowVig', betonlineag: 'BetOnline',
+  };
+  const fairBookLabel = FAIR_BOOK_LABELS[fairBookKey] || fairBookKey;
   const allBooks = pinnGame?.allBooks || {};
   const commenceTime = pinnGame?.commence ? new Date(pinnGame.commence).getTime() : null;
   const nowMs = Date.now();
@@ -4176,7 +4182,7 @@ const GameFlowCard = memo(function GameFlowCard({ game, isMobile, whaleProfiles,
         </div>
       </div>
 
-      {/* ── Pinnacle Fair Value ── */}
+      {/* ── Fair Value (most reputable book available) ── */}
       {pinnAway != null && (
         <div style={{
           margin: '0 0.75rem 0.5rem', borderRadius: '8px', overflow: 'hidden',
@@ -4188,7 +4194,7 @@ const GameFlowCard = memo(function GameFlowCard({ game, isMobile, whaleProfiles,
             borderBottom: `1px solid ${B.borderSubtle}`,
           }}>
             <span style={{ ...T.micro, fontWeight: 700, color: B.gold, letterSpacing: '0.06em', fontSize: '0.575rem' }}>
-              PINNACLE FAIR VALUE
+              {fairBookLabel.toUpperCase()} FAIR VALUE
             </span>
           </div>
           <div style={{ padding: '0.5rem 0.625rem', background: 'rgba(255,255,255,0.015)' }}>
@@ -6857,7 +6863,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr' }}>
               {[
                 { label: book || 'Locked', value: odds ? fmtO(odds) : '—', color: B.text },
-                { label: 'Pinnacle', value: pinnacleOdds ? fmtO(pinnacleOdds) : '—', color: B.textSec },
+                { label: book || 'Fair', value: pinnacleOdds ? fmtO(pinnacleOdds) : '—', color: B.textSec },
                 { label: 'Now', value: closingOdds ? fmtO(closingOdds) : '—', color: clvPositive ? B.green : liveCLV != null && liveCLV < 0 ? B.red : B.textSec },
               ].map((col, i) => (
                 <div key={col.label} style={{
@@ -13069,8 +13075,9 @@ export default function SharpFlow() {
                           // should reflect that source instead of rendering
                           // "0 · " (empty book).
                           book: lockOddsValid
-                            ? (lock.book || peak.book || 'Pinnacle')
-                            : (peak.book || lock.book || (sd.closingOdds ? 'Pinnacle' : '')),
+                            ? (lock.book || peak.book || 'Fair')
+                            : (peak.book || lock.book || (sd.closingOdds ? (lock.book || peak.book || 'Fair') : '')),
+                          fairBook: lock.oddsSource || peak.oddsSource || lock.book || peak.book || null,
                           peakAt: peak.updatedAt || lock.lockedAt,
                           lockedAt: lock.lockedAt || null,
                           gameTime: doc.commenceTime,

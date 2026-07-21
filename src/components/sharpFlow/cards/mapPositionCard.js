@@ -354,6 +354,7 @@ export function mapLockedPickToCardFixture(pick, {
     // Odds we "got" at lock vs fair/pinnacle for the price-check strip.
     gotOdds: lockOdds,
     fairLine: Number.isFinite(pick.pinnacleOdds) ? pick.pinnacleOdds : peakOdds,
+    fairBook: pick.fairBook || pick.oddsSource || pick.book || null,
     tierPerf: tierPerf || null,
     // Mute audit — why TRACKED / 0u (tape-weak, ags-quality-veto, MONITORING…)
     mutedBy: pick.mutedBy || null,
