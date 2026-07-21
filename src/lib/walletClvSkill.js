@@ -40,12 +40,15 @@ export const TAPE_BOOST_MULT = 1.35;
 export const TAPE_SIZING_LIVE_FROM = '2026-07-15';
 
 /**
- * BOTH floor: EDGE ≥10 ∧ tape ≥ boost → at least 5u (oddsCap, ≤6).
- * Jun15+ BOTH cell was 31–12 · +32% ROI at only ~3.75u avg — undersized.
+ * Skill top floors (after tape · 2026-07-21+):
+ *   BOTH  EDGE≥10 ∧ tape≥boost → ≥5u
+ *   ONE   EDGE≥10 XOR tape≥boost → ≥4u
+ * (oddsCap, ≤6). Jun15+ tops were printing at ~3.2–3.7u avg.
  */
 export const BOTH_E10_TAPE_BOOST_FROM = '2026-07-21';
 export const BOTH_E10_EDGE_MIN = 10;
 export const BOTH_E10_TAPE_BOOST_FLOOR = 5;
+export const SKILL_ONE_TOP_FLOOR = 4;
 
 export function isTapeSizingLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= TAPE_SIZING_LIVE_FROM;
@@ -413,8 +416,9 @@ export function applyTapeUnitPolicy({
 }
 
 /**
- * After tape: if EDGE ≥10 and tape is in boost band, floor units at 5
- * (then oddsCap + global cap). PASS when not BOTH or already muted/zero.
+ * After tape: floor size when EDGE≥10 and/or tape boost.
+ *   BOTH → ≥5u · ONE (exactly one) → ≥4u · else PASS.
+ * Never shrinks units (oddsCap may block a raise; then HOLD at pre).
  */
 export function applyBothE10TapeFloor({
   units,
@@ -423,20 +427,25 @@ export function applyBothE10TapeFloor({
   odds = null,
   oddsCapFn = null,
   unitCap = GLOBAL_UNIT_CAP,
-  floor = BOTH_E10_TAPE_BOOST_FLOOR,
+  bothFloor = BOTH_E10_TAPE_BOOST_FLOOR,
+  oneFloor = SKILL_ONE_TOP_FLOOR,
   edgeMin = BOTH_E10_EDGE_MIN,
   boostAbove = TAPE_BOOST_ABOVE,
 } = {}) {
   const pre = Number.isFinite(units) ? Math.max(0, units) : 0;
   if (!(pre > 0)) {
-    return { units: 0, action: 'PASS', reason: null, unitsPrePolicy: pre };
+    return { units: 0, action: 'PASS', reason: null, mode: null, unitsPrePolicy: pre };
   }
-  if (edge == null || !Number.isFinite(Number(edge)) || Number(edge) < edgeMin) {
-    return { units: pre, action: 'PASS', reason: null, unitsPrePolicy: pre };
+  const e10 = edge != null && Number.isFinite(Number(edge)) && Number(edge) >= edgeMin;
+  const boost = tape != null && Number.isFinite(Number(tape)) && Number(tape) >= boostAbove;
+  if (!e10 && !boost) {
+    return { units: pre, action: 'PASS', reason: null, mode: null, unitsPrePolicy: pre };
   }
-  if (tape == null || !Number.isFinite(Number(tape)) || Number(tape) < boostAbove) {
-    return { units: pre, action: 'PASS', reason: null, unitsPrePolicy: pre };
-  }
+  const mode = e10 && boost ? 'BOTH' : 'ONE';
+  const floor = mode === 'BOTH' ? bothFloor : oneFloor;
+  const reason = mode === 'BOTH'
+    ? 'both_e10_tape_boost'
+    : (e10 ? 'edge_ge10_only' : 'tape_boost_only');
   let out = Math.max(pre, floor);
   if (typeof oddsCapFn === 'function') out = oddsCapFn(out, odds);
   out = Math.min(unitCap, out);
@@ -445,14 +454,16 @@ export function applyBothE10TapeFloor({
     return {
       units: pre,
       action: 'HOLD',
-      reason: 'both_e10_already_ge_floor',
+      reason: `${reason}_already_ge_floor`,
+      mode,
       unitsPrePolicy: pre,
     };
   }
   return {
     units: out,
     action: 'FLOOR',
-    reason: 'both_e10_tape_boost',
+    reason,
+    mode,
     unitsPrePolicy: pre,
   };
 }

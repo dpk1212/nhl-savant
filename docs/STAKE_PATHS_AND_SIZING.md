@@ -229,7 +229,7 @@ tape   = 2·(EDGE/10) + 1.5·(netCLV/10)
 | mid | **HOLD** | unchanged |
 | **≥ 2.89** | **BOOST** | × **1.35**, oddsCap, ≤ **6u** |
 
-**BOTH floor (2026-07-21+):** if **EDGE ≥ 10** and tape boosted → raise to at least **5u** (oddsCap, ≤6).
+**Skill top floors (2026-07-21+):** BOTH (E≥10 ∧ tape boost) → **≥5u** · ONE (exactly one) → **≥4u** (oddsCap, ≤6).
 
 Details: [`TAPE_SIZING.md`](./TAPE_SIZING.md).
 

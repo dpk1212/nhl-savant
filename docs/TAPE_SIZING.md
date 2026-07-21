@@ -21,7 +21,14 @@ FOR-side components always stamp when FOR skill exists (including unopposed). ED
 | mid | **hold** |
 | `≥ 2.89` | **boost** × 1.35 (oddsCap, 6u max) — all tiers including RANK |
 
-**BOTH floor (2026-07-21+):** after tape, if **EDGE ≥ 10** and **tape ≥ 2.89**, raise units to at least **5u** (oddsCap, ≤6). Stamp: `v8_bothE10TapeAction` / `v8_unitsPreBothE10`.
+**Skill top floors (2026-07-21+):** after tape (oddsCap, ≤6):
+
+| Condition | Floor |
+|-----------|------:|
+| **BOTH** — EDGE ≥10 **and** tape ≥2.89 | **5u** |
+| **ONE** — EDGE ≥10 **or** tape ≥2.89 (exactly one) | **4u** |
+
+Stamps: `v8_bothE10TapeAction` · `v8_bothE10TapeMode` (`BOTH`\|`ONE`) · `v8_unitsPreBothE10`.
 
 Thresholds ≈ June 15+ path-stamped p40 / p80.
 

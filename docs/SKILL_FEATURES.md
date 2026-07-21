@@ -63,10 +63,11 @@ Written on every **LOCKED / LEAN** side each pre–T-15 cycle, and on any other 
 | `v8_edgeBandAction` | `MUTE` \| `HALF` \| `BOOST` \| `HOLD` \| `EXEMPT` \| `PASS` |
 | `v8_edgeBand` | `LT5` \| `MID` \| `GE10` \| `MISSING` |
 | `v8_unitsPreEdgeBand` | units before EDGE band overlay |
-| `v8_bothE10TapeAction` | `FLOOR` \| `HOLD` \| `PASS` — BOTH E≥10 ∩ tape-boost 5u floor |
-| `v8_unitsPreBothE10` | units before BOTH floor |
+| `v8_bothE10TapeAction` | `FLOOR` \| `HOLD` \| `PASS` — skill top size floor |
+| `v8_bothE10TapeMode` | `BOTH` (→5u) \| `ONE` (→4u) |
+| `v8_unitsPreBothE10` | units before skill top floor |
 | `v8_skillAgsV12` | AGS v12 score at stamp time |
-| `v8_skillFeatureVersion` | schema version (**5**) |
+| `v8_skillFeatureVersion` | schema version (**6**) |
 | `v8_skillEvaluatedAt` | ms timestamp of stamp |
 
 Frozen at **T-15** (last write sticks). **COMPLETED** docs never rewritten.

@@ -686,7 +686,7 @@ function edgeNetGateBucket(edge, net, eThr = SHARP_EDGE_THR, nThr = SHARP_NET_TH
 }
 
 /** Skill-feature stamp schema version — bump when fields/thresholds change. */
-const SKILL_FEATURE_VERSION = 5; // v5: BOTH E≥10 ∩ tape-boost → 5u floor
+const SKILL_FEATURE_VERSION = 6; // v6: ONE (E≥10 xor tape-boost) → 4u · BOTH → 5u
 
 /**
  * Full EDGE / netCLV / Tape bundle for analysis without rebuild.
@@ -741,6 +741,7 @@ function applySkillFeatureStamps(target, bundle, now, {
   unitsPreEdgeBand = null,
   bothE10TapeAction = null,
   unitsPreBothE10 = null,
+  bothE10TapeMode = null,
 } = {}) {
   const wa = bundle.winnerAlign;
   if (wa) {
@@ -792,6 +793,7 @@ function applySkillFeatureStamps(target, bundle, now, {
   if (unitsPreBothE10 != null && Number.isFinite(unitsPreBothE10)) {
     target.v8_unitsPreBothE10 = unitsPreBothE10;
   }
+  if (bothE10TapeMode != null) target.v8_bothE10TapeMode = bothE10TapeMode;
   target.v8_skillFeatureVersion = SKILL_FEATURE_VERSION;
   target.v8_skillEvaluatedAt = now;
 }
@@ -1669,7 +1671,7 @@ async function createMissingLockedPicks({
         // Map tape action into create stamps (reuse clvTop2Action field sparingly —
         // primary action lives on v8_tapeAction).
         peakUnitsApplied = clvPolicyCreate.units;
-        // BOTH E≥10 ∩ tape-boost → floor 5u (oddsCap, ≤6)
+        // Skill top floor: BOTH → 5u · ONE (E≥10 xor tape-boost) → 4u
         if (isBothE10TapeBoostLive(TARGET_DATE) && peakUnitsApplied > 0) {
           bothE10Create = applyBothE10TapeFloor({
             units: peakUnitsApplied,
@@ -1841,6 +1843,7 @@ async function createMissingLockedPicks({
           unitsPreBothE10: (bothE10Create && Number.isFinite(bothE10Create.unitsPrePolicy))
             ? bothE10Create.unitsPrePolicy
             : null,
+          bothE10TapeMode: bothE10Create?.mode ?? null,
         });
         v8Stamps.v8_winnerAlignAction = null;
         v8Stamps.v8_clvTop2Action = isTapeSizingLive(TARGET_DATE) ? 'PASS' : clvPolicyCreate.action;
@@ -2663,7 +2666,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       });
     }
     finalUnitsApplied = tapePolicy.units;
-    // BOTH E≥10 ∩ tape-boost → floor 5u (oddsCap, ≤6)
+    // Skill top floor: BOTH → 5u · ONE (E≥10 xor tape-boost) → 4u
     if (isBothE10TapeBoostLive(pickDate) && finalUnitsApplied > 0) {
       bothE10Policy = applyBothE10TapeFloor({
         units: finalUnitsApplied,
@@ -2976,9 +2979,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   }
   if (bothE10Policy?.action === 'FLOOR') {
     changes.push(
-      `BOTH-E10-TAPE: E=${winnerAlign?.edge == null ? '—' : Number(winnerAlign.edge).toFixed(1)} `
+      `SKILL-TOP ${bothE10Policy.mode}: E=${winnerAlign?.edge == null ? '—' : Number(winnerAlign.edge).toFixed(1)} `
       + `tape=${tapeLive == null ? '—' : Number(tapeLive).toFixed(2)} `
-      + `${bothE10Policy.unitsPrePolicy}u → ${bothE10Policy.units}u floor`
+      + `${bothE10Policy.unitsPrePolicy}u → ${bothE10Policy.units}u (${bothE10Policy.reason})`
     );
   }
   if (rankRescued) {
@@ -3028,6 +3031,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       unitsPreBothE10: (bothE10Policy && Number.isFinite(bothE10Policy.unitsPrePolicy))
         ? bothE10Policy.unitsPrePolicy
         : null,
+      bothE10TapeMode: bothE10Policy?.mode ?? null,
     });
     patch.v8_winnerAlignAction = winnerAlignAction;
     patch.v8_clvTop2Action = clvPolicy.action;
@@ -3036,7 +3040,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     if (skillStampsDrifted(sd, skillLive, { tapeAction: tapePolicy?.action ?? null })
         || (edgeNetSizePolicy && (sd.v8_edgeNetSizeAction || null) !== edgeNetSizePolicy.action)
         || (edgeBandSizePolicy && (sd.v8_edgeBandAction || null) !== edgeBandSizePolicy.action)
-        || (bothE10Policy && (sd.v8_bothE10TapeAction || null) !== bothE10Policy.action)) {
+        || (bothE10Policy && (
+          (sd.v8_bothE10TapeAction || null) !== bothE10Policy.action
+          || (sd.v8_bothE10TapeMode || null) !== (bothE10Policy.mode || null)
+        ))) {
       changes.push(
         `SKILL-FEATURES: E=${skillLive.edge == null ? '—' : Number(skillLive.edge).toFixed(1)} `
         + `net=${skillLive.netMeanPrior == null ? '—' : Number(skillLive.netMeanPrior).toFixed(1)} `
