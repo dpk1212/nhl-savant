@@ -76,9 +76,10 @@ function WalletMap({ wallets, selected, onSelect, gid }) {
     );
   }
 
-  const W = 360;
-  const H = 248;
-  const pad = { t: 22, r: 16, b: 36, l: 40 };
+  // Wide viewBox + tight pads so the plot fills the dark map well.
+  const W = 420;
+  const H = 268;
+  const pad = { t: 16, r: 8, b: 30, l: 34 };
   const iw = W - pad.l - pad.r;
   const ih = H - pad.t - pad.b;
   const roiOf = (p) => (Number.isFinite(p.roi) ? p.roi : p.dollarRoi);
@@ -95,7 +96,7 @@ function WalletMap({ wallets, selected, onSelect, gid }) {
   const xS = (v) => pad.l + ((clamp(v, xMin, xMax) - xMin) / (xMax - xMin)) * iw;
   const yS = (v) => pad.t + (1 - (clamp(v, yMin, yMax) - yMin) / (yMax - yMin)) * ih;
   const invMax = Math.max(...plottable.map((p) => p.invested), 1);
-  const rFor = (p) => 7 + Math.sqrt((p.invested || 0) / invMax) * 14;
+  const rFor = (p) => 8 + Math.sqrt((p.invested || 0) / invMax) * 16;
   const xB = xS(XB);
   const yB = yS(YB);
   const selPt = plottable.find((p) => p.short === selected);
@@ -111,7 +112,12 @@ function WalletMap({ wallets, selected, onSelect, gid }) {
   });
 
   return (
-    <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: 'block' }}>
+    <svg
+      width="100%"
+      viewBox={`0 0 ${W} ${H}`}
+      preserveAspectRatio="xMidYMid meet"
+      style={{ display: 'block', width: '100%', height: 'auto' }}
+    >
       <defs>
         <radialGradient id={`${gid}-elite`} cx="84%" cy="14%" r="48%">
           <stop offset="0%" stopColor={GREEN} stopOpacity="0.18" />
@@ -332,10 +338,14 @@ export default function LockedClarityExpanded({
   const provenUsd = all.filter((w) => w.side === 'ours' && w.proven).reduce((s, w) => s + (w.invested || 0), 0);
   const secondaryUsd = all.filter((w) => w.side === 'ours' && !w.proven && w.skillEligible).reduce((s, w) => s + (w.invested || 0), 0);
   const againstUsd = all.filter((w) => w.side === 'against').reduce((s, w) => s + (w.invested || 0), 0);
-  const board = provenUsd + secondaryUsd + againstUsd || 1;
+  const oursUsd = provenUsd + secondaryUsd;
+  const board = oursUsd + againstUsd || 1;
   const provenPct = Math.round((provenUsd / board) * 100);
   const secondaryPct = Math.round((secondaryUsd / board) * 100);
   const againstPct = Math.max(0, 100 - provenPct - secondaryPct);
+  // Board share from wallet $ on this card — never a stamp that can disagree.
+  const boardSharePct = Math.round((oursUsd / board) * 100);
+  const unopposed = againstUsd <= 0;
 
   const against = f.against || {
     abbr: '—', invested: againstUsd, avgWr: null, avgClv: null, avgRoi: null,
@@ -348,7 +358,16 @@ export default function LockedClarityExpanded({
 
   const vault = selected?.qualify === 'VAULT';
   const againstSel = selected?.side === 'against';
-  const sizeHot = Number.isFinite(selected?.sizeRatio) && selected.sizeRatio >= 1.5;
+  // Size vs usual: ratio and usual $ from the same identity (invested / ratio).
+  const sizeRatio = Number.isFinite(selected?.sizeRatio) && selected.sizeRatio > 0
+    ? selected.sizeRatio
+    : (Number.isFinite(selected?.avgSportBet) && selected.avgSportBet > 0 && selected.invested > 0
+      ? selected.invested / selected.avgSportBet
+      : null);
+  const sizeUsual = Number.isFinite(sizeRatio) && sizeRatio > 0 && selected?.invested > 0
+    ? selected.invested / sizeRatio
+    : (Number.isFinite(selected?.avgSportBet) ? selected.avgSportBet : null);
+  const sizeHot = Number.isFinite(sizeRatio) && sizeRatio >= 1.5;
   const beatHot = Number.isFinite(selected?.priorClvPct) && selected.priorClvPct >= 55;
   const leadAccent = againstSel ? VS : vault ? GOLD : selected?.proven ? GREEN : BLUE;
 
@@ -365,8 +384,7 @@ export default function LockedClarityExpanded({
           ? 'A proven winner on this side'
           : 'Secondary wallet — on the board, not the stake path';
 
-  const sharpUsd = f.sharpUsd || f.sideInvested || 0;
-  const moneyPct = Number.isFinite(f.moneyPct) ? f.moneyPct : null;
+  const sharpUsd = f.sharpUsd || f.sideInvested || oursUsd || 0;
   const journey = Array.isArray(f.journey) && f.journey.length >= 2
     ? f.journey
     : [f.lockOdds, f.peakOdds, f.nowOdds].filter(Number.isFinite);
@@ -451,8 +469,10 @@ export default function LockedClarityExpanded({
           marginTop: 8, display: 'flex', alignItems: 'baseline', gap: 8, fontFeatureSettings: "'tnum'",
         }}>
           <span style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.03em' }}>{fmtMoney(sharpUsd)}</span>
-          {Number.isFinite(moneyPct) && (
-            <span style={{ fontSize: 12, fontWeight: 650, color: GREEN }}>{Math.round(moneyPct)}% of board</span>
+          {oursUsd > 0 && (
+            <span style={{ fontSize: 12, fontWeight: 650, color: GREEN }}>
+              {unopposed ? 'Unopposed' : `${boardSharePct}% of board`}
+            </span>
           )}
           {f.lockedAt && (
             <span style={{ fontSize: 10, color: C.textFaint, marginLeft: 'auto' }}>{f.lockedAt}</span>
@@ -461,17 +481,19 @@ export default function LockedClarityExpanded({
 
         <div style={{ marginTop: 8 }}>
           <div style={{ height: 2.5, borderRadius: 1.5, overflow: 'hidden', display: 'flex', background: 'rgba(0,0,0,0.4)' }}>
-            <div style={{ width: `${provenPct}%`, background: GREEN }} />
-            <div style={{ width: `${secondaryPct}%`, background: BLUE }} />
-            <div style={{ width: `${againstPct}%`, background: VS }} />
+            {provenPct > 0 && <div style={{ width: `${provenPct}%`, background: GREEN }} />}
+            {secondaryPct > 0 && <div style={{ width: `${secondaryPct}%`, background: BLUE }} />}
+            {againstPct > 0 && <div style={{ width: `${againstPct}%`, background: VS }} />}
           </div>
           <div style={{
-            display: 'flex', justifyContent: 'space-between', marginTop: 4,
+            display: 'flex', justifyContent: 'space-between', marginTop: 4, gap: 8,
             fontSize: 8, fontWeight: 700, letterSpacing: '0.05em', fontFeatureSettings: "'tnum'",
           }}>
-            <span style={{ color: GREEN }}>Proven money {provenPct}%</span>
-            <span style={{ color: BLUE }}>Secondary {secondaryPct}%</span>
-            <span style={{ color: VS }}>Against {againstPct}%</span>
+            {provenPct > 0 && <span style={{ color: GREEN }}>Proven money {provenPct}%</span>}
+            {secondaryPct > 0 && <span style={{ color: BLUE }}>Secondary {secondaryPct}%</span>}
+            {againstPct > 0
+              ? <span style={{ color: VS }}>Against {againstPct}%</span>
+              : <span style={{ color: GREEN, marginLeft: 'auto' }}>Unopposed</span>}
           </div>
         </div>
       </div>
@@ -499,22 +521,28 @@ export default function LockedClarityExpanded({
                 <i style={{ width: 7, height: 7, borderRadius: '50%', background: GREEN, display: 'inline-block' }} />
                 Proven ({provenN})
               </span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                <i style={{
-                  width: 7, height: 7, borderRadius: '50%', display: 'inline-block',
-                  border: `1.5px dashed ${BLUE}`, boxSizing: 'border-box',
-                }} />
-                Secondary ({secondaryN})
-              </span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                <i style={{ width: 7, height: 7, borderRadius: '50%', background: VS, display: 'inline-block' }} />
-                Against ({againstN})
-              </span>
+              {secondaryN > 0 && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <i style={{
+                    width: 7, height: 7, borderRadius: '50%', display: 'inline-block',
+                    border: `1.5px dashed ${BLUE}`, boxSizing: 'border-box',
+                  }} />
+                  Secondary ({secondaryN})
+                </span>
+              )}
+              {againstN > 0 ? (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <i style={{ width: 7, height: 7, borderRadius: '50%', background: VS, display: 'inline-block' }} />
+                  Against ({againstN})
+                </span>
+              ) : (
+                <span style={{ color: GREEN, fontWeight: 700 }}>Unopposed</span>
+              )}
               <span style={{ color: C.textFaint }}>· size = $</span>
             </div>
           </div>
 
-          <div style={{ padding: '0 2px 2px' }}>
+          <div style={{ padding: 0, margin: 0 }}>
             <WalletMap wallets={all} selected={sel} onSelect={setSel} gid={gid} />
           </div>
 
@@ -635,7 +663,7 @@ export default function LockedClarityExpanded({
                 </div>
               )}
 
-              {!againstSel && Number.isFinite(selected.sizeRatio) && Number.isFinite(selected.invested) && selected.invested > 0 && (
+              {!againstSel && Number.isFinite(sizeRatio) && Number.isFinite(selected.invested) && selected.invested > 0 && (
                 <div style={{ marginTop: 9 }}>
                   <div style={{
                     display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
@@ -650,7 +678,7 @@ export default function LockedClarityExpanded({
                     <span style={{
                       fontSize: 12, fontWeight: 700, color: sizeHot ? GREEN : GOLD_HI,
                     }}>
-                      {selected.sizeRatio.toFixed(1)}×
+                      {sizeRatio.toFixed(1)}×
                     </span>
                   </div>
                   <div style={{
@@ -661,10 +689,10 @@ export default function LockedClarityExpanded({
                       position: 'absolute', inset: 0, borderRadius: 2, overflow: 'hidden',
                       background: `linear-gradient(90deg, rgba(255,255,255,0.04), ${sizeHot ? GREEN : GOLD})`,
                     }} />
-                    {Number.isFinite(selected.avgSportBet) && selected.avgSportBet > 0 && (
+                    {Number.isFinite(sizeUsual) && sizeUsual > 0 && (
                       <div style={{
                         position: 'absolute',
-                        left: `${Math.min(92, (selected.avgSportBet / selected.invested) * 100)}%`,
+                        left: `${Math.min(92, (sizeUsual / selected.invested) * 100)}%`,
                         top: -2, bottom: -2, width: 2, borderRadius: 1,
                         background: C.text, transform: 'translateX(-50%)',
                         boxShadow: '0 0 8px rgba(255,255,255,0.35)',
@@ -675,7 +703,7 @@ export default function LockedClarityExpanded({
                     display: 'flex', justifyContent: 'space-between', marginTop: 4,
                     fontSize: 10, fontWeight: 550, color: C.textMuted, fontFeatureSettings: "'tnum'",
                   }}>
-                    <span>usual {fmtMoney(selected.avgSportBet)}</span>
+                    <span>usual {fmtMoney(sizeUsual)}</span>
                     <span style={{ color: sizeHot ? GREEN : C.textSec }}>this {fmtMoney(selected.invested)}</span>
                   </div>
                 </div>
@@ -685,41 +713,73 @@ export default function LockedClarityExpanded({
 
           {/* OTHER SIDE */}
           <div style={{
-            borderTop: '1px solid rgba(240,113,103,0.22)',
-            background: 'rgba(240,113,103,0.05)',
+            borderTop: unopposed
+              ? '1px solid rgba(52,211,153,0.22)'
+              : '1px solid rgba(240,113,103,0.22)',
+            background: unopposed
+              ? 'rgba(52,211,153,0.06)'
+              : 'rgba(240,113,103,0.05)',
             padding: '8px 12px 9px',
           }}>
-            <div style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10,
-              marginBottom: 7,
-            }}>
-              <span style={{
-                fontFamily: MONO, fontSize: 8, fontWeight: 700, letterSpacing: '0.12em', color: VS,
+            {unopposed ? (
+              <div style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10,
               }}>
-                ② OTHER SIDE · {against.abbr || '—'}
-              </span>
-              <span style={{
-                fontSize: 14, fontWeight: 700, color: VS, fontFeatureSettings: "'tnum'",
-              }}>
-                {fmtMoney(against.invested)}
-              </span>
-            </div>
-            <div style={{
-              display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
-              gap: 0, borderRadius: 7, overflow: 'hidden',
-              background: 'rgba(0,0,0,0.28)',
-              border: '1px solid rgba(240,113,103,0.18)',
-            }}>
-              <GapCell label="Win rate" value={fmtGap(against.avgWr)} first />
-              <GapCell label="Beat close" value={fmtGap(against.avgClv)} />
-              <GapCell label="ROI" value={fmtGap(against.avgRoi)} />
-            </div>
-            <div style={{
-              marginTop: 5, fontSize: 10, fontWeight: 550, color: VS,
-              fontFeatureSettings: "'tnum'",
-            }}>
-              {againstProvenN} proven · {againstSecondaryN} secondary
-            </div>
+                <div>
+                  <div style={{
+                    fontFamily: MONO, fontSize: 8, fontWeight: 700, letterSpacing: '0.12em', color: GREEN,
+                    marginBottom: 4,
+                  }}>
+                    ② OTHER SIDE · {against.abbr || '—'}
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: GREEN, letterSpacing: '-0.01em' }}>
+                    Unopposed
+                  </div>
+                  <div style={{ marginTop: 2, fontSize: 11, fontWeight: 500, color: C.textSec, lineHeight: 1.35 }}>
+                    No sharp money on the other side of this board.
+                  </div>
+                </div>
+                <span style={{
+                  fontSize: 14, fontWeight: 700, color: GREEN, fontFeatureSettings: "'tnum'", flexShrink: 0,
+                }}>
+                  $0
+                </span>
+              </div>
+            ) : (
+              <>
+                <div style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10,
+                  marginBottom: 7,
+                }}>
+                  <span style={{
+                    fontFamily: MONO, fontSize: 8, fontWeight: 700, letterSpacing: '0.12em', color: VS,
+                  }}>
+                    ② OTHER SIDE · {against.abbr || '—'}
+                  </span>
+                  <span style={{
+                    fontSize: 14, fontWeight: 700, color: VS, fontFeatureSettings: "'tnum'",
+                  }}>
+                    {fmtMoney(against.invested ?? againstUsd)}
+                  </span>
+                </div>
+                <div style={{
+                  display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
+                  gap: 0, borderRadius: 7, overflow: 'hidden',
+                  background: 'rgba(0,0,0,0.28)',
+                  border: '1px solid rgba(240,113,103,0.18)',
+                }}>
+                  <GapCell label="Win rate" value={fmtGap(against.avgWr)} first />
+                  <GapCell label="Beat close" value={fmtGap(against.avgClv)} />
+                  <GapCell label="ROI" value={fmtGap(against.avgRoi)} />
+                </div>
+                <div style={{
+                  marginTop: 5, fontSize: 10, fontWeight: 550, color: VS,
+                  fontFeatureSettings: "'tnum'",
+                }}>
+                  {againstProvenN} proven · {againstSecondaryN} secondary
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

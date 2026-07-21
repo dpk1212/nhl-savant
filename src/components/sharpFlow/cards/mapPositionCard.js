@@ -119,8 +119,13 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
       const medianBet = profile?.sizeSignal?.medianInvested;
       const usualBet = feedCrossAvg
         || (Number.isFinite(medianBet) && medianBet > 0 ? medianBet : null);
+      // Prefer stamped sizeRatio (cron / HC). Usual $ for display MUST agree
+      // with that ratio — never show profile median next to a mismatched ×.
       const sizeRatio = Number.isFinite(w.sizeRatio) ? w.sizeRatio
         : (usualBet != null && (w.invested || 0) > 0) ? +(w.invested / usualBet).toFixed(2) : null;
+      const avgSportBet = (Number.isFinite(sizeRatio) && sizeRatio > 0 && (w.invested || 0) > 0)
+        ? Math.round((w.invested || 0) / sizeRatio)
+        : (usualBet != null ? Math.round(usualBet) : null);
       // Causal %+CLV ("beats the close"): profile.clvSkill from exportWalletProfiles
       // (same definition as the tape/netCLV cron). Never invent a default %.
       const profileClv = profile?.clvSkill?.pctPos;
@@ -172,7 +177,7 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
         roi,
         dollarRoi,
         invested: w.invested || 0,
-        avgSportBet: usualBet,
+        avgSportBet,
         cents: w.cents ?? null,
         pnl: w.pnl || 0,
         priorClvPct,
