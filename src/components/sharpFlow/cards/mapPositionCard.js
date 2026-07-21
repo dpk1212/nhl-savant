@@ -150,6 +150,9 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
             : ['SHARP', 'TRACKING'];
       return {
         short,
+        // Preserve feed side (away/home/draw/over/under) when present — locked
+        // clarity map + live board both need it after enrich.
+        side: w.side || null,
         proven,
         whitelisted,
         skillEligible,
@@ -251,6 +254,58 @@ export function mapLockedPickToCardFixture(pick, {
     getRecordForDisplay,
   );
 
+  // Normalize totals over/under → home/away so board sides match `side`.
+  const normSide = (s) => {
+    if (s === 'over') return 'home';
+    if (s === 'under') return 'away';
+    return s || null;
+  };
+
+  // Both-side board for the clarity map. Prefer stamped boardWallets; fall
+  // back to play-side receipts so the expanded card still has something.
+  const boardRaw = (Array.isArray(pick.boardWallets) && pick.boardWallets.length
+    ? pick.boardWallets
+    : (pick.backingWallets || []).map((w) => ({ ...w, side: w.side || side }))
+  ).map((w) => ({ ...w, side: normSide(w.side) || side }));
+
+  const mapWallets = enrichWallets(
+    boardRaw,
+    pick.sport,
+    getWalletProfile,
+    isSportWinner,
+    getRecordForDisplay,
+  ).map((w) => {
+    const marketSide = normSide(w.side) || side;
+    return {
+      ...w,
+      marketSide,
+      side: marketSide === side ? 'ours' : 'against',
+    };
+  });
+
+  const againstRows = mapWallets.filter((w) => w.side === 'against');
+  const meanFinite = (arr) => {
+    const xs = arr.filter(Number.isFinite);
+    if (!xs.length) return null;
+    return +(xs.reduce((s, v) => s + v, 0) / xs.length).toFixed(1);
+  };
+  const againstInvested = againstRows.reduce((s, w) => s + (w.invested || 0), 0);
+  const againstAbbr = side === 'draw'
+    ? `${awayShort}/${homeShort}`
+    : side === 'home' ? awayShort : homeShort;
+  const againstLabel = side === 'draw'
+    ? `${pick.away || awayShort} / ${pick.home || homeShort}`
+    : side === 'home' ? (pick.away || awayShort) : (pick.home || homeShort);
+  const against = {
+    abbr: againstAbbr,
+    label: againstLabel,
+    proven: againstRows.filter((w) => w.proven).length,
+    invested: againstInvested,
+    avgRoi: meanFinite(againstRows.map((w) => w.roi)),
+    avgClv: meanFinite(againstRows.map((w) => w.priorClvPct)),
+    avgWr: meanFinite(againstRows.map((w) => w.wr)),
+  };
+
   // Proven count MUST equal PROVEN badges on THE RECEIPTS (and the live
   // board's confirmedOnSide): whitelist winner + ≥0.10× usual. Prefer that
   // census over a stamped agsProvenForCount that can drift from who we paint.
@@ -338,6 +393,10 @@ export function mapLockedPickToCardFixture(pick, {
     setupHitRate: null,
     sideInvested: pick.totalInvested || pick.lockTotalInvested || 0,
     wallets,
+    mapWallets: mapWallets.length ? mapWallets : null,
+    against,
+    sharpUsd: pick.totalInvested || pick.lockTotalInvested || 0,
+    journey: [lockOdds, peakOdds, nowOdds].filter(Number.isFinite),
     combinedWalletPnl: wallets.reduce((s, w) => s + (w.pnl || 0), 0),
     gameTime,
     lockedAt,

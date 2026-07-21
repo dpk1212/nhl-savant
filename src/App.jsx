@@ -51,9 +51,70 @@ const LivePositionCardLab = lazy(() => import('./components/preview/LivePosition
 // Design sandbox for sharp wallet quadrant map — #/sharp-map-lab
 const SharpMapLab = lazy(() => import('./components/preview/SharpMapLab'));
 const LockedCardStates = lazy(() => import('./components/preview/LockedCardStates'));
+const LockedStoryLab = lazy(() => import('./components/preview/LockedStoryLab'));
+
+/** Design sandboxes — no auth, no paywall, no splash, no data bootstrap. */
+const DESIGN_LAB_PATHS = [
+  '/card-lab',
+  '/position-lab',
+  '/sharp-map-lab',
+  '/locked-card-states',
+  '/locked-story-lab',
+];
+
+function hashPath() {
+  const raw = (typeof window !== 'undefined' ? window.location.hash : '') || '#/';
+  const path = raw.replace(/^#/, '').split('?')[0] || '/';
+  return path.startsWith('/') ? path : `/${path}`;
+}
+
+function isDesignLabPath(path = hashPath()) {
+  return DESIGN_LAB_PATHS.includes(path);
+}
+
+/** If someone hits /locked-story-lab (no hash), bounce into HashRouter. */
+function useDesignLabPathRedirect() {
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const path = window.location.pathname.replace(/\/$/, '') || '/';
+    if (!DESIGN_LAB_PATHS.includes(path)) return;
+    if (hashPath() === path) return;
+    window.location.replace(`${window.location.origin}/#${path}`);
+  }, []);
+}
+
+function useIsDesignLab() {
+  const [lab, setLab] = useState(() => isDesignLabPath());
+  useEffect(() => {
+    const sync = () => setLab(isDesignLabPath());
+    window.addEventListener('hashchange', sync);
+    return () => window.removeEventListener('hashchange', sync);
+  }, []);
+  return lab;
+}
+
+function DesignLabApp() {
+  return (
+    <ErrorBoundary>
+      <Router>
+        <Suspense fallback={<LoadingSpinner />}>
+          <Routes>
+            <Route path="/card-lab" element={<LockedPickCardLab />} />
+            <Route path="/position-lab" element={<LivePositionCardLab />} />
+            <Route path="/sharp-map-lab" element={<SharpMapLab />} />
+            <Route path="/locked-card-states" element={<LockedCardStates />} />
+            <Route path="/locked-story-lab" element={<LockedStoryLab />} />
+          </Routes>
+        </Suspense>
+      </Router>
+    </ErrorBoundary>
+  );
+}
 
 function App() {
   // ALL HOOKS FIRST - Called on every render
+  useDesignLabPathRedirect();
+  const onDesignLab = useIsDesignLab();
   const { showSplash, hasWebGL, dismissSplash } = useSplashScreen();
   const [dataProcessor, setDataProcessor] = useState(null);
   const [oddsData, setOddsData] = useState(null);
@@ -90,6 +151,10 @@ function App() {
   
   // useEffect hook - MUST be before any returns
   useEffect(() => {
+    if (onDesignLab) {
+      setLoading(false);
+      return;
+    }
     const loadData = async () => {
       // Only load data if NOT showing splash
       if (showSplash) {
@@ -222,8 +287,13 @@ function App() {
     };
 
     loadData();
-  }, [showSplash]); // Add showSplash as dependency to re-trigger when splash dismisses
+  }, [showSplash, onDesignLab]); // re-trigger when splash dismisses
   
+  // Design labs: no splash, no Sharp Flow paywall, no nav shell.
+  if (onDesignLab) {
+    return <DesignLabApp />;
+  }
+
   // CONDITIONAL RENDERING - After all hooks
   if (showSplash) {
     return hasWebGL ? (
@@ -377,10 +447,6 @@ function AppContent({ dataProcessor, oddsData, startingGoalies, goalieData, stat
               <Route path="/guides/how-to-find-ev-college-basketball-picks" element={<EVCBBGuide />} />
               <Route path="/data" element={<Data />} />
               <Route path="/disclaimer" element={<Disclaimer />} />
-              <Route path="/card-lab" element={<Suspense fallback={<LoadingSpinner />}><LockedPickCardLab /></Suspense>} />
-              <Route path="/position-lab" element={<Suspense fallback={<LoadingSpinner />}><LivePositionCardLab /></Suspense>} />
-              <Route path="/sharp-map-lab" element={<Suspense fallback={<LoadingSpinner />}><SharpMapLab /></Suspense>} />
-              <Route path="/locked-card-states" element={<Suspense fallback={<LoadingSpinner />}><LockedCardStates /></Suspense>} />
           </Routes>
         </Suspense>
         </main>

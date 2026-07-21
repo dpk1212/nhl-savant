@@ -13184,6 +13184,31 @@ export default function SharpFlow() {
                               .sort((a, b) => (b.invested || 0) - (a.invested || 0));
                             return rows.length ? rows : null;
                           })(),
+                          // Both-side board for the locked clarity map (proven /
+                          // secondary / against). Same snapshot as backingWallets
+                          // but unfiltered by consensus side.
+                          boardWallets: (() => {
+                            const wd = sd.peak?.v8Scoring?.walletDetails
+                              || sd.lock?.v8Scoring?.walletDetails
+                              || peak?.v8Scoring?.walletDetails
+                              || lock?.v8Scoring?.walletDetails
+                              || null;
+                            if (!Array.isArray(wd)) return null;
+                            const rows = wd
+                              .filter(w => w && (w.invested || 0) > 0)
+                              .map(w => ({
+                                wallet: w.wallet,
+                                side: w.side,
+                                invested: w.invested || 0,
+                                roi: w.roi || 0,
+                                pnl: w.pnl || 0,
+                                rank: w.rank ?? null,
+                                sizeRatio: Number.isFinite(w.sizeRatio) ? w.sizeRatio : null,
+                                avgSportBet: Number.isFinite(w.avgSportBet) ? w.avgSportBet : null,
+                              }))
+                              .sort((a, b) => (b.invested || 0) - (a.invested || 0));
+                            return rows.length ? rows : null;
+                          })(),
                           // v7.1 TOP PICK tiers — read from stamped fields when
                           // the pick is post-cutover and has been stamped under
                           // consensus version 7. Pre-cutover picks fall through

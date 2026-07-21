@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { Check, Lock, ChevronDown, Clock, X } from 'lucide-react';
 import { AGS_V12_DISPLAY_TIERS, AGS_V12_PATH_TO_DISPLAY } from '../../../lib/ags.js';
+import LockedClarityExpanded from './LockedClarityExpanded';
 
 /** Ticket freezes 15 min before first pitch/kick — same gate as the cron. */
 const LOCK_LEAD_MS = 15 * 60 * 1000;
@@ -2003,7 +2004,8 @@ function TicketPerf() {
 function TicketBarcode({ serial }) {
   const bars = [];
   let seed = 0;
-  for (let i = 0; i < serial.length; i += 1) seed = (seed * 31 + serial.charCodeAt(i)) % 9973;
+  const key = String(serial || 'SF');
+  for (let i = 0; i < key.length; i += 1) seed = (seed * 31 + key.charCodeAt(i)) % 9973;
   for (let i = 0; i < 34; i += 1) {
     seed = (seed * 1103515245 + 12345) % 2147483647;
     bars.push(1 + (seed % 3));
@@ -2328,23 +2330,11 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
   // Champagne accents stay even on tracked picks; only the pill goes gray.
   // Graded tickets tint the accent to the result so the list reads at a glance.
   const accent = graded && resultColor ? resultColor : B.gold;
-  const playSide = playSideLabel(f);
   const clvGood = f.clvPct >= 0;
   const clvColor = clvGood ? B.profit : B.loss;
   const productTier = displayTierFromPath(f.stakePath);
   const tierLabel = productTier?.label || null;
   const tierColor = productTier?.color || C.textMuted;
-  // Journey chart through the three REAL price stops (lock → peak → now).
-  const journeySeries = [f.lockOdds, f.peakOdds, f.nowOdds].filter(Number.isFinite);
-  const hasJourney = journeySeries.length >= 2;
-  const centsEdge = (() => {
-    const got = f.gotOdds ?? f.lockOdds;
-    const fair = f.fairLine ?? f.fairOdds;
-    if (!Number.isFinite(got) || !Number.isFinite(fair)) return null;
-    let diff = got - fair;
-    if ((got > 0) !== (fair > 0)) diff -= Math.sign(diff) * 200;
-    return diff;
-  })();
   const cardBorder = tracked
     ? 'rgba(139,150,171,0.22)'
     : graded
@@ -2482,413 +2472,51 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
       </div>
     );
   }
-  // Proven first, then skill (EDGE/net contributors), then conviction size.
-  const sortedWallets = sortWalletsForDisplay(f.wallets);
-  const maxRatio = Math.max(...sortedWallets.map((w) => w.sizeRatio || 0), 1);
-  const provenWallets = sortedWallets.filter((w) => w.proven);
-  const provenCount = provenWallets.length > 0 ? provenWallets.length : (f.confirmedOnSide || 0);
-  const provenWithRecord = provenWallets.filter((w) => w.record && w.record !== '—');
-  const provenRecSummary = provenWithRecord
-    .slice(0, 2)
-    .map((w) => `${w.record}${Number.isFinite(w.wr) ? ` (${w.wr}% W)` : ''}`)
-    .join(' · ');
-  const provenRoiAvg = (() => {
-    const rois = provenWallets.map((w) => w.roi).filter(Number.isFinite);
-    if (!rois.length) return null;
-    return Math.round(rois.reduce((s, v) => s + v, 0) / rois.length);
-  })();
 
-  const winners = `${provenCount} proven ${f.sport} winner${provenCount === 1 ? '' : 's'}`;
-  const clvLine = Number.isFinite(f.clvPct)
-    ? (clvGood
-      ? `Market already moved our way (+${f.clvPct.toFixed(1)}% CLV).`
-      : `Price has drifted ${Math.abs(f.clvPct).toFixed(1)}% against since flag.`)
-    : '';
-  const verdictLead = tracked
-    ? `Watching ${playSide} at ${fmtOdds(f.lockOdds)} — ${winners} on the board.`
-    : `${winners} on ${playSide}${provenRecSummary ? ` — ${provenRecSummary}` : ''}.`;
-  const verdictRest = tracked
-    ? `No stake — price only. ${clvLine}`
-    : `We took a ${tierLabel || 'ticket'} at ${fmtOdds(f.lockOdds)}${Number.isFinite(provenRoiAvg) ? ` behind wallets averaging ${provenRoiAvg >= 0 ? '+' : ''}${provenRoiAvg}% ROI` : ''}. ${clvLine}`;
-
-  // Why-this-play proof chips — only real signals that sell the ticket.
-  const whyChips = [
-    provenCount > 0 ? `${provenCount} proven ${f.sport} winner${provenCount === 1 ? '' : 's'}` : null,
-    (f.sideInvested || 0) > 0
-      ? `${fmtMoney(f.sideInvested)} sharp${Number.isFinite(f.moneyPct) && f.moneyPct >= 70 ? ` · ${Math.round(f.moneyPct)}% of board` : ''}`
-      : null,
-    Number.isFinite(f.clvPct) && clvGood ? `+${f.clvPct.toFixed(1)}% CLV` : null,
-    Number.isFinite(centsEdge) && centsEdge > 0 ? `${Math.round(centsEdge)}¢ better than fair` : null,
-    Number.isFinite(f.hcMargin) && f.hcMargin >= 1 ? `HC +${f.hcMargin}` : null,
-    Number.isFinite(f.edge) && f.edge > 0 ? `EDGE +${f.edge.toFixed(1)}` : null,
-    f.tierPerf?.wr != null
-      ? `${f.tierPerf.label} ${f.tierPerf.window} ${f.tierPerf.wr}% W`
-      : null,
-  ].filter(Boolean);
-
-  const keyReads = [
-    Number.isFinite(f.gotOdds) || Number.isFinite(f.lockOdds)
-      ? { label: 'WE GOT', value: fmtOdds(f.gotOdds ?? f.lockOdds), sub: f.book || null }
-      : null,
-    Number.isFinite(f.fairLine) || Number.isFinite(f.fairOdds)
-      ? { label: 'FAIR LINE', value: fmtOdds(f.fairLine ?? f.fairOdds), sub: Number.isFinite(centsEdge) ? `${centsEdge > 0 ? '+' : ''}${Math.round(centsEdge)}¢ vs fair` : (f.fairBook || f.book || 'Fair') }
-      : null,
-    Number.isFinite(f.clvPct)
-      ? { label: 'CLV', value: `${clvGood ? '+' : ''}${f.clvPct.toFixed(1)}%`, color: clvColor, sub: clvGood ? 'beating close' : 'behind close' }
-      : null,
-    Number.isFinite(f.edge) && Math.abs(f.edge) >= 1
-      ? { label: 'EDGE', value: `${f.edge >= 0 ? '+' : ''}${f.edge.toFixed(1)}`, color: f.edge >= 0 ? B.profit : B.loss, sub: 'winner align' }
-      : null,
-    Number.isFinite(f.hcMargin) && f.hcMargin !== 0
-      ? { label: 'HC', value: `${f.hcMargin >= 0 ? '+' : ''}${f.hcMargin}`, sub: 'conviction margin' }
-      : null,
-    provenCount > 0
-      ? { label: 'PROVEN', value: String(provenCount), sub: playSide }
-      : null,
-    (f.sideInvested || 0) > 0
-      ? { label: 'SHARP $', value: fmtMoney(f.sideInvested), sub: Number.isFinite(f.moneyPct) ? `${Math.round(f.moneyPct)}% of board` : 'on our side' }
-      : null,
-  ].filter(Boolean);
-
-  const zone = (i) => ({ className: 'pos-reveal', style: { animationDelay: `${i * 70}ms`, position: 'relative' } });
+  // Expanded = V27 clarity story (map → lead wallet → other side → price).
+  // Collapsed chrome above is unchanged.
+  const statusSlot = tracked ? (
+    <span
+      title={muteTip}
+      style={{
+        fontSize: 8, fontWeight: 800, letterSpacing: '0.08em',
+        padding: '4px 8px', borderRadius: 6, color: '#aeb8cb',
+        background: 'rgba(139,150,171,0.10)', border: '1px solid rgba(139,150,171,0.26)',
+      }}
+    >
+      TRACKED
+    </span>
+  ) : graded ? (
+    <GradedResultPill
+      outcome={f.outcome}
+      profit={f.profit}
+      units={f.units}
+      toWin={f.toWin}
+      compact
+    />
+  ) : (
+    <>
+      {tierLabel && (
+        <span style={{
+          fontSize: 7.5, fontWeight: 800, letterSpacing: '0.14em',
+          padding: '3px 8px', borderRadius: 4, color: '#0A0E14',
+          background: `linear-gradient(180deg, ${B.goldHi}, ${tierColor})`,
+        }}>
+          {tierLabel}
+        </span>
+      )}
+      <LockFreezeStatus commenceMs={f.commenceMs} compact />
+    </>
+  );
 
   return (
-    <div style={{
-      borderRadius: 16, overflow: 'hidden',
-      background: 'linear-gradient(180deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0) 42%), linear-gradient(180deg, #161B29 0%, #10141F 55%, #0D111C 100%)',
-      border: `1px solid ${tracked ? 'rgba(139,150,171,0.24)' : graded ? `${resultColor}55` : 'rgba(212,175,55,0.30)'}`, position: 'relative',
-      boxShadow: '0 24px 60px -30px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.05)',
-    }}>
-      <CardStyles />
-      <div style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none',
-        background: `
-          radial-gradient(130% 60% at 50% -15%, ${accent}1e 0%, transparent 52%),
-          radial-gradient(60% 30% at 85% 8%, rgba(255,255,255,0.04) 0%, transparent 55%)
-        `,
-      }} />
-      <div style={{
-        position: 'absolute', top: 0, left: '12%', right: '12%', height: 1.5, pointerEvents: 'none',
-        background: `linear-gradient(90deg, transparent, ${accent}, transparent)`, opacity: 0.85,
-      }} />
-
-      {/* ── THE TICKET ── */}
-      <div {...zone(0)}>
-        <div style={{ padding: '14px 18px 14px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, gap: 8 }}>
-            <span style={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.12em', color: C.textMuted, minWidth: 0 }}>
-              {f.sport}
-              <span style={{ color: C.textFaint, marginLeft: 9 }}>{f.away} @ {f.home}</span>
-              <span style={{ color: C.textFaint, marginLeft: 9 }}>{f.gameTime}</span>
-              {f.lockedAt && (
-                <span style={{ color: C.textFaint, marginLeft: 9, letterSpacing: 0, fontWeight: 600 }}>
-                  {tracked ? 'tracked' : 'flagged'} {f.lockedAt}
-                </span>
-              )}
-            </span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-              {tracked ? (
-                <span
-                  title={muteTip}
-                  style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 5,
-                    fontSize: '0.58rem', fontWeight: 900, letterSpacing: '0.08em',
-                    padding: '5px 12px', borderRadius: 8, color: '#aeb8cb',
-                    background: 'rgba(139,150,171,0.10)', border: '1px solid rgba(139,150,171,0.26)',
-                  }}
-                >
-                  TRACKED
-                </span>
-              ) : graded ? (
-                <GradedResultPill
-                  outcome={f.outcome}
-                  profit={f.profit}
-                  units={f.units}
-                  toWin={f.toWin}
-                />
-              ) : tierLabel ? (
-                <span style={{
-                  fontSize: '0.56rem', fontWeight: 900, letterSpacing: '0.12em',
-                  padding: '5px 10px', borderRadius: 7, color: tierColor,
-                  background: `${tierColor}18`, border: `1px solid ${tierColor}44`,
-                }}>
-                  {tierLabel}
-                </span>
-              ) : null}
-              <button
-                type="button"
-                onClick={() => setExpanded(false)}
-                aria-label="Collapse"
-                style={{
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  width: 24, height: 24, borderRadius: '50%', cursor: 'pointer',
-                  background: 'rgba(255,255,255,0.05)', border: `1px solid ${C.hair}`,
-                  color: C.textMuted, padding: 0,
-                }}
-              >
-                <ChevronDown size={13} style={{ transform: 'rotate(180deg)' }} />
-              </button>
-            </span>
-          </div>
-
-          {/* Pick + price + units + book + CLV share one baseline row — the
-              stacked layout cost ~40px of hero space per card. */}
-          <div style={{
-            display: 'flex', flexWrap: 'wrap', alignItems: 'baseline',
-            gap: '4px 12px', marginBottom: 2, fontFeatureSettings: "'tnum'",
-          }}>
-            <span style={{
-              fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.035em', lineHeight: 1.1,
-            }}>
-              {f.pickLabel}
-            </span>
-            <span style={{ fontSize: '1.05rem', fontWeight: 800 }}>{fmtOdds(f.lockOdds)}</span>
-            {!tracked && f.units > 0 && (
-              <span style={{ fontSize: '1.05rem', fontWeight: 900, color: B.goldHi }}>
-                {f.units.toFixed(1)}u
-              </span>
-            )}
-            {f.book && (
-              <span style={{
-                fontSize: '0.66rem', fontWeight: 700, color: C.textSec,
-                padding: '2px 8px', borderRadius: 6, alignSelf: 'center',
-                background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.hair}`,
-              }}>
-                {f.book}
-              </span>
-            )}
-            {Number.isFinite(f.clvPct) && (
-              <span style={{
-                fontSize: '0.58rem', fontWeight: 800, padding: '2px 8px',
-                borderRadius: 6, alignSelf: 'center',
-                background: `${clvColor}18`, color: clvColor,
-                border: `1px solid ${clvColor}40`,
-              }}>
-                CLV {clvGood ? '+' : ''}{f.clvPct.toFixed(1)}%
-              </span>
-            )}
-          </div>
-
-          {!tracked ? (
-            <TicketStub
-              units={f.units}
-              toWin={f.toWin}
-              odds={f.lockOdds}
-              stakePath={f.stakePath}
-              tapeAction={f.tapeAction}
-              centsEdge={Number.isFinite(centsEdge) && centsEdge > 0 ? `${Math.round(centsEdge)}¢ better than fair` : null}
-              commenceMs={f.commenceMs}
-              outcome={f.outcome}
-              profit={f.profit}
-            />
-          ) : (
-            <div style={{
-              marginTop: 8, padding: '10px 14px', borderRadius: 12,
-              display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap',
-              background: 'rgba(139,150,171,0.06)', border: '1px solid rgba(139,150,171,0.22)',
-            }}>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '1.1rem', fontWeight: 800, color: C.textSec }}>No ticket</div>
-                <div style={{ fontSize: '0.52rem', fontWeight: 700, color: C.textFaint, marginTop: 3, maxWidth: 160 }}>
-                  {muteTip}
-                </div>
-              </div>
-              <span style={{ fontSize: '0.6rem', color: C.textMuted }}>Watching for context — 0u staked</span>
-              <span style={{ marginLeft: 'auto', alignSelf: 'center' }}>
-                <LockFreezeStatus commenceMs={f.commenceMs} compact />
-              </span>
-            </div>
-          )}
-
-          {/* WHY THIS PLAY — the premium thesis */}
-          <div style={{ marginTop: 12 }}>
-            <div style={{
-              fontSize: '0.52rem', fontWeight: 900, letterSpacing: '0.16em',
-              color: B.goldHi, marginBottom: 6,
-            }}>
-              WHY THIS PLAY
-            </div>
-            <p style={{ margin: 0, fontSize: '0.9rem', color: C.text, lineHeight: 1.45, fontWeight: 700 }}>
-              {verdictLead}
-            </p>
-            <p style={{ margin: '5px 0 0', fontSize: '0.78rem', color: '#9fabc2', lineHeight: 1.45 }}>
-              {verdictRest}
-            </p>
-            {whyChips.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-                {whyChips.map((c) => (
-                  <span key={c} style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 5,
-                    fontSize: '0.58rem', fontWeight: 700, color: C.text,
-                    padding: '5px 10px', borderRadius: 7,
-                    background: 'rgba(47,213,126,0.08)', border: '1px solid rgba(47,213,126,0.28)',
-                  }}>
-                    <Check size={10} strokeWidth={3.5} color={B.profit} />
-                    {c}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {keyReads.length > 0 && (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(88px, 1fr))',
-              gap: '10px 12px',
-              marginTop: 12, paddingTop: 10, borderTop: `1px solid ${C.hairSoft}`,
-            }}>
-              {keyReads.map((r) => (
-                <KeyReadCell key={r.label} label={r.label} value={r.value} color={r.color} sub={r.sub} />
-              ))}
-            </div>
-          )}
-
-          {!tracked && (
-            <div style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              marginTop: 10, fontFeatureSettings: "'tnum'",
-            }}>
-              <span style={{ fontSize: '0.62rem', fontWeight: 700, color: C.textSec }}>
-                {f.pathBaseUnits.toFixed(1)}u base
-                <span style={{ color: C.textFaint }}> → </span>
-                <span style={{ color: f.tapeAction === 'boost' ? B.profit : f.tapeAction === 'mute' ? B.loss : C.textSec }}>
-                  {f.tapeAction === 'boost' ? '×1.35 skill' : f.tapeAction === 'mute' ? 'pass' : 'hold'}
-                </span>
-                <span style={{ color: C.textFaint }}> → </span>
-                <span style={{ color: '#fff', fontWeight: 800 }}>{f.units.toFixed(1)}u</span>
-              </span>
-              {Number.isFinite(f.setupHitRate) && (
-                <span style={{ fontSize: '0.6rem', color: C.textMuted }}>
-                  setups like this hit <span style={{ color: f.setupHitRate >= 55 ? B.profit : C.textSec, fontWeight: 800 }}>{f.setupHitRate}%</span>
-                </span>
-              )}
-            </div>
-          )}
-
-          {!tracked && <TierPerfStrip tierPerf={f.tierPerf} compact />}
-        </div>
-      </div>
-
-      <TicketPerf />
-
-      {/* ── THE RECEIPTS — proof before price ── */}
-      <div {...zone(1)}>
-        <div style={{ padding: '20px 20px 12px' }}>
-          <ZoneHead accent={accent} right={(
-            <span style={{ fontSize: '0.62rem', fontWeight: 800, color: B.profit, fontFeatureSettings: "'tnum'" }}>
-              {provenCount > 0
-                ? <><span style={{ color: B.profit }}>{provenCount} proven</span>
-                  <span style={{ color: C.textFaint }}> · </span></>
-                : null}
-              {fmtMoney(f.sideInvested)} at lock
-            </span>
-          )}>
-            THE RECEIPTS
-          </ZoneHead>
-          <p style={{
-            margin: '0 0 10px', fontSize: '0.68rem', color: C.textSec, lineHeight: 1.45,
-          }}>
-            {provenCount > 0
-              ? `These are the ${f.sport} winners behind the ticket — real records, real size.`
-              : 'Wallets on this side at lock. Proven winners earn the badge.'}
-          </p>
-          {sortedWallets.slice(0, Math.max(provenWallets.length, 4)).map((w, i, arr) => (
-            <ConvictionRow
-              key={w.short}
-              w={w}
-              accent={accent}
-              maxRatio={maxRatio}
-              last={i === arr.length - 1}
-              sport={f.sport}
-            />
-          ))}
-        </div>
-      </div>
-
-      <ZoneRule />
-
-      {/* ── PRICE JOURNEY ── */}
-      <div {...zone(2)}>
-        <div style={{ padding: '20px 20px 18px' }}>
-          <ZoneHead accent={accent} right={(
-            <span style={{ fontSize: '0.58rem', fontWeight: 800, color: clvColor }}>
-              {clvGood ? 'beating the close' : 'behind the close'}
-            </span>
-          )}>
-            PRICE JOURNEY
-          </ZoneHead>
-
-          {hasJourney && (
-            <HeroChart points={journeySeries} color={clvColor} h={64} gid={`locked-${f.id}`} />
-          )}
-
-          <div style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-            marginTop: 4, position: 'relative', padding: '0 6px',
-          }}>
-            <div style={{
-              position: 'absolute', left: 36, right: 36, top: 46, height: 1,
-              background: `linear-gradient(90deg, ${accent}66, ${clvColor}66)`,
-            }} />
-            <JourneyStop label={tracked ? 'Flagged' : 'Locked'} time={f.lockedAt} odds={f.lockOdds} color={accent} active />
-            <JourneyStop label="Peak" time={f.peakAt} odds={f.peakOdds} color={C.textMuted} />
-            <JourneyStop label="Now" time="live" odds={f.nowOdds} color={clvColor} active />
-          </div>
-
-          <p style={{ fontSize: '0.64rem', color: C.textMuted, lineHeight: 1.5, margin: '14px 0 0' }}>
-            We {tracked ? 'flagged' : 'locked'} {fmtOdds(f.lockOdds)}. The sharp book now sits at {fmtOdds(f.nowOdds)}.
-            {clvGood ? ' Anyone betting now gets a worse price.' : ' The price has moved since then.'}
-          </p>
-        </div>
-      </div>
-
-      <TicketPerf />
-
-      {/* ── FOOTER — serial + brand (no share) ── */}
-      <div style={{ position: 'relative', padding: '6px 20px 18px' }}>
-        <div style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 12,
-        }}>
-          <div>
-            <div style={{ fontSize: '0.46rem', fontWeight: 800, letterSpacing: '0.14em', color: C.textFaint, marginBottom: 4 }}>
-              PICK N°
-            </div>
-            <div style={{ fontFamily: MONO, fontSize: '0.68rem', fontWeight: 700, color: C.textSec, letterSpacing: '0.06em' }}>
-              {f.serial}
-            </div>
-          </div>
-          {f.record30d && (
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '0.46rem', fontWeight: 800, letterSpacing: '0.14em', color: C.textFaint, marginBottom: 4 }}>
-                {f.record30d.scope.toUpperCase()}
-              </div>
-              <div style={{ fontSize: '0.78rem', fontWeight: 800, fontFeatureSettings: "'tnum'" }}>
-                {f.record30d.record}
-                <span style={{ color: B.profit, marginLeft: 7 }}>{f.record30d.units}</span>
-              </div>
-            </div>
-          )}
-        </div>
-        <TicketBarcode serial={f.serial} />
-        <div style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          marginTop: 14, paddingTop: 12, borderTop: `1px solid ${C.hairSoft}`,
-        }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-            <span style={{
-              width: 5, height: 5, borderRadius: '50%',
-              background: B.gold, boxShadow: `0 0 8px ${B.gold}`,
-            }} />
-            <span style={{ fontSize: '0.5rem', fontWeight: 800, letterSpacing: '0.24em', color: C.textMuted }}>
-              NHL SAVANT · SHARP FLOW
-            </span>
-          </span>
-          <span style={{ fontSize: '0.52rem', color: C.textFaint, fontFeatureSettings: "'tnum'" }}>
-            game time {f.gameTime}
-          </span>
-        </div>
-      </div>
-    </div>
+    <LockedClarityExpanded
+      f={f}
+      onCollapse={() => setExpanded(false)}
+      tracked={tracked}
+      statusSlot={statusSlot}
+      ticketFrozen={ticketFrozen}
+      accent={accent}
+    />
   );
 }
