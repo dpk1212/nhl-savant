@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-07-21T18:47:31.695Z",
-  "elapsedSec": 16.9,
+  "scannedAt": "2026-07-21T18:51:30.383Z",
+  "elapsedSec": 17.4,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 30,
   "summary": {
     "total": 203,
     "coveredByMain": 8,
-    "recovered": 12,
-    "recoveredPositions": 41,
-    "noPositions": 183,
+    "recovered": 14,
+    "recoveredPositions": 43,
+    "noPositions": 181,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,8 +16,8 @@
       "ml": 11,
       "spread": 0,
       "total": 2,
-      "dropped_shadow_gate": 4,
-      "dropped_excluded": 24,
+      "dropped_shadow_gate": 5,
+      "dropped_excluded": 25,
       "dropped_duplicate": 0
     }
   },
@@ -473,8 +473,24 @@
       "tier": "CONFIRMED",
       "name": "0x2c335066FE58fe9237c3d3Dc7b275C2a034a0563-1759935795465",
       "sports": "NBA,NHL",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x2c335066fe58fe9237c3d3dc7b275c2a034a0563"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x2c335066fe58fe9237c3d3dc7b275c2a034a0563",
+      "positionsCount": 1,
+      "statsSource": "sports_sharps",
+      "avgSportBet": 154995,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "lad_phi",
+          "marketType": "total",
+          "side": "under",
+          "invested": 23980,
+          "entryLine": 8.5,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "4a752c",
@@ -1809,8 +1825,24 @@
       "tier": "CONFIRMED",
       "name": "stakesroyale",
       "sports": "NHL,MLB",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xfb681e23db8d1cca8a6b7e2a70a29e000ddfa240"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0xfb681e23db8d1cca8a6b7e2a70a29e000ddfa240",
+      "positionsCount": 1,
+      "statsSource": "sharpWalletProfiles_derived",
+      "avgSportBet": 3199,
+      "willPassShadowGate": 0,
+      "willDropAtShadowGate": 1,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "lad_phi",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 100,
+          "entryLine": null,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "e05213",
@@ -1965,7 +1997,7 @@
           "gameKey": "sfg_kcr",
           "marketType": "ml",
           "side": "away",
-          "invested": 12709,
+          "invested": 12719,
           "entryLine": null,
           "passesShadow": true
         },
