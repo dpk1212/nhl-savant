@@ -199,37 +199,53 @@ function isModelCounted(w) {
 }
 
 /**
- * The record that EARNED the wallet its whitelist badge — never a
- * contradicting one. A wallet can be whitelisted via Source A (featured-pick
- * flat ROI) while its on-chain $ record is negative; showing the on-chain
- * record next to a PROVEN badge reads as nonsense ("how can you be negative
- * and on our whitelist?"). whitelistSource tells us which signal promoted the
- * wallet, so we display THAT record.
+ * Sport record shown on THE RECEIPTS / backing strips.
+ *
+ * Prefer the stronger of Source A (featured picks) vs Source B (positions)
+ * so a PROVEN wallet never leads with the weaker book when both exist
+ * (e.g. ***7923c4: 77-61 / 55.8% picks vs 154-148 / 51% positions).
+ *
+ * Ranking: positive flat ROI beats negative (badge coherence), then higher
+ * WR, then higher ROI. ROI is display-guarded to finite values — a few
+ * stored profiles still carry picks.flatRoi = Infinity from a fixed odds=0
+ * bug; those render without an ROI figure until profiles regenerate.
+ *
  * Returns { wins, losses, wr, roi, kind: 'picks'|'positions' } or null.
  */
 function whitelistRecordForDisplay(walletShort, sport) {
   const sr = getWalletProfile(walletShort)?.bySport?.[sport];
   if (!sr) return null;
-  const isWinner = sr.whitelistTier === 'CONFIRMED' || sr.whitelistTier === 'FLAT';
   const pos = sr.positions || null;
   const pk = sr.picks || null;
-  // ROI is display-guarded to finite values: 4 stored profiles carried
-  // picks.flatRoi = Infinity (odds=0 bug in exportWalletProfiles, since
-  // fixed) which rendered "+Infinity% ROI" on the card. Until those docs
-  // regenerate, show the record without an ROI figure.
   const mk = (r, kind, roi) => ({
     wins: r.wins || 0, losses: r.losses || 0,
     wr: r.wr ?? null, roi: Number.isFinite(roi) ? roi : null, kind,
   });
-  // Promoted purely on featured-pick performance → show the pick record.
-  if (isWinner && sr.whitelistSource === 'A' && pk && pk.n > 0) {
-    return mk(pk, 'picks', pk.flatRoi);
+
+  const candidates = [];
+  // Featured-pick book — min 2 decided (same floor enrichWallets uses).
+  if (pk && (pk.n || 0) >= 2 && ((pk.wins || 0) + (pk.losses || 0)) > 0) {
+    candidates.push(mk(pk, 'picks', pk.flatRoi));
   }
-  if (pos && (pos.n || 0) > 0) {
-    return mk(pos, 'positions', pos.positionFlatRoi ?? (pk?.flatRoi ?? null));
+  // Positions book — denser on-chain ledger.
+  if (pos && (pos.n || 0) >= 2 && ((pos.wins || 0) + (pos.losses || 0)) > 0) {
+    candidates.push(mk(pos, 'positions', pos.positionFlatRoi));
   }
-  if (pk && pk.n > 0) return mk(pk, 'picks', pk.flatRoi);
-  return null;
+  if (candidates.length === 0) {
+    if (pos && (pos.n || 0) > 0) return mk(pos, 'positions', pos.positionFlatRoi ?? (pk?.flatRoi ?? null));
+    if (pk && (pk.n || 0) > 0) return mk(pk, 'picks', pk.flatRoi);
+    return null;
+  }
+  if (candidates.length === 1) return candidates[0];
+
+  const score = (c) => {
+    const wr = Number.isFinite(c.wr) ? c.wr : -1;
+    const roi = Number.isFinite(c.roi) ? c.roi : -999;
+    // Lexicographic: positive-ROI book first, then WR, then ROI.
+    const posRoi = roi > 0 ? 1 : 0;
+    return posRoi * 1e6 + wr * 1e3 + roi;
+  };
+  return candidates.sort((a, b) => score(b) - score(a))[0];
 }
 
 /** UI: grouped sports leaderboard rank (no raw # or percentile shown). */

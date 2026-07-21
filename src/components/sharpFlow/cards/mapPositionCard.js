@@ -74,9 +74,8 @@ const pathBaseUnits = (stakeTier) => {
 
 /**
  * Enrich walletDetails / backing wallets with profile fields for ConvictionRow.
- * `getRecordForDisplay(short, sport)` is the whitelist-coherent record helper
- * (whitelistRecordForDisplay in SharpFlow) — the same numbers BackingWalletStrip
- * shows, so a PROVEN wallet never renders with a record that contradicts its badge.
+ * `getRecordForDisplay(short, sport)` picks the stronger sport book (featured
+ * picks vs positions) — same helper BackingWalletStrip / THE RECEIPTS use.
  */
 export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner, getRecordForDisplay) {
   if (!Array.isArray(rawWallets)) return [];
