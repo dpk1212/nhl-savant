@@ -6,11 +6,12 @@ _Full stack: [`STAKE_PATHS_AND_SIZING.md`](./STAKE_PATHS_AND_SIZING.md) · metri
 ## Rule
 
 ```
-tape = 1.5 · (EDGE / 10) + 2 · (netCLV / 10)
+tape = 2 · (EDGE / 10) + 1.5 · (netCLV / 10)
 EDGE  = mean(FOR sport WR) − (mean(AG sport WR) ?? 50)
 netCLV = mean(FOR causal %+CLV) − (mean(AG %+CLV) ?? 62)
 ```
 
+Weights flipped **2026-07-21** to EDGE-heavy (~57% / 43%; was 1.5/2 Net-heavy). Mute/boost cutpoints unchanged (`0` / `2.89`); total coefficient sum still 3.5.
 FOR-side components always stamp when FOR skill exists (including unopposed). EDGE uses AG prior **50** when nobody is against; netCLV uses AG prior **62**.
 
 | Tape | Action |

@@ -13,7 +13,7 @@ These metrics are product core — Path C door, TOP mute, EDGE band size on A/C,
 ```
 EDGE   = mean(FOR sport featured WR) − (mean(AG) ?? 50)
 netCLV = mean(FOR causal %+CLV)     − (mean(AG) ?? 62)
-Tape   = 1.5·(EDGE/10) + 2·(netCLV/10)
+Tape   = 2·(EDGE/10) + 1.5·(netCLV/10)
 ```
 
 - Featured WR: `sharpWalletProfiles` sport `picks.wr` with n≥8  

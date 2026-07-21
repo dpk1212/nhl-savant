@@ -2605,7 +2605,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
 
   // ─── TAPE / CLV unit policy (after paths + edge-net size + winner mute) ─
   // Tape era (2026-07-15+): mute weak / keep mid / boost strong on path units.
-  //   tape = 1.5·(EDGE/10) + 2·(netCLV/10); fail-open when unscored.
+  //   tape = 2·(EDGE/10) + 1.5·(netCLV/10); fail-open when unscored.
   // RANK exempt from tape mute (still gets HOLD/BOOST) — RANK NEITHER was +11% ROI.
   // Pre-tape: legacy CLV top2 cancel≤59 / boost≥74 (fail-closed if missing).
   // netLive already computed above (shared with Path C / TOP mute).

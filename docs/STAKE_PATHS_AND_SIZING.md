@@ -219,7 +219,7 @@ Stamps: `v8_edgeNetSizeAction` (`BOOST` \| `HALF` \| `HOLD` \| `PASS`) · `v8_un
 ```
 EDGE   = mean(FOR sport WR) − (mean(AG) ?? 50)
 netCLV = mean(FOR causal %+CLV) − (mean(AG) ?? 62)
-tape   = 1.5·(EDGE/10) + 2·(netCLV/10)
+tape   = 2·(EDGE/10) + 1.5·(netCLV/10)
 ```
 
 | Tape | Action | Units |

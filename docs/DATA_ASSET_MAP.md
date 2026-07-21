@@ -172,7 +172,7 @@ Computed at sync from **profiles (WR)** + **graded positions (CLV ledger)** + **
 | **Causal %+CLV** | % of wallet’s prior grades with clv>0 (as-of) | ledger (not per-pick) | building block |
 | **top2 CLV** | mean top-2 FOR causal %+CLV | `v8_forTop2PctPos` | audit only (post-07-15) |
 | **netCLV** | mean FOR − (mean AG ?? **62**) | `v8_netMeanPrior` | tape input |
-| **TAPE** | `1.5·EDGE/10 + 2·netCLV/10` | `v8_tapeScore` | **yes** — mute &lt;0 / boost ≥2.89 ×1.35 |
+| **TAPE** | `2·EDGE/10 + 1.5·netCLV/10` | `v8_tapeScore` | **yes** — mute &lt;0 / boost ≥2.89 ×1.35 |
 
 **This is the proprietary sizing brain.** Raw positions without tape/EDGE are incomplete for UX that shows “why this size.”
 

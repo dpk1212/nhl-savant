@@ -2,8 +2,9 @@
  * Sharp Intel — AGS-Unified Daily Performance & Calibration Report
  * ──────────────────────────────────────────────────────────────────────────
  * Single canonical monitoring artifact for V12 production.
- * Core read (§1–12): PnL · live stack · paths · tape era (Jul15+) side profile
- * · sport · stake cal · mute · recent picks · score health · wallets · ops.
+ * Core read (§1–12): PnL · live stack · paths · tape era (Jul15+) skill bands
+ * (EDGE/NetCLV/Tape) · side profile · sport · stake cal · mute · recent picks ·
+ * score health · wallets · ops.
  * Appendices: model versions · feature lab (research).
  *
  * VERSION-AGNOSTIC: every reference to active features / weights / quintiles
@@ -40,8 +41,16 @@ import {
   TAPE_BOOST_ABOVE,
   TAPE_BOOST_MULT,
   TAPE_SIZING_LIVE_FROM,
+  TAPE_EDGE_WEIGHT,
+  TAPE_NET_WEIGHT,
   EDGE_PRIOR_AG_WR,
+  NET_CLV_PRIOR_AG,
   computeTapeScore,
+  computeNetMeanPrior,
+  hydrateClvLedger,
+  CLV_LEDGER_COLLECTION,
+  CLV_LEDGER_DOC_ID,
+  shortWalletId,
   isTapeSizingLive,
 } from '../src/lib/walletClvSkill.js';
 
@@ -1497,6 +1506,9 @@ async function loadAllGradedAndShadowPicks() {
           agsV12: Number.isFinite(sd.v8_agsV12) ? sd.v8_agsV12 : null,
           team: sd.team || sideKey,
           sideKey,
+          // walletDetails needed for §5 skill-band as-of EDGE/net (stamp-else-asof)
+          walletDetails: (peak.v8Scoring?.walletDetails || lock.v8Scoring?.walletDetails || [])
+            .filter(w => w && w.wallet && w.side),
         });
       }
     }
@@ -1988,6 +2000,342 @@ function fillForSideEdgeTapeFromStamps(rows) {
       r.tapeScoreSource = 'derived_stamped';
     }
   }
+}
+
+// ── § 5 skill-band windows (EDGE · NetCLV · Tape · Jun15+ / Jul15+ / yesterday) ──
+const SKILL_BAND_FROM = '2026-06-15';
+const SKILL_BAND_WR_FROM = '2026-04-18';
+const SKILL_BAND_MIN_WR_N = 8;
+const SKILL_PATH_MAP = {
+  SUPER: 'A', TOP: 'A', 'TOP+': 'A', MINI: 'A', 'MINI-': 'A', CONFIRMED: 'A',
+  RANK: 'B',
+  SHARP: 'C', 'SHARP-LEAN': 'C', 'SHARP-PRIME': 'C',
+  DISSENT: 'D', WINNER: 'E',
+};
+const SKILL_OPPOSITE = { home: 'away', away: 'home', over: 'under', under: 'over' };
+const EDGE_NET_BANDS = ['<5', '5–10', '≥10'];
+const TAPE_POLICY_BANDS = ['<0', '0–2.89', '≥2.89'];
+
+function skillPathOf(tier) {
+  return SKILL_PATH_MAP[tier] || '?';
+}
+function edgeNetBand(v) {
+  if (v == null || !Number.isFinite(v)) return 'missing';
+  if (v < 5) return '<5';
+  if (v < 10) return '5–10';
+  return '≥10';
+}
+function tapePolicyBand(t) {
+  if (t == null || !Number.isFinite(t)) return 'missing';
+  if (t < TAPE_MUTE_BELOW) return '<0';
+  if (t < TAPE_BOOST_ABOVE) return '0–2.89';
+  return '≥2.89';
+}
+function fmtSkillRoi(roi) {
+  if (roi == null || !Number.isFinite(roi)) return '—';
+  return `${roi >= 0 ? '+' : ''}${roi.toFixed(1)}%`;
+}
+function fmtShortYmd(ymd) {
+  if (!ymd || ymd.length < 10) return ymd || '—';
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const m = Number(ymd.slice(5, 7));
+  const d = Number(ymd.slice(8, 10));
+  return `${months[m - 1] || '??'} ${d}`;
+}
+
+/** Causal featured-WR ledger from graded allRows (stamp-else-asof EDGE). */
+function buildFeaturedWrLedgerFromRows(allRows) {
+  const byDoc = new Map();
+  for (const r of allRows || []) {
+    if (!r?.docId || !r.date || r.date < SKILL_BAND_WR_FROM) continue;
+    if (r.superseded) continue;
+    if (r.won !== 0 && r.won !== 1) continue;
+    if (!byDoc.has(r.docId)) byDoc.set(r.docId, []);
+    byDoc.get(r.docId).push(r);
+  }
+  const map = new Map(); // short → sport → [{date, won}]
+  for (const rows of byDoc.values()) {
+    const date = rows[0]?.date;
+    const sport = rows[0]?.sport;
+    if (!date || !sport) continue;
+    let winningSide = null;
+    for (const r of rows) {
+      if (r.won === 1) { winningSide = r.sideKey; break; }
+      if (r.won === 0 && SKILL_OPPOSITE[r.sideKey]) {
+        winningSide = SKILL_OPPOSITE[r.sideKey];
+        break;
+      }
+    }
+    if (!winningSide) continue;
+    const seen = new Set();
+    for (const r of rows) {
+      for (const w of r.walletDetails || []) {
+        if (!w?.wallet || !w.side) continue;
+        const short = shortWalletId(w.walletShort || w.wallet);
+        if (!short || seen.has(short)) continue;
+        seen.add(short);
+        if (!map.has(short)) map.set(short, new Map());
+        const bySport = map.get(short);
+        if (!bySport.has(sport)) bySport.set(sport, []);
+        bySport.get(sport).push({ date, won: w.side === winningSide ? 1 : 0 });
+      }
+    }
+  }
+  for (const bySport of map.values()) {
+    for (const arr of bySport.values()) arr.sort((a, b) => a.date.localeCompare(b.date));
+  }
+  return map;
+}
+
+function featuredWrAsOf(ledger, walletShort, sport, asOfDate) {
+  const arr = ledger.get(walletShort)?.get(sport);
+  if (!arr || !asOfDate) return null;
+  let n = 0, wins = 0;
+  for (const e of arr) {
+    if (e.date >= asOfDate) break;
+    n++;
+    wins += e.won;
+  }
+  if (n < SKILL_BAND_MIN_WR_N) return null;
+  return (100 * wins) / n;
+}
+
+function asofEdgeFromWd(wd, side, sport, date, wrLedger) {
+  const seen = new Set();
+  const forW = [], agW = [];
+  for (const w of wd || []) {
+    const s = shortWalletId(w?.walletShort || w?.wallet);
+    if (!s || seen.has(s)) continue;
+    seen.add(s);
+    const wr = featuredWrAsOf(wrLedger, s, sport, date);
+    if (wr == null) continue;
+    if (w.side === side) forW.push(wr);
+    else if (w.side) agW.push(wr);
+  }
+  if (!forW.length) return null;
+  const meanFor = forW.reduce((a, b) => a + b, 0) / forW.length;
+  const meanAg = agW.length ? agW.reduce((a, b) => a + b, 0) / agW.length : null;
+  return meanFor - (meanAg ?? EDGE_PRIOR_AG_WR);
+}
+
+function skillAgg(arr) {
+  const w = arr.filter(r => r.won === 1).length;
+  const n = arr.length;
+  const stake = arr.reduce((s, r) => s + (r.units || 0), 0);
+  const pnl = arr.reduce((s, r) => s + (Number.isFinite(r.profit) ? r.profit : 0), 0);
+  return {
+    n,
+    wins: w,
+    losses: n - w,
+    record: n ? `${w}–${n - w}` : '—',
+    wr: n ? +(100 * w / n).toFixed(1) : null,
+    stake: +stake.toFixed(1),
+    pnl: +pnl.toFixed(1),
+    roi: stake ? +(100 * pnl / stake).toFixed(1) : null,
+  };
+}
+
+function skillMetricWindow(pool, metricKey, bandFn, bands) {
+  const withM = pool.filter(r => Number.isFinite(r[metricKey]));
+  const allPaths = {};
+  for (const b of [...bands, 'All']) {
+    const cell = b === 'All' ? pool : pool.filter(r => bandFn(r[metricKey]) === b);
+    if (cell.length) allPaths[b] = skillAgg(cell);
+  }
+  const byPath = {};
+  for (const p of ['A', 'B', 'C']) {
+    const pathRows = pool.filter(r => r.path === p);
+    if (!pathRows.length) continue;
+    byPath[p] = {};
+    for (const b of bands) {
+      const cell = pathRows.filter(r => bandFn(r[metricKey]) === b);
+      if (cell.length) {
+        const a = skillAgg(cell);
+        byPath[p][b] = { wr: a.wr, n: a.n, record: a.record, roi: a.roi };
+      }
+    }
+  }
+  return {
+    n: pool.length,
+    coverage: withM.length,
+    stampN: pool.filter(r => r[`${metricKey}Src`] === 'stamp').length,
+    asofN: pool.filter(r => r[`${metricKey}Src`] === 'asof').length,
+    allPaths,
+    byPath,
+  };
+}
+
+/**
+ * Staked graded Jun15+ · EDGE/net/tape = stamp if present else as-of
+ * (featured WR / causal CLV ledger / computeTapeScore).
+ */
+async function computeSkillBandWindows(allRows) {
+  const yesterday = etYesterday();
+  const jul15 = TAPE_SIZING_LIVE_FROM;
+  const wrLedger = buildFeaturedWrLedgerFromRows(allRows);
+
+  let clvLedger = new Map();
+  try {
+    const snap = await db.collection(CLV_LEDGER_COLLECTION).doc(CLV_LEDGER_DOC_ID).get();
+    if (snap.exists) clvLedger = hydrateClvLedger(snap.data() || {});
+  } catch (_) { /* degrade to stamps-only for net/tape as-of */ }
+
+  const enriched = [];
+  for (const r of allRows || []) {
+    if (!r?.date || r.date < SKILL_BAND_FROM) continue;
+    if (r.superseded) continue;
+    if (r.won !== 0 && r.won !== 1) continue;
+    if (r.tracked) continue;
+    const units = Number(r.units) || 0;
+    if (!(units > 0)) continue;
+
+    const wd = r.walletDetails || [];
+    let edge = null, edgeSrc = 'none';
+    if (Number.isFinite(r.winnerAlignEdge)) {
+      edge = r.winnerAlignEdge;
+      edgeSrc = 'stamp';
+    } else if (Number.isFinite(r.winnerAlignMeanFor)) {
+      // Composite blank on some unopposed / FAIL_OPEN rows — FOR mean still stamped.
+      const ag = Number.isFinite(r.winnerAlignMeanAg) ? r.winnerAlignMeanAg : EDGE_PRIOR_AG_WR;
+      edge = r.winnerAlignMeanFor - ag;
+      edgeSrc = 'stamp';
+    } else {
+      const e = asofEdgeFromWd(wd, r.sideKey, r.sport, r.date, wrLedger);
+      if (e != null) { edge = e; edgeSrc = 'asof'; }
+    }
+
+    let net = null, netSrc = 'none';
+    if (Number.isFinite(r.netMeanPrior)) {
+      net = r.netMeanPrior;
+      netSrc = 'stamp';
+    } else if (Number.isFinite(r.netClvMeanFor)) {
+      const ag = Number.isFinite(r.netClvMeanAg) ? r.netClvMeanAg : NET_CLV_PRIOR_AG;
+      net = r.netClvMeanFor - ag;
+      netSrc = 'stamp';
+    } else if (clvLedger.size && wd.length) {
+      const n = computeNetMeanPrior(wd, r.sideKey, r.date, clvLedger);
+      if (n?.netMeanPrior != null) { net = n.netMeanPrior; netSrc = 'asof'; }
+    }
+
+    let tape = null, tapeSrc = 'none';
+    if (Number.isFinite(r.tapeScore)) {
+      tape = r.tapeScore;
+      tapeSrc = 'stamp';
+    } else {
+      const t = computeTapeScore(edge, net);
+      if (t != null) {
+        tape = t;
+        tapeSrc = (edgeSrc === 'asof' || netSrc === 'asof') ? 'asof' : 'stamp';
+      }
+    }
+
+    enriched.push({
+      date: r.date,
+      path: skillPathOf(r.hcStakeTier),
+      units,
+      won: r.won,
+      profit: Number.isFinite(r.profit) ? r.profit : (r.won === 1 ? 0 : -units),
+      edge, edgeSrc,
+      net, netSrc,
+      tape, tapeSrc,
+    });
+  }
+
+  const windows = [
+    { label: `Jun 15+`, pred: (r) => r.date >= SKILL_BAND_FROM },
+    { label: `Jul 15+`, pred: (r) => r.date >= jul15 },
+    { label: `Yesterday (${fmtShortYmd(yesterday)})`, pred: (r) => r.date === yesterday },
+  ];
+
+  return {
+    yesterday,
+    clvWallets: clvLedger.size,
+    wrWallets: wrLedger.size,
+    nRows: enriched.length,
+    edge: windows.map((w) => ({ label: w.label, ...skillMetricWindow(enriched.filter(w.pred), 'edge', edgeNetBand, EDGE_NET_BANDS) })),
+    net: windows.map((w) => ({ label: w.label, ...skillMetricWindow(enriched.filter(w.pred), 'net', edgeNetBand, EDGE_NET_BANDS) })),
+    tape: windows.map((w) => ({ label: w.label, ...skillMetricWindow(enriched.filter(w.pred), 'tape', tapePolicyBand, TAPE_POLICY_BANDS) })),
+  };
+}
+
+function pushSkillMetricTables(report, name, subtitle, windows, bands, pathHeaders) {
+  report.push(`#### ${name}`);
+  report.push('');
+  report.push(`_${subtitle}_`);
+  report.push('');
+  for (const w of windows) {
+    report.push(`##### ${w.label} · ${w.n} tickets · cov ${w.coverage}/${w.n} (stamp ${w.stampN} / as-of ${w.asofN})`);
+    report.push('');
+    report.push(`| Band | n | Record | WR | ROI |`);
+    report.push(`|------|--:|:------:|---:|----:|`);
+    for (const b of [...bands, 'All']) {
+      const a = w.allPaths[b];
+      if (!a) continue;
+      report.push(`| ${b} | ${a.n} | ${a.record} | ${a.wr != null ? a.wr.toFixed(1) + '%' : '—'} | ${fmtSkillRoi(a.roi)} |`);
+    }
+    report.push('');
+    const paths = ['A', 'B', 'C'].filter((p) => w.byPath[p]);
+    if (paths.length) {
+      report.push(`| Path | ${pathHeaders.join(' | ')} |`);
+      report.push(`|------|${pathHeaders.map(() => '---:').join('|')}|`);
+      for (const p of paths) {
+        const cells = bands.map((b) => {
+          const c = w.byPath[p][b];
+          return c ? `${c.wr}% (${c.n})` : '—';
+        });
+        report.push(`| ${p} | ${cells.join(' | ')} |`);
+      }
+      report.push('');
+    }
+  }
+}
+
+async function buildSkillBandWindows(report, allRows) {
+  report.push(`### 5b — Skill bands (EDGE · NetCLV · Tape)`);
+  report.push('');
+  report.push(`Staked graded (\`finalUnits > 0\`, WIN/LOSS). Metric = **stamp if present, else as-of** (featured sport WR n≥${SKILL_BAND_MIN_WR_N} / causal CLV ledger / \`computeTapeScore\`). Windows: **Jun 15+** · **Jul 15+** · **yesterday**.`);
+  report.push('');
+  report.push(`- **EDGE** bands: \`<5\` / \`5–10\` / \`≥10\` · mean FOR WR − (mean AG ?? ${EDGE_PRIOR_AG_WR})`);
+  report.push(`- **NetCLV** bands: same · mean FOR %+CLV − (mean AG ?? ${NET_CLV_PRIOR_AG})`);
+  report.push(`- **Tape** bands: policy \`<${TAPE_MUTE_BELOW}\` / mid / \`≥${TAPE_BOOST_ABOVE}\` · \`${TAPE_EDGE_WEIGHT}·(EDGE/10) + ${TAPE_NET_WEIGHT}·(netCLV/10)\``);
+  report.push('');
+
+  let data;
+  try {
+    data = await computeSkillBandWindows(allRows);
+  } catch (err) {
+    report.push(`_(skill-band compute failed: ${err?.message || err})_`);
+    report.push('');
+    return;
+  }
+
+  if (!data.nRows) {
+    report.push(`_No staked graded tickets from ${SKILL_BAND_FROM}+ yet._`);
+    report.push('');
+    return;
+  }
+
+  // One-line headline from Jun15+ EDGE ≥10 vs 5–10
+  const junEdge = data.edge[0];
+  const eHi = junEdge?.allPaths['≥10'];
+  const eMid = junEdge?.allPaths['5–10'];
+  if (eHi && eMid) {
+    report.push(`> **Watch:** EDGE ≥10 is the separator (Jun15+ ${eHi.record} · ${eHi.wr}% · ${fmtSkillRoi(eHi.roi)}); **5–10 is the hole** (${eMid.record} · ${eMid.wr}% · ${fmtSkillRoi(eMid.roi)}). Net ≥10 can flip cold in the Jul15+ window — read across metrics.`);
+    report.push('');
+  }
+
+  pushSkillMetricTables(
+    report, 'EDGE', 'mean FOR sport WR − (mean AG ?? 50)',
+    data.edge, EDGE_NET_BANDS, ['E<5 WR', '5–10 WR', '≥10 WR'],
+  );
+  pushSkillMetricTables(
+    report, 'NetCLV', `mean FOR causal %+CLV − (mean AG ?? ${NET_CLV_PRIOR_AG}) · bands mirror EDGE`,
+    data.net, EDGE_NET_BANDS, ['N<5 WR', '5–10 WR', '≥10 WR'],
+  );
+  pushSkillMetricTables(
+    report, 'Tape', `${TAPE_EDGE_WEIGHT}·(EDGE/10) + ${TAPE_NET_WEIGHT}·(netCLV/10) · mute <${TAPE_MUTE_BELOW} · boost ≥${TAPE_BOOST_ABOVE}`,
+    data.tape, TAPE_POLICY_BANDS, ['<0 WR', '0–2.89 WR', '≥2.89 WR'],
+  );
 }
 
 /** @deprecated LOOKAHEAD — do not use for historical EDGE tables. Current profiles on old dates. Kept only if needed for live ungraded diagnostics. */
@@ -3483,7 +3831,7 @@ function buildV12TapeSizing(report, stats) {
   }
   report.push(`### 5a — TAPE sizing impact`);
   report.push('');
-  report.push(`From **${TAPE_SIZING_LIVE_FROM}**, path units are resized by **TAPE** = \`1.5·(EDGE/10) + 2·(netCLV/10)\`: mute if tape &lt; ${TAPE_MUTE_BELOW} · hold mid · boost if ≥ ${TAPE_BOOST_ABOVE} (×${TAPE_BOOST_MULT}, 6u cap). Missing tape = fail-open. See \`docs/TAPE_SIZING.md\`.`);
+  report.push(`From **${TAPE_SIZING_LIVE_FROM}**, path units are resized by **TAPE** = \`${TAPE_EDGE_WEIGHT}·(EDGE/10) + ${TAPE_NET_WEIGHT}·(netCLV/10)\`: mute if tape &lt; ${TAPE_MUTE_BELOW} · hold mid · boost if ≥ ${TAPE_BOOST_ABOVE} (×${TAPE_BOOST_MULT}, 6u cap). Missing tape = fail-open. See \`docs/TAPE_SIZING.md\`.`);
   report.push('');
 
   const era = (stats.v12RowsAll || stats.v12Rows || []).filter(r => isTapeSizingLive(r.date));
@@ -3717,7 +4065,7 @@ const SIDE_PROFILE_METRICS = [
  * to find which underlying metrics separate winners from losers.
  */
 function buildV12SideProfileAnalysis(report, stats) {
-  report.push(`### 5b — Side profile (WIN vs LOSS)`);
+  report.push(`### 5c — Side profile (WIN vs LOSS)`);
   report.push('');
   report.push(`From **${SIDE_PROFILE_FROM}** we stamp depth + quality on every shipped side. Compare means on **WIN vs LOSS**. Separators are gate/sizing candidates; flat metrics are noise. N is still early — treat ranks as hypotheses.`);
   report.push('');
@@ -5235,6 +5583,7 @@ async function main() {
   buildV12PathModifierBoard(report, v12Stats);
   buildV12TierAnalysis(report, v12Stats);
   buildV12TapeSizing(report, v12Stats);
+  await buildSkillBandWindows(report, allRows);
   buildV12SideProfileAnalysis(report, v12Stats);
   buildV12SportMarketAnalysis(report, v12Stats);
   buildV12MuteAudit(report, v12Stats);

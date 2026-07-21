@@ -5,7 +5,8 @@
  *   • Cancel top2Pct ≤ 59  → left-tail poison
  *   • Boost  top2Pct ≥ 74  → right-tail size up
  *
- * Ship (2026-07-15+): TAPE = 1.5·(EDGE/10) + 2·(netCLV/10)
+ * Ship (2026-07-15+): TAPE = 2·(EDGE/10) + 1.5·(netCLV/10)
+ *   (EDGE-heavy from 2026-07-21; was 1.5/2 Net-heavy at original ship)
  *   EDGE  = mean(FOR sport WR) − (mean(AG sport WR) ?? PRIOR_AG_WR=50)
  *   netCLV = mean(FOR %+CLV) − (mean(AG %+CLV) ?? PRIOR_AG=62)
  *   FOR-side components (meanFor WR / meanFor CLV) always stamp when present —
@@ -30,8 +31,9 @@ export const GLOBAL_UNIT_CAP = 6;
 export const NET_CLV_PRIOR_AG = 62;
 /** EDGE = mean FOR sport WR − (mean AG sport WR ?? 50). Unopposed keeps a FOR-side datapoint. */
 export const EDGE_PRIOR_AG_WR = 50;
-export const TAPE_EDGE_WEIGHT = 1.5;
-export const TAPE_NET_WEIGHT = 2;
+/** EDGE share ≈ 57% (flipped from Net-heavy 1.5/2 on 2026-07-21). */
+export const TAPE_EDGE_WEIGHT = 2;
+export const TAPE_NET_WEIGHT = 1.5;
 export const TAPE_MUTE_BELOW = 0;       // ≈ June15+ path-stamped p40
 export const TAPE_BOOST_ABOVE = 2.89;   // ≈ June15+ path-stamped p80
 export const TAPE_BOOST_MULT = 1.35;
@@ -323,7 +325,7 @@ export function computeNetMeanPrior(walletDetails, side, asOfDate, ledger, opts 
   };
 }
 
-/** tape = 1.5·(EDGE/10) + 2·(netCLV/10). null if either input missing.
+/** tape = 2·(EDGE/10) + 1.5·(netCLV/10). null if either input missing.
  *  EDGE should already include AG prior 50 when unopposed (see EDGE_PRIOR_AG_WR). */
 export function computeTapeScore(edge, netMeanPrior, {
   we = TAPE_EDGE_WEIGHT,

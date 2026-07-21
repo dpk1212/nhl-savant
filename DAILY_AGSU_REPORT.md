@@ -1,6 +1,6 @@
 # AGS-Unified — V12 Daily Monitor
 
-**Generated:** Tuesday, July 21, 2026 at 5:23 AM ET
+**Generated:** Tuesday, July 21, 2026 at 6:01 AM ET
 
 **Model:** `ags-unified-v12` · **Live since:** 2026-06-01 (51 days) · **Tape / side-profile era:** 2026-07-15+
 
@@ -307,7 +307,161 @@ _Score coverage: **95/119** graded stamped rows have `v8_tapeScore`._
 | 2026-07-18 | MLB | Under 9.5 | HC-1 | 3.82 | BOOST | 4.00u | 5.40u | WIN |
 | 2026-07-17 | MLB | San Diego Padres | HC-1 | 3.55 | BOOST | 4.00u | 5.40u | LOSS |
 
-### 5b — Side profile (WIN vs LOSS)
+### 5b — Skill bands (EDGE · NetCLV · Tape)
+
+Staked graded (`finalUnits > 0`, WIN/LOSS). Metric = **stamp if present, else as-of** (featured sport WR n≥8 / causal CLV ledger / `computeTapeScore`). Windows: **Jun 15+** · **Jul 15+** · **yesterday**.
+
+- **EDGE** bands: `<5` / `5–10` / `≥10` · mean FOR WR − (mean AG ?? 50)
+- **NetCLV** bands: same · mean FOR %+CLV − (mean AG ?? 62)
+- **Tape** bands: policy `<0` / mid / `≥2.89` · `1.5·(EDGE/10) + 2·(netCLV/10)`
+
+> **Watch:** EDGE ≥10 is the separator (Jun15+ 48–22 · 68.6% · +29.2%); **5–10 is the hole** (27–25 · 51.9% · -8.0%). Net ≥10 can flip cold in the Jul15+ window — read across metrics.
+
+#### EDGE
+
+_mean FOR sport WR − (mean AG ?? 50)_
+
+##### Jun 15+ · 257 tickets · cov 247/257 (stamp 47 / as-of 200)
+
+| Band | n | Record | WR | ROI |
+|------|--:|:------:|---:|----:|
+| <5 | 125 | 62–63 | 49.6% | -8.1% |
+| 5–10 | 52 | 27–25 | 51.9% | -8.0% |
+| ≥10 | 70 | 48–22 | 68.6% | +29.2% |
+| All | 257 | 143–114 | 55.6% | +2.5% |
+
+| Path | E<5 WR | 5–10 WR | ≥10 WR |
+|------|---:|---:|---:|
+| A | 50.7% (71) | 55.9% (34) | 70.2% (47) |
+| B | 56.7% (30) | 80% (5) | 75% (8) |
+| C | 37.5% (24) | 27.3% (11) | 58.3% (12) |
+
+##### Jul 15+ · 46 tickets · cov 42/46 (stamp 42 / as-of 0)
+
+| Band | n | Record | WR | ROI |
+|------|--:|:------:|---:|----:|
+| <5 | 19 | 9–10 | 47.4% | -12.4% |
+| 5–10 | 13 | 4–9 | 30.8% | -48.7% |
+| ≥10 | 10 | 9–1 | 90.0% | +55.9% |
+| All | 46 | 25–21 | 54.3% | -3.8% |
+
+| Path | E<5 WR | 5–10 WR | ≥10 WR |
+|------|---:|---:|---:|
+| A | 41.7% (12) | 40% (5) | 83.3% (6) |
+| B | 75% (4) | — | 100% (1) |
+| C | 33.3% (3) | 16.7% (6) | 100% (2) |
+
+##### Yesterday (Jul 20) · 7 tickets · cov 7/7 (stamp 7 / as-of 0)
+
+| Band | n | Record | WR | ROI |
+|------|--:|:------:|---:|----:|
+| <5 | 2 | 2–0 | 100.0% | +76.3% |
+| 5–10 | 4 | 1–3 | 25.0% | -51.9% |
+| ≥10 | 1 | 1–0 | 100.0% | +48.4% |
+| All | 7 | 4–3 | 57.1% | +22.3% |
+
+| Path | E<5 WR | 5–10 WR | ≥10 WR |
+|------|---:|---:|---:|
+| B | 100% (2) | — | — |
+| C | — | 25% (4) | 100% (1) |
+
+#### NetCLV
+
+_mean FOR causal %+CLV − (mean AG ?? 62) · bands mirror EDGE_
+
+##### Jun 15+ · 257 tickets · cov 256/257 (stamp 45 / as-of 211)
+
+| Band | n | Record | WR | ROI |
+|------|--:|:------:|---:|----:|
+| <5 | 169 | 90–79 | 53.3% | -2.8% |
+| 5–10 | 42 | 23–19 | 54.8% | +5.8% |
+| ≥10 | 45 | 30–15 | 66.7% | +21.4% |
+| All | 257 | 143–114 | 55.6% | +2.5% |
+
+| Path | N<5 WR | 5–10 WR | ≥10 WR |
+|------|---:|---:|---:|
+| A | 54.8% (104) | 53.8% (26) | 77.8% (27) |
+| B | 64.5% (31) | 66.7% (6) | 50% (6) |
+| C | 38.7% (31) | 44.4% (9) | 45.5% (11) |
+
+##### Jul 15+ · 46 tickets · cov 46/46 (stamp 45 / as-of 1)
+
+| Band | n | Record | WR | ROI |
+|------|--:|:------:|---:|----:|
+| <5 | 19 | 12–7 | 63.2% | +6.7% |
+| 5–10 | 19 | 10–9 | 52.6% | +3.2% |
+| ≥10 | 8 | 3–5 | 37.5% | -46.0% |
+| All | 46 | 25–21 | 54.3% | -3.8% |
+
+| Path | N<5 WR | 5–10 WR | ≥10 WR |
+|------|---:|---:|---:|
+| A | 70% (10) | 50% (10) | 50% (6) |
+| B | 66.7% (3) | 100% (2) | — |
+| C | 50% (4) | 33.3% (6) | 0% (2) |
+
+##### Yesterday (Jul 20) · 7 tickets · cov 7/7 (stamp 7 / as-of 0)
+
+| Band | n | Record | WR | ROI |
+|------|--:|:------:|---:|----:|
+| <5 | 3 | 3–0 | 100.0% | +71.0% |
+| 5–10 | 2 | 1–1 | 50.0% | +13.1% |
+| ≥10 | 2 | 0–2 | 0.0% | -100.0% |
+| All | 7 | 4–3 | 57.1% | +22.3% |
+
+| Path | N<5 WR | 5–10 WR | ≥10 WR |
+|------|---:|---:|---:|
+| B | 100% (2) | — | — |
+| C | 100% (1) | 50% (2) | 0% (2) |
+
+#### Tape
+
+_1.5·(EDGE/10) + 2·(netCLV/10) · mute <0 · boost ≥2.89_
+
+##### Jun 15+ · 257 tickets · cov 247/257 (stamp 41 / as-of 206)
+
+| Band | n | Record | WR | ROI |
+|------|--:|:------:|---:|----:|
+| <0 | 84 | 36–48 | 42.9% | -24.1% |
+| 0–2.89 | 106 | 62–44 | 58.5% | +12.3% |
+| ≥2.89 | 57 | 39–18 | 68.4% | +25.0% |
+| All | 257 | 143–114 | 55.6% | +2.5% |
+
+| Path | <0 WR | 0–2.89 WR | ≥2.89 WR |
+|------|---:|---:|---:|
+| A | 40.7% (54) | 63.9% (61) | 73% (37) |
+| B | 64.7% (17) | 57.9% (19) | 71.4% (7) |
+| C | 23.1% (13) | 45.8% (24) | 50% (10) |
+
+##### Jul 15+ · 46 tickets · cov 42/46 (stamp 41 / as-of 1)
+
+| Band | n | Record | WR | ROI |
+|------|--:|:------:|---:|----:|
+| <0 | 3 | 1–2 | 33.3% | -50.5% |
+| 0–2.89 | 26 | 14–12 | 53.8% | +0.3% |
+| ≥2.89 | 13 | 7–6 | 53.8% | +3.6% |
+| All | 46 | 25–21 | 54.3% | -3.8% |
+
+| Path | <0 WR | 0–2.89 WR | ≥2.89 WR |
+|------|---:|---:|---:|
+| A | 0% (1) | 53.8% (13) | 55.6% (9) |
+| B | 50% (2) | 100% (2) | 100% (1) |
+| C | — | 44.4% (9) | 0% (2) |
+
+##### Yesterday (Jul 20) · 7 tickets · cov 7/7 (stamp 7 / as-of 0)
+
+| Band | n | Record | WR | ROI |
+|------|--:|:------:|---:|----:|
+| <0 | 1 | 1–0 | 100.0% | +48.5% |
+| 0–2.89 | 4 | 3–1 | 75.0% | +62.9% |
+| ≥2.89 | 2 | 0–2 | 0.0% | -100.0% |
+| All | 7 | 4–3 | 57.1% | +22.3% |
+
+| Path | <0 WR | 0–2.89 WR | ≥2.89 WR |
+|------|---:|---:|---:|
+| B | 100% (1) | 100% (1) | — |
+| C | — | 66.7% (3) | 0% (2) |
+
+### 5c — Side profile (WIN vs LOSS)
 
 From **2026-07-15** we stamp depth + quality on every shipped side. Compare means on **WIN vs LOSS**. Separators are gate/sizing candidates; flat metrics are noise. N is still early — treat ranks as hypotheses.
 
