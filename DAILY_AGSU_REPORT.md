@@ -1,6 +1,6 @@
 # AGS-Unified — V12 Daily Monitor
 
-**Generated:** Tuesday, July 21, 2026 at 6:01 AM ET
+**Generated:** Tuesday, July 21, 2026 at 10:35 AM ET
 
 **Model:** `ags-unified-v12` · **Live since:** 2026-06-01 (51 days) · **Tape / side-profile era:** 2026-07-15+
 
@@ -14,17 +14,17 @@ Appendix A — Model Versions · Appendix B — Feature Lab
 
 ## § 1 — Executive Summary
 
-> 🟢 **V12 is currently WINNING.** Since going live on **2026-06-01** (51 days ago), V12 has evaluated **1440** picks, shipped **475** for real money (33.0% ship rate), and muted the other **965**. On the shipped picks V12 has gone **261-214** (54.9% win), staked **1317.20u**, and returned **+41.24u** at **+3.1% ROI**.
+> 🟢 **V12 is currently WINNING.** Since going live on **2026-06-01** (51 days ago), V12 has evaluated **1444** picks, shipped **475** for real money (32.9% ship rate), and muted the other **969**. On the shipped picks V12 has gone **261-214** (54.9% win), staked **1317.20u**, and returned **+41.24u** at **+3.1% ROI**.
 
 ### Snapshot
 
 | Metric                              | Value                          |
 |-------------------------------------|--------------------------------|
 | Days V12 has been authoritative     |                             51 |
-| Picks V12 has evaluated             |                           1440 |
+| Picks V12 has evaluated             |                           1444 |
 | Picks SHIPPED (units > 0)           |                            475 |
-| Picks MUTED (score ≤ 0, FADE)       |                            965 |
-| Ship rate                           |                          33.0% |
+| Picks MUTED (score ≤ 0, FADE)       |                            969 |
+| Ship rate                           |                          32.9% |
 | Live W-L                            |                        261-214 |
 | Live Win %                          |                          54.9% |
 | Live PnL (units)                    |                         +41.24 |
@@ -87,7 +87,7 @@ Last **21** calendar days with activity. **Live** = units > 0 · **Muted** = gra
 | 2026-07-18 |        41 |   14 |    21 | 8-6        |  57.1% |     46.70 |      +4.91 |     10.5% |     +44.59 |
 | 2026-07-19 |        24 |   13 |     7 | 7-6        |  53.8% |     34.10 |      -7.00 |    -20.5% |     +37.59 |
 | 2026-07-20 |        22 |    7 |    12 | 4-3        |  57.1% |     16.35 |      +3.65 |     22.3% |     +41.24 |
-| 2026-07-21 |         2 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +41.24 |
+| 2026-07-21 |         6 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +41.24 |
 
 > **Trajectory.** 🟡 Last 3 days (-6.6% ROI) **-10.2pp** vs prior (3.5%).
 
@@ -245,13 +245,13 @@ xychart-beta
 
 ### 5a — TAPE sizing impact
 
-From **2026-07-15**, path units are resized by **TAPE** = `1.5·(EDGE/10) + 2·(netCLV/10)`: mute if tape &lt; 0 · hold mid · boost if ≥ 2.89 (×1.35, 6u cap). Missing tape = fail-open. See `docs/TAPE_SIZING.md`.
+From **2026-07-15**, path units are resized by **TAPE** = `2·(EDGE/10) + 1.5·(netCLV/10)`: mute if tape &lt; 0 · hold mid · boost if ≥ 2.89 (×1.35, 6u cap). Missing tape = fail-open. See `docs/TAPE_SIZING.md`.
 
 ### Coverage
 
 | Window | Sides | With tape stamp | Graded w/ stamp |
 |--------|------:|----------------:|----------------:|
-| ≥ 2026-07-15 | 128 | 123 | 119 |
+| ≥ 2026-07-15 | 132 | 127 | 119 |
 
 ### (A) By tape action (stamped + graded)
 
@@ -267,8 +267,8 @@ From **2026-07-15**, path units are resized by **TAPE** = `1.5·(EDGE/10) + 2·(
 
 | Tape bucket | Rule | N | W-L | Win % | Staked PnL |
 |-------------|------|--:|:---:|------:|-----------:|
-| mute (<0) | → 0u | 31 | 20-11 | 64.5% | -6.06u |
-| hold (0–2.89) | path u | 46 | 22-24 | 47.8% | -2.79u |
+| mute (<0) | → 0u | 30 | 20-10 | 66.7% | -6.06u |
+| hold (0–2.89) | path u | 47 | 22-25 | 46.8% | -2.79u |
 | boost (≥2.89) | ×1.35 | 18 | 8-10 | 44.4% | -1.74u |
 
 _Score coverage: **95/119** graded stamped rows have `v8_tapeScore`._
@@ -313,7 +313,7 @@ Staked graded (`finalUnits > 0`, WIN/LOSS). Metric = **stamp if present, else as
 
 - **EDGE** bands: `<5` / `5–10` / `≥10` · mean FOR WR − (mean AG ?? 50)
 - **NetCLV** bands: same · mean FOR %+CLV − (mean AG ?? 62)
-- **Tape** bands: policy `<0` / mid / `≥2.89` · `1.5·(EDGE/10) + 2·(netCLV/10)`
+- **Tape** bands: policy `<0` / mid / `≥2.89` · `2·(EDGE/10) + 1.5·(netCLV/10)`
 
 > **Watch:** EDGE ≥10 is the separator (Jun15+ 48–22 · 68.6% · +29.2%); **5–10 is the hole** (27–25 · 51.9% · -8.0%). Net ≥10 can flip cold in the Jul15+ window — read across metrics.
 
@@ -415,22 +415,22 @@ _mean FOR causal %+CLV − (mean AG ?? 62) · bands mirror EDGE_
 
 #### Tape
 
-_1.5·(EDGE/10) + 2·(netCLV/10) · mute <0 · boost ≥2.89_
+_2·(EDGE/10) + 1.5·(netCLV/10) · mute <0 · boost ≥2.89_
 
 ##### Jun 15+ · 257 tickets · cov 247/257 (stamp 41 / as-of 206)
 
 | Band | n | Record | WR | ROI |
 |------|--:|:------:|---:|----:|
-| <0 | 84 | 36–48 | 42.9% | -24.1% |
-| 0–2.89 | 106 | 62–44 | 58.5% | +12.3% |
-| ≥2.89 | 57 | 39–18 | 68.4% | +25.0% |
+| <0 | 72 | 29–43 | 40.3% | -28.0% |
+| 0–2.89 | 117 | 68–49 | 58.1% | +11.8% |
+| ≥2.89 | 58 | 40–18 | 69.0% | +25.4% |
 | All | 257 | 143–114 | 55.6% | +2.5% |
 
 | Path | <0 WR | 0–2.89 WR | ≥2.89 WR |
 |------|---:|---:|---:|
-| A | 40.7% (54) | 63.9% (61) | 73% (37) |
-| B | 64.7% (17) | 57.9% (19) | 71.4% (7) |
-| C | 23.1% (13) | 45.8% (24) | 50% (10) |
+| A | 37.2% (43) | 62.9% (70) | 71.8% (39) |
+| B | 61.1% (18) | 58.8% (17) | 75% (8) |
+| C | 18.2% (11) | 46.4% (28) | 50% (8) |
 
 ##### Jul 15+ · 46 tickets · cov 42/46 (stamp 41 / as-of 1)
 
@@ -498,7 +498,7 @@ From **2026-07-15** we stamp depth + quality on every shipped side. Compare mean
 | quality | ForCLV           | 45/46 | 65.98 | 68.71 | -2.74 | 68.84 | 69.51 |
 | quality | AgCLV            | 23/46 | 60.28 | 56.48 | +3.79 | 63.69 | 62.59 |
 | quality | netCLV           | 45/46 | 4.91 | 9.34 | -4.43 | 4.62 | 6.85 |
-| quality | Tape             | 41/46 | 2.60 | 2.55 | +0.05 | 1.77 | 2.26 |
+| quality | Tape             | 41/46 | 2.47 | 2.36 | +0.11 | 1.77 | 2.26 |
 | quality | V12 score        | 46/46 | 0.92 | 0.85 | +0.07 | 0.95 | 0.96 |
 | quality | V12 forMean      | 46/46 | 16.00 | 14.55 | +1.45 | 10.80 | 13.50 |
 | quality | V12 agMean       | 46/46 | 0.14 | 0.13 | +0.01 | 0.00 | 0.00 |
@@ -524,11 +524,11 @@ AUC: chance a random WIN scores higher than a random LOSS on that metric (0.50 =
 |   13 | ForWR            | quality | 42/46 | 0.548 | +0.210 | +0.205 | +1.66 | 🟡 mild OK |
 |   14 | V12 forMean      | quality | 46/46 | 0.541 | +0.153 | +0.056 | +1.45 | 🟡 mild OK |
 |   15 | v12 F count      | depth   | 46/46 | 0.461 | +0.080 | -0.227 | -0.63 | flat |
-|   16 | Tape             | quality | 41/46 | 0.464 | -0.122 | +0.010 | +0.05 | flat |
-|   17 | V12 agMean       | quality | 46/46 | 0.465 | +0.254 | +0.012 | +0.01 | flat |
-|   18 | proven A         | depth   | 46/46 | 0.470 | +0.204 | -0.120 | -0.18 | flat |
-|   19 | #F sharps        | depth   | 46/46 | 0.472 | +0.052 | -0.171 | -0.52 | flat |
-|   20 | proven F−A       | depth   | 46/46 | 0.524 | +0.389 | +0.102 | +0.17 | flat |
+|   16 | V12 agMean       | quality | 46/46 | 0.465 | +0.254 | +0.012 | +0.01 | flat |
+|   17 | proven A         | depth   | 46/46 | 0.470 | +0.204 | -0.120 | -0.18 | flat |
+|   18 | #F sharps        | depth   | 46/46 | 0.472 | +0.052 | -0.171 | -0.52 | flat |
+|   19 | proven F−A       | depth   | 46/46 | 0.524 | +0.389 | +0.102 | +0.17 | flat |
+|   20 | Tape             | quality | 41/46 | 0.476 | -0.107 | +0.026 | +0.11 | flat |
 |   21 | WA AgN           | depth   | 46/46 | 0.486 | +0.114 | -0.131 | -0.39 | flat |
 |   22 | proven F         | depth   | 46/46 | 0.510 | +0.179 | -0.013 | -0.01 | flat |
 |   23 | v12 A count      | depth   | 46/46 | 0.509 | +0.006 | -0.074 | -0.22 | flat |
@@ -862,10 +862,10 @@ Same filter, sorted ROI ascending. Wallets that consistently lose when they're o
 | Graded picks with `tracked=true` AND `finalUnits > 0`         |     1 | 🚨 grader regression — see betTracking.js |
 | Graded picks with `tracked=true` AND `finalUnits == 0`        |   957 | 🟡 informational only — true tracked plays |
 | LOCK+ tier picks with `finalUnits == 0` (sizing regression)   |   164 | 🚨 sizing regression — agsSizeMultiplier returning 0 for strong AGS-U |
-| Live picks (not graded yet) with `finalUnits > 0`             |     2 | 🟢 picks queued for grading |
-| AGS-U promoted picks missing `v8_ags` value                   |    43 | 🟡 some picks missing AGS-U — cron lag or stale doc |
+| Live picks (not graded yet) with `finalUnits > 0`             |     3 | 🟢 picks queued for grading |
+| AGS-U promoted picks missing `v8_ags` value                   |    44 | 🟡 some picks missing AGS-U — cron lag or stale doc |
 | AGS-U promoted picks missing `agsTier`                        |     7 | 🟡 some picks missing tier classification |
-| Single-wallet shipped picks (`provenWalletCount == 1`)       |   201 | 🟡 informational — AGS-U calibration controls sample adequacy |
+| Single-wallet shipped picks (`provenWalletCount == 1`)       |   202 | 🟡 informational — AGS-U calibration controls sample adequacy |
 
 **Tracked-shipped detail (these are the picks the grader wrongly marked 0u):**
 
