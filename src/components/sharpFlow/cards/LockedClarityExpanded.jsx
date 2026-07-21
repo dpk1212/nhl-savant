@@ -303,72 +303,89 @@ function SizePath({ baseU, finalU, tapeAction, tracked }) {
   const action = tapeAction === 'boost' ? 'boost'
     : tapeAction === 'mute' ? 'mute'
     : 'hold';
-  // Half = held but ticket is meaningfully under base (tape soft-cut / half-stake).
   const isHalf = action === 'hold'
     && Number.isFinite(baseU) && Number.isFinite(finalU)
     && baseU > 0 && finalU > 0 && finalU < baseU * 0.85;
+  const activeId = action === 'mute' ? 'mute'
+    : action === 'boost' ? 'boost'
+    : isHalf ? 'half'
+    : 'hold';
   const steps = [
-    { id: 'mute', label: 'Mute', on: action === 'mute', color: VS },
-    { id: 'half', label: 'Half', on: isHalf, color: '#F0D78C' },
-    { id: 'hold', label: 'Hold', on: action === 'hold' && !isHalf, color: GOLD },
-    { id: 'boost', label: 'Boost', on: action === 'boost', color: GREEN },
+    { id: 'mute', label: 'Mute' },
+    { id: 'half', label: 'Half' },
+    { id: 'hold', label: 'Hold' },
+    { id: 'boost', label: 'Boost' },
   ];
-  const active = steps.find((s) => s.on) || steps[2];
+  const activeIdx = Math.max(0, steps.findIndex((s) => s.id === activeId));
+  const activeLabel = steps[activeIdx]?.label || 'Hold';
 
   return (
     <div style={{
       height: '100%',
       display: 'flex', flexDirection: 'column', justifyContent: 'center',
-      padding: '8px 10px',
-      borderRadius: 9,
-      background: 'rgba(0,0,0,0.28)',
+      padding: '10px 12px 11px',
+      borderRadius: 8,
+      background: 'rgba(255,255,255,0.015)',
       border: `1px solid ${LINE}`,
       fontFeatureSettings: "'tnum'",
     }}>
       <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8,
+        display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10,
       }}>
-        <span style={{ fontFamily: MONO, fontSize: 8, fontWeight: 700, letterSpacing: '0.12em', color: C.textMuted }}>
+        <span style={{ fontFamily: MONO, fontSize: 8, fontWeight: 700, letterSpacing: '0.14em', color: C.textMuted }}>
           SIZE PATH
         </span>
-        <span style={{ fontSize: 11, fontWeight: 700, color: active.color }}>
-          {tracked ? 'No ticket' : active.label}
+        <span style={{ fontSize: 10, fontWeight: 600, color: C.textSec, letterSpacing: '0.02em' }}>
+          {tracked ? 'No ticket' : activeLabel}
         </span>
       </div>
+
       <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4, marginBottom: 8,
+        display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginBottom: 12,
       }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: C.textSec }}>
-          {Number.isFinite(baseU) ? `${baseU.toFixed(1)}u` : '—'}
-        </span>
-        <span style={{ fontSize: 9, color: C.textFaint }}>base</span>
-        <span style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
-        <span style={{ fontSize: 9, color: C.textFaint }}>ticket</span>
-        <span style={{
-          fontSize: 14, fontWeight: 800, color: tracked ? C.textMuted : GOLD_HI,
-        }}>
-          {tracked ? '0u' : (Number.isFinite(finalU) ? `${finalU.toFixed(1)}u` : '—')}
-        </span>
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 4 }}>
-        {steps.map((s) => (
-          <div
-            key={s.id}
-            style={{
-              textAlign: 'center',
-              padding: '6px 2px',
-              borderRadius: 6,
-              fontSize: 9,
-              fontWeight: s.on ? 800 : 550,
-              color: s.on ? (s.id === 'mute' ? '#1a0808' : '#0A0E14') : C.textFaint,
-              background: s.on ? s.color : 'rgba(255,255,255,0.03)',
-              border: s.on ? 'none' : `1px solid ${LINE}`,
-              boxShadow: s.on ? `0 0 12px -4px ${s.color}` : 'none',
-            }}
-          >
-            {s.label}
+        <div>
+          <div style={{ fontSize: 9, color: C.textFaint, marginBottom: 2 }}>Base</div>
+          <div style={{ fontSize: 15, fontWeight: 650, color: C.textSec }}>
+            {Number.isFinite(baseU) ? `${baseU.toFixed(1)}u` : '—'}
           </div>
-        ))}
+        </div>
+        <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.06)', alignSelf: 'center', marginTop: 12 }} />
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: 9, color: C.textFaint, marginBottom: 2 }}>Ticket</div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: tracked ? C.textMuted : C.text }}>
+            {tracked ? '0u' : (Number.isFinite(finalU) ? `${finalU.toFixed(1)}u` : '—')}
+          </div>
+        </div>
+      </div>
+
+      {/* Segmented track — active step is a hairline fill, not a neon pill */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 0,
+        borderRadius: 5, overflow: 'hidden',
+        border: `1px solid ${LINE}`,
+        background: 'rgba(0,0,0,0.25)',
+      }}>
+        {steps.map((s, i) => {
+          const on = s.id === activeId;
+          return (
+            <div
+              key={s.id}
+              style={{
+                textAlign: 'center',
+                padding: '7px 2px',
+                fontSize: 9,
+                fontWeight: on ? 700 : 500,
+                letterSpacing: '0.04em',
+                color: on ? C.text : C.textFaint,
+                background: on ? 'rgba(212,175,55,0.12)' : 'transparent',
+                borderLeft: i === 0 ? 'none' : `1px solid ${LINE}`,
+                boxShadow: on ? 'inset 0 -1.5px 0 #D4AF37' : 'none',
+              }}
+            >
+              {s.label}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -406,17 +423,13 @@ function CompactTape({ tapeScore, tapeAction, edge }) {
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
           {Number.isFinite(edge) && (
             <span style={{
-              fontSize: 11, fontWeight: 800, color: edgeColor,
-              padding: edgeHot ? '3px 8px' : 0,
-              borderRadius: 5,
-              background: edgeHot ? 'rgba(52,211,153,0.12)' : 'transparent',
-              border: edgeHot ? '1px solid rgba(52,211,153,0.28)' : 'none',
+              fontSize: 11, fontWeight: 700, color: edgeColor,
             }}>
               EDGE {edge >= 0 ? '+' : ''}{edge.toFixed(1)}
             </span>
           )}
           {hasTape && (
-            <span style={{ fontSize: 12, fontWeight: 800, color }}>{headline}</span>
+            <span style={{ fontSize: 11, fontWeight: 650, color: C.textSec }}>{headline}</span>
           )}
         </div>
       </div>
@@ -603,14 +616,11 @@ export default function LockedClarityExpanded({
         background: `linear-gradient(90deg, transparent, ${accent}, transparent)`, opacity: 0.85,
       }} />
 
-      {/* 1. THE PLAY — hero ticket strip */}
+      {/* 1. THE PLAY — quiet premium ticket strip */}
       <div className="lc-in" style={{
         padding: '14px 14px 12px',
-        background: `
-          radial-gradient(90% 80% at 12% 0%, rgba(212,175,55,0.16) 0%, transparent 55%),
-          linear-gradient(180deg, rgba(255,255,255,0.035) 0%, transparent 70%)
-        `,
-        borderBottom: '1px solid rgba(212,175,55,0.16)',
+        background: 'linear-gradient(180deg, rgba(212,175,55,0.05) 0%, transparent 72%)',
+        borderBottom: `1px solid ${LINE}`,
       }}>
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, gap: 8,
@@ -629,7 +639,7 @@ export default function LockedClarityExpanded({
               style={{
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 width: 24, height: 24, borderRadius: '50%', cursor: 'pointer',
-                background: 'rgba(255,255,255,0.05)', border: `1px solid ${C.hair}`,
+                background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.hair}`,
                 color: C.textMuted, padding: 0,
               }}
             >
@@ -643,32 +653,30 @@ export default function LockedClarityExpanded({
           fontFeatureSettings: "'tnum'",
         }}>
           <span style={{
-            fontSize: 22, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.05,
+            fontSize: 21, fontWeight: 750, letterSpacing: '-0.028em', lineHeight: 1.05,
           }}>
             {f.pickLabel}
           </span>
-          <span style={{ fontSize: 16, fontWeight: 700, color: C.textSec }}>{fmtOdds(f.lockOdds)}</span>
+          <span style={{ fontSize: 15, fontWeight: 600, color: C.textSec }}>{fmtOdds(f.lockOdds)}</span>
           {!tracked && f.units > 0 && (
             <span style={{
-              fontSize: 15, fontWeight: 800, color: '#0A0E14',
-              padding: '3px 9px', borderRadius: 6,
-              background: `linear-gradient(180deg, ${GOLD_HI}, ${GOLD})`,
-              boxShadow: '0 6px 18px -8px rgba(212,175,55,0.85)',
+              fontSize: 13, fontWeight: 700, color: GOLD,
+              letterSpacing: '-0.01em',
             }}>
               {f.units.toFixed(1)}u
             </span>
           )}
           {tracked && (
-            <span style={{ fontSize: 12, fontWeight: 700, color: C.textMuted }}>No ticket</span>
+            <span style={{ fontSize: 12, fontWeight: 600, color: C.textMuted }}>No ticket</span>
           )}
           {ticketFrozen && !tracked && !f.graded && (
             <span style={{
               display: 'inline-flex', alignItems: 'center', gap: 3,
-              fontSize: 8, fontWeight: 800, letterSpacing: '0.08em',
-              padding: '3px 8px', borderRadius: 999, color: '#06140c',
-              background: 'linear-gradient(180deg, #6EE7B7 0%, #34D399 100%)',
+              fontSize: 8, fontWeight: 700, letterSpacing: '0.1em',
+              padding: '2px 7px', borderRadius: 4, color: GREEN,
+              background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.28)',
             }}>
-              <Check size={8} strokeWidth={3.2} />
+              <Check size={8} strokeWidth={3} />
               SET
             </span>
           )}
@@ -676,25 +684,14 @@ export default function LockedClarityExpanded({
 
         <div style={{
           marginTop: 12,
-          padding: '10px 12px',
-          borderRadius: 10,
-          background: unopposed
-            ? 'linear-gradient(135deg, rgba(52,211,153,0.12) 0%, rgba(0,0,0,0.25) 70%)'
-            : 'rgba(0,0,0,0.28)',
-          border: unopposed
-            ? '1px solid rgba(52,211,153,0.28)'
-            : `1px solid ${LINE}`,
           display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap',
           fontFeatureSettings: "'tnum'",
         }}>
-          <span style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.035em' }}>{fmtMoney(sharpUsd)}</span>
+          <span style={{ fontSize: 24, fontWeight: 750, letterSpacing: '-0.03em' }}>{fmtMoney(sharpUsd)}</span>
           {oursUsd > 0 && (
             <span style={{
-              fontSize: 11, fontWeight: 800, letterSpacing: '0.04em',
-              color: unopposed ? '#042f1e' : GREEN,
-              padding: '3px 8px', borderRadius: 5,
-              background: unopposed ? GREEN : 'rgba(52,211,153,0.12)',
-              border: unopposed ? 'none' : '1px solid rgba(52,211,153,0.28)',
+              fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
+              color: unopposed ? GREEN : C.textSec,
             }}>
               {unopposed ? 'UNOPPOSED' : `${boardSharePct}% OF BOARD`}
             </span>
@@ -705,20 +702,20 @@ export default function LockedClarityExpanded({
         </div>
 
         <div style={{ marginTop: 10 }}>
-          <div style={{ height: 3, borderRadius: 2, overflow: 'hidden', display: 'flex', background: 'rgba(0,0,0,0.45)' }}>
+          <div style={{ height: 2, borderRadius: 1, overflow: 'hidden', display: 'flex', background: 'rgba(255,255,255,0.04)' }}>
             {provenPct > 0 && <div style={{ width: `${provenPct}%`, background: GREEN }} />}
             {secondaryPct > 0 && <div style={{ width: `${secondaryPct}%`, background: BLUE }} />}
             {againstPct > 0 && <div style={{ width: `${againstPct}%`, background: VS }} />}
           </div>
           <div style={{
             display: 'flex', justifyContent: 'space-between', marginTop: 5, gap: 8,
-            fontSize: 9, fontWeight: 700, letterSpacing: '0.05em', fontFeatureSettings: "'tnum'",
+            fontSize: 9, fontWeight: 600, letterSpacing: '0.04em', fontFeatureSettings: "'tnum'",
           }}>
-            {provenPct > 0 && <span style={{ color: GREEN }}>Proven money {provenPct}%</span>}
-            {secondaryPct > 0 && <span style={{ color: BLUE }}>Secondary {secondaryPct}%</span>}
+            {provenPct > 0 && <span style={{ color: C.textSec }}>Proven {provenPct}%</span>}
+            {secondaryPct > 0 && <span style={{ color: C.textMuted }}>Secondary {secondaryPct}%</span>}
             {againstPct > 0
-              ? <span style={{ color: VS }}>Against {againstPct}%</span>
-              : <span style={{ color: GREEN, marginLeft: 'auto' }}>Unopposed</span>}
+              ? <span style={{ color: C.textMuted }}>Against {againstPct}%</span>
+              : <span style={{ color: C.textSec, marginLeft: 'auto' }}>Unopposed</span>}
           </div>
         </div>
       </div>

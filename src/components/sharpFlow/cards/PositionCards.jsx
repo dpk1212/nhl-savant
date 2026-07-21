@@ -2498,9 +2498,9 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
     <>
       {tierLabel && (
         <span style={{
-          fontSize: 7.5, fontWeight: 800, letterSpacing: '0.14em',
-          padding: '3px 8px', borderRadius: 4, color: '#0A0E14',
-          background: `linear-gradient(180deg, ${B.goldHi}, ${tierColor})`,
+          fontSize: 8, fontWeight: 800, letterSpacing: '0.12em',
+          padding: '4px 8px', borderRadius: 5, color: tierColor,
+          background: `${tierColor}14`, border: `1px solid ${tierColor}40`,
         }}>
           {tierLabel}
         </span>
