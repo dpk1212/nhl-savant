@@ -63,6 +63,7 @@ import { matchSoccerPositionTitle, resolveSoccerSide } from './lib/soccerTeams.j
 import { matchUFCPositionTitle } from './lib/ufcFighters.js';
 import { matchWNBAPositionTitle, resolveWNBATeam, WNBA_NAME_TO_CODE } from './lib/wnbaTeams.js';
 import { resolveBinarySide, resolveSpreadEntryLine } from './lib/resolvePositionSide.js';
+import { positionMatchesPolyEvent } from './lib/positionEventMatch.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -608,6 +609,7 @@ async function run() {
   let apiError = 0;
   let recoveredPositionsTotal = 0;
   let unresolvedSideCount = 0;
+  let wrongEventCount = 0;
   const recoveredAll = []; // Flat list of all recovered positions (for merge step).
   // Supplemental-scan heartbeat — merged into sharp_positions*.json so
   // writeSharpActions can EXITED-stamp wallets the main scan missed.
@@ -724,6 +726,14 @@ async function run() {
       const marketType = isTotal ? 'total' : isSpread ? 'spread' : 'ml';
       const game = todaysGames[`${match.sport}:${match.key}`];
       const polyGame = polyData?.[match.sport]?.[match.key];
+
+      // Reject postponed/other-date markets that title-matched today's team.
+      const eventGate = positionMatchesPolyEvent(pos, polyGame, match.key);
+      if (!eventGate.ok) {
+        wrongEventCount++;
+        continue;
+      }
+
       let side;
       let sideSource = null;
       if (isTotal) {
@@ -910,6 +920,9 @@ async function run() {
   console.log(`  Coverage:                        ${totalScanned} / ${whitelist.length}  (${coveragePct}%)`);
   if (unresolvedSideCount > 0) {
     console.log(`  Skipped unresolved side:         ${unresolvedSideCount}  (stale outcome, no usable outcomeIndex)`);
+  }
+  if (wrongEventCount > 0) {
+    console.log(`  Skipped wrong-event match:       ${wrongEventCount}  (eventId/slug ≠ today's poly event)`);
   }
   console.log(`  Phase-2 merge:                   ${MERGE ? 'ENABLED (positions WILL be merged into sharp_positions*.json)' : 'OFF (diagnostic only, no downstream change)'}`);
   console.log(`  Elapsed:                         ${elapsedSec}s`);

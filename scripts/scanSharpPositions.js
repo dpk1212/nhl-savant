@@ -16,6 +16,7 @@ import { matchSoccerPositionTitle, resolveSoccerSide } from './lib/soccerTeams.j
 import { matchUFCPositionTitle } from './lib/ufcFighters.js';
 import { matchWNBAPositionTitle, resolveWNBATeam, WNBA_NAME_TO_CODE } from './lib/wnbaTeams.js';
 import { resolveBinarySide, resolveSpreadEntryLine } from './lib/resolvePositionSide.js';
+import { positionMatchesPolyEvent } from './lib/positionEventMatch.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -726,6 +727,7 @@ async function run() {
   let totalMatchCount = 0;
   let errorCount = 0;
   let unresolvedSideCount = 0;
+  let wrongEventCount = 0;
 
   // ── Phase A: fetch every wallet's open positions in parallel (bounded) ──
   // The network call is the bottleneck (1 throttled request per wallet). A
@@ -798,6 +800,14 @@ async function run() {
       const game = todaysGames[`${match.sport}:${match.key}`];
       const sport = match.sport;
       const polyGame = polyData?.[match.sport]?.[match.key];
+
+      // Reject postponed/other-date markets that title-matched today's team.
+      // e.g. mlb-stl-cin-2026-05-24 (rained out) must not attach to stl_laa today.
+      const eventGate = positionMatchesPolyEvent(pos, polyGame, match.key);
+      if (!eventGate.ok) {
+        wrongEventCount++;
+        continue;
+      }
 
       let side;
       let sideSource = null;
@@ -1119,6 +1129,9 @@ async function run() {
   console.log(`\nDone — ${matchCount} ML, ${spreadMatchCount} spread, ${totalMatchCount} total positions`);
   if (unresolvedSideCount > 0) {
     console.log(`Skipped ${unresolvedSideCount} position(s) with unresolved side (stale outcome, no usable outcomeIndex)`);
+  }
+  if (wrongEventCount > 0) {
+    console.log(`Skipped ${wrongEventCount} position(s) with eventId/slug not matching today's poly event`);
   }
   console.log(`Games: ${totalGamesWithPositions} ML, ${spreadGames} spread, ${totalGames} total`);
   console.log(`Wrote ${outPath}, ${spreadOutPath}, ${totalOutPath}`);
