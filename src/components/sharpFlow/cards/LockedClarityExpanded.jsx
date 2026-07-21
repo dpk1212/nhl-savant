@@ -76,10 +76,10 @@ function WalletMap({ wallets, selected, onSelect, gid }) {
     );
   }
 
-  // Wide viewBox + tight pads so the plot fills the dark map well.
+  // Room for axis titles + tick labels; plot still fills the well.
   const W = 420;
-  const H = 268;
-  const pad = { t: 16, r: 8, b: 30, l: 34 };
+  const H = 292;
+  const pad = { t: 22, r: 14, b: 44, l: 46 };
   const iw = W - pad.l - pad.r;
   const ih = H - pad.t - pad.b;
   const roiOf = (p) => (Number.isFinite(p.roi) ? p.roi : p.dollarRoi);
@@ -105,6 +105,9 @@ function WalletMap({ wallets, selected, onSelect, gid }) {
   for (let v = Math.ceil(xMin / 5) * 5; v <= xMax; v += 5) xTicks.push(v);
   const yTicks = [];
   for (let v = Math.ceil(yMin / 5) * 5; v <= yMax; v += 5) yTicks.push(v);
+  // Fewer tick labels when dense — keep every 10 on X if many ticks.
+  const xLabelEvery = xTicks.length > 7 ? 2 : 1;
+  const yLabelEvery = yTicks.length > 8 ? 2 : 1;
 
   const sorted = [...plottable].sort((a, b) => {
     const r = (p) => (p.short === selected ? 5 : p.qualify === 'VAULT' ? 4 : p.proven ? 3 : p.side === 'ours' ? 2 : 1);
@@ -142,47 +145,62 @@ function WalletMap({ wallets, selected, onSelect, gid }) {
       <rect x={pad.l} y={yB} width={Math.max(0, xB - pad.l)} height={Math.max(0, pad.t + ih - yB)} fill={`url(#${gid}-noise)`} />
 
       {xTicks.map((v) => (
-        <line key={`xg${v}`} x1={xS(v)} y1={pad.t} x2={xS(v)} y2={pad.t + ih} stroke="rgba(148,163,184,0.06)" />
+        <line key={`xg${v}`} x1={xS(v)} y1={pad.t} x2={xS(v)} y2={pad.t + ih} stroke="rgba(148,163,184,0.07)" />
       ))}
       {yTicks.map((v) => (
-        <line key={`yg${v}`} x1={pad.l} y1={yS(v)} x2={pad.l + iw} y2={yS(v)} stroke="rgba(148,163,184,0.06)" />
+        <line key={`yg${v}`} x1={pad.l} y1={yS(v)} x2={pad.l + iw} y2={yS(v)} stroke="rgba(148,163,184,0.07)" />
       ))}
 
-      <line x1={xB} y1={pad.t} x2={xB} y2={pad.t + ih} stroke="rgba(255,255,255,0.2)" strokeDasharray="3 4" strokeWidth={1.2} />
-      <line x1={pad.l} y1={yB} x2={pad.l + iw} y2={yB} stroke="rgba(255,255,255,0.2)" strokeDasharray="3 4" strokeWidth={1.2} />
-      <line x1={pad.l} y1={pad.t + ih} x2={pad.l + iw} y2={pad.t + ih} stroke="rgba(168,176,191,0.4)" strokeWidth={1.3} />
-      <line x1={pad.l} y1={pad.t} x2={pad.l} y2={pad.t + ih} stroke="rgba(168,176,191,0.4)" strokeWidth={1.3} />
+      <line x1={xB} y1={pad.t} x2={xB} y2={pad.t + ih} stroke="rgba(255,255,255,0.22)" strokeDasharray="3 4" strokeWidth={1.2} />
+      <line x1={pad.l} y1={yB} x2={pad.l + iw} y2={yB} stroke="rgba(255,255,255,0.22)" strokeDasharray="3 4" strokeWidth={1.2} />
+      <line x1={pad.l} y1={pad.t + ih} x2={pad.l + iw} y2={pad.t + ih} stroke="rgba(168,176,191,0.45)" strokeWidth={1.4} />
+      <line x1={pad.l} y1={pad.t} x2={pad.l} y2={pad.t + ih} stroke="rgba(168,176,191,0.45)" strokeWidth={1.4} />
 
-      <text x={xB + (pad.l + iw - xB) / 2} y={pad.t + 14} textAnchor="middle"
-        fill={GREEN} fillOpacity={0.7} fontSize={9} fontFamily={MONO} fontWeight={800} letterSpacing="0.12em">
+      <text x={xB + (pad.l + iw - xB) / 2} y={pad.t + 16} textAnchor="middle"
+        fill={GREEN} fillOpacity={0.75} fontSize={11} fontFamily={MONO} fontWeight={800} letterSpacing="0.14em">
         ELITE
       </text>
-      <text x={pad.l + (xB - pad.l) / 2} y={pad.t + ih - 8} textAnchor="middle"
-        fill={VS} fillOpacity={0.65} fontSize={9} fontFamily={MONO} fontWeight={800} letterSpacing="0.1em">
+      <text x={pad.l + (xB - pad.l) / 2} y={pad.t + ih - 10} textAnchor="middle"
+        fill={VS} fillOpacity={0.7} fontSize={11} fontFamily={MONO} fontWeight={800} letterSpacing="0.12em">
         NOISE
       </text>
 
-      <text x={pad.l + iw / 2} y={H - 7} textAnchor="middle"
-        fill={C.textSec} fontSize={10} fontWeight={650} letterSpacing="0.06em">
-        HOW OFTEN THEY BEAT THE CLOSING LINE →
+      {/* Axis titles — clear of the plot */}
+      <text x={pad.l + iw / 2} y={H - 10} textAnchor="middle"
+        fill={C.textSec} fontSize={11} fontWeight={700} letterSpacing="0.04em">
+        Beat the closing line →
       </text>
-      <text x={12} y={pad.t + ih / 2} textAnchor="middle" fill={C.textSec} fontSize={10}
-        fontWeight={650} letterSpacing="0.06em" transform={`rotate(-90 12 ${pad.t + ih / 2})`}>
-        LIFETIME ROI →
+      <text
+        x={13}
+        y={pad.t + ih / 2}
+        textAnchor="middle"
+        fill={C.textSec}
+        fontSize={11}
+        fontWeight={700}
+        letterSpacing="0.04em"
+        transform={`rotate(-90 13 ${pad.t + ih / 2})`}
+      >
+        Lifetime ROI →
       </text>
 
-      {xTicks.map((v) => (
-        <text key={`xt${v}`} x={xS(v)} y={pad.t + ih + 14} textAnchor="middle"
-          fill={v === XB ? C.text : C.textMuted} fontSize={9} fontFamily={MONO} fontWeight={v === XB ? 700 : 500}>
-          {v}%
-        </text>
-      ))}
-      {yTicks.filter((_, i) => i % 2 === 0).map((v) => (
-        <text key={`yt${v}`} x={pad.l - 5} y={yS(v) + 3} textAnchor="end"
-          fill={v === 0 ? C.text : C.textMuted} fontSize={9} fontFamily={MONO} fontWeight={v === 0 ? 700 : 500}>
-          {v > 0 ? `+${v}` : v}
-        </text>
-      ))}
+      {xTicks.map((v, i) => {
+        if (i % xLabelEvery !== 0 && v !== XB && v !== xMin && v !== xMax) return null;
+        return (
+          <text key={`xt${v}`} x={xS(v)} y={pad.t + ih + 18} textAnchor="middle"
+            fill={v === XB ? C.text : C.textMuted} fontSize={11} fontFamily={MONO} fontWeight={v === XB ? 700 : 550}>
+            {v}%
+          </text>
+        );
+      })}
+      {yTicks.map((v, i) => {
+        if (i % yLabelEvery !== 0 && v !== 0 && v !== yMin && v !== yMax) return null;
+        return (
+          <text key={`yt${v}`} x={pad.l - 8} y={yS(v) + 4} textAnchor="end"
+            fill={v === 0 ? C.text : C.textMuted} fontSize={11} fontFamily={MONO} fontWeight={v === 0 ? 700 : 550}>
+            {v > 0 ? `+${v}` : v}
+          </text>
+        );
+      })}
 
       {selPt && (
         <g opacity={0.15}>
@@ -210,14 +228,14 @@ function WalletMap({ wallets, selected, onSelect, gid }) {
               strokeDasharray={sel ? undefined : st.dash}
               filter={sel ? `url(#${gid}-glow)` : undefined}
             />
-            <text x={cx} y={cy + 3} textAnchor="middle" fill={st.text}
-              fontSize={r >= 12 ? 8 : 6.5} fontFamily={MONO} fontWeight={800}
+            <text x={cx} y={cy + 3.5} textAnchor="middle" fill={st.text}
+              fontSize={r >= 12 ? 9 : 7.5} fontFamily={MONO} fontWeight={800}
               style={{ pointerEvents: 'none' }}>
               {p.short.slice(0, 2)}
             </text>
             {sel && (
-              <text x={cx} y={cy - r - 6} textAnchor="middle" fill={GOLD_HI}
-                fontSize={10} fontFamily={MONO} fontWeight={700} style={{ pointerEvents: 'none' }}>
+              <text x={cx} y={cy - r - 7} textAnchor="middle" fill={GOLD_HI}
+                fontSize={11} fontFamily={MONO} fontWeight={700} style={{ pointerEvents: 'none' }}>
                 {fmtMoney(p.invested)}
               </text>
             )}
@@ -234,34 +252,49 @@ function OddsPath({ journey, fair, clvPct, gid }) {
   const vals = pts.map((p) => -p);
   const fairV = Number.isFinite(fair) ? -fair : vals[0];
   const allV = [...vals, fairV];
-  const vMax = Math.max(...allV) + 1;
-  const vMin = Math.min(...allV) - 1;
+  const vMax = Math.max(...allV) + 2;
+  const vMin = Math.min(...allV) - 2;
   const span = vMax - vMin || 1;
-  const w = 340;
-  const h = 34;
-  const padY = 5;
-  const yS = (v) => h - padY - ((v - vMin) / span) * (h - padY * 2);
-  const coords = vals.map((v, i) => [(i / (vals.length - 1)) * w, yS(v)]);
+  const w = 360;
+  const h = 64;
+  const padX = 10;
+  const padTop = 16;
+  const padBot = 18;
+  const plotW = w - padX * 2;
+  const plotH = h - padTop - padBot;
+  const yS = (v) => padTop + (1 - (v - vMin) / span) * plotH;
+  const xS = (i) => padX + (i / (vals.length - 1)) * plotW;
+  const coords = vals.map((v, i) => [xS(i), yS(v)]);
   const line = coords.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
-  const area = `${line} L${w},${h} L0,${h} Z`;
+  const area = `${line} L${coords[coords.length - 1][0]},${h - padBot} L${padX},${h - padBot} Z`;
   const last = coords[coords.length - 1];
   const fairY = yS(fairV);
   const color = clvPct >= 0 ? GREEN : VS;
+  const startOdds = pts[0];
+  const endOdds = pts[pts.length - 1];
 
   return (
-    <svg width="100%" height={h} viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ display: 'block' }}>
+    <svg width="100%" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 'auto' }}>
       <defs>
         <linearGradient id={`${gid}-odds`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.22" />
+          <stop offset="0%" stopColor={color} stopOpacity="0.28" />
           <stop offset="100%" stopColor={color} stopOpacity="0" />
         </linearGradient>
       </defs>
-      <line x1={0} y1={fairY} x2={w} y2={fairY} stroke={GOLD} strokeWidth={1} strokeDasharray="3.5 2.5" opacity={0.75} />
-      <text x={w} y={fairY - 3} textAnchor="end" fill={GOLD} fontSize={6.5} fontFamily={MONO}>FAIR {fmtOdds(fair)}</text>
+      <line x1={padX} y1={fairY} x2={w - padX} y2={fairY} stroke={GOLD} strokeWidth={1.15} strokeDasharray="4 3" opacity={0.8} />
+      <text x={w - padX} y={Math.max(11, fairY - 5)} textAnchor="end" fill={GOLD} fontSize={10} fontFamily={MONO} fontWeight={700}>
+        FAIR {fmtOdds(fair)}
+      </text>
       <path d={area} fill={`url(#${gid}-odds)`} />
-      <path className="lc-draw" d={line} fill="none" stroke={color} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx={0} cy={coords[0][1]} r={1.8} fill={GOLD} />
-      <circle cx={last[0]} cy={last[1]} r={2.5} fill={color} />
+      <path className="lc-draw" d={line} fill="none" stroke={color} strokeWidth={2.1} strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx={coords[0][0]} cy={coords[0][1]} r={2.6} fill={GOLD} />
+      <circle cx={last[0]} cy={last[1]} r={3.2} fill={color} stroke="#0B0F18" strokeWidth={1} />
+      <text x={padX} y={h - 4} textAnchor="start" fill={C.textMuted} fontSize={10} fontFamily={MONO} fontWeight={600}>
+        {fmtOdds(startOdds)}
+      </text>
+      <text x={w - padX} y={h - 4} textAnchor="end" fill={color} fontSize={10} fontFamily={MONO} fontWeight={700}>
+        {fmtOdds(endOdds)}
+      </text>
     </svg>
   );
 }
@@ -542,7 +575,7 @@ export default function LockedClarityExpanded({
             </div>
           </div>
 
-          <div style={{ padding: 0, margin: 0 }}>
+          <div style={{ padding: '2px 4px 6px' }}>
             <WalletMap wallets={all} selected={sel} onSelect={setSel} gid={gid} />
           </div>
 
@@ -785,34 +818,34 @@ export default function LockedClarityExpanded({
       </div>
 
       {/* 5. PRICE */}
-      <div className="lc-in-2" style={{ padding: '10px 14px 4px' }}>
+      <div className="lc-in-2" style={{ padding: '12px 14px 6px' }}>
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
-          marginBottom: 5, fontFeatureSettings: "'tnum'",
+          marginBottom: 8, fontFeatureSettings: "'tnum'",
         }}>
           <div>
             <span style={{ fontFamily: MONO, fontSize: 8, fontWeight: 700, letterSpacing: '0.12em', color: C.textMuted }}>
               ③ OUR PRICE
             </span>
-            <span style={{ marginLeft: 8, fontSize: 14, fontWeight: 650 }}>{fmtOdds(f.gotOdds ?? f.lockOdds)}</span>
+            <span style={{ marginLeft: 8, fontSize: 15, fontWeight: 650 }}>{fmtOdds(f.gotOdds ?? f.lockOdds)}</span>
           </div>
           {Number.isFinite(f.clvPct) && (
-            <span style={{ fontSize: 11, fontWeight: 700, color: clvGood ? GREEN : VS }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: clvGood ? GREEN : VS }}>
               {clvGood ? '+' : ''}{f.clvPct.toFixed(1)}% vs close
             </span>
           )}
         </div>
         {journey.length >= 2 && (
           <div style={{
-            borderRadius: 8, padding: '4px 6px 1px',
-            background: 'rgba(0,0,0,0.25)', border: `1px solid ${LINE}`,
+            borderRadius: 9, padding: '10px 10px 8px',
+            background: 'rgba(0,0,0,0.28)', border: `1px solid ${LINE}`,
           }}>
             <OddsPath journey={journey} fair={fairOdds} clvPct={f.clvPct ?? 0} gid={gid} />
           </div>
         )}
         <div style={{
-          marginTop: 5, display: 'flex', gap: 12,
-          fontSize: 10, fontWeight: 550, color: C.textMuted, fontFeatureSettings: "'tnum'",
+          marginTop: 8, display: 'flex', gap: 14,
+          fontSize: 11, fontWeight: 550, color: C.textMuted, fontFeatureSettings: "'tnum'",
         }}>
           {Number.isFinite(f.hcMargin) && (
             <span>HC <span style={{ color: GREEN, fontWeight: 700 }}>{f.hcMargin >= 0 ? '+' : ''}{f.hcMargin}</span></span>
