@@ -229,6 +229,8 @@ tape   = 2·(EDGE/10) + 1.5·(netCLV/10)
 | mid | **HOLD** | unchanged |
 | **≥ 2.89** | **BOOST** | × **1.35**, oddsCap, ≤ **6u** |
 
+**BOTH floor (2026-07-21+):** if **EDGE ≥ 10** and tape boosted → raise to at least **5u** (oddsCap, ≤6).
+
 Details: [`TAPE_SIZING.md`](./TAPE_SIZING.md).
 
 ---
@@ -244,7 +246,8 @@ Details: [`TAPE_SIZING.md`](./TAPE_SIZING.md).
 | MINI, EDGE 4 | 3u | band MUTE | — | **0u** |
 | RANK, tape &lt; 0 | 4u | exempt | mute-exempt HOLD | **4u** |
 | RANK, tape ≥2.89 | 4u | exempt | ×1.35 | **5.4u** |
-| SHARP, EDGE 12 | 3u | band ×1.25 → 3.75u | hold | **3.75u** |
+| SHARP, EDGE 12, tape mid | 3u | band ×1.25 → 3.75u | hold | **3.75u** |
+| SHARP, EDGE 12, tape ≥2.89 | 3u | band → 3.75u | ×1.35 → 5.06 → BOTH floor | **5u–6u** |
 | SHARP-LEAN, EDGE 2 (net≥5) | 1.5u | band MUTE | — | **0u** |
 | Any, fadeTop≥60 | Nu | — | — | **0u** |
 

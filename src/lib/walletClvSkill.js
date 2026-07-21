@@ -39,8 +39,20 @@ export const TAPE_BOOST_ABOVE = 2.89;   // ≈ June15+ path-stamped p80
 export const TAPE_BOOST_MULT = 1.35;
 export const TAPE_SIZING_LIVE_FROM = '2026-07-15';
 
+/**
+ * BOTH floor: EDGE ≥10 ∧ tape ≥ boost → at least 5u (oddsCap, ≤6).
+ * Jun15+ BOTH cell was 31–12 · +32% ROI at only ~3.75u avg — undersized.
+ */
+export const BOTH_E10_TAPE_BOOST_FROM = '2026-07-21';
+export const BOTH_E10_EDGE_MIN = 10;
+export const BOTH_E10_TAPE_BOOST_FLOOR = 5;
+
 export function isTapeSizingLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= TAPE_SIZING_LIVE_FROM;
+}
+
+export function isBothE10TapeBoostLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= BOTH_E10_TAPE_BOOST_FROM;
 }
 
 export function shortWalletId(w) {
@@ -396,6 +408,51 @@ export function applyTapeUnitPolicy({
     action,
     reason,
     mutedBy: null,
+    unitsPrePolicy: pre,
+  };
+}
+
+/**
+ * After tape: if EDGE ≥10 and tape is in boost band, floor units at 5
+ * (then oddsCap + global cap). PASS when not BOTH or already muted/zero.
+ */
+export function applyBothE10TapeFloor({
+  units,
+  edge = null,
+  tape = null,
+  odds = null,
+  oddsCapFn = null,
+  unitCap = GLOBAL_UNIT_CAP,
+  floor = BOTH_E10_TAPE_BOOST_FLOOR,
+  edgeMin = BOTH_E10_EDGE_MIN,
+  boostAbove = TAPE_BOOST_ABOVE,
+} = {}) {
+  const pre = Number.isFinite(units) ? Math.max(0, units) : 0;
+  if (!(pre > 0)) {
+    return { units: 0, action: 'PASS', reason: null, unitsPrePolicy: pre };
+  }
+  if (edge == null || !Number.isFinite(Number(edge)) || Number(edge) < edgeMin) {
+    return { units: pre, action: 'PASS', reason: null, unitsPrePolicy: pre };
+  }
+  if (tape == null || !Number.isFinite(Number(tape)) || Number(tape) < boostAbove) {
+    return { units: pre, action: 'PASS', reason: null, unitsPrePolicy: pre };
+  }
+  let out = Math.max(pre, floor);
+  if (typeof oddsCapFn === 'function') out = oddsCapFn(out, odds);
+  out = Math.min(unitCap, out);
+  out = Math.round(out * 100) / 100;
+  if (out <= pre + 0.001) {
+    return {
+      units: pre,
+      action: 'HOLD',
+      reason: 'both_e10_already_ge_floor',
+      unitsPrePolicy: pre,
+    };
+  }
+  return {
+    units: out,
+    action: 'FLOOR',
+    reason: 'both_e10_tape_boost',
     unitsPrePolicy: pre,
   };
 }

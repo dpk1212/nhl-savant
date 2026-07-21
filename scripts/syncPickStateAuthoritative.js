@@ -88,15 +88,19 @@ import {
   TAPE_MUTE_BELOW,
   TAPE_BOOST_ABOVE,
   TAPE_BOOST_MULT,
+  TAPE_EDGE_WEIGHT,
+  TAPE_NET_WEIGHT,
   TAPE_SIZING_LIVE_FROM,
   EDGE_PRIOR_AG_WR,
   applyClvTop2UnitPolicy,
   applyTapeUnitPolicy,
+  applyBothE10TapeFloor,
   computeForTop2PctPos,
   computeNetMeanPrior,
   computeTapeScore,
   hydrateClvLedger,
   isTapeSizingLive,
+  isBothE10TapeBoostLive,
 } from '../src/lib/walletClvSkill.js';
 import { loadWalletProfilesMap } from './lib/loadWalletProfiles.js';
 
@@ -682,7 +686,7 @@ function edgeNetGateBucket(edge, net, eThr = SHARP_EDGE_THR, nThr = SHARP_NET_TH
 }
 
 /** Skill-feature stamp schema version — bump when fields/thresholds change. */
-const SKILL_FEATURE_VERSION = 4; // v4: Path A/C EDGE band ladder stamps (mute/half/boost)
+const SKILL_FEATURE_VERSION = 5; // v5: BOTH E≥10 ∩ tape-boost → 5u floor
 
 /**
  * Full EDGE / netCLV / Tape bundle for analysis without rebuild.
@@ -706,10 +710,10 @@ function buildSkillFeatureBundle({
   const nOk = netMean != null && Number.isFinite(Number(netMean)) && Number(netMean) >= SHARP_NET_THR;
   const bucket = edgeNetGateBucket(edge, netMean);
   const edgeTerm = edge != null && Number.isFinite(Number(edge))
-    ? Math.round((1.5 * (Number(edge) / 10)) * 1000) / 1000
+    ? Math.round((TAPE_EDGE_WEIGHT * (Number(edge) / 10)) * 1000) / 1000
     : null;
   const netTerm = netMean != null && Number.isFinite(Number(netMean))
-    ? Math.round((2 * (Number(netMean) / 10)) * 1000) / 1000
+    ? Math.round((TAPE_NET_WEIGHT * (Number(netMean) / 10)) * 1000) / 1000
     : null;
   return {
     winnerAlign: wa,
@@ -735,6 +739,8 @@ function applySkillFeatureStamps(target, bundle, now, {
   edgeBandAction = null,
   edgeBand = null,
   unitsPreEdgeBand = null,
+  bothE10TapeAction = null,
+  unitsPreBothE10 = null,
 } = {}) {
   const wa = bundle.winnerAlign;
   if (wa) {
@@ -781,6 +787,10 @@ function applySkillFeatureStamps(target, bundle, now, {
   if (edgeBand != null) target.v8_edgeBand = edgeBand;
   if (unitsPreEdgeBand != null && Number.isFinite(unitsPreEdgeBand)) {
     target.v8_unitsPreEdgeBand = unitsPreEdgeBand;
+  }
+  if (bothE10TapeAction != null) target.v8_bothE10TapeAction = bothE10TapeAction;
+  if (unitsPreBothE10 != null && Number.isFinite(unitsPreBothE10)) {
+    target.v8_unitsPreBothE10 = unitsPreBothE10;
   }
   target.v8_skillFeatureVersion = SKILL_FEATURE_VERSION;
   target.v8_skillEvaluatedAt = now;
@@ -1571,6 +1581,7 @@ async function createMissingLockedPicks({
       }
       let edgeNetSizeCreate = null;
       let edgeBandSizeCreate = null;
+      let bothE10Create = null;
       if (createV121Eligible && isSharpCEdgeNetLive(TARGET_DATE) && scoreV12 > 0) {
         const createBucket = edgeNetGateBucket(waCreateEdge?.edge ?? null, netCreate.netMeanPrior);
         // TOP / TOP+ NEITHER → mute
@@ -1658,6 +1669,18 @@ async function createMissingLockedPicks({
         // Map tape action into create stamps (reuse clvTop2Action field sparingly —
         // primary action lives on v8_tapeAction).
         peakUnitsApplied = clvPolicyCreate.units;
+        // BOTH E≥10 ∩ tape-boost → floor 5u (oddsCap, ≤6)
+        if (isBothE10TapeBoostLive(TARGET_DATE) && peakUnitsApplied > 0) {
+          bothE10Create = applyBothE10TapeFloor({
+            units: peakUnitsApplied,
+            edge: waCreateEdge?.edge ?? null,
+            tape: tapeCreate,
+            odds: odds ?? null,
+            oddsCapFn: oddsCap,
+            unitCap: GLOBAL_UNIT_CAP,
+          });
+          peakUnitsApplied = bothE10Create.units;
+        }
       } else {
         clvPolicyCreate = applyClvTop2UnitPolicy({
           units: peakUnitsApplied,
@@ -1813,6 +1836,10 @@ async function createMissingLockedPicks({
           edgeBand: edgeBandSizeCreate?.band ?? null,
           unitsPreEdgeBand: (edgeBandSizeCreate && Number.isFinite(edgeBandSizeCreate.unitsPrePolicy))
             ? edgeBandSizeCreate.unitsPrePolicy
+            : null,
+          bothE10TapeAction: bothE10Create?.action ?? null,
+          unitsPreBothE10: (bothE10Create && Number.isFinite(bothE10Create.unitsPrePolicy))
+            ? bothE10Create.unitsPrePolicy
             : null,
         });
         v8Stamps.v8_winnerAlignAction = null;
@@ -2613,6 +2640,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const tapeLive = computeTapeScore(winnerAlign?.edge ?? null, netLive.netMeanPrior);
   let clvPolicy;
   let tapePolicy = null;
+  let bothE10Policy = null;
   const unitsBeforeClv = finalUnitsApplied;
   if (tapeSizingLive) {
     const rankTapeMuteExempt = hcStakeTier === 'RANK'
@@ -2635,6 +2663,18 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       });
     }
     finalUnitsApplied = tapePolicy.units;
+    // BOTH E≥10 ∩ tape-boost → floor 5u (oddsCap, ≤6)
+    if (isBothE10TapeBoostLive(pickDate) && finalUnitsApplied > 0) {
+      bothE10Policy = applyBothE10TapeFloor({
+        units: finalUnitsApplied,
+        edge: winnerAlign?.edge ?? null,
+        tape: tapeLive,
+        odds: sideOdds,
+        oddsCapFn: oddsCap,
+        unitCap: GLOBAL_UNIT_CAP,
+      });
+      finalUnitsApplied = bothE10Policy.units;
+    }
     // Diagnostic-only top2 stamp (no unit effect)
     clvPolicy = {
       units: finalUnitsApplied,
@@ -2934,6 +2974,13 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (tapePolicy?.reason === 'rank_tape_mute_exempt') {
     changes.push(`TAPE: RANK mute-exempt (tape=${tapeLive == null ? '—' : Number(tapeLive).toFixed(2)}) → keep ${unitsBeforeClv}u`);
   }
+  if (bothE10Policy?.action === 'FLOOR') {
+    changes.push(
+      `BOTH-E10-TAPE: E=${winnerAlign?.edge == null ? '—' : Number(winnerAlign.edge).toFixed(1)} `
+      + `tape=${tapeLive == null ? '—' : Number(tapeLive).toFixed(2)} `
+      + `${bothE10Policy.unitsPrePolicy}u → ${bothE10Policy.units}u floor`
+    );
+  }
   if (rankRescued) {
     changes.push(`RANK-RESCUE: 2-for-0 slice promoted HC-muted pick → ${RANK_RESCUE_UNITS}u`);
   }
@@ -2977,6 +3024,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       unitsPreEdgeBand: (edgeBandSizePolicy && Number.isFinite(edgeBandSizePolicy.unitsPrePolicy))
         ? edgeBandSizePolicy.unitsPrePolicy
         : null,
+      bothE10TapeAction: bothE10Policy?.action ?? null,
+      unitsPreBothE10: (bothE10Policy && Number.isFinite(bothE10Policy.unitsPrePolicy))
+        ? bothE10Policy.unitsPrePolicy
+        : null,
     });
     patch.v8_winnerAlignAction = winnerAlignAction;
     patch.v8_clvTop2Action = clvPolicy.action;
@@ -2984,7 +3035,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     // Force write when schema/gate stamps are new or metrics moved — even if units flat.
     if (skillStampsDrifted(sd, skillLive, { tapeAction: tapePolicy?.action ?? null })
         || (edgeNetSizePolicy && (sd.v8_edgeNetSizeAction || null) !== edgeNetSizePolicy.action)
-        || (edgeBandSizePolicy && (sd.v8_edgeBandAction || null) !== edgeBandSizePolicy.action)) {
+        || (edgeBandSizePolicy && (sd.v8_edgeBandAction || null) !== edgeBandSizePolicy.action)
+        || (bothE10Policy && (sd.v8_bothE10TapeAction || null) !== bothE10Policy.action)) {
       changes.push(
         `SKILL-FEATURES: E=${skillLive.edge == null ? '—' : Number(skillLive.edge).toFixed(1)} `
         + `net=${skillLive.netMeanPrior == null ? '—' : Number(skillLive.netMeanPrior).toFixed(1)} `
