@@ -299,17 +299,44 @@ function OddsPath({ journey, fair, clvPct, gid }) {
   );
 }
 
-function SizePath({ baseU, finalU, tapeAction, tracked }) {
-  const action = tapeAction === 'boost' ? 'boost'
-    : tapeAction === 'mute' ? 'mute'
-    : 'hold';
-  const isHalf = action === 'hold'
-    && Number.isFinite(baseU) && Number.isFinite(finalU)
-    && baseU > 0 && finalU > 0 && finalU < baseU * 0.85;
-  const activeId = action === 'mute' ? 'mute'
-    : action === 'boost' ? 'boost'
-    : isHalf ? 'half'
-    : 'hold';
+/** Normalize overlay stamps (EDGE band / EDGE-net / tape) → size-path step. */
+function normSizeStep(action) {
+  const a = String(action || '').toLowerCase();
+  if (a === 'mute' || a === 'cancel') return 'mute';
+  if (a === 'boost') return 'boost';
+  if (a === 'half' || a === 'soft') return 'half';
+  return null; // hold / keep / pass / exempt / missing — not decisive alone
+}
+
+/**
+ * Size Path = net Base → Ticket outcome across ALL size overlays
+ * (EDGE band, EDGE/net soft size, tape) — not tape alone.
+ * Units delta is source of truth; stamps break ties when flat.
+ */
+function resolveSizePathStep({
+  baseU, finalU, edgeBandAction, edgeNetAction, tapeAction, tracked,
+} = {}) {
+  if (tracked) return 'mute';
+  const base = Number(baseU);
+  const fin = Number(finalU);
+  if (Number.isFinite(fin) && fin <= 0 && Number.isFinite(base) && base > 0) return 'mute';
+  if (Number.isFinite(base) && base > 0 && Number.isFinite(fin)) {
+    if (fin >= base * 1.08) return 'boost';
+    if (fin > 0 && fin <= base * 0.85) return 'half';
+  }
+  // Flat ticket vs base — honor a decisive overlay stamp (band → net → tape).
+  const stamped = [edgeBandAction, edgeNetAction, tapeAction]
+    .map(normSizeStep)
+    .find(Boolean);
+  return stamped || 'hold';
+}
+
+function SizePath({
+  baseU, finalU, tapeAction, edgeBandAction, edgeNetAction, tracked,
+}) {
+  const activeId = resolveSizePathStep({
+    baseU, finalU, edgeBandAction, edgeNetAction, tapeAction, tracked,
+  });
   const steps = [
     { id: 'mute', label: 'Mute' },
     { id: 'half', label: 'Half' },
@@ -1072,6 +1099,8 @@ export default function LockedClarityExpanded({
             baseU={f.pathBaseUnits}
             finalU={f.units}
             tapeAction={f.tapeAction}
+            edgeBandAction={f.edgeBandAction}
+            edgeNetAction={f.edgeNetAction}
             tracked={tracked}
           />
         </div>

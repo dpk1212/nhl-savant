@@ -5966,6 +5966,8 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile, tierWind
     tapeAction: pick.tapeAction || pick.v8_tapeAction,
     tapeScore: pick.tapeScore ?? pick.v8_tapeScore,
     netClv: pick.netClv ?? pick.v8_netMeanPrior,
+    edgeBandAction: pick.edgeBandAction || pick.v8_edgeBandAction,
+    edgeNetAction: pick.edgeNetAction || pick.v8_edgeNetSizeAction,
   }, {
     getWalletProfile,
     isSportWinner,
@@ -13287,6 +13289,11 @@ export default function SharpFlow() {
                           v8_tapeScore: Number.isFinite(sd.v8_tapeScore) ? sd.v8_tapeScore : null,
                           v8_netMeanPrior: Number.isFinite(sd.v8_netMeanPrior) ? sd.v8_netMeanPrior : null,
                           netClv: Number.isFinite(sd.v8_netMeanPrior) ? sd.v8_netMeanPrior : null,
+                          // Size-path overlays (EDGE band / EDGE-net) — Size Path UI
+                          edgeBandAction: sd.v8_edgeBandAction || null,
+                          v8_edgeBandAction: sd.v8_edgeBandAction || null,
+                          edgeNetAction: sd.v8_edgeNetSizeAction || null,
+                          v8_edgeNetSizeAction: sd.v8_edgeNetSizeAction || null,
                           // Mute audit — why this side is TRACKED / 0u
                           mutedBy: sd.mutedBy || null,
                           unitsPreTape: Number.isFinite(sd.v8_unitsPreTape) ? sd.v8_unitsPreTape : null,
