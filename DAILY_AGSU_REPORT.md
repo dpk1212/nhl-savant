@@ -1,6 +1,6 @@
 # AGS-Unified — V12 Daily Monitor
 
-**Generated:** Wednesday, July 22, 2026 at 5:10 AM ET
+**Generated:** Wednesday, July 22, 2026 at 10:35 AM ET
 
 **Model:** `ags-unified-v12` · **Live since:** 2026-06-01 (52 days) · **Tape / side-profile era:** 2026-07-15+
 
@@ -14,17 +14,17 @@ Appendix A — Model Versions · Appendix B — Feature Lab
 
 ## § 1 — Executive Summary
 
-> 🟢 **V12 is currently WINNING.** Since going live on **2026-06-01** (52 days ago), V12 has evaluated **1461** picks, shipped **483** for real money (33.1% ship rate), and muted the other **978**. On the shipped picks V12 has gone **266-217** (55.1% win), staked **1338.07u**, and returned **+47.48u** at **+3.5% ROI**.
+> 🟢 **V12 is currently WINNING.** Since going live on **2026-06-01** (52 days ago), V12 has evaluated **1463** picks, shipped **483** for real money (33.0% ship rate), and muted the other **980**. On the shipped picks V12 has gone **266-217** (55.1% win), staked **1338.07u**, and returned **+47.48u** at **+3.5% ROI**.
 
 ### Snapshot
 
 | Metric                              | Value                          |
 |-------------------------------------|--------------------------------|
 | Days V12 has been authoritative     |                             52 |
-| Picks V12 has evaluated             |                           1461 |
+| Picks V12 has evaluated             |                           1463 |
 | Picks SHIPPED (units > 0)           |                            483 |
-| Picks MUTED (score ≤ 0, FADE)       |                            978 |
-| Ship rate                           |                          33.1% |
+| Picks MUTED (score ≤ 0, FADE)       |                            980 |
+| Ship rate                           |                          33.0% |
 | Live W-L                            |                        266-217 |
 | Live Win %                          |                          55.1% |
 | Live PnL (units)                    |                         +47.48 |
@@ -87,7 +87,7 @@ Last **21** calendar days with activity. **Live** = units > 0 · **Muted** = gra
 | 2026-07-19 |        24 |   13 |     7 | 7-6        |  53.8% |     34.10 |      -7.00 |    -20.5% |     +37.59 |
 | 2026-07-20 |        22 |    7 |    12 | 4-3        |  57.1% |     16.35 |      +3.65 |     22.3% |     +41.24 |
 | 2026-07-21 |        21 |    8 |     5 | 5-3        |  62.5% |     20.87 |      +6.24 |     29.9% |     +47.48 |
-| 2026-07-22 |         2 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +47.48 |
+| 2026-07-22 |         4 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +47.48 |
 
 > **Trajectory.** 🟢 Last 3 days (26.6% ROI) **+23.7pp** vs prior (2.9%).
 
@@ -251,7 +251,7 @@ From **2026-07-15**, path units are resized by **TAPE** = `2·(EDGE/10) + 1.5·(
 
 | Window | Sides | With tape stamp | Graded w/ stamp |
 |--------|------:|----------------:|----------------:|
-| ≥ 2026-07-15 | 149 | 144 | 134 |
+| ≥ 2026-07-15 | 151 | 146 | 134 |
 
 ### (A) By tape action (stamped + graded)
 
@@ -291,7 +291,7 @@ _Score coverage: **108/134** graded stamped rows have `v8_tapeScore`._
 
 | Date | Sport | Pick | Path | Tape | Act | Pre-u | Final | Outcome |
 |------|-------|------|------|-----:|-----|------:|------:|---------|
-| 2026-07-22 | WNBA | Minnesota Lynx | HC-1 | 3.43 | BOOST | 5.00u | 6.00u | — |
+| 2026-07-22 | WNBA | Chicago Sky | SHARP | 4.35 | BOOST | 3.75u | 5.06u | — |
 | 2026-07-21 | MLB | Los Angeles Dodgers | HC-1 | 3.04 | BOOST | 1.25u | 2.50u | WIN |
 | 2026-07-21 | MLB | Under 8.5 | SHARP~ | -1.33 | MUTE | 0.75u | 0.00u | LOSS |
 | 2026-07-21 | MLB | Under 9.5 | SHARP | 5.50 | BOOST | 3.75u | 5.06u | WIN |
@@ -859,10 +859,10 @@ Same filter, sorted ROI ascending. Wallets that consistently lose when they're o
 | Graded picks with `tracked=true` AND `finalUnits > 0`         |     1 | 🚨 grader regression — see betTracking.js |
 | Graded picks with `tracked=true` AND `finalUnits == 0`        |   964 | 🟡 informational only — true tracked plays |
 | LOCK+ tier picks with `finalUnits == 0` (sizing regression)   |   164 | 🚨 sizing regression — agsSizeMultiplier returning 0 for strong AGS-U |
-| Live picks (not graded yet) with `finalUnits > 0`             |     4 | 🟢 picks queued for grading |
+| Live picks (not graded yet) with `finalUnits > 0`             |     6 | 🟢 picks queued for grading |
 | AGS-U promoted picks missing `v8_ags` value                   |    44 | 🟡 some picks missing AGS-U — cron lag or stale doc |
 | AGS-U promoted picks missing `agsTier`                        |     7 | 🟡 some picks missing tier classification |
-| Single-wallet shipped picks (`provenWalletCount == 1`)       |   207 | 🟡 informational — AGS-U calibration controls sample adequacy |
+| Single-wallet shipped picks (`provenWalletCount == 1`)       |   208 | 🟡 informational — AGS-U calibration controls sample adequacy |
 
 **Tracked-shipped detail (these are the picks the grader wrongly marked 0u):**
 
