@@ -37,7 +37,7 @@ Thresholds ≈ June 15+ path-stamped p40 / p80.
 1. Paths A → B → C → D (base units + tier)  
 2. TOP/TOP+ NEITHER hard mute  
 3. Winner-align **fadeTop≥60 mute only**  
-4. **EDGE band size on A/C** (mute E&lt;5 · half 5–10 · boost ≥10) · else EDGE/net soft size  
+4. **EDGE band size on A/C** (2026-07-22+: mute E&lt;7 · ×0.75 on 7–10 · boost ≥10; legacy 07-20..21 mute&lt;5 · half 5–10) · else EDGE/net soft size  
 5. **Tape** mute / hold / boost (RANK mute-exempt)  
 6. Odds cap + global 6u inside tape boost  
 

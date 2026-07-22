@@ -526,7 +526,8 @@ const SHARP_LIVE_FROM   = '2026-06-26';  // original Path C cutover
 const SHARP_C_RETUNE_FROM = '2026-07-12'; // optimal-levels cutover (include today; was 07-13)
 const SHARP_C_EDGE_NET_FROM = '2026-07-19'; // EDGE/net two-gate Path C + TOP NEITHER mute
 const EDGE_NET_SIZE_FROM = '2026-07-19'; // board-wide BOTH boost / soft NEITHER shrink + RANK tape-exempt
-const EDGE_BAND_SIZE_FROM = '2026-07-20'; // Path A/C EDGE ladder: mute<5 · half 5–10 · boost≥10
+const EDGE_BAND_SIZE_FROM = '2026-07-20'; // Path A/C EDGE ladder live (v1: mute<5 · half 5–10)
+const EDGE_BAND_MUTE7_FROM = '2026-07-22'; // v2: mute<7 · ×0.75 on 7–10 · boost≥10
 const SHARP_MIN_QN      = 8;             // min settled positions for a $ROI read
 const SHARP_MIN_QROI    = 10;            // positions.dollarRoi threshold (%)
 const SHARP_MIN_PN      = 5;             // min settled picks to count toward wr
@@ -542,9 +543,13 @@ const SHARP_EDGE_THR    = 5;
 const SHARP_NET_THR     = 5;
 const EDGE_NET_BOTH_MULT = 1.25;         // BOTH gate → path × 1.25 (cap 6u)
 const EDGE_NET_NEITHER_SOFT_MULT = 0.5;  // soft shrink (not mute) on MINI/SHARP/CONFIRMED
-const EDGE_BAND_MUTE_BELOW = 5;          // EDGE < 5 → 0u on Path A/C
+/** Legacy EDGE band (2026-07-20 .. 2026-07-21): mute <5 · ×0.5 on 5–10. */
+const EDGE_BAND_MUTE_BELOW_V1 = 5;
+const EDGE_BAND_MID_MULT_V1 = 0.5;
+/** Live EDGE band (2026-07-22+): mute <7 · ×0.75 on 7–10. */
+const EDGE_BAND_MUTE_BELOW_V2 = 7;
+const EDGE_BAND_MID_MULT_V2 = 0.75;
 const EDGE_BAND_BOOST_AT = 10;           // EDGE ≥ 10 → × boost on Path A/C
-const EDGE_BAND_HALF_MULT = 0.5;         // 5 ≤ EDGE < 10 → half
 const EDGE_BAND_BOOST_MULT = 1.25;       // EDGE ≥ 10 → ×1.25 (cap 6u)
 const TOP_BOOST_UNITS   = 5;             // HC-1 TOP + proven-$ → boost 4u → 5u (pre-retune only)
 const MINI_REDUCED_UNITS = 1;            // gate-fail MINI (no proven-$) → 3u → 1u
@@ -571,6 +576,30 @@ function isEdgeNetSizeLive(pickDate) {
 }
 function isEdgeBandSizeLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= EDGE_BAND_SIZE_FROM;
+}
+function isEdgeBandMute7Live(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= EDGE_BAND_MUTE7_FROM;
+}
+/** Thresholds / stamps for the active EDGE band ladder version. */
+function edgeBandLadderParams(pickDate) {
+  if (isEdgeBandMute7Live(pickDate)) {
+    return {
+      muteBelow: EDGE_BAND_MUTE_BELOW_V2,
+      midMult: EDGE_BAND_MID_MULT_V2,
+      muteBand: 'LT7',
+      muteReason: 'edge_lt7',
+      midAction: 'SOFT',
+      midReason: 'edge_7_10',
+    };
+  }
+  return {
+    muteBelow: EDGE_BAND_MUTE_BELOW_V1,
+    midMult: EDGE_BAND_MID_MULT_V1,
+    muteBand: 'LT5',
+    muteReason: 'edge_lt5',
+    midAction: 'HALF',
+    midReason: 'edge_5_10',
+  };
 }
 /**
  * Board-wide EDGE/net size overlay (after paths + fadeTop, before tape).
@@ -623,10 +652,10 @@ function applyEdgeNetSizeOverlay({
   return { units: pre, action: 'HOLD', reason: null, unitsPrePolicy: pre };
 }
 /**
- * Path A/C EDGE band size ladder (2026-07-20+), after paths + fadeTop, before tape.
- *   EDGE < 5 (or missing) → MUTE 0u
- *   5 ≤ EDGE < 10         → ×0.5
- *   EDGE ≥ 10             → ×1.25 (≤6u, oddsCap)
+ * Path A/C EDGE band size ladder (after paths + fadeTop, before tape).
+ *   2026-07-20 .. 2026-07-21: mute E<5 · ×0.5 on 5–10 · boost ≥10 ×1.25
+ *   2026-07-22+:               mute E<7 · ×0.75 on 7–10 · boost ≥10 ×1.25
+ *   missing EDGE → MUTE 0u (both eras)
  * RANK / DISSENT / untiered → EXEMPT (caller skips or passes through).
  * Replaces BOTH/NEITHER soft size on A/C so boosts do not stack.
  */
@@ -637,6 +666,7 @@ function applyEdgeBandSizeOverlay({
   odds = null,
   oddsCapFn = null,
   unitCap = GLOBAL_UNIT_CAP,
+  pickDate = null,
 } = {}) {
   const pre = Number.isFinite(units) ? Math.max(0, units) : 0;
   if (!(pre > 0)) {
@@ -649,6 +679,7 @@ function applyEdgeBandSizeOverlay({
       units: pre, action: 'EXEMPT', band: null, reason: 'tier_exempt', unitsPrePolicy: pre,
     };
   }
+  const ladder = edgeBandLadderParams(pickDate);
   const hasEdge = edge != null && Number.isFinite(Number(edge));
   if (!hasEdge) {
     return {
@@ -656,17 +687,17 @@ function applyEdgeBandSizeOverlay({
     };
   }
   const e = Number(edge);
-  if (e < EDGE_BAND_MUTE_BELOW) {
+  if (e < ladder.muteBelow) {
     return {
-      units: 0, action: 'MUTE', band: 'LT5', reason: 'edge_lt5', unitsPrePolicy: pre,
+      units: 0, action: 'MUTE', band: ladder.muteBand, reason: ladder.muteReason, unitsPrePolicy: pre,
     };
   }
   if (e < EDGE_BAND_BOOST_AT) {
-    let out = Math.round(pre * EDGE_BAND_HALF_MULT * 100) / 100;
+    let out = Math.round(pre * ladder.midMult * 100) / 100;
     if (typeof oddsCapFn === 'function') out = oddsCapFn(out, odds);
     out = Math.max(0, Math.round(out * 100) / 100);
     return {
-      units: out, action: 'HALF', band: 'MID', reason: 'edge_5_10', unitsPrePolicy: pre,
+      units: out, action: ladder.midAction, band: 'MID', reason: ladder.midReason, unitsPrePolicy: pre,
     };
   }
   let out = Math.min(unitCap, pre * EDGE_BAND_BOOST_MULT);
@@ -697,7 +728,7 @@ function edgeNetGateBucket(edge, net, eThr = SHARP_EDGE_THR, nThr = SHARP_NET_TH
 }
 
 /** Skill-feature stamp schema version — bump when fields/thresholds change. */
-const SKILL_FEATURE_VERSION = 6; // v6: ONE (E≥10 xor tape-boost) → 4u · BOTH → 5u
+const SKILL_FEATURE_VERSION = 7; // v7: EDGE band mute<7 · ×0.75 on 7–10 (2026-07-22+)
 
 /**
  * Full EDGE / netCLV / Tape bundle for analysis without rebuild.
@@ -1633,6 +1664,7 @@ async function createMissingLockedPicks({
             odds: odds ?? null,
             oddsCapFn: oddsCap,
             unitCap: GLOBAL_UNIT_CAP,
+            pickDate: TARGET_DATE,
           });
           peakUnitsApplied = edgeBandSizeCreate.units;
         } else if (isEdgeNetSizeLive(TARGET_DATE) && peakUnitsApplied > 0) {
@@ -1659,6 +1691,7 @@ async function createMissingLockedPicks({
           odds: odds ?? null,
           oddsCapFn: oddsCap,
           unitCap: GLOBAL_UNIT_CAP,
+          pickDate: TARGET_DATE,
         });
         peakUnitsApplied = edgeBandSizeCreate.units;
       }
@@ -2617,8 +2650,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   }
 
   // ─── Size overlay (after paths + fadeTop, before tape) ─────────────────
-  // 2026-07-20+: Path A/C EDGE band — mute E<5 · half 5–10 · boost ≥10 ×1.25.
-  //   Replaces BOTH/NEITHER soft size on A/C (no double boost). RANK/DISSENT
+  // 2026-07-20+: Path A/C EDGE band (v1 mute<5·half 5–10; v2 from 07-22 mute<7·×0.75 7–10;
+  //   boost ≥10 ×1.25). Replaces BOTH/NEITHER soft size on A/C. RANK/DISSENT
   //   stay on legacy EDGE/net soft size (RANK exempt).
   // Pre-band: BOTH → ×1.25 · ONE hold · NEITHER ×0.5 on MINI/SHARP/CONFIRMED.
   let edgeNetSizePolicy = null;
@@ -2633,6 +2666,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         odds: sideOdds,
         oddsCapFn: oddsCap,
         unitCap: GLOBAL_UNIT_CAP,
+        pickDate,
       });
       finalUnitsApplied = edgeBandSizePolicy.units;
     } else if (isEdgeNetSizeLive(pickDate)) {
@@ -2978,7 +3012,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (edgeBandSizePolicy
       && (edgeBandSizePolicy.action === 'MUTE'
         || edgeBandSizePolicy.action === 'BOOST'
-        || edgeBandSizePolicy.action === 'HALF')) {
+        || edgeBandSizePolicy.action === 'HALF'
+        || edgeBandSizePolicy.action === 'SOFT')) {
     changes.push(
       `EDGE-BAND: ${edgeBandSizePolicy.band || '—'} ${edgeBandSizePolicy.action} `
       + `E=${winnerAlign?.edge == null ? '—' : Number(winnerAlign.edge).toFixed(1)} `

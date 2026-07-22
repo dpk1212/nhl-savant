@@ -30,7 +30,7 @@ Tape   = 2·(EDGE/10) + 1.5·(netCLV/10)
 |----------|------|
 | Path C door | BOTH → SHARP 3u · ONE → SHARP-LEAN 1.5u · NEITHER → no rescue |
 | TOP hard mute | TOP/TOP+ + NEITHER → 0u |
-| **EDGE band (A/C)** | E&lt;5 → **0u** · 5–10 → ×**0.5** · ≥10 → ×**1.25** · RANK/DISSENT exempt |
+| **EDGE band (A/C)** | 2026-07-22+: E&lt;7 → **0u** · 7–10 → ×**0.75** · ≥10 → ×**1.25** · RANK/DISSENT exempt |
 | Soft size overlay | ONLY when EDGE band did not apply (non–A/C) · BOTH ×1.25 · NEITHER ×0.5 · RANK exempt |
 | Tape | `&lt;0` mute (RANK exempt) · `≥2.89` ×1.35 · else hold |
 
@@ -60,8 +60,8 @@ Written on every **LOCKED / LEAN** side each pre–T-15 cycle, and on any other 
 | `v8_edgeGateThr` / `v8_netGateThr` | thresholds (5 / 5) |
 | `v8_edgeNetSizeAction` | `BOOST` \| `HALF` \| `HOLD` \| `PASS` (soft size, non–A/C) |
 | `v8_unitsPreEdgeNetSize` | units before soft size overlay |
-| `v8_edgeBandAction` | `MUTE` \| `HALF` \| `BOOST` \| `HOLD` \| `EXEMPT` \| `PASS` |
-| `v8_edgeBand` | `LT5` \| `MID` \| `GE10` \| `MISSING` |
+| `v8_edgeBandAction` | `MUTE` \| `SOFT` \| `HALF` \| `BOOST` \| `HOLD` \| `EXEMPT` \| `PASS` |
+| `v8_edgeBand` | `LT7` \| `LT5` \| `MID` \| `GE10` \| `MISSING` |
 | `v8_unitsPreEdgeBand` | units before EDGE band overlay |
 | `v8_bothE10TapeAction` | `FLOOR` \| `HOLD` \| `PASS` — skill top size floor |
 | `v8_bothE10TapeMode` | `BOTH` (→5u) \| `ONE` (→4u) |
