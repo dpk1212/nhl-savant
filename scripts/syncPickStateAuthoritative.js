@@ -528,7 +528,7 @@ const SHARP_C_EDGE_NET_FROM = '2026-07-19'; // EDGE/net two-gate Path C + TOP NE
 const EDGE_NET_SIZE_FROM = '2026-07-19'; // board-wide BOTH boost / soft NEITHER shrink + RANK tape-exempt
 const EDGE_BAND_SIZE_FROM = '2026-07-20'; // Path A/C EDGE ladder live (v1: mute<5 · half 5–10)
 const EDGE_BAND_MUTE7_FROM = '2026-07-22'; // v2: mute<7 · ×0.75 on 7–10 · boost≥10
-const EDGE_RANK_BAND_FROM = '2026-07-22'; // RANK joins the same EDGE band ladder (forward-only)
+const EDGE_RANK_BAND_FROM = '2026-07-22'; // RANK-only EDGE overlay (forward-only)
 const SHARP_MIN_QN      = 8;             // min settled positions for a $ROI read
 const SHARP_MIN_QROI    = 10;            // positions.dollarRoi threshold (%)
 const SHARP_MIN_PN      = 5;             // min settled picks to count toward wr
@@ -550,19 +550,22 @@ const EDGE_BAND_MID_MULT_V1 = 0.5;
 /** Live EDGE band (2026-07-22+): mute <7 · ×0.75 on 7–10. */
 const EDGE_BAND_MUTE_BELOW_V2 = 7;
 const EDGE_BAND_MID_MULT_V2 = 0.75;
-const EDGE_BAND_BOOST_AT = 10;           // EDGE ≥ 10 → × boost
+const EDGE_BAND_BOOST_AT = 10;           // EDGE ≥ 10 → × boost (A/C + RANK)
 const EDGE_BAND_BOOST_MULT = 1.25;       // EDGE ≥ 10 → ×1.25 (cap 6u)
+/** RANK-only EDGE bands (2026-07-22+): mute <0 · ×0.75 on 0–7 · HOLD (7,10) · boost ≥10. */
+const EDGE_RANK_MUTE_BELOW = 0;
+const EDGE_RANK_SOFT_AT = 7;             // inclusive soft upper bound
+const EDGE_RANK_SOFT_MULT = 0.75;        // same mid mult as A/C v2
 const TOP_BOOST_UNITS   = 5;             // HC-1 TOP + proven-$ → boost 4u → 5u (pre-retune only)
 const MINI_REDUCED_UNITS = 1;            // gate-fail MINI (no proven-$) → 3u → 1u
 /** NEITHER soft-shrink tiers (TOP/TOP+ stay hard-muted earlier; RANK exempt). */
 const EDGE_NET_SOFT_NEITHER_TIERS = new Set([
   'MINI', 'MINI-', 'SHARP', 'SHARP-PRIME', 'SHARP-LEAN', 'CONFIRMED',
 ]);
-/** Path A/C + RANK — shared EDGE band ladder. DISSENT stays exempt. */
+/** Path A + Path C tiers — A/C EDGE band ladder. RANK uses RANK-only bands below. */
 const EDGE_BAND_SIZE_TIERS = new Set([
   'SUPER', 'TOP', 'TOP+', 'MINI', 'MINI-', 'CONFIRMED',
   'SHARP', 'SHARP-PRIME', 'SHARP-LEAN',
-  'RANK',
 ]);
 function isSharpRescueLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= SHARP_LIVE_FROM;
@@ -587,10 +590,9 @@ function isEdgeRankBandLive(pickDate) {
 }
 /** True when this tier should run applyEdgeBandSizeOverlay on pickDate. */
 function isEdgeBandApplicable(tier, pickDate) {
-  if (!EDGE_BAND_SIZE_TIERS.has(tier)) return false;
-  // RANK was exempt until EDGE_RANK_BAND_FROM; A/C use EDGE_BAND_SIZE_FROM.
+  if (EDGE_BAND_SIZE_TIERS.has(tier)) return isEdgeBandSizeLive(pickDate);
   if (tier === 'RANK') return isEdgeRankBandLive(pickDate);
-  return isEdgeBandSizeLive(pickDate);
+  return false;
 }
 /** Thresholds / stamps for the active EDGE band ladder version. */
 function edgeBandLadderParams(pickDate) {
@@ -664,13 +666,16 @@ function applyEdgeNetSizeOverlay({
   return { units: pre, action: 'HOLD', reason: null, unitsPrePolicy: pre };
 }
 /**
- * Shared EDGE band size ladder (after paths + fadeTop, before tape).
+ * EDGE band size ladder (after paths + fadeTop, before tape).
+ * Path A/C (unchanged):
  *   2026-07-20 .. 2026-07-21: mute E<5 · ×0.5 on 5–10 · boost ≥10 ×1.25
  *   2026-07-22+:               mute E<7 · ×0.75 on 7–10 · boost ≥10 ×1.25
- *   missing EDGE → MUTE 0u (both eras)
- * Applies to Path A/C tiers + RANK (RANK joins from EDGE_RANK_BAND_FROM).
- * DISSENT / untiered → EXEMPT (caller skips or passes through).
- * Replaces BOTH/NEITHER soft size so boosts do not stack.
+ *   missing EDGE → MUTE 0u
+ * Path B RANK only (2026-07-22+):
+ *   mute E<0 · ×0.75 on 0–7 · HOLD (7,10) · boost ≥10 ×1.25 (same boost mult)
+ *   missing EDGE → HOLD (fail-open)
+ * DISSENT / untiered / pre-gate RANK → EXEMPT.
+ * Reuses the same overlay stamps / boost mult as A/C; RANK bands are path-local.
  */
 function applyEdgeBandSizeOverlay({
   units,
@@ -687,13 +692,51 @@ function applyEdgeBandSizeOverlay({
       units: 0, action: 'PASS', band: null, reason: null, unitsPrePolicy: pre,
     };
   }
-  if (!EDGE_BAND_SIZE_TIERS.has(tier)) {
+  // ── RANK 2-for-0 only — does not change Path A/C thresholds ───────────
+  if (tier === 'RANK') {
+    if (!isEdgeRankBandLive(pickDate)) {
+      return {
+        units: pre, action: 'EXEMPT', band: null, reason: 'tier_exempt', unitsPrePolicy: pre,
+      };
+    }
+    const hasEdge = edge != null && Number.isFinite(Number(edge));
+    if (!hasEdge) {
+      return {
+        units: pre, action: 'HOLD', band: 'MISSING', reason: 'edge_missing_hold', unitsPrePolicy: pre,
+      };
+    }
+    const e = Number(edge);
+    if (e < EDGE_RANK_MUTE_BELOW) {
+      return {
+        units: 0, action: 'MUTE', band: 'LT0', reason: 'edge_lt0', unitsPrePolicy: pre,
+      };
+    }
+    if (e <= EDGE_RANK_SOFT_AT) {
+      let out = Math.round(pre * EDGE_RANK_SOFT_MULT * 100) / 100;
+      if (typeof oddsCapFn === 'function') out = oddsCapFn(out, odds);
+      out = Math.max(0, Math.round(out * 100) / 100);
+      return {
+        units: out, action: 'SOFT', band: 'MID', reason: 'edge_0_7', unitsPrePolicy: pre,
+      };
+    }
+    if (e < EDGE_BAND_BOOST_AT) {
+      return {
+        units: pre, action: 'HOLD', band: 'MID7_10', reason: null, unitsPrePolicy: pre,
+      };
+    }
+    let outRank = Math.min(unitCap, pre * EDGE_BAND_BOOST_MULT);
+    if (typeof oddsCapFn === 'function') outRank = oddsCapFn(outRank, odds);
+    outRank = Math.min(unitCap, Math.round(outRank * 100) / 100);
+    if (Math.abs(outRank - pre) < 0.01) {
+      return {
+        units: pre, action: 'HOLD', band: 'GE10', reason: null, unitsPrePolicy: pre,
+      };
+    }
     return {
-      units: pre, action: 'EXEMPT', band: null, reason: 'tier_exempt', unitsPrePolicy: pre,
+      units: outRank, action: 'BOOST', band: 'GE10', reason: 'edge_ge10', unitsPrePolicy: pre,
     };
   }
-  // RANK membership is date-gated at the caller; defend here too.
-  if (tier === 'RANK' && !isEdgeRankBandLive(pickDate)) {
+  if (!EDGE_BAND_SIZE_TIERS.has(tier)) {
     return {
       units: pre, action: 'EXEMPT', band: null, reason: 'tier_exempt', unitsPrePolicy: pre,
     };
@@ -747,7 +790,7 @@ function edgeNetGateBucket(edge, net, eThr = SHARP_EDGE_THR, nThr = SHARP_NET_TH
 }
 
 /** Skill-feature stamp schema version — bump when fields/thresholds change. */
-const SKILL_FEATURE_VERSION = 8; // v8: RANK joins shared EDGE band ladder (2026-07-22+)
+const SKILL_FEATURE_VERSION = 8; // v8: RANK-only EDGE overlay mute<0 · ×0.75 on 0–7 · boost≥10
 
 /**
  * Full EDGE / netCLV / Tape bundle for analysis without rebuild.
@@ -1672,8 +1715,8 @@ async function createMissingLockedPicks({
             hcStakeTierCreate = 'SHARP-LEAN';
           }
         }
-        // Size overlay before tape: shared EDGE band ladder on A/C (2026-07-20+)
-        // and RANK (2026-07-22+), else legacy BOTH/NEITHER soft size. DISSENT exempt.
+        // Size overlay before tape: A/C EDGE band (2026-07-20+) + RANK-only
+        // bands (2026-07-22+). Else legacy BOTH/NEITHER soft size. DISSENT exempt.
         if (isEdgeBandApplicable(hcStakeTierCreate, TARGET_DATE) && peakUnitsApplied > 0) {
           edgeBandSizeCreate = applyEdgeBandSizeOverlay({
             units: peakUnitsApplied,
@@ -1699,7 +1742,7 @@ async function createMissingLockedPicks({
           peakUnitsApplied = edgeNetSizeCreate.units;
         }
       }
-      // EDGE band on A/C + RANK even when Path C edge-net create block did not run.
+      // EDGE band on A/C + RANK-only overlay even when Path C edge-net create skipped.
       if (createV121Eligible && isEdgeBandApplicable(hcStakeTierCreate, TARGET_DATE)
           && peakUnitsApplied > 0 && !edgeBandSizeCreate) {
         edgeBandSizeCreate = applyEdgeBandSizeOverlay({
@@ -2668,11 +2711,11 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   }
 
   // ─── Size overlay (after paths + fadeTop, before tape) ─────────────────
-  // Shared EDGE band ladder (same rules for Path A/C + RANK):
-  //   v1 2026-07-20..21: mute<5 · ×0.5 on 5–10 · boost ≥10 ×1.25
-  //   v2 2026-07-22+:     mute<7 · ×0.75 on 7–10 · boost ≥10 ×1.25
-  // RANK joins from EDGE_RANK_BAND_FROM (2026-07-22). DISSENT stays exempt.
-  // Pre-band / non-band tiers: BOTH → ×1.25 · ONE hold · NEITHER ×0.5 on MINI/SHARP/CONFIRMED.
+  // Path A/C EDGE band (unchanged): v1 mute<5·half 5–10; v2 mute<7·×0.75 7–10;
+  //   boost ≥10 ×1.25.
+  // Path B RANK only (2026-07-22+): mute E<0 · ×0.75 on 0–7 · HOLD (7,10) ·
+  //   boost ≥10 ×1.25 (same boost mult/stamps). DISSENT exempt.
+  // Pre-band: BOTH → ×1.25 · ONE hold · NEITHER ×0.5 on MINI/SHARP/CONFIRMED.
   let edgeNetSizePolicy = null;
   let edgeBandSizePolicy = null;
   const skipManualSize = Number.isFinite(sd.manualStake) && sd.manualStake > 0;
