@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-07-22T14:27:44.984Z",
-  "elapsedSec": 12.8,
+  "scannedAt": "2026-07-22T14:31:50.287Z",
+  "elapsedSec": 14.1,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 33,
   "summary": {
     "total": 203,
     "coveredByMain": 8,
-    "recovered": 11,
-    "recoveredPositions": 76,
-    "noPositions": 184,
+    "recovered": 13,
+    "recoveredPositions": 80,
+    "noPositions": 182,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -17,7 +17,7 @@
       "spread": 2,
       "total": 0,
       "dropped_shadow_gate": 16,
-      "dropped_excluded": 54,
+      "dropped_excluded": 58,
       "dropped_duplicate": 0
     }
   },
@@ -436,10 +436,10 @@
       "sports": "MLB",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xf7f0b0b1e9c0fe02ccad926916ee31aef74b912c",
-      "positionsCount": 25,
+      "positionsCount": 26,
       "statsSource": "sports_sharps",
       "avgSportBet": 566,
-      "willPassShadowGate": 18,
+      "willPassShadowGate": 19,
       "willDropAtShadowGate": 7,
       "positions": [
         {
@@ -449,6 +449,15 @@
           "side": "over",
           "invested": 714,
           "entryLine": 7.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "pit_nyy",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 379,
+          "entryLine": null,
           "passesShadow": true
         },
         {
@@ -772,10 +781,10 @@
       "sports": "MLB,SOC,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xdb83e85ffd22faa4009273034770f96ffc5b1e50",
-      "positionsCount": 2,
+      "positionsCount": 3,
       "statsSource": "sports_sharps",
       "avgSportBet": 487,
-      "willPassShadowGate": 2,
+      "willPassShadowGate": 3,
       "willDropAtShadowGate": 0,
       "positions": [
         {
@@ -785,6 +794,15 @@
           "side": "over",
           "invested": 2682,
           "entryLine": 7.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "pit_nyy",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 1393,
+          "entryLine": null,
           "passesShadow": true
         },
         {
@@ -1172,8 +1190,24 @@
       "tier": "FLAT",
       "name": "pleaseplease123",
       "sports": "MLB",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x5e9458202b5817a72cf81105ec8a30e6f3705ba1"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x5e9458202b5817a72cf81105ec8a30e6f3705ba1",
+      "positionsCount": 1,
+      "statsSource": "sports_sharps",
+      "avgSportBet": 54957,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "pit_nyy",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 36358,
+          "entryLine": null,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "710c2e",
@@ -1513,8 +1547,24 @@
       "tier": "FLAT",
       "name": "AnonymousUsername",
       "sports": "MLB",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x9703676286b93c2eca71ca96e8757104519a69c2"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x9703676286b93c2eca71ca96e8757104519a69c2",
+      "positionsCount": 1,
+      "statsSource": "sports_sharps",
+      "avgSportBet": 10808,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "pit_nyy",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 8141,
+          "entryLine": null,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "9bc9a1",
@@ -2211,7 +2261,7 @@
           "gameKey": "oak_ari",
           "marketType": "spread",
           "side": "home",
-          "invested": 7397,
+          "invested": 7398,
           "entryLine": -1.5,
           "passesShadow": true
         },
