@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-07-22T14:58:49.455Z",
-  "elapsedSec": 16.9,
+  "scannedAt": "2026-07-22T15:03:01.673Z",
+  "elapsedSec": 17.7,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 33,
   "summary": {
     "total": 203,
     "coveredByMain": 8,
-    "recovered": 15,
-    "recoveredPositions": 83,
-    "noPositions": 180,
+    "recovered": 16,
+    "recoveredPositions": 86,
+    "noPositions": 179,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,8 +16,8 @@
       "ml": 5,
       "spread": 2,
       "total": 0,
-      "dropped_shadow_gate": 18,
-      "dropped_excluded": 58,
+      "dropped_shadow_gate": 19,
+      "dropped_excluded": 60,
       "dropped_duplicate": 0
     }
   },
@@ -330,8 +330,24 @@
       "tier": "FLAT",
       "name": "meoooow",
       "sports": "SOC",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xd202bf6d89dc6bab1b9f00ead175f75466348973"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0xd202bf6d89dc6bab1b9f00ead175f75466348973",
+      "positionsCount": 1,
+      "statsSource": "sports_sharps",
+      "avgSportBet": 13717,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "WNBA",
+          "gameKey": "min_sea",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 2546,
+          "entryLine": 9.5,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "388d4c",
@@ -452,11 +468,11 @@
       "sports": "MLB",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xf7f0b0b1e9c0fe02ccad926916ee31aef74b912c",
-      "positionsCount": 27,
+      "positionsCount": 29,
       "statsSource": "sports_sharps",
       "avgSportBet": 566,
-      "willPassShadowGate": 19,
-      "willDropAtShadowGate": 8,
+      "willPassShadowGate": 20,
+      "willDropAtShadowGate": 9,
       "positions": [
         {
           "sport": "MLB",
@@ -622,6 +638,15 @@
         },
         {
           "sport": "WNBA",
+          "gameKey": "chi_nyl",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 87,
+          "entryLine": -11.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "WNBA",
           "gameKey": "min_sea",
           "marketType": "total",
           "side": "over",
@@ -663,6 +688,15 @@
           "side": "away",
           "invested": 51,
           "entryLine": 1.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "WNBA",
+          "gameKey": "lva_was",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 36,
+          "entryLine": -5.5,
           "passesShadow": false
         },
         {
@@ -1021,6 +1055,15 @@
         },
         {
           "sport": "WNBA",
+          "gameKey": "lva_was",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 1739,
+          "entryLine": -5.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "WNBA",
           "gameKey": "pho_las",
           "marketType": "ml",
           "side": "away",
@@ -1143,15 +1186,6 @@
           "side": "under",
           "invested": 651,
           "entryLine": 8.5,
-          "passesShadow": true
-        },
-        {
-          "sport": "WNBA",
-          "gameKey": "lva_was",
-          "marketType": "spread",
-          "side": "away",
-          "invested": 657,
-          "entryLine": -5.5,
           "passesShadow": true
         },
         {
@@ -2277,7 +2311,7 @@
           "gameKey": "sfg_kcr",
           "marketType": "ml",
           "side": "away",
-          "invested": 19147,
+          "invested": 19152,
           "entryLine": null,
           "passesShadow": true
         },
@@ -2331,7 +2365,7 @@
           "gameKey": "bal_bos",
           "marketType": "ml",
           "side": "away",
-          "invested": 343,
+          "invested": 347,
           "entryLine": null,
           "passesShadow": false
         },
