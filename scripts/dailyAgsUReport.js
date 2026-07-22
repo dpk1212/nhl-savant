@@ -1856,7 +1856,7 @@ function buildV12RankRescue(report, stats, walletProfiles) {
     return;
   }
   const { v12Rows, daysLive } = stats;
-  report.push(`> **What this is.** \`v12ab\` = the v12a book (HC-margin sizing) **plus** the RANK-RESCUE staking path that went live **2026-06-21**. The rule: a v12-shipped pick (score > 0) that the HC sizer mutes to 0u is staked at **${RANK_RESCUE_UNITS}u** when its FOR side is **2-for-0** — ≥2 eligible whitelist wallets backing (CONFIRMED/FLAT/WR50 with ≥8 settled in-sport picks) and 0 against. It **only rescues muted picks**; it never up-sizes a pick the HC ladder already staked.`);
+  report.push(`> **What this is.** \`v12ab\` = the v12a book (HC-margin sizing) **plus** the RANK-RESCUE staking path that went live **2026-06-21**. The rule: a v12-shipped pick (score > 0) that the HC sizer mutes to 0u is staked at **${RANK_RESCUE_UNITS}u** when its FOR side is **2-for-0** — ≥2 eligible whitelist wallets backing (CONFIRMED/FLAT/WR50 with ≥8 settled in-sport picks) and 0 against. It **only rescues muted picks**; it never up-sizes a pick the HC ladder already staked. From **2026-07-22**, RANK also takes an EDGE band overlay: mute EDGE&lt;0 · ×0.75 on 0–7 · HOLD (7,10) · boost ≥10 ×1.25 (same 10+ boost as Path A/C).`);
   report.push('');
 
   // ── (B) Reconstruction over the v12 era ──────────────────────────────────
