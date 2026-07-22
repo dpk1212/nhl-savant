@@ -246,6 +246,8 @@ export function mapLockedPickToCardFixture(pick, {
   const tapeScore = Number.isFinite(pick.tapeScore) ? pick.tapeScore
     : Number.isFinite(pick.v8_tapeScore) ? pick.v8_tapeScore
     : null;
+  const edgeBandAction = pick.edgeBandAction || pick.v8_edgeBandAction || null;
+  const edgeNetAction = pick.edgeNetAction || pick.v8_edgeNetSizeAction || null;
 
   const edge = Number.isFinite(pick.winnerAlignEdge) ? pick.winnerAlignEdge : null;
   const netClv = Number.isFinite(pick.netClv) ? pick.netClv
@@ -389,6 +391,8 @@ export function mapLockedPickToCardFixture(pick, {
     fairProb: Math.round((ip(pick.pinnacleOdds ?? peakOdds) || 0.5) * 100),
     tapeAction,
     tapeScore,
+    edgeBandAction,
+    edgeNetAction,
     pathBaseUnits: base || units,
     hcMargin: Number.isFinite(pick.hcMargin) ? pick.hcMargin : 0,
     edge,
