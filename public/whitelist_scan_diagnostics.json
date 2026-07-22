@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-07-22T05:39:41.713Z",
-  "elapsedSec": 13.9,
+  "scannedAt": "2026-07-22T05:43:45.428Z",
+  "elapsedSec": 12,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 33,
   "summary": {
     "total": 203,
     "coveredByMain": 3,
-    "recovered": 6,
-    "recoveredPositions": 24,
-    "noPositions": 194,
+    "recovered": 8,
+    "recoveredPositions": 28,
+    "noPositions": 192,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,8 +16,8 @@
       "ml": 2,
       "spread": 0,
       "total": 0,
-      "dropped_shadow_gate": 8,
-      "dropped_excluded": 14,
+      "dropped_shadow_gate": 11,
+      "dropped_excluded": 15,
       "dropped_duplicate": 0
     }
   },
@@ -1786,8 +1786,42 @@
       "tier": "CONFIRMED",
       "name": "0x3DFb153c197D4C19D3B31c1ecD2c7B6860eeabAf-1722957908185",
       "sports": "SOC,NBA,MLB",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x3dfb153c197d4c19d3b31c1ecd2c7b6860eeabaf"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x3dfb153c197d4c19d3b31c1ecd2c7b6860eeabaf",
+      "positionsCount": 3,
+      "statsSource": "sports_sharps",
+      "avgSportBet": 33276,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 2,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "pit_nyy",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 20129,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "sfg_kcr",
+          "marketType": "total",
+          "side": "under",
+          "invested": 2290,
+          "entryLine": 9.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "pit_nyy",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 4,
+          "entryLine": -1.5,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "eff402",
@@ -1850,8 +1884,24 @@
       "tier": "CONFIRMED",
       "name": null,
       "sports": "MLB,NBA",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xd81e5bc01e4a98d0af93d82dc2c542a4c0f9e3d0"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0xd81e5bc01e4a98d0af93d82dc2c542a4c0f9e3d0",
+      "positionsCount": 1,
+      "statsSource": "sharpWalletProfiles_derived",
+      "avgSportBet": 108255,
+      "willPassShadowGate": 0,
+      "willDropAtShadowGate": 1,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "pit_nyy",
+          "marketType": "total",
+          "side": "over",
+          "invested": 1200,
+          "entryLine": 9.5,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "fc4582",
