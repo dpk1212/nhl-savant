@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-07-23T01:50:45.079Z",
-  "elapsedSec": 14.8,
+  "scannedAt": "2026-07-23T01:54:35.191Z",
+  "elapsedSec": 14.5,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 25,
   "summary": {
     "total": 203,
-    "coveredByMain": 14,
-    "recovered": 7,
-    "recoveredPositions": 14,
+    "coveredByMain": 13,
+    "recovered": 8,
+    "recoveredPositions": 15,
     "noPositions": 182,
     "apiError": 0,
     "addressNotFound": 0,
@@ -16,7 +16,7 @@
       "ml": 1,
       "spread": 0,
       "total": 0,
-      "dropped_shadow_gate": 3,
+      "dropped_shadow_gate": 4,
       "dropped_excluded": 10,
       "dropped_duplicate": 0
     }
@@ -721,7 +721,7 @@
           "gameKey": "dal_por",
           "marketType": "spread",
           "side": "home",
-          "invested": 971,
+          "invested": 1143,
           "entryLine": 6.5,
           "passesShadow": true
         },
@@ -1107,8 +1107,24 @@
       "tier": "CONFIRMED",
       "name": "suntori",
       "sports": "MLB,NBA,NHL",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xe9076a87c5ed90ef16e6fe6529c943baeca0cff6"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0xe9076a87c5ed90ef16e6fe6529c943baeca0cff6",
+      "positionsCount": 1,
+      "statsSource": "sharpWalletProfiles_derived",
+      "avgSportBet": 15747,
+      "willPassShadowGate": 0,
+      "willDropAtShadowGate": 1,
+      "positions": [
+        {
+          "sport": "WNBA",
+          "gameKey": "dal_por",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 187,
+          "entryLine": -6.5,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "a0d6d2",
@@ -1656,7 +1672,8 @@
       "tier": "WR50",
       "name": "Sharkbets.pro",
       "sports": "",
-      "status": "COVERED_BY_MAIN"
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0x8c818a866e6a4e5821a4faac8418903e33e3dcd3"
     },
     {
       "walletShort": "e70853",
