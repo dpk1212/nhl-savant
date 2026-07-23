@@ -134,14 +134,16 @@ const WHITELIST_CONSENSUS_VERSION = 9;
 const BASE_UNITS_ML            = 2.50;
 const BASE_UNITS_SPREAD_TOTAL  = 1.50;
 
-// Odds caps — never bet too much on a long underdog (size relative to
+// Odds caps — never bet too much on a *long* underdog (size relative to
 // expected drawdown matters more than EV alone). Applied after AGS sizing.
+// +120 or shorter (favorites through small dogs) → uncapped by odds
+// (still ≤ GLOBAL_UNIT_CAP). Longer dogs keep the stepped clamp.
 function oddsCap(units, odds) {
   if (!Number.isFinite(odds)) return units;
   if (odds >= 200) return Math.min(units, 1.0);
   if (odds >= 151) return Math.min(units, 1.5);
-  if (odds >= 100) return Math.min(units, 2.5);
-  return units;
+  if (odds > 120) return Math.min(units, 2.5); // +121 .. +150
+  return units; // ≤ +120 — full path size
 }
 
 // T-15 freeze window (matches browser).

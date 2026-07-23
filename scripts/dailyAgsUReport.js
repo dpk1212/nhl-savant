@@ -120,10 +120,10 @@ const TIER_ORDER = ['ELITE', 'PREMIUM', 'LOCK', 'LEAN', 'WEAK', 'FADE'];
 
 // v12 ABSOLUTE units ladder (not a multiplier — see syncPickStateAuthoritative
 // `unitsFromAgsV12` and ags.js `agsV12SizeMultiplier`). After ladder lookup
-// the value is run through `oddsCap` (which clamps long underdogs down to
-// 2.5 / 1.5 / 1.0 at +100 / +151 / +200 thresholds), so the realised stake
-// can legitimately fall below the ladder target on +odds — that is NOT a
-// drift bug, it's the cap doing its job.
+// the value is run through `oddsCap` (which clamps *long* underdogs down to
+// 2.5 / 1.5 / 1.0 at +121 / +151 / +200; +120 or shorter is uncapped by odds),
+// so the realised stake can legitimately fall below the ladder target on
+// long +odds — that is NOT a drift bug, it's the cap doing its job.
 const V12_TIER_UNITS = { ELITE: 5.00, PREMIUM: 3.00, LOCK: 1.00, LEAN: 0.50, WEAK: 0.25, FADE: 0.00 };
 // Maximum stake by american-odds band, mirroring oddsCap in
 // syncPickStateAuthoritative.js. Used by § 13 to distinguish legitimate
@@ -132,8 +132,8 @@ function oddsCapForReport(units, odds) {
   if (!Number.isFinite(odds)) return units;
   if (odds >= 200) return Math.min(units, 1.0);
   if (odds >= 151) return Math.min(units, 1.5);
-  if (odds >= 100) return Math.min(units, 2.5);
-  return units;
+  if (odds > 120) return Math.min(units, 2.5); // +121 .. +150
+  return units; // ≤ +120 — full path size
 }
 const TIER_QUINTILE_LABEL = {
   ELITE:   '≥ q90',
@@ -1385,7 +1385,7 @@ function buildCalibrationSnapshot(report, liveCal) {
       report.push(`| ${k.padEnd(8)} | ${valStr.padStart(13)} | ${tier} |`);
     }
     report.push('');
-    report.push(`> **Odds cap** (still live): ≤2.5u at +100 · ≤1.5u at +151 · ≤1.0u at +200.`);
+    report.push(`> **Odds cap** (still live): uncapped at ≤+120 · ≤2.5u at +121 · ≤1.5u at +151 · ≤1.0u at +200.`);
     report.push('');
   } else if (liveCal.quintiles) {
     // Pre-V12 fallback: show the v11 logit quintiles & multiplier ladder.
@@ -2940,7 +2940,7 @@ function buildV12Primer(report) {
   report.push('');
   report.push(`**Stamps we keep for analysis (every shipped side):** depth (\`#F/#A\`, proven, V12 counts) + quality (ForWR, ForCLV, EDGE, Tape). Unopposed sides still get FOR numbers (EDGE uses AG prior ${EDGE_PRIOR_AG_WR}). Compare WIN vs LOSS in § 5.`);
   report.push('');
-  report.push(`Odds cap still clamps long dogs (+100 / +151 / +200 → max 2.5 / 1.5 / 1.0u). Legacy ELITE→WEAK score-ladder units are **not** the live sizer — ignore them if you see them in old notes.`);
+  report.push(`Odds cap clamps long dogs only (+121 / +151 / +200 → max 2.5 / 1.5 / 1.0u). **+120 or shorter is uncapped by odds** (still ≤6u global). Legacy ELITE→WEAK score-ladder units are **not** the live sizer — ignore them if you see them in old notes.`);
   report.push('');
 }
 

@@ -268,8 +268,8 @@ Details: [`TAPE_SIZING.md`](./TAPE_SIZING.md).
 |---------------|----------:|
 | ≥ +200 | 1.0 |
 | ≥ +151 | 1.5 |
-| ≥ +100 | 2.5 |
-| else | uncapped by odds (still ≤ **6u** global) |
+| +121 … +150 | 2.5 |
+| **≤ +120** (incl. all favorites) | uncapped by odds (still ≤ **6u** global) |
 
 ---
 

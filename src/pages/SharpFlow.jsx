@@ -1247,8 +1247,8 @@ function agsuOddsCap(units, odds) {
   if (!Number.isFinite(odds)) return units;
   if (odds >= 200) return Math.min(units, 1.0);
   if (odds >= 151) return Math.min(units, 1.5);
-  if (odds >= 100) return Math.min(units, 2.5);
-  return units;
+  if (odds > 120) return Math.min(units, 2.5); // +121 .. +150
+  return units; // ≤ +120 — full path size (mirror sync oddsCap)
 }
 function agsuStarsFromAgs(ags, calibration) {
   if (ags == null || !Number.isFinite(ags)) return 1.0;

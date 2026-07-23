@@ -55,7 +55,7 @@ V12 still **scores** a side as a wallet-quality differential (`forMean` vs `agMe
 
 **Stamps we keep for analysis (every shipped side):** depth (`#F/#A`, proven, V12 counts) + quality (ForWR, ForCLV, EDGE, Tape). Unopposed sides still get FOR numbers (EDGE uses AG prior 50). Compare WIN vs LOSS in § 5.
 
-Odds cap still clamps long dogs (+100 / +151 / +200 → max 2.5 / 1.5 / 1.0u). Legacy ELITE→WEAK score-ladder units are **not** the live sizer — ignore them if you see them in old notes.
+Odds cap clamps long dogs only (+121 / +151 / +200 → max 2.5 / 1.5 / 1.0u). **+120 or shorter is uncapped by odds** (still ≤6u global). Legacy ELITE→WEAK score-ladder units are **not** the live sizer — ignore them if you see them in old notes.
 
 ## § 3 — Daily Scoreboard
 
@@ -937,7 +937,7 @@ Score ≤ 0 still mutes (FADE). Positive bands below are **labels only** — liv
 | —        |        +0.000 | WEAK (score > 0) |
 | mute     |             — | FADE (score ≤ 0 → 0u) |
 
-> **Odds cap** (still live): ≤2.5u at +100 · ≤1.5u at +151 · ≤1.0u at +200.
+> **Odds cap** (still live): uncapped at ≤+120 · ≤2.5u at +121 · ≤1.5u at +151 · ≤1.0u at +200.
 
 ### Wallet pool
 
