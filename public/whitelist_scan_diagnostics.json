@@ -1,23 +1,23 @@
 {
-  "scannedAt": "2026-07-23T19:16:35.134Z",
-  "elapsedSec": 15.9,
+  "scannedAt": "2026-07-23T19:20:38.412Z",
+  "elapsedSec": 12.8,
   "phase": "PHASE_2_MERGE_ENABLED",
-  "todayGamesCount": 36,
+  "todayGamesCount": 37,
   "summary": {
     "total": 204,
     "coveredByMain": 11,
     "recovered": 13,
-    "recoveredPositions": 18,
+    "recoveredPositions": 19,
     "noPositions": 180,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 1,
+      "ml": 2,
       "spread": 0,
       "total": 3,
-      "dropped_shadow_gate": 8,
-      "dropped_excluded": 6,
+      "dropped_shadow_gate": 7,
+      "dropped_excluded": 7,
       "dropped_duplicate": 0
     }
   },
@@ -564,10 +564,10 @@
       "sports": "MLB,SOC,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xdb83e85ffd22faa4009273034770f96ffc5b1e50",
-      "positionsCount": 1,
+      "positionsCount": 2,
       "statsSource": "sports_sharps",
       "avgSportBet": 484,
-      "willPassShadowGate": 1,
+      "willPassShadowGate": 2,
       "willDropAtShadowGate": 0,
       "positions": [
         {
@@ -577,6 +577,15 @@
           "side": "under",
           "invested": 2443,
           "entryLine": 8.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "kcr_det",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 962,
+          "entryLine": 1.5,
           "passesShadow": true
         }
       ]
@@ -846,24 +855,24 @@
       "positionsCount": 2,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 1054,
-      "willPassShadowGate": 0,
-      "willDropAtShadowGate": 2,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 1,
       "positions": [
+        {
+          "sport": "WNBA",
+          "gameKey": "tor_min",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 376,
+          "entryLine": null,
+          "passesShadow": true
+        },
         {
           "sport": "UFC",
           "gameKey": "bogdanguskov_magomedankalaev",
           "marketType": "ml",
           "side": "home",
           "invested": 81,
-          "entryLine": null,
-          "passesShadow": false
-        },
-        {
-          "sport": "WNBA",
-          "gameKey": "tor_min",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 9,
           "entryLine": null,
           "passesShadow": false
         }
