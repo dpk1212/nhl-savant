@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-07-24T23:19:05.322Z",
-  "elapsedSec": 16,
+  "scannedAt": "2026-07-24T23:22:59.942Z",
+  "elapsedSec": 14.2,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 43,
   "summary": {
     "total": 204,
     "coveredByMain": 10,
     "recovered": 17,
-    "recoveredPositions": 65,
+    "recoveredPositions": 66,
     "noPositions": 177,
     "apiError": 0,
     "addressNotFound": 0,
@@ -16,7 +16,7 @@
       "ml": 8,
       "spread": 0,
       "total": 1,
-      "dropped_shadow_gate": 17,
+      "dropped_shadow_gate": 18,
       "dropped_excluded": 39,
       "dropped_duplicate": 0
     }
@@ -182,15 +182,24 @@
       "sports": "",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x0eb75bf6f54794a83bd26095811f30b530161f17",
-      "positionsCount": 1,
+      "positionsCount": 2,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 33108,
       "willPassShadowGate": 0,
-      "willDropAtShadowGate": 1,
+      "willDropAtShadowGate": 2,
       "positions": [
         {
           "sport": "MLB",
           "gameKey": "hou_cws",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 300,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "laa_sfg",
           "marketType": "ml",
           "side": "home",
           "invested": 300,
@@ -605,7 +614,7 @@
           "gameKey": "hou_cws",
           "marketType": "ml",
           "side": "away",
-          "invested": 5588,
+          "invested": 5601,
           "entryLine": null,
           "passesShadow": true
         }
@@ -637,7 +646,7 @@
           "gameKey": "tyrellfortune_rizvankuniev",
           "marketType": "ml",
           "side": "away",
-          "invested": 905,
+          "invested": 906,
           "entryLine": null,
           "passesShadow": false
         },
@@ -737,20 +746,20 @@
         },
         {
           "sport": "MLB",
+          "gameKey": "laa_sfg",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 87,
+          "entryLine": 1.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
           "gameKey": "oak_min",
           "marketType": "ml",
           "side": "home",
           "invested": 72,
           "entryLine": null,
-          "passesShadow": false
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "laa_sfg",
-          "marketType": "spread",
-          "side": "away",
-          "invested": 29,
-          "entryLine": 1.5,
           "passesShadow": false
         }
       ]
@@ -848,7 +857,7 @@
           "gameKey": "laa_sfg",
           "marketType": "ml",
           "side": "home",
-          "invested": 1175,
+          "invested": 1189,
           "entryLine": null,
           "passesShadow": true
         }
@@ -1081,7 +1090,7 @@
           "gameKey": "oak_min",
           "marketType": "ml",
           "side": "home",
-          "invested": 746,
+          "invested": 758,
           "entryLine": null,
           "passesShadow": true
         }
@@ -1240,7 +1249,7 @@
           "gameKey": "muhammadsaid_dustinjacoby",
           "marketType": "ml",
           "side": "away",
-          "invested": 1220,
+          "invested": 1318,
           "entryLine": null,
           "passesShadow": true
         },
