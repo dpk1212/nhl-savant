@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-07-24T05:21:09.660Z",
-  "elapsedSec": 16,
+  "scannedAt": "2026-07-24T05:25:04.606Z",
+  "elapsedSec": 16.1,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 44,
   "summary": {
     "total": 204,
     "coveredByMain": 4,
-    "recovered": 6,
-    "recoveredPositions": 16,
-    "noPositions": 194,
+    "recovered": 7,
+    "recoveredPositions": 17,
+    "noPositions": 193,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -17,7 +17,7 @@
       "spread": 0,
       "total": 0,
       "dropped_shadow_gate": 10,
-      "dropped_excluded": 5,
+      "dropped_excluded": 6,
       "dropped_duplicate": 0
     }
   },
@@ -522,8 +522,24 @@
       "tier": "CONFIRMED",
       "name": "sentrio",
       "sports": "MLB,SOC,NBA",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xdb83e85ffd22faa4009273034770f96ffc5b1e50"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0xdb83e85ffd22faa4009273034770f96ffc5b1e50",
+      "positionsCount": 1,
+      "statsSource": "sports_sharps",
+      "avgSportBet": 492,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "col_mil",
+          "marketType": "total",
+          "side": "under",
+          "invested": 800,
+          "entryLine": 8.5,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "5b53d1",
