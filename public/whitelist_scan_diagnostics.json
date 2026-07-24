@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-07-24T12:54:16.464Z",
-  "elapsedSec": 11.6,
+  "scannedAt": "2026-07-24T12:58:16.294Z",
+  "elapsedSec": 14,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 44,
   "summary": {
     "total": 204,
     "coveredByMain": 6,
     "recovered": 9,
-    "recoveredPositions": 38,
+    "recoveredPositions": 39,
     "noPositions": 189,
     "apiError": 0,
     "addressNotFound": 0,
@@ -17,7 +17,7 @@
       "spread": 0,
       "total": 0,
       "dropped_shadow_gate": 19,
-      "dropped_excluded": 18,
+      "dropped_excluded": 19,
       "dropped_duplicate": 0
     }
   },
@@ -428,19 +428,19 @@
       "positions": [
         {
           "sport": "MLB",
-          "gameKey": "tor_bos",
+          "gameKey": "cin_stl",
           "marketType": "total",
-          "side": "under",
-          "invested": 492,
+          "side": "over",
+          "invested": 963,
           "entryLine": 8.5,
           "passesShadow": true
         },
         {
           "sport": "MLB",
-          "gameKey": "cin_stl",
+          "gameKey": "tor_bos",
           "marketType": "total",
-          "side": "over",
-          "invested": 481,
+          "side": "under",
+          "invested": 492,
           "entryLine": 8.5,
           "passesShadow": true
         },
@@ -664,12 +664,21 @@
       "sports": "MLB,SOC,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xdb83e85ffd22faa4009273034770f96ffc5b1e50",
-      "positionsCount": 1,
+      "positionsCount": 2,
       "statsSource": "sports_sharps",
       "avgSportBet": 483,
-      "willPassShadowGate": 1,
+      "willPassShadowGate": 2,
       "willDropAtShadowGate": 0,
       "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "cin_stl",
+          "marketType": "total",
+          "side": "over",
+          "invested": 1353,
+          "entryLine": 8.5,
+          "passesShadow": true
+        },
         {
           "sport": "MLB",
           "gameKey": "col_mil",
