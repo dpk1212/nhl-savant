@@ -210,9 +210,9 @@
       "awayAsk": 58,
       "homeBid": 40,
       "homeAsk": 43,
-      "awayLast": 59,
+      "awayLast": 58,
       "homeLast": 43,
-      "priceMove24h": 0,
+      "priceMove24h": -1,
       "priceHistory": {
         "points": [
           0,
@@ -247,12 +247,12 @@
       },
       "volume24h": 1437,
       "tradeFlow": {
-        "awayTicketPct": 78.2,
-        "homeTicketPct": 21.8,
-        "awayMoneyPct": 85.5,
-        "homeMoneyPct": 14.5,
-        "tradeCount": 55,
-        "sampleCash": 532
+        "awayTicketPct": 78.9,
+        "homeTicketPct": 21.1,
+        "awayMoneyPct": 85.8,
+        "homeMoneyPct": 14.2,
+        "tradeCount": 57,
+        "sampleCash": 543
       },
       "whales": {
         "count": 1,
@@ -441,12 +441,12 @@
       },
       "volume24h": 2976,
       "tradeFlow": {
-        "awayTicketPct": 32.7,
-        "homeTicketPct": 67.3,
-        "awayMoneyPct": 55.9,
-        "homeMoneyPct": 44.1,
-        "tradeCount": 52,
-        "sampleCash": 1539
+        "awayTicketPct": 34,
+        "homeTicketPct": 66,
+        "awayMoneyPct": 56.5,
+        "homeMoneyPct": 43.5,
+        "tradeCount": 53,
+        "sampleCash": 1558
       },
       "whales": {
         "count": 2,
@@ -472,7 +472,7 @@
       "spreads": [
         {
           "label": "Toronto wins by over 1.5 runs",
-          "prob": 35,
+          "prob": 34.5,
           "volume": 37
         },
         {
@@ -632,9 +632,9 @@
       "title": "Houston vs Chicago WS"
     },
     "sea_tex": {
-      "awayProb": 51.5,
+      "awayProb": 52,
       "homeProb": 47.5,
-      "awayBid": 49,
+      "awayBid": 50,
       "awayAsk": 54,
       "homeBid": 47,
       "homeAsk": 48,
@@ -703,29 +703,36 @@
     },
     "oak_min": {
       "awayProb": 39,
-      "homeProb": 61.5,
+      "homeProb": 62,
       "awayBid": 38,
       "awayAsk": 40,
       "homeBid": 61,
-      "homeAsk": 62,
+      "homeAsk": 63,
       "awayLast": 40,
       "homeLast": 62,
       "priceMove24h": -1,
       "priceHistory": null,
       "volume24h": 2899,
       "tradeFlow": {
-        "awayTicketPct": 45,
-        "homeTicketPct": 55,
-        "awayMoneyPct": 28.4,
-        "homeMoneyPct": 71.6,
-        "tradeCount": 20,
-        "sampleCash": 304
+        "awayTicketPct": 42.9,
+        "homeTicketPct": 57.1,
+        "awayMoneyPct": 17.3,
+        "homeMoneyPct": 82.7,
+        "tradeCount": 21,
+        "sampleCash": 499
       },
       "whales": {
-        "count": 1,
-        "totalCash": 169,
-        "largest": 169,
+        "count": 2,
+        "totalCash": 364,
+        "largest": 195,
         "topTrades": [
+          {
+            "amount": 195,
+            "side": "BUY",
+            "outcome": "Minnesota",
+            "price": 62,
+            "ts": 1784943460827
+          },
           {
             "amount": 169,
             "side": "BUY",
@@ -1067,12 +1074,12 @@
       },
       "volume24h": 2827,
       "tradeFlow": {
-        "awayTicketPct": 32.8,
-        "homeTicketPct": 67.2,
-        "awayMoneyPct": 24.6,
-        "homeMoneyPct": 75.4,
-        "tradeCount": 58,
-        "sampleCash": 1037
+        "awayTicketPct": 32.2,
+        "homeTicketPct": 67.8,
+        "awayMoneyPct": 24.5,
+        "homeMoneyPct": 75.5,
+        "tradeCount": 59,
+        "sampleCash": 1042
       },
       "whales": {
         "count": 1,
@@ -1382,16 +1389,16 @@
       },
       "volume24h": 10368,
       "tradeFlow": {
-        "awayTicketPct": 29.5,
-        "homeTicketPct": 70.5,
-        "awayMoneyPct": 7.1,
-        "homeMoneyPct": 92.9,
-        "tradeCount": 146,
-        "sampleCash": 6200
+        "awayTicketPct": 29.3,
+        "homeTicketPct": 70.7,
+        "awayMoneyPct": 6.3,
+        "homeMoneyPct": 93.7,
+        "tradeCount": 147,
+        "sampleCash": 6985
       },
       "whales": {
-        "count": 13,
-        "totalCash": 4229,
+        "count": 14,
+        "totalCash": 5014,
         "largest": 1101,
         "topTrades": [
           {
@@ -1400,6 +1407,13 @@
             "outcome": "Milwaukee",
             "price": 49,
             "ts": 1784939000668
+          },
+          {
+            "amount": 785,
+            "side": "BUY",
+            "outcome": "Milwaukee",
+            "price": 72,
+            "ts": 1784943483562
           },
           {
             "amount": 490,
@@ -1456,13 +1470,6 @@
             "outcome": "Milwaukee",
             "price": 49,
             "ts": 1784939000668
-          },
-          {
-            "amount": 147,
-            "side": "BUY",
-            "outcome": "Milwaukee",
-            "price": 72,
-            "ts": 1784937161922
           }
         ]
       },
@@ -1516,5 +1523,5 @@
       "title": "Colorado vs Milwaukee"
     }
   },
-  "updatedAt": "2026-07-25T01:33:28.315Z"
+  "updatedAt": "2026-07-25T01:37:35.507Z"
 }
