@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-07-25T16:59:50.457Z",
-  "elapsedSec": 14.7,
+  "scannedAt": "2026-07-25T17:03:55.845Z",
+  "elapsedSec": 14.4,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 34,
   "summary": {
     "total": 204,
-    "coveredByMain": 11,
+    "coveredByMain": 12,
     "recovered": 19,
-    "recoveredPositions": 110,
-    "noPositions": 174,
+    "recoveredPositions": 111,
+    "noPositions": 173,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,7 +16,7 @@
       "ml": 9,
       "spread": 0,
       "total": 0,
-      "dropped_shadow_gate": 21,
+      "dropped_shadow_gate": 22,
       "dropped_excluded": 80,
       "dropped_duplicate": 0
     }
@@ -1993,8 +1993,7 @@
       "tier": "CONFIRMED",
       "name": "WARNINGWARNINGWARNING",
       "sports": "MLB,NHL",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x5e6e2c3f06686f2607b86c90e35f536e81a1be00"
+      "status": "COVERED_BY_MAIN"
     },
     {
       "walletShort": "a6c56e",
@@ -2560,11 +2559,11 @@
       "sports": "SOC,NBA,MLB",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x3dfb153c197d4c19d3b31c1ecd2c7b6860eeabaf",
-      "positionsCount": 3,
+      "positionsCount": 4,
       "statsSource": "sports_sharps",
       "avgSportBet": 34072,
       "willPassShadowGate": 1,
-      "willDropAtShadowGate": 2,
+      "willDropAtShadowGate": 3,
       "positions": [
         {
           "sport": "MLB",
@@ -2574,6 +2573,15 @@
           "invested": 29484,
           "entryLine": null,
           "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "kcr_det",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 0,
+          "entryLine": null,
+          "passesShadow": false
         },
         {
           "sport": "MLB",
@@ -2589,7 +2597,7 @@
           "gameKey": "nyy_phi",
           "marketType": "spread",
           "side": "away",
-          "invested": 805,
+          "invested": 827,
           "entryLine": -1.5,
           "passesShadow": false
         }
@@ -2728,7 +2736,7 @@
           "gameKey": "bogdanguskov_magomedankalaev",
           "marketType": "ml",
           "side": "home",
-          "invested": 20049,
+          "invested": 20505,
           "entryLine": null,
           "passesShadow": true
         }
