@@ -1,20 +1,51 @@
 {
-  "generatedAt": "2026-07-26T17:32:22.375Z",
+  "generatedAt": "2026-07-26T19:42:45.749Z",
   "today": "2026-07-26",
   "source": "Firestore sharpFlowPicks/Spreads/Totals (same as site loadLockedPicks)",
   "summary": {
-    "liveSidesToday": 9,
-    "shippedToday": 1,
-    "trackedOnlyToday": 8,
-    "totalUnitsToday": 5.06,
+    "liveSidesToday": 14,
+    "shippedToday": 3,
+    "trackedOnlyToday": 11,
+    "totalUnitsToday": 15.06,
     "byTier": {
-      "SHARP": 1
+      "TOP": 1,
+      "SHARP": 1,
+      "SHARP-LEAN": 1
     },
     "bySport": {
-      "MLB": 1
+      "MLB": 3
     }
   },
   "picks": [
+    {
+      "date": "2026-07-26",
+      "isToday": true,
+      "sport": "MLB",
+      "market": "SPREAD",
+      "gameKey": "col_mil",
+      "matchup": "Colorado Rockies @ Milwaukee Brewers",
+      "away": "Colorado Rockies",
+      "home": "Milwaukee Brewers",
+      "side": "home",
+      "team": "Milwaukee Brewers",
+      "selection": "Milwaukee Brewers -1.5 (-102)",
+      "line": -1.5,
+      "odds": -102,
+      "units": 6,
+      "shipped": true,
+      "stakeTier": "TOP",
+      "agsConvictionTier": "ELITE",
+      "hcMargin": 1,
+      "walletConsensusDelta": 1,
+      "walletQualityMargin": 1,
+      "provenWinnersFor": 2,
+      "provenWinnersAgainst": 1,
+      "ags": 0.1265755358909047,
+      "agsTier": "ELITE",
+      "promotedBy": "ags-unified-v12",
+      "commenceTime": "2026-07-26T18:11:00.000Z",
+      "minsToGame": -92
+    },
     {
       "date": "2026-07-26",
       "isToday": true,
@@ -34,15 +65,73 @@
       "stakeTier": "SHARP",
       "agsConvictionTier": "WEAK",
       "hcMargin": 0,
-      "walletConsensusDelta": 0,
-      "walletQualityMargin": -1,
-      "provenWinnersFor": 2,
+      "walletConsensusDelta": -1,
+      "walletQualityMargin": -2,
+      "provenWinnersFor": 1,
       "provenWinnersAgainst": 2,
-      "ags": 0.021574829283724867,
+      "ags": 0.07884536114265131,
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-26T18:11:00.000Z",
-      "minsToGame": 39
+      "minsToGame": -92
+    },
+    {
+      "date": "2026-07-26",
+      "isToday": true,
+      "sport": "MLB",
+      "market": "ML",
+      "gameKey": "sea_tex",
+      "matchup": "Seattle Mariners @ Texas Rangers",
+      "away": "Seattle Mariners",
+      "home": "Texas Rangers",
+      "side": "home",
+      "team": "Texas Rangers",
+      "selection": "Texas Rangers ML -106",
+      "line": null,
+      "odds": -106,
+      "units": 4,
+      "shipped": true,
+      "stakeTier": "SHARP-LEAN",
+      "agsConvictionTier": "PREMIUM",
+      "hcMargin": 0,
+      "walletConsensusDelta": 0,
+      "walletQualityMargin": -1,
+      "provenWinnersFor": 1,
+      "provenWinnersAgainst": 1,
+      "ags": 0.06735850013666198,
+      "agsTier": "PREMIUM",
+      "promotedBy": "ags-unified-v12",
+      "commenceTime": "2026-07-26T18:36:00.000Z",
+      "minsToGame": -67
+    },
+    {
+      "date": "2026-07-26",
+      "isToday": true,
+      "sport": "MLB",
+      "market": "ML",
+      "gameKey": "sdp_mia",
+      "matchup": "San Diego Padres @ Miami Marlins",
+      "away": "San Diego Padres",
+      "home": "Miami Marlins",
+      "side": "home",
+      "team": "Miami Marlins",
+      "selection": "Miami Marlins ML -112",
+      "line": null,
+      "odds": -112,
+      "units": 0,
+      "shipped": false,
+      "stakeTier": "MONITORING",
+      "agsConvictionTier": "WEAK",
+      "hcMargin": 0,
+      "walletConsensusDelta": 1,
+      "walletQualityMargin": 0,
+      "provenWinnersFor": 2,
+      "provenWinnersAgainst": 1,
+      "ags": 0.27204011037302145,
+      "agsTier": "WEAK",
+      "promotedBy": "ags-unified-v12",
+      "commenceTime": "2026-07-26T17:41:00.000Z",
+      "minsToGame": -122
     },
     {
       "date": "2026-07-26",
@@ -71,7 +160,7 @@
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-26T17:41:00.000Z",
-      "minsToGame": 9
+      "minsToGame": -122
     },
     {
       "date": "2026-07-26",
@@ -90,17 +179,46 @@
       "units": 0,
       "shipped": false,
       "stakeTier": "MONITORING",
-      "agsConvictionTier": "LOCK",
+      "agsConvictionTier": "ELITE",
       "hcMargin": 0,
       "walletConsensusDelta": 1,
       "walletQualityMargin": 0,
       "provenWinnersFor": 1,
       "provenWinnersAgainst": 0,
       "ags": 0.046019456795230534,
-      "agsTier": "LOCK",
+      "agsTier": "ELITE",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-26T18:11:00.000Z",
-      "minsToGame": 39
+      "minsToGame": -92
+    },
+    {
+      "date": "2026-07-26",
+      "isToday": true,
+      "sport": "MLB",
+      "market": "ML",
+      "gameKey": "laa_sfg",
+      "matchup": "Los Angeles Angels @ San Francisco Giants",
+      "away": "Los Angeles Angels",
+      "home": "San Francisco Giants",
+      "side": "home",
+      "team": "San Francisco Giants",
+      "selection": "San Francisco Giants ML +103",
+      "line": null,
+      "odds": 103,
+      "units": 0,
+      "shipped": false,
+      "stakeTier": "MONITORING",
+      "agsConvictionTier": "LEAN",
+      "hcMargin": 0,
+      "walletConsensusDelta": -1,
+      "walletQualityMargin": 0,
+      "provenWinnersFor": 1,
+      "provenWinnersAgainst": 2,
+      "ags": 0.3506496855733794,
+      "agsTier": "LEAN",
+      "promotedBy": "ags-unified-v12",
+      "commenceTime": "2026-07-26T20:06:00.000Z",
+      "minsToGame": 23
     },
     {
       "date": "2026-07-26",
@@ -129,7 +247,7 @@
       "agsTier": "PREMIUM",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-26T16:16:00.000Z",
-      "minsToGame": -76
+      "minsToGame": -207
     },
     {
       "date": "2026-07-26",
@@ -158,7 +276,7 @@
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-26T16:16:00.000Z",
-      "minsToGame": -76
+      "minsToGame": -207
     },
     {
       "date": "2026-07-26",
@@ -187,7 +305,7 @@
       "agsTier": "LOCK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-26T17:36:00.000Z",
-      "minsToGame": 4
+      "minsToGame": -127
     },
     {
       "date": "2026-07-26",
@@ -216,7 +334,7 @@
       "agsTier": "PREMIUM",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-26T17:41:00.000Z",
-      "minsToGame": 9
+      "minsToGame": -122
     },
     {
       "date": "2026-07-26",
@@ -237,15 +355,15 @@
       "stakeTier": "SHARP-LEAN",
       "agsConvictionTier": "LOCK",
       "hcMargin": 0,
-      "walletConsensusDelta": 1,
-      "walletQualityMargin": 1,
-      "provenWinnersFor": 2,
+      "walletConsensusDelta": 0,
+      "walletQualityMargin": -2,
+      "provenWinnersFor": 1,
       "provenWinnersAgainst": 1,
-      "ags": -0.04786604546015949,
+      "ags": 0.009404486398766912,
       "agsTier": "LOCK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-26T18:11:00.000Z",
-      "minsToGame": 39
+      "minsToGame": -92
     },
     {
       "date": "2026-07-26",
@@ -274,7 +392,36 @@
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-26T18:16:00.000Z",
-      "minsToGame": 44
+      "minsToGame": -87
+    },
+    {
+      "date": "2026-07-26",
+      "isToday": true,
+      "sport": "MLB",
+      "market": "TOTAL",
+      "gameKey": "laa_sfg",
+      "matchup": "Los Angeles Angels @ San Francisco Giants",
+      "away": "Los Angeles Angels",
+      "home": "San Francisco Giants",
+      "side": "over",
+      "team": "Over 8.5",
+      "selection": "Over 8.5 (-110)",
+      "line": 8.5,
+      "odds": -110,
+      "units": 0,
+      "shipped": false,
+      "stakeTier": "SHARP-LEAN",
+      "agsConvictionTier": "ELITE",
+      "hcMargin": 0,
+      "walletConsensusDelta": 1,
+      "walletQualityMargin": -1,
+      "provenWinnersFor": 1,
+      "provenWinnersAgainst": 0,
+      "ags": 0.1483082910426154,
+      "agsTier": "ELITE",
+      "promotedBy": "ags-unified-v12",
+      "commenceTime": "2026-07-26T20:06:00.000Z",
+      "minsToGame": 23
     },
     {
       "date": "2026-07-25",
@@ -303,7 +450,7 @@
       "agsTier": "LEAN",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-25T23:11:00.000Z",
-      "minsToGame": -1101
+      "minsToGame": -1232
     },
     {
       "date": "2026-07-25",
@@ -332,7 +479,7 @@
       "agsTier": "ELITE",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-25T20:06:00.000Z",
-      "minsToGame": -1286
+      "minsToGame": -1417
     },
     {
       "date": "2026-07-25",
@@ -361,7 +508,7 @@
       "agsTier": "LOCK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-25T17:11:00.000Z",
-      "minsToGame": -1461
+      "minsToGame": -1592
     },
     {
       "date": "2026-07-25",
@@ -390,7 +537,7 @@
       "agsTier": "LEAN",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-25T22:41:00.000Z",
-      "minsToGame": -1131
+      "minsToGame": -1262
     },
     {
       "date": "2026-07-25",
@@ -419,7 +566,7 @@
       "agsTier": "LOCK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-25T23:16:00.000Z",
-      "minsToGame": -1096
+      "minsToGame": -1227
     },
     {
       "date": "2026-07-25",
@@ -448,7 +595,7 @@
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-25T22:06:00.000Z",
-      "minsToGame": -1166
+      "minsToGame": -1297
     },
     {
       "date": "2026-07-25",
@@ -477,7 +624,7 @@
       "agsTier": "ELITE",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-25T14:15:00.000Z",
-      "minsToGame": -1637
+      "minsToGame": -1768
     },
     {
       "date": "2026-07-25",
@@ -506,7 +653,7 @@
       "agsTier": "ELITE",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-25T23:11:00.000Z",
-      "minsToGame": -1101
+      "minsToGame": -1232
     },
     {
       "date": "2026-07-25",
@@ -535,7 +682,7 @@
       "agsTier": "LOCK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-25T22:06:00.000Z",
-      "minsToGame": -1166
+      "minsToGame": -1297
     },
     {
       "date": "2026-07-25",
@@ -564,7 +711,7 @@
       "agsTier": "PREMIUM",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-25T14:50:00.000Z",
-      "minsToGame": -1602
+      "minsToGame": -1733
     },
     {
       "date": "2026-07-25",
@@ -593,7 +740,7 @@
       "agsTier": "LOCK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-25T17:15:00.000Z",
-      "minsToGame": -1457
+      "minsToGame": -1588
     },
     {
       "date": "2026-07-25",
@@ -622,7 +769,7 @@
       "agsTier": "PREMIUM",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-25T20:06:00.000Z",
-      "minsToGame": -1286
+      "minsToGame": -1417
     },
     {
       "date": "2026-07-25",
@@ -651,7 +798,7 @@
       "agsTier": "LEAN",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-25T17:11:00.000Z",
-      "minsToGame": -1461
+      "minsToGame": -1592
     },
     {
       "date": "2026-07-25",
@@ -680,7 +827,7 @@
       "agsTier": "LOCK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-25T20:11:00.000Z",
-      "minsToGame": -1281
+      "minsToGame": -1412
     },
     {
       "date": "2026-07-25",
@@ -709,7 +856,7 @@
       "agsTier": "PREMIUM",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-25T20:11:00.000Z",
-      "minsToGame": -1281
+      "minsToGame": -1412
     },
     {
       "date": "2026-07-25",
@@ -738,7 +885,7 @@
       "agsTier": "LOCK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-25T20:11:00.000Z",
-      "minsToGame": -1281
+      "minsToGame": -1412
     },
     {
       "date": "2026-07-25",
@@ -767,7 +914,7 @@
       "agsTier": "LOCK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-25T22:11:00.000Z",
-      "minsToGame": -1161
+      "minsToGame": -1292
     },
     {
       "date": "2026-07-25",
@@ -796,7 +943,7 @@
       "agsTier": "LOCK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-25T22:41:00.000Z",
-      "minsToGame": -1131
+      "minsToGame": -1262
     },
     {
       "date": "2026-07-25",
@@ -825,7 +972,7 @@
       "agsTier": "PREMIUM",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-25T13:10:00.000Z",
-      "minsToGame": -1702
+      "minsToGame": -1833
     },
     {
       "date": "2026-07-25",
@@ -854,7 +1001,7 @@
       "agsTier": "LOCK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-25T15:15:00.000Z",
-      "minsToGame": -1577
+      "minsToGame": -1708
     },
     {
       "date": "2026-07-25",
@@ -883,7 +1030,7 @@
       "agsTier": "LOCK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-25T16:15:00.000Z",
-      "minsToGame": -1517
+      "minsToGame": -1648
     },
     {
       "date": "2026-07-25",
@@ -912,7 +1059,7 @@
       "agsTier": "PREMIUM",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-25T17:45:00.000Z",
-      "minsToGame": -1427
+      "minsToGame": -1558
     },
     {
       "date": "2026-07-25",
@@ -941,7 +1088,7 @@
       "agsTier": "LOCK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-25T23:11:00.000Z",
-      "minsToGame": -1101
+      "minsToGame": -1232
     },
     {
       "date": "2026-07-25",
@@ -970,7 +1117,7 @@
       "agsTier": "PREMIUM",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-25T23:16:00.000Z",
-      "minsToGame": -1096
+      "minsToGame": -1227
     },
     {
       "date": "2026-07-25",
@@ -999,7 +1146,7 @@
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-25T23:16:00.000Z",
-      "minsToGame": -1096
+      "minsToGame": -1227
     },
     {
       "date": "2026-07-25",
@@ -1028,7 +1175,7 @@
       "agsTier": "PREMIUM",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-07-25T23:16:00.000Z",
-      "minsToGame": -1096
+      "minsToGame": -1227
     }
   ]
 }
