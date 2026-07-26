@@ -1,19 +1,19 @@
 {
-  "scannedAt": "2026-07-26T19:19:33.749Z",
-  "elapsedSec": 16,
+  "scannedAt": "2026-07-26T19:23:34.116Z",
+  "elapsedSec": 16.5,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 39,
   "summary": {
     "total": 206,
     "coveredByMain": 12,
-    "recovered": 9,
-    "recoveredPositions": 21,
-    "noPositions": 185,
+    "recovered": 10,
+    "recoveredPositions": 22,
+    "noPositions": 184,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 2,
+      "ml": 3,
       "spread": 0,
       "total": 2,
       "dropped_shadow_gate": 8,
@@ -274,8 +274,24 @@
       "tier": "FLAT",
       "name": "BaseballBill",
       "sports": "MLB",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xb272505077cc2c6bde5acca133ea6364152e5030"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0xb272505077cc2c6bde5acca133ea6364152e5030",
+      "positionsCount": 1,
+      "statsSource": "sharpWalletProfiles_derived",
+      "avgSportBet": 2650,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "laa_sfg",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 1551,
+          "entryLine": null,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "2e8da5",
@@ -772,7 +788,7 @@
           "gameKey": "laa_sfg",
           "marketType": "total",
           "side": "under",
-          "invested": 11601,
+          "invested": 11611,
           "entryLine": 8.5,
           "passesShadow": true
         },
