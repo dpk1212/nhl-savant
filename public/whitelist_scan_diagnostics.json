@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-07-26T02:00:30.911Z",
-  "elapsedSec": 16.5,
+  "scannedAt": "2026-07-26T02:04:41.501Z",
+  "elapsedSec": 17.2,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 31,
   "summary": {
     "total": 204,
     "coveredByMain": 4,
-    "recovered": 4,
-    "recoveredPositions": 8,
-    "noPositions": 196,
+    "recovered": 5,
+    "recoveredPositions": 10,
+    "noPositions": 195,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -17,7 +17,7 @@
       "spread": 0,
       "total": 0,
       "dropped_shadow_gate": 7,
-      "dropped_excluded": 0,
+      "dropped_excluded": 2,
       "dropped_duplicate": 0
     }
   },
@@ -405,12 +405,21 @@
       "sports": "MLB,WNBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xf7f0b0b1e9c0fe02ccad926916ee31aef74b912c",
-      "positionsCount": 3,
+      "positionsCount": 4,
       "statsSource": "sports_sharps",
       "avgSportBet": 474,
-      "willPassShadowGate": 0,
+      "willPassShadowGate": 1,
       "willDropAtShadowGate": 3,
       "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "oak_min",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 584,
+          "entryLine": null,
+          "passesShadow": true
+        },
         {
           "sport": "MLB",
           "gameKey": "cin_stl",
@@ -703,8 +712,24 @@
       "tier": "CONFIRMED",
       "name": "HomeRunHazard",
       "sports": "MLB,NBA",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x5268527977f700f9bf9b6d5cd843859e4e70135d"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
+      "positionsCount": 1,
+      "statsSource": "sports_sharps",
+      "avgSportBet": 1662,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "oak_min",
+          "marketType": "total",
+          "side": "over",
+          "invested": 1026,
+          "entryLine": 10.5,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "705ba1",
