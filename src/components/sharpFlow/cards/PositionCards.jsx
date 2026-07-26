@@ -72,16 +72,31 @@ export const fmtMoney = (v) => {
   return `${neg ? '-' : ''}$${Math.round(n)}`;
 };
 
+const EDGE_AURA_MIN = 11;
+const EDGE_AURA_BORDER = 'rgba(232,210,138,0.78)';
+const EDGE_AURA_SHADOW_IDLE =
+  '0 0 0 1px rgba(232,210,138,0.42), 0 0 18px -2px rgba(212,175,55,0.55), 0 0 40px -8px rgba(212,175,55,0.32)';
+
 const CARD_CSS = `
   @keyframes posReveal { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes posBar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
   @keyframes posPin { from { opacity: 0; transform: translateX(-50%) translateY(4px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
   @keyframes posPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+  @keyframes posGoldAura {
+    0%, 100% {
+      box-shadow: 0 0 0 1px rgba(232,210,138,0.40), 0 0 16px -2px rgba(212,175,55,0.48), 0 0 36px -8px rgba(212,175,55,0.26);
+    }
+    50% {
+      box-shadow: 0 0 0 1px rgba(232,210,138,0.72), 0 0 24px -1px rgba(212,175,55,0.72), 0 0 52px -6px rgba(212,175,55,0.42);
+    }
+  }
   .pos-reveal { animation: posReveal .34s cubic-bezier(0.16,1,0.3,1) both; }
   .pos-bar { transform-origin: left center; animation: posBar .75s cubic-bezier(0.16,1,0.3,1) both; }
   .pos-pulse { animation: posPulse 1.6s ease-in-out infinite; }
+  .sf-edge-aura { animation: posGoldAura 2.8s ease-in-out infinite; }
   @media (prefers-reduced-motion: reduce) {
-    .pos-reveal, .pos-bar, .pos-pulse { animation: none !important; }
+    .pos-reveal, .pos-bar, .pos-pulse, .sf-edge-aura { animation: none !important; }
+    .sf-edge-aura { box-shadow: ${EDGE_AURA_SHADOW_IDLE} !important; }
   }
 `;
 function CardStyles() {
@@ -2335,11 +2350,15 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
   const productTier = displayTierFromPath(f.stakePath);
   const tierLabel = productTier?.label || null;
   const tierColor = productTier?.color || C.textMuted;
+  // Gold aura: staked live tickets (countdown or fully LOCKED) with EDGE ≥ 11.
+  const edgeAura = !tracked && !graded && Number.isFinite(f.edge) && f.edge >= EDGE_AURA_MIN;
   const cardBorder = tracked
     ? 'rgba(139,150,171,0.22)'
     : graded
       ? `${resultColor}55`
-      : 'rgba(212,175,55,0.28)';
+      : edgeAura
+        ? EDGE_AURA_BORDER
+        : 'rgba(212,175,55,0.28)';
   const muteTip = trackedMuteLabel({
     mutedBy: f.mutedBy,
     tapeAction: f.tapeAction,
@@ -2352,15 +2371,19 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
   if (!expanded) {
     return (
       <div
-        className="sf-card"
+        className={edgeAura ? 'sf-card sf-edge-aura' : 'sf-card'}
         onClick={() => setExpanded(true)}
         role="button"
         tabIndex={0}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setExpanded(true); }}
+        title={edgeAura ? `EDGE ${Number(f.edge).toFixed(1)} · high-conviction lock` : undefined}
         style={{
           borderRadius: 14, overflow: 'hidden', cursor: 'pointer',
-          background: 'linear-gradient(180deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0) 42%), linear-gradient(180deg, #161B29 0%, #10141F 100%)',
+          background: edgeAura
+            ? 'linear-gradient(180deg, rgba(212,175,55,0.10) 0%, rgba(255,255,255,0) 48%), linear-gradient(180deg, #161B29 0%, #10141F 100%)'
+            : 'linear-gradient(180deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0) 42%), linear-gradient(180deg, #161B29 0%, #10141F 100%)',
           border: `1px solid ${cardBorder}`,
+          boxShadow: edgeAura ? EDGE_AURA_SHADOW_IDLE : undefined,
           position: 'relative', padding: '14px 18px',
         }}
       >
@@ -2517,6 +2540,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
       statusSlot={statusSlot}
       ticketFrozen={ticketFrozen}
       accent={accent}
+      edgeAura={edgeAura}
     />
   );
 }

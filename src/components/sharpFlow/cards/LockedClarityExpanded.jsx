@@ -37,16 +37,30 @@ const fmtMoney = (v) => {
   return `${neg ? '-' : ''}$${Math.round(n)}`;
 };
 
+const EDGE_AURA_BORDER = 'rgba(232,210,138,0.78)';
+const EDGE_AURA_SHADOW_IDLE =
+  '0 0 0 1px rgba(232,210,138,0.42), 0 0 18px -2px rgba(212,175,55,0.55), 0 0 40px -8px rgba(212,175,55,0.32), 0 24px 60px -30px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.05)';
+
 const CLARITY_CSS = `
   @keyframes lcIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes lcDraw { from { stroke-dashoffset: 400; } to { stroke-dashoffset: 0; } }
   @keyframes lcRing { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+  @keyframes lcGoldAura {
+    0%, 100% {
+      box-shadow: 0 0 0 1px rgba(232,210,138,0.40), 0 0 16px -2px rgba(212,175,55,0.48), 0 0 36px -8px rgba(212,175,55,0.26), 0 24px 60px -30px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    50% {
+      box-shadow: 0 0 0 1px rgba(232,210,138,0.72), 0 0 24px -1px rgba(212,175,55,0.72), 0 0 52px -6px rgba(212,175,55,0.42), 0 24px 60px -30px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+  }
   .lc-in { animation: lcIn 0.35s cubic-bezier(0.16,1,0.3,1) both; }
   .lc-in-2 { animation: lcIn 0.35s cubic-bezier(0.16,1,0.3,1) 0.06s both; }
   .lc-draw { stroke-dasharray: 400; stroke-dashoffset: 400; animation: lcDraw 1.1s cubic-bezier(0.16,1,0.3,1) 0.15s both; }
   .lc-ring { animation: lcRing 2.6s ease-in-out infinite; }
+  .sf-edge-aura { animation: lcGoldAura 2.8s ease-in-out infinite; }
   @media (prefers-reduced-motion: reduce) {
-    .lc-in, .lc-in-2, .lc-draw, .lc-ring { animation: none; }
+    .lc-in, .lc-in-2, .lc-draw, .lc-ring, .sf-edge-aura { animation: none; }
+    .sf-edge-aura { box-shadow: ${EDGE_AURA_SHADOW_IDLE} !important; }
     .lc-draw { stroke-dashoffset: 0; }
   }
 `;
@@ -550,6 +564,7 @@ export default function LockedClarityExpanded({
   statusSlot,
   ticketFrozen,
   accent,
+  edgeAura = false,
 }) {
   const all = (Array.isArray(f.mapWallets) && f.mapWallets.length
     ? f.mapWallets
@@ -626,15 +641,24 @@ export default function LockedClarityExpanded({
     ? 'rgba(139,150,171,0.24)'
     : f.graded
       ? `${accent}55`
-      : 'rgba(212,175,55,0.30)';
+      : edgeAura
+        ? EDGE_AURA_BORDER
+        : 'rgba(212,175,55,0.30)';
 
   return (
-    <div style={{
+    <div
+      className={edgeAura ? 'sf-edge-aura' : undefined}
+      title={edgeAura && Number.isFinite(f.edge) ? `EDGE ${Number(f.edge).toFixed(1)} · high-conviction lock` : undefined}
+      style={{
       borderRadius: 16, overflow: 'hidden',
-      background: 'linear-gradient(180deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0) 42%), linear-gradient(180deg, #161B29 0%, #10141F 55%, #0D111C 100%)',
+      background: edgeAura
+        ? 'linear-gradient(180deg, rgba(212,175,55,0.10) 0%, rgba(255,255,255,0) 48%), linear-gradient(180deg, #161B29 0%, #10141F 55%, #0D111C 100%)'
+        : 'linear-gradient(180deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0) 42%), linear-gradient(180deg, #161B29 0%, #10141F 55%, #0D111C 100%)',
       border: `1px solid ${cardBorder}`,
       position: 'relative',
-      boxShadow: '0 24px 60px -30px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.05)',
+      boxShadow: edgeAura
+        ? EDGE_AURA_SHADOW_IDLE
+        : '0 24px 60px -30px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.05)',
       color: C.text,
     }}>
       <ClarityStyles />
