@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-07-26T23:16:00.301Z",
-  "elapsedSec": 13.2,
+  "scannedAt": "2026-07-26T23:20:04.310Z",
+  "elapsedSec": 15.2,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 29,
   "summary": {
     "total": 206,
     "coveredByMain": 12,
     "recovered": 17,
-    "recoveredPositions": 63,
+    "recoveredPositions": 64,
     "noPositions": 177,
     "apiError": 0,
     "addressNotFound": 0,
@@ -17,7 +17,7 @@
       "spread": 1,
       "total": 2,
       "dropped_shadow_gate": 27,
-      "dropped_excluded": 24,
+      "dropped_excluded": 25,
       "dropped_duplicate": 1
     }
   },
@@ -1821,10 +1821,10 @@
       "sports": "SOC,MLB,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x84cfffc3f16dcc353094de30d4a45226eccd2f63",
-      "positionsCount": 22,
+      "positionsCount": 23,
       "statsSource": "sports_sharps",
       "avgSportBet": 22453,
-      "willPassShadowGate": 6,
+      "willPassShadowGate": 7,
       "willDropAtShadowGate": 16,
       "positions": [
         {
@@ -1834,6 +1834,15 @@
           "side": "over",
           "invested": 36059,
           "entryLine": 7.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "nyy_phi",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 20314,
+          "entryLine": null,
           "passesShadow": true
         },
         {
@@ -1849,18 +1858,18 @@
           "sport": "MLB",
           "gameKey": "nyy_phi",
           "marketType": "ml",
-          "side": "home",
-          "invested": 16129,
+          "side": "away",
+          "invested": 10870,
           "entryLine": null,
           "passesShadow": true
         },
         {
           "sport": "MLB",
           "gameKey": "nyy_phi",
-          "marketType": "ml",
-          "side": "away",
-          "invested": 5232,
-          "entryLine": null,
+          "marketType": "total",
+          "side": "under",
+          "invested": 2628,
+          "entryLine": 4.5,
           "passesShadow": true
         },
         {
@@ -1877,15 +1886,6 @@
           "gameKey": "nyy_phi",
           "marketType": "total",
           "side": "under",
-          "invested": 2234,
-          "entryLine": 4.5,
-          "passesShadow": false
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "nyy_phi",
-          "marketType": "total",
-          "side": "under",
           "invested": 2260,
           "entryLine": 9.5,
           "passesShadow": true
@@ -1894,8 +1894,17 @@
           "sport": "MLB",
           "gameKey": "nyy_phi",
           "marketType": "total",
+          "side": "under",
+          "invested": 731,
+          "entryLine": 7.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "nyy_phi",
+          "marketType": "total",
           "side": "over",
-          "invested": 161,
+          "invested": 176,
           "entryLine": 9.5,
           "passesShadow": false
         },
