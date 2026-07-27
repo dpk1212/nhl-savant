@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-07-27T19:50:06.349Z",
-  "elapsedSec": 17.4,
+  "scannedAt": "2026-07-27T19:54:04.822Z",
+  "elapsedSec": 17.2,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 31,
   "summary": {
     "total": 207,
-    "coveredByMain": 5,
-    "recovered": 15,
-    "recoveredPositions": 114,
-    "noPositions": 187,
+    "coveredByMain": 6,
+    "recovered": 16,
+    "recoveredPositions": 115,
+    "noPositions": 185,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -17,7 +17,7 @@
       "spread": 1,
       "total": 0,
       "dropped_shadow_gate": 46,
-      "dropped_excluded": 60,
+      "dropped_excluded": 61,
       "dropped_duplicate": 0
     }
   },
@@ -470,20 +470,20 @@
       "positions": [
         {
           "sport": "MLB",
+          "gameKey": "cle_cin",
+          "marketType": "total",
+          "side": "under",
+          "invested": 1475,
+          "entryLine": 8.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
           "gameKey": "nyy_cws",
           "marketType": "spread",
           "side": "home",
           "invested": 1126,
           "entryLine": 1.5,
-          "passesShadow": true
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "cle_cin",
-          "marketType": "total",
-          "side": "under",
-          "invested": 993,
-          "entryLine": 8.5,
           "passesShadow": true
         },
         {
@@ -848,7 +848,7 @@
           "gameKey": "phi_mia",
           "marketType": "ml",
           "side": "home",
-          "invested": 6109,
+          "invested": 6140,
           "entryLine": null,
           "passesShadow": true
         },
@@ -992,7 +992,7 @@
           "gameKey": "ari_pit",
           "marketType": "ml",
           "side": "home",
-          "invested": 3231,
+          "invested": 4095,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1241,6 +1241,15 @@
       "positions": [
         {
           "sport": "MLB",
+          "gameKey": "cle_cin",
+          "marketType": "total",
+          "side": "under",
+          "invested": 15856,
+          "entryLine": 8.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
           "gameKey": "ari_pit",
           "marketType": "total",
           "side": "over",
@@ -1282,15 +1291,6 @@
           "side": "under",
           "invested": 3943,
           "entryLine": 9.5,
-          "passesShadow": true
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "cle_cin",
-          "marketType": "total",
-          "side": "under",
-          "invested": 3754,
-          "entryLine": 8.5,
           "passesShadow": true
         },
         {
@@ -1681,8 +1681,7 @@
       "tier": "FLAT",
       "name": "Bagwell306",
       "sports": "NBA,UFC",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x9c76cdb43fb46454da005fbc82047a64a18ec926"
+      "status": "COVERED_BY_MAIN"
     },
     {
       "walletShort": "913987",
@@ -1785,8 +1784,24 @@
       "tier": "FLAT",
       "name": "AnonymousUsername",
       "sports": "MLB",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x9703676286b93c2eca71ca96e8757104519a69c2"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x9703676286b93c2eca71ca96e8757104519a69c2",
+      "positionsCount": 1,
+      "statsSource": "sports_sharps",
+      "avgSportBet": 10615,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "cle_cin",
+          "marketType": "total",
+          "side": "under",
+          "invested": 9942,
+          "entryLine": 8.5,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "9bc9a1",
@@ -2255,7 +2270,7 @@
           "gameKey": "tor_wsh",
           "marketType": "total",
           "side": "over",
-          "invested": 1858,
+          "invested": 2040,
           "entryLine": 9.5,
           "passesShadow": false
         },
