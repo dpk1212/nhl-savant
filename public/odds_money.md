@@ -75,8 +75,8 @@ NHLTue 09/29
 | ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>TUE 09/298:00 PM<br>![](https://logos.oddstrader.com/logos-original/2b914c97-fab4-4d52-820e-a63fc28f1fe6-original.png?d=100x100)<br>N.Y. Rangers<br>34-48<br>-<br>+108Heritage | +104 | +104 | - | - | +108 | - | - |
 | ![](https://logos.oddstrader.com/logos-original/b43cb96f-6406-45ff-9f63-bbc3399c442a-original.png?d=100x100)<br>Boston<br>47-41<br>-<br>-118BetOnline | -118 | -118 | - | - | -120 | - | - |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>TUE 09/2910:00 PM<br>![](https://logos.oddstrader.com/logos-original/1772417e-ab44-4577-9fba-8607bceb834b-original.PNG?d=100x100)<br>Vancouver<br>25-57<br>-<br>+229Heritage | +224 | +224 | - | - | +229 | - | - |
-| ![](https://logos.oddstrader.com/logos-original/048d93e0-fc31-4098-9870-b2bc9ab4ed16-original.png?d=100x100)<br>Edmonton<br>43-45<br>-<br>-257Heritage | -260 | -260 | - | - | -257 | - | - |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>TUE 09/2910:00 PM<br>![](https://logos.oddstrader.com/logos-original/1772417e-ab44-4577-9fba-8607bceb834b-original.PNG?d=100x100)<br>Vancouver<br>25-57<br>-<br>+229Heritage | +224 | +220 | - | - | +229 | - | - |
+| ![](https://logos.oddstrader.com/logos-original/048d93e0-fc31-4098-9870-b2bc9ab4ed16-original.png?d=100x100)<br>Edmonton<br>43-45<br>-<br>-255BetOnline | -260 | -255 | - | - | -257 | - | - |
 
 | ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>TUE 09/2910:30 PM<br>![](https://logos.oddstrader.com/logos-original/57746aad-944c-4746-a88e-276959c6ed99-original.PNG?d=100x100)<br>Chicago<br>29-53<br>-<br>+218Heritage | +216 | +216 | - | - | +218 | - | - |
 | ![](https://logos.oddstrader.com/logos-original/e3199119-49e3-4bf8-9f6f-bcf997eb1105-original.PNG?d=100x100)<br>Vegas<br>53-51<br>-<br>-244Heritage | -250 | -250 | - | - | -244 | - | - |
@@ -185,6 +185,8 @@ It depends on the matchup. If the favorite is strong but overpriced, puck line b
 Look for short answers to common questions like how the puck line works or how to track movement across sportsbooks.
 
 [![icon](https://otcdn.virginia.us-east-1.oddstrader.com/ot-app-icon.svg)Download the app](https://get-app.oddstrader.com/ot-app-link)
+
+Thinking...Generate
 
 ![BetStation](https://otcdn.virginia.us-east-1.oddstrader.com/otTurbo/assistant-logo.svg)
 
