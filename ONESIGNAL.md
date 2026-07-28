@@ -12,16 +12,27 @@ Brand colors: Primary `#10B981` · Secondary `#D4AF37`
 
 | Event | Behavior |
 |---|---|
-| Paid user Enables on Account | Subscribe + tag `paid=true`, External ID = Firebase uid |
-| Paid user visits while premium | `PaidPushGate` re-asserts `paid=true` (no permission prompt) |
+| Paid user Enables on Account | Subscribe + tag `paid=all` or `paid=edge11`, External ID = Firebase uid |
+| Paid user visits while premium | `PaidPushGate` re-asserts entitlement — **preserves** `all` / `edge11` (migrates legacy `true` → `all`) |
 | User signs out | Clear External ID only — **keep** browser subscription (alerts work offline) |
-| Sub lapses / canceled | Tag `paid=false` via Stripe webhook (+ client optOut if they reopen) |
-| Production send | Always filter `tag paid = true` — **never** `Active Subscriptions` |
+| Sub lapses / canceled | Tag `paid=false` via Stripe webhook (+ client untag if they reopen) |
+| Production send | Filter by lock mode (below) — **never** `Active Subscriptions` |
+
+### Lock alert modes (same `paid` tag)
+
+| Tag value | Who gets the push |
+|---|---|
+| `all` | Every staked lock at T−15 |
+| `edge11` | Only locks with stamped **EDGE ≥ 11** |
+| `true` | Legacy — treated as `all` by send filters |
+| `false` | No sends (free / lapsed) |
+
+Account → Lock Alerts shows **All plays** vs **Top tier (EDGE 11+)**. Changing mode while enabled updates the tag without a new permission prompt.
 
 ### Tag hygiene (plan limit)
 
 OneSignal org plan allows **one custom tag** for us (`entitlements-tag-limit`).  
-**Only write `paid` = `"true"` | `"false"`.** Do not add `tier` / `email` / `lock_alerts`.
+**Only write `paid`.** Encode preference in its value (`all` / `edge11` / `false`). Do not add `tier` / `email` / `lock_alerts`.
 
 Client free-path is delayed ~5s so Stripe sync can promote free→paid without a false untag on login.
 
@@ -34,11 +45,12 @@ Client free-path is delayed ~5s so Stripe sync can promote free→paid without a
 | `index.html` | SDK init · **autoPrompt: false** |
 | `public/OneSignalSDKWorker.js` | Service worker at site root |
 | `public/manifest.json` | PWA (`display: standalone`) for iOS home-screen push |
-| `PaidPushGate.jsx` | Paid → External ID + `paid=true`. Free → delayed `paid=false` + optOut. Logout ≠ optOut |
-| `LockAlertsCard.jsx` | Account `#/account` — Enable / Turn off + iOS/Android directions |
-| `scripts/sendLockAlerts.mjs` | Cron: newly frozen LOCKED at T−15 → OneSignal (`paid=true`) |
-| `functions/src/onesignalTags.js` | Stripe webhook syncs only `paid` by External ID |
-| Tags | **`paid` only** |
+| `PaidPushGate.jsx` | Paid → External ID + preserve `paid=all\|edge11`. Free → delayed `paid=false`. Logout ≠ optOut |
+| `LockAlertsCard.jsx` | Account `#/account` — Enable / Turn off + All vs Top tier + iOS/Android directions |
+| `src/lib/lockAlertMode.js` | Shared mode constants + OneSignal filter builder |
+| `scripts/sendLockAlerts.mjs` | Cron: newly frozen LOCKED at T−15 → audience by EDGE |
+| `functions/src/onesignalTags.js` | Stripe webhook syncs `paid` by External ID (preserves mode) |
+| Tags | **`paid` only** — values `all` \| `edge11` \| `false` |
 
 Free visitors never see a permission dialog. Paid users opt in from **Account → Lock Alerts**.
 
@@ -56,13 +68,14 @@ Free visitors never see a permission dialog. Paid users opt in from **Account �
    - Inside freeze window: `now >= commenceTime - 15m` through
      `commenceTime + 10m` grace (late cycle still delivers)
    - Not yet stamped `sides[side].lockAlertSentAt`
-3. Sends push with filter `paid=true`. Body is set explicitly (not the
-   dashboard template body) so tier / units / win-rate copy is not stripped:
-   `{pick} just locked — {TIER} · {Nu} · {WR}% WR. ~15 min to gametime.`
-   - **Tier** = product label from `v8_hcStakeTier` (MAX PLAY / TOP PICK / …)
-   - **Units** = live `finalUnits` on that side (post tape/odds cap)
-   - **WR** = display-tier win % from `DAILY_AGSU_REPORT.md` § By Stake Tier
-4. On success, stamps `lockAlertSentAt` + `lockAlertMessageId` (idempotent).
+4. Sends push with filters:
+   - Always: `paid=all` **OR** legacy `paid=true`
+   - If stamped EDGE ≥ 11: also **OR** `paid=edge11`
+   - EDGE from `v8_winnerAlignEdge` (else meanFor − meanAg/prior)
+   - Body is set explicitly (not the dashboard template body):
+     `{pick} just locked — {TIER} · {Nu} · {WR}% WR. ~15 min to gametime.`
+   - Heading: `Sharp Flow · Locked` · or `Sharp Flow · Top lock` when EDGE ≥ 11
+5. On success, stamps `lockAlertSentAt` + `lockAlertMessageId` (+ `lockAlertEdge`) — idempotent.
 
 Owner-only test (no paid audience, no Firestore stamp):
 ```bash
@@ -100,11 +113,14 @@ Without this, cancel/lapse only updates Firestore; OneSignal `paid` stays stale 
 
 ### Verify tag sync
 
-1. Paid + Enable → Audience user shows `paid=true`
-2. Ask agent to send filter `paid=true` → you receive; `paid=false` → rejected
-3. After Functions secret is live: cancel test sub (or set Firestore free + webhook) → `paid=false` without opening the app
+1. Paid + Enable (All) → Audience user shows `paid=all`
+2. Switch to Top tier → `paid=edge11`
+3. EDGE ≥ 11 lock → both audiences; EDGE &lt; 11 → `all`/`true` only
+4. After Functions secret is live: cancel test sub → `paid=false` without opening the app
 
 ### Backfill existing users
+
+Migrates legacy `true` → `all` while preserving any `edge11` preference:
 
 ```bash
 ONESIGNAL_REST_API_KEY=... node scripts/syncOnesignalPaidTags.mjs --dry-run
@@ -120,12 +136,12 @@ ONESIGNAL_REST_API_KEY=... node scripts/syncOnesignalPaidTags.mjs --uid=FIREBASE
 | Asset | ID / name |
 |---|---|
 | Lock template | **15-Min Lock Alert** · `451e41a3-2bdf-4758-a779-ec59a8fecf36` |
-| Lock copy | Title `Sharp Flow · Locked` · `{pick} just locked — {TIER} · {Nu} · {WR}% WR. ~15 min to gametime.` (units from `finalUnits`; WR from `DAILY_AGSU_REPORT.md` By Stake Tier table; script sets `contents` directly — do not rely on template body) |
+| Lock copy | Title `Sharp Flow · Locked` (or `Top lock`) · `{pick} just locked — {TIER} · {Nu} · {WR}% WR. ~15 min to gametime.` |
 | Enable template | **Lock Alerts Enabled** · `43652cb9-f99a-47a7-a0ce-2eea9a1001e4` |
 | Enable copy | Title `You're on for lock alerts` · welcome body |
 | Stake gate | Alert only if Locked Picks would show it (`finalUnits > 0` + stake tier) |
 | Click URLs | Lock → `/#/` · Enable → `/#/account` |
-| Audience | filter `tag paid = true` |
+| Audience | `paid=all` \| `true` · plus `edge11` when EDGE ≥ 11 |
 
 ---
 
@@ -135,32 +151,3 @@ ONESIGNAL_REST_API_KEY=... node scripts/syncOnesignalPaidTags.mjs --uid=FIREBASE
 2. Prompt Editor → **Auto Prompt OFF**
 3. Service worker at `/` — live at https://nhlsavant.com/OneSignalSDKWorker.js
 4. Skip SDK verification if needed (paid-only means no public first subscription)
-
----
-
-## Mobile
-
-### Android
-Open site in Chrome → sign in paid → Account → Enable Lock Alerts → Allow.
-
-### iPhone / iPad (iOS 16.4+)
-1. Open site → Share → **Add to Home Screen**
-2. Open from **home-screen icon**
-3. Sign in paid → Account → Enable Lock Alerts → Allow
-
-See [iOS web push](https://documentation.onesignal.com/docs/en/web-push-for-ios).
-
----
-
-## OneSignal MCP (Cursor)
-
-```json
-"onesignal": {
-  "url": "https://server.smithery.ai/onesignal/onesignal"
-}
-```
-
-Authenticate with App ID + REST API key (not Key ID).  
-Docs: https://documentation.onesignal.com/docs/en/model-context-protocol
-
-**Never commit the REST API key.**

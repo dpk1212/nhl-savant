@@ -3,13 +3,15 @@
  *
  * Runs after syncPickStateAuthoritative in the market cron. For each live
  * side with lockStage=LOCKED that has entered the T−15 freeze window and
- * has not yet been alerted, sends OneSignal push filtered to tag paid=true.
+ * has not yet been alerted, sends OneSignal push filtered by lock preference:
+ *   paid=all | paid=true (legacy) → every staked lock
+ *   paid=edge11 → only when stamped EDGE ≥ 11
  *
  * Usage:
  *   node scripts/sendLockAlerts.mjs
  *   node scripts/sendLockAlerts.mjs --dry-run
  *   node scripts/sendLockAlerts.mjs --date=2026-07-09
- *   # Owner-only test (no Firestore stamp; never hits paid=true audience):
+ *   # Owner-only test (no Firestore stamp; never hits paid audience):
  *   node scripts/sendLockAlerts.mjs --test-owner --force
  *   node scripts/sendLockAlerts.mjs --test-owner --force --side=2026-07-09_SOC_mar_fra:home
  *
@@ -31,6 +33,11 @@ import {
   AGS_V12_PATH_TO_DISPLAY,
   AGS_V12_STAKE_TIER_META,
 } from '../src/lib/ags.js';
+import {
+  LOCK_ALERT_EDGE_MIN,
+  onesignalFiltersForEdge,
+  sideLockAlertEdge,
+} from '../src/lib/lockAlertMode.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..');
@@ -247,11 +254,12 @@ function buildContents({ pickText, tier }) {
   return `${pickText} just locked — ~15 min to gametime. Tap for the card.`;
 }
 
-async function sendOneSignal({ pickText, detail, tier }) {
+async function sendOneSignal({ pickText, detail, tier, edge }) {
   if (!REST_KEY) {
     throw new Error('ONESIGNAL_REST_API_KEY is not set');
   }
   const contentsEn = buildContents({ pickText, tier });
+  const isTop = Number.isFinite(edge) && edge >= LOCK_ALERT_EDGE_MIN;
   // Do NOT use template_id for the body. The dashboard template
   // ("{{pick}} just locked — ~15 min…") was winning over contents and
   // stripping tier WR. Send headings/contents explicitly; keep custom_data
@@ -266,20 +274,22 @@ async function sendOneSignal({ pickText, detail, tier }) {
       units: tier?.unitsText || '',
       tierWinPct: tier?.winPct != null ? String(tier.winPct) : '',
       tierRecord: tier?.record || '',
+      edge: Number.isFinite(edge) ? String(edge) : '',
+      lockMode: isTop ? 'edge11+' : 'all',
       templateId: TEMPLATE_ID, // reference only — not applied
     },
     contents: { en: contentsEn },
-    headings: { en: 'Sharp Flow · Locked' },
+    headings: { en: isTop ? 'Sharp Flow · Top lock' : 'Sharp Flow · Locked' },
     url: SITE_URL,
     ttl: 900,
     name: `${TEST_OWNER ? 'TEST ' : ''}Lock: ${pickText}`.slice(0, 128),
   };
 
   if (TEST_OWNER) {
-    // Owner-only — never use paid=true filter for tests.
+    // Owner-only — never use paid audience filter for tests.
     body.include_aliases = { external_id: [OWNER_UID] };
   } else {
-    body.filters = [{ field: 'tag', key: 'paid', relation: '=', value: 'true' }];
+    body.filters = onesignalFiltersForEdge(edge);
   }
 
   const res = await fetch('https://api.onesignal.com/notifications', {
@@ -308,9 +318,10 @@ async function main() {
     `Mode: ${DRY_RUN ? 'DRY RUN' : 'LIVE'}${TEST_OWNER ? ' · TEST-OWNER only' : ''} · app ${APP_ID}`,
   );
   if (TEST_OWNER) {
-    console.log(`Audience: external_id=${OWNER_UID} (no paid=true, no Firestore stamp)`);
+    console.log(`Audience: external_id=${OWNER_UID} (no paid filter, no Firestore stamp)`);
   }
   if (FORCE) console.log('Force: ignore T−15 window / already-sent (test path)');
+  console.log(`Lock modes: paid=all|true → all locks · paid=edge11 → EDGE≥${LOCK_ALERT_EDGE_MIN}`);
 
   if (!DRY_RUN && !REST_KEY) {
     console.error('Missing ONESIGNAL_REST_API_KEY — aborting (use --dry-run to inspect only)');
@@ -396,17 +407,23 @@ async function main() {
         stats.candidates++;
         const pickText = pickLabel(pick, sideKey, market);
         const tier = tierLineForSide(sd, tierStats);
+        const edge = sideLockAlertEdge(sd);
         const detail = tier?.text ? ` ${tier.text}.` : ' Open Sharp Flow.';
         const preview = buildContents({ pickText, tier });
+        const audience =
+          Number.isFinite(edge) && edge >= LOCK_ALERT_EDGE_MIN
+            ? `all+edge11 (EDGE ${edge.toFixed(1)})`
+            : `all only${Number.isFinite(edge) ? ` (EDGE ${edge.toFixed(1)})` : ' (EDGE n/a)'}`;
         console.log(`  → ${DRY_RUN ? 'WOULD SEND' : 'SEND'} ${col}/${pick._id} ${sideKey}`);
         console.log(
-          `     path=${sd.v8_hcStakeTier || '—'} · units=${tier?.unitsText || formatUnits(sideStakeUnits(sd)) || '0u'} · ${preview}`,
+          `     path=${sd.v8_hcStakeTier || '—'} · units=${tier?.unitsText || formatUnits(sideStakeUnits(sd)) || '0u'} · audience=${audience}`,
         );
+        console.log(`     ${preview}`);
 
         if (DRY_RUN) continue;
 
         try {
-          const result = await sendOneSignal({ pickText, detail, tier });
+          const result = await sendOneSignal({ pickText, detail, tier, edge });
           const messageId = result.id || null;
           // Never stamp Firestore on owner-only tests — production cron still owns idempotency.
           if (!TEST_OWNER) {
@@ -419,6 +436,7 @@ async function main() {
                     [sideKey]: {
                       lockAlertSentAt: now,
                       lockAlertMessageId: messageId,
+                      lockAlertEdge: Number.isFinite(edge) ? edge : null,
                     },
                   },
                   lastAction: 'lock_alert_sent',

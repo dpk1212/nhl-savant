@@ -5,6 +5,9 @@ import {
   onesignalGetPushStatus,
   onesignalEnableForPaidUser,
   onesignalOptOutPush,
+  onesignalSetLockAlertMode,
+  LOCK_ALERT_MODE,
+  LOCK_ALERT_EDGE_MIN,
 } from '../lib/onesignal';
 
 const cardShell = {
@@ -41,6 +44,7 @@ export default function LockAlertsCard({ user, isPremium }) {
   const [message, setMessage] = useState(null);
   const [showIos, setShowIos] = useState(false);
   const [showAndroid, setShowAndroid] = useState(false);
+  const [lockMode, setLockMode] = useState(LOCK_ALERT_MODE.ALL);
 
   const ios = isIosDevice();
   const standalone = isStandalone();
@@ -48,6 +52,9 @@ export default function LockAlertsCard({ user, isPremium }) {
   const refreshStatus = useCallback(async () => {
     const s = await onesignalGetPushStatus();
     setPushStatus(s);
+    if (s?.lockMode === LOCK_ALERT_MODE.EDGE11 || s?.lockMode === LOCK_ALERT_MODE.ALL) {
+      setLockMode(s.lockMode);
+    }
     return s;
   }, []);
 
@@ -77,10 +84,18 @@ export default function LockAlertsCard({ user, isPremium }) {
       }
       const outcome = await onesignalEnableForPaidUser({
         uid: user.uid,
+        mode: lockMode,
       });
       await refreshStatus();
       if (outcome.ok) {
-        setMessage({ type: 'success', text: 'Lock alerts are on for this device. We’ll ping you ~15 min before gametime.' });
+        const modeNote =
+          lockMode === LOCK_ALERT_MODE.EDGE11
+            ? `Top tier only (EDGE ${LOCK_ALERT_EDGE_MIN}+).`
+            : 'All staked locks.';
+        setMessage({
+          type: 'success',
+          text: `Lock alerts are on for this device. ${modeNote} We’ll ping you ~15 min before gametime.`,
+        });
       } else if (outcome.reason === 'denied') {
         setMessage({
           type: 'error',
@@ -107,6 +122,30 @@ export default function LockAlertsCard({ user, isPremium }) {
     } catch (err) {
       console.error(err);
       setMessage({ type: 'error', text: 'Could not turn off alerts. Try again.' });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleModeChange = async (nextMode) => {
+    if (nextMode !== LOCK_ALERT_MODE.ALL && nextMode !== LOCK_ALERT_MODE.EDGE11) return;
+    setLockMode(nextMode);
+    if (!pushStatus?.optedIn || !user?.uid || !isPremium) return;
+    setBusy(true);
+    setMessage(null);
+    try {
+      await onesignalSetLockAlertMode(nextMode);
+      await refreshStatus();
+      setMessage({
+        type: 'success',
+        text:
+          nextMode === LOCK_ALERT_MODE.EDGE11
+            ? `Switched to Top tier — EDGE ${LOCK_ALERT_EDGE_MIN}+ only.`
+            : 'Switched to All plays — every staked lock.',
+      });
+    } catch (err) {
+      console.error(err);
+      setMessage({ type: 'error', text: 'Could not update alert mode. Try again.' });
     } finally {
       setBusy(false);
     }
@@ -149,7 +188,7 @@ export default function LockAlertsCard({ user, isPremium }) {
 
       <p style={{ fontSize: '0.938rem', color: 'rgba(241, 245, 249, 0.8)', lineHeight: 1.6, marginBottom: '1.25rem' }}>
         Get a push when a Sharp Flow play <strong style={{ color: '#10B981' }}>locks</strong> — about 15 minutes before gametime.
-        Opt in once per device (Home Screen on iPhone). Stays on until you tap Turn off — including after sign-out while your plan is active. If the plan ends, sends pause; re-subscribe and they resume on this device without enabling again.
+        Choose all staked locks or Top tier only (EDGE {LOCK_ALERT_EDGE_MIN}+). Opt in once per device (Home Screen on iPhone). Stays on until you tap Turn off — including after sign-out while your plan is active. If the plan ends, sends pause; re-subscribe and they resume on this device without enabling again.
       </p>
 
       {/* Status */}
@@ -161,7 +200,7 @@ export default function LockAlertsCard({ user, isPremium }) {
           flexWrap: 'wrap',
           padding: '0.875rem 1rem',
           borderRadius: '10px',
-          marginBottom: '1.25rem',
+          marginBottom: '0.75rem',
           background: optedIn ? 'rgba(16, 185, 129, 0.12)' : 'rgba(148, 163, 184, 0.08)',
           border: `1px solid ${optedIn ? 'rgba(16, 185, 129, 0.35)' : 'rgba(148, 163, 184, 0.2)'}`,
         }}
@@ -198,6 +237,35 @@ export default function LockAlertsCard({ user, isPremium }) {
             {busy ? 'Working…' : 'Enable Lock Alerts'}
           </button>
         )}
+      </div>
+
+      {/* Alert mode */}
+      <div
+        role="radiogroup"
+        aria-label="Lock alert mode"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '0.5rem',
+          marginBottom: '1.25rem',
+        }}
+      >
+        <ModeOption
+          selected={lockMode === LOCK_ALERT_MODE.ALL}
+          disabled={busy}
+          onSelect={() => handleModeChange(LOCK_ALERT_MODE.ALL)}
+          title="All plays"
+          subtitle="Every staked lock"
+          accent="#10B981"
+        />
+        <ModeOption
+          selected={lockMode === LOCK_ALERT_MODE.EDGE11}
+          disabled={busy}
+          onSelect={() => handleModeChange(LOCK_ALERT_MODE.EDGE11)}
+          title="Top tier"
+          subtitle={`EDGE ${LOCK_ALERT_EDGE_MIN}+ only`}
+          accent="#D4AF37"
+        />
       </div>
 
       {message && (
@@ -320,6 +388,34 @@ function Header() {
         Lock Alerts
       </h3>
     </div>
+  );
+}
+
+function ModeOption({ selected, disabled, onSelect, title, subtitle, accent }) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={selected}
+      disabled={disabled}
+      onClick={onSelect}
+      style={{
+        textAlign: 'left',
+        padding: '0.75rem 0.875rem',
+        borderRadius: 10,
+        cursor: disabled ? 'wait' : 'pointer',
+        background: selected ? `${accent}18` : 'rgba(15, 23, 42, 0.45)',
+        border: `1px solid ${selected ? `${accent}66` : 'rgba(148, 163, 184, 0.2)'}`,
+        color: '#F1F5F9',
+      }}
+    >
+      <div style={{ fontSize: '0.875rem', fontWeight: 700, color: selected ? accent : '#F1F5F9' }}>
+        {title}
+      </div>
+      <div style={{ fontSize: '0.72rem', color: 'rgba(241, 245, 249, 0.55)', marginTop: 2 }}>
+        {subtitle}
+      </div>
+    </button>
   );
 }
 

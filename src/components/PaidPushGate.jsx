@@ -11,11 +11,13 @@ import {
  * PaidPushGate — keep OneSignal External ID + `paid` tag in sync.
  *
  * Does NOT request notification permission. Opt-in lives on Account
- * (#/account) so users see directions and choose Enable Lock Alerts.
+ * (#/account) so users see directions and choose Enable Lock Alerts
+ * (All plays vs Top tier EDGE 11+).
  *
  * Sign-out: clear External ID only (push subscription stays).
  * Sub lapse / free: paid=false tag only — never optOut (that wiped
  * persistent Enable when isPremium briefly flickered false).
+ * Paid visit: preserves paid=all|edge11 (migrates legacy true → all).
  *
  * Free-path is deferred ~5s so Stripe background sync can promote
  * free→paid without a false untag race on login.
