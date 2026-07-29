@@ -1,6 +1,6 @@
 # AGS-Unified — V12 Daily Monitor
 
-**Generated:** Wednesday, July 29, 2026 at 7:38 AM ET
+**Generated:** Wednesday, July 29, 2026 at 10:51 AM ET
 
 **Model:** `ags-unified-v12` · **Live since:** 2026-06-01 (59 days) · **Tape / side-profile era:** 2026-07-15+
 
@@ -14,23 +14,23 @@ Appendix A — Model Versions · Appendix B — Feature Lab
 
 ## § 1 — Executive Summary
 
-> 🟢 **V12 is currently WINNING.** Since going live on **2026-06-01** (59 days ago), V12 has evaluated **1638** picks, shipped **537** for real money (32.8% ship rate), and muted the other **1101**. On the shipped picks V12 has gone **297-240** (55.3% win), staked **1516.22u**, and returned **+57.39u** at **+3.8% ROI**.
+> 🟢 **V12 is currently WINNING.** Since going live on **2026-06-01** (59 days ago), V12 has evaluated **1640** picks, shipped **537** for real money (32.7% ship rate), and muted the other **1103**. On the shipped picks V12 has gone **297-240** (55.3% win), staked **1516.22u**, and returned **+57.39u** at **+3.8% ROI**.
 
 ### Snapshot
 
 | Metric                              | Value                          |
 |-------------------------------------|--------------------------------|
 | Days V12 has been authoritative     |                             59 |
-| Picks V12 has evaluated             |                           1638 |
+| Picks V12 has evaluated             |                           1640 |
 | Picks SHIPPED (units > 0)           |                            537 |
-| Picks MUTED (score ≤ 0, FADE)       |                           1101 |
-| Ship rate                           |                          32.8% |
+| Picks MUTED (score ≤ 0, FADE)       |                           1103 |
+| Ship rate                           |                          32.7% |
 | Live W-L                            |                        297-240 |
 | Live Win %                          |                          55.3% |
 | Live PnL (units)                    |                         +57.39 |
 | Live ROI                            |                          +3.8% |
 | Avg PnL / day                       |                         +0.97u |
-| Most recent action (2026-07-28)  |           11 live, 5-6, -6.54u |
+| Most recent action (2026-07-29)  |            0 live, 0-0, +0.00u |
 
 ### What's working
 
@@ -61,13 +61,12 @@ Odds cap clamps long dogs only (+121 / +151 / +200 → max 2.5 / 1.5 / 1.0u). **
 
 **Full book:** 59d · 537 live · 297-240 · **+57.39u** · +3.8% ROI · +0.97u/day.
 
-_Prior to table (2026-06-01 → 2026-07-06): 385 live · 215-170 · +59.88u · cum through prior = +59.88u._
+_Prior to table (2026-06-01 → 2026-07-07): 395 live · 219-176 · +48.67u · cum through prior = +48.67u._
 
 Last **21** calendar days with activity. **Live** = units > 0 · **Muted** = graded FADE / 0u · **Cum PnL** = running total since V12 launch.
 
 | Date       | Evaluated | Live | Muted | W-L (live) | Win %  | Stake (u) | PnL (u)    | ROI       | Cum PnL    |
 |------------|-----------|------|-------|------------|--------|-----------|------------|-----------|------------|
-| 2026-07-07 |        38 |   10 |    18 | 4-6        |  40.0% |     30.50 |     -11.21 |    -36.8% |     +48.67 |
 | 2026-07-08 |        37 |    8 |    11 | 6-2        |  75.0% |     24.50 |     +12.97 |     52.9% |     +61.64 |
 | 2026-07-09 |        25 |    7 |    11 | 5-2        |  71.4% |     25.00 |      +7.44 |     29.8% |     +69.08 |
 | 2026-07-10 |        37 |    8 |    16 | 5-3        |  62.5% |     34.00 |      +4.96 |     14.6% |     +74.04 |
@@ -88,8 +87,9 @@ Last **21** calendar days with activity. **Live** = units > 0 · **Muted** = gra
 | 2026-07-26 |        26 |    4 |    13 | 3-1        |  75.0% |     21.06 |      +8.50 |     40.4% |     +63.65 |
 | 2026-07-27 |        17 |    8 |     8 | 4-4        |  50.0% |     27.63 |      +0.28 |      1.0% |     +63.93 |
 | 2026-07-28 |        26 |   11 |    11 | 5-6        |  45.5% |     34.82 |      -6.54 |    -18.8% |     +57.39 |
+| 2026-07-29 |         2 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +57.39 |
 
-> **Trajectory.** Last 3 days (2.7% ROI) ≈ prior book (3.8%).
+> **Trajectory.** 🟡 Last 3 days (-10.0% ROI) **-14.4pp** vs prior (4.4%).
 
 ## § 4 — Path & Modifier Board
 
@@ -252,7 +252,7 @@ From **2026-07-15**, path units are resized by **TAPE** = `2·(EDGE/10) + 1.5·(
 
 | Window | Sides | With tape stamp | Graded w/ stamp |
 |--------|------:|----------------:|----------------:|
-| ≥ 2026-07-15 | 326 | 321 | 317 |
+| ≥ 2026-07-15 | 328 | 323 | 317 |
 
 ### (A) By tape action (stamped + graded)
 
