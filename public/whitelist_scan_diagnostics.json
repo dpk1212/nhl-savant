@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-07-29T14:36:45.129Z",
-  "elapsedSec": 15,
+  "scannedAt": "2026-07-29T14:42:29.905Z",
+  "elapsedSec": 13.5,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 30,
   "summary": {
     "total": 206,
-    "coveredByMain": 6,
+    "coveredByMain": 7,
     "recovered": 16,
-    "recoveredPositions": 99,
-    "noPositions": 184,
+    "recoveredPositions": 100,
+    "noPositions": 183,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,7 +16,7 @@
       "ml": 4,
       "spread": 0,
       "total": 1,
-      "dropped_shadow_gate": 42,
+      "dropped_shadow_gate": 43,
       "dropped_excluded": 52,
       "dropped_duplicate": 0
     }
@@ -96,7 +96,7 @@
           "gameKey": "ari_pit",
           "marketType": "ml",
           "side": "away",
-          "invested": 178,
+          "invested": 179,
           "entryLine": null,
           "passesShadow": false
         }
@@ -656,7 +656,7 @@
           "gameKey": "tor_wsh",
           "marketType": "ml",
           "side": "home",
-          "invested": 27,
+          "invested": 64,
           "entryLine": null,
           "passesShadow": false
         }
@@ -1207,7 +1207,7 @@
           "gameKey": "chc_stl",
           "marketType": "ml",
           "side": "away",
-          "invested": 437,
+          "invested": 438,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1254,8 +1254,7 @@
       "tier": "FLAT",
       "name": "pleaseplease123",
       "sports": "MLB",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x5e9458202b5817a72cf81105ec8a30e6f3705ba1"
+      "status": "COVERED_BY_MAIN"
     },
     {
       "walletShort": "710c2e",
@@ -2038,11 +2037,11 @@
       "sports": "SOC,MLB,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x84cfffc3f16dcc353094de30d4a45226eccd2f63",
-      "positionsCount": 17,
+      "positionsCount": 18,
       "statsSource": "sports_sharps",
       "avgSportBet": 22453,
       "willPassShadowGate": 1,
-      "willDropAtShadowGate": 16,
+      "willDropAtShadowGate": 17,
       "positions": [
         {
           "sport": "MLB",
@@ -2087,6 +2086,15 @@
           "side": "away",
           "invested": 403,
           "entryLine": -1.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "ari_pit",
+          "marketType": "total",
+          "side": "under",
+          "invested": 309,
+          "entryLine": 8.5,
           "passesShadow": false
         },
         {
