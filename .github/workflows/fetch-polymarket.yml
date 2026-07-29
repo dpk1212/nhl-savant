@@ -2,8 +2,10 @@ name: Fetch Market Data (Polymarket + Kalshi)
 
 # ─── Scheduling (Option A — self-chain, 2026-07-11) ────────────────────────
 # GitHub Actions cron is unreliable at sub-15-min cadence (silently dropped).
-# We keep ~4-min scans via an inner loop (~12 × 240s ≈ 48 min/run), then
-# self-dispatch the next run so coverage is continuous without babysitting.
+# We keep ~4-min scans via an inner loop (12 × 240s target ≈ 48 min/run;
+# daytime slates can run ~5.5–7 min/cycle ≈ 70–85 min). Job timeout must
+# clear that wall so all 12 cycles finish and the chain step can dispatch.
+# Self-dispatch the next run so coverage is continuous without babysitting.
 #
 # Day window (America/New_York):
 #   • Starter cron ~6am ET (10:00 UTC during EDT / 11:00 UTC during EST)
@@ -13,7 +15,8 @@ name: Fetch Market Data (Polymarket + Kalshi)
 #   • After 11pm ET the chain stops until the next morning starter
 #
 # concurrency cancel-in-progress:false → queued safety/cron waits; no kill.
-# Inner loop unchanged (2026-07-09): 12 × ~4 min, work ~150–180s/cycle.
+# Inner loop: 12 × ~4 min target; work was ~150–180s/cycle (2026-07-09),
+# but heavy daytime books regularly overrun (2026-07-29: 324–425s/cycle).
 #
 # Odds API budget: ~12 cycles × ~17 waking hours ≈ ~200 cycles/day × ~1–2
 # calls — still well under the 50K/mo quota.
@@ -38,7 +41,9 @@ concurrency:
 jobs:
   fetch-market-data:
     runs-on: ubuntu-latest
-    timeout-minutes: 58
+    # 100m clears 12× ~7m daytime cycles + setup. 58m timed out mid-loop on
+    # 2026-07-29 (job cancelled → chain step skipped via !cancelled()).
+    timeout-minutes: 100
     permissions:
       contents: write
       actions: write   # required for end-of-run self-dispatch (gh workflow run)
