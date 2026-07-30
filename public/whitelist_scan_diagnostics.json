@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-07-30T00:18:54.606Z",
-  "elapsedSec": 12.6,
+  "scannedAt": "2026-07-30T00:22:55.168Z",
+  "elapsedSec": 12.7,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 32,
   "summary": {
     "total": 206,
     "coveredByMain": 8,
-    "recovered": 14,
-    "recoveredPositions": 39,
-    "noPositions": 184,
+    "recovered": 15,
+    "recoveredPositions": 40,
+    "noPositions": 183,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,7 +16,7 @@
       "ml": 6,
       "spread": 0,
       "total": 0,
-      "dropped_shadow_gate": 7,
+      "dropped_shadow_gate": 8,
       "dropped_excluded": 26,
       "dropped_duplicate": 0
     }
@@ -1098,8 +1098,24 @@
       "tier": "CONFIRMED",
       "name": "ramadamaramadam",
       "sports": "MLB,NBA",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x5b4ec9c06b284ee52c41a761974d836992880232"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x5b4ec9c06b284ee52c41a761974d836992880232",
+      "positionsCount": 1,
+      "statsSource": "sports_sharps",
+      "avgSportBet": 96473,
+      "willPassShadowGate": 0,
+      "willDropAtShadowGate": 1,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "hou_laa",
+          "marketType": "total",
+          "side": "under",
+          "invested": 0,
+          "entryLine": 9.5,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "8a3782",
