@@ -10330,8 +10330,11 @@ export default function SharpFlow() {
                 return { curve, totalPicks, finalCum, isProfit, minCum, maxCum, peak, trough, drawdown, bestDay, worstDay, STARTING_BANKROLL, dollarsCurrent, fmt$ };
               })();
 
-              // ─── Recent picks ledger (last 20 graded/pending, newest first) ──
-              const ledgerRows = [...agsuPicks]
+              // ─── Recent picks ledger (staked only — same money book as the
+              // profit graph / hero KPIs). Exclude tracked-only and 0u FADE/
+              // mute rows that still carry an AGS-U tier stamp.
+              const stakedAgsuPicks = agsuPicks.filter(p => !p.tracked && Number(p.units) > 0);
+              const ledgerRows = [...stakedAgsuPicks]
                 .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
                 .slice(0, 20);
               const featureLabels = {
@@ -11239,18 +11242,18 @@ export default function SharpFlow() {
                                 }}
                               >
                                 <span style={{ ...T.micro, color: B.gold, fontWeight: 900, letterSpacing: '0.12em', fontSize: '0.58rem' }}>
-                                  ◆ RECENT AGS-U PICKS
+                                  ◆ RECENT STAKED PICKS
                                 </span>
                                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                                   <span style={{ ...T.micro, color: B.textSec, fontSize: '0.58rem', letterSpacing: '0.04em' }}>
-                                    <span style={{ color: B.text, fontWeight: 800 }}>{ledgerRows.length}</span> of {agsuPicks.length}
+                                    <span style={{ color: B.text, fontWeight: 800 }}>{ledgerRows.length}</span> of {stakedAgsuPicks.length}
                                   </span>
                                   {showAgsuLedger ? <ChevronUp size={12} color={B.textMuted} /> : <ChevronDown size={12} color={B.textMuted} />}
                                 </span>
                               </button>
                               {showAgsuLedger && ledgerRows.length === 0 && (
                                 <div style={{ ...T.micro, color: B.textMuted, padding: '1rem', textAlign: 'center', fontStyle: 'italic' }}>
-                                  No picks match current filters.
+                                  No staked plays match current filters.
                                 </div>
                               )}
                               {showAgsuLedger && (
