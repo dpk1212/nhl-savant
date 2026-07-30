@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-07-30T14:56:32.986Z",
-  "elapsedSec": 14.9,
+  "scannedAt": "2026-07-30T15:00:29.053Z",
+  "elapsedSec": 16.6,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 30,
   "summary": {
     "total": 206,
     "coveredByMain": 4,
     "recovered": 17,
-    "recoveredPositions": 64,
+    "recoveredPositions": 65,
     "noPositions": 185,
     "apiError": 0,
     "addressNotFound": 0,
@@ -17,7 +17,7 @@
       "spread": 0,
       "total": 0,
       "dropped_shadow_gate": 11,
-      "dropped_excluded": 43,
+      "dropped_excluded": 44,
       "dropped_duplicate": 0
     }
   },
@@ -495,6 +495,15 @@
         },
         {
           "sport": "MLB",
+          "gameKey": "kcr_min",
+          "marketType": "total",
+          "side": "over",
+          "invested": 542,
+          "entryLine": 9.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
           "gameKey": "tex_tbr",
           "marketType": "spread",
           "side": "away",
@@ -509,15 +518,6 @@
           "side": "home",
           "invested": 827,
           "entryLine": 1.5,
-          "passesShadow": true
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "kcr_min",
-          "marketType": "total",
-          "side": "over",
-          "invested": 503,
-          "entryLine": 9.5,
           "passesShadow": true
         },
         {
@@ -1543,10 +1543,10 @@
       "sports": "NBA,NHL",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xe9076a87c5ed90ef16e6fe6529c943baeca0cff6",
-      "positionsCount": 2,
+      "positionsCount": 3,
       "statsSource": "sports_sharps",
       "avgSportBet": 1306,
-      "willPassShadowGate": 2,
+      "willPassShadowGate": 3,
       "willDropAtShadowGate": 0,
       "positions": [
         {
@@ -1565,6 +1565,15 @@
           "side": "home",
           "invested": 286,
           "entryLine": 11.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "UFC",
+          "gameKey": "navajostirling_janblachowicz",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 208,
+          "entryLine": null,
           "passesShadow": true
         }
       ]
@@ -2235,7 +2244,7 @@
           "gameKey": "chc_stl",
           "marketType": "ml",
           "side": "home",
-          "invested": 15761,
+          "invested": 15767,
           "entryLine": null,
           "passesShadow": true
         }
