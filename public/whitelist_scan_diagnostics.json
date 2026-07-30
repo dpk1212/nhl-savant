@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-07-30T02:47:05.656Z",
-  "elapsedSec": 13.9,
+  "scannedAt": "2026-07-30T02:51:05.021Z",
+  "elapsedSec": 13.8,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 31,
   "summary": {
     "total": 206,
     "coveredByMain": 7,
     "recovered": 6,
-    "recoveredPositions": 10,
+    "recoveredPositions": 12,
     "noPositions": 193,
     "apiError": 0,
     "addressNotFound": 0,
@@ -16,8 +16,8 @@
       "ml": 2,
       "spread": 0,
       "total": 0,
-      "dropped_shadow_gate": 4,
-      "dropped_excluded": 4,
+      "dropped_shadow_gate": 5,
+      "dropped_excluded": 5,
       "dropped_duplicate": 0
     }
   },
@@ -428,12 +428,21 @@
       "sports": "MLB,WNBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xf7f0b0b1e9c0fe02ccad926916ee31aef74b912c",
-      "positionsCount": 2,
+      "positionsCount": 4,
       "statsSource": "sports_sharps",
       "avgSportBet": 480,
-      "willPassShadowGate": 2,
-      "willDropAtShadowGate": 0,
+      "willPassShadowGate": 3,
+      "willDropAtShadowGate": 1,
       "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "chc_stl",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 827,
+          "entryLine": 1.5,
+          "passesShadow": true
+        },
         {
           "sport": "WNBA",
           "gameKey": "min_tor",
@@ -451,6 +460,15 @@
           "invested": 76,
           "entryLine": null,
           "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "chc_stl",
+          "marketType": "total",
+          "side": "under",
+          "invested": 4,
+          "entryLine": 9.5,
+          "passesShadow": false
         }
       ]
     },
