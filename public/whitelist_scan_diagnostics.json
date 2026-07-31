@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-07-31T01:18:15.975Z",
-  "elapsedSec": 15.7,
+  "scannedAt": "2026-07-31T01:22:14.955Z",
+  "elapsedSec": 12,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 42,
   "summary": {
     "total": 206,
     "coveredByMain": 10,
     "recovered": 17,
-    "recoveredPositions": 62,
+    "recoveredPositions": 63,
     "noPositions": 179,
     "apiError": 0,
     "addressNotFound": 0,
@@ -16,7 +16,7 @@
       "ml": 5,
       "spread": 2,
       "total": 3,
-      "dropped_shadow_gate": 15,
+      "dropped_shadow_gate": 16,
       "dropped_excluded": 37,
       "dropped_duplicate": 0
     }
@@ -871,6 +871,15 @@
       "positions": [
         {
           "sport": "MLB",
+          "gameKey": "sea_lad",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 18641,
+          "entryLine": 1.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
           "gameKey": "sfg_sdp",
           "marketType": "total",
           "side": "over",
@@ -885,15 +894,6 @@
           "side": "under",
           "invested": 9920,
           "entryLine": 8.5,
-          "passesShadow": true
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "sea_lad",
-          "marketType": "spread",
-          "side": "away",
-          "invested": 11192,
-          "entryLine": 1.5,
           "passesShadow": true
         },
         {
@@ -960,6 +960,15 @@
           "passesShadow": true
         },
         {
+          "sport": "WNBA",
+          "gameKey": "nyl_lva",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 1922,
+          "entryLine": 3.5,
+          "passesShadow": true
+        },
+        {
           "sport": "MLB",
           "gameKey": "bos_oak",
           "marketType": "spread",
@@ -1002,15 +1011,6 @@
           "side": "away",
           "invested": 921,
           "entryLine": null,
-          "passesShadow": true
-        },
-        {
-          "sport": "WNBA",
-          "gameKey": "nyl_lva",
-          "marketType": "spread",
-          "side": "away",
-          "invested": 868,
-          "entryLine": 3.5,
           "passesShadow": true
         },
         {
@@ -1423,12 +1423,21 @@
       "sports": "NBA,NHL",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xe9076a87c5ed90ef16e6fe6529c943baeca0cff6",
-      "positionsCount": 2,
+      "positionsCount": 3,
       "statsSource": "sports_sharps",
       "avgSportBet": 7002,
       "willPassShadowGate": 0,
-      "willDropAtShadowGate": 2,
+      "willDropAtShadowGate": 3,
       "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "sea_lad",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 259,
+          "entryLine": null,
+          "passesShadow": false
+        },
         {
           "sport": "MLB",
           "gameKey": "sea_lad",
@@ -2139,7 +2148,7 @@
           "gameKey": "sea_lad",
           "marketType": "spread",
           "side": "home",
-          "invested": 36928,
+          "invested": 51333,
           "entryLine": -1.5,
           "passesShadow": true
         },
@@ -2148,7 +2157,7 @@
           "gameKey": "sea_lad",
           "marketType": "ml",
           "side": "home",
-          "invested": 42475,
+          "invested": 42524,
           "entryLine": null,
           "passesShadow": true
         },
