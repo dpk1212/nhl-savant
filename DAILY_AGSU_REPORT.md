@@ -1,6 +1,6 @@
 # AGS-Unified — V12 Daily Monitor
 
-**Generated:** Friday, July 31, 2026 at 8:56 AM ET
+**Generated:** Friday, July 31, 2026 at 11:00 AM ET
 
 **Model:** `ags-unified-v12` · **Live since:** 2026-06-01 (61 days) · **Tape / side-profile era:** 2026-07-15+
 
@@ -14,16 +14,16 @@ Appendix A — Model Versions · Appendix B — Feature Lab
 
 ## § 1 — Executive Summary
 
-> 🟢 **V12 is currently WINNING.** Since going live on **2026-06-01** (61 days ago), V12 has evaluated **1673** picks, shipped **549** for real money (32.8% ship rate), and muted the other **1124**. On the shipped picks V12 has gone **306-243** (55.7% win), staked **1550.80u**, and returned **+66.81u** at **+4.3% ROI**.
+> 🟢 **V12 is currently WINNING.** Since going live on **2026-06-01** (61 days ago), V12 has evaluated **1675** picks, shipped **549** for real money (32.8% ship rate), and muted the other **1126**. On the shipped picks V12 has gone **306-243** (55.7% win), staked **1550.80u**, and returned **+66.81u** at **+4.3% ROI**.
 
 ### Snapshot
 
 | Metric                              | Value                          |
 |-------------------------------------|--------------------------------|
 | Days V12 has been authoritative     |                             61 |
-| Picks V12 has evaluated             |                           1673 |
+| Picks V12 has evaluated             |                           1675 |
 | Picks SHIPPED (units > 0)           |                            549 |
-| Picks MUTED (score ≤ 0, FADE)       |                           1124 |
+| Picks MUTED (score ≤ 0, FADE)       |                           1126 |
 | Ship rate                           |                          32.8% |
 | Live W-L                            |                        306-243 |
 | Live Win %                          |                          55.7% |
@@ -87,7 +87,7 @@ Last **21** calendar days with activity. **Live** = units > 0 · **Muted** = gra
 | 2026-07-28 |        26 |   11 |    11 | 5-6        |  45.5% |     34.82 |      -6.54 |    -18.8% |     +57.39 |
 | 2026-07-29 |        18 |    7 |    10 | 6-1        |  85.7% |     17.08 |      +9.32 |     54.6% |     +66.71 |
 | 2026-07-30 |        16 |    5 |    10 | 3-2        |  60.0% |     17.50 |      +0.10 |      0.6% |     +66.81 |
-| 2026-07-31 |         1 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +66.81 |
+| 2026-07-31 |         3 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +66.81 |
 
 > **Trajectory.** 🟢 Last 3 days (27.2% ROI) **+23.5pp** vs prior (3.8%).
 
@@ -251,7 +251,7 @@ From **2026-07-15**, path units are resized by **TAPE** = `2·(EDGE/10) + 1.5·(
 
 | Window | Sides | With tape stamp | Graded w/ stamp |
 |--------|------:|----------------:|----------------:|
-| ≥ 2026-07-15 | 361 | 356 | 351 |
+| ≥ 2026-07-15 | 363 | 358 | 351 |
 
 ### (A) By tape action (stamped + graded)
 
@@ -861,10 +861,10 @@ Same filter, sorted ROI ascending. Wallets that consistently lose when they're o
 | Graded picks with `tracked=true` AND `finalUnits > 0`         |     1 | 🚨 grader regression — see betTracking.js |
 | Graded picks with `tracked=true` AND `finalUnits == 0`        |  1115 | 🟡 informational only — true tracked plays |
 | LOCK+ tier picks with `finalUnits == 0` (sizing regression)   |   194 | 🚨 sizing regression — agsSizeMultiplier returning 0 for strong AGS-U |
-| Live picks (not graded yet) with `finalUnits > 0`             |     1 | 🟢 picks queued for grading |
+| Live picks (not graded yet) with `finalUnits > 0`             |     2 | 🟢 picks queued for grading |
 | AGS-U promoted picks missing `v8_ags` value                   |    46 | 🟡 some picks missing AGS-U — cron lag or stale doc |
 | AGS-U promoted picks missing `agsTier`                        |     7 | 🟡 some picks missing tier classification |
-| Single-wallet shipped picks (`provenWalletCount == 1`)       |   244 | 🟡 informational — AGS-U calibration controls sample adequacy |
+| Single-wallet shipped picks (`provenWalletCount == 1`)       |   245 | 🟡 informational — AGS-U calibration controls sample adequacy |
 
 **Tracked-shipped detail (these are the picks the grader wrongly marked 0u):**
 
