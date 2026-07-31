@@ -1,5 +1,5 @@
 {
-  "scannedAt": "2026-07-31T01:06:14.963Z",
+  "scannedAt": "2026-07-31T01:10:14.564Z",
   "elapsedSec": 13.7,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 42,
@@ -7,14 +7,14 @@
     "total": 206,
     "coveredByMain": 9,
     "recovered": 16,
-    "recoveredPositions": 59,
+    "recoveredPositions": 60,
     "noPositions": 181,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
       "ml": 5,
-      "spread": 1,
+      "spread": 2,
       "total": 2,
       "dropped_shadow_gate": 15,
       "dropped_excluded": 36,
@@ -310,7 +310,7 @@
           "gameKey": "nyl_lva",
           "marketType": "spread",
           "side": "home",
-          "invested": 4687,
+          "invested": 4782,
           "entryLine": -3.5,
           "passesShadow": true
         }
@@ -872,6 +872,15 @@
         {
           "sport": "MLB",
           "gameKey": "sea_lad",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 11192,
+          "entryLine": 1.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "sea_lad",
           "marketType": "ml",
           "side": "home",
           "invested": 8166,
@@ -885,15 +894,6 @@
           "side": "home",
           "invested": 3585,
           "entryLine": null,
-          "passesShadow": true
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "sea_lad",
-          "marketType": "spread",
-          "side": "away",
-          "invested": 5581,
-          "entryLine": 1.5,
           "passesShadow": true
         },
         {
@@ -1719,12 +1719,21 @@
       "sports": "WNBA,UFC,NBA,SOC",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x27f738fe203827445690339104aae35b20bc44b0",
-      "positionsCount": 2,
+      "positionsCount": 3,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 7575,
-      "willPassShadowGate": 2,
+      "willPassShadowGate": 3,
       "willDropAtShadowGate": 0,
       "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "sea_lad",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 16362,
+          "entryLine": 1.5,
+          "passesShadow": true
+        },
         {
           "sport": "MLB",
           "gameKey": "sfg_sdp",
@@ -2104,19 +2113,19 @@
         {
           "sport": "MLB",
           "gameKey": "sea_lad",
-          "marketType": "ml",
+          "marketType": "spread",
           "side": "home",
-          "invested": 42461,
-          "entryLine": null,
+          "invested": 36906,
+          "entryLine": -1.5,
           "passesShadow": true
         },
         {
           "sport": "MLB",
           "gameKey": "sea_lad",
-          "marketType": "spread",
+          "marketType": "ml",
           "side": "home",
-          "invested": 23866,
-          "entryLine": -1.5,
+          "invested": 42461,
+          "entryLine": null,
           "passesShadow": true
         },
         {
