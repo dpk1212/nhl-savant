@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-07-31T01:42:26.337Z",
-  "elapsedSec": 12.6,
+  "scannedAt": "2026-07-31T01:45:28.991Z",
+  "elapsedSec": 16.9,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 42,
   "summary": {
     "total": 206,
-    "coveredByMain": 9,
+    "coveredByMain": 10,
     "recovered": 16,
-    "recoveredPositions": 45,
-    "noPositions": 181,
+    "recoveredPositions": 46,
+    "noPositions": 180,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,7 +16,7 @@
       "ml": 4,
       "spread": 2,
       "total": 0,
-      "dropped_shadow_gate": 12,
+      "dropped_shadow_gate": 13,
       "dropped_excluded": 27,
       "dropped_duplicate": 0
     }
@@ -327,7 +327,7 @@
           "gameKey": "nyl_lva",
           "marketType": "spread",
           "side": "home",
-          "invested": 6380,
+          "invested": 6593,
           "entryLine": -3.5,
           "passesShadow": true
         }
@@ -804,8 +804,7 @@
       "tier": "FLAT",
       "name": "0x9e3ed7b661a903fc97afcf49e0f014ebe869f882-1783406009396",
       "sports": "SOC",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x9e3ed7b661a903fc97afcf49e0f014ebe869f882"
+      "status": "COVERED_BY_MAIN"
     },
     {
       "walletShort": "6b0288",
@@ -1366,11 +1365,11 @@
       "sports": "NBA,NHL",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xe9076a87c5ed90ef16e6fe6529c943baeca0cff6",
-      "positionsCount": 3,
+      "positionsCount": 4,
       "statsSource": "sports_sharps",
       "avgSportBet": 7002,
       "willPassShadowGate": 0,
-      "willDropAtShadowGate": 3,
+      "willDropAtShadowGate": 4,
       "positions": [
         {
           "sport": "MLB",
@@ -1397,6 +1396,15 @@
           "side": "away",
           "invested": 208,
           "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "sea_lad",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 124,
+          "entryLine": 1.5,
           "passesShadow": false
         }
       ]
