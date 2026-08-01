@@ -2,22 +2,133 @@
   "CBB": {},
   "NHL": {},
   "MLB": {
-    "bos_lad": {
-      "volume24h": 37707.47945099999,
-      "liveVolume": 55391.165189999985,
-      "awayMoneyPct": 34.8,
-      "homeMoneyPct": 65.2,
-      "awayTicketPct": 57.7,
-      "homeTicketPct": 42.3,
+    "min_sea": {
+      "volume24h": 60176.555983000006,
+      "liveVolume": 60202.335982,
+      "awayMoneyPct": 68.8,
+      "homeMoneyPct": 31.2,
+      "awayTicketPct": 67.2,
+      "homeTicketPct": 32.8,
       "tradeCount": 201,
-      "sampleCash": 30086,
+      "sampleCash": 38572,
+      "priceMove1h": 0,
+      "priceHistory": {
+        "points": [
+          40.5,
+          40.5,
+          40.5,
+          40.5,
+          40.5,
+          39.5,
+          39.5,
+          39.5,
+          39.5,
+          39.5,
+          40.5,
+          40.5,
+          39.5
+        ],
+        "open": 40.5,
+        "current": 39.5,
+        "high": 40.5,
+        "low": 39.5,
+        "change": -1
+      },
+      "whales": null,
+      "awayProb": 39.5,
+      "homeProb": 60.5,
+      "drawProb": null,
+      "drawMoneyPct": null,
+      "drawTicketPct": null,
+      "polySpread": {
+        "line": -1.5,
+        "title": "Spread -1.5",
+        "outcomes": [
+          "Seattle Mariners",
+          "Minnesota Twins"
+        ],
+        "probs": [
+          41.5,
+          58.5
+        ],
+        "priceHistory": {
+          "points": [
+            49,
+            42.5,
+            40.5,
+            41.5,
+            41.5,
+            41.5,
+            41.5,
+            41.5,
+            41.5,
+            41.5,
+            41.5,
+            41.5,
+            41.5
+          ],
+          "open": 49,
+          "current": 41.5,
+          "change": -7.5
+        }
+      },
+      "polyTotal": {
+        "line": 8.5,
+        "title": "O/U 8.5",
+        "outcomes": [
+          "Over",
+          "Under"
+        ],
+        "probs": [
+          39.5,
+          60.5
+        ],
+        "priceHistory": {
+          "points": [
+            50,
+            44.5,
+            42.5,
+            44.5,
+            44.5,
+            44.5,
+            44.5,
+            44.5,
+            42.5,
+            42.5,
+            42.5,
+            42.5,
+            39.5
+          ],
+          "open": 50,
+          "current": 39.5,
+          "change": -10.5
+        }
+      },
+      "awayTeam": "Minnesota Twins",
+      "homeTeam": "Seattle Mariners",
+      "eventId": "761272",
+      "title": "Minnesota Twins vs. Seattle Mariners",
+      "commence": "2026-08-01T20:11:00Z",
+      "polyGameTime": "2026-08-01T20:10:00Z",
+      "polyGameDate": "2026-08-01",
+      "enrichmentFailed": false
+    },
+    "bos_lad": {
+      "volume24h": 51728.639792,
+      "liveVolume": 55391.165189999985,
+      "awayMoneyPct": 38,
+      "homeMoneyPct": 62,
+      "awayTicketPct": 59,
+      "homeTicketPct": 41,
+      "tradeCount": 210,
+      "sampleCash": 31934,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
           38,
           38,
           38.5,
-          40,
+          40.5,
           40.5,
           40.5,
           40.5,
@@ -35,10 +146,10 @@
         "change": 2.5
       },
       "whales": {
-        "count": 11,
-        "totalCash": 22303,
+        "count": 12,
+        "totalCash": 23762,
         "largest": 4130,
-        "buyCount": 9,
+        "buyCount": 10,
         "sellCount": 2,
         "topTrades": [
           {
@@ -92,6 +203,15 @@
             "outcome": "Los Angeles Dodgers",
             "price": 70,
             "ts": 1785561407000,
+            "wallet": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
+            "traderName": "HomeRunHazard"
+          },
+          {
+            "amount": 1459,
+            "side": "BUY",
+            "outcome": "Under",
+            "price": 66,
+            "ts": 1785588245000,
             "wallet": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
             "traderName": "HomeRunHazard"
           },
@@ -163,20 +283,21 @@
             58,
             42,
             40,
+            41.5,
+            41.5,
             41,
-            41,
-            41,
-            40.5,
             40.5,
             40.5,
             40.5,
             41.5,
             41.5,
-            41.5
+            41.5,
+            41.5,
+            42.5
           ],
           "open": 58,
-          "current": 41.5,
-          "change": -16.5
+          "current": 42.5,
+          "change": -15.5
         }
       },
       "polyTotal": {
@@ -187,8 +308,8 @@
           "Under"
         ],
         "probs": [
-          43.5,
-          56.5
+          42.5,
+          57.5
         ],
         "priceHistory": {
           "points": [
@@ -204,7 +325,6 @@
             45.5,
             45.5,
             45.5,
-            43.5,
             42.5
           ],
           "open": 46.5,
@@ -221,640 +341,21 @@
       "polyGameDate": "2026-08-01",
       "enrichmentFailed": false
     },
-    "stl_tor": {
-      "volume24h": 34779.080054,
-      "liveVolume": 35182.054535,
-      "awayMoneyPct": 44.7,
-      "homeMoneyPct": 55.3,
-      "awayTicketPct": 62.3,
-      "homeTicketPct": 37.7,
-      "tradeCount": 231,
-      "sampleCash": 17950,
-      "priceMove1h": 0,
-      "priceHistory": {
-        "points": [
-          44.5,
-          44.5,
-          44.5,
-          44.5,
-          44.5,
-          43.5,
-          43.5,
-          43.5,
-          42.5,
-          42.5,
-          42.5,
-          42.5,
-          42.5
-        ],
-        "open": 44.5,
-        "current": 42.5,
-        "high": 44.5,
-        "low": 42.5,
-        "change": -2
-      },
-      "whales": {
-        "count": 5,
-        "totalCash": 10538,
-        "largest": 6960,
-        "buyCount": 5,
-        "sellCount": 0,
-        "topTrades": [
-          {
-            "amount": 6960,
-            "side": "BUY",
-            "outcome": "Toronto Blue Jays",
-            "price": 58,
-            "ts": 1785582818000,
-            "wallet": "0xf8f3cc7e42da6a28dd2e128317b9c7ba78137e0b",
-            "traderName": "yishengpingan"
-          },
-          {
-            "amount": 1674,
-            "side": "BUY",
-            "outcome": "Over",
-            "price": 58,
-            "ts": 1785582296000,
-            "wallet": "0x032eb1bc893940263ad0b01889f262fc232f2a9e",
-            "traderName": "purplegatto"
-          },
-          {
-            "amount": 713,
-            "side": "BUY",
-            "outcome": "St. Louis Cardinals",
-            "price": 43,
-            "ts": 1785577532000,
-            "wallet": "0xc7db2021edc9939e088dbea543911f1063f81d90",
-            "traderName": "Turtletrader30"
-          },
-          {
-            "amount": 678,
-            "side": "BUY",
-            "outcome": "St. Louis Cardinals",
-            "price": 33,
-            "ts": 1785566724000,
-            "wallet": "0xdc41c39b95453c943174f369926018f6963bdd7e",
-            "traderName": "quavoo"
-          },
-          {
-            "amount": 512,
-            "side": "BUY",
-            "outcome": "Under",
-            "price": 61,
-            "ts": 1785559773000,
-            "wallet": "0xdc41c39b95453c943174f369926018f6963bdd7e",
-            "traderName": "quavoo"
-          }
-        ]
-      },
-      "awayProb": 42.5,
-      "homeProb": 57.5,
-      "drawProb": null,
-      "drawMoneyPct": null,
-      "drawTicketPct": null,
-      "polySpread": {
-        "line": -1.5,
-        "title": "Spread -1.5",
-        "outcomes": [
-          "Toronto Blue Jays",
-          "St. Louis Cardinals"
-        ],
-        "probs": [
-          39.5,
-          60.5
-        ],
-        "priceHistory": {
-          "points": [
-            49.5,
-            38.5,
-            35.5,
-            38.5,
-            38.5,
-            38.5,
-            38.5,
-            38.5,
-            38.5,
-            38.5,
-            38.5,
-            38.5,
-            39.5
-          ],
-          "open": 49.5,
-          "current": 39.5,
-          "change": -10
-        }
-      },
-      "polyTotal": {
-        "line": 8.5,
-        "title": "O/U 8.5",
-        "outcomes": [
-          "Over",
-          "Under"
-        ],
-        "probs": [
-          49.5,
-          50.5
-        ],
-        "priceHistory": {
-          "points": [
-            50,
-            48,
-            49.5,
-            49.5,
-            49.5,
-            49.5,
-            49.5,
-            49.5,
-            49.5,
-            49.5,
-            49.5,
-            49.5,
-            49.5
-          ],
-          "open": 50,
-          "current": 49.5,
-          "change": -0.5
-        }
-      },
-      "awayTeam": "St. Louis Cardinals",
-      "homeTeam": "Toronto Blue Jays",
-      "eventId": "761265",
-      "title": "St. Louis Cardinals vs. Toronto Blue Jays",
-      "commence": "2026-08-01T19:08:00Z",
-      "polyGameTime": "2026-08-01T19:07:00Z",
-      "polyGameDate": "2026-08-01",
-      "enrichmentFailed": false
-    },
-    "min_sea": {
-      "volume24h": 24281.712032,
-      "liveVolume": 60202.335982,
-      "awayMoneyPct": 65.4,
-      "homeMoneyPct": 34.6,
-      "awayTicketPct": 66.3,
-      "homeTicketPct": 33.7,
-      "tradeCount": 181,
-      "sampleCash": 33131,
-      "priceMove1h": 0,
-      "priceHistory": {
-        "points": [
-          40.5,
-          40.5,
-          40.5,
-          40.5,
-          40.5,
-          39.5,
-          39.5,
-          39.5,
-          39.5,
-          39.5,
-          40.5,
-          40.5,
-          39.5
-        ],
-        "open": 40.5,
-        "current": 39.5,
-        "high": 40.5,
-        "low": 39.5,
-        "change": -1
-      },
-      "whales": {
-        "count": 18,
-        "totalCash": 28406,
-        "largest": 5830,
-        "buyCount": 17,
-        "sellCount": 1,
-        "topTrades": [
-          {
-            "amount": 5830,
-            "side": "BUY",
-            "outcome": "Under",
-            "price": 53,
-            "ts": 1785587190000,
-            "wallet": "0xe55aab114e95fff2fa267313916381d79323ecf7",
-            "traderName": "steevenseakael"
-          },
-          {
-            "amount": 2857,
-            "side": "BUY",
-            "outcome": "Under",
-            "price": 52,
-            "ts": 1785586847000,
-            "wallet": "0xe55aab114e95fff2fa267313916381d79323ecf7",
-            "traderName": "steevenseakael"
-          },
-          {
-            "amount": 2377,
-            "side": "BUY",
-            "outcome": "Seattle Mariners",
-            "price": 72,
-            "ts": 1785587237000,
-            "wallet": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
-            "traderName": "HomeRunHazard"
-          },
-          {
-            "amount": 2000,
-            "side": "BUY",
-            "outcome": "Seattle Mariners",
-            "price": 61,
-            "ts": 1785553676000,
-            "wallet": "0xca97f5464912ba0308bd40c095bea215980849f6",
-            "traderName": "LarryDaddy"
-          },
-          {
-            "amount": 1967,
-            "side": "SELL",
-            "outcome": "Seattle Mariners",
-            "price": 60,
-            "ts": 1785554115000,
-            "wallet": "0xca97f5464912ba0308bd40c095bea215980849f6",
-            "traderName": "LarryDaddy"
-          },
-          {
-            "amount": 1600,
-            "side": "BUY",
-            "outcome": "Seattle Mariners",
-            "price": 61,
-            "ts": 1785584955000,
-            "wallet": "0x05e17fb524aa6896de92dec88db2f0e4dd5285a2",
-            "traderName": "0x05e17Fb524aa6896DE92DeC88db2F0e4Dd5285A2-1768091861491"
-          },
-          {
-            "amount": 1597,
-            "side": "BUY",
-            "outcome": "Under",
-            "price": 68,
-            "ts": 1785586866000,
-            "wallet": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
-            "traderName": "HomeRunHazard"
-          },
-          {
-            "amount": 1541,
-            "side": "BUY",
-            "outcome": "Under",
-            "price": 67,
-            "ts": 1785571350000,
-            "wallet": "0xedf01e2d7cdcd4139d757863255d5cd4ecee1e2a",
-            "traderName": "deeznuts83"
-          },
-          {
-            "amount": 1530,
-            "side": "BUY",
-            "outcome": "Under",
-            "price": 51,
-            "ts": 1785586818000,
-            "wallet": "0xe55aab114e95fff2fa267313916381d79323ecf7",
-            "traderName": "steevenseakael"
-          },
-          {
-            "amount": 1406,
-            "side": "BUY",
-            "outcome": "Seattle Mariners",
-            "price": 60,
-            "ts": 1785533429000,
-            "wallet": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
-            "traderName": "HomeRunHazard"
-          },
-          {
-            "amount": 1200,
-            "side": "BUY",
-            "outcome": "Minnesota Twins",
-            "price": 40,
-            "ts": 1785557454000,
-            "wallet": "0xbc3107551d71e0fe3821b4ec4bb2767d313e971f",
-            "traderName": "TCA"
-          },
-          {
-            "amount": 1020,
-            "side": "BUY",
-            "outcome": "Under",
-            "price": 51,
-            "ts": 1785586832000,
-            "wallet": "0xe55aab114e95fff2fa267313916381d79323ecf7",
-            "traderName": "steevenseakael"
-          },
-          {
-            "amount": 665,
-            "side": "BUY",
-            "outcome": "Under",
-            "price": 60,
-            "ts": 1785587826000,
-            "wallet": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
-            "traderName": "HomeRunHazard"
-          },
-          {
-            "amount": 665,
-            "side": "BUY",
-            "outcome": "Under",
-            "price": 57,
-            "ts": 1785563028000,
-            "wallet": "0x7a3051610fed486c6f21e04a89bddaf22dfc8abd",
-            "traderName": "heyi8"
-          },
-          {
-            "amount": 644,
-            "side": "BUY",
-            "outcome": "Seattle Mariners",
-            "price": 41,
-            "ts": 1785533429000,
-            "wallet": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
-            "traderName": "HomeRunHazard"
-          },
-          {
-            "amount": 504,
-            "side": "BUY",
-            "outcome": "Under",
-            "price": 48,
-            "ts": 1785543938000,
-            "wallet": "0x25867077c891354137bbaf7fde12eec6949cc893",
-            "traderName": "TTdes"
-          },
-          {
-            "amount": 503,
-            "side": "BUY",
-            "outcome": "Under",
-            "price": 58,
-            "ts": 1785586767000,
-            "wallet": "0x73e83485b8e20b70c53c27bef8ba4c62575dcd6f",
-            "traderName": "lottobot"
-          },
-          {
-            "amount": 500,
-            "side": "BUY",
-            "outcome": "Under",
-            "price": 50,
-            "ts": 1785586808000,
-            "wallet": "0xe55aab114e95fff2fa267313916381d79323ecf7",
-            "traderName": "steevenseakael"
-          }
-        ]
-      },
-      "awayProb": 39.5,
-      "homeProb": 60.5,
-      "drawProb": null,
-      "drawMoneyPct": null,
-      "drawTicketPct": null,
-      "polySpread": {
-        "line": -1.5,
-        "title": "Spread -1.5",
-        "outcomes": [
-          "Seattle Mariners",
-          "Minnesota Twins"
-        ],
-        "probs": [
-          41.5,
-          58.5
-        ],
-        "priceHistory": {
-          "points": [
-            49,
-            42.5,
-            40.5,
-            41.5,
-            41.5,
-            41.5,
-            41.5,
-            41.5,
-            41.5,
-            41.5,
-            41.5,
-            41.5,
-            41.5
-          ],
-          "open": 49,
-          "current": 41.5,
-          "change": -7.5
-        }
-      },
-      "polyTotal": {
-        "line": 8.5,
-        "title": "O/U 8.5",
-        "outcomes": [
-          "Over",
-          "Under"
-        ],
-        "probs": [
-          39.5,
-          60.5
-        ],
-        "priceHistory": {
-          "points": [
-            50,
-            44.5,
-            42.5,
-            44.5,
-            44.5,
-            44.5,
-            44.5,
-            44.5,
-            42.5,
-            42.5,
-            42.5,
-            42.5,
-            40.5,
-            39.5
-          ],
-          "open": 50,
-          "current": 39.5,
-          "change": -10.5
-        }
-      },
-      "awayTeam": "Minnesota Twins",
-      "homeTeam": "Seattle Mariners",
-      "eventId": "761272",
-      "title": "Minnesota Twins vs. Seattle Mariners",
-      "commence": "2026-08-01T20:11:00Z",
-      "polyGameTime": "2026-08-01T20:10:00Z",
-      "polyGameDate": "2026-08-01",
-      "enrichmentFailed": false
-    },
-    "cws_tbr": {
-      "volume24h": 19897.050646,
-      "liveVolume": 22851.669823000004,
-      "awayMoneyPct": 59.4,
-      "homeMoneyPct": 40.6,
-      "awayTicketPct": 40.8,
-      "homeTicketPct": 59.2,
-      "tradeCount": 174,
-      "sampleCash": 11602,
-      "priceMove1h": 0,
-      "priceHistory": {
-        "points": [
-          41.5,
-          41.5,
-          39.5,
-          39,
-          39.5,
-          39.5,
-          39.5,
-          39.5,
-          39.5,
-          39.5,
-          39.5,
-          39.5,
-          39.5
-        ],
-        "open": 41.5,
-        "current": 39.5,
-        "high": 41.5,
-        "low": 39,
-        "change": -2
-      },
-      "whales": {
-        "count": 6,
-        "totalCash": 5271,
-        "largest": 1800,
-        "buyCount": 6,
-        "sellCount": 0,
-        "topTrades": [
-          {
-            "amount": 1800,
-            "side": "BUY",
-            "outcome": "Over",
-            "price": 47,
-            "ts": 1785582881000,
-            "wallet": "0xdc41c39b95453c943174f369926018f6963bdd7e",
-            "traderName": "quavoo"
-          },
-          {
-            "amount": 886,
-            "side": "BUY",
-            "outcome": "Chicago White Sox",
-            "price": 57,
-            "ts": 1785585777000,
-            "wallet": "0xfe787d2da716d60e8acff57fb87eb13cd4d10319",
-            "traderName": "ferrariChampions2026"
-          },
-          {
-            "amount": 747,
-            "side": "BUY",
-            "outcome": "Over",
-            "price": 55,
-            "ts": 1785583112000,
-            "wallet": "0x032eb1bc893940263ad0b01889f262fc232f2a9e",
-            "traderName": "purplegatto"
-          },
-          {
-            "amount": 696,
-            "side": "BUY",
-            "outcome": "Tampa Bay Rays",
-            "price": 43,
-            "ts": 1785582855000,
-            "wallet": "0x84cfffc3f16dcc353094de30d4a45226eccd2f63",
-            "traderName": "mooseborzoi"
-          },
-          {
-            "amount": 586,
-            "side": "BUY",
-            "outcome": "Under",
-            "price": 54,
-            "ts": 1785548400000,
-            "wallet": "0x7a3051610fed486c6f21e04a89bddaf22dfc8abd",
-            "traderName": "heyi8"
-          },
-          {
-            "amount": 555,
-            "side": "BUY",
-            "outcome": "Over",
-            "price": 47,
-            "ts": 1785582879000,
-            "wallet": "0x84cfffc3f16dcc353094de30d4a45226eccd2f63",
-            "traderName": "mooseborzoi"
-          }
-        ]
-      },
-      "awayProb": 39.5,
-      "homeProb": 60.5,
-      "drawProb": null,
-      "drawMoneyPct": null,
-      "drawTicketPct": null,
-      "polySpread": {
-        "line": -1.5,
-        "title": "Spread -1.5",
-        "outcomes": [
-          "Tampa Bay Rays",
-          "Chicago White Sox"
-        ],
-        "probs": [
-          42.5,
-          57.5
-        ],
-        "priceHistory": {
-          "points": [
-            49.5,
-            43,
-            41.5,
-            41.5,
-            41.5,
-            41.5,
-            41.5,
-            41.5,
-            41.5,
-            42.5,
-            42.5,
-            42.5,
-            42.5
-          ],
-          "open": 49.5,
-          "current": 42.5,
-          "change": -7
-        }
-      },
-      "polyTotal": {
-        "line": 7.5,
-        "title": "O/U 7.5",
-        "outcomes": [
-          "Over",
-          "Under"
-        ],
-        "probs": [
-          55.5,
-          44.5
-        ],
-        "priceHistory": {
-          "points": [
-            49.5,
-            53,
-            53,
-            54.5,
-            55.5,
-            55,
-            55,
-            54.5,
-            54.5,
-            54.5,
-            54.5,
-            54.5,
-            55.5
-          ],
-          "open": 49.5,
-          "current": 55.5,
-          "change": 6
-        }
-      },
-      "awayTeam": "Chicago White Sox",
-      "homeTeam": "Tampa Bay Rays",
-      "eventId": "761273",
-      "title": "Chicago White Sox vs. Tampa Bay Rays",
-      "commence": "2026-08-01T20:11:00Z",
-      "polyGameTime": "2026-08-01T20:10:00Z",
-      "polyGameDate": "2026-08-01",
-      "enrichmentFailed": false
-    },
     "nyy_chc": {
-      "volume24h": 18567.388198,
+      "volume24h": 39713.378773,
       "liveVolume": 39721.7686,
       "awayMoneyPct": 35.4,
       "homeMoneyPct": 64.6,
-      "awayTicketPct": 56.6,
-      "homeTicketPct": 43.4,
-      "tradeCount": 113,
-      "sampleCash": 18969,
-      "priceMove1h": -1.9,
+      "awayTicketPct": 57,
+      "homeTicketPct": 43,
+      "tradeCount": 114,
+      "sampleCash": 18974,
+      "priceMove1h": 0,
       "priceHistory": {
         "points": [
           51.5,
           51.5,
-          51.5,
+          52,
           54,
           54,
           53.5,
@@ -974,13 +475,13 @@
             45,
             39,
             39,
-            38.5,
+            39,
             38,
             39,
             38.5,
             38.5,
             37.5,
-            37.5,
+            39.5,
             39.5,
             39.5,
             38.5
@@ -1031,76 +532,94 @@
       "polyGameDate": "2026-08-01",
       "enrichmentFailed": false
     },
-    "tex_hou": {
-      "volume24h": 8579.47732,
-      "liveVolume": 8632.010883,
-      "awayMoneyPct": 31.5,
-      "homeMoneyPct": 68.5,
-      "awayTicketPct": 40.7,
-      "homeTicketPct": 59.3,
-      "tradeCount": 81,
-      "sampleCash": 4074,
+    "stl_tor": {
+      "volume24h": 35057.794535,
+      "liveVolume": 35182.054535,
+      "awayMoneyPct": 44.7,
+      "homeMoneyPct": 55.3,
+      "awayTicketPct": 62.3,
+      "homeTicketPct": 37.7,
+      "tradeCount": 231,
+      "sampleCash": 17950,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
-          52.5,
-          52.5,
-          52.5,
-          53.5,
-          53.5,
-          53.5,
-          53.5,
-          54.5,
-          54.5,
-          54.5,
-          54.5,
-          54.5,
-          54.5
+          44.5,
+          44.5,
+          44.5,
+          44.5,
+          44.5,
+          43.5,
+          43.5,
+          43.5,
+          42.5,
+          42.5,
+          42.5,
+          42.5,
+          42.5
         ],
-        "open": 52.5,
-        "current": 54.5,
-        "high": 54.5,
-        "low": 52.5,
-        "change": 2
+        "open": 44.5,
+        "current": 42.5,
+        "high": 44.5,
+        "low": 42.5,
+        "change": -2
       },
       "whales": {
-        "count": 3,
-        "totalCash": 2560,
-        "largest": 1518,
-        "buyCount": 3,
+        "count": 5,
+        "totalCash": 10538,
+        "largest": 6960,
+        "buyCount": 5,
         "sellCount": 0,
         "topTrades": [
           {
-            "amount": 1518,
+            "amount": 6960,
             "side": "BUY",
-            "outcome": "Houston Astros",
-            "price": 46,
-            "ts": 1785569631000,
-            "wallet": "0xd47dda34a3f41f39e5d3c1c98260a0dd7c0a322b",
-            "traderName": "MymanIvan"
+            "outcome": "Toronto Blue Jays",
+            "price": 58,
+            "ts": 1785582818000,
+            "wallet": "0xf8f3cc7e42da6a28dd2e128317b9c7ba78137e0b",
+            "traderName": "yishengpingan"
           },
           {
-            "amount": 542,
+            "amount": 1674,
+            "side": "BUY",
+            "outcome": "Over",
+            "price": 58,
+            "ts": 1785582296000,
+            "wallet": "0x032eb1bc893940263ad0b01889f262fc232f2a9e",
+            "traderName": "purplegatto"
+          },
+          {
+            "amount": 713,
+            "side": "BUY",
+            "outcome": "St. Louis Cardinals",
+            "price": 43,
+            "ts": 1785577532000,
+            "wallet": "0xc7db2021edc9939e088dbea543911f1063f81d90",
+            "traderName": "Turtletrader30"
+          },
+          {
+            "amount": 678,
+            "side": "BUY",
+            "outcome": "St. Louis Cardinals",
+            "price": 33,
+            "ts": 1785566724000,
+            "wallet": "0xdc41c39b95453c943174f369926018f6963bdd7e",
+            "traderName": "quavoo"
+          },
+          {
+            "amount": 512,
             "side": "BUY",
             "outcome": "Under",
-            "price": 52,
-            "ts": 1785563250000,
-            "wallet": "0x7a3051610fed486c6f21e04a89bddaf22dfc8abd",
-            "traderName": "heyi8"
-          },
-          {
-            "amount": 500,
-            "side": "BUY",
-            "outcome": "Houston Astros",
-            "price": 46,
-            "ts": 1785569684000,
-            "wallet": "0x6b0e1a58bcf5aa11c19b8936b02343cebeb70517",
-            "traderName": "medvedman"
+            "price": 61,
+            "ts": 1785559773000,
+            "wallet": "0xdc41c39b95453c943174f369926018f6963bdd7e",
+            "traderName": "quavoo"
           }
         ]
       },
-      "awayProb": 54.5,
-      "homeProb": 45.5,
+      "awayProb": 42.5,
+      "homeProb": 57.5,
       "drawProb": null,
       "drawMoneyPct": null,
       "drawTicketPct": null,
@@ -1108,32 +627,196 @@
         "line": -1.5,
         "title": "Spread -1.5",
         "outcomes": [
-          "Texas Rangers",
-          "Houston Astros"
+          "Toronto Blue Jays",
+          "St. Louis Cardinals"
         ],
         "probs": [
-          41.5,
-          58.5
+          39.5,
+          60.5
         ],
         "priceHistory": {
           "points": [
-            48.5,
-            42,
-            41.5,
-            41,
-            41.5,
-            41.5,
-            41.5,
-            41.5,
-            41.5,
-            41.5,
-            41.5,
-            41.5,
-            41.5
+            49.5,
+            38.5,
+            35.5,
+            38.5,
+            38.5,
+            38.5,
+            38.5,
+            38.5,
+            38.5,
+            38.5,
+            38.5,
+            39.5,
+            39.5
           ],
-          "open": 48.5,
-          "current": 41.5,
-          "change": -7
+          "open": 49.5,
+          "current": 39.5,
+          "change": -10
+        }
+      },
+      "polyTotal": {
+        "line": 8.5,
+        "title": "O/U 8.5",
+        "outcomes": [
+          "Over",
+          "Under"
+        ],
+        "probs": [
+          49.5,
+          50.5
+        ],
+        "priceHistory": {
+          "points": [
+            50,
+            48,
+            49.5,
+            49.5,
+            49.5,
+            49.5,
+            49.5,
+            49.5,
+            49.5,
+            49.5,
+            49.5,
+            49.5,
+            49.5
+          ],
+          "open": 50,
+          "current": 49.5,
+          "change": -0.5
+        }
+      },
+      "awayTeam": "St. Louis Cardinals",
+      "homeTeam": "Toronto Blue Jays",
+      "eventId": "761265",
+      "title": "St. Louis Cardinals vs. Toronto Blue Jays",
+      "commence": "2026-08-01T19:08:00Z",
+      "polyGameTime": "2026-08-01T19:07:00Z",
+      "polyGameDate": "2026-08-01",
+      "enrichmentFailed": false
+    },
+    "ari_cle": {
+      "volume24h": 32957.857793999996,
+      "liveVolume": 32957.857793999996,
+      "awayMoneyPct": 17.4,
+      "homeMoneyPct": 82.6,
+      "awayTicketPct": 51.3,
+      "homeTicketPct": 48.7,
+      "tradeCount": 191,
+      "sampleCash": 18082,
+      "priceMove1h": 0,
+      "priceHistory": {
+        "points": [
+          43,
+          43,
+          43,
+          41.5,
+          41.5,
+          41.5,
+          41.5,
+          41.5,
+          41.5,
+          41.5,
+          41.5,
+          41.5,
+          41.5
+        ],
+        "open": 43,
+        "current": 41.5,
+        "high": 43,
+        "low": 41.5,
+        "change": -1.5
+      },
+      "whales": {
+        "count": 5,
+        "totalCash": 16424,
+        "largest": 10886,
+        "buyCount": 5,
+        "sellCount": 0,
+        "topTrades": [
+          {
+            "amount": 10886,
+            "side": "BUY",
+            "outcome": "Cleveland Guardians",
+            "price": 59,
+            "ts": 1785586308000,
+            "wallet": "0x56acab44cfca2e88bb9b3406890aea7bfa0cd77e",
+            "traderName": "dv-pm"
+          },
+          {
+            "amount": 1500,
+            "side": "BUY",
+            "outcome": "Cleveland Guardians",
+            "price": 59,
+            "ts": 1785586332000,
+            "wallet": "0x61f15c585de606990fd711169ce835c009fc7aef",
+            "traderName": "Follow555"
+          },
+          {
+            "amount": 1500,
+            "side": "BUY",
+            "outcome": "Cleveland Guardians",
+            "price": 59,
+            "ts": 1785586331000,
+            "wallet": "0x34530b984a71bc776a759cabab76d6234f8d8524",
+            "traderName": "Hunter33"
+          },
+          {
+            "amount": 1300,
+            "side": "BUY",
+            "outcome": "Arizona Diamondbacks",
+            "price": 42,
+            "ts": 1785587067000,
+            "wallet": "0xb8c842bc049bf208f73354c7b037b811d741d8a4",
+            "traderName": "0xb8C842Bc049BF208F73354c7B037B811d741D8A4-1766967229992"
+          },
+          {
+            "amount": 1238,
+            "side": "BUY",
+            "outcome": "Arizona Diamondbacks",
+            "price": 42,
+            "ts": 1785587069000,
+            "wallet": "0x8e9068871f7af76c32a26df9f02aac9b2df24f65",
+            "traderName": "bj2win"
+          }
+        ]
+      },
+      "awayProb": 41.5,
+      "homeProb": 58.5,
+      "drawProb": null,
+      "drawMoneyPct": null,
+      "drawTicketPct": null,
+      "polySpread": {
+        "line": -1.5,
+        "title": "Spread -1.5",
+        "outcomes": [
+          "Cleveland Guardians",
+          "Arizona Diamondbacks"
+        ],
+        "probs": [
+          40.5,
+          59.5
+        ],
+        "priceHistory": {
+          "points": [
+            28,
+            42,
+            42,
+            41,
+            41,
+            41,
+            40.5,
+            40.5,
+            40.5,
+            40.5,
+            40.5,
+            40.5,
+            40.5
+          ],
+          "open": 28,
+          "current": 40.5,
+          "change": 12.5
         }
       },
       "polyTotal": {
@@ -1149,12 +832,12 @@
         ],
         "priceHistory": {
           "points": [
-            50,
-            46.5,
-            46,
+            68,
+            48,
+            47,
             49,
-            49,
-            49,
+            48.5,
+            48.5,
             48.5,
             48.5,
             48.5,
@@ -1163,29 +846,359 @@
             48.5,
             48.5
           ],
-          "open": 50,
+          "open": 68,
           "current": 48.5,
-          "change": -1.5
+          "change": -19.5
         }
       },
-      "awayTeam": "Texas Rangers",
-      "homeTeam": "Houston Astros",
-      "eventId": "761276",
-      "title": "Texas Rangers vs. Houston Astros",
-      "commence": "2026-08-01T23:11:00Z",
-      "polyGameTime": "2026-08-01T23:10:00Z",
+      "awayTeam": "Arizona Diamondbacks",
+      "homeTeam": "Cleveland Guardians",
+      "eventId": "761279",
+      "title": "Arizona Diamondbacks vs. Cleveland Guardians",
+      "commence": "2026-08-01T23:16:00Z",
+      "polyGameTime": "2026-08-01T23:15:00Z",
+      "polyGameDate": "2026-08-01",
+      "enrichmentFailed": false
+    },
+    "cws_tbr": {
+      "volume24h": 22851.669824,
+      "liveVolume": 22851.669823000004,
+      "awayMoneyPct": 74.4,
+      "homeMoneyPct": 25.6,
+      "awayTicketPct": 48.8,
+      "homeTicketPct": 51.2,
+      "tradeCount": 201,
+      "sampleCash": 18417,
+      "priceMove1h": 0,
+      "priceHistory": {
+        "points": [
+          41.5,
+          41.5,
+          39.5,
+          39.5,
+          39.5,
+          39.5,
+          39.5,
+          39.5,
+          39.5,
+          39.5,
+          39.5,
+          39.5,
+          39.5
+        ],
+        "open": 41.5,
+        "current": 39.5,
+        "high": 41.5,
+        "low": 39,
+        "change": -2
+      },
+      "whales": {
+        "count": 11,
+        "totalCash": 10786,
+        "largest": 2118,
+        "buyCount": 11,
+        "sellCount": 0,
+        "topTrades": [
+          {
+            "amount": 2118,
+            "side": "BUY",
+            "outcome": "Under",
+            "price": 55,
+            "ts": 1785588353000,
+            "wallet": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
+            "traderName": "HomeRunHazard"
+          },
+          {
+            "amount": 1800,
+            "side": "BUY",
+            "outcome": "Over",
+            "price": 47,
+            "ts": 1785582881000,
+            "wallet": "0xdc41c39b95453c943174f369926018f6963bdd7e",
+            "traderName": "quavoo"
+          },
+          {
+            "amount": 1425,
+            "side": "BUY",
+            "outcome": "Under",
+            "price": 45,
+            "ts": 1785588299000,
+            "wallet": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
+            "traderName": "HomeRunHazard"
+          },
+          {
+            "amount": 886,
+            "side": "BUY",
+            "outcome": "Chicago White Sox",
+            "price": 57,
+            "ts": 1785585777000,
+            "wallet": "0xfe787d2da716d60e8acff57fb87eb13cd4d10319",
+            "traderName": "ferrariChampions2026"
+          },
+          {
+            "amount": 747,
+            "side": "BUY",
+            "outcome": "Over",
+            "price": 55,
+            "ts": 1785583112000,
+            "wallet": "0x032eb1bc893940263ad0b01889f262fc232f2a9e",
+            "traderName": "purplegatto"
+          },
+          {
+            "amount": 716,
+            "side": "BUY",
+            "outcome": "Over",
+            "price": 45,
+            "ts": 1785588369000,
+            "wallet": "0x4a3f86ed9ce6b3dac5b66e2d5478a6bf38cc4333",
+            "traderName": "Jarod21"
+          },
+          {
+            "amount": 715,
+            "side": "BUY",
+            "outcome": "Under",
+            "price": 46,
+            "ts": 1785588353000,
+            "wallet": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
+            "traderName": "HomeRunHazard"
+          },
+          {
+            "amount": 696,
+            "side": "BUY",
+            "outcome": "Tampa Bay Rays",
+            "price": 43,
+            "ts": 1785582855000,
+            "wallet": "0x84cfffc3f16dcc353094de30d4a45226eccd2f63",
+            "traderName": "mooseborzoi"
+          },
+          {
+            "amount": 586,
+            "side": "BUY",
+            "outcome": "Under",
+            "price": 54,
+            "ts": 1785548400000,
+            "wallet": "0x7a3051610fed486c6f21e04a89bddaf22dfc8abd",
+            "traderName": "heyi8"
+          },
+          {
+            "amount": 555,
+            "side": "BUY",
+            "outcome": "Over",
+            "price": 47,
+            "ts": 1785582879000,
+            "wallet": "0x84cfffc3f16dcc353094de30d4a45226eccd2f63",
+            "traderName": "mooseborzoi"
+          },
+          {
+            "amount": 541,
+            "side": "BUY",
+            "outcome": "Under",
+            "price": 54,
+            "ts": 1785588320000,
+            "wallet": "0xfe787d2da716d60e8acff57fb87eb13cd4d10319",
+            "traderName": "ferrariChampions2026"
+          }
+        ]
+      },
+      "awayProb": 39.5,
+      "homeProb": 60.5,
+      "drawProb": null,
+      "drawMoneyPct": null,
+      "drawTicketPct": null,
+      "polySpread": {
+        "line": -1.5,
+        "title": "Spread -1.5",
+        "outcomes": [
+          "Tampa Bay Rays",
+          "Chicago White Sox"
+        ],
+        "probs": [
+          42.5,
+          57.5
+        ],
+        "priceHistory": {
+          "points": [
+            49.5,
+            43,
+            41.5,
+            41.5,
+            41.5,
+            41.5,
+            41.5,
+            41.5,
+            41.5,
+            42.5,
+            42.5,
+            42.5,
+            42.5
+          ],
+          "open": 49.5,
+          "current": 42.5,
+          "change": -7
+        }
+      },
+      "polyTotal": {
+        "line": 7.5,
+        "title": "O/U 7.5",
+        "outcomes": [
+          "Over",
+          "Under"
+        ],
+        "probs": [
+          55.5,
+          44.5
+        ],
+        "priceHistory": {
+          "points": [
+            49.5,
+            53,
+            53,
+            54.5,
+            55.5,
+            55,
+            55,
+            54.5,
+            54.5,
+            54.5,
+            54.5,
+            54.5,
+            55.5,
+            53.5
+          ],
+          "open": 49.5,
+          "current": 53.5,
+          "change": 4
+        }
+      },
+      "awayTeam": "Chicago White Sox",
+      "homeTeam": "Tampa Bay Rays",
+      "eventId": "761273",
+      "title": "Chicago White Sox vs. Tampa Bay Rays",
+      "commence": "2026-08-01T20:11:00Z",
+      "polyGameTime": "2026-08-01T20:10:00Z",
+      "polyGameDate": "2026-08-01",
+      "enrichmentFailed": false
+    },
+    "kcr_col": {
+      "volume24h": 18512.607533,
+      "liveVolume": 18512.607532000005,
+      "awayMoneyPct": 15.7,
+      "homeMoneyPct": 84.3,
+      "awayTicketPct": 52.7,
+      "homeTicketPct": 47.3,
+      "tradeCount": 74,
+      "sampleCash": 9603,
+      "priceMove1h": 0,
+      "priceHistory": {
+        "points": [
+          51.5,
+          51.5,
+          51.5,
+          47.5,
+          47.5,
+          48.5,
+          48.5,
+          48.5,
+          48.5,
+          48.5,
+          48.5,
+          48.5,
+          48.5
+        ],
+        "open": 51.5,
+        "current": 48.5,
+        "high": 51.5,
+        "low": 47.5,
+        "change": -3
+      },
+      "whales": null,
+      "awayProb": 48.5,
+      "homeProb": 51.5,
+      "drawProb": null,
+      "drawMoneyPct": null,
+      "drawTicketPct": null,
+      "polySpread": {
+        "line": -1.5,
+        "title": "Spread -1.5",
+        "outcomes": [
+          "Kansas City Royals",
+          "Colorado Rockies"
+        ],
+        "probs": [
+          38.5,
+          61.5
+        ],
+        "priceHistory": {
+          "points": [
+            59.5,
+            38,
+            39,
+            39.5,
+            39.5,
+            39.5,
+            39.5,
+            39.5,
+            39,
+            39.5,
+            39.5,
+            39.5,
+            38.5
+          ],
+          "open": 59.5,
+          "current": 38.5,
+          "change": -21
+        }
+      },
+      "polyTotal": {
+        "line": 12.5,
+        "title": "O/U 12.5",
+        "outcomes": [
+          "Over",
+          "Under"
+        ],
+        "probs": [
+          44.5,
+          55.5
+        ],
+        "priceHistory": {
+          "points": [
+            56.5,
+            45,
+            45,
+            45,
+            45,
+            45,
+            45.5,
+            45.5,
+            45.5,
+            45,
+            44.5,
+            44.5,
+            44.5
+          ],
+          "open": 56.5,
+          "current": 44.5,
+          "change": -12
+        }
+      },
+      "awayTeam": "Kansas City Royals",
+      "homeTeam": "Colorado Rockies",
+      "eventId": "761280",
+      "title": "Kansas City Royals vs. Colorado Rockies",
+      "commence": "2026-08-02T00:10:00Z",
+      "polyGameTime": "2026-08-02T00:10:00Z",
       "polyGameDate": "2026-08-01",
       "enrichmentFailed": false
     },
     "wsh_atl": {
-      "volume24h": 6449.402427000001,
-      "liveVolume": 14952.155929999999,
+      "volume24h": 14952.155931,
+      "liveVolume": 15019.155931,
       "awayMoneyPct": 88.1,
       "homeMoneyPct": 11.9,
-      "awayTicketPct": 67.5,
-      "homeTicketPct": 32.5,
-      "tradeCount": 83,
-      "sampleCash": 6056,
+      "awayTicketPct": 67.9,
+      "homeTicketPct": 32.1,
+      "tradeCount": 84,
+      "sampleCash": 6082,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -1323,161 +1336,15 @@
       "polyGameDate": "2026-08-01",
       "enrichmentFailed": false
     },
-    "phi_bal": {
-      "volume24h": 6306.369003999999,
-      "liveVolume": 7396.734417,
-      "awayMoneyPct": 80.7,
-      "homeMoneyPct": 19.3,
-      "awayTicketPct": 71,
-      "homeTicketPct": 29,
-      "tradeCount": 69,
-      "sampleCash": 3753,
-      "priceMove1h": 0,
-      "priceHistory": {
-        "points": [
-          55.5,
-          56.5,
-          56.5,
-          57,
-          56.5,
-          56.5,
-          56.5,
-          56.5,
-          56.5,
-          56.5,
-          56.5,
-          56.5,
-          56.5
-        ],
-        "open": 55.5,
-        "current": 56.5,
-        "high": 57,
-        "low": 55.5,
-        "change": 1
-      },
-      "whales": {
-        "count": 3,
-        "totalCash": 2263,
-        "largest": 1197,
-        "buyCount": 3,
-        "sellCount": 0,
-        "topTrades": [
-          {
-            "amount": 1197,
-            "side": "BUY",
-            "outcome": "Over",
-            "price": 56,
-            "ts": 1785580838000,
-            "wallet": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
-            "traderName": "HomeRunHazard"
-          },
-          {
-            "amount": 566,
-            "side": "BUY",
-            "outcome": "Philadelphia Phillies",
-            "price": 43,
-            "ts": 1785561503000,
-            "wallet": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
-            "traderName": "HomeRunHazard"
-          },
-          {
-            "amount": 500,
-            "side": "BUY",
-            "outcome": "Baltimore Orioles",
-            "price": 44,
-            "ts": 1785569714000,
-            "wallet": "0x6b0e1a58bcf5aa11c19b8936b02343cebeb70517",
-            "traderName": "medvedman"
-          }
-        ]
-      },
-      "awayProb": 56.5,
-      "homeProb": 43.5,
-      "drawProb": null,
-      "drawMoneyPct": null,
-      "drawTicketPct": null,
-      "polySpread": {
-        "line": -1.5,
-        "title": "Spread -1.5",
-        "outcomes": [
-          "Philadelphia Phillies",
-          "Baltimore Orioles"
-        ],
-        "probs": [
-          43.5,
-          56.5
-        ],
-        "priceHistory": {
-          "points": [
-            49.5,
-            45,
-            43,
-            43,
-            43,
-            43,
-            42.5,
-            42.5,
-            43.5,
-            43.5,
-            43.5,
-            43.5,
-            43.5
-          ],
-          "open": 49.5,
-          "current": 43.5,
-          "change": -6
-        }
-      },
-      "polyTotal": {
-        "line": 8.5,
-        "title": "O/U 8.5",
-        "outcomes": [
-          "Over",
-          "Under"
-        ],
-        "probs": [
-          49.5,
-          50.5
-        ],
-        "priceHistory": {
-          "points": [
-            49.5,
-            47,
-            46.5,
-            47,
-            47,
-            47,
-            47.5,
-            47.5,
-            47.5,
-            47.5,
-            47.5,
-            47.5,
-            49.5
-          ],
-          "open": 49.5,
-          "current": 49.5,
-          "change": 0
-        }
-      },
-      "awayTeam": "Philadelphia Phillies",
-      "homeTeam": "Baltimore Orioles",
-      "eventId": "761275",
-      "title": "Philadelphia Phillies vs. Baltimore Orioles",
-      "commence": "2026-08-01T23:06:00Z",
-      "polyGameTime": "2026-08-01T23:05:00Z",
-      "polyGameDate": "2026-08-01",
-      "enrichmentFailed": false
-    },
     "det_oak": {
-      "volume24h": 5575.917323,
+      "volume24h": 10891.610624,
       "liveVolume": 10891.610621999998,
       "awayMoneyPct": 99.7,
       "homeMoneyPct": 0.3,
-      "awayTicketPct": 94.1,
-      "homeTicketPct": 5.9,
-      "tradeCount": 85,
-      "sampleCash": 5750,
+      "awayTicketPct": 94.2,
+      "homeTicketPct": 5.8,
+      "tradeCount": 86,
+      "sampleCash": 5783,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -1633,8 +1500,455 @@
       "polyGameDate": "2026-08-01",
       "enrichmentFailed": false
     },
+    "mil_laa": {
+      "volume24h": 10421.168635,
+      "liveVolume": 12701.665299,
+      "awayMoneyPct": 0,
+      "homeMoneyPct": 0,
+      "awayTicketPct": 0,
+      "homeTicketPct": 0,
+      "tradeCount": 0,
+      "sampleCash": 0,
+      "priceMove1h": 0,
+      "priceHistory": {
+        "points": [
+          54.5,
+          55.5,
+          55.5,
+          53,
+          53,
+          52.5,
+          52.5,
+          52.5,
+          52.5,
+          52.5,
+          52.5,
+          52.5,
+          52.5
+        ],
+        "open": 54.5,
+        "current": 52.5,
+        "high": 55.5,
+        "low": 52,
+        "change": -2
+      },
+      "whales": {
+        "count": 3,
+        "totalCash": 5163,
+        "largest": 2585,
+        "buyCount": 3,
+        "sellCount": 0,
+        "topTrades": [
+          {
+            "amount": 2585,
+            "side": "BUY",
+            "outcome": "Los Angeles Angels",
+            "price": 59,
+            "ts": 1785587810000,
+            "wallet": "0x56acab44cfca2e88bb9b3406890aea7bfa0cd77e",
+            "traderName": "dv-pm"
+          },
+          {
+            "amount": 1292,
+            "side": "BUY",
+            "outcome": "Los Angeles Angels",
+            "price": 60,
+            "ts": 1785587946000,
+            "wallet": "0x34530b984a71bc776a759cabab76d6234f8d8524",
+            "traderName": "Hunter33"
+          },
+          {
+            "amount": 1286,
+            "side": "BUY",
+            "outcome": "Los Angeles Angels",
+            "price": 60,
+            "ts": 1785588239000,
+            "wallet": "0x61f15c585de606990fd711169ce835c009fc7aef",
+            "traderName": "Follow555"
+          }
+        ]
+      },
+      "awayProb": 52.5,
+      "homeProb": 47.5,
+      "drawProb": null,
+      "drawMoneyPct": null,
+      "drawTicketPct": null,
+      "polySpread": {
+        "line": -1.5,
+        "title": "Spread -1.5",
+        "outcomes": [
+          "Milwaukee Brewers",
+          "Los Angeles Angels"
+        ],
+        "probs": [
+          40.5,
+          59.5
+        ],
+        "priceHistory": {
+          "points": [
+            48.5,
+            42,
+            41,
+            41,
+            41,
+            41,
+            40.5,
+            40.5,
+            40.5,
+            40.5,
+            40.5,
+            41.5,
+            40.5
+          ],
+          "open": 48.5,
+          "current": 40.5,
+          "change": -8
+        }
+      },
+      "polyTotal": {
+        "line": 9.5,
+        "title": "O/U 9.5",
+        "outcomes": [
+          "Over",
+          "Under"
+        ],
+        "probs": [
+          39.5,
+          60.5
+        ],
+        "priceHistory": {
+          "points": [
+            33,
+            43.5,
+            42.5,
+            43,
+            43,
+            43,
+            42.5,
+            42.5,
+            42.5,
+            40.5,
+            40.5,
+            40.5,
+            39.5
+          ],
+          "open": 33,
+          "current": 39.5,
+          "change": 6.5
+        }
+      },
+      "awayTeam": "Milwaukee Brewers",
+      "homeTeam": "Los Angeles Angels",
+      "eventId": "761283",
+      "title": "Milwaukee Brewers vs. Los Angeles Angels",
+      "commence": "2026-08-02T01:39:00Z",
+      "polyGameTime": "2026-08-02T01:38:00Z",
+      "polyGameDate": "2026-08-01",
+      "enrichmentFailed": false
+    },
+    "tex_hou": {
+      "volume24h": 8632.010884000001,
+      "liveVolume": 15046.862127,
+      "awayMoneyPct": 19.4,
+      "homeMoneyPct": 80.6,
+      "awayTicketPct": 49,
+      "homeTicketPct": 51,
+      "tradeCount": 104,
+      "sampleCash": 7039,
+      "priceMove1h": 0,
+      "priceHistory": {
+        "points": [
+          52.5,
+          52.5,
+          52.5,
+          53.5,
+          53.5,
+          53.5,
+          53.5,
+          54.5,
+          54.5,
+          54.5,
+          54.5,
+          54.5,
+          54.5
+        ],
+        "open": 52.5,
+        "current": 54.5,
+        "high": 54.5,
+        "low": 52.5,
+        "change": 2
+      },
+      "whales": {
+        "count": 4,
+        "totalCash": 5289,
+        "largest": 2729,
+        "buyCount": 4,
+        "sellCount": 0,
+        "topTrades": [
+          {
+            "amount": 2729,
+            "side": "BUY",
+            "outcome": "Houston Astros",
+            "price": 46,
+            "ts": 1785588515000,
+            "wallet": "0xfe787d2da716d60e8acff57fb87eb13cd4d10319",
+            "traderName": "ferrariChampions2026"
+          },
+          {
+            "amount": 1518,
+            "side": "BUY",
+            "outcome": "Houston Astros",
+            "price": 46,
+            "ts": 1785569631000,
+            "wallet": "0xd47dda34a3f41f39e5d3c1c98260a0dd7c0a322b",
+            "traderName": "MymanIvan"
+          },
+          {
+            "amount": 542,
+            "side": "BUY",
+            "outcome": "Under",
+            "price": 52,
+            "ts": 1785563250000,
+            "wallet": "0x7a3051610fed486c6f21e04a89bddaf22dfc8abd",
+            "traderName": "heyi8"
+          },
+          {
+            "amount": 500,
+            "side": "BUY",
+            "outcome": "Houston Astros",
+            "price": 46,
+            "ts": 1785569684000,
+            "wallet": "0x6b0e1a58bcf5aa11c19b8936b02343cebeb70517",
+            "traderName": "medvedman"
+          }
+        ]
+      },
+      "awayProb": 54.5,
+      "homeProb": 45.5,
+      "drawProb": null,
+      "drawMoneyPct": null,
+      "drawTicketPct": null,
+      "polySpread": {
+        "line": -1.5,
+        "title": "Spread -1.5",
+        "outcomes": [
+          "Texas Rangers",
+          "Houston Astros"
+        ],
+        "probs": [
+          41.5,
+          58.5
+        ],
+        "priceHistory": {
+          "points": [
+            48.5,
+            42,
+            41.5,
+            41,
+            41.5,
+            41.5,
+            41.5,
+            41.5,
+            41.5,
+            41.5,
+            41.5,
+            41.5,
+            41.5
+          ],
+          "open": 48.5,
+          "current": 41.5,
+          "change": -7
+        }
+      },
+      "polyTotal": {
+        "line": 8.5,
+        "title": "O/U 8.5",
+        "outcomes": [
+          "Over",
+          "Under"
+        ],
+        "probs": [
+          48.5,
+          51.5
+        ],
+        "priceHistory": {
+          "points": [
+            50,
+            46.5,
+            46,
+            49,
+            49,
+            49,
+            48.5,
+            48.5,
+            48.5,
+            48.5,
+            48.5,
+            48.5,
+            48.5
+          ],
+          "open": 50,
+          "current": 48.5,
+          "change": -1.5
+        }
+      },
+      "awayTeam": "Texas Rangers",
+      "homeTeam": "Houston Astros",
+      "eventId": "761276",
+      "title": "Texas Rangers vs. Houston Astros",
+      "commence": "2026-08-01T23:11:00Z",
+      "polyGameTime": "2026-08-01T23:10:00Z",
+      "polyGameDate": "2026-08-01",
+      "enrichmentFailed": false
+    },
+    "phi_bal": {
+      "volume24h": 7396.734417,
+      "liveVolume": 7396.734417,
+      "awayMoneyPct": 80.7,
+      "homeMoneyPct": 19.3,
+      "awayTicketPct": 71,
+      "homeTicketPct": 29,
+      "tradeCount": 69,
+      "sampleCash": 3753,
+      "priceMove1h": 0,
+      "priceHistory": {
+        "points": [
+          55.5,
+          56.5,
+          56.5,
+          56.5,
+          56.5,
+          56.5,
+          56.5,
+          56.5,
+          56.5,
+          56.5,
+          56.5,
+          56.5,
+          56.5
+        ],
+        "open": 55.5,
+        "current": 56.5,
+        "high": 57,
+        "low": 55.5,
+        "change": 1
+      },
+      "whales": {
+        "count": 3,
+        "totalCash": 2263,
+        "largest": 1197,
+        "buyCount": 3,
+        "sellCount": 0,
+        "topTrades": [
+          {
+            "amount": 1197,
+            "side": "BUY",
+            "outcome": "Over",
+            "price": 56,
+            "ts": 1785580838000,
+            "wallet": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
+            "traderName": "HomeRunHazard"
+          },
+          {
+            "amount": 566,
+            "side": "BUY",
+            "outcome": "Philadelphia Phillies",
+            "price": 43,
+            "ts": 1785561503000,
+            "wallet": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
+            "traderName": "HomeRunHazard"
+          },
+          {
+            "amount": 500,
+            "side": "BUY",
+            "outcome": "Baltimore Orioles",
+            "price": 44,
+            "ts": 1785569714000,
+            "wallet": "0x6b0e1a58bcf5aa11c19b8936b02343cebeb70517",
+            "traderName": "medvedman"
+          }
+        ]
+      },
+      "awayProb": 56.5,
+      "homeProb": 43.5,
+      "drawProb": null,
+      "drawMoneyPct": null,
+      "drawTicketPct": null,
+      "polySpread": {
+        "line": -1.5,
+        "title": "Spread -1.5",
+        "outcomes": [
+          "Philadelphia Phillies",
+          "Baltimore Orioles"
+        ],
+        "probs": [
+          43.5,
+          56.5
+        ],
+        "priceHistory": {
+          "points": [
+            49.5,
+            45,
+            43,
+            43,
+            43,
+            43,
+            42.5,
+            42.5,
+            43.5,
+            43.5,
+            43.5,
+            43.5,
+            43.5
+          ],
+          "open": 49.5,
+          "current": 43.5,
+          "change": -6
+        }
+      },
+      "polyTotal": {
+        "line": 8.5,
+        "title": "O/U 8.5",
+        "outcomes": [
+          "Over",
+          "Under"
+        ],
+        "probs": [
+          49.5,
+          50.5
+        ],
+        "priceHistory": {
+          "points": [
+            49.5,
+            47,
+            47,
+            47,
+            47,
+            47,
+            47.5,
+            47.5,
+            47.5,
+            47.5,
+            47.5,
+            47.5,
+            49.5
+          ],
+          "open": 49.5,
+          "current": 49.5,
+          "change": 0
+        }
+      },
+      "awayTeam": "Philadelphia Phillies",
+      "homeTeam": "Baltimore Orioles",
+      "eventId": "761275",
+      "title": "Philadelphia Phillies vs. Baltimore Orioles",
+      "commence": "2026-08-01T23:06:00Z",
+      "polyGameTime": "2026-08-01T23:05:00Z",
+      "polyGameDate": "2026-08-01",
+      "enrichmentFailed": false
+    },
     "mia_nym": {
-      "volume24h": 4576.500804000001,
+      "volume24h": 4926.461063,
       "liveVolume": 4926.461063000002,
       "awayMoneyPct": 91.1,
       "homeMoneyPct": 8.9,
@@ -1771,7 +2085,7 @@
       "enrichmentFailed": false
     },
     "sfg_sdp": {
-      "volume24h": 3946.402536999999,
+      "volume24h": 4276.871781999998,
       "liveVolume": 4276.871782000001,
       "awayMoneyPct": 60,
       "homeMoneyPct": 40,
@@ -1789,7 +2103,6 @@
           45.5,
           45.5,
           44.5,
-          43.5,
           43.5,
           43.5,
           43.5,
@@ -1856,7 +2169,7 @@
             50,
             50.5,
             50.5,
-            50.5,
+            50,
             50.5,
             50,
             49.5,
@@ -1881,280 +2194,15 @@
       "polyGameDate": "2026-08-01",
       "enrichmentFailed": false
     },
-    "mil_laa": {
-      "volume24h": 3769.237323,
-      "liveVolume": 12701.665299,
-      "awayMoneyPct": 29.5,
-      "homeMoneyPct": 70.5,
-      "awayTicketPct": 73.6,
-      "homeTicketPct": 26.4,
-      "tradeCount": 91,
-      "sampleCash": 5784,
-      "priceMove1h": 0,
-      "priceHistory": {
-        "points": [
-          54.5,
-          55.5,
-          55.5,
-          53,
-          53,
-          52.5,
-          52.5,
-          52.5,
-          52.5,
-          52.5,
-          52.5,
-          52.5,
-          52.5
-        ],
-        "open": 54.5,
-        "current": 52.5,
-        "high": 55.5,
-        "low": 52,
-        "change": -2
-      },
-      "whales": {
-        "count": 2,
-        "totalCash": 3877,
-        "largest": 2585,
-        "buyCount": 2,
-        "sellCount": 0,
-        "topTrades": [
-          {
-            "amount": 2585,
-            "side": "BUY",
-            "outcome": "Los Angeles Angels",
-            "price": 59,
-            "ts": 1785587810000,
-            "wallet": "0x56acab44cfca2e88bb9b3406890aea7bfa0cd77e",
-            "traderName": "dv-pm"
-          },
-          {
-            "amount": 1292,
-            "side": "BUY",
-            "outcome": "Los Angeles Angels",
-            "price": 60,
-            "ts": 1785587946000,
-            "wallet": "0x34530b984a71bc776a759cabab76d6234f8d8524",
-            "traderName": "Hunter33"
-          }
-        ]
-      },
-      "awayProb": 52.5,
-      "homeProb": 47.5,
-      "drawProb": null,
-      "drawMoneyPct": null,
-      "drawTicketPct": null,
-      "polySpread": {
-        "line": -1.5,
-        "title": "Spread -1.5",
-        "outcomes": [
-          "Milwaukee Brewers",
-          "Los Angeles Angels"
-        ],
-        "probs": [
-          40.5,
-          59.5
-        ],
-        "priceHistory": {
-          "points": [
-            48.5,
-            42,
-            41,
-            41,
-            41,
-            41,
-            40.5,
-            40.5,
-            40.5,
-            40.5,
-            40.5,
-            41.5,
-            40.5
-          ],
-          "open": 48.5,
-          "current": 40.5,
-          "change": -8
-        }
-      },
-      "polyTotal": {
-        "line": 9.5,
-        "title": "O/U 9.5",
-        "outcomes": [
-          "Over",
-          "Under"
-        ],
-        "probs": [
-          39.5,
-          60.5
-        ],
-        "priceHistory": {
-          "points": [
-            33,
-            43.5,
-            43,
-            43,
-            43,
-            43,
-            42.5,
-            42.5,
-            42.5,
-            40.5,
-            40.5,
-            40.5,
-            39.5
-          ],
-          "open": 33,
-          "current": 39.5,
-          "change": 6.5
-        }
-      },
-      "awayTeam": "Milwaukee Brewers",
-      "homeTeam": "Los Angeles Angels",
-      "eventId": "761283",
-      "title": "Milwaukee Brewers vs. Los Angeles Angels",
-      "commence": "2026-08-02T01:39:00Z",
-      "polyGameTime": "2026-08-02T01:38:00Z",
-      "polyGameDate": "2026-08-01",
-      "enrichmentFailed": false
-    },
-    "kcr_col": {
-      "volume24h": 3577.00544,
-      "liveVolume": 18512.607532000005,
-      "awayMoneyPct": 15.7,
-      "homeMoneyPct": 84.3,
-      "awayTicketPct": 52.7,
-      "homeTicketPct": 47.3,
-      "tradeCount": 74,
-      "sampleCash": 9603,
-      "priceMove1h": 0,
-      "priceHistory": {
-        "points": [
-          51.5,
-          51.5,
-          51.5,
-          47.5,
-          47.5,
-          48.5,
-          48.5,
-          48.5,
-          48.5,
-          48.5,
-          48.5,
-          48.5,
-          48.5
-        ],
-        "open": 51.5,
-        "current": 48.5,
-        "high": 51.5,
-        "low": 47.5,
-        "change": -3
-      },
-      "whales": {
-        "count": 1,
-        "totalCash": 7277,
-        "largest": 7277,
-        "buyCount": 1,
-        "sellCount": 0,
-        "topTrades": [
-          {
-            "amount": 7277,
-            "side": "BUY",
-            "outcome": "Colorado Rockies",
-            "price": 52,
-            "ts": 1785586571000,
-            "wallet": "0xfe787d2da716d60e8acff57fb87eb13cd4d10319",
-            "traderName": "ferrariChampions2026"
-          }
-        ]
-      },
-      "awayProb": 48.5,
-      "homeProb": 51.5,
-      "drawProb": null,
-      "drawMoneyPct": null,
-      "drawTicketPct": null,
-      "polySpread": {
-        "line": -1.5,
-        "title": "Spread -1.5",
-        "outcomes": [
-          "Kansas City Royals",
-          "Colorado Rockies"
-        ],
-        "probs": [
-          38.5,
-          61.5
-        ],
-        "priceHistory": {
-          "points": [
-            59.5,
-            38,
-            39,
-            40,
-            39.5,
-            39.5,
-            39.5,
-            39.5,
-            39,
-            39.5,
-            39.5,
-            39.5,
-            38.5
-          ],
-          "open": 59.5,
-          "current": 38.5,
-          "change": -21
-        }
-      },
-      "polyTotal": {
-        "line": 12.5,
-        "title": "O/U 12.5",
-        "outcomes": [
-          "Over",
-          "Under"
-        ],
-        "probs": [
-          44.5,
-          55.5
-        ],
-        "priceHistory": {
-          "points": [
-            56.5,
-            45,
-            45,
-            45,
-            45,
-            45,
-            45.5,
-            45.5,
-            45.5,
-            45,
-            44.5,
-            44.5,
-            44.5
-          ],
-          "open": 56.5,
-          "current": 44.5,
-          "change": -12
-        }
-      },
-      "awayTeam": "Kansas City Royals",
-      "homeTeam": "Colorado Rockies",
-      "eventId": "761280",
-      "title": "Kansas City Royals vs. Colorado Rockies",
-      "commence": "2026-08-02T00:10:00Z",
-      "polyGameTime": "2026-08-02T00:10:00Z",
-      "polyGameDate": "2026-08-01",
-      "enrichmentFailed": false
-    },
     "pit_cin": {
-      "volume24h": 3211.6086299999997,
-      "liveVolume": 3304.578752,
-      "awayMoneyPct": 96.3,
-      "homeMoneyPct": 3.7,
-      "awayTicketPct": 80.9,
-      "homeTicketPct": 19.1,
-      "tradeCount": 68,
-      "sampleCash": 1807,
+      "volume24h": 3304.5787530000002,
+      "liveVolume": 3468.722084,
+      "awayMoneyPct": 96.4,
+      "homeMoneyPct": 3.6,
+      "awayTicketPct": 80.3,
+      "homeTicketPct": 19.7,
+      "tradeCount": 71,
+      "sampleCash": 1886,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -2273,184 +2321,20 @@
       "polyGameTime": "2026-08-01T22:40:00Z",
       "polyGameDate": "2026-08-01",
       "enrichmentFailed": false
-    },
-    "ari_cle": {
-      "volume24h": 2103.2750849999998,
-      "liveVolume": 32957.857793999996,
-      "awayMoneyPct": 17.4,
-      "homeMoneyPct": 82.6,
-      "awayTicketPct": 51.6,
-      "homeTicketPct": 48.4,
-      "tradeCount": 190,
-      "sampleCash": 18080,
-      "priceMove1h": 0,
-      "priceHistory": {
-        "points": [
-          43,
-          43,
-          43,
-          41.5,
-          41.5,
-          41.5,
-          41.5,
-          41.5,
-          41.5,
-          41.5,
-          41.5,
-          41.5,
-          41.5
-        ],
-        "open": 43,
-        "current": 41.5,
-        "high": 43,
-        "low": 41.5,
-        "change": -1.5
-      },
-      "whales": {
-        "count": 5,
-        "totalCash": 16424,
-        "largest": 10886,
-        "buyCount": 5,
-        "sellCount": 0,
-        "topTrades": [
-          {
-            "amount": 10886,
-            "side": "BUY",
-            "outcome": "Cleveland Guardians",
-            "price": 59,
-            "ts": 1785586308000,
-            "wallet": "0x56acab44cfca2e88bb9b3406890aea7bfa0cd77e",
-            "traderName": "dv-pm"
-          },
-          {
-            "amount": 1500,
-            "side": "BUY",
-            "outcome": "Cleveland Guardians",
-            "price": 59,
-            "ts": 1785586332000,
-            "wallet": "0x61f15c585de606990fd711169ce835c009fc7aef",
-            "traderName": "Follow555"
-          },
-          {
-            "amount": 1500,
-            "side": "BUY",
-            "outcome": "Cleveland Guardians",
-            "price": 59,
-            "ts": 1785586331000,
-            "wallet": "0x34530b984a71bc776a759cabab76d6234f8d8524",
-            "traderName": "Hunter33"
-          },
-          {
-            "amount": 1300,
-            "side": "BUY",
-            "outcome": "Arizona Diamondbacks",
-            "price": 42,
-            "ts": 1785587067000,
-            "wallet": "0xb8c842bc049bf208f73354c7b037b811d741d8a4",
-            "traderName": "0xb8C842Bc049BF208F73354c7B037B811d741D8A4-1766967229992"
-          },
-          {
-            "amount": 1238,
-            "side": "BUY",
-            "outcome": "Arizona Diamondbacks",
-            "price": 42,
-            "ts": 1785587069000,
-            "wallet": "0x8e9068871f7af76c32a26df9f02aac9b2df24f65",
-            "traderName": "bj2win"
-          }
-        ]
-      },
-      "awayProb": 41.5,
-      "homeProb": 58.5,
-      "drawProb": null,
-      "drawMoneyPct": null,
-      "drawTicketPct": null,
-      "polySpread": {
-        "line": -1.5,
-        "title": "Spread -1.5",
-        "outcomes": [
-          "Cleveland Guardians",
-          "Arizona Diamondbacks"
-        ],
-        "probs": [
-          40.5,
-          59.5
-        ],
-        "priceHistory": {
-          "points": [
-            28,
-            42,
-            42,
-            41,
-            41,
-            41,
-            40.5,
-            40.5,
-            40.5,
-            40.5,
-            40.5,
-            40.5,
-            40.5
-          ],
-          "open": 28,
-          "current": 40.5,
-          "change": 12.5
-        }
-      },
-      "polyTotal": {
-        "line": 8.5,
-        "title": "O/U 8.5",
-        "outcomes": [
-          "Over",
-          "Under"
-        ],
-        "probs": [
-          48.5,
-          51.5
-        ],
-        "priceHistory": {
-          "points": [
-            68,
-            48,
-            47,
-            49,
-            48.5,
-            49,
-            48.5,
-            48.5,
-            48.5,
-            48.5,
-            48.5,
-            48.5,
-            48.5
-          ],
-          "open": 68,
-          "current": 48.5,
-          "change": -19.5
-        }
-      },
-      "awayTeam": "Arizona Diamondbacks",
-      "homeTeam": "Cleveland Guardians",
-      "eventId": "761279",
-      "title": "Arizona Diamondbacks vs. Cleveland Guardians",
-      "commence": "2026-08-01T23:16:00Z",
-      "polyGameTime": "2026-08-01T23:15:00Z",
-      "polyGameDate": "2026-08-01",
-      "enrichmentFailed": false
     }
   },
   "NBA": {},
   "SOC": {},
   "UFC": {
     "navajostirling_janblachowicz": {
-      "volume24h": 78237.73240600002,
+      "volume24h": 81259.809376,
       "liveVolume": 81315.765446,
       "awayMoneyPct": 68.2,
       "homeMoneyPct": 31.8,
-      "awayTicketPct": 51.5,
-      "homeTicketPct": 48.5,
-      "tradeCount": 555,
-      "sampleCash": 38254,
+      "awayTicketPct": 51.4,
+      "homeTicketPct": 48.6,
+      "tradeCount": 556,
+      "sampleCash": 38273,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -2590,14 +2474,14 @@
       "enrichmentFailed": false
     },
     "bogdangrad_dennisbuzukja": {
-      "volume24h": 78126.25844699999,
+      "volume24h": 79383.203126,
       "liveVolume": 79409.828126,
       "awayMoneyPct": 85.1,
       "homeMoneyPct": 14.9,
-      "awayTicketPct": 84.6,
-      "homeTicketPct": 15.4,
-      "tradeCount": 273,
-      "sampleCash": 45294,
+      "awayTicketPct": 84.7,
+      "homeTicketPct": 15.3,
+      "tradeCount": 275,
+      "sampleCash": 45319,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -2818,7 +2702,7 @@
       "enrichmentFailed": false
     },
     "marcintybura_aleksandarrakic": {
-      "volume24h": 71482.22040500001,
+      "volume24h": 72114.837235,
       "liveVolume": 72114.837233,
       "awayMoneyPct": 69,
       "homeMoneyPct": 31,
@@ -2836,7 +2720,7 @@
           23.5,
           23,
           22.5,
-          23,
+          22.5,
           23.5,
           23.5,
           23.5,
@@ -2911,7 +2795,7 @@
       "enrichmentFailed": false
     },
     "tofiqmusayev_ludovitklein": {
-      "volume24h": 50575.36056700001,
+      "volume24h": 53911.61573600001,
       "liveVolume": 53911.615734,
       "awayMoneyPct": 31.3,
       "homeMoneyPct": 68.7,
@@ -3076,14 +2960,14 @@
       "enrichmentFailed": false
     },
     "noahgugnon_milosjanicic": {
-      "volume24h": 33499.709365,
-      "liveVolume": 35998.179942,
-      "awayMoneyPct": 22.7,
-      "homeMoneyPct": 77.3,
-      "awayTicketPct": 63.3,
-      "homeTicketPct": 36.7,
-      "tradeCount": 128,
-      "sampleCash": 17905,
+      "volume24h": 35998.17994199999,
+      "liveVolume": 37528.179942,
+      "awayMoneyPct": 27.1,
+      "homeMoneyPct": 72.9,
+      "awayTicketPct": 62.6,
+      "homeTicketPct": 37.4,
+      "tradeCount": 131,
+      "sampleCash": 19122,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -3178,7 +3062,7 @@
       "enrichmentFailed": false
     },
     "danielrodriguez_urosmedic": {
-      "volume24h": 29907.689650999997,
+      "volume24h": 30675.92712,
       "liveVolume": 30675.927119000004,
       "awayMoneyPct": 33.3,
       "homeMoneyPct": 66.7,
@@ -3289,14 +3173,14 @@
       "enrichmentFailed": false
     },
     "kyleprepolec_mateuszrebecki": {
-      "volume24h": 27816.980296,
-      "liveVolume": 28010.766326999998,
+      "volume24h": 28010.766328,
+      "liveVolume": 28087.409183999996,
       "awayMoneyPct": 17.4,
       "homeMoneyPct": 82.6,
-      "awayTicketPct": 51,
-      "homeTicketPct": 49,
-      "tradeCount": 249,
-      "sampleCash": 15281,
+      "awayTicketPct": 51.2,
+      "homeTicketPct": 48.8,
+      "tradeCount": 252,
+      "sampleCash": 15291,
       "priceMove1h": -6.9,
       "priceHistory": {
         "points": [
@@ -3445,14 +3329,14 @@
       "enrichmentFailed": false
     },
     "alexanderpoppeck_jovanleka": {
-      "volume24h": 23621.190159000005,
-      "liveVolume": 24620.440614000003,
-      "awayMoneyPct": 20.1,
-      "homeMoneyPct": 79.9,
-      "awayTicketPct": 52.6,
-      "homeTicketPct": 47.4,
-      "tradeCount": 175,
-      "sampleCash": 13635,
+      "volume24h": 24620.440613999996,
+      "liveVolume": 25474.012041,
+      "awayMoneyPct": 21.6,
+      "homeMoneyPct": 78.4,
+      "awayTicketPct": 54.6,
+      "homeTicketPct": 45.4,
+      "tradeCount": 183,
+      "sampleCash": 13889,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -3463,7 +3347,7 @@
           28.5,
           28.5,
           28.5,
-          28.5,
+          27.5,
           27.5,
           27.5,
           27.5,
@@ -3565,7 +3449,7 @@
       "enrichmentFailed": false
     },
     "michaeloliveira_obanelliott": {
-      "volume24h": 21257.702318,
+      "volume24h": 21636.427659,
       "liveVolume": 21702.154610999998,
       "awayMoneyPct": 84.6,
       "homeMoneyPct": 15.4,
@@ -3585,7 +3469,7 @@
           76.5,
           76.5,
           76.5,
-          76.5,
+          77.5,
           77.5,
           77.5,
           76.5
@@ -3658,14 +3542,14 @@
       "enrichmentFailed": false
     },
     "markvologdin_borislavnikolic": {
-      "volume24h": 19020.893126000003,
+      "volume24h": 19100.380557000004,
       "liveVolume": 19598.920381,
-      "awayMoneyPct": 21.6,
-      "homeMoneyPct": 78.4,
-      "awayTicketPct": 38.4,
-      "homeTicketPct": 61.6,
-      "tradeCount": 138,
-      "sampleCash": 10772,
+      "awayMoneyPct": 21.9,
+      "homeMoneyPct": 78.1,
+      "awayTicketPct": 39.7,
+      "homeTicketPct": 60.3,
+      "tradeCount": 141,
+      "sampleCash": 10810,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -3673,7 +3557,7 @@
           36.5,
           35.5,
           35.5,
-          35.5,
+          36.5,
           36.5,
           36.5,
           35.5,
@@ -3778,14 +3662,14 @@
       "enrichmentFailed": false
     },
     "haileycowan_ninamilosevic": {
-      "volume24h": 15041.158672,
-      "liveVolume": 15401.83441,
+      "volume24h": 15401.834412000002,
+      "liveVolume": 15425.053919999998,
       "awayMoneyPct": 31.9,
       "homeMoneyPct": 68.1,
-      "awayTicketPct": 49.2,
-      "homeTicketPct": 50.8,
-      "tradeCount": 187,
-      "sampleCash": 8454,
+      "awayTicketPct": 48.7,
+      "homeTicketPct": 51.3,
+      "tradeCount": 189,
+      "sampleCash": 8473,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -3843,15 +3727,99 @@
       "polyGameDate": "2026-08-01",
       "enrichmentFailed": false
     },
+    "robertvalentin_duskotodorovic": {
+      "volume24h": 13917.415429000002,
+      "liveVolume": 14050.784264,
+      "awayMoneyPct": 78.3,
+      "homeMoneyPct": 21.7,
+      "awayTicketPct": 60,
+      "homeTicketPct": 40,
+      "tradeCount": 205,
+      "sampleCash": 7594,
+      "priceMove1h": 0,
+      "priceHistory": {
+        "points": [
+          59.5,
+          59.5,
+          59.5,
+          59.5,
+          59.5,
+          59.5,
+          60.5,
+          60.5,
+          60.5,
+          60.5,
+          60.5,
+          60.5,
+          60.5
+        ],
+        "open": 59.5,
+        "current": 60.5,
+        "high": 60.5,
+        "low": 59.5,
+        "change": 1
+      },
+      "whales": {
+        "count": 3,
+        "totalCash": 2800,
+        "largest": 1500,
+        "buyCount": 3,
+        "sellCount": 0,
+        "topTrades": [
+          {
+            "amount": 1500,
+            "side": "BUY",
+            "outcome": "Robert Valentin",
+            "price": 61,
+            "ts": 1785584961000,
+            "wallet": "0x300b4292912c123066a380a344b505b0f353f636",
+            "traderName": "digitalnomad85"
+          },
+          {
+            "amount": 700,
+            "side": "BUY",
+            "outcome": "Robert Valentin",
+            "price": 60,
+            "ts": 1785350124000,
+            "wallet": "0x82398835fe16616214d928ba87127e28fc1cd9a3",
+            "traderName": "Kosherlocks"
+          },
+          {
+            "amount": 600,
+            "side": "BUY",
+            "outcome": "Robert Valentin",
+            "price": 60,
+            "ts": 1785465576000,
+            "wallet": "0x31550df5402226b825f900a31659a05d809d268e",
+            "traderName": "tizzles"
+          }
+        ]
+      },
+      "awayProb": 60.5,
+      "homeProb": 39.5,
+      "drawProb": null,
+      "drawMoneyPct": null,
+      "drawTicketPct": null,
+      "polySpread": null,
+      "polyTotal": null,
+      "awayTeam": "Robert Valentin",
+      "homeTeam": "Duško Todorovic",
+      "eventId": "723173",
+      "title": "UFC Fight Night: Duško Todorovic vs. Robert Valentin (Middleweight, Main Card)",
+      "commence": "2026-08-01T18:15:00Z",
+      "polyGameTime": "2026-08-01T14:00:00Z",
+      "polyGameDate": "2026-08-01",
+      "enrichmentFailed": false
+    },
     "stephanieluciano_marinaspasic": {
-      "volume24h": 10695.219331,
-      "liveVolume": 13692.240168999999,
+      "volume24h": 13692.240171,
+      "liveVolume": 13849.176482,
       "awayMoneyPct": 76,
       "homeMoneyPct": 24,
-      "awayTicketPct": 82.9,
-      "homeTicketPct": 17.1,
-      "tradeCount": 158,
-      "sampleCash": 6530,
+      "awayTicketPct": 83.2,
+      "homeTicketPct": 16.8,
+      "tradeCount": 161,
+      "sampleCash": 6536,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -3859,7 +3827,7 @@
           75.5,
           75.5,
           75.5,
-          75.5,
+          74.5,
           74.5,
           74.5,
           74.5,
@@ -3945,99 +3913,15 @@
       "polyGameDate": "2026-08-01",
       "enrichmentFailed": false
     },
-    "robertvalentin_duskotodorovic": {
-      "volume24h": 10682.11822,
-      "liveVolume": 13917.415429,
-      "awayMoneyPct": 78.4,
-      "homeMoneyPct": 21.6,
-      "awayTicketPct": 57.6,
-      "homeTicketPct": 42.4,
-      "tradeCount": 191,
-      "sampleCash": 7517,
-      "priceMove1h": 0,
-      "priceHistory": {
-        "points": [
-          59.5,
-          59.5,
-          59.5,
-          59.5,
-          59.5,
-          59.5,
-          60.5,
-          60.5,
-          60.5,
-          60.5,
-          60.5,
-          60.5,
-          60.5
-        ],
-        "open": 59.5,
-        "current": 60.5,
-        "high": 60.5,
-        "low": 59.5,
-        "change": 1
-      },
-      "whales": {
-        "count": 3,
-        "totalCash": 2800,
-        "largest": 1500,
-        "buyCount": 3,
-        "sellCount": 0,
-        "topTrades": [
-          {
-            "amount": 1500,
-            "side": "BUY",
-            "outcome": "Robert Valentin",
-            "price": 61,
-            "ts": 1785584961000,
-            "wallet": "0x300b4292912c123066a380a344b505b0f353f636",
-            "traderName": "digitalnomad85"
-          },
-          {
-            "amount": 700,
-            "side": "BUY",
-            "outcome": "Robert Valentin",
-            "price": 60,
-            "ts": 1785350124000,
-            "wallet": "0x82398835fe16616214d928ba87127e28fc1cd9a3",
-            "traderName": "Kosherlocks"
-          },
-          {
-            "amount": 600,
-            "side": "BUY",
-            "outcome": "Robert Valentin",
-            "price": 60,
-            "ts": 1785465576000,
-            "wallet": "0x31550df5402226b825f900a31659a05d809d268e",
-            "traderName": "tizzles"
-          }
-        ]
-      },
-      "awayProb": 60.5,
-      "homeProb": 39.5,
-      "drawProb": null,
-      "drawMoneyPct": null,
-      "drawTicketPct": null,
-      "polySpread": null,
-      "polyTotal": null,
-      "awayTeam": "Robert Valentin",
-      "homeTeam": "Duško Todorovic",
-      "eventId": "723173",
-      "title": "UFC Fight Night: Duško Todorovic vs. Robert Valentin (Middleweight, Main Card)",
-      "commence": "2026-08-01T18:15:00Z",
-      "polyGameTime": "2026-08-01T14:00:00Z",
-      "polyGameDate": "2026-08-01",
-      "enrichmentFailed": false
-    },
     "gilberturbina_vlastocepo": {
-      "volume24h": 9675.705252,
+      "volume24h": 10460.775015999998,
       "liveVolume": 10727.278235,
-      "awayMoneyPct": 27.3,
-      "homeMoneyPct": 72.7,
-      "awayTicketPct": 34.5,
-      "homeTicketPct": 65.5,
-      "tradeCount": 110,
-      "sampleCash": 6425,
+      "awayMoneyPct": 28.2,
+      "homeMoneyPct": 71.8,
+      "awayTicketPct": 35.7,
+      "homeTicketPct": 64.3,
+      "tradeCount": 112,
+      "sampleCash": 6504,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -4191,7 +4075,7 @@
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
-          19.5,
+          20.5,
           29.5,
           33.5,
           33.5,
@@ -4205,11 +4089,11 @@
           33.5,
           33.5
         ],
-        "open": 19.5,
+        "open": 20.5,
         "current": 33.5,
         "high": 33.5,
-        "low": 19.5,
-        "change": 14
+        "low": 20.5,
+        "change": 13
       },
       "whales": null,
       "awayProb": 33.5,
@@ -4278,7 +4162,7 @@
       "enrichmentFailed": false
     },
     "brunolopes_diyarnurgozhay": {
-      "volume24h": 118.48156499999999,
+      "volume24h": 128.481565,
       "liveVolume": 128.481564,
       "awayMoneyPct": 1.3,
       "homeMoneyPct": 98.7,
@@ -4290,12 +4174,12 @@
       "priceHistory": {
         "points": [
           56,
-          63,
+          62.5,
           41.5,
           41.5,
           41,
-          41.5,
           40.5,
+          41.5,
           40.5,
           41.5,
           41.5,
@@ -4339,17 +4223,17 @@
       "priceHistory": {
         "points": [
           50,
-          60,
-          56,
-          60,
-          57.5,
-          51,
-          32.5,
+          59.5,
+          55.5,
+          59.5,
+          57,
+          50,
+          32,
           31.5,
           31.5,
-          31.5,
-          31.5,
-          31.5,
+          32,
+          32,
+          29.5,
           30.5
         ],
         "open": 50,
@@ -4427,14 +4311,14 @@
   },
   "WNBA": {
     "lva_chi": {
-      "volume24h": 48273.58293700001,
-      "liveVolume": 62737.61648800001,
-      "awayMoneyPct": 84.5,
-      "homeMoneyPct": 15.5,
-      "awayTicketPct": 75.2,
-      "homeTicketPct": 24.8,
-      "tradeCount": 391,
-      "sampleCash": 33177,
+      "volume24h": 62737.616489000015,
+      "liveVolume": 63513.973879,
+      "awayMoneyPct": 84.6,
+      "homeMoneyPct": 15.4,
+      "awayTicketPct": 75.8,
+      "homeTicketPct": 24.3,
+      "tradeCount": 400,
+      "sampleCash": 33423,
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
@@ -4638,23 +4522,23 @@
         ],
         "priceHistory": {
           "points": [
-            49.5,
+            50,
             49,
             48,
             48.5,
             48.5,
             47.5,
             47.5,
-            45.5,
+            44.5,
             44.5,
             44.5,
             43.5,
             44.5,
             45.5
           ],
-          "open": 49.5,
+          "open": 50,
           "current": 45.5,
-          "change": -4
+          "change": -4.5
         }
       },
       "polyTotal": {
@@ -4670,7 +4554,7 @@
         ],
         "priceHistory": {
           "points": [
-            51,
+            51.5,
             49.5,
             49.5,
             48.5,
@@ -4681,12 +4565,12 @@
             52.5,
             54.5,
             55,
-            57,
+            55.5,
             55
           ],
-          "open": 51,
+          "open": 51.5,
           "current": 55,
-          "change": 4
+          "change": 3.5
         }
       },
       "awayTeam": "Las Vegas Aces",
@@ -4699,20 +4583,20 @@
       "enrichmentFailed": false
     },
     "nyl_pho": {
-      "volume24h": 18572.860743999998,
-      "liveVolume": 26758.100314999996,
-      "awayMoneyPct": 71.8,
-      "homeMoneyPct": 28.2,
-      "awayTicketPct": 78.4,
-      "homeTicketPct": 21.6,
-      "tradeCount": 162,
-      "sampleCash": 13815,
-      "priceMove1h": 0,
+      "volume24h": 26758.100317999997,
+      "liveVolume": 26785.257175999996,
+      "awayMoneyPct": 71.9,
+      "homeMoneyPct": 28.1,
+      "awayTicketPct": 78.8,
+      "homeTicketPct": 21.2,
+      "tradeCount": 165,
+      "sampleCash": 13854,
+      "priceMove1h": -0.9,
       "priceHistory": {
         "points": [
           55,
           55,
-          55,
+          55.5,
           57,
           56.5,
           56.5,
@@ -4722,13 +4606,13 @@
           57.5,
           57.5,
           58.5,
-          58
+          57.5
         ],
         "open": 55,
-        "current": 58,
+        "current": 57.5,
         "high": 58.5,
         "low": 55,
-        "change": 3
+        "change": 2.5
       },
       "whales": {
         "count": 7,
@@ -4821,16 +4705,16 @@
         "priceHistory": {
           "points": [
             46,
-            50,
             49.5,
+            49,
             51,
             50.5,
-            50.5,
+            51,
             50.5,
             51.5,
             51.5,
             51,
-            49.5,
+            50.5,
             50.5,
             50.5
           ],
@@ -4892,25 +4776,25 @@
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
-          33.5,
-          30,
+          34.5,
+          29.5,
           31,
           31.5,
           35.5,
-          39.5,
+          38.5,
           42,
           43.5,
-          33.5,
+          33,
           33,
           32.5,
           32.5,
           31.5
         ],
-        "open": 33.5,
+        "open": 34.5,
         "current": 31.5,
         "high": 51,
         "low": 29,
-        "change": -2
+        "change": -3
       },
       "whales": null,
       "awayProb": 31.5,
@@ -4926,28 +4810,28 @@
           "Indiana Fever"
         ],
         "probs": [
-          51.5,
-          48.5
+          52,
+          48
         ],
         "priceHistory": {
           "points": [
             51.5,
-            51,
+            39.5,
             51.5,
-            51,
+            50,
             48.5,
             52,
-            50,
+            49.5,
             51.5,
-            50.5,
             51.5,
-            52.5,
+            51.5,
             52,
-            51.5
+            52,
+            52
           ],
           "open": 51.5,
-          "current": 51.5,
-          "change": 0
+          "current": 52,
+          "change": 0.5
         }
       },
       "polyTotal": {
@@ -4958,29 +4842,29 @@
           "Under"
         ],
         "probs": [
-          48.5,
-          51.5
+          49.5,
+          50.5
         ],
         "priceHistory": {
           "points": [
             51,
-            50.5,
             51,
             51,
             51,
+            50,
             50.5,
+            50,
+            51,
             50.5,
+            51,
             50.5,
-            50.5,
-            50.5,
-            50.5,
+            50,
             49.5,
-            49,
-            48.5
+            49
           ],
           "open": 51,
-          "current": 48.5,
-          "change": -2.5
+          "current": 49,
+          "change": -2
         }
       },
       "awayTeam": "Indiana Fever",
@@ -4993,7 +4877,7 @@
       "enrichmentFailed": false
     },
     "con_dal": {
-      "volume24h": 1223.072494,
+      "volume24h": 1223.0724940000002,
       "liveVolume": 1223.072493,
       "awayMoneyPct": 1.2,
       "homeMoneyPct": 98.8,
@@ -5004,25 +4888,25 @@
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
+          26,
+          28,
           27.5,
-          29.5,
-          28.5,
           27.5,
-          25.5,
-          25.5,
+          26,
+          26,
           23,
           16.5,
           16,
-          16.5,
+          16,
           16.5,
           16.5,
           16.5
         ],
-        "open": 27.5,
+        "open": 26,
         "current": 16.5,
         "high": 30.5,
         "low": 16,
-        "change": -11
+        "change": -9.5
       },
       "whales": null,
       "awayProb": 16.5,
@@ -5038,8 +4922,8 @@
           "Connecticut Sun"
         ],
         "probs": [
-          49,
-          51
+          48.5,
+          51.5
         ],
         "priceHistory": {
           "points": [
@@ -5055,11 +4939,12 @@
             49.5,
             49,
             49.5,
-            49
+            49,
+            48.5
           ],
           "open": 50,
-          "current": 49,
-          "change": -1
+          "current": 48.5,
+          "change": -1.5
         }
       },
       "polyTotal": {
@@ -5087,6 +4972,7 @@
             49.5,
             50,
             48.5,
+            49.5,
             49
           ],
           "open": 51,
@@ -5103,119 +4989,9 @@
       "polyGameDate": "2026-08-02",
       "enrichmentFailed": false
     },
-    "tor_gsv": {
-      "volume24h": 893.0857639999999,
-      "liveVolume": 893.085763,
-      "awayMoneyPct": 2.1,
-      "homeMoneyPct": 97.9,
-      "awayTicketPct": 39.1,
-      "homeTicketPct": 60.9,
-      "tradeCount": 23,
-      "sampleCash": 699,
-      "priceMove1h": 0,
-      "priceHistory": {
-        "points": [
-          30,
-          29.5,
-          23.5,
-          23.5,
-          23.5,
-          23.5,
-          23.5,
-          15,
-          15,
-          15.5,
-          15,
-          14.5,
-          14.5
-        ],
-        "open": 30,
-        "current": 14.5,
-        "high": 31.5,
-        "low": 14.5,
-        "change": -15.5
-      },
-      "whales": null,
-      "awayProb": 14.5,
-      "homeProb": 85.5,
-      "drawProb": null,
-      "drawMoneyPct": null,
-      "drawTicketPct": null,
-      "polySpread": {
-        "line": -12.5,
-        "title": "Spread -12.5",
-        "outcomes": [
-          "Golden State Valkyries",
-          "Toronto Tempo"
-        ],
-        "probs": [
-          48.5,
-          51.5
-        ],
-        "priceHistory": {
-          "points": [
-            49.5,
-            49,
-            49,
-            52,
-            48.5,
-            48.5,
-            48,
-            48.5,
-            49,
-            49,
-            48.5,
-            48.5
-          ],
-          "open": 49.5,
-          "current": 48.5,
-          "change": -1
-        }
-      },
-      "polyTotal": {
-        "line": 166.5,
-        "title": "O/U 166.5",
-        "outcomes": [
-          "Over",
-          "Under"
-        ],
-        "probs": [
-          50,
-          50
-        ],
-        "priceHistory": {
-          "points": [
-            50,
-            50.5,
-            50.5,
-            50.5,
-            51,
-            50,
-            50,
-            50.5,
-            50,
-            50,
-            50.5,
-            50,
-            50.5
-          ],
-          "open": 50,
-          "current": 50.5,
-          "change": 0.5
-        }
-      },
-      "awayTeam": "Toronto Tempo",
-      "homeTeam": "Golden State Valkyries",
-      "eventId": "723982",
-      "title": "Toronto Tempo vs. Golden State Valkyries",
-      "commence": "2026-08-03T00:30:00Z",
-      "polyGameTime": "2026-08-03T00:30:00Z",
-      "polyGameDate": "2026-08-02",
-      "enrichmentFailed": false
-    },
     "las_por": {
-      "volume24h": 62.5313,
-      "liveVolume": 908.8312999999999,
+      "volume24h": 908.8313,
+      "liveVolume": 930.8312999999999,
       "awayMoneyPct": 96.6,
       "homeMoneyPct": 3.4,
       "awayTicketPct": 68.8,
@@ -5225,25 +5001,25 @@
       "priceMove1h": 0,
       "priceHistory": {
         "points": [
-          41,
+          40.5,
           45.5,
-          49.5,
-          50,
-          53.5,
+          46.5,
+          51,
+          54,
           54.5,
           53.5,
-          54.5,
-          52.5,
+          53.5,
+          51,
           48,
           48,
           48.5,
           49
         ],
-        "open": 41,
+        "open": 40.5,
         "current": 49,
         "high": 57,
         "low": 36.5,
-        "change": 8
+        "change": 8.5
       },
       "whales": null,
       "awayProb": 49,
@@ -5323,7 +5099,118 @@
       "polyGameTime": "2026-08-02T19:30:00Z",
       "polyGameDate": "2026-08-02",
       "enrichmentFailed": false
+    },
+    "tor_gsv": {
+      "volume24h": 893.0857639999999,
+      "liveVolume": 893.085763,
+      "awayMoneyPct": 2.1,
+      "homeMoneyPct": 97.9,
+      "awayTicketPct": 39.1,
+      "homeTicketPct": 60.9,
+      "tradeCount": 23,
+      "sampleCash": 699,
+      "priceMove1h": 0,
+      "priceHistory": {
+        "points": [
+          28.5,
+          28,
+          23.5,
+          23.5,
+          23.5,
+          23.5,
+          18.5,
+          15,
+          15,
+          15.5,
+          15,
+          14.5,
+          14.5
+        ],
+        "open": 28.5,
+        "current": 14.5,
+        "high": 31.5,
+        "low": 14.5,
+        "change": -14
+      },
+      "whales": null,
+      "awayProb": 14.5,
+      "homeProb": 85.5,
+      "drawProb": null,
+      "drawMoneyPct": null,
+      "drawTicketPct": null,
+      "polySpread": {
+        "line": -12.5,
+        "title": "Spread -12.5",
+        "outcomes": [
+          "Golden State Valkyries",
+          "Toronto Tempo"
+        ],
+        "probs": [
+          48.5,
+          51.5
+        ],
+        "priceHistory": {
+          "points": [
+            49.5,
+            49,
+            49,
+            52,
+            48.5,
+            48.5,
+            48,
+            48.5,
+            49,
+            49,
+            48.5,
+            48.5,
+            48.5
+          ],
+          "open": 49.5,
+          "current": 48.5,
+          "change": -1
+        }
+      },
+      "polyTotal": {
+        "line": 166.5,
+        "title": "O/U 166.5",
+        "outcomes": [
+          "Over",
+          "Under"
+        ],
+        "probs": [
+          50.5,
+          49.5
+        ],
+        "priceHistory": {
+          "points": [
+            50,
+            50.5,
+            50.5,
+            50.5,
+            51,
+            50,
+            50,
+            50.5,
+            50,
+            50,
+            50.5,
+            50,
+            50.5
+          ],
+          "open": 50,
+          "current": 50.5,
+          "change": 0.5
+        }
+      },
+      "awayTeam": "Toronto Tempo",
+      "homeTeam": "Golden State Valkyries",
+      "eventId": "723982",
+      "title": "Toronto Tempo vs. Golden State Valkyries",
+      "commence": "2026-08-03T00:30:00Z",
+      "polyGameTime": "2026-08-03T00:30:00Z",
+      "polyGameDate": "2026-08-02",
+      "enrichmentFailed": false
     }
   },
-  "updatedAt": "2026-08-01T12:45:58.335Z"
+  "updatedAt": "2026-08-01T12:49:58.415Z"
 }
