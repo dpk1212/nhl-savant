@@ -1,23 +1,23 @@
 {
-  "scannedAt": "2026-08-01T13:26:34.717Z",
-  "elapsedSec": 15.8,
+  "scannedAt": "2026-08-01T13:30:43.196Z",
+  "elapsedSec": 15.6,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 41,
   "summary": {
     "total": 206,
     "coveredByMain": 5,
-    "recovered": 15,
-    "recoveredPositions": 97,
-    "noPositions": 186,
+    "recovered": 16,
+    "recoveredPositions": 102,
+    "noPositions": 185,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 8,
+      "ml": 9,
       "spread": 1,
-      "total": 2,
+      "total": 3,
       "dropped_shadow_gate": 32,
-      "dropped_excluded": 54,
+      "dropped_excluded": 57,
       "dropped_duplicate": 0
     }
   },
@@ -870,7 +870,7 @@
           "gameKey": "bogdangrad_dennisbuzukja",
           "marketType": "ml",
           "side": "away",
-          "invested": 3656,
+          "invested": 3752,
           "entryLine": null,
           "passesShadow": true
         }
@@ -1007,10 +1007,10 @@
       "sports": "MLB,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
-      "positionsCount": 34,
+      "positionsCount": 35,
       "statsSource": "sports_sharps",
       "avgSportBet": 1627,
-      "willPassShadowGate": 34,
+      "willPassShadowGate": 35,
       "willDropAtShadowGate": 0,
       "positions": [
         {
@@ -1128,6 +1128,15 @@
           "side": "home",
           "invested": 1403,
           "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "nyy_chc",
+          "marketType": "total",
+          "side": "over",
+          "invested": 1126,
+          "entryLine": 6.5,
           "passesShadow": true
         },
         {
@@ -1326,8 +1335,24 @@
       "tier": "FLAT",
       "name": null,
       "sports": "MLB",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x5e9458202b5817a72cf81105ec8a30e6f3705ba1"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x5e9458202b5817a72cf81105ec8a30e6f3705ba1",
+      "positionsCount": 1,
+      "statsSource": "sharpWalletProfiles_derived",
+      "avgSportBet": 65910,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "nyy_chc",
+          "marketType": "total",
+          "side": "under",
+          "invested": 15866,
+          "entryLine": 6.5,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "710c2e",
@@ -1400,10 +1425,10 @@
       "sports": "NBA,MLB",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xa71093cafc0c099b4ccab24c3cb8018d817923c4",
-      "positionsCount": 4,
+      "positionsCount": 6,
       "statsSource": "sports_sharps",
       "avgSportBet": 30863,
-      "willPassShadowGate": 0,
+      "willPassShadowGate": 2,
       "willDropAtShadowGate": 4,
       "positions": [
         {
@@ -1411,9 +1436,18 @@
           "gameKey": "kyleprepolec_mateuszrebecki",
           "marketType": "ml",
           "side": "home",
-          "invested": 0,
+          "invested": 15079,
           "entryLine": null,
-          "passesShadow": false
+          "passesShadow": true
+        },
+        {
+          "sport": "UFC",
+          "gameKey": "noahgugnon_milosjanicic",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 4344,
+          "entryLine": null,
+          "passesShadow": true
         },
         {
           "sport": "UFC",
@@ -1439,6 +1473,15 @@
           "marketType": "ml",
           "side": "home",
           "invested": 2902,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "UFC",
+          "gameKey": "haileycowan_ninamilosevic",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 657,
           "entryLine": null,
           "passesShadow": false
         }
@@ -1989,12 +2032,21 @@
       "sports": "NBA,SOC,UFC",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xe922473e81dbd20e3fffd7b64b51f057a9b839b3",
-      "positionsCount": 1,
+      "positionsCount": 2,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 758,
-      "willPassShadowGate": 0,
+      "willPassShadowGate": 1,
       "willDropAtShadowGate": 1,
       "positions": [
+        {
+          "sport": "UFC",
+          "gameKey": "noahgugnon_milosjanicic",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 500,
+          "entryLine": null,
+          "passesShadow": true
+        },
         {
           "sport": "UFC",
           "gameKey": "robertvalentin_duskotodorovic",
@@ -2225,7 +2277,7 @@
           "gameKey": "nyy_chc",
           "marketType": "total",
           "side": "over",
-          "invested": 3651,
+          "invested": 5274,
           "entryLine": 6.5,
           "passesShadow": true
         },
