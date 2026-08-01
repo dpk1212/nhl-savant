@@ -1,23 +1,23 @@
 {
-  "scannedAt": "2026-08-01T14:41:30.119Z",
+  "scannedAt": "2026-08-01T14:45:23.255Z",
   "elapsedSec": 17.2,
   "phase": "PHASE_2_MERGE_ENABLED",
-  "todayGamesCount": 40,
+  "todayGamesCount": 39,
   "summary": {
     "total": 206,
     "coveredByMain": 5,
-    "recovered": 20,
-    "recoveredPositions": 125,
-    "noPositions": 181,
+    "recovered": 21,
+    "recoveredPositions": 128,
+    "noPositions": 180,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 14,
+      "ml": 15,
       "spread": 1,
       "total": 3,
-      "dropped_shadow_gate": 40,
-      "dropped_excluded": 67,
+      "dropped_shadow_gate": 43,
+      "dropped_excluded": 66,
       "dropped_duplicate": 0
     }
   },
@@ -288,24 +288,24 @@
       "positionsCount": 2,
       "statsSource": "sports_sharps",
       "avgSportBet": 124024,
-      "willPassShadowGate": 1,
-      "willDropAtShadowGate": 1,
+      "willPassShadowGate": 0,
+      "willDropAtShadowGate": 2,
       "positions": [
-        {
-          "sport": "UFC",
-          "gameKey": "haileycowan_ninamilosevic",
-          "marketType": "ml",
-          "side": "away",
-          "invested": 13617,
-          "entryLine": null,
-          "passesShadow": true
-        },
         {
           "sport": "UFC",
           "gameKey": "danielrodriguez_urosmedic",
           "marketType": "ml",
           "side": "away",
-          "invested": 2619,
+          "invested": 2620,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "UFC",
+          "gameKey": "haileycowan_ninamilosevic",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 8,
           "entryLine": null,
           "passesShadow": false
         }
@@ -1418,7 +1418,7 @@
           "gameKey": "nyy_chc",
           "marketType": "total",
           "side": "under",
-          "invested": 16571,
+          "invested": 16573,
           "entryLine": 6.5,
           "passesShadow": true
         }
@@ -1469,8 +1469,24 @@
       "tier": "CONFIRMED",
       "name": "matanovik",
       "sports": "NBA",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x39d3c773be30fcc73161fc6768f46d563a779ef0"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x39d3c773be30fcc73161fc6768f46d563a779ef0",
+      "positionsCount": 1,
+      "statsSource": "sports_sharps",
+      "avgSportBet": 6840,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "UFC",
+          "gameKey": "haileycowan_ninamilosevic",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 1639,
+          "entryLine": null,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "786930",
@@ -1861,7 +1877,7 @@
           "gameKey": "kyleprepolec_mateuszrebecki",
           "marketType": "ml",
           "side": "away",
-          "invested": 174,
+          "invested": 177,
           "entryLine": null,
           "passesShadow": false
         }
@@ -2361,11 +2377,11 @@
       "sports": "MLB,SOC,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x84cfffc3f16dcc353094de30d4a45226eccd2f63",
-      "positionsCount": 25,
+      "positionsCount": 27,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 17981,
       "willPassShadowGate": 3,
-      "willDropAtShadowGate": 22,
+      "willDropAtShadowGate": 24,
       "positions": [
         {
           "sport": "WNBA",
@@ -2390,7 +2406,7 @@
           "gameKey": "bos_lad",
           "marketType": "total",
           "side": "under",
-          "invested": 4348,
+          "invested": 4680,
           "entryLine": 8.5,
           "passesShadow": true
         },
@@ -2536,6 +2552,24 @@
           "side": "over",
           "invested": 162,
           "entryLine": 7.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "bos_lad",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 118,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "stl_tor",
+          "marketType": "total",
+          "side": "under",
+          "invested": 111,
+          "entryLine": 9.5,
           "passesShadow": false
         },
         {
