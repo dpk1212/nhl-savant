@@ -3,76 +3,6 @@
   "NHL": {},
   "NBA": {},
   "MLB": {
-    "pit_cin": {
-      "awayProb": 43,
-      "homeProb": 55.5,
-      "awayBid": 42,
-      "awayAsk": 44,
-      "homeBid": 55,
-      "homeAsk": 56,
-      "awayLast": 44,
-      "homeLast": 56,
-      "priceMove24h": 0,
-      "priceHistory": null,
-      "volume24h": 278,
-      "tradeFlow": {
-        "awayTicketPct": 66.7,
-        "homeTicketPct": 33.3,
-        "awayMoneyPct": 58.9,
-        "homeMoneyPct": 41.1,
-        "tradeCount": 27,
-        "sampleCash": 105
-      },
-      "whales": null,
-      "spreads": [
-        {
-          "label": "Pittsburgh wins by over 1.5 runs",
-          "prob": 39.5,
-          "volume": 87
-        },
-        {
-          "label": "Cincinnati wins by over 1.5 runs",
-          "prob": 30.5,
-          "volume": 0
-        },
-        {
-          "label": "Pittsburgh wins by over 2.5 runs",
-          "prob": 30.5,
-          "volume": 0
-        },
-        {
-          "label": "Pittsburgh wins by over 3.5 runs",
-          "prob": 22,
-          "volume": 0
-        }
-      ],
-      "totals": [
-        {
-          "label": "Over 2.5 runs scored",
-          "prob": 95.5,
-          "volume": 30
-        },
-        {
-          "label": "Over 3.5 runs scored",
-          "prob": 90.5,
-          "volume": 11
-        },
-        {
-          "label": "Over 4.5 runs scored",
-          "prob": 86,
-          "volume": 95
-        },
-        {
-          "label": "Over 5.5 runs scored",
-          "prob": 75,
-          "volume": 0
-        }
-      ],
-      "awayTeam": "Pittsburgh",
-      "homeTeam": "Cincinnati",
-      "eventTicker": "KXMLBGAME-26AUG021340PITCIN",
-      "title": "Pittsburgh vs Cincinnati"
-    },
     "phi_bal": {
       "awayProb": 53,
       "homeProb": 46,
@@ -191,7 +121,7 @@
       "homeBid": 49,
       "homeAsk": 54,
       "awayLast": 47,
-      "homeLast": 52,
+      "homeLast": 54,
       "priceMove24h": -1,
       "priceHistory": {
         "points": [
@@ -225,14 +155,27 @@
       },
       "volume24h": 1238,
       "tradeFlow": {
-        "awayTicketPct": 14.6,
-        "homeTicketPct": 85.4,
-        "awayMoneyPct": 38.6,
-        "homeMoneyPct": 61.4,
-        "tradeCount": 41,
-        "sampleCash": 445
+        "awayTicketPct": 14.3,
+        "homeTicketPct": 85.7,
+        "awayMoneyPct": 26.9,
+        "homeMoneyPct": 73.1,
+        "tradeCount": 42,
+        "sampleCash": 639
       },
-      "whales": null,
+      "whales": {
+        "count": 1,
+        "totalCash": 194,
+        "largest": 194,
+        "topTrades": [
+          {
+            "amount": 194,
+            "side": "BUY",
+            "outcome": "Toronto",
+            "price": 54,
+            "ts": 1785546893484
+          }
+        ]
+      },
       "spreads": [
         {
           "label": "Toronto wins by over 1.5 runs",
@@ -593,12 +536,12 @@
           "volume": 29
         },
         {
-          "label": "Washington wins by over 1.5 runs",
-          "prob": 27.5,
+          "label": "Atlanta wins by over 3.5 runs",
+          "prob": 27,
           "volume": 0
         },
         {
-          "label": "Atlanta wins by over 3.5 runs",
+          "label": "Washington wins by over 1.5 runs",
           "prob": 27,
           "volume": 0
         }
@@ -679,7 +622,7 @@
         },
         {
           "label": "Texas wins by over 2.5 runs",
-          "prob": 31.5,
+          "prob": 31,
           "volume": 0
         },
         {
@@ -1024,16 +967,16 @@
       },
       "volume24h": 52824,
       "tradeFlow": {
-        "awayTicketPct": 20.2,
-        "homeTicketPct": 79.8,
+        "awayTicketPct": 20.4,
+        "homeTicketPct": 79.6,
         "awayMoneyPct": 11.5,
         "homeMoneyPct": 88.5,
-        "tradeCount": 331,
-        "sampleCash": 17871
+        "tradeCount": 338,
+        "sampleCash": 18089
       },
       "whales": {
-        "count": 41,
-        "totalCash": 12566,
+        "count": 42,
+        "totalCash": 12710,
         "largest": 1276,
         "topTrades": [
           {
@@ -1426,7 +1369,77 @@
       "homeTeam": "Seattle",
       "eventTicker": "KXMLBGAME-26AUG021610MINSEA",
       "title": "Minnesota vs Seattle"
+    },
+    "pit_cin": {
+      "awayProb": 43,
+      "homeProb": 55.5,
+      "awayBid": 42,
+      "awayAsk": 44,
+      "homeBid": 55,
+      "homeAsk": 56,
+      "awayLast": 44,
+      "homeLast": 56,
+      "priceMove24h": 0,
+      "priceHistory": null,
+      "volume24h": 278,
+      "tradeFlow": {
+        "awayTicketPct": 66.7,
+        "homeTicketPct": 33.3,
+        "awayMoneyPct": 58.9,
+        "homeMoneyPct": 41.1,
+        "tradeCount": 27,
+        "sampleCash": 105
+      },
+      "whales": null,
+      "spreads": [
+        {
+          "label": "Pittsburgh wins by over 1.5 runs",
+          "prob": 39.5,
+          "volume": 87
+        },
+        {
+          "label": "Cincinnati wins by over 1.5 runs",
+          "prob": 30.5,
+          "volume": 0
+        },
+        {
+          "label": "Pittsburgh wins by over 2.5 runs",
+          "prob": 30.5,
+          "volume": 0
+        },
+        {
+          "label": "Pittsburgh wins by over 3.5 runs",
+          "prob": 22,
+          "volume": 0
+        }
+      ],
+      "totals": [
+        {
+          "label": "Over 2.5 runs scored",
+          "prob": 95.5,
+          "volume": 30
+        },
+        {
+          "label": "Over 3.5 runs scored",
+          "prob": 90.5,
+          "volume": 11
+        },
+        {
+          "label": "Over 4.5 runs scored",
+          "prob": 86,
+          "volume": 95
+        },
+        {
+          "label": "Over 5.5 runs scored",
+          "prob": 75,
+          "volume": 0
+        }
+      ],
+      "awayTeam": "Pittsburgh",
+      "homeTeam": "Cincinnati",
+      "eventTicker": "KXMLBGAME-26AUG021340PITCIN",
+      "title": "Pittsburgh vs Cincinnati"
     }
   },
-  "updatedAt": "2026-08-01T01:12:43.676Z"
+  "updatedAt": "2026-08-01T01:16:36.375Z"
 }
