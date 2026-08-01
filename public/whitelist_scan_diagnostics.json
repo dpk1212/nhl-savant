@@ -1,23 +1,23 @@
 {
-  "scannedAt": "2026-08-01T14:45:23.255Z",
-  "elapsedSec": 17.2,
+  "scannedAt": "2026-08-01T14:49:31.833Z",
+  "elapsedSec": 17,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 39,
   "summary": {
     "total": 206,
     "coveredByMain": 5,
-    "recovered": 21,
-    "recoveredPositions": 128,
-    "noPositions": 180,
+    "recovered": 18,
+    "recoveredPositions": 122,
+    "noPositions": 183,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 15,
+      "ml": 14,
       "spread": 1,
       "total": 3,
-      "dropped_shadow_gate": 43,
-      "dropped_excluded": 66,
+      "dropped_shadow_gate": 40,
+      "dropped_excluded": 64,
       "dropped_duplicate": 0
     }
   },
@@ -76,12 +76,21 @@
       "sports": "NHL,SOC,UFC,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x0a77bc0638f13892c8b1d1d2c13ba178540f9d74",
-      "positionsCount": 3,
+      "positionsCount": 4,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 2189,
-      "willPassShadowGate": 2,
+      "willPassShadowGate": 3,
       "willDropAtShadowGate": 1,
       "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "bos_lad",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 640,
+          "entryLine": null,
+          "passesShadow": true
+        },
         {
           "sport": "MLB",
           "gameKey": "stl_tor",
@@ -285,27 +294,18 @@
       "sports": "NBA,NHL,SOC",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x9f2fe025f84839ca81dd8e0338892605702d2ca8",
-      "positionsCount": 2,
+      "positionsCount": 1,
       "statsSource": "sports_sharps",
       "avgSportBet": 124024,
       "willPassShadowGate": 0,
-      "willDropAtShadowGate": 2,
+      "willDropAtShadowGate": 1,
       "positions": [
         {
           "sport": "UFC",
           "gameKey": "danielrodriguez_urosmedic",
           "marketType": "ml",
           "side": "away",
-          "invested": 2620,
-          "entryLine": null,
-          "passesShadow": false
-        },
-        {
-          "sport": "UFC",
-          "gameKey": "haileycowan_ninamilosevic",
-          "marketType": "ml",
-          "side": "away",
-          "invested": 8,
+          "invested": 2626,
           "entryLine": null,
           "passesShadow": false
         }
@@ -1469,24 +1469,8 @@
       "tier": "CONFIRMED",
       "name": "matanovik",
       "sports": "NBA",
-      "status": "RECOVERED_VIA_WHITELIST_SCAN",
-      "addr": "0x39d3c773be30fcc73161fc6768f46d563a779ef0",
-      "positionsCount": 1,
-      "statsSource": "sports_sharps",
-      "avgSportBet": 6840,
-      "willPassShadowGate": 1,
-      "willDropAtShadowGate": 0,
-      "positions": [
-        {
-          "sport": "UFC",
-          "gameKey": "haileycowan_ninamilosevic",
-          "marketType": "ml",
-          "side": "away",
-          "invested": 1639,
-          "entryLine": null,
-          "passesShadow": true
-        }
-      ]
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0x39d3c773be30fcc73161fc6768f46d563a779ef0"
     },
     {
       "walletShort": "786930",
@@ -1511,11 +1495,11 @@
       "sports": "NBA,MLB",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xa71093cafc0c099b4ccab24c3cb8018d817923c4",
-      "positionsCount": 6,
+      "positionsCount": 5,
       "statsSource": "sports_sharps",
       "avgSportBet": 30863,
       "willPassShadowGate": 2,
-      "willDropAtShadowGate": 4,
+      "willDropAtShadowGate": 3,
       "positions": [
         {
           "sport": "UFC",
@@ -1559,15 +1543,6 @@
           "marketType": "ml",
           "side": "home",
           "invested": 2921,
-          "entryLine": null,
-          "passesShadow": false
-        },
-        {
-          "sport": "UFC",
-          "gameKey": "haileycowan_ninamilosevic",
-          "marketType": "ml",
-          "side": "away",
-          "invested": 666,
           "entryLine": null,
           "passesShadow": false
         }
@@ -1619,21 +1594,12 @@
       "sports": "UFC",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xed107a85a4585a381e48c7f7ca4144909e7dd2e5",
-      "positionsCount": 7,
+      "positionsCount": 6,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 3202,
       "willPassShadowGate": 6,
-      "willDropAtShadowGate": 1,
+      "willDropAtShadowGate": 0,
       "positions": [
-        {
-          "sport": "UFC",
-          "gameKey": "haileycowan_ninamilosevic",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 4000,
-          "entryLine": null,
-          "passesShadow": true
-        },
         {
           "sport": "UFC",
           "gameKey": "noahgugnon_milosjanicic",
@@ -1675,7 +1641,7 @@
           "gameKey": "bogdangrad_dennisbuzukja",
           "marketType": "ml",
           "side": "away",
-          "invested": 1620,
+          "invested": 1635,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1684,9 +1650,9 @@
           "gameKey": "kyleprepolec_mateuszrebecki",
           "marketType": "ml",
           "side": "home",
-          "invested": 93,
+          "invested": 1833,
           "entryLine": null,
-          "passesShadow": false
+          "passesShadow": true
         }
       ]
     },
@@ -1857,27 +1823,18 @@
       "sports": "SOC",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x64e93f87d8a0c1b2cde6f20d71f211372a95eb4c",
-      "positionsCount": 2,
+      "positionsCount": 1,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 6738,
-      "willPassShadowGate": 1,
+      "willPassShadowGate": 0,
       "willDropAtShadowGate": 1,
       "positions": [
-        {
-          "sport": "UFC",
-          "gameKey": "haileycowan_ninamilosevic",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 4050,
-          "entryLine": null,
-          "passesShadow": true
-        },
         {
           "sport": "UFC",
           "gameKey": "kyleprepolec_mateuszrebecki",
           "marketType": "ml",
           "side": "away",
-          "invested": 177,
+          "invested": 357,
           "entryLine": null,
           "passesShadow": false
         }
@@ -2406,7 +2363,7 @@
           "gameKey": "bos_lad",
           "marketType": "total",
           "side": "under",
-          "invested": 4680,
+          "invested": 4752,
           "entryLine": 8.5,
           "passesShadow": true
         },
@@ -2537,21 +2494,21 @@
           "passesShadow": false
         },
         {
+          "sport": "MLB",
+          "gameKey": "stl_tor",
+          "marketType": "total",
+          "side": "over",
+          "invested": 178,
+          "entryLine": 7.5,
+          "passesShadow": false
+        },
+        {
           "sport": "WNBA",
           "gameKey": "lva_chi",
           "marketType": "total",
           "side": "over",
           "invested": 159,
           "entryLine": 182.5,
-          "passesShadow": false
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "stl_tor",
-          "marketType": "total",
-          "side": "over",
-          "invested": 162,
-          "entryLine": 7.5,
           "passesShadow": false
         },
         {
@@ -2665,24 +2622,8 @@
       "tier": "CONFIRMED",
       "name": "ferrariChampions2026",
       "sports": "NBA",
-      "status": "RECOVERED_VIA_WHITELIST_SCAN",
-      "addr": "0xfe787d2da716d60e8acff57fb87eb13cd4d10319",
-      "positionsCount": 1,
-      "statsSource": "sports_sharps",
-      "avgSportBet": 873,
-      "willPassShadowGate": 1,
-      "willDropAtShadowGate": 0,
-      "positions": [
-        {
-          "sport": "UFC",
-          "gameKey": "haileycowan_ninamilosevic",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 41460,
-          "entryLine": null,
-          "passesShadow": true
-        }
-      ]
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0xfe787d2da716d60e8acff57fb87eb13cd4d10319"
     },
     {
       "walletShort": "d200f2",
@@ -2921,24 +2862,8 @@
       "tier": "CONFIRMED",
       "name": "GamblingOdyssey",
       "sports": "SOC",
-      "status": "RECOVERED_VIA_WHITELIST_SCAN",
-      "addr": "0xe5241830e8876c115d7dc8311ad9f43d85fdd34f",
-      "positionsCount": 1,
-      "statsSource": "sports_sharps",
-      "avgSportBet": 8758,
-      "willPassShadowGate": 1,
-      "willDropAtShadowGate": 0,
-      "positions": [
-        {
-          "sport": "UFC",
-          "gameKey": "haileycowan_ninamilosevic",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 15633,
-          "entryLine": null,
-          "passesShadow": true
-        }
-      ]
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0xe5241830e8876c115d7dc8311ad9f43d85fdd34f"
     },
     {
       "walletShort": "fea6f5",
