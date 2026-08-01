@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-08-01T23:17:01.932Z",
-  "elapsedSec": 14.7,
+  "scannedAt": "2026-08-01T23:21:06.021Z",
+  "elapsedSec": 12.2,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 27,
   "summary": {
     "total": 206,
-    "coveredByMain": 7,
+    "coveredByMain": 8,
     "recovered": 14,
-    "recoveredPositions": 98,
-    "noPositions": 185,
+    "recoveredPositions": 99,
+    "noPositions": 184,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,7 +16,7 @@
       "ml": 9,
       "spread": 1,
       "total": 3,
-      "dropped_shadow_gate": 38,
+      "dropped_shadow_gate": 39,
       "dropped_excluded": 46,
       "dropped_duplicate": 1
     }
@@ -805,11 +805,11 @@
       "sports": "SOC",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x9e3ed7b661a903fc97afcf49e0f014ebe869f882",
-      "positionsCount": 3,
+      "positionsCount": 4,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 1824,
       "willPassShadowGate": 0,
-      "willDropAtShadowGate": 3,
+      "willDropAtShadowGate": 4,
       "positions": [
         {
           "sport": "MLB",
@@ -836,6 +836,15 @@
           "side": "home",
           "invested": 12,
           "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "det_oak",
+          "marketType": "total",
+          "side": "under",
+          "invested": 10,
+          "entryLine": 10.5,
           "passesShadow": false
         }
       ]
@@ -996,7 +1005,7 @@
           "gameKey": "sfg_sdp",
           "marketType": "total",
           "side": "over",
-          "invested": 1985,
+          "invested": 2015,
           "entryLine": 7.5,
           "passesShadow": true
         },
@@ -1155,7 +1164,7 @@
           "gameKey": "bos_lad",
           "marketType": "total",
           "side": "under",
-          "invested": 85152,
+          "invested": 85160,
           "entryLine": 7.5,
           "passesShadow": true
         },
@@ -1541,8 +1550,7 @@
       "tier": "CONFIRMED",
       "name": "suntori",
       "sports": "NBA,NHL",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xe9076a87c5ed90ef16e6fe6529c943baeca0cff6"
+      "status": "COVERED_BY_MAIN"
     },
     {
       "walletShort": "a0d6d2",
