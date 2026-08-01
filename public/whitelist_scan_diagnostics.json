@@ -1,22 +1,22 @@
 {
-  "scannedAt": "2026-08-01T15:20:23.050Z",
-  "elapsedSec": 15.9,
+  "scannedAt": "2026-08-01T15:24:13.468Z",
+  "elapsedSec": 16,
   "phase": "PHASE_2_MERGE_ENABLED",
-  "todayGamesCount": 38,
+  "todayGamesCount": 37,
   "summary": {
     "total": 206,
-    "coveredByMain": 5,
+    "coveredByMain": 6,
     "recovered": 20,
-    "recoveredPositions": 142,
-    "noPositions": 181,
+    "recoveredPositions": 144,
+    "noPositions": 180,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 17,
+      "ml": 18,
       "spread": 1,
       "total": 4,
-      "dropped_shadow_gate": 49,
+      "dropped_shadow_gate": 50,
       "dropped_excluded": 71,
       "dropped_duplicate": 0
     }
@@ -76,12 +76,21 @@
       "sports": "NHL,SOC,UFC,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x0a77bc0638f13892c8b1d1d2c13ba178540f9d74",
-      "positionsCount": 5,
+      "positionsCount": 6,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 2189,
-      "willPassShadowGate": 4,
+      "willPassShadowGate": 5,
       "willDropAtShadowGate": 1,
       "positions": [
+        {
+          "sport": "UFC",
+          "gameKey": "bogdangrad_dennisbuzukja",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 2000,
+          "entryLine": null,
+          "passesShadow": true
+        },
         {
           "sport": "MLB",
           "gameKey": "bos_lad",
@@ -303,18 +312,27 @@
       "sports": "NBA,NHL,SOC",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x9f2fe025f84839ca81dd8e0338892605702d2ca8",
-      "positionsCount": 1,
+      "positionsCount": 2,
       "statsSource": "sports_sharps",
       "avgSportBet": 124024,
       "willPassShadowGate": 0,
-      "willDropAtShadowGate": 1,
+      "willDropAtShadowGate": 2,
       "positions": [
         {
           "sport": "UFC",
           "gameKey": "danielrodriguez_urosmedic",
           "marketType": "ml",
           "side": "away",
-          "invested": 2630,
+          "invested": 2835,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "UFC",
+          "gameKey": "bogdangrad_dennisbuzukja",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 5470,
           "entryLine": null,
           "passesShadow": false
         }
@@ -1135,20 +1153,20 @@
         },
         {
           "sport": "MLB",
+          "gameKey": "nyy_chc",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 2780,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
           "gameKey": "bos_lad",
           "marketType": "total",
           "side": "under",
           "invested": 3696,
           "entryLine": 9.5,
-          "passesShadow": true
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "nyy_chc",
-          "marketType": "ml",
-          "side": "away",
-          "invested": 2448,
-          "entryLine": null,
           "passesShadow": true
         },
         {
@@ -1389,6 +1407,15 @@
           "sport": "WNBA",
           "gameKey": "lva_chi",
           "marketType": "spread",
+          "side": "away",
+          "invested": 575,
+          "entryLine": -7.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "WNBA",
+          "gameKey": "lva_chi",
+          "marketType": "spread",
           "side": "home",
           "invested": 689,
           "entryLine": 7.5,
@@ -1401,15 +1428,6 @@
           "side": "away",
           "invested": 566,
           "entryLine": -1.5,
-          "passesShadow": true
-        },
-        {
-          "sport": "WNBA",
-          "gameKey": "lva_chi",
-          "marketType": "spread",
-          "side": "away",
-          "invested": 560,
-          "entryLine": -7.5,
           "passesShadow": true
         },
         {
@@ -1513,7 +1531,7 @@
           "gameKey": "nyy_chc",
           "marketType": "total",
           "side": "under",
-          "invested": 16688,
+          "invested": 16693,
           "entryLine": 6.5,
           "passesShadow": true
         }
@@ -1564,8 +1582,7 @@
       "tier": "CONFIRMED",
       "name": "matanovik",
       "sports": "NBA",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x39d3c773be30fcc73161fc6768f46d563a779ef0"
+      "status": "COVERED_BY_MAIN"
     },
     {
       "walletShort": "786930",
@@ -1736,7 +1753,7 @@
           "gameKey": "bogdangrad_dennisbuzukja",
           "marketType": "ml",
           "side": "away",
-          "invested": 2363,
+          "invested": 3023,
           "entryLine": null,
           "passesShadow": true
         }
@@ -2423,20 +2440,20 @@
         },
         {
           "sport": "MLB",
-          "gameKey": "nyy_chc",
+          "gameKey": "bos_lad",
           "marketType": "total",
-          "side": "over",
-          "invested": 5298,
-          "entryLine": 6.5,
+          "side": "under",
+          "invested": 6255,
+          "entryLine": 8.5,
           "passesShadow": true
         },
         {
           "sport": "MLB",
-          "gameKey": "bos_lad",
+          "gameKey": "nyy_chc",
           "marketType": "total",
-          "side": "under",
-          "invested": 5475,
-          "entryLine": 8.5,
+          "side": "over",
+          "invested": 5302,
+          "entryLine": 6.5,
           "passesShadow": true
         },
         {
@@ -2561,7 +2578,7 @@
           "gameKey": "cws_tbr",
           "marketType": "total",
           "side": "under",
-          "invested": 547,
+          "invested": 576,
           "entryLine": 8.5,
           "passesShadow": false
         },
