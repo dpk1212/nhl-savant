@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-08-01T11:38:14.622Z",
-  "elapsedSec": 17.2,
+  "scannedAt": "2026-08-01T11:42:24.557Z",
+  "elapsedSec": 17.7,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 41,
   "summary": {
     "total": 206,
     "coveredByMain": 4,
     "recovered": 13,
-    "recoveredPositions": 55,
+    "recoveredPositions": 56,
     "noPositions": 189,
     "apiError": 0,
     "addressNotFound": 0,
@@ -15,9 +15,9 @@
     "merge": {
       "ml": 6,
       "spread": 1,
-      "total": 1,
-      "dropped_shadow_gate": 21,
-      "dropped_excluded": 26,
+      "total": 2,
+      "dropped_shadow_gate": 19,
+      "dropped_excluded": 28,
       "dropped_duplicate": 0
     }
   },
@@ -469,11 +469,11 @@
       "sports": "MLB,WNBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xf7f0b0b1e9c0fe02ccad926916ee31aef74b912c",
-      "positionsCount": 8,
+      "positionsCount": 9,
       "statsSource": "sports_sharps",
       "avgSportBet": 451,
-      "willPassShadowGate": 7,
-      "willDropAtShadowGate": 1,
+      "willPassShadowGate": 9,
+      "willDropAtShadowGate": 0,
       "positions": [
         {
           "sport": "MLB",
@@ -513,11 +513,29 @@
         },
         {
           "sport": "WNBA",
+          "gameKey": "lva_chi",
+          "marketType": "total",
+          "side": "under",
+          "invested": 120,
+          "entryLine": 183.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "WNBA",
           "gameKey": "nyl_pho",
           "marketType": "total",
           "side": "under",
           "invested": 115,
           "entryLine": 174.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "WNBA",
+          "gameKey": "lva_chi",
+          "marketType": "total",
+          "side": "under",
+          "invested": 95,
+          "entryLine": 182.5,
           "passesShadow": true
         },
         {
@@ -537,15 +555,6 @@
           "invested": 83,
           "entryLine": 1.5,
           "passesShadow": true
-        },
-        {
-          "sport": "WNBA",
-          "gameKey": "lva_chi",
-          "marketType": "total",
-          "side": "under",
-          "invested": 20,
-          "entryLine": 182.5,
-          "passesShadow": false
         }
       ]
     },
@@ -727,7 +736,7 @@
           "gameKey": "bogdangrad_dennisbuzukja",
           "marketType": "ml",
           "side": "away",
-          "invested": 2868,
+          "invested": 2943,
           "entryLine": null,
           "passesShadow": true
         }
@@ -1835,8 +1844,8 @@
       "positionsCount": 12,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 17981,
-      "willPassShadowGate": 2,
-      "willDropAtShadowGate": 10,
+      "willPassShadowGate": 3,
+      "willDropAtShadowGate": 9,
       "positions": [
         {
           "sport": "WNBA",
@@ -1861,9 +1870,9 @@
           "gameKey": "bos_lad",
           "marketType": "total",
           "side": "under",
-          "invested": 1591,
+          "invested": 1927,
           "entryLine": 8.5,
-          "passesShadow": false
+          "passesShadow": true
         },
         {
           "sport": "MLB",
