@@ -1,19 +1,19 @@
 {
-  "scannedAt": "2026-08-01T15:50:55.476Z",
-  "elapsedSec": 14.2,
+  "scannedAt": "2026-08-01T15:54:52.777Z",
+  "elapsedSec": 16.3,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 37,
   "summary": {
     "total": 206,
-    "coveredByMain": 6,
+    "coveredByMain": 7,
     "recovered": 21,
-    "recoveredPositions": 146,
-    "noPositions": 179,
+    "recoveredPositions": 147,
+    "noPositions": 178,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 15,
+      "ml": 16,
       "spread": 1,
       "total": 4,
       "dropped_shadow_gate": 50,
@@ -471,8 +471,7 @@
       "tier": "CONFIRMED",
       "name": "shoemanhere",
       "sports": "MLB",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x39fcd0aafb7047035e9323e6d1f99cd46f43e2f2"
+      "status": "COVERED_BY_MAIN"
     },
     {
       "walletShort": "461220",
@@ -1019,12 +1018,21 @@
       "sports": "SOC",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x9e3ed7b661a903fc97afcf49e0f014ebe869f882",
-      "positionsCount": 4,
+      "positionsCount": 5,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 1824,
-      "willPassShadowGate": 0,
+      "willPassShadowGate": 1,
       "willDropAtShadowGate": 4,
       "positions": [
+        {
+          "sport": "UFC",
+          "gameKey": "markvologdin_borislavnikolic",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 762,
+          "entryLine": null,
+          "passesShadow": true
+        },
         {
           "sport": "MLB",
           "gameKey": "kcr_col",
@@ -1618,7 +1626,7 @@
           "gameKey": "michaeloliveira_obanelliott",
           "marketType": "ml",
           "side": "home",
-          "invested": 21918,
+          "invested": 22555,
           "entryLine": null,
           "passesShadow": true
         },
@@ -2443,7 +2451,7 @@
           "gameKey": "bos_lad",
           "marketType": "total",
           "side": "under",
-          "invested": 8790,
+          "invested": 8868,
           "entryLine": 8.5,
           "passesShadow": true
         },
@@ -2823,7 +2831,7 @@
           "gameKey": "michaeloliveira_obanelliott",
           "marketType": "ml",
           "side": "away",
-          "invested": 37712,
+          "invested": 37724,
           "entryLine": null,
           "passesShadow": true
         }
