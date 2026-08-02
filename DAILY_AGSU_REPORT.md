@@ -1,6 +1,6 @@
 # AGS-Unified — V12 Daily Monitor
 
-**Generated:** Sunday, August 2, 2026 at 8:09 AM ET
+**Generated:** Sunday, August 2, 2026 at 10:09 AM ET
 
 **Model:** `ags-unified-v12` · **Live since:** 2026-06-01 (63 days) · **Tape / side-profile era:** 2026-07-15+
 
@@ -14,16 +14,16 @@ Appendix A — Model Versions · Appendix B — Feature Lab
 
 ## § 1 — Executive Summary
 
-> 🟢 **V12 is currently WINNING.** Since going live on **2026-06-01** (63 days ago), V12 has evaluated **1730** picks, shipped **567** for real money (32.8% ship rate), and muted the other **1163**. On the shipped picks V12 has gone **319-248** (56.3% win), staked **1619.90u**, and returned **+85.02u** at **+5.2% ROI**.
+> 🟢 **V12 is currently WINNING.** Since going live on **2026-06-01** (63 days ago), V12 has evaluated **1731** picks, shipped **567** for real money (32.8% ship rate), and muted the other **1164**. On the shipped picks V12 has gone **319-248** (56.3% win), staked **1619.90u**, and returned **+85.02u** at **+5.2% ROI**.
 
 ### Snapshot
 
 | Metric                              | Value                          |
 |-------------------------------------|--------------------------------|
 | Days V12 has been authoritative     |                             63 |
-| Picks V12 has evaluated             |                           1730 |
+| Picks V12 has evaluated             |                           1731 |
 | Picks SHIPPED (units > 0)           |                            567 |
-| Picks MUTED (score ≤ 0, FADE)       |                           1163 |
+| Picks MUTED (score ≤ 0, FADE)       |                           1164 |
 | Ship rate                           |                          32.8% |
 | Live W-L                            |                        319-248 |
 | Live Win %                          |                          56.3% |
@@ -87,7 +87,7 @@ Last **21** calendar days with activity. **Live** = units > 0 · **Muted** = gra
 | 2026-07-30 |        16 |    5 |    10 | 3-2        |  60.0% |     17.50 |      +0.10 |      0.6% |     +66.81 |
 | 2026-07-31 |        16 |    0 |    15 | 0-0        |      — |      0.00 |      +0.00 |         — |     +66.81 |
 | 2026-08-01 |        39 |   18 |    18 | 13-5       |  72.2% |     69.10 |     +18.21 |     26.4% |     +85.02 |
-| 2026-08-02 |         3 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +85.02 |
+| 2026-08-02 |         4 |    0 |     0 | 0-0        |      — |      0.00 |      +0.00 |         — |     +85.02 |
 
 > **Trajectory.** 🟢 Last 3 days (26.4% ROI) **+22.0pp** vs prior (4.3%).
 
@@ -253,7 +253,7 @@ From **2026-07-15**, path units are resized by **TAPE** = `2·(EDGE/10) + 1.5·(
 
 | Window | Sides | With tape stamp | Graded w/ stamp |
 |--------|------:|----------------:|----------------:|
-| ≥ 2026-07-15 | 418 | 413 | 406 |
+| ≥ 2026-07-15 | 419 | 414 | 406 |
 
 ### (A) By tape action (stamped + graded)
 
