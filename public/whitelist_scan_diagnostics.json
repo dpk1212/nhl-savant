@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-08-02T02:18:45.231Z",
-  "elapsedSec": 13.7,
+  "scannedAt": "2026-08-02T02:22:45.371Z",
+  "elapsedSec": 15.7,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 29,
   "summary": {
     "total": 206,
-    "coveredByMain": 9,
+    "coveredByMain": 8,
     "recovered": 1,
-    "recoveredPositions": 9,
-    "noPositions": 196,
+    "recoveredPositions": 10,
+    "noPositions": 197,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,7 +16,7 @@
       "ml": 0,
       "spread": 0,
       "total": 0,
-      "dropped_shadow_gate": 9,
+      "dropped_shadow_gate": 10,
       "dropped_excluded": 0,
       "dropped_duplicate": 0
     }
@@ -983,7 +983,8 @@
       "tier": "CONFIRMED",
       "name": "suntori",
       "sports": "NBA,NHL",
-      "status": "COVERED_BY_MAIN"
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0xe9076a87c5ed90ef16e6fe6529c943baeca0cff6"
     },
     {
       "walletShort": "a0d6d2",
@@ -1358,11 +1359,11 @@
       "sports": "MLB,SOC,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x84cfffc3f16dcc353094de30d4a45226eccd2f63",
-      "positionsCount": 9,
+      "positionsCount": 10,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 17981,
       "willPassShadowGate": 0,
-      "willDropAtShadowGate": 9,
+      "willDropAtShadowGate": 10,
       "positions": [
         {
           "sport": "MLB",
@@ -1416,6 +1417,15 @@
           "side": "under",
           "invested": 15,
           "entryLine": 9.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "nyy_chc",
+          "marketType": "total",
+          "side": "under",
+          "invested": 9,
+          "entryLine": 6.5,
           "passesShadow": false
         },
         {
