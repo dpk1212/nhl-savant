@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-08-03T20:45:05.382Z",
-  "elapsedSec": 14,
+  "scannedAt": "2026-08-03T20:49:06.516Z",
+  "elapsedSec": 16.1,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 23,
   "summary": {
     "total": 207,
     "coveredByMain": 7,
     "recovered": 16,
-    "recoveredPositions": 102,
+    "recoveredPositions": 103,
     "noPositions": 184,
     "apiError": 0,
     "addressNotFound": 0,
@@ -15,7 +15,7 @@
     "merge": {
       "ml": 10,
       "spread": 1,
-      "total": 9,
+      "total": 10,
       "dropped_shadow_gate": 24,
       "dropped_excluded": 55,
       "dropped_duplicate": 3
@@ -300,12 +300,21 @@
       "sports": "SOC,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x032eb1bc893940263ad0b01889f262fc232f2a9e",
-      "positionsCount": 1,
+      "positionsCount": 2,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 18314,
-      "willPassShadowGate": 1,
+      "willPassShadowGate": 2,
       "willDropAtShadowGate": 0,
       "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "stl_nyy",
+          "marketType": "total",
+          "side": "under",
+          "invested": 4514,
+          "entryLine": 7.5,
+          "passesShadow": true
+        },
         {
           "sport": "MLB",
           "gameKey": "lad_chc",
@@ -716,7 +725,7 @@
           "gameKey": "sdp_ari",
           "marketType": "ml",
           "side": "away",
-          "invested": 2458,
+          "invested": 2602,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1007,6 +1016,15 @@
           "passesShadow": true
         },
         {
+          "sport": "MLB",
+          "gameKey": "lad_chc",
+          "marketType": "total",
+          "side": "under",
+          "invested": 4052,
+          "entryLine": 8.5,
+          "passesShadow": true
+        },
+        {
           "sport": "WNBA",
           "gameKey": "lva_atl",
           "marketType": "total",
@@ -1022,15 +1040,6 @@
           "side": "under",
           "invested": 2127,
           "entryLine": 183.5,
-          "passesShadow": true
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "lad_chc",
-          "marketType": "total",
-          "side": "under",
-          "invested": 2458,
-          "entryLine": 8.5,
           "passesShadow": true
         },
         {
@@ -1915,7 +1924,7 @@
           "gameKey": "lva_atl",
           "marketType": "total",
           "side": "over",
-          "invested": 1343,
+          "invested": 1370,
           "entryLine": 183.5,
           "passesShadow": true
         },
@@ -2583,7 +2592,7 @@
           "gameKey": "tor_hou",
           "marketType": "total",
           "side": "over",
-          "invested": 6510,
+          "invested": 6667,
           "entryLine": 9.5,
           "passesShadow": true
         }
