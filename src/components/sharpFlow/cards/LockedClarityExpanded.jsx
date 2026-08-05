@@ -264,20 +264,22 @@ function WalletMap({ wallets, selected, onSelect, gid }) {
   );
 }
 
-function OddsPath({ journey, fair, clvPct, gid }) {
+/** Fair-book overtime spark. variant="market" = quiet instrument (no neon fill). */
+function OddsPath({ journey, fair, clvPct, gid, variant = 'default' }) {
   const pts = (Array.isArray(journey) ? journey : []).filter(Number.isFinite);
   if (pts.length < 2) return null;
+  const quiet = variant === 'market';
   const vals = pts.map((p) => -p);
   const fairV = Number.isFinite(fair) ? -fair : vals[0];
-  const allV = [...vals, fairV];
+  const allV = quiet ? vals : [...vals, fairV];
   const vMax = Math.max(...allV) + 2;
   const vMin = Math.min(...allV) - 2;
   const span = vMax - vMin || 1;
   const w = 360;
-  const h = 64;
-  const padX = 10;
-  const padTop = 16;
-  const padBot = 18;
+  const h = quiet ? 52 : 64;
+  const padX = quiet ? 2 : 10;
+  const padTop = quiet ? 8 : 16;
+  const padBot = quiet ? 14 : 18;
   const plotW = w - padX * 2;
   const plotH = h - padTop - padBot;
   const yS = (v) => padTop + (1 - (v - vMin) / span) * plotH;
@@ -287,30 +289,51 @@ function OddsPath({ journey, fair, clvPct, gid }) {
   const area = `${line} L${coords[coords.length - 1][0]},${h - padBot} L${padX},${h - padBot} Z`;
   const last = coords[coords.length - 1];
   const fairY = yS(fairV);
-  const color = clvPct >= 0 ? GREEN : VS;
+  const color = quiet ? GOLD_HI : (clvPct >= 0 ? GREEN : VS);
   const startOdds = pts[0];
   const endOdds = pts[pts.length - 1];
 
   return (
     <svg width="100%" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 'auto' }}>
-      <defs>
-        <linearGradient id={`${gid}-odds`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.28" />
-          <stop offset="100%" stopColor={color} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <line x1={padX} y1={fairY} x2={w - padX} y2={fairY} stroke={GOLD} strokeWidth={1.15} strokeDasharray="4 3" opacity={0.8} />
-      <text x={w - padX} y={Math.max(11, fairY - 5)} textAnchor="end" fill={GOLD} fontSize={10} fontFamily={MONO} fontWeight={700}>
-        FAIR {fmtOdds(fair)}
-      </text>
-      <path d={area} fill={`url(#${gid}-odds)`} />
-      <path className="lc-draw" d={line} fill="none" stroke={color} strokeWidth={2.1} strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx={coords[0][0]} cy={coords[0][1]} r={2.6} fill={GOLD} />
-      <circle cx={last[0]} cy={last[1]} r={3.2} fill={color} stroke="#0B0F18" strokeWidth={1} />
-      <text x={padX} y={h - 4} textAnchor="start" fill={C.textMuted} fontSize={10} fontFamily={MONO} fontWeight={600}>
+      {!quiet && (
+        <defs>
+          <linearGradient id={`${gid}-odds`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.28" />
+            <stop offset="100%" stopColor={color} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+      )}
+      {Number.isFinite(fair) && (
+        <line
+          x1={padX} y1={fairY} x2={w - padX} y2={fairY}
+          stroke={GOLD}
+          strokeWidth={quiet ? 0.75 : 1.15}
+          strokeDasharray={quiet ? '3 4' : '4 3'}
+          opacity={quiet ? 0.35 : 0.8}
+        />
+      )}
+      {!quiet && Number.isFinite(fair) && (
+        <text x={w - padX} y={Math.max(11, fairY - 5)} textAnchor="end" fill={GOLD} fontSize={10} fontFamily={MONO} fontWeight={700}>
+          FAIR {fmtOdds(fair)}
+        </text>
+      )}
+      {!quiet && <path d={area} fill={`url(#${gid}-odds)`} />}
+      <path
+        className={quiet ? undefined : 'lc-draw'}
+        d={line}
+        fill="none"
+        stroke={color}
+        strokeWidth={quiet ? 1.5 : 2.1}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        opacity={quiet ? 0.92 : 1}
+      />
+      <circle cx={coords[0][0]} cy={coords[0][1]} r={quiet ? 2 : 2.6} fill={quiet ? C.textMuted : GOLD} />
+      <circle cx={last[0]} cy={last[1]} r={quiet ? 2.4 : 3.2} fill={color} stroke="#0B0F18" strokeWidth={1} />
+      <text x={padX} y={h - 2} textAnchor="start" fill={C.textFaint} fontSize={9} fontFamily={MONO} fontWeight={600}>
         {fmtOdds(startOdds)}
       </text>
-      <text x={w - padX} y={h - 4} textAnchor="end" fill={color} fontSize={10} fontFamily={MONO} fontWeight={700}>
+      <text x={w - padX} y={h - 2} textAnchor="end" fill={quiet ? C.textSec : color} fontSize={9} fontFamily={MONO} fontWeight={700}>
         {fmtOdds(endOdds)}
       </text>
     </svg>
@@ -518,7 +541,25 @@ function CompactTape({ tapeScore, tapeAction, edge, fill = false }) {
   );
 }
 
-/** Full-width price overtime + current best odds (premium market board). */
+/** Short book label for the strip (FanDuel → FD). */
+function shortBook(name) {
+  const n = String(name || '').trim();
+  if (!n) return '—';
+  const map = {
+    pinnacle: 'PIN', draftkings: 'DK', fanduel: 'FD', betmgm: 'MGM',
+    caesars: 'CZR', fanatics: 'FAN', betonlineag: 'BOL', betonline: 'BOL',
+    lowvig: 'LV', bookmaker: 'BM', circa: 'CIR',
+  };
+  const key = n.toLowerCase().replace(/\s+/g, '');
+  if (map[key]) return map[key];
+  if (n.length <= 4) return n.toUpperCase();
+  return n.slice(0, 3).toUpperCase();
+}
+
+/**
+ * Full-width market instrument — lock price hero, quiet overtime, book strip.
+ * No nested cards / neon fills / competing gold boxes.
+ */
 function MarketPriceBoard({
   journey, fair, clvPct, gid, gotOdds, gotBook,
   bestOdds, bestBook, books, ourLabel, oppLabel, oppBestOdds, oppBestBook,
@@ -527,15 +568,14 @@ function MarketPriceBoard({
   const hasJourney = Array.isArray(journey) && journey.filter(Number.isFinite).length >= 2;
   const hasBest = Number.isFinite(bestOdds);
   const hasBooks = Array.isArray(books) && books.some((b) => Number.isFinite(b?.odds));
-  const hasOpp = Number.isFinite(oppBestOdds);
-  if (!hasJourney && !hasBest && !hasBooks) {
+  if (!hasJourney && !hasBest && !hasBooks && !Number.isFinite(gotOdds)) {
     return (
       <div style={{
-        marginTop: 8, padding: '12px 11px', borderRadius: 9,
-        background: 'rgba(0,0,0,0.28)', border: `1px solid ${LINE}`,
+        marginTop: 8, padding: '11px 12px',
+        borderTop: `1px solid ${LINE}`,
         fontSize: 11, color: C.textMuted, fontWeight: 550,
       }}>
-        Market board fills when fair-book history posts for this game.
+        Market prices fill when the fair book posts.
       </div>
     );
   }
@@ -545,181 +585,151 @@ function MarketPriceBoard({
       ? `${Math.round(updatedAgoSec / 60)}m` : `${Math.round(updatedAgoSec / 3600)}h`)
     : null;
 
-  // Sort books: sharp first, then best, then by price (higher American = better for bettor on plus sides — use implied)
   const bookRows = hasBooks
     ? [...books].filter((b) => Number.isFinite(b.odds)).slice(0, 8)
     : [];
 
+  const Dot = () => (
+    <span style={{ color: C.textFaint, margin: '0 7px', fontWeight: 400 }}>·</span>
+  );
+
   return (
     <div style={{
-      marginTop: 8,
-      borderRadius: 9,
-      background: 'rgba(0,0,0,0.28)',
-      border: `1px solid ${LINE}`,
-      overflow: 'hidden',
+      marginTop: 10,
+      paddingTop: 12,
+      borderTop: `1px solid ${LINE}`,
       fontFeatureSettings: "'tnum'",
     }}>
+      {/* Header */}
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
-        padding: '10px 11px 0', gap: 8,
+        marginBottom: 10, gap: 8,
       }}>
-        <div>
-          <span style={{ fontFamily: MONO, fontSize: 8, fontWeight: 700, letterSpacing: '0.12em', color: C.textMuted }}>
-            ④ PRICE · MARKET
+        <div style={{ minWidth: 0 }}>
+          <span style={{
+            fontFamily: MONO, fontSize: 8, fontWeight: 700,
+            letterSpacing: '0.12em', color: C.textMuted,
+          }}>
+            ④ MARKET
           </span>
           {ourLabel && (
-            <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 650, color: C.textSec }}>
+            <span style={{
+              marginLeft: 8, fontSize: 12, fontWeight: 600, color: C.textSec,
+            }}>
               {ourLabel}
             </span>
           )}
         </div>
         {ago && (
-          <span style={{ fontSize: 9, fontWeight: 600, color: C.textFaint }}>{ago} ago</span>
+          <span style={{ fontSize: 9, fontWeight: 500, color: C.textFaint, flexShrink: 0 }}>
+            {ago}
+          </span>
         )}
       </div>
 
-      {/* Summary row: we got · best now · fair · (optional other-side best) */}
+      {/* One price line — lock is the hero; best/fair are quiet context */}
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: 0,
-        margin: '10px 11px 0',
-        borderRadius: 7,
-        overflow: 'hidden',
-        border: `1px solid ${LINE}`,
-        background: 'rgba(255,255,255,0.015)',
+        display: 'flex', flexWrap: 'wrap', alignItems: 'baseline',
+        gap: '2px 0', marginBottom: hasJourney ? 10 : 12,
+        lineHeight: 1.15,
       }}>
-        <MarketStat
-          label="WE GOT"
-          value={fmtOdds(gotOdds)}
-          sub={gotBook || null}
-          first
-        />
-        <MarketStat
-          label="BEST NOW"
-          value={hasBest ? fmtOdds(bestOdds) : '—'}
-          sub={bestBook || null}
-          accent={hasBest ? GOLD : undefined}
-          hot={hasBest}
-        />
-        <MarketStat
-          label="FAIR"
-          value={Number.isFinite(fair) ? fmtOdds(fair) : '—'}
-          sub="sharp book"
-        />
-      </div>
-      {hasOpp && (
-        <div style={{
-          margin: '0 11px',
-          padding: '7px 10px',
-          borderRadius: '0 0 7px 7px',
-          border: `1px solid ${LINE}`,
-          borderTop: 'none',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
-          background: 'rgba(255,255,255,0.01)',
+        <span style={{
+          fontSize: 22, fontWeight: 750, letterSpacing: '-0.03em', color: C.text,
         }}>
-          <span style={{ fontSize: 10, fontWeight: 600, color: C.textMuted }}>
-            Other side{oppLabel ? ` · ${oppLabel}` : ''}
-          </span>
-          <span style={{ fontSize: 13, fontWeight: 700, color: C.textSec }}>
-            {fmtOdds(oppBestOdds)}
-            {oppBestBook && (
-              <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 550, color: C.textFaint }}>
-                {oppBestBook}
-              </span>
+          {fmtOdds(gotOdds)}
+        </span>
+        <span style={{
+          marginLeft: 8, fontSize: 11, fontWeight: 550, color: C.textMuted,
+        }}>
+          locked{gotBook ? ` · ${gotBook}` : ''}
+        </span>
+        {(hasBest || Number.isFinite(fair)) && (
+          <span style={{
+            width: '100%', marginTop: 6,
+            fontSize: 12, fontWeight: 550, color: C.textSec,
+          }}>
+            {hasBest && (
+              <>
+                <span style={{ color: C.textFaint }}>best </span>
+                <span style={{ fontWeight: 700, color: C.text }}>{fmtOdds(bestOdds)}</span>
+                {bestBook && (
+                  <span style={{ color: C.textFaint }}> {shortBook(bestBook)}</span>
+                )}
+              </>
+            )}
+            {hasBest && Number.isFinite(fair) && <Dot />}
+            {Number.isFinite(fair) && (
+              <>
+                <span style={{ color: C.textFaint }}>fair </span>
+                <span style={{ fontWeight: 650, color: GOLD }}>{fmtOdds(fair)}</span>
+              </>
+            )}
+            {Number.isFinite(oppBestOdds) && oppLabel && (
+              <>
+                <Dot />
+                <span style={{ color: C.textFaint }}>{oppLabel} </span>
+                <span style={{ fontWeight: 600 }}>{fmtOdds(oppBestOdds)}</span>
+              </>
             )}
           </span>
-        </div>
-      )}
+        )}
+      </div>
 
       {hasJourney && (
-        <div style={{ padding: '10px 10px 4px' }}>
-          <div style={{
-            fontFamily: MONO, fontSize: 8, fontWeight: 700, letterSpacing: '0.1em',
-            color: C.textMuted, marginBottom: 4,
-          }}>
-            PRICE OVER TIME
-          </div>
-          <OddsPath journey={journey} fair={fair} clvPct={clvPct ?? 0} gid={`${gid}-mkt`} />
+        <div style={{ marginBottom: bookRows.length ? 10 : 0 }}>
+          <OddsPath
+            journey={journey}
+            fair={fair}
+            clvPct={clvPct ?? 0}
+            gid={`${gid}-mkt`}
+            variant="market"
+          />
         </div>
       )}
 
       {bookRows.length > 0 && (
         <div style={{
           display: 'flex',
+          gap: 0,
           overflowX: 'auto',
           WebkitOverflowScrolling: 'touch',
           borderTop: `1px solid ${LINE}`,
-          marginTop: hasJourney ? 4 : 10,
+          paddingTop: 8,
         }}>
           {bookRows.map((b, i) => {
-            const isSharp = !!b.sharp;
             const isBest = !!b.best || (hasBest && bestBook
               && String(b.name).toLowerCase() === String(bestBook).toLowerCase());
+            const isSharp = !!b.sharp;
             return (
               <div
                 key={`${b.name}-${i}`}
                 style={{
                   flex: '1 0 auto',
-                  minWidth: 64,
-                  maxWidth: 88,
-                  padding: '10px 8px 11px',
+                  minWidth: 48,
+                  padding: '2px 8px 0',
                   textAlign: 'center',
-                  borderLeft: i === 0 ? 'none' : `1px solid ${LINE}`,
-                  background: isBest ? 'rgba(212,175,55,0.10)' : 'transparent',
-                  boxShadow: isBest ? 'inset 0 -1.5px 0 #D4AF37' : 'none',
                 }}
               >
                 <div style={{
-                  fontSize: 8, fontWeight: 700, letterSpacing: '0.06em',
-                  color: isSharp ? GOLD : isBest ? GOLD_HI : C.textMuted,
-                  marginBottom: 4,
-                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                  fontFamily: MONO, fontSize: 8, fontWeight: 650,
+                  letterSpacing: '0.08em',
+                  color: isBest ? GOLD : C.textFaint,
+                  marginBottom: 3,
                 }}>
-                  {String(b.name).toUpperCase()}
+                  {shortBook(b.name)}
                 </div>
                 <div style={{
-                  fontSize: 15, fontWeight: 750,
-                  color: isSharp || isBest ? GOLD_HI : C.text,
+                  fontSize: 13, fontWeight: isBest || isSharp ? 700 : 600,
+                  color: isBest ? GOLD_HI : C.textSec,
                   letterSpacing: '-0.02em',
+                  paddingBottom: 6,
+                  boxShadow: isBest ? `inset 0 -1px 0 ${GOLD}` : 'none',
                 }}>
                   {fmtOdds(b.odds)}
                 </div>
               </div>
             );
           })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function MarketStat({ label, value, sub, first, accent, hot }) {
-  return (
-    <div style={{
-      padding: '8px 6px 9px',
-      textAlign: 'center',
-      borderLeft: first ? 'none' : `1px solid ${LINE}`,
-      background: hot ? 'rgba(212,175,55,0.07)' : 'transparent',
-    }}>
-      <div style={{
-        fontFamily: MONO, fontSize: 7, fontWeight: 700, letterSpacing: '0.1em',
-        color: C.textMuted, marginBottom: 3,
-      }}>
-        {label}
-      </div>
-      <div style={{
-        fontSize: 15, fontWeight: 750, letterSpacing: '-0.02em',
-        color: accent || C.text,
-      }}>
-        {value}
-      </div>
-      {sub && (
-        <div style={{
-          marginTop: 2, fontSize: 9, fontWeight: 550, color: C.textFaint,
-          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-        }}>
-          {sub}
         </div>
       )}
     </div>
