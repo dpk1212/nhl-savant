@@ -2320,24 +2320,25 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
         mergeData.sides[side].lockStageV9 = decision.stage;
         mergeData.sides[side].lockTierV9 = decision.lockTier || null;
         stampWalletConsensus(mergeData.sides[side], v8Scoring, side, sport, stars || 0, decision.promotedBy, pickDate);
+        // v12.2 — NEVER flip sides from the browser. Cron owns
+        // superseded / live-side via v12 score (syncPickStateAuthoritative).
+        // UI reflip was racing money-consensus (e.g. Jays $) over a
+        // cron-LOCKED Astros side: cleared away.superseded, stamped
+        // home.superseded=true, hid the real ticket, and painted the
+        // opposite ML on the live card (tor_hou 2026-08-05).
+        // If this side is still marked superseded, only refresh peak
+        // descriptive fields — do not resurrect it or kill the other side.
         if (isReflip) {
-          mergeData.sides[side].superseded = false;
-          mergeData.sides[side].supersededAt = null;
-          const reflipWPS = v8Scoring?.walletPlayScore ?? null;
-          if (reflipWPS != null) mergeData.flipBeatThreshold = reflipWPS;
-          // v12 cleanup: do NOT write lockStage/promotedBy on reflip — cron
-          // re-evaluates from frozen walletDetails and stamps authoritatively.
-          // We only clear `superseded` here and mark the other side superseded.
-          stampWalletConsensus(mergeData.sides[side], v8Scoring, side, sport, stars || 0, decision.promotedBy, pickDate);
-          for (const [otherSide] of Object.entries(sides)) {
-            if (otherSide === side) continue;
-            if (!mergeData.sides[otherSide]) mergeData.sides[otherSide] = {};
-            mergeData.sides[otherSide].superseded = true;
-            mergeData.sides[otherSide].supersededAt = Date.now();
-          }
+          await setDoc(ref, {
+            sides: { [side]: { peak: peakData, contribTier: decision.contribTier || null, lockStageV9: decision.stage, lockTierV9: decision.lockTier || null } },
+            source: 'ui_card_sync',
+            lastWriteAt: Date.now(),
+            lastAction: 'peak_updated_superseded_side',
+          }, { merge: true });
+          return { docId, action: 'peak_updated' };
         }
         await setDoc(ref, mergeData, { merge: true });
-        return { docId, action: isReflip ? 'side_reflipped' : 'peak_updated' };
+        return { docId, action: 'peak_updated' };
       }
 
       {
@@ -2411,6 +2412,15 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
     if (stars <= existingBestStars && !newSideHasWhitelistPromo) {
       const originalSide = existingSides.find(([, sd]) => sd.lock && !sd.superseded)?.[0];
       return { docId, action: 'no_change', originalSide };
+    }
+    // v12.2 — cron owns live side. Never let the browser add/supersede
+    // over a cron-LOCKED positive-v12 ticket (money-consensus races).
+    const cronOwns = existingSides.find(([, sd]) => sd
+      && sd.lockStage === 'LOCKED'
+      && Number.isFinite(sd.finalUnits) && sd.finalUnits > 0
+      && Number.isFinite(sd.v8_agsV12) && sd.v8_agsV12 > 0);
+    if (cronOwns) {
+      return { docId, action: 'no_change', originalSide: cronOwns[0] };
     }
     const sideData = buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile, regime, qualityProxy, v8Scoring, sport, pickDate);
     const newWPS = v8Scoring?.walletPlayScore ?? null;
@@ -2636,6 +2646,13 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
       const originalSide = existingSides.find(([, sd]) => sd.lock && !sd.superseded)?.[0];
       return { docId, action: 'no_change', originalSide };
     }
+    const cronOwns = existingSides.find(([, sd]) => sd
+      && sd.lockStage === 'LOCKED'
+      && Number.isFinite(sd.finalUnits) && sd.finalUnits > 0
+      && Number.isFinite(sd.v8_agsV12) && sd.v8_agsV12 > 0);
+    if (cronOwns) {
+      return { docId, action: 'no_change', originalSide: cronOwns[0] };
+    }
     const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring, sport, pickDate);
     const action = newSideHasWhitelistPromo && stars <= existingBestStars ? 'side_added_whitelist' : 'side_added';
     const mergePayload = { sides: { [side]: sideData }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: action };
@@ -2760,6 +2777,13 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
     if (stars <= existingBestStars && !newSideHasWhitelistPromo) {
       const originalSide = existingSides.find(([, sd]) => sd.lock && !sd.superseded)?.[0];
       return { docId, action: 'no_change', originalSide };
+    }
+    const cronOwns = existingSides.find(([, sd]) => sd
+      && sd.lockStage === 'LOCKED'
+      && Number.isFinite(sd.finalUnits) && sd.finalUnits > 0
+      && Number.isFinite(sd.v8_agsV12) && sd.v8_agsV12 > 0);
+    if (cronOwns) {
+      return { docId, action: 'no_change', originalSide: cronOwns[0] };
     }
     const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring, sport, pickDate);
     const action = newSideHasWhitelistPromo && stars <= existingBestStars ? 'side_added_whitelist' : 'side_added';
@@ -7211,7 +7235,17 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const lockedSideRef = useRef(originalLockedSide || null);
   const ss = sportStyle(gd.sport);
   const s = gd.summary;
-  const consensusSide = s.consensus;
+  // Money-flow consensus (who the sharps are on right now).
+  const moneyConsensusSide = s.consensus;
+  // v12.2 — when cron has a real ticket (LOCKED side + units>0), the card
+  // MUST play that side — not money consensus. Otherwise a late $ swing
+  // paints the opposite ML while Firestore still has the cron ticket
+  // (Astros LOCKED / Jays money → card showed Jays +200 4u).
+  const cronTicketSide = (originalLockedSide
+    && Number.isFinite(mlCronUnits) && mlCronUnits > 0)
+    ? originalLockedSide
+    : null;
+  const consensusSide = cronTicketSide || moneyConsensusSide;
   // Play side for battle chrome / CARRYING / header proven. Prefer raw
   // consensus when it's a real outcome — including SOC 'draw'. Only fall
   // back to 2-way money when consensus is null (3-way money tie).
@@ -7581,9 +7615,12 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   // and never got written, since once we cross T-15 the sync effect
   // returns early and the doc is never created. The locked-picks page
   // and the live card now share the same source of truth.
-  const isLockedInFirestore = isLocked
-    && (originalLockedSide === consensusSide
-        || lockedSideRef.current === consensusSide);
+  // Cron ticket on this side → always show as locked-in (even if client
+  // v9 floor disagrees). Otherwise require client lock + side match.
+  const isLockedInFirestore = (cronTicketSide != null && cronTicketSide === consensusSide)
+    || (isLocked
+      && (originalLockedSide === consensusSide
+          || lockedSideRef.current === consensusSide));
   const lockType = isLockedInFirestore ? (isGameLive ? 'LIVE' : 'PREGAME') : null;
   const lockTierLive = decision?.lockTier || 'MUTED';
   const hcDominant = !!decision?.hcDominant;
@@ -9251,11 +9288,8 @@ export default function SharpFlow() {
       const prevDoc = next[docId] || {};
       const prevSides = prevDoc.sides || {};
       const updatedSides = { ...prevSides };
-      if (action === 'side_added') {
-        for (const sk of Object.keys(updatedSides)) {
-          if (sk !== side) updatedSides[sk] = { ...updatedSides[sk], superseded: true, supersededAt: Date.now() };
-        }
-      }
+      // v12.2 — do not optimistically supersede other sides in React state.
+      // Cron owns flips; local supersede painted the wrong ML as live.
       // v12 cleanup: deep-merge peak/lock so the cron-stamped tier-driven
       // fields (stars / units / unitTier / team) survive when the browser
       // sends a descriptive-fields-only snap. Pre-v12 we did `peak: snap`
@@ -12607,7 +12641,21 @@ export default function SharpFlow() {
                           && sd.v8_agsV12EvaluatedAt != null
                           && Number.isFinite(sd.finalUnits)
                           && sd.health?.syncedBy === 'server-cron';
-                        const gdActiveSideEntry = gdLock ? Object.entries(gdLock.sides || {}).find(isLiveLockedSide) : null;
+                        // Recovery: browser races can stamp the money side
+                        // live+SHADOW while the real cron ticket is still
+                        // LOCKED+units>0+v12>0 but superseded. Prefer the
+                        // cron ticket so the live card doesn't flip to the
+                        // opposite ML (tor_hou 2026-08-05).
+                        const isCronTicketSide = ([, sd]) => sd
+                          && sd.lockStage === 'LOCKED'
+                          && Number.isFinite(sd.finalUnits) && sd.finalUnits > 0
+                          && Number.isFinite(sd.v8_agsV12) && sd.v8_agsV12 > 0
+                          && (sd.v8_agsV12EvaluatedAt != null || sd.health?.syncedBy === 'server-cron');
+                        const gdSideEntries = gdLock ? Object.entries(gdLock.sides || {}) : [];
+                        const gdActiveSideEntry = gdSideEntries.find(isLiveLockedSide)
+                          || [...gdSideEntries].filter(isCronTicketSide)
+                            .sort((a, b) => (b[1].v8_agsV12 || 0) - (a[1].v8_agsV12 || 0))[0]
+                          || null;
                         const gdOriginalSide = gdActiveSideEntry?.[0] || null;
                         const gdLockStars = gdActiveSideEntry?.[1]?.lock?.stars ?? null;
                         const gdLockWPS = gdActiveSideEntry?.[1]?.lock?.v8Scoring?.walletPlayScore ?? null;
@@ -12724,7 +12772,21 @@ export default function SharpFlow() {
                       if (!docId.startsWith(targetDate)) continue;
                       const docSport = doc.sport || 'NHL';
                       for (const [sideKey, sd] of Object.entries(doc.sides || {})) {
-                        if (sd.lockStage === 'SHADOW' || sd.superseded) continue;
+                        // Hide SHADOW. Superseded sides stay hidden UNLESS
+                        // they are the only cron ticket left (LOCKED + u>0 +
+                        // v12>0) — browser flip races can leave that shape.
+                        if (sd.lockStage === 'SHADOW') continue;
+                        if (sd.superseded) {
+                          const isOrphanCronTicket = sd.lockStage === 'LOCKED'
+                            && Number.isFinite(sd.finalUnits) && sd.finalUnits > 0
+                            && Number.isFinite(sd.v8_agsV12) && sd.v8_agsV12 > 0;
+                          if (!isOrphanCronTicket) continue;
+                          const siblings = Object.entries(doc.sides || {});
+                          const hasCleanLive = siblings.some(([sk, o]) => sk !== sideKey && o
+                            && !o.superseded && o.lockStage === 'LOCKED'
+                            && Number.isFinite(o.finalUnits) && o.finalUnits > 0);
+                          if (hasCleanLive) continue;
+                        }
                         // ─── TRACKED-ONLY HARD GATE ───────────────────────
                         // result.tracked=true means the grader logged the
                         // outcome but ZERO money was at risk (sized at 0u
