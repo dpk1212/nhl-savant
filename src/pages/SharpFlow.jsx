@@ -5731,7 +5731,7 @@ const LockCountdown = memo(function LockCountdown({ gameTime, isGraded }) {
   );
 });
 
-const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile, tierWindows }) {
+const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile, tierWindows, pinnacleHistory }) {
   const {
     team, away, home, sport, units, odds, book, lockedAt, peakAt, gameTime,
     status, outcome, profit, closingOdds, totalInvested, evEdge, consensusStrength,
@@ -5973,6 +5973,7 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile, tierWind
     isSportWinner,
     getRecordForDisplay: whitelistRecordForDisplay,
     tierPerf,
+    pinnacleHistory,
   });
   return <LockedPositionCardView f={lockedFixture} />;
 });
@@ -13063,6 +13064,9 @@ export default function SharpFlow() {
                         const liveConsensusGrade = liveSf?.consensusTier ?? null;
                         allLockedArr.push({
                           key: `${docId}:${sideKey}`,
+                          gameKey: doc.gameKey || null,
+                          side: sideKey,
+                          pickSide: sideKey,
                           team: sd.team || sideKey,
                           away: doc.away || '', home: doc.home || '',
                           sport: docSport,
@@ -13558,7 +13562,7 @@ export default function SharpFlow() {
                                   gap: '0.75rem',
                                 }}>
                                   {stakedCards.map(p => (
-                                    <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} tierWindows={displayTierWindows} />
+                                    <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} tierWindows={displayTierWindows} pinnacleHistory={pinnacleHistory} />
                                   ))}
                                 </div>
                               )}
@@ -13584,7 +13588,7 @@ export default function SharpFlow() {
                                     opacity: 0.78,
                                   }}>
                                     {monitoringCards.map(p => (
-                                      <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} tierWindows={displayTierWindows} />
+                                      <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} tierWindows={displayTierWindows} pinnacleHistory={pinnacleHistory} />
                                     ))}
                                   </div>
                                 </div>

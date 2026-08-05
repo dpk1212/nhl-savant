@@ -192,6 +192,226 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
 }
 
 /**
+ * Live market board for a locked pick from pinnacle_history.json.
+ * Returns pinSeries (fair-book overtime), books[], bestOdds/bestBook, dual-side
+ * labels for totals/ML. Fail-soft → empty board when history missing.
+ */
+export function buildLockedMarketOdds(pick, pinnacleHistory) {
+  const empty = {
+    pinSeries: null,
+    books: [],
+    bestOdds: null,
+    bestBook: null,
+    fairNow: null,
+    marketLine: null,
+    ourLabel: null,
+    oppLabel: null,
+    oppBestOdds: null,
+    oppBestBook: null,
+    updatedAgoSec: null,
+  };
+  if (!pick || !pinnacleHistory) return empty;
+  const sport = pick.sport;
+  const gameKey = pick.gameKey
+    || (typeof pick.key === 'string' ? pick.key.split(':')[0]?.split('_').slice(2).join('_') : null);
+  // docId is date_sport_gameKey — prefer explicit gameKey
+  let gk = pick.gameKey;
+  if (!gk && typeof pick.key === 'string') {
+    // key = `${date}_${sport}_${gameKey}:${side}` or with _spread/_total suffix on doc
+    const docPart = pick.key.split(':')[0] || '';
+    const parts = docPart.split('_');
+    // date(YYYY-MM-DD) _ sport _ gameKey…  → drop first two tokens
+    if (parts.length >= 3) {
+      const rest = parts.slice(2).join('_').replace(/_(spread|total)$/i, '');
+      gk = rest || null;
+    }
+  }
+  const pinnGame = sport && gk ? pinnacleHistory?.[sport]?.[gk] : null;
+  if (!pinnGame) return empty;
+
+  const mt = String(pick.marketType || 'ml').toLowerCase();
+  const isTotal = mt === 'total';
+  const isSpread = mt === 'spread';
+  const teamRaw = (pick.team || '').trim();
+  const sideKey = pick.side
+    || pick.pickSide
+    || (isTotal
+      ? (teamRaw.toLowerCase().startsWith('under') ? 'under' : 'over')
+      : (/^draw$/i.test(teamRaw) ? 'draw'
+        : (shortTeam(pick.team) === shortTeam(pick.away) ? 'away' : 'home')));
+
+  const books = [];
+  let pinSeries = null;
+  let bestOdds = null;
+  let bestBook = null;
+  let fairNow = null;
+  let marketLine = Number.isFinite(pick.line) ? pick.line : null;
+  let ourLabel = null;
+  let oppLabel = null;
+  let oppBestOdds = null;
+  let oppBestBook = null;
+  let latestT = null;
+
+  if (isTotal) {
+    const hist = Array.isArray(pinnGame.totalHistory) ? pinnGame.totalHistory : [];
+    const pts = hist
+      .map((h) => (sideKey === 'under' ? h.underOdds : h.overOdds))
+      .filter(Number.isFinite);
+    pinSeries = pts.length >= 2 ? pts : null;
+    const last = hist[hist.length - 1];
+    if (last) {
+      fairNow = sideKey === 'under' ? last.underOdds : last.overOdds;
+      if (Number.isFinite(last.line)) marketLine = last.line;
+      if (Number.isFinite(last.t)) latestT = last.t;
+    } else if (pinnGame.totalCurrent) {
+      fairNow = sideKey === 'under'
+        ? pinnGame.totalCurrent.underOdds
+        : pinnGame.totalCurrent.overOdds;
+      if (Number.isFinite(pinnGame.totalCurrent.line)) marketLine = pinnGame.totalCurrent.line;
+    }
+    const best = sideKey === 'under' ? pinnGame.bestUnder : pinnGame.bestOver;
+    const opp = sideKey === 'under' ? pinnGame.bestOver : pinnGame.bestUnder;
+    if (best && Number.isFinite(best.odds)) {
+      bestOdds = best.odds;
+      bestBook = best.book || null;
+      if (Number.isFinite(best.line)) marketLine = best.line;
+    }
+    if (opp && Number.isFinite(opp.odds)) {
+      oppBestOdds = opp.odds;
+      oppBestBook = opp.book || null;
+    }
+    ourLabel = sideKey === 'under'
+      ? `Under ${marketLine ?? ''}`.trim()
+      : `Over ${marketLine ?? ''}`.trim();
+    oppLabel = sideKey === 'under'
+      ? `Over ${opp?.line ?? marketLine ?? ''}`.trim()
+      : `Under ${opp?.line ?? marketLine ?? ''}`.trim();
+    if (Number.isFinite(fairNow)) {
+      books.push({ name: pinnGame.fairTotalBook || 'Pinnacle', odds: fairNow, sharp: true });
+    }
+    if (bestBook && Number.isFinite(bestOdds) && bestBook.toLowerCase() !== 'pinnacle') {
+      books.push({ name: bestBook, odds: bestOdds, best: true });
+    }
+  } else if (isSpread) {
+    const hist = Array.isArray(pinnGame.spreadHistory) ? pinnGame.spreadHistory : [];
+    const pts = hist
+      .map((h) => (sideKey === 'away' ? h.awayOdds : h.homeOdds))
+      .filter(Number.isFinite);
+    pinSeries = pts.length >= 2 ? pts : null;
+    const last = hist[hist.length - 1];
+    if (last) {
+      fairNow = sideKey === 'away' ? last.awayOdds : last.homeOdds;
+      const ln = sideKey === 'away' ? last.awayLine : last.homeLine;
+      if (Number.isFinite(ln)) marketLine = ln;
+      if (Number.isFinite(last.t)) latestT = last.t;
+    }
+    const best = sideKey === 'away' ? pinnGame.bestAwaySpread : pinnGame.bestHomeSpread;
+    const opp = sideKey === 'away' ? pinnGame.bestHomeSpread : pinnGame.bestAwaySpread;
+    if (best && Number.isFinite(best.odds)) {
+      bestOdds = best.odds;
+      bestBook = best.book || null;
+      if (Number.isFinite(best.line)) marketLine = best.line;
+    }
+    if (opp && Number.isFinite(opp.odds)) {
+      oppBestOdds = opp.odds;
+      oppBestBook = opp.book || null;
+    }
+    const teamShort = sideKey === 'away' ? shortTeam(pick.away) : shortTeam(pick.home);
+    const oppShort = sideKey === 'away' ? shortTeam(pick.home) : shortTeam(pick.away);
+    const fmtLn = (ln) => (Number.isFinite(ln) ? `${ln > 0 ? '+' : ''}${ln}` : '');
+    ourLabel = `${teamShort} ${fmtLn(marketLine)}`.trim();
+    oppLabel = `${oppShort} ${fmtLn(opp?.line)}`.trim();
+    if (Number.isFinite(fairNow)) {
+      books.push({ name: pinnGame.fairSpreadBook || 'Pinnacle', odds: fairNow, sharp: true });
+    }
+    if (bestBook && Number.isFinite(bestOdds)) {
+      books.push({ name: bestBook, odds: bestOdds, best: true });
+    }
+  } else {
+    // Moneyline
+    const hist = Array.isArray(pinnGame.history) ? pinnGame.history : [];
+    const pts = hist
+      .map((h) => (sideKey === 'away' ? h.away : sideKey === 'draw' ? h.draw : h.home))
+      .filter(Number.isFinite);
+    pinSeries = pts.length >= 2 ? pts : null;
+    const last = hist[hist.length - 1];
+    if (last) {
+      fairNow = sideKey === 'away' ? last.away : sideKey === 'draw' ? last.draw : last.home;
+      if (Number.isFinite(last.t)) latestT = last.t;
+    } else if (pinnGame.current) {
+      fairNow = sideKey === 'away' ? pinnGame.current.away
+        : sideKey === 'draw' ? pinnGame.current.draw
+        : pinnGame.current.home;
+    }
+    bestOdds = sideKey === 'away' ? pinnGame.bestAway
+      : sideKey === 'draw' ? pinnGame.bestDraw
+      : pinnGame.bestHome;
+    bestBook = sideKey === 'away' ? pinnGame.bestAwayBook
+      : sideKey === 'draw' ? pinnGame.bestDrawBook
+      : pinnGame.bestHomeBook;
+    oppBestOdds = sideKey === 'away' ? pinnGame.bestHome : pinnGame.bestAway;
+    oppBestBook = sideKey === 'away' ? pinnGame.bestHomeBook : pinnGame.bestAwayBook;
+    ourLabel = sideKey === 'draw' ? 'Draw'
+      : (sideKey === 'away' ? shortTeam(pick.away) : shortTeam(pick.home));
+    oppLabel = sideKey === 'draw' ? null
+      : (sideKey === 'away' ? shortTeam(pick.home) : shortTeam(pick.away));
+
+    const allBooks = pinnGame.allBooks || {};
+    const sideOdds = (b) => (sideKey === 'away' ? b?.away : sideKey === 'draw' ? b?.draw : b?.home);
+    if (Number.isFinite(fairNow)) {
+      books.push({
+        name: (pinnGame.fairBook || 'pinnacle').replace(/^\w/, (c) => c.toUpperCase()),
+        odds: fairNow,
+        sharp: true,
+      });
+    }
+    const seen = new Set(books.map((b) => b.name.toLowerCase()));
+    // Prefer recognizable retail books, then fill from allBooks
+    const prefer = ['draftkings', 'fanduel', 'betmgm', 'caesars', 'fanatics', 'betonlineag', 'lowvig', 'bookmaker', 'circa'];
+    const keys = [
+      ...prefer.filter((k) => allBooks[k]),
+      ...Object.keys(allBooks).filter((k) => !prefer.includes(k) && k !== 'pinnacle'),
+    ];
+    for (const k of keys) {
+      const b = allBooks[k];
+      const o = sideOdds(b);
+      if (!Number.isFinite(o)) continue;
+      const name = b?.name || k;
+      if (seen.has(String(name).toLowerCase())) continue;
+      seen.add(String(name).toLowerCase());
+      const isBest = bestBook && String(name).toLowerCase() === String(bestBook).toLowerCase();
+      books.push({ name, odds: o, best: !!isBest });
+      if (books.length >= 8) break;
+    }
+    if (bestBook && Number.isFinite(bestOdds)
+        && !books.some((b) => String(b.name).toLowerCase() === String(bestBook).toLowerCase())) {
+      books.push({ name: bestBook, odds: bestOdds, best: true });
+    }
+  }
+
+  let updatedAgoSec = null;
+  if (Number.isFinite(latestT)) {
+    // history timestamps are unix seconds in this feed
+    const ms = latestT > 1e12 ? latestT : latestT * 1000;
+    updatedAgoSec = Math.max(0, Math.round((Date.now() - ms) / 1000));
+  }
+
+  return {
+    pinSeries,
+    books,
+    bestOdds: Number.isFinite(bestOdds) ? bestOdds : null,
+    bestBook: bestBook || null,
+    fairNow: Number.isFinite(fairNow) ? fairNow : null,
+    marketLine: Number.isFinite(marketLine) ? marketLine : null,
+    ourLabel,
+    oppLabel,
+    oppBestOdds: Number.isFinite(oppBestOdds) ? oppBestOdds : null,
+    oppBestBook: oppBestBook || null,
+    updatedAgoSec,
+  };
+}
+
+/**
  * Locked pick (allLockedArr entry) → LockedPositionCardView fixture
  */
 export function mapLockedPickToCardFixture(pick, {
@@ -200,6 +420,7 @@ export function mapLockedPickToCardFixture(pick, {
   getRecordForDisplay,
   record30d = null,
   tierPerf = null,
+  pinnacleHistory = null,
 } = {}) {
   const units = Number.isFinite(pick.units) ? pick.units : 0;
   const odds = Number.isFinite(pick.odds) ? pick.odds : null;
@@ -369,6 +590,15 @@ export function mapLockedPickToCardFixture(pick, {
     : null;
   const graded = !!outcome && (outcome === 'WIN' || outcome === 'LOSS' || outcome === 'PUSH');
 
+  const market = buildLockedMarketOdds(
+    { ...pick, side: pick.side || pick.pickSide || side },
+    pinnacleHistory,
+  );
+  const sparseJourney = [lockOdds, peakOdds, nowOdds].filter(Number.isFinite);
+  const pinSeries = market.pinSeries;
+  // Dense fair-book overtime when available; else lock→peak→now snapshots.
+  const journey = (pinSeries && pinSeries.length >= 2) ? pinSeries : sparseJourney;
+
   return {
     id: pick.key || `${pick.sport}-${pickLabel}`,
     sport: pick.sport,
@@ -378,6 +608,7 @@ export function mapLockedPickToCardFixture(pick, {
     homeShort,
     pickLabel,
     side,
+    marketType: isSpread ? 'spread' : isTotal ? 'total' : 'ml',
     displayState: graded ? 'GRADED' : 'LOCKED',
     outcome,
     profit,
@@ -387,8 +618,11 @@ export function mapLockedPickToCardFixture(pick, {
     toWin,
     odds: lockOdds,
     book: pick.book || 'Pinnacle',
-    fairOdds: Number.isFinite(pick.pinnacleOdds) ? pick.pinnacleOdds : peakOdds,
-    fairProb: Math.round((ip(pick.pinnacleOdds ?? peakOdds) || 0.5) * 100),
+    fairOdds: Number.isFinite(market.fairNow) ? market.fairNow
+      : (Number.isFinite(pick.pinnacleOdds) ? pick.pinnacleOdds : peakOdds),
+    fairProb: Math.round((ip(
+      Number.isFinite(market.fairNow) ? market.fairNow : (pick.pinnacleOdds ?? peakOdds),
+    ) || 0.5) * 100),
     tapeAction,
     tapeScore,
     edgeBandAction,
@@ -405,7 +639,17 @@ export function mapLockedPickToCardFixture(pick, {
     mapWallets: mapWallets.length ? mapWallets : null,
     against,
     sharpUsd: pick.totalInvested || pick.lockTotalInvested || 0,
-    journey: [lockOdds, peakOdds, nowOdds].filter(Number.isFinite),
+    journey,
+    pinSeries,
+    books: market.books,
+    bestOdds: market.bestOdds,
+    bestBook: market.bestBook,
+    ourMarketLabel: market.ourLabel,
+    oppMarketLabel: market.oppLabel,
+    oppBestOdds: market.oppBestOdds,
+    oppBestBook: market.oppBestBook,
+    marketLine: market.marketLine,
+    oddsUpdatedAgoSec: market.updatedAgoSec,
     combinedWalletPnl: wallets.reduce((s, w) => s + (w.pnl || 0), 0),
     gameTime,
     lockedAt,
@@ -421,7 +665,8 @@ export function mapLockedPickToCardFixture(pick, {
     moneyPct,
     // Odds we "got" at lock vs fair/pinnacle for the price-check strip.
     gotOdds: lockOdds,
-    fairLine: Number.isFinite(pick.pinnacleOdds) ? pick.pinnacleOdds : peakOdds,
+    fairLine: Number.isFinite(market.fairNow) ? market.fairNow
+      : (Number.isFinite(pick.pinnacleOdds) ? pick.pinnacleOdds : peakOdds),
     fairBook: pick.fairBook || pick.oddsSource || pick.book || null,
     tierPerf: tierPerf || null,
     // Mute audit — why TRACKED / 0u (tape-weak, ags-quality-veto, MONITORING…)

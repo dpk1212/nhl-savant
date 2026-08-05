@@ -58,6 +58,10 @@ const CLARITY_CSS = `
   .lc-draw { stroke-dasharray: 400; stroke-dashoffset: 400; animation: lcDraw 1.1s cubic-bezier(0.16,1,0.3,1) 0.15s both; }
   .lc-ring { animation: lcRing 2.6s ease-in-out infinite; }
   .sf-edge-aura { animation: lcGoldAura 2.8s ease-in-out infinite; }
+  .lc-tape-size { display: grid; grid-template-columns: 1.15fr 1fr; gap: 8px; align-items: stretch; }
+  @media (max-width: 420px) {
+    .lc-tape-size { grid-template-columns: 1fr; }
+  }
   @media (prefers-reduced-motion: reduce) {
     .lc-in, .lc-in-2, .lc-draw, .lc-ring, .sf-edge-aura { animation: none; }
     .sf-edge-aura { box-shadow: ${EDGE_AURA_SHADOW_IDLE} !important; }
@@ -432,7 +436,7 @@ function SizePath({
   );
 }
 
-function CompactTape({ tapeScore, tapeAction, edge }) {
+function CompactTape({ tapeScore, tapeAction, edge, fill = false }) {
   const hasTape = Number.isFinite(tapeScore);
   const action = tapeAction === 'boost' ? 'boost'
     : tapeAction === 'mute' ? 'mute'
@@ -443,17 +447,20 @@ function CompactTape({ tapeScore, tapeAction, edge }) {
   const needle = hasTape ? pctOf(clamp) : pctOf(1);
   const color = action === 'boost' ? GREEN : action === 'mute' ? VS : GOLD_HI;
   const headline = action === 'boost' ? 'Sized up' : action === 'mute' ? 'Passing' : 'Standard';
-  const edgeHot = Number.isFinite(edge) && edge >= 2;
   const edgeColor = !Number.isFinite(edge) ? C.textMuted : edge >= 0 ? GREEN : VS;
 
   return (
     <div style={{
-      marginTop: 8,
+      marginTop: fill ? 0 : 8,
+      height: fill ? '100%' : undefined,
       padding: '10px 11px 11px',
       borderRadius: 9,
       background: 'rgba(0,0,0,0.28)',
       border: `1px solid ${LINE}`,
       fontFeatureSettings: "'tnum'",
+      display: fill ? 'flex' : 'block',
+      flexDirection: 'column',
+      justifyContent: fill ? 'center' : undefined,
     }}>
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, gap: 8,
@@ -505,6 +512,214 @@ function CompactTape({ tapeScore, tapeAction, edge }) {
           {Number.isFinite(edge)
             ? `EDGE ${edge >= 0 ? '+' : ''}${edge.toFixed(1)} · tape score not stamped on this ticket`
             : 'Tape / EDGE not available on this ticket'}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Full-width price overtime + current best odds (premium market board). */
+function MarketPriceBoard({
+  journey, fair, clvPct, gid, gotOdds, gotBook,
+  bestOdds, bestBook, books, ourLabel, oppLabel, oppBestOdds, oppBestBook,
+  updatedAgoSec,
+}) {
+  const hasJourney = Array.isArray(journey) && journey.filter(Number.isFinite).length >= 2;
+  const hasBest = Number.isFinite(bestOdds);
+  const hasBooks = Array.isArray(books) && books.some((b) => Number.isFinite(b?.odds));
+  const hasOpp = Number.isFinite(oppBestOdds);
+  if (!hasJourney && !hasBest && !hasBooks) {
+    return (
+      <div style={{
+        marginTop: 8, padding: '12px 11px', borderRadius: 9,
+        background: 'rgba(0,0,0,0.28)', border: `1px solid ${LINE}`,
+        fontSize: 11, color: C.textMuted, fontWeight: 550,
+      }}>
+        Market board fills when fair-book history posts for this game.
+      </div>
+    );
+  }
+
+  const ago = Number.isFinite(updatedAgoSec)
+    ? (updatedAgoSec < 60 ? `${updatedAgoSec}s` : updatedAgoSec < 3600
+      ? `${Math.round(updatedAgoSec / 60)}m` : `${Math.round(updatedAgoSec / 3600)}h`)
+    : null;
+
+  // Sort books: sharp first, then best, then by price (higher American = better for bettor on plus sides — use implied)
+  const bookRows = hasBooks
+    ? [...books].filter((b) => Number.isFinite(b.odds)).slice(0, 8)
+    : [];
+
+  return (
+    <div style={{
+      marginTop: 8,
+      borderRadius: 9,
+      background: 'rgba(0,0,0,0.28)',
+      border: `1px solid ${LINE}`,
+      overflow: 'hidden',
+      fontFeatureSettings: "'tnum'",
+    }}>
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+        padding: '10px 11px 0', gap: 8,
+      }}>
+        <div>
+          <span style={{ fontFamily: MONO, fontSize: 8, fontWeight: 700, letterSpacing: '0.12em', color: C.textMuted }}>
+            ④ PRICE · MARKET
+          </span>
+          {ourLabel && (
+            <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 650, color: C.textSec }}>
+              {ourLabel}
+            </span>
+          )}
+        </div>
+        {ago && (
+          <span style={{ fontSize: 9, fontWeight: 600, color: C.textFaint }}>{ago} ago</span>
+        )}
+      </div>
+
+      {/* Summary row: we got · best now · fair · (optional other-side best) */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: 0,
+        margin: '10px 11px 0',
+        borderRadius: 7,
+        overflow: 'hidden',
+        border: `1px solid ${LINE}`,
+        background: 'rgba(255,255,255,0.015)',
+      }}>
+        <MarketStat
+          label="WE GOT"
+          value={fmtOdds(gotOdds)}
+          sub={gotBook || null}
+          first
+        />
+        <MarketStat
+          label="BEST NOW"
+          value={hasBest ? fmtOdds(bestOdds) : '—'}
+          sub={bestBook || null}
+          accent={hasBest ? GOLD : undefined}
+          hot={hasBest}
+        />
+        <MarketStat
+          label="FAIR"
+          value={Number.isFinite(fair) ? fmtOdds(fair) : '—'}
+          sub="sharp book"
+        />
+      </div>
+      {hasOpp && (
+        <div style={{
+          margin: '0 11px',
+          padding: '7px 10px',
+          borderRadius: '0 0 7px 7px',
+          border: `1px solid ${LINE}`,
+          borderTop: 'none',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+          background: 'rgba(255,255,255,0.01)',
+        }}>
+          <span style={{ fontSize: 10, fontWeight: 600, color: C.textMuted }}>
+            Other side{oppLabel ? ` · ${oppLabel}` : ''}
+          </span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: C.textSec }}>
+            {fmtOdds(oppBestOdds)}
+            {oppBestBook && (
+              <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 550, color: C.textFaint }}>
+                {oppBestBook}
+              </span>
+            )}
+          </span>
+        </div>
+      )}
+
+      {hasJourney && (
+        <div style={{ padding: '10px 10px 4px' }}>
+          <div style={{
+            fontFamily: MONO, fontSize: 8, fontWeight: 700, letterSpacing: '0.1em',
+            color: C.textMuted, marginBottom: 4,
+          }}>
+            PRICE OVER TIME
+          </div>
+          <OddsPath journey={journey} fair={fair} clvPct={clvPct ?? 0} gid={`${gid}-mkt`} />
+        </div>
+      )}
+
+      {bookRows.length > 0 && (
+        <div style={{
+          display: 'flex',
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          borderTop: `1px solid ${LINE}`,
+          marginTop: hasJourney ? 4 : 10,
+        }}>
+          {bookRows.map((b, i) => {
+            const isSharp = !!b.sharp;
+            const isBest = !!b.best || (hasBest && bestBook
+              && String(b.name).toLowerCase() === String(bestBook).toLowerCase());
+            return (
+              <div
+                key={`${b.name}-${i}`}
+                style={{
+                  flex: '1 0 auto',
+                  minWidth: 64,
+                  maxWidth: 88,
+                  padding: '10px 8px 11px',
+                  textAlign: 'center',
+                  borderLeft: i === 0 ? 'none' : `1px solid ${LINE}`,
+                  background: isBest ? 'rgba(212,175,55,0.10)' : 'transparent',
+                  boxShadow: isBest ? 'inset 0 -1.5px 0 #D4AF37' : 'none',
+                }}
+              >
+                <div style={{
+                  fontSize: 8, fontWeight: 700, letterSpacing: '0.06em',
+                  color: isSharp ? GOLD : isBest ? GOLD_HI : C.textMuted,
+                  marginBottom: 4,
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                }}>
+                  {String(b.name).toUpperCase()}
+                </div>
+                <div style={{
+                  fontSize: 15, fontWeight: 750,
+                  color: isSharp || isBest ? GOLD_HI : C.text,
+                  letterSpacing: '-0.02em',
+                }}>
+                  {fmtOdds(b.odds)}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MarketStat({ label, value, sub, first, accent, hot }) {
+  return (
+    <div style={{
+      padding: '8px 6px 9px',
+      textAlign: 'center',
+      borderLeft: first ? 'none' : `1px solid ${LINE}`,
+      background: hot ? 'rgba(212,175,55,0.07)' : 'transparent',
+    }}>
+      <div style={{
+        fontFamily: MONO, fontSize: 7, fontWeight: 700, letterSpacing: '0.1em',
+        color: C.textMuted, marginBottom: 3,
+      }}>
+        {label}
+      </div>
+      <div style={{
+        fontSize: 15, fontWeight: 750, letterSpacing: '-0.02em',
+        color: accent || C.text,
+      }}>
+        {value}
+      </div>
+      {sub && (
+        <div style={{
+          marginTop: 2, fontSize: 9, fontWeight: 550, color: C.textFaint,
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        }}>
+          {sub}
         </div>
       )}
     </div>
@@ -1072,7 +1287,7 @@ export default function LockedClarityExpanded({
         </div>
       </div>
 
-      {/* 5. PRICE + SIZE PATH + TAPE */}
+      {/* 5. TAPE + SIZE · then full-width market price board */}
       <div className="lc-in-2" style={{ padding: '12px 14px 6px' }}>
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
@@ -1080,7 +1295,7 @@ export default function LockedClarityExpanded({
         }}>
           <div>
             <span style={{ fontFamily: MONO, fontSize: 8, fontWeight: 700, letterSpacing: '0.12em', color: C.textMuted }}>
-              ③ PRICE & SIZE
+              ③ TAPE & SIZE
             </span>
             <span style={{ marginLeft: 8, fontSize: 15, fontWeight: 650 }}>{fmtOdds(f.gotOdds ?? f.lockOdds)}</span>
             {Number.isFinite(f.hcMargin) && (
@@ -1096,29 +1311,13 @@ export default function LockedClarityExpanded({
           )}
         </div>
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: journey.length >= 2 ? '1.15fr 1fr' : '1fr',
-          gap: 8,
-          alignItems: 'stretch',
-        }}>
-          {journey.length >= 2 && (
-            <div style={{
-              borderRadius: 9, padding: '10px 10px 8px',
-              background: 'rgba(0,0,0,0.28)', border: `1px solid ${LINE}`,
-              display: 'flex', flexDirection: 'column',
-            }}>
-              <div style={{
-                fontFamily: MONO, fontSize: 8, fontWeight: 700, letterSpacing: '0.1em',
-                color: C.textMuted, marginBottom: 6,
-              }}>
-                PRICE JOURNEY
-              </div>
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
-                <OddsPath journey={journey} fair={fairOdds} clvPct={f.clvPct ?? 0} gid={gid} />
-              </div>
-            </div>
-          )}
+        <div className="lc-tape-size">
+          <CompactTape
+            tapeScore={f.tapeScore}
+            tapeAction={f.tapeAction}
+            edge={f.edge}
+            fill
+          />
           <SizePath
             baseU={f.pathBaseUnits}
             finalU={f.units}
@@ -1129,10 +1328,21 @@ export default function LockedClarityExpanded({
           />
         </div>
 
-        <CompactTape
-          tapeScore={f.tapeScore}
-          tapeAction={f.tapeAction}
-          edge={f.edge}
+        <MarketPriceBoard
+          journey={journey}
+          fair={fairOdds}
+          clvPct={f.clvPct ?? 0}
+          gid={gid}
+          gotOdds={f.gotOdds ?? f.lockOdds}
+          gotBook={f.book}
+          bestOdds={f.bestOdds}
+          bestBook={f.bestBook}
+          books={f.books}
+          ourLabel={f.ourMarketLabel || f.pickLabel}
+          oppLabel={f.oppMarketLabel}
+          oppBestOdds={f.oppBestOdds}
+          oppBestBook={f.oppBestBook}
+          updatedAgoSec={f.oddsUpdatedAgoSec}
         />
       </div>
 
