@@ -2216,7 +2216,7 @@ async function createMissingLockedPicks({
         peakUnitsApplied = qConvPolicyCreate.units;
       }
 
-      // FOOLS-gold mute — final dial after qConv (E≥7 + best FOR = FLAT → 0u).
+      // FOOLS mute — final dial after qConv (best FOR = FLAT → 0u, any EDGE).
       const bestForCreate = (createV121Eligible && Array.isArray(walletDetails) && walletDetails.length > 0)
         ? bestProvenForSide(walletDetails, side, sport, walletProfiles)
         : { tier: null, nForProven: 0, flatRoi: null, walletShort: null };
@@ -3323,8 +3323,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     finalUnitsApplied = qConvPolicy.units;
   }
 
-  // ─── FOOLS-gold mute (final dial after qConv) ─────────────────────────
-  // E≥7 + best proven FOR = FLAT → 0u. Fail-open if EDGE missing.
+  // ─── FOOLS mute (final dial after qConv) ──────────────────────────────
+  // Best proven FOR = FLAT → 0u at any EDGE (incl. soft E<7).
   // Manual stake exempt. DISSENT / non-A/B/C tiers exempt.
   const bestForLive = (v121Eligible && Array.isArray(wd) && wd.length > 0)
     ? bestProvenForSide(wd, side, pick.sport, walletProfiles)
@@ -4261,8 +4261,8 @@ async function main() {
 
   if (isFoolsGoldMuteLive(TARGET_DATE)) {
     console.log(
-      `FOOLS-gold mute LIVE: E≥${FOOLS_GOLD_EDGE_MIN} + best proven FOR=FLAT → 0u`
-      + ` · from ${FOOLS_GOLD_MUTE_FROM} · Path A/B/C · fail-open if EDGE missing`,
+      `FOOLS mute LIVE: best proven FOR=FLAT → 0u (any EDGE, incl. soft E<${FOOLS_GOLD_EDGE_MIN})`
+      + ` · from ${FOOLS_GOLD_MUTE_FROM} · Path A/B/C`,
     );
   } else {
     console.log(`FOOLS-gold mute: not live before ${FOOLS_GOLD_MUTE_FROM} (TARGET_DATE=${TARGET_DATE})`);

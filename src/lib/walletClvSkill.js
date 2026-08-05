@@ -603,11 +603,13 @@ export function applyQConvMuteOverlay({
   };
 }
 
-// ── FOOLS-gold mute (E≥7 + best proven FOR = FLAT → 0u) ─────────────────────
-// Validated Jun15+/Jul15+ staked book: FLAT-anchored high-EDGE tickets lose
-// (~−14u / −12% ROI) at the same avg units as CONFIRMED-deep gold. Path A has
-// ~0 historical FOOLS; mass is Path C / SHARP-LEAN. Forward-only from FOOLS_GOLD_MUTE_FROM.
+// ── FOOLS mute (best proven FOR = FLAT → 0u, any EDGE) ───────────────────────
+// Originally E≥7-only (classic FOOLS-gold). Soft+FLAT (E<7) is worse in-sample
+// (Jun15+: ~38% WR / −29% ROI) and was slipping through — e.g. Jays +1.5 on
+// 2026-08-05. Mute now covers FLAT anchors at every EDGE on Path A/B/C.
+// Forward-only from FOOLS_GOLD_MUTE_FROM.
 export const FOOLS_GOLD_MUTE_FROM = '2026-08-05';
+/** @deprecated Mute no longer gates on EDGE; kept for log/compat. */
 export const FOOLS_GOLD_EDGE_MIN = 7;
 /** Same Path A/B/C book as qConv mute (DISSENT exempt). */
 export const FOOLS_GOLD_MUTE_TIERS = new Set([
@@ -664,8 +666,9 @@ export function bestProvenForSide(walletDetails, mySide, sport, walletProfiles) 
 }
 
 /**
- * Cancel FOOLS-gold: EDGE ≥ 7 and best proven FOR tier is FLAT → 0u.
- * Fail-open on missing EDGE. Manual stake exempt at call site.
+ * Cancel FOOLS: best proven FOR tier is FLAT → 0u (any EDGE, incl. soft E&lt;7).
+ * EDGE is optional (used only to tag soft vs classic in reason). Manual stake
+ * exempt at call site. Missing bestForTier → HOLD (fail-open).
  */
 export function applyFoolsGoldMuteOverlay({
   units,
@@ -690,25 +693,17 @@ export function applyFoolsGoldMuteOverlay({
       units: pre, action: 'EXEMPT', reason: 'tier_exempt', mutedBy: null, unitsPrePolicy: pre,
     };
   }
-  if (edge == null || !Number.isFinite(Number(edge))) {
-    return {
-      units: pre, action: 'FAIL_OPEN', reason: 'edge_missing', mutedBy: null, unitsPrePolicy: pre,
-    };
-  }
-  if (Number(edge) < FOOLS_GOLD_EDGE_MIN) {
-    return {
-      units: pre, action: 'HOLD', reason: null, mutedBy: null, unitsPrePolicy: pre,
-    };
-  }
   if (bestForTier !== 'FLAT') {
     return {
       units: pre, action: 'HOLD', reason: null, mutedBy: null, unitsPrePolicy: pre,
     };
   }
+  const softFlat = edge == null || !Number.isFinite(Number(edge))
+    || Number(edge) < FOOLS_GOLD_EDGE_MIN;
   return {
     units: 0,
     action: 'MUTE',
-    reason: 'fools_gold_flat',
+    reason: softFlat ? 'fools_flat_soft' : 'fools_gold_flat',
     mutedBy: 'fools-gold-flat',
     unitsPrePolicy: pre,
   };
