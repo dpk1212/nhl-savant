@@ -3,7 +3,7 @@
  * Collapsed chrome stays in LockedPositionCardView — this is expand-only.
  * Self-contained (no PositionCards imports) to avoid circular deps.
  */
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
 
 const B = {
@@ -784,6 +784,33 @@ function fmtGap(v, suffix = '%') {
 }
 
 /**
+ * Best proven FOR wallet for expand default.
+ * Rank: VAULT (sized) → CONFIRMED over FLAT → roi → invested → wr.
+ */
+function bestProvenForDefault(wallets) {
+  const list = Array.isArray(wallets) ? wallets : [];
+  const oursProven = list.filter((w) => w && w.side === 'ours' && w.proven);
+  const pool = oursProven.length
+    ? oursProven
+    : list.filter((w) => w && w.side === 'ours');
+  if (!pool.length) return list[0]?.short || null;
+  const tierScore = (w) => {
+    const t = String(w.whitelist || '').toUpperCase();
+    if (t === 'CONFIRMED') return 2;
+    if (t === 'FLAT') return 1;
+    return w.proven ? 1 : 0;
+  };
+  const score = (w) => {
+    const vault = w.qualify === 'VAULT' ? 1e9 : 0;
+    const roi = Number.isFinite(w.roi) ? w.roi : -999;
+    const inv = Number(w.invested) || 0;
+    const wr = Number.isFinite(w.wr) ? w.wr : 0;
+    return vault + tierScore(w) * 1e6 + (roi + 500) * 1e3 + inv + wr;
+  };
+  return [...pool].sort((a, b) => score(b) - score(a))[0]?.short || null;
+}
+
+/**
  * @param {object} props
  * @param {object} props.f — locked card fixture
  * @param {() => void} props.onCollapse
@@ -805,14 +832,16 @@ export default function LockedClarityExpanded({
     ? f.mapWallets
     : (f.wallets || []).map((w) => ({ ...w, side: 'ours' })));
 
-  const defaultSel = all.find((w) => w.qualify === 'VAULT' && w.side === 'ours')?.short
-    || all.find((w) => w.proven && w.side === 'ours')?.short
-    || all.find((w) => w.side === 'ours')?.short
-    || all[0]?.short
-    || null;
-
+  // Expand remounts this tree — default once to best proven FOR (VAULT / CONFIRMED).
+  const defaultSel = useMemo(() => bestProvenForDefault(all), [
+    all.map((w) => `${w.short}:${w.side}:${w.qualify}:${w.whitelist}:${w.roi}:${w.invested}`).join('|'),
+  ]);
   const [sel, setSel] = useState(defaultSel);
-  const selected = all.find((w) => w.short === sel) || all[0] || null;
+  const selected = all.find((w) => w.short === sel)
+    || all.find((w) => w.short === defaultSel)
+    || all.find((w) => w.side === 'ours')
+    || all[0]
+    || null;
   const clvGood = Number.isFinite(f.clvPct) ? f.clvPct >= 0 : true;
   const gid = `lc-${String(f.id || 'x').replace(/[^a-zA-Z0-9-_]/g, '')}`;
 
