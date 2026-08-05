@@ -467,3 +467,365 @@ export function applyBothE10TapeFloor({
     unitsPrePolicy: pre,
   };
 }
+
+// ── qConv (quality-weighted conviction) Q1 mute ─────────────────────────────
+// qConv = Σ sizeRatio×(sportWR−50) FOR − Σ sizeRatio×(sportWR−50) AG
+// Mute bottom quintile of prior staked A/B/C (expanding Q1 thr). Fail-open
+// when qConv or thr missing. Live from QCONV_MUTE_FROM.
+export const QCONV_WR_MIN_N = 8;
+export const QCONV_MUTE_FROM = '2026-08-03';
+export const QCONV_MUTE_LOOKBACK_FROM = '2026-06-15';
+export const QCONV_MUTE_FALLBACK_THR = 0; // ≈ Jun15+ staked Q1 (−0.27)
+export const QCONV_MUTE_MIN_PRIORS = 25;
+export const QCONV_STATE_COLLECTION = 'qConvMuteState';
+export const QCONV_STATE_DOC_ID = 'current';
+/** Path A/B/C tiers — same book the mute was validated on (not DISSENT). */
+export const QCONV_MUTE_TIERS = new Set([
+  'SUPER', 'TOP', 'TOP+', 'MINI', 'MINI-', 'CONFIRMED',
+  'RANK', 'SHARP', 'SHARP-PRIME', 'SHARP-LEAN',
+]);
+
+export function isQConvMuteLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= QCONV_MUTE_FROM;
+}
+
+/** Featured sport WR from sharpWalletProfiles (n≥8) — same source as EDGE. */
+export function walletSportFeaturedWr(profile, sport, minN = QCONV_WR_MIN_N) {
+  const rec = profile?.bySport?.[sport];
+  if (!rec) return null;
+  const n = Number(rec.picks?.n) || 0;
+  const wr = Number(rec.picks?.wr);
+  if (n < minN || !Number.isFinite(wr)) return null;
+  return wr;
+}
+
+/**
+ * Quality-weighted relative conviction.
+ *   Σ_i sizeRatio_i × (WR_i − 50) on FOR
+ * − Σ_j sizeRatio_j × (WR_j − 50) on AG
+ * Returns null when no wallet on either side has WR + sizeRatio.
+ */
+export function computeQConv(walletDetails, mySide, sport, walletProfiles, {
+  minN = QCONV_WR_MIN_N,
+  getWr = walletSportFeaturedWr,
+} = {}) {
+  if (!Array.isArray(walletDetails) || !mySide || !sport || !walletProfiles) return null;
+  let forS = 0;
+  let agS = 0;
+  let nF = 0;
+  let nA = 0;
+  const seen = new Set();
+  for (const w of walletDetails) {
+    if (!w) continue;
+    const short = shortWalletId(w.walletShort || w.wallet);
+    if (!short || seen.has(short)) continue;
+    seen.add(short);
+    const sr = Number(w.sizeRatio ?? w.betMultiplier);
+    if (!(sr > 0) || !Number.isFinite(sr)) continue;
+    const profile = walletProfiles.get(short) || walletProfiles.get(short.toUpperCase());
+    const wr = getWr(profile, sport, minN);
+    if (wr == null || !Number.isFinite(wr)) continue;
+    const v = sr * (wr - 50);
+    if (w.side === mySide) {
+      forS += v;
+      nF += 1;
+    } else if (w.side) {
+      agS += v;
+      nA += 1;
+    }
+  }
+  if (!nF && !nA) return null;
+  return Math.round((forS - agS) * 10000) / 10000;
+}
+
+/** Expanding Q1 threshold from sorted prior staked qConv values. */
+export function qConvMuteThresholdFromValues(values, {
+  minPriors = QCONV_MUTE_MIN_PRIORS,
+} = {}) {
+  if (!Array.isArray(values) || values.length < minPriors) return null;
+  const sorted = values
+    .filter((v) => v != null && Number.isFinite(Number(v)))
+    .map(Number)
+    .sort((a, b) => a - b);
+  if (sorted.length < minPriors) return null;
+  const idx = Math.floor(sorted.length / 5) - 1;
+  return sorted[Math.max(0, idx)];
+}
+
+/**
+ * Final mute: qConv below expanding Q1 thr → 0u.
+ * Fail-open when not live / missing qConv / missing thr / non-mute tier.
+ */
+export function applyQConvMuteOverlay({
+  units,
+  qConv = null,
+  thr = null,
+  tier = null,
+  pickDate = null,
+} = {}) {
+  const pre = Number.isFinite(units) ? Math.max(0, units) : 0;
+  if (!(pre > 0)) {
+    return {
+      units: 0, action: 'PASS', reason: null, mutedBy: null, unitsPrePolicy: pre,
+    };
+  }
+  if (!isQConvMuteLive(pickDate)) {
+    return {
+      units: pre, action: 'EXEMPT', reason: 'pre_cutover', mutedBy: null, unitsPrePolicy: pre,
+    };
+  }
+  if (!tier || !QCONV_MUTE_TIERS.has(tier)) {
+    return {
+      units: pre, action: 'EXEMPT', reason: 'tier_exempt', mutedBy: null, unitsPrePolicy: pre,
+    };
+  }
+  if (qConv == null || !Number.isFinite(Number(qConv))) {
+    return {
+      units: pre, action: 'FAIL_OPEN', reason: 'qconv_missing', mutedBy: null, unitsPrePolicy: pre,
+    };
+  }
+  if (thr == null || !Number.isFinite(Number(thr))) {
+    return {
+      units: pre, action: 'FAIL_OPEN', reason: 'thr_missing', mutedBy: null, unitsPrePolicy: pre,
+    };
+  }
+  if (Number(qConv) < Number(thr)) {
+    return {
+      units: 0,
+      action: 'MUTE',
+      reason: 'qconv_q1',
+      mutedBy: 'qconv-q1',
+      unitsPrePolicy: pre,
+    };
+  }
+  return {
+    units: pre, action: 'HOLD', reason: null, mutedBy: null, unitsPrePolicy: pre,
+  };
+}
+
+// ── FOOLS-gold mute (E≥7 + best proven FOR = FLAT → 0u) ─────────────────────
+// Validated Jun15+/Jul15+ staked book: FLAT-anchored high-EDGE tickets lose
+// (~−14u / −12% ROI) at the same avg units as CONFIRMED-deep gold. Path A has
+// ~0 historical FOOLS; mass is Path C / SHARP-LEAN. Forward-only from FOOLS_GOLD_MUTE_FROM.
+export const FOOLS_GOLD_MUTE_FROM = '2026-08-05';
+export const FOOLS_GOLD_EDGE_MIN = 7;
+/** Same Path A/B/C book as qConv mute (DISSENT exempt). */
+export const FOOLS_GOLD_MUTE_TIERS = new Set([
+  'SUPER', 'TOP', 'TOP+', 'MINI', 'MINI-', 'CONFIRMED',
+  'RANK', 'SHARP', 'SHARP-PRIME', 'SHARP-LEAN',
+]);
+
+export function isFoolsGoldMuteLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= FOOLS_GOLD_MUTE_FROM;
+}
+
+/**
+ * Best proven FOR wallet on the ticket side.
+ * Rank: CONFIRMED > FLAT, then flatRoi, then n (matches gold/fools analysis).
+ * @returns {{ tier: 'CONFIRMED'|'FLAT'|null, nForProven: number, flatRoi: number|null, walletShort: string|null }}
+ */
+export function bestProvenForSide(walletDetails, mySide, sport, walletProfiles) {
+  const empty = { tier: null, nForProven: 0, flatRoi: null, walletShort: null };
+  if (!Array.isArray(walletDetails) || !mySide || !sport || !walletProfiles) return empty;
+  const seen = new Set();
+  const forR = [];
+  for (const w of walletDetails) {
+    if (!w?.side || w.side !== mySide) continue;
+    const s = shortWalletId(w.walletShort || w.wallet);
+    if (!s || seen.has(s)) continue;
+    seen.add(s);
+    const key = String(s).toLowerCase();
+    const profile = walletProfiles.get(key)
+      || walletProfiles.get(key.toUpperCase())
+      || walletProfiles.get(s);
+    const bs = profile?.bySport?.[sport];
+    const tier = bs?.whitelistTier;
+    if (tier !== 'CONFIRMED' && tier !== 'FLAT') continue;
+    const picks = bs.picks || {};
+    const flatRoi = Number.isFinite(picks.flatRoi) ? picks.flatRoi : null;
+    const n = picks.n ?? 0;
+    const tierScore = tier === 'CONFIRMED' ? 2 : 1;
+    forR.push({
+      walletShort: s,
+      tier,
+      flatRoi,
+      n,
+      score: tierScore * 1e6 + ((flatRoi ?? -999) + 500) * 1e3 + n,
+    });
+  }
+  if (!forR.length) return empty;
+  forR.sort((a, b) => b.score - a.score);
+  return {
+    tier: forR[0].tier,
+    nForProven: forR.length,
+    flatRoi: forR[0].flatRoi,
+    walletShort: forR[0].walletShort,
+  };
+}
+
+/**
+ * Cancel FOOLS-gold: EDGE ≥ 7 and best proven FOR tier is FLAT → 0u.
+ * Fail-open on missing EDGE. Manual stake exempt at call site.
+ */
+export function applyFoolsGoldMuteOverlay({
+  units,
+  edge = null,
+  bestForTier = null,
+  tier = null,
+  pickDate = null,
+} = {}) {
+  const pre = Number.isFinite(units) ? Math.max(0, units) : 0;
+  if (!(pre > 0)) {
+    return {
+      units: 0, action: 'PASS', reason: null, mutedBy: null, unitsPrePolicy: pre,
+    };
+  }
+  if (!isFoolsGoldMuteLive(pickDate)) {
+    return {
+      units: pre, action: 'EXEMPT', reason: 'pre_cutover', mutedBy: null, unitsPrePolicy: pre,
+    };
+  }
+  if (!tier || !FOOLS_GOLD_MUTE_TIERS.has(tier)) {
+    return {
+      units: pre, action: 'EXEMPT', reason: 'tier_exempt', mutedBy: null, unitsPrePolicy: pre,
+    };
+  }
+  if (edge == null || !Number.isFinite(Number(edge))) {
+    return {
+      units: pre, action: 'FAIL_OPEN', reason: 'edge_missing', mutedBy: null, unitsPrePolicy: pre,
+    };
+  }
+  if (Number(edge) < FOOLS_GOLD_EDGE_MIN) {
+    return {
+      units: pre, action: 'HOLD', reason: null, mutedBy: null, unitsPrePolicy: pre,
+    };
+  }
+  if (bestForTier !== 'FLAT') {
+    return {
+      units: pre, action: 'HOLD', reason: null, mutedBy: null, unitsPrePolicy: pre,
+    };
+  }
+  return {
+    units: 0,
+    action: 'MUTE',
+    reason: 'fools_gold_flat',
+    mutedBy: 'fools-gold-flat',
+    unitsPrePolicy: pre,
+  };
+}
+
+// ── Path × EDGE blended expected win rate (display / calibration) ───────────
+// logit(p*) = wp·logit(pathWR) + we·logit(meanFor)
+// Path WR = expanding empirical WR of prior graded staked same tier (all sports).
+// EDGE side uses featured meanFor (same units as EDGE). Tape is intentionally
+// excluded. Stamped for tracking — does not size units.
+export const BLEND_WR_PATH_W = 0.35;
+export const BLEND_WR_EDGE_W = 0.65;
+export const BLEND_PATH_MIN_N = 15;
+export const BLEND_PATH_LOOKBACK_FROM = '2026-06-15';
+/** Cold-start / thin-tier prior ≈ typical -115 implied. */
+export const BLEND_WR_BASE = 0.535;
+export const BLEND_STATE_COLLECTION = 'blendWrState';
+export const BLEND_STATE_DOC_ID = 'current';
+
+export function logitProb(p) {
+  const e = Math.min(1 - 1e-6, Math.max(1e-6, Number(p)));
+  return Math.log(e / (1 - e));
+}
+
+export function sigmoidProb(z) {
+  const x = Math.max(-20, Math.min(20, Number(z)));
+  return 1 / (1 + Math.exp(-x));
+}
+
+/** American odds → implied win probability (vig-in). */
+export function americanOddsImpliedWr(odds) {
+  if (odds == null || !Number.isFinite(Number(odds)) || Number(odds) === 0) return null;
+  const o = Number(odds);
+  return o < 0 ? Math.abs(o) / (Math.abs(o) + 100) : 100 / (o + 100);
+}
+
+/**
+ * Resolve path prior WR (0–1) from { n, w } record.
+ * Thin tiers fall back to `baseWr` (overall book or BLEND_WR_BASE).
+ */
+export function pathWrFromCounts(rec, {
+  minN = BLEND_PATH_MIN_N,
+  baseWr = BLEND_WR_BASE,
+} = {}) {
+  const n = Number(rec?.n) || 0;
+  const w = Number(rec?.w) || 0;
+  if (n >= minN && n > 0) return w / n;
+  if (baseWr != null && Number.isFinite(baseWr)) return Number(baseWr);
+  return BLEND_WR_BASE;
+}
+
+/**
+ * Path × EDGE blend in logit space.
+ * @returns {{ blendWr, pathWr, edgeWr, wp, we, pathN } | null}
+ *   blendWr/pathWr/edgeWr are percentages (0–100), rounded to 1 dp.
+ */
+export function computePathEdgeBlendWr({
+  pathWr = null,
+  meanFor = null,
+  pathN = null,
+  wp = BLEND_WR_PATH_W,
+  we = BLEND_WR_EDGE_W,
+} = {}) {
+  const pPath = pathWr != null && Number.isFinite(Number(pathWr))
+    ? (Number(pathWr) > 1 ? Number(pathWr) / 100 : Number(pathWr))
+    : null;
+  const pEdge = meanFor != null && Number.isFinite(Number(meanFor))
+    ? (Number(meanFor) > 1 ? Number(meanFor) / 100 : Number(meanFor))
+    : null;
+
+  let wPath = Number(wp);
+  let wEdge = Number(we);
+  if (!Number.isFinite(wPath)) wPath = BLEND_WR_PATH_W;
+  if (!Number.isFinite(wEdge)) wEdge = BLEND_WR_EDGE_W;
+
+  if (pPath == null && pEdge == null) return null;
+  if (pPath == null) { wPath = 0; wEdge = 1; }
+  if (pEdge == null) { wPath = 1; wEdge = 0; }
+  const sum = wPath + wEdge;
+  if (!(sum > 0)) return null;
+  wPath /= sum;
+  wEdge /= sum;
+
+  const z = (pPath != null ? wPath * logitProb(pPath) : 0)
+    + (pEdge != null ? wEdge * logitProb(pEdge) : 0);
+  const blend = sigmoidProb(z);
+  const round1 = (x) => Math.round(x * 1000) / 10; // → pct 1dp
+  return {
+    blendWr: round1(blend),
+    pathWr: pPath != null ? round1(pPath) : null,
+    edgeWr: pEdge != null ? round1(pEdge) : null,
+    wp: Math.round(wPath * 100) / 100,
+    we: Math.round(wEdge * 100) / 100,
+    pathN: pathN != null && Number.isFinite(Number(pathN)) ? Number(pathN) : null,
+  };
+}
+
+/** Look up tier prior from a byTier map built by loadPathBlendPriors / backtest. */
+export function resolvePathPriorWr(byTier, tier, {
+  minN = BLEND_PATH_MIN_N,
+  baseWr = BLEND_WR_BASE,
+} = {}) {
+  if (!tier || !byTier) {
+    return { pathWr: baseWr, pathN: 0, source: 'base' };
+  }
+  const rec = byTier[tier] || null;
+  const n = Number(rec?.n) || 0;
+  if (n >= minN) {
+    return { pathWr: pathWrFromCounts(rec, { minN, baseWr }), pathN: n, source: 'tier' };
+  }
+  const all = byTier.__ALL__ || null;
+  if (all && (Number(all.n) || 0) >= minN) {
+    return {
+      pathWr: pathWrFromCounts(all, { minN, baseWr }),
+      pathN: n,
+      source: 'all_staked',
+    };
+  }
+  return { pathWr: baseWr, pathN: n, source: 'base' };
+}

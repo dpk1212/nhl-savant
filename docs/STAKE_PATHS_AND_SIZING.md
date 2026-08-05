@@ -16,10 +16,12 @@ _Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`SKILL_FEATURES.md`](./SKILL_
 | **FadeTop** | Toxic AG | top AG WR ≥ 60 beating FOR → **0u** |
 | **EDGE band size** | A/C dial | E&lt;7 → **0u** · 7–10 → ×**0.75** · ≥10 → ×**1.25** · **RANK/DISSENT exempt** |
 | **EDGE/net size** | Soft dial (non–A/C) | BOTH ×**1.25** · ONE hold · NEITHER ×**0.5** on remaining soft tiers · **RANK exempt** |
-| **Tape** | Final dial | `&lt;0` mute (except **RANK**) · mid hold · `≥2.89` ×**1.35** · fail-open if missing |
+| **Tape** | Near-final dial | `&lt;0` mute (except **RANK**) · mid hold · `≥2.89` ×**1.35** · fail-open if missing |
+| **qConv Q1 mute** | Near-final mute (2026-08-03+) | Path A/B/C · `qConv <` expanding Q1 of prior staked → **0u** · fail-open if missing |
+| **FOOLS-gold mute** | Final mute (2026-08-05+) | Path A/B/C · EDGE ≥ 7 · best proven FOR = **FLAT** → **0u** · fail-open if EDGE missing |
 | **T-15** | Freeze | No further rewrite |
 
-**Paths pick who. EDGE band sizes A/C. Tape is the last dial.**
+**Paths pick who. EDGE band sizes A/C. Tape dials size. qConv cuts the Q1 tail. FOOLS cancels FLAT-anchored high-EDGE.**
 
 Skill metrics (EDGE / netCLV / Tape / bucket) stamp every pre–T-15 cycle — see [`SKILL_FEATURES.md`](./SKILL_FEATURES.md).
 
@@ -54,11 +56,21 @@ Skill metrics (EDGE / netCLV / Tape / bucket) stamp every pre–T-15 cycle — s
    └─ RANK / DISSENT / null → hold (RANK never shrunk here)
    └─ missing EDGE and net → fail-open (hold)
 
-8. Tape mute / hold / boost           → final units
+8. Tape mute / hold / boost
    └─ RANK exempt from tape mute only (still boosts)
 
-9. Odds cap + global 6u cap
-10. T-15 → freeze
+9. qConv Q1 mute (2026-08-03+)
+   └─ qConv = Σ sizeRatio×(WR−50) FOR − AG
+   └─ thr = expanding Q1 of prior staked A/B/C (Jun15+)
+   └─ below thr → 0u · fail-open if qConv/thr missing · DISSENT/manual exempt
+
+10. FOOLS-gold mute (2026-08-05+)     → final units
+   └─ EDGE ≥ 7 + best proven FOR whitelistTier = FLAT → 0u
+   └─ CONFIRMED FOR (gold/thin) hold · EDGE < 7 hold · fail-open if EDGE missing
+   └─ DISSENT / manual stake exempt
+
+11. Odds cap + global 6u cap
+12. T-15 → freeze
 ```
 
 Rescues **never up-size** an already-staked Path A ticket — they only fill `0u` holes.
@@ -76,6 +88,8 @@ Rescues **never up-size** an already-staked Path A ticket — they only fill `0u
 | **2026-07-19** | **Path C = EDGE/net two-gate** · **TOP NEITHER hard mute** · **board-wide BOTH×1.25 / NEITHER×0.5** · **RANK tape-mute exempt** · proven-$ Path C retired |
 | **2026-07-20** | **EDGE band size on Path A/C** — mute E&lt;5 · half 5–10 · boost ≥10 ×1.25 · RANK/DISSENT exempt (replaces BOTH/NEITHER soft size on A/C) |
 | **2026-07-22** | **EDGE band v2** — mute E&lt;7 · ×0.75 on 7–10 · boost ≥10 ×1.25 (cuts the 5–7 poison slice; mid slightly less shrunk) |
+| **2026-08-03** | **EDGE abs bands** on A/C · **qConv Q1 mute** on A/B/C (after tape) |
+| **2026-08-05** | **FOOLS-gold mute** — E≥7 + best proven FOR=FLAT → 0u (after qConv) |
 
 ---
 

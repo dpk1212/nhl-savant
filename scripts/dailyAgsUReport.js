@@ -3,8 +3,8 @@
  * ──────────────────────────────────────────────────────────────────────────
  * Single canonical monitoring artifact for V12 production.
  * Core read (§1–12): PnL · live stack · paths · tape era (Jul15+) skill bands
- * (EDGE/NetCLV/Tape) · side profile · sport · stake cal · mute · recent picks ·
- * score health · wallets · ops.
+ * (EDGE/NetCLV/Tape) · qConv Q1 mute (Aug3+) · side profile · sport · stake cal ·
+ * mute · recent picks · score health · wallets · ops.
  * Appendices: model versions · feature lab (research).
  *
  * VERSION-AGNOSTIC: every reference to active features / weights / quintiles
@@ -45,6 +45,12 @@ import {
   TAPE_NET_WEIGHT,
   EDGE_PRIOR_AG_WR,
   NET_CLV_PRIOR_AG,
+  QCONV_MUTE_FROM,
+  QCONV_MUTE_LOOKBACK_FROM,
+  QCONV_MUTE_FALLBACK_THR,
+  QCONV_STATE_COLLECTION,
+  QCONV_STATE_DOC_ID,
+  QCONV_MUTE_TIERS,
   computeTapeScore,
   computeNetMeanPrior,
   hydrateClvLedger,
@@ -52,6 +58,7 @@ import {
   CLV_LEDGER_DOC_ID,
   shortWalletId,
   isTapeSizingLive,
+  isQConvMuteLive,
 } from '../src/lib/walletClvSkill.js';
 
 /** Tape / side-profile analysis window (EDGE+TAPE stamps). */
@@ -682,6 +689,11 @@ async function loadAllAgsuGradedPicks() {
           netClvMeanAg: Number.isFinite(sd.v8_netClvMeanAg) ? sd.v8_netClvMeanAg : null,
           netClvNFor: Number.isFinite(sd.v8_netClvNFor) ? sd.v8_netClvNFor : null,
           netClvNAg: Number.isFinite(sd.v8_netClvNAg) ? sd.v8_netClvNAg : null,
+          // qConv Q1 mute (live 2026-08-03+)
+          qConv: Number.isFinite(sd.v8_qConv) ? sd.v8_qConv : null,
+          qConvThr: Number.isFinite(sd.v8_qConvThr) ? sd.v8_qConvThr : null,
+          qConvAction: sd.v8_qConvAction || null,
+          unitsPreQConv: Number.isFinite(sd.v8_unitsPreQConv) ? sd.v8_unitsPreQConv : null,
           provenFor, provenAg,
           provenTotal: (provenFor ?? 0) + (provenAg ?? 0),
           hcMargin, miniHcMargin,
@@ -741,13 +753,13 @@ function buildHeader(report, cutover, liveCal, eras) {
   report.push('');
   report.push(`**Generated:** ${new Date().toLocaleString('en-US', { timeZone: 'America/New_York', dateStyle: 'full', timeStyle: 'short' })} ET`);
   report.push('');
-  report.push(`**Model:** \`${schemaLive}\` · **Live since:** ${v12From || '—'} (${v12Days ?? '—'} days) · **Tape / side-profile era:** ${SIDE_PROFILE_FROM}+`);
+  report.push(`**Model:** \`${schemaLive}\` · **Live since:** ${v12From || '—'} (${v12Days ?? '—'} days) · **Tape / side-profile era:** ${SIDE_PROFILE_FROM}+ · **qConv mute:** ${QCONV_MUTE_FROM}+`);
   report.push('');
-  report.push(`Production book = **Paths A–D** (HC / RANK / SHARP / DISSENT) → fadeTop mute → **TAPE** mute/boost. Numbers below are V12-scoped (pick date ≥ ${v12From || 'TBD'}) unless marked Appendix.`);
+  report.push(`Production book = **Paths A–D** (HC / RANK / SHARP / DISSENT) → fadeTop mute → **TAPE** mute/boost → **qConv Q1 mute**. Numbers below are V12-scoped (pick date ≥ ${v12From || 'TBD'}) unless marked Appendix.`);
   report.push('');
   report.push(`## Contents`);
   report.push('');
-  report.push(`1. Executive Summary · 2. Live Stack · 3. Daily Scoreboard · **4. Path & Modifier Board** · 5. Tape Era (${SIDE_PROFILE_FROM}+) · 6. Sport/Market · 7. Mute · 8. Recent Picks · 9. Predictive Health · 10. Wallets · 11. Ops`);
+  report.push(`1. Executive Summary · 2. Live Stack · 3. Daily Scoreboard · **4. Path & Modifier Board** · 5. Tape Era (${SIDE_PROFILE_FROM}+) · **5q. qConv Q1 Mute** · 6. Sport/Market · 7. Mute · 8. Recent Picks · 9. Predictive Health · 10. Wallets · 11. Ops`);
   report.push('');
   report.push(`Appendix A — Model Versions · Appendix B — Feature Lab`);
   report.push('');
@@ -1499,6 +1511,10 @@ async function loadAllGradedAndShadowPicks() {
           netClvMeanAg: Number.isFinite(sd.v8_netClvMeanAg) ? sd.v8_netClvMeanAg : null,
           netClvNFor: Number.isFinite(sd.v8_netClvNFor) ? sd.v8_netClvNFor : null,
           netClvNAg: Number.isFinite(sd.v8_netClvNAg) ? sd.v8_netClvNAg : null,
+          qConv: Number.isFinite(sd.v8_qConv) ? sd.v8_qConv : null,
+          qConvThr: Number.isFinite(sd.v8_qConvThr) ? sd.v8_qConvThr : null,
+          qConvAction: sd.v8_qConvAction || null,
+          unitsPreQConv: Number.isFinite(sd.v8_unitsPreQConv) ? sd.v8_unitsPreQConv : null,
           winnerAlignMeanFor: Number.isFinite(sd.v8_winnerAlignMeanFor) ? sd.v8_winnerAlignMeanFor : null,
           winnerAlignMeanAg: Number.isFinite(sd.v8_winnerAlignMeanAg) ? sd.v8_winnerAlignMeanAg : null,
           winnerAlignForN: Number.isFinite(sd.v8_winnerAlignForN) ? sd.v8_winnerAlignForN : null,
@@ -2904,6 +2920,32 @@ function buildV12CeoExecutive(report, stats, eras) {
       `Tape era (${SIDE_PROFILE_FROM}+): **${tAgg.w}-${tAgg.l}** · ${tAgg.roi != null ? ((tAgg.roi >= 0 ? '+' : '') + tAgg.roi.toFixed(1) + '%') : '—'} ROI · ${fmtSigned(tAgg.profit)}u on ${tAgg.n} graded — see § 5.`,
     );
   }
+  // qConv Q1 mute snapshot (2026-08-03+)
+  const qConvMutes = (v12RowsAll || liveRows).filter(r =>
+    isQConvMuteLive(r.date)
+    && (r.qConvAction === 'MUTE' || r.mutedBy === 'qconv-q1')
+    && r.won != null,
+  );
+  if (qConvMutes.length >= 5) {
+    let cf = 0, mw = 0, ml = 0;
+    for (const r of qConvMutes) {
+      if (r.won === 1) mw++; else ml++;
+      const pu = Number.isFinite(r.unitsPreQConv) && r.unitsPreQConv > 0
+        ? r.unitsPreQConv
+        : (Number.isFinite(r.unitsPreTape) && r.unitsPreTape > 0 ? r.unitsPreTape : null);
+      if (!(pu > 0)) continue;
+      const would = cfProfitAtUnits(r.won, r.peakOdds || r.lockOdds, pu);
+      if (would != null) cf += -would;
+    }
+    const wr = 100 * mw / (mw + ml);
+    if (cf > 3) {
+      wins.push(`qConv Q1 mute (${QCONV_MUTE_FROM}+): **${mw}-${ml}** (${wr.toFixed(0)}% WR) · CF Δ ${fmtSigned(cf)}u saved — see § 5q.`);
+    } else if (cf < -3) {
+      watch.push(`🚨 qConv Q1 mute may be costing money — muted **${mw}-${ml}** (${wr.toFixed(0)}% WR) · CF Δ ${fmtSigned(cf)}u — see § 5q.`);
+    } else {
+      watch.push(`qConv Q1 mute (${QCONV_MUTE_FROM}+): **${mw}-${ml}** muted · CF Δ ${fmtSigned(cf)}u — see § 5q.`);
+    }
+  }
   // Sample size warning
   if (agg.n < 20) {
     watch.push(`🟡 **Sample is still small** — only ${agg.n} live picks across ${daysLive} days. ROI/Win% will swing wildly until ~40-60 picks. Don't make big policy changes off ${agg.n}-pick samples.`);
@@ -2937,8 +2979,9 @@ function buildV12Primer(report) {
   report.push(`| D | DISSENT mute rescue (MLB contribMargin≤0) | 1u |`);
   report.push(`| E | fadeTop≥60 mute only (EDGE size/rescue **frozen**) | — |`);
   report.push(`| TAPE | From **${SIDE_PROFILE_FROM}**: mute tape&lt;0 · hold mid · boost ≥2.89 ×1.35 | path units |`);
+  report.push(`| qConv | From **${QCONV_MUTE_FROM}**: mute qConv &lt; expanding Q1 thr (Path A/B/C) | → 0u |`);
   report.push('');
-  report.push(`**Stamps we keep for analysis (every shipped side):** depth (\`#F/#A\`, proven, V12 counts) + quality (ForWR, ForCLV, EDGE, Tape). Unopposed sides still get FOR numbers (EDGE uses AG prior ${EDGE_PRIOR_AG_WR}). Compare WIN vs LOSS in § 5.`);
+  report.push(`**Stamps we keep for analysis (every shipped side):** depth (\`#F/#A\`, proven, V12 counts) + quality (ForWR, ForCLV, EDGE, Tape, qConv). Unopposed sides still get FOR numbers (EDGE uses AG prior ${EDGE_PRIOR_AG_WR}). Compare WIN vs LOSS in § 5 / § 5q.`);
   report.push('');
   report.push(`Odds cap clamps long dogs only (+121 / +151 / +200 → max 2.5 / 1.5 / 1.0u). **+120 or shorter is uncapped by odds** (still ≤6u global). Legacy ELITE→WEAK score-ladder units are **not** the live sizer — ignore them if you see them in old notes.`);
   report.push('');
@@ -3962,6 +4005,235 @@ function buildV12TapeSizing(report, stats) {
     }
     report.push('');
   }
+}
+
+// ── § 5q — qConv Q1 mute (quality×size FOR−AG · live 2026-08-03+) ─────────
+function qConvPreUnits(r) {
+  if (Number.isFinite(r.unitsPreQConv) && r.unitsPreQConv > 0) return r.unitsPreQConv;
+  if (Number.isFinite(r.unitsPreTape) && r.unitsPreTape > 0) return r.unitsPreTape;
+  return pathUnitsGuess(r);
+}
+
+function qConvActionOf(r) {
+  if (r.qConvAction) return r.qConvAction;
+  if (r.mutedBy === 'qconv-q1') return 'MUTE';
+  return null;
+}
+
+async function loadQConvMuteStateDoc() {
+  try {
+    const snap = await db.collection(QCONV_STATE_COLLECTION).doc(QCONV_STATE_DOC_ID).get();
+    if (!snap.exists) return null;
+    return snap.data() || null;
+  } catch {
+    return null;
+  }
+}
+
+async function buildV12QConvMute(report, stats) {
+  report.push(`## § 5q — qConv Q1 Mute (${QCONV_MUTE_FROM}+)`);
+  report.push('');
+  report.push(`Final dial after tape / EDGE abs. **qConv** = \`Σ sizeRatio×(WR−50) FOR − Σ sizeRatio×(WR−50) AG\` (same featured WR source as EDGE, n≥8). Mute Path A/B/C when \`qConv < expanding Q1 thr\` of prior staked A/B/C since ${QCONV_MUTE_LOOKBACK_FROM}. Fail-open if qConv/thr missing. DISSENT + manual stake exempt. See \`docs/SKILL_FEATURES.md\`.`);
+  report.push('');
+
+  const state = await loadQConvMuteStateDoc();
+  if (state && Number.isFinite(Number(state.thr))) {
+    report.push(`**Live thr cache** (\`${QCONV_STATE_COLLECTION}/${QCONV_STATE_DOC_ID}\`): **${Number(state.thr).toFixed(2)}** · nPriors=${state.n ?? '—'} · source=${state.source || '—'} · asOf=${state.asOfDate || '—'} · fallback=${QCONV_MUTE_FALLBACK_THR}`);
+  } else {
+    report.push(`**Live thr cache:** not written yet — sync will bootstrap on first ${QCONV_MUTE_FROM}+ cycle (fallback thr=${QCONV_MUTE_FALLBACK_THR}).`);
+  }
+  report.push('');
+
+  if (!stats) {
+    report.push(`_(no V12-era picks yet.)_`);
+    report.push('');
+    return;
+  }
+
+  const era = (stats.v12RowsAll || stats.v12Rows || []).filter(r => isQConvMuteLive(r.date));
+  const stamped = era.filter(r =>
+    qConvActionOf(r) != null || Number.isFinite(r.qConv) || r.mutedBy === 'qconv-q1',
+  );
+  const graded = stamped.filter(r => r.won != null);
+  const pathAbc = (r) => r.hcStakeTier && QCONV_MUTE_TIERS.has(r.hcStakeTier);
+
+  report.push(`### Coverage`);
+  report.push('');
+  report.push(`| Window | Sides | With qConv stamp | Graded w/ stamp | Path A/B/C graded |`);
+  report.push(`|--------|------:|-----------------:|----------------:|------------------:|`);
+  report.push(
+    `| ≥ ${QCONV_MUTE_FROM} | ${era.length} | ${stamped.length} | ${graded.length} | ${graded.filter(pathAbc).length} |`,
+  );
+  report.push('');
+  if (stamped.length === 0) {
+    report.push(`_No qConv stamps yet in the live window — fills as the cron writes \`v8_qConv\` / \`v8_qConvAction\` / \`v8_unitsPreQConv\`._`);
+    report.push('');
+    return;
+  }
+
+  // (A) By action
+  report.push(`### (A) By qConv action (stamped + graded)`);
+  report.push('');
+  if (graded.length === 0) {
+    report.push(`_No graded qConv-stamped picks yet — tables fill as ${QCONV_MUTE_FROM}+ locks settle._`);
+    report.push('');
+  } else {
+    report.push(`| Action | N | W-L | Win % | Stake | PnL (u) | ROI |`);
+    report.push(`|--------|--:|:---:|------:|------:|--------:|----:|`);
+    for (const act of ['MUTE', 'HOLD', 'FAIL_OPEN', 'EXEMPT', 'PASS']) {
+      const rows = graded.filter(r => qConvActionOf(r) === act);
+      if (!rows.length) continue;
+      const a = tapeAgg(rows);
+      report.push(
+        `| ${act.padEnd(9)} | ${a.n} | ${a.w}-${a.l} | ${a.n ? ((100 * a.w / a.n).toFixed(1) + '%') : '—'} | ${a.stake.toFixed(2)}u | ${fmtSigned(a.pnl)}u | ${a.roi != null ? ((a.roi >= 0 ? '+' : '') + a.roi.toFixed(1) + '%') : '—'} |`,
+      );
+    }
+    report.push('');
+  }
+
+  // (B) Score quintiles among Path A/B/C with qConv
+  report.push(`### (B) qConv quintiles (Path A/B/C · graded · score present)`);
+  report.push('');
+  const withQc = graded.filter(r => pathAbc(r) && Number.isFinite(r.qConv));
+  if (withQc.length < 10) {
+    report.push(`_Need ≥10 Path A/B/C graded rows with \`v8_qConv\` (have ${withQc.length})._`);
+    report.push('');
+  } else {
+    const sorted = [...withQc].sort((a, b) => a.qConv - b.qConv);
+    report.push(`| Quintile | qConv range | N | W-L | Win % | Stake | PnL | ROI |`);
+    report.push(`|----------|-------------|--:|:---:|------:|------:|----:|----:|`);
+    for (let i = 0; i < 5; i++) {
+      const a = Math.floor(i * sorted.length / 5);
+      const b = Math.floor((i + 1) * sorted.length / 5);
+      const slice = sorted.slice(a, b);
+      const s = tapeAgg(slice);
+      const lo = slice[0]?.qConv;
+      const hi = slice[slice.length - 1]?.qConv;
+      report.push(
+        `| Q${i + 1}${i === 0 ? ' (mute)' : ''} | ${lo?.toFixed(1)} … ${hi?.toFixed(1)} | ${s.n} | ${s.w}-${s.l} | ${s.n ? ((100 * s.w / s.n).toFixed(1) + '%') : '—'} | ${s.stake.toFixed(1)}u | ${fmtSigned(s.pnl)}u | ${s.roi != null ? ((s.roi >= 0 ? '+' : '') + s.roi.toFixed(1) + '%') : '—'} |`,
+      );
+    }
+    report.push('');
+    report.push(`_Q1 is the toxic pile the mute targets. Q5 should be the strongest — if Q1 WR/ROI is not the worst, the policy may be drifting._`);
+    report.push('');
+  }
+
+  // (C) Mute counterfactual
+  report.push(`### (C) Mute counterfactual (would-have-shipped PnL)`);
+  report.push('');
+  report.push(`> If qConv-muted tickets had kept \`v8_unitsPreQConv\` (else pre-tape / path ladder), what PnL? **Positive Δ** = mute saved money.`);
+  report.push('');
+  const mutes = graded.filter(r => qConvActionOf(r) === 'MUTE');
+  let muteCf = 0, muteN = 0, muteSaved = 0, muteMissed = 0, muteW = 0, muteL = 0;
+  for (const r of mutes) {
+    const pu = qConvPreUnits(r);
+    if (!(pu > 0) || r.won == null) continue;
+    const would = cfProfitAtUnits(r.won, r.peakOdds || r.lockOdds, pu);
+    if (would == null) continue;
+    muteN++;
+    if (r.won === 1) muteW++; else muteL++;
+    muteCf += -would; // actual 0 − would
+    if (would < 0) muteSaved += -would;
+    else muteMissed += would;
+  }
+  report.push(`| Mute CF | N | W-L | PnL if path had shipped | Δ vs actual (0u) | Avoided losses | Missed wins |`);
+  report.push(`|---------|--:|:---:|------------------------:|-----------------:|---------------:|------------:|`);
+  report.push(
+    `| qconv-q1 → 0u | ${muteN} | ${muteW}-${muteL} | ${fmtSigned(-muteCf)}u | ${fmtSigned(muteCf)}u | ${fmtSigned(muteSaved)}u | ${fmtSigned(muteMissed)}u |`,
+  );
+  report.push('');
+  if (muteN >= 8) {
+    const muteWr = 100 * muteW / muteN;
+    if (muteCf > 5) {
+      report.push(`> 🟢 **Mute is saving money** (Δ ${fmtSigned(muteCf)}u · muted WR ${muteWr.toFixed(1)}%). Keep the Q1 cut.`);
+    } else if (muteCf < -5) {
+      report.push(`> 🚨 **Mute is costing money** (Δ ${fmtSigned(muteCf)}u · muted WR ${muteWr.toFixed(1)}%). Revisit thr / formulation — muted pile is winning.`);
+    } else {
+      report.push(`> 🟡 **Mute roughly break-even** (Δ ${fmtSigned(muteCf)}u · muted WR ${muteWr.toFixed(1)}%). Keep monitoring as N grows.`);
+    }
+    report.push('');
+  }
+
+  // (D) Muted pile by path / sport
+  if (mutes.length) {
+    report.push(`### (D) Muted pile mix (graded MUTE)`);
+    report.push('');
+    report.push(`| Slice | N | W-L | Win % | Pre-u stake (CF) | CF PnL |`);
+    report.push(`|-------|--:|:---:|------:|-----------------:|-------:|`);
+    const slices = [
+      ...['A', 'B', 'C'].map((p) => ({
+        key: `Path ${p}`,
+        test: (r) => {
+          const t = r.hcStakeTier;
+          if (p === 'A') return ['SUPER', 'TOP', 'TOP+', 'MINI', 'MINI-', 'CONFIRMED'].includes(t);
+          if (p === 'B') return t === 'RANK';
+          return ['SHARP', 'SHARP-LEAN', 'SHARP-PRIME'].includes(t);
+        },
+      })),
+      ...[...new Set(mutes.map(r => r.sport).filter(Boolean))].sort().map((sp) => ({
+        key: sp,
+        test: (r) => r.sport === sp,
+      })),
+    ];
+    for (const sl of slices) {
+      const rows = mutes.filter(sl.test);
+      if (!rows.length) continue;
+      let w = 0, l = 0, stake = 0, pnl = 0;
+      for (const r of rows) {
+        if (r.won === 1) w++; else if (r.won === 0) l++;
+        const pu = qConvPreUnits(r);
+        if (pu > 0 && r.won != null) {
+          stake += pu;
+          const would = cfProfitAtUnits(r.won, r.peakOdds || r.lockOdds, pu);
+          if (would != null) pnl += would;
+        }
+      }
+      const n = w + l;
+      report.push(
+        `| ${sl.key} | ${n} | ${w}-${l} | ${n ? ((100 * w / n).toFixed(1) + '%') : '—'} | ${stake.toFixed(1)}u | ${fmtSigned(pnl)}u |`,
+      );
+    }
+    report.push('');
+  }
+
+  // (E) Recent mute events
+  const notable = stamped
+    .filter(r => qConvActionOf(r) === 'MUTE')
+    .slice()
+    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
+    .slice(0, 20);
+  if (notable.length) {
+    report.push(`### (E) Recent qConv mutes`);
+    report.push('');
+    report.push(`| Date | Sport | Pick | Path | qConv | Thr | Pre-u | Outcome |`);
+    report.push(`|------|-------|------|------|------:|----:|------:|---------|`);
+    for (const r of notable) {
+      const pre = qConvPreUnits(r);
+      const out = r.won === 1 ? 'WIN' : r.won === 0 ? 'LOSS' : 'pending';
+      report.push(
+        `| ${r.date} | ${r.sport || ''} | ${(r.team || r.sideKey || '').substring(0, 22)} | ${pathShort(r.hcStakeTier)} | ${Number.isFinite(r.qConv) ? r.qConv.toFixed(1) : '—'} | ${Number.isFinite(r.qConvThr) ? r.qConvThr.toFixed(1) : '—'} | ${pre != null ? pre.toFixed(2) + 'u' : '—'} | ${out} |`,
+      );
+    }
+    report.push('');
+  }
+
+  // Book-after vs book-before (kept HOLD vs all Path ABC that had units pre-qConv)
+  const held = graded.filter(r => pathAbc(r) && qConvActionOf(r) === 'HOLD' && (r.units || 0) > 0);
+  const heldAgg = tapeAgg(held);
+  const mutedAgg = tapeAgg(mutes);
+  report.push(`### (F) Book impact summary`);
+  report.push('');
+  report.push(`| Book | N | W-L | Win % | Stake | PnL | ROI |`);
+  report.push(`|------|--:|:---:|------:|------:|----:|----:|`);
+  report.push(
+    `| Kept (HOLD, units&gt;0) | ${heldAgg.n} | ${heldAgg.w}-${heldAgg.l} | ${heldAgg.n ? ((100 * heldAgg.w / heldAgg.n).toFixed(1) + '%') : '—'} | ${heldAgg.stake.toFixed(1)}u | ${fmtSigned(heldAgg.pnl)}u | ${heldAgg.roi != null ? ((heldAgg.roi >= 0 ? '+' : '') + heldAgg.roi.toFixed(1) + '%') : '—'} |`,
+  );
+  report.push(
+    `| Muted (Q1 → 0u) | ${mutedAgg.n} | ${mutedAgg.w}-${mutedAgg.l} | ${mutedAgg.n ? ((100 * mutedAgg.w / mutedAgg.n).toFixed(1) + '%') : '—'} | ${mutedAgg.stake.toFixed(1)}u | ${fmtSigned(mutedAgg.pnl)}u | ${mutedAgg.roi != null ? ((mutedAgg.roi >= 0 ? '+' : '') + mutedAgg.roi.toFixed(1) + '%') : '—'} |`,
+  );
+  report.push('');
+  report.push(`> Early window will be thin until ${QCONV_MUTE_FROM}+ tickets grade. The policy is validated on Jun15+/Jul15+ staked history — this section tracks whether live continues to match.`);
+  report.push('');
 }
 
 // § 5b / § 9 helpers — side profile (depth + quality) for WIN vs LOSS analysis
@@ -5583,6 +5855,7 @@ async function main() {
   buildV12PathModifierBoard(report, v12Stats);
   buildV12TierAnalysis(report, v12Stats);
   buildV12TapeSizing(report, v12Stats);
+  await buildV12QConvMute(report, v12Stats);
   await buildSkillBandWindows(report, allRows);
   buildV12SideProfileAnalysis(report, v12Stats);
   buildV12SportMarketAnalysis(report, v12Stats);

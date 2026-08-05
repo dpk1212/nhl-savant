@@ -95,12 +95,35 @@ import {
   applyClvTop2UnitPolicy,
   applyTapeUnitPolicy,
   applyBothE10TapeFloor,
+  applyQConvMuteOverlay,
+  applyFoolsGoldMuteOverlay,
+  bestProvenForSide,
   computeForTop2PctPos,
   computeNetMeanPrior,
+  computeQConv,
   computeTapeScore,
+  computePathEdgeBlendWr,
+  resolvePathPriorWr,
+  americanOddsImpliedWr,
   hydrateClvLedger,
   isTapeSizingLive,
   isBothE10TapeBoostLive,
+  isQConvMuteLive,
+  isFoolsGoldMuteLive,
+  qConvMuteThresholdFromValues,
+  QCONV_MUTE_FALLBACK_THR,
+  QCONV_MUTE_FROM,
+  QCONV_MUTE_LOOKBACK_FROM,
+  QCONV_MUTE_MIN_PRIORS,
+  QCONV_STATE_COLLECTION,
+  QCONV_STATE_DOC_ID,
+  FOOLS_GOLD_MUTE_FROM,
+  FOOLS_GOLD_EDGE_MIN,
+  BLEND_PATH_LOOKBACK_FROM,
+  BLEND_PATH_MIN_N,
+  BLEND_WR_BASE,
+  BLEND_STATE_COLLECTION,
+  BLEND_STATE_DOC_ID,
 } from '../src/lib/walletClvSkill.js';
 import { loadWalletProfilesMap } from './lib/loadWalletProfiles.js';
 
@@ -530,6 +553,7 @@ const SHARP_C_EDGE_NET_FROM = '2026-07-19'; // EDGE/net two-gate Path C + TOP NE
 const EDGE_NET_SIZE_FROM = '2026-07-19'; // board-wide BOTH boost / soft NEITHER shrink + RANK tape-exempt
 const EDGE_BAND_SIZE_FROM = '2026-07-20'; // Path A/C EDGE ladder live (v1: mute<5 · half 5–10)
 const EDGE_BAND_MUTE7_FROM = '2026-07-22'; // v2: mute<7 · ×0.75 on 7–10 · boost≥10
+const EDGE_BAND_ABS_FROM = '2026-08-03'; // v3: absolute units — <7≤1u · 7–11→2–3u · ≥11→4–6u
 const EDGE_RANK_BAND_FROM = '2026-07-22'; // RANK-only EDGE overlay (forward-only)
 const SHARP_MIN_QN      = 8;             // min settled positions for a $ROI read
 const SHARP_MIN_QROI    = 10;            // positions.dollarRoi threshold (%)
@@ -549,11 +573,19 @@ const EDGE_NET_NEITHER_SOFT_MULT = 0.5;  // soft shrink (not mute) on MINI/SHARP
 /** Legacy EDGE band (2026-07-20 .. 2026-07-21): mute <5 · ×0.5 on 5–10. */
 const EDGE_BAND_MUTE_BELOW_V1 = 5;
 const EDGE_BAND_MID_MULT_V1 = 0.5;
-/** Live EDGE band (2026-07-22+): mute <7 · ×0.75 on 7–10. */
+/** Live EDGE band (2026-07-22 .. 2026-08-02): mute <7 · ×0.75 on 7–10. */
 const EDGE_BAND_MUTE_BELOW_V2 = 7;
 const EDGE_BAND_MID_MULT_V2 = 0.75;
-const EDGE_BAND_BOOST_AT = 10;           // EDGE ≥ 10 → × boost (A/C + RANK)
+const EDGE_BAND_BOOST_AT = 10;           // EDGE ≥ 10 → × boost (A/C + RANK) — v1/v2 / RANK
 const EDGE_BAND_BOOST_MULT = 1.25;       // EDGE ≥ 10 → ×1.25 (cap 6u)
+/** Absolute EDGE unit bands (2026-08-03+ Path A/C): hard clamp, not multipliers. */
+const EDGE_BAND_ABS_LT7_CAP = 1;         // EDGE < 7 → max 1u
+const EDGE_BAND_ABS_MID_AT = 7;          // inclusive mid lower
+const EDGE_BAND_ABS_HI_AT = 11;          // EDGE ≥ 11 → 4–6u reserved
+const EDGE_BAND_ABS_MID_MIN_U = 2;
+const EDGE_BAND_ABS_MID_MAX_U = 3;
+const EDGE_BAND_ABS_HI_MIN_U = 4;
+const EDGE_BAND_ABS_HI_MAX_U = 6;
 /** RANK-only EDGE bands (2026-07-22+): mute <0 · ×0.75 on 0–7 · HOLD (7,10) · boost ≥10. */
 const EDGE_RANK_MUTE_BELOW = 0;
 const EDGE_RANK_SOFT_AT = 7;             // inclusive soft upper bound
@@ -586,6 +618,9 @@ function isEdgeBandSizeLive(pickDate) {
 }
 function isEdgeBandMute7Live(pickDate) {
   return typeof pickDate === 'string' && pickDate >= EDGE_BAND_MUTE7_FROM;
+}
+function isEdgeBandAbsLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= EDGE_BAND_ABS_FROM;
 }
 function isEdgeRankBandLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= EDGE_RANK_BAND_FROM;
@@ -668,12 +703,60 @@ function applyEdgeNetSizeOverlay({
   return { units: pre, action: 'HOLD', reason: null, unitsPrePolicy: pre };
 }
 /**
+ * Absolute EDGE → unit bands (Path A/C, 2026-08-03+).
+ *   E < 7      → max 1u (CAP, never floor a muted 0)
+ *   7 ≤ E < 11 → clamp into [2, 3]
+ *   E ≥ 11     → clamp into [4, 6] (≤ unitCap)
+ * Odds cap may still shrink after the EDGE clamp.
+ */
+function clampUnitsToEdgeAbsBand(pre, edge, {
+  odds = null,
+  oddsCapFn = null,
+  unitCap = GLOBAL_UNIT_CAP,
+} = {}) {
+  const e = Number(edge);
+  let out;
+  let action;
+  let band;
+  let reason;
+  if (e < EDGE_BAND_ABS_MID_AT) {
+    out = Math.min(pre, EDGE_BAND_ABS_LT7_CAP);
+    band = 'LT7';
+    reason = 'edge_lt7_cap1';
+    action = Math.abs(out - pre) < 0.01 ? 'HOLD' : 'CAP';
+  } else if (e < EDGE_BAND_ABS_HI_AT) {
+    out = Math.min(EDGE_BAND_ABS_MID_MAX_U, Math.max(EDGE_BAND_ABS_MID_MIN_U, pre));
+    band = 'MID7_11';
+    reason = 'edge_7_11';
+    action = Math.abs(out - pre) < 0.01 ? 'HOLD' : 'CLAMP';
+  } else {
+    const hiMax = Math.min(unitCap, EDGE_BAND_ABS_HI_MAX_U);
+    out = Math.min(hiMax, Math.max(EDGE_BAND_ABS_HI_MIN_U, pre));
+    band = 'GE11';
+    reason = 'edge_ge11';
+    action = Math.abs(out - pre) < 0.01 ? 'HOLD' : 'CLAMP';
+  }
+  if (typeof oddsCapFn === 'function') out = oddsCapFn(out, odds);
+  out = Math.min(unitCap, Math.max(0, Math.round(out * 100) / 100));
+  if (Math.abs(out - pre) < 0.01) {
+    action = 'HOLD';
+  } else if (action === 'HOLD') {
+    // oddsCap moved units after an in-band HOLD
+    action = e < EDGE_BAND_ABS_MID_AT ? 'CAP' : 'CLAMP';
+  }
+  return {
+    units: out, action, band, reason, unitsPrePolicy: pre,
+  };
+}
+
+/**
  * EDGE band size ladder (after paths + fadeTop, before tape).
- * Path A/C (unchanged):
+ * Path A/C:
  *   2026-07-20 .. 2026-07-21: mute E<5 · ×0.5 on 5–10 · boost ≥10 ×1.25
- *   2026-07-22+:               mute E<7 · ×0.75 on 7–10 · boost ≥10 ×1.25
+ *   2026-07-22 .. 2026-08-02: mute E<7 · ×0.75 on 7–10 · boost ≥10 ×1.25
+ *   2026-08-03+:              abs units E<7→≤1u · 7–11→[2,3] · ≥11→[4,6]
  *   missing EDGE → MUTE 0u
- * Path B RANK only (2026-07-22+):
+ * Path B RANK only (2026-07-22+; unchanged by abs ladder):
  *   mute E<0 · ×0.75 on 0–7 · HOLD (7,10) · boost ≥10 ×1.25 (same boost mult)
  *   missing EDGE → HOLD (fail-open)
  * DISSENT / untiered / pre-gate RANK → EXEMPT.
@@ -743,7 +826,6 @@ function applyEdgeBandSizeOverlay({
       units: pre, action: 'EXEMPT', band: null, reason: 'tier_exempt', unitsPrePolicy: pre,
     };
   }
-  const ladder = edgeBandLadderParams(pickDate);
   const hasEdge = edge != null && Number.isFinite(Number(edge));
   if (!hasEdge) {
     return {
@@ -751,6 +833,11 @@ function applyEdgeBandSizeOverlay({
     };
   }
   const e = Number(edge);
+  // v3 absolute unit bands (forward-only) — replaces mute/soft/boost multipliers
+  if (isEdgeBandAbsLive(pickDate)) {
+    return clampUnitsToEdgeAbsBand(pre, e, { odds, oddsCapFn, unitCap });
+  }
+  const ladder = edgeBandLadderParams(pickDate);
   if (e < ladder.muteBelow) {
     return {
       units: 0, action: 'MUTE', band: ladder.muteBand, reason: ladder.muteReason, unitsPrePolicy: pre,
@@ -776,6 +863,36 @@ function applyEdgeBandSizeOverlay({
     units: out, action: 'BOOST', band: 'GE10', reason: 'edge_ge10', unitsPrePolicy: pre,
   };
 }
+
+/**
+ * Re-apply abs EDGE unit bands after tape / BOTH-E10 so those overlays cannot
+ * put Path A/C tickets outside the EDGE ladder. No-op when already compliant
+ * or when abs ladder is not live for pickDate.
+ */
+function reclampEdgeAbsAfterTape({
+  units,
+  tier,
+  edge = null,
+  odds = null,
+  oddsCapFn = null,
+  unitCap = GLOBAL_UNIT_CAP,
+  pickDate = null,
+} = {}) {
+  if (!isEdgeBandAbsLive(pickDate)) return null;
+  if (!EDGE_BAND_SIZE_TIERS.has(tier)) return null;
+  const pre = Number.isFinite(units) ? Math.max(0, units) : 0;
+  if (!(pre > 0)) return null;
+  if (edge == null || !Number.isFinite(Number(edge))) return null;
+  const clamped = clampUnitsToEdgeAbsBand(pre, Number(edge), {
+    odds, oddsCapFn, unitCap,
+  });
+  if (Math.abs(clamped.units - pre) < 0.01) return null;
+  return {
+    ...clamped,
+    unitsPrePolicy: pre,
+    reason: `${clamped.reason}_post_tape`,
+  };
+}
 function sharpMinFor(pickDate) {
   return isSharpCRetuneLive(pickDate) ? SHARP_MIN_FOR_RETUNE : SHARP_MIN_FOR_LEGACY;
 }
@@ -792,7 +909,7 @@ function edgeNetGateBucket(edge, net, eThr = SHARP_EDGE_THR, nThr = SHARP_NET_TH
 }
 
 /** Skill-feature stamp schema version — bump when fields/thresholds change. */
-const SKILL_FEATURE_VERSION = 8; // v8: RANK-only EDGE overlay mute<0 · ×0.75 on 0–7 · boost≥10
+const SKILL_FEATURE_VERSION = 11; // v11: FOOLS-gold mute stamps (E≥7 + FLAT FOR)
 
 /**
  * Full EDGE / netCLV / Tape bundle for analysis without rebuild.
@@ -848,6 +965,17 @@ function applySkillFeatureStamps(target, bundle, now, {
   bothE10TapeAction = null,
   unitsPreBothE10 = null,
   bothE10TapeMode = null,
+  qConv = null,
+  qConvThr = null,
+  qConvAction = null,
+  unitsPreQConv = null,
+  bestForTier = null,
+  nForProven = null,
+  foolsGoldAction = null,
+  unitsPreFoolsGold = null,
+  blendTier = null,
+  pathBlendPriors = null,
+  sideOdds = null,
 } = {}) {
   const wa = bundle.winnerAlign;
   if (wa) {
@@ -900,17 +1028,61 @@ function applySkillFeatureStamps(target, bundle, now, {
     target.v8_unitsPreBothE10 = unitsPreBothE10;
   }
   if (bothE10TapeMode != null) target.v8_bothE10TapeMode = bothE10TapeMode;
+  if (qConv != null && Number.isFinite(Number(qConv))) target.v8_qConv = Number(qConv);
+  if (qConvThr != null && Number.isFinite(Number(qConvThr))) target.v8_qConvThr = Number(qConvThr);
+  if (qConvAction != null) target.v8_qConvAction = qConvAction;
+  if (unitsPreQConv != null && Number.isFinite(unitsPreQConv)) {
+    target.v8_unitsPreQConv = unitsPreQConv;
+  }
+  if (bestForTier != null) target.v8_bestForTier = bestForTier;
+  if (nForProven != null && Number.isFinite(Number(nForProven))) {
+    target.v8_nForProven = Number(nForProven);
+  }
+  if (foolsGoldAction != null) target.v8_foolsGoldAction = foolsGoldAction;
+  if (unitsPreFoolsGold != null && Number.isFinite(unitsPreFoolsGold)) {
+    target.v8_unitsPreFoolsGold = unitsPreFoolsGold;
+  }
+  // Path × EDGE expected WR (tracking only — no unit effect)
+  const meanFor = wa?.meanFor ?? bundle.winnerAlign?.meanFor ?? null;
+  const prior = resolvePathPriorWr(pathBlendPriors?.byTier, blendTier, {
+    minN: BLEND_PATH_MIN_N,
+    baseWr: pathBlendPriors?.baseWr ?? BLEND_WR_BASE,
+  });
+  const blend = computePathEdgeBlendWr({
+    pathWr: prior.pathWr,
+    meanFor,
+    pathN: prior.pathN,
+  });
+  if (blend) {
+    target.v8_blendWr = blend.blendWr;
+    target.v8_blendPathWr = blend.pathWr;
+    target.v8_blendEdgeWr = blend.edgeWr;
+    target.v8_blendWp = blend.wp;
+    target.v8_blendWe = blend.we;
+    if (blend.pathN != null) target.v8_blendPathN = blend.pathN;
+    target.v8_blendPathSource = prior.source;
+  }
+  const mktWr = americanOddsImpliedWr(sideOdds);
+  if (mktWr != null) {
+    target.v8_mktImpliedWr = Math.round(mktWr * 1000) / 10; // pct 1dp
+  }
   target.v8_skillFeatureVersion = SKILL_FEATURE_VERSION;
   target.v8_skillEvaluatedAt = now;
 }
 
-function skillStampsDrifted(sd, bundle, { tapeAction = null } = {}) {
+function skillStampsDrifted(sd, bundle, {
+  tapeAction = null, qConv = null, qConvAction = null, foolsGoldAction = null, blendWr = null,
+} = {}) {
   if ((sd.v8_skillFeatureVersion || 0) !== SKILL_FEATURE_VERSION) return true;
   if (sd.v8_skillEvaluatedAt == null) return true;
   const edge = bundle.edge;
   const prevEdge = sd.v8_winnerAlignEdge;
   if ((prevEdge == null) !== (edge == null)) return true;
   if (Number.isFinite(prevEdge) && Number.isFinite(edge) && Math.abs(prevEdge - edge) >= 0.05) return true;
+  if (blendWr != null && Number.isFinite(Number(blendWr))) {
+    const prevB = sd.v8_blendWr;
+    if (prevB == null || Math.abs(Number(prevB) - Number(blendWr)) >= 0.15) return true;
+  }
   const net = bundle.netMeanPrior;
   const prevNet = sd.v8_netMeanPrior;
   if ((prevNet == null) !== (net == null)) return true;
@@ -927,7 +1099,206 @@ function skillStampsDrifted(sd, bundle, { tapeAction = null } = {}) {
   if ((sd.v8_winnerAlignAgN || 0) !== (bundle.winnerAlign?.agN || 0)) return true;
   if ((sd.v8_netClvNFor || 0) !== (bundle.net.nFor || 0)) return true;
   if ((sd.v8_netClvNAg || 0) !== (bundle.net.nAg || 0)) return true;
+  if (qConv != null && Number.isFinite(Number(qConv))) {
+    const prevQc = sd.v8_qConv;
+    if (prevQc == null || Math.abs(Number(prevQc) - Number(qConv)) >= 0.05) return true;
+  }
+  if (qConvAction != null && (sd.v8_qConvAction || null) !== qConvAction) return true;
+  if (foolsGoldAction != null && (sd.v8_foolsGoldAction || null) !== foolsGoldAction) return true;
   return false;
+}
+
+const PATH_ABC_TIERS = new Set([
+  'SUPER', 'TOP', 'TOP+', 'MINI', 'MINI-', 'CONFIRMED',
+  'RANK', 'SHARP', 'SHARP-PRIME', 'SHARP-LEAN',
+]);
+
+/**
+ * Expanding Q1 thr for qConv mute: prior staked A/B/C qConv (date < asOfDate).
+ * Prefers stamped v8_qConv; else recomputes from peak walletDetails + profiles.
+ * Caches on qConvMuteState/current. Fail-open callers use FALLBACK when null.
+ */
+async function loadQConvMuteThreshold(db, walletProfiles, asOfDate, { dryRun = false } = {}) {
+  const fallback = {
+    thr: QCONV_MUTE_FALLBACK_THR,
+    n: 0,
+    source: 'fallback',
+    lookbackFrom: QCONV_MUTE_LOOKBACK_FROM,
+  };
+  if (!isQConvMuteLive(asOfDate)) {
+    return { ...fallback, thr: null, source: 'pre_cutover' };
+  }
+  try {
+    const ref = db.collection(QCONV_STATE_COLLECTION).doc(QCONV_STATE_DOC_ID);
+    const cached = await ref.get();
+    if (cached.exists) {
+      const d = cached.data() || {};
+      const thr = Number(d.thr);
+      const n = Number(d.n) || 0;
+      const asOf = d.asOfDate || null;
+      // Reuse cache for the same slate day when priors already sufficient.
+      if (Number.isFinite(thr) && n >= QCONV_MUTE_MIN_PRIORS && asOf === asOfDate) {
+        return {
+          thr, n, source: d.source || 'cache', lookbackFrom: d.lookbackFrom || QCONV_MUTE_LOOKBACK_FROM,
+        };
+      }
+    }
+  } catch (e) {
+    console.warn(`qConv mute thr cache read failed: ${e.message}`);
+  }
+
+  const values = [];
+  const cols = ['sharpFlowPicks', 'sharpFlowSpreads', 'sharpFlowTotals'];
+  try {
+    for (const col of cols) {
+      const snap = await db.collection(col)
+        .where('date', '>=', QCONV_MUTE_LOOKBACK_FROM)
+        .where('date', '<', asOfDate)
+        .get();
+      for (const doc of snap.docs) {
+        const data = doc.data() || {};
+        const sport = data.sport;
+        for (const [sideKey, sd] of Object.entries(data.sides || {})) {
+          if (!sd || sd.superseded) continue;
+          const tier = sd.v8_hcStakeTier;
+          const units = Number(sd.finalUnits ?? 0);
+          if (!PATH_ABC_TIERS.has(tier) || !(units > 0)) continue;
+          if (sd.result?.tracked) continue;
+          let qc = Number(sd.v8_qConv);
+          if (!Number.isFinite(qc)) {
+            const wd = sd.peak?.v8Scoring?.walletDetails
+              || sd.lock?.v8Scoring?.walletDetails
+              || [];
+            qc = computeQConv(wd, sideKey, sport, walletProfiles);
+          }
+          if (qc != null && Number.isFinite(qc)) values.push(qc);
+        }
+      }
+    }
+  } catch (e) {
+    console.warn(`qConv mute thr bootstrap scan failed: ${e.message}`);
+    return fallback;
+  }
+
+  const thr = qConvMuteThresholdFromValues(values) ?? QCONV_MUTE_FALLBACK_THR;
+  const out = {
+    thr,
+    n: values.length,
+    source: values.length >= QCONV_MUTE_MIN_PRIORS ? 'expanding_q1' : 'fallback_thin',
+    lookbackFrom: QCONV_MUTE_LOOKBACK_FROM,
+  };
+  if (!dryRun) {
+    try {
+      await db.collection(QCONV_STATE_COLLECTION).doc(QCONV_STATE_DOC_ID).set({
+        thr: out.thr,
+        n: out.n,
+        source: out.source,
+        lookbackFrom: out.lookbackFrom,
+        asOfDate,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true });
+    } catch (e) {
+      console.warn(`qConv mute thr cache write failed: ${e.message}`);
+    }
+  }
+  return out;
+}
+
+/**
+ * Expanding path-tier WR priors for blend expected WR.
+ * Graded staked sides with date ∈ [BLEND_PATH_LOOKBACK_FROM, asOfDate).
+ * Cached on blendWrState/current per slate day.
+ */
+async function loadPathBlendPriors(db, asOfDate, { dryRun = false } = {}) {
+  const empty = {
+    byTier: {},
+    baseWr: BLEND_WR_BASE,
+    n: 0,
+    source: 'empty',
+    lookbackFrom: BLEND_PATH_LOOKBACK_FROM,
+  };
+  if (!asOfDate || typeof asOfDate !== 'string') return empty;
+
+  try {
+    const ref = db.collection(BLEND_STATE_COLLECTION).doc(BLEND_STATE_DOC_ID);
+    const cached = await ref.get();
+    if (cached.exists) {
+      const d = cached.data() || {};
+      if (d.asOfDate === asOfDate && d.byTier && typeof d.byTier === 'object') {
+        const allN = Number(d.byTier.__ALL__?.n) || Number(d.n) || 0;
+        return {
+          byTier: d.byTier,
+          baseWr: Number.isFinite(Number(d.baseWr)) ? Number(d.baseWr) : BLEND_WR_BASE,
+          n: allN,
+          source: d.source || 'cache',
+          lookbackFrom: d.lookbackFrom || BLEND_PATH_LOOKBACK_FROM,
+        };
+      }
+    }
+  } catch (e) {
+    console.warn(`blend path priors cache read failed: ${e.message}`);
+  }
+
+  const byTier = {};
+  const bump = (tier, won) => {
+    if (!tier) return;
+    if (!byTier[tier]) byTier[tier] = { n: 0, w: 0 };
+    byTier[tier].n += 1;
+    if (won) byTier[tier].w += 1;
+  };
+
+  const cols = ['sharpFlowPicks', 'sharpFlowSpreads', 'sharpFlowTotals'];
+  try {
+    for (const col of cols) {
+      const snap = await db.collection(col)
+        .where('date', '>=', BLEND_PATH_LOOKBACK_FROM)
+        .where('date', '<', asOfDate)
+        .get();
+      for (const doc of snap.docs) {
+        const data = doc.data() || {};
+        for (const sd of Object.values(data.sides || {})) {
+          if (!sd || sd.superseded) continue;
+          const tier = sd.v8_hcStakeTier;
+          const units = Number(sd.finalUnits ?? 0);
+          if (!tier || !(units > 0)) continue;
+          if (sd.result?.tracked) continue;
+          const outcome = sd.result?.outcome || sd.outcome;
+          if (outcome !== 'WIN' && outcome !== 'LOSS') continue;
+          bump(tier, outcome === 'WIN');
+          bump('__ALL__', outcome === 'WIN');
+        }
+      }
+    }
+  } catch (e) {
+    console.warn(`blend path priors scan failed: ${e.message}`);
+    return empty;
+  }
+
+  const all = byTier.__ALL__ || { n: 0, w: 0 };
+  const baseWr = all.n >= BLEND_PATH_MIN_N ? all.w / all.n : BLEND_WR_BASE;
+  const out = {
+    byTier,
+    baseWr,
+    n: all.n,
+    source: all.n >= BLEND_PATH_MIN_N ? 'expanding' : 'thin_base',
+    lookbackFrom: BLEND_PATH_LOOKBACK_FROM,
+  };
+  if (!dryRun) {
+    try {
+      await db.collection(BLEND_STATE_COLLECTION).doc(BLEND_STATE_DOC_ID).set({
+        byTier: out.byTier,
+        baseWr: out.baseWr,
+        n: out.n,
+        source: out.source,
+        lookbackFrom: out.lookbackFrom,
+        asOfDate,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true });
+    } catch (e) {
+      console.warn(`blend path priors cache write failed: ${e.message}`);
+    }
+  }
+  return out;
 }
 
 // ── PATH-D / v12abcd "d" — DISSENT-WEIGHTED rescue (contribMargin ≤ 0) ─────
@@ -1531,6 +1902,8 @@ async function createMissingLockedPicks({
   existingDocIds, gameMeta, now, dryRun, force,
   sportWinnerBoards = null,
   clvLedger = null,
+  qConvMuteThr = null,
+  pathBlendPriors = null,
 }) {
   const created = []; // { col, docId, side, ags, agsTotal }
   const skipped = []; // { reason, ... }
@@ -1796,6 +2169,26 @@ async function createMissingLockedPicks({
           });
           peakUnitsApplied = bothE10Create.units;
         }
+        // Abs EDGE ladder is authoritative — undo tape/BOTH floors outside band.
+        const edgeAbsReclampCreate = reclampEdgeAbsAfterTape({
+          units: peakUnitsApplied,
+          tier: hcStakeTierCreate,
+          edge: waCreateEdge?.edge ?? null,
+          odds: odds ?? null,
+          oddsCapFn: oddsCap,
+          unitCap: GLOBAL_UNIT_CAP,
+          pickDate: TARGET_DATE,
+        });
+        if (edgeAbsReclampCreate) {
+          const priorPre = edgeBandSizeCreate?.unitsPrePolicy;
+          peakUnitsApplied = edgeAbsReclampCreate.units;
+          edgeBandSizeCreate = {
+            ...edgeAbsReclampCreate,
+            unitsPrePolicy: Number.isFinite(priorPre)
+              ? priorPre
+              : edgeAbsReclampCreate.unitsPrePolicy,
+          };
+        }
       } else {
         clvPolicyCreate = applyClvTop2UnitPolicy({
           units: peakUnitsApplied,
@@ -1805,6 +2198,38 @@ async function createMissingLockedPicks({
           unitCap: GLOBAL_UNIT_CAP,
         });
         peakUnitsApplied = clvPolicyCreate.units;
+      }
+
+      // qConv Q1 mute — after tape / EDGE abs (Path A/B/C only).
+      const qConvCreate = createV121Eligible
+        ? computeQConv(walletDetails, side, sport, walletProfiles)
+        : null;
+      let qConvPolicyCreate = null;
+      if (createV121Eligible && peakUnitsApplied > 0) {
+        qConvPolicyCreate = applyQConvMuteOverlay({
+          units: peakUnitsApplied,
+          qConv: qConvCreate,
+          thr: qConvMuteThr,
+          tier: hcStakeTierCreate,
+          pickDate: TARGET_DATE,
+        });
+        peakUnitsApplied = qConvPolicyCreate.units;
+      }
+
+      // FOOLS-gold mute — final dial after qConv (E≥7 + best FOR = FLAT → 0u).
+      const bestForCreate = (createV121Eligible && Array.isArray(walletDetails) && walletDetails.length > 0)
+        ? bestProvenForSide(walletDetails, side, sport, walletProfiles)
+        : { tier: null, nForProven: 0, flatRoi: null, walletShort: null };
+      let foolsGoldPolicyCreate = null;
+      if (createV121Eligible && peakUnitsApplied > 0) {
+        foolsGoldPolicyCreate = applyFoolsGoldMuteOverlay({
+          units: peakUnitsApplied,
+          edge: waCreateEdge?.edge ?? null,
+          bestForTier: bestForCreate.tier,
+          tier: hcStakeTierCreate,
+          pickDate: TARGET_DATE,
+        });
+        peakUnitsApplied = foolsGoldPolicyCreate.units;
       }
 
       // Determine team label for the side.
@@ -1957,6 +2382,21 @@ async function createMissingLockedPicks({
             ? bothE10Create.unitsPrePolicy
             : null,
           bothE10TapeMode: bothE10Create?.mode ?? null,
+          qConv: qConvCreate,
+          qConvThr: qConvMuteThr,
+          qConvAction: qConvPolicyCreate?.action ?? null,
+          unitsPreQConv: (qConvPolicyCreate && Number.isFinite(qConvPolicyCreate.unitsPrePolicy))
+            ? qConvPolicyCreate.unitsPrePolicy
+            : null,
+          bestForTier: bestForCreate.tier,
+          nForProven: bestForCreate.nForProven,
+          foolsGoldAction: foolsGoldPolicyCreate?.action ?? null,
+          unitsPreFoolsGold: (foolsGoldPolicyCreate && Number.isFinite(foolsGoldPolicyCreate.unitsPrePolicy))
+            ? foolsGoldPolicyCreate.unitsPrePolicy
+            : null,
+          blendTier: hcStakeTierCreate,
+          pathBlendPriors,
+          sideOdds: odds ?? null,
         });
         v8Stamps.v8_winnerAlignAction = null;
         v8Stamps.v8_clvTop2Action = isTapeSizingLive(TARGET_DATE) ? 'PASS' : clvPolicyCreate.action;
@@ -1975,14 +2415,29 @@ async function createMissingLockedPicks({
           v8Stamps.v8_unitsPreTape = clvPolicyCreate.unitsPrePolicy;
         }
       }
-      if (clvPolicyCreate.mutedBy) {
+      if (foolsGoldPolicyCreate?.mutedBy) {
+        v8Stamps.mutedBy = foolsGoldPolicyCreate.mutedBy;
+      } else if (qConvPolicyCreate?.mutedBy) {
+        v8Stamps.mutedBy = qConvPolicyCreate.mutedBy;
+      } else if (clvPolicyCreate.mutedBy) {
         v8Stamps.mutedBy = clvPolicyCreate.mutedBy;
       }
       // Health stamp — gives the dashboard a non-undefined health.status
       // immediately. reconcileSide will overwrite next cycle (same shape).
+      const createSizeMuted = (foolsGoldPolicyCreate?.action === 'MUTE'
+          && Number.isFinite(foolsGoldPolicyCreate.unitsPrePolicy)
+          && foolsGoldPolicyCreate.unitsPrePolicy > 0)
+        || (qConvPolicyCreate?.action === 'MUTE'
+          && Number.isFinite(qConvPolicyCreate.unitsPrePolicy)
+          && qConvPolicyCreate.unitsPrePolicy > 0)
+        || (!!clvPolicyCreate.mutedBy);
       const healthStamp = {
-        status: 'ACTIVE',
-        reasons: [],
+        status: createSizeMuted ? 'MUTED' : 'ACTIVE',
+        reasons: [
+          ...(foolsGoldPolicyCreate?.reason ? [foolsGoldPolicyCreate.reason] : []),
+          ...(qConvPolicyCreate?.reason ? [qConvPolicyCreate.reason] : []),
+          ...(clvPolicyCreate.reason ? [clvPolicyCreate.reason] : []),
+        ],
         walletDelta: live.delta,
         qualityMargin: live.qualityMargin,
         hcMargin: live.hcMargin,
@@ -2147,7 +2602,7 @@ function spreadLockLooksLikeMlBleed(lockOdds, peakOdds, spreadOdds, mlOdds) {
   return false;
 }
 
-function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn, walletPriorStatsFn, gameMeta = null, sportWinnerBoards = null, clvLedger = null }) {
+function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn, walletPriorStatsFn, gameMeta = null, sportWinnerBoards = null, clvLedger = null, qConvMuteThr = null, pathBlendPriors = null }) {
   const pickDate = pick.date || TARGET_DATE;
   const sport = pick.sport;
   const lockStage = sd.lockStage || null;
@@ -2235,14 +2690,26 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       }
     }
     const patch = {};
-    applySkillFeatureStamps(patch, skill, now);
+    const qConvMeta = computeQConv(wdMeta, side, sport, walletProfiles);
+    const metaOdds = sd.peak?.odds ?? sd.lock?.odds ?? null;
+    applySkillFeatureStamps(patch, skill, now, {
+      qConv: qConvMeta,
+      qConvThr: qConvMuteThr,
+      qConvAction: null, // skill-only path does not resize
+      blendTier: sd.v8_hcStakeTier || null,
+      pathBlendPriors,
+      sideOdds: metaOdds,
+    });
     // Diagnostic score on this side (even if never staked) — analysis key.
     if (skillScoreV12 != null) {
       patch.v8_skillAgsV12 = skillScoreV12;
     }
     const scoreDrift = skillScoreV12 != null
       && (sd.v8_skillAgsV12 == null || Math.abs((sd.v8_skillAgsV12 || 0) - skillScoreV12) >= 0.01);
-    const drifted = skillStampsDrifted(sd, skill) || scoreDrift;
+    const drifted = skillStampsDrifted(sd, skill, {
+      qConv: qConvMeta,
+      blendWr: patch.v8_blendWr,
+    }) || scoreDrift;
     if (!drifted) {
       return { skipped: true, reason: 'not_locked_or_lean_no_skill_drift' };
     }
@@ -2713,8 +3180,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   }
 
   // ─── Size overlay (after paths + fadeTop, before tape) ─────────────────
-  // Path A/C EDGE band (unchanged): v1 mute<5·half 5–10; v2 mute<7·×0.75 7–10;
-  //   boost ≥10 ×1.25.
+  // Path A/C EDGE band: v1 mute<5·half 5–10; v2 mute<7·×0.75 7–10·boost≥10;
+  //   v3 (2026-08-03+) abs units <7≤1 · 7–11→[2,3] · ≥11→[4,6].
   // Path B RANK only (2026-07-22+): mute E<0 · ×0.75 on 0–7 · HOLD (7,10) ·
   //   boost ≥10 ×1.25 (same boost mult/stamps). DISSENT exempt.
   // Pre-band: BOTH → ×1.25 · ONE hold · NEITHER ×0.5 on MINI/SHARP/CONFIRMED.
@@ -2793,6 +3260,28 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       });
       finalUnitsApplied = bothE10Policy.units;
     }
+    // Abs EDGE ladder is authoritative — undo tape/BOTH floors outside band.
+    if (!skipManualSize) {
+      const edgeAbsReclamp = reclampEdgeAbsAfterTape({
+        units: finalUnitsApplied,
+        tier: hcStakeTier,
+        edge: winnerAlign?.edge ?? null,
+        odds: sideOdds,
+        oddsCapFn: oddsCap,
+        unitCap: GLOBAL_UNIT_CAP,
+        pickDate,
+      });
+      if (edgeAbsReclamp) {
+        const priorPre = edgeBandSizePolicy?.unitsPrePolicy;
+        finalUnitsApplied = edgeAbsReclamp.units;
+        edgeBandSizePolicy = {
+          ...edgeAbsReclamp,
+          unitsPrePolicy: Number.isFinite(priorPre)
+            ? priorPre
+            : edgeAbsReclamp.unitsPrePolicy,
+        };
+      }
+    }
     // Diagnostic-only top2 stamp (no unit effect)
     clvPolicy = {
       units: finalUnitsApplied,
@@ -2813,6 +3302,44 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     if (clvPolicy.action !== 'CANCEL') {
       finalUnitsApplied = Math.min(GLOBAL_UNIT_CAP, finalUnitsApplied);
     }
+  }
+
+  // ─── qConv Q1 mute (after tape / EDGE abs) ────────────────────────────
+  // Quality×size FOR−AG; mute bottom quintile of prior staked A/B/C.
+  // Fail-open if qConv/thr missing. Manual stake exempt. DISSENT exempt.
+  const qConvLive = (v121Eligible && Array.isArray(wd) && wd.length > 0)
+    ? computeQConv(wd, side, pick.sport, walletProfiles)
+    : null;
+  let qConvPolicy = null;
+  const skipManualQConv = Number.isFinite(sd.manualStake) && sd.manualStake > 0;
+  if (v121Eligible && finalUnitsApplied > 0 && !skipManualQConv) {
+    qConvPolicy = applyQConvMuteOverlay({
+      units: finalUnitsApplied,
+      qConv: qConvLive,
+      thr: qConvMuteThr,
+      tier: hcStakeTier,
+      pickDate,
+    });
+    finalUnitsApplied = qConvPolicy.units;
+  }
+
+  // ─── FOOLS-gold mute (final dial after qConv) ─────────────────────────
+  // E≥7 + best proven FOR = FLAT → 0u. Fail-open if EDGE missing.
+  // Manual stake exempt. DISSENT / non-A/B/C tiers exempt.
+  const bestForLive = (v121Eligible && Array.isArray(wd) && wd.length > 0)
+    ? bestProvenForSide(wd, side, pick.sport, walletProfiles)
+    : { tier: null, nForProven: 0, flatRoi: null, walletShort: null };
+  let foolsGoldPolicy = null;
+  const skipManualFools = Number.isFinite(sd.manualStake) && sd.manualStake > 0;
+  if (v121Eligible && finalUnitsApplied > 0 && !skipManualFools) {
+    foolsGoldPolicy = applyFoolsGoldMuteOverlay({
+      units: finalUnitsApplied,
+      edge: winnerAlign?.edge ?? null,
+      bestForTier: bestForLive.tier,
+      tier: hcStakeTier,
+      pickDate,
+    });
+    finalUnitsApplied = foolsGoldPolicy.units;
   }
 
   // ─── lockStage promote/demote — v12 gate ──────────────────────────────
@@ -2863,6 +3390,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (appliedReason) reasons.push(appliedReason);
   if (clvPolicy.reason && !reasons.includes(clvPolicy.reason)) reasons.push(clvPolicy.reason);
   if (tapePolicy?.reason && !reasons.includes(tapePolicy.reason)) reasons.push(tapePolicy.reason);
+  if (qConvPolicy?.reason && !reasons.includes(qConvPolicy.reason)) reasons.push(qConvPolicy.reason);
+  if (foolsGoldPolicy?.reason && !reasons.includes(foolsGoldPolicy.reason)) reasons.push(foolsGoldPolicy.reason);
   // Preserve diagnostic-only badge signals from prior cycles (they don't
   // change status but the UI uses them for chip rendering).
   if (sd.health?.reasons) {
@@ -2872,10 +3401,16 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       }
     }
   }
-  // CLV/tape cancel → MUTED so Locked Picks treats it like other 0u mutes.
-  const sizeMuted = tapeSizingLive
+  // CLV/tape/qConv/FOOLS cancel → MUTED so Locked Picks treats it like other 0u mutes.
+  const qConvMuted = qConvPolicy?.action === 'MUTE'
+    && Number.isFinite(qConvPolicy.unitsPrePolicy)
+    && qConvPolicy.unitsPrePolicy > 0;
+  const foolsMuted = foolsGoldPolicy?.action === 'MUTE'
+    && Number.isFinite(foolsGoldPolicy.unitsPrePolicy)
+    && foolsGoldPolicy.unitsPrePolicy > 0;
+  const sizeMuted = foolsMuted || qConvMuted || (tapeSizingLive
     ? (tapePolicy?.action === 'MUTE' && unitsBeforeClv > 0)
-    : (clvPolicy.action === 'CANCEL' && unitsBeforeClv > 0);
+    : (clvPolicy.action === 'CANCEL' && unitsBeforeClv > 0));
   const healthStatusOut = sizeMuted
     ? 'MUTED'
     : appliedStatus;
@@ -2907,8 +3442,14 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const LEGACY_UI_MUTE_VALUES = new Set(['ags-quality-veto', 'ags-hard-mute', 'winner_align_fade']);
   const CLV_MUTE_VALUES = new Set(['clv-top2-cancel', 'clv-top2-missing']);
   const TAPE_MUTE_VALUES = new Set(['tape-weak']);
+  const QCONV_MUTE_VALUES = new Set(['qconv-q1']);
+  const FOOLS_MUTE_VALUES = new Set(['fools-gold-flat']);
   if (winnerMuted) {
     patch.mutedBy = 'winner_align_fade';
+  } else if (foolsGoldPolicy?.mutedBy) {
+    patch.mutedBy = foolsGoldPolicy.mutedBy;
+  } else if (qConvPolicy?.mutedBy) {
+    patch.mutedBy = qConvPolicy.mutedBy;
   } else if (tapePolicy?.mutedBy) {
     patch.mutedBy = tapePolicy.mutedBy;
   } else if (clvPolicy.mutedBy) {
@@ -2917,7 +3458,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     patch.mutedBy = 'ags-quality-veto';
   } else if (LEGACY_UI_MUTE_VALUES.has(sd.mutedBy)
       || CLV_MUTE_VALUES.has(sd.mutedBy)
-      || TAPE_MUTE_VALUES.has(sd.mutedBy)) {
+      || TAPE_MUTE_VALUES.has(sd.mutedBy)
+      || QCONV_MUTE_VALUES.has(sd.mutedBy)
+      || FOOLS_MUTE_VALUES.has(sd.mutedBy)) {
     patch.mutedBy = admin.firestore.FieldValue.delete();
   }
   if (stampedStatus !== healthStatusOut) {
@@ -3077,7 +3620,9 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       && (edgeBandSizePolicy.action === 'MUTE'
         || edgeBandSizePolicy.action === 'BOOST'
         || edgeBandSizePolicy.action === 'HALF'
-        || edgeBandSizePolicy.action === 'SOFT')) {
+        || edgeBandSizePolicy.action === 'SOFT'
+        || edgeBandSizePolicy.action === 'CAP'
+        || edgeBandSizePolicy.action === 'CLAMP')) {
     changes.push(
       `EDGE-BAND: ${edgeBandSizePolicy.band || '—'} ${edgeBandSizePolicy.action} `
       + `E=${winnerAlign?.edge == null ? '—' : Number(winnerAlign.edge).toFixed(1)} `
@@ -3098,6 +3643,20 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       `SKILL-TOP ${bothE10Policy.mode}: E=${winnerAlign?.edge == null ? '—' : Number(winnerAlign.edge).toFixed(1)} `
       + `tape=${tapeLive == null ? '—' : Number(tapeLive).toFixed(2)} `
       + `${bothE10Policy.unitsPrePolicy}u → ${bothE10Policy.units}u (${bothE10Policy.reason})`
+    );
+  }
+  if (qConvPolicy?.action === 'MUTE') {
+    changes.push(
+      `QCONV-MUTE: qConv=${qConvLive == null ? '—' : Number(qConvLive).toFixed(1)} `
+      + `< thr=${qConvMuteThr == null ? '—' : Number(qConvMuteThr).toFixed(1)} `
+      + `${qConvPolicy.unitsPrePolicy}u → 0u (${hcStakeTier})`
+    );
+  }
+  if (foolsGoldPolicy?.action === 'MUTE') {
+    changes.push(
+      `FOOLS-MUTE: E=${winnerAlign?.edge == null ? '—' : Number(winnerAlign.edge).toFixed(1)} `
+      + `bestFOR=${bestForLive.tier || '—'} nFor=${bestForLive.nForProven} `
+      + `${foolsGoldPolicy.unitsPrePolicy}u → 0u (${hcStakeTier})`
     );
   }
   if (rankRescued) {
@@ -3148,25 +3707,52 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         ? bothE10Policy.unitsPrePolicy
         : null,
       bothE10TapeMode: bothE10Policy?.mode ?? null,
+      qConv: qConvLive,
+      qConvThr: qConvMuteThr,
+      qConvAction: qConvPolicy?.action ?? null,
+      unitsPreQConv: (qConvPolicy && Number.isFinite(qConvPolicy.unitsPrePolicy))
+        ? qConvPolicy.unitsPrePolicy
+        : null,
+      bestForTier: bestForLive.tier,
+      nForProven: bestForLive.nForProven,
+      foolsGoldAction: foolsGoldPolicy?.action ?? null,
+      unitsPreFoolsGold: (foolsGoldPolicy && Number.isFinite(foolsGoldPolicy.unitsPrePolicy))
+        ? foolsGoldPolicy.unitsPrePolicy
+        : null,
+      blendTier: hcStakeTier,
+      pathBlendPriors,
+      sideOdds,
     });
     patch.v8_winnerAlignAction = winnerAlignAction;
     patch.v8_clvTop2Action = clvPolicy.action;
     if (scoreV12Live != null) patch.v8_skillAgsV12 = scoreV12Live;
     // Force write when schema/gate stamps are new or metrics moved — even if units flat.
-    if (skillStampsDrifted(sd, skillLive, { tapeAction: tapePolicy?.action ?? null })
+    if (skillStampsDrifted(sd, skillLive, {
+      tapeAction: tapePolicy?.action ?? null,
+      qConv: qConvLive,
+      qConvAction: qConvPolicy?.action ?? null,
+      foolsGoldAction: foolsGoldPolicy?.action ?? null,
+      blendWr: patch.v8_blendWr,
+    })
         || (edgeNetSizePolicy && (sd.v8_edgeNetSizeAction || null) !== edgeNetSizePolicy.action)
         || (edgeBandSizePolicy && (sd.v8_edgeBandAction || null) !== edgeBandSizePolicy.action)
         || (bothE10Policy && (
           (sd.v8_bothE10TapeAction || null) !== bothE10Policy.action
           || (sd.v8_bothE10TapeMode || null) !== (bothE10Policy.mode || null)
-        ))) {
+        ))
+        || (qConvPolicy && (sd.v8_qConvAction || null) !== qConvPolicy.action)
+        || (foolsGoldPolicy && (sd.v8_foolsGoldAction || null) !== foolsGoldPolicy.action)) {
       changes.push(
         `SKILL-FEATURES: E=${skillLive.edge == null ? '—' : Number(skillLive.edge).toFixed(1)} `
         + `net=${skillLive.netMeanPrior == null ? '—' : Number(skillLive.netMeanPrior).toFixed(1)} `
         + `tape=${skillLive.tape == null ? '—' : Number(skillLive.tape).toFixed(2)} `
         + `bucket=${skillLive.edgeNetBucket}`
         + (edgeBandSizePolicy?.action ? ` band=${edgeBandSizePolicy.action}` : '')
-        + (edgeNetSizePolicy?.action ? ` size=${edgeNetSizePolicy.action}` : ''),
+        + (edgeNetSizePolicy?.action ? ` size=${edgeNetSizePolicy.action}` : '')
+        + (qConvLive != null ? ` qConv=${Number(qConvLive).toFixed(1)}` : '')
+        + (qConvPolicy?.action ? ` qConvAct=${qConvPolicy.action}` : '')
+        + (bestForLive.tier ? ` bestFOR=${bestForLive.tier}` : '')
+        + (foolsGoldPolicy?.action ? ` foolsAct=${foolsGoldPolicy.action}` : ''),
       );
     }
   }
@@ -3567,6 +4153,16 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         net: netLive.netMeanPrior,
         action: tapePolicy?.action ?? null,
       },
+      qConv: {
+        value: qConvLive,
+        thr: qConvMuteThr,
+        action: qConvPolicy?.action ?? null,
+      },
+      foolsGold: {
+        bestForTier: bestForLive.tier,
+        nForProven: bestForLive.nForProven,
+        action: foolsGoldPolicy?.action ?? null,
+      },
       winnerRescued,
       score: scoreV12Live,
       stakeTier: hcStakeTier,
@@ -3634,7 +4230,10 @@ async function main() {
         + ` · cached (since ${data.since || CLV_HIST_FROM}) · updated ${updated}`
         + (isTapeSizingLive(TARGET_DATE)
           ? ` · TAPE sizing LIVE (mute<${TAPE_MUTE_BELOW} / boost≥${TAPE_BOOST_ABOVE} ×${TAPE_BOOST_MULT} / cap ${GLOBAL_UNIT_CAP}u) · EDGE stake FROZEN`
-          : ` · CLV-top2 (cancel≤${CLV_TOP2_CANCEL_MAX} / boost≥${CLV_TOP2_BOOST_MIN} / cap ${GLOBAL_UNIT_CAP}u)`),
+          : ` · CLV-top2 (cancel≤${CLV_TOP2_CANCEL_MAX} / boost≥${CLV_TOP2_BOOST_MIN} / cap ${GLOBAL_UNIT_CAP}u)`)
+        + (isEdgeBandAbsLive(TARGET_DATE)
+          ? ` · EDGE abs bands LIVE (<7≤${EDGE_BAND_ABS_LT7_CAP}u · 7–11→[${EDGE_BAND_ABS_MID_MIN_U},${EDGE_BAND_ABS_MID_MAX_U}] · ≥11→[${EDGE_BAND_ABS_HI_MIN_U},${EDGE_BAND_ABS_HI_MAX_U}])`
+          : ''),
       );
     } else {
       console.warn(
@@ -3644,6 +4243,39 @@ async function main() {
   } catch (err) {
     console.warn(`[clv] failed to load cached ledger (fail-open): ${err.message}`);
   }
+
+  // qConv Q1 mute thr — expanding bottom quintile of prior staked A/B/C.
+  let qConvMuteThr = null;
+  if (isQConvMuteLive(TARGET_DATE)) {
+    console.log(`Loading qConv mute threshold (${QCONV_STATE_COLLECTION}/${QCONV_STATE_DOC_ID})…`);
+    const qThr = await loadQConvMuteThreshold(db, walletProfiles, TARGET_DATE, { dryRun: DRY_RUN });
+    qConvMuteThr = qThr.thr;
+    console.log(
+      `qConv Q1 mute LIVE: thr=${qConvMuteThr == null ? '—' : Number(qConvMuteThr).toFixed(2)}`
+      + ` · nPriors=${qThr.n} · source=${qThr.source}`
+      + ` · lookback≥${qThr.lookbackFrom} · fail-open if qConv missing`,
+    );
+  } else {
+    console.log(`qConv Q1 mute: not live before ${QCONV_MUTE_FROM} (TARGET_DATE=${TARGET_DATE})`);
+  }
+
+  if (isFoolsGoldMuteLive(TARGET_DATE)) {
+    console.log(
+      `FOOLS-gold mute LIVE: E≥${FOOLS_GOLD_EDGE_MIN} + best proven FOR=FLAT → 0u`
+      + ` · from ${FOOLS_GOLD_MUTE_FROM} · Path A/B/C · fail-open if EDGE missing`,
+    );
+  } else {
+    console.log(`FOOLS-gold mute: not live before ${FOOLS_GOLD_MUTE_FROM} (TARGET_DATE=${TARGET_DATE})`);
+  }
+
+  // Path × EDGE blend WR priors — expanding tier WR before TARGET_DATE.
+  console.log(`Loading path blend priors (${BLEND_STATE_COLLECTION}/${BLEND_STATE_DOC_ID})…`);
+  const pathBlendPriors = await loadPathBlendPriors(db, TARGET_DATE, { dryRun: DRY_RUN });
+  console.log(
+    `blend WR priors: nStaked=${pathBlendPriors.n} · source=${pathBlendPriors.source}`
+    + ` · baseWr=${(100 * pathBlendPriors.baseWr).toFixed(1)}%`
+    + ` · lookback≥${pathBlendPriors.lookbackFrom} · weights path=${0.35}/edge=${0.65}`,
+  );
 
   // Load today's positions (live wallet activity) from Firestore.
   // (Could also read from public/sharp_positions.json but Firestore stays
@@ -3817,7 +4449,7 @@ async function main() {
           sd, side: sideKey, pick, mkt, group, walletProfiles, now,
           force: FORCE,
           agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn, walletPriorStatsFn,
-          gameMeta, sportWinnerBoards, clvLedger,
+          gameMeta, sportWinnerBoards, clvLedger, qConvMuteThr, pathBlendPriors,
         });
         if (result.skipped) {
           if (result.reason === 'not_locked_or_lean' || result.reason === 'not_locked_or_lean_no_skill_drift') {
@@ -4031,6 +4663,8 @@ async function main() {
     dryRun: DRY_RUN, force: FORCE,
     sportWinnerBoards,
     clvLedger,
+    qConvMuteThr,
+    pathBlendPriors,
   });
   stats.created_missing = cm.created.length;
   if (cm.created.length === 0) {
