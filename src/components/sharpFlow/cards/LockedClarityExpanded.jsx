@@ -3,7 +3,7 @@
  * Collapsed chrome stays in LockedPositionCardView — this is expand-only.
  * Self-contained (no PositionCards imports) to avoid circular deps.
  */
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
 
 const B = {
@@ -74,15 +74,69 @@ function ClarityStyles() {
 }
 
 function bubbleStyle(p) {
+  if (p.plotIncomplete) {
+    return { fill: 'rgba(100,112,137,0.22)', stroke: C.textMuted, dash: '2.5 2', text: '#c5cddb' };
+  }
   if (p.side === 'against') return { fill: VS, stroke: '#F5A39C', text: '#1a0808' };
   if (p.qualify === 'VAULT') return { fill: GOLD, stroke: GOLD_HI, text: '#0c0a06' };
   if (p.proven) return { fill: GREEN, stroke: '#6EE7B7', text: '#042f1e' };
   return { fill: 'rgba(139,164,200,0.32)', stroke: BLUE, dash: '2.5 2', text: '#d5e0f0' };
 }
 
+const MAP_XB = 55;
+const MAP_YB = 0;
+
+/**
+ * Keep board dots stable while the expanded card is open.
+ * Live cron / countdown re-renders used to drop wallets (missing CLV for a
+ * tick) or flip ours/against (Sox nick collision), which remounted SVG nodes
+ * and looked like dots blinking in and out.
+ */
+function useStableBoardWallets(incoming) {
+  const ref = useRef(null);
+  if (!Array.isArray(incoming) || incoming.length === 0) {
+    return ref.current || [];
+  }
+  if (!ref.current) {
+    ref.current = incoming.map((w) => ({ ...w }));
+    return ref.current;
+  }
+  const byShort = new Map(ref.current.map((w) => [w.short, w]));
+  for (const w of incoming) {
+    if (!w?.short) continue;
+    const prev = byShort.get(w.short);
+    if (prev) {
+      // Refresh $ / skill stats, but freeze side tags so dots don't remount.
+      byShort.set(w.short, {
+        ...prev,
+        ...w,
+        side: prev.side,
+        marketSide: prev.marketSide ?? w.marketSide,
+      });
+    } else {
+      byShort.set(w.short, { ...w });
+    }
+  }
+  ref.current = [...byShort.values()];
+  return ref.current;
+}
+
 function WalletMap({ wallets, selected, onSelect, gid }) {
-  const plottable = wallets.filter((p) =>
-    Number.isFinite(p.priorClvPct) && (Number.isFinite(p.roi) || Number.isFinite(p.dollarRoi)));
+  // Plot every wallet with a stake. Missing CLV/ROI used to exclude the dot
+  // entirely — profiles loading mid-expand made them blink off then on.
+  const plottable = wallets
+    .filter((p) => p && (p.invested || 0) > 0 && p.short)
+    .map((p) => {
+      const hasClv = Number.isFinite(p.priorClvPct);
+      const hasRoi = Number.isFinite(p.roi) || Number.isFinite(p.dollarRoi);
+      const plotIncomplete = !hasClv || !hasRoi;
+      return {
+        ...p,
+        plotIncomplete,
+        plotClv: hasClv ? p.priorClvPct : MAP_XB,
+        plotRoi: hasRoi ? (Number.isFinite(p.roi) ? p.roi : p.dollarRoi) : MAP_YB,
+      };
+    });
   if (plottable.length < 1) {
     return (
       <div style={{
@@ -100,20 +154,37 @@ function WalletMap({ wallets, selected, onSelect, gid }) {
   const pad = { t: 22, r: 14, b: 44, l: 46 };
   const iw = W - pad.l - pad.r;
   const ih = H - pad.t - pad.b;
-  const roiOf = (p) => (Number.isFinite(p.roi) ? p.roi : p.dollarRoi);
+  const roiOf = (p) => p.plotRoi;
 
-  const clvs = plottable.map((p) => p.priorClvPct);
-  const rois = plottable.map(roiOf);
-  const xMin = Math.min(40, Math.floor(Math.min(...clvs) / 5) * 5 - 2);
-  const xMax = Math.max(64, Math.ceil(Math.max(...clvs) / 5) * 5 + 2);
-  const yMin = Math.min(-14, Math.floor(Math.min(...rois) / 5) * 5 - 2);
-  const yMax = Math.max(26, Math.ceil(Math.max(...rois) / 5) * 5 + 2);
-  const XB = 55;
-  const YB = 0;
+  // Expand-only axis domain — never shrink when a wallet briefly drops out,
+  // or every remaining dot jumps and looks like a glitch.
+  const domainRef = useRef(null);
+  const ready = plottable.filter((p) => !p.plotIncomplete);
+  const sample = ready.length ? ready : plottable;
+  const clvs = sample.map((p) => p.plotClv);
+  const rois = sample.map(roiOf);
+  let xMin = Math.min(40, Math.floor(Math.min(...clvs) / 5) * 5 - 2);
+  let xMax = Math.max(64, Math.ceil(Math.max(...clvs) / 5) * 5 + 2);
+  let yMin = Math.min(-14, Math.floor(Math.min(...rois) / 5) * 5 - 2);
+  let yMax = Math.max(26, Math.ceil(Math.max(...rois) / 5) * 5 + 2);
+  if (domainRef.current) {
+    xMin = Math.min(domainRef.current.xMin, xMin);
+    xMax = Math.max(domainRef.current.xMax, xMax);
+    yMin = Math.min(domainRef.current.yMin, yMin);
+    yMax = Math.max(domainRef.current.yMax, yMax);
+  }
+  domainRef.current = { xMin, xMax, yMin, yMax };
+
+  const XB = MAP_XB;
+  const YB = MAP_YB;
   const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
   const xS = (v) => pad.l + ((clamp(v, xMin, xMax) - xMin) / (xMax - xMin)) * iw;
   const yS = (v) => pad.t + (1 - (clamp(v, yMin, yMax) - yMin) / (yMax - yMin)) * ih;
-  const invMax = Math.max(...plottable.map((p) => p.invested), 1);
+  // Freeze max $ for radius so live ticket bumps don't resize every dot.
+  const invMaxRef = useRef(1);
+  const invMaxLive = Math.max(...plottable.map((p) => p.invested || 0), 1);
+  invMaxRef.current = Math.max(invMaxRef.current, invMaxLive);
+  const invMax = invMaxRef.current;
   const rFor = (p) => 8 + Math.sqrt((p.invested || 0) / invMax) * 16;
   const xB = xS(XB);
   const yB = yS(YB);
@@ -220,21 +291,22 @@ function WalletMap({ wallets, selected, onSelect, gid }) {
         );
       })}
 
-      {selPt && (
+      {selPt && !selPt.plotIncomplete && (
         <g opacity={0.15}>
           <line x1={pad.l} y1={yS(roiOf(selPt))} x2={pad.l + iw} y2={yS(roiOf(selPt))} stroke={GOLD} strokeWidth={1} />
-          <line x1={xS(selPt.priorClvPct)} y1={pad.t} x2={xS(selPt.priorClvPct)} y2={pad.t + ih} stroke={GOLD} strokeWidth={1} />
+          <line x1={xS(selPt.plotClv)} y1={pad.t} x2={xS(selPt.plotClv)} y2={pad.t + ih} stroke={GOLD} strokeWidth={1} />
         </g>
       )}
 
       {sorted.map((p) => {
-        const cx = xS(p.priorClvPct);
+        const cx = xS(p.plotClv);
         const cy = yS(roiOf(p));
         const r = rFor(p);
         const st = bubbleStyle(p);
         const sel = selected === p.short;
+        // Key by wallet id only — side tags must not remount the node.
         return (
-          <g key={`${p.side}-${p.short}`} onClick={() => onSelect(p.short)} style={{ cursor: 'pointer' }} opacity={sel ? 1 : 0.45}>
+          <g key={p.short} onClick={() => onSelect(p.short)} style={{ cursor: 'pointer' }} opacity={sel ? 1 : 0.45}>
             <circle cx={cx} cy={cy} r={Math.max(r + 8, 16)} fill="transparent" />
             {sel && (
               <circle cx={cx} cy={cy} r={r + 6} fill="none" stroke={GOLD_HI} strokeWidth={1.3} className="lc-ring" />
@@ -828,16 +900,19 @@ export default function LockedClarityExpanded({
   accent,
   edgeAura = false,
 }) {
-  const all = (Array.isArray(f.mapWallets) && f.mapWallets.length
+  const incoming = (Array.isArray(f.mapWallets) && f.mapWallets.length
     ? f.mapWallets
     : (f.wallets || []).map((w) => ({ ...w, side: 'ours' })));
+  // Freeze membership + ours/against while expanded so live sync can't blink dots.
+  const all = useStableBoardWallets(incoming);
 
   // Expand remounts this tree — default once to best proven FOR (VAULT / CONFIRMED).
   const defaultSel = useMemo(() => bestProvenForDefault(all), [
-    all.map((w) => `${w.short}:${w.side}:${w.qualify}:${w.whitelist}:${w.roi}:${w.invested}`).join('|'),
+    all.map((w) => `${w.short}:${w.side}:${w.qualify}:${w.whitelist}`).join('|'),
   ]);
-  const [sel, setSel] = useState(defaultSel);
-  const selected = all.find((w) => w.short === sel)
+  const [sel, setSel] = useState(null);
+  const activeSel = sel || defaultSel;
+  const selected = all.find((w) => w.short === activeSel)
     || all.find((w) => w.short === defaultSel)
     || all.find((w) => w.side === 'ours')
     || all[0]
@@ -1080,7 +1155,7 @@ export default function LockedClarityExpanded({
           </div>
 
           <div style={{ padding: '2px 4px 6px' }}>
-            <WalletMap wallets={all} selected={sel} onSelect={setSel} gid={gid} />
+            <WalletMap wallets={all} selected={activeSel} onSelect={setSel} gid={gid} />
           </div>
 
           {selected && (
