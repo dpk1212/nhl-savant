@@ -819,7 +819,7 @@ export function resolvePathPriorWr(byTier, tier, {
   if (n >= minN) {
     return { pathWr: pathWrFromCounts(rec, { minN, baseWr }), pathN: n, source: 'tier' };
   }
-  const all = byTier.__ALL__ || null;
+  const all = byTier.ALL || byTier.__ALL__ || null; // ALL preferred; __ALL__ legacy/local
   if (all && (Number(all.n) || 0) >= minN) {
     return {
       pathWr: pathWrFromCounts(all, { minN, baseWr }),

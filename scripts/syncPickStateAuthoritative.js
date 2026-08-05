@@ -1225,7 +1225,7 @@ async function loadPathBlendPriors(db, asOfDate, { dryRun = false } = {}) {
     if (cached.exists) {
       const d = cached.data() || {};
       if (d.asOfDate === asOfDate && d.byTier && typeof d.byTier === 'object') {
-        const allN = Number(d.byTier.__ALL__?.n) || Number(d.n) || 0;
+        const allN = Number(d.byTier.ALL?.n) || Number(d.n) || 0;
         return {
           byTier: d.byTier,
           baseWr: Number.isFinite(Number(d.baseWr)) ? Number(d.baseWr) : BLEND_WR_BASE,
@@ -1265,7 +1265,7 @@ async function loadPathBlendPriors(db, asOfDate, { dryRun = false } = {}) {
           const outcome = sd.result?.outcome || sd.outcome;
           if (outcome !== 'WIN' && outcome !== 'LOSS') continue;
           bump(tier, outcome === 'WIN');
-          bump('__ALL__', outcome === 'WIN');
+          bump('ALL', outcome === 'WIN');
         }
       }
     }
@@ -1274,7 +1274,7 @@ async function loadPathBlendPriors(db, asOfDate, { dryRun = false } = {}) {
     return empty;
   }
 
-  const all = byTier.__ALL__ || { n: 0, w: 0 };
+  const all = byTier.ALL || { n: 0, w: 0 };
   const baseWr = all.n >= BLEND_PATH_MIN_N ? all.w / all.n : BLEND_WR_BASE;
   const out = {
     byTier,
