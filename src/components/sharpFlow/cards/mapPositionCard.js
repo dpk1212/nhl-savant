@@ -37,11 +37,60 @@ export function isSkillEligibleProfile(profile, sport) {
     || netClvPctFromProfile(profile) != null;
 }
 
-const shortTeam = (name) => {
+/** Last-word nick — fine until White Sox vs Red Sox both become "Sox". */
+const shortTeamLast = (name) => {
   if (!name) return '—';
   const parts = String(name).trim().split(/\s+/);
   return parts[parts.length - 1] || name;
 };
+
+/** Last two words — "Red Sox" / "White Sox" when nicknames collide. */
+const shortTeamTwo = (name) => {
+  if (!name) return '—';
+  const parts = String(name).trim().split(/\s+/);
+  if (parts.length >= 2) return `${parts[parts.length - 2]} ${parts[parts.length - 1]}`;
+  return parts[0] || name;
+};
+
+/**
+ * Display nick for a team. When `other` shares the same last word (CWS/BOS
+ * both "Sox"), use two-word form so labels and side inference don't collide.
+ */
+const shortTeam = (name, other = null) => {
+  if (!name) return '—';
+  const last = shortTeamLast(name);
+  if (other && shortTeamLast(other) === last) return shortTeamTwo(name);
+  return last;
+};
+
+/** Resolve ML/spread side. Prefer stamped sideKey — never infer via "Sox"=="Sox". */
+function resolvePickSide(pick, {
+  isTotal = false,
+  isSpread = false,
+  awayShort = null,
+  homeShort = null,
+  teamShort = null,
+} = {}) {
+  const stamped = pick?.side || pick?.pickSide || null;
+  if (stamped === 'away' || stamped === 'home' || stamped === 'draw'
+      || stamped === 'over' || stamped === 'under') {
+    return stamped;
+  }
+  const teamRaw = (pick?.team || '').trim();
+  if (isTotal) {
+    return teamRaw.toLowerCase().startsWith('under') ? 'under' : 'over';
+  }
+  if (/^draw$/i.test(teamRaw)) return 'draw';
+  // Matchup-aware shorts already disambiguate Sox/Sox. Fall back carefully:
+  // if nicknames still collide, prefer home only when team equals home full name.
+  if (teamShort && awayShort && teamShort === awayShort && teamShort === homeShort) {
+    const t = teamRaw.toLowerCase();
+    if (t && t === String(pick?.away || '').trim().toLowerCase()) return 'away';
+    if (t && t === String(pick?.home || '').trim().toLowerCase()) return 'home';
+  }
+  if (teamShort && awayShort && teamShort === awayShort) return 'away';
+  return 'home';
+}
 
 const ip = (o) => {
   if (o == null || !Number.isFinite(Number(o))) return null;
@@ -268,13 +317,13 @@ export function buildLockedMarketOdds(pick, pinnacleHistory) {
   const mt = String(pick.marketType || 'ml').toLowerCase();
   const isTotal = mt === 'total';
   const isSpread = mt === 'spread';
-  const teamRaw = (pick.team || '').trim();
-  const sideKey = pick.side
-    || pick.pickSide
-    || (isTotal
-      ? (teamRaw.toLowerCase().startsWith('under') ? 'under' : 'over')
-      : (/^draw$/i.test(teamRaw) ? 'draw'
-        : (shortTeam(pick.team) === shortTeam(pick.away) ? 'away' : 'home')));
+  const sideKey = resolvePickSide(pick, {
+    isTotal,
+    isSpread,
+    awayShort: shortTeam(pick.away, pick.home),
+    homeShort: shortTeam(pick.home, pick.away),
+    teamShort: shortTeam(pick.team, pick.away === pick.team ? pick.home : pick.away),
+  });
 
   const books = [];
   let pinSeries = null;
@@ -513,15 +562,26 @@ export function mapLockedPickToCardFixture(pick, {
   const isSpread = pick.marketType === 'spread';
   const teamRaw = (pick.team || '').trim();
   const isDraw = !isTotal && !isSpread && /^draw$/i.test(teamRaw);
+  // Matchup-aware shorts — White Sox @ Red Sox must not both collapse to "Sox"
+  // (that flipped home locks to away and painted our wallets as Against).
+  const awayShort = isTotal ? 'Under' : shortTeam(pick.away, pick.home);
+  const homeShort = isTotal ? 'Over' : shortTeam(pick.home, pick.away);
+  const side = resolvePickSide(pick, {
+    isTotal,
+    isSpread,
+    awayShort,
+    homeShort,
+    teamShort: isTotal
+      ? (teamRaw.toLowerCase().startsWith('under') ? 'Under' : 'Over')
+      : isDraw ? 'Draw'
+        : shortTeam(pick.team, pick.away === pick.team ? pick.home : pick.away),
+  });
+  // Normalize totals over/under → home/away for board math below.
+  const sideNorm = side === 'over' ? 'home' : side === 'under' ? 'away' : side;
   const teamShort = isTotal
-    ? ((pick.team || '').toLowerCase().startsWith('under') ? 'Under' : 'Over')
-    : isDraw ? 'Draw' : shortTeam(pick.team);
-  const awayShort = isTotal ? 'Under' : shortTeam(pick.away);
-  const homeShort = isTotal ? 'Over' : shortTeam(pick.home);
-  const side = isTotal
-    ? (teamShort === 'Over' ? 'home' : 'away')
-    : isDraw ? 'draw'
-    : (teamShort === awayShort ? 'away' : 'home');
+    ? (side === 'under' || sideNorm === 'away' ? 'Under' : 'Over')
+    : isDraw ? 'Draw'
+      : (sideNorm === 'away' ? awayShort : homeShort);
 
   const pickLabel = isSpread
     ? `${teamShort} ${pick.line > 0 ? '+' : ''}${pick.line}`
@@ -550,7 +610,7 @@ export function mapLockedPickToCardFixture(pick, {
     getRecordForDisplay,
   );
 
-  // Normalize totals over/under → home/away so board sides match `side`.
+  // Normalize totals over/under → home/away so board sides match `sideNorm`.
   const normSide = (s) => {
     if (s === 'over') return 'home';
     if (s === 'under') return 'away';
@@ -561,8 +621,8 @@ export function mapLockedPickToCardFixture(pick, {
   // back to play-side receipts so the expanded card still has something.
   const boardRaw = (Array.isArray(pick.boardWallets) && pick.boardWallets.length
     ? pick.boardWallets
-    : (pick.backingWallets || []).map((w) => ({ ...w, side: w.side || side }))
-  ).map((w) => ({ ...w, side: normSide(w.side) || side }));
+    : (pick.backingWallets || []).map((w) => ({ ...w, side: w.side || sideNorm }))
+  ).map((w) => ({ ...w, side: normSide(w.side) || sideNorm }));
 
   const mapWallets = enrichWallets(
     boardRaw,
@@ -571,11 +631,11 @@ export function mapLockedPickToCardFixture(pick, {
     isSportWinner,
     getRecordForDisplay,
   ).map((w) => {
-    const marketSide = normSide(w.side) || side;
+    const marketSide = normSide(w.side) || sideNorm;
     return {
       ...w,
       marketSide,
-      side: marketSide === side ? 'ours' : 'against',
+      side: marketSide === sideNorm ? 'ours' : 'against',
     };
   });
 
@@ -586,12 +646,12 @@ export function mapLockedPickToCardFixture(pick, {
     return +(xs.reduce((s, v) => s + v, 0) / xs.length).toFixed(1);
   };
   const againstInvested = againstRows.reduce((s, w) => s + (w.invested || 0), 0);
-  const againstAbbr = side === 'draw'
+  const againstAbbr = sideNorm === 'draw'
     ? `${awayShort}/${homeShort}`
-    : side === 'home' ? awayShort : homeShort;
-  const againstLabel = side === 'draw'
+    : sideNorm === 'home' ? awayShort : homeShort;
+  const againstLabel = sideNorm === 'draw'
     ? `${pick.away || awayShort} / ${pick.home || homeShort}`
-    : side === 'home' ? (pick.away || awayShort) : (pick.home || homeShort);
+    : sideNorm === 'home' ? (pick.away || awayShort) : (pick.home || homeShort);
   const against = {
     abbr: againstAbbr,
     label: againstLabel,
@@ -616,6 +676,17 @@ export function mapLockedPickToCardFixture(pick, {
     ? provenFromWallets
     : (Number.isFinite(pick.agsProvenForCount) ? pick.agsProvenForCount : 0);
   const vaultOnSide = wallets.filter((w) => (w.sizeRatio || 0) >= 1.5).length;
+  // C margin = CONFIRMED-tier winners FOR−AG (token floor only). Distinct from
+  // HC (= CONFIRMED ∧ size ≥ 1.5×). Lets the tape header show "HC +0 · C +2"
+  // when confirmed wallets are on the board but none are sized up.
+  const confCounted = (w) => w && w.whitelist === 'CONFIRMED' && isCounted(w);
+  const confForN = mapWallets.filter((w) => w.side === 'ours' && confCounted(w)).length;
+  const confAgN = mapWallets.filter((w) => w.side === 'against' && confCounted(w)).length;
+  const confMargin = mapWallets.length > 0 ? (confForN - confAgN) : null;
+  // Proven margin (CONFIRMED+FLAT) — same board census as "N proven" above.
+  const provenForN = mapWallets.filter((w) => w.side === 'ours' && w.proven && isCounted(w)).length;
+  const provenAgN = mapWallets.filter((w) => w.side === 'against' && w.proven && isCounted(w)).length;
+  const provenMargin = mapWallets.length > 0 ? (provenForN - provenAgN) : null;
   const base = pathBaseUnits(stakePath);
 
   const toWin = (() => {
@@ -659,7 +730,7 @@ export function mapLockedPickToCardFixture(pick, {
   const graded = !!outcome && (outcome === 'WIN' || outcome === 'LOSS' || outcome === 'PUSH');
 
   const market = buildLockedMarketOdds(
-    { ...pick, side: pick.side || pick.pickSide || side },
+    { ...pick, side: pick.side || pick.pickSide || sideNorm },
     pinnacleHistory,
   );
   const sparseJourney = [lockOdds, peakOdds, nowOdds].filter(Number.isFinite);
@@ -683,7 +754,8 @@ export function mapLockedPickToCardFixture(pick, {
     awayShort,
     homeShort,
     pickLabel,
-    side,
+    // Always home|away|draw for board math (totals already mapped over→home).
+    side: sideNorm,
     marketType: isSpread ? 'spread' : isTotal ? 'total' : 'ml',
     displayState: graded ? 'GRADED' : 'LOCKED',
     outcome,
@@ -705,6 +777,8 @@ export function mapLockedPickToCardFixture(pick, {
     edgeNetAction,
     pathBaseUnits: base || units,
     hcMargin: Number.isFinite(pick.hcMargin) ? pick.hcMargin : 0,
+    confMargin: Number.isFinite(confMargin) ? confMargin : null,
+    provenMargin: Number.isFinite(provenMargin) ? provenMargin : null,
     edge,
     netClv,
     confirmedOnSide,
@@ -793,8 +867,8 @@ export function mapLiveGameToCardFixture({
   tierPerf, // display-tier L7/L30 { label, window, record, wr, roi, n, color }
 }) {
   const isTotal = marketType === 'TOTAL';
-  const awayShort = isTotal ? 'Under' : shortTeam(gd.away);
-  const homeShort = isTotal ? 'Over' : shortTeam(gd.home);
+  const awayShort = isTotal ? 'Under' : shortTeam(gd.away, gd.home);
+  const homeShort = isTotal ? 'Over' : shortTeam(gd.home, gd.away);
   const normSide = side === 'over' ? 'home' : side === 'under' ? 'away' : side;
 
   const u = Number.isFinite(units) ? units : 0;

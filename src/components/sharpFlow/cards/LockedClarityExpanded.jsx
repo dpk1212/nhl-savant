@@ -1347,9 +1347,40 @@ export default function LockedClarityExpanded({
               ③ TAPE & SIZE
             </span>
             <span style={{ marginLeft: 8, fontSize: 15, fontWeight: 650 }}>{fmtOdds(f.gotOdds ?? f.lockOdds)}</span>
-            {Number.isFinite(f.hcMargin) && (
-              <span style={{ marginLeft: 10, fontSize: 11, fontWeight: 650, color: C.textMuted }}>
-                HC <span style={{ color: GREEN, fontWeight: 800 }}>{f.hcMargin >= 0 ? '+' : ''}{f.hcMargin}</span>
+            {/* Wallet quality ladder next to price:
+                HC = CONFIRMED ∧ sized ≥1.5× (FOR−AG)
+                C  = CONFIRMED any size above token floor (FOR−AG)
+                P  = proven CONFIRMED+FLAT (FOR−AG) — only when it differs from C */}
+            {(Number.isFinite(f.hcMargin) || Number.isFinite(f.confMargin) || Number.isFinite(f.provenMargin)) && (
+              <span style={{
+                marginLeft: 10, fontSize: 11, fontWeight: 650, color: C.textMuted,
+                display: 'inline-flex', alignItems: 'baseline', gap: 7,
+              }}>
+                {Number.isFinite(f.hcMargin) && (
+                  <span title="HC margin: CONFIRMED winners sized ≥1.5× usual (FOR − AG)">
+                    HC <span style={{
+                      color: f.hcMargin > 0 ? GREEN : f.hcMargin < 0 ? VS : C.textMuted,
+                      fontWeight: 800,
+                    }}>{f.hcMargin >= 0 ? '+' : ''}{f.hcMargin}</span>
+                  </span>
+                )}
+                {Number.isFinite(f.confMargin) && (
+                  <span title="C margin: CONFIRMED-tier winners on the board (FOR − AG). Same wallets as HC, without the 1.5× size gate.">
+                    C <span style={{
+                      color: f.confMargin > 0 ? GREEN : f.confMargin < 0 ? VS : C.textMuted,
+                      fontWeight: 800,
+                    }}>{f.confMargin >= 0 ? '+' : ''}{f.confMargin}</span>
+                  </span>
+                )}
+                {Number.isFinite(f.provenMargin)
+                  && (!Number.isFinite(f.confMargin) || f.provenMargin !== f.confMargin) && (
+                  <span title="P margin: proven sport winners (CONFIRMED + FLAT) FOR − AG">
+                    P <span style={{
+                      color: f.provenMargin > 0 ? GREEN : f.provenMargin < 0 ? VS : C.textMuted,
+                      fontWeight: 800,
+                    }}>{f.provenMargin >= 0 ? '+' : ''}{f.provenMargin}</span>
+                  </span>
+                )}
               </span>
             )}
           </div>
