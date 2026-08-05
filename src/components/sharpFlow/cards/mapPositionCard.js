@@ -49,6 +49,39 @@ const ip = (o) => {
   return n < 0 ? Math.abs(n) / (Math.abs(n) + 100) : 100 / (n + 100);
 };
 
+const probToAmerican = (p) => {
+  if (p == null || !Number.isFinite(p) || p <= 0 || p >= 1) return null;
+  if (p >= 0.5) return Math.round((-100 * p) / (1 - p));
+  return Math.round((100 * (1 - p)) / p);
+};
+
+/**
+ * Multiplicative no-vig fair (industry standard for 2-way / 3-way).
+ * p_fair_i = p_raw_i / Σ p_raw. Returns fair American for `sideIdx`.
+ */
+export function noVigFairAmerican(sideOddsList, sideIdx = 0) {
+  const raw = (sideOddsList || []).map(ip);
+  if (!raw.every((p) => p != null && p > 0)) return null;
+  const sum = raw.reduce((s, p) => s + p, 0);
+  if (!(sum > 0)) return null;
+  return probToAmerican(raw[sideIdx] / sum);
+}
+
+/** EV in percentage points vs a fair win probability: (p_fair − p_offer) × 100. */
+export function evPctVsFairProb(offerOdds, fairProb) {
+  const offerP = ip(offerOdds);
+  if (offerP == null || fairProb == null || !Number.isFinite(fairProb)) return null;
+  return +((fairProb - offerP) * 100).toFixed(1);
+}
+
+export function fairProbFromNoVig(sideOddsList, sideIdx = 0) {
+  const raw = (sideOddsList || []).map(ip);
+  if (!raw.every((p) => p != null && p > 0)) return null;
+  const sum = raw.reduce((s, p) => s + p, 0);
+  if (!(sum > 0)) return null;
+  return raw[sideIdx] / sum;
+}
+
 const fmtEt = (ts) => {
   if (!ts) return '';
   if (typeof ts === 'string' && /AM|PM/i.test(ts) && !ts.includes('T')) return ts;
@@ -203,6 +236,9 @@ export function buildLockedMarketOdds(pick, pinnacleHistory) {
     bestOdds: null,
     bestBook: null,
     fairNow: null,
+    fairNoVig: null,
+    fairProb: null,
+    fairIsNoVig: false,
     marketLine: null,
     ourLabel: null,
     oppLabel: null,
@@ -245,6 +281,8 @@ export function buildLockedMarketOdds(pick, pinnacleHistory) {
   let bestOdds = null;
   let bestBook = null;
   let fairNow = null;
+  /** Both-side sharp prices for no-vig (our side first for sideIdx=0). */
+  let fairPair = null; // number[]
   let marketLine = Number.isFinite(pick.line) ? pick.line : null;
   let ourLabel = null;
   let oppLabel = null;
@@ -261,12 +299,22 @@ export function buildLockedMarketOdds(pick, pinnacleHistory) {
     const last = hist[hist.length - 1];
     if (last) {
       fairNow = sideKey === 'under' ? last.underOdds : last.overOdds;
+      const over = last.overOdds;
+      const under = last.underOdds;
+      if (Number.isFinite(over) && Number.isFinite(under)) {
+        fairPair = sideKey === 'under' ? [under, over] : [over, under];
+      }
       if (Number.isFinite(last.line)) marketLine = last.line;
       if (Number.isFinite(last.t)) latestT = last.t;
     } else if (pinnGame.totalCurrent) {
       fairNow = sideKey === 'under'
         ? pinnGame.totalCurrent.underOdds
         : pinnGame.totalCurrent.overOdds;
+      const over = pinnGame.totalCurrent.overOdds;
+      const under = pinnGame.totalCurrent.underOdds;
+      if (Number.isFinite(over) && Number.isFinite(under)) {
+        fairPair = sideKey === 'under' ? [under, over] : [over, under];
+      }
       if (Number.isFinite(pinnGame.totalCurrent.line)) marketLine = pinnGame.totalCurrent.line;
     }
     const best = sideKey === 'under' ? pinnGame.bestUnder : pinnGame.bestOver;
@@ -301,6 +349,11 @@ export function buildLockedMarketOdds(pick, pinnacleHistory) {
     const last = hist[hist.length - 1];
     if (last) {
       fairNow = sideKey === 'away' ? last.awayOdds : last.homeOdds;
+      const a = last.awayOdds;
+      const h = last.homeOdds;
+      if (Number.isFinite(a) && Number.isFinite(h)) {
+        fairPair = sideKey === 'away' ? [a, h] : [h, a];
+      }
       const ln = sideKey === 'away' ? last.awayLine : last.homeLine;
       if (Number.isFinite(ln)) marketLine = ln;
       if (Number.isFinite(last.t)) latestT = last.t;
@@ -335,13 +388,18 @@ export function buildLockedMarketOdds(pick, pinnacleHistory) {
       .filter(Number.isFinite);
     pinSeries = pts.length >= 2 ? pts : null;
     const last = hist[hist.length - 1];
-    if (last) {
-      fairNow = sideKey === 'away' ? last.away : sideKey === 'draw' ? last.draw : last.home;
-      if (Number.isFinite(last.t)) latestT = last.t;
-    } else if (pinnGame.current) {
-      fairNow = sideKey === 'away' ? pinnGame.current.away
-        : sideKey === 'draw' ? pinnGame.current.draw
-        : pinnGame.current.home;
+    const snap = last || pinnGame.current || null;
+    if (snap) {
+      fairNow = sideKey === 'away' ? snap.away : sideKey === 'draw' ? snap.draw : snap.home;
+      if (Number.isFinite(last?.t)) latestT = last.t;
+      const a = snap.away;
+      const h = snap.home;
+      const d = snap.draw;
+      if (sideKey === 'draw' && Number.isFinite(a) && Number.isFinite(h) && Number.isFinite(d)) {
+        fairPair = [d, a, h];
+      } else if (Number.isFinite(a) && Number.isFinite(h)) {
+        fairPair = sideKey === 'away' ? [a, h] : [h, a];
+      }
     }
     bestOdds = sideKey === 'away' ? pinnGame.bestAway
       : sideKey === 'draw' ? pinnGame.bestDraw
@@ -396,12 +454,22 @@ export function buildLockedMarketOdds(pick, pinnacleHistory) {
     updatedAgoSec = Math.max(0, Math.round((Date.now() - ms) / 1000));
   }
 
+  // Multiplicative no-vig fair (standard). Fall back to vigged sharp price.
+  const fairProb = fairPair ? fairProbFromNoVig(fairPair, 0) : null;
+  const fairNoVig = fairPair ? noVigFairAmerican(fairPair, 0) : null;
+  const fairIsNoVig = Number.isFinite(fairNoVig);
+  const fairDisplay = fairIsNoVig ? fairNoVig : (Number.isFinite(fairNow) ? fairNow : null);
+
   return {
     pinSeries,
     books,
     bestOdds: Number.isFinite(bestOdds) ? bestOdds : null,
     bestBook: bestBook || null,
     fairNow: Number.isFinite(fairNow) ? fairNow : null,
+    fairNoVig: Number.isFinite(fairNoVig) ? fairNoVig : null,
+    fairProb: fairProb != null ? fairProb : null,
+    fairIsNoVig,
+    fairDisplay,
     marketLine: Number.isFinite(marketLine) ? marketLine : null,
     ourLabel,
     oppLabel,
@@ -598,6 +666,14 @@ export function mapLockedPickToCardFixture(pick, {
   const pinSeries = market.pinSeries;
   // Dense fair-book overtime when available; else lock→peak→now snapshots.
   const journey = (pinSeries && pinSeries.length >= 2) ? pinSeries : sparseJourney;
+  const fairLine = Number.isFinite(market.fairDisplay) ? market.fairDisplay
+    : (Number.isFinite(pick.pinnacleOdds) ? pick.pinnacleOdds : peakOdds);
+  // EV vs no-vig fair when both sides exist; else vigged-sharp proxy (legacy).
+  const fairProb = market.fairProb != null
+    ? market.fairProb
+    : ip(fairLine);
+  const evFlagged = evPctVsFairProb(lockOdds, fairProb);
+  const evBest = evPctVsFairProb(market.bestOdds, fairProb);
 
   return {
     id: pick.key || `${pick.sport}-${pickLabel}`,
@@ -618,11 +694,11 @@ export function mapLockedPickToCardFixture(pick, {
     toWin,
     odds: lockOdds,
     book: pick.book || 'Pinnacle',
-    fairOdds: Number.isFinite(market.fairNow) ? market.fairNow
-      : (Number.isFinite(pick.pinnacleOdds) ? pick.pinnacleOdds : peakOdds),
-    fairProb: Math.round((ip(
-      Number.isFinite(market.fairNow) ? market.fairNow : (pick.pinnacleOdds ?? peakOdds),
-    ) || 0.5) * 100),
+    fairOdds: fairLine,
+    fairProb: Math.round((fairProb || 0.5) * 100),
+    fairIsNoVig: !!market.fairIsNoVig,
+    evFlagged: Number.isFinite(evFlagged) ? evFlagged : null,
+    evBest: Number.isFinite(evBest) ? evBest : null,
     tapeAction,
     tapeScore,
     edgeBandAction,
@@ -663,10 +739,9 @@ export function mapLockedPickToCardFixture(pick, {
     lockChecks: lockChecks.length ? lockChecks : ['Locked ticket'],
     commenceMs,
     moneyPct,
-    // Odds we "got" at lock vs fair/pinnacle for the price-check strip.
+    // Odds we flagged (pre T-15) vs fair / no-vig for the market board.
     gotOdds: lockOdds,
-    fairLine: Number.isFinite(market.fairNow) ? market.fairNow
-      : (Number.isFinite(pick.pinnacleOdds) ? pick.pinnacleOdds : peakOdds),
+    fairLine,
     fairBook: pick.fairBook || pick.oddsSource || pick.book || null,
     tierPerf: tierPerf || null,
     // Mute audit — why TRACKED / 0u (tape-weak, ags-quality-veto, MONITORING…)

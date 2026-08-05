@@ -561,9 +561,9 @@ function shortBook(name) {
  * No nested cards / neon fills / competing gold boxes.
  */
 function MarketPriceBoard({
-  journey, fair, clvPct, gid, gotOdds, gotBook,
-  bestOdds, bestBook, books, ourLabel, oppLabel, oppBestOdds, oppBestBook,
-  updatedAgoSec,
+  journey, fair, clvPct, gid, gotOdds,
+  bestOdds, bestBook, books, ourLabel, oppLabel, oppBestOdds,
+  updatedAgoSec, fairIsNoVig = false, evFlagged = null,
 }) {
   const hasJourney = Array.isArray(journey) && journey.filter(Number.isFinite).length >= 2;
   const hasBest = Number.isFinite(bestOdds);
@@ -592,6 +592,8 @@ function MarketPriceBoard({
   const Dot = () => (
     <span style={{ color: C.textFaint, margin: '0 7px', fontWeight: 400 }}>·</span>
   );
+
+  const showEv = Number.isFinite(evFlagged) && evFlagged > 0;
 
   return (
     <div style={{
@@ -627,22 +629,30 @@ function MarketPriceBoard({
         )}
       </div>
 
-      {/* One price line — lock is the hero; best/fair are quiet context */}
+      {/* Flagged price (pre T-15) — lock freezes later */}
       <div style={{
         display: 'flex', flexWrap: 'wrap', alignItems: 'baseline',
         gap: '2px 0', marginBottom: hasJourney ? 10 : 12,
         lineHeight: 1.15,
       }}>
         <span style={{
+          fontSize: 12, fontWeight: 550, color: C.textMuted, marginRight: 8,
+        }}>
+          flagged at
+        </span>
+        <span style={{
           fontSize: 22, fontWeight: 750, letterSpacing: '-0.03em', color: C.text,
         }}>
           {fmtOdds(gotOdds)}
         </span>
-        <span style={{
-          marginLeft: 8, fontSize: 11, fontWeight: 550, color: C.textMuted,
-        }}>
-          locked{gotBook ? ` · ${gotBook}` : ''}
-        </span>
+        {showEv && (
+          <span style={{
+            marginLeft: 10, fontSize: 12, fontWeight: 750, color: GREEN,
+            letterSpacing: '-0.01em',
+          }}>
+            EV +{evFlagged.toFixed(1)}%
+          </span>
+        )}
         {(hasBest || Number.isFinite(fair)) && (
           <span style={{
             width: '100%', marginTop: 6,
@@ -660,7 +670,7 @@ function MarketPriceBoard({
             {hasBest && Number.isFinite(fair) && <Dot />}
             {Number.isFinite(fair) && (
               <>
-                <span style={{ color: C.textFaint }}>fair </span>
+                <span style={{ color: C.textFaint }}>{fairIsNoVig ? 'fair' : 'sharp'} </span>
                 <span style={{ fontWeight: 650, color: GOLD }}>{fmtOdds(fair)}</span>
               </>
             )}
@@ -1344,15 +1354,15 @@ export default function LockedClarityExpanded({
           clvPct={f.clvPct ?? 0}
           gid={gid}
           gotOdds={f.gotOdds ?? f.lockOdds}
-          gotBook={f.book}
           bestOdds={f.bestOdds}
           bestBook={f.bestBook}
           books={f.books}
           ourLabel={f.ourMarketLabel || f.pickLabel}
           oppLabel={f.oppMarketLabel}
           oppBestOdds={f.oppBestOdds}
-          oppBestBook={f.oppBestBook}
           updatedAgoSec={f.oddsUpdatedAgoSec}
+          fairIsNoVig={!!f.fairIsNoVig}
+          evFlagged={f.evFlagged}
         />
       </div>
 
