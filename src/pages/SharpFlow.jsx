@@ -154,6 +154,7 @@ function sportStyle(sport) {
   if (sport === 'MLB') return { color: '#E31837', bg: 'rgba(227,24,55,0.12)', icon: '⚾' };
   if (sport === 'NBA') return { color: '#FF8C00', bg: 'rgba(255,140,0,0.12)', icon: '🏀' };
   if (sport === 'WNBA') return { color: '#F472B6', bg: 'rgba(244,114,182,0.12)', icon: '🏀' };
+  if (sport === 'NFL') return { color: '#4CAF50', bg: 'rgba(76,175,80,0.12)', icon: '🏈' };
   if (sport === 'SOC') return { color: '#2ECC71', bg: 'rgba(46,204,113,0.12)', icon: '⚽' };
   if (sport === 'UFC') return { color: '#C0392B', bg: 'rgba(192,57,43,0.12)', icon: '🥊' };
   return { color: '#D4AF37', bg: 'rgba(212,175,55,0.12)', icon: '🏒' };
@@ -3615,6 +3616,7 @@ function buildGameData(polyData, kalshiData) {
   processSport('SOC');
   processSport('UFC');
   processSport('WNBA');
+  processSport('NFL');
 
   games.sort((a, b) => b.volume - a.volume);
   return games;
@@ -8901,7 +8903,7 @@ const SharpFlowProfitChart = memo(function SharpFlowProfitChart({ picks }) {
             <div>
               <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: '0.375rem' }}>Sport</div>
               <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
-                {[{ k: 'ALL', l: 'All Sports' }, { k: 'NHL', l: 'NHL' }, { k: 'CBB', l: 'CBB' }, { k: 'MLB', l: 'MLB' }, { k: 'NBA', l: 'NBA' }, { k: 'WNBA', l: 'WNBA' }, { k: 'SOC', l: 'SOC' }, { k: 'UFC', l: 'UFC' }].map(s => (
+                {[{ k: 'ALL', l: 'All Sports' }, { k: 'NHL', l: 'NHL' }, { k: 'CBB', l: 'CBB' }, { k: 'MLB', l: 'MLB' }, { k: 'NBA', l: 'NBA' }, { k: 'WNBA', l: 'WNBA' }, { k: 'NFL', l: 'NFL' }, { k: 'SOC', l: 'SOC' }, { k: 'UFC', l: 'UFC' }].map(s => (
                   <FilterBtn key={s.k} isActive={chartSport === s.k} onClick={() => setChartSport(s.k)} color="#3B82F6">{s.l}</FilterBtn>
                 ))}
               </div>
@@ -9022,7 +9024,7 @@ function ConvictionGauge({ pct, accent }) {
 const SharpTape = memo(function SharpTape({ sharpPositions }) {
   const items = useMemo(() => {
     const out = [];
-    for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA']) {
+    for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL']) {
       const games = sharpPositions?.[sport] || {};
       for (const gd of Object.values(games)) {
         for (const p of gd.positions || []) {
@@ -9412,7 +9414,7 @@ export default function SharpFlow() {
     }).length;
 
     let totalSharpInvested = 0;
-    for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA']) {
+    for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL']) {
       const sg = sharpPositions?.[sport] || {};
       for (const gd of Object.values(sg)) totalSharpInvested += gd.summary?.totalInvested || 0;
     }
@@ -10624,6 +10626,7 @@ export default function SharpFlow() {
                           { id: 'CBB', label: 'CBB', color: '#FF6B35' },
                           { id: 'SOC', label: 'SOC', color: '#2ECC71' },
                           { id: 'WNBA', label: 'WNBA', color: '#F472B6' },
+                          { id: 'NFL', label: 'NFL', color: '#4CAF50' },
                           { id: 'UFC', label: 'UFC', color: '#C0392B' },
                         ].map(opt => (
                           <button key={opt.id} onClick={() => setAgsuSport(opt.id)} style={{
@@ -11451,7 +11454,7 @@ export default function SharpFlow() {
                 ? buildWalletPriorStatsFnForUI(walletProfiles)
                 : null;
               const v12SortToday = todayET();
-              for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA']) {
+              for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL']) {
                 if (sportFilter !== 'All' && sport !== sportFilter) continue;
                 const sportGames = sharpPositions?.[sport] || {};
                 for (const [key, gd] of Object.entries(sportGames)) {
@@ -14027,7 +14030,7 @@ function SfSegmented({ options, value, onChange, isMobile, scrollable = false })
 function SportTabs({ active, onChange, isMobile }) {
   const options = [
     { id: 'All', label: 'All', emoji: '⚡', color: B.gold },
-    ...['CBB', 'NHL', 'MLB', 'NBA', 'WNBA', 'SOC', 'UFC'].map((key) => {
+    ...['CBB', 'NHL', 'MLB', 'NBA', 'WNBA', 'NFL', 'SOC', 'UFC'].map((key) => {
       const ss = sportStyle(key);
       return { id: key, label: key, emoji: ss.icon, color: ss.color };
     }),

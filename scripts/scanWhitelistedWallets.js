@@ -62,6 +62,7 @@ import { dirname, join } from 'path';
 import { matchSoccerPositionTitle, resolveSoccerSide } from './lib/soccerTeams.js';
 import { matchUFCPositionTitle } from './lib/ufcFighters.js';
 import { matchWNBAPositionTitle, resolveWNBATeam, WNBA_NAME_TO_CODE } from './lib/wnbaTeams.js';
+import { matchNFLPositionTitle, resolveNFLTeam, NFL_NAME_TO_CODE } from './lib/nflTeams.js';
 import { resolveBinarySide, resolveSpreadEntryLine } from './lib/resolvePositionSide.js';
 import { positionMatchesPolyEvent } from './lib/positionEventMatch.js';
 
@@ -276,7 +277,7 @@ function extractTeamsFromTitle(title) {
 
 function buildTodaysGames(polyData) {
   const games = {};
-  for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA']) {
+  for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL']) {
     const sportGames = polyData?.[sport] || {};
     for (const [key, g] of Object.entries(sportGames)) {
       const away = g.awayTeam || '';
@@ -316,6 +317,15 @@ function matchPositionToGame(posTitle, todaysGames, cbbMap) {
     const rev = `${mlbB}_${mlbA}`;
     if (todaysGames[`MLB:${rev}`]) return { key: rev, sport: 'MLB', side: 'home', awayName: rawB, homeName: rawA };
   }
+  // NFL before NBA — nicknames collide with CBB; only match today's NFL slate.
+  const nflA = resolveNFLTeam(rawA);
+  const nflB = resolveNFLTeam(rawB);
+  if (nflA && nflB) {
+    const key = `${nflA.toLowerCase()}_${nflB.toLowerCase()}`;
+    if (todaysGames[`NFL:${key}`]) return { key, sport: 'NFL', side: 'away', awayName: rawA, homeName: rawB };
+    const rev = `${nflB.toLowerCase()}_${nflA.toLowerCase()}`;
+    if (todaysGames[`NFL:${rev}`]) return { key: rev, sport: 'NFL', side: 'home', awayName: rawB, homeName: rawA };
+  }
   // WNBA before NBA — shared nicknames (Sun, Sparks, Liberty, …)
   const wnbaA = resolveWNBATeam(rawA);
   const wnbaB = resolveWNBATeam(rawB);
@@ -344,7 +354,10 @@ function matchSpreadTitle(posTitle, todaysGames, cbbMap) {
   const WNBA_MAP = Object.fromEntries(
     Object.entries(WNBA_NAME_TO_CODE).map(([k, v]) => [k, String(v).toLowerCase()]),
   );
-  const SPORT_MAPS = { NHL: NHL_MAP, WNBA: WNBA_MAP, NBA: NBA_MAP, MLB: MLB_MAP };
+  const NFL_MAP = Object.fromEntries(
+    Object.entries(NFL_NAME_TO_CODE).map(([k, v]) => [k, String(v).toLowerCase()]),
+  );
+  const SPORT_MAPS = { NHL: NHL_MAP, WNBA: WNBA_MAP, NFL: NFL_MAP, NBA: NBA_MAP, MLB: MLB_MAP };
   const candidates = [];
   const teamNorm = normalize(teamRaw);
   const words = teamRaw.split(/\s+/).map(w => normalize(w)).filter(w => w.length >= 3);
@@ -421,7 +434,7 @@ function collectScannedWallets() {
   for (const f of ['sharp_positions.json', 'sharp_spread_positions.json', 'sharp_total_positions.json']) {
     const data = loadJSON(f);
     if (!data) continue;
-    for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA']) {
+    for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL']) {
       const games = data[sport] || {};
       if (typeof games !== 'object') continue;
       for (const g of Object.values(games)) {
@@ -706,7 +719,8 @@ async function run() {
       let match = matchPositionToGame(title, todaysGames, cbbMap)
         || matchSoccerPositionTitle(title, todaysGames)
         || matchUFCPositionTitle(title, todaysGames)
-        || matchWNBAPositionTitle(title, todaysGames);
+        || matchWNBAPositionTitle(title, todaysGames)
+        || matchNFLPositionTitle(title, todaysGames);
       let forcedSpread = false;
       if (!match) {
         const sm = matchSpreadTitle(title, todaysGames, cbbMap);
@@ -1046,7 +1060,7 @@ function mergeRecoveredIntoScanFiles(positions, polyData) {
     if (!data) {
       // If the main scanner didn't produce this file (e.g. no totals
       // today), bootstrap a minimal shape so we can still inject.
-      data = { NHL: {}, CBB: {}, MLB: {}, NBA: {}, SOC: {}, UFC: {}, WNBA: {}, _whitelist_bootstrap: true };
+      data = { NHL: {}, CBB: {}, MLB: {}, NBA: {}, SOC: {}, UFC: {}, WNBA: {}, NFL: {}, _whitelist_bootstrap: true };
     }
 
     for (const pos of bucket.positions) {

@@ -1569,7 +1569,7 @@ function loadGameMetadata() {
   const meta = new Map(); // key: `${sport}|${gameKey}` → { commenceTime, away, home, mlOdds: { away, home }, spread, total }
   try {
     const poly = JSON.parse(readFileSync(join(PUBLIC, 'polymarket_data.json'), 'utf8'));
-    for (const sport of ['NBA', 'MLB', 'NHL', 'CBB', 'SOC', 'UFC', 'WNBA']) {
+    for (const sport of ['NBA', 'MLB', 'NHL', 'CBB', 'SOC', 'UFC', 'WNBA', 'NFL']) {
       const games = poly[sport] || {};
       for (const [gk, g] of Object.entries(games)) {
         const key = `${sport}|${gk}`;
@@ -1593,7 +1593,7 @@ function loadGameMetadata() {
   }
   try {
     const pinn = JSON.parse(readFileSync(join(PUBLIC, 'pinnacle_history.json'), 'utf8'));
-    for (const sport of ['NBA', 'MLB', 'NHL', 'CBB', 'SOC', 'UFC', 'WNBA']) {
+    for (const sport of ['NBA', 'MLB', 'NHL', 'CBB', 'SOC', 'UFC', 'WNBA', 'NFL']) {
       const games = pinn[sport] || {};
       for (const [gk, g] of Object.entries(games)) {
         const key = `${sport}|${gk}`;
@@ -1655,6 +1655,7 @@ const LINE_PLAUSIBILITY = {
   TOTAL: {
     NBA: { min: 150, max: 300 }, // typical 200-260
     WNBA: { min: 130, max: 220 }, // typical 150-180
+    NFL: { min: 20, max: 80 }, // football totals — typical 40-55
     MLB: { min: 4,   max: 25  }, // typical 6.5-12.5
     NHL: { min: 3,   max: 12  }, // typical 5-7
     SOC: { min: 0.5, max: 7.5 }, // soccer goals — typical 1.5-3.5

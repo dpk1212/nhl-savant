@@ -42,6 +42,7 @@ const NCAA_API_URL = "https://ncaa-api.henrygd.me/scoreboard/basketball-men/d1";
 const ESPN_MLB_URL = "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard";
 const ESPN_NBA_URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard";
 const ESPN_WNBA_URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard";
+const ESPN_NFL_URL = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard";
 const ESPN_SOC_URL = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard";
 const ESPN_UFC_URL = "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard";
 
@@ -51,6 +52,16 @@ const ESPN_WNBA_TO_CODE = {
   IND: "ind", LV: "lva", LVA: "lva", LA: "las", LAS: "las", MIN: "min",
   NY: "nyl", NYL: "nyl", PHX: "pho", PHO: "pho", POR: "por", SEA: "sea",
   TOR: "tor", WAS: "was", WSH: "was",
+};
+
+// ESPN NFL abbreviation → our lowercased codes (mirrors gradeSharpActions.js).
+const ESPN_NFL_TO_CODE = {
+  ARI: "ari", ATL: "atl", BAL: "bal", BUF: "buf", CAR: "car", CHI: "chi",
+  CIN: "cin", CLE: "cle", DAL: "dal", DEN: "den", DET: "det", GB: "gb",
+  HOU: "hou", IND: "ind", JAC: "jax", JAX: "jax", KC: "kc", LV: "lv",
+  LAC: "lac", LAR: "lar", MIA: "mia", MIN: "min", NE: "ne", NO: "no",
+  NYG: "nyg", NYJ: "nyj", PHI: "phi", PIT: "pit", SEA: "sea", SF: "sf",
+  TB: "tb", TEN: "ten", WAS: "was", WSH: "was",
 };
 
 const WNBA_NAME_TO_CODE = {
@@ -119,6 +130,95 @@ function resolveWNBATeam(raw) {
 function wnbaTeamsMatch(rawA, rawB) {
   const a = resolveWNBATeam(rawA);
   const b = resolveWNBATeam(rawB);
+  return !!(a && b && a === b);
+}
+
+// NFL helpers (mirrors scripts/lib/nflTeams.js — functions/ is CJS).
+const NFL_NAME_TO_CODE = {
+  ari: "ARI", arizonacardinals: "ARI", arizona: "ARI", cardinals: "ARI",
+  atl: "ATL", atlantafalcons: "ATL", atlanta: "ATL", falcons: "ATL",
+  bal: "BAL", baltimoreravens: "BAL", baltimore: "BAL", ravens: "BAL",
+  buf: "BUF", buffalobills: "BUF", buffalo: "BUF", bills: "BUF",
+  car: "CAR", carolinapanthers: "CAR", carolina: "CAR", panthers: "CAR",
+  chi: "CHI", chicagobears: "CHI", chicago: "CHI", bears: "CHI",
+  cin: "CIN", cincinnatibengals: "CIN", cincinnati: "CIN", bengals: "CIN",
+  cle: "CLE", clevelandbrowns: "CLE", cleveland: "CLE", browns: "CLE",
+  dal: "DAL", dallascowboys: "DAL", dallas: "DAL", cowboys: "DAL",
+  den: "DEN", denverbroncos: "DEN", denver: "DEN", broncos: "DEN",
+  det: "DET", detroitlions: "DET", detroit: "DET", lions: "DET",
+  gb: "GB", greenbaypackers: "GB", greenbay: "GB", packers: "GB",
+  hou: "HOU", houstontexans: "HOU", houston: "HOU", texans: "HOU",
+  ind: "IND", indianapoliscolts: "IND", indianapolis: "IND", colts: "IND",
+  jax: "JAX", jac: "JAX", jacksonvillejaguars: "JAX", jacksonville: "JAX", jaguars: "JAX",
+  kc: "KC", kansascitychiefs: "KC", kansascity: "KC", chiefs: "KC",
+  lv: "LV", lasvegasraiders: "LV", lasvegas: "LV", raiders: "LV", oaklandraiders: "LV",
+  lac: "LAC", losangeleschargers: "LAC", lachargers: "LAC", chargers: "LAC",
+  lar: "LAR", losangelesrams: "LAR", larams: "LAR", rams: "LAR",
+  mia: "MIA", miamidolphins: "MIA", miami: "MIA", dolphins: "MIA",
+  min: "MIN", minnesotavikings: "MIN", minnesota: "MIN", vikings: "MIN",
+  ne: "NE", newenglandpatriots: "NE", newengland: "NE", patriots: "NE",
+  no: "NO", neworleanssaints: "NO", neworleans: "NO", saints: "NO",
+  nyg: "NYG", newyorkgiants: "NYG", nygiants: "NYG", giants: "NYG",
+  nyj: "NYJ", newyorkjets: "NYJ", nyjets: "NYJ", jets: "NYJ",
+  phi: "PHI", philadelphiaeagles: "PHI", philadelphia: "PHI", eagles: "PHI",
+  pit: "PIT", pittsburghsteelers: "PIT", pittsburgh: "PIT", steelers: "PIT",
+  sea: "SEA", seattleseahawks: "SEA", seattle: "SEA", seahawks: "SEA",
+  sf: "SF", sanfrancisco49ers: "SF", sanfrancisco: "SF", "49ers": "SF", niners: "SF",
+  tb: "TB", tampabaybuccaneers: "TB", tampabay: "TB", buccaneers: "TB", bucs: "TB",
+  ten: "TEN", tennesseetitans: "TEN", tennessee: "TEN", titans: "TEN",
+  was: "WAS", wsh: "WAS", washingtoncommanders: "WAS", washington: "WAS",
+  commanders: "WAS", footballteam: "WAS", redskins: "WAS",
+};
+
+function normalizeNFLName(s) {
+  return (s || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+}
+
+function resolveNFLTeam(raw) {
+  if (!raw) return null;
+  const cleaned = String(raw)
+      .replace(/\s*\((?:nfl|football|preseason)\)\s*$/i, "")
+      .replace(/^nfl\s*:\s*/i, "")
+      .trim();
+  if (/\b(esports?|dota|csgo|valorant|lol|ncaa|college|wnba|nba|mlb|nhl|ufc|mma)\b/i.test(cleaned)
+      && !/\bnfl\b/i.test(cleaned)) {
+    if (!/cardinals|falcons|ravens|bills|panthers|bears|bengals|browns|cowboys|broncos|lions|packers|texans|colts|jaguars|chiefs|raiders|chargers|rams|dolphins|vikings|patriots|saints|giants|jets|eagles|steelers|seahawks|49ers|buccaneers|titans|commanders/i.test(cleaned)) {
+      return null;
+    }
+  }
+  const n = normalizeNFLName(cleaned);
+  if (!n) return null;
+  if (NFL_NAME_TO_CODE[n]) return NFL_NAME_TO_CODE[n];
+  let best = null;
+  let bestLen = 0;
+  for (const [alias, code] of Object.entries(NFL_NAME_TO_CODE)) {
+    if (alias.length < 3) continue;
+    const prefixHit = n === alias || n.startsWith(alias);
+    const longContains = alias.length >= 6 && n.includes(alias);
+    if ((prefixHit || longContains) && alias.length > bestLen) {
+      best = code;
+      bestLen = alias.length;
+    }
+  }
+  if (best) return best;
+  const words = cleaned
+      .replace(/([a-z])([A-Z])/g, "$1 $2")
+      .split(/[\s/_.,\-]+/)
+      .filter(Boolean);
+  for (const w of words) {
+    const wn = normalizeNFLName(w);
+    if (wn.length >= 3 && NFL_NAME_TO_CODE[wn]) return NFL_NAME_TO_CODE[wn];
+  }
+  return null;
+}
+
+function nflTeamsMatch(rawA, rawB) {
+  const a = resolveNFLTeam(rawA);
+  const b = resolveNFLTeam(rawB);
   return !!(a && b && a === b);
 }
 
@@ -451,6 +551,59 @@ async function fetchWNBAFinalGames() {
   }
 }
 
+async function fetchNFLFinalGames() {
+  try {
+    const res = await fetch(ESPN_NFL_URL);
+    if (!res.ok) { logger.warn(`ESPN NFL API ${res.status}`); return []; }
+    const data = await res.json();
+    let postponedCount = 0;
+    const games = (data.events || [])
+        .filter((e) => {
+          const st = e.competitions?.[0]?.status?.type;
+          const ok = isActuallyFinal(st);
+          if (!ok && (st?.state === "post" || st?.completed)) {
+            postponedCount++;
+            const comp = e.competitions[0];
+            const comps = comp.competitors || [];
+            const away = comps.find((c) => c.homeAway === "away") || {};
+            const home = comps.find((c) => c.homeAway === "home") || {};
+            logger.warn(`[grader] SKIP NFL no-play game (${st?.name}): ${away.team?.displayName} @ ${home.team?.displayName}`);
+          }
+          return ok;
+        })
+        .map((e) => {
+          const comp = e.competitions[0];
+          const comps = comp.competitors || [];
+          const away = comps.find((c) => c.homeAway === "away") || {};
+          const home = comps.find((c) => c.homeAway === "home") || {};
+          const awayAbbr = away.team?.abbreviation || "";
+          const homeAbbr = home.team?.abbreviation || "";
+          const awayName = away.team?.displayName || awayAbbr;
+          const homeName = home.team?.displayName || homeAbbr;
+          return {
+            dateET: espnEventDateET(e),
+            awayCode: ESPN_NFL_TO_CODE[awayAbbr]
+              || (resolveNFLTeam(awayName) || "").toLowerCase()
+              || awayAbbr.toLowerCase(),
+            homeCode: ESPN_NFL_TO_CODE[homeAbbr]
+              || (resolveNFLTeam(homeName) || "").toLowerCase()
+              || homeAbbr.toLowerCase(),
+            awayTeam: awayName,
+            homeTeam: homeName,
+            awayScore: parseInt(away.score) || 0,
+            homeScore: parseInt(home.score) || 0,
+          };
+        });
+    if (postponedCount > 0) {
+      logger.info(`[grader] NFL: ${games.length} truly final, ${postponedCount} no-play skipped`);
+    }
+    return games;
+  } catch (e) {
+    logger.error("ESPN NFL fetch error:", e.message);
+    return [];
+  }
+}
+
 async function fetchSOCFinalGames(dateStr) {
   // FIFA World Cup via ESPN. Polymarket's 3-way match market resolves on the
   // 90-minute result. Group stage is always STATUS_FULL_TIME, so the final
@@ -687,6 +840,12 @@ exports.updateBetResults = onSchedule({
       logger.info(`ESPN WNBA API: ${wnbaFinalGames.length} final WNBA games`);
     }
 
+    let nflFinalGames = [];
+    if (allSports.has("NFL")) {
+      nflFinalGames = await fetchNFLFinalGames();
+      logger.info(`ESPN NFL API: ${nflFinalGames.length} final NFL games`);
+    }
+
     let socFinalGames = [];
     if (allSports.has("SOC")) {
       for (const d of allSocDates) {
@@ -818,6 +977,31 @@ exports.updateBetResults = onSchedule({
                 }
               }
             }
+          } else if (sport === "NFL") {
+            const rawKey = (pick.gameKey || "").replace(/^NFL:/, "");
+            const parts = rawKey.split("_");
+            const dated = nflFinalGames.filter((g) =>
+              !pick.date || (g.dateET != null && g.dateET === pick.date),
+            );
+            if (parts.length === 2) {
+              matchingGame = dated.find((g) =>
+                g.awayCode === parts[0] && g.homeCode === parts[1],
+              );
+            }
+            if (!matchingGame) {
+              for (const g of dated) {
+                if (nflTeamsMatch(pick.away, g.awayTeam) &&
+                    nflTeamsMatch(pick.home, g.homeTeam)) {
+                  matchingGame = g;
+                  break;
+                }
+                if (teamNamesMatch(pick.away, g.awayTeam) &&
+                    teamNamesMatch(pick.home, g.homeTeam)) {
+                  matchingGame = g;
+                  break;
+                }
+              }
+            }
           } else if (sport === "SOC") {
             const rawKey = (pick.gameKey || "").replace(/^SOC:/, "");
             const parts = rawKey.split("_");
@@ -910,6 +1094,7 @@ exports.updateBetResults = onSchedule({
                 sport === "CBB" ? "NCAA_API" :
                 sport === "NBA" ? "ESPN_NBA_API" :
                 sport === "WNBA" ? "ESPN_WNBA_API" :
+                sport === "NFL" ? "ESPN_NFL_API" :
                 sport === "SOC" ? "ESPN_SOC_API" :
                 sport === "UFC" ? "ESPN_UFC_API" : "ESPN_MLB_API",
             };
@@ -1011,6 +1196,7 @@ exports.updateBetResults = onSchedule({
                 sport === "CBB" ? "NCAA_API" :
                 sport === "NBA" ? "ESPN_NBA_API" :
                 sport === "WNBA" ? "ESPN_WNBA_API" :
+                sport === "NFL" ? "ESPN_NFL_API" :
                 sport === "SOC" ? "ESPN_SOC_API" :
                 sport === "UFC" ? "ESPN_UFC_API" : "ESPN_MLB_API",
               "result.gradedAt":
@@ -1118,6 +1304,31 @@ exports.updateBetResults = onSchedule({
               for (const g of dated) {
                 if (wnbaTeamsMatch(pick.away, g.awayTeam) &&
                     wnbaTeamsMatch(pick.home, g.homeTeam)) {
+                  matchingGame = g;
+                  break;
+                }
+                if (teamNamesMatch(pick.away, g.awayTeam) &&
+                    teamNamesMatch(pick.home, g.homeTeam)) {
+                  matchingGame = g;
+                  break;
+                }
+              }
+            }
+          } else if (sport === "NFL") {
+            const rawKey = (pick.gameKey || "").replace(/^NFL:/, "");
+            const parts = rawKey.split("_");
+            const dated = nflFinalGames.filter((g) =>
+              !pick.date || (g.dateET != null && g.dateET === pick.date),
+            );
+            if (parts.length === 2) {
+              matchingGame = dated.find(
+                  (g) => g.awayCode === parts[0] && g.homeCode === parts[1],
+              );
+            }
+            if (!matchingGame) {
+              for (const g of dated) {
+                if (nflTeamsMatch(pick.away, g.awayTeam) &&
+                    nflTeamsMatch(pick.home, g.homeTeam)) {
                   matchingGame = g;
                   break;
                 }
@@ -1290,6 +1501,31 @@ exports.updateBetResults = onSchedule({
               for (const g of dated) {
                 if (wnbaTeamsMatch(pick.away, g.awayTeam) &&
                     wnbaTeamsMatch(pick.home, g.homeTeam)) {
+                  matchingGame = g;
+                  break;
+                }
+                if (teamNamesMatch(pick.away, g.awayTeam) &&
+                    teamNamesMatch(pick.home, g.homeTeam)) {
+                  matchingGame = g;
+                  break;
+                }
+              }
+            }
+          } else if (sport === "NFL") {
+            const rawKey = (pick.gameKey || "").replace(/^NFL:/, "");
+            const parts = rawKey.split("_");
+            const dated = nflFinalGames.filter((g) =>
+              !pick.date || (g.dateET != null && g.dateET === pick.date),
+            );
+            if (parts.length === 2) {
+              matchingGame = dated.find(
+                  (g) => g.awayCode === parts[0] && g.homeCode === parts[1],
+              );
+            }
+            if (!matchingGame) {
+              for (const g of dated) {
+                if (nflTeamsMatch(pick.away, g.awayTeam) &&
+                    nflTeamsMatch(pick.home, g.homeTeam)) {
                   matchingGame = g;
                   break;
                 }

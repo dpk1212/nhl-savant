@@ -18,6 +18,7 @@ import { fileURLToPath } from 'url';
 import { resolveSOCTeam } from './lib/soccerTeams.js';
 import { makeUFCGameKey } from './lib/ufcFighters.js';
 import { makeWNBAGameKey } from './lib/wnbaTeams.js';
+import { makeNFLGameKey } from './lib/nflTeams.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -42,6 +43,9 @@ const SPORTS = [
   { key: 'mma_mixed_martial_arts', label: 'UFC', markets: 'h2h' },
   // WNBA — full NBA-style markets (ML + spreads + totals).
   { key: 'basketball_wnba', label: 'WNBA', markets: 'h2h,spreads,totals' },
+  // NFL — preseason + regular season (ML + spreads + totals).
+  { key: 'americanfootball_nfl_preseason', label: 'NFL', markets: 'h2h,spreads,totals' },
+  { key: 'americanfootball_nfl', label: 'NFL', markets: 'h2h,spreads,totals' },
 ];
 
 // Reputation order for fair line (highest → lowest). First with both sides wins.
@@ -183,6 +187,9 @@ function makeGameKey(away, home, sportLabel) {
   }
   if (sportLabel === 'WNBA') {
     return makeWNBAGameKey(away, home);
+  }
+  if (sportLabel === 'NFL') {
+    return makeNFLGameKey(away, home);
   }
   const aCanon = findCBBTeam(cbbMap, away);
   const hCanon = findCBBTeam(cbbMap, home);

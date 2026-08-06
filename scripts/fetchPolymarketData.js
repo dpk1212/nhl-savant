@@ -25,6 +25,10 @@ import {
   makeWNBAGameKey,
   isMainWNBAGameSlug,
 } from './lib/wnbaTeams.js';
+import {
+  makeNFLGameKey,
+  isMainNFLGameSlug,
+} from './lib/nflTeams.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -464,6 +468,9 @@ function matchToGameKey(teams, cbbMap, sport) {
   if (sport === 'WNBA') {
     return makeWNBAGameKey(a, b);
   }
+  if (sport === 'NFL') {
+    return makeNFLGameKey(a, b);
+  }
   return null;
 }
 
@@ -684,14 +691,52 @@ async function loadTodaysSchedule(cbbMap) {
     }
   }
 
-  return { validCBB, validNHL, validMLB, validNBA, validSOC, validUFC, validWNBA, commenceTimes };
+  // NFL: Odds API preseason + regular season. The regular-season endpoint
+  // returns the full season slate (~270), so we keep only games commencing
+  // in a short window (now−6h → +72h). Polymarket season-series futures
+  // otherwise soft-gate through as "valid" matchups.
+  const validNFL = new Set();
+  if (ODDS_API_KEY) {
+    const nflWindowLo = Date.now() - 6 * 3600 * 1000;
+    const nflWindowHi = Date.now() + 72 * 3600 * 1000;
+    for (const oddsKey of ['americanfootball_nfl_preseason', 'americanfootball_nfl']) {
+      try {
+        const url = `https://api.the-odds-api.com/v4/sports/${oddsKey}/odds/?apiKey=${ODDS_API_KEY}&regions=us&markets=h2h&oddsFormat=american&bookmakers=fanduel`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const games = await res.json();
+          let added = 0;
+          for (const g of games) {
+            const t = g.commence_time ? Date.parse(g.commence_time) : NaN;
+            if (!Number.isFinite(t) || t < nflWindowLo || t > nflWindowHi) continue;
+            const gk = makeNFLGameKey(g.away_team, g.home_team);
+            if (gk) {
+              validNFL.add(gk);
+              added++;
+              if (g.commence_time && !commenceTimes[`NFL:${gk}`]) commenceTimes[`NFL:${gk}`] = g.commence_time;
+            } else {
+              console.warn(`NFL team resolution miss (${oddsKey}): "${g.away_team}" / "${g.home_team}"`);
+            }
+          }
+          const remaining = res.headers.get('x-requests-remaining');
+          console.log(`📋 Today's NFL (${oddsKey}): +${added} in window → ${validNFL.size} cumulative [credits left: ${remaining}]`);
+        } else {
+          console.warn(`Odds API NFL error (${oddsKey}): ${res.status}`);
+        }
+      } catch (e) {
+        console.warn(`Could not load NFL schedule from Odds API (${oddsKey}):`, e.message);
+      }
+    }
+  }
+
+  return { validCBB, validNHL, validMLB, validNBA, validSOC, validUFC, validWNBA, validNFL, commenceTimes };
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────
 async function run() {
-  const out = { CBB: {}, NHL: {}, MLB: {}, NBA: {}, SOC: {}, UFC: {}, WNBA: {}, updatedAt: new Date().toISOString() };
+  const out = { CBB: {}, NHL: {}, MLB: {}, NBA: {}, SOC: {}, UFC: {}, WNBA: {}, NFL: {}, updatedAt: new Date().toISOString() };
   const cbbMap = loadCBBTeamMap();
-  const { validCBB, validNHL, validMLB, validNBA, validSOC, validUFC, validWNBA, commenceTimes } = await loadTodaysSchedule(cbbMap);
+  const { validCBB, validNHL, validMLB, validNBA, validSOC, validUFC, validWNBA, validNFL, commenceTimes } = await loadTodaysSchedule(cbbMap);
 
   const tags = [
     { slug: 'sports', sport: null },
@@ -705,6 +750,7 @@ async function run() {
     { slug: 'baseball', sport: 'MLB' },
     { slug: 'nba', sport: 'NBA' },
     { slug: 'wnba', sport: 'WNBA' },
+    { slug: 'nfl', sport: 'NFL' },
     { slug: 'fifa-world-cup', sport: 'SOC' },
     { slug: 'soccer', sport: 'SOC' },
     { slug: 'ufc', sport: 'UFC' },
@@ -760,12 +806,13 @@ async function run() {
     const hasNcaaTag = evTags.some(t => /ncaa|college|cbb|cwbb|ncaa-basketball/.test(t));
     const hasNbaTag = evTags.includes('nba');
     const hasWnbaTag = evTags.includes('wnba');
+    const hasNflTag = evTags.includes('nfl');
     const hasNhlTag = evTags.includes('nhl') || evTags.includes('hockey');
     const hasMlbTag = evTags.includes('mlb') || evTags.includes('baseball');
     const hasSoccerTag = evTags.includes('fifa-world-cup') || evTags.includes('soccer');
     const hasUfcTag = evTags.includes('ufc') || evTags.includes('mma');
 
-    let sport = ev._sport === 'CBB' ? 'CBB' : ev._sport === 'ncaa' ? 'CBB' : ev._sport === 'nhl' ? 'NHL' : ev._sport === 'MLB' ? 'MLB' : ev._sport === 'mlb' ? 'MLB' : ev._sport === 'baseball' ? 'MLB' : ev._sport === 'nba' ? 'NBA' : ev._sport === 'NBA' ? 'NBA' : ev._sport === 'WNBA' ? 'WNBA' : ev._sport === 'wnba' ? 'WNBA' : ev._sport === 'SOC' ? 'SOC' : ev._sport === 'UFC' ? 'UFC' : null;
+    let sport = ev._sport === 'CBB' ? 'CBB' : ev._sport === 'ncaa' ? 'CBB' : ev._sport === 'nhl' ? 'NHL' : ev._sport === 'MLB' ? 'MLB' : ev._sport === 'mlb' ? 'MLB' : ev._sport === 'baseball' ? 'MLB' : ev._sport === 'nba' ? 'NBA' : ev._sport === 'NBA' ? 'NBA' : ev._sport === 'WNBA' ? 'WNBA' : ev._sport === 'wnba' ? 'WNBA' : ev._sport === 'NFL' ? 'NFL' : ev._sport === 'nfl' ? 'NFL' : ev._sport === 'SOC' ? 'SOC' : ev._sport === 'UFC' ? 'UFC' : null;
 
     // If tag says ncaa/college, force CBB regardless of _sport from tag_slug
     if (!sport && hasNcaaTag && !hasNbaTag && !hasWnbaTag) sport = 'CBB';
@@ -780,6 +827,11 @@ async function run() {
     else if (!sport && hasWnbaTag && isMainWNBAGameSlug(ev.slug)) sport = 'WNBA';
     else if (!sport && hasWnbaTag && !hasNbaTag) sport = 'WNBA';
 
+    // NFL before generic — nicknames collide with CBB (Eagles/Panthers/…).
+    if ((!sport || sport === 'NFL') && isMainNFLGameSlug(ev.slug)) sport = 'NFL';
+    else if (!sport && hasNflTag && isMainNFLGameSlug(ev.slug)) sport = 'NFL';
+    else if (!sport && hasNflTag) sport = 'NFL';
+
     let teams = sport === 'UFC'
       ? extractUFCFightersFromTitle(title)
       : extractTeamsFromTitle(title);
@@ -789,12 +841,14 @@ async function run() {
       const t = title.toLowerCase();
       if (/ncaa|college|basketball/.test(t) && !/nba|wnba|champion|winner|tournament winner/.test(t)) sport = 'CBB';
       else if (/\bwnba\b/.test(t) && !/champion|winner|mvp|award/.test(t)) sport = 'WNBA';
+      else if (/\bnfl\b/.test(t) && !/champion|winner|mvp|award|super bowl winner/.test(t)) sport = 'NFL';
       else if (/nba/.test(t) && !/champion|winner|mvp|award/.test(t)) sport = 'NBA';
       else if (/nhl|hockey/.test(t) && !/champion|winner|stanley/.test(t)) sport = 'NHL';
       else if (/mlb|baseball/.test(t) && !/champion|winner|world series winner/.test(t)) sport = 'MLB';
       else if (hasNhlTag && !hasNcaaTag) sport = 'NHL';
       else if (hasMlbTag) sport = 'MLB';
       else if (hasWnbaTag) sport = 'WNBA';
+      else if (hasNflTag) sport = 'NFL';
       else if (hasNbaTag) sport = 'NBA';
       else if (hasSoccerTag && isMainWorldCupMatchSlug(ev.slug)) sport = 'SOC';
       else {
@@ -807,16 +861,19 @@ async function run() {
         const mlbRevKey = matchToGameKey(revTeams, cbbMap, 'MLB');
         const wnbaKey = matchToGameKey(teams, cbbMap, 'WNBA');
         const wnbaRevKey = matchToGameKey(revTeams, cbbMap, 'WNBA');
+        const nflKey = matchToGameKey(teams, cbbMap, 'NFL');
+        const nflRevKey = matchToGameKey(revTeams, cbbMap, 'NFL');
         const nbaKey = matchToGameKey(teams, cbbMap, 'NBA');
         const nbaRevKey = matchToGameKey(revTeams, cbbMap, 'NBA');
         if ((cbbKey && validCBB.has(cbbKey)) || (cbbRevKey && validCBB.has(cbbRevKey))) sport = 'CBB';
         else if ((nhlKey && validNHL.has(nhlKey)) || (nhlRevKey && validNHL.has(nhlRevKey))) sport = 'NHL';
         else if ((mlbKey && validMLB.has(mlbKey)) || (mlbRevKey && validMLB.has(mlbRevKey))) sport = 'MLB';
         else if ((wnbaKey && validWNBA.has(wnbaKey)) || (wnbaRevKey && validWNBA.has(wnbaRevKey))) sport = 'WNBA';
+        else if ((nflKey && validNFL.has(nflKey)) || (nflRevKey && validNFL.has(nflRevKey))) sport = 'NFL';
         else if ((nbaKey && validNBA.has(nbaKey)) || (nbaRevKey && validNBA.has(nbaRevKey))) sport = 'NBA';
       }
     }
-    if (!sport || !['CBB', 'NHL', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA'].includes(sport)) continue;
+    if (!sport || !['CBB', 'NHL', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL'].includes(sport)) continue;
 
     // SOC: only MAIN World Cup match events (drops props: corners, first-to-score,
     // halftime-result; drops futures: winner, starting-11; drops club soccer).
@@ -834,12 +891,24 @@ async function run() {
       if (!(soft1 && validWNBA.has(soft1)) && !(soft2 && validWNBA.has(soft2))) continue;
     }
 
+    // NFL: only MAIN game events (drops Super Bowl / season-series futures).
+    if (sport === 'NFL') {
+      const titleL = (title || '').toLowerCase();
+      if (/season series|series winner|super bowl winner|draft|mvp/.test(titleL)) continue;
+      if (!isMainNFLGameSlug(ev.slug)) {
+        const soft1 = matchToGameKey(teams, cbbMap, 'NFL');
+        const soft2 = matchToGameKey([teams[1], teams[0]], cbbMap, 'NFL');
+        if (!(soft1 && validNFL.has(soft1)) && !(soft2 && validNFL.has(soft2))) continue;
+      }
+    }
+
     const key1 = matchToGameKey(teams, cbbMap, sport);
     const key2 = matchToGameKey([teams[1], teams[0]], cbbMap, sport);
     const validSet = sport === 'CBB' ? validCBB
       : sport === 'MLB' ? validMLB
       : sport === 'NBA' ? validNBA
       : sport === 'WNBA' ? validWNBA
+      : sport === 'NFL' ? validNFL
       : sport === 'SOC' ? validSOC
       : sport === 'UFC' ? validUFC
       : validNHL;
@@ -1235,8 +1304,9 @@ async function run() {
   const socCount = Object.keys(out.SOC).length;
   const ufcCount = Object.keys(out.UFC).length;
   const wnbaCount = Object.keys(out.WNBA).length;
-  console.log(`Wrote ${outPath} — CBB: ${cbbCount}, NHL: ${nhlCount}, MLB: ${mlbCount}, NBA: ${nbaCount}, SOC: ${socCount}, UFC: ${ufcCount}, WNBA: ${wnbaCount}`);
-  if (cbbCount === 0 && nhlCount === 0 && mlbCount === 0 && nbaCount === 0 && socCount === 0 && wnbaCount === 0) {
+  const nflCount = Object.keys(out.NFL).length;
+  console.log(`Wrote ${outPath} — CBB: ${cbbCount}, NHL: ${nhlCount}, MLB: ${mlbCount}, NBA: ${nbaCount}, SOC: ${socCount}, UFC: ${ufcCount}, WNBA: ${wnbaCount}, NFL: ${nflCount}`);
+  if (cbbCount === 0 && nhlCount === 0 && mlbCount === 0 && nbaCount === 0 && socCount === 0 && wnbaCount === 0 && nflCount === 0) {
     console.log('(No Polymarket markets matched today\'s schedule)');
   }
 }

@@ -129,7 +129,7 @@ There is **no Firestore `games` collection**. Games live as keys in JSON + embed
 | **Store** | `public/pinnacle_history.json` |
 | **Markets** | h2h, spreads, totals (UFC: ML only) |
 | **Books** | pinnacle + DK/FD/MGM/Caesars |
-| **Sports** | NHL, NBA, MLB, CBB, WNBA, SOC, UFC |
+| **Sports** | NHL, NBA, MLB, CBB, WNBA, NFL, SOC, UFC |
 
 **Per game:** opener → current → history; spread/total lines+juice; EV vs retail; commence.
 
@@ -149,7 +149,7 @@ There is **no Firestore `games` collection**. Games live as keys in JSON + embed
 
 ### Scores (grading only)
 
-NHL API · ESPN (MLB/NBA/WNBA/SOC/UFC) · NCAA CBB → W/L + settled PnL.
+NHL API · ESPN (MLB/NBA/WNBA/NFL/SOC/UFC) · NCAA CBB → W/L + settled PnL.
 
 ### Odds stamps on locked picks (`sharpFlow*`)
 

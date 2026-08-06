@@ -14,6 +14,7 @@ import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { isWNBAMarketTitle } from './lib/wnbaTeams.js';
+import { isNFLMarketTitle } from './lib/nflTeams.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -60,6 +61,8 @@ function classifySport(title) {
   const t = title.toLowerCase();
   // WNBA before NBA keyword loop — shared nicknames (Liberty, Sun, Sparks, …).
   if (isWNBAMarketTitle(title)) return 'WNBA';
+  // NFL before keyword loop — nicknames collide with CBB (Eagles, Panthers, …).
+  if (isNFLMarketTitle(title)) return 'NFL';
   for (const [sport, keywords] of Object.entries(SPORT_KEYWORDS)) {
     for (const kw of keywords) {
       if (t.includes(kw)) return sport;
