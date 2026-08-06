@@ -18,6 +18,10 @@ import { matchWNBAPositionTitle, resolveWNBATeam, WNBA_NAME_TO_CODE } from './li
 import { matchNFLPositionTitle, resolveNFLTeam, NFL_NAME_TO_CODE } from './lib/nflTeams.js';
 import { resolveBinarySide, resolveSpreadEntryLine } from './lib/resolvePositionSide.js';
 import { positionMatchesPolyEvent } from './lib/positionEventMatch.js';
+import {
+  acceptFullGameTotalPosition,
+  parseTotalEntryLine,
+} from './lib/totalMarketFilter.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -746,6 +750,7 @@ async function run() {
   let errorCount = 0;
   let unresolvedSideCount = 0;
   let wrongEventCount = 0;
+  let nonFgTotalCount = 0;
 
   // ── Phase A: fetch every wallet's open positions in parallel (bounded) ──
   // The network call is the bottleneck (1 throttled request per wallet). A
@@ -818,6 +823,7 @@ async function run() {
       const game = todaysGames[`${match.sport}:${match.key}`];
       const sport = match.sport;
       const polyGame = polyData?.[match.sport]?.[match.key];
+      const posSlug = pos.slug || pos.eventSlug || '';
 
       // Reject postponed/other-date markets that title-matched today's team.
       // e.g. mlb-stl-cin-2026-05-24 (rained out) must not attach to stl_laa today.
@@ -825,6 +831,24 @@ async function run() {
       if (!eventGate.ok) {
         wrongEventCount++;
         continue;
+      }
+
+      // TOTAL: game O/U only — drop F5 / team total / 1H / NRFI / far alts.
+      // Real incident 2026-08-06 DET@SEA: F5 O/U 3.5 Over ($1.1K) locked as
+      // bare "Over" with no game total line.
+      if (isTotal) {
+        const earlyLine = parseTotalEntryLine(title);
+        const gate = acceptFullGameTotalPosition({
+          title,
+          slug: posSlug,
+          entryLine: earlyLine,
+          mainLine: polyGame?.polyTotal?.line ?? null,
+          sport,
+        });
+        if (!gate.ok) {
+          nonFgTotalCount++;
+          continue;
+        }
       }
 
       let side;
@@ -876,12 +900,9 @@ async function run() {
         });
       } else if (isTotal) {
         // PRIMARY: parse the line from the wallet's OWN position title.
-        // A single Polymarket "event" lists many O/U sub-markets per
-        // game — full game, F5, alt-lines. Title is self-evident truth.
-        const titleTotalMatch = title.match(/(?:O\/U|Over|Under|Total)[^\d]*(\d+\.?\d*)/i);
-        if (titleTotalMatch) {
-          entryLine = parseFloat(titleTotalMatch[1]);
-        } else {
+        // Non-FG markets already filtered above; alts must stay near main.
+        entryLine = parseTotalEntryLine(title);
+        if (entryLine == null) {
           const pt = polyGame?.polyTotal;
           const isGameTotal = pt && (pt.outcomes || []).some(o => /^over$/i.test(o));
           if (isGameTotal) entryLine = pt.line;
@@ -934,6 +955,9 @@ async function run() {
         firstSeen: prevFirstSeen || new Date().toISOString(),
         ...(entryLine != null && { entryLine }),
         ...(sideSource && { sideSource }),
+        // Title/slug — sync + grader can re-verify full-game vs F5/TT
+        ...(title && { title: String(title).slice(0, 120) }),
+        ...(posSlug && { slug: String(posSlug).slice(0, 80) }),
         // Polymarket position identity — used for deterministic EXITED stamps
         ...(pos.asset != null && pos.asset !== '' && { asset: String(pos.asset) }),
         ...(pos.conditionId != null && pos.conditionId !== '' && { conditionId: String(pos.conditionId) }),
@@ -1145,6 +1169,9 @@ async function run() {
   }
 
   console.log(`\nDone — ${matchCount} ML, ${spreadMatchCount} spread, ${totalMatchCount} total positions`);
+  if (nonFgTotalCount > 0) {
+    console.log(`Skipped ${nonFgTotalCount} non-full-game / far-alt TOTAL positions (F5, team total, 1H, …)`);
+  }
   if (unresolvedSideCount > 0) {
     console.log(`Skipped ${unresolvedSideCount} position(s) with unresolved side (stale outcome, no usable outcomeIndex)`);
   }

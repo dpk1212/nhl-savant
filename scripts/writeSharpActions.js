@@ -668,6 +668,9 @@ async function main() {
             entryLine: pos.entryLine ?? null,
             spreadLine: spreadLine,
             totalLine: totalLine,
+            // Full-game vs F5/TT classification (sync scrub + audit)
+            ...(pos.title ? { title: String(pos.title).slice(0, 120) } : {}),
+            ...(pos.slug ? { slug: String(pos.slug).slice(0, 80) } : {}),
             label,
             firstSeen: pos.firstSeen || null,
             // Game-level V8 scoring (same score Sharp Intel uses)
@@ -923,6 +926,8 @@ async function main() {
         if (pos.entryLine != null) updatePayload.entryLine = pos.entryLine;
         if (pos.spreadLine != null && !data.spreadLine) updatePayload.spreadLine = pos.spreadLine;
         if (pos.totalLine != null && !data.totalLine) updatePayload.totalLine = pos.totalLine;
+        if (pos.title && !data.title) updatePayload.title = String(pos.title).slice(0, 120);
+        if (pos.slug && !data.slug) updatePayload.slug = String(pos.slug).slice(0, 80);
         // Backfill Polymarket IDs once we have them (legacy PENDING docs).
         if (pos.asset && !data.asset) updatePayload.asset = pos.asset;
         if (pos.conditionId && !data.conditionId) updatePayload.conditionId = pos.conditionId;

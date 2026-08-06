@@ -65,6 +65,10 @@ import { matchWNBAPositionTitle, resolveWNBATeam, WNBA_NAME_TO_CODE } from './li
 import { matchNFLPositionTitle, resolveNFLTeam, NFL_NAME_TO_CODE } from './lib/nflTeams.js';
 import { resolveBinarySide, resolveSpreadEntryLine } from './lib/resolvePositionSide.js';
 import { positionMatchesPolyEvent } from './lib/positionEventMatch.js';
+import {
+  acceptFullGameTotalPosition,
+  parseTotalEntryLine,
+} from './lib/totalMarketFilter.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -623,6 +627,7 @@ async function run() {
   let recoveredPositionsTotal = 0;
   let unresolvedSideCount = 0;
   let wrongEventCount = 0;
+  let nonFgTotalCount = 0;
   const recoveredAll = []; // Flat list of all recovered positions (for merge step).
   // Supplemental-scan heartbeat — merged into sharp_positions*.json so
   // writeSharpActions can EXITED-stamp wallets the main scan missed.
@@ -748,6 +753,22 @@ async function run() {
         continue;
       }
 
+      const posSlug = pos.slug || pos.eventSlug || '';
+      // TOTAL: game O/U only (mirror main scanner — F5/TT/1H must not stake).
+      if (isTotal) {
+        const gate = acceptFullGameTotalPosition({
+          title,
+          slug: posSlug,
+          entryLine: parseTotalEntryLine(title),
+          mainLine: polyGame?.polyTotal?.line ?? null,
+          sport: match.sport,
+        });
+        if (!gate.ok) {
+          nonFgTotalCount++;
+          continue;
+        }
+      }
+
       let side;
       let sideSource = null;
       if (isTotal) {
@@ -794,11 +815,8 @@ async function run() {
           matchSpreadLine: match.spreadLine ?? null,
         });
       } else if (isTotal) {
-        // PRIMARY: wallet's own position title (not cached polyTotal alt-line).
-        const totalMatch = title.match(/(?:O\/U|Over|Under|Total)[^\d]*(\d+\.?\d*)/i);
-        if (totalMatch) {
-          entryLine = parseFloat(totalMatch[1]);
-        } else {
+        entryLine = parseTotalEntryLine(title);
+        if (entryLine == null) {
           const pt = polyGame?.polyTotal;
           const isGameTotal = pt && (pt.outcomes || []).some(o => /^over$/i.test(o));
           if (isGameTotal) entryLine = pt.line;
@@ -864,6 +882,7 @@ async function run() {
         ...(pos.outcomeIndex != null && pos.outcomeIndex !== '' && { outcomeIndex: Number(pos.outcomeIndex) }),
         ...(pos.eventId != null && pos.eventId !== '' && { eventId: String(pos.eventId) }),
         title,
+        ...(posSlug && { slug: String(posSlug).slice(0, 80) }),
       });
     }
 
@@ -937,6 +956,9 @@ async function run() {
   }
   if (wrongEventCount > 0) {
     console.log(`  Skipped wrong-event match:       ${wrongEventCount}  (eventId/slug ≠ today's poly event)`);
+  }
+  if (nonFgTotalCount > 0) {
+    console.log(`  Skipped non-FG / far-alt TOTAL:  ${nonFgTotalCount}  (F5, team total, 1H, …)`);
   }
   console.log(`  Phase-2 merge:                   ${MERGE ? 'ENABLED (positions WILL be merged into sharp_positions*.json)' : 'OFF (diagnostic only, no downstream change)'}`);
   console.log(`  Elapsed:                         ${elapsedSec}s`);

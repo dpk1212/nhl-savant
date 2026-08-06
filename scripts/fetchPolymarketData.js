@@ -29,6 +29,7 @@ import {
   makeNFLGameKey,
   isMainNFLGameSlug,
 } from './lib/nflTeams.js';
+import { isNonFullGameTotalMarket } from './lib/totalMarketFilter.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -1027,9 +1028,13 @@ async function run() {
           }
         }
       } else {
+        // Collect full-game O/U candidates; never let F5 / team total / 1H
+        // win polyTotal (first-match used to pick "1st 5 Innings O/U 3.5").
+        const fgTotalCandidates = [];
         for (const m of markets) {
           const git = (m.groupItemTitle || '').toLowerCase();
           const q = (m.question || '').toLowerCase();
+          const slug = (m.slug || '').toLowerCase();
           let outs = m.outcomes;
           if (typeof outs === 'string') try { outs = JSON.parse(outs); } catch { outs = []; }
           const hasOverUnder = Array.isArray(outs) && outs.some(o => /^(over|under)$/i.test(o));
@@ -1037,10 +1042,22 @@ async function run() {
           if (git.includes('spread') || q.includes('spread:')) {
             if (!spreadMarket) spreadMarket = m;
           } else if (hasOverUnder && (git.includes('o/u') || git.includes('over') || git.includes('under') || q.includes('o/u'))) {
-            if (!totalMarket) totalMarket = m;
+            if (isNonFullGameTotalMarket(`${m.groupItemTitle || ''} ${m.question || ''}`, slug)) continue;
+            fgTotalCandidates.push(m);
           } else {
             if (!mlMarket) mlMarket = m;
           }
+        }
+        // Prefer slug `…-total-NptN` (main FG) over alts; else highest liquidity.
+        if (fgTotalCandidates.length) {
+          const score = (m) => {
+            const slug = (m.slug || '').toLowerCase();
+            const mainSlug = /(?:^|-)total-\d/.test(slug) && !/f5|team|1h|half/.test(slug) ? 1e12 : 0;
+            const liq = Number(m.liquidityNum ?? m.liquidity ?? 0) || 0;
+            return mainSlug + liq;
+          };
+          fgTotalCandidates.sort((a, b) => score(b) - score(a));
+          totalMarket = fgTotalCandidates[0];
         }
       }
       if (!mlMarket) mlMarket = markets[0];

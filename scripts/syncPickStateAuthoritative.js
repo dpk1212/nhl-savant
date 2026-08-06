@@ -126,6 +126,7 @@ import {
   BLEND_STATE_DOC_ID,
 } from '../src/lib/walletClvSkill.js';
 import { loadWalletProfilesMap } from './lib/loadWalletProfiles.js';
+import { acceptFullGameTotalPosition } from './lib/totalMarketFilter.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '../public');
@@ -1561,6 +1562,34 @@ function buildPositionGroupsFromFirestore(positions) {
   return groups;
 }
 
+/**
+ * Drop F5 / team-total / 1H / far-alt rows from TOTAL clusters so AGS/HC
+ * never stakes on derivative Over/Under contracts (DET@SEA 2026-08-06).
+ * Returns count removed.
+ */
+function scrubNonFullGameTotals(groups, gameMeta) {
+  let removed = 0;
+  for (const [gk, list] of groups.entries()) {
+    const [sport, gameKey, mkt] = gk.split('|');
+    if (mkt !== 'TOTAL') continue;
+    const mainLine = gameMeta.get(`${sport}|${gameKey}`)?.polyTotalLine ?? null;
+    const kept = [];
+    for (const p of list) {
+      const gate = acceptFullGameTotalPosition({
+        title: p.title || '',
+        slug: p.slug || '',
+        entryLine: p.entryLine ?? p.totalLine ?? null,
+        mainLine,
+        sport,
+      });
+      if (gate.ok) kept.push(p);
+      else removed++;
+    }
+    groups.set(gk, kept);
+  }
+  return removed;
+}
+
 // ── Game metadata sources (commenceTime + odds) ────────────────────────────
 // For NEWLY CREATED pick docs (no browser sync ever ran), we need
 // commenceTime and current odds. Browser-facing JSON files are the same
@@ -1585,6 +1614,9 @@ function loadGameMetadata() {
         cur.polyAwayProb = typeof g.awayProb === 'number' ? g.awayProb : null;
         cur.polyHomeProb = typeof g.homeProb === 'number' ? g.homeProb : null;
         cur.polyDrawProb = typeof g.drawProb === 'number' ? g.drawProb : null;
+        // Main full-game O/U line from fetchPolymarketData (never F5/TT).
+        const ptLine = g.polyTotal?.line;
+        if (Number.isFinite(ptLine)) cur.polyTotalLine = Number(ptLine);
         meta.set(key, cur);
       }
     }
@@ -2021,8 +2053,18 @@ async function createMissingLockedPicks({
         line = pinnLine ?? consensusLine(positions, side, sport, 'SPREAD') ?? null;
       } else if (marketType === 'TOTAL') {
         odds = -110;
-        line = consensusLine(positions, side, sport, 'TOTAL') ?? null;
+        // Wallet consensus first; polyTotalLine is the event's main FG O/U
+        // (fetch already excludes F5). Never lock a bare Over/Under.
+        line = consensusLine(positions, side, sport, 'TOTAL')
+          ?? (Number.isFinite(meta.polyTotalLine) ? meta.polyTotalLine : null);
       }
+      // TOTAL without a usable line = F5/alt contamination or missing poly —
+      // do not create a staked pick (DET@SEA bare "Over -110" 2026-08-06).
+      if (marketType === 'TOTAL' && (line == null || !isPlausibleLine(line, sport, 'TOTAL'))) {
+        skipped.push({ docId, side, reason: 'total_missing_plausible_line', line });
+        continue;
+      }
+
       // v12 ladder is the authoritative bet size. unitsFromAgsV12 applies
       // the mute-on-≤0 rule + the absolute ladder (0.25/0.50/1/3/5) +
       // the odds cap. v11 multiplier is recorded as a sidecar for
@@ -3967,6 +4009,38 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         changes.push(`fairOdds backfill: ${liveFair} (${fairLabel})`);
       }
     }
+
+    // TOTAL line backfill — bare "Over"/"Under" when F5 was scrubbed or
+    // create ran without consensus. Prefer poly main FG line.
+    if (mkt === 'TOTAL' && pick.status !== 'COMPLETED') {
+      const polyLine = Number.isFinite(meta?.polyTotalLine) ? meta.polyTotalLine : null;
+      const consLine = consensusLine(group || [], side, sport, 'TOTAL');
+      const fillLine = consLine ?? polyLine;
+      if (Number.isFinite(fillLine) && isPlausibleLine(fillLine, sport, 'TOTAL')) {
+        const lockLineMissing = !Number.isFinite(sd.lock?.line);
+        const peakLineMissing = !Number.isFinite(sd.peak?.line);
+        if (lockLineMissing || peakLineMissing) {
+          const dir = side === 'under' ? 'Under' : 'Over';
+          const teamLabel = `${dir} ${fillLine}`;
+          if (lockLineMissing) {
+            patch.lock = {
+              ...(patch.lock || {}),
+              line: fillLine,
+              team: teamLabel,
+            };
+          }
+          if (peakLineMissing) {
+            patch.peak = {
+              ...(patch.peak || {}),
+              line: fillLine,
+              team: teamLabel,
+              updatedAt: now,
+            };
+          }
+          changes.push(`totalLine backfill: ${fillLine}`);
+        }
+      }
+    }
   }
 
   // ── SPREAD lock-odds repair (ML bleed / -110 default) ───────────────────
@@ -4376,6 +4450,11 @@ async function main() {
   // (2026-07-09: ReferenceError: Cannot access 'gameMeta' before initialization).
   const gameMeta = loadGameMetadata();
   console.log(`Loaded metadata for ${gameMeta.size} games (commenceTime + odds source)`);
+
+  const scrubbedTotals = scrubNonFullGameTotals(groups, gameMeta);
+  if (scrubbedTotals > 0) {
+    console.log(`  ↳ scrubbed ${scrubbedTotals} non-full-game / far-alt TOTAL position(s) (F5, team total, 1H, …)`);
+  }
 
   // Load today's pick docs.
   const collections = ['sharpFlowPicks', 'sharpFlowSpreads', 'sharpFlowTotals'];
