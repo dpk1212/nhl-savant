@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-08-06T12:39:44.724Z",
-  "elapsedSec": 17.1,
+  "scannedAt": "2026-08-06T12:43:38.490Z",
+  "elapsedSec": 16.8,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 34,
   "summary": {
     "total": 208,
     "coveredByMain": 6,
-    "recovered": 14,
-    "recoveredPositions": 69,
-    "noPositions": 188,
+    "recovered": 15,
+    "recoveredPositions": 70,
+    "noPositions": 187,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,7 +16,7 @@
       "ml": 8,
       "spread": 0,
       "total": 0,
-      "dropped_shadow_gate": 26,
+      "dropped_shadow_gate": 27,
       "dropped_excluded": 35,
       "dropped_duplicate": 0
     }
@@ -1130,8 +1130,24 @@
       "tier": "FLAT",
       "name": null,
       "sports": "MLB",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x5e9458202b5817a72cf81105ec8a30e6f3705ba1"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x5e9458202b5817a72cf81105ec8a30e6f3705ba1",
+      "positionsCount": 1,
+      "statsSource": "sharpWalletProfiles_derived",
+      "avgSportBet": 67146,
+      "willPassShadowGate": 0,
+      "willDropAtShadowGate": 1,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "det_sea",
+          "marketType": "total",
+          "side": "over",
+          "invested": 3173,
+          "entryLine": 7.5,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "710c2e",
@@ -2212,7 +2228,7 @@
           "gameKey": "oak_cin",
           "marketType": "ml",
           "side": "home",
-          "invested": 3259,
+          "invested": 3262,
           "entryLine": null,
           "passesShadow": false
         },
@@ -2230,7 +2246,7 @@
           "gameKey": "oak_cin",
           "marketType": "spread",
           "side": "home",
-          "invested": 593,
+          "invested": 601,
           "entryLine": -1.5,
           "passesShadow": false
         },
