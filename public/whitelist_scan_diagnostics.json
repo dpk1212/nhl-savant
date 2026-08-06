@@ -1,22 +1,22 @@
 {
-  "scannedAt": "2026-08-06T00:42:21.270Z",
-  "elapsedSec": 14.5,
+  "scannedAt": "2026-08-06T00:46:12.240Z",
+  "elapsedSec": 14.2,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 35,
   "summary": {
     "total": 209,
     "coveredByMain": 12,
-    "recovered": 16,
-    "recoveredPositions": 60,
-    "noPositions": 181,
+    "recovered": 17,
+    "recoveredPositions": 63,
+    "noPositions": 180,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
       "ml": 6,
       "spread": 0,
-      "total": 3,
-      "dropped_shadow_gate": 13,
+      "total": 5,
+      "dropped_shadow_gate": 14,
       "dropped_excluded": 38,
       "dropped_duplicate": 0
     }
@@ -35,8 +35,33 @@
       "tier": "FLAT",
       "name": null,
       "sports": "SOC",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xdb859a551fcf56e49416160911476bea7307152f"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0xdb859a551fcf56e49416160911476bea7307152f",
+      "positionsCount": 2,
+      "statsSource": "sharpWalletProfiles_derived",
+      "avgSportBet": 109781,
+      "willPassShadowGate": 2,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "det_sea",
+          "marketType": "total",
+          "side": "under",
+          "invested": 15000,
+          "entryLine": 7.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "sdp_ari",
+          "marketType": "total",
+          "side": "over",
+          "invested": 14997,
+          "entryLine": 8.5,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "0b0329",
@@ -828,12 +853,21 @@
       "sports": "MLB,SOC,WNBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x9e3ed7b661a903fc97afcf49e0f014ebe869f882",
-      "positionsCount": 3,
+      "positionsCount": 4,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 1503,
       "willPassShadowGate": 1,
-      "willDropAtShadowGate": 2,
+      "willDropAtShadowGate": 3,
       "positions": [
+        {
+          "sport": "WNBA",
+          "gameKey": "las_chi",
+          "marketType": "total",
+          "side": "over",
+          "invested": 0,
+          "entryLine": 187.5,
+          "passesShadow": false
+        },
         {
           "sport": "MLB",
           "gameKey": "det_sea",
@@ -857,7 +891,7 @@
           "gameKey": "sdp_ari",
           "marketType": "ml",
           "side": "away",
-          "invested": 30,
+          "invested": 57,
           "entryLine": null,
           "passesShadow": false
         }
@@ -964,8 +998,17 @@
           "gameKey": "las_chi",
           "marketType": "spread",
           "side": "away",
-          "invested": 3510,
+          "invested": 3529,
           "entryLine": 2.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "sdp_ari",
+          "marketType": "total",
+          "side": "under",
+          "invested": 4095,
+          "entryLine": 9.5,
           "passesShadow": true
         },
         {
@@ -984,15 +1027,6 @@
           "side": "under",
           "invested": 3215,
           "entryLine": 187.5,
-          "passesShadow": true
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "sdp_ari",
-          "marketType": "total",
-          "side": "under",
-          "invested": 3444,
-          "entryLine": 9.5,
           "passesShadow": true
         },
         {
