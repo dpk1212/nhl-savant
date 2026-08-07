@@ -1,608 +1,265 @@
-import { useState, useEffect } from 'react';
-import { BookOpen, Code } from 'lucide-react';
+/**
+ * How it works — SharpFlow Learn surface.
+ * Explains the product loop without leaking IP (thresholds, wallet rules, sizing math).
+ */
+import { Link } from 'react-router-dom';
+import { Activity, Target, Users, ScrollText, Shield, ArrowRight } from 'lucide-react';
 
-const Methodology = () => {
-  const [isMobile, setIsMobile] = useState(false);
+const GOLD = '#D4AF37';
+const MUTED = 'rgba(232, 238, 248, 0.62)';
+const TEXT = '#E8EEF8';
+const LINE = 'rgba(232, 238, 248, 0.12)';
+const PANEL = 'rgba(18, 26, 43, 0.92)';
 
-  // Detect mobile device
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 640);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+const STEPS = [
+  {
+    icon: Activity,
+    kicker: '01 · Market',
+    title: 'See where the money is',
+    body: 'SharpFlow maps live positioning across today’s games — who is on which side, how hard the money is pressing, and where the market is contested. You get a clear picture of the tape before you decide anything.',
+  },
+  {
+    icon: Users,
+    kicker: '02 · Sharps',
+    title: 'Know who actually wins',
+    body: 'Not every large bettor is sharp. We maintain a living ledger of wallets with real sports-market histories — form, size discipline, and results — so the map is grounded in who has beaten these markets over time, not who shouted the loudest today.',
+  },
+  {
+    icon: Target,
+    kicker: '03 · Engine',
+    title: 'Only act when the bar clears',
+    body: 'The Prediction Engine does not force a pick on every game. When the money map and sharp evidence are clean enough, we stake. When the picture is noisy, contested, or thin, we stay out. Selectivity is the product.',
+  },
+  {
+    icon: ScrollText,
+    kicker: '04 · Record',
+    title: 'Grade everything in public',
+    body: 'Every Engine decision is timestamped and graded after the game — wins and losses. The Record is the trust surface: you can audit the book instead of trusting a highlight reel.',
+  },
+];
 
+const Principles = [
+  {
+    title: 'Follow capital, not narratives',
+    body: 'We start from where verified sharp money actually sits — not from storylines, tipster vibes, or a single model’s hunch.',
+  },
+  {
+    title: 'Mute is a feature',
+    body: 'Most edges die in overtrading. Passing when the tape is unclear is how a book stays solvent across a season.',
+  },
+  {
+    title: 'Proof over promises',
+    body: 'If it isn’t posted before lock and graded after, it doesn’t count. Losses stay on the ledger.',
+  },
+  {
+    title: 'Models are tools, not the brand',
+    body: 'Sport-specific models (NHL, MLB, CBB) live under Models for fans of that surface. SharpFlow is the multi-sport money map and decision loop.',
+  },
+];
+
+export default function Methodology() {
   return (
-    <div style={{ backgroundColor: 'var(--color-background)', minHeight: '100vh' }}>
-      {/* Header */}
-      <div style={{ 
-        padding: isMobile ? '2rem 1rem 1rem' : '3rem 2rem 2rem', 
-        borderBottom: '1px solid var(--color-border)' 
+    <div style={{
+      minHeight: '100vh',
+      background: `
+        radial-gradient(1000px 500px at 8% -10%, rgba(201, 162, 39, 0.14), transparent 55%),
+        radial-gradient(800px 420px at 100% 0%, rgba(70, 120, 200, 0.14), transparent 50%),
+        #0b1220
+      `,
+      color: TEXT,
+      paddingBottom: '4rem',
+    }}>
+      <header style={{
+        borderBottom: `1px solid ${LINE}`,
+        padding: '3rem 1.25rem 2.25rem',
       }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-          <h1 style={{ 
-            marginBottom: '0.5rem',
-            fontSize: isMobile ? '1.5rem' : '2rem'
+        <div style={{ maxWidth: 880, margin: '0 auto' }}>
+          <p style={{
+            margin: '0 0 0.75rem',
+            fontSize: '0.72rem',
+            fontWeight: 800,
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            color: GOLD,
           }}>
-            📚 Methodology
+            Learn · How it works
+          </p>
+          <h1 style={{
+            margin: '0 0 0.85rem',
+            fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
+            fontWeight: 900,
+            letterSpacing: '-0.03em',
+            lineHeight: 1.15,
+            fontFamily: '"Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif',
+          }}>
+            How SharpFlow works
           </h1>
-          <p style={{ 
-            color: 'var(--color-text-secondary)', 
-            fontSize: isMobile ? '0.875rem' : '0.938rem',
-            lineHeight: '1.6'
+          <p style={{
+            margin: 0,
+            fontSize: '1.05rem',
+            lineHeight: 1.65,
+            color: MUTED,
+            maxWidth: 640,
           }}>
-            Mathematical foundations and betting strategies behind NHL Savant analytics. All formulas are transparent, verifiable, and backed by real data.
+            We track where winning bettors put their money, decide when that picture is clear enough to act,
+            and grade every result in public. The tickets are the output. The loop is the product.
           </p>
         </div>
-      </div>
+      </header>
 
-      <div style={{ 
-        maxWidth: '1400px', 
-        margin: '0 auto', 
-        padding: isMobile ? '1rem' : '2rem'
-      }}>
-        {/* Expected Goals (xG) */}
-        <div className="elevated-card methodology-section" style={{ marginBottom: isMobile ? '1.5rem' : '2rem' }}>
-          <h2 style={{ 
-            marginBottom: isMobile ? '1rem' : '1.5rem', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '0.5rem',
-            fontSize: isMobile ? '1.125rem' : '1.25rem'
-          }}>
-            <BookOpen size={isMobile ? 18 : 20} />
-            Expected Goals (xG) Analysis
-          </h2>
-          
-          <div style={{ marginBottom: isMobile ? '1rem' : '1.5rem' }}>
-            <h3 style={{ 
-              fontSize: isMobile ? '0.938rem' : '1rem', 
-              marginBottom: '0.75rem',
-              fontWeight: '600' 
-            }}>
-              What is xG?
-            </h3>
-            <p style={{ 
-              fontSize: isMobile ? '0.875rem' : '0.938rem', 
-              color: 'var(--color-text-secondary)', 
-              lineHeight: '1.6' 
-            }}>
-              Expected Goals (xG) is a statistical metric that measures the quality of scoring chances. Each shot is assigned a probability
-              of becoming a goal based on historical data, considering factors like shot location, type, and game situation.
-            </p>
-          </div>
-
-          <div style={{ marginBottom: isMobile ? '1rem' : '1.5rem' }}>
-            <h3 style={{ 
-              fontSize: isMobile ? '0.938rem' : '1rem', 
-              marginBottom: '0.75rem',
-              fontWeight: '600'
-            }}>
-              Per-60 Normalization
-            </h3>
-            <p style={{ 
-              fontSize: isMobile ? '0.875rem' : '0.938rem', 
-              color: 'var(--color-text-secondary)', 
-              lineHeight: '1.6', 
-              marginBottom: '0.75rem' 
-            }}>
-              To compare teams fairly, we normalize all metrics to a 60-minute rate:
-            </p>
-            <div className="methodology-example" style={{
-              fontFamily: 'Monaco, Consolas, monospace',
-              fontSize: isMobile ? '0.75rem' : '0.813rem',
-              backgroundColor: 'var(--color-card)',
-              border: '1px solid var(--color-border)',
-              borderRadius: '4px',
-              padding: isMobile ? '0.75rem' : '1rem',
-              color: 'var(--color-accent)',
-              overflowX: 'auto'
-            }}>
-              xG per 60 = (xGoals / Ice Time in seconds) × 3600
-            </div>
-          </div>
-
-          <div>
-            <h3 style={{ 
-              fontSize: isMobile ? '0.938rem' : '1rem', 
-              marginBottom: '0.75rem',
-              fontWeight: '600'
-            }}>
-              Why xG Matters for Betting
-            </h3>
-            <ul style={{ 
-              fontSize: isMobile ? '0.875rem' : '0.938rem', 
-              color: 'var(--color-text-secondary)', 
-              lineHeight: '1.8', 
-              paddingLeft: isMobile ? '1.25rem' : '1.5rem' 
-            }}>
-              <li>Reveals true team quality beyond results influenced by luck</li>
-              <li>Identifies teams with strong underlying metrics but poor record (value bets)</li>
-              <li>Predicts future performance more accurately than goals scored</li>
-              <li>Situational xG (5v5, PP, PK) exposes specific strengths and weaknesses</li>
-            </ul>
-          </div>
-        </div>
-
-        {/* PDO & Regression */}
-        <div className="elevated-card methodology-section" style={{ marginBottom: isMobile ? '1.5rem' : '2rem' }}>
-          <h2 style={{ 
-            marginBottom: isMobile ? '1rem' : '1.5rem', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '0.5rem',
-            fontSize: isMobile ? '1.125rem' : '1.25rem'
-          }}>
-            <Code size={isMobile ? 18 : 20} />
-            PDO & Regression Theory
-          </h2>
-          
-          <div style={{ marginBottom: isMobile ? '1rem' : '1.5rem' }}>
-            <h3 style={{ 
-              fontSize: isMobile ? '0.938rem' : '1rem', 
-              marginBottom: '0.75rem',
-              fontWeight: '600'
-            }}>
-              PDO Calculation
-            </h3>
-            <p style={{ 
-              fontSize: isMobile ? '0.875rem' : '0.938rem', 
-              color: 'var(--color-text-secondary)', 
-              lineHeight: '1.6', 
-              marginBottom: '0.75rem' 
-            }}>
-              PDO measures "puck luck" by combining shooting percentage and save percentage:
-            </p>
-            <div className="methodology-example" style={{
-              fontFamily: 'Monaco, Consolas, monospace',
-              fontSize: isMobile ? '0.75rem' : '0.813rem',
-              backgroundColor: 'var(--color-card)',
-              border: '1px solid var(--color-border)',
-              borderRadius: '4px',
-              padding: isMobile ? '0.75rem' : '1rem',
-              color: 'var(--color-accent)',
-              overflowX: 'auto'
-            }}>
-              PDO = (Goals For / Shots For) × 100 + (1 - Goals Against / Shots Against) × 100
-            </div>
-          </div>
-
-          <div style={{ marginBottom: isMobile ? '1rem' : '1.5rem' }}>
-            <h3 style={{ 
-              fontSize: isMobile ? '0.938rem' : '1rem', 
-              marginBottom: '0.75rem',
-              fontWeight: '600'
-            }}>
-              Regression to the Mean
-            </h3>
-            <p style={{ 
-              fontSize: isMobile ? '0.875rem' : '0.938rem', 
-              color: 'var(--color-text-secondary)', 
-              lineHeight: '1.6' 
-            }}>
-              Over time, PDO regresses toward 100.0 (league average). Teams with PDO significantly above or below 100 are experiencing
-              unsustainable luck and will likely regress.
-            </p>
-          </div>
-
-          <div>
-            <h3 style={{ 
-              fontSize: isMobile ? '0.938rem' : '1rem', 
-              marginBottom: '0.75rem',
-              fontWeight: '600'
-            }}>
-              Betting Applications
-            </h3>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(250px, 1fr))',
-              gap: isMobile ? '0.75rem' : '1rem',
-            }}>
-              <div style={{
-                padding: isMobile ? '0.875rem' : '1rem',
-                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                border: '1px solid var(--color-danger)',
-                borderRadius: '4px',
-              }}>
-                <div style={{ 
-                  fontWeight: 600, 
-                  marginBottom: '0.5rem', 
-                  color: 'var(--color-danger)',
-                  fontSize: isMobile ? '0.938rem' : '1rem'
+      <main style={{ maxWidth: 880, margin: '0 auto', padding: '2rem 1.25rem 0' }}>
+        <section style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2.5rem' }}>
+          {STEPS.map(({ icon: Icon, kicker, title, body }) => (
+            <article
+              key={kicker}
+              style={{
+                background: PANEL,
+                border: `1px solid ${LINE}`,
+                borderRadius: 16,
+                padding: '1.35rem 1.4rem',
+              }}
+            >
+              <div style={{ display: 'flex', gap: '0.85rem', alignItems: 'flex-start' }}>
+                <div style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 10,
+                  background: 'rgba(212, 175, 55, 0.12)',
+                  border: '1px solid rgba(212, 175, 55, 0.28)',
+                  display: 'grid',
+                  placeItems: 'center',
+                  flexShrink: 0,
                 }}>
-                  PDO &gt; 102
+                  <Icon size={18} color={GOLD} strokeWidth={2.25} />
                 </div>
-                <div style={{ 
-                  fontSize: isMobile ? '0.875rem' : '0.938rem', 
-                  color: 'var(--color-text-secondary)' 
-                }}>
-                  Overperforming due to luck. Bet UNDER or AGAINST.
+                <div>
+                  <p style={{
+                    margin: '0 0 0.35rem',
+                    fontSize: '0.68rem',
+                    fontWeight: 800,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    color: GOLD,
+                  }}>
+                    {kicker}
+                  </p>
+                  <h2 style={{
+                    margin: '0 0 0.5rem',
+                    fontSize: '1.2rem',
+                    fontWeight: 800,
+                    letterSpacing: '-0.02em',
+                  }}>
+                    {title}
+                  </h2>
+                  <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: 1.65, color: MUTED }}>
+                    {body}
+                  </p>
                 </div>
               </div>
-              <div style={{
-                padding: isMobile ? '0.875rem' : '1rem',
-                backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                border: '1px solid var(--color-success)',
-                borderRadius: '4px',
-              }}>
-                <div style={{ 
-                  fontWeight: 600, 
-                  marginBottom: '0.5rem', 
-                  color: 'var(--color-success)',
-                  fontSize: isMobile ? '0.938rem' : '1rem'
-                }}>
-                  PDO &lt; 98
-                </div>
-                <div style={{ 
-                  fontSize: isMobile ? '0.875rem' : '0.938rem', 
-                  color: 'var(--color-text-secondary)' 
-                }}>
-                  Underperforming due to bad luck. Bet OVER or WITH.
-                </div>
+            </article>
+          ))}
+        </section>
+
+        <section style={{ marginBottom: '2.5rem' }}>
+          <h2 style={{
+            margin: '0 0 1rem',
+            fontSize: '1.35rem',
+            fontWeight: 800,
+            letterSpacing: '-0.02em',
+            fontFamily: '"Iowan Old Style", Palatino, Georgia, serif',
+          }}>
+            What we believe
+          </h2>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+            gap: '0.85rem',
+          }}>
+            {Principles.map((p) => (
+              <div
+                key={p.title}
+                style={{
+                  background: PANEL,
+                  border: `1px solid ${LINE}`,
+                  borderRadius: 14,
+                  padding: '1.15rem 1.2rem',
+                }}
+              >
+                <h3 style={{ margin: '0 0 0.45rem', fontSize: '0.95rem', fontWeight: 700, color: TEXT }}>
+                  {p.title}
+                </h3>
+                <p style={{ margin: 0, fontSize: '0.88rem', lineHeight: 1.6, color: MUTED }}>
+                  {p.body}
+                </p>
               </div>
-            </div>
+            ))}
           </div>
-        </div>
+        </section>
 
-        {/* Expected Value Calculation */}
-        <div className="elevated-card methodology-section" style={{ marginBottom: isMobile ? '1.5rem' : '2rem' }}>
-          <h2 style={{ 
-            marginBottom: isMobile ? '1rem' : '1.5rem', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '0.5rem',
-            fontSize: isMobile ? '1.125rem' : '1.25rem'
-          }}>
-            <BookOpen size={isMobile ? 18 : 20} />
-            Expected Value (EV) Calculation
-          </h2>
-          
-          <div style={{ marginBottom: isMobile ? '1rem' : '1.5rem' }}>
-            <h3 style={{ 
-              fontSize: isMobile ? '0.938rem' : '1rem', 
-              marginBottom: '0.75rem',
-              fontWeight: '600'
-            }}>
-              What is EV?
-            </h3>
-            <p style={{ 
-              fontSize: isMobile ? '0.875rem' : '0.938rem', 
-              color: 'var(--color-text-secondary)', 
-              lineHeight: '1.6' 
-            }}>
-              Expected Value (EV) measures the average amount you can expect to win or lose per bet over the long term.
-              A positive EV indicates a profitable bet over time, while negative EV indicates a losing bet.
-            </p>
-          </div>
-
-          <div style={{ marginBottom: isMobile ? '1rem' : '1.5rem' }}>
-            <h3 style={{ 
-              fontSize: isMobile ? '0.938rem' : '1rem', 
-              marginBottom: '0.75rem',
-              fontWeight: '600'
-            }}>
-              Formula
-            </h3>
-            <div className="methodology-example" style={{
-              fontFamily: 'Monaco, Consolas, monospace',
-              fontSize: isMobile ? '0.75rem' : '0.813rem',
-              backgroundColor: 'var(--color-card)',
-              border: '1px solid var(--color-border)',
-              borderRadius: '4px',
-              padding: isMobile ? '0.75rem' : '1rem',
-              color: 'var(--color-accent)',
-              marginBottom: '1rem',
-              overflowX: 'auto'
-            }}>
-              EV = (P_model × Total Return) - Stake
-            </div>
-            <p style={{ 
-              fontSize: isMobile ? '0.875rem' : '0.938rem', 
-              color: 'var(--color-text-secondary)', 
-              lineHeight: '1.6' 
-            }}>
-              Where P_model is your model's win probability, Total Return is your stake plus winnings, and Stake is your bet amount.
-            </p>
-          </div>
-
-          <div style={{ marginBottom: isMobile ? '1rem' : '1.5rem' }}>
-            <h3 style={{ 
-              fontSize: isMobile ? '0.938rem' : '1rem', 
-              marginBottom: '0.75rem',
-              fontWeight: '600'
-            }}>
-              Example
-            </h3>
-            <div className="methodology-example" style={{
-              backgroundColor: 'var(--color-card)',
-              border: '1px solid var(--color-border)',
-              borderRadius: '4px',
-              padding: isMobile ? '0.875rem' : '1rem',
-            }}>
-              <p style={{ 
-                fontSize: isMobile ? '0.875rem' : '0.938rem', 
-                color: 'var(--color-text-secondary)', 
-                lineHeight: '1.6', 
-                marginBottom: '0.5rem' 
-              }}>
-                <strong>Scenario:</strong> Our model gives Team A a 55% win probability, but the market odds are +150 (implied 40% probability).
-              </p>
-              <p style={{ 
-                fontSize: isMobile ? '0.875rem' : '0.938rem', 
-                color: 'var(--color-text-secondary)', 
-                lineHeight: '1.6', 
-                marginBottom: '0.5rem' 
-              }}>
-                <strong>Calculation:</strong> On a $100 bet at +150 odds, total return is $250 ($100 stake + $150 winnings).
-              </p>
-              <p style={{ 
-                fontSize: isMobile ? '0.875rem' : '0.938rem', 
-                color: 'var(--color-text-secondary)', 
-                lineHeight: '1.6', 
-                marginBottom: '0.5rem' 
-              }}>
-                EV = (0.55 × $250) - $100 = $137.50 - $100 = <strong style={{ color: 'var(--color-success)' }}>+$37.50</strong>
-              </p>
-              <p style={{ 
-                fontSize: isMobile ? '0.875rem' : '0.938rem', 
-                color: 'var(--color-success)', 
-                lineHeight: '1.6' 
-              }}>
-                <strong>Result:</strong> This is a +37.5% EV bet — excellent value!
-              </p>
-            </div>
-          </div>
-
-          <div style={{
-            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-            border: '1px solid var(--color-success)',
-            borderRadius: '4px',
-            padding: isMobile ? '0.875rem' : '1rem',
-          }}>
-            <p style={{ 
-              fontSize: isMobile ? '0.875rem' : '0.938rem', 
-              color: 'var(--color-text-secondary)' 
-            }}>
-              <strong style={{ color: 'var(--color-success)' }}>Betting Rule:</strong> Only bet when EV &gt; 0. The higher the EV percentage,
-              the better the opportunity.
-            </p>
-          </div>
-        </div>
-
-        {/* Kelly Criterion */}
-        <div className="elevated-card methodology-section" style={{ marginBottom: isMobile ? '1.5rem' : '2rem' }}>
-          <h2 style={{ 
-            marginBottom: isMobile ? '1rem' : '1.5rem', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '0.5rem',
-            fontSize: isMobile ? '1.125rem' : '1.25rem'
-          }}>
-            <BookOpen size={isMobile ? 18 : 20} />
-            Kelly Criterion (Stake Sizing)
-          </h2>
-          
-          <div style={{ marginBottom: isMobile ? '1rem' : '1.5rem' }}>
-            <h3 style={{ 
-              fontSize: isMobile ? '0.938rem' : '1rem', 
-              marginBottom: '0.75rem',
-              fontWeight: '600'
-            }}>
-              What is Kelly?
-            </h3>
-            <p style={{ 
-              fontSize: isMobile ? '0.875rem' : '0.938rem', 
-              color: 'var(--color-text-secondary)', 
-              lineHeight: '1.6' 
-            }}>
-              The Kelly Criterion is a formula for determining the optimal bet size to maximize long-term growth while minimizing
-              risk of ruin. It calculates what percentage of your bankroll to wager on a positive EV bet.
-            </p>
-          </div>
-
-          <div style={{ marginBottom: isMobile ? '1rem' : '1.5rem' }}>
-            <h3 style={{ 
-              fontSize: isMobile ? '0.938rem' : '1rem', 
-              marginBottom: '0.75rem',
-              fontWeight: '600'
-            }}>
-              Formula
-            </h3>
-            <div className="methodology-example" style={{
-              fontFamily: 'Monaco, Consolas, monospace',
-              fontSize: isMobile ? '0.75rem' : '0.813rem',
-              backgroundColor: 'var(--color-card)',
-              border: '1px solid var(--color-border)',
-              borderRadius: '4px',
-              padding: isMobile ? '0.75rem' : '1rem',
-              color: 'var(--color-accent)',
-              marginBottom: '0.5rem',
-              overflowX: 'auto'
-            }}>
-              f* = (bp - q) / b
-            </div>
-            <p style={{ 
-              fontSize: isMobile ? '0.875rem' : '0.938rem', 
-              color: 'var(--color-text-secondary)', 
-              lineHeight: '1.6', 
-              marginBottom: '0.5rem' 
-            }}>
-              Where:
-            </p>
-            <ul style={{ 
-              fontSize: isMobile ? '0.875rem' : '0.938rem', 
-              color: 'var(--color-text-secondary)', 
-              lineHeight: '1.6', 
-              paddingLeft: isMobile ? '1.25rem' : '1.5rem' 
-            }}>
-              <li><code>b</code> = decimal odds - 1 (e.g., +150 → 1.5)</li>
-              <li><code>p</code> = your model's win probability</li>
-              <li><code>q</code> = 1 - p (loss probability)</li>
-            </ul>
-          </div>
-
-          <div style={{ marginBottom: isMobile ? '1rem' : '1.5rem' }}>
-            <h3 style={{ 
-              fontSize: isMobile ? '0.938rem' : '1rem', 
-              marginBottom: '0.75rem',
-              fontWeight: '600'
-            }}>
-              Fractional Kelly (Common Approach)
-            </h3>
-            <p style={{ 
-              fontSize: isMobile ? '0.875rem' : '0.938rem', 
-              color: 'var(--color-text-secondary)', 
-              lineHeight: '1.6', 
-              marginBottom: '0.75rem' 
-            }}>
-              Full Kelly can be aggressive and lead to large swings. A common approach is <strong>25% Kelly</strong> (Quarter Kelly) for more conservative,
-              sustainable bankroll growth.
-            </p>
-            <div className="methodology-example" style={{
-              backgroundColor: 'var(--color-card)',
-              border: '1px solid var(--color-border)',
-              borderRadius: '4px',
-              padding: isMobile ? '0.875rem' : '1rem',
-            }}>
-              <p style={{ 
-                fontSize: isMobile ? '0.875rem' : '0.938rem', 
-                color: 'var(--color-text-secondary)', 
-                lineHeight: '1.6' 
-              }}>
-                <strong>Example:</strong> If Kelly suggests 8% of bankroll, Quarter Kelly would be 2% (8% × 0.25).
-                On a $1,000 bankroll, that's $20 instead of $80.
-              </p>
-            </div>
-          </div>
-
-          <div style={{
-            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid var(--color-danger)',
-            borderRadius: '4px',
-            padding: isMobile ? '0.875rem' : '1rem',
-          }}>
-            <p style={{ 
-              fontSize: isMobile ? '0.875rem' : '0.938rem', 
-              color: 'var(--color-text-secondary)' 
-            }}>
-              <strong style={{ color: 'var(--color-danger)' }}>Risk Management:</strong> Never bet more than 5% of your bankroll on a single game,
-              even if Kelly suggests higher. This protects against model errors and variance.
-            </p>
-          </div>
-        </div>
-
-        {/* Game Total Prediction */}
-        <div className="elevated-card methodology-section" style={{ marginBottom: isMobile ? '1.5rem' : '2rem' }}>
-          <h2 style={{ 
-            marginBottom: isMobile ? '1rem' : '1.5rem', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '0.5rem',
-            fontSize: isMobile ? '1.125rem' : '1.25rem'
-          }}>
-            <BookOpen size={isMobile ? 18 : 20} />
-            Game Total Prediction Model
-          </h2>
-          
-          <div style={{ marginBottom: isMobile ? '1rem' : '1.5rem' }}>
-            <h3 style={{ 
-              fontSize: isMobile ? '0.938rem' : '1rem', 
-              marginBottom: '0.75rem',
-              fontWeight: '600'
-            }}>
-              How We Predict Game Totals
-            </h3>
-            <p style={{ 
-              fontSize: isMobile ? '0.875rem' : '0.938rem', 
-              color: 'var(--color-text-secondary)', 
-              lineHeight: '1.6' 
-            }}>
-              Our model uses score-adjusted expected goals (xG), applies PDO regression, and weights both teams' offense and defense 
-              (55% offense / 45% defense) to predict individual team scores and total goals.
-            </p>
-          </div>
-
-          <div style={{ marginBottom: isMobile ? '1rem' : '1.5rem' }}>
-            <h3 style={{ 
-              fontSize: isMobile ? '0.938rem' : '1rem', 
-              marginBottom: '0.75rem',
-              fontWeight: '600'
-            }}>
-              Key Components
-            </h3>
-            <ul style={{ 
-              fontSize: isMobile ? '0.875rem' : '0.938rem', 
-              color: 'var(--color-text-secondary)', 
-              lineHeight: '1.6', 
-              paddingLeft: isMobile ? '1.25rem' : '1.5rem' 
-            }}>
-              <li><strong>Score-Adjusted xG:</strong> Removes bias from teams protecting leads or chasing deficits</li>
-              <li><strong>PDO Regression:</strong> Adjusts for unsustainable luck (high/low shooting % or save %)</li>
-              <li><strong>5v5 Weight:</strong> 77% of game time (46.2 minutes)</li>
-              <li><strong>PP/PK Weight:</strong> 23% of game time (13.8 minutes)</li>
-              <li><strong>Home Ice:</strong> +5% win probability boost</li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 style={{ 
-              fontSize: isMobile ? '0.938rem' : '1rem', 
-              marginBottom: '0.75rem',
-              fontWeight: '600'
-            }}>
-              Win Probability
-            </h3>
-            <p style={{ 
-              fontSize: isMobile ? '0.875rem' : '0.938rem', 
-              color: 'var(--color-text-secondary)', 
-              lineHeight: '1.6' 
-            }}>
-              We use a logistic regression model that accounts for xG differential, PDO regression, and home-ice advantage 
-              to estimate moneyline win probabilities. This S-curve approach reflects real-world probabilities better than linear models.
-            </p>
-          </div>
-        </div>
-
-        {/* Code Reference */}
-        <div style={{
-          padding: isMobile ? '0.875rem' : '1rem',
-          backgroundColor: 'rgba(212, 175, 55, 0.05)',
-          border: '1px solid var(--color-accent)',
-          borderRadius: '4px',
+        <section style={{
+          background: PANEL,
+          border: `1px solid ${LINE}`,
+          borderRadius: 16,
+          padding: '1.5rem 1.4rem',
+          marginBottom: '2rem',
         }}>
-          <p style={{ 
-            fontSize: isMobile ? '0.875rem' : '0.938rem', 
-            color: 'var(--color-text-secondary)',
-            lineHeight: '1.6'
-          }}>
-            <strong style={{ color: 'var(--color-accent)' }}>Verify the Math:</strong> All calculations are performed in{' '}
-            <code style={{
-              fontFamily: 'Monaco, Consolas, monospace',
-              backgroundColor: 'var(--color-card)',
-              padding: '0.125rem 0.25rem',
-              borderRadius: '2px',
-              fontSize: isMobile ? '0.75rem' : '0.813rem'
-            }}>
-              src/utils/dataProcessing.js
-            </code>
-            {' '}and{' '}
-            <code style={{
-              fontFamily: 'Monaco, Consolas, monospace',
-              backgroundColor: 'var(--color-card)',
-              padding: '0.125rem 0.25rem',
-              borderRadius: '2px',
-              fontSize: isMobile ? '0.75rem' : '0.813rem'
-            }}>
-              src/utils/edgeCalculator.js
-            </code>
-            {'. '}Every metric displayed uses real CSV data with transparent, verifiable calculations. Audit them in the Data Inspector page.
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start', marginBottom: '0.85rem' }}>
+            <Shield size={20} color={GOLD} />
+            <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800 }}>
+              What we don’t publish
+            </h2>
+          </div>
+          <p style={{ margin: '0 0 0.75rem', fontSize: '0.92rem', lineHeight: 1.65, color: MUTED }}>
+            We explain the <em style={{ color: TEXT, fontStyle: 'normal' }}>product</em> — Market, Engine, Sharps, Record —
+            so you know what you’re looking at. We do not publish internal ranking formulas, wallet qualification
+            thresholds, sizing ladders, or proprietary scoring weights. Those are the asset. The proof of whether
+            they work lives in the graded Record, not in a whitepaper that teaches competitors how to copy the pipe.
           </p>
+          <p style={{ margin: 0, fontSize: '0.92rem', lineHeight: 1.65, color: MUTED }}>
+            SharpFlow is an information product. We are not a sportsbook. Content is for entertainment and education;
+            you are responsible for your own decisions and for complying with local law.
+          </p>
+        </section>
+
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '0.75rem',
+          marginBottom: '1.5rem',
+        }}>
+          {[
+            { to: '/', label: 'Open Market' },
+            { to: '/engine', label: 'Open Engine' },
+            { to: '/record', label: 'View Record' },
+            { to: '/faq', label: 'FAQ' },
+          ].map((c) => (
+            <Link
+              key={c.to}
+              to={c.to}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                padding: '0.7rem 1.1rem',
+                borderRadius: 10,
+                background: c.to === '/' ? `linear-gradient(135deg, ${GOLD}, #FFD700)` : 'rgba(255,255,255,0.04)',
+                color: c.to === '/' ? '#0A0E27' : TEXT,
+                border: c.to === '/' ? 'none' : `1px solid ${LINE}`,
+                fontWeight: 700,
+                fontSize: '0.9rem',
+                textDecoration: 'none',
+              }}
+            >
+              {c.label}
+              <ArrowRight size={15} />
+            </Link>
+          ))}
         </div>
-      </div>
+
+        <p style={{ fontSize: '0.8rem', color: 'rgba(232,238,248,0.4)', margin: 0 }}>
+          Last updated: August 7, 2026 · SharpFlow
+        </p>
+      </main>
     </div>
   );
-};
-
-export default Methodology;
+}
