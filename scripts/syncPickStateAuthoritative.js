@@ -2259,7 +2259,7 @@ async function createMissingLockedPicks({
         peakUnitsApplied = qConvPolicyCreate.units;
       }
 
-      // FOOLS mute — final dial after qConv (best FOR = FLAT → 0u, any EDGE).
+      // FOOLS clamp — final dial after qConv (best FOR = FLAT → [1u, 2u]).
       const bestForCreate = (createV121Eligible && Array.isArray(walletDetails) && walletDetails.length > 0)
         ? bestProvenForSide(walletDetails, side, sport, walletProfiles)
         : { tier: null, nForProven: 0, flatRoi: null, walletShort: null };
@@ -3366,8 +3366,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     finalUnitsApplied = qConvPolicy.units;
   }
 
-  // ─── FOOLS mute (final dial after qConv) ──────────────────────────────
-  // Best proven FOR = FLAT → 0u at any EDGE (incl. soft E<7).
+  // ─── FOOLS clamp (final dial after qConv) ─────────────────────────────
+  // Best proven FOR = FLAT → stake clamped to [1u, 2u] (0u mute rolled back).
   // Manual stake exempt. DISSENT / non-A/B/C tiers exempt.
   const bestForLive = (v121Eligible && Array.isArray(wd) && wd.length > 0)
     ? bestProvenForSide(wd, side, pick.sport, walletProfiles)
@@ -3444,14 +3444,11 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       }
     }
   }
-  // CLV/tape/qConv/FOOLS cancel → MUTED so Locked Picks treats it like other 0u mutes.
+  // CLV/tape/qConv cancel → MUTED. FOOLS is a clamp now (stays ACTIVE with 1–2u).
   const qConvMuted = qConvPolicy?.action === 'MUTE'
     && Number.isFinite(qConvPolicy.unitsPrePolicy)
     && qConvPolicy.unitsPrePolicy > 0;
-  const foolsMuted = foolsGoldPolicy?.action === 'MUTE'
-    && Number.isFinite(foolsGoldPolicy.unitsPrePolicy)
-    && foolsGoldPolicy.unitsPrePolicy > 0;
-  const sizeMuted = foolsMuted || qConvMuted || (tapeSizingLive
+  const sizeMuted = qConvMuted || (tapeSizingLive
     ? (tapePolicy?.action === 'MUTE' && unitsBeforeClv > 0)
     : (clvPolicy.action === 'CANCEL' && unitsBeforeClv > 0));
   const healthStatusOut = sizeMuted
@@ -3489,8 +3486,6 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const FOOLS_MUTE_VALUES = new Set(['fools-gold-flat']);
   if (winnerMuted) {
     patch.mutedBy = 'winner_align_fade';
-  } else if (foolsGoldPolicy?.mutedBy) {
-    patch.mutedBy = foolsGoldPolicy.mutedBy;
   } else if (qConvPolicy?.mutedBy) {
     patch.mutedBy = qConvPolicy.mutedBy;
   } else if (tapePolicy?.mutedBy) {
@@ -3504,6 +3499,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       || TAPE_MUTE_VALUES.has(sd.mutedBy)
       || QCONV_MUTE_VALUES.has(sd.mutedBy)
       || FOOLS_MUTE_VALUES.has(sd.mutedBy)) {
+    // Clear legacy fools-gold-flat mute stamps now that FOOLS only clamps.
     patch.mutedBy = admin.firestore.FieldValue.delete();
   }
   if (stampedStatus !== healthStatusOut) {
@@ -3695,11 +3691,11 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       + `${qConvPolicy.unitsPrePolicy}u → 0u (${hcStakeTier})`
     );
   }
-  if (foolsGoldPolicy?.action === 'MUTE') {
+  if (foolsGoldPolicy?.action === 'CLAMP') {
     changes.push(
-      `FOOLS-MUTE: E=${winnerAlign?.edge == null ? '—' : Number(winnerAlign.edge).toFixed(1)} `
+      `FOOLS-CLAMP: E=${winnerAlign?.edge == null ? '—' : Number(winnerAlign.edge).toFixed(1)} `
       + `bestFOR=${bestForLive.tier || '—'} nFor=${bestForLive.nForProven} `
-      + `${foolsGoldPolicy.unitsPrePolicy}u → 0u (${hcStakeTier})`
+      + `${foolsGoldPolicy.unitsPrePolicy}u → ${foolsGoldPolicy.units}u (${hcStakeTier})`
     );
   }
   if (rankRescued) {
@@ -4336,11 +4332,11 @@ async function main() {
 
   if (isFoolsGoldMuteLive(TARGET_DATE)) {
     console.log(
-      `FOOLS mute LIVE: best proven FOR=FLAT → 0u (any EDGE, incl. soft E<${FOOLS_GOLD_EDGE_MIN})`
+      `FOOLS clamp LIVE: best proven FOR=FLAT → [1u, 2u] (0u mute rolled back)`
       + ` · from ${FOOLS_GOLD_MUTE_FROM} · Path A/B/C`,
     );
   } else {
-    console.log(`FOOLS-gold mute: not live before ${FOOLS_GOLD_MUTE_FROM} (TARGET_DATE=${TARGET_DATE})`);
+    console.log(`FOOLS clamp: not live before ${FOOLS_GOLD_MUTE_FROM} (TARGET_DATE=${TARGET_DATE})`);
   }
 
   // Path × EDGE blend WR priors — expanding tier WR before TARGET_DATE.

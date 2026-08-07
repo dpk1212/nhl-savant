@@ -603,14 +603,16 @@ export function applyQConvMuteOverlay({
   };
 }
 
-// ── FOOLS mute (best proven FOR = FLAT → 0u, any EDGE) ───────────────────────
-// Originally E≥7-only (classic FOOLS-gold). Soft+FLAT (E<7) is worse in-sample
-// (Jun15+: ~38% WR / −29% ROI) and was slipping through — e.g. Jays +1.5 on
-// 2026-08-05. Mute now covers FLAT anchors at every EDGE on Path A/B/C.
-// Forward-only from FOOLS_GOLD_MUTE_FROM.
+// ── FOOLS clamp (best proven FOR = FLAT → stake clamped to [1u, 2u]) ─────────
+// Was a hard 0u mute from 2026-08-05; rolled back after early live cost
+// (~−2.76u / ~6.75u volume in two days). FLAT anchors still get sized down
+// (or floored up to 1u) instead of cancelled. Forward-only from cutover.
 export const FOOLS_GOLD_MUTE_FROM = '2026-08-05';
-/** @deprecated Mute no longer gates on EDGE; kept for log/compat. */
+/** @deprecated EDGE no longer gates FOOLS; kept for log/compat. */
 export const FOOLS_GOLD_EDGE_MIN = 7;
+/** Stake band when best proven FOR is FLAT (replaces 0u mute). */
+export const FOOLS_CLAMP_MIN_U = 1;
+export const FOOLS_CLAMP_MAX_U = 2;
 /** Same Path A/B/C book as qConv mute (DISSENT exempt). */
 export const FOOLS_GOLD_MUTE_TIERS = new Set([
   'SUPER', 'TOP', 'TOP+', 'MINI', 'MINI-', 'CONFIRMED',
@@ -666,9 +668,10 @@ export function bestProvenForSide(walletDetails, mySide, sport, walletProfiles) 
 }
 
 /**
- * Cancel FOOLS: best proven FOR tier is FLAT → 0u (any EDGE, incl. soft E&lt;7).
- * EDGE is optional (used only to tag soft vs classic in reason). Manual stake
+ * FOOLS size clamp: best proven FOR tier is FLAT → stake in [1u, 2u].
+ * Replaces the hard 0u mute. EDGE is optional (reason tag only). Manual stake
  * exempt at call site. Missing bestForTier → HOLD (fail-open).
+ * Already inside the band → HOLD (no rewrite).
  */
 export function applyFoolsGoldMuteOverlay({
   units,
@@ -676,6 +679,8 @@ export function applyFoolsGoldMuteOverlay({
   bestForTier = null,
   tier = null,
   pickDate = null,
+  minU = FOOLS_CLAMP_MIN_U,
+  maxU = FOOLS_CLAMP_MAX_U,
 } = {}) {
   const pre = Number.isFinite(units) ? Math.max(0, units) : 0;
   if (!(pre > 0)) {
@@ -698,13 +703,21 @@ export function applyFoolsGoldMuteOverlay({
       units: pre, action: 'HOLD', reason: null, mutedBy: null, unitsPrePolicy: pre,
     };
   }
+  const lo = Number.isFinite(minU) ? minU : FOOLS_CLAMP_MIN_U;
+  const hi = Number.isFinite(maxU) ? maxU : FOOLS_CLAMP_MAX_U;
+  const clamped = Math.round(Math.min(hi, Math.max(lo, pre)) * 100) / 100;
+  if (clamped === pre) {
+    return {
+      units: pre, action: 'HOLD', reason: null, mutedBy: null, unitsPrePolicy: pre,
+    };
+  }
   const softFlat = edge == null || !Number.isFinite(Number(edge))
     || Number(edge) < FOOLS_GOLD_EDGE_MIN;
   return {
-    units: 0,
-    action: 'MUTE',
-    reason: softFlat ? 'fools_flat_soft' : 'fools_gold_flat',
-    mutedBy: 'fools-gold-flat',
+    units: clamped,
+    action: 'CLAMP',
+    reason: softFlat ? 'fools_flat_clamp_soft' : 'fools_flat_clamp',
+    mutedBy: null,
     unitsPrePolicy: pre,
   };
 }
