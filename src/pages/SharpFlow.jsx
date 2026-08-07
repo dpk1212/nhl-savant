@@ -8,6 +8,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef, memo, Fragment } from 'react';
 import { createPortal } from 'react-dom';
+import { useLocation } from 'react-router-dom';
 import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Activity, Zap, BarChart3, Eye, Star, ArrowUpRight, ArrowDownRight, Minus, DollarSign, Workflow, Lock, CheckCircle, Circle, Clock, AlertTriangle, ShieldCheck, Sparkles, Flame, Check, X } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ComposedChart, Bar, ReferenceDot, Cell, Area, AreaChart, ReferenceLine } from 'recharts';
 import { resolveOutcomeSide } from '../utils/teamNameMapper';
@@ -9113,6 +9114,7 @@ const SharpTape = memo(function SharpTape({ sharpPositions }) {
 });
 
 export default function SharpFlow() {
+  const location = useLocation();
   const { polyData, kalshiData, whaleProfiles, pinnacleHistory, sharpPositions, spreadPositions, totalPositions, rawSharpPositions, rawSpreadPositions, rawTotalPositions, sportsSharps, intelExcludedWallets, walletProfiles, loading } = useMarketData();
   const { user, loading: authLoading } = useAuth();
   const { isPremium, loading: subLoading } = useSubscription(user);
@@ -9151,6 +9153,32 @@ export default function SharpFlow() {
   // v9 + v10 + v11 + v12). The standalone Pre-v12 archive bar was retired
   // 2026-06-11 per UX feedback ("I want 1 bar only").
   const [showAgsuPerf, setShowAgsuPerf] = useState(false);
+
+  // Top-nav deep links — SharpFlow surfaces only (never NHL model PerformanceDashboard).
+  // /record → AGS-U graded ledger on the Board. /performance stays the NHL model page.
+  useEffect(() => {
+    const p = location.pathname || '/';
+    if (p === '/locks') {
+      setViewMode('whaleSignals');
+      setSortBy('locked');
+      setShowAgsuPerf(false);
+    } else if (p === '/sharps') {
+      setViewMode('sharpVault');
+      setShowAgsuPerf(false);
+    } else if (p === '/record') {
+      setViewMode('whaleSignals');
+      setShowAgsuPerf(true);
+      // Land on the SharpFlow AGS-U ledger — not the NHL model /performance page.
+      requestAnimationFrame(() => {
+        document.getElementById('sf-agsu-record')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    } else if (p === '/' || p === '/sharp-flow' || p === '/board') {
+      setViewMode('whaleSignals');
+      // Board = live map; don't land on Locked Picks (that's /locks).
+      setSortBy((prev) => (prev === 'locked' ? 'stars' : prev));
+      setShowAgsuPerf(false);
+    }
+  }, [location.pathname]);
   // 'v12' (default, the live model since 2026-06-01) | 'all' (every era).
   const [agsuEraScope, setAgsuEraScope] = useState('v12');
   const [agsuDateRange, setAgsuDateRange] = useState('all');
@@ -10439,7 +10467,7 @@ export default function SharpFlow() {
               })();
 
               return (
-                <div style={{ marginBottom: '1rem' }}>
+                <div id="sf-agsu-record" style={{ marginBottom: '1rem' }}>
                   {/* ── Collapsed/expanded header ──────────────────── */}
                   <button onClick={() => setShowAgsuPerf(p => !p)} className="sf-glass" style={{
                     width: '100%',

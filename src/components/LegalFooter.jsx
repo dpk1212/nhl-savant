@@ -60,7 +60,7 @@ const LegalFooter = () => {
               letterSpacing: '0.05em',
               marginBottom: '0.75rem'
             }}>
-              NHL Savant
+              SharpFlow
             </h3>
             <p style={{
               fontSize: '0.813rem',
@@ -68,7 +68,7 @@ const LegalFooter = () => {
               color: 'var(--color-text-muted)',
               margin: 0
             }}>
-              Advanced NHL analytics and statistical modeling for sports enthusiasts. Not a gambling operator or sportsbook.
+              We follow winning bettors&apos; money across sports markets — graded, losses included. Not a gambling operator or sportsbook.
             </p>
           </div>
 
@@ -214,7 +214,7 @@ const LegalFooter = () => {
               <strong>18+/21+ Only.</strong> Verify sports betting is legal in your jurisdiction before placing wagers.
             </p>
             <p style={{ margin: 0 }}>
-              © {new Date().getFullYear()} NHL Savant. All rights reserved. We are not affiliated with the NHL or any sportsbook operator.
+              © {new Date().getFullYear()} SharpFlow. All rights reserved. We are not affiliated with any league or sportsbook operator.
             </p>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import Papa from 'papaparse';
 import { trackPageView, trackEngagement, trackFirstVisit, trackEvent, getPageName } from './utils/analytics';
@@ -22,7 +22,6 @@ import { useSplashScreen } from './hooks/useSplashScreen';
 
 // Route-level code splitting — SharpFlow is the landing page and stays eager;
 // every other page loads on navigation so "/" ships the smallest bundle.
-const Dashboard = lazy(() => import('./components/Dashboard'));
 const DataInspector = lazy(() => import('./components/DataInspector'));
 const TodaysGames = lazy(() => import('./components/TodaysGames'));
 const PerformanceDashboard = lazy(() => import('./components/PerformanceDashboard'));
@@ -414,9 +413,18 @@ function AppContent({ dataProcessor, oddsData, startingGoalies, goalieData, stat
       <main>
         <Suspense fallback={<LoadingSpinner />}>
         <Routes>
-              {/* Sharp Flow is the primary landing page (nhlsavant.com → Sharp Flow). */}
+              {/* SharpFlow product loop: Board · Locks · Sharps · Record (AGS-U ledger) */}
               <Route path="/" element={<SharpFlow />} />
-              {/* Today's Games moved off "/" but kept reachable at its own path. */}
+              <Route path="/board" element={<Navigate to="/" replace />} />
+              <Route path="/locks" element={<SharpFlow />} />
+              <Route path="/sharps" element={<SharpFlow />} />
+              <Route path="/record" element={<SharpFlow />} />
+              {/* Back-compat aliases */}
+              <Route path="/sharp-flow" element={<Navigate to="/" replace />} />
+              {/* Analytics Hub removed from product surface */}
+              <Route path="/dashboard" element={<Navigate to="/" replace />} />
+
+              {/* Sport models (relocated under Models — NOT SharpFlow Record) */}
               <Route path="/todays-games" element={<TodaysGames 
                 dataProcessor={dataProcessor} 
                 oddsData={oddsData} 
@@ -425,19 +433,15 @@ function AppContent({ dataProcessor, oddsData, startingGoalies, goalieData, stat
                 statsAnalyzer={statsAnalyzer}
                 edgeFactorCalc={edgeFactorCalc}
               />} />
-              <Route path="/my-picks" element={<MyPicks />} />
-              {/* Backwards-compatible alias for existing /sharp-flow links. */}
-              <Route path="/sharp-flow" element={<SharpFlow />} />
-              
-              {/* Basketball - Hidden from navigation */}
+              {/* NHL model graded performance — model surface only */}
+              <Route path="/performance" element={<PerformanceDashboard />} />
+              <Route path="/mlb" element={<MLB />} />
               <Route path="/basketball" element={<Basketball />} />
               <Route path="/basketball/mapping-audit" element={<BasketballMappingAudit />} />
-              <Route path="/mlb" element={<MLB />} />
-              
-              <Route path="/dashboard" element={<Dashboard dataProcessor={dataProcessor} loading={loading} error={error} />} />
+
+              <Route path="/my-picks" element={<MyPicks />} />
               <Route path="/methodology" element={<Methodology />} />
               <Route path="/inspector" element={<DataInspector dataProcessor={dataProcessor} />} />
-              <Route path="/performance" element={<PerformanceDashboard />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/account" element={<Account />} />
               <Route path="/faq" element={<FAQ />} />

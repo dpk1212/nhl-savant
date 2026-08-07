@@ -365,7 +365,10 @@ export const getPageName = (pathname) => {
     '/basketball': 'Basketball',
     '/faq': 'FAQ',
     '/dashboard': 'Analytics Dashboard',
-    '/performance': 'Performance Dashboard',
+    '/performance': 'NHL Model Record',
+    '/record': 'SharpFlow Record',
+    '/locks': 'SharpFlow Locks',
+    '/sharps': 'SharpFlow Sharps',
     '/methodology': 'Methodology',
     '/inspector': 'Data Inspector',
     '/disclaimer': 'Legal Disclaimer'
