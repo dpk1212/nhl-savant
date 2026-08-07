@@ -9154,11 +9154,11 @@ export default function SharpFlow() {
   // 2026-06-11 per UX feedback ("I want 1 bar only").
   const [showAgsuPerf, setShowAgsuPerf] = useState(false);
 
-  // Top-nav deep links — SharpFlow surfaces only (never NHL model PerformanceDashboard).
-  // /record → AGS-U graded ledger on the Board. /performance stays the NHL model page.
+  // Top-nav: Market (/) · Engine (/engine) · Sharps · Record.
+  // /record → AGS-U ledger. /performance stays NHL model only.
   useEffect(() => {
     const p = location.pathname || '/';
-    if (p === '/locks') {
+    if (p === '/engine' || p === '/locks') {
       setViewMode('whaleSignals');
       setSortBy('locked');
       setShowAgsuPerf(false);
@@ -9168,13 +9168,12 @@ export default function SharpFlow() {
     } else if (p === '/record') {
       setViewMode('whaleSignals');
       setShowAgsuPerf(true);
-      // Land on the SharpFlow AGS-U ledger — not the NHL model /performance page.
       requestAnimationFrame(() => {
         document.getElementById('sf-agsu-record')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
-    } else if (p === '/' || p === '/sharp-flow' || p === '/board') {
+    } else if (p === '/' || p === '/sharp-flow' || p === '/board' || p === '/market') {
       setViewMode('whaleSignals');
-      // Board = live map; don't land on Locked Picks (that's /locks).
+      // Market = live tape; Engine owns locked picks.
       setSortBy((prev) => (prev === 'locked' ? 'stars' : prev));
       setShowAgsuPerf(false);
     }

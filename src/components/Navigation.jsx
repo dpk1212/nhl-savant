@@ -17,8 +17,8 @@ import AuthModal from './AuthModal';
 const GOLD = '#D4AF37';
 
 const primaryLinks = [
-  { path: '/', label: 'Board', icon: Zap, match: (p) => p === '/' || p === '/sharp-flow' || p === '/board' },
-  { path: '/locks', label: 'Locks', icon: Target, match: (p) => p === '/locks' },
+  { path: '/', label: 'Market', icon: Zap, match: (p) => p === '/' || p === '/sharp-flow' || p === '/board' || p === '/market' },
+  { path: '/engine', label: 'Engine', icon: Target, match: (p) => p === '/engine' || p === '/locks' },
   { path: '/sharps', label: 'Sharps', icon: Lock, match: (p) => p === '/sharps' },
   { path: '/record', label: 'Record', icon: BarChart3, match: (p) => p === '/record' },
 ];

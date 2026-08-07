@@ -367,8 +367,10 @@ export const getPageName = (pathname) => {
     '/dashboard': 'Analytics Dashboard',
     '/performance': 'NHL Model Record',
     '/record': 'SharpFlow Record',
-    '/locks': 'SharpFlow Locks',
+    '/engine': 'SharpFlow Engine',
+    '/locks': 'SharpFlow Engine',
     '/sharps': 'SharpFlow Sharps',
+    '/': 'SharpFlow Market',
     '/methodology': 'Methodology',
     '/inspector': 'Data Inspector',
     '/disclaimer': 'Legal Disclaimer'

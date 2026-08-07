@@ -413,10 +413,12 @@ function AppContent({ dataProcessor, oddsData, startingGoalies, goalieData, stat
       <main>
         <Suspense fallback={<LoadingSpinner />}>
         <Routes>
-              {/* SharpFlow product loop: Board · Locks · Sharps · Record (AGS-U ledger) */}
+              {/* SharpFlow product loop: Market · Engine · Sharps · Record */}
               <Route path="/" element={<SharpFlow />} />
+              <Route path="/market" element={<Navigate to="/" replace />} />
               <Route path="/board" element={<Navigate to="/" replace />} />
-              <Route path="/locks" element={<SharpFlow />} />
+              <Route path="/engine" element={<SharpFlow />} />
+              <Route path="/locks" element={<Navigate to="/engine" replace />} />
               <Route path="/sharps" element={<SharpFlow />} />
               <Route path="/record" element={<SharpFlow />} />
               {/* Back-compat aliases */}
