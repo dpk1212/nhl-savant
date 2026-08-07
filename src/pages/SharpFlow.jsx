@@ -9,7 +9,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, memo, Fragment } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
-import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Activity, Zap, BarChart3, Eye, Star, ArrowUpRight, ArrowDownRight, Minus, DollarSign, Workflow, Lock, CheckCircle, Circle, Clock, AlertTriangle, ShieldCheck, Sparkles, Flame, Check, X } from 'lucide-react';
+import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Activity, Zap, BarChart3, Eye, Star, ArrowUpRight, ArrowDownRight, Minus, DollarSign, Workflow, Lock, CheckCircle, Circle, Clock, AlertTriangle, ShieldCheck, Sparkles, Flame, Check, X, Target } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ComposedChart, Bar, ReferenceDot, Cell, Area, AreaChart, ReferenceLine } from 'recharts';
 import { resolveOutcomeSide } from '../utils/teamNameMapper';
 import { collection, doc, setDoc, getDoc, getDocs, query, where, orderBy, deleteField } from 'firebase/firestore';
@@ -3692,7 +3692,7 @@ function SharpFlowInfo({ isMobile }) {
           border: '1px solid rgba(251,191,36,0.25)', cursor: 'pointer',
           transition: 'all 0.2s ease', padding: 0,
         }}
-        aria-label="How Sharp Flow works"
+        aria-label="How SharpFlow works"
       >
         <span style={{ fontSize: isMobile ? '0.75rem' : '0.813rem', fontWeight: 700, color: 'rgba(251,191,36,0.85)' }}>?</span>
       </button>
@@ -3704,58 +3704,58 @@ function SharpFlowInfo({ isMobile }) {
             position: isMobile ? 'fixed' : 'absolute', zIndex: 999,
             top: isMobile ? '50%' : '100%', left: isMobile ? '50%' : 'auto', right: isMobile ? 'auto' : 0,
             transform: isMobile ? 'translate(-50%,-50%)' : 'none', marginTop: isMobile ? 0 : '10px',
-            width: isMobile ? 'calc(100vw - 48px)' : '340px', maxWidth: '380px',
-            padding: isMobile ? '1.25rem' : '1rem',
+            width: isMobile ? 'calc(100vw - 48px)' : '360px', maxWidth: '400px',
+            padding: isMobile ? '1.25rem' : '1.1rem',
             background: 'linear-gradient(145deg, rgba(15,23,42,0.99) 0%, rgba(30,41,59,0.99) 100%)',
             border: '1px solid rgba(251,191,36,0.2)', borderRadius: '14px',
             boxShadow: '0 12px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05) inset',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', paddingBottom: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ fontSize: '1.1rem' }}>⚡</span>
-                <span style={{ fontSize: '1rem', fontWeight: 700, color: 'rgba(251,191,36,0.95)' }}>How Sharp Flow Works</span>
+                <Zap size={16} color={B.gold} fill={B.gold} style={{ opacity: 0.9 }} />
+                <span style={{ fontSize: '0.95rem', fontWeight: 800, color: 'rgba(251,191,36,0.95)', letterSpacing: '-0.01em' }}>How SharpFlow works</span>
               </div>
-              {isMobile && <button onClick={() => setIsOpen(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '1.5rem', cursor: 'pointer', padding: 0, lineHeight: 1 }}>×</button>}
+              {isMobile && <button type="button" onClick={() => setIsOpen(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '1.5rem', cursor: 'pointer', padding: 0, lineHeight: 1 }}>×</button>}
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.35rem' }}>
-                  <span style={{ fontSize: '0.8rem' }}>★</span>
-                  <span style={{ fontSize: '0.813rem', fontWeight: 700, color: B.gold }}>Conviction Star Rating</span>
+                  <Activity size={12} color={B.gold} />
+                  <span style={{ fontSize: '0.813rem', fontWeight: 700, color: B.gold }}>Market</span>
                 </div>
                 <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, margin: 0 }}>
-                  Every play is scored using a <strong style={{ color: B.gold }}>proprietary weighted signal model</strong> that evaluates multiple dimensions of sharp activity, market pricing, and directional momentum. The result is a 0.5–5.0 conviction rating that captures the full strength of the signal.
+                  The live money map — both sides of the action, how hard capital is pressing, and where the tape is contested. Cards show the <strong style={{ color: B.gold }}>sharp money picture</strong> from verified public exchange data, not tipster chatter.
                 </p>
               </div>
 
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.35rem' }}>
-                  <Lock size={12} color={B.green} />
-                  <span style={{ fontSize: '0.813rem', fontWeight: 700, color: B.green }}>Locking & Unit Sizing</span>
+                  <Target size={12} color={B.green} />
+                  <span style={{ fontSize: '0.813rem', fontWeight: 700, color: B.green }}>Engine</span>
                 </div>
                 <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, margin: 0 }}>
-                  Plays that exceed our <strong style={{ color: B.green }}>conviction threshold</strong> are automatically locked and tracked with dynamically sized units. Higher-rated plays receive larger positions. Built-in safeguards penalize thin volume and split consensus before a play can lock.
+                  The Prediction Engine only stakes when the map is <strong style={{ color: B.green }}>clear enough</strong>. When volume is thin, consensus is split, or the picture is noisy, we stay out. Mute is a feature — not every game gets a ticket.
                 </p>
               </div>
 
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.35rem' }}>
-                  <Eye size={12} color="#60A5FA" />
-                  <span style={{ fontSize: '0.813rem', fontWeight: 700, color: '#60A5FA' }}>Game Cards</span>
+                  <Lock size={12} color="#818CF8" />
+                  <span style={{ fontSize: '0.813rem', fontWeight: 700, color: '#818CF8' }}>Sharps & Record</span>
                 </div>
                 <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, margin: 0 }}>
-                  Each card shows the <strong style={{ color: '#60A5FA' }}>full sharp money picture</strong> — both sides of the action, real-time line movement, market pricing, best available odds, and a signal checklist. All positions are verified from public on-chain and exchange data.
+                  <strong style={{ color: '#A5B4FC' }}>Sharps</strong> is the wallet ledger — who has historically beaten these markets. <strong style={{ color: '#A5B4FC' }}>Record</strong> grades every Engine decision after the game, wins and losses. That’s the audit trail.
                 </p>
               </div>
 
               <div style={{
                 marginTop: '0.25rem', padding: '0.625rem 0.75rem',
                 background: 'linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(212,175,55,0.06) 100%)',
-                border: `1px solid rgba(16,185,129,0.15)`, borderRadius: '8px',
+                border: '1px solid rgba(16,185,129,0.15)', borderRadius: '8px',
               }}>
                 <p style={{ fontSize: '0.688rem', color: 'rgba(148,163,184,0.95)', lineHeight: 1.5, margin: 0, fontWeight: 500 }}>
-                  Every locked play is graded after the game. Performance is tracked by conviction tier to validate the model. <span style={{ color: B.green }}>The star rating drives every decision</span> — what you see is what powers the recommendation.
+                  We follow winning bettors’ money, act only when the bar clears, and keep a public ledger. <span style={{ color: B.green }}>Proof over promises</span> — the Record is how you judge the book.
                 </p>
               </div>
             </div>
