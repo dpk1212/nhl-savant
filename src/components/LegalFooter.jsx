@@ -94,6 +94,36 @@ const LegalFooter = () => {
               margin: 0
             }}>
               <li style={{ marginBottom: '0.5rem' }}>
+                <a
+                  href="/privacy.html"
+                  style={{
+                    fontSize: '0.813rem',
+                    color: '#3B82F6',
+                    textDecoration: 'none',
+                    transition: 'color 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.target.style.color = '#60A5FA'}
+                  onMouseLeave={(e) => e.target.style.color = '#3B82F6'}
+                >
+                  Privacy Policy
+                </a>
+              </li>
+              <li style={{ marginBottom: '0.5rem' }}>
+                <a
+                  href="/terms.html"
+                  style={{
+                    fontSize: '0.813rem',
+                    color: '#3B82F6',
+                    textDecoration: 'none',
+                    transition: 'color 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.target.style.color = '#60A5FA'}
+                  onMouseLeave={(e) => e.target.style.color = '#3B82F6'}
+                >
+                  Terms of Use
+                </a>
+              </li>
+              <li style={{ marginBottom: '0.5rem' }}>
                 <Link 
                   to="/disclaimer" 
                   style={{
@@ -105,7 +135,7 @@ const LegalFooter = () => {
                   onMouseEnter={(e) => e.target.style.color = '#60A5FA'}
                   onMouseLeave={(e) => e.target.style.color = '#3B82F6'}
                 >
-                  Terms & Disclaimer
+                  Disclaimer
                 </Link>
               </li>
               <li style={{ marginBottom: '0.5rem' }}>
