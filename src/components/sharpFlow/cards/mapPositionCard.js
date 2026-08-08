@@ -350,6 +350,27 @@ function linesClose(a, b, eps = 0.051) {
   return Number.isFinite(a) && Number.isFinite(b) && Math.abs(a - b) <= eps;
 }
 
+/** Commence / freeze timestamps from Firestore, ISO, or epoch ms. */
+export function parseCommenceMs(raw) {
+  if (raw == null) return null;
+  if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
+  if (typeof raw?.toMillis === 'function') return raw.toMillis();
+  if (typeof raw?._seconds === 'number') return raw._seconds * 1000;
+  if (raw instanceof Date) {
+    const t = raw.getTime();
+    return Number.isFinite(t) ? t : null;
+  }
+  const t = new Date(raw).getTime();
+  return Number.isFinite(t) ? t : null;
+}
+
+/** Keep history points at/before freeze; points without t stay (legacy). */
+function histUpTo(hist, freezeAtMs) {
+  if (!Array.isArray(hist)) return [];
+  if (!Number.isFinite(freezeAtMs)) return hist;
+  return hist.filter((h) => !Number.isFinite(h?.t) || h.t <= freezeAtMs);
+}
+
 /**
  * Live market board for a locked pick from pinnacle_history.json.
  * Returns pinSeries (fair-book overtime), books[], bestOdds/bestBook, dual-side
@@ -358,8 +379,14 @@ function linesClose(a, b, eps = 0.051) {
  * Rule: ticket line and companion odds are one instrument. Never overwrite
  * the staked total/spread with a live consensus line, and never pair
  * flagged ticket odds with fair/best from a different line.
+ *
+ * @param {object} [opts]
+ * @param {number|null} [opts.freezeAtMs] — when set (T-15), truncate history and
+ *   ignore live totalCurrent/best so the board cannot keep moving past freeze.
  */
-export function buildLockedMarketOdds(pick, pinnacleHistory) {
+export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
+  const freezeAtMs = Number.isFinite(opts?.freezeAtMs) ? opts.freezeAtMs : null;
+  const sealed = Number.isFinite(freezeAtMs);
   const empty = {
     pinSeries: null,
     books: [],
@@ -433,7 +460,10 @@ export function buildLockedMarketOdds(pick, pinnacleHistory) {
   let latestT = null;
 
   if (isTotal) {
-    const hist = Array.isArray(pinnGame.totalHistory) ? pinnGame.totalHistory : [];
+    const hist = histUpTo(
+      Array.isArray(pinnGame.totalHistory) ? pinnGame.totalHistory : [],
+      freezeAtMs,
+    );
     const last = hist[hist.length - 1] || null;
     // Journey / fair for the TICKET line only — never mix 8.5 odds with 7.5.
     const stakeHist = stakedLine != null
@@ -455,7 +485,7 @@ export function buildLockedMarketOdds(pick, pinnacleHistory) {
         fairPair = sideKey === 'under' ? [under, over] : [over, under];
       }
       if (Number.isFinite(matchHist.t)) latestT = matchHist.t;
-    } else if (stakedLine == null && pinnGame.totalCurrent) {
+    } else if (!sealed && stakedLine == null && pinnGame.totalCurrent) {
       fairNow = sideKey === 'under'
         ? pinnGame.totalCurrent.underOdds
         : pinnGame.totalCurrent.overOdds;
@@ -469,15 +499,16 @@ export function buildLockedMarketOdds(pick, pinnacleHistory) {
     if (last && Number.isFinite(last.line)) {
       liveMarketLine = last.line;
       if (Number.isFinite(last.t) && latestT == null) latestT = last.t;
-    } else if (pinnGame.totalCurrent && Number.isFinite(pinnGame.totalCurrent.line)) {
+    } else if (!sealed && pinnGame.totalCurrent && Number.isFinite(pinnGame.totalCurrent.line)) {
       liveMarketLine = pinnGame.totalCurrent.line;
     }
 
-    const best = sideKey === 'under' ? pinnGame.bestUnder : pinnGame.bestOver;
-    const opp = sideKey === 'under' ? pinnGame.bestOver : pinnGame.bestUnder;
-    if (Number.isFinite(best?.line) && liveMarketLine == null) liveMarketLine = best.line;
+    const best = sealed ? null : (sideKey === 'under' ? pinnGame.bestUnder : pinnGame.bestOver);
+    const opp = sealed ? null : (sideKey === 'under' ? pinnGame.bestOver : pinnGame.bestUnder);
+    if (!sealed && Number.isFinite(best?.line) && liveMarketLine == null) liveMarketLine = best.line;
 
-    lineMoved = stakedLine != null && liveMarketLine != null && !linesClose(stakedLine, liveMarketLine);
+    lineMoved = !sealed
+      && stakedLine != null && liveMarketLine != null && !linesClose(stakedLine, liveMarketLine);
     marketLine = stakedLine ?? liveMarketLine;
 
     // Best retail only when it is the same line as the ticket.
@@ -490,8 +521,9 @@ export function buildLockedMarketOdds(pick, pinnacleHistory) {
         liveBestBook = best.book || null;
       }
     }
-    // Opp prices ride with whatever line they belong to (ticket vs "now" row).
-    if (opp && Number.isFinite(opp.odds)) {
+    // Opp only on the same ticket line (never Under 7.5 next to Over 8).
+    if (opp && Number.isFinite(opp.odds)
+        && (stakedLine == null || linesClose(opp.line, stakedLine))) {
       oppBestOdds = opp.odds;
       oppBestBook = opp.book || null;
     }
@@ -512,9 +544,8 @@ export function buildLockedMarketOdds(pick, pinnacleHistory) {
         ? `now Under ${liveMarketLine}`
         : `now Over ${liveMarketLine}`;
     }
-    const oppLn = (!lineMoved && Number.isFinite(opp?.line))
-      ? opp.line
-      : (lineMoved ? liveMarketLine : (opp?.line ?? marketLine));
+    const oppLn = Number.isFinite(stakedLine) ? stakedLine
+      : (Number.isFinite(opp?.line) ? opp.line : marketLine);
     oppLabel = sideKey === 'under'
       ? `Over ${oppLn ?? ''}`.trim()
       : `Under ${oppLn ?? ''}`.trim();
@@ -526,7 +557,10 @@ export function buildLockedMarketOdds(pick, pinnacleHistory) {
       books.push({ name: bestBook, odds: bestOdds, best: true });
     }
   } else if (isSpread) {
-    const hist = Array.isArray(pinnGame.spreadHistory) ? pinnGame.spreadHistory : [];
+    const hist = histUpTo(
+      Array.isArray(pinnGame.spreadHistory) ? pinnGame.spreadHistory : [],
+      freezeAtMs,
+    );
     const last = hist[hist.length - 1] || null;
     const lineOf = (h) => (sideKey === 'away' ? h.awayLine : h.homeLine);
     const stakeHist = stakedLine != null
@@ -555,11 +589,12 @@ export function buildLockedMarketOdds(pick, pinnacleHistory) {
       if (Number.isFinite(last.t) && latestT == null) latestT = last.t;
     }
 
-    const best = sideKey === 'away' ? pinnGame.bestAwaySpread : pinnGame.bestHomeSpread;
-    const opp = sideKey === 'away' ? pinnGame.bestHomeSpread : pinnGame.bestAwaySpread;
-    if (Number.isFinite(best?.line) && liveMarketLine == null) liveMarketLine = best.line;
+    const best = sealed ? null : (sideKey === 'away' ? pinnGame.bestAwaySpread : pinnGame.bestHomeSpread);
+    const opp = sealed ? null : (sideKey === 'away' ? pinnGame.bestHomeSpread : pinnGame.bestAwaySpread);
+    if (!sealed && Number.isFinite(best?.line) && liveMarketLine == null) liveMarketLine = best.line;
 
-    lineMoved = stakedLine != null && liveMarketLine != null && !linesClose(stakedLine, liveMarketLine);
+    lineMoved = !sealed
+      && stakedLine != null && liveMarketLine != null && !linesClose(stakedLine, liveMarketLine);
     marketLine = stakedLine ?? liveMarketLine;
 
     if (best && Number.isFinite(best.odds)) {
@@ -599,13 +634,16 @@ export function buildLockedMarketOdds(pick, pinnacleHistory) {
     }
   } else {
     // Moneyline
-    const hist = Array.isArray(pinnGame.history) ? pinnGame.history : [];
+    const hist = histUpTo(
+      Array.isArray(pinnGame.history) ? pinnGame.history : [],
+      freezeAtMs,
+    );
     const pts = hist
       .map((h) => (sideKey === 'away' ? h.away : sideKey === 'draw' ? h.draw : h.home))
       .filter(Number.isFinite);
     pinSeries = pts.length >= 2 ? pts : null;
     const last = hist[hist.length - 1];
-    const snap = last || pinnGame.current || null;
+    const snap = last || (!sealed ? pinnGame.current : null) || null;
     if (snap) {
       fairNow = sideKey === 'away' ? snap.away : sideKey === 'draw' ? snap.draw : snap.home;
       if (Number.isFinite(last?.t)) latestT = last.t;
@@ -618,21 +656,21 @@ export function buildLockedMarketOdds(pick, pinnacleHistory) {
         fairPair = sideKey === 'away' ? [a, h] : [h, a];
       }
     }
-    bestOdds = sideKey === 'away' ? pinnGame.bestAway
-      : sideKey === 'draw' ? pinnGame.bestDraw
-      : pinnGame.bestHome;
-    bestBook = sideKey === 'away' ? pinnGame.bestAwayBook
-      : sideKey === 'draw' ? pinnGame.bestDrawBook
-      : pinnGame.bestHomeBook;
-    oppBestOdds = sideKey === 'away' ? pinnGame.bestHome : pinnGame.bestAway;
-    oppBestBook = sideKey === 'away' ? pinnGame.bestHomeBook : pinnGame.bestAwayBook;
+    if (!sealed) {
+      bestOdds = sideKey === 'away' ? pinnGame.bestAway
+        : sideKey === 'draw' ? pinnGame.bestDraw
+        : pinnGame.bestHome;
+      bestBook = sideKey === 'away' ? pinnGame.bestAwayBook
+        : sideKey === 'draw' ? pinnGame.bestDrawBook
+        : pinnGame.bestHomeBook;
+      oppBestOdds = sideKey === 'away' ? pinnGame.bestHome : pinnGame.bestAway;
+      oppBestBook = sideKey === 'away' ? pinnGame.bestHomeBook : pinnGame.bestAwayBook;
+    }
     ourLabel = sideKey === 'draw' ? 'Draw'
       : (sideKey === 'away' ? shortTeam(pick.away) : shortTeam(pick.home));
     oppLabel = sideKey === 'draw' ? null
       : (sideKey === 'away' ? shortTeam(pick.home) : shortTeam(pick.away));
 
-    const allBooks = pinnGame.allBooks || {};
-    const sideOdds = (b) => (sideKey === 'away' ? b?.away : sideKey === 'draw' ? b?.draw : b?.home);
     if (Number.isFinite(fairNow)) {
       books.push({
         name: (pinnGame.fairBook || 'pinnacle').replace(/^\w/, (c) => c.toUpperCase()),
@@ -640,27 +678,31 @@ export function buildLockedMarketOdds(pick, pinnacleHistory) {
         sharp: true,
       });
     }
-    const seen = new Set(books.map((b) => b.name.toLowerCase()));
-    // Prefer recognizable retail books, then fill from allBooks
-    const prefer = ['draftkings', 'fanduel', 'betmgm', 'caesars', 'fanatics', 'betonlineag', 'lowvig', 'bookmaker', 'circa'];
-    const keys = [
-      ...prefer.filter((k) => allBooks[k]),
-      ...Object.keys(allBooks).filter((k) => !prefer.includes(k) && k !== 'pinnacle'),
-    ];
-    for (const k of keys) {
-      const b = allBooks[k];
-      const o = sideOdds(b);
-      if (!Number.isFinite(o)) continue;
-      const name = b?.name || k;
-      if (seen.has(String(name).toLowerCase())) continue;
-      seen.add(String(name).toLowerCase());
-      const isBest = bestBook && String(name).toLowerCase() === String(bestBook).toLowerCase();
-      books.push({ name, odds: o, best: !!isBest });
-      if (books.length >= 8) break;
-    }
-    if (bestBook && Number.isFinite(bestOdds)
-        && !books.some((b) => String(b.name).toLowerCase() === String(bestBook).toLowerCase())) {
-      books.push({ name: bestBook, odds: bestOdds, best: true });
+    // Past T-15: sharp fair from freeze snapshot only — no live retail strip.
+    if (!sealed) {
+      const allBooks = pinnGame.allBooks || {};
+      const sideOdds = (b) => (sideKey === 'away' ? b?.away : sideKey === 'draw' ? b?.draw : b?.home);
+      const seen = new Set(books.map((b) => b.name.toLowerCase()));
+      const prefer = ['draftkings', 'fanduel', 'betmgm', 'caesars', 'fanatics', 'betonlineag', 'lowvig', 'bookmaker', 'circa'];
+      const keys = [
+        ...prefer.filter((k) => allBooks[k]),
+        ...Object.keys(allBooks).filter((k) => !prefer.includes(k) && k !== 'pinnacle'),
+      ];
+      for (const k of keys) {
+        const b = allBooks[k];
+        const o = sideOdds(b);
+        if (!Number.isFinite(o)) continue;
+        const name = b?.name || k;
+        if (seen.has(String(name).toLowerCase())) continue;
+        seen.add(String(name).toLowerCase());
+        const isBest = bestBook && String(name).toLowerCase() === String(bestBook).toLowerCase();
+        books.push({ name, odds: o, best: !!isBest });
+        if (books.length >= 8) break;
+      }
+      if (bestBook && Number.isFinite(bestOdds)
+          && !books.some((b) => String(b.name).toLowerCase() === String(bestBook).toLowerCase())) {
+        books.push({ name: bestBook, odds: bestOdds, best: true });
+      }
     }
   }
 
@@ -735,28 +777,44 @@ export function mapLockedPickToCardFixture(pick, {
   const alreadyGraded = pick.status === 'COMPLETED'
     && !!(pick.outcome || pick.result?.outcome);
 
-  // Live TOTAL ticket = sportsbook MAIN line + same-line odds. Last defense
-  // against cron/Firestore stamping a Polymarket alt (Over 8.5 @ -110).
+  // Ticket line/odds = stamped lock/peak instrument.
+  // Pre-T-15 only: repair missing/alt stamps from sportsbook MAIN total.
+  // Past T-15 (or graded): NEVER overwrite with live books — that broke the
+  // sealed ticket (live line/odds kept moving after freeze).
+  const T15_MS = 15 * 60 * 1000;
+  const commenceMsForFreeze = parseCommenceMs(
+    pick.commenceMs ?? pick.gameTime ?? pick.commenceTime ?? null,
+  );
+  const freezeAtMs = commenceMsForFreeze != null
+    ? commenceMsForFreeze - T15_MS
+    : null;
+  const ticketFrozen = alreadyGraded
+    || (freezeAtMs != null && Date.now() >= freezeAtMs);
+
   let ticketLine = Number.isFinite(pick.line) ? pick.line : null;
   let ticketOdds = Number.isFinite(pick.odds) ? pick.odds : null;
-  if (isTotal && !alreadyGraded && pinnacleHistory && pick.sport && pick.gameKey) {
+  if (isTotal && !ticketFrozen && pinnacleHistory && pick.sport && pick.gameKey) {
     const pinnGame = pinnacleHistory[pick.sport]?.[pick.gameKey];
     const main = pinnGame?.totalCurrent?.line;
     if (Number.isFinite(main) && main >= 1.5) {
-      ticketLine = main;
-      const sideIsUnder = (() => {
-        const t = String(pick.team || pick.side || pick.pickSide || '').toLowerCase();
-        return t.startsWith('under') || t === 'under' || pick.side === 'under' || pick.pickSide === 'under';
-      })();
-      const best = sideIsUnder ? pinnGame.bestUnder : pinnGame.bestOver;
-      const fair = sideIsUnder
-        ? pinnGame.totalCurrent?.underOdds
-        : pinnGame.totalCurrent?.overOdds;
-      if (best && Number.isFinite(best.odds) && Number.isFinite(best.line)
-          && Math.abs(best.line - main) <= 0.051) {
-        ticketOdds = best.odds;
-      } else if (Number.isFinite(fair)) {
-        ticketOdds = fair;
+      const stampLooksAlt = Number.isFinite(ticketLine) && Math.abs(ticketLine - main) > 0.051;
+      const stampMissing = !Number.isFinite(ticketLine) || !Number.isFinite(ticketOdds);
+      if (stampMissing || stampLooksAlt) {
+        ticketLine = main;
+        const sideIsUnder = (() => {
+          const t = String(pick.team || pick.side || pick.pickSide || '').toLowerCase();
+          return t.startsWith('under') || t === 'under' || pick.side === 'under' || pick.pickSide === 'under';
+        })();
+        const best = sideIsUnder ? pinnGame.bestUnder : pinnGame.bestOver;
+        const fair = sideIsUnder
+          ? pinnGame.totalCurrent?.underOdds
+          : pinnGame.totalCurrent?.overOdds;
+        if (best && Number.isFinite(best.odds) && Number.isFinite(best.line)
+            && Math.abs(best.line - main) <= 0.051) {
+          ticketOdds = best.odds;
+        } else if (Number.isFinite(fair)) {
+          ticketOdds = fair;
+        }
       }
     }
   }
@@ -766,8 +824,11 @@ export function mapLockedPickToCardFixture(pick, {
   const lockOdds = odds;
   const peakOdds = Number.isFinite(pick.lockPinnOdds) ? pick.lockPinnOdds
     : Number.isFinite(pick.pinnacleOdds) ? pick.pinnacleOdds : lockOdds;
-  const nowOdds = Number.isFinite(pick.closingOdds) ? pick.closingOdds
-    : Number.isFinite(pick.pinnacleOdds) ? pick.pinnacleOdds : peakOdds;
+  // Past T-15 the ticket is sealed — do not chase live closingOdds.
+  const nowOdds = ticketFrozen
+    ? (peakOdds ?? lockOdds)
+    : (Number.isFinite(pick.closingOdds) ? pick.closingOdds
+      : Number.isFinite(pick.pinnacleOdds) ? pick.pinnacleOdds : peakOdds);
 
   const lockProb = ip(lockOdds);
   const closeProb = ip(pick.closingOdds ?? nowOdds);
@@ -929,11 +990,8 @@ export function mapLockedPickToCardFixture(pick, {
   const gameTime = fmtEt(pick.gameTime) || 'TBD';
   const lockedAt = fmtEt(pick.lockedAt) || '—';
   const peakAt = fmtEt(pick.peakAt) || lockedAt;
-  const commenceMs = (() => {
-    if (typeof pick.gameTime === 'number' && Number.isFinite(pick.gameTime)) return pick.gameTime;
-    const e = Date.parse(pick.gameTime);
-    return Number.isFinite(e) ? e : null;
-  })();
+  const commenceMs = commenceMsForFreeze
+    ?? parseCommenceMs(pick.gameTime ?? pick.commenceTime ?? null);
   const moneyPct = Number.isFinite(pick.consensusStrength?.moneyPct)
     ? pick.consensusStrength.moneyPct
     : null;
@@ -971,10 +1029,14 @@ export function mapLockedPickToCardFixture(pick, {
       side: pick.side || pick.pickSide || sideNorm,
     },
     pinnacleHistory,
+    { freezeAtMs: ticketFrozen ? freezeAtMs : null },
   );
-  const sparseJourney = [lockOdds, peakOdds, nowOdds].filter(Number.isFinite);
+  const sparseJourney = ticketFrozen
+    ? [lockOdds, peakOdds].filter(Number.isFinite)
+    : [lockOdds, peakOdds, nowOdds].filter(Number.isFinite);
   const pinSeries = market.pinSeries;
   // Dense fair-book overtime when available; else lock→peak→now snapshots.
+  // Past T-15 pinSeries is already truncated to freezeAtMs.
   const journey = (pinSeries && pinSeries.length >= 2) ? pinSeries : sparseJourney;
   const fairLine = Number.isFinite(market.fairDisplay) ? market.fairDisplay
     : (Number.isFinite(pick.pinnacleOdds) ? pick.pinnacleOdds : peakOdds);

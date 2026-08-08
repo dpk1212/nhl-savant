@@ -12978,8 +12978,24 @@ export default function SharpFlow() {
                           && peakOddsRaw !== -110;
                         const lockOddsValid = !spreadLockIsMlBleed
                           && lockOddsRaw && Math.abs(lockOddsRaw) <= 400;
-                        const cardOdds = lockOddsValid ? lockOddsRaw
-                          : (peakOddsRaw || lockOddsRaw || sd.closingOdds || 0);
+                        // Post T-15: ticket = last pre-freeze stamp (peak), not
+                        // morning create-time lock — lock.odds can be hours old
+                        // while peak was updated until the freeze gate.
+                        const commenceForOdds = (() => {
+                          const raw = doc.commenceTime;
+                          if (raw == null) return null;
+                          if (typeof raw === 'number') return raw;
+                          if (raw?.toMillis) return raw.toMillis();
+                          if (typeof raw?._seconds === 'number') return raw._seconds * 1000;
+                          const t = new Date(raw).getTime();
+                          return Number.isFinite(t) ? t : null;
+                        })();
+                        const pastT15Odds = commenceForOdds != null
+                          && Date.now() >= commenceForOdds - (15 * 60 * 1000);
+                        const cardOdds = pastT15Odds
+                          ? (peakOddsRaw || (lockOddsValid ? lockOddsRaw : null) || sd.closingOdds || 0)
+                          : (lockOddsValid ? lockOddsRaw
+                            : (peakOddsRaw || lockOddsRaw || sd.closingOdds || 0));
                         // v6.6 — health is engine-truth. evaluatePickHealth
                         // is the single source of truth for ACTIVE / MUTED /
                         // CANCELLED under the hybrid floor. Earlier code self-
@@ -13159,7 +13175,11 @@ export default function SharpFlow() {
                           gameKey: doc.gameKey || null,
                           side: sideKey,
                           pickSide: sideKey,
-                          team: sd.team || sideKey,
+                          // Past T-15: sealed ticket label from peak (last pre-freeze),
+                          // not a morning create-time team string that can drift.
+                          team: pastT15Odds
+                            ? (peak.team || lock.team || sd.team || sideKey)
+                            : (sd.team || lock.team || peak.team || sideKey),
                           away: doc.away || '', home: doc.home || '',
                           sport: docSport,
                           stars: displayStars,
@@ -13228,11 +13248,13 @@ export default function SharpFlow() {
                             || sd.closingOdds || null,
                           marketType: marketTypeKey,
                           // line fallback: peak.line → lock.line → closingLine.
-                          // PENDING spread: if lock/peak sign-flips vs closingLine
-                          // (Polymarket entryLine bug), Pinnacle close wins.
+                          // Past T-15: never chase live closingLine — ticket is sealed.
+                          // PENDING spread (pre-freeze): if lock/peak sign-flips vs
+                          // closingLine (Polymarket entryLine bug), Pinnacle close wins.
                           line: (() => {
                             const locked = peak.line ?? lock.line;
                             const close = sd.closingLine;
+                            if (pastT15Odds) return locked ?? close ?? null;
                             if (marketTypeKey === 'spread' && sd.status === 'PENDING'
                                 && locked != null && close != null && locked === -close && locked !== 0) {
                               return close;

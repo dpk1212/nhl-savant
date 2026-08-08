@@ -4961,8 +4961,39 @@ async function main() {
           if (result.reason === 'not_locked_or_lean' || result.reason === 'not_locked_or_lean_no_skill_drift') {
             stats.skipped_not_locked++;
           } else if (result.reason === 'completed') stats.skipped_completed++;
-          else if (result.reason === 'within_t_minus_15') stats.skipped_t15++;
-          else if (result.reason === 'within_t_minus_15_needs_rescue') {
+          else if (result.reason === 'within_t_minus_15') {
+            stats.skipped_t15++;
+            // One-shot ticket seal: copy last pre-freeze peak line/odds onto
+            // lock so the UI ticket matches T-15 (not morning create-time).
+            if (!DRY_RUN && !sd.v8_ticketSealedAt && sd.peak
+                && (sd.lockStage === 'LOCKED' || sd.lockStage === 'LEAN'
+                  || Number(sd.finalUnits) > 0)) {
+              const peak = sd.peak || {};
+              const lock = sd.lock || {};
+              const sealPatch = {
+                v8_ticketSealedAt: now,
+                lock: {
+                  ...lock,
+                  line: peak.line ?? lock.line ?? null,
+                  odds: peak.odds ?? lock.odds ?? null,
+                  pinnacleOdds: peak.pinnacleOdds ?? lock.pinnacleOdds ?? null,
+                  team: peak.team ?? lock.team ?? null,
+                  book: peak.book ?? lock.book ?? null,
+                  oddsSource: peak.oddsSource ?? lock.oddsSource ?? null,
+                  sealedAt: now,
+                },
+              };
+              const ref = db.collection(col).doc(pick._id);
+              await ref.set(
+                { sides: { [sideKey]: sealPatch }, lastWriteAt: now, lastAction: 'ticket_seal_at_t15' },
+                { merge: true },
+              );
+              console.log(
+                `  🔒 T-15 SEAL: ${col}/${pick._id} ${sideKey}`
+                + ` — lock ${lock.odds ?? '∅'}/${lock.line ?? '∅'} → peak ${peak.odds ?? '∅'}/${peak.line ?? '∅'}`,
+              );
+            }
+          } else if (result.reason === 'within_t_minus_15_needs_rescue') {
             // T-15 rescue write — reconcileSide flagged an undefined
             // finalUnits on a LOCKED/LEAN side at freeze. Stamp the
             // deterministic 0u/FADE mute so the grader doesn't mark
