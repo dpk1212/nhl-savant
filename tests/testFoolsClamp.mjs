@@ -1,12 +1,11 @@
 /**
- * FOOLS flat → hard 1u clamp (replaces 0u mute / prior [1u, 2u]).
+ * FOOLS flat-led → hard 0u MUTE (cancel). Replaces prior 1u clamp.
  * Usage: node tests/testFoolsClamp.mjs
  */
 import assert from 'assert';
 import {
   applyFoolsGoldMuteOverlay,
-  FOOLS_CLAMP_MIN_U,
-  FOOLS_CLAMP_MAX_U,
+  FOOLS_GOLD_MUTE_TIERS,
 } from '../src/lib/walletClvSkill.js';
 
 let n = 0;
@@ -15,7 +14,7 @@ function ok(cond, msg) {
   n++;
 }
 
-ok(FOOLS_CLAMP_MIN_U === 1 && FOOLS_CLAMP_MAX_U === 1, 'hard 1u band');
+ok(FOOLS_GOLD_MUTE_TIERS.has('CONFIRMED-UNOPP'), 'promote tier in FOOLS allowlist');
 
 const base = {
   bestForTier: 'FLAT',
@@ -26,25 +25,19 @@ const base = {
 
 {
   const r = applyFoolsGoldMuteOverlay({ ...base, units: 2.5 });
-  ok(r.action === 'CLAMP' && r.units === FOOLS_CLAMP_MAX_U, 'cap 2.5 → 1');
-  ok(r.mutedBy == null, 'clamp does not set mutedBy');
+  ok(r.action === 'MUTE' && r.units === 0, 'cap path → 0u MUTE');
+  ok(r.mutedBy === 'fools-gold-flat', 'sets mutedBy');
   ok(r.unitsPrePolicy === 2.5, 'preserves pre units');
+  ok(r.reason === 'fools_flat_cancel', 'hard reason when EDGE≥7');
 }
 {
-  const r = applyFoolsGoldMuteOverlay({ ...base, units: 0.25 });
-  ok(r.action === 'CLAMP' && r.units === FOOLS_CLAMP_MIN_U, 'floor 0.25 → 1');
+  const r = applyFoolsGoldMuteOverlay({ ...base, units: 1, edge: 3 });
+  ok(r.action === 'MUTE' && r.units === 0, '1u FLAT-led → 0u');
+  ok(r.reason === 'fools_flat_cancel_soft', 'soft reason when EDGE<7');
 }
 {
-  const r = applyFoolsGoldMuteOverlay({ ...base, units: 1.5 });
-  ok(r.action === 'CLAMP' && r.units === 1, 'prior mid-band 1.5 → 1');
-}
-{
-  const r = applyFoolsGoldMuteOverlay({ ...base, units: 1 });
-  ok(r.action === 'HOLD' && r.units === 1, 'already 1u unchanged');
-}
-{
-  const r = applyFoolsGoldMuteOverlay({ ...base, units: 1, bestForTier: 'CONFIRMED' });
-  ok(r.action === 'HOLD' && r.units === 1, 'CONFIRMED not clamped');
+  const r = applyFoolsGoldMuteOverlay({ ...base, units: 5, bestForTier: 'CONFIRMED' });
+  ok(r.action === 'HOLD' && r.units === 5, 'CONFIRMED not muted');
 }
 {
   const r = applyFoolsGoldMuteOverlay({ ...base, units: 5, tier: 'DISSENT' });
@@ -57,6 +50,18 @@ const base = {
 {
   const r = applyFoolsGoldMuteOverlay({ ...base, units: 0 });
   ok(r.action === 'PASS' && r.units === 0, 'zero stays pass');
+}
+{
+  const r = applyFoolsGoldMuteOverlay({
+    ...base, units: 2, tier: 'CONFIRMED-UNOPP', bestForTier: 'FLAT',
+  });
+  ok(r.action === 'MUTE' && r.units === 0, 'CONFIRMED-UNOPP still FOOLS-eligible if FLAT-led');
+}
+{
+  const r = applyFoolsGoldMuteOverlay({
+    ...base, units: 2, tier: 'CONFIRMED-UNOPP', bestForTier: 'CONFIRMED',
+  });
+  ok(r.action === 'HOLD' && r.units === 2, 'CONFIRMED-UNOPP HOLD when best FOR CONFIRMED');
 }
 
 console.log(`OK — ${n} assertions`);

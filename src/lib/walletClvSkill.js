@@ -483,6 +483,7 @@ export const QCONV_STATE_DOC_ID = 'current';
 export const QCONV_MUTE_TIERS = new Set([
   'SUPER', 'TOP', 'TOP+', 'MINI', 'MINI-', 'CONFIRMED',
   'RANK', 'SHARP', 'SHARP-PRIME', 'SHARP-LEAN',
+  'CONFIRMED-UNOPP',
 ]);
 
 export function isQConvMuteLive(pickDate) {
@@ -603,20 +604,22 @@ export function applyQConvMuteOverlay({
   };
 }
 
-// ── FOOLS clamp (best proven FOR = FLAT → hard 1u) ───────────────────────────
-// Was a hard 0u mute from 2026-08-05; rolled back after early live cost
-// (~−2.76u / ~6.75u volume in two days). Then [1u, 2u]; tightened to 1u max
-// after as-of FLAT-led drag (Jul15+ still −EV even at EDGE≥11). Forward-only.
+// ── FOOLS mute (best proven FOR = FLAT → hard 0u cancel) ─────────────────────
+// 2026-08-05: hard 0u mute. Briefly clamped to 1u / [1u,2u] after early live
+// cost; restored to 0u cancel (2026-08-08) — FLAT-led Path A/B/C stays MUTED.
+// Forward-only from FOOLS_GOLD_MUTE_FROM. EDGE is reason-tag only (not a gate).
 export const FOOLS_GOLD_MUTE_FROM = '2026-08-05';
 /** @deprecated EDGE no longer gates FOOLS; kept for log/compat. */
 export const FOOLS_GOLD_EDGE_MIN = 7;
-/** Stake when best proven FOR is FLAT (replaces 0u mute / prior [1u, 2u]). */
-export const FOOLS_CLAMP_MIN_U = 1;
-export const FOOLS_CLAMP_MAX_U = 1;
-/** Same Path A/B/C book as qConv mute (DISSENT exempt). */
+/** @deprecated Was 1u clamp band; FOOLS is 0u MUTE again. Kept for import compat. */
+export const FOOLS_CLAMP_MIN_U = 0;
+/** @deprecated Was 1u clamp band; FOOLS is 0u MUTE again. Kept for import compat. */
+export const FOOLS_CLAMP_MAX_U = 0;
+/** Same Path A/B/C book as qConv mute (+ CONFIRMED-UNOPP promote; DISSENT exempt). */
 export const FOOLS_GOLD_MUTE_TIERS = new Set([
   'SUPER', 'TOP', 'TOP+', 'MINI', 'MINI-', 'CONFIRMED',
   'RANK', 'SHARP', 'SHARP-PRIME', 'SHARP-LEAN',
+  'CONFIRMED-UNOPP',
 ]);
 
 export function isFoolsGoldMuteLive(pickDate) {
@@ -667,11 +670,71 @@ export function bestProvenForSide(walletDetails, mySide, sport, walletProfiles) 
   };
 }
 
+// ── CONFIRMED-UNOPP promote (ALL CONFIRMED × sized ≥ 0.5 × unopposed) ───────
+// Rescue score>0 sides still at 0u after HC/RANK/SHARP. Forward-only.
+export const CONFIRMED_UNOPP_FROM = '2026-08-08';
+export const CONFIRMED_UNOPP_MIN_SIZE = 0.5;
+export const CONFIRMED_UNOPP_UNITS = 1;
+
+export function isConfirmedUnoppPromoteLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= CONFIRMED_UNOPP_FROM;
+}
+
 /**
- * FOOLS size clamp: best proven FOR tier is FLAT → stake = 1u.
- * Replaces the hard 0u mute / prior [1u, 2u]. EDGE is optional (reason tag
- * only). Manual stake exempt at call site. Missing bestForTier → HOLD
- * (fail-open). Already at 1u → HOLD (no rewrite).
+ * ≥1 CONFIRMED FOR with sizeRatio ≥ minSize, and zero CONFIRMED on AG.
+ * @returns {{ qualifies: boolean, forSized: number, agConfirmed: number, bestSize: number|null, wallets: string[] }}
+ */
+export function computeConfirmedUnoppSized(
+  walletDetails,
+  mySide,
+  sport,
+  walletProfiles,
+  { minSize = CONFIRMED_UNOPP_MIN_SIZE } = {},
+) {
+  const empty = {
+    qualifies: false, forSized: 0, agConfirmed: 0, bestSize: null, wallets: [],
+  };
+  if (!Array.isArray(walletDetails) || !mySide || !sport || !walletProfiles) return empty;
+  const seen = new Set();
+  let forSized = 0;
+  let agConfirmed = 0;
+  let bestSize = null;
+  const wallets = [];
+  for (const w of walletDetails) {
+    if (!w?.side) continue;
+    const s = shortWalletId(w.walletShort || w.wallet);
+    if (!s || seen.has(s)) continue;
+    seen.add(s);
+    const key = String(s).toLowerCase();
+    const profile = walletProfiles.get(key)
+      || walletProfiles.get(key.toUpperCase())
+      || walletProfiles.get(s);
+    const tier = profile?.bySport?.[sport]?.whitelistTier;
+    if (tier !== 'CONFIRMED') continue;
+    const sr = Number(w.sizeRatio);
+    if (w.side === mySide) {
+      if (Number.isFinite(sr) && sr >= minSize) {
+        forSized++;
+        wallets.push(s);
+        if (bestSize == null || sr > bestSize) bestSize = sr;
+      }
+    } else {
+      agConfirmed++;
+    }
+  }
+  return {
+    qualifies: forSized >= 1 && agConfirmed === 0,
+    forSized,
+    agConfirmed,
+    bestSize: bestSize != null ? +bestSize.toFixed(3) : null,
+    wallets,
+  };
+}
+
+/**
+ * FOOLS cancel: best proven FOR tier is FLAT → stake = 0u MUTED.
+ * EDGE is optional (reason tag only). Manual stake exempt at call site.
+ * Missing bestForTier → HOLD (fail-open).
  */
 export function applyFoolsGoldMuteOverlay({
   units,
@@ -679,8 +742,6 @@ export function applyFoolsGoldMuteOverlay({
   bestForTier = null,
   tier = null,
   pickDate = null,
-  minU = FOOLS_CLAMP_MIN_U,
-  maxU = FOOLS_CLAMP_MAX_U,
 } = {}) {
   const pre = Number.isFinite(units) ? Math.max(0, units) : 0;
   if (!(pre > 0)) {
@@ -703,21 +764,13 @@ export function applyFoolsGoldMuteOverlay({
       units: pre, action: 'HOLD', reason: null, mutedBy: null, unitsPrePolicy: pre,
     };
   }
-  const lo = Number.isFinite(minU) ? minU : FOOLS_CLAMP_MIN_U;
-  const hi = Number.isFinite(maxU) ? maxU : FOOLS_CLAMP_MAX_U;
-  const clamped = Math.round(Math.min(hi, Math.max(lo, pre)) * 100) / 100;
-  if (clamped === pre) {
-    return {
-      units: pre, action: 'HOLD', reason: null, mutedBy: null, unitsPrePolicy: pre,
-    };
-  }
   const softFlat = edge == null || !Number.isFinite(Number(edge))
     || Number(edge) < FOOLS_GOLD_EDGE_MIN;
   return {
-    units: clamped,
-    action: 'CLAMP',
-    reason: softFlat ? 'fools_flat_clamp_soft' : 'fools_flat_clamp',
-    mutedBy: null,
+    units: 0,
+    action: 'MUTE',
+    reason: softFlat ? 'fools_flat_cancel_soft' : 'fools_flat_cancel',
+    mutedBy: 'fools-gold-flat',
     unitsPrePolicy: pre,
   };
 }

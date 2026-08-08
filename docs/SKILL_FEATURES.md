@@ -38,7 +38,8 @@ qConv  = Σ sizeRatio×(WR−50) FOR − Σ sizeRatio×(WR−50) AG
 | Soft size overlay | ONLY when EDGE band did not apply (non–A/C) · BOTH ×1.25 · NEITHER ×0.5 · RANK exempt |
 | Tape | `&lt;0` mute (RANK exempt) · `≥2.89` ×1.35 · else hold |
 | **qConv Q1 mute** | 2026-08-03+: after tape · Path A/B/C · `qConv < expanding Q1 thr` → **0u** · fail-open if missing · DISSENT/manual exempt |
-| **FOOLS-gold mute** | 2026-08-05+: after qConv · Path A/B/C · EDGE ≥ 7 · best proven FOR = **FLAT** → **0u** · fail-open if EDGE missing · DISSENT/manual exempt |
+| **CONFIRMED-UNOPP promote** | 2026-08-08+: after SHARP · still 0u · ≥1 CONFIRMED FOR size≥0.5× · zero CONFIRMED AG → **1u** · stamp `v8_confirmedUnoppPromote` |
+| **FOOLS-gold mute** | 2026-08-05+: after qConv · Path A/B/C + CONFIRMED-UNOPP · best proven FOR = **FLAT** → **0u MUTED** · fail-open if bestFOR missing · DISSENT/manual exempt |
 
 ---
 
@@ -80,6 +81,7 @@ Written on every **LOCKED / LEAN** side each pre–T-15 cycle, and on any other 
 | `v8_nForProven` | count of proven (CONFIRMED/FLAT) FOR wallets |
 | `v8_foolsGoldAction` | `MUTE` \| `HOLD` \| `FAIL_OPEN` \| `EXEMPT` \| `PASS` |
 | `v8_unitsPreFoolsGold` | units entering FOOLS-gold mute |
+| `v8_confirmedUnoppPromote` | `true` when CONFIRMED-UNOPP rescue filled this side @ 1u |
 | `v8_blendWr` | path×EDGE expected WR % (logit 0.35/0.65) — tracking only |
 | `v8_blendPathWr` / `v8_blendEdgeWr` | components (path prior WR % / meanFor %) |
 | `v8_blendWp` / `v8_blendWe` | weights used |
