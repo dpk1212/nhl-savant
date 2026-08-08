@@ -31,12 +31,12 @@ export function netClvPctFromProfile(profile) {
 /**
  * Chart ELITE quadrant floors — must match LockedClarityExpanded WalletMap
  * crosshairs (beat-close % × lifetime ROI). Geography only — not the
- * lead-wallet TOP Q badge (CONFIRMED beat-close quartile).
+ * "best sharp" map labels (CONFIRMED beat-close quartile).
  */
 export const ELITE_ZONE_CLV = 55;
 export const ELITE_ZONE_ROI = 0;
 
-/** Min graded CLV sample for TOP Q rank (same floor as featured WR). */
+/** Min graded CLV sample for best-sharp rank (same floor as featured WR). */
 export const TOP_Q_CLV_MIN_N = FEATURED_WR_MIN_N;
 
 /** ROI axis for the skill map (prefer unit ROI, fall back to $ ROI). */

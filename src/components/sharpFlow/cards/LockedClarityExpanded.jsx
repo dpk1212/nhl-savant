@@ -315,6 +315,12 @@ function WalletMap({ wallets, selected, onSelect, gid }) {
         const r = rFor(p);
         const st = bubbleStyle(p);
         const sel = selected === p.short;
+        const sizedUp = Number.isFinite(p.sizeRatio) && p.sizeRatio >= 1.5;
+        const isBestSharp = p.side === 'ours' && !!p.topQ;
+        // Plain language on the dot — never "TOP Q" jargon.
+        const bestLabel = isBestSharp
+          ? (sizedUp ? 'BEST · SIZED UP' : 'BEST SHARP')
+          : null;
         // Key by wallet id only — side tags must not remount the node.
         return (
           <g key={p.short} onClick={() => onSelect(p.short)} style={{ cursor: 'pointer' }} opacity={sel ? 1 : 0.45}>
@@ -322,21 +328,36 @@ function WalletMap({ wallets, selected, onSelect, gid }) {
             {sel && (
               <circle cx={cx} cy={cy} r={r + 6} fill="none" stroke={GOLD_HI} strokeWidth={1.3} className="lc-ring" />
             )}
-            {!sel && p.eliteZone && p.side === 'ours' && (
-              <circle cx={cx} cy={cy} r={r + 5} fill="none" stroke={GREEN} strokeWidth={1.4} opacity={0.85} className="lc-ring" />
+            {!sel && isBestSharp && (
+              <circle cx={cx} cy={cy} r={r + 5} fill="none" stroke={GREEN} strokeWidth={1.4} opacity={0.9} className="lc-ring" />
             )}
             <circle
               cx={cx} cy={cy} r={r}
-              fill={st.fill} stroke={sel ? GOLD_HI : st.stroke}
-              strokeWidth={sel ? 1.7 : 1.25}
+              fill={st.fill} stroke={sel ? GOLD_HI : (isBestSharp ? GREEN : st.stroke)}
+              strokeWidth={sel || isBestSharp ? 1.7 : 1.25}
               strokeDasharray={sel ? undefined : st.dash}
-              filter={sel ? `url(#${gid}-glow)` : undefined}
+              filter={sel || isBestSharp ? `url(#${gid}-glow)` : undefined}
             />
             <text x={cx} y={cy + 3.5} textAnchor="middle" fill={st.text}
               fontSize={r >= 12 ? 9 : 7.5} fontFamily={MONO} fontWeight={800}
               style={{ pointerEvents: 'none' }}>
               {p.short.slice(0, 2)}
             </text>
+            {bestLabel && (
+              <text
+                x={cx}
+                y={cy - r - (sel ? 20 : 8)}
+                textAnchor="middle"
+                fill={GREEN}
+                fontSize={9}
+                fontFamily={MONO}
+                fontWeight={800}
+                letterSpacing="0.04em"
+                style={{ pointerEvents: 'none' }}
+              >
+                {bestLabel}
+              </text>
+            )}
             {sel && (
               <text x={cx} y={cy - r - 7} textAnchor="middle" fill={GOLD_HI}
                 fontSize={11} fontFamily={MONO} fontWeight={700} style={{ pointerEvents: 'none' }}>
@@ -1252,11 +1273,10 @@ export default function LockedClarityExpanded({
                     {selectedTopQ && (
                       <Pill
                         c={GREEN}
-                        title={Number.isFinite(q1Thr)
-                          ? `Top-quartile beat-close among CONFIRMED (≥${q1Thr}% · n≥8)`
-                          : 'Top-quartile beat-close among CONFIRMED'}
+                        solid
+                        title="Top price skill among our confirmed sharps — consistently beats the close"
                       >
-                        Top Q
+                        {sizeHot ? 'Best sharp · sized up' : 'Best sharp'}
                       </Pill>
                     )}
                   </div>
@@ -1330,9 +1350,9 @@ export default function LockedClarityExpanded({
                     </div>
                     <div style={{ fontSize: 11, fontWeight: 500, color: C.textSec, lineHeight: 1.3 }}>
                       {selectedTopQ
-                        ? (Number.isFinite(q1Thr)
-                          ? `Top quartile · ≥${q1Thr}% confirmed`
-                          : 'Top quartile among confirmed')
+                        ? (sizeHot
+                          ? 'One of our best sharps · sized up'
+                          : 'One of our best sharps')
                         : 'Beat the closing line'}
                     </div>
                   </div>

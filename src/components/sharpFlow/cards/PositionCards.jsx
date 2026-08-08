@@ -2399,20 +2399,6 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
             <span style={{ color: C.textFaint, marginLeft: 8 }}>{f.gameTime}</span>
           </span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-            {(f.hasTopQ || f.topQOnSide > 0) && (
-              <span
-                title={Number.isFinite(f.confirmedClvQ1)
-                  ? `Top-quartile beat-close among CONFIRMED (≥${f.confirmedClvQ1}%)`
-                  : 'Top-quartile beat-close among CONFIRMED'}
-                style={{
-                  fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.1em',
-                  padding: '3px 7px', borderRadius: 6, color: '#042f1e',
-                  background: B.profit, border: `1px solid ${B.profit}`,
-                }}
-              >
-                TOP Q
-              </span>
-            )}
             {!tracked && !graded && tierLabel && (
               <span style={{
                 fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.1em',
@@ -2512,48 +2498,27 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
 
   // Expanded = V27 clarity story (map → lead wallet → other side → price).
   // Collapsed chrome above is unchanged.
-  const topQPill = (f.hasTopQ || f.topQOnSide > 0) ? (
+  const statusSlot = tracked ? (
     <span
-      title={Number.isFinite(f.confirmedClvQ1)
-        ? `Top-quartile beat-close among CONFIRMED (≥${f.confirmedClvQ1}%)`
-        : 'Top-quartile beat-close among CONFIRMED'}
+      title={muteTip}
       style={{
-        fontSize: 8, fontWeight: 800, letterSpacing: '0.1em',
-        padding: '4px 8px', borderRadius: 5, color: '#042f1e',
-        background: B.profit, border: `1px solid ${B.profit}`,
+        fontSize: 8, fontWeight: 800, letterSpacing: '0.08em',
+        padding: '4px 8px', borderRadius: 6, color: '#aeb8cb',
+        background: 'rgba(139,150,171,0.10)', border: '1px solid rgba(139,150,171,0.26)',
       }}
     >
-      TOP Q
+      TRACKED
     </span>
-  ) : null;
-  const statusSlot = tracked ? (
-    <>
-      {topQPill}
-      <span
-        title={muteTip}
-        style={{
-          fontSize: 8, fontWeight: 800, letterSpacing: '0.08em',
-          padding: '4px 8px', borderRadius: 6, color: '#aeb8cb',
-          background: 'rgba(139,150,171,0.10)', border: '1px solid rgba(139,150,171,0.26)',
-        }}
-      >
-        TRACKED
-      </span>
-    </>
   ) : graded ? (
-    <>
-      {topQPill}
-      <GradedResultPill
-        outcome={f.outcome}
-        profit={f.profit}
-        units={f.units}
-        toWin={f.toWin}
-        compact
-      />
-    </>
+    <GradedResultPill
+      outcome={f.outcome}
+      profit={f.profit}
+      units={f.units}
+      toWin={f.toWin}
+      compact
+    />
   ) : (
     <>
-      {topQPill}
       {tierLabel && (
         <span style={{
           fontSize: 8, fontWeight: 800, letterSpacing: '0.12em',
