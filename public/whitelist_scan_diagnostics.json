@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-08-08T11:50:57.781Z",
-  "elapsedSec": 19.7,
+  "scannedAt": "2026-08-08T11:54:46.449Z",
+  "elapsedSec": 17.6,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 38,
   "summary": {
     "total": 208,
     "coveredByMain": 3,
     "recovered": 13,
-    "recoveredPositions": 85,
+    "recoveredPositions": 86,
     "noPositions": 192,
     "apiError": 0,
     "addressNotFound": 0,
@@ -15,7 +15,7 @@
     "merge": {
       "ml": 5,
       "spread": 0,
-      "total": 1,
+      "total": 2,
       "dropped_shadow_gate": 26,
       "dropped_excluded": 53,
       "dropped_duplicate": 0
@@ -1260,7 +1260,7 @@
           "gameKey": "ind_chi",
           "marketType": "spread",
           "side": "away",
-          "invested": 429,
+          "invested": 431,
           "entryLine": -6.5,
           "passesShadow": true
         }
@@ -2115,12 +2115,21 @@
       "sports": "SOC,MLB,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x84cfffc3f16dcc353094de30d4a45226eccd2f63",
-      "positionsCount": 6,
+      "positionsCount": 7,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 17898,
-      "willPassShadowGate": 2,
+      "willPassShadowGate": 3,
       "willDropAtShadowGate": 4,
       "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "laa_mia",
+          "marketType": "total",
+          "side": "under",
+          "invested": 4493,
+          "entryLine": 8.5,
+          "passesShadow": true
+        },
         {
           "sport": "MLB",
           "gameKey": "oak_bos",
@@ -2141,15 +2150,6 @@
         },
         {
           "sport": "MLB",
-          "gameKey": "laa_mia",
-          "marketType": "total",
-          "side": "under",
-          "invested": 1467,
-          "entryLine": 8.5,
-          "passesShadow": false
-        },
-        {
-          "sport": "MLB",
           "gameKey": "oak_bos",
           "marketType": "spread",
           "side": "home",
@@ -2164,6 +2164,15 @@
           "side": "home",
           "invested": 804,
           "entryLine": 6.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "oak_bos",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 32,
+          "entryLine": -1.5,
           "passesShadow": false
         },
         {
