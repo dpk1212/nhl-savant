@@ -82,6 +82,7 @@ Written on every **LOCKED / LEAN** side each pre–T-15 cycle, and on any other 
 | `v8_nForProven` | count of proven (CONFIRMED/FLAT) FOR wallets |
 | `v8_foolsGoldAction` | `MUTE` \| `HOLD` \| `FAIL_OPEN` \| `EXEMPT` \| `PASS` |
 | `v8_unitsPreFoolsGold` | units entering FOOLS-gold mute |
+| `v8_confirmedQ1Promote` | `true` when CONFIRMED-Q1 floor/promote filled this side @ 2–3u |
 | `v8_confirmedUnoppPromote` | `true` when CONFIRMED-UNOPP rescue filled this side @ 1u |
 | `v8_blendWr` | path×EDGE expected WR % (logit 0.35/0.65) — tracking only |
 | `v8_blendPathWr` / `v8_blendEdgeWr` | components (path prior WR % / meanFor %) |
