@@ -100,6 +100,8 @@ import {
   bestProvenForSide,
   computeConfirmedUnoppSized,
   computeConfirmedQ1Sized,
+  confirmedQ1BypassesAgsCreateGate,
+  applyConfirmedQ1UnitFloor,
   buildFlatDollarQBySport,
   computeForTop2PctPos,
   computeNetMeanPrior,
@@ -2009,6 +2011,39 @@ async function createMissingLockedPicks({
   const writes = new Map(); // col → [{ docId, payload }]
   const PREGAME_BUFFER_MS = 5 * 60 * 1000;
 
+  /** True if any side in this group has PENDING CONFIRMED×Q1×sized≥0.5. */
+  function groupHasConfirmedQ1Sized(positions, sport, marketType) {
+    if (!isConfirmedQ1PromoteLive(TARGET_DATE)) return false;
+    const wd = positions.map(positionToWalletDetail).filter(Boolean);
+    const trialSides = marketType === 'TOTAL' ? ['over', 'under']
+      : sport === 'SOC' ? ['away', 'home', 'draw']
+      : ['away', 'home'];
+    return trialSides.some((s) => computeConfirmedQ1Sized(
+      wd, s, sport, walletProfiles, FLAT_DOLLAR_Q_BY_SPORT,
+      { minSize: CONFIRMED_Q1_MIN_SIZE },
+    ).qualifies);
+  }
+
+  /** Teams-only meta when poly/pinn missing — commence must still come from real sources. */
+  function metaFallbackFromPositions(positions, sport, gameKey) {
+    const sample = positions[0] || {};
+    const existing = gameMeta.get(`${sport}|${gameKey}`) || {};
+    return {
+      ...existing,
+      away: existing.away || sample.away || null,
+      home: existing.home || sample.home || null,
+      commenceTime: existing.commenceTime || null,
+      mlOdds: existing.mlOdds || null,
+      fairBook: existing.fairBook || null,
+      totalCurrent: existing.totalCurrent || null,
+      totalOpener: existing.totalOpener || null,
+      polyTotalLine: existing.polyTotalLine || null,
+      bestOver: existing.bestOver || null,
+      bestUnder: existing.bestUnder || null,
+      q1MetaFallback: true,
+    };
+  }
+
   for (const [groupKey, positions] of groups.entries()) {
     const [sport, gameKey, marketType] = groupKey.split('|');
     const col = marketType === 'SPREAD' ? 'sharpFlowSpreads'
@@ -2024,13 +2059,23 @@ async function createMissingLockedPicks({
     const docId = `${TARGET_DATE}_${sport}_${gameKey}${suffix}`;
     if (existingDocIds.has(`${col}|${docId}`)) continue; // already in Firestore
 
-    const meta = gameMeta.get(`${sport}|${gameKey}`);
+    let meta = gameMeta.get(`${sport}|${gameKey}`);
+    let usedQ1MetaFallback = false;
     if (!meta) {
-      skipped.push({ docId, col, reason: 'no_metadata' });
-      continue;
+      if (groupHasConfirmedQ1Sized(positions, sport, marketType)) {
+        meta = metaFallbackFromPositions(positions, sport, gameKey);
+        usedQ1MetaFallback = true;
+        console.log(`  Q1 meta fallback: ${docId} (teams from positions; commence still required)`);
+      } else {
+        skipped.push({ docId, col, reason: 'no_metadata' });
+        continue;
+      }
     }
     if (!meta.commenceTime) {
-      skipped.push({ docId, col, reason: 'no_commenceTime' });
+      skipped.push({
+        docId, col,
+        reason: usedQ1MetaFallback ? 'q1_force_no_commenceTime' : 'no_commenceTime',
+      });
       continue;
     }
     // CRITICAL: only create picks for games actually happening on TARGET_DATE
@@ -2057,7 +2102,13 @@ async function createMissingLockedPicks({
       if (live.forW === 0 && live.agW === 0 && live.hcConfFor === 0 && live.hcConfAg === 0) continue;
 
       // Build walletDetails for AGS-U.
-      const walletDetails = positions.map(positionToWalletDetail);
+      const walletDetails = positions.map(positionToWalletDetail).filter(Boolean);
+      const q1Early = isConfirmedQ1PromoteLive(TARGET_DATE)
+        ? computeConfirmedQ1Sized(
+          walletDetails, side, sport, walletProfiles, FLAT_DOLLAR_Q_BY_SPORT,
+          { minSize: CONFIRMED_Q1_MIN_SIZE },
+        )
+        : { qualifies: false, forQ1Sized: 0, bestSize: null, targetUnits: CONFIRMED_Q1_UNITS, wallets: [] };
       // v11 (informational / sidecar diagnostic)
       const agg = aggregateSideProven(walletDetails, side, sport, isProvenFn, isHcEligibleFn, walletStatsFn);
       const agsRes = agg ? computeAgs(agg, agsCalibration) : null;
@@ -2070,18 +2121,31 @@ async function createMissingLockedPicks({
 
       // v12 ship gate — score > 0. Wallet-pool adequacy is implicit in the
       // quality score (non-HC_BASE wallets contribute 0; no qualified
-      // wallets → score 0 → muted). No separate proven-wallet floor needed.
+      // wallets → score 0 → muted). CONFIRMED-Q1×sized bypasses mute so the
+      // create path can apply the same hard floor as reconcile.
+      let q1ForceBypassAgs = false;
       if (scoreV12 == null) {
-        skipped.push({ docId, side, reason: 'agsv12_no_signal' });
-        continue;
-      }
-      if (scoreV12 <= 0) {
-        skipped.push({ docId, side, reason: 'agsv12_mute_below_zero', score: scoreV12 });
-        continue;
+        if (confirmedQ1BypassesAgsCreateGate(q1Early.qualifies, scoreV12)) {
+          q1ForceBypassAgs = true;
+          console.log(`  Q1 AGS bypass: ${docId} ${side} (agsv12_no_signal → force create)`);
+        } else {
+          skipped.push({ docId, side, reason: 'agsv12_no_signal' });
+          continue;
+        }
+      } else if (scoreV12 <= 0) {
+        if (confirmedQ1BypassesAgsCreateGate(q1Early.qualifies, scoreV12)) {
+          q1ForceBypassAgs = true;
+          console.log(
+            `  Q1 AGS bypass: ${docId} ${side} (agsv12_mute score=${scoreV12} → force create)`,
+          );
+        } else {
+          skipped.push({ docId, side, reason: 'agsv12_mute_below_zero', score: scoreV12 });
+          continue;
+        }
       }
 
-      const promotedBy = 'ags-unified-v12';
-      const finalTier = agsV12Res.tier; // v12 tier becomes the authoritative label
+      const promotedBy = q1ForceBypassAgs ? 'confirmed-q1-force' : 'ags-unified-v12';
+      const finalTier = agsV12Res?.tier || 'FADE';
       const peakStars = starsFromTierV12(finalTier);
       // ── Pinnacle odds + line. ML uses live mlOdds; SPREAD uses the
       // pinnacle opener (pinnacle_history doesn't track spreads over
@@ -2121,8 +2185,24 @@ async function createMissingLockedPicks({
         // Ticket = sportsbook MAIN line + matching odds (same rule as spreads).
         // Do NOT use Polymarket wallet entryLine votes — those mix 7.5 / 8.5
         // alt markets and burned "Over 8.5 @ -110" while the main was 7.5.
+        // Exception: CONFIRMED-Q1×sized orphan with no book line may use the
+        // Q1 wallet's plausible entryLine so the card can be created + floored.
         line = mainTotalLine(meta);
         odds = mainTotalOdds(meta, side);
+        if ((line == null || !isPlausibleLine(line, sport, 'TOTAL')) && q1Early.qualifies) {
+          const q1Set = new Set((q1Early.wallets || []).map((w) => String(w).toLowerCase()));
+          for (const p of positions) {
+            if (p.side !== side) continue;
+            const short = String(p.walletShort || p.wallet || '').slice(-6).toLowerCase();
+            if (!q1Set.has(short)) continue;
+            const ln = Number(p.entryLine ?? p.totalLine);
+            if (isPlausibleLine(ln, sport, 'TOTAL')) {
+              line = ln;
+              console.log(`  Q1 line fallback: ${docId} ${side} entryLine=${ln}`);
+              break;
+            }
+          }
+        }
       }
       // TOTAL without a usable line = F5/alt contamination or missing poly —
       // do not create a staked pick (DET@SEA bare "Over -110" 2026-08-06).
@@ -2199,21 +2279,7 @@ async function createMissingLockedPicks({
             hcStakeTierCreate = 'SHARP-LEAN';
           }
         }
-        // CONFIRMED-Q1 promote (opposed OK) — before UNOPP; size-up 2u/3u
-        if (isConfirmedQ1PromoteLive(TARGET_DATE)) {
-          const q1Create = computeConfirmedQ1Sized(
-            walletDetails, side, sport, walletProfiles, FLAT_DOLLAR_Q_BY_SPORT,
-            { minSize: CONFIRMED_Q1_MIN_SIZE },
-          );
-          if (q1Create.qualifies) {
-            const tgt = Math.round(oddsCap(q1Create.targetUnits, odds ?? null) * 100) / 100;
-            if (peakUnitsApplied < tgt) {
-              peakUnitsApplied = tgt;
-              hcStakeTierCreate = 'CONFIRMED-Q1';
-            }
-          }
-        }
-        // CONFIRMED-UNOPP promote when still 0u after Path C / Q1
+        // CONFIRMED-UNOPP promote when still 0u after Path C (Q1 runs below for all create paths)
         if (peakUnitsApplied === 0 && isConfirmedUnoppPromoteLive(TARGET_DATE)) {
           const unoppCreate = computeConfirmedUnoppSized(
             walletDetails, side, sport, walletProfiles,
@@ -2265,6 +2331,22 @@ async function createMissingLockedPicks({
         });
         peakUnitsApplied = edgeBandSizeCreate.units;
       }
+
+      // CONFIRMED-Q1 promote before tape (opposed OK) — including AGS-mute force path
+      // so CONFIRMED-Q1 gets tape-mute exemption.
+      if (createV121Eligible && isConfirmedQ1PromoteLive(TARGET_DATE)) {
+        const q1PreTape = applyConfirmedQ1UnitFloor({
+          units: peakUnitsApplied,
+          odds: odds ?? null,
+          q1Result: q1Early,
+          oddsCapFn: oddsCap,
+        });
+        if (q1PreTape.floored) {
+          peakUnitsApplied = q1PreTape.units;
+          hcStakeTierCreate = q1PreTape.tier;
+        }
+      }
+
       const tapeCreate = computeTapeScore(waCreateEdge?.edge ?? null, netCreate.netMeanPrior);
       let clvPolicyCreate;
       if (isTapeSizingLive(TARGET_DATE)) {
@@ -2342,17 +2424,17 @@ async function createMissingLockedPicks({
       }
 
       // CONFIRMED-Q1 / UNOPP late fill if still under-floored after sizing mutes.
-      if (createV121Eligible && scoreV12 > 0 && isConfirmedQ1PromoteLive(TARGET_DATE)) {
-        const q1Late = computeConfirmedQ1Sized(
-          walletDetails, side, sport, walletProfiles, FLAT_DOLLAR_Q_BY_SPORT,
-          { minSize: CONFIRMED_Q1_MIN_SIZE },
-        );
-        if (q1Late.qualifies) {
-          const tgt = Math.round(oddsCap(q1Late.targetUnits, odds ?? null) * 100) / 100;
-          if (peakUnitsApplied < tgt) {
-            peakUnitsApplied = tgt;
-            hcStakeTierCreate = 'CONFIRMED-Q1';
-          }
+      // Q1 runs even when AGS muted (force-create); UNOPP still requires scoreV12 > 0.
+      if (createV121Eligible && isConfirmedQ1PromoteLive(TARGET_DATE)) {
+        const q1Late = applyConfirmedQ1UnitFloor({
+          units: peakUnitsApplied,
+          odds: odds ?? null,
+          q1Result: q1Early,
+          oddsCapFn: oddsCap,
+        });
+        if (q1Late.floored) {
+          peakUnitsApplied = q1Late.units;
+          hcStakeTierCreate = q1Late.tier;
         }
       }
       if (createV121Eligible && scoreV12 > 0 && peakUnitsApplied === 0
@@ -2401,18 +2483,17 @@ async function createMissingLockedPicks({
         peakUnitsApplied = foolsGoldPolicyCreate.units;
       }
 
-      // CONFIRMED-Q1 hard floor after mutes (create path).
-      if (createV121Eligible && scoreV12 > 0 && isConfirmedQ1PromoteLive(TARGET_DATE)) {
-        const q1Floor = computeConfirmedQ1Sized(
-          walletDetails, side, sport, walletProfiles, FLAT_DOLLAR_Q_BY_SPORT,
-          { minSize: CONFIRMED_Q1_MIN_SIZE },
-        );
-        if (q1Floor.qualifies) {
-          const tgt = Math.round(oddsCap(q1Floor.targetUnits, odds ?? null) * 100) / 100;
-          if (peakUnitsApplied < tgt) {
-            peakUnitsApplied = tgt;
-            hcStakeTierCreate = 'CONFIRMED-Q1';
-          }
+      // CONFIRMED-Q1 hard floor after mutes (create path) — includes AGS-mute force.
+      if (createV121Eligible && isConfirmedQ1PromoteLive(TARGET_DATE)) {
+        const q1Floor = applyConfirmedQ1UnitFloor({
+          units: peakUnitsApplied,
+          odds: odds ?? null,
+          q1Result: q1Early,
+          oddsCapFn: oddsCap,
+        });
+        if (q1Floor.floored) {
+          peakUnitsApplied = q1Floor.units;
+          hcStakeTierCreate = q1Floor.tier;
         }
       }
 
@@ -2527,15 +2608,21 @@ async function createMissingLockedPicks({
       v8Stamps.v8_agsTier = finalTier; // v12 tier (overwrites legacy v11 tier slot)
       v8Stamps.v8_agsV12 = scoreV12;
       v8Stamps.v8_agsV12Tier = finalTier;
-      v8Stamps.v8_agsV12Quintile = agsV12Res.quintile;
-      v8Stamps.v8_agsV12ForCount = agsV12Res.forCount;
-      v8Stamps.v8_agsV12AgCount = agsV12Res.agCount;
-      v8Stamps.v8_agsV12ForMean = agsV12Res.forMean;
-      v8Stamps.v8_agsV12AgMean = agsV12Res.agMean;
+      v8Stamps.v8_agsV12Quintile = agsV12Res?.quintile ?? null;
+      v8Stamps.v8_agsV12ForCount = agsV12Res?.forCount ?? null;
+      v8Stamps.v8_agsV12AgCount = agsV12Res?.agCount ?? null;
+      v8Stamps.v8_agsV12ForMean = agsV12Res?.forMean ?? null;
+      v8Stamps.v8_agsV12AgMean = agsV12Res?.agMean ?? null;
       v8Stamps.v8_agsV12UnitsRaw = agsV12UnitsRaw; // ladder value pre-odds-cap
       v8Stamps.v8_agsV12UnitsApplied = peakUnitsApplied;  // post-odds-cap, == finalUnits
-      v8Stamps.v8_agsV12CalibrationSource = agsV12Res.calibrationSource || 'fallback';
+      v8Stamps.v8_agsV12CalibrationSource = agsV12Res?.calibrationSource || 'fallback';
       v8Stamps.v8_agsV12EvaluatedAt = now;
+      if (q1ForceBypassAgs) {
+        v8Stamps.v8_confirmedQ1ForceCreate = true;
+      }
+      if (usedQ1MetaFallback) {
+        v8Stamps.v8_q1MetaFallback = true;
+      }
       // v12.1 — product stake tier from the HC margin (going-forward only).
       if (createV121Eligible) {
         v8Stamps.v8_hcStakeTier = hcStakeTierCreate;
@@ -5088,6 +5175,10 @@ async function main() {
   if (cm.skipped.length > 0) {
     const reasonCounts = cm.skipped.reduce((m, s) => { m[s.reason] = (m[s.reason] || 0) + 1; return m; }, {});
     console.log(`  Skipped: ${Object.entries(reasonCounts).map(([r, n]) => `${r}=${n}`).join(', ')}`);
+    const q1Skips = cm.skipped.filter((s) => String(s.reason || '').startsWith('q1_force'));
+    for (const s of q1Skips.slice(0, 12)) {
+      console.log(`    Q1-force skip: ${s.docId}${s.side ? `/${s.side}` : ''} reason=${s.reason}`);
+    }
   }
 
   console.log(`\n── Summary ──`);

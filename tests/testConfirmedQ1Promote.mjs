@@ -6,6 +6,8 @@ import assert from 'assert';
 import {
   buildFlatDollarQBySport,
   computeConfirmedQ1Sized,
+  confirmedQ1BypassesAgsCreateGate,
+  applyConfirmedQ1UnitFloor,
   isConfirmedQ1PromoteLive,
   CONFIRMED_Q1_FROM,
   CONFIRMED_Q1_MIN_SIZE,
@@ -108,6 +110,52 @@ ok(qBy.get('MLB')?.get('dddddd') === 4, 'bottom → Q4');
     qBy,
   );
   ok(r.qualifies === false, 'FLAT tier fails');
+}
+
+// Create-path: AGS mute / no-signal bypass when Q1×sized qualifies
+ok(confirmedQ1BypassesAgsCreateGate(true, null) === true, 'bypass no_signal');
+ok(confirmedQ1BypassesAgsCreateGate(true, -0.5) === true, 'bypass mute ≤0');
+ok(confirmedQ1BypassesAgsCreateGate(true, 0) === true, 'bypass score 0');
+ok(confirmedQ1BypassesAgsCreateGate(true, 0.2) === false, 'no bypass when AGS ships');
+ok(confirmedQ1BypassesAgsCreateGate(false, -1) === false, 'no bypass without Q1');
+
+// Unit floor after AGS mute (0u scaffolding → 2u / 3u)
+const oddsCapFn = (u) => u;
+{
+  const q1 = computeConfirmedQ1Sized(
+    [{ wallet: 'aaaaaa', side: 'home', sizeRatio: 0.8 }],
+    side, sport, prof, qBy,
+  );
+  const floored = applyConfirmedQ1UnitFloor({
+    units: 0, odds: null, q1Result: q1, oddsCapFn,
+  });
+  ok(floored.floored === true, 'AGS-mute 0u floors');
+  ok(floored.units === CONFIRMED_Q1_UNITS, 'floors to 2u');
+  ok(floored.tier === 'CONFIRMED-Q1', 'tier CONFIRMED-Q1');
+}
+{
+  const q1 = computeConfirmedQ1Sized(
+    [{ wallet: 'aaaaaa', side: 'home', sizeRatio: 1.2 }],
+    side, sport, prof, qBy,
+  );
+  const floored = applyConfirmedQ1UnitFloor({
+    units: 0, odds: -110, q1Result: q1, oddsCapFn,
+  });
+  ok(floored.units === CONFIRMED_Q1_PRESS_UNITS, 'press floors to 3u');
+}
+{
+  const floored = applyConfirmedQ1UnitFloor({
+    units: 0, odds: null,
+    q1Result: { qualifies: false, targetUnits: 2 },
+    oddsCapFn,
+  });
+  ok(floored.floored === false && floored.units === 0, 'no floor without qualify');
+}
+
+// EXITED positions are pruned before create — empty walletDetails ⇒ no Q1
+{
+  const r = computeConfirmedQ1Sized([], side, sport, prof, qBy);
+  ok(r.qualifies === false, 'no walletDetails (EXITED pruned) ⇒ no Q1');
 }
 
 console.log(`OK — ${n} assertions`);

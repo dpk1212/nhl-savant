@@ -748,6 +748,37 @@ export function isConfirmedQ1PromoteLive(pickDate) {
 }
 
 /**
+ * Create-path: CONFIRMED-Q1×sized may proceed when AGS v12 would
+ * no-signal or mute (score ≤ 0). Reconcile hard-floors the same way;
+ * create must not skip before that floor can run.
+ */
+export function confirmedQ1BypassesAgsCreateGate(qualifies, scoreV12) {
+  if (!qualifies) return false;
+  return scoreV12 == null || !Number.isFinite(scoreV12) || scoreV12 <= 0;
+}
+
+/**
+ * Raise units to Q1 target when under-floored. Returns next units + tier
+ * stamp when a floor applied.
+ * @param {(u: number, odds: number|null) => number} oddsCapFn
+ */
+export function applyConfirmedQ1UnitFloor({
+  units,
+  odds = null,
+  q1Result,
+  oddsCapFn,
+}) {
+  if (!q1Result?.qualifies || typeof oddsCapFn !== 'function') {
+    return { units, tier: null, floored: false, targetUnits: null };
+  }
+  const tgt = Math.round(oddsCapFn(q1Result.targetUnits, odds ?? null) * 100) / 100;
+  if (!(Number.isFinite(units) && units < tgt)) {
+    return { units, tier: null, floored: false, targetUnits: tgt };
+  }
+  return { units: tgt, tier: 'CONFIRMED-Q1', floored: true, targetUnits: tgt };
+}
+
+/**
  * flatDollar Q among CONFIRMED-in-sport from live walletProfiles.
  * Score = z(flatRoi) + z(dollarRoi); need ≥4 scored wallets in sport.
  * @returns {Map<string, Map<string, number>>} sport → walletShort → Q (1..4)
