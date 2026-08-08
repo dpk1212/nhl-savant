@@ -210,7 +210,13 @@ function WalletMap({ wallets, selected, onSelect, gid }) {
   const yLabelEvery = yTicks.length > 8 ? 2 : 1;
 
   const sorted = [...plottable].sort((a, b) => {
-    const r = (p) => (p.short === selected ? 5 : p.qualify === 'VAULT' ? 4 : p.proven ? 3 : p.side === 'ours' ? 2 : 1);
+    const r = (p) => (
+      p.short === selected ? 6
+        : (p.side === 'ours' && p.topQ) ? 5
+          : p.qualify === 'VAULT' ? 4
+            : p.proven ? 3
+              : p.side === 'ours' ? 2 : 1
+    );
     return r(a) - r(b);
   });
 
@@ -222,22 +228,19 @@ function WalletMap({ wallets, selected, onSelect, gid }) {
       style={{ display: 'block', width: '100%', height: 'auto' }}
     >
       <defs>
-        <radialGradient id={`${gid}-elite`} cx="84%" cy="14%" r="48%">
-          <stop offset="0%" stopColor={GREEN} stopOpacity="0.18" />
-          <stop offset="100%" stopColor={GREEN} stopOpacity="0" />
+        {/* Soft quadrant wash only — no ELITE/NOISE stamp text. */}
+        <radialGradient id={`${gid}-elite`} cx="84%" cy="14%" r="52%">
+          <stop offset="0%" stopColor={GOLD} stopOpacity="0.07" />
+          <stop offset="100%" stopColor={GOLD} stopOpacity="0" />
         </radialGradient>
-        <radialGradient id={`${gid}-noise`} cx="14%" cy="90%" r="44%">
-          <stop offset="0%" stopColor={VS} stopOpacity="0.12" />
+        <radialGradient id={`${gid}-noise`} cx="14%" cy="90%" r="48%">
+          <stop offset="0%" stopColor={VS} stopOpacity="0.05" />
           <stop offset="100%" stopColor={VS} stopOpacity="0" />
         </radialGradient>
         <linearGradient id={`${gid}-well`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="rgba(255,255,255,0.04)" />
-          <stop offset="100%" stopColor="rgba(0,0,0,0.45)" />
+          <stop offset="0%" stopColor="rgba(255,255,255,0.035)" />
+          <stop offset="100%" stopColor="rgba(0,0,0,0.42)" />
         </linearGradient>
-        <filter id={`${gid}-glow`} x="-60%" y="-60%" width="220%" height="220%">
-          <feGaussianBlur stdDeviation="2" result="b" />
-          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
-        </filter>
       </defs>
 
       <rect x={pad.l} y={pad.t} width={iw} height={ih} rx={4} fill={`url(#${gid}-well)`} />
@@ -245,29 +248,20 @@ function WalletMap({ wallets, selected, onSelect, gid }) {
       <rect x={pad.l} y={yB} width={Math.max(0, xB - pad.l)} height={Math.max(0, pad.t + ih - yB)} fill={`url(#${gid}-noise)`} />
 
       {xTicks.map((v) => (
-        <line key={`xg${v}`} x1={xS(v)} y1={pad.t} x2={xS(v)} y2={pad.t + ih} stroke="rgba(148,163,184,0.07)" />
+        <line key={`xg${v}`} x1={xS(v)} y1={pad.t} x2={xS(v)} y2={pad.t + ih} stroke="rgba(148,163,184,0.06)" />
       ))}
       {yTicks.map((v) => (
-        <line key={`yg${v}`} x1={pad.l} y1={yS(v)} x2={pad.l + iw} y2={yS(v)} stroke="rgba(148,163,184,0.07)" />
+        <line key={`yg${v}`} x1={pad.l} y1={yS(v)} x2={pad.l + iw} y2={yS(v)} stroke="rgba(148,163,184,0.06)" />
       ))}
 
-      <line x1={xB} y1={pad.t} x2={xB} y2={pad.t + ih} stroke="rgba(255,255,255,0.22)" strokeDasharray="3 4" strokeWidth={1.2} />
-      <line x1={pad.l} y1={yB} x2={pad.l + iw} y2={yB} stroke="rgba(255,255,255,0.22)" strokeDasharray="3 4" strokeWidth={1.2} />
-      <line x1={pad.l} y1={pad.t + ih} x2={pad.l + iw} y2={pad.t + ih} stroke="rgba(168,176,191,0.45)" strokeWidth={1.4} />
-      <line x1={pad.l} y1={pad.t} x2={pad.l} y2={pad.t + ih} stroke="rgba(168,176,191,0.45)" strokeWidth={1.4} />
-
-      <text x={xB + (pad.l + iw - xB) / 2} y={pad.t + 16} textAnchor="middle"
-        fill={GREEN} fillOpacity={0.75} fontSize={11} fontFamily={MONO} fontWeight={800} letterSpacing="0.14em">
-        ELITE
-      </text>
-      <text x={pad.l + (xB - pad.l) / 2} y={pad.t + ih - 10} textAnchor="middle"
-        fill={VS} fillOpacity={0.7} fontSize={11} fontFamily={MONO} fontWeight={800} letterSpacing="0.12em">
-        NOISE
-      </text>
+      <line x1={xB} y1={pad.t} x2={xB} y2={pad.t + ih} stroke="rgba(255,255,255,0.14)" strokeDasharray="2.5 5" strokeWidth={1} />
+      <line x1={pad.l} y1={yB} x2={pad.l + iw} y2={yB} stroke="rgba(255,255,255,0.14)" strokeDasharray="2.5 5" strokeWidth={1} />
+      <line x1={pad.l} y1={pad.t + ih} x2={pad.l + iw} y2={pad.t + ih} stroke="rgba(168,176,191,0.38)" strokeWidth={1.2} />
+      <line x1={pad.l} y1={pad.t} x2={pad.l} y2={pad.t + ih} stroke="rgba(168,176,191,0.38)" strokeWidth={1.2} />
 
       {/* Axis titles — clear of the plot */}
       <text x={pad.l + iw / 2} y={H - 10} textAnchor="middle"
-        fill={C.textSec} fontSize={11} fontWeight={700} letterSpacing="0.04em">
+        fill={C.textSec} fontSize={11} fontWeight={600} letterSpacing="0.03em">
         Beat the closing line →
       </text>
       <text
@@ -276,8 +270,8 @@ function WalletMap({ wallets, selected, onSelect, gid }) {
         textAnchor="middle"
         fill={C.textSec}
         fontSize={11}
-        fontWeight={700}
-        letterSpacing="0.04em"
+        fontWeight={600}
+        letterSpacing="0.03em"
         transform={`rotate(-90 13 ${pad.t + ih / 2})`}
       >
         Lifetime ROI →
@@ -303,7 +297,7 @@ function WalletMap({ wallets, selected, onSelect, gid }) {
       })}
 
       {selPt && !selPt.plotIncomplete && (
-        <g opacity={0.15}>
+        <g opacity={0.12}>
           <line x1={pad.l} y1={yS(roiOf(selPt))} x2={pad.l + iw} y2={yS(roiOf(selPt))} stroke={GOLD} strokeWidth={1} />
           <line x1={xS(selPt.plotClv)} y1={pad.t} x2={xS(selPt.plotClv)} y2={pad.t + ih} stroke={GOLD} strokeWidth={1} />
         </g>
@@ -317,50 +311,52 @@ function WalletMap({ wallets, selected, onSelect, gid }) {
         const sel = selected === p.short;
         const sizedUp = Number.isFinite(p.sizeRatio) && p.sizeRatio >= 1.5;
         const isBestSharp = p.side === 'ours' && !!p.topQ;
-        // Plain language on the dot — never "TOP Q" jargon.
-        const bestLabel = isBestSharp
-          ? (sizedUp ? 'BEST · SIZED UP' : 'BEST SHARP')
-          : null;
+        // Quiet mark: champagne hairline = best on price; ↑ = sized up. No floating shout labels.
         // Key by wallet id only — side tags must not remount the node.
         return (
-          <g key={p.short} onClick={() => onSelect(p.short)} style={{ cursor: 'pointer' }} opacity={sel ? 1 : 0.45}>
+          <g key={p.short} onClick={() => onSelect(p.short)} style={{ cursor: 'pointer' }} opacity={sel ? 1 : 0.42}>
             <circle cx={cx} cy={cy} r={Math.max(r + 8, 16)} fill="transparent" />
             {sel && (
-              <circle cx={cx} cy={cy} r={r + 6} fill="none" stroke={GOLD_HI} strokeWidth={1.3} className="lc-ring" />
+              <circle cx={cx} cy={cy} r={r + 5.5} fill="none" stroke={GOLD_HI} strokeWidth={1.15} opacity={0.85} />
             )}
-            {!sel && isBestSharp && (
-              <circle cx={cx} cy={cy} r={r + 5} fill="none" stroke={GREEN} strokeWidth={1.4} opacity={0.9} className="lc-ring" />
+            {isBestSharp && (
+              <circle
+                cx={cx} cy={cy} r={r + (sel ? 3.5 : 3)}
+                fill="none"
+                stroke={GOLD_HI}
+                strokeWidth={1}
+                opacity={sel ? 0.95 : 0.72}
+              />
             )}
             <circle
               cx={cx} cy={cy} r={r}
-              fill={st.fill} stroke={sel ? GOLD_HI : (isBestSharp ? GREEN : st.stroke)}
-              strokeWidth={sel || isBestSharp ? 1.7 : 1.25}
-              strokeDasharray={sel ? undefined : st.dash}
-              filter={sel || isBestSharp ? `url(#${gid}-glow)` : undefined}
+              fill={st.fill}
+              stroke={sel ? GOLD_HI : isBestSharp ? GOLD : st.stroke}
+              strokeWidth={sel || isBestSharp ? 1.35 : 1.15}
+              strokeDasharray={sel || isBestSharp ? undefined : st.dash}
             />
             <text x={cx} y={cy + 3.5} textAnchor="middle" fill={st.text}
               fontSize={r >= 12 ? 9 : 7.5} fontFamily={MONO} fontWeight={800}
               style={{ pointerEvents: 'none' }}>
               {p.short.slice(0, 2)}
             </text>
-            {bestLabel && (
+            {isBestSharp && sizedUp && (
               <text
-                x={cx}
-                y={cy - r - (sel ? 20 : 8)}
+                x={cx + r * 0.55}
+                y={cy - r * 0.55}
                 textAnchor="middle"
-                fill={GREEN}
-                fontSize={9}
+                fill={GOLD_HI}
+                fontSize={10}
                 fontFamily={MONO}
-                fontWeight={800}
-                letterSpacing="0.04em"
+                fontWeight={700}
                 style={{ pointerEvents: 'none' }}
               >
-                {bestLabel}
+                ↑
               </text>
             )}
             {sel && (
-              <text x={cx} y={cy - r - 7} textAnchor="middle" fill={GOLD_HI}
-                fontSize={11} fontFamily={MONO} fontWeight={700} style={{ pointerEvents: 'none' }}>
+              <text x={cx} y={cy - r - 8} textAnchor="middle" fill={GOLD_HI}
+                fontSize={11} fontFamily={MONO} fontWeight={650} style={{ pointerEvents: 'none' }}>
                 {fmtMoney(p.invested)}
               </text>
             )}
@@ -1040,7 +1036,9 @@ export default function LockedClarityExpanded({
     ? selected.sizeBand
     : matchSizeRatioBand(sizeRatio, selected?.sizeRatioBands);
   const beatHot = Number.isFinite(selected?.priorClvPct) && selected.priorClvPct >= 55;
-  const leadAccent = againstSel ? VS : vault ? GOLD : selected?.proven ? GREEN : BLUE;
+  const leadAccent = againstSel ? VS
+    : selectedTopQ || vault ? GOLD
+      : selected?.proven ? GREEN : BLUE;
 
   const ours = all.filter((w) => w.side === 'ours');
   const isBiggest = selected && [...ours].sort((a, b) => (b.invested || 0) - (a.invested || 0))[0]?.short === selected.short;
@@ -1049,11 +1047,15 @@ export default function LockedClarityExpanded({
     ? 'No wallets on the board'
     : againstSel
       ? 'On the other side — weak track record'
-      : isBiggest && selected.proven
-        ? 'This is the lead wallet on this play'
-        : selected.proven
-          ? 'A proven winner on this side'
-          : 'Secondary wallet — on the board, not the stake path';
+      : selectedTopQ && sizeHot
+        ? 'One of our best on price — and betting above their usual'
+        : selectedTopQ
+          ? 'One of our best on price'
+          : isBiggest && selected.proven
+            ? 'This is the lead wallet on this play'
+            : selected.proven
+              ? 'A proven winner on this side'
+              : 'Secondary wallet — on the board, not the stake path';
 
   const sharpUsd = f.sharpUsd || f.sideInvested || oursUsd || 0;
   const journey = Array.isArray(f.journey) && f.journey.length >= 2
@@ -1237,6 +1239,9 @@ export default function LockedClarityExpanded({
                 <span style={{ color: GREEN, fontWeight: 700 }}>Unopposed</span>
               )}
               <span style={{ color: C.textFaint }}>· size = $</span>
+              <span style={{ color: C.textFaint, marginLeft: 'auto' }}>
+                champagne ring = best on price · ↑ sized up
+              </span>
             </div>
           </div>
 
@@ -1251,7 +1256,7 @@ export default function LockedClarityExpanded({
               borderLeft: `3px solid ${leadAccent}`,
               background: againstSel
                 ? 'rgba(240,113,103,0.06)'
-                : vault ? 'rgba(212,175,55,0.07)' : 'rgba(52,211,153,0.04)',
+                : selectedTopQ || vault ? 'rgba(212,175,55,0.07)' : 'rgba(52,211,153,0.04)',
             }}>
               <div style={{
                 fontFamily: MONO, fontSize: 8, fontWeight: 700, letterSpacing: '0.12em',
@@ -1270,19 +1275,11 @@ export default function LockedClarityExpanded({
                       : selected.proven ? <Pill c={GREEN} solid>Proven</Pill>
                         : <Pill c={BLUE}>Secondary</Pill>}
                     {vault && !againstSel && <Pill c={GOLD}>Vault</Pill>}
-                    {selectedTopQ && (
-                      <Pill
-                        c={GREEN}
-                        solid
-                        title="Top price skill among our confirmed sharps — consistently beats the close"
-                      >
-                        {sizeHot ? 'Best sharp · sized up' : 'Best sharp'}
-                      </Pill>
-                    )}
                   </div>
                   <div style={{
-                    marginTop: 5, fontSize: 13, fontWeight: 600, color: C.text, lineHeight: 1.3,
-                    letterSpacing: '-0.01em',
+                    marginTop: 5, fontSize: 13, fontWeight: 600,
+                    color: selectedTopQ && !againstSel ? GOLD_HI : C.text,
+                    lineHeight: 1.35, letterSpacing: '-0.01em',
                   }}>
                     {headline}
                   </div>
@@ -1332,8 +1329,10 @@ export default function LockedClarityExpanded({
                   </div>
                   <div style={{
                     padding: '9px 10px', borderRadius: 8,
-                    background: selectedTopQ || beatHot ? 'rgba(52,211,153,0.08)' : 'rgba(0,0,0,0.32)',
-                    border: `1px solid ${selectedTopQ || beatHot ? 'rgba(52,211,153,0.25)' : LINE}`,
+                    background: selectedTopQ ? 'rgba(212,175,55,0.08)'
+                      : beatHot ? 'rgba(52,211,153,0.06)' : 'rgba(0,0,0,0.32)',
+                    border: `1px solid ${selectedTopQ ? 'rgba(212,175,55,0.28)'
+                      : beatHot ? 'rgba(52,211,153,0.22)' : LINE}`,
                   }}>
                     <div style={{
                       fontSize: 9, fontWeight: 700, letterSpacing: '0.06em', color: C.textMuted, marginBottom: 6,
@@ -1343,7 +1342,8 @@ export default function LockedClarityExpanded({
                     </div>
                     <div style={{
                       fontSize: 18, fontWeight: 700, letterSpacing: '-0.02em',
-                      fontFeatureSettings: "'tnum'", color: selectedTopQ || beatHot ? GREEN : C.text,
+                      fontFeatureSettings: "'tnum'",
+                      color: selectedTopQ ? GOLD_HI : beatHot ? GREEN : C.text,
                       marginBottom: 2,
                     }}>
                       {Number.isFinite(selected.priorClvPct) ? `${selected.priorClvPct}%` : '—'}
@@ -1351,8 +1351,8 @@ export default function LockedClarityExpanded({
                     <div style={{ fontSize: 11, fontWeight: 500, color: C.textSec, lineHeight: 1.3 }}>
                       {selectedTopQ
                         ? (sizeHot
-                          ? 'One of our best sharps · sized up'
-                          : 'One of our best sharps')
+                          ? 'Best on price · above usual size'
+                          : 'Best on price among our confirmed')
                         : 'Beat the closing line'}
                     </div>
                   </div>
