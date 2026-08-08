@@ -9792,9 +9792,9 @@ export default function SharpFlow() {
     // ── Battle Field — per-game map of EVERY tracked wallet ────────────────
     // Built from the RAW position feeds (not the qualified filter) so the
     // game field shows the whole fight, including unqualified wallets:
-    //   proven  = Vault whitelist (CONFIRMED/FLAT in any sport)
+    //   proven  = CONFIRMED whitelist in THIS sport (gold)
     //   cold    = graded record with us is negative (10+ graded bets)
-    //   tracked = in the feed, no proven/cold verdict yet
+    //   tracked = open ticket, not sport-CONFIRMED (incl. FLAT / cross-sport)
     // intel-excluded wallets (MM/arb) stay out — they aren't opinions.
     const battlePosFiles = [
       { data: rawSharpPositions, mkt: 'ML' },
@@ -9802,16 +9802,15 @@ export default function SharpFlow() {
       { data: rawTotalPositions, mkt: 'TOTAL' },
     ];
     const BATTLE_MIN_INVESTED = 250;
-    // Proven on the battle map = whitelist for THIS sport only — same gate as
-    // Sharp Intel / vault open legs. Cross-sport CONFIRMED (e.g. MLB winner on
-    // a UFC ticket) used to paint gold with no UFC open-leg in the vault,
-    // which made the dots look like ghosts. They still plot as tracked.
+    // Proven on the battle map = CONFIRMED for THIS sport only. FLAT and
+    // cross-sport CONFIRMED used to paint gold; they plot as tracked now so
+    // game view matches "gold = proven in this sport."
     const classifyBattleWallet = (wLower, sport) => {
       const prof = walletProfiles.get(wLower.slice(-6));
       if (!prof) return { cls: 'tracked', prof: null };
       const tier = prof.bySport?.[sport]?.whitelistTier;
       let cls = 'tracked';
-      if (tier === 'CONFIRMED' || tier === 'FLAT') cls = 'proven';
+      if (tier === 'CONFIRMED') cls = 'proven';
       else if ((prof.picks?.n || 0) >= 10 && (prof.picks?.flatRoi ?? 0) < 0) cls = 'cold';
       return { cls, prof };
     };

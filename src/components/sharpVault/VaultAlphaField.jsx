@@ -133,8 +133,15 @@ export default function VaultAlphaField({
       if (toggle === 'active' && open <= 0) continue;
       if (toggle === 'hc' && !isHc) continue;
 
-      const confirmedN = (e.confirmedSports || []).length;
-      const flatOnly = confirmedN === 0;
+      // Gold paint:
+      //   ALL sports → CONFIRMED anywhere
+      //   sport selected → CONFIRMED in that sport only
+      //   Active / Heavy toggles → CONFIRMED anywhere (live conviction cue)
+      const confirmedSports = e.confirmedSports || [];
+      const confirmedAnywhere = confirmedSports.length > 0;
+      const confirmedInSport = sportFilter !== 'ALL' && confirmedSports.includes(sportFilter);
+      const goldAnywhere = sportFilter === 'ALL' || toggle === 'active' || toggle === 'hc';
+      const isProvenGold = goldAnywhere ? confirmedAnywhere : confirmedInSport;
       const weekAbs = Math.abs(e.weeklyPnl || 0);
       const z = Math.max(40, Math.min(280, weekAbs > 0 ? Math.sqrt(weekAbs) * 2.2 : Math.sqrt(e.vol || 0) * 0.35));
       const legs = openLegsByWallet[w] || [];
@@ -153,7 +160,7 @@ export default function VaultAlphaField({
         picksWr: e.picks?.wr,
         picksN: e.picks?.n || 0,
         sports: (e.whitelistSports || []).join(', '),
-        flatOnly,
+        isProvenGold,
         weeklyPnl: e.weeklyPnl,
         liveLine,
         selected: selected === w,
@@ -325,7 +332,9 @@ export default function VaultAlphaField({
           <div style={{ ...T.label, color: B.textMuted, fontWeight: 500 }}>
             {isBattle
               ? 'Sides face off across the line · gold = proven in this sport · height = wallet ROI · distance = money'
-              : 'Beat the close vs sports ROI · ring = betting today · bright = heavy size'}
+              : sportFilter !== 'ALL' && toggle === 'all'
+                ? `Beat the close vs sports ROI · gold = proven ${sportFilter} · ring = live · bright = heavy`
+                : 'Beat the close vs sports ROI · gold = proven · ring = live · bright = heavy'}
           </div>
         </div>
         {!isBattle && (
@@ -562,7 +571,7 @@ export default function VaultAlphaField({
                         />
                       );
                     }
-                    let stroke = p.flatOnly ? 'rgba(148,163,184,0.45)' : 'rgba(212,175,55,0.35)';
+                    let stroke = p.isProvenGold ? 'rgba(212,175,55,0.35)' : 'rgba(148,163,184,0.45)';
                     let strokeWidth = 1;
                     let fillOpacity = p.isLive || p.isHc ? 0.9 : 0.55;
                     if (p.isLive) {
@@ -581,7 +590,7 @@ export default function VaultAlphaField({
                     return (
                       <Cell
                         key={p.wallet}
-                        fill={p.flatOnly ? 'rgba(148,163,184,0.5)' : B.gold}
+                        fill={p.isProvenGold ? B.gold : 'rgba(148,163,184,0.5)'}
                         fillOpacity={fillOpacity}
                         stroke={stroke}
                         strokeWidth={strokeWidth}
@@ -620,7 +629,9 @@ export default function VaultAlphaField({
       <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.45rem', lineHeight: 1.5 }}>
         {isBattle
           ? 'Proven = Vault-verified winner in this sport · Cold = negative graded record with us (10+ picks) · Tracked = open ticket, not sport-proven. Positions under $250 omitted. Tap a proven dot for the full profile.'
-          : `Only wallets with enough history to trust (${CLV_N_MIN}+ graded bets and real sports volume). Hover a live wallet for its largest open bet — full markets are on Locked Picks and Live.`}
+          : sportFilter !== 'ALL' && toggle === 'all'
+            ? `Gold = proven ${sportFilter} winner · grey = vaulted elsewhere or steady-only. ${CLV_N_MIN}+ graded bets required. Hover a live wallet for its largest open bet.`
+            : `Gold = proven winner (any sport) · grey = steady-only. ${CLV_N_MIN}+ graded bets required. Hover a live wallet for its largest open bet — full markets are on Locked Picks and Live.`}
       </div>
     </section>
   );
