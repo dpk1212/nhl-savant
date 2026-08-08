@@ -296,6 +296,43 @@ function picksAgg(bets) {
     flatRoi: flatBets.length ? +((flatPnl / flatBets.length) * 100).toFixed(1) : 0,
   };
 }
+
+/**
+ * Trailing form + flat equity curve for Action desk (strength UI).
+ * Prefer featured picks (Source A); fall back to positions with flat.
+ * Chronological by date, last 20 legs for the curve.
+ */
+function sportForm(bets) {
+  const ordered = (bets || [])
+    .filter((b) => b && (b.won === 0 || b.won === 1))
+    .slice()
+    .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
+  if (!ordered.length) return null;
+
+  const lastN = (n) => {
+    const slice = ordered.slice(-n);
+    const w = slice.filter((b) => b.won === 1).length;
+    const l = slice.length - w;
+    return { w, l };
+  };
+  const l5 = ordered.length >= 1 ? lastN(Math.min(5, ordered.length)) : null;
+  const l10 = ordered.length >= 1 ? lastN(Math.min(10, ordered.length)) : null;
+
+  const flatLegs = ordered.filter((b) => Number.isFinite(b.flat));
+  const curveSrc = flatLegs.slice(-20);
+  let cum = 0;
+  const flatCurve = curveSrc.map((b) => {
+    cum += b.flat;
+    return r2(cum);
+  });
+  if (!l5 && !flatCurve.length) return null;
+  return {
+    l5,
+    l10,
+    flatCurve: flatCurve.length >= 5 ? flatCurve : [],
+    flatEnd: flatCurve.length ? flatCurve[flatCurve.length - 1] : null,
+  };
+}
 function positionsAgg(bets) {
   const n = bets.length;
   const wins = bets.filter(b => b.won === 1).length;
@@ -443,6 +480,8 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
     const picksInSport = picksAgg(pp);
     const positionsInSport = positionsAgg(ps);
     const { tier, source } = classifyWhitelistTierWithSource(picksInSport, positionsInSport);
+    // Form: prefer featured picks; else positions (with flat = settledPnl/invested).
+    const form = sportForm(pp.length ? pp : ps);
     bySport[sport] = {
       picks: picksInSport,
       positions: positionsInSport,
@@ -458,6 +497,7 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
                                 && (positionsInSport.wr ?? 0) >= 50,
       whitelistTier:      tier,
       whitelistSource:    source,   // 'A' | 'B' | 'A+B' | null  (v2)
+      ...(form ? { form } : {}),
     };
   }
   const byMarket = {};
