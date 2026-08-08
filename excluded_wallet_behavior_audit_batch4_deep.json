@@ -1,0 +1,2942 @@
+{
+  "auditedAt": "2026-07-17T19:45:15.610Z",
+  "note": "Hardened batch4 with maxClosed 1500, broad sport filter (excl esports), futures/outlier flags",
+  "summary": {
+    "reinstate": [
+      {
+        "name": "Sharky6999",
+        "addr": "0x751a2b86cab503496efd325c8344e10159349ea1",
+        "hardened": "REINSTATE_WEAK_EDGE",
+        "bothMax": 8.9,
+        "classRoi": 0.1,
+        "broadRoi": 0.1
+      },
+      {
+        "name": "torta.tech",
+        "addr": "0x161a7f666ca49d592848cf415b42f49a84714103",
+        "hardened": "REINSTATE",
+        "bothMax": 3.6,
+        "classRoi": 54.8,
+        "broadRoi": 60
+      },
+      {
+        "name": "pleaseplease123",
+        "addr": "0x5e9458202b5817a72cf81105ec8a30e6f3705ba1",
+        "hardened": "REINSTATE_WEAK_EDGE",
+        "bothMax": 0,
+        "classRoi": 1.3,
+        "broadRoi": 4.9
+      },
+      {
+        "name": "0xE5efD6543002653B2EEF940d8254911862aD9e7A-1729599643232",
+        "addr": "0xe5efd6543002653b2eef940d8254911862ad9e7a",
+        "hardened": "REINSTATE",
+        "bothMax": 0.6,
+        "classRoi": 100.9,
+        "broadRoi": 89.2
+      },
+      {
+        "name": "05143",
+        "addr": "0x777d9f00c2b4f7b829c9de0049ca3e707db05143",
+        "hardened": "REINSTATE",
+        "bothMax": 1.1,
+        "classRoi": 50.3,
+        "broadRoi": 29.5
+      },
+      {
+        "name": "212121212121212121212",
+        "addr": "0x1bc0d88ca86b9049cf05d642e634836d5ddf4429",
+        "hardened": "REINSTATE",
+        "bothMax": 2,
+        "classRoi": 80.6,
+        "broadRoi": 78.7
+      },
+      {
+        "name": "AgricultureSecretary",
+        "addr": "0x6ffb4354cbe6e0f9989e3b55564ec5fb8646a834",
+        "hardened": "REINSTATE_WEAK_EDGE",
+        "bothMax": 2,
+        "classRoi": 0.3,
+        "broadRoi": 0.2
+      },
+      {
+        "name": "ZerOptimist",
+        "addr": "0x2c57db9e442ef5ffb2651f03afd551171738c94d",
+        "hardened": "REINSTATE",
+        "bothMax": 2.5,
+        "classRoi": 36.9,
+        "broadRoi": 39.4
+      },
+      {
+        "name": "tmoneeey",
+        "addr": "0xa974826f82380f9bb3d5b9c722c50f82fb1aef79",
+        "hardened": "REINSTATE",
+        "bothMax": 2.3,
+        "classRoi": 62.6,
+        "broadRoi": 61.4
+      },
+      {
+        "name": "simonbanza",
+        "addr": "0x5350afcd8bd8ceffdf4da32420d6d31be0822fda",
+        "hardened": "REINSTATE",
+        "bothMax": 12.2,
+        "classRoi": -5.7,
+        "broadRoi": 5.9
+      },
+      {
+        "name": "Gucky-45",
+        "addr": "0xe613b515bd46b1585a8b137a4d291d9b80bd540e",
+        "hardened": "REINSTATE",
+        "bothMax": 9.4,
+        "classRoi": 6.4,
+        "broadRoi": 8.8
+      },
+      {
+        "name": "Dhdhsjsj",
+        "addr": "0x5d58e38cd0a7e6f5fa67b7f9c2f70dd70df09a15",
+        "hardened": "REINSTATE",
+        "bothMax": 2.9,
+        "classRoi": 5.9,
+        "broadRoi": 59.2
+      },
+      {
+        "name": "NO-GOD-PLEASE-NO",
+        "addr": "0x5257aa84944804bbb0c718814ebebeeafaca3e2a",
+        "hardened": "REINSTATE_WEAK_EDGE",
+        "bothMax": 6.1,
+        "classRoi": -3.9,
+        "broadRoi": 2.8
+      },
+      {
+        "name": "johnny234",
+        "addr": "0xd38ad20037839959d89165cf448568d584b28d26",
+        "hardened": "REINSTATE",
+        "bothMax": 1.5,
+        "classRoi": 76.4,
+        "broadRoi": 56.9
+      },
+      {
+        "name": "lmeow11",
+        "addr": "0x38507eb687f0a07e4d8a23a3c96a01916f0fc4b4",
+        "hardened": "REINSTATE",
+        "bothMax": 0,
+        "classRoi": -24.4,
+        "broadRoi": 11.6
+      }
+    ],
+    "noEdge": [],
+    "careful": [
+      "VivaMoldova",
+      "puipui2486",
+      "piratesfan1313",
+      "Cavs2"
+    ],
+    "keep": [
+      "winner877",
+      "Q96s3kwozynxpau"
+    ]
+  },
+  "results": [
+    {
+      "addr": "0x751a2b86cab503496efd325c8344e10159349ea1",
+      "name": "Sharky6999",
+      "currentTag": "MM+TRADER",
+      "batchBoth": 0,
+      "batchRoi": 0.1,
+      "batchWL": "49-1",
+      "closedFetched": 1500,
+      "classified": {
+        "label": "class",
+        "legs": 106,
+        "markets": 103,
+        "both": 3,
+        "bothPct": 2.9,
+        "wl": "102-4",
+        "roi": 0.1,
+        "inv": 13282682,
+        "game": {
+          "wl": "73-4",
+          "roi": 0.1,
+          "n": 77
+        },
+        "fut": {
+          "wl": "29-0",
+          "roi": 0.1,
+          "n": 29
+        },
+        "esportsLegs": 0,
+        "top1": 6.4,
+        "top3": 17.7,
+        "topPnl": [
+          {
+            "title": "Will Egypt win on 2026-07-03?",
+            "pnl": 850,
+            "fut": true
+          },
+          {
+            "title": "Will Belgium win on 2026-07-01?",
+            "pnl": 820,
+            "fut": true
+          },
+          {
+            "title": "Will Switzerland win on 2026-07-07?",
+            "pnl": 700,
+            "fut": true
+          }
+        ]
+      },
+      "broad": {
+        "label": "broad",
+        "legs": 220,
+        "markets": 202,
+        "both": 18,
+        "bothPct": 8.9,
+        "wl": "200-20",
+        "roi": 0.1,
+        "inv": 18100388,
+        "game": {
+          "wl": "166-20",
+          "roi": 0.1,
+          "n": 186
+        },
+        "fut": {
+          "wl": "34-0",
+          "roi": 0.1,
+          "n": 34
+        },
+        "esportsLegs": 0,
+        "top1": 14,
+        "top3": 36.5,
+        "topPnl": [
+          {
+            "title": "Seattle Mariners vs. Baltimore Orioles",
+            "pnl": 25000,
+            "fut": false
+          },
+          {
+            "title": "Seattle Mariners vs. Baltimore Orioles",
+            "pnl": -25000,
+            "fut": false
+          },
+          {
+            "title": "Cattolica: Federico Bondioli vs Carlo Alberto Caniato",
+            "pnl": 15000,
+            "fut": false
+          }
+        ]
+      },
+      "all": {
+        "label": "all",
+        "legs": 1500,
+        "markets": 1468,
+        "both": 32,
+        "bothPct": 2.2,
+        "wl": "1436-64",
+        "roi": 0.2,
+        "inv": 24943017,
+        "game": {
+          "wl": "1386-64",
+          "roi": 0.3,
+          "n": 1450
+        },
+        "fut": {
+          "wl": "50-0",
+          "roi": 0.1,
+          "n": 50
+        },
+        "esportsLegs": 35,
+        "top1": 14.2,
+        "top3": 35.4,
+        "topPnl": [
+          {
+            "title": "Counter-Strike: BIG vs B8 (BO3) - IEM Cologne Major Sta",
+            "pnl": 50000,
+            "fut": false
+          },
+          {
+            "title": "Counter-Strike: BIG vs B8 (BO3) - IEM Cologne Major Sta",
+            "pnl": -50000,
+            "fut": false
+          },
+          {
+            "title": "Seattle Mariners vs. Baltimore Orioles",
+            "pnl": 25000,
+            "fut": false
+          }
+        ]
+      },
+      "hardened": "REINSTATE_WEAK_EDGE",
+      "flags": [
+        "truncated_1500"
+      ],
+      "bothMax": 8.9
+    },
+    {
+      "addr": "0xad89f899f1524533adfd1e6a07da692fcd92f6e1",
+      "name": "VivaMoldova",
+      "currentTag": "MM",
+      "batchBoth": 11.7,
+      "batchRoi": 12.8,
+      "batchWL": "64-33",
+      "closedFetched": 1500,
+      "classified": {
+        "label": "class",
+        "legs": 153,
+        "markets": 137,
+        "both": 16,
+        "bothPct": 11.7,
+        "wl": "93-41",
+        "roi": 11.8,
+        "inv": 548445,
+        "game": {
+          "wl": "14-10",
+          "roi": -7.3,
+          "n": 24
+        },
+        "fut": {
+          "wl": "79-31",
+          "roi": 4.7,
+          "n": 110
+        },
+        "esportsLegs": 1,
+        "top1": 56.2,
+        "top3": 62.9,
+        "topPnl": [
+          {
+            "title": "Roland Garros ATP: Matteo Arnaldi vs Flavio Cobolli",
+            "pnl": 49317,
+            "fut": false
+          },
+          {
+            "title": "Roland Garros ATP: Luca Van Assche vs Patrick Kypson",
+            "pnl": 3144,
+            "fut": false
+          },
+          {
+            "title": "Will Trump say \"Sucker\" or \"Soccer\" during Inter Miami ",
+            "pnl": -2700,
+            "fut": false
+          }
+        ]
+      },
+      "broad": {
+        "label": "broad",
+        "legs": 1062,
+        "markets": 905,
+        "both": 157,
+        "bothPct": 17.3,
+        "wl": "528-293",
+        "roi": 7.3,
+        "inv": 2951463,
+        "game": {
+          "wl": "269-157",
+          "roi": 6.5,
+          "n": 426
+        },
+        "fut": {
+          "wl": "259-136",
+          "roi": 3,
+          "n": 395
+        },
+        "esportsLegs": 0,
+        "top1": 16.3,
+        "top3": 35.4,
+        "topPnl": [
+          {
+            "title": "Set Handicap: Valentova (-1.5) vs Birrell (+1.5)",
+            "pnl": 54013,
+            "fut": false
+          },
+          {
+            "title": "Roland Garros ATP: Matteo Arnaldi vs Flavio Cobolli",
+            "pnl": 49317,
+            "fut": false
+          },
+          {
+            "title": "Will Alexander Zverev win the 2026 Men's French Open?",
+            "pnl": -14396,
+            "fut": true
+          }
+        ]
+      },
+      "all": {
+        "label": "all",
+        "legs": 1500,
+        "markets": 1309,
+        "both": 191,
+        "bothPct": 14.6,
+        "wl": "842-413",
+        "roi": 7.5,
+        "inv": 3643942,
+        "game": {
+          "wl": "575-275",
+          "roi": 7.3,
+          "n": 850
+        },
+        "fut": {
+          "wl": "267-138",
+          "roi": 3.2,
+          "n": 405
+        },
+        "esportsLegs": 4,
+        "top1": 12,
+        "top3": 26.1,
+        "topPnl": [
+          {
+            "title": "Set Handicap: Valentova (-1.5) vs Birrell (+1.5)",
+            "pnl": 54013,
+            "fut": false
+          },
+          {
+            "title": "Roland Garros ATP: Matteo Arnaldi vs Flavio Cobolli",
+            "pnl": 49317,
+            "fut": false
+          },
+          {
+            "title": "Will Alexander Zverev win the 2026 Men's French Open?",
+            "pnl": -14396,
+            "fut": true
+          }
+        ]
+      },
+      "hardened": "REVIEW_CAREFUL",
+      "flags": [
+        "truncated_1500",
+        "roi_top1:56.2%"
+      ],
+      "bothMax": 17.3
+    },
+    {
+      "addr": "0x161a7f666ca49d592848cf415b42f49a84714103",
+      "name": "torta.tech",
+      "currentTag": "MM",
+      "batchBoth": 2.9,
+      "batchRoi": 57.2,
+      "batchWL": "403-17",
+      "closedFetched": 1500,
+      "classified": {
+        "label": "class",
+        "legs": 745,
+        "markets": 719,
+        "both": 26,
+        "bothPct": 3.6,
+        "wl": "712-33",
+        "roi": 54.8,
+        "inv": 299544,
+        "game": {
+          "wl": "683-33",
+          "roi": 56.2,
+          "n": 716
+        },
+        "fut": {
+          "wl": "29-0",
+          "roi": 37,
+          "n": 29
+        },
+        "esportsLegs": 0,
+        "top1": 1.4,
+        "top3": 3.7,
+        "topPnl": [
+          {
+            "title": "Seattle Sounders FC vs. Portland Timbers: O/U 3.5",
+            "pnl": 2311,
+            "fut": false
+          },
+          {
+            "title": "Houston Astros vs. Texas Rangers: O/U 7.5",
+            "pnl": 2241,
+            "fut": false
+          },
+          {
+            "title": "Chicago White Sox vs. New York Yankees",
+            "pnl": 1821,
+            "fut": false
+          }
+        ]
+      },
+      "broad": {
+        "label": "broad",
+        "legs": 1494,
+        "markets": 1457,
+        "both": 37,
+        "bothPct": 2.5,
+        "wl": "1439-55",
+        "roi": 60,
+        "inv": 581986,
+        "game": {
+          "wl": "1385-55",
+          "roi": 61.3,
+          "n": 1440
+        },
+        "fut": {
+          "wl": "54-0",
+          "roi": 39.7,
+          "n": 54
+        },
+        "esportsLegs": 0,
+        "top1": 2.2,
+        "top3": 3.5,
+        "topPnl": [
+          {
+            "title": "Colombia vs. Ghana: O/U 1.5",
+            "pnl": 8082,
+            "fut": false
+          },
+          {
+            "title": "Seattle Sounders FC vs. Portland Timbers: O/U 3.5",
+            "pnl": 2311,
+            "fut": false
+          },
+          {
+            "title": "Houston Astros vs. Texas Rangers: O/U 7.5",
+            "pnl": 2241,
+            "fut": false
+          }
+        ]
+      },
+      "all": {
+        "label": "all",
+        "legs": 1500,
+        "markets": 1463,
+        "both": 37,
+        "bothPct": 2.5,
+        "wl": "1445-55",
+        "roi": 59.9,
+        "inv": 584118,
+        "game": {
+          "wl": "1391-55",
+          "roi": 61.1,
+          "n": 1446
+        },
+        "fut": {
+          "wl": "54-0",
+          "roi": 39.7,
+          "n": 54
+        },
+        "esportsLegs": 0,
+        "top1": 2.2,
+        "top3": 3.5,
+        "topPnl": [
+          {
+            "title": "Colombia vs. Ghana: O/U 1.5",
+            "pnl": 8082,
+            "fut": false
+          },
+          {
+            "title": "Seattle Sounders FC vs. Portland Timbers: O/U 3.5",
+            "pnl": 2311,
+            "fut": false
+          },
+          {
+            "title": "Houston Astros vs. Texas Rangers: O/U 7.5",
+            "pnl": 2241,
+            "fut": false
+          }
+        ]
+      },
+      "hardened": "REINSTATE",
+      "flags": [
+        "truncated_1500"
+      ],
+      "bothMax": 3.6
+    },
+    {
+      "addr": "0x5e9458202b5817a72cf81105ec8a30e6f3705ba1",
+      "name": "pleaseplease123",
+      "currentTag": "MM",
+      "batchBoth": 0,
+      "batchRoi": 1.3,
+      "batchWL": "55-58",
+      "closedFetched": 207,
+      "classified": {
+        "label": "class",
+        "legs": 113,
+        "markets": 113,
+        "both": 0,
+        "bothPct": 0,
+        "wl": "55-58",
+        "roi": 1.3,
+        "inv": 6179215,
+        "game": {
+          "wl": "55-58",
+          "roi": 1.3,
+          "n": 113
+        },
+        "fut": {
+          "wl": "0-0",
+          "roi": null,
+          "n": 0
+        },
+        "esportsLegs": 0,
+        "top1": 2,
+        "top3": 6,
+        "topPnl": [
+          {
+            "title": "Chicago Cubs vs. Milwaukee Brewers: O/U 7.5",
+            "pnl": 122222,
+            "fut": false
+          },
+          {
+            "title": "New York Yankees vs. Boston Red Sox: O/U 8.5",
+            "pnl": 122222,
+            "fut": false
+          },
+          {
+            "title": "Arizona Diamondbacks vs. Los Angeles Dodgers",
+            "pnl": 121818,
+            "fut": false
+          }
+        ]
+      },
+      "broad": {
+        "label": "broad",
+        "legs": 207,
+        "markets": 207,
+        "both": 0,
+        "bothPct": 0,
+        "wl": "107-100",
+        "roi": 4.9,
+        "inv": 11470606,
+        "game": {
+          "wl": "107-100",
+          "roi": 4.9,
+          "n": 207
+        },
+        "fut": {
+          "wl": "0-0",
+          "roi": null,
+          "n": 0
+        },
+        "esportsLegs": 0,
+        "top1": 1.2,
+        "top3": 3.4,
+        "topPnl": [
+          {
+            "title": "Cincinnati Reds vs. Milwaukee Brewers",
+            "pnl": -130000,
+            "fut": false
+          },
+          {
+            "title": "Chicago Cubs vs. Milwaukee Brewers: O/U 7.5",
+            "pnl": 122222,
+            "fut": false
+          },
+          {
+            "title": "New York Yankees vs. Boston Red Sox: O/U 8.5",
+            "pnl": 122222,
+            "fut": false
+          }
+        ]
+      },
+      "all": {
+        "label": "all",
+        "legs": 207,
+        "markets": 207,
+        "both": 0,
+        "bothPct": 0,
+        "wl": "107-100",
+        "roi": 4.9,
+        "inv": 11470606,
+        "game": {
+          "wl": "107-100",
+          "roi": 4.9,
+          "n": 207
+        },
+        "fut": {
+          "wl": "0-0",
+          "roi": null,
+          "n": 0
+        },
+        "esportsLegs": 0,
+        "top1": 1.2,
+        "top3": 3.4,
+        "topPnl": [
+          {
+            "title": "Cincinnati Reds vs. Milwaukee Brewers",
+            "pnl": -130000,
+            "fut": false
+          },
+          {
+            "title": "Chicago Cubs vs. Milwaukee Brewers: O/U 7.5",
+            "pnl": 122222,
+            "fut": false
+          },
+          {
+            "title": "New York Yankees vs. Boston Red Sox: O/U 8.5",
+            "pnl": 122222,
+            "fut": false
+          }
+        ]
+      },
+      "hardened": "REINSTATE_WEAK_EDGE",
+      "flags": [],
+      "bothMax": 0
+    },
+    {
+      "addr": "0xe5efd6543002653b2eef940d8254911862ad9e7a",
+      "name": "0xE5efD6543002653B2EEF940d8254911862aD9e7A-1729599643232",
+      "currentTag": "MM",
+      "batchBoth": 0.5,
+      "batchRoi": 101.6,
+      "batchWL": "121-82",
+      "closedFetched": 813,
+      "classified": {
+        "label": "class",
+        "legs": 209,
+        "markets": 208,
+        "both": 1,
+        "bothPct": 0.5,
+        "wl": "125-83",
+        "roi": 100.9,
+        "inv": 529014,
+        "game": {
+          "wl": "122-81",
+          "roi": 101,
+          "n": 203
+        },
+        "fut": {
+          "wl": "3-2",
+          "roi": 116.9,
+          "n": 5
+        },
+        "esportsLegs": 0,
+        "top1": 7.7,
+        "top3": 16.9,
+        "topPnl": [
+          {
+            "title": "Roland Garros WTA: Diana Shnaider vs Maja Chwalinska",
+            "pnl": 46383,
+            "fut": false
+          },
+          {
+            "title": "Roland Garros ATP: Felix Auger-Aliassime vs Flavio Cobo",
+            "pnl": 27690,
+            "fut": false
+          },
+          {
+            "title": "76ers vs. Celtics: O/U 206.5",
+            "pnl": 27021,
+            "fut": false
+          }
+        ]
+      },
+      "broad": {
+        "label": "broad",
+        "legs": 526,
+        "markets": 523,
+        "both": 3,
+        "bothPct": 0.6,
+        "wl": "292-231",
+        "roi": 89.2,
+        "inv": 1346226,
+        "game": {
+          "wl": "287-224",
+          "roi": 91.5,
+          "n": 511
+        },
+        "fut": {
+          "wl": "5-7",
+          "roi": 23.4,
+          "n": 12
+        },
+        "esportsLegs": 0,
+        "top1": 3.5,
+        "top3": 9.9,
+        "topPnl": [
+          {
+            "title": "Knicks vs. Spurs: O/U 216.5",
+            "pnl": 49576,
+            "fut": false
+          },
+          {
+            "title": "Roland Garros WTA: Diana Shnaider vs Maja Chwalinska",
+            "pnl": 46383,
+            "fut": false
+          },
+          {
+            "title": "Spurs vs. Thunder: O/U 213.5",
+            "pnl": 44792,
+            "fut": false
+          }
+        ]
+      },
+      "all": {
+        "label": "all",
+        "legs": 813,
+        "markets": 800,
+        "both": 13,
+        "bothPct": 1.6,
+        "wl": "464-346",
+        "roi": 86.5,
+        "inv": 1451688,
+        "game": {
+          "wl": "459-339",
+          "roi": 88.6,
+          "n": 798
+        },
+        "fut": {
+          "wl": "5-7",
+          "roi": 23.4,
+          "n": 12
+        },
+        "esportsLegs": 0,
+        "top1": 3.2,
+        "top3": 9.2,
+        "topPnl": [
+          {
+            "title": "Knicks vs. Spurs: O/U 216.5",
+            "pnl": 49576,
+            "fut": false
+          },
+          {
+            "title": "Roland Garros WTA: Diana Shnaider vs Maja Chwalinska",
+            "pnl": 46383,
+            "fut": false
+          },
+          {
+            "title": "Spurs vs. Thunder: O/U 213.5",
+            "pnl": 44792,
+            "fut": false
+          }
+        ]
+      },
+      "hardened": "REINSTATE",
+      "flags": [],
+      "bothMax": 0.6
+    },
+    {
+      "addr": "0x777d9f00c2b4f7b829c9de0049ca3e707db05143",
+      "name": "05143",
+      "currentTag": "MM",
+      "batchBoth": 0.8,
+      "batchRoi": 50.3,
+      "batchWL": "81-51",
+      "closedFetched": 474,
+      "classified": {
+        "label": "class",
+        "legs": 133,
+        "markets": 132,
+        "both": 1,
+        "bothPct": 0.8,
+        "wl": "81-51",
+        "roi": 50.3,
+        "inv": 4110498,
+        "game": {
+          "wl": "72-42",
+          "roi": 49.9,
+          "n": 114
+        },
+        "fut": {
+          "wl": "9-9",
+          "roi": 60.8,
+          "n": 18
+        },
+        "esportsLegs": 0,
+        "top1": 6.6,
+        "top3": 14.1,
+        "topPnl": [
+          {
+            "title": "UFC 327: Jirí Procházka vs. Carlos Ulberg (Light Heavyw",
+            "pnl": 280671,
+            "fut": false
+          },
+          {
+            "title": "UFC Fight Night: Mandel Nallo vs. Jai Herbert (Lightwei",
+            "pnl": 175930,
+            "fut": false
+          },
+          {
+            "title": "Spread: Nuggets (-23.5)",
+            "pnl": 149193,
+            "fut": false
+          }
+        ]
+      },
+      "broad": {
+        "label": "broad",
+        "legs": 467,
+        "markets": 462,
+        "both": 5,
+        "bothPct": 1.1,
+        "wl": "284-182",
+        "roi": 29.5,
+        "inv": 11870536,
+        "game": {
+          "wl": "237-149",
+          "roi": 30.6,
+          "n": 386
+        },
+        "fut": {
+          "wl": "47-33",
+          "roi": 19.8,
+          "n": 80
+        },
+        "esportsLegs": 0,
+        "top1": 2.5,
+        "top3": 6.1,
+        "topPnl": [
+          {
+            "title": "UFC 327: Jirí Procházka vs. Carlos Ulberg (Light Heavyw",
+            "pnl": 280671,
+            "fut": false
+          },
+          {
+            "title": "Texas Rangers vs. Baltimore Orioles: O/U 8.5",
+            "pnl": 239142,
+            "fut": false
+          },
+          {
+            "title": "UFC Fight Night: Mandel Nallo vs. Jai Herbert (Lightwei",
+            "pnl": 175930,
+            "fut": false
+          }
+        ]
+      },
+      "all": {
+        "label": "all",
+        "legs": 474,
+        "markets": 469,
+        "both": 5,
+        "bothPct": 1.1,
+        "wl": "288-185",
+        "roi": 29.5,
+        "inv": 11914070,
+        "game": {
+          "wl": "240-152",
+          "roi": 30.6,
+          "n": 392
+        },
+        "fut": {
+          "wl": "48-33",
+          "roi": 20.1,
+          "n": 81
+        },
+        "esportsLegs": 1,
+        "top1": 2.5,
+        "top3": 6.1,
+        "topPnl": [
+          {
+            "title": "UFC 327: Jirí Procházka vs. Carlos Ulberg (Light Heavyw",
+            "pnl": 280671,
+            "fut": false
+          },
+          {
+            "title": "Texas Rangers vs. Baltimore Orioles: O/U 8.5",
+            "pnl": 239142,
+            "fut": false
+          },
+          {
+            "title": "UFC Fight Night: Mandel Nallo vs. Jai Herbert (Lightwei",
+            "pnl": 175930,
+            "fut": false
+          }
+        ]
+      },
+      "hardened": "REINSTATE",
+      "flags": [],
+      "bothMax": 1.1
+    },
+    {
+      "addr": "0x1bc0d88ca86b9049cf05d642e634836d5ddf4429",
+      "name": "212121212121212121212",
+      "currentTag": "MM",
+      "batchBoth": 1.4,
+      "batchRoi": 80.6,
+      "batchWL": "64-9",
+      "closedFetched": 304,
+      "classified": {
+        "label": "class",
+        "legs": 73,
+        "markets": 72,
+        "both": 1,
+        "bothPct": 1.4,
+        "wl": "64-9",
+        "roi": 80.6,
+        "inv": 2811222,
+        "game": {
+          "wl": "57-8",
+          "roi": 80.1,
+          "n": 65
+        },
+        "fut": {
+          "wl": "7-1",
+          "roi": 97.4,
+          "n": 8
+        },
+        "esportsLegs": 0,
+        "top1": 7.2,
+        "top3": 19.1,
+        "topPnl": [
+          {
+            "title": "Nuggets vs. Lakers",
+            "pnl": 199213,
+            "fut": false
+          },
+          {
+            "title": "Heat vs. Bucks",
+            "pnl": 171325,
+            "fut": false
+          },
+          {
+            "title": "Nuggets vs. Mavericks",
+            "pnl": 159269,
+            "fut": false
+          }
+        ]
+      },
+      "broad": {
+        "label": "broad",
+        "legs": 302,
+        "markets": 296,
+        "both": 6,
+        "bothPct": 2,
+        "wl": "257-45",
+        "roi": 78.7,
+        "inv": 10959967,
+        "game": {
+          "wl": "237-44",
+          "roi": 78.7,
+          "n": 281
+        },
+        "fut": {
+          "wl": "20-1",
+          "roi": 80.8,
+          "n": 21
+        },
+        "esportsLegs": 0,
+        "top1": 2.3,
+        "top3": 6.5,
+        "topPnl": [
+          {
+            "title": "Cavaliers vs. Suns",
+            "pnl": 251372,
+            "fut": false
+          },
+          {
+            "title": "Hornets vs. Thunder",
+            "pnl": 245778,
+            "fut": false
+          },
+          {
+            "title": "Knicks vs. Kings",
+            "pnl": 215589,
+            "fut": false
+          }
+        ]
+      },
+      "all": {
+        "label": "all",
+        "legs": 304,
+        "markets": 298,
+        "both": 6,
+        "bothPct": 2,
+        "wl": "259-45",
+        "roi": 78.5,
+        "inv": 10982561,
+        "game": {
+          "wl": "239-44",
+          "roi": 78.5,
+          "n": 283
+        },
+        "fut": {
+          "wl": "20-1",
+          "roi": 80.8,
+          "n": 21
+        },
+        "esportsLegs": 0,
+        "top1": 2.3,
+        "top3": 6.5,
+        "topPnl": [
+          {
+            "title": "Cavaliers vs. Suns",
+            "pnl": 251372,
+            "fut": false
+          },
+          {
+            "title": "Hornets vs. Thunder",
+            "pnl": 245778,
+            "fut": false
+          },
+          {
+            "title": "Knicks vs. Kings",
+            "pnl": 215589,
+            "fut": false
+          }
+        ]
+      },
+      "hardened": "REINSTATE",
+      "flags": [],
+      "bothMax": 2
+    },
+    {
+      "addr": "0x6ffb4354cbe6e0f9989e3b55564ec5fb8646a834",
+      "name": "AgricultureSecretary",
+      "currentTag": "MM",
+      "batchBoth": 1.1,
+      "batchRoi": 0.2,
+      "batchWL": "82-12",
+      "closedFetched": 1500,
+      "classified": {
+        "label": "class",
+        "legs": 153,
+        "markets": 150,
+        "both": 3,
+        "bothPct": 2,
+        "wl": "133-18",
+        "roi": 0.3,
+        "inv": 1590169,
+        "game": {
+          "wl": "112-9",
+          "roi": 0.6,
+          "n": 121
+        },
+        "fut": {
+          "wl": "21-9",
+          "roi": 0.2,
+          "n": 30
+        },
+        "esportsLegs": 1,
+        "top1": 16.9,
+        "top3": 40.6,
+        "topPnl": [
+          {
+            "title": "Will Powell say \"Inflation\" 50+ times during March pres",
+            "pnl": 990,
+            "fut": false
+          },
+          {
+            "title": "Will Argentina vs. Switzerland end in a draw?",
+            "pnl": 833,
+            "fut": false
+          },
+          {
+            "title": "Will Portugal win on 2026-07-06?",
+            "pnl": 549,
+            "fut": true
+          }
+        ]
+      },
+      "broad": {
+        "label": "broad",
+        "legs": 552,
+        "markets": 541,
+        "both": 11,
+        "bothPct": 2,
+        "wl": "498-47",
+        "roi": 0.2,
+        "inv": 34990052,
+        "game": {
+          "wl": "318-25",
+          "roi": 1.4,
+          "n": 343
+        },
+        "fut": {
+          "wl": "180-22",
+          "roi": 0,
+          "n": 202
+        },
+        "esportsLegs": 0,
+        "top1": 10.6,
+        "top3": 24.8,
+        "topPnl": [
+          {
+            "title": "Morocco vs. Haiti: O/U 2.5",
+            "pnl": 6533,
+            "fut": false
+          },
+          {
+            "title": "Rome: Henri Squire vs Stefanos Sakellaridis",
+            "pnl": 5728,
+            "fut": false
+          },
+          {
+            "title": "Will Eastleigh FC win on 2026-04-18?",
+            "pnl": 3044,
+            "fut": true
+          }
+        ]
+      },
+      "all": {
+        "label": "all",
+        "legs": 1500,
+        "markets": 1456,
+        "both": 44,
+        "bothPct": 3,
+        "wl": "1292-197",
+        "roi": 0.7,
+        "inv": 43639548,
+        "game": {
+          "wl": "1096-172",
+          "roi": 2.5,
+          "n": 1268
+        },
+        "fut": {
+          "wl": "196-25",
+          "roi": 0,
+          "n": 221
+        },
+        "esportsLegs": 15,
+        "top1": 34.8,
+        "top3": 47.4,
+        "topPnl": [
+          {
+            "title": "US x Iran permanent peace deal by June 15, 2026?",
+            "pnl": 115928,
+            "fut": false
+          },
+          {
+            "title": "Will Trump say \"Soleimani\" during Medal of Honor ceremo",
+            "pnl": 35160,
+            "fut": false
+          },
+          {
+            "title": "Morocco vs. Haiti: O/U 2.5",
+            "pnl": 6533,
+            "fut": false
+          }
+        ]
+      },
+      "hardened": "REINSTATE_WEAK_EDGE",
+      "flags": [
+        "truncated_1500"
+      ],
+      "bothMax": 2
+    },
+    {
+      "addr": "0x2c57db9e442ef5ffb2651f03afd551171738c94d",
+      "name": "ZerOptimist",
+      "currentTag": "MM",
+      "batchBoth": 0,
+      "batchRoi": 36.9,
+      "batchWL": "20-2",
+      "closedFetched": 245,
+      "classified": {
+        "label": "class",
+        "legs": 22,
+        "markets": 22,
+        "both": 0,
+        "bothPct": 0,
+        "wl": "20-2",
+        "roi": 36.9,
+        "inv": 798402,
+        "game": {
+          "wl": "17-1",
+          "roi": 35.4,
+          "n": 18
+        },
+        "fut": {
+          "wl": "3-1",
+          "roi": 53.7,
+          "n": 4
+        },
+        "esportsLegs": 0,
+        "top1": 18.2,
+        "top3": 45.8,
+        "topPnl": [
+          {
+            "title": "UFC Fight Night: Hooker vs. Tsarukyan (Lightweight, Mai",
+            "pnl": 60000,
+            "fut": false
+          },
+          {
+            "title": "Kings vs. Nuggets: O/U 236.5",
+            "pnl": 53517,
+            "fut": false
+          },
+          {
+            "title": "ATP World Tour Finals, Final Stage: Carlos Alcaraz vs J",
+            "pnl": 37879,
+            "fut": true
+          }
+        ]
+      },
+      "broad": {
+        "label": "broad",
+        "legs": 244,
+        "markets": 238,
+        "both": 6,
+        "bothPct": 2.5,
+        "wl": "202-42",
+        "roi": 39.4,
+        "inv": 5209521,
+        "game": {
+          "wl": "144-35",
+          "roi": 39.2,
+          "n": 179
+        },
+        "fut": {
+          "wl": "58-7",
+          "roi": 40.5,
+          "n": 65
+        },
+        "esportsLegs": 0,
+        "top1": 5.8,
+        "top3": 13.9,
+        "topPnl": [
+          {
+            "title": "Spread: Ravens (-7.5)",
+            "pnl": -224063,
+            "fut": false
+          },
+          {
+            "title": "Penguins vs. Predators",
+            "pnl": 162000,
+            "fut": false
+          },
+          {
+            "title": "Colts vs. Chiefs",
+            "pnl": 149882,
+            "fut": false
+          }
+        ]
+      },
+      "all": {
+        "label": "all",
+        "legs": 245,
+        "markets": 239,
+        "both": 6,
+        "bothPct": 2.5,
+        "wl": "203-42",
+        "roi": 39.4,
+        "inv": 5209525,
+        "game": {
+          "wl": "145-35",
+          "roi": 39.2,
+          "n": 180
+        },
+        "fut": {
+          "wl": "58-7",
+          "roi": 40.5,
+          "n": 65
+        },
+        "esportsLegs": 1,
+        "top1": 5.8,
+        "top3": 13.9,
+        "topPnl": [
+          {
+            "title": "Spread: Ravens (-7.5)",
+            "pnl": -224063,
+            "fut": false
+          },
+          {
+            "title": "Penguins vs. Predators",
+            "pnl": 162000,
+            "fut": false
+          },
+          {
+            "title": "Colts vs. Chiefs",
+            "pnl": 149882,
+            "fut": false
+          }
+        ]
+      },
+      "hardened": "REINSTATE",
+      "flags": [],
+      "bothMax": 2.5
+    },
+    {
+      "addr": "0xa974826f82380f9bb3d5b9c722c50f82fb1aef79",
+      "name": "tmoneeey",
+      "currentTag": "MM",
+      "batchBoth": 2.3,
+      "batchRoi": 62.6,
+      "batchWL": "115-18",
+      "closedFetched": 353,
+      "classified": {
+        "label": "class",
+        "legs": 134,
+        "markets": 131,
+        "both": 3,
+        "bothPct": 2.3,
+        "wl": "115-18",
+        "roi": 62.6,
+        "inv": 538120,
+        "game": {
+          "wl": "93-11",
+          "roi": 82.8,
+          "n": 104
+        },
+        "fut": {
+          "wl": "22-7",
+          "roi": 67.9,
+          "n": 29
+        },
+        "esportsLegs": 0,
+        "top1": 15.8,
+        "top3": 29,
+        "topPnl": [
+          {
+            "title": "Will the Carolina Hurricanes win the 2026 NHL Stanley C",
+            "pnl": 62517,
+            "fut": true
+          },
+          {
+            "title": "Will the Seattle Seahawks win Super Bowl 2026?",
+            "pnl": 38543,
+            "fut": true
+          },
+          {
+            "title": "New York Mets vs. San Francisco Giants",
+            "pnl": 13500,
+            "fut": false
+          }
+        ]
+      },
+      "broad": {
+        "label": "broad",
+        "legs": 285,
+        "markets": 282,
+        "both": 3,
+        "bothPct": 1.1,
+        "wl": "233-51",
+        "roi": 61.4,
+        "inv": 1076082,
+        "game": {
+          "wl": "211-44",
+          "roi": 66.5,
+          "n": 255
+        },
+        "fut": {
+          "wl": "22-7",
+          "roi": 67.9,
+          "n": 29
+        },
+        "esportsLegs": 0,
+        "top1": 7.7,
+        "top3": 15.7,
+        "topPnl": [
+          {
+            "title": "Will the Carolina Hurricanes win the 2026 NHL Stanley C",
+            "pnl": 62517,
+            "fut": true
+          },
+          {
+            "title": "Will the Seattle Seahawks win Super Bowl 2026?",
+            "pnl": 38543,
+            "fut": true
+          },
+          {
+            "title": "Texas A&M Aggies vs. Saint Mary's Gaels",
+            "pnl": 26389,
+            "fut": false
+          }
+        ]
+      },
+      "all": {
+        "label": "all",
+        "legs": 353,
+        "markets": 350,
+        "both": 3,
+        "bothPct": 0.9,
+        "wl": "281-71",
+        "roi": 53,
+        "inv": 1331662,
+        "game": {
+          "wl": "259-64",
+          "roi": 54,
+          "n": 323
+        },
+        "fut": {
+          "wl": "22-7",
+          "roi": 67.9,
+          "n": 29
+        },
+        "esportsLegs": 0,
+        "top1": 6.1,
+        "top3": 13.4,
+        "topPnl": [
+          {
+            "title": "Will the Carolina Hurricanes win the 2026 NHL Stanley C",
+            "pnl": 62517,
+            "fut": true
+          },
+          {
+            "title": "Will the Seattle Seahawks win Super Bowl 2026?",
+            "pnl": 38543,
+            "fut": true
+          },
+          {
+            "title": "Exact Score: France 0 - 0 Morocco?",
+            "pnl": 35550,
+            "fut": false
+          }
+        ]
+      },
+      "hardened": "REINSTATE",
+      "flags": [],
+      "bothMax": 2.3
+    },
+    {
+      "addr": "0x5350afcd8bd8ceffdf4da32420d6d31be0822fda",
+      "name": "simonbanza",
+      "currentTag": "MM",
+      "batchBoth": 6.2,
+      "batchRoi": -5.7,
+      "batchWL": "36-33",
+      "closedFetched": 331,
+      "classified": {
+        "label": "class",
+        "legs": 69,
+        "markets": 65,
+        "both": 4,
+        "bothPct": 6.2,
+        "wl": "36-33",
+        "roi": -5.7,
+        "inv": 2513150,
+        "game": {
+          "wl": "24-26",
+          "roi": -1.1,
+          "n": 50
+        },
+        "fut": {
+          "wl": "12-7",
+          "roi": -22.5,
+          "n": 19
+        },
+        "esportsLegs": 0,
+        "top1": 12.4,
+        "top3": 28.8,
+        "topPnl": [
+          {
+            "title": "Nuggets vs. Celtics",
+            "pnl": 258373,
+            "fut": false
+          },
+          {
+            "title": "Hornets vs. Lakers",
+            "pnl": -208868,
+            "fut": false
+          },
+          {
+            "title": "Nuggets vs. Heat",
+            "pnl": -130270,
+            "fut": false
+          }
+        ]
+      },
+      "broad": {
+        "label": "broad",
+        "legs": 330,
+        "markets": 294,
+        "both": 36,
+        "bothPct": 12.2,
+        "wl": "176-154",
+        "roi": 5.9,
+        "inv": 15704642,
+        "game": {
+          "wl": "125-120",
+          "roi": 9.5,
+          "n": 245
+        },
+        "fut": {
+          "wl": "51-34",
+          "roi": -8.4,
+          "n": 85
+        },
+        "esportsLegs": 0,
+        "top1": 4.7,
+        "top3": 10.4,
+        "topPnl": [
+          {
+            "title": "Spurs vs. Thunder",
+            "pnl": 560344,
+            "fut": false
+          },
+          {
+            "title": "Patriots vs. Ravens",
+            "pnl": 361001,
+            "fut": false
+          },
+          {
+            "title": "Spread: Indiana (-3.5)",
+            "pnl": 318728,
+            "fut": false
+          }
+        ]
+      },
+      "all": {
+        "label": "all",
+        "legs": 331,
+        "markets": 295,
+        "both": 36,
+        "bothPct": 12.2,
+        "wl": "177-154",
+        "roi": 5.9,
+        "inv": 15704662,
+        "game": {
+          "wl": "126-120",
+          "roi": 9.5,
+          "n": 246
+        },
+        "fut": {
+          "wl": "51-34",
+          "roi": -8.4,
+          "n": 85
+        },
+        "esportsLegs": 0,
+        "top1": 4.7,
+        "top3": 10.4,
+        "topPnl": [
+          {
+            "title": "Spurs vs. Thunder",
+            "pnl": 560344,
+            "fut": false
+          },
+          {
+            "title": "Patriots vs. Ravens",
+            "pnl": 361001,
+            "fut": false
+          },
+          {
+            "title": "Spread: Indiana (-3.5)",
+            "pnl": 318728,
+            "fut": false
+          }
+        ]
+      },
+      "hardened": "REINSTATE",
+      "flags": [],
+      "bothMax": 12.2
+    },
+    {
+      "addr": "0x70d94a4ff67ed919a8480885cf0808afefe7a684",
+      "name": "puipui2486",
+      "currentTag": "MM",
+      "batchBoth": 8.1,
+      "batchRoi": 32.7,
+      "batchWL": "20-169",
+      "closedFetched": 1500,
+      "classified": {
+        "label": "class",
+        "legs": 339,
+        "markets": 312,
+        "both": 27,
+        "bothPct": 8.7,
+        "wl": "29-246",
+        "roi": 33.4,
+        "inv": 3713110,
+        "game": {
+          "wl": "3-32",
+          "roi": -35.5,
+          "n": 35
+        },
+        "fut": {
+          "wl": "26-214",
+          "roi": 39,
+          "n": 240
+        },
+        "esportsLegs": 0,
+        "top1": 28.8,
+        "top3": 59.8,
+        "topPnl": [
+          {
+            "title": "Will Spain win the 2026 FIFA World Cup?",
+            "pnl": 1156858,
+            "fut": true
+          },
+          {
+            "title": "Will Spain win the 2026 FIFA World Cup?",
+            "pnl": -845326,
+            "fut": true
+          },
+          {
+            "title": "Will France win the 2026 FIFA World Cup?",
+            "pnl": 396578,
+            "fut": true
+          }
+        ]
+      },
+      "broad": {
+        "label": "broad",
+        "legs": 808,
+        "markets": 749,
+        "both": 59,
+        "bothPct": 7.9,
+        "wl": "83-612",
+        "roi": 39.7,
+        "inv": 4064183,
+        "game": {
+          "wl": "3-32",
+          "roi": -35.5,
+          "n": 35
+        },
+        "fut": {
+          "wl": "80-580",
+          "roi": 45.5,
+          "n": 660
+        },
+        "esportsLegs": 0,
+        "top1": 25.9,
+        "top3": 53.6,
+        "topPnl": [
+          {
+            "title": "Will Spain win the 2026 FIFA World Cup?",
+            "pnl": 1156858,
+            "fut": true
+          },
+          {
+            "title": "Will Spain win the 2026 FIFA World Cup?",
+            "pnl": -845326,
+            "fut": true
+          },
+          {
+            "title": "Will France win the 2026 FIFA World Cup?",
+            "pnl": 396578,
+            "fut": true
+          }
+        ]
+      },
+      "all": {
+        "label": "all",
+        "legs": 1500,
+        "markets": 1385,
+        "both": 115,
+        "bothPct": 8.3,
+        "wl": "236-1101",
+        "roi": 37,
+        "inv": 4968590,
+        "game": {
+          "wl": "151-500",
+          "roi": -1.9,
+          "n": 651
+        },
+        "fut": {
+          "wl": "85-601",
+          "roi": 44.3,
+          "n": 686
+        },
+        "esportsLegs": 10,
+        "top1": 21.3,
+        "top3": 44.2,
+        "topPnl": [
+          {
+            "title": "Will Spain win the 2026 FIFA World Cup?",
+            "pnl": 1156858,
+            "fut": true
+          },
+          {
+            "title": "Will Spain win the 2026 FIFA World Cup?",
+            "pnl": -845326,
+            "fut": true
+          },
+          {
+            "title": "Will France win the 2026 FIFA World Cup?",
+            "pnl": 396578,
+            "fut": true
+          }
+        ]
+      },
+      "hardened": "REVIEW_CAREFUL",
+      "flags": [
+        "truncated_1500",
+        "edge_only_futures"
+      ],
+      "bothMax": 8.7
+    },
+    {
+      "addr": "0xe613b515bd46b1585a8b137a4d291d9b80bd540e",
+      "name": "Gucky-45",
+      "currentTag": "MM",
+      "batchBoth": 9.9,
+      "batchRoi": -6.1,
+      "batchWL": "22-226",
+      "closedFetched": 1500,
+      "classified": {
+        "label": "class",
+        "legs": 406,
+        "markets": 371,
+        "both": 35,
+        "bothPct": 9.4,
+        "wl": "36-345",
+        "roi": 6.4,
+        "inv": 6330772,
+        "game": {
+          "wl": "2-6",
+          "roi": -68.2,
+          "n": 8
+        },
+        "fut": {
+          "wl": "34-339",
+          "roi": 0.6,
+          "n": 373
+        },
+        "esportsLegs": 0,
+        "top1": 10.9,
+        "top3": 25.5,
+        "topPnl": [
+          {
+            "title": "Will France win the 2026 FIFA World Cup?",
+            "pnl": 529197,
+            "fut": true
+          },
+          {
+            "title": "Will the Oklahoma City Thunder win the 2026 NBA Finals?",
+            "pnl": 418655,
+            "fut": true
+          },
+          {
+            "title": "Will Spain win the 2026 FIFA World Cup?",
+            "pnl": 289366,
+            "fut": true
+          }
+        ]
+      },
+      "broad": {
+        "label": "broad",
+        "legs": 1197,
+        "markets": 1109,
+        "both": 88,
+        "bothPct": 7.9,
+        "wl": "93-1031",
+        "roi": 8.8,
+        "inv": 8046851,
+        "game": {
+          "wl": "7-12",
+          "roi": -59,
+          "n": 19
+        },
+        "fut": {
+          "wl": "86-1019",
+          "roi": 3.3,
+          "n": 1105
+        },
+        "esportsLegs": 0,
+        "top1": 8.5,
+        "top3": 19.9,
+        "topPnl": [
+          {
+            "title": "Will France win the 2026 FIFA World Cup?",
+            "pnl": 529197,
+            "fut": true
+          },
+          {
+            "title": "Will the Oklahoma City Thunder win the 2026 NBA Finals?",
+            "pnl": 418655,
+            "fut": true
+          },
+          {
+            "title": "Will Spain win the 2026 FIFA World Cup?",
+            "pnl": 289366,
+            "fut": true
+          }
+        ]
+      },
+      "all": {
+        "label": "all",
+        "legs": 1500,
+        "markets": 1396,
+        "both": 104,
+        "bothPct": 7.4,
+        "wl": "115-1287",
+        "roi": 8.7,
+        "inv": 8690353,
+        "game": {
+          "wl": "28-244",
+          "roi": -15.9,
+          "n": 272
+        },
+        "fut": {
+          "wl": "87-1043",
+          "roi": 2.8,
+          "n": 1130
+        },
+        "esportsLegs": 0,
+        "top1": 7.9,
+        "top3": 18.5,
+        "topPnl": [
+          {
+            "title": "Will France win the 2026 FIFA World Cup?",
+            "pnl": 529197,
+            "fut": true
+          },
+          {
+            "title": "Will the Oklahoma City Thunder win the 2026 NBA Finals?",
+            "pnl": 418655,
+            "fut": true
+          },
+          {
+            "title": "Will Spain win the 2026 FIFA World Cup?",
+            "pnl": 289366,
+            "fut": true
+          }
+        ]
+      },
+      "hardened": "REINSTATE",
+      "flags": [
+        "truncated_1500",
+        "futures_heavy_thin_games"
+      ],
+      "bothMax": 9.4
+    },
+    {
+      "addr": "0x5d58e38cd0a7e6f5fa67b7f9c2f70dd70df09a15",
+      "name": "Dhdhsjsj",
+      "currentTag": "MM",
+      "batchBoth": 2.9,
+      "batchRoi": 5.9,
+      "batchWL": "26-10",
+      "closedFetched": 271,
+      "classified": {
+        "label": "class",
+        "legs": 36,
+        "markets": 35,
+        "both": 1,
+        "bothPct": 2.9,
+        "wl": "26-10",
+        "roi": 5.9,
+        "inv": 1242930,
+        "game": {
+          "wl": "24-8",
+          "roi": 7.4,
+          "n": 32
+        },
+        "fut": {
+          "wl": "2-2",
+          "roi": -10.2,
+          "n": 4
+        },
+        "esportsLegs": 1,
+        "top1": 41.5,
+        "top3": 63.8,
+        "topPnl": [
+          {
+            "title": "Warriors vs. Clippers",
+            "pnl": -444903,
+            "fut": false
+          },
+          {
+            "title": "Miami Marlins vs. Atlanta Braves",
+            "pnl": 147476,
+            "fut": false
+          },
+          {
+            "title": "76ers vs. Celtics",
+            "pnl": 91933,
+            "fut": false
+          }
+        ]
+      },
+      "broad": {
+        "label": "broad",
+        "legs": 124,
+        "markets": 121,
+        "both": 3,
+        "bothPct": 2.5,
+        "wl": "111-13",
+        "roi": 59.2,
+        "inv": 6146633,
+        "game": {
+          "wl": "106-11",
+          "roi": 64.3,
+          "n": 117
+        },
+        "fut": {
+          "wl": "5-2",
+          "roi": -28,
+          "n": 7
+        },
+        "esportsLegs": 0,
+        "top1": 13.3,
+        "top3": 29.5,
+        "topPnl": [
+          {
+            "title": "Wuning 2: Sergey Fomin vs Moerani Bouzige",
+            "pnl": 646699,
+            "fut": false
+          },
+          {
+            "title": "Warriors vs. Clippers",
+            "pnl": -444903,
+            "fut": false
+          },
+          {
+            "title": "Busan: Ilya Ivashka vs Dane Sweeny",
+            "pnl": 341948,
+            "fut": false
+          }
+        ]
+      },
+      "all": {
+        "label": "all",
+        "legs": 271,
+        "markets": 266,
+        "both": 5,
+        "bothPct": 1.9,
+        "wl": "248-23",
+        "roi": 67.8,
+        "inv": 10141728,
+        "game": {
+          "wl": "219-20",
+          "roi": 70.9,
+          "n": 239
+        },
+        "fut": {
+          "wl": "29-3",
+          "roi": 39.6,
+          "n": 32
+        },
+        "esportsLegs": 138,
+        "top1": 7.6,
+        "top3": 19.7,
+        "topPnl": [
+          {
+            "title": "Wuning 2: Sergey Fomin vs Moerani Bouzige",
+            "pnl": 646699,
+            "fut": false
+          },
+          {
+            "title": "Counter-Strike: Vitality vs Team Falcons (BO3) - IEM Ri",
+            "pnl": 580741,
+            "fut": false
+          },
+          {
+            "title": "Warriors vs. Clippers",
+            "pnl": -444903,
+            "fut": false
+          }
+        ]
+      },
+      "hardened": "REINSTATE",
+      "flags": [],
+      "bothMax": 2.9
+    },
+    {
+      "addr": "0xf65506e2d5f55279d77bd67d3c80af6882ad7ea4",
+      "name": "piratesfan1313",
+      "currentTag": "MM",
+      "batchBoth": 12.3,
+      "batchRoi": 14.4,
+      "batchWL": "119-244",
+      "closedFetched": 855,
+      "classified": {
+        "label": "class",
+        "legs": 377,
+        "markets": 336,
+        "both": 41,
+        "bothPct": 12.2,
+        "wl": "121-254",
+        "roi": 14.4,
+        "inv": 1017677,
+        "game": {
+          "wl": "27-24",
+          "roi": -31.3,
+          "n": 51
+        },
+        "fut": {
+          "wl": "94-230",
+          "roi": 17.4,
+          "n": 324
+        },
+        "esportsLegs": 0,
+        "top1": 12.7,
+        "top3": 28.1,
+        "topPnl": [
+          {
+            "title": "Will Canada win the Men's Ice Hockey gold medal at the ",
+            "pnl": 65318,
+            "fut": true
+          },
+          {
+            "title": "Will USA win the 2026 World Baseball Classic?",
+            "pnl": 40012,
+            "fut": true
+          },
+          {
+            "title": "Will Connecticut win the 2026 NCAA Tournament?",
+            "pnl": -39685,
+            "fut": true
+          }
+        ]
+      },
+      "broad": {
+        "label": "broad",
+        "legs": 764,
+        "markets": 662,
+        "both": 102,
+        "bothPct": 15.4,
+        "wl": "285-475",
+        "roi": 19.6,
+        "inv": 2128631,
+        "game": {
+          "wl": "104-93",
+          "roi": 31.2,
+          "n": 197
+        },
+        "fut": {
+          "wl": "181-382",
+          "roi": 16.4,
+          "n": 563
+        },
+        "esportsLegs": 0,
+        "top1": 6,
+        "top3": 16.8,
+        "topPnl": [
+          {
+            "title": "Connecticut Huskies vs. Illinois Fighting Illini",
+            "pnl": 80202,
+            "fut": false
+          },
+          {
+            "title": "Connecticut Huskies vs. Duke Blue Devils",
+            "pnl": 79827,
+            "fut": false
+          },
+          {
+            "title": "Will Canada win the Men's Ice Hockey gold medal at the ",
+            "pnl": 65318,
+            "fut": true
+          }
+        ]
+      },
+      "all": {
+        "label": "all",
+        "legs": 855,
+        "markets": 746,
+        "both": 109,
+        "bothPct": 14.6,
+        "wl": "322-529",
+        "roi": 18.8,
+        "inv": 2281433,
+        "game": {
+          "wl": "134-139",
+          "roi": 25.5,
+          "n": 273
+        },
+        "fut": {
+          "wl": "188-390",
+          "roi": 16.5,
+          "n": 578
+        },
+        "esportsLegs": 0,
+        "top1": 5.8,
+        "top3": 16.2,
+        "topPnl": [
+          {
+            "title": "Connecticut Huskies vs. Illinois Fighting Illini",
+            "pnl": 80202,
+            "fut": false
+          },
+          {
+            "title": "Connecticut Huskies vs. Duke Blue Devils",
+            "pnl": 79827,
+            "fut": false
+          },
+          {
+            "title": "Will Canada win the Men's Ice Hockey gold medal at the ",
+            "pnl": 65318,
+            "fut": true
+          }
+        ]
+      },
+      "hardened": "REVIEW_CAREFUL",
+      "flags": [
+        "edge_only_futures"
+      ],
+      "bothMax": 15.4
+    },
+    {
+      "addr": "0x5257aa84944804bbb0c718814ebebeeafaca3e2a",
+      "name": "NO-GOD-PLEASE-NO",
+      "currentTag": "MM",
+      "batchBoth": 3,
+      "batchRoi": -3.9,
+      "batchWL": "56-46",
+      "closedFetched": 220,
+      "classified": {
+        "label": "class",
+        "legs": 103,
+        "markets": 100,
+        "both": 3,
+        "bothPct": 3,
+        "wl": "56-46",
+        "roi": -3.9,
+        "inv": 7349678,
+        "game": {
+          "wl": "26-12",
+          "roi": -20.7,
+          "n": 38
+        },
+        "fut": {
+          "wl": "30-34",
+          "roi": 4,
+          "n": 64
+        },
+        "esportsLegs": 0,
+        "top1": 11.8,
+        "top3": 32.1,
+        "topPnl": [
+          {
+            "title": "Will Czechia vs. South Africa end in a draw?",
+            "pnl": -331565,
+            "fut": false
+          },
+          {
+            "title": "Will Argentina vs. Switzerland end in a draw?",
+            "pnl": -286495,
+            "fut": false
+          },
+          {
+            "title": "Will Belgium win on 2026-07-01?",
+            "pnl": 281214,
+            "fut": true
+          }
+        ]
+      },
+      "broad": {
+        "label": "broad",
+        "legs": 190,
+        "markets": 179,
+        "both": 11,
+        "bothPct": 6.1,
+        "wl": "102-87",
+        "roi": 2.8,
+        "inv": 10096760,
+        "game": {
+          "wl": "47-36",
+          "roi": -3.8,
+          "n": 83
+        },
+        "fut": {
+          "wl": "55-51",
+          "roi": 6.8,
+          "n": 106
+        },
+        "esportsLegs": 0,
+        "top1": 6.6,
+        "top3": 17.9,
+        "topPnl": [
+          {
+            "title": "Will Czechia vs. South Africa end in a draw?",
+            "pnl": -331565,
+            "fut": false
+          },
+          {
+            "title": "Will Argentina vs. Switzerland end in a draw?",
+            "pnl": -286495,
+            "fut": false
+          },
+          {
+            "title": "Will Belgium win on 2026-07-01?",
+            "pnl": 281214,
+            "fut": true
+          }
+        ]
+      },
+      "all": {
+        "label": "all",
+        "legs": 220,
+        "markets": 207,
+        "both": 13,
+        "bothPct": 6.3,
+        "wl": "117-102",
+        "roi": 3.1,
+        "inv": 10362700,
+        "game": {
+          "wl": "61-48",
+          "roi": -2.4,
+          "n": 109
+        },
+        "fut": {
+          "wl": "56-54",
+          "roi": 6.7,
+          "n": 110
+        },
+        "esportsLegs": 21,
+        "top1": 6.4,
+        "top3": 17.3,
+        "topPnl": [
+          {
+            "title": "Will Czechia vs. South Africa end in a draw?",
+            "pnl": -331565,
+            "fut": false
+          },
+          {
+            "title": "Will Argentina vs. Switzerland end in a draw?",
+            "pnl": -286495,
+            "fut": false
+          },
+          {
+            "title": "Will Belgium win on 2026-07-01?",
+            "pnl": 281214,
+            "fut": true
+          }
+        ]
+      },
+      "hardened": "REINSTATE_WEAK_EDGE",
+      "flags": [],
+      "bothMax": 6.1
+    },
+    {
+      "addr": "0xd38ad20037839959d89165cf448568d584b28d26",
+      "name": "johnny234",
+      "currentTag": "MM",
+      "batchBoth": 1.5,
+      "batchRoi": 76.4,
+      "batchWL": "57-7",
+      "closedFetched": 189,
+      "classified": {
+        "label": "class",
+        "legs": 66,
+        "markets": 65,
+        "both": 1,
+        "bothPct": 1.5,
+        "wl": "57-7",
+        "roi": 76.4,
+        "inv": 2885330,
+        "game": {
+          "wl": "56-7",
+          "roi": 78.6,
+          "n": 63
+        },
+        "fut": {
+          "wl": "1-0",
+          "roi": 95.2,
+          "n": 1
+        },
+        "esportsLegs": 0,
+        "top1": 7.4,
+        "top3": 15.3,
+        "topPnl": [
+          {
+            "title": "Red Sox vs. Yankees",
+            "pnl": 200358,
+            "fut": false
+          },
+          {
+            "title": "Phillies vs. Brewers",
+            "pnl": 107496,
+            "fut": false
+          },
+          {
+            "title": "Red Sox vs. Yankees",
+            "pnl": 107282,
+            "fut": false
+          }
+        ]
+      },
+      "broad": {
+        "label": "broad",
+        "legs": 177,
+        "markets": 175,
+        "both": 2,
+        "bothPct": 1.1,
+        "wl": "145-28",
+        "roi": 56.9,
+        "inv": 8352186,
+        "game": {
+          "wl": "135-28",
+          "roi": 58,
+          "n": 163
+        },
+        "fut": {
+          "wl": "10-0",
+          "roi": 62.6,
+          "n": 10
+        },
+        "esportsLegs": 0,
+        "top1": 2.8,
+        "top3": 8,
+        "topPnl": [
+          {
+            "title": "Ravens vs. Chiefs",
+            "pnl": 216823,
+            "fut": false
+          },
+          {
+            "title": "Red Sox vs. Yankees",
+            "pnl": 200358,
+            "fut": false
+          },
+          {
+            "title": "Vikings vs. Bears",
+            "pnl": 196985,
+            "fut": false
+          }
+        ]
+      },
+      "all": {
+        "label": "all",
+        "legs": 189,
+        "markets": 187,
+        "both": 2,
+        "bothPct": 1.1,
+        "wl": "157-28",
+        "roi": 57.8,
+        "inv": 8615801,
+        "game": {
+          "wl": "147-28",
+          "roi": 58.8,
+          "n": 175
+        },
+        "fut": {
+          "wl": "10-0",
+          "roi": 62.6,
+          "n": 10
+        },
+        "esportsLegs": 12,
+        "top1": 2.7,
+        "top3": 7.7,
+        "topPnl": [
+          {
+            "title": "Ravens vs. Chiefs",
+            "pnl": 216823,
+            "fut": false
+          },
+          {
+            "title": "Red Sox vs. Yankees",
+            "pnl": 200358,
+            "fut": false
+          },
+          {
+            "title": "Vikings vs. Bears",
+            "pnl": 196985,
+            "fut": false
+          }
+        ]
+      },
+      "hardened": "REINSTATE",
+      "flags": [],
+      "bothMax": 1.5
+    },
+    {
+      "addr": "0x85e5669beee6b80d887493e724987dabc5f56056",
+      "name": "winner877",
+      "currentTag": "MM",
+      "batchBoth": 0,
+      "batchRoi": -4.5,
+      "batchWL": "22-2",
+      "closedFetched": 1500,
+      "classified": {
+        "label": "class",
+        "legs": 89,
+        "markets": 89,
+        "both": 0,
+        "bothPct": 0,
+        "wl": "80-9",
+        "roi": -1.4,
+        "inv": 2772463,
+        "game": {
+          "wl": "47-8",
+          "roi": -2.4,
+          "n": 55
+        },
+        "fut": {
+          "wl": "33-1",
+          "roi": 0.4,
+          "n": 34
+        },
+        "esportsLegs": 0,
+        "top1": 23.3,
+        "top3": 44.9,
+        "topPnl": [
+          {
+            "title": "Warriors vs. Clippers",
+            "pnl": -52476,
+            "fut": false
+          },
+          {
+            "title": "Bulls vs. Lakers",
+            "pnl": 27704,
+            "fut": false
+          },
+          {
+            "title": "Will Senegal win on 2026-07-01?",
+            "pnl": -21032,
+            "fut": true
+          }
+        ]
+      },
+      "broad": {
+        "label": "broad",
+        "legs": 189,
+        "markets": 189,
+        "both": 0,
+        "bothPct": 0,
+        "wl": "174-15",
+        "roi": -1.2,
+        "inv": 5207911,
+        "game": {
+          "wl": "138-14",
+          "roi": -1.6,
+          "n": 152
+        },
+        "fut": {
+          "wl": "36-1",
+          "roi": 0.4,
+          "n": 37
+        },
+        "esportsLegs": 0,
+        "top1": 11.6,
+        "top3": 29.2,
+        "topPnl": [
+          {
+            "title": "Kings vs. Clippers",
+            "pnl": -58849,
+            "fut": false
+          },
+          {
+            "title": "Warriors vs. Clippers",
+            "pnl": -52476,
+            "fut": false
+          },
+          {
+            "title": "Spurs vs. Clippers",
+            "pnl": 36878,
+            "fut": false
+          }
+        ]
+      },
+      "all": {
+        "label": "all",
+        "legs": 1500,
+        "markets": 1174,
+        "both": 326,
+        "bothPct": 27.8,
+        "wl": "1120-380",
+        "roi": -1.5,
+        "inv": 8963146,
+        "game": {
+          "wl": "1084-379",
+          "roi": -1.7,
+          "n": 1463
+        },
+        "fut": {
+          "wl": "36-1",
+          "roi": 0.4,
+          "n": 37
+        },
+        "esportsLegs": 0,
+        "top1": 8.5,
+        "top3": 21.5,
+        "topPnl": [
+          {
+            "title": "Kings vs. Clippers",
+            "pnl": -58849,
+            "fut": false
+          },
+          {
+            "title": "Warriors vs. Clippers",
+            "pnl": -52476,
+            "fut": false
+          },
+          {
+            "title": "Spurs vs. Clippers",
+            "pnl": 36878,
+            "fut": false
+          }
+        ]
+      },
+      "hardened": "KEEP_HEDGE",
+      "flags": [
+        "truncated_1500",
+        "both_sides_elevated_fuller",
+        "no_edge"
+      ],
+      "bothMax": 0
+    },
+    {
+      "addr": "0xef54467264cbc7ae9659e6891d3be20f99afd1ee",
+      "name": "Cavs2",
+      "currentTag": "MM",
+      "batchBoth": 0,
+      "batchRoi": 77.7,
+      "batchWL": "17-3",
+      "closedFetched": 169,
+      "classified": {
+        "label": "class",
+        "legs": 20,
+        "markets": 20,
+        "both": 0,
+        "bothPct": 0,
+        "wl": "17-3",
+        "roi": 77.7,
+        "inv": 12348,
+        "game": {
+          "wl": "1-0",
+          "roi": 0.5,
+          "n": 1
+        },
+        "fut": {
+          "wl": "16-3",
+          "roi": 78.6,
+          "n": 19
+        },
+        "esportsLegs": 0,
+        "top1": 99,
+        "top3": 99.7,
+        "topPnl": [
+          {
+            "title": "Will Portsmouth FC win on 2025-12-13?",
+            "pnl": 9616,
+            "fut": true
+          },
+          {
+            "title": "Will the Chicago Bears win Super Bowl 2026?",
+            "pnl": -53,
+            "fut": true
+          },
+          {
+            "title": "Will the Jacksonville Jaguars win Super Bowl 2026?",
+            "pnl": 13,
+            "fut": true
+          }
+        ]
+      },
+      "broad": {
+        "label": "broad",
+        "legs": 160,
+        "markets": 152,
+        "both": 8,
+        "bothPct": 5.3,
+        "wl": "138-22",
+        "roi": 100.6,
+        "inv": 3645176,
+        "game": {
+          "wl": "110-12",
+          "roi": 100.8,
+          "n": 122
+        },
+        "fut": {
+          "wl": "28-10",
+          "roi": 81.3,
+          "n": 38
+        },
+        "esportsLegs": 0,
+        "top1": 4.4,
+        "top3": 10.5,
+        "topPnl": [
+          {
+            "title": "Avalanche vs. Predators",
+            "pnl": 181996,
+            "fut": false
+          },
+          {
+            "title": "Islanders vs. Stars",
+            "pnl": 125308,
+            "fut": false
+          },
+          {
+            "title": "Canadiens vs. Penguins",
+            "pnl": 124159,
+            "fut": false
+          }
+        ]
+      },
+      "all": {
+        "label": "all",
+        "legs": 169,
+        "markets": 161,
+        "both": 8,
+        "bothPct": 5,
+        "wl": "145-24",
+        "roi": 100.7,
+        "inv": 3646567,
+        "game": {
+          "wl": "117-14",
+          "roi": 100.9,
+          "n": 131
+        },
+        "fut": {
+          "wl": "28-10",
+          "roi": 81.3,
+          "n": 38
+        },
+        "esportsLegs": 1,
+        "top1": 4.4,
+        "top3": 10.5,
+        "topPnl": [
+          {
+            "title": "Avalanche vs. Predators",
+            "pnl": 181996,
+            "fut": false
+          },
+          {
+            "title": "Islanders vs. Stars",
+            "pnl": 125308,
+            "fut": false
+          },
+          {
+            "title": "Canadiens vs. Penguins",
+            "pnl": 124159,
+            "fut": false
+          }
+        ]
+      },
+      "hardened": "REVIEW_CAREFUL",
+      "flags": [
+        "roi_top1:99%",
+        "roi_top3:99.7%",
+        "futures_heavy_thin_games"
+      ],
+      "bothMax": 5.3
+    },
+    {
+      "addr": "0x38507eb687f0a07e4d8a23a3c96a01916f0fc4b4",
+      "name": "lmeow11",
+      "currentTag": "MM",
+      "batchBoth": 0,
+      "batchRoi": -24.4,
+      "batchWL": "19-47",
+      "closedFetched": 491,
+      "classified": {
+        "label": "class",
+        "legs": 66,
+        "markets": 66,
+        "both": 0,
+        "bothPct": 0,
+        "wl": "19-47",
+        "roi": -24.4,
+        "inv": 339320,
+        "game": {
+          "wl": "18-41",
+          "roi": -25,
+          "n": 59
+        },
+        "fut": {
+          "wl": "1-6",
+          "roi": 9.1,
+          "n": 7
+        },
+        "esportsLegs": 0,
+        "top1": 8.9,
+        "top3": 23,
+        "topPnl": [
+          {
+            "title": "Warriors vs. Spurs",
+            "pnl": -29000,
+            "fut": false
+          },
+          {
+            "title": "Rockets vs. Bucks",
+            "pnl": -27500,
+            "fut": false
+          },
+          {
+            "title": "Clippers vs. Lakers",
+            "pnl": 18260,
+            "fut": false
+          }
+        ]
+      },
+      "broad": {
+        "label": "broad",
+        "legs": 451,
+        "markets": 451,
+        "both": 0,
+        "bothPct": 0,
+        "wl": "175-275",
+        "roi": 11.6,
+        "inv": 2136674,
+        "game": {
+          "wl": "170-244",
+          "roi": 12.3,
+          "n": 414
+        },
+        "fut": {
+          "wl": "5-31",
+          "roi": -45.1,
+          "n": 36
+        },
+        "esportsLegs": 0,
+        "top1": 3.4,
+        "top3": 6.7,
+        "topPnl": [
+          {
+            "title": "Raptors vs. Pacers",
+            "pnl": 68202,
+            "fut": false
+          },
+          {
+            "title": "Steelers vs. Chargers",
+            "pnl": 33797,
+            "fut": false
+          },
+          {
+            "title": "Spread: Cowboys (-3.5)",
+            "pnl": 31375,
+            "fut": false
+          }
+        ]
+      },
+      "all": {
+        "label": "all",
+        "legs": 491,
+        "markets": 491,
+        "both": 0,
+        "bothPct": 0,
+        "wl": "193-297",
+        "roi": 9.9,
+        "inv": 2352587,
+        "game": {
+          "wl": "187-266",
+          "roi": 10.4,
+          "n": 453
+        },
+        "fut": {
+          "wl": "6-31",
+          "roi": -24.9,
+          "n": 37
+        },
+        "esportsLegs": 34,
+        "top1": 3.2,
+        "top3": 6.2,
+        "topPnl": [
+          {
+            "title": "Raptors vs. Pacers",
+            "pnl": 68202,
+            "fut": false
+          },
+          {
+            "title": "Steelers vs. Chargers",
+            "pnl": 33797,
+            "fut": false
+          },
+          {
+            "title": "Spread: Cowboys (-3.5)",
+            "pnl": 31375,
+            "fut": false
+          }
+        ]
+      },
+      "hardened": "REINSTATE",
+      "flags": [],
+      "bothMax": 0
+    },
+    {
+      "addr": "0x2663daca3cecf3767ca1c3b126002a8578a8ed1f",
+      "name": "Q96s3kwozynxpau",
+      "currentTag": "MM",
+      "batchBoth": 16.7,
+      "batchRoi": 49.4,
+      "batchWL": "17-92",
+      "closedFetched": 500,
+      "classified": {
+        "label": "class",
+        "legs": 112,
+        "markets": 96,
+        "both": 16,
+        "bothPct": 16.7,
+        "wl": "17-92",
+        "roi": 49.4,
+        "inv": 5972167,
+        "game": {
+          "wl": "1-2",
+          "roi": -4.3,
+          "n": 3
+        },
+        "fut": {
+          "wl": "16-90",
+          "roi": 151.6,
+          "n": 106
+        },
+        "esportsLegs": 0,
+        "top1": 33.4,
+        "top3": 74.9,
+        "topPnl": [
+          {
+            "title": "Will Spain win the 2026 FIFA World Cup?",
+            "pnl": 2241011,
+            "fut": true
+          },
+          {
+            "title": "Will Spain win the 2026 FIFA World Cup?",
+            "pnl": -1653956,
+            "fut": true
+          },
+          {
+            "title": "Will France win the 2026 FIFA World Cup?",
+            "pnl": 1129470,
+            "fut": true
+          }
+        ]
+      },
+      "broad": {
+        "label": "broad",
+        "legs": 205,
+        "markets": 182,
+        "both": 23,
+        "bothPct": 12.6,
+        "wl": "32-168",
+        "roi": 51,
+        "inv": 6619288,
+        "game": {
+          "wl": "1-3",
+          "roi": -9.4,
+          "n": 4
+        },
+        "fut": {
+          "wl": "31-165",
+          "roi": 123,
+          "n": 196
+        },
+        "esportsLegs": 0,
+        "top1": 30.8,
+        "top3": 69,
+        "topPnl": [
+          {
+            "title": "Will Spain win the 2026 FIFA World Cup?",
+            "pnl": 2241011,
+            "fut": true
+          },
+          {
+            "title": "Will Spain win the 2026 FIFA World Cup?",
+            "pnl": -1653956,
+            "fut": true
+          },
+          {
+            "title": "Will France win the 2026 FIFA World Cup?",
+            "pnl": 1129470,
+            "fut": true
+          }
+        ]
+      },
+      "all": {
+        "label": "all",
+        "legs": 500,
+        "markets": 389,
+        "both": 111,
+        "bothPct": 28.5,
+        "wl": "182-313",
+        "roi": 50.2,
+        "inv": 6720637,
+        "game": {
+          "wl": "151-148",
+          "roi": 2.1,
+          "n": 299
+        },
+        "fut": {
+          "wl": "31-165",
+          "roi": 123,
+          "n": 196
+        },
+        "esportsLegs": 3,
+        "top1": 30.7,
+        "top3": 68.9,
+        "topPnl": [
+          {
+            "title": "Will Spain win the 2026 FIFA World Cup?",
+            "pnl": 2241011,
+            "fut": true
+          },
+          {
+            "title": "Will Spain win the 2026 FIFA World Cup?",
+            "pnl": -1653956,
+            "fut": true
+          },
+          {
+            "title": "Will France win the 2026 FIFA World Cup?",
+            "pnl": 1129470,
+            "fut": true
+          }
+        ]
+      },
+      "hardened": "KEEP_HEDGE",
+      "flags": [
+        "both_sides_elevated_fuller",
+        "roi_top3:74.9%",
+        "futures_heavy_thin_games"
+      ],
+      "bothMax": 16.7
+    }
+  ]
+}
