@@ -603,16 +603,16 @@ export function applyQConvMuteOverlay({
   };
 }
 
-// ── FOOLS clamp (best proven FOR = FLAT → stake clamped to [1u, 2u]) ─────────
+// ── FOOLS clamp (best proven FOR = FLAT → hard 1u) ───────────────────────────
 // Was a hard 0u mute from 2026-08-05; rolled back after early live cost
-// (~−2.76u / ~6.75u volume in two days). FLAT anchors still get sized down
-// (or floored up to 1u) instead of cancelled. Forward-only from cutover.
+// (~−2.76u / ~6.75u volume in two days). Then [1u, 2u]; tightened to 1u max
+// after as-of FLAT-led drag (Jul15+ still −EV even at EDGE≥11). Forward-only.
 export const FOOLS_GOLD_MUTE_FROM = '2026-08-05';
 /** @deprecated EDGE no longer gates FOOLS; kept for log/compat. */
 export const FOOLS_GOLD_EDGE_MIN = 7;
-/** Stake band when best proven FOR is FLAT (replaces 0u mute). */
+/** Stake when best proven FOR is FLAT (replaces 0u mute / prior [1u, 2u]). */
 export const FOOLS_CLAMP_MIN_U = 1;
-export const FOOLS_CLAMP_MAX_U = 2;
+export const FOOLS_CLAMP_MAX_U = 1;
 /** Same Path A/B/C book as qConv mute (DISSENT exempt). */
 export const FOOLS_GOLD_MUTE_TIERS = new Set([
   'SUPER', 'TOP', 'TOP+', 'MINI', 'MINI-', 'CONFIRMED',
@@ -668,10 +668,10 @@ export function bestProvenForSide(walletDetails, mySide, sport, walletProfiles) 
 }
 
 /**
- * FOOLS size clamp: best proven FOR tier is FLAT → stake in [1u, 2u].
- * Replaces the hard 0u mute. EDGE is optional (reason tag only). Manual stake
- * exempt at call site. Missing bestForTier → HOLD (fail-open).
- * Already inside the band → HOLD (no rewrite).
+ * FOOLS size clamp: best proven FOR tier is FLAT → stake = 1u.
+ * Replaces the hard 0u mute / prior [1u, 2u]. EDGE is optional (reason tag
+ * only). Manual stake exempt at call site. Missing bestForTier → HOLD
+ * (fail-open). Already at 1u → HOLD (no rewrite).
  */
 export function applyFoolsGoldMuteOverlay({
   units,

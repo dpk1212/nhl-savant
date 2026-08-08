@@ -1,5 +1,5 @@
 /**
- * FOOLS flat → [1u, 2u] clamp (replaces 0u mute).
+ * FOOLS flat → hard 1u clamp (replaces 0u mute / prior [1u, 2u]).
  * Usage: node tests/testFoolsClamp.mjs
  */
 import assert from 'assert';
@@ -15,6 +15,8 @@ function ok(cond, msg) {
   n++;
 }
 
+ok(FOOLS_CLAMP_MIN_U === 1 && FOOLS_CLAMP_MAX_U === 1, 'hard 1u band');
+
 const base = {
   bestForTier: 'FLAT',
   tier: 'SHARP-LEAN',
@@ -24,7 +26,7 @@ const base = {
 
 {
   const r = applyFoolsGoldMuteOverlay({ ...base, units: 2.5 });
-  ok(r.action === 'CLAMP' && r.units === FOOLS_CLAMP_MAX_U, 'cap 2.5 → 2');
+  ok(r.action === 'CLAMP' && r.units === FOOLS_CLAMP_MAX_U, 'cap 2.5 → 1');
   ok(r.mutedBy == null, 'clamp does not set mutedBy');
   ok(r.unitsPrePolicy === 2.5, 'preserves pre units');
 }
@@ -34,7 +36,11 @@ const base = {
 }
 {
   const r = applyFoolsGoldMuteOverlay({ ...base, units: 1.5 });
-  ok(r.action === 'HOLD' && r.units === 1.5, 'inside band unchanged');
+  ok(r.action === 'CLAMP' && r.units === 1, 'prior mid-band 1.5 → 1');
+}
+{
+  const r = applyFoolsGoldMuteOverlay({ ...base, units: 1 });
+  ok(r.action === 'HOLD' && r.units === 1, 'already 1u unchanged');
 }
 {
   const r = applyFoolsGoldMuteOverlay({ ...base, units: 1, bestForTier: 'CONFIRMED' });
