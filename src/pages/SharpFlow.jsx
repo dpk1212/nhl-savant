@@ -6001,6 +6001,7 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile, tierWind
     getRecordForDisplay: whitelistRecordForDisplay,
     tierPerf,
     pinnacleHistory,
+    walletProfiles: WALLET_PROFILES_CACHE,
   });
   return <LockedPositionCardView f={lockedFixture} />;
 });

@@ -30,10 +30,14 @@ export function netClvPctFromProfile(profile) {
 
 /**
  * Chart ELITE quadrant floors — must match LockedClarityExpanded WalletMap
- * crosshairs (beat-close % × lifetime ROI).
+ * crosshairs (beat-close % × lifetime ROI). Geography only — not the
+ * lead-wallet TOP Q badge (CONFIRMED beat-close quartile).
  */
 export const ELITE_ZONE_CLV = 55;
 export const ELITE_ZONE_ROI = 0;
+
+/** Min graded CLV sample for TOP Q rank (same floor as featured WR). */
+export const TOP_Q_CLV_MIN_N = FEATURED_WR_MIN_N;
 
 /** ROI axis for the skill map (prefer unit ROI, fall back to $ ROI). */
 export function walletRoiForPlot(w) {
@@ -48,6 +52,40 @@ export function isEliteZoneWallet(w) {
   const roi = walletRoiForPlot(w);
   return Number.isFinite(clv) && Number.isFinite(roi)
     && clv > ELITE_ZONE_CLV && roi > ELITE_ZONE_ROI;
+}
+
+/**
+ * Beat-close % cutoff for top quartile among CONFIRMED wallets (n≥8).
+ * Higher pctPos = better. Returns null when the pool is too thin.
+ */
+export function computeConfirmedBeatCloseQ1(walletProfiles) {
+  if (!walletProfiles || typeof walletProfiles.entries !== 'function') return null;
+  const pcts = [];
+  for (const [, profile] of walletProfiles.entries()) {
+    const bySport = profile?.bySport;
+    if (!bySport || typeof bySport !== 'object') continue;
+    const confirmed = Object.values(bySport).some(
+      (s) => String(s?.whitelistTier || '').toUpperCase() === 'CONFIRMED',
+    );
+    if (!confirmed) continue;
+    const n = Number(profile?.clvSkill?.n) || 0;
+    const pct = Number(profile?.clvSkill?.pctPos);
+    if (n < TOP_Q_CLV_MIN_N || !Number.isFinite(pct)) continue;
+    pcts.push(pct);
+  }
+  if (pcts.length < 4) return null;
+  pcts.sort((a, b) => a - b);
+  const i = Math.ceil(0.75 * (pcts.length - 1));
+  return +pcts[i].toFixed(1);
+}
+
+/** CONFIRMED + enough CLV sample + beat-close at/above confirmed Q1 cut. */
+export function isTopQWallet(w, q1Thr) {
+  if (!Number.isFinite(q1Thr)) return false;
+  if (String(w?.whitelist || '').toUpperCase() !== 'CONFIRMED') return false;
+  const n = Number(w?.clvN) || 0;
+  const pct = Number(w?.priorClvPct);
+  return n >= TOP_Q_CLV_MIN_N && Number.isFinite(pct) && pct >= q1Thr;
 }
 
 /**
@@ -182,8 +220,9 @@ const pathBaseUnits = (stakeTier) => {
  * `getRecordForDisplay(short, sport)` picks the stronger sport book (featured
  * picks vs positions) — same helper BackingWalletStrip / THE RECEIPTS use.
  */
-export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner, getRecordForDisplay) {
+export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner, getRecordForDisplay, opts = {}) {
   if (!Array.isArray(rawWallets)) return [];
+  const q1Thr = Number.isFinite(opts.confirmedClvQ1) ? opts.confirmedClvQ1 : null;
   return rawWallets
     .filter((w) => w && (w.invested || 0) > 0)
     .map((w) => {
@@ -237,6 +276,7 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
       // Causal %+CLV ("beats the close"): profile.clvSkill from exportWalletProfiles
       // (same definition as the tape/netCLV cron). Never invent a default %.
       const profileClv = profile?.clvSkill?.pctPos;
+      const clvN = Number(profile?.clvSkill?.n) || 0;
       const priorClvPct = Number.isFinite(w.priorClvPct) ? Math.round(w.priorClvPct)
         : Number.isFinite(w.causalPctPos) ? Math.round(w.causalPctPos)
         : Number.isFinite(profileClv) ? Math.round(profileClv)
@@ -254,6 +294,8 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
       const edgeEligible = featuredWr != null;
       const netEligible = netClvPct != null;
       const skillEligible = edgeEligible || netEligible;
+      const whitelist = sportRec?.whitelistTier || (whitelisted ? 'CONFIRMED' : null);
+      const topQ = isTopQWallet({ whitelist, clvN, priorClvPct }, q1Thr);
       const badges = proven
         ? ['SHARP', `${sport} WINNER`]
         : whitelisted
@@ -274,7 +316,7 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
         featuredWr: edgeEligible ? Math.round(featuredWr) : null,
         netClvPct: netEligible ? Math.round(netClvPct) : null,
         badges,
-        whitelist: sportRec?.whitelistTier || (whitelisted ? 'CONFIRMED' : null),
+        whitelist,
         qualify: sizeRatio >= 0.75 ? 'VAULT' : 'SHADOW',
         sizeRatio,
         record,
@@ -291,6 +333,8 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
         cents: w.cents ?? null,
         pnl: w.pnl || 0,
         priorClvPct,
+        clvN,
+        topQ,
       };
     })
     .sort((a, b) =>
@@ -682,7 +726,10 @@ export function mapLockedPickToCardFixture(pick, {
   record30d = null,
   tierPerf = null,
   pinnacleHistory = null,
+  walletProfiles = null,
 } = {}) {
+  const confirmedClvQ1 = computeConfirmedBeatCloseQ1(walletProfiles);
+  const enrichOpts = { confirmedClvQ1 };
   const isTotal = pick.marketType === 'total' || pick.marketType === 'TOTAL';
   const isSpread = pick.marketType === 'spread' || pick.marketType === 'SPREAD';
   const alreadyGraded = pick.status === 'COMPLETED'
@@ -785,6 +832,7 @@ export function mapLockedPickToCardFixture(pick, {
     getWalletProfile,
     isSportWinner,
     getRecordForDisplay,
+    enrichOpts,
   );
 
   // Normalize totals over/under → home/away so board sides match `sideNorm`.
@@ -807,6 +855,7 @@ export function mapLockedPickToCardFixture(pick, {
     getWalletProfile,
     isSportWinner,
     getRecordForDisplay,
+    enrichOpts,
   ).map((w) => {
     const marketSide = normSide(w.side) || sideNorm;
     const sideTag = marketSide === sideNorm ? 'ours' : 'against';
@@ -817,9 +866,9 @@ export function mapLockedPickToCardFixture(pick, {
       eliteZone: isEliteZoneWallet(w),
     };
   });
-  // Glance signal: any FOR-side wallet in the chart ELITE quadrant.
-  const eliteDotOnSide = mapWallets.filter((w) => w.side === 'ours' && w.eliteZone).length;
-  const hasEliteDot = eliteDotOnSide > 0;
+  // Glance: any FOR-side CONFIRMED wallet in top-quartile beat-close.
+  const topQOnSide = mapWallets.filter((w) => w.side === 'ours' && w.topQ).length;
+  const hasTopQ = topQOnSide > 0;
 
   const againstRows = mapWallets.filter((w) => w.side === 'against');
   const meanFinite = (arr) => {
@@ -978,8 +1027,9 @@ export function mapLockedPickToCardFixture(pick, {
     netClv,
     confirmedOnSide,
     vaultOnSide,
-    eliteDotOnSide,
-    hasEliteDot,
+    topQOnSide,
+    hasTopQ,
+    confirmedClvQ1: Number.isFinite(confirmedClvQ1) ? confirmedClvQ1 : null,
     setupHitRate: null,
     sideInvested: pick.totalInvested || pick.lockTotalInvested || 0,
     wallets,

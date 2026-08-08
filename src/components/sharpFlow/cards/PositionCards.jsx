@@ -2399,16 +2399,18 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
             <span style={{ color: C.textFaint, marginLeft: 8 }}>{f.gameTime}</span>
           </span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-            {(f.hasEliteDot || f.eliteDotOnSide > 0) && (
+            {(f.hasTopQ || f.topQOnSide > 0) && (
               <span
-                title="A FOR wallet is in the ELITE zone — high beat-close % and lifetime ROI"
+                title={Number.isFinite(f.confirmedClvQ1)
+                  ? `Top-quartile beat-close among CONFIRMED (≥${f.confirmedClvQ1}%)`
+                  : 'Top-quartile beat-close among CONFIRMED'}
                 style={{
                   fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.1em',
                   padding: '3px 7px', borderRadius: 6, color: '#042f1e',
                   background: B.profit, border: `1px solid ${B.profit}`,
                 }}
               >
-                ELITE
+                TOP Q
               </span>
             )}
             {!tracked && !graded && tierLabel && (
@@ -2510,21 +2512,23 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
 
   // Expanded = V27 clarity story (map → lead wallet → other side → price).
   // Collapsed chrome above is unchanged.
-  const elitePill = (f.hasEliteDot || f.eliteDotOnSide > 0) ? (
+  const topQPill = (f.hasTopQ || f.topQOnSide > 0) ? (
     <span
-      title="A FOR wallet is in the ELITE zone — high beat-close % and lifetime ROI"
+      title={Number.isFinite(f.confirmedClvQ1)
+        ? `Top-quartile beat-close among CONFIRMED (≥${f.confirmedClvQ1}%)`
+        : 'Top-quartile beat-close among CONFIRMED'}
       style={{
         fontSize: 8, fontWeight: 800, letterSpacing: '0.1em',
         padding: '4px 8px', borderRadius: 5, color: '#042f1e',
         background: B.profit, border: `1px solid ${B.profit}`,
       }}
     >
-      ELITE
+      TOP Q
     </span>
   ) : null;
   const statusSlot = tracked ? (
     <>
-      {elitePill}
+      {topQPill}
       <span
         title={muteTip}
         style={{
@@ -2538,7 +2542,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
     </>
   ) : graded ? (
     <>
-      {elitePill}
+      {topQPill}
       <GradedResultPill
         outcome={f.outcome}
         profit={f.profit}
@@ -2549,7 +2553,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
     </>
   ) : (
     <>
-      {elitePill}
+      {topQPill}
       {tierLabel && (
         <span style={{
           fontSize: 8, fontWeight: 800, letterSpacing: '0.12em',

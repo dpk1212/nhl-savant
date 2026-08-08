@@ -10,6 +10,7 @@ import {
   ELITE_ZONE_CLV,
   ELITE_ZONE_ROI,
   isEliteZoneWallet,
+  isTopQWallet,
   walletRoiForPlot,
 } from './mapPositionCard.js';
 
@@ -889,15 +890,18 @@ function GapCell({ label, value, first }) {
   );
 }
 
-function Pill({ children, c, solid }) {
+function Pill({ children, c, solid, title }) {
   return (
-    <span style={{
-      fontSize: 8, fontWeight: 700, letterSpacing: '0.04em',
-      padding: '1.5px 5px', borderRadius: 3,
-      background: solid ? c : `${c}16`,
-      color: solid ? '#042f1e' : c,
-      border: solid ? 'none' : `1px solid ${c}40`,
-    }}>
+    <span
+      title={title}
+      style={{
+        fontSize: 8, fontWeight: 700, letterSpacing: '0.04em',
+        padding: '1.5px 5px', borderRadius: 3,
+        background: solid ? c : `${c}16`,
+        color: solid ? '#042f1e' : c,
+        border: solid ? 'none' : `1px solid ${c}40`,
+      }}
+    >
       {children}
     </span>
   );
@@ -977,9 +981,6 @@ export default function LockedClarityExpanded({
   const secondaryUsd = all.filter((w) => w.side === 'ours' && !w.proven && w.skillEligible).reduce((s, w) => s + (w.invested || 0), 0);
   const againstUsd = all.filter((w) => w.side === 'against').reduce((s, w) => s + (w.invested || 0), 0);
   const oursUsd = provenUsd + secondaryUsd;
-  const eliteDotOnSide = all.filter((w) => w.side === 'ours' && (w.eliteZone === true || isEliteZoneWallet(w))).length;
-  // Prefer live board; fall back to stamped flag when map wallets aren't loaded yet.
-  const hasEliteDot = all.length > 0 ? eliteDotOnSide > 0 : !!f.hasEliteDot;
   const board = oursUsd + againstUsd || 1;
   const provenPct = Math.round((provenUsd / board) * 100);
   const secondaryPct = Math.round((secondaryUsd / board) * 100);
@@ -999,6 +1000,10 @@ export default function LockedClarityExpanded({
 
   const vault = selected?.qualify === 'VAULT';
   const againstSel = selected?.side === 'against';
+  const q1Thr = Number.isFinite(f.confirmedClvQ1) ? f.confirmedClvQ1 : null;
+  const selectedTopQ = !!(selected && !againstSel && (
+    selected.topQ === true || isTopQWallet(selected, q1Thr)
+  ));
   // Size vs usual: ratio and usual $ from the same identity (invested / ratio).
   const sizeRatio = Number.isFinite(selected?.sizeRatio) && selected.sizeRatio > 0
     ? selected.sizeRatio
@@ -1146,18 +1151,6 @@ export default function LockedClarityExpanded({
               {unopposed ? 'UNOPPOSED' : `${boardSharePct}% OF BOARD`}
             </span>
           )}
-          {hasEliteDot && (
-            <span
-              title="A FOR wallet is in the ELITE zone — high beat-close % and lifetime ROI"
-              style={{
-                fontSize: 9, fontWeight: 800, letterSpacing: '0.1em',
-                padding: '2px 7px', borderRadius: 4, color: '#042f1e',
-                background: GREEN, border: `1px solid ${GREEN}`,
-              }}
-            >
-              ELITE DOT{eliteDotOnSide > 1 ? ` · ${eliteDotOnSide}` : ''}
-            </span>
-          )}
           {f.lockedAt && (
             <span style={{ fontSize: 10, color: C.textFaint, marginLeft: 'auto' }}>{f.lockedAt}</span>
           )}
@@ -1222,11 +1215,6 @@ export default function LockedClarityExpanded({
               ) : (
                 <span style={{ color: GREEN, fontWeight: 700 }}>Unopposed</span>
               )}
-              {hasEliteDot && (
-                <span style={{ color: GREEN, fontWeight: 700 }}>
-                  · Elite zone ({eliteDotOnSide || f.eliteDotOnSide || 1})
-                </span>
-              )}
               <span style={{ color: C.textFaint }}>· size = $</span>
             </div>
           </div>
@@ -1261,6 +1249,16 @@ export default function LockedClarityExpanded({
                       : selected.proven ? <Pill c={GREEN} solid>Proven</Pill>
                         : <Pill c={BLUE}>Secondary</Pill>}
                     {vault && !againstSel && <Pill c={GOLD}>Vault</Pill>}
+                    {selectedTopQ && (
+                      <Pill
+                        c={GREEN}
+                        title={Number.isFinite(q1Thr)
+                          ? `Top-quartile beat-close among CONFIRMED (≥${q1Thr}% · n≥8)`
+                          : 'Top-quartile beat-close among CONFIRMED'}
+                      >
+                        Top Q
+                      </Pill>
+                    )}
                   </div>
                   <div style={{
                     marginTop: 5, fontSize: 13, fontWeight: 600, color: C.text, lineHeight: 1.3,
@@ -1314,8 +1312,8 @@ export default function LockedClarityExpanded({
                   </div>
                   <div style={{
                     padding: '9px 10px', borderRadius: 8,
-                    background: beatHot ? 'rgba(52,211,153,0.08)' : 'rgba(0,0,0,0.32)',
-                    border: `1px solid ${beatHot ? 'rgba(52,211,153,0.25)' : LINE}`,
+                    background: selectedTopQ || beatHot ? 'rgba(52,211,153,0.08)' : 'rgba(0,0,0,0.32)',
+                    border: `1px solid ${selectedTopQ || beatHot ? 'rgba(52,211,153,0.25)' : LINE}`,
                   }}>
                     <div style={{
                       fontSize: 9, fontWeight: 700, letterSpacing: '0.06em', color: C.textMuted, marginBottom: 6,
@@ -1325,13 +1323,17 @@ export default function LockedClarityExpanded({
                     </div>
                     <div style={{
                       fontSize: 18, fontWeight: 700, letterSpacing: '-0.02em',
-                      fontFeatureSettings: "'tnum'", color: beatHot ? GREEN : C.text,
+                      fontFeatureSettings: "'tnum'", color: selectedTopQ || beatHot ? GREEN : C.text,
                       marginBottom: 2,
                     }}>
                       {Number.isFinite(selected.priorClvPct) ? `${selected.priorClvPct}%` : '—'}
                     </div>
                     <div style={{ fontSize: 11, fontWeight: 500, color: C.textSec, lineHeight: 1.3 }}>
-                      Beat the closing line
+                      {selectedTopQ
+                        ? (Number.isFinite(q1Thr)
+                          ? `Top quartile · ≥${q1Thr}% confirmed`
+                          : 'Top quartile among confirmed')
+                        : 'Beat the closing line'}
                     </div>
                   </div>
                 </div>
