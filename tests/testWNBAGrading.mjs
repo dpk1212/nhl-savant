@@ -11,6 +11,7 @@ import {
   isMainWNBAGameSlug,
   wnbaTeamsMatch,
 } from '../scripts/lib/wnbaTeams.js';
+import { positionMatchesPolyEvent } from '../scripts/lib/positionEventMatch.js';
 
 let pass = 0, fail = 0;
 function check(name, cond) {
@@ -35,6 +36,28 @@ check('NBA Lakers vs Celtics is NOT WNBA', isWNBAMarketTitle('Lakers vs. Celtics
 check('main slug ok', isMainWNBAGameSlug('wnba-lva-nyl-2026-07-09') === true);
 check('championship slug rejected', isMainWNBAGameSlug('wnba-championship-winner-2026') === false);
 check('total prop slug rejected', isMainWNBAGameSlug('wnba-lva-nyl-2026-07-09-total-points') === false);
+
+// Polymarket uses wsh; Odds API / our keys use was
+check('resolve Polymarket WSH abbr', resolveWNBATeam('wsh') === 'WAS');
+check('resolve WSH uppercase', resolveWNBATeam('WSH') === 'WAS');
+check('atl-wsh slug codes → atl_was key', makeWNBAGameKey('ATL', 'WSH') === 'atl_was');
+
+{
+  const otherDay = {
+    slug: 'wnba-atl-wsh-2026-08-07-total-170pt5',
+    eventId: '746307',
+  };
+  const gate = positionMatchesPolyEvent(otherDay, null, 'atl_was', { boardDate: '2026-08-08' });
+  check('other-day WNBA slug rejected vs board', gate.ok === false && gate.reason === 'slug_date_vs_board');
+  const sameDayPoly = { eventId: '746307', polyGameDate: '2026-08-07' };
+  const gateOk = positionMatchesPolyEvent(
+    { slug: 'wnba-atl-wsh-2026-08-07', eventId: '746307' },
+    sameDayPoly,
+    'atl_was',
+    { boardDate: '2026-08-07' },
+  );
+  check('same-day WNBA eventId match ok', gateOk.ok === true && gateOk.reason === 'eventId');
+}
 
 const wnbaFinal = {
   dateET: '2026-07-09',

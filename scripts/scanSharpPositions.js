@@ -827,7 +827,9 @@ async function run() {
 
       // Reject postponed/other-date markets that title-matched today's team.
       // e.g. mlb-stl-cin-2026-05-24 (rained out) must not attach to stl_laa today.
-      const eventGate = positionMatchesPolyEvent(pos, polyGame, match.key);
+      // Also blocks WNBA overnight leftovers (wnba-atl-wsh-YYYY-MM-DD ≠ board day).
+      const boardDateET = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+      const eventGate = positionMatchesPolyEvent(pos, polyGame, match.key, { boardDate: boardDateET });
       if (!eventGate.ok) {
         wrongEventCount++;
         continue;

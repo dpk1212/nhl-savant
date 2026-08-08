@@ -2059,6 +2059,20 @@ async function createMissingLockedPicks({
     const docId = `${TARGET_DATE}_${sport}_${gameKey}${suffix}`;
     if (existingDocIds.has(`${col}|${docId}`)) continue; // already in Firestore
 
+    // Reject other-day Polymarket leftovers (e.g. wnba-atl-wsh-2026-08-07 on Aug 8 board).
+    {
+      const slugDates = positions
+        .map((p) => (String(p.slug || p.eventSlug || '').match(/(20\d{2}-\d{2}-\d{2})/) || [])[1])
+        .filter(Boolean);
+      if (slugDates.length > 0 && slugDates.every((d) => d !== TARGET_DATE)) {
+        skipped.push({
+          docId, col, reason: 'slug_date_not_target',
+          slugDates: [...new Set(slugDates)],
+        });
+        continue;
+      }
+    }
+
     let meta = gameMeta.get(`${sport}|${gameKey}`);
     let usedQ1MetaFallback = false;
     if (!meta) {

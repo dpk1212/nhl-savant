@@ -39,7 +39,8 @@ const WNBA_TEAMS = [
   { code: 'POR', names: ['Portland Fire', 'Portland', 'Fire'] },
   { code: 'SEA', names: ['Seattle Storm', 'Seattle', 'Storm'] },
   { code: 'TOR', names: ['Toronto Tempo', 'Toronto', 'Tempo'] },
-  { code: 'WAS', names: ['Washington Mystics', 'Washington', 'Mystics'] },
+  // Polymarket slugs use `wsh` (wnba-atl-wsh-YYYY-MM-DD); Odds API / ESPN use WAS.
+  { code: 'WAS', names: ['Washington Mystics', 'Washington', 'Mystics', 'WSH'] },
 ];
 
 /** normalized alias -> WNBA code */
