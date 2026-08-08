@@ -38,7 +38,8 @@ qConv  = Σ sizeRatio×(WR−50) FOR − Σ sizeRatio×(WR−50) AG
 | Soft size overlay | ONLY when EDGE band did not apply (non–A/C) · BOTH ×1.25 · NEITHER ×0.5 · RANK exempt |
 | Tape | `&lt;0` mute (RANK exempt) · `≥2.89` ×1.35 · else hold |
 | **qConv Q1 mute** | 2026-08-03+: after tape · Path A/B/C · `qConv < expanding Q1 thr` → **0u** · fail-open if missing · DISSENT/manual exempt |
-| **CONFIRMED-UNOPP promote** | 2026-08-08+: after SHARP · still 0u · ≥1 CONFIRMED FOR size≥0.5× · zero CONFIRMED AG → **1u** · stamp `v8_confirmedUnoppPromote` |
+| **CONFIRMED-Q1 promote** | 2026-08-08+: ≥1 FOR CONFIRMED × flatDollar Q1 × size≥0.5× → **2u** (3u if size≥1×) · opposed OK · hard floor after mutes · stamp `v8_confirmedQ1Promote` |
+| **CONFIRMED-UNOPP promote** | 2026-08-08+: after SHARP/Q1 · still 0u · ≥1 CONFIRMED FOR size≥0.5× · zero CONFIRMED AG → **1u** · stamp `v8_confirmedUnoppPromote` |
 | **FOOLS-gold mute** | 2026-08-05+: after qConv · Path A/B/C + CONFIRMED-UNOPP · best proven FOR = **FLAT** → **0u MUTED** · fail-open if bestFOR missing · DISSENT/manual exempt |
 
 ---

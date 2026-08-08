@@ -99,6 +99,8 @@ import {
   applyFoolsGoldMuteOverlay,
   bestProvenForSide,
   computeConfirmedUnoppSized,
+  computeConfirmedQ1Sized,
+  buildFlatDollarQBySport,
   computeForTop2PctPos,
   computeNetMeanPrior,
   computeQConv,
@@ -112,6 +114,7 @@ import {
   isQConvMuteLive,
   isFoolsGoldMuteLive,
   isConfirmedUnoppPromoteLive,
+  isConfirmedQ1PromoteLive,
   qConvMuteThresholdFromValues,
   QCONV_MUTE_FALLBACK_THR,
   QCONV_MUTE_FROM,
@@ -124,6 +127,10 @@ import {
   CONFIRMED_UNOPP_FROM,
   CONFIRMED_UNOPP_MIN_SIZE,
   CONFIRMED_UNOPP_UNITS,
+  CONFIRMED_Q1_FROM,
+  CONFIRMED_Q1_MIN_SIZE,
+  CONFIRMED_Q1_UNITS,
+  CONFIRMED_Q1_PRESS_UNITS,
   BLEND_PATH_LOOKBACK_FROM,
   BLEND_PATH_MIN_N,
   BLEND_WR_BASE,
@@ -540,7 +547,9 @@ function computeRankSlice(walletDetails, mySide, sport, walletProfiles) {
   return { backing, against, qualifies: backing >= 2 && against === 0 };
 }
 
-// CONFIRMED-UNOPP promote — see computeConfirmedUnoppSized in walletClvSkill.js
+// CONFIRMED-UNOPP / CONFIRMED-Q1 promote — see walletClvSkill.js
+/** Live flatDollar Q map (sport → wallet → Q); set once in main() after profiles load. */
+let FLAT_DOLLAR_Q_BY_SPORT = new Map();
 // (ALL live CONFIRMED × size≥0.5 × unopposed by CONFIRMED → 1u rescue).
 
 // ── SHARP-RESCUE / v12abc "c" ───────────────────────────────────────────────
@@ -2190,7 +2199,21 @@ async function createMissingLockedPicks({
             hcStakeTierCreate = 'SHARP-LEAN';
           }
         }
-        // CONFIRMED-UNOPP promote when still 0u after Path C (RANK/DISSENT on reconcile)
+        // CONFIRMED-Q1 promote (opposed OK) — before UNOPP; size-up 2u/3u
+        if (isConfirmedQ1PromoteLive(TARGET_DATE)) {
+          const q1Create = computeConfirmedQ1Sized(
+            walletDetails, side, sport, walletProfiles, FLAT_DOLLAR_Q_BY_SPORT,
+            { minSize: CONFIRMED_Q1_MIN_SIZE },
+          );
+          if (q1Create.qualifies) {
+            const tgt = Math.round(oddsCap(q1Create.targetUnits, odds ?? null) * 100) / 100;
+            if (peakUnitsApplied < tgt) {
+              peakUnitsApplied = tgt;
+              hcStakeTierCreate = 'CONFIRMED-Q1';
+            }
+          }
+        }
+        // CONFIRMED-UNOPP promote when still 0u after Path C / Q1
         if (peakUnitsApplied === 0 && isConfirmedUnoppPromoteLive(TARGET_DATE)) {
           const unoppCreate = computeConfirmedUnoppSized(
             walletDetails, side, sport, walletProfiles,
@@ -2245,18 +2268,21 @@ async function createMissingLockedPicks({
       const tapeCreate = computeTapeScore(waCreateEdge?.edge ?? null, netCreate.netMeanPrior);
       let clvPolicyCreate;
       if (isTapeSizingLive(TARGET_DATE)) {
-        // RANK + CONFIRMED-UNOPP exempt from tape mute (still eligible for HOLD/BOOST).
-        // Promote fills left-behind CONFIRMED; tape must not immediately zero them.
+        // RANK / CONFIRMED-UNOPP / CONFIRMED-Q1 exempt from tape mute.
         const rankTapeMuteExempt = (hcStakeTierCreate === 'RANK'
-            || hcStakeTierCreate === 'CONFIRMED-UNOPP')
+            || hcStakeTierCreate === 'CONFIRMED-UNOPP'
+            || hcStakeTierCreate === 'CONFIRMED-Q1')
           && tapeCreate != null && tapeCreate < TAPE_MUTE_BELOW;
         if (rankTapeMuteExempt) {
+          const tapeExemptReason = hcStakeTierCreate === 'CONFIRMED-Q1'
+            ? 'confirmed_q1_tape_mute_exempt'
+            : (hcStakeTierCreate === 'CONFIRMED-UNOPP'
+              ? 'confirmed_unopp_tape_mute_exempt'
+              : 'rank_tape_mute_exempt');
           clvPolicyCreate = {
             units: peakUnitsApplied,
             action: 'HOLD',
-            reason: hcStakeTierCreate === 'CONFIRMED-UNOPP'
-              ? 'confirmed_unopp_tape_mute_exempt'
-              : 'rank_tape_mute_exempt',
+            reason: tapeExemptReason,
             mutedBy: null,
             unitsPrePolicy: peakUnitsApplied,
           };
@@ -2315,10 +2341,24 @@ async function createMissingLockedPicks({
         peakUnitsApplied = clvPolicyCreate.units;
       }
 
-      // CONFIRMED-UNOPP promote if still 0u after HC/Path C (create may skip RANK).
+      // CONFIRMED-Q1 / UNOPP late fill if still under-floored after sizing mutes.
+      if (createV121Eligible && scoreV12 > 0 && isConfirmedQ1PromoteLive(TARGET_DATE)) {
+        const q1Late = computeConfirmedQ1Sized(
+          walletDetails, side, sport, walletProfiles, FLAT_DOLLAR_Q_BY_SPORT,
+          { minSize: CONFIRMED_Q1_MIN_SIZE },
+        );
+        if (q1Late.qualifies) {
+          const tgt = Math.round(oddsCap(q1Late.targetUnits, odds ?? null) * 100) / 100;
+          if (peakUnitsApplied < tgt) {
+            peakUnitsApplied = tgt;
+            hcStakeTierCreate = 'CONFIRMED-Q1';
+          }
+        }
+      }
       if (createV121Eligible && scoreV12 > 0 && peakUnitsApplied === 0
           && isConfirmedUnoppPromoteLive(TARGET_DATE)
-          && hcStakeTierCreate !== 'CONFIRMED-UNOPP') {
+          && hcStakeTierCreate !== 'CONFIRMED-UNOPP'
+          && hcStakeTierCreate !== 'CONFIRMED-Q1') {
         const unoppCreateLate = computeConfirmedUnoppSized(
           walletDetails, side, sport, walletProfiles,
           { minSize: CONFIRMED_UNOPP_MIN_SIZE },
@@ -2359,6 +2399,21 @@ async function createMissingLockedPicks({
           pickDate: TARGET_DATE,
         });
         peakUnitsApplied = foolsGoldPolicyCreate.units;
+      }
+
+      // CONFIRMED-Q1 hard floor after mutes (create path).
+      if (createV121Eligible && scoreV12 > 0 && isConfirmedQ1PromoteLive(TARGET_DATE)) {
+        const q1Floor = computeConfirmedQ1Sized(
+          walletDetails, side, sport, walletProfiles, FLAT_DOLLAR_Q_BY_SPORT,
+          { minSize: CONFIRMED_Q1_MIN_SIZE },
+        );
+        if (q1Floor.qualifies) {
+          const tgt = Math.round(oddsCap(q1Floor.targetUnits, odds ?? null) * 100) / 100;
+          if (peakUnitsApplied < tgt) {
+            peakUnitsApplied = tgt;
+            hcStakeTierCreate = 'CONFIRMED-Q1';
+          }
+        }
       }
 
       // Determine team label for the side.
@@ -2484,6 +2539,9 @@ async function createMissingLockedPicks({
       // v12.1 — product stake tier from the HC margin (going-forward only).
       if (createV121Eligible) {
         v8Stamps.v8_hcStakeTier = hcStakeTierCreate;
+        if (hcStakeTierCreate === 'CONFIRMED-Q1') {
+          v8Stamps.v8_confirmedQ1Promote = true;
+        }
         if (hcStakeTierCreate === 'CONFIRMED-UNOPP') {
           v8Stamps.v8_confirmedUnoppPromote = true;
         }
@@ -3119,8 +3177,31 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     }
   }
 
+  // ─── CONFIRMED-Q1 promote (2026-08-08+) ───────────────────────────────
+  // ≥1 FOR: CONFIRMED × flatDollar Q1 × size≥0.5× → floor 2u (3u if size≥1×).
+  // Opposed OK. Upsizes under-floored sides; never downsizes a larger path.
+  let confirmedQ1Rescued = false;
+  const confirmedQ1Slice = (v121Eligible && Array.isArray(wd) && wd.length > 0)
+    ? computeConfirmedQ1Sized(wd, side, pick.sport, walletProfiles, FLAT_DOLLAR_Q_BY_SPORT, {
+      minSize: CONFIRMED_Q1_MIN_SIZE,
+    })
+    : {
+      qualifies: false, forQ1Sized: 0, bestSize: null, targetUnits: CONFIRMED_Q1_UNITS, wallets: [],
+    };
+  if (isConfirmedQ1PromoteLive(pickDate) && appliedStatus === 'ACTIVE'
+      && scoreV12Live != null && scoreV12Live > 0
+      && !(Number.isFinite(sd.manualStake) && sd.manualStake > 0)
+      && confirmedQ1Slice.qualifies) {
+    const tgt = Math.round(oddsCap(confirmedQ1Slice.targetUnits, sideOdds) * 100) / 100;
+    if (finalUnitsApplied < tgt) {
+      finalUnitsApplied = tgt;
+      hcStakeTier = 'CONFIRMED-Q1';
+      confirmedQ1Rescued = true;
+    }
+  }
+
   // ─── CONFIRMED-UNOPP promote (2026-08-08+) ────────────────────────────
-  // After HC / RANK / SHARP leave score>0 at 0u: ≥1 CONFIRMED FOR sized ≥0.5×
+  // After HC / RANK / SHARP / Q1 leave score>0 at 0u: ≥1 CONFIRMED FOR sized ≥0.5×
   // and zero CONFIRMED on AG → 1u. Never up-sizes. Runs before Path D so the
   // tier stamp is CONFIRMED-UNOPP (not DISSENT) when both would qualify.
   let confirmedUnoppRescued = false;
@@ -3131,7 +3212,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     : { qualifies: false, forSized: 0, agConfirmed: 0, bestSize: null, wallets: [] };
   if (isConfirmedUnoppPromoteLive(pickDate) && appliedStatus === 'ACTIVE'
       && scoreV12Live != null && scoreV12Live > 0
-      && finalUnitsApplied === 0 && !rankRescued && !sharpRescued
+      && finalUnitsApplied === 0 && !rankRescued && !sharpRescued && !confirmedQ1Rescued
       && !(Number.isFinite(sd.manualStake) && sd.manualStake > 0)
       && confirmedUnoppSlice.qualifies) {
     finalUnitsApplied = Math.round(oddsCap(CONFIRMED_UNOPP_UNITS, sideOdds) * 100) / 100;
@@ -3140,14 +3221,15 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   }
 
   // ─── PATH-D / DISSENT: v12abcd "d" contribMargin ≤ 0 mute rescue ──────
-  // After HC / RANK / SHARP / CONFIRMED-UNOPP leave a pick at 0u, rescue when
+  // After HC / RANK / SHARP / Q1 / CONFIRMED-UNOPP leave a pick at 0u, rescue when
   // against-side weighted contribution matches or beats FOR (Feature Lab
   // unused signal), on MLB, odds ≤ +200, maxShare < 0.35. Flat 1u. Never up-sizes.
   let pathDRescued = false;
   const pathDSlice = computePathDSlice(wd, side);
   if (isPathDLive(pickDate) && appliedStatus === 'ACTIVE'
       && scoreV12Live != null && scoreV12Live > 0
-      && finalUnitsApplied === 0 && !rankRescued && !sharpRescued && !confirmedUnoppRescued
+      && finalUnitsApplied === 0 && !rankRescued && !sharpRescued
+      && !confirmedQ1Rescued && !confirmedUnoppRescued
       && !(Number.isFinite(sd.manualStake) && sd.manualStake > 0)
       && pick.sport === 'MLB'
       && Number.isFinite(sideOdds) && sideOdds <= PATH_D_MAX_ODDS
@@ -3370,8 +3452,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // ─── TAPE / CLV unit policy (after paths + edge-net size + winner mute) ─
   // Tape era (2026-07-15+): mute weak / keep mid / boost strong on path units.
   //   tape = 2·(EDGE/10) + 1.5·(netCLV/10); fail-open when unscored.
-  // RANK + CONFIRMED-UNOPP exempt from tape mute (still get HOLD/BOOST).
-  // RANK NEITHER was +11% ROI; CONFIRMED-UNOPP promote must stick at 1u.
+  // RANK / CONFIRMED-UNOPP / CONFIRMED-Q1 exempt from tape mute.
   // Pre-tape: legacy CLV top2 cancel≤59 / boost≥74 (fail-closed if missing).
   // netLive already computed above (shared with Path C / TOP mute).
   const top2Live = computeForTop2PctPos(wd, side, pickDate, clvLedger);
@@ -3381,15 +3462,20 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   let bothE10Policy = null;
   const unitsBeforeClv = finalUnitsApplied;
   if (tapeSizingLive) {
-    const rankTapeMuteExempt = (hcStakeTier === 'RANK' || hcStakeTier === 'CONFIRMED-UNOPP')
+    const rankTapeMuteExempt = (hcStakeTier === 'RANK'
+        || hcStakeTier === 'CONFIRMED-UNOPP'
+        || hcStakeTier === 'CONFIRMED-Q1')
       && tapeLive != null && tapeLive < TAPE_MUTE_BELOW;
     if (rankTapeMuteExempt) {
+      const tapeExemptReason = hcStakeTier === 'CONFIRMED-Q1'
+        ? 'confirmed_q1_tape_mute_exempt'
+        : (hcStakeTier === 'CONFIRMED-UNOPP'
+          ? 'confirmed_unopp_tape_mute_exempt'
+          : 'rank_tape_mute_exempt');
       tapePolicy = {
         units: finalUnitsApplied,
         action: 'HOLD',
-        reason: hcStakeTier === 'CONFIRMED-UNOPP'
-          ? 'confirmed_unopp_tape_mute_exempt'
-          : 'rank_tape_mute_exempt',
+        reason: tapeExemptReason,
         mutedBy: null,
         unitsPrePolicy: unitsBeforeClv,
       };
@@ -3496,6 +3582,23 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     finalUnitsApplied = foolsGoldPolicy.units;
   }
 
+  // ─── CONFIRMED-Q1 hard floor (after mutes) ────────────────────────────
+  // Research: never leave Q1×sized at 0u. Restore / size-up even if tape /
+  // qConv / EDGE zeroed the path stake. Manual stake exempt.
+  let confirmedQ1Floored = false;
+  if (isConfirmedQ1PromoteLive(pickDate) && appliedStatus === 'ACTIVE'
+      && scoreV12Live != null && scoreV12Live > 0
+      && !(Number.isFinite(sd.manualStake) && sd.manualStake > 0)
+      && confirmedQ1Slice.qualifies) {
+    const tgt = Math.round(oddsCap(confirmedQ1Slice.targetUnits, sideOdds) * 100) / 100;
+    if (finalUnitsApplied < tgt) {
+      finalUnitsApplied = tgt;
+      hcStakeTier = 'CONFIRMED-Q1';
+      confirmedQ1Floored = true;
+      confirmedQ1Rescued = true;
+    }
+  }
+
   // ─── lockStage promote/demote — v12 gate ──────────────────────────────
   // Ship floor: v12 score > 0 (the mute boundary). Picks above 0 LOCK
   // with units determined by the ladder (SMALL 0.25u → ELITE 5u).
@@ -3562,9 +3665,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const foolsMuted = foolsGoldPolicy?.action === 'MUTE'
     && Number.isFinite(foolsGoldPolicy.unitsPrePolicy)
     && foolsGoldPolicy.unitsPrePolicy > 0;
-  const sizeMuted = foolsMuted || qConvMuted || (tapeSizingLive
+  // Q1 hard floor wins — do not leave health MUTED when units were restored.
+  const sizeMuted = !confirmedQ1Floored && (foolsMuted || qConvMuted || (tapeSizingLive
     ? (tapePolicy?.action === 'MUTE' && unitsBeforeClv > 0)
-    : (clvPolicy.action === 'CANCEL' && unitsBeforeClv > 0));
+    : (clvPolicy.action === 'CANCEL' && unitsBeforeClv > 0)));
   const healthStatusOut = sizeMuted
     ? 'MUTED'
     : appliedStatus;
@@ -3598,7 +3702,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const TAPE_MUTE_VALUES = new Set(['tape-weak']);
   const QCONV_MUTE_VALUES = new Set(['qconv-q1']);
   const FOOLS_MUTE_VALUES = new Set(['fools-gold-flat']);
-  if (winnerMuted) {
+  if (confirmedQ1Floored) {
+    // Hard floor restored stake — clear any mute stamp so UI shows the ticket.
+    if (sd.mutedBy != null || foolsGoldPolicy?.mutedBy || qConvPolicy?.mutedBy) {
+      patch.mutedBy = admin.firestore.FieldValue.delete();
+    }
+  } else if (winnerMuted) {
     patch.mutedBy = 'winner_align_fade';
   } else if (foolsGoldPolicy?.mutedBy) {
     patch.mutedBy = foolsGoldPolicy.mutedBy;
@@ -3718,6 +3827,11 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     // for pre-cutover picks so the dashboard/UI fall back to the score tier.
     if (v121Eligible) {
       patch.v8_hcStakeTier = hcStakeTier;
+      if (confirmedQ1Rescued || hcStakeTier === 'CONFIRMED-Q1') {
+        patch.v8_confirmedQ1Promote = true;
+      } else if (sd.v8_confirmedQ1Promote != null) {
+        patch.v8_confirmedQ1Promote = admin.firestore.FieldValue.delete();
+      }
       if (confirmedUnoppRescued || hcStakeTier === 'CONFIRMED-UNOPP') {
         patch.v8_confirmedUnoppPromote = true;
       } else if (sd.v8_confirmedUnoppPromote != null) {
@@ -3796,9 +3910,11 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     );
   }
   if (tapePolicy?.reason === 'rank_tape_mute_exempt'
-      || tapePolicy?.reason === 'confirmed_unopp_tape_mute_exempt') {
-    const who = tapePolicy.reason === 'confirmed_unopp_tape_mute_exempt'
-      ? 'CONFIRMED-UNOPP' : 'RANK';
+      || tapePolicy?.reason === 'confirmed_unopp_tape_mute_exempt'
+      || tapePolicy?.reason === 'confirmed_q1_tape_mute_exempt') {
+    const who = tapePolicy.reason === 'confirmed_q1_tape_mute_exempt'
+      ? 'CONFIRMED-Q1'
+      : (tapePolicy.reason === 'confirmed_unopp_tape_mute_exempt' ? 'CONFIRMED-UNOPP' : 'RANK');
     changes.push(`TAPE: ${who} mute-exempt (tape=${tapeLive == null ? '—' : Number(tapeLive).toFixed(2)}) → keep ${unitsBeforeClv}u`);
   }
   if (bothE10Policy?.action === 'FLOOR') {
@@ -3824,6 +3940,13 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   }
   if (rankRescued) {
     changes.push(`RANK-RESCUE: 2-for-0 slice promoted HC-muted pick → ${RANK_RESCUE_UNITS}u`);
+  }
+  if (confirmedQ1Rescued) {
+    changes.push(
+      `CONFIRMED-Q1${confirmedQ1Floored ? '/FLOOR' : ''}: forQ1=${confirmedQ1Slice.forQ1Sized} `
+      + `bestSize=${confirmedQ1Slice.bestSize ?? '—'}× `
+      + `→ ${confirmedQ1Slice.targetUnits}u (${confirmedQ1Slice.wallets.join('+') || '—'})`
+    );
   }
   if (confirmedUnoppRescued) {
     changes.push(
@@ -4444,6 +4567,13 @@ async function main() {
   // or if walletProfilesMeta says Firestore is newer (failed git push).
   const { map: walletProfiles, source: profilesSource } = await loadWalletProfilesMap(db);
   console.log(`Loaded ${walletProfiles.size} sharpWalletProfiles (source=${profilesSource})`);
+  FLAT_DOLLAR_Q_BY_SPORT = buildFlatDollarQBySport(walletProfiles);
+  {
+    const q1n = [...FLAT_DOLLAR_Q_BY_SPORT.entries()]
+      .map(([sp, m]) => `${sp}:${[...m.values()].filter((q) => q === 1).length}`)
+      .join(' ');
+    console.log(`flatDollar Q by sport (Q1 counts): ${q1n || '—'}`);
+  }
   const sportWinnerBoards = buildSportWinnerBoards(walletProfiles);
   console.log(`Sport winner boards: ${sportWinnerBoards.size} sports (Top-${WINNER_ALIGN_TOP_N} + elite≥${WINNER_ALIGN_ELITE_WR})`);
 
@@ -4519,6 +4649,15 @@ async function main() {
     );
   } else {
     console.log(`FOOLS mute: not live before ${FOOLS_GOLD_MUTE_FROM} (TARGET_DATE=${TARGET_DATE})`);
+  }
+  if (isConfirmedQ1PromoteLive(TARGET_DATE)) {
+    console.log(
+      `CONFIRMED-Q1 promote LIVE: CONFIRMED × flatDollar Q1 × size≥${CONFIRMED_Q1_MIN_SIZE}× `
+      + `→ ${CONFIRMED_Q1_UNITS}u (${CONFIRMED_Q1_PRESS_UNITS}u if size≥1×) · opposed OK`
+      + ` · from ${CONFIRMED_Q1_FROM} · hard floor after mutes`,
+    );
+  } else {
+    console.log(`CONFIRMED-Q1 promote: not live before ${CONFIRMED_Q1_FROM} (TARGET_DATE=${TARGET_DATE})`);
   }
   if (isConfirmedUnoppPromoteLive(TARGET_DATE)) {
     console.log(

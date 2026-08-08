@@ -11,7 +11,7 @@ _Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`SKILL_FEATURES.md`](./SKILL_
 | Layer | Role | Live rule |
 |-------|------|-----------|
 | **AGS v12** | Side select | `score > 0` or no stake |
-| **Paths A–D + CONFIRMED-UNOPP** | Who + base u | HC → RANK → SHARP/LEAN → **CONFIRMED-UNOPP @ 1u** → DISSENT |
+| **Paths A–D + Q1 / UNOPP** | Who + base u | HC → RANK → SHARP/LEAN → **CONFIRMED-Q1 @ 2–3u** → **CONFIRMED-UNOPP @ 1u** → DISSENT |
 | **TOP NEITHER mute** | Hard kill | TOP/TOP+ with E&lt;5 **and** net&lt;5 → **0u** |
 | **FadeTop** | Toxic AG | top AG WR ≥ 60 beating FOR → **0u** |
 | **EDGE band size** | A/C dial | E&lt;7 → **0u** · 7–10 → ×**0.75** · ≥10 → ×**1.25** · **RANK/DISSENT/CONFIRMED-UNOPP exempt** |
@@ -39,9 +39,11 @@ Skill metrics (EDGE / netCLV / Tape / bucket) stamp every pre–T-15 cycle — s
 
 3. If still 0u → Path B RANK rescue   → RANK @ 4u
 4. If still 0u → Path C SHARP rescue  → SHARP @ 3u (BOTH) / SHARP-LEAN @ 1.5u (ONE)
-5. If still 0u → CONFIRMED-UNOPP (2026-08-08+) → 1u
+5. CONFIRMED-Q1 (2026-08-08+) → floor **2u** (3u if size≥1×)
+   └─ ≥1 FOR: CONFIRMED × flatDollar Q1 × size≥0.5 · **opposed OK** · hard floor after mutes
+6. If still 0u → CONFIRMED-UNOPP → 1u
    └─ ≥1 live CONFIRMED FOR sizeRatio ≥ 0.5 · zero CONFIRMED on AG
-6. If still 0u → Path D DISSENT       → DISSENT @ 1u  (MLB only)
+7. If still 0u → Path D DISSENT       → DISSENT @ 1u  (MLB only)
 
 7. Winner-align fadeTop≥60 mute       → 0u if toxic AG top WR
    └─ EDGE size / WINNER rescue / Policy E  → FROZEN (no unit effect)

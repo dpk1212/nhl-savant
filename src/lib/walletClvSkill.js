@@ -484,6 +484,7 @@ export const QCONV_MUTE_TIERS = new Set([
   'SUPER', 'TOP', 'TOP+', 'MINI', 'MINI-', 'CONFIRMED',
   'RANK', 'SHARP', 'SHARP-PRIME', 'SHARP-LEAN',
   'CONFIRMED-UNOPP',
+  // CONFIRMED-Q1 intentionally omitted — hard floor restores after mutes
 ]);
 
 export function isQConvMuteLive(pickDate) {
@@ -620,6 +621,7 @@ export const FOOLS_GOLD_MUTE_TIERS = new Set([
   'SUPER', 'TOP', 'TOP+', 'MINI', 'MINI-', 'CONFIRMED',
   'RANK', 'SHARP', 'SHARP-PRIME', 'SHARP-LEAN',
   'CONFIRMED-UNOPP',
+  // CONFIRMED-Q1 omitted — Q1×sized floor is CONFIRMED-led by construction
 ]);
 
 export function isFoolsGoldMuteLive(pickDate) {
@@ -727,6 +729,123 @@ export function computeConfirmedUnoppSized(
     forSized,
     agConfirmed,
     bestSize: bestSize != null ? +bestSize.toFixed(3) : null,
+    wallets,
+  };
+}
+
+// ── CONFIRMED-Q1 promote (CONFIRMED × flatDollar Q1 × size ≥ 0.5) ──────────
+// As-of research: ~62% WR / +29% $ROI on wallet legs (opposed OK). Never leave
+// at 0u; size up vs CONFIRMED-UNOPP (2u base · 3u when size≥1×).
+export const CONFIRMED_Q1_FROM = '2026-08-08';
+export const CONFIRMED_Q1_MIN_SIZE = 0.5;
+export const CONFIRMED_Q1_UNITS = 2;
+/** Lean/full/press conviction bump (sizeRatio ≥ 1×). */
+export const CONFIRMED_Q1_PRESS_MIN_SIZE = 1.0;
+export const CONFIRMED_Q1_PRESS_UNITS = 3;
+
+export function isConfirmedQ1PromoteLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= CONFIRMED_Q1_FROM;
+}
+
+/**
+ * flatDollar Q among CONFIRMED-in-sport from live walletProfiles.
+ * Score = z(flatRoi) + z(dollarRoi); need ≥4 scored wallets in sport.
+ * @returns {Map<string, Map<string, number>>} sport → walletShort → Q (1..4)
+ */
+export function buildFlatDollarQBySport(walletProfiles) {
+  const bySport = new Map(); // sport → [[wallet, flat, dol], ...]
+  if (!walletProfiles || typeof walletProfiles.forEach !== 'function') return new Map();
+  for (const [id, prof] of walletProfiles) {
+    const short = shortWalletId(id);
+    if (!short || !prof?.bySport) continue;
+    for (const [sport, rec] of Object.entries(prof.bySport)) {
+      if (rec?.whitelistTier !== 'CONFIRMED') continue;
+      const flat = Number(rec.picks?.flatRoi ?? rec.positions?.positionFlatRoi);
+      const dol = Number(rec.positions?.dollarRoi);
+      if (!Number.isFinite(flat) || !Number.isFinite(dol)) continue;
+      if (!bySport.has(sport)) bySport.set(sport, []);
+      bySport.get(sport).push({ wallet: short, flat, dol });
+    }
+  }
+  const out = new Map();
+  for (const [sport, rows] of bySport) {
+    if (rows.length < 4) {
+      out.set(sport, new Map());
+      continue;
+    }
+    const flats = rows.map((r) => r.flat);
+    const dols = rows.map((r) => r.dol);
+    const mkz = (xs) => {
+      const m = xs.reduce((a, b) => a + b, 0) / xs.length;
+      const sd = Math.sqrt(xs.reduce((a, b) => a + (b - m) ** 2, 0) / xs.length) || 1;
+      return (x) => (x - m) / sd;
+    };
+    const zf = mkz(flats);
+    const zd = mkz(dols);
+    const scored = rows
+      .map((r) => ({ w: r.wallet, s: zf(r.flat) + zd(r.dol) }))
+      .sort((a, b) => b.s - a.s);
+    const qMap = new Map();
+    const n = scored.length;
+    scored.forEach((row, i) => {
+      qMap.set(row.w, Math.min(4, Math.floor((i / n) * 4) + 1));
+    });
+    out.set(sport, qMap);
+  }
+  return out;
+}
+
+/**
+ * ≥1 FOR wallet: CONFIRMED-in-sport × flatDollar Q1 × sizeRatio ≥ minSize.
+ * Opposition does NOT disqualify.
+ * @returns {{ qualifies: boolean, forQ1Sized: number, bestSize: number|null, targetUnits: number, wallets: string[] }}
+ */
+export function computeConfirmedQ1Sized(
+  walletDetails,
+  mySide,
+  sport,
+  walletProfiles,
+  qBySport,
+  {
+    minSize = CONFIRMED_Q1_MIN_SIZE,
+    baseUnits = CONFIRMED_Q1_UNITS,
+    pressMinSize = CONFIRMED_Q1_PRESS_MIN_SIZE,
+    pressUnits = CONFIRMED_Q1_PRESS_UNITS,
+  } = {},
+) {
+  const empty = {
+    qualifies: false, forQ1Sized: 0, bestSize: null, targetUnits: baseUnits, wallets: [],
+  };
+  if (!Array.isArray(walletDetails) || !mySide || !sport || !walletProfiles) return empty;
+  const qMap = qBySport?.get?.(sport) || qBySport?.get?.(String(sport).toUpperCase()) || new Map();
+  const seen = new Set();
+  let forQ1Sized = 0;
+  let bestSize = null;
+  const wallets = [];
+  for (const w of walletDetails) {
+    if (!w?.side || w.side !== mySide) continue;
+    const s = shortWalletId(w.walletShort || w.wallet);
+    if (!s || seen.has(s)) continue;
+    seen.add(s);
+    const key = String(s).toLowerCase();
+    const profile = walletProfiles.get(key)
+      || walletProfiles.get(key.toUpperCase())
+      || walletProfiles.get(s);
+    if (profile?.bySport?.[sport]?.whitelistTier !== 'CONFIRMED') continue;
+    if (qMap.get(s) !== 1 && qMap.get(key) !== 1) continue;
+    const sr = Number(w.sizeRatio);
+    if (!(Number.isFinite(sr) && sr >= minSize)) continue;
+    forQ1Sized++;
+    wallets.push(s);
+    if (bestSize == null || sr > bestSize) bestSize = sr;
+  }
+  if (forQ1Sized < 1) return empty;
+  const targetUnits = (bestSize != null && bestSize >= pressMinSize) ? pressUnits : baseUnits;
+  return {
+    qualifies: true,
+    forQ1Sized,
+    bestSize: bestSize != null ? +bestSize.toFixed(3) : null,
+    targetUnits,
     wallets,
   };
 }
