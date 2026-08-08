@@ -1572,7 +1572,8 @@ function scrubNonFullGameTotals(groups, gameMeta) {
   for (const [gk, list] of groups.entries()) {
     const [sport, gameKey, mkt] = gk.split('|');
     if (mkt !== 'TOTAL') continue;
-    const mainLine = gameMeta.get(`${sport}|${gameKey}`)?.polyTotalLine ?? null;
+    const gm = gameMeta.get(`${sport}|${gameKey}`);
+    const mainLine = mainTotalLine(gm) ?? gm?.polyTotalLine ?? null;
     const kept = [];
     for (const p of list) {
       const gate = acceptFullGameTotalPosition({
@@ -1663,6 +1664,25 @@ function loadGameMetadata() {
           };
         }
         if (g.fairSpreadBook) cur.fairSpreadBook = g.fairSpreadBook;
+        // Main full-game total + odds (sportsbook). Ticket instrument for
+        // TOTAL locks — never a Polymarket alt (7.5 vs 8.5) wallet vote.
+        if (g.totalCurrent) {
+          cur.totalCurrent = {
+            line: g.totalCurrent.line,
+            overOdds: g.totalCurrent.overOdds,
+            underOdds: g.totalCurrent.underOdds,
+          };
+        }
+        if (g.totalOpener) {
+          cur.totalOpener = {
+            line: g.totalOpener.line,
+            overOdds: g.totalOpener.overOdds,
+            underOdds: g.totalOpener.underOdds,
+          };
+        }
+        if (g.bestOver) cur.bestOver = g.bestOver;
+        if (g.bestUnder) cur.bestUnder = g.bestUnder;
+        if (g.fairTotalBook) cur.fairTotalBook = g.fairTotalBook;
         meta.set(key, cur);
       }
     }
@@ -1670,6 +1690,35 @@ function loadGameMetadata() {
     console.warn('[meta] pinnacle_history.json unreadable:', e.message);
   }
   return meta;
+}
+
+/** Sportsbook main FG total line (Pinnacle/Odds API), else Polymarket main O/U. */
+function mainTotalLine(meta) {
+  const pinn = meta?.totalCurrent?.line ?? meta?.totalOpener?.line;
+  if (Number.isFinite(pinn) && pinn >= 1.5) return pinn;
+  if (Number.isFinite(meta?.polyTotalLine) && meta.polyTotalLine >= 1.5) return meta.polyTotalLine;
+  return null;
+}
+
+/**
+ * Odds for the MAIN total line only. Prefer best retail when its point
+ * matches the main line; else fair-book over/under on that line.
+ * Never invent -110 and never use an alt-line book's price.
+ */
+function mainTotalOdds(meta, side) {
+  const line = mainTotalLine(meta);
+  if (!Number.isFinite(line)) return null;
+  const best = side === 'under' ? meta?.bestUnder : meta?.bestOver;
+  if (best && Number.isFinite(best.odds) && Number.isFinite(best.line)
+      && Math.abs(best.line - line) <= 0.051) {
+    return best.odds;
+  }
+  const fair = meta?.totalCurrent || meta?.totalOpener;
+  if (fair && Number.isFinite(fair.line) && Math.abs(fair.line - line) <= 0.051) {
+    const o = side === 'under' ? fair.underOdds : fair.overOdds;
+    if (Number.isFinite(o)) return o;
+  }
+  return null;
 }
 
 // Mode-of value across positions on a side. Used to compute the consensus
@@ -2052,11 +2101,11 @@ async function createMissingLockedPicks({
           : (meta.spreadCurrent?.awayOdds ?? meta.spreadOpener?.awayOdds)) ?? null;
         line = pinnLine ?? consensusLine(positions, side, sport, 'SPREAD') ?? null;
       } else if (marketType === 'TOTAL') {
-        odds = -110;
-        // Wallet consensus first; polyTotalLine is the event's main FG O/U
-        // (fetch already excludes F5). Never lock a bare Over/Under.
-        line = consensusLine(positions, side, sport, 'TOTAL')
-          ?? (Number.isFinite(meta.polyTotalLine) ? meta.polyTotalLine : null);
+        // Ticket = sportsbook MAIN line + matching odds (same rule as spreads).
+        // Do NOT use Polymarket wallet entryLine votes — those mix 7.5 / 8.5
+        // alt markets and burned "Over 8.5 @ -110" while the main was 7.5.
+        line = mainTotalLine(meta);
+        odds = mainTotalOdds(meta, side);
       }
       // TOTAL without a usable line = F5/alt contamination or missing poly —
       // do not create a staked pick (DET@SEA bare "Over -110" 2026-08-06).
@@ -2259,7 +2308,7 @@ async function createMissingLockedPicks({
         peakUnitsApplied = qConvPolicyCreate.units;
       }
 
-      // FOOLS clamp — final dial after qConv (best FOR = FLAT → [1u, 2u]).
+      // FOOLS clamp — final dial after qConv (best FOR = FLAT → 1u).
       const bestForCreate = (createV121Eligible && Array.isArray(walletDetails) && walletDetails.length > 0)
         ? bestProvenForSide(walletDetails, side, sport, walletProfiles)
         : { tier: null, nForProven: 0, flatRoi: null, walletShort: null };
@@ -3367,7 +3416,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   }
 
   // ─── FOOLS clamp (final dial after qConv) ─────────────────────────────
-  // Best proven FOR = FLAT → stake clamped to [1u, 2u] (0u mute rolled back).
+  // Best proven FOR = FLAT → stake clamped to 1u (0u mute / [1u, 2u] tightened).
   // Manual stake exempt. DISSENT / non-A/B/C tiers exempt.
   const bestForLive = (v121Eligible && Array.isArray(wd) && wd.length > 0)
     ? bestProvenForSide(wd, side, pick.sport, walletProfiles)
@@ -3444,7 +3493,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       }
     }
   }
-  // CLV/tape/qConv cancel → MUTED. FOOLS is a clamp now (stays ACTIVE with 1–2u).
+  // CLV/tape/qConv cancel → MUTED. FOOLS is a clamp now (stays ACTIVE at 1u).
   const qConvMuted = qConvPolicy?.action === 'MUTE'
     && Number.isFinite(qConvPolicy.unitsPrePolicy)
     && qConvPolicy.unitsPrePolicy > 0;
@@ -3972,7 +4021,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         ? (meta?.spreadCurrent?.homeOdds ?? meta?.spreadOpener?.homeOdds)
         : (meta?.spreadCurrent?.awayOdds ?? meta?.spreadOpener?.awayOdds))
       : mkt === 'TOTAL'
-        ? null
+        ? mainTotalOdds(meta, side)
         : (side === 'home' ? meta?.mlOdds?.home
           : side === 'draw' ? meta?.mlOdds?.draw
           : meta?.mlOdds?.away);
@@ -4006,34 +4055,83 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       }
     }
 
-    // TOTAL line backfill — bare "Over"/"Under" when F5 was scrubbed or
-    // create ran without consensus. Prefer poly main FG line.
+    // TOTAL line/odds — always the sportsbook MAIN instrument.
+    // Repair missing OR wrong alt lines (wallet-voted 8.5 while main is 7.5)
+    // and the hardcoded -110 create default, while still PENDING / pre-lock.
     if (mkt === 'TOTAL' && pick.status !== 'COMPLETED') {
-      const polyLine = Number.isFinite(meta?.polyTotalLine) ? meta.polyTotalLine : null;
-      const consLine = consensusLine(group || [], side, sport, 'TOTAL');
-      const fillLine = consLine ?? polyLine;
+      const fillLine = mainTotalLine(meta);
+      const fillOdds = mainTotalOdds(meta, side);
+      const fairLabelTot = fairBookLabel(meta?.fairTotalBook || meta?.fairBook);
       if (Number.isFinite(fillLine) && isPlausibleLine(fillLine, sport, 'TOTAL')) {
-        const lockLineMissing = !Number.isFinite(sd.lock?.line);
-        const peakLineMissing = !Number.isFinite(sd.peak?.line);
-        if (lockLineMissing || peakLineMissing) {
-          const dir = side === 'under' ? 'Under' : 'Over';
-          const teamLabel = `${dir} ${fillLine}`;
-          if (lockLineMissing) {
-            patch.lock = {
-              ...(patch.lock || {}),
-              line: fillLine,
-              team: teamLabel,
-            };
+        const dir = side === 'under' ? 'Under' : 'Over';
+        const teamLabel = `${dir} ${fillLine}`;
+        const lockLn = sd.lock?.line;
+        const peakLn = sd.peak?.line;
+        const lockWrong = Number.isFinite(lockLn) && Math.abs(lockLn - fillLine) > 0.051;
+        const peakWrong = Number.isFinite(peakLn) && Math.abs(peakLn - fillLine) > 0.051;
+        const lockLineMissing = !Number.isFinite(lockLn);
+        const peakLineMissing = !Number.isFinite(peakLn);
+        if (lockLineMissing || lockWrong) {
+          patch.lock = {
+            ...(patch.lock || {}),
+            line: fillLine,
+            team: teamLabel,
+            ...(Number.isFinite(fillOdds) ? {
+              odds: fillOdds,
+              pinnacleOdds: (side === 'under'
+                ? (meta?.totalCurrent?.underOdds ?? meta?.totalOpener?.underOdds)
+                : (meta?.totalCurrent?.overOdds ?? meta?.totalOpener?.overOdds)) ?? fillOdds,
+              book: (meta?.bestOver || meta?.bestUnder)?.book || fairLabelTot,
+            } : {}),
+          };
+          changes.push(lockWrong
+            ? `totalLine repair: ${lockLn} → ${fillLine} (main)`
+            : `totalLine backfill: ${fillLine}`);
+        }
+        if (peakLineMissing || peakWrong) {
+          patch.peak = {
+            ...(patch.peak || {}),
+            line: fillLine,
+            team: teamLabel,
+            updatedAt: now,
+            ...(Number.isFinite(fillOdds) ? {
+              odds: fillOdds,
+              pinnacleOdds: (side === 'under'
+                ? (meta?.totalCurrent?.underOdds ?? meta?.totalOpener?.underOdds)
+                : (meta?.totalCurrent?.overOdds ?? meta?.totalOpener?.overOdds)) ?? fillOdds,
+              book: (meta?.bestOver || meta?.bestUnder)?.book || fairLabelTot,
+            } : {}),
+          };
+          if (!lockWrong && !lockLineMissing) {
+            changes.push(peakWrong
+              ? `totalPeakLine repair: ${peakLn} → ${fillLine} (main)`
+              : `totalPeakLine backfill: ${fillLine}`);
           }
-          if (peakLineMissing) {
-            patch.peak = {
-              ...(patch.peak || {}),
-              line: fillLine,
-              team: teamLabel,
-              updatedAt: now,
-            };
-          }
-          changes.push(`totalLine backfill: ${fillLine}`);
+        }
+        // Odds-only repair when line already matches but create burned -110.
+        const lockOdds = Number.isFinite(sd.lock?.odds) ? sd.lock.odds : null;
+        const peakOdds = Number.isFinite(sd.peak?.odds) ? sd.peak.odds : null;
+        if (Number.isFinite(fillOdds) && !lockWrong && !lockLineMissing
+            && (lockOdds == null || lockOdds === -110 || lockOdds === 0)) {
+          patch.lock = {
+            ...(patch.lock || {}),
+            odds: fillOdds,
+            pinnacleOdds: (side === 'under'
+              ? meta?.totalCurrent?.underOdds
+              : meta?.totalCurrent?.overOdds) ?? fillOdds,
+          };
+          changes.push(`totalOdds repair: ${lockOdds} → ${fillOdds} (main)`);
+        }
+        if (Number.isFinite(fillOdds) && !peakWrong && !peakLineMissing
+            && (peakOdds == null || peakOdds === -110 || peakOdds === 0)) {
+          patch.peak = {
+            ...(patch.peak || {}),
+            odds: fillOdds,
+            pinnacleOdds: (side === 'under'
+              ? meta?.totalCurrent?.underOdds
+              : meta?.totalCurrent?.overOdds) ?? fillOdds,
+            updatedAt: now,
+          };
         }
       }
     }
@@ -4332,7 +4430,7 @@ async function main() {
 
   if (isFoolsGoldMuteLive(TARGET_DATE)) {
     console.log(
-      `FOOLS clamp LIVE: best proven FOR=FLAT → [1u, 2u] (0u mute rolled back)`
+      `FOOLS clamp LIVE: best proven FOR=FLAT → 1u (tightened from [1u, 2u])`
       + ` · from ${FOOLS_GOLD_MUTE_FROM} · Path A/B/C`,
     );
   } else {

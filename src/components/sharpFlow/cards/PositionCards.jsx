@@ -2399,6 +2399,18 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
             <span style={{ color: C.textFaint, marginLeft: 8 }}>{f.gameTime}</span>
           </span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+            {(f.hasEliteDot || f.eliteDotOnSide > 0) && (
+              <span
+                title="A FOR wallet is in the ELITE zone — high beat-close % and lifetime ROI"
+                style={{
+                  fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.1em',
+                  padding: '3px 7px', borderRadius: 6, color: '#042f1e',
+                  background: B.profit, border: `1px solid ${B.profit}`,
+                }}
+              >
+                ELITE
+              </span>
+            )}
             {!tracked && !graded && tierLabel && (
               <span style={{
                 fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.1em',
@@ -2498,27 +2510,46 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
 
   // Expanded = V27 clarity story (map → lead wallet → other side → price).
   // Collapsed chrome above is unchanged.
-  const statusSlot = tracked ? (
+  const elitePill = (f.hasEliteDot || f.eliteDotOnSide > 0) ? (
     <span
-      title={muteTip}
+      title="A FOR wallet is in the ELITE zone — high beat-close % and lifetime ROI"
       style={{
-        fontSize: 8, fontWeight: 800, letterSpacing: '0.08em',
-        padding: '4px 8px', borderRadius: 6, color: '#aeb8cb',
-        background: 'rgba(139,150,171,0.10)', border: '1px solid rgba(139,150,171,0.26)',
+        fontSize: 8, fontWeight: 800, letterSpacing: '0.1em',
+        padding: '4px 8px', borderRadius: 5, color: '#042f1e',
+        background: B.profit, border: `1px solid ${B.profit}`,
       }}
     >
-      TRACKED
+      ELITE
     </span>
+  ) : null;
+  const statusSlot = tracked ? (
+    <>
+      {elitePill}
+      <span
+        title={muteTip}
+        style={{
+          fontSize: 8, fontWeight: 800, letterSpacing: '0.08em',
+          padding: '4px 8px', borderRadius: 6, color: '#aeb8cb',
+          background: 'rgba(139,150,171,0.10)', border: '1px solid rgba(139,150,171,0.26)',
+        }}
+      >
+        TRACKED
+      </span>
+    </>
   ) : graded ? (
-    <GradedResultPill
-      outcome={f.outcome}
-      profit={f.profit}
-      units={f.units}
-      toWin={f.toWin}
-      compact
-    />
+    <>
+      {elitePill}
+      <GradedResultPill
+        outcome={f.outcome}
+        profit={f.profit}
+        units={f.units}
+        toWin={f.toWin}
+        compact
+      />
+    </>
   ) : (
     <>
+      {elitePill}
       {tierLabel && (
         <span style={{
           fontSize: 8, fontWeight: 800, letterSpacing: '0.12em',

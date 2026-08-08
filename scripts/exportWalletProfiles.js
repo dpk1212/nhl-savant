@@ -89,6 +89,7 @@ import {
   WALLET_PROFILES_META_COLLECTION,
   WALLET_PROFILES_META_DOC_ID,
 } from './lib/loadWalletProfiles.js';
+import { buildSizeRatioBands } from '../src/lib/sizeRatioBands.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -228,6 +229,8 @@ async function loadPositions() {
       settledPnl,
       flat,
       avgPrice: d.avgPrice,
+      // Aggregate WR still treats non-profit as loss (legacy). Size-band builder
+      // excludes ~0 settledPnl pushes via settledPnl when present.
       won: settledPnl > 0 ? 1 : 0,
       sportROI: d.sportROI,
       sportPnlTotal: d.sportPnlTotal,
@@ -405,7 +408,27 @@ function classifyWhitelistTier(picksInSport, positionsInSport) {
 }
 
 // ── Build per-wallet profile ───────────────────────────────────────
-function buildProfile(walletShort, pickBets, posBets, clvLedger) {
+function loadAvgSportBetByShort() {
+  // sports_sharps.json — same cross-sport usual $ the live card uses.
+  const path = join(__dirname, '..', 'public', 'sports_sharps.json');
+  const out = new Map();
+  if (!existsSync(path)) return out;
+  try {
+    const raw = JSON.parse(readFileSync(path, 'utf8'));
+    for (const [addr, row] of Object.entries(raw)) {
+      if (!addr || addr.startsWith('_') || !row || typeof row !== 'object') continue;
+      const avg = Number(row.avgSportBet);
+      if (!Number.isFinite(avg) || avg <= 0) continue;
+      const short = shortWalletId(addr);
+      if (short) out.set(short, avg);
+    }
+  } catch (e) {
+    console.warn('[sizeRatioBands] sports_sharps unreadable:', e.message);
+  }
+  return out;
+}
+
+function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = null) {
   const latestPick = pickBets.length ? pickBets.slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0] : null;
   const latestPos = posBets.length ? posBets.slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0] : null;
 
@@ -482,6 +505,22 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger) {
     medianInvested: shadowPosBets.length ? Math.round(median(shadowPosBets.map(b => b.invested))) : null,
   } : null;
 
+  // Size-vs-usual WR bands (invested / avgSportBet). Same denominator as the
+  // locked-card "Size vs usual" strip. Positions first; tracked picks second.
+  let sizeRatioBands = null;
+  if (Number.isFinite(avgSportBet) && avgSportBet > 0) {
+    const posBands = buildSizeRatioBands(posBets, avgSportBet);
+    const pickBands = buildSizeRatioBands(pickBets, avgSportBet);
+    if (posBands || pickBands) {
+      sizeRatioBands = {
+        usual: Math.round(avgSportBet),
+        minN: posBands?.minN ?? pickBands?.minN ?? 30,
+        positions: posBands,
+        picks: pickBands,
+      };
+    }
+  }
+
   // Causal %+CLV skill — % of prior graded positions that beat the close.
   // Surfaced on live cards as "beats close X%" / BEATS THE CLOSE battle row,
   // and is the same input the TAPE cron averages into netCLV.
@@ -553,6 +592,7 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger) {
     positions,           // ALL graded positions (VAULT + SHADOW) — feeds dollarRoi / WR
     sizeSignal,          // VAULT-only conviction bucketing
     shadowSignal,        // SHADOW-only tracking aggregate (may be null)
+    sizeRatioBands,      // WR by size-vs-usual (avgSportBet); null when usual unknown
     clvSkill,            // TAPE input: causal %+CLV (beats the close); null pctPos when n < minN
     bySport,
     byMarket,
@@ -580,6 +620,8 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger) {
   const vaultCt = positions.filter(p => p.vaultQualified).length;
   const shadowCt = positions.length - vaultCt;
   console.log(`  → ${positions.length} graded positions (VAULT=${vaultCt}, SHADOW=${shadowCt})`);
+  const avgByShort = loadAvgSportBetByShort();
+  console.log(`  → avgSportBet for ${avgByShort.size} wallets (size-ratio bands)`);
 
   // Shared CLV ledger — built once (was rebuilt per-wallet inside computeClvSkill).
   // Also materialised to clvSkillLedger/current so syncPickState can load 1 doc
@@ -598,7 +640,9 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger) {
   for (const walletShort of allWallets) {
     const pickBets = walletBets.filter(b => b.wallet === walletShort);
     const posBets = positions.filter(p => p.walletShort === walletShort);
-    profiles[walletShort] = buildProfile(walletShort, pickBets, posBets, clvLedger);
+    profiles[walletShort] = buildProfile(
+      walletShort, pickBets, posBets, clvLedger, avgByShort.get(walletShort) ?? null,
+    );
   }
 
   // CLV skill coverage — must stay high; this feeds TAPE + live cards.
@@ -758,6 +802,7 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger) {
   out.push('  "positions": { "n": 15, "wins": 8, "wr": 53.3, "invested": 944079, "settledPnl": 48627, "dollarRoi": 5.2 },');
   out.push('  "sizeSignal":  { "medianInvested": 42000, "routine": {…}, "above": {…}, "wayAbove": {…} },  // VAULT-only');
   out.push('  "shadowSignal":{ "n": 7, "dollarRoi": -3.1, "medianInvested": 4200 },  // SHADOW-only (may be null)');
+  out.push('  "sizeRatioBands": { "usual": 3300, "positions": { bands: { light|lean|full|press } }, "picks": {…} },');
   out.push('  "latest": { "walletBase": 77.8, "roiNorm": 67.8, "lifetimeRoi": 6.3, "rank": 34 },');
   out.push('  "bySport": { "MLB": {…}, "NBA": {…}, "NHL": {…} },');
   out.push('  "byMarket": { "ML": {…}, "SPREAD": {…}, "TOTAL": {…} },');

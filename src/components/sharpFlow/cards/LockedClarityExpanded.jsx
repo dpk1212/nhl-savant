@@ -5,6 +5,13 @@
  */
 import { useMemo, useRef, useState } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
+import { matchSizeRatioBand } from '../../../lib/sizeRatioBands.js';
+import {
+  ELITE_ZONE_CLV,
+  ELITE_ZONE_ROI,
+  isEliteZoneWallet,
+  walletRoiForPlot,
+} from './mapPositionCard.js';
 
 const B = {
   gold: '#D4AF37',
@@ -83,8 +90,8 @@ function bubbleStyle(p) {
   return { fill: 'rgba(139,164,200,0.32)', stroke: BLUE, dash: '2.5 2', text: '#d5e0f0' };
 }
 
-const MAP_XB = 55;
-const MAP_YB = 0;
+const MAP_XB = ELITE_ZONE_CLV;
+const MAP_YB = ELITE_ZONE_ROI;
 
 /**
  * Keep board dots stable while the expanded card is open.
@@ -128,13 +135,16 @@ function WalletMap({ wallets, selected, onSelect, gid }) {
     .filter((p) => p && (p.invested || 0) > 0 && p.short)
     .map((p) => {
       const hasClv = Number.isFinite(p.priorClvPct);
-      const hasRoi = Number.isFinite(p.roi) || Number.isFinite(p.dollarRoi);
+      const roi = walletRoiForPlot(p);
+      const hasRoi = Number.isFinite(roi);
       const plotIncomplete = !hasClv || !hasRoi;
+      const eliteZone = !plotIncomplete && (p.eliteZone === true || isEliteZoneWallet(p));
       return {
         ...p,
         plotIncomplete,
+        eliteZone,
         plotClv: hasClv ? p.priorClvPct : MAP_XB,
-        plotRoi: hasRoi ? (Number.isFinite(p.roi) ? p.roi : p.dollarRoi) : MAP_YB,
+        plotRoi: hasRoi ? roi : MAP_YB,
       };
     });
   if (plottable.length < 1) {
@@ -310,6 +320,9 @@ function WalletMap({ wallets, selected, onSelect, gid }) {
             <circle cx={cx} cy={cy} r={Math.max(r + 8, 16)} fill="transparent" />
             {sel && (
               <circle cx={cx} cy={cy} r={r + 6} fill="none" stroke={GOLD_HI} strokeWidth={1.3} className="lc-ring" />
+            )}
+            {!sel && p.eliteZone && p.side === 'ours' && (
+              <circle cx={cx} cy={cy} r={r + 5} fill="none" stroke={GREEN} strokeWidth={1.4} opacity={0.85} className="lc-ring" />
             )}
             <circle
               cx={cx} cy={cy} r={r}
@@ -636,11 +649,17 @@ function MarketPriceBoard({
   journey, fair, clvPct, gid, gotOdds,
   bestOdds, bestBook, books, ourLabel, oppLabel, oppBestOdds,
   updatedAgoSec, fairIsNoVig = false, evFlagged = null,
+  liveLabel = null, liveBestOdds = null, liveBestBook = null,
+  liveFair = null, liveFairIsNoVig = false,
 }) {
   const hasJourney = Array.isArray(journey) && journey.filter(Number.isFinite).length >= 2;
   const hasBest = Number.isFinite(bestOdds);
   const hasBooks = Array.isArray(books) && books.some((b) => Number.isFinite(b?.odds));
-  if (!hasJourney && !hasBest && !hasBooks && !Number.isFinite(gotOdds)) {
+  const hasLive = !!(liveLabel && (
+    Number.isFinite(liveBestOdds) || Number.isFinite(liveFair)
+    || (Number.isFinite(oppBestOdds) && oppLabel)
+  ));
+  if (!hasJourney && !hasBest && !hasBooks && !Number.isFinite(gotOdds) && !hasLive) {
     return (
       <div style={{
         marginTop: 8, padding: '11px 12px',
@@ -674,7 +693,7 @@ function MarketPriceBoard({
       borderTop: `1px solid ${LINE}`,
       fontFeatureSettings: "'tnum'",
     }}>
-      {/* Header */}
+      {/* Header — always the staked instrument */}
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
         marginBottom: 10, gap: 8,
@@ -701,10 +720,10 @@ function MarketPriceBoard({
         )}
       </div>
 
-      {/* Flagged price (pre T-15) — lock freezes later */}
+      {/* Flagged price — ticket odds only; best/fair must be same line */}
       <div style={{
         display: 'flex', flexWrap: 'wrap', alignItems: 'baseline',
-        gap: '2px 0', marginBottom: hasJourney ? 10 : 12,
+        gap: '2px 0', marginBottom: hasLive ? 8 : (hasJourney ? 10 : 12),
         lineHeight: 1.15,
       }}>
         <span style={{
@@ -725,7 +744,7 @@ function MarketPriceBoard({
             EV +{evFlagged.toFixed(1)}%
           </span>
         )}
-        {(hasBest || Number.isFinite(fair)) && (
+        {(hasBest || Number.isFinite(fair) || (Number.isFinite(oppBestOdds) && oppLabel && !hasLive)) && (
           <span style={{
             width: '100%', marginTop: 6,
             fontSize: 12, fontWeight: 550, color: C.textSec,
@@ -746,7 +765,7 @@ function MarketPriceBoard({
                 <span style={{ fontWeight: 650, color: GOLD }}>{fmtOdds(fair)}</span>
               </>
             )}
-            {Number.isFinite(oppBestOdds) && oppLabel && (
+            {Number.isFinite(oppBestOdds) && oppLabel && !hasLive && (
               <>
                 <Dot />
                 <span style={{ color: C.textFaint }}>{oppLabel} </span>
@@ -756,6 +775,40 @@ function MarketPriceBoard({
           </span>
         )}
       </div>
+
+      {/* Consensus moved — live prices on their own line, never mixed into ticket */}
+      {hasLive && (
+        <div style={{
+          marginBottom: hasJourney ? 10 : 12,
+          fontSize: 12, fontWeight: 550, color: C.textSec, lineHeight: 1.45,
+        }}>
+          <span style={{ color: C.textFaint }}>{liveLabel}</span>
+          {Number.isFinite(liveBestOdds) && (
+            <>
+              <Dot />
+              <span style={{ color: C.textFaint }}>best </span>
+              <span style={{ fontWeight: 700, color: C.text }}>{fmtOdds(liveBestOdds)}</span>
+              {liveBestBook && (
+                <span style={{ color: C.textFaint }}> {shortBook(liveBestBook)}</span>
+              )}
+            </>
+          )}
+          {Number.isFinite(liveFair) && (
+            <>
+              <Dot />
+              <span style={{ color: C.textFaint }}>{liveFairIsNoVig ? 'fair' : 'sharp'} </span>
+              <span style={{ fontWeight: 650, color: GOLD }}>{fmtOdds(liveFair)}</span>
+            </>
+          )}
+          {Number.isFinite(oppBestOdds) && oppLabel && (
+            <>
+              <Dot />
+              <span style={{ color: C.textFaint }}>{oppLabel} </span>
+              <span style={{ fontWeight: 600 }}>{fmtOdds(oppBestOdds)}</span>
+            </>
+          )}
+        </div>
+      )}
 
       {hasJourney && (
         <div style={{ marginBottom: bookRows.length ? 10 : 0 }}>
@@ -924,6 +977,9 @@ export default function LockedClarityExpanded({
   const secondaryUsd = all.filter((w) => w.side === 'ours' && !w.proven && w.skillEligible).reduce((s, w) => s + (w.invested || 0), 0);
   const againstUsd = all.filter((w) => w.side === 'against').reduce((s, w) => s + (w.invested || 0), 0);
   const oursUsd = provenUsd + secondaryUsd;
+  const eliteDotOnSide = all.filter((w) => w.side === 'ours' && (w.eliteZone === true || isEliteZoneWallet(w))).length;
+  // Prefer live board; fall back to stamped flag when map wallets aren't loaded yet.
+  const hasEliteDot = all.length > 0 ? eliteDotOnSide > 0 : !!f.hasEliteDot;
   const board = oursUsd + againstUsd || 1;
   const provenPct = Math.round((provenUsd / board) * 100);
   const secondaryPct = Math.round((secondaryUsd / board) * 100);
@@ -953,6 +1009,10 @@ export default function LockedClarityExpanded({
     ? selected.invested / sizeRatio
     : (Number.isFinite(selected?.avgSportBet) ? selected.avgSportBet : null);
   const sizeHot = Number.isFinite(sizeRatio) && sizeRatio >= 1.5;
+  // Prefer enriched sizeBand; re-match from bands on the wallet if first paint raced profiles.
+  const sizeBand = (selected?.sizeBand && Number.isFinite(selected.sizeBand.wr))
+    ? selected.sizeBand
+    : matchSizeRatioBand(sizeRatio, selected?.sizeRatioBands);
   const beatHot = Number.isFinite(selected?.priorClvPct) && selected.priorClvPct >= 55;
   const leadAccent = againstSel ? VS : vault ? GOLD : selected?.proven ? GREEN : BLUE;
 
@@ -1086,6 +1146,18 @@ export default function LockedClarityExpanded({
               {unopposed ? 'UNOPPOSED' : `${boardSharePct}% OF BOARD`}
             </span>
           )}
+          {hasEliteDot && (
+            <span
+              title="A FOR wallet is in the ELITE zone — high beat-close % and lifetime ROI"
+              style={{
+                fontSize: 9, fontWeight: 800, letterSpacing: '0.1em',
+                padding: '2px 7px', borderRadius: 4, color: '#042f1e',
+                background: GREEN, border: `1px solid ${GREEN}`,
+              }}
+            >
+              ELITE DOT{eliteDotOnSide > 1 ? ` · ${eliteDotOnSide}` : ''}
+            </span>
+          )}
           {f.lockedAt && (
             <span style={{ fontSize: 10, color: C.textFaint, marginLeft: 'auto' }}>{f.lockedAt}</span>
           )}
@@ -1149,6 +1221,11 @@ export default function LockedClarityExpanded({
                 </span>
               ) : (
                 <span style={{ color: GREEN, fontWeight: 700 }}>Unopposed</span>
+              )}
+              {hasEliteDot && (
+                <span style={{ color: GREEN, fontWeight: 700 }}>
+                  · Elite zone ({eliteDotOnSide || f.eliteDotOnSide || 1})
+                </span>
               )}
               <span style={{ color: C.textFaint }}>· size = $</span>
             </div>
@@ -1330,6 +1407,23 @@ export default function LockedClarityExpanded({
                           <span>usual {fmtMoney(sizeUsual)}</span>
                           <span style={{ color: sizeHot ? GREEN : C.textSec }}>this {fmtMoney(selected.invested)}</span>
                         </div>
+                        {sizeBand && Number.isFinite(sizeBand.wr) && (
+                          <div style={{
+                            marginTop: 7,
+                            fontSize: 11, fontWeight: 550, color: C.textSec,
+                            fontFeatureSettings: "'tnum'", lineHeight: 1.35,
+                          }}>
+                            <span style={{ color: C.text }}>
+                              {sizeBand.wr}% W
+                            </span>
+                            <span style={{ color: C.textMuted }}> at this size</span>
+                            {Number.isFinite(sizeBand.pct) && (
+                              <span style={{ color: C.textFaint }}>
+                                {' · '}{sizeBand.pct}% of bets
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </>
                     );
                   })()}
@@ -1498,6 +1592,11 @@ export default function LockedClarityExpanded({
           updatedAgoSec={f.oddsUpdatedAgoSec}
           fairIsNoVig={!!f.fairIsNoVig}
           evFlagged={f.evFlagged}
+          liveLabel={f.liveMarketLabel}
+          liveBestOdds={f.liveBestOdds}
+          liveBestBook={f.liveBestBook}
+          liveFair={f.liveFair}
+          liveFairIsNoVig={!!f.liveFairIsNoVig}
         />
       </div>
 

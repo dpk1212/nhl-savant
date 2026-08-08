@@ -4,6 +4,7 @@
  */
 import { AGS_V12_STAKE_TIER_META } from '../../../lib/ags.js';
 import { CLV_SKILL_MIN_N, EDGE_PRIOR_AG_WR, NET_CLV_PRIOR_AG } from '../../../lib/walletClvSkill.js';
+import { matchSizeRatioBand } from '../../../lib/sizeRatioBands.js';
 
 /** Same floor as EDGE (scripts/syncPickStateAuthoritative WINNER_ALIGN_MIN_N). */
 export const FEATURED_WR_MIN_N = 8;
@@ -25,6 +26,28 @@ export function netClvPctFromProfile(profile) {
   const n = Number(clv?.n) || 0;
   if (n < CLV_SKILL_MIN_N || !Number.isFinite(pct)) return null;
   return pct;
+}
+
+/**
+ * Chart ELITE quadrant floors — must match LockedClarityExpanded WalletMap
+ * crosshairs (beat-close % × lifetime ROI).
+ */
+export const ELITE_ZONE_CLV = 55;
+export const ELITE_ZONE_ROI = 0;
+
+/** ROI axis for the skill map (prefer unit ROI, fall back to $ ROI). */
+export function walletRoiForPlot(w) {
+  if (Number.isFinite(w?.roi)) return w.roi;
+  if (Number.isFinite(w?.dollarRoi)) return w.dollarRoi;
+  return null;
+}
+
+/** True when a wallet sits in the map ELITE zone (complete CLV + ROI only). */
+export function isEliteZoneWallet(w) {
+  const clv = Number(w?.priorClvPct);
+  const roi = walletRoiForPlot(w);
+  return Number.isFinite(clv) && Number.isFinite(roi)
+    && clv > ELITE_ZONE_CLV && roi > ELITE_ZONE_ROI;
 }
 
 /**
@@ -208,6 +231,9 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
       const avgSportBet = (Number.isFinite(sizeRatio) && sizeRatio > 0 && (w.invested || 0) > 0)
         ? Math.round((w.invested || 0) / sizeRatio)
         : (usualBet != null ? Math.round(usualBet) : null);
+      // WR at this size-vs-usual band (from profile.sizeRatioBands). Null when n thin.
+      // Keep raw bands on the wallet so the card can re-match if sizeRatio updates.
+      const sizeBand = matchSizeRatioBand(sizeRatio, profile?.sizeRatioBands);
       // Causal %+CLV ("beats the close"): profile.clvSkill from exportWalletProfiles
       // (same definition as the tape/netCLV cron). Never invent a default %.
       const profileClv = profile?.clvSkill?.pctPos;
@@ -260,6 +286,8 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
         dollarRoi,
         invested: w.invested || 0,
         avgSportBet,
+        sizeBand,
+        sizeRatioBands: profile?.sizeRatioBands || null,
         cents: w.cents ?? null,
         pnl: w.pnl || 0,
         priorClvPct,
@@ -273,10 +301,19 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
     );
 }
 
+/** Lines match within a half-point tick (totals/spreads). */
+function linesClose(a, b, eps = 0.051) {
+  return Number.isFinite(a) && Number.isFinite(b) && Math.abs(a - b) <= eps;
+}
+
 /**
  * Live market board for a locked pick from pinnacle_history.json.
  * Returns pinSeries (fair-book overtime), books[], bestOdds/bestBook, dual-side
  * labels for totals/ML. Fail-soft → empty board when history missing.
+ *
+ * Rule: ticket line and companion odds are one instrument. Never overwrite
+ * the staked total/spread with a live consensus line, and never pair
+ * flagged ticket odds with fair/best from a different line.
  */
 export function buildLockedMarketOdds(pick, pinnacleHistory) {
   const empty = {
@@ -289,16 +326,21 @@ export function buildLockedMarketOdds(pick, pinnacleHistory) {
     fairProb: null,
     fairIsNoVig: false,
     marketLine: null,
+    liveMarketLine: null,
+    lineMoved: false,
     ourLabel: null,
+    liveLabel: null,
     oppLabel: null,
     oppBestOdds: null,
     oppBestBook: null,
+    liveBestOdds: null,
+    liveBestBook: null,
+    liveFair: null,
+    liveFairIsNoVig: false,
     updatedAgoSec: null,
   };
   if (!pick || !pinnacleHistory) return empty;
   const sport = pick.sport;
-  const gameKey = pick.gameKey
-    || (typeof pick.key === 'string' ? pick.key.split(':')[0]?.split('_').slice(2).join('_') : null);
   // docId is date_sport_gameKey — prefer explicit gameKey
   let gk = pick.gameKey;
   if (!gk && typeof pick.key === 'string') {
@@ -332,30 +374,44 @@ export function buildLockedMarketOdds(pick, pinnacleHistory) {
   let fairNow = null;
   /** Both-side sharp prices for no-vig (our side first for sideIdx=0). */
   let fairPair = null; // number[]
-  let marketLine = Number.isFinite(pick.line) ? pick.line : null;
+  const stakedLine = Number.isFinite(pick.line) ? pick.line : null;
+  let marketLine = stakedLine;
+  let liveMarketLine = null;
+  let lineMoved = false;
   let ourLabel = null;
+  let liveLabel = null;
   let oppLabel = null;
   let oppBestOdds = null;
   let oppBestBook = null;
+  let liveBestOdds = null;
+  let liveBestBook = null;
+  let liveFairPair = null;
   let latestT = null;
 
   if (isTotal) {
     const hist = Array.isArray(pinnGame.totalHistory) ? pinnGame.totalHistory : [];
-    const pts = hist
+    const last = hist[hist.length - 1] || null;
+    // Journey / fair for the TICKET line only — never mix 8.5 odds with 7.5.
+    const stakeHist = stakedLine != null
+      ? hist.filter((h) => linesClose(h.line, stakedLine))
+      : hist;
+    const pts = stakeHist
       .map((h) => (sideKey === 'under' ? h.underOdds : h.overOdds))
       .filter(Number.isFinite);
     pinSeries = pts.length >= 2 ? pts : null;
-    const last = hist[hist.length - 1];
-    if (last) {
-      fairNow = sideKey === 'under' ? last.underOdds : last.overOdds;
-      const over = last.overOdds;
-      const under = last.underOdds;
+
+    const matchHist = stakedLine != null
+      ? [...hist].reverse().find((h) => linesClose(h.line, stakedLine))
+      : last;
+    if (matchHist) {
+      fairNow = sideKey === 'under' ? matchHist.underOdds : matchHist.overOdds;
+      const over = matchHist.overOdds;
+      const under = matchHist.underOdds;
       if (Number.isFinite(over) && Number.isFinite(under)) {
         fairPair = sideKey === 'under' ? [under, over] : [over, under];
       }
-      if (Number.isFinite(last.line)) marketLine = last.line;
-      if (Number.isFinite(last.t)) latestT = last.t;
-    } else if (pinnGame.totalCurrent) {
+      if (Number.isFinite(matchHist.t)) latestT = matchHist.t;
+    } else if (stakedLine == null && pinnGame.totalCurrent) {
       fairNow = sideKey === 'under'
         ? pinnGame.totalCurrent.underOdds
         : pinnGame.totalCurrent.overOdds;
@@ -364,25 +420,61 @@ export function buildLockedMarketOdds(pick, pinnacleHistory) {
       if (Number.isFinite(over) && Number.isFinite(under)) {
         fairPair = sideKey === 'under' ? [under, over] : [over, under];
       }
-      if (Number.isFinite(pinnGame.totalCurrent.line)) marketLine = pinnGame.totalCurrent.line;
     }
+
+    if (last && Number.isFinite(last.line)) {
+      liveMarketLine = last.line;
+      if (Number.isFinite(last.t) && latestT == null) latestT = last.t;
+    } else if (pinnGame.totalCurrent && Number.isFinite(pinnGame.totalCurrent.line)) {
+      liveMarketLine = pinnGame.totalCurrent.line;
+    }
+
     const best = sideKey === 'under' ? pinnGame.bestUnder : pinnGame.bestOver;
     const opp = sideKey === 'under' ? pinnGame.bestOver : pinnGame.bestUnder;
+    if (Number.isFinite(best?.line) && liveMarketLine == null) liveMarketLine = best.line;
+
+    lineMoved = stakedLine != null && liveMarketLine != null && !linesClose(stakedLine, liveMarketLine);
+    marketLine = stakedLine ?? liveMarketLine;
+
+    // Best retail only when it is the same line as the ticket.
     if (best && Number.isFinite(best.odds)) {
-      bestOdds = best.odds;
-      bestBook = best.book || null;
-      if (Number.isFinite(best.line)) marketLine = best.line;
+      if (stakedLine == null || linesClose(best.line, stakedLine)) {
+        bestOdds = best.odds;
+        bestBook = best.book || null;
+      } else {
+        liveBestOdds = best.odds;
+        liveBestBook = best.book || null;
+      }
     }
+    // Opp prices ride with whatever line they belong to (ticket vs "now" row).
     if (opp && Number.isFinite(opp.odds)) {
       oppBestOdds = opp.odds;
       oppBestBook = opp.book || null;
     }
+
+    if (lineMoved && last) {
+      const over = last.overOdds;
+      const under = last.underOdds;
+      if (Number.isFinite(over) && Number.isFinite(under)) {
+        liveFairPair = sideKey === 'under' ? [under, over] : [over, under];
+      }
+    }
+
     ourLabel = sideKey === 'under'
       ? `Under ${marketLine ?? ''}`.trim()
       : `Over ${marketLine ?? ''}`.trim();
+    if (lineMoved && Number.isFinite(liveMarketLine)) {
+      liveLabel = sideKey === 'under'
+        ? `now Under ${liveMarketLine}`
+        : `now Over ${liveMarketLine}`;
+    }
+    const oppLn = (!lineMoved && Number.isFinite(opp?.line))
+      ? opp.line
+      : (lineMoved ? liveMarketLine : (opp?.line ?? marketLine));
     oppLabel = sideKey === 'under'
-      ? `Over ${opp?.line ?? marketLine ?? ''}`.trim()
-      : `Under ${opp?.line ?? marketLine ?? ''}`.trim();
+      ? `Over ${oppLn ?? ''}`.trim()
+      : `Under ${oppLn ?? ''}`.trim();
+
     if (Number.isFinite(fairNow)) {
       books.push({ name: pinnGame.fairTotalBook || 'Pinnacle', odds: fairNow, sharp: true });
     }
@@ -391,38 +483,70 @@ export function buildLockedMarketOdds(pick, pinnacleHistory) {
     }
   } else if (isSpread) {
     const hist = Array.isArray(pinnGame.spreadHistory) ? pinnGame.spreadHistory : [];
-    const pts = hist
+    const last = hist[hist.length - 1] || null;
+    const lineOf = (h) => (sideKey === 'away' ? h.awayLine : h.homeLine);
+    const stakeHist = stakedLine != null
+      ? hist.filter((h) => linesClose(lineOf(h), stakedLine))
+      : hist;
+    const pts = stakeHist
       .map((h) => (sideKey === 'away' ? h.awayOdds : h.homeOdds))
       .filter(Number.isFinite);
     pinSeries = pts.length >= 2 ? pts : null;
-    const last = hist[hist.length - 1];
-    if (last) {
-      fairNow = sideKey === 'away' ? last.awayOdds : last.homeOdds;
-      const a = last.awayOdds;
-      const h = last.homeOdds;
+
+    const matchHist = stakedLine != null
+      ? [...hist].reverse().find((h) => linesClose(lineOf(h), stakedLine))
+      : last;
+    if (matchHist) {
+      fairNow = sideKey === 'away' ? matchHist.awayOdds : matchHist.homeOdds;
+      const a = matchHist.awayOdds;
+      const h = matchHist.homeOdds;
       if (Number.isFinite(a) && Number.isFinite(h)) {
         fairPair = sideKey === 'away' ? [a, h] : [h, a];
       }
-      const ln = sideKey === 'away' ? last.awayLine : last.homeLine;
-      if (Number.isFinite(ln)) marketLine = ln;
-      if (Number.isFinite(last.t)) latestT = last.t;
+      if (Number.isFinite(matchHist.t)) latestT = matchHist.t;
     }
+    if (last) {
+      const ln = lineOf(last);
+      if (Number.isFinite(ln)) liveMarketLine = ln;
+      if (Number.isFinite(last.t) && latestT == null) latestT = last.t;
+    }
+
     const best = sideKey === 'away' ? pinnGame.bestAwaySpread : pinnGame.bestHomeSpread;
     const opp = sideKey === 'away' ? pinnGame.bestHomeSpread : pinnGame.bestAwaySpread;
+    if (Number.isFinite(best?.line) && liveMarketLine == null) liveMarketLine = best.line;
+
+    lineMoved = stakedLine != null && liveMarketLine != null && !linesClose(stakedLine, liveMarketLine);
+    marketLine = stakedLine ?? liveMarketLine;
+
     if (best && Number.isFinite(best.odds)) {
-      bestOdds = best.odds;
-      bestBook = best.book || null;
-      if (Number.isFinite(best.line)) marketLine = best.line;
+      if (stakedLine == null || linesClose(best.line, stakedLine)) {
+        bestOdds = best.odds;
+        bestBook = best.book || null;
+      } else {
+        liveBestOdds = best.odds;
+        liveBestBook = best.book || null;
+      }
     }
-    if (opp && Number.isFinite(opp.odds)) {
+    if (opp && Number.isFinite(opp.odds) && (!lineMoved || linesClose(opp.line, stakedLine))) {
       oppBestOdds = opp.odds;
       oppBestBook = opp.book || null;
     }
+    if (lineMoved && last) {
+      const a = last.awayOdds;
+      const h = last.homeOdds;
+      if (Number.isFinite(a) && Number.isFinite(h)) {
+        liveFairPair = sideKey === 'away' ? [a, h] : [h, a];
+      }
+    }
+
     const teamShort = sideKey === 'away' ? shortTeam(pick.away) : shortTeam(pick.home);
     const oppShort = sideKey === 'away' ? shortTeam(pick.home) : shortTeam(pick.away);
     const fmtLn = (ln) => (Number.isFinite(ln) ? `${ln > 0 ? '+' : ''}${ln}` : '');
     ourLabel = `${teamShort} ${fmtLn(marketLine)}`.trim();
-    oppLabel = `${oppShort} ${fmtLn(opp?.line)}`.trim();
+    if (lineMoved && Number.isFinite(liveMarketLine)) {
+      liveLabel = `now ${teamShort} ${fmtLn(liveMarketLine)}`.trim();
+    }
+    oppLabel = `${oppShort} ${fmtLn(opp?.line ?? (lineMoved ? liveMarketLine : marketLine))}`.trim();
     if (Number.isFinite(fairNow)) {
       books.push({ name: pinnGame.fairSpreadBook || 'Pinnacle', odds: fairNow, sharp: true });
     }
@@ -504,10 +628,23 @@ export function buildLockedMarketOdds(pick, pinnacleHistory) {
   }
 
   // Multiplicative no-vig fair (standard). Fall back to vigged sharp price.
+  // Only from the ticket-line pair — never from a moved consensus line.
   const fairProb = fairPair ? fairProbFromNoVig(fairPair, 0) : null;
   const fairNoVig = fairPair ? noVigFairAmerican(fairPair, 0) : null;
   const fairIsNoVig = Number.isFinite(fairNoVig);
   const fairDisplay = fairIsNoVig ? fairNoVig : (Number.isFinite(fairNow) ? fairNow : null);
+
+  let liveFair = null;
+  let liveFairIsNoVig = false;
+  if (liveFairPair) {
+    const ln = noVigFairAmerican(liveFairPair, 0);
+    if (Number.isFinite(ln)) {
+      liveFair = ln;
+      liveFairIsNoVig = true;
+    } else {
+      liveFair = liveFairPair[0];
+    }
+  }
 
   return {
     pinSeries,
@@ -520,10 +657,17 @@ export function buildLockedMarketOdds(pick, pinnacleHistory) {
     fairIsNoVig,
     fairDisplay,
     marketLine: Number.isFinite(marketLine) ? marketLine : null,
+    liveMarketLine: Number.isFinite(liveMarketLine) ? liveMarketLine : null,
+    lineMoved: !!lineMoved,
     ourLabel,
+    liveLabel,
     oppLabel,
     oppBestOdds: Number.isFinite(oppBestOdds) ? oppBestOdds : null,
     oppBestBook: oppBestBook || null,
+    liveBestOdds: Number.isFinite(liveBestOdds) ? liveBestOdds : null,
+    liveBestBook: liveBestBook || null,
+    liveFair: Number.isFinite(liveFair) ? liveFair : null,
+    liveFairIsNoVig,
     updatedAgoSec,
   };
 }
@@ -539,8 +683,39 @@ export function mapLockedPickToCardFixture(pick, {
   tierPerf = null,
   pinnacleHistory = null,
 } = {}) {
+  const isTotal = pick.marketType === 'total' || pick.marketType === 'TOTAL';
+  const isSpread = pick.marketType === 'spread' || pick.marketType === 'SPREAD';
+  const alreadyGraded = pick.status === 'COMPLETED'
+    && !!(pick.outcome || pick.result?.outcome);
+
+  // Live TOTAL ticket = sportsbook MAIN line + same-line odds. Last defense
+  // against cron/Firestore stamping a Polymarket alt (Over 8.5 @ -110).
+  let ticketLine = Number.isFinite(pick.line) ? pick.line : null;
+  let ticketOdds = Number.isFinite(pick.odds) ? pick.odds : null;
+  if (isTotal && !alreadyGraded && pinnacleHistory && pick.sport && pick.gameKey) {
+    const pinnGame = pinnacleHistory[pick.sport]?.[pick.gameKey];
+    const main = pinnGame?.totalCurrent?.line;
+    if (Number.isFinite(main) && main >= 1.5) {
+      ticketLine = main;
+      const sideIsUnder = (() => {
+        const t = String(pick.team || pick.side || pick.pickSide || '').toLowerCase();
+        return t.startsWith('under') || t === 'under' || pick.side === 'under' || pick.pickSide === 'under';
+      })();
+      const best = sideIsUnder ? pinnGame.bestUnder : pinnGame.bestOver;
+      const fair = sideIsUnder
+        ? pinnGame.totalCurrent?.underOdds
+        : pinnGame.totalCurrent?.overOdds;
+      if (best && Number.isFinite(best.odds) && Number.isFinite(best.line)
+          && Math.abs(best.line - main) <= 0.051) {
+        ticketOdds = best.odds;
+      } else if (Number.isFinite(fair)) {
+        ticketOdds = fair;
+      }
+    }
+  }
+
   const units = Number.isFinite(pick.units) ? pick.units : 0;
-  const odds = Number.isFinite(pick.odds) ? pick.odds : null;
+  const odds = Number.isFinite(ticketOdds) ? ticketOdds : null;
   const lockOdds = odds;
   const peakOdds = Number.isFinite(pick.lockPinnOdds) ? pick.lockPinnOdds
     : Number.isFinite(pick.pinnacleOdds) ? pick.pinnacleOdds : lockOdds;
@@ -558,8 +733,6 @@ export function mapLockedPickToCardFixture(pick, {
     clvPct = 0;
   }
 
-  const isTotal = pick.marketType === 'total';
-  const isSpread = pick.marketType === 'spread';
   const teamRaw = (pick.team || '').trim();
   const isDraw = !isTotal && !isSpread && /^draw$/i.test(teamRaw);
   // Matchup-aware shorts — White Sox @ Red Sox must not both collapse to "Sox"
@@ -583,9 +756,13 @@ export function mapLockedPickToCardFixture(pick, {
     : isDraw ? 'Draw'
       : (sideNorm === 'away' ? awayShort : homeShort);
 
+  // Totals: always label from ticketLine (main sportsbook when live).
   const pickLabel = isSpread
-    ? `${teamShort} ${pick.line > 0 ? '+' : ''}${pick.line}`
-    : isTotal ? (pick.team || 'Total')
+    ? `${teamShort} ${ticketLine > 0 ? '+' : ''}${ticketLine}`
+    : isTotal
+      ? (Number.isFinite(ticketLine) && ticketLine >= 1.5
+        ? `${teamShort} ${ticketLine}`
+        : (pick.team || 'Total'))
     : isDraw ? 'Draw ML'
     : `${teamShort} ML`;
 
@@ -632,12 +809,17 @@ export function mapLockedPickToCardFixture(pick, {
     getRecordForDisplay,
   ).map((w) => {
     const marketSide = normSide(w.side) || sideNorm;
+    const sideTag = marketSide === sideNorm ? 'ours' : 'against';
     return {
       ...w,
       marketSide,
-      side: marketSide === sideNorm ? 'ours' : 'against',
+      side: sideTag,
+      eliteZone: isEliteZoneWallet(w),
     };
   });
+  // Glance signal: any FOR-side wallet in the chart ELITE quadrant.
+  const eliteDotOnSide = mapWallets.filter((w) => w.side === 'ours' && w.eliteZone).length;
+  const hasEliteDot = eliteDotOnSide > 0;
 
   const againstRows = mapWallets.filter((w) => w.side === 'against');
   const meanFinite = (arr) => {
@@ -730,7 +912,15 @@ export function mapLockedPickToCardFixture(pick, {
   const graded = !!outcome && (outcome === 'WIN' || outcome === 'LOSS' || outcome === 'PUSH');
 
   const market = buildLockedMarketOdds(
-    { ...pick, side: pick.side || pick.pickSide || sideNorm },
+    {
+      ...pick,
+      line: ticketLine,
+      odds: ticketOdds,
+      team: isTotal && Number.isFinite(ticketLine)
+        ? `${teamShort} ${ticketLine}`
+        : pick.team,
+      side: pick.side || pick.pickSide || sideNorm,
+    },
     pinnacleHistory,
   );
   const sparseJourney = [lockOdds, peakOdds, nowOdds].filter(Number.isFinite);
@@ -740,11 +930,16 @@ export function mapLockedPickToCardFixture(pick, {
   const fairLine = Number.isFinite(market.fairDisplay) ? market.fairDisplay
     : (Number.isFinite(pick.pinnacleOdds) ? pick.pinnacleOdds : peakOdds);
   // EV vs no-vig fair when both sides exist; else vigged-sharp proxy (legacy).
+  // EV only vs fair on the same instrument as the ticket. If the consensus
+  // total/spread moved and we have no history at the staked line, leave EV blank
+  // rather than comparing 8.5 lock odds to a 7.5 fair.
   const fairProb = market.fairProb != null
     ? market.fairProb
-    : ip(fairLine);
-  const evFlagged = evPctVsFairProb(lockOdds, fairProb);
-  const evBest = evPctVsFairProb(market.bestOdds, fairProb);
+    : (market.lineMoved ? null : ip(fairLine));
+  const evFlagged = fairProb != null ? evPctVsFairProb(lockOdds, fairProb) : null;
+  const evBest = (fairProb != null && Number.isFinite(market.bestOdds))
+    ? evPctVsFairProb(market.bestOdds, fairProb)
+    : null;
 
   return {
     id: pick.key || `${pick.sport}-${pickLabel}`,
@@ -783,6 +978,8 @@ export function mapLockedPickToCardFixture(pick, {
     netClv,
     confirmedOnSide,
     vaultOnSide,
+    eliteDotOnSide,
+    hasEliteDot,
     setupHitRate: null,
     sideInvested: pick.totalInvested || pick.lockTotalInvested || 0,
     wallets,
@@ -795,10 +992,17 @@ export function mapLockedPickToCardFixture(pick, {
     bestOdds: market.bestOdds,
     bestBook: market.bestBook,
     ourMarketLabel: market.ourLabel,
+    liveMarketLabel: market.liveLabel,
+    lineMoved: !!market.lineMoved,
     oppMarketLabel: market.oppLabel,
     oppBestOdds: market.oppBestOdds,
     oppBestBook: market.oppBestBook,
     marketLine: market.marketLine,
+    liveMarketLine: market.liveMarketLine,
+    liveBestOdds: market.liveBestOdds,
+    liveBestBook: market.liveBestBook,
+    liveFair: market.liveFair,
+    liveFairIsNoVig: !!market.liveFairIsNoVig,
     oddsUpdatedAgoSec: market.updatedAgoSec,
     combinedWalletPnl: wallets.reduce((s, w) => s + (w.pnl || 0), 0),
     gameTime,
