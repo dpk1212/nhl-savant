@@ -2245,14 +2245,18 @@ async function createMissingLockedPicks({
       const tapeCreate = computeTapeScore(waCreateEdge?.edge ?? null, netCreate.netMeanPrior);
       let clvPolicyCreate;
       if (isTapeSizingLive(TARGET_DATE)) {
-        // RANK exempt from tape mute (still eligible for HOLD/BOOST)
-        const rankTapeMuteExempt = hcStakeTierCreate === 'RANK'
+        // RANK + CONFIRMED-UNOPP exempt from tape mute (still eligible for HOLD/BOOST).
+        // Promote fills left-behind CONFIRMED; tape must not immediately zero them.
+        const rankTapeMuteExempt = (hcStakeTierCreate === 'RANK'
+            || hcStakeTierCreate === 'CONFIRMED-UNOPP')
           && tapeCreate != null && tapeCreate < TAPE_MUTE_BELOW;
         if (rankTapeMuteExempt) {
           clvPolicyCreate = {
             units: peakUnitsApplied,
             action: 'HOLD',
-            reason: 'rank_tape_mute_exempt',
+            reason: hcStakeTierCreate === 'CONFIRMED-UNOPP'
+              ? 'confirmed_unopp_tape_mute_exempt'
+              : 'rank_tape_mute_exempt',
             mutedBy: null,
             unitsPrePolicy: peakUnitsApplied,
           };
@@ -3366,7 +3370,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // ─── TAPE / CLV unit policy (after paths + edge-net size + winner mute) ─
   // Tape era (2026-07-15+): mute weak / keep mid / boost strong on path units.
   //   tape = 2·(EDGE/10) + 1.5·(netCLV/10); fail-open when unscored.
-  // RANK exempt from tape mute (still gets HOLD/BOOST) — RANK NEITHER was +11% ROI.
+  // RANK + CONFIRMED-UNOPP exempt from tape mute (still get HOLD/BOOST).
+  // RANK NEITHER was +11% ROI; CONFIRMED-UNOPP promote must stick at 1u.
   // Pre-tape: legacy CLV top2 cancel≤59 / boost≥74 (fail-closed if missing).
   // netLive already computed above (shared with Path C / TOP mute).
   const top2Live = computeForTop2PctPos(wd, side, pickDate, clvLedger);
@@ -3376,13 +3381,15 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   let bothE10Policy = null;
   const unitsBeforeClv = finalUnitsApplied;
   if (tapeSizingLive) {
-    const rankTapeMuteExempt = hcStakeTier === 'RANK'
+    const rankTapeMuteExempt = (hcStakeTier === 'RANK' || hcStakeTier === 'CONFIRMED-UNOPP')
       && tapeLive != null && tapeLive < TAPE_MUTE_BELOW;
     if (rankTapeMuteExempt) {
       tapePolicy = {
         units: finalUnitsApplied,
         action: 'HOLD',
-        reason: 'rank_tape_mute_exempt',
+        reason: hcStakeTier === 'CONFIRMED-UNOPP'
+          ? 'confirmed_unopp_tape_mute_exempt'
+          : 'rank_tape_mute_exempt',
         mutedBy: null,
         unitsPrePolicy: unitsBeforeClv,
       };
@@ -3788,8 +3795,11 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       + `${edgeNetSizePolicy.unitsPrePolicy}u → ${edgeNetSizePolicy.units}u (${hcStakeTier})`
     );
   }
-  if (tapePolicy?.reason === 'rank_tape_mute_exempt') {
-    changes.push(`TAPE: RANK mute-exempt (tape=${tapeLive == null ? '—' : Number(tapeLive).toFixed(2)}) → keep ${unitsBeforeClv}u`);
+  if (tapePolicy?.reason === 'rank_tape_mute_exempt'
+      || tapePolicy?.reason === 'confirmed_unopp_tape_mute_exempt') {
+    const who = tapePolicy.reason === 'confirmed_unopp_tape_mute_exempt'
+      ? 'CONFIRMED-UNOPP' : 'RANK';
+    changes.push(`TAPE: ${who} mute-exempt (tape=${tapeLive == null ? '—' : Number(tapeLive).toFixed(2)}) → keep ${unitsBeforeClv}u`);
   }
   if (bothE10Policy?.action === 'FLOOR') {
     changes.push(

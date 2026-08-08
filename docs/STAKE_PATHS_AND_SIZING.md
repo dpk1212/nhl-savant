@@ -16,7 +16,7 @@ _Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`SKILL_FEATURES.md`](./SKILL_
 | **FadeTop** | Toxic AG | top AG WR ≥ 60 beating FOR → **0u** |
 | **EDGE band size** | A/C dial | E&lt;7 → **0u** · 7–10 → ×**0.75** · ≥10 → ×**1.25** · **RANK/DISSENT/CONFIRMED-UNOPP exempt** |
 | **EDGE/net size** | Soft dial (non–A/C) | BOTH ×**1.25** · ONE hold · NEITHER ×**0.5** on remaining soft tiers · **RANK exempt** |
-| **Tape** | Near-final dial | `&lt;0` mute (except **RANK**) · mid hold · `≥2.89` ×**1.35** · fail-open if missing |
+| **Tape** | Near-final dial | `&lt;0` mute (except **RANK** / **CONFIRMED-UNOPP**) · mid hold · `≥2.89` ×**1.35** · fail-open if missing |
 | **qConv Q1 mute** | Near-final mute (2026-08-03+) | Path A/B/C + CONFIRMED-UNOPP · `qConv <` expanding Q1 of prior staked → **0u** · fail-open if missing |
 | **FOOLS-gold mute** | Final mute (2026-08-05+) | Path A/B/C + CONFIRMED-UNOPP · best proven FOR = **FLAT** → **0u MUTED** · fail-open if bestFOR missing · DISSENT/manual exempt |
 | **T-15** | Freeze | No further rewrite |
@@ -59,7 +59,7 @@ Skill metrics (EDGE / netCLV / Tape / bucket) stamp every pre–T-15 cycle — s
    └─ missing EDGE and net → fail-open (hold)
 
 9. Tape mute / hold / boost
-   └─ RANK exempt from tape mute only (still boosts)
+   └─ RANK / CONFIRMED-UNOPP exempt from tape mute only (still boosts)
 
 10. qConv Q1 mute (2026-08-03+)
    └─ qConv = Σ sizeRatio×(WR−50) FOR − AG
