@@ -3,6 +3,11 @@
  * Observational strength only (no stake units / path stamps).
  */
 import { buildFlatDollarQBySport, shortWalletId, CLV_SKILL_MIN_N } from './walletClvSkill.js';
+import {
+  lookupSharpTierCellStats,
+  formatSharpTierCellHist,
+  tierLetterFromQ,
+} from './sharpTierCellStats.js';
 
 const SPORTS = ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL'];
 
@@ -235,6 +240,7 @@ export function buildConfirmedActionRows({
   totalPositions,
   walletProfiles,
   pinnacleHistory,
+  cellStatsTable = null,
 } = {}) {
   const qBySport = buildFlatDollarQBySport(walletProfiles);
   const raw = [
@@ -344,6 +350,14 @@ export function buildConfirmedActionRows({
 
   for (const r of rows) {
     r.strengthScore = strengthScore(r);
+    const tier = tierLetterFromQ(r.skillQ);
+    const hit = lookupSharpTierCellStats({
+      tier,
+      sizeBand: r.sizeBand,
+      unopposed: r.opposed === 'clear',
+    }, cellStatsTable);
+    r.cellHist = hit;
+    r.cellHistText = formatSharpTierCellHist(hit);
   }
 
   const stats = {

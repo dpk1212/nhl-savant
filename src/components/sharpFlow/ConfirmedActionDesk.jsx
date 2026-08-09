@@ -2,7 +2,7 @@
  * Action desk — live tickets from winning wallets.
  * Sparse header. Dense, scannable rows. No product lectures.
  */
-import React, { useMemo, useState, memo } from 'react';
+import React, { useEffect, useMemo, useState, memo } from 'react';
 import { Activity } from 'lucide-react';
 import {
   buildConfirmedActionRows,
@@ -385,6 +385,23 @@ function TrustLine({ trust }) {
   );
 }
 
+/** Historic cell WR/ROI from as-of Sharp tier × size × opposition. */
+function CellHistLine({ text }) {
+  if (!text) return null;
+  return (
+    <div style={{
+      marginTop: '0.28rem',
+      ...T.micro,
+      fontWeight: 600,
+      color: B.textSubtle,
+      fontFeatureSettings: "'tnum'",
+      letterSpacing: '0.01em',
+    }}>
+      {text}
+    </div>
+  );
+}
+
 function ActionRow({ row, isMobile }) {
   const [hover, setHover] = useState(false);
   const matchup = row.away && row.home ? `${row.away} @ ${row.home}` : row.gameKey;
@@ -419,6 +436,7 @@ function ActionRow({ row, isMobile }) {
               <div style={{ ...T.name, color: B.text, fontSize: '1.15rem' }}>{row.team}</div>
               <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.2rem' }}>{matchup}</div>
               <TrustLine trust={trust} />
+              <CellHistLine text={row.cellHistText} />
             </div>
             <div style={{ textAlign: 'right', flexShrink: 0 }}>
               <div style={{ ...T.money, color: B.gold, fontSize: '1.25rem', fontFeatureSettings: "'tnum'" }}>
@@ -480,6 +498,7 @@ function ActionRow({ row, isMobile }) {
             {matchup}
           </div>
           <TrustLine trust={trust} />
+          <CellHistLine text={row.cellHistText} />
         </div>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center' }}>
@@ -528,6 +547,16 @@ export default function ConfirmedActionDesk({
   const [sizedOnly, setSizedOnly] = useState(false);
   const [clearOnly, setClearOnly] = useState(false);
   const [pinWithOnly, setPinWithOnly] = useState(false);
+  const [cellStatsTable, setCellStatsTable] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/sharp-tier-cell-stats.json', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (!cancelled && j?.cells) setCellStatsTable(j); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   const { rows } = useMemo(
     () => buildConfirmedActionRows({
@@ -536,8 +565,9 @@ export default function ConfirmedActionDesk({
       totalPositions,
       walletProfiles,
       pinnacleHistory,
+      cellStatsTable,
     }),
-    [sharpPositions, spreadPositions, totalPositions, walletProfiles, pinnacleHistory],
+    [sharpPositions, spreadPositions, totalPositions, walletProfiles, pinnacleHistory, cellStatsTable],
   );
 
   const visible = useMemo(() => {

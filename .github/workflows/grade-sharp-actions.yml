@@ -46,13 +46,22 @@ jobs:
           FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
         run: node scripts/exportWalletProfiles.js --write-firebase
 
+      # As-of Sharp tier × size × opposition hist WR/$ROI for Action row stamps.
+      # Rebuilds after grades so cell stats track newly settled plays.
+      - name: Rebuild Sharp tier cell stats lookup
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: node scripts/exportSharpTierCellStats.js --write-firebase
+
       - name: Commit updated wallet profile artifacts
         run: |
           git config --local user.name  "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/wallet-profiles.json WALLET_ROSTER.md WALLET_PROFILES_SUMMARY.md
+          git add data/wallet-profiles.json data/sharp-tier-cell-stats.json public/sharp-tier-cell-stats.json WALLET_ROSTER.md WALLET_PROFILES_SUMMARY.md
           git diff --quiet && git diff --staged --quiet || (
-            git commit -m "Auto-update: Sharp wallet profiles [$(TZ='America/New_York' date +'%Y-%m-%d %H:%M')] [skip ci]" &&
+            git commit -m "Auto-update: Sharp wallet profiles + tier cell stats [$(TZ='America/New_York' date +'%Y-%m-%d %H:%M')] [skip ci]" &&
             git stash --include-untracked &&
             git pull --rebase -X theirs &&
             (git stash pop || true) &&
