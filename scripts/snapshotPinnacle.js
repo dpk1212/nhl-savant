@@ -225,12 +225,23 @@ function loadHistory() {
   try { return JSON.parse(readFileSync(OUT_PATH, 'utf8')); } catch { return {}; }
 }
 
-/** First FAIR_BOOKS entry with both away+home h2h prices. */
+/**
+ * Best available h2h quote for ticket/CLV plumbing.
+ * Prefer sharp fair books; if none quote the game, fall through to retail
+ * (and finally any bookmaker). Real incident 2026-08-09 Athletics @ Red Sox:
+ * Odds API returned only DK/FD — FAIR_BOOKS-only skip left oak_bos out of
+ * pinnacle_history and locked picks stamped with null odds.
+ */
 function pickFairH2h(game) {
   const awayName = game.away_team;
   const homeName = game.home_team;
   const byKey = Object.fromEntries((game.bookmakers || []).map(b => [b.key, b]));
-  for (const key of FAIR_BOOKS) {
+  const order = [
+    ...FAIR_BOOKS,
+    ...RETAIL_BOOKS,
+    ...Object.keys(byKey).filter((k) => !FAIR_BOOKS.includes(k) && !RETAIL_BOOKS.includes(k)),
+  ];
+  for (const key of order) {
     const bk = byKey[key];
     if (!bk) continue;
     const h2h = bk.markets?.find(m => m.key === 'h2h');

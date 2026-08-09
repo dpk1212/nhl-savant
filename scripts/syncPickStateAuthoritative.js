@@ -1711,6 +1711,40 @@ function loadGameMetadata() {
   return meta;
 }
 
+/** Polymarket implied % (0–100 or 0–1) → American odds. */
+function americanFromImpliedPct(pct) {
+  if (!Number.isFinite(pct) || pct <= 0) return null;
+  const p = pct > 1 ? pct / 100 : pct;
+  if (!(p > 0 && p < 1)) return null;
+  return p >= 0.5
+    ? -Math.round((p / (1 - p)) * 100)
+    : Math.round(((1 - p) / p) * 100);
+}
+
+/**
+ * ML ticket odds from game meta: fair book (Pinnacle/cascade) first, then
+ * Polymarket implied (same path draw already used). Never invent -110.
+ */
+function mlOddsFromMeta(meta, side) {
+  if (!meta) return null;
+  if (side === 'home') {
+    const pinn = meta.mlOdds?.home;
+    if (Number.isFinite(pinn) && pinn !== 0) return pinn;
+    return americanFromImpliedPct(meta.polyHomeProb);
+  }
+  if (side === 'away') {
+    const pinn = meta.mlOdds?.away;
+    if (Number.isFinite(pinn) && pinn !== 0) return pinn;
+    return americanFromImpliedPct(meta.polyAwayProb);
+  }
+  if (side === 'draw') {
+    const pinn = meta.mlOdds?.draw;
+    if (Number.isFinite(pinn) && pinn !== 0) return pinn;
+    return americanFromImpliedPct(meta.polyDrawProb);
+  }
+  return null;
+}
+
 /** Sportsbook main FG total line (Pinnacle/Odds API), else Polymarket main O/U. */
 function mainTotalLine(meta) {
   const pinn = meta?.totalCurrent?.line ?? meta?.totalOpener?.line;
@@ -2169,18 +2203,10 @@ async function createMissingLockedPicks({
       let odds = null;
       let line = null;
       if (marketType === 'ML') {
-        // 3-way soccer: the draw is a first-class side and MUST use the draw
-        // price — not the away fallback (which previously stamped the favorite's
-        // odds onto draw picks, e.g. "Draw ML -1100"). Prefer Pinnacle's draw
-        // line; if it hasn't been captured yet, derive from Polymarket draw prob.
-        if (side === 'home') odds = meta.mlOdds?.home;
-        else if (side === 'draw') {
-          odds = meta.mlOdds?.draw ?? null;
-          if (odds == null && Number.isFinite(meta.polyDrawProb) && meta.polyDrawProb > 0 && meta.polyDrawProb < 100) {
-            const p = meta.polyDrawProb / 100;
-            odds = p >= 0.5 ? -Math.round((p / (1 - p)) * 100) : Math.round(((1 - p) / p) * 100);
-          }
-        } else odds = meta.mlOdds?.away;
+        // Fair book first; Polymarket implied if Pinnacle/cascade not in yet.
+        // Home/away previously had NO poly fallback (only draw did) — morning
+        // MLB creates could stamp 3u locks with lock.odds missing (Sox 2026-08-09).
+        odds = mlOddsFromMeta(meta, side);
       } else if (marketType === 'SPREAD') {
         // Side/money = wallet consensus. The number on the ticket = Pinnacle
         // SPREAD juice — never ML. Do NOT default to -110: that is the
@@ -2222,6 +2248,13 @@ async function createMissingLockedPicks({
       // do not create a staked pick (DET@SEA bare "Over -110" 2026-08-06).
       if (marketType === 'TOTAL' && (line == null || !isPlausibleLine(line, sport, 'TOTAL'))) {
         skipped.push({ docId, side, reason: 'total_missing_plausible_line', line });
+        continue;
+      }
+      // ML/SPREAD without a ticket price — never create a staked lock at 0 odds.
+      // Wait for the next cycle once pinnacle_history / poly has a quote.
+      if ((marketType === 'ML' || marketType === 'SPREAD')
+          && (!Number.isFinite(odds) || odds === 0)) {
+        skipped.push({ docId, side, reason: 'missing_ticket_odds', marketType });
         continue;
       }
 
@@ -4328,23 +4361,24 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         : (meta?.spreadCurrent?.awayOdds ?? meta?.spreadOpener?.awayOdds))
       : mkt === 'TOTAL'
         ? mainTotalOdds(meta, side)
-        : (side === 'home' ? meta?.mlOdds?.home
-          : side === 'draw' ? meta?.mlOdds?.draw
-          : meta?.mlOdds?.away);
+        : mlOddsFromMeta(meta, side);
     const fairLabel = fairBookLabel(
-      mkt === 'SPREAD' ? (meta?.fairSpreadBook || meta?.fairBook) : meta?.fairBook,
+      mkt === 'SPREAD' ? (meta?.fairSpreadBook || meta?.fairBook)
+        : (meta?.fairBook || (Number.isFinite(liveFair) && !meta?.mlOdds ? 'polymarket' : null)),
     );
     if (Number.isFinite(liveFair) && liveFair !== 0) {
       const lockMissing = !Number.isFinite(sd.lock?.odds) || sd.lock.odds === 0;
       const peakMissing = !Number.isFinite(sd.peak?.odds) || sd.peak.odds === 0;
       if (lockMissing || peakMissing) {
+        const oddsSource = meta?.fairBook
+          || (meta?.mlOdds ? 'pinnacle_history' : 'polymarket');
         if (lockMissing) {
           patch.lock = {
             ...(patch.lock || {}),
             odds: liveFair,
             pinnacleOdds: liveFair,
             book: fairLabel,
-            oddsSource: meta?.fairBook || null,
+            oddsSource,
           };
         }
         if (peakMissing) {
@@ -4353,7 +4387,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
             odds: liveFair,
             pinnacleOdds: liveFair,
             book: fairLabel,
-            oddsSource: meta?.fairBook || null,
+            oddsSource,
             updatedAt: now,
           };
         }
