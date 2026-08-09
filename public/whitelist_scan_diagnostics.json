@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-08-09T14:57:35.555Z",
-  "elapsedSec": 18.1,
+  "scannedAt": "2026-08-09T15:01:01.137Z",
+  "elapsedSec": 18.7,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 31,
   "summary": {
     "total": 209,
     "coveredByMain": 4,
     "recovered": 19,
-    "recoveredPositions": 130,
+    "recoveredPositions": 132,
     "noPositions": 186,
     "apiError": 0,
     "addressNotFound": 0,
@@ -15,8 +15,8 @@
     "merge": {
       "ml": 7,
       "spread": 2,
-      "total": 8,
-      "dropped_shadow_gate": 25,
+      "total": 9,
+      "dropped_shadow_gate": 26,
       "dropped_excluded": 88,
       "dropped_duplicate": 0
     }
@@ -648,19 +648,19 @@
         {
           "sport": "WNBA",
           "gameKey": "lva_nyl",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 416,
-          "entryLine": null,
+          "marketType": "spread",
+          "side": "away",
+          "invested": 365,
+          "entryLine": 1.5,
           "passesShadow": true
         },
         {
           "sport": "WNBA",
           "gameKey": "lva_nyl",
-          "marketType": "spread",
-          "side": "away",
-          "invested": 252,
-          "entryLine": 1.5,
+          "marketType": "ml",
+          "side": "home",
+          "invested": 416,
+          "entryLine": null,
           "passesShadow": true
         },
         {
@@ -827,7 +827,7 @@
           "gameKey": "laa_mia",
           "marketType": "ml",
           "side": "away",
-          "invested": 610,
+          "invested": 612,
           "entryLine": null,
           "passesShadow": false
         }
@@ -1221,21 +1221,21 @@
           "passesShadow": true
         },
         {
+          "sport": "WNBA",
+          "gameKey": "lva_nyl",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 2952,
+          "entryLine": -1.5,
+          "passesShadow": true
+        },
+        {
           "sport": "MLB",
           "gameKey": "det_sfg",
           "marketType": "total",
           "side": "under",
           "invested": 2783,
           "entryLine": 7.5,
-          "passesShadow": true
-        },
-        {
-          "sport": "WNBA",
-          "gameKey": "lva_nyl",
-          "marketType": "spread",
-          "side": "home",
-          "invested": 2809,
-          "entryLine": -1.5,
           "passesShadow": true
         },
         {
@@ -1423,7 +1423,7 @@
           "gameKey": "lad_ari",
           "marketType": "ml",
           "side": "away",
-          "invested": 957,
+          "invested": 970,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1589,18 +1589,18 @@
       "sports": "MLB",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x5e9458202b5817a72cf81105ec8a30e6f3705ba1",
-      "positionsCount": 3,
+      "positionsCount": 5,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 65787,
-      "willPassShadowGate": 3,
-      "willDropAtShadowGate": 0,
+      "willPassShadowGate": 4,
+      "willDropAtShadowGate": 1,
       "positions": [
         {
           "sport": "MLB",
           "gameKey": "laa_mia",
           "marketType": "total",
           "side": "over",
-          "invested": 51134,
+          "invested": 51136,
           "entryLine": 8.5,
           "passesShadow": true
         },
@@ -1621,6 +1621,24 @@
           "invested": 16016,
           "entryLine": 8.5,
           "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "col_stl",
+          "marketType": "total",
+          "side": "over",
+          "invested": 10055,
+          "entryLine": 8.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "col_stl",
+          "marketType": "total",
+          "side": "over",
+          "invested": 2806,
+          "entryLine": 9.5,
+          "passesShadow": false
         }
       ]
     },
@@ -2745,7 +2763,7 @@
           "gameKey": "col_stl",
           "marketType": "spread",
           "side": "home",
-          "invested": 11113,
+          "invested": 11122,
           "entryLine": -1.5,
           "passesShadow": true
         },
