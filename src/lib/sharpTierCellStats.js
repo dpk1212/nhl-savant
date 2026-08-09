@@ -65,15 +65,9 @@ export function lookupSharpTierCellStats(keys, table) {
 /** Compact secondary label for Action rows. */
 export function formatSharpTierCellHist(hit) {
   if (!hit || !Number.isFinite(hit.wr)) return null;
+  const wr = `${hit.wr}% WR`;
   const roi = Number.isFinite(hit.roi)
     ? `${hit.roi >= 0 ? '+' : ''}${hit.roi}% ROI`
     : null;
-  const parts = [
-    'Hist',
-    hit.key?.replace(/\|/g, ' · '),
-    `${hit.wr}% WR`,
-    roi,
-    `n=${hit.n}`,
-  ].filter(Boolean);
-  return parts.join(' · ');
+  return roi ? `Plays like this · ${wr} · ${roi}` : `Plays like this · ${wr}`;
 }
