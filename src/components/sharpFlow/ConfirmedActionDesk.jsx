@@ -319,75 +319,70 @@ function signalChips(row) {
   );
 }
 
-/** LockedClarity-style trust tiles — results + beat-close price skill. */
-function TrustStrip({ trust, isMobile }) {
+/**
+ * Quiet proof line under the ticket — not a second card deck.
+ * Record anchors; ROI / wins / beat-close trail as secondary type.
+ */
+function TrustLine({ trust }) {
   if (!trust) return null;
   const hasBook = trust.record || Number.isFinite(trust.roi) || Number.isFinite(trust.wr);
   const hasClv = Number.isFinite(trust.priorClvPct);
   if (!hasBook && !hasClv) return null;
 
-  const beatHot = hasClv && trust.priorClvPct >= 55;
   const roiHot = Number.isFinite(trust.roi) && trust.roi > 0;
-  const tile = (hot) => ({
-    padding: isMobile ? '0.55rem 0.65rem' : '0.6rem 0.75rem',
-    borderRadius: '9px',
-    background: hot
-      ? 'linear-gradient(145deg, rgba(212,175,55,0.10) 0%, rgba(16,185,129,0.06) 100%)'
-      : 'rgba(0,0,0,0.28)',
-    border: `1px solid ${hot ? 'rgba(212,175,55,0.28)' : B.borderSubtle}`,
-    minWidth: 0,
-  });
+  const beatHot = hasClv && trust.priorClvPct >= 55;
+  const sep = (
+    <span style={{ color: B.textSubtle, opacity: 0.55, fontWeight: 500, userSelect: 'none' }}>·</span>
+  );
 
   return (
     <div style={{
-      display: 'grid',
-      gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-      gap: '0.5rem',
+      marginTop: '0.42rem',
+      display: 'flex',
+      flexWrap: 'wrap',
+      alignItems: 'baseline',
+      gap: '0.28rem 0.4rem',
+      fontFeatureSettings: "'tnum'",
+      maxWidth: '100%',
     }}>
-      {hasBook && (
-        <div style={tile(roiHot)}>
-          <div style={{ ...T.tiny, color: B.textMuted, marginBottom: '0.3rem' }}>
-            Why we trust them
-          </div>
-          <div style={{
-            fontSize: isMobile ? '1.05rem' : '1.15rem',
-            fontWeight: 800,
-            color: B.text,
-            fontFeatureSettings: "'tnum'",
-            letterSpacing: '-0.02em',
-            lineHeight: 1.15,
+      <span style={{ ...T.tiny, color: B.textSubtle, letterSpacing: '0.08em' }}>
+        Trust
+      </span>
+      {trust.record && (
+        <span style={{
+          fontSize: '0.78rem', fontWeight: 700, color: B.textSec,
+          letterSpacing: '-0.01em', lineHeight: 1.2,
+        }}>
+          {trust.record}
+        </span>
+      )}
+      {(Number.isFinite(trust.roi) || Number.isFinite(trust.wr)) && (
+        <>
+          {trust.record ? sep : null}
+          <span style={{
+            ...T.micro,
+            fontWeight: 600,
+            color: roiHot ? B.green : B.textMuted,
           }}>
-            {trust.record || '—'}
-          </div>
-          <div style={{
-            ...T.micro, marginTop: '0.22rem', fontWeight: 700,
-            color: roiHot ? B.green : B.textSec,
-            fontFeatureSettings: "'tnum'",
-          }}>
-            {Number.isFinite(trust.roi) ? `${trust.roi >= 0 ? '+' : ''}${trust.roi}% ROI` : '—'}
-            {Number.isFinite(trust.wr) ? ` · ${trust.wr}% wins` : ''}
-          </div>
-        </div>
+            {Number.isFinite(trust.roi)
+              ? `${trust.roi >= 0 ? '+' : ''}${trust.roi}% ROI`
+              : null}
+            {Number.isFinite(trust.roi) && Number.isFinite(trust.wr) ? ' · ' : ''}
+            {Number.isFinite(trust.wr) ? `${trust.wr}% wins` : ''}
+          </span>
+        </>
       )}
       {hasClv && (
-        <div style={tile(beatHot)}>
-          <div style={{ ...T.tiny, color: B.textMuted, marginBottom: '0.3rem' }}>
-            Price skill
-          </div>
-          <div style={{
-            fontSize: isMobile ? '1.05rem' : '1.15rem',
-            fontWeight: 800,
-            color: beatHot ? B.gold : B.text,
-            fontFeatureSettings: "'tnum'",
-            letterSpacing: '-0.02em',
-            lineHeight: 1.15,
+        <>
+          {sep}
+          <span style={{
+            ...T.micro,
+            fontWeight: 600,
+            color: beatHot ? B.gold : B.textMuted,
           }}>
-            {trust.priorClvPct}%
-          </div>
-          <div style={{ ...T.micro, marginTop: '0.22rem', color: B.textSec, fontWeight: 600 }}>
-            Beat the closing line
-          </div>
-        </div>
+            Beat close {trust.priorClvPct}%
+          </span>
+        </>
       )}
     </div>
   );
@@ -426,6 +421,7 @@ function ActionRow({ row, isMobile }) {
               </div>
               <div style={{ ...T.name, color: B.text, fontSize: '1.15rem' }}>{row.team}</div>
               <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.2rem' }}>{matchup}</div>
+              <TrustLine trust={trust} />
             </div>
             <div style={{ textAlign: 'right', flexShrink: 0 }}>
               <div style={{ ...T.money, color: B.gold, fontSize: '1.25rem', fontFeatureSettings: "'tnum'" }}>
@@ -451,15 +447,6 @@ function ActionRow({ row, isMobile }) {
             {signalChips(row)}
           </div>
         </div>
-        {trust && (
-          <div style={{
-            padding: '0.65rem 1rem 0.85rem',
-            borderTop: `1px solid ${B.borderSubtle}`,
-            background: 'rgba(0,0,0,0.18)',
-          }}>
-            <TrustStrip trust={trust} isMobile />
-          </div>
-        )}
       </div>
     );
   }
@@ -495,6 +482,7 @@ function ActionRow({ row, isMobile }) {
           }}>
             {matchup}
           </div>
+          <TrustLine trust={trust} />
         </div>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center' }}>
@@ -525,16 +513,6 @@ function ActionRow({ row, isMobile }) {
           </div>
         </div>
       </div>
-
-      {trust && (
-        <div style={{
-          padding: '0.7rem 1.25rem 0.85rem',
-          borderTop: `1px solid ${B.borderSubtle}`,
-          background: 'linear-gradient(180deg, rgba(0,0,0,0.22) 0%, rgba(0,0,0,0.12) 100%)',
-        }}>
-          <TrustStrip trust={trust} />
-        </div>
-      )}
     </div>
   );
 }
