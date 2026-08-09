@@ -290,7 +290,7 @@ function signalChips(row) {
     <>
       <Chip tone={sk}>
         <span style={{ opacity: 0.65, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', fontSize: '0.55rem' }}>
-          Skill
+          Peers
         </span>
         {row.skillLabel}
       </Chip>
@@ -345,9 +345,6 @@ function TrustLine({ trust }) {
       fontFeatureSettings: "'tnum'",
       maxWidth: '100%',
     }}>
-      <span style={{ ...T.tiny, color: B.textSubtle, letterSpacing: '0.08em' }}>
-        Trust
-      </span>
       {trust.record && (
         <span style={{
           fontSize: '0.78rem', fontWeight: 700, color: B.textSec,
