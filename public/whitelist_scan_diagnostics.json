@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-08-09T19:44:07.841Z",
-  "elapsedSec": 18.8,
+  "scannedAt": "2026-08-09T19:47:57.197Z",
+  "elapsedSec": 17.6,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 36,
   "summary": {
     "total": 209,
     "coveredByMain": 4,
     "recovered": 15,
-    "recoveredPositions": 49,
+    "recoveredPositions": 50,
     "noPositions": 190,
     "apiError": 0,
     "addressNotFound": 0,
@@ -17,7 +17,7 @@
       "spread": 0,
       "total": 7,
       "dropped_shadow_gate": 6,
-      "dropped_excluded": 31,
+      "dropped_excluded": 32,
       "dropped_duplicate": 0
     }
   },
@@ -109,19 +109,19 @@
       "positions": [
         {
           "sport": "MLB",
-          "gameKey": "lad_ari",
+          "gameKey": "det_sfg",
           "marketType": "ml",
-          "side": "home",
-          "invested": 512,
+          "side": "away",
+          "invested": 666,
           "entryLine": null,
           "passesShadow": true
         },
         {
           "sport": "MLB",
-          "gameKey": "det_sfg",
+          "gameKey": "lad_ari",
           "marketType": "ml",
-          "side": "away",
-          "invested": 642,
+          "side": "home",
+          "invested": 512,
           "entryLine": null,
           "passesShadow": true
         },
@@ -873,12 +873,21 @@
       "sports": "MLB,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
-      "positionsCount": 16,
+      "positionsCount": 17,
       "statsSource": "sports_sharps",
       "avgSportBet": 2075,
-      "willPassShadowGate": 16,
+      "willPassShadowGate": 17,
       "willDropAtShadowGate": 0,
       "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "lad_ari",
+          "marketType": "total",
+          "side": "under",
+          "invested": 13832,
+          "entryLine": 9.5,
+          "passesShadow": true
+        },
         {
           "sport": "MLB",
           "gameKey": "tbr_sea",
@@ -902,8 +911,8 @@
           "gameKey": "lad_ari",
           "marketType": "total",
           "side": "under",
-          "invested": 6502,
-          "entryLine": 9.5,
+          "invested": 8292,
+          "entryLine": 8.5,
           "passesShadow": true
         },
         {
@@ -938,7 +947,7 @@
           "gameKey": "lad_ari",
           "marketType": "ml",
           "side": "away",
-          "invested": 2444,
+          "invested": 2543,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1061,7 +1070,7 @@
           "gameKey": "tbr_sea",
           "marketType": "total",
           "side": "over",
-          "invested": 34758,
+          "invested": 34911,
           "entryLine": 7.5,
           "passesShadow": true
         }
