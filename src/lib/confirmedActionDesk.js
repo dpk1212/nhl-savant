@@ -6,6 +6,11 @@ import { buildFlatDollarQBySport, shortWalletId } from './walletClvSkill.js';
 
 const SPORTS = ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL'];
 
+/** Same as Signals “proven” / {SPORT} WINNER — CONFIRMED + FLAT. */
+const PROVEN_TIERS = new Set(['CONFIRMED', 'FLAT']);
+/** writeSharpActions SHADOW floor — token bets don't count as opposed money. */
+const MODEL_MIN_SIZE = 0.10;
+
 const SKILL_BAND = {
   1: { key: 'high', label: 'Top 25%', weight: 4 },
   2: { key: 'mid', label: '25–50%', weight: 3 },
@@ -29,6 +34,12 @@ export function sizeBandFromRatio(sr) {
   if (sr >= 1.0) return { key: 'full', label: 'usual', weight: SIZE_WEIGHT.full, ratio: sr };
   if (sr >= 0.5) return { key: 'lean', label: 'lean', weight: SIZE_WEIGHT.lean, ratio: sr };
   return { key: 'light', label: 'light', weight: SIZE_WEIGHT.light, ratio: sr };
+}
+
+/** Counted proven ticket (not a SHADOW/token bet). */
+export function isCountedProvenSize(sizeRatio) {
+  if (!Number.isFinite(sizeRatio)) return true; // legacy / unknown → count
+  return sizeRatio >= MODEL_MIN_SIZE;
 }
 
 function profileFor(walletProfiles, short) {
@@ -171,7 +182,11 @@ export function buildConfirmedActionRows({
   walletProfiles,
   pinnacleHistory,
 } = {}) {
-  const qBySport = buildFlatDollarQBySport(walletProfiles);
+  // Peer skill among proven (CONFIRMED+FLAT). Staking CONFIRMED-Q1 still
+  // uses CONFIRMED-only via the default buildFlatDollarQBySport() call site.
+  const qBySport = buildFlatDollarQBySport(walletProfiles, {
+    tiers: ['CONFIRMED', 'FLAT'],
+  });
   const raw = [
     ...collectPositions(sharpPositions, 'ML'),
     ...collectPositions(spreadPositions, 'SPREAD'),
@@ -183,8 +198,8 @@ export function buildConfirmedActionRows({
     const short = shortWalletId(pos.walletShort || pos.wallet);
     if (!short) continue;
     const prof = profileFor(walletProfiles, short);
-    const tier = prof?.bySport?.[sport]?.whitelistTier;
-    if (tier !== 'CONFIRMED') continue;
+    const tier = String(prof?.bySport?.[sport]?.whitelistTier || '').toUpperCase();
+    if (!PROVEN_TIERS.has(tier)) continue;
     if (pos.status && pos.status !== 'PENDING') continue;
 
     const side = pos.side;
@@ -194,6 +209,7 @@ export function buildConfirmedActionRows({
     const skill = skillBandFromQ(q);
     const sr = sizeRatioOf(pos);
     const size = sizeBandFromRatio(sr);
+    const counted = isCountedProvenSize(sr);
     const form = formFromProfile(prof, sport);
     const formDisp = formLabel(form);
     const pin = pinMoveFor(pinnacleHistory, sport, gameKey, side);
@@ -225,6 +241,8 @@ export function buildConfirmedActionRows({
       sizeBand: size.key,
       sizeLabel: size.label,
       sizeWeight: size.weight,
+      whitelistTier: tier,
+      counted,
       skillKey: skill.key,
       skillLabel: skill.label,
       skillWeight: skill.weight,
@@ -236,13 +254,15 @@ export function buildConfirmedActionRows({
       flatEnd: form.flatEnd,
       pinMove: pin, // 'with' | 'against' | null
       opposed: null, // filled below
+      opposedBy: 0,
       ts,
       firstSeen: pos.firstSeen || null,
       odds: americanOdds,
     });
   }
 
-  // Opposition: other CONFIRMED on opposite side of same sport|game|market
+  // Opposition: other *counted* proven (CONFIRMED|FLAT, ≥0.10×) on opposite side.
+  // Matches Signals “N proven winners” — not CONFIRMED-only Action rows.
   const byCluster = new Map();
   for (const r of rows) {
     const k = `${r.sport}|${r.gameKey}|${r.marketType}`;
@@ -253,10 +273,16 @@ export function buildConfirmedActionRows({
     away: 'home', home: 'away', over: 'under', under: 'over', draw: null,
   };
   for (const list of byCluster.values()) {
-    const sides = new Set(list.map((r) => r.side));
     for (const r of list) {
       const opp = oppSide[r.side];
-      r.opposed = opp && sides.has(opp) ? 'contested' : 'clear';
+      if (!opp) {
+        r.opposed = 'clear';
+        r.opposedBy = 0;
+        continue;
+      }
+      const foes = list.filter((x) => x.side === opp && x.counted);
+      r.opposedBy = foes.length;
+      r.opposed = foes.length > 0 ? 'contested' : 'clear';
     }
   }
 

@@ -779,18 +779,22 @@ export function applyConfirmedQ1UnitFloor({
 }
 
 /**
- * flatDollar Q among CONFIRMED-in-sport from live walletProfiles.
+ * flatDollar Q among whitelist-in-sport from live walletProfiles.
  * Score = z(flatRoi) + z(dollarRoi); need ≥4 scored wallets in sport.
+ * Default universe = CONFIRMED only (staking / CONFIRMED-Q1). Pass
+ * `tiers: ['CONFIRMED','FLAT']` for Action “proven winner” peer ranking.
  * @returns {Map<string, Map<string, number>>} sport → walletShort → Q (1..4)
  */
-export function buildFlatDollarQBySport(walletProfiles) {
+export function buildFlatDollarQBySport(walletProfiles, { tiers = ['CONFIRMED'] } = {}) {
+  const tierSet = new Set((tiers || ['CONFIRMED']).map((t) => String(t).toUpperCase()));
   const bySport = new Map(); // sport → [[wallet, flat, dol], ...]
   if (!walletProfiles || typeof walletProfiles.forEach !== 'function') return new Map();
   for (const [id, prof] of walletProfiles) {
     const short = shortWalletId(id);
     if (!short || !prof?.bySport) continue;
     for (const [sport, rec] of Object.entries(prof.bySport)) {
-      if (rec?.whitelistTier !== 'CONFIRMED') continue;
+      const tier = String(rec?.whitelistTier || '').toUpperCase();
+      if (!tierSet.has(tier)) continue;
       const flat = Number(rec.picks?.flatRoi ?? rec.positions?.positionFlatRoi);
       const dol = Number(rec.positions?.dollarRoi);
       if (!Number.isFinite(flat) || !Number.isFinite(dol)) continue;

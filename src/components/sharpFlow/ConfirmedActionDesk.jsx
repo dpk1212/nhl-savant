@@ -273,17 +273,28 @@ const ActionTape = memo(function ActionTape({ items }) {
 
 function signalChips(row) {
   const sk = skillTone(row.skillKey);
+  const oppN = Number(row.opposedBy) || 0;
   const opp = row.opposed === 'clear'
     ? { label: 'Unopposed', tone: { color: B.green, bg: B.greenDim, border: 'rgba(16,185,129,0.3)' } }
-    : { label: 'Sharp contested', tone: { color: B.amber, bg: B.amberDim, border: 'rgba(245,158,11,0.3)' } };
+    : {
+      label: oppN > 1 ? `Sharp contested · ${oppN}` : 'Sharp contested',
+      tone: { color: B.amber, bg: B.amberDim, border: 'rgba(245,158,11,0.3)' },
+    };
   const pin = row.pinMove === 'with'
     ? { label: 'Line with', tone: { color: B.green, bg: B.greenDim, border: 'rgba(16,185,129,0.3)' } }
     : row.pinMove === 'against'
       ? { label: 'Line against', tone: { color: B.red, bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.3)' } }
       : null;
 
+  const tierTone = row.whitelistTier === 'CONFIRMED'
+    ? { color: B.green, bg: B.greenDim, border: 'rgba(16,185,129,0.3)' }
+    : { color: B.textSec, bg: 'rgba(148,163,184,0.08)', border: B.border };
+
   return (
     <>
+      <Chip tone={tierTone}>
+        {row.whitelistTier === 'CONFIRMED' ? 'Confirmed' : 'Flat'}
+      </Chip>
       <Chip tone={sk}>
         <span style={{ opacity: 0.65, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', fontSize: '0.55rem' }}>
           Skill
