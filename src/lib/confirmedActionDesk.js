@@ -2,7 +2,7 @@
  * CONFIRMED Action desk — row builder + strength ranking.
  * Observational strength only (no stake units / path stamps).
  */
-import { buildFlatDollarQBySport, shortWalletId } from './walletClvSkill.js';
+import { buildFlatDollarQBySport, shortWalletId, CLV_SKILL_MIN_N } from './walletClvSkill.js';
 
 const SPORTS = ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL'];
 
@@ -139,6 +139,42 @@ function formLabel(form) {
   return { text: '—', kind: null };
 }
 
+/**
+ * Same “Why we trust them” spine as LockedClarity / receipts:
+ * sport book W–L + flat ROI + WR, plus causal beat-close %.
+ */
+function trustFromProfile(prof, sport) {
+  const picks = prof?.bySport?.[sport]?.picks;
+  const wins = Number(picks?.wins);
+  const losses = Number(picks?.losses);
+  const n = Number(picks?.n) || 0;
+  const wr = Number(picks?.wr);
+  const flatRoi = Number(picks?.flatRoi);
+  const dollarRoi = Number(prof?.bySport?.[sport]?.positions?.dollarRoi);
+  const roi = Number.isFinite(flatRoi) ? flatRoi
+    : Number.isFinite(dollarRoi) ? dollarRoi
+      : null;
+
+  const clvN = Number(prof?.clvSkill?.n) || 0;
+  const clvPct = Number(prof?.clvSkill?.pctPos);
+  const priorClvPct = (clvN >= CLV_SKILL_MIN_N && Number.isFinite(clvPct))
+    ? Math.round(clvPct)
+    : null;
+
+  const record = (n > 0 && Number.isFinite(wins) && Number.isFinite(losses))
+    ? `${wins}-${losses}`
+    : null;
+
+  if (!record && !Number.isFinite(priorClvPct) && !Number.isFinite(roi)) return null;
+  return {
+    record,
+    wr: Number.isFinite(wr) ? Math.round(wr) : null,
+    roi: Number.isFinite(roi) ? Math.round(roi) : null,
+    priorClvPct,
+    bookN: n,
+  };
+}
+
 function parseTs(raw) {
   if (raw == null) return 0;
   if (typeof raw === 'number') return raw < 1e12 ? raw * 1000 : raw;
@@ -271,6 +307,7 @@ export function buildConfirmedActionRows({
       formKind: formDisp.kind,
       flatCurve: form.flatCurve,
       flatEnd: form.flatEnd,
+      trust: trustFromProfile(prof, sport),
       pinMove: pin, // 'with' | 'against' | null
       opposed: null, // filled below
       opposedBy: 0,

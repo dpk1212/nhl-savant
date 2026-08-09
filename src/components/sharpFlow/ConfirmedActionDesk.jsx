@@ -319,6 +319,80 @@ function signalChips(row) {
   );
 }
 
+/** LockedClarity-style trust tiles — results + beat-close price skill. */
+function TrustStrip({ trust, isMobile }) {
+  if (!trust) return null;
+  const hasBook = trust.record || Number.isFinite(trust.roi) || Number.isFinite(trust.wr);
+  const hasClv = Number.isFinite(trust.priorClvPct);
+  if (!hasBook && !hasClv) return null;
+
+  const beatHot = hasClv && trust.priorClvPct >= 55;
+  const roiHot = Number.isFinite(trust.roi) && trust.roi > 0;
+  const tile = (hot) => ({
+    padding: isMobile ? '0.55rem 0.65rem' : '0.6rem 0.75rem',
+    borderRadius: '9px',
+    background: hot
+      ? 'linear-gradient(145deg, rgba(212,175,55,0.10) 0%, rgba(16,185,129,0.06) 100%)'
+      : 'rgba(0,0,0,0.28)',
+    border: `1px solid ${hot ? 'rgba(212,175,55,0.28)' : B.borderSubtle}`,
+    minWidth: 0,
+  });
+
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+      gap: '0.5rem',
+    }}>
+      {hasBook && (
+        <div style={tile(roiHot)}>
+          <div style={{ ...T.tiny, color: B.textMuted, marginBottom: '0.3rem' }}>
+            Why we trust them
+          </div>
+          <div style={{
+            fontSize: isMobile ? '1.05rem' : '1.15rem',
+            fontWeight: 800,
+            color: B.text,
+            fontFeatureSettings: "'tnum'",
+            letterSpacing: '-0.02em',
+            lineHeight: 1.15,
+          }}>
+            {trust.record || '—'}
+          </div>
+          <div style={{
+            ...T.micro, marginTop: '0.22rem', fontWeight: 700,
+            color: roiHot ? B.green : B.textSec,
+            fontFeatureSettings: "'tnum'",
+          }}>
+            {Number.isFinite(trust.roi) ? `${trust.roi >= 0 ? '+' : ''}${trust.roi}% ROI` : '—'}
+            {Number.isFinite(trust.wr) ? ` · ${trust.wr}% wins` : ''}
+          </div>
+        </div>
+      )}
+      {hasClv && (
+        <div style={tile(beatHot)}>
+          <div style={{ ...T.tiny, color: B.textMuted, marginBottom: '0.3rem' }}>
+            Price skill
+          </div>
+          <div style={{
+            fontSize: isMobile ? '1.05rem' : '1.15rem',
+            fontWeight: 800,
+            color: beatHot ? B.gold : B.text,
+            fontFeatureSettings: "'tnum'",
+            letterSpacing: '-0.02em',
+            lineHeight: 1.15,
+          }}>
+            {trust.priorClvPct}%
+          </div>
+          <div style={{ ...T.micro, marginTop: '0.22rem', color: B.textSec, fontWeight: 600 }}>
+            Beat the closing line
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ActionRow({ row, isMobile }) {
   const [hover, setHover] = useState(false);
   const matchup = row.away && row.home ? `${row.away} @ ${row.home}` : row.gameKey;
@@ -326,48 +400,66 @@ function ActionRow({ row, isMobile }) {
   const accent = row.skillKey === 'high' ? B.gold
     : row.skillKey === 'mid' ? B.green
       : B.border;
+  const trust = row.trust;
+
+  const shell = {
+    borderRadius: '12px',
+    border: `1px solid ${hover ? B.goldBorder : B.border}`,
+    borderLeft: `3px solid ${accent}`,
+    background: hover
+      ? `linear-gradient(105deg, ${B.cardHover} 0%, ${B.card} 70%)`
+      : B.card,
+    boxShadow: hover ? '0 10px 32px rgba(0,0,0,0.35)' : 'none',
+    transition: 'border-color 140ms ease, box-shadow 140ms ease, background 140ms ease',
+    overflow: 'hidden',
+  };
 
   if (isMobile) {
     return (
-      <div style={{
-        padding: '1rem 1rem 0.9rem',
-        borderRadius: '12px',
-        border: `1px solid ${B.border}`,
-        borderLeft: `3px solid ${accent}`,
-        background: B.card,
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem' }}>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center', marginBottom: '0.3rem' }}>
-              <span style={{ ...T.tiny, color: sportColor(row.sport) }}>{row.sport}</span>
-              <span style={{ ...T.tiny, color: B.textMuted }}>{row.marketType}</span>
-            </div>
-            <div style={{ ...T.name, color: B.text, fontSize: '1.15rem' }}>{row.team}</div>
-            <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.2rem' }}>{matchup}</div>
-          </div>
-          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <div style={{ ...T.money, color: B.gold, fontSize: '1.25rem', fontFeatureSettings: "'tnum'" }}>
-              {fmtVol(row.invested)}
-            </div>
-            {(row.americanLabel || Number.isFinite(row.cents)) && (
-              <div style={{ ...T.odds, color: B.text, marginTop: '0.15rem', fontFeatureSettings: "'tnum'", fontSize: '0.9rem' }}>
-                {Number.isFinite(row.cents) ? `${row.cents}¢` : ''}
-                {Number.isFinite(row.cents) && row.americanLabel ? ' · ' : ''}
-                {row.americanLabel || ''}
+      <div style={shell}>
+        <div style={{ padding: '1rem 1rem 0.85rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem' }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center', marginBottom: '0.3rem' }}>
+                <span style={{ ...T.tiny, color: sportColor(row.sport) }}>{row.sport}</span>
+                <span style={{ ...T.tiny, color: B.textMuted }}>{row.marketType}</span>
               </div>
-            )}
-            <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.2rem', fontFeatureSettings: "'tnum'" }}>
-              {clock ? `${clock} ET` : ''}{clock ? ' · ' : ''}{agoTxt(row.ts)}
+              <div style={{ ...T.name, color: B.text, fontSize: '1.15rem' }}>{row.team}</div>
+              <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.2rem' }}>{matchup}</div>
+            </div>
+            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+              <div style={{ ...T.money, color: B.gold, fontSize: '1.25rem', fontFeatureSettings: "'tnum'" }}>
+                {fmtVol(row.invested)}
+              </div>
+              {(row.americanLabel || Number.isFinite(row.cents)) && (
+                <div style={{ ...T.odds, color: B.text, marginTop: '0.15rem', fontFeatureSettings: "'tnum'", fontSize: '0.9rem' }}>
+                  {Number.isFinite(row.cents) ? `${row.cents}¢` : ''}
+                  {Number.isFinite(row.cents) && row.americanLabel ? ' · ' : ''}
+                  {row.americanLabel || ''}
+                </div>
+              )}
+              <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.2rem', fontFeatureSettings: "'tnum'" }}>
+                {clock ? `${clock} ET` : ''}{clock ? ' · ' : ''}{agoTxt(row.ts)}
+              </div>
             </div>
           </div>
+          <div style={{
+            display: 'flex', flexWrap: 'wrap', gap: '0.35rem',
+            marginTop: '0.75rem', paddingTop: '0.7rem',
+            borderTop: `1px solid ${B.borderSubtle}`,
+          }}>
+            {signalChips(row)}
+          </div>
         </div>
-        <div style={{
-          display: 'flex', flexWrap: 'wrap', gap: '0.35rem',
-          marginTop: '0.75rem', paddingTop: '0.7rem',
-          borderTop: `1px solid ${B.borderSubtle}`,
-        }}>
-          {signalChips(row)}
-        </div>
+        {trust && (
+          <div style={{
+            padding: '0.65rem 1rem 0.85rem',
+            borderTop: `1px solid ${B.borderSubtle}`,
+            background: 'rgba(0,0,0,0.18)',
+          }}>
+            <TrustStrip trust={trust} isMobile />
+          </div>
+        )}
       </div>
     );
   }
@@ -376,72 +468,73 @@ function ActionRow({ row, isMobile }) {
     <div
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      style={{
+      style={shell}
+    >
+      <div style={{
         display: 'grid',
         gridTemplateColumns: 'minmax(240px, 1.4fr) minmax(280px, 1.6fr) auto',
         gap: '1.25rem',
         alignItems: 'center',
         padding: '1.1rem 1.25rem',
-        borderRadius: '12px',
-        border: `1px solid ${hover ? B.goldBorder : B.border}`,
-        borderLeft: `3px solid ${accent}`,
-        background: hover
-          ? `linear-gradient(105deg, ${B.cardHover} 0%, ${B.card} 70%)`
-          : B.card,
-        boxShadow: hover ? '0 10px 32px rgba(0,0,0,0.35)' : 'none',
-        transition: 'border-color 140ms ease, box-shadow 140ms ease, background 140ms ease',
-      }}
-    >
-      {/* Pick */}
-      <div style={{ minWidth: 0 }}>
-        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', marginBottom: '0.35rem' }}>
-          <span style={{
-            ...T.tiny, color: sportColor(row.sport),
-            padding: '0.12rem 0.38rem', borderRadius: '4px',
-            background: 'rgba(255,255,255,0.03)', border: `1px solid ${B.borderSubtle}`,
-          }}>
-            {row.sport}
-          </span>
-          <span style={{ ...T.tiny, color: B.textMuted }}>{row.marketType}</span>
-        </div>
-        <div style={{ ...T.name, color: B.text }}>{row.team}</div>
-        <div style={{
-          ...T.body, color: B.textMuted, marginTop: '0.28rem',
-          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-        }}>
-          {matchup}
-        </div>
-      </div>
-
-      {/* Signals — chips only, no essays */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center' }}>
-        {signalChips(row)}
-      </div>
-
-      {/* Ticket — $ / odds / time as the punch */}
-      <div style={{ textAlign: 'right', minWidth: 132 }}>
-        <div style={{ ...T.money, color: B.gold, fontFeatureSettings: "'tnum'" }}>
-          {fmtVol(row.invested)}
-        </div>
-        {(row.americanLabel || Number.isFinite(row.cents)) ? (
+      }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', marginBottom: '0.35rem' }}>
+            <span style={{
+              ...T.tiny, color: sportColor(row.sport),
+              padding: '0.12rem 0.38rem', borderRadius: '4px',
+              background: 'rgba(255,255,255,0.03)', border: `1px solid ${B.borderSubtle}`,
+            }}>
+              {row.sport}
+            </span>
+            <span style={{ ...T.tiny, color: B.textMuted }}>{row.marketType}</span>
+          </div>
+          <div style={{ ...T.name, color: B.text }}>{row.team}</div>
           <div style={{
-            ...T.odds, color: B.text, marginTop: '0.2rem',
+            ...T.body, color: B.textMuted, marginTop: '0.28rem',
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          }}>
+            {matchup}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center' }}>
+          {signalChips(row)}
+        </div>
+
+        <div style={{ textAlign: 'right', minWidth: 132 }}>
+          <div style={{ ...T.money, color: B.gold, fontFeatureSettings: "'tnum'" }}>
+            {fmtVol(row.invested)}
+          </div>
+          {(row.americanLabel || Number.isFinite(row.cents)) ? (
+            <div style={{
+              ...T.odds, color: B.text, marginTop: '0.2rem',
+              fontFeatureSettings: "'tnum'",
+            }}>
+              {Number.isFinite(row.cents) ? `${row.cents}¢` : ''}
+              {Number.isFinite(row.cents) && row.americanLabel ? ' · ' : ''}
+              {row.americanLabel || ''}
+            </div>
+          ) : null}
+          <div style={{
+            ...T.micro, color: B.textSubtle, marginTop: '0.35rem',
             fontFeatureSettings: "'tnum'",
           }}>
-            {Number.isFinite(row.cents) ? `${row.cents}¢` : ''}
-            {Number.isFinite(row.cents) && row.americanLabel ? ' · ' : ''}
-            {row.americanLabel || ''}
+            {clock ? `${clock} ET` : '—'}
+            <span style={{ margin: '0 0.3rem', opacity: 0.5 }}>·</span>
+            {agoTxt(row.ts)}
           </div>
-        ) : null}
-        <div style={{
-          ...T.micro, color: B.textSubtle, marginTop: '0.35rem',
-          fontFeatureSettings: "'tnum'",
-        }}>
-          {clock ? `${clock} ET` : '—'}
-          <span style={{ margin: '0 0.3rem', opacity: 0.5 }}>·</span>
-          {agoTxt(row.ts)}
         </div>
       </div>
+
+      {trust && (
+        <div style={{
+          padding: '0.7rem 1.25rem 0.85rem',
+          borderTop: `1px solid ${B.borderSubtle}`,
+          background: 'linear-gradient(180deg, rgba(0,0,0,0.22) 0%, rgba(0,0,0,0.12) 100%)',
+        }}>
+          <TrustStrip trust={trust} />
+        </div>
+      )}
     </div>
   );
 }
