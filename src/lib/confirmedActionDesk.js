@@ -108,14 +108,38 @@ function formLabel(form) {
   return { text: '—', kind: null };
 }
 
-function tsMs(pos) {
-  const raw = pos.updatedAt || pos.firstSeen || pos.createdAt || pos.ts;
+function parseTs(raw) {
   if (raw == null) return 0;
   if (typeof raw === 'number') return raw < 1e12 ? raw * 1000 : raw;
   if (typeof raw?.toMillis === 'function') return raw.toMillis();
   if (typeof raw?._seconds === 'number') return raw._seconds * 1000;
   const t = Date.parse(raw);
   return Number.isFinite(t) ? t : 0;
+}
+
+/** Prefer first-seen / entry time over last update. */
+function entryTsMs(pos) {
+  return parseTs(pos.firstSeen || pos.createdAt || pos.entryAt || pos.ts || pos.updatedAt);
+}
+
+/** Polymarket price → 0–1 probability (handles 0–1 or 1–100¢). */
+function normalizeProb(price) {
+  const p = Number(price);
+  if (!Number.isFinite(p) || p <= 0) return null;
+  if (p <= 1) return p;
+  if (p <= 100) return p / 100;
+  return null;
+}
+
+function probToAmerican(p) {
+  if (p == null || !Number.isFinite(p) || p <= 0 || p >= 1) return null;
+  if (p >= 0.5) return Math.round((-100 * p) / (1 - p));
+  return Math.round((100 * (1 - p)) / p);
+}
+
+function fmtAmerican(odds) {
+  if (!Number.isFinite(odds)) return null;
+  return odds > 0 ? `+${odds}` : `${odds}`;
 }
 
 function collectPositions(feed, marketType) {
@@ -171,8 +195,13 @@ export function buildConfirmedActionRows({
     const formDisp = formLabel(form);
     const pin = pinMoveFor(pinnacleHistory, sport, gameKey, side);
     const invested = Number(pos.invested || pos.size || 0) || 0;
-    const ts = tsMs(pos);
-    const firstSeen = pos.firstSeen || null;
+    const ts = entryTsMs(pos);
+    const rawPrice = pos.entryAvgPrice ?? pos.avgPrice ?? pos.price ?? null;
+    const prob = normalizeProb(rawPrice);
+    const cents = prob != null ? Math.round(prob * 100) : null;
+    const americanOdds = Number.isFinite(pos.odds)
+      ? Math.round(pos.odds)
+      : probToAmerican(prob);
 
     rows.push({
       id: `${sport}|${gameKey}|${marketType}|${short}|${side}`,
@@ -185,7 +214,10 @@ export function buildConfirmedActionRows({
       home: gd.home || gd.homeTeam || null,
       walletShort: short,
       invested,
-      price: pos.avgPrice ?? pos.price ?? null,
+      price: prob,
+      cents,
+      americanOdds,
+      americanLabel: fmtAmerican(americanOdds),
       sizeRatio: size.ratio,
       sizeBand: size.key,
       sizeLabel: size.label,
@@ -202,8 +234,8 @@ export function buildConfirmedActionRows({
       pinMove: pin, // 'with' | 'against' | null
       opposed: null, // filled below
       ts,
-      firstSeen,
-      odds: pos.odds ?? null,
+      firstSeen: pos.firstSeen || null,
+      odds: americanOdds,
     });
   }
 
@@ -310,6 +342,8 @@ export function buildConfirmedActionMarquee(rows, limit = 18) {
       team: r.team,
       invested: r.invested,
       price: r.price,
+      cents: r.cents,
+      americanLabel: r.americanLabel,
       ts: r.ts,
       skillLabel: r.skillLabel,
       opposed: r.opposed,

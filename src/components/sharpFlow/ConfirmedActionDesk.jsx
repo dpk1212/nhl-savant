@@ -65,6 +65,29 @@ function agoTxt(ts) {
   return `${Math.round(h / 24)}d ago`;
 }
 
+/** Absolute entry clock in ET — e.g. "Aug 8, 3:12 PM ET". */
+function entryClock(ts) {
+  if (!ts) return null;
+  try {
+    return `${new Date(ts).toLocaleString('en-US', {
+      timeZone: 'America/New_York',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    })} ET`;
+  } catch {
+    return null;
+  }
+}
+
+function ticketPriceLine(row) {
+  const parts = [];
+  if (Number.isFinite(row.cents)) parts.push(`${row.cents}¢`);
+  if (row.americanLabel) parts.push(row.americanLabel);
+  return parts.length ? parts.join(' · ') : null;
+}
+
 function sportColor(sport) {
   if (sport === 'MLB') return '#E31837';
   if (sport === 'NBA') return '#FF8C00';
@@ -84,46 +107,46 @@ function skillTone(key) {
 }
 
 function skillHint(key) {
-  if (key === 'high') return 'Top flat-$ quartile in sport';
-  if (key === 'mid') return 'Solid flat-$ track record';
-  if (key === 'low') return 'Below-median flat edge';
-  return 'Thin sample — read light';
+  if (key === 'high') return 'Among the best in this sport';
+  if (key === 'mid') return 'Solid history in this sport';
+  if (key === 'low') return 'Weaker history in this sport';
+  return 'Not enough history yet';
 }
 
 function sizeHint(band, ratio) {
-  if (!Number.isFinite(ratio)) return 'vs their usual stake';
-  if (band === 'press') return 'Pressing — well above usual';
-  if (band === 'full') return 'Full size vs usual';
-  if (band === 'lean') return 'Lean — under usual';
-  return 'Light — small vs usual';
+  if (!Number.isFinite(ratio)) return 'Compared to what they usually bet';
+  if (band === 'press') return 'Bigger than they usually bet';
+  if (band === 'full') return 'About their usual size';
+  if (band === 'lean') return 'Smaller than usual';
+  return 'Much smaller than usual';
 }
 
 function formHint(kind) {
-  if (kind === 'l10') return 'Last 10 graded in sport';
-  if (kind === 'l5') return 'Last 5 graded in sport';
-  if (kind === 'book') return 'Season book W–L';
-  return 'No recent form yet';
+  if (kind === 'l10') return 'Last 10 settled bets';
+  if (kind === 'l5') return 'Last 5 settled bets';
+  if (kind === 'book') return 'Overall record in sport';
+  return 'No recent results yet';
 }
 
 const SORTS = [
-  { id: 'strength', label: 'Strength' },
-  { id: 'size', label: 'Size' },
-  { id: 'skill', label: 'Skill' },
+  { id: 'strength', label: 'Best look' },
+  { id: 'size', label: 'Bet size' },
+  { id: 'skill', label: 'Track record' },
   { id: 'form', label: 'Form' },
   { id: 'trend', label: 'Trend' },
-  { id: 'recency', label: 'Recency' },
+  { id: 'recency', label: 'Newest' },
   { id: 'dollars', label: '$' },
 ];
 
 const COL_HEADERS = [
-  { key: 'pick', title: 'Position', sub: 'CONFIRMED wallet · pick' },
-  { key: 'skill', title: 'Skill', sub: 'Flat-$ band in sport' },
-  { key: 'size', title: 'Size', sub: 'Stake vs their usual' },
-  { key: 'form', title: 'Form', sub: 'Recent graded book' },
-  { key: 'trend', title: 'Trend', sub: 'Flat equity curve' },
-  { key: 'field', title: 'Field', sub: 'Other CONFIRMED?' },
-  { key: 'pin', title: 'Pinnacle', sub: 'Line move vs pick' },
-  { key: 'money', title: 'Money', sub: 'Dollars on this side' },
+  { key: 'pick', title: 'Bet', sub: 'Who · matchup · entry' },
+  { key: 'skill', title: 'Track record', sub: 'How they do here' },
+  { key: 'size', title: 'Bet size', sub: 'vs what they usually risk' },
+  { key: 'form', title: 'Recent form', sub: 'Last settled results' },
+  { key: 'trend', title: 'Trend', sub: 'Running result' },
+  { key: 'field', title: 'Competition', sub: 'Sharp money opposite?' },
+  { key: 'pin', title: 'Line move', sub: 'Where sharp books went' },
+  { key: 'money', title: 'Ticket', sub: '$ · price · odds' },
 ];
 
 const FlatSpark = memo(function FlatSpark({ points, width = 96, height = 28 }) {
@@ -259,7 +282,13 @@ const ConfirmedActionMarquee = memo(function ConfirmedActionMarquee({ items }) {
       <span style={{ ...T.micro, fontSize: '0.58rem', color: B.textSubtle, letterSpacing: '0.06em' }}>{it.sport}</span>
       <span style={{ ...T.body, fontWeight: 800, color: B.text }}>{String(it.team).toUpperCase()}</span>
       <span style={{ ...T.body, fontWeight: 800, color: B.gold, fontFeatureSettings: "'tnum'" }}>{fmtVol(it.invested)}</span>
-      <span style={{ ...T.micro, color: B.textSec }}>{it.skillLabel}</span>
+      {(it.americanLabel || Number.isFinite(it.cents)) && (
+        <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
+          {Number.isFinite(it.cents) ? `${it.cents}¢` : ''}
+          {Number.isFinite(it.cents) && it.americanLabel ? ' · ' : ''}
+          {it.americanLabel || ''}
+        </span>
+      )}
       <span style={{ ...T.micro, color: B.textSubtle }}>{agoTxt(it.ts)}</span>
     </span>
   ));
@@ -283,7 +312,7 @@ const ConfirmedActionMarquee = memo(function ConfirmedActionMarquee({ items }) {
           boxShadow: '0 0 8px rgba(16,185,129,0.75)',
         }} />
         <span style={{ ...T.tiny, color: B.green, letterSpacing: '0.12em' }}>
-          CONFIRMED ACTION
+          LIVE ACTION
         </span>
       </span>
       <div className="sf-tape" style={{ flex: 1, overflow: 'hidden', minWidth: 0 }}>
@@ -309,6 +338,8 @@ function ActionRow({ row, isMobile, rank }) {
         : B.textMuted;
   const matchup = row.away && row.home ? `${row.away} @ ${row.home}` : row.gameKey;
   const walletTag = row.walletShort ? `···${String(row.walletShort).slice(-4)}` : null;
+  const priceLine = ticketPriceLine(row);
+  const clock = entryClock(row.ts);
 
   const [hover, setHover] = useState(false);
 
@@ -335,12 +366,21 @@ function ActionRow({ row, isMobile, rank }) {
             </div>
             <div style={{ ...T.hero, color: B.text, fontSize: '1.05rem' }}>{row.team}</div>
             <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.15rem' }}>{matchup}</div>
+            {clock && (
+              <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.25rem', fontFeatureSettings: "'tnum'" }}>
+                In at {clock} · {agoTxt(row.ts)}
+              </div>
+            )}
           </div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
             <div style={{ ...T.hero, color: B.gold, fontSize: '1.15rem', fontFeatureSettings: "'tnum'" }}>
               {fmtVol(row.invested)}
             </div>
-            <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.15rem' }}>{agoTxt(row.ts)}</div>
+            {priceLine && (
+              <div style={{ ...T.micro, color: B.textSec, marginTop: '0.15rem', fontFeatureSettings: "'tnum'" }}>
+                @ {priceLine}
+              </div>
+            )}
           </div>
         </div>
 
@@ -348,9 +388,9 @@ function ActionRow({ row, isMobile, rank }) {
           display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.55rem',
           paddingTop: '0.55rem', borderTop: `1px solid ${B.borderSubtle}`,
         }}>
-          <MobileMetric label="Skill" value={<Badge tone={sk}>{row.skillLabel}</Badge>} hint={skillHint(row.skillKey)} />
+          <MobileMetric label="Track record" value={<Badge tone={sk}>{row.skillLabel}</Badge>} hint={skillHint(row.skillKey)} />
           <MobileMetric
-            label="Size vs usual"
+            label="Bet size"
             value={(
               <span style={{ ...T.label, color: B.text, fontFeatureSettings: "'tnum'" }}>
                 {row.sizeRatio != null ? `${row.sizeRatio.toFixed(1)}×` : '—'}
@@ -361,18 +401,18 @@ function ActionRow({ row, isMobile, rank }) {
           />
           <MobileMetric label="Form" value={row.formText} hint={formHint(row.formKind)} />
           <MobileMetric
-            label="Field"
-            value={<span style={{ color: oppColor, fontWeight: 800 }}>{row.opposed === 'clear' ? 'Clear' : 'Contested'}</span>}
-            hint={row.opposed === 'clear' ? 'No CONFIRMED on other side' : 'CONFIRMED on both sides'}
+            label="Competition"
+            value={<span style={{ color: oppColor, fontWeight: 800 }}>{row.opposed === 'clear' ? 'Unopposed' : 'Both sides'}</span>}
+            hint={row.opposed === 'clear' ? 'No sharp money the other way' : 'Sharp money on both sides'}
           />
           <MobileMetric
-            label="Pinnacle"
-            value={<span style={{ color: pinColor, fontWeight: 800 }}>{row.pinMove === 'with' ? 'With' : row.pinMove === 'against' ? 'Against' : 'Flat / n/a'}</span>}
-            hint="Sharp book line direction"
+            label="Line move"
+            value={<span style={{ color: pinColor, fontWeight: 800 }}>{row.pinMove === 'with' ? 'With them' : row.pinMove === 'against' ? 'Against them' : 'Quiet'}</span>}
+            hint="Where the sharp books moved"
           />
           {(row.flatCurve || flatLabel) && (
             <div>
-              <div style={{ ...T.tiny, color: B.textMuted, marginBottom: '0.2rem' }}>Flat trend</div>
+              <div style={{ ...T.tiny, color: B.textMuted, marginBottom: '0.2rem' }}>Trend</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
                 <FlatSpark points={row.flatCurve} width={80} height={24} />
                 {flatLabel && (
@@ -389,7 +429,7 @@ function ActionRow({ row, isMobile, rank }) {
         </div>
         {walletTag && (
           <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.55rem' }}>
-            Wallet {walletTag}
+            Bettor {walletTag}
           </div>
         )}
       </div>
@@ -445,13 +485,29 @@ function ActionRow({ row, isMobile, rank }) {
               {row.marketType}
             </span>
             {walletTag && (
-              <span style={{ ...T.micro, color: B.textSubtle }}>wallet {walletTag}</span>
+              <span style={{ ...T.micro, color: B.textSubtle }}>bettor {walletTag}</span>
             )}
           </div>
           <div style={{ ...T.hero, color: B.text }}>{row.team}</div>
           <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.2rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {matchup}
           </div>
+          {(clock || priceLine) && (
+            <div style={{
+              ...T.micro, color: B.textSec, marginTop: '0.35rem',
+              fontFeatureSettings: "'tnum'", display: 'flex', flexWrap: 'wrap', gap: '0.35rem 0.55rem',
+            }}>
+              {clock && <span>In {clock}</span>}
+              {clock && <span style={{ color: B.textSubtle }}>·</span>}
+              <span style={{ color: B.textSubtle }}>{agoTxt(row.ts)}</span>
+              {priceLine && (
+                <>
+                  <span style={{ color: B.textSubtle }}>·</span>
+                  <span>@ {priceLine}</span>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -499,13 +555,13 @@ function ActionRow({ row, isMobile, rank }) {
               {flatLabel || '—'}
             </div>
             <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.15rem' }}>
-              {flatLabel ? 'Cumulative flat units' : 'Need ≥5 graded'}
+              {flatLabel ? 'Even-money result lately' : 'Need more settled bets'}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Field / Opposed */}
+      {/* Competition */}
       <div>
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
@@ -519,32 +575,39 @@ function ActionRow({ row, isMobile, rank }) {
             boxShadow: row.opposed === 'clear' ? '0 0 6px rgba(16,185,129,0.6)' : 'none',
           }} />
           <span style={{ ...T.micro, fontWeight: 800, color: oppColor }}>
-            {row.opposed === 'clear' ? 'Clear' : 'Contested'}
+            {row.opposed === 'clear' ? 'Unopposed' : 'Both sides'}
           </span>
         </div>
         <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.35rem' }}>
-          {row.opposed === 'clear' ? 'No CONFIRMED opposite' : 'CONFIRMED on both sides'}
+          {row.opposed === 'clear' ? 'No sharp money the other way' : 'Sharp money on both sides'}
         </div>
       </div>
 
-      {/* Pin */}
+      {/* Line move */}
       <div>
         <div style={{ ...T.label, fontWeight: 800, color: pinColor }}>
-          {row.pinMove === 'with' ? 'Moving with' : row.pinMove === 'against' ? 'Moving against' : 'No clear move'}
+          {row.pinMove === 'with' ? 'Books with them' : row.pinMove === 'against' ? 'Books against' : 'Line quiet'}
         </div>
         <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.3rem' }}>
-          {row.pinMove === 'with' ? 'Pinnacle agrees with pick'
-            : row.pinMove === 'against' ? 'Pinnacle leans other way'
-              : 'Line quiet or N/A'}
+          {row.pinMove === 'with' ? 'Sharp line moved their way'
+            : row.pinMove === 'against' ? 'Sharp line moved the other way'
+              : 'No clear book move yet'}
         </div>
       </div>
 
-      {/* Money + time */}
+      {/* Ticket: $ · price · odds */}
       <div style={{ textAlign: 'right' }}>
         <div style={{ ...T.hero, color: B.gold, fontSize: '1.15rem', fontFeatureSettings: "'tnum'" }}>
           {fmtVol(row.invested)}
         </div>
-        <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.3rem', fontFeatureSettings: "'tnum'" }}>
+        {priceLine ? (
+          <div style={{ ...T.label, color: B.text, marginTop: '0.25rem', fontFeatureSettings: "'tnum'", fontSize: '0.78rem' }}>
+            @ {priceLine}
+          </div>
+        ) : (
+          <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.25rem' }}>Price n/a</div>
+        )}
+        <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.25rem', fontFeatureSettings: "'tnum'" }}>
           {agoTxt(row.ts)}
         </div>
       </div>
@@ -604,7 +667,7 @@ export default function ConfirmedActionDesk({
   if (!walletProfiles) {
     return (
       <div style={{ ...T.label, color: B.textMuted, padding: '2rem', textAlign: 'center' }}>
-        Loading wallet strength…
+        Loading live action…
       </div>
     );
   }
@@ -617,9 +680,9 @@ export default function ConfirmedActionDesk({
         border: `1px solid ${B.border}`,
       }}>
         <Activity size={30} color={B.textMuted} style={{ marginBottom: '0.85rem' }} />
-        <div style={{ ...T.sub, color: B.text, marginBottom: '0.4rem' }}>No CONFIRMED action right now</div>
+        <div style={{ ...T.sub, color: B.text, marginBottom: '0.4rem' }}>No live action right now</div>
         <div style={{ ...T.body, color: B.textSec, maxWidth: 420, margin: '0 auto' }}>
-          When CONFIRMED-in-sport wallets open positions, they rank here by strength — skill, size, form, field, and Pinnacle.
+          When proven bettors put money down, their open bets show up here — who, how much, at what price, and when.
         </div>
       </div>
     );
@@ -631,11 +694,12 @@ export default function ConfirmedActionDesk({
 
       <div style={{ marginBottom: '1rem' }}>
         <div style={{ ...T.hero, color: B.text, marginBottom: '0.3rem', fontSize: '1.2rem' }}>
-          CONFIRMED wallet action
+          What winning bettors are on
         </div>
         <div style={{ ...T.body, color: B.textSec, maxWidth: 720 }}>
-          Live positions from wallets that are CONFIRMED in that sport — ranked by how strong the bet looks:
-          skill band, size vs usual, recent form, whether anyone sharp is opposite, and whether Pinnacle is moving with them.
+          Open bets from people who actually win in that sport. We rank them by how strong each ticket looks —
+          their track record, how big they bet vs usual, recent form, whether sharp money is on the other side,
+          and whether the books moved with them. Each row shows entry time, price, and American odds.
         </div>
       </div>
 
@@ -645,10 +709,10 @@ export default function ConfirmedActionDesk({
         gap: '0.7rem',
         marginBottom: '1.15rem',
       }}>
-        <StatCard icon={Activity} label="Live positions" value={stats.total} accent={B.gold} hint="Open CONFIRMED legs" />
-        <StatCard icon={TrendingUp} label="High / Mid skill" value={stats.highMid} hint="Stronger flat-$ bands" />
-        <StatCard icon={ShieldCheck} label="Clear field" value={stats.clear} accent={stats.clear > 0 ? B.green : null} hint="No CONFIRMED opposite" />
-        <StatCard icon={Eye} label="Pin with" value={stats.pinWith} hint="Pinnacle moving same way" />
+        <StatCard icon={Activity} label="Open bets" value={stats.total} accent={B.gold} hint="Live tickets right now" />
+        <StatCard icon={TrendingUp} label="Stronger hands" value={stats.highMid} hint="Better track records" />
+        <StatCard icon={ShieldCheck} label="Unopposed" value={stats.clear} accent={stats.clear > 0 ? B.green : null} hint="No sharp money opposite" />
+        <StatCard icon={Eye} label="Books agree" value={stats.pinWith} hint="Line moved their way" />
       </div>
 
       <div style={{
@@ -665,10 +729,10 @@ export default function ConfirmedActionDesk({
         marginBottom: '1rem',
       }}>
         <span style={{ ...T.tiny, color: B.textMuted, marginRight: '0.2rem' }}>Filter</span>
-        <Pill active={highMidOnly} onClick={() => setHighMidOnly((v) => !v)}>High / Mid</Pill>
-        <Pill active={sizedOnly} onClick={() => setSizedOnly((v) => !v)}>Sized ≥0.5×</Pill>
-        <Pill active={clearOnly} onClick={() => setClearOnly((v) => !v)}>Clear only</Pill>
-        <Pill active={pinWithOnly} onClick={() => setPinWithOnly((v) => !v)}>Pin with</Pill>
+        <Pill active={highMidOnly} onClick={() => setHighMidOnly((v) => !v)}>Stronger hands</Pill>
+        <Pill active={sizedOnly} onClick={() => setSizedOnly((v) => !v)}>Real size</Pill>
+        <Pill active={clearOnly} onClick={() => setClearOnly((v) => !v)}>Unopposed</Pill>
+        <Pill active={pinWithOnly} onClick={() => setPinWithOnly((v) => !v)}>Books agree</Pill>
         <span style={{ ...T.micro, color: B.textSubtle, marginLeft: 'auto' }}>
           {visible.length} of {rows.length}
           {sportFilter && sportFilter !== 'All' ? ` · ${sportFilter}` : ''}
