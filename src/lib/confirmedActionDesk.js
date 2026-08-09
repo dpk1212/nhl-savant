@@ -8,6 +8,7 @@ import {
   formatSharpTierCellHist,
   tierLetterFromQ,
 } from './sharpTierCellStats.js';
+import { sportBookForDisplay } from './walletSportBook.js';
 
 const SPORTS = ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL'];
 
@@ -147,19 +148,15 @@ function formLabel(form) {
 
 /**
  * Same “Why we trust them” spine as LockedClarity / receipts:
- * sport book W–L + flat ROI + WR, plus causal beat-close %.
+ * stronger of Source A (picks) vs Source B (positions), plus beat-close %.
  */
 function trustFromProfile(prof, sport) {
-  const picks = prof?.bySport?.[sport]?.picks;
-  const wins = Number(picks?.wins);
-  const losses = Number(picks?.losses);
-  const n = Number(picks?.n) || 0;
-  const wr = Number(picks?.wr);
-  const flatRoi = Number(picks?.flatRoi);
-  const dollarRoi = Number(prof?.bySport?.[sport]?.positions?.dollarRoi);
-  const roi = Number.isFinite(flatRoi) ? flatRoi
-    : Number.isFinite(dollarRoi) ? dollarRoi
-      : null;
+  const book = sportBookForDisplay(prof?.bySport?.[sport]);
+  const wins = Number(book?.wins);
+  const losses = Number(book?.losses);
+  const n = Number(book?.n) || 0;
+  const wr = Number(book?.wr);
+  const roi = Number(book?.roi);
 
   const clvN = Number(prof?.clvSkill?.n) || 0;
   const clvPct = Number(prof?.clvSkill?.pctPos);
@@ -178,6 +175,7 @@ function trustFromProfile(prof, sport) {
     roi: Number.isFinite(roi) ? Math.round(roi) : null,
     priorClvPct,
     bookN: n,
+    bookKind: book?.kind || null,
   };
 }
 

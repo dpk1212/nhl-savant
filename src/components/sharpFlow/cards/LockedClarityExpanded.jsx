@@ -35,7 +35,12 @@ const GOLD_HI = B.goldHi;
 const MONO = "'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace";
 const LINE = 'rgba(148,163,184,0.11)';
 
-const fmtOdds = (o) => (o == null || Number.isNaN(Number(o)) ? '—' : Number(o) > 0 ? `+${Number(o)}` : `${Number(o)}`);
+const fmtOdds = (o) => {
+  const n = Number(o);
+  // 0 is “missing stamp”, not even money — never render as “0”.
+  if (o == null || !Number.isFinite(n) || n === 0) return '—';
+  return n > 0 ? `+${n}` : `${n}`;
+};
 const fmtMoney = (v) => {
   if (v == null || Number.isNaN(Number(v))) return '—';
   const n = Math.abs(Number(v));

@@ -792,13 +792,13 @@ export function mapLockedPickToCardFixture(pick, {
     || (freezeAtMs != null && Date.now() >= freezeAtMs);
 
   let ticketLine = Number.isFinite(pick.line) ? pick.line : null;
-  let ticketOdds = Number.isFinite(pick.odds) ? pick.odds : null;
+  let ticketOdds = Number.isFinite(pick.odds) && pick.odds !== 0 ? pick.odds : null;
   if (isTotal && !ticketFrozen && pinnacleHistory && pick.sport && pick.gameKey) {
     const pinnGame = pinnacleHistory[pick.sport]?.[pick.gameKey];
     const main = pinnGame?.totalCurrent?.line;
     if (Number.isFinite(main) && main >= 1.5) {
       const stampLooksAlt = Number.isFinite(ticketLine) && Math.abs(ticketLine - main) > 0.051;
-      const stampMissing = !Number.isFinite(ticketLine) || !Number.isFinite(ticketOdds);
+      const stampMissing = !Number.isFinite(ticketLine) || !Number.isFinite(ticketOdds) || ticketOdds === 0;
       if (stampMissing || stampLooksAlt) {
         ticketLine = main;
         const sideIsUnder = (() => {
@@ -820,7 +820,8 @@ export function mapLockedPickToCardFixture(pick, {
   }
 
   const units = Number.isFinite(pick.units) ? pick.units : 0;
-  const odds = Number.isFinite(ticketOdds) ? ticketOdds : null;
+  // Odds 0 is a missing create stamp — treat as null so cards never show “ML 0”.
+  const odds = Number.isFinite(ticketOdds) && ticketOdds !== 0 ? ticketOdds : null;
   const lockOdds = odds;
   const peakOdds = Number.isFinite(pick.lockPinnOdds) ? pick.lockPinnOdds
     : Number.isFinite(pick.pinnacleOdds) ? pick.pinnacleOdds : lockOdds;
