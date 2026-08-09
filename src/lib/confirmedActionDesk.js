@@ -6,8 +6,8 @@ import { buildFlatDollarQBySport, shortWalletId } from './walletClvSkill.js';
 
 const SPORTS = ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL'];
 
-/** Same as Signals “proven” / {SPORT} WINNER — CONFIRMED + FLAT. */
-const PROVEN_TIERS = new Set(['CONFIRMED', 'FLAT']);
+/** Action tape = CONFIRMED only (FLAT wins less — kept off this board). */
+const ACTION_TIERS = new Set(['CONFIRMED']);
 /** writeSharpActions SHADOW floor — token bets don't count as opposed money. */
 const MODEL_MIN_SIZE = 0.10;
 
@@ -182,11 +182,7 @@ export function buildConfirmedActionRows({
   walletProfiles,
   pinnacleHistory,
 } = {}) {
-  // Peer skill among proven (CONFIRMED+FLAT). Staking CONFIRMED-Q1 still
-  // uses CONFIRMED-only via the default buildFlatDollarQBySport() call site.
-  const qBySport = buildFlatDollarQBySport(walletProfiles, {
-    tiers: ['CONFIRMED', 'FLAT'],
-  });
+  const qBySport = buildFlatDollarQBySport(walletProfiles);
   const raw = [
     ...collectPositions(sharpPositions, 'ML'),
     ...collectPositions(spreadPositions, 'SPREAD'),
@@ -199,7 +195,7 @@ export function buildConfirmedActionRows({
     if (!short) continue;
     const prof = profileFor(walletProfiles, short);
     const tier = String(prof?.bySport?.[sport]?.whitelistTier || '').toUpperCase();
-    if (!PROVEN_TIERS.has(tier)) continue;
+    if (!ACTION_TIERS.has(tier)) continue;
     if (pos.status && pos.status !== 'PENDING') continue;
 
     const side = pos.side;
@@ -261,8 +257,7 @@ export function buildConfirmedActionRows({
     });
   }
 
-  // Opposition: other *counted* proven (CONFIRMED|FLAT, ≥0.10×) on opposite side.
-  // Matches Signals “N proven winners” — not CONFIRMED-only Action rows.
+  // Opposition: other counted CONFIRMED (≥0.10×) on opposite side.
   const byCluster = new Map();
   for (const r of rows) {
     const k = `${r.sport}|${r.gameKey}|${r.marketType}`;

@@ -286,15 +286,8 @@ function signalChips(row) {
       ? { label: 'Line against', tone: { color: B.red, bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.3)' } }
       : null;
 
-  const tierTone = row.whitelistTier === 'CONFIRMED'
-    ? { color: B.green, bg: B.greenDim, border: 'rgba(16,185,129,0.3)' }
-    : { color: B.textSec, bg: 'rgba(148,163,184,0.08)', border: B.border };
-
   return (
     <>
-      <Chip tone={tierTone}>
-        {row.whitelistTier === 'CONFIRMED' ? 'Confirmed' : 'Flat'}
-      </Chip>
       <Chip tone={sk}>
         <span style={{ opacity: 0.65, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', fontSize: '0.55rem' }}>
           Skill
