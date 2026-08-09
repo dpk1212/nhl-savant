@@ -1,22 +1,22 @@
 {
-  "scannedAt": "2026-08-09T23:28:57.822Z",
-  "elapsedSec": 18.5,
+  "scannedAt": "2026-08-09T23:32:51.852Z",
+  "elapsedSec": 15.2,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 27,
   "summary": {
     "total": 209,
     "coveredByMain": 2,
-    "recovered": 6,
-    "recoveredPositions": 9,
-    "noPositions": 201,
+    "recovered": 7,
+    "recoveredPositions": 13,
+    "noPositions": 200,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
       "ml": 1,
       "spread": 0,
-      "total": 1,
-      "dropped_shadow_gate": 3,
+      "total": 2,
+      "dropped_shadow_gate": 6,
       "dropped_excluded": 4,
       "dropped_duplicate": 0
     }
@@ -605,11 +605,11 @@
       "sports": "MLB,WNBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xa0f21e6d351baa9185716b5c00c2925ed9621848",
-      "positionsCount": 2,
+      "positionsCount": 3,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 16710,
       "willPassShadowGate": 0,
-      "willDropAtShadowGate": 2,
+      "willDropAtShadowGate": 3,
       "positions": [
         {
           "sport": "MLB",
@@ -618,6 +618,15 @@
           "side": "away",
           "invested": 1162,
           "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "hou_sdp",
+          "marketType": "total",
+          "side": "over",
+          "invested": 0,
+          "entryLine": 7.5,
           "passesShadow": false
         },
         {
@@ -1692,8 +1701,42 @@
       "tier": "CONFIRMED",
       "name": null,
       "sports": "SOC,NBA",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x3dfb153c197d4c19d3b31c1ecd2c7b6860eeabaf"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x3dfb153c197d4c19d3b31c1ecd2c7b6860eeabaf",
+      "positionsCount": 3,
+      "statsSource": "sharpWalletProfiles_derived",
+      "avgSportBet": 46219,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 2,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "hou_sdp",
+          "marketType": "total",
+          "side": "under",
+          "invested": 6055,
+          "entryLine": 8.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "hou_sdp",
+          "marketType": "total",
+          "side": "under",
+          "invested": 0,
+          "entryLine": 7.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "hou_sdp",
+          "marketType": "total",
+          "side": "under",
+          "invested": 301,
+          "entryLine": 9.5,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "eff402",
