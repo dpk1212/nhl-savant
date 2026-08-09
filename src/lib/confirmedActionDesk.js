@@ -54,12 +54,29 @@ function profileFor(walletProfiles, short) {
   return walletProfiles[s] || walletProfiles[short] || null;
 }
 
+/** Model / filter size — stamped cross-sport usual (do not change for display). */
 function sizeRatioOf(pos) {
   if (Number.isFinite(pos.v8_sizeRatio)) return Number(pos.v8_sizeRatio);
   const invested = Number(pos.invested || 0);
   const usual = Number(pos.avgSportBet || pos.usualBet || 0);
   if (invested > 0 && usual > 0) return invested / usual;
   return null;
+}
+
+/**
+ * Display-only: invested / this wallet's average stake *in this sport*
+ * (bySport.positions). Falls back to model sizeRatio when sport usual unknown.
+ */
+function sportDisplaySizeRatio(pos, prof, sport) {
+  const invested = Number(pos.invested || pos.size || 0);
+  const rec = prof?.bySport?.[sport]?.positions;
+  const n = Number(rec?.n) || 0;
+  const sportInvested = Number(rec?.invested);
+  if (invested > 0 && n > 0 && Number.isFinite(sportInvested) && sportInvested > 0) {
+    const usual = sportInvested / n;
+    if (usual > 0) return invested / usual;
+  }
+  return sizeRatioOf(pos);
 }
 
 function teamLabel(gd, side) {
@@ -205,6 +222,8 @@ export function buildConfirmedActionRows({
     const skill = skillBandFromQ(q);
     const sr = sizeRatioOf(pos);
     const size = sizeBandFromRatio(sr);
+    const dispSr = sportDisplaySizeRatio(pos, prof, sport);
+    const dispSize = sizeBandFromRatio(dispSr);
     const counted = isCountedProvenSize(sr);
     const form = formFromProfile(prof, sport);
     const formDisp = formLabel(form);
@@ -237,6 +256,10 @@ export function buildConfirmedActionRows({
       sizeBand: size.key,
       sizeLabel: size.label,
       sizeWeight: size.weight,
+      // UI only — sport-local usual. Filters/Best math still use sizeRatio.
+      displaySizeRatio: dispSize.ratio,
+      displaySizeBand: dispSize.key,
+      displaySizeLabel: dispSize.label,
       whitelistTier: tier,
       counted,
       skillKey: skill.key,
@@ -295,19 +318,55 @@ export function buildConfirmedActionRows({
   return { rows, qBySport, stats };
 }
 
+/**
+ * "Best" ≈ researched edge order, not raw conviction theatre.
+ * Spine: CONFIRMED flatDollar Q1 × sized (≥0.5×) × unopposed, then pin/form/price.
+ * Uses model sizeRatio (cross-sport stamp) — display size is separate.
+ */
 export function strengthScore(r) {
   let s = 0;
-  s += (r.skillWeight || 0) * 100;
-  s += (r.sizeWeight || 0) * 20;
-  s += r.opposed === 'clear' ? 15 : 0;
-  if (r.pinMove === 'with') s += 10;
-  else if (r.pinMove === 'against') s -= 8;
-  // Recency bump (0–10): fresher within 6h
+
+  // Skill quartile (flat$ peer rank) — Q1 carried the as-of edge
+  if (r.skillKey === 'high') s += 100;
+  else if (r.skillKey === 'mid') s += 42;
+  else if (r.skillKey === 'low') s += 12;
+  else if (r.skillKey === 'bottom') s += 0;
+  else s += 8; // thin sample
+
+  // Size vs usual (model) — Q1 promote floor was ≥0.5×; light tickets are weak
+  const sr = Number(r.sizeRatio);
+  if (Number.isFinite(sr)) {
+    if (sr >= 1.5) s += 55;
+    else if (sr >= 1.0) s += 48;
+    else if (sr >= 0.5) s += 38;
+    else if (sr >= 0.25) s += 6;
+    else s -= 28;
+  } else {
+    s -= 8;
+  }
+
+  // Field — unopposed helps; contested is soft (Q1 survived opposition in research)
+  if (r.opposed === 'clear') s += 28;
+  else s -= 6;
+
+  if (r.pinMove === 'with') s += 14;
+  else if (r.pinMove === 'against') s -= 16;
+
+  // Recent form — secondary signal
+  const wr = formWinRate(r);
+  if (wr > 0) s += (wr - 0.5) * 36;
+
+  // Entry price — favorites cash more often (modest; not the edge story)
+  if (Number.isFinite(r.price) && r.price > 0 && r.price < 1) {
+    s += (r.price - 0.5) * 18;
+  }
+
+  // Freshness (small)
   if (r.ts) {
     const ageH = (Date.now() - r.ts) / 36e5;
-    if (ageH < 6) s += Math.max(0, 10 - ageH * 1.5);
+    if (ageH < 6) s += Math.max(0, 5 - ageH * 0.7);
   }
-  s += Math.min(5, Math.log10(Math.max(1, r.invested)) - 2);
+
   return s;
 }
 

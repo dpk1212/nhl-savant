@@ -294,7 +294,11 @@ function signalChips(row) {
         </span>
         {row.skillLabel}
       </Chip>
-      <SizeBar ratio={row.sizeRatio} band={row.sizeBand} label={row.sizeLabel} />
+      <SizeBar
+        ratio={Number.isFinite(row.displaySizeRatio) ? row.displaySizeRatio : row.sizeRatio}
+        band={row.displaySizeBand || row.sizeBand}
+        label={row.displaySizeLabel || row.sizeLabel}
+      />
       {row.formText !== '—' && <Chip>{row.formText}</Chip>}
       <Chip tone={opp.tone}>{opp.label}</Chip>
       {pin && <Chip tone={pin.tone}>{pin.label}</Chip>}
