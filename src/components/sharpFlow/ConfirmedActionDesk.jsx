@@ -290,7 +290,7 @@ function signalChips(row) {
     <>
       <Chip tone={sk}>
         <span style={{ opacity: 0.65, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', fontSize: '0.55rem' }}>
-          Peers
+          Sharp tier
         </span>
         {row.skillLabel}
       </Chip>

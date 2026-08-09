@@ -11,12 +11,12 @@ const ACTION_TIERS = new Set(['CONFIRMED']);
 /** writeSharpActions SHADOW floor — token bets don't count as opposed money. */
 const MODEL_MIN_SIZE = 0.10;
 
-/** Peer rank among CONFIRMED in-sport (flat+dollar ROI) — not win rate. */
+/** Sharp tier = ROI rank among CONFIRMED in-sport (flat+dollar) — not win rate. */
 const SKILL_BAND = {
-  1: { key: 'high', label: 'Top quarter', weight: 4 },
-  2: { key: 'mid', label: '2nd quarter', weight: 3 },
-  3: { key: 'low', label: '3rd quarter', weight: 2 },
-  4: { key: 'bottom', label: 'Bottom quarter', weight: 1 },
+  1: { key: 'high', label: 'A', weight: 4 },
+  2: { key: 'mid', label: 'B', weight: 3 },
+  3: { key: 'low', label: 'C', weight: 2 },
+  4: { key: 'bottom', label: 'D', weight: 1 },
 };
 
 /** Missing flatDollar Q (sport <4 scored, or no flat+$ ROIs) — not a quartile. */
