@@ -1,8 +1,8 @@
 /**
- * CONFIRMED Action desk — OKX-style strength list.
+ * CONFIRMED Action desk — OKX/Fey-style strength list.
  * Data product only: no stake units, lock CTAs, or path stamps.
  */
-import React, { useMemo, useState, memo } from 'react';
+import React, { useMemo, useState, useId, memo } from 'react';
 import { Activity, Eye, ShieldCheck, TrendingUp } from 'lucide-react';
 import {
   buildConfirmedActionRows,
@@ -14,16 +14,19 @@ import {
 const B = {
   gold: '#D4AF37',
   goldDim: 'rgba(212, 175, 55, 0.10)',
-  goldBorder: 'rgba(212, 175, 55, 0.25)',
+  goldBorder: 'rgba(212, 175, 55, 0.28)',
   green: '#10B981',
   greenDim: 'rgba(16, 185, 129, 0.12)',
   red: '#EF4444',
   redDim: 'rgba(239, 68, 68, 0.12)',
+  amber: '#F59E0B',
+  amberDim: 'rgba(245, 158, 11, 0.12)',
   sky: '#0EA5E9',
   card: '#151923',
   cardAlt: '#1A1F2E',
-  border: 'rgba(37, 43, 59, 0.8)',
-  borderSubtle: 'rgba(26, 32, 48, 0.6)',
+  cardHover: '#1C2230',
+  border: 'rgba(37, 43, 59, 0.85)',
+  borderSubtle: 'rgba(26, 32, 48, 0.7)',
   text: '#F8FAFC',
   textSec: '#94A3B8',
   textMuted: '#64748B',
@@ -31,14 +34,18 @@ const B = {
 };
 
 const T = {
-  sub: { fontSize: '0.938rem', fontWeight: 700, lineHeight: 1.4 },
-  label: { fontSize: '0.75rem', fontWeight: 600, lineHeight: 1.4, letterSpacing: '0.03em' },
-  micro: { fontSize: '0.625rem', fontWeight: 600, lineHeight: 1.4 },
+  hero: { fontSize: '1.05rem', fontWeight: 800, lineHeight: 1.25, letterSpacing: '-0.01em' },
+  sub: { fontSize: '0.938rem', fontWeight: 700, lineHeight: 1.35 },
+  label: { fontSize: '0.8rem', fontWeight: 700, lineHeight: 1.35, letterSpacing: '0.01em' },
+  body: { fontSize: '0.72rem', fontWeight: 600, lineHeight: 1.4 },
+  micro: { fontSize: '0.65rem', fontWeight: 600, lineHeight: 1.35 },
   tiny: {
-    fontSize: '0.563rem', fontWeight: 700, lineHeight: 1.4,
-    letterSpacing: '0.05em', textTransform: 'uppercase',
+    fontSize: '0.58rem', fontWeight: 700, lineHeight: 1.3,
+    letterSpacing: '0.06em', textTransform: 'uppercase',
   },
 };
+
+const GRID = 'minmax(220px, 1.9fr) 0.85fr 0.95fr 0.85fr 1.15fr 0.9fr 0.85fr 0.85fr';
 
 function fmtVol(v) {
   const abs = Math.abs(v);
@@ -51,11 +58,11 @@ function fmtVol(v) {
 function agoTxt(ts) {
   if (!ts) return '—';
   const m = Math.round((Date.now() - ts) / 60000);
-  if (m < 1) return 'now';
-  if (m < 60) return `${m}m`;
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m}m ago`;
   const h = Math.round(m / 60);
-  if (h < 24) return `${h}h`;
-  return `${Math.round(h / 24)}d`;
+  if (h < 24) return `${h}h ago`;
+  return `${Math.round(h / 24)}d ago`;
 }
 
 function sportColor(sport) {
@@ -71,9 +78,31 @@ function sportColor(sport) {
 
 function skillTone(key) {
   if (key === 'high') return { color: B.gold, bg: B.goldDim, border: B.goldBorder };
-  if (key === 'mid') return { color: B.green, bg: B.greenDim, border: 'rgba(16,185,129,0.25)' };
+  if (key === 'mid') return { color: B.green, bg: B.greenDim, border: 'rgba(16,185,129,0.28)' };
   if (key === 'low') return { color: B.textSec, bg: 'rgba(148,163,184,0.08)', border: B.border };
   return { color: B.textMuted, bg: 'rgba(100,116,139,0.08)', border: B.borderSubtle };
+}
+
+function skillHint(key) {
+  if (key === 'high') return 'Top flat-$ quartile in sport';
+  if (key === 'mid') return 'Solid flat-$ track record';
+  if (key === 'low') return 'Below-median flat edge';
+  return 'Thin sample — read light';
+}
+
+function sizeHint(band, ratio) {
+  if (!Number.isFinite(ratio)) return 'vs their usual stake';
+  if (band === 'press') return 'Pressing — well above usual';
+  if (band === 'full') return 'Full size vs usual';
+  if (band === 'lean') return 'Lean — under usual';
+  return 'Light — small vs usual';
+}
+
+function formHint(kind) {
+  if (kind === 'l10') return 'Last 10 graded in sport';
+  if (kind === 'l5') return 'Last 5 graded in sport';
+  if (kind === 'book') return 'Season book W–L';
+  return 'No recent form yet';
 }
 
 const SORTS = [
@@ -86,7 +115,19 @@ const SORTS = [
   { id: 'dollars', label: '$' },
 ];
 
-const FlatSpark = memo(function FlatSpark({ points, width = 72, height = 22 }) {
+const COL_HEADERS = [
+  { key: 'pick', title: 'Position', sub: 'CONFIRMED wallet · pick' },
+  { key: 'skill', title: 'Skill', sub: 'Flat-$ band in sport' },
+  { key: 'size', title: 'Size', sub: 'Stake vs their usual' },
+  { key: 'form', title: 'Form', sub: 'Recent graded book' },
+  { key: 'trend', title: 'Trend', sub: 'Flat equity curve' },
+  { key: 'field', title: 'Field', sub: 'Other CONFIRMED?' },
+  { key: 'pin', title: 'Pinnacle', sub: 'Line move vs pick' },
+  { key: 'money', title: 'Money', sub: 'Dollars on this side' },
+];
+
+const FlatSpark = memo(function FlatSpark({ points, width = 96, height = 28 }) {
+  const gid = useId().replace(/:/g, '');
   if (!points || points.length < 5) return null;
   const min = Math.min(...points);
   const max = Math.max(...points);
@@ -102,12 +143,40 @@ const FlatSpark = memo(function FlatSpark({ points, width = 72, height = 22 }) {
   for (let i = 1; i < pts.length; i++) d += ` L${pts[i].x.toFixed(1)},${pts[i].y.toFixed(1)}`;
   const up = points[points.length - 1] >= points[0];
   const color = up ? B.green : B.red;
+  const gradId = `spark-${gid}`;
+  const area = `${d} L${pts[pts.length - 1].x.toFixed(1)},${height - pad} L${pts[0].x.toFixed(1)},${height - pad} Z`;
   return (
     <svg width={width} height={height} style={{ display: 'block', overflow: 'visible' }}>
-      <path d={d} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+      <defs>
+        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.28" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={area} fill={`url(#${gradId})`} />
+      <path d={d} fill="none" stroke={color} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 });
+
+function SizeMeter({ ratio }) {
+  if (!Number.isFinite(ratio)) return null;
+  const pct = Math.max(6, Math.min(100, (ratio / 2) * 100));
+  const hot = ratio >= 1.5;
+  return (
+    <div style={{
+      marginTop: '0.28rem', height: 3, borderRadius: 99, overflow: 'hidden',
+      background: 'rgba(148,163,184,0.12)', maxWidth: 72,
+    }}>
+      <div style={{
+        width: `${pct}%`, height: '100%', borderRadius: 99,
+        background: hot
+          ? `linear-gradient(90deg, ${B.gold}, #F5D76E)`
+          : `linear-gradient(90deg, ${B.sky}, ${B.green})`,
+      }} />
+    </div>
+  );
+}
 
 function Pill({ active, onClick, children }) {
   return (
@@ -115,8 +184,8 @@ function Pill({ active, onClick, children }) {
       type="button"
       onClick={onClick}
       style={{
-        padding: '0.28rem 0.65rem',
-        borderRadius: '6px',
+        padding: '0.32rem 0.7rem',
+        borderRadius: '7px',
         cursor: 'pointer',
         border: active ? `1px solid ${B.goldBorder}` : `1px solid ${B.border}`,
         background: active
@@ -132,22 +201,46 @@ function Pill({ active, onClick, children }) {
   );
 }
 
-function StatCard({ icon: Icon, label, value, accent }) {
+function StatCard({ icon: Icon, label, value, accent, hint }) {
   return (
     <div style={{
-      padding: '0.75rem 0.85rem',
-      borderRadius: '10px',
-      background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
+      padding: '0.85rem 0.95rem',
+      borderRadius: '12px',
+      background: `linear-gradient(145deg, ${B.cardAlt} 0%, ${B.card} 100%)`,
       border: `1px solid ${accent ? B.goldBorder : B.borderSubtle}`,
+      boxShadow: accent ? '0 0 0 1px rgba(212,175,55,0.04)' : 'none',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.35rem' }}>
-        <Icon size={12} color={accent || B.textMuted} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.4rem' }}>
+        <Icon size={13} color={accent || B.textMuted} />
         <span style={{ ...T.tiny, color: B.textMuted }}>{label}</span>
       </div>
-      <div style={{ ...T.sub, color: accent || B.text, margin: 0, fontFeatureSettings: "'tnum'" }}>
+      <div style={{ ...T.hero, color: accent || B.text, fontFeatureSettings: "'tnum'", fontSize: '1.35rem' }}>
         {value}
       </div>
+      {hint && (
+        <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.25rem' }}>{hint}</div>
+      )}
     </div>
+  );
+}
+
+function Badge({ children, tone }) {
+  return (
+    <span style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      padding: '0.18rem 0.5rem',
+      borderRadius: '6px',
+      ...T.micro,
+      fontWeight: 800,
+      fontSize: '0.7rem',
+      color: tone?.color || B.textSec,
+      background: tone?.bg || 'rgba(148,163,184,0.08)',
+      border: `1px solid ${tone?.border || B.borderSubtle}`,
+      whiteSpace: 'nowrap',
+    }}>
+      {children}
+    </span>
   );
 }
 
@@ -155,40 +248,41 @@ const ConfirmedActionMarquee = memo(function ConfirmedActionMarquee({ items }) {
   if (!items || items.length < 3) return null;
   const renderRun = (prefix) => items.map((it, i) => (
     <span key={`${prefix}-${i}`} style={{
-      display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-      padding: '0 1.1rem', whiteSpace: 'nowrap',
+      display: 'inline-flex', alignItems: 'center', gap: '0.45rem',
+      padding: '0 1.25rem', whiteSpace: 'nowrap',
     }}>
       <span style={{
-        width: 5, height: 5, borderRadius: '50%', flexShrink: 0,
+        width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
         background: it.opposed === 'clear' ? B.green : B.gold,
+        boxShadow: it.opposed === 'clear' ? '0 0 8px rgba(16,185,129,0.55)' : 'none',
       }} />
-      <span style={{ ...T.micro, fontSize: '0.55rem', color: B.textSubtle, letterSpacing: '0.05em' }}>{it.sport}</span>
-      <span style={{ ...T.micro, fontSize: '0.62rem', fontWeight: 800, color: B.text }}>{String(it.team).toUpperCase()}</span>
-      <span style={{ ...T.micro, fontSize: '0.62rem', fontWeight: 800, color: B.gold, fontFeatureSettings: "'tnum'" }}>{fmtVol(it.invested)}</span>
-      <span style={{ ...T.micro, fontSize: '0.55rem', color: B.textSec }}>{it.skillLabel}</span>
-      <span style={{ ...T.micro, fontSize: '0.55rem', color: B.textSubtle }}>{agoTxt(it.ts)}</span>
+      <span style={{ ...T.micro, fontSize: '0.58rem', color: B.textSubtle, letterSpacing: '0.06em' }}>{it.sport}</span>
+      <span style={{ ...T.body, fontWeight: 800, color: B.text }}>{String(it.team).toUpperCase()}</span>
+      <span style={{ ...T.body, fontWeight: 800, color: B.gold, fontFeatureSettings: "'tnum'" }}>{fmtVol(it.invested)}</span>
+      <span style={{ ...T.micro, color: B.textSec }}>{it.skillLabel}</span>
+      <span style={{ ...T.micro, color: B.textSubtle }}>{agoTxt(it.ts)}</span>
     </span>
   ));
 
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', gap: '0.65rem',
-      marginBottom: '1rem', padding: '0.45rem 0.65rem',
-      borderRadius: '10px',
-      background: 'linear-gradient(160deg, rgba(26,31,46,0.55) 0%, rgba(17,21,31,0.65) 100%)',
+      display: 'flex', alignItems: 'center', gap: '0.75rem',
+      marginBottom: '1.15rem', padding: '0.55rem 0.75rem',
+      borderRadius: '12px',
+      background: 'linear-gradient(160deg, rgba(26,31,46,0.7) 0%, rgba(17,21,31,0.85) 100%)',
       border: `1px solid ${B.borderSubtle}`,
       overflow: 'hidden',
     }}>
       <span style={{
-        display: 'inline-flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0,
-        padding: '0.18rem 0.5rem', borderRadius: '5px',
-        background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)',
+        display: 'inline-flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0,
+        padding: '0.28rem 0.6rem', borderRadius: '6px',
+        background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)',
       }}>
         <span style={{
-          width: 5, height: 5, borderRadius: '50%', background: B.green,
-          boxShadow: '0 0 6px rgba(16,185,129,0.7)',
+          width: 6, height: 6, borderRadius: '50%', background: B.green,
+          boxShadow: '0 0 8px rgba(16,185,129,0.75)',
         }} />
-        <span style={{ ...T.micro, fontSize: '0.55rem', fontWeight: 900, color: B.green, letterSpacing: '0.1em' }}>
+        <span style={{ ...T.tiny, color: B.green, letterSpacing: '0.12em' }}>
           CONFIRMED ACTION
         </span>
       </span>
@@ -202,46 +296,100 @@ const ConfirmedActionMarquee = memo(function ConfirmedActionMarquee({ items }) {
   );
 });
 
-function ActionRow({ row, isMobile }) {
+function ActionRow({ row, isMobile, rank }) {
   const sk = skillTone(row.skillKey);
   const flatLabel = Number.isFinite(row.flatEnd)
     ? `${row.flatEnd >= 0 ? '+' : ''}${row.flatEnd.toFixed(1)} flat`
     : null;
   const pinColor = row.pinMove === 'with' ? B.green : row.pinMove === 'against' ? B.red : B.textMuted;
-  const oppColor = row.opposed === 'clear' ? B.green : '#F59E0B';
-  const accent = row.skillKey === 'high' ? B.goldBorder
-    : row.skillKey === 'thin' ? B.borderSubtle
-      : B.border;
+  const oppColor = row.opposed === 'clear' ? B.green : B.amber;
+  const accent = row.skillKey === 'high' ? B.gold
+    : row.skillKey === 'mid' ? B.green
+      : row.skillKey === 'thin' ? B.textSubtle
+        : B.textMuted;
+  const matchup = row.away && row.home ? `${row.away} @ ${row.home}` : row.gameKey;
+  const walletTag = row.walletShort ? `···${String(row.walletShort).slice(-4)}` : null;
+
+  const [hover, setHover] = useState(false);
 
   if (isMobile) {
     return (
       <div style={{
-        padding: '0.7rem 0.75rem',
-        borderRadius: '10px',
-        border: `1px solid ${accent}`,
-        borderLeft: `3px solid ${sk.color}`,
-        background: B.card,
+        padding: '0.95rem 1rem',
+        borderRadius: '14px',
+        border: `1px solid ${hover ? B.goldBorder : B.border}`,
+        borderLeft: `3px solid ${accent}`,
+        background: `linear-gradient(135deg, ${B.cardAlt} 0%, ${B.card} 100%)`,
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.35rem' }}>
-          <div>
-            <span style={{ ...T.tiny, color: sportColor(row.sport), marginRight: '0.4rem' }}>{row.sport}</span>
-            <span style={{ ...T.sub, color: B.text, fontSize: '0.85rem' }}>{row.team}</span>
-            <span style={{ ...T.micro, color: B.textMuted, marginLeft: '0.35rem' }}>{row.marketType}</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.65rem', marginBottom: '0.55rem' }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.2rem' }}>
+              <span style={{
+                ...T.tiny, color: sportColor(row.sport),
+                padding: '0.12rem 0.35rem', borderRadius: '4px',
+                background: 'rgba(255,255,255,0.03)', border: `1px solid ${B.borderSubtle}`,
+              }}>
+                {row.sport}
+              </span>
+              <span style={{ ...T.tiny, color: B.textMuted }}>{row.marketType}</span>
+            </div>
+            <div style={{ ...T.hero, color: B.text, fontSize: '1.05rem' }}>{row.team}</div>
+            <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.15rem' }}>{matchup}</div>
           </div>
-          <span style={{ ...T.sub, color: B.gold, fontSize: '0.85rem', fontFeatureSettings: "'tnum'" }}>{fmtVol(row.invested)}</span>
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <div style={{ ...T.hero, color: B.gold, fontSize: '1.15rem', fontFeatureSettings: "'tnum'" }}>
+              {fmtVol(row.invested)}
+            </div>
+            <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.15rem' }}>{agoTxt(row.ts)}</div>
+          </div>
         </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', alignItems: 'center' }}>
-          <Badge tone={sk}>{row.skillLabel}</Badge>
-          <Badge>{row.sizeRatio != null ? `${row.sizeRatio.toFixed(1)}×` : '—'} {row.sizeLabel !== '—' ? row.sizeLabel : ''}</Badge>
-          <Badge>{row.formText}</Badge>
-          <Badge tone={{ color: oppColor }}>{row.opposed === 'clear' ? 'Clear' : 'Contested'}</Badge>
-          <Badge tone={{ color: pinColor }}>{row.pinMove === 'with' ? 'Pin with' : row.pinMove === 'against' ? 'Pin against' : 'Pin —'}</Badge>
-          <span style={{ ...T.micro, color: B.textSubtle, marginLeft: 'auto' }}>{agoTxt(row.ts)}</span>
+
+        <div style={{
+          display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.55rem',
+          paddingTop: '0.55rem', borderTop: `1px solid ${B.borderSubtle}`,
+        }}>
+          <MobileMetric label="Skill" value={<Badge tone={sk}>{row.skillLabel}</Badge>} hint={skillHint(row.skillKey)} />
+          <MobileMetric
+            label="Size vs usual"
+            value={(
+              <span style={{ ...T.label, color: B.text, fontFeatureSettings: "'tnum'" }}>
+                {row.sizeRatio != null ? `${row.sizeRatio.toFixed(1)}×` : '—'}
+                <span style={{ color: B.textMuted, fontWeight: 600, marginLeft: '0.3rem' }}>{row.sizeLabel !== '—' ? row.sizeLabel : ''}</span>
+              </span>
+            )}
+            hint={sizeHint(row.sizeBand, row.sizeRatio)}
+          />
+          <MobileMetric label="Form" value={row.formText} hint={formHint(row.formKind)} />
+          <MobileMetric
+            label="Field"
+            value={<span style={{ color: oppColor, fontWeight: 800 }}>{row.opposed === 'clear' ? 'Clear' : 'Contested'}</span>}
+            hint={row.opposed === 'clear' ? 'No CONFIRMED on other side' : 'CONFIRMED on both sides'}
+          />
+          <MobileMetric
+            label="Pinnacle"
+            value={<span style={{ color: pinColor, fontWeight: 800 }}>{row.pinMove === 'with' ? 'With' : row.pinMove === 'against' ? 'Against' : 'Flat / n/a'}</span>}
+            hint="Sharp book line direction"
+          />
+          {(row.flatCurve || flatLabel) && (
+            <div>
+              <div style={{ ...T.tiny, color: B.textMuted, marginBottom: '0.2rem' }}>Flat trend</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                <FlatSpark points={row.flatCurve} width={80} height={24} />
+                {flatLabel && (
+                  <span style={{
+                    ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'",
+                    color: (row.flatEnd || 0) >= 0 ? B.green : B.red,
+                  }}>
+                    {flatLabel}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
-        {(row.flatCurve || flatLabel) && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.45rem' }}>
-            <FlatSpark points={row.flatCurve} />
-            {flatLabel && <span style={{ ...T.micro, color: (row.flatEnd || 0) >= 0 ? B.green : B.red, fontFeatureSettings: "'tnum'" }}>{flatLabel}</span>}
+        {walletTag && (
+          <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.55rem' }}>
+            Wallet {walletTag}
           </div>
         )}
       </div>
@@ -249,69 +397,168 @@ function ActionRow({ row, isMobile }) {
   }
 
   return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: '1.6fr 0.7fr 0.7fr 0.75fr 1fr 0.75fr 0.7fr 0.7fr 0.55fr',
-      gap: '0.4rem',
-      alignItems: 'center',
-      padding: '0.55rem 0.65rem',
-      borderRadius: '8px',
-      border: `1px solid ${accent}`,
-      borderLeft: `3px solid ${sk.color}`,
-      background: B.card,
-    }}>
-      <div style={{ minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
-          <span style={{ ...T.tiny, color: sportColor(row.sport) }}>{row.sport}</span>
-          <span style={{ ...T.label, color: B.text, fontWeight: 800 }}>{row.team}</span>
-          <span style={{ ...T.micro, color: B.textMuted }}>{row.marketType}</span>
-        </div>
-        <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.1rem' }}>
-          {row.away && row.home ? `${row.away} @ ${row.home}` : row.gameKey}
-        </div>
-      </div>
-      <div><Badge tone={sk}>{row.skillLabel}</Badge></div>
-      <div style={{ ...T.micro, color: B.text, fontFeatureSettings: "'tnum'" }}>
-        <span style={{ fontWeight: 800 }}>{row.sizeRatio != null ? `${row.sizeRatio.toFixed(1)}×` : '—'}</span>
-        <span style={{ color: B.textMuted, marginLeft: '0.25rem' }}>{row.sizeLabel}</span>
-      </div>
-      <div style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>{row.formText}</div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-        <FlatSpark points={row.flatCurve} />
-        <span style={{
-          ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'",
-          color: Number.isFinite(row.flatEnd) ? ((row.flatEnd >= 0) ? B.green : B.red) : B.textMuted,
+    <div
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        display: 'grid',
+        gridTemplateColumns: GRID,
+        gap: '0.65rem',
+        alignItems: 'center',
+        padding: '1rem 1.05rem',
+        borderRadius: '14px',
+        border: `1px solid ${hover ? B.goldBorder : B.border}`,
+        borderLeft: `3px solid ${accent}`,
+        background: hover
+          ? `linear-gradient(120deg, ${B.cardHover} 0%, ${B.card} 55%, rgba(212,175,55,0.04) 100%)`
+          : `linear-gradient(145deg, ${B.cardAlt} 0%, ${B.card} 100%)`,
+        boxShadow: hover ? '0 8px 28px rgba(0,0,0,0.28)' : '0 1px 0 rgba(255,255,255,0.02)',
+        transition: 'border-color 160ms ease, box-shadow 160ms ease, background 160ms ease',
+        cursor: 'default',
+      }}
+    >
+      {/* Position */}
+      <div style={{ minWidth: 0, display: 'flex', gap: '0.7rem', alignItems: 'flex-start' }}>
+        <div style={{
+          width: 28, height: 28, borderRadius: '8px', flexShrink: 0,
+          display: 'grid', placeItems: 'center',
+          background: rank <= 3 ? B.goldDim : 'rgba(148,163,184,0.06)',
+          border: `1px solid ${rank <= 3 ? B.goldBorder : B.borderSubtle}`,
+          ...T.tiny, color: rank <= 3 ? B.gold : B.textMuted, fontFeatureSettings: "'tnum'",
         }}>
-          {flatLabel || '—'}
-        </span>
+          {rank}
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.25rem', flexWrap: 'wrap' }}>
+            <span style={{
+              ...T.tiny, color: sportColor(row.sport),
+              padding: '0.14rem 0.4rem', borderRadius: '5px',
+              background: 'rgba(255,255,255,0.03)', border: `1px solid ${B.borderSubtle}`,
+            }}>
+              {row.sport}
+            </span>
+            <span style={{
+              ...T.tiny, color: B.textSec,
+              padding: '0.14rem 0.4rem', borderRadius: '5px',
+              background: 'rgba(148,163,184,0.06)', border: `1px solid ${B.borderSubtle}`,
+            }}>
+              {row.marketType}
+            </span>
+            {walletTag && (
+              <span style={{ ...T.micro, color: B.textSubtle }}>wallet {walletTag}</span>
+            )}
+          </div>
+          <div style={{ ...T.hero, color: B.text }}>{row.team}</div>
+          <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.2rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {matchup}
+          </div>
+        </div>
       </div>
-      <div style={{ ...T.micro, fontWeight: 700, color: oppColor }}>
-        {row.opposed === 'clear' ? 'Clear' : 'Contested'}
+
+      {/* Skill */}
+      <div>
+        <Badge tone={sk}>{row.skillLabel}</Badge>
+        <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.35rem' }}>
+          {skillHint(row.skillKey)}
+        </div>
       </div>
-      <div style={{ ...T.micro, fontWeight: 700, color: pinColor }}>
-        {row.pinMove === 'with' ? 'With' : row.pinMove === 'against' ? 'Against' : '—'}
+
+      {/* Size */}
+      <div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem' }}>
+          <span style={{ ...T.sub, color: B.text, fontFeatureSettings: "'tnum'", fontSize: '1rem' }}>
+            {row.sizeRatio != null ? `${row.sizeRatio.toFixed(1)}×` : '—'}
+          </span>
+          {row.sizeLabel !== '—' && (
+            <span style={{ ...T.micro, color: B.textSec, textTransform: 'capitalize' }}>{row.sizeLabel}</span>
+          )}
+        </div>
+        <SizeMeter ratio={row.sizeRatio} />
+        <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.28rem' }}>
+          {sizeHint(row.sizeBand, row.sizeRatio)}
+        </div>
       </div>
-      <div style={{ ...T.label, color: B.gold, fontWeight: 800, fontFeatureSettings: "'tnum'" }}>{fmtVol(row.invested)}</div>
-      <div style={{ ...T.micro, color: B.textSubtle, fontFeatureSettings: "'tnum'", textAlign: 'right' }}>{agoTxt(row.ts)}</div>
+
+      {/* Form */}
+      <div>
+        <div style={{ ...T.label, color: B.text, fontFeatureSettings: "'tnum'" }}>{row.formText}</div>
+        <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.3rem' }}>
+          {formHint(row.formKind)}
+        </div>
+      </div>
+
+      {/* Trend */}
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+          <FlatSpark points={row.flatCurve} />
+          <div>
+            <div style={{
+              ...T.label, fontWeight: 800, fontFeatureSettings: "'tnum'",
+              color: Number.isFinite(row.flatEnd) ? ((row.flatEnd >= 0) ? B.green : B.red) : B.textMuted,
+            }}>
+              {flatLabel || '—'}
+            </div>
+            <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.15rem' }}>
+              {flatLabel ? 'Cumulative flat units' : 'Need ≥5 graded'}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Field / Opposed */}
+      <div>
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+          padding: '0.22rem 0.55rem', borderRadius: '6px',
+          background: row.opposed === 'clear' ? B.greenDim : B.amberDim,
+          border: `1px solid ${row.opposed === 'clear' ? 'rgba(16,185,129,0.3)' : 'rgba(245,158,11,0.3)'}`,
+        }}>
+          <span style={{
+            width: 6, height: 6, borderRadius: '50%',
+            background: oppColor,
+            boxShadow: row.opposed === 'clear' ? '0 0 6px rgba(16,185,129,0.6)' : 'none',
+          }} />
+          <span style={{ ...T.micro, fontWeight: 800, color: oppColor }}>
+            {row.opposed === 'clear' ? 'Clear' : 'Contested'}
+          </span>
+        </div>
+        <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.35rem' }}>
+          {row.opposed === 'clear' ? 'No CONFIRMED opposite' : 'CONFIRMED on both sides'}
+        </div>
+      </div>
+
+      {/* Pin */}
+      <div>
+        <div style={{ ...T.label, fontWeight: 800, color: pinColor }}>
+          {row.pinMove === 'with' ? 'Moving with' : row.pinMove === 'against' ? 'Moving against' : 'No clear move'}
+        </div>
+        <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.3rem' }}>
+          {row.pinMove === 'with' ? 'Pinnacle agrees with pick'
+            : row.pinMove === 'against' ? 'Pinnacle leans other way'
+              : 'Line quiet or N/A'}
+        </div>
+      </div>
+
+      {/* Money + time */}
+      <div style={{ textAlign: 'right' }}>
+        <div style={{ ...T.hero, color: B.gold, fontSize: '1.15rem', fontFeatureSettings: "'tnum'" }}>
+          {fmtVol(row.invested)}
+        </div>
+        <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.3rem', fontFeatureSettings: "'tnum'" }}>
+          {agoTxt(row.ts)}
+        </div>
+      </div>
     </div>
   );
 }
 
-function Badge({ children, tone }) {
+function MobileMetric({ label, value, hint }) {
   return (
-    <span style={{
-      display: 'inline-block',
-      padding: '0.12rem 0.4rem',
-      borderRadius: '5px',
-      ...T.micro,
-      fontWeight: 800,
-      color: tone?.color || B.textSec,
-      background: tone?.bg || 'rgba(148,163,184,0.08)',
-      border: `1px solid ${tone?.border || B.borderSubtle}`,
-      whiteSpace: 'nowrap',
-    }}>
-      {children}
-    </span>
+    <div>
+      <div style={{ ...T.tiny, color: B.textMuted, marginBottom: '0.2rem' }}>{label}</div>
+      <div style={{ ...T.label, color: B.text }}>{value}</div>
+      {hint && <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.15rem' }}>{hint}</div>}
+    </div>
   );
 }
 
@@ -365,14 +612,14 @@ export default function ConfirmedActionDesk({
   if (rows.length === 0) {
     return (
       <div style={{
-        textAlign: 'center', padding: '3rem', borderRadius: '12px',
-        background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
+        textAlign: 'center', padding: '3.25rem 2rem', borderRadius: '14px',
+        background: `linear-gradient(145deg, ${B.cardAlt} 0%, ${B.card} 100%)`,
         border: `1px solid ${B.border}`,
       }}>
-        <Activity size={28} color={B.textMuted} style={{ marginBottom: '0.75rem' }} />
-        <div style={{ ...T.sub, color: B.text, marginBottom: '0.35rem' }}>No CONFIRMED action right now</div>
-        <div style={{ ...T.label, color: B.textSec }}>
-          When CONFIRMED-in-sport wallets open positions, they rank here by strength.
+        <Activity size={30} color={B.textMuted} style={{ marginBottom: '0.85rem' }} />
+        <div style={{ ...T.sub, color: B.text, marginBottom: '0.4rem' }}>No CONFIRMED action right now</div>
+        <div style={{ ...T.body, color: B.textSec, maxWidth: 420, margin: '0 auto' }}>
+          When CONFIRMED-in-sport wallets open positions, they rank here by strength — skill, size, form, field, and Pinnacle.
         </div>
       </div>
     );
@@ -382,39 +629,42 @@ export default function ConfirmedActionDesk({
     <div>
       <ConfirmedActionMarquee items={marquee} />
 
-      <div style={{ marginBottom: '0.85rem' }}>
-        <div style={{ ...T.sub, color: B.text, marginBottom: '0.2rem' }}>CONFIRMED wallet action</div>
-        <div style={{ ...T.micro, color: B.textSec }}>
-          Ranked by strength — skill, relative size, form, opposition, and Pinnacle move. Observational data only.
+      <div style={{ marginBottom: '1rem' }}>
+        <div style={{ ...T.hero, color: B.text, marginBottom: '0.3rem', fontSize: '1.2rem' }}>
+          CONFIRMED wallet action
+        </div>
+        <div style={{ ...T.body, color: B.textSec, maxWidth: 720 }}>
+          Live positions from wallets that are CONFIRMED in that sport — ranked by how strong the bet looks:
+          skill band, size vs usual, recent form, whether anyone sharp is opposite, and whether Pinnacle is moving with them.
         </div>
       </div>
 
       <div style={{
         display: 'grid',
         gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
-        gap: '0.625rem',
-        marginBottom: '1rem',
+        gap: '0.7rem',
+        marginBottom: '1.15rem',
       }}>
-        <StatCard icon={Activity} label="Live positions" value={stats.total} accent={B.gold} />
-        <StatCard icon={TrendingUp} label="High / Mid skill" value={stats.highMid} />
-        <StatCard icon={ShieldCheck} label="Clear (unopposed)" value={stats.clear} accent={stats.clear > 0 ? B.green : null} />
-        <StatCard icon={Eye} label="Pin moving with" value={stats.pinWith} />
+        <StatCard icon={Activity} label="Live positions" value={stats.total} accent={B.gold} hint="Open CONFIRMED legs" />
+        <StatCard icon={TrendingUp} label="High / Mid skill" value={stats.highMid} hint="Stronger flat-$ bands" />
+        <StatCard icon={ShieldCheck} label="Clear field" value={stats.clear} accent={stats.clear > 0 ? B.green : null} hint="No CONFIRMED opposite" />
+        <StatCard icon={Eye} label="Pin with" value={stats.pinWith} hint="Pinnacle moving same way" />
       </div>
 
       <div style={{
-        display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center',
-        marginBottom: '0.65rem',
+        display: 'flex', flexWrap: 'wrap', gap: '0.45rem', alignItems: 'center',
+        marginBottom: '0.7rem',
       }}>
-        <span style={{ ...T.tiny, color: B.textMuted, marginRight: '0.25rem' }}>Sort</span>
+        <span style={{ ...T.tiny, color: B.textMuted, marginRight: '0.2rem' }}>Sort</span>
         {SORTS.map((s) => (
           <Pill key={s.id} active={sortMode === s.id} onClick={() => setSortMode(s.id)}>{s.label}</Pill>
         ))}
       </div>
       <div style={{
-        display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center',
-        marginBottom: '0.85rem',
+        display: 'flex', flexWrap: 'wrap', gap: '0.45rem', alignItems: 'center',
+        marginBottom: '1rem',
       }}>
-        <span style={{ ...T.tiny, color: B.textMuted, marginRight: '0.25rem' }}>Filter</span>
+        <span style={{ ...T.tiny, color: B.textMuted, marginRight: '0.2rem' }}>Filter</span>
         <Pill active={highMidOnly} onClick={() => setHighMidOnly((v) => !v)}>High / Mid</Pill>
         <Pill active={sizedOnly} onClick={() => setSizedOnly((v) => !v)}>Sized ≥0.5×</Pill>
         <Pill active={clearOnly} onClick={() => setClearOnly((v) => !v)}>Clear only</Pill>
@@ -428,24 +678,29 @@ export default function ConfirmedActionDesk({
       {!isMobile && (
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '1.6fr 0.7fr 0.7fr 0.75fr 1fr 0.75fr 0.7fr 0.7fr 0.55fr',
-          gap: '0.4rem',
-          padding: '0 0.65rem 0.4rem',
+          gridTemplateColumns: GRID,
+          gap: '0.65rem',
+          padding: '0 1.05rem 0.55rem',
         }}>
-          {['Pick', 'Skill', 'Size', 'Form', 'Trend', 'Opposed', 'Pin', '$', 'Ago'].map((h) => (
-            <div key={h} style={{ ...T.tiny, color: B.textMuted }}>{h}</div>
+          {COL_HEADERS.map((h) => (
+            <div key={h.key}>
+              <div style={{ ...T.tiny, color: B.textMuted }}>{h.title}</div>
+              <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.12rem', textTransform: 'none', letterSpacing: 0, fontWeight: 500 }}>
+                {h.sub}
+              </div>
+            </div>
           ))}
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-        {visible.map((r) => (
-          <ActionRow key={r.id} row={r} isMobile={isMobile} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+        {visible.map((r, i) => (
+          <ActionRow key={r.id} row={r} isMobile={isMobile} rank={i + 1} />
         ))}
       </div>
 
       {visible.length === 0 && (
-        <div style={{ ...T.label, color: B.textMuted, padding: '1.5rem', textAlign: 'center' }}>
+        <div style={{ ...T.label, color: B.textMuted, padding: '1.75rem', textAlign: 'center' }}>
           No rows match these filters.
         </div>
       )}
