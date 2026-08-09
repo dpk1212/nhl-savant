@@ -8,16 +8,19 @@ const SPORTS = ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL'];
 
 const SKILL_BAND = {
   1: { key: 'high', label: 'Top 25%', weight: 4 },
-  2: { key: 'mid', label: 'Top 50%', weight: 3 },
-  3: { key: 'low', label: 'Bottom half', weight: 2 },
-  4: { key: 'thin', label: 'Thin sample', weight: 1 },
+  2: { key: 'mid', label: '25–50%', weight: 3 },
+  3: { key: 'low', label: '50–75%', weight: 2 },
+  4: { key: 'bottom', label: 'Bottom 25%', weight: 1 },
 };
+
+/** Missing flatDollar Q (sport <4 scored, or no flat+$ ROIs) — not a quartile. */
+const SKILL_THIN = { key: 'thin', label: 'Thin sample', weight: 1.5 };
 
 const SIZE_WEIGHT = { press: 4, full: 3, lean: 2, light: 1 };
 
 export function skillBandFromQ(q) {
   if (q === 1 || q === 2 || q === 3 || q === 4) return SKILL_BAND[q];
-  return { key: 'mid', label: 'Top 50%', weight: 2.5 }; // unscored CONFIRMED → neutral mid
+  return SKILL_THIN;
 }
 
 export function sizeBandFromRatio(sr) {
