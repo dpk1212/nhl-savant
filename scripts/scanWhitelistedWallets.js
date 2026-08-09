@@ -63,7 +63,7 @@ import { matchSoccerPositionTitle, resolveSoccerSide } from './lib/soccerTeams.j
 import { matchUFCPositionTitle } from './lib/ufcFighters.js';
 import { matchWNBAPositionTitle, resolveWNBATeam, WNBA_NAME_TO_CODE } from './lib/wnbaTeams.js';
 import { matchNFLPositionTitle, resolveNFLTeam, NFL_NAME_TO_CODE } from './lib/nflTeams.js';
-import { resolveBinarySide, resolveSpreadEntryLine } from './lib/resolvePositionSide.js';
+import { resolveBinarySide, resolveSpreadSide, resolveSpreadEntryLine } from './lib/resolvePositionSide.js';
 import { positionMatchesPolyEvent } from './lib/positionEventMatch.js';
 import {
   acceptFullGameTotalPosition,
@@ -784,10 +784,24 @@ async function run() {
       } else if (match.sport === 'UFC' && match.side) {
         side = match.side;
         sideSource = 'ufc';
+      } else if (isSpread) {
+        // Outcome/title first — main polySpread.outcomes + idx mislabels alts.
+        const resolved = resolveSpreadSide({
+          title,
+          outcome,
+          outcomeIndex,
+          awayName: game.away,
+          homeName: game.home,
+          marketOutcomes: polyGame?.polySpread?.outcomes || null,
+        });
+        side = resolved.side;
+        sideSource = resolved.source;
+        if (!side) {
+          unresolvedSideCount++;
+          continue;
+        }
       } else {
-        const marketOutcomes = isSpread
-          ? (polyGame?.polySpread?.outcomes || null)
-          : (polyGame?.polyMl?.outcomes || polyGame?.poly?.outcomes || polyGame?.outcomes || null);
+        const marketOutcomes = polyGame?.polyMl?.outcomes || polyGame?.poly?.outcomes || polyGame?.outcomes || null;
         const resolved = resolveBinarySide({
           outcome,
           outcomeIndex,
@@ -803,7 +817,7 @@ async function run() {
         }
       }
 
-      // ── entryLine (shared helper — outcomeIndex-first) ───────────────
+      // ── entryLine (title-first for spreads — see resolveSpreadEntryLine) ──
       let entryLine = null;
       if (isSpread) {
         entryLine = resolveSpreadEntryLine({

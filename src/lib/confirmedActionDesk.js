@@ -96,6 +96,16 @@ function teamLabel(gd, side) {
   return parts[parts.length - 1] || raw;
 }
 
+/** "SPREAD +1.5" / "TOTAL 8.5" — entry line the wallet actually held. */
+export function formatMarketLabel(marketType, entryLine) {
+  const mkt = String(marketType || '').toUpperCase();
+  if (!Number.isFinite(Number(entryLine))) return mkt;
+  const n = Number(entryLine);
+  if (mkt === 'SPREAD') return `${mkt} ${n > 0 ? '+' : ''}${n}`;
+  if (mkt === 'TOTAL') return `${mkt} ${n}`;
+  return mkt;
+}
+
 function pinMoveFor(pinnacleHistory, sport, gameKey, side) {
   const g = pinnacleHistory?.[sport]?.[gameKey];
   const dir = g?.movement?.direction;
@@ -277,6 +287,10 @@ export function buildConfirmedActionRows({
     const americanOdds = Number.isFinite(pos.odds)
       ? Math.round(pos.odds)
       : probToAmerican(prob);
+    const entryLine = Number.isFinite(Number(pos.entryLine))
+      ? Number(pos.entryLine)
+      : (Number.isFinite(Number(pos.spreadLine)) ? Number(pos.spreadLine)
+        : (Number.isFinite(Number(pos.totalLine)) ? Number(pos.totalLine) : null));
 
     rows.push({
       id: `${sport}|${gameKey}|${marketType}|${short}|${side}`,
@@ -284,6 +298,8 @@ export function buildConfirmedActionRows({
       gameKey,
       marketType,
       side,
+      entryLine,
+      marketLabel: formatMarketLabel(marketType, entryLine),
       team: teamLabel(gd, side),
       away: gd.away || gd.awayTeam || null,
       home: gd.home || gd.homeTeam || null,

@@ -48,7 +48,7 @@ export function resolveBinarySide({
     ? Number(outcomeIndex)
     : NaN;
 
-  // 1) Token index + published outcomes (canonical)
+  // 1) Token index + published outcomes (canonical for that market)
   if (outs && outs.length >= 2 && Number.isInteger(idx) && idx >= 0 && idx < outs.length) {
     const fromIdx = teamNameToSide(outs[idx], awayName, homeName);
     if (fromIdx) return { side: fromIdx, source: 'outcomeIndex' };
@@ -84,8 +84,53 @@ export function resolveBinarySide({
 }
 
 /**
+ * Spread side for a wallet position.
+ *
+ * Do NOT trust game-level polySpread.outcomes[] + outcomeIndex alone: alt /
+ * away-1.5 markets reuse index 0/1 with a different team order. CLE@CWS
+ * 2026-08-09: title "Spread: Guardians (-1.5)" + outcome Guardians, but main
+ * poly outcomes [Sox, Guardians] + idx0 stamped side=home (Sox).
+ *
+ * Priority:
+ *   1. outcome team (held token — covers other side of "Spread: Fav (-1.5)")
+ *   2. title team when outcome missing/unresolved
+ *   3. binary index helper (last resort; unsafe across alt markets)
+ */
+export function resolveSpreadSide({
+  title = '',
+  outcome = '',
+  outcomeIndex = null,
+  awayName,
+  homeName,
+  marketOutcomes = null,
+} = {}) {
+  const fromOutcome = teamNameToSide(outcome, awayName, homeName);
+  if (fromOutcome) return { side: fromOutcome, source: 'outcome' };
+
+  const titleTeamMatch = String(title).match(/^Spread:\s+(.+?)\s*\(/i);
+  if (titleTeamMatch) {
+    const fromTitle = teamNameToSide(titleTeamMatch[1], awayName, homeName);
+    if (fromTitle) return { side: fromTitle, source: 'spread_title' };
+  }
+
+  return resolveBinarySide({
+    outcome,
+    outcomeIndex,
+    awayName,
+    homeName,
+    marketOutcomes,
+  });
+}
+
+/**
  * Spread entry line from the wallet's perspective (positive = that side getting runs/points).
- * Prefer outcomeIndex + polySpread.line; title parse uses resolved side for polarity.
+ *
+ * Priority:
+ *   1. Position title `Spread: Team (±line)` — the wallet's actual market (incl. alts).
+ *      Must beat game-level polySpread: main is often "Spread -1.5" while the wallet
+ *      bought e.g. Sox +1.5 @ +150 (CLE@CWS 2026-08-09).
+ *   2. matchSpreadLine from matchSpreadTitle (same title parse, already team-signed).
+ *   3. polySpread.line + outcomeIndex / side (main market only; idx0 gets ps.line).
  */
 export function resolveSpreadEntryLine({
   title = '',
@@ -102,13 +147,7 @@ export function resolveSpreadEntryLine({
     ? Number(outcomeIndex)
     : NaN;
 
-  // 1) Index + poly line (sign: idx0 = ps.line, idx1 = -ps.line)
-  if (ps != null && Number.isFinite(Number(ps.line)) && Number.isInteger(idx)) {
-    if (idx === 0) return Number(ps.line);
-    if (idx === 1) return -Number(ps.line);
-  }
-
-  // 2) Title "Spread: Team (±line)" — polarity vs resolved side
+  // 1) Title "Spread: Team (±line)" — wallet market, including alternate lines
   const titleLineMatch = String(title).match(/\(([+-]?\d+\.?\d*)\)/);
   const titleTeamMatch = String(title).match(/^Spread:\s+(.+?)\s*\(/i);
   if (titleLineMatch) {
@@ -127,9 +166,25 @@ export function resolveSpreadEntryLine({
     }
   }
 
-  // 3) Match-time spread line hint (weak)
+  // 2) matchSpreadTitle already extracted the team-signed line from the title
   if (matchSpreadLine != null && Number.isFinite(Number(matchSpreadLine))) {
     return Number(matchSpreadLine);
   }
+
+  // 3) Main-market polySpread — idx0 / outcomes[0] carries ps.line; other side flips
+  if (ps != null && Number.isFinite(Number(ps.line))) {
+    const line = Number(ps.line);
+    if (Number.isInteger(idx) && (idx === 0 || idx === 1)) {
+      return idx === 0 ? line : -line;
+    }
+    // Side + outcomes[] when index missing
+    const outs = Array.isArray(ps.outcomes) ? ps.outcomes : null;
+    if (side && outs && outs.length >= 2) {
+      const sideIdx = outs.findIndex((name) => teamNameToSide(name, awayName, homeName) === side);
+      if (sideIdx === 0) return line;
+      if (sideIdx === 1) return -line;
+    }
+  }
+
   return null;
 }

@@ -431,7 +431,7 @@ function ActionRow({ row, isMobile }) {
             <div style={{ minWidth: 0 }}>
               <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center', marginBottom: '0.3rem' }}>
                 <span style={{ ...T.tiny, color: sportColor(row.sport) }}>{row.sport}</span>
-                <span style={{ ...T.tiny, color: B.textMuted }}>{row.marketType}</span>
+                <span style={{ ...T.tiny, color: B.textMuted }}>{row.marketLabel || row.marketType}</span>
               </div>
               <div style={{ ...T.name, color: B.text, fontSize: '1.15rem' }}>{row.team}</div>
               <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.2rem' }}>{matchup}</div>
@@ -488,7 +488,7 @@ function ActionRow({ row, isMobile }) {
             }}>
               {row.sport}
             </span>
-            <span style={{ ...T.tiny, color: B.textMuted }}>{row.marketType}</span>
+            <span style={{ ...T.tiny, color: B.textMuted }}>{row.marketLabel || row.marketType}</span>
           </div>
           <div style={{ ...T.name, color: B.text }}>{row.team}</div>
           <div style={{
