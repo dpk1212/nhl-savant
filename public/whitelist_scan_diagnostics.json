@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-08-09T21:50:26.407Z",
-  "elapsedSec": 17.3,
+  "scannedAt": "2026-08-09T21:54:18.547Z",
+  "elapsedSec": 17.4,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 31,
   "summary": {
     "total": 209,
     "coveredByMain": 2,
     "recovered": 4,
-    "recoveredPositions": 14,
+    "recoveredPositions": 15,
     "noPositions": 203,
     "apiError": 0,
     "addressNotFound": 0,
@@ -16,7 +16,7 @@
       "ml": 0,
       "spread": 0,
       "total": 1,
-      "dropped_shadow_gate": 2,
+      "dropped_shadow_gate": 3,
       "dropped_excluded": 11,
       "dropped_duplicate": 0
     }
@@ -590,12 +590,21 @@
       "sports": "MLB,WNBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xa0f21e6d351baa9185716b5c00c2925ed9621848",
-      "positionsCount": 2,
+      "positionsCount": 3,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 16710,
       "willPassShadowGate": 0,
-      "willDropAtShadowGate": 2,
+      "willDropAtShadowGate": 3,
       "positions": [
+        {
+          "sport": "WNBA",
+          "gameKey": "gsv_las",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 732,
+          "entryLine": null,
+          "passesShadow": false
+        },
         {
           "sport": "MLB",
           "gameKey": "hou_sdp",
@@ -714,7 +723,7 @@
           "gameKey": "hou_sdp",
           "marketType": "total",
           "side": "under",
-          "invested": 5541,
+          "invested": 11037,
           "entryLine": 9.5,
           "passesShadow": true
         },
