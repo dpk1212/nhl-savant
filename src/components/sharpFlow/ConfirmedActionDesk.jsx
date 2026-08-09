@@ -146,6 +146,68 @@ function Chip({ children, tone }) {
   );
 }
 
+/** Relative size vs this wallet's usual — visual punch, not just "1.6× press". */
+function SizeBar({ ratio, band, label }) {
+  if (!Number.isFinite(ratio)) return null;
+  const cap = 2.5;
+  const pct = Math.max(8, Math.min(100, (ratio / cap) * 100));
+  const usualPct = (1 / cap) * 100;
+  const hot = band === 'press' || ratio >= 1.5;
+  const cool = band === 'light' || ratio < 0.5;
+  const fill = hot
+    ? `linear-gradient(90deg, #B8860B 0%, ${B.gold} 55%, #F5D76E 100%)`
+    : cool
+      ? `linear-gradient(90deg, ${B.textSubtle} 0%, ${B.textMuted} 100%)`
+      : `linear-gradient(90deg, #0EA5E9 0%, ${B.green} 100%)`;
+  const word = label && label !== '—' ? label : (hot ? 'press' : cool ? 'light' : 'usual');
+
+  return (
+    <span style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '0.45rem',
+      padding: '0.28rem 0.55rem 0.28rem 0.5rem',
+      borderRadius: '7px',
+      background: hot ? B.goldDim : 'rgba(148,163,184,0.06)',
+      border: `1px solid ${hot ? B.goldBorder : B.borderSubtle}`,
+      minWidth: 118,
+    }}>
+      <span style={{ position: 'relative', width: 52, height: 7, flexShrink: 0 }}>
+        <span style={{
+          position: 'absolute', inset: 0, borderRadius: 99,
+          background: 'rgba(148,163,184,0.14)',
+        }} />
+        {/* usual marker */}
+        <span style={{
+          position: 'absolute', top: -2, bottom: -2, left: `${usualPct}%`,
+          width: 1.5, borderRadius: 1,
+          background: 'rgba(248,250,252,0.35)',
+          transform: 'translateX(-50%)',
+        }} />
+        <span style={{
+          position: 'absolute', left: 0, top: 0, bottom: 0,
+          width: `${pct}%`, borderRadius: 99,
+          background: fill,
+          boxShadow: hot ? '0 0 10px rgba(212,175,55,0.45)' : 'none',
+        }} />
+      </span>
+      <span style={{
+        ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'",
+        color: hot ? B.gold : B.text,
+        lineHeight: 1,
+      }}>
+        {ratio.toFixed(1)}×
+      </span>
+      <span style={{
+        ...T.tiny, color: hot ? B.gold : B.textMuted,
+        letterSpacing: '0.04em', textTransform: 'capitalize',
+      }}>
+        {word}
+      </span>
+    </span>
+  );
+}
+
 function Pill({ active, onClick, children }) {
   return (
     <button
@@ -211,12 +273,9 @@ const ActionTape = memo(function ActionTape({ items }) {
 
 function signalChips(row) {
   const sk = skillTone(row.skillKey);
-  const sizeTxt = row.sizeRatio != null
-    ? `${row.sizeRatio.toFixed(1)}×${row.sizeLabel !== '—' ? ` ${row.sizeLabel}` : ''}`
-    : null;
   const opp = row.opposed === 'clear'
     ? { label: 'Unopposed', tone: { color: B.green, bg: B.greenDim, border: 'rgba(16,185,129,0.3)' } }
-    : { label: 'Both sides', tone: { color: B.amber, bg: B.amberDim, border: 'rgba(245,158,11,0.3)' } };
+    : { label: 'Sharp contested', tone: { color: B.amber, bg: B.amberDim, border: 'rgba(245,158,11,0.3)' } };
   const pin = row.pinMove === 'with'
     ? { label: 'Line with', tone: { color: B.green, bg: B.greenDim, border: 'rgba(16,185,129,0.3)' } }
     : row.pinMove === 'against'
@@ -225,8 +284,13 @@ function signalChips(row) {
 
   return (
     <>
-      <Chip tone={sk}>{row.skillLabel}</Chip>
-      {sizeTxt && <Chip>{sizeTxt}</Chip>}
+      <Chip tone={sk}>
+        <span style={{ opacity: 0.65, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', fontSize: '0.55rem' }}>
+          Skill
+        </span>
+        {row.skillLabel}
+      </Chip>
+      <SizeBar ratio={row.sizeRatio} band={row.sizeBand} label={row.sizeLabel} />
       {row.formText !== '—' && <Chip>{row.formText}</Chip>}
       <Chip tone={opp.tone}>{opp.label}</Chip>
       {pin && <Chip tone={pin.tone}>{pin.label}</Chip>}
@@ -451,7 +515,7 @@ export default function ConfirmedActionDesk({
           <Pill key={s.id} active={sortMode === s.id} onClick={() => setSortMode(s.id)}>{s.label}</Pill>
         ))}
         <span style={{ width: 1, height: 16, background: B.border, margin: '0 0.15rem' }} />
-        <Pill active={highMidOnly} onClick={() => setHighMidOnly((v) => !v)}>High / Mid</Pill>
+        <Pill active={highMidOnly} onClick={() => setHighMidOnly((v) => !v)}>Top half</Pill>
         <Pill active={sizedOnly} onClick={() => setSizedOnly((v) => !v)}>Sized</Pill>
         <Pill active={clearOnly} onClick={() => setClearOnly((v) => !v)}>Unopposed</Pill>
         <Pill active={pinWithOnly} onClick={() => setPinWithOnly((v) => !v)}>Line with</Pill>

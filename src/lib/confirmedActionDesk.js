@@ -7,23 +7,23 @@ import { buildFlatDollarQBySport, shortWalletId } from './walletClvSkill.js';
 const SPORTS = ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL'];
 
 const SKILL_BAND = {
-  1: { key: 'high', label: 'High', weight: 4 },
-  2: { key: 'mid', label: 'Mid', weight: 3 },
-  3: { key: 'low', label: 'Low', weight: 2 },
-  4: { key: 'thin', label: 'Thin', weight: 1 },
+  1: { key: 'high', label: 'Top 25%', weight: 4 },
+  2: { key: 'mid', label: 'Top 50%', weight: 3 },
+  3: { key: 'low', label: 'Bottom half', weight: 2 },
+  4: { key: 'thin', label: 'Thin sample', weight: 1 },
 };
 
 const SIZE_WEIGHT = { press: 4, full: 3, lean: 2, light: 1 };
 
 export function skillBandFromQ(q) {
   if (q === 1 || q === 2 || q === 3 || q === 4) return SKILL_BAND[q];
-  return { key: 'mid', label: 'Mid', weight: 2.5 }; // unscored CONFIRMED → neutral Mid
+  return { key: 'mid', label: 'Top 50%', weight: 2.5 }; // unscored CONFIRMED → neutral mid
 }
 
 export function sizeBandFromRatio(sr) {
-  if (!Number.isFinite(sr)) return { key: 'lean', label: '—', weight: 1.5, ratio: null };
+  if (!Number.isFinite(sr)) return { key: 'lean', label: 'usual', weight: 1.5, ratio: null };
   if (sr >= 1.5) return { key: 'press', label: 'press', weight: SIZE_WEIGHT.press, ratio: sr };
-  if (sr >= 1.0) return { key: 'full', label: 'full', weight: SIZE_WEIGHT.full, ratio: sr };
+  if (sr >= 1.0) return { key: 'full', label: 'usual', weight: SIZE_WEIGHT.full, ratio: sr };
   if (sr >= 0.5) return { key: 'lean', label: 'lean', weight: SIZE_WEIGHT.lean, ratio: sr };
   return { key: 'light', label: 'light', weight: SIZE_WEIGHT.light, ratio: sr };
 }
