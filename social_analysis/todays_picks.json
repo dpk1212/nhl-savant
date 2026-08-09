@@ -1,20 +1,51 @@
 {
-  "generatedAt": "2026-08-09T15:00:19.111Z",
+  "generatedAt": "2026-08-09T15:57:05.521Z",
   "today": "2026-08-09",
   "source": "Firestore sharpFlowPicks/Spreads/Totals (same as site loadLockedPicks)",
   "summary": {
-    "liveSidesToday": 4,
-    "shippedToday": 1,
-    "trackedOnlyToday": 3,
-    "totalUnitsToday": 2,
+    "liveSidesToday": 5,
+    "shippedToday": 3,
+    "trackedOnlyToday": 2,
+    "totalUnitsToday": 6,
     "byTier": {
-      "CONFIRMED-Q1": 1
+      "CONFIRMED-Q1": 2,
+      "SHARP-LEAN": 1
     },
     "bySport": {
+      "MLB": 2,
       "WNBA": 1
     }
   },
   "picks": [
+    {
+      "date": "2026-08-09",
+      "isToday": true,
+      "sport": "MLB",
+      "market": "TOTAL",
+      "gameKey": "atl_nyy",
+      "matchup": "Atlanta Braves @ New York Yankees",
+      "away": "Atlanta Braves",
+      "home": "New York Yankees",
+      "side": "under",
+      "team": "Under 8.5",
+      "selection": "Under 8.5 (-110)",
+      "line": 8.5,
+      "odds": -110,
+      "units": 3,
+      "shipped": true,
+      "stakeTier": "CONFIRMED-Q1",
+      "agsConvictionTier": "WEAK",
+      "hcMargin": -1,
+      "walletConsensusDelta": -1,
+      "walletQualityMargin": -1,
+      "provenWinnersFor": 1,
+      "provenWinnersAgainst": 2,
+      "ags": -0.03242634523410726,
+      "agsTier": "WEAK",
+      "promotedBy": "ags-unified-v12",
+      "commenceTime": "2026-08-09T17:35:00.000Z",
+      "minsToGame": 98
+    },
     {
       "date": "2026-08-09",
       "isToday": true,
@@ -42,7 +73,7 @@
       "agsTier": "PREMIUM",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-08-09T16:30:00.000Z",
-      "minsToGame": 90
+      "minsToGame": 33
     },
     {
       "date": "2026-08-09",
@@ -53,54 +84,25 @@
       "matchup": "Athletics @ Boston Red Sox",
       "away": "Athletics",
       "home": "Boston Red Sox",
-      "side": "away",
-      "team": "Athletics",
-      "selection": "Athletics ML +217",
+      "side": "home",
+      "team": "Boston Red Sox",
+      "selection": "Boston Red Sox ML -249",
       "line": null,
-      "odds": 217,
-      "units": 0,
-      "shipped": false,
-      "stakeTier": "MONITORING",
+      "odds": -249,
+      "units": 1,
+      "shipped": true,
+      "stakeTier": "SHARP-LEAN",
       "agsConvictionTier": "WEAK",
       "hcMargin": 0,
       "walletConsensusDelta": 0,
-      "walletQualityMargin": 1,
+      "walletQualityMargin": -1,
       "provenWinnersFor": 1,
       "provenWinnersAgainst": 1,
       "ags": 0.05750631780121984,
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-08-09T17:35:00.000Z",
-      "minsToGame": 155
-    },
-    {
-      "date": "2026-08-09",
-      "isToday": true,
-      "sport": "MLB",
-      "market": "TOTAL",
-      "gameKey": "atl_nyy",
-      "matchup": "Atlanta Braves @ New York Yankees",
-      "away": "Atlanta Braves",
-      "home": "New York Yankees",
-      "side": "over",
-      "team": "Over 8.5",
-      "selection": "Over 8.5 (-106)",
-      "line": 8.5,
-      "odds": -106,
-      "units": 0,
-      "shipped": false,
-      "stakeTier": "MONITORING",
-      "agsConvictionTier": "LOCK",
-      "hcMargin": 0,
-      "walletConsensusDelta": 1,
-      "walletQualityMargin": 1,
-      "provenWinnersFor": 1,
-      "provenWinnersAgainst": 0,
-      "ags": 0.28189229270846355,
-      "agsTier": "LOCK",
-      "promotedBy": "ags-unified-v12",
-      "commenceTime": "2026-08-09T17:35:00.000Z",
-      "minsToGame": 155
+      "minsToGame": 98
     },
     {
       "date": "2026-08-09",
@@ -129,7 +131,36 @@
       "agsTier": "LOCK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-08-09T18:10:00.000Z",
-      "minsToGame": 190
+      "minsToGame": 133
+    },
+    {
+      "date": "2026-08-09",
+      "isToday": true,
+      "sport": "MLB",
+      "market": "TOTAL",
+      "gameKey": "col_stl",
+      "matchup": "Colorado Rockies @ St. Louis Cardinals",
+      "away": "Colorado Rockies",
+      "home": "St. Louis Cardinals",
+      "side": "over",
+      "team": "Over 9",
+      "selection": "Over 9 (-110)",
+      "line": 9,
+      "odds": -110,
+      "units": 0,
+      "shipped": false,
+      "stakeTier": "MONITORING",
+      "agsConvictionTier": "LOCK",
+      "hcMargin": 0,
+      "walletConsensusDelta": 1,
+      "walletQualityMargin": 0,
+      "provenWinnersFor": 1,
+      "provenWinnersAgainst": 0,
+      "ags": 0.28189229270846355,
+      "agsTier": "LOCK",
+      "promotedBy": "ags-unified-v12",
+      "commenceTime": "2026-08-09T18:15:00.000Z",
+      "minsToGame": 138
     },
     {
       "date": "2026-08-08",
@@ -158,7 +189,7 @@
       "agsTier": "ELITE",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-08-08T22:25:00.000Z",
-      "minsToGame": -995
+      "minsToGame": -1052
     },
     {
       "date": "2026-08-08",
@@ -187,7 +218,7 @@
       "agsTier": "PREMIUM",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-08-09T00:45:00.000Z",
-      "minsToGame": -855
+      "minsToGame": -912
     },
     {
       "date": "2026-08-08",
@@ -216,7 +247,7 @@
       "agsTier": "ELITE",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-08-09T01:15:00.000Z",
-      "minsToGame": -825
+      "minsToGame": -882
     },
     {
       "date": "2026-08-08",
@@ -245,7 +276,7 @@
       "agsTier": "LEAN",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-08-08T20:11:00.000Z",
-      "minsToGame": -1129
+      "minsToGame": -1186
     },
     {
       "date": "2026-08-08",
@@ -274,7 +305,7 @@
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-08-08T23:15:00.000Z",
-      "minsToGame": -945
+      "minsToGame": -1002
     },
     {
       "date": "2026-08-08",
@@ -303,7 +334,7 @@
       "agsTier": "LEAN",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-08-08T23:16:00.000Z",
-      "minsToGame": -944
+      "minsToGame": -1001
     },
     {
       "date": "2026-08-08",
@@ -332,7 +363,7 @@
       "agsTier": "LEAN",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-08-09T02:15:00.000Z",
-      "minsToGame": -765
+      "minsToGame": -822
     },
     {
       "date": "2026-08-08",
@@ -361,7 +392,7 @@
       "agsTier": "PREMIUM",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-08-08T17:00:00.000Z",
-      "minsToGame": -1320
+      "minsToGame": -1377
     },
     {
       "date": "2026-08-08",
@@ -390,7 +421,7 @@
       "agsTier": "LEAN",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-08-08T22:06:00.000Z",
-      "minsToGame": -1014
+      "minsToGame": -1071
     },
     {
       "date": "2026-08-08",
@@ -419,7 +450,7 @@
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-08-08T22:06:00.000Z",
-      "minsToGame": -1014
+      "minsToGame": -1071
     },
     {
       "date": "2026-08-08",
@@ -448,7 +479,7 @@
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-08-08T22:41:00.000Z",
-      "minsToGame": -979
+      "minsToGame": -1036
     },
     {
       "date": "2026-08-08",
@@ -477,7 +508,7 @@
       "agsTier": "LOCK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-08-08T22:46:00.000Z",
-      "minsToGame": -974
+      "minsToGame": -1031
     },
     {
       "date": "2026-08-08",
@@ -506,7 +537,7 @@
       "agsTier": "LEAN",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-08-08T23:16:00.000Z",
-      "minsToGame": -944
+      "minsToGame": -1001
     },
     {
       "date": "2026-08-08",
@@ -535,7 +566,7 @@
       "agsTier": "LEAN",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-08-08T23:16:00.000Z",
-      "minsToGame": -944
+      "minsToGame": -1001
     },
     {
       "date": "2026-08-08",
@@ -564,7 +595,7 @@
       "agsTier": "WEAK",
       "promotedBy": "ags-unified-v12",
       "commenceTime": "2026-08-09T00:11:00.000Z",
-      "minsToGame": -889
+      "minsToGame": -946
     }
   ]
 }
