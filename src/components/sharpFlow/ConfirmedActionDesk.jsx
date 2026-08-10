@@ -518,7 +518,7 @@ function BetTypeRollupStrip({ sport, marketType, sportRollup, marketRollup }) {
               </>
             )}
             <span style={{ ...T.tiny, color: B.textSubtle, marginLeft: '0.1rem' }}>
-              ({scope}{Number.isFinite(book.n) ? ` · n=${book.n}` : ''})
+              ({scope})
             </span>
           </div>
         );
