@@ -206,6 +206,45 @@ function trustFromProfile(prof, sport) {
   };
 }
 
+/**
+ * Compact W-L / WR / ROI for expand rollups.
+ * source: 'featured' → Source A flatRoi; 'action' → Source B dollarRoi.
+ */
+function rollupFromAgg(agg, source) {
+  if (!agg || !(agg.n > 0)) return null;
+  const wins = Number(agg.wins) || 0;
+  const losses = Number.isFinite(agg.losses) ? Number(agg.losses) : Math.max(0, agg.n - wins);
+  const roiRaw = source === 'action' ? agg.dollarRoi : agg.flatRoi;
+  const roi = Number.isFinite(Number(roiRaw)) ? Math.round(Number(roiRaw)) : null;
+  const wr = Number.isFinite(Number(agg.wr)) ? Math.round(Number(agg.wr)) : null;
+  return {
+    n: agg.n,
+    wins,
+    losses,
+    record: `${wins}-${losses}`,
+    wr,
+    roi,
+    source,
+    window: 'all',
+  };
+}
+
+/** Sport + sport×market books for Action expand (featured flat / action $). */
+function contextRollupsFromProfile(prof, sport, marketType) {
+  const rec = prof?.bySport?.[sport];
+  if (!rec) {
+    return { sportFeatured: null, sportAction: null, marketFeatured: null, marketAction: null };
+  }
+  const mkt = String(marketType || '').toUpperCase();
+  const mRec = rec.byMarket?.[mkt] || null;
+  return {
+    sportFeatured: rollupFromAgg(rec.picks, 'featured'),
+    sportAction: rollupFromAgg(rec.positions, 'action'),
+    marketFeatured: rollupFromAgg(mRec?.picks, 'featured'),
+    marketAction: rollupFromAgg(mRec?.positions, 'action'),
+  };
+}
+
 function parseTs(raw) {
   if (raw == null) return 0;
   if (typeof raw === 'number') return raw < 1e12 ? raw * 1000 : raw;
@@ -351,6 +390,7 @@ export function buildConfirmedActionRows({
       recentFeatured: form.recentFeatured || [],
       recentAction: form.recentAction || [],
       trust: trustFromProfile(prof, sport),
+      ...contextRollupsFromProfile(prof, sport, marketType),
       pinMove: pin, // 'with' | 'against' | null
       opposed: null, // filled below
       opposedBy: 0,

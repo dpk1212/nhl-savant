@@ -735,9 +735,18 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
       form.recentFeatured = recentFeatured;
       form.recentAction = recentAction;
     }
+    // Sport × market rollups for Action expand (MLB TOTAL, MLB ML, …).
+    const byMarketInSport = {};
+    for (const market of new Set([...pp.map((b) => b.market), ...ps.map((b) => b.market)].filter(Boolean))) {
+      byMarketInSport[market] = {
+        picks: picksAgg(pp.filter((b) => b.market === market)),
+        positions: positionsAgg(ps.filter((b) => b.market === market)),
+      };
+    }
     bySport[sport] = {
       picks: picksInSport,
       positions: positionsInSport,
+      byMarket: byMarketInSport,
       isFlatProfitable:   picksInSport.n >= WHITELIST_MIN_BETS && picksInSport.flatRoi > 0,
       isDollarProfitable: positionsInSport.n >= WHITELIST_MIN_BETS
                           && positionsInSport.dollarRoi != null
