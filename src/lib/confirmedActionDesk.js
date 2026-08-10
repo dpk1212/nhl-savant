@@ -121,12 +121,14 @@ function formFromProfile(prof, sport) {
   const form = rec?.form;
   const recentFeatured = Array.isArray(form?.recentFeatured) ? form.recentFeatured : [];
   const recentAction = Array.isArray(form?.recentAction) ? form.recentAction : [];
-  if (form && (form.l10 || form.flatCurve || recentFeatured.length || recentAction.length)) {
+  if (form && (form.l10 || form.flatCurve || form.dollarCurve || recentFeatured.length || recentAction.length)) {
     return {
       l5: form.l5 || null,
       l10: form.l10 || null,
       flatCurve: Array.isArray(form.flatCurve) ? form.flatCurve : null,
       flatEnd: Number.isFinite(form.flatEnd) ? form.flatEnd : null,
+      dollarCurve: Array.isArray(form.dollarCurve) ? form.dollarCurve : null,
+      dollarEnd: Number.isFinite(form.dollarEnd) ? form.dollarEnd : null,
       flatCurveDays: Number.isFinite(form.flatCurveDays) ? form.flatCurveDays : 30,
       recentFeatured,
       recentAction,
@@ -141,6 +143,8 @@ function formFromProfile(prof, sport) {
       l10: null,
       flatCurve: null,
       flatEnd: Number.isFinite(picks.flatPnl) ? picks.flatPnl : null,
+      dollarCurve: null,
+      dollarEnd: null,
       flatCurveDays: 30,
       recentFeatured: [],
       recentAction: [],
@@ -149,7 +153,8 @@ function formFromProfile(prof, sport) {
     };
   }
   return {
-    l5: null, l10: null, flatCurve: null, flatEnd: null, flatCurveDays: 30,
+    l5: null, l10: null, flatCurve: null, flatEnd: null,
+    dollarCurve: null, dollarEnd: null, flatCurveDays: 30,
     recentFeatured: [], recentAction: [],
     book: null, source: null,
   };
@@ -340,6 +345,8 @@ export function buildConfirmedActionRows({
       formKind: formDisp.kind,
       flatCurve: form.flatCurve,
       flatEnd: form.flatEnd,
+      dollarCurve: form.dollarCurve,
+      dollarEnd: form.dollarEnd,
       flatCurveDays: form.flatCurveDays ?? 30,
       recentFeatured: form.recentFeatured || [],
       recentAction: form.recentAction || [],

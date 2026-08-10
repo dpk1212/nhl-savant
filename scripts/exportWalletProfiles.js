@@ -367,12 +367,30 @@ function sportForm(bets) {
     cum += b.flat;
     return r2(cum);
   });
-  if (!l5 && !flatCurve.length) return null;
+  // Actual $ curve — settledPnl when present, else invested × flat unit return.
+  const dollarOf = (b) => {
+    if (Number.isFinite(b.settledPnl)) return b.settledPnl;
+    if (Number.isFinite(b.flat) && Number.isFinite(b.invested) && b.invested > 0) {
+      return b.invested * b.flat;
+    }
+    return null;
+  };
+  const dollarInWindow = inWindow.filter((b) => dollarOf(b) != null);
+  const dollarAll = ordered.filter((b) => dollarOf(b) != null);
+  const dollarSrc = dollarInWindow.length >= 5 ? dollarInWindow : dollarAll.slice(-20);
+  let dCum = 0;
+  const dollarCurve = dollarSrc.map((b) => {
+    dCum += dollarOf(b);
+    return Math.round(dCum);
+  });
+  if (!l5 && !flatCurve.length && !dollarCurve.length) return null;
   return {
     l5,
     l10,
     flatCurve: flatCurve.length >= 5 ? flatCurve : [],
     flatEnd: flatCurve.length ? flatCurve[flatCurve.length - 1] : null,
+    dollarCurve: dollarCurve.length >= 5 ? dollarCurve : [],
+    dollarEnd: dollarCurve.length ? dollarCurve[dollarCurve.length - 1] : null,
     flatCurveDays: FORM_CURVE_DAYS,
     flatCurveFrom: curveSrc[0]?.date || null,
   };
@@ -443,6 +461,12 @@ function recentFeaturedLegs(pickBets, { days = RECENT_LEGS_DAYS, maxLegs = RECEN
     const sr = Number.isFinite(b.sizeRatio) ? Number(b.sizeRatio) : null;
     const line = Number.isFinite(Number(b.entryLine)) ? Number(b.entryLine) : null;
     const matchup = matchupAbbrev(b.away, b.home, b.gameKey);
+    const invested = Number.isFinite(b.invested) ? Math.round(b.invested) : null;
+    const flat = Number.isFinite(b.flat) ? r2(b.flat) : null;
+    // Featured unit flat × stake ≈ dollar PnL at lock odds.
+    const dollarPnl = (flat != null && invested != null && invested > 0)
+      ? Math.round(invested * flat)
+      : null;
     return {
       date: b.date || null,
       marketType: b.market || null,
@@ -454,11 +478,12 @@ function recentFeaturedLegs(pickBets, { days = RECENT_LEGS_DAYS, maxLegs = RECEN
       away: b.away || null,
       home: b.home || null,
       odds: cleanAmericanOdds(b.odds),
-      invested: Number.isFinite(b.invested) ? Math.round(b.invested) : null,
+      invested,
       sizeRatio: sr,
       sizeBand: sizeBandKey(sr),
       won: b.won,
-      flat: Number.isFinite(b.flat) ? r2(b.flat) : null,
+      flat,
+      dollarPnl,
     };
   });
 }
@@ -502,6 +527,8 @@ function recentActionLegs(posBets, avgSportBet = null, { days = RECENT_LEGS_DAYS
       sizeBand: sizeBandKey(sr),
       won: b.won,
       settledPnl: Math.round(Number(b.settledPnl) || 0),
+      dollarPnl: Math.round(Number(b.settledPnl) || 0),
+      flat: Number.isFinite(b.flat) ? r2(b.flat) : null,
     };
   });
 }
@@ -658,7 +685,12 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
     const recentAction = recentActionLegs(ps, avgSportBet);
     let form = sportForm(pp.length ? pp : ps);
     if (!form && (recentFeatured.length || recentAction.length)) {
-      form = { l5: null, l10: null, flatCurve: [], flatEnd: null };
+      form = {
+        l5: null, l10: null,
+        flatCurve: [], flatEnd: null,
+        dollarCurve: [], dollarEnd: null,
+        flatCurveDays: FORM_CURVE_DAYS,
+      };
     }
     if (form) {
       form.recentFeatured = recentFeatured;

@@ -194,7 +194,7 @@ const PremiumSpark = memo(function PremiumSpark({
   );
 });
 
-/** Cumulative +1/−1 curve from recent W/L legs when flat equity is thin. */
+/** Cumulative +1/−1 curve from recent W/L legs when equity is thin. */
 function wlStripPoints(legs) {
   if (!Array.isArray(legs) || legs.length < 2) return null;
   let cum = 0;
@@ -204,37 +204,84 @@ function wlStripPoints(legs) {
   });
 }
 
-function sparkPointsForTab(tab, row) {
-  const flatSpark = () => {
-    if (row.flatCurve?.length >= 5) {
-      return {
-        points: row.flatCurve,
-        endLabel: Number.isFinite(row.flatEnd)
-          ? `${row.flatEnd >= 0 ? '+' : ''}${row.flatEnd.toFixed(1)}u`
-          : null,
-        kind: 'flat',
-      };
-    }
-    return null;
-  };
-  const stripSpark = (legs) => {
-    const strip = wlStripPoints(legs);
-    if (!strip) return null;
-    const end = strip[strip.length - 1];
-    return {
-      points: strip,
-      endLabel: `${end >= 0 ? '+' : ''}${end}`,
-      kind: 'wl',
-    };
-  };
-
-  if (tab === 'form') {
-    return flatSpark()
-      || stripSpark(row.recentFeatured)
-      || stripSpark(row.recentAction)
-      || null;
+/** Per-leg dollar PnL: stamped dollarPnl / settledPnl, else invested × flat. */
+function legDollarPnl(leg) {
+  if (Number.isFinite(leg?.dollarPnl)) return Number(leg.dollarPnl);
+  if (Number.isFinite(leg?.settledPnl)) return Number(leg.settledPnl);
+  if (Number.isFinite(leg?.flat) && Number.isFinite(leg?.invested) && leg.invested > 0) {
+    return leg.invested * leg.flat;
   }
-  return stripSpark(row.recentAction) || flatSpark() || null;
+  return null;
+}
+
+function cumCurveFromLegs(legs, mode) {
+  if (!Array.isArray(legs) || legs.length < 2) return null;
+  let cum = 0;
+  const points = [];
+  for (const leg of legs) {
+    let d = null;
+    if (mode === 'actual') d = legDollarPnl(leg);
+    else if (Number.isFinite(leg?.flat)) d = Number(leg.flat);
+    if (d == null) continue;
+    cum += d;
+    points.push(mode === 'actual' ? Math.round(cum) : +(cum.toFixed(2)));
+  }
+  if (points.length < 2) return null;
+  return points;
+}
+
+function fmtSparkEnd(value, mode) {
+  if (!Number.isFinite(value)) return null;
+  if (mode === 'actual') {
+    const abs = Math.abs(value);
+    const body = abs >= 1000 ? `$${(abs / 1000).toFixed(1)}K` : `$${Math.round(abs)}`;
+    return value >= 0 ? `+${body}` : `-${body}`;
+  }
+  return `${value >= 0 ? '+' : ''}${value.toFixed(1)}u`;
+}
+
+/**
+ * Spark for expand panel.
+ * mode: 'actual' (dollar) | 'flat' (1u) — default actual (real stake sizing).
+ */
+function sparkPointsForTab(tab, row, mode = 'actual') {
+  const featured = row.recentFeatured || [];
+  const action = row.recentAction || [];
+  const tabLegs = tab === 'form'
+    ? (featured.length ? featured : action)
+    : action;
+
+  const fromLegs = cumCurveFromLegs(tabLegs, mode);
+  if (fromLegs) {
+    return {
+      points: fromLegs,
+      endLabel: fmtSparkEnd(fromLegs[fromLegs.length - 1], mode),
+      kind: mode,
+    };
+  }
+
+  if (mode === 'actual' && row.dollarCurve?.length >= 5) {
+    return {
+      points: row.dollarCurve,
+      endLabel: fmtSparkEnd(row.dollarEnd, 'actual'),
+      kind: 'actual',
+    };
+  }
+  if (mode === 'flat' && row.flatCurve?.length >= 5) {
+    return {
+      points: row.flatCurve,
+      endLabel: fmtSparkEnd(row.flatEnd, 'flat'),
+      kind: 'flat',
+    };
+  }
+
+  const strip = wlStripPoints(tabLegs.length ? tabLegs : (featured.length ? featured : action));
+  if (!strip) return null;
+  return {
+    points: strip,
+    endLabel: `${strip[strip.length - 1] >= 0 ? '+' : ''}${strip[strip.length - 1]}`,
+    kind: 'wl',
+  };
 }
 
 function fmtLegDate(dateStr) {
@@ -283,7 +330,7 @@ function legMatchup(leg) {
   return null;
 }
 
-function TicketLegRow({ leg, showSize }) {
+function TicketLegRow({ leg, showSize, pnlMode = 'flat' }) {
   const win = leg.won === 1;
   const ratio = Number(leg.sizeRatio);
   const band = leg.sizeBand;
@@ -293,6 +340,7 @@ function TicketLegRow({ leg, showSize }) {
   const mktLine = formatLegMarket(leg.marketType, Number(leg.line));
   const matchup = legMatchup(leg);
   const oddsTxt = formatAmerican(Number(leg.odds));
+  const dollar = legDollarPnl(leg);
   const mid = showSize
     ? (
       <span style={{ ...T.micro, color: Number.isFinite(ratio) && ratio >= 1.5 ? B.gold : B.textSec, minWidth: 0 }}>
@@ -302,13 +350,22 @@ function TicketLegRow({ leg, showSize }) {
         ) : null}
       </span>
     )
-    : (
-      <span style={{ ...T.micro, color: B.textSec }}>
-        {Number.isFinite(leg.flat)
-          ? `${leg.flat >= 0 ? '+' : ''}${leg.flat.toFixed(2)}u`
-          : (Number.isFinite(leg.invested) && leg.invested > 0 ? fmtVol(leg.invested) : '—')}
-      </span>
-    );
+    : pnlMode === 'actual'
+      ? (
+        <span style={{
+          ...T.micro,
+          color: Number.isFinite(dollar) ? (dollar >= 0 ? B.green : B.red) : B.textSubtle,
+        }}>
+          {Number.isFinite(dollar) ? fmtSparkEnd(dollar, 'actual') : '—'}
+        </span>
+      )
+      : (
+        <span style={{ ...T.micro, color: B.textSec }}>
+          {Number.isFinite(leg.flat)
+            ? `${leg.flat >= 0 ? '+' : ''}${leg.flat.toFixed(2)}u`
+            : (Number.isFinite(leg.invested) && leg.invested > 0 ? fmtVol(leg.invested) : '—')}
+        </span>
+      );
 
   return (
     <div style={{
@@ -366,9 +423,11 @@ function ActionExpandPanel({ row, isMobile }) {
   // form = this sharp's featured history; recent = this sharp's Action tickets
   const [tab, setTab] = useState('form');
   const [showMore, setShowMore] = useState(false);
+  // Actual $ first — locked picks & Action tickets are sized, not 1u flat.
+  const [sparkMode, setSparkMode] = useState('actual');
   const featured = row.recentFeatured || [];
   const action = row.recentAction || [];
-  const spark = sparkPointsForTab(tab, row);
+  const spark = sparkPointsForTab(tab, row, sparkMode);
   const curveDays = Number.isFinite(row.flatCurveDays) ? row.flatCurveDays : 30;
   // Featured list prefers Source A; fall back to Action only when featured is empty.
   const formLegs = featured.length ? featured : action;
@@ -425,30 +484,36 @@ function ActionExpandPanel({ row, isMobile }) {
         )}
       </div>
 
-      {spark ? (
-        <div style={{ marginBottom: '0.75rem' }}>
-          <div style={{
-            ...T.tiny, color: B.textSubtle, marginBottom: '0.35rem',
-          }}>
-            {spark.kind === 'flat'
-              ? `Last ${curveDays} days · flat equity`
-              : `Last ${curveDays} days · win / loss`}
-          </div>
+      <div style={{ marginBottom: '0.75rem' }}>
+        <div style={{
+          display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem',
+          marginBottom: '0.4rem',
+        }}>
+          <span style={{ ...T.tiny, color: B.textSubtle }}>
+            Last {curveDays} days
+            {spark?.kind === 'wl' ? ' · win / loss' : sparkMode === 'actual' ? ' · actual $' : ' · flat 1u'}
+          </span>
+          <span style={{ display: 'inline-flex', gap: '0.25rem', marginLeft: 'auto' }}>
+            <Pill active={sparkMode === 'actual'} onClick={() => setSparkMode('actual')}>Actual</Pill>
+            <Pill active={sparkMode === 'flat'} onClick={() => setSparkMode('flat')}>Flat</Pill>
+          </span>
+        </div>
+        {spark ? (
           <PremiumSpark
             points={spark.points}
             width={isMobile ? 280 : 420}
             height={isMobile ? 56 : 68}
             endLabel={spark.endLabel}
           />
-        </div>
-      ) : (
-        <div style={{
-          ...T.micro, color: B.textSubtle, marginBottom: '0.75rem',
-          padding: '0.65rem 0.2rem',
-        }}>
-          Not enough graded tickets in the last {curveDays} days for a curve.
-        </div>
-      )}
+        ) : (
+          <div style={{
+            ...T.micro, color: B.textSubtle,
+            padding: '0.65rem 0.2rem',
+          }}>
+            Not enough graded tickets in the last {curveDays} days for a curve.
+          </div>
+        )}
+      </div>
 
       {tab === 'form' && row.trust && (
         <div style={{ marginBottom: '0.55rem' }}>
@@ -475,7 +540,11 @@ function ActionExpandPanel({ row, isMobile }) {
             <span>Date</span>
             <span>Pick</span>
             <span style={{ textAlign: 'right' }}>Odds</span>
-            <span>{tab === 'recent' || formListIsActionFallback ? 'Size' : 'Flat'}</span>
+            <span>
+              {tab === 'recent' || formListIsActionFallback
+                ? 'Size'
+                : (sparkMode === 'actual' ? 'Actual' : 'Flat')}
+            </span>
             <span style={{ textAlign: 'right' }}>W/L</span>
           </div>
           {[...visibleLegs].reverse().map((leg, i) => (
@@ -483,6 +552,7 @@ function ActionExpandPanel({ row, isMobile }) {
               key={`${leg.date}-${leg.side}-${leg.gameKey || i}`}
               leg={leg}
               showSize={tab === 'recent' || formListIsActionFallback}
+              pnlMode={sparkMode}
             />
           ))}
           {legs.length > previewN && (
