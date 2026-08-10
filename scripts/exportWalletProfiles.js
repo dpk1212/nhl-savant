@@ -139,9 +139,35 @@ const r2 = (v) => v == null ? null : Math.round(v * 100) / 100;
 const r1 = (v) => v == null ? null : Math.round(v * 10) / 10;
 const pct = (v) => v == null ? null : +(v * 100).toFixed(1);
 
+/** Canonical shipped stake units on a sharpFlow side (same ladder as tallySides). */
+function sideStakeUnits(side) {
+  const u = side?.finalUnits
+    ?? side?.v8_agsUnitsApplied
+    ?? side?.peak?.units
+    ?? side?.lock?.units
+    ?? 0;
+  return Number(u) || 0;
+}
+
+/**
+ * True featured / shipped lock — money on the ticket.
+ * Mirrors SharpFlow tallySides: drop MUTED / CANCELLED / SHADOW / tracked / 0u.
+ * MONITORING + hard-mute legs are graded for the record but were never featured.
+ */
+function isTrulyFeaturedSide(side) {
+  if (!side) return false;
+  if (side.superseded) return false;
+  if (side.health?.status === 'CANCELLED' || side.health?.status === 'MUTED') return false;
+  if (side.lockStage === 'SHADOW') return false;
+  if (side.result?.tracked === true) return false;
+  if (sideStakeUnits(side) <= 0) return false;
+  return true;
+}
+
 // ── Load Source A (wallet-bets from walletDetails) ─────────────────
 async function loadWalletBets() {
   const bets = [];
+  let skippedUnshipped = 0;
   for (const [col, market] of COLS) {
     const snap = await db.collection(col).where('date', '>=', V8_CUTOVER).get();
     for (const doc of snap.docs) {
@@ -160,16 +186,25 @@ async function loadWalletBets() {
 
       const seen = new Map();
       for (const [sideKey, side] of Object.entries(sides)) {
+        // Only attribute wallets on sides that actually shipped units.
+        // 0u muted / tracked / cancelled locks are not featured plays.
+        if (!isTrulyFeaturedSide(side)) {
+          const wdSkip = (side.peak || side.lock)?.v8Scoring?.walletDetails;
+          if (Array.isArray(wdSkip) && wdSkip.length) skippedUnshipped += 1;
+          continue;
+        }
         const peak = side.peak || side.lock;
         const wd = peak?.v8Scoring?.walletDetails;
         if (!Array.isArray(wd)) continue;
         const oddsForThisSide = peak.odds ?? 0;
         for (const w of wd) {
           if (!w.wallet || !w.side) continue;
+          // On-side only — against wallets on a featured lock are not "their featured."
+          if (w.side !== sideKey) continue;
           if (seen.has(`${doc.id}_${w.wallet}`)) continue;
           seen.set(`${doc.id}_${w.wallet}`, true);
-          const sidePeak = sides[w.side]?.peak || sides[w.side]?.lock || peak;
-          const betOddsRaw = sides[w.side]?.peak?.odds ?? sides[w.side]?.lock?.odds ?? oddsForThisSide;
+          const sidePeak = side.peak || side.lock || peak;
+          const betOddsRaw = side.peak?.odds ?? side.lock?.odds ?? oddsForThisSide;
           const betOdds = Number.isFinite(Number(betOddsRaw)) && Number(betOddsRaw) !== 0
             ? Number(betOddsRaw)
             : null;
@@ -202,10 +237,14 @@ async function loadWalletBets() {
             convictionMult: w.convictionMult ?? null,
             won,
             flat: flatProfit(betOdds, won === 1),
+            featuredUnits: sideStakeUnits(side),
           });
         }
       }
     }
+  }
+  if (skippedUnshipped > 0) {
+    console.log(`Source A: skipped ${skippedUnshipped} unshipped side(s) (muted/tracked/0u/cancelled)`);
   }
   return bets;
 }
