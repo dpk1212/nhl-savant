@@ -10,6 +10,15 @@
  * Polymarket `asset` (or soft key, for legacy docs) is no longer open.
  * Scanner silence (wallet not in scanHeartbeat.okWallets) does NOT exit.
  *
+ * Action-tab stamps (going forward — no backfill):
+ *   commenceTime          — ms from polymarket_data / pinnacle_history
+ *   whitelistTierAtEntry  — CONFIRMED/FLAT/… frozen on create (backfill if missing)
+ *   skillQ / sharpTier    — flat+dollar Q (1–4 / A–D); refreshed while PENDING
+ *   opposed / opposedBy   — clear|contested vs counted CONFIRMED ≥0.10× other side
+ *   confirmedSupport      — counted CONFIRMED ≥0.10× on same side (incl. self)
+ *   sizeBand              — press|full|lean|light from betMultiplier
+ *   minutesToCommence     — (commenceTime − exitNow) / 60k on EXITED (null if unknown)
+ *
  * Usage: node scripts/writeSharpActions.js
  * Schedule: run after scan-sharp-positions (every 2h)
  */
@@ -20,6 +29,9 @@ import { readFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { loadWalletProfilesMap } from './lib/loadWalletProfiles.js';
+import { buildFlatDollarQBySport, shortWalletId } from '../src/lib/walletClvSkill.js';
+import { tierLetterFromQ } from '../src/lib/sharpTierCellStats.js';
+import { sizeBandFromRatio, isCountedProvenSize } from '../src/lib/confirmedActionDesk.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '../public');
@@ -37,6 +49,11 @@ const COLLECTION = 'sharp_action_positions';
 // a much denser feed — particularly NHL, which has very few vault rows.
 const VAULT_MIN_MULTIPLIER = 0.75;
 const SHADOW_MIN_MULTIPLIER = 0.10;
+
+/** Opposite side for Action opposed/unopposed (matches confirmedActionDesk). */
+const ACTION_OPP_SIDE = {
+  away: 'home', home: 'away', over: 'under', under: 'over', draw: null,
+};
 
 function initFirebase() {
   if (!admin.apps.length) {
@@ -108,6 +125,102 @@ function collectScanSoftKeys(posFiles) {
     }
   }
   return keys;
+}
+
+function parseCommenceMs(raw) {
+  if (raw == null || raw === '') return null;
+  if (typeof raw === 'number' && Number.isFinite(raw)) {
+    return raw < 1e12 ? raw * 1000 : raw;
+  }
+  const ms = Date.parse(raw);
+  return Number.isFinite(ms) ? ms : null;
+}
+
+/**
+ * sport|gameKey → commenceTime ms (poly first, pinnacle fallback).
+ * Same sources as syncPickStateAuthoritative.loadGameMetadata.
+ */
+function loadCommenceByGame() {
+  const map = new Map();
+  const sports = ['NHL', 'NBA', 'MLB', 'CBB', 'NFL', 'SOC', 'UFC', 'WNBA'];
+  const poly = loadJSON('polymarket_data.json') || {};
+  for (const sport of sports) {
+    for (const [gk, g] of Object.entries(poly[sport] || {})) {
+      if (!g || typeof g !== 'object') continue;
+      const ms = parseCommenceMs(g.commence || g.polyGameTime || g.commenceTime);
+      if (ms != null) map.set(`${sport}|${gk}`, ms);
+    }
+  }
+  const pinn = loadJSON('pinnacle_history.json') || {};
+  for (const sport of sports) {
+    for (const [gk, g] of Object.entries(pinn[sport] || {})) {
+      if (!g || typeof g !== 'object') continue;
+      const key = `${sport}|${gk}`;
+      if (map.has(key)) continue;
+      const fromT = g.opener?.t ?? g.current?.t ?? null;
+      const ms = parseCommenceMs(fromT != null ? fromT : (g.commence || g.commenceTime));
+      if (ms != null) map.set(key, ms);
+    }
+  }
+  return map;
+}
+
+/**
+ * Stamp Action-tab analytics fields onto the in-memory position list before write.
+ * Opposition uses current whitelist + size (desk rule), not frozen AtEntry.
+ */
+function enrichActionDeskStamps(positions, walletProfiles, commenceByGame) {
+  const qBySport = buildFlatDollarQBySport(walletProfiles);
+
+  for (const pos of positions) {
+    const short = shortWalletId(pos.walletShort || pos.wallet);
+    const prof = walletProfiles.get(short)
+      || walletProfiles.get(String(short || '').toLowerCase())
+      || null;
+    const wlRaw = prof?.bySport?.[pos.sport]?.whitelistTier;
+    const wlNow = wlRaw ? String(wlRaw).toUpperCase() : null;
+    pos._wlNow = wlNow;
+    pos.whitelistTierAtEntry = wlNow;
+
+    const qMap = qBySport.get(pos.sport) || new Map();
+    const q = qMap.get(short) || qMap.get(String(short).toLowerCase()) || null;
+    pos.skillQ = (q === 1 || q === 2 || q === 3 || q === 4) ? q : null;
+    pos.sharpTier = tierLetterFromQ(pos.skillQ);
+
+    pos.commenceTime = commenceByGame.get(`${pos.sport}|${pos.gameKey}`) ?? null;
+
+    const sr = Number(pos.betMultiplier);
+    const size = sizeBandFromRatio(Number.isFinite(sr) ? sr : Number(pos.v8_sizeRatio));
+    pos.sizeBand = size.key;
+  }
+
+  const byCluster = new Map();
+  for (const pos of positions) {
+    const k = `${pos.sport}|${pos.gameKey}|${pos.marketType}`;
+    if (!byCluster.has(k)) byCluster.set(k, []);
+    byCluster.get(k).push(pos);
+  }
+
+  for (const pos of positions) {
+    const list = byCluster.get(`${pos.sport}|${pos.gameKey}|${pos.marketType}`) || [];
+    const opp = ACTION_OPP_SIDE[pos.side] ?? null;
+    const counted = (p) => p._wlNow === 'CONFIRMED' && isCountedProvenSize(Number(p.betMultiplier));
+    const foes = opp ? list.filter((x) => x.side === opp && counted(x)) : [];
+    const support = list.filter((x) => x.side === pos.side && counted(x));
+    pos.opposed = foes.length > 0 ? 'contested' : 'clear';
+    pos.opposedBy = foes.length;
+    pos.confirmedSupport = support.length;
+    delete pos._wlNow;
+  }
+
+  const withCommence = positions.filter((p) => p.commenceTime != null).length;
+  const confirmedN = positions.filter((p) => p.whitelistTierAtEntry === 'CONFIRMED').length;
+  const contestedN = positions.filter((p) => p.opposed === 'contested').length;
+  console.log(
+    `Action stamps: commence=${withCommence}/${positions.length}`
+    + ` · CONFIRMED=${confirmedN} · contested=${contestedN}`
+    + ` · Q maps=${qBySport.size} sports`,
+  );
 }
 
 // ── V8 Wallet-Contribution Scoring (server-side port) ────────────────────────
@@ -462,20 +575,22 @@ async function main() {
   const totalPositions = loadJSON('sharp_total_positions.json');
   const sportsSharps = loadJSON('sports_sharps.json') || {};
   const pinnacleHistory = loadJSON('pinnacle_history.json') || {};
+  const commenceByGame = loadCommenceByGame();
+  console.log(`Loaded commenceTime for ${commenceByGame.size} games (poly/pinn)`);
   const excludedRaw = loadJSON('sharp_intel_excluded_wallets.json') || {};
   const excludedArr = Array.isArray(excludedRaw.excluded) ? excludedRaw.excluded : [];
   const excludedSet = new Set(excludedArr.map(w => (w || '').toLowerCase()));
 
-  // Phase 2 wallet whitelist — needed for Vault Quant Score winners margin.
-  // Keyed by walletShort (last 6 chars). Prefer local JSON; Firestore fallback
-  // via loadWalletProfilesMap (same contract as syncPickStateAuthoritative).
+  // Phase 2 wallet whitelist — needed for Vault Quant Score winners margin
+  // + Action sharp-tier / opposed stamps. Keyed by walletShort (last 6 chars).
+  // Prefer local JSON; Firestore fallback via loadWalletProfilesMap.
   let walletProfiles = new Map();
   try {
     const loaded = await loadWalletProfilesMap(db);
     walletProfiles = loaded.map;
     console.log(`Loaded ${walletProfiles.size} sharpWalletProfiles for vault quant scoring (source=${loaded.source})`);
   } catch (err) {
-    console.warn('WARNING: failed to load sharpWalletProfiles — vault_* fields will be null:', err.message);
+    console.warn('WARNING: failed to load sharpWalletProfiles — vault_* / Action stamps will be null:', err.message);
   }
 
   const posFiles = [
@@ -726,6 +841,15 @@ async function main() {
             conditionId: pos.conditionId || null,
             outcomeIndex: pos.outcomeIndex ?? null,
             eventId: pos.eventId || null,
+            // Action-tab stamps — filled in enrichActionDeskStamps() below
+            commenceTime: null,
+            whitelistTierAtEntry: null,
+            skillQ: null,
+            sharpTier: null,
+            opposed: null,
+            opposedBy: null,
+            confirmedSupport: null,
+            sizeBand: null,
             status: 'PENDING',
             result: null,
             gradedAt: null,
@@ -738,6 +862,8 @@ async function main() {
       }
     }
   }
+
+  enrichActionDeskStamps(positions, walletProfiles, commenceByGame);
 
   const vaultCt = positions.filter(p => p.vaultQualified).length;
   const shadowCt = positions.length - vaultCt;
@@ -876,7 +1002,16 @@ async function main() {
           // tiers as invested grows/shrinks relative to avgSportBet.
           qualificationTier: pos.qualificationTier,
           vaultQualified: pos.vaultQualified,
+          avgSportBet: pos.avgSportBet,
           betMultiplier: pos.betMultiplier,
+          sizeBand: pos.sizeBand,
+          // Action desk — refresh while open (peers / Q can move pre-game).
+          // whitelistTierAtEntry is create-only (backfilled below if missing).
+          skillQ: pos.skillQ,
+          sharpTier: pos.sharpTier,
+          opposed: pos.opposed,
+          opposedBy: pos.opposedBy,
+          confirmedSupport: pos.confirmedSupport,
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           // V8 scoring — always update to latest snapshot
           v8_walletPlayScore: pos.v8_walletPlayScore,
@@ -933,11 +1068,19 @@ async function main() {
         if (pos.conditionId && !data.conditionId) updatePayload.conditionId = pos.conditionId;
         if (pos.outcomeIndex != null && data.outcomeIndex == null) updatePayload.outcomeIndex = pos.outcomeIndex;
         if (pos.eventId && !data.eventId) updatePayload.eventId = pos.eventId;
+        // Freeze-at-entry / one-time backfills (going forward creates stamp these).
+        if (data.whitelistTierAtEntry == null && pos.whitelistTierAtEntry != null) {
+          updatePayload.whitelistTierAtEntry = pos.whitelistTierAtEntry;
+        }
+        if (data.commenceTime == null && pos.commenceTime != null) {
+          updatePayload.commenceTime = pos.commenceTime;
+        }
         // Re-open if this wallet re-entered after an EXITED stamp.
         if (data.status === 'EXITED') {
           updatePayload.status = 'PENDING';
           updatePayload.exitedAt = null;
           updatePayload.exitReason = null;
+          updatePayload.minutesToCommence = null;
           reopened++;
         }
         batch.update(ref, updatePayload);
@@ -1047,13 +1190,26 @@ async function markExitedPositions(db, date, { sharpPositions, posFiles, present
     }
     if (!shouldExit) continue;
 
-    batch.update(doc.ref, {
+    const exitPayload = {
       status: 'EXITED',
       exitedAt: admin.firestore.FieldValue.serverTimestamp(),
       exitReason,
       // Keep size snapshot; stop looking "live" for freshness consumers.
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
+    };
+    // Exit-vs-tip: positive = exited before commence. Uses wall clock ≈ exitedAt.
+    let ct = typeof data.commenceTime === 'number' && Number.isFinite(data.commenceTime)
+      ? data.commenceTime
+      : null;
+    if (ct == null) {
+      const g = polyData?.[data.sport]?.[data.gameKey];
+      ct = parseCommenceMs(g?.commence || g?.polyGameTime || g?.commenceTime);
+      if (ct != null) exitPayload.commenceTime = ct;
+    }
+    if (ct != null) {
+      exitPayload.minutesToCommence = +((ct - Date.now()) / 60000).toFixed(1);
+    }
+    batch.update(doc.ref, exitPayload);
     batchOps++;
     exited++;
     if (batchOps >= 400) {

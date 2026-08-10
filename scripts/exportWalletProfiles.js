@@ -218,10 +218,18 @@ async function loadPositions() {
     // by `invested` (= avgPrice * sharesHeld) gives the unit return at the
     // Polymarket entry price. Mean across positions = position-flat ROI.
     const flat = invested > 0 ? settledPnl / invested : 0;
+    const sizeRatio = Number.isFinite(Number(d.betMultiplier))
+      ? Number(d.betMultiplier)
+      : (Number.isFinite(Number(d.v8_sizeRatio)) ? Number(d.v8_sizeRatio) : null);
     rows.push({
       date: d.date,
       sport: d.sport,
       market: d.marketType,
+      gameKey: d.gameKey || null,
+      side: d.side || null,
+      teamName: d.teamName || null,
+      entryLine: d.entryLine ?? d.spreadLine ?? d.totalLine ?? null,
+      sizeRatio,
       walletShort,
       walletAddress: d.wallet,
       tier: d.tier,
@@ -332,6 +340,83 @@ function sportForm(bets) {
     flatCurve: flatCurve.length >= 5 ? flatCurve : [],
     flatEnd: flatCurve.length ? flatCurve[flatCurve.length - 1] : null,
   };
+}
+
+/** Size band key — same thresholds as confirmedActionDesk.sizeBandFromRatio. */
+function sizeBandKey(sr) {
+  if (!Number.isFinite(sr)) return null;
+  if (sr >= 1.5) return 'press';
+  if (sr >= 1.0) return 'full';
+  if (sr >= 0.5) return 'lean';
+  return 'light';
+}
+
+function sideLabel(side) {
+  if (!side) return null;
+  const s = String(side).toLowerCase();
+  if (s === 'over') return 'Over';
+  if (s === 'under') return 'Under';
+  if (s === 'draw') return 'Draw';
+  if (s === 'away' || s === 'home') return s;
+  return String(side);
+}
+
+/**
+ * Last 10 featured tracked picks (Source A) for Action expand Tab 1.
+ */
+function recentFeaturedLegs(pickBets, limit = 10) {
+  const ordered = (pickBets || [])
+    .filter((b) => b && (b.won === 0 || b.won === 1))
+    .slice()
+    .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')))
+    .slice(-limit);
+  return ordered.map((b) => {
+    const sr = Number.isFinite(b.sizeRatio) ? Number(b.sizeRatio) : null;
+    return {
+      date: b.date || null,
+      marketType: b.market || null,
+      side: b.side || null,
+      label: sideLabel(b.side),
+      line: null,
+      gameKey: b.gameKey || null,
+      invested: Number.isFinite(b.invested) ? Math.round(b.invested) : null,
+      sizeRatio: sr,
+      sizeBand: sizeBandKey(sr),
+      won: b.won,
+      flat: Number.isFinite(b.flat) ? r2(b.flat) : null,
+    };
+  });
+}
+
+/**
+ * Last 10 graded Action positions (Source B) for Action expand Tab 2.
+ */
+function recentActionLegs(posBets, avgSportBet = null, limit = 10) {
+  const ordered = (posBets || [])
+    .filter((b) => b && (b.won === 0 || b.won === 1))
+    .slice()
+    .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')))
+    .slice(-limit);
+  return ordered.map((b) => {
+    let sr = Number.isFinite(b.sizeRatio) ? Number(b.sizeRatio) : null;
+    if (sr == null && Number.isFinite(avgSportBet) && avgSportBet > 0 && Number.isFinite(b.invested)) {
+      sr = +(b.invested / avgSportBet).toFixed(2);
+    }
+    const label = b.teamName || sideLabel(b.side);
+    return {
+      date: b.date || null,
+      marketType: b.market || null,
+      side: b.side || null,
+      label: label || null,
+      line: Number.isFinite(Number(b.entryLine)) ? Number(b.entryLine) : null,
+      gameKey: b.gameKey || null,
+      invested: Math.round(Number(b.invested) || 0),
+      sizeRatio: sr,
+      sizeBand: sizeBandKey(sr),
+      won: b.won,
+      settledPnl: Math.round(Number(b.settledPnl) || 0),
+    };
+  });
 }
 function positionsAgg(bets) {
   const n = bets.length;
@@ -481,7 +566,17 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
     const positionsInSport = positionsAgg(ps);
     const { tier, source } = classifyWhitelistTierWithSource(picksInSport, positionsInSport);
     // Form: prefer featured picks; else positions (with flat = settledPnl/invested).
-    const form = sportForm(pp.length ? pp : ps);
+    // Recent ticket lists always stamp both sources for Action expand tabs.
+    const recentFeatured = recentFeaturedLegs(pp, 10);
+    const recentAction = recentActionLegs(ps, avgSportBet, 10);
+    let form = sportForm(pp.length ? pp : ps);
+    if (!form && (recentFeatured.length || recentAction.length)) {
+      form = { l5: null, l10: null, flatCurve: [], flatEnd: null };
+    }
+    if (form) {
+      form.recentFeatured = recentFeatured;
+      form.recentAction = recentAction;
+    }
     bySport[sport] = {
       picks: picksInSport,
       positions: positionsInSport,

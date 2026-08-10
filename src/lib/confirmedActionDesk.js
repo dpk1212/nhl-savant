@@ -119,12 +119,16 @@ function pinMoveFor(pinnacleHistory, sport, gameKey, side) {
 function formFromProfile(prof, sport) {
   const rec = prof?.bySport?.[sport];
   const form = rec?.form;
-  if (form && (form.l10 || form.flatCurve)) {
+  const recentFeatured = Array.isArray(form?.recentFeatured) ? form.recentFeatured : [];
+  const recentAction = Array.isArray(form?.recentAction) ? form.recentAction : [];
+  if (form && (form.l10 || form.flatCurve || recentFeatured.length || recentAction.length)) {
     return {
       l5: form.l5 || null,
       l10: form.l10 || null,
       flatCurve: Array.isArray(form.flatCurve) ? form.flatCurve : null,
       flatEnd: Number.isFinite(form.flatEnd) ? form.flatEnd : null,
+      recentFeatured,
+      recentAction,
       book: null,
       source: 'form',
     };
@@ -136,11 +140,17 @@ function formFromProfile(prof, sport) {
       l10: null,
       flatCurve: null,
       flatEnd: Number.isFinite(picks.flatPnl) ? picks.flatPnl : null,
+      recentFeatured: [],
+      recentAction: [],
       book: { w: picks.wins || 0, l: picks.losses || 0, n: picks.n || 0 },
       source: 'book',
     };
   }
-  return { l5: null, l10: null, flatCurve: null, flatEnd: null, book: null, source: null };
+  return {
+    l5: null, l10: null, flatCurve: null, flatEnd: null,
+    recentFeatured: [], recentAction: [],
+    book: null, source: null,
+  };
 }
 
 function formLabel(form) {
@@ -328,6 +338,8 @@ export function buildConfirmedActionRows({
       formKind: formDisp.kind,
       flatCurve: form.flatCurve,
       flatEnd: form.flatEnd,
+      recentFeatured: form.recentFeatured || [],
+      recentAction: form.recentAction || [],
       trust: trustFromProfile(prof, sport),
       pinMove: pin, // 'with' | 'against' | null
       opposed: null, // filled below

@@ -1248,6 +1248,15 @@ p {
   to   { transform: translateX(-50%); }
 }
 
+/* Action desk row expand panel */
+.sf-action-expand {
+  animation: sf-action-expand-in 200ms ease;
+}
+@keyframes sf-action-expand-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* Horizontal-scroll filter chip rail (mobile). Hidden scrollbar +
    soft right-edge fade to hint there's more to swipe. */
 .sf-chiprail {
@@ -1267,5 +1276,5 @@ p {
 
 @media (prefers-reduced-motion: reduce) {
   .sf-card, .sf-bar-left, .sf-bar-right, .sf-spark-halo, .sf-aurora,
-  .sf-stagger > *, .sf-tape-track { animation: none; transition: none; }
+  .sf-stagger > *, .sf-tape-track, .sf-action-expand { animation: none; transition: none; }
 }

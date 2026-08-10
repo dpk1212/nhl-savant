@@ -3,7 +3,7 @@
  * Sparse header. Dense, scannable rows. No product lectures.
  */
 import React, { useEffect, useMemo, useState, memo } from 'react';
-import { Activity } from 'lucide-react';
+import { Activity, ChevronDown } from 'lucide-react';
 import {
   buildConfirmedActionRows,
   buildConfirmedActionMarquee,
@@ -125,6 +125,330 @@ const FlatSpark = memo(function FlatSpark({ points, width = 64, height = 20 }) {
     </svg>
   );
 });
+
+/** Larger equity / W-L strip sparkline for the expand panel. */
+const PremiumSpark = memo(function PremiumSpark({
+  points,
+  width = 320,
+  height = 64,
+  endLabel = null,
+}) {
+  if (!points || points.length < 2) return null;
+  const min = Math.min(...points);
+  const max = Math.max(...points);
+  const range = max - min || 1;
+  const padX = 4;
+  const padY = 6;
+  const xStep = (width - padX * 2) / Math.max(1, points.length - 1);
+  const yH = height - padY * 2;
+  const pts = points.map((v, i) => ({
+    x: padX + i * xStep,
+    y: padY + yH - ((v - min) / range) * yH,
+  }));
+  let line = `M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;
+  for (let i = 1; i < pts.length; i++) line += ` L${pts[i].x.toFixed(1)},${pts[i].y.toFixed(1)}`;
+  const last = pts[pts.length - 1];
+  const fill = `${line} L${last.x.toFixed(1)},${(height - 2).toFixed(1)} L${pts[0].x.toFixed(1)},${(height - 2).toFixed(1)} Z`;
+  const up = points[points.length - 1] >= points[0];
+  const stroke = up ? B.green : B.red;
+  const fillTint = up ? 'rgba(16,185,129,0.16)' : 'rgba(239,68,68,0.14)';
+  const gid = `ps-${up ? 'up' : 'dn'}-${width}-${points.length}`;
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.65rem', width: '100%' }}>
+      <svg
+        width="100%"
+        height={height}
+        viewBox={`0 0 ${width} ${height}`}
+        preserveAspectRatio="none"
+        style={{ display: 'block', flex: 1, minWidth: 0 }}
+        aria-hidden
+      >
+        <defs>
+          <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={stroke} stopOpacity="0.35" />
+            <stop offset="100%" stopColor={stroke} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={fill} fill={`url(#${gid})`} />
+        <path
+          d={line}
+          fill="none"
+          stroke={stroke}
+          strokeWidth={2.2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <circle cx={last.x} cy={last.y} r={3.2} fill={stroke} />
+        <circle cx={last.x} cy={last.y} r={6} fill={fillTint} />
+      </svg>
+      {endLabel != null && (
+        <span style={{
+          ...T.body, fontWeight: 800, fontFeatureSettings: "'tnum'",
+          color: up ? B.green : B.red, flexShrink: 0, paddingBottom: 2,
+        }}>
+          {endLabel}
+        </span>
+      )}
+    </div>
+  );
+});
+
+/** Cumulative +1/−1 curve from recent W/L legs when flat equity is thin. */
+function wlStripPoints(legs) {
+  if (!Array.isArray(legs) || legs.length < 2) return null;
+  let cum = 0;
+  return legs.map((leg) => {
+    cum += leg.won === 1 ? 1 : -1;
+    return cum;
+  });
+}
+
+function sparkPointsForTab(tab, row) {
+  const flatSpark = () => {
+    if (row.flatCurve?.length >= 5) {
+      return {
+        points: row.flatCurve,
+        endLabel: Number.isFinite(row.flatEnd)
+          ? `${row.flatEnd >= 0 ? '+' : ''}${row.flatEnd.toFixed(1)}u`
+          : null,
+        kind: 'flat',
+      };
+    }
+    return null;
+  };
+  const stripSpark = (legs) => {
+    const strip = wlStripPoints(legs);
+    if (!strip) return null;
+    const end = strip[strip.length - 1];
+    return {
+      points: strip,
+      endLabel: `${end >= 0 ? '+' : ''}${end}`,
+      kind: 'wl',
+    };
+  };
+
+  if (tab === 'form') {
+    return flatSpark()
+      || stripSpark(row.recentFeatured)
+      || stripSpark(row.recentAction)
+      || null;
+  }
+  return stripSpark(row.recentAction) || flatSpark() || null;
+}
+
+function fmtLegDate(dateStr) {
+  if (!dateStr) return '—';
+  try {
+    const [y, m, d] = String(dateStr).split('-').map(Number);
+    if (!y || !m || !d) return dateStr;
+    return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  } catch {
+    return dateStr;
+  }
+}
+
+function sizeWord(band, ratio) {
+  if (band === 'press' || ratio >= 1.5) return 'press';
+  if (band === 'light' || (Number.isFinite(ratio) && ratio < 0.5)) return 'light';
+  if (band === 'lean' || (Number.isFinite(ratio) && ratio < 1)) return 'lean';
+  return 'usual';
+}
+
+function TicketLegRow({ leg, showSize }) {
+  const win = leg.won === 1;
+  const ratio = Number(leg.sizeRatio);
+  const band = leg.sizeBand;
+  const label = leg.label
+    || (leg.side === 'over' ? 'Over' : leg.side === 'under' ? 'Under' : leg.side)
+    || '—';
+  const mkt = leg.marketType || '';
+  const line = Number.isFinite(leg.line) ? ` ${leg.line > 0 ? '+' : ''}${leg.line}` : '';
+  const mid = showSize
+    ? (
+      <span style={{ ...T.micro, color: Number.isFinite(ratio) && ratio >= 1.5 ? B.gold : B.textSec, minWidth: 0 }}>
+        {Number.isFinite(ratio) ? `${ratio.toFixed(1)}× ${sizeWord(band, ratio)}` : '—'}
+        {Number.isFinite(leg.invested) && leg.invested > 0 ? (
+          <span style={{ color: B.textSubtle }}> · {fmtVol(leg.invested)}</span>
+        ) : null}
+      </span>
+    )
+    : (
+      <span style={{ ...T.micro, color: B.textSec }}>
+        {Number.isFinite(leg.flat)
+          ? `${leg.flat >= 0 ? '+' : ''}${leg.flat.toFixed(2)}u`
+          : (Number.isFinite(leg.invested) && leg.invested > 0 ? fmtVol(leg.invested) : '—')}
+      </span>
+    );
+
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: LEG_ROW_GRID,
+      gap: '0.4rem 0.5rem',
+      alignItems: 'center',
+      padding: '0.45rem 0.1rem',
+      borderBottom: `1px solid ${B.borderSubtle}`,
+      fontFeatureSettings: "'tnum'",
+    }}>
+      <span style={{ ...T.micro, color: B.textMuted }}>{fmtLegDate(leg.date)}</span>
+      <span style={{
+        ...T.micro, color: B.textSec, minWidth: 0,
+        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+      }}>
+        <span style={{ color: B.textSubtle }}>{mkt}{line}</span>
+        {' · '}
+        <span style={{ color: B.text, fontWeight: 700 }}>{String(label).toUpperCase()}</span>
+      </span>
+      {mid}
+      <span style={{
+        ...T.tiny,
+        justifySelf: 'end',
+        padding: '0.16rem 0.4rem',
+        borderRadius: 5,
+        color: win ? B.green : B.red,
+        background: win ? B.greenDim : 'rgba(239,68,68,0.12)',
+        border: `1px solid ${win ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`,
+        textAlign: 'center',
+      }}>
+        {win ? 'W' : 'L'}
+      </span>
+    </div>
+  );
+}
+
+const LEG_ROW_GRID = '4rem minmax(0, 1.35fr) minmax(4.5rem, 1fr) 2.4rem';
+
+function ActionExpandPanel({ row, isMobile }) {
+  const [tab, setTab] = useState('form');
+  const [showTen, setShowTen] = useState(false);
+  const featured = row.recentFeatured || [];
+  const action = row.recentAction || [];
+  const spark = sparkPointsForTab(tab, row);
+  // Form list prefers featured; fall back to Action legs when Source A is thin.
+  const formLegs = featured.length ? featured : action;
+  const legs = tab === 'form' ? formLegs : action;
+  const formListIsActionFallback = tab === 'form' && !featured.length && action.length > 0;
+  const visibleLegs = showTen ? legs.slice(-10) : legs.slice(-5);
+  const l5 = row.form?.l5;
+  const l10 = row.form?.l10;
+  const formRecord = (window) => {
+    const r = window === 5 ? l5 : l10;
+    if (!r || (r.w + r.l) <= 0) return null;
+    return `${r.w}–${r.l}`;
+  };
+
+  return (
+    <div
+      className="sf-action-expand"
+      style={{
+        borderTop: `1px solid ${B.borderSubtle}`,
+        background: 'linear-gradient(180deg, rgba(26,31,46,0.95) 0%, rgba(20,24,33,0.98) 100%)',
+        padding: isMobile ? '0.85rem 1rem 1rem' : '0.95rem 1.25rem 1.1rem',
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', alignItems: 'center', marginBottom: '0.75rem' }}>
+        <Pill active={tab === 'form'} onClick={() => { setTab('form'); setShowTen(false); }}>Form</Pill>
+        <Pill active={tab === 'recent'} onClick={() => { setTab('recent'); setShowTen(false); }}>Recent</Pill>
+        {tab === 'form' && (
+          <span style={{ ...T.micro, color: B.textMuted, marginLeft: '0.25rem' }}>
+            {featured.length ? 'Featured tracked' : (formListIsActionFallback ? 'Recent Action (no featured yet)' : 'Sport form')}
+            {formRecord(10) ? (
+              <span style={{ color: B.textSec, fontWeight: 700 }}>
+                {' · '}L10 {formRecord(10)}
+                {formRecord(5) ? ` · L5 ${formRecord(5)}` : ''}
+              </span>
+            ) : null}
+          </span>
+        )}
+        {tab === 'recent' && (
+          <span style={{ ...T.micro, color: B.textMuted, marginLeft: '0.25rem' }}>
+            Last {Math.min(showTen ? 10 : 5, action.length) || 0} Action tickets
+          </span>
+        )}
+      </div>
+
+      {spark ? (
+        <div style={{ marginBottom: '0.75rem' }}>
+          <div style={{
+            ...T.tiny, color: B.textSubtle, marginBottom: '0.35rem',
+          }}>
+            {spark.kind === 'flat' ? 'Flat equity' : 'Win / loss strip'}
+          </div>
+          <PremiumSpark
+            points={spark.points}
+            width={isMobile ? 280 : 420}
+            height={isMobile ? 56 : 68}
+            endLabel={spark.endLabel}
+          />
+        </div>
+      ) : (
+        <div style={{
+          ...T.micro, color: B.textSubtle, marginBottom: '0.75rem',
+          padding: '0.65rem 0.2rem',
+        }}>
+          Not enough graded tickets yet for a curve.
+        </div>
+      )}
+
+      {tab === 'form' && row.trust && (
+        <div style={{ marginBottom: '0.55rem' }}>
+          <TrustLine trust={row.trust} />
+        </div>
+      )}
+
+      {visibleLegs.length === 0 ? (
+        <div style={{ ...T.micro, color: B.textMuted, padding: '0.5rem 0.1rem 0.15rem' }}>
+          {tab === 'form'
+            ? 'No featured tracked picks in this sport yet.'
+            : 'No graded Action tickets in this sport yet.'}
+        </div>
+      ) : (
+        <div>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: LEG_ROW_GRID,
+            gap: '0.4rem 0.5rem',
+            padding: '0 0.1rem 0.3rem',
+            ...T.tiny,
+            color: B.textSubtle,
+          }}>
+            <span>Date</span>
+            <span>Pick</span>
+            <span>{tab === 'recent' || formListIsActionFallback ? 'Size' : 'Flat'}</span>
+            <span style={{ textAlign: 'right' }}>W/L</span>
+          </div>
+          {[...visibleLegs].reverse().map((leg, i) => (
+            <TicketLegRow
+              key={`${leg.date}-${leg.side}-${leg.gameKey || i}`}
+              leg={leg}
+              showSize={tab === 'recent' || formListIsActionFallback}
+            />
+          ))}
+          {legs.length > 5 && (
+            <button
+              type="button"
+              onClick={() => setShowTen((v) => !v)}
+              style={{
+                marginTop: '0.55rem',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                ...T.micro,
+                fontWeight: 700,
+                color: B.gold,
+                padding: '0.2rem 0',
+              }}
+            >
+              {showTen ? 'Show 5' : `Show ${Math.min(10, legs.length)}`}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function Chip({ children, tone }) {
   return (
@@ -402,7 +726,7 @@ function CellHistLine({ text }) {
   );
 }
 
-function ActionRow({ row, isMobile }) {
+function ActionRow({ row, isMobile, expanded, onToggle }) {
   const [hover, setHover] = useState(false);
   const matchup = row.away && row.home ? `${row.away} @ ${row.home}` : row.gameKey;
   const clock = entryClock(row.ts);
@@ -410,58 +734,97 @@ function ActionRow({ row, isMobile }) {
     : row.skillKey === 'mid' ? B.green
       : B.border;
   const trust = row.trust;
+  const reduceMotion = typeof window !== 'undefined'
+    && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
 
   const shell = {
     borderRadius: '12px',
-    border: `1px solid ${hover ? B.goldBorder : B.border}`,
+    border: `1px solid ${expanded || hover ? B.goldBorder : B.border}`,
     borderLeft: `3px solid ${accent}`,
-    background: hover
+    background: hover || expanded
       ? `linear-gradient(105deg, ${B.cardHover} 0%, ${B.card} 70%)`
       : B.card,
-    boxShadow: hover ? '0 10px 32px rgba(0,0,0,0.35)' : 'none',
-    transition: 'border-color 140ms ease, box-shadow 140ms ease, background 140ms ease',
+    boxShadow: hover || expanded ? '0 10px 32px rgba(0,0,0,0.35)' : 'none',
+    transition: reduceMotion
+      ? 'none'
+      : 'border-color 140ms ease, box-shadow 140ms ease, background 140ms ease',
     overflow: 'hidden',
+  };
+
+  const chevron = (
+    <ChevronDown
+      size={16}
+      color={expanded ? B.gold : B.textMuted}
+      style={{
+        flexShrink: 0,
+        transition: reduceMotion ? 'none' : 'transform 200ms ease',
+        transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+      }}
+      aria-hidden
+    />
+  );
+
+  const headerBtnProps = {
+    type: 'button',
+    onClick: onToggle,
+    'aria-expanded': expanded,
+    style: {
+      display: 'block',
+      width: '100%',
+      textAlign: 'left',
+      background: 'transparent',
+      border: 'none',
+      padding: 0,
+      cursor: 'pointer',
+      color: 'inherit',
+    },
   };
 
   if (isMobile) {
     return (
       <div style={shell}>
-        <div style={{ padding: '1rem 1rem 0.85rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem' }}>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center', marginBottom: '0.3rem' }}>
-                <span style={{ ...T.tiny, color: sportColor(row.sport) }}>{row.sport}</span>
-                <span style={{ ...T.tiny, color: B.textMuted }}>{row.marketLabel || row.marketType}</span>
-              </div>
-              <div style={{ ...T.name, color: B.text, fontSize: '1.15rem' }}>{row.team}</div>
-              <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.2rem' }}>{matchup}</div>
-              <TrustLine trust={trust} />
-              <CellHistLine text={row.cellHistText} />
-            </div>
-            <div style={{ textAlign: 'right', flexShrink: 0 }}>
-              <div style={{ ...T.money, color: B.gold, fontSize: '1.25rem', fontFeatureSettings: "'tnum'" }}>
-                {fmtVol(row.invested)}
-              </div>
-              {(row.americanLabel || Number.isFinite(row.cents)) && (
-                <div style={{ ...T.odds, color: B.text, marginTop: '0.15rem', fontFeatureSettings: "'tnum'", fontSize: '0.9rem' }}>
-                  {Number.isFinite(row.cents) ? `${row.cents}¢` : ''}
-                  {Number.isFinite(row.cents) && row.americanLabel ? ' · ' : ''}
-                  {row.americanLabel || ''}
+        <button {...headerBtnProps}>
+          <div style={{ padding: '1rem 1rem 0.85rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem' }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center', marginBottom: '0.3rem' }}>
+                  <span style={{ ...T.tiny, color: sportColor(row.sport) }}>{row.sport}</span>
+                  <span style={{ ...T.tiny, color: B.textMuted }}>{row.marketLabel || row.marketType}</span>
                 </div>
-              )}
-              <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.2rem', fontFeatureSettings: "'tnum'" }}>
-                {clock ? `${clock} ET` : ''}{clock ? ' · ' : ''}{agoTxt(row.ts)}
+                <div style={{ ...T.name, color: B.text, fontSize: '1.15rem' }}>{row.team}</div>
+                <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.2rem' }}>{matchup}</div>
+                <TrustLine trust={trust} />
+                <CellHistLine text={row.cellHistText} />
+              </div>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.2rem' }}>
+                  {chevron}
+                </div>
+                <div style={{ ...T.money, color: B.gold, fontSize: '1.25rem', fontFeatureSettings: "'tnum'" }}>
+                  {fmtVol(row.invested)}
+                </div>
+                {(row.americanLabel || Number.isFinite(row.cents)) && (
+                  <div style={{ ...T.odds, color: B.text, marginTop: '0.15rem', fontFeatureSettings: "'tnum'", fontSize: '0.9rem' }}>
+                    {Number.isFinite(row.cents) ? `${row.cents}¢` : ''}
+                    {Number.isFinite(row.cents) && row.americanLabel ? ' · ' : ''}
+                    {row.americanLabel || ''}
+                  </div>
+                )}
+                <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.2rem', fontFeatureSettings: "'tnum'" }}>
+                  {clock ? `${clock} ET` : ''}{clock ? ' · ' : ''}{agoTxt(row.ts)}
+                </div>
               </div>
             </div>
+            <div style={{
+              display: 'flex', flexWrap: 'wrap', gap: '0.35rem',
+              marginTop: '0.75rem', paddingTop: '0.7rem',
+              borderTop: `1px solid ${B.borderSubtle}`,
+            }}>
+              {signalChips(row)}
+            </div>
           </div>
-          <div style={{
-            display: 'flex', flexWrap: 'wrap', gap: '0.35rem',
-            marginTop: '0.75rem', paddingTop: '0.7rem',
-            borderTop: `1px solid ${B.borderSubtle}`,
-          }}>
-            {signalChips(row)}
-          </div>
-        </div>
+        </button>
+        {expanded && <ActionExpandPanel row={row} isMobile />}
       </div>
     );
   }
@@ -472,63 +835,70 @@ function ActionRow({ row, isMobile }) {
       onMouseLeave={() => setHover(false)}
       style={shell}
     >
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'minmax(240px, 1.4fr) minmax(280px, 1.6fr) auto',
-        gap: '1.25rem',
-        alignItems: 'center',
-        padding: '1.1rem 1.25rem',
-      }}>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', marginBottom: '0.35rem' }}>
-            <span style={{
-              ...T.tiny, color: sportColor(row.sport),
-              padding: '0.12rem 0.38rem', borderRadius: '4px',
-              background: 'rgba(255,255,255,0.03)', border: `1px solid ${B.borderSubtle}`,
-            }}>
-              {row.sport}
-            </span>
-            <span style={{ ...T.tiny, color: B.textMuted }}>{row.marketLabel || row.marketType}</span>
-          </div>
-          <div style={{ ...T.name, color: B.text }}>{row.team}</div>
-          <div style={{
-            ...T.body, color: B.textMuted, marginTop: '0.28rem',
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-          }}>
-            {matchup}
-          </div>
-          <TrustLine trust={trust} />
-          <CellHistLine text={row.cellHistText} />
-        </div>
-
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center' }}>
-          {signalChips(row)}
-        </div>
-
-        <div style={{ textAlign: 'right', minWidth: 132 }}>
-          <div style={{ ...T.money, color: B.gold, fontFeatureSettings: "'tnum'" }}>
-            {fmtVol(row.invested)}
-          </div>
-          {(row.americanLabel || Number.isFinite(row.cents)) ? (
+      <button {...headerBtnProps}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(240px, 1.4fr) minmax(280px, 1.6fr) auto auto',
+          gap: '1.25rem',
+          alignItems: 'center',
+          padding: '1.1rem 1.25rem',
+        }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', marginBottom: '0.35rem' }}>
+              <span style={{
+                ...T.tiny, color: sportColor(row.sport),
+                padding: '0.12rem 0.38rem', borderRadius: '4px',
+                background: 'rgba(255,255,255,0.03)', border: `1px solid ${B.borderSubtle}`,
+              }}>
+                {row.sport}
+              </span>
+              <span style={{ ...T.tiny, color: B.textMuted }}>{row.marketLabel || row.marketType}</span>
+            </div>
+            <div style={{ ...T.name, color: B.text }}>{row.team}</div>
             <div style={{
-              ...T.odds, color: B.text, marginTop: '0.2rem',
+              ...T.body, color: B.textMuted, marginTop: '0.28rem',
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            }}>
+              {matchup}
+            </div>
+            <TrustLine trust={trust} />
+            <CellHistLine text={row.cellHistText} />
+          </div>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center' }}>
+            {signalChips(row)}
+          </div>
+
+          <div style={{ textAlign: 'right', minWidth: 132 }}>
+            <div style={{ ...T.money, color: B.gold, fontFeatureSettings: "'tnum'" }}>
+              {fmtVol(row.invested)}
+            </div>
+            {(row.americanLabel || Number.isFinite(row.cents)) ? (
+              <div style={{
+                ...T.odds, color: B.text, marginTop: '0.2rem',
+                fontFeatureSettings: "'tnum'",
+              }}>
+                {Number.isFinite(row.cents) ? `${row.cents}¢` : ''}
+                {Number.isFinite(row.cents) && row.americanLabel ? ' · ' : ''}
+                {row.americanLabel || ''}
+              </div>
+            ) : null}
+            <div style={{
+              ...T.micro, color: B.textSubtle, marginTop: '0.35rem',
               fontFeatureSettings: "'tnum'",
             }}>
-              {Number.isFinite(row.cents) ? `${row.cents}¢` : ''}
-              {Number.isFinite(row.cents) && row.americanLabel ? ' · ' : ''}
-              {row.americanLabel || ''}
+              {clock ? `${clock} ET` : '—'}
+              <span style={{ margin: '0 0.3rem', opacity: 0.5 }}>·</span>
+              {agoTxt(row.ts)}
             </div>
-          ) : null}
-          <div style={{
-            ...T.micro, color: B.textSubtle, marginTop: '0.35rem',
-            fontFeatureSettings: "'tnum'",
-          }}>
-            {clock ? `${clock} ET` : '—'}
-            <span style={{ margin: '0 0.3rem', opacity: 0.5 }}>·</span>
-            {agoTxt(row.ts)}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', paddingLeft: '0.15rem' }}>
+            {chevron}
           </div>
         </div>
-      </div>
+      </button>
+      {expanded && <ActionExpandPanel row={row} isMobile={false} />}
     </div>
   );
 }
@@ -548,6 +918,7 @@ export default function ConfirmedActionDesk({
   const [clearOnly, setClearOnly] = useState(false);
   const [pinWithOnly, setPinWithOnly] = useState(false);
   const [cellStatsTable, setCellStatsTable] = useState(null);
+  const [expandedId, setExpandedId] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -557,6 +928,10 @@ export default function ConfirmedActionDesk({
       .catch(() => {});
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    setExpandedId(null);
+  }, [sportFilter, sortMode, highMidOnly, sizedOnly, clearOnly, pinWithOnly]);
 
   const { rows } = useMemo(
     () => buildConfirmedActionRows({
@@ -633,7 +1008,13 @@ export default function ConfirmedActionDesk({
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
         {visible.map((r) => (
-          <ActionRow key={r.id} row={r} isMobile={isMobile} />
+          <ActionRow
+            key={r.id}
+            row={r}
+            isMobile={isMobile}
+            expanded={expandedId === r.id}
+            onToggle={() => setExpandedId((cur) => (cur === r.id ? null : r.id))}
+          />
         ))}
       </div>
 
