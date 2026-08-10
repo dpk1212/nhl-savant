@@ -2345,8 +2345,6 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
   // Champagne accents stay even on tracked picks; only the pill goes gray.
   // Graded tickets tint the accent to the result so the list reads at a glance.
   const accent = graded && resultColor ? resultColor : B.gold;
-  const clvGood = f.clvPct >= 0;
-  const clvColor = clvGood ? B.profit : B.loss;
   const productTier = displayTierFromPath(f.stakePath);
   const tierLabel = productTier?.label || null;
   const tierColor = productTier?.color || C.textMuted;
@@ -2467,15 +2465,6 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
               {fmtOdds(f.lockOdds)}
             </span>
           </span>
-          {Number.isFinite(f.clvPct) && (
-            <span style={{
-              fontSize: '0.52rem', fontWeight: 800, padding: '3px 7px',
-              borderRadius: 6, background: `${clvColor}18`, color: clvColor,
-              border: `1px solid ${clvColor}40`, fontFeatureSettings: "'tnum'",
-            }}>
-              CLV {clvGood ? '+' : ''}{f.clvPct.toFixed(1)}%
-            </span>
-          )}
           <span style={{ flex: 1 }} />
           <span style={{ fontSize: '0.9rem', fontWeight: 800, fontFeatureSettings: "'tnum'", color: tracked ? C.textMuted : C.text }}>
             {tracked ? 'No ticket' : `${f.units.toFixed(1)}u`}

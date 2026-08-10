@@ -833,13 +833,12 @@ export function mapLockedPickToCardFixture(pick, {
 
   const lockProb = ip(lockOdds);
   const closeProb = ip(pick.closingOdds ?? nowOdds);
+  // Leave null when close/lock aren't both known — never invent 0% CLV.
   let clvPct = null;
   if (Number.isFinite(pick.clv)) {
     clvPct = +(pick.clv * (Math.abs(pick.clv) <= 1 ? 100 : 1)).toFixed(1);
   } else if (lockProb != null && closeProb != null) {
     clvPct = +((closeProb - lockProb) * 100).toFixed(1);
-  } else {
-    clvPct = 0;
   }
 
   const teamRaw = (pick.team || '').trim();
