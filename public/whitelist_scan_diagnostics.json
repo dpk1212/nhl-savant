@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-08-10T23:34:45.847Z",
-  "elapsedSec": 13.8,
+  "scannedAt": "2026-08-10T23:38:53.888Z",
+  "elapsedSec": 15.2,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 34,
   "summary": {
     "total": 191,
-    "coveredByMain": 7,
+    "coveredByMain": 8,
     "recovered": 18,
-    "recoveredPositions": 125,
-    "noPositions": 166,
+    "recoveredPositions": 127,
+    "noPositions": 165,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,8 +16,8 @@
       "ml": 15,
       "spread": 2,
       "total": 5,
-      "dropped_shadow_gate": 22,
-      "dropped_excluded": 80,
+      "dropped_shadow_gate": 23,
+      "dropped_excluded": 81,
       "dropped_duplicate": 1
     }
   },
@@ -763,10 +763,10 @@
       "sports": "MLB,SOC,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xdb83e85ffd22faa4009273034770f96ffc5b1e50",
-      "positionsCount": 12,
+      "positionsCount": 13,
       "statsSource": "sports_sharps",
       "avgSportBet": 401,
-      "willPassShadowGate": 12,
+      "willPassShadowGate": 13,
       "willDropAtShadowGate": 0,
       "positions": [
         {
@@ -830,6 +830,15 @@
           "side": "home",
           "invested": 3758,
           "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "bal_min",
+          "marketType": "total",
+          "side": "under",
+          "invested": 2004,
+          "entryLine": 8.5,
           "passesShadow": true
         },
         {
@@ -1042,6 +1051,15 @@
         },
         {
           "sport": "MLB",
+          "gameKey": "bal_min",
+          "marketType": "total",
+          "side": "over",
+          "invested": 8363,
+          "entryLine": 8.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
           "gameKey": "kcr_lad",
           "marketType": "total",
           "side": "over",
@@ -1227,15 +1245,6 @@
           "side": "home",
           "invested": 2015,
           "entryLine": null,
-          "passesShadow": true
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "bal_min",
-          "marketType": "total",
-          "side": "over",
-          "invested": 1985,
-          "entryLine": 8.5,
           "passesShadow": true
         },
         {
@@ -1474,7 +1483,7 @@
           "gameKey": "mil_sdp",
           "marketType": "ml",
           "side": "home",
-          "invested": 451,
+          "invested": 585,
           "entryLine": null,
           "passesShadow": false
         }
@@ -1664,8 +1673,7 @@
       "tier": "FLAT",
       "name": "Winnerdinnerchickenjr",
       "sports": "SOC",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x408fe71e6b5401ecd6733970cb6f1a25e984b2f4"
+      "status": "COVERED_BY_MAIN"
     },
     {
       "walletShort": "880232",
@@ -2580,7 +2588,7 @@
           "gameKey": "tbr_oak",
           "marketType": "spread",
           "side": "home",
-          "invested": 39432,
+          "invested": 39723,
           "entryLine": 1.5,
           "passesShadow": true
         },
@@ -2736,11 +2744,11 @@
       "sports": "NHL,MLB",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xc8075693f48668a264b9fa313b47f52712fcc12b",
-      "positionsCount": 2,
+      "positionsCount": 3,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 50034,
       "willPassShadowGate": 2,
-      "willDropAtShadowGate": 0,
+      "willDropAtShadowGate": 1,
       "positions": [
         {
           "sport": "MLB",
@@ -2756,9 +2764,18 @@
           "gameKey": "phi_stl",
           "marketType": "ml",
           "side": "away",
-          "invested": 20255,
+          "invested": 20372,
           "entryLine": null,
           "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "bal_min",
+          "marketType": "total",
+          "side": "over",
+          "invested": 2302,
+          "entryLine": 8.5,
+          "passesShadow": false
         }
       ]
     },
