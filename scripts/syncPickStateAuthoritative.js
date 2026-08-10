@@ -1827,6 +1827,30 @@ function consensusLine(positions, side, sport = null, marketType = null) {
   return bestLine;
 }
 
+/**
+ * Size-weighted Polymarket avgPrice → American odds for a spread side.
+ * Optional `line` filter keeps alt and main markets from mixing.
+ * PHI@STL 2026-08-10: Cardinals -1.5 @ 0.33 → +203 (not Pinnacle home +1.5 @ -158).
+ */
+function consensusSpreadOddsFromPoly(positions, side, line = null) {
+  let sumInv = 0;
+  let sumPxInv = 0;
+  for (const p of positions || []) {
+    if (p.side !== side) continue;
+    if (line != null && Number.isFinite(Number(line))) {
+      const el = Number(p.entryLine ?? p.spreadLine);
+      if (Number.isFinite(el) && Math.abs(el - Number(line)) > 0.051) continue;
+    }
+    const inv = Number(p.invested) || 0;
+    const px = Number(p.avgPrice);
+    if (!(inv > 0) || !(px > 0)) continue;
+    sumInv += inv;
+    sumPxInv += px * inv;
+  }
+  if (!(sumInv > 0)) return null;
+  return americanFromImpliedPct(sumPxInv / sumInv);
+}
+
 // Mirror of src/pages/SharpFlow.jsx → unitTier(units). Lives here so the
 // cron's create-missing path can stamp peak.unitTier in the same shape
 // the browser writes (otherwise the dashboard renders "undefined").
@@ -2208,19 +2232,28 @@ async function createMissingLockedPicks({
         // MLB creates could stamp 3u locks with lock.odds missing (Sox 2026-08-09).
         odds = mlOddsFromMeta(meta, side);
       } else if (marketType === 'SPREAD') {
-        // Side/money = wallet consensus. The number on the ticket = Pinnacle
-        // SPREAD juice — never ML. Do NOT default to -110: that is the
-        // standard ML chalk price and was burned onto Braves -1.5 at
-        // create-time (2026-07-09 atl_pit) while real spread juice was +139.
-        // Leave odds null until spreadCurrent/Opener is available; reconcile
-        // will backfill pre-T-15 once Pinnacle has the number.
+        // Ticket = sharp wallet instrument (title/entryLine), not sportsbook main.
+        // PHI@STL 2026-08-10: wallets held "Spread: Cardinals (-1.5)" @ 0.33 while
+        // Pinnacle home was +1.5 @ -158 — stamping the book line inverted the pick.
+        // When wallet line matches Pinnacle main, prefer book juice for CLV; when
+        // it's an alt (or book missing), use size-weighted Poly avgPrice.
+        // Never default to -110 (Braves 2026-07-09 ML-bleed).
         const pinnLine = side === 'home'
           ? (meta.spreadCurrent?.homeLine ?? meta.spreadOpener?.homeLine)
           : (meta.spreadCurrent?.awayLine ?? meta.spreadOpener?.awayLine);
-        odds = (side === 'home'
+        const pinnOdds = (side === 'home'
           ? (meta.spreadCurrent?.homeOdds ?? meta.spreadOpener?.homeOdds)
           : (meta.spreadCurrent?.awayOdds ?? meta.spreadOpener?.awayOdds)) ?? null;
-        line = pinnLine ?? consensusLine(positions, side, sport, 'SPREAD') ?? null;
+        const walletLine = consensusLine(positions, side, sport, 'SPREAD');
+        line = walletLine ?? pinnLine ?? null;
+        const lineMatchesPinn = Number.isFinite(line) && Number.isFinite(pinnLine)
+          && Math.abs(line - pinnLine) <= 0.051;
+        const walletOdds = consensusSpreadOddsFromPoly(positions, side, line);
+        if (lineMatchesPinn && Number.isFinite(pinnOdds) && pinnOdds !== 0) {
+          odds = pinnOdds;
+        } else {
+          odds = walletOdds ?? pinnOdds ?? null;
+        }
       } else if (marketType === 'TOTAL') {
         // Ticket = sportsbook MAIN line + matching odds (same rule as spreads).
         // Do NOT use Polymarket wallet entryLine votes — those mix 7.5 / 8.5
@@ -4477,24 +4510,89 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     }
   }
 
+  // ── SPREAD instrument repair (wallet entryLine vs sportsbook main) ─────
+  // Pre-T-15: if live sharp positions agree on a different line than lock
+  // (alt -1.5 vs main +1.5), rewrite lock/peak to the wallet instrument +
+  // Poly-implied odds so units/toWin/CLV match Action desk.
+  if (pick.status !== 'COMPLETED' && mkt === 'SPREAD' && Array.isArray(group) && group.length) {
+    const metaKey = `${sport}|${pick.gameKey}`;
+    const meta = gameMeta?.get?.(metaKey) || null;
+    const pinnLine = side === 'home'
+      ? (meta?.spreadCurrent?.homeLine ?? meta?.spreadOpener?.homeLine)
+      : (meta?.spreadCurrent?.awayLine ?? meta?.spreadOpener?.awayLine);
+    const walletLine = consensusLine(group, side, sport, 'SPREAD');
+    const lockLn = Number.isFinite(sd.lock?.line) ? sd.lock.line
+      : (Number.isFinite(sd.peak?.line) ? sd.peak.line : null);
+    if (Number.isFinite(walletLine)
+        && (lockLn == null || Math.abs(lockLn - walletLine) > 0.051)) {
+      const walletOdds = consensusSpreadOddsFromPoly(group, side, walletLine);
+      const pinnOdds = side === 'home'
+        ? (meta?.spreadCurrent?.homeOdds ?? meta?.spreadOpener?.homeOdds)
+        : (meta?.spreadCurrent?.awayOdds ?? meta?.spreadOpener?.awayOdds);
+      const lineMatchesPinn = Number.isFinite(pinnLine)
+        && Math.abs(walletLine - pinnLine) <= 0.051;
+      const repairOdds = (lineMatchesPinn && Number.isFinite(pinnOdds) && pinnOdds !== 0)
+        ? pinnOdds
+        : (walletOdds ?? (Number.isFinite(pinnOdds) ? pinnOdds : null));
+      if (Number.isFinite(repairOdds) && repairOdds !== 0) {
+        patch.lock = {
+          ...(patch.lock || sd.lock || {}),
+          line: walletLine,
+          odds: repairOdds,
+          pinnacleOdds: Number.isFinite(pinnOdds) ? pinnOdds : (sd.lock?.pinnacleOdds ?? null),
+          book: lineMatchesPinn
+            ? (sd.lock?.book || fairBookLabel(meta?.fairBook || meta?.fairSpreadBook))
+            : 'Polymarket',
+          oddsSource: lineMatchesPinn
+            ? (meta?.fairBook || meta?.fairSpreadBook || sd.lock?.oddsSource || null)
+            : 'poly_avgPrice',
+        };
+        if (sd.peak) {
+          patch.peak = {
+            ...(patch.peak || sd.peak || {}),
+            line: walletLine,
+            odds: repairOdds,
+            updatedAt: now,
+          };
+        }
+        changes.push(
+          `spreadInstrument repair: line ${lockLn ?? '∅'} → ${walletLine}`
+          + ` odds → ${repairOdds}`
+          + (lineMatchesPinn ? ' (wallet=book main)' : ' (wallet alt / Poly)'),
+        );
+      }
+    }
+  }
+
   // ── SPREAD lock-odds repair (ML bleed / -110 default) ───────────────────
   // Real incident 2026-07-09 Braves -1.5: create stamped lock.odds=-110
   // (ML chalk / TOTAL-style default) while peak later correctly held +139
   // retail / +144 Pinnacle spread juice. Pre-T-15, rewrite lock from the
   // best available spread source so Locked / CLV / payout match the ticket.
+  // Skip when lock.line is a wallet alt (≠ Pinnacle main) — Poly odds are
+  // the correct ticket price for that instrument.
   if (pick.status !== 'COMPLETED' && mkt === 'SPREAD') {
     const metaKey = `${sport}|${pick.gameKey}`;
     const meta = gameMeta?.get?.(metaKey) || null;
+    const pinnLine = side === 'home'
+      ? (meta?.spreadCurrent?.homeLine ?? meta?.spreadOpener?.homeLine)
+      : (meta?.spreadCurrent?.awayLine ?? meta?.spreadOpener?.awayLine);
+    const stampedLine = Number.isFinite(patch.lock?.line) ? patch.lock.line
+      : (Number.isFinite(sd.lock?.line) ? sd.lock.line
+        : (Number.isFinite(sd.peak?.line) ? sd.peak.line : null));
+    const isWalletAlt = Number.isFinite(stampedLine) && Number.isFinite(pinnLine)
+      && Math.abs(stampedLine - pinnLine) > 0.051;
     const spreadOdds = side === 'home'
       ? (meta?.spreadCurrent?.homeOdds ?? meta?.spreadOpener?.homeOdds)
       : (meta?.spreadCurrent?.awayOdds ?? meta?.spreadOpener?.awayOdds);
     const mlOdds = side === 'home' ? meta?.mlOdds?.home : meta?.mlOdds?.away;
     const peakOdds = Number.isFinite(sd.peak?.odds) ? sd.peak.odds : null;
-    const lockOdds = Number.isFinite(sd.lock?.odds) ? sd.lock.odds : null;
+    const lockOdds = Number.isFinite(patch.lock?.odds) ? patch.lock.odds
+      : (Number.isFinite(sd.lock?.odds) ? sd.lock.odds : null);
     const repairFrom = (Number.isFinite(spreadOdds) && spreadOdds !== -110)
       ? spreadOdds
       : (peakOdds != null && peakOdds !== -110 ? peakOdds : null);
-    if (repairFrom != null
+    if (!isWalletAlt && repairFrom != null
         && spreadLockLooksLikeMlBleed(lockOdds, peakOdds, spreadOdds, mlOdds)) {
       const pinnSpread = Number.isFinite(spreadOdds) ? spreadOdds : repairFrom;
       const fairLabel = fairBookLabel(meta?.fairBook || meta?.fairSpreadBook);

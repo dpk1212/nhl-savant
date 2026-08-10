@@ -12765,16 +12765,15 @@ export default function SharpFlow() {
                           marketType: marketTypeKey,
                           // line fallback: peak.line → lock.line → closingLine.
                           // Past T-15: never chase live closingLine — ticket is sealed.
-                          // PENDING spread (pre-freeze): if lock/peak sign-flips vs
-                          // closingLine (Polymarket entryLine bug), Pinnacle close wins.
+                          // Do NOT flip when lock.line === -closingLine. That used to
+                          // "fix" bad Poly stamps, but alt home -1.5 vs main +1.5 is
+                          // the normal case (PHI@STL 2026-08-10: wallet title
+                          // "Spread: Cardinals (-1.5)" stamped -1.5; Pinnacle close
+                          // +1.5). Preferring close painted Cardinals +1.5.
                           line: (() => {
                             const locked = peak.line ?? lock.line;
                             const close = sd.closingLine;
                             if (pastT15Odds) return locked ?? close ?? null;
-                            if (marketTypeKey === 'spread' && sd.status === 'PENDING'
-                                && locked != null && close != null && locked === -close && locked !== 0) {
-                              return close;
-                            }
                             return locked ?? close ?? null;
                           })(),
                           superseded: !!sd.superseded,
