@@ -168,19 +168,25 @@ async function loadWalletBets() {
           if (!w.wallet || !w.side) continue;
           if (seen.has(`${doc.id}_${w.wallet}`)) continue;
           seen.set(`${doc.id}_${w.wallet}`, true);
-          const betOdds = sides[w.side]?.peak?.odds ?? sides[w.side]?.lock?.odds ?? oddsForThisSide;
+          const sidePeak = sides[w.side]?.peak || sides[w.side]?.lock || peak;
+          const betOddsRaw = sides[w.side]?.peak?.odds ?? sides[w.side]?.lock?.odds ?? oddsForThisSide;
+          const betOdds = Number.isFinite(Number(betOddsRaw)) && Number(betOddsRaw) !== 0
+            ? Number(betOddsRaw)
+            : null;
           const won = w.side === winningSide ? 1 : 0;
           // Line from this side's peak/lock (TOTAL 7.5 / SPREAD -1.5), else doc-level.
-          const sidePeak = sides[w.side]?.peak || sides[w.side]?.lock || peak;
           const rawLine = sidePeak?.line ?? peak?.line ?? d.line ?? d.totalLine ?? d.spreadLine ?? null;
           const entryLine = Number.isFinite(Number(rawLine)) ? Number(rawLine) : null;
           bets.push({
-            gameKey: doc.id,
+            // Prefer sport gameKey (atl_nyy); fall back to doc id for legacy.
+            gameKey: d.gameKey || doc.id,
             date: d.date,
             sport: d.sport,
             market,
             wallet: w.wallet,
             side: w.side,
+            away: d.away || d.awayTeam || null,
+            home: d.home || d.homeTeam || null,
             odds: betOdds,
             invested: w.invested ?? 0,
             entryLine,
@@ -233,6 +239,8 @@ async function loadPositions() {
       gameKey: d.gameKey || null,
       side: d.side || null,
       teamName: d.teamName || null,
+      away: d.away || d.awayTeam || null,
+      home: d.home || d.homeTeam || null,
       entryLine: d.entryLine ?? d.spreadLine ?? d.totalLine ?? null,
       sizeRatio,
       walletShort,
@@ -242,6 +250,9 @@ async function loadPositions() {
       settledPnl,
       flat,
       avgPrice: d.avgPrice,
+      pinnacleOdds: d.pinnacleOdds ?? d.entryPinnacleOdds ?? null,
+      bestRetailOdds: d.bestRetailOdds ?? null,
+      odds: d.odds ?? null,
       // Aggregate WR still treats non-profit as loss (legacy). Size-band builder
       // excludes ~0 settledPnl pushes via settledPnl when present.
       won: settledPnl > 0 ? 1 : 0,
@@ -386,6 +397,37 @@ function sideLabel(side) {
   return String(side);
 }
 
+/** "ATL @ NYY" from gameKey or team names. */
+function matchupAbbrev(away, home, gameKey) {
+  const gk = String(gameKey || '');
+  // Letters-only codes (atl_nyy, …_kcr_det_total) — skip date fragments.
+  const m = gk.match(/([a-z]{2,5})_([a-z]{2,5})(?:_(?:total|spread|ml))?$/i)
+    || gk.match(/^([a-z]{2,5})_([a-z]{2,5})$/i);
+  if (m) return `${m[1].toUpperCase()} @ ${m[2].toUpperCase()}`;
+  const last = (t) => {
+    if (!t) return null;
+    const parts = String(t).trim().split(/\s+/);
+    return parts[parts.length - 1] || null;
+  };
+  const a = last(away);
+  const h = last(home);
+  if (a && h) return `${a} @ ${h}`;
+  return null;
+}
+
+/** American odds → display; null/0 omitted (never stamp fake zeros). */
+function cleanAmericanOdds(odds) {
+  const o = Number(odds);
+  if (!Number.isFinite(o) || o === 0) return null;
+  return Math.round(o);
+}
+
+function americanFromProb(p) {
+  if (!Number.isFinite(p) || p <= 0 || p >= 1) return null;
+  if (p >= 0.5) return Math.round((-100 * p) / (1 - p));
+  return Math.round((100 * (1 - p)) / p);
+}
+
 /**
  * Featured tracked picks (Source A) in the last RECENT_LEGS_DAYS for expand Tab 1.
  * Capped at RECENT_LEGS_MAX so profile JSON stays small.
@@ -400,6 +442,7 @@ function recentFeaturedLegs(pickBets, { days = RECENT_LEGS_DAYS, maxLegs = RECEN
   return ordered.map((b) => {
     const sr = Number.isFinite(b.sizeRatio) ? Number(b.sizeRatio) : null;
     const line = Number.isFinite(Number(b.entryLine)) ? Number(b.entryLine) : null;
+    const matchup = matchupAbbrev(b.away, b.home, b.gameKey);
     return {
       date: b.date || null,
       marketType: b.market || null,
@@ -407,6 +450,10 @@ function recentFeaturedLegs(pickBets, { days = RECENT_LEGS_DAYS, maxLegs = RECEN
       label: sideLabel(b.side),
       line,
       gameKey: b.gameKey || null,
+      matchup,
+      away: b.away || null,
+      home: b.home || null,
+      odds: cleanAmericanOdds(b.odds),
       invested: Number.isFinite(b.invested) ? Math.round(b.invested) : null,
       sizeRatio: sr,
       sizeBand: sizeBandKey(sr),
@@ -432,6 +479,13 @@ function recentActionLegs(posBets, avgSportBet = null, { days = RECENT_LEGS_DAYS
       sr = +(b.invested / avgSportBet).toFixed(2);
     }
     const label = b.teamName || sideLabel(b.side);
+    const matchup = matchupAbbrev(b.away, b.home, b.gameKey);
+    let odds = cleanAmericanOdds(b.pinnacleOdds ?? b.bestRetailOdds ?? b.odds);
+    if (odds == null && Number.isFinite(b.avgPrice)) {
+      const p = Number(b.avgPrice);
+      const prob = p > 1 && p <= 100 ? p / 100 : p;
+      odds = americanFromProb(prob);
+    }
     return {
       date: b.date || null,
       marketType: b.market || null,
@@ -439,6 +493,10 @@ function recentActionLegs(posBets, avgSportBet = null, { days = RECENT_LEGS_DAYS
       label: label || null,
       line: Number.isFinite(Number(b.entryLine)) ? Number(b.entryLine) : null,
       gameKey: b.gameKey || null,
+      matchup,
+      away: b.away || null,
+      home: b.home || null,
+      odds,
       invested: Math.round(Number(b.invested) || 0),
       sizeRatio: sr,
       sizeBand: sizeBandKey(sr),

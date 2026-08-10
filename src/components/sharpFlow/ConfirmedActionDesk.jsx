@@ -268,6 +268,21 @@ function formatLegMarket(marketType, line) {
   return m;
 }
 
+function formatAmerican(odds) {
+  if (!Number.isFinite(odds) || odds === 0) return null;
+  return odds > 0 ? `+${Math.round(odds)}` : `${Math.round(odds)}`;
+}
+
+/** Matchup abbrev: stamped matchup, or parse gameKey (kcr_lad → KCR @ LAD). */
+function legMatchup(leg) {
+  if (leg?.matchup) return leg.matchup;
+  const gk = String(leg?.gameKey || '');
+  // Letters-only team codes at end (avoids matching date fragments).
+  const m = gk.match(/([a-z]{2,5})_([a-z]{2,5})(?:_(?:total|spread|ml))?$/i);
+  if (m) return `${m[1].toUpperCase()} @ ${m[2].toUpperCase()}`;
+  return null;
+}
+
 function TicketLegRow({ leg, showSize }) {
   const win = leg.won === 1;
   const ratio = Number(leg.sizeRatio);
@@ -276,6 +291,8 @@ function TicketLegRow({ leg, showSize }) {
     || (leg.side === 'over' ? 'Over' : leg.side === 'under' ? 'Under' : leg.side)
     || '—';
   const mktLine = formatLegMarket(leg.marketType, Number(leg.line));
+  const matchup = legMatchup(leg);
+  const oddsTxt = formatAmerican(Number(leg.odds));
   const mid = showSize
     ? (
       <span style={{ ...T.micro, color: Number.isFinite(ratio) && ratio >= 1.5 ? B.gold : B.textSec, minWidth: 0 }}>
@@ -297,7 +314,7 @@ function TicketLegRow({ leg, showSize }) {
     <div style={{
       display: 'grid',
       gridTemplateColumns: LEG_ROW_GRID,
-      gap: '0.4rem 0.5rem',
+      gap: '0.35rem 0.45rem',
       alignItems: 'center',
       padding: '0.45rem 0.1rem',
       borderBottom: `1px solid ${B.borderSubtle}`,
@@ -308,11 +325,23 @@ function TicketLegRow({ leg, showSize }) {
         ...T.micro, color: B.textSec, minWidth: 0,
         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
       }}>
+        {matchup ? (
+          <span style={{ color: B.text, fontWeight: 700 }}>{matchup}</span>
+        ) : null}
+        {matchup && (mktLine || label) ? (
+          <span style={{ color: B.textSubtle }}> · </span>
+        ) : null}
         {mktLine ? (
           <span style={{ color: B.textSubtle }}>{mktLine}</span>
         ) : null}
         {mktLine ? ' · ' : ''}
         <span style={{ color: B.text, fontWeight: 700 }}>{String(label).toUpperCase()}</span>
+      </span>
+      <span style={{
+        ...T.micro, color: oddsTxt ? B.textSec : B.textSubtle,
+        textAlign: 'right', fontFeatureSettings: "'tnum'",
+      }}>
+        {oddsTxt || '—'}
       </span>
       {mid}
       <span style={{
@@ -331,7 +360,7 @@ function TicketLegRow({ leg, showSize }) {
   );
 }
 
-const LEG_ROW_GRID = '4rem minmax(0, 1.35fr) minmax(4.5rem, 1fr) 2.4rem';
+const LEG_ROW_GRID = '3.6rem minmax(0, 1.5fr) 2.8rem minmax(4rem, 0.9fr) 2.4rem';
 
 function ActionExpandPanel({ row, isMobile }) {
   // form = this sharp's featured history; recent = this sharp's Action tickets
@@ -438,13 +467,14 @@ function ActionExpandPanel({ row, isMobile }) {
           <div style={{
             display: 'grid',
             gridTemplateColumns: LEG_ROW_GRID,
-            gap: '0.4rem 0.5rem',
+            gap: '0.35rem 0.45rem',
             padding: '0 0.1rem 0.3rem',
             ...T.tiny,
             color: B.textSubtle,
           }}>
             <span>Date</span>
             <span>Pick</span>
+            <span style={{ textAlign: 'right' }}>Odds</span>
             <span>{tab === 'recent' || formListIsActionFallback ? 'Size' : 'Flat'}</span>
             <span style={{ textAlign: 'right' }}>W/L</span>
           </div>
