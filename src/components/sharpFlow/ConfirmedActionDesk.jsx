@@ -255,6 +255,19 @@ function sizeWord(band, ratio) {
   return 'usual';
 }
 
+/** "TOTAL 7.5" / "SPREAD -1.5" / "ML" — totals never get a + prefix. */
+function formatLegMarket(marketType, line) {
+  const m = String(marketType || '').toUpperCase();
+  if (!m) return '';
+  if (!Number.isFinite(line)) return m;
+  if (m === 'TOTAL' || m === 'TOTALS') return `${m === 'TOTALS' ? 'TOTAL' : m} ${line}`;
+  if (m === 'SPREAD') {
+    const sign = line > 0 ? '+' : '';
+    return `${m} ${sign}${line}`;
+  }
+  return m;
+}
+
 function TicketLegRow({ leg, showSize }) {
   const win = leg.won === 1;
   const ratio = Number(leg.sizeRatio);
@@ -262,8 +275,7 @@ function TicketLegRow({ leg, showSize }) {
   const label = leg.label
     || (leg.side === 'over' ? 'Over' : leg.side === 'under' ? 'Under' : leg.side)
     || '—';
-  const mkt = leg.marketType || '';
-  const line = Number.isFinite(leg.line) ? ` ${leg.line > 0 ? '+' : ''}${leg.line}` : '';
+  const mktLine = formatLegMarket(leg.marketType, Number(leg.line));
   const mid = showSize
     ? (
       <span style={{ ...T.micro, color: Number.isFinite(ratio) && ratio >= 1.5 ? B.gold : B.textSec, minWidth: 0 }}>
@@ -296,8 +308,10 @@ function TicketLegRow({ leg, showSize }) {
         ...T.micro, color: B.textSec, minWidth: 0,
         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
       }}>
-        <span style={{ color: B.textSubtle }}>{mkt}{line}</span>
-        {' · '}
+        {mktLine ? (
+          <span style={{ color: B.textSubtle }}>{mktLine}</span>
+        ) : null}
+        {mktLine ? ' · ' : ''}
         <span style={{ color: B.text, fontWeight: 700 }}>{String(label).toUpperCase()}</span>
       </span>
       {mid}
@@ -320,16 +334,19 @@ function TicketLegRow({ leg, showSize }) {
 const LEG_ROW_GRID = '4rem minmax(0, 1.35fr) minmax(4.5rem, 1fr) 2.4rem';
 
 function ActionExpandPanel({ row, isMobile }) {
+  // form = this sharp's featured history; recent = this sharp's Action tickets
   const [tab, setTab] = useState('form');
-  const [showTen, setShowTen] = useState(false);
+  const [showMore, setShowMore] = useState(false);
   const featured = row.recentFeatured || [];
   const action = row.recentAction || [];
   const spark = sparkPointsForTab(tab, row);
-  // Form list prefers featured; fall back to Action legs when Source A is thin.
+  const curveDays = Number.isFinite(row.flatCurveDays) ? row.flatCurveDays : 30;
+  // Featured list prefers Source A; fall back to Action only when featured is empty.
   const formLegs = featured.length ? featured : action;
   const legs = tab === 'form' ? formLegs : action;
   const formListIsActionFallback = tab === 'form' && !featured.length && action.length > 0;
-  const visibleLegs = showTen ? legs.slice(-10) : legs.slice(-5);
+  const previewN = 5;
+  const visibleLegs = showMore ? legs : legs.slice(-previewN);
   const l5 = row.form?.l5;
   const l10 = row.form?.l10;
   const formRecord = (window) => {
@@ -348,24 +365,34 @@ function ActionExpandPanel({ row, isMobile }) {
       }}
       onClick={(e) => e.stopPropagation()}
     >
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', alignItems: 'center', marginBottom: '0.75rem' }}>
-        <Pill active={tab === 'form'} onClick={() => { setTab('form'); setShowTen(false); }}>Form</Pill>
-        <Pill active={tab === 'recent'} onClick={() => { setTab('recent'); setShowTen(false); }}>Recent</Pill>
-        {tab === 'form' && (
-          <span style={{ ...T.micro, color: B.textMuted, marginLeft: '0.25rem' }}>
-            {featured.length ? 'Featured tracked' : (formListIsActionFallback ? 'Recent Action (no featured yet)' : 'Sport form')}
-            {formRecord(10) ? (
-              <span style={{ color: B.textSec, fontWeight: 700 }}>
-                {' · '}L10 {formRecord(10)}
-                {formRecord(5) ? ` · L5 ${formRecord(5)}` : ''}
-              </span>
-            ) : null}
-          </span>
-        )}
-        {tab === 'recent' && (
-          <span style={{ ...T.micro, color: B.textMuted, marginLeft: '0.25rem' }}>
-            Last {Math.min(showTen ? 10 : 5, action.length) || 0} Action tickets
-          </span>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', alignItems: 'center', marginBottom: '0.35rem' }}>
+        <Pill active={tab === 'form'} onClick={() => { setTab('form'); setShowMore(false); }}>
+          Their featured
+        </Pill>
+        <Pill active={tab === 'recent'} onClick={() => { setTab('recent'); setShowMore(false); }}>
+          Their Action
+        </Pill>
+      </div>
+      <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.75rem', lineHeight: 1.4 }}>
+        {tab === 'form' ? (
+          formListIsActionFallback
+            ? 'No featured locks yet — showing this sharp’s Action tickets instead.'
+            : (
+              <>
+                This sharp’s prior <span style={{ color: B.textSec, fontWeight: 700 }}>featured</span> picks
+                {formRecord(10) ? (
+                  <span style={{ color: B.textSec, fontWeight: 700 }}>
+                    {' · '}L10 {formRecord(10)}
+                    {formRecord(5) ? ` · L5 ${formRecord(5)}` : ''}
+                  </span>
+                ) : null}
+              </>
+            )
+        ) : (
+          <>
+            This sharp’s other graded <span style={{ color: B.textSec, fontWeight: 700 }}>Action</span> tickets
+            {action.length ? ` · last ${curveDays}d` : ''}
+          </>
         )}
       </div>
 
@@ -374,7 +401,9 @@ function ActionExpandPanel({ row, isMobile }) {
           <div style={{
             ...T.tiny, color: B.textSubtle, marginBottom: '0.35rem',
           }}>
-            {spark.kind === 'flat' ? 'Flat equity' : 'Win / loss strip'}
+            {spark.kind === 'flat'
+              ? `Last ${curveDays} days · flat equity`
+              : `Last ${curveDays} days · win / loss`}
           </div>
           <PremiumSpark
             points={spark.points}
@@ -388,7 +417,7 @@ function ActionExpandPanel({ row, isMobile }) {
           ...T.micro, color: B.textSubtle, marginBottom: '0.75rem',
           padding: '0.65rem 0.2rem',
         }}>
-          Not enough graded tickets yet for a curve.
+          Not enough graded tickets in the last {curveDays} days for a curve.
         </div>
       )}
 
@@ -401,8 +430,8 @@ function ActionExpandPanel({ row, isMobile }) {
       {visibleLegs.length === 0 ? (
         <div style={{ ...T.micro, color: B.textMuted, padding: '0.5rem 0.1rem 0.15rem' }}>
           {tab === 'form'
-            ? 'No featured tracked picks in this sport yet.'
-            : 'No graded Action tickets in this sport yet.'}
+            ? 'No featured picks for this sharp in this sport yet.'
+            : 'No graded Action tickets for this sharp in this sport yet.'}
         </div>
       ) : (
         <div>
@@ -426,10 +455,10 @@ function ActionExpandPanel({ row, isMobile }) {
               showSize={tab === 'recent' || formListIsActionFallback}
             />
           ))}
-          {legs.length > 5 && (
+          {legs.length > previewN && (
             <button
               type="button"
-              onClick={() => setShowTen((v) => !v)}
+              onClick={() => setShowMore((v) => !v)}
               style={{
                 marginTop: '0.55rem',
                 background: 'transparent',
@@ -441,7 +470,7 @@ function ActionExpandPanel({ row, isMobile }) {
                 padding: '0.2rem 0',
               }}
             >
-              {showTen ? 'Show 5' : `Show ${Math.min(10, legs.length)}`}
+              {showMore ? 'Show less' : `Show all ${legs.length} (last ${curveDays}d)`}
             </button>
           )}
         </div>

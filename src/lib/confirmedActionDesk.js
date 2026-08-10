@@ -127,6 +127,7 @@ function formFromProfile(prof, sport) {
       l10: form.l10 || null,
       flatCurve: Array.isArray(form.flatCurve) ? form.flatCurve : null,
       flatEnd: Number.isFinite(form.flatEnd) ? form.flatEnd : null,
+      flatCurveDays: Number.isFinite(form.flatCurveDays) ? form.flatCurveDays : 30,
       recentFeatured,
       recentAction,
       book: null,
@@ -140,6 +141,7 @@ function formFromProfile(prof, sport) {
       l10: null,
       flatCurve: null,
       flatEnd: Number.isFinite(picks.flatPnl) ? picks.flatPnl : null,
+      flatCurveDays: 30,
       recentFeatured: [],
       recentAction: [],
       book: { w: picks.wins || 0, l: picks.losses || 0, n: picks.n || 0 },
@@ -147,7 +149,7 @@ function formFromProfile(prof, sport) {
     };
   }
   return {
-    l5: null, l10: null, flatCurve: null, flatEnd: null,
+    l5: null, l10: null, flatCurve: null, flatEnd: null, flatCurveDays: 30,
     recentFeatured: [], recentAction: [],
     book: null, source: null,
   };
@@ -338,6 +340,7 @@ export function buildConfirmedActionRows({
       formKind: formDisp.kind,
       flatCurve: form.flatCurve,
       flatEnd: form.flatEnd,
+      flatCurveDays: form.flatCurveDays ?? 30,
       recentFeatured: form.recentFeatured || [],
       recentAction: form.recentAction || [],
       trust: trustFromProfile(prof, sport),

@@ -170,6 +170,10 @@ async function loadWalletBets() {
           seen.set(`${doc.id}_${w.wallet}`, true);
           const betOdds = sides[w.side]?.peak?.odds ?? sides[w.side]?.lock?.odds ?? oddsForThisSide;
           const won = w.side === winningSide ? 1 : 0;
+          // Line from this side's peak/lock (TOTAL 7.5 / SPREAD -1.5), else doc-level.
+          const sidePeak = sides[w.side]?.peak || sides[w.side]?.lock || peak;
+          const rawLine = sidePeak?.line ?? peak?.line ?? d.line ?? d.totalLine ?? d.spreadLine ?? null;
+          const entryLine = Number.isFinite(Number(rawLine)) ? Number(rawLine) : null;
           bets.push({
             gameKey: doc.id,
             date: d.date,
@@ -179,6 +183,7 @@ async function loadWalletBets() {
             side: w.side,
             odds: betOdds,
             invested: w.invested ?? 0,
+            entryLine,
             walletBase: w.walletBase ?? null,
             roiNorm: w.roiNorm ?? null,
             rankNorm: w.rankNorm ?? null,
@@ -305,10 +310,22 @@ function picksAgg(bets) {
   };
 }
 
+/** ET calendar date string YYYY-MM-DD, `days` ago from now. */
+function etDateMinusDays(days) {
+  const ms = Date.now() - Math.max(0, days) * 86400000;
+  return new Date(ms).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+}
+
+/** Action expand sparkline / recent lists — rolling calendar window. */
+const FORM_CURVE_DAYS = 30;
+const RECENT_LEGS_DAYS = 30;
+const RECENT_LEGS_MAX = 40;
+
 /**
  * Trailing form + flat equity curve for Action desk (strength UI).
  * Prefer featured picks (Source A); fall back to positions with flat.
- * Chronological by date, last 20 legs for the curve.
+ * Equity curve = graded flat legs in the last FORM_CURVE_DAYS (ET).
+ * L5/L10 stay last-N count windows (not calendar).
  */
 function sportForm(bets) {
   const ordered = (bets || [])
@@ -326,8 +343,14 @@ function sportForm(bets) {
   const l5 = ordered.length >= 1 ? lastN(Math.min(5, ordered.length)) : null;
   const l10 = ordered.length >= 1 ? lastN(Math.min(10, ordered.length)) : null;
 
-  const flatLegs = ordered.filter((b) => Number.isFinite(b.flat));
-  const curveSrc = flatLegs.slice(-20);
+  const cutoff = etDateMinusDays(FORM_CURVE_DAYS);
+  const inWindow = ordered.filter((b) => b.date && String(b.date) >= cutoff);
+  // Prefer calendar window; if thinner than 5 flat legs, fall back to last 20.
+  const flatInWindow = inWindow.filter((b) => Number.isFinite(b.flat));
+  const flatAll = ordered.filter((b) => Number.isFinite(b.flat));
+  const curveSrc = flatInWindow.length >= 5
+    ? flatInWindow
+    : flatAll.slice(-20);
   let cum = 0;
   const flatCurve = curveSrc.map((b) => {
     cum += b.flat;
@@ -339,6 +362,8 @@ function sportForm(bets) {
     l10,
     flatCurve: flatCurve.length >= 5 ? flatCurve : [],
     flatEnd: flatCurve.length ? flatCurve[flatCurve.length - 1] : null,
+    flatCurveDays: FORM_CURVE_DAYS,
+    flatCurveFrom: curveSrc[0]?.date || null,
   };
 }
 
@@ -362,22 +387,25 @@ function sideLabel(side) {
 }
 
 /**
- * Last 10 featured tracked picks (Source A) for Action expand Tab 1.
+ * Featured tracked picks (Source A) in the last RECENT_LEGS_DAYS for expand Tab 1.
+ * Capped at RECENT_LEGS_MAX so profile JSON stays small.
  */
-function recentFeaturedLegs(pickBets, limit = 10) {
+function recentFeaturedLegs(pickBets, { days = RECENT_LEGS_DAYS, maxLegs = RECENT_LEGS_MAX } = {}) {
+  const cutoff = etDateMinusDays(days);
   const ordered = (pickBets || [])
-    .filter((b) => b && (b.won === 0 || b.won === 1))
+    .filter((b) => b && (b.won === 0 || b.won === 1) && b.date && String(b.date) >= cutoff)
     .slice()
     .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')))
-    .slice(-limit);
+    .slice(-maxLegs);
   return ordered.map((b) => {
     const sr = Number.isFinite(b.sizeRatio) ? Number(b.sizeRatio) : null;
+    const line = Number.isFinite(Number(b.entryLine)) ? Number(b.entryLine) : null;
     return {
       date: b.date || null,
       marketType: b.market || null,
       side: b.side || null,
       label: sideLabel(b.side),
-      line: null,
+      line,
       gameKey: b.gameKey || null,
       invested: Number.isFinite(b.invested) ? Math.round(b.invested) : null,
       sizeRatio: sr,
@@ -389,14 +417,15 @@ function recentFeaturedLegs(pickBets, limit = 10) {
 }
 
 /**
- * Last 10 graded Action positions (Source B) for Action expand Tab 2.
+ * Graded Action positions (Source B) in the last RECENT_LEGS_DAYS for expand Tab 2.
  */
-function recentActionLegs(posBets, avgSportBet = null, limit = 10) {
+function recentActionLegs(posBets, avgSportBet = null, { days = RECENT_LEGS_DAYS, maxLegs = RECENT_LEGS_MAX } = {}) {
+  const cutoff = etDateMinusDays(days);
   const ordered = (posBets || [])
-    .filter((b) => b && (b.won === 0 || b.won === 1))
+    .filter((b) => b && (b.won === 0 || b.won === 1) && b.date && String(b.date) >= cutoff)
     .slice()
     .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')))
-    .slice(-limit);
+    .slice(-maxLegs);
   return ordered.map((b) => {
     let sr = Number.isFinite(b.sizeRatio) ? Number(b.sizeRatio) : null;
     if (sr == null && Number.isFinite(avgSportBet) && avgSportBet > 0 && Number.isFinite(b.invested)) {
@@ -567,8 +596,8 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
     const { tier, source } = classifyWhitelistTierWithSource(picksInSport, positionsInSport);
     // Form: prefer featured picks; else positions (with flat = settledPnl/invested).
     // Recent ticket lists always stamp both sources for Action expand tabs.
-    const recentFeatured = recentFeaturedLegs(pp, 10);
-    const recentAction = recentActionLegs(ps, avgSportBet, 10);
+    const recentFeatured = recentFeaturedLegs(pp);
+    const recentAction = recentActionLegs(ps, avgSportBet);
     let form = sportForm(pp.length ? pp : ps);
     if (!form && (recentFeatured.length || recentAction.length)) {
       form = { l5: null, l10: null, flatCurve: [], flatEnd: null };
