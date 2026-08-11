@@ -165,9 +165,11 @@ function isTrulyFeaturedSide(side) {
 }
 
 // ── Load Source A (wallet-bets from walletDetails) ─────────────────
+// IMPORTANT: do NOT drop muted/0u sides here — whitelist / Vault (CONFIRMED+FLAT)
+// is rebuilt from this feed. Filtering unshipped locks belongs only in
+// recentFeaturedLegs (Action expand UI). 2026-08-10 scoped filter demoted ~24 vault wallets.
 async function loadWalletBets() {
   const bets = [];
-  let skippedUnshipped = 0;
   for (const [col, market] of COLS) {
     const snap = await db.collection(col).where('date', '>=', V8_CUTOVER).get();
     for (const doc of snap.docs) {
@@ -186,25 +188,17 @@ async function loadWalletBets() {
 
       const seen = new Map();
       for (const [sideKey, side] of Object.entries(sides)) {
-        // Only attribute wallets on sides that actually shipped units.
-        // 0u muted / tracked / cancelled locks are not featured plays.
-        if (!isTrulyFeaturedSide(side)) {
-          const wdSkip = (side.peak || side.lock)?.v8Scoring?.walletDetails;
-          if (Array.isArray(wdSkip) && wdSkip.length) skippedUnshipped += 1;
-          continue;
-        }
         const peak = side.peak || side.lock;
         const wd = peak?.v8Scoring?.walletDetails;
         if (!Array.isArray(wd)) continue;
         const oddsForThisSide = peak.odds ?? 0;
         for (const w of wd) {
           if (!w.wallet || !w.side) continue;
-          // On-side only — against wallets on a featured lock are not "their featured."
-          if (w.side !== sideKey) continue;
           if (seen.has(`${doc.id}_${w.wallet}`)) continue;
           seen.set(`${doc.id}_${w.wallet}`, true);
-          const sidePeak = side.peak || side.lock || peak;
-          const betOddsRaw = side.peak?.odds ?? side.lock?.odds ?? oddsForThisSide;
+          const playSide = sides[w.side] || side;
+          const sidePeak = playSide?.peak || playSide?.lock || peak;
+          const betOddsRaw = playSide?.peak?.odds ?? playSide?.lock?.odds ?? oddsForThisSide;
           const betOdds = Number.isFinite(Number(betOddsRaw)) && Number(betOddsRaw) !== 0
             ? Number(betOddsRaw)
             : null;
@@ -212,6 +206,8 @@ async function loadWalletBets() {
           // Line from this side's peak/lock (TOTAL 7.5 / SPREAD -1.5), else doc-level.
           const rawLine = sidePeak?.line ?? peak?.line ?? d.line ?? d.totalLine ?? d.spreadLine ?? null;
           const entryLine = Number.isFinite(Number(rawLine)) ? Number(rawLine) : null;
+          // Expand "Their featured" only — wallet's side actually shipped units.
+          const shippedFeatured = isTrulyFeaturedSide(playSide);
           bets.push({
             // Prefer sport gameKey (atl_nyy); fall back to doc id for legacy.
             gameKey: d.gameKey || doc.id,
@@ -237,14 +233,12 @@ async function loadWalletBets() {
             convictionMult: w.convictionMult ?? null,
             won,
             flat: flatProfit(betOdds, won === 1),
-            featuredUnits: sideStakeUnits(side),
+            shippedFeatured,
+            featuredUnits: shippedFeatured ? sideStakeUnits(playSide) : 0,
           });
         }
       }
     }
-  }
-  if (skippedUnshipped > 0) {
-    console.log(`Source A: skipped ${skippedUnshipped} unshipped side(s) (muted/tracked/0u/cancelled)`);
   }
   return bets;
 }
@@ -488,11 +482,13 @@ function americanFromProb(p) {
 /**
  * Featured tracked picks (Source A) in the last RECENT_LEGS_DAYS for expand Tab 1.
  * Capped at RECENT_LEGS_MAX so profile JSON stays small.
+ * UI-only: shipped locks (units > 0, not muted/tracked) — does not affect whitelist.
  */
 function recentFeaturedLegs(pickBets, { days = RECENT_LEGS_DAYS, maxLegs = RECENT_LEGS_MAX } = {}) {
   const cutoff = etDateMinusDays(days);
   const ordered = (pickBets || [])
     .filter((b) => b && (b.won === 0 || b.won === 1) && b.date && String(b.date) >= cutoff)
+    .filter((b) => b.shippedFeatured === true)
     .slice()
     .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')))
     .slice(-maxLegs);
