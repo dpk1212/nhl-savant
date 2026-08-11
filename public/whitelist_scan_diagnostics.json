@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-08-11T14:15:57.367Z",
-  "elapsedSec": 16.5,
+  "scannedAt": "2026-08-11T14:19:51.542Z",
+  "elapsedSec": 17.5,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 38,
   "summary": {
     "total": 191,
     "coveredByMain": 1,
     "recovered": 12,
-    "recoveredPositions": 66,
+    "recoveredPositions": 67,
     "noPositions": 178,
     "apiError": 0,
     "addressNotFound": 0,
@@ -16,7 +16,7 @@
       "ml": 2,
       "spread": 0,
       "total": 3,
-      "dropped_shadow_gate": 18,
+      "dropped_shadow_gate": 19,
       "dropped_excluded": 43,
       "dropped_duplicate": 0
     }
@@ -1817,12 +1817,30 @@
       "sports": "SOC,NBA,WNBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x84cfffc3f16dcc353094de30d4a45226eccd2f63",
-      "positionsCount": 5,
+      "positionsCount": 6,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 17886,
       "willPassShadowGate": 0,
-      "willDropAtShadowGate": 5,
+      "willDropAtShadowGate": 6,
       "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "mil_sdp",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 282,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "pit_mia",
+          "marketType": "total",
+          "side": "under",
+          "invested": 179,
+          "entryLine": 7.5,
+          "passesShadow": false
+        },
         {
           "sport": "MLB",
           "gameKey": "cin_cws",
@@ -1839,15 +1857,6 @@
           "side": "home",
           "invested": 79,
           "entryLine": null,
-          "passesShadow": false
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "pit_mia",
-          "marketType": "total",
-          "side": "under",
-          "invested": 0,
-          "entryLine": 7.5,
           "passesShadow": false
         },
         {
