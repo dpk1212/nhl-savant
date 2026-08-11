@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-08-11T19:44:56.281Z",
-  "elapsedSec": 35.1,
+  "scannedAt": "2026-08-11T19:49:00.166Z",
+  "elapsedSec": 22.2,
   "phase": "PHASE_2_MERGE_ENABLED",
-  "todayGamesCount": 43,
+  "todayGamesCount": 44,
   "summary": {
     "total": 220,
     "coveredByMain": 3,
     "recovered": 20,
-    "recoveredPositions": 140,
+    "recoveredPositions": 142,
     "noPositions": 197,
     "apiError": 0,
     "addressNotFound": 0,
@@ -16,8 +16,8 @@
       "ml": 11,
       "spread": 0,
       "total": 8,
-      "dropped_shadow_gate": 25,
-      "dropped_excluded": 96,
+      "dropped_shadow_gate": 26,
+      "dropped_excluded": 97,
       "dropped_duplicate": 0
     }
   },
@@ -61,12 +61,21 @@
       "sports": "MLB,WNBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x56acab44cfca2e88bb9b3406890aea7bfa0cd77e",
-      "positionsCount": 3,
+      "positionsCount": 5,
       "statsSource": "sports_sharps",
       "avgSportBet": 4373,
-      "willPassShadowGate": 1,
-      "willDropAtShadowGate": 2,
+      "willPassShadowGate": 2,
+      "willDropAtShadowGate": 3,
       "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "chc_wsh",
+          "marketType": "total",
+          "side": "under",
+          "invested": 11147,
+          "entryLine": 8.5,
+          "passesShadow": true
+        },
         {
           "sport": "MLB",
           "gameKey": "nym_atl",
@@ -92,6 +101,15 @@
           "side": "over",
           "invested": 14,
           "entryLine": 9.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "pit_mia",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 9,
+          "entryLine": 1.5,
           "passesShadow": false
         }
       ]
@@ -2902,7 +2920,7 @@
     {
       "walletShort": "e96b87",
       "tier": "WR50",
-      "name": null,
+      "name": "0xE30E74595517de48f1FB19f4553dd3d9F1E96B87-1772612985000",
       "sports": "",
       "status": "SCANNED_NO_POSITIONS_TODAY",
       "addr": "0xe30e74595517de48f1fb19f4553dd3d9f1e96b87"
