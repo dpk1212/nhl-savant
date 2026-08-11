@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-08-11T13:06:40.427Z",
-  "elapsedSec": 14.3,
+  "scannedAt": "2026-08-11T13:12:58.476Z",
+  "elapsedSec": 15.2,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 38,
   "summary": {
     "total": 191,
     "coveredByMain": 1,
-    "recovered": 10,
-    "recoveredPositions": 55,
-    "noPositions": 180,
+    "recovered": 11,
+    "recoveredPositions": 56,
+    "noPositions": 179,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,7 +16,7 @@
       "ml": 1,
       "spread": 0,
       "total": 2,
-      "dropped_shadow_gate": 14,
+      "dropped_shadow_gate": 15,
       "dropped_excluded": 38,
       "dropped_duplicate": 0
     }
@@ -811,7 +811,7 @@
           "gameKey": "cle_det",
           "marketType": "total",
           "side": "under",
-          "invested": 1520,
+          "invested": 1522,
           "entryLine": 7.5,
           "passesShadow": true
         },
@@ -1273,8 +1273,24 @@
       "tier": "CONFIRMED",
       "name": null,
       "sports": "SOC",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x2117ae94a97d69b78cbc81b6680a62deb1955c26"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x2117ae94a97d69b78cbc81b6680a62deb1955c26",
+      "positionsCount": 1,
+      "statsSource": "sharpWalletProfiles_derived",
+      "avgSportBet": 27377,
+      "willPassShadowGate": 0,
+      "willDropAtShadowGate": 1,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "nym_atl",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 485,
+          "entryLine": null,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "95618e",
@@ -1961,7 +1977,7 @@
           "gameKey": "nym_atl",
           "marketType": "ml",
           "side": "away",
-          "invested": 3203,
+          "invested": 3630,
           "entryLine": null,
           "passesShadow": false
         },
