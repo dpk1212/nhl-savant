@@ -53,7 +53,7 @@ const FROM = '2026-06-15';
 const COLS = [['sharpFlowPicks', 'ML'], ['sharpFlowSpreads', 'SPREAD'], ['sharpFlowTotals', 'TOTAL']];
 const OPPOSITE = { home: 'away', away: 'home', over: 'under', under: 'over' };
 const WHITELIST_MIN_BETS = 2;
-const B_ONLY_MIN_BETS = 5;
+const B_ONLY_MIN_BETS = 4; // keep in sync with exportWalletProfiles.js
 const MIN_N_FEAT = 8;
 /** Match Action MODEL_MIN_SIZE — token bets don't count as opposed money. */
 const COUNTED_MIN_SIZE = 0.10;

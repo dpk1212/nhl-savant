@@ -52,14 +52,14 @@
  *
  * Where:
  *   flatOkA   = picks.n      >= WHITELIST_MIN_BETS (2)  AND picks.flatRoi      > 0
- *   flatOkB   = positions.n  >= B_ONLY_MIN_BETS    (5)  AND positions.positionFlatRoi > 0
+ *   flatOkB   = positions.n  >= B_ONLY_MIN_BETS    (4)  AND positions.positionFlatRoi > 0
  *   dollarOk  = positions.n  >= WHITELIST_MIN_BETS (2)  AND positions.dollarRoi > 0
  *   wr50OkA   = picks.n      >= WHITELIST_MIN_BETS (2)  AND picks.wr      >= 50
- *   wr50OkB   = positions.n  >= B_ONLY_MIN_BETS    (5)  AND positions.wr  >= 50
+ *   wr50OkB   = positions.n  >= B_ONLY_MIN_BETS    (4)  AND positions.wr  >= 50
  *
- * The Source-B-only paths (B_ONLY_MIN_BETS = 5) are NEW in v2. They let
+ * The Source-B-only paths (B_ONLY_MIN_BETS = 4 as of 2026-08-11; was 5) let
  * us promote sharps who never appear on a featured pick (the historical
- * MLB/NHL coverage gap). The bar is intentionally higher (5 vs 2) since
+ * MLB/NHL coverage gap). The bar stays above Source A (4 vs 2) since
  * these wallets have no independent featured-pick verification.
  *
  * Audit fields (v2):
@@ -625,12 +625,12 @@ function verdict(picks, positions) {
 // featured pick (Source A). Many active sharps in MLB/NHL never trigger
 // our featured-pick lookup but are profitable on-chain — they were
 // invisible to the engine. We now accept either source for the flat-ROI
-// and WR signals, with a stricter min-bets gate (B_ONLY_MIN_BETS = 5)
+// and WR signals, with a stricter min-bets gate (B_ONLY_MIN_BETS = 4)
 // for Source-B-only paths since those wallets have no independent
-// featured-pick verification. Re-evaluate: 2026-05-24 — see
-// TWO_WEEK_REEVAL.md.
+// featured-pick verification. Was 5; lowered 2026-08-11 for B on-ramp
+// ($-pos + flat-pos at n=4) without opening n=2 lottery books.
 const WHITELIST_MIN_BETS    = 2;   // Source A min (unchanged from v1)
-const B_ONLY_MIN_BETS       = 5;   // Source-B-only min (new in v2)
+const B_ONLY_MIN_BETS       = 4;   // Source-B-only min (was 5; 2026-08-11)
 const WHITELIST_VERSION     = 2;
 
 // Source-attribution helper. Returns 'A', 'B', or 'A+B' for audit/reporting.
