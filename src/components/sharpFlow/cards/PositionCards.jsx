@@ -8,6 +8,7 @@ import { Check, Lock, ChevronDown, Clock, X } from 'lucide-react';
 import { AGS_V12_DISPLAY_TIERS, AGS_V12_PATH_TO_DISPLAY } from '../../../lib/ags.js';
 import LockedClarityExpanded from './LockedClarityExpanded';
 import OddsLimitSpark from './OddsLimitSpark';
+import LockedSignalsRow from './LockedSignalsRow';
 
 /** Ticket freezes 15 min before first pitch/kick — same gate as the cron. */
 const LOCK_LEAD_MS = 15 * 60 * 1000;

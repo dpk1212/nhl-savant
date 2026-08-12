@@ -6,7 +6,7 @@ import { AGS_V12_STAKE_TIER_META } from '../../../lib/ags.js';
 import { CLV_SKILL_MIN_N, EDGE_PRIOR_AG_WR, NET_CLV_PRIOR_AG } from '../../../lib/walletClvSkill.js';
 import { matchSizeRatioBand } from '../../../lib/sizeRatioBands.js';
 import { passesSizeSkillLiveGate } from '../../../lib/sizeSkillRescue.js';
-import { sharpMarketAgreementFromPinnGame } from '../../../lib/marketAgreement.js';
+import { sharpMarketAgreementFromPinnGame, buildLockedMarketSignals } from '../../../lib/marketAgreement.js';
 
 /** Same floor as EDGE (scripts/syncPickStateAuthoritative WINNER_ALIGN_MIN_N). */
 export const FEATURED_WR_MIN_N = 8;
@@ -1149,6 +1149,15 @@ export function mapLockedPickToCardFixture(pick, {
     liveEvPct: Number.isFinite(evFlagged) ? evFlagged : null,
   });
 
+  const marketSignals = buildLockedMarketSignals({
+    sma,
+    evPct: Number.isFinite(evFlagged) ? evFlagged : null,
+    provenOnSide: confirmedOnSide,
+    vaultOnSide,
+    trackedOnSide: wallets.length,
+    clvPct: Number.isFinite(clvPct) ? clvPct : null,
+  });
+
   return {
     id: pick.key || `${pick.sport}-${pickLabel}`,
     sport: pick.sport,
@@ -1239,6 +1248,7 @@ export function mapLockedPickToCardFixture(pick, {
       : null,
     // Sharp–Market Agreement (SMA) — sharps × Pinnacle move × max liquidity
     marketAgreement: sma,
+    marketSignals,
     pinnMax: sma?.path?.maxNow ?? null,
     pinnMaxDelta: sma?.path?.maxDelta ?? null,
     pinnMovePp: sma?.path?.deltaProbPp ?? null,

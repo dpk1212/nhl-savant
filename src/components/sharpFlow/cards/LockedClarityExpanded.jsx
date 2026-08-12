@@ -14,6 +14,7 @@ import {
   walletRoiForPlot,
 } from './mapPositionCard.js';
 import OddsLimitSpark from './OddsLimitSpark';
+import LockedSignalsRow from './LockedSignalsRow';
 
 const B = {
   gold: '#D4AF37',
@@ -1672,19 +1673,22 @@ export default function LockedClarityExpanded({
           || (f.marketAgreement && f.marketAgreement.state !== 'NO_SHARPS')
           || (Array.isArray(f.pinPath) && f.pinPath.length >= 2)) && (
           <div className="lc-in-2" style={{ margin: '0 0 12px' }}>
-            <OddsLimitSpark
-              pinPath={f.pinPath}
-              flagged={f.gotOdds ?? f.lockOdds}
-              entry={f.sharpEntryOdds}
-              now={f.currentFairOdds ?? f.nowOdds}
-              fair={f.fairLine ?? fairOdds}
-              evPct={f.evFlagged}
-              sma={f.marketAgreement}
-              maxNow={f.pinnMax ?? f.marketAgreement?.maxNow}
-              movePp={f.pinnMovePp}
-              gid={`ols-${gid}`}
-              showStory
-            />
+            <LockedSignalsRow signals={f.marketSignals} />
+            <div style={{ marginTop: 10 }}>
+              <OddsLimitSpark
+                pinPath={f.pinPath}
+                flagged={f.gotOdds ?? f.lockOdds}
+                entry={f.sharpEntryOdds}
+                now={f.currentFairOdds ?? f.nowOdds}
+                fair={f.fairLine ?? fairOdds}
+                evPct={f.evFlagged}
+                sma={f.marketAgreement}
+                maxNow={f.pinnMax ?? f.marketAgreement?.maxNow}
+                movePp={f.pinnMovePp}
+                gid={`ols-${gid}`}
+                showStory
+              />
+            </div>
           </div>
         )}
 

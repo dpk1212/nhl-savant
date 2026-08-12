@@ -351,6 +351,110 @@ function buildTitle({ state, proven, deltaProbPp, maxNow, maxDelta, liveEvPct, s
 }
 
 /**
+ * High-value Locked Picks checklist — what to show when confirmation is real.
+ * Ordered by user-facing significance (not SMA math order).
+ */
+export function buildLockedMarketSignals({
+  sma = null,
+  evPct = null,
+  provenOnSide = 0,
+  vaultOnSide = 0,
+  trackedOnSide = 0,
+  clvPct = null,
+} = {}) {
+  const proven = Math.max(0, Number(provenOnSide) || 0);
+  const vault = Math.max(0, Number(vaultOnSide) || 0);
+  const tracked = Math.max(0, Number(trackedOnSide) || proven);
+  const dir = sma?.dir ?? 0;
+  const movePp = sma?.deltaProbPp ?? sma?.path?.deltaProbPp ?? null;
+  const maxDelta = sma?.maxDelta ?? sma?.path?.maxDelta ?? null;
+  const maxNow = sma?.maxNow ?? sma?.path?.maxNow ?? null;
+  const limitTested = !!(sma?.limitTested || (Number.isFinite(maxNow) && maxNow >= LIMIT_TESTED_USD));
+  const steamedWith = dir > 0 && Number.isFinite(movePp) && movePp >= 0.25;
+  const steamedAgainst = dir < 0 && Number.isFinite(movePp) && movePp <= -0.25;
+  const limitRising = Number.isFinite(maxDelta) && maxDelta >= 500;
+  const limitFalling = Number.isFinite(maxDelta) && maxDelta <= -500;
+  const pinnConfirms = sma?.state === 'CONFIRMS' || sma?.state === 'WITH'
+    || (steamedWith && limitTested);
+  const plusEv = Number.isFinite(evPct) && evPct >= 0.3;
+  const clvUp = Number.isFinite(clvPct) && clvPct >= 0.3;
+  const whaleConsensus = proven >= 2 || (proven >= 1 && vault >= 1) || tracked >= 3;
+
+  const signals = [
+    {
+      id: 'whaleConsensus',
+      label: 'Whale Consensus',
+      short: 'Whales',
+      met: whaleConsensus,
+      tier: 'core',
+      tip: 'Proven / tracked sharp money clustered on this side — the who.',
+    },
+    {
+      id: 'pinnacleConfirms',
+      label: 'Pinnacle Confirms',
+      short: 'Pinn ✓',
+      met: pinnConfirms,
+      tier: 'high',
+      tip: 'Liquid Pinnacle fair is moving with (or standing under) our sharps.',
+    },
+    {
+      id: 'steamWith',
+      label: 'Steam With Entry',
+      short: 'Steam',
+      met: steamedWith,
+      tier: 'high',
+      tip: 'Fair probability moved toward our side after the market formed — book pressure agrees.',
+    },
+    {
+      id: 'limitRising',
+      label: 'Limit Rising',
+      short: 'Max ↑',
+      met: limitRising,
+      tier: 'high',
+      tip: 'Pinnacle max stake increased — the fair is getting more liquid / trustworthy.',
+    },
+    {
+      id: 'limitTested',
+      label: 'Limit-Tested',
+      short: 'Liquid',
+      met: limitTested && !limitRising,
+      tier: 'med',
+      tip: 'Max is already large enough to treat this fair as real size.',
+    },
+    {
+      id: 'plusEv',
+      label: '+EV Ticket',
+      short: '+EV',
+      met: plusEv,
+      tier: 'high',
+      tip: 'Your flagged price beats no-vig / sharp fair right now.',
+    },
+    {
+      id: 'clvLive',
+      label: 'Beating Close',
+      short: 'CLV',
+      met: clvUp,
+      tier: 'med',
+      tip: 'Live CLV vs close / peak — you still own a better number than the market’s path.',
+    },
+  ];
+
+  // Hide dormant med-tier noise when unmet (keep high/core always visible).
+  const visible = signals.filter((s) => s.met || s.tier === 'core' || s.tier === 'high');
+  const metCount = visible.filter((s) => s.met).length;
+  const warnAgainst = steamedAgainst || limitFalling || sma?.state === 'OPPOSES';
+
+  return {
+    signals: visible,
+    metCount,
+    total: visible.length,
+    warnAgainst,
+    steamedAgainst,
+    limitFalling,
+  };
+}
+
+/**
  * Convenience: pinnacle game + pick context → full SMA payload.
  */
 export function sharpMarketAgreementFromPinnGame(pinnGame, ctx = {}) {
