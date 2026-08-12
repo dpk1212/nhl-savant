@@ -534,7 +534,8 @@ function BetTypeRollupStrip({ sport, marketType, sportRollup, marketRollup }) {
 
 function ActionExpandPanel({ row, isMobile }) {
   // form = this sharp's featured history; recent = this sharp's Action tickets
-  const [tab, setTab] = useState('form');
+  // Default Action — that's the desk context; featured is one click away.
+  const [tab, setTab] = useState('recent');
   const [showMore, setShowMore] = useState(false);
   // Actual $ first — locked picks & Action tickets are sized, not 1u flat.
   const [sparkMode, setSparkMode] = useState('actual');
