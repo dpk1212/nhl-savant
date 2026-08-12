@@ -1,11 +1,9 @@
 /**
- * Premium 3-rail price strip for Locked Picks.
- * Flagged (ticket) · Sharp entry (Pinn open/fair) · Now (live Pinn) —
- * three different numbers for three different decisions.
+ * Compact 3-rail price strip for collapsed Locked Picks.
+ * Flagged (ticket) · Entry (pinn open) · Now (live pinn).
  */
 const C = {
   text: '#F4F7FB',
-  textSec: '#9aa6bd',
   textMuted: '#647089',
   textFaint: '#4a5568',
 };
@@ -23,7 +21,7 @@ function toneColor(tone) {
   if (tone === 'confirm' || tone === 'with') return GREEN;
   if (tone === 'oppose' || tone === 'against') return VS;
   if (tone === 'thin') return GOLD;
-  return C.textSec;
+  return C.textMuted;
 }
 
 function fmtMax(n) {
@@ -42,12 +40,12 @@ function Rail({ label, value, hint, emphasize, align = 'left' }) {
     <div style={{ flex: 1, minWidth: 0, textAlign: align }}>
       <div style={{
         fontSize: '0.48rem', fontWeight: 800, letterSpacing: '0.1em',
-        color: C.textFaint, marginBottom: 4,
+        color: C.textFaint, marginBottom: 3,
       }}>
         {label}
       </div>
       <div style={{
-        fontSize: emphasize ? '1.12rem' : '1.05rem',
+        fontSize: emphasize ? '1.05rem' : '1rem',
         fontWeight: 800,
         letterSpacing: '-0.02em',
         color: emphasize ? GOLD : C.text,
@@ -58,8 +56,7 @@ function Rail({ label, value, hint, emphasize, align = 'left' }) {
       </div>
       {hint && (
         <div style={{
-          fontSize: '0.5rem', fontWeight: 600, color: C.textMuted,
-          marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          fontSize: '0.48rem', fontWeight: 600, color: C.textMuted, marginTop: 2,
         }}>
           {hint}
         </div>
@@ -68,20 +65,6 @@ function Rail({ label, value, hint, emphasize, align = 'left' }) {
   );
 }
 
-/**
- * @param {object} props
- * @param {number|null} props.flagged — ticket / lock odds
- * @param {number|null} props.entry — Pinnacle at open / sharp entry
- * @param {number|null} props.now — live Pinnacle fair
- * @param {string|null} [props.smaLabel]
- * @param {string|null} [props.smaTone]
- * @param {string|null} [props.smaTitle]
- * @param {number|null} [props.maxNow]
- * @param {boolean} [props.limitTested]
- * @param {number|null} [props.evPct]
- * @param {number|null} [props.movePp]
- * @param {'compact'|'expanded'} [props.density]
- */
 export default function LockedLineRails({
   flagged,
   entry,
@@ -93,110 +76,63 @@ export default function LockedLineRails({
   limitTested = false,
   evPct = null,
   movePp = null,
-  density = 'compact',
 }) {
   const hasAny = [flagged, entry, now].some((v) => Number.isFinite(Number(v)) && Number(v) !== 0);
   if (!hasAny) return null;
 
-  const pad = density === 'expanded' ? '12px 14px' : '10px 0 2px';
   const maxLabel = fmtMax(maxNow);
   const showEv = Number.isFinite(evPct) && Math.abs(evPct) >= 0.15;
-  const showMove = Number.isFinite(movePp) && Math.abs(movePp) >= 0.15;
   const statusColor = toneColor(smaTone);
 
   return (
-    <div
-      title={smaTitle || undefined}
-      style={{ padding: pad, fontFeatureSettings: "'tnum'" }}
-      onClick={(e) => e.stopPropagation()}
-    >
+    <div title={smaTitle || undefined} style={{ padding: '8px 0 0' }} onClick={(e) => e.stopPropagation()}>
       <div style={{
-        display: 'flex', alignItems: 'flex-start', gap: 10,
-        padding: density === 'expanded' ? '10px 12px' : '8px 10px',
-        borderRadius: 10,
+        display: 'flex', alignItems: 'flex-start', gap: 8,
+        padding: '8px 10px',
+        borderRadius: 9,
         background: 'rgba(0,0,0,0.22)',
         border: '1px solid rgba(148,163,184,0.12)',
       }}>
-        <Rail
-          label="FLAGGED"
-          value={flagged}
-          hint="ticket"
-          emphasize={false}
-          align="left"
-        />
-        <div style={{
-          width: 1, alignSelf: 'stretch',
-          background: 'rgba(148,163,184,0.12)', flexShrink: 0,
-        }} />
-        <Rail
-          label="SHARP ENTRY"
-          value={entry}
-          hint="open fair"
-          emphasize
-          align="center"
-        />
-        <div style={{
-          width: 1, alignSelf: 'stretch',
-          background: 'rgba(148,163,184,0.12)', flexShrink: 0,
-        }} />
-        <Rail
-          label="NOW"
-          value={now}
-          hint="live pinn"
-          emphasize={false}
-          align="right"
-        />
+        <Rail label="FLAGGED" value={flagged} hint="ticket" align="left" />
+        <div style={{ width: 1, alignSelf: 'stretch', background: 'rgba(148,163,184,0.12)' }} />
+        <Rail label="ENTRY" value={entry} hint="pinn open" emphasize align="center" />
+        <div style={{ width: 1, alignSelf: 'stretch', background: 'rgba(148,163,184,0.12)' }} />
+        <Rail label="NOW" value={now} hint="live pinn" align="right" />
       </div>
 
-      {(smaLabel || maxLabel || showEv || showMove) && (
+      {(smaLabel || maxLabel || showEv || limitTested) && (
         <div style={{
-          display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px 10px',
-          marginTop: density === 'expanded' ? 10 : 8,
+          display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '4px 10px',
+          marginTop: 7, padding: '0 2px',
         }}>
-          {smaLabel && (
-            <span style={{
-              fontSize: density === 'expanded' ? '0.58rem' : '0.5rem',
-              fontWeight: 900, letterSpacing: '0.06em',
-              color: statusColor,
-            }}>
+          {smaLabel && smaLabel !== 'LIMIT-TESTED' && (
+            <span style={{ fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.06em', color: statusColor }}>
               {smaLabel}
             </span>
           )}
-          {limitTested && smaLabel !== 'LIMIT-TESTED' && (
+          {(limitTested || smaLabel === 'LIMIT-TESTED') && (
             <span style={{
-              fontSize: density === 'expanded' ? '0.52rem' : '0.48rem',
-              fontWeight: 800, letterSpacing: '0.05em',
-              padding: '2px 7px', borderRadius: 5,
-              color: GREEN,
-              background: 'rgba(16,185,129,0.12)',
-              border: '1px solid rgba(16,185,129,0.35)',
+              fontSize: '0.48rem', fontWeight: 800, letterSpacing: '0.05em',
+              padding: '2px 6px', borderRadius: 5, color: GREEN,
+              background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.32)',
             }}>
-              LIMIT-TESTED
+              LIMIT-TESTED{maxLabel ? ` · ${maxLabel}` : ''}
             </span>
           )}
-          {maxLabel && !limitTested && (
-            <span style={{
-              fontSize: '0.48rem', fontWeight: 700, color: C.textMuted,
-              fontFeatureSettings: "'tnum'",
-            }}>
+          {maxLabel && !limitTested && smaLabel !== 'LIMIT-TESTED' && (
+            <span style={{ fontSize: '0.48rem', fontWeight: 700, color: C.textMuted }}>
               Max {maxLabel}
             </span>
           )}
-          {showMove && (
-            <span style={{
-              fontSize: '0.48rem', fontWeight: 700, color: C.textSec,
-              fontFeatureSettings: "'tnum'",
-            }}>
-              Fair {movePp > 0 ? '+' : ''}{movePp.toFixed(1)}pp
+          {Number.isFinite(movePp) && Math.abs(movePp) >= 0.25 && (
+            <span style={{ fontSize: '0.48rem', fontWeight: 700, color: C.textMuted }}>
+              {movePp > 0 ? '+' : ''}{movePp.toFixed(1)}pp
             </span>
           )}
           {showEv && (
             <span style={{
-              marginLeft: 'auto',
-              fontSize: density === 'expanded' ? '0.62rem' : '0.52rem',
-              fontWeight: 800,
-              color: evPct >= 0 ? GREEN : VS,
-              fontFeatureSettings: "'tnum'",
+              marginLeft: 'auto', fontSize: '0.52rem', fontWeight: 800,
+              color: evPct >= 0 ? GREEN : VS, fontFeatureSettings: "'tnum'",
             }}>
               {evPct >= 0 ? '+' : ''}{evPct.toFixed(1)}% EV
             </span>

@@ -392,16 +392,24 @@ function extractSpreadOdds(game, preferFairBook = null) {
 
 function extractTotalOdds(game, preferFairBook = null) {
   let bestOver = null, bestUnder = null;
+  const allTotalBooks = {};
 
   for (const bk of (game.bookmakers || [])) {
     const totalMkt = bk.markets?.find(m => m.key === 'totals');
     if (!totalMkt) continue;
     const over = totalMkt.outcomes.find(o => o.name === 'Over');
     const under = totalMkt.outcomes.find(o => o.name === 'Under');
-    if (!over || !under) continue;
+    if (!over || !under || !Number.isFinite(over.point)) continue;
+
+    const bookName = BOOK_DISPLAY[bk.key] || bk.title || bk.key;
+    allTotalBooks[bk.key] = {
+      over: over.price,
+      under: under.price,
+      line: over.point,
+      name: bookName,
+    };
 
     if (RETAIL_BOOKS.includes(bk.key)) {
-      const bookName = BOOK_DISPLAY[bk.key] || bk.title;
       if (bestOver === null || over.price > bestOver.odds) {
         bestOver = { line: over.point, odds: over.price, book: bookName };
       }
@@ -416,6 +424,7 @@ function extractTotalOdds(game, preferFairBook = null) {
     fairTotalBook: fair?.fairBook || null,
     bestOver,
     bestUnder,
+    allTotalBooks,
   };
 }
 
@@ -600,7 +609,7 @@ async function run() {
       if (bestHomeSpread) existing.bestHomeSpread = bestHomeSpread;
 
       // Total data
-      let { fairTotal, fairTotalBook, bestOver, bestUnder } = extractTotalOdds(game, fairBook);
+      let { fairTotal, fairTotalBook, bestOver, bestUnder, allTotalBooks } = extractTotalOdds(game, fairBook);
       if (pin?.fairTotal?.overOdds != null && pin.fairTotal.underOdds != null) {
         fairTotal = pin.fairTotal;
         fairTotalBook = 'pinnacle';
@@ -626,6 +635,9 @@ async function run() {
       }
       if (bestOver) existing.bestOver = bestOver;
       if (bestUnder) existing.bestUnder = bestUnder;
+      if (allTotalBooks && Object.keys(allTotalBooks).length) {
+        existing.allTotalBooks = allTotalBooks;
+      }
 
       history[label][gameKey] = existing;
       sportFair++;

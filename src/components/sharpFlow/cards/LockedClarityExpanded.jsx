@@ -13,7 +13,6 @@ import {
   isTopQWallet,
   walletRoiForPlot,
 } from './mapPositionCard.js';
-import LockedLineRails from './LockedLineRails';
 import OddsLimitSpark from './OddsLimitSpark';
 
 const B = {
@@ -731,7 +730,7 @@ function MarketPriceBoard({
             fontFamily: MONO, fontSize: 8, fontWeight: 700,
             letterSpacing: '0.12em', color: C.textMuted,
           }}>
-            ④ MARKET
+            {hideTicketHero ? 'BOOKS' : '④ MARKET'}
           </span>
           {ourLabel && (
             <span style={{
@@ -813,9 +812,9 @@ function MarketPriceBoard({
         )}
       </div>
       )}
-      {hideTicketHero && (hasBest || Number.isFinite(fair) || (Number.isFinite(oppBestOdds) && oppLabel && !hasLive)) && (
+      {hideTicketHero && (hasBest || Number.isFinite(fair) || (Number.isFinite(oppBestOdds) && oppLabel && !hasLive)) && bookRows.length === 0 && (
         <div style={{
-          marginBottom: hasLive ? 8 : (hasJourney ? 10 : 12),
+          marginBottom: hasLive ? 8 : 12,
           fontSize: 12, fontWeight: 550, color: C.textSec,
         }}>
           {hasBest && (
@@ -834,20 +833,13 @@ function MarketPriceBoard({
               <span style={{ fontWeight: 650, color: GOLD }}>{fmtOdds(fair)}</span>
             </>
           )}
-          {Number.isFinite(oppBestOdds) && oppLabel && !hasLive && (
-            <>
-              {(hasBest || Number.isFinite(fair)) && <Dot />}
-              <span style={{ color: C.textFaint }}>{oppLabel} </span>
-              <span style={{ fontWeight: 600 }}>{fmtOdds(oppBestOdds)}</span>
-            </>
-          )}
         </div>
       )}
 
       {/* Consensus moved — live prices on their own line, never mixed into ticket */}
       {hasLive && (
         <div style={{
-          marginBottom: hasJourney ? 10 : 12,
+          marginBottom: bookRows.length ? 10 : 4,
           fontSize: 12, fontWeight: 550, color: C.textSec, lineHeight: 1.45,
         }}>
           <span style={{ color: C.textFaint }}>{liveLabel}</span>
@@ -890,49 +882,74 @@ function MarketPriceBoard({
         </div>
       )}
 
-      {bookRows.length > 0 && (
-        <div style={{
-          display: 'flex',
-          gap: 0,
-          overflowX: 'auto',
-          WebkitOverflowScrolling: 'touch',
-          borderTop: `1px solid ${LINE}`,
-          paddingTop: 8,
-        }}>
-          {bookRows.map((b, i) => {
-            const isBest = !!b.best || (hasBest && bestBook
-              && String(b.name).toLowerCase() === String(bestBook).toLowerCase());
-            const isSharp = !!b.sharp;
-            return (
-              <div
-                key={`${b.name}-${i}`}
-                style={{
-                  flex: '1 0 auto',
-                  minWidth: 48,
-                  padding: '2px 8px 0',
-                  textAlign: 'center',
-                }}
-              >
-                <div style={{
-                  fontFamily: MONO, fontSize: 8, fontWeight: 650,
-                  letterSpacing: '0.08em',
-                  color: isBest ? GOLD : C.textFaint,
-                  marginBottom: 3,
-                }}>
-                  {shortBook(b.name)}
+      {bookRows.length > 0 ? (
+        <div>
+          <div style={{
+            fontSize: 10, fontWeight: 550, color: C.textMuted, marginBottom: 8,
+          }}>
+            Same line across books
+            {Number.isFinite(fair) && (
+              <span style={{ color: C.textFaint }}>
+                {' '}· fair {fmtOdds(fair)}{fairIsNoVig ? ' (no-vig)' : ''}
+              </span>
+            )}
+          </div>
+          <div style={{
+            display: 'flex',
+            gap: 0,
+            overflowX: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            borderRadius: 9,
+            border: '1px solid rgba(148,163,184,0.12)',
+            background: 'rgba(0,0,0,0.22)',
+          }}>
+            {bookRows.map((b, i) => {
+              const isBest = !!b.best || (hasBest && bestBook
+                && String(b.name).toLowerCase() === String(bestBook).toLowerCase());
+              const isSharp = !!b.sharp;
+              return (
+                <div
+                  key={`${b.name}-${i}`}
+                  style={{
+                    flex: '1 0 auto',
+                    minWidth: 56,
+                    padding: '10px 10px 9px',
+                    textAlign: 'center',
+                    borderLeft: i === 0 ? 'none' : '1px solid rgba(148,163,184,0.10)',
+                  }}
+                >
+                  <div style={{
+                    fontFamily: MONO, fontSize: 8, fontWeight: 700,
+                    letterSpacing: '0.08em',
+                    color: isBest ? GOLD : isSharp ? GOLD_HI : C.textFaint,
+                    marginBottom: 4,
+                  }}>
+                    {shortBook(b.name)}
+                  </div>
+                  <div style={{
+                    fontSize: 15, fontWeight: isBest || isSharp ? 800 : 650,
+                    color: isBest ? GOLD_HI : isSharp ? GOLD : C.text,
+                    letterSpacing: '-0.02em',
+                    fontFeatureSettings: "'tnum'",
+                  }}>
+                    {fmtOdds(b.odds)}
+                  </div>
+                  {(isBest || isSharp) && (
+                    <div style={{
+                      marginTop: 3, fontSize: 8, fontWeight: 700, letterSpacing: '0.06em',
+                      color: isBest ? GOLD : C.textMuted,
+                    }}>
+                      {isBest ? 'BEST' : 'SHARP'}
+                    </div>
+                  )}
                 </div>
-                <div style={{
-                  fontSize: 13, fontWeight: isBest || isSharp ? 700 : 600,
-                  color: isBest ? GOLD_HI : C.textSec,
-                  letterSpacing: '-0.02em',
-                  paddingBottom: 6,
-                  boxShadow: isBest ? `inset 0 -1px 0 ${GOLD}` : 'none',
-                }}>
-                  {fmtOdds(b.odds)}
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        <div style={{ fontSize: 11, color: C.textMuted, fontWeight: 500 }}>
+          Retail books on this exact line fill on the next odds pull.
         </div>
       )}
     </div>
@@ -1652,54 +1669,22 @@ export default function LockedClarityExpanded({
         {(Number.isFinite(f.gotOdds ?? f.lockOdds)
           || Number.isFinite(f.sharpEntryOdds)
           || Number.isFinite(f.currentFairOdds ?? f.fairLine)
-          || (f.marketAgreement && f.marketAgreement.state !== 'NO_SHARPS')) && (
-          <div className="lc-in-2" style={{ margin: '0 0 10px' }}>
-            <div style={{
-              fontFamily: MONO, fontSize: 8, fontWeight: 700, letterSpacing: '0.12em',
-              color: C.textMuted, marginBottom: 2, paddingLeft: 2,
-            }}>
-              PRICE CHECK · FLAGGED · SHARP ENTRY · NOW
-            </div>
-            <LockedLineRails
+          || (f.marketAgreement && f.marketAgreement.state !== 'NO_SHARPS')
+          || (Array.isArray(f.pinPath) && f.pinPath.length >= 2)) && (
+          <div className="lc-in-2" style={{ margin: '0 0 12px' }}>
+            <OddsLimitSpark
+              pinPath={f.pinPath}
               flagged={f.gotOdds ?? f.lockOdds}
               entry={f.sharpEntryOdds}
-              now={f.currentFairOdds ?? f.fairLine}
-              smaLabel={f.marketAgreement?.state !== 'NO_SHARPS' ? f.marketAgreement?.label : null}
-              smaTone={f.marketAgreement?.tone}
-              smaTitle={f.marketAgreement?.title}
-              maxNow={f.pinnMax ?? f.marketAgreement?.maxNow}
-              limitTested={!!f.marketAgreement?.limitTested}
+              now={f.currentFairOdds ?? f.nowOdds}
+              fair={f.fairLine ?? fairOdds}
               evPct={f.evFlagged}
+              sma={f.marketAgreement}
+              maxNow={f.pinnMax ?? f.marketAgreement?.maxNow}
               movePp={f.pinnMovePp}
-              density="expanded"
+              gid={`ols-${gid}`}
+              showStory
             />
-            <div style={{ marginTop: 10 }}>
-              <OddsLimitSpark
-                pinPath={f.pinPath}
-                flagged={f.gotOdds ?? f.lockOdds}
-                entry={f.sharpEntryOdds}
-                now={f.currentFairOdds ?? f.nowOdds}
-                fair={f.fairLine ?? fairOdds}
-                evPct={f.evFlagged}
-                sma={f.marketAgreement}
-                maxNow={f.pinnMax ?? f.marketAgreement?.maxNow}
-                movePp={f.pinnMovePp}
-                gid={`ols-${gid}`}
-              />
-            </div>
-            {Number.isFinite(f.marketAgreement?.score) && f.marketAgreement?.state !== 'NO_SHARPS' && (
-              <div style={{
-                marginTop: 6, paddingLeft: 4,
-                fontFamily: MONO, fontSize: 10, color: C.textFaint, fontFeatureSettings: "'tnum'",
-              }}>
-                SMA {f.marketAgreement.score >= 0 ? '+' : ''}{f.marketAgreement.score.toFixed(2)}
-                {Number.isFinite(f.pinnMaxDelta) && Math.abs(f.pinnMaxDelta) >= 250 && (
-                  <span style={{ marginLeft: 10, color: C.textSec }}>
-                    Limit {f.pinnMaxDelta > 0 ? '↑' : '↓'} ${Math.round(Math.abs(f.pinnMaxDelta))}
-                  </span>
-                )}
-              </div>
-            )}
           </div>
         )}
 

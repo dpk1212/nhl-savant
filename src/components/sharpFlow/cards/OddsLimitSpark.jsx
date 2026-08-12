@@ -1,18 +1,19 @@
 /**
- * Dual-axis spark: Pinnacle odds over time + max-limit overlay.
- * Markers for FLAGGED / SHARP ENTRY / NOW — Sharp Action PRICE CHECK energy.
+ * Locked Picks market tape — Pinnacle odds + max limit over time.
+ * Terminal-style: left odds axis, right $ max, bottom clock, clear markers.
  */
 const C = {
   text: '#F4F7FB',
   textSec: '#9aa6bd',
   textMuted: '#647089',
   textFaint: '#4a5568',
+  grid: 'rgba(148,163,184,0.10)',
 };
 const GREEN = '#2fd57e';
 const VS = '#F07167';
 const GOLD = '#D4AF37';
 const GOLD_HI = '#E8D28A';
-const LIMIT = '#7DD3FC';
+const LIMIT = '#5B8FB9';
 const MONO = "'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace";
 
 export function fmtOdds(o) {
@@ -31,7 +32,28 @@ function fmtMax(n) {
   return `$${Math.round(v)}`;
 }
 
-/** Build readable steam / EV / limit story for locked picks. */
+function toMs(t) {
+  if (!Number.isFinite(t)) return null;
+  return t > 1e12 ? t : t * 1000;
+}
+
+function fmtClock(t) {
+  const ms = toMs(t);
+  if (ms == null) return null;
+  try {
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/New_York',
+      hour: 'numeric',
+      minute: '2-digit',
+    }).format(new Date(ms));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Short desk copy — what matters, why it matters. No filler.
+ */
 export function buildMarketStory({
   sma = null,
   evPct = null,
@@ -46,50 +68,48 @@ export function buildMarketStory({
   const thin = !!(sma?.thin || (Number.isFinite(maxNow) && maxNow > 0 && maxNow < 1000));
   const maxLabel = fmtMax(maxNow ?? sma?.maxNow);
   const tone = sma?.tone || 'neutral';
-  const label = sma?.label || null;
-  const showEv = Number.isFinite(evPct);
   const fairRef = Number.isFinite(fair) ? fair : (Number.isFinite(now) ? now : null);
+  const steamed = Number.isFinite(movePp) && Math.abs(movePp) >= 0.25;
+  const priceMoved = Number.isFinite(entry) && Number.isFinite(now) && entry !== now;
 
-  let headline = label || 'MARKET WATCH';
-  const bits = [];
+  let headline = 'WATCHING';
+  if (tone === 'confirm') headline = 'CONFIRMED';
+  else if (tone === 'oppose') headline = 'OPPOSED';
+  else if (tone === 'against') headline = 'LEANING AGAINST';
+  else if (tone === 'with' || limitTested) headline = limitTested ? 'LIQUID' : 'WITH MARKET';
+  else if (tone === 'thin') headline = 'THIN';
+
+  const parts = [];
 
   if (limitTested && maxLabel) {
-    bits.push(`Pinnacle will take ${maxLabel} — limit-tested, real liquidity`);
+    parts.push(`Pinnacle’s max is ${maxLabel} — enough size that this fair is real.`);
   } else if (thin && maxLabel) {
-    bits.push(`Thin book (${maxLabel}) — treat the fair with caution`);
+    parts.push(`Max only ${maxLabel}. Thin book — don’t overweight the fair.`);
   } else if (maxLabel) {
-    bits.push(`Pinnacle max ${maxLabel}`);
+    parts.push(`Pinnacle max ${maxLabel}.`);
   }
 
-  if (Number.isFinite(movePp) && Math.abs(movePp) >= 0.25) {
-    bits.push(movePp > 0
-      ? `Fair steamed ${movePp.toFixed(1)}pp toward this side`
-      : `Fair steamed ${Math.abs(movePp).toFixed(1)}pp against this side`);
-  } else if (Number.isFinite(entry) && Number.isFinite(now) && entry !== now) {
-    bits.push(`Open ${fmtOdds(entry)} → now ${fmtOdds(now)}`);
+  if (steamed) {
+    parts.push(movePp > 0
+      ? `Fair moved ${movePp.toFixed(1)}pp toward this side.`
+      : `Fair moved ${Math.abs(movePp).toFixed(1)}pp against this side.`);
+  } else if (priceMoved) {
+    parts.push(`Open ${fmtOdds(entry)} → now ${fmtOdds(now)}.`);
   } else {
-    bits.push('Fair hasn’t steamed yet — watching the limit and price');
+    parts.push('No steam yet on this number.');
   }
 
-  if (showEv && Number.isFinite(flagged) && Number.isFinite(fairRef)) {
-    bits.push(evPct >= 0
-      ? `Flagged ${fmtOdds(flagged)} beats fair ${fmtOdds(fairRef)} · EV +${evPct.toFixed(1)}%`
-      : `Flagged ${fmtOdds(flagged)} vs fair ${fmtOdds(fairRef)} · EV ${evPct.toFixed(1)}% — price not in your favor yet`);
+  if (Number.isFinite(evPct) && Number.isFinite(flagged) && Number.isFinite(fairRef)) {
+    if (evPct >= 0.3) {
+      parts.push(`Ticket ${fmtOdds(flagged)} clears fair ${fmtOdds(fairRef)} (+${evPct.toFixed(1)}% EV).`);
+    } else if (evPct <= -0.3) {
+      parts.push(`Ticket ${fmtOdds(flagged)} is short of fair ${fmtOdds(fairRef)} (${evPct.toFixed(1)}% EV).`);
+    } else {
+      parts.push(`Ticket and fair are close (${fmtOdds(flagged)} vs ${fmtOdds(fairRef)}).`);
+    }
   }
 
-  if (tone === 'confirm') {
-    headline = label || 'SHARPS + PINN';
-  } else if (tone === 'oppose') {
-    headline = label || 'PINN OPPOSES';
-  } else if (tone === 'with' && limitTested) {
-    headline = label || 'LIMIT-TESTED';
-  }
-
-  return {
-    headline,
-    body: bits.join('. ') + '.',
-    tone,
-  };
+  return { headline, body: parts.join(' '), tone };
 }
 
 function normalizePath(path) {
@@ -111,41 +131,40 @@ function normalizePath(path) {
     .filter(Boolean);
 }
 
-/**
- * Prefer dense pinPath; if flat/short, synthesize ENTRY → FLAGGED → NOW
- * so the three decision prices still plot.
- */
 export function resolveSparkPath({ pinPath, entry, flagged, now, maxNow } = {}) {
   const dense = normalizePath(pinPath);
   const uniqueOdds = new Set(dense.map((p) => p.odds));
-  const hasMotion = uniqueOdds.size >= 2 || dense.some((p, i) => i > 0 && p.max != null && dense[i - 1].max != null && p.max !== dense[i - 1].max);
+  const maxMoved = dense.some((p, i) => (
+    i > 0 && p.max != null && dense[i - 1].max != null && p.max !== dense[i - 1].max
+  ));
+  const hasMotion = uniqueOdds.size >= 2 || maxMoved;
 
-  if (dense.length >= 2 && hasMotion) return { points: dense, synthetic: false };
+  if (dense.length >= 2 && (hasMotion || dense.every((p) => p.t != null))) {
+    return { points: dense, synthetic: !hasMotion && uniqueOdds.size < 2 };
+  }
 
-  const pts = [];
   const m = Number.isFinite(maxNow) ? maxNow : (dense.find((p) => p.max)?.max ?? null);
-  if (Number.isFinite(entry)) pts.push({ odds: entry, max: m, mark: 'entry' });
-  if (Number.isFinite(flagged) && flagged !== entry) pts.push({ odds: flagged, max: m, mark: 'flagged' });
-  if (Number.isFinite(now) && now !== flagged && now !== entry) pts.push({ odds: now, max: m, mark: 'now' });
-  if (pts.length < 2 && dense.length >= 2) return { points: dense, synthetic: false };
-  if (pts.length < 2 && dense.length === 1) {
-    const d = dense[0];
-    pts.length = 0;
-    pts.push({ ...d, mark: 'entry' }, { ...d, mark: 'now' });
+  const pts = [];
+  if (Number.isFinite(entry)) pts.push({ odds: entry, max: m, mark: 'entry', t: null });
+  if (Number.isFinite(flagged) && flagged !== entry) {
+    pts.push({ odds: flagged, max: m, mark: 'flagged', t: null });
   }
-  if (pts.length < 2) {
-    // Last resort: single odds duplicated so chart still mounts with markers
-    const o = flagged ?? now ?? entry;
-    if (!Number.isFinite(o)) return { points: [], synthetic: false };
-    return {
-      points: [
-        { odds: o, max: m, mark: 'flagged' },
-        { odds: o, max: m, mark: 'now' },
-      ],
-      synthetic: true,
-    };
+  const live = Number.isFinite(now) ? now : null;
+  if (live != null && live !== flagged && live !== entry) {
+    pts.push({ odds: live, max: m, mark: 'now', t: null });
   }
-  return { points: pts, synthetic: true };
+  if (pts.length >= 2) return { points: pts, synthetic: true };
+  if (dense.length >= 2) return { points: dense, synthetic: false };
+
+  const o = flagged ?? now ?? entry;
+  if (!Number.isFinite(o)) return { points: [], synthetic: false };
+  return {
+    points: [
+      { odds: o, max: m, mark: 'open', t: null },
+      { odds: o, max: m, mark: 'now', t: null },
+    ],
+    synthetic: true,
+  };
 }
 
 function OddsLimitChart({
@@ -159,94 +178,128 @@ function OddsLimitChart({
 }) {
   if (!points || points.length < 2) return null;
 
-  const w = compact ? 280 : 360;
-  const h = compact ? 44 : 78;
-  const padX = compact ? 6 : 12;
-  const padTop = compact ? 6 : 14;
-  const padBot = compact ? 12 : 18;
-  const plotW = w - padX * 2;
+  const w = compact ? 320 : 400;
+  const h = compact ? 56 : 112;
+  const padL = compact ? 28 : 36;
+  const padR = compact ? 28 : 40;
+  const padTop = compact ? 8 : 16;
+  const padBot = compact ? 16 : 22;
+  const plotW = w - padL - padR;
   const plotH = h - padTop - padBot;
+  const volH = compact ? 10 : 18;
 
-  // Better American price for the bettor = higher on chart (negate)
   const oddsVals = points.map((p) => -p.odds);
-  const markerOdds = [flagged, entry, now, fair].filter((v) => Number.isFinite(v) && v !== 0);
-  const allOdds = [...oddsVals, ...markerOdds.map((o) => -o)];
+  const refs = [flagged, entry, now, fair].filter((v) => Number.isFinite(v) && v !== 0);
+  const allOdds = [...oddsVals, ...refs.map((o) => -o)];
   let oMax = Math.max(...allOdds);
   let oMin = Math.min(...allOdds);
   if (oMax === oMin) {
-    oMax += 8;
-    oMin -= 8;
+    oMax += 10;
+    oMin -= 10;
   } else {
-    const pad = (oMax - oMin) * 0.12 || 4;
+    const pad = Math.max(4, (oMax - oMin) * 0.15);
     oMax += pad;
     oMin -= pad;
   }
   const oSpan = oMax - oMin || 1;
-  const yOdds = (v) => padTop + (1 - (v - oMin) / oSpan) * plotH;
-  const xAt = (i) => padX + (i / (points.length - 1)) * plotW;
 
   const maxes = points.map((p) => p.max).filter((m) => Number.isFinite(m) && m > 0);
   const hasMax = maxes.length > 0;
-  const mMax = hasMax ? Math.max(...maxes) * 1.08 : 1;
-  const yMax = (m) => padTop + (1 - Math.max(0, m) / mMax) * plotH;
+  const mHi = hasMax ? Math.max(...maxes, 1) * 1.05 : 1;
+
+  const yOdds = (negOdds) => padTop + (1 - (negOdds - oMin) / oSpan) * (plotH - volH);
+  const yMaxBar = (m) => {
+    const avail = volH - 1;
+    const hh = (Math.max(0, m) / mHi) * avail;
+    return (h - padBot) - hh;
+  };
+  const xAt = (i) => padL + (i / (points.length - 1)) * plotW;
 
   const oddsCoords = points.map((p, i) => [xAt(i), yOdds(-p.odds)]);
   const oddsLine = oddsCoords.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
-  const oddsArea = `${oddsLine} L${oddsCoords[oddsCoords.length - 1][0]},${h - padBot} L${padX},${h - padBot} Z`;
-
-  // Limit as step-area underlay
-  let limitPath = null;
-  if (hasMax) {
-    const cmds = [];
-    points.forEach((p, i) => {
-      const x = xAt(i);
-      const y = yMax(p.max ?? maxes[0]);
-      const base = h - padBot;
-      if (i === 0) {
-        cmds.push(`M${x.toFixed(1)},${base} L${x.toFixed(1)},${y.toFixed(1)}`);
-      } else {
-        const prevX = xAt(i - 1);
-        cmds.push(`L${prevX.toFixed(1)},${y.toFixed(1)} L${x.toFixed(1)},${y.toFixed(1)}`);
-      }
-      if (i === points.length - 1) cmds.push(`L${x.toFixed(1)},${base} Z`);
-    });
-    limitPath = cmds.join(' ');
-  }
+  const areaBottom = h - padBot - volH;
+  const oddsArea = `${oddsLine} L${oddsCoords[oddsCoords.length - 1][0]},${areaBottom} L${padL},${areaBottom} Z`;
 
   const last = oddsCoords[oddsCoords.length - 1];
   const start = oddsCoords[0];
-  const color = GREEN;
   const fairY = Number.isFinite(fair) ? yOdds(-fair) : null;
   const flaggedY = Number.isFinite(flagged) ? yOdds(-flagged) : null;
-  const entryY = Number.isFinite(entry) ? yOdds(-entry) : null;
+
+  // Y-axis ticks (3)
+  const yTicks = [oMin, (oMin + oMax) / 2, oMax].map((v) => ({
+    y: yOdds(v),
+    label: fmtOdds(-v),
+  }));
+
+  // X-axis time labels
+  const t0 = fmtClock(points[0].t);
+  const tMid = points.length >= 3 ? fmtClock(points[Math.floor(points.length / 2)].t) : null;
+  const t1 = fmtClock(points[points.length - 1].t);
+  const xLabels = [
+    { x: padL, text: t0 || 'Open', anchor: 'start' },
+    ...(tMid ? [{ x: padL + plotW / 2, text: tMid, anchor: 'middle' }] : []),
+    { x: padL + plotW, text: t1 || 'Now', anchor: 'end' },
+  ];
+
+  const maxLabel = hasMax ? fmtMax(maxes[maxes.length - 1]) : null;
 
   return (
     <svg width="100%" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 'auto' }}>
       <defs>
         <linearGradient id={`${gid}-odds`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.22" />
-          <stop offset="100%" stopColor={color} stopOpacity="0" />
-        </linearGradient>
-        <linearGradient id={`${gid}-max`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={LIMIT} stopOpacity="0.28" />
-          <stop offset="100%" stopColor={LIMIT} stopOpacity="0.04" />
+          <stop offset="0%" stopColor={GOLD_HI} stopOpacity="0.18" />
+          <stop offset="100%" stopColor={GOLD_HI} stopOpacity="0" />
         </linearGradient>
       </defs>
 
-      {limitPath && (
-        <path d={limitPath} fill={`url(#${gid}-max)`} stroke={LIMIT} strokeWidth={1} opacity={0.85} />
-      )}
+      {/* Horizontal grid */}
+      {yTicks.map((tk, i) => (
+        <line
+          key={`g-${i}`}
+          x1={padL}
+          y1={tk.y}
+          x2={padL + plotW}
+          y2={tk.y}
+          stroke={C.grid}
+          strokeWidth={1}
+        />
+      ))}
 
+      {/* Limit volume bars (bottom band) */}
+      {hasMax && points.map((p, i) => {
+        const max = p.max ?? maxes[0];
+        if (!Number.isFinite(max)) return null;
+        const x = xAt(i);
+        const gap = plotW / (points.length - 1);
+        const bw = Math.max(2, Math.min(10, gap * 0.55));
+        const y = yMaxBar(max);
+        const bh = (h - padBot) - y;
+        return (
+          <rect
+            key={`v-${i}`}
+            x={x - bw / 2}
+            y={y}
+            width={bw}
+            height={Math.max(1, bh)}
+            fill={LIMIT}
+            opacity={0.45}
+            rx={1}
+          />
+        );
+      })}
+
+      {/* Fair / flagged guides */}
       {Number.isFinite(fairY) && (
         <line
-          x1={padX} y1={fairY} x2={w - padX} y2={fairY}
-          stroke={GOLD} strokeWidth={1} strokeDasharray="4 3" opacity={0.75}
+          x1={padL} y1={fairY} x2={padL + plotW} y2={fairY}
+          stroke={GOLD} strokeWidth={1} strokeDasharray="4 3" opacity={0.85}
         />
       )}
-      {Number.isFinite(flaggedY) && Math.abs((flagged ?? 0) - (fair ?? 9999)) > 0.5 && (
+      {Number.isFinite(flaggedY) && Number.isFinite(flagged)
+        && (!Number.isFinite(fair) || Math.abs(flagged - fair) > 1) && (
         <line
-          x1={padX} y1={flaggedY} x2={w - padX} y2={flaggedY}
-          stroke={C.textSec} strokeWidth={0.9} strokeDasharray="2 3" opacity={0.45}
+          x1={padL} y1={flaggedY} x2={padL + plotW} y2={flaggedY}
+          stroke="rgba(244,247,251,0.35)" strokeWidth={1} strokeDasharray="2 3"
         />
       )}
 
@@ -255,32 +308,68 @@ function OddsLimitChart({
         d={oddsLine}
         fill="none"
         stroke={GOLD_HI}
-        strokeWidth={compact ? 1.6 : 2.2}
+        strokeWidth={compact ? 1.7 : 2.2}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
 
-      <circle cx={start[0]} cy={start[1]} r={compact ? 2.2 : 3} fill={GOLD} />
-      <circle cx={last[0]} cy={last[1]} r={compact ? 2.6 : 3.4} fill={color} stroke="#0B0F18" strokeWidth={1} />
+      <circle cx={start[0]} cy={start[1]} r={compact ? 2.2 : 2.8} fill={GOLD} />
+      <circle cx={last[0]} cy={last[1]} r={compact ? 2.6 : 3.2} fill={GREEN} stroke="#0B0F18" strokeWidth={1.2} />
 
-      {/* Entry marker when distinct */}
-      {Number.isFinite(entryY) && Number.isFinite(entry) && (
-        <circle cx={padX + plotW * 0.08} cy={entryY} r={2} fill={GOLD} opacity={0.9} />
-      )}
-
-      <text x={padX} y={h - 2} textAnchor="start" fill={C.textFaint} fontSize={compact ? 8 : 9} fontFamily={MONO} fontWeight={600}>
-        {fmtOdds(points[0].odds)}
-      </text>
-      <text x={w - padX} y={h - 2} textAnchor="end" fill={GOLD_HI} fontSize={compact ? 8 : 9} fontFamily={MONO} fontWeight={700}>
-        {fmtOdds(points[points.length - 1].odds)}
-      </text>
-      {!compact && hasMax && (
-        <text x={w - padX} y={padTop + 2} textAnchor="end" fill={LIMIT} fontSize={8} fontFamily={MONO} fontWeight={700}>
-          MAX {fmtMax(maxes[maxes.length - 1])}
+      {/* Left odds axis */}
+      {!compact && yTicks.map((tk, i) => (
+        <text
+          key={`yl-${i}`}
+          x={padL - 4}
+          y={tk.y + 3}
+          textAnchor="end"
+          fill={C.textFaint}
+          fontSize={8}
+          fontFamily={MONO}
+          fontWeight={600}
+        >
+          {tk.label}
         </text>
+      ))}
+
+      {/* Right max axis */}
+      {!compact && hasMax && (
+        <>
+          <text x={padL + plotW + 4} y={padTop + 8} textAnchor="start" fill={LIMIT} fontSize={8} fontFamily={MONO} fontWeight={700}>
+            MAX
+          </text>
+          <text x={padL + plotW + 4} y={h - padBot - 2} textAnchor="start" fill={LIMIT} fontSize={8} fontFamily={MONO} fontWeight={700}>
+            {maxLabel}
+          </text>
+        </>
       )}
+
+      {/* Bottom time axis */}
+      {xLabels.map((lb, i) => (
+        <text
+          key={`x-${i}`}
+          x={lb.x}
+          y={h - 3}
+          textAnchor={lb.anchor}
+          fill={C.textFaint}
+          fontSize={compact ? 7.5 : 8}
+          fontFamily={MONO}
+          fontWeight={600}
+        >
+          {lb.text}
+        </text>
+      ))}
+
       {!compact && Number.isFinite(fair) && (
-        <text x={padX} y={Math.max(10, fairY - 4)} textAnchor="start" fill={GOLD} fontSize={8} fontFamily={MONO} fontWeight={700}>
+        <text
+          x={padL + 2}
+          y={Math.max(padTop + 9, fairY - 4)}
+          textAnchor="start"
+          fill={GOLD}
+          fontSize={8}
+          fontFamily={MONO}
+          fontWeight={700}
+        >
           FAIR {fmtOdds(fair)}
         </text>
       )}
@@ -289,7 +378,7 @@ function OddsLimitChart({
 }
 
 /**
- * Full PRICE PATH block: chart + legend + story.
+ * Full market tape block for locked / tracked cards.
  */
 export default function OddsLimitSpark({
   pinPath = null,
@@ -303,6 +392,7 @@ export default function OddsLimitSpark({
   movePp = null,
   compact = false,
   gid = 'ols',
+  showStory = true,
 }) {
   const { points, synthetic } = resolveSparkPath({
     pinPath,
@@ -331,75 +421,88 @@ export default function OddsLimitSpark({
   const hasMax = points.some((p) => Number.isFinite(p.max));
 
   return (
-    <div
-      style={{ fontFeatureSettings: "'tnum'" }}
-      onClick={(e) => e.stopPropagation()}
-    >
+    <div style={{ fontFeatureSettings: "'tnum'" }} onClick={(e) => e.stopPropagation()}>
       {!compact && (
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
-          marginBottom: 6, gap: 8,
+          marginBottom: 8, gap: 8,
         }}>
-          <span style={{
-            fontFamily: MONO, fontSize: 8, fontWeight: 700, letterSpacing: '0.12em', color: C.textMuted,
-          }}>
-            ODDS × LIMIT{synthetic ? ' · KEY PRICES' : ''}
-          </span>
-          <span style={{ display: 'inline-flex', gap: 10, fontSize: 9, fontWeight: 600, color: C.textFaint }}>
-            <span><span style={{ color: GOLD_HI }}>━</span> fair odds</span>
-            {hasMax && <span><span style={{ color: LIMIT }}>▮</span> pinn max</span>}
-          </span>
+          <div>
+            <div style={{
+              fontFamily: MONO, fontSize: 8, fontWeight: 700, letterSpacing: '0.12em', color: C.textMuted,
+            }}>
+              PINNACLE TAPE
+            </div>
+            <div style={{ fontSize: 11, fontWeight: 500, color: C.textSec, marginTop: 3 }}>
+              Gold = fair odds · bars = max bet{synthetic ? ' · flat until steam' : ''}
+            </div>
+          </div>
+          <div style={{ display: 'inline-flex', gap: 10, fontSize: 9, fontWeight: 650, color: C.textFaint, flexShrink: 0 }}>
+            <span><span style={{ color: GOLD_HI }}>━</span> odds</span>
+            {hasMax && <span><span style={{ color: LIMIT }}>▮</span> max</span>}
+          </div>
         </div>
       )}
 
-      <OddsLimitChart
-        points={points}
-        flagged={flagged}
-        entry={entry}
-        now={Number.isFinite(now) ? now : fair}
-        fair={fair}
-        compact={compact}
-        gid={gid}
-      />
+      <div style={{
+        borderRadius: compact ? 8 : 10,
+        border: '1px solid rgba(148,163,184,0.12)',
+        background: 'rgba(0,0,0,0.28)',
+        padding: compact ? '6px 6px 2px' : '10px 8px 4px',
+      }}>
+        <OddsLimitChart
+          points={points}
+          flagged={flagged}
+          entry={entry}
+          now={Number.isFinite(now) ? now : fair}
+          fair={fair}
+          compact={compact}
+          gid={gid}
+        />
+      </div>
 
       {!compact && (
         <div style={{
-          display: 'flex', flexWrap: 'wrap', gap: '4px 12px',
-          marginTop: 8, fontSize: 10, fontWeight: 650, color: C.textSec,
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: 8,
+          marginTop: 10,
+          padding: '0 2px',
         }}>
-          {Number.isFinite(flagged) && (
-            <span>Flagged <span style={{ color: C.text }}>{fmtOdds(flagged)}</span></span>
-          )}
-          {Number.isFinite(entry) && (
-            <span>Entry <span style={{ color: GOLD }}>{fmtOdds(entry)}</span></span>
-          )}
-          {Number.isFinite(now || fair) && (
-            <span>Now <span style={{ color: GREEN }}>{fmtOdds(now ?? fair)}</span></span>
-          )}
-          {Number.isFinite(evPct) && Math.abs(evPct) >= 0.1 && (
-            <span style={{ marginLeft: 'auto', color: evPct >= 0 ? GREEN : VS }}>
-              EV {evPct >= 0 ? '+' : ''}{evPct.toFixed(1)}%
-            </span>
-          )}
+          <div>
+            <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.1em', color: C.textFaint }}>FLAGGED</div>
+            <div style={{ fontSize: 15, fontWeight: 750, color: C.text, marginTop: 2 }}>{fmtOdds(flagged)}</div>
+            <div style={{ fontSize: 10, color: C.textMuted, marginTop: 1 }}>your ticket</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.1em', color: C.textFaint }}>ENTRY</div>
+            <div style={{ fontSize: 15, fontWeight: 750, color: GOLD, marginTop: 2 }}>{fmtOdds(entry)}</div>
+            <div style={{ fontSize: 10, color: C.textMuted, marginTop: 1 }}>pinn open</div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.1em', color: C.textFaint }}>NOW</div>
+            <div style={{ fontSize: 15, fontWeight: 750, color: GREEN, marginTop: 2 }}>{fmtOdds(now ?? fair)}</div>
+            <div style={{ fontSize: 10, color: C.textMuted, marginTop: 1 }}>
+              {Number.isFinite(evPct) ? (
+                <span style={{ color: evPct >= 0 ? GREEN : VS, fontWeight: 700 }}>
+                  EV {evPct >= 0 ? '+' : ''}{evPct.toFixed(1)}%
+                </span>
+              ) : 'live pinn'}
+            </div>
+          </div>
         </div>
       )}
 
-      {!compact && story.body && (
-        <div style={{
-          marginTop: 10,
-          padding: '10px 11px',
-          borderRadius: 9,
-          background: 'rgba(255,255,255,0.025)',
-          border: '1px solid rgba(148,163,184,0.12)',
-        }}>
+      {!compact && showStory && story.body && (
+        <div style={{ marginTop: 12 }}>
           <div style={{
-            fontFamily: MONO, fontSize: 9, fontWeight: 800, letterSpacing: '0.08em',
+            fontFamily: MONO, fontSize: 9, fontWeight: 800, letterSpacing: '0.1em',
             color: toneColor, marginBottom: 4,
           }}>
             {story.headline}
           </div>
           <div style={{
-            fontSize: 11, fontWeight: 500, color: C.textSec, lineHeight: 1.45,
+            fontSize: 12, fontWeight: 500, color: C.textSec, lineHeight: 1.45,
           }}>
             {story.body}
           </div>

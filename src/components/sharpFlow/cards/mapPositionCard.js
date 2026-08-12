@@ -569,10 +569,39 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
       : `Under ${oppLn ?? ''}`.trim();
 
     if (Number.isFinite(fairNow)) {
-      books.push({ name: pinnGame.fairTotalBook || 'Pinnacle', odds: fairNow, sharp: true });
+      books.push({
+        name: (pinnGame.fairTotalBook || 'pinnacle').replace(/^\w/, (c) => c.toUpperCase()),
+        odds: fairNow,
+        sharp: true,
+      });
     }
-    if (bestBook && Number.isFinite(bestOdds) && bestBook.toLowerCase() !== 'pinnacle') {
-      books.push({ name: bestBook, odds: bestOdds, best: true });
+    // Retail strip on the ticket line (allTotalBooks from snapshot; fallback best*).
+    {
+      const allT = pinnGame.allTotalBooks || {};
+      const prefer = ['draftkings', 'fanduel', 'betmgm', 'caesars', 'fanatics', 'betonlineag', 'lowvig', 'bookmaker', 'circa'];
+      const keys = [
+        ...prefer.filter((k) => allT[k]),
+        ...Object.keys(allT).filter((k) => !prefer.includes(k) && k !== 'pinnacle'),
+      ];
+      const seen = new Set(books.map((b) => String(b.name).toLowerCase()));
+      for (const k of keys) {
+        const b = allT[k];
+        if (!b) continue;
+        if (stakedLine != null && Number.isFinite(b.line) && !linesClose(b.line, stakedLine)) continue;
+        const o = sideKey === 'under' ? b.under : b.over;
+        if (!Number.isFinite(o)) continue;
+        const name = b.name || k;
+        if (seen.has(String(name).toLowerCase())) continue;
+        seen.add(String(name).toLowerCase());
+        const isBest = bestBook && String(name).toLowerCase() === String(bestBook).toLowerCase();
+        books.push({ name, odds: o, best: !!isBest });
+        if (books.length >= 8) break;
+      }
+      if (books.length < 2 && bestBook && Number.isFinite(bestOdds)
+          && bestBook.toLowerCase() !== 'pinnacle'
+          && !seen.has(bestBook.toLowerCase())) {
+        books.push({ name: bestBook, odds: bestOdds, best: true });
+      }
     }
   } else if (isSpread) {
     const hist = histUpTo(

@@ -2491,7 +2491,6 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
           limitTested={!!f.marketAgreement?.limitTested}
           evPct={f.evFlagged}
           movePp={f.pinnMovePp}
-          density="compact"
         />
         <div style={{ marginTop: 6 }}>
           <OddsLimitSpark
@@ -2505,6 +2504,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
             maxNow={f.pinnMax ?? f.marketAgreement?.maxNow}
             movePp={f.pinnMovePp}
             compact
+            showStory={false}
             gid={`ols-c-${f.id || 'x'}`}
           />
         </div>
