@@ -7,7 +7,6 @@ import { useState, useEffect } from 'react';
 import { Check, Lock, ChevronDown, Clock, X } from 'lucide-react';
 import { AGS_V12_DISPLAY_TIERS, AGS_V12_PATH_TO_DISPLAY } from '../../../lib/ags.js';
 import LockedClarityExpanded from './LockedClarityExpanded';
-import LockedLineRails from './LockedLineRails';
 import OddsLimitSpark from './OddsLimitSpark';
 
 /** Ticket freezes 15 min before first pitch/kick — same gate as the cron. */
@@ -2480,19 +2479,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
           )}
           <ChevronDown size={15} style={{ color: C.textMuted, flexShrink: 0 }} />
         </div>
-        <LockedLineRails
-          flagged={f.gotOdds ?? f.lockOdds}
-          entry={f.sharpEntryOdds}
-          now={f.currentFairOdds ?? f.fairLine}
-          smaLabel={f.marketAgreement?.label}
-          smaTone={f.marketAgreement?.tone}
-          smaTitle={f.marketAgreement?.title}
-          maxNow={f.pinnMax ?? f.marketAgreement?.maxNow}
-          limitTested={!!f.marketAgreement?.limitTested}
-          evPct={f.evFlagged}
-          movePp={f.pinnMovePp}
-        />
-        <div style={{ marginTop: 6 }}>
+        <div style={{ marginTop: 4 }}>
           <OddsLimitSpark
             pinPath={f.pinPath}
             flagged={f.gotOdds ?? f.lockOdds}
@@ -2505,6 +2492,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
             movePp={f.pinnMovePp}
             compact
             showStory={false}
+            showMetrics
             gid={`ols-c-${f.id || 'x'}`}
           />
         </div>
