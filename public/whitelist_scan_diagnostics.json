@@ -1,19 +1,19 @@
 {
-  "scannedAt": "2026-08-12T00:12:38.596Z",
-  "elapsedSec": 19.1,
+  "scannedAt": "2026-08-12T00:16:43.602Z",
+  "elapsedSec": 18.1,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 47,
   "summary": {
     "total": 220,
     "coveredByMain": 9,
     "recovered": 18,
-    "recoveredPositions": 76,
+    "recoveredPositions": 77,
     "noPositions": 193,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 3,
+      "ml": 4,
       "spread": 0,
       "total": 0,
       "dropped_shadow_gate": 11,
@@ -1067,6 +1067,15 @@
           "passesShadow": true
         },
         {
+          "sport": "WNBA",
+          "gameKey": "was_lva",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 6793,
+          "entryLine": 7.5,
+          "passesShadow": true
+        },
+        {
           "sport": "MLB",
           "gameKey": "kcr_lad",
           "marketType": "total",
@@ -1082,15 +1091,6 @@
           "side": "over",
           "invested": 5789,
           "entryLine": 178.5,
-          "passesShadow": true
-        },
-        {
-          "sport": "WNBA",
-          "gameKey": "was_lva",
-          "marketType": "spread",
-          "side": "away",
-          "invested": 5331,
-          "entryLine": 7.5,
           "passesShadow": true
         },
         {
@@ -1284,7 +1284,7 @@
           "gameKey": "tbr_oak",
           "marketType": "ml",
           "side": "home",
-          "invested": 27842,
+          "invested": 27845,
           "entryLine": null,
           "passesShadow": true
         }
@@ -1392,12 +1392,21 @@
       "sports": "MLB",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xe8c4d68aff65b38cac46987b9b65e01eb47d395d",
-      "positionsCount": 1,
+      "positionsCount": 2,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 1259,
-      "willPassShadowGate": 1,
+      "willPassShadowGate": 2,
       "willDropAtShadowGate": 0,
       "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "hou_sfg",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 970,
+          "entryLine": null,
+          "passesShadow": true
+        },
         {
           "sport": "MLB",
           "gameKey": "kcr_lad",
