@@ -2,8 +2,8 @@
  * writeSharpActions.js — Persist Today's Action positions to Firebase
  *
  * Reads sharp_positions / spread / total JSONs + sports_sharps + pinnacle_history,
- * applies the same 0.75x avg-bet filter as the UI, and writes each qualifying
- * position to Firestore collection `sharp_action_positions`.
+ * applies the same 0.75× / 0.10× size filters as the UI (sport-local usual),
+ * and writes each qualifying position to Firestore `sharp_action_positions`.
  *
  * Idempotent upserts for open positions. After the write pass, stamps EXITED
  * on PENDING docs whose wallet was successfully scanned this cycle and whose
@@ -33,6 +33,7 @@ import { buildFlatDollarQBySport, shortWalletId } from '../src/lib/walletClvSkil
 import { tierLetterFromQ } from '../src/lib/sharpTierCellStats.js';
 import { sizeBandFromRatio, isCountedProvenSize } from '../src/lib/confirmedActionDesk.js';
 import { passesSizeSkillLiveGate } from '../src/lib/sizeSkillRescue.js';
+import { resolveSportUsualBet } from './lib/sportUsualBet.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '../public');
@@ -577,12 +578,29 @@ async function main() {
   const spreadPositions = loadJSON('sharp_spread_positions.json');
   const totalPositions = loadJSON('sharp_total_positions.json');
   const sportsSharps = loadJSON('sports_sharps.json') || {};
+  const sportsSharpsByLower = new Map();
+  for (const [addr, row] of Object.entries(sportsSharps)) {
+    if (addr === '_meta' || typeof addr !== 'string') continue;
+    sportsSharpsByLower.set(addr.toLowerCase(), row);
+  }
   const pinnacleHistory = loadJSON('pinnacle_history.json') || {};
   const commenceByGame = loadCommenceByGame();
   console.log(`Loaded commenceTime for ${commenceByGame.size} games (poly/pinn)`);
   const excludedRaw = loadJSON('sharp_intel_excluded_wallets.json') || {};
   const excludedArr = Array.isArray(excludedRaw.excluded) ? excludedRaw.excluded : [];
-  const excludedSet = new Set(excludedArr.map(w => (w || '').toLowerCase()));
+  const forceRaw = loadJSON('sharp_intel_force_include.json') || {};
+  const forceSet = new Set(
+    (Array.isArray(forceRaw.wallets) ? forceRaw.wallets : [])
+      .map((w) => String(w?.addr || w || '').toLowerCase())
+      .filter(Boolean),
+  );
+  // Force-include wins — directional wallets falsely tagged MM/trader.
+  const excludedSet = new Set(
+    excludedArr.map((w) => (w || '').toLowerCase()).filter((a) => a && !forceSet.has(a)),
+  );
+  if (forceSet.size) {
+    console.log(`Force-include: ${forceSet.size} wallet(s) exempt from exclusion filter`);
+  }
 
   // Phase 2 wallet whitelist — needed for Vault Quant Score winners margin
   // + Action sharp-tier / opposed stamps. Keyed by walletShort (last 6 chars).
@@ -652,7 +670,15 @@ async function main() {
           if (!wLower) continue;
           if (excludedSet.has(wLower)) continue;
 
-          const avgBet = pos.avgSportBet || 0;
+          // Sport-local usual (profile bySport → perSport → stamped cross-sport).
+          // Same denominator as locked-card Size vs usual / whitelist merge.
+          const short = shortWalletId(pos.wallet);
+          const { usual: avgBet } = resolveSportUsualBet({
+            sport,
+            sportsSharp: sportsSharpsByLower.get(wLower) || null,
+            profile: walletProfiles.get(short) || null,
+            fallback: pos.avgSportBet || 0,
+          });
           if (avgBet <= 0) continue;
           const rawMult = pos.invested / avgBet;
           if (rawMult < SHADOW_MIN_MULTIPLIER) continue;

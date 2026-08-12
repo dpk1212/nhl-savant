@@ -1,7 +1,33 @@
 /**
  * Win rate by size-vs-usual (invested / avgSportBet).
  * Shared by exportWalletProfiles (persist) and locked-card UI (match).
+ *
+ * Locked-card "Size vs usual" uses sport-local usual (bySport.positions).
+ * Model / HC / SHADOW floors still use cross-sport sports_sharps.avgSportBet.
  */
+
+/** Mean stake for this wallet in `sport` from graded positions. */
+export function sportUsualBetFromProfile(profile, sport) {
+  const rec = profile?.bySport?.[sport]?.positions;
+  const n = Number(rec?.n) || 0;
+  const sportInvested = Number(rec?.invested);
+  if (n > 0 && Number.isFinite(sportInvested) && sportInvested > 0) {
+    return sportInvested / n;
+  }
+  return null;
+}
+
+/**
+ * Display-only size ratio: invested / sport-local usual.
+ * Falls back to modelRatio when sport usual unknown.
+ */
+export function sportDisplaySizeRatio(invested, profile, sport, modelRatio = null) {
+  const inv = Number(invested || 0);
+  const usual = sportUsualBetFromProfile(profile, sport);
+  if (inv > 0 && Number.isFinite(usual) && usual > 0) return inv / usual;
+  return Number.isFinite(modelRatio) && modelRatio > 0 ? modelRatio : null;
+}
+
 
 export const SIZE_RATIO_BAND_DEFS = [
   { id: 'light', label: 'this size', min: 0, max: 0.5 },

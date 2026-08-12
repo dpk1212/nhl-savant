@@ -10,6 +10,7 @@ import {
 } from './sharpTierCellStats.js';
 import { sportBookForDisplay } from './walletSportBook.js';
 import { passesSizeSkillLiveGate } from './sizeSkillRescue.js';
+import { sportDisplaySizeRatio as sportDisplaySizeRatioFromProfile } from './sizeRatioBands.js';
 
 const SPORTS = ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL'];
 
@@ -71,20 +72,14 @@ function sizeRatioOf(pos) {
   return null;
 }
 
-/**
- * Display-only: invested / this wallet's average stake *in this sport*
- * (bySport.positions). Falls back to model sizeRatio when sport usual unknown.
- */
+/** Display-only: invested / sport-local usual (bySport.positions). */
 function sportDisplaySizeRatio(pos, prof, sport) {
-  const invested = Number(pos.invested || pos.size || 0);
-  const rec = prof?.bySport?.[sport]?.positions;
-  const n = Number(rec?.n) || 0;
-  const sportInvested = Number(rec?.invested);
-  if (invested > 0 && n > 0 && Number.isFinite(sportInvested) && sportInvested > 0) {
-    const usual = sportInvested / n;
-    if (usual > 0) return invested / usual;
-  }
-  return sizeRatioOf(pos);
+  return sportDisplaySizeRatioFromProfile(
+    pos.invested || pos.size || 0,
+    prof,
+    sport,
+    sizeRatioOf(pos),
+  );
 }
 
 function teamLabel(gd, side) {

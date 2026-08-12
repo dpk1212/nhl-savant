@@ -4,7 +4,10 @@
  */
 import { AGS_V12_STAKE_TIER_META } from '../../../lib/ags.js';
 import { CLV_SKILL_MIN_N, EDGE_PRIOR_AG_WR, NET_CLV_PRIOR_AG } from '../../../lib/walletClvSkill.js';
-import { matchSizeRatioBand } from '../../../lib/sizeRatioBands.js';
+import {
+  matchSizeRatioBand,
+  sportUsualBetFromProfile,
+} from '../../../lib/sizeRatioBands.js';
 import { passesSizeSkillLiveGate } from '../../../lib/sizeSkillRescue.js';
 import { sharpMarketAgreementFromPinnGame, buildLockedMarketSignals } from '../../../lib/marketAgreement.js';
 
@@ -257,23 +260,20 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
       const decided = (Number.isFinite(wins) && Number.isFinite(losses)) ? wins + losses : 0;
       const record = decided > 0 ? `${wins}-${losses}` : (w.record && w.record !== '—' ? w.record : null);
 
-      // "vs usual" MUST match cron / HC: invested / cross-sport avgSportBet
-      // (sports_sharps.avgSportBet stamped on the position). Do not use
-      // perSport[sport] here — Path A HC and v8_sizeRatio use the same
-      // cross-sport denominator.
-      const feedCrossAvg = Number.isFinite(w.avgSportBet) && w.avgSportBet > 0 ? w.avgSportBet : null;
+      // Sport-local usual for SHADOW floor + Size vs usual (matches cron gate).
+      // Fallback: stamped avgSportBet / sizeSignal median when sport history thin.
+      const feedAvg = Number.isFinite(w.avgSportBet) && w.avgSportBet > 0 ? w.avgSportBet : null;
       const medianBet = profile?.sizeSignal?.medianInvested;
-      const usualBet = feedCrossAvg
-        || (Number.isFinite(medianBet) && medianBet > 0 ? medianBet : null);
-      // Prefer stamped sizeRatio (cron / HC). Usual $ for display MUST agree
-      // with that ratio — never show profile median next to a mismatched ×.
-      const sizeRatio = Number.isFinite(w.sizeRatio) ? w.sizeRatio
-        : (usualBet != null && (w.invested || 0) > 0) ? +(w.invested / usualBet).toFixed(2) : null;
-      const avgSportBet = (Number.isFinite(sizeRatio) && sizeRatio > 0 && (w.invested || 0) > 0)
-        ? Math.round((w.invested || 0) / sizeRatio)
-        : (usualBet != null ? Math.round(usualBet) : null);
-      // WR at this size-vs-usual band (from profile.sizeRatioBands). Null when n thin.
-      // Keep raw bands on the wallet so the card can re-match if sizeRatio updates.
+      const sportUsualRaw = sportUsualBetFromProfile(profile, sport);
+      const usualBet = (Number.isFinite(sportUsualRaw) && sportUsualRaw > 0)
+        ? sportUsualRaw
+        : (feedAvg || (Number.isFinite(medianBet) && medianBet > 0 ? medianBet : null));
+      const sizeRatio = (usualBet != null && (w.invested || 0) > 0)
+        ? +(w.invested / usualBet).toFixed(2)
+        : (Number.isFinite(w.sizeRatio) ? w.sizeRatio : null);
+      const displaySizeRatio = sizeRatio;
+      const avgSportBet = usualBet != null ? Math.round(usualBet) : null;
+      // WR at this size-vs-usual band — same ratio as the meter / SHADOW floor.
       const sizeBand = matchSizeRatioBand(sizeRatio, profile?.sizeRatioBands);
       // Causal %+CLV ("beats the close"): profile.clvSkill from exportWalletProfiles
       // (same definition as the tape/netCLV cron). Never invent a default %.
@@ -323,6 +323,7 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
         whitelist,
         qualify: sizeRatio >= 0.75 ? 'VAULT' : 'SHADOW',
         sizeRatio,
+        displaySizeRatio: Number.isFinite(displaySizeRatio) ? displaySizeRatio : null,
         record,
         wins: Number.isFinite(wins) ? wins : null,
         losses: Number.isFinite(losses) ? losses : null,

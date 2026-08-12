@@ -1089,15 +1089,20 @@ export default function LockedClarityExpanded({
   const selectedTopQ = !!(selected && !againstSel && (
     selected.topQ === true || isTopQWallet(selected, q1Thr)
   ));
-  // Size vs usual: ratio and usual $ from the same identity (invested / ratio).
-  const sizeRatio = Number.isFinite(selected?.sizeRatio) && selected.sizeRatio > 0
-    ? selected.sizeRatio
-    : (Number.isFinite(selected?.avgSportBet) && selected.avgSportBet > 0 && selected.invested > 0
-      ? selected.invested / selected.avgSportBet
+  // Size vs usual: sport-local usual (displaySizeRatio / avgSportBet from enrich).
+  // Model sizeRatio (cross-sport) is for Proven/VAULT only — not this meter.
+  const sizeRatio = Number.isFinite(selected?.displaySizeRatio) && selected.displaySizeRatio > 0
+    ? selected.displaySizeRatio
+    : (Number.isFinite(selected?.sizeRatio) && selected.sizeRatio > 0
+      ? selected.sizeRatio
+      : (Number.isFinite(selected?.avgSportBet) && selected.avgSportBet > 0 && selected.invested > 0
+        ? selected.invested / selected.avgSportBet
+        : null));
+  const sizeUsual = Number.isFinite(selected?.avgSportBet) && selected.avgSportBet > 0
+    ? selected.avgSportBet
+    : (Number.isFinite(sizeRatio) && sizeRatio > 0 && selected?.invested > 0
+      ? selected.invested / sizeRatio
       : null);
-  const sizeUsual = Number.isFinite(sizeRatio) && sizeRatio > 0 && selected?.invested > 0
-    ? selected.invested / sizeRatio
-    : (Number.isFinite(selected?.avgSportBet) ? selected.avgSportBet : null);
   const sizeHot = Number.isFinite(sizeRatio) && sizeRatio >= 1.5;
   // Prefer enriched sizeBand; re-match from bands on the wallet if first paint raced profiles.
   const sizeBand = (selected?.sizeBand && Number.isFinite(selected.sizeBand.wr))

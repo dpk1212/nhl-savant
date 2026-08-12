@@ -219,7 +219,8 @@ function DetailRow({ label, value, color = C.text, last }) {
 
 function WalletListRow({ w, side, sport, accent, defaultOpen = false }) {
   const [open, setOpen] = useState(defaultOpen);
-  const sizedUp = w.sizeRatio >= 1.5;
+  const vsUsual = uiSizeRatio(w);
+  const sizedUp = Number.isFinite(vsUsual) && vsUsual >= 1.5;
   const sizeLabel = w.qualify === 'VAULT' ? 'Above their avg' : 'Light size';
 
   return (
@@ -251,13 +252,13 @@ function WalletListRow({ w, side, sport, accent, defaultOpen = false }) {
             )}
           </div>
         </div>
-        {Number.isFinite(w.sizeRatio) && (
+        {Number.isFinite(vsUsual) && (
           <div style={{ textAlign: 'right', flexShrink: 0, minWidth: 56 }}>
             <div style={{
               fontSize: '0.62rem', fontWeight: 800, color: sizedUp ? accent : C.textSec,
               fontFeatureSettings: "'tnum'",
             }}>
-              {fmtRatio(w.sizeRatio)}×
+              {fmtRatio(vsUsual)}×
             </div>
             <div style={{ fontSize: '0.48rem', color: C.textFaint, marginTop: 1 }}>vs usual</div>
           </div>
@@ -281,8 +282,8 @@ function WalletListRow({ w, side, sport, accent, defaultOpen = false }) {
       </button>
       {open && (
         <div style={{ padding: '0 0 12px' }}>
-          {Number.isFinite(w.sizeRatio) && (
-            <DetailRow label="Size vs usual" value={`${fmtRatio(w.sizeRatio)}× · ${sizeLabel}`} color={sizedUp ? accent : C.text} />
+          {Number.isFinite(vsUsual) && (
+            <DetailRow label="Size vs usual" value={`${fmtRatio(vsUsual)}× · ${sizeLabel}`} color={sizedUp ? accent : C.text} />
           )}
           {w.avgSportBet != null && <DetailRow label={`Usual ${sport} bet`} value={fmtMoney(w.avgSportBet)} />}
           {w.cents != null && <DetailRow label="This ticket" value={`${side} @ ${w.cents}¢`} />}
@@ -793,6 +794,12 @@ function TapeMeter({ tapeScore, action }) {
 }
 
 const fmtRatio = (r) => (r < 0.1 ? '<0.1' : r.toFixed(1));
+/** Locked UI: sport-local × when enrich stamped it; else model sizeRatio. */
+const uiSizeRatio = (w) => (
+  Number.isFinite(w?.displaySizeRatio) && w.displaySizeRatio > 0
+    ? w.displaySizeRatio
+    : (Number.isFinite(w?.sizeRatio) ? w.sizeRatio : null)
+);
 
 /** Display tier for badges — never changes stake / proven census. */
 function walletTier(w) {
@@ -857,11 +864,12 @@ function sortWalletsForDisplay(list) {
 }
 
 function ConvictionRow({ w, accent, maxRatio, last, sport }) {
-  const hasRatio = Number.isFinite(w.sizeRatio);
+  const vsUsual = uiSizeRatio(w);
+  const hasRatio = Number.isFinite(vsUsual);
   const hasClv = Number.isFinite(w.priorClvPct);
   const roiDisp = Number.isFinite(w.roi) ? w.roi : w.dollarRoi;
-  const ratioColor = w.sizeRatio >= 1.5 ? B.profit : w.sizeRatio >= 1 ? accent : C.textMuted;
-  const barPct = hasRatio ? Math.min(100, Math.max(3, (w.sizeRatio / Math.max(maxRatio, 1.01)) * 100)) : 0;
+  const ratioColor = vsUsual >= 1.5 ? B.profit : vsUsual >= 1 ? accent : C.textMuted;
+  const barPct = hasRatio ? Math.min(100, Math.max(3, (vsUsual / Math.max(maxRatio, 1.01)) * 100)) : 0;
   const hasRecord = !!w.record && w.record !== '—' && (w.decided == null || w.decided > 0);
   const tier = walletTier(w);
   return (
@@ -939,7 +947,7 @@ function ConvictionRow({ w, accent, maxRatio, last, sport }) {
                 fontSize: '0.7rem', fontWeight: 800, color: ratioColor,
                 fontFeatureSettings: "'tnum'", minWidth: 64, textAlign: 'right',
               }} title={Number.isFinite(w.avgSportBet) ? `usual ${fmtMoney(w.avgSportBet)}` : undefined}>
-                {fmtRatio(w.sizeRatio)}× usual
+                {fmtRatio(vsUsual)}× usual
               </span>
             </>
           )}
@@ -1212,11 +1220,11 @@ function WalletMapPanel({ f, accent, pts }) {
             {[
               { label: 'BEATS CLOSE', val: `${selected.priorClvPct}%`, hot: selected.priorClvPct >= X_BREAK },
               { label: 'ROI', val: `${roiOf(selected) >= 0 ? '+' : ''}${roiOf(selected)}%`, hot: roiOf(selected) >= 0 },
-              ...(Number.isFinite(selected.sizeRatio)
+              ...(Number.isFinite(uiSizeRatio(selected))
                 ? [{
                   label: '× USUAL',
-                  val: `${fmtRatio(selected.sizeRatio)}×`,
-                  hot: selected.sizeRatio >= 1.5,
+                  val: `${fmtRatio(uiSizeRatio(selected))}×`,
+                  hot: uiSizeRatio(selected) >= 1.5,
                   sub: Number.isFinite(selected.avgSportBet) ? `of ${fmtMoney(selected.avgSportBet)}` : null,
                 }]
                 : []),
@@ -1333,7 +1341,7 @@ export function LivePositionCardView({ f, markets, onMarket }) {
   const pinSeries = Array.isArray(f.pinSeries) && f.pinSeries.length >= 2 ? f.pinSeries : null;
   const moveColor = f.pinnacleOpposes ? B.loss : B.profit;
   const sortedWallets = sortWalletsForDisplay(f.wallets);
-  const maxRatio = Math.max(...sortedWallets.map((w) => w.sizeRatio || 0), 1);
+  const maxRatio = Math.max(...sortedWallets.map((w) => uiSizeRatio(w) || 0), 1);
   const sizeColor = f.tapeAction === 'boost' ? B.profit : f.tapeAction === 'mute' ? B.loss : C.textSec;
   const sizeWord = f.tapeAction === 'boost' ? 'sized up' : f.tapeAction === 'mute' ? 'passed' : 'standard size';
   const isLive = f.isLive || f.gameTime === 'LIVE';

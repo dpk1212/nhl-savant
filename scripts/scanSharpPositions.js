@@ -22,6 +22,7 @@ import {
   acceptFullGameTotalPosition,
   parseTotalEntryLine,
 } from './lib/totalMarketFilter.js';
+import { resolveSportUsualBet } from './lib/sportUsualBet.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -953,6 +954,13 @@ async function run() {
       if (game.commence && posFirstSeen >= new Date(game.commence).getTime()) continue;
 
       const eff = effectiveTier(wallet.tier, wallet.addr, sport);
+      // Sport-local usual for SHADOW gate (invested / avgSportBet ≥ 0.10).
+      const ssRow = sportsSharpsLower[String(wallet.addr || '').toLowerCase()] || null;
+      const { usual: sportUsual } = resolveSportUsualBet({
+        sport,
+        sportsSharp: ssRow,
+        fallback: eff.avgSportBet,
+      });
       targetResult[sport][match.key].positions.push({
         wallet: wallet.addr,
         name: wallet.name,
@@ -982,7 +990,7 @@ async function run() {
         sportPnl: eff.sportPnl,
         sportVerified: eff.sportVerified,
         sportROI: eff.sportROI,
-        avgSportBet: eff.avgSportBet,
+        avgSportBet: sportUsual || eff.avgSportBet,
         leaderboardRank: eff.leaderboardRank ?? null,
         sportsLbPercentileTop: eff.sportsLbPercentileTop ?? null,
         sportVol: eff.sportVol || 0,

@@ -1,7 +1,61 @@
 {
-  "updatedAt": "2026-07-17T19:50:00Z",
-  "note": "Directional wallets falsely tagged MM/trader. Primary gate: closed-positions both-sides rate on sports markets (conditionId with ≥2 outcomes). Hold-to-resolve is secondary — nearly all closed sports legs eventually settle. Never write these into sharp_intel_excluded_wallets. Batch3/4 reinstates hardened with fuller history (maxClosed 1500–2000) and broad sport filter after classifier gaps undercounted both-sides on some names.",
+  "updatedAt": "2026-08-12T20:36:44.118Z",
+  "note": "Directional wallets falsely tagged MM/trader. Primary gate: closed-positions both-sides rate on sports markets (conditionId with ≥2 outcomes). Hold-to-resolve is secondary — nearly all closed sports legs eventually settle. Never write these into sharp_intel_excluded_wallets. Batch3/4 reinstates hardened with fuller history (maxClosed 1500–2000) and broad sport filter after classifier gaps undercounted both-sides on some names. 2026-08-12: MLB CONFIRMED coverage audit reinstated dv-pm / ndb1 / AV23IUa / 33aa70 / wapol. + fcc12b/dfa240/aa9fb4/10c684 (suspicion dig); 95618e intentionally NOT included (tiny-bet spray).",
   "wallets": [
+    {
+      "addr": "0xbddf61af533ff524d27154e589d2d7a81510c684",
+      "name": "10c684",
+      "reason": "2026-08-12 suspicion dig: MLB med $19k, both 2.4%, game-both 1%, ROI +95% — fat one-way tickets",
+      "auditedAt": "2026-08-12"
+    },
+    {
+      "addr": "0x6157d529ae129fe08f22a27ed42e741d2eaa9fb4",
+      "name": "aa9fb4",
+      "reason": "2026-08-12 suspicion dig: 0% both across sports, med $2.5k MLB, ROI +78% — directional",
+      "auditedAt": "2026-08-12"
+    },
+    {
+      "addr": "0xfb681e23db8d1cca8a6b7e2a70a29e000ddfa240",
+      "name": "dfa240",
+      "reason": "2026-08-12 suspicion dig: selective MLB 22 mkts, 0% both, med $600, ROI +113% — false MM (mmScore 42)",
+      "auditedAt": "2026-08-12"
+    },
+    {
+      "addr": "0xc8075693f48668a264b9fa313b47f52712fcc12b",
+      "name": "fcc12b",
+      "reason": "2026-08-12 suspicion dig: 344 MLB mkts over 139d (2.5/day), med $16k, game-both 0%, WR 77%, ROI +38% — volume grind not MM spray",
+      "auditedAt": "2026-08-12"
+    },
+    {
+      "addr": "0x56acab44cfca2e88bb9b3406890aea7bfa0cd77e",
+      "name": "dv-pm",
+      "reason": "MLB CONFIRMED coverage audit 2026-08-12: both-sides 0%, hold 100%, sport ROI +11% — directional, not MM",
+      "auditedAt": "2026-08-12"
+    },
+    {
+      "addr": "0xfea31bc088000ff909be1dfd8d0e3f2c7ef2d227",
+      "name": "ndb1",
+      "reason": "MLB CONFIRMED coverage audit 2026-08-12: both-sides ~11%, hold ~81%, sport ROI +41% — directional (batch2 also DIRECTIONAL_SHARP)",
+      "auditedAt": "2026-08-12"
+    },
+    {
+      "addr": "0xdb859a551fcf56e49416160911476bea7307152f",
+      "name": "AV23IUa",
+      "reason": "MLB CONFIRMED coverage audit 2026-08-12: both-sides 0%, hold 99%, sport ROI +88% — directional, not MM/trader",
+      "auditedAt": "2026-08-12"
+    },
+    {
+      "addr": "0x4be1fa92e6ceaf886aac0bbec3be6c527133aa70",
+      "name": "33aa70",
+      "reason": "MLB CONFIRMED coverage audit 2026-08-12: both-sides ~2%, hold 98%, sport ROI +29% — directional, not trader",
+      "auditedAt": "2026-08-12"
+    },
+    {
+      "addr": "0xf7f0b0b1e9c0fe02ccad926916ee31aef74b912c",
+      "name": "wapol",
+      "reason": "MLB CONFIRMED coverage audit 2026-08-12: official MIXED/REVIEW (~16% both); recheck both~8% hold 99% — reinstate pending clearer hedge signal",
+      "auditedAt": "2026-08-12"
+    },
     {
       "addr": "0x9c76cdb43fb46454da005fbc82047a64a18ec926",
       "name": "Bagwell306",

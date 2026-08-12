@@ -33,11 +33,11 @@
  *
  * avgSportBet resolution chain (writeSharpActions's SHADOW gate
  * depends on this being non-zero — without it the recovered position
- * gets silently dropped):
- *   1. sports_sharps.json[addr].avgSportBet (the value the main
- *      scanner would have used)
- *   2. sharpWalletProfiles[short].byMarket[market].positions.invested
- *      / .n  (derived per-market avg bet)
+ * gets silently dropped). Prefer sport-local usual:
+ *   1. sharpWalletProfiles.bySport[sport].positions invested/n
+ *   2. sports_sharps.perSport[sport].avgBet
+ *   3. sports_sharps.avgSportBet (cross-sport fallback)
+ *   4. byMarket ML/SPREAD/TOTAL invested/n
  *
  * Failure mode: the cycle bash loop catches non-zero exits via `|| echo`
  * so this script failing has zero downstream impact — the main
@@ -69,6 +69,7 @@ import {
   acceptFullGameTotalPosition,
   parseTotalEntryLine,
 } from './lib/totalMarketFilter.js';
+import { resolveSportUsualBet } from './lib/sportUsualBet.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -555,51 +556,39 @@ async function run() {
   function resolveWalletStats(suffix, sport) {
     const ss = sportsSharpsBySuffix.get(suffix);
     const swp = profileByShort.get(suffix);
-    // Source 1: sports_sharps.json — the field the main scanner uses verbatim.
-    if (ss?.avgSportBet > 0) {
+    const byMarket = swp?.byMarket || {};
+    const marketCandidate =
+      byMarket.ML?.positions ||
+      byMarket.SPREAD?.positions ||
+      byMarket.TOTAL?.positions ||
+      null;
+    const marketAvg = (marketCandidate?.invested && marketCandidate?.n)
+      ? Math.round(marketCandidate.invested / marketCandidate.n)
+      : 0;
+    const crossAvg = (ss?.avgSportBet > 0) ? ss.avgSportBet : marketAvg;
+    const { usual, source: usualSource } = resolveSportUsualBet({
+      sport,
+      sportsSharp: ss,
+      profile: swp,
+      fallback: crossAvg,
+    });
+
+    if (ss || swp) {
+      const pc = swp?.positionsContext || {};
       return {
-        avgSportBet: ss.avgSportBet,
-        sportPnlTotal: ss.sportPnlTotal || 0,
-        sportROI: ss.sportROI || 0,
-        sportVol: ss.sportVol || 0,
-        sportVerified: ss.sportVerified ?? true,
-        leaderboardRank: ss.leaderboardRank ?? null,
-        sportsLbPercentileTop: ss.sportsLbPercentileTop ?? null,
-        tier: ss.tier || 'PROVEN',
-        totalPnl: ss.totalPnl || 0,
-        source: 'sports_sharps',
+        avgSportBet: usual,
+        sportPnlTotal: ss?.sportPnlTotal || pc.sportPnlTotal || 0,
+        sportROI: ss?.sportROI || pc.sportROI || 0,
+        sportVol: ss?.sportVol || ss?.vol || pc.sportVol || 0,
+        sportVerified: ss ? (ss.sportVerified ?? true) : true,
+        leaderboardRank: ss?.leaderboardRank ?? swp?.latestLbRank ?? null,
+        sportsLbPercentileTop: ss?.sportsLbPercentileTop ?? pc.sportsLbPercentileTop ?? null,
+        tier: ss?.tier || swp?.tier || 'PROVEN',
+        totalPnl: ss?.totalPnl || swp?.latest?.lifetimePnl || 0,
+        source: usualSource,
       };
     }
-    // Source 2: derive avgSportBet from sharpWalletProfiles.byMarket. Pick
-    // the market that matches the position's market type when possible;
-    // otherwise fall back to the wallet's topSport's ML market.
-    if (swp) {
-      const byMarket = swp.byMarket || {};
-      const candidate =
-        byMarket.ML?.positions ||
-        byMarket.SPREAD?.positions ||
-        byMarket.TOTAL?.positions ||
-        null;
-      const avgBet = (candidate?.invested && candidate?.n)
-        ? Math.round(candidate.invested / candidate.n)
-        : 0;
-      const pc = swp.positionsContext || {};
-      return {
-        avgSportBet: avgBet,
-        sportPnlTotal: pc.sportPnlTotal || 0,
-        sportROI: pc.sportROI || 0,
-        sportVol: pc.sportVol || 0,
-        sportVerified: true,
-        leaderboardRank: swp.latestLbRank ?? null,
-        sportsLbPercentileTop: pc.sportsLbPercentileTop ?? null,
-        tier: swp.tier || 'PROVEN',
-        totalPnl: swp.latest?.lifetimePnl || 0,
-        source: 'sharpWalletProfiles_derived',
-      };
-    }
-    // Source 3: no profile data at all — return zeros so writeSharpActions
-    // drops the position (this matches existing behavior for "unverified"
-    // wallets). Mark for diagnostic visibility.
+    // No profile data — zeros so writeSharpActions drops (unverified).
     return {
       avgSportBet: 0,
       sportPnlTotal: 0,
@@ -1065,9 +1054,17 @@ function mergeRecoveredIntoScanFiles(positions, polyData) {
   let excludedSet = null;
   try {
     const excl = loadJSON('sharp_intel_excluded_wallets.json');
+    const force = loadJSON('sharp_intel_force_include.json');
+    const forceSet = new Set(
+      (Array.isArray(force?.wallets) ? force.wallets : [])
+        .map((w) => String(w?.addr || w || '').toLowerCase())
+        .filter(Boolean),
+    );
     const xs = Array.isArray(excl?.excluded) ? excl.excluded : [];
     if (xs.length > 0) {
-      excludedSet = new Set(xs.map((a) => String(a || '').toLowerCase()).filter(Boolean));
+      excludedSet = new Set(
+        xs.map((a) => String(a || '').toLowerCase()).filter((a) => a && !forceSet.has(a)),
+      );
     }
   } catch { /* fail open — merge without exclusion if file unreadable */ }
   const buckets = {

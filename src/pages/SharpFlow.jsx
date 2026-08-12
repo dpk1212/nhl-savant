@@ -7996,8 +7996,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     };
   };
 
-  // sizeRatio / avgSportBet: same cross-sport denominator cron + HC use
-  // (invested / sports_sharps.avgSportBet on the position JSON).
+  // Board proven + Size vs usual use sport-local usual (same SHADOW ≥0.10× gate).
   // Filter to cardSideKey (not raw consensus) so CARRYING matches OUR SIDE
   // when SOC consensus is null/draw.
   const rawMlPositions = rawSharpPositions?.[gd.sport]?.[gd.key]?.positions || null;
