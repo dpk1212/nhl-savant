@@ -117,7 +117,9 @@ const FlatSpark = memo(function FlatSpark({ points, width = 64, height = 20 }) {
   }));
   let d = `M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;
   for (let i = 1; i < pts.length; i++) d += ` L${pts[i].x.toFixed(1)},${pts[i].y.toFixed(1)}`;
-  const up = points[points.length - 1] >= points[0];
+  // Color by PnL sign (end of cumulative series), not end-vs-start slope.
+  // First leg can be a big win so last < first while end is still green (+$).
+  const up = points[points.length - 1] >= 0;
   const color = up ? B.green : B.red;
   return (
     <svg width={width} height={height} style={{ display: 'block' }} aria-hidden>
@@ -149,7 +151,10 @@ const PremiumSpark = memo(function PremiumSpark({
   for (let i = 1; i < pts.length; i++) line += ` L${pts[i].x.toFixed(1)},${pts[i].y.toFixed(1)}`;
   const last = pts[pts.length - 1];
   const fill = `${line} L${last.x.toFixed(1)},${(height - 2).toFixed(1)} L${pts[0].x.toFixed(1)},${(height - 2).toFixed(1)} Z`;
-  const up = points[points.length - 1] >= points[0];
+  // Color by final cumulative PnL sign — matches +$ / −$ end label.
+  // Do not use last>=first: a large early win then drawdown stays profitable
+  // but would paint red (e.g. +7.4k → +5.8k).
+  const up = points[points.length - 1] >= 0;
   const stroke = up ? B.green : B.red;
   const fillTint = up ? 'rgba(16,185,129,0.16)' : 'rgba(239,68,68,0.14)';
   const gid = `ps-${up ? 'up' : 'dn'}-${width}-${points.length}`;
