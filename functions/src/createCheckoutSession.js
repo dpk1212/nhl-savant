@@ -37,6 +37,36 @@ const TRIAL_DAYS = {
   pro: 10,
 };
 
+// 72h flash — mirrors frontend PAYWALL_PROMO / PROMO_CODES.SUMMER.
+// Auto-applied at Checkout for monthly/weekly only. Keep Stripe coupon
+// restricted to scout + elite price IDs (duration: forever).
+const FLASH_PROMO = {
+  code: 'SUMMER',
+  tiers: new Set(['scout', 'elite']),
+  endMs: Date.parse('2026-08-15T21:58:00Z'), // Sat Aug 15, 5:58pm ET
+};
+
+async function resolveFlashPromoId(stripeClient, tier) {
+  if (!FLASH_PROMO.tiers.has(tier)) return null;
+  if (!Number.isFinite(FLASH_PROMO.endMs) || Date.now() > FLASH_PROMO.endMs) return null;
+  try {
+    const list = await stripeClient.promotionCodes.list({
+      code: FLASH_PROMO.code,
+      active: true,
+      limit: 1,
+    });
+    const promo = list.data[0];
+    if (!promo?.id) {
+      console.warn(`Flash promo ${FLASH_PROMO.code} not found or inactive in Stripe`);
+      return null;
+    }
+    return promo.id;
+  } catch (err) {
+    console.warn(`Flash promo lookup failed: ${err.message}`);
+    return null;
+  }
+}
+
 /**
  * Look up the Price ID for a tier dynamically from Stripe products
  * Only used when PRICE_IDS env vars aren't set
@@ -184,8 +214,20 @@ exports.createCheckoutSession = functions.https.onCall(async (data, context) => 
       subscription_data: {
         metadata: { firebaseUID: userId, tier },
       },
-      allow_promotion_codes: true,
     };
+
+    // Flash: auto-apply SUMMER on monthly/weekly so users don't miss the code.
+    // Stripe forbids discounts + allow_promotion_codes together.
+    const flashPromoId = await resolveFlashPromoId(stripeClient, tier);
+    if (flashPromoId) {
+      sessionParams.discounts = [{ promotion_code: flashPromoId }];
+      sessionParams.metadata.promo = FLASH_PROMO.code;
+      sessionParams.subscription_data.metadata.promo = FLASH_PROMO.code;
+      console.log(`Auto-applying flash promo ${FLASH_PROMO.code} (${flashPromoId}) for tier=${tier}`);
+    } else {
+      // Annual (or post-flash): still allow manual codes at Checkout.
+      sessionParams.allow_promotion_codes = true;
+    }
 
     // Only grant trial if they haven't had one before
     if (!hadTrial) {

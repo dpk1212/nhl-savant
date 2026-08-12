@@ -67,7 +67,7 @@ export const PRICING = {
     currency: 'USD',
     interval: 'month',
     trialDays: 7,
-    popular: true
+    popular: true // default push during flash / for monthly recruitment
   },
   pro: {
     name: 'SAVANT PRO',

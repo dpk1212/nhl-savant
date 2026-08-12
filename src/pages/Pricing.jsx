@@ -25,7 +25,16 @@ const logEvent = (eventName, params) => {
 };
 
 const PROMO_CODES = {
-  SUMMER: { code: 'SUMMER', discount: 33, label: 'Summer Launch', forLife: true, expires: new Date('2026-07-28T04:00:00Z') }, // midnight ET July 27
+  // 72h flash — monthly (elite) + weekly (scout) only. Annual (pro) excluded.
+  // Stripe coupon SUMMER must also be limited to those two price IDs.
+  SUMMER: {
+    code: 'SUMMER',
+    discount: 33,
+    label: '72-Hour Flash Sale',
+    forLife: true,
+    expires: new Date('2026-08-15T21:58:00Z'), // Sat Aug 15, 5:58pm ET
+    tiers: ['scout', 'elite'],
+  },
 };
 
 const Pricing = () => {
@@ -42,14 +51,22 @@ const Pricing = () => {
   const [copied, setCopied] = useState(false);
   const [promoApplied, setPromoApplied] = useState(false);
 
-  // Check for promo code in URL query params
+  // Check for promo code in URL query params — also auto-apply live SUMMER flash
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const promo = params.get('promo')?.toUpperCase();
+    const promo = (params.get('promo') || 'SUMMER')?.toUpperCase();
     if (promo && PROMO_CODES[promo]) {
       const p = PROMO_CODES[promo];
       if (p.expires && new Date() > p.expires) return;
-      setActiveDiscount({ code: p.code, discount: p.discount, timeLeft: null, label: p.label, forLife: p.forLife });
+      setActiveDiscount({
+        code: p.code,
+        discount: p.discount,
+        timeLeft: null,
+        label: p.label,
+        forLife: p.forLife,
+        tiers: p.tiers || null,
+        expires: p.expires || null,
+      });
       setPromoApplied(true);
     }
   }, [location.search]);
@@ -182,20 +199,12 @@ const Pricing = () => {
     'Full model transparency'
   ];
 
+  const flashLive = !!(activeDiscount?.forLife
+    && activeDiscount?.tiers?.length
+    && (!activeDiscount.expires || new Date() <= activeDiscount.expires));
+
+  // During flash: Monthly first + highlighted. Annual demoted (no SUMMER discount).
   const tiers = [
-    {
-      id: 'scout',
-      name: 'Scout',
-      icon: Target,
-      price: '$7.99',
-      period: 'week',
-      trial: '5-day free trial',
-      description: 'Follow the sharps, week to week',
-      priceAnchor: 'Less than one stadium beer',
-      pricePerDay: '$1.14/day',
-      cta: 'Start 5-Day Trial',
-      highlight: 'No commitment — cancel any week'
-    },
     {
       id: 'elite',
       name: 'Elite',
@@ -204,11 +213,31 @@ const Pricing = () => {
       period: 'month',
       trial: '7-day free trial',
       description: 'The full edge, month to month',
-      priceAnchor: 'One blown $20 parlay costs more than this',
+      popular: true,
+      popularLabel: flashLive ? 'Flash Sale' : 'Most Popular',
+      priceAnchor: flashLive
+        ? '33% off for life with code SUMMER'
+        : 'One blown $20 parlay costs more than this',
       pricePerDay: '87¢/day',
-      savings: 'Save $9/month vs weekly',
+      savings: flashLive ? 'Save 33% for life' : 'Save $9/month vs weekly',
       cta: 'Start 7-Day Trial',
-      highlight: 'Most popular with serious bettors'
+      highlight: flashLive ? 'Flash sale — monthly & weekly only' : 'Most popular with serious bettors'
+    },
+    {
+      id: 'scout',
+      name: 'Scout',
+      icon: Target,
+      price: '$7.99',
+      period: 'week',
+      trial: '5-day free trial',
+      description: 'Follow the sharps, week to week',
+      priceAnchor: flashLive
+        ? '33% off for life with code SUMMER'
+        : 'Less than one stadium beer',
+      pricePerDay: '$1.14/day',
+      savings: flashLive ? 'Save 33% for life' : null,
+      cta: 'Start 5-Day Trial',
+      highlight: 'No commitment — cancel any week'
     },
     {
       id: 'pro',
@@ -218,9 +247,11 @@ const Pricing = () => {
       period: 'year',
       trial: '10-day free trial',
       description: 'Lock in the lowest rate all season',
-      popular: true,
+      popular: false,
       popularLabel: 'Best Value',
-      priceAnchor: 'Cheaper per month than Netflix',
+      priceAnchor: flashLive
+        ? 'Flash sale is monthly & weekly only'
+        : 'Cheaper per month than Netflix',
       pricePerDay: '41¢/day',
       savings: 'Save $161.88/year',
       badge: 'Just $12.50/month',
@@ -228,6 +259,12 @@ const Pricing = () => {
       highlight: 'One bet won covers the whole year'
     }
   ];
+
+  const tierGetsPromo = (tierId) => {
+    if (!activeDiscount) return false;
+    if (!activeDiscount.tiers) return true;
+    return activeDiscount.tiers.includes(tierId);
+  };
 
   return (
     <div style={{
@@ -268,7 +305,7 @@ const Pricing = () => {
               color: 'rgba(241,245,249,0.8)',
               lineHeight: 1.5,
             }}>
-              <strong style={{ color: '#10B981' }}>{activeDiscount.discount}% off for life</strong> — locked in forever for joining during our summer launch. Offer ends July 27.
+              <strong style={{ color: '#10B981' }}>{activeDiscount.discount}% off for life</strong> on Monthly & Weekly only — locked forever. 72-hour flash; Annual excluded.
               <br />Use code <strong style={{
                 color: '#D4AF37',
                 padding: '0.1rem 0.4rem',
@@ -377,14 +414,14 @@ const Pricing = () => {
                 background: 'linear-gradient(135deg, #10B981 0%, #D4AF37 100%)',
                 WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0,
               }}>
-                {activeDiscount.discount}% Founding Member Discount Applied
+                {activeDiscount.discount}% Off For Life — Monthly & Weekly
               </h3>
             </div>
             <p style={{
               fontSize: window.innerWidth < 640 ? '0.938rem' : '1rem',
               color: 'rgba(241,245,249,0.8)', marginBottom: '0.75rem', lineHeight: 1.5,
             }}>
-              Code <strong style={{ color: '#D4AF37' }}>{activeDiscount.code}</strong> is applied to all plans below. Lock this rate in forever.
+              Code <strong style={{ color: '#D4AF37' }}>{activeDiscount.code}</strong> locks {activeDiscount.discount}% off forever on Monthly & Weekly. Annual excluded.
             </p>
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: '10px',
@@ -755,8 +792,8 @@ const Pricing = () => {
             lineHeight: '1.6'
           }}>
             {activeDiscount?.forLife
-              ? `Every plan includes everything. ${activeDiscount.discount}% off is locked forever with code ${activeDiscount.code}.`
-              : 'Every plan includes everything — annual just costs the least per day.'}
+              ? `Every plan includes everything. Code ${activeDiscount.code} = ${activeDiscount.discount}% off for life on Monthly & Weekly only.`
+              : 'Every plan includes everything — pick the commitment that fits.'}
           </p>
           <div style={{
             display: 'inline-flex',
@@ -791,6 +828,7 @@ const Pricing = () => {
           {tiers.map((tierInfo) => {
             const Icon = tierInfo.icon;
             const isCurrentTier = currentTier === tierInfo.id;
+            const onSale = tierGetsPromo(tierInfo.id);
             
             return (
               <div
@@ -916,9 +954,9 @@ const Pricing = () => {
                   {tierInfo.description}
                 </p>
 
-                {/* Price */}
+                {/* Price — SUMMER flash only discounts monthly/weekly */}
                 <div style={{ marginBottom: '1rem' }}>
-                  {activeDiscount ? (
+                  {onSale ? (
                     <>
                       {/* Original price crossed out */}
                       <span style={{
@@ -959,7 +997,7 @@ const Pricing = () => {
                   </span>
                   
                   {/* Discount badge */}
-                  {activeDiscount && (
+                  {onSale && (
                     <div style={{
                       display: 'inline-block',
                       background: 'rgba(16, 185, 129, 0.2)',
@@ -999,11 +1037,11 @@ const Pricing = () => {
                 {/* Price Per Day */}
                 <div style={{
                   fontSize: '1.125rem',
-                  color: activeDiscount ? '#10B981' : (tierInfo.popular ? '#D4AF37' : '#60A5FA'),
+                  color: onSale ? '#10B981' : (tierInfo.popular ? '#D4AF37' : '#60A5FA'),
                   fontWeight: '700',
                   marginBottom: tierInfo.badge ? '0.5rem' : '2rem'
                 }}>
-                  {activeDiscount ? (
+                  {onSale ? (
                     <>
                       <span style={{
                         textDecoration: 'line-through',
@@ -1025,7 +1063,17 @@ const Pricing = () => {
                   ) : (
                     tierInfo.pricePerDay
                   )}
-                  {tierInfo.savings && !activeDiscount && (
+                  {tierInfo.savings && !onSale && (
+                    <span style={{
+                      fontSize: '0.813rem',
+                      color: '#10B981',
+                      marginLeft: '0.5rem',
+                      fontWeight: '600'
+                    }}>
+                      • {tierInfo.savings}
+                    </span>
+                  )}
+                  {onSale && tierInfo.savings && (
                     <span style={{
                       fontSize: '0.813rem',
                       color: '#10B981',

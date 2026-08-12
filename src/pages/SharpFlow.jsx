@@ -1037,41 +1037,35 @@ function computeRecentWindowStats(picks, daysBack = 7) {
   return { ready: true, w, l, pu, total, profit, record: `${w}-${l}${pu ? `-${pu}` : ''}` };
 }
 
-// Sharp Flow paywall — limited-time promo (mirrors Pricing.jsx PROMO_CODES.SUMMER).
+// Sharp Flow paywall — 72h flash (mirrors Pricing.jsx PROMO_CODES.SUMMER).
+// SUMMER is monthly/weekly only — annual stays full price (Stripe coupon
+// must also be restricted to scout/elite price IDs).
 const PAYWALL_PROMO = {
   code: 'SUMMER',
   discount: 0.33,
-  label: 'Summer Launch',
-  endMs: new Date('2026-07-28T04:00:00Z').getTime(), // midnight ET July 27
+  label: '72-Hour Flash',
+  endMs: new Date('2026-08-15T21:58:00Z').getTime(), // Sat Aug 15, 5:58pm ET
+  tiers: ['elite', 'scout'], // monthly + weekly
 };
 
-// Paywall plan picker — mirrors PRICING in src/utils/stripe.js.
-// Annual is listed first and preselected: it's the plan we push hardest.
-// The hero number on each card is the monthly-equivalent (or weekly) rate —
-// the pattern top-converting paywalls use to make annual feel cheapest.
+// Plan order + default selection push Monthly/Weekly. Annual stays available
+// at the bottom — just not the preselected "BEST VALUE" anchor that was
+// converting everyone into yearly.
 const PAYWALL_PLANS = [
-  {
-    id: 'pro',
-    name: 'Annual',
-    trialDays: 10,
-    badge: 'BEST VALUE',
-    save: 'SAVE 52%',
-    heroFull: '$12.50', heroPromo: '$8.38', heroPer: '/mo',
-    billFull: 'billed $150/yr', billPromo: 'billed $100.50/yr',
-    chargeFull: '$150/yr', chargePromo: '$100.50/yr',
-    sub: 'Cheaper per month than Netflix',
-    winMath: 'One 1u win (+$91 at $100/unit) covers 90% of your entire year',
-  },
   {
     id: 'elite',
     name: 'Monthly',
     trialDays: 7,
     badge: 'MOST POPULAR',
+    badgePromo: 'FLASH SALE',
     save: null,
+    savePromo: 'SAVE 33%',
+    promoEligible: true,
     heroFull: '$25.99', heroPromo: '$17.41', heroPer: '/mo',
     billFull: null, billPromo: null,
     chargeFull: '$25.99/mo', chargePromo: '$17.41/mo',
     sub: 'One blown $20 parlay costs more',
+    subPromo: '33% off for life with code SUMMER',
     winMath: 'One 1u win (+$91 at $100/unit) covers your next 5 months',
   },
   {
@@ -1079,12 +1073,32 @@ const PAYWALL_PLANS = [
     name: 'Weekly',
     trialDays: 5,
     badge: null,
+    badgePromo: null,
     save: null,
+    savePromo: 'SAVE 33%',
+    promoEligible: true,
     heroFull: '$7.99', heroPromo: '$5.35', heroPer: '/wk',
     billFull: null, billPromo: null,
     chargeFull: '$7.99/wk', chargePromo: '$5.35/wk',
     sub: 'Less than one stadium beer',
+    subPromo: '33% off for life with code SUMMER',
     winMath: 'One 1u win (+$91 at $100/unit) covers 4 months of access',
+  },
+  {
+    id: 'pro',
+    name: 'Annual',
+    trialDays: 10,
+    badge: 'BEST VALUE',
+    badgePromo: null,
+    save: 'SAVE 52%',
+    savePromo: null,
+    promoEligible: false,
+    heroFull: '$12.50', heroPromo: '$12.50', heroPer: '/mo',
+    billFull: 'billed $150/yr', billPromo: 'billed $150/yr',
+    chargeFull: '$150/yr', chargePromo: '$150/yr',
+    sub: 'Cheaper per month than Netflix',
+    subPromo: 'Flash sale is monthly & weekly only',
+    winMath: 'One 1u win (+$91 at $100/unit) covers 90% of your entire year',
   },
 ];
 //
@@ -13712,7 +13726,9 @@ function SportTabs({ active, onChange, isMobile }) {
 function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
   const [now, setNow] = useState(Date.now());
   const { user } = useAuth();
-  const [selectedPlan, setSelectedPlan] = useState('pro');
+  // Default Monthly during flash — Annual was converting too hard as the
+  // preselected BEST VALUE card.
+  const [selectedPlan, setSelectedPlan] = useState('elite');
   const [authOpen, setAuthOpen] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
 
@@ -13856,7 +13872,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
         pointerEvents: 'none',
       }} />
 
-      {/* Promo banner strip */}
+      {/* Promo banner strip — monthly/weekly only */}
       {promoActive && (
         <div style={{
           background: 'linear-gradient(90deg, #D4AF37 0%, #F5D060 50%, #D4AF37 100%)',
@@ -13865,7 +13881,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
           letterSpacing: '0.06em',
         }}>
           <span style={{ fontSize: '0.72rem', fontWeight: 900, color: '#0B1120', textTransform: 'uppercase' }}>
-            {promoLabel.toUpperCase()} · 33% OFF FOR LIFE · ENDS JULY 27
+            {promoLabel.toUpperCase()} · CODE {promoCode} · 33% OFF FOR LIFE · MONTHLY & WEEKLY ONLY
           </span>
         </div>
       )}
@@ -14205,7 +14221,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
               }}>
                 <Flame size={13} color={B.gold} />
                 <span style={{ ...T.micro, color: B.gold, fontWeight: 900, letterSpacing: '0.12em', textTransform: 'uppercase', fontSize: '0.68rem' }}>
-                  33% OFF FOR LIFE — ENDS IN
+                  MONTHLY & WEEKLY · 33% OFF FOR LIFE — ENDS IN
                 </span>
                 <Flame size={13} color={B.gold} />
               </div>
@@ -14258,15 +14274,19 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
             </div>
           )}
 
-          {/* Plan picker — annual first + preselected, hero number is the
-              monthly-equivalent rate (the anchor that sells annual) */}
+          {/* Plan picker — Monthly first + preselected; flash prices only on
+              promoEligible tiers (monthly/weekly). Annual stays full price. */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', marginBottom: '1.1rem' }}>
             {PAYWALL_PLANS.map((plan) => {
               const isSelected = selectedPlan === plan.id;
               const isAnnual = plan.id === 'pro';
-              const hero = promoActive ? plan.heroPromo : plan.heroFull;
-              const struck = promoActive ? plan.heroFull : null;
-              const bill = promoActive ? plan.billPromo : plan.billFull;
+              const planOnSale = promoActive && plan.promoEligible;
+              const hero = planOnSale ? plan.heroPromo : plan.heroFull;
+              const struck = planOnSale ? plan.heroFull : null;
+              const bill = planOnSale ? plan.billPromo : plan.billFull;
+              const badge = planOnSale ? (plan.badgePromo || plan.badge) : plan.badge;
+              const savePill = planOnSale ? (plan.savePromo || plan.save) : plan.save;
+              const subLine = planOnSale ? (plan.subPromo || plan.sub) : (promoActive && !plan.promoEligible ? plan.subPromo : plan.sub);
               return (
                 <button
                   key={plan.id}
@@ -14285,21 +14305,26 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
                       : 'inset 0 1px 0 rgba(255,255,255,0.02)',
                     transform: isSelected && !isMobile ? 'scale(1.015)' : 'scale(1)',
                     transition: 'border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease',
+                    opacity: promoActive && isAnnual ? 0.82 : 1,
                   }}
                 >
                   {/* Floating badge — sits on the card's top edge like the Mobbin refs */}
-                  {plan.badge && (
+                  {badge && (
                     <span style={{
                       position: 'absolute', top: '-9px', left: '42px',
                       fontSize: '0.55rem', fontWeight: 900, letterSpacing: '0.1em',
                       padding: '0.2rem 0.55rem', borderRadius: '5px', lineHeight: 1,
-                      background: isAnnual
-                        ? `linear-gradient(135deg, ${B.gold} 0%, #F5D060 100%)`
-                        : `linear-gradient(135deg, ${B.green} 0%, #34D399 100%)`,
+                      background: planOnSale
+                        ? `linear-gradient(135deg, ${B.green} 0%, #34D399 100%)`
+                        : isAnnual
+                          ? `linear-gradient(135deg, ${B.gold} 0%, #F5D060 100%)`
+                          : `linear-gradient(135deg, ${B.green} 0%, #34D399 100%)`,
                       color: '#0B1120',
-                      boxShadow: isAnnual ? '0 3px 10px rgba(212,175,55,0.45)' : '0 3px 10px rgba(16,185,129,0.40)',
+                      boxShadow: planOnSale || !isAnnual
+                        ? '0 3px 10px rgba(16,185,129,0.40)'
+                        : '0 3px 10px rgba(212,175,55,0.45)',
                     }}>
-                      {plan.badge}
+                      {badge}
                     </span>
                   )}
 
@@ -14317,7 +14342,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
                       <span style={{ fontSize: isMobile ? '1rem' : '1.05rem', fontWeight: 900, color: B.text, letterSpacing: '-0.01em' }}>
                         {plan.name}
                       </span>
-                      {plan.save && (
+                      {savePill && (
                         <span style={{
                           fontSize: '0.58rem', fontWeight: 900, letterSpacing: '0.06em',
                           padding: '0.18rem 0.45rem', borderRadius: '5px',
@@ -14325,12 +14350,12 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
                           border: '1px solid rgba(16,185,129,0.40)',
                           color: B.green,
                         }}>
-                          {plan.save}
+                          {savePill}
                         </span>
                       )}
                     </span>
                     <span style={{ display: 'block', ...T.micro, color: isSelected ? B.textSec : B.textMuted, fontSize: '0.64rem', marginTop: '0.25rem', lineHeight: 1.35 }}>
-                      {plan.sub}
+                      {subLine}
                     </span>
                   </span>
 
@@ -14347,11 +14372,11 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
                       )}
                       <span style={{
                         fontSize: isMobile ? '1.45rem' : '1.6rem', fontWeight: 900,
-                        color: promoActive ? B.green : B.text,
-                        backgroundImage: promoActive ? `linear-gradient(135deg, ${B.green} 0%, #34D399 100%)` : 'none',
-                        WebkitBackgroundClip: promoActive ? 'text' : 'unset',
-                        WebkitTextFillColor: promoActive ? 'transparent' : 'unset',
-                        backgroundClip: promoActive ? 'text' : 'unset',
+                        color: planOnSale ? B.green : B.text,
+                        backgroundImage: planOnSale ? `linear-gradient(135deg, ${B.green} 0%, #34D399 100%)` : 'none',
+                        WebkitBackgroundClip: planOnSale ? 'text' : 'unset',
+                        WebkitTextFillColor: planOnSale ? 'transparent' : 'unset',
+                        backgroundClip: planOnSale ? 'text' : 'unset',
                         fontFeatureSettings: "'tnum'", letterSpacing: '-0.03em', lineHeight: 1,
                       }}>
                         {hero}
@@ -14370,7 +14395,8 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
           {/* Dynamic charge summary — exact terms for the selected plan */}
           {(() => {
             const plan = PAYWALL_PLANS.find(p => p.id === selectedPlan) || PAYWALL_PLANS[0];
-            const charge = promoActive ? plan.chargePromo : plan.chargeFull;
+            const planOnSale = promoActive && plan.promoEligible;
+            const charge = planOnSale ? plan.chargePromo : plan.chargeFull;
             return (
               <>
                 {/* Trial timeline — kills "what if I forget to cancel" anxiety */}
@@ -14415,7 +14441,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
                     <span style={{ color: B.text, fontWeight: 800 }}>{plan.trialDays} days free</span>
                     {', then '}
                     <span style={{ color: B.text, fontWeight: 800, fontFeatureSettings: "'tnum'" }}>{charge}</span>
-                    {promoActive && (
+                    {planOnSale && (
                       <>
                         {' · code '}
                         <span style={{
@@ -14424,6 +14450,11 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
                         }}>{promoCode}</span>
                         <span style={{ color: B.green, fontWeight: 800 }}> locks 33% off for life</span>
                       </>
+                    )}
+                    {promoActive && !plan.promoEligible && (
+                      <span style={{ color: B.textMuted, fontWeight: 600 }}>
+                        {' · flash sale is monthly & weekly only'}
+                      </span>
                     )}
                   </span>
                 </div>
@@ -14509,7 +14540,8 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
       {showStickyCta && createPortal(
         (() => {
           const plan = PAYWALL_PLANS.find(p => p.id === selectedPlan) || PAYWALL_PLANS[0];
-          const charge = promoActive ? plan.chargePromo : plan.chargeFull;
+          const planOnSale = promoActive && plan.promoEligible;
+          const charge = planOnSale ? plan.chargePromo : plan.chargeFull;
           return (
             <div style={{
               position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 9999,
@@ -14528,7 +14560,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
                     {plan.trialDays} days free · $0 today
                   </div>
                   <div style={{ fontSize: '0.6rem', fontWeight: 600, color: 'rgba(241,245,249,0.55)', marginTop: '0.1rem', fontFeatureSettings: "'tnum'" }}>
-                    then {charge}{promoActive ? ' · 33% off locked for life' : ''}
+                    then {charge}{planOnSale ? ' · 33% off locked for life' : ''}
                   </div>
                 </div>
                 <button
