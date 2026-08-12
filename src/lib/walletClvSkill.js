@@ -766,6 +766,16 @@ export function confirmedQ1BypassesAgsCreateGate(qualifies, scoreV12) {
 }
 
 /**
+ * Create/reconcile: CONFIRMED-UNOPP×sized (≥0.5×, unopposed) may proceed when
+ * AGS v12 would no-signal or mute. Action can surface these winners while
+ * Locked used to skip them entirely (featured flat ≤ 0 → quality 0).
+ */
+export function confirmedUnoppBypassesAgsCreateGate(qualifies, scoreV12) {
+  if (!qualifies) return false;
+  return scoreV12 == null || !Number.isFinite(scoreV12) || scoreV12 <= 0;
+}
+
+/**
  * Raise units to Q1 target when under-floored. Returns next units + tier
  * stamp when a floor applied.
  * @param {(u: number, odds: number|null) => number} oddsCapFn

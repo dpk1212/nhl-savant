@@ -101,6 +101,7 @@ import {
   computeConfirmedUnoppSized,
   computeConfirmedQ1Sized,
   confirmedQ1BypassesAgsCreateGate,
+  confirmedUnoppBypassesAgsCreateGate,
   applyConfirmedQ1UnitFloor,
   buildFlatDollarQBySport,
   computeForTop2PctPos,
@@ -502,23 +503,42 @@ function buildWalletPriorStatsFn(walletProfiles) {
 // are CONFIRMED. Fall back to the Source-B flat-ROI mirror + position count so the
 // quality formula reflects their actual tracked edge. Threshold mirrors
 // exportWalletProfiles WHITELIST_MIN_BETS (2): use Source A only when it is non-thin.
+//
+// Also: a wallet can print on real $ / on-chain flat while running cold on *our*
+// featured grades (agsV12 quality uses max(0, priorRoi) — negative Source A
+// zeroes them and blocks Locked create). When Source A flat ≤ 0, prefer a
+// positive Source B flat/dollar ROI so Action winners still score.
 const V12_SOURCE_A_MIN = 2;
 function walletPriorStatsFromSportRec(sportRec) {
   if (!sportRec) return null;
   const picksN = Number(sportRec.picks?.n) || 0;
+  const posN = Number(sportRec.positions?.n) || 0;
+  const picksFlat = Number(sportRec.picks?.flatRoi);
+  const posFlat = Number(sportRec.positions?.positionFlatRoi);
+  const dollarRoi = Number(sportRec.positions?.dollarRoi);
+  const positiveSourceB = [posFlat, dollarRoi]
+    .filter((x) => Number.isFinite(x) && x > 0);
+
   if (picksN >= V12_SOURCE_A_MIN) {
+    let priorRoi = Number.isFinite(picksFlat) ? picksFlat : 0;
+    if (!(priorRoi > 0) && positiveSourceB.length > 0) {
+      priorRoi = Math.max(...positiveSourceB);
+    }
     return {
       tier: sportRec.whitelistTier || null,
       priorN: picksN,
-      priorRoi: Number(sportRec.picks?.flatRoi) || 0,
+      priorRoi,
     };
   }
   // Source-A thin → fall back to Source-B (on-chain) flat-ROI mirror.
-  const posN = Number(sportRec.positions?.n) || 0;
+  let priorRoi = Number.isFinite(posFlat) ? posFlat : 0;
+  if (!(priorRoi > 0) && Number.isFinite(dollarRoi) && dollarRoi > 0) {
+    priorRoi = dollarRoi;
+  }
   return {
     tier: sportRec.whitelistTier || null,
     priorN: posN,
-    priorRoi: Number(sportRec.positions?.positionFlatRoi) || 0,
+    priorRoi,
   };
 }
 
@@ -2217,13 +2237,23 @@ async function createMissingLockedPicks({
 
       // v12 ship gate — score > 0. Wallet-pool adequacy is implicit in the
       // quality score (non-HC_BASE wallets contribute 0; no qualified
-      // wallets → score 0 → muted). CONFIRMED-Q1×sized bypasses mute so the
-      // create path can apply the same hard floor as reconcile.
+      // wallets → score 0 → muted). CONFIRMED-Q1×sized and CONFIRMED-UNOPP
+      // bypass mute so Action winners still get a Locked card.
+      const unoppEarly = isConfirmedUnoppPromoteLive(TARGET_DATE)
+        ? computeConfirmedUnoppSized(
+          walletDetails, side, sport, walletProfiles,
+          { minSize: CONFIRMED_UNOPP_MIN_SIZE },
+        )
+        : { qualifies: false, forSized: 0, agConfirmed: 0, bestSize: null, wallets: [] };
       let q1ForceBypassAgs = false;
+      let unoppForceBypassAgs = false;
       if (scoreV12 == null) {
         if (confirmedQ1BypassesAgsCreateGate(q1Early.qualifies, scoreV12)) {
           q1ForceBypassAgs = true;
           console.log(`  Q1 AGS bypass: ${docId} ${side} (agsv12_no_signal → force create)`);
+        } else if (confirmedUnoppBypassesAgsCreateGate(unoppEarly.qualifies, scoreV12)) {
+          unoppForceBypassAgs = true;
+          console.log(`  UNOPP AGS bypass: ${docId} ${side} (agsv12_no_signal → force create)`);
         } else {
           skipped.push({ docId, side, reason: 'agsv12_no_signal' });
           continue;
@@ -2234,13 +2264,20 @@ async function createMissingLockedPicks({
           console.log(
             `  Q1 AGS bypass: ${docId} ${side} (agsv12_mute score=${scoreV12} → force create)`,
           );
+        } else if (confirmedUnoppBypassesAgsCreateGate(unoppEarly.qualifies, scoreV12)) {
+          unoppForceBypassAgs = true;
+          console.log(
+            `  UNOPP AGS bypass: ${docId} ${side} (agsv12_mute score=${scoreV12} → force create)`,
+          );
         } else {
           skipped.push({ docId, side, reason: 'agsv12_mute_below_zero', score: scoreV12 });
           continue;
         }
       }
 
-      const promotedBy = q1ForceBypassAgs ? 'confirmed-q1-force' : 'ags-unified-v12';
+      const promotedBy = q1ForceBypassAgs
+        ? 'confirmed-q1-force'
+        : (unoppForceBypassAgs ? 'confirmed-unopp-force' : 'ags-unified-v12');
       const finalTier = agsV12Res?.tier || 'FADE';
       const peakStars = starsFromTierV12(finalTier);
       // ── Pinnacle odds + line. ML uses live mlOdds; SPREAD uses the
@@ -2539,7 +2576,7 @@ async function createMissingLockedPicks({
       }
 
       // CONFIRMED-Q1 / UNOPP late fill if still under-floored after sizing mutes.
-      // Q1 runs even when AGS muted (force-create); UNOPP still requires scoreV12 > 0.
+      // Q1 + UNOPP both run when AGS-muted (force-create bypass).
       if (createV121Eligible && isConfirmedQ1PromoteLive(TARGET_DATE)) {
         const q1Late = applyConfirmedQ1UnitFloor({
           units: peakUnitsApplied,
@@ -2552,15 +2589,12 @@ async function createMissingLockedPicks({
           hcStakeTierCreate = q1Late.tier;
         }
       }
-      if (createV121Eligible && scoreV12 > 0 && peakUnitsApplied === 0
+      if (createV121Eligible && peakUnitsApplied === 0
+          && (scoreV12 > 0 || unoppForceBypassAgs)
           && isConfirmedUnoppPromoteLive(TARGET_DATE)
           && hcStakeTierCreate !== 'CONFIRMED-UNOPP'
           && hcStakeTierCreate !== 'CONFIRMED-Q1') {
-        const unoppCreateLate = computeConfirmedUnoppSized(
-          walletDetails, side, sport, walletProfiles,
-          { minSize: CONFIRMED_UNOPP_MIN_SIZE },
-        );
-        if (unoppCreateLate.qualifies) {
+        if (unoppEarly.qualifies) {
           peakUnitsApplied = Math.round(oddsCap(CONFIRMED_UNOPP_UNITS, odds ?? null) * 100) / 100;
           hcStakeTierCreate = 'CONFIRMED-UNOPP';
         }
@@ -2735,6 +2769,9 @@ async function createMissingLockedPicks({
       v8Stamps.v8_agsV12EvaluatedAt = now;
       if (q1ForceBypassAgs) {
         v8Stamps.v8_confirmedQ1ForceCreate = true;
+      }
+      if (unoppForceBypassAgs) {
+        v8Stamps.v8_confirmedUnoppForceCreate = true;
       }
       if (usedQ1MetaFallback) {
         v8Stamps.v8_q1MetaFallback = true;
@@ -3217,12 +3254,41 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     calibration: agsCalibration,
   });
 
+  // Early CONFIRMED slices — may reactivate an AGS-muted side (Action winners
+  // with cold featured flat used to stay MUTED/SHADOW forever).
+  const confirmedQ1SliceEarly = (isV121Eligible(pickDate) && Array.isArray(wd) && wd.length > 0
+    && isConfirmedQ1PromoteLive(pickDate))
+    ? computeConfirmedQ1Sized(wd, side, pick.sport, walletProfiles, FLAT_DOLLAR_Q_BY_SPORT, {
+      minSize: CONFIRMED_Q1_MIN_SIZE,
+    })
+    : {
+      qualifies: false, forQ1Sized: 0, bestSize: null, targetUnits: CONFIRMED_Q1_UNITS, wallets: [],
+    };
+  const confirmedUnoppSliceEarly = (isV121Eligible(pickDate) && Array.isArray(wd) && wd.length > 0
+    && isConfirmedUnoppPromoteLive(pickDate))
+    ? computeConfirmedUnoppSized(wd, side, pick.sport, walletProfiles, {
+      minSize: CONFIRMED_UNOPP_MIN_SIZE,
+    })
+    : { qualifies: false, forSized: 0, agConfirmed: 0, bestSize: null, wallets: [] };
+
   // No hysteresis. Whatever evaluateBaseHealthV12 says this cycle is what
-  // we write. ACTIVE ↔ MUTED is free to flip every cycle until T-15.
+  // we write. ACTIVE ↔ MUTED is free to flip every cycle until T-15 —
+  // except CONFIRMED-Q1 / UNOPP may force ACTIVE through an AGS mute.
   let appliedStatus = baseHealth.status;
   let appliedReason = baseHealth.reason;
-  const mutedByAgs = appliedReason === 'agsv12_mute_below_zero'
+  let mutedByAgs = appliedReason === 'agsv12_mute_below_zero'
                   || appliedReason === 'no_agsv12_signal';
+  if (mutedByAgs && !flipSupersede) {
+    if (confirmedQ1BypassesAgsCreateGate(confirmedQ1SliceEarly.qualifies, scoreV12Live)) {
+      appliedStatus = 'ACTIVE';
+      appliedReason = 'confirmed_q1_ags_bypass';
+      mutedByAgs = false;
+    } else if (confirmedUnoppBypassesAgsCreateGate(confirmedUnoppSliceEarly.qualifies, scoreV12Live)) {
+      appliedStatus = 'ACTIVE';
+      appliedReason = 'confirmed_unopp_ags_bypass';
+      mutedByAgs = false;
+    }
+  }
 
   // Compute tier / stars / units — all derived from the v12 score now.
   const liveTier = agsV12Result ? agsV12Result.tier : 'FADE';
@@ -3383,16 +3449,13 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // ─── CONFIRMED-Q1 promote (2026-08-08+) ───────────────────────────────
   // ≥1 FOR: CONFIRMED × flatDollar Q1 × size≥0.5× → floor 2u (3u if size≥1×).
   // Opposed OK. Upsizes under-floored sides; never downsizes a larger path.
+  // Also runs under AGS bypass (score ≤ 0) when the early slice qualifies.
   let confirmedQ1Rescued = false;
-  const confirmedQ1Slice = (v121Eligible && Array.isArray(wd) && wd.length > 0)
-    ? computeConfirmedQ1Sized(wd, side, pick.sport, walletProfiles, FLAT_DOLLAR_Q_BY_SPORT, {
-      minSize: CONFIRMED_Q1_MIN_SIZE,
-    })
-    : {
-      qualifies: false, forQ1Sized: 0, bestSize: null, targetUnits: CONFIRMED_Q1_UNITS, wallets: [],
-    };
+  const confirmedQ1Slice = confirmedQ1SliceEarly;
+  const q1ScoreOk = scoreV12Live != null && scoreV12Live > 0;
+  const q1AgsBypass = confirmedQ1BypassesAgsCreateGate(confirmedQ1Slice.qualifies, scoreV12Live);
   if (isConfirmedQ1PromoteLive(pickDate) && appliedStatus === 'ACTIVE'
-      && scoreV12Live != null && scoreV12Live > 0
+      && (q1ScoreOk || q1AgsBypass)
       && !(Number.isFinite(sd.manualStake) && sd.manualStake > 0)
       && confirmedQ1Slice.qualifies) {
     const tgt = Math.round(oddsCap(confirmedQ1Slice.targetUnits, sideOdds) * 100) / 100;
@@ -3404,17 +3467,17 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   }
 
   // ─── CONFIRMED-UNOPP promote (2026-08-08+) ────────────────────────────
-  // After HC / RANK / SHARP / Q1 leave score>0 at 0u: ≥1 CONFIRMED FOR sized ≥0.5×
-  // and zero CONFIRMED on AG → 1u. Never up-sizes. Runs before Path D so the
-  // tier stamp is CONFIRMED-UNOPP (not DISSENT) when both would qualify.
+  // After HC / RANK / SHARP / Q1 leave 0u: ≥1 CONFIRMED FOR sized ≥0.5×
+  // and zero CONFIRMED on AG → 1u. Also under AGS bypass (Action winners
+  // with cold featured flat). Never up-sizes. Before Path D.
   let confirmedUnoppRescued = false;
-  const confirmedUnoppSlice = (v121Eligible && Array.isArray(wd) && wd.length > 0)
-    ? computeConfirmedUnoppSized(wd, side, pick.sport, walletProfiles, {
-      minSize: CONFIRMED_UNOPP_MIN_SIZE,
-    })
-    : { qualifies: false, forSized: 0, agConfirmed: 0, bestSize: null, wallets: [] };
+  const confirmedUnoppSlice = confirmedUnoppSliceEarly;
+  const unoppScoreOk = scoreV12Live != null && scoreV12Live > 0;
+  const unoppAgsBypass = confirmedUnoppBypassesAgsCreateGate(
+    confirmedUnoppSlice.qualifies, scoreV12Live,
+  );
   if (isConfirmedUnoppPromoteLive(pickDate) && appliedStatus === 'ACTIVE'
-      && scoreV12Live != null && scoreV12Live > 0
+      && (unoppScoreOk || unoppAgsBypass)
       && finalUnitsApplied === 0 && !rankRescued && !sharpRescued && !confirmedQ1Rescued
       && !(Number.isFinite(sd.manualStake) && sd.manualStake > 0)
       && confirmedUnoppSlice.qualifies) {
@@ -3788,10 +3851,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
 
   // ─── CONFIRMED-Q1 hard floor (after mutes) ────────────────────────────
   // Research: never leave Q1×sized at 0u. Restore / size-up even if tape /
-  // qConv / EDGE zeroed the path stake. Manual stake exempt.
+  // qConv / EDGE zeroed the path stake. Manual stake exempt. AGS bypass OK.
   let confirmedQ1Floored = false;
   if (isConfirmedQ1PromoteLive(pickDate) && appliedStatus === 'ACTIVE'
-      && scoreV12Live != null && scoreV12Live > 0
+      && (q1ScoreOk || q1AgsBypass)
       && !(Number.isFinite(sd.manualStake) && sd.manualStake > 0)
       && confirmedQ1Slice.qualifies) {
     const tgt = Math.round(oddsCap(confirmedQ1Slice.targetUnits, sideOdds) * 100) / 100;
@@ -3804,19 +3867,25 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   }
 
   // ─── lockStage promote/demote — v12 gate ──────────────────────────────
-  // Ship floor: v12 score > 0 (the mute boundary). Picks above 0 LOCK
-  // with units determined by the ladder (SMALL 0.25u → ELITE 5u).
-  // Picks at score ≤ 0 SHADOW (hidden). Wallet-pool adequacy is implicit
-  // in the v12 score formula (non-HC_BASE wallets contribute 0).
+  // Ship floor: v12 score > 0 (the mute boundary), OR a CONFIRMED-Q1 /
+  // CONFIRMED-UNOPP rescue that forced through an AGS mute.
   let appliedLockStage = lockStage;
   let lockStageReason = null;
-  const passesShipFloor = appliedStatus === 'ACTIVE'
+  const passesShipFloor = (
+    appliedStatus === 'ACTIVE'
     && scoreV12Live != null
-    && scoreV12Live > 0;
+    && scoreV12Live > 0
+  ) || (
+    appliedStatus === 'ACTIVE'
+    && finalUnitsApplied > 0
+    && (confirmedQ1Rescued || confirmedUnoppRescued)
+  );
   if (passesShipFloor) {
     if (lockStage !== 'LOCKED') {
       appliedLockStage = 'LOCKED';
-      lockStageReason = 'agsv12_positive_score';
+      lockStageReason = (scoreV12Live != null && scoreV12Live > 0)
+        ? 'agsv12_positive_score'
+        : (confirmedQ1Rescued ? 'confirmed_q1_ags_bypass' : 'confirmed_unopp_ags_bypass');
     } else {
       appliedLockStage = 'LOCKED';
     }
