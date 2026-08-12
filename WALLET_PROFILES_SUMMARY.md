@@ -1,10 +1,10 @@
 # Wallet Profiles Summary
 
-Generated: 8/12/2026, 12:46:08 AM ET · V8 cutover: 2026-04-18 · whitelistVersion: 2
+Generated: 8/12/2026, 2:12:38 AM ET · V8 cutover: 2026-04-18 · whitelistVersion: 2
 
 Monitoring artifact for the nightly `sharpWalletProfiles` rebuild. Shows how many wallets qualify for each whitelist tier per sport, who the top performers are, and what changed since the last run.
 
-**Population**: 400 wallets · 8569 graded picks · 23866 graded positions.
+**Population**: 400 wallets · 8571 graded picks · 23868 graded positions.
 
 ## Population by verdict
 
@@ -167,152 +167,7 @@ Definition: `causalPctPos` from `src/lib/walletClvSkill.js` — % of graded posi
 
 ## Churn since last run
 
-**142** wallet-sport tier changes since the prior run.
-
-| Wallet | Sport | From | To | Notes |
-|---|---|---|---|---|
-| 0336b0 | NBA | — | WR50 |  |
-| 06c80c | MLB | FLAT | — |  |
-| 06c80c | SOC | CONFIRMED | — |  |
-| 07152f | MLB | WR50 | CONFIRMED |  |
-| 07152f | SOC | — | FLAT |  |
-| 0f9d74 | MLB | — | WR50 |  |
-| 0f9d74 | UFC | FLAT | — |  |
-| 11381f | MLB | WR50 | FLAT |  |
-| 118cec | NBA | — | WR50 |  |
-| 154dea | SOC | — | CONFIRMED |  |
-| 162937 | MLB | — | CONFIRMED |  |
-| 182fef | SOC | — | CONFIRMED |  |
-| 1aef79 | SOC | WR50 | — |  |
-| 1e8f33 | SOC | WR50 | FLAT |  |
-| 22ac33 | NBA | — | WR50 |  |
-| 28658e | SOC | — | CONFIRMED |  |
-| 2bffeb | NBA | — | CONFIRMED |  |
-| 2f2a9e | MLB | WR50 | — |  |
-| 2f2a9e | NHL | — | WR50 |  |
-| 2f2a9e | SOC | WR50 | CONFIRMED |  |
-| 3033ee | NHL | — | WR50 |  |
-| 3102c3 | NBA | — | CONFIRMED |  |
-| 335355 | SOC | CONFIRMED | — |  |
-| 33aa70 | MLB | — | CONFIRMED |  |
-| 3bdd7e | WNBA | — | CONFIRMED |  |
-| 3db89e | MLB | — | WR50 |  |
-| 3dfe91 | MLB | — | WR50 |  |
-| 40d814 | NBA | CONFIRMED | WR50 |  |
-| 40d814 | NHL | — | CONFIRMED |  |
-| 43020b | SOC | — | FLAT |  |
-| 45fc26 | SOC | — | CONFIRMED |  |
-| 468c33 | MLB | WR50 | — |  |
-| 491f30 | MLB | FLAT | — |  |
-| 4a752c | WNBA | — | CONFIRMED |  |
-| 4b912c | SOC | FLAT | — |  |
-| 4c9ada | MLB | — | FLAT |  |
-| 4c9ada | SOC | — | FLAT |  |
-| 4c9ada | UFC | — | WR50 |  |
-| 4edc5b | NBA | WR50 | FLAT |  |
-| 52aeeb | NHL | — | CONFIRMED |  |
-| 53b215 | NHL | — | WR50 |  |
-| 55647a | WNBA | — | WR50 |  |
-| 57be17 | MLB | — | FLAT |  |
-| 57be17 | SOC | — | FLAT |  |
-| 59266e | SOC | — | CONFIRMED |  |
-| 5b53d1 | SOC | — | CONFIRMED |  |
-| 5dc83b | SOC | — | FLAT |  |
-| 5fc79c | MLB | — | CONFIRMED |  |
-| 621848 | UFC | — | WR50 |  |
-| 63fc82 | MLB | — | FLAT |  |
-| 63fc82 | SOC | — | FLAT |  |
-| 69f882 | UFC | FLAT | WR50 |  |
-| 6ac120 | UFC | — | FLAT |  |
-| 6b0288 | SOC | — | FLAT |  |
-| 6b853d | MLB | FLAT | — |  |
-| 6b853d | NBA | — | WR50 |  |
-| 6b853d | NHL | — | WR50 |  |
-| 6bd96a | NBA | FLAT | — |  |
-| 6c78fd | SOC | — | WR50 |  |
-| 73f5b0 | NBA | — | WR50 |  |
-| 799fad | MLB | — | WR50 |  |
-| 799fad | NBA | — | CONFIRMED |  |
-| 799fad | NHL | — | CONFIRMED |  |
-| 7d395d | MLB | — | WR50 |  |
-| 7da3d5 | UFC | FLAT | — |  |
-| 7da3d5 | WNBA | CONFIRMED | — |  |
-| 7f00bc | SOC | — | FLAT |  |
-| 8221cc | SOC | — | CONFIRMED |  |
-| 8366f5 | NHL | WR50 | FLAT |  |
-| 84b2f4 | MLB | — | WR50 |  |
-| 8ce2ce | SOC | — | FLAT |  |
-| 8da2ca | SOC | WR50 | FLAT |  |
-| 8ec926 | UFC | — | FLAT |  |
-| 8ec926 | WNBA | — | WR50 |  |
-| 92df91 | NHL | — | WR50 |  |
-| 94600d | MLB | — | WR50 |  |
-| 946418 | NBA | WR50 | FLAT |  |
-| 946418 | SOC | WR50 | CONFIRMED |  |
-| 955c26 | SOC | CONFIRMED | — |  |
-| 95618e | MLB | WR50 | CONFIRMED |  |
-| 95eb4c | UFC | — | WR50 |  |
-| 981187 | NHL | WR50 | FLAT |  |
-| 98e6d4 | MLB | — | WR50 |  |
-| 99059d | SOC | WR50 | FLAT |  |
-| a09a17 | SOC | WR50 | — |  |
-| a0cff6 | SOC | WR50 | — |  |
-| a0cff6 | WNBA | — | WR50 |  |
-| a190ea | SOC | WR50 | — |  |
-| a7a9cc | SOC | — | FLAT |  |
-| a8c991 | SOC | — | FLAT |  |
-| aa9fb4 | MLB | — | WR50 |  |
-| ab39ae | SOC | — | WR50 |  |
-| b28d26 | MLB | WR50 | FLAT |  |
-| b32864 | MLB | WR50 | — |  |
-| b32864 | UFC | — | FLAT |  |
-| b6bcf3 | SOC | — | FLAT |  |
-| b839b3 | MLB | FLAT | WR50 |  |
-| bc3532 | SOC | — | FLAT |  |
-| bc44b0 | NHL | FLAT | WR50 |  |
-| bc44b0 | UFC | — | CONFIRMED |  |
-| bc8b21 | SOC | CONFIRMED | — |  |
-| bd659a | SOC | — | CONFIRMED |  |
-| bfe3bc | SOC | — | CONFIRMED |  |
-| c19b3c | NHL | — | CONFIRMED |  |
-| c289a0 | NHL | — | WR50 |  |
-| c2aeea | SOC | — | FLAT |  |
-| c4c933 | SOC | — | CONFIRMED |  |
-| c5cea1 | NBA | — | FLAT |  |
-| c5fefa | SOC | — | WR50 |  |
-| c668b3 | MLB | FLAT | WR50 |  |
-| c911a4 | UFC | — | FLAT |  |
-| cce0fd | NBA | — | WR50 |  |
-| cd2f63 | MLB | WR50 | FLAT |  |
-| cd2f63 | WNBA | FLAT | WR50 |  |
-| cf627b | SOC | — | FLAT |  |
-| cf76ed | MLB | WR50 | — |  |
-| d10319 | MLB | WR50 | — |  |
-| d10319 | SOC | — | WR50 |  |
-| d3f7ad | NBA | FLAT | WR50 |  |
-| d5017f | SOC | — | FLAT |  |
-| d50c53 | NBA | WR50 | — |  |
-| daf4de | MLB | WR50 | — |  |
-| daf4de | SOC | WR50 | CONFIRMED |  |
-| dcafd2 | MLB | — | WR50 |  |
-| de3f67 | SOC | WR50 | — |  |
-| e077f1 | SOC | — | FLAT |  |
-| e2cbd0 | SOC | — | CONFIRMED |  |
-| e3dcd3 | NBA | — | WR50 |  |
-| e70853 | NBA | — | WR50 |  |
-| ebeb6d | MLB | — | WR50 |  |
-| ebeb6d | SOC | — | CONFIRMED |  |
-| eeabaf | NBA | — | FLAT |  |
-| eeb218 | SOC | — | CONFIRMED |  |
-| f114fb | SOC | — | FLAT |  |
-| f2d227 | NBA | CONFIRMED | WR50 |  |
-| f906da | SOC | — | CONFIRMED |  |
-| f9a165 | MLB | — | CONFIRMED |  |
-| f9e3d0 | NHL | — | CONFIRMED |  |
-| fc4582 | NBA | — | WR50 |  |
-| fdd34f | MLB | — | WR50 |  |
-| fdd34f | UFC | — | WR50 |  |
-| fea6f5 | SOC | WR50 | CONFIRMED |  |
+_No whitelist-tier changes vs. the prior run._
 
 ---
 *Generated by `scripts/exportWalletProfiles.js`.*
