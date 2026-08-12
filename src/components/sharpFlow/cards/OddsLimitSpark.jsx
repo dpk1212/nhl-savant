@@ -189,7 +189,7 @@ function stepPath(coords) {
   return d;
 }
 
-function MetricStrip({ evPct, fair, entry, now, flagged, maxNow, movePp, compact }) {
+function MetricStrip({ evPct, fair, entry, now, flagged, maxNow, movePp, compact, polyEntry = null }) {
   const cells = [
     {
       key: 'ev',
@@ -203,9 +203,21 @@ function MetricStrip({ evPct, fair, entry, now, flagged, maxNow, movePp, compact
       value: fmtOdds(fair ?? now),
       color: GOLD_HI,
     },
+  ];
+  if (Number.isFinite(polyEntry)
+      && (!Number.isFinite(entry) || Math.abs(polyEntry - entry) > 1)) {
+    cells.push({
+      key: 'pm',
+      label: 'PM',
+      value: fmtOdds(polyEntry),
+      color: C.text,
+    });
+  }
+  cells.push(
     {
       key: 'open',
-      label: 'OPEN',
+      label: (Number.isFinite(polyEntry) && (!Number.isFinite(entry) || Math.abs(polyEntry - entry) > 1))
+        ? 'PIN' : 'OPEN',
       value: fmtOdds(entry),
       color: C.text,
     },
@@ -215,9 +227,12 @@ function MetricStrip({ evPct, fair, entry, now, flagged, maxNow, movePp, compact
       value: fmtOdds(now ?? fair),
       color: GREEN,
     },
-  ];
+  );
   if (Number.isFinite(flagged) && Number.isFinite(entry) && flagged !== entry) {
-    cells.splice(2, 0, {
+    const hasPm = Number.isFinite(polyEntry)
+      && (!Number.isFinite(entry) || Math.abs(polyEntry - entry) > 1);
+    const insertAt = hasPm ? 3 : 2;
+    cells.splice(insertAt, 0, {
       key: 'got',
       label: 'FLAGGED',
       value: fmtOdds(flagged),
@@ -287,6 +302,12 @@ function MetricStrip({ evPct, fair, entry, now, flagged, maxNow, movePp, compact
   );
 }
 
+function americanToDecimal(am) {
+  const n = Number(am);
+  if (!Number.isFinite(n) || n === 0) return null;
+  return n > 0 ? 1 + n / 100 : 1 + 100 / Math.abs(n);
+}
+
 function DualAxisChart({
   points,
   flagged,
@@ -305,19 +326,21 @@ function DualAxisChart({
   const plotW = w - padL - padR;
   const plotH = h - padTop - padBot;
 
-  // Odds: better American for bettor = higher on chart (negate)
-  const oddsVals = points.map((p) => -p.odds);
-  const refs = [flagged, fair].filter((v) => Number.isFinite(v) && v !== 0);
-  const allOdds = [...oddsVals, ...refs.map((o) => -o)];
+  // Plot in decimal odds space so near-even ML (-103 vs fair +101) does not
+  // cross zero on a negated-American axis (that produced a bogus "-1.5" tick).
+  const toPlot = (am) => americanToDecimal(am);
+  const oddsVals = points.map((p) => toPlot(p.odds)).filter((v) => v != null);
+  const refs = [flagged, fair].map(toPlot).filter((v) => v != null);
+  const allOdds = [...oddsVals, ...refs];
   let oMax = Math.max(...allOdds);
   let oMin = Math.min(...allOdds);
-  if (oMax === oMin) {
-    oMax += 12;
-    oMin -= 12;
+  if (!(oMax > oMin)) {
+    oMax += 0.08;
+    oMin = Math.max(1.01, oMin - 0.08);
   } else {
-    const pad = Math.max(6, (oMax - oMin) * 0.12);
+    const pad = Math.max(0.03, (oMax - oMin) * 0.12);
     oMax += pad;
-    oMin -= pad;
+    oMin = Math.max(1.01, oMin - pad);
   }
   const oSpan = oMax - oMin || 1;
 
@@ -327,11 +350,14 @@ function DualAxisChart({
   const mHi = hasMax ? Math.max(...maxes) * 1.12 : 1000;
   const mSpan = mHi - mLo || 1;
 
-  const yOdds = (neg) => padTop + (1 - (neg - oMin) / oSpan) * plotH;
+  const yOdds = (dec) => padTop + (1 - (dec - oMin) / oSpan) * plotH;
   const yMax = (m) => padTop + (1 - (Math.max(0, m) - mLo) / mSpan) * plotH;
   const xAt = (i) => padL + (i / (points.length - 1)) * plotW;
 
-  const oddsCoords = points.map((p, i) => [xAt(i), yOdds(-p.odds)]);
+  const oddsCoords = points.map((p, i) => {
+    const d = toPlot(p.odds);
+    return [xAt(i), yOdds(d != null ? d : oMin)];
+  });
   const maxCoords = hasMax
     ? points.map((p, i) => [xAt(i), yMax(p.max ?? maxes[0])])
     : [];
@@ -341,10 +367,22 @@ function DualAxisChart({
     ? maxCoords.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ')
     : null;
 
-  const oTicks = [oMax, (oMin + oMax) / 2, oMin].map((v) => ({
-    y: yOdds(v),
-    label: fmtOdds(-v),
-  }));
+  // Tick labels from real American odds in the series (not midpoint of mixed ±).
+  const amSamples = points.map((p) => p.odds).filter((o) => Number.isFinite(o) && o !== 0);
+  if (Number.isFinite(flagged) && flagged !== 0) amSamples.push(flagged);
+  if (Number.isFinite(fair) && fair !== 0) amSamples.push(fair);
+  const amHi = amSamples.length ? Math.max(...amSamples.map((a) => toPlot(a))) : oMax;
+  const amLo = amSamples.length ? Math.min(...amSamples.map((a) => toPlot(a))) : oMin;
+  const midDec = (amHi + amLo) / 2;
+  const decToAm = (dec) => {
+    if (!(dec > 1)) return null;
+    return dec >= 2 ? Math.round((dec - 1) * 100) : Math.round(-100 / (dec - 1));
+  };
+  const oTicks = [
+    { y: yOdds(oMax), label: fmtOdds(decToAm(oMax)) },
+    { y: yOdds(midDec), label: fmtOdds(decToAm(midDec)) },
+    { y: yOdds(oMin), label: fmtOdds(decToAm(oMin)) },
+  ];
   const mTicks = hasMax
     ? [mHi, mHi * 0.5, mLo || mHi * 0.05].map((v) => ({
       y: yMax(v),
@@ -355,7 +393,8 @@ function DualAxisChart({
   const t0 = fmtClock(points[0].t);
   const tMid = points.length >= 3 ? fmtClock(points[Math.floor(points.length / 2)].t) : null;
   const t1 = fmtClock(points[points.length - 1].t);
-  const fairY = Number.isFinite(fair) ? yOdds(-fair) : null;
+  const fairDec = toPlot(fair);
+  const fairY = fairDec != null ? yOdds(fairDec) : null;
   const lastOdds = oddsCoords[oddsCoords.length - 1];
 
   return (
@@ -517,6 +556,7 @@ export default function OddsLimitSpark({
   sma = null,
   maxNow = null,
   movePp = null,
+  polyEntry = null,
   compact = false,
   gid = 'ols',
   showStory = true,
@@ -559,6 +599,7 @@ export default function OddsLimitSpark({
           flagged={flagged}
           maxNow={maxNow ?? sma?.maxNow}
           movePp={movePp}
+          polyEntry={polyEntry}
           compact={compact}
         />
       )}

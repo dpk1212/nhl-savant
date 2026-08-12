@@ -2464,6 +2464,17 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
           <span style={{ fontSize: '1.05rem', fontWeight: 800, letterSpacing: '-0.02em', minWidth: 0 }}>
             {f.pickLabel}
           </span>
+          {f.lineMoved && f.liveMarketLabel && (
+            <span
+              title="Sportsbook main moved off the vault entry line"
+              style={{
+                fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.04em',
+                color: C.textMuted, whiteSpace: 'nowrap',
+              }}
+            >
+              {f.liveMarketLabel}
+            </span>
+          )}
           <span style={{ flex: 1 }} />
           <span style={{ fontSize: '0.9rem', fontWeight: 800, fontFeatureSettings: "'tnum'", color: tracked ? C.textMuted : C.text }}>
             {tracked ? 'No ticket' : `${f.units.toFixed(1)}u`}
@@ -2492,6 +2503,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
             sma={f.marketAgreement}
             maxNow={f.pinnMax ?? f.marketAgreement?.maxNow}
             movePp={f.pinnMovePp}
+            polyEntry={f.polyEntryOdds}
             compact
             showStory={false}
             showMetrics

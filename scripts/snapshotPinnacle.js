@@ -23,7 +23,7 @@ import { resolveSOCTeam } from './lib/soccerTeams.js';
 import { makeUFCGameKey } from './lib/ufcFighters.js';
 import { makeWNBAGameKey } from './lib/wnbaTeams.js';
 import { makeNFLGameKey } from './lib/nflTeams.js';
-import { fetchPinnapiIndex } from './lib/pinnapi.js';
+import { fetchPinnapiIndex, fetchRecentDrops, normalizeDrop, PINNAPI_SPORT_ID } from './lib/pinnapi.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -65,6 +65,8 @@ const MAX_HISTORY = 2600;
 const STALE_HOURS = 36;
 const COMPLETED_HOURS = 6;
 const OUT_PATH = join(ROOT, 'public', 'pinnacle_history.json');
+const STEAM_PATH = join(ROOT, 'public', 'pinnacle_steam.json');
+const STEAM_KEEP_SEC = 6 * 3600;
 
 const NHL_CODES = {
   'Anaheim Ducks': 'ana', 'Boston Bruins': 'bos', 'Buffalo Sabres': 'buf',
@@ -672,6 +674,109 @@ async function run() {
         if (commenceEpoch < completedCutoff) { delete history[label][gk]; continue; }
       }
     }
+  }
+
+  // Edge REST drops → stamp steam onto matched games (cron-friendly; SSE is optional elsewhere).
+  let steamStamped = 0;
+  if (process.env.PINNAPI_KEY) {
+    const sportIds = [...new Set(Object.values(PINNAPI_SPORT_ID))];
+    const rawDrops = [];
+    for (const sportId of sportIds) {
+      const batch = await fetchRecentDrops({
+        mode: 'prematch',
+        sportId,
+        minDropPct: 3,
+        maxAgeSec: 7200,
+        markets: 'moneyline,spread,total',
+        periods: '0',
+        limit: 200,
+      });
+      rawDrops.push(...batch);
+    }
+    const seen = new Set();
+    const normalized = [];
+    for (const raw of rawDrops) {
+      const n = normalizeDrop(raw, now);
+      if (!n || !n.home || !n.away || !Number.isFinite(n.dropPct)) continue;
+      const dedupe = `${n.eventId}|${n.market}|${n.side}|${n.points}|${n.t}|${n.toOdds}`;
+      if (seen.has(dedupe)) continue;
+      seen.add(dedupe);
+      normalized.push(n);
+    }
+
+    const LABEL_BY_SPORT_HINT = [
+      [/hockey|nhl/i, 'NHL'],
+      [/baseball|mlb/i, 'MLB'],
+      [/basketball.*wnba|wnba/i, 'WNBA'],
+      [/basketball|nba|ncaa/i, 'NBA'],
+      [/football|nfl/i, 'NFL'],
+      [/soccer|football.*uefa|epl/i, 'SOC'],
+      [/mma|ufc|combat/i, 'UFC'],
+    ];
+    const guessLabel = (n) => {
+      const blob = `${n.sportName || ''} ${n.league || ''}`;
+      for (const [re, label] of LABEL_BY_SPORT_HINT) {
+        if (re.test(blob)) {
+          if (label === 'NBA' && /wnba/i.test(blob)) return 'WNBA';
+          if (label === 'NBA' && /ncaa|college|ncaab/i.test(blob)) return 'CBB';
+          return label;
+        }
+      }
+      return null;
+    };
+
+    for (const n of normalized) {
+      const labels = [];
+      const guessed = guessLabel(n);
+      if (guessed) labels.push(guessed);
+      // Also try all labels — makeGameKey is sport-aware for SOC/UFC/etc.
+      for (const lab of ['MLB', 'NHL', 'NBA', 'NFL', 'CBB', 'WNBA', 'SOC', 'UFC']) {
+        if (!labels.includes(lab)) labels.push(lab);
+      }
+      let attached = false;
+      for (const label of labels) {
+        if (!history[label]) continue;
+        const gk = makeGameKey(n.away, n.home, label);
+        if (!gk || !history[label][gk]) continue;
+        const gd = history[label][gk];
+        const prev = Array.isArray(gd.steamDrops) ? gd.steamDrops : [];
+        const next = [...prev, {
+          t: n.t,
+          market: n.market,
+          side: n.side,
+          points: n.points,
+          fromOdds: n.fromOdds,
+          toOdds: n.toOdds,
+          dropPct: n.dropPct,
+          nvp: n.nvp,
+        }].filter((d) => Number.isFinite(d.t) && d.t >= now - STEAM_KEEP_SEC);
+        // Dedupe near-identical prints
+        const uniq = [];
+        const uk = new Set();
+        for (const d of next.sort((a, b) => (a.t || 0) - (b.t || 0))) {
+          const k = `${d.market}|${d.side}|${d.points}|${d.toOdds}|${Math.floor((d.t || 0) / 30)}`;
+          if (uk.has(k)) continue;
+          uk.add(k);
+          uniq.push(d);
+        }
+        gd.steamDrops = uniq.slice(-40);
+        history[label][gk] = gd;
+        steamStamped++;
+        attached = true;
+        break;
+      }
+      if (!attached) {
+        // keep in aggregate file even if unmatched
+      }
+    }
+
+    writeFileSync(STEAM_PATH, JSON.stringify({
+      updatedAt: new Date().toISOString(),
+      count: normalized.length,
+      stamped: steamStamped,
+      drops: normalized.slice(0, 300),
+    }, null, 2), 'utf8');
+    console.log(`  ⚡ steam drops: ${normalized.length} pulled, ${steamStamped} matched to games`);
   }
 
   writeFileSync(OUT_PATH, JSON.stringify(history, null, 2), 'utf8');

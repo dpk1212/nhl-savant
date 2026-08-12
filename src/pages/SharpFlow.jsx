@@ -3913,14 +3913,22 @@ const GameFlowCard = memo(function GameFlowCard({ game, isMobile, whaleProfiles,
   const pinnMax = pinnGame?.max ?? pinnGame?.current?.max ?? null;
   const pinnMaxLabel = fmtMaxStake(pinnMax);
   const pinnLimitTested = pinnMax != null && pinnMax >= PINNACLE_LIMIT_TESTED;
-  const pinnMaxPoints = pinnHistory.map(h => h.max).filter(v => v != null && Number.isFinite(v));
+  const pinnMaxPoints = pinnHistory.map(h => h.max ?? h.maxMoneyLine).filter(v => v != null && Number.isFinite(v) && v > 0);
+  const pinnMaxOpen = pinnMaxPoints.length ? Math.min(...pinnMaxPoints) : null;
+  const pinnMaxNow = pinnMaxPoints.length ? pinnMaxPoints[pinnMaxPoints.length - 1] : pinnMax;
+  const pinnMaxDelta = (Number.isFinite(pinnMaxOpen) && Number.isFinite(pinnMaxNow))
+    ? pinnMaxNow - pinnMaxOpen
+    : null;
+  const pinnLimitRising = (Number.isFinite(pinnMaxDelta) && pinnMaxDelta >= 500)
+    || (Number.isFinite(pinnMaxOpen) && Number.isFinite(pinnMaxNow) && pinnMaxOpen > 0
+      && pinnMaxNow >= pinnMaxOpen * 1.45);
 
   const criteria = [
     { label: 'Reverse Line Move', met: isReverse },
     { label: '+EV Edge', met: maxEV > 0 },
     { label: 'Pinnacle Confirms', met: !!pinnConfirms },
     { label: 'Whale Consensus', met: !!whaleAligned },
-    { label: 'High Volume', met: game.totalCash >= 500000 },
+    { label: 'Limit Rising', met: !!pinnLimitRising },
   ];
   const criteriaMet = criteria.filter(c => c.met).length;
 
@@ -4209,7 +4217,16 @@ const GameFlowCard = memo(function GameFlowCard({ game, isMobile, whaleProfiles,
                 <span style={{ ...T.micro, fontSize: '0.55rem', color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
                   Max {pinnMaxLabel}
                 </span>
-                {pinnLimitTested && (
+                {pinnLimitRising && (
+                  <span style={{
+                    ...T.micro, fontSize: '0.5rem', fontWeight: 800, letterSpacing: '0.04em',
+                    color: B.green, padding: '0.1rem 0.3rem', borderRadius: '3px',
+                    background: 'rgba(34,197,94,0.12)', border: `1px solid rgba(34,197,94,0.35)`,
+                  }}>
+                    MAX ↑
+                  </span>
+                )}
+                {pinnLimitTested && !pinnLimitRising && (
                   <span style={{
                     ...T.micro, fontSize: '0.5rem', fontWeight: 800, letterSpacing: '0.04em',
                     color: B.green, padding: '0.1rem 0.3rem', borderRadius: '3px',
@@ -5299,7 +5316,7 @@ const LockCountdown = memo(function LockCountdown({ gameTime, isGraded }) {
   );
 });
 
-const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile, tierWindows, pinnacleHistory }) {
+const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile, tierWindows, pinnacleHistory, totalPositions = null }) {
   const {
     team, away, home, sport, units, odds, book, lockedAt, peakAt, gameTime,
     status, outcome, profit, closingOdds, totalInvested, evEdge, consensusStrength,
@@ -5546,6 +5563,7 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile, tierWind
     tierPerf,
     pinnacleHistory,
     walletProfiles: WALLET_PROFILES_CACHE,
+    totalPositions,
   });
   return <LockedPositionCardView f={lockedFixture} />;
 });
@@ -8240,12 +8258,15 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const totalPlayBestBook = totalPlaySide === 'under'
     ? pinnGame?.bestUnderTotal?.book
     : pinnGame?.bestOverTotal?.book;
-  // Line for "Over 9.5" — Pinnacle first; reject entryLine=1 Polymarket junk.
+  // Line for totals — vault entry first (matches Engine Open Positions);
+  // Pinnacle MAIN only when no plausible wallet line. Reject entryLine=1 junk.
   const totalPlayLine = (() => {
-    if (Number.isFinite(totalLine) && totalLine > 1) return totalLine;
     const fromPos = (totalGameData?.positions || [])
-      .find((p) => p.side === totalPlaySide && Number.isFinite(p.entryLine) && p.entryLine > 1);
-    return Number.isFinite(fromPos?.entryLine) ? fromPos.entryLine : null;
+      .filter((p) => p.side === totalPlaySide && Number.isFinite(p.entryLine) && p.entryLine > 1)
+      .sort((a, b) => (b.invested || 0) - (a.invested || 0))[0];
+    if (Number.isFinite(fromPos?.entryLine) && fromPos.entryLine >= 1.5) return fromPos.entryLine;
+    if (Number.isFinite(totalLine) && totalLine > 1) return totalLine;
+    return null;
   })();
   const totalPickLabel = totalPlayLine != null
     ? `${totalPlaySide === 'under' ? 'Under' : 'Over'} ${totalPlayLine}`
@@ -12829,9 +12850,29 @@ export default function SharpFlow() {
                           line: (() => {
                             const locked = peak.line ?? lock.line;
                             const close = sd.closingLine;
+                            // Pre-T-15 TOTAL: prefer live vault entryLine so Locked
+                            // matches Engine Open Positions (not live book MAIN).
+                            if (!pastT15Odds && marketTypeKey === 'total' && liveGameData?.positions) {
+                              const byLine = new Map();
+                              for (const p of liveGameData.positions) {
+                                if (p.side !== sideKey) continue;
+                                const ln = Number(p.entryLine ?? p.totalLine);
+                                if (!Number.isFinite(ln) || ln < 1.5) continue;
+                                byLine.set(ln, (byLine.get(ln) || 0) + (Number(p.invested) || 0));
+                              }
+                              let vaultLine = null;
+                              let bestInv = -1;
+                              for (const [ln, inv] of byLine) {
+                                if (inv > bestInv) { vaultLine = ln; bestInv = inv; }
+                              }
+                              if (Number.isFinite(vaultLine)) return vaultLine;
+                            }
                             if (pastT15Odds) return locked ?? close ?? null;
                             return locked ?? close ?? null;
                           })(),
+                          vaultPositions: (!pastT15Odds && marketTypeKey === 'total' && liveGameData?.positions)
+                            ? liveGameData.positions
+                            : null,
                           superseded: !!sd.superseded,
                           health: healthResolved,
                           // True when this side was a LEAN / 0u tracked-only
@@ -13247,7 +13288,7 @@ export default function SharpFlow() {
                                   gap: '0.75rem',
                                 }}>
                                   {stakedCards.map(p => (
-                                    <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} tierWindows={displayTierWindows} pinnacleHistory={pinnacleHistory} />
+                                    <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} tierWindows={displayTierWindows} pinnacleHistory={pinnacleHistory} totalPositions={totalPositions} />
                                   ))}
                                 </div>
                               )}
@@ -13273,7 +13314,7 @@ export default function SharpFlow() {
                                     opacity: 0.78,
                                   }}>
                                     {monitoringCards.map(p => (
-                                      <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} tierWindows={displayTierWindows} pinnacleHistory={pinnacleHistory} />
+                                      <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} tierWindows={displayTierWindows} pinnacleHistory={pinnacleHistory} totalPositions={totalPositions} />
                                     ))}
                                   </div>
                                 </div>

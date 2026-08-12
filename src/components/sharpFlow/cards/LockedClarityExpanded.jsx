@@ -1685,6 +1685,7 @@ export default function LockedClarityExpanded({
                 sma={f.marketAgreement}
                 maxNow={f.pinnMax ?? f.marketAgreement?.maxNow}
                 movePp={f.pinnMovePp}
+                polyEntry={f.polyEntryOdds}
                 gid={`ols-${gid}`}
                 showStory
               />

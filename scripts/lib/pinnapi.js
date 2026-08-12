@@ -214,3 +214,158 @@ export async function fetchPinnapiIndex(label, makeGameKey) {
   }
   return map;
 }
+
+/**
+ * Pull recent odds drops (REST buffer — Edge/Drops plans).
+ * Prefer this in cron over long-lived SSE; same drop events as /odds-drop.
+ *
+ * @param {object} [opts]
+ * @param {'prematch'|'live'} [opts.mode]
+ * @param {number} [opts.sportId]
+ * @param {number} [opts.minDropPct]
+ * @param {number} [opts.maxAgeSec]
+ * @param {string} [opts.markets]  csv: moneyline,spread,total
+ * @returns {Promise<object[]>}
+ */
+export async function fetchRecentDrops({
+  mode = 'prematch',
+  sportId = null,
+  minDropPct = 3,
+  maxAgeSec = 7200,
+  markets = 'moneyline,spread,total',
+  periods = '0',
+  limit = 500,
+  apiKey = process.env.PINNAPI_KEY,
+} = {}) {
+  if (!apiKey) return [];
+  const qs = new URLSearchParams({
+    mode,
+    min_drop_pct: String(minDropPct),
+    max_age_sec: String(maxAgeSec),
+    markets,
+    periods,
+    limit: String(limit),
+  });
+  if (sportId != null) qs.set('sport_id', String(sportId));
+  const url = `https://pinnapi.com/api/drops?${qs}`;
+  let res;
+  try {
+    res = await fetch(url, { headers: { 'x-portal-apikey': apiKey } });
+  } catch (e) {
+    console.warn(`  ⚠️ pinnapi drops network: ${e.message}`);
+    return [];
+  }
+  if (res.status === 401 || res.status === 403) {
+    console.warn(`  ⚠️ pinnapi drops: HTTP ${res.status} (need Edge/Drops plan)`);
+    return [];
+  }
+  if (res.status === 429) {
+    console.warn('  ⚠️ pinnapi drops rate limited — skipping');
+    return [];
+  }
+  if (!res.ok) {
+    console.warn(`  ⚠️ pinnapi drops: HTTP ${res.status}`);
+    return [];
+  }
+  try {
+    const data = await res.json();
+    return Array.isArray(data?.drops) ? data.drops : [];
+  } catch (e) {
+    console.warn(`  ⚠️ pinnapi drops parse: ${e.message}`);
+    return [];
+  }
+}
+
+/** Decimal (European) → American for drop from/to prices. */
+export function normalizeDrop(raw, nowSec = Math.floor(Date.now() / 1000)) {
+  if (!raw || typeof raw !== 'object') return null;
+  const fromDec = Number(raw.from ?? raw.from_price);
+  const toDec = Number(raw.to ?? raw.to_price);
+  const dropPct = Number(raw.drop_pct);
+  const age = Number(raw.age_s);
+  const mktRaw = String(raw.market || raw.sect || '').toLowerCase();
+  let market = null;
+  if (mktRaw.includes('total') || mktRaw === 'ou' || mktRaw === 'o/u') market = 'total';
+  else if (mktRaw.includes('spread') || mktRaw.includes('handicap')) market = 'spread';
+  else if (mktRaw.includes('money') || mktRaw === 'ml' || mktRaw === 'moneyline') market = 'ml';
+  const sideRaw = String(raw.side || raw.outcome || '').toLowerCase();
+  let side = null;
+  if (sideRaw === 'over' || sideRaw.startsWith('over')) side = 'over';
+  else if (sideRaw === 'under' || sideRaw.startsWith('under')) side = 'under';
+  else if (sideRaw === 'home' || sideRaw === '1') side = 'home';
+  else if (sideRaw === 'away' || sideRaw === '2') side = 'away';
+  else if (sideRaw === 'draw' || sideRaw === 'x') side = 'draw';
+  const t = Number.isFinite(age) ? nowSec - age : nowSec;
+  return {
+    eventId: raw.event_id ?? raw.id ?? null,
+    sportName: raw.sport_name || raw.sport || null,
+    league: raw.league || null,
+    home: raw.home || null,
+    away: raw.away || null,
+    market,
+    side,
+    points: Number.isFinite(Number(raw.points)) ? Number(raw.points) : null,
+    fromDec: Number.isFinite(fromDec) ? fromDec : null,
+    toDec: Number.isFinite(toDec) ? toDec : null,
+    fromOdds: decimalToAmerican(fromDec),
+    toOdds: decimalToAmerican(toDec),
+    dropPct: Number.isFinite(dropPct) ? dropPct : null,
+    nvp: Number.isFinite(Number(raw.nvp)) ? Number(raw.nvp) : null,
+    t,
+    isLive: !!raw.is_live,
+  };
+}
+
+/**
+ * Optional long-lived SSE consumer (Edge). Prefer fetchRecentDrops in Actions cron.
+ * Yields normalized drop objects. Caller must abort via signal.
+ */
+export async function* streamOddsDrops({
+  prematch = true,
+  minDrop = 3,
+  apiKey = process.env.PINNAPI_KEY,
+  signal = null,
+} = {}) {
+  if (!apiKey) return;
+  const path = prematch ? '/odds-drop-prematch' : '/odds-drop';
+  const url = `https://pinnapi.com${path}?key=${encodeURIComponent(apiKey)}&min_drop=${minDrop}`;
+  let res;
+  try {
+    res = await fetch(url, {
+      headers: { Accept: 'text/event-stream', 'x-portal-apikey': apiKey },
+      signal,
+    });
+  } catch (e) {
+    console.warn(`  ⚠️ pinnapi SSE connect: ${e.message}`);
+    return;
+  }
+  if (!res.ok || !res.body) {
+    console.warn(`  ⚠️ pinnapi SSE HTTP ${res.status}`);
+    return;
+  }
+  const reader = res.body.getReader();
+  const dec = new TextDecoder();
+  let buf = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    const parts = buf.split('\n');
+    buf = parts.pop() || '';
+    for (const line of parts) {
+      if (!line.startsWith('data:')) continue;
+      const raw = line.slice(5).trim();
+      if (!raw) continue;
+      let payload;
+      try { payload = JSON.parse(raw); } catch { continue; }
+      if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+        if (payload.type === 'connected' || payload.type === 'error') continue;
+      }
+      const list = Array.isArray(payload) ? payload : [payload];
+      for (const d of list) {
+        const n = normalizeDrop(d);
+        if (n) yield n;
+      }
+    }
+  }
+}

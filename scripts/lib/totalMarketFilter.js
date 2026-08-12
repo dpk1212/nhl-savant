@@ -53,7 +53,7 @@ export function parseTotalEntryLine(title = '') {
  * @param {number|null|undefined} mainLine  — polyTotal.line when known
  * @param {{ maxDiff?: number }} [opts]
  */
-export function isMainishTotalLine(entryLine, mainLine, { maxDiff = 1 } = {}) {
+export function isMainishTotalLine(entryLine, mainLine, { maxDiff = 2.5 } = {}) {
   if (!Number.isFinite(entryLine)) return false;
   if (!Number.isFinite(mainLine)) return true; // no anchor → allow FG positions
   return Math.abs(Number(entryLine) - Number(mainLine)) <= maxDiff;
@@ -78,7 +78,9 @@ export function acceptFullGameTotalPosition({
   entryLine = null,
   mainLine = null,
   sport = null,
-  maxDiff = 1,
+  // Keep near-main full-game alts (MLB opens 7.5 → books steam to 9.5).
+  // F5 / team totals still rejected via title/slug + MLB F5 heuristic.
+  maxDiff = 2.5,
 } = {}) {
   if (isNonFullGameTotalMarket(title, slug)) {
     return { ok: false, reason: 'non_full_game_total' };

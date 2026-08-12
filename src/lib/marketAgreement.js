@@ -51,6 +51,32 @@ function histMax(h, marketType) {
   return h.maxMoneyLine ?? h.max ?? null;
 }
 
+/** First / last history point that actually has a max (early prints often lack it). */
+function firstHistMax(hist, marketType) {
+  for (const h of hist || []) {
+    const m = Number(histMax(h, marketType));
+    if (Number.isFinite(m) && m > 0) return m;
+  }
+  return null;
+}
+function lastHistMax(hist, marketType) {
+  const arr = hist || [];
+  for (let i = arr.length - 1; i >= 0; i--) {
+    const m = Number(histMax(arr[i], marketType));
+    if (Number.isFinite(m) && m > 0) return m;
+  }
+  return null;
+}
+function minHistMax(hist, marketType) {
+  let lo = null;
+  for (const h of hist || []) {
+    const m = Number(histMax(h, marketType));
+    if (!Number.isFinite(m) || m <= 0) continue;
+    lo = lo == null ? m : Math.min(lo, m);
+  }
+  return lo;
+}
+
 /**
  * Extract open→now fair odds for the pick side + max trajectory from pinnacle_history game.
  */
@@ -109,8 +135,10 @@ export function extractMarketPath(pinnGame, {
   if (hist.length >= 1) {
     openOdds = oddsAt(hist[0]);
     nowOdds = oddsAt(hist[hist.length - 1]);
-    maxOpen = histMax(hist[0], mt);
-    maxNow = histMax(hist[hist.length - 1], mt);
+    // Session low → latest (captures $10K→$20K doubles even when early
+    // prints lacked max and firstHistMax would equal lastHistMax).
+    maxOpen = minHistMax(hist, mt);
+    maxNow = lastHistMax(hist, mt);
   }
 
   // Fall back to opener/current game fields when history thin.
@@ -118,33 +146,35 @@ export function extractMarketPath(pinnGame, {
     if (isTotal) {
       const op = pinnGame.totalOpener;
       openOdds = op ? (sideIsAway ? op.underOdds : op.overOdds) : null;
-      maxOpen = maxOpen ?? op?.max ?? pinnGame.maxTotal ?? null;
+      maxOpen = maxOpen ?? op?.max ?? null;
     } else if (isSpread) {
       const op = pinnGame.spreadOpener;
       openOdds = op ? (sideIsAway ? op.awayOdds : op.homeOdds) : null;
-      maxOpen = maxOpen ?? op?.max ?? pinnGame.maxSpread ?? null;
+      maxOpen = maxOpen ?? op?.max ?? null;
     } else {
       const op = pinnGame.opener;
       openOdds = op
         ? (pickDraw ? op.draw : sideIsAway ? op.away : op.home)
         : null;
-      maxOpen = maxOpen ?? op?.max ?? pinnGame.maxMoneyLine ?? pinnGame.max ?? null;
+      maxOpen = maxOpen ?? op?.max ?? null;
     }
   }
-  if (nowOdds == null) {
+  if (nowOdds == null || maxNow == null) {
     if (isTotal) {
       const cur = pinnGame.totalCurrent;
-      nowOdds = cur ? (sideIsAway ? cur.underOdds : cur.overOdds) : null;
+      if (nowOdds == null) nowOdds = cur ? (sideIsAway ? cur.underOdds : cur.overOdds) : null;
       maxNow = maxNow ?? cur?.max ?? pinnGame.maxTotal ?? null;
     } else if (isSpread) {
       const cur = pinnGame.spreadCurrent;
-      nowOdds = cur ? (sideIsAway ? cur.awayOdds : cur.homeOdds) : null;
+      if (nowOdds == null) nowOdds = cur ? (sideIsAway ? cur.awayOdds : cur.homeOdds) : null;
       maxNow = maxNow ?? cur?.max ?? pinnGame.maxSpread ?? null;
     } else {
       const cur = pinnGame.current;
-      nowOdds = cur
-        ? (pickDraw ? cur.draw : sideIsAway ? cur.away : cur.home)
-        : null;
+      if (nowOdds == null) {
+        nowOdds = cur
+          ? (pickDraw ? cur.draw : sideIsAway ? cur.away : cur.home)
+          : null;
+      }
       maxNow = maxNow ?? cur?.max ?? pinnGame.maxMoneyLine ?? pinnGame.max ?? null;
     }
   }
@@ -370,9 +400,12 @@ export function buildLockedMarketSignals({
   const maxDelta = sma?.maxDelta ?? sma?.path?.maxDelta ?? null;
   const maxNow = sma?.maxNow ?? sma?.path?.maxNow ?? null;
   const limitTested = !!(sma?.limitTested || (Number.isFinite(maxNow) && maxNow >= LIMIT_TESTED_USD));
-  const steamedWith = dir > 0 && Number.isFinite(movePp) && movePp >= 0.25;
+  const steamedWith = (dir > 0 && Number.isFinite(movePp) && movePp >= 0.25)
+    || !!(sma?.path?.steamDrop && Number(sma.path.steamDrop.dropPct) >= 3);
   const steamedAgainst = dir < 0 && Number.isFinite(movePp) && movePp <= -0.25;
-  const limitRising = Number.isFinite(maxDelta) && maxDelta >= 500;
+  const limitRising = (Number.isFinite(maxDelta) && maxDelta >= 500)
+    || (Number.isFinite(maxOpen) && Number.isFinite(maxNow) && maxOpen > 0
+      && maxNow >= maxOpen * 1.45);
   const limitFalling = Number.isFinite(maxDelta) && maxDelta <= -500;
   const pinnConfirms = sma?.state === 'CONFIRMS' || sma?.state === 'WITH'
     || (steamedWith && limitTested);
@@ -455,20 +488,71 @@ export function buildLockedMarketSignals({
 }
 
 /**
+ * Match a pinnapi steam drop to our ticket (market + side + optional line).
+ * Totals: over/under + points near ticket line when present.
+ */
+export function matchSteamDrop(drops, {
+  marketType = 'ml',
+  sideNorm = 'home',
+  line = null,
+  minDropPct = 3,
+  sinceSec = null,
+} = {}) {
+  if (!Array.isArray(drops) || !drops.length) return null;
+  const mt = String(marketType || 'ml').toLowerCase();
+  const wantMkt = mt === 'total' ? 'total' : mt === 'spread' ? 'spread' : 'ml';
+  const wantSide = mt === 'total'
+    ? (sideNorm === 'away' || sideNorm === 'under' ? 'under' : 'over')
+    : (sideNorm === 'away' ? 'away' : sideNorm === 'draw' ? 'draw' : 'home');
+  let best = null;
+  for (const d of drops) {
+    if (!d || d.market !== wantMkt || d.side !== wantSide) continue;
+    if (!(Number(d.dropPct) >= minDropPct)) continue;
+    if (Number.isFinite(sinceSec) && Number.isFinite(d.t) && d.t < sinceSec) continue;
+    if (wantMkt !== 'ml' && Number.isFinite(line) && Number.isFinite(d.points)
+        && Math.abs(d.points - line) > 0.051
+        && Math.abs(Math.abs(d.points) - Math.abs(line)) > 0.051) {
+      continue;
+    }
+    if (!best || (d.dropPct || 0) > (best.dropPct || 0)) best = d;
+  }
+  return best;
+}
+
+/**
  * Convenience: pinnacle game + pick context → full SMA payload.
  */
 export function sharpMarketAgreementFromPinnGame(pinnGame, ctx = {}) {
   const path = extractMarketPath(pinnGame, ctx);
+  const steam = matchSteamDrop(pinnGame?.steamDrops, {
+    marketType: ctx.marketType,
+    sideNorm: ctx.sideNorm,
+    line: ctx.line,
+    minDropPct: 3,
+  });
+  const base = computeSharpMarketAgreement({
+    provenOnSide: ctx.provenOnSide,
+    vaultOnSide: ctx.vaultOnSide,
+    trackedOnSide: ctx.trackedOnSide,
+    deltaProbPp: path.deltaProbPp,
+    maxNow: path.maxNow,
+    maxDelta: path.maxDelta,
+    liveEvPct: ctx.liveEvPct,
+  });
+  // Explicit Edge drop on our side counts as steam-with even if open→now history is flat.
+  if (steam && (base.dir == null || base.dir >= 0)) {
+    if (base.state === 'NEUTRAL' || base.state === 'LIQUID' || base.dir === 0) {
+      base.state = base.limitTested ? 'WITH' : 'WITH';
+      base.label = base.limitTested ? 'PINN STEAM' : 'PINN STEAM';
+      base.tone = 'with';
+    }
+  }
   return {
-    ...computeSharpMarketAgreement({
-      provenOnSide: ctx.provenOnSide,
-      vaultOnSide: ctx.vaultOnSide,
-      trackedOnSide: ctx.trackedOnSide,
-      deltaProbPp: path.deltaProbPp,
-      maxNow: path.maxNow,
-      maxDelta: path.maxDelta,
-      liveEvPct: ctx.liveEvPct,
-    }),
-    path,
+    ...base,
+    path: {
+      ...path,
+      steamDrop: steam,
+      steamDropPct: steam?.dropPct ?? null,
+    },
   };
 }
