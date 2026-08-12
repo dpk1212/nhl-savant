@@ -2111,7 +2111,8 @@ async function createMissingLockedPicks({
   const created = []; // { col, docId, side, ags, agsTotal }
   const skipped = []; // { reason, ... }
   const writes = new Map(); // col → [{ docId, payload }]
-  const PREGAME_BUFFER_MS = 5 * 60 * 1000;
+  // Same T-15 freeze as reconcileSide — create used to allow until T-5, which
+  // minted late locks (e.g. BOS -1.5 @ 7:01 for a 7:07 first pitch).
 
   /** True if any side in this group has PENDING CONFIRMED×Q1×sized≥0.5. */
   function groupHasConfirmedQ1Sized(positions, sport, marketType) {
@@ -2203,8 +2204,8 @@ async function createMissingLockedPicks({
       skipped.push({ docId, col, reason: 'game_not_target_date', gameDateET });
       continue;
     }
-    if (!force && now >= meta.commenceTime - PREGAME_BUFFER_MS) {
-      skipped.push({ docId, col, reason: 'past_pregame_window' });
+    if (!force && now >= meta.commenceTime - T_MINUS_15_MIN_MS) {
+      skipped.push({ docId, col, reason: 'past_t_minus_15' });
       continue;
     }
 

@@ -2220,9 +2220,10 @@ function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet
 
 async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTime, side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile, regime, qualityProxy, v8Scoring }) {
   try {
-    const PREGAME_BUFFER_MS = 5 * 60 * 1000;
+    // Match cron T-15 freeze — do not mint new locks inside the freeze window.
+    const T_MINUS_15_MS = 15 * 60 * 1000;
     const docId = `${date}_${sport}_${gameKey}`;
-    if (!commenceTime || Date.now() >= commenceTime - PREGAME_BUFFER_MS) {
+    if (!commenceTime || Date.now() >= commenceTime - T_MINUS_15_MS) {
       return { docId, action: 'no_change' };
     }
     const contribTier = classifyContributionTier(v8Scoring, side);
@@ -2530,9 +2531,10 @@ function buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, ev
 
 async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, commenceTime, side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring }) {
   try {
-    const PREGAME_BUFFER_MS = 5 * 60 * 1000;
+    // Match cron T-15 freeze — do not mint new locks inside the freeze window.
+    const T_MINUS_15_MS = 15 * 60 * 1000;
     const docId = `${date}_${sport}_${gameKey}_spread`;
-    if (!commenceTime || Date.now() >= commenceTime - PREGAME_BUFFER_MS) {
+    if (!commenceTime || Date.now() >= commenceTime - T_MINUS_15_MS) {
       return { docId, action: 'no_change' };
     }
     const contribTier = classifyContributionTier(v8Scoring, side);
@@ -2661,9 +2663,10 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
 
 async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, commenceTime, side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring }) {
   try {
-    const PREGAME_BUFFER_MS = 5 * 60 * 1000;
+    // Match cron T-15 freeze — do not mint new locks inside the freeze window.
+    const T_MINUS_15_MS = 15 * 60 * 1000;
     const docId = `${date}_${sport}_${gameKey}_total`;
-    if (!commenceTime || Date.now() >= commenceTime - PREGAME_BUFFER_MS) {
+    if (!commenceTime || Date.now() >= commenceTime - T_MINUS_15_MS) {
       return { docId, action: 'no_change' };
     }
     const contribTier = classifyContributionTier(v8Scoring, side);
