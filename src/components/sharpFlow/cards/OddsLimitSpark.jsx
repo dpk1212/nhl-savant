@@ -240,17 +240,22 @@ function MetricStrip({ evPct, fair, entry, now, flagged, maxNow, movePp, compact
     });
   }
   const maxLabel = fmtMax(maxNow);
-  const fs = compact ? 13 : 15;
-  const labFs = compact ? 8 : 9;
+  const fs = compact ? 12 : 15;
+  const labFs = compact ? 7.5 : 9;
 
   return (
     <div style={{
       display: 'flex',
-      borderRadius: compact ? 8 : 10,
-      border: '1px solid rgba(148,163,184,0.14)',
-      background: 'rgba(0,0,0,0.28)',
+      borderRadius: compact ? 10 : 10,
+      border: compact
+        ? '1px solid rgba(212,175,55,0.14)'
+        : '1px solid rgba(148,163,184,0.14)',
+      background: compact
+        ? 'linear-gradient(180deg, rgba(255,255,255,0.035) 0%, rgba(0,0,0,0.22) 100%)'
+        : 'rgba(0,0,0,0.28)',
       overflow: 'hidden',
-      marginBottom: compact ? 6 : 10,
+      marginBottom: compact ? 8 : 10,
+      boxShadow: compact ? 'inset 0 1px 0 rgba(255,255,255,0.04)' : undefined,
     }}>
       {cells.map((c, i) => (
         <div
@@ -258,19 +263,23 @@ function MetricStrip({ evPct, fair, entry, now, flagged, maxNow, movePp, compact
           style={{
             flex: 1,
             minWidth: 0,
-            padding: compact ? '7px 6px' : '9px 8px',
+            padding: compact ? '8px 5px 7px' : '9px 8px',
             textAlign: 'center',
-            borderLeft: i === 0 ? 'none' : '1px solid rgba(148,163,184,0.12)',
+            borderLeft: i === 0
+              ? 'none'
+              : compact
+                ? '1px solid rgba(212,175,55,0.10)'
+                : '1px solid rgba(148,163,184,0.12)',
           }}
         >
           <div style={{
             fontFamily: MONO, fontSize: labFs, fontWeight: 700,
-            letterSpacing: '0.1em', color: C.textFaint, marginBottom: 3,
+            letterSpacing: '0.12em', color: C.textFaint, marginBottom: compact ? 4 : 3,
           }}>
             {c.label}
           </div>
           <div style={{
-            fontSize: fs, fontWeight: 800, letterSpacing: '-0.02em',
+            fontSize: fs, fontWeight: 800, letterSpacing: '-0.03em',
             color: c.color, fontFeatureSettings: "'tnum'",
           }}>
             {c.value}
@@ -279,20 +288,22 @@ function MetricStrip({ evPct, fair, entry, now, flagged, maxNow, movePp, compact
       ))}
       {(maxLabel || Number.isFinite(movePp)) && (
         <div style={{
-          flex: compact ? '0 0 56px' : '0 0 68px',
-          padding: compact ? '7px 6px' : '9px 8px',
+          flex: compact ? '0 0 54px' : '0 0 68px',
+          padding: compact ? '8px 5px 7px' : '9px 8px',
           textAlign: 'center',
-          borderLeft: '1px solid rgba(148,163,184,0.12)',
+          borderLeft: compact
+            ? '1px solid rgba(212,175,55,0.10)'
+            : '1px solid rgba(148,163,184,0.12)',
         }}>
           <div style={{
             fontFamily: MONO, fontSize: labFs, fontWeight: 700,
-            letterSpacing: '0.1em', color: C.textFaint, marginBottom: 3,
+            letterSpacing: '0.12em', color: C.textFaint, marginBottom: compact ? 4 : 3,
           }}>
             {maxLabel ? 'MAX' : 'MOVE'}
           </div>
           <div style={{
             fontSize: compact ? 11 : 12, fontWeight: 800,
-            color: LIMIT_DIM, fontFeatureSettings: "'tnum'",
+            color: LIMIT_DIM, fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em',
           }}>
             {maxLabel || (Number.isFinite(movePp) ? `${movePp > 0 ? '+' : ''}${movePp.toFixed(1)}pp` : '—')}
           </div>
