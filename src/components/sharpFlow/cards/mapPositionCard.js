@@ -503,6 +503,18 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
         fairPair = sideKey === 'under' ? [under, over] : [over, under];
       }
       if (Number.isFinite(matchHist.t)) latestT = matchHist.t;
+    } else if (!sealed && stakedLine != null && Array.isArray(pinnGame.totalLines)) {
+      // Live alt board (same cycle) when history hasn't caught the ticket line yet.
+      const liveAlt = pinnGame.totalLines.find((r) => linesClose(r.line, stakedLine));
+      if (liveAlt) {
+        fairNow = sideKey === 'under' ? liveAlt.underOdds : liveAlt.overOdds;
+        if (Number.isFinite(liveAlt.overOdds) && Number.isFinite(liveAlt.underOdds)) {
+          fairPair = sideKey === 'under'
+            ? [liveAlt.underOdds, liveAlt.overOdds]
+            : [liveAlt.overOdds, liveAlt.underOdds];
+        }
+        if (Number.isFinite(liveAlt.t)) latestT = liveAlt.t;
+      }
     } else if (!sealed && stakedLine == null && pinnGame.totalCurrent) {
       fairNow = sideKey === 'under'
         ? pinnGame.totalCurrent.underOdds
@@ -641,11 +653,33 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
         fairPair = sideKey === 'away' ? [a, h] : [h, a];
       }
       if (Number.isFinite(matchHist.t)) latestT = matchHist.t;
+    } else if (!sealed && stakedLine != null && Array.isArray(pinnGame.spreadLines)) {
+      const liveAlt = pinnGame.spreadLines.find((r) => {
+        const homeLn = Number(r.homeLine);
+        const awayLn = Number(r.awayLine);
+        return linesClose(sideKey === 'away' ? awayLn : homeLn, stakedLine)
+          || linesClose(homeLn, stakedLine)
+          || linesClose(awayLn, stakedLine);
+      });
+      if (liveAlt) {
+        fairNow = sideKey === 'away' ? liveAlt.awayOdds : liveAlt.homeOdds;
+        if (Number.isFinite(liveAlt.awayOdds) && Number.isFinite(liveAlt.homeOdds)) {
+          fairPair = sideKey === 'away'
+            ? [liveAlt.awayOdds, liveAlt.homeOdds]
+            : [liveAlt.homeOdds, liveAlt.awayOdds];
+        }
+        if (Number.isFinite(liveAlt.t)) latestT = liveAlt.t;
+      }
     }
     if (last) {
       const ln = lineOf(last);
       if (Number.isFinite(ln)) liveMarketLine = ln;
       if (Number.isFinite(last.t) && latestT == null) latestT = last.t;
+    } else if (!sealed && pinnGame.spreadCurrent) {
+      const curLn = sideKey === 'away'
+        ? pinnGame.spreadCurrent.awayLine
+        : pinnGame.spreadCurrent.homeLine;
+      if (Number.isFinite(curLn)) liveMarketLine = curLn;
     }
 
     const best = sealed ? null : (sideKey === 'away' ? pinnGame.bestAwaySpread : pinnGame.bestHomeSpread);
@@ -961,6 +995,8 @@ export function mapLockedPickToCardFixture(pick, {
   const peakOdds = Number.isFinite(pick.lockPinnOdds) ? pick.lockPinnOdds
     : Number.isFinite(pick.pinnacleOdds) ? pick.pinnacleOdds : lockOdds;
   // Past T-15 the ticket is sealed — do not chase live closingOdds.
+  // Raw pick.pinnacleOdds / closingOdds may be MAIN after a line move; prefer
+  // market.fairDisplay / sma path (ticket-line) later when composing the card.
   const nowOdds = ticketFrozen
     ? (peakOdds ?? lockOdds)
     : (Number.isFinite(pick.closingOdds) ? pick.closingOdds
@@ -1166,15 +1202,23 @@ export function mapLockedPickToCardFixture(pick, {
     pinnacleHistory,
     { freezeAtMs: ticketFrozen ? freezeAtMs : null },
   );
-  const sparseJourney = ticketFrozen
-    ? [lockOdds, peakOdds].filter(Number.isFinite)
-    : [lockOdds, peakOdds, nowOdds].filter(Number.isFinite);
+  // When main moved off the ticket line, never stitch lock→peak→now from
+  // stamps that may be MAIN quotes (e.g. Over 9.5 +168 on an Over 7.5 card).
+  const sparseJourney = market.lineMoved
+    ? [lockOdds].filter(Number.isFinite)
+    : (ticketFrozen
+      ? [lockOdds, peakOdds].filter(Number.isFinite)
+      : [lockOdds, peakOdds, nowOdds].filter(Number.isFinite));
   const pinSeries = market.pinSeries;
   // Dense fair-book overtime when available; else lock→peak→now snapshots.
   // Past T-15 pinSeries is already truncated to freezeAtMs.
   const journey = (pinSeries && pinSeries.length >= 2) ? pinSeries : sparseJourney;
+  // FAIR/NOW must be the TICKET line only. When main moved (7.5→8.5) never
+  // fall back to stamped pinnacleOdds / peak that may be the live MAIN quote.
   const fairLine = Number.isFinite(market.fairDisplay) ? market.fairDisplay
-    : (Number.isFinite(pick.pinnacleOdds) ? pick.pinnacleOdds : peakOdds);
+    : (market.lineMoved
+      ? null
+      : (Number.isFinite(pick.pinnacleOdds) ? pick.pinnacleOdds : peakOdds));
   // EV vs no-vig fair when both sides exist; else vigged-sharp proxy (legacy).
   // EV only vs fair on the same instrument as the ticket. If the consensus
   // total/spread moved and we have no history at the staked line, leave EV blank
@@ -1316,9 +1360,9 @@ export function mapLockedPickToCardFixture(pick, {
     pinnMaxDelta: sma?.path?.maxDelta ?? null,
     pinnMovePp: sma?.path?.deltaProbPp ?? null,
     // Three distinct lines for Locked Picks rails:
-    // flagged = ticket; sharp entry = Pinn open; now = live Pinn fair
+    // flagged = ticket; sharp entry = Pinn open on TICKET line; now = live fair on TICKET line
     sharpEntryOdds: Number.isFinite(sma?.path?.openOdds) ? sma.path.openOdds
-      : (Number.isFinite(peakOdds) ? peakOdds : null),
+      : (Number.isFinite(peakOdds) && !market.lineMoved ? peakOdds : null),
     currentFairOdds: Number.isFinite(sma?.path?.nowOdds) ? sma.path.nowOdds
       : (Number.isFinite(fairLine) ? fairLine : null),
     polyEntryOdds: Number.isFinite(polyEntryOdds) ? polyEntryOdds : null,

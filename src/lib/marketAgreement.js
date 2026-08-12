@@ -117,6 +117,15 @@ export function extractMarketPath(pinnGame, {
 
   if (isTotal && Number.isFinite(line)) {
     hist = hist.filter((h) => Math.abs(Number(h.line) - Number(line)) <= 0.051);
+  } else if (isSpread && Number.isFinite(line)) {
+    // Ticket may be away -1.5 or home +1.5 — match either side's stamped line.
+    hist = hist.filter((h) => {
+      const homeLn = Number(h.homeLine);
+      const awayLn = Number(h.awayLine);
+      return Math.abs(homeLn - Number(line)) <= 0.051
+        || Math.abs(awayLn - Number(line)) <= 0.051
+        || Math.abs(homeLn + Number(line)) <= 0.051;
+    });
   }
 
   const oddsAt = (h) => {
@@ -141,8 +150,11 @@ export function extractMarketPath(pinnGame, {
     maxNow = lastHistMax(hist, mt);
   }
 
-  // Fall back to opener/current game fields when history thin.
-  if (openOdds == null) {
+  // Fall back to opener/current ONLY when we are not pinned to a specific
+  // ticket line. If history was filtered to e.g. Over 7.5 and came up empty,
+  // never borrow MAIN 9.5 quotes — that is the line-move leak.
+  const pinnedToLine = (isTotal || isSpread) && Number.isFinite(line);
+  if (!pinnedToLine && openOdds == null) {
     if (isTotal) {
       const op = pinnGame.totalOpener;
       openOdds = op ? (sideIsAway ? op.underOdds : op.overOdds) : null;
@@ -159,7 +171,7 @@ export function extractMarketPath(pinnGame, {
       maxOpen = maxOpen ?? op?.max ?? null;
     }
   }
-  if (nowOdds == null || maxNow == null) {
+  if (!pinnedToLine && (nowOdds == null || maxNow == null)) {
     if (isTotal) {
       const cur = pinnGame.totalCurrent;
       if (nowOdds == null) nowOdds = cur ? (sideIsAway ? cur.underOdds : cur.overOdds) : null;
@@ -177,6 +189,31 @@ export function extractMarketPath(pinnGame, {
       }
       maxNow = maxNow ?? cur?.max ?? pinnGame.maxMoneyLine ?? pinnGame.max ?? null;
     }
+  } else if (pinnedToLine) {
+    // Same-line live board (filled once snapshot stamps allTotals/allSpreads).
+    if (isTotal && nowOdds == null && Array.isArray(pinnGame.totalLines)) {
+      const live = pinnGame.totalLines.find(
+        (r) => Math.abs(Number(r.line) - Number(line)) <= 0.051,
+      );
+      if (live) {
+        nowOdds = sideIsAway ? live.underOdds : live.overOdds;
+        maxNow = maxNow ?? live.max ?? null;
+      }
+    } else if (isSpread && nowOdds == null && Array.isArray(pinnGame.spreadLines)) {
+      const live = pinnGame.spreadLines.find((r) => {
+        const homeLn = Number(r.homeLine);
+        const awayLn = Number(r.awayLine);
+        return Math.abs(homeLn - Number(line)) <= 0.051
+          || Math.abs(awayLn - Number(line)) <= 0.051
+          || Math.abs(homeLn + Number(line)) <= 0.051;
+      });
+      if (live) {
+        nowOdds = sideIsAway ? live.awayOdds : live.homeOdds;
+        maxNow = maxNow ?? live.max ?? null;
+      }
+    }
+    // Do NOT fall back to game-level maxTotal/maxSpread — that is the MAIN
+    // limit and lights Liquid/$7.5K on an orphaned alt ticket.
   }
 
   const pOpen = impliedProb(openOdds);

@@ -61,7 +61,7 @@ const ODDS_REGIONS = 'us,uk,eu';
 // Tape retention: NFL openers sit for days — keep a full week of odds + max.
 // ~4 min cadence → ~2520 pts/week; hard cap is a safety valve only.
 const HISTORY_KEEP_HOURS = 168; // 7 days
-const MAX_HISTORY = 2600;
+const MAX_HISTORY = 8000; // multi-line totals/spreads ≈ 3–6 prints/cycle
 const STALE_HOURS = 36;
 const COMPLETED_HOURS = 6;
 const OUT_PATH = join(ROOT, 'public', 'pinnacle_history.json');
@@ -598,15 +598,24 @@ async function run() {
       existing.commence = game.commence_time;
       existing.apiId = game.id;
 
-      // Spread data — prefer pinnapi Pinnacle, else Odds API fair book
+      // Spread data — MAIN + every alt line (same rule as totals).
       let { fairSpread, fairSpreadBook, bestAwaySpread, bestHomeSpread } = extractSpreadOdds(game, fairBook);
       if (pin?.fairSpread?.awayOdds != null && pin.fairSpread.homeOdds != null) {
         fairSpread = pin.fairSpread;
         fairSpreadBook = 'pinnacle';
       }
+      const spreadSnapsByLine = new Map();
+      const pushSpreadSnap = (snap) => {
+        if (!snap || !Number.isFinite(snap.homeLine)) return;
+        const key = Number(snap.homeLine).toFixed(3);
+        const prev = spreadSnapsByLine.get(key);
+        if (prev && prev.fairBook === 'pinnacle' && snap.fairBook !== 'pinnacle') return;
+        spreadSnapsByLine.set(key, snap);
+      };
       if (fairSpread) {
         const sSnap = { t: now, ...fairSpread, fairBook: fairSpreadBook };
         if (maxSpread != null) sSnap.max = maxSpread;
+        pushSpreadSnap(sSnap);
         if (!existing.spreadOpener) {
           existing.spreadOpener = { ...sSnap };
         }
@@ -618,22 +627,58 @@ async function run() {
           awayOdds: fairSpread.awayOdds - (existing.spreadOpener.awayOdds || 0),
           homeOdds: fairSpread.homeOdds - (existing.spreadOpener.homeOdds || 0),
         };
+      }
+      for (const alt of (pin?.allSpreads || [])) {
+        if (!Number.isFinite(alt.homeLine) || !Number.isFinite(alt.homeOdds) || !Number.isFinite(alt.awayOdds)) continue;
+        pushSpreadSnap({
+          t: now,
+          homeLine: alt.homeLine,
+          awayLine: alt.awayLine,
+          homeOdds: alt.homeOdds,
+          awayOdds: alt.awayOdds,
+          fairBook: 'pinnacle',
+          max: alt.max ?? maxSpread ?? null,
+        });
+      }
+      if (spreadSnapsByLine.size) {
         const sHist = existing.spreadHistory || [];
-        sHist.push(sSnap);
+        for (const snap of spreadSnapsByLine.values()) sHist.push(snap);
         existing.spreadHistory = trimHistorySeries(sHist, now);
+        existing.spreadLines = [...spreadSnapsByLine.values()]
+          .map((s) => ({
+            homeLine: s.homeLine,
+            awayLine: s.awayLine,
+            homeOdds: s.homeOdds,
+            awayOdds: s.awayOdds,
+            max: s.max ?? null,
+            fairBook: s.fairBook || null,
+            t: s.t,
+          }))
+          .sort((a, b) => Math.abs(a.homeLine) - Math.abs(b.homeLine));
       }
       if (bestAwaySpread) existing.bestAwaySpread = bestAwaySpread;
       if (bestHomeSpread) existing.bestHomeSpread = bestHomeSpread;
 
-      // Total data
+      // Total data — MAIN for current/opener + EVERY alt line into history so
+      // Locked tickets on vault 7.5 keep a live pin tape after main moves to 8.5/9.5.
       let { fairTotal, fairTotalBook, bestOver, bestUnder, allTotalBooks } = extractTotalOdds(game, fairBook);
       if (pin?.fairTotal?.overOdds != null && pin.fairTotal.underOdds != null) {
         fairTotal = pin.fairTotal;
         fairTotalBook = 'pinnacle';
       }
+      const totalSnapsByLine = new Map();
+      const pushTotalSnap = (snap) => {
+        if (!snap || !Number.isFinite(snap.line)) return;
+        const key = Number(snap.line).toFixed(3);
+        // Prefer pinnacle over soft-book for the same line in one cycle.
+        const prev = totalSnapsByLine.get(key);
+        if (prev && prev.fairBook === 'pinnacle' && snap.fairBook !== 'pinnacle') return;
+        totalSnapsByLine.set(key, snap);
+      };
       if (fairTotal) {
         const tSnap = { t: now, ...fairTotal, fairBook: fairTotalBook };
         if (maxTotal != null) tSnap.max = maxTotal;
+        pushTotalSnap(tSnap);
         if (!existing.totalOpener) {
           existing.totalOpener = { ...tSnap };
         }
@@ -645,9 +690,45 @@ async function run() {
           overOdds: fairTotal.overOdds - (existing.totalOpener.overOdds || 0),
           underOdds: fairTotal.underOdds - (existing.totalOpener.underOdds || 0),
         };
+      }
+      // Pinnacle alts (full totals board from pinnapi).
+      for (const alt of (pin?.allTotals || [])) {
+        if (!Number.isFinite(alt.line) || !Number.isFinite(alt.overOdds) || !Number.isFinite(alt.underOdds)) continue;
+        pushTotalSnap({
+          t: now,
+          line: alt.line,
+          overOdds: alt.overOdds,
+          underOdds: alt.underOdds,
+          fairBook: 'pinnacle',
+          max: alt.max ?? maxTotal ?? null,
+        });
+      }
+      // Soft-book prints at non-main lines (helps when Pinnacle dropped the alt).
+      for (const b of Object.values(allTotalBooks || {})) {
+        if (!b || !Number.isFinite(b.line) || !Number.isFinite(b.over) || !Number.isFinite(b.under)) continue;
+        if (fairTotal && Math.abs(b.line - fairTotal.line) <= 0.051) continue;
+        pushTotalSnap({
+          t: now,
+          line: b.line,
+          overOdds: b.over,
+          underOdds: b.under,
+          fairBook: String(b.name || 'retail').toLowerCase(),
+        });
+      }
+      if (totalSnapsByLine.size) {
         const tHist = existing.totalHistory || [];
-        tHist.push(tSnap);
+        for (const snap of totalSnapsByLine.values()) tHist.push(snap);
         existing.totalHistory = trimHistorySeries(tHist, now);
+        existing.totalLines = [...totalSnapsByLine.values()]
+          .map((s) => ({
+            line: s.line,
+            overOdds: s.overOdds,
+            underOdds: s.underOdds,
+            max: s.max ?? null,
+            fairBook: s.fairBook || null,
+            t: s.t,
+          }))
+          .sort((a, b) => a.line - b.line);
       }
       if (bestOver) existing.bestOver = bestOver;
       if (bestUnder) existing.bestUnder = bestUnder;

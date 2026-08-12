@@ -83,6 +83,56 @@ function pickMainTotal(totals) {
   return best;
 }
 
+/** Every FG total line Pinnacle is quoting (alts + main). */
+export function extractAllTotals(totals) {
+  if (!totals || typeof totals !== 'object') return [];
+  const out = [];
+  const seen = new Set();
+  for (const t of Object.values(totals)) {
+    if (!t || t.over == null || t.under == null) continue;
+    const line = Number(t.points);
+    const overOdds = decimalToAmerican(t.over);
+    const underOdds = decimalToAmerican(t.under);
+    if (!Number.isFinite(line) || !Number.isFinite(overOdds) || !Number.isFinite(underOdds)) continue;
+    const key = line.toFixed(3);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({
+      line,
+      overOdds,
+      underOdds,
+      max: Number.isFinite(Number(t.max)) ? Number(t.max) : null,
+    });
+  }
+  return out.sort((a, b) => a.line - b.line);
+}
+
+/** Every FG spread Pinnacle is quoting (alts + main). */
+export function extractAllSpreads(spreads) {
+  if (!spreads || typeof spreads !== 'object') return [];
+  const out = [];
+  const seen = new Set();
+  for (const s of Object.values(spreads)) {
+    if (!s || s.home == null || s.away == null) continue;
+    const homeLine = Number(s.hdp);
+    const awayLine = -homeLine;
+    const homeOdds = decimalToAmerican(s.home);
+    const awayOdds = decimalToAmerican(s.away);
+    if (!Number.isFinite(homeLine) || !Number.isFinite(homeOdds) || !Number.isFinite(awayOdds)) continue;
+    const key = homeLine.toFixed(3);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({
+      homeLine,
+      awayLine,
+      homeOdds,
+      awayOdds,
+      max: Number.isFinite(Number(s.max)) ? Number(s.max) : null,
+    });
+  }
+  return out.sort((a, b) => Math.abs(a.homeLine) - Math.abs(b.homeLine));
+}
+
 /**
  * Extract period-0 (full game) quote + limits from a pinnapi event.
  */
@@ -100,6 +150,8 @@ export function extractPeriod0(event) {
   const meta = p0.meta || {};
   const spread = pickMainSpread(p0.spreads);
   const total = pickMainTotal(p0.totals);
+  const allTotals = extractAllTotals(p0.totals);
+  const allSpreads = extractAllSpreads(p0.spreads);
 
   const maxMoneyLine = meta.max_money_line ?? null;
   const maxSpread = spread?.max ?? meta.max_spread ?? null;
@@ -122,6 +174,8 @@ export function extractPeriod0(event) {
     maxTotal: Number.isFinite(maxTotal) ? maxTotal : null,
     fairSpread: null,
     fairTotal: null,
+    allTotals,
+    allSpreads,
   };
 
   if (spread) {
