@@ -58,7 +58,10 @@ const FAIR_BOOKS = ['pinnacle', 'circa', 'bookmaker', 'lowvig', 'betonlineag'];
 const RETAIL_BOOKS = ['draftkings', 'fanduel', 'betmgm', 'caesars'];
 const BOOKMAKERS = [...FAIR_BOOKS, ...RETAIL_BOOKS].join(',');
 const ODDS_REGIONS = 'us,uk,eu';
-const MAX_HISTORY = 360; // ~24h at ~4min cadence — need depth for locked-tape charts
+// Tape retention: NFL openers sit for days — keep a full week of odds + max.
+// ~4 min cadence → ~2520 pts/week; hard cap is a safety valve only.
+const HISTORY_KEEP_HOURS = 168; // 7 days
+const MAX_HISTORY = 2600;
 const STALE_HOURS = 36;
 const COMPLETED_HOURS = 6;
 const OUT_PATH = join(ROOT, 'public', 'pinnacle_history.json');
@@ -124,6 +127,20 @@ function fairBookDisplayName(key) {
 }
 
 const normalize = s => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+/** Keep tape points for HISTORY_KEEP_HOURS (and never more than MAX_HISTORY). */
+function trimHistorySeries(arr, nowSec) {
+  if (!Array.isArray(arr) || !arr.length) return [];
+  const cutoff = nowSec - HISTORY_KEEP_HOURS * 3600;
+  const kept = arr.filter((h) => {
+    const t = Number(h?.t);
+    if (!Number.isFinite(t)) return true;
+    const sec = t > 1e12 ? t / 1000 : t;
+    return sec >= cutoff;
+  });
+  if (kept.length > MAX_HISTORY) return kept.slice(kept.length - MAX_HISTORY);
+  return kept;
+}
 
 function loadCBBTeamMap() {
   const csvPath = join(ROOT, 'public', 'basketball_teams.csv');
@@ -541,8 +558,7 @@ async function run() {
 
       const hist = existing.history || [];
       hist.push(snapshot);
-      if (hist.length > MAX_HISTORY) hist.splice(0, hist.length - MAX_HISTORY);
-      existing.history = hist;
+      existing.history = trimHistorySeries(hist, now);
 
       const opAway = existing.opener.away;
       const opHome = existing.opener.home;
@@ -602,8 +618,7 @@ async function run() {
         };
         const sHist = existing.spreadHistory || [];
         sHist.push(sSnap);
-        if (sHist.length > MAX_HISTORY) sHist.splice(0, sHist.length - MAX_HISTORY);
-        existing.spreadHistory = sHist;
+        existing.spreadHistory = trimHistorySeries(sHist, now);
       }
       if (bestAwaySpread) existing.bestAwaySpread = bestAwaySpread;
       if (bestHomeSpread) existing.bestHomeSpread = bestHomeSpread;
@@ -630,8 +645,7 @@ async function run() {
         };
         const tHist = existing.totalHistory || [];
         tHist.push(tSnap);
-        if (tHist.length > MAX_HISTORY) tHist.splice(0, tHist.length - MAX_HISTORY);
-        existing.totalHistory = tHist;
+        existing.totalHistory = trimHistorySeries(tHist, now);
       }
       if (bestOver) existing.bestOver = bestOver;
       if (bestUnder) existing.bestUnder = bestUnder;
