@@ -7,6 +7,8 @@ import { useState, useEffect } from 'react';
 import { Check, Lock, ChevronDown, Clock, X } from 'lucide-react';
 import { AGS_V12_DISPLAY_TIERS, AGS_V12_PATH_TO_DISPLAY } from '../../../lib/ags.js';
 import LockedClarityExpanded from './LockedClarityExpanded';
+import LockedLineRails from './LockedLineRails';
+import OddsLimitSpark from './OddsLimitSpark';
 
 /** Ticket freezes 15 min before first pitch/kick — same gate as the cron. */
 const LOCK_LEAD_MS = 15 * 60 * 1000;
@@ -41,83 +43,6 @@ function displayTierFromPath(stakePath) {
   const key = AGS_V12_PATH_TO_DISPLAY[stakePath];
   if (!key) return null;
   return AGS_V12_DISPLAY_TIERS.find((d) => d.key === key) || null;
-}
-
-function fmtMaxChip(n) {
-  if (n == null || !Number.isFinite(Number(n)) || Number(n) <= 0) return null;
-  const v = Number(n);
-  if (v >= 1000) {
-    const k = v / 1000;
-    return `$${k >= 10 ? Math.round(k) : (k % 1 === 0 ? k.toFixed(0) : k.toFixed(1))}K`;
-  }
-  return `$${Math.round(v)}`;
-}
-
-/** Collapsed/expanded chips: Sharp–Market Agreement + max + live EV. */
-function MarketAgreementChips({ sma, evPct, compact = true }) {
-  const hasMax = sma && Number.isFinite(sma.maxNow);
-  const hasEv = Number.isFinite(evPct) && Math.abs(evPct) >= 0.15;
-  const hasState = sma && sma.state && sma.state !== 'NO_DATA' && sma.label;
-  if (!hasMax && !hasEv && !hasState) return null;
-  const tone = sma?.tone || 'neutral';
-  const colors = {
-    confirm: { color: '#34D399', bg: 'rgba(16,185,129,0.14)', border: 'rgba(16,185,129,0.40)' },
-    with: { color: '#6EE7B7', bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.28)' },
-    neutral: { color: '#94A3B8', bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.22)' },
-    against: { color: '#FCA5A5', bg: 'rgba(239,68,68,0.10)', border: 'rgba(239,68,68,0.30)' },
-    oppose: { color: '#F87171', bg: 'rgba(239,68,68,0.16)', border: 'rgba(239,68,68,0.45)' },
-    thin: { color: '#FBBF24', bg: 'rgba(245,158,11,0.10)', border: 'rgba(245,158,11,0.32)' },
-  }[tone] || { color: '#94A3B8', bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.22)' };
-
-  const maxLabel = fmtMaxChip(sma?.maxNow);
-  const chipFs = compact ? '0.48rem' : '0.52rem';
-  const chipPad = compact ? '3px 7px' : '4px 8px';
-
-  return (
-    <span
-      title={sma?.title || 'Pinnacle market structure'}
-      style={{
-        display: 'inline-flex', alignItems: 'center', gap: 5, flexWrap: 'wrap',
-        justifyContent: 'flex-end', minWidth: 0,
-      }}
-      onClick={(e) => e.stopPropagation()}
-    >
-      {hasState && (
-        <span style={{
-          fontSize: chipFs, fontWeight: 900, letterSpacing: '0.06em',
-          padding: chipPad, borderRadius: 6, color: colors.color,
-          background: colors.bg, border: `1px solid ${colors.border}`,
-          whiteSpace: 'nowrap',
-        }}>
-          {sma.label}
-        </span>
-      )}
-      {maxLabel && !sma?.limitTested && (
-        <span style={{
-          fontSize: chipFs, fontWeight: 800, letterSpacing: '0.04em',
-          padding: chipPad, borderRadius: 6,
-          color: C.textMuted,
-          background: 'rgba(148,163,184,0.06)',
-          border: '1px solid rgba(148,163,184,0.18)',
-          fontFeatureSettings: "'tnum'", whiteSpace: 'nowrap',
-        }}>
-          Max {maxLabel}
-        </span>
-      )}
-      {hasEv && (
-        <span style={{
-          fontSize: chipFs, fontWeight: 800, letterSpacing: '0.04em',
-          padding: chipPad, borderRadius: 6,
-          color: evPct >= 0 ? '#34D399' : '#F87171',
-          background: evPct >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
-          border: `1px solid ${evPct >= 0 ? 'rgba(16,185,129,0.28)' : 'rgba(239,68,68,0.28)'}`,
-          fontFeatureSettings: "'tnum'", whiteSpace: 'nowrap',
-        }}>
-          {evPct >= 0 ? '+' : ''}{evPct.toFixed(1)}% EV
-        </span>
-      )}
-    </span>
-  );
 }
 
 // Anchored to the Sharp Flow page palette (see B tokens in SharpFlow.jsx):
@@ -2535,16 +2460,11 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
             )}
           </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: '1.05rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 2 }}>
+          <span style={{ fontSize: '1.05rem', fontWeight: 800, letterSpacing: '-0.02em', minWidth: 0 }}>
             {f.pickLabel}
-            <span style={{ fontSize: '0.8rem', color: C.textSec, fontWeight: 700, marginLeft: 8, fontFeatureSettings: "'tnum'" }}>
-              {fmtOdds(f.lockOdds)}
-            </span>
           </span>
-          <span style={{ flex: 1, display: 'flex', justifyContent: 'center', minWidth: 0, padding: '0 6px' }}>
-            <MarketAgreementChips sma={f.marketAgreement} evPct={f.evFlagged} compact />
-          </span>
+          <span style={{ flex: 1 }} />
           <span style={{ fontSize: '0.9rem', fontWeight: 800, fontFeatureSettings: "'tnum'", color: tracked ? C.textMuted : C.text }}>
             {tracked ? 'No ticket' : `${f.units.toFixed(1)}u`}
           </span>
@@ -2559,6 +2479,34 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
             </span>
           )}
           <ChevronDown size={15} style={{ color: C.textMuted, flexShrink: 0 }} />
+        </div>
+        <LockedLineRails
+          flagged={f.gotOdds ?? f.lockOdds}
+          entry={f.sharpEntryOdds}
+          now={f.currentFairOdds ?? f.fairLine}
+          smaLabel={f.marketAgreement?.label}
+          smaTone={f.marketAgreement?.tone}
+          smaTitle={f.marketAgreement?.title}
+          maxNow={f.pinnMax ?? f.marketAgreement?.maxNow}
+          limitTested={!!f.marketAgreement?.limitTested}
+          evPct={f.evFlagged}
+          movePp={f.pinnMovePp}
+          density="compact"
+        />
+        <div style={{ marginTop: 6 }}>
+          <OddsLimitSpark
+            pinPath={f.pinPath}
+            flagged={f.gotOdds ?? f.lockOdds}
+            entry={f.sharpEntryOdds}
+            now={f.currentFairOdds ?? f.nowOdds}
+            fair={f.fairLine}
+            evPct={f.evFlagged}
+            sma={f.marketAgreement}
+            maxNow={f.pinnMax ?? f.marketAgreement?.maxNow}
+            movePp={f.pinnMovePp}
+            compact
+            gid={`ols-c-${f.id || 'x'}`}
+          />
         </div>
       </div>
     );

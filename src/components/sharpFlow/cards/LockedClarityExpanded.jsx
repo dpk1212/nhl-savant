@@ -13,6 +13,8 @@ import {
   isTopQWallet,
   walletRoiForPlot,
 } from './mapPositionCard.js';
+import LockedLineRails from './LockedLineRails';
+import OddsLimitSpark from './OddsLimitSpark';
 
 const B = {
   gold: '#D4AF37',
@@ -670,12 +672,15 @@ function shortBook(name) {
  */
 function MarketPriceBoard({
   journey, fair, clvPct, gid, gotOdds,
+  sharpEntry = null,
+  hideTicketHero = false,
+  hideJourney = false,
   bestOdds, bestBook, books, ourLabel, oppLabel, oppBestOdds,
   updatedAgoSec, fairIsNoVig = false, evFlagged = null,
   liveLabel = null, liveBestOdds = null, liveBestBook = null,
   liveFair = null, liveFairIsNoVig = false,
 }) {
-  const hasJourney = Array.isArray(journey) && journey.filter(Number.isFinite).length >= 2;
+  const hasJourney = !hideJourney && Array.isArray(journey) && journey.filter(Number.isFinite).length >= 2;
   const hasBest = Number.isFinite(bestOdds);
   const hasBooks = Array.isArray(books) && books.some((b) => Number.isFinite(b?.odds));
   const hasLive = !!(liveLabel && (
@@ -743,7 +748,8 @@ function MarketPriceBoard({
         )}
       </div>
 
-      {/* Flagged price — ticket odds only; best/fair must be same line */}
+      {/* Ticket + book context — omit when PRICE CHECK rails already showed the three lines */}
+      {!hideTicketHero && (
       <div style={{
         display: 'flex', flexWrap: 'wrap', alignItems: 'baseline',
         gap: '2px 0', marginBottom: hasLive ? 8 : (hasJourney ? 10 : 12),
@@ -759,6 +765,14 @@ function MarketPriceBoard({
         }}>
           {fmtOdds(gotOdds)}
         </span>
+        {Number.isFinite(sharpEntry) && (
+          <span style={{
+            marginLeft: 12, fontSize: 12, fontWeight: 550, color: C.textSec,
+          }}>
+            <span style={{ color: C.textFaint }}>entry </span>
+            <span style={{ fontWeight: 700, color: GOLD }}>{fmtOdds(sharpEntry)}</span>
+          </span>
+        )}
         {showEv && (
           <span style={{
             marginLeft: 10, fontSize: 12, fontWeight: 750, color: GREEN,
@@ -784,7 +798,7 @@ function MarketPriceBoard({
             {hasBest && Number.isFinite(fair) && <Dot />}
             {Number.isFinite(fair) && (
               <>
-                <span style={{ color: C.textFaint }}>{fairIsNoVig ? 'fair' : 'sharp'} </span>
+                <span style={{ color: C.textFaint }}>{fairIsNoVig ? 'fair' : 'now'} </span>
                 <span style={{ fontWeight: 650, color: GOLD }}>{fmtOdds(fair)}</span>
               </>
             )}
@@ -798,6 +812,37 @@ function MarketPriceBoard({
           </span>
         )}
       </div>
+      )}
+      {hideTicketHero && (hasBest || Number.isFinite(fair) || (Number.isFinite(oppBestOdds) && oppLabel && !hasLive)) && (
+        <div style={{
+          marginBottom: hasLive ? 8 : (hasJourney ? 10 : 12),
+          fontSize: 12, fontWeight: 550, color: C.textSec,
+        }}>
+          {hasBest && (
+            <>
+              <span style={{ color: C.textFaint }}>best </span>
+              <span style={{ fontWeight: 700, color: C.text }}>{fmtOdds(bestOdds)}</span>
+              {bestBook && (
+                <span style={{ color: C.textFaint }}> {shortBook(bestBook)}</span>
+              )}
+            </>
+          )}
+          {hasBest && Number.isFinite(fair) && <Dot />}
+          {Number.isFinite(fair) && (
+            <>
+              <span style={{ color: C.textFaint }}>{fairIsNoVig ? 'fair' : 'now'} </span>
+              <span style={{ fontWeight: 650, color: GOLD }}>{fmtOdds(fair)}</span>
+            </>
+          )}
+          {Number.isFinite(oppBestOdds) && oppLabel && !hasLive && (
+            <>
+              {(hasBest || Number.isFinite(fair)) && <Dot />}
+              <span style={{ color: C.textFaint }}>{oppLabel} </span>
+              <span style={{ fontWeight: 600 }}>{fmtOdds(oppBestOdds)}</span>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Consensus moved — live prices on their own line, never mixed into ticket */}
       {hasLive && (
@@ -1604,63 +1649,57 @@ export default function LockedClarityExpanded({
           />
         </div>
 
-        {f.marketAgreement && f.marketAgreement.state !== 'NO_SHARPS' && (
-          <div
-            className="lc-in-2"
-            title={f.marketAgreement.title}
-            style={{
-              margin: '0 0 10px',
-              padding: '10px 12px',
-              borderRadius: 10,
-              border: '1px solid rgba(148,163,184,0.14)',
-              background: 'rgba(255,255,255,0.02)',
-            }}
-          >
+        {(Number.isFinite(f.gotOdds ?? f.lockOdds)
+          || Number.isFinite(f.sharpEntryOdds)
+          || Number.isFinite(f.currentFairOdds ?? f.fairLine)
+          || (f.marketAgreement && f.marketAgreement.state !== 'NO_SHARPS')) && (
+          <div className="lc-in-2" style={{ margin: '0 0 10px' }}>
             <div style={{
               fontFamily: MONO, fontSize: 8, fontWeight: 700, letterSpacing: '0.12em',
-              color: C.textMuted, marginBottom: 6,
+              color: C.textMuted, marginBottom: 2, paddingLeft: 2,
             }}>
-              SHARP × PINNACLE
+              PRICE CHECK · FLAGGED · SHARP ENTRY · NOW
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
-              <span style={{
-                fontSize: 11, fontWeight: 800, letterSpacing: '0.04em',
-                color: f.marketAgreement.tone === 'confirm' || f.marketAgreement.tone === 'with' ? GREEN
-                  : f.marketAgreement.tone === 'oppose' || f.marketAgreement.tone === 'against' ? VS
-                    : f.marketAgreement.tone === 'thin' ? GOLD : C.textSec,
+            <LockedLineRails
+              flagged={f.gotOdds ?? f.lockOdds}
+              entry={f.sharpEntryOdds}
+              now={f.currentFairOdds ?? f.fairLine}
+              smaLabel={f.marketAgreement?.state !== 'NO_SHARPS' ? f.marketAgreement?.label : null}
+              smaTone={f.marketAgreement?.tone}
+              smaTitle={f.marketAgreement?.title}
+              maxNow={f.pinnMax ?? f.marketAgreement?.maxNow}
+              limitTested={!!f.marketAgreement?.limitTested}
+              evPct={f.evFlagged}
+              movePp={f.pinnMovePp}
+              density="expanded"
+            />
+            <div style={{ marginTop: 10 }}>
+              <OddsLimitSpark
+                pinPath={f.pinPath}
+                flagged={f.gotOdds ?? f.lockOdds}
+                entry={f.sharpEntryOdds}
+                now={f.currentFairOdds ?? f.nowOdds}
+                fair={f.fairLine ?? fairOdds}
+                evPct={f.evFlagged}
+                sma={f.marketAgreement}
+                maxNow={f.pinnMax ?? f.marketAgreement?.maxNow}
+                movePp={f.pinnMovePp}
+                gid={`ols-${gid}`}
+              />
+            </div>
+            {Number.isFinite(f.marketAgreement?.score) && f.marketAgreement?.state !== 'NO_SHARPS' && (
+              <div style={{
+                marginTop: 6, paddingLeft: 4,
+                fontFamily: MONO, fontSize: 10, color: C.textFaint, fontFeatureSettings: "'tnum'",
               }}>
-                {f.marketAgreement.label}
-              </span>
-              {Number.isFinite(f.marketAgreement.score) && (
-                <span style={{ fontFamily: MONO, fontSize: 10, color: C.textFaint, fontFeatureSettings: "'tnum'" }}>
-                  SMA {f.marketAgreement.score >= 0 ? '+' : ''}{f.marketAgreement.score.toFixed(2)}
-                </span>
-              )}
-              {Number.isFinite(f.pinnMovePp) && Math.abs(f.pinnMovePp) >= 0.15 && (
-                <span style={{ fontSize: 10, color: C.textSec, fontFeatureSettings: "'tnum'" }}>
-                  Fair {f.pinnMovePp > 0 ? '+' : ''}{f.pinnMovePp.toFixed(1)}pp
-                </span>
-              )}
-              {Number.isFinite(f.pinnMax) && (
-                <span style={{ fontSize: 10, color: f.marketAgreement.limitTested ? GREEN : C.textSec, fontFeatureSettings: "'tnum'" }}>
-                  Max {f.pinnMax >= 1000 ? `$${(f.pinnMax / 1000).toFixed(f.pinnMax >= 10000 ? 0 : 1)}K` : `$${Math.round(f.pinnMax)}`}
-                  {f.marketAgreement.limitTested ? ' · tested' : ''}
-                </span>
-              )}
-              {Number.isFinite(f.pinnMaxDelta) && Math.abs(f.pinnMaxDelta) >= 250 && (
-                <span style={{ fontSize: 10, color: C.textSec, fontFeatureSettings: "'tnum'" }}>
-                  Limit {f.pinnMaxDelta > 0 ? '↑' : '↓'} ${Math.round(Math.abs(f.pinnMaxDelta))}
-                </span>
-              )}
-              {Number.isFinite(f.evFlagged) && (
-                <span style={{
-                  fontSize: 10, fontWeight: 700, marginLeft: 'auto',
-                  color: f.evFlagged >= 0 ? GREEN : VS, fontFeatureSettings: "'tnum'",
-                }}>
-                  Live EV {f.evFlagged >= 0 ? '+' : ''}{f.evFlagged.toFixed(1)}%
-                </span>
-              )}
-            </div>
+                SMA {f.marketAgreement.score >= 0 ? '+' : ''}{f.marketAgreement.score.toFixed(2)}
+                {Number.isFinite(f.pinnMaxDelta) && Math.abs(f.pinnMaxDelta) >= 250 && (
+                  <span style={{ marginLeft: 10, color: C.textSec }}>
+                    Limit {f.pinnMaxDelta > 0 ? '↑' : '↓'} ${Math.round(Math.abs(f.pinnMaxDelta))}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -1670,6 +1709,9 @@ export default function LockedClarityExpanded({
           clvPct={f.clvPct ?? 0}
           gid={gid}
           gotOdds={f.gotOdds ?? f.lockOdds}
+          sharpEntry={f.sharpEntryOdds}
+          hideTicketHero
+          hideJourney
           bestOdds={f.bestOdds}
           bestBook={f.bestBook}
           books={f.books}

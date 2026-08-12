@@ -393,6 +393,7 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
   const sealed = Number.isFinite(freezeAtMs);
   const empty = {
     pinSeries: null,
+    pinPath: null,
     books: [],
     bestOdds: null,
     bestBook: null,
@@ -444,6 +445,7 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
 
   const books = [];
   let pinSeries = null;
+  let pinPath = null;
   let bestOdds = null;
   let bestBook = null;
   let fairNow = null;
@@ -473,10 +475,22 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
     const stakeHist = stakedLine != null
       ? hist.filter((h) => linesClose(h.line, stakedLine))
       : hist;
-    const pts = stakeHist
-      .map((h) => (sideKey === 'under' ? h.underOdds : h.overOdds))
-      .filter(Number.isFinite);
+    pinPath = stakeHist
+      .map((h) => {
+        const odds = sideKey === 'under' ? h.underOdds : h.overOdds;
+        if (!Number.isFinite(odds)) return null;
+        const max = Number.isFinite(h.max) ? h.max
+          : (Number.isFinite(h.maxTotal) ? h.maxTotal : null);
+        return {
+          t: Number.isFinite(h.t) ? h.t : null,
+          odds,
+          max,
+        };
+      })
+      .filter(Boolean);
+    const pts = pinPath.map((p) => p.odds);
     pinSeries = pts.length >= 2 ? pts : null;
+    if (pinPath.length < 2) pinPath = null;
 
     const matchHist = stakedLine != null
       ? [...hist].reverse().find((h) => linesClose(h.line, stakedLine))
@@ -570,10 +584,22 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
     const stakeHist = stakedLine != null
       ? hist.filter((h) => linesClose(lineOf(h), stakedLine))
       : hist;
-    const pts = stakeHist
-      .map((h) => (sideKey === 'away' ? h.awayOdds : h.homeOdds))
-      .filter(Number.isFinite);
+    pinPath = stakeHist
+      .map((h) => {
+        const odds = sideKey === 'away' ? h.awayOdds : h.homeOdds;
+        if (!Number.isFinite(odds)) return null;
+        const max = Number.isFinite(h.max) ? h.max
+          : (Number.isFinite(h.maxSpread) ? h.maxSpread : null);
+        return {
+          t: Number.isFinite(h.t) ? h.t : null,
+          odds,
+          max,
+        };
+      })
+      .filter(Boolean);
+    const pts = pinPath.map((p) => p.odds);
     pinSeries = pts.length >= 2 ? pts : null;
+    if (pinPath.length < 2) pinPath = null;
 
     const matchHist = stakedLine != null
       ? [...hist].reverse().find((h) => linesClose(lineOf(h), stakedLine))
@@ -642,10 +668,22 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
       Array.isArray(pinnGame.history) ? pinnGame.history : [],
       freezeAtMs,
     );
-    const pts = hist
-      .map((h) => (sideKey === 'away' ? h.away : sideKey === 'draw' ? h.draw : h.home))
-      .filter(Number.isFinite);
+    pinPath = hist
+      .map((h) => {
+        const odds = sideKey === 'away' ? h.away : sideKey === 'draw' ? h.draw : h.home;
+        if (!Number.isFinite(odds)) return null;
+        const max = Number.isFinite(h.max) ? h.max
+          : (Number.isFinite(h.maxMoneyLine) ? h.maxMoneyLine : null);
+        return {
+          t: Number.isFinite(h.t) ? h.t : null,
+          odds,
+          max,
+        };
+      })
+      .filter(Boolean);
+    const pts = pinPath.map((p) => p.odds);
     pinSeries = pts.length >= 2 ? pts : null;
+    if (pinPath.length < 2) pinPath = null;
     const last = hist[hist.length - 1];
     const snap = last || (!sealed ? pinnGame.current : null) || null;
     if (snap) {
@@ -738,6 +776,7 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
 
   return {
     pinSeries,
+    pinPath: Array.isArray(pinPath) && pinPath.length >= 2 ? pinPath : null,
     books,
     bestOdds: Number.isFinite(bestOdds) ? bestOdds : null,
     bestBook: bestBook || null,
@@ -1129,6 +1168,7 @@ export function mapLockedPickToCardFixture(pick, {
     sharpUsd: pick.totalInvested || pick.lockTotalInvested || 0,
     journey,
     pinSeries,
+    pinPath: Array.isArray(market.pinPath) && market.pinPath.length >= 2 ? market.pinPath : null,
     books: market.books,
     bestOdds: market.bestOdds,
     bestBook: market.bestBook,
@@ -1173,6 +1213,12 @@ export function mapLockedPickToCardFixture(pick, {
     pinnMax: sma?.path?.maxNow ?? null,
     pinnMaxDelta: sma?.path?.maxDelta ?? null,
     pinnMovePp: sma?.path?.deltaProbPp ?? null,
+    // Three distinct lines for Locked Picks rails:
+    // flagged = ticket; sharp entry = Pinn open; now = live Pinn fair
+    sharpEntryOdds: Number.isFinite(sma?.path?.openOdds) ? sma.path.openOdds
+      : (Number.isFinite(peakOdds) ? peakOdds : null),
+    currentFairOdds: Number.isFinite(sma?.path?.nowOdds) ? sma.path.nowOdds
+      : (Number.isFinite(fairLine) ? fairLine : null),
   };
 }
 
