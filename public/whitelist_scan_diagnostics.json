@@ -1,22 +1,22 @@
 {
-  "scannedAt": "2026-08-12T16:27:09.520Z",
-  "elapsedSec": 19.1,
+  "scannedAt": "2026-08-12T16:31:20.888Z",
+  "elapsedSec": 19.2,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 46,
   "summary": {
     "total": 221,
     "coveredByMain": 9,
-    "recovered": 13,
-    "recoveredPositions": 65,
-    "noPositions": 199,
+    "recovered": 14,
+    "recoveredPositions": 68,
+    "noPositions": 198,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
       "ml": 5,
       "spread": 0,
-      "total": 2,
-      "dropped_shadow_gate": 14,
+      "total": 3,
+      "dropped_shadow_gate": 16,
       "dropped_excluded": 44,
       "dropped_duplicate": 0
     }
@@ -792,11 +792,11 @@
       "sports": "MLB,SOC,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xdb83e85ffd22faa4009273034770f96ffc5b1e50",
-      "positionsCount": 6,
+      "positionsCount": 7,
       "statsSource": "sports_sharps",
       "avgSportBet": 409,
       "willPassShadowGate": 6,
-      "willDropAtShadowGate": 0,
+      "willDropAtShadowGate": 1,
       "positions": [
         {
           "sport": "MLB",
@@ -815,6 +815,15 @@
           "invested": 4048,
           "entryLine": 8.5,
           "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "pit_mia",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 0,
+          "entryLine": null,
+          "passesShadow": false
         },
         {
           "sport": "MLB",
@@ -883,8 +892,24 @@
       "tier": "CONFIRMED",
       "name": "Herdonia",
       "sports": "MLB",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xd106952ebf30a3125affd8a23b6c1f30c35fc79c"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0xd106952ebf30a3125affd8a23b6c1f30c35fc79c",
+      "positionsCount": 1,
+      "statsSource": "sports_sharps",
+      "avgSportBet": 2130,
+      "willPassShadowGate": 0,
+      "willDropAtShadowGate": 1,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "pit_mia",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 0,
+          "entryLine": null,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "621848",
@@ -931,7 +956,7 @@
           "gameKey": "mil_sdp",
           "marketType": "ml",
           "side": "home",
-          "invested": 149,
+          "invested": 162,
           "entryLine": null,
           "passesShadow": false
         },
@@ -1131,6 +1156,15 @@
         },
         {
           "sport": "MLB",
+          "gameKey": "phi_stl",
+          "marketType": "total",
+          "side": "over",
+          "invested": 1664,
+          "entryLine": 8.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
           "gameKey": "pit_mia",
           "marketType": "spread",
           "side": "away",
@@ -1188,17 +1222,8 @@
           "gameKey": "min_por",
           "marketType": "total",
           "side": "under",
-          "invested": 921,
+          "invested": 924,
           "entryLine": 184.5,
-          "passesShadow": true
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "phi_stl",
-          "marketType": "total",
-          "side": "over",
-          "invested": 887,
-          "entryLine": 8.5,
           "passesShadow": true
         },
         {
@@ -1420,12 +1445,21 @@
       "sports": "",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xe8c4d68aff65b38cac46987b9b65e01eb47d395d",
-      "positionsCount": 1,
+      "positionsCount": 2,
       "statsSource": "sharpWalletProfiles_derived",
       "avgSportBet": 1233,
-      "willPassShadowGate": 1,
+      "willPassShadowGate": 2,
       "willDropAtShadowGate": 0,
       "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "phi_stl",
+          "marketType": "total",
+          "side": "under",
+          "invested": 2005,
+          "entryLine": 8.5,
+          "passesShadow": true
+        },
         {
           "sport": "MLB",
           "gameKey": "bos_tor",
