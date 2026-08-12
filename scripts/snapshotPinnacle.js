@@ -713,6 +713,9 @@ async function run() {
           overOdds: b.over,
           underOdds: b.under,
           fairBook: String(b.name || 'retail').toLowerCase(),
+          // Soft books rarely expose alt max — stamp book totals max so the
+          // dual-axis tape still has a liquidity series on vault alts.
+          max: maxTotal ?? null,
         });
       }
       if (totalSnapsByLine.size) {

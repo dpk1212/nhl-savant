@@ -376,6 +376,33 @@ function histUpTo(hist, freezeAtMs) {
 }
 
 /**
+ * Paint max onto every path point so OddsLimitSpark can draw the dual-axis
+ * story. Forward-fill stamped maxes, then fall back to ticketMax (same-line
+ * live or book-level liquidity) when the alt feed omitted max.
+ */
+function backfillPathMax(path, ticketMax) {
+  if (!Array.isArray(path) || !path.length) return path;
+  let last = null;
+  const fwd = path.map((p) => {
+    const m = Number.isFinite(p.max) ? p.max : last;
+    if (Number.isFinite(m)) last = m;
+    return { ...p, max: Number.isFinite(m) ? m : null };
+  });
+  if (!Number.isFinite(ticketMax)) return fwd;
+  return fwd.map((p) => ({
+    ...p,
+    max: Number.isFinite(p.max) ? p.max : ticketMax,
+  }));
+}
+
+function resolveTicketMax(candidates) {
+  for (const m of candidates) {
+    if (Number.isFinite(m) && m > 0) return m;
+  }
+  return null;
+}
+
+/**
  * Live market board for a locked pick from pinnacle_history.json.
  * Returns pinSeries (fair-book overtime), books[], bestOdds/bestBook, dual-side
  * labels for totals/ML. Fail-soft → empty board when history missing.
@@ -488,13 +515,13 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
         };
       })
       .filter(Boolean);
-    const pts = pinPath.map((p) => p.odds);
-    pinSeries = pts.length >= 2 ? pts : null;
-    if (pinPath.length < 2) pinPath = null;
 
     const matchHist = stakedLine != null
       ? [...hist].reverse().find((h) => linesClose(h.line, stakedLine))
       : last;
+    const liveAlt = (!sealed && stakedLine != null && Array.isArray(pinnGame.totalLines))
+      ? pinnGame.totalLines.find((r) => linesClose(r.line, stakedLine))
+      : null;
     if (matchHist) {
       fairNow = sideKey === 'under' ? matchHist.underOdds : matchHist.overOdds;
       const over = matchHist.overOdds;
@@ -503,18 +530,15 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
         fairPair = sideKey === 'under' ? [under, over] : [over, under];
       }
       if (Number.isFinite(matchHist.t)) latestT = matchHist.t;
-    } else if (!sealed && stakedLine != null && Array.isArray(pinnGame.totalLines)) {
+    } else if (liveAlt) {
       // Live alt board (same cycle) when history hasn't caught the ticket line yet.
-      const liveAlt = pinnGame.totalLines.find((r) => linesClose(r.line, stakedLine));
-      if (liveAlt) {
-        fairNow = sideKey === 'under' ? liveAlt.underOdds : liveAlt.overOdds;
-        if (Number.isFinite(liveAlt.overOdds) && Number.isFinite(liveAlt.underOdds)) {
-          fairPair = sideKey === 'under'
-            ? [liveAlt.underOdds, liveAlt.overOdds]
-            : [liveAlt.overOdds, liveAlt.underOdds];
-        }
-        if (Number.isFinite(liveAlt.t)) latestT = liveAlt.t;
+      fairNow = sideKey === 'under' ? liveAlt.underOdds : liveAlt.overOdds;
+      if (Number.isFinite(liveAlt.overOdds) && Number.isFinite(liveAlt.underOdds)) {
+        fairPair = sideKey === 'under'
+          ? [liveAlt.underOdds, liveAlt.overOdds]
+          : [liveAlt.overOdds, liveAlt.underOdds];
       }
+      if (Number.isFinite(liveAlt.t)) latestT = liveAlt.t;
     } else if (!sealed && stakedLine == null && pinnGame.totalCurrent) {
       fairNow = sideKey === 'under'
         ? pinnGame.totalCurrent.underOdds
@@ -525,6 +549,35 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
         fairPair = sideKey === 'under' ? [under, over] : [over, under];
       }
     }
+
+    // Same-line max for dual-axis spark; book-level only once ticket odds exist.
+    const ticketMax = resolveTicketMax([
+      matchHist?.max,
+      liveAlt?.max,
+      Number.isFinite(fairNow) ? pinnGame.maxTotal : null,
+      Number.isFinite(fairNow) ? pinnGame.totalCurrent?.max : null,
+    ]);
+    pinPath = backfillPathMax(pinPath, ticketMax);
+    // Single live print still deserves a 2-point tape (odds + max story).
+    if (pinPath.length === 1 && Number.isFinite(fairNow)) {
+      pinPath = [
+        { ...pinPath[0], mark: 'open' },
+        {
+          t: pinPath[0].t,
+          odds: fairNow,
+          max: Number.isFinite(pinPath[0].max) ? pinPath[0].max : ticketMax,
+          mark: 'now',
+        },
+      ];
+    } else if (pinPath.length === 0 && Number.isFinite(fairNow)) {
+      pinPath = [
+        { t: latestT, odds: fairNow, max: ticketMax, mark: 'open' },
+        { t: latestT, odds: fairNow, max: ticketMax, mark: 'now' },
+      ];
+    }
+    const pts = pinPath.map((p) => p.odds);
+    pinSeries = pts.length >= 2 ? pts : null;
+    if (pinPath.length < 2) pinPath = null;
 
     if (last && Number.isFinite(last.line)) {
       liveMarketLine = last.line;
@@ -638,13 +691,19 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
         };
       })
       .filter(Boolean);
-    const pts = pinPath.map((p) => p.odds);
-    pinSeries = pts.length >= 2 ? pts : null;
-    if (pinPath.length < 2) pinPath = null;
 
     const matchHist = stakedLine != null
       ? [...hist].reverse().find((h) => linesClose(lineOf(h), stakedLine))
       : last;
+    const liveAlt = (!sealed && stakedLine != null && Array.isArray(pinnGame.spreadLines))
+      ? pinnGame.spreadLines.find((r) => {
+        const homeLn = Number(r.homeLine);
+        const awayLn = Number(r.awayLine);
+        return linesClose(sideKey === 'away' ? awayLn : homeLn, stakedLine)
+          || linesClose(homeLn, stakedLine)
+          || linesClose(awayLn, stakedLine);
+      })
+      : null;
     if (matchHist) {
       fairNow = sideKey === 'away' ? matchHist.awayOdds : matchHist.homeOdds;
       const a = matchHist.awayOdds;
@@ -653,24 +712,43 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
         fairPair = sideKey === 'away' ? [a, h] : [h, a];
       }
       if (Number.isFinite(matchHist.t)) latestT = matchHist.t;
-    } else if (!sealed && stakedLine != null && Array.isArray(pinnGame.spreadLines)) {
-      const liveAlt = pinnGame.spreadLines.find((r) => {
-        const homeLn = Number(r.homeLine);
-        const awayLn = Number(r.awayLine);
-        return linesClose(sideKey === 'away' ? awayLn : homeLn, stakedLine)
-          || linesClose(homeLn, stakedLine)
-          || linesClose(awayLn, stakedLine);
-      });
-      if (liveAlt) {
-        fairNow = sideKey === 'away' ? liveAlt.awayOdds : liveAlt.homeOdds;
-        if (Number.isFinite(liveAlt.awayOdds) && Number.isFinite(liveAlt.homeOdds)) {
-          fairPair = sideKey === 'away'
-            ? [liveAlt.awayOdds, liveAlt.homeOdds]
-            : [liveAlt.homeOdds, liveAlt.awayOdds];
-        }
-        if (Number.isFinite(liveAlt.t)) latestT = liveAlt.t;
+    } else if (liveAlt) {
+      fairNow = sideKey === 'away' ? liveAlt.awayOdds : liveAlt.homeOdds;
+      if (Number.isFinite(liveAlt.awayOdds) && Number.isFinite(liveAlt.homeOdds)) {
+        fairPair = sideKey === 'away'
+          ? [liveAlt.awayOdds, liveAlt.homeOdds]
+          : [liveAlt.homeOdds, liveAlt.awayOdds];
       }
+      if (Number.isFinite(liveAlt.t)) latestT = liveAlt.t;
     }
+
+    const ticketMax = resolveTicketMax([
+      matchHist?.max,
+      liveAlt?.max,
+      Number.isFinite(fairNow) ? pinnGame.maxSpread : null,
+      Number.isFinite(fairNow) ? pinnGame.spreadCurrent?.max : null,
+    ]);
+    pinPath = backfillPathMax(pinPath, ticketMax);
+    if (pinPath.length === 1 && Number.isFinite(fairNow)) {
+      pinPath = [
+        { ...pinPath[0], mark: 'open' },
+        {
+          t: pinPath[0].t,
+          odds: fairNow,
+          max: Number.isFinite(pinPath[0].max) ? pinPath[0].max : ticketMax,
+          mark: 'now',
+        },
+      ];
+    } else if (pinPath.length === 0 && Number.isFinite(fairNow)) {
+      pinPath = [
+        { t: latestT, odds: fairNow, max: ticketMax, mark: 'open' },
+        { t: latestT, odds: fairNow, max: ticketMax, mark: 'now' },
+      ];
+    }
+    const pts = pinPath.map((p) => p.odds);
+    pinSeries = pts.length >= 2 ? pts : null;
+    if (pinPath.length < 2) pinPath = null;
+
     if (last) {
       const ln = lineOf(last);
       if (Number.isFinite(ln)) liveMarketLine = ln;
@@ -1356,7 +1434,12 @@ export function mapLockedPickToCardFixture(pick, {
     // Sharp–Market Agreement (SMA) — sharps × Pinnacle move × max liquidity
     marketAgreement: sma,
     marketSignals,
-    pinnMax: sma?.path?.maxNow ?? null,
+    // Prefer SMA max; else last stamped max on the ticket-line spark path.
+    pinnMax: sma?.path?.maxNow
+      ?? (Array.isArray(market.pinPath)
+        ? [...market.pinPath].reverse().find((p) => Number.isFinite(p?.max))?.max
+        : null)
+      ?? null,
     pinnMaxDelta: sma?.path?.maxDelta ?? null,
     pinnMovePp: sma?.path?.deltaProbPp ?? null,
     // Three distinct lines for Locked Picks rails:

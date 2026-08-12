@@ -190,16 +190,16 @@ export function extractMarketPath(pinnGame, {
       maxNow = maxNow ?? cur?.max ?? pinnGame.maxMoneyLine ?? pinnGame.max ?? null;
     }
   } else if (pinnedToLine) {
-    // Same-line live board (filled once snapshot stamps allTotals/allSpreads).
-    if (isTotal && nowOdds == null && Array.isArray(pinnGame.totalLines)) {
+    // Same-line live board for odds + max (even when hist already gave odds).
+    if (isTotal && Array.isArray(pinnGame.totalLines)) {
       const live = pinnGame.totalLines.find(
         (r) => Math.abs(Number(r.line) - Number(line)) <= 0.051,
       );
       if (live) {
-        nowOdds = sideIsAway ? live.underOdds : live.overOdds;
-        maxNow = maxNow ?? live.max ?? null;
+        if (nowOdds == null) nowOdds = sideIsAway ? live.underOdds : live.overOdds;
+        maxNow = maxNow ?? (Number.isFinite(live.max) ? live.max : null);
       }
-    } else if (isSpread && nowOdds == null && Array.isArray(pinnGame.spreadLines)) {
+    } else if (isSpread && Array.isArray(pinnGame.spreadLines)) {
       const live = pinnGame.spreadLines.find((r) => {
         const homeLn = Number(r.homeLine);
         const awayLn = Number(r.awayLine);
@@ -208,12 +208,23 @@ export function extractMarketPath(pinnGame, {
           || Math.abs(homeLn + Number(line)) <= 0.051;
       });
       if (live) {
-        nowOdds = sideIsAway ? live.awayOdds : live.homeOdds;
-        maxNow = maxNow ?? live.max ?? null;
+        if (nowOdds == null) nowOdds = sideIsAway ? live.awayOdds : live.homeOdds;
+        maxNow = maxNow ?? (Number.isFinite(live.max) ? live.max : null);
       }
     }
-    // Do NOT fall back to game-level maxTotal/maxSpread — that is the MAIN
-    // limit and lights Liquid/$7.5K on an orphaned alt ticket.
+    // Dual-axis story: once we have a real TICKET-line price, never leave MAX
+    // blank. Prefer per-line max; else book-level totals/spreads max as liquidity
+    // proxy (alts often omit max in the feed). Do NOT invent odds from main.
+    if (Number.isFinite(nowOdds) && maxNow == null) {
+      maxNow = isTotal
+        ? (pinnGame.maxTotal ?? pinnGame.totalCurrent?.max ?? null)
+        : (pinnGame.maxSpread ?? pinnGame.spreadCurrent?.max ?? null);
+    }
+    if (Number.isFinite(openOdds) && maxOpen == null) {
+      maxOpen = isTotal
+        ? (pinnGame.totalOpener?.max ?? maxNow)
+        : (pinnGame.spreadOpener?.max ?? maxNow);
+    }
   }
 
   const pOpen = impliedProb(openOdds);
