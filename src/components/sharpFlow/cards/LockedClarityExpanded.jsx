@@ -1209,6 +1209,13 @@ export default function LockedClarityExpanded({
             {f.pickLabel}
           </span>
           <span style={{ fontSize: 15, fontWeight: 600, color: C.textSec }}>{fmtOdds(f.lockOdds)}</span>
+          {f.mainNowLabel && (
+            <span style={{
+              width: '100%', fontSize: 11, fontWeight: 600, color: C.textMuted, marginTop: 2,
+            }}>
+              {f.mainNowLabel}
+            </span>
+          )}
           {!tracked && f.units > 0 && (
             <span style={{
               fontSize: 13, fontWeight: 700, color: GOLD,
@@ -1693,6 +1700,8 @@ export default function LockedClarityExpanded({
                 polyEntry={f.polyEntryOdds}
                 gid={`ols-${gid}`}
                 showStory
+                chartLineLabel={f.chartLineLabel}
+                ticketOffMain={!!f.lineMoved}
               />
             </div>
           </div>

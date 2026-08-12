@@ -2515,12 +2515,35 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
         }}>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{
-              fontSize: '1.28rem', fontWeight: 800, letterSpacing: '-0.035em',
-              color: C.text, lineHeight: 1.05,
+              display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap',
+              fontFeatureSettings: "'tnum'",
             }}>
-              {f.pickLabel}
+              <div style={{
+                fontSize: '1.28rem', fontWeight: 800, letterSpacing: '-0.035em',
+                color: C.text, lineHeight: 1.05,
+              }}>
+                {f.pickLabel}
+              </div>
+              {Number.isFinite(f.lockOdds ?? f.odds) && (
+                <div style={{
+                  fontSize: '1.05rem', fontWeight: 750, letterSpacing: '-0.02em',
+                  color: C.textSec, lineHeight: 1.05,
+                }}>
+                  {fmtOdds(f.lockOdds ?? f.odds)}
+                </div>
+              )}
             </div>
-            {f.entryLadderLabel ? (
+            {f.mainNowLabel ? (
+              <div
+                title="Sportsbook main line — chart / FAIR / NOW use this instrument"
+                style={{
+                  marginTop: 5, fontSize: 10, fontWeight: 600,
+                  letterSpacing: '0.02em', color: C.textMuted,
+                }}
+              >
+                {f.mainNowLabel}
+              </div>
+            ) : f.entryLadderLabel ? (
               <div
                 title="Sharp vault entries on this side (possibly different lines)"
                 style={{
@@ -2553,16 +2576,20 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
                   const od = Number.isFinite(r.odds)
                     ? (r.odds > 0 ? `+${r.odds}` : String(r.odds))
                     : null;
+                  const isTicket = Number.isFinite(f.ticketLine)
+                    && Math.abs(ln - Number(f.ticketLine)) <= 0.051;
                   return (
                     <span
                       key={`el-${ln}`}
-                      title={`$${Math.round(r.invested || 0)} across ${r.wallets || 0} wallet(s)`}
+                      title={`$${Math.round(r.invested || 0)} across ${r.wallets || 0} wallet(s)${isTicket ? ' · sealed ticket' : ''}`}
                       style={{
                         fontSize: 9, fontWeight: 700, letterSpacing: '0.02em',
                         padding: '3px 7px', borderRadius: 4,
-                        color: C.textMuted,
-                        background: 'rgba(148,163,184,0.08)',
-                        border: '1px solid rgba(148,163,184,0.18)',
+                        color: isTicket ? C.text : C.textMuted,
+                        background: isTicket ? 'rgba(212,175,55,0.12)' : 'rgba(148,163,184,0.08)',
+                        border: isTicket
+                          ? '1px solid rgba(212,175,55,0.35)'
+                          : '1px solid rgba(148,163,184,0.18)',
                         fontFeatureSettings: "'tnum'",
                       }}
                     >
@@ -2621,6 +2648,8 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
           showStory={false}
           showMetrics
           gid={`ols-c-${f.id || 'x'}`}
+          chartLineLabel={f.chartLineLabel}
+          ticketOffMain={!!f.lineMoved}
         />
       </div>
     );

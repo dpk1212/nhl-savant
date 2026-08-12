@@ -189,7 +189,11 @@ function stepPath(coords) {
   return d;
 }
 
-function MetricStrip({ evPct, fair, entry, now, flagged, maxNow, movePp, compact, polyEntry = null }) {
+function MetricStrip({
+  evPct, fair, entry, now, flagged, maxNow, movePp, compact,
+  polyEntry = null,
+  ticketOffMain = false,
+}) {
   const cells = [
     {
       key: 'ev',
@@ -204,8 +208,10 @@ function MetricStrip({ evPct, fair, entry, now, flagged, maxNow, movePp, compact
       color: GOLD_HI,
     },
   ];
+  // PM = poly receipt. Skip when it duplicates TICKET (same juice) on off-main cards.
   if (Number.isFinite(polyEntry)
-      && (!Number.isFinite(entry) || Math.abs(polyEntry - entry) > 1)) {
+      && (!Number.isFinite(entry) || Math.abs(polyEntry - entry) > 1)
+      && !(ticketOffMain && Number.isFinite(flagged) && Math.abs(polyEntry - flagged) <= 1)) {
     cells.push({
       key: 'pm',
       label: 'PM',
@@ -228,13 +234,27 @@ function MetricStrip({ evPct, fair, entry, now, flagged, maxNow, movePp, compact
       color: GREEN,
     },
   );
+  // Ticket receipt juice — only when it differs from main-tape OPEN/PIN.
+  // Label TICKET (not FLAGGED) so it isn't read as "odds on the chart line".
   if (Number.isFinite(flagged) && Number.isFinite(entry) && flagged !== entry) {
     const hasPm = Number.isFinite(polyEntry)
       && (!Number.isFinite(entry) || Math.abs(polyEntry - entry) > 1);
     const insertAt = hasPm ? 3 : 2;
     cells.splice(insertAt, 0, {
       key: 'got',
-      label: 'FLAGGED',
+      label: ticketOffMain ? 'TICKET' : 'FLAGGED',
+      value: fmtOdds(flagged),
+      color: C.text,
+    });
+  } else if (ticketOffMain && Number.isFinite(flagged)
+      && (!Number.isFinite(entry) || flagged === entry)) {
+    // Off-main ticket whose juice equals pin open — still surface as TICKET.
+    const hasPm = Number.isFinite(polyEntry)
+      && (!Number.isFinite(entry) || Math.abs(polyEntry - entry) > 1);
+    const insertAt = hasPm ? 3 : 2;
+    cells.splice(insertAt, 0, {
+      key: 'got',
+      label: 'TICKET',
       value: fmtOdds(flagged),
       color: C.text,
     });
@@ -572,12 +592,17 @@ export default function OddsLimitSpark({
   gid = 'ols',
   showStory = true,
   showMetrics = true,
+  /** When set, chart is MAIN-line tape (ticket may be a different handicap). */
+  chartLineLabel = null,
+  ticketOffMain = false,
 }) {
   const liveNow = Number.isFinite(now) ? now : fair;
+  // Never inject off-main ticket juice into the MAIN tape path.
+  const pathFlagged = ticketOffMain ? null : flagged;
   const { points, synthetic } = resolveSparkPath({
     pinPath,
     entry,
-    flagged,
+    flagged: pathFlagged,
     now: liveNow,
     maxNow: maxNow ?? sma?.maxNow,
   });
@@ -586,7 +611,7 @@ export default function OddsLimitSpark({
   const story = buildMarketStory({
     sma,
     evPct,
-    flagged,
+    flagged: pathFlagged,
     entry,
     now: liveNow,
     fair,
@@ -612,6 +637,7 @@ export default function OddsLimitSpark({
           movePp={movePp}
           polyEntry={polyEntry}
           compact={compact}
+          ticketOffMain={ticketOffMain}
         />
       )}
 
@@ -623,7 +649,9 @@ export default function OddsLimitSpark({
           <div style={{
             fontFamily: MONO, fontSize: 8, fontWeight: 700, letterSpacing: '0.12em', color: C.textMuted,
           }}>
-            SHARP BOOK LINE MOVEMENT
+            {chartLineLabel
+              ? `${String(chartLineLabel).toUpperCase()} TAPE`
+              : 'SHARP BOOK LINE MOVEMENT'}
           </div>
           <div style={{ display: 'inline-flex', gap: 12, fontSize: 9, fontWeight: 650, color: C.textFaint }}>
             <span><span style={{ color: GOLD_HI }}>━</span> pinn odds</span>
@@ -641,7 +669,7 @@ export default function OddsLimitSpark({
       }}>
         <DualAxisChart
           points={points}
-          flagged={flagged}
+          flagged={pathFlagged}
           fair={fair}
           compact={compact}
           gid={gid}

@@ -1247,21 +1247,66 @@ export function mapLockedPickToCardFixture(pick, {
     : isDraw ? 'Draw'
       : (sideNorm === 'away' ? awayShort : homeShort);
 
-  // Hero = PLAYABLE recommendation (main / freeze-time main).
-  // Ladder subtitle = where sharps entered (possibly multiple lines).
-  const pickLabel = isSpread
-    ? `${teamShort} ${playableLine > 0 ? '+' : ''}${playableLine}`
-    : isTotal
-      ? (Number.isFinite(playableLine) && playableLine >= 1.5
-        ? `${teamShort} ${playableLine}`
-        : (pick.team || 'Total'))
-    : isDraw ? 'Draw ML'
-    : `${teamShort} ML`;
+  // Hero = TICKET (vault consensus / what T-15 seals). Chart + FAIR/NOW stay
+  // on playable MAIN — never pair ticket juice with a different handicap.
+  const fmtSpreadLn = (ln) => (Number.isFinite(ln) ? `${ln > 0 ? '+' : ''}${ln}` : '');
+  const fmtAm = (o) => {
+    if (!Number.isFinite(o) || o === 0) return null;
+    return o > 0 ? `+${Math.round(o)}` : `${Math.round(o)}`;
+  };
+  const ticketHeroLine = Number.isFinite(ticketLine) ? ticketLine : null;
+  const pickLabel = isSpread && Number.isFinite(ticketHeroLine)
+    ? `${teamShort} ${fmtSpreadLn(ticketHeroLine)}`
+    : isTotal && Number.isFinite(ticketHeroLine) && ticketHeroLine >= 1.5
+      ? `${teamShort} ${ticketHeroLine}`
+      : isSpread && Number.isFinite(playableLine)
+        ? `${teamShort} ${fmtSpreadLn(playableLine)}`
+        : isTotal && Number.isFinite(playableLine) && playableLine >= 1.5
+          ? `${teamShort} ${playableLine}`
+          : isTotal ? (pick.team || 'Total')
+            : isDraw ? 'Draw ML'
+              : `${teamShort} ML`;
   const entryLadderLabel = (isTotal || isSpread)
     ? formatEntryLadderLabel(entryLadder, { isTotal, isSpread, teamShort })
     : null;
   const entriesOffPlayable = (isTotal || isSpread)
-    && entryLadder.some((r) => !linesClose(r.line, playableLine));
+    && Number.isFinite(playableLine)
+    && (
+      (Number.isFinite(ticketHeroLine) && !linesClose(ticketHeroLine, playableLine))
+      || entryLadder.some((r) => !linesClose(r.line, playableLine))
+    );
+  // Secondary line under hero when MAIN drifted off the sealed ticket.
+  const playableNowOdds = (() => {
+    if (!entriesOffPlayable || !pinnGamePeek) return null;
+    if (isSpread) {
+      const hist = Array.isArray(pinnGamePeek.spreadHistory) ? pinnGamePeek.spreadHistory : [];
+      const last = hist[hist.length - 1];
+      const awayPick = sideNorm === 'away';
+      if (last) {
+        const o = awayPick ? last.awayOdds : last.homeOdds;
+        if (Number.isFinite(o)) return o;
+      }
+      const cur = pinnGamePeek.spreadCurrent;
+      if (cur) {
+        const o = awayPick ? cur.awayOdds : cur.homeOdds;
+        if (Number.isFinite(o)) return o;
+      }
+    }
+    if (isTotal) {
+      const hist = Array.isArray(pinnGamePeek.totalHistory) ? pinnGamePeek.totalHistory : [];
+      const last = hist[hist.length - 1];
+      if (last) {
+        const o = sideNorm === 'away' ? last.underOdds : last.overOdds;
+        if (Number.isFinite(o)) return o;
+      }
+    }
+    return null;
+  })();
+  const mainNowLabel = entriesOffPlayable && Number.isFinite(playableLine)
+    ? `Main now ${teamShort} ${isSpread ? fmtSpreadLn(playableLine) : playableLine}${
+      fmtAm(playableNowOdds) ? ` · ${fmtAm(playableNowOdds)}` : ''
+    }`
+    : null;
 
   const stakePath = pick.hcStakeTier || pick.lockTier || 'LOCK';
   const tapeAction = normTape(pick.tapeAction || pick.v8_tapeAction);
@@ -1480,13 +1525,17 @@ export function mapLockedPickToCardFixture(pick, {
     clvPct: Number.isFinite(clvPct) ? clvPct : null,
   });
 
-  // Display odds for stake math: prefer playable reco when available.
-  const displayOdds = Number.isFinite(recoOdds) ? recoOdds : lockOdds;
+  // Stake math / hero price = sealed ticket odds (not main-line reco juice).
+  const displayOdds = Number.isFinite(lockOdds) ? lockOdds
+    : (Number.isFinite(recoOdds) ? recoOdds : null);
   const displayToWin = (() => {
     if (!Number.isFinite(displayOdds) || units <= 0) return 0;
     if (displayOdds < 0) return units * (100 / Math.abs(displayOdds));
     return units * (displayOdds / 100);
   })();
+  const chartLineLabel = (isSpread || isTotal) && Number.isFinite(playableLine)
+    ? `Main ${teamShort} ${isSpread ? fmtSpreadLn(playableLine) : playableLine}`
+    : null;
 
   return {
     id: pick.key || `${pick.sport}-${pickLabel}`,
@@ -1497,9 +1546,12 @@ export function mapLockedPickToCardFixture(pick, {
     homeShort,
     pickLabel,
     entryLadder: entryLadder.length ? entryLadder : null,
-    entryLadderLabel: entriesOffPlayable ? entryLadderLabel : (
-      entryLadder.length > 1 ? entryLadderLabel : null
-    ),
+    // When MAIN ≠ ticket: show "Main now …" under hero; keep multi-entry chips.
+    entryLadderLabel: entriesOffPlayable
+      ? null
+      : (entryLadder.length > 1 ? entryLadderLabel : null),
+    mainNowLabel,
+    chartLineLabel,
     // Always home|away|draw for board math (totals already mapped over→home).
     side: sideNorm,
     marketType: isSpread ? 'spread' : isTotal ? 'total' : 'ml',
