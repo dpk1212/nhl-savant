@@ -1,21 +1,21 @@
 {
-  "scannedAt": "2026-08-12T19:18:21.357Z",
-  "elapsedSec": 17.3,
+  "scannedAt": "2026-08-12T19:22:42.236Z",
+  "elapsedSec": 17.7,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 50,
   "summary": {
     "total": 221,
     "coveredByMain": 7,
-    "recovered": 19,
-    "recoveredPositions": 96,
-    "noPositions": 195,
+    "recovered": 20,
+    "recoveredPositions": 97,
+    "noPositions": 194,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
       "ml": 10,
       "spread": 1,
-      "total": 2,
+      "total": 3,
       "dropped_shadow_gate": 21,
       "dropped_excluded": 62,
       "dropped_duplicate": 0
@@ -472,8 +472,24 @@
       "tier": "CONFIRMED",
       "name": "quavoo",
       "sports": "WNBA",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xdc41c39b95453c943174f369926018f6963bdd7e"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0xdc41c39b95453c943174f369926018f6963bdd7e",
+      "positionsCount": 1,
+      "statsSource": "sharpWalletProfiles_derived",
+      "avgSportBet": 1524,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "sea_nyy",
+          "marketType": "total",
+          "side": "under",
+          "invested": 1217,
+          "entryLine": 8.5,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "3db89e",
@@ -1548,7 +1564,7 @@
           "gameKey": "sea_nyy",
           "marketType": "total",
           "side": "over",
-          "invested": 30864,
+          "invested": 31382,
           "entryLine": 8.5,
           "passesShadow": true
         },
@@ -1557,7 +1573,7 @@
           "gameKey": "col_ari",
           "marketType": "ml",
           "side": "home",
-          "invested": 34808,
+          "invested": 34912,
           "entryLine": null,
           "passesShadow": true
         },
