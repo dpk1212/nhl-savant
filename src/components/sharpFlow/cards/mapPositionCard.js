@@ -1475,6 +1475,7 @@ export function mapLockedPickToCardFixture(pick, {
     provenOnSide: confirmedOnSide,
     vaultOnSide,
     trackedOnSide: wallets.length,
+    sideInvested: pick.totalInvested || pick.lockTotalInvested || 0,
     clvPct: Number.isFinite(clvPct) ? clvPct : null,
   });
 

@@ -90,6 +90,7 @@ export function extractMarketPath(pinnGame, {
     openOdds: null,
     nowOdds: null,
     deltaProbPp: null,
+    deltaFromTroughPp: null,
     maxNow: null,
     maxOpen: null,
     maxDelta: null,
@@ -233,6 +234,23 @@ export function extractMarketPath(pinnGame, {
     ? +((pNow - pOpen) * 100).toFixed(2)
     : null;
 
+  // Session trough → now: catches mid-day steam that open→now flattens out.
+  // Example: ARI opened -176, dipped to -165, steamed back to -173 — open→now
+  // looks flat/against while the live story is WITH the favorite.
+  let deltaFromTroughPp = null;
+  if (hist.length >= 2 && pNow != null) {
+    let troughProb = null;
+    for (const h of hist) {
+      const o = oddsAt(h);
+      const p = impliedProb(o);
+      if (p == null) continue;
+      troughProb = troughProb == null ? p : Math.min(troughProb, p);
+    }
+    if (troughProb != null) {
+      deltaFromTroughPp = +((pNow - troughProb) * 100).toFixed(2);
+    }
+  }
+
   const maxDelta = (Number.isFinite(maxNow) && Number.isFinite(maxOpen))
     ? maxNow - maxOpen
     : null;
@@ -241,6 +259,7 @@ export function extractMarketPath(pinnGame, {
     openOdds: Number.isFinite(openOdds) ? openOdds : null,
     nowOdds: Number.isFinite(nowOdds) ? nowOdds : null,
     deltaProbPp,
+    deltaFromTroughPp,
     maxNow: Number.isFinite(maxNow) ? maxNow : null,
     maxOpen: Number.isFinite(maxOpen) ? maxOpen : null,
     maxDelta: Number.isFinite(maxDelta) ? maxDelta : null,
@@ -428,6 +447,9 @@ function buildTitle({ state, proven, deltaProbPp, maxNow, maxDelta, liveEvPct, s
   return `${head} ${bits.join(' · ')}`;
 }
 
+/** Absolute Polymarket $ that counts as a lone whale without 1.5× vault size. */
+const WHALE_USD = 5000;
+
 /**
  * High-value Locked Picks checklist — what to show when confirmation is real.
  * Ordered by user-facing significance (not SMA math order).
@@ -438,29 +460,45 @@ export function buildLockedMarketSignals({
   provenOnSide = 0,
   vaultOnSide = 0,
   trackedOnSide = 0,
+  sideInvested = 0,
   clvPct = null,
 } = {}) {
   const proven = Math.max(0, Number(provenOnSide) || 0);
   const vault = Math.max(0, Number(vaultOnSide) || 0);
   const tracked = Math.max(0, Number(trackedOnSide) || proven);
+  const invested = Math.max(0, Number(sideInvested) || 0);
   const dir = sma?.dir ?? 0;
   const movePp = sma?.deltaProbPp ?? sma?.path?.deltaProbPp ?? null;
+  const troughPp = sma?.path?.deltaFromTroughPp ?? null;
   const maxDelta = sma?.maxDelta ?? sma?.path?.maxDelta ?? null;
   const maxNow = sma?.maxNow ?? sma?.path?.maxNow ?? null;
   const maxOpen = sma?.maxOpen ?? sma?.path?.maxOpen ?? null;
   const limitTested = !!(sma?.limitTested || (Number.isFinite(maxNow) && maxNow >= LIMIT_TESTED_USD));
-  const steamedWith = (dir > 0 && Number.isFinite(movePp) && movePp >= 0.25)
+  const withFromOpen = dir > 0 && Number.isFinite(movePp) && movePp >= 0.25;
+  const withFromTrough = Number.isFinite(troughPp) && troughPp >= 0.25;
+  const steamedWith = withFromOpen || withFromTrough
     || !!(sma?.path?.steamDrop && Number(sma.path.steamDrop.dropPct) >= 3);
-  const steamedAgainst = dir < 0 && Number.isFinite(movePp) && movePp <= -0.25;
+  const steamedAgainst = dir < 0 && Number.isFinite(movePp) && movePp <= -0.25
+    && !(withFromTrough);
   const limitRising = (Number.isFinite(maxDelta) && maxDelta >= 500)
     || (Number.isFinite(maxOpen) && Number.isFinite(maxNow) && maxOpen > 0
       && maxNow >= maxOpen * 1.45);
   const limitFalling = Number.isFinite(maxDelta) && maxDelta <= -500;
+  // Pinn confirms: SMA agree, steam+liquid, OR rising limits under sharps while
+  // the live tape is not clearly steaming against the pick.
+  const hasSharps = proven >= 1 || vault >= 1 || tracked >= 1;
   const pinnConfirms = sma?.state === 'CONFIRMS' || sma?.state === 'WITH'
-    || (steamedWith && limitTested);
+    || (steamedWith && limitTested)
+    || (limitRising && hasSharps && limitTested && !steamedAgainst);
   const plusEv = Number.isFinite(evPct) && evPct >= 0.3;
   const clvUp = Number.isFinite(clvPct) && clvPct >= 0.3;
-  const whaleConsensus = proven >= 2 || (proven >= 1 && vault >= 1) || tracked >= 3;
+  // Whales: cluster OR a single real whale ($ / vault size). Solo $33K proven
+  // at 0.5× usual must still light — absolute size is the signal.
+  const whaleConsensus = proven >= 2
+    || (proven >= 1 && vault >= 1)
+    || tracked >= 3
+    || (proven >= 1 && invested >= WHALE_USD)
+    || (vault >= 1 && invested >= WHALE_USD);
 
   const signals = [
     {
@@ -579,11 +617,18 @@ export function sharpMarketAgreementFromPinnGame(pinnGame, ctx = {}) {
     line: ctx.line,
     minDropPct: 3,
   });
+  // Prefer trough→now when it shows clearer WITH steam than open→now
+  // (mid-session dips then steam back toward the pick).
+  const openPp = Number.isFinite(path.deltaProbPp) ? path.deltaProbPp : null;
+  const troughPp = Number.isFinite(path.deltaFromTroughPp) ? path.deltaFromTroughPp : null;
+  const agreePp = (openPp == null && troughPp == null)
+    ? null
+    : Math.max(openPp ?? -Infinity, troughPp ?? -Infinity);
   const base = computeSharpMarketAgreement({
     provenOnSide: ctx.provenOnSide,
     vaultOnSide: ctx.vaultOnSide,
     trackedOnSide: ctx.trackedOnSide,
-    deltaProbPp: path.deltaProbPp,
+    deltaProbPp: Number.isFinite(agreePp) ? agreePp : openPp,
     maxNow: path.maxNow,
     maxDelta: path.maxDelta,
     liveEvPct: ctx.liveEvPct,
@@ -591,8 +636,8 @@ export function sharpMarketAgreementFromPinnGame(pinnGame, ctx = {}) {
   // Explicit Edge drop on our side counts as steam-with even if open→now history is flat.
   if (steam && (base.dir == null || base.dir >= 0)) {
     if (base.state === 'NEUTRAL' || base.state === 'LIQUID' || base.dir === 0) {
-      base.state = base.limitTested ? 'WITH' : 'WITH';
-      base.label = base.limitTested ? 'PINN STEAM' : 'PINN STEAM';
+      base.state = 'WITH';
+      base.label = 'PINN STEAM';
       base.tone = 'with';
     }
   }
