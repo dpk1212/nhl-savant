@@ -474,6 +474,8 @@ export function applyBothE10TapeFloor({
 // qConv = Σ sizeRatio×(sportWR−50) FOR − Σ sizeRatio×(sportWR−50) AG
 // Mute bottom quintile of prior staked A/B/C (expanding Q1 thr). Fail-open
 // when qConv or thr missing. Live from QCONV_MUTE_FROM.
+// 2026-08-12: Path A (HC) + RANK 2-for-0 exempt — mute was cutting gold winners
+// (HC-1 Rays/Braves). Applies to Path C SHARP* + CONFIRMED-UNOPP only.
 export const QCONV_WR_MIN_N = 8;
 export const QCONV_MUTE_FROM = '2026-08-03';
 export const QCONV_MUTE_LOOKBACK_FROM = '2026-06-15';
@@ -481,11 +483,11 @@ export const QCONV_MUTE_FALLBACK_THR = 0; // ≈ Jun15+ staked Q1 (−0.27)
 export const QCONV_MUTE_MIN_PRIORS = 25;
 export const QCONV_STATE_COLLECTION = 'qConvMuteState';
 export const QCONV_STATE_DOC_ID = 'current';
-/** Path A/B/C tiers — same book the mute was validated on (not DISSENT). */
+/** Path C + CONFIRMED-UNOPP only. Path A (SUPER/TOP/MINI/…) and RANK exempt. */
 export const QCONV_MUTE_TIERS = new Set([
-  'SUPER', 'TOP', 'TOP+', 'MINI', 'MINI-', 'CONFIRMED',
-  'RANK', 'SHARP', 'SHARP-PRIME', 'SHARP-LEAN',
+  'SHARP', 'SHARP-PRIME', 'SHARP-LEAN',
   'CONFIRMED-UNOPP',
+  // Path A + RANK intentionally omitted — do not qConv-mute gold / 2-for-0
   // CONFIRMED-Q1 intentionally omitted — hard floor restores after mutes
 ]);
 
@@ -618,7 +620,7 @@ export const FOOLS_GOLD_EDGE_MIN = 7;
 export const FOOLS_CLAMP_MIN_U = 0;
 /** @deprecated Was 1u clamp band; FOOLS is 0u MUTE again. Kept for import compat. */
 export const FOOLS_CLAMP_MAX_U = 0;
-/** Same Path A/B/C book as qConv mute (+ CONFIRMED-UNOPP promote; DISSENT exempt). */
+/** Path A/B/C + CONFIRMED-UNOPP (broader than qConv, which is Path C-only). DISSENT exempt. */
 export const FOOLS_GOLD_MUTE_TIERS = new Set([
   'SUPER', 'TOP', 'TOP+', 'MINI', 'MINI-', 'CONFIRMED',
   'RANK', 'SHARP', 'SHARP-PRIME', 'SHARP-LEAN',

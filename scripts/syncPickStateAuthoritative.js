@@ -2566,7 +2566,8 @@ async function createMissingLockedPicks({
         }
       }
 
-      // qConv Q1 mute — after tape / EDGE abs (Path A/B/C only).
+      // qConv Q1 mute — after tape / EDGE abs (Path C + CONFIRMED-UNOPP only;
+      // Path A + RANK exempt — see QCONV_MUTE_TIERS).
       const qConvCreate = createV121Eligible
         ? computeQConv(walletDetails, side, sport, walletProfiles)
         : null;
@@ -3748,7 +3749,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   }
 
   // ─── qConv Q1 mute (after tape / EDGE abs) ────────────────────────────
-  // Quality×size FOR−AG; mute bottom quintile of prior staked A/B/C.
+  // Quality×size FOR−AG; mute bottom quintile vs expanding thr.
+  // Applies to Path C + CONFIRMED-UNOPP only (Path A + RANK exempt).
   // Fail-open if qConv/thr missing. Manual stake exempt. DISSENT exempt.
   const qConvLive = (v121Eligible && Array.isArray(wd) && wd.length > 0)
     ? computeQConv(wd, side, pick.sport, walletProfiles)

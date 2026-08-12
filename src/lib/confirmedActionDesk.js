@@ -18,6 +18,8 @@ const SPORTS = ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL'];
 const ACTION_TIERS = new Set(['CONFIRMED']);
 /** writeSharpActions SHADOW floor — token bets don't count as opposed money. */
 const MODEL_MIN_SIZE = 0.10;
+/** Default Action desk / marquee: hide sub-$500 tickets (noise). */
+export const MIN_ACTION_INVESTED = 500;
 
 /** Sharp tier = ROI rank among CONFIRMED in-sport (flat+dollar) — not win rate. */
 const SKILL_BAND = {
@@ -529,9 +531,13 @@ export function filterActionRows(rows, {
   sizedOnly = false,
   clearOnly = false,
   pinWithOnly = false,
+  /** Dollar floor; default hides sub-$500. Pass 0 to show all sizes. */
+  minInvested = MIN_ACTION_INVESTED,
 } = {}) {
   return rows.filter((r) => {
     if (sport && sport !== 'All' && sport !== 'ALL' && r.sport !== sport) return false;
+    if (Number.isFinite(minInvested) && minInvested > 0
+      && !(Number(r.invested) >= minInvested)) return false;
     if (highMidOnly && r.skillKey !== 'high' && r.skillKey !== 'mid') return false;
     if (sizedOnly && !(Number.isFinite(r.sizeRatio) && r.sizeRatio >= 0.5)) return false;
     if (clearOnly && r.opposed !== 'clear') return false;
@@ -543,7 +549,7 @@ export function filterActionRows(rows, {
 /** Marquee items for the CONFIRMED Action strip. */
 export function buildConfirmedActionMarquee(rows, limit = 18) {
   return [...rows]
-    .filter((r) => r.invested >= 500)
+    .filter((r) => r.invested >= MIN_ACTION_INVESTED)
     .sort((a, b) => (b.ts || 0) - (a.ts || 0))
     .slice(0, limit)
     .map((r) => ({

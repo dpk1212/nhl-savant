@@ -17,11 +17,11 @@ _Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`SKILL_FEATURES.md`](./SKILL_
 | **EDGE band size** | A/C dial | E&lt;7 → **0u** · 7–10 → ×**0.75** · ≥10 → ×**1.25** · **RANK/DISSENT/CONFIRMED-UNOPP exempt** |
 | **EDGE/net size** | Soft dial (non–A/C) | BOTH ×**1.25** · ONE hold · NEITHER ×**0.5** on remaining soft tiers · **RANK exempt** |
 | **Tape** | Near-final dial | `&lt;0` mute (except **RANK** / **CONFIRMED-UNOPP**) · mid hold · `≥2.89` ×**1.35** · fail-open if missing |
-| **qConv Q1 mute** | Near-final mute (2026-08-03+) | Path A/B/C + CONFIRMED-UNOPP · `qConv <` expanding Q1 of prior staked → **0u** · fail-open if missing |
+| **qConv Q1 mute** | Near-final mute (2026-08-03+; Path A+RANK exempt 2026-08-12) | Path C SHARP* + CONFIRMED-UNOPP · `qConv <` expanding Q1 of prior staked → **0u** · Path A + RANK exempt · fail-open if missing |
 | **FOOLS-gold mute** | Final mute (2026-08-05+) | Path A/B/C + CONFIRMED-UNOPP · best proven FOR = **FLAT** → **0u MUTED** · fail-open if bestFOR missing · DISSENT/manual exempt |
 | **T-15** | Freeze | No further rewrite |
 
-**Paths pick who. EDGE band sizes A/C. Tape dials size. qConv cuts the Q1 tail. FOOLS cancels FLAT-led. CONFIRMED-UNOPP fills sized unopposed CONFIRMED left at 0u.**
+**Paths pick who. EDGE band sizes A/C. Tape dials size. qConv cuts the Path C Q1 tail (Path A + RANK exempt). FOOLS cancels FLAT-led. CONFIRMED-UNOPP fills sized unopposed CONFIRMED left at 0u.**
 
 Skill metrics (EDGE / netCLV / Tape / bucket) stamp every pre–T-15 cycle — see [`SKILL_FEATURES.md`](./SKILL_FEATURES.md).
 
@@ -63,10 +63,11 @@ Skill metrics (EDGE / netCLV / Tape / bucket) stamp every pre–T-15 cycle — s
 9. Tape mute / hold / boost
    └─ RANK / CONFIRMED-UNOPP exempt from tape mute only (still boosts)
 
-10. qConv Q1 mute (2026-08-03+)
+10. qConv Q1 mute (2026-08-03+; Path A + RANK exempt from 2026-08-12)
    └─ qConv = Σ sizeRatio×(WR−50) FOR − AG
    └─ thr = expanding Q1 of prior staked A/B/C (Jun15+)
-   └─ below thr → 0u · fail-open if qConv/thr missing · DISSENT/manual exempt
+   └─ Path C SHARP* + CONFIRMED-UNOPP only · below thr → 0u
+   └─ Path A (SUPER/TOP/MINI/…) + RANK exempt · fail-open if missing · DISSENT/manual exempt
 
 11. FOOLS-gold mute (2026-08-05+)     → final units
    └─ best proven FOR whitelistTier = FLAT → 0u MUTED (mutedBy=fools-gold-flat)
@@ -94,6 +95,7 @@ Rescues **never up-size** an already-staked Path A ticket — they only fill `0u
 | **2026-07-20** | **EDGE band size on Path A/C** — mute E&lt;5 · half 5–10 · boost ≥10 ×1.25 · RANK/DISSENT exempt (replaces BOTH/NEITHER soft size on A/C) |
 | **2026-07-22** | **EDGE band v2** — mute E&lt;7 · ×0.75 on 7–10 · boost ≥10 ×1.25 (cuts the 5–7 poison slice; mid slightly less shrunk) |
 | **2026-08-03** | **EDGE abs bands** on A/C · **qConv Q1 mute** on A/B/C (after tape) |
+| **2026-08-12** | **qConv Q1 mute** scoped to Path C + CONFIRMED-UNOPP only (Path A + RANK exempt) |
 | **2026-08-05** | **FOOLS-gold mute** — best proven FOR=FLAT → 0u (after qConv); briefly 1u clamp then restored |
 | **2026-08-08** | **CONFIRMED-UNOPP promote** — CONFIRMED × size≥0.5× × unopposed → 1u (after SHARP / before DISSENT) · FOOLS back to hard 0u cancel |
 
