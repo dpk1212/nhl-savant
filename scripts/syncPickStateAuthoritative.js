@@ -795,13 +795,54 @@ function clampUnitsToEdgeAbsBand(pre, edge, {
   };
 }
 
+/** Missing-EDGE fail-open: FOR proven wallet with solid on-chain / $ book. */
+const EDGE_MISSING_SOURCE_B_MIN_ROI = 5; // % dollar or position-flat
+// n≥4: Source B printers often have thinner settled books than featured picks;
+// still enough to HOLD path size while winnerAlign EDGE catches up.
+const EDGE_MISSING_SOURCE_B_MIN_N = 4;
+
+/**
+ * True when at least one CONFIRMED/FLAT wallet on `side` has solid Source B
+ * (on-chain flat or $ ROI). Used so Path A/C can HOLD path units while
+ * winner-align EDGE is still null instead of hard-muting to 0u.
+ */
+function forSideHasSolidSourceB(walletDetails, side, sport, walletProfiles) {
+  if (!Array.isArray(walletDetails) || !side || !sport || !walletProfiles) return false;
+  const seen = new Set();
+  for (const w of walletDetails) {
+    if (!w || w.side !== side) continue;
+    const short = String(w.walletShort || w.wallet || '').slice(-6).toLowerCase();
+    if (!short || seen.has(short)) continue;
+    seen.add(short);
+    const profile = walletProfiles.get(short)
+      || walletProfiles.get(short.toUpperCase())
+      || walletProfiles.get(String(w.walletShort || w.wallet || ''));
+    const rec = profile?.bySport?.[sport];
+    const tier = rec?.whitelistTier;
+    if (tier !== 'CONFIRMED' && tier !== 'FLAT') continue;
+    const n = Math.max(
+      Number(rec.positions?.n) || 0,
+      Number(rec.picks?.n) || 0,
+    );
+    if (n < EDGE_MISSING_SOURCE_B_MIN_N) continue;
+    const dol = Number(rec.positions?.dollarRoi);
+    const flat = Number(rec.positions?.positionFlatRoi);
+    const roi = Math.max(
+      Number.isFinite(dol) ? dol : -Infinity,
+      Number.isFinite(flat) ? flat : -Infinity,
+    );
+    if (roi >= EDGE_MISSING_SOURCE_B_MIN_ROI) return true;
+  }
+  return false;
+}
+
 /**
  * EDGE band size ladder (after paths + fadeTop, before tape).
  * Path A/C:
  *   2026-07-20 .. 2026-07-21: mute E<5 · ×0.5 on 5–10 · boost ≥10 ×1.25
  *   2026-07-22 .. 2026-08-02: mute E<7 · ×0.75 on 7–10 · boost ≥10 ×1.25
  *   2026-08-03+:              abs units E<7→≤1u · 7–11→[2,3] · ≥11→[4,6]
- *   missing EDGE → MUTE 0u
+ *   missing EDGE → MUTE 0u, unless FOR has solid Source B → HOLD (wait for EDGE)
  * Path B RANK only (2026-07-22+; unchanged by abs ladder):
  *   mute E<0 · ×0.75 on 0–7 · HOLD (7,10) · boost ≥10 ×1.25 (same boost mult)
  *   missing EDGE → HOLD (fail-open)
@@ -816,6 +857,7 @@ function applyEdgeBandSizeOverlay({
   oddsCapFn = null,
   unitCap = GLOBAL_UNIT_CAP,
   pickDate = null,
+  solidSourceB = false,
 } = {}) {
   const pre = Number.isFinite(units) ? Math.max(0, units) : 0;
   if (!(pre > 0)) {
@@ -874,6 +916,17 @@ function applyEdgeBandSizeOverlay({
   }
   const hasEdge = edge != null && Number.isFinite(Number(edge));
   if (!hasEdge) {
+    // Solid Source B on FOR: keep path stake while EDGE populates (Wings -9.5
+    // style — CONFIRMED printer, thin/no against → winnerAlign EDGE null).
+    if (solidSourceB) {
+      return {
+        units: pre,
+        action: 'HOLD',
+        band: 'MISSING',
+        reason: 'edge_missing_source_b_hold',
+        unitsPrePolicy: pre,
+      };
+    }
     return {
       units: 0, action: 'MUTE', band: 'MISSING', reason: 'edge_missing', unitsPrePolicy: pre,
     };
@@ -2454,6 +2507,7 @@ async function createMissingLockedPicks({
             oddsCapFn: oddsCap,
             unitCap: GLOBAL_UNIT_CAP,
             pickDate: TARGET_DATE,
+            solidSourceB: forSideHasSolidSourceB(walletDetails, side, sport, walletProfiles),
           });
           peakUnitsApplied = edgeBandSizeCreate.units;
         } else if (isEdgeNetSizeLive(TARGET_DATE) && peakUnitsApplied > 0) {
@@ -2481,6 +2535,7 @@ async function createMissingLockedPicks({
           oddsCapFn: oddsCap,
           unitCap: GLOBAL_UNIT_CAP,
           pickDate: TARGET_DATE,
+          solidSourceB: forSideHasSolidSourceB(walletDetails, side, sport, walletProfiles),
         });
         peakUnitsApplied = edgeBandSizeCreate.units;
       }
@@ -3699,6 +3754,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         oddsCapFn: oddsCap,
         unitCap: GLOBAL_UNIT_CAP,
         pickDate,
+        solidSourceB: forSideHasSolidSourceB(wd, side, pick.sport, walletProfiles),
       });
       finalUnitsApplied = edgeBandSizePolicy.units;
     } else if (isEdgeNetSizeLive(pickDate)) {
