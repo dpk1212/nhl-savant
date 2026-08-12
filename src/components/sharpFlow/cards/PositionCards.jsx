@@ -2481,6 +2481,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
           <ChevronDown size={15} style={{ color: C.textMuted, flexShrink: 0 }} />
         </div>
         <div style={{ marginTop: 4 }}>
+          <LockedSignalsRow signals={f.marketSignals} compact />
           <OddsLimitSpark
             pinPath={f.pinPath}
             flagged={f.gotOdds ?? f.lockOdds}
