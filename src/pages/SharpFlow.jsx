@@ -5316,7 +5316,7 @@ const LockCountdown = memo(function LockCountdown({ gameTime, isGraded }) {
   );
 });
 
-const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile, tierWindows, pinnacleHistory, totalPositions = null }) {
+const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile, tierWindows, pinnacleHistory, totalPositions = null, spreadPositions = null }) {
   const {
     team, away, home, sport, units, odds, book, lockedAt, peakAt, gameTime,
     status, outcome, profit, closingOdds, totalInvested, evEdge, consensusStrength,
@@ -5564,6 +5564,7 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile, tierWind
     pinnacleHistory,
     walletProfiles: WALLET_PROFILES_CACHE,
     totalPositions,
+    spreadPositions,
   });
   return <LockedPositionCardView f={lockedFixture} />;
 });
@@ -12870,7 +12871,9 @@ export default function SharpFlow() {
                             if (pastT15Odds) return locked ?? close ?? null;
                             return locked ?? close ?? null;
                           })(),
-                          vaultPositions: (!pastT15Odds && marketTypeKey === 'total' && liveGameData?.positions)
+                          vaultPositions: (!pastT15Odds
+                            && (marketTypeKey === 'total' || marketTypeKey === 'spread')
+                            && liveGameData?.positions)
                             ? liveGameData.positions
                             : null,
                           superseded: !!sd.superseded,
@@ -13288,7 +13291,7 @@ export default function SharpFlow() {
                                   gap: '0.75rem',
                                 }}>
                                   {stakedCards.map(p => (
-                                    <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} tierWindows={displayTierWindows} pinnacleHistory={pinnacleHistory} totalPositions={totalPositions} />
+                                    <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} tierWindows={displayTierWindows} pinnacleHistory={pinnacleHistory} totalPositions={totalPositions} spreadPositions={spreadPositions} />
                                   ))}
                                 </div>
                               )}
@@ -13314,7 +13317,7 @@ export default function SharpFlow() {
                                     opacity: 0.78,
                                   }}>
                                     {monitoringCards.map(p => (
-                                      <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} tierWindows={displayTierWindows} pinnacleHistory={pinnacleHistory} totalPositions={totalPositions} />
+                                      <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} tierWindows={displayTierWindows} pinnacleHistory={pinnacleHistory} totalPositions={totalPositions} spreadPositions={spreadPositions} />
                                     ))}
                                   </div>
                                 </div>

@@ -2512,7 +2512,17 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
             }}>
               {f.pickLabel}
             </div>
-            {f.lineMoved && f.liveMarketLabel && (
+            {f.entryLadderLabel ? (
+              <div
+                title="Sharp vault entries on this side (possibly different lines)"
+                style={{
+                  marginTop: 5, fontSize: 10, fontWeight: 600,
+                  letterSpacing: '0.02em', color: C.textMuted,
+                }}
+              >
+                {f.entryLadderLabel}
+              </div>
+            ) : (f.lineMoved && f.liveMarketLabel && (
               <div
                 title="Sportsbook main moved off the vault entry line"
                 style={{
@@ -2521,6 +2531,37 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
                 }}
               >
                 {f.liveMarketLabel}
+              </div>
+            ))}
+            {Array.isArray(f.entryLadder) && f.entryLadder.length > 1 && (
+              <div style={{
+                display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 8,
+              }}>
+                {f.entryLadder.slice(0, 4).map((r) => {
+                  const ln = Number(r.line);
+                  const lnStr = f.marketType === 'spread'
+                    ? `${ln > 0 ? '+' : ''}${ln}`
+                    : String(ln);
+                  const od = Number.isFinite(r.odds)
+                    ? (r.odds > 0 ? `+${r.odds}` : String(r.odds))
+                    : null;
+                  return (
+                    <span
+                      key={`el-${ln}`}
+                      title={`$${Math.round(r.invested || 0)} across ${r.wallets || 0} wallet(s)`}
+                      style={{
+                        fontSize: 9, fontWeight: 700, letterSpacing: '0.02em',
+                        padding: '3px 7px', borderRadius: 4,
+                        color: C.textMuted,
+                        background: 'rgba(148,163,184,0.08)',
+                        border: '1px solid rgba(148,163,184,0.18)',
+                        fontFeatureSettings: "'tnum'",
+                      }}
+                    >
+                      {lnStr}{od ? ` ${od}` : ''}
+                    </span>
+                  );
+                })}
               </div>
             )}
           </div>
