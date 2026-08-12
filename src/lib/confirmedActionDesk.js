@@ -9,6 +9,7 @@ import {
   tierLetterFromQ,
 } from './sharpTierCellStats.js';
 import { sportBookForDisplay } from './walletSportBook.js';
+import { passesSizeSkillLiveGate } from './sizeSkillRescue.js';
 
 const SPORTS = ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL'];
 
@@ -328,6 +329,8 @@ export function buildConfirmedActionRows({
     const q = qMap.get(short) || qMap.get(String(short).toLowerCase()) || null;
     const skill = skillBandFromQ(q);
     const sr = sizeRatioOf(pos);
+    // Size-skill CONFIRMED: Action desk only at sizeRatio ≥ 1.0.
+    if (!passesSizeSkillLiveGate(prof?.bySport?.[sport], sr)) continue;
     const size = sizeBandFromRatio(sr);
     const dispSr = sportDisplaySizeRatio(pos, prof, sport);
     const dispSize = sizeBandFromRatio(dispSr);

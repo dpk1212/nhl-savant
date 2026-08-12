@@ -141,6 +141,7 @@ import {
 } from '../src/lib/walletClvSkill.js';
 import { loadWalletProfilesMap } from './lib/loadWalletProfiles.js';
 import { acceptFullGameTotalPosition } from './lib/totalMarketFilter.js';
+import { passesSizeSkillLiveGate } from '../src/lib/sizeSkillRescue.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '../public');
@@ -431,16 +432,21 @@ async function loadAgsCalibration(db) {
   }
 }
 
-// Builds an `isProven(walletShort, sport)` predicate from the loaded
-// sharpWalletProfiles map. Walletshort is the last-6 hex of the wallet
+// Builds an `isProven(walletShort, sport, walletDetail?)` predicate from the
+// loaded sharpWalletProfiles map. Walletshort is the last-6 hex of the wallet
 // (matches walletDetails entries). CONFIRMED + FLAT only.
+// Size-skill CONFIRMED additionally requires sizeRatio ≥ 1.0 when detail is
+// provided (AGS / peak stats); without detail, size-skill fails closed.
 function buildIsProvenFn(walletProfiles) {
-  return (walletShort, sport) => {
+  return (walletShort, sport, w = null) => {
     if (!walletShort || !sport) return false;
     const key = String(walletShort).toLowerCase();
     const profile = walletProfiles.get(key) || walletProfiles.get(key.toUpperCase());
-    const tier = profile?.bySport?.[sport]?.whitelistTier;
-    return tier === 'CONFIRMED' || tier === 'FLAT';
+    const bs = profile?.bySport?.[sport];
+    const tier = bs?.whitelistTier;
+    if (tier !== 'CONFIRMED' && tier !== 'FLAT') return false;
+    const sr = w?.sizeRatio ?? w?.v8_sizeRatio ?? null;
+    return passesSizeSkillLiveGate(bs, sr);
   };
 }
 
@@ -1875,8 +1881,8 @@ function buildPeakStatsFromPositions(positions, side, isProvenFn, sport) {
   // which renders as "$null" / "—" on the dashboard. Mirrors the
   // same shortOf() logic computeWalletConsensus already uses (line 398).
   const shortOf = (p) => String(p.walletShort || p.wallet || '').slice(-6).toLowerCase();
-  const proven = positions.filter(p => p.side === side && isProvenFn(shortOf(p), sport));
-  const opposing = positions.filter(p => p.side !== side && isProvenFn(shortOf(p), sport));
+  const proven = positions.filter(p => p.side === side && isProvenFn(shortOf(p), sport, p));
+  const opposing = positions.filter(p => p.side !== side && isProvenFn(shortOf(p), sport, p));
   const conWalletCount = proven.length;
   const oppWalletCount = opposing.length;
   const totalInvested = proven.reduce((s, p) => s + (Number(p.invested) || 0), 0);

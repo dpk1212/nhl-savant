@@ -1,12 +1,16 @@
 /**
  * Sharp Odds Snapshot — captures fair-value + retail book prices every
- * 15 minutes for all active sports. Piggybacked on the fetch-polymarket
+ * ~4 minutes for all active sports. Piggybacked on the fetch-polymarket
  * workflow.
  *
  * Fair book = most reputable quote available per game (not Pinnacle-only):
  *   pinnacle → circa → bookmaker → lowvig → betonlineag
  * Prices still land in opener/current/history so CLV/lock/close plumbing
  * stays compatible. Each game stamps `fairBook` with the source key.
+ *
+ * When PINNAPI_KEY is set, enriches matched games with true Pinnacle prices
+ * + max stake (max / maxMoneyLine / maxSpread / maxTotal) from pinnapi.com.
+ * Missing key or rate limits are non-fatal — Odds API path continues alone.
  *
  * Usage: node scripts/snapshotPinnacle.js
  */
@@ -19,6 +23,7 @@ import { resolveSOCTeam } from './lib/soccerTeams.js';
 import { makeUFCGameKey } from './lib/ufcFighters.js';
 import { makeWNBAGameKey } from './lib/wnbaTeams.js';
 import { makeNFLGameKey } from './lib/nflTeams.js';
+import { fetchPinnapiIndex } from './lib/pinnapi.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -417,20 +422,35 @@ function extractTotalOdds(game, preferFairBook = null) {
 async function run() {
   console.log('📌 Sharp odds snapshot (fair book cascade + retail)\n');
   console.log(`   Fair order: ${FAIR_BOOKS.join(' → ')}`);
-  console.log(`   Regions: ${ODDS_REGIONS}\n`);
+  console.log(`   Regions: ${ODDS_REGIONS}`);
+  console.log(`   pinnapi: ${process.env.PINNAPI_KEY ? 'enabled' : 'off (no PINNAPI_KEY)'}\n`);
   const now = Math.floor(Date.now() / 1000);
   const history = loadHistory();
   const staleCutoff = now - STALE_HOURS * 3600;
   const fairSourceCounts = {};
+  let pinnapiMatched = 0;
+  let pinnapiWithMax = 0;
+
+  // Cache per label (NBA/CBB/WNBA each filter their own leagues from sport_id 3).
+  const pinnapiCache = new Map();
+
+  async function pinnapiFor(label) {
+    if (pinnapiCache.has(label)) return pinnapiCache.get(label);
+    const idx = await fetchPinnapiIndex(label, makeGameKey);
+    pinnapiCache.set(label, idx);
+    if (idx.size) console.log(`  📡 pinnapi ${label}: ${idx.size} events indexed`);
+    return idx;
+  }
 
   for (const { key: sportKey, label, markets } of SPORTS) {
     if (!history[label]) history[label] = {};
     let sportFair = 0;
     let sportSkip = 0;
+    const pinIdx = await pinnapiFor(label);
 
     const games = await fetchOdds(sportKey, markets || 'h2h,spreads,totals');
     for (const game of games) {
-      const {
+      let {
         fairBook, fairAway, fairHome, fairDraw,
         bestAway, bestHome, bestDraw, bestAwayBook, bestHomeBook, bestDrawBook, allBooks,
       } = extractBookOdds(game);
@@ -459,16 +479,56 @@ async function run() {
         delete existing.totalHistory;
       }
 
+      // Prefer true Pinnacle from pinnapi when we can match the game.
+      const pin = pinIdx.get(gameKey) || null;
+      let max = null;
+      let maxMoneyLine = null;
+      let maxSpread = null;
+      let maxTotal = null;
+      if (pin) {
+        pinnapiMatched++;
+        fairAway = pin.away;
+        fairHome = pin.home;
+        if (pin.draw != null) fairDraw = pin.draw;
+        fairBook = 'pinnacle';
+        allBooks = {
+          ...allBooks,
+          pinnacle: {
+            away: pin.away,
+            home: pin.home,
+            name: 'Pinnacle',
+            ...(pin.draw != null ? { draw: pin.draw } : {}),
+          },
+        };
+        max = pin.max;
+        maxMoneyLine = pin.maxMoneyLine;
+        maxSpread = pin.maxSpread;
+        maxTotal = pin.maxTotal;
+        if (max != null) pinnapiWithMax++;
+      }
+
       // ML history (draw stored only when present — 3-way soccer).
       const snapshot = { t: now, away: fairAway, home: fairHome, fairBook };
       if (fairDraw != null) snapshot.draw = fairDraw;
+      if (max != null) snapshot.max = max;
+      if (maxMoneyLine != null) snapshot.maxMoneyLine = maxMoneyLine;
+      if (maxSpread != null) snapshot.maxSpread = maxSpread;
+      if (maxTotal != null) snapshot.maxTotal = maxTotal;
       if (!existing.opener) {
         existing.opener = { ...snapshot };
       }
       existing.current = fairDraw != null
         ? { away: fairAway, home: fairHome, draw: fairDraw }
         : { away: fairAway, home: fairHome };
+      if (max != null) existing.current.max = max;
+      if (maxMoneyLine != null) existing.current.maxMoneyLine = maxMoneyLine;
+      if (maxSpread != null) existing.current.maxSpread = maxSpread;
+      if (maxTotal != null) existing.current.maxTotal = maxTotal;
       existing.fairBook = fairBook;
+      if (max != null) existing.max = max;
+      if (maxMoneyLine != null) existing.maxMoneyLine = maxMoneyLine;
+      if (maxSpread != null) existing.maxSpread = maxSpread;
+      if (maxTotal != null) existing.maxTotal = maxTotal;
 
       const hist = existing.history || [];
       hist.push(snapshot);
@@ -511,13 +571,20 @@ async function run() {
       existing.commence = game.commence_time;
       existing.apiId = game.id;
 
-      // Spread data — prefer same fair book as ML when possible
-      const { fairSpread, fairSpreadBook, bestAwaySpread, bestHomeSpread } = extractSpreadOdds(game, fairBook);
+      // Spread data — prefer pinnapi Pinnacle, else Odds API fair book
+      let { fairSpread, fairSpreadBook, bestAwaySpread, bestHomeSpread } = extractSpreadOdds(game, fairBook);
+      if (pin?.fairSpread?.awayOdds != null && pin.fairSpread.homeOdds != null) {
+        fairSpread = pin.fairSpread;
+        fairSpreadBook = 'pinnacle';
+      }
       if (fairSpread) {
+        const sSnap = { t: now, ...fairSpread, fairBook: fairSpreadBook };
+        if (maxSpread != null) sSnap.max = maxSpread;
         if (!existing.spreadOpener) {
-          existing.spreadOpener = { ...fairSpread, t: now, fairBook: fairSpreadBook };
+          existing.spreadOpener = { ...sSnap };
         }
-        existing.spreadCurrent = fairSpread;
+        existing.spreadCurrent = { ...fairSpread };
+        if (maxSpread != null) existing.spreadCurrent.max = maxSpread;
         existing.fairSpreadBook = fairSpreadBook;
         existing.spreadMovement = {
           awayLine: fairSpread.awayLine - (existing.spreadOpener.awayLine || 0),
@@ -525,7 +592,7 @@ async function run() {
           homeOdds: fairSpread.homeOdds - (existing.spreadOpener.homeOdds || 0),
         };
         const sHist = existing.spreadHistory || [];
-        sHist.push({ t: now, ...fairSpread, fairBook: fairSpreadBook });
+        sHist.push(sSnap);
         if (sHist.length > MAX_HISTORY) sHist.splice(0, sHist.length - MAX_HISTORY);
         existing.spreadHistory = sHist;
       }
@@ -533,12 +600,19 @@ async function run() {
       if (bestHomeSpread) existing.bestHomeSpread = bestHomeSpread;
 
       // Total data
-      const { fairTotal, fairTotalBook, bestOver, bestUnder } = extractTotalOdds(game, fairBook);
+      let { fairTotal, fairTotalBook, bestOver, bestUnder } = extractTotalOdds(game, fairBook);
+      if (pin?.fairTotal?.overOdds != null && pin.fairTotal.underOdds != null) {
+        fairTotal = pin.fairTotal;
+        fairTotalBook = 'pinnacle';
+      }
       if (fairTotal) {
+        const tSnap = { t: now, ...fairTotal, fairBook: fairTotalBook };
+        if (maxTotal != null) tSnap.max = maxTotal;
         if (!existing.totalOpener) {
-          existing.totalOpener = { ...fairTotal, t: now, fairBook: fairTotalBook };
+          existing.totalOpener = { ...tSnap };
         }
-        existing.totalCurrent = fairTotal;
+        existing.totalCurrent = { ...fairTotal };
+        if (maxTotal != null) existing.totalCurrent.max = maxTotal;
         existing.fairTotalBook = fairTotalBook;
         existing.totalMovement = {
           line: fairTotal.line - (existing.totalOpener.line || 0),
@@ -546,7 +620,7 @@ async function run() {
           underOdds: fairTotal.underOdds - (existing.totalOpener.underOdds || 0),
         };
         const tHist = existing.totalHistory || [];
-        tHist.push({ t: now, ...fairTotal, fairBook: fairTotalBook });
+        tHist.push(tSnap);
         if (tHist.length > MAX_HISTORY) tHist.splice(0, tHist.length - MAX_HISTORY);
         existing.totalHistory = tHist;
       }
@@ -590,6 +664,9 @@ async function run() {
     .join(', ') || 'none';
   console.log(`\n✅ ${totalGames} games tracked, ${evSpots} with +EV retail lines`);
   console.log(`   Fair sources this cycle: ${srcLine}`);
+  if (process.env.PINNAPI_KEY) {
+    console.log(`   pinnapi matched=${pinnapiMatched} withMax=${pinnapiWithMax}`);
+  }
 }
 
 run().catch(e => { console.error(e); process.exit(1); });

@@ -1604,6 +1604,66 @@ export default function LockedClarityExpanded({
           />
         </div>
 
+        {f.marketAgreement && f.marketAgreement.state !== 'NO_SHARPS' && (
+          <div
+            className="lc-in-2"
+            title={f.marketAgreement.title}
+            style={{
+              margin: '0 0 10px',
+              padding: '10px 12px',
+              borderRadius: 10,
+              border: '1px solid rgba(148,163,184,0.14)',
+              background: 'rgba(255,255,255,0.02)',
+            }}
+          >
+            <div style={{
+              fontFamily: MONO, fontSize: 8, fontWeight: 700, letterSpacing: '0.12em',
+              color: C.textMuted, marginBottom: 6,
+            }}>
+              SHARP × PINNACLE
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+              <span style={{
+                fontSize: 11, fontWeight: 800, letterSpacing: '0.04em',
+                color: f.marketAgreement.tone === 'confirm' || f.marketAgreement.tone === 'with' ? GREEN
+                  : f.marketAgreement.tone === 'oppose' || f.marketAgreement.tone === 'against' ? VS
+                    : f.marketAgreement.tone === 'thin' ? GOLD : C.textSec,
+              }}>
+                {f.marketAgreement.label}
+              </span>
+              {Number.isFinite(f.marketAgreement.score) && (
+                <span style={{ fontFamily: MONO, fontSize: 10, color: C.textFaint, fontFeatureSettings: "'tnum'" }}>
+                  SMA {f.marketAgreement.score >= 0 ? '+' : ''}{f.marketAgreement.score.toFixed(2)}
+                </span>
+              )}
+              {Number.isFinite(f.pinnMovePp) && Math.abs(f.pinnMovePp) >= 0.15 && (
+                <span style={{ fontSize: 10, color: C.textSec, fontFeatureSettings: "'tnum'" }}>
+                  Fair {f.pinnMovePp > 0 ? '+' : ''}{f.pinnMovePp.toFixed(1)}pp
+                </span>
+              )}
+              {Number.isFinite(f.pinnMax) && (
+                <span style={{ fontSize: 10, color: f.marketAgreement.limitTested ? GREEN : C.textSec, fontFeatureSettings: "'tnum'" }}>
+                  Max {f.pinnMax >= 1000 ? `$${(f.pinnMax / 1000).toFixed(f.pinnMax >= 10000 ? 0 : 1)}K` : `$${Math.round(f.pinnMax)}`}
+                  {f.marketAgreement.limitTested ? ' · tested' : ''}
+                </span>
+              )}
+              {Number.isFinite(f.pinnMaxDelta) && Math.abs(f.pinnMaxDelta) >= 250 && (
+                <span style={{ fontSize: 10, color: C.textSec, fontFeatureSettings: "'tnum'" }}>
+                  Limit {f.pinnMaxDelta > 0 ? '↑' : '↓'} ${Math.round(Math.abs(f.pinnMaxDelta))}
+                </span>
+              )}
+              {Number.isFinite(f.evFlagged) && (
+                <span style={{
+                  fontSize: 10, fontWeight: 700, marginLeft: 'auto',
+                  color: f.evFlagged >= 0 ? GREEN : VS, fontFeatureSettings: "'tnum'",
+                }}>
+                  Live EV {f.evFlagged >= 0 ? '+' : ''}{f.evFlagged.toFixed(1)}%
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
         <MarketPriceBoard
           journey={journey}
           fair={fairOdds}

@@ -5,6 +5,8 @@
 import { AGS_V12_STAKE_TIER_META } from '../../../lib/ags.js';
 import { CLV_SKILL_MIN_N, EDGE_PRIOR_AG_WR, NET_CLV_PRIOR_AG } from '../../../lib/walletClvSkill.js';
 import { matchSizeRatioBand } from '../../../lib/sizeRatioBands.js';
+import { passesSizeSkillLiveGate } from '../../../lib/sizeSkillRescue.js';
+import { sharpMarketAgreementFromPinnGame } from '../../../lib/marketAgreement.js';
 
 /** Same floor as EDGE (scripts/syncPickStateAuthoritative WINNER_ALIGN_MIN_N). */
 export const FEATURED_WR_MIN_N = 8;
@@ -288,7 +290,9 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
       const MODEL_MIN = 0.10;
       const whitelisted = isSportWinner ? !!isSportWinner(short, sport) : true;
       const counted = !Number.isFinite(sizeRatio) || sizeRatio <= 0 || sizeRatio >= MODEL_MIN;
-      const proven = whitelisted && counted;
+      // Size-skill CONFIRMED: Proven only at sizeRatio ≥ 1.0 (full/press).
+      const sizeSkillOk = passesSizeSkillLiveGate(sportRec, sizeRatio);
+      const proven = whitelisted && counted && sizeSkillOk;
       const featuredWr = featuredWrFromProfile(profile, sport);
       const netClvPct = netClvPctFromProfile(profile);
       const edgeEligible = featuredWr != null;
@@ -968,10 +972,10 @@ export function mapLockedPickToCardFixture(pick, {
     ? provenFromWallets
     : (Number.isFinite(pick.agsProvenForCount) ? pick.agsProvenForCount : 0);
   const vaultOnSide = wallets.filter((w) => (w.sizeRatio || 0) >= 1.5).length;
-  // C margin = CONFIRMED-tier winners FOR−AG (token floor only). Distinct from
-  // HC (= CONFIRMED ∧ size ≥ 1.5×). Lets the tape header show "HC +0 · C +2"
-  // when confirmed wallets are on the board but none are sized up.
-  const confCounted = (w) => w && w.whitelist === 'CONFIRMED' && isCounted(w);
+  // C margin = CONFIRMED-tier winners FOR−AG (token floor + size-skill ≥1.0).
+  // Distinct from HC (= CONFIRMED ∧ size ≥ 1.5×). Uses `proven` so size-skill
+  // light tickets never inflate C margin.
+  const confCounted = (w) => w && w.whitelist === 'CONFIRMED' && w.proven;
   const confForN = mapWallets.filter((w) => w.side === 'ours' && confCounted(w)).length;
   const confAgN = mapWallets.filter((w) => w.side === 'against' && confCounted(w)).length;
   const confMargin = mapWallets.length > 0 ? (confForN - confAgN) : null;
@@ -1051,6 +1055,31 @@ export function mapLockedPickToCardFixture(pick, {
   const evBest = (fairProb != null && Number.isFinite(market.bestOdds))
     ? evPctVsFairProb(market.bestOdds, fairProb)
     : null;
+
+  // Sharp–Market Agreement: tracked proven wallets ∩ Pinnacle move × liquidity.
+  // Display / confirmation only — does not change v12 stake.
+  let pinnGameForSma = null;
+  if (pinnacleHistory && pick.sport) {
+    let gk = pick.gameKey;
+    if (!gk && typeof pick.key === 'string') {
+      const docPart = pick.key.split(':')[0] || '';
+      const parts = docPart.split('_');
+      if (parts.length >= 3) {
+        gk = parts.slice(2).join('_').replace(/_(spread|total)$/i, '') || null;
+      }
+    }
+    pinnGameForSma = gk ? pinnacleHistory[pick.sport]?.[gk] : null;
+  }
+  const sma = sharpMarketAgreementFromPinnGame(pinnGameForSma, {
+    marketType: isSpread ? 'spread' : isTotal ? 'total' : 'ml',
+    sideNorm,
+    line: ticketLine,
+    freezeAtMs: ticketFrozen ? freezeAtMs : null,
+    provenOnSide: confirmedOnSide,
+    vaultOnSide,
+    trackedOnSide: wallets.length,
+    liveEvPct: Number.isFinite(evFlagged) ? evFlagged : null,
+  });
 
   return {
     id: pick.key || `${pick.sport}-${pickLabel}`,
@@ -1139,6 +1168,11 @@ export function mapLockedPickToCardFixture(pick, {
     unitsPreTape: Number.isFinite(pick.unitsPreTape) ? pick.unitsPreTape
       : Number.isFinite(pick.v8_unitsPreTape) ? pick.v8_unitsPreTape
       : null,
+    // Sharp–Market Agreement (SMA) — sharps × Pinnacle move × max liquidity
+    marketAgreement: sma,
+    pinnMax: sma?.path?.maxNow ?? null,
+    pinnMaxDelta: sma?.path?.maxDelta ?? null,
+    pinnMovePp: sma?.path?.deltaProbPp ?? null,
   };
 }
 

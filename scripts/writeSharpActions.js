@@ -32,6 +32,7 @@ import { loadWalletProfilesMap } from './lib/loadWalletProfiles.js';
 import { buildFlatDollarQBySport, shortWalletId } from '../src/lib/walletClvSkill.js';
 import { tierLetterFromQ } from '../src/lib/sharpTierCellStats.js';
 import { sizeBandFromRatio, isCountedProvenSize } from '../src/lib/confirmedActionDesk.js';
+import { passesSizeSkillLiveGate } from '../src/lib/sizeSkillRescue.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '../public');
@@ -511,9 +512,11 @@ function computeVaultHcSignals(walletDetails, mySide, sport, walletProfiles, myW
   let hcConfFor = 0, hcConfAg = 0, isHcWallet = false;
   for (const d of walletDetails) {
     const short = String(d.wallet || '').slice(-6);
-    const tier = walletProfiles?.get(short)?.bySport?.[sport]?.whitelistTier || null;
+    const sportRec = walletProfiles?.get(short)?.bySport?.[sport] || null;
+    const tier = sportRec?.whitelistTier || null;
     if (tier !== 'CONFIRMED') continue;
     const sr = d.sizeRatio ?? 0;
+    if (!passesSizeSkillLiveGate(sportRec, sr)) continue;
     if (sr < HC_RATIO) continue;
     if (d.side === mySide) {
       hcConfFor++;

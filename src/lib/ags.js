@@ -318,7 +318,7 @@ export function aggregateSideProven(walletDetails, sideKey, sport, isProvenFn, i
   for (const w of walletDetails) {
     if (!w || !w.wallet || !w.side) continue;
     totalRaw += 1;
-    if (!isProvenFn(w.wallet, sport)) continue;
+    if (!isProvenFn(w.wallet, sport, w)) continue;
     provenRaw += 1;
 
     const sideBucket = (w.side === sideKey) ? f : a;

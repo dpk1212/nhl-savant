@@ -54,6 +54,7 @@ import {
   positionToWalletDetail,
 } from '../lib/ags.js';
 import { sportBookForDisplay } from '../lib/walletSportBook.js';
+import { passesSizeSkillLiveGate } from '../lib/sizeSkillRescue.js';
 // Browser-side mirror of scripts/syncPickStateAuthoritative.js::buildWalletPriorStatsFn
 // — feeds aggregateSideV12 the per-sport prior stats (whitelist tier,
 // historical pick count, flat ROI) that the v12 quality calc weighs. Used
@@ -1185,8 +1186,12 @@ function getAgsCalibration() { return AGS_CALIBRATION_CACHE || AGS_FALLBACK_CALI
 
 // Adapter so the shared AGS module's aggregateSideProven can use the
 // already-loaded WALLET_PROFILES_CACHE without duplicating the lookup.
-function isProvenForAgs(walletShort, sport) {
-  return isWhitelistedForSport(walletShort, sport);
+// Third arg = wallet detail (sizeRatio) — size-skill CONFIRMED fails closed
+// below 1.0× usual.
+function isProvenForAgs(walletShort, sport, w = null) {
+  if (!isWhitelistedForSport(walletShort, sport)) return false;
+  const p = getWalletProfile(walletShort);
+  return passesSizeSkillLiveGate(p?.bySport?.[sport], w?.sizeRatio ?? w?.v8_sizeRatio);
 }
 
 // HC eligibility — CONFIRMED tier only. The HC_RATIO sizeRatio threshold
@@ -3905,6 +3910,10 @@ const GameFlowCard = memo(function GameFlowCard({ game, isMobile, whaleProfiles,
   const polyPoints = polyGame?.priceHistory?.points || [];
   const pinnHistory = pinnGame?.history || [];
   const pinnConsensusPoints = pinnHistory.map(h => moneyFav === 'away' ? h.away : h.home);
+  const pinnMax = pinnGame?.max ?? pinnGame?.current?.max ?? null;
+  const pinnMaxLabel = fmtMaxStake(pinnMax);
+  const pinnLimitTested = pinnMax != null && pinnMax >= PINNACLE_LIMIT_TESTED;
+  const pinnMaxPoints = pinnHistory.map(h => h.max).filter(v => v != null && Number.isFinite(v));
 
   const criteria = [
     { label: 'Reverse Line Move', met: isReverse },
@@ -4190,10 +4199,27 @@ const GameFlowCard = memo(function GameFlowCard({ game, isMobile, whaleProfiles,
             padding: '0.375rem 0.625rem',
             background: 'rgba(212,175,55,0.04)',
             borderBottom: `1px solid ${B.borderSubtle}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem',
           }}>
             <span style={{ ...T.micro, fontWeight: 700, color: B.gold, letterSpacing: '0.06em', fontSize: '0.575rem' }}>
               {fairBookLabel.toUpperCase()} FAIR VALUE
             </span>
+            {pinnMaxLabel && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <span style={{ ...T.micro, fontSize: '0.55rem', color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
+                  Max {pinnMaxLabel}
+                </span>
+                {pinnLimitTested && (
+                  <span style={{
+                    ...T.micro, fontSize: '0.5rem', fontWeight: 800, letterSpacing: '0.04em',
+                    color: B.green, padding: '0.1rem 0.3rem', borderRadius: '3px',
+                    background: 'rgba(34,197,94,0.12)', border: `1px solid rgba(34,197,94,0.35)`,
+                  }}>
+                    LIMIT-TESTED
+                  </span>
+                )}
+              </span>
+            )}
           </div>
           <div style={{ padding: '0.5rem 0.625rem', background: 'rgba(255,255,255,0.015)' }}>
             <div style={{
@@ -4302,7 +4328,7 @@ const GameFlowCard = memo(function GameFlowCard({ game, isMobile, whaleProfiles,
       )}
 
       {/* ── Price Movement Sparklines ── */}
-      {(pinnConsensusPoints.length >= 2 || polyPoints.length >= 2) && (
+      {(pinnConsensusPoints.length >= 2 || polyPoints.length >= 2 || pinnMaxPoints.length >= 2) && (
         <div style={{
           margin: '0 0.75rem 0.5rem', padding: '0.5rem 0.625rem',
           borderRadius: '8px', background: 'rgba(255,255,255,0.02)',
@@ -4319,6 +4345,17 @@ const GameFlowCard = memo(function GameFlowCard({ game, isMobile, whaleProfiles,
                 startLabel={fmtOdds(pinnConsensusPoints[0])}
                 endLabel={fmtOdds(pinnConsensusPoints[pinnConsensusPoints.length - 1])}
                 color={B.gold}
+                width={isMobile ? 130 : 140}
+                height={32}
+              />
+            )}
+            {pinnMaxPoints.length >= 2 && (
+              <MiniSparkline
+                points={pinnMaxPoints}
+                label="Pinnacle max bet"
+                startLabel={fmtMaxStake(pinnMaxPoints[0])}
+                endLabel={fmtMaxStake(pinnMaxPoints[pinnMaxPoints.length - 1])}
+                color={B.textSec}
                 width={isMobile ? 130 : 140}
                 height={32}
               />
@@ -4418,6 +4455,19 @@ function fmtOdds(american) {
   if (american == null || !Number.isFinite(Number(american)) || Number(american) === 0) return '—';
   return american > 0 ? `+${american}` : `${american}`;
 }
+
+/** Format Pinnacle max stake for display ($750 / $1.7K / $12K). */
+function fmtMaxStake(n) {
+  if (n == null || !Number.isFinite(Number(n)) || Number(n) <= 0) return null;
+  const v = Number(n);
+  if (v >= 1000) {
+    const k = v / 1000;
+    return `$${k >= 10 ? Math.round(k) : k.toFixed(k >= 1 && k % 1 === 0 ? 0 : 1)}K`;
+  }
+  return `$${Math.round(v)}`;
+}
+
+const PINNACLE_LIMIT_TESTED = 3000;
 
 // ─── Sharp Position Card (elevated, full-featured) ────────────────────────────
 
@@ -4841,7 +4891,8 @@ function BackingWalletStrip({ wallets, sport, accent = B.green, isMobile }) {
     const rec = wlRec;
     const flatRoiDisp = wlRec?.roi ?? null;
     const decided = wlRec ? (wlRec.wins || 0) + (wlRec.losses || 0) : 0;
-    const winner = isSportWinner(short, sport);
+    const winner = isSportWinner(short, sport)
+      && passesSizeSkillLiveGate(profile?.bySport?.[sport], w.sizeRatio);
     // Model parity: token bets (< 0.10× the wallet's avg sport bet) are
     // invisible to the staking cron — badge them instead of counting them.
     const counted = isModelCounted(w);
@@ -9229,8 +9280,10 @@ export default function SharpFlow() {
       // Count CONFIRMED + sizeRatio ≥ HC_RATIO wallets per side.
       const sideHcCounts = new Map();
       for (const d of details) {
-        const tier = getWalletProfile(d.walletShort)?.bySport?.[sport]?.whitelistTier;
+        const sportRec = getWalletProfile(d.walletShort)?.bySport?.[sport];
+        const tier = sportRec?.whitelistTier;
         if (tier !== 'CONFIRMED') continue;
+        if (!passesSizeSkillLiveGate(sportRec, d.sizeRatio)) continue;
         if (d.sizeRatio < HC_RATIO) continue;
         sideHcCounts.set(d.side, (sideHcCounts.get(d.side) || 0) + 1);
       }
@@ -9259,8 +9312,11 @@ export default function SharpFlow() {
       // isHcWallet — this wallet itself qualifies as HC on its side.
       const myAvgBet = ap.avgSportBet || 0;
       const mySizeRatio = myAvgBet > 0 ? (ap.invested || 0) / myAvgBet : 0;
-      const myTier = getWalletProfile(String(ap.wallet).slice(-6))?.bySport?.[sport]?.whitelistTier || null;
-      const isHcWallet = myTier === 'CONFIRMED' && mySizeRatio >= HC_RATIO;
+      const mySportRec = getWalletProfile(String(ap.wallet).slice(-6))?.bySport?.[sport] || null;
+      const myTier = mySportRec?.whitelistTier || null;
+      const isHcWallet = myTier === 'CONFIRMED'
+        && mySizeRatio >= HC_RATIO
+        && passesSizeSkillLiveGate(mySportRec, mySizeRatio);
       ap.vault_hcConfFor = counts.hcConfFor;
       ap.vault_hcConfAg = counts.hcConfAg;
       ap.vault_hcMargin = hcMargin;

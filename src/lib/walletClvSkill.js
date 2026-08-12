@@ -19,6 +19,8 @@
  * positions with CLV > 0 (n ≥ MIN_N, as-of before the pick date).
  */
 
+import { passesSizeSkillLiveGate } from './sizeSkillRescue.js';
+
 export const CLV_HIST_FROM = '2026-04-01';
 export const CLV_SKILL_MIN_N = 5;
 export const CLV_TOP2_CANCEL_MAX = 59;   // inclusive: ≤ 59 → cancel
@@ -650,6 +652,8 @@ export function bestProvenForSide(walletDetails, mySide, sport, walletProfiles) 
     const bs = profile?.bySport?.[sport];
     const tier = bs?.whitelistTier;
     if (tier !== 'CONFIRMED' && tier !== 'FLAT') continue;
+    // Size-skill CONFIRMED: only count when this ticket is sized ≥ 1.0×.
+    if (!passesSizeSkillLiveGate(bs, w.sizeRatio)) continue;
     const picks = bs.picks || {};
     const flatRoi = Number.isFinite(picks.flatRoi) ? picks.flatRoi : null;
     const n = picks.n ?? 0;
@@ -711,9 +715,11 @@ export function computeConfirmedUnoppSized(
     const profile = walletProfiles.get(key)
       || walletProfiles.get(key.toUpperCase())
       || walletProfiles.get(s);
-    const tier = profile?.bySport?.[sport]?.whitelistTier;
+    const bs = profile?.bySport?.[sport];
+    const tier = bs?.whitelistTier;
     if (tier !== 'CONFIRMED') continue;
     const sr = Number(w.sizeRatio);
+    if (!passesSizeSkillLiveGate(bs, sr)) continue;
     if (w.side === mySide) {
       if (Number.isFinite(sr) && sr >= minSize) {
         forSized++;
@@ -867,6 +873,7 @@ export function computeConfirmedQ1Sized(
       || walletProfiles.get(key.toUpperCase())
       || walletProfiles.get(s);
     if (profile?.bySport?.[sport]?.whitelistTier !== 'CONFIRMED') continue;
+    if (!passesSizeSkillLiveGate(profile?.bySport?.[sport], w.sizeRatio)) continue;
     if (qMap.get(s) !== 1 && qMap.get(key) !== 1) continue;
     const sr = Number(w.sizeRatio);
     if (!(Number.isFinite(sr) && sr >= minSize)) continue;

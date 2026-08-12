@@ -45,7 +45,8 @@
  *
  * Per (wallet, sport), classifyWhitelistTier() resolves the tier as:
  *
- *   CONFIRMED — flat-positive (Source A OR B) AND $-positive (Source B)
+ *   CONFIRMED — flat-positive (Source A OR B) AND ($-positive Source B
+ *               OR recent-dollar rescue — see below)
  *   FLAT      — flat-positive (Source A OR B)
  *   WR50      — WR ≥ 50% (Source A OR B)
  *   null      — none of the above (wallet not whitelisted in this sport)
@@ -57,13 +58,28 @@
  *   wr50OkA   = picks.n      >= WHITELIST_MIN_BETS (2)  AND picks.wr      >= 50
  *   wr50OkB   = positions.n  >= B_ONLY_MIN_BETS    (4)  AND positions.wr  >= 50
  *
+ * Recent-dollar rescue (v3, 2026-08-12) — FLAT → CONFIRMED when lifetime
+ * Source B $ is ≤0 (sample can be thin / skewed) but last-30d Action $ is
+ * green with skill floors:
+ *   recentDollarOk = last-30d Action n ≥ 15 AND $ ROI > 0
+ *                    AND lifetime positions.n ≥ 80
+ *                    AND clvSkill n ≥ 50 AND pctPos ≥ 55
+ * Stamp bySport[sport].whitelistRescue = 'recent-dollar-30d' when used.
+ * Roll-back: set RECENT_DOLLAR_RESCUE_MIN_N = Infinity.
+ *
+ * Size-skill rescue (v4, 2026-08-12) — $ up / flat down → CONFIRMED when
+ * wallet-level own-median size-up WR lift clears floors. Live Proven/Action
+ * only when sizeRatio ≥ 1.0 (full/press). See src/lib/sizeSkillRescue.js.
+ * Stamp whitelistRescue = 'size-skill'. Roll-back: SIZE_SKILL_BAND_MIN_N = Infinity.
+ *
  * The Source-B-only paths (B_ONLY_MIN_BETS = 4 as of 2026-08-11; was 5) let
  * us promote sharps who never appear on a featured pick (the historical
  * MLB/NHL coverage gap). The bar stays above Source A (4 vs 2) since
  * these wallets have no independent featured-pick verification.
  *
- * Audit fields (v2):
+ * Audit fields (v2+):
  *   bySport[sport].whitelistSource    ∈ {'A', 'A+B', 'B', null}
+ *   bySport[sport].whitelistRescue    ∈ {'recent-dollar-30d', 'size-skill', null}
  *   profile.whitelistSourceBySport    map of all sports → source
  *
  * Re-evaluation pinned for 2026-05-24 — see TWO_WEEK_REEVAL.md.
@@ -90,6 +106,17 @@ import {
   WALLET_PROFILES_META_DOC_ID,
 } from './lib/loadWalletProfiles.js';
 import { buildSizeRatioBands } from '../src/lib/sizeRatioBands.js';
+import {
+  SIZE_SKILL_RESCUE,
+  SIZE_SKILL_LIVE_MIN,
+  SIZE_SKILL_WR_LIFT_MIN,
+  SIZE_SKILL_BAND_MIN_N,
+  SIZE_SKILL_HIGH_WR_MIN,
+  SIZE_SKILL_SPORT_POS_MIN_N,
+  SIZE_SKILL_SPORT_DOLLAR_ROI_MIN,
+  evaluateSizeSkillLift,
+  sizeSkillRescueOk,
+} from '../src/lib/sizeSkillRescue.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -614,29 +641,79 @@ function verdict(picks, positions) {
 
 // ── Whitelist tier classification (see WALLET_WHITELIST_BACKTEST.md) ──
 // For each sport a wallet has activity in, assign one of:
-//   CONFIRMED — positive in BOTH a flat-equivalent ROI AND $ ROI
+//   CONFIRMED — flat-positive AND (lifetime $ ROI > 0 OR recent-dollar rescue)
 //   FLAT      — positive flat-equivalent ROI
 //   WR50      — WR ≥ 50%
 //   null      — none of the above OR below MIN_BETS in that sport
 // Precedence: CONFIRMED > FLAT > WR50.
 //
-// v2 (2026-05-10) — Source-B-only promotion enabled (2-week trial).
-// Previously, FLAT/CONFIRMED required the wallet to have appeared on a
-// featured pick (Source A). Many active sharps in MLB/NHL never trigger
-// our featured-pick lookup but are profitable on-chain — they were
-// invisible to the engine. We now accept either source for the flat-ROI
-// and WR signals, with a stricter min-bets gate (B_ONLY_MIN_BETS = 4)
-// for Source-B-only paths since those wallets have no independent
-// featured-pick verification. Was 5; lowered 2026-08-11 for B on-ramp
+// v2 (2026-05-10) — Source-B-only promotion enabled.
+// v3 (2026-08-12) — recent-dollar rescue: FLAT → CONFIRMED when last-30d
+// Action $ is green with pos/CLV floors (tracked sample can be skewed).
+// v4 (2026-08-12) — size-skill rescue: $ up / flat down → CONFIRMED when
+// own-median size-up WR lift ≥ +15pp; live proven only at sizeRatio ≥ 1.0.
+// Was 5; lowered B_ONLY_MIN_BETS 2026-08-11 for B on-ramp
 // ($-pos + flat-pos at n=4) without opening n=2 lottery books.
 const WHITELIST_MIN_BETS    = 2;   // Source A min (unchanged from v1)
 const B_ONLY_MIN_BETS       = 4;   // Source-B-only min (was 5; 2026-08-11)
-const WHITELIST_VERSION     = 2;
+const WHITELIST_VERSION     = 4;   // v4: size-skill rescue (2026-08-12)
+
+/** Last-30d Action $ rescue — FLAT → CONFIRMED when lifetime $ sample is red. */
+const RECENT_DOLLAR_RESCUE_DAYS = 30;
+const RECENT_DOLLAR_RESCUE_MIN_N = 15;       // set Infinity to disable rescue
+const RECENT_DOLLAR_RESCUE_POS_MIN_N = 80;   // lifetime Action positions in sport
+const RECENT_DOLLAR_RESCUE_CLV_MIN_N = 50;
+const RECENT_DOLLAR_RESCUE_CLV_MIN_PCT = 55;
+
+/**
+ * Graded Action $ book in the last `days` ET calendar window.
+ * Same date window as recentActionLegs / form curves.
+ */
+function recentActionDollarWindow(posBets, {
+  days = RECENT_DOLLAR_RESCUE_DAYS,
+  minN = RECENT_DOLLAR_RESCUE_MIN_N,
+} = {}) {
+  const cutoff = etDateMinusDays(days);
+  const legs = (posBets || []).filter(
+    (b) => b && (b.won === 0 || b.won === 1) && b.date && String(b.date) >= cutoff,
+  );
+  const n = legs.length;
+  let invested = 0;
+  let settledPnl = 0;
+  for (const b of legs) {
+    if (Number.isFinite(b.invested)) invested += b.invested;
+    if (Number.isFinite(b.settledPnl)) settledPnl += b.settledPnl;
+  }
+  const dollarRoi = invested > 0 ? +((settledPnl / invested) * 100).toFixed(1) : null;
+  return {
+    n,
+    invested,
+    settledPnl,
+    dollarRoi,
+    ok: n >= minN && dollarRoi != null && dollarRoi > 0,
+  };
+}
+
+function recentDollarRescueOk(positionsInSport, recentWindow, clvSkill) {
+  if (!(RECENT_DOLLAR_RESCUE_MIN_N < Infinity)) return false;
+  const q = positionsInSport || { n: 0 };
+  if ((q.n || 0) < RECENT_DOLLAR_RESCUE_POS_MIN_N) return false;
+  if (!recentWindow?.ok) return false;
+  const clvN = Number(clvSkill?.n) || 0;
+  const clvPct = Number(clvSkill?.pctPos);
+  if (clvN < RECENT_DOLLAR_RESCUE_CLV_MIN_N) return false;
+  if (!Number.isFinite(clvPct) || clvPct < RECENT_DOLLAR_RESCUE_CLV_MIN_PCT) return false;
+  return true;
+}
 
 // Source-attribution helper. Returns 'A', 'B', or 'A+B' for audit/reporting.
 // Used to populate `bySport[sport].whitelistSource` so the 2-week re-eval
 // can isolate the lift attributable to the new Source-B-only path.
-function classifyWhitelistTierWithSource(picksInSport, positionsInSport) {
+function classifyWhitelistTierWithSource(picksInSport, positionsInSport, {
+  recentWindow = null,
+  clvSkill = null,
+  sizeLiftEval = null,
+} = {}) {
   const p = picksInSport || { n: 0 };
   const q = positionsInSport || { n: 0 };
 
@@ -650,18 +727,30 @@ function classifyWhitelistTierWithSource(picksInSport, positionsInSport) {
   const flatOkB   = q.n >= B_ONLY_MIN_BETS && (q.positionFlatRoi ?? 0) > 0;
   const wr50OkB   = q.n >= B_ONLY_MIN_BETS && (q.wr ?? 0) >= 50;
   const dollarOk  = q.n >= WHITELIST_MIN_BETS && q.dollarRoi != null && q.dollarRoi > 0;
+  const recentRescued = !dollarOk && recentDollarRescueOk(q, recentWindow, clvSkill);
+  const sizeRescued = sizeSkillRescueOk(p, q, sizeLiftEval);
 
-  // Tier resolution — CONFIRMED requires flat + dollar; flat can come from
-  // either source. Source-B-only also requires dollarRoi > 0 to claim
-  // CONFIRMED (so the bar stays "profitable two ways").
+  // Tier resolution — CONFIRMED via flat+$ (or recent-$ rescue), OR size-skill.
   let tier = null;
-  if ((flatOkA || flatOkB) && dollarOk) tier = 'CONFIRMED';
-  else if (flatOkA || flatOkB)          tier = 'FLAT';
-  else if (wr50OkA || wr50OkB)          tier = 'WR50';
+  let whitelistRescue = null;
+  if ((flatOkA || flatOkB) && (dollarOk || recentRescued)) {
+    tier = 'CONFIRMED';
+    if (recentRescued && !dollarOk) whitelistRescue = 'recent-dollar-30d';
+  } else if (sizeRescued) {
+    tier = 'CONFIRMED';
+    whitelistRescue = SIZE_SKILL_RESCUE;
+  } else if (flatOkA || flatOkB) {
+    tier = 'FLAT';
+  } else if (wr50OkA || wr50OkB) {
+    tier = 'WR50';
+  }
 
   // Source attribution for the active flat/WR signal driving the tier.
+  // Size-skill has no flat path — attribute B when positions exist.
   let source = null;
-  if (tier === 'CONFIRMED' || tier === 'FLAT') {
+  if (whitelistRescue === SIZE_SKILL_RESCUE) {
+    source = 'B';
+  } else if (tier === 'CONFIRMED' || tier === 'FLAT') {
     if (flatOkA && flatOkB) source = 'A+B';
     else if (flatOkA)       source = 'A';
     else if (flatOkB)       source = 'B';
@@ -670,12 +759,16 @@ function classifyWhitelistTierWithSource(picksInSport, positionsInSport) {
     else if (wr50OkA)       source = 'A';
     else if (wr50OkB)       source = 'B';
   }
-  return { tier, source };
+  return {
+    tier,
+    source,
+    whitelistRescue,
+  };
 }
 
 // Back-compat shim — callers that only need the tier string.
-function classifyWhitelistTier(picksInSport, positionsInSport) {
-  return classifyWhitelistTierWithSource(picksInSport, positionsInSport).tier;
+function classifyWhitelistTier(picksInSport, positionsInSport, opts) {
+  return classifyWhitelistTierWithSource(picksInSport, positionsInSport, opts).tier;
 }
 
 // ── Build per-wallet profile ───────────────────────────────────────
@@ -706,6 +799,48 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
   const picks = picksAgg(pickBets);
   const positions = positionsAgg(posBets);
 
+  // CLV first — recent-dollar CONFIRMED rescue needs wallet-level skill floors.
+  const clvSkill = computeClvSkill(clvLedger, walletShort);
+
+  // Size signal BEFORE bySport — size-skill CONFIRMED rescue needs own-median lift.
+  // VAULT-ONLY: shadow positions are structurally small and would skew medians.
+  const vaultPosBets = posBets.filter(b => b.vaultQualified);
+  const shadowPosBets = posBets.filter(b => !b.vaultQualified);
+
+  let sizeSignal = null;
+  if (vaultPosBets.length >= 3) {
+    const med = median(vaultPosBets.map(b => b.invested));
+    const buckets = { routine: [], above: [], wayAbove: [] };
+    for (const b of vaultPosBets) {
+      const ratio = med > 0 ? b.invested / med : 1;
+      if (ratio >= 2) buckets.wayAbove.push(b);
+      else if (ratio >= 1.25) buckets.above.push(b);
+      else buckets.routine.push(b);
+    }
+    sizeSignal = {
+      medianInvested: Math.round(med),
+      routine: positionsAgg(buckets.routine),
+      above: positionsAgg(buckets.above),
+      wayAbove: positionsAgg(buckets.wayAbove),
+    };
+  }
+
+  let sizeRatioBands = null;
+  if (Number.isFinite(avgSportBet) && avgSportBet > 0) {
+    const posBands = buildSizeRatioBands(posBets, avgSportBet);
+    const pickBands = buildSizeRatioBands(pickBets, avgSportBet);
+    if (posBands || pickBands) {
+      sizeRatioBands = {
+        usual: Math.round(avgSportBet),
+        minN: posBands?.minN ?? pickBands?.minN ?? 30,
+        positions: posBands,
+        picks: pickBands,
+      };
+    }
+  }
+
+  const sizeLiftEval = evaluateSizeSkillLift(sizeSignal, sizeRatioBands);
+
   // Sport + market breakdowns
   const bySport = {};
   for (const sport of new Set([...pickBets.map(b => b.sport), ...posBets.map(b => b.sport)].filter(Boolean))) {
@@ -713,7 +848,12 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
     const ps = posBets.filter(b => b.sport === sport);
     const picksInSport = picksAgg(pp);
     const positionsInSport = positionsAgg(ps);
-    const { tier, source } = classifyWhitelistTierWithSource(picksInSport, positionsInSport);
+    const recentWindow = recentActionDollarWindow(ps);
+    const { tier, source, whitelistRescue } = classifyWhitelistTierWithSource(
+      picksInSport,
+      positionsInSport,
+      { recentWindow, clvSkill, sizeLiftEval },
+    );
     // Form: prefer featured picks; else positions (with flat = settledPnl/invested).
     // Recent ticket lists always stamp both sources for Action expand tabs.
     const recentFeatured = recentFeaturedLegs(pp);
@@ -747,6 +887,8 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
       isDollarProfitable: positionsInSport.n >= WHITELIST_MIN_BETS
                           && positionsInSport.dollarRoi != null
                           && positionsInSport.dollarRoi > 0,
+      isRecentDollarProfitable: !!recentWindow?.ok,
+      isSizeSkillRescue: whitelistRescue === SIZE_SKILL_RESCUE,
       isWR50:             picksInSport.n >= WHITELIST_MIN_BETS && picksInSport.wr >= 50,
       // NEW (v2): Source-B-only signals — used to attribute the promotion path.
       isPositionFlatProfitable: positionsInSport.n >= B_ONLY_MIN_BETS
@@ -755,6 +897,14 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
                                 && (positionsInSport.wr ?? 0) >= 50,
       whitelistTier:      tier,
       whitelistSource:    source,   // 'A' | 'B' | 'A+B' | null  (v2)
+      whitelistRescue:    whitelistRescue, // 'recent-dollar-30d' | 'size-skill' | null
+      recentActionWindow: {
+        days: RECENT_DOLLAR_RESCUE_DAYS,
+        n: recentWindow.n,
+        dollarRoi: recentWindow.dollarRoi,
+        settledPnl: Number.isFinite(recentWindow.settledPnl)
+          ? Math.round(recentWindow.settledPnl) : null,
+      },
       ...(form ? { form } : {}),
     };
   }
@@ -768,32 +918,6 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
     };
   }
 
-  // Size signal from positions (own-median buckets) — VAULT-ONLY.
-  // Shadow positions are structurally small (0.10×–0.75× avg) so they would
-  // skew the own-median bucketing downward and break the "when this wallet
-  // sizes UP, do they win?" semantic. Shadow rows are tracked separately
-  // below in `shadowSignal` for visibility.
-  const vaultPosBets = posBets.filter(b => b.vaultQualified);
-  const shadowPosBets = posBets.filter(b => !b.vaultQualified);
-
-  let sizeSignal = null;
-  if (vaultPosBets.length >= 3) {
-    const med = median(vaultPosBets.map(b => b.invested));
-    const buckets = { routine: [], above: [], wayAbove: [] };
-    for (const b of vaultPosBets) {
-      const ratio = med > 0 ? b.invested / med : 1;
-      if (ratio >= 2) buckets.wayAbove.push(b);
-      else if (ratio >= 1.25) buckets.above.push(b);
-      else buckets.routine.push(b);
-    }
-    sizeSignal = {
-      medianInvested: Math.round(med),
-      routine: positionsAgg(buckets.routine),
-      above: positionsAgg(buckets.above),
-      wayAbove: positionsAgg(buckets.wayAbove),
-    };
-  }
-
   // Shadow signal — aggregate of small-sized (SHADOW) positions only. A
   // wallet with negative shadow PnL but positive vault PnL is exactly the
   // pattern we expect from a sharp ("they win when they're sure, chase when
@@ -803,26 +927,7 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
     medianInvested: shadowPosBets.length ? Math.round(median(shadowPosBets.map(b => b.invested))) : null,
   } : null;
 
-  // Size-vs-usual WR bands (invested / avgSportBet). Same denominator as the
-  // locked-card "Size vs usual" strip. Positions first; tracked picks second.
-  let sizeRatioBands = null;
-  if (Number.isFinite(avgSportBet) && avgSportBet > 0) {
-    const posBands = buildSizeRatioBands(posBets, avgSportBet);
-    const pickBands = buildSizeRatioBands(pickBets, avgSportBet);
-    if (posBands || pickBands) {
-      sizeRatioBands = {
-        usual: Math.round(avgSportBet),
-        minN: posBands?.minN ?? pickBands?.minN ?? 30,
-        positions: posBands,
-        picks: pickBands,
-      };
-    }
-  }
-
-  // Causal %+CLV skill — % of prior graded positions that beat the close.
-  // Surfaced on live cards as "beats close X%" / BEATS THE CLOSE battle row,
-  // and is the same input the TAPE cron averages into netCLV.
-  const clvSkill = computeClvSkill(clvLedger, walletShort);
+  // sizeSignal / sizeRatioBands / sizeLiftEval computed above (size-skill rescue).
 
   // Date spans
   const allDates = [...pickBets, ...posBets].map(b => b.date).filter(Boolean).sort();
@@ -891,6 +996,12 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
     sizeSignal,          // VAULT-only conviction bucketing
     shadowSignal,        // SHADOW-only tracking aggregate (may be null)
     sizeRatioBands,      // WR by size-vs-usual (avgSportBet); null when usual unknown
+    sizeSkillLift: sizeLiftEval?.ok ? {
+      source: sizeLiftEval.source,
+      wrLift: sizeLiftEval.wrLift,
+      highWr: sizeLiftEval.highWr,
+      highDollarRoi: sizeLiftEval.highDollarRoi,
+    } : null,
     clvSkill,            // TAPE input: causal %+CLV (beats the close); null pctPos when n < minN
     bySport,
     byMarket,
@@ -996,7 +1107,7 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
   out.push('');
   out.push('Every sharp wallet we have V8-era data on, sorted by combined conviction score. This is the **full roster** (no minimum-bets filter) — noisy at the tail, but that\'s the point for a tracking dataset. Verdict column reflects the ≥3-bet threshold.');
   out.push('');
-  out.push(`> **Promotion policy (v${WHITELIST_VERSION}, continuous gate)**: rebuilt every 2h via \`grade-sharp-actions\`. Tier = CONFIRMED if flat-positive in either source AND $-positive in B; FLAT if flat-positive in either source; WR50 if WR ≥ 50% in either source. Source A min ${WHITELIST_MIN_BETS} bets, Source-B-only min ${B_ONLY_MIN_BETS} bets. \`whitelistSource\` (A/A+B/B) attributes which path drove each promotion. Roll-back: set \`B_ONLY_MIN_BETS = Infinity\` in \`scripts/exportWalletProfiles.js\`.`);
+  out.push(`> **Promotion policy (v${WHITELIST_VERSION}, continuous gate)**: rebuilt every 2h via \`grade-sharp-actions\`. Tier = CONFIRMED if flat-positive in either source AND (lifetime $-positive in B **or** recent-dollar rescue: last-${RECENT_DOLLAR_RESCUE_DAYS}d Action n≥${RECENT_DOLLAR_RESCUE_MIN_N} with $ ROI>0, lifetime pos n≥${RECENT_DOLLAR_RESCUE_POS_MIN_N}, CLV n≥${RECENT_DOLLAR_RESCUE_CLV_MIN_N} & pct≥${RECENT_DOLLAR_RESCUE_CLV_MIN_PCT}); **or** size-skill rescue ($ up / flat down, own-median size-up WR lift ≥ +${SIZE_SKILL_WR_LIFT_MIN}pp, high-band n≥${SIZE_SKILL_BAND_MIN_N} WR≥${SIZE_SKILL_HIGH_WR_MIN}% $+ , sport pos n≥${SIZE_SKILL_SPORT_POS_MIN_N} $ROI≥${SIZE_SKILL_SPORT_DOLLAR_ROI_MIN}% — live Proven/Action only at sizeRatio≥${SIZE_SKILL_LIVE_MIN}); FLAT if flat-positive in either source; WR50 if WR ≥ 50% in either source. Source A min ${WHITELIST_MIN_BETS} bets, Source-B-only min ${B_ONLY_MIN_BETS} bets. \`whitelistRescue\` ∈ {recent-dollar-30d, size-skill}. Roll-back: \`RECENT_DOLLAR_RESCUE_MIN_N = Infinity\`, \`SIZE_SKILL_BAND_MIN_N = Infinity\`, or \`B_ONLY_MIN_BETS = Infinity\`.`);
   out.push('');
   out.push(`> **TAPE / beats-the-close**: every profile carries \`clvSkill.pctPos\` — causal % of graded positions with CLV > 0 since ${CLV_HIST_FROM} (min n=${CLV_SKILL_MIN_N}). Same definition as \`walletClvSkill.js\` / netCLV. Rebuilt every cycle. Coverage this run: **${clvScored.length}/${Object.keys(profiles).length}** wallets scored${clvAvg != null ? ` · mean **${clvAvg.toFixed(1)}%**` : ''}.`);
   out.push('');
