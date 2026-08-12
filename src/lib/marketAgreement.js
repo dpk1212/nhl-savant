@@ -399,6 +399,7 @@ export function buildLockedMarketSignals({
   const movePp = sma?.deltaProbPp ?? sma?.path?.deltaProbPp ?? null;
   const maxDelta = sma?.maxDelta ?? sma?.path?.maxDelta ?? null;
   const maxNow = sma?.maxNow ?? sma?.path?.maxNow ?? null;
+  const maxOpen = sma?.maxOpen ?? sma?.path?.maxOpen ?? null;
   const limitTested = !!(sma?.limitTested || (Number.isFinite(maxNow) && maxNow >= LIMIT_TESTED_USD));
   const steamedWith = (dir > 0 && Number.isFinite(movePp) && movePp >= 0.25)
     || !!(sma?.path?.steamDrop && Number(sma.path.steamDrop.dropPct) >= 3);
