@@ -492,9 +492,9 @@ export function buildLockedMarketSignals({
     || (limitRising && hasSharps && limitTested && !steamedAgainst);
   const plusEv = Number.isFinite(evPct) && evPct >= 0.3;
   const clvUp = Number.isFinite(clvPct) && clvPct >= 0.3;
-  // Whales: cluster OR a single real whale ($ / vault size). Solo $33K proven
-  // at 0.5× usual must still light — absolute size is the signal.
-  const whaleConsensus = proven >= 2
+  // Sharp consensus: cluster OR a single real sharp ($ / vault size). Solo $33K
+  // proven at 0.5× usual must still light — absolute size is the signal.
+  const sharpConsensus = proven >= 2
     || (proven >= 1 && vault >= 1)
     || tracked >= 3
     || (proven >= 1 && invested >= WHALE_USD)
@@ -502,12 +502,12 @@ export function buildLockedMarketSignals({
 
   const signals = [
     {
-      id: 'whaleConsensus',
-      label: 'Whale Consensus',
-      short: 'Whales',
-      met: whaleConsensus,
+      id: 'sharpConsensus',
+      label: 'Sharp Consensus',
+      short: 'Sharp',
+      met: sharpConsensus,
       tier: 'core',
-      tip: 'Proven / tracked sharp money clustered on this side — the who.',
+      tip: 'Proven / tracked sharp money on this side — the who.',
     },
     {
       id: 'pinnacleConfirms',

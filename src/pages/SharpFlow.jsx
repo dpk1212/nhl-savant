@@ -3927,7 +3927,7 @@ const GameFlowCard = memo(function GameFlowCard({ game, isMobile, whaleProfiles,
     { label: 'Reverse Line Move', met: isReverse },
     { label: '+EV Edge', met: maxEV > 0 },
     { label: 'Pinnacle Confirms', met: !!pinnConfirms },
-    { label: 'Whale Consensus', met: !!whaleAligned },
+    { label: 'Sharp Consensus', met: !!whaleAligned },
     { label: 'Limit Rising', met: !!pinnLimitRising },
   ];
   const criteriaMet = criteria.filter(c => c.met).length;
