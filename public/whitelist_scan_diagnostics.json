@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-08-13T17:14:51.026Z",
-  "elapsedSec": 18.1,
+  "scannedAt": "2026-08-13T17:20:38.527Z",
+  "elapsedSec": 18.3,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 45,
   "summary": {
     "total": 220,
     "coveredByMain": 10,
-    "recovered": 13,
-    "recoveredPositions": 61,
-    "noPositions": 197,
+    "recovered": 14,
+    "recoveredPositions": 62,
+    "noPositions": 196,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,7 +16,7 @@
       "ml": 9,
       "spread": 2,
       "total": 2,
-      "dropped_shadow_gate": 5,
+      "dropped_shadow_gate": 6,
       "dropped_excluded": 43,
       "dropped_duplicate": 0
     }
@@ -95,7 +95,7 @@
           "gameKey": "bos_tor",
           "marketType": "ml",
           "side": "away",
-          "invested": 1571,
+          "invested": 1689,
           "entryLine": null,
           "passesShadow": true
         },
@@ -989,6 +989,15 @@
           "gameKey": "bos_tor",
           "marketType": "total",
           "side": "over",
+          "invested": 2673,
+          "entryLine": 8.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "bos_tor",
+          "marketType": "total",
+          "side": "over",
           "invested": 2624,
           "entryLine": 7.5,
           "passesShadow": true
@@ -1063,15 +1072,6 @@
           "side": "home",
           "invested": 1698,
           "entryLine": -7.5,
-          "passesShadow": true
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "bos_tor",
-          "marketType": "total",
-          "side": "over",
-          "invested": 1542,
-          "entryLine": 8.5,
           "passesShadow": true
         },
         {
@@ -2253,7 +2253,7 @@
           "gameKey": "tex_laa",
           "marketType": "ml",
           "side": "away",
-          "invested": 12802,
+          "invested": 12923,
           "entryLine": null,
           "passesShadow": true
         },
@@ -2385,8 +2385,24 @@
       "tier": "CONFIRMED",
       "name": "GamblingOdyssey",
       "sports": "SOC",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xe5241830e8876c115d7dc8311ad9f43d85fdd34f"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0xe5241830e8876c115d7dc8311ad9f43d85fdd34f",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 7685,
+      "willPassShadowGate": 0,
+      "willDropAtShadowGate": 1,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "chc_wsh",
+          "marketType": "total",
+          "side": "under",
+          "invested": 6,
+          "entryLine": 7.5,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "fea6f5",
