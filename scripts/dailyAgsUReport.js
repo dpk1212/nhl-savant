@@ -2357,6 +2357,16 @@ async function buildSkillBandWindows(report, allRows) {
 /** @deprecated LOOKAHEAD — do not use for historical EDGE tables. Current profiles on old dates. Kept only if needed for live ungraded diagnostics. */
 function enrichWinnerAlignEdge(rows, walletProfiles) {
   if (!walletProfiles || !walletProfiles.size) return;
+  const blendFrom = '2026-08-13';
+  const wrForEdge = (rec, pickDate) => {
+    const nA = Number(rec?.picks?.n) || 0;
+    const a = nA >= 8 && Number.isFinite(Number(rec?.picks?.wr)) ? Number(rec.picks.wr) : null;
+    const nB = Number(rec?.positions?.n) || 0;
+    const b = nB >= 8 && Number.isFinite(Number(rec?.positions?.wr)) ? Number(rec.positions.wr) : null;
+    if (!(typeof pickDate === 'string' && pickDate >= blendFrom)) return a;
+    if (a != null && b != null) return 0.7 * b + 0.3 * a;
+    return b != null ? b : a;
+  };
   for (const r of rows) {
     if (Number.isFinite(r.winnerAlignEdge)) continue;
     const wd = r.walletDetails;
@@ -2369,9 +2379,8 @@ function enrichWinnerAlignEdge(rows, walletProfiles) {
       seen.add(short);
       const prof = walletProfiles.get(short);
       const rec = prof?.bySport?.[r.sport];
-      const n = Number(rec?.picks?.n) || 0;
-      const wr = Number(rec?.picks?.wr);
-      if (n < 8 || !Number.isFinite(wr)) continue;
+      const wr = wrForEdge(rec, r.date);
+      if (wr == null) continue;
       if (w.side === r.sideKey) fors.push(wr);
       else if (w.side) ags.push(wr);
     }
