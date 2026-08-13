@@ -15,13 +15,24 @@ import { sharpMarketAgreementFromPinnGame, buildLockedMarketSignals } from '../.
 export const FEATURED_WR_MIN_N = 8;
 export { EDGE_PRIOR_AG_WR, NET_CLV_PRIOR_AG, CLV_SKILL_MIN_N };
 
-/** Featured sport WR when it clears the EDGE floor (n≥8). */
-export function featuredWrFromProfile(profile, sport) {
-  const picks = profile?.bySport?.[sport]?.picks;
-  const wr = Number(picks?.wr);
-  const n = Number(picks?.n) || 0;
-  if (n < FEATURED_WR_MIN_N || !Number.isFinite(wr)) return null;
-  return wr;
+/**
+ * Sport WR for display / skill eligibility (mirrors EDGE input).
+ * From 2026-08-13 staking uses 70% Source B positions + 30% Source A picks
+ * when both clear n≥8; this helper returns the same blend (no date arg → blend).
+ */
+export function featuredWrFromProfile(profile, sport, { blend = true } = {}) {
+  const rec = profile?.bySport?.[sport];
+  if (!rec) return null;
+  const nA = Number(rec.picks?.n) || 0;
+  const a = nA >= FEATURED_WR_MIN_N && Number.isFinite(Number(rec.picks?.wr))
+    ? Number(rec.picks.wr) : null;
+  const nB = Number(rec.positions?.n) || 0;
+  const b = nB >= FEATURED_WR_MIN_N && Number.isFinite(Number(rec.positions?.wr))
+    ? Number(rec.positions.wr) : null;
+  if (!blend) return a;
+  if (a != null && b != null) return 0.7 * b + 0.3 * a;
+  if (b != null) return b;
+  return a;
 }
 
 /** Causal %+CLV when it clears the netCLV floor (n≥5). */

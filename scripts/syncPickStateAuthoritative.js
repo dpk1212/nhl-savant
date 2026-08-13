@@ -589,6 +589,7 @@ let FLAT_DOLLAR_Q_BY_SPORT = new Map();
 //   • ONE   (exactly one clears)      → SHARP-LEAN @ 1.5u
 //   • NEITHER                         → stay 0u
 // EDGE = winner-align mean FOR − (mean AG ?? 50); net = causal netMeanPrior.
+// Sport WR: Source A only through 2026-08-12; from 2026-08-13 → 70% B / 30% A.
 //
 // Legacy (SHARP_LIVE_FROM .. pre EDGE_NET): proven-$ + mean picks.wr + forCount
 // (+ retune chalk/for≥3). Still used for MINI- cut / pre-cutover TOP+ boost.
@@ -1008,7 +1009,7 @@ function edgeNetGateBucket(edge, net, eThr = SHARP_EDGE_THR, nThr = SHARP_NET_TH
 }
 
 /** Skill-feature stamp schema version — bump when fields/thresholds change. */
-const SKILL_FEATURE_VERSION = 11; // v11: FOOLS-gold mute stamps (E≥7 + FLAT FOR)
+const SKILL_FEATURE_VERSION = 12; // v12: EDGE sport WR 70% Source B / 30% Source A (2026-08-13+)
 
 /**
  * Full EDGE / netCLV / Tape bundle for analysis without rebuild.
@@ -1020,7 +1021,7 @@ function buildSkillFeatureBundle({
 }) {
   const wa = winnerAlign || (
     Array.isArray(wd) && wd.length > 0 && sport
-      ? computeWinnerAlign(wd, side, sport, walletProfiles, sportWinnerBoards)
+      ? computeWinnerAlign(wd, side, sport, walletProfiles, sportWinnerBoards, pickDate)
       : null
   );
   const net = computeNetMeanPrior(wd, side, pickDate, clvLedger);
@@ -1094,6 +1095,7 @@ function applySkillFeatureStamps(target, bundle, now, {
     target.v8_winnerAlignEliteUnopp = wa.eliteUnopp;
     target.v8_winnerAlignTopVsTop = wa.topVsTop;
     target.v8_winnerAlignEvaluatedAt = now;
+    if (wa.wrMode != null) target.v8_edgeWrMode = wa.wrMode;
   }
   target.v8_forTop2PctPos = bundle.top2.top2Pct;
   target.v8_forTop2NSkill = bundle.top2.nForSkill;
@@ -1450,7 +1452,8 @@ function computePathDSlice(walletDetails, mySide) {
 }
 
 // ── WINNER-ALIGN (v12abcde) — EDGE feature + limited mute ─────────────────
-// Site thesis: follow real winners. EDGE = mean FOR − (mean AG ?? 50) sport WR.
+// Site thesis: follow real winners. EDGE = mean FOR − (mean AG ?? 50) sport WR
+// (Source A picks through 2026-08-12; 70% Source B positions + 30% Source A from 2026-08-13).
 // FOR-side mean/top/N always stamp when FOR wallets have sport WR — even with
 // nobody against — so analysis can profile underlying metrics on every W/L.
 // hasBoth stays true only when a real AG side exists (Policy E gates).
@@ -1468,6 +1471,10 @@ function computePathDSlice(walletDetails, mySide) {
 //   3. RESCUE — still 0u + score>0 + EDGE≥3 → WINNER @ 6/4/3
 //   4. TOP-WINNER E — top_cap / top_floor / top_junk
 const WINNER_ALIGN_LIVE_FROM = '2026-07-12';
+/** EDGE sport-WR blend: 70% Source B (positions) + 30% Source A (featured picks). */
+const EDGE_SPORT_WR_BLEND_FROM = '2026-08-13';
+const EDGE_SPORT_WR_B_WEIGHT = 0.70;
+const EDGE_SPORT_WR_A_WEIGHT = 0.30;
 const WINNER_ALIGN_MIN_N = 8;
 const WINNER_ALIGN_FADE_TOP_WR = 60;
 const WINNER_ALIGN_MEAN_BEHIND = -5;
@@ -1494,11 +1501,15 @@ const TOP_EDGE_NET_TIERS = new Set(['TOP', 'TOP+']);
 function isWinnerAlignLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= WINNER_ALIGN_LIVE_FROM;
 }
+function isEdgeSportWrBlendLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= EDGE_SPORT_WR_BLEND_FROM;
+}
 /** EDGE size / rescue / Policy E unit effects — frozen once tape sizing ships. */
 function isWinnerAlignEdgeStakeLive(pickDate) {
   return isWinnerAlignLive(pickDate) && !isTapeSizingLive(pickDate);
 }
-function sportFeaturedWr(profile, sport) {
+/** Source A — featured picks.wr (n≥8). */
+function sportSourceAWr(profile, sport) {
   const rec = profile?.bySport?.[sport];
   if (!rec) return null;
   const n = Number(rec.picks?.n) || 0;
@@ -1506,19 +1517,51 @@ function sportFeaturedWr(profile, sport) {
   if (n < WINNER_ALIGN_MIN_N || !Number.isFinite(wr)) return null;
   return wr;
 }
+/** Source B — on-chain positions.wr (n≥8). */
+function sportSourceBWr(profile, sport) {
+  const rec = profile?.bySport?.[sport];
+  if (!rec) return null;
+  const n = Number(rec.positions?.n) || 0;
+  const wr = Number(rec.positions?.wr);
+  if (n < WINNER_ALIGN_MIN_N || !Number.isFinite(wr)) return null;
+  return wr;
+}
 /**
- * Per-sport leaderboards from sharpWalletProfiles (n≥8 featured WR).
- * Built once per sync cycle — Top-5 by WR and elite (WR≥60) sets.
+ * Sport WR used for EDGE / winner-align boards.
+ * Pre 2026-08-13: Source A only (legacy).
+ * From EDGE_SPORT_WR_BLEND_FROM: 0.7·B + 0.3·A when both clear n≥8;
+ * else whichever book clears (B preferred when only one exists).
  */
-function buildSportWinnerBoards(walletProfiles) {
+function sportFeaturedWr(profile, sport, pickDate = null) {
+  const a = sportSourceAWr(profile, sport);
+  const b = sportSourceBWr(profile, sport);
+  if (!isEdgeSportWrBlendLive(pickDate)) return a;
+  if (a != null && b != null) {
+    return EDGE_SPORT_WR_B_WEIGHT * b + EDGE_SPORT_WR_A_WEIGHT * a;
+  }
+  if (b != null) return b;
+  return a;
+}
+/**
+ * Per-sport leaderboards from sharpWalletProfiles (n≥8 sport WR).
+ * Built once per sync cycle — Top-5 by WR and elite (WR≥60) sets.
+ * `pickDate` selects Source A vs 70/30 B/A blend (same as EDGE).
+ */
+function buildSportWinnerBoards(walletProfiles, pickDate = null) {
   const bySport = new Map(); // sport -> [{ short, wr, n }]
   for (const [shortRaw, profile] of walletProfiles) {
     const short = String(shortRaw || '').slice(-6).toLowerCase();
     if (!short || !profile?.bySport) continue;
-    for (const [sport, rec] of Object.entries(profile.bySport)) {
-      const n = Number(rec?.picks?.n) || 0;
-      const wr = Number(rec?.picks?.wr);
-      if (n < WINNER_ALIGN_MIN_N || !Number.isFinite(wr)) continue;
+    for (const sport of Object.keys(profile.bySport)) {
+      const wr = sportFeaturedWr(profile, sport, pickDate);
+      if (wr == null) continue;
+      const rec = profile.bySport[sport];
+      // Prefer Source B n for blend era (actual position sample); else Source A n.
+      const nB = Number(rec?.positions?.n) || 0;
+      const nA = Number(rec?.picks?.n) || 0;
+      const n = isEdgeSportWrBlendLive(pickDate)
+        ? (nB >= WINNER_ALIGN_MIN_N ? nB : nA)
+        : nA;
       if (!bySport.has(sport)) bySport.set(sport, []);
       bySport.get(sport).push({ short, wr, n });
     }
@@ -1534,12 +1577,15 @@ function buildSportWinnerBoards(walletProfiles) {
   return boards;
 }
 /** Mean FOR−AG sport WR edge + fade-top + top-winner diagnostics. */
-function computeWinnerAlign(walletDetails, mySide, sport, walletProfiles, sportWinnerBoards = null) {
+function computeWinnerAlign(
+  walletDetails, mySide, sport, walletProfiles, sportWinnerBoards = null, pickDate = null,
+) {
   const empty = {
     forWrs: [], agWrs: [], forN: 0, agN: 0, meanFor: null, meanAg: null, edge: null,
     topFor: null, topAg: null, hasBoth: false, fadeTop60: false, meanBehind5: false,
     hasTop5For: false, hasTop5Ag: false, hasE60For: false, hasE60Ag: false,
     topUnopp: false, eliteUnopp: false, topVsTop: false,
+    wrMode: isEdgeSportWrBlendLive(pickDate) ? 'blend_70b_30a' : 'source_a',
   };
   if (!Array.isArray(walletDetails) || !mySide || !sport) return empty;
   const board = sportWinnerBoards?.get?.(sport) || null;
@@ -1553,7 +1599,7 @@ function computeWinnerAlign(walletDetails, mySide, sport, walletProfiles, sportW
     if (!short || seen.has(short)) continue;
     seen.add(short);
     const profile = walletProfiles.get(short) || walletProfiles.get(short.toUpperCase());
-    const wr = sportFeaturedWr(profile, sport);
+    const wr = sportFeaturedWr(profile, sport, pickDate);
     if (wr == null) continue;
     if (w.side === mySide) { forWrs.push(wr); forShorts.push(short); }
     else if (w.side) { agWrs.push(wr); agShorts.push(short); }
@@ -1595,6 +1641,7 @@ function computeWinnerAlign(walletDetails, mySide, sport, walletProfiles, sportW
     hasBoth, fadeTop60, meanBehind5,
     hasTop5For, hasTop5Ag, hasE60For, hasE60Ag,
     topUnopp, eliteUnopp, topVsTop,
+    wrMode: isEdgeSportWrBlendLive(pickDate) ? 'blend_70b_30a' : 'source_a',
   };
 }
 
@@ -2450,7 +2497,7 @@ async function createMissingLockedPicks({
       // don't briefly show TOP NEITHER or miss Path C until the next cycle.
       const top2Create = computeForTop2PctPos(walletDetails, side, TARGET_DATE, clvLedger);
       const waCreateEdge = createV121Eligible
-        ? computeWinnerAlign(walletDetails, side, sport, walletProfiles, sportWinnerBoards)
+        ? computeWinnerAlign(walletDetails, side, sport, walletProfiles, sportWinnerBoards, TARGET_DATE)
         : null;
       const netCreate = computeNetMeanPrior(walletDetails, side, TARGET_DATE, clvLedger);
       // MINI- cut first (proven-$ gate), matching reconcile order.
@@ -3414,7 +3461,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   // by TOP NEITHER mute, Path C edge-net rescue, winner-align mute, and tape.
   let winnerAlign = null;
   if (v121Eligible && Array.isArray(wd) && wd.length > 0) {
-    winnerAlign = computeWinnerAlign(wd, side, pick.sport, walletProfiles, sportWinnerBoards);
+    winnerAlign = computeWinnerAlign(wd, side, pick.sport, walletProfiles, sportWinnerBoards, pickDate);
   }
   const netLive = computeNetMeanPrior(wd, side, pickDate, clvLedger);
   const edgeNetBucket = edgeNetGateBucket(winnerAlign?.edge ?? null, netLive.netMeanPrior);
@@ -5021,8 +5068,11 @@ async function main() {
       .join(' ');
     console.log(`flatDollar Q by sport (Q1 counts): ${q1n || '—'}`);
   }
-  const sportWinnerBoards = buildSportWinnerBoards(walletProfiles);
-  console.log(`Sport winner boards: ${sportWinnerBoards.size} sports (Top-${WINNER_ALIGN_TOP_N} + elite≥${WINNER_ALIGN_ELITE_WR})`);
+  const sportWinnerBoards = buildSportWinnerBoards(walletProfiles, TARGET_DATE);
+  console.log(
+    `Sport winner boards: ${sportWinnerBoards.size} sports (Top-${WINNER_ALIGN_TOP_N} + elite≥${WINNER_ALIGN_ELITE_WR})`
+    + ` · WR=${isEdgeSportWrBlendLive(TARGET_DATE) ? '70%B/30%A' : 'Source A'}`,
+  );
 
   // Load AGS-U calibration + build the proven / HC-eligible predicates.
   // AGS-U v12 is the SOLE decision input — drives lock/mute/sizing for every
