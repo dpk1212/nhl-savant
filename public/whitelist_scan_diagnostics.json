@@ -1,19 +1,19 @@
 {
-  "scannedAt": "2026-08-13T21:42:26.889Z",
-  "elapsedSec": 16.6,
+  "scannedAt": "2026-08-13T21:49:37.848Z",
+  "elapsedSec": 18.7,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 50,
   "summary": {
     "total": 220,
     "coveredByMain": 7,
-    "recovered": 11,
-    "recoveredPositions": 44,
-    "noPositions": 202,
+    "recovered": 12,
+    "recoveredPositions": 45,
+    "noPositions": 201,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 3,
+      "ml": 4,
       "spread": 1,
       "total": 1,
       "dropped_shadow_gate": 3,
@@ -883,11 +883,20 @@
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
       "positionsCount": 22,
-      "statsSource": "sports_sharps.perSport",
-      "avgSportBet": 3922,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 2055,
       "willPassShadowGate": 22,
       "willDropAtShadowGate": 0,
       "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "phi_min",
+          "marketType": "total",
+          "side": "over",
+          "invested": 8398,
+          "entryLine": 8.5,
+          "passesShadow": true
+        },
         {
           "sport": "WNBA",
           "gameKey": "was_lva",
@@ -1012,15 +1021,6 @@
           "side": "under",
           "invested": 1327,
           "entryLine": 169.5,
-          "passesShadow": true
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "phi_min",
-          "marketType": "total",
-          "side": "over",
-          "invested": 1204,
-          "entryLine": 8.5,
           "passesShadow": true
         },
         {
@@ -1845,8 +1845,24 @@
       "tier": "CONFIRMED",
       "name": null,
       "sports": "SOC,NHL",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xabb89972b21b304c1bed2bf26f35c8741ac9bba3"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0xabb89972b21b304c1bed2bf26f35c8741ac9bba3",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 17411,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "phi_min",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 10000,
+          "entryLine": null,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "ca3e2a",
