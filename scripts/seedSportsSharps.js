@@ -437,6 +437,56 @@ async function run() {
     output[addr] = profile;
   }
 
+  // Re-attach fat-ticket discover wallets the MAX_SHARPS $ cut would drop.
+  const suppPath = join(ROOT, 'public', 'sharp_scan_supplement.json');
+  let scanSupplementAttached = 0;
+  if (existsSync(suppPath)) {
+    try {
+      const supp = JSON.parse(readFileSync(suppPath, 'utf8'));
+      const outputLower = new Set(
+        Object.keys(output).filter((k) => k !== '_meta').map((k) => k.toLowerCase()),
+      );
+      const prevByLower = new Map(
+        Object.entries(allWallets).map(([k, v]) => [k.toLowerCase(), [k, v]]),
+      );
+      for (const [rawAddr, row] of Object.entries(supp.wallets || {})) {
+        const addr = String(row?.addr || rawAddr).toLowerCase();
+        if (!addr.startsWith('0x')) continue;
+        if (outputLower.has(addr)) continue;
+        const prev = prevByLower.get(addr);
+        if (prev) {
+          output[prev[0]] = { ...prev[1], scanSupplement: true };
+        } else {
+          output[addr] = {
+            name: row.name || addr.slice(-6),
+            totalPnl: row.sportPnlTotal || 0,
+            sportPnlTotal: row.sportPnlTotal || 0,
+            sportROI: row.sportROI || 0,
+            avgSportBet: row.avgSportBet || 0,
+            leaderboardRank: row.leaderboardRank ?? null,
+            leaderboardScope: 'ALL',
+            vol: row.sportVol || 0,
+            sportMarkets: {},
+            marketsTraded: 0,
+            sportBets: 0,
+            sportBetCount: 0,
+            perSport: {},
+            monthlyPnl: row.monthPnl || null,
+            monthlyQualified: (row.monthPnl || 0) > 0,
+            lastSeen: now,
+            builtAt: now,
+            source: 'scan_supplement',
+            scanSupplement: true,
+          };
+        }
+        outputLower.add(addr);
+        scanSupplementAttached++;
+      }
+    } catch (e) {
+      console.log(`sharp_scan_supplement.json parse error — skipping attach: ${e.message}`);
+    }
+  }
+
   const lifetimeCount = qualified.filter(([, p]) => (p.sportPnlTotal || 0) >= MIN_SPORT_PNL).length;
   const monthlyOnlyCount = qualified.filter(([, p]) => (p.sportPnlTotal || 0) < MIN_SPORT_PNL && p.monthlyQualified).length;
   const minPnl = qualified.length > 0
@@ -446,7 +496,8 @@ async function run() {
   output._meta = {
     ready: qualified.length > 0,
     seededAt: now,
-    walletCount: qualified.length,
+    walletCount: qualified.length + scanSupplementAttached,
+    scanSupplementAttached,
     lifetimeQualified: lifetimeCount,
     monthlyHotQualified: monthlyOnlyCount,
     minSportPnl: minPnl,
@@ -466,6 +517,9 @@ async function run() {
   console.log(`All-time LB: ${allTimeLB.length} | Monthly LB: ${monthlyLB.length} (${monthlyHot.length} with $${(MIN_MONTHLY_PNL / 1000).toFixed(0)}K+)`);
   console.log(`Profiled this run: ${profiled} (${skipped} skipped as fresh, ${errors} errors)`);
   console.log(`Qualified sharps: ${qualified.length} total`);
+  if (scanSupplementAttached > 0) {
+    console.log(`Scan supplement re-attached: ${scanSupplementAttached}`);
+  }
   console.log(`  Lifetime ($${MIN_SPORT_PNL.toLocaleString()}+ sport PnL): ${lifetimeCount}`);
   console.log(`  Monthly-only ($${MIN_MONTHLY_PNL.toLocaleString()}+ this month): ${monthlyOnlyCount}`);
   if (qualified.length > 0) {

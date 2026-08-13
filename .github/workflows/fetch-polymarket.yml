@@ -139,6 +139,9 @@ jobs:
             echo "--- snapshotPinnacle ---"
             node scripts/snapshotPinnacle.js || echo "pinnacle failed (cycle $i)"
 
+            echo "--- discoverScanSupplement ---"
+            node scripts/discoverScanSupplement.js || echo "discoverScanSupplement failed (cycle $i — non-fatal)"
+
             echo "--- scanSharpPositions ---"
             scan_rc=0
             node scripts/scanSharpPositions.js || scan_rc=$?
@@ -216,7 +219,8 @@ jobs:
                     public/sharp_spread_positions.json public/sharp_total_positions.json \
                     public/sharp_intel_excluded_wallets.json \
                     public/whitelist_scan_diagnostics.json \
-                    public/scan_heartbeat.json 2>/dev/null || true
+                    public/scan_heartbeat.json \
+                    public/sharp_scan_supplement.json 2>/dev/null || true
             if ! git diff --staged --quiet; then
               git commit -m "Auto-update: Market data [$(date +'%Y-%m-%d %H:%M') cycle $i]"
               for attempt in 1 2 3; do
@@ -242,6 +246,7 @@ jobs:
                   public/sharp_intel_excluded_wallets.json \
                   public/whitelist_scan_diagnostics.json \
                   public/scan_heartbeat.json \
+                  public/sharp_scan_supplement.json \
                   "$json_stash/" 2>/dev/null || true
 
             # Pull latest main BEFORE building. This loop checks out once at

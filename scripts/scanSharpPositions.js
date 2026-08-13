@@ -647,16 +647,70 @@ async function run() {
   // Must have positive sport PnL OR be monthly-qualified to count
   // NEVER re-introduce wallets that were excluded as MMs (unless force-included)
   const baseAddrs = new Set(baseWallets.map(w => w.addr));
+  const baseAddrsLower = new Set([...baseAddrs].map((a) => (a || '').toLowerCase()));
   const mmAddressSet = new Set(mmFiltered.map(([a]) => (a || '').toLowerCase()));
   let supplementalCount = 0;
   for (const [addr, p] of Object.entries(sportsSharps)) {
     if (addr === '_meta') continue;
     if (baseAddrs.has(addr)) continue;
     const al = (addr || '').toLowerCase();
+    if (baseAddrsLower.has(al)) continue;
     if (mmAddressSet.has(al) && !forceInclude.has(al)) continue;
     if ((p.sportPnlTotal || 0) <= 0 && !p.monthlyQualified && !forceInclude.has(al)) continue;
     baseWallets.push({ addr, name: p.name, tier: 'SHARP', totalPnl: p.totalPnl, sportPnl: {}, sportPnlTotal: p.sportPnlTotal || 0, mmScore: 0, monthlyQualified: p.monthlyQualified, monthlyPnl: p.monthlyPnl });
+    baseAddrs.add(addr);
+    baseAddrsLower.add(al);
     supplementalCount++;
+  }
+
+  // Fat-ticket discover list — official sports LB green + directional.
+  // Seed re-attaches these after the 500 cut; this merge covers the gap
+  // until the next seed run.
+  let discoverCount = 0;
+  const suppDoc = loadJSON('sharp_scan_supplement.json') || {};
+  for (const [rawAddr, row] of Object.entries(suppDoc.wallets || {})) {
+    if (!row || typeof row !== 'object') continue;
+    const addr = String(row.addr || rawAddr).toLowerCase();
+    if (!addr.startsWith('0x')) continue;
+    if (baseAddrsLower.has(addr)) continue;
+    if (mmAddressSet.has(addr) && !forceInclude.has(addr)) continue;
+    if ((row.sportPnlTotal || 0) <= 0 && !forceInclude.has(addr)) continue;
+    sportPnlLookup[addr] = {
+      sportPnlTotal: row.sportPnlTotal || 0,
+      sportMarkets: {},
+      sportROI: row.sportROI || 0,
+      avgSportBet: row.avgSportBet || 0,
+      monthlyPnl: row.monthPnl || null,
+      monthlyQualified: (row.monthPnl || 0) > 0,
+      leaderboardRank: row.leaderboardRank ?? null,
+      sportsLbPercentileTop: null,
+      sportVol: row.sportVol || 0,
+      leaderboardScope: 'ALL',
+    };
+    sportsSharpsLower[addr] = {
+      vol: row.sportVol || 0,
+      sportPnlTotal: row.sportPnlTotal || 0,
+      sportROI: row.sportROI || 0,
+      avgSportBet: row.avgSportBet || 0,
+    };
+    baseWallets.push({
+      addr,
+      name: row.name,
+      tier: 'SHARP',
+      totalPnl: row.sportPnlTotal || 0,
+      sportPnl: {},
+      sportPnlTotal: row.sportPnlTotal || 0,
+      mmScore: 0,
+      monthlyQualified: (row.monthPnl || 0) > 0,
+      monthlyPnl: row.monthPnl,
+      source: 'scan_supplement',
+    });
+    baseAddrs.add(addr);
+    baseAddrsLower.add(addr);
+    discoverCount++;
+  }
+  if (discoverCount > 0) {
+    console.log(`Scan supplement: ${discoverCount} directional wallet(s) from fat-ticket discover`);
   }
 
   const walletsToScan = baseWallets.sort((a, b) => b.totalPnl - a.totalPnl);
@@ -717,7 +771,7 @@ async function run() {
     return;
   }
 
-  console.log(`Scanning ${walletsToScan.length} sharp wallets (${mmFiltered.length} MMs + ${sportLosers.length} sport losers + ${noSport.length} non-sport excluded, ${supplementalCount} added from sport sharps)...\n`);
+  console.log(`Scanning ${walletsToScan.length} sharp wallets (${mmFiltered.length} MMs + ${sportLosers.length} sport losers + ${noSport.length} non-sport excluded, ${supplementalCount} added from sport sharps, ${discoverCount} from scan supplement)...\n`);
 
   // Build lookup of previous firstSeen timestamps to preserve across rescans
   const prevPositions = {};

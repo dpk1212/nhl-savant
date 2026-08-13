@@ -22,6 +22,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Discover fat-ticket supplement
+        run: node scripts/discoverScanSupplement.js
+
       - name: Scan sharp wallet positions
         run: node scripts/scanSharpPositions.js
 
@@ -29,7 +32,7 @@ jobs:
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add public/sharp_positions.json public/sharp_spread_positions.json public/sharp_total_positions.json public/sharp_intel_excluded_wallets.json
+          git add public/sharp_positions.json public/sharp_spread_positions.json public/sharp_total_positions.json public/sharp_intel_excluded_wallets.json public/sharp_scan_supplement.json
           git diff --quiet && git diff --staged --quiet || (
             git commit -m "Auto-update: Sharp positions [$(date +'%Y-%m-%d %H:%M')]" &&
             git stash --include-untracked &&
