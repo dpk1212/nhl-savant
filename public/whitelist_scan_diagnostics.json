@@ -1,23 +1,23 @@
 {
-  "scannedAt": "2026-08-13T18:21:33.292Z",
-  "elapsedSec": 19,
+  "scannedAt": "2026-08-13T18:27:08.162Z",
+  "elapsedSec": 19.1,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 45,
   "summary": {
     "total": 220,
-    "coveredByMain": 11,
-    "recovered": 12,
-    "recoveredPositions": 55,
-    "noPositions": 197,
+    "coveredByMain": 9,
+    "recovered": 13,
+    "recoveredPositions": 57,
+    "noPositions": 198,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 6,
-      "spread": 2,
-      "total": 1,
-      "dropped_shadow_gate": 4,
-      "dropped_excluded": 42,
+      "ml": 9,
+      "spread": 3,
+      "total": 2,
+      "dropped_shadow_gate": 6,
+      "dropped_excluded": 37,
       "dropped_duplicate": 0
     }
   },
@@ -195,7 +195,33 @@
       "tier": "CONFIRMED",
       "name": "0x547f2917D51F2e63ab382DCF641d4E0240162937-1782667852436",
       "sports": "MLB",
-      "status": "COVERED_BY_MAIN"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x547f2917d51f2e63ab382dcf641d4e0240162937",
+      "positionsCount": 2,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 183387,
+      "willPassShadowGate": 0,
+      "willDropAtShadowGate": 2,
+      "positions": [
+        {
+          "sport": "WNBA",
+          "gameKey": "atl_con",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 285,
+          "entryLine": 9.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "mil_lad",
+          "marketType": "total",
+          "side": "under",
+          "invested": 248,
+          "entryLine": 7.5,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "182fef",
@@ -783,7 +809,8 @@
       "tier": "CONFIRMED",
       "name": "0x9e3ed7b661a903fc97afcf49e0f014ebe869f882-1783406009396",
       "sports": "WNBA,SOC",
-      "status": "COVERED_BY_MAIN"
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0x9e3ed7b661a903fc97afcf49e0f014ebe869f882"
     },
     {
       "walletShort": "6ac120",
@@ -1192,7 +1219,7 @@
           "gameKey": "bos_tor",
           "marketType": "total",
           "side": "over",
-          "invested": 5319,
+          "invested": 5296,
           "entryLine": 7.5,
           "passesShadow": true
         }
