@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-08-13T20:27:57.968Z",
-  "elapsedSec": 17.5,
+  "scannedAt": "2026-08-13T20:32:37.089Z",
+  "elapsedSec": 16.1,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 52,
   "summary": {
     "total": 220,
-    "coveredByMain": 12,
+    "coveredByMain": 11,
     "recovered": 10,
-    "recoveredPositions": 42,
-    "noPositions": 198,
+    "recoveredPositions": 43,
+    "noPositions": 199,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -17,7 +17,7 @@
       "spread": 1,
       "total": 0,
       "dropped_shadow_gate": 4,
-      "dropped_excluded": 34,
+      "dropped_excluded": 35,
       "dropped_duplicate": 0
     }
   },
@@ -354,10 +354,10 @@
       "sports": "",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xdc41c39b95453c943174f369926018f6963bdd7e",
-      "positionsCount": 5,
+      "positionsCount": 6,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 1693,
-      "willPassShadowGate": 5,
+      "willPassShadowGate": 6,
       "willDropAtShadowGate": 0,
       "positions": [
         {
@@ -376,6 +376,15 @@
           "side": "home",
           "invested": 3105,
           "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "phi_min",
+          "marketType": "total",
+          "side": "over",
+          "invested": 1885,
+          "entryLine": 8.5,
           "passesShadow": true
         },
         {
@@ -535,7 +544,7 @@
           "gameKey": "mil_lad",
           "marketType": "ml",
           "side": "home",
-          "invested": 49,
+          "invested": 1759,
           "entryLine": null,
           "passesShadow": false
         }
@@ -1473,7 +1482,8 @@
       "tier": "CONFIRMED",
       "name": "riverskew",
       "sports": "MLB,SOC",
-      "status": "COVERED_BY_MAIN"
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0xa804390f80019699ab34a282c0df7528fba82a75"
     },
     {
       "walletShort": "a8c991",
