@@ -21,7 +21,7 @@ const MODEL_MIN_SIZE = 0.10;
 /** Default Action desk / marquee: hide sub-$500 tickets (noise). */
 export const MIN_ACTION_INVESTED = 500;
 
-/** Sharp tier = ROI rank among CONFIRMED in-sport (flat+dollar) — not win rate. */
+/** Sharp tier = same Q as CONFIRMED-Q1: 40% flat(30A/70B) + 60% B $. */
 const SKILL_BAND = {
   1: { key: 'high', label: 'A', weight: 4 },
   2: { key: 'mid', label: 'B', weight: 3 },

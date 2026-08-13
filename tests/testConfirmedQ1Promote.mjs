@@ -4,6 +4,10 @@
  */
 import assert from 'assert';
 import {
+  FLAT_BLEND_A,
+  FLAT_BLEND_B,
+  FLAT_DOLLAR_Q_WEIGHT_FLAT,
+  FLAT_DOLLAR_Q_WEIGHT_DOLLAR,
   buildFlatDollarQBySport,
   computeConfirmedQ1Sized,
   confirmedQ1BypassesAgsCreateGate,
@@ -29,15 +33,16 @@ ok(isConfirmedQ1PromoteLive('2026-08-08'), 'live');
 ok(!isConfirmedQ1PromoteLive('2026-08-07'), 'not before');
 
 function profiles(entries) {
-  // [id, sport, tier, flatRoi, dollarRoi]
+  // [id, sport, tier, flatA, dollar, flatB?]  flatB defaults to flatA
   const m = new Map();
-  for (const [id, sport, tier, flatRoi, dollarRoi] of entries) {
+  for (const [id, sport, tier, flatRoi, dollarRoi, flatB] of entries) {
     const key = String(id).toLowerCase();
     if (!m.has(key)) m.set(key, { bySport: {} });
+    const bFlat = Number.isFinite(flatB) ? flatB : flatRoi;
     m.get(key).bySport[sport] = {
       whitelistTier: tier,
       picks: { flatRoi, n: 10 },
-      positions: { dollarRoi, n: 10 },
+      positions: { dollarRoi, positionFlatRoi: bFlat, n: 10 },
     };
   }
   return m;
@@ -56,6 +61,31 @@ const prof = profiles([
 const qBy = buildFlatDollarQBySport(prof);
 ok(qBy.get('MLB')?.get('aaaaaa') === 1, 'top score → Q1');
 ok(qBy.get('MLB')?.get('dddddd') === 4, 'bottom → Q4');
+
+ok(FLAT_BLEND_A === 0.3 && FLAT_BLEND_B === 0.7, 'flat mix 30A/70B');
+ok(FLAT_DOLLAR_Q_WEIGHT_FLAT === 0.4 && FLAT_DOLLAR_Q_WEIGHT_DOLLAR === 0.6, '40 flat / 60 B$');
+{
+  // Same Q for Action + stake. 60% B$ ranks dollar-hot over A-flat-hot.
+  const split = profiles([
+    ['hotb00', 'MLB', 'CONFIRMED', 0, 50, 0],
+    ['hota00', 'MLB', 'CONFIRMED', 50, 0, 50],
+    ['mid000', 'MLB', 'CONFIRMED', 10, 10, 10],
+    ['low000', 'MLB', 'CONFIRMED', -10, -10, -10],
+  ]);
+  const q = buildFlatDollarQBySport(split);
+  ok(q.get('MLB')?.get('hotb00') < q.get('MLB')?.get('hota00'), 'B$ hot ranks above A-flat hot');
+}
+{
+  // Equal dollars: 70% B-flat inside the 40% bucket ranks B-flat hot over A-flat hot.
+  const flats = profiles([
+    ['bflat0', 'MLB', 'CONFIRMED', 0, 10, 50],
+    ['aflat0', 'MLB', 'CONFIRMED', 50, 10, 0],
+    ['mid000', 'MLB', 'CONFIRMED', 10, 10, 10],
+    ['low000', 'MLB', 'CONFIRMED', -10, -10, -10],
+  ]);
+  const q = buildFlatDollarQBySport(flats);
+  ok(q.get('MLB')?.get('bflat0') < q.get('MLB')?.get('aflat0'), 'B-flat hot ranks above A-flat hot');
+}
 
 {
   const r = computeConfirmedQ1Sized(

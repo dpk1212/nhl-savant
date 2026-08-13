@@ -13,7 +13,7 @@
  * Action-tab stamps (going forward — no backfill):
  *   commenceTime          — ms from polymarket_data / pinnacle_history
  *   whitelistTierAtEntry  — CONFIRMED/FLAT/… frozen on create (backfill if missing)
- *   skillQ / sharpTier    — flat+dollar Q (1–4 / A–D); refreshed while PENDING
+ *   skillQ / sharpTier    — 40% flat(30A/70B)+60% B$ Q (1–4 / A–D); same as Q1 stake
  *   opposed / opposedBy   — clear|contested vs counted CONFIRMED ≥0.10× other side
  *   confirmedSupport      — counted CONFIRMED ≥0.10× on same side (incl. self)
  *   sizeBand              — press|full|lean|light from betMultiplier

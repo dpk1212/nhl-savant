@@ -1,7 +1,7 @@
 /**
  * exportSharpTierCellStats.js
  *
- * As-of day-of Sharp tier (flatDollar Q among CONFIRMED-in-sport) × size band
+ * As-of day-of Sharp tier (40% flat(30A/70B) + 60% B $ among CONFIRMED-in-sport) × size band
  * × opposed/unopposed historic WR / $ROI lookup for Action row stamps.
  *
  * Opposition matches Action desk: other as-of CONFIRMED on opposite side of
@@ -26,6 +26,7 @@ import admin from 'firebase-admin';
 import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { combineFlatDollarScore } from '../src/lib/walletClvSkill.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -117,6 +118,14 @@ function zScores(xs) {
   const m = xs.reduce((a, b) => a + b, 0) / xs.length;
   const sd = Math.sqrt(xs.reduce((a, b) => a + (b - m) ** 2, 0) / xs.length) || 1;
   return { z: xs.map((x) => (x - m) / sd), m, sd };
+}
+
+function zScoresFinite(xs) {
+  const finite = xs.filter((x) => Number.isFinite(x));
+  if (!finite.length) return xs.map(() => null);
+  const m = finite.reduce((a, b) => a + b, 0) / finite.length;
+  const sd = Math.sqrt(finite.reduce((a, b) => a + (b - m) ** 2, 0) / finite.length) || 1;
+  return xs.map((x) => (Number.isFinite(x) ? (x - m) / sd : null));
 }
 
 function assignQ(scoreByWallet) {
@@ -286,23 +295,33 @@ function addToBucket(map, key, leg) {
         const bs = p.bySport[sport];
         if (bs?.tier !== 'CONFIRMED') continue;
         confirmed.add(wallet);
-        const flatRoi = bs.picks?.n >= MIN_N_FEAT && Number.isFinite(bs.picks.flatRoi) ? bs.picks.flatRoi
-          : (bs.positions?.n >= MIN_N_FEAT && Number.isFinite(bs.positions.positionFlatRoi)
-            ? bs.positions.positionFlatRoi : null);
+        const flatA = bs.picks?.n >= MIN_N_FEAT && Number.isFinite(bs.picks.flatRoi)
+          ? bs.picks.flatRoi : null;
+        const flatB = bs.positions?.n >= MIN_N_FEAT && Number.isFinite(bs.positions.positionFlatRoi)
+          ? bs.positions.positionFlatRoi : null;
         const dollarRoi = bs.positions?.n >= MIN_N_FEAT && Number.isFinite(bs.positions.dollarRoi)
           ? bs.positions.dollarRoi : null;
-        rows.push({ wallet, flatRoi, dollarRoi });
+        rows.push({ wallet, flatA, flatB, dollarRoi });
       }
       confirmedWalletsBySport.set(sport, confirmed);
       if (rows.length < 4) continue;
 
-      const elFd = rows.filter((r) => Number.isFinite(r.flatRoi) && Number.isFinite(r.dollarRoi));
+      const elFd = rows.filter((r) => Number.isFinite(r.dollarRoi)
+        && (Number.isFinite(r.flatA) || Number.isFinite(r.flatB)));
       let flatDollar = new Map();
       if (elFd.length >= 4) {
-        const zf = zScores(elFd.map((r) => r.flatRoi)).z;
-        const zd = zScores(elFd.map((r) => r.dollarRoi)).z;
+        const zA = zScoresFinite(elFd.map((r) => r.flatA));
+        const zB = zScoresFinite(elFd.map((r) => r.flatB));
+        const zD = zScoresFinite(elFd.map((r) => r.dollarRoi));
         const m = new Map();
-        elFd.forEach((r, i) => m.set(r.wallet, zf[i] + zd[i]));
+        elFd.forEach((r, i) => {
+          const s = combineFlatDollarScore({
+            zFlatA: Number.isFinite(r.flatA) ? zA[i] : null,
+            zFlatB: Number.isFinite(r.flatB) ? zB[i] : null,
+            zDollar: zD[i],
+          });
+          if (Number.isFinite(s)) m.set(r.wallet, s);
+        });
         flatDollar = assignQ(m);
       }
       qBySport.set(sport, flatDollar);
@@ -409,7 +428,7 @@ function addToBucket(map, key, leg) {
     method: [
       'As-of CONFIRMED-in-sport graded sharp_action_positions from',
       FROM,
-      '+. Sharp tier = day-of flatDollar Q (z(flatRoi)+z(dollarRoi)) among CONFIRMED in that sport.',
+      '+. Sharp tier = day-of flatDollar Q (0.40·(0.30·z(A flat)+0.70·z(B flat))+0.60·z(B $)) among CONFIRMED in that sport.',
       'Size bands: light <0.5×, lean 0.5–1×, full 1–1.5×, press ≥1.5× (stamped cross-sport sizeRatio).',
       'Unopposed = zero other as-of CONFIRMED on opposite side of date|sport|gameKey|marketType with size ≥0.10× (Action-matched).',
     ].join(' '),

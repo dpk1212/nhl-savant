@@ -797,15 +797,44 @@ export function applyConfirmedQ1UnitFloor({
 }
 
 /**
+ * Shared Action letter + CONFIRMED-Q1 score (one formula):
+ *   flatMix = 0.30·z(Source A flat) + 0.70·z(Source B flat)
+ *   score   = 0.40·flatMix + 0.60·z(Source B $)
+ * Missing A or B flat: that side drops out of flatMix (other side = 100%).
+ */
+export const FLAT_BLEND_A = 0.3;
+export const FLAT_BLEND_B = 0.7;
+export const FLAT_DOLLAR_Q_WEIGHT_FLAT = 0.4;
+export const FLAT_DOLLAR_Q_WEIGHT_DOLLAR = 0.6;
+
+function zUnit(xs) {
+  const finite = xs.filter((x) => Number.isFinite(x));
+  if (!finite.length) return () => null;
+  const m = finite.reduce((a, b) => a + b, 0) / finite.length;
+  const sd = Math.sqrt(finite.reduce((a, b) => a + (b - m) ** 2, 0) / finite.length) || 1;
+  return (x) => (Number.isFinite(x) ? (x - m) / sd : null);
+}
+
+/** Combine already-computed z's. Used by live Q and as-of cell hist. */
+export function combineFlatDollarScore({ zFlatA = null, zFlatB = null, zDollar }) {
+  if (!Number.isFinite(zDollar)) return null;
+  const aOk = Number.isFinite(zFlatA);
+  const bOk = Number.isFinite(zFlatB);
+  if (!aOk && !bOk) return null;
+  const flatMix = aOk && bOk
+    ? FLAT_BLEND_A * zFlatA + FLAT_BLEND_B * zFlatB
+    : (aOk ? zFlatA : zFlatB);
+  return FLAT_DOLLAR_Q_WEIGHT_FLAT * flatMix + FLAT_DOLLAR_Q_WEIGHT_DOLLAR * zDollar;
+}
+
+/**
  * flatDollar Q among whitelist-in-sport from live walletProfiles.
- * Score = z(flatRoi) + z(dollarRoi); need ≥4 scored wallets in sport.
- * Default universe = CONFIRMED only (staking / CONFIRMED-Q1). Pass
- * `tiers: ['CONFIRMED','FLAT']` for Action “proven winner” peer ranking.
+ * Need ≥4 scored wallets in sport. Default universe = CONFIRMED only.
  * @returns {Map<string, Map<string, number>>} sport → walletShort → Q (1..4)
  */
 export function buildFlatDollarQBySport(walletProfiles, { tiers = ['CONFIRMED'] } = {}) {
   const tierSet = new Set((tiers || ['CONFIRMED']).map((t) => String(t).toUpperCase()));
-  const bySport = new Map(); // sport → [[wallet, flat, dol], ...]
+  const bySport = new Map();
   if (!walletProfiles || typeof walletProfiles.forEach !== 'function') return new Map();
   for (const [id, prof] of walletProfiles) {
     const short = shortWalletId(id);
@@ -813,11 +842,18 @@ export function buildFlatDollarQBySport(walletProfiles, { tiers = ['CONFIRMED'] 
     for (const [sport, rec] of Object.entries(prof.bySport)) {
       const tier = String(rec?.whitelistTier || '').toUpperCase();
       if (!tierSet.has(tier)) continue;
-      const flat = Number(rec.picks?.flatRoi ?? rec.positions?.positionFlatRoi);
+      const flatA = Number(rec.picks?.flatRoi);
+      const flatB = Number(rec.positions?.positionFlatRoi);
       const dol = Number(rec.positions?.dollarRoi);
-      if (!Number.isFinite(flat) || !Number.isFinite(dol)) continue;
+      if (!Number.isFinite(dol)) continue;
+      if (!Number.isFinite(flatA) && !Number.isFinite(flatB)) continue;
       if (!bySport.has(sport)) bySport.set(sport, []);
-      bySport.get(sport).push({ wallet: short, flat, dol });
+      bySport.get(sport).push({
+        wallet: short,
+        flatA: Number.isFinite(flatA) ? flatA : null,
+        flatB: Number.isFinite(flatB) ? flatB : null,
+        dol,
+      });
     }
   }
   const out = new Map();
@@ -826,20 +862,26 @@ export function buildFlatDollarQBySport(walletProfiles, { tiers = ['CONFIRMED'] 
       out.set(sport, new Map());
       continue;
     }
-    const flats = rows.map((r) => r.flat);
-    const dols = rows.map((r) => r.dol);
-    const mkz = (xs) => {
-      const m = xs.reduce((a, b) => a + b, 0) / xs.length;
-      const sd = Math.sqrt(xs.reduce((a, b) => a + (b - m) ** 2, 0) / xs.length) || 1;
-      return (x) => (x - m) / sd;
-    };
-    const zf = mkz(flats);
-    const zd = mkz(dols);
+    const zA = zUnit(rows.map((r) => r.flatA));
+    const zB = zUnit(rows.map((r) => r.flatB));
+    const zD = zUnit(rows.map((r) => r.dol));
     const scored = rows
-      .map((r) => ({ w: r.wallet, s: zf(r.flat) + zd(r.dol) }))
+      .map((r) => ({
+        w: r.wallet,
+        s: combineFlatDollarScore({
+          zFlatA: zA(r.flatA),
+          zFlatB: zB(r.flatB),
+          zDollar: zD(r.dol),
+        }),
+      }))
+      .filter((r) => Number.isFinite(r.s))
       .sort((a, b) => b.s - a.s);
     const qMap = new Map();
     const n = scored.length;
+    if (n < 4) {
+      out.set(sport, qMap);
+      continue;
+    }
     scored.forEach((row, i) => {
       qMap.set(row.w, Math.min(4, Math.floor((i / n) * 4) + 1));
     });
