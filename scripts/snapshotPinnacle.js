@@ -25,6 +25,11 @@ import { makeWNBAGameKey } from './lib/wnbaTeams.js';
 import { makeNFLGameKey } from './lib/nflTeams.js';
 import { fetchPinnapiIndex, fetchRecentDrops, normalizeDrop, PINNAPI_SPORT_ID } from './lib/pinnapi.js';
 import { pickMainSpreadFromBoard, pickMainTotalFromBoard, linesClose } from '../src/lib/pinnacleMain.js';
+import {
+  appendTapePoint,
+  enforceGitSafeSize,
+  GIT_SAFE_MAX_BYTES,
+} from './lib/pinnacleTape.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -59,10 +64,9 @@ const FAIR_BOOKS = ['pinnacle', 'circa', 'bookmaker', 'lowvig', 'betonlineag'];
 const RETAIL_BOOKS = ['draftkings', 'fanduel', 'betmgm', 'caesars'];
 const BOOKMAKERS = [...FAIR_BOOKS, ...RETAIL_BOOKS].join(',');
 const ODDS_REGIONS = 'us,uk,eu';
-// Tape retention: NFL openers sit for days — keep a full week of odds + max.
-// ~4 min cadence → ~2520 pts/week; hard cap is a safety valve only.
-const HISTORY_KEEP_HOURS = 168; // 7 days
-const MAX_HISTORY = 8000; // multi-line totals/spreads ≈ 3–6 prints/cycle
+// Tape retention lives in scripts/lib/pinnacleTape.js (7-day dense tape for
+// games inside an 8-day commence horizon; far slates keep opener/current only).
+// GitHub rejects blobs > 100 MB — never pretty-print this file.
 const STALE_HOURS = 36;
 const COMPLETED_HOURS = 6;
 const OUT_PATH = join(ROOT, 'public', 'pinnacle_history.json');
@@ -130,20 +134,6 @@ function fairBookDisplayName(key) {
 }
 
 const normalize = s => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-
-/** Keep tape points for HISTORY_KEEP_HOURS (and never more than MAX_HISTORY). */
-function trimHistorySeries(arr, nowSec) {
-  if (!Array.isArray(arr) || !arr.length) return [];
-  const cutoff = nowSec - HISTORY_KEEP_HOURS * 3600;
-  const kept = arr.filter((h) => {
-    const t = Number(h?.t);
-    if (!Number.isFinite(t)) return true;
-    const sec = t > 1e12 ? t / 1000 : t;
-    return sec >= cutoff;
-  });
-  if (kept.length > MAX_HISTORY) return kept.slice(kept.length - MAX_HISTORY);
-  return kept;
-}
 
 function loadCBBTeamMap() {
   const csvPath = join(ROOT, 'public', 'basketball_teams.csv');
@@ -561,9 +551,7 @@ async function run() {
       if (maxSpread != null) existing.maxSpread = maxSpread;
       if (maxTotal != null) existing.maxTotal = maxTotal;
 
-      const hist = existing.history || [];
-      hist.push(snapshot);
-      existing.history = trimHistorySeries(hist, now);
+      existing.history = appendTapePoint(existing.history, snapshot, 'ml', now);
 
       const opAway = existing.opener.away;
       const opHome = existing.opener.home;
@@ -676,9 +664,11 @@ async function run() {
             isMain: true,
           };
         }
-        const sHist = existing.spreadHistory || [];
-        for (const snap of spreadSnapsByLine.values()) sHist.push(snap);
-        existing.spreadHistory = trimHistorySeries(sHist, now);
+        let sHist = existing.spreadHistory || [];
+        for (const snap of spreadSnapsByLine.values()) {
+          sHist = appendTapePoint(sHist, snap, 'spread', now);
+        }
+        existing.spreadHistory = sHist;
         existing.spreadLines = [...spreadSnapsByLine.values()]
           .map((s) => ({
             homeLine: s.homeLine,
@@ -783,9 +773,11 @@ async function run() {
             isMain: true,
           };
         }
-        const tHist = existing.totalHistory || [];
-        for (const snap of totalSnapsByLine.values()) tHist.push(snap);
-        existing.totalHistory = trimHistorySeries(tHist, now);
+        let tHist = existing.totalHistory || [];
+        for (const snap of totalSnapsByLine.values()) {
+          tHist = appendTapePoint(tHist, snap, 'total', now);
+        }
+        existing.totalHistory = tHist;
         existing.totalLines = [...totalSnapsByLine.values()]
           .map((s) => ({
             line: s.line,
@@ -928,7 +920,11 @@ async function run() {
     console.log(`  ⚡ steam drops: ${normalized.length} pulled, ${steamStamped} matched to games`);
   }
 
-  writeFileSync(OUT_PATH, JSON.stringify(history, null, 2), 'utf8');
+  const { json, bytes, emergencyClips } = enforceGitSafeSize(history, now);
+  writeFileSync(OUT_PATH, json, 'utf8');
+  const mb = (bytes / (1024 * 1024)).toFixed(2);
+  const capMb = (GIT_SAFE_MAX_BYTES / (1024 * 1024)).toFixed(0);
+  console.log(`   tape file: ${mb} MiB compact (cap ${capMb} MiB)${emergencyClips ? ` emergencyClips=${emergencyClips}` : ''}`);
 
   let totalGames = 0;
   let evSpots = 0;

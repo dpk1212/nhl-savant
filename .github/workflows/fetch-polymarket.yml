@@ -139,6 +139,15 @@ jobs:
             echo "--- snapshotPinnacle ---"
             node scripts/snapshotPinnacle.js || echo "pinnacle failed (cycle $i)"
 
+            # GitHub rejects blobs > 100 MB. A fat pretty-printed NFL tape
+            # (alts × every cycle × regular-season games months out) already
+            # failed main push. Always compact/clip before git add.
+            echo "--- prunePinnacleHistory ---"
+            if ! node scripts/prunePinnacleHistory.js; then
+              echo "::error::prunePinnacleHistory failed (cycle $i) — reverting tape file to HEAD so main can still push"
+              git checkout HEAD -- public/pinnacle_history.json 2>/dev/null || true
+            fi
+
             echo "--- discoverScanSupplement ---"
             node scripts/discoverScanSupplement.js || echo "discoverScanSupplement failed (cycle $i — non-fatal)"
 
@@ -214,6 +223,14 @@ jobs:
             # `git pull --rebase` fail every cycle ("unstaged changes"), so the
             # market-data commit never reached origin/main and the hard-reset
             # below wiped the fresh scan before build/deploy (Vault stuck ~20h).
+            # GitHub hard-rejects blobs > 100 MB (this is what stalled fetch).
+            # If tape is still huge after prune, drop it from this commit.
+            pinn_bytes=$(wc -c < public/pinnacle_history.json 2>/dev/null | tr -d ' ')
+            if [ "${pinn_bytes:-0}" -gt 90000000 ]; then
+              echo "::error::pinnacle_history.json is ${pinn_bytes} bytes (>90MB). Not staging it."
+              git checkout HEAD -- public/pinnacle_history.json 2>/dev/null || true
+            fi
+
             git add public/polymarket_data.json public/kalshi_data.json \
                     public/pinnacle_history.json public/sharp_positions.json \
                     public/sharp_spread_positions.json public/sharp_total_positions.json \
@@ -259,6 +276,22 @@ jobs:
             git reset --hard origin/main
             cp -f "$json_stash"/* public/ 2>/dev/null || true
             rm -rf "$json_stash"
+
+            # Stash restore can put a 100MB tape back on top of a pruned
+            # checkout. GitHub rejects that on gh-pages the same as main
+            # (2026-08-14: main push failed, then dist deploy failed with
+            # the same 100.12 MB blob). Shrink again before Vite copies
+            # public/ → dist/.
+            if [ -f scripts/prunePinnacleHistory.js ]; then
+              echo "--- prunePinnacleHistory (pre-build) ---"
+              node scripts/prunePinnacleHistory.js || true
+            fi
+            pinn_bytes=$(wc -c < public/pinnacle_history.json 2>/dev/null | tr -d ' ')
+            if [ "${pinn_bytes:-0}" -gt 90000000 ]; then
+              echo "::error::pre-build tape is ${pinn_bytes} bytes — omitting from dist so gh-pages can still push"
+              printf '%s\n' "{\"error\":\"tape_omitted_over_github_limit\",\"bytes\":${pinn_bytes}}" \
+                > public/pinnacle_history.json
+            fi
 
             # Build the site (~1 min). Wipe dist so a leftover dist/.git from
             # a prior cycle can't make `git checkout -b gh-pages` no-op and
