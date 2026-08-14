@@ -139,6 +139,15 @@ jobs:
             echo "--- snapshotPinnacle ---"
             node scripts/snapshotPinnacle.js || echo "pinnacle failed (cycle $i)"
 
+            # GitHub rejects blobs > 100 MB. A fat pretty-printed NFL tape
+            # (alts × every cycle × regular-season games months out) already
+            # failed main push. Always compact/clip before git add.
+            echo "--- prunePinnacleHistory ---"
+            if ! node scripts/prunePinnacleHistory.js; then
+              echo "::error::prunePinnacleHistory failed (cycle $i) — reverting tape file to HEAD so main can still push"
+              git checkout HEAD -- public/pinnacle_history.json 2>/dev/null || true
+            fi
+
             echo "--- discoverScanSupplement ---"
             node scripts/discoverScanSupplement.js || echo "discoverScanSupplement failed (cycle $i — non-fatal)"
 
@@ -214,6 +223,14 @@ jobs:
             # `git pull --rebase` fail every cycle ("unstaged changes"), so the
             # market-data commit never reached origin/main and the hard-reset
             # below wiped the fresh scan before build/deploy (Vault stuck ~20h).
+            # GitHub hard-rejects blobs > 100 MB (this is what stalled fetch).
+            # If tape is still huge after prune, drop it from this commit.
+            pinn_bytes=$(wc -c < public/pinnacle_history.json 2>/dev/null | tr -d ' ')
+            if [ "${pinn_bytes:-0}" -gt 90000000 ]; then
+              echo "::error::pinnacle_history.json is ${pinn_bytes} bytes (>90MB). Not staging it."
+              git checkout HEAD -- public/pinnacle_history.json 2>/dev/null || true
+            fi
+
             git add public/polymarket_data.json public/kalshi_data.json \
                     public/pinnacle_history.json public/sharp_positions.json \
                     public/sharp_spread_positions.json public/sharp_total_positions.json \
