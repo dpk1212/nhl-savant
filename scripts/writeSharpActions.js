@@ -96,6 +96,13 @@ function americanOddsFromProb(prob) {
 }
 
 function todayStr() {
+  // ET — must match syncPickStateAuthoritative TARGET_DATE. UTC (toISOString)
+  // after ~8 PM ET files new positions under tomorrow; sync still queries today
+  // and evening money never reaches lock create.
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+}
+
+function utcDateStr() {
   return new Date().toISOString().slice(0, 10);
 }
 
@@ -1124,6 +1131,11 @@ async function main() {
     if (batchOps > 0) await batch.commit();
   }
 
+  // UTC leftovers from the pre-ET todayStr (8 PM–midnight ET): same ticket
+  // already written under tomorrow's UTC date. Exit those so grade doesn't
+  // settle both copies. New ET-dated docs are what sync loads.
+  const retagged = await retagUtcDatedSiblings(db, date, positions);
+
   // ── Stamp EXITED for true closes (scan heartbeat required) ─────────────
   const exited = await markExitedPositions(db, date, {
     sharpPositions,
@@ -1135,10 +1147,59 @@ async function main() {
   console.log(`  Written:  ${written} new positions`);
   console.log(`  Updated:  ${updated} existing positions (live fields)`);
   console.log(`  Reopened: ${reopened} EXITED → PENDING (position returned)`);
+  console.log(`  Retagged: ${retagged} UTC-dated siblings → EXITED (date_calendar_retag)`);
   console.log(`  Exited:   ${exited} PENDING → EXITED (scanned, asset/soft-key gone)`);
   console.log(`  Skipped:  ${skipped} already graded`);
   console.log(`  Total:    ${positions.length}`);
   console.log(`\nDone.`);
+}
+
+/**
+ * After 8 PM ET, UTC today ≠ ET today. Positions written under the old
+ * toISOString date sit on tomorrow's prefix; sync queries ET today.
+ * Exit PENDING UTC-dated copies of tickets we just wrote under ET so
+ * grade (all PENDING, no date filter) does not settle both.
+ */
+async function retagUtcDatedSiblings(db, etDate, positions) {
+  const utcDate = utcDateStr();
+  if (utcDate === etDate) return 0;
+
+  const etKeys = new Set(
+    positions.map((p) => softPositionKey(p.wallet, p.sport, p.gameKey, p.marketType, p.side)),
+  );
+  if (etKeys.size === 0) return 0;
+
+  const snap = await db.collection(COLLECTION)
+    .where('date', '==', utcDate)
+    .where('status', '==', 'PENDING')
+    .get();
+
+  let retagged = 0;
+  let batch = db.batch();
+  let batchOps = 0;
+  for (const doc of snap.docs) {
+    const data = doc.data() || {};
+    const key = softPositionKey(data.wallet, data.sport, data.gameKey, data.marketType, data.side);
+    if (!etKeys.has(key)) continue;
+    batch.update(doc.ref, {
+      status: 'EXITED',
+      exitedAt: admin.firestore.FieldValue.serverTimestamp(),
+      exitReason: 'date_calendar_retag',
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    batchOps++;
+    retagged++;
+    if (batchOps >= 400) {
+      await batch.commit();
+      batch = db.batch();
+      batchOps = 0;
+    }
+  }
+  if (batchOps > 0) await batch.commit();
+  if (retagged > 0) {
+    console.log(`UTC retag: ${retagged} PENDING ${utcDate} sibling(s) EXITED → live docs are ${etDate}`);
+  }
+  return retagged;
 }
 
 /**
