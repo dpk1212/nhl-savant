@@ -3122,7 +3122,7 @@ async function createMissingLockedPicks({
  * rather than real run-line juice. Peak or live Pinnacle spread odds are the
  * recovery source.
  */
-function spreadLockLooksLikeMlBleed(lockOdds, peakOdds, spreadOdds, mlOdds) {
+function spreadLockLooksLikeMlBleed(lockOdds, peakOdds, spreadOdds, mlOdds, polyOdds = null) {
   if (lockOdds == null || !Number.isFinite(lockOdds)) return false;
   // Classic create-time default: lock stamped -110 while peak/spread is not.
   if (lockOdds === -110 && peakOdds != null && peakOdds !== -110) return true;
@@ -3130,6 +3130,22 @@ function spreadLockLooksLikeMlBleed(lockOdds, peakOdds, spreadOdds, mlOdds) {
   // Lock equals the ML price for this side, but Pinnacle's spread juice differs.
   if (mlOdds != null && lockOdds === mlOdds && spreadOdds != null
       && Math.abs(spreadOdds - mlOdds) >= 20) {
+    return true;
+  }
+  // Absurd juice vs Pinnacle run-line (STL@CHC Cardinals +1.5 2026-08-14:
+  // lock +270 while spreadCurrent.awayOdds was −135).
+  if (Number.isFinite(spreadOdds) && spreadOdds !== 0
+      && Math.abs(lockOdds - spreadOdds) >= 40) {
+    return true;
+  }
+  // Absurd juice vs vault Poly entry (same incident: 55¢ → −124).
+  if (Number.isFinite(polyOdds) && polyOdds !== 0
+      && Math.abs(lockOdds - polyOdds) >= 40) {
+    return true;
+  }
+  // Peak already holds real spread juice and lock diverges hard.
+  if (Number.isFinite(peakOdds) && peakOdds !== 0 && peakOdds !== -110
+      && Math.abs(lockOdds - peakOdds) >= 40) {
     return true;
   }
   return false;
@@ -4850,34 +4866,52 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     const peakOdds = Number.isFinite(sd.peak?.odds) ? sd.peak.odds : null;
     const lockOdds = Number.isFinite(patch.lock?.odds) ? patch.lock.odds
       : (Number.isFinite(sd.lock?.odds) ? sd.lock.odds : null);
-    const repairFrom = (Number.isFinite(spreadOdds) && spreadOdds !== -110)
-      ? spreadOdds
-      : (peakOdds != null && peakOdds !== -110 ? peakOdds : null);
-    if (!isWalletAlt && repairFrom != null
-        && spreadLockLooksLikeMlBleed(lockOdds, peakOdds, spreadOdds, mlOdds)) {
+    const stampedLineForPoly = Number.isFinite(stampedLine) ? stampedLine : null;
+    const polyOdds = Array.isArray(group) && group.length
+      ? consensusOddsFromPoly(group, side, stampedLineForPoly)
+      : null;
+    // Main line: prefer Pinnacle spread juice. Wallet alt: Poly entry only.
+    const repairFrom = isWalletAlt
+      ? (Number.isFinite(polyOdds) && polyOdds !== 0 ? polyOdds
+        : (peakOdds != null && peakOdds !== -110 ? peakOdds : null))
+      : ((Number.isFinite(spreadOdds) && spreadOdds !== -110)
+        ? spreadOdds
+        : (Number.isFinite(polyOdds) && polyOdds !== 0 ? polyOdds
+          : (peakOdds != null && peakOdds !== -110 ? peakOdds : null)));
+    if (repairFrom != null
+        && spreadLockLooksLikeMlBleed(lockOdds, peakOdds, spreadOdds, mlOdds, polyOdds)) {
       const pinnSpread = Number.isFinite(spreadOdds) ? spreadOdds : repairFrom;
       const fairLabel = fairBookLabel(meta?.fairBook || meta?.fairSpreadBook);
       patch.lock = {
         ...(patch.lock || {}),
         odds: repairFrom,
-        pinnacleOdds: pinnSpread,
-        book: sd.lock?.book && sd.lock.book !== 'Pinnacle'
-          ? sd.lock.book
-          : fairLabel,
-        oddsSource: meta?.fairBook || meta?.fairSpreadBook || sd.lock?.oddsSource || null,
+        pinnacleOdds: Number.isFinite(spreadOdds) ? spreadOdds : (sd.lock?.pinnacleOdds ?? null),
+        book: isWalletAlt
+          ? 'Polymarket'
+          : (sd.lock?.book && sd.lock.book !== 'Pinnacle'
+            ? sd.lock.book
+            : fairLabel),
+        oddsSource: isWalletAlt
+          ? 'poly_avgPrice'
+          : (meta?.fairBook || meta?.fairSpreadBook || sd.lock?.oddsSource || null),
       };
-      // Keep peak.pinnacleOdds on the spread number too when it was ML-bleed.
-      if (sd.peak?.pinnacleOdds === -110 || sd.peak?.pinnacleOdds === mlOdds) {
+      // Keep peak on the repaired juice when it was ML-bleed / absurd.
+      if (sd.peak?.pinnacleOdds === -110 || sd.peak?.pinnacleOdds === mlOdds
+          || (Number.isFinite(peakOdds) && Math.abs(peakOdds - repairFrom) >= 40)) {
         patch.peak = {
           ...(patch.peak || {}),
-          pinnacleOdds: pinnSpread,
-          ...(peakOdds === -110 || peakOdds === mlOdds ? { odds: repairFrom } : {}),
+          pinnacleOdds: Number.isFinite(spreadOdds) ? spreadOdds : (sd.peak?.pinnacleOdds ?? null),
+          ...(peakOdds === -110 || peakOdds === mlOdds
+            || (Number.isFinite(peakOdds) && Math.abs(peakOdds - repairFrom) >= 40)
+            ? { odds: repairFrom } : {}),
           updatedAt: now,
         };
       }
       changes.push(
         `spreadOdds repair: lock ${lockOdds ?? '∅'} → ${repairFrom}`
-        + ` (was ML-bleed/default; pinn spread ${pinnSpread})`,
+        + ` (was ML-bleed/absurd; pinn spread ${pinnSpread}`
+        + (Number.isFinite(polyOdds) ? `; poly ${polyOdds}` : '')
+        + ')',
       );
     }
   }

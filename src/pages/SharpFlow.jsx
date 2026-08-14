@@ -12570,12 +12570,53 @@ export default function SharpFlow() {
                         // sometimes stamped lock.odds=-110 (ML chalk / default)
                         // while peak correctly held the run-line juice (+139).
                         // Prefer peak when lock looks like that bleed.
+                        //
+                        // SPREAD guard (2026-08-14 STL@CHC +1.5): stamp +270
+                        // while vault Action sat at 55¢ → −124. Treat ≥40pt
+                        // divergence from vault Poly / peak as invalid too.
                         const lockOddsRaw = lock.odds;
                         const peakOddsRaw = peak.odds;
+                        const livePosSourceEarly = marketTypeKey === 'spread' ? spreadPositions
+                          : marketTypeKey === 'total' ? totalPositions
+                            : sharpPositions;
+                        const liveGameDataEarly = livePosSourceEarly?.[docSport]?.[doc.gameKey];
+                        let vaultPolyOdds = null;
+                        if (marketTypeKey === 'spread' && Array.isArray(liveGameDataEarly?.positions)) {
+                          let sumInv = 0;
+                          let sumPx = 0;
+                          const lockLn = Number.isFinite(lock.line) ? lock.line
+                            : (Number.isFinite(peak.line) ? peak.line : null);
+                          for (const p of liveGameDataEarly.positions) {
+                            if (p.side !== sideKey) continue;
+                            if (Number.isFinite(lockLn)) {
+                              const el = Number(p.entryLine ?? p.spreadLine);
+                              if (Number.isFinite(el) && Math.abs(el - lockLn) > 0.051) continue;
+                            }
+                            const inv = Number(p.invested) || 0;
+                            const px = Number(p.avgPrice);
+                            if (!(inv > 0) || !(px > 0 && px < 1)) continue;
+                            sumInv += inv;
+                            sumPx += px * inv;
+                          }
+                          if (sumInv > 0) {
+                            const p = sumPx / sumInv;
+                            vaultPolyOdds = p >= 0.5
+                              ? Math.round(-100 * p / (1 - p))
+                              : Math.round(100 * (1 - p) / p);
+                          }
+                        }
                         const spreadLockIsMlBleed = marketTypeKey === 'spread'
-                          && lockOddsRaw === -110
-                          && Number.isFinite(peakOddsRaw)
-                          && peakOddsRaw !== -110;
+                          && (
+                            (lockOddsRaw === -110
+                              && Number.isFinite(peakOddsRaw)
+                              && peakOddsRaw !== -110)
+                            || (Number.isFinite(vaultPolyOdds)
+                              && Number.isFinite(lockOddsRaw)
+                              && Math.abs(lockOddsRaw - vaultPolyOdds) >= 40)
+                            || (Number.isFinite(peakOddsRaw) && peakOddsRaw !== -110
+                              && Number.isFinite(lockOddsRaw)
+                              && Math.abs(lockOddsRaw - peakOddsRaw) >= 40)
+                          );
                         const lockOddsValid = !spreadLockIsMlBleed
                           && lockOddsRaw && Math.abs(lockOddsRaw) <= 400;
                         // Post T-15: ticket = last pre-freeze stamp (peak), not
@@ -12596,16 +12637,25 @@ export default function SharpFlow() {
                         const pickFiniteOdds = (v) => (
                           Number.isFinite(v) && v !== 0 ? v : null
                         );
-                        const cardOdds = pastT15Odds
+                        const cardOddsRaw = pastT15Odds
                           ? (pickFiniteOdds(peakOddsRaw)
                             || (lockOddsValid ? pickFiniteOdds(lockOddsRaw) : null)
                             || pickFiniteOdds(sd.closingOdds)
                             || null)
                           : ((lockOddsValid ? pickFiniteOdds(lockOddsRaw) : null)
                             || pickFiniteOdds(peakOddsRaw)
+                            || pickFiniteOdds(vaultPolyOdds)
                             || pickFiniteOdds(lockOddsRaw)
                             || pickFiniteOdds(sd.closingOdds)
                             || null);
+                        // Final vault Poly preference when stamp still absurd.
+                        const cardOdds = (!pastT15Odds
+                          && marketTypeKey === 'spread'
+                          && Number.isFinite(vaultPolyOdds)
+                          && Number.isFinite(cardOddsRaw)
+                          && Math.abs(cardOddsRaw - vaultPolyOdds) >= 40)
+                          ? vaultPolyOdds
+                          : cardOddsRaw;
                         // v6.6 — health is engine-truth. evaluatePickHealth
                         // is the single source of truth for ACTIVE / MUTED /
                         // CANCELLED under the hybrid floor. Earlier code self-

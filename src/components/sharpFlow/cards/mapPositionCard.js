@@ -477,12 +477,24 @@ function resolveTicketMax(candidates) {
 }
 
 /** Poly avgPrice (0–1) → American odds. */
-function americanFromPolyPrice(px) {
+export function americanFromPolyPrice(px) {
   const p = Number(px);
   if (!(p > 0 && p < 1)) return null;
   return p >= 0.5
     ? Math.round(-100 * p / (1 - p))
     : Math.round(100 * (1 - p) / p);
+}
+
+/**
+ * When stamped lock.odds diverges from vault Poly entry by ≥ minAbsDelta
+ * American points, prefer the vault receipt (FLAGGED / toWin).
+ * STL@CHC Cardinals +1.5 2026-08-14: stamp +270 vs vault 55¢ → −124.
+ */
+export function preferVaultPolyTicketOdds(stamped, poly, { minAbsDelta = 40 } = {}) {
+  if (!Number.isFinite(poly) || poly === 0) return Number.isFinite(stamped) && stamped !== 0 ? stamped : null;
+  if (!Number.isFinite(stamped) || stamped === 0) return poly;
+  if (Math.abs(stamped - poly) >= minAbsDelta) return poly;
+  return stamped;
 }
 
 /**
@@ -1209,7 +1221,10 @@ export function mapLockedPickToCardFixture(pick, {
     }
     if (Number.isFinite(entryLadder[0].odds)) {
       polyEntryOdds = entryLadder[0].odds;
-      if (!Number.isFinite(ticketOdds) || ticketOdds === 0) ticketOdds = polyEntryOdds;
+      // Prefer vault Poly receipt over stamped lock.odds when the stamp is
+      // absurd (ML bleed / wrong instrument). STL@CHC +1.5 2026-08-14:
+      // stamp +270 while Action/vault sat at 55¢ → −124.
+      ticketOdds = preferVaultPolyTicketOdds(ticketOdds, polyEntryOdds);
     }
   }
 
