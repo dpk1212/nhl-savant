@@ -5,6 +5,10 @@
  * applies the same 0.75× / 0.10× size filters as the UI (sport-local usual),
  * and writes each qualifying position to Firestore `sharp_action_positions`.
  *
+ * Identity: one Firestore doc per wallet + game + market + side + line
+ * (SPREAD/TOTAL). ML stays lineless. Pre-line PENDING siblings EXIT as
+ * superseded_by_line_id so last-write can no longer clobber +1.5 with −1.5.
+ *
  * Idempotent upserts for open positions. After the write pass, stamps EXITED
  * on PENDING docs whose wallet was successfully scanned this cycle and whose
  * Polymarket `asset` (or soft key, for legacy docs) is no longer open.
@@ -34,6 +38,14 @@ import { tierLetterFromQ } from '../src/lib/sharpTierCellStats.js';
 import { sizeBandFromRatio, isCountedProvenSize } from '../src/lib/confirmedActionDesk.js';
 import { passesSizeSkillLiveGate } from '../src/lib/sizeSkillRescue.js';
 import { resolveSportUsualBet } from './lib/sportUsualBet.js';
+import {
+  isLegacyLinelessActionDoc,
+  linelessSoftKey,
+  positionDocId,
+  shouldSupersedeLinelessActionDoc,
+  softPositionKey,
+  ticketLineForActionId,
+} from '../src/lib/actionPositionId.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '../public');
@@ -106,18 +118,10 @@ function utcDateStr() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function positionDocId(pos) {
-  return `${pos.date}_${pos.sport}_${pos.gameKey}_${pos.wallet.slice(-8)}_${pos.marketType}_${pos.side}`;
-}
-
-/** Soft key used when a legacy PENDING doc has no Polymarket asset id yet. */
-function softPositionKey(wallet, sport, gameKey, marketType, side) {
-  return `${String(wallet || '').toLowerCase()}|${sport}|${gameKey}|${marketType}|${side}`;
-}
-
 /**
  * Collect soft keys for every position in the scan JSONs (not just SHADOW+).
  * Used as EXITED fallback when asset is missing on the Firestore doc.
+ * SPREAD/TOTAL keys include the ticket line so +1.5 and −1.5 stay distinct.
  */
 function collectScanSoftKeys(posFiles) {
   const keys = new Set();
@@ -128,10 +132,20 @@ function collectScanSoftKeys(posFiles) {
       for (const [gameKey, gd] of Object.entries(sportGames)) {
         for (const pos of (gd.positions || [])) {
           if (!pos.wallet || !pos.side) continue;
-          keys.add(softPositionKey(pos.wallet, sport, gameKey, mkt, pos.side));
+          keys.add(softPositionKey(pos.wallet, sport, gameKey, mkt, pos.side, pos.entryLine));
         }
       }
     }
+  }
+  return keys;
+}
+
+function collectSupersededLinelessKeys(positions) {
+  const keys = new Set();
+  for (const p of positions || []) {
+    const mkt = String(p.marketType || '').toUpperCase();
+    if (mkt !== 'SPREAD' && mkt !== 'TOTAL') continue;
+    keys.add(linelessSoftKey(p.wallet, p.sport, p.gameKey, p.marketType, p.side));
   }
   return keys;
 }
@@ -1141,6 +1155,7 @@ async function main() {
     sharpPositions,
     posFiles,
     presentDocIds,
+    supersededLinelessKeys: collectSupersededLinelessKeys(positions),
   });
 
   console.log(`\nResults:`);
@@ -1164,10 +1179,15 @@ async function retagUtcDatedSiblings(db, etDate, positions) {
   const utcDate = utcDateStr();
   if (utcDate === etDate) return 0;
 
-  const etKeys = new Set(
-    positions.map((p) => softPositionKey(p.wallet, p.sport, p.gameKey, p.marketType, p.side)),
-  );
-  if (etKeys.size === 0) return 0;
+  const etLined = new Set();
+  const etLineless = new Set();
+  for (const p of positions) {
+    etLined.add(softPositionKey(
+      p.wallet, p.sport, p.gameKey, p.marketType, p.side, ticketLineForActionId(p),
+    ));
+    etLineless.add(linelessSoftKey(p.wallet, p.sport, p.gameKey, p.marketType, p.side));
+  }
+  if (etLined.size === 0) return 0;
 
   const snap = await db.collection(COLLECTION)
     .where('date', '==', utcDate)
@@ -1179,8 +1199,13 @@ async function retagUtcDatedSiblings(db, etDate, positions) {
   let batchOps = 0;
   for (const doc of snap.docs) {
     const data = doc.data() || {};
-    const key = softPositionKey(data.wallet, data.sport, data.gameKey, data.marketType, data.side);
-    if (!etKeys.has(key)) continue;
+    const lined = softPositionKey(
+      data.wallet, data.sport, data.gameKey, data.marketType, data.side, ticketLineForActionId(data),
+    );
+    const matchLined = etLined.has(lined);
+    const matchLegacy = isLegacyLinelessActionDoc(doc.id, data)
+      && etLineless.has(linelessSoftKey(data.wallet, data.sport, data.gameKey, data.marketType, data.side));
+    if (!matchLined && !matchLegacy) continue;
     batch.update(doc.ref, {
       status: 'EXITED',
       exitedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -1209,7 +1234,9 @@ async function retagUtcDatedSiblings(db, etDate, positions) {
  * Prefer asset identity from Polymarket. Soft-key fallback only for legacy
  * docs that predate asset storage. Never exit on scanner silence.
  */
-async function markExitedPositions(db, date, { sharpPositions, posFiles, presentDocIds }) {
+async function markExitedPositions(db, date, {
+  sharpPositions, posFiles, presentDocIds, supersededLinelessKeys,
+}) {
   // Heartbeat moved to its own file (scan_heartbeat.json) so the ~4MB of
   // open-asset IDs stop shipping to the browser. Fallback to the legacy
   // embedded location for one transition cycle.
@@ -1263,6 +1290,14 @@ async function markExitedPositions(db, date, { sharpPositions, posFiles, present
 
     if (!shouldExit && presentDocIds.has(doc.id)) continue; // still open / just refreshed
 
+    // Lined SPREAD/TOTAL ids superseded the old wallet+side doc. Exit even
+    // when the Polymarket asset is still open — otherwise last-write's
+    // lineless row stays PENDING next to the new +1.5 / −1.5 tickets.
+    if (!shouldExit && shouldSupersedeLinelessActionDoc(doc.id, data, supersededLinelessKeys)) {
+      shouldExit = true;
+      exitReason = 'superseded_by_line_id';
+    }
+
     if (!shouldExit) {
       if (data.asset) {
         const stillOpen = openAssetsByWallet[wLower]?.has(String(data.asset));
@@ -1271,7 +1306,9 @@ async function markExitedPositions(db, date, { sharpPositions, posFiles, present
           exitReason = 'asset_absent';
         }
       } else {
-        const soft = softPositionKey(data.wallet, data.sport, data.gameKey, data.marketType, data.side);
+        const soft = softPositionKey(
+          data.wallet, data.sport, data.gameKey, data.marketType, data.side, ticketLineForActionId(data),
+        );
         if (!scanSoftKeys.has(soft)) {
           shouldExit = true;
           exitReason = 'soft_key_absent_legacy';

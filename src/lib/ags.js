@@ -724,11 +724,21 @@ export const V12_HEDGE_FLOOR = 1.0;
 // game down to a single directional vote so a wallet can never appear FOR and
 // AGAINST simultaneously:
 //   • single-outcome wallets are left untouched (small solo bets still count)
-//   • multi-outcome wallets keep only legs at/above V12_HEDGE_FLOOR, then take
-//     the single highest-sizeRatio leg as their vote
-//   • a wallet with no leg above the floor (pure balanced dust) is excluded
+//   • same-side multi-leg (e.g. Cardinals +1.5 and −1.5) keeps the fattest
+//     sizeRatio, then invested — never Firestore/scan order (`legs[0]`)
+//   • opposed multi-outcome wallets keep only legs at/above V12_HEDGE_FLOOR,
+//     then take the single highest-sizeRatio leg as their vote
+//   • a wallet with no opposed leg above the floor (pure balanced dust) is excluded
 // This removes the self-hedge double-counting that otherwise dilutes the
 // for/against margin (see egy_bel: 6 fake "against" dust legs muting a 6u SUPER).
+function fattestSameSideLeg(legs) {
+  return [...legs].sort((a, b) => {
+    const sr = Number(b.sizeRatio || 0) - Number(a.sizeRatio || 0);
+    if (sr !== 0) return sr;
+    return Number(b.invested || 0) - Number(a.invested || 0);
+  })[0];
+}
+
 export function collapseHedgedWalletsV12(walletDetails) {
   if (!Array.isArray(walletDetails) || walletDetails.length === 0) return walletDetails;
   const byWallet = new Map();
@@ -741,7 +751,7 @@ export function collapseHedgedWalletsV12(walletDetails) {
   for (const legs of byWallet.values()) {
     if (legs.length === 1) { out.push(legs[0]); continue; }
     const distinctSides = new Set(legs.map((l) => l.side));
-    if (distinctSides.size === 1) { out.push(legs[0]); continue; } // multiple legs, same side
+    if (distinctSides.size === 1) { out.push(fattestSameSideLeg(legs)); continue; }
     const kept = legs.filter((l) => Number(l.sizeRatio || 0) >= V12_HEDGE_FLOOR);
     if (kept.length === 0) continue; // balanced dust → no directional edge
     kept.sort((a, b) => Number(b.sizeRatio || 0) - Number(a.sizeRatio || 0));
