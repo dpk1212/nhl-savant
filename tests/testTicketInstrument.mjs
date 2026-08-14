@@ -64,6 +64,18 @@ assert.equal(run.tape.now, -135);
 assert.ok(run.tape.series.every((p) => p.odds === -143 || p.odds === -135),
   `run-line tape must not mix alt +1 juice, got ${JSON.stringify(run.tape.series)}`);
 
+// Complementary handicap in the same history must not leak into +1.5 tape.
+const mixedTape = tapeOnLine({
+  spreadHistory: [
+    { t: 1, awayLine: 1.5, awayOdds: -143, homeLine: -1.5, homeOdds: 119, isMain: true },
+    { t: 2, awayLine: -1.5, awayOdds: 256, homeLine: 1.5, homeOdds: -310 },
+    { t: 3, awayLine: 1.5, awayOdds: -121, homeLine: -1.5, homeOdds: 105, isMain: true },
+  ],
+}, { family: 'SPREAD', side: 'away', line: 1.5 });
+assert.equal(mixedTape.open, -143);
+assert.equal(mixedTape.now, -121);
+assert.ok(!mixedTape.series.some((p) => p.odds === 256));
+
 // 2) Alt spread — Cardinals -1.5 vs book MAIN +1.5. Ticket Poly; tape empty (no borrow).
 const altPos = [{
   side: 'home', entryLine: -1.5, avgPrice: 0.33, invested: 500,

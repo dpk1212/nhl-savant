@@ -61,6 +61,18 @@ const fixture = mapLockedPickToCardFixture({
             t: Math.floor((commence - 8 * 3600_000) / 1000),
             awayLine: 1.5, awayOdds: -143, homeLine: -1.5, homeOdds: 119, isMain: true,
           },
+          {
+            t: Math.floor((commence - 2 * 3600_000) / 1000),
+            awayLine: -1.5, awayOdds: 256, homeLine: 1.5, homeOdds: -310,
+          },
+          {
+            t: Math.floor((commence - 1 * 3600_000) / 1000),
+            awayLine: 1.5, awayOdds: -121, homeLine: -1.5, homeOdds: 105, isMain: true,
+          },
+        ],
+        spreadLines: [
+          { homeLine: 1.5, awayLine: -1.5, homeOdds: -310, awayOdds: 256 },
+          { homeLine: -1.5, awayLine: 1.5, homeOdds: 105, awayOdds: -121, isMain: true },
         ],
         fairSpreadBook: 'draftkings',
       },
@@ -82,7 +94,10 @@ assert.ok(Math.abs(fixture.toWin - (1 * 100 / 124)) < 0.01,
   `toWin must use −124 juice, got ${fixture.toWin}`);
 const pathOdds = (fixture.pinPath || []).map((p) => p.odds);
 assert.ok(!pathOdds.includes(270), `tape must not include stamped +270, got ${JSON.stringify(pathOdds)}`);
-assert.ok(pathOdds.every((o) => o === -143 || o === -135),
-  `run-line tape should be −143/−135, got ${JSON.stringify(pathOdds)}`);
+assert.ok(pathOdds.every((o) => o === -143 || o === -135 || o === -121),
+  `run-line tape should be −143/−135/−121, got ${JSON.stringify(pathOdds)}`);
+assert.ok(!pathOdds.includes(256));
+assert.equal(fixture.sharpEntryOdds, -143);
+assert.equal(fixture.currentFairOdds, -121);
 
 console.log('testSpreadFlaggedOdds: ok');

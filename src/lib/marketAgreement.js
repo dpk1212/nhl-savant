@@ -1,3 +1,5 @@
+import { linesClose } from './pinnacleMain.js';
+
 /**
  * Sharp–Market Agreement (SMA)
  *
@@ -77,6 +79,13 @@ function minHistMax(hist, marketType) {
   return lo;
 }
 
+/** This-side handicap only. Complementary home +1.5 is a different ticket. */
+export function spreadRowOnTicketLine(row, sideIsAway, line) {
+  if (!row || !Number.isFinite(Number(line))) return false;
+  const ln = sideIsAway ? Number(row.awayLine) : Number(row.homeLine);
+  return linesClose(ln, line);
+}
+
 /**
  * Extract open→now fair odds for the pick side + max trajectory from pinnacle_history game.
  */
@@ -119,14 +128,7 @@ export function extractMarketPath(pinnGame, {
   if (isTotal && Number.isFinite(line)) {
     hist = hist.filter((h) => Math.abs(Number(h.line) - Number(line)) <= 0.051);
   } else if (isSpread && Number.isFinite(line)) {
-    // Ticket may be away -1.5 or home +1.5 — match either side's stamped line.
-    hist = hist.filter((h) => {
-      const homeLn = Number(h.homeLine);
-      const awayLn = Number(h.awayLine);
-      return Math.abs(homeLn - Number(line)) <= 0.051
-        || Math.abs(awayLn - Number(line)) <= 0.051
-        || Math.abs(homeLn + Number(line)) <= 0.051;
-    });
+    hist = hist.filter((h) => spreadRowOnTicketLine(h, sideIsAway, line));
   }
 
   const oddsAt = (h) => {
@@ -201,13 +203,7 @@ export function extractMarketPath(pinnGame, {
         maxNow = maxNow ?? (Number.isFinite(live.max) ? live.max : null);
       }
     } else if (isSpread && Array.isArray(pinnGame.spreadLines)) {
-      const live = pinnGame.spreadLines.find((r) => {
-        const homeLn = Number(r.homeLine);
-        const awayLn = Number(r.awayLine);
-        return Math.abs(homeLn - Number(line)) <= 0.051
-          || Math.abs(awayLn - Number(line)) <= 0.051
-          || Math.abs(homeLn + Number(line)) <= 0.051;
-      });
+      const live = pinnGame.spreadLines.find((r) => spreadRowOnTicketLine(r, sideIsAway, line));
       if (live) {
         if (nowOdds == null) nowOdds = sideIsAway ? live.awayOdds : live.homeOdds;
         maxNow = maxNow ?? (Number.isFinite(live.max) ? live.max : null);
@@ -597,8 +593,7 @@ export function matchSteamDrop(drops, {
     if (!(Number(d.dropPct) >= minDropPct)) continue;
     if (Number.isFinite(sinceSec) && Number.isFinite(d.t) && d.t < sinceSec) continue;
     if (wantMkt !== 'ml' && Number.isFinite(line) && Number.isFinite(d.points)
-        && Math.abs(d.points - line) > 0.051
-        && Math.abs(Math.abs(d.points) - Math.abs(line)) > 0.051) {
+        && Math.abs(d.points - line) > 0.051) {
       continue;
     }
     if (!best || (d.dropPct || 0) > (best.dropPct || 0)) best = d;

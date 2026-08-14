@@ -843,13 +843,10 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
       ? [...hist].reverse().find((h) => linesClose(lineOf(h), stakedLine))
       : last;
     const liveAlt = (!sealed && stakedLine != null && Array.isArray(pinnGame.spreadLines))
-      ? pinnGame.spreadLines.find((r) => {
-        const homeLn = Number(r.homeLine);
-        const awayLn = Number(r.awayLine);
-        return linesClose(sideKey === 'away' ? awayLn : homeLn, stakedLine)
-          || linesClose(homeLn, stakedLine)
-          || linesClose(awayLn, stakedLine);
-      })
+      ? pinnGame.spreadLines.find((r) => linesClose(
+        sideKey === 'away' ? Number(r.awayLine) : Number(r.homeLine),
+        stakedLine,
+      ))
       : null;
     if (matchHist) {
       fairNow = sideKey === 'away' ? matchHist.awayOdds : matchHist.homeOdds;
@@ -1531,6 +1528,20 @@ export function mapLockedPickToCardFixture(pick, {
     clvPct: Number.isFinite(clvPct) ? clvPct : null,
   });
 
+  // PIN = first print on this-side tape; NOW = last print (green dot).
+  // Do not use SMA open/now — that path used to mix +1.5 with −1.5.
+  const pinPts = Array.isArray(market.pinPath)
+    ? market.pinPath.filter((p) => Number.isFinite(p?.odds))
+    : [];
+  const tapeOpen = pinPts[0]?.odds
+    ?? (Number.isFinite(inst.tape?.open) ? inst.tape.open : null)
+    ?? (Number.isFinite(sma?.path?.openOdds) ? sma.path.openOdds : null);
+  const tapeNow = pinPts.length
+    ? pinPts[pinPts.length - 1].odds
+    : (Number.isFinite(inst.tape?.now) ? inst.tape.now : null)
+      ?? (Number.isFinite(sma?.path?.nowOdds) ? sma.path.nowOdds : null)
+      ?? (Number.isFinite(fairLine) ? fairLine : null);
+
   // Stake math / hero price = sealed ticket odds (not main-line reco juice).
   const displayOdds = Number.isFinite(lockOdds) ? lockOdds
     : (Number.isFinite(recoOdds) ? recoOdds : null);
@@ -1625,7 +1636,8 @@ export function mapLockedPickToCardFixture(pick, {
     lockOdds,
     peakOdds,
     peakAt,
-    nowOdds: Number.isFinite(sma?.path?.nowOdds) ? sma.path.nowOdds : fairLine,
+    nowOdds: Number.isFinite(tapeNow) ? tapeNow
+      : (Number.isFinite(sma?.path?.nowOdds) ? sma.path.nowOdds : fairLine),
     clvPct,
     serial,
     record30d: record30d || null,
@@ -1650,8 +1662,9 @@ export function mapLockedPickToCardFixture(pick, {
       ?? null,
     pinnMaxDelta: sma?.path?.maxDelta ?? null,
     pinnMovePp: sma?.path?.deltaProbPp ?? null,
-    sharpEntryOdds: Number.isFinite(sma?.path?.openOdds) ? sma.path.openOdds : null,
-    currentFairOdds: Number.isFinite(sma?.path?.nowOdds) ? sma.path.nowOdds
+    // PIN/NOW = same-line tape as the chart (pinPath), never SMA's mixed path.
+    sharpEntryOdds: Number.isFinite(tapeOpen) ? tapeOpen : null,
+    currentFairOdds: Number.isFinite(tapeNow) ? tapeNow
       : (Number.isFinite(fairLine) ? fairLine : null),
     polyEntryOdds: Number.isFinite(polyEntryOdds) ? polyEntryOdds : null,
   };
