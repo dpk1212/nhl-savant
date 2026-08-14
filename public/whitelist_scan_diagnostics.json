@@ -1,6 +1,6 @@
 {
-  "scannedAt": "2026-08-14T22:16:19.759Z",
-  "elapsedSec": 17.6,
+  "scannedAt": "2026-08-14T22:20:48.948Z",
+  "elapsedSec": 17.7,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 46,
   "summary": {
@@ -13,12 +13,12 @@
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 13,
+      "ml": 14,
       "spread": 1,
       "total": 6,
-      "dropped_shadow_gate": 14,
+      "dropped_shadow_gate": 12,
       "dropped_excluded": 57,
-      "dropped_duplicate": 1
+      "dropped_duplicate": 2
     }
   },
   "perWallet": [
@@ -87,8 +87,8 @@
       "positionsCount": 7,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 1943,
-      "willPassShadowGate": 6,
-      "willDropAtShadowGate": 1,
+      "willPassShadowGate": 7,
+      "willDropAtShadowGate": 0,
       "positions": [
         {
           "sport": "MLB",
@@ -104,9 +104,9 @@
           "gameKey": "tb_nyj",
           "marketType": "ml",
           "side": "home",
-          "invested": 0,
+          "invested": 1250,
           "entryLine": null,
-          "passesShadow": false
+          "passesShadow": true
         },
         {
           "sport": "MLB",
@@ -876,7 +876,7 @@
           "gameKey": "cws_det",
           "marketType": "ml",
           "side": "away",
-          "invested": 1738,
+          "invested": 1860,
           "entryLine": null,
           "passesShadow": true
         },
@@ -2432,8 +2432,8 @@
       "positionsCount": 13,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 35524,
-      "willPassShadowGate": 9,
-      "willDropAtShadowGate": 4,
+      "willPassShadowGate": 10,
+      "willDropAtShadowGate": 3,
       "positions": [
         {
           "sport": "MLB",
@@ -2503,7 +2503,16 @@
           "gameKey": "tb_nyj",
           "marketType": "ml",
           "side": "away",
-          "invested": 3576,
+          "invested": 3697,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "NFL",
+          "gameKey": "tb_nyj",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 2918,
           "entryLine": null,
           "passesShadow": true
         },
@@ -2537,18 +2546,9 @@
         {
           "sport": "NFL",
           "gameKey": "den_atl",
-          "marketType": "total",
-          "side": "under",
-          "invested": 23,
-          "entryLine": 41.5,
-          "passesShadow": false
-        },
-        {
-          "sport": "NFL",
-          "gameKey": "den_atl",
           "marketType": "ml",
           "side": "home",
-          "invested": 16,
+          "invested": 17,
           "entryLine": null,
           "passesShadow": false
         }
