@@ -143,6 +143,7 @@ import {
 import { loadWalletProfilesMap } from './lib/loadWalletProfiles.js';
 import { acceptFullGameTotalPosition } from './lib/totalMarketFilter.js';
 import { passesSizeSkillLiveGate } from '../src/lib/sizeSkillRescue.js';
+import { resolveInstrument, ticketAmerican } from '../src/lib/ticketInstrument.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '../public');
@@ -2386,48 +2387,32 @@ async function createMissingLockedPicks({
       // time); TOTAL falls back to -110 (no Pinnacle source for totals
       // in pinnacle_history.json — browser sync writes the live retail
       // book number, but the cron only has Pinnacle ML).
+      // Ticket = vault Poly on this line. Tape = books on the same line.
+      // Never copy MAIN juice onto an alt or ML juice onto a run line.
       let odds = null;
       let line = null;
+      let tapeOdds = null;
+      let instrumentVariant = 'MAIN';
+      let ticketPolyPrice = null;
       if (marketType === 'ML') {
-        // Fair book first; Polymarket implied if Pinnacle/cascade not in yet.
-        // Home/away previously had NO poly fallback (only draw did) — morning
-        // MLB creates could stamp 3u locks with lock.odds missing (Sox 2026-08-09).
-        odds = mlOddsFromMeta(meta, side);
+        const inst = resolveInstrument({ family: 'ML', side, positions, meta });
+        odds = ticketAmerican(inst, null) ?? mlOddsFromMeta(meta, side);
+        tapeOdds = inst.tape?.now ?? mlOddsFromMeta(meta, side);
+        ticketPolyPrice = inst.ticket?.polyPrice ?? null;
       } else if (marketType === 'SPREAD') {
-        // Ticket = sharp wallet instrument (title/entryLine), not sportsbook main.
-        // PHI@STL 2026-08-10: wallets held "Spread: Cardinals (-1.5)" @ 0.33 while
-        // Pinnacle home was +1.5 @ -158 — stamping the book line inverted the pick.
-        // When wallet line matches Pinnacle main, prefer book juice for CLV; when
-        // it's an alt (or book missing), use size-weighted Poly avgPrice.
-        // Never default to -110 (Braves 2026-07-09 ML-bleed).
-        const pinnLine = side === 'home'
-          ? (meta.spreadCurrent?.homeLine ?? meta.spreadOpener?.homeLine)
-          : (meta.spreadCurrent?.awayLine ?? meta.spreadOpener?.awayLine);
-        const pinnOdds = (side === 'home'
-          ? (meta.spreadCurrent?.homeOdds ?? meta.spreadOpener?.homeOdds)
-          : (meta.spreadCurrent?.awayOdds ?? meta.spreadOpener?.awayOdds)) ?? null;
         const walletLine = consensusLine(positions, side, sport, 'SPREAD');
-        line = walletLine ?? pinnLine ?? null;
-        const lineMatchesPinn = Number.isFinite(line) && Number.isFinite(pinnLine)
-          && Math.abs(line - pinnLine) <= 0.051;
-        const walletOdds = consensusSpreadOddsFromPoly(positions, side, line);
-        if (lineMatchesPinn && Number.isFinite(pinnOdds) && pinnOdds !== 0) {
-          odds = pinnOdds;
-        } else {
-          odds = walletOdds ?? pinnOdds ?? null;
-        }
+        const inst = resolveInstrument({
+          family: 'SPREAD', side, positions, meta, stampedLine: walletLine,
+        });
+        line = inst.line ?? walletLine ?? null;
+        odds = ticketAmerican(inst, null);
+        tapeOdds = inst.tape?.now ?? null;
+        instrumentVariant = inst.variant;
+        ticketPolyPrice = inst.ticket?.polyPrice ?? null;
       } else if (marketType === 'TOTAL') {
-        // Ticket = sharp wallet instrument (entryLine), not live sportsbook MAIN.
-        // Same rule as spreads (PHI@STL -1.5). Vault Open Positions and Locked
-        // Picks must show the same O/U number — MAIN 9.5 while wallets hold
-        // Over 8.5 / 7.5 made Engine vs Locked unreadable.
-        // When wallet line matches Pinnacle main, prefer book juice for CLV;
-        // when it's an alt (or book missing), use size-weighted Poly avgPrice.
-        const pinnLine = mainTotalLine(meta);
-        const pinnOdds = mainTotalOdds(meta, side);
         const walletLine = consensusLine(positions, side, sport, 'TOTAL');
-        line = walletLine ?? pinnLine ?? null;
-        if ((line == null || !isPlausibleLine(line, sport, 'TOTAL')) && q1Early.qualifies) {
+        let stamped = walletLine;
+        if ((stamped == null || !isPlausibleLine(stamped, sport, 'TOTAL')) && q1Early.qualifies) {
           const q1Set = new Set((q1Early.wallets || []).map((w) => String(w).toLowerCase()));
           for (const p of positions) {
             if (p.side !== side) continue;
@@ -2435,20 +2420,20 @@ async function createMissingLockedPicks({
             if (!q1Set.has(short)) continue;
             const ln = Number(p.entryLine ?? p.totalLine);
             if (isPlausibleLine(ln, sport, 'TOTAL')) {
-              line = ln;
+              stamped = ln;
               console.log(`  Q1 line fallback: ${docId} ${side} entryLine=${ln}`);
               break;
             }
           }
         }
-        const lineMatchesPinn = Number.isFinite(line) && Number.isFinite(pinnLine)
-          && Math.abs(line - pinnLine) <= 0.051;
-        const walletOdds = consensusOddsFromPoly(positions, side, line);
-        if (lineMatchesPinn && Number.isFinite(pinnOdds) && pinnOdds !== 0) {
-          odds = pinnOdds;
-        } else {
-          odds = walletOdds ?? pinnOdds ?? null;
-        }
+        const inst = resolveInstrument({
+          family: 'TOTAL', side, positions, meta, stampedLine: stamped,
+        });
+        line = inst.line ?? stamped ?? null;
+        odds = ticketAmerican(inst, null);
+        tapeOdds = inst.tape?.now ?? null;
+        instrumentVariant = inst.variant;
+        ticketPolyPrice = inst.ticket?.polyPrice ?? null;
       }
       // TOTAL without a usable line = F5/alt contamination or missing poly —
       // do not create a staked pick (DET@SEA bare "Over -110" 2026-08-06).
@@ -2815,6 +2800,16 @@ async function createMissingLockedPicks({
       };
       if (odds != null) {
         peakSnapshot.odds = odds;
+        peakSnapshot.oddsSource = Number.isFinite(ticketPolyPrice)
+          ? 'poly_avgPrice'
+          : (meta.fairBook || 'pinnacle');
+        peakSnapshot.book = Number.isFinite(ticketPolyPrice) ? 'Polymarket' : fairLabel;
+        peakSnapshot.instrumentVariant = instrumentVariant;
+        if (Number.isFinite(ticketPolyPrice)) peakSnapshot.polyPrice = ticketPolyPrice;
+      }
+      if (Number.isFinite(tapeOdds) && tapeOdds !== 0) {
+        peakSnapshot.pinnacleOdds = tapeOdds;
+      } else if (odds != null) {
         peakSnapshot.pinnacleOdds = odds;
       }
       if (line != null) {
@@ -4720,6 +4715,58 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     }
   }
 
+  // ── Instrument restamp: ticket = vault Poly, tape = same-line books ──
+  // Fixes STL@CHC +1.5 lock.odds=+270 while Action sat at 55¢ → −124.
+  if (pick.status !== 'COMPLETED' && Array.isArray(group) && group.length
+      && (mkt === 'SPREAD' || mkt === 'TOTAL' || mkt === 'ML')) {
+    const instMetaKey = `${sport}|${pick.gameKey}`;
+    const instMeta = gameMeta?.get?.(instMetaKey) || null;
+    const stampedLn = Number.isFinite(patch.lock?.line) ? patch.lock.line
+      : (Number.isFinite(sd.lock?.line) ? sd.lock.line
+        : (Number.isFinite(sd.peak?.line) ? sd.peak.line : null));
+    const inst = resolveInstrument({
+      family: mkt, side, positions: group, meta: instMeta, stampedLine: stampedLn,
+    });
+    const ticket = ticketAmerican(inst, null);
+    const lockOddsNow = Number.isFinite(patch.lock?.odds) ? patch.lock.odds
+      : (Number.isFinite(sd.lock?.odds) ? sd.lock.odds : null);
+    if (Number.isFinite(ticket) && ticket !== 0) {
+      const lineChanged = Number.isFinite(inst.line)
+        && (stampedLn == null || Math.abs(stampedLn - inst.line) > 0.051);
+      const oddsChanged = lockOddsNow !== ticket;
+      if (lineChanged || oddsChanged) {
+        patch.lock = {
+          ...(patch.lock || sd.lock || {}),
+          ...(Number.isFinite(inst.line) ? { line: inst.line } : {}),
+          odds: ticket,
+          pinnacleOdds: Number.isFinite(inst.tape?.now) ? inst.tape.now
+            : (sd.lock?.pinnacleOdds ?? null),
+          book: 'Polymarket',
+          oddsSource: 'poly_avgPrice',
+          instrumentVariant: inst.variant,
+          polyPrice: inst.ticket.polyPrice,
+        };
+        if (sd.peak) {
+          patch.peak = {
+            ...(patch.peak || sd.peak || {}),
+            ...(Number.isFinite(inst.line) ? { line: inst.line } : {}),
+            odds: ticket,
+            pinnacleOdds: Number.isFinite(inst.tape?.now) ? inst.tape.now
+              : (sd.peak?.pinnacleOdds ?? null),
+            updatedAt: now,
+          };
+        }
+        changes.push(
+          `instrument ticket: ${lockOddsNow ?? '∅'} → ${ticket}`
+          + ` (${inst.family} ${inst.variant}`
+          + (Number.isFinite(inst.line) ? ` ${inst.line}` : '')
+          + (Number.isFinite(inst.tape?.now) ? `; tape ${inst.tape.now}` : '')
+          + ')',
+        );
+      }
+    }
+  }
+
   // ── SPREAD instrument repair (wallet entryLine vs sportsbook main) ─────
   // Pre-T-15: if live sharp positions agree on a different line than lock
   // (alt -1.5 vs main +1.5), rewrite lock/peak to the wallet instrument +
@@ -4741,21 +4788,17 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         : (meta?.spreadCurrent?.awayOdds ?? meta?.spreadOpener?.awayOdds);
       const lineMatchesPinn = Number.isFinite(pinnLine)
         && Math.abs(walletLine - pinnLine) <= 0.051;
-      const repairOdds = (lineMatchesPinn && Number.isFinite(pinnOdds) && pinnOdds !== 0)
-        ? pinnOdds
-        : (walletOdds ?? (Number.isFinite(pinnOdds) ? pinnOdds : null));
+      const repairOdds = walletOdds;
       if (Number.isFinite(repairOdds) && repairOdds !== 0) {
         patch.lock = {
           ...(patch.lock || sd.lock || {}),
           line: walletLine,
           odds: repairOdds,
-          pinnacleOdds: Number.isFinite(pinnOdds) ? pinnOdds : (sd.lock?.pinnacleOdds ?? null),
-          book: lineMatchesPinn
-            ? (sd.lock?.book || fairBookLabel(meta?.fairBook || meta?.fairSpreadBook))
-            : 'Polymarket',
-          oddsSource: lineMatchesPinn
-            ? (meta?.fairBook || meta?.fairSpreadBook || sd.lock?.oddsSource || null)
-            : 'poly_avgPrice',
+          pinnacleOdds: Number.isFinite(pinnOdds) && lineMatchesPinn
+            ? pinnOdds
+            : (sd.lock?.pinnacleOdds ?? null),
+          book: 'Polymarket',
+          oddsSource: 'poly_avgPrice',
         };
         if (sd.peak) {
           patch.peak = {
@@ -4789,9 +4832,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       const pinnOdds = mainTotalOdds(meta, side);
       const lineMatchesPinn = Number.isFinite(pinnLine)
         && Math.abs(walletLine - pinnLine) <= 0.051;
-      const repairOdds = (lineMatchesPinn && Number.isFinite(pinnOdds) && pinnOdds !== 0)
-        ? pinnOdds
-        : (walletOdds ?? (Number.isFinite(pinnOdds) ? pinnOdds : null));
+      const repairOdds = walletOdds;
       if (Number.isFinite(repairOdds) && repairOdds !== 0) {
         const dir = side === 'under' ? 'Under' : 'Over';
         patch.lock = {
@@ -4799,13 +4840,11 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
           line: walletLine,
           team: `${dir} ${walletLine}`,
           odds: repairOdds,
-          pinnacleOdds: Number.isFinite(pinnOdds) ? pinnOdds : (sd.lock?.pinnacleOdds ?? null),
-          book: lineMatchesPinn
-            ? (sd.lock?.book || fairBookLabel(meta?.fairTotalBook || meta?.fairBook))
-            : 'Polymarket',
-          oddsSource: lineMatchesPinn
-            ? (meta?.fairTotalBook || meta?.fairBook || sd.lock?.oddsSource || null)
-            : 'poly_avgPrice',
+          pinnacleOdds: Number.isFinite(pinnOdds) && lineMatchesPinn
+            ? pinnOdds
+            : (sd.lock?.pinnacleOdds ?? null),
+          book: 'Polymarket',
+          oddsSource: 'poly_avgPrice',
         };
         if (sd.peak) {
           patch.peak = {
@@ -4850,10 +4889,19 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     const peakOdds = Number.isFinite(sd.peak?.odds) ? sd.peak.odds : null;
     const lockOdds = Number.isFinite(patch.lock?.odds) ? patch.lock.odds
       : (Number.isFinite(sd.lock?.odds) ? sd.lock.odds : null);
-    const repairFrom = (Number.isFinite(spreadOdds) && spreadOdds !== -110)
-      ? spreadOdds
-      : (peakOdds != null && peakOdds !== -110 ? peakOdds : null);
-    if (!isWalletAlt && repairFrom != null
+    const stampedLineForPoly = Number.isFinite(stampedLine) ? stampedLine : null;
+    const polyOdds = Array.isArray(group) && group.length
+      ? consensusOddsFromPoly(group, side, stampedLineForPoly)
+      : null;
+    const repairFrom = isWalletAlt
+      ? (Number.isFinite(polyOdds) && polyOdds !== 0 ? polyOdds
+        : (peakOdds != null && peakOdds !== -110 ? peakOdds : null))
+      : ((Number.isFinite(spreadOdds) && spreadOdds !== -110)
+        ? spreadOdds
+        : (Number.isFinite(polyOdds) && polyOdds !== 0 ? polyOdds
+          : (peakOdds != null && peakOdds !== -110 ? peakOdds : null)));
+    if (repairFrom != null
+        && !(Number.isFinite(polyOdds) && polyOdds !== 0)
         && spreadLockLooksLikeMlBleed(lockOdds, peakOdds, spreadOdds, mlOdds)) {
       const pinnSpread = Number.isFinite(spreadOdds) ? spreadOdds : repairFrom;
       const fairLabel = fairBookLabel(meta?.fairBook || meta?.fairSpreadBook);

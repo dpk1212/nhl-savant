@@ -15,6 +15,13 @@ import {
   pickMainSpreadFromBoard,
   pickMainTotalFromBoard,
 } from '../../../lib/pinnacleMain.js';
+import {
+  americanFromPolyPrice,
+  resolveInstrument,
+  ticketAmerican,
+} from '../../../lib/ticketInstrument.js';
+
+export { americanFromPolyPrice };
 
 /** Same floor as EDGE (scripts/syncPickStateAuthoritative WINNER_ALIGN_MIN_N). */
 export const FEATURED_WR_MIN_N = 8;
@@ -476,13 +483,14 @@ function resolveTicketMax(candidates) {
   return null;
 }
 
-/** Poly avgPrice (0–1) → American odds. */
-function americanFromPolyPrice(px) {
-  const p = Number(px);
-  if (!(p > 0 && p < 1)) return null;
-  return p >= 0.5
-    ? Math.round(-100 * p / (1 - p))
-    : Math.round(100 * (1 - p) / p);
+/**
+ * Ticket juice is vault Poly whenever we have it. Stamped lock.odds is
+ * fallback only (sealed / no live positions).
+ */
+export function preferVaultPolyTicketOdds(stamped, poly) {
+  if (Number.isFinite(poly) && poly !== 0) return poly;
+  if (Number.isFinite(stamped) && stamped !== 0) return stamped;
+  return null;
 }
 
 /**
@@ -1147,77 +1155,29 @@ export function mapLockedPickToCardFixture(pick, {
     )
     : [];
 
-  // Prefer live vault consensus line for the sharp receipt when pre-freeze.
-  if (isTotal && !ticketFrozen && entryLadder.length) {
-    const vaultLine = entryLadder[0].line;
-    if (Number.isFinite(vaultLine)) {
-      if (!Number.isFinite(ticketLine) || Math.abs(ticketLine - vaultLine) > 0.051) {
-        ticketLine = vaultLine;
-      }
-      polyEntryOdds = entryLadder[0].odds;
-      if (Number.isFinite(polyEntryOdds)
-          && (!Number.isFinite(ticketOdds) || ticketOdds === 0
-            || (Number.isFinite(pick.line) && Math.abs(pick.line - vaultLine) > 0.051))) {
-        ticketOdds = polyEntryOdds;
-      }
-    }
-  } else if (isTotal && !ticketFrozen && Array.isArray(vaultPositions) && vaultPositions.length) {
-    // Fallback when ladder empty (shouldn't happen) — keep prior invested-weight path.
-    const playSide = playSideEarly;
-    const byLine = new Map();
-    for (const p of vaultPositions) {
-      if (p.side !== playSide) continue;
-      const ln = Number(p.entryLine ?? p.totalLine);
-      if (!Number.isFinite(ln) || ln < 1.5) continue;
-      byLine.set(ln, (byLine.get(ln) || 0) + (Number(p.invested) || 0));
-    }
-    let vaultLine = null;
-    let bestInv = -1;
-    for (const [ln, inv] of byLine) {
-      if (inv > bestInv) { vaultLine = ln; bestInv = inv; }
-    }
-    if (Number.isFinite(vaultLine)) {
-      if (!Number.isFinite(ticketLine) || Math.abs(ticketLine - vaultLine) > 0.051) {
-        ticketLine = vaultLine;
-      }
-      let sumInv = 0;
-      let sumPx = 0;
-      for (const p of vaultPositions) {
-        if (p.side !== playSide) continue;
-        const ln = Number(p.entryLine ?? p.totalLine);
-        if (!Number.isFinite(ln) || Math.abs(ln - vaultLine) > 0.051) continue;
-        const inv = Number(p.invested) || 0;
-        const px = Number(p.avgPrice);
-        if (!(inv > 0) || !(px > 0 && px < 1)) continue;
-        sumInv += inv;
-        sumPx += px * inv;
-      }
-      if (sumInv > 0) {
-        polyEntryOdds = americanFromPolyPrice(sumPx / sumInv);
-        if (!Number.isFinite(ticketOdds) || ticketOdds === 0
-            || (Number.isFinite(pick.line) && Math.abs(pick.line - vaultLine) > 0.051)) {
-          ticketOdds = polyEntryOdds;
-        }
-      }
-    }
-  }
-  if (isSpread && !ticketFrozen && entryLadder.length) {
-    const vaultLine = entryLadder[0].line;
-    if (Number.isFinite(vaultLine)
-        && (!Number.isFinite(ticketLine) || Math.abs(ticketLine - vaultLine) > 0.051)) {
-      ticketLine = vaultLine;
-    }
-    if (Number.isFinite(entryLadder[0].odds)) {
-      polyEntryOdds = entryLadder[0].odds;
-      if (!Number.isFinite(ticketOdds) || ticketOdds === 0) ticketOdds = polyEntryOdds;
-    }
-  }
-
   // Peek Pinnacle for PLAYABLE main line (recommendation instrument).
   // Use *Current (or last main print when frozen) — never the last alt dump.
   const pinnGamePeek = (pinnacleHistory && pick.sport && pick.gameKey)
     ? pinnacleHistory[pick.sport]?.[pick.gameKey]
     : null;
+  const instSide = isTotal
+    ? (sideIsUnderEarly ? 'under' : 'over')
+    : (String(pick.side || pick.pickSide || '').toLowerCase() === 'away' ? 'away' : 'home');
+  const inst = resolveInstrument({
+    family: isTotal ? 'TOTAL' : isSpread ? 'SPREAD' : 'ML',
+    side: instSide,
+    positions: Array.isArray(vaultPositions) ? vaultPositions : [],
+    pinnGame: pinnGamePeek,
+    freezeAtMs: ticketFrozen ? freezeAtMs : null,
+    stampedLine: Number.isFinite(ticketLine) ? ticketLine : null,
+  });
+  if (Number.isFinite(inst.ticket.american)) {
+    polyEntryOdds = inst.ticket.american;
+    ticketOdds = ticketAmerican(inst, ticketOdds);
+  }
+  if (Number.isFinite(inst.line) && (isSpread || isTotal) && !ticketFrozen) {
+    ticketLine = inst.line;
+  }
   const awayPickEarly = String(pick.side || pick.pickSide || '').toLowerCase() === 'away'
     || String(pick.team || '').toLowerCase().includes(
       String(pick.away || '').split(' ').pop()?.toLowerCase() || '\0',
@@ -1497,15 +1457,15 @@ export function mapLockedPickToCardFixture(pick, {
     : null;
   const graded = !!outcome && (outcome === 'WIN' || outcome === 'LOSS' || outcome === 'PUSH');
 
-  // Market board + spark on the PLAYABLE instrument (main). Sharp entries
-  // stay on the ladder / FLAGGED·PM cells — not the dual-axis tape.
+  // Market board + spark on the TICKET line so movement matches FLAGGED.
+  // MAIN vs ALT is labeled on the instrument; never chart MAIN juice on an alt.
   const market = buildLockedMarketOdds(
     {
       ...pick,
-      line: Number.isFinite(playableLine) ? playableLine : ticketLine,
+      line: Number.isFinite(ticketLine) ? ticketLine : playableLine,
       odds: ticketOdds,
-      team: isTotal && Number.isFinite(playableLine)
-        ? `${teamShort} ${playableLine}`
+      team: isTotal && Number.isFinite(ticketLine)
+        ? `${teamShort} ${ticketLine}`
         : pick.team,
       side: pick.side || pick.pickSide || sideNorm,
     },
@@ -1520,16 +1480,17 @@ export function mapLockedPickToCardFixture(pick, {
     ? [recoOdds, market.fairDisplay].filter(Number.isFinite)
     : [market.fairDisplay, recoOdds].filter(Number.isFinite);
   const journey = (pinSeries && pinSeries.length >= 2) ? pinSeries : sparseJourney;
-  // FAIR/NOW = playable line only.
+  // FAIR/NOW = same-line tape as the ticket.
   const fairLine = Number.isFinite(market.fairDisplay) ? market.fairDisplay
-    : (Number.isFinite(pick.pinnacleOdds) && !entriesOffPlayable ? pick.pinnacleOdds : null);
+    : (Number.isFinite(inst.tape?.fair) ? inst.tape.fair
+      : (Number.isFinite(pick.pinnacleOdds) && inst.variant !== 'ALT' ? pick.pinnacleOdds : null));
   const fairProb = market.fairProb != null
     ? market.fairProb
     : ip(fairLine);
-  // EV of the recommendation (best retail vs playable fair), not alt entry vs main.
-  const evFlagged = (fairProb != null && Number.isFinite(recoOdds))
-    ? evPctVsFairProb(recoOdds, fairProb)
-    : (fairProb != null && Number.isFinite(lockOdds) && !entriesOffPlayable
+  // EV of the ticket vs same-line fair (not MAIN reco vs a different handicap).
+  const evFlagged = (fairProb != null && Number.isFinite(lockOdds) && inst.variant !== 'ALT')
+    ? evPctVsFairProb(lockOdds, fairProb)
+    : (fairProb != null && Number.isFinite(lockOdds) && Number.isFinite(fairLine)
       ? evPctVsFairProb(lockOdds, fairProb)
       : null);
   const evBest = (fairProb != null && Number.isFinite(market.bestOdds))
@@ -1552,7 +1513,7 @@ export function mapLockedPickToCardFixture(pick, {
   const sma = sharpMarketAgreementFromPinnGame(pinnGameForSma, {
     marketType: isSpread ? 'spread' : isTotal ? 'total' : 'ml',
     sideNorm,
-    line: Number.isFinite(playableLine) ? playableLine : ticketLine,
+    line: Number.isFinite(ticketLine) ? ticketLine : playableLine,
     freezeAtMs: ticketFrozen ? freezeAtMs : null,
     provenOnSide: confirmedOnSide,
     vaultOnSide,
@@ -1578,8 +1539,8 @@ export function mapLockedPickToCardFixture(pick, {
     if (displayOdds < 0) return units * (100 / Math.abs(displayOdds));
     return units * (displayOdds / 100);
   })();
-  const chartLineLabel = (isSpread || isTotal) && Number.isFinite(playableLine)
-    ? `Main ${teamShort} ${isSpread ? fmtSpreadLn(playableLine) : playableLine}`
+  const chartLineLabel = (isSpread || isTotal) && Number.isFinite(ticketLine)
+    ? `${inst.variant === 'ALT' ? 'Alt' : ''} ${teamShort} ${isSpread ? fmtSpreadLn(ticketLine) : ticketLine}`.trim()
     : null;
 
   return {
@@ -1644,6 +1605,8 @@ export function mapLockedPickToCardFixture(pick, {
     ourMarketLabel: market.ourLabel,
     liveMarketLabel: market.liveLabel,
     lineMoved: !!entriesOffPlayable,
+    instrumentVariant: inst.variant || 'MAIN',
+    instrumentFamily: inst.family || (isSpread ? 'SPREAD' : isTotal ? 'TOTAL' : 'ML'),
     oppMarketLabel: market.oppLabel,
     oppBestOdds: market.oppBestOdds,
     oppBestBook: market.oppBestBook,
@@ -1669,7 +1632,7 @@ export function mapLockedPickToCardFixture(pick, {
     lockChecks: lockChecks.length ? lockChecks : ['Locked ticket'],
     commenceMs,
     moneyPct,
-    // FLAGGED / PM = sharp entry receipt; FAIR / NOW / MAX = playable tape.
+    // FLAGGED / PM = vault Poly receipt; FAIR / NOW / chart = same-line book tape.
     gotOdds: lockOdds,
     fairLine,
     fairBook: pick.fairBook || pick.oddsSource || pick.book || null,
