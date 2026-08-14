@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-08-14T14:59:05.579Z",
-  "elapsedSec": 18.2,
+  "scannedAt": "2026-08-14T15:02:51.397Z",
+  "elapsedSec": 17,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 45,
   "summary": {
     "total": 221,
     "coveredByMain": 8,
-    "recovered": 10,
-    "recoveredPositions": 53,
-    "noPositions": 203,
+    "recovered": 11,
+    "recoveredPositions": 54,
+    "noPositions": 202,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -17,7 +17,7 @@
       "spread": 1,
       "total": 5,
       "dropped_shadow_gate": 9,
-      "dropped_excluded": 33,
+      "dropped_excluded": 34,
       "dropped_duplicate": 1
     }
   },
@@ -608,8 +608,24 @@
       "tier": "CONFIRMED",
       "name": "sentrio",
       "sports": "MLB,SOC,NBA",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xdb83e85ffd22faa4009273034770f96ffc5b1e50"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0xdb83e85ffd22faa4009273034770f96ffc5b1e50",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 1420,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "stl_chc",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 6339,
+          "entryLine": 1.5,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "5b53d1",
@@ -861,7 +877,7 @@
           "gameKey": "stl_chc",
           "marketType": "spread",
           "side": "home",
-          "invested": 4252,
+          "invested": 4260,
           "entryLine": -1.5,
           "passesShadow": true
         },
@@ -890,6 +906,15 @@
           "side": "over",
           "invested": 3848,
           "entryLine": 7.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "stl_chc",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 3265,
+          "entryLine": 1.5,
           "passesShadow": true
         },
         {
@@ -1006,15 +1031,6 @@
           "marketType": "spread",
           "side": "home",
           "invested": 755,
-          "entryLine": 1.5,
-          "passesShadow": true
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "stl_chc",
-          "marketType": "spread",
-          "side": "away",
-          "invested": 577,
           "entryLine": 1.5,
           "passesShadow": true
         },
@@ -2155,7 +2171,7 @@
           "gameKey": "sdp_cle",
           "marketType": "total",
           "side": "under",
-          "invested": 285,
+          "invested": 289,
           "entryLine": 6.5,
           "passesShadow": false
         }
