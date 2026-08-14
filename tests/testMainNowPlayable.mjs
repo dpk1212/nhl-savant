@@ -1,5 +1,5 @@
 /**
- * "Main now" must use totalCurrent / spreadCurrent, not the last alt dump.
+ * "Main now" = pick'em on the current board, not last alt / stale totalCurrent.
  * Usage: node tests/testMainNowPlayable.mjs
  */
 import assert from 'node:assert/strict';
@@ -12,13 +12,22 @@ const pinnacleHistory = {
   MLB: {
     mil_lad: {
       totalHistory: [
-        { t, line: 9.5, overOdds: 163, underOdds: -196, max: 7500 },
-        { t, line: 7.5, overOdds: -148, underOdds: 122, max: 7500 },
-        { t, line: 8, overOdds: -130, underOdds: 110, max: 7500 },
-        { t, line: 8.5, overOdds: -115, underOdds: -105, max: 7500 },
-        { t, line: 9, overOdds: 155, underOdds: -175, max: 7500 },
+        { t, line: 9.5, overOdds: 172, underOdds: -212, max: 1875 },
+        { t, line: 7.5, overOdds: -121, underOdds: 104, max: 1875 },
+        { t, line: 8, overOdds: -109, underOdds: -103, max: 1875 },
+        { t, line: 8.5, overOdds: 114, underOdds: -133, max: 1875 },
+        { t, line: 9, overOdds: 147, underOdds: -175, max: 1875 },
       ],
-      totalCurrent: { line: 9.5, overOdds: 163, underOdds: -196, max: 7500 },
+      // Stale stamp — highest alt. Board pick'em must win.
+      totalCurrent: { line: 9.5, overOdds: 172, underOdds: -212, max: 1875 },
+      totalLines: [
+        { line: 6.5, overOdds: -204, underOdds: 166, max: 1875 },
+        { line: 7.5, overOdds: -121, underOdds: 104, max: 1875 },
+        { line: 8, overOdds: -109, underOdds: -103, max: 1875 },
+        { line: 8.5, overOdds: 114, underOdds: -133, max: 1875 },
+        { line: 9, overOdds: 147, underOdds: -175, max: 1875 },
+        { line: 9.5, overOdds: 172, underOdds: -212, max: 1875 },
+      ],
     },
     tex_laa: {
       spreadHistory: [
@@ -27,6 +36,11 @@ const pinnacleHistory = {
         { t, homeLine: 3, awayLine: -3, homeOdds: -325, awayOdds: 265, max: 10000 },
       ],
       spreadCurrent: { homeLine: 1, awayLine: -1, homeOdds: 100, awayOdds: -112, max: 10000 },
+      spreadLines: [
+        { homeLine: 1, awayLine: -1, homeOdds: 100, awayOdds: -112, max: 10000 },
+        { homeLine: 1.5, awayLine: -1.5, homeOdds: -117, awayOdds: 102, max: 10000 },
+        { homeLine: 3, awayLine: -3, homeOdds: -325, awayOdds: 265, max: 10000 },
+      ],
     },
   },
 };
@@ -49,10 +63,10 @@ const mil = mapLockedPickToCardFixture({
 
 assert.equal(mil.ticketLine, 7.5);
 assert.equal(mil.pickLabel, 'Under 7.5');
-assert.equal(mil.playableLine, 9.5, 'main is 9.5, not last hist alt 9');
-assert.match(mil.mainNowLabel || '', /Main now Under 9\.5/);
-assert.match(mil.mainNowLabel || '', /-196/);
-assert.ok(!/Under 9 ·/.test(mil.mainNowLabel || ''), `got ${mil.mainNowLabel}`);
+assert.equal(mil.playableLine, 8, 'main is pick-em 8, not stale 9.5');
+assert.match(mil.mainNowLabel || '', /Main now Under 8/);
+assert.match(mil.mainNowLabel || '', /-103/);
+assert.ok(!/9\.5/.test(mil.mainNowLabel || ''), `got ${mil.mainNowLabel}`);
 
 const laa = mapLockedPickToCardFixture({
   key: '2026-08-13_MLB_tex_laa_spread:home',
@@ -76,7 +90,7 @@ assert.match(laa.mainNowLabel || '', /Main now Angels \+1/);
 assert.match(laa.mainNowLabel || '', /\+100/);
 assert.ok(!/-325/.test(laa.mainNowLabel || ''), `got ${laa.mainNowLabel}`);
 
-// Frozen: do not chase post-T-15 *Current if main-at-freeze is recoverable.
+// Frozen: last pre-T-15 board / isMain, not live totalCurrent.
 const freezeCommence = Date.now() - (30 * 60 * 1000);
 const freezeAt = freezeCommence - (15 * 60 * 1000);
 const tPre = Math.floor((freezeAt - 60_000) / 1000);
@@ -85,12 +99,15 @@ const frozenHist = {
   MLB: {
     was_lva: {
       totalHistory: [
-        { t: tPre, line: 171.5, overOdds: 100, underOdds: -125, max: 2000 },
+        { t: tPre, line: 170.5, overOdds: -110, underOdds: -110, max: 2000, isMain: true },
         { t: tPre, line: 169.5, overOdds: -105, underOdds: 113, max: 2000 },
         { t: tPre, line: 172, overOdds: 112, underOdds: -132, max: 2000 },
-        { t: tPost, line: 173.5, overOdds: -110, underOdds: -110, max: 2000 },
+        { t: tPost, line: 173.5, overOdds: -110, underOdds: -110, max: 2000, isMain: true },
       ],
       totalCurrent: { line: 173.5, overOdds: -110, underOdds: -110, max: 2000 },
+      totalLines: [
+        { line: 173.5, overOdds: -110, underOdds: -110, max: 2000, isMain: true },
+      ],
     },
   },
 };
@@ -110,8 +127,8 @@ const was = mapLockedPickToCardFixture({
   home: 'Las Vegas Aces',
 }, { pinnacleHistory: frozenHist });
 
-assert.equal(was.playableLine, 171.5, 'frozen main is last pre-T-15 main, not live 173.5 or alt 172');
-assert.match(was.mainNowLabel || '', /Main now Under 171\.5/);
+assert.equal(was.playableLine, 170.5, 'frozen main is last pre-T-15 isMain, not live 173.5');
+assert.match(was.mainNowLabel || '', /Main now Under 170\.5/);
 assert.ok(!/173\.5/.test(was.mainNowLabel || ''), `got ${was.mainNowLabel}`);
 
 console.log('testMainNowPlayable: ok');

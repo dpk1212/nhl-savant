@@ -7,6 +7,8 @@
  * Does not throw on missing key / rate limit — callers fall back to Odds API.
  */
 
+import { pickMainTotalFromPinnapi } from '../../src/lib/pinnacleMain.js';
+
 const BASE = 'https://pinnapi.com/kit/v1';
 
 /** In-process cache so NBA/CBB/WNBA (shared sport_id) don't triple-fetch. */
@@ -67,20 +69,9 @@ function pickMainSpread(spreads) {
   return best;
 }
 
+/** MAIN total = closest to pick'em. Do not use highest max — alts share max. */
 function pickMainTotal(totals) {
-  if (!totals || typeof totals !== 'object') return null;
-  // Prefer the line with the highest max (most liquid main), else first.
-  let best = null;
-  let bestMax = -1;
-  for (const t of Object.values(totals)) {
-    if (!t || t.over == null || t.under == null) continue;
-    const m = Number(t.max) || 0;
-    if (m >= bestMax) {
-      bestMax = m;
-      best = t;
-    }
-  }
-  return best;
+  return pickMainTotalFromPinnapi(totals);
 }
 
 /** Every FG total line Pinnacle is quoting (alts + main). */

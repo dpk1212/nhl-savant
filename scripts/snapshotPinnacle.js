@@ -24,6 +24,7 @@ import { makeUFCGameKey } from './lib/ufcFighters.js';
 import { makeWNBAGameKey } from './lib/wnbaTeams.js';
 import { makeNFLGameKey } from './lib/nflTeams.js';
 import { fetchPinnapiIndex, fetchRecentDrops, normalizeDrop, PINNAPI_SPORT_ID } from './lib/pinnapi.js';
+import { pickMainSpreadFromBoard, pickMainTotalFromBoard, linesClose } from '../src/lib/pinnacleMain.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -641,6 +642,20 @@ async function run() {
         });
       }
       if (spreadSnapsByLine.size) {
+        const boardMain = pickMainSpreadFromBoard([...spreadSnapsByLine.values()]);
+        for (const snap of spreadSnapsByLine.values()) {
+          snap.isMain = !!(boardMain && linesClose(snap.homeLine, boardMain.homeLine));
+        }
+        if (boardMain) {
+          existing.spreadCurrent = {
+            homeLine: boardMain.homeLine,
+            awayLine: boardMain.awayLine,
+            homeOdds: boardMain.homeOdds,
+            awayOdds: boardMain.awayOdds,
+            max: boardMain.max ?? existing.spreadCurrent?.max ?? null,
+            isMain: true,
+          };
+        }
         const sHist = existing.spreadHistory || [];
         for (const snap of spreadSnapsByLine.values()) sHist.push(snap);
         existing.spreadHistory = trimHistorySeries(sHist, now);
@@ -653,6 +668,7 @@ async function run() {
             max: s.max ?? null,
             fairBook: s.fairBook || null,
             t: s.t,
+            isMain: !!s.isMain,
           }))
           .sort((a, b) => Math.abs(a.homeLine) - Math.abs(b.homeLine));
       }
@@ -719,6 +735,19 @@ async function run() {
         });
       }
       if (totalSnapsByLine.size) {
+        const boardMain = pickMainTotalFromBoard([...totalSnapsByLine.values()]);
+        for (const snap of totalSnapsByLine.values()) {
+          snap.isMain = !!(boardMain && linesClose(snap.line, boardMain.line));
+        }
+        if (boardMain) {
+          existing.totalCurrent = {
+            line: boardMain.line,
+            overOdds: boardMain.overOdds,
+            underOdds: boardMain.underOdds,
+            max: boardMain.max ?? existing.totalCurrent?.max ?? null,
+            isMain: true,
+          };
+        }
         const tHist = existing.totalHistory || [];
         for (const snap of totalSnapsByLine.values()) tHist.push(snap);
         existing.totalHistory = trimHistorySeries(tHist, now);
@@ -730,6 +759,7 @@ async function run() {
             max: s.max ?? null,
             fairBook: s.fairBook || null,
             t: s.t,
+            isMain: !!s.isMain,
           }))
           .sort((a, b) => a.line - b.line);
       }
