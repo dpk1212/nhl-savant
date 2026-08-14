@@ -29,6 +29,7 @@ import {
   EDGE_PRIOR_AG_WR,
   NET_CLV_PRIOR_AG,
 } from '../components/sharpFlow/cards/mapPositionCard';
+import { vaultTicket, classifyFamily } from '../lib/ticketInstrument';
 import VaultAlphaField from '../components/sharpVault/VaultAlphaField';
 import VaultRoster from '../components/sharpVault/VaultRoster';
 import VaultWalletDrawer from '../components/sharpVault/VaultWalletDrawer';
@@ -12572,6 +12573,21 @@ export default function SharpFlow() {
                         // Prefer peak when lock looks like that bleed.
                         const lockOddsRaw = lock.odds;
                         const peakOddsRaw = peak.odds;
+                        const livePosSourceEarly = marketTypeKey === 'spread' ? spreadPositions
+                          : marketTypeKey === 'total' ? totalPositions
+                            : sharpPositions;
+                        const liveGameDataEarly = livePosSourceEarly?.[docSport]?.[doc.gameKey];
+                        let vaultPolyOdds = null;
+                        if (Array.isArray(liveGameDataEarly?.positions)) {
+                          const fam = classifyFamily(marketTypeKey);
+                          const lockLn = Number.isFinite(lock.line) ? lock.line
+                            : (Number.isFinite(peak.line) ? peak.line : null);
+                          vaultPolyOdds = vaultTicket(liveGameDataEarly.positions, {
+                            side: sideKey,
+                            line: fam === 'ML' ? null : lockLn,
+                            family: fam,
+                          }).american;
+                        }
                         const spreadLockIsMlBleed = marketTypeKey === 'spread'
                           && lockOddsRaw === -110
                           && Number.isFinite(peakOddsRaw)
@@ -12596,7 +12612,7 @@ export default function SharpFlow() {
                         const pickFiniteOdds = (v) => (
                           Number.isFinite(v) && v !== 0 ? v : null
                         );
-                        const cardOdds = pastT15Odds
+                        const cardOddsRaw = pastT15Odds
                           ? (pickFiniteOdds(peakOddsRaw)
                             || (lockOddsValid ? pickFiniteOdds(lockOddsRaw) : null)
                             || pickFiniteOdds(sd.closingOdds)
@@ -12606,6 +12622,12 @@ export default function SharpFlow() {
                             || pickFiniteOdds(lockOddsRaw)
                             || pickFiniteOdds(sd.closingOdds)
                             || null);
+                        // Ticket = vault Poly on this line whenever we have it.
+                        const cardOdds = (!pastT15Odds
+                          && (marketTypeKey === 'spread' || marketTypeKey === 'total' || marketTypeKey === 'ml')
+                          && Number.isFinite(vaultPolyOdds))
+                          ? vaultPolyOdds
+                          : cardOddsRaw;
                         // v6.6 — health is engine-truth. evaluatePickHealth
                         // is the single source of truth for ACTIVE / MUTED /
                         // CANCELLED under the hybrid floor. Earlier code self-

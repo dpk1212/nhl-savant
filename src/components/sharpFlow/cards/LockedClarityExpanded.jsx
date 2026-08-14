@@ -1701,7 +1701,7 @@ export default function LockedClarityExpanded({
                 gid={`ols-${gid}`}
                 showStory
                 chartLineLabel={f.chartLineLabel}
-                ticketOffMain={!!f.lineMoved}
+                ticketOffMain={f.instrumentVariant === 'ALT' || !!f.lineMoved}
               />
             </div>
           </div>
