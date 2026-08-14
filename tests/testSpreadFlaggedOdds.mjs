@@ -13,7 +13,7 @@ assert.equal(americanFromPolyPrice(0.554), -124);
 assert.equal(americanFromPolyPrice(0.27), 270);
 
 assert.equal(preferVaultPolyTicketOdds(270, -124), -124);
-assert.equal(preferVaultPolyTicketOdds(-135, -124), -135, 'small book vs poly gap kept');
+assert.equal(preferVaultPolyTicketOdds(-135, -124), -124, 'vault Poly is the ticket even vs nearby book');
 assert.equal(preferVaultPolyTicketOdds(null, -124), -124);
 assert.equal(preferVaultPolyTicketOdds(270, null), 270);
 
@@ -77,7 +77,12 @@ assert.equal(fixture.polyEntryOdds, -124, `poly entry expected -124, got ${fixtu
 assert.equal(fixture.lockOdds, -124, `FLAGGED/lockOdds must follow vault, got ${fixture.lockOdds}`);
 assert.equal(fixture.gotOdds, -124);
 assert.equal(fixture.odds, -124);
+assert.equal(fixture.instrumentVariant, 'MAIN');
 assert.ok(Math.abs(fixture.toWin - (1 * 100 / 124)) < 0.01,
   `toWin must use −124 juice, got ${fixture.toWin}`);
+const pathOdds = (fixture.pinPath || []).map((p) => p.odds);
+assert.ok(!pathOdds.includes(270), `tape must not include stamped +270, got ${JSON.stringify(pathOdds)}`);
+assert.ok(pathOdds.every((o) => o === -143 || o === -135),
+  `run-line tape should be −143/−135, got ${JSON.stringify(pathOdds)}`);
 
 console.log('testSpreadFlaggedOdds: ok');

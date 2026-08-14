@@ -29,6 +29,7 @@ import {
   EDGE_PRIOR_AG_WR,
   NET_CLV_PRIOR_AG,
 } from '../components/sharpFlow/cards/mapPositionCard';
+import { vaultTicket, classifyFamily } from '../lib/ticketInstrument';
 import VaultAlphaField from '../components/sharpVault/VaultAlphaField';
 import VaultRoster from '../components/sharpVault/VaultRoster';
 import VaultWalletDrawer from '../components/sharpVault/VaultWalletDrawer';
@@ -12581,29 +12582,15 @@ export default function SharpFlow() {
                             : sharpPositions;
                         const liveGameDataEarly = livePosSourceEarly?.[docSport]?.[doc.gameKey];
                         let vaultPolyOdds = null;
-                        if (marketTypeKey === 'spread' && Array.isArray(liveGameDataEarly?.positions)) {
-                          let sumInv = 0;
-                          let sumPx = 0;
+                        if (Array.isArray(liveGameDataEarly?.positions)) {
+                          const fam = classifyFamily(marketTypeKey);
                           const lockLn = Number.isFinite(lock.line) ? lock.line
                             : (Number.isFinite(peak.line) ? peak.line : null);
-                          for (const p of liveGameDataEarly.positions) {
-                            if (p.side !== sideKey) continue;
-                            if (Number.isFinite(lockLn)) {
-                              const el = Number(p.entryLine ?? p.spreadLine);
-                              if (Number.isFinite(el) && Math.abs(el - lockLn) > 0.051) continue;
-                            }
-                            const inv = Number(p.invested) || 0;
-                            const px = Number(p.avgPrice);
-                            if (!(inv > 0) || !(px > 0 && px < 1)) continue;
-                            sumInv += inv;
-                            sumPx += px * inv;
-                          }
-                          if (sumInv > 0) {
-                            const p = sumPx / sumInv;
-                            vaultPolyOdds = p >= 0.5
-                              ? Math.round(-100 * p / (1 - p))
-                              : Math.round(100 * (1 - p) / p);
-                          }
+                          vaultPolyOdds = vaultTicket(liveGameDataEarly.positions, {
+                            side: sideKey,
+                            line: fam === 'ML' ? null : lockLn,
+                            family: fam,
+                          }).american;
                         }
                         const spreadLockIsMlBleed = marketTypeKey === 'spread'
                           && (
@@ -12648,12 +12635,10 @@ export default function SharpFlow() {
                             || pickFiniteOdds(lockOddsRaw)
                             || pickFiniteOdds(sd.closingOdds)
                             || null);
-                        // Final vault Poly preference when stamp still absurd.
+                        // Ticket = vault Poly on this line whenever we have it.
                         const cardOdds = (!pastT15Odds
-                          && marketTypeKey === 'spread'
-                          && Number.isFinite(vaultPolyOdds)
-                          && Number.isFinite(cardOddsRaw)
-                          && Math.abs(cardOddsRaw - vaultPolyOdds) >= 40)
+                          && (marketTypeKey === 'spread' || marketTypeKey === 'total' || marketTypeKey === 'ml')
+                          && Number.isFinite(vaultPolyOdds))
                           ? vaultPolyOdds
                           : cardOddsRaw;
                         // v6.6 — health is engine-truth. evaluatePickHealth
