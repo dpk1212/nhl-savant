@@ -393,6 +393,50 @@ function histUpTo(hist, freezeAtMs) {
 }
 
 /**
+ * Snapshot writes the Pinnacle main first each cycle, then every alt.
+ * History is a mixed dump — last row is usually the highest alt, not main.
+ * First print at each timestamp is the main instrument.
+ */
+function lastMainSnap(hist) {
+  if (!Array.isArray(hist) || !hist.length) return null;
+  const firstByT = new Map();
+  for (const h of hist) {
+    const t = Number.isFinite(h?.t) ? h.t : 'na';
+    if (!firstByT.has(t)) firstByT.set(t, h);
+  }
+  const mains = [...firstByT.values()];
+  return mains[mains.length - 1] || null;
+}
+
+/** Live MAIN from *Current; frozen tickets use last main print at/before T-15. */
+function resolveMainTotal(pinnGame, { frozen = false, freezeAtMs = null } = {}) {
+  const cur = pinnGame?.totalCurrent;
+  if (!frozen && Number.isFinite(cur?.line) && cur.line >= 1.5) return cur;
+  const hist = histUpTo(
+    Array.isArray(pinnGame?.totalHistory) ? pinnGame.totalHistory : [],
+    frozen ? freezeAtMs : null,
+  );
+  const main = lastMainSnap(hist);
+  if (main && Number.isFinite(main.line) && main.line >= 1.5) return main;
+  if (Number.isFinite(cur?.line) && cur.line >= 1.5) return cur;
+  return null;
+}
+
+function resolveMainSpread(pinnGame, { frozen = false, freezeAtMs = null } = {}) {
+  const cur = pinnGame?.spreadCurrent;
+  const lineOk = (s) => s && (Number.isFinite(s.homeLine) || Number.isFinite(s.awayLine));
+  if (!frozen && lineOk(cur)) return cur;
+  const hist = histUpTo(
+    Array.isArray(pinnGame?.spreadHistory) ? pinnGame.spreadHistory : [],
+    frozen ? freezeAtMs : null,
+  );
+  const main = lastMainSnap(hist);
+  if (lineOk(main)) return main;
+  if (lineOk(cur)) return cur;
+  return null;
+}
+
+/**
  * Paint max onto every path point so OddsLimitSpark can draw the dual-axis
  * story. Forward-fill stamped maxes, then fall back to ticketMax (same-line
  * live or book-level liquidity) when the alt feed omitted max.
@@ -656,12 +700,13 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
     pinSeries = pts.length >= 2 ? pts : null;
     if (pinPath.length < 2) pinPath = null;
 
-    if (last && Number.isFinite(last.line)) {
-      liveMarketLine = last.line;
-      if (Number.isFinite(last.t) && latestT == null) latestT = last.t;
-    } else if (!sealed && pinnGame.totalCurrent && Number.isFinite(pinnGame.totalCurrent.line)) {
+    const mainSnap = lastMainSnap(hist);
+    if (!sealed && pinnGame.totalCurrent && Number.isFinite(pinnGame.totalCurrent.line)) {
       liveMarketLine = pinnGame.totalCurrent.line;
+    } else if (mainSnap && Number.isFinite(mainSnap.line)) {
+      liveMarketLine = mainSnap.line;
     }
+    if (Number.isFinite(mainSnap?.t) && latestT == null) latestT = mainSnap.t;
 
     const best = sealed ? null : (sideKey === 'under' ? pinnGame.bestUnder : pinnGame.bestOver);
     const opp = sealed ? null : (sideKey === 'under' ? pinnGame.bestOver : pinnGame.bestUnder);
@@ -688,9 +733,10 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
       oppBestBook = opp.book || null;
     }
 
-    if (lineMoved && last) {
-      const over = last.overOdds;
-      const under = last.underOdds;
+    if (lineMoved) {
+      const src = (!sealed && pinnGame.totalCurrent) ? pinnGame.totalCurrent : mainSnap;
+      const over = src?.overOdds;
+      const under = src?.underOdds;
       if (Number.isFinite(over) && Number.isFinite(under)) {
         liveFairPair = sideKey === 'under' ? [under, over] : [over, under];
       }
@@ -826,16 +872,17 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
     pinSeries = pts.length >= 2 ? pts : null;
     if (pinPath.length < 2) pinPath = null;
 
-    if (last) {
-      const ln = lineOf(last);
-      if (Number.isFinite(ln)) liveMarketLine = ln;
-      if (Number.isFinite(last.t) && latestT == null) latestT = last.t;
-    } else if (!sealed && pinnGame.spreadCurrent) {
+    const mainSnap = lastMainSnap(hist);
+    if (!sealed && pinnGame.spreadCurrent) {
       const curLn = sideKey === 'away'
         ? pinnGame.spreadCurrent.awayLine
         : pinnGame.spreadCurrent.homeLine;
       if (Number.isFinite(curLn)) liveMarketLine = curLn;
+    } else if (mainSnap) {
+      const ln = lineOf(mainSnap);
+      if (Number.isFinite(ln)) liveMarketLine = ln;
     }
+    if (Number.isFinite(mainSnap?.t) && latestT == null) latestT = mainSnap.t;
 
     const best = sealed ? null : (sideKey === 'away' ? pinnGame.bestAwaySpread : pinnGame.bestHomeSpread);
     const opp = sealed ? null : (sideKey === 'away' ? pinnGame.bestHomeSpread : pinnGame.bestAwaySpread);
@@ -858,9 +905,10 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
       oppBestOdds = opp.odds;
       oppBestBook = opp.book || null;
     }
-    if (lineMoved && last) {
-      const a = last.awayOdds;
-      const h = last.homeOdds;
+    if (lineMoved) {
+      const src = (!sealed && pinnGame.spreadCurrent) ? pinnGame.spreadCurrent : mainSnap;
+      const a = src?.awayOdds;
+      const h = src?.homeOdds;
       if (Number.isFinite(a) && Number.isFinite(h)) {
         liveFairPair = sideKey === 'away' ? [a, h] : [h, a];
       }
@@ -1149,43 +1197,26 @@ export function mapLockedPickToCardFixture(pick, {
   }
 
   // Peek Pinnacle for PLAYABLE main line (recommendation instrument).
+  // Use *Current (or last main print when frozen) — never the last alt dump.
   const pinnGamePeek = (pinnacleHistory && pick.sport && pick.gameKey)
     ? pinnacleHistory[pick.sport]?.[pick.gameKey]
     : null;
+  const awayPickEarly = String(pick.side || pick.pickSide || '').toLowerCase() === 'away'
+    || String(pick.team || '').toLowerCase().includes(
+      String(pick.away || '').split(' ').pop()?.toLowerCase() || '\0',
+    );
+  const mainTotal = isTotal && pinnGamePeek
+    ? resolveMainTotal(pinnGamePeek, { frozen: ticketFrozen, freezeAtMs })
+    : null;
+  const mainSpread = isSpread && pinnGamePeek
+    ? resolveMainSpread(pinnGamePeek, { frozen: ticketFrozen, freezeAtMs })
+    : null;
   let playableLine = ticketLine;
-  if ((isTotal || isSpread) && pinnGamePeek) {
-    if (isTotal) {
-      const hist = histUpTo(
-        Array.isArray(pinnGamePeek.totalHistory) ? pinnGamePeek.totalHistory : [],
-        ticketFrozen ? freezeAtMs : null,
-      );
-      const last = hist[hist.length - 1];
-      if (last && Number.isFinite(last.line) && last.line >= 1.5) {
-        playableLine = last.line;
-      } else if (Number.isFinite(pinnGamePeek.totalCurrent?.line)
-          && pinnGamePeek.totalCurrent.line >= 1.5) {
-        playableLine = pinnGamePeek.totalCurrent.line;
-      }
-    } else if (isSpread) {
-      const hist = histUpTo(
-        Array.isArray(pinnGamePeek.spreadHistory) ? pinnGamePeek.spreadHistory : [],
-        ticketFrozen ? freezeAtMs : null,
-      );
-      const last = hist[hist.length - 1];
-      const awayPick = String(pick.side || pick.pickSide || '').toLowerCase() === 'away'
-        || String(pick.team || '').toLowerCase().includes(
-          String(pick.away || '').split(' ').pop()?.toLowerCase() || '\0',
-        );
-      if (last) {
-        const ln = awayPick ? last.awayLine : last.homeLine;
-        if (Number.isFinite(ln)) playableLine = ln;
-      } else if (pinnGamePeek.spreadCurrent) {
-        const ln = awayPick
-          ? pinnGamePeek.spreadCurrent.awayLine
-          : pinnGamePeek.spreadCurrent.homeLine;
-        if (Number.isFinite(ln)) playableLine = ln;
-      }
-    }
+  if (mainTotal && Number.isFinite(mainTotal.line) && mainTotal.line >= 1.5) {
+    playableLine = mainTotal.line;
+  } else if (mainSpread) {
+    const ln = awayPickEarly ? mainSpread.awayLine : mainSpread.homeLine;
+    if (Number.isFinite(ln)) playableLine = ln;
   }
   // Junk stamp repair for totals only when we still have no playable.
   if (isTotal && (!Number.isFinite(playableLine) || playableLine < 1.5)
@@ -1289,27 +1320,13 @@ export function mapLockedPickToCardFixture(pick, {
   // Secondary line under hero when MAIN drifted off the sealed ticket.
   const playableNowOdds = (() => {
     if (!entriesOffPlayable || !pinnGamePeek) return null;
-    if (isSpread) {
-      const hist = Array.isArray(pinnGamePeek.spreadHistory) ? pinnGamePeek.spreadHistory : [];
-      const last = hist[hist.length - 1];
-      const awayPick = sideNorm === 'away';
-      if (last) {
-        const o = awayPick ? last.awayOdds : last.homeOdds;
-        if (Number.isFinite(o)) return o;
-      }
-      const cur = pinnGamePeek.spreadCurrent;
-      if (cur) {
-        const o = awayPick ? cur.awayOdds : cur.homeOdds;
-        if (Number.isFinite(o)) return o;
-      }
+    if (isSpread && mainSpread) {
+      const o = sideNorm === 'away' ? mainSpread.awayOdds : mainSpread.homeOdds;
+      if (Number.isFinite(o)) return o;
     }
-    if (isTotal) {
-      const hist = Array.isArray(pinnGamePeek.totalHistory) ? pinnGamePeek.totalHistory : [];
-      const last = hist[hist.length - 1];
-      if (last) {
-        const o = sideNorm === 'away' ? last.underOdds : last.overOdds;
-        if (Number.isFinite(o)) return o;
-      }
+    if (isTotal && mainTotal) {
+      const o = sideNorm === 'away' ? mainTotal.underOdds : mainTotal.overOdds;
+      if (Number.isFinite(o)) return o;
     }
     return null;
   })();
