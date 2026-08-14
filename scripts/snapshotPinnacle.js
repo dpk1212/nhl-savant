@@ -289,9 +289,11 @@ function pickFairSpread(game, preferBook = null) {
   const awayName = game.away_team;
   const homeName = game.home_team;
   const byKey = Object.fromEntries((game.bookmakers || []).map(b => [b.key, b]));
+  // Odds API `spreads` is the labeled main (alts are `alternate_spreads`).
+  // Retail last — we need the LINE even when no fair book quotes it.
   const order = preferBook
-    ? [preferBook, ...FAIR_BOOKS.filter(k => k !== preferBook)]
-    : FAIR_BOOKS;
+    ? [preferBook, ...FAIR_BOOKS.filter(k => k !== preferBook), ...RETAIL_BOOKS]
+    : [...FAIR_BOOKS, ...RETAIL_BOOKS];
   for (const key of order) {
     const bk = byKey[key];
     if (!bk) continue;
@@ -314,8 +316,8 @@ function pickFairSpread(game, preferBook = null) {
 function pickFairTotal(game, preferBook = null) {
   const byKey = Object.fromEntries((game.bookmakers || []).map(b => [b.key, b]));
   const order = preferBook
-    ? [preferBook, ...FAIR_BOOKS.filter(k => k !== preferBook)]
-    : FAIR_BOOKS;
+    ? [preferBook, ...FAIR_BOOKS.filter(k => k !== preferBook), ...RETAIL_BOOKS]
+    : [...FAIR_BOOKS, ...RETAIL_BOOKS];
   for (const key of order) {
     const bk = byKey[key];
     if (!bk) continue;
@@ -599,9 +601,23 @@ async function run() {
       existing.commence = game.commence_time;
       existing.apiId = game.id;
 
-      // Spread data — MAIN + every alt line (same rule as totals).
+      // Spread data — Odds API `spreads` is the labeled main. Do not replace
+      // that LINE with pinnapi's unlabeled bag (closest-to-0 was picking MLB +1
+      // over the 1.5 run line). Attach Pinnacle odds at the labeled line.
       let { fairSpread, fairSpreadBook, bestAwaySpread, bestHomeSpread } = extractSpreadOdds(game, fairBook);
-      if (pin?.fairSpread?.awayOdds != null && pin.fairSpread.homeOdds != null) {
+      const labeledHomeLine = fairSpread?.homeLine;
+      if (pin?.allSpreads?.length && Number.isFinite(labeledHomeLine)) {
+        const pinOnLabeled = pin.allSpreads.find((s) => linesClose(s.homeLine, labeledHomeLine));
+        if (pinOnLabeled) {
+          fairSpread = {
+            homeLine: pinOnLabeled.homeLine,
+            awayLine: pinOnLabeled.awayLine,
+            homeOdds: pinOnLabeled.homeOdds,
+            awayOdds: pinOnLabeled.awayOdds,
+          };
+          fairSpreadBook = 'pinnacle';
+        }
+      } else if (!fairSpread && pin?.fairSpread?.awayOdds != null && pin.fairSpread.homeOdds != null) {
         fairSpread = pin.fairSpread;
         fairSpreadBook = 'pinnacle';
       }
@@ -642,7 +658,11 @@ async function run() {
         });
       }
       if (spreadSnapsByLine.size) {
-        const boardMain = pickMainSpreadFromBoard([...spreadSnapsByLine.values()]);
+        const labeled = Number.isFinite(labeledHomeLine) ? labeledHomeLine : null;
+        const boardMain = labeled != null
+          ? ([...spreadSnapsByLine.values()].find((s) => linesClose(s.homeLine, labeled))
+            || pickMainSpreadFromBoard([...spreadSnapsByLine.values()]))
+          : pickMainSpreadFromBoard([...spreadSnapsByLine.values()]);
         for (const snap of spreadSnapsByLine.values()) {
           snap.isMain = !!(boardMain && linesClose(snap.homeLine, boardMain.homeLine));
         }
@@ -675,10 +695,21 @@ async function run() {
       if (bestAwaySpread) existing.bestAwaySpread = bestAwaySpread;
       if (bestHomeSpread) existing.bestHomeSpread = bestHomeSpread;
 
-      // Total data — MAIN for current/opener + EVERY alt line into history so
-      // Locked tickets on vault 7.5 keep a live pin tape after main moves to 8.5/9.5.
+      // Total data — Odds API `totals` is the labeled main. Same as spreads:
+      // keep that LINE, attach Pinnacle odds at it. Alts go on the board.
       let { fairTotal, fairTotalBook, bestOver, bestUnder, allTotalBooks } = extractTotalOdds(game, fairBook);
-      if (pin?.fairTotal?.overOdds != null && pin.fairTotal.underOdds != null) {
+      const labeledTotalLine = fairTotal?.line;
+      if (pin?.allTotals?.length && Number.isFinite(labeledTotalLine)) {
+        const pinOnLabeled = pin.allTotals.find((t) => linesClose(t.line, labeledTotalLine));
+        if (pinOnLabeled) {
+          fairTotal = {
+            line: pinOnLabeled.line,
+            overOdds: pinOnLabeled.overOdds,
+            underOdds: pinOnLabeled.underOdds,
+          };
+          fairTotalBook = 'pinnacle';
+        }
+      } else if (!fairTotal && pin?.fairTotal?.overOdds != null && pin.fairTotal.underOdds != null) {
         fairTotal = pin.fairTotal;
         fairTotalBook = 'pinnacle';
       }
@@ -735,7 +766,11 @@ async function run() {
         });
       }
       if (totalSnapsByLine.size) {
-        const boardMain = pickMainTotalFromBoard([...totalSnapsByLine.values()]);
+        const labeled = Number.isFinite(labeledTotalLine) ? labeledTotalLine : null;
+        const boardMain = labeled != null
+          ? ([...totalSnapsByLine.values()].find((s) => linesClose(s.line, labeled))
+            || pickMainTotalFromBoard([...totalSnapsByLine.values()]))
+          : pickMainTotalFromBoard([...totalSnapsByLine.values()]);
         for (const snap of totalSnapsByLine.values()) {
           snap.isMain = !!(boardMain && linesClose(snap.line, boardMain.line));
         }

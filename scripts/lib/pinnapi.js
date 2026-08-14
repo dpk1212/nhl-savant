@@ -7,7 +7,7 @@
  * Does not throw on missing key / rate limit — callers fall back to Odds API.
  */
 
-import { pickMainTotalFromPinnapi } from '../../src/lib/pinnacleMain.js';
+import { pickMainSpreadFromPinnapi, pickMainTotalFromPinnapi } from '../../src/lib/pinnacleMain.js';
 
 const BASE = 'https://pinnapi.com/kit/v1';
 
@@ -55,21 +55,10 @@ function leagueOk(label, leagueName) {
 }
 
 function pickMainSpread(spreads) {
-  if (!spreads || typeof spreads !== 'object') return null;
-  let best = null;
-  let bestAbs = Infinity;
-  for (const s of Object.values(spreads)) {
-    if (!s || s.home == null || s.away == null) continue;
-    const abs = Math.abs(Number(s.hdp) || 0);
-    if (abs < bestAbs) {
-      bestAbs = abs;
-      best = s;
-    }
-  }
-  return best;
+  return pickMainSpreadFromPinnapi(spreads);
 }
 
-/** MAIN total = closest to pick'em. Do not use highest max — alts share max. */
+/** Unlabeled pinnapi bag only — snapshot stamps main from Odds API `totals`. */
 function pickMainTotal(totals) {
   return pickMainTotalFromPinnapi(totals);
 }

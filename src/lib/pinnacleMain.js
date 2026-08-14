@@ -1,7 +1,13 @@
 /**
- * Pinnacle MAIN = the line closest to pick'em.
- * Spreads already used |hdp| → 0. Totals used highest max, which ties
- * (alts inherit the same max) and crowns the highest alt. Do not do that.
+ * MAIN is labeled, not guessed.
+ *
+ * Odds API `spreads` / `totals` = the book's main. `alternate_*` are alts.
+ * Official Pinnacle: altLineId null = main. pinnapi /markets flattens every
+ * handicap into one bag and does not pass that flag — so snapshot stamps
+ * isMain from the Odds API labeled line, then we honor the stamp.
+ *
+ * Unlabeled fallback (no isMain): pick'em on the two prices. Do NOT use
+ * |hdp| → 0 — that crowns MLB +1 alts over the 1.5 run line.
  */
 
 export function impliedFromAmerican(o) {
@@ -25,11 +31,18 @@ export function linesClose(a, b, eps = LINE_EPS) {
   return Number.isFinite(a) && Number.isFinite(b) && Math.abs(a - b) <= eps;
 }
 
+export function stampedMain(lines) {
+  if (!Array.isArray(lines)) return null;
+  return lines.find((row) => row && row.isMain) || null;
+}
+
 /**
  * Current totals board → main row.
  * Rows: { line, overOdds, underOdds, max? } American.
  */
 export function pickMainTotalFromBoard(lines) {
+  const stamped = stampedMain(lines);
+  if (stamped) return stamped;
   if (!Array.isArray(lines) || !lines.length) return null;
   let best = null;
   let bestDist = Infinity;
@@ -74,21 +87,49 @@ export function pickMainTotalFromPinnapi(totals) {
   return best;
 }
 
-/** Current spreads board → main row (closest to pick'em / 0). */
+/** Current spreads board → main row. Honor isMain; never |hdp| → 0. */
 export function pickMainSpreadFromBoard(lines) {
+  const stamped = stampedMain(lines);
+  if (stamped) return stamped;
   if (!Array.isArray(lines) || !lines.length) return null;
   let best = null;
-  let bestAbs = Infinity;
+  let bestDist = Infinity;
+  let bestMax = -1;
   for (const row of lines) {
     if (!row) continue;
-    const abs = Math.min(
-      Math.abs(Number(row.homeLine)),
-      Math.abs(Number(row.awayLine)),
+    const dist = pickemDist(
+      impliedFromAmerican(row.homeOdds),
+      impliedFromAmerican(row.awayOdds),
     );
-    if (!Number.isFinite(abs)) continue;
-    if (abs < bestAbs) {
-      bestAbs = abs;
+    if (!Number.isFinite(dist) || dist === Infinity) continue;
+    const m = Number(row.max) || 0;
+    if (dist < bestDist - 1e-9 || (Math.abs(dist - bestDist) <= 1e-9 && m > bestMax)) {
+      bestDist = dist;
+      bestMax = m;
       best = row;
+    }
+  }
+  return best;
+}
+
+/** Raw PinnAPI period spreads object → unlabeled fallback (pick'em). */
+export function pickMainSpreadFromPinnapi(spreads) {
+  if (!spreads || typeof spreads !== 'object') return null;
+  let best = null;
+  let bestDist = Infinity;
+  let bestMax = -1;
+  for (const s of Object.values(spreads)) {
+    if (!s || s.home == null || s.away == null) continue;
+    const dist = pickemDist(
+      impliedFromDecimal(Number(s.home)),
+      impliedFromDecimal(Number(s.away)),
+    );
+    if (!Number.isFinite(dist) || dist === Infinity) continue;
+    const m = Number(s.max) || 0;
+    if (dist < bestDist - 1e-9 || (Math.abs(dist - bestDist) <= 1e-9 && m > bestMax)) {
+      bestDist = dist;
+      bestMax = m;
+      best = s;
     }
   }
   return best;
