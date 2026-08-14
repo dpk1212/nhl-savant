@@ -363,6 +363,7 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
         priorClvPct,
         clvN,
         topQ,
+        entryLine: Number.isFinite(Number(w.entryLine)) ? Number(w.entryLine) : null,
       };
     })
     .sort((a, b) =>
@@ -371,6 +372,66 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
       || (Number(!!b.whitelisted) - Number(!!a.whitelisted))
       || ((b.sizeRatio || 0) - (a.sizeRatio || 0))
     );
+}
+
+/** One row per wallet+side — keep the fattest stake (snapshot has no line). */
+export function collapseWalletRowsBySide(rows) {
+  const by = new Map();
+  for (const w of rows || []) {
+    if (!w) continue;
+    const id = String(w.wallet || w.short || '').toLowerCase();
+    if (!id) continue;
+    const k = `${id}|${w.side || ''}`;
+    const prev = by.get(k);
+    if (!prev || (Number(w.invested) || 0) > (Number(prev.invested) || 0)) by.set(k, w);
+  }
+  return [...by.values()];
+}
+
+/**
+ * Live vault rows on this ticket's instrument.
+ * Spreads: ours = same side + ticket line; against = other side + complementary line.
+ * Totals: both sides of the same number. ML: all legs.
+ */
+export function vaultRowsOnTicket(positions, {
+  ticketLine = null,
+  sideNorm = 'home',
+  isTotal = false,
+  isSpread = false,
+} = {}) {
+  const rows = [];
+  for (const p of positions || []) {
+    if (!p || !(Number(p.invested) > 0)) continue;
+    const ln = Number(p.entryLine ?? (isTotal ? p.totalLine : p.spreadLine));
+    rows.push({
+      wallet: p.wallet,
+      side: p.side,
+      invested: Number(p.invested) || 0,
+      avgSportBet: Number.isFinite(Number(p.avgSportBet)) ? Number(p.avgSportBet) : null,
+      sizeRatio: Number.isFinite(Number(p.sizeRatio)) ? Number(p.sizeRatio)
+        : (Number.isFinite(Number(p.v8_sizeRatio)) ? Number(p.v8_sizeRatio) : null),
+      roi: p.sportROI ?? p.roi,
+      pnl: p.pnl,
+      entryLine: Number.isFinite(ln) ? ln : null,
+    });
+  }
+  if (!(isTotal || isSpread) || !Number.isFinite(ticketLine)) {
+    return collapseWalletRowsBySide(rows);
+  }
+  const onTicket = [];
+  for (const r of rows) {
+    if (!Number.isFinite(r.entryLine)) continue;
+    const posSide = r.side === 'over' ? 'home' : r.side === 'under' ? 'away' : r.side;
+    const ours = posSide === sideNorm;
+    if (isTotal) {
+      if (!linesClose(r.entryLine, ticketLine)) continue;
+      onTicket.push(r);
+      continue;
+    }
+    if (ours && linesClose(r.entryLine, ticketLine)) onTicket.push(r);
+    else if (!ours && linesClose(r.entryLine, -ticketLine)) onTicket.push(r);
+  }
+  return collapseWalletRowsBySide(onTicket);
 }
 
 /** Lines match within a half-point tick (totals/spreads). */
@@ -1326,8 +1387,22 @@ export function mapLockedPickToCardFixture(pick, {
   const netClv = Number.isFinite(pick.netClv) ? pick.netClv
     : Number.isFinite(pick.v8_netMeanPrior) ? pick.v8_netMeanPrior : null;
 
+  const ticketVaultRows = (isTotal || isSpread) && Array.isArray(vaultPositions) && vaultPositions.length
+    ? vaultRowsOnTicket(vaultPositions, {
+      ticketLine: Number.isFinite(ticketLine) ? ticketLine : null,
+      sideNorm,
+      isTotal,
+      isSpread,
+    })
+    : [];
+  const backingSource = ticketVaultRows.length
+    ? ticketVaultRows.filter((w) => {
+      const posSide = w.side === 'over' ? 'home' : w.side === 'under' ? 'away' : w.side;
+      return posSide === sideNorm;
+    })
+    : collapseWalletRowsBySide(pick.backingWallets || []);
   const wallets = enrichWallets(
-    pick.backingWallets || [],
+    backingSource,
     pick.sport,
     getWalletProfile,
     isSportWinner,
@@ -1342,11 +1417,16 @@ export function mapLockedPickToCardFixture(pick, {
     return s || null;
   };
 
-  // Both-side board for the clarity map. Prefer stamped boardWallets; fall
-  // back to play-side receipts so the expanded card still has something.
-  const boardRaw = (Array.isArray(pick.boardWallets) && pick.boardWallets.length
-    ? pick.boardWallets
-    : (pick.backingWallets || []).map((w) => ({ ...w, side: w.side || sideNorm }))
+  // Both-side board: live vault on THIS ticket line when we have it.
+  // Snapshot walletDetails drops entryLine and last-write-wins by short,
+  // which hid wapol's Cardinals +1.5 $1022 Action behind their −1.5 $276 leg.
+  const boardRaw = (ticketVaultRows.length
+    ? ticketVaultRows
+    : collapseWalletRowsBySide(
+      Array.isArray(pick.boardWallets) && pick.boardWallets.length
+        ? pick.boardWallets
+        : (pick.backingWallets || []).map((w) => ({ ...w, side: w.side || sideNorm })),
+    )
   ).map((w) => ({ ...w, side: normSide(w.side) || sideNorm }));
 
   const mapWallets = enrichWallets(

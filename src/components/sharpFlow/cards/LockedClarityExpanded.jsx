@@ -109,6 +109,10 @@ const MAP_YB = ELITE_ZONE_ROI;
  */
 function useStableBoardWallets(incoming) {
   const ref = useRef(null);
+  const rowKey = (w) => {
+    const ln = Number.isFinite(Number(w?.entryLine)) ? Number(w.entryLine) : '';
+    return `${w?.short || ''}|${w?.side || ''}|${ln}`;
+  };
   if (!Array.isArray(incoming) || incoming.length === 0) {
     return ref.current || [];
   }
@@ -116,23 +120,25 @@ function useStableBoardWallets(incoming) {
     ref.current = incoming.map((w) => ({ ...w }));
     return ref.current;
   }
-  const byShort = new Map(ref.current.map((w) => [w.short, w]));
+  const byKey = new Map(ref.current.map((w) => [rowKey(w), w]));
   for (const w of incoming) {
     if (!w?.short) continue;
-    const prev = byShort.get(w.short);
+    const k = rowKey(w);
+    const prev = byKey.get(k);
     if (prev) {
-      // Refresh $ / skill stats, but freeze side tags so dots don't remount.
-      byShort.set(w.short, {
-        ...prev,
-        ...w,
+      const nextInv = Number(w.invested) || 0;
+      const prevInv = Number(prev.invested) || 0;
+      const keep = nextInv >= prevInv ? { ...prev, ...w } : { ...w, ...prev };
+      byKey.set(k, {
+        ...keep,
         side: prev.side,
         marketSide: prev.marketSide ?? w.marketSide,
       });
     } else {
-      byShort.set(w.short, { ...w });
+      byKey.set(k, { ...w });
     }
   }
-  ref.current = [...byShort.values()];
+  ref.current = [...byKey.values()];
   return ref.current;
 }
 
