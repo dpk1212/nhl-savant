@@ -400,7 +400,6 @@ function DualAxisChart({
 
   // Tick labels from real American odds in the series (not midpoint of mixed ±).
   const amSamples = points.map((p) => p.odds).filter((o) => Number.isFinite(o) && o !== 0);
-  if (Number.isFinite(flagged) && flagged !== 0) amSamples.push(flagged);
   if (Number.isFinite(fair) && fair !== 0) amSamples.push(fair);
   const amHi = amSamples.length ? Math.max(...amSamples.map((a) => toPlot(a))) : oMax;
   const amLo = amSamples.length ? Math.min(...amSamples.map((a) => toPlot(a))) : oMin;
@@ -592,13 +591,14 @@ export default function OddsLimitSpark({
   gid = 'ols',
   showStory = true,
   showMetrics = true,
-  /** When set, chart is MAIN-line tape (ticket may be a different handicap). */
   chartLineLabel = null,
+  /** When ticket is an alt, label TICKET (not FLAGGED) in the metric strip. */
   ticketOffMain = false,
 }) {
   const liveNow = Number.isFinite(now) ? now : fair;
-  // Never inject off-main ticket juice into the MAIN tape path.
-  const pathFlagged = ticketOffMain ? null : flagged;
+  // Chart is book tape on this line. Ticket juice stays in the FLAGGED cell —
+  // never inflate the axis with a Poly receipt (STL@CHC +270 vs −135 tape).
+  const pathFlagged = null;
   const { points, synthetic } = resolveSparkPath({
     pinPath,
     entry,

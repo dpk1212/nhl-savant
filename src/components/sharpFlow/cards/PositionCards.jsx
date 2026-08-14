@@ -2649,7 +2649,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
           showMetrics
           gid={`ols-c-${f.id || 'x'}`}
           chartLineLabel={f.chartLineLabel}
-          ticketOffMain={!!f.lineMoved}
+          ticketOffMain={f.instrumentVariant === 'ALT' || !!f.lineMoved}
         />
       </div>
     );
