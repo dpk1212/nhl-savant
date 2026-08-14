@@ -141,6 +141,24 @@ function downsample(points, maxPts = 28) {
   return out;
 }
 
+/** PIN/NOW boxes follow the chart series, not a second odds source. */
+export function sparkStripOdds({ pinPath, entry, now, fair, maxNow } = {}) {
+  const liveNow = Number.isFinite(now) ? now : fair;
+  const { points } = resolveSparkPath({
+    pinPath,
+    entry,
+    flagged: null,
+    now: liveNow,
+    maxNow,
+  });
+  return {
+    entry: Number.isFinite(points[0]?.odds) ? points[0].odds : (Number.isFinite(entry) ? entry : null),
+    now: Number.isFinite(points[points.length - 1]?.odds)
+      ? points[points.length - 1].odds
+      : (Number.isFinite(liveNow) ? liveNow : null),
+  };
+}
+
 export function resolveSparkPath({ pinPath, entry, flagged, now, maxNow } = {}) {
   const dense = downsample(normalizePath(pinPath));
   const uniqueOdds = new Set(dense.map((p) => p.odds));
@@ -607,13 +625,19 @@ export default function OddsLimitSpark({
     maxNow: maxNow ?? sma?.maxNow,
   });
   if (points.length < 2) return null;
+  const strip = {
+    entry: Number.isFinite(points[0]?.odds) ? points[0].odds : (Number.isFinite(entry) ? entry : null),
+    now: Number.isFinite(points[points.length - 1]?.odds)
+      ? points[points.length - 1].odds
+      : (Number.isFinite(liveNow) ? liveNow : null),
+  };
 
   const story = buildMarketStory({
     sma,
     evPct,
     flagged: pathFlagged,
-    entry,
-    now: liveNow,
+    entry: strip.entry,
+    now: strip.now,
     fair,
     maxNow: maxNow ?? sma?.maxNow,
     movePp,
@@ -630,8 +654,8 @@ export default function OddsLimitSpark({
         <MetricStrip
           evPct={evPct}
           fair={fair}
-          entry={entry}
-          now={liveNow}
+          entry={strip.entry}
+          now={strip.now}
           flagged={flagged}
           maxNow={maxNow ?? sma?.maxNow}
           movePp={movePp}
