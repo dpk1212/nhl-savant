@@ -77,6 +77,7 @@ import {
   meetsAgsLockFloor,
   positionToWalletDetail,
 } from '../src/lib/ags.js';
+import { selectVotedLine } from '../src/lib/actionPositionId.js';
 
 import {
   CLV_HIST_FROM,
@@ -1950,23 +1951,8 @@ function consensusLine(positions, side, sport = null, marketType = null) {
     counts.set(ln, cur);
   }
   if (counts.size === 0) return null;
-  let bestLine = null;
-  let bestN = -1;
-  let bestInv = -1;
   const byInvested = String(marketType || '').toUpperCase() === 'TOTAL';
-  for (const [ln, c] of counts) {
-    if (byInvested) {
-      if (c.invested > bestInv || (c.invested === bestInv && c.n > bestN)) {
-        bestLine = ln;
-        bestInv = c.invested;
-        bestN = c.n;
-      }
-    } else if (c.n > bestN) {
-      bestLine = ln;
-      bestN = c.n;
-    }
-  }
-  return bestLine;
+  return selectVotedLine(counts, { byInvested });
 }
 
 /**
