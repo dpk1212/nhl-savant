@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-08-14T14:03:51.192Z",
-  "elapsedSec": 17.2,
+  "scannedAt": "2026-08-14T14:08:19.217Z",
+  "elapsedSec": 17.1,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 45,
   "summary": {
     "total": 221,
-    "coveredByMain": 9,
-    "recovered": 9,
-    "recoveredPositions": 49,
+    "coveredByMain": 8,
+    "recovered": 10,
+    "recoveredPositions": 50,
     "noPositions": 203,
     "apiError": 0,
     "addressNotFound": 0,
@@ -17,7 +17,7 @@
       "spread": 1,
       "total": 5,
       "dropped_shadow_gate": 10,
-      "dropped_excluded": 29,
+      "dropped_excluded": 30,
       "dropped_duplicate": 1
     }
   },
@@ -385,7 +385,24 @@
       "tier": "CONFIRMED",
       "name": "sbsigner",
       "sports": "NHL",
-      "status": "COVERED_BY_MAIN"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x1b47e9b128e6b671edebfb2cac23dd3efc40d814",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 1470,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "bal_tbr",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 1057,
+          "entryLine": null,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "41ac37",
@@ -2039,7 +2056,7 @@
           "gameKey": "stl_chc",
           "marketType": "total",
           "side": "under",
-          "invested": 38411,
+          "invested": 38413,
           "entryLine": 7.5,
           "passesShadow": true
         },
@@ -2111,7 +2128,7 @@
           "gameKey": "sdp_cle",
           "marketType": "total",
           "side": "under",
-          "invested": 283,
+          "invested": 285,
           "entryLine": 6.5,
           "passesShadow": false
         }
