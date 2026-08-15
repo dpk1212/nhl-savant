@@ -1,4 +1,5 @@
 import { linesClose } from './pinnacleMain.js';
+import { summarizeSteam, STEAM_EVENT_PCT } from './steamMove.js';
 
 /**
  * Sharp–Market Agreement (SMA)
@@ -470,10 +471,11 @@ export function buildLockedMarketSignals({
   const maxNow = sma?.maxNow ?? sma?.path?.maxNow ?? null;
   const maxOpen = sma?.maxOpen ?? sma?.path?.maxOpen ?? null;
   const limitTested = !!(sma?.limitTested || (Number.isFinite(maxNow) && maxNow >= LIMIT_TESTED_USD));
-  const withFromOpen = dir > 0 && Number.isFinite(movePp) && movePp >= 0.25;
   const withFromTrough = Number.isFinite(troughPp) && troughPp >= 0.25;
-  const steamedWith = withFromOpen || withFromTrough
-    || !!(sma?.path?.steamDrop && Number(sma.path.steamDrop.dropPct) >= 3);
+  const steam = sma?.path?.steam || null;
+  // 3%+ Pinnacle drop (pinnapi / ClosingDime units). 0.25pp implied is juice — not steam.
+  const steamedWith = !!(steam?.show)
+    || !!(sma?.path?.steamDrop && Number(sma.path.steamDrop.dropPct) >= STEAM_EVENT_PCT);
   const steamedAgainst = dir < 0 && Number.isFinite(movePp) && movePp <= -0.25
     && !(withFromTrough);
   const limitRising = (Number.isFinite(maxDelta) && maxDelta >= 500)
@@ -515,11 +517,12 @@ export function buildLockedMarketSignals({
     },
     {
       id: 'steamWith',
-      label: 'Steam With Entry',
-      short: 'Steam',
+      label: steam?.goldConfirmed ? 'Gold Steam' : 'Steam With Entry',
+      short: steam?.show && steam.tagShort ? `Steam ${steam.tagShort}` : 'Steam',
       met: steamedWith,
       tier: 'high',
-      tip: 'Fair probability moved toward our side after the market formed — book pressure agrees.',
+      tip: steam?.tip
+        || 'Fair probability moved toward our side after the market formed — book pressure agrees.',
     },
     {
       id: 'limitRising',
@@ -610,7 +613,12 @@ export function sharpMarketAgreementFromPinnGame(pinnGame, ctx = {}) {
     marketType: ctx.marketType,
     sideNorm: ctx.sideNorm,
     line: ctx.line,
-    minDropPct: 3,
+    minDropPct: STEAM_EVENT_PCT,
+  });
+  const steamSummary = summarizeSteam(pinnGame, {
+    marketType: ctx.marketType,
+    sideNorm: ctx.sideNorm,
+    line: ctx.line,
   });
   // Prefer trough→now when it shows clearer WITH steam than open→now
   // (mid-session dips then steam back toward the pick).
@@ -641,7 +649,8 @@ export function sharpMarketAgreementFromPinnGame(pinnGame, ctx = {}) {
     path: {
       ...path,
       steamDrop: steam,
-      steamDropPct: steam?.dropPct ?? null,
+      steamDropPct: steam?.dropPct ?? steamSummary?.lastHour?.maxDrop ?? null,
+      steam: steamSummary,
     },
   };
 }

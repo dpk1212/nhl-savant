@@ -15,6 +15,7 @@ import {
 } from './mapPositionCard.js';
 import OddsLimitSpark from './OddsLimitSpark';
 import LockedSignalsRow from './LockedSignalsRow';
+import SteamTag from './SteamTag';
 
 const B = {
   gold: '#D4AF37',
@@ -1209,6 +1210,7 @@ export default function LockedClarityExpanded({
             {f.pickLabel}
           </span>
           <span style={{ fontSize: 15, fontWeight: 600, color: C.textSec }}>{fmtOdds(f.lockOdds)}</span>
+          <SteamTag steam={f.steam} compact />
           {f.mainNowLabel && (
             <span style={{
               width: '100%', fontSize: 11, fontWeight: 600, color: C.textMuted, marginTop: 2,

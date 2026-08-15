@@ -1662,6 +1662,7 @@ export function mapLockedPickToCardFixture(pick, {
       ?? null,
     pinnMaxDelta: sma?.path?.maxDelta ?? null,
     pinnMovePp: sma?.path?.deltaProbPp ?? null,
+    steam: sma?.path?.steam || null,
     // PIN/NOW = same-line tape as the chart (pinPath), never SMA's mixed path.
     sharpEntryOdds: Number.isFinite(tapeOpen) ? tapeOpen : null,
     currentFairOdds: Number.isFinite(tapeNow) ? tapeNow

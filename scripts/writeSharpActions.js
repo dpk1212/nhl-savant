@@ -21,7 +21,8 @@
  *   tabEligible           — would paint on the Action tab this cycle
  *   tabSeen               — sticky: ever tabEligible (never cleared)
  *   tabSnapshot           — frozen desk fields from last eligible cycle
- *                           (tier, Q, size, opposed, pin). Not rebuilt later.
+ *                           (tier, Q, size, opposed, pin, steam). Not rebuilt later.
+ *   steam                 — last-hour / since-open Pinnacle drop (pinnapi units)
  *
  * Usage: node scripts/writeSharpActions.js
  * Schedule: run after scan-sharp-positions (every 2h)
@@ -41,6 +42,7 @@ import {
   isActionTabEligible,
   pinMoveFor,
 } from '../src/lib/confirmedActionDesk.js';
+import { steamForGame, compactSteam } from '../src/lib/steamMove.js';
 import { passesSizeSkillLiveGate } from '../src/lib/sizeSkillRescue.js';
 import { resolveSportUsualBet } from './lib/sportUsualBet.js';
 
@@ -210,6 +212,17 @@ function enrichActionDeskStamps(positions, walletProfiles, commenceByGame, pinna
 
     pos.commenceTime = commenceByGame.get(`${pos.sport}|${pos.gameKey}`) ?? null;
     pos.pinMove = pinMoveFor(pinnacleHistory, pos.sport, pos.gameKey, pos.side);
+    const steamMkt = String(pos.marketType || 'ML').toUpperCase() === 'SPREAD' ? 'spread'
+      : String(pos.marketType || 'ML').toUpperCase() === 'TOTAL' ? 'total'
+        : 'ml';
+    const steamLine = Number.isFinite(Number(pos.entryLine)) ? Number(pos.entryLine)
+      : (Number.isFinite(Number(pos.spreadLine)) ? Number(pos.spreadLine)
+        : (Number.isFinite(Number(pos.totalLine)) ? Number(pos.totalLine) : null));
+    pos.steam = compactSteam(steamForGame(pinnacleHistory, pos.sport, pos.gameKey, {
+      marketType: steamMkt,
+      sideNorm: pos.side,
+      line: steamLine,
+    }));
 
     const sr = Number(pos.betMultiplier);
     const size = sizeBandFromRatio(Number.isFinite(sr) ? sr : Number(pos.v8_sizeRatio));
@@ -250,6 +263,7 @@ function enrichActionDeskStamps(positions, walletProfiles, commenceByGame, pinna
       opposedBy: pos.opposedBy,
       confirmedSupport: pos.confirmedSupport,
       pinMove: pos.pinMove,
+      steam: pos.steam,
       invested: Number.isFinite(Number(pos.invested)) ? Number(pos.invested) : null,
     } : null;
     delete pos._wlNow;
@@ -261,10 +275,13 @@ function enrichActionDeskStamps(positions, walletProfiles, commenceByGame, pinna
   const confirmedN = positions.filter((p) => p.whitelistTierAtEntry === 'CONFIRMED').length;
   const contestedN = positions.filter((p) => p.opposed === 'contested').length;
   const tabN = positions.filter((p) => p.tabEligible).length;
+  const steamN = positions.filter((p) => p.steam?.tier === 'steam' || p.steam?.tier === 'gold').length;
+  const goldN = positions.filter((p) => p.steam?.tier === 'gold').length;
   console.log(
     `Action stamps: commence=${withCommence}/${positions.length}`
     + ` · CONFIRMED=${confirmedN} · contested=${contestedN}`
     + ` · tabEligible=${tabN}`
+    + ` · steam=${steamN} gold=${goldN}`
     + ` · Q maps=${qBySport.size} sports`,
   );
 }
@@ -924,6 +941,7 @@ async function main() {
             confirmedSupport: null,
             sizeBand: null,
             pinMove: null,
+            steam: null,
             whitelistTierNow: null,
             tabEligible: false,
             tabSeen: false,
@@ -1093,6 +1111,7 @@ async function main() {
           opposedBy: pos.opposedBy,
           confirmedSupport: pos.confirmedSupport,
           pinMove: pos.pinMove ?? null,
+          steam: pos.steam ?? null,
           whitelistTierNow: pos.whitelistTierNow ?? null,
           tabEligible: !!pos.tabEligible,
           tabSeen: !!(data.tabSeen || pos.tabEligible),

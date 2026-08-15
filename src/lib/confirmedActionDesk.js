@@ -11,6 +11,7 @@ import {
 import { sportBookForDisplay } from './walletSportBook.js';
 import { passesSizeSkillLiveGate } from './sizeSkillRescue.js';
 import { sportDisplaySizeRatio as sportDisplaySizeRatioFromProfile } from './sizeRatioBands.js';
+import { steamForGame } from './steamMove.js';
 
 const SPORTS = ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL'];
 
@@ -363,6 +364,14 @@ export function buildConfirmedActionRows({
       ? Number(pos.entryLine)
       : (Number.isFinite(Number(pos.spreadLine)) ? Number(pos.spreadLine)
         : (Number.isFinite(Number(pos.totalLine)) ? Number(pos.totalLine) : null));
+    const steamMkt = marketType === 'SPREAD' ? 'spread'
+      : marketType === 'TOTAL' ? 'total'
+        : 'ml';
+    const steam = steamForGame(pinnacleHistory, sport, gameKey, {
+      marketType: steamMkt,
+      sideNorm: side,
+      line: entryLine,
+    });
 
     rows.push({
       id: `${sport}|${gameKey}|${marketType}|${short}|${side}`,
@@ -408,6 +417,7 @@ export function buildConfirmedActionRows({
       trust: trustFromProfile(prof, sport),
       ...contextRollupsFromProfile(prof, sport, marketType),
       pinMove: pin, // 'with' | 'against' | null
+      steam,
       opposed: null, // filled below
       opposedBy: 0,
       ts,

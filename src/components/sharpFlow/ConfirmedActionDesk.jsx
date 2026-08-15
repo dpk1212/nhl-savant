@@ -10,6 +10,7 @@ import {
   filterActionRows,
   sortActionRows,
 } from '../../lib/confirmedActionDesk.js';
+import SteamTag from './cards/SteamTag';
 
 const B = {
   gold: '#D4AF37',
@@ -893,6 +894,13 @@ function signalChips(row) {
       {row.formText !== '—' && <Chip>{row.formText}</Chip>}
       <Chip tone={opp.tone}>{opp.label}</Chip>
       {pin && <Chip tone={pin.tone}>{pin.label}</Chip>}
+      {row.steam?.show && (
+        <Chip tone={row.steam.tier === 'gold'
+          ? { color: B.gold, bg: B.goldDim, border: B.goldBorder }
+          : { color: B.green, bg: B.greenDim, border: 'rgba(16,185,129,0.3)' }}>
+          {row.steam.goldConfirmed ? row.steam.tag : `Steam ${row.steam.tag}`}
+        </Chip>
+      )}
       {row.flatCurve?.length >= 5 && (
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
           <FlatSpark points={row.flatCurve} />
@@ -1058,7 +1066,10 @@ function ActionRow({ row, isMobile, expanded, onToggle }) {
                   <span style={{ ...T.tiny, color: sportColor(row.sport) }}>{row.sport}</span>
                   <span style={{ ...T.tiny, color: B.textMuted }}>{row.marketLabel || row.marketType}</span>
                 </div>
-                <div style={{ ...T.name, color: B.text, fontSize: '1.15rem' }}>{row.team}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                  <div style={{ ...T.name, color: B.text, fontSize: '1.15rem' }}>{row.team}</div>
+                  <SteamTag steam={row.steam} compact />
+                </div>
                 <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.2rem' }}>{matchup}</div>
                 <TrustLine trust={trust} />
                 <CellHistLine text={row.cellHistText} />
@@ -1121,7 +1132,10 @@ function ActionRow({ row, isMobile, expanded, onToggle }) {
               </span>
               <span style={{ ...T.tiny, color: B.textMuted }}>{row.marketLabel || row.marketType}</span>
             </div>
-            <div style={{ ...T.name, color: B.text }}>{row.team}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+              <div style={{ ...T.name, color: B.text }}>{row.team}</div>
+              <SteamTag steam={row.steam} compact />
+            </div>
             <div style={{
               ...T.body, color: B.textMuted, marginTop: '0.28rem',
               whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
