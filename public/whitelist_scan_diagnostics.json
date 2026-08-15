@@ -1,23 +1,23 @@
 {
-  "scannedAt": "2026-08-15T01:35:17.296Z",
-  "elapsedSec": 15.4,
+  "scannedAt": "2026-08-15T01:39:29.080Z",
+  "elapsedSec": 19.6,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 47,
   "summary": {
     "total": 221,
     "coveredByMain": 11,
-    "recovered": 11,
-    "recoveredPositions": 28,
-    "noPositions": 199,
+    "recovered": 9,
+    "recoveredPositions": 22,
+    "noPositions": 201,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 0,
+      "ml": 1,
       "spread": 0,
-      "total": 2,
-      "dropped_shadow_gate": 3,
-      "dropped_excluded": 23,
+      "total": 0,
+      "dropped_shadow_gate": 2,
+      "dropped_excluded": 19,
       "dropped_duplicate": 0
     }
   },
@@ -641,21 +641,12 @@
       "sports": "MLB",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xd106952ebf30a3125affd8a23b6c1f30c35fc79c",
-      "positionsCount": 3,
-      "statsSource": "profile.bySport.positions",
-      "avgSportBet": 1748,
-      "willPassShadowGate": 3,
+      "positionsCount": 2,
+      "statsSource": "sports_sharps.perSport",
+      "avgSportBet": 1548,
+      "willPassShadowGate": 2,
       "willDropAtShadowGate": 0,
       "positions": [
-        {
-          "sport": "MLB",
-          "gameKey": "kcr_laa",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 433,
-          "entryLine": null,
-          "passesShadow": true
-        },
         {
           "sport": "WNBA",
           "gameKey": "por_sea",
@@ -683,11 +674,11 @@
       "sports": "MLB,WNBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xa0f21e6d351baa9185716b5c00c2925ed9621848",
-      "positionsCount": 3,
+      "positionsCount": 2,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 4022,
       "willPassShadowGate": 0,
-      "willDropAtShadowGate": 3,
+      "willDropAtShadowGate": 2,
       "positions": [
         {
           "sport": "MLB",
@@ -695,15 +686,6 @@
           "marketType": "ml",
           "side": "away",
           "invested": 148,
-          "entryLine": null,
-          "passesShadow": false
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "kcr_laa",
-          "marketType": "ml",
-          "side": "away",
-          "invested": 187,
           "entryLine": null,
           "passesShadow": false
         },
@@ -804,21 +786,12 @@
       "sports": "MLB,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
-      "positionsCount": 14,
-      "statsSource": "profile.bySport.positions",
-      "avgSportBet": 2055,
-      "willPassShadowGate": 14,
+      "positionsCount": 12,
+      "statsSource": "sports_sharps.perSport",
+      "avgSportBet": 3584,
+      "willPassShadowGate": 12,
       "willDropAtShadowGate": 0,
       "positions": [
-        {
-          "sport": "MLB",
-          "gameKey": "kcr_laa",
-          "marketType": "total",
-          "side": "under",
-          "invested": 38612,
-          "entryLine": 8.5,
-          "passesShadow": true
-        },
         {
           "sport": "WNBA",
           "gameKey": "por_sea",
@@ -911,15 +884,6 @@
         },
         {
           "sport": "MLB",
-          "gameKey": "kcr_laa",
-          "marketType": "total",
-          "side": "under",
-          "invested": 1543,
-          "entryLine": 10.5,
-          "passesShadow": true
-        },
-        {
-          "sport": "MLB",
           "gameKey": "col_sfg",
           "marketType": "total",
           "side": "under",
@@ -943,8 +907,24 @@
       "tier": "FLAT",
       "name": null,
       "sports": "MLB",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x5e9458202b5817a72cf81105ec8a30e6f3705ba1"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x5e9458202b5817a72cf81105ec8a30e6f3705ba1",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 60314,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "tex_oak",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 99979,
+          "entryLine": null,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "710c2e",
@@ -1515,48 +1495,16 @@
       "tier": "CONFIRMED",
       "name": null,
       "sports": "NHL,SOC,WNBA",
-      "status": "RECOVERED_VIA_WHITELIST_SCAN",
-      "addr": "0x21f333307ac6d2e65ac82f014b3dd2b64cbc35e3",
-      "positionsCount": 1,
-      "statsSource": "profile.bySport.positions",
-      "avgSportBet": 5176,
-      "willPassShadowGate": 1,
-      "willDropAtShadowGate": 0,
-      "positions": [
-        {
-          "sport": "MLB",
-          "gameKey": "kcr_laa",
-          "marketType": "total",
-          "side": "under",
-          "invested": 15692,
-          "entryLine": 8.5,
-          "passesShadow": true
-        }
-      ]
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0x21f333307ac6d2e65ac82f014b3dd2b64cbc35e3"
     },
     {
       "walletShort": "bc44b0",
       "tier": "CONFIRMED",
       "name": "ic4cream",
       "sports": "WNBA,UFC,NBA,SOC",
-      "status": "RECOVERED_VIA_WHITELIST_SCAN",
-      "addr": "0x27f738fe203827445690339104aae35b20bc44b0",
-      "positionsCount": 1,
-      "statsSource": "profile.bySport.positions",
-      "avgSportBet": 6441,
-      "willPassShadowGate": 1,
-      "willDropAtShadowGate": 0,
-      "positions": [
-        {
-          "sport": "MLB",
-          "gameKey": "kcr_laa",
-          "marketType": "total",
-          "side": "under",
-          "invested": 5775,
-          "entryLine": 8.5,
-          "passesShadow": true
-        }
-      ]
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0x27f738fe203827445690339104aae35b20bc44b0"
     },
     {
       "walletShort": "bd2d54",
@@ -1760,7 +1708,7 @@
           "gameKey": "tex_oak",
           "marketType": "ml",
           "side": "home",
-          "invested": 37586,
+          "invested": 37579,
           "entryLine": null,
           "passesShadow": true
         }
@@ -1947,24 +1895,8 @@
       "tier": "CONFIRMED",
       "name": null,
       "sports": "SOC,NBA",
-      "status": "RECOVERED_VIA_WHITELIST_SCAN",
-      "addr": "0x3dfb153c197d4c19d3b31c1ecd2c7b6860eeabaf",
-      "positionsCount": 1,
-      "statsSource": "profile.bySport.positions",
-      "avgSportBet": 35524,
-      "willPassShadowGate": 1,
-      "willDropAtShadowGate": 0,
-      "positions": [
-        {
-          "sport": "MLB",
-          "gameKey": "kcr_laa",
-          "marketType": "total",
-          "side": "over",
-          "invested": 14466,
-          "entryLine": 8.5,
-          "passesShadow": true
-        }
-      ]
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0x3dfb153c197d4c19d3b31c1ecd2c7b6860eeabaf"
     },
     {
       "walletShort": "eeb218",
