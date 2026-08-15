@@ -1,9 +1,10 @@
 /**
  * gradeSharpActions.js — Grade Today's Action positions with game results
  *
- * Queries PENDING positions from `sharp_action_positions`, fetches final
- * scores from NHL API / ESPN (MLB, NBA) / NCAA API (CBB), then grades
- * each position WIN / LOSS / PUSH and records CLV where closing odds exist.
+ * Queries PENDING positions from `sharp_action_positions`, plus EXITED
+ * tickets that were still on after first pitch (asset dropped from the
+ * scan once the market resolved). Pre-game exits stay ungraded.
+ * Fetches finals from NHL API / ESPN / NCAA, then grades WIN / LOSS / PUSH.
  *
  * Also captures closing Pinnacle odds from pinnacle_history.json for CLV.
  *
@@ -188,9 +189,10 @@ function espnEventDateET(e) {
   return d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 }
 
-async function fetchMLBFinalGames() {
+async function fetchMLBFinalGames(dateStr) {
   try {
-    const res = await fetch(ESPN_MLB_URL);
+    const ymd = dateStr ? `?dates=${String(dateStr).replace(/-/g, '')}` : '';
+    const res = await fetch(`${ESPN_MLB_URL}${ymd}`);
     if (!res.ok) return [];
     const data = await res.json();
     return (data.events || [])
@@ -219,9 +221,10 @@ async function fetchMLBFinalGames() {
   }
 }
 
-async function fetchNBAFinalGames() {
+async function fetchNBAFinalGames(dateStr) {
   try {
-    const res = await fetch(ESPN_NBA_URL);
+    const ymd = dateStr ? `?dates=${String(dateStr).replace(/-/g, '')}` : '';
+    const res = await fetch(`${ESPN_NBA_URL}${ymd}`);
     if (!res.ok) return [];
     const data = await res.json();
     return (data.events || [])
@@ -250,9 +253,10 @@ async function fetchNBAFinalGames() {
   }
 }
 
-async function fetchWNBAFinalGames() {
+async function fetchWNBAFinalGames(dateStr) {
   try {
-    const res = await fetch(ESPN_WNBA_URL);
+    const ymd = dateStr ? `?dates=${String(dateStr).replace(/-/g, '')}` : '';
+    const res = await fetch(`${ESPN_WNBA_URL}${ymd}`);
     if (!res.ok) return [];
     const data = await res.json();
     return (data.events || [])
@@ -289,9 +293,10 @@ async function fetchWNBAFinalGames() {
   }
 }
 
-async function fetchNFLFinalGames() {
+async function fetchNFLFinalGames(dateStr) {
   try {
-    const res = await fetch(ESPN_NFL_URL);
+    const ymd = dateStr ? `?dates=${String(dateStr).replace(/-/g, '')}` : '';
+    const res = await fetch(`${ESPN_NFL_URL}${ymd}`);
     if (!res.ok) return [];
     const data = await res.json();
     return (data.events || [])
@@ -607,6 +612,60 @@ function findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFi
   return null;
 }
 
+const EXITED_GRADE_LOOKBACK_DAYS = 30;
+const EXITED_SKIP_REASONS = new Set(['date_calendar_retag', 'eventId_mismatch']);
+
+function etDateMinusDays(days) {
+  return new Date(Date.now() - days * 86400000)
+    .toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+}
+
+function exitedAtMs(pos) {
+  const x = pos?.exitedAt;
+  if (x == null) return null;
+  if (typeof x.toMillis === 'function') return x.toMillis();
+  if (Number.isFinite(x.seconds)) return x.seconds * 1000;
+  if (typeof x === 'string') {
+    const t = Date.parse(x);
+    return Number.isFinite(t) ? t : null;
+  }
+  if (Number.isFinite(x)) return x > 1e12 ? x : x * 1000;
+  return null;
+}
+
+/**
+ * EXITED after first pitch still counts — the scan dropped a resolved
+ * (or in-game sold) market. Pre-game exits and retag/mismatch do not.
+ */
+function shouldGradeExited(pos) {
+  if (!pos || pos.status !== 'EXITED') return false;
+  if (EXITED_SKIP_REASONS.has(String(pos.exitReason || ''))) return false;
+  if (Number.isFinite(Number(pos.minutesToCommence)) && Number(pos.minutesToCommence) < 0) {
+    return true;
+  }
+  const ct = Number(pos.commenceTime);
+  const exited = exitedAtMs(pos);
+  if (Number.isFinite(ct) && ct > 1e11 && Number.isFinite(exited) && exited >= ct) return true;
+  return false;
+}
+
+async function loadGradeCandidates(db) {
+  const pendingSnap = await db.collection(COLLECTION).where('status', '==', 'PENDING').get();
+  const exitedSnap = await db.collection(COLLECTION).where('status', '==', 'EXITED').get();
+  const cutoff = etDateMinusDays(EXITED_GRADE_LOOKBACK_DAYS);
+  const held = exitedSnap.docs.filter((doc) => {
+    const d = doc.data() || {};
+    if (d.date && String(d.date) < cutoff) return false;
+    return shouldGradeExited(d);
+  });
+  return {
+    docs: [...pendingSnap.docs, ...held],
+    pending: pendingSnap.size,
+    exitedHeld: held.length,
+    exitedSkipped: exitedSnap.size - held.length,
+  };
+}
+
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -620,31 +679,35 @@ async function main() {
     return JSON.parse(readFileSync(p, 'utf8'));
   })();
 
-  // Query all pending positions
-  const snapshot = await db.collection(COLLECTION)
-    .where('status', '==', 'PENDING')
-    .get();
-
-  if (snapshot.empty) {
-    console.log('No pending positions to grade.');
+  const snapshot = await loadGradeCandidates(db);
+  if (!snapshot.docs.length) {
+    console.log('No pending or held-through-exit positions to grade.');
     return;
   }
-  console.log(`Found ${snapshot.size} pending positions to grade`);
+  console.log(`Found ${snapshot.pending} pending + ${snapshot.exitedHeld} held-through-exit (skipped ${snapshot.exitedSkipped} other EXITED)`);
 
   // Determine which sports / dates we need scores for
   const sports = new Set();
   const cbbDates = new Set();
   const nhlDates = new Set();
+  const mlbDates = new Set();
+  const nbaDates = new Set();
+  const wnbaDates = new Set();
+  const nflDates = new Set();
   const socDates = new Set();
   const ufcDates = new Set();
-  snapshot.forEach(doc => {
+  for (const doc of snapshot.docs) {
     const d = doc.data();
     sports.add(d.sport);
     if (d.sport === 'CBB' && d.date) cbbDates.add(d.date);
     if (d.sport === 'NHL' && d.date) nhlDates.add(d.date);
+    if (d.sport === 'MLB' && d.date) mlbDates.add(d.date);
+    if (d.sport === 'NBA' && d.date) nbaDates.add(d.date);
+    if (d.sport === 'WNBA' && d.date) wnbaDates.add(d.date);
+    if (d.sport === 'NFL' && d.date) nflDates.add(d.date);
     if (d.sport === 'SOC' && d.date) socDates.add(d.date);
     if (d.sport === 'UFC' && d.date) ufcDates.add(d.date);
-  });
+  }
 
   // Fetch scores
   let nhlFinals = [];
@@ -667,26 +730,42 @@ async function main() {
 
   let mlbFinals = [];
   if (sports.has('MLB')) {
-    mlbFinals = await fetchMLBFinalGames();
-    console.log(`ESPN MLB API: ${mlbFinals.length} final MLB games`);
+    const dates = mlbDates.size ? [...mlbDates] : [null];
+    for (const d of dates) {
+      const games = await fetchMLBFinalGames(d);
+      mlbFinals.push(...games);
+      console.log(`ESPN MLB API: ${games.length} final MLB games${d ? ` for ${d}` : ''}`);
+    }
   }
 
   let nbaFinals = [];
   if (sports.has('NBA')) {
-    nbaFinals = await fetchNBAFinalGames();
-    console.log(`ESPN NBA API: ${nbaFinals.length} final NBA games`);
+    const dates = nbaDates.size ? [...nbaDates] : [null];
+    for (const d of dates) {
+      const games = await fetchNBAFinalGames(d);
+      nbaFinals.push(...games);
+      console.log(`ESPN NBA API: ${games.length} final NBA games${d ? ` for ${d}` : ''}`);
+    }
   }
 
   let wnbaFinals = [];
   if (sports.has('WNBA')) {
-    wnbaFinals = await fetchWNBAFinalGames();
-    console.log(`ESPN WNBA API: ${wnbaFinals.length} final WNBA games`);
+    const dates = wnbaDates.size ? [...wnbaDates] : [null];
+    for (const d of dates) {
+      const games = await fetchWNBAFinalGames(d);
+      wnbaFinals.push(...games);
+      console.log(`ESPN WNBA API: ${games.length} final WNBA games${d ? ` for ${d}` : ''}`);
+    }
   }
 
   let nflFinals = [];
   if (sports.has('NFL')) {
-    nflFinals = await fetchNFLFinalGames();
-    console.log(`ESPN NFL API: ${nflFinals.length} final NFL games`);
+    const dates = nflDates.size ? [...nflDates] : [null];
+    for (const d of dates) {
+      const games = await fetchNFLFinalGames(d);
+      nflFinals.push(...games);
+      console.log(`ESPN NFL API: ${games.length} final NFL games${d ? ` for ${d}` : ''}`);
+    }
   }
 
   let socFinals = [];
@@ -817,7 +896,7 @@ async function main() {
   console.log(`  Graded:     ${graded}`);
   console.log(`  No game:    ${noGame} (game not final yet)`);
   console.log(`  Errors:     ${errors}`);
-  console.log(`  Remaining:  ${snapshot.size - graded} still pending`);
+  console.log(`  Remaining:  ${snapshot.docs.length - graded} still open`);
 
   // All-time performance summary used to re-scan every GRADED doc (~22k reads).
   // Skip that — exportWalletProfiles already rebuilds the CLV ledger + profiles
@@ -827,7 +906,7 @@ async function main() {
 }
 
 // Exported for tests (tests/testGradeDateGuard.mjs) — pure helpers, no I/O.
-export { espnEventDateET, finalDateMatches, findMatchingGame, teamNamesMatch };
+export { espnEventDateET, finalDateMatches, findMatchingGame, teamNamesMatch, shouldGradeExited };
 
 // Only run when executed directly (node scripts/gradeSharpActions.js), so
 // tests can import the helpers without triggering a live grading pass.
