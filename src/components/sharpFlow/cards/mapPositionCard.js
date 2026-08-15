@@ -1512,6 +1512,7 @@ export function mapLockedPickToCardFixture(pick, {
     sideNorm,
     line: Number.isFinite(ticketLine) ? ticketLine : playableLine,
     freezeAtMs: ticketFrozen ? freezeAtMs : null,
+    commenceMs: commenceMsForFreeze,
     provenOnSide: confirmedOnSide,
     vaultOnSide,
     trackedOnSide: wallets.length,

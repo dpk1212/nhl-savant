@@ -222,6 +222,7 @@ function enrichActionDeskStamps(positions, walletProfiles, commenceByGame, pinna
       marketType: steamMkt,
       sideNorm: pos.side,
       line: steamLine,
+      freezeAtMs: pos.commenceTime,
     }));
 
     const sr = Number(pos.betMultiplier);

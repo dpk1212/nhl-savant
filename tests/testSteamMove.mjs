@@ -94,4 +94,30 @@ const mixedTotals = summarizeSteam({
 assert.equal(mixedTotals.show, false, `mixed totals tagged ${mixedTotals.tag}`);
 assert.ok(Math.abs(mixedTotals.sinceOpen.dropPct || 0) < 3, `mixed open ${mixedTotals.sinceOpen.dropPct}`);
 
+// Live prints after commence must not move the tag.
+const commence = now - 1800;
+const liveAfter = summarizeSteam({
+  commence: new Date(commence * 1000).toISOString(),
+  opener: { t: now - 6 * 3600, away: 130, home: -150 },
+  current: { away: 200, home: -250 },
+  history: [
+    { t: now - 6 * 3600, away: 130, home: -150 },
+    { t: commence - 60, away: 135, home: -155 },
+    { t: now - 30, away: 200, home: -250 },
+  ],
+}, { marketType: 'ml', sideNorm: 'home', nowSec: now });
+assert.equal(liveAfter.frozen, true);
+assert.equal(liveAfter.sinceOpen.toOdds, -155, 'close = last pre-commence print');
+assert.ok(liveAfter.sinceOpen.dropPct < 3, `live after commence ${liveAfter.sinceOpen.dropPct}`);
+
+const pregame = summarizeSteam({
+  commence: new Date((now + 3600) * 1000).toISOString(),
+  history: [
+    { t: now - 6 * 3600, away: 130, home: -140 },
+    { t: now - 60, away: 145, home: -160 },
+  ],
+}, { marketType: 'ml', sideNorm: 'home', nowSec: now });
+assert.equal(pregame.frozen, false);
+assert.ok(pregame.sinceOpen.dropPct >= 4.5, `pregame still live ${pregame.sinceOpen.dropPct}`);
+
 console.log('testSteamMove: ok');

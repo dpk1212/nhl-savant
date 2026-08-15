@@ -619,6 +619,8 @@ export function sharpMarketAgreementFromPinnGame(pinnGame, ctx = {}) {
     marketType: ctx.marketType,
     sideNorm: ctx.sideNorm,
     line: ctx.line,
+    // Steam freezes at first pitch (pinnGame.commence), not T-15 ticket lock.
+    freezeAtMs: ctx.commenceMs ?? null,
   });
   // Prefer trough→now when it shows clearer WITH steam than open→now
   // (mid-session dips then steam back toward the pick).

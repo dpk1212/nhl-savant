@@ -105,6 +105,7 @@ export function matchSteamDrops(drops, {
   line = null,
   minDropPct = STEAM_EVENT_PCT,
   sinceSec = null,
+  untilSec = null,
 } = {}) {
   if (!Array.isArray(drops) || !drops.length) return [];
   const wantMkt = wantMarket(marketType);
@@ -114,6 +115,7 @@ export function matchSteamDrops(drops, {
     if (!d || d.market !== wantMkt || d.side !== side) continue;
     if (!(Number(d.dropPct) >= minDropPct)) continue;
     if (Number.isFinite(sinceSec) && Number.isFinite(d.t) && d.t < sinceSec) continue;
+    if (Number.isFinite(untilSec) && Number.isFinite(d.t) && d.t > untilSec) continue;
     if (wantMkt !== 'ml' && Number.isFinite(line) && Number.isFinite(d.points)
         && Math.abs(d.points - line) > 0.051) {
       continue;
@@ -121,6 +123,16 @@ export function matchSteamDrops(drops, {
     out.push(d);
   }
   return out.sort((a, b) => (a.t || 0) - (b.t || 0));
+}
+
+/** Epoch seconds. Accepts ms, sec, or ISO / Date-parseable commence. */
+export function commenceSecOf(raw) {
+  if (raw == null || raw === '') return null;
+  if (typeof raw === 'number' && Number.isFinite(raw)) {
+    return raw > 1e12 ? Math.floor(raw / 1000) : Math.floor(raw);
+  }
+  const ms = Date.parse(raw);
+  return Number.isFinite(ms) ? Math.floor(ms / 1000) : null;
 }
 
 function windowStats(matched, sinceSec) {
@@ -161,6 +173,7 @@ export function summarizeSteam(pinnGame, {
   sideNorm = 'home',
   line = null,
   nowSec = Math.floor(Date.now() / 1000),
+  freezeAtMs = null,
 } = {}) {
   const empty = {
     lastHour: emptyWindow(),
@@ -175,6 +188,13 @@ export function summarizeSteam(pinnGame, {
     at: nowSec,
   };
   if (!pinnGame) return empty;
+
+  const commenceSec = commenceSecOf(freezeAtMs)
+    ?? commenceSecOf(pinnGame.commence)
+    ?? commenceSecOf(pinnGame.commenceTime)
+    ?? commenceSecOf(pinnGame.starts);
+  const frozen = Number.isFinite(commenceSec) && nowSec >= commenceSec;
+  if (frozen) nowSec = commenceSec;
 
   const mt = String(marketType || 'ml').toLowerCase();
   const isTotal = mt === 'total';
@@ -205,6 +225,9 @@ export function summarizeSteam(pinnGame, {
   let hist = filterHist(marketHist(pinnGame, mt), {
     isTotal, isSpread, sideIsAway, line: pinLine,
   });
+  if (frozen) {
+    hist = hist.filter((h) => !Number.isFinite(h?.t) || h.t <= nowSec);
+  }
   const hourAgo = nowSec - STEAM_HOUR_SEC;
 
   let openOdds = hist.length ? oddsAt(hist[0], ctx) : null;
@@ -243,7 +266,7 @@ export function summarizeSteam(pinnGame, {
         openOdds = op ? (pickDraw ? op.draw : sideIsAway ? op.away : op.home) : null;
       }
     }
-    if (nowOdds == null) {
+    if (nowOdds == null && !frozen) {
       if (isTotal) nowOdds = pinnGame.totalCurrent
         ? (sideIsAway ? pinnGame.totalCurrent.underOdds : pinnGame.totalCurrent.overOdds)
         : null;
@@ -255,7 +278,7 @@ export function summarizeSteam(pinnGame, {
         nowOdds = cur ? (pickDraw ? cur.draw : sideIsAway ? cur.away : cur.home) : null;
       }
     }
-    if (maxNow == null) {
+    if (maxNow == null && !frozen) {
       maxNow = isTotal
         ? (pinnGame.maxTotal ?? pinnGame.totalCurrent?.max ?? null)
         : isSpread
@@ -282,6 +305,7 @@ export function summarizeSteam(pinnGame, {
     sideNorm,
     line: pinLine,
     minDropPct: STEAM_EVENT_PCT,
+    untilSec: frozen ? nowSec : null,
   });
   const hourDrops = windowStats(matched, hourAgo);
   const openDrops = windowStats(matched, null);
@@ -374,6 +398,7 @@ export function summarizeSteam(pinnGame, {
     tagShort,
     tip,
     at: nowSec,
+    frozen,
     maxOpen: Number.isFinite(maxOpen) ? maxOpen : null,
     maxNow: Number.isFinite(maxNow) ? maxNow : null,
   };
@@ -392,6 +417,7 @@ export function compactSteam(summary) {
     limitRising: !!summary.limitRising,
     tag: summary.tag || null,
     at: summary.at || null,
+    frozen: !!summary.frozen,
   };
 }
 
@@ -400,7 +426,8 @@ export function steamForGame(pinnacleHistory, sport, gameKey, {
   sideNorm = 'home',
   line = null,
   nowSec = Math.floor(Date.now() / 1000),
+  freezeAtMs = null,
 } = {}) {
   const g = pinnacleHistory?.[sport]?.[gameKey] || null;
-  return summarizeSteam(g, { marketType, sideNorm, line, nowSec });
+  return summarizeSteam(g, { marketType, sideNorm, line, nowSec, freezeAtMs });
 }
