@@ -1,23 +1,23 @@
 {
-  "scannedAt": "2026-08-15T19:17:59.625Z",
-  "elapsedSec": 15.3,
+  "scannedAt": "2026-08-15T19:22:08.070Z",
+  "elapsedSec": 17.8,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 44,
   "summary": {
     "total": 226,
     "coveredByMain": 23,
     "recovered": 19,
-    "recoveredPositions": 66,
+    "recoveredPositions": 69,
     "noPositions": 184,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 17,
+      "ml": 18,
       "spread": 0,
-      "total": 1,
+      "total": 2,
       "dropped_shadow_gate": 11,
-      "dropped_excluded": 37,
+      "dropped_excluded": 38,
       "dropped_duplicate": 0
     }
   },
@@ -641,10 +641,10 @@
       "sports": "SOC",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xf1528f12e645462c344799b62b1b421a6a4c64aa",
-      "positionsCount": 2,
+      "positionsCount": 3,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 18937,
-      "willPassShadowGate": 2,
+      "willPassShadowGate": 3,
       "willDropAtShadowGate": 0,
       "positions": [
         {
@@ -658,10 +658,19 @@
         },
         {
           "sport": "MLB",
+          "gameKey": "sea_hou",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 2650,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
           "gameKey": "wsh_nym",
           "marketType": "ml",
           "side": "home",
-          "invested": 2397,
+          "invested": 2403,
           "entryLine": null,
           "passesShadow": true
         }
@@ -1236,10 +1245,10 @@
       "sports": "MLB",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x5e9458202b5817a72cf81105ec8a30e6f3705ba1",
-      "positionsCount": 1,
+      "positionsCount": 3,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 60622,
-      "willPassShadowGate": 1,
+      "willPassShadowGate": 3,
       "willDropAtShadowGate": 0,
       "positions": [
         {
@@ -1247,8 +1256,26 @@
           "gameKey": "wsh_nym",
           "marketType": "total",
           "side": "over",
-          "invested": 76533,
+          "invested": 80077,
           "entryLine": 7.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "sea_hou",
+          "marketType": "total",
+          "side": "over",
+          "invested": 33832,
+          "entryLine": 8.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "sea_hou",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 7106,
+          "entryLine": null,
           "passesShadow": true
         }
       ]
