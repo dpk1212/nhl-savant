@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-08-15T13:10:22.405Z",
-  "elapsedSec": 15.4,
+  "scannedAt": "2026-08-15T13:14:22.126Z",
+  "elapsedSec": 15.8,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 45,
   "summary": {
     "total": 226,
     "coveredByMain": 15,
-    "recovered": 14,
-    "recoveredPositions": 40,
-    "noPositions": 197,
+    "recovered": 15,
+    "recoveredPositions": 41,
+    "noPositions": 196,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -17,7 +17,7 @@
       "spread": 0,
       "total": 0,
       "dropped_shadow_gate": 10,
-      "dropped_excluded": 20,
+      "dropped_excluded": 21,
       "dropped_duplicate": 0
     }
   },
@@ -683,8 +683,24 @@
       "tier": "CONFIRMED",
       "name": "sentrio",
       "sports": "MLB,SOC,NBA",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xdb83e85ffd22faa4009273034770f96ffc5b1e50"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0xdb83e85ffd22faa4009273034770f96ffc5b1e50",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 1420,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "stl_chc",
+          "marketType": "total",
+          "side": "over",
+          "invested": 2350,
+          "entryLine": 9.5,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "5b53d1",
@@ -925,7 +941,7 @@
           "gameKey": "wsh_nym",
           "marketType": "total",
           "side": "under",
-          "invested": 7369,
+          "invested": 7620,
           "entryLine": 8.5,
           "passesShadow": true
         },
@@ -1323,7 +1339,7 @@
           "gameKey": "myktybekorolbai_jeremiahwells",
           "marketType": "ml",
           "side": "home",
-          "invested": 1338,
+          "invested": 1341,
           "entryLine": null,
           "passesShadow": true
         }
@@ -1973,7 +1989,7 @@
           "gameKey": "nyy_tor",
           "marketType": "ml",
           "side": "away",
-          "invested": 202,
+          "invested": 212,
           "entryLine": null,
           "passesShadow": false
         }
