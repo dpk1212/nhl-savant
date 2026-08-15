@@ -18,6 +18,10 @@
  *   confirmedSupport      — counted CONFIRMED ≥0.10× on same side (incl. self)
  *   sizeBand              — press|full|lean|light from betMultiplier
  *   minutesToCommence     — (commenceTime − exitNow) / 60k on EXITED (null if unknown)
+ *   tabEligible           — would paint on the Action tab this cycle
+ *   tabSeen               — sticky: ever tabEligible (never cleared)
+ *   tabSnapshot           — frozen desk fields from last eligible cycle
+ *                           (tier, Q, size, opposed, pin). Not rebuilt later.
  *
  * Usage: node scripts/writeSharpActions.js
  * Schedule: run after scan-sharp-positions (every 2h)
@@ -31,7 +35,12 @@ import { dirname, join } from 'path';
 import { loadWalletProfilesMap } from './lib/loadWalletProfiles.js';
 import { buildFlatDollarQBySport, shortWalletId } from '../src/lib/walletClvSkill.js';
 import { tierLetterFromQ } from '../src/lib/sharpTierCellStats.js';
-import { sizeBandFromRatio, isCountedProvenSize } from '../src/lib/confirmedActionDesk.js';
+import {
+  sizeBandFromRatio,
+  isCountedProvenSize,
+  isActionTabEligible,
+  pinMoveFor,
+} from '../src/lib/confirmedActionDesk.js';
 import { passesSizeSkillLiveGate } from '../src/lib/sizeSkillRescue.js';
 import { resolveSportUsualBet } from './lib/sportUsualBet.js';
 
@@ -178,7 +187,7 @@ function loadCommenceByGame() {
  * Stamp Action-tab analytics fields onto the in-memory position list before write.
  * Opposition uses current whitelist + size (desk rule), not frozen AtEntry.
  */
-function enrichActionDeskStamps(positions, walletProfiles, commenceByGame) {
+function enrichActionDeskStamps(positions, walletProfiles, commenceByGame, pinnacleHistory = {}) {
   const qBySport = buildFlatDollarQBySport(walletProfiles);
 
   for (const pos of positions) {
@@ -186,10 +195,13 @@ function enrichActionDeskStamps(positions, walletProfiles, commenceByGame) {
     const prof = walletProfiles.get(short)
       || walletProfiles.get(String(short || '').toLowerCase())
       || null;
-    const wlRaw = prof?.bySport?.[pos.sport]?.whitelistTier;
+    const sportRec = prof?.bySport?.[pos.sport] || null;
+    const wlRaw = sportRec?.whitelistTier;
     const wlNow = wlRaw ? String(wlRaw).toUpperCase() : null;
     pos._wlNow = wlNow;
+    pos._sportRec = sportRec;
     pos.whitelistTierAtEntry = wlNow;
+    pos.whitelistTierNow = wlNow;
 
     const qMap = qBySport.get(pos.sport) || new Map();
     const q = qMap.get(short) || qMap.get(String(short).toLowerCase()) || null;
@@ -197,10 +209,13 @@ function enrichActionDeskStamps(positions, walletProfiles, commenceByGame) {
     pos.sharpTier = tierLetterFromQ(pos.skillQ);
 
     pos.commenceTime = commenceByGame.get(`${pos.sport}|${pos.gameKey}`) ?? null;
+    pos.pinMove = pinMoveFor(pinnacleHistory, pos.sport, pos.gameKey, pos.side);
 
     const sr = Number(pos.betMultiplier);
     const size = sizeBandFromRatio(Number.isFinite(sr) ? sr : Number(pos.v8_sizeRatio));
     pos.sizeBand = size.key;
+    pos._sizeRatio = Number.isFinite(sr) ? sr
+      : (Number.isFinite(Number(pos.v8_sizeRatio)) ? Number(pos.v8_sizeRatio) : null);
   }
 
   const byCluster = new Map();
@@ -219,15 +234,37 @@ function enrichActionDeskStamps(positions, walletProfiles, commenceByGame) {
     pos.opposed = foes.length > 0 ? 'contested' : 'clear';
     pos.opposedBy = foes.length;
     pos.confirmedSupport = support.length;
+    pos.tabEligible = isActionTabEligible({
+      whitelistTier: pos._wlNow,
+      invested: pos.invested,
+      sizeRatio: pos._sizeRatio,
+      sportRec: pos._sportRec,
+    });
+    pos.tabSnapshot = pos.tabEligible ? {
+      whitelistTier: pos._wlNow,
+      skillQ: pos.skillQ,
+      sharpTier: pos.sharpTier,
+      sizeRatio: pos._sizeRatio,
+      sizeBand: pos.sizeBand,
+      opposed: pos.opposed,
+      opposedBy: pos.opposedBy,
+      confirmedSupport: pos.confirmedSupport,
+      pinMove: pos.pinMove,
+      invested: Number.isFinite(Number(pos.invested)) ? Number(pos.invested) : null,
+    } : null;
     delete pos._wlNow;
+    delete pos._sportRec;
+    delete pos._sizeRatio;
   }
 
   const withCommence = positions.filter((p) => p.commenceTime != null).length;
   const confirmedN = positions.filter((p) => p.whitelistTierAtEntry === 'CONFIRMED').length;
   const contestedN = positions.filter((p) => p.opposed === 'contested').length;
+  const tabN = positions.filter((p) => p.tabEligible).length;
   console.log(
     `Action stamps: commence=${withCommence}/${positions.length}`
     + ` · CONFIRMED=${confirmedN} · contested=${contestedN}`
+    + ` · tabEligible=${tabN}`
     + ` · Q maps=${qBySport.size} sports`,
   );
 }
@@ -886,6 +923,13 @@ async function main() {
             opposedBy: null,
             confirmedSupport: null,
             sizeBand: null,
+            pinMove: null,
+            whitelistTierNow: null,
+            tabEligible: false,
+            tabSeen: false,
+            tabFirstAt: null,
+            tabLastAt: null,
+            tabSnapshot: null,
             status: 'PENDING',
             result: null,
             gradedAt: null,
@@ -899,7 +943,7 @@ async function main() {
     }
   }
 
-  enrichActionDeskStamps(positions, walletProfiles, commenceByGame);
+  enrichActionDeskStamps(positions, walletProfiles, commenceByGame, pinnacleHistory);
 
   const vaultCt = positions.filter(p => p.vaultQualified).length;
   const shadowCt = positions.length - vaultCt;
@@ -1048,6 +1092,10 @@ async function main() {
           opposed: pos.opposed,
           opposedBy: pos.opposedBy,
           confirmedSupport: pos.confirmedSupport,
+          pinMove: pos.pinMove ?? null,
+          whitelistTierNow: pos.whitelistTierNow ?? null,
+          tabEligible: !!pos.tabEligible,
+          tabSeen: !!(data.tabSeen || pos.tabEligible),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           // V8 scoring — always update to latest snapshot
           v8_walletPlayScore: pos.v8_walletPlayScore,
@@ -1111,6 +1159,13 @@ async function main() {
         if (data.commenceTime == null && pos.commenceTime != null) {
           updatePayload.commenceTime = pos.commenceTime;
         }
+        if (pos.tabEligible) {
+          updatePayload.tabLastAt = admin.firestore.FieldValue.serverTimestamp();
+          updatePayload.tabSnapshot = pos.tabSnapshot;
+          if (!data.tabFirstAt) {
+            updatePayload.tabFirstAt = admin.firestore.FieldValue.serverTimestamp();
+          }
+        }
         // Re-open if this wallet re-entered after an EXITED stamp.
         if (data.status === 'EXITED') {
           updatePayload.status = 'PENDING';
@@ -1122,6 +1177,11 @@ async function main() {
         batch.update(ref, updatePayload);
         updated++;
       } else {
+        if (pos.tabEligible) {
+          pos.tabSeen = true;
+          pos.tabFirstAt = admin.firestore.FieldValue.serverTimestamp();
+          pos.tabLastAt = admin.firestore.FieldValue.serverTimestamp();
+        }
         batch.set(ref, pos);
         written++;
       }

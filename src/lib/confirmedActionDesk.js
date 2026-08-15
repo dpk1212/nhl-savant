@@ -104,7 +104,7 @@ export function formatMarketLabel(marketType, entryLine) {
   return mkt;
 }
 
-function pinMoveFor(pinnacleHistory, sport, gameKey, side) {
+export function pinMoveFor(pinnacleHistory, sport, gameKey, side) {
   const g = pinnacleHistory?.[sport]?.[gameKey];
   const dir = g?.movement?.direction;
   if (!dir || !side) return null;
@@ -112,6 +112,22 @@ function pinMoveFor(pinnacleHistory, sport, gameKey, side) {
   if (dir === side) return 'with';
   if (dir === 'away' || dir === 'home') return 'against';
   return null;
+}
+
+/**
+ * Same gates as the live Action tab (default pills off).
+ * Additive analytics only — does not change who gets written.
+ */
+export function isActionTabEligible({
+  whitelistTier,
+  invested,
+  sizeRatio,
+  sportRec,
+} = {}) {
+  if (String(whitelistTier || '').toUpperCase() !== 'CONFIRMED') return false;
+  if (!(Number(invested) >= MIN_ACTION_INVESTED)) return false;
+  if (!passesSizeSkillLiveGate(sportRec, sizeRatio)) return false;
+  return true;
 }
 
 function formFromProfile(prof, sport) {
