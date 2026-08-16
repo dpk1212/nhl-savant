@@ -1248,20 +1248,25 @@ async function retagUtcDatedSiblings(db, etDate, positions) {
   const etKeys = new Set(
     positions.map((p) => softPositionKey(p.wallet, p.sport, p.gameKey, p.marketType, p.side)),
   );
-  if (etKeys.size === 0) return 0;
+  const etAssets = new Set(
+    positions.map((p) => (p.asset != null && p.asset !== '' ? String(p.asset) : null)).filter(Boolean),
+  );
+  if (etKeys.size === 0 && etAssets.size === 0) return 0;
 
-  const snap = await db.collection(COLLECTION)
-    .where('date', '==', utcDate)
-    .where('status', '==', 'PENDING')
-    .get();
+  const [pendingSnap, gradedSnap] = await Promise.all([
+    db.collection(COLLECTION).where('date', '==', utcDate).where('status', '==', 'PENDING').get(),
+    db.collection(COLLECTION).where('date', '==', utcDate).where('status', '==', 'GRADED').get(),
+  ]);
 
   let retagged = 0;
   let batch = db.batch();
   let batchOps = 0;
-  for (const doc of snap.docs) {
+  for (const doc of [...pendingSnap.docs, ...gradedSnap.docs]) {
     const data = doc.data() || {};
     const key = softPositionKey(data.wallet, data.sport, data.gameKey, data.marketType, data.side);
-    if (!etKeys.has(key)) continue;
+    const asset = data.asset != null && data.asset !== '' ? String(data.asset) : null;
+    const match = etKeys.has(key) || (asset && etAssets.has(asset));
+    if (!match) continue;
     batch.update(doc.ref, {
       status: 'EXITED',
       exitedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -1278,7 +1283,7 @@ async function retagUtcDatedSiblings(db, etDate, positions) {
   }
   if (batchOps > 0) await batch.commit();
   if (retagged > 0) {
-    console.log(`UTC retag: ${retagged} PENDING ${utcDate} sibling(s) EXITED → live docs are ${etDate}`);
+    console.log(`UTC retag: ${retagged} ${utcDate} sibling(s) EXITED → live docs are ${etDate}`);
   }
   return retagged;
 }

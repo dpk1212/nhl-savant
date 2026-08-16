@@ -744,6 +744,31 @@ function shouldGradeExited(pos) {
   return false;
 }
 
+function isLaterAssetClone(pos, earliestDateByAsset) {
+  const wallet = String(pos?.wallet || '').toLowerCase();
+  const asset = pos?.asset != null && pos.asset !== '' ? String(pos.asset) : null;
+  const date = pos?.date ? String(pos.date) : null;
+  if (!wallet || !asset || !date) return false;
+  const earliest = earliestDateByAsset.get(`${wallet}|${asset}`);
+  return Boolean(earliest && date > earliest);
+}
+
+async function loadEarliestGradedAssetDates(db) {
+  const snap = await db.collection(COLLECTION).where('status', '==', 'GRADED').get();
+  const earliest = new Map();
+  for (const doc of snap.docs) {
+    const d = doc.data() || {};
+    const wallet = String(d.wallet || '').toLowerCase();
+    const asset = d.asset != null && d.asset !== '' ? String(d.asset) : null;
+    if (!wallet || !asset || !d.date) continue;
+    const k = `${wallet}|${asset}`;
+    const date = String(d.date);
+    const prev = earliest.get(k);
+    if (!prev || date < prev) earliest.set(k, date);
+  }
+  return earliest;
+}
+
 async function loadGradeCandidates(db) {
   const pendingSnap = await db.collection(COLLECTION).where('status', '==', 'PENDING').get();
   const exitedSnap = await db.collection(COLLECTION).where('status', '==', 'EXITED').get();
@@ -821,6 +846,9 @@ async function main() {
     return;
   }
   console.log(`Found ${snapshot.pending} pending + ${snapshot.exitedHeld} held-through-exit (skipped ${snapshot.exitedSkipped} other EXITED)`);
+
+  const earliestAssetDate = await loadEarliestGradedAssetDates(db);
+  console.log(`Graded asset index: ${earliestAssetDate.size} wallet+asset keys`);
 
   // Determine which sports / dates we need scores for
   const sports = new Set();
@@ -923,7 +951,7 @@ async function main() {
   }
 
   // Grade each position
-  let graded = 0, noGame = 0, errors = 0;
+  let graded = 0, noGame = 0, errors = 0, cloneSkip = 0;
   const BATCH_SIZE = 400;
   const docs = snapshot.docs;
 
@@ -934,6 +962,11 @@ async function main() {
 
     for (const doc of chunk) {
       const pos = doc.data();
+
+      if (isLaterAssetClone(pos, earliestAssetDate)) {
+        cloneSkip++;
+        continue;
+      }
 
       let game = knownFinals.get(knownFinalKey(pos.sport, pos.date, pos.gameKey)) || null;
       if (!game) {
@@ -1033,6 +1066,7 @@ async function main() {
 
   console.log(`\nResults:`);
   console.log(`  Graded:     ${graded}`);
+  console.log(`  Clone skip: ${cloneSkip} (later date, same asset already GRADED)`);
   console.log(`  No game:    ${noGame} (game not final yet)`);
   console.log(`  Errors:     ${errors}`);
   console.log(`  Remaining:  ${snapshot.docs.length - graded} still open`);
@@ -1045,7 +1079,7 @@ async function main() {
 }
 
 // Exported for tests (tests/testGradeDateGuard.mjs) — pure helpers, no I/O.
-export { espnEventDateET, finalDateMatches, findMatchingGame, teamNamesMatch, shouldGradeExited, calculateOutcome };
+export { espnEventDateET, finalDateMatches, findMatchingGame, teamNamesMatch, shouldGradeExited, calculateOutcome, isLaterAssetClone };
 
 // Only run when executed directly (node scripts/gradeSharpActions.js), so
 // tests can import the helpers without triggering a live grading pass.

@@ -3,7 +3,7 @@
  * Usage: node tests/testGradeExitedHeld.mjs
  */
 import assert from 'node:assert/strict';
-import { shouldGradeExited } from '../scripts/gradeSharpActions.js';
+import { shouldGradeExited, isLaterAssetClone } from '../scripts/gradeSharpActions.js';
 
 const sdp = {
   status: 'EXITED',
@@ -57,5 +57,15 @@ assert.equal(shouldGradeExited({
   exitReason: 'slug_date_vs_board',
   minutesToCommence: -10,
 }), false, 'other-day slug is not a held ticket');
+
+{
+  const earliest = new Map([['abc|token1', '2026-08-10']]);
+  assert.equal(isLaterAssetClone({
+    wallet: 'abc', asset: 'token1', date: '2026-08-11',
+  }, earliest), true, 'later date same asset is a clone');
+  assert.equal(isLaterAssetClone({
+    wallet: 'abc', asset: 'token1', date: '2026-08-10',
+  }, earliest), false, 'earliest date is the keeper');
+}
 
 console.log('testGradeExitedHeld: ok');
