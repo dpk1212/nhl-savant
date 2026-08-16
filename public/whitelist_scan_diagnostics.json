@@ -1,23 +1,23 @@
 {
-  "scannedAt": "2026-08-16T01:46:57.975Z",
-  "elapsedSec": 16.5,
+  "scannedAt": "2026-08-16T01:51:18.779Z",
+  "elapsedSec": 19,
   "phase": "PHASE_2_MERGE_ENABLED",
-  "todayGamesCount": 34,
+  "todayGamesCount": 32,
   "summary": {
     "total": 226,
-    "coveredByMain": 17,
-    "recovered": 5,
-    "recoveredPositions": 8,
-    "noPositions": 204,
+    "coveredByMain": 18,
+    "recovered": 8,
+    "recoveredPositions": 12,
+    "noPositions": 200,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 5,
+      "ml": 8,
       "spread": 0,
       "total": 0,
-      "dropped_shadow_gate": 2,
-      "dropped_excluded": 1,
+      "dropped_shadow_gate": 1,
+      "dropped_excluded": 3,
       "dropped_duplicate": 0
     }
   },
@@ -262,8 +262,24 @@
       "tier": "CONFIRMED",
       "name": "fRibrenlc",
       "sports": "MLB",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x6f3e7f25baa7d2d49e15e2d2957ff3dec62cbcf8"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x6f3e7f25baa7d2d49e15e2d2957ff3dec62cbcf8",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 9667,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "UFC",
+          "gameKey": "dustinstoltzfus_mansurabdulmalik",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 15866,
+          "entryLine": null,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "2ceb9a",
@@ -477,8 +493,24 @@
       "tier": "CONFIRMED",
       "name": "0x2c335066FE58fe9237c3d3Dc7b275C2a034a0563-1759935795465",
       "sports": "NBA,NHL",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x2c335066fe58fe9237c3d3dc7b275c2a034a0563"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x2c335066fe58fe9237c3d3dc7b275c2a034a0563",
+      "positionsCount": 1,
+      "statsSource": "sports_sharps.perSport",
+      "avgSportBet": 22016,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "UFC",
+          "gameKey": "dustinstoltzfus_mansurabdulmalik",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 99936,
+          "entryLine": null,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "4a752c",
@@ -649,17 +681,17 @@
       "positionsCount": 2,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 775,
-      "willPassShadowGate": 1,
-      "willDropAtShadowGate": 1,
+      "willPassShadowGate": 2,
+      "willDropAtShadowGate": 0,
       "positions": [
         {
           "sport": "UFC",
           "gameKey": "dustinstoltzfus_mansurabdulmalik",
           "marketType": "ml",
           "side": "home",
-          "invested": 0,
+          "invested": 3814,
           "entryLine": null,
-          "passesShadow": false
+          "passesShadow": true
         },
         {
           "sport": "UFC",
@@ -693,8 +725,7 @@
       "tier": "CONFIRMED",
       "name": "0x9e3ed7b661a903fc97afcf49e0f014ebe869f882-1783406009396",
       "sports": "WNBA,SOC",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x9e3ed7b661a903fc97afcf49e0f014ebe869f882"
+      "status": "COVERED_BY_MAIN"
     },
     {
       "walletShort": "6ac120",
@@ -1574,8 +1605,24 @@
       "tier": "CONFIRMED",
       "name": "ferrariChampions2026",
       "sports": "NBA",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xfe787d2da716d60e8acff57fb87eb13cd4d10319"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0xfe787d2da716d60e8acff57fb87eb13cd4d10319",
+      "positionsCount": 1,
+      "statsSource": "fallback",
+      "avgSportBet": 1085,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "UFC",
+          "gameKey": "dustinstoltzfus_mansurabdulmalik",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 55863,
+          "entryLine": null,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "d200f2",
@@ -1752,12 +1799,21 @@
       "sports": "SOC,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x3dfb153c197d4c19d3b31c1ecd2c7b6860eeabaf",
-      "positionsCount": 2,
+      "positionsCount": 3,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 55616,
-      "willPassShadowGate": 2,
+      "willPassShadowGate": 3,
       "willDropAtShadowGate": 0,
       "positions": [
+        {
+          "sport": "UFC",
+          "gameKey": "dustinstoltzfus_mansurabdulmalik",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 24000,
+          "entryLine": null,
+          "passesShadow": true
+        },
         {
           "sport": "UFC",
           "gameKey": "gillianrobertson_mackenziedern",
