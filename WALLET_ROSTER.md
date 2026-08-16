@@ -1,6 +1,6 @@
 # Sharp Wallet Roster
 
-Generated: 8/16/2026, 3:29:27 AM ET · V8 cutover: 2026-04-18 · whitelistVersion: 4
+Generated: 8/16/2026, 5:23:53 AM ET · V8 cutover: 2026-04-18 · whitelistVersion: 4
 
 Every sharp wallet we have V8-era data on, sorted by combined conviction score. This is the **full roster** (no minimum-bets filter) — noisy at the tail, but that's the point for a tracking dataset. Verdict column reflects the ≥3-bet threshold.
 
