@@ -42,6 +42,16 @@ assert.equal(postponed.ok, false);
 assert.equal(postponed.reason, 'slug_date_vs_board');
 assert.equal(WRONG_GAME_EXIT_REASONS.has(postponed.reason), true);
 
+const soccerOnWnba = positionMatchesPolyEvent(
+  { eventId: '791678', slug: 'mex-ame-asl-2026-08-16-asl' },
+  { eventId: '789016', polyGameDate: '2026-08-16' },
+  'ind_atl',
+  { boardDate: '2026-08-16' },
+);
+assert.equal(soccerOnWnba.ok, false, 'soccer slug cannot ride the board date onto WNBA');
+assert.equal(soccerOnWnba.reason, 'slug_sport_mismatch');
+assert.equal(WRONG_GAME_EXIT_REASONS.has(soccerOnWnba.reason), true);
+
 const wrongTeams = positionMatchesPolyEvent(
   { eventId: '111111', slug: 'mlb-stl-cin-2026-08-15' },
   poly,

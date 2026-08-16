@@ -190,4 +190,74 @@ assert.equal(was.pickLabel, 'Under 170.5');
 assert.match(was.mainNowLabel || '', /flagged at Under 169\.5/);
 assert.ok(!/173\.5/.test(was.mainNowLabel || ''), `got ${was.mainNowLabel}`);
 
+const fever = mapLockedPickToCardFixture({
+  key: '2026-08-16_WNBA_ind_atl:away',
+  sport: 'WNBA',
+  gameKey: 'ind_atl',
+  marketType: 'ml',
+  side: 'away',
+  team: 'Indiana Fever',
+  odds: 223,
+  units: 1.5,
+  gameTime: commence,
+  status: 'PENDING',
+  away: 'Indiana Fever',
+  home: 'Atlanta Dream',
+  vaultPositions: [
+    { side: 'away', avgPrice: 0.45, invested: 108, slug: 'wnba-ind-atl-2026-08-16' },
+    { side: 'away', avgPrice: 0.15, invested: 59, slug: 'mex-ame-asl-2026-08-16-asl' },
+  ],
+}, {
+  pinnacleHistory: {
+    WNBA: {
+      ind_atl: {
+        opener: { away: 118, home: -144 },
+        current: { away: 110, home: -130 },
+        history: [
+          { t, away: 118, home: -144 },
+          { t, away: 110, home: -130 },
+        ],
+      },
+    },
+  },
+});
+assert.equal(fever.pickLabel, 'Fever ML');
+assert.equal(fever.heroOdds, 110, 'hero is book NOW, not vault +223');
+assert.equal(fever.lockOdds, 122, 'flagged is majority Poly, not soccer mix');
+assert.match(fever.mainNowLabel || '', /flagged at \+122/);
+
+const cards = mapLockedPickToCardFixture({
+  key: '2026-08-16_MLB_stl_chc:away',
+  sport: 'MLB',
+  gameKey: 'stl_chc',
+  marketType: 'ml',
+  side: 'away',
+  team: 'St. Louis Cardinals',
+  odds: 156,
+  units: 1,
+  gameTime: commence,
+  status: 'PENDING',
+  away: 'St. Louis Cardinals',
+  home: 'Chicago Cubs',
+  vaultPositions: [
+    { side: 'away', avgPrice: 0.391, invested: 200, slug: 'mlb-stl-chc-2026-08-16' },
+  ],
+}, {
+  pinnacleHistory: {
+    MLB: {
+      stl_chc: {
+        opener: { away: 139, home: -164 },
+        current: { away: 159, home: -185 },
+        history: [
+          { t, away: 139, home: -164 },
+          { t, away: 159, home: -185 },
+        ],
+      },
+    },
+  },
+});
+assert.equal(cards.pickLabel, 'Cardinals ML');
+assert.equal(cards.heroOdds, 159, 'ML hero is NOW even when juice is close');
+assert.match(cards.mainNowLabel || '', /flagged at \+156/);
+
 console.log('testMainNowPlayable: ok');

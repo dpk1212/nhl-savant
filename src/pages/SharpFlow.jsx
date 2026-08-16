@@ -5334,7 +5334,7 @@ const LockCountdown = memo(function LockCountdown({ gameTime, isGraded }) {
   );
 });
 
-const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile, tierWindows, pinnacleHistory, totalPositions = null, spreadPositions = null }) {
+const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile, tierWindows, pinnacleHistory, totalPositions = null, spreadPositions = null, mlPositions = null }) {
   const {
     team, away, home, sport, units, odds, book, lockedAt, peakAt, gameTime,
     status, outcome, profit, closingOdds, totalInvested, evEdge, consensusStrength,
@@ -5583,6 +5583,7 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({ pick, isMobile, tierWind
     walletProfiles: WALLET_PROFILES_CACHE,
     totalPositions,
     spreadPositions,
+    mlPositions,
   });
   return <LockedPositionCardView f={lockedFixture} />;
 });
@@ -8119,17 +8120,34 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     allBooks?.betmgm ? { name: 'BetMGM', odds: sideBookOdds(allBooks.betmgm, consensusSide) } : null,
   ].filter((b) => b && Number.isFinite(b.odds));
 
+  const mlNowPx = Number.isFinite(pinnGame?.current?.[cardSideKey])
+    ? pinnGame.current[cardSideKey]
+    : (Number.isFinite(consensusOdds) ? consensusOdds : (bestRetail ?? betOdds));
+  const mlFlaggedPx = vaultTicket(gd.positions || [], { side: cardSideKey, family: 'ML' }).american;
+  const mlTicketOff = Number.isFinite(mlFlaggedPx) && Number.isFinite(mlNowPx)
+    && Math.round(mlFlaggedPx) !== Math.round(mlNowPx);
+  const mlFlaggedLbl = mlTicketOff
+    ? `flagged at ${mlFlaggedPx > 0 ? '+' : ''}${Math.round(mlFlaggedPx)}`
+    : null;
+
   const mlFixture = mapLiveGameToCardFixture({
     gd,
     marketType: 'ML',
     displayState: displayState === 'PREVIEW' ? 'MONITORING' : displayState,
     stakePath: mlCronStakeTier || displayTier || 'MONITORING',
     units: Number.isFinite(displayUnits) ? displayUnits : 0,
-    odds: bestRetail ?? betOdds ?? consensusOdds,
+    odds: Number.isFinite(mlNowPx) ? mlNowPx : (bestRetail ?? betOdds ?? consensusOdds),
+    heroOdds: Number.isFinite(mlNowPx) ? mlNowPx : (bestRetail ?? betOdds ?? consensusOdds),
+    flaggedOdds: Number.isFinite(mlFlaggedPx) ? mlFlaggedPx : null,
+    mainNowLabel: mlFlaggedLbl,
+    ticketOffMain: mlTicketOff,
     book: bestBook || 'Pinnacle',
     fairOdds: consensusOdds,
     toWin: Number.isFinite(displayUnits) && displayUnits > 0
-      ? profitFromOdds(bestRetail ?? betOdds ?? consensusOdds, displayUnits)
+      ? profitFromOdds(
+        Number.isFinite(mlFlaggedPx) ? mlFlaggedPx : (bestRetail ?? betOdds ?? consensusOdds),
+        displayUnits,
+      )
       : 0,
     side: cardSideKey,
     gameTimeLabel: gameTimeFormatted ? `${gameTimeFormatted} ET` : gameTimeLabel,
@@ -12910,7 +12928,7 @@ export default function SharpFlow() {
                             return locked ?? close ?? null;
                           })(),
                           vaultPositions: (!pastT15Odds
-                            && (marketTypeKey === 'total' || marketTypeKey === 'spread')
+                            && (marketTypeKey === 'total' || marketTypeKey === 'spread' || marketTypeKey === 'ml')
                             && liveGameData?.positions)
                             ? liveGameData.positions
                             : null,
@@ -13329,7 +13347,7 @@ export default function SharpFlow() {
                                   gap: '0.75rem',
                                 }}>
                                   {stakedCards.map(p => (
-                                    <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} tierWindows={displayTierWindows} pinnacleHistory={pinnacleHistory} totalPositions={totalPositions} spreadPositions={spreadPositions} />
+                                    <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} tierWindows={displayTierWindows} pinnacleHistory={pinnacleHistory} totalPositions={totalPositions} spreadPositions={spreadPositions} mlPositions={sharpPositions} />
                                   ))}
                                 </div>
                               )}
@@ -13355,7 +13373,7 @@ export default function SharpFlow() {
                                     opacity: 0.78,
                                   }}>
                                     {monitoringCards.map(p => (
-                                      <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} tierWindows={displayTierWindows} pinnacleHistory={pinnacleHistory} totalPositions={totalPositions} spreadPositions={spreadPositions} />
+                                      <SharpLockCardV2 key={p.key} pick={p} isMobile={isMobile} tierWindows={displayTierWindows} pinnacleHistory={pinnacleHistory} totalPositions={totalPositions} spreadPositions={spreadPositions} mlPositions={sharpPositions} />
                                     ))}
                                   </div>
                                 </div>

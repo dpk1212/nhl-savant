@@ -41,6 +41,7 @@ check('total prop slug rejected', isMainWNBAGameSlug('wnba-lva-nyl-2026-07-09-to
 check('resolve Polymarket WSH abbr', resolveWNBATeam('wsh') === 'WAS');
 check('resolve WSH uppercase', resolveWNBATeam('WSH') === 'WAS');
 check('atl-wsh slug codes → atl_was key', makeWNBAGameKey('ATL', 'WSH') === 'atl_was');
+check('Atlético San Luis is not Atlanta', resolveWNBATeam('Atlético San Luis') == null);
 
 {
   const otherDay = {

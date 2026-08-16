@@ -187,4 +187,22 @@ const metaAlt = tapeFromMeta({
 }, { family: 'SPREAD', side: 'home', line: -1.5 });
 assert.equal(metaAlt.now, null);
 
+// Mixed-sport leak: soccer Yes @ 15¢ must not average into the WNBA ML ticket.
+const feverMix = resolveInstrument({
+  family: 'ML',
+  side: 'away',
+  positions: [
+    { side: 'away', avgPrice: 0.45, invested: 108, slug: 'wnba-ind-atl-2026-08-16' },
+    { side: 'away', avgPrice: 0.15, invested: 59, slug: 'mex-ame-asl-2026-08-16-asl' },
+    { side: 'away', avgPrice: 0.45, invested: 28, slug: 'wnba-ind-atl-2026-08-16' },
+  ],
+  pinnGame: {
+    current: { away: 110, home: -130 },
+    opener: { away: 118, home: -144 },
+    history: [{ t: 1, away: 118, home: -144 }, { t: 2, away: 110, home: -130 }],
+  },
+});
+assert.equal(feverMix.ticket.american, 122, 'majority WNBA slug stays +122, not soccer-blended +223');
+assert.equal(feverMix.tape.now, 110);
+
 console.log('testTicketInstrument: ok');

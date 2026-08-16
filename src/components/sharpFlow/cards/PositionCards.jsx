@@ -1346,6 +1346,7 @@ export function LivePositionCardView({ f, markets, onMarket }) {
   const sizeColor = f.tapeAction === 'boost' ? B.profit : f.tapeAction === 'mute' ? B.loss : C.textSec;
   const sizeWord = f.tapeAction === 'boost' ? 'sized up' : f.tapeAction === 'mute' ? 'passed' : 'standard size';
   const isLive = f.isLive || f.gameTime === 'LIVE';
+  const liveHeroPx = Number.isFinite(f.heroOdds) ? f.heroOdds : f.odds;
   const hasPrice = Number.isFinite(f.odds) || Number.isFinite(f.fairOdds);
   // Higher American odds always pay the bettor more, so "better than fair"
   // is odds > fairOdds. Crossing +100/-100 skips the dead 200-cent band.
@@ -1488,11 +1489,11 @@ export function LivePositionCardView({ f, markets, onMarket }) {
             }}>
               {f.pickLabel}
             </span>
-            {Number.isFinite(f.odds) && (
+            {Number.isFinite(liveHeroPx) && (
               <span style={{
                 fontSize: '1.05rem', fontWeight: 800, letterSpacing: '-0.02em', color: C.text,
               }}>
-                {fmtOdds(f.odds)}
+                {fmtOdds(liveHeroPx)}
               </span>
             )}
             {!isWatch && f.units > 0 && (
@@ -1518,6 +1519,14 @@ export function LivePositionCardView({ f, markets, onMarket }) {
               </span>
             )}
           </div>
+          {f.mainNowLabel ? (
+            <div style={{
+              marginTop: 4, fontSize: 10, fontWeight: 600,
+              letterSpacing: '0.02em', color: C.textMuted,
+            }}>
+              {f.mainNowLabel}
+            </div>
+          ) : null}
 
           {(isWatch || f.units <= 0) && (
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, marginTop: 8 }}>

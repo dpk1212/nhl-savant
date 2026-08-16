@@ -21,6 +21,33 @@ import {
 
 export { linesClose };
 
+function posMarketKey(p) {
+  const slug = String(p?.slug || p?.eventSlug || '').trim().toLowerCase();
+  if (slug) return slug;
+  const cid = String(p?.conditionId || '').trim().toLowerCase();
+  if (cid) return cid;
+  return '';
+}
+
+/** Keep the invested-majority market so a leaked soccer/UFC leg cannot mix into an ML ticket. */
+export function majorityMarketPositions(positions, side, family = 'ML') {
+  const rows = (positions || []).filter((p) => sameSide(p, side));
+  if (family !== 'ML' || rows.length <= 1) return rows;
+  const byKey = new Map();
+  for (const p of rows) {
+    const k = posMarketKey(p) || '_none';
+    const cur = byKey.get(k) || { inv: 0, rows: [] };
+    cur.inv += Number(p.invested) || 0;
+    cur.rows.push(p);
+    byKey.set(k, cur);
+  }
+  let best = null;
+  for (const g of byKey.values()) {
+    if (!best || g.inv > best.inv) best = g;
+  }
+  return best?.rows || rows;
+}
+
 export function americanFromPolyPrice(px) {
   const p = Number(px);
   if (!(p > 0 && p < 1)) return null;
@@ -78,9 +105,10 @@ export function vaultConsensusLine(positions, side, family) {
  * Vault receipt on this instrument. `line` null = ML (all legs on side).
  */
 export function vaultTicket(positions, { side, line = null, family = 'ML' } = {}) {
+  const scoped = majorityMarketPositions(positions, side, family);
   let sumInv = 0;
   let sumPx = 0;
-  for (const p of positions || []) {
+  for (const p of scoped) {
     if (!sameSide(p, side)) continue;
     if (family !== 'ML' && Number.isFinite(line)) {
       const el = posLine(p, family);

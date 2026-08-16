@@ -85,7 +85,9 @@ export function resolveWNBATeam(raw) {
   let bestLen = 0;
   for (const [alias, code] of Object.entries(WNBA_NAME_TO_CODE)) {
     if (alias.length < 3) continue;
-    const prefixHit = n === alias || n.startsWith(alias);
+    // Exact, or prefix only for long aliases. Short codes ("atl") must not
+    // prefix-hit "Atlético San Luis" → Atlanta (Fever ML +223, 2026-08-16).
+    const prefixHit = n === alias || (alias.length >= 6 && n.startsWith(alias));
     const longContains = alias.length >= 6 && n.includes(alias);
     if ((prefixHit || longContains) && alias.length > bestLen) {
       best = code;

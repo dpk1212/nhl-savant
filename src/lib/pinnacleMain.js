@@ -31,6 +31,14 @@ export function linesClose(a, b, eps = LINE_EPS) {
   return Number.isFinite(a) && Number.isFinite(b) && Math.abs(a - b) <= eps;
 }
 
+/** True when two American prices are within `maxPp` implied-prob points. */
+export function americanOddsClose(a, b, maxPp = 1) {
+  const pa = impliedFromAmerican(a);
+  const pb = impliedFromAmerican(b);
+  if (pa == null || pb == null) return false;
+  return Math.abs(pa - pb) * 100 <= maxPp;
+}
+
 export function stampedMain(lines) {
   if (!Array.isArray(lines)) return null;
   return lines.find((row) => row && row.isMain) || null;

@@ -24,7 +24,18 @@ export const WRONG_GAME_EXIT_REASONS = new Set([
   'slug_date_mismatch',
   'slug_teams_mismatch',
   'slug_teams_mismatch_wnba',
+  'slug_sport_mismatch',
 ]);
+
+const FOREIGN_SLUG_LEAGUES = new Set([
+  'mex', 'epl', 'uefa', 'ucl', 'uel', 'mls', 'liga', 'serie', 'bundes',
+  'fifa', 'caf', 'afc', 'ufc', 'mma', 'atp', 'wta',
+]);
+
+function slugLeague(slug) {
+  const m = String(slug || '').toLowerCase().match(/^([a-z0-9]+)-/);
+  return m ? m[1] : null;
+}
 
 /**
  * @param {object} pos
@@ -65,6 +76,17 @@ export function positionMatchesPolyEvent(pos, polyGame, gameKey = null, opts = {
 
   if (slugDate && gameDate && slugDate !== gameDate) {
     return { ok: false, reason: 'slug_date_mismatch' };
+  }
+
+  // Same calendar day is not the same game. Soccer/UFC slugs used to pass
+  // this gate onto WNBA/MLB boards (mex-ame-asl-DATE → Fever ML +223).
+  const posLeague = slugLeague(slug);
+  const gameLeague = slugLeague(polyGame.slug || polyGame.eventSlug || '');
+  if (posLeague && gameLeague && posLeague !== gameLeague) {
+    return { ok: false, reason: 'slug_sport_mismatch' };
+  }
+  if (posLeague && FOREIGN_SLUG_LEAGUES.has(posLeague) && !gameLeague) {
+    return { ok: false, reason: 'slug_sport_mismatch' };
   }
 
   // MLB slug codes: mlb-stl-cin-2026-05-24 vs gameKey stl_laa

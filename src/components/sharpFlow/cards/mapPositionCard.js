@@ -1102,6 +1102,7 @@ export function mapLockedPickToCardFixture(pick, {
   walletProfiles = null,
   totalPositions = null,
   spreadPositions = null,
+  mlPositions = null,
 } = {}) {
   const confirmedClvQ1 = computeConfirmedBeatCloseQ1(walletProfiles);
   const enrichOpts = { confirmedClvQ1 };
@@ -1131,7 +1132,9 @@ export function mapLockedPickToCardFixture(pick, {
       ? (totalPositions[pick.sport]?.[pick.gameKey]?.positions || null)
       : (isSpread && spreadPositions && pick.sport && pick.gameKey
         ? (spreadPositions[pick.sport]?.[pick.gameKey]?.positions || null)
-        : null));
+        : (!isTotal && !isSpread && mlPositions && pick.sport && pick.gameKey
+          ? (mlPositions[pick.sport]?.[pick.gameKey]?.positions || null)
+          : null)));
 
   const sideIsUnderEarly = (() => {
     const t = String(pick.team || pick.side || pick.pickSide || '').toLowerCase();
@@ -1271,12 +1274,22 @@ export function mapLockedPickToCardFixture(pick, {
       (Number.isFinite(ticketHeroLine) && !linesClose(ticketHeroLine, playableLine))
       || entryLadder.some((r) => !linesClose(r.line, playableLine))
     );
-  const ticketOffMain = (isTotal || isSpread)
+  const mlNowOdds = (!isTotal && !isSpread && Number.isFinite(inst.tape?.now))
+    ? inst.tape.now
+    : null;
+  const ticketOffLine = (isTotal || isSpread)
     && Number.isFinite(playableLine)
     && Number.isFinite(ticketHeroLine)
     && !linesClose(ticketHeroLine, playableLine);
+  const ticketOffMl = !isTotal && !isSpread
+    && Number.isFinite(lockOdds)
+    && Number.isFinite(mlNowOdds)
+    && Math.round(lockOdds) !== Math.round(mlNowOdds);
+  const ticketOffMain = ticketOffLine || ticketOffMl;
   const playableNowOdds = (() => {
-    if (!ticketOffMain || !pinnGamePeek) return null;
+    if (!ticketOffMain) return null;
+    if (ticketOffMl && Number.isFinite(mlNowOdds)) return mlNowOdds;
+    if (!pinnGamePeek) return null;
     if (isSpread && mainSpread) {
       const o = sideNorm === 'away' ? mainSpread.awayOdds : mainSpread.homeOdds;
       if (Number.isFinite(o)) return o;
@@ -1287,21 +1300,25 @@ export function mapLockedPickToCardFixture(pick, {
     }
     return null;
   })();
-  const heroLine = ticketOffMain && Number.isFinite(playableLine)
+  const heroLine = ticketOffLine && Number.isFinite(playableLine)
     ? playableLine
     : (Number.isFinite(ticketHeroLine) ? ticketHeroLine : playableLine);
   const pickLabel = fmtLineLabel(heroLine)
     || (isTotal ? (pick.team || 'Total')
       : isDraw ? 'Draw ML'
         : `${teamShort} ML`);
-  const heroOdds = ticketOffMain
-    ? (Number.isFinite(playableNowOdds) ? playableNowOdds : null)
-    : lockOdds;
-  const flaggedAtLabel = ticketOffMain
+  // ML hero is always book NOW when we have tape — same pattern as
+  // totals/spreads (main line + now juice, flagged ticket underneath).
+  const heroOdds = (!isTotal && !isSpread && Number.isFinite(mlNowOdds))
+    ? mlNowOdds
+    : (ticketOffMain
+      ? (Number.isFinite(playableNowOdds) ? playableNowOdds : null)
+      : lockOdds);
+  const flaggedAtLabel = ticketOffLine
     ? `flagged at ${fmtLineLabel(ticketHeroLine) || `${teamShort} ${ticketHeroLine}`}${
       fmtAm(lockOdds) ? ` · ${fmtAm(lockOdds)}` : ''
     }`
-    : null;
+    : (ticketOffMl && fmtAm(lockOdds) ? `flagged at ${fmtAm(lockOdds)}` : null);
   // Secondary under hero — flagged ticket when MAIN is the lock.
   const mainNowLabel = flaggedAtLabel;
 
@@ -1721,6 +1738,10 @@ export function mapLiveGameToCardFixture({
   mapWallets, // both-sides enriched wallets (each tagged side:'away'|'home') for the quadrant map
   commenceMs, // game start epoch ms — ticket stub uses this for the T-15 freeze countdown
   tierPerf, // display-tier L7/L30 { label, window, record, wr, roi, n, color }
+  heroOdds = null,
+  flaggedOdds = null,
+  mainNowLabel = null,
+  ticketOffMain = false,
 }) {
   const isTotal = marketType === 'TOTAL';
   const awayShort = isTotal ? 'Under' : shortTeam(gd.away, gd.home);
@@ -1767,6 +1788,10 @@ export function mapLiveGameToCardFixture({
     units: u,
     toWin: Number.isFinite(toWin) ? toWin : 0,
     odds: Number.isFinite(odds) ? odds : null,
+    heroOdds: Number.isFinite(heroOdds) ? heroOdds : (Number.isFinite(odds) ? odds : null),
+    lockOdds: Number.isFinite(flaggedOdds) ? flaggedOdds : (Number.isFinite(odds) ? odds : null),
+    mainNowLabel: mainNowLabel || null,
+    ticketOffMain: !!ticketOffMain,
     book: book || 'Pinnacle',
     fairOdds: fair,
     fairProb,
