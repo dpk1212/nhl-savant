@@ -113,6 +113,29 @@ const side = 'home';
   ok(r.qualifies === false, 'empty/null fail-open false');
 }
 
+{
+  // Sport-local usual beats model/v8 (Astros −1.5: card 0.7×, v8 0.24×).
+  const m = profiles([['aaaaaa', 'MLB', 'CONFIRMED']]);
+  m.get('aaaaaa').bySport.MLB.positions = { n: 6, invested: 7351 };
+  const r = computeConfirmedUnoppSized(
+    [{ wallet: 'aaaaaa', side: 'home', sizeRatio: 0.24, invested: 808 }],
+    side, sport, m,
+  );
+  ok(r.qualifies === true, 'sport-local 0.66× qualifies even when v8 is 0.24');
+  ok(r.bestSize >= 0.5 && r.bestSize < 0.8, `bestSize is sport-local (got ${r.bestSize})`);
+}
+
+{
+  // Inverse: fat model size, light vs this sport's usual → fail.
+  const m = profiles([['aaaaaa', 'MLB', 'CONFIRMED']]);
+  m.get('aaaaaa').bySport.MLB.positions = { n: 5, invested: 10000 };
+  const r = computeConfirmedUnoppSized(
+    [{ wallet: 'aaaaaa', side: 'home', sizeRatio: 1.2, invested: 200 }],
+    side, sport, m,
+  );
+  ok(r.qualifies === false, 'sport-local 0.1× fails even when model is 1.2');
+}
+
 ok(!QCONV_MUTE_TIERS.has('CONFIRMED-UNOPP'), 'UNOPP exempt from qConv mute');
 
 const oddsCapFn = (u) => u;

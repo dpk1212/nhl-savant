@@ -44,6 +44,7 @@ import {
 } from '../src/lib/confirmedActionDesk.js';
 import { steamForGame, compactSteam } from '../src/lib/steamMove.js';
 import { passesSizeSkillLiveGate } from '../src/lib/sizeSkillRescue.js';
+import { stakeSizeRatio } from '../src/lib/sizeRatioBands.js';
 import { resolveSportUsualBet } from './lib/sportUsualBet.js';
 import { positionMatchesPolyEvent, WRONG_GAME_EXIT_REASONS } from './lib/positionEventMatch.js';
 
@@ -579,7 +580,8 @@ function computeVaultHcSignals(walletDetails, mySide, sport, walletProfiles, myW
     const sportRec = walletProfiles?.get(short)?.bySport?.[sport] || null;
     const tier = sportRec?.whitelistTier || null;
     if (tier !== 'CONFIRMED') continue;
-    const sr = d.sizeRatio ?? 0;
+    const profile = walletProfiles?.get(short) || null;
+    const sr = stakeSizeRatio(d, profile, sport) ?? Number(d.sizeRatio || 0);
     if (!passesSizeSkillLiveGate(sportRec, sr)) continue;
     if (sr < HC_RATIO) continue;
     if (d.side === mySide) {

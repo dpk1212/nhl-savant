@@ -2,8 +2,10 @@
  * Win rate by size-vs-usual (invested / avgSportBet).
  * Shared by exportWalletProfiles (persist) and locked-card UI (match).
  *
- * Locked-card "Size vs usual" uses sport-local usual (bySport.positions).
- * Model / HC / SHADOW floors still use cross-sport sports_sharps.avgSportBet.
+ * Locked-card "Size vs usual", Path A HC / mini-HC, and CONFIRMED-Q1 /
+ * CONFIRMED-UNOPP use sport-local usual (bySport.positions).
+ * AGS features / SHADOW still use cross-sport sports_sharps.avgSportBet
+ * (v8_sizeRatio on walletDetails).
  */
 
 /** Mean stake for this wallet in `sport` from graded positions. */
@@ -18,7 +20,7 @@ export function sportUsualBetFromProfile(profile, sport) {
 }
 
 /**
- * Display-only size ratio: invested / sport-local usual.
+ * Size vs this wallet's usual in `sport`: invested / sport-local usual.
  * Falls back to modelRatio when sport usual unknown.
  */
 export function sportDisplaySizeRatio(invested, profile, sport, modelRatio = null) {
@@ -26,6 +28,22 @@ export function sportDisplaySizeRatio(invested, profile, sport, modelRatio = nul
   const usual = sportUsualBetFromProfile(profile, sport);
   if (inv > 0 && Number.isFinite(usual) && usual > 0) return inv / usual;
   return Number.isFinite(modelRatio) && modelRatio > 0 ? modelRatio : null;
+}
+
+/**
+ * Stake-path size (Path A HC, Q1, UNOPP, size-skill live gate on those paths).
+ * Same sport-local volume as the locked card. Model sizeRatio is fallback
+ * only — never prefer v8/cross-sport when sport usual exists.
+ */
+export function stakeSizeRatio(walletDetail, profile, sport) {
+  const model = Number(walletDetail?.sizeRatio ?? walletDetail?.v8_sizeRatio);
+  const modelOrNull = Number.isFinite(model) && model > 0 ? model : null;
+  return sportDisplaySizeRatio(
+    walletDetail?.invested ?? walletDetail?.size,
+    profile,
+    sport,
+    modelOrNull,
+  );
 }
 
 

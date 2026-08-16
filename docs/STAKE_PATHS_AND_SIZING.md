@@ -40,9 +40,9 @@ Skill metrics (EDGE / netCLV / Tape / bucket) stamp every pre–T-15 cycle — s
 3. If still 0u → Path B RANK rescue   → RANK @ 4u
 4. If still 0u → Path C SHARP rescue  → SHARP @ 3u (BOTH) / SHARP-LEAN @ 1.5u (ONE)
 5. CONFIRMED-Q1 (2026-08-08+) → floor **2u** (3u if size≥1×)
-   └─ ≥1 FOR: CONFIRMED × flatDollar Q1 × size≥0.5 · **opposed OK** · hard floor after mutes
+   └─ ≥1 FOR: CONFIRMED × flatDollar Q1 × **sport-local** size≥0.5 · **opposed OK** · hard floor after mutes
 6. If still 0u → CONFIRMED-UNOPP → 1u
-   └─ ≥1 live CONFIRMED FOR sizeRatio ≥ 0.5 · zero CONFIRMED on AG · **hard floor after mutes**
+   └─ ≥1 live CONFIRMED FOR **sport-local** size ≥ 0.5 · zero CONFIRMED on AG · **hard floor after mutes**
 7. If still 0u → Path D DISSENT       → DISSENT @ 1u  (MLB only)
 
 7. Winner-align fadeTop≥60 mute       → 0u if toxic AG top WR
@@ -96,6 +96,7 @@ Rescues **never up-size** an already-staked Path A ticket — they only fill `0u
 | **2026-07-22** | **EDGE band v2** — mute E&lt;7 · ×0.75 on 7–10 · boost ≥10 ×1.25 (cuts the 5–7 poison slice; mid slightly less shrunk) |
 | **2026-08-03** | **EDGE abs bands** on A/C · **qConv Q1 mute** on A/B/C (after tape) |
 | **2026-08-16** | **CONFIRMED-UNOPP hard floor after mutes** — tape/qConv/FOOLS cannot leave qualifying unopposed CONFIRMED at 0u · qConv no longer mutes UNOPP |
+| **2026-08-16** | **Stake size = sport-local volume** — Path A HC / mini-HC, Q1, and UNOPP use invested / this wallet's usual in that sport (same as locked-card "Size vs usual"). Model `v8_sizeRatio` is fallback only. AGS features stay on model size. |
 | **2026-08-12** | **qConv Q1 mute** scoped to Path C only (Path A + RANK exempt; UNOPP later exempt 08-16) |
 | **2026-08-05** | **FOOLS-gold mute** — best proven FOR=FLAT → 0u (after qConv); briefly 1u clamp then restored |
 | **2026-08-08** | **CONFIRMED-UNOPP promote** — CONFIRMED × size≥0.5× × unopposed → 1u (after SHARP / before DISSENT) · FOOLS back to hard 0u cancel |
@@ -107,8 +108,9 @@ Rescues **never up-size** an already-staked Path A ticket — they only fill `0u
 **What it is:** High-conviction wallet margin. Count CONFIRMED wallets that are *sized up* on our side vs against.
 
 **Definitions**
-- **Full HC wallet:** `whitelistTier = CONFIRMED` and `sizeRatio ≥ 1.5` (`HC_RATIO`)
-- **Mini-HC wallet:** `CONFIRMED` and `1.0 ≤ sizeRatio < 1.5` (`HC_MINI_FLOOR`)
+- **Full HC wallet:** `whitelistTier = CONFIRMED` and **sport-local** size ≥ 1.5 (`HC_RATIO`)
+- **Mini-HC wallet:** `CONFIRMED` and **sport-local** `1.0 ≤ size < 1.5` (`HC_MINI_FLOOR`)
+- Size = invested / this wallet's usual in that sport (same as the locked card). Model `v8_sizeRatio` is fallback only. AGS `dHcSizeRatio` still uses model size.
 - **hcMargin** = (# full-HC FOR) − (# full-HC AG)
 - **miniHcMargin** = same for mini-HC band
 - Requires `agsV12 score > 0` and score tier **≠ WEAK** (WEAK → MONITORING 0u)

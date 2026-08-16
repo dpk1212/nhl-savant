@@ -77,6 +77,7 @@ import {
   meetsAgsLockFloor,
   positionToWalletDetail,
 } from '../src/lib/ags.js';
+import { stakeSizeRatio } from '../src/lib/sizeRatioBands.js';
 
 import {
   CLV_HIST_FROM,
@@ -375,9 +376,14 @@ function computeWalletConsensus(rawPositions, mySide, sport, walletProfiles) {
     const short = String(p.walletShort || p.wallet || '').slice(-6).toLowerCase();
     const profile = walletProfiles.get(short) || walletProfiles.get(short.toUpperCase());
     const tier = profile?.bySport?.[sport]?.whitelistTier || null;
-    const sr = p.v8_sizeRatio != null
-      ? p.v8_sizeRatio
-      : (p.avgSportBet > 0 ? (p.invested || 0) / p.avgSportBet : 0);
+    const modelSr = Number.isFinite(Number(p.v8_sizeRatio)) && Number(p.v8_sizeRatio) > 0
+      ? Number(p.v8_sizeRatio)
+      : (p.avgSportBet > 0 ? (p.invested || 0) / p.avgSportBet : null);
+    const sr = stakeSizeRatio(
+      { invested: p.invested, sizeRatio: modelSr, v8_sizeRatio: p.v8_sizeRatio },
+      profile,
+      sport,
+    ) ?? modelSr ?? 0;
     const c = p.v8_walletContribution ?? 0;
     if (c >= QUALITY_CONTRIB_CUT) {
       if (p.side === mySide) qFor++;

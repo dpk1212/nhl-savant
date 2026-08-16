@@ -56,6 +56,7 @@ import {
 } from '../lib/ags.js';
 import { sportBookForDisplay } from '../lib/walletSportBook.js';
 import { passesSizeSkillLiveGate } from '../lib/sizeSkillRescue.js';
+import { stakeSizeRatio } from '../lib/sizeRatioBands.js';
 // Browser-side mirror of scripts/syncPickStateAuthoritative.js::buildWalletPriorStatsFn
 // — feeds aggregateSideV12 the per-sport prior stats (whitelist tier,
 // historical pick count, flat ROI) that the v12 quality calc weighs. Used
@@ -1323,7 +1324,7 @@ function computeWalletConsensus(walletDetails, sport, sideKey, pickDate = null) 
   if (!WALLET_PROFILES_CACHE) return result;
 
   // Single pass: compute forW/agW (whitelist-gated CONFIRMED+FLAT) AND
-  // HC counts (CONFIRMED-only at sizeRatio ≥ HC_RATIO).
+  // HC counts (CONFIRMED-only at sport-local size ≥ HC_RATIO).
   let forW = 0, agW = 0, hcF = 0, hcA = 0;
   for (const d of walletDetails) {
     if (!d?.wallet) continue;
@@ -1336,7 +1337,8 @@ function computeWalletConsensus(walletDetails, sport, sideKey, pickDate = null) 
     // don't count toward HC. Profile shape: profile.bySport[sport].whitelistTier.
     const profile = getWalletProfile(d.wallet);
     const tier = profile?.bySport?.[sport]?.whitelistTier ?? null;
-    if (tier === 'CONFIRMED' && (d.sizeRatio ?? 0) >= HC_RATIO) {
+    const sr = stakeSizeRatio(d, profile, sport) ?? Number(d.sizeRatio || 0);
+    if (tier === 'CONFIRMED' && sr >= HC_RATIO) {
       if (isFor) hcF++;
       else if (d.side) hcA++;
     }
@@ -9322,11 +9324,19 @@ export default function SharpFlow() {
           const details = [];
           for (const p of seen.values()) {
             const avgBet = p.avgSportBet || 0;
-            const sizeRatio = avgBet > 0 ? (p.invested || 0) / avgBet : 0;
+            const modelSr = avgBet > 0 ? (p.invested || 0) / avgBet : 0;
+            const walletShort = String(p.wallet).slice(-6);
+            const profile = getWalletProfile(walletShort);
+            const sizeRatio = stakeSizeRatio(
+              { invested: p.invested, sizeRatio: modelSr },
+              profile,
+              sport,
+            ) ?? modelSr;
             details.push({
               wallet: p.wallet,
-              walletShort: String(p.wallet).slice(-6),
+              walletShort,
               side: p.side,
+              invested: p.invested,
               sizeRatio,
             });
           }

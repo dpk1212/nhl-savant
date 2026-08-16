@@ -133,6 +133,45 @@ ok(FLAT_DOLLAR_Q_WEIGHT_FLAT === 0.4 && FLAT_DOLLAR_Q_WEIGHT_DOLLAR === 0.6, '40
 }
 
 {
+  const local = profiles([
+    ['aaaaaa', 'MLB', 'CONFIRMED', 40, 40],
+    ['bbbbbb', 'MLB', 'CONFIRMED', 20, 20],
+    ['cccccc', 'MLB', 'CONFIRMED', 5, 5],
+    ['dddddd', 'MLB', 'CONFIRMED', -5, -5],
+  ]);
+  local.get('aaaaaa').bySport.MLB.positions = {
+    ...local.get('aaaaaa').bySport.MLB.positions,
+    n: 6,
+    invested: 7351,
+  };
+  const r = computeConfirmedQ1Sized(
+    [{ wallet: 'aaaaaa', side: 'home', sizeRatio: 0.24, invested: 808 }],
+    side, sport, local, qBy,
+  );
+  ok(r.qualifies === true, 'Q1 sport-local 0.66× qualifies when v8 is 0.24');
+  ok(r.targetUnits === CONFIRMED_Q1_UNITS, '0.66× is 2u not press');
+}
+
+{
+  const local = profiles([
+    ['aaaaaa', 'MLB', 'CONFIRMED', 40, 40],
+    ['bbbbbb', 'MLB', 'CONFIRMED', 20, 20],
+    ['cccccc', 'MLB', 'CONFIRMED', 5, 5],
+    ['dddddd', 'MLB', 'CONFIRMED', -5, -5],
+  ]);
+  local.get('aaaaaa').bySport.MLB.positions = {
+    ...local.get('aaaaaa').bySport.MLB.positions,
+    n: 5,
+    invested: 10000,
+  };
+  const r = computeConfirmedQ1Sized(
+    [{ wallet: 'aaaaaa', side: 'home', sizeRatio: 1.2, invested: 200 }],
+    side, sport, local, qBy,
+  );
+  ok(r.qualifies === false, 'Q1 sport-local 0.1× fails even when model is 1.2');
+}
+
+{
   const r = computeConfirmedQ1Sized(
     [{ wallet: 'aaaaaa', side: 'home', sizeRatio: 1.0 }],
     side, sport,

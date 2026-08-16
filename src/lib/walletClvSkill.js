@@ -20,6 +20,7 @@
  */
 
 import { passesSizeSkillLiveGate } from './sizeSkillRescue.js';
+import { stakeSizeRatio } from './sizeRatioBands.js';
 
 export const CLV_HIST_FROM = '2026-04-01';
 export const CLV_SKILL_MIN_N = 5;
@@ -690,7 +691,9 @@ export function isConfirmedUnoppPromoteLive(pickDate) {
 }
 
 /**
- * ≥1 CONFIRMED FOR with sizeRatio ≥ minSize, and zero CONFIRMED on AG.
+ * ≥1 CONFIRMED FOR with sport-local size ≥ minSize, and zero CONFIRMED on AG.
+ * Size = invested / this wallet's usual in `sport` (card "Size vs usual").
+ * Falls back to model sizeRatio when sport usual is unknown.
  * @returns {{ qualifies: boolean, forSized: number, agConfirmed: number, bestSize: number|null, wallets: string[] }}
  */
 export function computeConfirmedUnoppSized(
@@ -721,7 +724,7 @@ export function computeConfirmedUnoppSized(
     const bs = profile?.bySport?.[sport];
     const tier = bs?.whitelistTier;
     if (tier !== 'CONFIRMED') continue;
-    const sr = Number(w.sizeRatio);
+    const sr = stakeSizeRatio(w, profile, sport);
     if (!passesSizeSkillLiveGate(bs, sr)) continue;
     if (w.side === mySide) {
       if (Number.isFinite(sr) && sr >= minSize) {
@@ -748,7 +751,7 @@ export function computeConfirmedUnoppSized(
 export const CONFIRMED_Q1_FROM = '2026-08-08';
 export const CONFIRMED_Q1_MIN_SIZE = 0.5;
 export const CONFIRMED_Q1_UNITS = 2;
-/** Lean/full/press conviction bump (sizeRatio ≥ 1×). */
+/** Lean/full/press conviction bump (sport-local size ≥ 1×). */
 export const CONFIRMED_Q1_PRESS_MIN_SIZE = 1.0;
 export const CONFIRMED_Q1_PRESS_UNITS = 3;
 
@@ -976,7 +979,7 @@ export function buildFlatDollarQBySport(walletProfiles, { tiers = ['CONFIRMED'] 
 }
 
 /**
- * ≥1 FOR wallet: CONFIRMED-in-sport × flatDollar Q1 × sizeRatio ≥ minSize.
+ * ≥1 FOR wallet: CONFIRMED-in-sport × flatDollar Q1 × sport-local size ≥ minSize.
  * Opposition does NOT disqualify.
  * @returns {{ qualifies: boolean, forQ1Sized: number, bestSize: number|null, targetUnits: number, wallets: string[] }}
  */
@@ -1012,9 +1015,9 @@ export function computeConfirmedQ1Sized(
       || walletProfiles.get(key.toUpperCase())
       || walletProfiles.get(s);
     if (profile?.bySport?.[sport]?.whitelistTier !== 'CONFIRMED') continue;
-    if (!passesSizeSkillLiveGate(profile?.bySport?.[sport], w.sizeRatio)) continue;
+    const sr = stakeSizeRatio(w, profile, sport);
+    if (!passesSizeSkillLiveGate(profile?.bySport?.[sport], sr)) continue;
     if (qMap.get(s) !== 1 && qMap.get(key) !== 1) continue;
-    const sr = Number(w.sizeRatio);
     if (!(Number.isFinite(sr) && sr >= minSize)) continue;
     forQ1Sized++;
     wallets.push(s);
