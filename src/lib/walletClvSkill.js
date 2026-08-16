@@ -798,14 +798,19 @@ export function applyConfirmedQ1UnitFloor({
 
 /**
  * Shared Action letter + CONFIRMED-Q1 score (one formula):
- *   flatMix = 0.30·z(Source A flat) + 0.70·z(Source B flat)
- *   score   = 0.40·flatMix + 0.60·z(Source B $)
+ *   1. Shrink each ROI toward the sport's n-weighted CONFIRMED mean
+ *      shrunk = n/(n+n0)·ROI + n0/(n+n0)·mean   (n0 = 40)
+ *   2. z-score the shrunk values
+ *   3. flatMix = 0.30·z(A flat) + 0.70·z(B flat)
+ *      score   = 0.40·flatMix + 0.60·z(B $)
  * Missing A or B flat: that side drops out of flatMix (other side = 100%).
  */
 export const FLAT_BLEND_A = 0.3;
 export const FLAT_BLEND_B = 0.7;
 export const FLAT_DOLLAR_Q_WEIGHT_FLAT = 0.4;
 export const FLAT_DOLLAR_Q_WEIGHT_DOLLAR = 0.6;
+/** Prior strength in bets — same order as Sharp-tier cell hist floor. */
+export const FLAT_DOLLAR_Q_SHRINK_N0 = 40;
 
 function zUnit(xs) {
   const finite = xs.filter((x) => Number.isFinite(x));
@@ -813,6 +818,39 @@ function zUnit(xs) {
   const m = finite.reduce((a, b) => a + b, 0) / finite.length;
   const sd = Math.sqrt(finite.reduce((a, b) => a + (b - m) ** 2, 0) / finite.length) || 1;
   return (x) => (Number.isFinite(x) ? (x - m) / sd : null);
+}
+
+/** Volume-weighted mean so a 3-1 +54% cannot pull the prior. */
+export function nWeightedMean(rois, ns) {
+  let num = 0;
+  let den = 0;
+  const fallback = [];
+  const nArr = Array.isArray(ns) ? ns : [];
+  for (let i = 0; i < rois.length; i++) {
+    const roi = rois[i];
+    if (!Number.isFinite(roi)) continue;
+    fallback.push(roi);
+    const n = Number(nArr[i]);
+    if (Number.isFinite(n) && n > 0) {
+      num += n * roi;
+      den += n;
+    }
+  }
+  if (den > 0) return num / den;
+  if (!fallback.length) return null;
+  return fallback.reduce((a, b) => a + b, 0) / fallback.length;
+}
+
+/**
+ * Empirical-Bayes blend toward a peer mean.
+ * Missing / zero n → full shrink (won't take Q1 on an uncounted book).
+ */
+export function shrinkRoiTowardMean(roi, n, mean, n0 = FLAT_DOLLAR_Q_SHRINK_N0) {
+  if (!Number.isFinite(roi)) return null;
+  if (!Number.isFinite(mean)) return roi;
+  const nn = Math.max(0, Number.isFinite(Number(n)) ? Number(n) : 0);
+  const k = Number.isFinite(n0) && n0 > 0 ? n0 : FLAT_DOLLAR_Q_SHRINK_N0;
+  return (nn / (nn + k)) * roi + (k / (nn + k)) * mean;
 }
 
 /** Combine already-computed z's. Used by live Q and as-of cell hist. */
@@ -825,6 +863,47 @@ export function combineFlatDollarScore({ zFlatA = null, zFlatB = null, zDollar }
     ? FLAT_BLEND_A * zFlatA + FLAT_BLEND_B * zFlatB
     : (aOk ? zFlatA : zFlatB);
   return FLAT_DOLLAR_Q_WEIGHT_FLAT * flatMix + FLAT_DOLLAR_Q_WEIGHT_DOLLAR * zDollar;
+}
+
+/**
+ * Shrink → z → 40/60 blend. Rows: { wallet, flatA, nA, flatB, nB, dol, nDol }.
+ * @returns {Map<string, number>} wallet → score
+ */
+export function scoreFlatDollarRows(rows, n0 = FLAT_DOLLAR_Q_SHRINK_N0) {
+  const list = Array.isArray(rows) ? rows : [];
+  const meanA = nWeightedMean(list.map((r) => r.flatA), list.map((r) => r.nA));
+  const meanB = nWeightedMean(list.map((r) => r.flatB), list.map((r) => r.nB));
+  const meanD = nWeightedMean(list.map((r) => r.dol), list.map((r) => r.nDol ?? r.nB));
+  const shrunk = list.map((r) => ({
+    w: r.wallet,
+    sA: Number.isFinite(r.flatA) ? shrinkRoiTowardMean(r.flatA, r.nA, meanA, n0) : null,
+    sB: Number.isFinite(r.flatB) ? shrinkRoiTowardMean(r.flatB, r.nB, meanB, n0) : null,
+    sD: Number.isFinite(r.dol) ? shrinkRoiTowardMean(r.dol, r.nDol ?? r.nB, meanD, n0) : null,
+  }));
+  const zA = zUnit(shrunk.map((r) => r.sA));
+  const zB = zUnit(shrunk.map((r) => r.sB));
+  const zD = zUnit(shrunk.map((r) => r.sD));
+  const out = new Map();
+  for (const r of shrunk) {
+    const s = combineFlatDollarScore({
+      zFlatA: zA(r.sA),
+      zFlatB: zB(r.sB),
+      zDollar: zD(r.sD),
+    });
+    if (Number.isFinite(s) && r.w) out.set(r.w, s);
+  }
+  return out;
+}
+
+/** Highest score → Q1. Need ≥4 scored wallets. */
+export function quartileFromScores(scoreByWallet) {
+  const arr = [...(scoreByWallet || [])].filter(([, s]) => Number.isFinite(s));
+  arr.sort((a, b) => b[1] - a[1]);
+  const out = new Map();
+  const n = arr.length;
+  if (n < 4) return out;
+  arr.forEach(([w], i) => out.set(w, Math.min(4, Math.floor((i / n) * 4) + 1)));
+  return out;
 }
 
 /**
@@ -851,8 +930,11 @@ export function buildFlatDollarQBySport(walletProfiles, { tiers = ['CONFIRMED'] 
       bySport.get(sport).push({
         wallet: short,
         flatA: Number.isFinite(flatA) ? flatA : null,
+        nA: Number(rec.picks?.n) || 0,
         flatB: Number.isFinite(flatB) ? flatB : null,
+        nB: Number(rec.positions?.n) || 0,
         dol,
+        nDol: Number(rec.positions?.n) || 0,
       });
     }
   }
@@ -862,30 +944,7 @@ export function buildFlatDollarQBySport(walletProfiles, { tiers = ['CONFIRMED'] 
       out.set(sport, new Map());
       continue;
     }
-    const zA = zUnit(rows.map((r) => r.flatA));
-    const zB = zUnit(rows.map((r) => r.flatB));
-    const zD = zUnit(rows.map((r) => r.dol));
-    const scored = rows
-      .map((r) => ({
-        w: r.wallet,
-        s: combineFlatDollarScore({
-          zFlatA: zA(r.flatA),
-          zFlatB: zB(r.flatB),
-          zDollar: zD(r.dol),
-        }),
-      }))
-      .filter((r) => Number.isFinite(r.s))
-      .sort((a, b) => b.s - a.s);
-    const qMap = new Map();
-    const n = scored.length;
-    if (n < 4) {
-      out.set(sport, qMap);
-      continue;
-    }
-    scored.forEach((row, i) => {
-      qMap.set(row.w, Math.min(4, Math.floor((i / n) * 4) + 1));
-    });
-    out.set(sport, qMap);
+    out.set(sport, quartileFromScores(scoreFlatDollarRows(rows)));
   }
   return out;
 }

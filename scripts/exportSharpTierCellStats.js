@@ -26,7 +26,7 @@ import admin from 'firebase-admin';
 import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { combineFlatDollarScore } from '../src/lib/walletClvSkill.js';
+import { scoreFlatDollarRows, quartileFromScores } from '../src/lib/walletClvSkill.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -112,30 +112,6 @@ function sizeBand(sr) {
   if (sr < 1.0) return 'lean';
   if (sr < 1.5) return 'full';
   return 'press';
-}
-
-function zScores(xs) {
-  const m = xs.reduce((a, b) => a + b, 0) / xs.length;
-  const sd = Math.sqrt(xs.reduce((a, b) => a + (b - m) ** 2, 0) / xs.length) || 1;
-  return { z: xs.map((x) => (x - m) / sd), m, sd };
-}
-
-function zScoresFinite(xs) {
-  const finite = xs.filter((x) => Number.isFinite(x));
-  if (!finite.length) return xs.map(() => null);
-  const m = finite.reduce((a, b) => a + b, 0) / finite.length;
-  const sd = Math.sqrt(finite.reduce((a, b) => a + (b - m) ** 2, 0) / finite.length) || 1;
-  return xs.map((x) => (Number.isFinite(x) ? (x - m) / sd : null));
-}
-
-function assignQ(scoreByWallet) {
-  const arr = [...scoreByWallet.entries()].filter(([, s]) => Number.isFinite(s));
-  arr.sort((a, b) => b[1] - a[1]);
-  const out = new Map();
-  const n = arr.length;
-  if (n < 4) return out;
-  arr.forEach(([w], i) => out.set(w, Math.min(4, Math.floor((i / n) * 4) + 1)));
-  return out;
 }
 
 function summ(legs) {
@@ -301,28 +277,24 @@ function addToBucket(map, key, leg) {
           ? bs.positions.positionFlatRoi : null;
         const dollarRoi = bs.positions?.n >= MIN_N_FEAT && Number.isFinite(bs.positions.dollarRoi)
           ? bs.positions.dollarRoi : null;
-        rows.push({ wallet, flatA, flatB, dollarRoi });
+        rows.push({
+          wallet,
+          flatA,
+          nA: Number(bs.picks?.n) || 0,
+          flatB,
+          nB: Number(bs.positions?.n) || 0,
+          dol: dollarRoi,
+          nDol: Number(bs.positions?.n) || 0,
+        });
       }
       confirmedWalletsBySport.set(sport, confirmed);
       if (rows.length < 4) continue;
 
-      const elFd = rows.filter((r) => Number.isFinite(r.dollarRoi)
+      const elFd = rows.filter((r) => Number.isFinite(r.dol)
         && (Number.isFinite(r.flatA) || Number.isFinite(r.flatB)));
       let flatDollar = new Map();
       if (elFd.length >= 4) {
-        const zA = zScoresFinite(elFd.map((r) => r.flatA));
-        const zB = zScoresFinite(elFd.map((r) => r.flatB));
-        const zD = zScoresFinite(elFd.map((r) => r.dollarRoi));
-        const m = new Map();
-        elFd.forEach((r, i) => {
-          const s = combineFlatDollarScore({
-            zFlatA: Number.isFinite(r.flatA) ? zA[i] : null,
-            zFlatB: Number.isFinite(r.flatB) ? zB[i] : null,
-            zDollar: zD[i],
-          });
-          if (Number.isFinite(s)) m.set(r.wallet, s);
-        });
-        flatDollar = assignQ(m);
+        flatDollar = quartileFromScores(scoreFlatDollarRows(elFd));
       }
       qBySport.set(sport, flatDollar);
     }
@@ -428,7 +400,7 @@ function addToBucket(map, key, leg) {
     method: [
       'As-of CONFIRMED-in-sport graded sharp_action_positions from',
       FROM,
-      '+. Sharp tier = day-of flatDollar Q (0.40·(0.30·z(A flat)+0.70·z(B flat))+0.60·z(B $)) among CONFIRMED in that sport.',
+      '+. Sharp tier = day-of flatDollar Q: shrink each ROI toward n-weighted CONFIRMED mean (n0=40), then 0.40·(0.30·z(A flat)+0.70·z(B flat))+0.60·z(B $).',
       'Size bands: light <0.5×, lean 0.5–1×, full 1–1.5×, press ≥1.5× (stamped cross-sport sizeRatio).',
       'Unopposed = zero other as-of CONFIRMED on opposite side of date|sport|gameKey|marketType with size ≥0.10× (Action-matched).',
     ].join(' '),
