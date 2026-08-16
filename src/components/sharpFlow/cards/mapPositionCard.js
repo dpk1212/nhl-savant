@@ -1222,23 +1222,9 @@ export function mapLockedPickToCardFixture(pick, {
   const lockOdds = odds;
   const peakOdds = Number.isFinite(pick.lockPinnOdds) ? pick.lockPinnOdds
     : Number.isFinite(pick.pinnacleOdds) ? pick.pinnacleOdds : lockOdds;
-  // Past T-15 the ticket is sealed — do not chase live closingOdds.
-  // Raw pick.pinnacleOdds / closingOdds may be MAIN after a line move; prefer
-  // market.fairDisplay / sma path (ticket-line) later when composing the card.
-  const nowOdds = ticketFrozen
-    ? (peakOdds ?? lockOdds)
-    : (Number.isFinite(pick.closingOdds) ? pick.closingOdds
-      : Number.isFinite(pick.pinnacleOdds) ? pick.pinnacleOdds : peakOdds);
-
-  const lockProb = ip(lockOdds);
-  const closeProb = ip(pick.closingOdds ?? nowOdds);
-  // Leave null when close/lock aren't both known — never invent 0% CLV.
-  let clvPct = null;
-  if (Number.isFinite(pick.clv)) {
-    clvPct = +(pick.clv * (Math.abs(pick.clv) <= 1 ? 100 : 1)).toFixed(1);
-  } else if (lockProb != null && closeProb != null) {
-    clvPct = +((closeProb - lockProb) * 100).toFixed(1);
-  }
+  // Live CLV is computed later vs same-line tapeNow — not pick.closingOdds.
+  // updateClosingOdds stamps MAIN juice; pairing that with an alt ticket
+  // (Over 9.5 +127 vs Over 8.5 −117) fake-lights Beating Close.
 
   const teamRaw = (pick.team || '').trim();
   const isDraw = !isTotal && !isSpread && /^draw$/i.test(teamRaw);
@@ -1528,16 +1514,6 @@ export function mapLockedPickToCardFixture(pick, {
     liveEvPct: Number.isFinite(evFlagged) ? evFlagged : null,
   });
 
-  const marketSignals = buildLockedMarketSignals({
-    sma,
-    evPct: Number.isFinite(evFlagged) ? evFlagged : null,
-    provenOnSide: confirmedOnSide,
-    vaultOnSide,
-    trackedOnSide: wallets.length,
-    sideInvested: pick.totalInvested || pick.lockTotalInvested || 0,
-    clvPct: Number.isFinite(clvPct) ? clvPct : null,
-  });
-
   // PIN = first print on this-side tape; NOW = last print (green dot).
   // Do not use SMA open/now — that path used to mix +1.5 with −1.5.
   const pinPts = Array.isArray(market.pinPath)
@@ -1551,6 +1527,28 @@ export function mapLockedPickToCardFixture(pick, {
     : (Number.isFinite(inst.tape?.now) ? inst.tape.now : null)
       ?? (Number.isFinite(sma?.path?.nowOdds) ? sma.path.nowOdds : null)
       ?? (Number.isFinite(fairLine) ? fairLine : null);
+
+  // Beating Close = ticket vs same-line NOW. Never MAIN closingOdds vs an alt.
+  const closeForClv = Number.isFinite(tapeNow) ? tapeNow
+    : (ticketOffMain ? null : (Number.isFinite(pick.closingOdds) ? pick.closingOdds : null));
+  const lockProb = ip(lockOdds);
+  const closeProb = ip(closeForClv);
+  let clvPct = null;
+  if (lockProb != null && closeProb != null) {
+    clvPct = +((closeProb - lockProb) * 100).toFixed(1);
+  } else if (!ticketOffMain && Number.isFinite(pick.clv)) {
+    clvPct = +(pick.clv * (Math.abs(pick.clv) <= 1 ? 100 : 1)).toFixed(1);
+  }
+
+  const marketSignals = buildLockedMarketSignals({
+    sma,
+    evPct: Number.isFinite(evFlagged) ? evFlagged : null,
+    provenOnSide: confirmedOnSide,
+    vaultOnSide,
+    trackedOnSide: wallets.length,
+    sideInvested: pick.totalInvested || pick.lockTotalInvested || 0,
+    clvPct: Number.isFinite(clvPct) ? clvPct : null,
+  });
 
   // Stake math / hero price = sealed ticket odds (not main-line reco juice).
   const displayOdds = Number.isFinite(lockOdds) ? lockOdds

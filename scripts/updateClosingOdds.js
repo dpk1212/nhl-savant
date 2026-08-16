@@ -44,6 +44,39 @@ function impliedProb(american) {
     : 100 / (american + 100);
 }
 
+function linesClose(a, b) {
+  return Number.isFinite(a) && Number.isFinite(b) && Math.abs(a - b) <= 0.051;
+}
+
+function ticketLineFromSide(sd) {
+  if (!sd) return null;
+  if (Number.isFinite(sd.lock?.line)) return sd.lock.line;
+  if (Number.isFinite(sd.peak?.line)) return sd.peak.line;
+  if (Number.isFinite(sd.line)) return sd.line;
+  return null;
+}
+
+/** Same-line Pinnacle juice for a totals ticket — never MAIN when the pick is an alt. */
+function closingTotalForSide(pinnGame, side, line) {
+  const want = side === 'under' || side === 'away' ? 'underOdds' : 'overOdds';
+  const fromRow = (row) => {
+    if (!row || !Number.isFinite(row[want])) return null;
+    return { odds: row[want], line: row.line };
+  };
+  if (Number.isFinite(line)) {
+    const board = Array.isArray(pinnGame?.totalLines) ? pinnGame.totalLines : [];
+    const fromBoard = fromRow(board.find((r) => linesClose(r.line, line)));
+    if (fromBoard) return fromBoard;
+    const hist = Array.isArray(pinnGame?.totalHistory) ? pinnGame.totalHistory : [];
+    for (let i = hist.length - 1; i >= 0; i--) {
+      if (!linesClose(hist[i]?.line, line)) continue;
+      const fromHist = fromRow(hist[i]);
+      if (fromHist) return fromHist;
+    }
+  }
+  return fromRow(pinnGame?.totalCurrent);
+}
+
 const PINN_PATH = join(ROOT, 'public', 'pinnacle_history.json');
 
 async function run() {
@@ -122,16 +155,15 @@ async function run() {
     if (!sides || !sport || !gameKey) { skipped++; continue; }
     if (commenceTime && now >= commenceTime) { skipped++; continue; }
     const pinnGame = pinnacle?.[sport]?.[gameKey];
-    const tc = pinnGame?.totalCurrent;
-    if (!tc) { skipped++; continue; }
+    if (!pinnGame) { skipped++; continue; }
     const updates = {};
     let hasUpdate = false;
     for (const side of Object.keys(sides)) {
-      const closingOdds = side === 'over' ? tc.overOdds : tc.underOdds;
-      if (closingOdds == null) continue;
-      const prob = impliedProb(closingOdds);
-      updates[`sides.${side}.closingOdds`] = closingOdds;
-      updates[`sides.${side}.closingLine`] = tc.line;
+      const close = closingTotalForSide(pinnGame, side, ticketLineFromSide(sides[side]));
+      if (!close) continue;
+      const prob = impliedProb(close.odds);
+      updates[`sides.${side}.closingOdds`] = close.odds;
+      updates[`sides.${side}.closingLine`] = close.line;
       updates[`sides.${side}.closingPinnProb`] = prob ? +prob.toFixed(4) : null;
       hasUpdate = true;
     }

@@ -554,7 +554,7 @@ export function buildLockedMarketSignals({
       short: 'CLV',
       met: clvUp,
       tier: 'med',
-      tip: 'Live CLV vs close / peak — you still own a better number than the market’s path.',
+      tip: 'Ticket implied vs same-line NOW — you own a better number than the live tape.',
     },
   ];
 
