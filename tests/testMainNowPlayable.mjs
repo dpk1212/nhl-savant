@@ -1,5 +1,6 @@
 /**
- * "Main now" = Odds API labeled line (isMain), not last alt / pick'em guess.
+ * Hero = Odds API labeled MAIN (isMain), not last alt / pick'em guess.
+ * Flagged vault ticket is the subtitle when it sits off that main.
  * Usage: node tests/testMainNowPlayable.mjs
  */
 import assert from 'node:assert/strict';
@@ -80,10 +81,11 @@ const mil = mapLockedPickToCardFixture({
 }, { pinnacleHistory });
 
 assert.equal(mil.ticketLine, 7.5);
-assert.equal(mil.pickLabel, 'Under 7.5');
+assert.equal(mil.pickLabel, 'Under 8', 'hero is T-15 main, not the flagged ticket');
+assert.equal(mil.heroOdds, -103);
 assert.equal(mil.playableLine, 8, 'unlabeled totals fallback is pick-em 8, not stale 9.5');
-assert.match(mil.mainNowLabel || '', /Main now Under 8/);
-assert.match(mil.mainNowLabel || '', /-103/);
+assert.match(mil.mainNowLabel || '', /flagged at Under 7\.5/);
+assert.match(mil.mainNowLabel || '', /\+122/);
 assert.ok(!/9\.5/.test(mil.mainNowLabel || ''), `got ${mil.mainNowLabel}`);
 
 const laa = mapLockedPickToCardFixture({
@@ -142,7 +144,8 @@ const atl = mapLockedPickToCardFixture({
 }, { pinnacleHistory });
 
 assert.equal(atl.playableLine, 170.5, 'labeled total, not Pinnacle pick-em 173.5');
-assert.match(atl.mainNowLabel || '', /Main now Under 170\.5/);
+assert.equal(atl.pickLabel, 'Under 170.5');
+assert.match(atl.mainNowLabel || '', /flagged at Under 168\.5/);
 assert.ok(!/173\.5/.test(atl.mainNowLabel || ''), `got ${atl.mainNowLabel}`);
 
 // Frozen: last pre-T-15 board / isMain, not live totalCurrent.
@@ -183,7 +186,8 @@ const was = mapLockedPickToCardFixture({
 }, { pinnacleHistory: frozenHist });
 
 assert.equal(was.playableLine, 170.5, 'frozen main is last pre-T-15 isMain, not live 173.5');
-assert.match(was.mainNowLabel || '', /Main now Under 170\.5/);
+assert.equal(was.pickLabel, 'Under 170.5');
+assert.match(was.mainNowLabel || '', /flagged at Under 169\.5/);
 assert.ok(!/173\.5/.test(was.mainNowLabel || ''), `got ${was.mainNowLabel}`);
 
 console.log('testMainNowPlayable: ok');

@@ -1062,6 +1062,9 @@ export default function LockedClarityExpanded({
     || null;
   const clvGood = Number.isFinite(f.clvPct) ? f.clvPct >= 0 : true;
   const gid = `lc-${String(f.id || 'x').replace(/[^a-zA-Z0-9-_]/g, '')}`;
+  const heroPx = Number.isFinite(f.heroOdds)
+    ? f.heroOdds
+    : (f.ticketOffMain ? null : f.lockOdds);
 
   const provenUsd = all.filter((w) => w.side === 'ours' && w.proven).reduce((s, w) => s + (w.invested || 0), 0);
   const secondaryUsd = all.filter((w) => w.side === 'ours' && !w.proven && w.skillEligible).reduce((s, w) => s + (w.invested || 0), 0);
@@ -1209,12 +1212,19 @@ export default function LockedClarityExpanded({
           }}>
             {f.pickLabel}
           </span>
-          <span style={{ fontSize: 15, fontWeight: 600, color: C.textSec }}>{fmtOdds(f.lockOdds)}</span>
+          {Number.isFinite(heroPx) && (
+            <span style={{ fontSize: 15, fontWeight: 600, color: C.textSec }}>
+              {fmtOdds(heroPx)}
+            </span>
+          )}
           <SteamTag steam={f.steam} compact />
           {f.mainNowLabel && (
-            <span style={{
-              width: '100%', fontSize: 11, fontWeight: 600, color: C.textMuted, marginTop: 2,
-            }}>
+            <span
+              title="Vault flagged ticket — T-15 locks the main line above"
+              style={{
+                width: '100%', fontSize: 11, fontWeight: 600, color: C.textMuted, marginTop: 2,
+              }}
+            >
               {f.mainNowLabel}
             </span>
           )}

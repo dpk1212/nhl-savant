@@ -1263,25 +1263,19 @@ export function mapLockedPickToCardFixture(pick, {
     : isDraw ? 'Draw'
       : (sideNorm === 'away' ? awayShort : homeShort);
 
-  // Hero = TICKET (vault consensus / what T-15 seals). Chart + FAIR/NOW stay
-  // on playable MAIN — never pair ticket juice with a different handicap.
+  // T-15 locks MAIN. Hero = playable main; flagged vault ticket is the subtitle.
+  // Never pair ticket juice with a different handicap.
   const fmtSpreadLn = (ln) => (Number.isFinite(ln) ? `${ln > 0 ? '+' : ''}${ln}` : '');
   const fmtAm = (o) => {
     if (!Number.isFinite(o) || o === 0) return null;
     return o > 0 ? `+${Math.round(o)}` : `${Math.round(o)}`;
   };
+  const fmtLineLabel = (ln) => {
+    if (isSpread && Number.isFinite(ln)) return `${teamShort} ${fmtSpreadLn(ln)}`;
+    if (isTotal && Number.isFinite(ln) && ln >= 1.5) return `${teamShort} ${ln}`;
+    return null;
+  };
   const ticketHeroLine = Number.isFinite(ticketLine) ? ticketLine : null;
-  const pickLabel = isSpread && Number.isFinite(ticketHeroLine)
-    ? `${teamShort} ${fmtSpreadLn(ticketHeroLine)}`
-    : isTotal && Number.isFinite(ticketHeroLine) && ticketHeroLine >= 1.5
-      ? `${teamShort} ${ticketHeroLine}`
-      : isSpread && Number.isFinite(playableLine)
-        ? `${teamShort} ${fmtSpreadLn(playableLine)}`
-        : isTotal && Number.isFinite(playableLine) && playableLine >= 1.5
-          ? `${teamShort} ${playableLine}`
-          : isTotal ? (pick.team || 'Total')
-            : isDraw ? 'Draw ML'
-              : `${teamShort} ML`;
   const entryLadderLabel = (isTotal || isSpread)
     ? formatEntryLadderLabel(entryLadder, { isTotal, isSpread, teamShort })
     : null;
@@ -1291,9 +1285,12 @@ export function mapLockedPickToCardFixture(pick, {
       (Number.isFinite(ticketHeroLine) && !linesClose(ticketHeroLine, playableLine))
       || entryLadder.some((r) => !linesClose(r.line, playableLine))
     );
-  // Secondary line under hero when MAIN drifted off the sealed ticket.
+  const ticketOffMain = (isTotal || isSpread)
+    && Number.isFinite(playableLine)
+    && Number.isFinite(ticketHeroLine)
+    && !linesClose(ticketHeroLine, playableLine);
   const playableNowOdds = (() => {
-    if (!entriesOffPlayable || !pinnGamePeek) return null;
+    if (!ticketOffMain || !pinnGamePeek) return null;
     if (isSpread && mainSpread) {
       const o = sideNorm === 'away' ? mainSpread.awayOdds : mainSpread.homeOdds;
       if (Number.isFinite(o)) return o;
@@ -1304,11 +1301,23 @@ export function mapLockedPickToCardFixture(pick, {
     }
     return null;
   })();
-  const mainNowLabel = entriesOffPlayable && Number.isFinite(playableLine)
-    ? `Main now ${teamShort} ${isSpread ? fmtSpreadLn(playableLine) : playableLine}${
-      fmtAm(playableNowOdds) ? ` · ${fmtAm(playableNowOdds)}` : ''
+  const heroLine = ticketOffMain && Number.isFinite(playableLine)
+    ? playableLine
+    : (Number.isFinite(ticketHeroLine) ? ticketHeroLine : playableLine);
+  const pickLabel = fmtLineLabel(heroLine)
+    || (isTotal ? (pick.team || 'Total')
+      : isDraw ? 'Draw ML'
+        : `${teamShort} ML`);
+  const heroOdds = ticketOffMain
+    ? (Number.isFinite(playableNowOdds) ? playableNowOdds : null)
+    : lockOdds;
+  const flaggedAtLabel = ticketOffMain
+    ? `flagged at ${fmtLineLabel(ticketHeroLine) || `${teamShort} ${ticketHeroLine}`}${
+      fmtAm(lockOdds) ? ` · ${fmtAm(lockOdds)}` : ''
     }`
     : null;
+  // Secondary under hero — flagged ticket when MAIN is the lock.
+  const mainNowLabel = flaggedAtLabel;
 
   const stakePath = pick.hcStakeTier || pick.lockTier || 'LOCK';
   const tapeAction = normTape(pick.tapeAction || pick.v8_tapeAction);
@@ -1564,11 +1573,14 @@ export function mapLockedPickToCardFixture(pick, {
     homeShort,
     pickLabel,
     entryLadder: entryLadder.length ? entryLadder : null,
-    // When MAIN ≠ ticket: show "Main now …" under hero; keep multi-entry chips.
+    // When MAIN ≠ ticket: hero is MAIN; flagged ticket is the subtitle.
     entryLadderLabel: entriesOffPlayable
       ? null
       : (entryLadder.length > 1 ? entryLadderLabel : null),
     mainNowLabel,
+    flaggedAtLabel,
+    ticketOffMain,
+    heroOdds,
     chartLineLabel,
     // Always home|away|draw for board math (totals already mapped over→home).
     side: sideNorm,

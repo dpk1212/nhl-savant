@@ -2376,6 +2376,9 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
   });
   const ticketFrozen = Number.isFinite(f.commenceMs)
     && Date.now() >= (f.commenceMs - LOCK_LEAD_MS);
+  const heroPx = Number.isFinite(f.heroOdds)
+    ? f.heroOdds
+    : (f.ticketOffMain ? null : (f.lockOdds ?? f.odds));
 
   if (!expanded) {
     const stakeLabel = tracked
@@ -2525,19 +2528,19 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
               }}>
                 {f.pickLabel}
               </div>
-              {Number.isFinite(f.lockOdds ?? f.odds) && (
+              {Number.isFinite(heroPx) && (
                 <div style={{
                   fontSize: '1.05rem', fontWeight: 750, letterSpacing: '-0.02em',
                   color: C.textSec, lineHeight: 1.05,
                 }}>
-                  {fmtOdds(f.lockOdds ?? f.odds)}
+                  {fmtOdds(heroPx)}
                 </div>
               )}
               <SteamTag steam={f.steam} compact />
             </div>
             {f.mainNowLabel ? (
               <div
-                title="Sportsbook main line — chart / FAIR / NOW use this instrument"
+                title="Vault flagged ticket — T-15 locks the main line above"
                 style={{
                   marginTop: 5, fontSize: 10, fontWeight: 600,
                   letterSpacing: '0.02em', color: C.textMuted,

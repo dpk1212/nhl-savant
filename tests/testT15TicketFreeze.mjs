@@ -76,6 +76,7 @@ const fixture = mapLockedPickToCardFixture({
 }, { pinnacleHistory });
 
 assert.equal(fixture.pickLabel, 'Over 9');
+assert.equal(fixture.heroOdds, -102);
 assert.equal(fixture.lockOdds, -102);
 assert.equal(fixture.nowOdds, -102, 'frozen nowOdds must not chase closingOdds');
 assert.ok(!fixture.journey.includes(-101), 'journey must not include post-freeze odds');
