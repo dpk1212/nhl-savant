@@ -1,23 +1,23 @@
 {
-  "scannedAt": "2026-08-16T01:10:07.221Z",
-  "elapsedSec": 17.6,
+  "scannedAt": "2026-08-16T01:15:21.674Z",
+  "elapsedSec": 17.2,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 35,
   "summary": {
     "total": 226,
     "coveredByMain": 20,
-    "recovered": 14,
-    "recoveredPositions": 24,
-    "noPositions": 192,
+    "recovered": 15,
+    "recoveredPositions": 27,
+    "noPositions": 191,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 6,
+      "ml": 5,
       "spread": 0,
       "total": 2,
-      "dropped_shadow_gate": 6,
-      "dropped_excluded": 10,
+      "dropped_shadow_gate": 8,
+      "dropped_excluded": 12,
       "dropped_duplicate": 0
     }
   },
@@ -694,11 +694,11 @@
       "sports": "MLB,WNBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xa0f21e6d351baa9185716b5c00c2925ed9621848",
-      "positionsCount": 3,
+      "positionsCount": 4,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 775,
-      "willPassShadowGate": 2,
-      "willDropAtShadowGate": 1,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 3,
       "positions": [
         {
           "sport": "UFC",
@@ -711,19 +711,28 @@
         },
         {
           "sport": "UFC",
-          "gameKey": "estebanribovics_edsonbarboza",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 289,
-          "entryLine": null,
-          "passesShadow": true
-        },
-        {
-          "sport": "UFC",
           "gameKey": "dustinstoltzfus_mansurabdulmalik",
           "marketType": "ml",
           "side": "away",
           "invested": 77,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "UFC",
+          "gameKey": "estebanribovics_edsonbarboza",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 0,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "UFC",
+          "gameKey": "estebanribovics_edsonbarboza",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 13,
           "entryLine": null,
           "passesShadow": false
         }
@@ -770,7 +779,7 @@
           "gameKey": "gillianrobertson_mackenziedern",
           "marketType": "ml",
           "side": "home",
-          "invested": 14743,
+          "invested": 15404,
           "entryLine": null,
           "passesShadow": true
         }
@@ -830,10 +839,10 @@
       "sports": "MLB,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
-      "positionsCount": 6,
+      "positionsCount": 7,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 2055,
-      "willPassShadowGate": 6,
+      "willPassShadowGate": 7,
       "willDropAtShadowGate": 0,
       "positions": [
         {
@@ -841,8 +850,35 @@
           "gameKey": "kcr_laa",
           "marketType": "total",
           "side": "under",
-          "invested": 3390,
+          "invested": 21893,
           "entryLine": 7.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "kcr_laa",
+          "marketType": "total",
+          "side": "under",
+          "invested": 6631,
+          "entryLine": 8.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "kcr_laa",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 5597,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "kcr_laa",
+          "marketType": "total",
+          "side": "under",
+          "invested": 4789,
+          "entryLine": 9.5,
           "passesShadow": true
         },
         {
@@ -852,24 +888,6 @@
           "side": "away",
           "invested": 2592,
           "entryLine": null,
-          "passesShadow": true
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "kcr_laa",
-          "marketType": "total",
-          "side": "under",
-          "invested": 2084,
-          "entryLine": 8.5,
-          "passesShadow": true
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "kcr_laa",
-          "marketType": "total",
-          "side": "under",
-          "invested": 1752,
-          "entryLine": 9.5,
           "passesShadow": true
         },
         {
@@ -910,7 +928,7 @@
           "gameKey": "kcr_laa",
           "marketType": "total",
           "side": "over",
-          "invested": 77688,
+          "invested": 116303,
           "entryLine": 7.5,
           "passesShadow": true
         }
@@ -1001,7 +1019,8 @@
       "tier": "CONFIRMED",
       "name": "Talvez10",
       "sports": "MLB,NBA",
-      "status": "COVERED_BY_MAIN"
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0xa71093cafc0c099b4ccab24c3cb8018d817923c4"
     },
     {
       "walletShort": "799fad",
@@ -1261,8 +1280,24 @@
       "tier": "FLAT",
       "name": "AnonymousUsername",
       "sports": "MLB",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x9703676286b93c2eca71ca96e8757104519a69c2"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x9703676286b93c2eca71ca96e8757104519a69c2",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 8849,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "kcr_laa",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 9895,
+          "entryLine": null,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "9bc9a1",
@@ -1465,8 +1500,7 @@
       "tier": "CONFIRMED",
       "name": "LesterDiamond",
       "sports": "NBA",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x558f2f82cf0394c28ce3c8e117ee747aeab51a56"
+      "status": "COVERED_BY_MAIN"
     },
     {
       "walletShort": "b6bcf3",
