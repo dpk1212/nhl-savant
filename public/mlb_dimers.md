@@ -14,9 +14,9 @@ Orioles  T. Rogers \\
 \\
 42.7% \\
 \\
-![DraftKings](https://cdn.ciphersports.io/images/bookmaker-logos/draftkings-icon.svg)\\
+![BetRivers](https://cdn.ciphersports.io/images/bookmaker-logos/bet-rivers-icon-1.svg)\\
 \\
-+131\\
++133\\
 \\
 ![Rays](https://cdn.ciphersports.io/images/MLB/official/TB.svg)\\
 \\
@@ -28,7 +28,9 @@ Rays  F. Peralta \\
 \\
 -133\\
 \\
-MLB \\
+STARTS\\
+\\
+48 mins \\
 \\
 See Game Predictions](https://www.dimers.com/mlb/predictions/2026_145_tb_bal) [Aug 16, 1:35 PM ET\\
 \\
@@ -40,7 +42,7 @@ Red Sox  P. Sandoval \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--106\\
+-108\\
 \\
 ![Pirates](https://cdn.ciphersports.io/images/MLB/official/PIT.svg)\\
 \\
@@ -120,9 +122,9 @@ Mets  C. Scott \\
 \\
 61.5% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![BetRivers](https://cdn.ciphersports.io/images/bookmaker-logos/bet-rivers-icon-1.svg)\\
 \\
--156\\
+-152\\
 \\
 MLB \\
 \\
@@ -136,7 +138,7 @@ White Sox  S. Burke \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-+104\\
++106\\
 \\
 ![Tigers](https://cdn.ciphersports.io/images/MLB/official/DET.svg)\\
 \\
@@ -144,9 +146,9 @@ Tigers  D. Anderson \\
 \\
 53.0% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![Polymarket](https://cdn.ciphersports.io/images/polymarket-small.png)\\
 \\
--106\\
+-104\\
 \\
 MLB \\
 \\
@@ -158,9 +160,9 @@ Padres  C. Mize \\
 \\
 51.1% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![DraftKings](https://cdn.ciphersports.io/images/bookmaker-logos/draftkings-icon.svg)\\
 \\
--106\\
+-105\\
 \\
 ![Guardians](https://cdn.ciphersports.io/images/MLB/official/CLE.svg)\\
 \\
@@ -168,7 +170,7 @@ Guardians  T. Bibee \\
 \\
 48.9% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![Polymarket](https://cdn.ciphersports.io/images/polymarket-small.png)\\
 \\
 +104\\
 \\
@@ -206,9 +208,9 @@ Phillies  A. Painter \\
 \\
 49.7% \\
 \\
-![DraftKings](https://cdn.ciphersports.io/images/bookmaker-logos/draftkings-icon.svg)\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--104\\
+-102\\
 \\
 ![Twins](https://cdn.ciphersports.io/images/MLB/official/MIN.svg)\\
 \\
@@ -216,9 +218,9 @@ Twins  D. Kremer \\
 \\
 50.3% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![bet365](https://cdn.ciphersports.io/images/bookmaker-logos/bet365-icon.svg)\\
 \\
-+102\\
++103\\
 \\
 MLB \\
 \\
@@ -254,9 +256,9 @@ Rangers  C. Bradford \\
 \\
 52.0% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![Polymarket](https://cdn.ciphersports.io/images/polymarket-small.png)\\
 \\
--125\\
+-122\\
 \\
 ![Athletics](https://cdn.ciphersports.io/images/MLB/official/ATH.svg)\\
 \\
@@ -278,9 +280,9 @@ Rockies  G. Hughes \\
 \\
 43.9% \\
 \\
-![BetRivers](https://cdn.ciphersports.io/images/bookmaker-logos/bet-rivers-icon-1.svg)\\
+![Hard Rock Bet](https://cdn.ciphersports.io/images/bookmaker-logos/hardrock-icon.png)\\
 \\
-+123\\
++120\\
 \\
 ![Giants](https://cdn.ciphersports.io/images/MLB/official/SF.svg)\\
 \\
@@ -312,9 +314,9 @@ Angels  R. Johnson \\
 \\
 48.3% \\
 \\
-![bet365](https://cdn.ciphersports.io/images/bookmaker-logos/bet365-icon.svg)\\
+![Caesars](https://cdn.ciphersports.io/images/bookmaker-logos/william-hill-icon.svg)\\
 \\
-+108\\
++105\\
 \\
 MLB \\
 \\
@@ -326,9 +328,9 @@ Brewers  L. Henderson \\
 \\
 32.5% \\
 \\
-![FanDuel](https://cdn.ciphersports.io/images/bookmaker-logos/fanduel-icon.svg)\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-+166\\
++167\\
 \\
 ![Dodgers](https://cdn.ciphersports.io/images/MLB/official/LAD.svg)\\
 \\
@@ -338,7 +340,7 @@ Dodgers  T. Skubal \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--167\\
+-170\\
 \\
 MLB \\
 \\
@@ -360,9 +362,9 @@ Astros  H. Brown \\
 \\
 53.9% \\
 \\
-![FanDuel](https://cdn.ciphersports.io/images/bookmaker-logos/fanduel-icon.svg)\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--116\\
+-115\\
 \\
 MLB \\
 \\
