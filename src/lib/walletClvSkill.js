@@ -475,7 +475,7 @@ export function applyBothE10TapeFloor({
 // Mute bottom quintile of prior staked A/B/C (expanding Q1 thr). Fail-open
 // when qConv or thr missing. Live from QCONV_MUTE_FROM.
 // 2026-08-12: Path A (HC) + RANK 2-for-0 exempt — mute was cutting gold winners
-// (HC-1 Rays/Braves). Applies to Path C SHARP* + CONFIRMED-UNOPP only.
+// (HC-1 Rays/Braves). Applies to Path C SHARP* only.
 export const QCONV_WR_MIN_N = 8;
 export const QCONV_MUTE_FROM = '2026-08-03';
 export const QCONV_MUTE_LOOKBACK_FROM = '2026-06-15';
@@ -483,12 +483,11 @@ export const QCONV_MUTE_FALLBACK_THR = 0; // ≈ Jun15+ staked Q1 (−0.27)
 export const QCONV_MUTE_MIN_PRIORS = 25;
 export const QCONV_STATE_COLLECTION = 'qConvMuteState';
 export const QCONV_STATE_DOC_ID = 'current';
-/** Path C + CONFIRMED-UNOPP only. Path A (SUPER/TOP/MINI/…) and RANK exempt. */
+/** Path C SHARP* only. Path A + RANK + CONFIRMED-UNOPP/Q1 exempt. */
 export const QCONV_MUTE_TIERS = new Set([
   'SHARP', 'SHARP-PRIME', 'SHARP-LEAN',
-  'CONFIRMED-UNOPP',
   // Path A + RANK intentionally omitted — do not qConv-mute gold / 2-for-0
-  // CONFIRMED-Q1 intentionally omitted — hard floor restores after mutes
+  // CONFIRMED-Q1 / CONFIRMED-UNOPP omitted — hard floor restores after mutes
 ]);
 
 export function isQConvMuteLive(pickDate) {
@@ -679,7 +678,9 @@ export function bestProvenForSide(walletDetails, mySide, sport, walletProfiles) 
 }
 
 // ── CONFIRMED-UNOPP promote (ALL CONFIRMED × sized ≥ 0.5 × unopposed) ───────
-// Rescue score>0 sides still at 0u after HC/RANK/SHARP. Forward-only.
+// Rescue score>0 sides still at 0u after HC/RANK/SHARP. Hard floor after
+// tape/qConv/FOOLS so Path A/C mutes cannot leave a qualifying side at 0u.
+// Never upsizes a live path. Forward-only.
 export const CONFIRMED_UNOPP_FROM = '2026-08-08';
 export const CONFIRMED_UNOPP_MIN_SIZE = 0.5;
 export const CONFIRMED_UNOPP_UNITS = 1;
@@ -794,6 +795,31 @@ export function applyConfirmedQ1UnitFloor({
     return { units, tier: null, floored: false, targetUnits: tgt };
   }
   return { units: tgt, tier: 'CONFIRMED-Q1', floored: true, targetUnits: tgt };
+}
+
+/**
+ * Restore 1u when CONFIRMED-UNOPP qualifies and the side is still at 0u
+ * after tape / qConv / FOOLS. Never upsizes a live path (unlike Q1).
+ * @param {(u: number, odds: number|null) => number} oddsCapFn
+ */
+export function applyConfirmedUnoppUnitFloor({
+  units,
+  odds = null,
+  unoppResult,
+  oddsCapFn,
+}) {
+  if (!unoppResult?.qualifies || typeof oddsCapFn !== 'function') {
+    return { units, tier: null, floored: false, targetUnits: null };
+  }
+  const tgt = Math.round(oddsCapFn(CONFIRMED_UNOPP_UNITS, odds ?? null) * 100) / 100;
+  if (!(Number.isFinite(tgt) && tgt > 0)) {
+    return { units, tier: null, floored: false, targetUnits: tgt };
+  }
+  const pre = Number.isFinite(units) ? units : 0;
+  if (pre > 0) {
+    return { units: pre, tier: null, floored: false, targetUnits: tgt };
+  }
+  return { units: tgt, tier: 'CONFIRMED-UNOPP', floored: true, targetUnits: tgt };
 }
 
 /**

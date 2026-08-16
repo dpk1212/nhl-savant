@@ -2988,7 +2988,7 @@ function buildV12Primer(report) {
   report.push(`| D | DISSENT mute rescue (MLB contribMargin≤0) | 1u |`);
   report.push(`| E | fadeTop≥60 mute only (EDGE size/rescue **frozen**) | — |`);
   report.push(`| TAPE | From **${SIDE_PROFILE_FROM}**: mute tape&lt;0 · hold mid · boost ≥2.89 ×1.35 | path units |`);
-  report.push(`| qConv | From **${QCONV_MUTE_FROM}**: mute qConv &lt; expanding Q1 thr (Path C + CONFIRMED-UNOPP; Path A + RANK exempt) | → 0u |`);
+  report.push(`| qConv | From **${QCONV_MUTE_FROM}**: mute qConv &lt; expanding Q1 thr (Path C SHARP*; Path A + RANK + UNOPP/Q1 exempt) | → 0u |`);
   report.push('');
   report.push(`**Stamps we keep for analysis (every shipped side):** depth (\`#F/#A\`, proven, V12 counts) + quality (ForWR, ForCLV, EDGE, Tape, qConv). Unopposed sides still get FOR numbers (EDGE uses AG prior ${EDGE_PRIOR_AG_WR}). Compare WIN vs LOSS in § 5 / § 5q.`);
   report.push('');
@@ -4042,7 +4042,7 @@ async function loadQConvMuteStateDoc() {
 async function buildV12QConvMute(report, stats) {
   report.push(`## § 5q — qConv Q1 Mute (${QCONV_MUTE_FROM}+)`);
   report.push('');
-  report.push(`Final dial after tape / EDGE abs. **qConv** = \`Σ sizeRatio×(WR−50) FOR − Σ sizeRatio×(WR−50) AG\` (same featured WR source as EDGE, n≥8). Mute Path C SHARP* + CONFIRMED-UNOPP when \`qConv < expanding Q1 thr\` of prior staked A/B/C since ${QCONV_MUTE_LOOKBACK_FROM}. **Path A + RANK exempt** (2026-08-12). Fail-open if qConv/thr missing. DISSENT + manual stake exempt. See \`docs/SKILL_FEATURES.md\`.`);
+  report.push(`Final dial after tape / EDGE abs. **qConv** = \`Σ sizeRatio×(WR−50) FOR − Σ sizeRatio×(WR−50) AG\` (same featured WR source as EDGE, n≥8). Mute Path C SHARP* when \`qConv < expanding Q1 thr\` of prior staked A/B/C since ${QCONV_MUTE_LOOKBACK_FROM}. **Path A + RANK + CONFIRMED-UNOPP/Q1 exempt**. Fail-open if qConv/thr missing. DISSENT + manual stake exempt. See \`docs/SKILL_FEATURES.md\`.`);
   report.push('');
 
   const state = await loadQConvMuteStateDoc();

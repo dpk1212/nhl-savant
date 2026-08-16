@@ -5,10 +5,13 @@
 import assert from 'assert';
 import {
   computeConfirmedUnoppSized,
+  applyConfirmedUnoppUnitFloor,
+  applyQConvMuteOverlay,
   isConfirmedUnoppPromoteLive,
   CONFIRMED_UNOPP_FROM,
   CONFIRMED_UNOPP_MIN_SIZE,
   CONFIRMED_UNOPP_UNITS,
+  QCONV_MUTE_TIERS,
 } from '../src/lib/walletClvSkill.js';
 
 let n = 0;
@@ -108,6 +111,44 @@ const side = 'home';
 {
   const r = computeConfirmedUnoppSized(null, side, sport, profiles([]));
   ok(r.qualifies === false, 'empty/null fail-open false');
+}
+
+ok(!QCONV_MUTE_TIERS.has('CONFIRMED-UNOPP'), 'UNOPP exempt from qConv mute');
+
+const oddsCapFn = (u) => u;
+{
+  const wd = [{ wallet: 'aaaaaa', side: 'home', sizeRatio: 1.04 }];
+  const unopp = computeConfirmedUnoppSized(
+    wd, side, sport,
+    profiles([['aaaaaa', 'MLB', 'CONFIRMED']]),
+  );
+  const fromZero = applyConfirmedUnoppUnitFloor({
+    units: 0, odds: null, unoppResult: unopp, oddsCapFn,
+  });
+  ok(fromZero.floored === true, '0u after mute floors');
+  ok(fromZero.units === CONFIRMED_UNOPP_UNITS, 'floors to 1u');
+  ok(fromZero.tier === 'CONFIRMED-UNOPP', 'tier CONFIRMED-UNOPP');
+
+  const livePath = applyConfirmedUnoppUnitFloor({
+    units: 1, odds: null, unoppResult: unopp, oddsCapFn,
+  });
+  ok(livePath.floored === false && livePath.units === 1, 'does not upsize a live 1u path');
+
+  const noQual = applyConfirmedUnoppUnitFloor({
+    units: 0, odds: null, unoppResult: { qualifies: false }, oddsCapFn,
+  });
+  ok(noQual.floored === false && noQual.units === 0, 'no floor without qualify');
+}
+
+{
+  const r = applyQConvMuteOverlay({
+    units: 1,
+    qConv: -17.4,
+    thr: -0.29,
+    tier: 'CONFIRMED-UNOPP',
+    pickDate: '2026-08-16',
+  });
+  ok(r.action === 'EXEMPT' && r.units === 1, 'qConv does not mute UNOPP');
 }
 
 console.log(`OK — ${n} assertions`);

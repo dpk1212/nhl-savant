@@ -103,6 +103,7 @@ import {
   confirmedQ1BypassesAgsCreateGate,
   confirmedUnoppBypassesAgsCreateGate,
   applyConfirmedQ1UnitFloor,
+  applyConfirmedUnoppUnitFloor,
   buildFlatDollarQBySport,
   computeForTop2PctPos,
   computeNetMeanPrior,
@@ -2677,19 +2678,22 @@ async function createMissingLockedPicks({
           hcStakeTierCreate = q1Late.tier;
         }
       }
-      if (createV121Eligible && peakUnitsApplied === 0
-          && (scoreV12 > 0 || unoppForceBypassAgs)
-          && isConfirmedUnoppPromoteLive(TARGET_DATE)
-          && hcStakeTierCreate !== 'CONFIRMED-UNOPP'
-          && hcStakeTierCreate !== 'CONFIRMED-Q1') {
-        if (unoppEarly.qualifies) {
-          peakUnitsApplied = Math.round(oddsCap(CONFIRMED_UNOPP_UNITS, odds ?? null) * 100) / 100;
-          hcStakeTierCreate = 'CONFIRMED-UNOPP';
+      if (createV121Eligible && isConfirmedUnoppPromoteLive(TARGET_DATE)
+          && (scoreV12 > 0 || unoppForceBypassAgs)) {
+        const unoppLate = applyConfirmedUnoppUnitFloor({
+          units: peakUnitsApplied,
+          odds: odds ?? null,
+          unoppResult: unoppEarly,
+          oddsCapFn: oddsCap,
+        });
+        if (unoppLate.floored) {
+          peakUnitsApplied = unoppLate.units;
+          hcStakeTierCreate = unoppLate.tier;
         }
       }
 
-      // qConv Q1 mute — after tape / EDGE abs (Path C + CONFIRMED-UNOPP only;
-      // Path A + RANK exempt — see QCONV_MUTE_TIERS).
+      // qConv Q1 mute — after tape / EDGE abs (Path C SHARP* only;
+      // Path A + RANK + CONFIRMED-UNOPP/Q1 exempt — see QCONV_MUTE_TIERS).
       const qConvCreate = createV121Eligible
         ? computeQConv(walletDetails, side, sport, walletProfiles)
         : null;
@@ -2721,7 +2725,9 @@ async function createMissingLockedPicks({
         peakUnitsApplied = foolsGoldPolicyCreate.units;
       }
 
-      // CONFIRMED-Q1 hard floor after mutes (create path) — includes AGS-mute force.
+      // CONFIRMED-Q1 / UNOPP hard floor after mutes (create path) — includes AGS-mute force.
+      let q1FlooredCreate = false;
+      let unoppFlooredCreate = false;
       if (createV121Eligible && isConfirmedQ1PromoteLive(TARGET_DATE)) {
         const q1Floor = applyConfirmedQ1UnitFloor({
           units: peakUnitsApplied,
@@ -2732,6 +2738,21 @@ async function createMissingLockedPicks({
         if (q1Floor.floored) {
           peakUnitsApplied = q1Floor.units;
           hcStakeTierCreate = q1Floor.tier;
+          q1FlooredCreate = true;
+        }
+      }
+      if (createV121Eligible && isConfirmedUnoppPromoteLive(TARGET_DATE)
+          && (scoreV12 > 0 || unoppForceBypassAgs)) {
+        const unoppFloor = applyConfirmedUnoppUnitFloor({
+          units: peakUnitsApplied,
+          odds: odds ?? null,
+          unoppResult: unoppEarly,
+          oddsCapFn: oddsCap,
+        });
+        if (unoppFloor.floored) {
+          peakUnitsApplied = unoppFloor.units;
+          hcStakeTierCreate = unoppFloor.tier;
+          unoppFlooredCreate = true;
         }
       }
 
@@ -2943,7 +2964,9 @@ async function createMissingLockedPicks({
           v8Stamps.v8_unitsPreTape = clvPolicyCreate.unitsPrePolicy;
         }
       }
-      if (foolsGoldPolicyCreate?.mutedBy) {
+      if (q1FlooredCreate || unoppFlooredCreate) {
+        if (v8Stamps.mutedBy != null) delete v8Stamps.mutedBy;
+      } else if (foolsGoldPolicyCreate?.mutedBy) {
         v8Stamps.mutedBy = foolsGoldPolicyCreate.mutedBy;
       } else if (qConvPolicyCreate?.mutedBy) {
         v8Stamps.mutedBy = qConvPolicyCreate.mutedBy;
@@ -2952,13 +2975,15 @@ async function createMissingLockedPicks({
       }
       // Health stamp — gives the dashboard a non-undefined health.status
       // immediately. reconcileSide will overwrite next cycle (same shape).
-      const createSizeMuted = (foolsGoldPolicyCreate?.action === 'MUTE'
+      const createSizeMuted = !q1FlooredCreate && !unoppFlooredCreate && (
+        (foolsGoldPolicyCreate?.action === 'MUTE'
           && Number.isFinite(foolsGoldPolicyCreate.unitsPrePolicy)
           && foolsGoldPolicyCreate.unitsPrePolicy > 0)
         || (qConvPolicyCreate?.action === 'MUTE'
           && Number.isFinite(qConvPolicyCreate.unitsPrePolicy)
           && qConvPolicyCreate.unitsPrePolicy > 0)
-        || (!!clvPolicyCreate.mutedBy);
+        || (!!clvPolicyCreate.mutedBy)
+      );
       const healthStamp = {
         status: createSizeMuted ? 'MUTED' : 'ACTIVE',
         reasons: [
@@ -3912,7 +3937,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
 
   // ─── qConv Q1 mute (after tape / EDGE abs) ────────────────────────────
   // Quality×size FOR−AG; mute bottom quintile vs expanding thr.
-  // Applies to Path C + CONFIRMED-UNOPP only (Path A + RANK exempt).
+  // Applies to Path C SHARP* only (Path A + RANK + UNOPP/Q1 exempt).
   // Fail-open if qConv/thr missing. Manual stake exempt. DISSENT exempt.
   const qConvLive = (v121Eligible && Array.isArray(wd) && wd.length > 0)
     ? computeQConv(wd, side, pick.sport, walletProfiles)
@@ -3962,6 +3987,28 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       hcStakeTier = 'CONFIRMED-Q1';
       confirmedQ1Floored = true;
       confirmedQ1Rescued = true;
+    }
+  }
+
+  // ─── CONFIRMED-UNOPP hard floor (after mutes) ─────────────────────────
+  // Thesis: never leave CONFIRMED×sized×unopposed at 0u after tape / qConv /
+  // FOOLS. Does not upsize a live path. Manual stake exempt. AGS bypass OK.
+  let confirmedUnoppFloored = false;
+  if (isConfirmedUnoppPromoteLive(pickDate) && appliedStatus === 'ACTIVE'
+      && (unoppScoreOk || unoppAgsBypass)
+      && !(Number.isFinite(sd.manualStake) && sd.manualStake > 0)
+      && confirmedUnoppSlice.qualifies) {
+    const unoppFloor = applyConfirmedUnoppUnitFloor({
+      units: finalUnitsApplied,
+      odds: sideOdds,
+      unoppResult: confirmedUnoppSlice,
+      oddsCapFn: oddsCap,
+    });
+    if (unoppFloor.floored) {
+      finalUnitsApplied = unoppFloor.units;
+      hcStakeTier = 'CONFIRMED-UNOPP';
+      confirmedUnoppFloored = true;
+      confirmedUnoppRescued = true;
     }
   }
 
@@ -4037,8 +4084,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const foolsMuted = foolsGoldPolicy?.action === 'MUTE'
     && Number.isFinite(foolsGoldPolicy.unitsPrePolicy)
     && foolsGoldPolicy.unitsPrePolicy > 0;
-  // Q1 hard floor wins — do not leave health MUTED when units were restored.
-  const sizeMuted = !confirmedQ1Floored && (foolsMuted || qConvMuted || (tapeSizingLive
+  // Q1 / UNOPP hard floor wins — do not leave health MUTED when units were restored.
+  const sizeMuted = !confirmedQ1Floored && !confirmedUnoppFloored && (foolsMuted || qConvMuted || (tapeSizingLive
     ? (tapePolicy?.action === 'MUTE' && unitsBeforeClv > 0)
     : (clvPolicy.action === 'CANCEL' && unitsBeforeClv > 0)));
   const healthStatusOut = sizeMuted
@@ -4074,7 +4121,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const TAPE_MUTE_VALUES = new Set(['tape-weak']);
   const QCONV_MUTE_VALUES = new Set(['qconv-q1']);
   const FOOLS_MUTE_VALUES = new Set(['fools-gold-flat']);
-  if (confirmedQ1Floored) {
+  if (confirmedQ1Floored || confirmedUnoppFloored) {
     // Hard floor restored stake — clear any mute stamp so UI shows the ticket.
     if (sd.mutedBy != null || foolsGoldPolicy?.mutedBy || qConvPolicy?.mutedBy) {
       patch.mutedBy = admin.firestore.FieldValue.delete();
@@ -4322,7 +4369,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   }
   if (confirmedUnoppRescued) {
     changes.push(
-      `CONFIRMED-UNOPP: forSized=${confirmedUnoppSlice.forSized} `
+      `CONFIRMED-UNOPP${confirmedUnoppFloored ? '/FLOOR' : ''}: forSized=${confirmedUnoppSlice.forSized} `
       + `bestSize=${confirmedUnoppSlice.bestSize ?? '—'}× `
       + `→ ${CONFIRMED_UNOPP_UNITS}u (${confirmedUnoppSlice.wallets.join('+') || '—'})`
     );
@@ -5207,7 +5254,7 @@ async function main() {
   if (isConfirmedUnoppPromoteLive(TARGET_DATE)) {
     console.log(
       `CONFIRMED-UNOPP promote LIVE: CONFIRMED × size≥${CONFIRMED_UNOPP_MIN_SIZE}× × unopposed → ${CONFIRMED_UNOPP_UNITS}u`
-      + ` · from ${CONFIRMED_UNOPP_FROM} · after SHARP / before DISSENT`,
+      + ` · from ${CONFIRMED_UNOPP_FROM} · after SHARP / before DISSENT · hard floor after mutes`,
     );
   } else {
     console.log(`CONFIRMED-UNOPP promote: not live before ${CONFIRMED_UNOPP_FROM} (TARGET_DATE=${TARGET_DATE})`);
