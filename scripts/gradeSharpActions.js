@@ -15,6 +15,7 @@
 import 'dotenv/config';
 import admin from 'firebase-admin';
 import { readFileSync, existsSync } from 'fs';
+import { execFileSync } from 'child_process';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { dirname, join } from 'path';
 import { resolveSOCTeam } from './lib/soccerTeams.js';
@@ -33,11 +34,52 @@ const COLLECTION = 'sharp_action_positions';
 const NHL_SCHEDULE_URL = 'https://api-web.nhle.com/v1/schedule';
 const NCAA_API_URL = 'https://ncaa-api.henrygd.me/scoreboard/basketball-men/d1';
 const ESPN_MLB_URL = 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard';
+const STATSAPI_MLB_URL = 'https://statsapi.mlb.com/api/v1/schedule';
 const ESPN_NBA_URL = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard';
 const ESPN_WNBA_URL = 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard';
 const ESPN_NFL_URL = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard';
 const ESPN_SOC_URL = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard';
 const ESPN_UFC_URL = 'https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard';
+const ESPN_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+};
+
+const _espnCache = new Map();
+
+async function espnJson(url) {
+  if (_espnCache.has(url)) return _espnCache.get(url);
+  let data = null;
+  try {
+    const res = await fetch(url, { headers: ESPN_HEADERS });
+    if (res.ok) data = await res.json();
+    else console.warn(`ESPN HTTP ${res.status} ${url}`);
+  } catch (e) {
+    console.warn(`ESPN fetch error: ${e.message}`);
+  }
+  if (!data) {
+    try {
+      const raw = execFileSync('curl', ['-sS', '-A', ESPN_HEADERS['User-Agent'], url], {
+        encoding: 'utf8',
+        timeout: 25000,
+      });
+      data = JSON.parse(raw);
+    } catch (e) {
+      console.warn(`ESPN curl fallback failed: ${e.message}`);
+    }
+  }
+  _espnCache.set(url, data);
+  return data;
+}
+
+function recentScoreboardDates(dateSet) {
+  const floor = etDateMinusDays(2);
+  const keep = [...dateSet].filter((d) => d && String(d) >= floor);
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  const yday = etDateMinusDays(1);
+  if (!keep.includes(today)) keep.push(today);
+  if (!keep.includes(yday)) keep.push(yday);
+  return keep;
+}
 
 const ABBREV_MAP = {
   bos: 'BOS', tor: 'TOR', mtl: 'MTL', ott: 'OTT', buf: 'BUF', det: 'DET',
@@ -52,8 +94,16 @@ const ESPN_MLB_TO_CODE = {
   ARI: 'ari', ATL: 'atl', BAL: 'bal', BOS: 'bos', CHC: 'chc', CWS: 'cws',
   CIN: 'cin', CLE: 'cle', COL: 'col', DET: 'det', HOU: 'hou', KC: 'kcr',
   LAA: 'laa', LAD: 'lad', MIA: 'mia', MIL: 'mil', MIN: 'min', NYM: 'nym',
-  NYY: 'nyy', OAK: 'oak', PHI: 'phi', PIT: 'pit', SD: 'sdp', SF: 'sfg',
+  NYY: 'nyy', OAK: 'oak', ATH: 'oak', PHI: 'phi', PIT: 'pit', SD: 'sdp', SF: 'sfg',
   SEA: 'sea', STL: 'stl', TB: 'tbr', TEX: 'tex', TOR: 'tor', WSH: 'wsh',
+};
+
+const STATSAPI_MLB_TO_CODE = {
+  ARI: 'ari', AZ: 'ari', ATL: 'atl', BAL: 'bal', BOS: 'bos', CHC: 'chc', CWS: 'cws',
+  CIN: 'cin', CLE: 'cle', COL: 'col', DET: 'det', HOU: 'hou', KC: 'kcr',
+  LAA: 'laa', LAD: 'lad', MIA: 'mia', MIL: 'mil', MIN: 'min', NYM: 'nym',
+  NYY: 'nyy', OAK: 'oak', ATH: 'oak', PHI: 'phi', PIT: 'pit', SD: 'sdp',
+  SF: 'sfg', SEA: 'sea', STL: 'stl', TB: 'tbr', TEX: 'tex', TOR: 'tor', WSH: 'wsh',
 };
 
 const ESPN_NBA_TO_CODE = {
@@ -189,13 +239,49 @@ function espnEventDateET(e) {
   return d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 }
 
+async function fetchMLBFinalsFromStatsApi(dateStr) {
+  if (!dateStr) return [];
+  try {
+    const url = `${STATSAPI_MLB_URL}?sportId=1&date=${dateStr}&hydrate=linescore,team`;
+    const res = await fetch(url, { headers: { 'User-Agent': 'nhl-savant' } });
+    if (!res.ok) {
+      console.warn(`MLB StatsAPI HTTP ${res.status} for ${dateStr}`);
+      return [];
+    }
+    const data = await res.json();
+    const games = [];
+    for (const day of data.dates || []) {
+      const dateET = day.date || dateStr;
+      for (const g of day.games || []) {
+        const st = String(g.status?.detailedState || '');
+        if (!/Final|Game Over|Completed/i.test(st)) continue;
+        const away = g.teams?.away;
+        const home = g.teams?.home;
+        const awayAbbr = away?.team?.abbreviation || '';
+        const homeAbbr = home?.team?.abbreviation || '';
+        games.push({
+          dateET,
+          awayCode: STATSAPI_MLB_TO_CODE[awayAbbr] || awayAbbr.toLowerCase(),
+          homeCode: STATSAPI_MLB_TO_CODE[homeAbbr] || homeAbbr.toLowerCase(),
+          awayTeam: away?.team?.name || awayAbbr,
+          homeTeam: home?.team?.name || homeAbbr,
+          awayScore: parseInt(away?.score, 10) || 0,
+          homeScore: parseInt(home?.score, 10) || 0,
+        });
+      }
+    }
+    return games;
+  } catch (e) {
+    console.warn(`MLB StatsAPI error: ${e.message}`);
+    return [];
+  }
+}
+
 async function fetchMLBFinalGames(dateStr) {
   try {
     const ymd = dateStr ? `?dates=${String(dateStr).replace(/-/g, '')}` : '';
-    const res = await fetch(`${ESPN_MLB_URL}${ymd}`);
-    if (!res.ok) return [];
-    const data = await res.json();
-    return (data.events || [])
+    const data = await espnJson(`${ESPN_MLB_URL}${ymd}`);
+    const espnGames = !data ? [] : (data.events || [])
       .filter(e => {
         const st = e.competitions?.[0]?.status?.type;
         return st?.state === 'post' || st?.completed;
@@ -215,18 +301,20 @@ async function fetchMLBFinalGames(dateStr) {
           homeScore: parseInt(home.score) || 0,
         };
       });
+    if (espnGames.length) return espnGames;
   } catch (e) {
     console.error('ESPN MLB fetch error:', e.message);
-    return [];
   }
+  const stats = await fetchMLBFinalsFromStatsApi(dateStr);
+  if (stats.length) console.log(`  MLB StatsAPI fallback: ${stats.length} finals for ${dateStr || 'undated'}`);
+  return stats;
 }
 
 async function fetchNBAFinalGames(dateStr) {
   try {
     const ymd = dateStr ? `?dates=${String(dateStr).replace(/-/g, '')}` : '';
-    const res = await fetch(`${ESPN_NBA_URL}${ymd}`);
-    if (!res.ok) return [];
-    const data = await res.json();
+    const data = await espnJson(`${ESPN_NBA_URL}${ymd}`);
+    if (!data) return [];
     return (data.events || [])
       .filter(e => {
         const st = e.competitions?.[0]?.status?.type;
@@ -256,9 +344,8 @@ async function fetchNBAFinalGames(dateStr) {
 async function fetchWNBAFinalGames(dateStr) {
   try {
     const ymd = dateStr ? `?dates=${String(dateStr).replace(/-/g, '')}` : '';
-    const res = await fetch(`${ESPN_WNBA_URL}${ymd}`);
-    if (!res.ok) return [];
-    const data = await res.json();
+    const data = await espnJson(`${ESPN_WNBA_URL}${ymd}`);
+    if (!data) return [];
     return (data.events || [])
       .filter(e => {
         const st = e.competitions?.[0]?.status?.type;
@@ -296,9 +383,8 @@ async function fetchWNBAFinalGames(dateStr) {
 async function fetchNFLFinalGames(dateStr) {
   try {
     const ymd = dateStr ? `?dates=${String(dateStr).replace(/-/g, '')}` : '';
-    const res = await fetch(`${ESPN_NFL_URL}${ymd}`);
-    if (!res.ok) return [];
-    const data = await res.json();
+    const data = await espnJson(`${ESPN_NFL_URL}${ymd}`);
+    if (!data) return [];
     return (data.events || [])
       .filter(e => {
         const st = e.competitions?.[0]?.status?.type;
@@ -340,9 +426,8 @@ async function fetchSOCFinalGames(dateStr) {
   // rounds may include extra time in ESPN's score — revisit before June 28.
   try {
     const ymd = dateStr ? `?dates=${dateStr.replace(/-/g, '')}` : '';
-    const res = await fetch(`${ESPN_SOC_URL}${ymd}`);
-    if (!res.ok) return [];
-    const data = await res.json();
+    const data = await espnJson(`${ESPN_SOC_URL}${ymd}`);
+    if (!data) return [];
     return (data.events || [])
       .filter(e => {
         const st = e.competitions?.[0]?.status?.type;
@@ -390,9 +475,8 @@ async function fetchSOCFinalGames(dateStr) {
 async function fetchUFCFinalFights(dateStr) {
   try {
     const ymd = dateStr ? `?dates=${dateStr.replace(/-/g, '')}` : '';
-    const res = await fetch(`${ESPN_UFC_URL}${ymd}`);
-    if (!res.ok) return [];
-    const data = await res.json();
+    const data = await espnJson(`${ESPN_UFC_URL}${ymd}`);
+    if (!data) return [];
     const fights = [];
     for (const ev of data.events || []) {
       const cardDateET = espnEventDateET(ev);
@@ -613,7 +697,14 @@ function findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFi
 }
 
 const EXITED_GRADE_LOOKBACK_DAYS = 30;
-const EXITED_SKIP_REASONS = new Set(['date_calendar_retag', 'eventId_mismatch']);
+/** Never grade these — UTC siblings or a real other-game leftover. */
+const EXITED_SKIP_REASONS = new Set([
+  'date_calendar_retag',
+  'slug_date_vs_board',
+  'slug_date_mismatch',
+  'slug_teams_mismatch',
+  'slug_teams_mismatch_wnba',
+]);
 
 function etDateMinusDays(days) {
   return new Date(Date.now() - days * 86400000)
@@ -635,7 +726,11 @@ function exitedAtMs(pos) {
 
 /**
  * EXITED after first pitch still counts — the scan dropped a resolved
- * (or in-game sold) market. Pre-game exits and retag/mismatch do not.
+ * (or in-game sold) market. Pre-game exits and calendar/wrong-game retags
+ * do not.
+ *
+ * minutesToCommence is stamped at exit: negative = held through commence.
+ * Legacy eventId_mismatch after commence is cache churn, not a sell — grade it.
  */
 function shouldGradeExited(pos) {
   if (!pos || pos.status !== 'EXITED') return false;
@@ -664,6 +759,47 @@ async function loadGradeCandidates(db) {
     exitedHeld: held.length,
     exitedSkipped: exitedSnap.size - held.length,
   };
+}
+
+const PICK_SCORE_COLS = ['sharpFlowPicks', 'sharpFlowSpreads', 'sharpFlowTotals'];
+
+function knownFinalKey(sport, date, gameKey) {
+  const raw = String(gameKey || '').replace(/^(NHL|NBA|MLB|CBB|SOC|UFC|WNBA|NFL):/, '');
+  return `${sport}|${date}|${raw}`;
+}
+
+/** Scores already stored on graded Source A picks — do not wait on ESPN. */
+async function loadKnownFinalsFromPicks(db, dates) {
+  const map = new Map();
+  const dateList = [...dates].filter(Boolean);
+  if (!dateList.length) return map;
+  for (const date of dateList) {
+    for (const col of PICK_SCORE_COLS) {
+      const snap = await db.collection(col).where('date', '==', date).get();
+      for (const doc of snap.docs) {
+        const d = doc.data() || {};
+        const away = d.result?.awayScore;
+        const home = d.result?.homeScore;
+        if (away == null || home == null) continue;
+        const sport = d.sport;
+        const gameKey = d.gameKey || '';
+        if (!sport || !gameKey) continue;
+        const key = knownFinalKey(sport, date, gameKey);
+        if (map.has(key)) continue;
+        const parts = String(gameKey).replace(/^(NHL|NBA|MLB|CBB|SOC|UFC|WNBA|NFL):/, '').split('_');
+        map.set(key, {
+          dateET: date,
+          awayCode: parts[0] || null,
+          homeCode: parts[1] || null,
+          awayTeam: d.away || d.awayTeam || '',
+          homeTeam: d.home || d.homeTeam || '',
+          awayScore: Number(away),
+          homeScore: Number(home),
+        });
+      }
+    }
+  }
+  return map;
 }
 
 // ─── Main ────────────────────────────────────────────────────────────────────
@@ -709,6 +845,10 @@ async function main() {
     if (d.sport === 'UFC' && d.date) ufcDates.add(d.date);
   }
 
+  const allDates = new Set([...cbbDates, ...nhlDates, ...mlbDates, ...nbaDates, ...wnbaDates, ...nflDates, ...socDates, ...ufcDates]);
+  const knownFinals = await loadKnownFinalsFromPicks(db, allDates);
+  console.log(`Source A known finals: ${knownFinals.size} games (already-graded picks)`);
+
   // Fetch scores
   let nhlFinals = [];
   if (sports.has('NHL')) {
@@ -730,8 +870,7 @@ async function main() {
 
   let mlbFinals = [];
   if (sports.has('MLB')) {
-    const dates = mlbDates.size ? [...mlbDates] : [null];
-    for (const d of dates) {
+    for (const d of [null, ...recentScoreboardDates(mlbDates)]) {
       const games = await fetchMLBFinalGames(d);
       mlbFinals.push(...games);
       console.log(`ESPN MLB API: ${games.length} final MLB games${d ? ` for ${d}` : ''}`);
@@ -740,8 +879,7 @@ async function main() {
 
   let nbaFinals = [];
   if (sports.has('NBA')) {
-    const dates = nbaDates.size ? [...nbaDates] : [null];
-    for (const d of dates) {
+    for (const d of [null, ...recentScoreboardDates(nbaDates)]) {
       const games = await fetchNBAFinalGames(d);
       nbaFinals.push(...games);
       console.log(`ESPN NBA API: ${games.length} final NBA games${d ? ` for ${d}` : ''}`);
@@ -750,8 +888,7 @@ async function main() {
 
   let wnbaFinals = [];
   if (sports.has('WNBA')) {
-    const dates = wnbaDates.size ? [...wnbaDates] : [null];
-    for (const d of dates) {
+    for (const d of [null, ...recentScoreboardDates(wnbaDates)]) {
       const games = await fetchWNBAFinalGames(d);
       wnbaFinals.push(...games);
       console.log(`ESPN WNBA API: ${games.length} final WNBA games${d ? ` for ${d}` : ''}`);
@@ -760,8 +897,7 @@ async function main() {
 
   let nflFinals = [];
   if (sports.has('NFL')) {
-    const dates = nflDates.size ? [...nflDates] : [null];
-    for (const d of dates) {
+    for (const d of [null, ...recentScoreboardDates(nflDates)]) {
       const games = await fetchNFLFinalGames(d);
       nflFinals.push(...games);
       console.log(`ESPN NFL API: ${games.length} final NFL games${d ? ` for ${d}` : ''}`);
@@ -770,7 +906,7 @@ async function main() {
 
   let socFinals = [];
   if (sports.has('SOC')) {
-    for (const d of socDates) {
+    for (const d of recentScoreboardDates(socDates)) {
       const games = await fetchSOCFinalGames(d);
       socFinals.push(...games);
       console.log(`ESPN SOC API: ${games.length} final World Cup games for ${d}`);
@@ -779,7 +915,7 @@ async function main() {
 
   let ufcFinals = [];
   if (sports.has('UFC')) {
-    for (const d of ufcDates) {
+    for (const d of recentScoreboardDates(ufcDates)) {
       const fights = await fetchUFCFinalFights(d);
       ufcFinals.push(...fights);
       console.log(`ESPN UFC API: ${fights.length} final fights for ${d}`);
@@ -799,7 +935,10 @@ async function main() {
     for (const doc of chunk) {
       const pos = doc.data();
 
-      const game = findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals, ufcFinals, wnbaFinals, nflFinals);
+      let game = knownFinals.get(knownFinalKey(pos.sport, pos.date, pos.gameKey)) || null;
+      if (!game) {
+        game = findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals, ufcFinals, wnbaFinals, nflFinals);
+      }
       if (!game) {
         noGame++;
         continue;
@@ -906,7 +1045,7 @@ async function main() {
 }
 
 // Exported for tests (tests/testGradeDateGuard.mjs) — pure helpers, no I/O.
-export { espnEventDateET, finalDateMatches, findMatchingGame, teamNamesMatch, shouldGradeExited };
+export { espnEventDateET, finalDateMatches, findMatchingGame, teamNamesMatch, shouldGradeExited, calculateOutcome };
 
 // Only run when executed directly (node scripts/gradeSharpActions.js), so
 // tests can import the helpers without triggering a live grading pass.

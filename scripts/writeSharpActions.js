@@ -45,6 +45,7 @@ import {
 import { steamForGame, compactSteam } from '../src/lib/steamMove.js';
 import { passesSizeSkillLiveGate } from '../src/lib/sizeSkillRescue.js';
 import { resolveSportUsualBet } from './lib/sportUsualBet.js';
+import { positionMatchesPolyEvent, WRONG_GAME_EXIT_REASONS } from './lib/positionEventMatch.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '../public');
@@ -1329,16 +1330,13 @@ async function markExitedPositions(db, date, { sharpPositions, posFiles, present
     let shouldExit = false;
     let exitReason = null;
 
-    // Wrong-event attribution: position's Polymarket eventId ≠ today's game.
-    // Asset can still be open (postponed/other-date market) — still EXITED here.
-    const gameEventId = polyData?.[data.sport]?.[data.gameKey]?.eventId;
-    if (
-      data.eventId != null && data.eventId !== ''
-      && gameEventId != null && gameEventId !== ''
-      && String(data.eventId) !== String(gameEventId)
-    ) {
+    // Wrong-game leftovers only (other-day slug / other teams). Cache eventId
+    // churn is the same game — never EXIT on raw ID inequality.
+    const polyGame = polyData?.[data.sport]?.[data.gameKey] || null;
+    const gate = positionMatchesPolyEvent(data, polyGame, data.gameKey, { boardDate: date });
+    if (!gate.ok && WRONG_GAME_EXIT_REASONS.has(gate.reason)) {
       shouldExit = true;
-      exitReason = 'eventId_mismatch';
+      exitReason = gate.reason;
     }
 
     if (!shouldExit && presentDocIds.has(doc.id)) continue; // still open / just refreshed

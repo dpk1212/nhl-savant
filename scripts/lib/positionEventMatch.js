@@ -7,10 +7,24 @@
  * Cards–Reds market (still open under mlb-stl-cin-2026-05-24) then matches
  * today's Cards@Angels by the single team code "stl".
  *
- * Prefer eventId equality. Fall back to eventSlug date / MLB+WNBA team codes.
+ * Prefer eventId equality. If IDs differ, prove the SAME GAME via slug date
+ * + team codes — Gamma rebuilds the cache every cycle and the event that
+ * wins a gameKey is not stable (live vs pregame, ML vs total sibling).
+ * Raw ID inequality is cache churn, not a wrong-game ticket.
+ *
+ * Writer may EXIT only on WRONG_GAME_EXIT_REASONS (other-day / other-teams).
+ * Never on eventId_mismatch.
  */
 
 import { resolveWNBATeam } from './wnbaTeams.js';
+
+/** Real other-game leftovers. Cache ID churn is NOT in this set. */
+export const WRONG_GAME_EXIT_REASONS = new Set([
+  'slug_date_vs_board',
+  'slug_date_mismatch',
+  'slug_teams_mismatch',
+  'slug_teams_mismatch_wnba',
+]);
 
 /**
  * @param {object} pos
@@ -41,13 +55,13 @@ export function positionMatchesPolyEvent(pos, polyGame, gameKey = null, opts = {
     ? String(polyGame.eventId)
     : null;
 
-  // Primary: Polymarket event id (authoritative)
-  if (posEventId && gameEventId) {
-    if (posEventId === gameEventId) return { ok: true, reason: 'eventId' };
-    return { ok: false, reason: 'eventId_mismatch' };
-  }
-
   const gameDate = polyGame.polyGameDate ? String(polyGame.polyGameDate).slice(0, 10) : null;
+
+  // Primary: Polymarket event id. Equal IDs are sufficient. Unequal IDs
+  // fall through — slug date/teams decide same-game vs wrong-game.
+  if (posEventId && gameEventId && posEventId === gameEventId) {
+    return { ok: true, reason: 'eventId' };
+  }
 
   if (slugDate && gameDate && slugDate !== gameDate) {
     return { ok: false, reason: 'slug_date_mismatch' };
@@ -75,17 +89,24 @@ export function positionMatchesPolyEvent(pos, polyGame, gameKey = null, opts = {
     }
   }
 
+  // Same calendar game, different Gamma event (cache churn / sibling market).
+  if (slugDate && (slugDate === boardDate || slugDate === gameDate)) {
+    return { ok: true, reason: posEventId && gameEventId && posEventId !== gameEventId
+      ? 'same_game_event_churn'
+      : 'slug_date' };
+  }
+
   // Position names an event we can't verify against this game → skip
   if (posEventId && !gameEventId) {
     return { ok: false, reason: 'game_missing_eventId' };
   }
 
-  if (slugDate && gameDate && slugDate === gameDate) {
-    return { ok: true, reason: 'slug_date' };
-  }
-
   // No eventId on the position (rare) — allow title match
   if (!posEventId) return { ok: true, reason: 'no_eventId_legacy' };
+
+  if (posEventId && gameEventId && posEventId !== gameEventId) {
+    return { ok: false, reason: 'eventId_mismatch' };
+  }
 
   return { ok: false, reason: 'unverified' };
 }

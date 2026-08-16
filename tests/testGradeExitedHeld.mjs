@@ -31,8 +31,14 @@ assert.equal(shouldGradeExited({
 assert.equal(shouldGradeExited({
   status: 'EXITED',
   exitReason: 'eventId_mismatch',
-  minutesToCommence: -10,
-}), false, 'wrong-event exit is not a held ticket');
+  minutesToCommence: 40,
+}), false, 'pre-game eventId mismatch stays ungraded');
+
+assert.equal(shouldGradeExited({
+  status: 'EXITED',
+  exitReason: 'eventId_mismatch',
+  minutesToCommence: -180,
+}), true, 'post-commence eventId mismatch is a held ticket');
 
 assert.equal(shouldGradeExited({
   status: 'PENDING',
@@ -45,5 +51,11 @@ assert.equal(shouldGradeExited({
   commenceTime: 1786749060000,
   exitedAt: { seconds: 1786754767 },
 }), true, 'Firestore timestamp after commence');
+
+assert.equal(shouldGradeExited({
+  status: 'EXITED',
+  exitReason: 'slug_date_vs_board',
+  minutesToCommence: -10,
+}), false, 'other-day slug is not a held ticket');
 
 console.log('testGradeExitedHeld: ok');
