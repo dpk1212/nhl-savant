@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-08-16T02:23:27.379Z",
-  "elapsedSec": 19.8,
+  "scannedAt": "2026-08-16T02:27:19.071Z",
+  "elapsedSec": 15.3,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 30,
   "summary": {
     "total": 226,
-    "coveredByMain": 15,
-    "recovered": 8,
-    "recoveredPositions": 11,
-    "noPositions": 203,
+    "coveredByMain": 17,
+    "recovered": 9,
+    "recoveredPositions": 12,
+    "noPositions": 200,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,7 +16,7 @@
       "ml": 8,
       "spread": 0,
       "total": 0,
-      "dropped_shadow_gate": 1,
+      "dropped_shadow_gate": 2,
       "dropped_excluded": 2,
       "dropped_duplicate": 0
     }
@@ -523,7 +523,7 @@
           "gameKey": "gillianrobertson_mackenziedern",
           "marketType": "ml",
           "side": "home",
-          "invested": 43816,
+          "invested": 43826,
           "entryLine": null,
           "passesShadow": true
         }
@@ -589,8 +589,24 @@
       "tier": "FLAT",
       "name": null,
       "sports": "NBA",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xa38a455bbdd4b68486548b7e19da99903f4f821d"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0xa38a455bbdd4b68486548b7e19da99903f4f821d",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 5785,
+      "willPassShadowGate": 0,
+      "willDropAtShadowGate": 1,
+      "positions": [
+        {
+          "sport": "UFC",
+          "gameKey": "kauefernandes_jalinturner",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 408,
+          "entryLine": null,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "52aeeb",
@@ -715,7 +731,7 @@
           "gameKey": "kauefernandes_jalinturner",
           "marketType": "ml",
           "side": "away",
-          "invested": 721,
+          "invested": 847,
           "entryLine": null,
           "passesShadow": true
         }
@@ -742,8 +758,7 @@
       "tier": "CONFIRMED",
       "name": "0x9e3ed7b661a903fc97afcf49e0f014ebe869f882-1783406009396",
       "sports": "WNBA,SOC",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x9e3ed7b661a903fc97afcf49e0f014ebe869f882"
+      "status": "COVERED_BY_MAIN"
     },
     {
       "walletShort": "6ac120",
@@ -1752,8 +1767,7 @@
       "tier": "CONFIRMED",
       "name": "0x6db568e61e5e3de7d87f831431b673f38ce2e279",
       "sports": "SOC",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x6db568e61e5e3de7d87f831431b673f38ce2e279"
+      "status": "COVERED_BY_MAIN"
     },
     {
       "walletShort": "e3dcd3",
@@ -1810,19 +1824,19 @@
       "positions": [
         {
           "sport": "UFC",
-          "gameKey": "kauefernandes_jalinturner",
+          "gameKey": "gillianrobertson_mackenziedern",
           "marketType": "ml",
-          "side": "away",
-          "invested": 61798,
+          "side": "home",
+          "invested": 108800,
           "entryLine": null,
           "passesShadow": true
         },
         {
           "sport": "UFC",
-          "gameKey": "gillianrobertson_mackenziedern",
+          "gameKey": "kauefernandes_jalinturner",
           "marketType": "ml",
-          "side": "home",
-          "invested": 57600,
+          "side": "away",
+          "invested": 77261,
           "entryLine": null,
           "passesShadow": true
         }
