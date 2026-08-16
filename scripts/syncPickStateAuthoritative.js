@@ -2395,14 +2395,14 @@ async function createMissingLockedPicks({
       let instrumentVariant = 'MAIN';
       let ticketPolyPrice = null;
       if (marketType === 'ML') {
-        const inst = resolveInstrument({ family: 'ML', side, positions, meta });
+        const inst = resolveInstrument({ family: 'ML', side, positions, meta, sport });
         odds = ticketAmerican(inst, null) ?? mlOddsFromMeta(meta, side);
         tapeOdds = inst.tape?.now ?? mlOddsFromMeta(meta, side);
         ticketPolyPrice = inst.ticket?.polyPrice ?? null;
       } else if (marketType === 'SPREAD') {
         const walletLine = consensusLine(positions, side, sport, 'SPREAD');
         const inst = resolveInstrument({
-          family: 'SPREAD', side, positions, meta, stampedLine: walletLine,
+          family: 'SPREAD', side, positions, meta, stampedLine: walletLine, sport,
         });
         line = inst.line ?? walletLine ?? null;
         odds = ticketAmerican(inst, null);
@@ -2427,7 +2427,7 @@ async function createMissingLockedPicks({
           }
         }
         const inst = resolveInstrument({
-          family: 'TOTAL', side, positions, meta, stampedLine: stamped,
+          family: 'TOTAL', side, positions, meta, stampedLine: stamped, sport,
         });
         line = inst.line ?? stamped ?? null;
         odds = ticketAmerican(inst, null);
@@ -4725,7 +4725,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       : (Number.isFinite(sd.lock?.line) ? sd.lock.line
         : (Number.isFinite(sd.peak?.line) ? sd.peak.line : null));
     const inst = resolveInstrument({
-      family: mkt, side, positions: group, meta: instMeta, stampedLine: stampedLn,
+      family: mkt, side, positions: group, meta: instMeta, stampedLine: stampedLn, sport,
     });
     const ticket = ticketAmerican(inst, null);
     const lockOddsNow = Number.isFinite(patch.lock?.odds) ? patch.lock.odds

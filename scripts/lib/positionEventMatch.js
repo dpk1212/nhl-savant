@@ -17,6 +17,7 @@
  */
 
 import { resolveWNBATeam } from './wnbaTeams.js';
+import { BOARD_SPORT_SLUG, slugLeague } from '../../src/lib/sportSlug.js';
 
 /** Real other-game leftovers. Cache ID churn is NOT in this set. */
 export const WRONG_GAME_EXIT_REASONS = new Set([
@@ -29,25 +30,34 @@ export const WRONG_GAME_EXIT_REASONS = new Set([
 
 const FOREIGN_SLUG_LEAGUES = new Set([
   'mex', 'epl', 'uefa', 'ucl', 'uel', 'mls', 'liga', 'serie', 'bundes',
-  'fifa', 'caf', 'afc', 'ufc', 'mma', 'atp', 'wta',
+  'fifa', 'caf', 'afc', 'ufc', 'mma', 'atp', 'wta', 'canpl', 'cpl',
 ]);
-
-function slugLeague(slug) {
-  const m = String(slug || '').toLowerCase().match(/^([a-z0-9]+)-/);
-  return m ? m[1] : null;
-}
 
 /**
  * @param {object} pos
  * @param {object|null} polyGame
  * @param {string|null} gameKey
- * @param {{ boardDate?: string|null }} [opts] boardDate = ET YYYY-MM-DD for the board day
+ * @param {{ boardDate?: string|null, sport?: string|null }} [opts] boardDate = ET YYYY-MM-DD; sport = WNBA/MLB/…
  * @returns {{ ok: boolean, reason: string }}
  */
 export function positionMatchesPolyEvent(pos, polyGame, gameKey = null, opts = {}) {
   const boardDate = opts?.boardDate != null ? String(opts.boardDate).slice(0, 10) : null;
   const slug = String(pos?.eventSlug || pos?.slug || '');
   const slugDate = (slug.match(/(20\d{2}-\d{2}-\d{2})/) || [])[1] || null;
+  const sport = opts?.sport || null;
+
+  // Allowlist before eventId — poly cache often has no slug (Fever 2026-08-16).
+  // canpl/mex on the same calendar day is not a WNBA moneyline.
+  const posLeagueEarly = slugLeague(slug);
+  const boardLeagueEarly = slugLeague(polyGame?.slug || polyGame?.eventSlug || '')
+    || BOARD_SPORT_SLUG[String(sport || '').toUpperCase()]
+    || null;
+  if (posLeagueEarly && boardLeagueEarly && posLeagueEarly !== boardLeagueEarly) {
+    return { ok: false, reason: 'slug_sport_mismatch' };
+  }
+  if (posLeagueEarly && FOREIGN_SLUG_LEAGUES.has(posLeagueEarly) && !boardLeagueEarly) {
+    return { ok: false, reason: 'slug_sport_mismatch' };
+  }
 
   // Hard reject other-day markets even when poly cache is missing (WNBA overnight
   // leftovers: wnba-atl-wsh-2026-08-07 sitting on the 2026-08-08 board).

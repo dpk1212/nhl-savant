@@ -1170,6 +1170,7 @@ export function mapLockedPickToCardFixture(pick, {
     pinnGame: pinnGamePeek,
     freezeAtMs: ticketFrozen ? freezeAtMs : null,
     stampedLine: Number.isFinite(ticketLine) ? ticketLine : null,
+    sport: pick.sport || null,
   });
   if (Number.isFinite(inst.ticket.american)) {
     polyEntryOdds = inst.ticket.american;

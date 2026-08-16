@@ -18,6 +18,7 @@ import {
   pickMainSpreadFromBoard,
   pickMainTotalFromBoard,
 } from './pinnacleMain.js';
+import { positionFitsBoardSport } from './sportSlug.js';
 
 export { linesClose };
 
@@ -30,11 +31,15 @@ function posMarketKey(p) {
 }
 
 /** Keep the invested-majority market so a leaked soccer/UFC leg cannot mix into an ML ticket. */
-export function majorityMarketPositions(positions, side, family = 'ML') {
+export function majorityMarketPositions(positions, side, family = 'ML', sport = null) {
   const rows = (positions || []).filter((p) => sameSide(p, side));
-  if (family !== 'ML' || rows.length <= 1) return rows;
+  const onSport = sport
+    ? rows.filter((p) => positionFitsBoardSport(p, sport))
+    : rows;
+  const use = onSport.length ? onSport : rows;
+  if (family !== 'ML' || use.length <= 1) return use;
   const byKey = new Map();
-  for (const p of rows) {
+  for (const p of use) {
     const k = posMarketKey(p) || '_none';
     const cur = byKey.get(k) || { inv: 0, rows: [] };
     cur.inv += Number(p.invested) || 0;
@@ -45,7 +50,7 @@ export function majorityMarketPositions(positions, side, family = 'ML') {
   for (const g of byKey.values()) {
     if (!best || g.inv > best.inv) best = g;
   }
-  return best?.rows || rows;
+  return best?.rows || use;
 }
 
 export function americanFromPolyPrice(px) {
@@ -104,8 +109,8 @@ export function vaultConsensusLine(positions, side, family) {
 /**
  * Vault receipt on this instrument. `line` null = ML (all legs on side).
  */
-export function vaultTicket(positions, { side, line = null, family = 'ML' } = {}) {
-  const scoped = majorityMarketPositions(positions, side, family);
+export function vaultTicket(positions, { side, line = null, family = 'ML', sport = null } = {}) {
+  const scoped = majorityMarketPositions(positions, side, family, sport);
   let sumInv = 0;
   let sumPx = 0;
   for (const p of scoped) {
@@ -379,6 +384,7 @@ export function resolveInstrument({
   meta = null,
   freezeAtMs = null,
   stampedLine = null,
+  sport = null,
 } = {}) {
   const fam = classifyFamily(family);
   const vaultLine = vaultConsensusLine(positions, side, fam);
@@ -388,7 +394,7 @@ export function resolveInstrument({
     : (Number.isFinite(vaultLine) ? vaultLine
       : (Number.isFinite(stampedLine) ? stampedLine : mainLine));
   const variant = classifyVariant(fam, line, mainLine);
-  const ticket = vaultTicket(positions, { side, line, family: fam });
+  const ticket = vaultTicket(positions, { side, line, family: fam, sport });
   const tape = pinnGame
     ? tapeOnLine(pinnGame, { family: fam, side, line, freezeAtMs })
     : tapeFromMeta(meta, { family: fam, side, line });

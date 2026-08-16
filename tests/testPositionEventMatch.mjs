@@ -52,6 +52,15 @@ assert.equal(soccerOnWnba.ok, false, 'soccer slug cannot ride the board date ont
 assert.equal(soccerOnWnba.reason, 'slug_sport_mismatch');
 assert.equal(WRONG_GAME_EXIT_REASONS.has(soccerOnWnba.reason), true);
 
+const ottawaOnWnba = positionMatchesPolyEvent(
+  { eventId: '855029', slug: 'canpl-sup-ott-2026-08-16-ott' },
+  { eventId: '789016', polyGameDate: '2026-08-16' },
+  'ind_atl',
+  { boardDate: '2026-08-16', sport: 'WNBA' },
+);
+assert.equal(ottawaOnWnba.ok, false, 'CanPL slug cannot ride the board date onto WNBA');
+assert.equal(ottawaOnWnba.reason, 'slug_sport_mismatch');
+
 const wrongTeams = positionMatchesPolyEvent(
   { eventId: '111111', slug: 'mlb-stl-cin-2026-08-15' },
   poly,

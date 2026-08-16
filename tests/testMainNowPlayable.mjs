@@ -204,6 +204,8 @@ const fever = mapLockedPickToCardFixture({
   away: 'Indiana Fever',
   home: 'Atlanta Dream',
   vaultPositions: [
+    { side: 'away', avgPrice: 0.45, invested: 562, slug: 'wnba-ind-atl-2026-08-16' },
+    { side: 'away', avgPrice: 0.31, invested: 260, slug: 'canpl-sup-ott-2026-08-16-ott' },
     { side: 'away', avgPrice: 0.45, invested: 108, slug: 'wnba-ind-atl-2026-08-16' },
     { side: 'away', avgPrice: 0.15, invested: 59, slug: 'mex-ame-asl-2026-08-16-asl' },
   ],

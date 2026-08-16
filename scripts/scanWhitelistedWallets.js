@@ -738,7 +738,9 @@ async function run() {
       // Reject postponed/other-date markets that title-matched today's team.
       // Also blocks WNBA overnight leftovers (slug date ≠ board day).
       const boardDateET = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-      const eventGate = positionMatchesPolyEvent(pos, polyGame, match.key, { boardDate: boardDateET });
+      const eventGate = positionMatchesPolyEvent(pos, polyGame, match.key, {
+        boardDate: boardDateET, sport: match.sport,
+      });
       if (!eventGate.ok) {
         wrongEventCount++;
         continue;

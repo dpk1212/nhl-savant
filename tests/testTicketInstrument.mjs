@@ -205,4 +205,24 @@ const feverMix = resolveInstrument({
 assert.equal(feverMix.ticket.american, 122, 'majority WNBA slug stays +122, not soccer-blended +223');
 assert.equal(feverMix.tape.now, 110);
 
+// Live 2026-08-16 card: Atletico Ottawa 31¢ is exactly +223. Must not be the ticket.
+const feverLive = resolveInstrument({
+  family: 'ML',
+  side: 'away',
+  sport: 'WNBA',
+  positions: [
+    { side: 'away', avgPrice: 0.45, invested: 562, slug: 'wnba-ind-atl-2026-08-16' },
+    { side: 'away', avgPrice: 0.31, invested: 260, slug: 'canpl-sup-ott-2026-08-16-ott' },
+    { side: 'away', avgPrice: 0.45, invested: 108, slug: 'wnba-ind-atl-2026-08-16' },
+    { side: 'away', avgPrice: 0.15, invested: 59, slug: 'mex-ame-asl-2026-08-16-asl' },
+  ],
+  pinnGame: {
+    current: { away: 110, home: -130 },
+    opener: { away: 118, home: -144 },
+    history: [{ t: 1, away: 118, home: -144 }, { t: 2, away: 110, home: -130 }],
+  },
+});
+assert.equal(feverLive.ticket.american, 122, 'Ottawa 31¢ / +223 is not a Fever ticket');
+assert.equal(americanFromPolyPrice(0.31), 223);
+
 console.log('testTicketInstrument: ok');

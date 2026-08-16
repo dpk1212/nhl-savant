@@ -884,7 +884,9 @@ async function run() {
       // e.g. mlb-stl-cin-2026-05-24 (rained out) must not attach to stl_laa today.
       // Also blocks WNBA overnight leftovers (wnba-atl-wsh-YYYY-MM-DD ≠ board day).
       const boardDateET = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-      const eventGate = positionMatchesPolyEvent(pos, polyGame, match.key, { boardDate: boardDateET });
+      const eventGate = positionMatchesPolyEvent(pos, polyGame, match.key, {
+        boardDate: boardDateET, sport: match.sport,
+      });
       if (!eventGate.ok) {
         wrongEventCount++;
         continue;

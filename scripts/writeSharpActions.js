@@ -1338,7 +1338,9 @@ async function markExitedPositions(db, date, { sharpPositions, posFiles, present
     // Wrong-game leftovers only (other-day slug / other teams). Cache eventId
     // churn is the same game — never EXIT on raw ID inequality.
     const polyGame = polyData?.[data.sport]?.[data.gameKey] || null;
-    const gate = positionMatchesPolyEvent(data, polyGame, data.gameKey, { boardDate: date });
+    const gate = positionMatchesPolyEvent(data, polyGame, data.gameKey, {
+      boardDate: date, sport: data.sport,
+    });
     if (!gate.ok && WRONG_GAME_EXIT_REASONS.has(gate.reason)) {
       shouldExit = true;
       exitReason = gate.reason;

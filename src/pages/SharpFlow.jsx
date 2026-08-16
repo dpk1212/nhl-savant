@@ -8123,7 +8123,9 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const mlNowPx = Number.isFinite(pinnGame?.current?.[cardSideKey])
     ? pinnGame.current[cardSideKey]
     : (Number.isFinite(consensusOdds) ? consensusOdds : (bestRetail ?? betOdds));
-  const mlFlaggedPx = vaultTicket(gd.positions || [], { side: cardSideKey, family: 'ML' }).american;
+  const mlFlaggedPx = vaultTicket(gd.positions || [], {
+    side: cardSideKey, family: 'ML', sport: gd.sport,
+  }).american;
   const mlTicketOff = Number.isFinite(mlFlaggedPx) && Number.isFinite(mlNowPx)
     && Math.round(mlFlaggedPx) !== Math.round(mlNowPx);
   const mlFlaggedLbl = mlTicketOff
@@ -12604,6 +12606,7 @@ export default function SharpFlow() {
                             side: sideKey,
                             line: fam === 'ML' ? null : lockLn,
                             family: fam,
+                            sport: docSport,
                           }).american;
                         }
                         const spreadLockIsMlBleed = marketTypeKey === 'spread'
