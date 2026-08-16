@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-08-16T00:29:58.278Z",
-  "elapsedSec": 17.1,
+  "scannedAt": "2026-08-16T00:34:17.605Z",
+  "elapsedSec": 17.6,
   "phase": "PHASE_2_MERGE_ENABLED",
-  "todayGamesCount": 36,
+  "todayGamesCount": 35,
   "summary": {
     "total": 226,
-    "coveredByMain": 20,
+    "coveredByMain": 19,
     "recovered": 16,
-    "recoveredPositions": 25,
-    "noPositions": 190,
+    "recoveredPositions": 26,
+    "noPositions": 191,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,7 +16,7 @@
       "ml": 8,
       "spread": 0,
       "total": 2,
-      "dropped_shadow_gate": 5,
+      "dropped_shadow_gate": 6,
       "dropped_excluded": 10,
       "dropped_duplicate": 0
     }
@@ -180,10 +180,10 @@
         {
           "sport": "MLB",
           "gameKey": "tex_oak",
-          "marketType": "spread",
+          "marketType": "ml",
           "side": "away",
-          "invested": 631,
-          "entryLine": -1.5,
+          "invested": 594,
+          "entryLine": null,
           "passesShadow": false
         }
       ]
@@ -292,7 +292,7 @@
           "gameKey": "joelalvarez_chidinjokuani",
           "marketType": "ml",
           "side": "away",
-          "invested": 16594,
+          "invested": 16919,
           "entryLine": null,
           "passesShadow": true
         }
@@ -682,7 +682,7 @@
           "gameKey": "kcr_laa",
           "marketType": "ml",
           "side": "home",
-          "invested": 3802,
+          "invested": 3807,
           "entryLine": null,
           "passesShadow": true
         }
@@ -727,11 +727,11 @@
       "sports": "MLB,WNBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xa0f21e6d351baa9185716b5c00c2925ed9621848",
-      "positionsCount": 1,
+      "positionsCount": 2,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 775,
       "willPassShadowGate": 1,
-      "willDropAtShadowGate": 0,
+      "willDropAtShadowGate": 1,
       "positions": [
         {
           "sport": "UFC",
@@ -741,6 +741,15 @@
           "invested": 1181,
           "entryLine": null,
           "passesShadow": true
+        },
+        {
+          "sport": "UFC",
+          "gameKey": "estebanribovics_edsonbarboza",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 0,
+          "entryLine": null,
+          "passesShadow": false
         }
       ]
     },
@@ -1197,7 +1206,8 @@
       "tier": "CONFIRMED",
       "name": "ArmageddonRewardsBilly",
       "sports": "SOC,NBA",
-      "status": "COVERED_BY_MAIN"
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0xc8ab97a9089a9ff7e6ef0688e6e591a066946418"
     },
     {
       "walletShort": "95618e",
