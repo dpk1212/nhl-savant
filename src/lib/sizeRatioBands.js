@@ -30,6 +30,25 @@ export function sportDisplaySizeRatio(invested, profile, sport, modelRatio = nul
   return Number.isFinite(modelRatio) && modelRatio > 0 ? modelRatio : null;
 }
 
+/** press / full / lean / light — same edges as Action desk + Their Action. */
+export function sizeBandKeyFromRatio(sr) {
+  if (!Number.isFinite(sr)) return null;
+  if (sr >= 1.5) return 'press';
+  if (sr >= 1.0) return 'full';
+  if (sr >= 0.5) return 'lean';
+  return 'light';
+}
+
+/** Recompute a history leg's × usual from sport-local usual (not cross-sport stamp). */
+export function relocalizeSizeVsUsual(leg, usual) {
+  if (!leg) return leg;
+  const inv = Number(leg.invested);
+  const u = Number(usual);
+  if (!(inv > 0) || !(u > 0)) return leg;
+  const sizeRatio = +(inv / u).toFixed(2);
+  return { ...leg, sizeRatio, sizeBand: sizeBandKeyFromRatio(sizeRatio) };
+}
+
 /**
  * Stake-path size (Path A HC, Q1, UNOPP, size-skill live gate on those paths).
  * Same sport-local volume as the locked card. Model sizeRatio is fallback

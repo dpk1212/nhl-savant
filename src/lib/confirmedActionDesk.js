@@ -10,7 +10,10 @@ import {
 } from './sharpTierCellStats.js';
 import { sportBookForDisplay } from './walletSportBook.js';
 import { passesSizeSkillLiveGate } from './sizeSkillRescue.js';
-import { sportDisplaySizeRatio as sportDisplaySizeRatioFromProfile } from './sizeRatioBands.js';
+import {
+  sportDisplaySizeRatio as sportDisplaySizeRatioFromProfile,
+  sportUsualBetFromProfile,
+} from './sizeRatioBands.js';
 import { steamForGame } from './steamMove.js';
 
 const SPORTS = ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL'];
@@ -414,6 +417,7 @@ export function buildConfirmedActionRows({
       flatCurveDays: form.flatCurveDays ?? 30,
       recentFeatured: form.recentFeatured || [],
       recentAction: form.recentAction || [],
+      sportUsualBet: sportUsualBetFromProfile(prof, sport),
       trust: trustFromProfile(prof, sport),
       ...contextRollupsFromProfile(prof, sport, marketType),
       pinMove: pin, // 'with' | 'against' | null

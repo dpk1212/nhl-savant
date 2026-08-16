@@ -511,7 +511,7 @@ function americanFromProb(p) {
  * Capped at RECENT_LEGS_MAX so profile JSON stays small.
  * UI-only: shipped locks (units > 0, not muted/tracked) — does not affect whitelist.
  */
-function recentFeaturedLegs(pickBets, { days = RECENT_LEGS_DAYS, maxLegs = RECENT_LEGS_MAX } = {}) {
+function recentFeaturedLegs(pickBets, sportUsualBet = null, { days = RECENT_LEGS_DAYS, maxLegs = RECENT_LEGS_MAX } = {}) {
   const cutoff = etDateMinusDays(days);
   const ordered = (pickBets || [])
     .filter((b) => b && (b.won === 0 || b.won === 1) && b.date && String(b.date) >= cutoff)
@@ -520,7 +520,12 @@ function recentFeaturedLegs(pickBets, { days = RECENT_LEGS_DAYS, maxLegs = RECEN
     .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')))
     .slice(-maxLegs);
   return ordered.map((b) => {
-    const sr = Number.isFinite(b.sizeRatio) ? Number(b.sizeRatio) : null;
+    let sr = null;
+    if (Number.isFinite(sportUsualBet) && sportUsualBet > 0 && Number.isFinite(b.invested) && b.invested > 0) {
+      sr = +(b.invested / sportUsualBet).toFixed(2);
+    } else if (Number.isFinite(b.sizeRatio)) {
+      sr = Number(b.sizeRatio);
+    }
     const line = Number.isFinite(Number(b.entryLine)) ? Number(b.entryLine) : null;
     const matchup = matchupAbbrev(b.away, b.home, b.gameKey);
     const invested = Number.isFinite(b.invested) ? Math.round(b.invested) : null;
@@ -553,7 +558,7 @@ function recentFeaturedLegs(pickBets, { days = RECENT_LEGS_DAYS, maxLegs = RECEN
 /**
  * Graded Action positions (Source B) in the last RECENT_LEGS_DAYS for expand Tab 2.
  */
-function recentActionLegs(posBets, avgSportBet = null, { days = RECENT_LEGS_DAYS, maxLegs = RECENT_LEGS_MAX } = {}) {
+function recentActionLegs(posBets, sportUsualBet = null, { days = RECENT_LEGS_DAYS, maxLegs = RECENT_LEGS_MAX } = {}) {
   const cutoff = etDateMinusDays(days);
   const ordered = (posBets || [])
     .filter((b) => b && (b.won === 0 || b.won === 1) && b.date && String(b.date) >= cutoff)
@@ -561,9 +566,11 @@ function recentActionLegs(posBets, avgSportBet = null, { days = RECENT_LEGS_DAYS
     .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')))
     .slice(-maxLegs);
   return ordered.map((b) => {
-    let sr = Number.isFinite(b.sizeRatio) ? Number(b.sizeRatio) : null;
-    if (sr == null && Number.isFinite(avgSportBet) && avgSportBet > 0 && Number.isFinite(b.invested)) {
-      sr = +(b.invested / avgSportBet).toFixed(2);
+    let sr = null;
+    if (Number.isFinite(sportUsualBet) && sportUsualBet > 0 && Number.isFinite(b.invested) && b.invested > 0) {
+      sr = +(b.invested / sportUsualBet).toFixed(2);
+    } else if (Number.isFinite(b.sizeRatio)) {
+      sr = Number(b.sizeRatio);
     }
     const label = b.teamName || sideLabel(b.side);
     const matchup = matchupAbbrev(b.away, b.home, b.gameKey);
@@ -773,7 +780,8 @@ function classifyWhitelistTier(picksInSport, positionsInSport, opts) {
 
 // ── Build per-wallet profile ───────────────────────────────────────
 function loadAvgSportBetByShort() {
-  // sports_sharps.json — same cross-sport usual $ the live card uses.
+  // sports_sharps.json — cross-sport usual for wallet-level sizeRatioBands only.
+  // Action/featured history legs use sport-local usual (bySport.positions).
   const path = join(__dirname, '..', 'public', 'sports_sharps.json');
   const out = new Map();
   if (!existsSync(path)) return out;
@@ -856,8 +864,11 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
     );
     // Form: prefer featured picks; else positions (with flat = settledPnl/invested).
     // Recent ticket lists always stamp both sources for Action expand tabs.
-    const recentFeatured = recentFeaturedLegs(pp);
-    const recentAction = recentActionLegs(ps, avgSportBet);
+    const sportUsual = (positionsInSport.n > 0 && positionsInSport.invested > 0)
+      ? positionsInSport.invested / positionsInSport.n
+      : null;
+    const recentFeatured = recentFeaturedLegs(pp, sportUsual);
+    const recentAction = recentActionLegs(ps, sportUsual);
     let form = sportForm(pp.length ? pp : ps);
     if (!form && (recentFeatured.length || recentAction.length)) {
       form = {

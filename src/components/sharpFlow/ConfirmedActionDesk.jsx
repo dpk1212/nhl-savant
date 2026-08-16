@@ -10,6 +10,7 @@ import {
   filterActionRows,
   sortActionRows,
 } from '../../lib/confirmedActionDesk.js';
+import { relocalizeSizeVsUsual } from '../../lib/sizeRatioBands.js';
 import SteamTag from './cards/SteamTag';
 
 const B = {
@@ -540,8 +541,14 @@ function ActionExpandPanel({ row, isMobile }) {
   const [showMore, setShowMore] = useState(false);
   // Actual $ first — locked picks & Action tickets are sized, not 1u flat.
   const [sparkMode, setSparkMode] = useState('actual');
-  const featured = row.recentFeatured || [];
-  const action = row.recentAction || [];
+  const featured = useMemo(
+    () => (row.recentFeatured || []).map((leg) => relocalizeSizeVsUsual(leg, row.sportUsualBet)),
+    [row.recentFeatured, row.sportUsualBet],
+  );
+  const action = useMemo(
+    () => (row.recentAction || []).map((leg) => relocalizeSizeVsUsual(leg, row.sportUsualBet)),
+    [row.recentAction, row.sportUsualBet],
+  );
   const spark = sparkPointsForTab(tab, row, sparkMode);
   const curveDays = Number.isFinite(row.flatCurveDays) ? row.flatCurveDays : 30;
   // Featured list prefers Source A; fall back to Action only when featured is empty.
