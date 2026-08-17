@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-08-17T11:15:01.289Z",
-  "elapsedSec": 17.3,
+  "scannedAt": "2026-08-17T11:19:01.435Z",
+  "elapsedSec": 17.5,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 27,
   "summary": {
     "total": 236,
     "coveredByMain": 3,
-    "recovered": 5,
-    "recoveredPositions": 24,
-    "noPositions": 228,
+    "recovered": 6,
+    "recoveredPositions": 25,
+    "noPositions": 227,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,7 +16,7 @@
       "ml": 4,
       "spread": 0,
       "total": 0,
-      "dropped_shadow_gate": 5,
+      "dropped_shadow_gate": 6,
       "dropped_excluded": 15,
       "dropped_duplicate": 0
     }
@@ -417,7 +417,7 @@
           "gameKey": "lad_col",
           "marketType": "ml",
           "side": "away",
-          "invested": 2015,
+          "invested": 2060,
           "entryLine": null,
           "passesShadow": true
         }
@@ -1298,8 +1298,24 @@
       "tier": "CONFIRMED",
       "name": "0xfcC71106212c778ca14102fbF5aC4d5D6a9A4d38-1783931807282",
       "sports": "MLB",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xfcc71106212c778ca14102fbf5ac4d5d6a9a4d38"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0xfcc71106212c778ca14102fbf5ac4d5d6a9a4d38",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 736,
+      "willPassShadowGate": 0,
+      "willDropAtShadowGate": 1,
+      "positions": [
+        {
+          "sport": "WNBA",
+          "gameKey": "dal_gsv",
+          "marketType": "total",
+          "side": "under",
+          "invested": 0,
+          "entryLine": 162.5,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "9a69c2",
@@ -2000,7 +2016,7 @@
           "gameKey": "bal_tbr",
           "marketType": "ml",
           "side": "away",
-          "invested": 15,
+          "invested": 29,
           "entryLine": null,
           "passesShadow": false
         }
