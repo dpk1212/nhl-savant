@@ -59,13 +59,12 @@ export function positionMatchesPolyEvent(pos, polyGame, gameKey = null, opts = {
     return { ok: false, reason: 'slug_sport_mismatch' };
   }
 
-  // Hard reject other-day markets even when poly cache is missing (WNBA overnight
-  // leftovers: wnba-atl-wsh-2026-08-07 sitting on the 2026-08-08 board).
-  if (boardDate && slugDate && slugDate !== boardDate) {
-    return { ok: false, reason: 'slug_date_vs_board' };
-  }
-
   if (!polyGame || typeof polyGame !== 'object') {
+    // Hard reject other-day markets when poly cache is missing (WNBA overnight
+    // leftovers: wnba-atl-wsh-2026-08-07 sitting on the 2026-08-08 board).
+    if (boardDate && slugDate && slugDate !== boardDate) {
+      return { ok: false, reason: 'slug_date_vs_board' };
+    }
     return { ok: false, reason: 'no_poly_game' };
   }
 
@@ -75,6 +74,18 @@ export function positionMatchesPolyEvent(pos, polyGame, gameKey = null, opts = {
   const gameEventId = polyGame.eventId != null && polyGame.eventId !== ''
     ? String(polyGame.eventId)
     : null;
+
+  // Hard reject other-day slugs UNLESS this ticket is on the exact event the
+  // board already kept. Polymarket reuses postponed slugs (Cards–Reds DH
+  // 2026-08-17: mlb-stl-cin-2026-05-24, startTime moved to today). Event id
+  // equality means the rainout market IS today's game — not a leftover on
+  // a different matchup (that case still fails: ids differ).
+  if (boardDate && slugDate && slugDate !== boardDate) {
+    const reusedOnBoard = !!(posEventId && gameEventId && posEventId === gameEventId);
+    if (!reusedOnBoard) {
+      return { ok: false, reason: 'slug_date_vs_board' };
+    }
+  }
 
   const gameDate = polyGame.polyGameDate ? String(polyGame.polyGameDate).slice(0, 10) : null;
 

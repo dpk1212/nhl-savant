@@ -42,6 +42,24 @@ assert.equal(postponed.ok, false);
 assert.equal(postponed.reason, 'slug_date_vs_board');
 assert.equal(WRONG_GAME_EXIT_REASONS.has(postponed.reason), true);
 
+const rainoutReused = positionMatchesPolyEvent(
+  { eventId: '498285', slug: 'mlb-stl-cin-2026-05-24' },
+  { eventId: '498285', polyGameDate: '2026-08-17' },
+  'stl_cin',
+  { boardDate: '2026-08-17' },
+);
+assert.equal(rainoutReused.ok, true, 'reused rainout slug on the board event is a match');
+assert.equal(rainoutReused.reason, 'eventId');
+
+const rainoutOtherEvent = positionMatchesPolyEvent(
+  { eventId: '833246', slug: 'mlb-stl-cin-2026-05-24' },
+  { eventId: '498285', polyGameDate: '2026-08-17' },
+  'stl_cin',
+  { boardDate: '2026-08-17' },
+);
+assert.equal(rainoutOtherEvent.ok, false, 'stale slug on a different event stays rejected');
+assert.equal(rainoutOtherEvent.reason, 'slug_date_vs_board');
+
 const soccerOnWnba = positionMatchesPolyEvent(
   { eventId: '791678', slug: 'mex-ame-asl-2026-08-16-asl' },
   { eventId: '789016', polyGameDate: '2026-08-16' },
