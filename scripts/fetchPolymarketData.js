@@ -30,6 +30,7 @@ import {
   isMainNFLGameSlug,
 } from './lib/nflTeams.js';
 import { isNonFullGameTotalMarket } from './lib/totalMarketFilter.js';
+import { allocateScheduleKey, pickScheduleKeyByStart } from './lib/doubleheaderKey.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -560,13 +561,14 @@ async function loadTodaysSchedule(cbbMap) {
       const res = await fetch(url);
       if (res.ok) {
         const games = await res.json();
-        for (const g of games) {
+        const ordered = [...games].sort((a, b) =>
+          Date.parse(a.commence_time || 0) - Date.parse(b.commence_time || 0));
+        for (const g of ordered) {
           const away = resolveMLBTeam(g.away_team);
           const home = resolveMLBTeam(g.home_team);
           if (away && home) {
             const gk = `${normalize(away)}_${normalize(home)}`;
-            validMLB.add(gk);
-            if (g.commence_time && !commenceTimes[`MLB:${gk}`]) commenceTimes[`MLB:${gk}`] = g.commence_time;
+            allocateScheduleKey(validMLB, commenceTimes, 'MLB', gk, g.commence_time);
           }
         }
         const remaining = res.headers.get('x-requests-remaining');
@@ -798,9 +800,15 @@ async function run() {
     const id = ev.id ?? ev.slug;
     const title = ev.title || ev.question || '';
 
-    // Reject stale events (eventDate > 2 days in the past)
+    // Reject stale events (eventDate > 2 days in the past). Reused rainout
+    // slugs keep the old eventDate (Cards–Reds mlb-stl-cin-2026-05-24) but
+    // startTime is moved to today — keep those.
     const evDate = ev.eventDate ? new Date(ev.eventDate).getTime() : null;
-    if (evDate && evDate < nowMs - TWO_DAYS_MS) continue;
+    const startMs = ev.startTime ? new Date(ev.startTime).getTime() : NaN;
+    const startIsLive = Number.isFinite(startMs)
+      && startMs > nowMs - TWO_DAYS_MS
+      && startMs < nowMs + 14 * 24 * 60 * 60 * 1000;
+    if (evDate && evDate < nowMs - TWO_DAYS_MS && !startIsLive) continue;
 
     // Use event's own Polymarket tags for sport detection first
     const evTags = (ev.tags || []).map(t => (t.slug || t || '').toLowerCase());
@@ -914,14 +922,17 @@ async function run() {
       : sport === 'UFC' ? validUFC
       : validNHL;
     const keyReversed = !(key1 && validSet.has(key1)) && (key2 && validSet.has(key2));
-    const key = keyReversed ? key2 : (key1 && validSet.has(key1)) ? key1 : null;
+    let key = keyReversed ? key2 : (key1 && validSet.has(key1)) ? key1 : null;
     if (!key) continue;
     if (keyReversed) teams.reverse();
+    key = pickScheduleKeyByStart(sport, key, ev.startTime, commenceTimes, validSet);
 
-    // Date-match: use Polymarket eventDate (actual game date, NOT endDate which is series end).
-    // Filters wrong-day events and breaks ties when multiple events share the same key.
-    const polyGameDate = ev.eventDate || toETDate(ev.startTime);
+    // Date-match: prefer startTime when it lands on the Odds API day so a
+    // reused rainout eventDate (May 24 slug, first pitch today) still matches.
     const oddsGameDate = toETDate(commenceTimes[`${sport}:${key}`]);
+    const startDate = toETDate(ev.startTime);
+    const listedDate = ev.eventDate || startDate;
+    const polyGameDate = (oddsGameDate && startDate === oddsGameDate) ? startDate : listedDate;
 
     if (seenDates.has(key)) {
       const prevDate = seenDates.get(key);

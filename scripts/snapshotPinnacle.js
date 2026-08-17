@@ -30,6 +30,7 @@ import {
   enforceGitSafeSize,
   GIT_SAFE_MAX_BYTES,
 } from './lib/pinnacleTape.js';
+import { dhSecondKey } from './lib/doubleheaderKey.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -467,9 +468,14 @@ async function run() {
     if (!history[label]) history[label] = {};
     let sportFair = 0;
     let sportSkip = 0;
+    const dhSeen = new Set();
     const pinIdx = await pinnapiFor(label);
 
-    const games = await fetchOdds(sportKey, markets || 'h2h,spreads,totals');
+    const gamesRaw = await fetchOdds(sportKey, markets || 'h2h,spreads,totals');
+    const games = label === 'MLB'
+      ? [...gamesRaw].sort((a, b) =>
+          Date.parse(a.commence_time || 0) - Date.parse(b.commence_time || 0))
+      : gamesRaw;
     for (const game of games) {
       let {
         fairBook, fairAway, fairHome, fairDraw,
@@ -482,8 +488,12 @@ async function run() {
 
       const awayName = game.away_team;
       const homeName = game.home_team;
-      const gameKey = makeGameKey(awayName, homeName, label);
+      let gameKey = makeGameKey(awayName, homeName, label);
       if (!gameKey) continue; // SOC country we can't resolve to a FIFA code
+      if (label === 'MLB') {
+        if (dhSeen.has(gameKey)) gameKey = dhSecondKey(gameKey);
+        else dhSeen.add(gameKey);
+      }
 
       const existing = history[label][gameKey] || {};
 

@@ -332,7 +332,7 @@ function legMatchup(leg) {
   if (leg?.matchup) return leg.matchup;
   const gk = String(leg?.gameKey || '');
   // Letters-only team codes at end (avoids matching date fragments).
-  const m = gk.match(/([a-z]{2,5})_([a-z]{2,5})(?:_(?:total|spread|ml))?$/i);
+  const m = gk.match(/([a-z]{2,5})_([a-z]{2,5})(?:__2)?(?:_(?:total|spread|ml))?$/i);
   if (m) return `${m[1].toUpperCase()} @ ${m[2].toUpperCase()}`;
   return null;
 }

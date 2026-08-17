@@ -65,6 +65,7 @@ import { matchWNBAPositionTitle, resolveWNBATeam, WNBA_NAME_TO_CODE } from './li
 import { matchNFLPositionTitle, resolveNFLTeam, NFL_NAME_TO_CODE } from './lib/nflTeams.js';
 import { resolveBinarySide, resolveSpreadSide, resolveSpreadEntryLine } from './lib/resolvePositionSide.js';
 import { positionMatchesPolyEvent } from './lib/positionEventMatch.js';
+import { resolveDoubleheaderMatch } from './lib/doubleheaderKey.js';
 import {
   acceptFullGameTotalPosition,
   parseTotalEntryLine,
@@ -721,6 +722,7 @@ async function run() {
         if (sm) { match = sm; forcedSpread = true; }
         else continue;
       }
+      match = resolveDoubleheaderMatch(match, pos, polyData);
       const outcome = pos.outcome || '';
       const outcomeNorm = normalize(outcome);
       const outcomeIndex = pos.outcomeIndex != null && pos.outcomeIndex !== ''
