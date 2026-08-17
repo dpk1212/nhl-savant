@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-08-17T14:06:51.404Z",
-  "elapsedSec": 17,
+  "scannedAt": "2026-08-17T14:10:51.252Z",
+  "elapsedSec": 18.2,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 27,
   "summary": {
     "total": 236,
     "coveredByMain": 6,
-    "recovered": 8,
-    "recoveredPositions": 36,
-    "noPositions": 222,
+    "recovered": 9,
+    "recoveredPositions": 37,
+    "noPositions": 221,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -17,7 +17,7 @@
       "spread": 0,
       "total": 0,
       "dropped_shadow_gate": 5,
-      "dropped_excluded": 23,
+      "dropped_excluded": 24,
       "dropped_duplicate": 0
     }
   },
@@ -694,8 +694,24 @@
       "tier": "CONFIRMED",
       "name": "sentrio",
       "sports": "MLB,SOC,NBA",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xdb83e85ffd22faa4009273034770f96ffc5b1e50"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0xdb83e85ffd22faa4009273034770f96ffc5b1e50",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 1430,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "WNBA",
+          "gameKey": "dal_gsv",
+          "marketType": "total",
+          "side": "under",
+          "invested": 1375,
+          "entryLine": 162.5,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "5b53d1",
@@ -891,12 +907,12 @@
           "passesShadow": true
         },
         {
-          "sport": "MLB",
-          "gameKey": "bal_tbr",
-          "marketType": "spread",
-          "side": "home",
-          "invested": 1565,
-          "entryLine": -1.5,
+          "sport": "WNBA",
+          "gameKey": "dal_gsv",
+          "marketType": "total",
+          "side": "under",
+          "invested": 2898,
+          "entryLine": 163.5,
           "passesShadow": true
         },
         {
@@ -904,8 +920,17 @@
           "gameKey": "dal_gsv",
           "marketType": "total",
           "side": "under",
-          "invested": 1422,
-          "entryLine": 163.5,
+          "invested": 2237,
+          "entryLine": 162.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "bal_tbr",
+          "marketType": "spread",
+          "side": "home",
+          "invested": 1565,
+          "entryLine": -1.5,
           "passesShadow": true
         },
         {
@@ -999,15 +1024,6 @@
           "passesShadow": true
         },
         {
-          "sport": "WNBA",
-          "gameKey": "dal_gsv",
-          "marketType": "total",
-          "side": "under",
-          "invested": 884,
-          "entryLine": 162.5,
-          "passesShadow": true
-        },
-        {
           "sport": "MLB",
           "gameKey": "stl_cin",
           "marketType": "spread",
@@ -1030,7 +1046,7 @@
           "gameKey": "dal_gsv",
           "marketType": "total",
           "side": "over",
-          "invested": 663,
+          "invested": 679,
           "entryLine": 163.5,
           "passesShadow": true
         },
@@ -2127,7 +2143,7 @@
           "gameKey": "sdp_nym",
           "marketType": "total",
           "side": "under",
-          "invested": 598,
+          "invested": 601,
           "entryLine": 8.5,
           "passesShadow": false
         }
