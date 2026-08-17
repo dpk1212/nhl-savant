@@ -1,23 +1,23 @@
 {
-  "scannedAt": "2026-08-17T17:33:14.960Z",
-  "elapsedSec": 19.6,
+  "scannedAt": "2026-08-17T17:37:07.712Z",
+  "elapsedSec": 19,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 28,
   "summary": {
     "total": 236,
-    "coveredByMain": 14,
-    "recovered": 18,
-    "recoveredPositions": 72,
-    "noPositions": 204,
+    "coveredByMain": 12,
+    "recovered": 21,
+    "recoveredPositions": 77,
+    "noPositions": 203,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 14,
-      "spread": 0,
-      "total": 3,
-      "dropped_shadow_gate": 11,
-      "dropped_excluded": 44,
+      "ml": 17,
+      "spread": 1,
+      "total": 8,
+      "dropped_shadow_gate": 14,
+      "dropped_excluded": 37,
       "dropped_duplicate": 0
     }
   },
@@ -203,7 +203,33 @@
       "tier": "CONFIRMED",
       "name": "0x547f2917D51F2e63ab382DCF641d4E0240162937-1782667852436",
       "sports": "MLB",
-      "status": "COVERED_BY_MAIN"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x547f2917d51f2e63ab382dcf641d4e0240162937",
+      "positionsCount": 2,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 92193,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 1,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "stl_cin",
+          "marketType": "total",
+          "side": "under",
+          "invested": 38436,
+          "entryLine": 9.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "stl_cin",
+          "marketType": "total",
+          "side": "under",
+          "invested": 2248,
+          "entryLine": 10.5,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "182fef",
@@ -970,7 +996,24 @@
       "tier": "CONFIRMED",
       "name": "0x9e3ed7b661a903fc97afcf49e0f014ebe869f882-1783406009396",
       "sports": "UFC,WNBA",
-      "status": "COVERED_BY_MAIN"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x9e3ed7b661a903fc97afcf49e0f014ebe869f882",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 1064,
+      "willPassShadowGate": 0,
+      "willDropAtShadowGate": 1,
+      "positions": [
+        {
+          "sport": "WNBA",
+          "gameKey": "dal_gsv",
+          "marketType": "total",
+          "side": "over",
+          "invested": 40,
+          "entryLine": 161.5,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "6ac120",
@@ -1339,7 +1382,7 @@
           "gameKey": "stl_cin",
           "marketType": "ml",
           "side": "home",
-          "invested": 28919,
+          "invested": 29289,
           "entryLine": null,
           "passesShadow": true
         }
@@ -1747,7 +1790,33 @@
       "tier": "CONFIRMED",
       "name": "suntori",
       "sports": "NBA,NHL,UFC",
-      "status": "COVERED_BY_MAIN"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0xe9076a87c5ed90ef16e6fe6529c943baeca0cff6",
+      "positionsCount": 2,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 1227,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 1,
+      "positions": [
+        {
+          "sport": "UFC",
+          "gameKey": "songyadong_umarnurmagomedov",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 59,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "det_pit",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 69,
+          "entryLine": null,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "a0d6d2",
@@ -1914,8 +1983,7 @@
       "tier": "FLAT",
       "name": "johnny234",
       "sports": "MLB",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xd38ad20037839959d89165cf448568d584b28d26"
+      "status": "COVERED_BY_MAIN"
     },
     {
       "walletShort": "b31fc6",
@@ -2144,7 +2212,7 @@
     {
       "walletShort": "c911a4",
       "tier": "CONFIRMED",
-      "name": "neutralwave23",
+      "name": null,
       "sports": "NBA,SOC,UFC",
       "status": "SCANNED_NO_POSITIONS_TODAY",
       "addr": "0x5b6331e7ff0831a3fe2ed12004747db1a9c911a4"
