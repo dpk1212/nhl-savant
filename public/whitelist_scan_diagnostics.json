@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-08-18T01:39:53.651Z",
-  "elapsedSec": 19.8,
+  "scannedAt": "2026-08-18T01:44:04.483Z",
+  "elapsedSec": 19.7,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 42,
   "summary": {
     "total": 236,
     "coveredByMain": 17,
-    "recovered": 11,
-    "recoveredPositions": 42,
-    "noPositions": 208,
+    "recovered": 12,
+    "recoveredPositions": 43,
+    "noPositions": 207,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -17,7 +17,7 @@
       "spread": 1,
       "total": 2,
       "dropped_shadow_gate": 5,
-      "dropped_excluded": 28,
+      "dropped_excluded": 29,
       "dropped_duplicate": 3
     }
   },
@@ -463,7 +463,7 @@
           "gameKey": "dal_gsv",
           "marketType": "total",
           "side": "under",
-          "invested": 1320,
+          "invested": 2340,
           "entryLine": 162.5,
           "passesShadow": true
         },
@@ -472,7 +472,7 @@
           "gameKey": "dal_gsv",
           "marketType": "total",
           "side": "over",
-          "invested": 1179,
+          "invested": 1958,
           "entryLine": 162.5,
           "passesShadow": true
         }
@@ -924,7 +924,7 @@
           "gameKey": "dal_gsv",
           "marketType": "spread",
           "side": "away",
-          "invested": 11572,
+          "invested": 12317,
           "entryLine": 5.5,
           "passesShadow": true
         },
@@ -969,7 +969,7 @@
           "gameKey": "dal_gsv",
           "marketType": "total",
           "side": "over",
-          "invested": 3781,
+          "invested": 3819,
           "entryLine": 163.5,
           "passesShadow": true
         },
@@ -980,6 +980,15 @@
           "side": "home",
           "invested": 2512,
           "entryLine": -6.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "WNBA",
+          "gameKey": "dal_gsv",
+          "marketType": "total",
+          "side": "over",
+          "invested": 1812,
+          "entryLine": 162.5,
           "passesShadow": true
         },
         {
@@ -998,15 +1007,6 @@
           "side": "home",
           "invested": 1596,
           "entryLine": -5.5,
-          "passesShadow": true
-        },
-        {
-          "sport": "WNBA",
-          "gameKey": "dal_gsv",
-          "marketType": "total",
-          "side": "over",
-          "invested": 1306,
-          "entryLine": 162.5,
           "passesShadow": true
         },
         {
@@ -1091,8 +1091,24 @@
       "tier": "CONFIRMED",
       "name": "matanovik",
       "sports": "NBA",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x39d3c773be30fcc73161fc6768f46d563a779ef0"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x39d3c773be30fcc73161fc6768f46d563a779ef0",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 3335,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "WNBA",
+          "gameKey": "dal_gsv",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 1272,
+          "entryLine": null,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "786930",
