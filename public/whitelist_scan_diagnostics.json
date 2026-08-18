@@ -1,23 +1,23 @@
 {
-  "scannedAt": "2026-08-18T02:00:55.606Z",
-  "elapsedSec": 20.1,
+  "scannedAt": "2026-08-18T02:05:02.780Z",
+  "elapsedSec": 17.3,
   "phase": "PHASE_2_MERGE_ENABLED",
-  "todayGamesCount": 40,
+  "todayGamesCount": 41,
   "summary": {
     "total": 236,
     "coveredByMain": 18,
-    "recovered": 12,
-    "recoveredPositions": 45,
-    "noPositions": 206,
+    "recovered": 10,
+    "recoveredPositions": 39,
+    "noPositions": 208,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 3,
+      "ml": 2,
       "spread": 1,
-      "total": 2,
-      "dropped_shadow_gate": 5,
-      "dropped_excluded": 31,
+      "total": 1,
+      "dropped_shadow_gate": 4,
+      "dropped_excluded": 28,
       "dropped_duplicate": 3
     }
   },
@@ -1746,24 +1746,8 @@
       "tier": "CONFIRMED",
       "name": null,
       "sports": "NHL,SOC,WNBA,UFC",
-      "status": "RECOVERED_VIA_WHITELIST_SCAN",
-      "addr": "0x21f333307ac6d2e65ac82f014b3dd2b64cbc35e3",
-      "positionsCount": 1,
-      "statsSource": "profile.bySport.positions",
-      "avgSportBet": 5002,
-      "willPassShadowGate": 1,
-      "willDropAtShadowGate": 0,
-      "positions": [
-        {
-          "sport": "WNBA",
-          "gameKey": "dal_gsv",
-          "marketType": "ml",
-          "side": "away",
-          "invested": 1654,
-          "entryLine": null,
-          "passesShadow": true
-        }
-      ]
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0x21f333307ac6d2e65ac82f014b3dd2b64cbc35e3"
     },
     {
       "walletShort": "bc44b0",
@@ -1932,21 +1916,12 @@
       "sports": "SOC,MLB,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x84cfffc3f16dcc353094de30d4a45226eccd2f63",
-      "positionsCount": 3,
-      "statsSource": "profile.bySport.positions",
-      "avgSportBet": 4911,
-      "willPassShadowGate": 1,
-      "willDropAtShadowGate": 2,
+      "positionsCount": 1,
+      "statsSource": "fallback",
+      "avgSportBet": 17833,
+      "willPassShadowGate": 0,
+      "willDropAtShadowGate": 1,
       "positions": [
-        {
-          "sport": "WNBA",
-          "gameKey": "dal_gsv",
-          "marketType": "total",
-          "side": "over",
-          "invested": 889,
-          "entryLine": 162.5,
-          "passesShadow": true
-        },
         {
           "sport": "NFL",
           "gameKey": "lv_hou",
@@ -1954,15 +1929,6 @@
           "side": "home",
           "invested": 11,
           "entryLine": null,
-          "passesShadow": false
-        },
-        {
-          "sport": "WNBA",
-          "gameKey": "dal_gsv",
-          "marketType": "total",
-          "side": "under",
-          "invested": 4,
-          "entryLine": 162.5,
           "passesShadow": false
         }
       ]
@@ -2320,42 +2286,8 @@
       "tier": "CONFIRMED",
       "name": "GamblingOdyssey",
       "sports": "SOC",
-      "status": "RECOVERED_VIA_WHITELIST_SCAN",
-      "addr": "0xe5241830e8876c115d7dc8311ad9f43d85fdd34f",
-      "positionsCount": 3,
-      "statsSource": "sports_sharps.perSport",
-      "avgSportBet": 3460,
-      "willPassShadowGate": 3,
-      "willDropAtShadowGate": 0,
-      "positions": [
-        {
-          "sport": "WNBA",
-          "gameKey": "dal_gsv",
-          "marketType": "total",
-          "side": "over",
-          "invested": 4664,
-          "entryLine": 161.5,
-          "passesShadow": true
-        },
-        {
-          "sport": "WNBA",
-          "gameKey": "dal_gsv",
-          "marketType": "ml",
-          "side": "away",
-          "invested": 1574,
-          "entryLine": null,
-          "passesShadow": true
-        },
-        {
-          "sport": "WNBA",
-          "gameKey": "dal_gsv",
-          "marketType": "total",
-          "side": "over",
-          "invested": 1334,
-          "entryLine": 162.5,
-          "passesShadow": true
-        }
-      ]
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0xe5241830e8876c115d7dc8311ad9f43d85fdd34f"
     },
     {
       "walletShort": "fea6f5",
