@@ -158,6 +158,7 @@ import { loadWalletProfilesMap } from './lib/loadWalletProfiles.js';
 import { acceptFullGameTotalPosition } from './lib/totalMarketFilter.js';
 import { passesSizeSkillLiveGate } from '../src/lib/sizeSkillRescue.js';
 import { resolveInstrument, ticketAmerican } from '../src/lib/ticketInstrument.js';
+import { captureTicketTape, applyTicketTapeStamps } from '../src/lib/ticketTapeCapture.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '../public');
@@ -1029,7 +1030,7 @@ function edgeNetGateBucket(edge, net, eThr = SHARP_EDGE_THR, nThr = SHARP_NET_TH
 }
 
 /** Skill-feature stamp schema version — bump when fields/thresholds change. */
-const SKILL_FEATURE_VERSION = 14; // v14: market-anchored expected win tracking stamps
+const SKILL_FEATURE_VERSION = 15; // v15: ticket EV + Pinnacle steam tracking stamps
 
 /**
  * Full EDGE / netCLV / Tape bundle for analysis without rebuild.
@@ -1100,6 +1101,11 @@ function applySkillFeatureStamps(target, bundle, now, {
   sideOdds = null,
   stakeUnits = null,
   expWinPriors = null,
+  pinnGame = null,
+  marketType = 'ml',
+  sideNorm = 'home',
+  ticketLine = null,
+  commenceMs = null,
 } = {}) {
   const wa = bundle.winnerAlign;
   if (wa) {
@@ -1206,8 +1212,29 @@ function applySkillFeatureStamps(target, bundle, now, {
     source: expWinPriors?.source ?? 'frozen',
   });
   if (expWin) applyExpectedWinStamps(target, expWin);
+  const tapeSnap = captureTicketTape({
+    pinnGame,
+    marketType,
+    sideNorm,
+    line: ticketLine,
+    offerOdds: sideOdds,
+    commenceMs,
+    nowMs: now,
+  });
+  applyTicketTapeStamps(target, tapeSnap);
   target.v8_skillFeatureVersion = SKILL_FEATURE_VERSION;
   target.v8_skillEvaluatedAt = now;
+}
+
+function pinnTapeFromMeta(gameMeta, pick, mkt, side, sd, extra = {}) {
+  const gm = gameMeta?.get?.(`${pick.sport}|${pick.gameKey}`) || extra.meta || null;
+  return {
+    pinnGame: extra.pinnGame ?? gm?.pinnGame ?? null,
+    marketType: extra.marketType ?? mkt ?? pick.marketType ?? 'ml',
+    sideNorm: extra.sideNorm ?? side,
+    ticketLine: extra.ticketLine ?? sd?.peak?.line ?? sd?.lock?.line ?? null,
+    commenceMs: extra.commenceMs ?? gm?.commenceTime ?? null,
+  };
 }
 
 function skillStampsDrifted(sd, bundle, {
@@ -1980,6 +2007,7 @@ function loadGameMetadata() {
         if (g.bestOver) cur.bestOver = g.bestOver;
         if (g.bestUnder) cur.bestUnder = g.bestUnder;
         if (g.fairTotalBook) cur.fairTotalBook = g.fairTotalBook;
+        cur.pinnGame = g;
         meta.set(key, cur);
       }
     }
@@ -3118,6 +3146,7 @@ async function createMissingLockedPicks({
           sideOdds: odds ?? null,
           stakeUnits: peakUnitsApplied,
           expWinPriors,
+          ...pinnTapeFromMeta(gameMeta, { sport, gameKey }, marketType, side, { peak: { line } }, { meta }),
         });
         v8Stamps.v8_winnerAlignAction = null;
         v8Stamps.v8_clvTop2Action = isTapeSizingLive(TARGET_DATE) ? 'PASS' : clvPolicyCreate.action;
@@ -3442,6 +3471,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       sideOdds: metaOdds,
       stakeUnits: sd.finalUnits ?? 0,
       expWinPriors,
+      ...pinnTapeFromMeta(gameMeta, pick, mkt, side, sd),
     });
     // Diagnostic score on this side (even if never staked) — analysis key.
     if (skillScoreV12 != null) {
@@ -4665,6 +4695,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       sideOdds,
       stakeUnits: finalUnitsApplied,
       expWinPriors,
+      ...pinnTapeFromMeta(gameMeta, pick, mkt, side, sd),
     });
     patch.v8_winnerAlignAction = winnerAlignAction;
     patch.v8_clvTop2Action = clvPolicy.action;
