@@ -145,6 +145,15 @@ import {
   BLEND_STATE_COLLECTION,
   BLEND_STATE_DOC_ID,
 } from '../src/lib/walletClvSkill.js';
+import {
+  EXP_WIN_LAMBDA_FROZEN,
+  EXP_WIN_LOOKBACK_FROM,
+  EXP_WIN_STATE_COLLECTION,
+  EXP_WIN_STATE_DOC_ID,
+  computeExpectedWin,
+  applyExpectedWinStamps,
+  fitExpWinLambda,
+} from '../src/lib/expectedWin.js';
 import { loadWalletProfilesMap } from './lib/loadWalletProfiles.js';
 import { acceptFullGameTotalPosition } from './lib/totalMarketFilter.js';
 import { passesSizeSkillLiveGate } from '../src/lib/sizeSkillRescue.js';
@@ -1020,7 +1029,7 @@ function edgeNetGateBucket(edge, net, eThr = SHARP_EDGE_THR, nThr = SHARP_NET_TH
 }
 
 /** Skill-feature stamp schema version — bump when fields/thresholds change. */
-const SKILL_FEATURE_VERSION = 13; // v13: flinch / fail-open leftover mute (2026-08-19+)
+const SKILL_FEATURE_VERSION = 14; // v14: market-anchored expected win tracking stamps
 
 /**
  * Full EDGE / netCLV / Tape bundle for analysis without rebuild.
@@ -1089,6 +1098,8 @@ function applySkillFeatureStamps(target, bundle, now, {
   blendTier = null,
   pathBlendPriors = null,
   sideOdds = null,
+  stakeUnits = null,
+  expWinPriors = null,
 } = {}) {
   const wa = bundle.winnerAlign;
   if (wa) {
@@ -1184,13 +1195,24 @@ function applySkillFeatureStamps(target, bundle, now, {
   if (mktWr != null) {
     target.v8_mktImpliedWr = Math.round(mktWr * 1000) / 10; // pct 1dp
   }
+  // Market-anchored expected win — tracking only, no unit effect.
+  const expWin = computeExpectedWin({
+    odds: sideOdds,
+    units: stakeUnits,
+    tape: bundle?.tape ?? null,
+    edge: bundle?.edge ?? bundle?.winnerAlign?.edge ?? null,
+    lambda: expWinPriors?.lambda ?? EXP_WIN_LAMBDA_FROZEN,
+    lambdaN: expWinPriors?.n ?? null,
+    source: expWinPriors?.source ?? 'frozen',
+  });
+  if (expWin) applyExpectedWinStamps(target, expWin);
   target.v8_skillFeatureVersion = SKILL_FEATURE_VERSION;
   target.v8_skillEvaluatedAt = now;
 }
 
 function skillStampsDrifted(sd, bundle, {
   tapeAction = null, qConv = null, qConvAction = null, foolsGoldAction = null,
-  flinchFailOpenAction = null, blendWr = null,
+  flinchFailOpenAction = null, blendWr = null, expWin = null,
 } = {}) {
   if ((sd.v8_skillFeatureVersion || 0) !== SKILL_FEATURE_VERSION) return true;
   if (sd.v8_skillEvaluatedAt == null) return true;
@@ -1201,6 +1223,10 @@ function skillStampsDrifted(sd, bundle, {
   if (blendWr != null && Number.isFinite(Number(blendWr))) {
     const prevB = sd.v8_blendWr;
     if (prevB == null || Math.abs(Number(prevB) - Number(blendWr)) >= 0.15) return true;
+  }
+  if (expWin != null && Number.isFinite(Number(expWin))) {
+    const prevE = sd.v8_expWin;
+    if (prevE == null || Math.abs(Number(prevE) - Number(expWin)) >= 0.15) return true;
   }
   const net = bundle.netMeanPrior;
   const prevNet = sd.v8_netMeanPrior;
@@ -1416,6 +1442,113 @@ async function loadPathBlendPriors(db, asOfDate, { dryRun = false } = {}) {
       }, { merge: true });
     } catch (e) {
       console.warn(`blend path priors cache write failed: ${e.message}`);
+    }
+  }
+  return out;
+}
+
+/**
+ * Expanding λ for expected-win stamps.
+ * Graded staked sides with date ∈ [EXP_WIN_LOOKBACK_FROM, asOfDate).
+ * Cached on expectedWinState/current per slate day.
+ */
+async function loadExpectedWinLambda(db, asOfDate, { dryRun = false } = {}) {
+  const frozen = {
+    lambda: EXP_WIN_LAMBDA_FROZEN,
+    n: 0,
+    w: 0,
+    wr: null,
+    impl: null,
+    source: 'frozen',
+    lookbackFrom: EXP_WIN_LOOKBACK_FROM,
+  };
+  if (!asOfDate || typeof asOfDate !== 'string') return frozen;
+
+  try {
+    const ref = db.collection(EXP_WIN_STATE_COLLECTION).doc(EXP_WIN_STATE_DOC_ID);
+    const cached = await ref.get();
+    if (cached.exists) {
+      const d = cached.data() || {};
+      if (d.asOfDate === asOfDate && Number.isFinite(Number(d.lambda))) {
+        return {
+          lambda: Number(d.lambda),
+          n: Number(d.n) || 0,
+          w: Number(d.w) || 0,
+          wr: d.wr != null ? Number(d.wr) : null,
+          impl: d.impl != null ? Number(d.impl) : null,
+          source: d.source === 'frozen' || d.source === 'expanding'
+            ? d.source
+            : ((Number(d.n) || 0) >= 15 ? 'expanding' : 'frozen'),
+          lookbackFrom: d.lookbackFrom || EXP_WIN_LOOKBACK_FROM,
+        };
+      }
+    }
+  } catch (e) {
+    console.warn(`expected-win lambda cache read failed: ${e.message}`);
+  }
+
+  const rows = [];
+  const cols = ['sharpFlowPicks', 'sharpFlowSpreads', 'sharpFlowTotals'];
+  try {
+    for (const col of cols) {
+      const snap = await db.collection(col)
+        .where('date', '>=', EXP_WIN_LOOKBACK_FROM)
+        .where('date', '<', asOfDate)
+        .get();
+      for (const doc of snap.docs) {
+        const data = doc.data() || {};
+        for (const sd of Object.values(data.sides || {})) {
+          if (!sd || sd.superseded) continue;
+          const units = Number(sd.finalUnits ?? 0);
+          if (!(units > 0)) continue;
+          if (sd.result?.tracked) continue;
+          const outcome = sd.result?.outcome || sd.outcome;
+          if (outcome !== 'WIN' && outcome !== 'LOSS') continue;
+          const odds = sd.peak?.odds ?? sd.lock?.odds ?? null;
+          const impl = americanOddsImpliedWr(odds);
+          if (impl == null) continue;
+          rows.push({
+            won: outcome === 'WIN' ? 1 : 0,
+            impl,
+            units,
+            tape: sd.v8_tapeScore ?? null,
+            edge: sd.v8_winnerAlignEdge ?? null,
+          });
+        }
+      }
+    }
+  } catch (e) {
+    console.warn(`expected-win lambda scan failed: ${e.message}`);
+    return frozen;
+  }
+
+  const fit = fitExpWinLambda(rows);
+  const out = {
+    lambda: fit.lambda,
+    n: fit.n,
+    w: fit.w,
+    wr: fit.wr,
+    impl: fit.impl,
+    source: fit.source,
+    lookbackFrom: EXP_WIN_LOOKBACK_FROM,
+  };
+  if (!dryRun) {
+    try {
+      await db.collection(EXP_WIN_STATE_COLLECTION).doc(EXP_WIN_STATE_DOC_ID).set({
+        lambda: out.lambda,
+        rawLambda: fit.rawLambda,
+        n: out.n,
+        w: out.w,
+        wr: out.wr,
+        impl: out.impl,
+        source: out.source,
+        lookbackFrom: out.lookbackFrom,
+        frozenFallback: EXP_WIN_LAMBDA_FROZEN,
+        asOfDate,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true });
+    } catch (e) {
+      console.warn(`expected-win lambda cache write failed: ${e.message}`);
     }
   }
   return out;
@@ -2226,6 +2359,7 @@ async function createMissingLockedPicks({
   clvLedger = null,
   qConvMuteThr = null,
   pathBlendPriors = null,
+  expWinPriors = null,
 }) {
   const created = []; // { col, docId, side, ags, agsTotal }
   const skipped = []; // { reason, ... }
@@ -2982,6 +3116,8 @@ async function createMissingLockedPicks({
           blendTier: hcStakeTierCreate,
           pathBlendPriors,
           sideOdds: odds ?? null,
+          stakeUnits: peakUnitsApplied,
+          expWinPriors,
         });
         v8Stamps.v8_winnerAlignAction = null;
         v8Stamps.v8_clvTop2Action = isTapeSizingLive(TARGET_DATE) ? 'PASS' : clvPolicyCreate.action;
@@ -2999,6 +3135,16 @@ async function createMissingLockedPicks({
         if (isTapeSizingLive(TARGET_DATE) && Number.isFinite(clvPolicyCreate.unitsPrePolicy)) {
           v8Stamps.v8_unitsPreTape = clvPolicyCreate.unitsPrePolicy;
         }
+        const expWinCreate = computeExpectedWin({
+          odds: odds ?? null,
+          units: peakUnitsApplied,
+          tape: tapeCreate,
+          edge: waCreateEdge?.edge ?? null,
+          lambda: expWinPriors?.lambda ?? EXP_WIN_LAMBDA_FROZEN,
+          lambdaN: expWinPriors?.n ?? null,
+          source: expWinPriors?.source ?? 'frozen',
+        });
+        if (expWinCreate) applyExpectedWinStamps(v8Stamps, expWinCreate);
       }
       if (flinchFailOpenPolicyCreate?.mutedBy) {
         v8Stamps.mutedBy = flinchFailOpenPolicyCreate.mutedBy;
@@ -3197,7 +3343,7 @@ function spreadLockLooksLikeMlBleed(lockOdds, peakOdds, spreadOdds, mlOdds) {
   return false;
 }
 
-function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn, walletPriorStatsFn, gameMeta = null, sportWinnerBoards = null, clvLedger = null, qConvMuteThr = null, pathBlendPriors = null }) {
+function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force, agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn, walletPriorStatsFn, gameMeta = null, sportWinnerBoards = null, clvLedger = null, qConvMuteThr = null, pathBlendPriors = null, expWinPriors = null }) {
   const pickDate = pick.date || TARGET_DATE;
   const sport = pick.sport;
   const lockStage = sd.lockStage || null;
@@ -3294,6 +3440,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       blendTier: sd.v8_hcStakeTier || null,
       pathBlendPriors,
       sideOdds: metaOdds,
+      stakeUnits: sd.finalUnits ?? 0,
+      expWinPriors,
     });
     // Diagnostic score on this side (even if never staked) — analysis key.
     if (skillScoreV12 != null) {
@@ -3304,6 +3452,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     const drifted = skillStampsDrifted(sd, skill, {
       qConv: qConvMeta,
       blendWr: patch.v8_blendWr,
+      expWin: patch.v8_expWin,
     }) || scoreDrift;
     if (!drifted) {
       return { skipped: true, reason: 'not_locked_or_lean_no_skill_drift' };
@@ -4514,6 +4663,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       blendTier: hcStakeTier,
       pathBlendPriors,
       sideOdds,
+      stakeUnits: finalUnitsApplied,
+      expWinPriors,
     });
     patch.v8_winnerAlignAction = winnerAlignAction;
     patch.v8_clvTop2Action = clvPolicy.action;
@@ -4526,6 +4677,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       foolsGoldAction: foolsGoldPolicy?.action ?? null,
       flinchFailOpenAction: flinchFailOpenPolicy?.action ?? null,
       blendWr: patch.v8_blendWr,
+      expWin: patch.v8_expWin,
     })
         || (edgeNetSizePolicy && (sd.v8_edgeNetSizeAction || null) !== edgeNetSizePolicy.action)
         || (edgeBandSizePolicy && (sd.v8_edgeBandAction || null) !== edgeBandSizePolicy.action)
@@ -5359,6 +5511,15 @@ async function main() {
     + ` · baseWr=${(100 * pathBlendPriors.baseWr).toFixed(1)}%`
     + ` · lookback≥${pathBlendPriors.lookbackFrom} · weights path=${0.35}/edge=${0.65}`,
   );
+  console.log(`Loading expected-win λ (${EXP_WIN_STATE_COLLECTION}/${EXP_WIN_STATE_DOC_ID})…`);
+  const expWinPriors = await loadExpectedWinLambda(db, TARGET_DATE, { dryRun: DRY_RUN });
+  console.log(
+    `expected-win λ: ${expWinPriors.lambda.toFixed(4)} · source=${expWinPriors.source}`
+    + ` · hot n=${expWinPriors.n}`
+    + (expWinPriors.wr != null ? ` · hot WR ${(100 * expWinPriors.wr).toFixed(1)}%` : '')
+    + (expWinPriors.impl != null ? ` vs impl ${(100 * expWinPriors.impl).toFixed(1)}%` : '')
+    + ` · lookback≥${expWinPriors.lookbackFrom} · frozen=${EXP_WIN_LAMBDA_FROZEN}`,
+  );
 
   // Load today's positions (live wallet activity) from Firestore.
   // (Could also read from public/sharp_positions.json but Firestore stays
@@ -5537,7 +5698,7 @@ async function main() {
           sd, side: sideKey, pick, mkt, group, walletProfiles, now,
           force: FORCE,
           agsCalibration, isProvenFn, isHcEligibleFn, walletStatsFn, walletPriorStatsFn,
-          gameMeta, sportWinnerBoards, clvLedger, qConvMuteThr, pathBlendPriors,
+          gameMeta, sportWinnerBoards, clvLedger, qConvMuteThr, pathBlendPriors, expWinPriors,
         });
         if (result.skipped) {
           if (result.reason === 'not_locked_or_lean' || result.reason === 'not_locked_or_lean_no_skill_drift') {
@@ -5788,6 +5949,7 @@ async function main() {
     clvLedger,
     qConvMuteThr,
     pathBlendPriors,
+    expWinPriors,
   });
   stats.created_missing = cm.created.length;
   if (cm.created.length === 0) {
