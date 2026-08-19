@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-08-19T17:16:52.348Z",
-  "elapsedSec": 19.1,
+  "scannedAt": "2026-08-19T17:22:00.886Z",
+  "elapsedSec": 21.1,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 42,
   "summary": {
     "total": 246,
     "coveredByMain": 20,
-    "recovered": 20,
-    "recoveredPositions": 95,
-    "noPositions": 206,
+    "recovered": 21,
+    "recoveredPositions": 96,
+    "noPositions": 205,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -17,7 +17,7 @@
       "spread": 2,
       "total": 12,
       "dropped_shadow_gate": 28,
-      "dropped_excluded": 41,
+      "dropped_excluded": 42,
       "dropped_duplicate": 0
     }
   },
@@ -604,8 +604,24 @@
       "tier": "CONFIRMED",
       "name": "0x2c335066FE58fe9237c3d3Dc7b275C2a034a0563-1759935795465",
       "sports": "NBA,NHL",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x2c335066fe58fe9237c3d3dc7b275c2a034a0563"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x2c335066fe58fe9237c3d3dc7b275c2a034a0563",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 29538,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "atl_min",
+          "marketType": "total",
+          "side": "under",
+          "invested": 9000,
+          "entryLine": 8.5,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "4a752c",
@@ -1099,7 +1115,7 @@
           "gameKey": "min_gsv",
           "marketType": "total",
           "side": "under",
-          "invested": 5985,
+          "invested": 6127,
           "entryLine": 164.5,
           "passesShadow": true
         },
@@ -1267,7 +1283,7 @@
           "gameKey": "atl_min",
           "marketType": "total",
           "side": "over",
-          "invested": 63513,
+          "invested": 77054,
           "entryLine": 8.5,
           "passesShadow": true
         },
@@ -2215,7 +2231,7 @@
           "gameKey": "lv_hou",
           "marketType": "ml",
           "side": "away",
-          "invested": 1685,
+          "invested": 1719,
           "entryLine": null,
           "passesShadow": false
         },
