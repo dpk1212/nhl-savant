@@ -25,12 +25,21 @@ function formatLockCountdown(ms) {
 }
 
 /** Human reason a 0u / TRACKED card is not a ticket — audit + tooltip. */
-function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, stakePath } = {}) {
-  const pre = Number.isFinite(unitsPreTape) && unitsPreTape > 0
-    ? `${unitsPreTape % 1 === 0 ? unitsPreTape.toFixed(0) : unitsPreTape.toFixed(1)}u → 0u`
+function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFailOpen, stakePath } = {}) {
+  const preU = Number.isFinite(unitsPreFlinchFailOpen) && unitsPreFlinchFailOpen > 0
+    ? unitsPreFlinchFailOpen
+    : (Number.isFinite(unitsPreTape) && unitsPreTape > 0 ? unitsPreTape : null);
+  const pre = preU != null
+    ? `${preU % 1 === 0 ? preU.toFixed(0) : preU.toFixed(1)}u → 0u`
     : null;
   if (mutedBy === 'tape-weak' || tapeAction === 'mute' || tapeAction === 'MUTE') {
     return pre ? `Tape mute · ${pre}` : 'Tape mute — weak EDGE / CLV';
+  }
+  if (mutedBy === 'believed-cut') {
+    return pre ? `Believed-cut leftover · ${pre}` : 'Believed-cut leftover — clamped under 4u';
+  }
+  if (mutedBy === 'fail-open-sub4') {
+    return pre ? `Tape fail-open · ${pre}` : 'Tape fail-open — sub-4 cancelled';
   }
   if (mutedBy === 'ags-quality-veto') return 'AGS quality veto — never sized';
   if (stakePath === 'FADE') return 'FADE tier — no ticket';
@@ -2381,6 +2390,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
     mutedBy: f.mutedBy,
     tapeAction: f.tapeAction,
     unitsPreTape: f.unitsPreTape,
+    unitsPreFlinchFailOpen: f.unitsPreFlinchFailOpen,
     stakePath: f.stakePath,
   });
   const ticketFrozen = Number.isFinite(f.commenceMs)

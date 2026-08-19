@@ -1682,6 +1682,9 @@ export function mapLockedPickToCardFixture(pick, {
     unitsPreTape: Number.isFinite(pick.unitsPreTape) ? pick.unitsPreTape
       : Number.isFinite(pick.v8_unitsPreTape) ? pick.v8_unitsPreTape
       : null,
+    unitsPreFlinchFailOpen: Number.isFinite(pick.unitsPreFlinchFailOpen) ? pick.unitsPreFlinchFailOpen
+      : Number.isFinite(pick.v8_unitsPreFlinchFailOpen) ? pick.v8_unitsPreFlinchFailOpen
+      : null,
     marketAgreement: sma,
     marketSignals,
     pinnMax: sma?.path?.maxNow

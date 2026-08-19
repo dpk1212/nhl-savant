@@ -1078,6 +1078,83 @@ export function applyFoolsGoldMuteOverlay({
   };
 }
 
+// ── Flinch / fail-open leftover mute (final 0u cancel) ──────────────────────
+// 2026-08-19+: after tape / skill floors / qConv / FOOLS / Q1+UNOPP restore.
+// Full-cancel two leftover classes that already disagreed with published size:
+//   1. Believed-then-cut — still <4u AND (native-4u path at plus-money
+//      oddsCap OR tape BOOST leftover OR EDGE≥10 leftover)
+//   2. sub-4 FAIL_OPEN — tape never scored, path units published anyway
+// Hard fences (zero impact on the rest of the book):
+//   • units ≥ 4 → EXEMPT (4u+ BOOST/E≥10/FAIL_OPEN TOP never touched)
+//   • no matching flag → HOLD at the exact incoming units
+//   • pre-cutover → EXEMPT
+// Q1/UNOPP floors run BEFORE this overlay so they cannot revive a stub.
+export const FLINCH_FAIL_OPEN_MUTE_FROM = '2026-08-19';
+export const FLINCH_FAIL_OPEN_NATIVE4_TIERS = new Set(['SUPER', 'TOP', 'TOP+', 'RANK']);
+export const FLINCH_MUTED_BY = 'believed-cut';
+export const FAIL_OPEN_SUB4_MUTED_BY = 'fail-open-sub4';
+
+export function isFlinchFailOpenMuteLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= FLINCH_FAIL_OPEN_MUTE_FROM;
+}
+
+function normalizeTapeAction(tapeAction) {
+  if (tapeAction == null || tapeAction === '') return '';
+  return String(tapeAction).trim().toUpperCase().replace(/-/g, '_');
+}
+
+/**
+ * Last-step leftover mute. Never changes units unless a flag matches and
+ * published size is still under 4u.
+ */
+export function applyFlinchFailOpenMuteOverlay({
+  units,
+  odds = null,
+  edge = null,
+  tapeAction = null,
+  tier = null,
+  pickDate = null,
+} = {}) {
+  const pre = Number.isFinite(units) ? Math.max(0, units) : 0;
+  const out = (action, reason = null) => ({
+    units: pre,
+    action,
+    reason,
+    mutedBy: null,
+    unitsPrePolicy: pre,
+    flags: [],
+  });
+  if (!(pre > 0)) {
+    return {
+      units: 0, action: 'PASS', reason: null, mutedBy: null, unitsPrePolicy: pre, flags: [],
+    };
+  }
+  if (!isFlinchFailOpenMuteLive(pickDate)) return out('EXEMPT', 'pre_cutover');
+  if (pre >= 4) return out('EXEMPT', 'units_ge_4');
+
+  const act = normalizeTapeAction(tapeAction);
+  const flags = [];
+  if (act === 'FAIL_OPEN') flags.push('fail_open_sub4');
+  const native4 = FLINCH_FAIL_OPEN_NATIVE4_TIERS.has(tier);
+  const plusMoney = Number.isFinite(Number(odds)) && Number(odds) > 120;
+  if (native4 && plusMoney) flags.push('odds_capped_native4');
+  if (act === 'BOOST') flags.push('tape_boost_sub4');
+  if (edge != null && Number.isFinite(Number(edge)) && Number(edge) >= BOTH_E10_EDGE_MIN) {
+    flags.push('edge_ge10_sub4');
+  }
+  if (!flags.length) return out('HOLD', null);
+
+  const failOpen = flags.includes('fail_open_sub4');
+  return {
+    units: 0,
+    action: 'MUTE',
+    reason: flags.join('+'),
+    mutedBy: failOpen ? FAIL_OPEN_SUB4_MUTED_BY : FLINCH_MUTED_BY,
+    unitsPrePolicy: pre,
+    flags,
+  };
+}
+
 // ── Path × EDGE blended expected win rate (display / calibration) ───────────
 // logit(p*) = wp·logit(pathWR) + we·logit(meanFor)
 // Path WR = expanding empirical WR of prior graded staked same tier (all sports).

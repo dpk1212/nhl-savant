@@ -1,7 +1,7 @@
 # Skill features — EDGE · netCLV · Tape (analysis + sizing stamps)
 
-_Status: **LIVE** · schema `v8_skillFeatureVersion = 11` from **2026-08-05**_  
-_Code: `scripts/syncPickStateAuthoritative.js` (`buildSkillFeatureBundle` / `applySkillFeatureStamps` / EDGE abs / qConv mute / FOOLS-gold mute / path×EDGE blend) · formulas: `src/lib/walletClvSkill.js`_  
+_Status: **LIVE** · schema `v8_skillFeatureVersion = 13` from **2026-08-19**_  
+_Code: `scripts/syncPickStateAuthoritative.js` (`buildSkillFeatureBundle` / `applySkillFeatureStamps` / EDGE abs / qConv mute / FOOLS-gold mute / flinch leftover mute / path×EDGE blend) · formulas: `src/lib/walletClvSkill.js`_  
 _Sizing stack: [`STAKE_PATHS_AND_SIZING.md`](./STAKE_PATHS_AND_SIZING.md)_
 
 These metrics are product core — Path C door, TOP mute, EDGE band size on A/C, tape, **qConv Q1 mute**, and **FOOLS-gold mute** all consume them. Every pre–T-15 sync stamps them so you can measure prediction / PnL **without rebuilding** from positions.
@@ -41,6 +41,7 @@ qConv  = Σ sizeRatio×(WR−50) FOR − Σ sizeRatio×(WR−50) AG
 | **CONFIRMED-Q1 promote** | 2026-08-08+: ≥1 FOR CONFIRMED × flatDollar Q1 × **sport-local** size≥0.5× → **2u** (3u if size≥1×) · opposed OK · hard floor after mutes · stamp `v8_confirmedQ1Promote` |
 | **CONFIRMED-UNOPP promote** | 2026-08-08+: after SHARP/Q1 · still 0u · ≥1 CONFIRMED FOR **sport-local** size≥0.5× · zero CONFIRMED AG → **1u** · hard floor after mutes (2026-08-16) · stamp `v8_confirmedUnoppPromote` |
 | **FOOLS-gold mute** | 2026-08-05+: after qConv · Path A/B/C + CONFIRMED-UNOPP · best proven FOR = **FLAT** → **0u MUTED** · fail-open if bestFOR missing · DISSENT/manual exempt |
+| **Flinch / fail-open leftover mute** | 2026-08-19+: after Q1/UNOPP restore · still &lt;4u AND (odds-capped native-4u **or** tape BOOST **or** E≥10 **or** FAIL_OPEN) → **0u** · 4u+ never touched · `mutedBy=believed-cut` \| `fail-open-sub4` |
 
 ---
 
@@ -82,6 +83,8 @@ Written on every **LOCKED / LEAN** side each pre–T-15 cycle, and on any other 
 | `v8_nForProven` | count of proven (CONFIRMED/FLAT) FOR wallets |
 | `v8_foolsGoldAction` | `MUTE` \| `HOLD` \| `FAIL_OPEN` \| `EXEMPT` \| `PASS` |
 | `v8_unitsPreFoolsGold` | units entering FOOLS-gold mute |
+| `v8_flinchFailOpenAction` | `MUTE` \| `HOLD` \| `EXEMPT` \| `PASS` |
+| `v8_unitsPreFlinchFailOpen` | units entering flinch / fail-open leftover mute |
 | `v8_confirmedQ1Promote` | `true` when CONFIRMED-Q1 floor/promote filled this side @ 2–3u |
 | `v8_confirmedUnoppPromote` | `true` when CONFIRMED-UNOPP rescue filled this side @ 1u |
 | `v8_blendWr` | path×EDGE expected WR % (logit 0.35/0.65) — tracking only |
@@ -90,7 +93,7 @@ Written on every **LOCKED / LEAN** side each pre–T-15 cycle, and on any other 
 | `v8_blendPathN` / `v8_blendPathSource` | prior n · `tier` \| `all_staked` \| `base` |
 | `v8_mktImpliedWr` | vig-in implied WR % from side odds |
 | `v8_skillAgsV12` | AGS v12 score at stamp time |
-| `v8_skillFeatureVersion` | schema version (**11**) |
+| `v8_skillFeatureVersion` | schema version (**13**) |
 | `v8_skillEvaluatedAt` | ms timestamp of stamp |
 
 Frozen at **T-15** (last write sticks). **COMPLETED** docs never rewritten.
