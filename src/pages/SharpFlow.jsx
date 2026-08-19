@@ -57,6 +57,7 @@ import {
 import { sportBookForDisplay } from '../lib/walletSportBook.js';
 import { passesSizeSkillLiveGate } from '../lib/sizeSkillRescue.js';
 import { stakeSizeRatio } from '../lib/sizeRatioBands.js';
+import { isOnTodaysEtSlate } from '../lib/slateDate.js';
 // Browser-side mirror of scripts/syncPickStateAuthoritative.js::buildWalletPriorStatsFn
 // — feeds aggregateSideV12 the per-sport prior stats (whitelist tier,
 // historical pick count, flat ROI) that the v12 quality calc weighs. Used
@@ -3504,6 +3505,14 @@ function buildGameData(polyData, kalshiData) {
     for (const key of allKeys) {
       const poly = polyGames[key];
       const kalshi = kalshiGames[key];
+
+      // MMA Odds API is the next card, not today's slate. Hide future UFC
+      // even if a stale polymarket_data.json still lists Saturday fights.
+      if (sport === 'UFC') {
+        const fightIso = poly?.commence || kalshi?.commence || null;
+        if (fightIso && !isOnTodaysEtSlate(fightIso)) continue;
+        if (!fightIso && poly?.polyGameDate && poly.polyGameDate !== todayET()) continue;
+      }
 
       const awayProb = poly?.awayProb ?? kalshi?.awayProb ?? null;
       const homeProb = poly?.homeProb ?? kalshi?.homeProb ?? null;

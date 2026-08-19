@@ -31,6 +31,7 @@ import {
 } from './lib/nflTeams.js';
 import { isNonFullGameTotalMarket } from './lib/totalMarketFilter.js';
 import { allocateScheduleKey, pickScheduleKeyByStart } from './lib/doubleheaderKey.js';
+import { isOnTodaysEtSlate } from '../src/lib/slateDate.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -639,7 +640,9 @@ async function loadTodaysSchedule(cbbMap) {
   }
 
   // UFC: Odds API key is mma_mixed_martial_arts (includes non-UFC orgs).
-  // Polymarket gate (isMainUFCFightSlug) keeps us on UFC fight cards only.
+  // That endpoint returns the NEXT fight card (often days out), not today.
+  // Keep only ET-today (or still-in-progress) fights. Polymarket slug gate
+  // (isMainUFCFightSlug) still drops method/round props + futures.
   const validUFC = new Set();
   if (ODDS_API_KEY) {
     try {
@@ -647,17 +650,26 @@ async function loadTodaysSchedule(cbbMap) {
       const res = await fetch(url);
       if (res.ok) {
         const games = await res.json();
+        let skippedFuture = 0;
         for (const g of games) {
           const gk = makeUFCGameKey(g.away_team, g.home_team);
-          if (gk) {
-            validUFC.add(gk);
-            if (g.commence_time && !commenceTimes[`UFC:${gk}`]) commenceTimes[`UFC:${gk}`] = g.commence_time;
-          } else {
+          if (!gk) {
             console.warn(`UFC fighter resolution miss: "${g.away_team}" / "${g.home_team}"`);
+            continue;
           }
+          if (!isOnTodaysEtSlate(g.commence_time)) {
+            skippedFuture++;
+            continue;
+          }
+          validUFC.add(gk);
+          if (g.commence_time && !commenceTimes[`UFC:${gk}`]) commenceTimes[`UFC:${gk}`] = g.commence_time;
         }
         const remaining = res.headers.get('x-requests-remaining');
-        console.log(`📋 Today's UFC/MMA (Odds API): ${validUFC.size} fights [credits left: ${remaining}]`);
+        console.log(
+          `📋 Today's UFC/MMA (Odds API): ${validUFC.size} fights`
+          + (skippedFuture ? ` · skipped ${skippedFuture} future-card` : '')
+          + ` [credits left: ${remaining}]`,
+        );
       } else {
         console.warn(`Odds API UFC/MMA error: ${res.status}`);
       }
@@ -941,6 +953,13 @@ async function run() {
       // This event matches today but the previous didn't — replace it below
     } else if (polyGameDate && oddsGameDate && polyGameDate !== oddsGameDate) {
       continue; // wrong day — skip, wait for correct-day event
+    }
+
+    // UFC: Odds API MMA is a multi-day upcoming card. Even if Poly date
+    // matches Odds date (both Saturday), that is not "today".
+    if (sport === 'UFC') {
+      const fightIso = commenceTimes[`UFC:${key}`] || ev.startTime || null;
+      if (!isOnTodaysEtSlate(fightIso)) continue;
     }
 
     seenDates.set(key, polyGameDate);
