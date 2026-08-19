@@ -40,6 +40,7 @@ Thresholds ≈ June 15+ path-stamped p40 / p80.
 4. **EDGE band size on A/C** (2026-07-22+: mute E&lt;7 · ×0.75 on 7–10 · boost ≥10; legacy 07-20..21 mute&lt;5 · half 5–10) · else EDGE/net soft size  
 5. **Tape** mute / hold / boost (RANK mute-exempt)  
 6. Odds cap + global 6u inside tape boost  
+7. **2026-08-19+ leftover mute:** still &lt;4u after all dials + Q1/UNOPP restore, and (native-4u plus-money **or** BOOST leftover **or** E≥10 leftover **or** FAIL_OPEN) → **0u**. 4u+ never touched.  
 
 `v8_unitsPreTape` = units **after** EDGE band / soft size, **before** tape.
 

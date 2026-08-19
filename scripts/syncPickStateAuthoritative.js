@@ -98,6 +98,7 @@ import {
   applyBothE10TapeFloor,
   applyQConvMuteOverlay,
   applyFoolsGoldMuteOverlay,
+  applyFlinchFailOpenMuteOverlay,
   bestProvenForSide,
   computeConfirmedUnoppSized,
   computeConfirmedQ1Sized,
@@ -118,6 +119,7 @@ import {
   isBothE10TapeBoostLive,
   isQConvMuteLive,
   isFoolsGoldMuteLive,
+  isFlinchFailOpenMuteLive,
   isConfirmedUnoppPromoteLive,
   isConfirmedQ1PromoteLive,
   qConvMuteThresholdFromValues,
@@ -129,6 +131,7 @@ import {
   QCONV_STATE_DOC_ID,
   FOOLS_GOLD_MUTE_FROM,
   FOOLS_GOLD_EDGE_MIN,
+  FLINCH_FAIL_OPEN_MUTE_FROM,
   CONFIRMED_UNOPP_FROM,
   CONFIRMED_UNOPP_MIN_SIZE,
   CONFIRMED_UNOPP_UNITS,
@@ -1017,7 +1020,7 @@ function edgeNetGateBucket(edge, net, eThr = SHARP_EDGE_THR, nThr = SHARP_NET_TH
 }
 
 /** Skill-feature stamp schema version — bump when fields/thresholds change. */
-const SKILL_FEATURE_VERSION = 12; // v12: EDGE sport WR 70% Source B / 30% Source A (2026-08-13+)
+const SKILL_FEATURE_VERSION = 13; // v13: flinch / fail-open leftover mute (2026-08-19+)
 
 /**
  * Full EDGE / netCLV / Tape bundle for analysis without rebuild.
@@ -1081,6 +1084,8 @@ function applySkillFeatureStamps(target, bundle, now, {
   nForProven = null,
   foolsGoldAction = null,
   unitsPreFoolsGold = null,
+  flinchFailOpenAction = null,
+  unitsPreFlinchFailOpen = null,
   blendTier = null,
   pathBlendPriors = null,
   sideOdds = null,
@@ -1151,6 +1156,10 @@ function applySkillFeatureStamps(target, bundle, now, {
   if (unitsPreFoolsGold != null && Number.isFinite(unitsPreFoolsGold)) {
     target.v8_unitsPreFoolsGold = unitsPreFoolsGold;
   }
+  if (flinchFailOpenAction != null) target.v8_flinchFailOpenAction = flinchFailOpenAction;
+  if (unitsPreFlinchFailOpen != null && Number.isFinite(unitsPreFlinchFailOpen)) {
+    target.v8_unitsPreFlinchFailOpen = unitsPreFlinchFailOpen;
+  }
   // Path × EDGE expected WR (tracking only — no unit effect)
   const meanFor = wa?.meanFor ?? bundle.winnerAlign?.meanFor ?? null;
   const prior = resolvePathPriorWr(pathBlendPriors?.byTier, blendTier, {
@@ -1180,7 +1189,8 @@ function applySkillFeatureStamps(target, bundle, now, {
 }
 
 function skillStampsDrifted(sd, bundle, {
-  tapeAction = null, qConv = null, qConvAction = null, foolsGoldAction = null, blendWr = null,
+  tapeAction = null, qConv = null, qConvAction = null, foolsGoldAction = null,
+  flinchFailOpenAction = null, blendWr = null,
 } = {}) {
   if ((sd.v8_skillFeatureVersion || 0) !== SKILL_FEATURE_VERSION) return true;
   if (sd.v8_skillEvaluatedAt == null) return true;
@@ -1214,6 +1224,7 @@ function skillStampsDrifted(sd, bundle, {
   }
   if (qConvAction != null && (sd.v8_qConvAction || null) !== qConvAction) return true;
   if (foolsGoldAction != null && (sd.v8_foolsGoldAction || null) !== foolsGoldAction) return true;
+  if (flinchFailOpenAction != null && (sd.v8_flinchFailOpenAction || null) !== flinchFailOpenAction) return true;
   return false;
 }
 
@@ -2762,6 +2773,21 @@ async function createMissingLockedPicks({
         }
       }
 
+      // Flinch / fail-open leftover mute — LAST dial after Q1/UNOPP restore
+      // so those floors cannot revive a stub. 4u+ and unflagged tickets HOLD.
+      let flinchFailOpenPolicyCreate = null;
+      if (createV121Eligible && peakUnitsApplied > 0) {
+        flinchFailOpenPolicyCreate = applyFlinchFailOpenMuteOverlay({
+          units: peakUnitsApplied,
+          odds: odds ?? null,
+          edge: waCreateEdge?.edge ?? null,
+          tapeAction: clvPolicyCreate?.action ?? null,
+          tier: hcStakeTierCreate,
+          pickDate: TARGET_DATE,
+        });
+        peakUnitsApplied = flinchFailOpenPolicyCreate.units;
+      }
+
       // Determine team label for the side.
       //
       // For TOTAL picks: write the canonical "Over <line>" form ONLY when
@@ -2949,6 +2975,10 @@ async function createMissingLockedPicks({
           unitsPreFoolsGold: (foolsGoldPolicyCreate && Number.isFinite(foolsGoldPolicyCreate.unitsPrePolicy))
             ? foolsGoldPolicyCreate.unitsPrePolicy
             : null,
+          flinchFailOpenAction: flinchFailOpenPolicyCreate?.action ?? null,
+          unitsPreFlinchFailOpen: (flinchFailOpenPolicyCreate && Number.isFinite(flinchFailOpenPolicyCreate.unitsPrePolicy))
+            ? flinchFailOpenPolicyCreate.unitsPrePolicy
+            : null,
           blendTier: hcStakeTierCreate,
           pathBlendPriors,
           sideOdds: odds ?? null,
@@ -2970,7 +3000,9 @@ async function createMissingLockedPicks({
           v8Stamps.v8_unitsPreTape = clvPolicyCreate.unitsPrePolicy;
         }
       }
-      if (q1FlooredCreate || unoppFlooredCreate) {
+      if (flinchFailOpenPolicyCreate?.mutedBy) {
+        v8Stamps.mutedBy = flinchFailOpenPolicyCreate.mutedBy;
+      } else if (q1FlooredCreate || unoppFlooredCreate) {
         if (v8Stamps.mutedBy != null) delete v8Stamps.mutedBy;
       } else if (foolsGoldPolicyCreate?.mutedBy) {
         v8Stamps.mutedBy = foolsGoldPolicyCreate.mutedBy;
@@ -2981,7 +3013,10 @@ async function createMissingLockedPicks({
       }
       // Health stamp — gives the dashboard a non-undefined health.status
       // immediately. reconcileSide will overwrite next cycle (same shape).
-      const createSizeMuted = !q1FlooredCreate && !unoppFlooredCreate && (
+      const flinchMutedCreate = flinchFailOpenPolicyCreate?.action === 'MUTE'
+        && Number.isFinite(flinchFailOpenPolicyCreate.unitsPrePolicy)
+        && flinchFailOpenPolicyCreate.unitsPrePolicy > 0;
+      const createSizeMuted = flinchMutedCreate || (!q1FlooredCreate && !unoppFlooredCreate && (
         (foolsGoldPolicyCreate?.action === 'MUTE'
           && Number.isFinite(foolsGoldPolicyCreate.unitsPrePolicy)
           && foolsGoldPolicyCreate.unitsPrePolicy > 0)
@@ -2989,10 +3024,11 @@ async function createMissingLockedPicks({
           && Number.isFinite(qConvPolicyCreate.unitsPrePolicy)
           && qConvPolicyCreate.unitsPrePolicy > 0)
         || (!!clvPolicyCreate.mutedBy)
-      );
+      ));
       const healthStamp = {
         status: createSizeMuted ? 'MUTED' : 'ACTIVE',
         reasons: [
+          ...(flinchFailOpenPolicyCreate?.reason ? [flinchFailOpenPolicyCreate.reason] : []),
           ...(foolsGoldPolicyCreate?.reason ? [foolsGoldPolicyCreate.reason] : []),
           ...(qConvPolicyCreate?.reason ? [qConvPolicyCreate.reason] : []),
           ...(clvPolicyCreate.reason ? [clvPolicyCreate.reason] : []),
@@ -4018,6 +4054,23 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     }
   }
 
+  // ─── Flinch / fail-open leftover mute (after Q1/UNOPP restore) ────────
+  // Believed-then-cut leftovers + sub-4 FAIL_OPEN → 0u. 4u+ never touched.
+  // Manual stake exempt. Runs last so Q1/UNOPP floors cannot revive a stub.
+  let flinchFailOpenPolicy = null;
+  const skipManualFlinch = Number.isFinite(sd.manualStake) && sd.manualStake > 0;
+  if (v121Eligible && finalUnitsApplied > 0 && !skipManualFlinch) {
+    flinchFailOpenPolicy = applyFlinchFailOpenMuteOverlay({
+      units: finalUnitsApplied,
+      odds: sideOdds,
+      edge: winnerAlign?.edge ?? null,
+      tapeAction: tapePolicy?.action ?? clvPolicy?.action ?? null,
+      tier: hcStakeTier,
+      pickDate,
+    });
+    finalUnitsApplied = flinchFailOpenPolicy.units;
+  }
+
   // ─── lockStage promote/demote — v12 gate ──────────────────────────────
   // Ship floor: v12 score > 0 (the mute boundary), OR a CONFIRMED-Q1 /
   // CONFIRMED-UNOPP rescue that forced through an AGS mute.
@@ -4074,6 +4127,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (tapePolicy?.reason && !reasons.includes(tapePolicy.reason)) reasons.push(tapePolicy.reason);
   if (qConvPolicy?.reason && !reasons.includes(qConvPolicy.reason)) reasons.push(qConvPolicy.reason);
   if (foolsGoldPolicy?.reason && !reasons.includes(foolsGoldPolicy.reason)) reasons.push(foolsGoldPolicy.reason);
+  if (flinchFailOpenPolicy?.reason && !reasons.includes(flinchFailOpenPolicy.reason)) reasons.push(flinchFailOpenPolicy.reason);
   // Preserve diagnostic-only badge signals from prior cycles (they don't
   // change status but the UI uses them for chip rendering).
   if (sd.health?.reasons) {
@@ -4090,10 +4144,14 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const foolsMuted = foolsGoldPolicy?.action === 'MUTE'
     && Number.isFinite(foolsGoldPolicy.unitsPrePolicy)
     && foolsGoldPolicy.unitsPrePolicy > 0;
+  const flinchMuted = flinchFailOpenPolicy?.action === 'MUTE'
+    && Number.isFinite(flinchFailOpenPolicy.unitsPrePolicy)
+    && flinchFailOpenPolicy.unitsPrePolicy > 0;
   // Q1 / UNOPP hard floor wins — do not leave health MUTED when units were restored.
-  const sizeMuted = !confirmedQ1Floored && !confirmedUnoppFloored && (foolsMuted || qConvMuted || (tapeSizingLive
+  // Flinch mute runs AFTER those floors, so it still wins if it cancelled the restore.
+  const sizeMuted = flinchMuted || (!confirmedQ1Floored && !confirmedUnoppFloored && (foolsMuted || qConvMuted || (tapeSizingLive
     ? (tapePolicy?.action === 'MUTE' && unitsBeforeClv > 0)
-    : (clvPolicy.action === 'CANCEL' && unitsBeforeClv > 0)));
+    : (clvPolicy.action === 'CANCEL' && unitsBeforeClv > 0))));
   const healthStatusOut = sizeMuted
     ? 'MUTED'
     : appliedStatus;
@@ -4127,7 +4185,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const TAPE_MUTE_VALUES = new Set(['tape-weak']);
   const QCONV_MUTE_VALUES = new Set(['qconv-q1']);
   const FOOLS_MUTE_VALUES = new Set(['fools-gold-flat']);
-  if (confirmedQ1Floored || confirmedUnoppFloored) {
+  const FLINCH_MUTE_VALUES = new Set(['believed-cut', 'fail-open-sub4']);
+  if (flinchFailOpenPolicy?.mutedBy) {
+    patch.mutedBy = flinchFailOpenPolicy.mutedBy;
+  } else if (confirmedQ1Floored || confirmedUnoppFloored) {
     // Hard floor restored stake — clear any mute stamp so UI shows the ticket.
     if (sd.mutedBy != null || foolsGoldPolicy?.mutedBy || qConvPolicy?.mutedBy) {
       patch.mutedBy = admin.firestore.FieldValue.delete();
@@ -4148,7 +4209,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       || CLV_MUTE_VALUES.has(sd.mutedBy)
       || TAPE_MUTE_VALUES.has(sd.mutedBy)
       || QCONV_MUTE_VALUES.has(sd.mutedBy)
-      || FOOLS_MUTE_VALUES.has(sd.mutedBy)) {
+      || FOOLS_MUTE_VALUES.has(sd.mutedBy)
+      || FLINCH_MUTE_VALUES.has(sd.mutedBy)) {
     // Clear stale mute stamps when no current mute gate is firing.
     patch.mutedBy = admin.firestore.FieldValue.delete();
   }
@@ -4363,6 +4425,14 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       + `${foolsGoldPolicy.unitsPrePolicy}u → 0u (${hcStakeTier})`
     );
   }
+  if (flinchFailOpenPolicy?.action === 'MUTE') {
+    changes.push(
+      `FLINCH-MUTE: ${flinchFailOpenPolicy.reason} `
+      + `tape=${tapePolicy?.action || clvPolicy?.action || '—'} `
+      + `E=${winnerAlign?.edge == null ? '—' : Number(winnerAlign.edge).toFixed(1)} `
+      + `${flinchFailOpenPolicy.unitsPrePolicy}u → 0u (${hcStakeTier})`
+    );
+  }
   if (rankRescued) {
     changes.push(`RANK-RESCUE: 2-for-0 slice promoted HC-muted pick → ${RANK_RESCUE_UNITS}u`);
   }
@@ -4437,6 +4507,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       unitsPreFoolsGold: (foolsGoldPolicy && Number.isFinite(foolsGoldPolicy.unitsPrePolicy))
         ? foolsGoldPolicy.unitsPrePolicy
         : null,
+      flinchFailOpenAction: flinchFailOpenPolicy?.action ?? null,
+      unitsPreFlinchFailOpen: (flinchFailOpenPolicy && Number.isFinite(flinchFailOpenPolicy.unitsPrePolicy))
+        ? flinchFailOpenPolicy.unitsPrePolicy
+        : null,
       blendTier: hcStakeTier,
       pathBlendPriors,
       sideOdds,
@@ -4450,6 +4524,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       qConv: qConvLive,
       qConvAction: qConvPolicy?.action ?? null,
       foolsGoldAction: foolsGoldPolicy?.action ?? null,
+      flinchFailOpenAction: flinchFailOpenPolicy?.action ?? null,
       blendWr: patch.v8_blendWr,
     })
         || (edgeNetSizePolicy && (sd.v8_edgeNetSizeAction || null) !== edgeNetSizePolicy.action)
@@ -4459,7 +4534,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
           || (sd.v8_bothE10TapeMode || null) !== (bothE10Policy.mode || null)
         ))
         || (qConvPolicy && (sd.v8_qConvAction || null) !== qConvPolicy.action)
-        || (foolsGoldPolicy && (sd.v8_foolsGoldAction || null) !== foolsGoldPolicy.action)) {
+        || (foolsGoldPolicy && (sd.v8_foolsGoldAction || null) !== foolsGoldPolicy.action)
+        || (flinchFailOpenPolicy && (sd.v8_flinchFailOpenAction || null) !== flinchFailOpenPolicy.action)) {
       changes.push(
         `SKILL-FEATURES: E=${skillLive.edge == null ? '—' : Number(skillLive.edge).toFixed(1)} `
         + `net=${skillLive.netMeanPrior == null ? '—' : Number(skillLive.netMeanPrior).toFixed(1)} `
@@ -4470,7 +4546,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         + (qConvLive != null ? ` qConv=${Number(qConvLive).toFixed(1)}` : '')
         + (qConvPolicy?.action ? ` qConvAct=${qConvPolicy.action}` : '')
         + (bestForLive.tier ? ` bestFOR=${bestForLive.tier}` : '')
-        + (foolsGoldPolicy?.action ? ` foolsAct=${foolsGoldPolicy.action}` : ''),
+        + (foolsGoldPolicy?.action ? ` foolsAct=${foolsGoldPolicy.action}` : '')
+        + (flinchFailOpenPolicy?.action ? ` flinchAct=${flinchFailOpenPolicy.action}` : ''),
       );
     }
   }
@@ -5247,6 +5324,14 @@ async function main() {
     );
   } else {
     console.log(`FOOLS mute: not live before ${FOOLS_GOLD_MUTE_FROM} (TARGET_DATE=${TARGET_DATE})`);
+  }
+  if (isFlinchFailOpenMuteLive(TARGET_DATE)) {
+    console.log(
+      `Flinch/fail-open leftover mute LIVE: still <4u AND (odds-capped native-4u OR tape BOOST OR E≥10 OR FAIL_OPEN) → 0u`
+      + ` · from ${FLINCH_FAIL_OPEN_MUTE_FROM} · 4u+ never touched`,
+    );
+  } else {
+    console.log(`Flinch/fail-open leftover mute: not live before ${FLINCH_FAIL_OPEN_MUTE_FROM} (TARGET_DATE=${TARGET_DATE})`);
   }
   if (isConfirmedQ1PromoteLive(TARGET_DATE)) {
     console.log(
