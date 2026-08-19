@@ -1,7 +1,7 @@
 # Skill features — EDGE · netCLV · Tape (analysis + sizing stamps)
 
-_Status: **LIVE** · schema `v8_skillFeatureVersion = 15` from **2026-08-19**_  
-_Code: `scripts/syncPickStateAuthoritative.js` (`buildSkillFeatureBundle` / `applySkillFeatureStamps` / EDGE abs / qConv mute / FOOLS-gold mute / flinch leftover mute / path×EDGE blend / expected-win tracking / ticket EV + steam) · formulas: `src/lib/walletClvSkill.js`, `src/lib/expectedWin.js`, `src/lib/ticketTapeCapture.js`_  
+_Status: **LIVE** · schema `v8_skillFeatureVersion = 16` from **2026-08-19**_  
+_Code: `scripts/syncPickStateAuthoritative.js` (`buildSkillFeatureBundle` / `applySkillFeatureStamps` / EDGE abs / qConv mute / FOOLS-gold mute / flinch leftover mute / path×EDGE blend / expected-win tracking / ticket EV + steam lifecycle) · formulas: `src/lib/walletClvSkill.js`, `src/lib/expectedWin.js`, `src/lib/ticketTapeCapture.js`_  
 _Sizing stack: [`STAKE_PATHS_AND_SIZING.md`](./STAKE_PATHS_AND_SIZING.md)_
 
 These metrics are product core — Path C door, TOP mute, EDGE band size on A/C, tape, **qConv Q1 mute**, and **FOOLS-gold mute** all consume them. Every pre–T-15 sync stamps them so you can measure prediction / PnL **without rebuilding** from positions.
@@ -10,7 +10,7 @@ These metrics are product core — Path C door, TOP mute, EDGE band size on A/C,
 
 **Expected win** (`v8_expWin`) is **tracking only** (not on the card yet). Market implied + a shrunk log-odds bump when the ticket is **4u+ and (tape BOOST or EDGE ≥ 11)**. Path is not an input. `v8_expWinFrozen` always uses the pre-August λ (+3–4pp near a −140) so we can compare expanding vs conservative for a week.
 
-**Ticket EV + steam** (`v8_ticketEvPct`, `v8_steam`) is **tracking only**. Same numbers the Locked card paints: flagged ticket vs same-line no-vig fair, plus last-hour / since-open Pinnacle drop. Frozen at T-15. Does **not** size units.
+**Ticket EV + steam** (`v8_ticketEvPct`, `v8_steam`) is **tracking only**. Same numbers the Locked card paints: flagged ticket vs same-line no-vig fair, plus last-hour / since-open Pinnacle drop. Latest scalars freeze at T-15. The **lifecycle log** (`v8_ticketTapeLog`) keeps first / hourly / T-60 / T-15 / grade samples so steam and EV can be analyzed against W/L and CLV. Does **not** size units.
 
 ---
 
@@ -105,11 +105,12 @@ Written on every **LOCKED / LEAN** side each pre–T-15 cycle, and on any other 
 | `v8_ticketEvFair` / `v8_ticketEvOffer` | fair American · ticket American used for that EV |
 | `v8_steam` | compact steam object (`lastHourPct`, `sinceOpenPct`, `tier`, `goldConfirmed`, …) |
 | `v8_steamLastHourPct` / `v8_steamSinceOpenPct` / `v8_steamTier` | flat copies for queries |
+| `v8_ticketTapeLog` | compact lifecycle `[{ at, gate, hoursOut, evPct, fair, offer, lastHourPct, sinceOpenPct, tier }]`. Gates: `first` · `hourly` (≤1/UTC hour) · `t60` · `t15` · `grade`. Cap 24; named gates kept. Tracking only. |
 | `v8_skillAgsV12` | AGS v12 score at stamp time |
-| `v8_skillFeatureVersion` | schema version (**15**) |
+| `v8_skillFeatureVersion` | schema version (**16**) |
 | `v8_skillEvaluatedAt` | ms timestamp of stamp |
 
-Frozen at **T-15** (last write sticks). **COMPLETED** docs never rewritten.
+Frozen at **T-15** (last scalar write sticks). **COMPLETED** docs never rewritten. The lifecycle log is appended on each due gate until that freeze (Locked) or until `grade` (Action).
 
 ### 2) Both-sides sidecar (`agsBothSides`)
 
@@ -156,6 +157,22 @@ NEITHER → 0u
 (use v8_skillAgsV12 > 0 + path for door)
 ```
 
+**Ticket EV / steam path (v16+)**
+
+```
+log = sides.*.v8_ticketTapeLog   (Locked)  or  ticketTapeLog (Action)
+first = row where gate==first
+lock  = row where gate==t15   else last
+steam-on = tier in {steam, gold}
+
+group by steamOnFirst × steamOnLock
+→ W/L, ROI, mean CLV, dEvFirstToLock
+
+evLock quintile → W/L
+```
+
+Helper: `analyzeTicketTapeLog(log)` in `src/lib/ticketTapeCapture.js` (also § 5d in `dailyAgsUReport.js`).
+
 ---
 
 ## Pipeline (when written)
@@ -164,7 +181,8 @@ NEITHER → 0u
 2. Reconcile LOCKED/LEAN → restamp skill + sizing every cycle  
 3. Reconcile other existing sides → skill-only restamp  
 4. `agsBothSides` refresh → both poles skill + AGS/HC  
-5. T-15 → freeze all of the above  
+5. Ticket tape log appends `first` / `hourly` / `t60` / `t15` until freeze (Locked) or `grade` (Action)  
+6. T-15 → freeze scalars + leftover log  
 
 ---
 
@@ -177,6 +195,7 @@ NEITHER → 0u
 | **3** | **2026-07-19** | `v8_edgeNetSizeAction` / `v8_unitsPreEdgeNetSize` |
 | **14** | **2026-08-19** | `v8_expWin` / `v8_expWinFrozen` market-anchored expected WR (tracking only) |
 | **15** | **2026-08-19** | `v8_ticketEvPct` + `v8_steam` (card EV and Pinnacle steam, tracking only) |
+| **16** | **2026-08-19** | `v8_ticketTapeLog` lifecycle (first / hourly / t60 / t15 / grade) |
 
 ---
 
@@ -184,4 +203,4 @@ NEITHER → 0u
 
 - [`STAKE_PATHS_AND_SIZING.md`](./STAKE_PATHS_AND_SIZING.md) — full grading/staking/sizing stack  
 - [`TAPE_SIZING.md`](./TAPE_SIZING.md) — tape mute/boost + RANK exempt  
-- `scripts/dailyAgsUReport.js` — § 5e / § 5f skill impact  
+- `scripts/dailyAgsUReport.js` — § 5e / § 5f skill impact · § 5d ticket EV/steam lifecycle  

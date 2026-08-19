@@ -26,6 +26,7 @@ import {
 } from './lib/ufcFighters.js';
 import { resolveWNBATeam, wnbaTeamsMatch } from './lib/wnbaTeams.js';
 import { resolveNFLTeam, nflTeamsMatch } from './lib/nflTeams.js';
+import { captureTicketTape, applyActionTicketTape, hoursUntilMs } from '../src/lib/ticketTapeCapture.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '../public');
@@ -1046,6 +1047,27 @@ async function main() {
         `Invested: $${pos.invested} | P&L: $${settledPnl}` +
         (clv != null ? ` | CLV: ${clv > 0 ? '+' : ''}${clv}%` : ''));
 
+      const tapeMkt = String(pos.marketType || 'ML').toUpperCase() === 'SPREAD' ? 'spread'
+        : String(pos.marketType || 'ML').toUpperCase() === 'TOTAL' ? 'total'
+          : 'ml';
+      const tapeLine = Number.isFinite(Number(pos.entryLine)) ? Number(pos.entryLine)
+        : (Number.isFinite(Number(line)) ? Number(line) : null);
+      const tapeOffer = Number.isFinite(Number(pos.ticketEvOffer)) ? Number(pos.ticketEvOffer)
+        : (Number.isFinite(Number(pos.bestRetailOdds)) ? Number(pos.bestRetailOdds)
+          : (Number.isFinite(Number(pos.pinnacleOdds)) ? Number(pos.pinnacleOdds) : null));
+      const gradeTape = applyActionTicketTape({}, captureTicketTape({
+        pinnGame: pinnGame || null,
+        marketType: tapeMkt,
+        sideNorm: pos.side,
+        line: tapeLine,
+        offerOdds: tapeOffer,
+        commenceMs: pos.commenceTime,
+      }), {
+        existingLog: pos.ticketTapeLog,
+        hoursUntilGame: hoursUntilMs(pos.commenceTime),
+        isGrade: true,
+      });
+
       batch.update(doc.ref, {
         status: 'GRADED',
         result: outcome,
@@ -1055,6 +1077,11 @@ async function main() {
         settledPrice,
         closingPinnacleOdds,
         clv,
+        ticketTapeLog: gradeTape.ticketTapeLog,
+        ticketEvPct: gradeTape.ticketEvPct,
+        ticketEvFair: gradeTape.ticketEvFair,
+        ticketEvOffer: gradeTape.ticketEvOffer,
+        steam: gradeTape.steam,
         gradedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
       batchOps++;

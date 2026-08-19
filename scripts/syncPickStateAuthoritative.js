@@ -158,7 +158,11 @@ import { loadWalletProfilesMap } from './lib/loadWalletProfiles.js';
 import { acceptFullGameTotalPosition } from './lib/totalMarketFilter.js';
 import { passesSizeSkillLiveGate } from '../src/lib/sizeSkillRescue.js';
 import { resolveInstrument, ticketAmerican } from '../src/lib/ticketInstrument.js';
-import { captureTicketTape, applyTicketTapeStamps } from '../src/lib/ticketTapeCapture.js';
+import {
+  captureTicketTape,
+  applyTicketTapeStamps,
+  hoursUntilMs,
+} from '../src/lib/ticketTapeCapture.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '../public');
@@ -1030,7 +1034,7 @@ function edgeNetGateBucket(edge, net, eThr = SHARP_EDGE_THR, nThr = SHARP_NET_TH
 }
 
 /** Skill-feature stamp schema version — bump when fields/thresholds change. */
-const SKILL_FEATURE_VERSION = 15; // v15: ticket EV + Pinnacle steam tracking stamps
+const SKILL_FEATURE_VERSION = 16; // v16: ticket EV + steam lifecycle log (gates)
 
 /**
  * Full EDGE / netCLV / Tape bundle for analysis without rebuild.
@@ -1106,6 +1110,7 @@ function applySkillFeatureStamps(target, bundle, now, {
   sideNorm = 'home',
   ticketLine = null,
   commenceMs = null,
+  existingTapeLog = null,
 } = {}) {
   const wa = bundle.winnerAlign;
   if (wa) {
@@ -1221,7 +1226,11 @@ function applySkillFeatureStamps(target, bundle, now, {
     commenceMs,
     nowMs: now,
   });
-  applyTicketTapeStamps(target, tapeSnap);
+  applyTicketTapeStamps(target, tapeSnap, {
+    existingLog: existingTapeLog ?? target.v8_ticketTapeLog ?? null,
+    nowMs: now,
+    hoursUntilGame: hoursUntilMs(commenceMs, now),
+  });
   target.v8_skillFeatureVersion = SKILL_FEATURE_VERSION;
   target.v8_skillEvaluatedAt = now;
 }
@@ -1234,6 +1243,7 @@ function pinnTapeFromMeta(gameMeta, pick, mkt, side, sd, extra = {}) {
     sideNorm: extra.sideNorm ?? side,
     ticketLine: extra.ticketLine ?? sd?.peak?.line ?? sd?.lock?.line ?? null,
     commenceMs: extra.commenceMs ?? gm?.commenceTime ?? null,
+    existingTapeLog: extra.existingTapeLog ?? sd?.v8_ticketTapeLog ?? null,
   };
 }
 
@@ -3174,6 +3184,21 @@ async function createMissingLockedPicks({
           source: expWinPriors?.source ?? 'frozen',
         });
         if (expWinCreate) applyExpectedWinStamps(v8Stamps, expWinCreate);
+        const tapeCreateCtx = pinnTapeFromMeta(
+          gameMeta, { sport, gameKey }, marketType, side, { peak: { line } }, { meta },
+        );
+        applyTicketTapeStamps(v8Stamps, captureTicketTape({
+          pinnGame: tapeCreateCtx.pinnGame,
+          marketType: tapeCreateCtx.marketType,
+          sideNorm: tapeCreateCtx.sideNorm,
+          line: tapeCreateCtx.ticketLine,
+          offerOdds: odds ?? null,
+          commenceMs: tapeCreateCtx.commenceMs,
+          nowMs: now,
+        }), {
+          nowMs: now,
+          hoursUntilGame: hoursUntilMs(tapeCreateCtx.commenceMs, now),
+        });
       }
       if (flinchFailOpenPolicyCreate?.mutedBy) {
         v8Stamps.mutedBy = flinchFailOpenPolicyCreate.mutedBy;
@@ -3479,11 +3504,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     }
     const scoreDrift = skillScoreV12 != null
       && (sd.v8_skillAgsV12 == null || Math.abs((sd.v8_skillAgsV12 || 0) - skillScoreV12) >= 0.01);
+    const tapeGrew = (patch.v8_ticketTapeLog?.length || 0) > ((sd.v8_ticketTapeLog || []).length);
     const drifted = skillStampsDrifted(sd, skill, {
       qConv: qConvMeta,
       blendWr: patch.v8_blendWr,
       expWin: patch.v8_expWin,
-    }) || scoreDrift;
+    }) || scoreDrift || tapeGrew;
     if (!drifted) {
       return { skipped: true, reason: 'not_locked_or_lean_no_skill_drift' };
     }
@@ -4731,6 +4757,16 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         + (bestForLive.tier ? ` bestFOR=${bestForLive.tier}` : '')
         + (foolsGoldPolicy?.action ? ` foolsAct=${foolsGoldPolicy.action}` : '')
         + (flinchFailOpenPolicy?.action ? ` flinchAct=${flinchFailOpenPolicy.action}` : ''),
+      );
+    }
+    const tapeGrew = (patch.v8_ticketTapeLog?.length || 0) > ((sd.v8_ticketTapeLog || []).length);
+    if (tapeGrew) {
+      const row = patch.v8_ticketTapeLog[patch.v8_ticketTapeLog.length - 1];
+      const added = patch.v8_ticketTapeLog.length - (sd.v8_ticketTapeLog || []).length;
+      changes.push(
+        `TICKET-TAPE-LOG: +${added} ${row?.gate || 'sample'} n=${patch.v8_ticketTapeLog.length}`
+        + (row?.evPct != null ? ` ev=${row.evPct}` : '')
+        + (row?.tier ? ` steam=${row.tier}` : ''),
       );
     }
   }

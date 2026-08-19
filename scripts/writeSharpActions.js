@@ -24,6 +24,7 @@
  *                           (tier, Q, size, opposed, pin, steam). Not rebuilt later.
  *   steam                 — last-hour / since-open Pinnacle drop (pinnapi units)
  *   ticketEvPct           — flagged ticket vs same-line no-vig fair (card EV)
+ *   ticketTapeLog         — compact steam/EV lifecycle (first / hourly / t60 / t15 / grade)
  *
  * Usage: node scripts/writeSharpActions.js
  * Schedule: run after scan-sharp-positions (every 2h)
@@ -43,7 +44,7 @@ import {
   isActionTabEligible,
   pinMoveFor,
 } from '../src/lib/confirmedActionDesk.js';
-import { captureTicketTape } from '../src/lib/ticketTapeCapture.js';
+import { captureTicketTape, applyActionTicketTape, hoursUntilMs } from '../src/lib/ticketTapeCapture.js';
 import { americanFromPolyPrice } from '../src/lib/ticketInstrument.js';
 import { passesSizeSkillLiveGate } from '../src/lib/sizeSkillRescue.js';
 import { stakeSizeRatio } from '../src/lib/sizeRatioBands.js';
@@ -234,6 +235,7 @@ function enrichActionDeskStamps(positions, walletProfiles, commenceByGame, pinna
     pos.ticketEvPct = tape.evPct;
     pos.ticketEvFair = tape.fairOdds;
     pos.ticketEvOffer = tape.offerOdds;
+    pos._tapeSnap = tape;
 
     const sr = Number(pos.betMultiplier);
     const size = sizeBandFromRatio(Number.isFinite(sr) ? sr : Number(pos.v8_sizeRatio));
@@ -296,6 +298,15 @@ function enrichActionDeskStamps(positions, walletProfiles, commenceByGame, pinna
     + ` · steam=${steamN} gold=${goldN}`
     + ` · Q maps=${qBySport.size} sports`,
   );
+}
+
+function applyPosTapeLog(target, pos, existingLog = null) {
+  if (!target || !pos?._tapeSnap) return target;
+  applyActionTicketTape(target, pos._tapeSnap, {
+    existingLog,
+    hoursUntilGame: hoursUntilMs(pos.commenceTime ?? target.commenceTime),
+  });
+  return target;
 }
 
 // ── V8 Wallet-Contribution Scoring (server-side port) ────────────────────────
@@ -958,6 +969,7 @@ async function main() {
             ticketEvPct: null,
             ticketEvFair: null,
             ticketEvOffer: null,
+            ticketTapeLog: null,
             whitelistTierNow: null,
             tabEligible: false,
             tabSeen: false,
@@ -1212,6 +1224,7 @@ async function main() {
           updatePayload.minutesToCommence = null;
           reopened++;
         }
+        applyPosTapeLog(updatePayload, pos, data.ticketTapeLog);
         batch.update(ref, updatePayload);
         updated++;
       } else {
@@ -1220,6 +1233,8 @@ async function main() {
           pos.tabFirstAt = admin.firestore.FieldValue.serverTimestamp();
           pos.tabLastAt = admin.firestore.FieldValue.serverTimestamp();
         }
+        applyPosTapeLog(pos, pos, null);
+        delete pos._tapeSnap;
         batch.set(ref, pos);
         written++;
       }
