@@ -57,6 +57,7 @@ import {
 import { sportBookForDisplay } from '../lib/walletSportBook.js';
 import { passesSizeSkillLiveGate } from '../lib/sizeSkillRescue.js';
 import { stakeSizeRatio } from '../lib/sizeRatioBands.js';
+import { compareLockedPicks } from '../lib/lockedPickSort.js';
 // Browser-side mirror of scripts/syncPickStateAuthoritative.js::buildWalletPriorStatsFn
 // — feeds aggregateSideV12 the per-sport prior stats (whitelist tier,
 // historical pick count, flat ROI) that the v12 quality calc weighs. Used
@@ -8803,7 +8804,7 @@ export default function SharpFlow() {
   const [showAgsuTiers, setShowAgsuTiers] = useState(false);
   const [lockedDay, setLockedDay] = useState('today');
   const [lockedStatusFilter, setLockedStatusFilter] = useState('all');
-  const [lockedSort, setLockedSort] = useState('stars');
+  const [lockedSort, setLockedSort] = useState('units');
   const [lockedSportFilter, setLockedSportFilter] = useState('All');
   const [lockedMarketFilter, setLockedMarketFilter] = useState('all');
   const [showCancelled, setShowCancelled] = useState(false);
@@ -13114,26 +13115,11 @@ export default function SharpFlow() {
                     const cancelledCount = statusFiltered.filter(p => (p.health?.status || 'ACTIVE') === 'CANCELLED' && !p.outcome).length;
                     const mutedCount = statusFiltered.filter(p => (p.health?.status || 'ACTIVE') === 'MUTED' && !p.outcome).length;
                     const filteredLocked = showCancelled ? statusFiltered : statusFiltered.filter(p => (p.health?.status || 'ACTIVE') !== 'CANCELLED' || !!p.outcome);
-                    const healthOrder = { ACTIVE: 0, MUTED: 1, CANCELLED: 2 };
-                    filteredLocked.sort((a, b) => {
-                      if (a.superseded !== b.superseded) return a.superseded ? 1 : -1;
-                      const aH = healthOrder[a.health?.status || 'ACTIVE'] || 0;
-                      const bH = healthOrder[b.health?.status || 'ACTIVE'] || 0;
-                      if (aH !== bH) return aH - bH;
-                      // V8.4: TOP PICK priority mirrors the two-tier badge,
-                      // using the precomputed flags from evaluateTopPickTier.
-                      //   2 = SUPER TOP PICK (CLEAR_MOVE + meanBase_F ≥ 55)
-                      //   1 = regular TOP PICK (CLEAR_MOVE)
-                      //   0 = neither
-                      const tierRank = (p) => p.isSuperTopPick ? 2 : p.isTopPick ? 1 : 0;
-                      const aTop = tierRank(a);
-                      const bTop = tierRank(b);
-                      if (aTop !== bTop) return bTop - aTop;
-                      if (lockedSort === 'stars') return b.stars - a.stars || b.units - a.units;
-                      const tA = a.gameTime ? new Date(a.gameTime).getTime() : 0;
-                      const tB = b.gameTime ? new Date(b.gameTime).getTime() : 0;
-                      return tA - tB || b.stars - a.stars;
-                    });
+                    // Default ORDER is units: stake size is the conviction
+                    // rank on the card (2.5u above 1u). Star rating and TOP
+                    // PICK badges used to lead this sort and put a 1u STRONG
+                    // above a 2.5u LOCKED.
+                    filteredLocked.sort((a, b) => compareLockedPicks(a, b, lockedSort));
                     // v12.1 — MONITORING picks (0u, non-HC or WEAK-tier HC) are
                     // shown for volume but never staked: they are excluded from
                     // the record / units / ROI ledger entirely.
@@ -13243,7 +13229,7 @@ export default function SharpFlow() {
                         </FilterGroup>
                         <FilterGroup label="ORDER">
                           {[
-                            { id: 'stars', label: '★ Rating' },
+                            { id: 'units', label: 'Units' },
                             { id: 'time', label: 'Game Time' },
                           ].map(opt => (
                             <button key={opt.id} onClick={() => setLockedSort(opt.id)} style={chipStyle(lockedSort === opt.id, B.gold)}>{opt.label}</button>
