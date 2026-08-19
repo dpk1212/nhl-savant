@@ -20,8 +20,15 @@ import {
   resolveInstrument,
   ticketAmerican,
 } from '../../../lib/ticketInstrument.js';
+import {
+  impliedFromAmerican as ip,
+  noVigFairAmerican,
+  fairProbFromNoVig,
+  evPctVsFairProb,
+} from '../../../lib/oddsEv.js';
 
 export { americanFromPolyPrice };
+export { noVigFairAmerican, fairProbFromNoVig, evPctVsFairProb };
 
 /** Same floor as EDGE (scripts/syncPickStateAuthoritative WINNER_ALIGN_MIN_N). */
 export const FEATURED_WR_MIN_N = 8;
@@ -179,45 +186,6 @@ function resolvePickSide(pick, {
   }
   if (teamShort && awayShort && teamShort === awayShort) return 'away';
   return 'home';
-}
-
-const ip = (o) => {
-  if (o == null || !Number.isFinite(Number(o))) return null;
-  const n = Number(o);
-  return n < 0 ? Math.abs(n) / (Math.abs(n) + 100) : 100 / (n + 100);
-};
-
-const probToAmerican = (p) => {
-  if (p == null || !Number.isFinite(p) || p <= 0 || p >= 1) return null;
-  if (p >= 0.5) return Math.round((-100 * p) / (1 - p));
-  return Math.round((100 * (1 - p)) / p);
-};
-
-/**
- * Multiplicative no-vig fair (industry standard for 2-way / 3-way).
- * p_fair_i = p_raw_i / Σ p_raw. Returns fair American for `sideIdx`.
- */
-export function noVigFairAmerican(sideOddsList, sideIdx = 0) {
-  const raw = (sideOddsList || []).map(ip);
-  if (!raw.every((p) => p != null && p > 0)) return null;
-  const sum = raw.reduce((s, p) => s + p, 0);
-  if (!(sum > 0)) return null;
-  return probToAmerican(raw[sideIdx] / sum);
-}
-
-/** EV in percentage points vs a fair win probability: (p_fair − p_offer) × 100. */
-export function evPctVsFairProb(offerOdds, fairProb) {
-  const offerP = ip(offerOdds);
-  if (offerP == null || fairProb == null || !Number.isFinite(fairProb)) return null;
-  return +((fairProb - offerP) * 100).toFixed(1);
-}
-
-export function fairProbFromNoVig(sideOddsList, sideIdx = 0) {
-  const raw = (sideOddsList || []).map(ip);
-  if (!raw.every((p) => p != null && p > 0)) return null;
-  const sum = raw.reduce((s, p) => s + p, 0);
-  if (!(sum > 0)) return null;
-  return raw[sideIdx] / sum;
 }
 
 const fmtEt = (ts) => {

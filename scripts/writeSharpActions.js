@@ -23,6 +23,7 @@
  *   tabSnapshot           — frozen desk fields from last eligible cycle
  *                           (tier, Q, size, opposed, pin, steam). Not rebuilt later.
  *   steam                 — last-hour / since-open Pinnacle drop (pinnapi units)
+ *   ticketEvPct           — flagged ticket vs same-line no-vig fair (card EV)
  *
  * Usage: node scripts/writeSharpActions.js
  * Schedule: run after scan-sharp-positions (every 2h)
@@ -42,7 +43,8 @@ import {
   isActionTabEligible,
   pinMoveFor,
 } from '../src/lib/confirmedActionDesk.js';
-import { steamForGame, compactSteam } from '../src/lib/steamMove.js';
+import { captureTicketTape } from '../src/lib/ticketTapeCapture.js';
+import { americanFromPolyPrice } from '../src/lib/ticketInstrument.js';
 import { passesSizeSkillLiveGate } from '../src/lib/sizeSkillRescue.js';
 import { stakeSizeRatio } from '../src/lib/sizeRatioBands.js';
 import { resolveSportUsualBet } from './lib/sportUsualBet.js';
@@ -220,12 +222,18 @@ function enrichActionDeskStamps(positions, walletProfiles, commenceByGame, pinna
     const steamLine = Number.isFinite(Number(pos.entryLine)) ? Number(pos.entryLine)
       : (Number.isFinite(Number(pos.spreadLine)) ? Number(pos.spreadLine)
         : (Number.isFinite(Number(pos.totalLine)) ? Number(pos.totalLine) : null));
-    pos.steam = compactSteam(steamForGame(pinnacleHistory, pos.sport, pos.gameKey, {
+    const tape = captureTicketTape({
+      pinnGame: pinnacleHistory?.[pos.sport]?.[pos.gameKey] || null,
       marketType: steamMkt,
       sideNorm: pos.side,
       line: steamLine,
-      freezeAtMs: pos.commenceTime,
-    }));
+      offerOdds: americanFromPolyPrice(pos.avgPrice) ?? pos.bestRetailOdds ?? null,
+      commenceMs: pos.commenceTime,
+    });
+    pos.steam = tape.steam;
+    pos.ticketEvPct = tape.evPct;
+    pos.ticketEvFair = tape.fairOdds;
+    pos.ticketEvOffer = tape.offerOdds;
 
     const sr = Number(pos.betMultiplier);
     const size = sizeBandFromRatio(Number.isFinite(sr) ? sr : Number(pos.v8_sizeRatio));
@@ -267,6 +275,7 @@ function enrichActionDeskStamps(positions, walletProfiles, commenceByGame, pinna
       confirmedSupport: pos.confirmedSupport,
       pinMove: pos.pinMove,
       steam: pos.steam,
+      ticketEvPct: pos.ticketEvPct,
       invested: Number.isFinite(Number(pos.invested)) ? Number(pos.invested) : null,
     } : null;
     delete pos._wlNow;
@@ -946,6 +955,9 @@ async function main() {
             sizeBand: null,
             pinMove: null,
             steam: null,
+            ticketEvPct: null,
+            ticketEvFair: null,
+            ticketEvOffer: null,
             whitelistTierNow: null,
             tabEligible: false,
             tabSeen: false,
@@ -1116,6 +1128,9 @@ async function main() {
           confirmedSupport: pos.confirmedSupport,
           pinMove: pos.pinMove ?? null,
           steam: pos.steam ?? null,
+          ticketEvPct: pos.ticketEvPct ?? null,
+          ticketEvFair: pos.ticketEvFair ?? null,
+          ticketEvOffer: pos.ticketEvOffer ?? null,
           whitelistTierNow: pos.whitelistTierNow ?? null,
           tabEligible: !!pos.tabEligible,
           tabSeen: !!(data.tabSeen || pos.tabEligible),
