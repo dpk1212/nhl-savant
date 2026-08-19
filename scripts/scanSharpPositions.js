@@ -14,6 +14,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { matchSoccerPositionTitle, resolveSoccerSide } from './lib/soccerTeams.js';
 import { matchUFCPositionTitle } from './lib/ufcFighters.js';
+import { isOnTodaysEtSlate } from '../src/lib/slateDate.js';
 import { matchWNBAPositionTitle, resolveWNBATeam, WNBA_NAME_TO_CODE } from './lib/wnbaTeams.js';
 import { matchNFLPositionTitle, resolveNFLTeam, NFL_NAME_TO_CODE } from './lib/nflTeams.js';
 import { resolveBinarySide, resolveSpreadSide, resolveSpreadEntryLine } from './lib/resolvePositionSide.js';
@@ -355,6 +356,9 @@ function buildTodaysGames(polyData) {
   for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL']) {
     const sportGames = polyData?.[sport] || {};
     for (const [key, g] of Object.entries(sportGames)) {
+      // Odds API MMA returns the next fight card. Do not treat Saturday
+      // UFC as "today" just because it is sitting in polymarket_data.json.
+      if (sport === 'UFC' && !isOnTodaysEtSlate(g.commence || null)) continue;
       const away = g.awayTeam || '';
       const home = g.homeTeam || '';
       games[`${sport}:${key}`] = { sport, away, home, key, title: g.title || '', commence: g.commence || null };
