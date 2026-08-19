@@ -36,6 +36,7 @@ import {
   AGS_V12_DISPLAY_TIERS,
   AGS_V12_STAKE_TIER_META,
 } from '../src/lib/ags.js';
+import { analyzeTicketTapeLog } from '../src/lib/ticketTapeCapture.js';
 import {
   TAPE_MUTE_BELOW,
   TAPE_BOOST_ABOVE,
@@ -706,6 +707,9 @@ async function loadAllAgsuGradedPicks() {
           healthStatus: sd.health?.status || 'ACTIVE',
           schemaVersion,
           walletDetails,
+          ticketEvPct: Number.isFinite(sd.v8_ticketEvPct) ? sd.v8_ticketEvPct : null,
+          ticketTapeLog: Array.isArray(sd.v8_ticketTapeLog) ? sd.v8_ticketTapeLog : [],
+          ticketTape: analyzeTicketTapeLog(sd.v8_ticketTapeLog),
         });
       }
     }
@@ -1525,6 +1529,9 @@ async function loadAllGradedAndShadowPicks() {
           // walletDetails needed for §5 skill-band as-of EDGE/net (stamp-else-asof)
           walletDetails: (peak.v8Scoring?.walletDetails || lock.v8Scoring?.walletDetails || [])
             .filter(w => w && w.wallet && w.side),
+          ticketEvPct: Number.isFinite(sd.v8_ticketEvPct) ? sd.v8_ticketEvPct : null,
+          ticketTapeLog: Array.isArray(sd.v8_ticketTapeLog) ? sd.v8_ticketTapeLog : [],
+          ticketTape: analyzeTicketTapeLog(sd.v8_ticketTapeLog),
         });
       }
     }
@@ -3873,6 +3880,83 @@ function tapeAgg(rows) {
   return { n, w, l, stake, pnl, roi: stake > 0 ? (pnl / stake) * 100 : null };
 }
 
+function steamPathLabel(t) {
+  if (!t) return 'no-log';
+  const a = t.steamOnFirst ? 'on' : 'off';
+  const b = t.steamOnLock ? 'on' : 'off';
+  return `${a}→${b}`;
+}
+
+function evLockBucket(ev) {
+  if (!Number.isFinite(Number(ev))) return 'missing';
+  const v = Number(ev);
+  if (v < 0) return '<0';
+  if (v < 2) return '0–2';
+  if (v < 4) return '2–4';
+  return '4+';
+}
+
+function buildTicketTapeLifecycle(report, stats) {
+  report.push(`### 5d — Ticket EV / steam lifecycle (tracking only)`);
+  report.push('');
+  report.push(`\`v8_ticketTapeLog\` keeps **first / hourly / T-60 / T-15 / grade** samples of card EV and Pinnacle steam. Scalars still freeze at T-15; the log is the path. Does **not** size units. See \`docs/SKILL_FEATURES.md\`.`);
+  report.push('');
+  if (!stats) {
+    report.push(`_(no V12-era picks yet.)_`);
+    report.push('');
+    return;
+  }
+  const pool = (stats.v12RowsAll || stats.v12Rows || []).filter((r) => (r.units || 0) > 0 && !r.tracked);
+  const withLog = pool.filter((r) => (r.ticketTape?.n || 0) > 0);
+  const withLock = withLog.filter((r) => r.ticketTape?.t15 || r.ticketTape?.n >= 2);
+  const graded = withLog.filter((r) => r.won != null);
+  report.push(`| Window | Staked sides | With log | First+lock | Graded w/ log |`);
+  report.push(`|--------|-------------:|---------:|-----------:|--------------:|`);
+  report.push(`| v16+ lifecycle | ${pool.length} | ${withLog.length} | ${withLock.length} | ${graded.length} |`);
+  report.push('');
+  if (withLog.length === 0) {
+    report.push(`_No lifecycle logs yet — fills after the next pre–T-15 sync writes \`v8_ticketTapeLog\`._`);
+    report.push('');
+    return;
+  }
+  if (graded.length === 0) {
+    report.push(`_Logs are on the book; W/L tables fill as those tickets settle._`);
+    report.push('');
+    return;
+  }
+
+  report.push(`#### Steam on at first vs lock`);
+  report.push('');
+  report.push(`| Path | N | W-L | Win % | Stake | PnL (u) | ROI | mean ΔEV |`);
+  report.push(`|------|--:|:---:|------:|------:|--------:|----:|---------:|`);
+  const paths = ['on→on', 'on→off', 'off→on', 'off→off'];
+  for (const p of paths) {
+    const rows = graded.filter((r) => steamPathLabel(r.ticketTape) === p);
+    if (!rows.length) continue;
+    const a = tapeAgg(rows);
+    const dEv = rows.map((r) => r.ticketTape?.dEvFirstToLock).filter((v) => Number.isFinite(v));
+    const meanD = dEv.length ? dEv.reduce((s, v) => s + v, 0) / dEv.length : null;
+    report.push(
+      `| ${p} | ${a.n} | ${a.w}-${a.l} | ${a.n ? ((100 * a.w / a.n).toFixed(1) + '%') : '—'} | ${a.stake.toFixed(2)}u | ${fmtSigned(a.pnl)}u | ${a.roi != null ? ((a.roi >= 0 ? '+' : '') + a.roi.toFixed(1) + '%') : '—'} | ${meanD != null ? fmtSigned(meanD, 1) : '—'} |`,
+    );
+  }
+  report.push('');
+
+  report.push(`#### EV at lock`);
+  report.push('');
+  report.push(`| EV@t15 | N | W-L | Win % | Stake | PnL (u) | ROI |`);
+  report.push(`|--------|--:|:---:|------:|------:|--------:|----:|`);
+  for (const b of ['<0', '0–2', '2–4', '4+', 'missing']) {
+    const rows = graded.filter((r) => evLockBucket(r.ticketTape?.evLock) === b);
+    if (!rows.length) continue;
+    const a = tapeAgg(rows);
+    report.push(
+      `| ${b} | ${a.n} | ${a.w}-${a.l} | ${a.n ? ((100 * a.w / a.n).toFixed(1) + '%') : '—'} | ${a.stake.toFixed(2)}u | ${fmtSigned(a.pnl)}u | ${a.roi != null ? ((a.roi >= 0 ? '+' : '') + a.roi.toFixed(1) + '%') : '—'} |`,
+    );
+  }
+  report.push('');
+}
+
 function buildV12TapeSizing(report, stats) {
   report.push(`## § 5 — Tape Era (sizing + side profile · ${TAPE_SIZING_LIVE_FROM}+)`);
   report.push('');
@@ -5867,6 +5951,7 @@ async function main() {
   await buildV12QConvMute(report, v12Stats);
   await buildSkillBandWindows(report, allRows);
   buildV12SideProfileAnalysis(report, v12Stats);
+  buildTicketTapeLifecycle(report, v12Stats);
   buildV12SportMarketAnalysis(report, v12Stats);
   buildV12MuteAudit(report, v12Stats);
   buildV12RecentLivePicks(report, v12Stats, 30, walletProfiles);
