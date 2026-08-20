@@ -25,10 +25,12 @@ function formatLockCountdown(ms) {
 }
 
 /** Human reason a 0u / TRACKED card is not a ticket — audit + tooltip. */
-function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFailOpen, stakePath } = {}) {
-  const preU = Number.isFinite(unitsPreFlinchFailOpen) && unitsPreFlinchFailOpen > 0
-    ? unitsPreFlinchFailOpen
-    : (Number.isFinite(unitsPreTape) && unitsPreTape > 0 ? unitsPreTape : null);
+function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFailOpen, unitsPreMaxSrSub4, stakePath } = {}) {
+  const preU = Number.isFinite(unitsPreMaxSrSub4) && unitsPreMaxSrSub4 > 0
+    ? unitsPreMaxSrSub4
+    : (Number.isFinite(unitsPreFlinchFailOpen) && unitsPreFlinchFailOpen > 0
+      ? unitsPreFlinchFailOpen
+      : (Number.isFinite(unitsPreTape) && unitsPreTape > 0 ? unitsPreTape : null));
   const pre = preU != null
     ? `${preU % 1 === 0 ? preU.toFixed(0) : preU.toFixed(1)}u → 0u`
     : null;
@@ -40,6 +42,9 @@ function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFai
   }
   if (mutedBy === 'fail-open-sub4') {
     return pre ? `Tape fail-open · ${pre}` : 'Tape fail-open — sub-4 cancelled';
+  }
+  if (mutedBy === 'maxsr-sub4') {
+    return pre ? `maxSR sub-4 cut · ${pre}` : 'maxSR sub-4 cut — FOR sizeRatio < 1';
   }
   if (mutedBy === 'ags-quality-veto') return 'AGS quality veto — never sized';
   if (stakePath === 'FADE') return 'FADE tier — no ticket';
@@ -2391,6 +2396,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
     tapeAction: f.tapeAction,
     unitsPreTape: f.unitsPreTape,
     unitsPreFlinchFailOpen: f.unitsPreFlinchFailOpen,
+    unitsPreMaxSrSub4: f.unitsPreMaxSrSub4,
     stakePath: f.stakePath,
   });
   const ticketFrozen = Number.isFinite(f.commenceMs)
