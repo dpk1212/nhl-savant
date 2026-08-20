@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-08-20T18:24:28.518Z",
-  "elapsedSec": 20.4,
+  "scannedAt": "2026-08-20T18:30:34.025Z",
+  "elapsedSec": 20.3,
   "phase": "PHASE_2_MERGE_ENABLED",
-  "todayGamesCount": 56,
+  "todayGamesCount": 57,
   "summary": {
     "total": 251,
-    "coveredByMain": 30,
-    "recovered": 16,
-    "recoveredPositions": 52,
+    "coveredByMain": 29,
+    "recovered": 17,
+    "recoveredPositions": 54,
     "noPositions": 205,
     "apiError": 0,
     "addressNotFound": 0,
@@ -16,8 +16,8 @@
       "ml": 5,
       "spread": 0,
       "total": 1,
-      "dropped_shadow_gate": 29,
-      "dropped_excluded": 17,
+      "dropped_shadow_gate": 30,
+      "dropped_excluded": 18,
       "dropped_duplicate": 0
     }
   },
@@ -462,8 +462,24 @@
       "tier": "FLAT",
       "name": "meoooow",
       "sports": "SOC",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xd202bf6d89dc6bab1b9f00ead175f75466348973"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0xd202bf6d89dc6bab1b9f00ead175f75466348973",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 5955,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "WNBA",
+          "gameKey": "ind_dal",
+          "marketType": "total",
+          "side": "over",
+          "invested": 1901,
+          "entryLine": 185.5,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "36b57a",
@@ -498,7 +514,7 @@
           "gameKey": "ind_dal",
           "marketType": "total",
           "side": "under",
-          "invested": 5309,
+          "invested": 6749,
           "entryLine": 185.5,
           "passesShadow": true
         },
@@ -525,7 +541,7 @@
           "gameKey": "atl_las",
           "marketType": "total",
           "side": "under",
-          "invested": 3328,
+          "invested": 3628,
           "entryLine": 181.5,
           "passesShadow": true
         },
@@ -722,11 +738,11 @@
       "sports": "NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xa38a455bbdd4b68486548b7e19da99903f4f821d",
-      "positionsCount": 1,
+      "positionsCount": 2,
       "statsSource": "fallback",
       "avgSportBet": 43316,
       "willPassShadowGate": 0,
-      "willDropAtShadowGate": 1,
+      "willDropAtShadowGate": 2,
       "positions": [
         {
           "sport": "MLB",
@@ -734,6 +750,15 @@
           "marketType": "ml",
           "side": "home",
           "invested": 48,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "MLB",
+          "gameKey": "cle_col",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 14,
           "entryLine": null,
           "passesShadow": false
         }
@@ -843,7 +868,7 @@
           "gameKey": "atl_las",
           "marketType": "total",
           "side": "over",
-          "invested": 3339,
+          "invested": 3648,
           "entryLine": 181.5,
           "passesShadow": true
         },
@@ -852,7 +877,7 @@
           "gameKey": "ind_dal",
           "marketType": "total",
           "side": "under",
-          "invested": 1420,
+          "invested": 1866,
           "entryLine": 185.5,
           "passesShadow": true
         }
@@ -1028,8 +1053,8 @@
           "gameKey": "ind_dal",
           "marketType": "total",
           "side": "under",
-          "invested": 2862,
-          "entryLine": 186.5,
+          "invested": 3955,
+          "entryLine": 185.5,
           "passesShadow": true
         },
         {
@@ -1037,8 +1062,8 @@
           "gameKey": "ind_dal",
           "marketType": "total",
           "side": "under",
-          "invested": 2468,
-          "entryLine": 185.5,
+          "invested": 2862,
+          "entryLine": 186.5,
           "passesShadow": true
         },
         {
@@ -1208,7 +1233,8 @@
       "tier": "CONFIRMED",
       "name": "7d6465",
       "sports": "MLB",
-      "status": "COVERED_BY_MAIN"
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0xc279092ffcc17de29689eae724ebc0a5bb7d6465"
     },
     {
       "walletShort": "7d85ad",
