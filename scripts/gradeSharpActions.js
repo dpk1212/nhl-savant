@@ -39,7 +39,10 @@ const STATSAPI_MLB_URL = 'https://statsapi.mlb.com/api/v1/schedule';
 const ESPN_NBA_URL = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard';
 const ESPN_WNBA_URL = 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard';
 const ESPN_NFL_URL = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard';
-const ESPN_SOC_URL = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard';
+const ESPN_SOC_URLS = [
+  'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard',
+  'https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard',
+];
 const ESPN_UFC_URL = 'https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard';
 const ESPN_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
@@ -421,35 +424,27 @@ async function fetchNFLFinalGames(dateStr) {
 }
 
 async function fetchSOCFinalGames(dateStr) {
-  // FIFA World Cup via ESPN. The Polymarket 3-way market (win/win/draw)
-  // resolves on the 90-minute result. Group stage (through June 27) has no
-  // extra time so the final score IS the regulation score. NOTE: knockout
-  // rounds may include extra time in ESPN's score — revisit before June 28.
-  try {
-    const ymd = dateStr ? `?dates=${dateStr.replace(/-/g, '')}` : '';
-    const data = await espnJson(`${ESPN_SOC_URL}${ymd}`);
-    if (!data) return [];
-    return (data.events || [])
-      .filter(e => {
+  // EPL (eng.1) + La Liga (esp.1). Polymarket 3-way match markets resolve on
+  // the 90-minute result. League games are almost always STATUS_FULL_TIME;
+  // cup extra-time still flags wentBeyond90 so we grade a DRAW.
+  const ymd = dateStr ? `?dates=${dateStr.replace(/-/g, '')}` : '';
+  const out = [];
+  for (const base of ESPN_SOC_URLS) {
+    try {
+      const data = await espnJson(`${base}${ymd}`);
+      if (!data) continue;
+      for (const e of data.events || []) {
         const st = e.competitions?.[0]?.status?.type;
-        return st?.state === 'post' || st?.completed;
-      })
-      .map(e => {
+        if (!(st?.state === 'post' || st?.completed)) continue;
         const comp = e.competitions[0];
         const comps = comp.competitors || [];
         const away = comps.find(c => c.homeAway === 'away') || {};
         const home = comps.find(c => c.homeAway === 'home') || {};
         const awayName = away.team?.displayName || away.team?.name || '';
         const homeName = home.team?.displayName || home.team?.name || '';
-        // A knockout match that reached extra time (STATUS_FINAL_AET) or a
-        // penalty shootout (STATUS_FINAL_PEN) was, by definition, level after
-        // 90 minutes. Polymarket's 3-way match market resolves on the
-        // 90-minute result, so those settle as a DRAW — even though ESPN's
-        // `score` below includes extra-time goals (and shootoutScore the pens).
-        // Group-stage games are always STATUS_FULL_TIME → score IS regulation.
         const stName = comp.status?.type?.name || '';
         const wentBeyond90 = stName === 'STATUS_FINAL_AET' || stName === 'STATUS_FINAL_PEN';
-        return {
+        out.push({
           awayCode: (resolveSOCTeam(awayName) || '').toLowerCase(),
           homeCode: (resolveSOCTeam(homeName) || '').toLowerCase(),
           awayTeam: awayName,
@@ -457,12 +452,13 @@ async function fetchSOCFinalGames(dateStr) {
           awayScore: parseInt(away.score) || 0,
           homeScore: parseInt(home.score) || 0,
           wentBeyond90,
-        };
-      });
-  } catch (e) {
-    console.error('ESPN SOC fetch error:', e.message);
-    return [];
+        });
+      }
+    } catch (e) {
+      console.error('ESPN SOC fetch error:', e.message);
+    }
   }
+  return out;
 }
 
 /**
@@ -938,7 +934,7 @@ async function main() {
     for (const d of recentScoreboardDates(socDates)) {
       const games = await fetchSOCFinalGames(d);
       socFinals.push(...games);
-      console.log(`ESPN SOC API: ${games.length} final World Cup games for ${d}`);
+      console.log(`ESPN SOC API: ${games.length} final EPL/La Liga games for ${d}`);
     }
   }
 

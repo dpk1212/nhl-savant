@@ -19,7 +19,7 @@ import * as dotenv from 'dotenv';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { resolveSOCTeam } from './lib/soccerTeams.js';
+import { makeSOCGameKey } from './lib/soccerTeams.js';
 import { makeUFCGameKey } from './lib/ufcFighters.js';
 import { makeWNBAGameKey } from './lib/wnbaTeams.js';
 import { makeNFLGameKey } from './lib/nflTeams.js';
@@ -31,6 +31,7 @@ import {
   GIT_SAFE_MAX_BYTES,
 } from './lib/pinnacleTape.js';
 import { dhSecondKey } from './lib/doubleheaderKey.js';
+import { overrideCommenceIso } from './lib/commenceOverrides.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -47,13 +48,12 @@ const SPORTS = [
   { key: 'basketball_ncaab', label: 'CBB' },
   { key: 'baseball_mlb', label: 'MLB' },
   { key: 'basketball_nba', label: 'NBA' },
-  // World Cup 2026 — h2h is 3-way (home/draw/away). We store the Draw price
-  // too so soccer flows through the same pipeline as 2-way sports (a draw is
-  // a first-class pickable side).
-  { key: 'soccer_fifa_world_cup', label: 'SOC' },
   // UFC fight cards — h2h only (no spreads/totals on Odds API for MMA).
   { key: 'mma_mixed_martial_arts', label: 'UFC', markets: 'h2h' },
-  // WNBA — full NBA-style markets (ML + spreads + totals).
+  // EPL + La Liga — 3-way h2h (home/draw/away). Same SOC sport code as the
+  // old World Cup board so soccer sharps, draw side, and UI reuse.
+  { key: 'soccer_epl', label: 'SOC', markets: 'h2h,spreads,totals' },
+  { key: 'soccer_spain_la_liga', label: 'SOC', markets: 'h2h,spreads,totals' },
   { key: 'basketball_wnba', label: 'WNBA', markets: 'h2h,spreads,totals' },
   // NFL — preseason + regular season (ML + spreads + totals).
   { key: 'americanfootball_nfl_preseason', label: 'NFL', markets: 'h2h,spreads,totals' },
@@ -190,13 +190,7 @@ function makeGameKey(away, home, sportLabel) {
     return `${a}_${h}`;
   }
   if (sportLabel === 'SOC') {
-    // Key by FIFA code so it matches fetchPolymarketData's SOC convention
-    // (normalize(resolveSOCTeam(away))_normalize(resolveSOCTeam(home))).
-    // Returns null when a country can't be resolved — caller skips it.
-    const a = resolveSOCTeam(away);
-    const h = resolveSOCTeam(home);
-    if (!a || !h) return null;
-    return `${normalize(a)}_${normalize(h)}`;
+    return makeSOCGameKey(away, home);
   }
   if (sportLabel === 'UFC') {
     return makeUFCGameKey(away, home);
@@ -596,7 +590,7 @@ async function run() {
       existing.allBooks = allBooks;
       existing.awayTeam = awayName;
       existing.homeTeam = homeName;
-      existing.commence = game.commence_time;
+      existing.commence = overrideCommenceIso(label, gameKey, game.commence_time);
       existing.apiId = game.id;
 
       // Spread data — Odds API `spreads` is the labeled main. Do not replace

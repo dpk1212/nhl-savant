@@ -14,7 +14,7 @@ import { readFileSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { parseOddsTrader } from '../src/utils/oddsTraderParser.js';
-import { resolveSOCTeam, isMainWorldCupMatchSlug } from './lib/soccerTeams.js';
+import { resolveSOCTeam, isMainSoccerMatchSlug, makeSOCGameKey } from './lib/soccerTeams.js';
 import {
   resolveUFCFighter,
   makeUFCGameKey,
@@ -31,6 +31,7 @@ import {
 } from './lib/nflTeams.js';
 import { isNonFullGameTotalMarket } from './lib/totalMarketFilter.js';
 import { allocateScheduleKey, pickScheduleKeyByStart } from './lib/doubleheaderKey.js';
+import { applyCommenceOverrides } from './lib/commenceOverrides.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -459,10 +460,7 @@ function matchToGameKey(teams, cbbMap, sport) {
     return `${normalize(aCode)}_${normalize(bCode)}`;
   }
   if (sport === 'SOC') {
-    const aCode = resolveSOCTeam(a);
-    const bCode = resolveSOCTeam(b);
-    if (!aCode || !bCode) return null;
-    return `${normalize(aCode)}_${normalize(bCode)}`;
+    return makeSOCGameKey(a, b);
   }
   if (sport === 'UFC') {
     return makeUFCGameKey(a, b);
@@ -608,33 +606,40 @@ async function loadTodaysSchedule(cbbMap) {
     }
   }
 
-  // SOC (FIFA World Cup): use Odds API. h2h for soccer is 3-way (home/away/draw)
-  // but away_team/home_team fields are still populated like other sports.
+  // SOC: EPL + La Liga (club soccer). World Cup Odds API key is gone.
+  // Season endpoints return the remaining slate, so keep a weekend window
+  // (now−8h → +5d) like NFL — otherwise futures soft-gate through.
   const validSOC = new Set();
   if (ODDS_API_KEY) {
-    try {
-      const url = `https://api.the-odds-api.com/v4/sports/soccer_fifa_world_cup/odds/?apiKey=${ODDS_API_KEY}&regions=us&markets=h2h&oddsFormat=american&bookmakers=fanduel`;
-      const res = await fetch(url);
-      if (res.ok) {
-        const games = await res.json();
-        for (const g of games) {
-          const away = resolveSOCTeam(g.away_team);
-          const home = resolveSOCTeam(g.home_team);
-          if (away && home) {
-            const gk = `${normalize(away)}_${normalize(home)}`;
-            validSOC.add(gk);
-            if (g.commence_time && !commenceTimes[`SOC:${gk}`]) commenceTimes[`SOC:${gk}`] = g.commence_time;
-          } else {
-            console.warn(`SOC team resolution miss: "${g.away_team}" / "${g.home_team}"`);
+    const socWindowLo = Date.now() - 8 * 3600 * 1000;
+    const socWindowHi = Date.now() + 5 * 24 * 3600 * 1000;
+    for (const oddsKey of ['soccer_epl', 'soccer_spain_la_liga']) {
+      try {
+        const url = `https://api.the-odds-api.com/v4/sports/${oddsKey}/odds/?apiKey=${ODDS_API_KEY}&regions=us&markets=h2h&oddsFormat=american&bookmakers=fanduel`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const games = await res.json();
+          let added = 0;
+          for (const g of games) {
+            const t = g.commence_time ? Date.parse(g.commence_time) : NaN;
+            if (!Number.isFinite(t) || t < socWindowLo || t > socWindowHi) continue;
+            const gk = makeSOCGameKey(g.away_team, g.home_team);
+            if (gk) {
+              validSOC.add(gk);
+              added++;
+              if (g.commence_time && !commenceTimes[`SOC:${gk}`]) commenceTimes[`SOC:${gk}`] = g.commence_time;
+            } else {
+              console.warn(`SOC team resolution miss (${oddsKey}): "${g.away_team}" / "${g.home_team}"`);
+            }
           }
+          const remaining = res.headers.get('x-requests-remaining');
+          console.log(`📋 Today's SOC/${oddsKey}: +${added} in window → ${validSOC.size} cumulative [credits left: ${remaining}]`);
+        } else {
+          console.warn(`Odds API SOC error (${oddsKey}): ${res.status}`);
         }
-        const remaining = res.headers.get('x-requests-remaining');
-        console.log(`📋 Today's SOC/World Cup (Odds API): ${validSOC.size} games [credits left: ${remaining}]`);
-      } else {
-        console.warn(`Odds API SOC error: ${res.status}`);
+      } catch (e) {
+        console.warn(`Could not load SOC schedule from Odds API (${oddsKey}):`, e.message);
       }
-    } catch (e) {
-      console.warn('Could not load SOC schedule from Odds API:', e.message);
     }
   }
 
@@ -732,6 +737,7 @@ async function loadTodaysSchedule(cbbMap) {
     }
   }
 
+  applyCommenceOverrides(commenceTimes);
   return { validCBB, validNHL, validMLB, validNBA, validSOC, validUFC, validWNBA, validNFL, commenceTimes };
 }
 
@@ -755,6 +761,9 @@ async function run() {
     { slug: 'wnba', sport: 'WNBA' },
     { slug: 'nfl', sport: 'NFL' },
     { slug: 'fifa-world-cup', sport: 'SOC' },
+    { slug: 'premier-league', sport: 'SOC' },
+    { slug: 'epl', sport: 'SOC' },
+    { slug: 'la-liga', sport: 'SOC' },
     { slug: 'soccer', sport: 'SOC' },
     { slug: 'ufc', sport: 'UFC' },
     { slug: 'mma', sport: 'UFC' },
@@ -818,7 +827,11 @@ async function run() {
     const hasNflTag = evTags.includes('nfl');
     const hasNhlTag = evTags.includes('nhl') || evTags.includes('hockey');
     const hasMlbTag = evTags.includes('mlb') || evTags.includes('baseball');
-    const hasSoccerTag = evTags.includes('fifa-world-cup') || evTags.includes('soccer');
+    const hasSoccerTag = evTags.includes('fifa-world-cup')
+      || evTags.includes('soccer')
+      || evTags.includes('premier-league')
+      || evTags.includes('epl')
+      || evTags.includes('la-liga');
     const hasUfcTag = evTags.includes('ufc') || evTags.includes('mma');
 
     let sport = ev._sport === 'CBB' ? 'CBB' : ev._sport === 'ncaa' ? 'CBB' : ev._sport === 'nhl' ? 'NHL' : ev._sport === 'MLB' ? 'MLB' : ev._sport === 'mlb' ? 'MLB' : ev._sport === 'baseball' ? 'MLB' : ev._sport === 'nba' ? 'NBA' : ev._sport === 'NBA' ? 'NBA' : ev._sport === 'WNBA' ? 'WNBA' : ev._sport === 'wnba' ? 'WNBA' : ev._sport === 'NFL' ? 'NFL' : ev._sport === 'nfl' ? 'NFL' : ev._sport === 'SOC' ? 'SOC' : ev._sport === 'UFC' ? 'UFC' : null;
@@ -859,7 +872,7 @@ async function run() {
       else if (hasWnbaTag) sport = 'WNBA';
       else if (hasNflTag) sport = 'NFL';
       else if (hasNbaTag) sport = 'NBA';
-      else if (hasSoccerTag && isMainWorldCupMatchSlug(ev.slug)) sport = 'SOC';
+      else if (hasSoccerTag && isMainSoccerMatchSlug(ev.slug)) sport = 'SOC';
       else {
         const revTeams = [teams[1], teams[0]];
         const cbbKey = matchToGameKey(teams, cbbMap, 'CBB');
@@ -874,19 +887,22 @@ async function run() {
         const nflRevKey = matchToGameKey(revTeams, cbbMap, 'NFL');
         const nbaKey = matchToGameKey(teams, cbbMap, 'NBA');
         const nbaRevKey = matchToGameKey(revTeams, cbbMap, 'NBA');
+        const socKey = matchToGameKey(teams, cbbMap, 'SOC');
+        const socRevKey = matchToGameKey(revTeams, cbbMap, 'SOC');
         if ((cbbKey && validCBB.has(cbbKey)) || (cbbRevKey && validCBB.has(cbbRevKey))) sport = 'CBB';
         else if ((nhlKey && validNHL.has(nhlKey)) || (nhlRevKey && validNHL.has(nhlRevKey))) sport = 'NHL';
         else if ((mlbKey && validMLB.has(mlbKey)) || (mlbRevKey && validMLB.has(mlbRevKey))) sport = 'MLB';
         else if ((wnbaKey && validWNBA.has(wnbaKey)) || (wnbaRevKey && validWNBA.has(wnbaRevKey))) sport = 'WNBA';
         else if ((nflKey && validNFL.has(nflKey)) || (nflRevKey && validNFL.has(nflRevKey))) sport = 'NFL';
         else if ((nbaKey && validNBA.has(nbaKey)) || (nbaRevKey && validNBA.has(nbaRevKey))) sport = 'NBA';
+        else if ((socKey && validSOC.has(socKey)) || (socRevKey && validSOC.has(socRevKey))) sport = 'SOC';
       }
     }
     if (!sport || !['CBB', 'NHL', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL'].includes(sport)) continue;
 
-    // SOC: only MAIN World Cup match events (drops props: corners, first-to-score,
-    // halftime-result; drops futures: winner, starting-11; drops club soccer).
-    if (sport === 'SOC' && !isMainWorldCupMatchSlug(ev.slug)) continue;
+    // SOC: only MAIN EPL / La Liga / leftover WC match events (drops HT result,
+    // exact-score, corners, champion futures, MLS / UCL / other leagues).
+    if (sport === 'SOC' && !isMainSoccerMatchSlug(ev.slug)) continue;
 
     // UFC: only MAIN fight-card ML events (drops method/round props + futures).
     if (sport === 'UFC' && !isMainUFCFightSlug(ev.slug)) continue;

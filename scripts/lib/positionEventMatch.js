@@ -17,7 +17,7 @@
  */
 
 import { resolveWNBATeam } from './wnbaTeams.js';
-import { BOARD_SPORT_SLUG, slugLeague } from '../../src/lib/sportSlug.js';
+import { BOARD_SPORT_SLUG, slugLeague, SOC_SLUG_LEAGUES } from '../../src/lib/sportSlug.js';
 
 /** Real other-game leftovers. Cache ID churn is NOT in this set. */
 export const WRONG_GAME_EXIT_REASONS = new Set([
@@ -29,8 +29,8 @@ export const WRONG_GAME_EXIT_REASONS = new Set([
 ]);
 
 const FOREIGN_SLUG_LEAGUES = new Set([
-  'mex', 'epl', 'uefa', 'ucl', 'uel', 'mls', 'liga', 'serie', 'bundes',
-  'fifa', 'caf', 'afc', 'ufc', 'mma', 'atp', 'wta', 'canpl', 'cpl',
+  'mex', 'epl', 'lal', 'uefa', 'ucl', 'uel', 'mls', 'liga', 'serie', 'bundes',
+  'fifa', 'fifwc', 'caf', 'afc', 'ufc', 'mma', 'atp', 'wta', 'canpl', 'cpl',
 ]);
 
 /**
@@ -49,13 +49,15 @@ export function positionMatchesPolyEvent(pos, polyGame, gameKey = null, opts = {
   // Allowlist before eventId — poly cache often has no slug (Fever 2026-08-16).
   // canpl/mex on the same calendar day is not a WNBA moneyline.
   const posLeagueEarly = slugLeague(slug);
+  const sportUpper = String(sport || '').toUpperCase();
   const boardLeagueEarly = slugLeague(polyGame?.slug || polyGame?.eventSlug || '')
-    || BOARD_SPORT_SLUG[String(sport || '').toUpperCase()]
+    || BOARD_SPORT_SLUG[sportUpper]
     || null;
   if (posLeagueEarly && boardLeagueEarly && posLeagueEarly !== boardLeagueEarly) {
     return { ok: false, reason: 'slug_sport_mismatch' };
   }
-  if (posLeagueEarly && FOREIGN_SLUG_LEAGUES.has(posLeagueEarly) && !boardLeagueEarly) {
+  const socNative = sportUpper === 'SOC' && SOC_SLUG_LEAGUES.has(posLeagueEarly);
+  if (posLeagueEarly && FOREIGN_SLUG_LEAGUES.has(posLeagueEarly) && !boardLeagueEarly && !socNative) {
     return { ok: false, reason: 'slug_sport_mismatch' };
   }
 

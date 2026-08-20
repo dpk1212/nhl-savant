@@ -43,7 +43,10 @@ const ESPN_MLB_URL = "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb
 const ESPN_NBA_URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard";
 const ESPN_WNBA_URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard";
 const ESPN_NFL_URL = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard";
-const ESPN_SOC_URL = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard";
+const ESPN_SOC_URLS = [
+  "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard",
+  "https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard",
+];
 const ESPN_UFC_URL = "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard";
 
 // ESPN WNBA abbreviation → our lowercased codes (mirrors gradeSharpActions.js).
@@ -299,15 +302,66 @@ const SOC_NAME_TO_CODE = {
   "turkiye": "TUR", "turkey": "TUR",
   "uruguay": "URU", "usa": "USA", "unitedstates": "USA", "unitedstatesofamerica": "USA",
   "uzbekistan": "UZB",
+  // EPL
+  "arsenal": "ARS", "arsenalfc": "ARS",
+  "astonvilla": "AST", "astonvillafc": "AST",
+  "bournemouth": "BOU", "afcbournemouth": "BOU",
+  "brentford": "BRE", "brentfordfc": "BRE",
+  "brightonandhovealbion": "BRI", "brightonhovealbion": "BRI", "brighton": "BRI",
+  "chelsea": "CHE", "chelseafc": "CHE",
+  "coventrycity": "COV", "coventry": "COV",
+  "crystalpalace": "CRY",
+  "everton": "EVE", "evertonfc": "EVE",
+  "fulham": "FUL", "fulhamfc": "FUL",
+  "hullcity": "HUL", "hull": "HUL",
+  "ipswichtown": "IPS", "ipswich": "IPS",
+  "leedsunited": "LEE", "leeds": "LEE",
+  "liverpool": "LIV", "liverpoolfc": "LIV",
+  "manchestercity": "MAC", "mancity": "MAC",
+  "manchesterunited": "MUN", "manutd": "MUN", "manunited": "MUN",
+  "newcastleunited": "NEW", "newcastle": "NEW",
+  "nottinghamforest": "NOT", "nottingham": "NOT",
+  "sunderland": "SUN",
+  "tottenhamhotspur": "TOT", "tottenham": "TOT", "spurs": "TOT",
+  // La Liga (EPY ≠ Spain ESP)
+  "alaves": "ALA", "deportivoalaves": "ALA",
+  "athleticbilbao": "BIL", "athleticclub": "BIL",
+  "atleticomadrid": "MAD", "clubatleticodemadrid": "MAD", "atleti": "MAD",
+  "barcelona": "BAR", "fcbarcelona": "BAR",
+  "osasuna": "OSA", "caosasuna": "OSA",
+  "celtavigo": "CEL", "celtadevigo": "CEL", "rcceltadevigo": "CEL", "celta": "CEL",
+  "deportivolacoruna": "DEP", "deportivo": "DEP",
+  "elche": "ELC", "elchecf": "ELC",
+  "espanyol": "EPY", "rcdespanyol": "EPY", "rcdespanyoldebarcelona": "EPY",
+  "getafe": "GET", "getafecf": "GET",
+  "levante": "LEV", "levanteud": "LEV",
+  "malaga": "MLG", "malagacf": "MLG",
+  "rayovallecano": "RAY", "rayovallecanodemadrid": "RAY", "rayo": "RAY",
+  "realbetis": "BET", "realbetisbalompie": "BET", "betis": "BET",
+  "realmadrid": "REA", "realmadridcf": "REA",
+  "realracingclubdesantander": "RRC", "realracingclub": "RRC", "racingsantander": "RRC",
+  "realsociedad": "RSO", "realsociedaddefutbol": "RSO",
+  "sevilla": "SEV", "sevillafc": "SEV",
+  "valencia": "VAL", "valenciacf": "VAL",
+  "villarreal": "VIL", "villarrealcf": "VIL",
 };
 
 function resolveSOCCode(raw) {
-  const n = (raw || "")
+  const cleaned = String(raw || "")
+      .replace(/^(?:the\s+)/i, "")
+      .replace(/^(?:fc|cf|rcd|rc|ca|afc)\s+/i, "")
+      .replace(/\s+(?:fc|cf|afc|cfc|sc)\s*$/i, "")
+      .trim();
+  const n = (cleaned)
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .toLowerCase()
       .replace(/[^a-z0-9]/g, "");
-  return SOC_NAME_TO_CODE[n] || null;
+  return SOC_NAME_TO_CODE[n] || SOC_NAME_TO_CODE[(raw || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "")] || null;
 }
 
 function impliedProbability(american) {
@@ -605,46 +659,39 @@ async function fetchNFLFinalGames() {
 }
 
 async function fetchSOCFinalGames(dateStr) {
-  // FIFA World Cup via ESPN. Polymarket's 3-way match market resolves on the
-  // 90-minute result. Group stage is always STATUS_FULL_TIME, so the final
-  // score IS the regulation score. Knockout rounds, however, can go to extra
-  // time (STATUS_FINAL_AET) or penalties (STATUS_FINAL_PEN) — and ESPN's
-  // `score` then INCLUDES extra-time goals (shootout goals live in a separate
-  // shootoutScore field). A knockout that reached ET/pens was, by definition,
-  // level after 90 minutes, so its 90-minute result is a DRAW. We flag those
-  // games (wentBeyond90) so calculateOutcome / winner grade them as a draw
-  // regardless of the ET-inflated score below.
-  try {
-    const ymd = dateStr ? `?dates=${dateStr.replace(/-/g, "")}` : "";
-    const res = await fetch(`${ESPN_SOC_URL}${ymd}`);
-    if (!res.ok) { logger.warn(`ESPN SOC API ${res.status}`); return []; }
-    const data = await res.json();
-    return (data.events || [])
-        .filter((e) => isActuallyFinal(e.competitions?.[0]?.status?.type))
-        .map((e) => {
-          const comp = e.competitions[0];
-          const comps = comp.competitors || [];
-          const away = comps.find((c) => c.homeAway === "away") || {};
-          const home = comps.find((c) => c.homeAway === "home") || {};
-          const awayName = away.team?.displayName || away.team?.name || "";
-          const homeName = home.team?.displayName || home.team?.name || "";
-          const stName = comp.status?.type?.name || "";
-          const wentBeyond90 =
-            stName === "STATUS_FINAL_AET" || stName === "STATUS_FINAL_PEN";
-          return {
-            awayCode: (resolveSOCCode(awayName) || "").toLowerCase(),
-            homeCode: (resolveSOCCode(homeName) || "").toLowerCase(),
-            awayTeam: awayName,
-            homeTeam: homeName,
-            awayScore: parseInt(away.score) || 0,
-            homeScore: parseInt(home.score) || 0,
-            wentBeyond90,
-          };
+  const ymd = dateStr ? `?dates=${dateStr.replace(/-/g, "")}` : "";
+  const games = [];
+  for (const base of ESPN_SOC_URLS) {
+    try {
+      const res = await fetch(`${base}${ymd}`);
+      if (!res.ok) { logger.warn(`ESPN SOC API ${res.status} (${base})`); continue; }
+      const data = await res.json();
+      for (const e of data.events || []) {
+        if (!isActuallyFinal(e.competitions?.[0]?.status?.type)) continue;
+        const comp = e.competitions[0];
+        const comps = comp.competitors || [];
+        const away = comps.find((c) => c.homeAway === "away") || {};
+        const home = comps.find((c) => c.homeAway === "home") || {};
+        const awayName = away.team?.displayName || away.team?.name || "";
+        const homeName = home.team?.displayName || home.team?.name || "";
+        const stName = comp.status?.type?.name || "";
+        const wentBeyond90 =
+          stName === "STATUS_FINAL_AET" || stName === "STATUS_FINAL_PEN";
+        games.push({
+          awayCode: (resolveSOCCode(awayName) || "").toLowerCase(),
+          homeCode: (resolveSOCCode(homeName) || "").toLowerCase(),
+          awayTeam: awayName,
+          homeTeam: homeName,
+          awayScore: parseInt(away.score) || 0,
+          homeScore: parseInt(home.score) || 0,
+          wentBeyond90,
         });
-  } catch (e) {
-    logger.error("ESPN SOC fetch error:", e.message);
-    return [];
+      }
+    } catch (e) {
+      logger.error("ESPN SOC fetch error:", e.message);
+    }
   }
+  return games;
 }
 
 /**

@@ -1,15 +1,15 @@
 /**
- * Soccer (FIFA World Cup) team resolution — shared by fetchPolymarketData,
- * scanSharpPositions, scanWhitelistedWallets, seedSportsSharps, buildWhaleProfiles.
+ * Soccer team resolution — World Cup nations + EPL / La Liga clubs.
+ * Shared by fetchPolymarketData, snapshotPinnacle, scanSharpPositions,
+ * scanWhitelistedWallets, seedSportsSharps, buildWhaleProfiles, gradeSharpActions.
  *
- * Maps country-name variants from three different sources to FIFA 3-letter codes:
- *   - Polymarket match titles  ("Korea Republic", "Türkiye", "Côte d'Ivoire", "DR Congo")
- *   - Polymarket winner market ("South Korea", "Turkiye", "Ivory Coast", "Congo DR")
- *   - The Odds API h2h teams   ("South Korea", "Turkey", "Ivory Coast", "USA"/"United States")
+ * Sport code stays `SOC` so the existing 3-way (home/draw/away) board, draw
+ * side, and soccer sharp wallet list (`bySport.SOC`) reuse without a new
+ * universe. World Cup is over; club soccer is the live schedule.
  *
- * Game keys follow the existing pipeline convention: `${code}_${code}` lowercased,
- * e.g. "mex_kor". Do NOT trust Polymarket slug codes (fifwc-mex-kr) — they are
- * inconsistent (observed kr vs kor, and mis-slugged events).
+ * Game keys: `${code}_${code}` lowercased from resolved names, not slug
+ * tokens (fifwc-mex-kr used `kr`; Espanyol slug `esp` must not become Spain).
+ * Espanyol is EPY so it never collides with FIFA Spain (ESP).
  */
 
 /** Fold diacritics then strip non-alphanumerics: "Côte d'Ivoire" -> "cotedivoire". */
@@ -75,16 +75,70 @@ const SOC_TEAMS = [
   { code: 'UZB', names: ['Uzbekistan'] },
 ];
 
-/** normalized alias -> FIFA code */
+// Premier League + La Liga clubs. Codes follow Polymarket slug tokens when
+// unique (ars, mun, mac, rea). Espanyol is EPY — slug `esp` is Spain's FIFA code.
+const SOC_CLUBS = [
+  // EPL
+  { code: 'ARS', names: ['Arsenal', 'Arsenal FC'] },
+  { code: 'AST', names: ['Aston Villa', 'Aston Villa FC'] },
+  { code: 'BOU', names: ['Bournemouth', 'AFC Bournemouth'] },
+  { code: 'BRE', names: ['Brentford', 'Brentford FC'] },
+  { code: 'BRI', names: ['Brighton and Hove Albion', 'Brighton & Hove Albion', 'Brighton & Hove Albion FC', 'Brighton'] },
+  { code: 'CHE', names: ['Chelsea', 'Chelsea FC'] },
+  { code: 'COV', names: ['Coventry City', 'Coventry City FC', 'Coventry'] },
+  { code: 'CRY', names: ['Crystal Palace', 'Crystal Palace FC'] },
+  { code: 'EVE', names: ['Everton', 'Everton FC'] },
+  { code: 'FUL', names: ['Fulham', 'Fulham FC'] },
+  { code: 'HUL', names: ['Hull City', 'Hull City AFC', 'Hull'] },
+  { code: 'IPS', names: ['Ipswich Town', 'Ipswich Town FC', 'Ipswich'] },
+  { code: 'LEE', names: ['Leeds United', 'Leeds United FC', 'Leeds'] },
+  { code: 'LIV', names: ['Liverpool', 'Liverpool FC'] },
+  { code: 'MAC', names: ['Manchester City', 'Manchester City FC', 'Man City'] },
+  { code: 'MUN', names: ['Manchester United', 'Manchester United FC', 'Man Utd', 'Man United'] },
+  { code: 'NEW', names: ['Newcastle United', 'Newcastle United FC', 'Newcastle'] },
+  { code: 'NOT', names: ['Nottingham Forest', 'Nottingham Forest FC', 'Nottingham'] },
+  { code: 'SUN', names: ['Sunderland', 'Sunderland AFC'] },
+  { code: 'TOT', names: ['Tottenham Hotspur', 'Tottenham Hotspur FC', 'Tottenham', 'Spurs'] },
+  // La Liga — EPY not ESP (Spain). REA not "Madrid" (Atlético also Madrid).
+  { code: 'ALA', names: ['Alavés', 'Alaves', 'Deportivo Alavés', 'Deportivo Alaves'] },
+  { code: 'BIL', names: ['Athletic Bilbao', 'Athletic Club'] },
+  { code: 'MAD', names: ['Atlético Madrid', 'Atletico Madrid', 'Club Atlético de Madrid', 'Club Atletico de Madrid', 'Atleti'] },
+  { code: 'BAR', names: ['Barcelona', 'FC Barcelona'] },
+  { code: 'OSA', names: ['Osasuna', 'CA Osasuna'] },
+  { code: 'CEL', names: ['Celta Vigo', 'Celta de Vigo', 'RC Celta de Vigo', 'Celta'] },
+  { code: 'DEP', names: ['Deportivo La Coruña', 'Deportivo La Coruna', 'Deportivo'] },
+  { code: 'ELC', names: ['Elche', 'Elche CF'] },
+  { code: 'EPY', names: ['Espanyol', 'RCD Espanyol', 'RCD Espanyol de Barcelona'] },
+  { code: 'GET', names: ['Getafe', 'Getafe CF'] },
+  { code: 'LEV', names: ['Levante', 'Levante UD'] },
+  { code: 'MLG', names: ['Málaga', 'Malaga', 'Málaga CF', 'Malaga CF'] },
+  { code: 'RAY', names: ['Rayo Vallecano', 'Rayo Vallecano de Madrid', 'Rayo'] },
+  { code: 'BET', names: ['Real Betis', 'Real Betis Balompié', 'Real Betis Balompie', 'Betis'] },
+  { code: 'REA', names: ['Real Madrid', 'Real Madrid CF'] },
+  { code: 'RRC', names: ['Real Racing Club de Santander', 'Real Racing Club', 'Racing Santander', 'Racing Club'] },
+  { code: 'RSO', names: ['Real Sociedad', 'Real Sociedad de Fútbol', 'Real Sociedad de Futbol'] },
+  { code: 'SEV', names: ['Sevilla', 'Sevilla FC'] },
+  { code: 'VAL', names: ['Valencia', 'Valencia CF'] },
+  { code: 'VIL', names: ['Villarreal', 'Villarreal CF'] },
+];
+
+const ALL_SOC_TEAMS = [...SOC_TEAMS, ...SOC_CLUBS];
+
+/** normalized alias -> FIFA / club code */
 export const SOC_NAME_TO_CODE = {};
-for (const { code, names } of SOC_TEAMS) {
+for (const { code, names } of ALL_SOC_TEAMS) {
   SOC_NAME_TO_CODE[normalizeSoccerName(code)] = code;
   for (const n of names) SOC_NAME_TO_CODE[normalizeSoccerName(n)] = code;
 }
+// Spain keeps ESP. Never let Espanyol's slug token steal it.
+SOC_NAME_TO_CODE.esp = 'ESP';
+SOC_NAME_TO_CODE.spain = 'ESP';
+SOC_NAME_TO_CODE.epy = 'EPY';
+SOC_NAME_TO_CODE.espanyol = 'EPY';
 
 /** Canonical display names (first alias) keyed by code, e.g. SOC_CODE_TO_NAME.KOR = 'Korea Republic'. */
 export const SOC_CODE_TO_NAME = {};
-for (const { code, names } of SOC_TEAMS) SOC_CODE_TO_NAME[code] = names[0];
+for (const { code, names } of ALL_SOC_TEAMS) SOC_CODE_TO_NAME[code] = names[0];
 
 /**
  * Resolve a raw country string to a FIFA code, or null.
@@ -92,13 +146,31 @@ for (const { code, names } of SOC_TEAMS) SOC_CODE_TO_NAME[code] = names[0];
  * fallbacks misfire on multi-word countries (South Korea vs South Africa).
  * Trailing noise like "(W)" or " National Team" is stripped first.
  */
-export function resolveSOCTeam(raw) {
-  if (!raw) return null;
-  const cleaned = String(raw)
+function stripClubNoise(raw) {
+  return String(raw || '')
     .replace(/\s*\((?:w|women)\)\s*$/i, '')
     .replace(/\s+national team\s*$/i, '')
+    .replace(/^(?:the\s+)/i, '')
+    .replace(/^(?:fc|cf|rcd|rc|ca|afc)\s+/i, '')
+    .replace(/\s+(?:fc|cf|afc|cfc|sc)\s*$/i, '')
     .trim();
-  return SOC_NAME_TO_CODE[normalizeSoccerName(cleaned)] || null;
+}
+
+export function resolveSOCTeam(raw) {
+  if (!raw) return null;
+  const cleaned = stripClubNoise(raw);
+  if (!cleaned) return null;
+  return SOC_NAME_TO_CODE[normalizeSoccerName(cleaned)]
+    || SOC_NAME_TO_CODE[normalizeSoccerName(String(raw).trim())]
+    || null;
+}
+
+/** Game key from two team name strings (away_home). */
+export function makeSOCGameKey(a, b) {
+  const aa = resolveSOCTeam(a);
+  const bb = resolveSOCTeam(b);
+  if (!aa || !bb || aa === bb) return null;
+  return `${aa.toLowerCase()}_${bb.toLowerCase()}`;
 }
 
 /**
@@ -110,8 +182,8 @@ export function resolveSOCTeam(raw) {
  */
 export function isSoccerMarketTitle(title) {
   const t = (title || '').toLowerCase();
-  if (/world cup|fifa/.test(t)) return true;
-  let m = t.match(/^will\s+(.+?)\s+win(?:\s+on\s+\d{4}-\d{2}-\d{2})?\s*\?*$/);
+  if (/world cup|\bfifa\b|\bepl\b|premier league|la ?liga|laliga/.test(t)) return true;
+  let m = t.match(/^will\s+(?:the\s+)?(.+?)\s+win(?:\s+on\s+\d{4}-\d{2}-\d{2})?\s*\?*$/);
   if (m && resolveSOCTeam(m[1])) return true;
   m = t.match(/^will\s+(.+?)\s+vs\.?\s+(.+?)\s+end\s+in\s+a\s+draw/);
   if (m && resolveSOCTeam(m[1]) && resolveSOCTeam(m[2])) return true;
@@ -120,7 +192,14 @@ export function isSoccerMarketTitle(title) {
   return false;
 }
 
-/** True if a Polymarket event slug is a MAIN World Cup match event (not a prop/future). */
+const MAIN_SOC_SLUG = /^(fifwc|epl|lal)-[a-z]+-[a-z]+-\d{4}-\d{2}-\d{2}$/;
+
+/** MAIN match event — EPL, La Liga, leftover World Cup. Drops HT / exact-score / futures. */
+export function isMainSoccerMatchSlug(slug) {
+  return MAIN_SOC_SLUG.test(String(slug || '').toLowerCase());
+}
+
+/** World Cup-only MAIN slug. Prefer isMainSoccerMatchSlug for live schedule. */
 export function isMainWorldCupMatchSlug(slug) {
   return /^fifwc-[a-z]+-[a-z]+-\d{4}-\d{2}-\d{2}$/.test(slug || '');
 }
@@ -168,7 +247,7 @@ export function matchSoccerPositionTitle(posTitle, todaysGames) {
   }
 
   // Team-win market (optionally dated)
-  m = t.match(/^will\s+(.+?)\s+win(?:\s+on\s+(\d{4}-\d{2}-\d{2}))?\s*\?*$/i);
+  m = t.match(/^will\s+(?:the\s+)?(.+?)\s+win(?:\s+on\s+(\d{4}-\d{2}-\d{2}))?\s*\?*$/i);
   if (m) {
     const code = resolveSOCTeam(m[1]);
     if (!code) return null;
