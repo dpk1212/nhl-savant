@@ -99,6 +99,11 @@ import {
   applyQConvMuteOverlay,
   applyFoolsGoldMuteOverlay,
   applyFlinchFailOpenMuteOverlay,
+  applyMaxSrSub4MuteOverlay,
+  maxForSizeRatio,
+  isMaxSrSub4MuteLive,
+  MAX_SR_SUB4_MUTE_FROM,
+  MAX_SR_SUB4_MUTED_BY,
   bestProvenForSide,
   computeConfirmedUnoppSized,
   computeConfirmedQ1Sized,
@@ -1100,6 +1105,9 @@ function applySkillFeatureStamps(target, bundle, now, {
   unitsPreFoolsGold = null,
   flinchFailOpenAction = null,
   unitsPreFlinchFailOpen = null,
+  maxSr = null,
+  maxSrSub4Action = null,
+  unitsPreMaxSrSub4 = null,
   blendTier = null,
   pathBlendPriors = null,
   sideOdds = null,
@@ -1182,6 +1190,11 @@ function applySkillFeatureStamps(target, bundle, now, {
   if (unitsPreFlinchFailOpen != null && Number.isFinite(unitsPreFlinchFailOpen)) {
     target.v8_unitsPreFlinchFailOpen = unitsPreFlinchFailOpen;
   }
+  if (maxSr != null && Number.isFinite(Number(maxSr))) target.v8_maxSr = Number(maxSr);
+  if (maxSrSub4Action != null) target.v8_maxSrSub4Action = maxSrSub4Action;
+  if (unitsPreMaxSrSub4 != null && Number.isFinite(unitsPreMaxSrSub4)) {
+    target.v8_unitsPreMaxSrSub4 = unitsPreMaxSrSub4;
+  }
   // Path × EDGE expected WR (tracking only — no unit effect)
   const meanFor = wa?.meanFor ?? bundle.winnerAlign?.meanFor ?? null;
   const prior = resolvePathPriorWr(pathBlendPriors?.byTier, blendTier, {
@@ -1249,7 +1262,7 @@ function pinnTapeFromMeta(gameMeta, pick, mkt, side, sd, extra = {}) {
 
 function skillStampsDrifted(sd, bundle, {
   tapeAction = null, qConv = null, qConvAction = null, foolsGoldAction = null,
-  flinchFailOpenAction = null, blendWr = null, expWin = null,
+  flinchFailOpenAction = null, maxSrSub4Action = null, blendWr = null, expWin = null,
 } = {}) {
   if ((sd.v8_skillFeatureVersion || 0) !== SKILL_FEATURE_VERSION) return true;
   if (sd.v8_skillEvaluatedAt == null) return true;
@@ -1288,6 +1301,7 @@ function skillStampsDrifted(sd, bundle, {
   if (qConvAction != null && (sd.v8_qConvAction || null) !== qConvAction) return true;
   if (foolsGoldAction != null && (sd.v8_foolsGoldAction || null) !== foolsGoldAction) return true;
   if (flinchFailOpenAction != null && (sd.v8_flinchFailOpenAction || null) !== flinchFailOpenAction) return true;
+  if (maxSrSub4Action != null && (sd.v8_maxSrSub4Action || null) !== maxSrSub4Action) return true;
   return false;
 }
 
@@ -2945,7 +2959,7 @@ async function createMissingLockedPicks({
         }
       }
 
-      // Flinch / fail-open leftover mute — LAST dial after Q1/UNOPP restore
+      // Flinch / fail-open leftover mute — after Q1/UNOPP restore
       // so those floors cannot revive a stub. 4u+ and unflagged tickets HOLD.
       let flinchFailOpenPolicyCreate = null;
       if (createV121Eligible && peakUnitsApplied > 0) {
@@ -2958,6 +2972,19 @@ async function createMissingLockedPicks({
           pickDate: TARGET_DATE,
         });
         peakUnitsApplied = flinchFailOpenPolicyCreate.units;
+      }
+
+      // maxSR sub-4 mute — ABSOLUTE LAST after flinch. Cuts only remaining
+      // sub-4u with max FOR sizeRatio < 1. Never resizes or repaths.
+      let maxSrSub4PolicyCreate = null;
+      const maxSrCreate = maxForSizeRatio(walletDetails, side);
+      if (createV121Eligible && peakUnitsApplied > 0) {
+        maxSrSub4PolicyCreate = applyMaxSrSub4MuteOverlay({
+          units: peakUnitsApplied,
+          maxSR: maxSrCreate,
+          pickDate: TARGET_DATE,
+        });
+        peakUnitsApplied = maxSrSub4PolicyCreate.units;
       }
 
       // Determine team label for the side.
@@ -3151,6 +3178,11 @@ async function createMissingLockedPicks({
           unitsPreFlinchFailOpen: (flinchFailOpenPolicyCreate && Number.isFinite(flinchFailOpenPolicyCreate.unitsPrePolicy))
             ? flinchFailOpenPolicyCreate.unitsPrePolicy
             : null,
+          maxSr: maxSrCreate,
+          maxSrSub4Action: maxSrSub4PolicyCreate?.action ?? null,
+          unitsPreMaxSrSub4: (maxSrSub4PolicyCreate && Number.isFinite(maxSrSub4PolicyCreate.unitsPrePolicy))
+            ? maxSrSub4PolicyCreate.unitsPrePolicy
+            : null,
           blendTier: hcStakeTierCreate,
           pathBlendPriors,
           sideOdds: odds ?? null,
@@ -3200,7 +3232,9 @@ async function createMissingLockedPicks({
           hoursUntilGame: hoursUntilMs(tapeCreateCtx.commenceMs, now),
         });
       }
-      if (flinchFailOpenPolicyCreate?.mutedBy) {
+      if (maxSrSub4PolicyCreate?.mutedBy) {
+        v8Stamps.mutedBy = maxSrSub4PolicyCreate.mutedBy;
+      } else if (flinchFailOpenPolicyCreate?.mutedBy) {
         v8Stamps.mutedBy = flinchFailOpenPolicyCreate.mutedBy;
       } else if (q1FlooredCreate || unoppFlooredCreate) {
         if (v8Stamps.mutedBy != null) delete v8Stamps.mutedBy;
@@ -3216,7 +3250,10 @@ async function createMissingLockedPicks({
       const flinchMutedCreate = flinchFailOpenPolicyCreate?.action === 'MUTE'
         && Number.isFinite(flinchFailOpenPolicyCreate.unitsPrePolicy)
         && flinchFailOpenPolicyCreate.unitsPrePolicy > 0;
-      const createSizeMuted = flinchMutedCreate || (!q1FlooredCreate && !unoppFlooredCreate && (
+      const maxSrMutedCreate = maxSrSub4PolicyCreate?.action === 'MUTE'
+        && Number.isFinite(maxSrSub4PolicyCreate.unitsPrePolicy)
+        && maxSrSub4PolicyCreate.unitsPrePolicy > 0;
+      const createSizeMuted = maxSrMutedCreate || flinchMutedCreate || (!q1FlooredCreate && !unoppFlooredCreate && (
         (foolsGoldPolicyCreate?.action === 'MUTE'
           && Number.isFinite(foolsGoldPolicyCreate.unitsPrePolicy)
           && foolsGoldPolicyCreate.unitsPrePolicy > 0)
@@ -3228,6 +3265,7 @@ async function createMissingLockedPicks({
       const healthStamp = {
         status: createSizeMuted ? 'MUTED' : 'ACTIVE',
         reasons: [
+          ...(maxSrSub4PolicyCreate?.reason ? [maxSrSub4PolicyCreate.reason] : []),
           ...(flinchFailOpenPolicyCreate?.reason ? [flinchFailOpenPolicyCreate.reason] : []),
           ...(foolsGoldPolicyCreate?.reason ? [foolsGoldPolicyCreate.reason] : []),
           ...(qConvPolicyCreate?.reason ? [qConvPolicyCreate.reason] : []),
@@ -4261,7 +4299,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
 
   // ─── Flinch / fail-open leftover mute (after Q1/UNOPP restore) ────────
   // Believed-then-cut leftovers + sub-4 FAIL_OPEN → 0u. 4u+ never touched.
-  // Manual stake exempt. Runs last so Q1/UNOPP floors cannot revive a stub.
+  // Manual stake exempt. Runs before maxSR mute.
   let flinchFailOpenPolicy = null;
   const skipManualFlinch = Number.isFinite(sd.manualStake) && sd.manualStake > 0;
   if (v121Eligible && finalUnitsApplied > 0 && !skipManualFlinch) {
@@ -4274,6 +4312,20 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       pickDate,
     });
     finalUnitsApplied = flinchFailOpenPolicy.units;
+  }
+
+  // ─── maxSR sub-4 mute (absolute last after flinch) ────────────────────
+  // Remaining sub-4u with max FOR sizeRatio < 1 → 0u. Never resizes /
+  // repaths. Missing maxSR → HOLD. 4u+ EXEMPT. Manual stake exempt.
+  let maxSrSub4Policy = null;
+  const maxSrLive = maxForSizeRatio(frozenWd, side);
+  if (v121Eligible && finalUnitsApplied > 0 && !skipManualFlinch) {
+    maxSrSub4Policy = applyMaxSrSub4MuteOverlay({
+      units: finalUnitsApplied,
+      maxSR: maxSrLive,
+      pickDate,
+    });
+    finalUnitsApplied = maxSrSub4Policy.units;
   }
 
   // ─── lockStage promote/demote — v12 gate ──────────────────────────────
@@ -4333,6 +4385,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (qConvPolicy?.reason && !reasons.includes(qConvPolicy.reason)) reasons.push(qConvPolicy.reason);
   if (foolsGoldPolicy?.reason && !reasons.includes(foolsGoldPolicy.reason)) reasons.push(foolsGoldPolicy.reason);
   if (flinchFailOpenPolicy?.reason && !reasons.includes(flinchFailOpenPolicy.reason)) reasons.push(flinchFailOpenPolicy.reason);
+  if (maxSrSub4Policy?.reason && !reasons.includes(maxSrSub4Policy.reason)) reasons.push(maxSrSub4Policy.reason);
   // Preserve diagnostic-only badge signals from prior cycles (they don't
   // change status but the UI uses them for chip rendering).
   if (sd.health?.reasons) {
@@ -4352,9 +4405,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const flinchMuted = flinchFailOpenPolicy?.action === 'MUTE'
     && Number.isFinite(flinchFailOpenPolicy.unitsPrePolicy)
     && flinchFailOpenPolicy.unitsPrePolicy > 0;
+  const maxSrMuted = maxSrSub4Policy?.action === 'MUTE'
+    && Number.isFinite(maxSrSub4Policy.unitsPrePolicy)
+    && maxSrSub4Policy.unitsPrePolicy > 0;
   // Q1 / UNOPP hard floor wins — do not leave health MUTED when units were restored.
-  // Flinch mute runs AFTER those floors, so it still wins if it cancelled the restore.
-  const sizeMuted = flinchMuted || (!confirmedQ1Floored && !confirmedUnoppFloored && (foolsMuted || qConvMuted || (tapeSizingLive
+  // Flinch + maxSR mutes run AFTER those floors, so they still win if they cancelled.
+  const sizeMuted = maxSrMuted || flinchMuted || (!confirmedQ1Floored && !confirmedUnoppFloored && (foolsMuted || qConvMuted || (tapeSizingLive
     ? (tapePolicy?.action === 'MUTE' && unitsBeforeClv > 0)
     : (clvPolicy.action === 'CANCEL' && unitsBeforeClv > 0))));
   const healthStatusOut = sizeMuted
@@ -4391,7 +4447,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const QCONV_MUTE_VALUES = new Set(['qconv-q1']);
   const FOOLS_MUTE_VALUES = new Set(['fools-gold-flat']);
   const FLINCH_MUTE_VALUES = new Set(['believed-cut', 'fail-open-sub4']);
-  if (flinchFailOpenPolicy?.mutedBy) {
+  const MAX_SR_MUTE_VALUES = new Set([MAX_SR_SUB4_MUTED_BY]);
+  if (maxSrSub4Policy?.mutedBy) {
+    patch.mutedBy = maxSrSub4Policy.mutedBy;
+  } else if (flinchFailOpenPolicy?.mutedBy) {
     patch.mutedBy = flinchFailOpenPolicy.mutedBy;
   } else if (confirmedQ1Floored || confirmedUnoppFloored) {
     // Hard floor restored stake — clear any mute stamp so UI shows the ticket.
@@ -4415,7 +4474,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       || TAPE_MUTE_VALUES.has(sd.mutedBy)
       || QCONV_MUTE_VALUES.has(sd.mutedBy)
       || FOOLS_MUTE_VALUES.has(sd.mutedBy)
-      || FLINCH_MUTE_VALUES.has(sd.mutedBy)) {
+      || FLINCH_MUTE_VALUES.has(sd.mutedBy)
+      || MAX_SR_MUTE_VALUES.has(sd.mutedBy)) {
     // Clear stale mute stamps when no current mute gate is firing.
     patch.mutedBy = admin.firestore.FieldValue.delete();
   }
@@ -4638,6 +4698,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       + `${flinchFailOpenPolicy.unitsPrePolicy}u → 0u (${hcStakeTier})`
     );
   }
+  if (maxSrSub4Policy?.action === 'MUTE') {
+    changes.push(
+      `MAXSR-MUTE: maxSR=${maxSrLive == null ? '—' : Number(maxSrLive).toFixed(2)} < 1 `
+      + `${maxSrSub4Policy.unitsPrePolicy}u → 0u (${hcStakeTier})`
+    );
+  }
   if (rankRescued) {
     changes.push(`RANK-RESCUE: 2-for-0 slice promoted HC-muted pick → ${RANK_RESCUE_UNITS}u`);
   }
@@ -4716,6 +4782,11 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       unitsPreFlinchFailOpen: (flinchFailOpenPolicy && Number.isFinite(flinchFailOpenPolicy.unitsPrePolicy))
         ? flinchFailOpenPolicy.unitsPrePolicy
         : null,
+      maxSr: maxSrLive,
+      maxSrSub4Action: maxSrSub4Policy?.action ?? null,
+      unitsPreMaxSrSub4: (maxSrSub4Policy && Number.isFinite(maxSrSub4Policy.unitsPrePolicy))
+        ? maxSrSub4Policy.unitsPrePolicy
+        : null,
       blendTier: hcStakeTier,
       pathBlendPriors,
       sideOdds,
@@ -4735,6 +4806,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       flinchFailOpenAction: flinchFailOpenPolicy?.action ?? null,
       blendWr: patch.v8_blendWr,
       expWin: patch.v8_expWin,
+      maxSrSub4Action: maxSrSub4Policy?.action ?? null,
     })
         || (edgeNetSizePolicy && (sd.v8_edgeNetSizeAction || null) !== edgeNetSizePolicy.action)
         || (edgeBandSizePolicy && (sd.v8_edgeBandAction || null) !== edgeBandSizePolicy.action)
@@ -4744,7 +4816,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         ))
         || (qConvPolicy && (sd.v8_qConvAction || null) !== qConvPolicy.action)
         || (foolsGoldPolicy && (sd.v8_foolsGoldAction || null) !== foolsGoldPolicy.action)
-        || (flinchFailOpenPolicy && (sd.v8_flinchFailOpenAction || null) !== flinchFailOpenPolicy.action)) {
+        || (flinchFailOpenPolicy && (sd.v8_flinchFailOpenAction || null) !== flinchFailOpenPolicy.action)
+        || (maxSrSub4Policy && (sd.v8_maxSrSub4Action || null) !== maxSrSub4Policy.action)) {
       changes.push(
         `SKILL-FEATURES: E=${skillLive.edge == null ? '—' : Number(skillLive.edge).toFixed(1)} `
         + `net=${skillLive.netMeanPrior == null ? '—' : Number(skillLive.netMeanPrior).toFixed(1)} `
@@ -4756,7 +4829,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         + (qConvPolicy?.action ? ` qConvAct=${qConvPolicy.action}` : '')
         + (bestForLive.tier ? ` bestFOR=${bestForLive.tier}` : '')
         + (foolsGoldPolicy?.action ? ` foolsAct=${foolsGoldPolicy.action}` : '')
-        + (flinchFailOpenPolicy?.action ? ` flinchAct=${flinchFailOpenPolicy.action}` : ''),
+        + (flinchFailOpenPolicy?.action ? ` flinchAct=${flinchFailOpenPolicy.action}` : '')
+        + (maxSrSub4Policy?.action ? ` maxSrAct=${maxSrSub4Policy.action}` : ''),
       );
     }
     const tapeGrew = (patch.v8_ticketTapeLog?.length || 0) > ((sd.v8_ticketTapeLog || []).length);
@@ -5551,6 +5625,14 @@ async function main() {
     );
   } else {
     console.log(`Flinch/fail-open leftover mute: not live before ${FLINCH_FAIL_OPEN_MUTE_FROM} (TARGET_DATE=${TARGET_DATE})`);
+  }
+  if (isMaxSrSub4MuteLive(TARGET_DATE)) {
+    console.log(
+      `maxSR sub-4 mute LIVE: still <4u AND max FOR sizeRatio < 1 → 0u`
+      + ` · from ${MAX_SR_SUB4_MUTE_FROM} · 4u+ / missing-SR never touched · after flinch`,
+    );
+  } else {
+    console.log(`maxSR sub-4 mute: not live before ${MAX_SR_SUB4_MUTE_FROM} (TARGET_DATE=${TARGET_DATE})`);
   }
   if (isConfirmedQ1PromoteLive(TARGET_DATE)) {
     console.log(

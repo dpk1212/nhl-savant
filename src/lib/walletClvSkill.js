@@ -1155,6 +1155,86 @@ export function applyFlinchFailOpenMuteOverlay({
   };
 }
 
+// ── maxSR sub-4 mute (final 0u cancel — after flinch leftover mute) ──────────
+// 2026-08-20+: after ALL sizing / tape / skill / flinch processing.
+// Full-cancel remaining sub-4u tickets whose max FOR sizeRatio is below 1.0.
+// Hard fences (zero impact on the rest of the book):
+//   • units ≥ 4 → EXEMPT (never touches 4u+)
+//   • maxSR missing / non-finite → HOLD (do not invent a cut)
+//   • maxSR ≥ 1 → HOLD at exact incoming units
+//   • pre-cutover → EXEMPT
+// Does NOT resize, repath, or change any upstream dial — identity elsewhere.
+export const MAX_SR_SUB4_MUTE_FROM = '2026-08-20';
+export const MAX_SR_SUB4_MUTE_THR = 1.0;
+export const MAX_SR_SUB4_MUTED_BY = 'maxsr-sub4';
+
+export function isMaxSrSub4MuteLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= MAX_SR_SUB4_MUTE_FROM;
+}
+
+/**
+ * Max FOR `sizeRatio` on the pick side from walletDetails (peak/lock stamp).
+ * Matches analysis ledger: wallets with matching `side`, optional FOR direction.
+ */
+export function maxForSizeRatio(walletDetails, sideKey) {
+  if (sideKey == null || sideKey === '') return null;
+  const list = Array.isArray(walletDetails)
+    ? walletDetails
+    : (walletDetails && typeof walletDetails === 'object' ? Object.values(walletDetails) : []);
+  if (!list.length) return null;
+  const side = String(sideKey);
+  let mx = null;
+  for (const w of list) {
+    if (!w || typeof w !== 'object') continue;
+    if (String(w.side || '') !== side) continue;
+    if (w.direction != null && String(w.direction).toUpperCase() !== 'FOR') continue;
+    const sr = Number(w.sizeRatio ?? w.v8_sizeRatio ?? w.betMultiplier);
+    if (!Number.isFinite(sr)) continue;
+    if (mx == null || sr > mx) mx = sr;
+  }
+  return mx;
+}
+
+/**
+ * Last-step sub-4 maxSR mute. Never changes units unless published size is
+ * still under 4u AND maxSR is stamped below the threshold.
+ */
+export function applyMaxSrSub4MuteOverlay({
+  units,
+  maxSR = null,
+  pickDate = null,
+  thr = MAX_SR_SUB4_MUTE_THR,
+} = {}) {
+  const pre = Number.isFinite(units) ? Math.max(0, units) : 0;
+  const out = (action, reason = null) => ({
+    units: pre,
+    action,
+    reason,
+    mutedBy: null,
+    unitsPrePolicy: pre,
+    maxSR: Number.isFinite(Number(maxSR)) ? Number(maxSR) : null,
+  });
+  if (!(pre > 0)) {
+    return {
+      units: 0, action: 'PASS', reason: null, mutedBy: null, unitsPrePolicy: pre, maxSR: null,
+    };
+  }
+  if (!isMaxSrSub4MuteLive(pickDate)) return out('EXEMPT', 'pre_cutover');
+  if (pre >= 4) return out('EXEMPT', 'units_ge_4');
+  if (maxSR == null || maxSR === '') return out('HOLD', 'maxsr_missing');
+  const sr = Number(maxSR);
+  if (!Number.isFinite(sr)) return out('HOLD', 'maxsr_missing');
+  if (sr >= thr) return out('HOLD', null);
+  return {
+    units: 0,
+    action: 'MUTE',
+    reason: `maxsr_lt_${thr}`,
+    mutedBy: MAX_SR_SUB4_MUTED_BY,
+    unitsPrePolicy: pre,
+    maxSR: sr,
+  };
+}
+
 // ── Path × EDGE blended expected win rate (display / calibration) ───────────
 // logit(p*) = wp·logit(pathWR) + we·logit(meanFor)
 // Path WR = expanding empirical WR of prior graded staked same tier (all sports).
