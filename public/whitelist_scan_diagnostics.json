@@ -1,19 +1,19 @@
 {
-  "scannedAt": "2026-08-20T00:27:38.720Z",
-  "elapsedSec": 19.6,
+  "scannedAt": "2026-08-20T00:33:13.737Z",
+  "elapsedSec": 17.2,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 51,
   "summary": {
     "total": 246,
     "coveredByMain": 36,
-    "recovered": 25,
-    "recoveredPositions": 73,
-    "noPositions": 185,
+    "recovered": 26,
+    "recoveredPositions": 74,
+    "noPositions": 184,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 9,
+      "ml": 10,
       "spread": 1,
       "total": 2,
       "dropped_shadow_gate": 37,
@@ -341,8 +341,24 @@
       "tier": "CONFIRMED",
       "name": "fRibrenlc",
       "sports": "MLB",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x6f3e7f25baa7d2d49e15e2d2957ff3dec62cbcf8"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x6f3e7f25baa7d2d49e15e2d2957ff3dec62cbcf8",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 9072,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "lad_col",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 1067,
+          "entryLine": null,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "2ceb9a",
@@ -522,7 +538,7 @@
           "gameKey": "min_gsv",
           "marketType": "total",
           "side": "under",
-          "invested": 1405,
+          "invested": 1421,
           "entryLine": 163.5,
           "passesShadow": true
         },
@@ -2158,7 +2174,7 @@
           "gameKey": "lad_col",
           "marketType": "total",
           "side": "over",
-          "invested": 298,
+          "invested": 421,
           "entryLine": 11.5,
           "passesShadow": false
         },
