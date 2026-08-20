@@ -1,24 +1,24 @@
 {
-  "scannedAt": "2026-08-20T18:56:31.284Z",
-  "elapsedSec": 21.6,
+  "scannedAt": "2026-08-20T19:02:54.633Z",
+  "elapsedSec": 22.1,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 60,
   "summary": {
     "total": 251,
-    "coveredByMain": 29,
-    "recovered": 17,
-    "recoveredPositions": 56,
-    "noPositions": 205,
+    "coveredByMain": 26,
+    "recovered": 21,
+    "recoveredPositions": 64,
+    "noPositions": 204,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 5,
+      "ml": 12,
       "spread": 0,
-      "total": 1,
-      "dropped_shadow_gate": 32,
-      "dropped_excluded": 18,
-      "dropped_duplicate": 0
+      "total": 5,
+      "dropped_shadow_gate": 33,
+      "dropped_excluded": 11,
+      "dropped_duplicate": 3
     }
   },
   "perWallet": [
@@ -399,8 +399,7 @@
       "tier": "CONFIRMED",
       "name": "ROI-Value",
       "sports": "MLB",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x689f7d0a49d2646dc199848ffbdb4757242e259c"
+      "status": "COVERED_BY_MAIN"
     },
     {
       "walletShort": "2e8da5",
@@ -506,15 +505,15 @@
       "positionsCount": 8,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 5631,
-      "willPassShadowGate": 7,
-      "willDropAtShadowGate": 1,
+      "willPassShadowGate": 8,
+      "willDropAtShadowGate": 0,
       "positions": [
         {
           "sport": "WNBA",
           "gameKey": "ind_dal",
           "marketType": "total",
           "side": "under",
-          "invested": 7546,
+          "invested": 7610,
           "entryLine": 185.5,
           "passesShadow": true
         },
@@ -532,7 +531,7 @@
           "gameKey": "atl_las",
           "marketType": "total",
           "side": "under",
-          "invested": 4225,
+          "invested": 4228,
           "entryLine": 181.5,
           "passesShadow": true
         },
@@ -550,7 +549,7 @@
           "gameKey": "ind_dal",
           "marketType": "total",
           "side": "under",
-          "invested": 2681,
+          "invested": 2891,
           "entryLine": 186.5,
           "passesShadow": true
         },
@@ -577,9 +576,9 @@
           "gameKey": "atl_las",
           "marketType": "total",
           "side": "under",
-          "invested": 0,
+          "invested": 1221,
           "entryLine": 180.5,
-          "passesShadow": false
+          "passesShadow": true
         }
       ]
     },
@@ -979,14 +978,75 @@
       "tier": "CONFIRMED",
       "name": "0x9e3ed7b661a903fc97afcf49e0f014ebe869f882-1783406009396",
       "sports": "UFC,WNBA",
-      "status": "COVERED_BY_MAIN"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x9e3ed7b661a903fc97afcf49e0f014ebe869f882",
+      "positionsCount": 4,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 472,
+      "willPassShadowGate": 4,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "UFC",
+          "gameKey": "chrispadilla_nasrathaqparast",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 4096,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "UFC",
+          "gameKey": "songyadong_umarnurmagomedov",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 592,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "WNBA",
+          "gameKey": "atl_las",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 190,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "WNBA",
+          "gameKey": "ind_dal",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 112,
+          "entryLine": null,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "6ac120",
       "tier": "CONFIRMED",
       "name": "C63AMG",
       "sports": "UFC",
-      "status": "COVERED_BY_MAIN"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0xb31e41965df4ab8014de4c4d8da9deff0a6ac120",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 7735,
+      "willPassShadowGate": 0,
+      "willDropAtShadowGate": 1,
+      "positions": [
+        {
+          "sport": "UFC",
+          "gameKey": "kennedynzechukwu_shamilgaziev",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 54,
+          "entryLine": null,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "6b0288",
@@ -1053,7 +1113,7 @@
       "addr": "0x5268527977f700f9bf9b6d5cd843859e4e70135d",
       "positionsCount": 4,
       "statsSource": "sports_sharps.perSport",
-      "avgSportBet": 4154,
+      "avgSportBet": 4214,
       "willPassShadowGate": 4,
       "willDropAtShadowGate": 0,
       "positions": [
@@ -1257,7 +1317,33 @@
       "tier": "CONFIRMED",
       "name": "wr0ngw4yb3tt0r",
       "sports": "SOC",
-      "status": "COVERED_BY_MAIN"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x224a89dbe0db0d6124b335edabd15b3f877da3d5",
+      "positionsCount": 2,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 7404,
+      "willPassShadowGate": 2,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "WNBA",
+          "gameKey": "ind_dal",
+          "marketType": "total",
+          "side": "under",
+          "invested": 20858,
+          "entryLine": 185.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "WNBA",
+          "gameKey": "ind_dal",
+          "marketType": "total",
+          "side": "under",
+          "invested": 7740,
+          "entryLine": 186.5,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "7dd2e5",
@@ -1525,7 +1611,24 @@
       "tier": "CONFIRMED",
       "name": "suntori",
       "sports": "NBA,NHL,UFC",
-      "status": "COVERED_BY_MAIN"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0xe9076a87c5ed90ef16e6fe6529c943baeca0cff6",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 1227,
+      "willPassShadowGate": 0,
+      "willDropAtShadowGate": 1,
+      "positions": [
+        {
+          "sport": "UFC",
+          "gameKey": "songyadong_umarnurmagomedov",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 64,
+          "entryLine": null,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "a0d6d2",
@@ -1807,7 +1910,7 @@
       "addr": "0x27f738fe203827445690339104aae35b20bc44b0",
       "positionsCount": 1,
       "statsSource": "sports_sharps.perSport",
-      "avgSportBet": 3833,
+      "avgSportBet": 3888,
       "willPassShadowGate": 1,
       "willDropAtShadowGate": 0,
       "positions": [
