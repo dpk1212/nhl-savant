@@ -237,13 +237,16 @@ function collectWhaleRows({
     if (!side) return;
     const wLower = t.wallet ? String(t.wallet).toLowerCase() : null;
     if (wLower && intelExcludedSet?.has(wLower)) return;
-    const tier = wLower ? tierFor(wLower, sport, getWalletProfile) : null;
+    const bits = wLower ? profileBits(wLower, sport, getWalletProfile) : { tier: null, verdict: null, tracked: false };
+    const tier = bits.tier;
     rows.push({
       wallet: wLower || `whale:${source}:${t.outcome}:${amt}`,
       side,
       invested: amt,
       sizeRatio: null,
       whitelist: tier,
+      verdict: bits.verdict,
+      tracked: bits.tracked,
       whitelisted: tier === 'CONFIRMED' || tier === 'FLAT',
       sourceMkt: 'WHALE',
       kind: 'whale',
