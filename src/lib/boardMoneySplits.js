@@ -1,15 +1,17 @@
 /**
  * Wide board money for locked-card battle bars.
  *
- * Accuracy rules (2026-08-21 audit):
+ * Accuracy rules (2026-08-21 audit + loser feed):
  *   1. Count ONLY the pick's market axis (ML+SPREAD together; TOTAL = O/U only).
  *      Never fold ML/SPREAD into "against" on a totals pick.
  *   2. Never paint ML sampleCash as Over/Under (totals get no exchange flow).
  *   3. Full = wallets + whales (deduped by wallet|side) + exchange residual
  *      (exchange minus whale $ already counted — no double-count).
- *   4. Losing = tracked open-position wallets that are NOT CONFIRMED/FLAT.
- *      Never anonymous Kalshi/Poly whale prints — we cannot tier those.
- *   5. Confirmed = CONFIRMED wallets only (no whales, no flow, no FLAT).
+ *   4. Losing = tracked open positions we can confirm as non-winners:
+ *        WR50 · null/unranked · CONFIRMED_BLEEDER · POSITIONS_ONLY_NEGATIVE
+ *        · PICKS_ONLY_NEGATIVE (even if whitelistTier was CONFIRMED/FLAT).
+ *      Never anonymous Kalshi/Poly whale prints.
+ *   5. Confirmed = CONFIRMED tier AND not a loser verdict (no bleeders).
  *   6. Min ticket matches Vault battle field ($250).
  *
  * Whales + exchange still feed Full (board money), not Losing.
@@ -19,6 +21,13 @@
 
 /** Match Vault battle scatter floor (SharpFlow BATTLE_MIN_INVESTED). */
 export const BOARD_MONEY_MIN_INVESTED = 250;
+
+/** Profile verdicts that mean we track this wallet as a loser. */
+export const TRACKED_LOSER_VERDICTS = new Set([
+  'CONFIRMED_BLEEDER',
+  'POSITIONS_ONLY_NEGATIVE',
+  'PICKS_ONLY_NEGATIVE',
+]);
 
 function splitOf(ours, theirs) {
   const o = Math.max(0, Number(ours) || 0);
@@ -39,11 +48,33 @@ function marketKeyOf(marketType) {
   return 'ML';
 }
 
-function tierFor(wallet, sport, getWalletProfile) {
-  if (!wallet || !getWalletProfile) return null;
+function profileBits(wallet, sport, getWalletProfile) {
+  if (!wallet || !getWalletProfile) {
+    return { tier: null, verdict: null, tracked: false };
+  }
   const short = String(wallet).slice(-6).toLowerCase();
   const p = getWalletProfile(short);
-  return p?.bySport?.[sport]?.whitelistTier || null;
+  if (!p) return { tier: null, verdict: null, tracked: false };
+  const verdict = p.verdict || p.latest?.verdict || null;
+  return {
+    tier: p?.bySport?.[sport]?.whitelistTier || null,
+    verdict: typeof verdict === 'string' ? verdict : null,
+    tracked: true,
+  };
+}
+
+/** True when we can confirm this tracked wallet is a loser for board money. */
+export function isTrackedLoserRow(w) {
+  if (!w) return false;
+  if (TRACKED_LOSER_VERDICTS.has(w.verdict)) return true;
+  if (w.whitelist === 'WR50') return true;
+  if (w.whitelist === 'CONFIRMED' || w.whitelist === 'FLAT') return false;
+  // null / unknown tier on a sharp_* open row = tracked scan universe
+  return true;
+}
+
+export function isConfirmedWinnerRow(w) {
+  return !!w && w.whitelist === 'CONFIRMED' && !TRACKED_LOSER_VERDICTS.has(w.verdict);
 }
 
 /** Normalize position side → away|home|draw (totals: over→home, under→away). */
@@ -108,7 +139,7 @@ function collectWalletRows({
       const sizeRatio = Number.isFinite(p.sizeRatio) && p.sizeRatio > 0
         ? p.sizeRatio
         : (avg > 0 ? inv / avg : null);
-      const tier = tierFor(wLower, sport, getWalletProfile);
+      const { tier, verdict, tracked } = profileBits(wLower, sport, getWalletProfile);
 
       out.push({
         wallet: wLower,
@@ -117,6 +148,8 @@ function collectWalletRows({
         invested: inv,
         sizeRatio,
         whitelist: tier,
+        verdict,
+        tracked,
         whitelisted: tier === 'CONFIRMED' || tier === 'FLAT',
         sourceMkt: mk,
         kind: 'wallet',
@@ -329,8 +362,8 @@ export function buildWideBoardMoneySplits({
     .filter((w) => w.side === side && pred(w))
     .reduce((s, w) => s + w.invested, 0);
 
-  const isLoser = (w) => !(w.whitelist === 'CONFIRMED' || w.whitelist === 'FLAT');
-  const isConfirmed = (w) => w.whitelist === 'CONFIRMED';
+  const isLoser = (w) => isTrackedLoserRow(w);
+  const isConfirmed = (w) => isConfirmedWinnerRow(w);
   const isHc = (w) => isConfirmed(w)
     && Number.isFinite(w.sizeRatio)
     && w.sizeRatio >= hcRatio;
@@ -339,12 +372,11 @@ export function buildWideBoardMoneySplits({
   const whalesAll = splitOf(sumSide(whaleRowsRaw, 'ours'), sumSide(whaleRowsRaw, 'against'));
   const whales = splitOf(sumSide(whaleRows, 'ours'), sumSide(whaleRows, 'against'));
 
+  // Losing = confirmed tracked losers' open $ only (no whales/flow).
   const losers = splitOf(
     sumSide(walletRows, 'ours', isLoser),
     sumSide(walletRows, 'against', isLoser),
   );
-  // Losing = tracked wallets ONLY. Anonymous Kalshi/Poly prints have no
-  // whitelist tier — do not invent "loser" money from unmatched whales.
 
   const confirmed = splitOf(
     sumSide(walletRows, 'ours', isConfirmed),
