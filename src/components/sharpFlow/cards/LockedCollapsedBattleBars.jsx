@@ -345,7 +345,7 @@ export default function LockedCollapsedBattleBars({ f }) {
           theirsLabel={theirsLabel}
           accentOurs={GREEN}
           accentTheirs={VS}
-          tip="Tracked open positions on this market that are not CONFIRMED/FLAT (WR50 + unranked). No anonymous exchange prints."
+          tip="Tracked losers on this market: WR50, unranked, bleeders, positions-negative. No anon exchange prints."
         />
       )}
       {hasConfirmed && (
@@ -359,7 +359,7 @@ export default function LockedCollapsedBattleBars({ f }) {
           accentTheirs={VS}
           hcOursPct={hcShareOfOurs}
           tag={hcPct != null ? { text: `HC ${hcPct}%`, color: GOLD } : null}
-          tip="CONFIRMED open positions on this market only. Gold = HC (≥1.5×)"
+          tip="CONFIRMED open positions on this market (bleeders excluded). Gold = HC (≥1.5×)"
         />
       )}
     </div>
