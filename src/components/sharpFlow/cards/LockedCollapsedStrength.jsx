@@ -63,7 +63,7 @@ function boardContext(f) {
       tone: 'warn',
       label: 'Contested',
       detail: ours ? `${ours} vs ${theirs}` : `vs ${theirs}`,
-      tip: 'Sharp money on both sides — size vs quality context',
+      tip: 'Qualified sharp $ on both sides (not the Full-split bar under the chart)',
     };
   }
   if (unopposed) {
@@ -71,7 +71,7 @@ function boardContext(f) {
       tone: 'trust',
       label: 'Unopposed',
       detail: sideUsd > 0 ? fmtUsd(sideUsd) : (proven >= 1 ? `${proven} proven` : null),
-      tip: 'No sharp money on the other side',
+      tip: 'No qualified sharp $ against — Full split under the chart can still show other flow',
     };
   }
   if (proven >= 1 || sideUsd > 0) {

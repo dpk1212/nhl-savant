@@ -310,10 +310,10 @@ export default function LockedCollapsedBattleBars({ f }) {
   const tipBits = [];
   if (src?.wallets > 0) tipBits.push(`wallets $${Math.round(src.wallets).toLocaleString()}`);
   if (src?.whales > 0) tipBits.push(`whales $${Math.round(src.whales).toLocaleString()}`);
-  if (src?.exchange > 0) tipBits.push(`flow $${Math.round(src.exchange).toLocaleString()}`);
+  if (src?.exchange > 0) tipBits.push(`flow residual $${Math.round(src.exchange).toLocaleString()}`);
   const fullTip = tipBits.length
-    ? tipBits.join(' + ')
-    : 'All tracked money on this board';
+    ? `${tipBits.join(' + ')} · this market only · no double-count`
+    : 'This market only (wallets + unmatched whales + flow residual)';
 
   return (
     <div
@@ -345,7 +345,7 @@ export default function LockedCollapsedBattleBars({ f }) {
           theirsLabel={theirsLabel}
           accentOurs={GREEN}
           accentTheirs={VS}
-          tip="Non-winner tracked wallets + whale prints from non-CONFIRMED/FLAT"
+          tip="Non-CONFIRMED/FLAT open positions on this market + unmatched whale prints"
         />
       )}
       {hasConfirmed && (
@@ -359,7 +359,7 @@ export default function LockedCollapsedBattleBars({ f }) {
           accentTheirs={VS}
           hcOursPct={hcShareOfOurs}
           tag={hcPct != null ? { text: `HC ${hcPct}%`, color: GOLD } : null}
-          tip="CONFIRMED only. Gold = HC (≥1.5×). Tag = HC share of our confirmed $"
+          tip="CONFIRMED open positions on this market only. Gold = HC (≥1.5×)"
         />
       )}
     </div>
