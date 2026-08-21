@@ -146,6 +146,25 @@ export function computeCollapsedBattleSplits(f) {
   };
 }
 
+/**
+ * Soft fill for a bar segment. NEVER append hex alpha onto rgba()/rgb() —
+ * that produced invalid CSS (`rgba(...)88`) and the Losing bar painted empty.
+ * Solid backgroundColor is always set so a bad gradient cannot blank the bar.
+ */
+function barFill(color, softHex = '88') {
+  const c = String(color || '').trim();
+  if (!c) return { backgroundColor: GREEN };
+  if (c[0] === '#') {
+    const hex = c.length >= 7 ? c.slice(0, 7) : c;
+    return {
+      backgroundColor: hex,
+      backgroundImage: `linear-gradient(90deg, ${hex}${softHex}, ${hex})`,
+    };
+  }
+  // rgba / rgb / named — use as-is (already has alpha if rgba)
+  return { backgroundColor: c };
+}
+
 function SplitBar({
   oursPct,
   theirsPct,
@@ -158,9 +177,12 @@ function SplitBar({
   const showHcSplit = Number.isFinite(hcOursPct) && hcOursPct > 0 && hcOursPct < 100 && o > 0;
   const hcW = showHcSplit ? Math.max(1, Math.round((o * hcOursPct) / 100)) : 0;
   const restW = showHcSplit ? Math.max(0, o - hcW) : o;
-  const oursColor = o > 0 && Number.isFinite(hcOursPct) && hcOursPct >= 100
-    ? `linear-gradient(90deg, ${GOLD}aa, ${GOLD})`
-    : `linear-gradient(90deg, ${accentOurs}88, ${accentOurs})`;
+  const oursFill = o > 0 && Number.isFinite(hcOursPct) && hcOursPct >= 100
+    ? barFill(GOLD, 'aa')
+    : barFill(accentOurs, '88');
+  const hcFill = barFill(GOLD, 'aa');
+  const restFill = barFill(accentOurs, '66');
+  const theirsFill = barFill(accentTheirs, '55');
 
   return (
     <div style={{
@@ -173,13 +195,13 @@ function SplitBar({
           {hcW > 0 && (
             <div style={{
               flex: hcW, minWidth: hcW > 0 ? 2 : 0,
-              background: `linear-gradient(90deg, ${GOLD}aa, ${GOLD})`,
+              ...hcFill,
             }} />
           )}
           {restW > 0 && (
             <div style={{
               flex: restW, minWidth: restW > 0 ? 2 : 0,
-              background: `linear-gradient(90deg, ${accentOurs}66, ${accentOurs})`,
+              ...restFill,
             }} />
           )}
         </>
@@ -187,14 +209,14 @@ function SplitBar({
         o > 0 && (
           <div style={{
             flex: o, minWidth: 2,
-            background: oursColor,
+            ...oursFill,
           }} />
         )
       )}
       {t > 0 && (
         <div style={{
           flex: t, minWidth: 2,
-          background: `linear-gradient(90deg, ${accentTheirs}55, ${accentTheirs})`,
+          ...theirsFill,
         }} />
       )}
     </div>
@@ -321,8 +343,10 @@ export default function LockedCollapsedBattleBars({ f }) {
           theirs={losers.theirs}
           oursLabel={oursLabel}
           theirsLabel={theirsLabel}
-          accentOurs="rgba(148,163,184,0.85)"
-          accentTheirs="rgba(240,113,103,0.70)"
+          // Hex only — SplitBar softens with 8-digit hex alpha. rgba() here
+          // previously blanked the entire middle bar (invalid CSS gradients).
+          accentOurs="#9aa6bd"
+          accentTheirs="#F07167"
           tip="Non-winner tracked wallets + whale prints from non-CONFIRMED/FLAT"
         />
       )}
