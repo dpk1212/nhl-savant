@@ -14,7 +14,10 @@ import {
   sportTrustBookPreferB,
   pickSensationalTrust,
 } from '../../../lib/walletSportBook.js';
-import { buildWideBoardMoneySplits } from '../../../lib/boardMoneySplits.js';
+import {
+  buildWideBoardMoneySplits,
+  planTrackedLosersForMap,
+} from '../../../lib/boardMoneySplits.js';
 import {
   lastBoardMain,
   pickMainSpreadFromBoard,
@@ -1342,6 +1345,32 @@ export function mapLockedPickToCardFixture(pick, {
     return s || null;
   };
 
+  // Wide board $ — Vault-parity raw pool (+ Poly/Kalshi flow on ML/spread).
+  // Built BEFORE the clarity map so we can pin tracked losers when the AGS
+  // stamp oscillates (browser peak_updated writes qualified-only walletDetails).
+  // Display-only; does not touch lock / AGS stamps.
+  const boardMoney = (pick.sport && pick.gameKey && sideNorm)
+    ? buildWideBoardMoneySplits({
+      sport: pick.sport,
+      gameKey: pick.gameKey,
+      marketType: isSpread ? 'spread' : isTotal ? 'total' : 'ml',
+      playSideNorm: sideNorm,
+      rawMl: rawMlPositions,
+      rawSpread: rawSpreadPositions,
+      rawTotal: rawTotalPositions,
+      getWalletProfile,
+      intelExcludedSet,
+      polyData,
+      kalshiData,
+      away: pick.away,
+      home: pick.home,
+      awayShort,
+      homeShort,
+      includeExchange: true,
+      hcRatio: HC_RATIO,
+    })
+    : null;
+
   // Both-side board for the clarity map. Prefer stamped boardWallets; fall
   // back to play-side receipts so the expanded card still has something.
   const boardRaw = (Array.isArray(pick.boardWallets) && pick.boardWallets.length
@@ -1349,14 +1378,7 @@ export function mapLockedPickToCardFixture(pick, {
     : (pick.backingWallets || []).map((w) => ({ ...w, side: w.side || sideNorm }))
   ).map((w) => ({ ...w, side: normSide(w.side) || sideNorm }));
 
-  const mapWallets = enrichWallets(
-    boardRaw,
-    pick.sport,
-    getWalletProfile,
-    isSportWinner,
-    getRecordForDisplay,
-    enrichOpts,
-  ).map((w) => {
+  const tagMapWallet = (w) => {
     const marketSide = normSide(w.side) || sideNorm;
     const sideTag = marketSide === sideNorm ? 'ours' : 'against';
     return {
@@ -1365,7 +1387,37 @@ export function mapLockedPickToCardFixture(pick, {
       side: sideTag,
       eliteZone: isEliteZoneWallet(w),
     };
-  });
+  };
+
+  let mapWallets = enrichWallets(
+    boardRaw,
+    pick.sport,
+    getWalletProfile,
+    isSportWinner,
+    getRecordForDisplay,
+    enrichOpts,
+  ).map(tagMapWallet);
+
+  // Pin up to 3 tracked losers from the same raw pool as the Losing bar.
+  // Stamp-only boards drop these whenever browser sync thins walletDetails.
+  {
+    const { keepShorts, addRaw } = planTrackedLosersForMap(
+      mapWallets,
+      boardMoney?.walletRows || [],
+    );
+    mapWallets = mapWallets.filter((w) => keepShorts.has(w.short));
+    if (addRaw.length) {
+      const extras = enrichWallets(
+        addRaw,
+        pick.sport,
+        getWalletProfile,
+        isSportWinner,
+        getRecordForDisplay,
+        enrichOpts,
+      ).map(tagMapWallet);
+      mapWallets = [...mapWallets, ...extras];
+    }
+  }
   // Glance: any FOR-side CONFIRMED wallet in top-quartile beat-close.
   const topQOnSide = mapWallets.filter((w) => w.side === 'ours' && w.topQ).length;
   const hasTopQ = topQOnSide > 0;
@@ -1568,30 +1620,6 @@ export function mapLockedPickToCardFixture(pick, {
   })();
   const chartLineLabel = (isSpread || isTotal) && Number.isFinite(ticketLine)
     ? `${inst.variant === 'ALT' ? 'Alt' : ''} ${teamShort} ${isSpread ? fmtSpreadLn(ticketLine) : ticketLine}`.trim()
-    : null;
-
-  // Wide board $ — Vault-parity raw pool (+ Poly/Kalshi flow on ML/spread).
-  // Display-only; does not touch lock / AGS stamps.
-  const boardMoney = (pick.sport && pick.gameKey && sideNorm)
-    ? buildWideBoardMoneySplits({
-      sport: pick.sport,
-      gameKey: pick.gameKey,
-      marketType: isSpread ? 'spread' : isTotal ? 'total' : 'ml',
-      playSideNorm: sideNorm,
-      rawMl: rawMlPositions,
-      rawSpread: rawSpreadPositions,
-      rawTotal: rawTotalPositions,
-      getWalletProfile,
-      intelExcludedSet,
-      polyData,
-      kalshiData,
-      away: pick.away,
-      home: pick.home,
-      awayShort,
-      homeShort,
-      includeExchange: true,
-      hcRatio: HC_RATIO,
-    })
     : null;
 
   return {

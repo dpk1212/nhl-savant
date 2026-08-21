@@ -77,6 +77,70 @@ export function isConfirmedWinnerRow(w) {
   return !!w && w.whitelist === 'CONFIRMED' && !TRACKED_LOSER_VERDICTS.has(w.verdict);
 }
 
+/** Clarity map: pin at most this many tracked-loser dots (display-only). */
+export const MAP_TRACKED_LOSER_CAP = 3;
+
+/**
+ * Merge / cap tracked losers for the clarity map.
+ *
+ * Why: `boardWallets` comes from peak.v8Scoring.walletDetails. Browser
+ * peak_updated often rewrites that snapshot from qualified-only (CONFIRMED+
+ * FLAT) positions, so loser dots vanish until cron restores a wider stamp.
+ * Battle-bar Losing already reads the raw pool — the map should too.
+ *
+ * Display-only. Does not change AGS / staking / walletDetails stamps.
+ *
+ * @param {object[]} mapRows  already-enriched map wallets (`short`, `invested`, …)
+ * @param {object[]} walletRows  from buildWideBoardMoneySplits (has whitelist/verdict)
+ * @returns {{ keepShorts: Set<string>, addRaw: object[] }}
+ *   keepShorts = shorts that should remain on the map after loser cap
+ *   addRaw     = up to N loser position stubs to enrich + append (not already kept)
+ */
+export function planTrackedLosersForMap(mapRows, walletRows, { limit = MAP_TRACKED_LOSER_CAP } = {}) {
+  const cap = Math.max(0, Number(limit) || 0);
+  const rows = Array.isArray(mapRows) ? mapRows : [];
+  const pool = (Array.isArray(walletRows) ? walletRows : [])
+    .filter(isTrackedLoserRow)
+    .slice()
+    .sort((a, b) => (b.invested || 0) - (a.invested || 0));
+
+  const loserShortRank = new Map();
+  pool.forEach((r, i) => {
+    const short = String(r.wallet || '').slice(-6).toLowerCase();
+    if (short && !loserShortRank.has(short)) loserShortRank.set(short, { row: r, rank: i });
+  });
+
+  const keepShorts = new Set();
+  for (const w of rows) {
+    const short = String(w?.short || w?.wallet || '').slice(-6).toLowerCase();
+    if (!short) continue;
+    if (!loserShortRank.has(short)) {
+      keepShorts.add(short); // non-loser always kept
+      continue;
+    }
+    // Loser: keep only if inside top-`cap` by $
+    if (loserShortRank.get(short).rank < cap) keepShorts.add(short);
+  }
+
+  let loserKept = [...keepShorts].filter((s) => loserShortRank.has(s)).length;
+  const addRaw = [];
+  for (const r of pool) {
+    if (loserKept >= cap) break;
+    const short = String(r.wallet || '').slice(-6).toLowerCase();
+    if (!short || keepShorts.has(short)) continue;
+    addRaw.push({
+      wallet: short,
+      side: r.marketSide || null,
+      invested: r.invested || 0,
+      sizeRatio: Number.isFinite(r.sizeRatio) ? r.sizeRatio : null,
+    });
+    keepShorts.add(short);
+    loserKept += 1;
+  }
+
+  return { keepShorts, addRaw, loserPool: pool };
+}
+
 /** Normalize position side → away|home|draw (totals: over→home, under→away). */
 function normSide(side) {
   const s = String(side || '').toLowerCase();
