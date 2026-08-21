@@ -246,7 +246,7 @@ export default function LockedCardStates() {
     <div style={{ minHeight: '100vh', background: '#0B0F1F', padding: '2rem 1rem' }}>
       <div style={{ maxWidth: 1040, margin: '0 auto' }}>
         <div style={{ color: '#9aa6bd', fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.14em', marginBottom: 18 }}>
-          LOCKED CARD — ZONE A / PRICE DESK / BATTLE BARS
+          LOCKED CARD — FULL / LOSING / CONFIRMED DOLLAR SPLITS
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(460px, 1fr))', gap: 18 }}>
           {FIXTURES.map(({ title, f }) => (
