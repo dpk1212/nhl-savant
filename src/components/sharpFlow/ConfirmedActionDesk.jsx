@@ -9,6 +9,7 @@ import {
   buildConfirmedActionMarquee,
   filterActionRows,
   sortActionRows,
+  sparkPointsForTab,
 } from '../../lib/confirmedActionDesk.js';
 import { relocalizeSizeVsUsual } from '../../lib/sizeRatioBands.js';
 import SteamTag from './cards/SteamTag';
@@ -201,16 +202,6 @@ const PremiumSpark = memo(function PremiumSpark({
   );
 });
 
-/** Cumulative +1/−1 curve from recent W/L legs when equity is thin. */
-function wlStripPoints(legs) {
-  if (!Array.isArray(legs) || legs.length < 2) return null;
-  let cum = 0;
-  return legs.map((leg) => {
-    cum += leg.won === 1 ? 1 : -1;
-    return cum;
-  });
-}
-
 /** Per-leg dollar PnL: stamped dollarPnl / settledPnl, else invested × flat. */
 function legDollarPnl(leg) {
   if (Number.isFinite(leg?.dollarPnl)) return Number(leg.dollarPnl);
@@ -221,22 +212,6 @@ function legDollarPnl(leg) {
   return null;
 }
 
-function cumCurveFromLegs(legs, mode) {
-  if (!Array.isArray(legs) || legs.length < 2) return null;
-  let cum = 0;
-  const points = [];
-  for (const leg of legs) {
-    let d = null;
-    if (mode === 'actual') d = legDollarPnl(leg);
-    else if (Number.isFinite(leg?.flat)) d = Number(leg.flat);
-    if (d == null) continue;
-    cum += d;
-    points.push(mode === 'actual' ? Math.round(cum) : +(cum.toFixed(2)));
-  }
-  if (points.length < 2) return null;
-  return points;
-}
-
 function fmtSparkEnd(value, mode) {
   if (!Number.isFinite(value)) return null;
   if (mode === 'actual') {
@@ -245,50 +220,6 @@ function fmtSparkEnd(value, mode) {
     return value >= 0 ? `+${body}` : `-${body}`;
   }
   return `${value >= 0 ? '+' : ''}${value.toFixed(1)}u`;
-}
-
-/**
- * Spark for expand panel.
- * mode: 'actual' (dollar) | 'flat' (1u) — default actual (real stake sizing).
- */
-function sparkPointsForTab(tab, row, mode = 'actual') {
-  const featured = row.recentFeatured || [];
-  const action = row.recentAction || [];
-  const tabLegs = tab === 'form'
-    ? (featured.length ? featured : action)
-    : action;
-
-  const fromLegs = cumCurveFromLegs(tabLegs, mode);
-  if (fromLegs) {
-    return {
-      points: fromLegs,
-      endLabel: fmtSparkEnd(fromLegs[fromLegs.length - 1], mode),
-      kind: mode,
-    };
-  }
-
-  if (mode === 'actual' && row.dollarCurve?.length >= 5) {
-    return {
-      points: row.dollarCurve,
-      endLabel: fmtSparkEnd(row.dollarEnd, 'actual'),
-      kind: 'actual',
-    };
-  }
-  if (mode === 'flat' && row.flatCurve?.length >= 5) {
-    return {
-      points: row.flatCurve,
-      endLabel: fmtSparkEnd(row.flatEnd, 'flat'),
-      kind: 'flat',
-    };
-  }
-
-  const strip = wlStripPoints(tabLegs.length ? tabLegs : (featured.length ? featured : action));
-  if (!strip) return null;
-  return {
-    points: strip,
-    endLabel: `${strip[strip.length - 1] >= 0 ? '+' : ''}${strip[strip.length - 1]}`,
-    kind: 'wl',
-  };
 }
 
 function fmtLegDate(dateStr) {
@@ -460,19 +391,108 @@ function rollupFromRecentLegs(legs, { mode = 'actual', windowDays = 30 } = {}) {
     roi,
     source: mode === 'actual' ? 'action' : 'featured',
     window: `${windowDays}d`,
+    settledPnl: mode === 'actual' ? Math.round(dollarPnl) : null,
   };
 }
 
-function BetTypeRollupStrip({ sport, marketType, sportRollup, marketRollup }) {
+function fmtBookPnl(pnl) {
+  if (!Number.isFinite(pnl)) return null;
+  const abs = Math.abs(pnl);
+  const body = abs >= 1000
+    ? `$${(abs / 1000).toFixed(abs >= 10000 ? 0 : 1)}K`
+    : `$${Math.round(abs)}`;
+  return pnl >= 0 ? `+${body}` : `-${body}`;
+}
+
+function BookInline({ book, sep }) {
+  if (!book) return null;
+  const roiHot = Number.isFinite(book.roi) && book.roi > 0;
+  const roiCold = Number.isFinite(book.roi) && book.roi < 0;
+  const roiKind = book.source === 'action' ? '$ ROI' : 'flat ROI';
+  const pnl = Number.isFinite(book.settledPnl) ? book.settledPnl : null;
+  const pnlLabel = fmtBookPnl(pnl);
+  return (
+    <>
+      {book.record && (
+        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: B.textSec }}>
+          {book.record}
+        </span>
+      )}
+      {!book.record && Number.isFinite(book.n) && (
+        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: B.textSec }}>
+          {book.n} bets
+        </span>
+      )}
+      {pnlLabel && (
+        <>
+          {sep}
+          <span style={{
+            ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'",
+            color: pnl >= 0 ? B.green : B.red,
+          }}>
+            {pnlLabel}
+          </span>
+        </>
+      )}
+      {Number.isFinite(book.roi) && (
+        <>
+          {sep}
+          <span style={{
+            ...T.micro, fontWeight: 700,
+            color: roiHot ? B.green : roiCold ? B.red : B.textMuted,
+          }}>
+            {book.roi >= 0 ? '+' : ''}{book.roi}% {roiKind}
+          </span>
+        </>
+      )}
+      {Number.isFinite(book.wr) && (
+        <>
+          {sep}
+          <span style={{ ...T.micro, color: B.textMuted }}>{book.wr}% WR</span>
+        </>
+      )}
+    </>
+  );
+}
+
+/**
+ * Action tab: L30 first (matches locked card), then all-time next to it.
+ * Featured tab: single book (all-time picks).
+ */
+function BetTypeRollupStrip({
+  sport,
+  marketType,
+  sportRollup,
+  marketRollup,
+  sportAllTime = null,
+  marketAllTime = null,
+  showDualWindows = false,
+}) {
   const mkt = String(marketType || '').toUpperCase();
   const mktLabel = mkt === 'ML' ? 'ML' : mkt;
   const rows = [
-    sportRollup ? { key: 'sport', label: String(sport || '').toUpperCase(), book: sportRollup } : null,
-    marketRollup ? {
-      key: 'market',
-      label: `${String(sport || '').toUpperCase()} ${mktLabel}`.trim(),
-      book: marketRollup,
-    } : null,
+    sportRollup || sportAllTime
+      ? {
+        key: 'sport',
+        label: String(sport || '').toUpperCase(),
+        l30: sportRollup?.window !== 'all' ? sportRollup : null,
+        all: showDualWindows
+          ? (sportAllTime || (sportRollup?.window === 'all' ? sportRollup : null))
+          : (sportRollup?.window === 'all' ? sportRollup : null),
+        single: !showDualWindows ? sportRollup : null,
+      }
+      : null,
+    marketRollup || marketAllTime
+      ? {
+        key: 'market',
+        label: `${String(sport || '').toUpperCase()} ${mktLabel}`.trim(),
+        l30: marketRollup?.window !== 'all' ? marketRollup : null,
+        all: showDualWindows
+          ? (marketAllTime || (marketRollup?.window === 'all' ? marketRollup : null))
+          : (marketRollup?.window === 'all' ? marketRollup : null),
+        single: !showDualWindows ? marketRollup : null,
+      }
+      : null,
   ].filter(Boolean);
   if (!rows.length) return null;
 
@@ -482,54 +502,57 @@ function BetTypeRollupStrip({ sport, marketType, sportRollup, marketRollup }) {
 
   return (
     <div style={{
-      display: 'flex', flexDirection: 'column', gap: '0.28rem',
+      display: 'flex', flexDirection: 'column', gap: '0.4rem',
       marginBottom: '0.7rem', fontFeatureSettings: "'tnum'",
     }}>
-      {rows.map(({ key, label, book }) => {
-        const roiHot = Number.isFinite(book.roi) && book.roi > 0;
-        const roiCold = Number.isFinite(book.roi) && book.roi < 0;
-        const scope = book.window === 'all' ? 'all-time' : `last ${book.window}`;
-        const roiKind = book.source === 'action' ? '$ ROI' : 'flat ROI';
-        return (
-          <div
-            key={key}
-            style={{
+      {rows.map(({ key, label, l30, all, single }) => (
+        <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: '0.18rem' }}>
+          <span style={{
+            ...T.tiny, fontWeight: 800, letterSpacing: '0.06em',
+            color: B.gold, textTransform: 'uppercase',
+          }}>
+            {label}
+          </span>
+          {showDualWindows ? (
+            <>
+              <div style={{
+                display: 'flex', flexWrap: 'wrap', alignItems: 'baseline',
+                gap: '0.28rem 0.4rem',
+              }}>
+                <span style={{ ...T.tiny, fontWeight: 800, color: B.green, letterSpacing: '0.04em' }}>
+                  L30
+                </span>
+                {l30 ? <BookInline book={l30} sep={sep} /> : (
+                  <span style={{ ...T.micro, color: B.textSubtle }}>no sample</span>
+                )}
+              </div>
+              <div style={{
+                display: 'flex', flexWrap: 'wrap', alignItems: 'baseline',
+                gap: '0.28rem 0.4rem',
+              }}>
+                <span style={{ ...T.tiny, fontWeight: 800, color: B.textSubtle, letterSpacing: '0.04em' }}>
+                  ALL-TIME
+                </span>
+                {all ? <BookInline book={all} sep={sep} /> : (
+                  <span style={{ ...T.micro, color: B.textSubtle }}>—</span>
+                )}
+              </div>
+            </>
+          ) : (
+            <div style={{
               display: 'flex', flexWrap: 'wrap', alignItems: 'baseline',
               gap: '0.28rem 0.4rem',
-            }}
-          >
-            <span style={{
-              ...T.tiny, fontWeight: 800, letterSpacing: '0.06em',
-              color: B.gold, textTransform: 'uppercase',
             }}>
-              {label}
-            </span>
-            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: B.textSec }}>
-              {book.record}
-            </span>
-            {Number.isFinite(book.roi) && (
-              <>
-                {sep}
-                <span style={{
-                  ...T.micro, fontWeight: 700,
-                  color: roiHot ? B.green : roiCold ? B.red : B.textMuted,
-                }}>
-                  {book.roi >= 0 ? '+' : ''}{book.roi}% {roiKind}
+              <BookInline book={single} sep={sep} />
+              {single && (
+                <span style={{ ...T.tiny, color: B.textSubtle, marginLeft: '0.1rem' }}>
+                  ({single.window === 'all' ? 'all-time' : `last ${single.window}`})
                 </span>
-              </>
-            )}
-            {Number.isFinite(book.wr) && (
-              <>
-                {sep}
-                <span style={{ ...T.micro, color: B.textMuted }}>{book.wr}% WR</span>
-              </>
-            )}
-            <span style={{ ...T.tiny, color: B.textSubtle, marginLeft: '0.1rem' }}>
-              ({scope})
-            </span>
-          </div>
-        );
-      })}
+              )}
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
@@ -555,10 +578,11 @@ function ActionExpandPanel({ row, isMobile }) {
   const formLegs = featured.length ? featured : action;
   const legs = tab === 'form' ? formLegs : action;
   const formListIsActionFallback = tab === 'form' && !featured.length && action.length > 0;
+  const actionTotalN = Number(row.recentActionTotalN) || action.length;
   const previewN = 5;
   const visibleLegs = showMore ? legs : legs.slice(-previewN);
-  const l5 = row.form?.l5;
-  const l10 = row.form?.l10;
+  const l5 = tab === 'recent' ? (row.form?.actionL5 || row.form?.l5) : row.form?.l5;
+  const l10 = tab === 'recent' ? (row.form?.actionL10 || row.form?.l10) : row.form?.l10;
   const formRecord = (window) => {
     const r = window === 5 ? l5 : l10;
     if (!r || (r.w + r.l) <= 0) return null;
@@ -566,21 +590,29 @@ function ActionExpandPanel({ row, isMobile }) {
   };
 
   // Sport + this bet type (e.g. MLB TOTAL). Featured → flat book; Action → $ book.
+  // Action tab always shows L30 + all-time side by side.
   const useActionBooks = tab === 'recent' || formListIsActionFallback;
   const sportRollup = useActionBooks
     ? (row.sportAction || null)
     : (row.sportFeatured || null);
   const marketRollup = (() => {
-    const stamped = useActionBooks ? row.marketAction : row.marketFeatured;
-    if (stamped) return stamped;
+    if (!useActionBooks) {
+      if (row.marketFeatured) return row.marketFeatured;
+      const mkt = String(row.marketType || '').toUpperCase();
+      const scoped = formLegs.filter((leg) => String(leg.marketType || '').toUpperCase() === mkt);
+      return rollupFromRecentLegs(scoped, { mode: 'flat', windowDays: curveDays });
+    }
+    if (row.marketAction) return row.marketAction;
+    // Pre-export profiles lack byMarket L30 — derive from Action ticket list.
     const mkt = String(row.marketType || '').toUpperCase();
-    const scoped = (useActionBooks ? action : formLegs)
-      .filter((leg) => String(leg.marketType || '').toUpperCase() === mkt);
+    const scoped = action.filter((leg) => String(leg.marketType || '').toUpperCase() === mkt);
     return rollupFromRecentLegs(scoped, {
-      mode: useActionBooks ? 'actual' : 'flat',
+      mode: 'actual',
       windowDays: curveDays,
     });
   })();
+  const sportAllTime = useActionBooks ? (row.sportActionAll || null) : null;
+  const marketAllTime = useActionBooks ? (row.marketActionAll || null) : null;
 
   return (
     <div
@@ -618,7 +650,10 @@ function ActionExpandPanel({ row, isMobile }) {
         ) : (
           <>
             This sharp’s other graded <span style={{ color: B.textSec, fontWeight: 700 }}>Action</span> tickets
-            {action.length ? ` · last ${curveDays}d` : ''}
+            {actionTotalN ? ` · last ${curveDays}d` : ''}
+            {actionTotalN > action.length
+              ? ` · showing ${action.length} of ${actionTotalN}`
+              : null}
           </>
         )}
       </div>
@@ -628,6 +663,9 @@ function ActionExpandPanel({ row, isMobile }) {
         marketType={row.marketType}
         sportRollup={sportRollup}
         marketRollup={marketRollup}
+        sportAllTime={sportAllTime}
+        marketAllTime={marketAllTime}
+        showDualWindows={useActionBooks}
       />
 
       <div style={{ marginBottom: '0.75rem' }}>
@@ -716,7 +754,11 @@ function ActionExpandPanel({ row, isMobile }) {
                 padding: '0.2rem 0',
               }}
             >
-              {showMore ? 'Show less' : `Show all ${legs.length} (last ${curveDays}d)`}
+              {showMore
+                ? 'Show less'
+                : (actionTotalN > legs.length && tab === 'recent'
+                  ? `Show all ${legs.length} of ${actionTotalN} (last ${curveDays}d)`
+                  : `Show all ${legs.length} (last ${curveDays}d)`)}
             </button>
           )}
         </div>
@@ -908,7 +950,17 @@ function signalChips(row) {
           {row.steam.goldConfirmed ? row.steam.tag : `Steam ${row.steam.tag}`}
         </Chip>
       )}
-      {row.flatCurve?.length >= 5 && (
+      {Number.isFinite(row.l30Pnl) ? (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+          <FlatSpark points={row.l30ChipCurve?.length >= 2 ? row.l30ChipCurve : [0, row.l30Pnl]} />
+          <span style={{
+            ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'",
+            color: row.l30Pnl >= 0 ? B.green : B.red,
+          }}>
+            L30 {fmtBookPnl(row.l30Pnl)}
+          </span>
+        </span>
+      ) : row.flatCurve?.length >= 5 ? (
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
           <FlatSpark points={row.flatCurve} />
           {Number.isFinite(row.flatEnd) && (
@@ -920,7 +972,7 @@ function signalChips(row) {
             </span>
           )}
         </span>
-      )}
+      ) : null}
     </>
   );
 }
