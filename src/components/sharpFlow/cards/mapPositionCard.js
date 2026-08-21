@@ -11,6 +11,10 @@ import {
 import { passesSizeSkillLiveGate } from '../../../lib/sizeSkillRescue.js';
 import { sharpMarketAgreementFromPinnGame, buildLockedMarketSignals } from '../../../lib/marketAgreement.js';
 import {
+  sportTrustBookPreferB,
+  pickSensationalTrust,
+} from '../../../lib/walletSportBook.js';
+import {
   lastBoardMain,
   pickMainSpreadFromBoard,
   pickMainTotalFromBoard,
@@ -298,6 +302,13 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
           : skillEligible
             ? ['SHARP', 'SECONDARY']
             : ['SHARP', 'TRACKING'];
+      // Collapsed Zone A — sport-specific Source B–preferred trust + sensational banger.
+      const trustBook = sportTrustBookPreferB(sportRec);
+      const trust = trustBook ? pickSensationalTrust(trustBook) : null;
+      const trustScore = (() => {
+        if (!trust?.banger) return (Number.isFinite(roi) ? roi : 0) + (proven ? 50 : 0);
+        return (trust.banger.score || 0) + (proven ? 500 : 0) + Math.min((w.invested || 0) / 1000, 40);
+      })();
       return {
         short,
         // Preserve feed side (away/home/draw/over/under) when present — locked
@@ -331,6 +342,10 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
         priorClvPct,
         clvN,
         topQ,
+        trust,
+        trustBook,
+        trustScore,
+        sport,
       };
     })
     .sort((a, b) =>

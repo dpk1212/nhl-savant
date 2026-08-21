@@ -1,7 +1,7 @@
 /**
- * Collapsed Locked card — premium strength block.
- * One plain-English verdict (novice) + one quiet detail line (advanced).
- * No pill walls, no BOARD/MARKET labels.
+ * Collapsed Locked — Zone A trust band.
+ * Novice headline: sport-specific Source B sharp + sensational number + board context.
+ * Contested always includes our $ vs their $ so big tickets still make sense.
  */
 const C = {
   text: '#F4F7FB',
@@ -11,7 +11,6 @@ const C = {
 };
 const GREEN = '#2fd57e';
 const VS = '#F07167';
-const GOLD = '#D4AF37';
 const GOLD_HI = '#E8D28A';
 const MONO = "'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace";
 
@@ -25,190 +24,198 @@ function fmtUsd(v) {
   return `$${Math.round(n)}`;
 }
 
-function fmtOdds(o) {
-  const n = Number(o);
-  if (!Number.isFinite(n) || n === 0) return null;
-  return n > 0 ? `+${n}` : `${n}`;
+function pickLeadWallet(f) {
+  const pool = (Array.isArray(f?.wallets) && f.wallets.length
+    ? f.wallets
+    : (Array.isArray(f?.mapWallets) ? f.mapWallets.filter((w) => w.side === 'ours' || !w.side) : []))
+    .filter((w) => w && (w.invested || 0) > 0);
+
+  if (!pool.length) return null;
+  const proven = pool.filter((w) => w.proven);
+  const list = (proven.length ? proven : pool).slice();
+  list.sort((a, b) => {
+    const ts = (Number(b.trustScore) || 0) - (Number(a.trustScore) || 0);
+    if (ts) return ts;
+    return (b.invested || 0) - (a.invested || 0);
+  });
+  return list[0];
 }
 
-function leadSizeRatio(f) {
-  const wallets = Array.isArray(f?.wallets) ? f.wallets : [];
-  const lead = wallets.find((w) => w?.proven && Number.isFinite(w.sizeRatio) && w.sizeRatio > 0)
-    || wallets.find((w) => Number.isFinite(w?.sizeRatio) && w.sizeRatio > 0);
-  const sr = Number(lead?.sizeRatio);
-  return Number.isFinite(sr) && sr > 0 ? sr : null;
-}
-
-function isBoosted(f) {
-  const units = Number(f?.units) || 0;
-  const base = Number(f?.pathBaseUnits);
-  const preTape = Number(f?.unitsPreTape);
-  const tape = String(f?.tapeAction || '').toLowerCase();
-  return tape === 'boost'
-    || (Number.isFinite(base) && units > 0 && units >= base * 1.2)
-    || (Number.isFinite(preTape) && units > 0 && units > preTape + 0.05);
-}
-
-function buildVerdict(f) {
-  const proven = Math.max(0, Number(f.confirmedOnSide) || 0);
+function boardContext(f) {
   const sideUsd = Number(f.sharpUsd ?? f.sideInvested) || 0;
   const againstUsd = Number(f.against?.invested) || 0;
   const againstProven = Math.max(0, Number(f.against?.proven) || 0);
-  const unopposed = againstUsd < 50 && againstProven === 0;
-  const contested = againstProven >= 1 || againstUsd >= 500;
+  const proven = Math.max(0, Number(f.confirmedOnSide) || 0);
   const muted = String(f.tapeAction || '').toLowerCase() === 'mute' || !!(f.mutedBy);
   const units = Number(f.units) || 0;
-
-  const steam = f.steam;
-  const warnAgainst = !!(f.marketSignals?.warnAgainst || f.marketSignals?.steamedAgainst);
-  const move = Number.isFinite(f.pinnMovePp) ? f.pinnMovePp : null;
-  const clv = Number.isFinite(f.clvPct) ? f.clvPct : null;
-
-  // Headline keyword + tone (one emotional beat)
-  let tone = 'neutral';
-  let headline = 'Locked';
-  let tip = 'Locked ticket';
+  const unopposed = againstUsd < 50 && againstProven === 0;
+  const contested = againstProven >= 1 || againstUsd >= 500;
 
   if (muted && !(units > 0)) {
-    tone = 'warn';
-    headline = 'Muted';
-    tip = 'System stood down — no ticket';
-  } else if (contested) {
-    tone = 'warn';
-    headline = 'Contested';
-    tip = 'Sharp money is also on the other side';
-  } else if (unopposed) {
-    tone = 'trust';
-    headline = 'Unopposed';
-    tip = 'No sharp money on the other side of this board';
-  } else if (proven >= 1) {
-    tone = 'system';
-    headline = proven === 1 ? '1 proven' : `${proven} proven`;
-    tip = 'Proven wallets on this side';
+    return { tone: 'warn', label: 'Muted', detail: 'No ticket', tip: 'System stood down' };
   }
-
-  // Body — readable clause after the headline
-  const bodyParts = [];
-  if (muted && !(units > 0)) {
-    bodyParts.push('system passed on this number');
-  } else if (contested) {
-    if (againstUsd > 0) bodyParts.push(`${fmtUsd(againstUsd)} sharp against`);
-    else if (againstProven > 0) bodyParts.push(`${againstProven} proven against`);
-    if (sideUsd > 0) bodyParts.push(`${fmtUsd(sideUsd)} with us`);
-  } else if (unopposed) {
-    if (sideUsd > 0) bodyParts.push(`${fmtUsd(sideUsd)} proven on this side`);
-    else if (proven >= 1) bodyParts.push(`${proven} proven wallet${proven === 1 ? '' : 's'} on this side`);
-    else bodyParts.push('clear side of the board');
-  } else if (sideUsd > 0) {
-    bodyParts.push(`${fmtUsd(sideUsd)} on this side`);
+  if (contested) {
+    const ours = sideUsd > 0 ? fmtUsd(sideUsd) : null;
+    const theirs = againstUsd > 0 ? fmtUsd(againstUsd) : `${againstProven} vs`;
+    return {
+      tone: 'warn',
+      label: 'Contested',
+      detail: ours ? `${ours} vs ${theirs}` : `vs ${theirs}`,
+      tip: 'Sharp money on both sides — size vs quality context',
+    };
   }
-
-  // Market confirmation clause (traditional)
-  if (steam?.show && (steam.tagShort || steam.tag)) {
-    const st = steam.tagShort || steam.tag;
-    bodyParts.push(String(st).toLowerCase().includes('steam')
-      ? `${st} after entry`
-      : `steam ${st} after entry`);
-  } else if (warnAgainst) {
-    bodyParts.push('tape pressure against');
-  } else if (Number.isFinite(move) && Math.abs(move) >= 0.25) {
-    bodyParts.push(move > 0
-      ? `fair +${move.toFixed(1)}pp toward us`
-      : `fair ${move.toFixed(1)}pp against`);
-  } else if (Number.isFinite(clv) && Math.abs(clv) >= 0.3) {
-    bodyParts.push(clv > 0
-      ? `beating the number · CLV +${clv.toFixed(1)}%`
-      : `behind the number · CLV ${clv.toFixed(1)}%`);
+  if (unopposed) {
+    return {
+      tone: 'trust',
+      label: 'Unopposed',
+      detail: sideUsd > 0 ? fmtUsd(sideUsd) : (proven >= 1 ? `${proven} proven` : null),
+      tip: 'No sharp money on the other side',
+    };
   }
-
-  const body = bodyParts.filter(Boolean).join(' · ');
-
-  // Advanced quiet line — size story + liquidity + PIN reference
-  const detail = [];
-  const sr = leadSizeRatio(f);
-  if (Number.isFinite(sr)) {
-    detail.push(sr >= 1.5
-      ? `Lead ${sr.toFixed(1)}× usual`
-      : sr < 0.75
-        ? `Lead ${sr.toFixed(1)}× usual`
-        : `${sr.toFixed(1)}× usual size`);
+  if (proven >= 1 || sideUsd > 0) {
+    return {
+      tone: 'system',
+      label: proven >= 1 ? `${proven} proven` : 'On side',
+      detail: sideUsd > 0 ? fmtUsd(sideUsd) : null,
+      tip: 'Sharp dollars on this side',
+    };
   }
-  if (isBoosted(f) && units > 0) {
-    const from = Number.isFinite(f.unitsPreTape) && f.unitsPreTape > 0
-      ? f.unitsPreTape
-      : (Number.isFinite(f.pathBaseUnits) && f.pathBaseUnits > 0 ? f.pathBaseUnits : null);
-    detail.push(from != null
-      ? `Sized ${Number(from).toFixed(1)}→${units.toFixed(1)}u`
-      : 'Sized up');
-  }
-  const pin = Number.isFinite(f.sharpEntryOdds) ? f.sharpEntryOdds
-    : (Number.isFinite(f.fairLine) ? f.fairLine : null);
-  const ticket = Number.isFinite(f.lockOdds) ? f.lockOdds
-    : (Number.isFinite(f.gotOdds) ? f.gotOdds : null);
-  if (Number.isFinite(pin) && Number.isFinite(ticket) && Math.abs(pin - ticket) > 1) {
-    detail.push(`PIN ${fmtOdds(pin)}`);
-  }
-  const max = Number(f.pinnMax);
-  if (Number.isFinite(max) && max >= 1000) {
-    const k = max / 1000;
-    detail.push(`Max $${k >= 10 ? Math.round(k) : (k % 1 === 0 ? k.toFixed(0) : k.toFixed(1))}K`);
-  }
-
-  return {
-    tone,
-    headline,
-    tip,
-    body,
-    detail: detail.slice(0, 3).join('  ·  '),
-  };
+  return null;
 }
 
 const TONE = {
-  trust: { bar: GREEN, word: GREEN },
-  warn: { bar: VS, word: VS },
-  system: { bar: GOLD, word: GOLD_HI },
-  neutral: { bar: 'rgba(148,163,184,0.45)', word: C.textSec },
+  trust: GREEN,
+  warn: VS,
+  system: GOLD_HI,
+  hot: GREEN,
+  good: GOLD_HI,
+  neutral: C.textSec,
 };
 
 export default function LockedCollapsedStrength({ f }) {
   if (!f) return null;
-  const v = buildVerdict(f);
-  if (!v.headline && !v.body) return null;
-  const t = TONE[v.tone] || TONE.neutral;
+
+  const lead = pickLeadWallet(f);
+  const trust = lead?.trust || null;
+  const board = boardContext(f);
+  const provenExtra = Math.max(0, (Number(f.confirmedOnSide) || 0) - (lead?.proven ? 1 : 0));
+  const sr = Number(lead?.displaySizeRatio ?? lead?.sizeRatio);
+  const sizeBit = Number.isFinite(sr) && sr > 0
+    ? (sr >= 1.5 ? `${sr.toFixed(1)}× usual` : sr < 0.75 ? `${sr.toFixed(1)}× usual` : null)
+    : null;
+  const onPlay = lead?.invested > 0 ? fmtUsd(lead.invested) : null;
+
+  if (!lead && !board) return null;
+
+  const bar = board
+    ? (TONE[board.tone] || C.textSec)
+    : (trust?.banger ? (TONE[trust.banger.tone] || GREEN) : GOLD_HI);
+
+  const sport = f.sport || lead?.sport || '';
 
   return (
     <div
-      style={{ marginTop: 14, marginBottom: 14 }}
+      style={{ marginTop: 16, marginBottom: 14 }}
       onClick={(e) => e.stopPropagation()}
-      title={v.tip}
     >
       <div style={{ display: 'flex', gap: 12, alignItems: 'stretch' }}>
         <div style={{
-          width: 2, flexShrink: 0, borderRadius: 2,
-          background: `linear-gradient(180deg, ${t.bar} 0%, ${t.bar}55 100%)`,
-          opacity: 0.95,
+          width: 3, flexShrink: 0, borderRadius: 2,
+          background: bar, minHeight: 44,
         }} />
-        <div style={{ minWidth: 0, flex: 1, paddingTop: 1 }}>
-          <div style={{
-            fontSize: 13, fontWeight: 600, lineHeight: 1.45,
-            letterSpacing: '-0.01em', color: C.textSec,
-          }}>
-            <span style={{ color: t.word, fontWeight: 750 }}>{v.headline}</span>
-            {v.body ? (
-              <span style={{ color: C.textMuted }}> — {v.body}</span>
-            ) : null}
-          </div>
-          {v.detail ? (
-            <div style={{
-              marginTop: 6,
-              fontFamily: MONO, fontSize: 10, fontWeight: 600,
-              letterSpacing: '0.02em', color: C.textFaint,
-              fontFeatureSettings: "'tnum'",
-              lineHeight: 1.35,
-            }}>
-              {v.detail}
+        <div style={{ minWidth: 0, flex: 1 }}>
+          {/* Lead sharp — sport-specific Source B trust */}
+          {lead && (
+            <div style={{ marginBottom: board ? 8 : 0 }}>
+              <div style={{
+                display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+                gap: 10, flexWrap: 'wrap',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', minWidth: 0 }}>
+                  <span style={{
+                    fontFamily: MONO, fontSize: 9, fontWeight: 700,
+                    letterSpacing: '0.12em', color: C.textFaint, textTransform: 'uppercase',
+                  }}>
+                    {sport ? `${sport} lead` : 'Lead'}
+                  </span>
+                  <span style={{
+                    fontSize: 13, fontWeight: 700, color: C.textSec,
+                    fontFeatureSettings: "'tnum'", letterSpacing: '0.02em',
+                  }}>
+                    …{lead.short || '————'}
+                  </span>
+                  {lead.proven && (
+                    <span style={{
+                      fontSize: 9, fontWeight: 800, letterSpacing: '0.08em',
+                      color: GREEN, textTransform: 'uppercase',
+                    }}>
+                      Proven
+                    </span>
+                  )}
+                  {provenExtra > 0 && (
+                    <span style={{ fontSize: 11, fontWeight: 600, color: C.textFaint }}>
+                      +{provenExtra} proven
+                    </span>
+                  )}
+                </div>
+                {trust?.banger && (
+                  <span style={{
+                    fontSize: 15, fontWeight: 750, letterSpacing: '-0.02em',
+                    color: TONE[trust.banger.tone] || GREEN,
+                    fontFeatureSettings: "'tnum'",
+                  }}>
+                    {trust.banger.label}
+                  </span>
+                )}
+              </div>
+
+              <div style={{
+                marginTop: 4,
+                display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
+                fontSize: 12, fontWeight: 600, color: C.textMuted,
+                fontFeatureSettings: "'tnum'",
+              }}>
+                {(trust?.secondary || []).map((s) => (
+                  <span key={s} style={{ color: C.textSec }}>{s}</span>
+                ))}
+                {(trust?.secondary || []).length > 0 && (onPlay || sizeBit) && (
+                  <span style={{ color: C.textFaint }}>·</span>
+                )}
+                {onPlay && (
+                  <span>{onPlay} on this</span>
+                )}
+                {onPlay && sizeBit && <span style={{ color: C.textFaint }}>·</span>}
+                {sizeBit && <span>{sizeBit}</span>}
+              </div>
             </div>
-          ) : null}
+          )}
+
+          {/* Board context — never a naked label */}
+          {board && (
+            <div
+              title={board.tip}
+              style={{
+                display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap',
+                paddingTop: lead ? 8 : 0,
+                borderTop: lead ? '1px solid rgba(148,163,184,0.10)' : 'none',
+              }}
+            >
+              <span style={{
+                fontSize: 13, fontWeight: 750, letterSpacing: '-0.015em',
+                color: TONE[board.tone] || C.text,
+              }}>
+                {board.label}
+              </span>
+              {board.detail && (
+                <span style={{
+                  fontSize: 13, fontWeight: 600, color: C.textSec,
+                  fontFeatureSettings: "'tnum'",
+                }}>
+                  {board.detail}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
