@@ -211,7 +211,106 @@ function MetricStrip({
   evPct, fair, entry, now, flagged, maxNow, movePp, compact,
   polyEntry = null,
   ticketOffMain = false,
+  clvPct = null,
+  curated = false,
 }) {
+  // Collapsed Locked card: curated cast — TICKET · PIN · NOW · MOVE/CLV · MAX.
+  // Same strip chrome; fewer competing columns.
+  if (curated && compact) {
+    const cells = [];
+    const liveNow = Number.isFinite(now) ? now : fair;
+    if (Number.isFinite(flagged)) {
+      cells.push({
+        key: 'got',
+        label: ticketOffMain ? 'TICKET' : 'TICKET',
+        value: fmtOdds(flagged),
+        color: C.text,
+      });
+    }
+    cells.push({
+      key: 'pin',
+      label: 'PIN',
+      value: fmtOdds(entry),
+      color: C.text,
+    });
+    cells.push({
+      key: 'now',
+      label: 'NOW',
+      value: fmtOdds(liveNow),
+      color: GREEN,
+    });
+    if (Number.isFinite(movePp)) {
+      cells.push({
+        key: 'move',
+        label: 'MOVE',
+        value: `${movePp > 0 ? '+' : ''}${movePp.toFixed(1)}pp`,
+        color: movePp >= 0.25 ? GREEN : movePp <= -0.25 ? VS : C.textSec,
+      });
+    } else if (Number.isFinite(clvPct)) {
+      cells.push({
+        key: 'clv',
+        label: 'CLV',
+        value: `${clvPct >= 0 ? '+' : ''}${clvPct.toFixed(1)}%`,
+        color: clvPct >= 0.3 ? GREEN : clvPct <= -0.3 ? VS : C.textSec,
+      });
+    } else if (Number.isFinite(evPct)) {
+      cells.push({
+        key: 'ev',
+        label: 'EV',
+        value: `${evPct >= 0 ? '+' : ''}${evPct.toFixed(1)}%`,
+        color: evPct >= 0 ? GREEN : VS,
+      });
+    }
+    const maxLabel = fmtMax(maxNow);
+    if (maxLabel) {
+      cells.push({
+        key: 'max',
+        label: 'MAX',
+        value: maxLabel,
+        color: LIMIT_DIM,
+      });
+    }
+    const fs = 12;
+    const labFs = 7.5;
+    return (
+      <div style={{
+        display: 'flex',
+        borderRadius: 10,
+        border: '1px solid rgba(212,175,55,0.14)',
+        background: 'linear-gradient(180deg, rgba(255,255,255,0.035) 0%, rgba(0,0,0,0.22) 100%)',
+        overflow: 'hidden',
+        marginBottom: 8,
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+      }}>
+        {cells.map((c, i) => (
+          <div
+            key={c.key}
+            style={{
+              flex: 1,
+              minWidth: 0,
+              padding: '8px 5px 7px',
+              textAlign: 'center',
+              borderLeft: i === 0 ? 'none' : '1px solid rgba(212,175,55,0.10)',
+            }}
+          >
+            <div style={{
+              fontFamily: MONO, fontSize: labFs, fontWeight: 700,
+              letterSpacing: '0.12em', color: C.textFaint, marginBottom: 4,
+            }}>
+              {c.label}
+            </div>
+            <div style={{
+              fontSize: fs, fontWeight: 800, letterSpacing: '-0.03em',
+              color: c.color, fontFeatureSettings: "'tnum'",
+            }}>
+              {c.value}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   const cells = [
     {
       key: 'ev',
@@ -419,6 +518,7 @@ function DualAxisChart({
   // Tick labels from real American odds in the series (not midpoint of mixed ±).
   const amSamples = points.map((p) => p.odds).filter((o) => Number.isFinite(o) && o !== 0);
   if (Number.isFinite(fair) && fair !== 0) amSamples.push(fair);
+  if (Number.isFinite(flagged) && flagged !== 0) amSamples.push(flagged);
   const amHi = amSamples.length ? Math.max(...amSamples.map((a) => toPlot(a))) : oMax;
   const amLo = amSamples.length ? Math.min(...amSamples.map((a) => toPlot(a))) : oMin;
   const midDec = (amHi + amLo) / 2;
@@ -443,6 +543,8 @@ function DualAxisChart({
   const t1 = fmtClock(points[points.length - 1].t);
   const fairDec = toPlot(fair);
   const fairY = fairDec != null ? yOdds(fairDec) : null;
+  const flaggedDec = toPlot(flagged);
+  const flaggedY = flaggedDec != null ? yOdds(flaggedDec) : null;
   const lastOdds = oddsCoords[oddsCoords.length - 1];
 
   return (
@@ -466,8 +568,22 @@ function DualAxisChart({
         />
       ))}
 
+      {/* Ticket guide — where we got on (collapsed proof) */}
+      {Number.isFinite(flaggedY) && (
+        <line
+          x1={padL}
+          y1={flaggedY}
+          x2={padL + plotW}
+          y2={flaggedY}
+          stroke={GOLD_HI}
+          strokeWidth={1}
+          strokeDasharray="5 4"
+          opacity={0.55}
+        />
+      )}
+
       {/* Fair guide (odds scale) */}
-      {Number.isFinite(fairY) && (
+      {Number.isFinite(fairY) && !(Number.isFinite(flagged) && Number.isFinite(fair) && Math.abs(flagged - fair) <= 1) && (
         <line
           x1={padL}
           y1={fairY}
@@ -605,10 +721,12 @@ export default function OddsLimitSpark({
   maxNow = null,
   movePp = null,
   polyEntry = null,
+  clvPct = null,
   compact = false,
   gid = 'ols',
   showStory = true,
   showMetrics = true,
+  curatedMetrics = false,
   chartLineLabel = null,
   /** When ticket is an alt, label TICKET (not FLAGGED) in the metric strip. */
   ticketOffMain = false,
@@ -616,11 +734,12 @@ export default function OddsLimitSpark({
   const liveNow = Number.isFinite(now) ? now : fair;
   // Chart is book tape on this line. Ticket juice stays in the FLAGGED cell —
   // never inflate the axis with a Poly receipt (STL@CHC +270 vs −135 tape).
-  const pathFlagged = null;
+  // Collapsed: still paint ticket as a fair-style guide so the graph proves entry.
+  const pathFlagged = compact && Number.isFinite(flagged) ? flagged : null;
   const { points, synthetic } = resolveSparkPath({
     pinPath,
     entry,
-    flagged: pathFlagged,
+    flagged: null,
     now: liveNow,
     maxNow: maxNow ?? sma?.maxNow,
   });
@@ -648,6 +767,25 @@ export default function OddsLimitSpark({
         : C.textSec;
   const hasMax = points.some((p) => Number.isFinite(p.max));
 
+  // Compact caption — one proof line under the chart (not the full desk story).
+  const compactCaption = (() => {
+    if (!compact || !showStory) return null;
+    if (Number.isFinite(movePp) && Math.abs(movePp) >= 0.25) {
+      return movePp > 0
+        ? `Fair moved ${movePp.toFixed(1)}pp toward this side`
+        : `Fair moved ${Math.abs(movePp).toFixed(1)}pp against this side`;
+    }
+    if (Number.isFinite(clvPct) && Math.abs(clvPct) >= 0.3) {
+      return clvPct > 0
+        ? `Beating the number · CLV ${clvPct >= 0 ? '+' : ''}${clvPct.toFixed(1)}%`
+        : `Behind the number · CLV ${clvPct.toFixed(1)}%`;
+    }
+    if (Number.isFinite(strip.entry) && Number.isFinite(strip.now) && strip.entry !== strip.now) {
+      return `Open ${fmtOdds(strip.entry)} → now ${fmtOdds(strip.now)}`;
+    }
+    return null;
+  })();
+
   return (
     <div style={{ fontFeatureSettings: "'tnum'" }} onClick={(e) => e.stopPropagation()}>
       {showMetrics && (
@@ -660,7 +798,9 @@ export default function OddsLimitSpark({
           maxNow={maxNow ?? sma?.maxNow}
           movePp={movePp}
           polyEntry={polyEntry}
+          clvPct={clvPct}
           compact={compact}
+          curated={curatedMetrics}
           ticketOffMain={ticketOffMain}
         />
       )}
@@ -699,6 +839,19 @@ export default function OddsLimitSpark({
           gid={gid}
         />
       </div>
+
+      {compact && compactCaption && (
+        <div style={{
+          marginTop: 7,
+          fontSize: 10,
+          fontWeight: 600,
+          color: toneColor,
+          letterSpacing: '0.01em',
+          lineHeight: 1.35,
+        }}>
+          {compactCaption}
+        </div>
+      )}
 
       {!compact && showStory && story.body && (
         <div style={{ marginTop: 12 }}>
