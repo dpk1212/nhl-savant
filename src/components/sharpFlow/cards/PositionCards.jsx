@@ -395,13 +395,9 @@ export const PROPOSED_META = {
 // block when the market rail swapped fixtures in place.
 function TicketStub({ units, toWin, odds, stakePath, tapeAction, centsEdge, commenceMs, outcome, profit }) {
   const risk = useCountUp(units, true, 900);
-  // Product tier (LEAN / STRONG / …) — same labels as the scoreboard. Internal
-  // path names (DISSENT, RANK, MINI-) and tape sizing ("Standard") stay out of
-  // this header so users aren't taught two vocabularies for one ticket.
-  const tier = displayTierFromPath(stakePath);
-  const tierLabel = tier?.label || stakePath || 'PLAY';
-  const tierColor = tier?.color || B.gold;
-  const tapeNote = tapeAction === 'boost' ? ' · Sized up' : tapeAction === 'mute' ? ' · Pass' : '';
+  // Stake size + lock status carry the ticket story. Path-band labels
+  // (LEAN / STRONG / SHARP PLAY / …) stay off the stub — same as the
+  // collapsed locked-card header.
   const cellLabel = { fontSize: '0.52rem', fontWeight: 800, letterSpacing: '0.13em', color: C.textMuted, marginBottom: 4 };
   const graded = outcome === 'WIN' || outcome === 'LOSS' || outcome === 'PUSH';
   const isWin = outcome === 'WIN';
@@ -478,14 +474,6 @@ function TicketStub({ units, toWin, odds, stakePath, tapeAction, centsEdge, comm
             </span>
           )
         )}
-        <span style={{
-          fontSize: '0.56rem', fontWeight: 900, letterSpacing: '0.12em',
-          color: tierColor, flexShrink: 0,
-          padding: '3px 8px', borderRadius: 6,
-          background: `${tierColor}18`, border: `1px solid ${tierColor}44`,
-        }}>
-          {tierLabel}{tapeNote}
-        </span>
         {/* punched notches on the perforation line */}
         <span style={{ position: 'absolute', left: -6, bottom: -6, width: 11, height: 11, borderRadius: '50%', background: '#12172a', border: `1px solid ${graded ? `${resultColor}55` : 'rgba(212,175,55,0.30)'}` }} />
         <span style={{ position: 'absolute', right: -6, bottom: -6, width: 11, height: 11, borderRadius: '50%', background: '#12172a', border: `1px solid ${graded ? `${resultColor}55` : 'rgba(212,175,55,0.30)'}` }} />
@@ -2379,9 +2367,6 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
   // Champagne accents stay even on tracked picks; only the pill goes gray.
   // Graded tickets tint the accent to the result so the list reads at a glance.
   const accent = graded && resultColor ? resultColor : B.gold;
-  const productTier = displayTierFromPath(f.stakePath);
-  const tierLabel = productTier?.label || null;
-  const tierColor = productTier?.color || C.textMuted;
   // Gold aura: staked live tickets (countdown or fully LOCKED) with EDGE ≥ 11.
   const edgeAura = !tracked && !graded && Number.isFinite(f.edge) && f.edge >= EDGE_AURA_MIN;
   const cardBorder = tracked
@@ -2475,15 +2460,6 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
             )}
           </div>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-            {!tracked && !graded && tierLabel && (
-              <span style={{
-                fontSize: 8, fontWeight: 800, letterSpacing: '0.12em',
-                padding: '4px 8px', borderRadius: 999, color: tierColor,
-                background: `${tierColor}14`, border: `1px solid ${tierColor}38`,
-              }}>
-                {tierLabel}
-              </span>
-            )}
             {tracked ? (
               <span
                 title={muteTip}
@@ -2707,18 +2683,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
       compact
     />
   ) : (
-    <>
-      {tierLabel && (
-        <span style={{
-          fontSize: 8, fontWeight: 800, letterSpacing: '0.12em',
-          padding: '4px 8px', borderRadius: 5, color: tierColor,
-          background: `${tierColor}14`, border: `1px solid ${tierColor}40`,
-        }}>
-          {tierLabel}
-        </span>
-      )}
-      <LockFreezeStatus commenceMs={f.commenceMs} compact />
-    </>
+    <LockFreezeStatus commenceMs={f.commenceMs} compact />
   );
 
   return (
