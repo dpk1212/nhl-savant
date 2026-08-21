@@ -18,9 +18,11 @@ const pinPath = (open, mid, close, max = 1900) => ([
 const leadTrust = {
   short: 'eeabaf',
   proven: true,
+  whitelisted: true,
+  whitelist: 'CONFIRMED',
   invested: 5400,
-  sizeRatio: 0.33,
-  displaySizeRatio: 0.33,
+  sizeRatio: 1.6,
+  displaySizeRatio: 1.6,
   sport: 'NFL',
   trustScore: 4600,
   trust: {
@@ -33,6 +35,46 @@ const leadTrust = {
     record: '8-3', wr: 73, roi: 60, dollarRoi: 48, kind: 'positions', n: 11,
   },
 };
+
+/** Both-side board for battle bars (FULL / LOSERS / CONFIRMED+HC). */
+const showcaseBoard = [
+  { ...leadTrust, side: 'ours' },
+  {
+    short: 'flat01', side: 'ours', proven: true, whitelisted: true, whitelist: 'FLAT',
+    invested: 2100, sizeRatio: 0.9, displaySizeRatio: 0.9,
+  },
+  {
+    short: 'lose9a', side: 'against', proven: false, whitelisted: false, whitelist: 'WR50',
+    invested: 1800, sizeRatio: 0.4, displaySizeRatio: 0.4,
+  },
+];
+
+const contestedBoard = [
+  {
+    ...leadTrust, short: 'a91f2c', side: 'ours', invested: 6200,
+    sizeRatio: 1.8, displaySizeRatio: 1.8, whitelist: 'CONFIRMED', whitelisted: true, proven: true,
+  },
+  {
+    short: 'b3e811', side: 'ours', proven: true, whitelisted: true, whitelist: 'CONFIRMED',
+    invested: 3600, sizeRatio: 1.2, displaySizeRatio: 1.2,
+  },
+  {
+    short: 'flat22', side: 'ours', proven: true, whitelisted: true, whitelist: 'FLAT',
+    invested: 1800, sizeRatio: 0.7, displaySizeRatio: 0.7,
+  },
+  {
+    short: 'c9vs01', side: 'against', proven: true, whitelisted: true, whitelist: 'CONFIRMED',
+    invested: 2400, sizeRatio: 1.1, displaySizeRatio: 1.1,
+  },
+  {
+    short: 'lose01', side: 'against', proven: false, whitelisted: false, whitelist: 'WR50',
+    invested: 3200, sizeRatio: 0.5, displaySizeRatio: 0.5,
+  },
+  {
+    short: 'lose02', side: 'ours', proven: false, whitelisted: false, whitelist: 'WR50',
+    invested: 900, sizeRatio: 0.3, displaySizeRatio: 0.3,
+  },
+];
 
 const base = {
   sport: 'NFL',
@@ -61,10 +103,12 @@ const base = {
   tapeAction: 'boost',
   stakePath: 'TOP',
   confirmedOnSide: 1,
-  sharpUsd: 5400,
-  sideInvested: 5400,
+  sharpUsd: 7500,
+  sideInvested: 7500,
+  moneyPct: 81,
   against: { abbr: 'Under', proven: 0, invested: 0 },
   wallets: [leadTrust],
+  mapWallets: showcaseBoard,
   pinnMax: 2100,
   pinnMovePp: 2.6,
   steam: { show: true, tag: '4.8% open', tagShort: '4.8%', tier: 'gold' },
@@ -95,10 +139,11 @@ const FIXTURES = [
       instrumentVariant: 'MAIN',
       units: 5.4,
       toWin: 5.83,
-      sharpUsd: 9800,
-      sideInvested: 9800,
+      sharpUsd: 11600,
+      sideInvested: 11600,
+      moneyPct: 78,
       confirmedOnSide: 2,
-      against: { abbr: 'CAR', proven: 1, invested: 3200, avgRoi: -4 },
+      against: { abbr: 'CAR', proven: 1, invested: 5600, avgRoi: -4 },
       wallets: [
         {
           ...leadTrust,
@@ -106,6 +151,8 @@ const FIXTURES = [
           invested: 6200,
           sizeRatio: 1.8,
           displaySizeRatio: 1.8,
+          whitelist: 'CONFIRMED',
+          whitelisted: true,
           trust: {
             record: '14-7',
             banger: { label: 'L30 +$18K', tone: 'hot', kind: 'l30pnl', score: 5180 },
@@ -114,9 +161,11 @@ const FIXTURES = [
           },
           trustScore: 5700,
         },
-        { short: 'b3e811', proven: true, invested: 3600, sizeRatio: 1.2, trustScore: 2100,
+        { short: 'b3e811', proven: true, whitelisted: true, whitelist: 'CONFIRMED',
+          invested: 3600, sizeRatio: 1.2, displaySizeRatio: 1.2, trustScore: 2100,
           trust: { record: '9-6', banger: { label: '+22% ROI', tone: 'good', kind: 'roi', score: 2022 }, secondary: ['9-6'] } },
       ],
+      mapWallets: contestedBoard,
       fairLine: -135,
       sharpEntryOdds: -135,
       currentFairOdds: -140,
@@ -197,7 +246,7 @@ export default function LockedCardStates() {
     <div style={{ minHeight: '100vh', background: '#0B0F1F', padding: '2rem 1rem' }}>
       <div style={{ maxWidth: 1040, margin: '0 auto' }}>
         <div style={{ color: '#9aa6bd', fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.14em', marginBottom: 18 }}>
-          LOCKED CARD — ZONE A TRUST + ZONE B PRICE DESK
+          LOCKED CARD — ZONE A / PRICE DESK / BATTLE BARS
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(460px, 1fr))', gap: 18 }}>
           {FIXTURES.map(({ title, f }) => (

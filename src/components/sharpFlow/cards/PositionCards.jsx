@@ -9,6 +9,7 @@ import { AGS_V12_DISPLAY_TIERS, AGS_V12_PATH_TO_DISPLAY } from '../../../lib/ags
 import LockedClarityExpanded from './LockedClarityExpanded';
 import OddsLimitSpark from './OddsLimitSpark';
 import LockedCollapsedStrength from './LockedCollapsedStrength';
+import LockedCollapsedBattleBars from './LockedCollapsedBattleBars';
 
 /** Ticket freezes 15 min before first pitch/kick — same gate as the cron. */
 const LOCK_LEAD_MS = 15 * 60 * 1000;
@@ -2613,6 +2614,8 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
           chartLineLabel={f.chartLineLabel}
           ticketOffMain={f.instrumentVariant === 'ALT' || !!f.lineMoved}
         />
+
+        <LockedCollapsedBattleBars f={f} />
       </div>
     );
   }
