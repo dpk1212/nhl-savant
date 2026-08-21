@@ -9,6 +9,7 @@ import {
   buildConfirmedActionMarquee,
   filterActionRows,
   sortActionRows,
+  sparkPointsForTab,
 } from '../../lib/confirmedActionDesk.js';
 import { relocalizeSizeVsUsual } from '../../lib/sizeRatioBands.js';
 import SteamTag from './cards/SteamTag';
@@ -201,16 +202,6 @@ const PremiumSpark = memo(function PremiumSpark({
   );
 });
 
-/** Cumulative +1/−1 curve from recent W/L legs when equity is thin. */
-function wlStripPoints(legs) {
-  if (!Array.isArray(legs) || legs.length < 2) return null;
-  let cum = 0;
-  return legs.map((leg) => {
-    cum += leg.won === 1 ? 1 : -1;
-    return cum;
-  });
-}
-
 /** Per-leg dollar PnL: stamped dollarPnl / settledPnl, else invested × flat. */
 function legDollarPnl(leg) {
   if (Number.isFinite(leg?.dollarPnl)) return Number(leg.dollarPnl);
@@ -221,22 +212,6 @@ function legDollarPnl(leg) {
   return null;
 }
 
-function cumCurveFromLegs(legs, mode) {
-  if (!Array.isArray(legs) || legs.length < 2) return null;
-  let cum = 0;
-  const points = [];
-  for (const leg of legs) {
-    let d = null;
-    if (mode === 'actual') d = legDollarPnl(leg);
-    else if (Number.isFinite(leg?.flat)) d = Number(leg.flat);
-    if (d == null) continue;
-    cum += d;
-    points.push(mode === 'actual' ? Math.round(cum) : +(cum.toFixed(2)));
-  }
-  if (points.length < 2) return null;
-  return points;
-}
-
 function fmtSparkEnd(value, mode) {
   if (!Number.isFinite(value)) return null;
   if (mode === 'actual') {
@@ -245,50 +220,6 @@ function fmtSparkEnd(value, mode) {
     return value >= 0 ? `+${body}` : `-${body}`;
   }
   return `${value >= 0 ? '+' : ''}${value.toFixed(1)}u`;
-}
-
-/**
- * Spark for expand panel.
- * mode: 'actual' (dollar) | 'flat' (1u) — default actual (real stake sizing).
- */
-function sparkPointsForTab(tab, row, mode = 'actual') {
-  const featured = row.recentFeatured || [];
-  const action = row.recentAction || [];
-  const tabLegs = tab === 'form'
-    ? (featured.length ? featured : action)
-    : action;
-
-  const fromLegs = cumCurveFromLegs(tabLegs, mode);
-  if (fromLegs) {
-    return {
-      points: fromLegs,
-      endLabel: fmtSparkEnd(fromLegs[fromLegs.length - 1], mode),
-      kind: mode,
-    };
-  }
-
-  if (mode === 'actual' && row.dollarCurve?.length >= 5) {
-    return {
-      points: row.dollarCurve,
-      endLabel: fmtSparkEnd(row.dollarEnd, 'actual'),
-      kind: 'actual',
-    };
-  }
-  if (mode === 'flat' && row.flatCurve?.length >= 5) {
-    return {
-      points: row.flatCurve,
-      endLabel: fmtSparkEnd(row.flatEnd, 'flat'),
-      kind: 'flat',
-    };
-  }
-
-  const strip = wlStripPoints(tabLegs.length ? tabLegs : (featured.length ? featured : action));
-  if (!strip) return null;
-  return {
-    points: strip,
-    endLabel: `${strip[strip.length - 1] >= 0 ? '+' : ''}${strip[strip.length - 1]}`,
-    kind: 'wl',
-  };
 }
 
 function fmtLegDate(dateStr) {
@@ -490,6 +421,7 @@ function BetTypeRollupStrip({ sport, marketType, sportRollup, marketRollup }) {
         const roiCold = Number.isFinite(book.roi) && book.roi < 0;
         const scope = book.window === 'all' ? 'all-time' : `last ${book.window}`;
         const roiKind = book.source === 'action' ? '$ ROI' : 'flat ROI';
+        const pnl = Number.isFinite(book.settledPnl) ? book.settledPnl : null;
         return (
           <div
             key={key}
@@ -504,9 +436,29 @@ function BetTypeRollupStrip({ sport, marketType, sportRollup, marketRollup }) {
             }}>
               {label}
             </span>
-            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: B.textSec }}>
-              {book.record}
-            </span>
+            {book.record && (
+              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: B.textSec }}>
+                {book.record}
+              </span>
+            )}
+            {!book.record && Number.isFinite(book.n) && (
+              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: B.textSec }}>
+                {book.n} bets
+              </span>
+            )}
+            {pnl != null && (
+              <>
+                {sep}
+                <span style={{
+                  ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'",
+                  color: pnl >= 0 ? B.green : B.red,
+                }}>
+                  {pnl >= 0 ? '+' : ''}{Math.abs(pnl) >= 1000
+                    ? `$${(pnl / 1000).toFixed(Math.abs(pnl) >= 10000 ? 0 : 1)}K`
+                    : `$${Math.round(pnl)}`}
+                </span>
+              </>
+            )}
             {Number.isFinite(book.roi) && (
               <>
                 {sep}
@@ -555,10 +507,11 @@ function ActionExpandPanel({ row, isMobile }) {
   const formLegs = featured.length ? featured : action;
   const legs = tab === 'form' ? formLegs : action;
   const formListIsActionFallback = tab === 'form' && !featured.length && action.length > 0;
+  const actionTotalN = Number(row.recentActionTotalN) || action.length;
   const previewN = 5;
   const visibleLegs = showMore ? legs : legs.slice(-previewN);
-  const l5 = row.form?.l5;
-  const l10 = row.form?.l10;
+  const l5 = tab === 'recent' ? (row.form?.actionL5 || row.form?.l5) : row.form?.l5;
+  const l10 = tab === 'recent' ? (row.form?.actionL10 || row.form?.l10) : row.form?.l10;
   const formRecord = (window) => {
     const r = window === 5 ? l5 : l10;
     if (!r || (r.w + r.l) <= 0) return null;
@@ -618,7 +571,10 @@ function ActionExpandPanel({ row, isMobile }) {
         ) : (
           <>
             This sharp’s other graded <span style={{ color: B.textSec, fontWeight: 700 }}>Action</span> tickets
-            {action.length ? ` · last ${curveDays}d` : ''}
+            {actionTotalN ? ` · last ${curveDays}d` : ''}
+            {actionTotalN > action.length
+              ? ` · showing ${action.length} of ${actionTotalN}`
+              : null}
           </>
         )}
       </div>
@@ -716,7 +672,11 @@ function ActionExpandPanel({ row, isMobile }) {
                 padding: '0.2rem 0',
               }}
             >
-              {showMore ? 'Show less' : `Show all ${legs.length} (last ${curveDays}d)`}
+              {showMore
+                ? 'Show less'
+                : (actionTotalN > legs.length && tab === 'recent'
+                  ? `Show all ${legs.length} of ${actionTotalN} (last ${curveDays}d)`
+                  : `Show all ${legs.length} (last ${curveDays}d)`)}
             </button>
           )}
         </div>

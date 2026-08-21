@@ -390,7 +390,8 @@ function etDateMinusDays(days) {
 /** Action expand sparkline / recent lists — rolling calendar window. */
 const FORM_CURVE_DAYS = 30;
 const RECENT_LEGS_DAYS = 30;
-const RECENT_LEGS_MAX = 40;
+/** Ticket list cap. Sparklines use full 30d action curves (not this slice). */
+const RECENT_LEGS_MAX = 120;
 
 /**
  * Trailing form + flat equity curve for Action desk (strength UI).
@@ -685,6 +686,7 @@ function recentActionDollarWindow(posBets, {
     (b) => b && (b.won === 0 || b.won === 1) && b.date && String(b.date) >= cutoff,
   );
   const n = legs.length;
+  const wins = legs.filter((b) => b.won === 1).length;
   let invested = 0;
   let settledPnl = 0;
   for (const b of legs) {
@@ -694,6 +696,9 @@ function recentActionDollarWindow(posBets, {
   const dollarRoi = invested > 0 ? +((settledPnl / invested) * 100).toFixed(1) : null;
   return {
     n,
+    wins,
+    losses: n - wins,
+    wr: n ? +((wins / n) * 100).toFixed(1) : null,
     invested,
     settledPnl,
     dollarRoi,
@@ -869,8 +874,11 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
       : null;
     const recentFeatured = recentFeaturedLegs(pp, sportUsual);
     const recentAction = recentActionLegs(ps, sportUsual);
+    // Featured form (Source A when present) — row chips / "Their featured".
     let form = sportForm(pp.length ? pp : ps);
-    if (!form && (recentFeatured.length || recentAction.length)) {
+    // Action form always from Source B positions — Action tab spark = true L30 $.
+    const actionForm = sportForm(ps);
+    if (!form && (recentFeatured.length || recentAction.length || actionForm)) {
       form = {
         l5: null, l10: null,
         flatCurve: [], flatEnd: null,
@@ -881,13 +889,24 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
     if (form) {
       form.recentFeatured = recentFeatured;
       form.recentAction = recentAction;
+      form.recentActionTotalN = recentWindow.n;
+      if (actionForm) {
+        form.actionFlatCurve = actionForm.flatCurve || [];
+        form.actionFlatEnd = actionForm.flatEnd;
+        form.actionDollarCurve = actionForm.dollarCurve || [];
+        form.actionDollarEnd = actionForm.dollarEnd;
+        form.actionL5 = actionForm.l5;
+        form.actionL10 = actionForm.l10;
+      }
     }
     // Sport × market rollups for Action expand (MLB TOTAL, MLB ML, …).
     const byMarketInSport = {};
     for (const market of new Set([...pp.map((b) => b.market), ...ps.map((b) => b.market)].filter(Boolean))) {
+      const mPos = ps.filter((b) => b.market === market);
       byMarketInSport[market] = {
         picks: picksAgg(pp.filter((b) => b.market === market)),
-        positions: positionsAgg(ps.filter((b) => b.market === market)),
+        positions: positionsAgg(mPos),
+        recentActionWindow: recentActionDollarWindow(mPos, { minN: 1 }),
       };
     }
     bySport[sport] = {
@@ -912,6 +931,9 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
       recentActionWindow: {
         days: RECENT_DOLLAR_RESCUE_DAYS,
         n: recentWindow.n,
+        wins: recentWindow.wins,
+        losses: recentWindow.losses,
+        wr: recentWindow.wr,
         dollarRoi: recentWindow.dollarRoi,
         settledPnl: Number.isFinite(recentWindow.settledPnl)
           ? Math.round(recentWindow.settledPnl) : null,

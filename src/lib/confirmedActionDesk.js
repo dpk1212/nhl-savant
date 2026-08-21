@@ -139,17 +139,34 @@ function formFromProfile(prof, sport) {
   const form = rec?.form;
   const recentFeatured = Array.isArray(form?.recentFeatured) ? form.recentFeatured : [];
   const recentAction = Array.isArray(form?.recentAction) ? form.recentAction : [];
-  if (form && (form.l10 || form.flatCurve || form.dollarCurve || recentFeatured.length || recentAction.length)) {
+  const recentWindow = rec?.recentActionWindow || null;
+  const recentActionTotalN = Number.isFinite(form?.recentActionTotalN)
+    ? form.recentActionTotalN
+    : (Number.isFinite(recentWindow?.n) ? recentWindow.n : recentAction.length);
+  const actionFlatCurve = Array.isArray(form?.actionFlatCurve) ? form.actionFlatCurve : null;
+  const actionDollarCurve = Array.isArray(form?.actionDollarCurve) ? form.actionDollarCurve : null;
+  if (form && (form.l10 || form.flatCurve || form.dollarCurve || actionFlatCurve?.length
+      || actionDollarCurve?.length || recentFeatured.length || recentAction.length)) {
     return {
       l5: form.l5 || null,
       l10: form.l10 || null,
+      // Featured (Source A) curves — "Their featured" tab / legacy chips.
       flatCurve: Array.isArray(form.flatCurve) ? form.flatCurve : null,
       flatEnd: Number.isFinite(form.flatEnd) ? form.flatEnd : null,
       dollarCurve: Array.isArray(form.dollarCurve) ? form.dollarCurve : null,
       dollarEnd: Number.isFinite(form.dollarEnd) ? form.dollarEnd : null,
+      // Action (Source B) L30 curves — Action tab spark must match locked L30 $.
+      actionFlatCurve,
+      actionFlatEnd: Number.isFinite(form.actionFlatEnd) ? form.actionFlatEnd : null,
+      actionDollarCurve,
+      actionDollarEnd: Number.isFinite(form.actionDollarEnd) ? form.actionDollarEnd : null,
+      actionL5: form.actionL5 || null,
+      actionL10: form.actionL10 || null,
       flatCurveDays: Number.isFinite(form.flatCurveDays) ? form.flatCurveDays : 30,
       recentFeatured,
       recentAction,
+      recentActionTotalN,
+      recentActionWindow: recentWindow,
       book: null,
       source: 'form',
     };
@@ -163,17 +180,31 @@ function formFromProfile(prof, sport) {
       flatEnd: Number.isFinite(picks.flatPnl) ? picks.flatPnl : null,
       dollarCurve: null,
       dollarEnd: null,
+      actionFlatCurve: null,
+      actionFlatEnd: null,
+      actionDollarCurve: null,
+      actionDollarEnd: null,
+      actionL5: null,
+      actionL10: null,
       flatCurveDays: 30,
       recentFeatured: [],
       recentAction: [],
+      recentActionTotalN: Number.isFinite(recentWindow?.n) ? recentWindow.n : 0,
+      recentActionWindow: recentWindow,
       book: { w: picks.wins || 0, l: picks.losses || 0, n: picks.n || 0 },
       source: 'book',
     };
   }
   return {
     l5: null, l10: null, flatCurve: null, flatEnd: null,
-    dollarCurve: null, dollarEnd: null, flatCurveDays: 30,
+    dollarCurve: null, dollarEnd: null,
+    actionFlatCurve: null, actionFlatEnd: null,
+    actionDollarCurve: null, actionDollarEnd: null,
+    actionL5: null, actionL10: null,
+    flatCurveDays: 30,
     recentFeatured: [], recentAction: [],
+    recentActionTotalN: Number.isFinite(recentWindow?.n) ? recentWindow.n : 0,
+    recentActionWindow: recentWindow,
     book: null, source: null,
   };
 }
@@ -247,6 +278,30 @@ function rollupFromAgg(agg, source) {
   };
 }
 
+/** Last-30d Action window — same stamp as locked-card L30 $. */
+function rollupFromRecentWindow(win, source = 'action') {
+  if (!win || !(win.n > 0)) return null;
+  const wins = Number(win.wins);
+  const losses = Number(win.losses);
+  const hasWl = Number.isFinite(wins) && Number.isFinite(losses);
+  const roi = Number(win.dollarRoi);
+  const wr = Number.isFinite(Number(win.wr))
+    ? Math.round(Number(win.wr))
+    : (hasWl && win.n > 0 ? Math.round((wins / win.n) * 100) : null);
+  const days = Number.isFinite(win.days) ? win.days : 30;
+  return {
+    n: win.n,
+    wins: hasWl ? wins : null,
+    losses: hasWl ? losses : null,
+    record: hasWl ? `${wins}-${losses}` : null,
+    wr,
+    roi: Number.isFinite(roi) ? Math.round(roi) : null,
+    source,
+    window: `${days}d`,
+    settledPnl: Number.isFinite(win.settledPnl) ? Math.round(win.settledPnl) : null,
+  };
+}
+
 /** Sport + sport×market books for Action expand (featured flat / action $). */
 function contextRollupsFromProfile(prof, sport, marketType) {
   const rec = prof?.bySport?.[sport];
@@ -255,11 +310,172 @@ function contextRollupsFromProfile(prof, sport, marketType) {
   }
   const mkt = String(marketType || '').toUpperCase();
   const mRec = rec.byMarket?.[mkt] || null;
+  // Action tab = L30 Action $ (matches locked L30). Featured stays all-time picks.
+  const sportActionL30 = rollupFromRecentWindow(rec.recentActionWindow, 'action');
+  const marketActionL30 = rollupFromRecentWindow(mRec?.recentActionWindow, 'action');
   return {
     sportFeatured: rollupFromAgg(rec.picks, 'featured'),
-    sportAction: rollupFromAgg(rec.positions, 'action'),
+    sportAction: sportActionL30 || rollupFromAgg(rec.positions, 'action'),
     marketFeatured: rollupFromAgg(mRec?.picks, 'featured'),
-    marketAction: rollupFromAgg(mRec?.positions, 'action'),
+    marketAction: marketActionL30 || rollupFromAgg(mRec?.positions, 'action'),
+  };
+}
+
+/** @internal exported for tests */
+export const _test = {
+  rollupFromRecentWindow,
+  rollupFromAgg,
+  formFromProfile,
+  sparkPointsForTab,
+};
+
+/** Per-leg dollar PnL: stamped dollarPnl / settledPnl, else invested × flat. */
+function legDollarPnl(leg) {
+  if (Number.isFinite(leg?.dollarPnl)) return Number(leg.dollarPnl);
+  if (Number.isFinite(leg?.settledPnl)) return Number(leg.settledPnl);
+  if (Number.isFinite(leg?.flat) && Number.isFinite(leg?.invested) && leg.invested > 0) {
+    return leg.invested * leg.flat;
+  }
+  return null;
+}
+
+function cumCurveFromLegs(legs, mode) {
+  if (!Array.isArray(legs) || legs.length < 2) return null;
+  let cum = 0;
+  const points = [];
+  for (const leg of legs) {
+    let d = null;
+    if (mode === 'actual') d = legDollarPnl(leg);
+    else if (Number.isFinite(leg?.flat)) d = Number(leg.flat);
+    if (d == null) continue;
+    cum += d;
+    points.push(mode === 'actual' ? Math.round(cum) : +(cum.toFixed(2)));
+  }
+  if (points.length < 2) return null;
+  return points;
+}
+
+function wlStripPoints(legs) {
+  if (!Array.isArray(legs) || legs.length < 2) return null;
+  let cum = 0;
+  return legs.map((leg) => {
+    cum += leg.won === 1 ? 1 : -1;
+    return cum;
+  });
+}
+
+function fmtSparkEnd(value, mode) {
+  if (!Number.isFinite(value)) return null;
+  if (mode === 'actual') {
+    const abs = Math.abs(value);
+    const body = abs >= 1000 ? `$${(abs / 1000).toFixed(1)}K` : `$${Math.round(abs)}`;
+    return value >= 0 ? `+${body}` : `-${body}`;
+  }
+  return `${value >= 0 ? '+' : ''}${value.toFixed(1)}u`;
+}
+
+/**
+ * Action expand spark.
+ * Action tab must end at locked-card L30 $ — never the truncated ticket-list sum.
+ */
+export function sparkPointsForTab(tab, row, mode = 'actual') {
+  const featured = row.recentFeatured || [];
+  const action = row.recentAction || [];
+  const isAction = tab === 'recent';
+  const tabLegs = isAction
+    ? action
+    : (featured.length ? featured : action);
+
+  const actionDollar = row.actionDollarCurve;
+  const actionFlat = row.actionFlatCurve;
+  const featDollar = row.dollarCurve;
+  const featFlat = row.flatCurve;
+  const recentWin = row.recentActionWindow;
+  const totalN = Number(row.recentActionTotalN) || action.length;
+  const legsCoverFullWindow = action.length > 0 && totalN > 0 && action.length >= totalN;
+
+  if (isAction) {
+    if (mode === 'actual' && actionDollar?.length >= 5) {
+      return {
+        points: actionDollar,
+        endLabel: fmtSparkEnd(
+          Number.isFinite(row.actionDollarEnd) ? row.actionDollarEnd : actionDollar[actionDollar.length - 1],
+          'actual',
+        ),
+        kind: 'actual',
+      };
+    }
+    if (mode === 'flat' && actionFlat?.length >= 5) {
+      return {
+        points: actionFlat,
+        endLabel: fmtSparkEnd(
+          Number.isFinite(row.actionFlatEnd) ? row.actionFlatEnd : actionFlat[actionFlat.length - 1],
+          'flat',
+        ),
+        kind: 'flat',
+      };
+    }
+    if (legsCoverFullWindow) {
+      const fromLegs = cumCurveFromLegs(action, mode);
+      if (fromLegs) {
+        let end = fromLegs[fromLegs.length - 1];
+        if (mode === 'actual' && Number.isFinite(recentWin?.settledPnl)) {
+          end = Math.round(recentWin.settledPnl);
+        }
+        return {
+          points: fromLegs,
+          endLabel: fmtSparkEnd(end, mode),
+          kind: mode,
+        };
+      }
+    }
+    // Pre-export profiles: list capped at 40 but L30 stamp exists — match locked badge.
+    if (mode === 'actual' && Number.isFinite(recentWin?.settledPnl)) {
+      const end = Math.round(recentWin.settledPnl);
+      return {
+        points: [0, end],
+        endLabel: fmtSparkEnd(end, 'actual'),
+        kind: 'actual',
+        truncated: true,
+      };
+    }
+  } else {
+    const fromLegs = cumCurveFromLegs(tabLegs, mode);
+    if (fromLegs) {
+      return {
+        points: fromLegs,
+        endLabel: fmtSparkEnd(fromLegs[fromLegs.length - 1], mode),
+        kind: mode,
+      };
+    }
+    if (mode === 'actual' && featDollar?.length >= 5) {
+      return {
+        points: featDollar,
+        endLabel: fmtSparkEnd(
+          Number.isFinite(row.dollarEnd) ? row.dollarEnd : featDollar[featDollar.length - 1],
+          'actual',
+        ),
+        kind: 'actual',
+      };
+    }
+    if (mode === 'flat' && featFlat?.length >= 5) {
+      return {
+        points: featFlat,
+        endLabel: fmtSparkEnd(
+          Number.isFinite(row.flatEnd) ? row.flatEnd : featFlat[featFlat.length - 1],
+          'flat',
+        ),
+        kind: 'flat',
+      };
+    }
+  }
+
+  const strip = wlStripPoints(tabLegs.length ? tabLegs : (featured.length ? featured : action));
+  if (!strip) return null;
+  return {
+    points: strip,
+    endLabel: `${strip[strip.length - 1] >= 0 ? '+' : ''}${strip[strip.length - 1]}`,
+    kind: 'wl',
   };
 }
 
@@ -410,13 +626,21 @@ export function buildConfirmedActionRows({
       form,
       formText: formDisp.text,
       formKind: formDisp.kind,
-      flatCurve: form.flatCurve,
-      flatEnd: form.flatEnd,
+      // Action desk chips: prefer Action L30 flat curve (not featured picks).
+      flatCurve: (form.actionFlatCurve?.length >= 5 ? form.actionFlatCurve : form.flatCurve),
+      flatEnd: Number.isFinite(form.actionFlatEnd) ? form.actionFlatEnd
+        : form.flatEnd,
       dollarCurve: form.dollarCurve,
       dollarEnd: form.dollarEnd,
+      actionFlatCurve: form.actionFlatCurve,
+      actionFlatEnd: form.actionFlatEnd,
+      actionDollarCurve: form.actionDollarCurve,
+      actionDollarEnd: form.actionDollarEnd,
       flatCurveDays: form.flatCurveDays ?? 30,
       recentFeatured: form.recentFeatured || [],
       recentAction: form.recentAction || [],
+      recentActionTotalN: form.recentActionTotalN ?? (form.recentAction || []).length,
+      recentActionWindow: form.recentActionWindow || null,
       sportUsualBet: sportUsualBetFromProfile(prof, sport),
       trust: trustFromProfile(prof, sport),
       ...contextRollupsFromProfile(prof, sport, marketType),
