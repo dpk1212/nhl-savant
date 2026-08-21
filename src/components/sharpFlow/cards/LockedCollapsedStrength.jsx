@@ -1,7 +1,7 @@
 /**
- * Collapsed Locked card — dual-rail strength strip.
- * System DNA (why we push) + traditional market proof (why a sharp cares).
- * Replaces the SIGNALS 2/5 chip checklist on the 80% surface.
+ * Collapsed Locked card — premium strength block.
+ * One plain-English verdict (novice) + one quiet detail line (advanced).
+ * No pill walls, no BOARD/MARKET labels.
  */
 const C = {
   text: '#F4F7FB',
@@ -31,292 +31,186 @@ function fmtOdds(o) {
   return n > 0 ? `+${n}` : `${n}`;
 }
 
-const PILL_TONES = {
-  system: {
-    color: GOLD_HI,
-    background: 'linear-gradient(180deg, rgba(232,210,138,0.14) 0%, rgba(212,175,55,0.06) 100%)',
-    border: '1px solid rgba(212,175,55,0.34)',
-  },
-  trust: {
-    color: GREEN,
-    background: 'rgba(47,213,126,0.10)',
-    border: '1px solid rgba(47,213,126,0.32)',
-  },
-  market: {
-    color: C.textSec,
-    background: 'rgba(148,163,184,0.07)',
-    border: '1px solid rgba(148,163,184,0.20)',
-  },
-  confirm: {
-    color: GREEN,
-    background: 'rgba(47,213,126,0.10)',
-    border: '1px solid rgba(47,213,126,0.28)',
-  },
-  warn: {
-    color: VS,
-    background: 'rgba(240,113,103,0.10)',
-    border: '1px solid rgba(240,113,103,0.30)',
-  },
-  neutral: {
-    color: C.textSec,
-    background: 'rgba(148,163,184,0.06)',
-    border: '1px solid rgba(148,163,184,0.16)',
-  },
-};
-
-function Pill({ children, title, tone = 'neutral' }) {
-  const toneStyle = PILL_TONES[tone] || PILL_TONES.neutral;
-  return (
-    <span
-      title={title}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 4,
-        fontSize: 9,
-        fontWeight: 750,
-        letterSpacing: '0.03em',
-        padding: '4px 8px',
-        borderRadius: 999,
-        whiteSpace: 'nowrap',
-        fontFeatureSettings: "'tnum'",
-        lineHeight: 1.15,
-        ...toneStyle,
-      }}
-    >
-      {children}
-    </span>
-  );
+function leadSizeRatio(f) {
+  const wallets = Array.isArray(f?.wallets) ? f.wallets : [];
+  const lead = wallets.find((w) => w?.proven && Number.isFinite(w.sizeRatio) && w.sizeRatio > 0)
+    || wallets.find((w) => Number.isFinite(w?.sizeRatio) && w.sizeRatio > 0);
+  const sr = Number(lead?.sizeRatio);
+  return Number.isFinite(sr) && sr > 0 ? sr : null;
 }
 
-function buildSystemPills(f) {
-  const pills = [];
+function isBoosted(f) {
+  const units = Number(f?.units) || 0;
+  const base = Number(f?.pathBaseUnits);
+  const preTape = Number(f?.unitsPreTape);
+  const tape = String(f?.tapeAction || '').toLowerCase();
+  return tape === 'boost'
+    || (Number.isFinite(base) && units > 0 && units >= base * 1.2)
+    || (Number.isFinite(preTape) && units > 0 && units > preTape + 0.05);
+}
+
+function buildVerdict(f) {
   const proven = Math.max(0, Number(f.confirmedOnSide) || 0);
   const sideUsd = Number(f.sharpUsd ?? f.sideInvested) || 0;
   const againstUsd = Number(f.against?.invested) || 0;
   const againstProven = Math.max(0, Number(f.against?.proven) || 0);
   const unopposed = againstUsd < 50 && againstProven === 0;
   const contested = againstProven >= 1 || againstUsd >= 500;
-
-  if (unopposed) {
-    pills.push({
-      key: 'board',
-      tone: 'trust',
-      title: 'No sharp money on the other side',
-      label: sideUsd > 0 ? `Unopposed · ${fmtUsd(sideUsd)}` : 'Unopposed',
-    });
-  } else if (contested) {
-    pills.push({
-      key: 'board',
-      tone: 'warn',
-      title: 'Sharp money on the other side of this board',
-      label: againstUsd > 0
-        ? `Contested · ${fmtUsd(againstUsd)} other`
-        : `Contested · ${againstProven} other`,
-    });
-  } else if (proven >= 1) {
-    pills.push({
-      key: 'board',
-      tone: 'system',
-      title: 'Proven wallets on this side',
-      label: sideUsd > 0
-        ? `${proven} proven · ${fmtUsd(sideUsd)}`
-        : `${proven} proven`,
-    });
-  } else if (sideUsd > 0) {
-    pills.push({
-      key: 'board',
-      tone: 'system',
-      title: 'Sharp dollars on this side',
-      label: fmtUsd(sideUsd),
-    });
-  }
-
-  if (proven >= 1 && unopposed && !pills.some((p) => p.key === 'board' && String(p.label).includes('proven'))) {
-    pills.push({
-      key: 'proven',
-      tone: 'system',
-      title: 'Proven wallets on this side',
-      label: `${proven} proven`,
-    });
-  }
-
-  const lead = (Array.isArray(f.wallets) ? f.wallets : [])
-    .find((w) => w?.proven && Number.isFinite(w.sizeRatio) && w.sizeRatio > 0)
-    || (Array.isArray(f.wallets) ? f.wallets : [])
-      .find((w) => Number.isFinite(w?.sizeRatio) && w.sizeRatio > 0);
-  const sr = Number(lead?.sizeRatio);
-  if (Number.isFinite(sr) && sr > 0) {
-    const hot = sr >= 1.5;
-    const lean = sr < 0.75;
-    pills.push({
-      key: 'size',
-      tone: hot ? 'trust' : lean ? 'neutral' : 'system',
-      title: hot
-        ? 'Lead wallet sized up vs their usual'
-        : lean
-          ? 'Lead wallet below their usual size'
-          : 'Lead wallet size vs usual',
-      label: `${sr.toFixed(1)}× usual`,
-    });
-  }
-
+  const muted = String(f.tapeAction || '').toLowerCase() === 'mute' || !!(f.mutedBy);
   const units = Number(f.units) || 0;
-  const base = Number(f.pathBaseUnits);
-  const preTape = Number(f.unitsPreTape);
-  const tape = String(f.tapeAction || '').toLowerCase();
-  const boosted = tape === 'boost'
-    || (Number.isFinite(base) && units > 0 && units >= base * 1.2)
-    || (Number.isFinite(preTape) && units > 0 && units > preTape + 0.05);
-  const muted = tape === 'mute' || !!(f.mutedBy);
 
-  if (muted && !(units > 0)) {
-    pills.push({
-      key: 'tape',
-      tone: 'warn',
-      title: 'System muted this ticket',
-      label: 'Muted',
-    });
-  } else if (boosted && units > 0) {
-    const from = Number.isFinite(preTape) && preTape > 0
-      ? preTape
-      : (Number.isFinite(base) && base > 0 ? base : null);
-    pills.push({
-      key: 'tape',
-      tone: 'trust',
-      title: from != null
-        ? `Sized up from ${from.toFixed(1)}u → ${units.toFixed(1)}u`
-        : 'Tape sized this ticket up',
-      label: from != null
-        ? `Boost ${from.toFixed(1)}→${units.toFixed(1)}u`
-        : 'Boost',
-    });
-  }
-
-  // Cap system rail — keep scanable
-  return pills.slice(0, 3);
-}
-
-function buildMarketPills(f) {
-  const pills = [];
   const steam = f.steam;
   const warnAgainst = !!(f.marketSignals?.warnAgainst || f.marketSignals?.steamedAgainst);
+  const move = Number.isFinite(f.pinnMovePp) ? f.pinnMovePp : null;
+  const clv = Number.isFinite(f.clvPct) ? f.clvPct : null;
 
-  if (steam?.show && steam.tag) {
-    pills.push({
-      key: 'steam',
-      tone: steam.tier === 'gold' ? 'system' : 'confirm',
-      title: steam.tip || 'Pinnacle steam with entry',
-      label: steam.tagShort ? `Steam ${steam.tagShort}` : (steam.tag || 'Steam'),
-    });
-  } else if (warnAgainst) {
-    pills.push({
-      key: 'steam',
-      tone: 'warn',
-      title: 'Tape pressure against this side',
-      label: 'Steam vs',
-    });
+  // Headline keyword + tone (one emotional beat)
+  let tone = 'neutral';
+  let headline = 'Locked';
+  let tip = 'Locked ticket';
+
+  if (muted && !(units > 0)) {
+    tone = 'warn';
+    headline = 'Muted';
+    tip = 'System stood down — no ticket';
+  } else if (contested) {
+    tone = 'warn';
+    headline = 'Contested';
+    tip = 'Sharp money is also on the other side';
+  } else if (unopposed) {
+    tone = 'trust';
+    headline = 'Unopposed';
+    tip = 'No sharp money on the other side of this board';
+  } else if (proven >= 1) {
+    tone = 'system';
+    headline = proven === 1 ? '1 proven' : `${proven} proven`;
+    tip = 'Proven wallets on this side';
   }
 
+  // Body — readable clause after the headline
+  const bodyParts = [];
+  if (muted && !(units > 0)) {
+    bodyParts.push('system passed on this number');
+  } else if (contested) {
+    if (againstUsd > 0) bodyParts.push(`${fmtUsd(againstUsd)} sharp against`);
+    else if (againstProven > 0) bodyParts.push(`${againstProven} proven against`);
+    if (sideUsd > 0) bodyParts.push(`${fmtUsd(sideUsd)} with us`);
+  } else if (unopposed) {
+    if (sideUsd > 0) bodyParts.push(`${fmtUsd(sideUsd)} proven on this side`);
+    else if (proven >= 1) bodyParts.push(`${proven} proven wallet${proven === 1 ? '' : 's'} on this side`);
+    else bodyParts.push('clear side of the board');
+  } else if (sideUsd > 0) {
+    bodyParts.push(`${fmtUsd(sideUsd)} on this side`);
+  }
+
+  // Market confirmation clause (traditional)
+  if (steam?.show && (steam.tagShort || steam.tag)) {
+    const st = steam.tagShort || steam.tag;
+    bodyParts.push(String(st).toLowerCase().includes('steam')
+      ? `${st} after entry`
+      : `steam ${st} after entry`);
+  } else if (warnAgainst) {
+    bodyParts.push('tape pressure against');
+  } else if (Number.isFinite(move) && Math.abs(move) >= 0.25) {
+    bodyParts.push(move > 0
+      ? `fair +${move.toFixed(1)}pp toward us`
+      : `fair ${move.toFixed(1)}pp against`);
+  } else if (Number.isFinite(clv) && Math.abs(clv) >= 0.3) {
+    bodyParts.push(clv > 0
+      ? `beating the number · CLV +${clv.toFixed(1)}%`
+      : `behind the number · CLV ${clv.toFixed(1)}%`);
+  }
+
+  const body = bodyParts.filter(Boolean).join(' · ');
+
+  // Advanced quiet line — size story + liquidity + PIN reference
+  const detail = [];
+  const sr = leadSizeRatio(f);
+  if (Number.isFinite(sr)) {
+    detail.push(sr >= 1.5
+      ? `Lead ${sr.toFixed(1)}× usual`
+      : sr < 0.75
+        ? `Lead ${sr.toFixed(1)}× usual`
+        : `${sr.toFixed(1)}× usual size`);
+  }
+  if (isBoosted(f) && units > 0) {
+    const from = Number.isFinite(f.unitsPreTape) && f.unitsPreTape > 0
+      ? f.unitsPreTape
+      : (Number.isFinite(f.pathBaseUnits) && f.pathBaseUnits > 0 ? f.pathBaseUnits : null);
+    detail.push(from != null
+      ? `Sized ${Number(from).toFixed(1)}→${units.toFixed(1)}u`
+      : 'Sized up');
+  }
   const pin = Number.isFinite(f.sharpEntryOdds) ? f.sharpEntryOdds
     : (Number.isFinite(f.fairLine) ? f.fairLine : null);
   const ticket = Number.isFinite(f.lockOdds) ? f.lockOdds
     : (Number.isFinite(f.gotOdds) ? f.gotOdds : null);
   if (Number.isFinite(pin) && Number.isFinite(ticket) && Math.abs(pin - ticket) > 1) {
-    pills.push({
-      key: 'pin',
-      tone: 'market',
-      title: `Ticket ${fmtOdds(ticket)} vs sharp open/PIN ${fmtOdds(pin)}`,
-      label: `PIN ${fmtOdds(pin)}`,
-    });
-  } else if (Number.isFinite(pin)) {
-    pills.push({
-      key: 'pin',
-      tone: 'market',
-      title: 'Sharp book reference',
-      label: `PIN ${fmtOdds(pin)}`,
-    });
+    detail.push(`PIN ${fmtOdds(pin)}`);
   }
-
-  const move = Number.isFinite(f.pinnMovePp) ? f.pinnMovePp : null;
-  const clv = Number.isFinite(f.clvPct) ? f.clvPct : null;
-  if (Number.isFinite(move) && Math.abs(move) >= 0.25) {
-    pills.push({
-      key: 'move',
-      tone: move > 0 ? 'confirm' : 'warn',
-      title: move > 0
-        ? `Fair moved ${move.toFixed(1)}pp toward this side`
-        : `Fair moved ${Math.abs(move).toFixed(1)}pp against this side`,
-      label: `${move > 0 ? '+' : ''}${move.toFixed(1)}pp`,
-    });
-  } else if (Number.isFinite(clv) && Math.abs(clv) >= 0.3) {
-    pills.push({
-      key: 'clv',
-      tone: clv > 0 ? 'confirm' : 'warn',
-      title: 'Ticket vs same-line NOW (running CLV)',
-      label: `CLV ${clv > 0 ? '+' : ''}${clv.toFixed(1)}%`,
-    });
-  }
-
   const max = Number(f.pinnMax);
-  if (Number.isFinite(max) && max >= 1000 && pills.length < 3) {
+  if (Number.isFinite(max) && max >= 1000) {
     const k = max / 1000;
-    const label = `Max $${k >= 10 ? Math.round(k) : (k % 1 === 0 ? k.toFixed(0) : k.toFixed(1))}K`;
-    pills.push({
-      key: 'max',
-      tone: 'market',
-      title: 'Pinnacle max stake — liquidity of the number',
-      label,
-    });
+    detail.push(`Max $${k >= 10 ? Math.round(k) : (k % 1 === 0 ? k.toFixed(0) : k.toFixed(1))}K`);
   }
 
-  return pills.slice(0, 3);
+  return {
+    tone,
+    headline,
+    tip,
+    body,
+    detail: detail.slice(0, 3).join('  ·  '),
+  };
 }
+
+const TONE = {
+  trust: { bar: GREEN, word: GREEN },
+  warn: { bar: VS, word: VS },
+  system: { bar: GOLD, word: GOLD_HI },
+  neutral: { bar: 'rgba(148,163,184,0.45)', word: C.textSec },
+};
 
 export default function LockedCollapsedStrength({ f }) {
   if (!f) return null;
-  const system = buildSystemPills(f);
-  const market = buildMarketPills(f);
-  if (!system.length && !market.length) return null;
+  const v = buildVerdict(f);
+  if (!v.headline && !v.body) return null;
+  const t = TONE[v.tone] || TONE.neutral;
 
   return (
     <div
-      style={{ marginTop: 10, marginBottom: 10 }}
+      style={{ marginTop: 14, marginBottom: 14 }}
       onClick={(e) => e.stopPropagation()}
+      title={v.tip}
     >
-      {system.length > 0 && (
+      <div style={{ display: 'flex', gap: 12, alignItems: 'stretch' }}>
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap',
-          marginBottom: market.length ? 6 : 0,
-        }}>
-          <span style={{
-            fontFamily: MONO, fontSize: 7.5, fontWeight: 800,
-            letterSpacing: '0.14em', color: GOLD,
-            flexShrink: 0, opacity: 0.85,
+          width: 2, flexShrink: 0, borderRadius: 2,
+          background: `linear-gradient(180deg, ${t.bar} 0%, ${t.bar}55 100%)`,
+          opacity: 0.95,
+        }} />
+        <div style={{ minWidth: 0, flex: 1, paddingTop: 1 }}>
+          <div style={{
+            fontSize: 13, fontWeight: 600, lineHeight: 1.45,
+            letterSpacing: '-0.01em', color: C.textSec,
           }}>
-            BOARD
-          </span>
-          {system.map((p) => (
-            <Pill key={p.key} title={p.title} tone={p.tone}>{p.label}</Pill>
-          ))}
+            <span style={{ color: t.word, fontWeight: 750 }}>{v.headline}</span>
+            {v.body ? (
+              <span style={{ color: C.textMuted }}> — {v.body}</span>
+            ) : null}
+          </div>
+          {v.detail ? (
+            <div style={{
+              marginTop: 6,
+              fontFamily: MONO, fontSize: 10, fontWeight: 600,
+              letterSpacing: '0.02em', color: C.textFaint,
+              fontFeatureSettings: "'tnum'",
+              lineHeight: 1.35,
+            }}>
+              {v.detail}
+            </div>
+          ) : null}
         </div>
-      )}
-      {market.length > 0 && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap',
-        }}>
-          <span style={{
-            fontFamily: MONO, fontSize: 7.5, fontWeight: 800,
-            letterSpacing: '0.14em', color: C.textMuted,
-            flexShrink: 0,
-          }}>
-            MARKET
-          </span>
-          {market.map((p) => (
-            <Pill key={p.key} title={p.title} tone={p.tone}>{p.label}</Pill>
-          ))}
-        </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -9,7 +9,6 @@ import { AGS_V12_DISPLAY_TIERS, AGS_V12_PATH_TO_DISPLAY } from '../../../lib/ags
 import LockedClarityExpanded from './LockedClarityExpanded';
 import OddsLimitSpark from './OddsLimitSpark';
 import LockedCollapsedStrength from './LockedCollapsedStrength';
-import SteamTag from './SteamTag';
 
 /** Ticket freezes 15 min before first pitch/kick — same gate as the cron. */
 const LOCK_LEAD_MS = 15 * 60 * 1000;
@@ -2400,6 +2399,8 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
         ? `${resultPnl >= 0 ? '+' : ''}${Number(resultPnl).toFixed(2)}u`
         : `+${Number(f.toWin).toFixed(2)}u`;
     const payoutColor = graded ? resultColor : B.profit;
+    const contextLine = f.mainNowLabel || f.entryLadderLabel
+      || (f.lineMoved && f.liveMarketLabel ? f.liveMarketLabel : null);
 
     return (
       <div
@@ -2410,53 +2411,58 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setExpanded(true); }}
         title={edgeAura ? `EDGE ${Number(f.edge).toFixed(1)} · high-conviction lock` : undefined}
         style={{
-          borderRadius: 16, overflow: 'hidden', cursor: 'pointer',
+          borderRadius: 14, overflow: 'hidden', cursor: 'pointer',
           background: edgeAura
-            ? 'linear-gradient(165deg, rgba(232,210,138,0.12) 0%, rgba(212,175,55,0.03) 28%, transparent 52%), linear-gradient(180deg, #171C2B 0%, #0E121C 100%)'
-            : 'linear-gradient(165deg, rgba(255,255,255,0.04) 0%, transparent 40%), linear-gradient(180deg, #171C2B 0%, #0E121C 100%)',
+            ? 'linear-gradient(165deg, rgba(232,210,138,0.10) 0%, rgba(212,175,55,0.02) 26%, transparent 48%), linear-gradient(180deg, #161B28 0%, #0C1018 100%)'
+            : 'linear-gradient(180deg, #161B28 0%, #0C1018 100%)',
           border: `1px solid ${cardBorder}`,
           boxShadow: edgeAura
             ? EDGE_AURA_SHADOW_IDLE
-            : '0 10px 28px -18px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,255,255,0.04)',
-          position: 'relative', padding: '16px 18px 14px',
-          transition: 'border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease',
+            : '0 12px 32px -20px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.035)',
+          position: 'relative', padding: '18px 20px 16px',
+          transition: 'border-color 160ms ease, box-shadow 160ms ease',
         }}
       >
         <CardStyles />
         <div style={{
-          position: 'absolute', top: 0, left: '10%', right: '10%', height: 1, pointerEvents: 'none',
-          background: `linear-gradient(90deg, transparent, ${tracked ? 'rgba(139,150,171,0.55)' : accent}, transparent)`,
-          opacity: 0.85,
+          position: 'absolute', top: 0, left: '12%', right: '12%', height: 1, pointerEvents: 'none',
+          background: `linear-gradient(90deg, transparent, ${tracked ? 'rgba(139,150,171,0.4)' : `${accent}99`}, transparent)`,
+          opacity: 0.7,
         }} />
 
-        {/* Eyebrow: matchup + status */}
+        {/* Quiet header — orientation only */}
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          marginBottom: 12, gap: 10,
+          marginBottom: 14, gap: 10,
         }}>
-          <div style={{ minWidth: 0, display: 1 }}>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap',
-              fontFamily: MONO, fontSize: 8, fontWeight: 700, letterSpacing: '0.12em',
-              color: C.textMuted, textTransform: 'uppercase',
+          <div style={{
+            minWidth: 0, flex: 1, display: 'flex', alignItems: 'baseline', gap: 6,
+            fontSize: 11, fontWeight: 500, color: C.textMuted,
+            overflow: 'hidden', whiteSpace: 'nowrap',
+          }}>
+            <span style={{
+              fontFamily: MONO, fontSize: 9, fontWeight: 700,
+              letterSpacing: '0.14em', color: B.goldHi, textTransform: 'uppercase',
+              flexShrink: 0,
             }}>
-              <span style={{ color: B.goldHi }}>{f.sport}</span>
-              <span style={{ color: C.textFaint, fontWeight: 500 }}>·</span>
-              <span style={{
-                color: C.textSec, letterSpacing: '0.02em', textTransform: 'none',
-                fontFamily: 'inherit', fontSize: 11, fontWeight: 600,
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              }}>
-                {f.away} @ {f.home}
-              </span>
-            </div>
+              {f.sport}
+            </span>
+            <span style={{ color: C.textFaint, flexShrink: 0 }}>·</span>
+            <span style={{
+              overflow: 'hidden', textOverflow: 'ellipsis', color: C.textSec, fontWeight: 600,
+            }}>
+              {f.away} @ {f.home}
+            </span>
             {f.gameTime && (
-              <div style={{
-                marginTop: 3, fontFamily: MONO, fontSize: 9, fontWeight: 600,
-                letterSpacing: '0.04em', color: C.textFaint, fontFeatureSettings: "'tnum'",
-              }}>
-                {f.gameTime}
-              </div>
+              <>
+                <span style={{ color: C.textFaint, flexShrink: 0 }}>·</span>
+                <span style={{
+                  fontFamily: MONO, fontSize: 10, fontWeight: 600,
+                  color: C.textFaint, fontFeatureSettings: "'tnum'", flexShrink: 0,
+                }}>
+                  {f.gameTime}
+                </span>
+              </>
             )}
           </div>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
@@ -2465,8 +2471,8 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
                 title={muteTip}
                 style={{
                   fontSize: 8, fontWeight: 800, letterSpacing: '0.1em',
-                  padding: '5px 10px', borderRadius: 999, color: '#aeb8cb',
-                  background: 'rgba(139,150,171,0.08)', border: '1px solid rgba(139,150,171,0.22)',
+                  padding: '4px 9px', borderRadius: 999, color: '#aeb8cb',
+                  background: 'rgba(139,150,171,0.08)', border: '1px solid rgba(139,150,171,0.2)',
                 }}
               >
                 TRACKED
@@ -2487,10 +2493,9 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
                     title="Ticket sealed at T-15 — set for grading"
                     style={{
                       display: 'inline-flex', alignItems: 'center', gap: 4,
-                      fontSize: 8, fontWeight: 900, letterSpacing: '0.1em',
-                      padding: '5px 10px', borderRadius: 999, color: '#06140c',
+                      fontSize: 8, fontWeight: 800, letterSpacing: '0.1em',
+                      padding: '4px 9px', borderRadius: 999, color: '#06140c',
                       background: 'linear-gradient(180deg, #6EE7B7 0%, #34D399 55%, #10B981 100%)',
-                      boxShadow: '0 8px 20px -12px rgba(16,185,129,0.75)',
                     }}
                   >
                     <Check size={9} strokeWidth={3.2} />
@@ -2499,10 +2504,9 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
                 ) : (
                   <span style={{
                     display: 'inline-flex', alignItems: 'center', gap: 4,
-                    fontSize: 8, fontWeight: 900, letterSpacing: '0.1em',
-                    padding: '5px 10px', borderRadius: 999, color: '#0a0904',
+                    fontSize: 8, fontWeight: 800, letterSpacing: '0.1em',
+                    padding: '4px 9px', borderRadius: 999, color: '#0a0904',
                     background: `linear-gradient(180deg, ${B.goldHi} 0%, ${accent} 58%, #B8941F 100%)`,
-                    boxShadow: `0 8px 20px -12px ${accent}`,
                   }}>
                     <Lock size={8} strokeWidth={3} />
                     IN
@@ -2513,113 +2517,65 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
           </span>
         </div>
 
-        {/* Hero: pick + stake */}
+        {/* Hero — pick + conviction stake */}
         <div style={{
-          display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
-          gap: 12, marginBottom: 2,
+          display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+          gap: 14,
         }}>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{
-              display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap',
+              display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap',
               fontFeatureSettings: "'tnum'",
             }}>
               <div style={{
-                fontSize: '1.28rem', fontWeight: 800, letterSpacing: '-0.035em',
+                fontSize: '1.42rem', fontWeight: 750, letterSpacing: '-0.04em',
                 color: C.text, lineHeight: 1.05,
               }}>
                 {f.pickLabel}
               </div>
               {Number.isFinite(heroPx) && (
                 <div style={{
-                  fontSize: '1.05rem', fontWeight: 750, letterSpacing: '-0.02em',
-                  color: C.textSec, lineHeight: 1.05,
+                  fontSize: '1.12rem', fontWeight: 650, letterSpacing: '-0.025em',
+                  color: C.textMuted, lineHeight: 1.05,
                 }}>
                   {fmtOdds(heroPx)}
                 </div>
               )}
-              <SteamTag steam={f.steam} compact />
             </div>
-            {f.mainNowLabel ? (
+            {contextLine && (
               <div
-                title="Vault flagged ticket — T-15 locks the main line above"
+                title="Entry / flagged context"
                 style={{
-                  marginTop: 5, fontSize: 10, fontWeight: 600,
-                  letterSpacing: '0.02em', color: C.textMuted,
+                  marginTop: 7, fontSize: 11, fontWeight: 500,
+                  letterSpacing: '0.01em', color: C.textFaint, lineHeight: 1.3,
                 }}
               >
-                {f.mainNowLabel}
-              </div>
-            ) : f.entryLadderLabel ? (
-              <div
-                title="Sharp vault entries on this side (possibly different lines)"
-                style={{
-                  marginTop: 5, fontSize: 10, fontWeight: 600,
-                  letterSpacing: '0.02em', color: C.textMuted,
-                }}
-              >
-                {f.entryLadderLabel}
-              </div>
-            ) : (f.lineMoved && f.liveMarketLabel && (
-              <div
-                title="Sportsbook main moved off the vault entry line"
-                style={{
-                  marginTop: 5, fontSize: 10, fontWeight: 600,
-                  letterSpacing: '0.02em', color: C.textMuted,
-                }}
-              >
-                {f.liveMarketLabel}
-              </div>
-            ))}
-            {Array.isArray(f.entryLadder) && f.entryLadder.length > 1 && (
-              <div style={{
-                display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 8,
-              }}>
-                {f.entryLadder.slice(0, 4).map((r) => {
-                  const ln = Number(r.line);
-                  const lnStr = f.marketType === 'spread'
-                    ? `${ln > 0 ? '+' : ''}${ln}`
-                    : String(ln);
-                  const od = Number.isFinite(r.odds)
-                    ? (r.odds > 0 ? `+${r.odds}` : String(r.odds))
-                    : null;
-                  const isTicket = Number.isFinite(f.ticketLine)
-                    && Math.abs(ln - Number(f.ticketLine)) <= 0.051;
-                  return (
-                    <span
-                      key={`el-${ln}`}
-                      title={`$${Math.round(r.invested || 0)} across ${r.wallets || 0} wallet(s)${isTicket ? ' · sealed ticket' : ''}`}
-                      style={{
-                        fontSize: 9, fontWeight: 700, letterSpacing: '0.02em',
-                        padding: '3px 7px', borderRadius: 4,
-                        color: isTicket ? C.text : C.textMuted,
-                        background: isTicket ? 'rgba(212,175,55,0.12)' : 'rgba(148,163,184,0.08)',
-                        border: isTicket
-                          ? '1px solid rgba(212,175,55,0.35)'
-                          : '1px solid rgba(148,163,184,0.18)',
-                        fontFeatureSettings: "'tnum'",
-                      }}
-                    >
-                      {lnStr}{od ? ` ${od}` : ''}
-                    </span>
-                  );
-                })}
+                {contextLine}
               </div>
             )}
           </div>
           <div style={{
             display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
-            gap: 2, flexShrink: 0,
+            gap: 3, flexShrink: 0, paddingTop: 2,
           }}>
+            {!tracked && !graded && (
+              <span style={{
+                fontFamily: MONO, fontSize: 8, fontWeight: 700,
+                letterSpacing: '0.14em', color: C.textFaint,
+              }}>
+                STAKE
+              </span>
+            )}
             <span style={{
-              fontSize: tracked ? 12 : 16, fontWeight: 800,
-              fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em',
+              fontSize: tracked ? 13 : 18, fontWeight: 750,
+              fontFeatureSettings: "'tnum'", letterSpacing: '-0.03em',
               color: tracked ? C.textMuted : graded ? C.text : B.goldHi, lineHeight: 1,
             }}>
               {stakeLabel}
             </span>
             {payoutLabel && (
               <span style={{
-                fontSize: 11, fontWeight: 700, fontFeatureSettings: "'tnum'",
+                fontSize: 12, fontWeight: 650, fontFeatureSettings: "'tnum'",
                 color: payoutColor, letterSpacing: '-0.01em',
               }}>
                 {payoutLabel}
@@ -2629,16 +2585,12 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
           <ChevronDown
             size={14}
             strokeWidth={2}
-            style={{ color: C.textFaint, flexShrink: 0, marginBottom: 2, opacity: 0.7 }}
+            style={{ color: C.textFaint, flexShrink: 0, marginTop: 6, opacity: 0.45 }}
           />
         </div>
 
-        <div style={{
-          height: 1, margin: '12px 0 2px',
-          background: 'linear-gradient(90deg, rgba(212,175,55,0.22), rgba(148,163,184,0.08) 55%, transparent)',
-        }} />
-
         <LockedCollapsedStrength f={f} />
+
         <OddsLimitSpark
           pinPath={f.pinPath}
           flagged={f.gotOdds ?? f.lockOdds}
@@ -2655,6 +2607,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
           showStory
           showMetrics
           curatedMetrics
+          premiumCompact
           gid={`ols-c-${f.id || 'x'}`}
           chartLineLabel={f.chartLineLabel}
           ticketOffMain={f.instrumentVariant === 'ALT' || !!f.lineMoved}

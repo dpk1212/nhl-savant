@@ -213,16 +213,17 @@ function MetricStrip({
   ticketOffMain = false,
   clvPct = null,
   curated = false,
+  premium = false,
 }) {
-  // Collapsed Locked card: curated cast — TICKET · PIN · NOW · MOVE/CLV · MAX.
-  // Same strip chrome; fewer competing columns.
+  // Collapsed Locked card: curated cast — TICKET · PIN · NOW · MOVE (or CLV).
+  // Premium: quieter chrome, 4 cells max, MAX lives in the strength detail line.
   if (curated && compact) {
     const cells = [];
     const liveNow = Number.isFinite(now) ? now : fair;
     if (Number.isFinite(flagged)) {
       cells.push({
         key: 'got',
-        label: ticketOffMain ? 'TICKET' : 'TICKET',
+        label: 'TICKET',
         value: fmtOdds(flagged),
         color: C.text,
       });
@@ -261,8 +262,9 @@ function MetricStrip({
         color: evPct >= 0 ? GREEN : VS,
       });
     }
+    // Only add MAX when we don't already have 4 cells (keep the rail scannable).
     const maxLabel = fmtMax(maxNow);
-    if (maxLabel) {
+    if (maxLabel && cells.length < 4) {
       cells.push({
         key: 'max',
         label: 'MAX',
@@ -270,17 +272,21 @@ function MetricStrip({
         color: LIMIT_DIM,
       });
     }
-    const fs = 12;
-    const labFs = 7.5;
+    const fs = premium ? 13 : 12;
+    const labFs = premium ? 8 : 7.5;
     return (
       <div style={{
         display: 'flex',
-        borderRadius: 10,
-        border: '1px solid rgba(212,175,55,0.14)',
-        background: 'linear-gradient(180deg, rgba(255,255,255,0.035) 0%, rgba(0,0,0,0.22) 100%)',
+        borderRadius: premium ? 8 : 10,
+        border: premium
+          ? '1px solid rgba(148,163,184,0.10)'
+          : '1px solid rgba(212,175,55,0.14)',
+        background: premium
+          ? 'rgba(255,255,255,0.02)'
+          : 'linear-gradient(180deg, rgba(255,255,255,0.035) 0%, rgba(0,0,0,0.22) 100%)',
         overflow: 'hidden',
-        marginBottom: 8,
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+        marginBottom: premium ? 10 : 8,
+        boxShadow: premium ? 'none' : 'inset 0 1px 0 rgba(255,255,255,0.04)',
       }}>
         {cells.map((c, i) => (
           <div
@@ -288,19 +294,24 @@ function MetricStrip({
             style={{
               flex: 1,
               minWidth: 0,
-              padding: '8px 5px 7px',
+              padding: premium ? '10px 6px 9px' : '8px 5px 7px',
               textAlign: 'center',
-              borderLeft: i === 0 ? 'none' : '1px solid rgba(212,175,55,0.10)',
+              borderLeft: i === 0
+                ? 'none'
+                : premium
+                  ? '1px solid rgba(148,163,184,0.08)'
+                  : '1px solid rgba(212,175,55,0.10)',
             }}
           >
             <div style={{
               fontFamily: MONO, fontSize: labFs, fontWeight: 700,
-              letterSpacing: '0.12em', color: C.textFaint, marginBottom: 4,
+              letterSpacing: premium ? '0.16em' : '0.12em',
+              color: C.textFaint, marginBottom: premium ? 5 : 4,
             }}>
               {c.label}
             </div>
             <div style={{
-              fontSize: fs, fontWeight: 800, letterSpacing: '-0.03em',
+              fontSize: fs, fontWeight: premium ? 700 : 800, letterSpacing: '-0.03em',
               color: c.color, fontFeatureSettings: "'tnum'",
             }}>
               {c.value}
@@ -461,16 +472,17 @@ function DualAxisChart({
   flagged,
   fair,
   compact = false,
+  premium = false,
   gid = 'ols',
 }) {
   if (!points || points.length < 2) return null;
 
   const w = compact ? 340 : 420;
-  const h = compact ? 78 : 148;
-  const padL = compact ? 30 : 38;
-  const padR = compact ? 34 : 44;
-  const padTop = compact ? 10 : 14;
-  const padBot = compact ? 16 : 22;
+  const h = premium ? 96 : (compact ? 78 : 148);
+  const padL = premium ? 32 : (compact ? 30 : 38);
+  const padR = premium ? 36 : (compact ? 34 : 44);
+  const padTop = premium ? 12 : (compact ? 10 : 14);
+  const padBot = premium ? 18 : (compact ? 16 : 22);
   const plotW = w - padL - padR;
   const plotH = h - padTop - padBot;
 
@@ -727,6 +739,7 @@ export default function OddsLimitSpark({
   showStory = true,
   showMetrics = true,
   curatedMetrics = false,
+  premiumCompact = false,
   chartLineLabel = null,
   /** When ticket is an alt, label TICKET (not FLAGGED) in the metric strip. */
   ticketOffMain = false,
@@ -801,6 +814,7 @@ export default function OddsLimitSpark({
           clvPct={clvPct}
           compact={compact}
           curated={curatedMetrics}
+          premium={premiumCompact}
           ticketOffMain={ticketOffMain}
         />
       )}
@@ -826,28 +840,31 @@ export default function OddsLimitSpark({
       )}
 
       <div style={{
-        borderRadius: compact ? 8 : 10,
-        border: '1px solid rgba(148,163,184,0.12)',
-        background: 'rgba(0,0,0,0.28)',
-        padding: compact ? '4px 4px 0' : '8px 6px 2px',
+        borderRadius: premiumCompact ? 8 : (compact ? 8 : 10),
+        border: premiumCompact
+          ? '1px solid rgba(148,163,184,0.09)'
+          : '1px solid rgba(148,163,184,0.12)',
+        background: premiumCompact ? 'rgba(0,0,0,0.22)' : 'rgba(0,0,0,0.28)',
+        padding: premiumCompact ? '8px 6px 2px' : (compact ? '4px 4px 0' : '8px 6px 2px'),
       }}>
         <DualAxisChart
           points={points}
           flagged={pathFlagged}
           fair={fair}
           compact={compact}
+          premium={premiumCompact}
           gid={gid}
         />
       </div>
 
       {compact && compactCaption && (
         <div style={{
-          marginTop: 7,
-          fontSize: 10,
-          fontWeight: 600,
-          color: toneColor,
+          marginTop: premiumCompact ? 9 : 7,
+          fontSize: premiumCompact ? 11 : 10,
+          fontWeight: 550,
+          color: premiumCompact ? C.textMuted : toneColor,
           letterSpacing: '0.01em',
-          lineHeight: 1.35,
+          lineHeight: 1.4,
         }}>
           {compactCaption}
         </div>
