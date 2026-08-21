@@ -1585,7 +1585,11 @@ export function mapLockedPickToCardFixture(pick, {
       intelExcludedSet,
       polyData,
       kalshiData,
-      includeExchange: !isTotal,
+      away: pick.away,
+      home: pick.home,
+      awayShort,
+      homeShort,
+      includeExchange: true,
       hcRatio: HC_RATIO,
     })
     : null;

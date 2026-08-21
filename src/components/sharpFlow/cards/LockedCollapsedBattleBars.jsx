@@ -283,9 +283,13 @@ export default function LockedCollapsedBattleBars({ f }) {
     : (hcPct === 0 ? 0 : null);
 
   const src = f?.boardMoneySources;
-  const fullTip = src?.exchange > 0
-    ? `Tracked wallets $${Math.round(src.wallets || 0).toLocaleString()} + exchange flow $${Math.round(src.exchange).toLocaleString()}`
-    : 'All tracked wallet $ on this board (Vault-wide pool)';
+  const tipBits = [];
+  if (src?.wallets > 0) tipBits.push(`wallets $${Math.round(src.wallets).toLocaleString()}`);
+  if (src?.whales > 0) tipBits.push(`whales $${Math.round(src.whales).toLocaleString()}`);
+  if (src?.exchange > 0) tipBits.push(`flow $${Math.round(src.exchange).toLocaleString()}`);
+  const fullTip = tipBits.length
+    ? tipBits.join(' + ')
+    : 'All tracked money on this board';
 
   return (
     <div
@@ -317,7 +321,7 @@ export default function LockedCollapsedBattleBars({ f }) {
           theirsLabel={theirsLabel}
           accentOurs="rgba(148,163,184,0.85)"
           accentTheirs="rgba(240,113,103,0.70)"
-          tip="WR50 / non-winner tracked wallets — Vault-wide pool"
+          tip="Non-winner tracked wallets + whale prints from non-CONFIRMED/FLAT"
         />
       )}
       {hasConfirmed && (

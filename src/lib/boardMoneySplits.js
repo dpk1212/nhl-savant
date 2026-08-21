@@ -1,14 +1,16 @@
 /**
  * Wide board money for locked-card battle bars.
  *
- * Matches Vault battle-field pool: RAW sharp_*_positions (not CONFIRMED+FLAT
- * filter), intel-excluded out, ≥$250 tickets. Tier tags from wallet profiles.
+ * Pulls EVERY tracked dollar we can attribute to the pick side:
+ *   1. Raw sharp_* open positions (Vault pool — all markets on the game)
+ *   2. Poly / Kalshi whale top-trades by outcome
+ *   3. Poly + Kalshi trade-flow sample cash (ML/spread axis only)
  *
- * Full can optionally fold in Polymarket + Kalshi trade-flow sample cash
- * (exchange money Vault doesn't plot but we track).
+ * Losing = non CONFIRMED/FLAT wallets from (1).
+ * Confirmed = CONFIRMED wallets from (1) on this side axis.
  */
 
-export const BOARD_MONEY_MIN_INVESTED = 250;
+export const BOARD_MONEY_MIN_INVESTED = 1; // catch small tickets Vault may still plot
 
 function splitOf(ours, theirs) {
   const o = Math.max(0, Number(ours) || 0);
@@ -22,18 +24,6 @@ function splitOf(ours, theirs) {
   };
 }
 
-function normMarketSide(side, { isTotal } = {}) {
-  const s = String(side || '').toLowerCase();
-  if (isTotal) {
-    if (s === 'over' || s === 'home') return 'home';
-    if (s === 'under' || s === 'away') return 'away';
-  }
-  if (s === 'over') return 'home';
-  if (s === 'under') return 'away';
-  if (s === 'away' || s === 'home' || s === 'draw') return s;
-  return null;
-}
-
 function marketKeyOf(marketType) {
   const m = String(marketType || '').toLowerCase();
   if (m === 'total' || m === 'totals') return 'TOTAL';
@@ -43,73 +33,95 @@ function marketKeyOf(marketType) {
 
 function tierFor(wallet, sport, getWalletProfile) {
   if (!wallet || !getWalletProfile) return null;
-  const short = String(wallet).slice(-6);
-  return getWalletProfile(short)?.bySport?.[sport]?.whitelistTier || null;
+  const short = String(wallet).slice(-6).toLowerCase();
+  const p = getWalletProfile(short);
+  return p?.bySport?.[sport]?.whitelistTier || null;
 }
 
-/**
- * Collect raw positions for a game across ML / SPREAD / TOTAL feeds.
- * When `marketOnly` is set, only that market file is used.
- */
-function collectRawPositions({
+/** Normalize position side → away|home|draw (totals: over→home, under→away). */
+function normSide(side) {
+  const s = String(side || '').toLowerCase();
+  if (s === 'over') return 'home';
+  if (s === 'under') return 'away';
+  if (s === 'away' || s === 'home' || s === 'draw') return s;
+  return null;
+}
+
+function collectWalletRows({
   sport,
   gameKey,
   marketType,
+  playSideNorm,
   rawMl,
   rawSpread,
   rawTotal,
-  marketOnly = false,
+  intelExcludedSet,
+  getWalletProfile,
 }) {
   const mkt = marketKeyOf(marketType);
-  const files = [];
-  if (!marketOnly || mkt === 'ML') {
-    files.push({ mkt: 'ML', data: rawMl });
-  }
-  if (!marketOnly || mkt === 'SPREAD') {
-    files.push({ mkt: 'SPREAD', data: rawSpread });
-  }
-  if (!marketOnly || mkt === 'TOTAL') {
-    files.push({ mkt: 'TOTAL', data: rawTotal });
-  }
-
-  const isTotal = mkt === 'TOTAL';
+  const files = [
+    { mk: 'ML', data: rawMl },
+    { mk: 'SPREAD', data: rawSpread },
+    { mk: 'TOTAL', data: rawTotal },
+  ];
   const out = [];
-  for (const { mkt: mk, data } of files) {
+
+  for (const { mk, data } of files) {
     if (!data || !sport || !gameKey) continue;
-    const gd = data[sport]?.[gameKey];
-    const positions = gd?.positions;
+    const positions = data[sport]?.[gameKey]?.positions;
     if (!Array.isArray(positions)) continue;
+
     for (const p of positions) {
       if (!p?.wallet || !p?.side) continue;
       const inv = Number(p.invested) || 0;
       if (inv < BOARD_MONEY_MIN_INVESTED) continue;
-      // Totals pick: only TOTAL market sides map cleanly to over/under.
-      // ML/SPREAD sides would pollute Full with unrelated money.
-      if (isTotal && mk !== 'TOTAL') continue;
-      // Spread pick: include SPREAD + ML (same away/home axis).
-      if (mkt === 'SPREAD' && mk === 'TOTAL') continue;
-      // ML pick: include ML + SPREAD (same away/home axis); skip TOTAL.
-      if (mkt === 'ML' && mk === 'TOTAL') continue;
+      const wLower = String(p.wallet).toLowerCase();
+      if (intelExcludedSet?.has(wLower)) continue;
 
-      const marketSide = normMarketSide(p.side, { isTotal: mk === 'TOTAL' || isTotal });
+      const marketSide = normSide(p.side);
       if (!marketSide) continue;
+
+      // Side-axis rules:
+      //  ML/SPREAD pick → count ML+SPREAD on away/home; skip TOTAL
+      //  TOTAL pick     → count TOTAL over/under as ours/against;
+      //                   fold ML+SPREAD into against (rest of game board)
+      let side;
+      if (mkt === 'TOTAL') {
+        if (mk === 'TOTAL') {
+          side = marketSide === playSideNorm ? 'ours' : 'against';
+        } else {
+          // Other markets on this game — not on our total side
+          side = 'against';
+        }
+      } else {
+        if (mk === 'TOTAL') continue;
+        side = marketSide === playSideNorm ? 'ours' : 'against';
+      }
+
+      const avg = Number(p.avgSportBet) || 0;
+      const sizeRatio = Number.isFinite(p.sizeRatio) && p.sizeRatio > 0
+        ? p.sizeRatio
+        : (avg > 0 ? inv / avg : null);
+      const tier = tierFor(wLower, sport, getWalletProfile);
+
       out.push({
-        wallet: String(p.wallet).toLowerCase(),
+        wallet: wLower,
+        side,
         marketSide,
         invested: inv,
-        sizeRatio: Number.isFinite(p.sizeRatio) ? p.sizeRatio : null,
-        avgSportBet: Number.isFinite(p.avgSportBet) ? p.avgSportBet : null,
+        sizeRatio,
+        whitelist: tier,
+        whitelisted: tier === 'CONFIRMED' || tier === 'FLAT',
         sourceMkt: mk,
+        kind: 'wallet',
       });
     }
   }
-  return out;
-}
 
-function dedupeMaxInvested(rows) {
+  // Dedupe wallet|side|sourceMkt — keep max invested
   const seen = new Map();
-  for (const r of rows) {
-    const k = `${r.wallet}|${r.marketSide}`;
+  for (const r of out) {
+    const k = `${r.wallet}|${r.side}|${r.sourceMkt}`;
     const cur = seen.get(k);
     if (!cur || r.invested > cur.invested) seen.set(k, r);
   }
@@ -117,17 +129,95 @@ function dedupeMaxInvested(rows) {
 }
 
 /**
- * Polymarket + Kalshi trade-flow sample cash allocated to away/home (or
- * over/under via home/away mapping for totals when only ML flow exists).
+ * Match a whale/trade outcome string to ours/against for this pick.
+ * Returns 'ours' | 'against' | null.
  */
+function outcomeToSide(outcome, {
+  playSideNorm,
+  marketType,
+  away,
+  home,
+  awayShort,
+  homeShort,
+}) {
+  const o = String(outcome || '').trim().toLowerCase();
+  if (!o) return null;
+  const mkt = marketKeyOf(marketType);
+
+  if (mkt === 'TOTAL') {
+    if (o === 'over' || o.startsWith('over')) {
+      return playSideNorm === 'home' ? 'ours' : 'against';
+    }
+    if (o === 'under' || o.startsWith('under')) {
+      return playSideNorm === 'away' ? 'ours' : 'against';
+    }
+    return null; // ML team outcomes don't map to totals
+  }
+
+  // ML / spread — match team names / abbreviations
+  const awayNames = [away, awayShort].filter(Boolean).map((s) => String(s).toLowerCase());
+  const homeNames = [home, homeShort].filter(Boolean).map((s) => String(s).toLowerCase());
+  const isAway = awayNames.some((n) => n && (o === n || o.includes(n) || n.includes(o)));
+  const isHome = homeNames.some((n) => n && (o === n || o.includes(n) || n.includes(o)));
+  if (isAway && !isHome) return playSideNorm === 'away' ? 'ours' : 'against';
+  if (isHome && !isAway) return playSideNorm === 'home' ? 'ours' : 'against';
+  return null;
+}
+
+function collectWhaleRows({
+  sport,
+  gameKey,
+  marketType,
+  playSideNorm,
+  polyData,
+  kalshiData,
+  away,
+  home,
+  awayShort,
+  homeShort,
+  intelExcludedSet,
+  getWalletProfile,
+}) {
+  const rows = [];
+  const poly = polyData?.[sport]?.[gameKey];
+  const kalshi = kalshiData?.[sport]?.[gameKey];
+  const ctx = { playSideNorm, marketType, away, home, awayShort, homeShort };
+
+  const pushTrade = (t, source) => {
+    const amt = Number(t?.amount) || 0;
+    if (amt < BOARD_MONEY_MIN_INVESTED) return;
+    const side = outcomeToSide(t.outcome, ctx);
+    if (!side) return;
+    const wLower = t.wallet ? String(t.wallet).toLowerCase() : null;
+    if (wLower && intelExcludedSet?.has(wLower)) return;
+    const tier = wLower ? tierFor(wLower, sport, getWalletProfile) : null;
+    rows.push({
+      wallet: wLower || `whale:${source}:${t.outcome}:${amt}`,
+      side,
+      invested: amt,
+      sizeRatio: null,
+      whitelist: tier,
+      whitelisted: tier === 'CONFIRMED' || tier === 'FLAT',
+      sourceMkt: 'WHALE',
+      kind: 'whale',
+      exchangeSource: source,
+    });
+  };
+
+  for (const t of (poly?.whales?.topTrades || [])) pushTrade(t, 'poly');
+  for (const t of (kalshi?.whales?.topTrades || [])) pushTrade(t, 'kalshi');
+  return rows;
+}
+
+/** ML/spread trade-flow sample cash → ours/against. */
 export function exchangeFlowSplit({
   sport,
   gameKey,
-  playSideNorm, // 'away' | 'home' | 'draw'
+  playSideNorm,
   polyData,
   kalshiData,
 }) {
-  if (!sport || !gameKey) return splitOf(0, 0);
+  if (!sport || !gameKey || playSideNorm === 'draw') return splitOf(0, 0);
   const poly = polyData?.[sport]?.[gameKey] || null;
   const kalshi = kalshiData?.[sport]?.[gameKey] || null;
   const polyCash = Number(poly?.sampleCash) || 0;
@@ -140,47 +230,47 @@ export function exchangeFlowSplit({
   const kAway = Number(kalshi?.tradeFlow?.awayMoneyPct);
   const kHome = Number(kalshi?.tradeFlow?.homeMoneyPct);
 
-  let awayPct;
-  let homePct;
-  if (totalCash > 0 && (polyCash > 0 || kCash > 0)) {
-    const awayAmt = (Number.isFinite(polyAway) ? polyAway / 100 * polyCash : 0)
-      + (Number.isFinite(kAway) ? kAway / 100 * kCash : 0);
-    const homeAmt = (Number.isFinite(polyHome) ? polyHome / 100 * polyCash : 0)
-      + (Number.isFinite(kHome) ? kHome / 100 * kCash : 0);
-    const known = awayAmt + homeAmt;
-    if (known > 0) {
-      awayPct = (awayAmt / known) * 100;
-      homePct = (homeAmt / known) * 100;
-    }
-  }
-  if (!Number.isFinite(awayPct)) {
-    awayPct = Number.isFinite(polyAway) ? polyAway
-      : (Number.isFinite(kAway) ? kAway : 50);
-    homePct = Number.isFinite(polyHome) ? polyHome
-      : (Number.isFinite(kHome) ? kHome : 50);
-  }
+  const awayAmt = (Number.isFinite(polyAway) ? polyAway / 100 * polyCash : 0)
+    + (Number.isFinite(kAway) ? kAway / 100 * kCash : 0);
+  const homeAmt = (Number.isFinite(polyHome) ? polyHome / 100 * polyCash : 0)
+    + (Number.isFinite(kHome) ? kHome / 100 * kCash : 0);
+  const known = awayAmt + homeAmt;
+  if (known <= 0) return splitOf(0, 0);
 
-  const away$ = totalCash * (awayPct / 100);
-  const home$ = totalCash * (homePct / 100);
-  if (playSideNorm === 'away') return splitOf(away$, home$);
-  if (playSideNorm === 'home') return splitOf(home$, away$);
-  // draw / unknown — no clean ours/against; leave exchange out
+  if (playSideNorm === 'away') return splitOf(awayAmt, homeAmt);
+  if (playSideNorm === 'home') return splitOf(homeAmt, awayAmt);
   return splitOf(0, 0);
 }
 
 /**
- * Build Full / Losing / Confirmed dollar splits for a locked pick.
- *
- * @returns {{
- *   full, losers, confirmed, hcOurs, hcPct, nonHcOurs,
- *   walletRows, exchange, sources
- * }}
+ * Totals: allocate poly sampleCash by over/under probs when polyTotal exists.
  */
+function totalsExchangeSplit({
+  sport,
+  gameKey,
+  playSideNorm,
+  polyData,
+}) {
+  const poly = polyData?.[sport]?.[gameKey];
+  if (!poly) return splitOf(0, 0);
+  const cash = Number(poly.sampleCash) || 0;
+  const probs = poly.polyTotal?.probs;
+  if (!(cash > 0) || !Array.isArray(probs) || probs.length < 2) return splitOf(0, 0);
+  const overPct = Number(probs[0]) || 0;
+  const underPct = Number(probs[1]) || 0;
+  const over$ = cash * (overPct / 100);
+  const under$ = cash * (underPct / 100);
+  // playSideNorm home = over, away = under
+  if (playSideNorm === 'home') return splitOf(over$, under$);
+  if (playSideNorm === 'away') return splitOf(under$, over$);
+  return splitOf(0, 0);
+}
+
 export function buildWideBoardMoneySplits({
   sport,
   gameKey,
   marketType,
-  playSideNorm, // away|home|draw after totals remap (over→home, under→away)
+  playSideNorm,
   rawMl = null,
   rawSpread = null,
   rawTotal = null,
@@ -188,6 +278,10 @@ export function buildWideBoardMoneySplits({
   intelExcludedSet = null,
   polyData = null,
   kalshiData = null,
+  away = null,
+  home = null,
+  awayShort = null,
+  homeShort = null,
   includeExchange = true,
   hcRatio = 1.5,
 } = {}) {
@@ -200,81 +294,82 @@ export function buildWideBoardMoneySplits({
     nonHcOurs: 0,
     walletRows: [],
     exchange: splitOf(0, 0),
-    sources: { wallets: 0, exchange: 0 },
+    whales: splitOf(0, 0),
+    sources: { wallets: 0, whales: 0, exchange: 0 },
   };
   if (!sport || !gameKey || !playSideNorm) return empty;
 
-  const raw = collectRawPositions({
-    sport, gameKey, marketType, rawMl, rawSpread, rawTotal,
-  });
-  const filtered = raw.filter((r) => {
-    if (intelExcludedSet?.has(r.wallet)) return false;
-    return true;
-  });
-  const deduped = dedupeMaxInvested(filtered);
-
-  const rows = deduped.map((r) => {
-    const tier = tierFor(r.wallet, sport, getWalletProfile);
-    const side = r.marketSide === playSideNorm ? 'ours' : 'against';
-    const avg = Number(r.avgSportBet) || 0;
-    const sizeRatio = Number.isFinite(r.sizeRatio) && r.sizeRatio > 0
-      ? r.sizeRatio
-      : (avg > 0 ? r.invested / avg : null);
-    return {
-      ...r,
-      side,
-      whitelist: tier,
-      whitelisted: tier === 'CONFIRMED' || tier === 'FLAT',
-      sizeRatio,
-    };
+  const walletRows = collectWalletRows({
+    sport, gameKey, marketType, playSideNorm,
+    rawMl, rawSpread, rawTotal, intelExcludedSet, getWalletProfile,
   });
 
-  const sum = (pred, side) => rows
+  const whaleRows = collectWhaleRows({
+    sport, gameKey, marketType, playSideNorm,
+    polyData, kalshiData, away, home, awayShort, homeShort,
+    intelExcludedSet, getWalletProfile,
+  });
+
+  const sumSide = (rows, side, pred = () => true) => rows
     .filter((w) => w.side === side && pred(w))
     .reduce((s, w) => s + w.invested, 0);
 
-  const all = () => true;
   const isLoser = (w) => !(w.whitelist === 'CONFIRMED' || w.whitelist === 'FLAT');
   const isConfirmed = (w) => w.whitelist === 'CONFIRMED';
   const isHc = (w) => isConfirmed(w)
     && Number.isFinite(w.sizeRatio)
     && w.sizeRatio >= hcRatio;
 
-  let full = splitOf(sum(all, 'ours'), sum(all, 'against'));
-  const losers = splitOf(sum(isLoser, 'ours'), sum(isLoser, 'against'));
-  const confirmed = splitOf(sum(isConfirmed, 'ours'), sum(isConfirmed, 'against'));
-  const hcOursFixed = rows
+  const walletFull = splitOf(sumSide(walletRows, 'ours'), sumSide(walletRows, 'against'));
+  const whales = splitOf(sumSide(whaleRows, 'ours'), sumSide(whaleRows, 'against'));
+
+  // Losers / Confirmed from open-position wallets only (not flow samples)
+  const losers = splitOf(
+    sumSide(walletRows, 'ours', isLoser),
+    sumSide(walletRows, 'against', isLoser),
+  );
+  // Whale trades from non-winner wallets also count as loser money
+  const whaleLosers = splitOf(
+    sumSide(whaleRows, 'ours', isLoser),
+    sumSide(whaleRows, 'against', isLoser),
+  );
+  const losersAll = splitOf(losers.ours + whaleLosers.ours, losers.theirs + whaleLosers.theirs);
+
+  const confirmed = splitOf(
+    sumSide(walletRows, 'ours', isConfirmed),
+    sumSide(walletRows, 'against', isConfirmed),
+  );
+  const hcOurs = walletRows
     .filter((w) => w.side === 'ours' && isHc(w))
     .reduce((s, w) => s + w.invested, 0);
-  const hcPct = confirmed.ours > 0
-    ? Math.round((hcOursFixed / confirmed.ours) * 100)
-    : null;
+  const hcPct = confirmed.ours > 0 ? Math.round((hcOurs / confirmed.ours) * 100) : null;
 
   let exchange = splitOf(0, 0);
-  if (includeExchange && playSideNorm !== 'draw') {
-    // Totals: exchange ML flow is not over/under — skip to avoid lying.
+  if (includeExchange) {
     const mkt = marketKeyOf(marketType);
-    if (mkt !== 'TOTAL') {
-      exchange = exchangeFlowSplit({
-        sport, gameKey, playSideNorm, polyData, kalshiData,
-      });
-      if (exchange.total > 0) {
-        full = splitOf(full.ours + exchange.ours, full.theirs + exchange.theirs);
-      }
-    }
+    exchange = mkt === 'TOTAL'
+      ? totalsExchangeSplit({ sport, gameKey, playSideNorm, polyData })
+      : exchangeFlowSplit({ sport, gameKey, playSideNorm, polyData, kalshiData });
   }
+
+  const full = splitOf(
+    walletFull.ours + whales.ours + exchange.ours,
+    walletFull.theirs + whales.theirs + exchange.theirs,
+  );
 
   return {
     full,
-    losers,
+    losers: losersAll,
     confirmed,
-    hcOurs: Math.round(hcOursFixed),
+    hcOurs: Math.round(hcOurs),
     hcPct,
-    nonHcOurs: Math.max(0, Math.round(confirmed.ours - hcOursFixed)),
-    walletRows: rows,
+    nonHcOurs: Math.max(0, Math.round(confirmed.ours - hcOurs)),
+    walletRows,
     exchange,
+    whales,
     sources: {
-      wallets: Math.round(sum(all, 'ours') + sum(all, 'against')),
+      wallets: walletFull.total,
+      whales: whales.total,
       exchange: exchange.total,
     },
   };
