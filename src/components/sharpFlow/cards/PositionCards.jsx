@@ -8,7 +8,7 @@ import { Check, Lock, ChevronDown, Clock, X } from 'lucide-react';
 import { AGS_V12_DISPLAY_TIERS, AGS_V12_PATH_TO_DISPLAY } from '../../../lib/ags.js';
 import LockedClarityExpanded from './LockedClarityExpanded';
 import OddsLimitSpark from './OddsLimitSpark';
-import LockedSignalsRow from './LockedSignalsRow';
+import LockedCollapsedStrength from './LockedCollapsedStrength';
 import SteamTag from './SteamTag';
 
 /** Ticket freezes 15 min before first pitch/kick — same gate as the cron. */
@@ -2611,9 +2611,9 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
             gap: 2, flexShrink: 0,
           }}>
             <span style={{
-              fontSize: tracked ? 12 : 15, fontWeight: 800,
+              fontSize: tracked ? 12 : 16, fontWeight: 800,
               fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em',
-              color: tracked ? C.textMuted : C.text, lineHeight: 1,
+              color: tracked ? C.textMuted : graded ? C.text : B.goldHi, lineHeight: 1,
             }}>
               {stakeLabel}
             </span>
@@ -2638,7 +2638,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
           background: 'linear-gradient(90deg, rgba(212,175,55,0.22), rgba(148,163,184,0.08) 55%, transparent)',
         }} />
 
-        <LockedSignalsRow signals={f.marketSignals} compact />
+        <LockedCollapsedStrength f={f} />
         <OddsLimitSpark
           pinPath={f.pinPath}
           flagged={f.gotOdds ?? f.lockOdds}
@@ -2650,9 +2650,11 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
           maxNow={f.pinnMax ?? f.marketAgreement?.maxNow}
           movePp={f.pinnMovePp}
           polyEntry={f.polyEntryOdds}
+          clvPct={f.clvPct}
           compact
-          showStory={false}
+          showStory
           showMetrics
+          curatedMetrics
           gid={`ols-c-${f.id || 'x'}`}
           chartLineLabel={f.chartLineLabel}
           ticketOffMain={f.instrumentVariant === 'ALT' || !!f.lineMoved}
