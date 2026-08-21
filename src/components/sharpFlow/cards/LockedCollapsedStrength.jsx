@@ -42,8 +42,14 @@ function pickLeadWallet(f) {
 }
 
 function boardContext(f) {
-  const sideUsd = Number(f.sharpUsd ?? f.sideInvested) || 0;
-  const againstUsd = Number(f.against?.invested) || 0;
+  // Prefer wide Full split (Vault + whales + exchange) so Zone A matches bars.
+  const wide = f?.boardMoneyFull || f?.boardMoney?.full;
+  const sideUsd = (wide && (wide.ours > 0 || wide.theirs > 0))
+    ? (Number(wide.ours) || 0)
+    : (Number(f.sharpUsd ?? f.sideInvested) || 0);
+  const againstUsd = (wide && (wide.ours > 0 || wide.theirs > 0))
+    ? (Number(wide.theirs) || 0)
+    : (Number(f.against?.invested) || 0);
   const againstProven = Math.max(0, Number(f.against?.proven) || 0);
   const proven = Math.max(0, Number(f.confirmedOnSide) || 0);
   const muted = String(f.tapeAction || '').toLowerCase() === 'mute' || !!(f.mutedBy);
