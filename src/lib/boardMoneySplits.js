@@ -1,16 +1,21 @@
 /**
  * Wide board money for locked-card battle bars.
  *
- * Pulls EVERY tracked dollar we can attribute to the pick side:
- *   1. Raw sharp_* open positions (Vault pool — all markets on the game)
- *   2. Poly / Kalshi whale top-trades by outcome
- *   3. Poly + Kalshi trade-flow sample cash (ML/spread axis only)
+ * Accuracy rules (2026-08-21 audit):
+ *   1. Count ONLY the pick's market axis (ML+SPREAD together; TOTAL = O/U only).
+ *      Never fold ML/SPREAD into "against" on a totals pick.
+ *   2. Never paint ML sampleCash as Over/Under (totals get no exchange flow).
+ *   3. Full = wallets + whales (deduped by wallet|side) + exchange residual
+ *      (exchange minus whale $ already counted — no double-count).
+ *   4. Losing = non CONFIRMED/FLAT from wallets + unmatched whale losers.
+ *   5. Confirmed = CONFIRMED wallets only (no whales, no flow, no FLAT).
+ *   6. Min ticket matches Vault battle field ($250).
  *
- * Losing = non CONFIRMED/FLAT wallets from (1).
- * Confirmed = CONFIRMED wallets from (1) on this side axis.
+ * Display-only — never changes AGS / staking / units.
  */
 
-export const BOARD_MONEY_MIN_INVESTED = 1; // catch small tickets Vault may still plot
+/** Match Vault battle scatter floor (SharpFlow BATTLE_MIN_INVESTED). */
+export const BOARD_MONEY_MIN_INVESTED = 250;
 
 function splitOf(ours, theirs) {
   const o = Math.max(0, Number(ours) || 0);
@@ -47,6 +52,11 @@ function normSide(side) {
   return null;
 }
 
+/**
+ * Open-position rows for the pick's market axis only.
+ * ML/SPREAD pick → ML + SPREAD files (skip TOTAL).
+ * TOTAL pick     → TOTAL file only (never fold team ML/spread into against).
+ */
 function collectWalletRows({
   sport,
   gameKey,
@@ -68,6 +78,14 @@ function collectWalletRows({
 
   for (const { mk, data } of files) {
     if (!data || !sport || !gameKey) continue;
+
+    // Market-axis gate — no cross-market pollution.
+    if (mkt === 'TOTAL') {
+      if (mk !== 'TOTAL') continue;
+    } else if (mk === 'TOTAL') {
+      continue;
+    }
+
     const positions = data[sport]?.[gameKey]?.positions;
     if (!Array.isArray(positions)) continue;
 
@@ -81,22 +99,7 @@ function collectWalletRows({
       const marketSide = normSide(p.side);
       if (!marketSide) continue;
 
-      // Side-axis rules:
-      //  ML/SPREAD pick → count ML+SPREAD on away/home; skip TOTAL
-      //  TOTAL pick     → count TOTAL over/under as ours/against;
-      //                   fold ML+SPREAD into against (rest of game board)
-      let side;
-      if (mkt === 'TOTAL') {
-        if (mk === 'TOTAL') {
-          side = marketSide === playSideNorm ? 'ours' : 'against';
-        } else {
-          // Other markets on this game — not on our total side
-          side = 'against';
-        }
-      } else {
-        if (mk === 'TOTAL') continue;
-        side = marketSide === playSideNorm ? 'ours' : 'against';
-      }
+      const side = marketSide === playSideNorm ? 'ours' : 'against';
 
       const avg = Number(p.avgSportBet) || 0;
       const sizeRatio = Number.isFinite(p.sizeRatio) && p.sizeRatio > 0
@@ -154,11 +157,19 @@ function outcomeToSide(outcome, {
     return null; // ML team outcomes don't map to totals
   }
 
-  // ML / spread — match team names / abbreviations
+  // ML / spread — prefer exact / prefix matches over fuzzy includes
   const awayNames = [away, awayShort].filter(Boolean).map((s) => String(s).toLowerCase());
   const homeNames = [home, homeShort].filter(Boolean).map((s) => String(s).toLowerCase());
-  const isAway = awayNames.some((n) => n && (o === n || o.includes(n) || n.includes(o)));
-  const isHome = homeNames.some((n) => n && (o === n || o.includes(n) || n.includes(o)));
+  const hit = (names) => names.some((n) => {
+    if (!n) return false;
+    if (o === n) return true;
+    if (o.startsWith(n) || n.startsWith(o)) return true;
+    // Short abbrev only if token-boundary-ish (avoid "or" in "Panthers")
+    if (n.length >= 3 && (o.includes(n) || n.includes(o))) return true;
+    return false;
+  });
+  const isAway = hit(awayNames);
+  const isHome = hit(homeNames);
   if (isAway && !isHome) return playSideNorm === 'away' ? 'ours' : 'against';
   if (isHome && !isAway) return playSideNorm === 'home' ? 'ours' : 'against';
   return null;
@@ -201,6 +212,7 @@ function collectWhaleRows({
       sourceMkt: 'WHALE',
       kind: 'whale',
       exchangeSource: source,
+      anonymous: !wLower,
     });
   };
 
@@ -209,7 +221,19 @@ function collectWhaleRows({
   return rows;
 }
 
-/** ML/spread trade-flow sample cash → ours/against. */
+/**
+ * Drop whale rows whose wallet|side already appears in open-position wallets
+ * (same dollar would otherwise hit Full twice).
+ */
+function whalesNotInWallets(whaleRows, walletRows) {
+  const walletKeys = new Set(walletRows.map((w) => `${w.wallet}|${w.side}`));
+  return whaleRows.filter((w) => {
+    if (w.anonymous) return true;
+    return !walletKeys.has(`${w.wallet}|${w.side}`);
+  });
+}
+
+/** ML/spread trade-flow sample cash → ours/against. Not used for TOTAL. */
 export function exchangeFlowSplit({
   sport,
   gameKey,
@@ -243,27 +267,14 @@ export function exchangeFlowSplit({
 }
 
 /**
- * Totals: allocate poly sampleCash by over/under probs when polyTotal exists.
+ * Residual exchange = sample flow minus whale $ already counted on that side.
+ * Avoids Full = wallets + whales + full sampleCash (triple-count).
  */
-function totalsExchangeSplit({
-  sport,
-  gameKey,
-  playSideNorm,
-  polyData,
-}) {
-  const poly = polyData?.[sport]?.[gameKey];
-  if (!poly) return splitOf(0, 0);
-  const cash = Number(poly.sampleCash) || 0;
-  const probs = poly.polyTotal?.probs;
-  if (!(cash > 0) || !Array.isArray(probs) || probs.length < 2) return splitOf(0, 0);
-  const overPct = Number(probs[0]) || 0;
-  const underPct = Number(probs[1]) || 0;
-  const over$ = cash * (overPct / 100);
-  const under$ = cash * (underPct / 100);
-  // playSideNorm home = over, away = under
-  if (playSideNorm === 'home') return splitOf(over$, under$);
-  if (playSideNorm === 'away') return splitOf(under$, over$);
-  return splitOf(0, 0);
+function exchangeResidual(exchange, whaleAll) {
+  return splitOf(
+    Math.max(0, (exchange?.ours || 0) - (whaleAll?.ours || 0)),
+    Math.max(0, (exchange?.theirs || 0) - (whaleAll?.theirs || 0)),
+  );
 }
 
 export function buildWideBoardMoneySplits({
@@ -304,11 +315,12 @@ export function buildWideBoardMoneySplits({
     rawMl, rawSpread, rawTotal, intelExcludedSet, getWalletProfile,
   });
 
-  const whaleRows = collectWhaleRows({
+  const whaleRowsRaw = collectWhaleRows({
     sport, gameKey, marketType, playSideNorm,
     polyData, kalshiData, away, home, awayShort, homeShort,
     intelExcludedSet, getWalletProfile,
   });
+  const whaleRows = whalesNotInWallets(whaleRowsRaw, walletRows);
 
   const sumSide = (rows, side, pred = () => true) => rows
     .filter((w) => w.side === side && pred(w))
@@ -321,14 +333,13 @@ export function buildWideBoardMoneySplits({
     && w.sizeRatio >= hcRatio;
 
   const walletFull = splitOf(sumSide(walletRows, 'ours'), sumSide(walletRows, 'against'));
+  const whalesAll = splitOf(sumSide(whaleRowsRaw, 'ours'), sumSide(whaleRowsRaw, 'against'));
   const whales = splitOf(sumSide(whaleRows, 'ours'), sumSide(whaleRows, 'against'));
 
-  // Losers / Confirmed from open-position wallets only (not flow samples)
   const losers = splitOf(
     sumSide(walletRows, 'ours', isLoser),
     sumSide(walletRows, 'against', isLoser),
   );
-  // Whale trades from non-winner wallets also count as loser money
   const whaleLosers = splitOf(
     sumSide(whaleRows, 'ours', isLoser),
     sumSide(whaleRows, 'against', isLoser),
@@ -344,12 +355,13 @@ export function buildWideBoardMoneySplits({
     .reduce((s, w) => s + w.invested, 0);
   const hcPct = confirmed.ours > 0 ? Math.round((hcOurs / confirmed.ours) * 100) : null;
 
+  // TOTAL: never allocate ML sampleCash via O/U probs (that was painting
+  // moneyline flow as Over/Under). Whales already carry real O/U prints.
+  let exchangeRaw = splitOf(0, 0);
   let exchange = splitOf(0, 0);
-  if (includeExchange) {
-    const mkt = marketKeyOf(marketType);
-    exchange = mkt === 'TOTAL'
-      ? totalsExchangeSplit({ sport, gameKey, playSideNorm, polyData })
-      : exchangeFlowSplit({ sport, gameKey, playSideNorm, polyData, kalshiData });
+  if (includeExchange && marketKeyOf(marketType) !== 'TOTAL') {
+    exchangeRaw = exchangeFlowSplit({ sport, gameKey, playSideNorm, polyData, kalshiData });
+    exchange = exchangeResidual(exchangeRaw, whalesAll);
   }
 
   const full = splitOf(
@@ -366,6 +378,7 @@ export function buildWideBoardMoneySplits({
     nonHcOurs: Math.max(0, Math.round(confirmed.ours - hcOurs)),
     walletRows,
     exchange,
+    exchangeRaw,
     whales,
     sources: {
       wallets: walletFull.total,
