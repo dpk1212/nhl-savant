@@ -2379,9 +2379,6 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
   // Champagne accents stay even on tracked picks; only the pill goes gray.
   // Graded tickets tint the accent to the result so the list reads at a glance.
   const accent = graded && resultColor ? resultColor : B.gold;
-  const productTier = displayTierFromPath(f.stakePath);
-  const tierLabel = productTier?.label || null;
-  const tierColor = productTier?.color || C.textMuted;
   // Gold aura: staked live tickets (countdown or fully LOCKED) with EDGE ≥ 11.
   const edgeAura = !tracked && !graded && Number.isFinite(f.edge) && f.edge >= EDGE_AURA_MIN;
   const cardBorder = tracked
@@ -2475,15 +2472,6 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
             )}
           </div>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-            {!tracked && !graded && tierLabel && (
-              <span style={{
-                fontSize: 8, fontWeight: 800, letterSpacing: '0.12em',
-                padding: '4px 8px', borderRadius: 999, color: tierColor,
-                background: `${tierColor}14`, border: `1px solid ${tierColor}38`,
-              }}>
-                {tierLabel}
-              </span>
-            )}
             {tracked ? (
               <span
                 title={muteTip}
@@ -2707,18 +2695,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
       compact
     />
   ) : (
-    <>
-      {tierLabel && (
-        <span style={{
-          fontSize: 8, fontWeight: 800, letterSpacing: '0.12em',
-          padding: '4px 8px', borderRadius: 5, color: tierColor,
-          background: `${tierColor}14`, border: `1px solid ${tierColor}40`,
-        }}>
-          {tierLabel}
-        </span>
-      )}
-      <LockFreezeStatus commenceMs={f.commenceMs} compact />
-    </>
+    <LockFreezeStatus commenceMs={f.commenceMs} compact />
   );
 
   return (
