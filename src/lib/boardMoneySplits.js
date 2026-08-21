@@ -4,9 +4,11 @@
  * Accuracy rules (2026-08-21 audit + loser feed):
  *   1. Count ONLY the pick's market axis (ML+SPREAD together; TOTAL = O/U only).
  *      Never fold ML/SPREAD into "against" on a totals pick.
- *   2. Never paint ML sampleCash as Over/Under (totals get no exchange flow).
+ *   2. Never paint ML sampleCash as Over/Under. TOTAL exchange uses Kalshi
+ *      totalTradeFlow (O/U only). ML/spread exchange uses away/home tradeFlow.
  *   3. Full = wallets + whales (deduped by wallet|side) + exchange residual
  *      (exchange minus whale $ already counted — no double-count).
+ *      TOTAL whales with outcome Over/Under come from Kalshi total markets.
  *   4. Losing = tracked open positions we can confirm as non-winners:
  *        WR50 · null/unranked · CONFIRMED_BLEEDER · POSITIONS_ONLY_NEGATIVE
  *        · PICKS_ONLY_NEGATIVE (even if whitelistTier was CONFIRMED/FLAT).
@@ -370,6 +372,34 @@ export function exchangeFlowSplit({
 }
 
 /**
+ * TOTAL-only exchange flow from Kalshi O/U trades (totalTradeFlow).
+ * playSideNorm: home = Over, away = Under (same as normSide).
+ * Never reads ML tradeFlow / awayMoneyPct — that was the totals bleed.
+ */
+export function totalExchangeFlowSplit({
+  sport,
+  gameKey,
+  playSideNorm,
+  kalshiData,
+}) {
+  if (!sport || !gameKey || playSideNorm === 'draw') return splitOf(0, 0);
+  const kalshi = kalshiData?.[sport]?.[gameKey] || null;
+  const tf = kalshi?.totalTradeFlow || null;
+  if (!tf) return splitOf(0, 0);
+  const cash = Number(tf.sampleCash) || 0;
+  if (cash <= 0) return splitOf(0, 0);
+  const overPct = Number(tf.overMoneyPct);
+  const underPct = Number(tf.underMoneyPct);
+  const overAmt = Number.isFinite(overPct) ? overPct / 100 * cash : 0;
+  const underAmt = Number.isFinite(underPct) ? underPct / 100 * cash : 0;
+  if (overAmt + underAmt <= 0) return splitOf(0, 0);
+  // home ↔ over, away ↔ under
+  if (playSideNorm === 'home') return splitOf(overAmt, underAmt);
+  if (playSideNorm === 'away') return splitOf(underAmt, overAmt);
+  return splitOf(0, 0);
+}
+
+/**
  * Residual exchange = sample flow minus whale $ already counted on that side.
  * Avoids Full = wallets + whales + full sampleCash (triple-count).
  */
@@ -454,13 +484,20 @@ export function buildWideBoardMoneySplits({
     .reduce((s, w) => s + w.invested, 0);
   const hcPct = confirmed.ours > 0 ? Math.round((hcOurs / confirmed.ours) * 100) : null;
 
-  // TOTAL: never allocate ML sampleCash via O/U probs (that was painting
-  // moneyline flow as Over/Under). Whales already carry real O/U prints.
+  // TOTAL: use Kalshi O/U totalTradeFlow only — never ML away/home sampleCash.
+  // ML/SPREAD: existing exchangeFlowSplit (poly + kalshi ML tradeFlow).
   let exchangeRaw = splitOf(0, 0);
   let exchange = splitOf(0, 0);
-  if (includeExchange && marketKeyOf(marketType) !== 'TOTAL') {
-    exchangeRaw = exchangeFlowSplit({ sport, gameKey, playSideNorm, polyData, kalshiData });
-    exchange = exchangeResidual(exchangeRaw, whalesAll);
+  if (includeExchange) {
+    if (marketKeyOf(marketType) === 'TOTAL') {
+      exchangeRaw = totalExchangeFlowSplit({
+        sport, gameKey, playSideNorm, kalshiData,
+      });
+      exchange = exchangeResidual(exchangeRaw, whalesAll);
+    } else {
+      exchangeRaw = exchangeFlowSplit({ sport, gameKey, playSideNorm, polyData, kalshiData });
+      exchange = exchangeResidual(exchangeRaw, whalesAll);
+    }
   }
 
   const full = splitOf(

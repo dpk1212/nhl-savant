@@ -651,6 +651,14 @@ function extractSpreadData(markets) {
   return spreads.slice(0, 4);
 }
 
+// Parse "Over 6.5 runs scored" / "Over 154.5 points scored" → 6.5 / 154.5
+function parseTotalLine(label) {
+  const m = String(label || '').match(/(\d+(?:\.\d+)?)/);
+  if (!m) return null;
+  const n = Number(m[1]);
+  return Number.isFinite(n) ? n : null;
+}
+
 // ─── Extract total data from Kalshi total markets ────────────────────────
 function extractTotalData(markets) {
   if (!markets || markets.length === 0) return null;
@@ -666,6 +674,10 @@ function extractTotalData(markets) {
       label: sub,
       prob: Number((mid * 100).toFixed(1)),
       volume: Math.round(vol),
+      // Needed so the UI can fetch / attribute O/U trade flow (ML tradeFlow
+      // is away/home only and must never be painted onto totals).
+      ticker: m.ticker || null,
+      line: parseTotalLine(sub),
     });
   }
   totals.sort((a, b) => b.prob - a.prob);
@@ -879,14 +891,84 @@ async function run() {
         };
       }
 
+      // ── Totals O/U trade flow (SEPARATE from ML away/home tradeFlow) ────
+      // Kalshi total markets are binary YES=Over / NO=Under for a line
+      // ("Over 6.5 runs scored"). Previously we only stored label/prob/volume
+      // and never fetched trades — so locked TOTAL battle bars had no Kalshi
+      // O/U volume while ML looked fine. Keep this pool off ML tradeFlow so
+      // we never paint Milwaukee/Atlanta cash as Over/Under.
+      let totalTradeFlow = null;
+      let overTickets = 0, underTickets = 0;
+      let overCash = 0, underCash = 0;
+      const totalBigTrades = [];
+
+      const processTotalTrades = (trades) => {
+        for (const t of trades) {
+          const count = parseFloat(t.count_fp || '0');
+          const yesPrice = parseFloat(t.yes_price_dollars || '0');
+          const noPrice = parseFloat(t.no_price_dollars || '0');
+          const isYes = t.taker_side === 'yes';
+          const cash = isYes ? count * yesPrice : count * noPrice;
+          const outcome = isYes ? 'Over' : 'Under';
+          if (isYes) { overTickets++; overCash += cash; }
+          else { underTickets++; underCash += cash; }
+          if (cash >= WHALE_MIN) {
+            totalBigTrades.push({
+              amount: Math.round(cash),
+              side: 'BUY',
+              outcome,
+              price: Math.round((isYes ? yesPrice : noPrice) * 100),
+              ts: t.created_time ? new Date(t.created_time).getTime() : null,
+              marketType: 'total',
+            });
+          }
+        }
+      };
+
+      if (totalEvent?.markets?.length > 0) {
+        for (const m of totalEvent.markets) {
+          if (!m.ticker) continue;
+          await sleep(150);
+          const trades = await fetchAllTrades(m.ticker);
+          if (trades.length > 0) {
+            console.log(`   📈 Total trades: ${m.yes_sub_title} → ${trades.length} trades`);
+          }
+          processTotalTrades(trades);
+        }
+      }
+
+      const ouTickets = overTickets + underTickets;
+      const ouCash = overCash + underCash;
+      if (ouTickets > 0) {
+        totalTradeFlow = {
+          overTicketPct: Number((overTickets / ouTickets * 100).toFixed(1)),
+          underTicketPct: Number((underTickets / ouTickets * 100).toFixed(1)),
+          overMoneyPct: ouCash > 0 ? Number((overCash / ouCash * 100).toFixed(1)) : 0,
+          underMoneyPct: ouCash > 0 ? Number((underCash / ouCash * 100).toFixed(1)) : 0,
+          tradeCount: ouTickets,
+          sampleCash: Math.round(ouCash),
+        };
+      }
+
+      // Merge O/U whales into the game whale list (outcome="Over"/"Under").
+      // Board money maps these only on TOTAL picks; ML picks ignore them.
+      if (totalBigTrades.length > 0) {
+        bigTrades.push(...totalBigTrades);
+      }
+
       if (bigTrades.length > 0) {
         bigTrades.sort((a, b) => b.amount - a.amount);
         const whaleCash = bigTrades.reduce((s, t) => s + t.amount, 0);
+        // Keep ML + O/U whales both visible — a pure top-10 would drop all
+        // Over/Under when moneyline whales dominate (common on MLB).
+        const mlTop = bigTrades.filter((t) => t.marketType !== 'total').slice(0, 10);
+        const ouTop = bigTrades.filter((t) => t.marketType === 'total').slice(0, 10);
+        const mixed = [...mlTop, ...ouTop].sort((a, b) => b.amount - a.amount);
         kalshiWhales = {
           count: bigTrades.length,
           totalCash: whaleCash,
           largest: bigTrades[0].amount,
-          topTrades: bigTrades.slice(0, 10),
+          topTrades: mixed.slice(0, 20),
         };
       }
 
@@ -921,13 +1003,15 @@ async function run() {
         priceHistory,
         volume24h: totalVolume,
         tradeFlow,
+        // O/U-only flow from KX*TOTAL markets — never fold into tradeFlow.
+        totalTradeFlow,
         whales: kalshiWhales,
         spreads: spreadData,
         totals: totalData,
         awayTeam: awayRaw,
         homeTeam: homeRaw,
-        eventTicker: gameEvent?.event_ticker || spreadEvent?.event_ticker || null,
-        title: (gameEvent?.title || spreadEvent?.title || '').substring(0, 80),
+        eventTicker: gameEvent?.event_ticker || spreadEvent?.event_ticker || totalEvent?.event_ticker || null,
+        title: (gameEvent?.title || spreadEvent?.title || totalEvent?.title || '').substring(0, 80),
       };
     }
   }
