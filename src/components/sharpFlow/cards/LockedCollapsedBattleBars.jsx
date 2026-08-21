@@ -1,9 +1,9 @@
 /**
- * Collapsed Locked — compact battle money bars under the chart.
+ * Collapsed Locked — compact dollar-split bars under the chart.
  *
- * 1. FULL — CONFIRMED+FLAT sharp money (same pool as signal-page SHARP MONEY)
- * 2. LOSERS — WR50 + non-winner tracked wallets we still see on the board
- * 3. CONFIRMED — CONFIRMED-tier only, dual color, % = HC share of our confirmed $
+ * 1. FULL DOLLARS — all tracked $ on this board (ours vs against)
+ * 2. LOSING WALLETS — WR50 / non-winner tracked $ only
+ * 3. CONFIRMED WINNERS — CONFIRMED-tier $; dual color; HC% of our confirmed $
  */
 import { HC_RATIO } from '../../../lib/ags.js';
 
@@ -31,30 +31,28 @@ function fmtUsd(v) {
 function boardPool(f) {
   if (Array.isArray(f?.mapWallets) && f.mapWallets.length) return f.mapWallets;
   if (Array.isArray(f?.wallets) && f.wallets.length) {
-    return f.wallets.map((w) => ({ ...w, side: w.side || 'ours' }));
+    return f.wallets.map((w) => ({ ...w, side: w.side === 'against' ? 'against' : 'ours' }));
   }
   return [];
 }
 
-/** Signal-page money pool: CONFIRMED + FLAT winners. */
-function isFullSharp(w) {
+function isWinnerPool(w) {
   if (!w) return false;
   if (w.whitelisted === true) return true;
   const t = String(w.whitelist || '').toUpperCase();
   return t === 'CONFIRMED' || t === 'FLAT';
 }
 
-/** Losing / LODO pool we still track — WR50 or non-winner on the board. */
-function isLoserTracked(w) {
+/** Losing track-record / LODO wallets we still track on the board. */
+function isLosingWallet(w) {
   if (!w || (w.invested || 0) <= 0) return false;
-  if (isFullSharp(w)) return false;
+  if (isWinnerPool(w)) return false;
   const t = String(w.whitelist || '').toUpperCase();
-  return t === 'WR50' || t === '' || t === 'NULL' || !w.whitelisted;
+  return t === 'WR50' || !w.whitelisted || t === '' || t === 'NULL';
 }
 
 function isConfirmed(w) {
-  if (!w) return false;
-  return String(w.whitelist || '').toUpperCase() === 'CONFIRMED';
+  return !!w && String(w.whitelist || '').toUpperCase() === 'CONFIRMED';
 }
 
 function isHc(w) {
@@ -66,128 +64,221 @@ function sumSide(rows, side) {
   return rows.filter((w) => w.side === side).reduce((s, w) => s + (Number(w.invested) || 0), 0);
 }
 
-function splitFromRows(rows) {
-  const ours = sumSide(rows, 'ours');
-  const theirs = sumSide(rows, 'against');
-  const total = ours + theirs;
+function splitOf(ours, theirs) {
+  const o = Math.max(0, Number(ours) || 0);
+  const t = Math.max(0, Number(theirs) || 0);
+  const total = o + t;
   return {
-    ours,
-    theirs,
+    ours: o,
+    theirs: t,
     total,
-    oursPct: total > 0 ? Math.round((ours / total) * 100) : null,
+    oursPct: total > 0 ? Math.round((o / total) * 100) : null,
   };
 }
 
 /**
- * Prefer mapWallets census. Fall back to stamped sharpUsd / against / moneyPct
- * for FULL when the board snapshot is thin (legacy picks).
+ * Full dollars = board totals (same numbers Contested / Unopposed use).
+ * Losers / Confirmed = mapWallets tier filters when present.
  */
 export function computeCollapsedBattleSplits(f) {
   const pool = boardPool(f);
 
-  let full = splitFromRows(pool.filter(isFullSharp));
-  if (full.total <= 0) {
-    const ours = Number(f?.sharpUsd ?? f?.sideInvested) || 0;
-    const stampedPct = Number(f?.moneyPct);
-    let theirs = Number(f?.against?.invested) || 0;
-    if (ours > 0 && Number.isFinite(stampedPct) && stampedPct > 0 && stampedPct < 100 && theirs <= 0) {
-      theirs = Math.round(ours * ((100 - stampedPct) / stampedPct));
-    }
-    const total = ours + theirs;
-    full = {
-      ours,
-      theirs,
-      total,
-      oursPct: total > 0
-        ? (Number.isFinite(stampedPct) ? Math.round(stampedPct) : Math.round((ours / total) * 100))
-        : null,
-    };
+  const stampedOurs = Number(f?.sharpUsd ?? f?.sideInvested) || 0;
+  const stampedTheirs = Number(f?.against?.invested) || 0;
+  const poolOurs = sumSide(pool, 'ours');
+  const poolTheirs = sumSide(pool, 'against');
+
+  // Prefer stamped board totals (authoritative contested/unopposed $).
+  // Fall back to full mapWallets census when stamps are empty.
+  const full = (stampedOurs > 0 || stampedTheirs > 0)
+    ? splitOf(stampedOurs, stampedTheirs)
+    : splitOf(poolOurs, poolTheirs);
+
+  const losers = splitOf(sumSide(pool.filter(isLosingWallet), 'ours'), sumSide(pool.filter(isLosingWallet), 'against'));
+
+  const confirmedRows = pool.filter(isConfirmed);
+  const confirmed = splitOf(sumSide(confirmedRows, 'ours'), sumSide(confirmedRows, 'against'));
+  // If mapWallets missing confirmed tags but wallets[] has them, try wallets.
+  let confirmedFinal = confirmed;
+  if (confirmed.total <= 0 && Array.isArray(f?.wallets)) {
+    const rows = f.wallets
+      .filter((w) => w && (w.invested || 0) > 0 && isConfirmed({ ...w, whitelist: w.whitelist || (w.whitelisted ? 'CONFIRMED' : null) }))
+      .map((w) => ({ ...w, side: w.side === 'against' ? 'against' : 'ours' }));
+    confirmedFinal = splitOf(sumSide(rows, 'ours'), sumSide(rows, 'against'));
   }
 
-  const losers = splitFromRows(pool.filter(isLoserTracked));
-  const confirmedRows = pool.filter(isConfirmed);
-  const confirmed = splitFromRows(confirmedRows);
-  const hcOurs = confirmedRows
-    .filter((w) => w.side === 'ours' && isHc(w))
-    .reduce((s, w) => s + (Number(w.invested) || 0), 0);
-  const hcPct = confirmed.ours > 0 ? Math.round((hcOurs / confirmed.ours) * 100) : null;
+  // Proven-but-untagged fallback: treat proven ours as confirmed when tier missing.
+  if (confirmedFinal.total <= 0 && pool.length) {
+    const provenRows = pool.filter((w) => w.proven);
+    if (provenRows.length) {
+      confirmedFinal = splitOf(sumSide(provenRows, 'ours'), sumSide(provenRows, 'against'));
+    }
+  }
 
-  return { full, losers, confirmed, hcPct, hcOurs };
+  const hcSource = confirmedRows.length
+    ? confirmedRows
+    : pool.filter((w) => w.proven || isConfirmed(w));
+  const hcOurs = hcSource
+    .filter((w) => w.side === 'ours' && (isHc(w) || (
+      w.proven && Number(w.displaySizeRatio ?? w.sizeRatio) >= HC_RATIO
+    )))
+    .reduce((s, w) => s + (Number(w.invested) || 0), 0);
+  const confirmedOurs = confirmedFinal.ours;
+  const hcPct = confirmedOurs > 0 ? Math.round((hcOurs / confirmedOurs) * 100) : null;
+  const nonHcOurs = Math.max(0, confirmedOurs - hcOurs);
+
+  return {
+    full,
+    losers,
+    confirmed: confirmedFinal,
+    hcPct,
+    hcOurs,
+    nonHcOurs,
+  };
+}
+
+function SplitBar({
+  oursPct,
+  theirsPct,
+  accentOurs,
+  accentTheirs,
+  /** Optional: split the ours segment into HC (gold) + rest */
+  hcOursPct = null,
+}) {
+  const showHcSplit = Number.isFinite(hcOursPct) && hcOursPct > 0 && hcOursPct < 100;
+  const hcW = showHcSplit ? Math.round((oursPct * hcOursPct) / 100) : 0;
+  const restW = showHcSplit ? Math.max(0, oursPct - hcW) : oursPct;
+
+  return (
+    <div style={{
+      display: 'flex', height: 6, borderRadius: 3, overflow: 'hidden',
+      background: 'rgba(255,255,255,0.04)', gap: 1,
+    }}>
+      {showHcSplit ? (
+        <>
+          {hcW > 0 && (
+            <div style={{
+              width: `${hcW}%`,
+              background: `linear-gradient(90deg, ${GOLD}aa, ${GOLD})`,
+              borderRadius: 2,
+            }} />
+          )}
+          {restW > 0 && (
+            <div style={{
+              width: `${restW}%`,
+              background: `linear-gradient(90deg, ${accentOurs}66, ${accentOurs})`,
+              borderRadius: 2,
+            }} />
+          )}
+        </>
+      ) : (
+        <div style={{
+          width: `${Math.max(oursPct, theirsPct <= 0 ? 100 : oursPct)}%`,
+          background: `linear-gradient(90deg, ${accentOurs}88, ${accentOurs})`,
+          borderRadius: 2,
+        }} />
+      )}
+      {theirsPct > 0 && (
+        <div style={{
+          width: `${theirsPct}%`,
+          background: `linear-gradient(90deg, ${accentTheirs}55, ${accentTheirs})`,
+          borderRadius: 2,
+        }} />
+      )}
+    </div>
+  );
 }
 
 function CompactSplitRow({
   label,
+  sub,
   ours,
   theirs,
+  oursLabel = 'Us',
+  theirsLabel = 'Them',
   accentOurs = GREEN,
   accentTheirs = VS,
   tag = null,
   tip = null,
+  hcOursPct = null,
 }) {
   const total = ours + theirs;
   if (total <= 0) return null;
-  const oursPct = Math.max(2, Math.round((ours / total) * 100));
+  const oursPct = Math.round((ours / total) * 100);
   const theirsPct = Math.max(0, 100 - oursPct);
 
   return (
-    <div title={tip || undefined} style={{ marginBottom: 7 }}>
+    <div title={tip || undefined} style={{ marginBottom: 9 }}>
+      <div style={{
+        display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+        gap: 8, marginBottom: 2,
+      }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{
+            fontFamily: MONO, fontSize: 8, fontWeight: 750,
+            letterSpacing: '0.10em', color: C.textMuted, textTransform: 'uppercase',
+          }}>
+            {label}
+          </div>
+          {sub && (
+            <div style={{ fontSize: 9, fontWeight: 550, color: C.textFaint, marginTop: 1 }}>
+              {sub}
+            </div>
+          )}
+        </div>
+        {tag && (
+          <span style={{
+            flexShrink: 0, fontSize: 10, fontWeight: 800, letterSpacing: '0.04em',
+            color: tag.color || GOLD, fontFeatureSettings: "'tnum'",
+          }}>
+            {tag.text}
+          </span>
+        )}
+      </div>
+
       <div style={{
         display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
         gap: 8, marginBottom: 3, fontFeatureSettings: "'tnum'",
+        fontSize: 12, fontWeight: 700,
       }}>
-        <span style={{
-          fontFamily: MONO, fontSize: 8, fontWeight: 750,
-          letterSpacing: '0.12em', color: C.textFaint, textTransform: 'uppercase',
-          flexShrink: 0,
-        }}>
-          {label}
+        <span style={{ color: accentOurs }}>
+          <span style={{ fontSize: 9, fontWeight: 600, color: C.textFaint, marginRight: 4 }}>{oursLabel}</span>
+          {fmtUsd(ours)}
         </span>
-        <div style={{
-          display: 'flex', alignItems: 'baseline', gap: 6, minWidth: 0,
-          fontSize: 11, fontWeight: 650,
-        }}>
-          <span style={{ color: accentOurs }}>{fmtUsd(ours)}</span>
-          <span style={{ color: C.textFaint, fontWeight: 500 }}>·</span>
-          <span style={{ color: C.textMuted }}>{fmtUsd(theirs)}</span>
-          {tag && (
-            <span style={{
-              marginLeft: 2, fontSize: 9, fontWeight: 800, letterSpacing: '0.06em',
-              color: tag.color || GOLD,
-            }}>
-              {tag.text}
-            </span>
-          )}
-        </div>
+        <span style={{ color: C.textFaint, fontWeight: 500, fontSize: 10 }}>
+          {oursPct != null ? `${oursPct}% / ${theirsPct}%` : ''}
+        </span>
+        <span style={{ color: theirs > 0 ? accentTheirs : C.textFaint, textAlign: 'right' }}>
+          {fmtUsd(theirs)}
+          <span style={{ fontSize: 9, fontWeight: 600, color: C.textFaint, marginLeft: 4 }}>{theirsLabel}</span>
+        </span>
       </div>
-      <div style={{
-        display: 'flex', height: 5, borderRadius: 2.5, overflow: 'hidden',
-        background: 'rgba(255,255,255,0.04)', gap: 1,
-      }}>
-        <div style={{
-          width: `${oursPct}%`,
-          background: `linear-gradient(90deg, ${accentOurs}88, ${accentOurs})`,
-          borderRadius: 2,
-        }} />
-        <div style={{
-          width: `${theirsPct}%`,
-          background: theirs > 0
-            ? `linear-gradient(90deg, ${accentTheirs}55, ${accentTheirs}99)`
-            : 'transparent',
-          borderRadius: 2,
-        }} />
-      </div>
+
+      <SplitBar
+        oursPct={Math.max(oursPct, 0)}
+        theirsPct={theirsPct}
+        accentOurs={accentOurs}
+        accentTheirs={accentTheirs}
+        hcOursPct={hcOursPct}
+      />
     </div>
   );
 }
 
 export default function LockedCollapsedBattleBars({ f }) {
   if (!f) return null;
-  const { full, losers, confirmed, hcPct } = computeCollapsedBattleSplits(f);
+  const { full, losers, confirmed, hcPct, hcOurs, nonHcOurs } = computeCollapsedBattleSplits(f);
 
   const hasFull = full.total > 0;
   const hasLosers = losers.total > 0;
   const hasConfirmed = confirmed.total > 0;
   if (!hasFull && !hasLosers && !hasConfirmed) return null;
+
+  const oursLabel = 'Us';
+  const theirsLabel = f?.against?.abbr || 'Them';
+  const hcShareOfOurs = confirmed.ours > 0 && hcOurs > 0
+    ? Math.round((hcOurs / confirmed.ours) * 100)
+    : (hcPct === 0 ? 0 : null);
 
   return (
     <div
@@ -200,37 +291,45 @@ export default function LockedCollapsedBattleBars({ f }) {
     >
       {hasFull && (
         <CompactSplitRow
-          label="Full"
+          label="Full dollar split"
+          sub="All tracked money on this board"
           ours={full.ours}
           theirs={full.theirs}
+          oursLabel={oursLabel}
+          theirsLabel={theirsLabel}
           accentOurs={GREEN}
           accentTheirs={VS}
-          tag={full.oursPct != null ? { text: `${full.oursPct}%`, color: C.textSec } : null}
-          tip="CONFIRMED + FLAT sharp money — same pool as signal-page SHARP MONEY"
+          tip="Total dollars on our side vs the other side (same board $ as Contested / Unopposed)"
         />
       )}
       {hasLosers && (
         <CompactSplitRow
-          label="Losers"
+          label="Losing wallets"
+          sub="WR50 / non-winner money only"
           ours={losers.ours}
           theirs={losers.theirs}
-          accentOurs="rgba(148,163,184,0.75)"
-          accentTheirs="rgba(240,113,103,0.55)"
-          tag={losers.oursPct != null ? { text: `${losers.oursPct}%`, color: C.textFaint } : null}
-          tip="WR50 + non-winner tracked wallets — where loser money sits on this board"
+          oursLabel={oursLabel}
+          theirsLabel={theirsLabel}
+          accentOurs="rgba(148,163,184,0.85)"
+          accentTheirs="rgba(240,113,103,0.70)"
+          tip="Where losing-track-record wallets we track have their money on this game"
         />
       )}
       {hasConfirmed && (
         <CompactSplitRow
-          label="Confirmed"
+          label="Confirmed winners"
+          sub={hcOurs > 0
+            ? `HC ${fmtUsd(hcOurs)} · rest ${fmtUsd(nonHcOurs)}`
+            : 'CONFIRMED-tier only · gold = HC (≥1.5×)'}
           ours={confirmed.ours}
           theirs={confirmed.theirs}
-          accentOurs={GOLD}
+          oursLabel={oursLabel}
+          theirsLabel={theirsLabel}
+          accentOurs={GREEN}
           accentTheirs={VS}
-          tag={hcPct != null
-            ? { text: `HC ${hcPct}%`, color: GOLD }
-            : (confirmed.oursPct != null ? { text: `${confirmed.oursPct}%`, color: GOLD } : null)}
-          tip="CONFIRMED-tier winners only. HC% = share of our confirmed $ at ≥1.5× usual"
+          hcOursPct={hcShareOfOurs}
+          tag={hcPct != null ? { text: `HC ${hcPct}%`, color: GOLD } : null}
+          tip="CONFIRMED winners only. Bar: HC (gold) + other confirmed (green) vs against (red). Tag = HC share of our confirmed $"
         />
       )}
     </div>
