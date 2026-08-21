@@ -90,4 +90,19 @@ function assert(cond, msg) {
   assert(spark.endLabel === '+$10.9K' || spark.endLabel === '+$11K', `label ${spark.endLabel}`);
 }
 
+// Dual windows: L30 stamp + all-time stay separate
+{
+  const { rollupFromAgg } = _test;
+  const l30 = rollupFromRecentWindow({
+    days: 30, n: 92, wins: 48, losses: 44, wr: 52.2,
+    dollarRoi: 1.2, settledPnl: 10937,
+  }, 'action');
+  const all = rollupFromAgg({
+    n: 1374, wins: 693, losses: 681, wr: 50.4, dollarRoi: -1.1,
+  }, 'action');
+  assert(l30.window === '30d' && l30.settledPnl === 10937, 'L30 book');
+  assert(all.window === 'all' && all.record === '693-681', 'all-time book');
+  assert(l30.settledPnl !== all.settledPnl, 'windows must not collapse');
+}
+
 console.log('testActionTabL30: ok');

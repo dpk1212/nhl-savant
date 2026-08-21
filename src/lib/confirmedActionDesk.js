@@ -306,18 +306,26 @@ function rollupFromRecentWindow(win, source = 'action') {
 function contextRollupsFromProfile(prof, sport, marketType) {
   const rec = prof?.bySport?.[sport];
   if (!rec) {
-    return { sportFeatured: null, sportAction: null, marketFeatured: null, marketAction: null };
+    return {
+      sportFeatured: null, sportAction: null, sportActionAll: null,
+      marketFeatured: null, marketAction: null, marketActionAll: null,
+    };
   }
   const mkt = String(marketType || '').toUpperCase();
   const mRec = rec.byMarket?.[mkt] || null;
-  // Action tab = L30 Action $ (matches locked L30). Featured stays all-time picks.
+  // Always stamp both windows — UI shows L30 then all-time side by side.
   const sportActionL30 = rollupFromRecentWindow(rec.recentActionWindow, 'action');
   const marketActionL30 = rollupFromRecentWindow(mRec?.recentActionWindow, 'action');
+  const sportActionAll = rollupFromAgg(rec.positions, 'action');
+  const marketActionAll = rollupFromAgg(mRec?.positions, 'action');
   return {
     sportFeatured: rollupFromAgg(rec.picks, 'featured'),
-    sportAction: sportActionL30 || rollupFromAgg(rec.positions, 'action'),
+    // Keep L30 and all-time separate — UI shows both. Never collapse into one.
+    sportAction: sportActionL30,
+    sportActionAll,
     marketFeatured: rollupFromAgg(mRec?.picks, 'featured'),
-    marketAction: marketActionL30 || rollupFromAgg(mRec?.positions, 'action'),
+    marketAction: marketActionL30,
+    marketActionAll,
   };
 }
 
@@ -626,7 +634,19 @@ export function buildConfirmedActionRows({
       form,
       formText: formDisp.text,
       formKind: formDisp.kind,
-      // Action desk chips: prefer Action L30 flat curve (not featured picks).
+      // Action desk chips: L30 Action $ (same claim as locked card), not featured flat.
+      l30Pnl: Number.isFinite(form.actionDollarEnd)
+        ? Math.round(form.actionDollarEnd)
+        : (Number.isFinite(form.recentActionWindow?.settledPnl)
+          ? Math.round(form.recentActionWindow.settledPnl)
+          : null),
+      l30ChipCurve: (form.actionDollarCurve?.length >= 5
+        ? form.actionDollarCurve
+        : (Number.isFinite(form.actionDollarEnd) || Number.isFinite(form.recentActionWindow?.settledPnl)
+          ? [0, Math.round(Number.isFinite(form.actionDollarEnd)
+            ? form.actionDollarEnd
+            : form.recentActionWindow.settledPnl)]
+          : null)),
       flatCurve: (form.actionFlatCurve?.length >= 5 ? form.actionFlatCurve : form.flatCurve),
       flatEnd: Number.isFinite(form.actionFlatEnd) ? form.actionFlatEnd
         : form.flatEnd,

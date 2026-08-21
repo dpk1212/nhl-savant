@@ -391,19 +391,108 @@ function rollupFromRecentLegs(legs, { mode = 'actual', windowDays = 30 } = {}) {
     roi,
     source: mode === 'actual' ? 'action' : 'featured',
     window: `${windowDays}d`,
+    settledPnl: mode === 'actual' ? Math.round(dollarPnl) : null,
   };
 }
 
-function BetTypeRollupStrip({ sport, marketType, sportRollup, marketRollup }) {
+function fmtBookPnl(pnl) {
+  if (!Number.isFinite(pnl)) return null;
+  const abs = Math.abs(pnl);
+  const body = abs >= 1000
+    ? `$${(abs / 1000).toFixed(abs >= 10000 ? 0 : 1)}K`
+    : `$${Math.round(abs)}`;
+  return pnl >= 0 ? `+${body}` : `-${body}`;
+}
+
+function BookInline({ book, sep }) {
+  if (!book) return null;
+  const roiHot = Number.isFinite(book.roi) && book.roi > 0;
+  const roiCold = Number.isFinite(book.roi) && book.roi < 0;
+  const roiKind = book.source === 'action' ? '$ ROI' : 'flat ROI';
+  const pnl = Number.isFinite(book.settledPnl) ? book.settledPnl : null;
+  const pnlLabel = fmtBookPnl(pnl);
+  return (
+    <>
+      {book.record && (
+        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: B.textSec }}>
+          {book.record}
+        </span>
+      )}
+      {!book.record && Number.isFinite(book.n) && (
+        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: B.textSec }}>
+          {book.n} bets
+        </span>
+      )}
+      {pnlLabel && (
+        <>
+          {sep}
+          <span style={{
+            ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'",
+            color: pnl >= 0 ? B.green : B.red,
+          }}>
+            {pnlLabel}
+          </span>
+        </>
+      )}
+      {Number.isFinite(book.roi) && (
+        <>
+          {sep}
+          <span style={{
+            ...T.micro, fontWeight: 700,
+            color: roiHot ? B.green : roiCold ? B.red : B.textMuted,
+          }}>
+            {book.roi >= 0 ? '+' : ''}{book.roi}% {roiKind}
+          </span>
+        </>
+      )}
+      {Number.isFinite(book.wr) && (
+        <>
+          {sep}
+          <span style={{ ...T.micro, color: B.textMuted }}>{book.wr}% WR</span>
+        </>
+      )}
+    </>
+  );
+}
+
+/**
+ * Action tab: L30 first (matches locked card), then all-time next to it.
+ * Featured tab: single book (all-time picks).
+ */
+function BetTypeRollupStrip({
+  sport,
+  marketType,
+  sportRollup,
+  marketRollup,
+  sportAllTime = null,
+  marketAllTime = null,
+  showDualWindows = false,
+}) {
   const mkt = String(marketType || '').toUpperCase();
   const mktLabel = mkt === 'ML' ? 'ML' : mkt;
   const rows = [
-    sportRollup ? { key: 'sport', label: String(sport || '').toUpperCase(), book: sportRollup } : null,
-    marketRollup ? {
-      key: 'market',
-      label: `${String(sport || '').toUpperCase()} ${mktLabel}`.trim(),
-      book: marketRollup,
-    } : null,
+    sportRollup || sportAllTime
+      ? {
+        key: 'sport',
+        label: String(sport || '').toUpperCase(),
+        l30: sportRollup?.window !== 'all' ? sportRollup : null,
+        all: showDualWindows
+          ? (sportAllTime || (sportRollup?.window === 'all' ? sportRollup : null))
+          : (sportRollup?.window === 'all' ? sportRollup : null),
+        single: !showDualWindows ? sportRollup : null,
+      }
+      : null,
+    marketRollup || marketAllTime
+      ? {
+        key: 'market',
+        label: `${String(sport || '').toUpperCase()} ${mktLabel}`.trim(),
+        l30: marketRollup?.window !== 'all' ? marketRollup : null,
+        all: showDualWindows
+          ? (marketAllTime || (marketRollup?.window === 'all' ? marketRollup : null))
+          : (marketRollup?.window === 'all' ? marketRollup : null),
+        single: !showDualWindows ? marketRollup : null,
+      }
+      : null,
   ].filter(Boolean);
   if (!rows.length) return null;
 
@@ -413,75 +502,57 @@ function BetTypeRollupStrip({ sport, marketType, sportRollup, marketRollup }) {
 
   return (
     <div style={{
-      display: 'flex', flexDirection: 'column', gap: '0.28rem',
+      display: 'flex', flexDirection: 'column', gap: '0.4rem',
       marginBottom: '0.7rem', fontFeatureSettings: "'tnum'",
     }}>
-      {rows.map(({ key, label, book }) => {
-        const roiHot = Number.isFinite(book.roi) && book.roi > 0;
-        const roiCold = Number.isFinite(book.roi) && book.roi < 0;
-        const scope = book.window === 'all' ? 'all-time' : `last ${book.window}`;
-        const roiKind = book.source === 'action' ? '$ ROI' : 'flat ROI';
-        const pnl = Number.isFinite(book.settledPnl) ? book.settledPnl : null;
-        return (
-          <div
-            key={key}
-            style={{
+      {rows.map(({ key, label, l30, all, single }) => (
+        <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: '0.18rem' }}>
+          <span style={{
+            ...T.tiny, fontWeight: 800, letterSpacing: '0.06em',
+            color: B.gold, textTransform: 'uppercase',
+          }}>
+            {label}
+          </span>
+          {showDualWindows ? (
+            <>
+              <div style={{
+                display: 'flex', flexWrap: 'wrap', alignItems: 'baseline',
+                gap: '0.28rem 0.4rem',
+              }}>
+                <span style={{ ...T.tiny, fontWeight: 800, color: B.green, letterSpacing: '0.04em' }}>
+                  L30
+                </span>
+                {l30 ? <BookInline book={l30} sep={sep} /> : (
+                  <span style={{ ...T.micro, color: B.textSubtle }}>no sample</span>
+                )}
+              </div>
+              <div style={{
+                display: 'flex', flexWrap: 'wrap', alignItems: 'baseline',
+                gap: '0.28rem 0.4rem',
+              }}>
+                <span style={{ ...T.tiny, fontWeight: 800, color: B.textSubtle, letterSpacing: '0.04em' }}>
+                  ALL-TIME
+                </span>
+                {all ? <BookInline book={all} sep={sep} /> : (
+                  <span style={{ ...T.micro, color: B.textSubtle }}>—</span>
+                )}
+              </div>
+            </>
+          ) : (
+            <div style={{
               display: 'flex', flexWrap: 'wrap', alignItems: 'baseline',
               gap: '0.28rem 0.4rem',
-            }}
-          >
-            <span style={{
-              ...T.tiny, fontWeight: 800, letterSpacing: '0.06em',
-              color: B.gold, textTransform: 'uppercase',
             }}>
-              {label}
-            </span>
-            {book.record && (
-              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: B.textSec }}>
-                {book.record}
-              </span>
-            )}
-            {!book.record && Number.isFinite(book.n) && (
-              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: B.textSec }}>
-                {book.n} bets
-              </span>
-            )}
-            {pnl != null && (
-              <>
-                {sep}
-                <span style={{
-                  ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'",
-                  color: pnl >= 0 ? B.green : B.red,
-                }}>
-                  {pnl >= 0 ? '+' : ''}{Math.abs(pnl) >= 1000
-                    ? `$${(pnl / 1000).toFixed(Math.abs(pnl) >= 10000 ? 0 : 1)}K`
-                    : `$${Math.round(pnl)}`}
+              <BookInline book={single} sep={sep} />
+              {single && (
+                <span style={{ ...T.tiny, color: B.textSubtle, marginLeft: '0.1rem' }}>
+                  ({single.window === 'all' ? 'all-time' : `last ${single.window}`})
                 </span>
-              </>
-            )}
-            {Number.isFinite(book.roi) && (
-              <>
-                {sep}
-                <span style={{
-                  ...T.micro, fontWeight: 700,
-                  color: roiHot ? B.green : roiCold ? B.red : B.textMuted,
-                }}>
-                  {book.roi >= 0 ? '+' : ''}{book.roi}% {roiKind}
-                </span>
-              </>
-            )}
-            {Number.isFinite(book.wr) && (
-              <>
-                {sep}
-                <span style={{ ...T.micro, color: B.textMuted }}>{book.wr}% WR</span>
-              </>
-            )}
-            <span style={{ ...T.tiny, color: B.textSubtle, marginLeft: '0.1rem' }}>
-              ({scope})
-            </span>
-          </div>
-        );
-      })}
+              )}
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
@@ -519,21 +590,29 @@ function ActionExpandPanel({ row, isMobile }) {
   };
 
   // Sport + this bet type (e.g. MLB TOTAL). Featured → flat book; Action → $ book.
+  // Action tab always shows L30 + all-time side by side.
   const useActionBooks = tab === 'recent' || formListIsActionFallback;
   const sportRollup = useActionBooks
     ? (row.sportAction || null)
     : (row.sportFeatured || null);
   const marketRollup = (() => {
-    const stamped = useActionBooks ? row.marketAction : row.marketFeatured;
-    if (stamped) return stamped;
+    if (!useActionBooks) {
+      if (row.marketFeatured) return row.marketFeatured;
+      const mkt = String(row.marketType || '').toUpperCase();
+      const scoped = formLegs.filter((leg) => String(leg.marketType || '').toUpperCase() === mkt);
+      return rollupFromRecentLegs(scoped, { mode: 'flat', windowDays: curveDays });
+    }
+    if (row.marketAction) return row.marketAction;
+    // Pre-export profiles lack byMarket L30 — derive from Action ticket list.
     const mkt = String(row.marketType || '').toUpperCase();
-    const scoped = (useActionBooks ? action : formLegs)
-      .filter((leg) => String(leg.marketType || '').toUpperCase() === mkt);
+    const scoped = action.filter((leg) => String(leg.marketType || '').toUpperCase() === mkt);
     return rollupFromRecentLegs(scoped, {
-      mode: useActionBooks ? 'actual' : 'flat',
+      mode: 'actual',
       windowDays: curveDays,
     });
   })();
+  const sportAllTime = useActionBooks ? (row.sportActionAll || null) : null;
+  const marketAllTime = useActionBooks ? (row.marketActionAll || null) : null;
 
   return (
     <div
@@ -584,6 +663,9 @@ function ActionExpandPanel({ row, isMobile }) {
         marketType={row.marketType}
         sportRollup={sportRollup}
         marketRollup={marketRollup}
+        sportAllTime={sportAllTime}
+        marketAllTime={marketAllTime}
+        showDualWindows={useActionBooks}
       />
 
       <div style={{ marginBottom: '0.75rem' }}>
@@ -868,7 +950,17 @@ function signalChips(row) {
           {row.steam.goldConfirmed ? row.steam.tag : `Steam ${row.steam.tag}`}
         </Chip>
       )}
-      {row.flatCurve?.length >= 5 && (
+      {Number.isFinite(row.l30Pnl) ? (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+          <FlatSpark points={row.l30ChipCurve?.length >= 2 ? row.l30ChipCurve : [0, row.l30Pnl]} />
+          <span style={{
+            ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'",
+            color: row.l30Pnl >= 0 ? B.green : B.red,
+          }}>
+            L30 {fmtBookPnl(row.l30Pnl)}
+          </span>
+        </span>
+      ) : row.flatCurve?.length >= 5 ? (
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
           <FlatSpark points={row.flatCurve} />
           {Number.isFinite(row.flatEnd) && (
@@ -880,7 +972,7 @@ function signalChips(row) {
             </span>
           )}
         </span>
-      )}
+      ) : null}
     </>
   );
 }
