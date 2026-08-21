@@ -2603,8 +2603,9 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
           movePp={f.pinnMovePp}
           polyEntry={f.polyEntryOdds}
           clvPct={f.clvPct}
+          bestNow={f.liveBestOdds ?? f.bestOdds}
           compact
-          showStory
+          showStory={false}
           showMetrics
           curatedMetrics
           premiumCompact

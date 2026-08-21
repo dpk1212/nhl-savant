@@ -214,12 +214,15 @@ function MetricStrip({
   clvPct = null,
   curated = false,
   premium = false,
+  bestNow = null,
 }) {
-  // Collapsed Locked card: curated cast — TICKET · PIN · NOW · MOVE (or CLV).
-  // Premium: quieter chrome, 4 cells max, MAX lives in the strength detail line.
+  // Collapsed Locked card price desk — what sharps need:
+  // TICKET · BEST · EV · FAIR · PIN · NOW (drop empties; cap at 5–6).
   if (curated && compact) {
     const cells = [];
     const liveNow = Number.isFinite(now) ? now : fair;
+    const best = Number.isFinite(bestNow) ? bestNow : null;
+
     if (Number.isFinite(flagged)) {
       cells.push({
         key: 'got',
@@ -228,50 +231,58 @@ function MetricStrip({
         color: C.text,
       });
     }
-    cells.push({
-      key: 'pin',
-      label: 'PIN',
-      value: fmtOdds(entry),
-      color: C.text,
-    });
+    if (Number.isFinite(best)
+        && (!Number.isFinite(flagged) || Math.abs(best - flagged) > 1)
+        && (!Number.isFinite(liveNow) || Math.abs(best - liveNow) > 1)) {
+      cells.push({
+        key: 'best',
+        label: 'BEST',
+        value: fmtOdds(best),
+        color: GOLD_HI,
+      });
+    }
+    if (Number.isFinite(evPct)) {
+      cells.push({
+        key: 'ev',
+        label: 'EV',
+        value: `${evPct >= 0 ? '+' : ''}${evPct.toFixed(1)}%`,
+        color: evPct >= 0.3 ? GREEN : evPct <= -0.3 ? VS : C.textSec,
+      });
+    }
+    if (Number.isFinite(fair)
+        && (!Number.isFinite(entry) || Math.abs(fair - entry) > 1)) {
+      cells.push({
+        key: 'fair',
+        label: 'FAIR',
+        value: fmtOdds(fair),
+        color: C.textSec,
+      });
+    }
+    if (Number.isFinite(entry)) {
+      cells.push({
+        key: 'pin',
+        label: 'PIN',
+        value: fmtOdds(entry),
+        color: C.text,
+      });
+    }
     cells.push({
       key: 'now',
       label: 'NOW',
       value: fmtOdds(liveNow),
       color: GREEN,
     });
-    if (Number.isFinite(movePp)) {
+    // Prefer MOVE as last cell when we don't already have 6.
+    if (cells.length < 6 && Number.isFinite(movePp) && Math.abs(movePp) >= 0.25) {
       cells.push({
         key: 'move',
         label: 'MOVE',
         value: `${movePp > 0 ? '+' : ''}${movePp.toFixed(1)}pp`,
         color: movePp >= 0.25 ? GREEN : movePp <= -0.25 ? VS : C.textSec,
       });
-    } else if (Number.isFinite(clvPct)) {
-      cells.push({
-        key: 'clv',
-        label: 'CLV',
-        value: `${clvPct >= 0 ? '+' : ''}${clvPct.toFixed(1)}%`,
-        color: clvPct >= 0.3 ? GREEN : clvPct <= -0.3 ? VS : C.textSec,
-      });
-    } else if (Number.isFinite(evPct)) {
-      cells.push({
-        key: 'ev',
-        label: 'EV',
-        value: `${evPct >= 0 ? '+' : ''}${evPct.toFixed(1)}%`,
-        color: evPct >= 0 ? GREEN : VS,
-      });
     }
-    // Only add MAX when we don't already have 4 cells (keep the rail scannable).
-    const maxLabel = fmtMax(maxNow);
-    if (maxLabel && cells.length < 4) {
-      cells.push({
-        key: 'max',
-        label: 'MAX',
-        value: maxLabel,
-        color: LIMIT_DIM,
-      });
-    }
+
+    const shown = cells.slice(0, 6);
     const fs = premium ? 13 : 12;
     const labFs = premium ? 8 : 7.5;
     return (
@@ -288,13 +299,13 @@ function MetricStrip({
         marginBottom: premium ? 10 : 8,
         boxShadow: premium ? 'none' : 'inset 0 1px 0 rgba(255,255,255,0.04)',
       }}>
-        {cells.map((c, i) => (
+        {shown.map((c, i) => (
           <div
             key={c.key}
             style={{
               flex: 1,
               minWidth: 0,
-              padding: premium ? '10px 6px 9px' : '8px 5px 7px',
+              padding: premium ? '10px 5px 9px' : '8px 5px 7px',
               textAlign: 'center',
               borderLeft: i === 0
                 ? 'none'
@@ -305,7 +316,7 @@ function MetricStrip({
           >
             <div style={{
               fontFamily: MONO, fontSize: labFs, fontWeight: 700,
-              letterSpacing: premium ? '0.16em' : '0.12em',
+              letterSpacing: premium ? '0.14em' : '0.12em',
               color: C.textFaint, marginBottom: premium ? 5 : 4,
             }}>
               {c.label}
@@ -740,6 +751,7 @@ export default function OddsLimitSpark({
   showMetrics = true,
   curatedMetrics = false,
   premiumCompact = false,
+  bestNow = null,
   chartLineLabel = null,
   /** When ticket is an alt, label TICKET (not FLAGGED) in the metric strip. */
   ticketOffMain = false,
@@ -815,6 +827,7 @@ export default function OddsLimitSpark({
           compact={compact}
           curated={curatedMetrics}
           premium={premiumCompact}
+          bestNow={bestNow}
           ticketOffMain={ticketOffMain}
         />
       )}
