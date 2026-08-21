@@ -7,9 +7,12 @@
  *   2. Never paint ML sampleCash as Over/Under (totals get no exchange flow).
  *   3. Full = wallets + whales (deduped by wallet|side) + exchange residual
  *      (exchange minus whale $ already counted — no double-count).
- *   4. Losing = non CONFIRMED/FLAT from wallets + unmatched whale losers.
+ *   4. Losing = tracked open-position wallets that are NOT CONFIRMED/FLAT.
+ *      Never anonymous Kalshi/Poly whale prints — we cannot tier those.
  *   5. Confirmed = CONFIRMED wallets only (no whales, no flow, no FLAT).
  *   6. Min ticket matches Vault battle field ($250).
+ *
+ * Whales + exchange still feed Full (board money), not Losing.
  *
  * Display-only — never changes AGS / staking / units.
  */
@@ -340,11 +343,8 @@ export function buildWideBoardMoneySplits({
     sumSide(walletRows, 'ours', isLoser),
     sumSide(walletRows, 'against', isLoser),
   );
-  const whaleLosers = splitOf(
-    sumSide(whaleRows, 'ours', isLoser),
-    sumSide(whaleRows, 'against', isLoser),
-  );
-  const losersAll = splitOf(losers.ours + whaleLosers.ours, losers.theirs + whaleLosers.theirs);
+  // Losing = tracked wallets ONLY. Anonymous Kalshi/Poly prints have no
+  // whitelist tier — do not invent "loser" money from unmatched whales.
 
   const confirmed = splitOf(
     sumSide(walletRows, 'ours', isConfirmed),
@@ -371,7 +371,7 @@ export function buildWideBoardMoneySplits({
 
   return {
     full,
-    losers: losersAll,
+    losers,
     confirmed,
     hcOurs: Math.round(hcOurs),
     hcPct,

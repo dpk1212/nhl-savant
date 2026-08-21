@@ -345,7 +345,7 @@ export default function LockedCollapsedBattleBars({ f }) {
           theirsLabel={theirsLabel}
           accentOurs={GREEN}
           accentTheirs={VS}
-          tip="Non-CONFIRMED/FLAT open positions on this market + unmatched whale prints"
+          tip="Tracked open positions on this market that are not CONFIRMED/FLAT (WR50 + unranked). No anonymous exchange prints."
         />
       )}
       {hasConfirmed && (
