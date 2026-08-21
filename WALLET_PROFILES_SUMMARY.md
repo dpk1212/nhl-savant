@@ -1,20 +1,20 @@
 # Wallet Profiles Summary
 
-Generated: 8/20/2026, 5:31:22 AM ET · V8 cutover: 2026-04-18 · whitelistVersion: 4
+Generated: 8/21/2026, 1:30:00 AM ET · V8 cutover: 2026-04-18 · whitelistVersion: 4
 
 Monitoring artifact for the nightly `sharpWalletProfiles` rebuild. Shows how many wallets qualify for each whitelist tier per sport, who the top performers are, and what changed since the last run.
 
-**Population**: 461 wallets · 9464 graded picks · 25115 graded positions.
+**Population**: 468 wallets · 9565 graded picks · 25279 graded positions.
 
 ## Population by verdict
 
 | Verdict | Wallets |
 |---|---|
-| INCONCLUSIVE | 116 |
+| INCONCLUSIVE | 122 |
 | CONFIRMED_BLEEDER | 75 |
 | CONFIRMED_WINNER | 69 |
 | POSITIONS_ONLY_NEGATIVE | 56 |
-| MIXED_PICKS_GOOD_$_BAD | 51 |
+| MIXED_PICKS_GOOD_$_BAD | 52 |
 | MIXED_PICKS_BAD_$_GOOD | 47 |
 | POSITIONS_ONLY_POSITIVE | 46 |
 | PICKS_ONLY_NEGATIVE | 1 |
@@ -25,13 +25,13 @@ Minimum 2 bets per sport. Precedence: CONFIRMED > FLAT > WR50. "FLAT-or-better" 
 
 | Sport | CONFIRMED | FLAT-or-better | WR50-only | Active (≥2 bets) | Any activity |
 |---|---|---|---|---|---|
-| MLB | 56 | 82 | 13 | 192 | 241 |
+| MLB | 58 | 84 | 12 | 193 | 244 |
 | NBA | 59 | 84 | 23 | 193 | 211 |
 | NFL | 1 | 2 | 0 | 10 | 14 |
 | NHL | 27 | 33 | 17 | 90 | 105 |
 | SOC | 60 | 98 | 8 | 180 | 220 |
 | UFC | 10 | 15 | 7 | 50 | 83 |
-| WNBA | 13 | 16 | 6 | 47 | 75 |
+| WNBA | 12 | 15 | 8 | 49 | 82 |
 
 ## Promotion source mix (v2 — Source-B-only trial)
 
@@ -39,13 +39,13 @@ Per-sport breakdown of how each FLAT-or-better wallet earned its tier. **B (new)
 
 | Sport | A | A+B | B (new) | FLAT-or-better total | % from B-only |
 |---|---|---|---|---|---|
-| MLB | 22 | 29 | 31 | 82 | 37.8% |
+| MLB | 22 | 29 | 33 | 84 | 39.3% |
 | NBA | 10 | 34 | 40 | 84 | 47.6% |
 | NFL | 0 | 0 | 2 | 2 | 100% |
 | NHL | 4 | 8 | 21 | 33 | 63.6% |
 | SOC | 42 | 34 | 22 | 98 | 22.4% |
 | UFC | 5 | 4 | 6 | 15 | 40% |
-| WNBA | 2 | 11 | 3 | 16 | 18.8% |
+| WNBA | 3 | 9 | 3 | 15 | 20% |
 
 ## Top FLAT-or-better wallets per sport
 
@@ -136,43 +136,56 @@ Per-sport breakdown of how each FLAT-or-better wallet earned its tier. **B (new)
 | # | Wallet | Tier | N | WR% | Flat ROI | Flat PnL (u) | $ ROI | $ PnL |
 |---|---|---|---|---|---|---|---|---|
 | 1 | 388d4c | CONFIRMED | 8 | 62.5% | +114.1% | +9.13 | +32.2% | +5876 |
-| 2 | 529da2 | CONFIRMED | 2 | 100% | +113% | +2.26 | +38.7% | +1185 |
-| 3 | ac9705 | FLAT | 1 | 100% | +109% | +1.09 | -5% | -363 |
-| 4 | e8e2cc | CONFIRMED | 2 | 100% | +103.1% | +2.06 | +63.4% | +2715 |
-| 5 | 89bd08 | CONFIRMED | 1 | 100% | +89.3% | +0.89 | +59.3% | +854 |
-| 6 | 4c8ed9 | CONFIRMED | 4 | 75% | +67.2% | +2.69 | +37.4% | +2432 |
-| 7 | d38380 | CONFIRMED | 5 | 80% | +61.3% | +3.07 | +29.3% | +10540 |
-| 8 | 4a752c | CONFIRMED | 5 | 80% | +41.4% | +2.07 | +39.6% | +53794 |
-| 9 | 2e8da5 | CONFIRMED | 6 | 66.7% | +35.3% | +2.12 | +13.2% | +18574 |
-| 10 | bc44b0 | CONFIRMED | 16 | 75% | +34.3% | +5.48 | +38.7% | +64516 |
+| 2 | 89bd08 | CONFIRMED | 1 | 100% | +89.3% | +0.89 | +59.3% | +854 |
+| 3 | e8e2cc | CONFIRMED | 4 | 75% | +54.6% | +2.18 | +59.9% | +3089 |
+| 4 | 2e8da5 | CONFIRMED | 7 | 71.4% | +44.2% | +3.10 | +24.9% | +40543 |
+| 5 | d38380 | CONFIRMED | 7 | 71.4% | +43.1% | +3.02 | +35.5% | +14686 |
+| 6 | 529da2 | FLAT | 3 | 66.7% | +42% | +1.26 | -39.9% | -2816 |
+| 7 | 4a752c | CONFIRMED | 5 | 80% | +41.4% | +2.07 | +39.6% | +53794 |
+| 8 | bc44b0 | CONFIRMED | 16 | 75% | +34.3% | +5.48 | +38.7% | +64516 |
+| 9 | 4c8ed9 | CONFIRMED | 5 | 60% | +33.7% | +1.69 | +18.4% | +1387 |
+| 10 | bc35e3 | CONFIRMED | 12 | 66.7% | +27.6% | +3.31 | +45.6% | +25115 |
 
 ## Causal %+CLV skill (beats the close) — TAPE input
 
 Definition: `causalPctPos` from `src/lib/walletClvSkill.js` — % of graded positions since **2026-04-01** with CLV > 0, requiring ≥ **5** events. Stored on every profile as `clvSkill` and upserted to `sharpWalletProfiles` each `grade-sharp-actions` run.
 
-**Coverage:** 257 / 461 wallets scored · mean pctPos **59.8%**.
+**Coverage:** 258 / 468 wallets scored · mean pctPos **60.0%**.
 
 | # | Wallet | Beats close % | n (CLV grades) | nPos | Verdict |
 |---|---|---|---|---|---|
 | 1 | 11b032 | 100% | 16 | 16 | CONFIRMED_WINNER |
 | 2 | 842db4 | 100% | 13 | 13 | POSITIONS_ONLY_POSITIVE |
 | 3 | 4a9953 | 100% | 11 | 11 | CONFIRMED_WINNER |
-| 4 | 308a06 | 100% | 8 | 8 | CONFIRMED_WINNER |
-| 5 | 92f6e1 | 100% | 7 | 7 | POSITIONS_ONLY_POSITIVE |
-| 6 | dd64af | 100% | 6 | 6 | MIXED_PICKS_BAD_$_GOOD |
-| 7 | d38380 | 100% | 6 | 6 | CONFIRMED_WINNER |
+| 4 | d38380 | 100% | 9 | 9 | CONFIRMED_WINNER |
+| 5 | 308a06 | 100% | 8 | 8 | CONFIRMED_WINNER |
+| 6 | 92f6e1 | 100% | 7 | 7 | POSITIONS_ONLY_POSITIVE |
+| 7 | dd64af | 100% | 6 | 6 | MIXED_PICKS_BAD_$_GOOD |
 | 8 | 41ac37 | 100% | 6 | 6 | POSITIONS_ONLY_POSITIVE |
 | 9 | c29d59 | 100% | 5 | 5 | MIXED_PICKS_GOOD_$_BAD |
-| 10 | 5592d3 | 100% | 5 | 5 | CONFIRMED_BLEEDER |
-| 11 | eff402 | 100% | 5 | 5 | POSITIONS_ONLY_POSITIVE |
-| 12 | 468c33 | 93.8% | 16 | 15 | CONFIRMED_BLEEDER |
-| 13 | 7dd2e5 | 93.3% | 15 | 14 | CONFIRMED_WINNER |
-| 14 | fb433f | 92.9% | 28 | 26 | CONFIRMED_BLEEDER |
-| 15 | b70f9a | 88.9% | 18 | 16 | CONFIRMED_WINNER |
+| 10 | eff402 | 100% | 5 | 5 | POSITIONS_ONLY_POSITIVE |
+| 11 | 468c33 | 93.8% | 16 | 15 | CONFIRMED_BLEEDER |
+| 12 | 7dd2e5 | 93.3% | 15 | 14 | CONFIRMED_WINNER |
+| 13 | fb433f | 92.9% | 28 | 26 | CONFIRMED_BLEEDER |
+| 14 | b70f9a | 88.9% | 18 | 16 | CONFIRMED_WINNER |
+| 15 | 2ceb9a | 88.9% | 9 | 8 | CONFIRMED_WINNER |
 
 ## Churn since last run
 
-_No whitelist-tier changes vs. the prior run._
+**10** wallet-sport tier changes since the prior run.
+
+| Wallet | Sport | From | To | Notes |
+|---|---|---|---|---|
+| 1cd9a3 | MLB | — | CONFIRMED |  |
+| 45fc26 | WNBA | WR50 | — |  |
+| 529da2 | WNBA | CONFIRMED | FLAT |  |
+| 5592d3 | WNBA | FLAT | WR50 |  |
+| 621848 | MLB | FLAT | CONFIRMED |  |
+| 73d6a6 | WNBA | — | WR50 |  |
+| 7d395d | WNBA | — | WR50 |  |
+| 9214c2 | MLB | CONFIRMED | FLAT |  |
+| cd2f63 | MLB | FLAT | CONFIRMED |  |
+| fcc12b | MLB | WR50 | FLAT |  |
 
 ---
 *Generated by `scripts/exportWalletProfiles.js`.*
