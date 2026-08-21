@@ -2,7 +2,7 @@
  * Adapters: production Sharp Flow data → PositionCards fixture shape.
  * Display-only. Never changes stake formulas or stamps.
  */
-import { AGS_V12_STAKE_TIER_META } from '../../../lib/ags.js';
+import { AGS_V12_STAKE_TIER_META, HC_RATIO } from '../../../lib/ags.js';
 import { CLV_SKILL_MIN_N, EDGE_PRIOR_AG_WR, NET_CLV_PRIOR_AG } from '../../../lib/walletClvSkill.js';
 import {
   matchSizeRatioBand,
@@ -14,6 +14,7 @@ import {
   sportTrustBookPreferB,
   pickSensationalTrust,
 } from '../../../lib/walletSportBook.js';
+import { buildWideBoardMoneySplits } from '../../../lib/boardMoneySplits.js';
 import {
   lastBoardMain,
   pickMainSpreadFromBoard,
@@ -1086,6 +1087,12 @@ export function mapLockedPickToCardFixture(pick, {
   totalPositions = null,
   spreadPositions = null,
   mlPositions = null,
+  rawMlPositions = null,
+  rawSpreadPositions = null,
+  rawTotalPositions = null,
+  intelExcludedSet = null,
+  polyData = null,
+  kalshiData = null,
 } = {}) {
   const confirmedClvQ1 = computeConfirmedBeatCloseQ1(walletProfiles);
   const enrichOpts = { confirmedClvQ1 };
@@ -1563,6 +1570,26 @@ export function mapLockedPickToCardFixture(pick, {
     ? `${inst.variant === 'ALT' ? 'Alt' : ''} ${teamShort} ${isSpread ? fmtSpreadLn(ticketLine) : ticketLine}`.trim()
     : null;
 
+  // Wide board $ — Vault-parity raw pool (+ Poly/Kalshi flow on ML/spread).
+  // Display-only; does not touch lock / AGS stamps.
+  const boardMoney = (pick.sport && pick.gameKey && sideNorm)
+    ? buildWideBoardMoneySplits({
+      sport: pick.sport,
+      gameKey: pick.gameKey,
+      marketType: isSpread ? 'spread' : isTotal ? 'total' : 'ml',
+      playSideNorm: sideNorm,
+      rawMl: rawMlPositions,
+      rawSpread: rawSpreadPositions,
+      rawTotal: rawTotalPositions,
+      getWalletProfile,
+      intelExcludedSet,
+      polyData,
+      kalshiData,
+      includeExchange: !isTotal,
+      hcRatio: HC_RATIO,
+    })
+    : null;
+
   return {
     id: pick.key || `${pick.sport}-${pickLabel}`,
     sport: pick.sport,
@@ -1619,6 +1646,14 @@ export function mapLockedPickToCardFixture(pick, {
     mapWallets: mapWallets.length ? mapWallets : null,
     against,
     sharpUsd: pick.totalInvested || pick.lockTotalInvested || 0,
+    boardMoney,
+    boardMoneyFull: boardMoney?.full || null,
+    boardMoneyLosers: boardMoney?.losers || null,
+    boardMoneyConfirmed: boardMoney?.confirmed || null,
+    boardMoneyHcPct: boardMoney?.hcPct ?? null,
+    boardMoneyHcOurs: boardMoney?.hcOurs ?? null,
+    boardMoneyNonHcOurs: boardMoney?.nonHcOurs ?? null,
+    boardMoneySources: boardMoney?.sources || null,
     journey,
     pinSeries,
     pinPath: Array.isArray(market.pinPath) && market.pinPath.length >= 2 ? market.pinPath : null,
