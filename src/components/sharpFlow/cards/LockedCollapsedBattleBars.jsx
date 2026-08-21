@@ -153,46 +153,48 @@ function SplitBar({
   accentTheirs,
   hcOursPct = null,
 }) {
-  const showHcSplit = Number.isFinite(hcOursPct) && hcOursPct > 0 && hcOursPct < 100;
-  const hcW = showHcSplit ? Math.round((oursPct * hcOursPct) / 100) : 0;
-  const restW = showHcSplit ? Math.max(0, oursPct - hcW) : oursPct;
+  const o = Math.max(0, Math.min(100, Number(oursPct) || 0));
+  const t = Math.max(0, Math.min(100, Number(theirsPct) || 0));
+  const showHcSplit = Number.isFinite(hcOursPct) && hcOursPct > 0 && hcOursPct < 100 && o > 0;
+  const hcW = showHcSplit ? Math.max(1, Math.round((o * hcOursPct) / 100)) : 0;
+  const restW = showHcSplit ? Math.max(0, o - hcW) : o;
+  const oursColor = o > 0 && Number.isFinite(hcOursPct) && hcOursPct >= 100
+    ? `linear-gradient(90deg, ${GOLD}aa, ${GOLD})`
+    : `linear-gradient(90deg, ${accentOurs}88, ${accentOurs})`;
 
   return (
     <div style={{
       display: 'flex', height: 6, borderRadius: 3, overflow: 'hidden',
-      background: 'rgba(255,255,255,0.04)', gap: 1,
+      background: 'rgba(255,255,255,0.06)', gap: 0,
+      minHeight: 6,
     }}>
       {showHcSplit ? (
         <>
           {hcW > 0 && (
             <div style={{
-              width: `${hcW}%`,
+              flex: hcW, minWidth: hcW > 0 ? 2 : 0,
               background: `linear-gradient(90deg, ${GOLD}aa, ${GOLD})`,
-              borderRadius: 2,
             }} />
           )}
           {restW > 0 && (
             <div style={{
-              width: `${restW}%`,
+              flex: restW, minWidth: restW > 0 ? 2 : 0,
               background: `linear-gradient(90deg, ${accentOurs}66, ${accentOurs})`,
-              borderRadius: 2,
             }} />
           )}
         </>
       ) : (
-        <div style={{
-          width: `${Math.max(oursPct, theirsPct <= 0 ? 100 : oursPct)}%`,
-          background: oursPct > 0 && Number.isFinite(hcOursPct) && hcOursPct >= 100
-            ? `linear-gradient(90deg, ${GOLD}aa, ${GOLD})`
-            : `linear-gradient(90deg, ${accentOurs}88, ${accentOurs})`,
-          borderRadius: 2,
-        }} />
+        o > 0 && (
+          <div style={{
+            flex: o, minWidth: 2,
+            background: oursColor,
+          }} />
+        )
       )}
-      {theirsPct > 0 && (
+      {t > 0 && (
         <div style={{
-          width: `${theirsPct}%`,
+          flex: t, minWidth: 2,
           background: `linear-gradient(90deg, ${accentTheirs}55, ${accentTheirs})`,
-          borderRadius: 2,
         }} />
       )}
     </div>
