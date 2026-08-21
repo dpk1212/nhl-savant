@@ -30,6 +30,7 @@ import {
   NET_CLV_PRIOR_AG,
 } from '../components/sharpFlow/cards/mapPositionCard';
 import { vaultTicket, classifyFamily } from '../lib/ticketInstrument';
+import { buildIntelExcludedSet } from '../lib/intelExclusion';
 import VaultAlphaField from '../components/sharpVault/VaultAlphaField';
 import VaultRoster from '../components/sharpVault/VaultRoster';
 import VaultWalletDrawer from '../components/sharpVault/VaultWalletDrawer';
@@ -3293,6 +3294,7 @@ function useMarketData() {
   const [totalPositions, setTotalPositions] = useState(null);
   const [sportsSharps, setSportsSharps] = useState(null);
   const [intelExcludedWallets, setIntelExcludedWallets] = useState(null);
+  const [intelForceInclude, setIntelForceInclude] = useState(null);
   const [walletProfiles, setWalletProfiles] = useState(null); // Map<walletShort, profile>
   const [loading, setLoading] = useState(true);
 
@@ -3318,7 +3320,7 @@ function useMarketData() {
       const hot = (name) => fetch(`${import.meta.env.BASE_URL}${name}${cb}`).then(r => r.ok ? r.json() : null).catch(() => null);
       const slow = (name) => fetch(`${import.meta.env.BASE_URL}${name}`).then(r => r.ok ? r.json() : null).catch(() => null);
       try {
-        const [p, k, wp, ph, sp, ss, sprP, totP, excl] = await Promise.all([
+        const [p, k, wp, ph, sp, ss, sprP, totP, excl, forceInc] = await Promise.all([
           hot('polymarket_data.json'),
           hot('kalshi_data.json'),
           slow('whale_profiles.json'),
@@ -3328,6 +3330,7 @@ function useMarketData() {
           hot('sharp_spread_positions.json'),
           hot('sharp_total_positions.json'),
           hot('sharp_intel_excluded_wallets.json'),
+          hot('sharp_intel_force_include.json'),
         ]);
         if (cancelled) return;
         if (p)    setPolyData(p);
@@ -3339,6 +3342,7 @@ function useMarketData() {
         if (sprP) setSpreadPositions(sprP);
         if (totP) setTotalPositions(totP);
         if (excl) setIntelExcludedWallets(excl);
+        if (forceInc) setIntelForceInclude(forceInc);
         if (initial) setLoading(false);
         if (!initial && sp) {
           const scannedAt = sp?.scannedAt ? new Date(sp.scannedAt).toISOString() : '—';
@@ -3456,11 +3460,10 @@ function useMarketData() {
   // Same exclusion set writeSharpActions uses (mmExcluded ∪ tradersExcluded
   // flattened into `.excluded`). Built here so the qualified-position filter
   // matches the cron board before any card / sharpStats consumer runs.
-  const intelExcludedSet = useMemo(() => {
-    const xs = intelExcludedWallets?.excluded;
-    if (!Array.isArray(xs) || xs.length === 0) return null;
-    return new Set(xs.map((a) => (a || '').toLowerCase()));
-  }, [intelExcludedWallets]);
+  const intelExcludedSet = useMemo(
+    () => buildIntelExcludedSet(intelExcludedWallets, intelForceInclude),
+    [intelExcludedWallets, intelForceInclude],
+  );
 
   // Apply qualified-wallet filter ONCE here so every downstream
   // consumer (cards, sharpStats, vault convergences, locked-list
@@ -3490,7 +3493,7 @@ function useMarketData() {
     rawSharpPositions: sharpPositions,
     rawSpreadPositions: spreadPositions,
     rawTotalPositions: totalPositions,
-    sportsSharps, intelExcludedWallets, walletProfiles, loading,
+    sportsSharps, intelExcludedWallets, intelForceInclude, walletProfiles, loading,
   };
 }
 
@@ -8727,7 +8730,7 @@ const SharpTape = memo(function SharpTape({ sharpPositions }) {
 
 export default function SharpFlow() {
   const location = useLocation();
-  const { polyData, kalshiData, whaleProfiles, pinnacleHistory, sharpPositions, spreadPositions, totalPositions, rawSharpPositions, rawSpreadPositions, rawTotalPositions, sportsSharps, intelExcludedWallets, walletProfiles, loading } = useMarketData();
+  const { polyData, kalshiData, whaleProfiles, pinnacleHistory, sharpPositions, spreadPositions, totalPositions, rawSharpPositions, rawSpreadPositions, rawTotalPositions, sportsSharps, intelExcludedWallets, intelForceInclude, walletProfiles, loading } = useMarketData();
   const { user, loading: authLoading } = useAuth();
   const { isPremium, loading: subLoading } = useSubscription(user);
   const [sportFilter, setSportFilter] = useState('All');
@@ -9084,11 +9087,10 @@ export default function SharpFlow() {
 
   const v8Norm = useMemo(() => buildV8Normalization(sportsSharps), [sportsSharps]);
 
-  const intelExcludedSet = useMemo(() => {
-    const xs = intelExcludedWallets?.excluded;
-    if (!Array.isArray(xs) || xs.length === 0) return null;
-    return new Set(xs.map((a) => (a || '').toLowerCase()));
-  }, [intelExcludedWallets]);
+  const intelExcludedSet = useMemo(
+    () => buildIntelExcludedSet(intelExcludedWallets, intelForceInclude),
+    [intelExcludedWallets, intelForceInclude],
+  );
 
   // Vault universe = full Phase-2 whitelist (CONFIRMED + FLAT in any sport),
   // NOT Polymarket sports-leaderboard top-N. Money fields prefer sports_sharps
