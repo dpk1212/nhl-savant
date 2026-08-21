@@ -343,10 +343,8 @@ export default function LockedCollapsedBattleBars({ f }) {
           theirs={losers.theirs}
           oursLabel={oursLabel}
           theirsLabel={theirsLabel}
-          // Hex only — SplitBar softens with 8-digit hex alpha. rgba() here
-          // previously blanked the entire middle bar (invalid CSS gradients).
-          accentOurs="#9aa6bd"
-          accentTheirs="#F07167"
+          accentOurs={GREEN}
+          accentTheirs={VS}
           tip="Non-winner tracked wallets + whale prints from non-CONFIRMED/FLAT"
         />
       )}
