@@ -54,6 +54,36 @@ function leagueOk(label, leagueName) {
   return rules.some((re) => re.test(name));
 }
 
+/**
+ * Main match only. Pinnapi attaches corners / bookings / 1X-12 specials as
+ * extra events that reuse the same home/away names. Those set `parent_id`
+ * to the real fixture (docs: specials are separate events linked by parent_id).
+ * Indexing them under the same gameKey last-write-wins the 90-min 1X2 with a
+ * 2-way quote — Arsenal 1.20 (-500) got replaced by a child 2.42 (+142).
+ */
+export function isMainPinnapiEvent(ev) {
+  if (!ev) return false;
+  if (ev.parent_id != null && ev.parent_id !== 0 && ev.parent_id !== '0') return false;
+  const league = String(ev.league_name || '');
+  if (/\b(corners|bookings|cards|shots|fouls)\b/i.test(league)) return false;
+  const names = `${ev.home || ''} ${ev.away || ''}`;
+  if (/\((corners|bookings|cards|shots)\)/i.test(names)) return false;
+  return true;
+}
+
+/**
+ * When two mains share a gameKey: keep a 3-way (draw) over a 2-way child that
+ * slipped through, else take `next` so live overwrites prematch.
+ */
+export function preferPinnapiQuote(existing, next) {
+  if (!existing) return next;
+  if (!next) return existing;
+  const ex3 = Number.isFinite(existing.draw);
+  const nx3 = Number.isFinite(next.draw);
+  if (ex3 && !nx3) return existing;
+  return next;
+}
+
 function pickMainSpread(spreads) {
   return pickMainSpreadFromPinnapi(spreads);
 }
@@ -237,13 +267,13 @@ export async function fetchPinnapiIndex(label, makeGameKey) {
 
   for (const pack of packs) {
     for (const ev of pack.events) {
+      if (!isMainPinnapiEvent(ev)) continue;
       if (!leagueOk(label, ev.league_name)) continue;
       const quote = extractPeriod0(ev);
       if (!quote) continue;
       const gk = makeGameKey(quote.awayName, quote.homeName, label);
       if (!gk) continue;
-      // Prefer live over prematch if both present (later pack wins when live).
-      map.set(gk, quote);
+      map.set(gk, preferPinnapiQuote(map.get(gk), quote));
     }
   }
   return map;

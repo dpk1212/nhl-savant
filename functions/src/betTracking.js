@@ -48,6 +48,10 @@ const ESPN_SOC_URLS = [
   "https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard",
 ];
 const ESPN_UFC_URL = "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard";
+const ESPN_HEADERS = {
+  "User-Agent": "curl/8.7.1",
+  "Accept": "application/json",
+};
 
 // ESPN WNBA abbreviation → our lowercased codes (mirrors gradeSharpActions.js).
 const ESPN_WNBA_TO_CODE = {
@@ -605,49 +609,64 @@ async function fetchWNBAFinalGames() {
   }
 }
 
-async function fetchNFLFinalGames() {
+async function fetchNFLFinalGames(dateStr) {
   try {
-    const res = await fetch(ESPN_NFL_URL);
-    if (!res.ok) { logger.warn(`ESPN NFL API ${res.status}`); return []; }
-    const data = await res.json();
+    const ymd = dateStr ? String(dateStr).replace(/-/g, "") : "";
+    const urls = ymd
+      ? [
+        `${ESPN_NFL_URL}?dates=${ymd}`,
+        `${ESPN_NFL_URL}?dates=${ymd}&seasontype=1`,
+        `${ESPN_NFL_URL}?dates=${ymd}&seasontype=2`,
+      ]
+      : [ESPN_NFL_URL, `${ESPN_NFL_URL}?seasontype=1`];
+    const seen = new Set();
+    const games = [];
     let postponedCount = 0;
-    const games = (data.events || [])
-        .filter((e) => {
-          const st = e.competitions?.[0]?.status?.type;
-          const ok = isActuallyFinal(st);
-          if (!ok && (st?.state === "post" || st?.completed)) {
-            postponedCount++;
-            const comp = e.competitions[0];
-            const comps = comp.competitors || [];
-            const away = comps.find((c) => c.homeAway === "away") || {};
-            const home = comps.find((c) => c.homeAway === "home") || {};
-            logger.warn(`[grader] SKIP NFL no-play game (${st?.name}): ${away.team?.displayName} @ ${home.team?.displayName}`);
-          }
-          return ok;
-        })
-        .map((e) => {
+    for (const url of urls) {
+      const res = await fetch(url, {headers: ESPN_HEADERS});
+      if (!res.ok) { logger.warn(`ESPN NFL API ${res.status} ${url}`); continue; }
+      const data = await res.json();
+      for (const e of data.events || []) {
+        const st = e.competitions?.[0]?.status?.type;
+        const ok = isActuallyFinal(st);
+        if (!ok && (st?.state === "post" || st?.completed)) {
+          postponedCount++;
           const comp = e.competitions[0];
           const comps = comp.competitors || [];
           const away = comps.find((c) => c.homeAway === "away") || {};
           const home = comps.find((c) => c.homeAway === "home") || {};
-          const awayAbbr = away.team?.abbreviation || "";
-          const homeAbbr = home.team?.abbreviation || "";
-          const awayName = away.team?.displayName || awayAbbr;
-          const homeName = home.team?.displayName || homeAbbr;
-          return {
-            dateET: espnEventDateET(e),
-            awayCode: ESPN_NFL_TO_CODE[awayAbbr]
-              || (resolveNFLTeam(awayName) || "").toLowerCase()
-              || awayAbbr.toLowerCase(),
-            homeCode: ESPN_NFL_TO_CODE[homeAbbr]
-              || (resolveNFLTeam(homeName) || "").toLowerCase()
-              || homeAbbr.toLowerCase(),
-            awayTeam: awayName,
-            homeTeam: homeName,
-            awayScore: parseInt(away.score) || 0,
-            homeScore: parseInt(home.score) || 0,
-          };
-        });
+          logger.warn(`[grader] SKIP NFL no-play game (${st?.name}): ${away.team?.displayName} @ ${home.team?.displayName}`);
+          continue;
+        }
+        if (!ok) continue;
+        const comp = e.competitions[0];
+        const comps = comp.competitors || [];
+        const away = comps.find((c) => c.homeAway === "away") || {};
+        const home = comps.find((c) => c.homeAway === "home") || {};
+        const awayAbbr = away.team?.abbreviation || "";
+        const homeAbbr = home.team?.abbreviation || "";
+        const awayName = away.team?.displayName || awayAbbr;
+        const homeName = home.team?.displayName || homeAbbr;
+        const g = {
+          dateET: espnEventDateET(e),
+          awayCode: ESPN_NFL_TO_CODE[awayAbbr]
+            || (resolveNFLTeam(awayName) || "").toLowerCase()
+            || awayAbbr.toLowerCase(),
+          homeCode: ESPN_NFL_TO_CODE[homeAbbr]
+            || (resolveNFLTeam(homeName) || "").toLowerCase()
+            || homeAbbr.toLowerCase(),
+          awayTeam: awayName,
+          homeTeam: homeName,
+          awayScore: parseInt(away.score) || 0,
+          homeScore: parseInt(home.score) || 0,
+        };
+        const k = `${g.dateET || ""}|${g.awayCode}|${g.homeCode}`;
+        if (seen.has(k)) continue;
+        seen.add(k);
+        games.push(g);
+      }
+      if (games.length) break;
+    }
     if (postponedCount > 0) {
       logger.info(`[grader] NFL: ${games.length} truly final, ${postponedCount} no-play skipped`);
     }
@@ -851,12 +870,14 @@ exports.updateBetResults = onSchedule({
     const allCbbDates = new Set();
     const allSocDates = new Set();
     const allUfcDates = new Set();
+    const allNflDates = new Set();
     allDocs.forEach((d) => {
       const p = d.data();
       allSports.add(p.sport);
       if (p.sport === "CBB" && p.date) allCbbDates.add(p.date);
       if (p.sport === "SOC" && p.date) allSocDates.add(p.date);
       if (p.sport === "UFC" && p.date) allUfcDates.add(p.date);
+      if (p.sport === "NFL" && p.date) allNflDates.add(p.date);
     });
 
     let cbbFinalByDate = {};
@@ -889,8 +910,12 @@ exports.updateBetResults = onSchedule({
 
     let nflFinalGames = [];
     if (allSports.has("NFL")) {
-      nflFinalGames = await fetchNFLFinalGames();
-      logger.info(`ESPN NFL API: ${nflFinalGames.length} final NFL games`);
+      const nflDates = allNflDates.size ? [null, ...allNflDates] : [null];
+      for (const d of nflDates) {
+        const games = await fetchNFLFinalGames(d);
+        nflFinalGames.push(...games);
+        logger.info(`ESPN NFL API: ${games.length} final NFL games${d ? ` for ${d}` : ""}`);
+      }
     }
 
     let socFinalGames = [];

@@ -44,34 +44,52 @@ const ESPN_SOC_URLS = [
   'https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard',
 ];
 const ESPN_UFC_URL = 'https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard';
+// ESPN 403s Node's default fetch UA and browser Chrome UAs.
+// `curl/8.x` is what their scoreboard currently allows (confirmed 2026-08-21).
 const ESPN_HEADERS = {
-  'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+  'User-Agent': 'curl/8.7.1',
+  'Accept': 'application/json',
 };
 
 const _espnCache = new Map();
+
+function looksLikeEspnScoreboard(data) {
+  return !!(data && (Array.isArray(data.events) || Array.isArray(data.leagues)));
+}
 
 async function espnJson(url) {
   if (_espnCache.has(url)) return _espnCache.get(url);
   let data = null;
   try {
     const res = await fetch(url, { headers: ESPN_HEADERS });
-    if (res.ok) data = await res.json();
-    else console.warn(`ESPN HTTP ${res.status} ${url}`);
+    if (res.ok) {
+      const parsed = await res.json();
+      if (looksLikeEspnScoreboard(parsed)) data = parsed;
+      else console.warn(`ESPN unexpected JSON ${url}`);
+    } else {
+      console.warn(`ESPN HTTP ${res.status} ${url}`);
+    }
   } catch (e) {
     console.warn(`ESPN fetch error: ${e.message}`);
   }
   if (!data) {
     try {
-      const raw = execFileSync('curl', ['-sS', '-A', ESPN_HEADERS['User-Agent'], url], {
+      const raw = execFileSync('curl', [
+        '-sS', '-f', '-L', '--max-time', '20',
+        '-A', ESPN_HEADERS['User-Agent'],
+        url,
+      ], {
         encoding: 'utf8',
         timeout: 25000,
       });
-      data = JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      if (looksLikeEspnScoreboard(parsed)) data = parsed;
+      else console.warn(`ESPN curl unexpected JSON ${url}`);
     } catch (e) {
       console.warn(`ESPN curl fallback failed: ${e.message}`);
     }
   }
-  _espnCache.set(url, data);
+  if (data) _espnCache.set(url, data);
   return data;
 }
 
@@ -384,39 +402,117 @@ async function fetchWNBAFinalGames(dateStr) {
   }
 }
 
-async function fetchNFLFinalGames(dateStr) {
-  try {
-    const ymd = dateStr ? `?dates=${String(dateStr).replace(/-/g, '')}` : '';
-    const data = await espnJson(`${ESPN_NFL_URL}${ymd}`);
-    if (!data) return [];
-    return (data.events || [])
-      .filter(e => {
-        const st = e.competitions?.[0]?.status?.type;
-        return st?.state === 'post' || st?.completed;
-      })
-      .map(e => {
-        const comp = e.competitions[0];
-        const comps = comp.competitors || [];
-        const away = comps.find(c => c.homeAway === 'away') || {};
-        const home = comps.find(c => c.homeAway === 'home') || {};
-        const awayAbbr = away.team?.abbreviation || '';
-        const homeAbbr = home.team?.abbreviation || '';
-        const awayName = away.team?.displayName || '';
-        const homeName = home.team?.displayName || '';
-        return {
-          dateET: espnEventDateET(e),
-          awayCode: ESPN_NFL_TO_CODE[awayAbbr]
-            || (resolveNFLTeam(awayName) || '').toLowerCase()
-            || awayAbbr.toLowerCase(),
-          homeCode: ESPN_NFL_TO_CODE[homeAbbr]
-            || (resolveNFLTeam(homeName) || '').toLowerCase()
-            || homeAbbr.toLowerCase(),
+function mapEspnNflEvent(e) {
+  const st = e.competitions?.[0]?.status?.type;
+  if (!(st?.state === 'post' || st?.completed || String(st?.name || '').startsWith('STATUS_FINAL'))) {
+    return null;
+  }
+  const comp = e.competitions[0];
+  const comps = comp.competitors || [];
+  const away = comps.find(c => c.homeAway === 'away') || {};
+  const home = comps.find(c => c.homeAway === 'home') || {};
+  const awayAbbr = away.team?.abbreviation || '';
+  const homeAbbr = home.team?.abbreviation || '';
+  const awayName = away.team?.displayName || '';
+  const homeName = home.team?.displayName || '';
+  return {
+    dateET: espnEventDateET(e),
+    awayCode: ESPN_NFL_TO_CODE[awayAbbr]
+      || (resolveNFLTeam(awayName) || '').toLowerCase()
+      || awayAbbr.toLowerCase(),
+    homeCode: ESPN_NFL_TO_CODE[homeAbbr]
+      || (resolveNFLTeam(homeName) || '').toLowerCase()
+      || homeAbbr.toLowerCase(),
+    awayTeam: awayName,
+    homeTeam: homeName,
+    awayScore: parseInt(away.score) || 0,
+    homeScore: parseInt(home.score) || 0,
+  };
+}
+
+let _oddsNflCache = null;
+
+async function fetchNFLFinalsFromOddsApi() {
+  if (_oddsNflCache) return _oddsNflCache;
+  const key = process.env.ODDS_API_KEY;
+  if (!key) {
+    _oddsNflCache = [];
+    return _oddsNflCache;
+  }
+  const out = [];
+  const seen = new Set();
+  for (const sportKey of ['americanfootball_nfl_preseason', 'americanfootball_nfl']) {
+    try {
+      const url = `https://api.the-odds-api.com/v4/sports/${sportKey}/scores/?daysFrom=3&apiKey=${key}`;
+      const res = await fetch(url, { headers: { 'User-Agent': 'nhl-savant-grader/1.0' } });
+      if (!res.ok) {
+        console.warn(`Odds API NFL scores HTTP ${res.status} (${sportKey})`);
+        continue;
+      }
+      const data = await res.json();
+      for (const g of Array.isArray(data) ? data : []) {
+        if (!g?.completed || !Array.isArray(g.scores)) continue;
+        const awayName = g.away_team || '';
+        const homeName = g.home_team || '';
+        const awayScore = parseInt(g.scores.find(s => s.name === awayName)?.score, 10);
+        const homeScore = parseInt(g.scores.find(s => s.name === homeName)?.score, 10);
+        if (!Number.isFinite(awayScore) || !Number.isFinite(homeScore)) continue;
+        const dateET = g.commence_time
+          ? new Date(g.commence_time).toLocaleDateString('en-CA', { timeZone: 'America/New_York' })
+          : null;
+        const row = {
+          dateET,
+          awayCode: (resolveNFLTeam(awayName) || '').toLowerCase(),
+          homeCode: (resolveNFLTeam(homeName) || '').toLowerCase(),
           awayTeam: awayName,
           homeTeam: homeName,
-          awayScore: parseInt(away.score) || 0,
-          homeScore: parseInt(home.score) || 0,
+          awayScore,
+          homeScore,
         };
-      });
+        if (!row.awayCode || !row.homeCode) continue;
+        const k = `${row.dateET || ''}|${row.awayCode}|${row.homeCode}`;
+        if (seen.has(k)) continue;
+        seen.add(k);
+        out.push(row);
+      }
+    } catch (e) {
+      console.warn(`Odds API NFL scores error (${sportKey}): ${e.message}`);
+    }
+  }
+  _oddsNflCache = out;
+  if (out.length) console.log(`Odds API NFL scores: ${out.length} completed`);
+  return out;
+}
+
+async function fetchNFLFinalGames(dateStr) {
+  try {
+    const ymd = dateStr ? String(dateStr).replace(/-/g, '') : '';
+    const urls = ymd
+      ? [
+        `${ESPN_NFL_URL}?dates=${ymd}`,
+        `${ESPN_NFL_URL}?dates=${ymd}&seasontype=1`,
+        `${ESPN_NFL_URL}?dates=${ymd}&seasontype=2`,
+      ]
+      : [ESPN_NFL_URL, `${ESPN_NFL_URL}?seasontype=1`];
+    const seen = new Set();
+    const out = [];
+    for (const url of urls) {
+      const data = await espnJson(url);
+      for (const e of data?.events || []) {
+        const g = mapEspnNflEvent(e);
+        if (!g || !g.awayCode || !g.homeCode) continue;
+        const k = `${g.dateET || ''}|${g.awayCode}|${g.homeCode}`;
+        if (seen.has(k)) continue;
+        seen.add(k);
+        out.push(g);
+      }
+      if (out.length) break;
+    }
+    if (!out.length) {
+      const odds = await fetchNFLFinalsFromOddsApi();
+      return dateStr ? odds.filter(g => g.dateET === dateStr) : odds;
+    }
+    return out;
   } catch (e) {
     console.error('ESPN NFL fetch error:', e.message);
     return [];
@@ -566,6 +662,14 @@ function calculateOutcome(game, marketType, side, line, sport = null) {
   if (side === 'draw') return (!mlAwayWin && !mlHomeWin) ? 'WIN' : 'LOSS';
   if (side === 'home') return mlHomeWin ? 'WIN' : (mlAwayWin ? 'LOSS' : (sport === 'SOC' ? 'LOSS' : 'PUSH'));
   return mlAwayWin ? 'WIN' : (mlHomeWin ? 'LOSS' : (sport === 'SOC' ? 'LOSS' : 'PUSH'));
+}
+
+function calculateProfit(outcome, odds, units = 0) {
+  if (!units || outcome === 'PUSH' || !outcome) return 0;
+  if (outcome === 'WIN') {
+    return odds < 0 ? units * (100 / Math.abs(odds)) : units * (odds / 100);
+  }
+  return -units;
 }
 
 // ─── Match a position's gameKey to a final game ─────────────────────────────
@@ -790,6 +894,141 @@ function knownFinalKey(sport, date, gameKey) {
   return `${sport}|${date}|${raw}`;
 }
 
+/** PENDING featured-pick dates so we fetch scores even when actions already exited. */
+async function collectPendingPickDates(db) {
+  const sports = new Set();
+  const bySport = {
+    CBB: new Set(), NHL: new Set(), MLB: new Set(), NBA: new Set(),
+    WNBA: new Set(), NFL: new Set(), SOC: new Set(), UFC: new Set(),
+  };
+  for (const col of PICK_SCORE_COLS) {
+    const snap = await db.collection(col).where('status', '==', 'PENDING').get();
+    for (const doc of snap.docs) {
+      const d = doc.data() || {};
+      if (!d.sport || !d.date) continue;
+      sports.add(d.sport);
+      bySport[d.sport]?.add(d.date);
+    }
+  }
+  return { sports, bySport };
+}
+
+function pickSideNorm(side) {
+  const s = String(side || '').toLowerCase();
+  if (s === 'away' || s === 'home' || s === 'over' || s === 'under' || s === 'draw') return s;
+  return s;
+}
+
+function pickLine(sideData) {
+  for (const v of [
+    sideData?.peak?.line,
+    sideData?.lock?.line,
+    sideData?.line,
+    sideData?.spread,
+    sideData?.total,
+  ]) {
+    const n = Number(v);
+    if (Number.isFinite(n)) return n;
+  }
+  return null;
+}
+
+async function gradePendingSharpFlowPicks(db, finals) {
+  const now = Date.now();
+  const colMarkets = [
+    ['sharpFlowPicks', 'ML'],
+    ['sharpFlowSpreads', 'SPREAD'],
+    ['sharpFlowTotals', 'TOTAL'],
+  ];
+  let graded = 0;
+  let skipped = 0;
+  for (const [col, marketType] of colMarkets) {
+    const snap = await db.collection(col).where('status', '==', 'PENDING').get();
+    for (const doc of snap.docs) {
+      const pick = doc.data() || {};
+      if (pick.commenceTime && Number(pick.commenceTime) > now) {
+        skipped++;
+        continue;
+      }
+      const game = findMatchingGame(
+        {
+          sport: pick.sport,
+          date: pick.date,
+          gameKey: pick.gameKey,
+          away: pick.away,
+          home: pick.home,
+        },
+        finals.nhlFinals,
+        finals.cbbFinals,
+        finals.mlbFinals,
+        finals.nbaFinals,
+        finals.socFinals,
+        finals.ufcFinals,
+        finals.wnbaFinals,
+        finals.nflFinals,
+      );
+      if (!game) {
+        skipped++;
+        continue;
+      }
+      const winner = game.wentBeyond90 ? 'draw'
+        : game.awayScore > game.homeScore ? 'away'
+          : game.homeScore > game.awayScore ? 'home' : 'draw';
+      const source = pick.sport === 'NHL' ? 'NHL_API'
+        : pick.sport === 'CBB' ? 'NCAA_API'
+          : pick.sport === 'NBA' ? 'ESPN_NBA_API'
+            : pick.sport === 'WNBA' ? 'ESPN_WNBA_API'
+              : pick.sport === 'NFL' ? 'ESPN_NFL_API'
+                : pick.sport === 'SOC' ? 'ESPN_SOC_API'
+                  : pick.sport === 'UFC' ? 'ESPN_UFC_API' : 'ESPN_MLB_API';
+      const updates = {
+        'result.awayScore': game.awayScore,
+        'result.homeScore': game.homeScore,
+        'result.winner': winner,
+        'result.source': source,
+      };
+      let allSidesGraded = true;
+      const sides = pick.sides && typeof pick.sides === 'object' ? pick.sides : null;
+      if (!sides) {
+        skipped++;
+        continue;
+      }
+      for (const [side, sideData] of Object.entries(sides)) {
+        if (sideData?.status === 'COMPLETED') continue;
+        const outcome = calculateOutcome(game, marketType, pickSideNorm(side), pickLine(sideData), pick.sport);
+        if (!outcome) {
+          allSidesGraded = false;
+          continue;
+        }
+        const units = sideData.finalUnits
+          ?? sideData.v8_agsUnitsApplied
+          ?? sideData.peak?.units
+          ?? sideData.lock?.units
+          ?? 0;
+        const odds = sideData.peak?.odds || sideData.lock?.odds || 0;
+        const isTracked = !units;
+        const profit = isTracked ? 0 : calculateProfit(outcome, odds, units);
+        updates[`sides.${side}.status`] = 'COMPLETED';
+        updates[`sides.${side}.result.outcome`] = outcome;
+        updates[`sides.${side}.result.profit`] = parseFloat(profit.toFixed(2));
+        updates[`sides.${side}.result.tracked`] = isTracked;
+        updates[`sides.${side}.result.gradedAt`] = admin.firestore.FieldValue.serverTimestamp();
+        const team = sideData.team || side;
+        console.log(`  🔒 ${pick.sport} pick ${doc.id} ${team} ${marketType} ${units}u → ${outcome} (${profit >= 0 ? '+' : ''}${profit.toFixed(2)}u) ${game.awayScore}-${game.homeScore}`);
+        graded++;
+      }
+      for (const [side, sideData] of Object.entries(sides)) {
+        if (sideData?.status !== 'COMPLETED' && !updates[`sides.${side}.status`]) {
+          allSidesGraded = false;
+        }
+      }
+      if (allSidesGraded) updates.status = 'COMPLETED';
+      await doc.ref.update(updates);
+    }
+  }
+  console.log(`Featured picks graded: ${graded} sides (${skipped} still waiting)`);
+}
+
 /** Scores already stored on graded Source A picks — do not wait on ESPN. */
 async function loadKnownFinalsFromPicks(db, dates) {
   const map = new Map();
@@ -840,12 +1079,16 @@ async function main() {
   const snapshot = await loadGradeCandidates(db);
   if (!snapshot.docs.length) {
     console.log('No pending or held-through-exit positions to grade.');
-    return;
+  } else {
+    console.log(`Found ${snapshot.pending} pending + ${snapshot.exitedHeld} held-through-exit (skipped ${snapshot.exitedSkipped} other EXITED)`);
   }
-  console.log(`Found ${snapshot.pending} pending + ${snapshot.exitedHeld} held-through-exit (skipped ${snapshot.exitedSkipped} other EXITED)`);
 
-  const earliestAssetDate = await loadEarliestGradedAssetDates(db);
-  console.log(`Graded asset index: ${earliestAssetDate.size} wallet+asset keys`);
+  const earliestAssetDate = snapshot.docs.length
+    ? await loadEarliestGradedAssetDates(db)
+    : new Map();
+  if (snapshot.docs.length) {
+    console.log(`Graded asset index: ${earliestAssetDate.size} wallet+asset keys`);
+  }
 
   // Determine which sports / dates we need scores for
   const sports = new Set();
@@ -869,6 +1112,17 @@ async function main() {
     if (d.sport === 'SOC' && d.date) socDates.add(d.date);
     if (d.sport === 'UFC' && d.date) ufcDates.add(d.date);
   }
+
+  const pendingPicks = await collectPendingPickDates(db);
+  for (const s of pendingPicks.sports) sports.add(s);
+  for (const d of pendingPicks.bySport.CBB) cbbDates.add(d);
+  for (const d of pendingPicks.bySport.NHL) nhlDates.add(d);
+  for (const d of pendingPicks.bySport.MLB) mlbDates.add(d);
+  for (const d of pendingPicks.bySport.NBA) nbaDates.add(d);
+  for (const d of pendingPicks.bySport.WNBA) wnbaDates.add(d);
+  for (const d of pendingPicks.bySport.NFL) nflDates.add(d);
+  for (const d of pendingPicks.bySport.SOC) socDates.add(d);
+  for (const d of pendingPicks.bySport.UFC) ufcDates.add(d);
 
   const allDates = new Set([...cbbDates, ...nhlDates, ...mlbDates, ...nbaDates, ...wnbaDates, ...nflDates, ...socDates, ...ufcDates]);
   const knownFinals = await loadKnownFinalsFromPicks(db, allDates);
@@ -946,6 +1200,10 @@ async function main() {
       console.log(`ESPN UFC API: ${fights.length} final fights for ${d}`);
     }
   }
+
+  await gradePendingSharpFlowPicks(db, {
+    nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals, ufcFinals, wnbaFinals, nflFinals,
+  });
 
   // Grade each position
   let graded = 0, noGame = 0, errors = 0, cloneSkip = 0;
