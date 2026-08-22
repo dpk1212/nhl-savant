@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-08-22T11:10:30.455Z",
-  "elapsedSec": 20.4,
+  "scannedAt": "2026-08-22T11:16:51.655Z",
+  "elapsedSec": 22,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 72,
   "summary": {
     "total": 251,
-    "coveredByMain": 19,
+    "coveredByMain": 20,
     "recovered": 14,
-    "recoveredPositions": 67,
-    "noPositions": 218,
+    "recoveredPositions": 68,
+    "noPositions": 217,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,7 +16,7 @@
       "ml": 8,
       "spread": 0,
       "total": 0,
-      "dropped_shadow_gate": 47,
+      "dropped_shadow_gate": 48,
       "dropped_excluded": 12,
       "dropped_duplicate": 0
     }
@@ -322,8 +322,7 @@
       "tier": "CONFIRMED",
       "name": "bomber",
       "sports": "NBA,SOC",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xd776f0a066fd3014ecfac89cfd414440982bffeb"
+      "status": "COVERED_BY_MAIN"
     },
     {
       "walletShort": "2cbcf8",
@@ -1495,11 +1494,11 @@
       "sports": "NBA,NHL,UFC",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xe9076a87c5ed90ef16e6fe6529c943baeca0cff6",
-      "positionsCount": 4,
+      "positionsCount": 5,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 21145,
       "willPassShadowGate": 0,
-      "willDropAtShadowGate": 4,
+      "willDropAtShadowGate": 5,
       "positions": [
         {
           "sport": "SOC",
@@ -1516,6 +1515,15 @@
           "marketType": "ml",
           "side": "away",
           "invested": 1733,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "SOC",
+          "gameKey": "mun_hul",
+          "marketType": "ml",
+          "side": "draw",
+          "invested": 198,
           "entryLine": null,
           "passesShadow": false
         },
@@ -2449,7 +2457,7 @@
           "gameKey": "nym_cws",
           "marketType": "ml",
           "side": "away",
-          "invested": 15168,
+          "invested": 15179,
           "entryLine": null,
           "passesShadow": true
         },
