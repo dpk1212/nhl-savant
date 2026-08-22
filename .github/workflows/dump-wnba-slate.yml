@@ -1,0 +1,45 @@
+name: Dump WNBA First Slate
+
+on:
+  workflow_dispatch:
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Dump WNBA sharp_action_positions
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: node scripts/_dumpWnbaSlate.mjs
+
+      - name: Upload dump artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-first-slate-dump
+          path: data/wnba_first_slate_dump.json
+
+      - name: Commit dump JSON
+        run: |
+          git config --local user.name  "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          mkdir -p data
+          git add data/wnba_first_slate_dump.json scripts/_dumpWnbaSlate.mjs .github/workflows/dump-wnba-slate.yml
+          git diff --quiet && git diff --staged --quiet || (
+            git commit -m "Dump first WNBA slate from sharp_action_positions" &&
+            git push
+          )
