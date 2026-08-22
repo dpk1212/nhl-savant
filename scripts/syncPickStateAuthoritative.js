@@ -4843,6 +4843,16 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         + (row?.tier ? ` steam=${row.tier}` : ''),
       );
     }
+    const tapeGrew = (patch.v8_ticketTapeLog?.length || 0) > ((sd.v8_ticketTapeLog || []).length);
+    if (tapeGrew) {
+      const row = patch.v8_ticketTapeLog[patch.v8_ticketTapeLog.length - 1];
+      const added = patch.v8_ticketTapeLog.length - (sd.v8_ticketTapeLog || []).length;
+      changes.push(
+        `TICKET-TAPE-LOG: +${added} ${row?.gate || 'sample'} n=${patch.v8_ticketTapeLog.length}`
+        + (row?.evPct != null ? ` ev=${row.evPct}` : '')
+        + (row?.tier ? ` steam=${row.tier}` : ''),
+      );
+    }
   }
   if (winnerMuted && winnerAlignAction === 'mute') {
     const why = winnerAlign?.fadeTop60
