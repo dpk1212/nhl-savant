@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- Primary Meta Tags -->
+    <title>SharpFlow — Follow Winning Bettors' Money</title>
+    <meta name="title" content="SharpFlow — Follow Winning Bettors' Money" />
+    <meta name="description" content="SharpFlow tracks where verified sharp money goes before lock — across sports — and grades every result publicly, losses included." />
+    <meta name="keywords" content="sharp money, sports betting analytics, sharp flow, Polymarket sharps, MLB picks, NHL analytics, betting ledger" />
+    <meta name="author" content="SharpFlow" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://nhlsavant.com/" />
+    <meta property="og:title" content="SharpFlow — Follow Winning Bettors' Money" />
+    <meta property="og:description" content="We track where verified sharp money goes before lock — and grade every result publicly, losses included." />
+    <meta property="og:image" content="https://nhlsavant.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:site_name" content="SharpFlow" />
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://nhlsavant.com/" />
+    <meta property="twitter:title" content="SharpFlow — Follow Winning Bettors' Money" />
+    <meta property="twitter:description" content="We track where verified sharp money goes before lock — and grade every result publicly, losses included." />
+    <meta property="twitter:image" content="https://nhlsavant.com/og-image.png" />
+    <meta property="twitter:image:alt" content="NHL Savant - Advanced Multi-Model NHL Analytics Platform" />
+    
+    <!-- Favicon / PWA (required for iOS web push home-screen install) -->
+    <link rel="icon" type="image/png" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="SharpFlow" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#0A0E27" />
+
+    <!-- Preload the two biggest data files so they download in parallel with
+         the JS bundle instead of waiting for React to mount. URLs must stay
+         bare (no query string) to match the fetch() calls in SharpFlow. -->
+    <link rel="preload" href="/whale_profiles.json" as="fetch" />
+    <link rel="preload" href="/sports_sharps.json" as="fetch" />
+
+    <!-- OneSignal Web Push (v16) — PAID ACTIVE USERS ONLY (see PaidPushGate.jsx) -->
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function (OneSignal) {
+        await OneSignal.init({
+          appId: "d8fcb504-8d29-4354-a9e4-8b612d3eafeb",
+          allowLocalhostAsSecureOrigin: true,
+          // Never auto-prompt visitors. PaidPushGate calls requestPermission for paid users only.
+          promptOptions: {
+            slidedown: {
+              prompts: [{ type: "push", autoPrompt: false }],
+            },
+          },
+        });
+      });
+    </script>
+    <script type="module" crossorigin src="/assets/index-fSfFo1yv.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-f4vsvoza.js">
+    <link rel="modulepreload" crossorigin href="/assets/utils-CpJM9g8Q.js">
+    <link rel="modulepreload" crossorigin href="/assets/charts-CbE0JX80.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-e7UOp7cr.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
