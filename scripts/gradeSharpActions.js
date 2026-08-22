@@ -743,10 +743,18 @@ function findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFi
     if (parts.length >= 2) {
       const match = dated.find(g => g.awayCode === parts[0] && g.homeCode === parts[1]);
       if (match) return match;
+      // Poly/key order sometimes flips vs ESPN home/away — still grade.
+      const flipped = dated.find(g => g.awayCode === parts[1] && g.homeCode === parts[0]);
+      if (flipped) {
+        return { ...flipped, awayScore: flipped.homeScore, homeScore: flipped.awayScore };
+      }
     }
     for (const g of dated) {
       if (nflTeamsMatch(pos.away, g.awayTeam) && nflTeamsMatch(pos.home, g.homeTeam)) return g;
       if (teamNamesMatch(pos.away, g.awayTeam) && teamNamesMatch(pos.home, g.homeTeam)) return g;
+      if (nflTeamsMatch(pos.away, g.homeTeam) && nflTeamsMatch(pos.home, g.awayTeam)) {
+        return { ...g, awayScore: g.homeScore, homeScore: g.awayScore };
+      }
     }
     return null;
   }
@@ -832,16 +840,32 @@ function exitedAtMs(pos) {
  *
  * minutesToCommence is stamped at exit: negative = held through commence.
  * Legacy eventId_mismatch after commence is cache churn, not a sell — grade it.
+ *
+ * Also hold recent asset_absent / soft_key exits even when commenceTime was
+ * never stamped (NFL/preseason poly rows sometimes lack commence) — otherwise
+ * resolved Action tickets never enter the grader and L30/v12 freeze.
  */
 function shouldGradeExited(pos) {
   if (!pos || pos.status !== 'EXITED') return false;
   if (EXITED_SKIP_REASONS.has(String(pos.exitReason || ''))) return false;
-  if (Number.isFinite(Number(pos.minutesToCommence)) && Number(pos.minutesToCommence) < 0) {
-    return true;
-  }
+
+  // Explicit exit-vs-tip stamp wins when present (incl. pre-game sells → false).
+  const mtc = Number(pos.minutesToCommence);
+  if (Number.isFinite(mtc)) return mtc < 0;
+
   const ct = Number(pos.commenceTime);
   const exited = exitedAtMs(pos);
-  if (Number.isFinite(ct) && ct > 1e11 && Number.isFinite(exited) && exited >= ct) return true;
+  if (Number.isFinite(ct) && ct > 1e11 && Number.isFinite(exited)) {
+    return exited >= ct;
+  }
+
+  // No commence signal — NFL/preseason poly rows often lack it. Hold recent
+  // asset_absent / soft_key exits so Action L30 + v12 staking can settle.
+  const reason = String(pos.exitReason || '');
+  if (reason === 'asset_absent' || reason === 'soft_key_absent_legacy') {
+    const floor = etDateMinusDays(5);
+    if (pos.date && String(pos.date) >= floor) return true;
+  }
   return false;
 }
 

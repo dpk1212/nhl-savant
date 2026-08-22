@@ -58,6 +58,32 @@ assert.equal(shouldGradeExited({
   minutesToCommence: -10,
 }), false, 'other-day slug is not a held ticket');
 
+// NFL/preseason: asset gone, no commence stamp — still hold recent tickets for grading.
+{
+  const todayET = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  assert.equal(shouldGradeExited({
+    status: 'EXITED',
+    exitReason: 'asset_absent',
+    date: todayET,
+  }), true, 'recent asset_absent without commence is held');
+  assert.equal(shouldGradeExited({
+    status: 'EXITED',
+    exitReason: 'soft_key_absent_legacy',
+    date: todayET,
+  }), true, 'recent soft_key exit without commence is held');
+  assert.equal(shouldGradeExited({
+    status: 'EXITED',
+    exitReason: 'asset_absent',
+    date: '2020-01-01',
+  }), false, 'stale asset_absent without commence is not held');
+  assert.equal(shouldGradeExited({
+    status: 'EXITED',
+    exitReason: 'asset_absent',
+    minutesToCommence: 40,
+    date: todayET,
+  }), false, 'explicit pre-game minutesToCommence still blocks');
+}
+
 {
   const earliest = new Map([['abc|token1', '2026-08-10']]);
   assert.equal(isLaterAssetClone({

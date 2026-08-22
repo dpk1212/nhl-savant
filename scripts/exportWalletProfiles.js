@@ -390,8 +390,8 @@ function etDateMinusDays(days) {
 /** Action expand sparkline / recent lists — rolling calendar window. */
 const FORM_CURVE_DAYS = 30;
 const RECENT_LEGS_DAYS = 30;
-/** Ticket list cap. Sparklines use full 30d action curves (not this slice). */
-const RECENT_LEGS_MAX = 120;
+/** Ticket list cap. Full L30 $ lives on actionDollarCurve — keep list lean for Firestore. */
+const RECENT_LEGS_MAX = 40;
 
 /**
  * Trailing form + flat equity curve for Action desk (strength UI).
@@ -1457,25 +1457,38 @@ function buildProfile(walletShort, pickBets, posBets, clvLedger, avgSportBet = n
   // ── Optional Firebase sync ───────────────────────────────────────
   if (WRITE_FB) {
     console.log(`Upserting ${Object.keys(profiles).length} profiles to Firestore collection \`${TARGET_COLLECTION}\`…`);
+    // Firestore txn limit ~10MB. Fat Action L30 forms blow past 400-doc batches
+    // (broke grade-sharp-actions 2026-08-22 — Transaction too big).
+    const MAX_BATCH_OPS = 40;
+    const MAX_BATCH_BYTES = 2_500_000;
     let batch = db.batch();
     let count = 0;
     let batchOps = 0;
+    let batchBytes = 0;
+    const commitBatch = async () => {
+      if (batchOps <= 0) return;
+      await batch.commit();
+      console.log(`  → committed ${count}`);
+      batch = db.batch();
+      batchOps = 0;
+      batchBytes = 0;
+    };
     for (const [walletShort, p] of Object.entries(profiles)) {
       const ref = db.collection(TARGET_COLLECTION).doc(walletShort);
-      batch.set(ref, {
+      const payload = {
         ...p,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      }, { merge: true });
+      };
+      const approxBytes = Buffer.byteLength(JSON.stringify(payload), 'utf8');
+      if (batchOps > 0 && (batchOps >= MAX_BATCH_OPS || batchBytes + approxBytes > MAX_BATCH_BYTES)) {
+        await commitBatch();
+      }
+      batch.set(ref, payload, { merge: true });
       count++;
       batchOps++;
-      if (batchOps >= 400) {
-        await batch.commit();
-        console.log(`  → committed ${count}`);
-        batch = db.batch();
-        batchOps = 0;
-      }
+      batchBytes += approxBytes;
     }
-    if (batchOps > 0) await batch.commit();
+    await commitBatch();
     console.log(`✓ Upserted ${count} wallet profiles.`);
 
     // Tiny meta doc — sync/writeSharpActions compare this (1 read) to the
