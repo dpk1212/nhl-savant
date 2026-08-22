@@ -1350,87 +1350,108 @@ async function markExitedPositions(db, date, { sharpPositions, posFiles, present
   const scanSoftKeys = collectScanSoftKeys(posFiles);
   const polyData = loadJSON('polymarket_data.json');
 
-  const pendingSnap = await db.collection(COLLECTION)
-    .where('date', '==', date)
-    .where('status', '==', 'PENDING')
-    .get();
+  // Current board date + prior 2 ET days. Finished NFL tickets otherwise stay
+  // PENDING after the date rolls, never EXITED, and Action/v12 L30 freezes.
+  const exitDates = [...new Set([
+    date,
+    etDateMinusDaysLocal(1),
+    etDateMinusDaysLocal(2),
+  ].filter(Boolean))];
 
   let exited = 0;
   let batch = db.batch();
   let batchOps = 0;
 
-  for (const doc of pendingSnap.docs) {
-    const data = doc.data() || {};
-    const wLower = String(data.wallet || '').toLowerCase();
-    if (!wLower || !okWallets.has(wLower)) continue; // not scanned this cycle
+  for (const boardDate of exitDates) {
+    const pendingSnap = await db.collection(COLLECTION)
+      .where('date', '==', boardDate)
+      .where('status', '==', 'PENDING')
+      .get();
 
-    let shouldExit = false;
-    let exitReason = null;
+    for (const doc of pendingSnap.docs) {
+      const data = doc.data() || {};
+      const wLower = String(data.wallet || '').toLowerCase();
+      if (!wLower || !okWallets.has(wLower)) continue; // not scanned this cycle
 
-    // Wrong-game leftovers only (other-day slug / other teams). Cache eventId
-    // churn is the same game — never EXIT on raw ID inequality.
-    const polyGame = polyData?.[data.sport]?.[data.gameKey] || null;
-    const gate = positionMatchesPolyEvent(data, polyGame, data.gameKey, {
-      boardDate: date, sport: data.sport,
-    });
-    if (!gate.ok && WRONG_GAME_EXIT_REASONS.has(gate.reason)) {
-      shouldExit = true;
-      exitReason = gate.reason;
-    }
+      let shouldExit = false;
+      let exitReason = null;
 
-    if (!shouldExit && presentDocIds.has(doc.id)) continue; // still open / just refreshed
+      // Wrong-game leftovers only (other-day slug / other teams). Cache eventId
+      // churn is the same game — never EXIT on raw ID inequality.
+      const polyGame = polyData?.[data.sport]?.[data.gameKey] || null;
+      const gate = positionMatchesPolyEvent(data, polyGame, data.gameKey, {
+        boardDate, sport: data.sport,
+      });
+      if (!gate.ok && WRONG_GAME_EXIT_REASONS.has(gate.reason)) {
+        shouldExit = true;
+        exitReason = gate.reason;
+      }
 
-    if (!shouldExit) {
-      if (data.asset) {
-        const stillOpen = openAssetsByWallet[wLower]?.has(String(data.asset));
-        if (!stillOpen) {
+      // Still on today's live write set — keep PENDING.
+      if (!shouldExit && boardDate === date && presentDocIds.has(doc.id)) continue;
+
+      if (!shouldExit) {
+        if (data.asset) {
+          const stillOpen = openAssetsByWallet[wLower]?.has(String(data.asset));
+          if (!stillOpen) {
+            shouldExit = true;
+            exitReason = 'asset_absent';
+          }
+        } else if (boardDate === date) {
+          const soft = softPositionKey(data.wallet, data.sport, data.gameKey, data.marketType, data.side);
+          if (!scanSoftKeys.has(soft)) {
+            shouldExit = true;
+            exitReason = 'soft_key_absent_legacy';
+          }
+        } else {
+          // Prior board date + wallet scanned + no longer in openAssets:
+          // market resolved / dropped — exit for grading.
           shouldExit = true;
           exitReason = 'asset_absent';
         }
-      } else {
-        const soft = softPositionKey(data.wallet, data.sport, data.gameKey, data.marketType, data.side);
-        if (!scanSoftKeys.has(soft)) {
-          shouldExit = true;
-          exitReason = 'soft_key_absent_legacy';
-        }
       }
-    }
-    if (!shouldExit) continue;
+      if (!shouldExit) continue;
 
-    const exitPayload = {
-      status: 'EXITED',
-      exitedAt: admin.firestore.FieldValue.serverTimestamp(),
-      exitReason,
-      // Keep size snapshot; stop looking "live" for freshness consumers.
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    };
-    // Exit-vs-tip: positive = exited before commence. Uses wall clock ≈ exitedAt.
-    let ct = typeof data.commenceTime === 'number' && Number.isFinite(data.commenceTime)
-      ? data.commenceTime
-      : null;
-    if (ct == null) {
-      const g = polyData?.[data.sport]?.[data.gameKey];
-      ct = parseCommenceMs(g?.commence || g?.polyGameTime || g?.commenceTime);
-      if (ct != null) exitPayload.commenceTime = ct;
-    }
-    if (ct != null) {
-      exitPayload.minutesToCommence = +((ct - Date.now()) / 60000).toFixed(1);
-    }
-    batch.update(doc.ref, exitPayload);
-    batchOps++;
-    exited++;
-    if (batchOps >= 400) {
-      await batch.commit();
-      batch = db.batch();
-      batchOps = 0;
+      const exitPayload = {
+        status: 'EXITED',
+        exitedAt: admin.firestore.FieldValue.serverTimestamp(),
+        exitReason,
+        // Keep size snapshot; stop looking "live" for freshness consumers.
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      };
+      // Exit-vs-tip: positive = exited before commence. Uses wall clock ≈ exitedAt.
+      let ct = typeof data.commenceTime === 'number' && Number.isFinite(data.commenceTime)
+        ? data.commenceTime
+        : null;
+      if (ct == null) {
+        const g = polyData?.[data.sport]?.[data.gameKey];
+        ct = parseCommenceMs(g?.commence || g?.polyGameTime || g?.commenceTime);
+        if (ct != null) exitPayload.commenceTime = ct;
+      }
+      if (ct != null) {
+        exitPayload.minutesToCommence = +((ct - Date.now()) / 60000).toFixed(1);
+      }
+      batch.update(doc.ref, exitPayload);
+      batchOps++;
+      exited++;
+      if (batchOps >= 400) {
+        await batch.commit();
+        batch = db.batch();
+        batchOps = 0;
+      }
     }
   }
 
   if (batchOps > 0) await batch.commit();
   if (exited > 0) {
-    console.log(`EXITED stamp: ${exited} position(s) closed (okWallets=${okWallets.size})`);
+    console.log(`EXITED stamp: ${exited} position(s) closed (okWallets=${okWallets.size}, dates=${exitDates.join(',')})`);
   }
   return exited;
+}
+
+function etDateMinusDaysLocal(days) {
+  return new Date(Date.now() - Math.max(0, days) * 86400000)
+    .toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 }
 
 main().catch(err => {

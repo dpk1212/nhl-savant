@@ -78,6 +78,11 @@ const nflPos = {
 const hit = findMatchingGame(nflPos, [], [], [], [], [], [], [], [nflFinal]);
 check('NFL key match grades Panthers@Cardinals', hit && hit.awayScore === 17 && hit.homeScore === 24);
 
+const flippedPos = { ...nflPos, gameKey: 'ari_car' };
+const flippedHit = findMatchingGame(flippedPos, [], [], [], [], [], [], [], [nflFinal]);
+check('NFL flipped key still grades with score swap',
+  flippedHit && flippedHit.awayScore === 24 && flippedHit.homeScore === 17);
+
 check('NFL wrong-day blocked by date guard',
   findMatchingGame(nflPos, [], [], [], [], [], [], [], [wrongDay]) === null);
 
