@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-08-23T23:35:58.996Z",
-  "elapsedSec": 17.2,
+  "scannedAt": "2026-08-23T23:39:57.647Z",
+  "elapsedSec": 20.6,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 36,
   "summary": {
     "total": 258,
     "coveredByMain": 28,
-    "recovered": 12,
-    "recoveredPositions": 24,
-    "noPositions": 218,
+    "recovered": 13,
+    "recoveredPositions": 25,
+    "noPositions": 217,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -17,7 +17,7 @@
       "spread": 1,
       "total": 1,
       "dropped_shadow_gate": 9,
-      "dropped_excluded": 9,
+      "dropped_excluded": 10,
       "dropped_duplicate": 0
     }
   },
@@ -689,8 +689,24 @@
       "tier": "CONFIRMED",
       "name": "Soarin22",
       "sports": "NBA,NHL",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x84dbb7103982e3617704a2ed7d5b39691952aeeb"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x84dbb7103982e3617704a2ed7d5b39691952aeeb",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 2435,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "NFL",
+          "gameKey": "sea_ten",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 1006,
+          "entryLine": null,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "53b215",
@@ -2158,7 +2174,7 @@
           "gameKey": "sea_ten",
           "marketType": "spread",
           "side": "away",
-          "invested": 12878,
+          "invested": 12902,
           "entryLine": 3.5,
           "passesShadow": true
         },
