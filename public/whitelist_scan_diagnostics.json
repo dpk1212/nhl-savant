@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-08-23T12:23:52.147Z",
-  "elapsedSec": 21.7,
+  "scannedAt": "2026-08-23T12:29:02.212Z",
+  "elapsedSec": 22.3,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 44,
   "summary": {
     "total": 258,
     "coveredByMain": 15,
-    "recovered": 19,
-    "recoveredPositions": 75,
-    "noPositions": 224,
+    "recovered": 20,
+    "recoveredPositions": 76,
+    "noPositions": 223,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,7 +16,7 @@
       "ml": 4,
       "spread": 1,
       "total": 0,
-      "dropped_shadow_gate": 26,
+      "dropped_shadow_gate": 27,
       "dropped_excluded": 44,
       "dropped_duplicate": 0
     }
@@ -66,8 +66,24 @@
       "tier": "CONFIRMED",
       "name": "AV23IUa",
       "sports": "MLB,SOC",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xdb859a551fcf56e49416160911476bea7307152f"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0xdb859a551fcf56e49416160911476bea7307152f",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 169413,
+      "willPassShadowGate": 0,
+      "willDropAtShadowGate": 1,
+      "positions": [
+        {
+          "sport": "SOC",
+          "gameKey": "ast_bri",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 0,
+          "entryLine": null,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "0b01a8",
@@ -1250,7 +1266,7 @@
           "gameKey": "tbr_bal",
           "marketType": "total",
           "side": "over",
-          "invested": 616,
+          "invested": 641,
           "entryLine": 8.5,
           "passesShadow": true
         },
@@ -1762,7 +1778,7 @@
           "gameKey": "bou_mac",
           "marketType": "ml",
           "side": "home",
-          "invested": 2440,
+          "invested": 2465,
           "entryLine": null,
           "passesShadow": true
         },
@@ -1798,7 +1814,7 @@
           "gameKey": "ast_bri",
           "marketType": "ml",
           "side": "away",
-          "invested": 82,
+          "invested": 92,
           "entryLine": null,
           "passesShadow": false
         },
@@ -2640,20 +2656,20 @@
       "positions": [
         {
           "sport": "MLB",
-          "gameKey": "stl_phi",
-          "marketType": "spread",
+          "gameKey": "oak_hou",
+          "marketType": "ml",
           "side": "away",
-          "invested": 16321,
-          "entryLine": 1.5,
+          "invested": 12667,
+          "entryLine": null,
           "passesShadow": true
         },
         {
           "sport": "MLB",
-          "gameKey": "oak_hou",
-          "marketType": "ml",
+          "gameKey": "stl_phi",
+          "marketType": "spread",
           "side": "away",
-          "invested": 9907,
-          "entryLine": null,
+          "invested": 16421,
+          "entryLine": 1.5,
           "passesShadow": true
         },
         {
