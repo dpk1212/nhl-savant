@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-08-23T02:19:06.682Z",
-  "elapsedSec": 20.2,
+  "scannedAt": "2026-08-23T02:24:09.396Z",
+  "elapsedSec": 16,
   "phase": "PHASE_2_MERGE_ENABLED",
-  "todayGamesCount": 52,
+  "todayGamesCount": 51,
   "summary": {
     "total": 250,
-    "coveredByMain": 30,
+    "coveredByMain": 29,
     "recovered": 17,
-    "recoveredPositions": 37,
-    "noPositions": 203,
+    "recoveredPositions": 39,
+    "noPositions": 204,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,7 +16,7 @@
       "ml": 5,
       "spread": 0,
       "total": 0,
-      "dropped_shadow_gate": 16,
+      "dropped_shadow_gate": 18,
       "dropped_excluded": 16,
       "dropped_duplicate": 0
     }
@@ -436,7 +436,8 @@
       "tier": "CONFIRMED",
       "name": "sbsigner",
       "sports": "NHL",
-      "status": "COVERED_BY_MAIN"
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0x1b47e9b128e6b671edebfb2cac23dd3efc40d814"
     },
     {
       "walletShort": "41ac37",
@@ -603,12 +604,21 @@
       "sports": "NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xa38a455bbdd4b68486548b7e19da99903f4f821d",
-      "positionsCount": 1,
-      "statsSource": "fallback",
-      "avgSportBet": 43316,
+      "positionsCount": 2,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 5785,
       "willPassShadowGate": 0,
-      "willDropAtShadowGate": 1,
+      "willDropAtShadowGate": 2,
       "positions": [
+        {
+          "sport": "UFC",
+          "gameKey": "gregoryrodrigues_anthonyhernandez",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 0,
+          "entryLine": null,
+          "passesShadow": false
+        },
         {
           "sport": "MLB",
           "gameKey": "cle_col__2",
@@ -740,7 +750,7 @@
           "gameKey": "gregoryrodrigues_anthonyhernandez",
           "marketType": "ml",
           "side": "away",
-          "invested": 8742,
+          "invested": 9809,
           "entryLine": null,
           "passesShadow": true
         }
@@ -769,11 +779,11 @@
       "sports": "UFC,WNBA,SOC",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x9e3ed7b661a903fc97afcf49e0f014ebe869f882",
-      "positionsCount": 4,
+      "positionsCount": 5,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 472,
       "willPassShadowGate": 3,
-      "willDropAtShadowGate": 1,
+      "willDropAtShadowGate": 2,
       "positions": [
         {
           "sport": "UFC",
@@ -807,9 +817,18 @@
           "gameKey": "gregoryrodrigues_anthonyhernandez",
           "marketType": "ml",
           "side": "home",
-          "invested": 48,
+          "invested": 57,
           "entryLine": null,
           "passesShadow": true
+        },
+        {
+          "sport": "UFC",
+          "gameKey": "songyadong_umarnurmagomedov",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 11,
+          "entryLine": null,
+          "passesShadow": false
         }
       ]
     },
@@ -1050,7 +1069,7 @@
           "gameKey": "gregoryrodrigues_anthonyhernandez",
           "marketType": "ml",
           "side": "away",
-          "invested": 3001,
+          "invested": 5443,
           "entryLine": null,
           "passesShadow": true
         }
@@ -2256,7 +2275,7 @@
           "gameKey": "gregoryrodrigues_anthonyhernandez",
           "marketType": "ml",
           "side": "home",
-          "invested": 109192,
+          "invested": 129954,
           "entryLine": null,
           "passesShadow": true
         }
@@ -2414,7 +2433,7 @@
           "gameKey": "gregoryrodrigues_anthonyhernandez",
           "marketType": "ml",
           "side": "away",
-          "invested": 3267,
+          "invested": 3611,
           "entryLine": null,
           "passesShadow": true
         }
