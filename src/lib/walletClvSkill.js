@@ -1235,6 +1235,96 @@ export function applyMaxSrSub4MuteOverlay({
   };
 }
 
+// ── no-CONFIRMED mute (absolute last 0u cancel — after maxSR) ─────────────
+// 2026-08-23+: after ALL sizing / tape / skill / flinch / maxSR.
+// Full-cancel remaining tickets with zero CONFIRMED wallets on FOR.
+// Hard fences (zero impact on the rest of the book):
+//   • ≥1 CONFIRMED on FOR → HOLD at exact incoming units
+//   • already 0u → PASS
+//   • pre-cutover → EXEMPT
+// Does NOT resize, repath, or change any upstream dial — identity elsewhere.
+// Thin / young CONFIRMED still count (do not apply size-skill).
+export const NO_CONFIRMED_MUTE_FROM = '2026-08-23';
+export const NO_CONFIRMED_MUTED_BY = 'no-confirmed';
+
+export function isNoConfirmedMuteLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= NO_CONFIRMED_MUTE_FROM;
+}
+
+/**
+ * Count distinct CONFIRMED wallets on the ticket side (FOR).
+ * Dedupes last-6. Missing profiles / empty details → 0.
+ * Does not require size-skill — any CONFIRMED on FOR holds the ticket.
+ */
+export function countConfirmedOnSide(walletDetails, sideKey, sport, walletProfiles) {
+  if (sideKey == null || sideKey === '' || !sport) return 0;
+  const list = Array.isArray(walletDetails)
+    ? walletDetails
+    : (walletDetails && typeof walletDetails === 'object' ? Object.values(walletDetails) : []);
+  if (!list.length) return 0;
+  const getProfile = (short) => {
+    if (!walletProfiles) return null;
+    const key = String(short).toLowerCase();
+    if (typeof walletProfiles.get === 'function') {
+      return walletProfiles.get(key)
+        || walletProfiles.get(key.toUpperCase())
+        || walletProfiles.get(short)
+        || null;
+    }
+    return walletProfiles[key] || walletProfiles[key.toUpperCase()] || walletProfiles[short] || null;
+  };
+  const side = String(sideKey);
+  const seen = new Set();
+  let n = 0;
+  for (const w of list) {
+    if (!w || typeof w !== 'object') continue;
+    if (String(w.side || '') !== side) continue;
+    if (w.direction != null && String(w.direction).toUpperCase() !== 'FOR') continue;
+    const short = shortWalletId(w.walletShort || w.wallet);
+    if (!short || seen.has(short)) continue;
+    seen.add(short);
+    const profile = getProfile(short);
+    if (profile?.bySport?.[sport]?.whitelistTier === 'CONFIRMED') n++;
+  }
+  return n;
+}
+
+/**
+ * Last-step no-CONFIRMED mute. Never changes units unless published size
+ * is still > 0 AND FOR has zero CONFIRMED wallets.
+ */
+export function applyNoConfirmedMuteOverlay({
+  units,
+  nConfirmed = 0,
+  pickDate = null,
+} = {}) {
+  const pre = Number.isFinite(units) ? Math.max(0, units) : 0;
+  const n = Number.isFinite(Number(nConfirmed)) ? Number(nConfirmed) : 0;
+  const out = (action, reason = null) => ({
+    units: pre,
+    action,
+    reason,
+    mutedBy: null,
+    unitsPrePolicy: pre,
+    nConfirmed: n,
+  });
+  if (!(pre > 0)) {
+    return {
+      units: 0, action: 'PASS', reason: null, mutedBy: null, unitsPrePolicy: pre, nConfirmed: n,
+    };
+  }
+  if (!isNoConfirmedMuteLive(pickDate)) return out('EXEMPT', 'pre_cutover');
+  if (n >= 1) return out('HOLD', null);
+  return {
+    units: 0,
+    action: 'MUTE',
+    reason: 'no_confirmed_on_for',
+    mutedBy: NO_CONFIRMED_MUTED_BY,
+    unitsPrePolicy: pre,
+    nConfirmed: n,
+  };
+}
+
 // ── Path × EDGE blended expected win rate (display / calibration) ───────────
 // logit(p*) = wp·logit(pathWR) + we·logit(meanFor)
 // Path WR = expanding empirical WR of prior graded staked same tier (all sports).
