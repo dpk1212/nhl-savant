@@ -1,63 +1,31 @@
-# Twitter Growth Org — closed loop (Social Neuron shape, our moat)
+# Sharp Flow × X — Hormozi desk
 
-Goal: 10K followers · 1K subscribers. **Never auto-publish.**
+**Operating system:** Hormozi principles only.  
+Old closed-loop org (Social Neuron shape, angle factory, 4-agent gate chain) is **retired**.
 
-Inspired by Social Neuron’s Ideate → Create → Distribute → Analyze → Learn,
-implemented with our agents + proprietary sharp-wallet receipts.
+## Canon (read every run)
 
-## Stages
+| Doc | Job |
+|-----|-----|
+| `TWITTER.md` | OS — what we optimize for + only loop |
+| `researcher/knowledge/hormozi_spcl.md` | Status · Power · Credibility · Likeness |
+| `researcher/knowledge/hormozi_qual_algorithm.md` | Qual · Algorithm · Trust economy |
+| `SHARED/brand_seed.md` | Voice + product bans |
 
-| SN stage | Our step | Owner |
-|----------|----------|-------|
-| Analyze | `growthPulse.mjs --save` | Parent / script |
-| Learn | `twitterLearn.mjs` → ledger + learn brief | Script (auto after pulse) |
-| Ideate | idea_queue (8–15) + angle_candidates | Researcher |
-| — | Coach craft autopsy | Coach |
-| Create | chosen_angle → hero/SR copy | Strategist pick → Editor |
-| Brand gate | brand_seed + saver bans | Editor + `saveTwitterDrafts.mjs` |
-| Distribute | distribution_job + compose links | Strategist · Dale posts |
+## Goal
 
-## Agent pipeline (every run)
+**Influence → compliance with soft trial** (“watch and grade it yourself”).  
+Not vanity views. Not tipster theater. **Never auto-publish.**
+
+## Loop
 
 ```
-Pulse → Learn → Coach → Researcher(Ideate + angles) → Strategist(pick) → Editor → BrandGate → Save
+Spine → SPCL → Stuff → Craft → Ask(SR) → Qual → Stage
 ```
 
-**Model law (Dale 2026-07-12):** every Task subagent launches with
-`model: grok-4.5-fast-xhigh` (Grok). No Claude/GPT/Composer for loop agents
-unless Dale overrides for that run. See `.cursor/rules/subagent-model-grok.mdc`.
+Dale spine = law. Stuff inside > container. Quality volume (Qual). Automate last.
 
-| Step | Agent | Rule | Output |
-|------|-------|------|--------|
-| −2 | Pulse | `scripts/growthPulse.mjs` | `growth_pulse.json` |
-| −1 | Learn | `scripts/twitterLearn.mjs` | `learning_ledger.json` + `learn_brief_latest.md` |
-| 0 | **Coach** | `.cursor/rules/twitter-coach.mdc` | COACH BRIEF |
-| 1 | **Researcher** | `.cursor/rules/twitter-researcher.mdc` | idea_queue + angle_candidates |
-| 2 | **Strategist** | `.cursor/rules/twitter-strategist.mdc` | chosen_angle + strategyPass |
-| 3 | **Editor** | `.cursor/rules/twitter-editor.mdc` | Final copy + editorPass |
+## Fossils
 
-Dale spine/angle = **override** when he dumps one — not the default.
-Missing learn brief / empty idea_queue / missing angle_candidates → FAIL
-(unless Dale override).
-
-## Shared sources of truth
-
-- `SHARED/brand_seed.md` — Brand Brain 8/8 essentials
-- `SHARED/learn_brief_latest.md` · `learning_ledger.json` — Learn weights
-- `twitter_drafts/idea_queue.json` — Ideate cards
-- `researcher/knowledge/inspiration_board.md` — generate-from-this
-- `SHARED/coach_brief_latest.md` — write-better
-- `BRAND_MESSAGING.md` · `MY_VOICE_PROFILE.md` · `ALGO_PSYCH_PLAYBOOK.md`
-- `TWITTER.md` — loop bible
-- `twitter_drafts/growth_pulse.json` — measured OVER/UNDER
-
-## Interviews
-
-Each agent interviews Dale once (then refreshes when voice/strategy shifts).
-Status: each agent's `INTERVIEW.md`. Answers: `memory/brand_answers.md`.
-
-## Knowledge compounds
-
-Learn script weights mechanics → vault kill/promote.
-Coach → `coach/memory/`. Researcher → `researcher/knowledge/`.
-Strategist → `strategist/memory/`. Editor → craft locks / fail patterns.
+Files under `coach/`, `researcher/knowledge/angle_*`, `idea_queue.json`, old PERSONA interview chains may still exist on disk.  
+**Do not treat them as required gates** unless Dale explicitly restores one after *What does that mean? How do you know? So what?*

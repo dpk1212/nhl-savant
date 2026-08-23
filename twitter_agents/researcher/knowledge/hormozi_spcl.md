@@ -4,6 +4,8 @@
 **Letters:** **S·P·C·L** = **Status · Power · Credibility · Likeness**  
 (say “special” if you want — not “problem/solution”).
 
+Pairs with: `hormozi_qual_algorithm.md` (Qual · Algorithm · Trust economy).
+
 **Goal of content (Hormozi definition):**  
 **Influence** = *high likelihood of compliance with a future request*  
 (subscribe / watch next / soft trial / “grade it yourself” — not max vanity views).

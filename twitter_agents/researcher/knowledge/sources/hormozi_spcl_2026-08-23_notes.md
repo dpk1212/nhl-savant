@@ -24,3 +24,13 @@ Influence = high likelihood of compliance with a request. Stack all four.
 ## Sharp Flow mapping lives in
 
 `../hormozi_spcl.md` (canon for agents).
+
+---
+
+## Addendum — Qual · Algorithm · Trust (same Dale capture wave)
+
+See `../hormozi_qual_algorithm.md`.
+
+- **Qual** = quality volume (middle of make-good vs make-lots). Stuff inside > container.
+- **Algorithm:** (1) question requirements — What does that mean? How do you know? So what? (2) delete until add-back (3) simplify/most-for-least (4) accelerate who/what/when (5) automate LAST. Elimination > automation.
+- **Trust economy:** show-me times; education→commerce; easy instructions + conviction; proof is the pudding; whole truth sells; imposter = lying smell; domain-scoped authority.
