@@ -64,6 +64,7 @@ import { matchUFCPositionTitle } from './lib/ufcFighters.js';
 import { matchWNBAPositionTitle, resolveWNBATeam, WNBA_NAME_TO_CODE } from './lib/wnbaTeams.js';
 import { matchNFLPositionTitle, resolveNFLTeam, NFL_NAME_TO_CODE } from './lib/nflTeams.js';
 import { resolveBinarySide, resolveSpreadSide, resolveSpreadEntryLine } from './lib/resolvePositionSide.js';
+import { parseSpreadTitle } from '../src/lib/spreadLineSign.js';
 import { positionMatchesPolyEvent } from './lib/positionEventMatch.js';
 import { resolveDoubleheaderMatch } from './lib/doubleheaderKey.js';
 import {
@@ -353,10 +354,10 @@ function matchPositionToGame(posTitle, todaysGames, cbbMap) {
 }
 
 function matchSpreadTitle(posTitle, todaysGames, cbbMap) {
-  const m = (posTitle || '').match(/^Spread:\s+(.+?)\s*\(([+-]?\d+\.?\d*)\)/i);
-  if (!m) return null;
-  const teamRaw = m[1].trim();
-  const spreadLine = parseFloat(m[2]);
+  const parsed = parseSpreadTitle(posTitle);
+  if (!parsed) return null;
+  const teamRaw = parsed.team;
+  const spreadLine = parsed.line;
   const WNBA_MAP = Object.fromEntries(
     Object.entries(WNBA_NAME_TO_CODE).map(([k, v]) => [k, String(v).toLowerCase()]),
   );
@@ -822,6 +823,7 @@ async function run() {
           homeName: game.home,
           polySpread: polyGame?.polySpread || null,
           matchSpreadLine: match.spreadLine ?? null,
+          slug: pos.slug || pos.eventSlug || '',
         });
       } else if (isTotal) {
         entryLine = parseTotalEntryLine(title);

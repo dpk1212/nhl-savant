@@ -11,8 +11,14 @@
  *   3. unresolved → null (caller MUST skip — never invent `away`)
  */
 
+import {
+  normalizeTeamKey as signNormalizeTeamKey,
+  resolveSignedSpreadLine,
+  teamLabelToSide,
+} from '../../src/lib/spreadLineSign.js';
+
 export function normalizeTeamKey(s) {
-  return (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  return signNormalizeTeamKey(s);
 }
 
 /** Map a team label to 'away' | 'home' | null. */
@@ -30,7 +36,8 @@ export function teamNameToSide(teamName, awayName, homeName) {
     if (nAway && nAway.includes(w)) return 'away';
     if (nHome && nHome.includes(w)) return 'home';
   }
-  return null;
+  // NFL/WNBA codes: "TEN" vs board nicknames "Titans" (SEA@TEN 2026-08-23)
+  return teamLabelToSide(teamName, awayName, homeName);
 }
 
 /**
@@ -126,11 +133,10 @@ export function resolveSpreadSide({
  * Spread entry line from the wallet's perspective (positive = that side getting runs/points).
  *
  * Priority:
- *   1. Position title `Spread: Team (±line)` — the wallet's actual market (incl. alts).
- *      Must beat game-level polySpread: main is often "Spread -1.5" while the wallet
- *      bought e.g. Sox +1.5 @ +150 (CLE@CWS 2026-08-09).
- *   2. matchSpreadLine from matchSpreadTitle (same title parse, already team-signed).
- *   3. polySpread.line + outcomeIndex / side (main market only; idx0 gets ps.line).
+ *   1. Market slug `spread-(home|away)-NptN` — exact alt.
+ *   2. Position title `Spread: Team (±line)` — flip when held token ≠ titled team.
+ *   3. matchSpreadLine only after the same flip (it is the titled team's number).
+ *   4. polySpread.line + outcomeIndex / side (main market only).
  */
 export function resolveSpreadEntryLine({
   title = '',
@@ -141,50 +147,17 @@ export function resolveSpreadEntryLine({
   homeName,
   polySpread = null,
   matchSpreadLine = null,
+  slug = '',
 } = {}) {
-  const ps = polySpread && typeof polySpread === 'object' ? polySpread : null;
-  const idx = outcomeIndex != null && outcomeIndex !== ''
-    ? Number(outcomeIndex)
-    : NaN;
-
-  // 1) Title "Spread: Team (±line)" — wallet market, including alternate lines
-  const titleLineMatch = String(title).match(/\(([+-]?\d+\.?\d*)\)/);
-  const titleTeamMatch = String(title).match(/^Spread:\s+(.+?)\s*\(/i);
-  if (titleLineMatch) {
-    const titleLine = parseFloat(titleLineMatch[1]);
-    if (Number.isFinite(titleLine) && titleTeamMatch) {
-      const titleSide = teamNameToSide(titleTeamMatch[1], awayName, homeName);
-      if (side && titleSide) {
-        return titleSide === side ? titleLine : -titleLine;
-      }
-      // No resolved side: only trust title line if outcome names the title team
-      const o = normalizeTeamKey(outcome);
-      const t = normalizeTeamKey(titleTeamMatch[1]);
-      if (o && t && (o.includes(t) || t.includes(o))) return titleLine;
-    } else if (Number.isFinite(titleLine) && !titleTeamMatch) {
-      return titleLine;
-    }
-  }
-
-  // 2) matchSpreadTitle already extracted the team-signed line from the title
-  if (matchSpreadLine != null && Number.isFinite(Number(matchSpreadLine))) {
-    return Number(matchSpreadLine);
-  }
-
-  // 3) Main-market polySpread — idx0 / outcomes[0] carries ps.line; other side flips
-  if (ps != null && Number.isFinite(Number(ps.line))) {
-    const line = Number(ps.line);
-    if (Number.isInteger(idx) && (idx === 0 || idx === 1)) {
-      return idx === 0 ? line : -line;
-    }
-    // Side + outcomes[] when index missing
-    const outs = Array.isArray(ps.outcomes) ? ps.outcomes : null;
-    if (side && outs && outs.length >= 2) {
-      const sideIdx = outs.findIndex((name) => teamNameToSide(name, awayName, homeName) === side);
-      if (sideIdx === 0) return line;
-      if (sideIdx === 1) return -line;
-    }
-  }
-
-  return null;
+  return resolveSignedSpreadLine({
+    title,
+    outcome,
+    outcomeIndex,
+    side,
+    awayName,
+    homeName,
+    polySpread,
+    matchSpreadLine,
+    slug,
+  });
 }

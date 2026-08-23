@@ -19,6 +19,10 @@ import {
   pickMainTotalFromBoard,
 } from './pinnacleMain.js';
 import { positionFitsBoardSport } from './sportSlug.js';
+import {
+  inheritSpreadMarketHints,
+  signedSpreadEntryLine,
+} from './spreadLineSign.js';
 
 export { linesClose };
 
@@ -74,9 +78,13 @@ export function classifyVariant(family, ticketLine, mainLine) {
   return linesClose(ticketLine, mainLine) ? 'MAIN' : 'ALT';
 }
 
-function posLine(p, family) {
+function posLine(p, family, ctx) {
   if (family === 'TOTAL') return Number(p?.entryLine ?? p?.totalLine);
-  if (family === 'SPREAD') return Number(p?.entryLine ?? p?.spreadLine);
+  if (family === 'SPREAD') {
+    const signed = signedSpreadEntryLine(p, ctx);
+    if (Number.isFinite(signed)) return signed;
+    return Number(p?.entryLine ?? p?.spreadLine);
+  }
   return null;
 }
 
@@ -85,12 +93,13 @@ function sameSide(p, side) {
 }
 
 /** Invested-weight vault line on this side (spreads / totals). */
-export function vaultConsensusLine(positions, side, family) {
+export function vaultConsensusLine(positions, side, family, ctx = {}) {
   if (family === 'ML') return null;
+  const rows = family === 'SPREAD' ? inheritSpreadMarketHints(positions) : positions;
   const byLine = new Map();
-  for (const p of positions || []) {
+  for (const p of rows || []) {
     if (!sameSide(p, side)) continue;
-    const ln = posLine(p, family);
+    const ln = posLine(p, family, ctx);
     if (!Number.isFinite(ln)) continue;
     if (family === 'TOTAL' && ln < 1.5) continue;
     byLine.set(ln, (byLine.get(ln) || 0) + (Number(p.invested) || 0));
@@ -109,14 +118,15 @@ export function vaultConsensusLine(positions, side, family) {
 /**
  * Vault receipt on this instrument. `line` null = ML (all legs on side).
  */
-export function vaultTicket(positions, { side, line = null, family = 'ML', sport = null } = {}) {
-  const scoped = majorityMarketPositions(positions, side, family, sport);
+export function vaultTicket(positions, { side, line = null, family = 'ML', sport = null, ...signCtx } = {}) {
+  const rows = family === 'SPREAD' ? inheritSpreadMarketHints(positions) : positions;
+  const scoped = majorityMarketPositions(rows, side, family, sport);
   let sumInv = 0;
   let sumPx = 0;
   for (const p of scoped) {
     if (!sameSide(p, side)) continue;
     if (family !== 'ML' && Number.isFinite(line)) {
-      const el = posLine(p, family);
+      const el = posLine(p, family, signCtx);
       if (Number.isFinite(el) && !linesClose(el, line)) continue;
     }
     const inv = Number(p.invested) || 0;
@@ -385,16 +395,25 @@ export function resolveInstrument({
   freezeAtMs = null,
   stampedLine = null,
   sport = null,
+  polySpread = null,
+  awayName = null,
+  homeName = null,
 } = {}) {
   const fam = classifyFamily(family);
-  const vaultLine = vaultConsensusLine(positions, side, fam);
+  const pos = fam === 'SPREAD' ? inheritSpreadMarketHints(positions) : positions;
+  const signCtx = {
+    awayName: awayName || pinnGame?.awayTeam || meta?.away || meta?.awayTeam,
+    homeName: homeName || pinnGame?.homeTeam || meta?.home || meta?.homeTeam,
+    polySpread: polySpread || meta?.polySpread || null,
+  };
+  const vaultLine = vaultConsensusLine(pos, side, fam, signCtx);
   const mainLine = mainLineForSide(fam, pinnGame || meta, side);
   const line = fam === 'ML'
     ? null
     : (Number.isFinite(vaultLine) ? vaultLine
       : (Number.isFinite(stampedLine) ? stampedLine : mainLine));
   const variant = classifyVariant(fam, line, mainLine);
-  const ticket = vaultTicket(positions, { side, line, family: fam, sport });
+  const ticket = vaultTicket(pos, { side, line, family: fam, sport, ...signCtx });
   const tape = pinnGame
     ? tapeOnLine(pinnGame, { family: fam, side, line, freezeAtMs })
     : tapeFromMeta(meta, { family: fam, side, line });

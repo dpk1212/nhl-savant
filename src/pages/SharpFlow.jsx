@@ -30,6 +30,7 @@ import {
   NET_CLV_PRIOR_AG,
 } from '../components/sharpFlow/cards/mapPositionCard';
 import { vaultTicket, classifyFamily, vaultConsensusLine } from '../lib/ticketInstrument';
+import { signedSpreadEntryLine } from '../lib/spreadLineSign.js';
 import VaultAlphaField from '../components/sharpVault/VaultAlphaField';
 import VaultRoster from '../components/sharpVault/VaultRoster';
 import VaultWalletDrawer from '../components/sharpVault/VaultWalletDrawer';
@@ -6713,8 +6714,9 @@ function WalletDossierRow({ p, gd, now, isMobile, market = 'ml', accent = B.gold
   } else {
     const sideTeam = p.side === 'draw' ? 'Draw' : p.side === 'away' ? gd.away : gd.home;
     const short = sideTeam.split(' ').pop();
-    sideLabel = market === 'spread' && p.entryLine != null
-      ? `${short} ${p.entryLine > 0 ? '+' : ''}${p.entryLine}`
+    const spreadLn = market === 'spread' ? signedSpreadEntryLine(p) : null;
+    sideLabel = market === 'spread' && spreadLn != null
+      ? `${short} ${spreadLn > 0 ? '+' : ''}${spreadLn}`
       : short;
   }
 

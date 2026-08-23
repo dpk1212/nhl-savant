@@ -169,6 +169,10 @@ import { acceptFullGameTotalPosition } from './lib/totalMarketFilter.js';
 import { passesSizeSkillLiveGate } from '../src/lib/sizeSkillRescue.js';
 import { resolveInstrument, ticketAmerican } from '../src/lib/ticketInstrument.js';
 import {
+  inheritSpreadMarketHints,
+  signedSpreadEntryLine,
+} from '../src/lib/spreadLineSign.js';
+import {
   captureTicketTape,
   applyTicketTapeStamps,
   hoursUntilMs,
@@ -2155,11 +2159,22 @@ function isPlausibleLine(ln, sport, marketType) {
   return ln >= band.min && ln <= band.max;
 }
 
+function positionHandicap(p, marketType) {
+  const mt = String(marketType || p.marketType || '').toUpperCase();
+  if (mt === 'SPREAD' || mt === 'SP') {
+    const signed = signedSpreadEntryLine(p);
+    if (Number.isFinite(signed)) return signed;
+  }
+  return p.entryLine ?? p.spreadLine ?? p.totalLine ?? null;
+}
+
 function consensusLine(positions, side, sport = null, marketType = null) {
+  const mt = String(marketType || '').toUpperCase();
+  const rows = mt === 'SPREAD' ? inheritSpreadMarketHints(positions) : positions;
   const counts = new Map(); // line → { n, invested }
-  for (const p of positions) {
+  for (const p of rows) {
     if (p.side !== side) continue;
-    const ln = p.entryLine ?? p.spreadLine ?? p.totalLine ?? null;
+    const ln = positionHandicap(p, marketType);
     if (ln == null) continue;
     // Sanity-gate per sport/market BEFORE voting so a single garbage
     // entryLine=1 can't outvote a single legit line.
@@ -2196,12 +2211,13 @@ function consensusLine(positions, side, sport = null, marketType = null) {
  * Totals: SEA@NYY Over 8.5 @ 0.519 → -108 (Vault instrument, not live MAIN 9.5).
  */
 function consensusOddsFromPoly(positions, side, line = null) {
+  const rows = inheritSpreadMarketHints(positions);
   let sumInv = 0;
   let sumPxInv = 0;
-  for (const p of positions || []) {
+  for (const p of rows || []) {
     if (p.side !== side) continue;
     if (line != null && Number.isFinite(Number(line))) {
-      const el = Number(p.entryLine ?? p.spreadLine ?? p.totalLine);
+      const el = Number(positionHandicap(p, p.marketType || 'SPREAD'));
       if (Number.isFinite(el) && Math.abs(el - Number(line)) > 0.051) continue;
     }
     const inv = Number(p.invested) || 0;

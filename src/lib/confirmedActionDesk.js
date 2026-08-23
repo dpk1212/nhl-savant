@@ -15,6 +15,7 @@ import {
   sportUsualBetFromProfile,
 } from './sizeRatioBands.js';
 import { steamForGame } from './steamMove.js';
+import { signedSpreadEntryLine } from './spreadLineSign.js';
 
 const SPORTS = ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL'];
 
@@ -587,10 +588,13 @@ export function buildConfirmedActionRows({
     const americanOdds = Number.isFinite(pos.odds)
       ? Math.round(pos.odds)
       : probToAmerican(prob);
-    const entryLine = Number.isFinite(Number(pos.entryLine))
-      ? Number(pos.entryLine)
-      : (Number.isFinite(Number(pos.spreadLine)) ? Number(pos.spreadLine)
-        : (Number.isFinite(Number(pos.totalLine)) ? Number(pos.totalLine) : null));
+    const signedSpread = marketType === 'SPREAD' ? signedSpreadEntryLine(pos) : null;
+    const entryLine = Number.isFinite(signedSpread)
+      ? signedSpread
+      : (Number.isFinite(Number(pos.entryLine))
+        ? Number(pos.entryLine)
+        : (Number.isFinite(Number(pos.spreadLine)) ? Number(pos.spreadLine)
+          : (Number.isFinite(Number(pos.totalLine)) ? Number(pos.totalLine) : null)));
     const steamMkt = marketType === 'SPREAD' ? 'spread'
       : marketType === 'TOTAL' ? 'total'
         : 'ml';

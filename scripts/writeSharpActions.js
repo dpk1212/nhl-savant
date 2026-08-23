@@ -46,6 +46,7 @@ import {
 } from '../src/lib/confirmedActionDesk.js';
 import { captureTicketTape, applyActionTicketTape, hoursUntilMs } from '../src/lib/ticketTapeCapture.js';
 import { americanFromPolyPrice } from '../src/lib/ticketInstrument.js';
+import { signedSpreadEntryLine } from '../src/lib/spreadLineSign.js';
 import { passesSizeSkillLiveGate } from '../src/lib/sizeSkillRescue.js';
 import { stakeSizeRatio } from '../src/lib/sizeRatioBands.js';
 import { resolveSportUsualBet } from './lib/sportUsualBet.js';
@@ -781,6 +782,12 @@ async function main() {
           // Pinnacle odds + retail EV
           const pinnGame = pinnacleHistory?.[sport]?.[gameKey];
           let pinnOdds = null, bestRetail = null, bestBook = null, evEdge = null;
+          const signedSpread = mkt === 'SPREAD'
+            ? signedSpreadEntryLine(pos, { awayName: gd.away, homeName: gd.home })
+            : null;
+          if (mkt === 'SPREAD' && Number.isFinite(signedSpread)) {
+            pos.entryLine = signedSpread;
+          }
           let spreadLine = mkt === 'SPREAD' ? (pos.entryLine ?? null) : null;
           let totalLine = mkt === 'TOTAL' ? (pos.entryLine ?? null) : null;
           if (pinnGame) {

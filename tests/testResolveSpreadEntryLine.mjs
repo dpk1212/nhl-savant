@@ -103,4 +103,19 @@ ok(
   'matchSpreadLine beats poly for alts',
 );
 
+// SEA@TEN 2026-08-23 — NFL code title, board nicknames, held dog token
+ok(
+  resolveSpreadEntryLine({
+    title: 'Spread: TEN (-4.5)',
+    outcome: 'SEA',
+    outcomeIndex: 1,
+    side: 'away',
+    awayName: 'Seahawks',
+    homeName: 'Titans',
+    matchSpreadLine: -4.5,
+    slug: 'nfl-sea-ten-2026-08-24-spread-home-4pt5',
+  }) === 4.5,
+  'NFL TEN -4.5 holding SEA → +4.5',
+);
+
 console.log(`OK ${passed} assertions`);

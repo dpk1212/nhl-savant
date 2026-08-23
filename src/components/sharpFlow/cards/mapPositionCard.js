@@ -29,6 +29,11 @@ import {
   ticketAmerican,
 } from '../../../lib/ticketInstrument.js';
 import {
+  inheritSpreadMarketHints,
+  isSpreadPolarityFlip,
+  signedSpreadEntryLine,
+} from '../../../lib/spreadLineSign.js';
+import {
   impliedFromAmerican as ip,
   noVigFairAmerican,
   fairProbFromNoVig,
@@ -496,10 +501,13 @@ export function preferVaultPolyTicketOdds(stamped, poly) {
  * Product: receipts of where sharps got on; not the playable recommendation.
  */
 function buildEntryLadder(positions, playSide, { isTotal = false } = {}) {
+  const rows = isTotal ? positions : inheritSpreadMarketHints(positions);
   const byLine = new Map();
-  for (const p of positions || []) {
+  for (const p of rows || []) {
     if (String(p.side || '').toLowerCase() !== String(playSide).toLowerCase()) continue;
-    const ln = Number(p.entryLine ?? (isTotal ? p.totalLine : p.spreadLine));
+    const ln = isTotal
+      ? Number(p.entryLine ?? p.totalLine)
+      : signedSpreadEntryLine(p);
     if (!Number.isFinite(ln)) continue;
     if (isTotal && ln < 1.5) continue;
     const inv = Number(p.invested) || 0;
@@ -1175,12 +1183,22 @@ export function mapLockedPickToCardFixture(pick, {
     freezeAtMs: ticketFrozen ? freezeAtMs : null,
     stampedLine: Number.isFinite(ticketLine) ? ticketLine : null,
     sport: pick.sport || null,
+    polySpread: polyData?.[pick.sport]?.[pick.gameKey]?.polySpread || null,
+    awayName: pick.away || pinnGamePeek?.awayTeam || null,
+    homeName: pick.home || pinnGamePeek?.homeTeam || null,
   });
   if (Number.isFinite(inst.ticket.american)) {
     polyEntryOdds = inst.ticket.american;
     ticketOdds = ticketAmerican(inst, ticketOdds);
   }
   if (Number.isFinite(inst.line) && (isSpread || isTotal) && !ticketFrozen) {
+    ticketLine = inst.line;
+  } else if (
+    isSpread
+    && Number.isFinite(inst.line)
+    && isSpreadPolarityFlip(inst.line, ticketLine)
+  ) {
+    // Same |line|, opposite sign — stored favorite/dog was inverted.
     ticketLine = inst.line;
   }
   const awayPickEarly = String(pick.side || pick.pickSide || '').toLowerCase() === 'away'

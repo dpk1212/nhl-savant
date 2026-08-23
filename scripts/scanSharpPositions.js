@@ -17,6 +17,7 @@ import { matchUFCPositionTitle } from './lib/ufcFighters.js';
 import { matchWNBAPositionTitle, resolveWNBATeam, WNBA_NAME_TO_CODE } from './lib/wnbaTeams.js';
 import { matchNFLPositionTitle, resolveNFLTeam, NFL_NAME_TO_CODE } from './lib/nflTeams.js';
 import { resolveBinarySide, resolveSpreadSide, resolveSpreadEntryLine } from './lib/resolvePositionSide.js';
+import { parseSpreadTitle } from '../src/lib/spreadLineSign.js';
 import { positionMatchesPolyEvent } from './lib/positionEventMatch.js';
 import { resolveDoubleheaderMatch } from './lib/doubleheaderKey.js';
 import {
@@ -450,10 +451,10 @@ function matchPositionToGameOrSoccer(posTitle, todaysGames, cbbMap) {
 
 // ─── Match spread-formatted titles like "Spread: Knicks (-3.5)" ─────────────
 function matchSpreadTitle(posTitle, todaysGames, cbbMap) {
-  const m = (posTitle || '').match(/^Spread:\s+(.+?)\s*\(([+-]?\d+\.?\d*)\)/i);
-  if (!m) return null;
-  const teamRaw = m[1].trim();
-  const spreadLine = parseFloat(m[2]);
+  const parsed = parseSpreadTitle(posTitle);
+  if (!parsed) return null;
+  const teamRaw = parsed.team;
+  const spreadLine = parseFloat(parsed.line);
 
   // WNBA_NAME_TO_CODE / NFL_NAME_TO_CODE are normalized-alias → CODE; lower-case codes for keys.
   const WNBA_MAP = Object.fromEntries(
@@ -972,6 +973,7 @@ async function run() {
           homeName: game.home,
           polySpread: polyGame?.polySpread || null,
           matchSpreadLine: match.spreadLine ?? null,
+          slug: pos.slug || pos.eventSlug || '',
         });
       } else if (isTotal) {
         // PRIMARY: parse the line from the wallet's OWN position title.
