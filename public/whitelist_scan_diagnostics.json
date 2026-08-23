@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-08-23T01:51:08.860Z",
-  "elapsedSec": 15.7,
+  "scannedAt": "2026-08-23T01:56:50.226Z",
+  "elapsedSec": 15.6,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 54,
   "summary": {
     "total": 250,
-    "coveredByMain": 33,
-    "recovered": 16,
-    "recoveredPositions": 46,
-    "noPositions": 201,
+    "coveredByMain": 31,
+    "recovered": 17,
+    "recoveredPositions": 47,
+    "noPositions": 202,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,7 +16,7 @@
       "ml": 7,
       "spread": 1,
       "total": 2,
-      "dropped_shadow_gate": 17,
+      "dropped_shadow_gate": 18,
       "dropped_excluded": 19,
       "dropped_duplicate": 0
     }
@@ -75,7 +75,8 @@
       "tier": "CONFIRMED",
       "name": "dv-pm",
       "sports": "MLB,WNBA,UFC",
-      "status": "COVERED_BY_MAIN"
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0x56acab44cfca2e88bb9b3406890aea7bfa0cd77e"
     },
     {
       "walletShort": "0eb6ef",
@@ -111,7 +112,7 @@
           "gameKey": "dal_ari",
           "marketType": "ml",
           "side": "home",
-          "invested": 2189,
+          "invested": 2417,
           "entryLine": null,
           "passesShadow": true
         },
@@ -120,7 +121,7 @@
           "gameKey": "dal_ari",
           "marketType": "total",
           "side": "under",
-          "invested": 559,
+          "invested": 750,
           "entryLine": 37.5,
           "passesShadow": true
         }
@@ -139,7 +140,8 @@
       "tier": "CONFIRMED",
       "name": "Gooooooollllllllll",
       "sports": "SOC,MLB",
-      "status": "COVERED_BY_MAIN"
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0xda3a9b7afff7b44ad4fd75308723194e0a11381f"
     },
     {
       "walletShort": "118cec",
@@ -194,8 +196,24 @@
       "tier": "WR50",
       "name": null,
       "sports": "",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x0eb75bf6f54794a83bd26095811f30b530161f17"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x0eb75bf6f54794a83bd26095811f30b530161f17",
+      "positionsCount": 1,
+      "statsSource": "fallback",
+      "avgSportBet": 27724,
+      "willPassShadowGate": 0,
+      "willDropAtShadowGate": 1,
+      "positions": [
+        {
+          "sport": "WNBA",
+          "gameKey": "atl_pho",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 230,
+          "entryLine": -5.5,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "162937",
@@ -923,20 +941,20 @@
         },
         {
           "sport": "WNBA",
+          "gameKey": "was_por",
+          "marketType": "total",
+          "side": "under",
+          "invested": 2318,
+          "entryLine": 165.5,
+          "passesShadow": true
+        },
+        {
+          "sport": "WNBA",
           "gameKey": "atl_pho",
           "marketType": "total",
           "side": "over",
           "invested": 1995,
           "entryLine": 176.5,
-          "passesShadow": true
-        },
-        {
-          "sport": "WNBA",
-          "gameKey": "was_por",
-          "marketType": "total",
-          "side": "under",
-          "invested": 1331,
-          "entryLine": 165.5,
           "passesShadow": true
         },
         {
