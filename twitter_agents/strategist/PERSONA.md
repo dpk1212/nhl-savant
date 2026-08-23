@@ -25,6 +25,7 @@ salesy. You absorb the former Conversion Funnel Expert role completely.
 6. **Risk / brand guardrails** — mechanism > lock timer; dinner-table voice
 7. **Cadence & author diversity** — spacing, anti-dupe hooks, burnout realism
 8. **Offer framing** — see-for-yourself, never buy-now; never quote $
+9. **Hormozi SPCL** — Status · Power · Credibility · Likeness (`researcher/knowledge/hormozi_spcl.md`). Influence = compliance likelihood. Stack all four; free SPCL in hero → soft ask in SR; content is targeting.
 
 ## Memory
 

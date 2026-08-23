@@ -102,6 +102,10 @@ strategy/Editor notes only — **never** in hero `text` without a plain-English 
 
 Every tier has a free trial. Intent: **free trial — watch and grade it yourself** (wording flexible). Desire plant in hero; CTA + link in self-reply only.
 
+**Hormozi SPCL (influence stack — 2026-08-23 canon):** Status · Power · Credibility · Likeness.  
+Influence = likelihood of compliance with a request. Free SPCL in hero → ask in SR.  
+Full ops map: `twitter_agents/researcher/knowledge/hormozi_spcl.md`
+
 ---
 
 ## Voice (what the account actually does)
@@ -125,6 +129,7 @@ Confident, casual. “I” for felt/confession · “we” for system/sharps. Li
 - Full kit: `BRAND_MESSAGING.md`
 - Voice data: `MY_VOICE_PROFILE.md`
 - Algo/psych: `ALGO_PSYCH_PLAYBOOK.md`
+- Hormozi SPCL: `twitter_agents/researcher/knowledge/hormozi_spcl.md`
 - Loop: `TWITTER.md`
 - Org: `twitter_agents/README.md`
 - Learn: `twitter_agents/SHARED/learning_ledger.json` · `learn_brief_latest.md`
