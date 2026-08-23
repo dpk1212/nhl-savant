@@ -102,9 +102,10 @@ strategy/Editor notes only — **never** in hero `text` without a plain-English 
 
 Every tier has a free trial. Intent: **free trial — watch and grade it yourself** (wording flexible). Desire plant in hero; CTA + link in self-reply only.
 
-**Hormozi SPCL (influence stack — 2026-08-23 canon):** Status · Power · Credibility · Likeness.  
-Influence = likelihood of compliance with a request. Free SPCL in hero → ask in SR.  
-Full ops map: `twitter_agents/researcher/knowledge/hormozi_spcl.md`
+**Hormozi SPCL (influence stack):** Status · Power · Credibility · Likeness.  
+**Qual / Algorithm / Trust:** quality volume · delete→simplify→accelerate→automate last · show-me whole truth.  
+Influence = compliance with a request. Free SPCL in hero → ask in SR.  
+OS: `TWITTER.md` · `hormozi_spcl.md` · `hormozi_qual_algorithm.md`
 
 ---
 
