@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-08-23T20:50:09.653Z",
-  "elapsedSec": 18.5,
+  "scannedAt": "2026-08-23T20:54:50.632Z",
+  "elapsedSec": 19.3,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 47,
   "summary": {
     "total": 258,
     "coveredByMain": 28,
-    "recovered": 13,
-    "recoveredPositions": 49,
-    "noPositions": 217,
+    "recovered": 14,
+    "recoveredPositions": 50,
+    "noPositions": 216,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,7 +16,7 @@
       "ml": 3,
       "spread": 0,
       "total": 1,
-      "dropped_shadow_gate": 7,
+      "dropped_shadow_gate": 8,
       "dropped_excluded": 38,
       "dropped_duplicate": 0
     }
@@ -627,7 +627,7 @@
           "gameKey": "atl_mil",
           "marketType": "ml",
           "side": "home",
-          "invested": 18777,
+          "invested": 26000,
           "entryLine": null,
           "passesShadow": true
         }
@@ -1353,8 +1353,24 @@
       "tier": "CONFIRMED",
       "name": "0xb4F978BE63cDF75554b0B46a4262a6dB597cc9A7-1779258330186",
       "sports": "MLB",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xb4f978be63cdf75554b0b46a4262a6db597cc9a7"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0xb4f978be63cdf75554b0b46a4262a6db597cc9a7",
+      "positionsCount": 1,
+      "statsSource": "sports_sharps.perSport",
+      "avgSportBet": 1821,
+      "willPassShadowGate": 0,
+      "willDropAtShadowGate": 1,
+      "positions": [
+        {
+          "sport": "NFL",
+          "gameKey": "sea_ten",
+          "marketType": "total",
+          "side": "over",
+          "invested": 0,
+          "entryLine": 37.5,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "7d395d",
@@ -2099,7 +2115,7 @@
           "gameKey": "atl_mil",
           "marketType": "ml",
           "side": "away",
-          "invested": 12000,
+          "invested": 20864,
           "entryLine": null,
           "passesShadow": true
         }
