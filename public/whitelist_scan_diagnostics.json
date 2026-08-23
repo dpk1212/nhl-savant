@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-08-23T23:15:39.181Z",
-  "elapsedSec": 19.4,
+  "scannedAt": "2026-08-23T23:19:48.897Z",
+  "elapsedSec": 18.6,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 38,
   "summary": {
     "total": 258,
     "coveredByMain": 28,
     "recovered": 12,
-    "recoveredPositions": 20,
+    "recoveredPositions": 21,
     "noPositions": 218,
     "apiError": 0,
     "addressNotFound": 0,
@@ -16,7 +16,7 @@
       "ml": 4,
       "spread": 1,
       "total": 0,
-      "dropped_shadow_gate": 8,
+      "dropped_shadow_gate": 9,
       "dropped_excluded": 7,
       "dropped_duplicate": 0
     }
@@ -116,11 +116,11 @@
       "sports": "NHL,SOC,NBA,NFL",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x0a77bc0638f13892c8b1d1d2c13ba178540f9d74",
-      "positionsCount": 2,
+      "positionsCount": 3,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 1313,
       "willPassShadowGate": 2,
-      "willDropAtShadowGate": 0,
+      "willDropAtShadowGate": 1,
       "positions": [
         {
           "sport": "NFL",
@@ -136,9 +136,18 @@
           "gameKey": "sea_ten",
           "marketType": "ml",
           "side": "home",
-          "invested": 1077,
+          "invested": 1084,
           "entryLine": null,
           "passesShadow": true
+        },
+        {
+          "sport": "NFL",
+          "gameKey": "sea_ten",
+          "marketType": "total",
+          "side": "under",
+          "invested": 0,
+          "entryLine": 37.5,
+          "passesShadow": false
         }
       ]
     },
