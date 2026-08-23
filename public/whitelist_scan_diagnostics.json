@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-08-23T12:08:23.145Z",
-  "elapsedSec": 21.7,
+  "scannedAt": "2026-08-23T12:13:34.861Z",
+  "elapsedSec": 21.5,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 44,
   "summary": {
     "total": 258,
     "coveredByMain": 15,
-    "recovered": 18,
-    "recoveredPositions": 67,
-    "noPositions": 225,
+    "recovered": 19,
+    "recoveredPositions": 74,
+    "noPositions": 224,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,8 +16,8 @@
       "ml": 4,
       "spread": 1,
       "total": 0,
-      "dropped_shadow_gate": 22,
-      "dropped_excluded": 40,
+      "dropped_shadow_gate": 26,
+      "dropped_excluded": 43,
       "dropped_duplicate": 0
     }
   },
@@ -560,8 +560,7 @@
       "tier": "FLAT",
       "name": "RegardedMoney",
       "sports": "NBA,SOC",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x5c3a1a602848565bb16165fcd460b00c3d43020b"
+      "status": "COVERED_BY_MAIN"
     },
     {
       "walletShort": "438d12",
@@ -814,10 +813,10 @@
       "sports": "MLB,SOC,NBA",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xdb83e85ffd22faa4009273034770f96ffc5b1e50",
-      "positionsCount": 3,
+      "positionsCount": 4,
       "statsSource": "profile.bySport.positions",
       "avgSportBet": 1943,
-      "willPassShadowGate": 3,
+      "willPassShadowGate": 4,
       "willDropAtShadowGate": 0,
       "positions": [
         {
@@ -836,6 +835,15 @@
           "side": "home",
           "invested": 4155,
           "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "WNBA",
+          "gameKey": "sea_dal",
+          "marketType": "spread",
+          "side": "away",
+          "invested": 2357,
+          "entryLine": 7.5,
           "passesShadow": true
         },
         {
@@ -1732,7 +1740,69 @@
       "tier": "CONFIRMED",
       "name": "suntori",
       "sports": "NBA,UFC,NHL",
-      "status": "COVERED_BY_MAIN"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0xe9076a87c5ed90ef16e6fe6529c943baeca0cff6",
+      "positionsCount": 6,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 21012,
+      "willPassShadowGate": 2,
+      "willDropAtShadowGate": 4,
+      "positions": [
+        {
+          "sport": "SOC",
+          "gameKey": "bou_mac",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 2244,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "UFC",
+          "gameKey": "songyadong_umarnurmagomedov",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 174,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "SOC",
+          "gameKey": "liv_new",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 352,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "SOC",
+          "gameKey": "ast_bri",
+          "marketType": "ml",
+          "side": "draw",
+          "invested": 121,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "SOC",
+          "gameKey": "ast_bri",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 82,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "SOC",
+          "gameKey": "liv_new",
+          "marketType": "ml",
+          "side": "draw",
+          "invested": 35,
+          "entryLine": null,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "a0d6d2",
@@ -2414,7 +2484,7 @@
           "gameKey": "chc_sea",
           "marketType": "ml",
           "side": "away",
-          "invested": 346,
+          "invested": 354,
           "entryLine": null,
           "passesShadow": false
         }
@@ -2564,7 +2634,7 @@
           "gameKey": "stl_phi",
           "marketType": "spread",
           "side": "away",
-          "invested": 16271,
+          "invested": 16299,
           "entryLine": 1.5,
           "passesShadow": true
         },
@@ -2573,7 +2643,7 @@
           "gameKey": "oak_hou",
           "marketType": "ml",
           "side": "away",
-          "invested": 7260,
+          "invested": 7261,
           "entryLine": null,
           "passesShadow": true
         },
