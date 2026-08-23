@@ -1,19 +1,19 @@
 {
-  "scannedAt": "2026-08-23T20:30:20.349Z",
-  "elapsedSec": 20.7,
+  "scannedAt": "2026-08-23T20:35:20.255Z",
+  "elapsedSec": 18.2,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 51,
   "summary": {
     "total": 258,
-    "coveredByMain": 31,
-    "recovered": 11,
-    "recoveredPositions": 45,
-    "noPositions": 216,
+    "coveredByMain": 29,
+    "recovered": 12,
+    "recoveredPositions": 46,
+    "noPositions": 217,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
-      "ml": 2,
+      "ml": 3,
       "spread": 0,
       "total": 1,
       "dropped_shadow_gate": 7,
@@ -627,7 +627,7 @@
           "gameKey": "atl_mil",
           "marketType": "ml",
           "side": "home",
-          "invested": 3147,
+          "invested": 16177,
           "entryLine": null,
           "passesShadow": true
         }
@@ -1483,7 +1483,8 @@
       "tier": "FLAT",
       "name": "Bagwell306",
       "sports": "NBA",
-      "status": "COVERED_BY_MAIN"
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0x9c76cdb43fb46454da005fbc82047a64a18ec926"
     },
     {
       "walletShort": "913987",
@@ -1793,7 +1794,8 @@
       "tier": "FLAT",
       "name": "johnny234",
       "sports": "MLB",
-      "status": "COVERED_BY_MAIN"
+      "status": "SCANNED_NO_POSITIONS_TODAY",
+      "addr": "0xd38ad20037839959d89165cf448568d584b28d26"
     },
     {
       "walletShort": "b31fc6",
@@ -2049,8 +2051,24 @@
       "tier": "CONFIRMED",
       "name": null,
       "sports": "SOC,NFL,NHL",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0xabb89972b21b304c1bed2bf26f35c8741ac9bba3"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0xabb89972b21b304c1bed2bf26f35c8741ac9bba3",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 16206,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "atl_mil",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 12000,
+          "entryLine": null,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "ca3e2a",
