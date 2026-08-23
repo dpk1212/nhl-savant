@@ -361,6 +361,17 @@ export function enrichWallets(rawWallets, sport, getWalletProfile, isSportWinner
 }
 
 /** Lines match within a half-point tick (totals/spreads). */
+/**
+ * +1.5 and −1.5 are opposite run lines, not juice movement on one ticket.
+ * Totals never flip via sign. Missing numbers are treated as compatible so
+ * we can still fall back to a single known line.
+ */
+export function sameSpreadHandicap(ticketLine, otherLine) {
+  if (!Number.isFinite(ticketLine) || !Number.isFinite(otherLine)) return true;
+  if (Math.abs(ticketLine) < 1e-9 && Math.abs(otherLine) < 1e-9) return true;
+  return Math.sign(ticketLine) === Math.sign(otherLine);
+}
+
 function linesClose(a, b, eps = 0.051) {
   return Number.isFinite(a) && Number.isFinite(b) && Math.abs(a - b) <= eps;
 }
@@ -1246,8 +1257,8 @@ export function mapLockedPickToCardFixture(pick, {
     : isDraw ? 'Draw'
       : (sideNorm === 'away' ? awayShort : homeShort);
 
-  // T-15 locks MAIN. Hero = playable main; flagged vault ticket is the subtitle.
-  // Never pair ticket juice with a different handicap.
+  // Hero is the ticket we lock and grade. Book MAIN only sits underneath
+  // when it is a different line (Under 10.5 ticket / Under 8.5 main).
   const fmtSpreadLn = (ln) => (Number.isFinite(ln) ? `${ln > 0 ? '+' : ''}${ln}` : '');
   const fmtAm = (o) => {
     if (!Number.isFinite(o) || o === 0) return null;
@@ -1280,40 +1291,33 @@ export function mapLockedPickToCardFixture(pick, {
     && Number.isFinite(mlNowOdds)
     && Math.round(lockOdds) !== Math.round(mlNowOdds);
   const ticketOffMain = ticketOffLine || ticketOffMl;
-  const playableNowOdds = (() => {
-    if (!ticketOffMain) return null;
-    if (ticketOffMl && Number.isFinite(mlNowOdds)) return mlNowOdds;
-    if (!pinnGamePeek) return null;
+  const mainNowOdds = (() => {
+    if (!ticketOffLine || !pinnGamePeek) return null;
     if (isSpread && mainSpread) {
       const o = sideNorm === 'away' ? mainSpread.awayOdds : mainSpread.homeOdds;
-      if (Number.isFinite(o)) return o;
+      return Number.isFinite(o) ? o : null;
     }
     if (isTotal && mainTotal) {
       const o = sideNorm === 'away' ? mainTotal.underOdds : mainTotal.overOdds;
-      if (Number.isFinite(o)) return o;
+      return Number.isFinite(o) ? o : null;
     }
     return null;
   })();
-  const heroLine = ticketOffLine && Number.isFinite(playableLine)
-    ? playableLine
-    : (Number.isFinite(ticketHeroLine) ? ticketHeroLine : playableLine);
+  const heroLine = Number.isFinite(ticketHeroLine) ? ticketHeroLine : playableLine;
   const pickLabel = fmtLineLabel(heroLine)
     || (isTotal ? (pick.team || 'Total')
       : isDraw ? 'Draw ML'
         : `${teamShort} ML`);
-  // ML hero is always book NOW when we have tape — same pattern as
-  // totals/spreads (main line + now juice, flagged ticket underneath).
+  // ML hero is book NOW when we have tape (same instrument, juice only).
+  // Spread/total hero juice is the ticket we will grade.
   const heroOdds = (!isTotal && !isSpread && Number.isFinite(mlNowOdds))
     ? mlNowOdds
-    : (ticketOffMain
-      ? (Number.isFinite(playableNowOdds) ? playableNowOdds : null)
-      : lockOdds);
+    : lockOdds;
   const flaggedAtLabel = ticketOffLine
-    ? `flagged at ${fmtLineLabel(ticketHeroLine) || `${teamShort} ${ticketHeroLine}`}${
-      fmtAm(lockOdds) ? ` · ${fmtAm(lockOdds)}` : ''
+    ? `main ${fmtLineLabel(playableLine) || playableLine}${
+      fmtAm(mainNowOdds) ? ` · ${fmtAm(mainNowOdds)}` : ''
     }`
     : (ticketOffMl && fmtAm(lockOdds) ? `flagged at ${fmtAm(lockOdds)}` : null);
-  // Secondary under hero — flagged ticket when MAIN is the lock.
   const mainNowLabel = flaggedAtLabel;
 
   const stakePath = pick.hcStakeTier || pick.lockTier || 'LOCK';
@@ -1631,7 +1635,7 @@ export function mapLockedPickToCardFixture(pick, {
     homeShort,
     pickLabel,
     entryLadder: entryLadder.length ? entryLadder : null,
-    // When MAIN ≠ ticket: hero is MAIN; flagged ticket is the subtitle.
+    // Hero is the ticket. Book main, when different, is the subtitle.
     entryLadderLabel: entriesOffPlayable
       ? null
       : (entryLadder.length > 1 ? entryLadderLabel : null),

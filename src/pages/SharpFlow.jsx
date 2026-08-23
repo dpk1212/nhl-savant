@@ -29,7 +29,7 @@ import {
   EDGE_PRIOR_AG_WR,
   NET_CLV_PRIOR_AG,
 } from '../components/sharpFlow/cards/mapPositionCard';
-import { vaultTicket, classifyFamily } from '../lib/ticketInstrument';
+import { vaultTicket, classifyFamily, vaultConsensusLine } from '../lib/ticketInstrument';
 import VaultAlphaField from '../components/sharpVault/VaultAlphaField';
 import VaultRoster from '../components/sharpVault/VaultRoster';
 import VaultWalletDrawer from '../components/sharpVault/VaultWalletDrawer';
@@ -2222,6 +2222,20 @@ function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet
   return base;
 }
 
+function pickCommenceMs(raw) {
+  if (raw == null) return null;
+  if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
+  if (typeof raw?.toMillis === 'function') return raw.toMillis();
+  if (typeof raw?._seconds === 'number') return raw._seconds * 1000;
+  const t = new Date(raw).getTime();
+  return Number.isFinite(t) ? t : null;
+}
+
+function isPastTicketFreeze(commenceTime, nowMs = Date.now()) {
+  const ms = pickCommenceMs(commenceTime);
+  return ms != null && nowMs >= ms - (15 * 60 * 1000);
+}
+
 async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTime, side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile, regime, qualityProxy, v8Scoring }) {
   try {
     // Match cron T-15 freeze — do not mint new locks inside the freeze window.
@@ -2262,6 +2276,8 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
 
     const data = existing.data();
     if (data.status === 'COMPLETED') return { docId, action: 'no_change' };
+    // Doc clock wins over a late Odds API / Poly commence (Aces 2026-08-18).
+    if (isPastTicketFreeze(data.commenceTime)) return { docId, action: 'no_change' };
     const sides = data.sides || {};
     // v7.1 — every downstream branch needs the persisted pick date so
     // pre-cutover docs stay on v7.0 logic even when re-stamped today.
@@ -2566,6 +2582,7 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
 
     const data = existing.data();
     if (data.status === 'COMPLETED') return { docId, action: 'no_change' };
+    if (isPastTicketFreeze(data.commenceTime)) return { docId, action: 'no_change' };
     const sides = data.sides || {};
     const pickDate = data.date || date;
 
@@ -2698,6 +2715,7 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
 
     const data = existing.data();
     if (data.status === 'COMPLETED') return { docId, action: 'no_change' };
+    if (isPastTicketFreeze(data.commenceTime)) return { docId, action: 'no_change' };
     const sides = data.sides || {};
     const pickDate = data.date || date;
 
@@ -7470,8 +7488,14 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     ? pinnGame?.bestAwaySpread?.odds : pinnGame?.bestHomeSpread?.odds;
   const spreadBestBook = spreadConsensusSide === 'away'
     ? pinnGame?.bestAwaySpread?.book : pinnGame?.bestHomeSpread?.book;
-  const spreadLine = spreadConsensusSide === 'away'
+  const spreadMainLine = spreadConsensusSide === 'away'
     ? pinnGame?.spreadCurrent?.awayLine : pinnGame?.spreadCurrent?.homeLine;
+  const spreadVaultLine = vaultConsensusLine(
+    spreadGameData?.positions || [],
+    spreadConsensusSide,
+    'SPREAD',
+  );
+  const spreadLine = Number.isFinite(spreadVaultLine) ? spreadVaultLine : spreadMainLine;
 
   const spreadPinnProb = impliedProb(spreadPinnOdds);
   const spreadRetailProb = impliedProb(spreadBestRetail);
@@ -8295,6 +8319,18 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     pickLabel: spreadLine != null
       ? `${(spreadPlaySide === 'away' ? awayShort : homeShort)} ${spreadLine > 0 ? '+' : ''}${spreadLine}`
       : 'Spread',
+    mainNowLabel: (() => {
+      if (!Number.isFinite(spreadVaultLine) || !Number.isFinite(spreadMainLine)) return null;
+      if (Math.abs(spreadVaultLine - spreadMainLine) <= 0.051) return null;
+      const team = spreadPlaySide === 'away' ? awayShort : homeShort;
+      const ln = `${spreadMainLine > 0 ? '+' : ''}${spreadMainLine}`;
+      const o = Number.isFinite(spreadPinnOdds)
+        ? (spreadPinnOdds > 0 ? `+${Math.round(spreadPinnOdds)}` : `${Math.round(spreadPinnOdds)}`)
+        : null;
+      return `main ${team} ${ln}${o ? ` · ${o}` : ''}`;
+    })(),
+    ticketOffMain: Number.isFinite(spreadVaultLine) && Number.isFinite(spreadMainLine)
+      && Math.abs(spreadVaultLine - spreadMainLine) > 0.051,
     pathBase: AGS_V12_STAKE_TIER_META[displaySpread.tier || spreadCronStakeTier]?.units,
     commenceMs: commenceTime,
     tierPerf: resolveDisplayTierPerf(displaySpread.tier || spreadCronStakeTier, tierWindows),
@@ -8365,6 +8401,17 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     wallets: totalBoard.wallets,
     mapWallets: totalBoard.mapWallets.length ? totalBoard.mapWallets : mlMapWallets,
     pickLabel: totalPickLabel,
+    mainNowLabel: (() => {
+      if (!Number.isFinite(totalPlayLine) || !Number.isFinite(totalLine)) return null;
+      if (Math.abs(totalPlayLine - totalLine) <= 0.051) return null;
+      const dir = totalPlaySide === 'under' ? 'Under' : 'Over';
+      const o = Number.isFinite(totalPlayPinnOdds)
+        ? (totalPlayPinnOdds > 0 ? `+${Math.round(totalPlayPinnOdds)}` : `${Math.round(totalPlayPinnOdds)}`)
+        : null;
+      return `main ${dir} ${totalLine}${o ? ` · ${o}` : ''}`;
+    })(),
+    ticketOffMain: Number.isFinite(totalPlayLine) && Number.isFinite(totalLine)
+      && Math.abs(totalPlayLine - totalLine) > 0.051,
     pathBase: AGS_V12_STAKE_TIER_META[displayTotal.tier || totalCronStakeTier]?.units,
     commenceMs: commenceTime,
     tierPerf: resolveDisplayTierPerf(displayTotal.tier || totalCronStakeTier, tierWindows),

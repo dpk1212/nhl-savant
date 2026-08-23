@@ -1,6 +1,5 @@
 /**
- * Hero = Odds API labeled MAIN (isMain), not last alt / pick'em guess.
- * Flagged vault ticket is the subtitle when it sits off that main.
+ * Hero = the ticket we lock/grade. Book MAIN is the subtitle when different.
  * Usage: node tests/testMainNowPlayable.mjs
  */
 import assert from 'node:assert/strict';
@@ -81,11 +80,11 @@ const mil = mapLockedPickToCardFixture({
 }, { pinnacleHistory });
 
 assert.equal(mil.ticketLine, 7.5);
-assert.equal(mil.pickLabel, 'Under 8', 'hero is T-15 main, not the flagged ticket');
-assert.equal(mil.heroOdds, -103);
-assert.equal(mil.playableLine, 8, 'unlabeled totals fallback is pick-em 8, not stale 9.5');
-assert.match(mil.mainNowLabel || '', /flagged at Under 7\.5/);
-assert.match(mil.mainNowLabel || '', /\+122/);
+assert.equal(mil.pickLabel, 'Under 7.5', 'hero is the ticket we lock');
+assert.equal(mil.heroOdds, 122);
+assert.equal(mil.playableLine, 8, 'book main still tracked as playable');
+assert.match(mil.mainNowLabel || '', /main Under 8/);
+assert.match(mil.mainNowLabel || '', /-103/);
 assert.ok(!/9\.5/.test(mil.mainNowLabel || ''), `got ${mil.mainNowLabel}`);
 
 const laa = mapLockedPickToCardFixture({
@@ -144,9 +143,9 @@ const atl = mapLockedPickToCardFixture({
 }, { pinnacleHistory });
 
 assert.equal(atl.playableLine, 170.5, 'labeled total, not Pinnacle pick-em 173.5');
-assert.equal(atl.pickLabel, 'Under 170.5');
-assert.match(atl.mainNowLabel || '', /flagged at Under 168\.5/);
-assert.ok(!/173\.5/.test(atl.mainNowLabel || ''), `got ${atl.mainNowLabel}`);
+assert.equal(atl.pickLabel, 'Under 168.5', 'hero is the ticket');
+assert.match(atl.mainNowLabel || '', /main Under 170\.5/);
+assert.ok(!/173\.5/.test(atl.pickLabel || ''), `got ${atl.pickLabel}`);
 
 // Frozen: last pre-T-15 board / isMain, not live totalCurrent.
 const freezeCommence = Date.now() - (30 * 60 * 1000);
@@ -186,9 +185,10 @@ const was = mapLockedPickToCardFixture({
 }, { pinnacleHistory: frozenHist });
 
 assert.equal(was.playableLine, 170.5, 'frozen main is last pre-T-15 isMain, not live 173.5');
-assert.equal(was.pickLabel, 'Under 170.5');
-assert.match(was.mainNowLabel || '', /flagged at Under 169\.5/);
-assert.ok(!/173\.5/.test(was.mainNowLabel || ''), `got ${was.mainNowLabel}`);
+assert.equal(was.pickLabel, 'Under 169.5', 'locked hero stays the stamped ticket');
+assert.equal(was.ticketLine, 169.5);
+assert.match(was.mainNowLabel || '', /main Under 170\.5/);
+assert.ok(!/173\.5/.test(was.pickLabel || ''), `got ${was.pickLabel}`);
 
 const fever = mapLockedPickToCardFixture({
   key: '2026-08-16_WNBA_ind_atl:away',
@@ -261,5 +261,92 @@ const cards = mapLockedPickToCardFixture({
 assert.equal(cards.pickLabel, 'Cardinals ML');
 assert.equal(cards.heroOdds, 159, 'ML hero is NOW even when juice is close');
 assert.match(cards.mainNowLabel || '', /flagged at \+156/);
+
+// Cubs @ Mariners: vault locked SEA +1.5 −170. Book main later flipped to
+// SEA −1.5 +180. Hero must stay the ticket we grade — never the opposite run line.
+const seaBoard = {
+  MLB: {
+    chc_sea: {
+      spreadCurrent: {
+        homeLine: -1.5, awayLine: 1.5, homeOdds: 180, awayOdds: -205, max: 4000, isMain: true,
+      },
+      spreadLines: [
+        { homeLine: -1.5, awayLine: 1.5, homeOdds: 180, awayOdds: -205, max: 4000, isMain: true },
+        { homeLine: 1.5, awayLine: -1.5, homeOdds: -170, awayOdds: 150, max: 2500 },
+      ],
+      spreadHistory: [
+        { t, homeLine: 1.5, awayLine: -1.5, homeOdds: -170, awayOdds: 150, max: 2500 },
+        { t, homeLine: -1.5, awayLine: 1.5, homeOdds: 180, awayOdds: -205, max: 4000, isMain: true },
+      ],
+    },
+  },
+};
+const seaPick = {
+  key: '2026-08-22_MLB_chc_sea_spread:home',
+  sport: 'MLB',
+  gameKey: 'chc_sea',
+  marketType: 'spread',
+  side: 'home',
+  team: 'Seattle Mariners',
+  line: 1.5,
+  odds: -170,
+  units: 1,
+  status: 'PENDING',
+  away: 'Chicago Cubs',
+  home: 'Seattle Mariners',
+};
+const seaLive = mapLockedPickToCardFixture({
+  ...seaPick,
+  gameTime: commence,
+}, { pinnacleHistory: seaBoard });
+assert.equal(seaLive.ticketLine, 1.5);
+assert.equal(seaLive.playableLine, -1.5);
+assert.equal(seaLive.pickLabel, 'Mariners +1.5', 'sign flip must not become the hero');
+assert.equal(seaLive.heroOdds, -170);
+assert.match(seaLive.mainNowLabel || '', /main Mariners -1\.5/);
+assert.match(seaLive.mainNowLabel || '', /\+180/);
+
+const seaLocked = mapLockedPickToCardFixture({
+  ...seaPick,
+  gameTime: Date.now() - (30 * 60 * 1000),
+  status: 'COMPLETED',
+  outcome: 'WIN',
+  profit: 0.59,
+}, { pinnacleHistory: seaBoard });
+assert.equal(seaLocked.pickLabel, 'Mariners +1.5', 'graded hero matches the ticket');
+assert.equal(seaLocked.heroOdds, -170);
+assert.equal(seaLocked.ticketLine, 1.5);
+
+const cin = mapLockedPickToCardFixture({
+  key: '2026-08-23_MLB_cin_ari_total:under',
+  sport: 'MLB',
+  gameKey: 'cin_ari',
+  marketType: 'total',
+  side: 'under',
+  team: 'Under 10.5',
+  line: 10.5,
+  odds: -186,
+  units: 1,
+  gameTime: commence,
+  status: 'PENDING',
+  away: 'Cincinnati Reds',
+  home: 'Arizona Diamondbacks',
+}, {
+  pinnacleHistory: {
+    MLB: {
+      cin_ari: {
+        totalCurrent: { line: 8.5, overOdds: -119, underOdds: 106, isMain: true },
+        totalLines: [
+          { line: 8.5, overOdds: -119, underOdds: 106, isMain: true },
+          { line: 10.5, overOdds: 155, underOdds: -186 },
+        ],
+      },
+    },
+  },
+});
+assert.equal(cin.pickLabel, 'Under 10.5');
+assert.equal(cin.heroOdds, -186);
+assert.match(cin.mainNowLabel || '', /main Under 8\.5/);
+assert.match(cin.mainNowLabel || '', /\+106/);
 
 console.log('testMainNowPlayable: ok');
