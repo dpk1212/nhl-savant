@@ -1,50 +1,57 @@
-# QT BetMGM Monday MLB — Nats + Sox (engagement)
+# QT BetMGM — MOST BET ≠ PRINTERS (Hormozi)
 status: STAGE ONLY — never auto-publish
-parent: @BetMGMNews Monday MLB betting (most-bet tickets / handle / totals)
-spine: Dale — limits↑ odds↓ Nats · 1 hot proven + 2 losers against · Sox 1u because contested BUT 4.6× Sox hit before + sizing again tonight
+parent: @BetMGMNews Monday MLB betting
 
-## Hormozi
-- **S** — we see proven $ / size / against; they publish ticket popularity
-- **C** — Nats $9.9K 1.8× +$85K · Sox $53K 1.3× +$133K · 4.6× prior Sox cash
-- **L** — honest: Sox is 1u *because* sharps against look different — then the size story
-- Buzz job: make strangers pick a camp (most-bet vs most-proven)
+## SPCL — pick (Hormozi leverage)
+| Letter | In / out | Why |
+|--------|----------|-----|
+| **S Status** | **PRIMARY** | Scarce resource = proven printers + size-ups. BetMGM publishes crowd tickets. QT stamps that we control the view they don’t. |
+| **C Credibility** | **SECONDARY** | Hard-to-fake $ / × / ROI / prior 4.6× cash — screenshots |
+| **P Power** | out | Don’t lecture say–do. The 4.6× cash is proof inside Status, not a Power sermon |
+| **L Likeness** | light | Dale voice in the cut — not the hero letter |
 
-## ONE POST (quote the BetMGM tweet)
+**One idea only:** most-bet tickets ≠ printer Status.  
+Two games = two exhibits of the same idea — not two stories.
+
+## Kill list (why last draft failed)
+- Database dump before the Status claim landed
+- Product jargon (“1u on our book”) as the Sox lede
+- Equal weight on both games → no obsessive hook
+- Ending that summarized instead of forcing a camp
+
+## ONE POST — quote BetMGM
 ```
-MOST BET ≠ THE BET.
+BETMGM COUNTS TICKETS.
+THAT’S THE CROWD.
 
-BetMGM’s ticket list is the crowd.
-Here’s the board under two of those games.
+Status is who already printed — and whether they sized up.
 
-NATS −1.5 @ +117:
-Limits up. Price steamed our way.
-One hot proven wallet: +$85K last 30.
+Two games on their “most bet” list tonight:
+
+NATS −1.5 @ +117
+Limits up. Odds dropping into the bet.
+One proven printer: +$85K last 30.
 $9.9K tonight — 1.8× his usual.
-Two losers against him on the Rockies
-(their side: −6% ROI money).
-Confirmed winners on the Nats: $9.9K.
-Confirmed winners on the Rockies: $0.
+Two losers fading him (−6% ROI money on the Rockies).
 
-SOX ML:
-Only 1u on our book — because the against side isn’t empty.
-A bunch of sharps look different over there.
+SOX ML (their #2 by handle)
+Contested — real money disagrees, so we stay light.
+But the lead wallet is up +$133K last 30 with $53K on it (1.3×).
+Last time he pressed the Red Sox like a madman — 4.6×, $180K — he cashed.
+He’s backing them with size again.
 
-But look closer.
-This same wallet pressed Red Sox ML at 4.6× before — $180K — and cashed.
-Tonight he’s back on the Sox with size again:
-$53K · 1.3× usual · +$133K last 30 · beats close 82%.
-
-Public counts tickets.
-We count who already printed — and whether they’re pressing.
+Follow tickets if you want a photo of the room.
+Follow printers when they press if you want the scarce view.
 ```
 
-## MEDIA ON THE QT
-1. Nats lock card (battle bars + lead) and/or clarity map (proven yellow vs loser reds)
-2. Nats Action L30 spark (+$85K · 1.8×)
-3. Sox clarity map + Action spark (+$133K · 1.3× · show the 4.6× prior Sox W in crop if possible)
+## MEDIA
+Nats: lock/battle bars + L30 spark (+$85K)  
+Sox: spark (+$133K) + history row showing 4.6× Sox W  
+Crop tier/HC.
 
-Crop tier / HC chrome.
-
-## ENGAGEMENT BEAT
-Forced take buried in the contrast — don’t end on a soft “thoughts?”  
-Strangers argue: fade the 1u contested Sox vs ride the size history · ticket popularity vs proven press.
+## Hormozi check
+- [x] Influence target: bettors who want proof over sportsbook popularity lists
+- [x] Status visible in line 1–2 (tickets vs printers)
+- [x] Credibility = observables only (no adjectives without $)
+- [x] One idea · Qual stuff · no ask (buzz post — compliance trained toward “I need that view”)
+- [x] Whole truth on Sox (contested / light) before the size punch
