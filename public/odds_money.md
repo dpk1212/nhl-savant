@@ -216,7 +216,9 @@ Report
 
 Follow us on
 
-[Terms of Use](https://www.oddstrader.com/terms-of-use/) [Responsible Gambling](https://www.oddstrader.com/responsible-gambling/) [Contact Us](https://www.oddstrader.com/contact/) [OddsTrader App](https://www.oddstrader.com/sports-betting-app/) [Blog](https://www.oddstrader.com/betting/analysis/) [Privacy Policy](https://www.oddstrader.com/privacy-policy/) [DMCA](https://www.oddstrader.com/dmca/)
+[About Us](https://www.oddstrader.com/about-us/) [Editorial Policy](https://www.oddstrader.com/editorial-policy/) [Affiliate Disclosure](https://www.oddstrader.com/affiliate-disclosure/) [Responsible Gambling](https://www.oddstrader.com/responsible-gambling/)
+
+[Privacy Policy](https://www.oddstrader.com/privacy-policy/) [Terms of Use](https://www.oddstrader.com/terms-of-use/) [Contact Us](https://www.oddstrader.com/contact/) [DMCA](https://www.oddstrader.com/dmca/) [App](https://www.oddstrader.com/sports-betting-app/)
 
 © OddsTrader 2026 All Rights Reserved
 
@@ -224,7 +226,7 @@ The content on this site is for entertainment purposes only. OddsTrader makes no
 
 OddsTrader no longer operates under any U.S. license, including Pennsylvania.
 
-Seek help with a gambling addiction at 1-800-Gambler.
+Seek help with a gambling addiction at 1-800-MY-RESET.
 
 ×Feedback
 
