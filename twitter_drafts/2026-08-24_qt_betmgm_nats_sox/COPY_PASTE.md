@@ -1,57 +1,32 @@
-# QT BetMGM — MOST BET ≠ PRINTERS (Hormozi)
+# QT BetMGM — pure Hormozi (no craft religion)
 status: STAGE ONLY — never auto-publish
-parent: @BetMGMNews Monday MLB betting
+parent: @BetMGM News Monday MLB most-bet list
 
-## SPCL — pick (Hormozi leverage)
-| Letter | In / out | Why |
-|--------|----------|-----|
-| **S Status** | **PRIMARY** | Scarce resource = proven printers + size-ups. BetMGM publishes crowd tickets. QT stamps that we control the view they don’t. |
-| **C Credibility** | **SECONDARY** | Hard-to-fake $ / × / ROI / prior 4.6× cash — screenshots |
-| **P Power** | out | Don’t lecture say–do. The 4.6× cash is proof inside Status, not a Power sermon |
-| **L Likeness** | light | Dale voice in the cut — not the hero letter |
-
-**One idea only:** most-bet tickets ≠ printer Status.  
-Two games = two exhibits of the same idea — not two stories.
-
-## Kill list (why last draft failed)
-- Database dump before the Status claim landed
-- Product jargon (“1u on our book”) as the Sox lede
-- Equal weight on both games → no obsessive hook
-- Ending that summarized instead of forcing a camp
+## Operator only (NOT in the tweet)
+- Letters: **S** (we publish the scarce proof sportsbooks don’t) + **C** (exact $)
+- Technique: kill the false metric → educate why → pudding → desire for the scarce view
+- Banned in copy: the words Status/Power/Credibility/Likeness, “scarce view,” “1u,” tipster CTA
+- One idea: most-bet = popularity ≠ proof
 
 ## ONE POST — quote BetMGM
 ```
-BETMGM COUNTS TICKETS.
-THAT’S THE CROWD.
+MOST BET IS A POPULARITY CONTEST.
 
-Status is who already printed — and whether they sized up.
+Popularity is not proof.
 
-Two games on their “most bet” list tonight:
+Proof is a wallet up $85,000 in 30 days
+pressing Nationals −1.5 at 1.8× usual — $9,900 @ +117 —
+while losing money fades him on the Rockies (−6% ROI)…
+and limits are rising while the price drops into his bet.
 
-NATS −1.5 @ +117
-Limits up. Odds dropping into the bet.
-One proven printer: +$85K last 30.
-$9.9K tonight — 1.8× his usual.
-Two losers fading him (−6% ROI money on the Rockies).
+Proof is a wallet up $133,000 in 30 days
+putting $53,000 on Red Sox ML tonight —
+after he already smashed Sox at 4.6× ($180,000) and cashed.
+He’s sizing up on them again.
 
-SOX ML (their #2 by handle)
-Contested — real money disagrees, so we stay light.
-But the lead wallet is up +$133K last 30 with $53K on it (1.3×).
-Last time he pressed the Red Sox like a madman — 4.6×, $180K — he cashed.
-He’s backing them with size again.
-
-Follow tickets if you want a photo of the room.
-Follow printers when they press if you want the scarce view.
+BetMGM just published the popularity contest.
+We publish the proof.
 ```
 
 ## MEDIA
-Nats: lock/battle bars + L30 spark (+$85K)  
-Sox: spark (+$133K) + history row showing 4.6× Sox W  
-Crop tier/HC.
-
-## Hormozi check
-- [x] Influence target: bettors who want proof over sportsbook popularity lists
-- [x] Status visible in line 1–2 (tickets vs printers)
-- [x] Credibility = observables only (no adjectives without $)
-- [x] One idea · Qual stuff · no ask (buzz post — compliance trained toward “I need that view”)
-- [x] Whole truth on Sox (contested / light) before the size punch
+Nats spark + battle bars · Sox spark + 4.6× history row · crop tier/HC
