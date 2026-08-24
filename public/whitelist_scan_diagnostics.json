@@ -1,21 +1,21 @@
 {
-  "scannedAt": "2026-08-24T16:12:21.754Z",
-  "elapsedSec": 19.5,
+  "scannedAt": "2026-08-24T16:16:31.789Z",
+  "elapsedSec": 19.8,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 44,
   "summary": {
     "total": 263,
     "coveredByMain": 16,
-    "recovered": 10,
-    "recoveredPositions": 53,
-    "noPositions": 237,
+    "recovered": 11,
+    "recoveredPositions": 54,
+    "noPositions": 236,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
     "merge": {
       "ml": 6,
       "spread": 0,
-      "total": 0,
+      "total": 1,
       "dropped_shadow_gate": 9,
       "dropped_excluded": 38,
       "dropped_duplicate": 0
@@ -384,8 +384,24 @@
       "tier": "CONFIRMED",
       "name": null,
       "sports": "SOC,NBA",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x032eb1bc893940263ad0b01889f262fc232f2a9e"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x032eb1bc893940263ad0b01889f262fc232f2a9e",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 5286,
+      "willPassShadowGate": 1,
+      "willDropAtShadowGate": 0,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "cin_sfg",
+          "marketType": "total",
+          "side": "over",
+          "invested": 3098,
+          "entryLine": 7.5,
+          "passesShadow": true
+        }
+      ]
     },
     {
       "walletShort": "3033ee",
@@ -1438,19 +1454,19 @@
         },
         {
           "sport": "MLB",
-          "gameKey": "tex_cws",
+          "gameKey": "bos_mia",
           "marketType": "ml",
-          "side": "home",
-          "invested": 2002,
+          "side": "away",
+          "invested": 1998,
           "entryLine": null,
           "passesShadow": true
         },
         {
           "sport": "MLB",
-          "gameKey": "bos_mia",
+          "gameKey": "tex_cws",
           "marketType": "ml",
-          "side": "away",
-          "invested": 1864,
+          "side": "home",
+          "invested": 2002,
           "entryLine": null,
           "passesShadow": true
         }
@@ -1779,7 +1795,7 @@
           "gameKey": "lev_osa",
           "marketType": "ml",
           "side": "home",
-          "invested": 390,
+          "invested": 392,
           "entryLine": null,
           "passesShadow": false
         },
@@ -1788,7 +1804,7 @@
           "gameKey": "lev_osa",
           "marketType": "ml",
           "side": "away",
-          "invested": 52,
+          "invested": 80,
           "entryLine": null,
           "passesShadow": false
         },
