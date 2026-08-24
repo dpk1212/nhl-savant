@@ -31,6 +31,7 @@ import {
 } from '../components/sharpFlow/cards/mapPositionCard';
 import { vaultTicket, classifyFamily, vaultConsensusLine } from '../lib/ticketInstrument';
 import { signedSpreadEntryLine } from '../lib/spreadLineSign.js';
+import { shortTeamNick } from '../utils/teamIdentity.js';
 import VaultAlphaField from '../components/sharpVault/VaultAlphaField';
 import VaultRoster from '../components/sharpVault/VaultRoster';
 import VaultWalletDrawer from '../components/sharpVault/VaultWalletDrawer';
@@ -3884,8 +3885,8 @@ const GameFlowCard = memo(function GameFlowCard({ game, isMobile, whaleProfiles,
   const [showBooks, setShowBooks] = useState(false);
   const [marketTab, setMarketTab] = useState('ml');
   const ss = sportStyle(game.sport);
-  const awayShort = game.away.split(' ').pop();
-  const homeShort = game.home.split(' ').pop();
+  const awayShort = shortTeamNick(game.away, game.home);
+  const homeShort = shortTeamNick(game.home, game.away);
   const pinnGame = pinnacleHistory?.[game.sport]?.[game.key];
   const fairBookKey = pinnGame?.fairBook || 'pinnacle';
   const FAIR_BOOK_LABELS = {
@@ -4451,7 +4452,7 @@ const GameFlowCard = memo(function GameFlowCard({ game, isMobile, whaleProfiles,
         )}
         {game.priceChange != null && game.priceChange !== 0 && (
           <span style={{ ...T.micro, fontSize: '0.575rem', fontFeatureSettings: "'tnum'", fontWeight: 700, color: game.priceChange > 0 ? B.green : B.red, padding: '0.1rem 0.35rem', borderRadius: '4px', background: game.priceChange > 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)' }}>
-            {game.priceMovedTeam?.split(' ').pop()} {game.priceChange > 0 ? '↑' : '↓'} {Math.abs(game.priceChange)}¢
+            {shortTeamNick(game.priceMovedTeam, game.priceMovedTeam === game.away ? game.home : game.away)} {game.priceChange > 0 ? '↑' : '↓'} {Math.abs(game.priceChange)}¢
           </span>
         )}
       </div>
@@ -4569,8 +4570,8 @@ function SpreadPanel({ pinnGame, game, isMobile }) {
   const bestAway = pinnGame?.bestAwaySpread;
   const bestHome = pinnGame?.bestHomeSpread;
   const spreadHist = pinnGame?.spreadHistory || [];
-  const awayShort = game.away.split(' ').pop();
-  const homeShort = game.home.split(' ').pop();
+  const awayShort = shortTeamNick(game.away, game.home);
+  const homeShort = shortTeamNick(game.home, game.away);
 
   const hasAnyData = sc || bestAway || bestHome;
   if (!hasAnyData) {
@@ -5457,9 +5458,9 @@ const SharpLockCardV2 = memo(function SharpLockCardV2({
   const isTotal = marketType === 'total';
   // TOTAL picks split Over vs Under — never "44% 9.5 · 56% Astros".
   const totalDir = isTotal ? ((team || '').toLowerCase().startsWith('under') ? 'Under' : 'Over') : null;
-  const teamShort = isTotal ? totalDir : ((team || '').split(' ').pop() || team);
-  const awayShort = (away || '').split(' ').pop() || away;
-  const homeShort = (home || '').split(' ').pop() || home;
+  const teamShort = isTotal ? totalDir : shortTeamNick(team, team === away ? home : away);
+  const awayShort = shortTeamNick(away, home);
+  const homeShort = shortTeamNick(home, away);
   const otherTeam = isTotal
     ? (totalDir === 'Over' ? 'Under' : 'Over')
     : (teamShort === awayShort ? homeShort : awayShort);
@@ -5843,9 +5844,9 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   // line number ("9.5") and pair it against a team name in money splits.
   const dtIsTotal = /^(over|under)/i.test(displayTeam || '');
   const dtDir = dtIsTotal ? ((displayTeam || '').toLowerCase().startsWith('under') ? 'Under' : 'Over') : null;
-  const teamShort = dtIsTotal ? dtDir : (displayTeam?.split(' ').pop() || displayTeam);
-  const awayShort = away?.split(' ').pop() || away;
-  const homeShort = home?.split(' ').pop() || home;
+  const teamShort = dtIsTotal ? dtDir : shortTeamNick(displayTeam, displayTeam === away ? home : away);
+  const awayShort = shortTeamNick(away, home);
+  const homeShort = shortTeamNick(home, away);
   const otherTeam = dtIsTotal
     ? (dtDir === 'Over' ? 'Under' : 'Over')
     : (teamShort === awayShort ? homeShort : awayShort);
@@ -6713,7 +6714,7 @@ function WalletDossierRow({ p, gd, now, isMobile, market = 'ml', accent = B.gold
     sideLabel = `${p.side === 'over' ? 'Over' : 'Under'}${p.entryLine != null ? ' ' + p.entryLine : ''}`;
   } else {
     const sideTeam = p.side === 'draw' ? 'Draw' : p.side === 'away' ? gd.away : gd.home;
-    const short = sideTeam.split(' ').pop();
+    const short = shortTeamNick(sideTeam, p.side === 'away' ? gd.home : gd.away);
     const spreadLn = market === 'spread' ? signedSpreadEntryLine(p) : null;
     sideLabel = market === 'spread' && spreadLn != null
       ? `${short} ${spreadLn > 0 ? '+' : ''}${spreadLn}`
@@ -6885,11 +6886,11 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     return homeInv >= awayInv ? 'home' : 'away';
   })();
   const consensusTeam = consensusSide === 'draw' ? 'Draw' : consensusSide === 'away' ? gd.away : gd.home;
-  const consensusShort = consensusTeam.split(' ').pop();
+  const consensusShort = shortTeamNick(consensusTeam, consensusSide === 'away' ? gd.home : gd.away);
   const oppTeam = consensusSide === 'draw' ? 'Either Team' : consensusSide === 'away' ? gd.home : gd.away;
-  const oppShort = consensusSide === 'draw' ? 'Teams' : oppTeam.split(' ').pop();
-  const awayShort = gd.away.split(' ').pop();
-  const homeShort = gd.home.split(' ').pop();
+  const oppShort = consensusSide === 'draw' ? 'Teams' : shortTeamNick(oppTeam, consensusTeam);
+  const awayShort = shortTeamNick(gd.away, gd.home);
+  const homeShort = shortTeamNick(gd.home, gd.away);
   let pinnGame = pinnacleHistory?.[gd.sport]?.[gd.key];
   // SOC neutral-site fallback: try the reversed key and flip away/home so the
   // odds line up with this card's orientation (see flipPinnGame).
@@ -8708,7 +8709,7 @@ const SharpTape = memo(function SharpTape({ sharpPositions }) {
           if (!team) continue;
           out.push({
             sport,
-            team: team.split(' ').pop(),
+            team: shortTeamNick(team, p.side === 'away' ? gd.home : gd.away),
             invested: p.invested,
             price: p.avgPrice,
             pnl: p.totalPnl || 0,

@@ -13,6 +13,7 @@ import {
 } from '../../lib/confirmedActionDesk.js';
 import { relocalizeSizeVsUsual } from '../../lib/sizeRatioBands.js';
 import SteamTag from './cards/SteamTag';
+import { shortTeamNick } from '../../utils/teamIdentity.js';
 
 const B = {
   gold: '#D4AF37',
@@ -268,13 +269,52 @@ function legMatchup(leg) {
   return null;
 }
 
+/** Matchup with the pick side bright so Chelsea FC @ Fulham FC is never a coin flip. */
+function MatchupLine({ away, home, side, fallback }) {
+  if (!away || !home) {
+    return fallback ? <span>{fallback}</span> : null;
+  }
+  const pickAway = side === 'away';
+  const pickHome = side === 'home';
+  const highlight = pickAway || pickHome;
+  const awayStyle = {
+    color: !highlight ? B.textMuted : (pickAway ? B.text : B.textMuted),
+    fontWeight: pickAway ? 800 : 500,
+  };
+  const homeStyle = {
+    color: !highlight ? B.textMuted : (pickHome ? B.text : B.textMuted),
+    fontWeight: pickHome ? 800 : 500,
+  };
+  return (
+    <span>
+      <span style={awayStyle}>{away}</span>
+      <span style={{ color: B.textSubtle }}> @ </span>
+      <span style={homeStyle}>{home}</span>
+    </span>
+  );
+}
+
+function legPickName(leg) {
+  const side = String(leg?.side || '').toLowerCase();
+  if (side === 'over') return 'Over';
+  if (side === 'under') return 'Under';
+  if (side === 'draw') return 'Draw';
+  const away = leg?.away || null;
+  const home = leg?.home || null;
+  const fromSide = side === 'away' ? away : side === 'home' ? home : null;
+  const raw = fromSide
+    || (leg?.label && !/^(away|home)$/i.test(String(leg.label)) ? leg.label : null)
+    || leg?.label
+    || side
+    || '—';
+  return shortTeamNick(raw, side === 'away' ? home : away);
+}
+
 function TicketLegRow({ leg, showSize, pnlMode = 'flat' }) {
   const win = leg.won === 1;
   const ratio = Number(leg.sizeRatio);
   const band = leg.sizeBand;
-  const label = leg.label
-    || (leg.side === 'over' ? 'Over' : leg.side === 'under' ? 'Under' : leg.side)
-    || '—';
+  const pickName = legPickName(leg);
   const mktLine = formatLegMarket(leg.marketType, Number(leg.line));
   const matchup = legMatchup(leg);
   const oddsTxt = formatAmerican(Number(leg.odds));
@@ -320,17 +360,21 @@ function TicketLegRow({ leg, showSize, pnlMode = 'flat' }) {
         ...T.micro, color: B.textSec, minWidth: 0,
         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
       }}>
-        {matchup ? (
-          <span style={{ color: B.text, fontWeight: 700 }}>{matchup}</span>
+        {pickName ? (
+          <span style={{ color: B.text, fontWeight: 800 }}>{String(pickName).toUpperCase()}</span>
         ) : null}
-        {matchup && (mktLine || label) ? (
+        {pickName && (mktLine || matchup) ? (
           <span style={{ color: B.textSubtle }}> · </span>
         ) : null}
         {mktLine ? (
           <span style={{ color: B.textSubtle }}>{mktLine}</span>
         ) : null}
-        {mktLine ? ' · ' : ''}
-        <span style={{ color: B.text, fontWeight: 700 }}>{String(label).toUpperCase()}</span>
+        {mktLine && matchup ? (
+          <span style={{ color: B.textSubtle }}> · </span>
+        ) : null}
+        {matchup ? (
+          <span style={{ color: B.textMuted }}>{matchup}</span>
+        ) : null}
       </span>
       <span style={{
         ...T.micro, color: oddsTxt ? B.textSec : B.textSubtle,
@@ -1129,7 +1173,9 @@ function ActionRow({ row, isMobile, expanded, onToggle }) {
                   <div style={{ ...T.name, color: B.text, fontSize: '1.15rem' }}>{row.team}</div>
                   <SteamTag steam={row.steam} compact />
                 </div>
-                <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.2rem' }}>{matchup}</div>
+                <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.2rem' }}>
+                  <MatchupLine away={row.away} home={row.home} side={row.side} fallback={matchup} />
+                </div>
                 <TrustLine trust={trust} />
                 <CellHistLine text={row.cellHistText} />
               </div>
@@ -1199,7 +1245,7 @@ function ActionRow({ row, isMobile, expanded, onToggle }) {
               ...T.body, color: B.textMuted, marginTop: '0.28rem',
               whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
             }}>
-              {matchup}
+              <MatchupLine away={row.away} home={row.home} side={row.side} fallback={matchup} />
             </div>
             <TrustLine trust={trust} />
             <CellHistLine text={row.cellHistText} />

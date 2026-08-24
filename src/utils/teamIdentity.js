@@ -122,13 +122,52 @@ const LEAGUE_FALLBACK = {
   UFC: { c1: '#C0392B', c2: '#2a0f0c' },
 };
 
+/** Trailing/leading club tokens that are never a unique nick (Chelsea FC vs Fulham FC). */
+const GENERIC_CLUB_TOKENS = new Set(['fc', 'cf', 'afc', 'sc', 'ac', 'club']);
+
+function clubTokenKey(word) {
+  return String(word || '').toLowerCase().replace(/\./g, '');
+}
+
+function teamTokens(name) {
+  const raw = String(name || '').trim().split(/\s+/).filter(Boolean);
+  const parts = raw.slice();
+  while (parts.length > 1 && GENERIC_CLUB_TOKENS.has(clubTokenKey(parts[0]))) parts.shift();
+  while (parts.length > 1 && GENERIC_CLUB_TOKENS.has(clubTokenKey(parts[parts.length - 1]))) parts.pop();
+  return parts.length ? parts : raw;
+}
+
+function nickLast(name) {
+  const parts = teamTokens(name);
+  return parts[parts.length - 1] || String(name || '').trim() || '—';
+}
+
+function nickTwo(name) {
+  const parts = teamTokens(name);
+  if (parts.length >= 2) return `${parts[parts.length - 2]} ${parts[parts.length - 1]}`;
+  return parts[0] || String(name || '').trim() || '—';
+}
+
+/**
+ * Display nick for a team. Strips generic club suffixes (FC/CF/AFC) so
+ * Chelsea FC vs Fulham FC never both become "FC". When `other` shares the
+ * same remaining last word (White Sox / Red Sox, Man City / Hull City),
+ * use two-word form.
+ */
+export function shortTeamNick(name, other = null) {
+  if (!name) return '—';
+  const last = nickLast(name);
+  if (other && nickLast(other) === last) return nickTwo(name);
+  return last;
+}
+
 function deriveAbbr(name) {
   if (!name) return '?';
-  const clean = String(name).replace(/\b(Over|Under)\b.*/i, '').trim();
-  const words = clean.split(/\s+/).filter(Boolean);
-  if (words.length === 0) return '?';
-  const last = words[words.length - 1];
-  return last.slice(0, 3).toUpperCase();
+  const nick = shortTeamNick(String(name).replace(/\b(Over|Under)\b.*/i, '').trim());
+  if (!nick || nick === '—') return '?';
+  const words = nick.split(/\s+/).filter(Boolean);
+  if (words.length >= 2) return `${words[0][0]}${words[1][0]}`.toUpperCase();
+  return nick.slice(0, 3).toUpperCase();
 }
 
 /**

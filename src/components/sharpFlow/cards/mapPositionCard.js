@@ -39,6 +39,7 @@ import {
   fairProbFromNoVig,
   evPctVsFairProb,
 } from '../../../lib/oddsEv.js';
+import { shortTeamNick as shortTeam } from '../../../utils/teamIdentity.js';
 
 export { americanFromPolyPrice };
 export { noVigFairAmerican, fairProbFromNoVig, evPctVsFairProb };
@@ -145,32 +146,6 @@ export function isSkillEligibleProfile(profile, sport) {
   return featuredWrFromProfile(profile, sport) != null
     || netClvPctFromProfile(profile) != null;
 }
-
-/** Last-word nick — fine until White Sox vs Red Sox both become "Sox". */
-const shortTeamLast = (name) => {
-  if (!name) return '—';
-  const parts = String(name).trim().split(/\s+/);
-  return parts[parts.length - 1] || name;
-};
-
-/** Last two words — "Red Sox" / "White Sox" when nicknames collide. */
-const shortTeamTwo = (name) => {
-  if (!name) return '—';
-  const parts = String(name).trim().split(/\s+/);
-  if (parts.length >= 2) return `${parts[parts.length - 2]} ${parts[parts.length - 1]}`;
-  return parts[0] || name;
-};
-
-/**
- * Display nick for a team. When `other` shares the same last word (CWS/BOS
- * both "Sox"), use two-word form so labels and side inference don't collide.
- */
-const shortTeam = (name, other = null) => {
-  if (!name) return '—';
-  const last = shortTeamLast(name);
-  if (other && shortTeamLast(other) === last) return shortTeamTwo(name);
-  return last;
-};
 
 /** Resolve ML/spread side. Prefer stamped sideKey — never infer via "Sox"=="Sox". */
 function resolvePickSide(pick, {

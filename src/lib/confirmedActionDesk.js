@@ -16,6 +16,7 @@ import {
 } from './sizeRatioBands.js';
 import { steamForGame } from './steamMove.js';
 import { signedSpreadEntryLine } from './spreadLineSign.js';
+import { shortTeamNick } from '../utils/teamIdentity.js';
 
 const SPORTS = ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL'];
 
@@ -93,10 +94,11 @@ function teamLabel(gd, side) {
   if (side === 'draw') return 'Draw';
   if (side === 'over') return 'Over';
   if (side === 'under') return 'Under';
-  const raw = side === 'away' ? (gd.away || gd.awayTeam) : (gd.home || gd.homeTeam);
+  const away = gd.away || gd.awayTeam;
+  const home = gd.home || gd.homeTeam;
+  const raw = side === 'away' ? away : home;
   if (!raw) return side;
-  const parts = String(raw).trim().split(/\s+/);
-  return parts[parts.length - 1] || raw;
+  return shortTeamNick(raw, side === 'away' ? home : away);
 }
 
 /** "SPREAD +1.5" / "TOTAL 8.5" — entry line the wallet actually held. */
@@ -336,6 +338,7 @@ export const _test = {
   rollupFromAgg,
   formFromProfile,
   sparkPointsForTab,
+  teamLabel,
 };
 
 /** Per-leg dollar PnL: stamped dollarPnl / settledPnl, else invested × flat. */
