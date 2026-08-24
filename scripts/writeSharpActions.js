@@ -893,8 +893,9 @@ async function main() {
             qualificationTier,  // 'VAULT' | 'SHADOW'
             vaultQualified,     // convenience boolean for simple filters
             sportROI: displayRoi,
-            totalPnl: pos.totalPnl || walletProfile.totalPnl || 0,
-            sportPnlTotal: pos.sportPnlTotal || walletProfile.sportPnlTotal || 0,
+            totalPnl: Number.isFinite(Number(pos.totalPnl)) ? Number(pos.totalPnl) : 0,
+            sportPnlTotal: Number.isFinite(Number(pos.sportPnlTotal)) ? Number(pos.sportPnlTotal) : 0,
+            monthlyPnl: Number.isFinite(Number(pos.monthlyPnl)) ? Number(pos.monthlyPnl) : null,
             sportVol: pos.sportVol || walletProfile.vol || 0,
             pinnacleOdds: pinnOdds,
             pinnacleImplied: pinnOdds ? +(impliedProb(pinnOdds) * 100).toFixed(1) : null,

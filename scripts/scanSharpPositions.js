@@ -25,6 +25,7 @@ import {
   parseTotalEntryLine,
 } from './lib/totalMarketFilter.js';
 import { resolveSportUsualBet } from './lib/sportUsualBet.js';
+import { stampLiveSportsPnl } from './lib/polymarketSportsPnl.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -1233,6 +1234,15 @@ async function run() {
   Object.assign(result, meta);
   Object.assign(spreadResult, meta);
   Object.assign(totalResult, meta);
+
+  // Display P&L = live sports all-time leaderboard (profile number).
+  // Never leave frozen latest.lifetimePnl / monthly pnl on the card.
+  try {
+    const pnlStamp = await stampLiveSportsPnl([result, spreadResult, totalResult]);
+    console.log(`Live sports P&L stamp: ${pnlStamp.fetched}/${pnlStamp.wallets} wallets · ${pnlStamp.stamped} positions`);
+  } catch (e) {
+    console.log(`Live sports P&L stamp failed (cards may show stale PnL): ${e.message}`);
+  }
 
   const outPath = join(ROOT, 'public', 'sharp_positions.json');
   writeFileSync(outPath, JSON.stringify(result, null, 2), 'utf8');

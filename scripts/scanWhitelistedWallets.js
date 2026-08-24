@@ -72,6 +72,7 @@ import {
   parseTotalEntryLine,
 } from './lib/totalMarketFilter.js';
 import { resolveSportUsualBet } from './lib/sportUsualBet.js';
+import { stampLiveSportsPnl } from './lib/polymarketSportsPnl.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -586,7 +587,10 @@ async function run() {
         leaderboardRank: ss?.leaderboardRank ?? swp?.latestLbRank ?? null,
         sportsLbPercentileTop: ss?.sportsLbPercentileTop ?? pc.sportsLbPercentileTop ?? null,
         tier: ss?.tier || swp?.tier || 'PROVEN',
-        totalPnl: ss?.totalPnl || swp?.latest?.lifetimePnl || 0,
+        // Display P&L is stamped live after merge. Do not copy
+        // latest.lifetimePnl — that is a frozen snapshot (e.g. +$496k
+        // while the profile is −$535k).
+        totalPnl: 0,
         source: usualSource,
       };
     }
@@ -1001,6 +1005,21 @@ async function run() {
   if (MERGE && heartbeatOkWallets.size > 0) {
     const hbMerged = mergeHeartbeatIntoScanFiles(heartbeatOkWallets, heartbeatOpenAssets);
     console.log(`  Heartbeat wallets merged:   ${hbMerged}`);
+  }
+
+  if (MERGE) {
+    try {
+      const ml = loadJSON('sharp_positions.json') || {};
+      const sp = loadJSON('sharp_spread_positions.json') || {};
+      const tot = loadJSON('sharp_total_positions.json') || {};
+      const pnlStamp = await stampLiveSportsPnl([ml, sp, tot]);
+      atomicWriteJSON(join(PUBLIC, 'sharp_positions.json'), ml);
+      atomicWriteJSON(join(PUBLIC, 'sharp_spread_positions.json'), sp);
+      atomicWriteJSON(join(PUBLIC, 'sharp_total_positions.json'), tot);
+      console.log(`  Live sports P&L stamp:      ${pnlStamp.fetched}/${pnlStamp.wallets} wallets · ${pnlStamp.stamped} positions`);
+    } catch (e) {
+      console.log(`  Live sports P&L stamp failed: ${e.message}`);
+    }
   }
 
   // ── Write diagnostic file (atomic) ──

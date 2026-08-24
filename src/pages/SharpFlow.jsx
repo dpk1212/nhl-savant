@@ -11840,7 +11840,7 @@ export default function SharpFlow() {
       
                                     {/* Stats line */}
                                     <div style={{ ...T.micro, color: B.textSec, marginTop: '0.4rem', lineHeight: 1.5, fontFeatureSettings: "'tnum'" }}>
-                                      {p.betMultiplier >= 1.5 && <><span style={{ color: B.gold, fontWeight: 700 }}>{p.betMultiplier.toFixed(1)}x</span> avg bet · </>}<span style={{ color: p.displayRoi > 0 ? B.green : p.displayRoi < 0 ? B.red : B.textSec, fontWeight: 700 }}>{p.displayRoi > 0 ? '+' : ''}{p.displayRoi.toFixed(1)}%</span> ROI{(p.totalPnl || 0) > 0 && <> · <span style={{ color: B.green, fontWeight: 700 }}>+{fmtVol(p.totalPnl)}</span> lifetime</>}{pinnOdds && <> · Fair {fmtOdds(pinnOdds)} ({(impliedProb(pinnOdds) * 100).toFixed(1)}%)</>}
+                                      {p.betMultiplier >= 1.5 && <><span style={{ color: B.gold, fontWeight: 700 }}>{p.betMultiplier.toFixed(1)}x</span> avg bet · </>}<span style={{ color: p.displayRoi > 0 ? B.green : p.displayRoi < 0 ? B.red : B.textSec, fontWeight: 700 }}>{p.displayRoi > 0 ? '+' : ''}{p.displayRoi.toFixed(1)}%</span> ROI{p.totalPnl != null && p.totalPnl !== 0 && <> · <span style={{ color: p.totalPnl >= 0 ? B.green : B.red, fontWeight: 700 }}>{p.totalPnl >= 0 ? '+' : ''}{fmtVol(p.totalPnl)}</span> lifetime</>}{p.monthlyPnl != null && p.monthlyPnl !== 0 && <> · <span style={{ color: p.monthlyPnl >= 0 ? B.green : B.red, fontWeight: 700 }}>{p.monthlyPnl >= 0 ? '+' : ''}{fmtVol(p.monthlyPnl)}</span> this month</>}{pinnOdds && <> · Fair {fmtOdds(pinnOdds)} ({(impliedProb(pinnOdds) * 100).toFixed(1)}%)</>}
                                     </div>
       
                                     {/* Signal chips */}
@@ -11879,12 +11879,21 @@ export default function SharpFlow() {
                                       cursor: 'pointer',
                                     }}
                                   >
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
                                       {p.totalPnl != null && p.totalPnl !== 0 && (
                                         <span style={{
                                           ...T.micro, fontWeight: 700, color: pnlColor, fontFeatureSettings: "'tnum'",
                                         }}>
-                                          {p.totalPnl >= 0 ? '+' : ''}{fmtVol(p.totalPnl)} lifetime sports P&L
+                                          {p.totalPnl >= 0 ? '+' : ''}{fmtVol(p.totalPnl)} lifetime
+                                        </span>
+                                      )}
+                                      {p.monthlyPnl != null && p.monthlyPnl !== 0 && (
+                                        <span style={{
+                                          ...T.micro, fontWeight: 700,
+                                          color: p.monthlyPnl >= 0 ? B.green : B.red,
+                                          fontFeatureSettings: "'tnum'",
+                                        }}>
+                                          {p.monthlyPnl >= 0 ? '+' : ''}{fmtVol(p.monthlyPnl)} this month
                                         </span>
                                       )}
                                     </div>
