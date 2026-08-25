@@ -6,6 +6,7 @@ Not views. Not tipster theater. Not craft religion.
 **Canon (only):**
 1. `twitter_agents/researcher/knowledge/hormozi_spcl.md` — Status · Power · Credibility · Likeness
 2. `twitter_agents/researcher/knowledge/hormozi_qual_algorithm.md` — Qual · Algorithm · Trust economy
+3. `twitter_agents/researcher/knowledge/hormozi_value_equation.md` — Dream · Speed · Effort · Likelihood ($100M Offers)
 
 **Never auto-publish.** Stage. Dale posts.
 
