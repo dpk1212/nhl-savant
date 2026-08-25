@@ -1,85 +1,117 @@
-# Hormozi — Value Equation (canon)
+# Hormozi — Value Equation + Grand Slam Offer (canon)
 
-**Source locked:** Hormozi teaching on unbeatable / “unfair” offers (*$100M Offers* frame).  
-**Transcript notes:** `sources/hormozi_value_equation_2026-08-25_notes.md`  
-**Pairs with:** SPCL · Qual/Algorithm/Trust.
-
----
-
-## Formula (conceptual)
-
-```
-Value ≈ Dream Outcome
-         × Perceived Likelihood of achievement
-         ÷ (Time Delay × Effort & Sacrifice)
-```
-
-Make offers unbeatable by raising the top and crushing the bottom until saying no feels stupid.
+**Source locked:** Hormozi *$100M Offers* value equation + enhancers (Dale transcripts 2026-08-25 — including deep dive flagged extremely important).  
+**Notes:**  
+- `sources/hormozi_value_equation_2026-08-25_notes.md`  
+- `sources/hormozi_value_equation_deep_2026-08-25_notes.md`  
+**Pairs with:** SPCL · Qual/Trust · `hormozi_diagnostic_sale.md`
 
 ---
 
-## 1 — Dream outcome (baseline)
+## Formula
 
-What do they actually want to have happen?  
-Every product has one. This is baseline value before multipliers/discounts.
+```
+                Dream Outcome × Perceived Likelihood of Achievement
+Value  ≈  ─────────────────────────────────────────────────────────
+                         Time Delay × Effort & Sacrifice
+```
+
+Raise the top. Crush the bottom. Charge more **and** convert more.  
+Same dream can be $5 or $50k — the other three variables explain the spread.
+
+Hormozi prefers **demand-constraint** businesses (create value/demand) over supply-constraint.
+
+---
+
+## 1 — Dream outcome (category filter)
+
+Whether they’re even interested in your **category**.  
+B2B often prices higher when dream ties to **ROI**.
 
 **Sharp Flow dream (locked):**  
-Win more by being sized up when we + proven sharps are in a good spot — and flat/fade when losing money is loud — **without** becoming sharp yourself.
+Win more by being **sized up** when we + proven sharps are confident / in a good spot — and **flat/fade** when losing money is loud — **without becoming sharp**.
 
-Not: “get more picks.”
-
----
-
-## 2 — Speed (time delay)
-
-Faster = more valuable. Humans are immediate-reward focused.  
-Marketplace move: do what others do in half the time.  
-Speed tiers can be margin (same work, priority access).
-
-**Sharp Flow speed:**  
-Phone notification at lock · live board before tipoff · before market moves.  
-Kill: finding out after the game / stale morning tip sheet.
+Not: “get more picks.” Not: “a membership.”
 
 ---
 
-## 3 — Effort & sacrifice (ease)
+## 2 — Perceived likelihood (= reverse of risk)
 
-Two pieces:
+Proof premium: 10,000 surgeries vs zero — same procedure, different price.  
+Then **guarantees** cut remaining risk.
 
-1. Remove what they **hate** doing (subs stack, datasets, film grind, guessing units).  
-2. Don’t force them to give up what they **like** (they still get to bet — when confident).
-
-**Gym trap:** force hated work + kill pleasures = hard sale.  
-Don’t turn Sharp Flow into another homework Discord.
-
----
-
-## 4 — Likelihood (risk-free)
-
-Higher certainty → higher value → supports price.
-
-Levers: proof volume · performance terms · satisfaction guarantees · conditional guarantees.  
-People will often pay *more* to keep a guarantee than take a discount without it.
+**Four guarantee types:**
+1. **Unconditional** — money back if asked  
+2. **Conditional** — if they do X/Y/Z  
+3. **Performance / implied** — aligned skin (“if you don’t make, I don’t”)  
+4. **Anti-guarantee** — “if you need a guarantee, this isn’t for you”
 
 **Sharp Flow likelihood:**  
-Public graded lock book (can’t hide a loss) · wallet ROI/records · size vs usual · for/against · limits/steam · conviction ladder (incl. 5u+ print book) · free trial · easy cancel · money-back.
+Public lock book (can’t hide a loss) · wallet ROI/records · size vs usual · whole-card for/against · limits/steam · conviction ladder / 5u+ print book · trial · cancel · money-back (name the type honestly).
 
 ---
 
-## Offer build order (Hormozi)
+## 3 — Time delay
 
-1. Name dream outcome clearly.  
-2. Make it **fast**.  
-3. Make it **easy** (remove hate-work).  
-4. Make it **risk-free** (proof + guarantee).  
-5. Then price — value equation supports the ask.
+Buy → get the dream. Shorter = more value.  
+Lipo (wake up thinner) >> personal training (12–18 months).
+
+**Sharp Flow speed:**  
+Lock alert to phone · live before tipoff · before market moves.  
+Kill: finding out after the game / becoming-sharp timeline measured in months.
 
 ---
 
-## Bankable principles
+## 4 — Effort & sacrifice
+
+| | Meaning |
+|--|---------|
+| **Effort** | Must **start** doing what they hate |
+| **Sacrifice** | Must **stop** doing what they love |
+
+**Grand slam method:** Itemize every pre/post-purchase step that raises risk, delay, hate-work, or killed pleasures → **build a solution for each**. Granular. That’s the stepwise price/close jump (change what the offer *says*).
+
+**Sharp Flow — remove hate-work:**  
+3–4 subs · datasets · film/Discord · decoding tips · guessing units · DIY steam/limits hunting.
+
+**Sharp Flow — don’t force bad sacrifice:**  
+They still bet (what they like). We change *when* they press — not “quit betting.”
+
+**Gym trap:** force hate-work + kill pleasures = hard sale. Don’t make SF another homework Discord.
+
+---
+
+## Enhancers (Grand Slam)
+
+| | |
+|--|--|
+| **Scarcity** | Limit units |
+| **Urgency** | Limit time |
+| **Guarantees** | Risk reverse (4 types) |
+| **Bonuses** | Each bonus solves one itemized friction |
+
+**Sales bonus stack (add value ≠ discount):**  
+Ask on core offer → if no, find constraint → plug matching bonus(es) → close.  
+Fast buyers: surprise remaining bonuses post-purchase. Hard closes: bonuses on the call.  
+Sales team stops leading with discounts.
+
+---
+
+## Build order
+
+1. Name **dream** (category + ours).  
+2. Max **likelihood** (proof + right guarantee).  
+3. Crush **time delay** (phone at lock).  
+4. Crush **effort/sacrifice** (itemize → solve).  
+5. Layer enhancers (scarcity/urgency/bonuses) only after the equation is strong.  
+6. Price — then diagnostic packaging (current→desired→vehicle).
+
+---
+
+## Bankable
 
 - Fast > slow  
 - Easy > hard  
 - Risk-free > risky  
-
-Application changes; these don’t.
+- Add value > cut price  
+- Same product, better offer statement → lava-lamp company jumps
