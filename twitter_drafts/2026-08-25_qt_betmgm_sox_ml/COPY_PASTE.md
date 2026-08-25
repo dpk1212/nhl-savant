@@ -1,44 +1,39 @@
-# QT BetMGM Tue MLB — Sox ML size-up vs most-bet
+# QT BetMGM Tue — Sox ML (v2 · fresh hook)
 status: STAGE ONLY — never auto-publish
-parent: @BetMGMNews Tuesday MLB betting (most-bet tickets/handle)
+parent: @BetMGMNews Tuesday MLB betting
+kill: "MOST BET IS A POPULARITY CONTEST" — used yesterday
 
-## SPCL (perfect avenue)
-- **S PRIMARY** — scarce resource = proven size-up + loser money on the fade. BetMGM publishes crowd tickets. We publish who pressed.
-- **C SECONDARY** — $20K · 1.8× · +26% ROI · 13-6 · against −3.7% ROI · losers 98% Marlins
-- **P/L** — out of hero seat (no lecture, no diary)
+## SPCL
+- **S PRIMARY** — scarce observable in ≤2 lines: $20K at 1.8× (Hormozi Status test)
+- **C SECONDARY** — +26% ROI · 13-6 · against −3.7% · losers 98% Marlins
+- Not Power sermon. Not Likeness diary.
 
-## Hormozi
-- Kill false metric (most-bet) in line 1–2
-- Pudding immediately (exact $)
-- Dream undercurrent: stop studying the room / start watching extractors
-- No framework jargon in copy
-
-## Hook obsession (why this open)
-Scroll-stop = confrontation + number a stranger can see in <1s.
-Not “here’s our board.” Not curriculum. Not Status vocabulary.
+## Hormozi (why this is better than v1)
+- Line 1 = scarce resource you can *see* (not abstract metric-kill we already ran)
+- Likelihood frame (same side ≠ same bet) from value equation — without saying “value equation”
+- Whole truth: contested board, quality of the 48% is the edge
+- Stuff > container. No framework jargon.
 
 ## ONE POST — quote BetMGM
 ```
-MOST BET IS A POPULARITY CONTEST.
+$20,000.
+1.8× HIS USUAL.
++26% LIFETIME ROI.
 
-BetMGM just put Red Sox ML in the ticket top 5.
+BetMGM’s ticket list has Red Sox ML in the top 5.
 
-Here’s what tickets can’t show:
+Cool.
+Tickets don’t show this:
 
-One proven wallet — +26% ROI · 13-6 —
-just put $20,000 on Sox ML.
-1.8× his usual size.
+The wallet pressing Sox is 13-6 at +26%.
+The $19,900 on the Marlins?
+−3.7% ROI money.
+98% of every losing wallet we track on this game is on Miami.
 
-The fade?
-$19,900 on the Marlins at −3.7% ROI.
-Losing wallets: 98% on Miami.
-
-Public counts tickets.
-We count who already prints — and whether they sized up.
+You can bet a side because it’s most-bet.
+Or because a printer sized up — and the fade is losers.
+Those are not the same bet.
 ```
 
 ## MEDIA
-Clarity map (champagne $20K / 1.8× vs red against cluster) + lock card battle bars (losers 98% Marlins). Crop tier/HC.
-
-## Mute-test
-Strip $ → still holds: most-bet vs size-up vs loser fade. Numbers from Dale UI this run only.
+Clarity map ($20K champagne / 1.8×) + battle bars (losers 98% Marlins). Crop tier/HC.
