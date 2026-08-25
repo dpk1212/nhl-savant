@@ -1,39 +1,36 @@
-# QT BetMGM Tue — Sox ML (v2 · fresh hook)
+# QT BetMGM Tue — Sox ML (v3)
 status: STAGE ONLY — never auto-publish
 parent: @BetMGMNews Tuesday MLB betting
-kill: "MOST BET IS A POPULARITY CONTEST" — used yesterday
+killed opens: "popularity contest" (yesterday) · stacked $20K flex lede (v2 tipster-chrome risk)
 
 ## SPCL
-- **S PRIMARY** — scarce observable in ≤2 lines: $20K at 1.8× (Hormozi Status test)
-- **C SECONDARY** — +26% ROI · 13-6 · against −3.7% · losers 98% Marlins
-- Not Power sermon. Not Likeness diary.
+- **S** — we control the *sort* (quality of money). Scarce lens, not just a big number.
+- **C** — $20K · 1.8× · +26% · against −3.7% · losers 98% Marlins
+- One idea: even dollars ≠ even bettors
 
-## Hormozi (why this is better than v1)
-- Line 1 = scarce resource you can *see* (not abstract metric-kill we already ran)
-- Likelihood frame (same side ≠ same bet) from value equation — without saying “value equation”
-- Whole truth: contested board, quality of the 48% is the edge
-- Stuff > container. No framework jargon.
+## Hormozi
+- Information gap in line 1–2 (looks even → isn’t)
+- Educator: teach the lens, then pudding
+- Likelihood: same side as tickets, different certainty once sorted
+- Status test: stranger sees what we control (the sort) in ≤2 lines — without burned abstract open
 
 ## ONE POST — quote BetMGM
 ```
-$20,000.
-1.8× HIS USUAL.
-+26% LIFETIME ROI.
+$21K ON THE SOX.
+$20K ON THE MARLINS.
 
-BetMGM’s ticket list has Red Sox ML in the top 5.
+Looks even.
+It isn’t.
 
-Cool.
-Tickets don’t show this:
+Sox side: a +26% ROI wallet just pressed $20,000 —
+1.8× his usual.
 
-The wallet pressing Sox is 13-6 at +26%.
-The $19,900 on the Marlins?
-−3.7% ROI money.
-98% of every losing wallet we track on this game is on Miami.
+Marlins side: −3.7% ROI money.
+98% of every losing wallet on this game.
 
-You can bet a side because it’s most-bet.
-Or because a printer sized up — and the fade is losers.
-Those are not the same bet.
+BetMGM is counting Sox tickets.
+We’re sorting the dollars by who already got paid.
 ```
 
 ## MEDIA
-Clarity map ($20K champagne / 1.8×) + battle bars (losers 98% Marlins). Crop tier/HC.
+Clarity map + battle bars (losers 98% Marlins). Crop tier/HC.
