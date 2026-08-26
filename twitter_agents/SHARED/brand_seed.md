@@ -102,10 +102,11 @@ strategy/Editor notes only — **never** in hero `text` without a plain-English 
 
 Every tier has a free trial. Intent: **free trial — watch and grade it yourself** (wording flexible). Desire plant in hero; CTA + link in self-reply only.
 
+**Rule of One:** one big idea per hero (understand · believe · unique); subpoints reinforce only — no toss salad.  
 **Hormozi SPCL (influence stack):** Status · Power · Credibility · Likeness.  
 **Qual / Algorithm / Trust:** quality volume · delete→simplify→accelerate→automate last · show-me whole truth.  
 Influence = compliance with a request. Free SPCL in hero → ask in SR.  
-OS: `TWITTER.md` · `hormozi_spcl.md` · `hormozi_qual_algorithm.md`
+OS: `TWITTER.md` · `hormozi_rule_of_one.md` · `hormozi_spcl.md` · `hormozi_qual_algorithm.md`
 
 ---
 
@@ -119,13 +120,14 @@ Confident, casual. “I” for felt/confession · “we” for system/sharps. Li
 
 ## Agent autonomy
 
-- **Hormozi desk** (single): SPCL + Qual + Trust — see `TWITTER.md`
+- **Hormozi desk** (single): Rule of One → SPCL → Qual + Trust — see `TWITTER.md`
 - Old Coach / Researcher / Strategist / Editor gate chain = **retired**
 - Dale spine = law; never auto-publish
 
 ## Pointers
 
 - OS: `TWITTER.md`
+- Rule of One: `twitter_agents/researcher/knowledge/hormozi_rule_of_one.md`
 - SPCL: `twitter_agents/researcher/knowledge/hormozi_spcl.md`
 - Qual/Algorithm/Trust: `twitter_agents/researcher/knowledge/hormozi_qual_algorithm.md`
 - Full kit: `BRAND_MESSAGING.md`
