@@ -1,0 +1,2461 @@
+{
+  "universes": [
+    {
+      "label": "U_all",
+      "base": {
+        "n": 246,
+        "w": 154,
+        "l": 92,
+        "stake": 1144.6100000000001,
+        "pnl": 107.24359000219046,
+        "wr": 62.60162601626016,
+        "roi": 9.36944374085413
+      },
+      "noise": {
+        "mean": -24.933955253854425,
+        "p95": 15.981436803592885,
+        "p99": 22.38942926669999,
+        "n": 60
+      },
+      "top": [
+        {
+          "name": "TierA TOP cut",
+          "deltaPnl": 42.57883168874632,
+          "cutN": 37,
+          "cutRoi": -25.40503084054074,
+          "keepRoi": 15.334788967455495,
+          "aboveNoise": 26.597394885153435,
+          "stable": true,
+          "passed": 4,
+          "tested": 5
+        },
+        {
+          "name": "TOP ∧ (leadSR≥3∨EDGE<10)",
+          "deltaPnl": 42.57883168874632,
+          "cutN": 37,
+          "cutRoi": -25.40503084054074,
+          "keepRoi": 15.334788967455495,
+          "aboveNoise": 26.597394885153435,
+          "stable": true,
+          "passed": 4,
+          "tested": 5
+        },
+        {
+          "name": "(ticketEv<-1)∧(EDGE≥12.65)",
+          "deltaPnl": 37.648013347586684,
+          "cutN": 16,
+          "cutRoi": -44.29178040892545,
+          "keepRoi": 13.674050202411948,
+          "aboveNoise": 21.6665765439938,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1)∧(EDGE≥15.43)",
+          "deltaPnl": 36.5512391540383,
+          "cutN": 14,
+          "cutRoi": -48.34819993920402,
+          "keepRoi": 13.451214596330141,
+          "aboveNoise": 20.569802350445414,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(EDGE<10.2)∧(leadSR≥0.84)",
+          "deltaPnl": 36.03317124735729,
+          "cutN": 16,
+          "cutRoi": -54.22599134290038,
+          "keepRoi": 13.289007313343829,
+          "aboveNoise": 20.051734443764403,
+          "stable": true,
+          "passed": 2,
+          "tested": 2
+        },
+        {
+          "name": "(EDGE<10.2)∧(leadSR≥0.62)",
+          "deltaPnl": 32.61436782855385,
+          "cutN": 17,
+          "cutRoi": -46.2943475210133,
+          "keepRoi": 13.020216525540365,
+          "aboveNoise": 16.632931024960968,
+          "stable": true,
+          "passed": 2,
+          "tested": 2
+        },
+        {
+          "name": "(ticketEv<-1)∧(EDGE≥11.35)",
+          "deltaPnl": 31.58801334758668,
+          "cutN": 17,
+          "cutRoi": -34.71210257976552,
+          "keepRoi": 13.176754524897946,
+          "aboveNoise": 15.606576543993796,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(edgePerUnit<2.04)∧(leadSR≥0.84)",
+          "deltaPnl": 30.86075745425383,
+          "cutN": 17,
+          "cutRoi": -42.59593851518819,
+          "keepRoi": 12.88094570366777,
+          "aboveNoise": 14.879320650660944,
+          "stable": true,
+          "passed": 2,
+          "tested": 2
+        },
+        {
+          "name": "EDGE < 10.2",
+          "deltaPnl": 30.672620255738323,
+          "cutN": 18,
+          "cutRoi": -41.198952660494754,
+          "keepRoi": 12.88743835108104,
+          "aboveNoise": 14.691183452145438,
+          "stable": true,
+          "passed": 2,
+          "tested": 2
+        },
+        {
+          "name": "(EDGE<10.2)∧(units≥4)",
+          "deltaPnl": 30.672620255738323,
+          "cutN": 18,
+          "cutRoi": -41.198952660494754,
+          "keepRoi": 12.88743835108104,
+          "aboveNoise": 14.691183452145438,
+          "stable": true,
+          "passed": 2,
+          "tested": 2
+        },
+        {
+          "name": "(EDGE<10.2)∧(odds≥-232)",
+          "deltaPnl": 30.672620255738323,
+          "cutN": 18,
+          "cutRoi": -41.198952660494754,
+          "keepRoi": 12.88743835108104,
+          "aboveNoise": 14.691183452145438,
+          "stable": true,
+          "passed": 2,
+          "tested": 2
+        },
+        {
+          "name": "(EDGE<10.2)∧(odds≥-168)",
+          "deltaPnl": 30.424832944832943,
+          "cutN": 15,
+          "cutRoi": -48.75774510389895,
+          "keepRoi": 12.721045171179666,
+          "aboveNoise": 14.443396141240058,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(leadSR≥2.44)∧(units<5.06)",
+          "deltaPnl": 29.744536280586928,
+          "cutN": 58,
+          "cutRoi": -11.803387412931313,
+          "keepRoi": 15.346918170620715,
+          "aboveNoise": 13.763099476994043,
+          "stable": true,
+          "passed": 3,
+          "tested": 5
+        },
+        {
+          "name": "(edgePerUnit<3.27)∧(leadSR≥0.84)",
+          "deltaPnl": 29.073839557360387,
+          "cutN": 49,
+          "cutRoi": -12.724337851704822,
+          "keepRoi": 14.879866126659278,
+          "aboveNoise": 13.092402753767502,
+          "stable": true,
+          "passed": 3,
+          "tested": 5
+        },
+        {
+          "name": "(netMeanPrior≥-3.17)∧(EDGE<10.2)",
+          "deltaPnl": 28.614367828553853,
+          "cutN": 16,
+          "cutRoi": -43.061501623105904,
+          "keepRoi": 12.600908754799324,
+          "aboveNoise": 12.632931024960968,
+          "stable": true,
+          "passed": 2,
+          "tested": 2
+        },
+        {
+          "name": "(EDGE<15.43)∧(units<5)",
+          "deltaPnl": 28.07011377697826,
+          "cutN": 42,
+          "cutRoi": -16.70342979885646,
+          "keepRoi": 13.856158738753265,
+          "aboveNoise": 12.088676973385375,
+          "stable": true,
+          "passed": 4,
+          "tested": 5
+        },
+        {
+          "name": "(EDGE<10.2)∧(leadSR≥1.38)",
+          "deltaPnl": 27.983171247357276,
+          "cutN": 14,
+          "cutRoi": -47.91638912218715,
+          "keepRoi": 12.449412291320076,
+          "aboveNoise": 12.001734443764391,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "boostBand ∧ ticketEv<-1",
+          "deltaPnl": 27.58801334758668,
+          "cutN": 16,
+          "cutRoi": -31.7103601696398,
+          "keepRoi": 12.748707307020286,
+          "aboveNoise": 11.606576543993796,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1)∧(units≥5.06)",
+          "deltaPnl": 27.58801334758668,
+          "cutN": 16,
+          "cutRoi": -31.7103601696398,
+          "keepRoi": 12.748707307020286,
+          "aboveNoise": 11.606576543993796,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1)∧(units≥5.4)",
+          "deltaPnl": 27.58801334758668,
+          "cutN": 16,
+          "cutRoi": -31.7103601696398,
+          "keepRoi": 12.748707307020286,
+          "aboveNoise": 11.606576543993796,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        }
+      ]
+    },
+    {
+      "label": "U_res (after TierA TOP cut)",
+      "base": {
+        "n": 209,
+        "w": 137,
+        "l": 72,
+        "stake": 977.009999999999,
+        "pnl": 149.82242169093678,
+        "wr": 65.55023923444976,
+        "roi": 15.334788967455495
+      },
+      "noise": {
+        "mean": -29.257079901218802,
+        "p95": 9.693473150397011,
+        "p99": 41.640772858908775,
+        "n": 60
+      },
+      "top": [
+        {
+          "name": "(ticketEv<-1)∧(EDGE≥13.5)",
+          "deltaPnl": 29.604797267184466,
+          "cutN": 13,
+          "cutRoi": -42.17207587918037,
+          "keepRoi": 19.78663876204733,
+          "aboveNoise": 19.911324116787455,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1)∧(EDGE≥16.7)",
+          "deltaPnl": 27.108023073636105,
+          "cutN": 11,
+          "cutRoi": -45.63640248086909,
+          "keepRoi": 19.281660483710187,
+          "aboveNoise": 17.414549923239093,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1.5)∧(units≥5.4)",
+          "deltaPnl": 24.20479726718449,
+          "cutN": 12,
+          "cutRoi": -37.35308220244541,
+          "keepRoi": 19.077539048916524,
+          "aboveNoise": 14.511324116787478,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1.5)∧(EDGE≥11)",
+          "deltaPnl": 24.20479726718449,
+          "cutN": 12,
+          "cutRoi": -37.35308220244541,
+          "keepRoi": 19.077539048916524,
+          "aboveNoise": 14.511324116787478,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1.5)∧(EDGE≥12.1)",
+          "deltaPnl": 24.20479726718449,
+          "cutN": 12,
+          "cutRoi": -37.35308220244541,
+          "keepRoi": 19.077539048916524,
+          "aboveNoise": 14.511324116787478,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1.5)∧(EDGE≥13.5)",
+          "deltaPnl": 24.20479726718449,
+          "cutN": 12,
+          "cutRoi": -37.35308220244541,
+          "keepRoi": 19.077539048916524,
+          "aboveNoise": 14.511324116787478,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "boostBand ∧ ticketEv<-1",
+          "deltaPnl": 23.544797267184464,
+          "cutN": 14,
+          "cutRoi": -30.898684077670108,
+          "keepRoi": 19.24570319580393,
+          "aboveNoise": 13.851324116787453,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1)∧(units≥5.4)",
+          "deltaPnl": 23.544797267184464,
+          "cutN": 14,
+          "cutRoi": -30.898684077670108,
+          "keepRoi": 19.24570319580393,
+          "aboveNoise": 13.851324116787453,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1)∧(EDGE≥11)",
+          "deltaPnl": 23.544797267184464,
+          "cutN": 14,
+          "cutRoi": -30.898684077670108,
+          "keepRoi": 19.24570319580393,
+          "aboveNoise": 13.851324116787453,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1)∧(EDGE≥12.1)",
+          "deltaPnl": 23.544797267184464,
+          "cutN": 14,
+          "cutRoi": -30.898684077670108,
+          "keepRoi": 19.24570319580393,
+          "aboveNoise": 13.851324116787453,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1.5)∧(EDGE≥16.7)",
+          "deltaPnl": 21.708023073636213,
+          "cutN": 10,
+          "cutRoi": -40.20004272895599,
+          "keepRoi": 18.583812175878176,
+          "aboveNoise": 12.014549923239201,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "expGap ≥ 6.667",
+          "deltaPnl": 19.544285714285735,
+          "cutN": 14,
+          "cutRoi": -26.198774415932593,
+          "keepRoi": 18.76826579993824,
+          "aboveNoise": 9.850812563888724,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "ticketEv < -1.5",
+          "deltaPnl": 19.30283648287076,
+          "cutN": 13,
+          "cutRoi": -27.654493528468336,
+          "keepRoi": 18.642349420068967,
+          "aboveNoise": 9.609363332473748,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1.5)∧(units≥4)",
+          "deltaPnl": 19.30283648287076,
+          "cutN": 13,
+          "cutRoi": -27.654493528468336,
+          "keepRoi": 18.642349420068967,
+          "aboveNoise": 9.609363332473748,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1.5)∧(units≥5)",
+          "deltaPnl": 19.30283648287076,
+          "cutN": 13,
+          "cutRoi": -27.654493528468336,
+          "keepRoi": 18.642349420068967,
+          "aboveNoise": 9.609363332473748,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "ticketEv<-1",
+          "deltaPnl": 18.642836482870734,
+          "cutN": 15,
+          "cutRoi": -22.959158230136566,
+          "keepRoi": 18.80591399669658,
+          "aboveNoise": 8.949363332473723,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "ticketEv < -1",
+          "deltaPnl": 18.642836482870734,
+          "cutN": 15,
+          "cutRoi": -22.959158230136566,
+          "keepRoi": 18.80591399669658,
+          "aboveNoise": 8.949363332473723,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1)∧(units≥4)",
+          "deltaPnl": 18.642836482870734,
+          "cutN": 15,
+          "cutRoi": -22.959158230136566,
+          "keepRoi": 18.80591399669658,
+          "aboveNoise": 8.949363332473723,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1)∧(units≥5)",
+          "deltaPnl": 18.642836482870734,
+          "cutN": 15,
+          "cutRoi": -22.959158230136566,
+          "keepRoi": 18.80591399669658,
+          "aboveNoise": 8.949363332473723,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1)∧(EDGE≥21.4)",
+          "deltaPnl": 20.6280230736362,
+          "cutN": 8,
+          "cutRoi": -47.750053411195,
+          "keepRoi": 18.253225470339054,
+          "aboveNoise": 10.934549923239189,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        }
+      ]
+    },
+    {
+      "label": "U_top",
+      "base": {
+        "n": 88,
+        "w": 51,
+        "l": 37,
+        "stake": 407,
+        "pnl": -19.09016649633923,
+        "wr": 57.95454545454545,
+        "roi": -4.690458598609148
+      },
+      "noise": {
+        "mean": 3.0627294934383373,
+        "p95": 23.11210721868609,
+        "p99": 31.816796536796545,
+        "n": 60
+      },
+      "top": [
+        {
+          "name": "(forRoiNormMean≥41.83)∧(leadSR≥1.98)",
+          "deltaPnl": 53.72240770408955,
+          "cutN": 33,
+          "cutRoi": -35.29724553488145,
+          "keepRoi": 13.591931400215977,
+          "aboveNoise": 30.610300485403457,
+          "stable": true,
+          "passed": 3,
+          "tested": 3
+        },
+        {
+          "name": "sumSR ≥ 2.77",
+          "deltaPnl": 54.82403516818221,
+          "cutN": 58,
+          "cutRoi": -20.260175597997865,
+          "keepRoi": 26.197850932436204,
+          "aboveNoise": 31.711927949496122,
+          "stable": true,
+          "passed": 3,
+          "tested": 3
+        },
+        {
+          "name": "sumSR ≥ 3.3",
+          "deltaPnl": 46.77240483772836,
+          "cutN": 45,
+          "cutRoi": -22.443572378948346,
+          "keepRoi": 13.938690000699458,
+          "aboveNoise": 23.660297619042268,
+          "stable": true,
+          "passed": 4,
+          "tested": 5
+        },
+        {
+          "name": "(forRoiNormMean≥41.83)∧(leadSR≥2.14)",
+          "deltaPnl": 46.294994032489846,
+          "cutN": 26,
+          "cutRoi": -38.514970076946625,
+          "keepRoi": 9.485644189731733,
+          "aboveNoise": 23.182886813803755,
+          "stable": true,
+          "passed": 3,
+          "tested": 4
+        },
+        {
+          "name": "(forRoiNormMean≥46.63)∧(leadSR≥1.98)",
+          "deltaPnl": 44.531357668853474,
+          "cutN": 24,
+          "cutRoi": -40.190756018820835,
+          "keepRoi": 8.589193508613857,
+          "aboveNoise": 21.419250450167382,
+          "stable": true,
+          "passed": 3,
+          "tested": 4
+        },
+        {
+          "name": "TierA TOP cut",
+          "deltaPnl": 42.57883168874628,
+          "cutN": 37,
+          "cutRoi": -25.40503084054074,
+          "keepRoi": 9.81147251144822,
+          "aboveNoise": 19.466724470060186,
+          "stable": true,
+          "passed": 4,
+          "tested": 4
+        },
+        {
+          "name": "TOP ∧ (leadSR≥3∨EDGE<10)",
+          "deltaPnl": 42.57883168874628,
+          "cutN": 37,
+          "cutRoi": -25.40503084054074,
+          "keepRoi": 9.81147251144822,
+          "aboveNoise": 19.466724470060186,
+          "stable": true,
+          "passed": 4,
+          "tested": 4
+        },
+        {
+          "name": "(forRoiNormMean≥41.83)∧(leadSR≥1.86)",
+          "deltaPnl": 39.907604620993794,
+          "cutN": 37,
+          "cutRoi": -23.58605474054007,
+          "keepRoi": 8.754179194556164,
+          "aboveNoise": 16.795497402307703,
+          "stable": true,
+          "passed": 3,
+          "tested": 3
+        },
+        {
+          "name": "(leadSR≥2.58)∧(units<5.4)",
+          "deltaPnl": 38.617141417214576,
+          "cutN": 35,
+          "cutRoi": -24.75457783154781,
+          "keepRoi": 7.779671283217266,
+          "aboveNoise": 15.505034198528485,
+          "stable": true,
+          "passed": 2,
+          "tested": 2
+        },
+        {
+          "name": "(forRoiNormMean≥21.6)∧(leadSR≥2.14)",
+          "deltaPnl": 37.36297187261016,
+          "cutN": 46,
+          "cutRoi": -17.65735910803883,
+          "keepRoi": 9.351486886525551,
+          "aboveNoise": 14.250864653924069,
+          "stable": true,
+          "passed": 3,
+          "tested": 4
+        },
+        {
+          "name": "(forRoiNormMean≥46.63)∧(leadSR≥1.86)",
+          "deltaPnl": 36.73387060307374,
+          "cutN": 26,
+          "cutRoi": -30.662663274685922,
+          "keepRoi": 6.143351012094187,
+          "aboveNoise": 13.621763384387648,
+          "stable": true,
+          "passed": 3,
+          "tested": 4
+        },
+        {
+          "name": "leadShare < 0.706",
+          "deltaPnl": 36.6650616711036,
+          "cutN": 43,
+          "cutRoi": -18.59283046202008,
+          "keepRoi": 8.376975774434872,
+          "aboveNoise": 13.55295445241751,
+          "stable": true,
+          "passed": 4,
+          "tested": 5
+        },
+        {
+          "name": "(forRoiNormMean≥46.63)∧(leadSR≥2.14)",
+          "deltaPnl": 34.698024335520145,
+          "cutN": 20,
+          "cutRoi": -37.79741213019624,
+          "keepRoi": 4.951731547963489,
+          "aboveNoise": 11.585917116834054,
+          "stable": true,
+          "passed": 3,
+          "tested": 4
+        },
+        {
+          "name": "(leadSR≥2.14)∧(units<5.4)",
+          "deltaPnl": 34.307814192973574,
+          "cutN": 44,
+          "cutRoi": -17.50398683314979,
+          "keepRoi": 7.2121553064617725,
+          "aboveNoise": 11.195706974287482,
+          "stable": true,
+          "passed": 2,
+          "tested": 2
+        },
+        {
+          "name": "forPnlNormSum ≥ 3.5",
+          "deltaPnl": 42.13735369150325,
+          "cutN": 77,
+          "cutRoi": -11.984457818971347,
+          "keepRoi": 41.60142092989895,
+          "aboveNoise": 19.02524647281716,
+          "stable": true,
+          "passed": 2,
+          "tested": 2
+        },
+        {
+          "name": "(leadSR≥2.89)∧(units<5.4)",
+          "deltaPnl": 32.87516280758891,
+          "cutN": 27,
+          "cutRoi": -27.626187233268002,
+          "keepRoi": 4.7864570525172505,
+          "aboveNoise": 9.763055588902816,
+          "stable": true,
+          "passed": 2,
+          "tested": 2
+        },
+        {
+          "name": "(leadSR≥2.89)∧(units<5)",
+          "deltaPnl": 32.23176823176823,
+          "cutN": 16,
+          "cutRoi": -50.36213786213786,
+          "keepRoi": 3.831370768346646,
+          "aboveNoise": 9.119661013082137,
+          "stable": true,
+          "passed": 2,
+          "tested": 2
+        },
+        {
+          "name": "(forRoiNormMean≥34.98)∧(leadSR≥1.98)",
+          "deltaPnl": 32.01488197208675,
+          "cutN": 44,
+          "cutRoi": -15.64754739593683,
+          "keepRoi": 6.385728989993832,
+          "aboveNoise": 8.902774753400656,
+          "stable": true,
+          "passed": 3,
+          "tested": 3
+        },
+        {
+          "name": "forPnlNormSum ≥ 86.6",
+          "deltaPnl": 31.42641564876602,
+          "cutN": 32,
+          "cutRoi": -21.262798138542642,
+          "keepRoi": 4.759355382880706,
+          "aboveNoise": 8.31430843007993,
+          "stable": true,
+          "passed": 3,
+          "tested": 4
+        },
+        {
+          "name": "forRoiNormMean ≥ 41.833",
+          "deltaPnl": 31.38801745140663,
+          "cutN": 45,
+          "cutRoi": -15.236901675440109,
+          "keepRoi": 6.118333808491242,
+          "aboveNoise": 8.275910232720538,
+          "stable": true,
+          "passed": 2,
+          "tested": 2
+        }
+      ]
+    },
+    {
+      "label": "U_nontop",
+      "base": {
+        "n": 158,
+        "w": 103,
+        "l": 55,
+        "stake": 737.6099999999992,
+        "pnl": 126.33375649852965,
+        "wr": 65.18987341772151,
+        "roi": 17.127446278999713
+      },
+      "noise": {
+        "mean": -29.412668592652267,
+        "p95": 13.522414198062506,
+        "p99": 28.497097452602603,
+        "n": 60
+      },
+      "top": [
+        {
+          "name": "(ticketEv<-1)∧(EDGE≥15.43)",
+          "deltaPnl": 28.08000000000004,
+          "cutN": 7,
+          "cutRoi": -74.28571428571429,
+          "keepRoi": 22.065097169021566,
+          "aboveNoise": 14.557585801937535,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1)∧(EDGE≥13.07)",
+          "deltaPnl": 25.176774193548425,
+          "cutN": 8,
+          "cutRoi": -58.279569892473134,
+          "keepRoi": 21.818598622150922,
+          "aboveNoise": 11.654359995485919,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1)∧(EDGE≥19.66)",
+          "deltaPnl": 22.680000000000064,
+          "cutN": 6,
+          "cutRoi": -70,
+          "keepRoi": 21.130408885088112,
+          "aboveNoise": 9.157585801937557,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "boostBand ∧ ticketEv<-1",
+          "deltaPnl": 19.116774193548423,
+          "cutN": 9,
+          "cutRoi": -38.85523210070811,
+          "keepRoi": 21.12847441090022,
+          "aboveNoise": 5.594359995485917,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1)∧(units≥5.06)",
+          "deltaPnl": 19.116774193548423,
+          "cutN": 9,
+          "cutRoi": -38.85523210070811,
+          "keepRoi": 21.12847441090022,
+          "aboveNoise": 5.594359995485917,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1)∧(units≥5.4)",
+          "deltaPnl": 19.116774193548423,
+          "cutN": 9,
+          "cutRoi": -38.85523210070811,
+          "keepRoi": 21.12847441090022,
+          "aboveNoise": 5.594359995485917,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1)∧(EDGE≥11.75)",
+          "deltaPnl": 19.116774193548423,
+          "cutN": 9,
+          "cutRoi": -38.85523210070811,
+          "keepRoi": 21.12847441090022,
+          "aboveNoise": 5.594359995485917,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "expGap ≥ 6.667",
+          "deltaPnl": 18.965714285714313,
+          "cutN": 12,
+          "cutRoi": -29.7268248992387,
+          "keepRoi": 21.56386381683918,
+          "aboveNoise": 5.4433000876518065,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "SHARP ∧ ticketEv<-1",
+          "deltaPnl": 18.696774193548436,
+          "cutN": 5,
+          "cutRoi": -69.247311827957,
+          "keepRoi": 20.409300557560158,
+          "aboveNoise": 5.174359995485929,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-0.3)∧(EDGE≥15.43)",
+          "deltaPnl": 18.437142857142902,
+          "cutN": 9,
+          "cutRoi": -37.936507936507944,
+          "keepRoi": 21.011436605516998,
+          "aboveNoise": 4.914728659080396,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(EDGE<11.75)∧(odds<-126)",
+          "deltaPnl": 17.72253814147024,
+          "cutN": 7,
+          "cutRoi": -58.7422543635074,
+          "keepRoi": 20.363040631007586,
+          "aboveNoise": 4.200123943407732,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1.9)∧(EDGE≥15.43)",
+          "deltaPnl": 17.280000000000058,
+          "cutN": 5,
+          "cutRoi": -64,
+          "keepRoi": 20.209926189967756,
+          "aboveNoise": 3.7575858019375517,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-0.3)∧(EDGE≥13.07)",
+          "deltaPnl": 15.533917050691286,
+          "cutN": 10,
+          "cutRoi": -28.766513056835645,
+          "keepRoi": 20.752720637384044,
+          "aboveNoise": 2.01150285262878,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(forRoiNormMean<23)∧(leadSR<0.33)",
+          "deltaPnl": 14.804971408565791,
+          "cutN": 8,
+          "cutRoi": -39.374923958951484,
+          "keepRoi": 20.162387381193923,
+          "aboveNoise": 1.2825572105032848,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(EDGE<13.07)∧(odds<-126)",
+          "deltaPnl": 14.583500708315142,
+          "cutN": 9,
+          "cutRoi": -38.20670869351612,
+          "keepRoi": 20.147154467408917,
+          "aboveNoise": 1.0610865102526361,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(leadShare≥0.96)∧(EDGE<15.43)",
+          "deltaPnl": 14.450950293675845,
+          "cutN": 27,
+          "cutRoi": -12.11718119543502,
+          "keepRoi": 22.76780250541047,
+          "aboveNoise": 0.9285360956133388,
+          "stable": true,
+          "passed": 3,
+          "tested": 3
+        },
+        {
+          "name": "ticketEv<-1",
+          "deltaPnl": 14.214813409234694,
+          "cutN": 10,
+          "cutRoi": -26.226593005968017,
+          "keepRoi": 20.56577602138752,
+          "aboveNoise": 0.6923992111721873,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "ticketEv < -1",
+          "deltaPnl": 14.214813409234694,
+          "cutN": 10,
+          "cutRoi": -26.226593005968017,
+          "keepRoi": 20.56577602138752,
+          "aboveNoise": 0.6923992111721873,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1)∧(units≥4)",
+          "deltaPnl": 14.214813409234694,
+          "cutN": 10,
+          "cutRoi": -26.226593005968017,
+          "keepRoi": 20.56577602138752,
+          "aboveNoise": 0.6923992111721873,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1)∧(EDGE≥10.97)",
+          "deltaPnl": 14.214813409234694,
+          "cutN": 10,
+          "cutRoi": -26.226593005968017,
+          "keepRoi": 20.56577602138752,
+          "aboveNoise": 0.6923992111721873,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        }
+      ]
+    },
+    {
+      "label": "U_mlb",
+      "base": {
+        "n": 181,
+        "w": 104,
+        "l": 77,
+        "stake": 815.3899999999994,
+        "pnl": 53.346745669730254,
+        "wr": 57.4585635359116,
+        "roi": 6.542482207254233
+      },
+      "noise": {
+        "mean": -11.264386597478286,
+        "p95": 31.794522978793644,
+        "p99": 42.66574917212338,
+        "n": 60
+      },
+      "top": [
+        {
+          "name": "(forRoiNormMean≥45.3)∧(leadSR≥2.25)",
+          "deltaPnl": 40.3539403975836,
+          "cutN": 25,
+          "cutRoi": -35.88292761656018,
+          "keepRoi": 13.330016654192299,
+          "aboveNoise": 8.559417418789955,
+          "stable": true,
+          "passed": 2,
+          "tested": 4
+        },
+        {
+          "name": "(forRoiNormMean≥45.3)∧(leadSR≥1.86)",
+          "deltaPnl": 40.209584644935205,
+          "cutN": 34,
+          "cutRoi": -26.37385848415003,
+          "keepRoi": 14.112550392147813,
+          "aboveNoise": 8.415061666141561,
+          "stable": true,
+          "passed": 2,
+          "tested": 4
+        },
+        {
+          "name": "(forRoiNormMean≥40.9)∧(leadSR≥2.25)",
+          "deltaPnl": 40.088164996514124,
+          "cutN": 32,
+          "cutRoi": -27.48400178014128,
+          "keepRoi": 13.955298592481954,
+          "aboveNoise": 8.29364201772048,
+          "stable": true,
+          "passed": 2,
+          "tested": 4
+        },
+        {
+          "name": "(slateN≥5)∧(units<5.4)",
+          "deltaPnl": 39.72008550085425,
+          "cutN": 91,
+          "cutRoi": -10.100980469662598,
+          "keepRoi": 22.045393019372877,
+          "aboveNoise": 7.925562522060609,
+          "stable": true,
+          "passed": 5,
+          "tested": 5
+        },
+        {
+          "name": "(meanFor≥55.6)∧(odds<-106)",
+          "deltaPnl": 36.24202901165407,
+          "cutN": 35,
+          "cutRoi": -22.175872857892706,
+          "keepRoi": 13.741452647614018,
+          "aboveNoise": 4.447506032860424,
+          "stable": true,
+          "passed": 4,
+          "tested": 4
+        },
+        {
+          "name": "(forRoiNormMean≥40.9)∧(leadSR≥1.86)",
+          "deltaPnl": 35.52057356481599,
+          "cutN": 47,
+          "cutRoi": -16.845572211332634,
+          "keepRoi": 14.700233112425565,
+          "aboveNoise": 3.726050586022346,
+          "stable": true,
+          "passed": 2,
+          "tested": 4
+        },
+        {
+          "name": "(forRoiNormMean≥45.3)∧(leadSR≥1.39)",
+          "deltaPnl": 35.137328798924045,
+          "cutN": 45,
+          "cutRoi": -17.40678133306451,
+          "keepRoi": 14.422126785756904,
+          "aboveNoise": 3.342805820130401,
+          "stable": true,
+          "passed": 3,
+          "tested": 4
+        },
+        {
+          "name": "(leadSR≥2.25)∧(units<5.4)",
+          "deltaPnl": 34.02497316417498,
+          "cutN": 51,
+          "cutRoi": -15.177523937985091,
+          "keepRoi": 14.77845754197413,
+          "aboveNoise": 2.2304501853813363,
+          "stable": true,
+          "passed": 4,
+          "tested": 5
+        },
+        {
+          "name": "(forRoiNormMean≥40.9)∧(leadSR≥1.39)",
+          "deltaPnl": 33.09790682010133,
+          "cutN": 64,
+          "cutRoi": -11.546049961662348,
+          "keepRoi": 16.349488867632175,
+          "aboveNoise": 1.303383841307685,
+          "stable": true,
+          "passed": 3,
+          "tested": 4
+        },
+        {
+          "name": "TierA TOP cut",
+          "deltaPnl": 32.87874515748584,
+          "cutN": 27,
+          "cutRoi": -26.99404364325602,
+          "keepRoi": 12.431766724897438,
+          "aboveNoise": 1.084222178692194,
+          "stable": true,
+          "passed": 3,
+          "tested": 4
+        },
+        {
+          "name": "TOP ∧ (leadSR≥3∨EDGE<10)",
+          "deltaPnl": 32.87874515748584,
+          "cutN": 27,
+          "cutRoi": -26.99404364325602,
+          "keepRoi": 12.431766724897438,
+          "aboveNoise": 1.084222178692194,
+          "stable": true,
+          "passed": 3,
+          "tested": 4
+        },
+        {
+          "name": "(leadSR≥1.86)∧(units<5.4)",
+          "deltaPnl": 33.7946190620265,
+          "cutN": 78,
+          "cutRoi": -9.934334488219905,
+          "keepRoi": 18.337443389608126,
+          "aboveNoise": 2.0000960832328545,
+          "stable": true,
+          "passed": 3,
+          "tested": 5
+        },
+        {
+          "name": "(slateN≥3)∧(units<5.4)",
+          "deltaPnl": 41.412624754189224,
+          "cutN": 131,
+          "cutRoi": -7.349570474770467,
+          "keepRoi": 37.61486599869778,
+          "aboveNoise": 9.61810177539558,
+          "stable": true,
+          "passed": 4,
+          "tested": 6
+        },
+        {
+          "name": "(slateN≥4)∧(units<5.4)",
+          "deltaPnl": 39.147138262696515,
+          "cutN": 120,
+          "cutRoi": -7.579750665613969,
+          "keepRoi": 30.94268832210183,
+          "aboveNoise": 7.352615283902871,
+          "stable": true,
+          "passed": 6,
+          "tested": 6
+        },
+        {
+          "name": "(slateN<8)∧(units<5.4)",
+          "deltaPnl": 36.793166097476515,
+          "cutN": 117,
+          "cutRoi": -7.351575706816749,
+          "keepRoi": 28.62402329783329,
+          "aboveNoise": 4.998643118682871,
+          "stable": true,
+          "passed": 4,
+          "tested": 6
+        },
+        {
+          "name": "(leadSR≥1.39)∧(units<5.4)",
+          "deltaPnl": 32.726912004178075,
+          "cutN": 101,
+          "cutRoi": -7.484885189867818,
+          "keepRoi": 22.761776457466176,
+          "aboveNoise": 0.9323890253844311,
+          "stable": true,
+          "passed": 5,
+          "tested": 6
+        },
+        {
+          "name": "(forRoiNormMean≥34.55)∧(leadSR≥2.25)",
+          "deltaPnl": 31.691357365969125,
+          "cutN": 39,
+          "cutRoi": -17.4204910762803,
+          "keepRoi": 13.424172105340334,
+          "aboveNoise": -0.10316561282451886,
+          "stable": true,
+          "passed": 2,
+          "tested": 4
+        },
+        {
+          "name": "(leadShare≥0.82)∧(EDGE<12.9)",
+          "deltaPnl": 31.277686651183075,
+          "cutN": 27,
+          "cutRoi": -26.91016661032698,
+          "keepRoi": 12.103729092183961,
+          "aboveNoise": -0.5168363276105694,
+          "stable": true,
+          "passed": 3,
+          "tested": 3
+        },
+        {
+          "name": "forPnlNormSum ≥ 148.1",
+          "deltaPnl": 31.05017825931074,
+          "cutN": 28,
+          "cutRoi": -23.599740259413807,
+          "keepRoi": 12.341979457904278,
+          "aboveNoise": -0.7443447194829034,
+          "stable": true,
+          "passed": 3,
+          "tested": 4
+        },
+        {
+          "name": "(forRoiNormMean≥45.3)∧(leadSR≥0.84)",
+          "deltaPnl": 30.253725195320442,
+          "cutN": 50,
+          "cutRoi": -13.636403675885886,
+          "keepRoi": 14.085298277264961,
+          "aboveNoise": -1.5407977834732023,
+          "stable": true,
+          "passed": 3,
+          "tested": 4
+        }
+      ]
+    },
+    {
+      "label": "U_mlb_res",
+      "base": {
+        "n": 154,
+        "w": 93,
+        "l": 61,
+        "stake": 693.5899999999996,
+        "pnl": 86.22549082721609,
+        "wr": 60.38961038961039,
+        "roi": 12.431766724897438
+      },
+      "noise": {
+        "mean": -19.5011233915042,
+        "p95": 23.616451605963505,
+        "p99": 54.44714877108315,
+        "n": 60
+      },
+      "top": [
+        {
+          "name": "(forRoiNormMean≥44.8)∧(leadSR≥1.99)",
+          "deltaPnl": 27.379321545468983,
+          "cutN": 18,
+          "cutRoi": -35.07471374003191,
+          "keepRoi": 18.456421680939208,
+          "aboveNoise": 3.762869939505478,
+          "stable": false,
+          "passed": 1,
+          "tested": 3
+        },
+        {
+          "name": "(meanFor≥55.9)∧(odds<-105)",
+          "deltaPnl": 22.33885776429682,
+          "cutN": 29,
+          "cutRoi": -16.422008207231308,
+          "keepRoi": 19.471330187157065,
+          "aboveNoise": -1.277593841666686,
+          "stable": true,
+          "passed": 4,
+          "tested": 4
+        },
+        {
+          "name": "(forRoiNormMean≥40.15)∧(leadSR≥1.99)",
+          "deltaPnl": 19.32194608237606,
+          "cutN": 24,
+          "cutRoi": -18.391344072316794,
+          "keepRoi": 17.93407930090092,
+          "aboveNoise": -4.294505523587446,
+          "stable": false,
+          "passed": 1,
+          "tested": 3
+        },
+        {
+          "name": "expGap ≥ 6.684",
+          "deltaPnl": 18.485714285714323,
+          "cutN": 6,
+          "cutRoi": -61.21097445600756,
+          "keepRoi": 15.784260406839183,
+          "aboveNoise": -5.130737320249182,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "forPnlNormSum ≥ 142.6",
+          "deltaPnl": 17.531130640263157,
+          "cutN": 24,
+          "cutRoi": -15.436409826770372,
+          "keepRoi": 17.88845582350251,
+          "aboveNoise": -6.0853209657003475,
+          "stable": true,
+          "passed": 2,
+          "tested": 3
+        },
+        {
+          "name": "expGap ≥ 7.08",
+          "deltaPnl": 18.800000000000026,
+          "cutN": 4,
+          "cutRoi": -100,
+          "keepRoi": 15.564174161919437,
+          "aboveNoise": -4.816451605963479,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(leadShare≥0.82)∧(EDGE<13.5)",
+          "deltaPnl": 16.784999363820276,
+          "cutN": 24,
+          "cutRoi": -16.25980757901797,
+          "keepRoi": 17.44875841707372,
+          "aboveNoise": -6.831452242143229,
+          "stable": true,
+          "passed": 3,
+          "tested": 3
+        },
+        {
+          "name": "(EDGE<11.9)∧(odds<-120)",
+          "deltaPnl": 16.72253814147021,
+          "cutN": 8,
+          "cutRoi": -48.9392395126432,
+          "keepRoi": 15.611905760924198,
+          "aboveNoise": -6.893913464493295,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "TOP+",
+          "deltaPnl": 15.517236156462559,
+          "cutN": 16,
+          "cutRoi": -19.396545195578184,
+          "keepRoi": 16.581549077344594,
+          "aboveNoise": -8.099215449500946,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(leadShare≥0.93)∧(EDGE<13.5)",
+          "deltaPnl": 14.228539736491058,
+          "cutN": 18,
+          "cutRoi": -18.706994131594865,
+          "keepRoi": 16.267068897657953,
+          "aboveNoise": -9.387911869472447,
+          "stable": true,
+          "passed": 3,
+          "tested": 3
+        },
+        {
+          "name": "(leadShare≥0.82)∧(EDGE<11.9)",
+          "deltaPnl": 13.855541044851421,
+          "cutN": 16,
+          "cutRoi": -20.32498319620272,
+          "keepRoi": 16.00221161332665,
+          "aboveNoise": -9.760910561112084,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "expGap ≥ 6.667",
+          "deltaPnl": 14.628571428571448,
+          "cutN": 7,
+          "cutRoi": -41.091492776886035,
+          "keepRoi": 15.327598026685447,
+          "aboveNoise": -8.987880177392057,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(EDGE<13.5)∧(odds<-120)",
+          "deltaPnl": 14.583500708315114,
+          "cutN": 9,
+          "cutRoi": -38.20670869351612,
+          "keepRoi": 15.380823218017644,
+          "aboveNoise": -9.03295089764839,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(edgeGap≥15.43)∧(leadSR≥0.74)",
+          "deltaPnl": 11.576450824995774,
+          "cutN": 22,
+          "cutRoi": -10.828220769802373,
+          "keepRoi": 16.67040663602166,
+          "aboveNoise": -12.04000078096773,
+          "stable": true,
+          "passed": 3,
+          "tested": 4
+        },
+        {
+          "name": "(meanFor≥55.9)∧(odds<-120)",
+          "deltaPnl": 11.490381953062354,
+          "cutN": 13,
+          "cutRoi": -19.008076018299953,
+          "keepRoi": 15.433533307053489,
+          "aboveNoise": -12.126069652901151,
+          "stable": true,
+          "passed": 2,
+          "tested": 3
+        },
+        {
+          "name": "(meanFor≥58.05)∧(odds<-105)",
+          "deltaPnl": 11.281843628641695,
+          "cutN": 20,
+          "cutRoi": -11.64036693008836,
+          "keepRoi": 16.341920065674127,
+          "aboveNoise": -12.33460797732181,
+          "stable": true,
+          "passed": 3,
+          "tested": 4
+        },
+        {
+          "name": "(ticketEv<-1.5)∧(EDGE≥15.57)",
+          "deltaPnl": 16.200000000000045,
+          "cutN": 3,
+          "cutRoi": -100,
+          "keepRoi": 15.120608634201302,
+          "aboveNoise": -7.416451605963459,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-0.1)∧(EDGE≥15.57)",
+          "deltaPnl": 16.200000000000045,
+          "cutN": 3,
+          "cutRoi": -100,
+          "keepRoi": 15.120608634201302,
+          "aboveNoise": -7.416451605963459,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(leadShare≥0.93)∧(EDGE≥15.57)",
+          "deltaPnl": 10.937984582052707,
+          "cutN": 15,
+          "cutRoi": -14.487396797420734,
+          "keepRoi": 15.719955897890085,
+          "aboveNoise": -12.678467023910798,
+          "stable": true,
+          "passed": 2,
+          "tested": 4
+        },
+        {
+          "name": "(slateN≥5)∧(units<5.4)",
+          "deltaPnl": 15.655558942141653,
+          "cutN": 76,
+          "cutRoi": -4.784267622816254,
+          "keepRoi": 27.808999281951568,
+          "aboveNoise": -7.960892663821852,
+          "stable": true,
+          "passed": 3,
+          "tested": 5
+        }
+      ]
+    },
+    {
+      "label": "U_ev (Aug20+ stamped)",
+      "base": {
+        "n": 30,
+        "w": 17,
+        "l": 13,
+        "stake": 159.00000000000006,
+        "pnl": -1.906909706130051,
+        "wr": 56.666666666666664,
+        "roi": -1.1993142805849373
+      },
+      "noise": {
+        "mean": -1.1581803419810648,
+        "p95": 20.015010952196885,
+        "p99": 21.315010952196886,
+        "n": 60
+      },
+      "top": [
+        {
+          "name": "(ticketEv<-1)∧(EDGE≥15.26)",
+          "deltaPnl": 40.55123915403825,
+          "cutN": 15,
+          "cutRoi": -50.94376778145507,
+          "keepRoi": 48.67044011071561,
+          "aboveNoise": 20.536228201841364,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1)∧(EDGE≥13.14)",
+          "deltaPnl": 37.648013347586634,
+          "cutN": 16,
+          "cutRoi": -44.29178040892545,
+          "keepRoi": 48.29878870467106,
+          "aboveNoise": 17.63300239538975,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1)∧(EDGE≥16.68)",
+          "deltaPnl": 31.151239154038244,
+          "cutN": 13,
+          "cutRoi": -44.37498454991203,
+          "keepRoi": 32.932803432329045,
+          "aboveNoise": 11.136228201841359,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-2.3)∧(EDGE≥15.26)",
+          "deltaPnl": 29.007921962754956,
+          "cutN": 8,
+          "cutRoi": -69.39694249462907,
+          "keepRoi": 23.123730594389848,
+          "aboveNoise": 8.992911010558071,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "boostBand ∧ ticketEv<-1",
+          "deltaPnl": 27.588013347586635,
+          "cutN": 16,
+          "cutRoi": -31.7103601696398,
+          "keepRoi": 35.668199502023036,
+          "aboveNoise": 7.57300239538975,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1)∧(units≥5.4)",
+          "deltaPnl": 27.588013347586635,
+          "cutN": 16,
+          "cutRoi": -31.7103601696398,
+          "keepRoi": 35.668199502023036,
+          "aboveNoise": 7.57300239538975,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "leadShare ≥ 0.836",
+          "deltaPnl": 26.696225838613195,
+          "cutN": 16,
+          "cutRoi": -32.241818645668104,
+          "keepRoi": 32.53191093501725,
+          "aboveNoise": 6.68121488641631,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(edgePerUnit≥2.94)∧(leadSR≥2.42)",
+          "deltaPnl": 26.692667725466826,
+          "cutN": 9,
+          "cutRoi": -58.28093389839917,
+          "keepRoi": 21.89554595347771,
+          "aboveNoise": 6.677656773269941,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-2.3)∧(EDGE≥13.14)",
+          "deltaPnl": 26.104696156303348,
+          "cutN": 9,
+          "cutRoi": -55.30655965318505,
+          "keepRoi": 21.643816145056615,
+          "aboveNoise": 6.089685204106463,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(EDGE≥13.14)∧(leadSR≥2.42)",
+          "deltaPnl": 25.835524868323965,
+          "cutN": 10,
+          "cutRoi": -49.87553063383004,
+          "keepRoi": 22.3214693677182,
+          "aboveNoise": 5.82051391612708,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(EDGE≥15.26)∧(leadSR≥2.42)",
+          "deltaPnl": 25.835524868323965,
+          "cutN": 10,
+          "cutRoi": -49.87553063383004,
+          "keepRoi": 22.3214693677182,
+          "aboveNoise": 5.82051391612708,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(edgeGap≥13.14)∧(leadSR≥2.42)",
+          "deltaPnl": 25.835524868323965,
+          "cutN": 10,
+          "cutRoi": -49.87553063383004,
+          "keepRoi": 22.3214693677182,
+          "aboveNoise": 5.82051391612708,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(edgeGap≥15.26)∧(leadSR≥2.42)",
+          "deltaPnl": 25.835524868323965,
+          "cutN": 10,
+          "cutRoi": -49.87553063383004,
+          "keepRoi": 22.3214693677182,
+          "aboveNoise": 5.82051391612708,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(edgePerUnit≥2.52)∧(leadSR≥2.42)",
+          "deltaPnl": 25.835524868323965,
+          "cutN": 10,
+          "cutRoi": -49.87553063383004,
+          "keepRoi": 22.3214693677182,
+          "aboveNoise": 5.82051391612708,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-2.3)∧(EDGE≥16.68)",
+          "deltaPnl": 25.007921962754956,
+          "cutN": 7,
+          "cutRoi": -66.15852371099193,
+          "keepRoi": 19.060241135829127,
+          "aboveNoise": 4.992911010558071,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1.8)∧(EDGE≥15.26)",
+          "deltaPnl": 24.351239154038247,
+          "cutN": 12,
+          "cutRoi": -38.4088945647291,
+          "keepRoi": 23.477332058481377,
+          "aboveNoise": 4.336228201841362,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-2.7)∧(EDGE≥15.26)",
+          "deltaPnl": 24.243216080402014,
+          "cutN": 6,
+          "cutRoi": -78.20392284000648,
+          "keepRoi": 17.450239354899967,
+          "aboveNoise": 4.228205128205129,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(qConv≥9.78)∧(leadSR≥0.83)",
+          "deltaPnl": 24.131564084010236,
+          "cutN": 16,
+          "cutRoi": -28.79661585204084,
+          "keepRoi": 29.554061672713008,
+          "aboveNoise": 4.116553131813351,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(leadShare≥0.84)∧(EDGE≥13.14)",
+          "deltaPnl": 23.696225838613195,
+          "cutN": 14,
+          "cutRoi": -31.679446308306414,
+          "keepRoi": 25.878047663281645,
+          "aboveNoise": 3.68121488641631,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "forTop2Pct < 65.18",
+          "deltaPnl": 23.200000000000003,
+          "cutN": 6,
+          "cutRoi": -82.2695035460993,
+          "keepRoi": 16.279121019778245,
+          "aboveNoise": 3.1849890478031178,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        }
+      ]
+    },
+    {
+      "label": "U_boost (≥5.4u)",
+      "base": {
+        "n": 62,
+        "w": 46,
+        "l": 16,
+        "stake": 345.59999999999985,
+        "pnl": 84.33237642818607,
+        "wr": 74.19354838709677,
+        "roi": 24.40172929056311
+      },
+      "noise": {
+        "mean": -17.99343528556527,
+        "p95": 6.08807338475134,
+        "p99": 12.862105599151917,
+        "n": 60
+      },
+      "top": [
+        {
+          "name": "(ticketEv<-1.5)∧(EDGE≥15.43)",
+          "deltaPnl": 31.15123915403825,
+          "cutN": 13,
+          "cutRoi": -44.37498454991203,
+          "keepRoi": 41.933048504801846,
+          "aboveNoise": 25.06316576928691,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "ticketEv < -1.5",
+          "deltaPnl": 28.248013347586635,
+          "cutN": 14,
+          "cutRoi": -37.365097020617235,
+          "keepRoi": 41.69644065769358,
+          "aboveNoise": 22.159939962835296,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1.5)∧(units≥5.4)",
+          "deltaPnl": 28.248013347586635,
+          "cutN": 14,
+          "cutRoi": -37.365097020617235,
+          "keepRoi": 41.69644065769358,
+          "aboveNoise": 22.159939962835296,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1.5)∧(units<6)",
+          "deltaPnl": 28.248013347586635,
+          "cutN": 14,
+          "cutRoi": -37.365097020617235,
+          "keepRoi": 41.69644065769358,
+          "aboveNoise": 22.159939962835296,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1.5)∧(EDGE≥13.53)",
+          "deltaPnl": 28.248013347586635,
+          "cutN": 14,
+          "cutRoi": -37.365097020617235,
+          "keepRoi": 41.69644065769358,
+          "aboveNoise": 22.159939962835296,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "boostBand ∧ ticketEv<-1",
+          "deltaPnl": 27.58801334758661,
+          "cutN": 16,
+          "cutRoi": -31.7103601696398,
+          "keepRoi": 43.27934639434363,
+          "aboveNoise": 21.49993996283527,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "ticketEv<-1",
+          "deltaPnl": 27.58801334758661,
+          "cutN": 16,
+          "cutRoi": -31.7103601696398,
+          "keepRoi": 43.27934639434363,
+          "aboveNoise": 21.49993996283527,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(leadShare≥0.81)∧(EDGE≥22.7)",
+          "deltaPnl": 26.74113483354313,
+          "cutN": 17,
+          "cutRoi": -29.129776507127612,
+          "keepRoi": 43.76418883440865,
+          "aboveNoise": 20.65306144879179,
+          "stable": false,
+          "passed": 1,
+          "tested": 2
+        },
+        {
+          "name": "(ticketEv<-2.3)∧(EDGE≥15.43)",
+          "deltaPnl": 25.007921962754963,
+          "cutN": 7,
+          "cutRoi": -66.15852371099193,
+          "keepRoi": 35.52316386970144,
+          "aboveNoise": 18.919848578003624,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "ticketEv < -2.3",
+          "deltaPnl": 22.104696156303348,
+          "cutN": 8,
+          "cutRoi": -51.16827813959107,
+          "keepRoi": 35.19744463772798,
+          "aboveNoise": 16.016622771552008,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-2.3)∧(units≥5.4)",
+          "deltaPnl": 22.104696156303348,
+          "cutN": 8,
+          "cutRoi": -51.16827813959107,
+          "keepRoi": 35.19744463772798,
+          "aboveNoise": 16.016622771552008,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-2.3)∧(units<6)",
+          "deltaPnl": 22.104696156303348,
+          "cutN": 8,
+          "cutRoi": -51.16827813959107,
+          "keepRoi": 35.19744463772798,
+          "aboveNoise": 16.016622771552008,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-2.3)∧(EDGE≥13.53)",
+          "deltaPnl": 22.104696156303348,
+          "cutN": 8,
+          "cutRoi": -51.16827813959107,
+          "keepRoi": 35.19744463772798,
+          "aboveNoise": 16.016622771552008,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1.8)∧(EDGE≥15.43)",
+          "deltaPnl": 20.35123915403824,
+          "cutN": 11,
+          "cutRoi": -34.26134537716877,
+          "keepRoi": 36.577084410281024,
+          "aboveNoise": 14.2631657692869,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1.5)∧(EDGE≥17.56)",
+          "deltaPnl": 20.35123915403824,
+          "cutN": 11,
+          "cutRoi": -34.26134537716877,
+          "keepRoi": 36.577084410281024,
+          "aboveNoise": 14.2631657692869,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-2.6)∧(EDGE≥15.43)",
+          "deltaPnl": 20.243216080402007,
+          "cutN": 5,
+          "cutRoi": -74.9748743718593,
+          "keepRoi": 32.82347536364975,
+          "aboveNoise": 14.155142695650667,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-2.3)∧(EDGE≥17.56)",
+          "deltaPnl": 19.607921962754958,
+          "cutN": 6,
+          "cutRoi": -60.51827766282393,
+          "keepRoi": 33.186557596085905,
+          "aboveNoise": 13.519848578003618,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-2.3)∧(EDGE≥22.7)",
+          "deltaPnl": 19.607921962754958,
+          "cutN": 6,
+          "cutRoi": -60.51827766282393,
+          "keepRoi": 33.186557596085905,
+          "aboveNoise": 13.519848578003618,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1.8)∧(EDGE≥22.7)",
+          "deltaPnl": 19.271239154038255,
+          "cutN": 9,
+          "cutRoi": -39.65275546098405,
+          "keepRoi": 34.883372249907175,
+          "aboveNoise": 13.183165769286916,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        },
+        {
+          "name": "(ticketEv<-1.5)∧(EDGE≥22.7)",
+          "deltaPnl": 19.271239154038255,
+          "cutN": 9,
+          "cutRoi": -39.65275546098405,
+          "keepRoi": 34.883372249907175,
+          "aboveNoise": 13.183165769286916,
+          "stable": false,
+          "passed": 1,
+          "tested": 1
+        }
+      ]
+    }
+  ],
+  "consensus": [
+    {
+      "name": "boostBand ∧ ticketEv<-1",
+      "vs": [
+        {
+          "univ": "U_res (after TierA TOP cut)",
+          "delta": 23.544797267184464,
+          "stable": false,
+          "cutN": 14,
+          "cutRoi": -30.898684077670108
+        },
+        {
+          "univ": "U_nontop",
+          "delta": 19.116774193548423,
+          "stable": false,
+          "cutN": 9,
+          "cutRoi": -38.85523210070811
+        },
+        {
+          "univ": "U_ev (Aug20+ stamped)",
+          "delta": 27.588013347586635,
+          "stable": false,
+          "cutN": 16,
+          "cutRoi": -31.7103601696398
+        },
+        {
+          "univ": "U_boost (≥5.4u)",
+          "delta": 27.58801334758661,
+          "stable": false,
+          "cutN": 16,
+          "cutRoi": -31.7103601696398
+        }
+      ]
+    },
+    {
+      "name": "TierA TOP cut",
+      "vs": [
+        {
+          "univ": "U_all",
+          "delta": 42.57883168874632,
+          "stable": true,
+          "cutN": 37,
+          "cutRoi": -25.40503084054074
+        },
+        {
+          "univ": "U_top",
+          "delta": 42.57883168874628,
+          "stable": true,
+          "cutN": 37,
+          "cutRoi": -25.40503084054074
+        },
+        {
+          "univ": "U_mlb",
+          "delta": 32.87874515748584,
+          "stable": true,
+          "cutN": 27,
+          "cutRoi": -26.99404364325602
+        }
+      ]
+    },
+    {
+      "name": "TOP ∧ (leadSR≥3∨EDGE<10)",
+      "vs": [
+        {
+          "univ": "U_all",
+          "delta": 42.57883168874632,
+          "stable": true,
+          "cutN": 37,
+          "cutRoi": -25.40503084054074
+        },
+        {
+          "univ": "U_top",
+          "delta": 42.57883168874628,
+          "stable": true,
+          "cutN": 37,
+          "cutRoi": -25.40503084054074
+        },
+        {
+          "univ": "U_mlb",
+          "delta": 32.87874515748584,
+          "stable": true,
+          "cutN": 27,
+          "cutRoi": -26.99404364325602
+        }
+      ]
+    },
+    {
+      "name": "(ticketEv<-1)∧(units≥5.4)",
+      "vs": [
+        {
+          "univ": "U_res (after TierA TOP cut)",
+          "delta": 23.544797267184464,
+          "stable": false,
+          "cutN": 14,
+          "cutRoi": -30.898684077670108
+        },
+        {
+          "univ": "U_nontop",
+          "delta": 19.116774193548423,
+          "stable": false,
+          "cutN": 9,
+          "cutRoi": -38.85523210070811
+        },
+        {
+          "univ": "U_ev (Aug20+ stamped)",
+          "delta": 27.588013347586635,
+          "stable": false,
+          "cutN": 16,
+          "cutRoi": -31.7103601696398
+        }
+      ]
+    },
+    {
+      "name": "(ticketEv<-1)∧(EDGE≥15.43)",
+      "vs": [
+        {
+          "univ": "U_all",
+          "delta": 36.5512391540383,
+          "stable": false,
+          "cutN": 14,
+          "cutRoi": -48.34819993920402
+        },
+        {
+          "univ": "U_nontop",
+          "delta": 28.08000000000004,
+          "stable": false,
+          "cutN": 7,
+          "cutRoi": -74.28571428571429
+        }
+      ]
+    },
+    {
+      "name": "(ticketEv<-1.5)∧(units≥5.4)",
+      "vs": [
+        {
+          "univ": "U_res (after TierA TOP cut)",
+          "delta": 24.20479726718449,
+          "stable": false,
+          "cutN": 12,
+          "cutRoi": -37.35308220244541
+        },
+        {
+          "univ": "U_boost (≥5.4u)",
+          "delta": 28.248013347586635,
+          "stable": false,
+          "cutN": 14,
+          "cutRoi": -37.365097020617235
+        }
+      ]
+    },
+    {
+      "name": "expGap ≥ 6.667",
+      "vs": [
+        {
+          "univ": "U_res (after TierA TOP cut)",
+          "delta": 19.544285714285735,
+          "stable": false,
+          "cutN": 14,
+          "cutRoi": -26.198774415932593
+        },
+        {
+          "univ": "U_nontop",
+          "delta": 18.965714285714313,
+          "stable": false,
+          "cutN": 12,
+          "cutRoi": -29.7268248992387
+        }
+      ]
+    },
+    {
+      "name": "ticketEv < -1.5",
+      "vs": [
+        {
+          "univ": "U_res (after TierA TOP cut)",
+          "delta": 19.30283648287076,
+          "stable": false,
+          "cutN": 13,
+          "cutRoi": -27.654493528468336
+        },
+        {
+          "univ": "U_boost (≥5.4u)",
+          "delta": 28.248013347586635,
+          "stable": false,
+          "cutN": 14,
+          "cutRoi": -37.365097020617235
+        }
+      ]
+    }
+  ],
+  "toxicSigs": [
+    {
+      "sig": "SHARP-LEAN·MLB·U<5.4·E≥20·SR<1.5·both·fav",
+      "n": 3,
+      "w": 0,
+      "l": 3,
+      "stake": 15,
+      "pnl": -15,
+      "wr": 0,
+      "roi": -100,
+      "wrLift": -62.60162601626016
+    },
+    {
+      "sig": "TOP·MLB·U<5.4·Emid·SR≥3·both·fav",
+      "n": 4,
+      "w": 1,
+      "l": 3,
+      "stake": 18,
+      "pnl": -10.844827586206897,
+      "wr": 25,
+      "roi": -60.249042145593876,
+      "wrLift": -37.60162601626016
+    },
+    {
+      "sig": "RANK·MLB·U<5.4·E?·SRmid·unopp·fav",
+      "n": 8,
+      "w": 3,
+      "l": 5,
+      "stake": 32,
+      "pnl": -10.369024778544311,
+      "wr": 37.5,
+      "roi": -32.40320243295097,
+      "wrLift": -25.101626016260163
+    },
+    {
+      "sig": "TOP·MLB·U<5.4·E?·SR≥3·unopp·fav",
+      "n": 11,
+      "w": 5,
+      "l": 6,
+      "stake": 49,
+      "pnl": -9.1811570782159,
+      "wr": 45.45454545454545,
+      "roi": -18.737055261665102,
+      "wrLift": -17.14708056171471
+    },
+    {
+      "sig": "TOP·MLB·U<5.4·E<10·SRmid·unopp·fav",
+      "n": 4,
+      "w": 2,
+      "l": 2,
+      "stake": 17,
+      "pnl": -3.5031712473572942,
+      "wr": 50,
+      "roi": -20.606889690337024,
+      "wrLift": -12.601626016260163
+    }
+  ],
+  "goldSigs": [
+    {
+      "sig": "RANK·MLB·U<5.4·E?·SR≥3·unopp·fav",
+      "n": 6,
+      "w": 5,
+      "l": 1,
+      "stake": 24,
+      "pnl": 11.550540300298131,
+      "wr": 83.33333333333333,
+      "roi": 48.12725125124221,
+      "wrLift": 20.731707317073166
+    },
+    {
+      "sig": "SUPER·SOC·U≥5.4·E?·SR≥3·unopp·fav",
+      "n": 4,
+      "w": 4,
+      "l": 0,
+      "stake": 24,
+      "pnl": 11.363391431407486,
+      "wr": 100,
+      "roi": 47.34746429753119,
+      "wrLift": 37.39837398373984
+    },
+    {
+      "sig": "TOP·MLB·U<5.4·Emid·SRmid·both·fav",
+      "n": 3,
+      "w": 3,
+      "l": 0,
+      "stake": 13,
+      "pnl": 9.843358395989975,
+      "wr": 100,
+      "roi": 75.71814150761519,
+      "wrLift": 37.39837398373984
+    },
+    {
+      "sig": "RANK·MLB·U<5.4·E?·SR<1.5·unopp·dog",
+      "n": 7,
+      "w": 4,
+      "l": 3,
+      "stake": 28,
+      "pnl": 8.079999999999998,
+      "wr": 57.142857142857146,
+      "roi": 28.85714285714285,
+      "wrLift": -5.458768873403017
+    },
+    {
+      "sig": "TOP·MLB·U≥5.4·E≥20·SRmid·both·fav",
+      "n": 3,
+      "w": 2,
+      "l": 1,
+      "stake": 16.8,
+      "pnl": 4.23235294117647,
+      "wr": 66.66666666666667,
+      "roi": 25.192577030812316,
+      "wrLift": 4.065040650406509
+    },
+    {
+      "sig": "MINI·UFC·U<5.4·E≥20·SR<1.5·unopp·fav",
+      "n": 3,
+      "w": 3,
+      "l": 0,
+      "stake": 15.18,
+      "pnl": 3.837810652685966,
+      "wr": 100,
+      "roi": 25.282020109920726,
+      "wrLift": 37.39837398373984
+    },
+    {
+      "sig": "SHARP-PRIME·MLB·U<5.4·E?·SRmid·unopp·fav",
+      "n": 3,
+      "w": 2,
+      "l": 1,
+      "stake": 12,
+      "pnl": 2.6418630287997793,
+      "wr": 66.66666666666667,
+      "roi": 22.01552523999816,
+      "wrLift": 4.065040650406509
+    }
+  ],
+  "leadWallets": [
+    {
+      "wallet": "7923c4",
+      "n": 7,
+      "w": 2,
+      "l": 5,
+      "stake": 32.23,
+      "pnl": -15.83027397260274,
+      "wr": 28.571428571428573,
+      "roi": -49.11658074031257
+    },
+    {
+      "wallet": "ac9705",
+      "n": 8,
+      "w": 3,
+      "l": 5,
+      "stake": 42,
+      "pnl": -11.74017006220396,
+      "wr": 37.5,
+      "roi": -27.95278586239038
+    },
+    {
+      "wallet": "621848",
+      "n": 7,
+      "w": 3,
+      "l": 4,
+      "stake": 33.6,
+      "pnl": -10.07530231604837,
+      "wr": 42.857142857142854,
+      "roi": -29.986018797763005
+    },
+    {
+      "wallet": "1e8f33",
+      "n": 3,
+      "w": 1,
+      "l": 2,
+      "stake": 14,
+      "pnl": -6.363636363636363,
+      "wr": 33.333333333333336,
+      "roi": -45.45454545454545
+    },
+    {
+      "wallet": "2f2a9e",
+      "n": 8,
+      "w": 5,
+      "l": 3,
+      "stake": 34,
+      "pnl": -4.9714285714285715,
+      "wr": 62.5,
+      "roi": -14.6218487394958
+    },
+    {
+      "wallet": "f2f960",
+      "n": 8,
+      "w": 4,
+      "l": 4,
+      "stake": 37,
+      "pnl": -3.9503484320557494,
+      "wr": 50,
+      "roi": -10.676617383934458
+    },
+    {
+      "wallet": "705ba1",
+      "n": 12,
+      "w": 6,
+      "l": 6,
+      "stake": 53,
+      "pnl": -3.00216834279104,
+      "wr": 50,
+      "roi": -5.66446857130385
+    },
+    {
+      "wallet": "8ec926",
+      "n": 5,
+      "w": 3,
+      "l": 2,
+      "stake": 21,
+      "pnl": -0.9076446255589823,
+      "wr": 60,
+      "roi": -4.322117264566582
+    },
+    {
+      "wallet": "7da3d5",
+      "n": 8,
+      "w": 4,
+      "l": 4,
+      "stake": 37.46,
+      "pnl": 1.2658460348162484,
+      "wr": 50,
+      "roi": 3.379193899669643
+    },
+    {
+      "wallet": "4b912c",
+      "n": 7,
+      "w": 4,
+      "l": 3,
+      "stake": 35.8,
+      "pnl": 3.740067340067339,
+      "wr": 57.142857142857146,
+      "roi": 10.447115475048433
+    },
+    {
+      "wallet": "4c64aa",
+      "n": 8,
+      "w": 5,
+      "l": 3,
+      "stake": 32,
+      "pnl": 3.7417475728155347,
+      "wr": 62.5,
+      "roi": 11.692961165048546
+    },
+    {
+      "wallet": "70135d",
+      "n": 8,
+      "w": 5,
+      "l": 3,
+      "stake": 33,
+      "pnl": 3.9284490819980924,
+      "wr": 62.5,
+      "roi": 11.904391157569977
+    },
+    {
+      "wallet": "3bdd7e",
+      "n": 4,
+      "w": 3,
+      "l": 1,
+      "stake": 18,
+      "pnl": 4.1632312641486955,
+      "wr": 75,
+      "roi": 23.129062578603865
+    },
+    {
+      "wallet": "7dd2e5",
+      "n": 12,
+      "w": 10,
+      "l": 2,
+      "stake": 63.37999999999999,
+      "pnl": 4.655079180487346,
+      "wr": 83.33333333333333,
+      "roi": 7.344713127938382
+    },
+    {
+      "wallet": "69f882",
+      "n": 4,
+      "w": 3,
+      "l": 1,
+      "stake": 21.200000000000003,
+      "pnl": 5.415004262574594,
+      "wr": 75,
+      "roi": 25.54247293667261
+    },
+    {
+      "wallet": "5b1e50",
+      "n": 16,
+      "w": 10,
+      "l": 6,
+      "stake": 68,
+      "pnl": 7.1196446845584695,
+      "wr": 62.5,
+      "roi": 10.470065712585985
+    },
+    {
+      "wallet": "eeabaf",
+      "n": 15,
+      "w": 9,
+      "l": 6,
+      "stake": 70.4,
+      "pnl": 8.40329090203639,
+      "wr": 60,
+      "roi": 11.936492758574419
+    },
+    {
+      "wallet": "b839b3",
+      "n": 5,
+      "w": 5,
+      "l": 0,
+      "stake": 22,
+      "pnl": 13.684111003800396,
+      "wr": 100,
+      "roi": 62.20050456272907
+    },
+    {
+      "wallet": "bc44b0",
+      "n": 6,
+      "w": 6,
+      "l": 0,
+      "stake": 29.119999999999997,
+      "pnl": 16.627988959719143,
+      "wr": 100,
+      "roi": 57.10161043859596
+    },
+    {
+      "wallet": "cd2f63",
+      "n": 6,
+      "w": 5,
+      "l": 1,
+      "stake": 28.06,
+      "pnl": 17.891663366859373,
+      "wr": 83.33333333333333,
+      "roi": 63.76216452907831
+    },
+    {
+      "wallet": "0cd77e",
+      "n": 33,
+      "w": 20,
+      "l": 13,
+      "stake": 149,
+      "pnl": 18.453119757360945,
+      "wr": 60.60606060606061,
+      "roi": 12.384644132457009
+    }
+  ]
+}
