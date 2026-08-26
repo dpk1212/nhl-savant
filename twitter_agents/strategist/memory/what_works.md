@@ -22,3 +22,10 @@ Seed 2026-07-10:
 - **Likeness** = Dale voice; zero ROI NPC cosplay. Content **is** targeting (interest media).
 - Free SPCL in hero → soft ask in SR. Volume × right avatar > clever low-volume.
 - Vault: `researcher/knowledge/hormozi_spcl.md`
+
+2026-08-26 (Hormozi Rule of One — Masterson / *Great Leads* via Hormozi transcript):
+- **One big idea** per hero: easy to understand · easy to believe · interesting/unique.
+- Sub-bullets / stories / facts only **reinforce** that idea — never parallel competing pitches (**toss salad** banned).
+- USP = one selling proposition, not nineteen. Hard part = choosing the tip; writing gets simple after.
+- Stack order: **ONE → SPCL → QUAL** (pick spear tip before dressing or scoring copy).
+- Vault: `researcher/knowledge/hormozi_rule_of_one.md` (Agora/91-of-100 figures = Hormozi recount, not independently verified)

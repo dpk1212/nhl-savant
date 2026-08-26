@@ -14,6 +14,7 @@ Researcher appends; never delete without logging why in research_log.
 | [psych_arsenal.md](psych_arsenal.md) | Psych levers mapped to algo actions |
 | [cross_niche_wins.md](cross_niche_wins.md) | Stealable mechanics from outside niche |
 | [kill_list.md](kill_list.md) | Patterns that die / Learn auto-kills |
+| [hormozi_rule_of_one.md](hormozi_rule_of_one.md) | **Rule of One** (Masterson / *Great Leads*) — one big idea; kill toss salad copy |
 | [hormozi_spcl.md](hormozi_spcl.md) | **Hormozi SPCL canon** — Status·Power·Credibility·Likeness + influence laws |
 | [hormozi_qual_algorithm.md](hormozi_qual_algorithm.md) | **Qual · Algorithm · Trust economy** — quality volume, manufacturing order, show-me times |
 
@@ -48,3 +49,4 @@ Researcher appends; never delete without logging why in research_log.
 - 2026-07-18 Sharp Vault shock reveal (Dale spine OVERRIDE): named **vault_shock_reveal** — receipt_proof variant: fund-scale shock (147 / +$107.5M / +7.7%) → product room named → Alpha Field (MLB) mute screenshot → one crown jewel (***3987 +$1.6M / 78% beat close / 68% WR) → forced verified-field vs tipster-vibes camp; confession_costly only if it serves reveal tension; kill tipster_secret / scoreboard_ledger / slate/we're-back / best kept secret — see `SHARED/researcher_brief_latest.md`, `idea_queue.json`
 - 2026-07-18 Dale catalog: **whale_battle_receipt** — house gold style from Rays `2077806487376650339` (**2220v/2r**). Not “size dump.” Full recipe: proven-wallet $ interrupt → Nx usual → wallet teeth → opposing proven honesty → unfinished hold → dual-pane Battle + wallet media. Sub under receipt_proof; distinct from vault_shock_reveal / civil_war_sizing. See viral_patterns, hook_patterns, visual_construction, inspiration_board `ib_whale_battle_receipt`, coach craft #86
 - 2026-08-23 **Hormozi OS cutover**: old Twitter loop retired. Canon = SPCL + Qual/Algorithm/Trust. See `TWITTER.md`, `hormozi_spcl.md`, `hormozi_qual_algorithm.md`
+- 2026-08-26 **Rule of One** locked (Masterson via Hormozi transcript): one big idea = easy to understand + believe + interesting/unique; kill toss salad — see `hormozi_rule_of_one.md`

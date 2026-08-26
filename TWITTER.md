@@ -4,9 +4,10 @@
 Those systems are **retired**. Do not resurrect them.
 
 **Canon (read every run):**
-1. `twitter_agents/researcher/knowledge/hormozi_spcl.md` — Status · Power · Credibility · Likeness
-2. `twitter_agents/researcher/knowledge/hormozi_qual_algorithm.md` — Qual · Algorithm · Trust economy
-3. `twitter_agents/SHARED/brand_seed.md` — product voice / bans (still binding)
+1. `twitter_agents/researcher/knowledge/hormozi_rule_of_one.md` — Rule of One (one big idea; no toss salad)
+2. `twitter_agents/researcher/knowledge/hormozi_spcl.md` — Status · Power · Credibility · Likeness
+3. `twitter_agents/researcher/knowledge/hormozi_qual_algorithm.md` — Qual · Algorithm · Trust economy
+4. `twitter_agents/SHARED/brand_seed.md` — product voice / bans (still binding)
 
 **North star:** free trials started (influence → compliance).  
 Followers/subs are lagging indicators. Vanity views are not the scoreboard.
@@ -50,6 +51,19 @@ Stack all four when possible. Line 1 must carry **S and/or C** a stranger can *s
 
 ---
 
+## Rule of One — every hero has one spear tip
+
+From Masterson (*Great Leads*) via Hormozi — **91/100** top offers centered on a single concept.
+
+- **One big idea** only: easy to understand · easy to believe · interesting/unique.
+- Sub-bullets / stories / facts exist solely to **reinforce** that idea — never competing pitches.
+- **Toss salad** (stack every benefit and hope one sticks) is banned.
+- Hard part = picking the one. Once picked, copy is simple.
+
+Full canon: `hormozi_rule_of_one.md`.
+
+---
+
 ## Trust economy — show me, whole truth
 
 - Proof **is** the pudding.
@@ -63,12 +77,13 @@ Stack all four when possible. Line 1 must carry **S and/or C** a stranger can *s
 
 ```
 1. SPINE   — Dale dump / live board moment (scarce, true, on-avatar)
-2. SPCL    — name which letters this post stamps + the ask we’re training
-3. STUFF   — receipts from THIS run’s files/UI (no invented numbers)
-4. CRAFT   — CAPS/confrontation line 1 when $ contrast exists; bullets; forced take
-5. ASK     — soft trial + link in SELF-REPLY only
-6. QUAL    — delete fluff; ship 95%; don’t major in minors
-7. STAGE   — save COPY_PASTE; Dale posts; never auto-publish
+2. ONE     — name the one big idea (Rule of One: understand / believe / unique)
+3. SPCL    — name which letters prove THAT idea + the ask we’re training
+4. STUFF   — receipts from THIS run’s files/UI (no invented numbers)
+5. CRAFT   — CAPS/confrontation line 1 when $ contrast exists; bullets; forced take
+6. ASK     — soft trial + link in SELF-REPLY only
+7. QUAL    — delete fluff; kill toss salad; ship 95%; don’t major in minors
+8. STAGE   — save COPY_PASTE; Dale posts; never auto-publish
 ```
 
 Optional feedback (not blockers): pulse / analytics CSV when X auth exists — to learn which SPCL stamps complied, not to rebuild the old gate religion.
@@ -115,10 +130,11 @@ Measure IRL: replies/trials from people we’d want as customers.
 
 There is **one desk**: Hormozi X for Sharp Flow.
 
-- Immerse in SPCL + Qual + Algorithm + Trust before drafting.
+- Immerse in SPCL + Qual + Algorithm + Trust + **Rule of One** before drafting.
+- Name the one big idea first; kill toss salad.
 - Prefer deletion and speed over process theater.
 - Parent may draft when Dale dumps a spine; no requirement to launch four Task agents.
-- If subagents are used, they only exist to stamp SPCL / raise Qual — model: Grok per Dale — and must not revive retired gates.
+- If subagents are used, they only exist to stamp SPCL / raise Qual / enforce Rule of One — model: Grok per Dale — and must not revive retired gates.
 
 ---
 
@@ -131,4 +147,4 @@ There is **one desk**: Hormozi X for Sharp Flow.
 - Conversion-expert / brand-editor dual religion as separate products
 - Scoring theater that rubber-stamps hollow copy
 
-Pointers to retired files may remain on disk as fossils. **Operating law is this document + the two Hormozi canons.**
+Pointers to retired files may remain on disk as fossils. **Operating law is this document + the Hormozi canons (SPCL · Qual · Rule of One).**
