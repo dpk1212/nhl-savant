@@ -101,14 +101,20 @@ import {
   applyFlinchFailOpenMuteOverlay,
   applyMaxSrSub4MuteOverlay,
   applyNoConfirmedMuteOverlay,
+  applyTopCrowdedConvictionMuteOverlay,
   maxForSizeRatio,
+  leadForSizeRatio,
+  meanForRoiNorm,
   countConfirmedOnSide,
   isMaxSrSub4MuteLive,
   isNoConfirmedMuteLive,
+  isTopCrowdedMuteLive,
   MAX_SR_SUB4_MUTE_FROM,
   MAX_SR_SUB4_MUTED_BY,
   NO_CONFIRMED_MUTE_FROM,
   NO_CONFIRMED_MUTED_BY,
+  TOP_CROWDED_MUTE_FROM,
+  TOP_CROWDED_MUTED_BY,
   bestProvenForSide,
   computeConfirmedUnoppSized,
   computeConfirmedQ1Sized,
@@ -1120,6 +1126,10 @@ function applySkillFeatureStamps(target, bundle, now, {
   nConfirmedFor = null,
   noConfirmedAction = null,
   unitsPreNoConfirmed = null,
+  leadSR = null,
+  forRoiNormMean = null,
+  topCrowdedAction = null,
+  unitsPreTopCrowded = null,
   blendTier = null,
   pathBlendPriors = null,
   sideOdds = null,
@@ -1214,6 +1224,14 @@ function applySkillFeatureStamps(target, bundle, now, {
   if (unitsPreNoConfirmed != null && Number.isFinite(unitsPreNoConfirmed)) {
     target.v8_unitsPreNoConfirmed = unitsPreNoConfirmed;
   }
+  if (leadSR != null && Number.isFinite(Number(leadSR))) target.v8_leadSR = Number(leadSR);
+  if (forRoiNormMean != null && Number.isFinite(Number(forRoiNormMean))) {
+    target.v8_forRoiNormMean = Number(forRoiNormMean);
+  }
+  if (topCrowdedAction != null) target.v8_topCrowdedAction = topCrowdedAction;
+  if (unitsPreTopCrowded != null && Number.isFinite(unitsPreTopCrowded)) {
+    target.v8_unitsPreTopCrowded = unitsPreTopCrowded;
+  }
   // Path × EDGE expected WR (tracking only — no unit effect)
   const meanFor = wa?.meanFor ?? bundle.winnerAlign?.meanFor ?? null;
   const prior = resolvePathPriorWr(pathBlendPriors?.byTier, blendTier, {
@@ -1282,6 +1300,7 @@ function pinnTapeFromMeta(gameMeta, pick, mkt, side, sd, extra = {}) {
 function skillStampsDrifted(sd, bundle, {
   tapeAction = null, qConv = null, qConvAction = null, foolsGoldAction = null,
   flinchFailOpenAction = null, maxSrSub4Action = null, noConfirmedAction = null,
+  topCrowdedAction = null,
   blendWr = null, expWin = null,
 } = {}) {
   if ((sd.v8_skillFeatureVersion || 0) !== SKILL_FEATURE_VERSION) return true;
@@ -1323,6 +1342,7 @@ function skillStampsDrifted(sd, bundle, {
   if (flinchFailOpenAction != null && (sd.v8_flinchFailOpenAction || null) !== flinchFailOpenAction) return true;
   if (maxSrSub4Action != null && (sd.v8_maxSrSub4Action || null) !== maxSrSub4Action) return true;
   if (noConfirmedAction != null && (sd.v8_noConfirmedAction || null) !== noConfirmedAction) return true;
+  if (topCrowdedAction != null && (sd.v8_topCrowdedAction || null) !== topCrowdedAction) return true;
   return false;
 }
 
@@ -3020,8 +3040,8 @@ async function createMissingLockedPicks({
         peakUnitsApplied = maxSrSub4PolicyCreate.units;
       }
 
-      // no-CONFIRMED mute — ABSOLUTE LAST after maxSR. Cuts remaining
-      // tickets with zero CONFIRMED on FOR. Never resizes or repaths.
+      // no-CONFIRMED mute — after maxSR. Cuts remaining tickets with zero
+      // CONFIRMED on FOR. Never resizes or repaths.
       let noConfirmedPolicyCreate = null;
       const nConfirmedCreate = countConfirmedOnSide(walletDetails, side, sport, walletProfiles);
       if (createV121Eligible && peakUnitsApplied > 0) {
@@ -3031,6 +3051,23 @@ async function createMissingLockedPicks({
           pickDate: TARGET_DATE,
         });
         peakUnitsApplied = noConfirmedPolicyCreate.units;
+      }
+
+      // TOP crowded-conviction mute — ABSOLUTE LAST. TOP/TOP+ only.
+      // Does not touch any other path or upstream sizing math.
+      let topCrowdedPolicyCreate = null;
+      const leadSrCreate = leadForSizeRatio(walletDetails, side);
+      const forRoiNormCreate = meanForRoiNorm(walletDetails, side);
+      if (createV121Eligible && peakUnitsApplied > 0) {
+        topCrowdedPolicyCreate = applyTopCrowdedConvictionMuteOverlay({
+          units: peakUnitsApplied,
+          tier: hcStakeTierCreate,
+          leadSR: leadSrCreate,
+          edge: waCreateEdge?.edge ?? null,
+          forRoiNormMean: forRoiNormCreate,
+          pickDate: TARGET_DATE,
+        });
+        peakUnitsApplied = topCrowdedPolicyCreate.units;
       }
 
       // Determine team label for the side.
@@ -3234,6 +3271,12 @@ async function createMissingLockedPicks({
           unitsPreNoConfirmed: (noConfirmedPolicyCreate && Number.isFinite(noConfirmedPolicyCreate.unitsPrePolicy))
             ? noConfirmedPolicyCreate.unitsPrePolicy
             : null,
+          leadSR: leadSrCreate,
+          forRoiNormMean: forRoiNormCreate,
+          topCrowdedAction: topCrowdedPolicyCreate?.action ?? null,
+          unitsPreTopCrowded: (topCrowdedPolicyCreate && Number.isFinite(topCrowdedPolicyCreate.unitsPrePolicy))
+            ? topCrowdedPolicyCreate.unitsPrePolicy
+            : null,
           blendTier: hcStakeTierCreate,
           pathBlendPriors,
           sideOdds: odds ?? null,
@@ -3283,7 +3326,9 @@ async function createMissingLockedPicks({
           hoursUntilGame: hoursUntilMs(tapeCreateCtx.commenceMs, now),
         });
       }
-      if (noConfirmedPolicyCreate?.mutedBy) {
+      if (topCrowdedPolicyCreate?.mutedBy) {
+        v8Stamps.mutedBy = topCrowdedPolicyCreate.mutedBy;
+      } else if (noConfirmedPolicyCreate?.mutedBy) {
         v8Stamps.mutedBy = noConfirmedPolicyCreate.mutedBy;
       } else if (maxSrSub4PolicyCreate?.mutedBy) {
         v8Stamps.mutedBy = maxSrSub4PolicyCreate.mutedBy;
@@ -3309,7 +3354,10 @@ async function createMissingLockedPicks({
       const noConfirmedMutedCreate = noConfirmedPolicyCreate?.action === 'MUTE'
         && Number.isFinite(noConfirmedPolicyCreate.unitsPrePolicy)
         && noConfirmedPolicyCreate.unitsPrePolicy > 0;
-      const createSizeMuted = noConfirmedMutedCreate || maxSrMutedCreate || flinchMutedCreate || (!q1FlooredCreate && !unoppFlooredCreate && (
+      const topCrowdedMutedCreate = topCrowdedPolicyCreate?.action === 'MUTE'
+        && Number.isFinite(topCrowdedPolicyCreate.unitsPrePolicy)
+        && topCrowdedPolicyCreate.unitsPrePolicy > 0;
+      const createSizeMuted = topCrowdedMutedCreate || noConfirmedMutedCreate || maxSrMutedCreate || flinchMutedCreate || (!q1FlooredCreate && !unoppFlooredCreate && (
         (foolsGoldPolicyCreate?.action === 'MUTE'
           && Number.isFinite(foolsGoldPolicyCreate.unitsPrePolicy)
           && foolsGoldPolicyCreate.unitsPrePolicy > 0)
@@ -3321,6 +3369,7 @@ async function createMissingLockedPicks({
       const healthStamp = {
         status: createSizeMuted ? 'MUTED' : 'ACTIVE',
         reasons: [
+          ...(topCrowdedPolicyCreate?.reason ? [topCrowdedPolicyCreate.reason] : []),
           ...(noConfirmedPolicyCreate?.reason ? [noConfirmedPolicyCreate.reason] : []),
           ...(maxSrSub4PolicyCreate?.reason ? [maxSrSub4PolicyCreate.reason] : []),
           ...(flinchFailOpenPolicyCreate?.reason ? [flinchFailOpenPolicyCreate.reason] : []),
@@ -4385,7 +4434,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     finalUnitsApplied = maxSrSub4Policy.units;
   }
 
-  // ─── no-CONFIRMED mute (absolute last after maxSR) ───────────────────
+  // ─── no-CONFIRMED mute (after maxSR) ─────────────────────────────────
   // Remaining tickets with zero CONFIRMED on FOR → 0u. Never resizes /
   // repaths. Manual stake exempt. Date-gated inside the overlay.
   let noConfirmedPolicy = null;
@@ -4397,6 +4446,24 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       pickDate,
     });
     finalUnitsApplied = noConfirmedPolicy.units;
+  }
+
+  // ─── TOP crowded-conviction mute (ABSOLUTE LAST) ─────────────────────
+  // TOP/TOP+ only · A∪A2 · never resizes / repaths · other tiers EXEMPT.
+  // Manual stake exempt. Date-gated inside the overlay.
+  let topCrowdedPolicy = null;
+  const leadSrLive = leadForSizeRatio(frozenWd, side);
+  const forRoiNormLive = meanForRoiNorm(frozenWd, side);
+  if (v121Eligible && finalUnitsApplied > 0 && !skipManualFlinch) {
+    topCrowdedPolicy = applyTopCrowdedConvictionMuteOverlay({
+      units: finalUnitsApplied,
+      tier: hcStakeTier,
+      leadSR: leadSrLive,
+      edge: winnerAlign?.edge ?? null,
+      forRoiNormMean: forRoiNormLive,
+      pickDate,
+    });
+    finalUnitsApplied = topCrowdedPolicy.units;
   }
 
   // ─── lockStage promote/demote — v12 gate ──────────────────────────────
@@ -4458,6 +4525,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (flinchFailOpenPolicy?.reason && !reasons.includes(flinchFailOpenPolicy.reason)) reasons.push(flinchFailOpenPolicy.reason);
   if (maxSrSub4Policy?.reason && !reasons.includes(maxSrSub4Policy.reason)) reasons.push(maxSrSub4Policy.reason);
   if (noConfirmedPolicy?.reason && !reasons.includes(noConfirmedPolicy.reason)) reasons.push(noConfirmedPolicy.reason);
+  if (topCrowdedPolicy?.reason && !reasons.includes(topCrowdedPolicy.reason)) reasons.push(topCrowdedPolicy.reason);
   // Preserve diagnostic-only badge signals from prior cycles (they don't
   // change status but the UI uses them for chip rendering).
   if (sd.health?.reasons) {
@@ -4483,9 +4551,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const noConfirmedMuted = noConfirmedPolicy?.action === 'MUTE'
     && Number.isFinite(noConfirmedPolicy.unitsPrePolicy)
     && noConfirmedPolicy.unitsPrePolicy > 0;
+  const topCrowdedMuted = topCrowdedPolicy?.action === 'MUTE'
+    && Number.isFinite(topCrowdedPolicy.unitsPrePolicy)
+    && topCrowdedPolicy.unitsPrePolicy > 0;
   // Q1 / UNOPP hard floor wins — do not leave health MUTED when units were restored.
-  // Flinch + maxSR + no-CONFIRMED run AFTER those floors, so they still win if they cancelled.
-  const sizeMuted = noConfirmedMuted || maxSrMuted || flinchMuted || (!confirmedQ1Floored && !confirmedUnoppFloored && (foolsMuted || qConvMuted || (tapeSizingLive
+  // Flinch + maxSR + no-CONFIRMED + TOP-crowded run AFTER those floors, so they still win if they cancelled.
+  const sizeMuted = topCrowdedMuted || noConfirmedMuted || maxSrMuted || flinchMuted || (!confirmedQ1Floored && !confirmedUnoppFloored && (foolsMuted || qConvMuted || (tapeSizingLive
     ? (tapePolicy?.action === 'MUTE' && unitsBeforeClv > 0)
     : (clvPolicy.action === 'CANCEL' && unitsBeforeClv > 0))));
   const healthStatusOut = sizeMuted
@@ -4524,7 +4595,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const FLINCH_MUTE_VALUES = new Set(['believed-cut', 'fail-open-sub4']);
   const MAX_SR_MUTE_VALUES = new Set([MAX_SR_SUB4_MUTED_BY]);
   const NO_CONF_MUTE_VALUES = new Set([NO_CONFIRMED_MUTED_BY]);
-  if (noConfirmedPolicy?.mutedBy) {
+  const TOP_CROWDED_MUTE_VALUES = new Set([TOP_CROWDED_MUTED_BY]);
+  if (topCrowdedPolicy?.mutedBy) {
+    patch.mutedBy = topCrowdedPolicy.mutedBy;
+  } else if (noConfirmedPolicy?.mutedBy) {
     patch.mutedBy = noConfirmedPolicy.mutedBy;
   } else if (maxSrSub4Policy?.mutedBy) {
     patch.mutedBy = maxSrSub4Policy.mutedBy;
@@ -4554,7 +4628,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       || FOOLS_MUTE_VALUES.has(sd.mutedBy)
       || FLINCH_MUTE_VALUES.has(sd.mutedBy)
       || MAX_SR_MUTE_VALUES.has(sd.mutedBy)
-      || NO_CONF_MUTE_VALUES.has(sd.mutedBy)) {
+      || NO_CONF_MUTE_VALUES.has(sd.mutedBy)
+      || TOP_CROWDED_MUTE_VALUES.has(sd.mutedBy)) {
     // Clear stale mute stamps when no current mute gate is firing.
     patch.mutedBy = admin.firestore.FieldValue.delete();
   }
@@ -4789,6 +4864,15 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       + `${noConfirmedPolicy.unitsPrePolicy}u → 0u (${hcStakeTier})`
     );
   }
+  if (topCrowdedPolicy?.action === 'MUTE') {
+    changes.push(
+      `TOP-CROWDED-MUTE: ${topCrowdedPolicy.reason} `
+      + `leadSR=${leadSrLive == null ? '—' : Number(leadSrLive).toFixed(2)} `
+      + `E=${winnerAlign?.edge == null ? '—' : Number(winnerAlign.edge).toFixed(1)} `
+      + `roiNorm=${forRoiNormLive == null ? '—' : Number(forRoiNormLive).toFixed(1)} `
+      + `${topCrowdedPolicy.unitsPrePolicy}u → 0u (${hcStakeTier})`
+    );
+  }
   if (rankRescued) {
     changes.push(`RANK-RESCUE: 2-for-0 slice promoted HC-muted pick → ${RANK_RESCUE_UNITS}u`);
   }
@@ -4877,6 +4961,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       unitsPreNoConfirmed: (noConfirmedPolicy && Number.isFinite(noConfirmedPolicy.unitsPrePolicy))
         ? noConfirmedPolicy.unitsPrePolicy
         : null,
+      leadSR: leadSrLive,
+      forRoiNormMean: forRoiNormLive,
+      topCrowdedAction: topCrowdedPolicy?.action ?? null,
+      unitsPreTopCrowded: (topCrowdedPolicy && Number.isFinite(topCrowdedPolicy.unitsPrePolicy))
+        ? topCrowdedPolicy.unitsPrePolicy
+        : null,
       blendTier: hcStakeTier,
       pathBlendPriors,
       sideOdds,
@@ -4898,6 +4988,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       expWin: patch.v8_expWin,
       maxSrSub4Action: maxSrSub4Policy?.action ?? null,
       noConfirmedAction: noConfirmedPolicy?.action ?? null,
+      topCrowdedAction: topCrowdedPolicy?.action ?? null,
     })
         || (edgeNetSizePolicy && (sd.v8_edgeNetSizeAction || null) !== edgeNetSizePolicy.action)
         || (edgeBandSizePolicy && (sd.v8_edgeBandAction || null) !== edgeBandSizePolicy.action)
@@ -4909,7 +5000,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         || (foolsGoldPolicy && (sd.v8_foolsGoldAction || null) !== foolsGoldPolicy.action)
         || (flinchFailOpenPolicy && (sd.v8_flinchFailOpenAction || null) !== flinchFailOpenPolicy.action)
         || (maxSrSub4Policy && (sd.v8_maxSrSub4Action || null) !== maxSrSub4Policy.action)
-        || (noConfirmedPolicy && (sd.v8_noConfirmedAction || null) !== noConfirmedPolicy.action)) {
+        || (noConfirmedPolicy && (sd.v8_noConfirmedAction || null) !== noConfirmedPolicy.action)
+        || (topCrowdedPolicy && (sd.v8_topCrowdedAction || null) !== topCrowdedPolicy.action)) {
       changes.push(
         `SKILL-FEATURES: E=${skillLive.edge == null ? '—' : Number(skillLive.edge).toFixed(1)} `
         + `net=${skillLive.netMeanPrior == null ? '—' : Number(skillLive.netMeanPrior).toFixed(1)} `
@@ -4923,7 +5015,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         + (foolsGoldPolicy?.action ? ` foolsAct=${foolsGoldPolicy.action}` : '')
         + (flinchFailOpenPolicy?.action ? ` flinchAct=${flinchFailOpenPolicy.action}` : '')
         + (maxSrSub4Policy?.action ? ` maxSrAct=${maxSrSub4Policy.action}` : '')
-        + (noConfirmedPolicy?.action ? ` noConfAct=${noConfirmedPolicy.action}` : ''),
+        + (noConfirmedPolicy?.action ? ` noConfAct=${noConfirmedPolicy.action}` : '')
+        + (topCrowdedPolicy?.action ? ` topCrowdAct=${topCrowdedPolicy.action}` : ''),
       );
     }
     const tapeGrew = (patch.v8_ticketTapeLog?.length || 0) > ((sd.v8_ticketTapeLog || []).length);
@@ -5730,10 +5823,18 @@ async function main() {
   if (isNoConfirmedMuteLive(TARGET_DATE)) {
     console.log(
       `no-CONFIRMED mute LIVE: zero CONFIRMED on FOR → 0u`
-      + ` · from ${NO_CONFIRMED_MUTE_FROM} · last step after maxSR · no resize`,
+      + ` · from ${NO_CONFIRMED_MUTE_FROM} · after maxSR · no resize`,
     );
   } else {
     console.log(`no-CONFIRMED mute: not live before ${NO_CONFIRMED_MUTE_FROM} (TARGET_DATE=${TARGET_DATE})`);
+  }
+  if (isTopCrowdedMuteLive(TARGET_DATE)) {
+    console.log(
+      `TOP crowded-conviction mute LIVE: TOP/TOP+ AND (leadSR≥3 OR EDGE<10 OR (roiNorm≥42∧leadSR≥2)) → 0u`
+      + ` · from ${TOP_CROWDED_MUTE_FROM} · absolute last · other tiers untouched`,
+    );
+  } else {
+    console.log(`TOP crowded-conviction mute: not live before ${TOP_CROWDED_MUTE_FROM} (TARGET_DATE=${TARGET_DATE})`);
   }
   if (isConfirmedQ1PromoteLive(TARGET_DATE)) {
     console.log(
