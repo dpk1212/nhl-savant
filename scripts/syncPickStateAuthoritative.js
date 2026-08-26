@@ -121,6 +121,7 @@ import {
   EV_DRIFT_EDGE_MUTED_BY,
   EV_DRIFT_EDGE_MIN,
   EV_DRIFT_DEV_MAX,
+  EV_DRIFT_CURRENT_MAX,
   bestProvenForSide,
   computeConfirmedUnoppSized,
   computeConfirmedQ1Sized,
@@ -5958,7 +5959,7 @@ async function main() {
   }
   if (isEvDriftEdgeMuteLive(TARGET_DATE)) {
     console.log(
-      `Ev-drift × EDGE mute LIVE: EDGE≥${EV_DRIFT_EDGE_MIN} AND dEv≤${EV_DRIFT_DEV_MAX} → 0u`
+      `Ev-drift × EDGE mute LIVE: EDGE≥${EV_DRIFT_EDGE_MIN} AND dEv≤${EV_DRIFT_DEV_MAX} AND currentEv<${EV_DRIFT_CURRENT_MAX} → 0u`
       + ` · from ${EV_DRIFT_EDGE_MUTE_FROM} · absolute last · missing Ev fail-open · mutedBy=${EV_DRIFT_EDGE_MUTED_BY}`,
     );
   } else {

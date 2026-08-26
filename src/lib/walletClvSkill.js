@@ -1466,27 +1466,31 @@ export function applyTopCrowdedConvictionMuteOverlay({
 // ── Ev-drift × EDGE mute (absolute last 0u cancel — after TOP crowded)
 // 2026-08-26+: after ALL sizing / leftover mutes including TOP crowded.
 // Any path. Hard 0u when:
-//   EDGE ≥ 15  AND  dEv ≤ −1.5
+//   EDGE ≥ 15  AND  dEv ≤ −1.5  AND  currentEv < −1
 // where dEv = current ticketEv − first (flag) ticketEv from v8_ticketTapeLog.
-// Collision: high wallet-alignment conviction + Pinny fair moved against us.
+// Collision: high wallet-alignment conviction + Pinny fair now against us
+// (not merely "worse than a great open" while still +EV).
 // Hard fences (zero impact elsewhere):
 //   • EDGE < 15 or missing → HOLD / fail-open
 //   • missing firstEv / currentEv / dEv → HOLD (fail-open; no invent)
+//   • currentEv ≥ −1 → HOLD (Ev has not actually gone negative)
 //   • already 0u → PASS
 //   • pre-cutover → EXEMPT
 // Does NOT resize, repath, or change any upstream dial — post-created mute only.
 export const EV_DRIFT_EDGE_MUTE_FROM = '2026-08-26';
 export const EV_DRIFT_EDGE_MUTED_BY = 'ev-drift-edge';
 export const EV_DRIFT_EDGE_MIN = 15;
-export const EV_DRIFT_DEV_MAX = -1.5; // inclusive: dEv ≤ −1.5 → mute
+export const EV_DRIFT_DEV_MAX = -1.5; // inclusive: dEv ≤ −1.5
+export const EV_DRIFT_CURRENT_MAX = -1; // exclusive: currentEv < −1
 
 export function isEvDriftEdgeMuteLive(pickDate) {
   return typeof pickDate === 'string' && pickDate >= EV_DRIFT_EDGE_MUTE_FROM;
 }
 
 /**
- * Absolute-last Ev-drift × high-EDGE mute. Identity unless EDGE≥15 and
- * first→current ticketEv worsened by ≥1.5pp. Never invents missing Ev.
+ * Absolute-last Ev-drift × high-EDGE mute. Identity unless EDGE≥15,
+ * first→current worsened by ≥1.5pp, AND current Ev is actually negative (<−1).
+ * Never invents missing Ev.
  */
 export function applyEvDriftEdgeMuteOverlay({
   units,
@@ -1534,6 +1538,7 @@ export function applyEvDriftEdgeMuteOverlay({
   }
   if (eIn < EV_DRIFT_EDGE_MIN) return out('HOLD', null);
   if (dIn > EV_DRIFT_DEV_MAX) return out('HOLD', null);
+  if (cIn >= EV_DRIFT_CURRENT_MAX) return out('HOLD', null);
 
   return {
     units: 0,

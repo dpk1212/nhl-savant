@@ -1,8 +1,9 @@
 /**
  * Ev-drift × EDGE mute (2026-08-26+).
  * Absolute-last post-created mute: any path.
- * CUT if EDGE≥15 AND dEv≤−1.5 (first→current ticketEv).
+ * CUT if EDGE≥15 AND dEv≤−1.5 AND currentEv < −1.
  * HOLD / fail-open when EDGE or Ev endpoints missing — never invents.
+ * Still-+EV tickets that merely drifted down from a great open HOLD.
  * Usage: node tests/testEvDriftEdgeMute.mjs
  */
 import assert from 'assert';
@@ -14,6 +15,7 @@ import {
   EV_DRIFT_EDGE_MUTED_BY,
   EV_DRIFT_EDGE_MIN,
   EV_DRIFT_DEV_MAX,
+  EV_DRIFT_CURRENT_MAX,
 } from '../src/lib/walletClvSkill.js';
 import {
   resolveTicketEvDrift,
@@ -35,24 +37,24 @@ ok(!isEvDriftEdgeMuteLive('2026-08-25'), 'not live before cutover');
 ok(EV_DRIFT_EDGE_MUTE_FROM === '2026-08-26', 'cutover date');
 ok(EV_DRIFT_EDGE_MIN === 15, 'EDGE thr');
 ok(EV_DRIFT_DEV_MAX === -1.5, 'dEv thr');
+ok(EV_DRIFT_CURRENT_MAX === -1, 'currentEv thr');
 ok(EV_DRIFT_EDGE_MUTED_BY === 'ev-drift-edge', 'mutedBy stamp');
 
-// ── MUTE: EDGE≥15 ∧ dEv≤−1.5 ─────────────────────────────────────────────
+// ── MUTE: EDGE≥15 ∧ dEv≤−1.5 ∧ currentEv < −1 ────────────────────────────
 {
   const r = mute({
     units: 5.4, edge: 16, firstEv: 0.5, currentEv: -1.3, dEv: -1.8,
   });
-  ok(r.action === 'MUTE' && r.units === 0, 'high-E drifted → mute');
+  ok(r.action === 'MUTE' && r.units === 0, 'high-E drifted into −EV → mute');
   ok(r.mutedBy === EV_DRIFT_EDGE_MUTED_BY, 'ev-drift-edge stamp');
   ok(r.unitsPrePolicy === 5.4, 'preserves pre units');
   ok(r.reason === 'ev_drift_edge', 'reason');
 }
 {
   const r = mute({
-    units: 5.4, edge: 15, firstEv: 2.0, currentEv: 0.5, // dEv = -1.5 exact
+    units: 5.4, edge: 15, firstEv: 1.0, currentEv: -1.01, // dEv ≈ -2.0
   });
-  ok(r.action === 'MUTE' && r.units === 0, 'EDGE exactly 15 + dEv exactly −1.5 → mute');
-  ok(r.dEv === -1.5, 'computes dEv from endpoints');
+  ok(r.action === 'MUTE' && r.units === 0, 'EDGE exactly 15 + current just under −1 → mute');
 }
 {
   const r = mute({
@@ -61,7 +63,7 @@ ok(EV_DRIFT_EDGE_MUTED_BY === 'ev-drift-edge', 'mutedBy stamp');
   ok(r.action === 'MUTE' && r.units === 0, 'any path / small units still mute when EDGE hot');
 }
 
-// ── HOLD: below thr / missing / improved ─────────────────────────────────
+// ── HOLD: below thr / missing / improved / still +EV ─────────────────────
 function holdExact(args, expectU, msg) {
   const r = mute(args);
   ok(r.units === expectU, `${msg} units ${r.units} === ${expectU}`);
@@ -78,6 +80,12 @@ holdExact({
 holdExact({
   units: 5.4, edge: 22, firstEv: -1, currentEv: 1, dEv: 2,
 }, 5.4, 'improved Ev HOLD');
+holdExact({
+  units: 5.4, edge: 30, firstEv: 12.2, currentEv: 9.5, dEv: -2.7,
+}, 5.4, 'drifted but still +EV HOLD (SOC-style)');
+holdExact({
+  units: 5.4, edge: 20, firstEv: 2, currentEv: -1.0, dEv: -3.0,
+}, 5.4, 'currentEv exactly −1 HOLD (strict <)');
 holdExact({
   units: 5.4, edge: null, firstEv: 1, currentEv: -5, dEv: -6,
 }, 5.4, 'missing EDGE fail-open');
