@@ -1463,6 +1463,91 @@ export function applyTopCrowdedConvictionMuteOverlay({
   };
 }
 
+// ── Ev-drift × EDGE mute (absolute last 0u cancel — after TOP crowded)
+// 2026-08-26+: after ALL sizing / leftover mutes including TOP crowded.
+// Any path. Hard 0u when:
+//   EDGE ≥ 15  AND  dEv ≤ −1.5
+// where dEv = current ticketEv − first (flag) ticketEv from v8_ticketTapeLog.
+// Collision: high wallet-alignment conviction + Pinny fair moved against us.
+// Hard fences (zero impact elsewhere):
+//   • EDGE < 15 or missing → HOLD / fail-open
+//   • missing firstEv / currentEv / dEv → HOLD (fail-open; no invent)
+//   • already 0u → PASS
+//   • pre-cutover → EXEMPT
+// Does NOT resize, repath, or change any upstream dial — post-created mute only.
+export const EV_DRIFT_EDGE_MUTE_FROM = '2026-08-26';
+export const EV_DRIFT_EDGE_MUTED_BY = 'ev-drift-edge';
+export const EV_DRIFT_EDGE_MIN = 15;
+export const EV_DRIFT_DEV_MAX = -1.5; // inclusive: dEv ≤ −1.5 → mute
+
+export function isEvDriftEdgeMuteLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= EV_DRIFT_EDGE_MUTE_FROM;
+}
+
+/**
+ * Absolute-last Ev-drift × high-EDGE mute. Identity unless EDGE≥15 and
+ * first→current ticketEv worsened by ≥1.5pp. Never invents missing Ev.
+ */
+export function applyEvDriftEdgeMuteOverlay({
+  units,
+  edge = null,
+  firstEv = null,
+  currentEv = null,
+  dEv = null,
+  pickDate = null,
+} = {}) {
+  const pre = Number.isFinite(units) ? Math.max(0, units) : 0;
+  const asFinite = (v) => {
+    if (v == null || v === '') return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  };
+  const eIn = asFinite(edge);
+  const fIn = asFinite(firstEv);
+  const cIn = asFinite(currentEv);
+  let dIn = asFinite(dEv);
+  if (dIn == null && fIn != null && cIn != null) {
+    dIn = Math.round((cIn - fIn) * 10) / 10;
+  }
+  const out = (action, reason = null, extra = {}) => ({
+    units: pre,
+    action,
+    reason,
+    mutedBy: null,
+    unitsPrePolicy: pre,
+    edge: eIn,
+    firstEv: fIn,
+    currentEv: cIn,
+    dEv: dIn,
+    ...extra,
+  });
+  if (!(pre > 0)) {
+    return {
+      units: 0, action: 'PASS', reason: null, mutedBy: null, unitsPrePolicy: pre,
+      edge: null, firstEv: null, currentEv: null, dEv: null,
+    };
+  }
+  if (!isEvDriftEdgeMuteLive(pickDate)) return out('EXEMPT', 'pre_cutover');
+  // Fail-open: need EDGE + both Ev endpoints.
+  if (eIn == null || fIn == null || cIn == null || dIn == null) {
+    return out('HOLD', null);
+  }
+  if (eIn < EV_DRIFT_EDGE_MIN) return out('HOLD', null);
+  if (dIn > EV_DRIFT_DEV_MAX) return out('HOLD', null);
+
+  return {
+    units: 0,
+    action: 'MUTE',
+    reason: 'ev_drift_edge',
+    mutedBy: EV_DRIFT_EDGE_MUTED_BY,
+    unitsPrePolicy: pre,
+    edge: eIn,
+    firstEv: fIn,
+    currentEv: cIn,
+    dEv: dIn,
+  };
+}
+
 // ── Path × EDGE blended expected win rate (display / calibration) ───────────
 // logit(p*) = wp·logit(pathWR) + we·logit(meanFor)
 // Path WR = expanding empirical WR of prior graded staked same tier (all sports).
