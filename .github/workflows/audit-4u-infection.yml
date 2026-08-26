@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   audit:
-    name: 4u+ infection audit
+    name: 4u+ infection + sub-4 counterfactual
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,14 +17,31 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
-      - name: Run audit
+      - name: Run 4u+ infection audit
         env:
           VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
           FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
           FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
         run: node scripts/audit4uInfection.mjs
+      - name: Run sub-4 / 4u+ counterfactual
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+        run: node scripts/auditSub4And4uCounterfactual.mjs
       - name: Upload report
         uses: actions/upload-artifact@v4
         with:
           name: 4u-infection-audit
-          path: tmp_4u_infection_audit.md
+          path: |
+            tmp_4u_infection_audit.md
+            tmp_sub4_4u_counterfactual.md
+            tmp_sub4_4u_counterfactual.json
