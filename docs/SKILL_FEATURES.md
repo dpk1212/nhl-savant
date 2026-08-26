@@ -47,7 +47,7 @@ qConv  = Σ sizeRatio×(WR−50) FOR − Σ sizeRatio×(WR−50) AG
 | **FOOLS-gold mute** | 2026-08-05+: after qConv · Path A/B/C + CONFIRMED-UNOPP · best proven FOR = **FLAT** → **0u MUTED** · fail-open if bestFOR missing · DISSENT/manual exempt |
 | **Flinch / fail-open leftover mute** | 2026-08-19+: after Q1/UNOPP restore · still &lt;4u AND (odds-capped native-4u **or** tape BOOST **or** E≥10 **or** FAIL_OPEN) → **0u** · 4u+ never touched · `mutedBy=believed-cut` \| `fail-open-sub4` |
 | **TOP crowded-conviction mute** | 2026-08-26+: after no-CONFIRMED · TOP/TOP+ only · `leadSR≥3` **OR** `EDGE&lt;10` **OR** (`forRoiNormMean≥42` ∧ `leadSR≥2`) → **0u** · other tiers EXEMPT · never resizes/repaths · `mutedBy=top-crowded` · manual exempt |
-| **Ev-drift × EDGE mute** | 2026-08-26+: **absolute last** · any path · `EDGE≥15` **AND** `dEv≤−1.5` (first→current `v8_ticketTapeLog` Ev) → **0u** · missing Ev/EDGE fail-open · never resizes/repaths · `mutedBy=ev-drift-edge` · manual exempt |
+| **Ev-drift × EDGE mute** | 2026-08-26+: **absolute last** · any path · `EDGE≥15` **AND** `dEv≤−1.5` **AND** `currentEv&lt;−1` (first→current `v8_ticketTapeLog` Ev) → **0u** · missing Ev/EDGE fail-open · never resizes/repaths · `mutedBy=ev-drift-edge` · manual exempt |
 
 ---
 
