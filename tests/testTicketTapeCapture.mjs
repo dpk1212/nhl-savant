@@ -7,6 +7,7 @@ import {
   evPctVsFairProb,
   fairProbFromNoVig,
   noVigFairAmerican,
+  mlFairOddsList,
 } from '../src/lib/oddsEv.js';
 import {
   captureTicketTape,
@@ -142,5 +143,34 @@ ok(ax.t15.hoursOut === 0.3, 't15 hoursOut is true distance');
 const actionDoc = {};
 applyActionTicketTape(actionDoc, snap, { nowMs: t0, hoursUntilGame: 8 });
 ok(actionDoc.ticketEvPct === 3.1 && actionDoc.ticketTapeLog[0].gate === 'first', 'Action doc log is unprefixed');
+
+// Soccer 3-way ML — must NOT drop draw (Madrid bug: 2-way fair −1047 vs real −374).
+{
+  const list = mlFairOddsList(-450, 1180, 610, 'home');
+  ok(Array.isArray(list) && list.length === 3, '3-way list includes draw');
+  ok(list[0] === -450 && list[1] === 1180 && list[2] === 610, 'home-first 3-way order');
+  const fair3 = noVigFairAmerican(list, 0);
+  ok(fair3 === -374, `3-way fair Madrid is −374 (got ${fair3})`);
+  const bad2 = noVigFairAmerican([-450, 1180], 0);
+  ok(bad2 === -1047, `2-way bug baseline still −1047 (got ${bad2})`);
+  ok(Math.abs(fair3) < Math.abs(bad2), '3-way fair is saner than 2-way inflate');
+  ok(evPctVsFairProb(-314, fairProbFromNoVig(list, 0)) === 3.0, 'ticket −314 vs 3-way fair ≈ +3% EV');
+}
+{
+  const soc = {
+    current: { home: -450, away: 1180, draw: 610 },
+    opener: { home: -259, away: 613, draw: 411 },
+  };
+  const pair = fairPairFromPinnGame(soc, { marketType: 'ml', sideNorm: 'home' });
+  ok(pair && pair.length === 3, 'fairPairFromPinnGame returns 3-way for soccer');
+  ok(noVigFairAmerican(pair, 0) === -374, 'stamp fair matches card 3-way');
+  const twoWaySport = { current: { home: -150, away: 130 } };
+  const pair2 = fairPairFromPinnGame(twoWaySport, { marketType: 'ml', sideNorm: 'home' });
+  ok(pair2 && pair2.length === 2, '2-way sport stays 2-way when no draw');
+  const away3 = fairPairFromPinnGame(soc, { marketType: 'ml', sideNorm: 'away' });
+  ok(away3[0] === 1180 && away3.length === 3, 'away side is first in 3-way list');
+  const draw3 = fairPairFromPinnGame(soc, { marketType: 'ml', sideNorm: 'draw' });
+  ok(draw3[0] === 610 && draw3.length === 3, 'draw side is first in 3-way list');
+}
 
 console.log(`testTicketTapeCapture: ${n} assertions passed`);

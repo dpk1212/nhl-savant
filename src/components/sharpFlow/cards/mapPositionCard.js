@@ -38,11 +38,12 @@ import {
   noVigFairAmerican,
   fairProbFromNoVig,
   evPctVsFairProb,
+  mlFairOddsList,
 } from '../../../lib/oddsEv.js';
 import { shortTeamNick as shortTeam } from '../../../utils/teamIdentity.js';
 
 export { americanFromPolyPrice };
-export { noVigFairAmerican, fairProbFromNoVig, evPctVsFairProb };
+export { noVigFairAmerican, fairProbFromNoVig, evPctVsFairProb, mlFairOddsList };
 
 /** Same floor as EDGE (scripts/syncPickStateAuthoritative WINNER_ALIGN_MIN_N). */
 export const FEATURED_WR_MIN_N = 8;
@@ -961,11 +962,8 @@ export function buildLockedMarketOdds(pick, pinnacleHistory, opts = {}) {
       const a = snap.away;
       const h = snap.home;
       const d = snap.draw;
-      if (sideKey === 'draw' && Number.isFinite(a) && Number.isFinite(h) && Number.isFinite(d)) {
-        fairPair = [d, a, h];
-      } else if (Number.isFinite(a) && Number.isFinite(h)) {
-        fairPair = sideKey === 'away' ? [a, h] : [h, a];
-      }
+      // Soccer / 3-way: include draw. 2-way sports stay home vs away.
+      fairPair = mlFairOddsList(h, a, d, sideKey);
     }
     if (!sealed) {
       bestOdds = sideKey === 'away' ? pinnGame.bestAway
