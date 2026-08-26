@@ -222,9 +222,42 @@ function steamOnRow(row) {
   return t === 'steam' || t === 'gold';
 }
 
-function delta(a, b) {
-  if (!Number.isFinite(Number(a)) || !Number.isFinite(Number(b))) return null;
-  return Math.round((Number(b) - Number(a)) * 10) / 10;
+/** fair=0 American is a known sentinel bug — treat Ev on that row as null. */
+export function cleanTapeEvPct(evPct, fairOdds) {
+  if (Number(fairOdds) === 0) return null;
+  const ev = Number(evPct);
+  return Number.isFinite(ev) ? ev : null;
+}
+
+function cleanEvFromLogRow(row) {
+  if (!row) return null;
+  return cleanTapeEvPct(row.evPct, row.fair);
+}
+
+/**
+ * first→current ticketEv drift for mid-window mute / analysis.
+ * Prefers live capture for current; else t15 / last log row.
+ * Returns null dEv when either endpoint is missing (fail-open).
+ */
+export function resolveTicketEvDrift(existingLog, liveSnap = null) {
+  const rows = Array.isArray(existingLog) ? existingLog : [];
+  const first = tapeLogRowAt(rows, 'first') || rows[0] || null;
+  const firstEv = cleanEvFromLogRow(first);
+
+  let currentEv = null;
+  if (liveSnap && typeof liveSnap === 'object') {
+    currentEv = cleanTapeEvPct(liveSnap.evPct, liveSnap.fairOdds);
+  }
+  if (currentEv == null) {
+    const t15 = tapeLogRowAt(rows, 't15');
+    const last = rows.length ? rows[rows.length - 1] : null;
+    currentEv = cleanEvFromLogRow(t15 || last);
+  }
+
+  const dEv = (firstEv != null && currentEv != null)
+    ? Math.round((currentEv - firstEv) * 10) / 10
+    : null;
+  return { firstEv, currentEv, dEv };
 }
 
 /** First vs lock (t15, else last) for W/L and CLV analysis. */
@@ -236,6 +269,8 @@ export function analyzeTicketTapeLog(log) {
   const grade = tapeLogRowAt(rows, 'grade');
   const last = rows.length ? rows[rows.length - 1] : null;
   const lock = t15 || last;
+  const evFirst = cleanEvFromLogRow(first);
+  const evLock = cleanEvFromLogRow(lock);
   return {
     n: rows.length,
     first,
@@ -244,9 +279,11 @@ export function analyzeTicketTapeLog(log) {
     grade,
     last,
     lock,
-    evFirst: first?.evPct ?? null,
-    evLock: lock?.evPct ?? null,
-    dEvFirstToLock: delta(first?.evPct, lock?.evPct),
+    evFirst,
+    evLock,
+    dEvFirstToLock: (evFirst != null && evLock != null)
+      ? Math.round((evLock - evFirst) * 10) / 10
+      : null,
     lastHourFirst: first?.lastHourPct ?? null,
     lastHourLock: lock?.lastHourPct ?? null,
     sinceOpenFirst: first?.sinceOpenPct ?? null,

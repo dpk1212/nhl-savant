@@ -102,6 +102,7 @@ import {
   applyMaxSrSub4MuteOverlay,
   applyNoConfirmedMuteOverlay,
   applyTopCrowdedConvictionMuteOverlay,
+  applyEvDriftEdgeMuteOverlay,
   maxForSizeRatio,
   leadForSizeRatio,
   meanForRoiNorm,
@@ -109,12 +110,17 @@ import {
   isMaxSrSub4MuteLive,
   isNoConfirmedMuteLive,
   isTopCrowdedMuteLive,
+  isEvDriftEdgeMuteLive,
   MAX_SR_SUB4_MUTE_FROM,
   MAX_SR_SUB4_MUTED_BY,
   NO_CONFIRMED_MUTE_FROM,
   NO_CONFIRMED_MUTED_BY,
   TOP_CROWDED_MUTE_FROM,
   TOP_CROWDED_MUTED_BY,
+  EV_DRIFT_EDGE_MUTE_FROM,
+  EV_DRIFT_EDGE_MUTED_BY,
+  EV_DRIFT_EDGE_MIN,
+  EV_DRIFT_DEV_MAX,
   bestProvenForSide,
   computeConfirmedUnoppSized,
   computeConfirmedQ1Sized,
@@ -181,6 +187,7 @@ import {
 import {
   captureTicketTape,
   applyTicketTapeStamps,
+  resolveTicketEvDrift,
   hoursUntilMs,
 } from '../src/lib/ticketTapeCapture.js';
 
@@ -1130,6 +1137,11 @@ function applySkillFeatureStamps(target, bundle, now, {
   forRoiNormMean = null,
   topCrowdedAction = null,
   unitsPreTopCrowded = null,
+  evDriftAction = null,
+  unitsPreEvDrift = null,
+  firstEv = null,
+  currentEv = null,
+  dEv = null,
   blendTier = null,
   pathBlendPriors = null,
   sideOdds = null,
@@ -1232,6 +1244,13 @@ function applySkillFeatureStamps(target, bundle, now, {
   if (unitsPreTopCrowded != null && Number.isFinite(unitsPreTopCrowded)) {
     target.v8_unitsPreTopCrowded = unitsPreTopCrowded;
   }
+  if (firstEv != null && Number.isFinite(Number(firstEv))) target.v8_ticketEvFirst = Number(firstEv);
+  if (currentEv != null && Number.isFinite(Number(currentEv))) target.v8_ticketEvCurrent = Number(currentEv);
+  if (dEv != null && Number.isFinite(Number(dEv))) target.v8_ticketEvDEv = Number(dEv);
+  if (evDriftAction != null) target.v8_evDriftAction = evDriftAction;
+  if (unitsPreEvDrift != null && Number.isFinite(unitsPreEvDrift)) {
+    target.v8_unitsPreEvDrift = unitsPreEvDrift;
+  }
   // Path × EDGE expected WR (tracking only — no unit effect)
   const meanFor = wa?.meanFor ?? bundle.winnerAlign?.meanFor ?? null;
   const prior = resolvePathPriorWr(pathBlendPriors?.byTier, blendTier, {
@@ -1301,6 +1320,7 @@ function skillStampsDrifted(sd, bundle, {
   tapeAction = null, qConv = null, qConvAction = null, foolsGoldAction = null,
   flinchFailOpenAction = null, maxSrSub4Action = null, noConfirmedAction = null,
   topCrowdedAction = null,
+  evDriftAction = null,
   blendWr = null, expWin = null,
 } = {}) {
   if ((sd.v8_skillFeatureVersion || 0) !== SKILL_FEATURE_VERSION) return true;
@@ -1343,6 +1363,7 @@ function skillStampsDrifted(sd, bundle, {
   if (maxSrSub4Action != null && (sd.v8_maxSrSub4Action || null) !== maxSrSub4Action) return true;
   if (noConfirmedAction != null && (sd.v8_noConfirmedAction || null) !== noConfirmedAction) return true;
   if (topCrowdedAction != null && (sd.v8_topCrowdedAction || null) !== topCrowdedAction) return true;
+  if (evDriftAction != null && (sd.v8_evDriftAction || null) !== evDriftAction) return true;
   return false;
 }
 
@@ -3053,7 +3074,7 @@ async function createMissingLockedPicks({
         peakUnitsApplied = noConfirmedPolicyCreate.units;
       }
 
-      // TOP crowded-conviction mute — ABSOLUTE LAST. TOP/TOP+ only.
+      // TOP crowded-conviction mute — after no-CONFIRMED. TOP/TOP+ only.
       // Does not touch any other path or upstream sizing math.
       let topCrowdedPolicyCreate = null;
       const leadSrCreate = leadForSizeRatio(walletDetails, side);
@@ -3068,6 +3089,36 @@ async function createMissingLockedPicks({
           pickDate: TARGET_DATE,
         });
         peakUnitsApplied = topCrowdedPolicyCreate.units;
+      }
+
+      // Ev-drift × EDGE mute — ABSOLUTE LAST. EDGE≥15 ∧ dEv≤−1.5 → 0u.
+      // On create there is no prior first Ev → HOLD (fail-open). Fires on
+      // later reconcile cycles once the tape log has a first sample.
+      let evDriftPolicyCreate = null;
+      let evDriftCreate = { firstEv: null, currentEv: null, dEv: null };
+      if (createV121Eligible && peakUnitsApplied > 0) {
+        const tapeCreateCtxEarly = pinnTapeFromMeta(
+          gameMeta, { sport, gameKey }, marketType, side, { peak: { line } }, { meta },
+        );
+        const liveTapeCreate = captureTicketTape({
+          pinnGame: tapeCreateCtxEarly.pinnGame,
+          marketType: tapeCreateCtxEarly.marketType,
+          sideNorm: tapeCreateCtxEarly.sideNorm,
+          line: tapeCreateCtxEarly.ticketLine,
+          offerOdds: odds ?? null,
+          commenceMs: tapeCreateCtxEarly.commenceMs,
+          nowMs: now,
+        });
+        evDriftCreate = resolveTicketEvDrift(null, liveTapeCreate);
+        evDriftPolicyCreate = applyEvDriftEdgeMuteOverlay({
+          units: peakUnitsApplied,
+          edge: waCreateEdge?.edge ?? null,
+          firstEv: evDriftCreate.firstEv,
+          currentEv: evDriftCreate.currentEv,
+          dEv: evDriftCreate.dEv,
+          pickDate: TARGET_DATE,
+        });
+        peakUnitsApplied = evDriftPolicyCreate.units;
       }
 
       // Determine team label for the side.
@@ -3277,6 +3328,13 @@ async function createMissingLockedPicks({
           unitsPreTopCrowded: (topCrowdedPolicyCreate && Number.isFinite(topCrowdedPolicyCreate.unitsPrePolicy))
             ? topCrowdedPolicyCreate.unitsPrePolicy
             : null,
+          evDriftAction: evDriftPolicyCreate?.action ?? null,
+          unitsPreEvDrift: (evDriftPolicyCreate && Number.isFinite(evDriftPolicyCreate.unitsPrePolicy))
+            ? evDriftPolicyCreate.unitsPrePolicy
+            : null,
+          firstEv: evDriftCreate?.firstEv ?? null,
+          currentEv: evDriftCreate?.currentEv ?? null,
+          dEv: evDriftCreate?.dEv ?? null,
           blendTier: hcStakeTierCreate,
           pathBlendPriors,
           sideOdds: odds ?? null,
@@ -3326,7 +3384,9 @@ async function createMissingLockedPicks({
           hoursUntilGame: hoursUntilMs(tapeCreateCtx.commenceMs, now),
         });
       }
-      if (topCrowdedPolicyCreate?.mutedBy) {
+      if (evDriftPolicyCreate?.mutedBy) {
+        v8Stamps.mutedBy = evDriftPolicyCreate.mutedBy;
+      } else if (topCrowdedPolicyCreate?.mutedBy) {
         v8Stamps.mutedBy = topCrowdedPolicyCreate.mutedBy;
       } else if (noConfirmedPolicyCreate?.mutedBy) {
         v8Stamps.mutedBy = noConfirmedPolicyCreate.mutedBy;
@@ -3357,7 +3417,10 @@ async function createMissingLockedPicks({
       const topCrowdedMutedCreate = topCrowdedPolicyCreate?.action === 'MUTE'
         && Number.isFinite(topCrowdedPolicyCreate.unitsPrePolicy)
         && topCrowdedPolicyCreate.unitsPrePolicy > 0;
-      const createSizeMuted = topCrowdedMutedCreate || noConfirmedMutedCreate || maxSrMutedCreate || flinchMutedCreate || (!q1FlooredCreate && !unoppFlooredCreate && (
+      const evDriftMutedCreate = evDriftPolicyCreate?.action === 'MUTE'
+        && Number.isFinite(evDriftPolicyCreate.unitsPrePolicy)
+        && evDriftPolicyCreate.unitsPrePolicy > 0;
+      const createSizeMuted = evDriftMutedCreate || topCrowdedMutedCreate || noConfirmedMutedCreate || maxSrMutedCreate || flinchMutedCreate || (!q1FlooredCreate && !unoppFlooredCreate && (
         (foolsGoldPolicyCreate?.action === 'MUTE'
           && Number.isFinite(foolsGoldPolicyCreate.unitsPrePolicy)
           && foolsGoldPolicyCreate.unitsPrePolicy > 0)
@@ -3369,6 +3432,7 @@ async function createMissingLockedPicks({
       const healthStamp = {
         status: createSizeMuted ? 'MUTED' : 'ACTIVE',
         reasons: [
+          ...(evDriftPolicyCreate?.reason ? [evDriftPolicyCreate.reason] : []),
           ...(topCrowdedPolicyCreate?.reason ? [topCrowdedPolicyCreate.reason] : []),
           ...(noConfirmedPolicyCreate?.reason ? [noConfirmedPolicyCreate.reason] : []),
           ...(maxSrSub4PolicyCreate?.reason ? [maxSrSub4PolicyCreate.reason] : []),
@@ -4448,7 +4512,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     finalUnitsApplied = noConfirmedPolicy.units;
   }
 
-  // ─── TOP crowded-conviction mute (ABSOLUTE LAST) ─────────────────────
+  // ─── TOP crowded-conviction mute (after no-CONFIRMED) ────────────────
   // TOP/TOP+ only · A∪A2 · never resizes / repaths · other tiers EXEMPT.
   // Manual stake exempt. Date-gated inside the overlay.
   let topCrowdedPolicy = null;
@@ -4464,6 +4528,35 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       pickDate,
     });
     finalUnitsApplied = topCrowdedPolicy.units;
+  }
+
+  // ─── Ev-drift × EDGE mute (ABSOLUTE LAST) ────────────────────────────
+  // EDGE≥15 ∧ first→current dEv ≤ −1.5 → 0u. Any path. Missing Ev fail-open.
+  // Live tape capture this cycle so mid-window drift mutes same cycle.
+  // Manual stake exempt. Date-gated inside the overlay.
+  let evDriftPolicy = null;
+  let evDriftLive = { firstEv: null, currentEv: null, dEv: null };
+  if (v121Eligible && finalUnitsApplied > 0 && !skipManualFlinch) {
+    const tapeCtxLive = pinnTapeFromMeta(gameMeta, pick, mkt, side, sd);
+    const liveTapeSnap = captureTicketTape({
+      pinnGame: tapeCtxLive.pinnGame,
+      marketType: tapeCtxLive.marketType,
+      sideNorm: tapeCtxLive.sideNorm,
+      line: tapeCtxLive.ticketLine,
+      offerOdds: sideOdds,
+      commenceMs: tapeCtxLive.commenceMs,
+      nowMs: now,
+    });
+    evDriftLive = resolveTicketEvDrift(sd.v8_ticketTapeLog, liveTapeSnap);
+    evDriftPolicy = applyEvDriftEdgeMuteOverlay({
+      units: finalUnitsApplied,
+      edge: winnerAlign?.edge ?? null,
+      firstEv: evDriftLive.firstEv,
+      currentEv: evDriftLive.currentEv,
+      dEv: evDriftLive.dEv,
+      pickDate,
+    });
+    finalUnitsApplied = evDriftPolicy.units;
   }
 
   // ─── lockStage promote/demote — v12 gate ──────────────────────────────
@@ -4526,6 +4619,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (maxSrSub4Policy?.reason && !reasons.includes(maxSrSub4Policy.reason)) reasons.push(maxSrSub4Policy.reason);
   if (noConfirmedPolicy?.reason && !reasons.includes(noConfirmedPolicy.reason)) reasons.push(noConfirmedPolicy.reason);
   if (topCrowdedPolicy?.reason && !reasons.includes(topCrowdedPolicy.reason)) reasons.push(topCrowdedPolicy.reason);
+  if (evDriftPolicy?.reason && !reasons.includes(evDriftPolicy.reason)) reasons.push(evDriftPolicy.reason);
   // Preserve diagnostic-only badge signals from prior cycles (they don't
   // change status but the UI uses them for chip rendering).
   if (sd.health?.reasons) {
@@ -4554,9 +4648,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const topCrowdedMuted = topCrowdedPolicy?.action === 'MUTE'
     && Number.isFinite(topCrowdedPolicy.unitsPrePolicy)
     && topCrowdedPolicy.unitsPrePolicy > 0;
+  const evDriftMuted = evDriftPolicy?.action === 'MUTE'
+    && Number.isFinite(evDriftPolicy.unitsPrePolicy)
+    && evDriftPolicy.unitsPrePolicy > 0;
   // Q1 / UNOPP hard floor wins — do not leave health MUTED when units were restored.
-  // Flinch + maxSR + no-CONFIRMED + TOP-crowded run AFTER those floors, so they still win if they cancelled.
-  const sizeMuted = topCrowdedMuted || noConfirmedMuted || maxSrMuted || flinchMuted || (!confirmedQ1Floored && !confirmedUnoppFloored && (foolsMuted || qConvMuted || (tapeSizingLive
+  // Flinch + maxSR + no-CONFIRMED + TOP-crowded + Ev-drift run AFTER those floors, so they still win if they cancelled.
+  const sizeMuted = evDriftMuted || topCrowdedMuted || noConfirmedMuted || maxSrMuted || flinchMuted || (!confirmedQ1Floored && !confirmedUnoppFloored && (foolsMuted || qConvMuted || (tapeSizingLive
     ? (tapePolicy?.action === 'MUTE' && unitsBeforeClv > 0)
     : (clvPolicy.action === 'CANCEL' && unitsBeforeClv > 0))));
   const healthStatusOut = sizeMuted
@@ -4596,7 +4693,10 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   const MAX_SR_MUTE_VALUES = new Set([MAX_SR_SUB4_MUTED_BY]);
   const NO_CONF_MUTE_VALUES = new Set([NO_CONFIRMED_MUTED_BY]);
   const TOP_CROWDED_MUTE_VALUES = new Set([TOP_CROWDED_MUTED_BY]);
-  if (topCrowdedPolicy?.mutedBy) {
+  const EV_DRIFT_MUTE_VALUES = new Set([EV_DRIFT_EDGE_MUTED_BY]);
+  if (evDriftPolicy?.mutedBy) {
+    patch.mutedBy = evDriftPolicy.mutedBy;
+  } else if (topCrowdedPolicy?.mutedBy) {
     patch.mutedBy = topCrowdedPolicy.mutedBy;
   } else if (noConfirmedPolicy?.mutedBy) {
     patch.mutedBy = noConfirmedPolicy.mutedBy;
@@ -4629,7 +4729,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       || FLINCH_MUTE_VALUES.has(sd.mutedBy)
       || MAX_SR_MUTE_VALUES.has(sd.mutedBy)
       || NO_CONF_MUTE_VALUES.has(sd.mutedBy)
-      || TOP_CROWDED_MUTE_VALUES.has(sd.mutedBy)) {
+      || TOP_CROWDED_MUTE_VALUES.has(sd.mutedBy)
+      || EV_DRIFT_MUTE_VALUES.has(sd.mutedBy)) {
     // Clear stale mute stamps when no current mute gate is firing.
     patch.mutedBy = admin.firestore.FieldValue.delete();
   }
@@ -4873,6 +4974,15 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       + `${topCrowdedPolicy.unitsPrePolicy}u → 0u (${hcStakeTier})`
     );
   }
+  if (evDriftPolicy?.action === 'MUTE') {
+    changes.push(
+      `EV-DRIFT-MUTE: E=${winnerAlign?.edge == null ? '—' : Number(winnerAlign.edge).toFixed(1)} `
+      + `firstEv=${evDriftLive.firstEv == null ? '—' : Number(evDriftLive.firstEv).toFixed(1)} `
+      + `curEv=${evDriftLive.currentEv == null ? '—' : Number(evDriftLive.currentEv).toFixed(1)} `
+      + `dEv=${evDriftLive.dEv == null ? '—' : Number(evDriftLive.dEv).toFixed(1)} `
+      + `${evDriftPolicy.unitsPrePolicy}u → 0u (${hcStakeTier})`
+    );
+  }
   if (rankRescued) {
     changes.push(`RANK-RESCUE: 2-for-0 slice promoted HC-muted pick → ${RANK_RESCUE_UNITS}u`);
   }
@@ -4967,6 +5077,13 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       unitsPreTopCrowded: (topCrowdedPolicy && Number.isFinite(topCrowdedPolicy.unitsPrePolicy))
         ? topCrowdedPolicy.unitsPrePolicy
         : null,
+      evDriftAction: evDriftPolicy?.action ?? null,
+      unitsPreEvDrift: (evDriftPolicy && Number.isFinite(evDriftPolicy.unitsPrePolicy))
+        ? evDriftPolicy.unitsPrePolicy
+        : null,
+      firstEv: evDriftLive?.firstEv ?? null,
+      currentEv: evDriftLive?.currentEv ?? null,
+      dEv: evDriftLive?.dEv ?? null,
       blendTier: hcStakeTier,
       pathBlendPriors,
       sideOdds,
@@ -4989,6 +5106,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       maxSrSub4Action: maxSrSub4Policy?.action ?? null,
       noConfirmedAction: noConfirmedPolicy?.action ?? null,
       topCrowdedAction: topCrowdedPolicy?.action ?? null,
+      evDriftAction: evDriftPolicy?.action ?? null,
     })
         || (edgeNetSizePolicy && (sd.v8_edgeNetSizeAction || null) !== edgeNetSizePolicy.action)
         || (edgeBandSizePolicy && (sd.v8_edgeBandAction || null) !== edgeBandSizePolicy.action)
@@ -5001,7 +5119,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         || (flinchFailOpenPolicy && (sd.v8_flinchFailOpenAction || null) !== flinchFailOpenPolicy.action)
         || (maxSrSub4Policy && (sd.v8_maxSrSub4Action || null) !== maxSrSub4Policy.action)
         || (noConfirmedPolicy && (sd.v8_noConfirmedAction || null) !== noConfirmedPolicy.action)
-        || (topCrowdedPolicy && (sd.v8_topCrowdedAction || null) !== topCrowdedPolicy.action)) {
+        || (topCrowdedPolicy && (sd.v8_topCrowdedAction || null) !== topCrowdedPolicy.action)
+        || (evDriftPolicy && (sd.v8_evDriftAction || null) !== evDriftPolicy.action)) {
       changes.push(
         `SKILL-FEATURES: E=${skillLive.edge == null ? '—' : Number(skillLive.edge).toFixed(1)} `
         + `net=${skillLive.netMeanPrior == null ? '—' : Number(skillLive.netMeanPrior).toFixed(1)} `
@@ -5016,7 +5135,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         + (flinchFailOpenPolicy?.action ? ` flinchAct=${flinchFailOpenPolicy.action}` : '')
         + (maxSrSub4Policy?.action ? ` maxSrAct=${maxSrSub4Policy.action}` : '')
         + (noConfirmedPolicy?.action ? ` noConfAct=${noConfirmedPolicy.action}` : '')
-        + (topCrowdedPolicy?.action ? ` topCrowdAct=${topCrowdedPolicy.action}` : ''),
+        + (topCrowdedPolicy?.action ? ` topCrowdAct=${topCrowdedPolicy.action}` : '')
+        + (evDriftPolicy?.action ? ` evDriftAct=${evDriftPolicy.action}` : ''),
       );
     }
     const tapeGrew = (patch.v8_ticketTapeLog?.length || 0) > ((sd.v8_ticketTapeLog || []).length);
@@ -5831,10 +5951,18 @@ async function main() {
   if (isTopCrowdedMuteLive(TARGET_DATE)) {
     console.log(
       `TOP crowded-conviction mute LIVE: TOP/TOP+ AND (leadSR≥3 OR EDGE<10 OR (roiNorm≥42∧leadSR≥2)) → 0u`
-      + ` · from ${TOP_CROWDED_MUTE_FROM} · absolute last · other tiers untouched`,
+      + ` · from ${TOP_CROWDED_MUTE_FROM} · after no-CONFIRMED · other tiers untouched`,
     );
   } else {
     console.log(`TOP crowded-conviction mute: not live before ${TOP_CROWDED_MUTE_FROM} (TARGET_DATE=${TARGET_DATE})`);
+  }
+  if (isEvDriftEdgeMuteLive(TARGET_DATE)) {
+    console.log(
+      `Ev-drift × EDGE mute LIVE: EDGE≥${EV_DRIFT_EDGE_MIN} AND dEv≤${EV_DRIFT_DEV_MAX} → 0u`
+      + ` · from ${EV_DRIFT_EDGE_MUTE_FROM} · absolute last · missing Ev fail-open · mutedBy=${EV_DRIFT_EDGE_MUTED_BY}`,
+    );
+  } else {
+    console.log(`Ev-drift × EDGE mute: not live before ${EV_DRIFT_EDGE_MUTE_FROM} (TARGET_DATE=${TARGET_DATE})`);
   }
   if (isConfirmedQ1PromoteLive(TARGET_DATE)) {
     console.log(
