@@ -1325,6 +1325,144 @@ export function applyNoConfirmedMuteOverlay({
   };
 }
 
+// ── TOP crowded-conviction mute (absolute last 0u cancel — after noConfirmed)
+// 2026-08-26+: after ALL sizing / tape / skill / leftover mutes.
+// TOP / TOP+ only. Hard 0u when ANY clause fires (A ∪ A2):
+//   A1  leadSR ≥ 3          (whale size on single-HC lead)
+//   A2a EDGE < 10           (soft / missing-juice alignment; requires finite EDGE)
+//   A2b forRoiNormMean ≥ 42 AND leadSR ≥ 2  (“obvious sharp” + sized)
+// Hard fences (zero impact elsewhere):
+//   • tier not TOP/TOP+ → EXEMPT (identity)
+//   • already 0u → PASS
+//   • pre-cutover → EXEMPT
+//   • missing leadSR / roiNorm / EDGE → that clause does not fire (no invent)
+// Does NOT resize, repath, or change any upstream dial — post-created mute only.
+export const TOP_CROWDED_MUTE_FROM = '2026-08-26';
+export const TOP_CROWDED_MUTED_BY = 'top-crowded';
+export const TOP_CROWDED_LEAD_SR_WHALE = 3;
+export const TOP_CROWDED_EDGE_MIN = 10;
+export const TOP_CROWDED_ROINORM_THR = 42;
+export const TOP_CROWDED_LEAD_SR_A2 = 2;
+/** HC size floor for lead proxy — matches Path A HC_RATIO. */
+export const TOP_CROWDED_HC_MIN = 1.5;
+export const TOP_CROWDED_TIERS = new Set(['TOP', 'TOP+']);
+
+export function isTopCrowdedMuteLive(pickDate) {
+  return typeof pickDate === 'string' && pickDate >= TOP_CROWDED_MUTE_FROM;
+}
+
+function forSideWalletList(walletDetails, sideKey) {
+  if (sideKey == null || sideKey === '') return [];
+  const list = Array.isArray(walletDetails)
+    ? walletDetails
+    : (walletDetails && typeof walletDetails === 'object' ? Object.values(walletDetails) : []);
+  if (!list.length) return [];
+  const side = String(sideKey);
+  return list.filter((w) => w && typeof w === 'object'
+    && String(w.side || '') === side
+    && (w.direction == null || String(w.direction).toUpperCase() === 'FOR'));
+}
+
+/**
+ * Lead FOR sizeRatio for TOP crowded mute (stamp-safe).
+ * Prefer HC-band wallets (sizeRatio ≥ 1.5), else max FOR sizeRatio.
+ */
+export function leadForSizeRatio(walletDetails, sideKey, hcMin = TOP_CROWDED_HC_MIN) {
+  const forW = forSideWalletList(walletDetails, sideKey);
+  if (!forW.length) return null;
+  const scored = forW.map((w) => {
+    const sr = Number(w.sizeRatio ?? w.v8_sizeRatio ?? w.betMultiplier);
+    return Number.isFinite(sr) ? { sr, invested: Number(w.invested) || 0 } : null;
+  }).filter(Boolean);
+  if (!scored.length) return null;
+  const hc = scored.filter((x) => x.sr >= hcMin)
+    .sort((a, b) => b.sr - a.sr || b.invested - a.invested);
+  if (hc.length) return hc[0].sr;
+  scored.sort((a, b) => b.sr - a.sr || b.invested - a.invested);
+  return scored[0].sr;
+}
+
+/** Mean stamped `roiNorm` across FOR wallets on the side. Null if none finite. */
+export function meanForRoiNorm(walletDetails, sideKey) {
+  const forW = forSideWalletList(walletDetails, sideKey);
+  const xs = [];
+  for (const w of forW) {
+    const r = Number(w.roiNorm);
+    if (Number.isFinite(r)) xs.push(r);
+  }
+  if (!xs.length) return null;
+  return xs.reduce((a, b) => a + b, 0) / xs.length;
+}
+
+/**
+ * Absolute-last TOP crowded-conviction mute. Never changes units unless
+ * tier is TOP/TOP+ and a clause matches. Identity on every other ticket.
+ */
+export function applyTopCrowdedConvictionMuteOverlay({
+  units,
+  tier = null,
+  leadSR = null,
+  edge = null,
+  forRoiNormMean = null,
+  pickDate = null,
+} = {}) {
+  const pre = Number.isFinite(units) ? Math.max(0, units) : 0;
+  // Reject null/'' before Number() — Number(null)===0 would false-fire soft_edge.
+  const asFinite = (v) => {
+    if (v == null || v === '') return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  };
+  const srIn = asFinite(leadSR);
+  const eIn = asFinite(edge);
+  const rnIn = asFinite(forRoiNormMean);
+  const out = (action, reason = null, extra = {}) => ({
+    units: pre,
+    action,
+    reason,
+    mutedBy: null,
+    unitsPrePolicy: pre,
+    leadSR: srIn,
+    edge: eIn,
+    forRoiNormMean: rnIn,
+    clauses: [],
+    ...extra,
+  });
+  if (!(pre > 0)) {
+    return {
+      units: 0, action: 'PASS', reason: null, mutedBy: null, unitsPrePolicy: pre,
+      leadSR: null, edge: null, forRoiNormMean: null, clauses: [],
+    };
+  }
+  if (!isTopCrowdedMuteLive(pickDate)) return out('EXEMPT', 'pre_cutover');
+  if (!tier || !TOP_CROWDED_TIERS.has(tier)) return out('EXEMPT', 'tier_exempt');
+
+  const sr = srIn;
+  const e = eIn;
+  const rn = rnIn;
+  const clauses = [];
+  if (sr != null && sr >= TOP_CROWDED_LEAD_SR_WHALE) clauses.push('whale_leadsr');
+  if (e != null && e < TOP_CROWDED_EDGE_MIN) clauses.push('soft_edge');
+  if (rn != null && sr != null
+      && rn >= TOP_CROWDED_ROINORM_THR
+      && sr >= TOP_CROWDED_LEAD_SR_A2) {
+    clauses.push('sharp_trap');
+  }
+  if (!clauses.length) return out('HOLD', null);
+
+  return {
+    units: 0,
+    action: 'MUTE',
+    reason: `top_crowded_${clauses.join('+')}`,
+    mutedBy: TOP_CROWDED_MUTED_BY,
+    unitsPrePolicy: pre,
+    leadSR: sr,
+    edge: e,
+    forRoiNormMean: rn,
+    clauses,
+  };
+}
+
 // ── Path × EDGE blended expected win rate (display / calibration) ───────────
 // logit(p*) = wp·logit(pathWR) + we·logit(meanFor)
 // Path WR = expanding empirical WR of prior graded staked same tier (all sports).
