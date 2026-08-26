@@ -32,6 +32,29 @@ export function fairProbFromNoVig(sideOddsList, sideIdx = 0) {
   return raw[sideIdx] / sum;
 }
 
+/**
+ * ML odds list for no-vig fair (side of interest first → index 0).
+ * Soccer / any 3-way: include draw. 2-way sports: home vs away only.
+ * Returns null if the needed legs are missing.
+ */
+export function mlFairOddsList(home, away, draw, sideNorm = 'home') {
+  const side = String(sideNorm || 'home').toLowerCase();
+  const h = Number(home);
+  const a = Number(away);
+  const d = Number(draw);
+  const hasH = Number.isFinite(h);
+  const hasA = Number.isFinite(a);
+  const hasD = Number.isFinite(d);
+  if (hasH && hasA && hasD) {
+    if (side === 'draw') return [d, a, h];
+    if (side === 'away') return [a, h, d];
+    return [h, a, d];
+  }
+  if (side === 'draw') return null;
+  if (side === 'away') return (hasA && hasH) ? [a, h] : null;
+  return (hasH && hasA) ? [h, a] : null;
+}
+
 /** EV in percentage points vs a fair win probability. */
 export function evPctVsFairProb(offerOdds, fairProb) {
   const offerP = impliedFromAmerican(offerOdds);

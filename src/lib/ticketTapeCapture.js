@@ -15,6 +15,7 @@ import {
   evPctVsFairProb,
   fairProbFromNoVig,
   noVigFairAmerican,
+  mlFairOddsList,
 } from './oddsEv.js';
 import { compactSteam, summarizeSteam } from './steamMove.js';
 
@@ -65,13 +66,8 @@ export function fairPairFromPinnGame(pinnGame, {
 
   const cur = pinnGame.current || pinnGame.opener;
   if (!cur) return null;
-  if (side === 'draw' && Number.isFinite(cur.draw)
-      && Number.isFinite(cur.away) && Number.isFinite(cur.home)) {
-    return [cur.draw, cur.away, cur.home];
-  }
-  return side === 'away'
-    ? twoWay(cur.away, cur.home)
-    : twoWay(cur.home, cur.away);
+  // Soccer / 3-way ML: include draw. 2-way sports stay home vs away.
+  return mlFairOddsList(cur.home, cur.away, cur.draw, side);
 }
 
 export function captureTicketTape({
