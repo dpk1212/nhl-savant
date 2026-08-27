@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-08-27T16:22:42.721Z",
-  "elapsedSec": 23.6,
+  "scannedAt": "2026-08-27T16:29:22.534Z",
+  "elapsedSec": 21.9,
   "phase": "PHASE_2_MERGE_ENABLED",
   "todayGamesCount": 68,
   "summary": {
     "total": 274,
     "coveredByMain": 30,
-    "recovered": 27,
-    "recoveredPositions": 166,
-    "noPositions": 217,
+    "recovered": 28,
+    "recoveredPositions": 167,
+    "noPositions": 216,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,7 +16,7 @@
       "ml": 25,
       "spread": 3,
       "total": 5,
-      "dropped_shadow_gate": 71,
+      "dropped_shadow_gate": 72,
       "dropped_excluded": 61,
       "dropped_duplicate": 1
     }
@@ -256,8 +256,24 @@
       "tier": "FLAT",
       "name": "Cannae",
       "sports": "SOC",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x7ea571c40408f340c1c8fc8eaacebab53c1bde7b"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x7ea571c40408f340c1c8fc8eaacebab53c1bde7b",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 11926,
+      "willPassShadowGate": 0,
+      "willDropAtShadowGate": 1,
+      "positions": [
+        {
+          "sport": "SOC",
+          "gameKey": "bil_bar",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 1091,
+          "entryLine": null,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "1cd9a3",
@@ -591,7 +607,7 @@
           "gameKey": "bil_bar",
           "marketType": "ml",
           "side": "home",
-          "invested": 387660,
+          "invested": 389610,
           "entryLine": null,
           "passesShadow": true
         },
@@ -732,6 +748,15 @@
         },
         {
           "sport": "MLB",
+          "gameKey": "lad_atl",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 570,
+          "entryLine": null,
+          "passesShadow": true
+        },
+        {
+          "sport": "MLB",
           "gameKey": "kcr_tor",
           "marketType": "total",
           "side": "over",
@@ -746,15 +771,6 @@
           "side": "away",
           "invested": 450,
           "entryLine": 3.5,
-          "passesShadow": true
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "lad_atl",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 540,
-          "entryLine": null,
           "passesShadow": true
         },
         {
@@ -974,6 +990,15 @@
           "passesShadow": false
         },
         {
+          "sport": "MLB",
+          "gameKey": "hou_nyy",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 42,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
           "sport": "UFC",
           "gameKey": "jackjenkins_seanwoodson",
           "marketType": "ml",
@@ -1016,15 +1041,6 @@
           "side": "home",
           "invested": 23,
           "entryLine": 2.5,
-          "passesShadow": false
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "hou_nyy",
-          "marketType": "ml",
-          "side": "home",
-          "invested": 26,
-          "entryLine": null,
           "passesShadow": false
         },
         {
@@ -1503,7 +1519,7 @@
           "gameKey": "bil_bar",
           "marketType": "ml",
           "side": "home",
-          "invested": 4831,
+          "invested": 6102,
           "entryLine": null,
           "passesShadow": true
         },
@@ -2091,7 +2107,7 @@
           "gameKey": "col_wsh",
           "marketType": "ml",
           "side": "away",
-          "invested": 34886,
+          "invested": 34962,
           "entryLine": null,
           "passesShadow": true
         },
@@ -2109,7 +2125,7 @@
           "gameKey": "lad_atl",
           "marketType": "ml",
           "side": "home",
-          "invested": 30602,
+          "invested": 31768,
           "entryLine": null,
           "passesShadow": true
         }
