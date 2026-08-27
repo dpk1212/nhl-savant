@@ -165,6 +165,7 @@ Kill: meta (“show-me version of the product”) · slogan soup · dunking · s
 - mark themes spent / still open
 - set ask temperature
 - note unfinished stakes / if Dale still iterating
+- **rewrite FORWARD LOOK** — after *this* post, what does the feed need next (2–3 slots + NOT next)
 
 Refresh `recent_timeline_latest.md` when CSV was part of this run.
 
@@ -188,8 +189,9 @@ Without this write-back, the next session loses the plot — which is the failur
 
 Before send:
 
-- [ ] Timeline review done (`recent_timeline_latest.md` this run)  
-- [ ] WHO + PURPOSE locked in one line each  
+- [ ] **Refresh FORWARD LOOK** — what the feed needs *after* this post (balance table + next 2–3 slots)
+- [ ] WHO + PURPOSE locked (PURPOSE usually matches forward-look slot #1 unless Dale overrides)
+- [ ] Timeline review done (`messaging_continuity.md` + `recent_timeline_latest.md` this run)  
 - [ ] ONE idea passes understand / believe / unique  
 - [ ] Only 1–2 SPCL letters owned (biased to what’s hot *and* fits purpose)  
 - [ ] Hook survives what / how / so what + doesn’t ignore recent winners/failures  
