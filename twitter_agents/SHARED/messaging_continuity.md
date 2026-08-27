@@ -7,7 +7,7 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-08-27 eve — Nats cash DEEP 1-tweet restage (Qual bar) |
+| Last updated | 2026-08-27 eve — Nats cash hook obsess (no ask-first) |
 | CSV window | Aug 21–27, 2026 |
 | Ask temperature | **hot when shipped** — then cool hard |
 | Account arc | Nats unfinished → **deep Power close + Upgrade ask** |
@@ -17,7 +17,7 @@
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 8/27 eve | QT own Nats | 7-1/5.0u + full morning receipt stack → Upgrade/DM | P + S | **yes in-tweet** | **Restaged DEEP** — Dale: prior drafts failed Qual bar |
+| 8/27 eve | QT own Nats | Pressed→cashed open (13-1→$12.7K→7-1/5u) + deep stack → Upgrade | P + S | yes close | **Hook C staged** — Dale: obsess open; ask-first killed |
 | 8/27 PM | Hero Action SOC | $381K soccer · MLB contrast · NFL foreshadow | S + C | none | Staged |
 | 8/27 PM | QT Trent FCS | Nats 13-1 → printers sizing (deep) | S + C | none | **Shipped** (parent) · quality bar |
 | 8/27 PM | QT Dominic | Don’t become a sharp — OG +5.37u | C + P | none | Pending |
