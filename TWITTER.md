@@ -82,7 +82,7 @@ Full checklist: `hormozi_tweet_process.md`. Compressed:
 
 ```
 1. SPINE     — Dale dump / assets (law)
-2. TIMELINE  — recent posts + analytics → recent_timeline_latest.md (hooks, SPCL mix, continuity, ask temp)
+2. TIMELINE  — read/write messaging_continuity.md + recent_timeline_latest.md (CSV when dropped)
 3. WHO       — who is this for right now
 4. PURPOSE   — one job: give / educate / buzz / ask
 5. ONE       — big idea (understand / believe / unique)
@@ -92,12 +92,17 @@ Full checklist: `hormozi_tweet_process.md`. Compressed:
 9. DRAFT     — Dale human voice; not brochure
 10. ASK      — respect ask temperature; soft trial in SR only if PURPOSE=ask
 11. QUAL     — question → delete → simplify → ship 95%
-12. STAGE    — COPY_PASTE with WHO/PURPOSE/ONE/SPCL/Timeline/Ask header
+12. STAGE    — COPY_PASTE + **write back** messaging_continuity.md (last beat, spent/open, ask temp)
 ```
 
-**Drops:** analytics CSV → `analytics_csv_ingest.md` before draft · Hormozi transcript → `hormozi_ingest.md` (full synthesize → canon) before draft.
+**Drops:** analytics CSV → `analytics_csv_ingest.md` before draft · Hormozi transcript → `hormozi_ingest.md` before draft.
 
-**Fluid timeline:** every run refreshes `twitter_agents/SHARED/recent_timeline_latest.md`. Drafts that ignore this window’s winners/failures restart at TIMELINE.
+**Fluid timeline (day-to-day):**  
+- Start: read `SHARED/messaging_continuity.md` (last beats / spent themes / ask temp)  
+- CSV: refresh `recent_timeline_latest.md` then merge into continuity  
+- End: **write back** continuity with what we just staged — or the next session loses the plot  
+
+Drafts that ignore last beats restart at TIMELINE.
 
 **Dale spine = law.** Shape his thought. Don’t invent a competing feeling.
 
