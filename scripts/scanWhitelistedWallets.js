@@ -63,6 +63,7 @@ import { matchSoccerPositionTitle, resolveSoccerSide } from './lib/soccerTeams.j
 import { matchUFCPositionTitle } from './lib/ufcFighters.js';
 import { matchWNBAPositionTitle, resolveWNBATeam, WNBA_NAME_TO_CODE } from './lib/wnbaTeams.js';
 import { matchNFLPositionTitle, resolveNFLTeam, NFL_NAME_TO_CODE } from './lib/nflTeams.js';
+import { matchCFBPositionTitle, resolveCFBTeam, CFB_NAME_TO_CODE } from './lib/cfbTeams.js';
 import { resolveBinarySide, resolveSpreadSide, resolveSpreadEntryLine } from './lib/resolvePositionSide.js';
 import { parseSpreadTitle } from '../src/lib/spreadLineSign.js';
 import { positionMatchesPolyEvent } from './lib/positionEventMatch.js';
@@ -285,7 +286,7 @@ function extractTeamsFromTitle(title) {
 
 function buildTodaysGames(polyData) {
   const games = {};
-  for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL']) {
+  for (const sport of ['NHL', 'CBB', 'CFB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL']) {
     const sportGames = polyData?.[sport] || {};
     for (const [key, g] of Object.entries(sportGames)) {
       const away = g.awayTeam || '';
@@ -308,6 +309,14 @@ function matchPositionToGame(posTitle, todaysGames, cbbMap) {
     if (todaysGames[`NHL:${key}`]) return { key, sport: 'NHL', side: 'away', awayName: rawA, homeName: rawB };
     const rev = `${nhlB}_${nhlA}`;
     if (todaysGames[`NHL:${rev}`]) return { key: rev, sport: 'NHL', side: 'home', awayName: rawB, homeName: rawA };
+  }
+  const cfbA = resolveCFBTeam(rawA);
+  const cfbB = resolveCFBTeam(rawB);
+  if (cfbA && cfbB) {
+    const key = `${cfbA.toLowerCase()}_${cfbB.toLowerCase()}`;
+    if (todaysGames[`CFB:${key}`]) return { key, sport: 'CFB', side: 'away', awayName: rawA, homeName: rawB };
+    const rev = `${cfbB.toLowerCase()}_${cfbA.toLowerCase()}`;
+    if (todaysGames[`CFB:${rev}`]) return { key: rev, sport: 'CFB', side: 'home', awayName: rawB, homeName: rawA };
   }
   const cbbA = findCBBTeam(cbbMap, rawA);
   const cbbB = findCBBTeam(cbbMap, rawB);
@@ -365,7 +374,10 @@ function matchSpreadTitle(posTitle, todaysGames, cbbMap) {
   const NFL_MAP = Object.fromEntries(
     Object.entries(NFL_NAME_TO_CODE).map(([k, v]) => [k, String(v).toLowerCase()]),
   );
-  const SPORT_MAPS = { NHL: NHL_MAP, WNBA: WNBA_MAP, NFL: NFL_MAP, NBA: NBA_MAP, MLB: MLB_MAP };
+  const CFB_MAP = Object.fromEntries(
+    Object.entries(CFB_NAME_TO_CODE).map(([k, v]) => [k, String(v).toLowerCase()]),
+  );
+  const SPORT_MAPS = { NHL: NHL_MAP, WNBA: WNBA_MAP, CFB: CFB_MAP, NFL: NFL_MAP, NBA: NBA_MAP, MLB: MLB_MAP };
   const candidates = [];
   const teamNorm = normalize(teamRaw);
   const words = teamRaw.split(/\s+/).map(w => normalize(w)).filter(w => w.length >= 3);
@@ -442,7 +454,7 @@ function collectScannedWallets() {
   for (const f of ['sharp_positions.json', 'sharp_spread_positions.json', 'sharp_total_positions.json']) {
     const data = loadJSON(f);
     if (!data) continue;
-    for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL']) {
+    for (const sport of ['NHL', 'CBB', 'CFB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL']) {
       const games = data[sport] || {};
       if (typeof games !== 'object') continue;
       for (const g of Object.values(games)) {
@@ -720,6 +732,7 @@ async function run() {
         || matchSoccerPositionTitle(title, todaysGames)
         || matchUFCPositionTitle(title, todaysGames)
         || matchWNBAPositionTitle(title, todaysGames)
+        || matchCFBPositionTitle(title, todaysGames)
         || matchNFLPositionTitle(title, todaysGames);
       let forcedSpread = false;
       if (!match) {
@@ -1120,7 +1133,7 @@ function mergeRecoveredIntoScanFiles(positions, polyData) {
     if (!data) {
       // If the main scanner didn't produce this file (e.g. no totals
       // today), bootstrap a minimal shape so we can still inject.
-      data = { NHL: {}, CBB: {}, MLB: {}, NBA: {}, SOC: {}, UFC: {}, WNBA: {}, NFL: {}, _whitelist_bootstrap: true };
+      data = { NHL: {}, CBB: {}, CFB: {}, MLB: {}, NBA: {}, SOC: {}, UFC: {}, WNBA: {}, NFL: {}, _whitelist_bootstrap: true };
     }
 
     for (const pos of bucket.positions) {

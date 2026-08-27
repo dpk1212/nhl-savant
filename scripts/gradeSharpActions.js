@@ -26,6 +26,7 @@ import {
 } from './lib/ufcFighters.js';
 import { resolveWNBATeam, wnbaTeamsMatch } from './lib/wnbaTeams.js';
 import { resolveNFLTeam, nflTeamsMatch } from './lib/nflTeams.js';
+import { resolveCFBTeam, cfbTeamsMatch } from './lib/cfbTeams.js';
 import { captureTicketTape, applyActionTicketTape, hoursUntilMs } from '../src/lib/ticketTapeCapture.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -39,6 +40,7 @@ const STATSAPI_MLB_URL = 'https://statsapi.mlb.com/api/v1/schedule';
 const ESPN_NBA_URL = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard';
 const ESPN_WNBA_URL = 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard';
 const ESPN_NFL_URL = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard';
+const ESPN_CFB_URL = 'https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard';
 const ESPN_SOC_URLS = [
   'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard',
   'https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard',
@@ -519,6 +521,114 @@ async function fetchNFLFinalGames(dateStr) {
   }
 }
 
+function mapEspnCfbEvent(e) {
+  const st = e.competitions?.[0]?.status?.type;
+  if (!(st?.state === 'post' || st?.completed || String(st?.name || '').startsWith('STATUS_FINAL'))) {
+    return null;
+  }
+  const comp = e.competitions[0];
+  const comps = comp.competitors || [];
+  const away = comps.find(c => c.homeAway === 'away') || {};
+  const home = comps.find(c => c.homeAway === 'home') || {};
+  const awayAbbr = away.team?.abbreviation || '';
+  const homeAbbr = home.team?.abbreviation || '';
+  const awayName = away.team?.displayName || '';
+  const homeName = home.team?.displayName || '';
+  return {
+    dateET: espnEventDateET(e),
+    awayCode: (resolveCFBTeam(awayName) || resolveCFBTeam(awayAbbr) || '').toLowerCase()
+      || awayAbbr.toLowerCase(),
+    homeCode: (resolveCFBTeam(homeName) || resolveCFBTeam(homeAbbr) || '').toLowerCase()
+      || homeAbbr.toLowerCase(),
+    awayTeam: awayName,
+    homeTeam: homeName,
+    awayScore: parseInt(away.score) || 0,
+    homeScore: parseInt(home.score) || 0,
+  };
+}
+
+let _oddsCfbCache = null;
+
+async function fetchCFBFinalsFromOddsApi() {
+  if (_oddsCfbCache) return _oddsCfbCache;
+  const key = process.env.ODDS_API_KEY;
+  if (!key) {
+    _oddsCfbCache = [];
+    return _oddsCfbCache;
+  }
+  const out = [];
+  const seen = new Set();
+  try {
+    const url = `https://api.the-odds-api.com/v4/sports/americanfootball_ncaaf/scores/?daysFrom=3&apiKey=${key}`;
+    const res = await fetch(url, { headers: { 'User-Agent': 'nhl-savant-grader/1.0' } });
+    if (!res.ok) {
+      console.warn(`Odds API NCAAF scores HTTP ${res.status}`);
+      _oddsCfbCache = [];
+      return _oddsCfbCache;
+    }
+    const data = await res.json();
+    for (const g of Array.isArray(data) ? data : []) {
+      if (!g?.completed || !Array.isArray(g.scores)) continue;
+      const awayName = g.away_team || '';
+      const homeName = g.home_team || '';
+      const awayScore = parseInt(g.scores.find(s => s.name === awayName)?.score, 10);
+      const homeScore = parseInt(g.scores.find(s => s.name === homeName)?.score, 10);
+      if (!Number.isFinite(awayScore) || !Number.isFinite(homeScore)) continue;
+      const dateET = g.commence_time
+        ? new Date(g.commence_time).toLocaleDateString('en-CA', { timeZone: 'America/New_York' })
+        : null;
+      const row = {
+        dateET,
+        awayCode: (resolveCFBTeam(awayName) || '').toLowerCase(),
+        homeCode: (resolveCFBTeam(homeName) || '').toLowerCase(),
+        awayTeam: awayName,
+        homeTeam: homeName,
+        awayScore,
+        homeScore,
+      };
+      if (!row.awayCode || !row.homeCode) continue;
+      const k = `${row.dateET || ''}|${row.awayCode}|${row.homeCode}`;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push(row);
+    }
+  } catch (e) {
+    console.warn(`Odds API NCAAF scores error: ${e.message}`);
+  }
+  _oddsCfbCache = out;
+  if (out.length) console.log(`Odds API NCAAF scores: ${out.length} completed`);
+  return out;
+}
+
+async function fetchCFBFinalGames(dateStr) {
+  try {
+    const ymd = dateStr ? String(dateStr).replace(/-/g, '') : '';
+    const urls = ymd ? [`${ESPN_CFB_URL}?dates=${ymd}`] : [ESPN_CFB_URL];
+    const seen = new Set();
+    const out = [];
+    for (const url of urls) {
+      const data = await espnJson(url);
+      for (const e of data?.events || []) {
+        const g = mapEspnCfbEvent(e);
+        if (!g || !g.awayCode || !g.homeCode) continue;
+        const k = `${g.dateET || ''}|${g.awayCode}|${g.homeCode}`;
+        if (seen.has(k)) continue;
+        seen.add(k);
+        out.push(g);
+      }
+      if (out.length) break;
+    }
+    if (!out.length) {
+      const odds = await fetchCFBFinalsFromOddsApi();
+      return dateStr ? odds.filter(g => g.dateET === dateStr) : odds;
+    }
+    return out;
+  } catch (e) {
+    console.error('ESPN CFB fetch error:', e.message);
+    return [];
+  }
+}
+
 async function fetchSOCFinalGames(dateStr) {
   // EPL (eng.1) + La Liga (esp.1). Polymarket 3-way match markets resolve on
   // the 90-minute result. League games are almost always STATUS_FULL_TIME;
@@ -690,8 +800,8 @@ function finalDateMatches(g, pos) {
   return g.dateET != null && g.dateET === pos.date;
 }
 
-function findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals = [], ufcFinals = [], wnbaFinals = [], nflFinals = []) {
-  const rawKey = (pos.gameKey || '').replace(/^(NHL|NBA|MLB|CBB|SOC|UFC|WNBA|NFL):/, '');
+function findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals = [], ufcFinals = [], wnbaFinals = [], nflFinals = [], cfbFinals = []) {
+  const rawKey = (pos.gameKey || '').replace(/^(NHL|NBA|MLB|CBB|SOC|UFC|WNBA|NFL|CFB):/, '');
   const parts = rawKey.split('_');
 
   if (pos.sport === 'NHL') {
@@ -753,6 +863,26 @@ function findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFi
       if (nflTeamsMatch(pos.away, g.awayTeam) && nflTeamsMatch(pos.home, g.homeTeam)) return g;
       if (teamNamesMatch(pos.away, g.awayTeam) && teamNamesMatch(pos.home, g.homeTeam)) return g;
       if (nflTeamsMatch(pos.away, g.homeTeam) && nflTeamsMatch(pos.home, g.awayTeam)) {
+        return { ...g, awayScore: g.homeScore, homeScore: g.awayScore };
+      }
+    }
+    return null;
+  }
+
+  if (pos.sport === 'CFB') {
+    const dated = cfbFinals.filter(g => finalDateMatches(g, pos));
+    if (parts.length >= 2) {
+      const match = dated.find(g => g.awayCode === parts[0] && g.homeCode === parts[1]);
+      if (match) return match;
+      const flipped = dated.find(g => g.awayCode === parts[1] && g.homeCode === parts[0]);
+      if (flipped) {
+        return { ...flipped, awayScore: flipped.homeScore, homeScore: flipped.awayScore };
+      }
+    }
+    for (const g of dated) {
+      if (cfbTeamsMatch(pos.away, g.awayTeam) && cfbTeamsMatch(pos.home, g.homeTeam)) return g;
+      if (teamNamesMatch(pos.away, g.awayTeam) && teamNamesMatch(pos.home, g.homeTeam)) return g;
+      if (cfbTeamsMatch(pos.away, g.homeTeam) && cfbTeamsMatch(pos.home, g.awayTeam)) {
         return { ...g, awayScore: g.homeScore, homeScore: g.awayScore };
       }
     }
@@ -914,7 +1044,7 @@ async function loadGradeCandidates(db) {
 const PICK_SCORE_COLS = ['sharpFlowPicks', 'sharpFlowSpreads', 'sharpFlowTotals'];
 
 function knownFinalKey(sport, date, gameKey) {
-  const raw = String(gameKey || '').replace(/^(NHL|NBA|MLB|CBB|SOC|UFC|WNBA|NFL):/, '');
+  const raw = String(gameKey || '').replace(/^(NHL|NBA|MLB|CBB|SOC|UFC|WNBA|NFL|CFB):/, '');
   return `${sport}|${date}|${raw}`;
 }
 
@@ -923,7 +1053,7 @@ async function collectPendingPickDates(db) {
   const sports = new Set();
   const bySport = {
     CBB: new Set(), NHL: new Set(), MLB: new Set(), NBA: new Set(),
-    WNBA: new Set(), NFL: new Set(), SOC: new Set(), UFC: new Set(),
+    WNBA: new Set(), NFL: new Set(), CFB: new Set(), SOC: new Set(), UFC: new Set(),
   };
   for (const col of PICK_SCORE_COLS) {
     const snap = await db.collection(col).where('status', '==', 'PENDING').get();
@@ -990,6 +1120,7 @@ async function gradePendingSharpFlowPicks(db, finals) {
         finals.ufcFinals,
         finals.wnbaFinals,
         finals.nflFinals,
+        finals.cfbFinals,
       );
       if (!game) {
         skipped++;
@@ -1003,6 +1134,7 @@ async function gradePendingSharpFlowPicks(db, finals) {
           : pick.sport === 'NBA' ? 'ESPN_NBA_API'
             : pick.sport === 'WNBA' ? 'ESPN_WNBA_API'
               : pick.sport === 'NFL' ? 'ESPN_NFL_API'
+                : pick.sport === 'CFB' ? 'ESPN_CFB_API'
                 : pick.sport === 'SOC' ? 'ESPN_SOC_API'
                   : pick.sport === 'UFC' ? 'ESPN_UFC_API' : 'ESPN_MLB_API';
       const updates = {
@@ -1071,7 +1203,7 @@ async function loadKnownFinalsFromPicks(db, dates) {
         if (!sport || !gameKey) continue;
         const key = knownFinalKey(sport, date, gameKey);
         if (map.has(key)) continue;
-        const parts = String(gameKey).replace(/^(NHL|NBA|MLB|CBB|SOC|UFC|WNBA|NFL):/, '').split('_');
+        const parts = String(gameKey).replace(/^(NHL|NBA|MLB|CBB|SOC|UFC|WNBA|NFL|CFB):/, '').split('_');
         map.set(key, {
           dateET: date,
           awayCode: parts[0] || null,
@@ -1122,6 +1254,7 @@ async function main() {
   const nbaDates = new Set();
   const wnbaDates = new Set();
   const nflDates = new Set();
+  const cfbDates = new Set();
   const socDates = new Set();
   const ufcDates = new Set();
   for (const doc of snapshot.docs) {
@@ -1133,6 +1266,7 @@ async function main() {
     if (d.sport === 'NBA' && d.date) nbaDates.add(d.date);
     if (d.sport === 'WNBA' && d.date) wnbaDates.add(d.date);
     if (d.sport === 'NFL' && d.date) nflDates.add(d.date);
+    if (d.sport === 'CFB' && d.date) cfbDates.add(d.date);
     if (d.sport === 'SOC' && d.date) socDates.add(d.date);
     if (d.sport === 'UFC' && d.date) ufcDates.add(d.date);
   }
@@ -1145,10 +1279,11 @@ async function main() {
   for (const d of pendingPicks.bySport.NBA) nbaDates.add(d);
   for (const d of pendingPicks.bySport.WNBA) wnbaDates.add(d);
   for (const d of pendingPicks.bySport.NFL) nflDates.add(d);
+  for (const d of pendingPicks.bySport.CFB) cfbDates.add(d);
   for (const d of pendingPicks.bySport.SOC) socDates.add(d);
   for (const d of pendingPicks.bySport.UFC) ufcDates.add(d);
 
-  const allDates = new Set([...cbbDates, ...nhlDates, ...mlbDates, ...nbaDates, ...wnbaDates, ...nflDates, ...socDates, ...ufcDates]);
+  const allDates = new Set([...cbbDates, ...nhlDates, ...mlbDates, ...nbaDates, ...wnbaDates, ...nflDates, ...cfbDates, ...socDates, ...ufcDates]);
   const knownFinals = await loadKnownFinalsFromPicks(db, allDates);
   console.log(`Source A known finals: ${knownFinals.size} games (already-graded picks)`);
 
@@ -1207,6 +1342,15 @@ async function main() {
     }
   }
 
+  let cfbFinals = [];
+  if (sports.has('CFB')) {
+    for (const d of [null, ...recentScoreboardDates(cfbDates)]) {
+      const games = await fetchCFBFinalGames(d);
+      cfbFinals.push(...games);
+      console.log(`ESPN CFB API: ${games.length} final CFB games${d ? ` for ${d}` : ''}`);
+    }
+  }
+
   let socFinals = [];
   if (sports.has('SOC')) {
     for (const d of recentScoreboardDates(socDates)) {
@@ -1226,7 +1370,7 @@ async function main() {
   }
 
   await gradePendingSharpFlowPicks(db, {
-    nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals, ufcFinals, wnbaFinals, nflFinals,
+    nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals, ufcFinals, wnbaFinals, nflFinals, cfbFinals,
   });
 
   // Grade each position
@@ -1249,7 +1393,7 @@ async function main() {
 
       let game = knownFinals.get(knownFinalKey(pos.sport, pos.date, pos.gameKey)) || null;
       if (!game) {
-        game = findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals, ufcFinals, wnbaFinals, nflFinals);
+        game = findMatchingGame(pos, nhlFinals, cbbFinals, mlbFinals, nbaFinals, socFinals, ufcFinals, wnbaFinals, nflFinals, cfbFinals);
       }
       if (!game) {
         noGame++;

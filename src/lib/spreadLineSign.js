@@ -10,6 +10,7 @@
  */
 import { resolveNFLTeam } from '../../scripts/lib/nflTeams.js';
 import { resolveWNBATeam } from '../../scripts/lib/wnbaTeams.js';
+import { resolveCFBTeam } from '../../scripts/lib/cfbTeams.js';
 
 export function normalizeSpreadText(s) {
   return String(s || '').replace(/[\u2212\u2013\u2014]/g, '-');
@@ -22,7 +23,7 @@ export function normalizeTeamKey(s) {
 /** TEN / Titans / Tennessee → same NFL code. */
 export function sportTeamCode(name) {
   if (!name) return null;
-  return resolveNFLTeam(name) || resolveWNBATeam(name) || null;
+  return resolveNFLTeam(name) || resolveWNBATeam(name) || resolveCFBTeam(name) || null;
 }
 
 export function labelsAreSameTeam(a, b) {

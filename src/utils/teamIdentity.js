@@ -116,6 +116,7 @@ const LEAGUE_FALLBACK = {
   NBA: { c1: '#c8553d', c2: '#3a1f1a' },
   WNBA: { c1: '#F472B6', c2: '#3b1028' },
   NFL: { c1: '#4CAF50', c2: '#0d2818' },
+  CFB: { c1: '#BF5700', c2: '#2a1206' },
   MLB: { c1: '#1d3557', c2: '#0d1b2a' },
   CBB: { c1: '#FF6B35', c2: '#2a1206' },
   SOC: { c1: '#2ECC71', c2: '#0d3320' },

@@ -18,7 +18,7 @@ import { steamForGame } from './steamMove.js';
 import { signedSpreadEntryLine } from './spreadLineSign.js';
 import { shortTeamNick } from '../utils/teamIdentity.js';
 
-const SPORTS = ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL'];
+const SPORTS = ['NHL', 'CBB', 'CFB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL'];
 
 /** Action tape = CONFIRMED only (FLAT wins less — kept off this board). */
 const ACTION_TIERS = new Set(['CONFIRMED']);

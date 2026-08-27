@@ -12,6 +12,7 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { isWNBAMarketTitle } from './lib/wnbaTeams.js';
 import { isNFLMarketTitle } from './lib/nflTeams.js';
+import { isCFBMarketTitle } from './lib/cfbTeams.js';
 import { isUFCMarketTitle } from './lib/ufcFighters.js';
 import { isSoccerMarketTitle } from './lib/soccerTeams.js';
 import { isNonFullGameTotalMarket } from './lib/totalMarketFilter.js';
@@ -37,7 +38,7 @@ const EARLY_FLIP = 55;
 const HOLD_FLIP_MAX = 40;
 const MIN_SPORTS_MARKETS = 8;
 
-const SPORT_KEYS = ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL'];
+const SPORT_KEYS = ['NHL', 'CBB', 'CFB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL'];
 
 const httpFetch = typeof globalThis.fetch === 'function'
   ? globalThis.fetch
@@ -62,6 +63,7 @@ function parseJsonField(v) {
 function classifySport(title) {
   const t = (title || '').toLowerCase();
   if (isWNBAMarketTitle(title)) return 'WNBA';
+  if (isCFBMarketTitle(title)) return 'CFB';
   if (isNFLMarketTitle(title)) return 'NFL';
   if (/\bmlb\b|baseball|world series/.test(t)) return 'MLB';
   if (/\bnba\b/.test(t)) return 'NBA';

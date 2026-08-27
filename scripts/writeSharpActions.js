@@ -140,7 +140,7 @@ function collectScanSoftKeys(posFiles) {
   const keys = new Set();
   for (const { data: posData, mkt } of posFiles) {
     if (!posData) continue;
-    for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'NFL', 'SOC', 'UFC', 'WNBA']) {
+    for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'CFB', 'NFL', 'SOC', 'UFC', 'WNBA']) {
       const sportGames = posData[sport] || {};
       for (const [gameKey, gd] of Object.entries(sportGames)) {
         for (const pos of (gd.positions || [])) {
@@ -168,7 +168,7 @@ function parseCommenceMs(raw) {
  */
 function loadCommenceByGame() {
   const map = new Map();
-  const sports = ['NHL', 'NBA', 'MLB', 'CBB', 'NFL', 'SOC', 'UFC', 'WNBA'];
+  const sports = ['NHL', 'NBA', 'MLB', 'CBB', 'CFB', 'NFL', 'SOC', 'UFC', 'WNBA'];
   const poly = loadJSON('polymarket_data.json') || {};
   for (const sport of sports) {
     for (const [gk, g] of Object.entries(poly[sport] || {})) {
@@ -716,7 +716,7 @@ async function main() {
 
   for (const { data: posData, mkt } of posFiles) {
     if (!posData) continue;
-    for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'NFL', 'SOC', 'UFC', 'WNBA']) {
+    for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'CFB', 'NFL', 'SOC', 'UFC', 'WNBA']) {
       const sportGames = posData[sport] || {};
       for (const [gameKey, gd] of Object.entries(sportGames)) {
         if (!gd.positions) continue;
@@ -747,7 +747,7 @@ async function main() {
 
   for (const { data: posData, mkt } of posFiles) {
     if (!posData) continue;
-    for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'NFL', 'SOC', 'UFC', 'WNBA']) {
+    for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'CFB', 'NFL', 'SOC', 'UFC', 'WNBA']) {
       const sportGames = posData[sport] || {};
       for (const [gameKey, gd] of Object.entries(sportGames)) {
         if (!gd.positions) continue;

@@ -24,6 +24,7 @@ export const PINNAPI_SPORT_ID = {
   UFC: 8,
   WNBA: 3,
   NFL: 5,
+  CFB: 5, // same American-football sport_id; league filter splits NFL vs NCAAF
 };
 
 /**
@@ -37,6 +38,7 @@ const LEAGUE_FILTER = {
   WNBA: [/^\s*WNBA\s*$/i],
   CBB: [/NCAA/i, /College/i, /NCAAB/i],
   NFL: [/^\s*NFL\s*$/i, /National Football/i],
+  CFB: [/NCAA/i, /College Football/i, /NCAAF/i, /NCAA Football/i],
   UFC: [/UFC/i, /MMA/i, /Bellator/i],
   SOC: null, // accept all soccer leagues we can key
 };

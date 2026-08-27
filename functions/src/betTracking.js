@@ -43,6 +43,7 @@ const ESPN_MLB_URL = "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb
 const ESPN_NBA_URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard";
 const ESPN_WNBA_URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard";
 const ESPN_NFL_URL = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard";
+const ESPN_CFB_URL = "https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard";
 const ESPN_SOC_URLS = [
   "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard",
   "https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard",
@@ -226,6 +227,48 @@ function resolveNFLTeam(raw) {
 function nflTeamsMatch(rawA, rawB) {
   const a = resolveNFLTeam(rawA);
   const b = resolveNFLTeam(rawB);
+  return !!(a && b && a === b);
+}
+
+const CFB_NAME_TO_CODE = require("./cfbNameToCode.json");
+
+function normalizeCFBName(s) {
+  return (s || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+}
+
+function resolveCFBTeam(raw) {
+  if (!raw) return null;
+  const cleaned = String(raw)
+      .replace(/\s*\((?:cfb|ncaaf|ncaa\s*football|college\s*football|fbs|fcs)\)\s*$/i, "")
+      .replace(/^(?:cfb|ncaaf|ncaa)\s*:\s*/i, "")
+      .replace(/\s+runnin['’]?\s*$/i, "")
+      .trim();
+  const n = normalizeCFBName(cleaned);
+  if (!n) return null;
+  if (CFB_NAME_TO_CODE[n]) return CFB_NAME_TO_CODE[n];
+  const OTHER_SCHOOL = /^(state|st|central|southern|northern|eastern|western|christian|tech|am|aandm|ia|ohio|martin|permian|international|baptist|college|famu|poly|mines)/;
+  let best = null;
+  let bestLen = 0;
+  for (const [alias, code] of Object.entries(CFB_NAME_TO_CODE)) {
+    if (alias.length < 4) continue;
+    if (!n.startsWith(alias)) continue;
+    const rest = n.slice(alias.length);
+    if (rest && OTHER_SCHOOL.test(rest)) continue;
+    if (alias.length > bestLen) {
+      best = code;
+      bestLen = alias.length;
+    }
+  }
+  return best;
+}
+
+function cfbTeamsMatch(rawA, rawB) {
+  const a = resolveCFBTeam(rawA);
+  const b = resolveCFBTeam(rawB);
   return !!(a && b && a === b);
 }
 
@@ -677,6 +720,91 @@ async function fetchNFLFinalGames(dateStr) {
   }
 }
 
+async function fetchCFBFinalGames(dateStr) {
+  try {
+    const ymd = dateStr ? String(dateStr).replace(/-/g, "") : "";
+    const urls = ymd ? [`${ESPN_CFB_URL}?dates=${ymd}`] : [ESPN_CFB_URL];
+    const seen = new Set();
+    const games = [];
+    for (const url of urls) {
+      const res = await fetch(url, {headers: ESPN_HEADERS});
+      if (!res.ok) { logger.warn(`ESPN CFB API ${res.status} ${url}`); continue; }
+      const data = await res.json();
+      for (const e of data.events || []) {
+        const st = e.competitions?.[0]?.status?.type;
+        if (!isActuallyFinal(st)) continue;
+        const comp = e.competitions[0];
+        const comps = comp.competitors || [];
+        const away = comps.find((c) => c.homeAway === "away") || {};
+        const home = comps.find((c) => c.homeAway === "home") || {};
+        const awayAbbr = away.team?.abbreviation || "";
+        const homeAbbr = home.team?.abbreviation || "";
+        const awayName = away.team?.displayName || awayAbbr;
+        const homeName = home.team?.displayName || homeAbbr;
+        const g = {
+          dateET: espnEventDateET(e),
+          awayCode: (resolveCFBTeam(awayName) || resolveCFBTeam(awayAbbr) || "").toLowerCase()
+            || awayAbbr.toLowerCase(),
+          homeCode: (resolveCFBTeam(homeName) || resolveCFBTeam(homeAbbr) || "").toLowerCase()
+            || homeAbbr.toLowerCase(),
+          awayTeam: awayName,
+          homeTeam: homeName,
+          awayScore: parseInt(away.score) || 0,
+          homeScore: parseInt(home.score) || 0,
+        };
+        const k = `${g.dateET || ""}|${g.awayCode}|${g.homeCode}`;
+        if (seen.has(k)) continue;
+        seen.add(k);
+        games.push(g);
+      }
+      if (games.length) break;
+    }
+    return games;
+  } catch (e) {
+    logger.error("ESPN CFB fetch error:", e.message);
+    return [];
+  }
+}
+
+function matchCfbGame(pick, cfbFinalGames) {
+  const rawKey = (pick.gameKey || "").replace(/^CFB:/, "");
+  const parts = rawKey.split("_");
+  const dated = cfbFinalGames.filter((g) =>
+    !pick.date || (g.dateET != null && g.dateET === pick.date),
+  );
+  let matchingGame = null;
+  if (parts.length === 2) {
+    matchingGame = dated.find((g) =>
+      g.awayCode === parts[0] && g.homeCode === parts[1],
+    );
+    if (!matchingGame) {
+      const flipped = dated.find((g) =>
+        g.awayCode === parts[1] && g.homeCode === parts[0],
+      );
+      if (flipped) {
+        matchingGame = {
+          ...flipped,
+          awayScore: flipped.homeScore,
+          homeScore: flipped.awayScore,
+        };
+      }
+    }
+  }
+  if (!matchingGame) {
+    for (const g of dated) {
+      if (cfbTeamsMatch(pick.away, g.awayTeam) && cfbTeamsMatch(pick.home, g.homeTeam)) {
+        matchingGame = g;
+        break;
+      }
+      if (teamNamesMatch(pick.away, g.awayTeam) && teamNamesMatch(pick.home, g.homeTeam)) {
+        matchingGame = g;
+        break;
+      }
+    }
+  }
+  return matchingGame;
+}
+
 async function fetchSOCFinalGames(dateStr) {
   const ymd = dateStr ? `?dates=${dateStr.replace(/-/g, "")}` : "";
   const games = [];
@@ -871,6 +999,7 @@ exports.updateBetResults = onSchedule({
     const allSocDates = new Set();
     const allUfcDates = new Set();
     const allNflDates = new Set();
+    const allCfbDates = new Set();
     allDocs.forEach((d) => {
       const p = d.data();
       allSports.add(p.sport);
@@ -878,6 +1007,7 @@ exports.updateBetResults = onSchedule({
       if (p.sport === "SOC" && p.date) allSocDates.add(p.date);
       if (p.sport === "UFC" && p.date) allUfcDates.add(p.date);
       if (p.sport === "NFL" && p.date) allNflDates.add(p.date);
+      if (p.sport === "CFB" && p.date) allCfbDates.add(p.date);
     });
 
     let cbbFinalByDate = {};
@@ -915,6 +1045,16 @@ exports.updateBetResults = onSchedule({
         const games = await fetchNFLFinalGames(d);
         nflFinalGames.push(...games);
         logger.info(`ESPN NFL API: ${games.length} final NFL games${d ? ` for ${d}` : ""}`);
+      }
+    }
+
+    let cfbFinalGames = [];
+    if (allSports.has("CFB")) {
+      const cfbDates = allCfbDates.size ? [null, ...allCfbDates] : [null];
+      for (const d of cfbDates) {
+        const games = await fetchCFBFinalGames(d);
+        cfbFinalGames.push(...games);
+        logger.info(`ESPN CFB API: ${games.length} final CFB games${d ? ` for ${d}` : ""}`);
       }
     }
 
@@ -1074,6 +1214,8 @@ exports.updateBetResults = onSchedule({
                 }
               }
             }
+          } else if (sport === "CFB") {
+            matchingGame = matchCfbGame(pick, cfbFinalGames);
           } else if (sport === "SOC") {
             const rawKey = (pick.gameKey || "").replace(/^SOC:/, "");
             const parts = rawKey.split("_");
@@ -1140,6 +1282,8 @@ exports.updateBetResults = onSchedule({
                 matchingGame.awayScore === matchingGame.homeScore) {
               matchingGame = null;
             }
+          } else if (sport === "CFB") {
+            matchingGame = matchCfbGame(pick, cfbFinalGames);
           }
 
           if (!matchingGame) continue;
@@ -1167,6 +1311,7 @@ exports.updateBetResults = onSchedule({
                 sport === "NBA" ? "ESPN_NBA_API" :
                 sport === "WNBA" ? "ESPN_WNBA_API" :
                 sport === "NFL" ? "ESPN_NFL_API" :
+                sport === "CFB" ? "ESPN_CFB_API" :
                 sport === "SOC" ? "ESPN_SOC_API" :
                 sport === "UFC" ? "ESPN_UFC_API" : "ESPN_MLB_API",
             };
@@ -1269,6 +1414,7 @@ exports.updateBetResults = onSchedule({
                 sport === "NBA" ? "ESPN_NBA_API" :
                 sport === "WNBA" ? "ESPN_WNBA_API" :
                 sport === "NFL" ? "ESPN_NFL_API" :
+                sport === "CFB" ? "ESPN_CFB_API" :
                 sport === "SOC" ? "ESPN_SOC_API" :
                 sport === "UFC" ? "ESPN_UFC_API" : "ESPN_MLB_API",
               "result.gradedAt":
@@ -1411,6 +1557,8 @@ exports.updateBetResults = onSchedule({
                 }
               }
             }
+          } else if (sport === "CFB") {
+            matchingGame = matchCfbGame(pick, cfbFinalGames);
           }
 
           if (!matchingGame) continue;
@@ -1608,6 +1756,8 @@ exports.updateBetResults = onSchedule({
                 }
               }
             }
+          } else if (sport === "CFB") {
+            matchingGame = matchCfbGame(pick, cfbFinalGames);
           }
 
           if (!matchingGame) continue;

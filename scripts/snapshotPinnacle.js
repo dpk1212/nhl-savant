@@ -23,6 +23,7 @@ import { makeSOCGameKey } from './lib/soccerTeams.js';
 import { makeUFCGameKey } from './lib/ufcFighters.js';
 import { makeWNBAGameKey } from './lib/wnbaTeams.js';
 import { makeNFLGameKey } from './lib/nflTeams.js';
+import { makeCFBGameKey } from './lib/cfbTeams.js';
 import { fetchPinnapiIndex, fetchRecentDrops, normalizeDrop, PINNAPI_SPORT_ID } from './lib/pinnapi.js';
 import { pickMainSpreadFromBoard, pickMainTotalFromBoard, linesClose } from '../src/lib/pinnacleMain.js';
 import {
@@ -58,6 +59,7 @@ const SPORTS = [
   // NFL — preseason + regular season (ML + spreads + totals).
   { key: 'americanfootball_nfl_preseason', label: 'NFL', markets: 'h2h,spreads,totals' },
   { key: 'americanfootball_nfl', label: 'NFL', markets: 'h2h,spreads,totals' },
+  { key: 'americanfootball_ncaaf', label: 'CFB', markets: 'h2h,spreads,totals' },
 ];
 
 // Reputation order for fair line (highest → lowest). First with both sides wins.
@@ -200,6 +202,9 @@ function makeGameKey(away, home, sportLabel) {
   }
   if (sportLabel === 'NFL') {
     return makeNFLGameKey(away, home);
+  }
+  if (sportLabel === 'CFB') {
+    return makeCFBGameKey(away, home);
   }
   const aCanon = findCBBTeam(cbbMap, away);
   const hCanon = findCBBTeam(cbbMap, home);
@@ -854,6 +859,7 @@ async function run() {
       [/baseball|mlb/i, 'MLB'],
       [/basketball.*wnba|wnba/i, 'WNBA'],
       [/basketball|nba|ncaa/i, 'NBA'],
+      [/football.*ncaa|ncaaf|college football|cfb/i, 'CFB'],
       [/football|nfl/i, 'NFL'],
       [/soccer|football.*uefa|epl/i, 'SOC'],
       [/mma|ufc|combat/i, 'UFC'],
@@ -864,6 +870,7 @@ async function run() {
         if (re.test(blob)) {
           if (label === 'NBA' && /wnba/i.test(blob)) return 'WNBA';
           if (label === 'NBA' && /ncaa|college|ncaab/i.test(blob)) return 'CBB';
+          if (label === 'NFL' && /ncaa|ncaaf|college|cfb/i.test(blob)) return 'CFB';
           return label;
         }
       }
@@ -875,7 +882,7 @@ async function run() {
       const guessed = guessLabel(n);
       if (guessed) labels.push(guessed);
       // Also try all labels — makeGameKey is sport-aware for SOC/UFC/etc.
-      for (const lab of ['MLB', 'NHL', 'NBA', 'NFL', 'CBB', 'WNBA', 'SOC', 'UFC']) {
+      for (const lab of ['MLB', 'NHL', 'NBA', 'NFL', 'CFB', 'CBB', 'WNBA', 'SOC', 'UFC']) {
         if (!labels.includes(lab)) labels.push(lab);
       }
       let attached = false;

@@ -160,6 +160,7 @@ function fmtTime(ts) {
 
 function sportStyle(sport) {
   if (sport === 'CBB') return { color: '#FF6B35', bg: 'rgba(255,107,53,0.12)', icon: '🏀' };
+  if (sport === 'CFB') return { color: '#BF5700', bg: 'rgba(191,87,0,0.12)', icon: '🏈' };
   if (sport === 'MLB') return { color: '#E31837', bg: 'rgba(227,24,55,0.12)', icon: '⚾' };
   if (sport === 'NBA') return { color: '#FF8C00', bg: 'rgba(255,140,0,0.12)', icon: '🏀' };
   if (sport === 'WNBA') return { color: '#F472B6', bg: 'rgba(244,114,182,0.12)', icon: '🏀' };
@@ -3231,7 +3232,7 @@ async function toggleUserPick(uid, date, gameKey, pickData) {
 // same list writeSharpActions skips before sharp_action_positions. Without
 // this, cards can paint "2 proven" / fake 2–0 stacks that staking never
 // sees (e.g. whitelist-recovered MM still in sharp_positions.json).
-const SHARP_INTEL_SPORTS = new Set(['NHL', 'CBB', 'MLB', 'NBA', 'NFL', 'SOC', 'UFC', 'WNBA']);
+const SHARP_INTEL_SPORTS = new Set(['NHL', 'CBB', 'CFB', 'MLB', 'NBA', 'NFL', 'SOC', 'UFC', 'WNBA']);
 function filterToQualifiedWallets(rawData, profilesMap, excludedSet = null) {
   if (!rawData) return null;
   if (!profilesMap || profilesMap.size === 0) return null;
@@ -3628,6 +3629,7 @@ function buildGameData(polyData, kalshiData) {
   };
 
   processSport('CBB');
+  processSport('CFB');
   processSport('NHL');
   processSport('MLB');
   processSport('NBA');
@@ -8577,7 +8579,7 @@ const SharpFlowProfitChart = memo(function SharpFlowProfitChart({ picks }) {
             <div>
               <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: '0.375rem' }}>Sport</div>
               <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
-                {[{ k: 'ALL', l: 'All Sports' }, { k: 'NHL', l: 'NHL' }, { k: 'CBB', l: 'CBB' }, { k: 'MLB', l: 'MLB' }, { k: 'NBA', l: 'NBA' }, { k: 'WNBA', l: 'WNBA' }, { k: 'NFL', l: 'NFL' }, { k: 'SOC', l: 'SOC' }, { k: 'UFC', l: 'UFC' }].map(s => (
+                {[{ k: 'ALL', l: 'All Sports' }, { k: 'NHL', l: 'NHL' }, { k: 'CBB', l: 'CBB' }, { k: 'CFB', l: 'CFB' }, { k: 'MLB', l: 'MLB' }, { k: 'NBA', l: 'NBA' }, { k: 'WNBA', l: 'WNBA' }, { k: 'NFL', l: 'NFL' }, { k: 'SOC', l: 'SOC' }, { k: 'UFC', l: 'UFC' }].map(s => (
                   <FilterBtn key={s.k} isActive={chartSport === s.k} onClick={() => setChartSport(s.k)} color="#3B82F6">{s.l}</FilterBtn>
                 ))}
               </div>
@@ -8698,7 +8700,7 @@ function ConvictionGauge({ pct, accent }) {
 const SharpTape = memo(function SharpTape({ sharpPositions }) {
   const items = useMemo(() => {
     const out = [];
-    for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL']) {
+    for (const sport of ['NHL', 'CBB', 'CFB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL']) {
       const games = sharpPositions?.[sport] || {};
       for (const gd of Object.values(games)) {
         for (const p of gd.positions || []) {
@@ -9113,7 +9115,7 @@ export default function SharpFlow() {
     }).length;
 
     let totalSharpInvested = 0;
-    for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL']) {
+    for (const sport of ['NHL', 'CBB', 'CFB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL']) {
       const sg = sharpPositions?.[sport] || {};
       for (const gd of Object.values(sg)) totalSharpInvested += gd.summary?.totalInvested || 0;
     }
@@ -9270,7 +9272,7 @@ export default function SharpFlow() {
     const walkExposure = (files, { vaultOnly, countTowardRoster }) => {
       for (const { data: posData, mkt } of files) {
         if (!posData) continue;
-        for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'NFL', 'SOC', 'UFC', 'WNBA']) {
+        for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'CFB', 'NFL', 'SOC', 'UFC', 'WNBA']) {
           const sportGames = posData[sport] || {};
           for (const [gameKey, gd] of Object.entries(sportGames)) {
             if (!gd.positions) continue;
@@ -9311,7 +9313,7 @@ export default function SharpFlow() {
     ];
     for (const { data: posData, mkt } of posFiles) {
       if (!posData) continue;
-      for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'NFL', 'SOC', 'UFC', 'WNBA']) {
+      for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'CFB', 'NFL', 'SOC', 'UFC', 'WNBA']) {
         const sportGames = posData[sport] || {};
         for (const [gameKey, gd] of Object.entries(sportGames)) {
           if (!gd.positions) continue;
@@ -9369,7 +9371,7 @@ export default function SharpFlow() {
     ];
     for (const { data: posData, mkt } of posFilesForHc) {
       if (!posData) continue;
-      for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'NFL', 'SOC', 'UFC', 'WNBA']) {
+      for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'CFB', 'NFL', 'SOC', 'UFC', 'WNBA']) {
         const sportGames = posData[sport] || {};
         for (const [gameKey, gd] of Object.entries(sportGames)) {
           if (!gd.positions) continue;
@@ -9502,7 +9504,7 @@ export default function SharpFlow() {
     const battleGameMap = new Map();
     for (const { data: posData, mkt } of battlePosFiles) {
       if (!posData) continue;
-      for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'NFL', 'SOC', 'UFC', 'WNBA']) {
+      for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'CFB', 'NFL', 'SOC', 'UFC', 'WNBA']) {
         const sportGames = posData[sport] || {};
         for (const [gameKey, gd] of Object.entries(sportGames)) {
           if (!gd.positions?.length) continue;
@@ -9750,7 +9752,7 @@ export default function SharpFlow() {
           ? weeklySample.reduce((s, e) => s + (e.weeklyPnl || 0), 0)
           : null;
 
-        const vaultSports = ['ALL', 'NHL', 'NBA', 'MLB', 'CBB', 'NFL', 'SOC', 'UFC', 'WNBA'];
+        const vaultSports = ['ALL', 'NHL', 'NBA', 'MLB', 'CBB', 'CFB', 'NFL', 'SOC', 'UFC', 'WNBA'];
         const selectedEntry = (() => {
           if (!vaultSelectedWallet) return null;
           const w = vaultSelectedWallet.toLowerCase();
@@ -10343,6 +10345,7 @@ export default function SharpFlow() {
                           { id: 'NBA', label: 'NBA', color: '#FF8C00' },
                           { id: 'NHL', label: 'NHL', color: '#D4AF37' },
                           { id: 'CBB', label: 'CBB', color: '#FF6B35' },
+                          { id: 'CFB', label: 'CFB', color: '#BF5700' },
                           { id: 'SOC', label: 'SOC', color: '#2ECC71' },
                           { id: 'WNBA', label: 'WNBA', color: '#F472B6' },
                           { id: 'NFL', label: 'NFL', color: '#4CAF50' },
@@ -11173,7 +11176,7 @@ export default function SharpFlow() {
                 ? buildWalletPriorStatsFnForUI(walletProfiles)
                 : null;
               const v12SortToday = todayET();
-              for (const sport of ['NHL', 'CBB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL']) {
+              for (const sport of ['NHL', 'CBB', 'CFB', 'MLB', 'NBA', 'SOC', 'UFC', 'WNBA', 'NFL']) {
                 if (sportFilter !== 'All' && sport !== sportFilter) continue;
                 const sportGames = sharpPositions?.[sport] || {};
                 for (const [key, gd] of Object.entries(sportGames)) {
@@ -11383,7 +11386,7 @@ export default function SharpFlow() {
                     // but this feed renders inside whaleSignals / Sharp Positions.
                     const SPORT_COLORS = {
                       NBA: '#FF8C00', WNBA: '#F472B6', NHL: '#D4AF37', MLB: '#E31837',
-                      CBB: '#FF6B35', NFL: '#4CAF50', SOC: '#2ECC71', UFC: '#C0392B',
+                      CBB: '#FF6B35', CFB: '#BF5700', NFL: '#4CAF50', SOC: '#2ECC71', UFC: '#C0392B',
                     };
                     const actionSortFns = {
                       size: (a, b) => (b.invested || 0) - (a.invested || 0),
@@ -11521,7 +11524,7 @@ export default function SharpFlow() {
                             }}>{sf.label} <span style={{ opacity: 0.6 }}>({sf.cnt})</span></button>
                           ))}
                           <div style={{ width: '1px', height: '14px', background: B.border, margin: '0 0.15rem' }} />
-                          {['ALL', 'NBA', 'NHL', 'MLB', 'CBB', 'NFL', 'SOC', 'UFC', 'WNBA'].map(sp => {
+                          {['ALL', 'NBA', 'NHL', 'MLB', 'CBB', 'CFB', 'NFL', 'SOC', 'UFC', 'WNBA'].map(sp => {
                             const statusFiltered = enriched.filter(p => actionStatusFilter === 'PREGAME' ? !p._isLive : actionStatusFilter === 'LIVE' ? p._isLive : true);
                             const cnt = sp === 'ALL' ? statusFiltered.length : (sportCounts[sp] || 0);
                             if (sp !== 'ALL' && cnt === 0) return null;
@@ -13198,7 +13201,7 @@ export default function SharpFlow() {
                     const lostCount = stakedLockedArr.filter(p => p.outcome === 'LOSS').length;
                     const sportCounts = {};
                     allLockedArr.forEach(p => { sportCounts[p.sport] = (sportCounts[p.sport] || 0) + 1; });
-                    const sportColorMap = { NHL: '#D4AF37', MLB: '#E31837', NBA: '#FF8C00', WNBA: '#F472B6', CBB: '#FF6B35', NFL: '#4CAF50', SOC: '#2ECC71', UFC: '#C0392B' };
+                    const sportColorMap = { NHL: '#D4AF37', MLB: '#E31837', NBA: '#FF8C00', WNBA: '#F472B6', CBB: '#FF6B35', CFB: '#BF5700', NFL: '#4CAF50', SOC: '#2ECC71', UFC: '#C0392B' };
                     const activeSports = Object.keys(sportCounts).sort();
 
                     // ── AGS-U Tier Scorecard (REMOVED 2026-05-22) ─────────
@@ -13818,7 +13821,7 @@ function SfSegmented({ options, value, onChange, isMobile, scrollable = false })
 function SportTabs({ active, onChange, isMobile }) {
   const options = [
     { id: 'All', label: 'All', emoji: '⚡', color: B.gold },
-    ...['CBB', 'NHL', 'MLB', 'NBA', 'WNBA', 'NFL', 'SOC', 'UFC'].map((key) => {
+    ...['CBB', 'CFB', 'NHL', 'MLB', 'NBA', 'WNBA', 'NFL', 'SOC', 'UFC'].map((key) => {
       const ss = sportStyle(key);
       return { id: key, label: key, emoji: ss.icon, color: ss.color };
     }),
