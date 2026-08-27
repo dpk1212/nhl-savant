@@ -12,6 +12,9 @@
 5. `hormozi_value_equation.md` + `hormozi_diagnostic_sale.md` (when on disk)
 6. `SHARED/brand_seed.md` (voice + bans + dream)
 7. `TWITTER.md`
+8. `SHARED/recent_timeline_latest.md` (must be fresh this run)
+9. If Dale dropped a **new Hormozi transcript** this session → finish `hormozi_ingest.md` **before** drafting
+10. If Dale dropped an **analytics CSV** → finish `analytics_csv_ingest.md` **before** drafting
 
 **Never auto-publish.** Stage in `twitter_drafts/COPY_PASTE.md`.
 
@@ -52,7 +55,7 @@ Capture only what Dale gave + live receipts:
 **Do this before PURPOSE / ONE / hook.** Keeps the account a continuous Hormozi feed, not isolated one-offs.
 
 **Pull (whatever exists this run):**
-1. Dale’s latest **analytics CSV** (impressions, engagements, replies, profile visits, URL clicks)
+1. Dale’s latest **analytics CSV** → run `analytics_csv_ingest.md` end-to-end
 2. Last **5–10** posted heroes / QTs (text + what they attached)
 3. Prior staged `COPY_PASTE` if we just shipped in-thread
 

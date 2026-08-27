@@ -14,6 +14,8 @@ Researcher appends; never delete without logging why in research_log.
 | [psych_arsenal.md](psych_arsenal.md) | Psych levers mapped to algo actions |
 | [cross_niche_wins.md](cross_niche_wins.md) | Stealable mechanics from outside niche |
 | [kill_list.md](kill_list.md) | Patterns that die / Learn auto-kills |
+| [hormozi_ingest.md](hormozi_ingest.md) | **Hormozi transcript ingest** — max-leverage synthesize → canon + leverage card |
+| [analytics_csv_ingest.md](analytics_csv_ingest.md) | **Analytics CSV ingest** — rank hooks/SPCL mix → `recent_timeline_latest.md` |
 | [hormozi_tweet_process.md](hormozi_tweet_process.md) | **Mandatory tweet pathway** — Timeline→WHO→PURPOSE→ONE→1–2 SPCL→HOOK QA→draft |
 | [hormozi_rule_of_one.md](hormozi_rule_of_one.md) | **Rule of One** (Masterson / *Great Leads*) — one big idea; kill toss salad copy |
 | [hormozi_spcl.md](hormozi_spcl.md) | **Hormozi SPCL canon** — Status·Power·Credibility·Likeness + influence laws |
@@ -53,3 +55,4 @@ Researcher appends; never delete without logging why in research_log.
 - 2026-08-26 **Rule of One** locked (Masterson via Hormozi transcript): one big idea = easy to understand + believe + interesting/unique; kill toss salad — see `hormozi_rule_of_one.md`
 - 2026-08-27 **Tweet pathway** locked after Dale override: no jump-to-copy; WHO/PURPOSE first; own 1–2 SPCL; hook QA; stuff > container — see `hormozi_tweet_process.md`
 - 2026-08-27 **Timeline review** added: every run refreshes `SHARED/recent_timeline_latest.md` (analytics + recent posts → SPCL mix, spent themes, ask temperature) before PURPOSE/hook
+- 2026-08-27 **Ingest pipelines** locked: `hormozi_ingest.md` (transcript → max synthesize → canon) · `analytics_csv_ingest.md` (CSV → timeline) · desk trigger rule `hormozi-ingest-triggers.mdc`

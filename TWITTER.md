@@ -95,9 +95,9 @@ Full checklist: `hormozi_tweet_process.md`. Compressed:
 12. STAGE    — COPY_PASTE with WHO/PURPOSE/ONE/SPCL/Timeline/Ask header
 ```
 
-**Fluid timeline:** every run refreshes `twitter_agents/SHARED/recent_timeline_latest.md`. Drafts that ignore this window’s winners/failures restart at TIMELINE.
+**Drops:** analytics CSV → `analytics_csv_ingest.md` before draft · Hormozi transcript → `hormozi_ingest.md` (full synthesize → canon) before draft.
 
-Optional: Dale drops an analytics CSV in-chat — parse it into the timeline file (eng/replies/profile/URL > vanity impressions alone).
+**Fluid timeline:** every run refreshes `twitter_agents/SHARED/recent_timeline_latest.md`. Drafts that ignore this window’s winners/failures restart at TIMELINE.
 
 **Dale spine = law.** Shape his thought. Don’t invent a competing feeling.
 

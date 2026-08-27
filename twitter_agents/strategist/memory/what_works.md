@@ -29,3 +29,9 @@ Seed 2026-07-10:
 - USP = one selling proposition, not nineteen. Hard part = choosing the tip; writing gets simple after.
 - Stack order: **ONE → SPCL → QUAL** (pick spear tip before dressing or scoring copy).
 - Vault: `researcher/knowledge/hormozi_rule_of_one.md` (Agora/91-of-100 figures = Hormozi recount, not independently verified)
+
+2026-08-27 (Hormozi tweet manufacturing locked):
+- Never jump to copy. Pathway: Timeline → WHO → PURPOSE → ONE → 1–2 SPCL → STUFF → HOOK QA → draft → Ask decision.
+- Drop CSV → `analytics_csv_ingest.md` → refresh `recent_timeline_latest.md` before drafting.
+- Drop Hormozi transcript → `hormozi_ingest.md` full synthesize (extract/conflict/SF-map/canon/leverage card) before drafting.
+- Stuff > container. Own 1–2 SPCL. Ask temperature from timeline.
