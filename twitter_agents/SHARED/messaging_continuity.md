@@ -7,7 +7,7 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-08-27 PM — QT Trent FCS → Nats deep rewrite |
+| Last updated | 2026-08-27 PM — Trent QT hook QA (v1 fail → candidates) |
 | CSV window | Aug 21–27, 2026 |
 | Ask temperature | **warm-cool** — distribution give; no ask; Power trail still owed |
 | Account arc | +110u · don’t-become-sharp · OG · **Nats unfinished via football QT (deep)** |
@@ -17,7 +17,7 @@
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 8/27 PM | QT Trent FCS | Everyone leaving baseball — printers still sized on Nats post-13-1 (deep receipts) | S + C | none | **Staged v2** — Dale: more depth/length; full stuff stack |
+| 8/27 PM | QT Trent FCS | Nats 13-1 → printers sizing (deep); hook under review | S + C | none | **Body strong · hook rewrite** — calendar open failed Hook QA |
 | 8/27 PM | Hero Nats ML early | Nats rocked 13-1 — Tier A sizing early; watch to lock | S + C | none | Staged — optional if QT ships first |
 | 8/27 PM | QT Dominic | Don’t become a sharp — size SharpFlow; OG +5.37u | C + P | none | Best draft; may still ship |
 | 8/27 AM | Hero +110u / >5u | 47–16 · +89.93u over 5u | S + C | none | Prefer human version |
