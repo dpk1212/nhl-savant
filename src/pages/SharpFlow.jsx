@@ -1062,7 +1062,7 @@ const PAYWALL_PLANS = [
     name: 'Monthly',
     trialDays: 7,
     badge: 'MOST POPULAR',
-    badgePromo: 'FLASH SALE',
+    badgePromo: '25% FOR LIFE',
     save: null,
     savePromo: 'SAVE 25%',
     promoEligible: true,
@@ -1070,7 +1070,7 @@ const PAYWALL_PLANS = [
     billFull: null, billPromo: null,
     chargeFull: '$25.99/mo', chargePromo: '$19.49/mo',
     sub: 'One blown $20 parlay costs more',
-    subPromo: '25% off for life with code Upgrade',
+    subPromo: "Tonight's tickets, sized, before lock",
     winMath: 'One 1u win (+$91 at $100/unit) covers your next 5 months',
   },
   {
@@ -1086,7 +1086,7 @@ const PAYWALL_PLANS = [
     billFull: null, billPromo: null,
     chargeFull: '$7.99/wk', chargePromo: '$5.99/wk',
     sub: 'Less than one stadium beer',
-    subPromo: '25% off for life with code Upgrade',
+    subPromo: 'Same side as the printers — try a week',
     winMath: 'One 1u win (+$91 at $100/unit) covers 4 months of access',
   },
   {
@@ -13909,36 +13909,39 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
   const recent7 = computeRecentWindowStats(pnlData?.picks || [], 7);
   const showHotStreak = recent7.ready && recent7.profit > 0;
 
-  // Features as plain-English benefits — a prospect shouldn't need to
-  // know what "5u ladder" or "RLM" means to want this. Numbers come
-  // straight from v12Proof when available.
-  const features = v12Proof.ready ? [
-    { label: 'Tonight\'s picks, sized and ready to bet', sub: 'Exact side, odds, and bet size on every lock — no decoding' },
-    { label: `${v12Proof.record} record, graded in public`, sub: `${v12Proof.totalGraded} picks auto-graded nightly — losses included` },
-    { label: 'Follow 200+ proven winners\' real money', sub: 'Verified profitable bettors, positions refreshed 4× a day' },
-    { label: 'Know how much to trust each play', sub: 'Strongest edges bet 5u, thin edges 0.25u, bad ones muted' },
-    { label: 'Always bet the best available number', sub: 'Pinnacle fair value + the best retail price, on every pick' },
-    { label: 'See when sharps disagree with the public', sub: 'Live money vs. tickets, line-move alerts, whale action' },
-  ] : [
-    { label: 'Tonight\'s picks, sized and ready to bet', sub: 'Exact side, odds, and bet size on every lock — no decoding' },
-    { label: 'Every result graded in public', sub: 'Auto-graded nightly against closing lines — losses included' },
-    { label: 'Follow 200+ proven winners\' real money', sub: 'Verified profitable bettors, positions refreshed 4× a day' },
-    { label: 'Know how much to trust each play', sub: 'Strongest edges bet 5u, thin edges 0.25u, bad ones muted' },
-    { label: 'Always bet the best available number', sub: 'Pinnacle fair value + the best retail price, on every pick' },
-    { label: 'See when sharps disagree with the public', sub: 'Live money vs. tickets, line-move alerts, whale action' },
+  // Three bullets, one idea: we put you on the printers' tickets.
+  // Extra product claims (Pinnacle, RLM, 200+ wallets) live on /pricing.
+  const features = [
+    {
+      label: 'Same side as the wallets that print',
+      sub: 'Proven money, sized — you ride their tickets, not the public pile',
+    },
+    {
+      label: 'Sized and locked before the market moves',
+      sub: 'Exact side, odds, and units. No decoding. No hunting.',
+    },
+    v12Proof.ready
+      ? {
+          label: `${v12Proof.record} — graded in public. We can't hide an L`,
+          sub: `${v12Proof.totalGraded} picks auto-graded nightly against the close`,
+        }
+      : {
+          label: 'Graded in public. We can\'t hide an L',
+          sub: 'Auto-graded nightly against closing lines — losses included',
+        },
   ];
 
   const featuresGrid = (
     <div style={{
-      display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-      gap: '0.45rem 1.25rem', marginBottom: isMobile ? 0 : '1.4rem',
+      display: 'grid', gridTemplateColumns: '1fr',
+      gap: '0.45rem', marginBottom: isMobile ? 0 : '1.4rem',
       marginTop: isMobile ? '1.5rem' : 0,
-      maxWidth: '600px', marginLeft: 'auto', marginRight: 'auto',
+      maxWidth: '480px', marginLeft: 'auto', marginRight: 'auto',
     }}>
       {isMobile && (
         <div style={{ textAlign: 'center', marginBottom: '0.2rem' }}>
           <span style={{ ...T.micro, color: B.gold, fontWeight: 900, letterSpacing: '0.12em', fontSize: '0.58rem' }}>
-            ◆ EVERYTHING INCLUDED
+            ◆ WHAT YOU GET
           </span>
         </div>
       )}
@@ -13993,7 +13996,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
           letterSpacing: '0.06em',
         }}>
           <span style={{ fontSize: '0.72rem', fontWeight: 900, color: '#0B1120', textTransform: 'uppercase' }}>
-            {promoLabel.toUpperCase()} · CODE {promoCode} · {promoPct}% OFF FOR LIFE · MONTHLY & WEEKLY ONLY
+            72 HOURS · CODE {promoCode} · {promoPct}% OFF FOR LIFE — LOCKED THE DAY YOU START
           </span>
         </div>
       )}
@@ -14234,21 +14237,19 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
           }}>
             {lockedCount
               ? <><span style={{ color: B.gold }}>{lockedCount} lock{lockedCount !== 1 ? 's are' : ' is'} live right now</span> — and you can't see {lockedCount !== 1 ? 'them' : 'it'}</>
-              : <>You've seen the results.<br />Now get the <span style={{
+              : <>We don&rsquo;t make you a sharp.<br />We put you on their <span style={{
                   display: 'inline-block',
                   color: B.gold,
                   backgroundImage: `linear-gradient(135deg, ${B.gold} 0%, ${B.goldHover} 100%)`,
                   WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-                }}>picks</span>.</>}
+                }}>tickets</span>.</>}
           </h2>
           <p style={{
             ...T.body, color: B.textSec, margin: '0 auto', maxWidth: '540px', lineHeight: 1.7,
           }}>
             {v12Proof.ready
-              ? <>Every number above is a <span style={{ color: B.text, fontWeight: 700 }}>real pick, graded in public</span> — we can't
-                  hide a loss. Members get the same locks in real time, sized and tagged before the market moves.</>
-              : <>We track <span style={{ color: B.text, fontWeight: 700 }}>200+ verified sharp bettors</span>, score every pick by conviction,
-                  and auto-size the locks. Every result is graded the same way the dashboard above shows it.</>}
+              ? <>The <span style={{ color: B.text, fontWeight: 700 }}>{v12Proof.record}</span> above is public. Tonight&rsquo;s locks aren&rsquo;t. Members got the same sized tickets before the market moved. 7 days free — grade it yourself.</>
+              : <>We track <span style={{ color: B.text, fontWeight: 700 }}>200+ verified sharp bettors</span> and lock what they size. 7 days free — grade it yourself.</>}
           </p>
         </div>
 
@@ -14333,7 +14334,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
               }}>
                 <Flame size={13} color={B.gold} />
                 <span style={{ ...T.micro, color: B.gold, fontWeight: 900, letterSpacing: '0.12em', textTransform: 'uppercase', fontSize: '0.68rem' }}>
-                  MONTHLY & WEEKLY · {promoPct}% OFF FOR LIFE — ENDS IN
+                  {promoPct}% OFF FOR LIFE — ENDS IN
                 </span>
                 <Flame size={13} color={B.gold} />
               </div>
@@ -14378,10 +14379,10 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
             }}>
               <Flame size={13} color={B.green} />
               <span style={{ fontSize: '0.72rem', fontWeight: 800, color: B.text, letterSpacing: '0.02em', fontFeatureSettings: "'tnum'" }}>
-                LAST 7 DAYS: <span style={{ color: B.green }}>{recent7.record} · +{recent7.profit.toFixed(1)}u</span>
+                LAST 7 DAYS: <span style={{ color: B.green }}>{recent7.record} · +{recent7.profit.toFixed(1)}u already printed</span>
               </span>
               <span style={{ ...T.micro, color: B.textSec, fontSize: '0.64rem' }}>
-                — every one hit members' dashboards before lock
+                — members had the tickets. you didn&rsquo;t.
               </span>
             </div>
           )}
@@ -14604,7 +14605,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
                     opacity: checkingOut ? 0.7 : 1,
                   }}
                 >
-                  <span>{checkingOut ? 'Opening checkout…' : `Start My ${plan.trialDays}-Day Free Trial`}</span>
+                  <span>{checkingOut ? 'Opening checkout…' : `Start ${plan.trialDays} days free — grade it yourself`}</span>
                   {!checkingOut && (
                     <span style={{
                       fontSize: '0.62rem', fontWeight: 900, letterSpacing: '0.06em',
@@ -14677,7 +14678,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
               }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#F1F5F9', lineHeight: 1.2 }}>
-                    {plan.trialDays} days free · $0 today
+                    {plan.trialDays} days free — grade it yourself
                   </div>
                   <div style={{ fontSize: '0.6rem', fontWeight: 600, color: 'rgba(241,245,249,0.55)', marginTop: '0.1rem', fontFeatureSettings: "'tnum'" }}>
                     then {charge}{planOnSale ? ` · ${promoPct}% off locked for life` : ''}
@@ -14696,7 +14697,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {checkingOut ? 'Opening…' : 'Start Free Trial'}
+                  {checkingOut ? 'Opening…' : 'Grade it yourself'}
                 </button>
               </div>
             </div>
