@@ -138,9 +138,11 @@ Line 1–3 must pass:
 1. **Screenshot test** — stranger sees S and/or C in ≤2 lines when $ contrast exists  
 2. **What / how / so what** on the open  
 3. **Not soft diary** — feelings only after proof, if at all  
-4. Prefer silhouettes from **this run’s timeline review** (`recent_timeline_latest.md`) when they fit the ONE idea — never empty-clone a winner into the wrong job
+4. Prefer silhouettes from **this run’s timeline review** (`recent_timeline_latest.md`) when they fit the ONE idea — never empty-clone a winner into the wrong job  
+5. **QT law** — parent already owns its open; **do not restate the parent’s hook**. Ours must be *our* scarce contrast. Calendar/“everyone’s moving on” opens fail unless $ or absurd proof is in the same breath.
 
-If hook fails, **rewrite hook before touching body**.
+If hook fails, **rewrite hook before touching body**.  
+**(Dale 8/27):** Deep body + Hook QA kill on soft calendar open → blowout/scarce-$ rewrite = validated pathway. Keep that order.
 
 ### 7 · Draft (human)
 - Dale dinner-table — not tipster, not brochure, not CAPS spam unless $ contrast earns it  
@@ -181,6 +183,7 @@ Without this write-back, the next session loses the plot — which is the failur
 | **Hero soft day / lab** | Power + Credibility connect | Honest scar → receipt |
 | **QT customer/OG** | Credibility deposit / educate dream | Their result or counterintuitive path — not Dale feelings |
 | **QT BetMGM / public** | Status contrast tickets vs printers | Public board vs our wallet $ |
+| **QT high-velocity (any)** | Buzz + give (impressions) | Our scarce open — never restate parent’s calendar/leave hook |
 | **Ask / convert** | Compliance | Sensational proof first → USP → soft trial in **SR** |
 
 ---
