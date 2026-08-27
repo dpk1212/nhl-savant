@@ -7,17 +7,17 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-08-27 PM — Trent QT hook QA (v1 fail → candidates) |
+| Last updated | 2026-08-27 PM — Dale: pathway/hook QA direction validated |
 | CSV window | Aug 21–27, 2026 |
-| Ask temperature | **warm-cool** — distribution give; no ask; Power trail still owed |
-| Account arc | +110u · don’t-become-sharp · OG · **Nats unfinished via football QT (deep)** |
+| Ask temperature | **warm-cool** — distribution give staged; no ask; Power trail owed if Nats ships |
+| Account arc | +110u · don’t-become-sharp · OG · **Nats unfinished (hook pick pending)** |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 8/27 PM | QT Trent FCS | Nats 13-1 → printers sizing (deep); hook under review | S + C | none | **Body strong · hook rewrite** — calendar open failed Hook QA |
+| 8/27 PM | QT Trent FCS | Nats 13-1 → printers sizing (deep); hook under review | S + C | none | **Body strong · hook rewrite** — Dale liked system; pick hook #1/#2/#3 then ship |
 | 8/27 PM | Hero Nats ML early | Nats rocked 13-1 — Tier A sizing early; watch to lock | S + C | none | Staged — optional if QT ships first |
 | 8/27 PM | QT Dominic | Don’t become a sharp — size SharpFlow; OG +5.37u | C + P | none | Best draft; may still ship |
 | 8/27 AM | Hero +110u / >5u | 47–16 · +89.93u over 5u | S + C | none | Prefer human version |
@@ -34,7 +34,9 @@
 6. Tickets vs printers under public parents — strong reach (this QT rides same shape)
 
 **Hot letters:** S+C opens; P on say–do; contrast C; QT under high-velocity parents  
-**Cold:** soft diary · brochure SPCL · empty testimonial · dunking the parent
+**Cold:** soft diary · brochure SPCL · empty testimonial · dunking the parent · **calendar/observation opens** (fail Hook QA)
+
+**Process win (Dale 8/27):** Pathway held — deep stuff body first, then Hook QA killed soft open and forced scarce contrast. Keep: WHO/PURPOSE/ONE → stuff → Hook QA → rewrite hook *before* body. Do not lean-starve QT next time.
 
 ---
 
