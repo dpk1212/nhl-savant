@@ -51,29 +51,31 @@ Capture only what Dale gave + live receipts:
 - Assets (screens, parent tweet, QT target)
 - Constraints (single tweet? no ask? QT vs hero?)
 
-### 0b · RECENT TIMELINE REVIEW (mandatory — fluid messaging)
-**Do this before PURPOSE / ONE / hook.** Keeps the account a continuous Hormozi feed, not isolated one-offs.
+### 0b · TIMELINE + CONTINUITY (mandatory — fluid day-to-day)
+**Do this before PURPOSE / ONE / hook.** Prevents losing the plot tweet-to-tweet.
 
-**Pull (whatever exists this run):**
-1. Dale’s latest **analytics CSV** → run `analytics_csv_ingest.md` end-to-end
-2. Last **5–10** posted heroes / QTs (text + what they attached)
-3. Prior staged `COPY_PASTE` if we just shipped in-thread
+**A · Read living state first**
+1. `twitter_agents/SHARED/messaging_continuity.md` ← **where we are** (last beats, spent/open themes, ask temp, unfinished stakes)
+2. `twitter_agents/SHARED/recent_timeline_latest.md` ← last analytics synthesis (may be same run)
 
-**Write into** `twitter_agents/SHARED/recent_timeline_latest.md` (overwrite each run):
+If continuity is stale (>2 days or empty last-beats) and no CSV, reconstruct from last known posts / COPY_PASTE / Dale’s words — then write continuity before drafting.
+
+**B · Analytics when Dale drops CSV**
+Run `analytics_csv_ingest.md` → refresh `recent_timeline_latest.md` → merge winners/SPCL mix into `messaging_continuity.md`.
+
+**C · Capture into continuity every run (also at END — see close-out)**
 
 | Capture | Why |
 |---------|-----|
-| Top 3 hooks by **engagement** (then impressions) | What actually stops the scroll *for us* |
-| SPCL mix of winners (which **1–2** letters they owned) | Next post rides a hot letter — doesn’t force a cold one |
-| Soft/failed opens | Kill list for *this week* |
-| Messaging continuity | Unfinished stakes · themes already spent · room to compound |
-| Ask temperature | cold = give only · warm = desire plant · hot = SR ask OK |
-| Prefer silhouettes | Only if they fit THIS spine’s ONE idea — never empty clone |
+| Top hooks / SPCL mix | What to ride next |
+| Soft/failed opens | Weekly kill list |
+| Themes spent vs open | Fluid timeline — don’t amnesia-echo |
+| Unfinished stakes | Serialization / compound once |
+| Ask temperature | cold / warm / hot |
+| Last 5 desk beats | Context for the next agent/session |
 
-**Hormozi litmus:** optimize for compliance from the right avatar (eng/replies/profile/URL), not vanity impressions alone.  
-**Qual:** this is *stuff* for manufacturing the next post — not a scorecard religion. If no CSV, still review last posts qualitatively; say “no CSV” in the file.
-
-**So what:** PURPOSE + hook must *acknowledge* the timeline (compound, contrast, or consciously break a spent theme). If the draft ignores winners/failures from this window, restart at 0b.
+**Hormozi litmus:** right-avatar eng/replies/profile/URL > vanity impressions.  
+**So what:** PURPOSE + hook must acknowledge continuity (compound, contrast, or consciously break a spent theme). Ignoring last beats = restart here.
 
 ### 1 · WHO
 One sentence: who is this for **right now**?  
@@ -144,17 +146,18 @@ If hook fails, **rewrite hook before touching body**.
 
 Kill: meta (“show-me version of the product”) · slogan soup · dunking · system-label leak · inventing numbers
 
-### 9 · Stage
-`COPY_PASTE.md` must open with:
-- WHO  
-- PURPOSE  
-- ONE idea  
-- SPCL owned (1–2)  
-- Timeline note (1 line: which recent winner/failure shaped the hook)  
-- Ask: none | SR  
+### 9 · Stage + WRITE CONTINUITY (end of run — never skip)
+`COPY_PASTE.md` header: WHO · PURPOSE · ONE · SPCL · Timeline note · Ask  
 
-Then the copy block only.  
-Refresh `SHARED/recent_timeline_latest.md` every run (fluid timeline).
+**Then update** `SHARED/messaging_continuity.md`:
+- prepend this beat to “Last 5 desk beats”
+- mark themes spent / still open
+- set ask temperature
+- note unfinished stakes / if Dale still iterating
+
+Refresh `recent_timeline_latest.md` when CSV was part of this run.
+
+Without this write-back, the next session loses the plot — which is the failure Dale called out.
 
 ---
 
