@@ -7,52 +7,51 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-08-27 eve — Nats 7-1 cash QT → Upgrade ask staged |
+| Last updated | 2026-08-27 eve — Nats cash FULL HORMOZI (ask in SR) |
 | CSV window | Aug 21–27, 2026 |
-| Ask temperature | **hot (just asked)** — cool asks after this ships; give before next ask |
-| Account arc | +110u · Nats unfinished → **Power closed 7-1 / 5.0u** · Upgrade convert |
+| Ask temperature | **hot when shipped** — then cool; give before next ask |
+| Account arc | Nats unfinished → **Power close 7-1/5.0u** → Upgrade ask (SR) |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 8/27 eve | QT own Nats | 7-1 cash · 5.0u · Upgrade 25% life + DM onboard | P + S | **yes** | **Staged** — Dale spine convert on Power close |
+| 8/27 eve | QT own Nats + SR | 7-1 / 5.0u cash → desire → Upgrade 25% life DM | P + S free; ask SR | **yes SR** | **Staged FULL HORMOZI** — Dale: optimal / pathway-strict |
 | 8/27 PM | Hero Action SOC | $381K soccer · MLB contrast · NFL foreshadow | S + C | none | Staged |
-| 8/27 PM | QT Trent FCS | Nats 13-1 → printers sizing (deep) | S + C | none | **Shipped** (parent for cash QT) |
-| 8/27 PM | Hero Nats ML early | Nats rocked 13-1 — Tier A sizing early | S + C | none | Superseded by shipped QT |
-| 8/27 PM | QT Dominic | Don’t become a sharp — size SharpFlow; OG +5.37u | C + P | none | Still pending if not posted |
+| 8/27 PM | QT Trent FCS | Nats 13-1 → printers sizing (deep) | S + C | none | **Shipped** (parent) |
+| 8/27 PM | QT Dominic | Don’t become a sharp — size SharpFlow; OG +5.37u | C + P | none | Pending if not posted |
+| 8/27 AM | Hero +110u / >5u | 47–16 · +89.93u over 5u | S + C | none | Prefer human version |
 
 ---
 
 ## What’s working (this window)
-1. Pressed… IT CASHED / heater return — **P** ← this beat rides same silhouette
-2. Most people try to become sharp — diagnostic dream
-3. Looks even. It isn’t. — **C** contrast
-4. Over 5u filter — **S+C**
-5. Deep receipt body + Hook QA — Dale validated
-6. Unfinished stake → grade/cash QT — Power trail closed
+1. Pressed… IT CASHED / heater return — **P**
+2. Deep receipt + Hook QA — Dale validated
+3. Unfinished stake → grade/cash — Power trail
+4. Ask in SR after free SPCL — full Hormozi
 
-**Hot letters:** P on say–do cash; S+$ opens  
-**Cold:** soft diary · calendar opens · ask without free SPCL first
+**Hot letters:** P say–do cash; S+$ opens  
+**Cold:** ask in hero · calendar opens · ask without free SPCL
+
+**Process lock:** PURPOSE=Ask → desire+proof in QT · request in SR only. Dale chose optimal over in-QT pitch.
 
 ---
 
 ## Themes SPENT
-- +110u milestone flex
-- Printer/$476K ask (cool)
-- **Nats early steam unfinished** — closed by 7-1 / 5.0u ask QT (once shipped)
-- Critic-diary spear alone
+- +110u flex
+- Printer/$476K ask
+- Nats early unfinished (closes on this ship)
+- In-QT hard ask (rejected for full Hormozi)
 
 ## Themes OPEN / compound
-- **Upgrade 25% life** — live offer on this ask; don’t re-pitch same hour
-- SOC / Action → NFL foreshadow — still compoundable week 1
-- Dominic QT — still ship once if not posted
-- Don’t-become-sharp — only with new pudding
+- Upgrade 25% life — live on this SR only; don’t re-pitch same hour
+- SOC → NFL foreshadow
+- Dominic QT — Cred give next
 
 ## Unfinished stakes
-- Nats ML — **Power trail closes when this QT ships**
-- Dominic QT — pending ship
+- Nats — **closes when this QT+SR ships**
+- Dominic QT — pending
 - Guardians — cooled
 
 ---
@@ -61,27 +60,24 @@
 ### Balance
 | Need | Status | So what |
 |------|--------|---------|
-| Power say–do | **Closing now** | Good — unfinished stake paid |
-| Status $ | Fed (SOC + Nats) | Don’t flex again immediately |
-| Ask | **Just firing** | Cool hard — next 1–2 = give only |
-| Third-party Cred | Dominic pending | Ideal next non-ask |
+| Power say–do | Closing | Good |
+| Ask | Firing (SR) | Cool hard after |
+| Cred | Dominic pending | Next non-ask |
+| Status $ | Fed | No mega-flex next |
 
 ### Recommended next slots
-1. **Give** — SOC Action ship if not posted, or honesty/mechanism  
-2. **Ship Dominic QT** — Cred without ask  
-3. **NFL/SOC compound** when board earns it  
-4. **Ask** only after fresh free SPCL  
+1. Give — Dominic or SOC if unshipped  
+2. NFL/SOC compound when earned  
+3. Ask only after fresh free SPCL  
 
 ### NOT next
-- Second ask tomorrow morning  
-- Another +110u / naked $ flex stacked on ask  
-- Critic-diary spear  
+- Second ask next morning  
+- Hard CTA inside next hero  
+- +110u echo  
 
 ---
 
 ## Agent close-out
-- [x] Appended Nats cash ask beat  
-- [x] Themes spent/open updated  
-- [x] Ask temperature → hot (cool after ship)  
-- [x] Unfinished: Nats closes on ship  
+- [x] Restaged full Hormozi (ask SR-only)  
+- [x] Ask temperature noted hot→cool after ship  
 - [x] FORWARD LOOK refreshed  

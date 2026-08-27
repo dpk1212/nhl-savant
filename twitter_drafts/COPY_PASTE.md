@@ -1,30 +1,34 @@
-# Twitter — 2026-08-27 · QT own Nats post → 7-1 cash → Upgrade ask
-**Pathway run**
+# Twitter — 2026-08-27 · QT own Nats → 7-1 cash → FULL HORMOZI ask
+**Pathway run — strict**
 
 | | |
 |--|--|
-| **WHO** | Bettors who saw the early Nats steam post (or scroll into the cash) and want the data without tipster pricing |
-| **PURPOSE** | **Ask** — Power say–do close on unfinished Nats stake → Upgrade 25% life + DM onboard today |
-| **ONE** | We posted Nats sized after the 13-1 — they won 7-1 / 5.0u cashed — Upgrade and get sharp plays like this |
-| **SPCL** | **P + S** — say–do trail (parent QT) · 7-1 · 5.0u · then ask |
-| **Timeline** | Forward look owed Power close → Dale spine converts on the cash (ask temp override: earned) |
-| **Ask** | **yes** — Upgrade 25% off for life · DM Dale today for onboard (Dale spine; in-QT not SR) |
+| **WHO** | Bettors who saw the early Nats steam (or scroll into the cash) and want printer data without tipster pricing |
+| **PURPOSE** | **Ask** — Power say–do earns the request |
+| **ONE** | We called the Nats size-up after the 13-1 — it cashed 5.0u / 7-1 — get this data and look sharp |
+| **SPCL** | **P + S** in QT (free) · Likeness in voice · ask sized in SR |
+| **Timeline** | Unfinished Nats → Power close → ask earned (cool-down after ship) |
+| **Ask** | **SR only** — Upgrade 25% off for life · DM today for onboard |
 
-**Parent:** Own earlier QT/hero — Nats rocked 13-1 / Tier A sized / $12.7K @ 1.5× / steam −116→−138 (QT Trent FCS)
+**Parent:** Own Nats QT — 13-1 / sizing UP / $12.7K @ 1.5× / steam
 
-**Stuff:** Nats won **7-1** · board **5.0u** · posted after 13-1 blowout · lead L30 +$108K · 17-4 81% · $12.7K 1.5× · Dale convert: dunno what people pay for data · mine won’t break bank · all data to look sharp · **Upgrade 25% off for life** · put on sharp plays like this · sign up today → **DM me** · onboard + questions
+**Hormozi architecture**
+1. QT = free SPCL (Power cash) + desire plant (value: look sharp / won’t break bank) — **no request**
+2. SR = the request (Upgrade + DM) — compliance target
+3. Hook QA on cash, not pitch
+4. Parent carries before-receipts — don’t restate
 
-**Hook QA:** `NATS WON 7-1.` → so what = the early post cashed / 5u. Parent carries before-receipts. Passes P screenshot.  
-**Kill:** re-dump full heater stats (parent has them) · tipster “lock hit” swagger · GOLD/AGS · soft diary · bury the ask · +110u echo
+**Stuff:** Nats **7-1** · **5.0u** · posted after 13-1 · sized early · said watch it · cashed · Dale desire: dunno what people pay · won’t break bank · all data to look sharp · Upgrade **25% off for life** · sharp plays like this · DM onboard today
 
-**Note:** Brand default = soft ask in SR. Dale spine puts Upgrade + DM in the QT — staged as authored.
+**Hook QA:** `NATS WON 7-1.` → so what = say–do printed / 5u. Passes P.  
+**Kill:** Upgrade/DM in QT · tipster lock swagger · GOLD/AGS · re-dump heater ledger · soft diary open · bury ask · +110u echo
 
 ---
 
-## QT — own Nats steam post (ASK)
+## QT — free SPCL + desire (no ask)
 
-**Action:** Quote-tweet your earlier Nats post (the 13-1 / sizing UP one)  
-**Attach:** none required (parent has boards) — optional final score graphic if you have one
+**Action:** Quote-tweet your earlier Nats post  
+**Attach:** none required (parent has boards)
 
 ### Copy this ↓
 
@@ -40,36 +44,20 @@ It cashed.
 I don't know what people are using for their data — or what they're paying.
 I know mine isn't going to break your bank.
 And you're going to get everything you need to look sharp.
-
-Upgrade for 25% off for life.
-Let us put you on sharp plays like this.
-
-Signing up today? DM me.
-I'll onboard you and answer anything.
 ```
 
 ---
 
-## Alt — proof in QT / hard ask in SR (if you want brand-default split)
+## SELF-REPLY — the ask (compliance)
 
-**QT**
-```
-NATS WON 7-1.
+**When:** Reply 1 under the QT — post immediately after
 
-5.0u.
-Posted after they got rocked 13-1.
-Sharps sized up early. We said watch it.
+### Copy this ↓
 
-It cashed.
-
-I don't know what people are paying for their data.
-Mine won't break your bank — and you'll get everything you need to look sharp.
-```
-
-**SR**
 ```
 Upgrade for 25% off for life.
 We'll put you on sharp plays like this.
 
-Signing up today? DM me — I'll onboard you and answer anything.
+Signing up today? DM me.
+I'll onboard you and answer anything.
 ```
