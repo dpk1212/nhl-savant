@@ -81,20 +81,23 @@ Full canon: `hormozi_rule_of_one.md`.
 Full checklist: `hormozi_tweet_process.md`. Compressed:
 
 ```
-1. SPINE    — Dale dump / assets (law)
-2. WHO      — who is this for right now
-3. PURPOSE  — one job: give / educate / buzz / ask
-4. ONE      — big idea (understand / believe / unique)
-5. SPCL     — own 1–2 letters only that prove THAT idea
-6. STUFF    — live receipts; whole truth; stuff > container
-7. HOOK QA  — what/how/so what; S/C screenshot test; fix hook before body
-8. DRAFT    — Dale human voice; not brochure
-9. ASK      — default none; soft trial in SR only if PURPOSE=ask
-10. QUAL    — question → delete → simplify → ship 95%
-11. STAGE   — COPY_PASTE with WHO/PURPOSE/ONE/SPCL/Ask header
+1. SPINE     — Dale dump / assets (law)
+2. TIMELINE  — recent posts + analytics → recent_timeline_latest.md (hooks, SPCL mix, continuity, ask temp)
+3. WHO       — who is this for right now
+4. PURPOSE   — one job: give / educate / buzz / ask
+5. ONE       — big idea (understand / believe / unique)
+6. SPCL      — own 1–2 letters only (hot + fits purpose)
+7. STUFF     — live receipts; whole truth; stuff > container
+8. HOOK QA   — what/how/so what; S/C screenshot test; timeline silhouettes only if they fit
+9. DRAFT     — Dale human voice; not brochure
+10. ASK      — respect ask temperature; soft trial in SR only if PURPOSE=ask
+11. QUAL     — question → delete → simplify → ship 95%
+12. STAGE    — COPY_PASTE with WHO/PURPOSE/ONE/SPCL/Timeline/Ask header
 ```
 
-Optional feedback (not blockers): analytics CSV when present — learn which hooks complied, not old gate religion.
+**Fluid timeline:** every run refreshes `twitter_agents/SHARED/recent_timeline_latest.md`. Drafts that ignore this window’s winners/failures restart at TIMELINE.
+
+Optional: Dale drops an analytics CSV in-chat — parse it into the timeline file (eng/replies/profile/URL > vanity impressions alone).
 
 **Dale spine = law.** Shape his thought. Don’t invent a competing feeling.
 
@@ -139,10 +142,11 @@ Measure IRL: replies/trials from people we’d want as customers.
 There is **one desk**: Hormozi X for Sharp Flow.
 
 - Run `hormozi_tweet_process.md` before every draft — never jump to copy.
+- Refresh `SHARED/recent_timeline_latest.md` every run (effectiveness + SPCL mix + continuity).
 - Lock WHO + PURPOSE + ONE idea first; own 1–2 SPCL letters only.
 - Stuff > container (Qual). Hook must pass what/how/so what.
 - Prefer deletion and speed over process theater.
-- Ask is a conscious choice (often none); soft trial in SR only when PURPOSE=ask.
+- Ask is a conscious choice (ask temperature from timeline); soft trial in SR only when PURPOSE=ask.
 - Parent may draft when Dale dumps a spine; no requirement to launch four Task agents.
 - If subagents are used, they only exist to stamp SPCL / raise Qual / enforce Rule of One — model: Grok per Dale — and must not revive retired gates.
 
