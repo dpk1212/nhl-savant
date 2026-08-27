@@ -1,15 +1,18 @@
 name: Send Lock Alerts (T−15 safety net)
 
-# Dedicated cadence for paid lock pushes. The market fetch loop also runs
-# sendLockAlerts, but that job is heavy (~48 min chains) and can be cancelled
-# mid-day — which silently dropped Sox/Mets alerts on 2026-07-18. This
-# workflow only syncs pick state + fires alerts so the T−15 window cannot
-# depend on the full Polymarket cycle staying alive.
+# Backup for paid lock pushes. Primary sender is Cloud Scheduler
+# (functions/sendLockAlerts, every 2 minutes) — GitHub `*/5` cron went
+# silent for 2.5h on 2026-08-27 and missed Barcelona TOP at T−15.
+# Keep this workflow as a second path + pick-state sync.
 on:
   schedule:
-    # Every 5 minutes — GitHub may coalesce under load; still far denser than
-    # waiting on the 4-min inner loop of fetch-polymarket.
     - cron: '*/5 * * * *'
+    # Hourly starters if GitHub coalesces the 5-min cron (it does).
+    - cron: '0 13 * * *'   # 9:00 AM ET
+    - cron: '0 16 * * *'   # 12:00 PM ET
+    - cron: '0 20 * * *'   # 4:00 PM ET
+    - cron: '0 22 * * *'   # 6:00 PM ET
+    - cron: '0 0 * * *'    # 8:00 PM ET
   workflow_dispatch:
 
 concurrency:

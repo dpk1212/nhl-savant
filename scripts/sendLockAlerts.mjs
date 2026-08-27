@@ -24,6 +24,7 @@
 
 import 'dotenv/config';
 import { config as loadEnv } from 'dotenv';
+import { createHash } from 'crypto';
 import admin from 'firebase-admin';
 import { readFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
@@ -48,10 +49,18 @@ if (existsSync(join(REPO_ROOT, 'functions', '.env'))) {
 }
 
 const T_MINUS_15_MIN_MS = 15 * 60 * 1000;
-// If the market cron hiccups across the freeze boundary, still deliver for a
-// short window after first pitch. Without this, a missed cycle (cancelled
-// workflow / rebase stall) permanently drops the alert once now > commence.
-const GRACE_AFTER_COMMENCE_MS = 10 * 60 * 1000;
+/** Drop a stale in-flight claim so a crashed send can retry. */
+const CLAIM_TTL_MS = 2 * 60 * 1000;
+/** Keep push alive for asleep iPhones / delayed Safari web push. Old 900s
+ *  TTL expired before the phone woke (Guardians arrived late, then vanished). */
+const PUSH_TTL_SEC = Number(process.env.ONESIGNAL_LOCK_TTL_SEC || 7200);
+const SEND_STAGGER_MS = 750;
+// If the market cron hiccups across the freeze boundary, still deliver after
+// first pitch. 10m was too tight when Actions was dead across T−15
+// (Barcelona 2026-08-27: safety net last ran 12:08 PM, freeze at 2:45 PM).
+const GRACE_AFTER_COMMENCE_MS = 20 * 60 * 1000;
+const HEARTBEAT_COL = 'ops';
+const HEARTBEAT_ID = 'lockAlertHeartbeat';
 const TEMPLATE_ID = '451e41a3-2bdf-4758-a779-ec59a8fecf36';
 const APP_ID = process.env.ONESIGNAL_APP_ID || 'd8fcb504-8d29-4354-a9e4-8b612d3eafeb';
 const REST_KEY = process.env.ONESIGNAL_REST_API_KEY || '';
@@ -145,8 +154,9 @@ function isStakedLockedSide(sd) {
   if (!sd || sd.superseded) return false;
   if (sd.lockStage !== 'LOCKED') return false;
   const tier = typeof sd.v8_hcStakeTier === 'string' ? sd.v8_hcStakeTier : null;
-  if (!tier || tier === 'MONITORING' || tier === 'FADE') return false;
-  if (!AGS_V12_PATH_TO_DISPLAY[tier]) return false;
+  if (tier === 'MONITORING' || tier === 'FADE') return false;
+  // Do NOT require AGS_V12_PATH_TO_DISPLAY — a new path (CONFIRMED-Q1, etc.)
+  // used to silently skip a live lock until the map was updated.
   if (!(sideStakeUnits(sd) > 0)) return false;
   const health = sd.health?.status || sd.status;
   if (health === 'MUTED' || health === 'CANCELLED' || health === 'COMPLETED') return false;
@@ -157,6 +167,74 @@ function isAlertableSide(sd) {
   if (!isStakedLockedSide(sd)) return false;
   if (!TEST_OWNER && sd.lockAlertSentAt) return false;
   return true;
+}
+
+function claimTimestampMs(val) {
+  if (val == null) return null;
+  if (typeof val === 'number' && Number.isFinite(val)) return val;
+  if (typeof val.toMillis === 'function') return val.toMillis();
+  if (typeof val._seconds === 'number') return val._seconds * 1000;
+  return null;
+}
+
+function hasFreshClaim(sd, now) {
+  const ms = claimTimestampMs(sd?.lockAlertClaimAt);
+  return ms != null && now - ms < CLAIM_TTL_MS;
+}
+
+/** Deterministic UUID v5 so two overlapping crons share one OneSignal idempotency key. */
+function lockAlertIdempotencyKey(col, docId, sideKey, date) {
+  const hash = createHash('sha1')
+    .update('lock-alert.nhlsavant.com')
+    .update(`${date}|${col}|${docId}|${sideKey}`)
+    .digest();
+  hash[6] = (hash[6] & 0x0f) | 0x50;
+  hash[8] = (hash[8] & 0x3f) | 0x80;
+  const hex = hash.subarray(0, 16).toString('hex');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+}
+
+/**
+ * Win the send before hitting OneSignal. Two workflows (market cron + 5-min
+ * safety net) used to both read lockAlertSentAt empty, both POST, then both
+ * stamp — duplicate pushes at the same second.
+ */
+async function claimLockAlert(db, col, docId, sideKey, now) {
+  const ref = db.collection(col).doc(docId);
+  return db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) return false;
+    const sd = snap.data()?.sides?.[sideKey];
+    if (!sd) return false;
+    if (sd.lockAlertSentAt) return false;
+    if (hasFreshClaim(sd, now)) return false;
+    tx.set(
+      ref,
+      {
+        sides: {
+          [sideKey]: { lockAlertClaimAt: now },
+        },
+      },
+      { merge: true },
+    );
+    return true;
+  });
+}
+
+async function releaseLockAlertClaim(db, col, docId, sideKey) {
+  await db
+    .collection(col)
+    .doc(docId)
+    .set(
+      {
+        sides: {
+          [sideKey]: {
+            lockAlertClaimAt: admin.firestore.FieldValue.delete(),
+          },
+        },
+      },
+      { merge: true },
+    );
 }
 
 /**
@@ -254,7 +332,7 @@ function buildContents({ pickText, tier }) {
   return `${pickText} just locked — ~15 min to gametime. Tap for the card.`;
 }
 
-async function sendOneSignal({ pickText, detail, tier, edge }) {
+async function sendOneSignal({ pickText, detail, tier, edge, idempotencyKey, topic }) {
   if (!REST_KEY) {
     throw new Error('ONESIGNAL_REST_API_KEY is not set');
   }
@@ -281,7 +359,9 @@ async function sendOneSignal({ pickText, detail, tier, edge }) {
     contents: { en: contentsEn },
     headings: { en: isTop ? 'Sharp Flow · Top lock' : 'Sharp Flow · Locked' },
     url: SITE_URL,
-    ttl: 900,
+    ttl: PUSH_TTL_SEC,
+    priority: 10,
+    web_push_topic: topic || `lock-${Date.now()}`,
     name: `${TEST_OWNER ? 'TEST ' : ''}Lock: ${pickText}`.slice(0, 128),
   };
 
@@ -292,12 +372,15 @@ async function sendOneSignal({ pickText, detail, tier, edge }) {
     body.filters = onesignalFiltersForEdge(edge);
   }
 
+  const headers = {
+    'Content-Type': 'application/json',
+    Authorization: `Key ${REST_KEY}`,
+  };
+  if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey;
+
   const res = await fetch('https://api.onesignal.com/notifications', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Key ${REST_KEY}`,
-    },
+    headers,
     body: JSON.stringify(body),
   });
   const json = await res.json().catch(() => ({}));
@@ -345,6 +428,8 @@ async function main() {
     skipped_not_locked: 0,
     skipped_unstaked: 0,
     skipped_force_filter: 0,
+    skipped_no_commence: 0,
+    skipped_claimed: 0,
     errors: 0,
   };
 
@@ -383,6 +468,7 @@ async function main() {
 
         if (!FORCE) {
           if (ct == null) {
+            stats.skipped_no_commence++;
             console.warn(`  ⚠ ${col}/${pick._id} ${sideKey}: LOCKED but no commenceTime — skip`);
             continue;
           }
@@ -422,8 +508,26 @@ async function main() {
 
         if (DRY_RUN) continue;
 
+        if (!TEST_OWNER) {
+          const claimed = await claimLockAlert(db, col, pick._id, sideKey, now);
+          if (!claimed) {
+            stats.skipped_claimed++;
+            console.log(`    · skipped (already claimed or sent) ${col}/${pick._id} ${sideKey}`);
+            continue;
+          }
+        }
+
         try {
-          const result = await sendOneSignal({ pickText, detail, tier, edge });
+          const idempotencyKey = lockAlertIdempotencyKey(col, pick._id, sideKey, TARGET_DATE);
+          const topic = `lock-${TARGET_DATE}-${pick._id}-${sideKey}`.slice(0, 64);
+          const result = await sendOneSignal({
+            pickText,
+            detail,
+            tier,
+            edge,
+            idempotencyKey,
+            topic,
+          });
           const messageId = result.id || null;
           // Never stamp Firestore on owner-only tests — production cron still owns idempotency.
           if (!TEST_OWNER) {
@@ -437,6 +541,8 @@ async function main() {
                       lockAlertSentAt: now,
                       lockAlertMessageId: messageId,
                       lockAlertEdge: Number.isFinite(edge) ? edge : null,
+                      lockAlertClaimAt: admin.firestore.FieldValue.delete(),
+                      lockAlertSource: 'actions',
                     },
                   },
                   lastAction: 'lock_alert_sent',
@@ -446,9 +552,17 @@ async function main() {
           }
           stats.sent++;
           console.log(`    ✓ message ${messageId || '(no id)'} recipients=${result.recipients ?? '?'}`);
+          if (stats.sent > 1) await new Promise((r) => setTimeout(r, SEND_STAGGER_MS));
         } catch (err) {
           stats.errors++;
           console.error(`    ✗ ${err.message || err}`);
+          if (!TEST_OWNER) {
+            try {
+              await releaseLockAlertClaim(db, col, pick._id, sideKey);
+            } catch (releaseErr) {
+              console.error(`    ✗ claim release: ${releaseErr.message || releaseErr}`);
+            }
+          }
         }
 
         // Owner test: send at most one notification.
@@ -459,6 +573,25 @@ async function main() {
         }
       }
     }
+  }
+
+  try {
+    await db
+      .collection(HEARTBEAT_COL)
+      .doc(HEARTBEAT_ID)
+      .set(
+        {
+          ...stats,
+          date: TARGET_DATE,
+          lastRunAt: now,
+          lastRunIso: new Date(now).toISOString(),
+          source: TEST_OWNER ? 'test-owner' : DRY_RUN ? 'dry-run' : 'actions',
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+  } catch (hbErr) {
+    console.warn('heartbeat write failed:', hbErr.message || hbErr);
   }
 
   console.log('\n--- summary ---');

@@ -13,6 +13,7 @@ const { updateLiveScores, triggerScoreUpdate } = require('./liveScores');
 const { updateBetResults, triggerBetUpdate } = require('./betTracking');
 const { ncaaProxy } = require('./ncaaProxy');
 const { updateBasketballBetResults, triggerBasketballBetGrading } = require('./basketballBetGrading');
+const { sendLockAlerts, triggerLockAlerts } = require('./sendLockAlerts');
 
 exports.stripeWebhook = handleStripeWebhook;
 exports.createUserDocument = onUserCreated;
@@ -26,4 +27,6 @@ exports.triggerBetUpdate = triggerBetUpdate;
 exports.ncaaProxy = ncaaProxy;
 exports.updateBasketballBetResults = updateBasketballBetResults;
 exports.triggerBasketballBetGrading = triggerBasketballBetGrading;
+exports.sendLockAlerts = sendLockAlerts;
+exports.triggerLockAlerts = triggerLockAlerts;
 
