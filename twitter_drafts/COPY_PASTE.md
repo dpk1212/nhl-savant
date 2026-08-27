@@ -1,88 +1,62 @@
-# Twitter — 2026-08-27 · QT Trent FCS → Nats still sized (deep)
+# Twitter — 2026-08-27 · Action tab SOC volume → NFL foreshadow
 **Pathway run**
 
 | | |
 |--|--|
-| **WHO** | Bettors scrolling football / leaving the diamond for the day |
-| **PURPOSE** | **Buzz + give** — ride Trent impressions; plant unfinished Nats stake with full receipt depth. No ask. |
-| **ONE** | Printers we track still sized on Nats after the 13-1 beatdown — steam jumped early; we’re watching to lock. (Football leave = QT parent job.) |
-| **SPCL** | **S + C** — $12.7K @ 1.5× · L30 +$108K · 17-4/81% · losing $0 Nats / winners 93% · steam −116→−138 |
-| **Timeline** | Body locked strong; **hook under review** — v1 calendar open fails Hook QA |
-| **Ask** | **none** · QT only |
+| **WHO** | Bettors who’s been living MLB-sized printer $ (~$10–15K clips) and doesn’t feel soccer/football gravity yet |
+| **PURPOSE** | **Give / educate** — show Action-tab scale; plant NFL anticipation. No ask. |
+| **ONE** | Soccer printers move money that makes MLB look small — and NFL’s about to look like this. |
+| **SPCL** | **S + C** — $381.3K · 6.0× press · L30 +$183K · 9-2/82% · Madrid $163.7K press cashed · Action stack |
+| **Timeline** | Dale spine overrides Nats-follow slot — new give on scale; Nats Power trail still owed separately |
+| **Ask** | **none** · single tweet |
 
-**Parent:** @BookitWithTrent — “While yall are still guessing… labbing FCS plays.” (~6.5K views, fresh)
+**Stuff:** Action tab · SOC · Athletic Club @ Barcelona · Barça ML · **$381.3K** @ −376 · 6.0× press · steam +11.8% open · L30 +$183K · 9-2 · +56% ROI · 82% WR · beat close 61% · Madrid Aug 26 **$163.7K** 2.6× press W · also Action stack $62.5K + $13.8K same side · MLB lived contrast ~$12.7K Nats / summer $10–15K clips · Dale: sheer soccer $ vs MLB · feeling NFL looks like this
 
-**Stuff:** Nats ML · rocked 13-1 yesterday · multiple Tier A · lead …2cbcf8 Proven · +$108K L30 · 17-4 81% · beat close 68% · $12.7K @ 1.5× (usual ~$8.7K) · steam Pin −116 → Now −138 · flagged −133 · losing wallets $35K Rockies / $0 Nats · confirmed winners 93% Nats ($19K vs $1.4K) · contested board · long to lock · monitor all day · jumped early
-
-**Hook QA — v1 FAIL:** `Everyone's moving off baseball today.`
-- Calendar observation · **zero S/C in ≤2 lines**
-- Under Trent QT the parent already owns “leaving the diamond” — we restated his open instead of ours
-- Body passes; open doesn’t. Rewrite hook before touching body.
-
-**Hook candidates (keep body):**
-1. **Blowout contrast** ★ recommended — `NATS GOT ROCKED 13-1 YESTERDAY.` → so what = printers sizing anyway (screenshot punch; Trent image carries football)
-2. **Scarce $ first** — `Just dropped $12.7K at 1.5× usual — on a team that lost 13-1 yesterday.`
-3. **Heater + absurd** — `This printer is +$108K L30. He's sizing the Nats after a 13-1 beatdown.`
-4. **Football+$ hybrid** — `Football's here. This printer still just sized $12.7K on the Nats.` (only if Dale wants parent echo in line 1)
-
-**Kill:** dunk on Trent · GOLD/AGS · tipster lock · ask · +110u echo · soft calendar open
+**Hook QA:** `$381K on one soccer ticket.` → so what = not baseball money / NFL coming. Passes S in line 1.  
+**Kill:** Tier B/D leak · GOLD/AGS · tipster lock · ask · soft “soccer is big” without $ · +110u echo · pretend every SOC card is a heater (bottom card −$100K L30 — omit or don’t fake)
 
 ---
 
-## QT — recommended (hook #1)
+## HERO — single tweet
 
-**Action:** Quote-tweet Trent’s FCS post  
-**Attach:** lead wallet card + lock/battle bars (steam chart)
+**Attach:** Action tab SOC (Barça $381K card visible) + optional Their Action chart
 
 ### Copy this ↓
 
 ```
-NATS GOT ROCKED 13-1 YESTERDAY.
+$381K on one soccer ticket.
 
-Sharps we track aren't fading them.
-They're sizing UP early.
+Barcelona ML.
+6.0× his usual.
+L30 +$183K · 9-2 · 82% WR.
 
-Multiple Tier A on this side.
-The lead one has been lights out:
-L30 +$108K.
-17-4 · 81% WR.
-Beats close 68% of the time.
-Just dropped $12.7K at 1.5× his usual.
+Yesterday this same printer pressed Madrid for $163.7K — and cashed.
 
-Losing wallets: $35K on the Rockies — $0 on the Nats.
-Confirmed winners: 93% Nationals.
+We've been tracking MLB printers all summer at $12K–$15K clips.
+This is a different planet.
 
-Line already steamed Pin −116 → Now −138.
-Long way to lock — we'll monitor all day.
+Action tab. Same wallets. Same process.
+Just… soccer money.
 
-But this one jumped off the board early.
+I've got a feeling NFL is going to look like this.
 ```
 
 ---
 
-## Hook alts (swap line 1–3 only)
+## Hook alts (if Dale wants harder MLB contrast in line 1)
 
-**#2 scarce $**
+**#2**
 ```
-Just dropped $12.7K at 1.5× usual — on a team that lost 13-1 yesterday.
+We've been watching $12K baseball printers all summer.
+This one just dropped $381K on Barcelona.
+```
+→ then body from “6.0× his usual…”
 
-Sharps we track aren't fading them.
-They're sizing UP early.
+**#3 (Action stack)**
 ```
-→ then same body from “Multiple Tier A…”
-
-**#3 heater**
+$381K.
+Then $62K.
+Then $14K.
+Same side. Barcelona. Action tab.
 ```
-This printer is +$108K the last 30 days.
-He's sizing the Nats after a 13-1 beatdown.
-
-They're sizing UP early.
-```
-→ then same body from “Multiple Tier A…” (trim duplicate size line if needed)
-
-**#4 football+$**
-```
-Football's here.
-This printer still just sized $12.7K on the Nats — after a 13-1 beatdown.
-```
-→ then same body from “Multiple Tier A…”
+→ then lead heater + MLB + NFL close

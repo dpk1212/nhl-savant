@@ -7,21 +7,21 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-08-27 PM — Dale: pathway/hook QA direction validated |
+| Last updated | 2026-08-27 PM — Action tab SOC $381K → NFL foreshadow staged |
 | CSV window | Aug 21–27, 2026 |
-| Ask temperature | **warm-cool** — distribution give staged; no ask; Power trail owed if Nats ships |
-| Account arc | +110u · don’t-become-sharp · OG · **Nats unfinished (hook pick pending)** |
+| Ask temperature | **warm-cool** — another give; no ask; still cool |
+| Account arc | +110u · don’t-become-sharp · OG · Nats unfinished · **SOC scale → NFL plant** |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 8/27 PM | QT Trent FCS | Nats 13-1 → printers sizing (deep); hook under review | S + C | none | **Body strong · hook rewrite** — Dale liked system; pick hook #1/#2/#3 then ship |
-| 8/27 PM | Hero Nats ML early | Nats rocked 13-1 — Tier A sizing early; watch to lock | S + C | none | Staged — optional if QT ships first |
+| 8/27 PM | Hero Action SOC | $381K soccer ticket · MLB $12–15K contrast · NFL will look like this | S + C | none | **Staged** — Dale spine; Action tab feature |
+| 8/27 PM | QT Trent FCS | Nats 13-1 → printers sizing (deep); hook under review | S + C | none | Body strong · hook pick pending |
+| 8/27 PM | Hero Nats ML early | Nats rocked 13-1 — Tier A sizing early | S + C | none | Optional if QT ships |
 | 8/27 PM | QT Dominic | Don’t become a sharp — size SharpFlow; OG +5.37u | C + P | none | Best draft; may still ship |
 | 8/27 AM | Hero +110u / >5u | 47–16 · +89.93u over 5u | S + C | none | Prefer human version |
-| 8/27 | QT printer ask | +$476K one wallet · look sharp | S + C | yes SR | Shipped; cool asks |
 
 ---
 
@@ -31,12 +31,13 @@
 3. Looks even. It isn’t. — **C** contrast
 4. Edge predictable / scoreboard not — whole truth
 5. Over 5u filter — **S+C** imp leader
-6. Tickets vs printers under public parents — strong reach (this QT rides same shape)
+6. Tickets vs printers under public parents — strong reach
+7. Deep receipt body + Hook QA kill soft opens — Dale validated
 
-**Hot letters:** S+C opens; P on say–do; contrast C; QT under high-velocity parents  
-**Cold:** soft diary · brochure SPCL · empty testimonial · dunking the parent · **calendar/observation opens** (fail Hook QA)
+**Hot letters:** S+C opens ($ first); P on say–do; contrast C  
+**Cold:** soft diary · brochure SPCL · empty testimonial · calendar opens · lean-starved QT
 
-**Process win (Dale 8/27):** Pathway held — deep stuff body first, then Hook QA killed soft open and forced scarce contrast. Keep: WHO/PURPOSE/ONE → stuff → Hook QA → rewrite hook *before* body. Do not lean-starve QT next time.
+**Process win (Dale 8/27):** Pathway held — stuff → Hook QA → rewrite hook before body.
 
 ---
 
@@ -47,44 +48,44 @@
 - Empty OG caption without mechanism
 
 ## Themes OPEN / compound
-- **Live unfinished Nats steam** — QT is the impression play; grade later = Power
+- **SOC / Action scale → NFL foreshadow** — just staged; can compound once NFL week 1 hits
+- **Live unfinished Nats steam** — still open; grade = Power
 - Dominic QT — still ship once if not posted
 - Don’t-become-sharp educate — only with new pudding
-- Tickets vs printers — available under public parents
 
 ## Unfinished stakes
-- **Nats ML** — early steam (hero and/or Trent QT); must follow steam/lock/grade (Power trail)
+- **Nats ML** — early steam; must follow steam/lock/grade (Power trail) if/when shipped
 - Dominic QT — pending ship
 - Guardians printer — cooled unless new grade
 
 ---
 
-## FORWARD LOOK — after this Trent QT
+## FORWARD LOOK — after this SOC Action post
 ### Balance
 | Need | Status | So what |
 |------|--------|---------|
-| Live unfinished / varied condition | **Fed via QT** | Good — football audience sees baseball printers |
-| Status $ printers | Fed lean | Don’t stack naked flex after |
-| Power say–do close | **Owed** | Grade Nats / update steam later |
-| Third-party Cred | Dominic still pending | Ship Dominic after Nats breathes |
-| Ask | Cool | Give at least one more beat before ask |
+| Live unfinished / varied | Nats still open | Don’t abandon Power trail |
+| Status $ printers | **Just fed hard** ($381K) | Next beat ≠ another naked $ flex |
+| Power say–do close | **Still owed** on Nats | Grade / update if posted |
+| Third-party Cred | Dominic pending | Good after Status flood |
+| Ask | Cool | One more non-ask give or Cred before ask |
 
 ### Recommended next slots
-1. **Nats follow** (steam update / lock / grade) — close Power loop  
-2. **Ship Dominic QT** if not posted — third-party sized dream  
-3. **Give** another live or honesty beat  
-4. **Ask** only after 1–2 more give posts  
+1. **Nats follow** (if shipped) — lock/grade Power close  
+2. **Ship Dominic QT** — third-party Cred after Status $  
+3. **Give** honesty / mechanism — not another $381K-class flex  
+4. **Ask** only after Cred or say–do lands  
 
 ### NOT next
-- Another +110u flex  
-- Trial ask on this QT  
-- Separate full hero if QT already carried the Nats stake (unless Dale wants both)  
+- Stack another mega-$ flex immediately  
+- Trial ask on this SOC post  
+- +110u echo  
 - Critic-diary spear  
 
 ---
 
 ## Agent close-out
-- [x] Appended Trent QT beat  
+- [x] Appended SOC Action beat  
 - [x] Themes spent/open updated  
 - [x] Ask temperature stays warm-cool  
 - [x] Unfinished: Nats Power trail still owed  
