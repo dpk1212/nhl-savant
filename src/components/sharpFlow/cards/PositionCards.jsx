@@ -10,6 +10,7 @@ import LockedClarityExpanded from './LockedClarityExpanded';
 import OddsLimitSpark from './OddsLimitSpark';
 import LockedCollapsedStrength from './LockedCollapsedStrength';
 import LockedCollapsedBattleBars from './LockedCollapsedBattleBars';
+import { fmtAmericanWithPm } from '../../../lib/oddsEv.js';
 
 /** Ticket freezes 15 min before first pitch/kick — same gate as the cron. */
 const LOCK_LEAD_MS = 15 * 60 * 1000;
@@ -2545,7 +2546,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
                   fontSize: '1.12rem', fontWeight: 650, letterSpacing: '-0.025em',
                   color: C.textMuted, lineHeight: 1.05,
                 }}>
-                  {fmtOdds(heroPx)}
+                  {fmtAmericanWithPm(heroPx)}
                 </div>
               )}
             </div>

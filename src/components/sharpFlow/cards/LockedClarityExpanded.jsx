@@ -16,6 +16,7 @@ import {
 import OddsLimitSpark from './OddsLimitSpark';
 import LockedSignalsRow from './LockedSignalsRow';
 import SteamTag from './SteamTag';
+import { fmtAmericanWithPm } from '../../../lib/oddsEv.js';
 
 const B = {
   gold: '#D4AF37',
@@ -1214,7 +1215,7 @@ export default function LockedClarityExpanded({
           </span>
           {Number.isFinite(heroPx) && (
             <span style={{ fontSize: 15, fontWeight: 600, color: C.textSec }}>
-              {fmtOdds(heroPx)}
+              {fmtAmericanWithPm(heroPx)}
             </span>
           )}
           <SteamTag steam={f.steam} compact />

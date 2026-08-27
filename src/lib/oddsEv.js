@@ -9,6 +9,22 @@ export function impliedFromAmerican(o) {
   return n < 0 ? Math.abs(n) / (Math.abs(n) + 100) : 100 / (n + 100);
 }
 
+/** Polymarket-style implied % for a displayed American price (−426 → 81). */
+export function impliedPctFromAmerican(o) {
+  const p = impliedFromAmerican(o);
+  if (p == null || !(p > 0 && p < 1)) return null;
+  return Math.round(p * 100);
+}
+
+/** Locked-pick hero: American plus PM % — e.g. `-426 (81%)`. */
+export function fmtAmericanWithPm(o) {
+  if (o == null || !Number.isFinite(Number(o)) || Number(o) === 0) return '—';
+  const n = Number(o);
+  const am = n > 0 ? `+${n}` : `${n}`;
+  const pct = impliedPctFromAmerican(n);
+  return pct == null ? am : `${am} (${pct}%)`;
+}
+
 export function americanFromProb(p) {
   if (p == null || !Number.isFinite(p) || p <= 0 || p >= 1) return null;
   if (p >= 0.5) return Math.round((-100 * p) / (1 - p));
