@@ -48,6 +48,30 @@ Capture only what Dale gave + live receipts:
 - Assets (screens, parent tweet, QT target)
 - Constraints (single tweet? no ask? QT vs hero?)
 
+### 0b · RECENT TIMELINE REVIEW (mandatory — fluid messaging)
+**Do this before PURPOSE / ONE / hook.** Keeps the account a continuous Hormozi feed, not isolated one-offs.
+
+**Pull (whatever exists this run):**
+1. Dale’s latest **analytics CSV** (impressions, engagements, replies, profile visits, URL clicks)
+2. Last **5–10** posted heroes / QTs (text + what they attached)
+3. Prior staged `COPY_PASTE` if we just shipped in-thread
+
+**Write into** `twitter_agents/SHARED/recent_timeline_latest.md` (overwrite each run):
+
+| Capture | Why |
+|---------|-----|
+| Top 3 hooks by **engagement** (then impressions) | What actually stops the scroll *for us* |
+| SPCL mix of winners (which **1–2** letters they owned) | Next post rides a hot letter — doesn’t force a cold one |
+| Soft/failed opens | Kill list for *this week* |
+| Messaging continuity | Unfinished stakes · themes already spent · room to compound |
+| Ask temperature | cold = give only · warm = desire plant · hot = SR ask OK |
+| Prefer silhouettes | Only if they fit THIS spine’s ONE idea — never empty clone |
+
+**Hormozi litmus:** optimize for compliance from the right avatar (eng/replies/profile/URL), not vanity impressions alone.  
+**Qual:** this is *stuff* for manufacturing the next post — not a scorecard religion. If no CSV, still review last posts qualitatively; say “no CSV” in the file.
+
+**So what:** PURPOSE + hook must *acknowledge* the timeline (compound, contrast, or consciously break a spent theme). If the draft ignores winners/failures from this window, restart at 0b.
+
 ### 1 · WHO
 One sentence: who is this for **right now**?  
 (current state they’re in — e.g. become-sharp grind / ticket-board / soft-day doubt)
@@ -98,7 +122,7 @@ Line 1–3 must pass:
 1. **Screenshot test** — stranger sees S and/or C in ≤2 lines when $ contrast exists  
 2. **What / how / so what** on the open  
 3. **Not soft diary** — feelings only after proof, if at all  
-4. Prefer proven silhouettes from *our* analytics when they fit (e.g. “Most people try to become sharp” · “EVERY TIME WE WENT OVER 5u” · $ contrast) — never clone empty
+4. Prefer silhouettes from **this run’s timeline review** (`recent_timeline_latest.md`) when they fit the ONE idea — never empty-clone a winner into the wrong job
 
 If hook fails, **rewrite hook before touching body**.
 
@@ -123,9 +147,11 @@ Kill: meta (“show-me version of the product”) · slogan soup · dunking · s
 - PURPOSE  
 - ONE idea  
 - SPCL owned (1–2)  
+- Timeline note (1 line: which recent winner/failure shaped the hook)  
 - Ask: none | SR  
 
-Then the copy block only.
+Then the copy block only.  
+Refresh `SHARED/recent_timeline_latest.md` every run (fluid timeline).
 
 ---
 
@@ -145,13 +171,14 @@ Then the copy block only.
 
 Before send:
 
+- [ ] Timeline review done (`recent_timeline_latest.md` this run)  
 - [ ] WHO + PURPOSE locked in one line each  
 - [ ] ONE idea passes understand / believe / unique  
-- [ ] Only 1–2 SPCL letters owned  
-- [ ] Hook survives what / how / so what  
+- [ ] Only 1–2 SPCL letters owned (biased to what’s hot *and* fits purpose)  
+- [ ] Hook survives what / how / so what + doesn’t ignore recent winners/failures  
 - [ ] Stuff > container  
 - [ ] Whole truth where it matters  
-- [ ] Ask decision conscious (usually none on connection posts)  
+- [ ] Ask decision conscious (ask temperature from timeline)  
 - [ ] Sounds like Dale at dinner — not an ad  
 
 If Dale says “Hormozi would be disgusted,” you skipped PURPOSE or majored in minors. Restart at step 2.
