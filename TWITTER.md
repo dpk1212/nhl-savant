@@ -82,9 +82,9 @@ Full checklist: `hormozi_tweet_process.md`. Compressed:
 
 ```
 1. SPINE     — Dale dump / assets (law)
-2. TIMELINE  — read/write messaging_continuity.md + recent_timeline_latest.md (CSV when dropped)
+2. TIMELINE  — continuity + recent_timeline; **FORWARD LOOK** (what feed needs next); CSV when dropped
 3. WHO       — who is this for right now
-4. PURPOSE   — one job: give / educate / buzz / ask
+4. PURPOSE   — one job (usually forward-look slot #1 unless Dale overrides)
 5. ONE       — big idea (understand / believe / unique)
 6. SPCL      — own 1–2 letters only (hot + fits purpose)
 7. STUFF     — live receipts; whole truth; stuff > container
@@ -92,7 +92,7 @@ Full checklist: `hormozi_tweet_process.md`. Compressed:
 9. DRAFT     — Dale human voice; not brochure
 10. ASK      — respect ask temperature; soft trial in SR only if PURPOSE=ask
 11. QUAL     — question → delete → simplify → ship 95%
-12. STAGE    — COPY_PASTE + **write back** messaging_continuity.md (last beat, spent/open, ask temp)
+12. STAGE    — COPY_PASTE + write-back continuity (**including refreshed FORWARD LOOK**)
 ```
 
 **Drops:** analytics CSV → `analytics_csv_ingest.md` before draft · Hormozi transcript → `hormozi_ingest.md` before draft.

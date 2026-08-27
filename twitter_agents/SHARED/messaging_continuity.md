@@ -67,10 +67,45 @@
 
 ---
 
+## FORWARD LOOK — what the feed needs next
+**Job:** not only “what worked” — decide what **timeline / right avatar / X distribution** is missing so the next post compounds influence (Hormozi: content = targeting · free SPCL before bigger asks · varied show-me conditions).
+
+### Balance check (this week)
+| Need | Status now | So what |
+|------|------------|---------|
+| Scarce Status ($ / sized units / printers) | **Fed** — +110u, >5u, $476K printer | Don’t flex milestone again immediately |
+| Power say–do (pointed → graded) | **Partial** — printer ask + heaters; soft-day honesty used | Next: close a loop (Dominic / sized day grade) or live board say–do |
+| Credibility third-party | **Hot** — Dominic OG pudding staged | Ship/compound **once**, then let it breathe |
+| Likeness / human (non-ad) | **Recovering** — Dale rejected brochure | Keep dinner-table; kill CAPS-ad stacks |
+| Dream educate (don’t become sharp) | **Unlocked** — high-eng silhouette | Strong candidate if PURPOSE=educate |
+| Soft ask / trial compliance | **Warm** — one ask already on printer QT | Only after fresh free pudding; not every post |
+| Varied conditions (trust economy) | Thin on live lock-tonight / in-game | Need a live-board beat soon |
+| Wrong-avatar entertainment | Avoid | No meme-only / dunk |
+
+### Algorithm / distribution (practical)
+- After a **high-imp filter flex** (+110u / >5u), feed usually needs **human proof or unfinished live stake** — not another scoreboard.
+- After a **diagnostic educate** (“become sharp”), feed needs **pudding** (OG/v12 day) — Dominic covers this.
+- After an **ask**, feed needs **give** (free SPCL) before another ask.
+- Reply/eng leaders beat pure imp for trial intent — prefer eng silhouettes when PURPOSE=connect/ask.
+
+### Recommended next slots (ordered)
+1. **Finalize/ship Dominic QT** (if not posted) — third-party sized dream; no ask.  
+2. **Live board / tonight sized lock** — unfinished stake; S+C or C+P; single tweet.  
+3. **Optional educate compound** — “don’t become a sharp” only if new pudding (not rehash).  
+4. **Ask** — only after 1–2 fresh give posts; SR trial; hot temperature.
+
+### Explicitly NOT next
+- Repeat +110u flex  
+- Another printer/$476K ask immediately  
+- Critic-diary spear (“they say I’m stupid”) alone  
+
+---
+
 ## Agent close-out checklist (END of every run)
 Update this file:
 - [ ] Append what we staged (hook · ONE · SPCL · ask · status)
 - [ ] Mark themes spent / still open
 - [ ] Adjust ask temperature
 - [ ] Note unfinished stakes
+- [ ] **Refresh FORWARD LOOK** — what the feed needs *after* this post (balance table + next 2–3 slots)
 - [ ] If CSV was dropped, sync rankings from `analytics_csv_ingest.md`

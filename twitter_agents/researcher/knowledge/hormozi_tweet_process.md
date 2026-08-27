@@ -73,9 +73,20 @@ Run `analytics_csv_ingest.md` → refresh `recent_timeline_latest.md` → merge 
 | Unfinished stakes | Serialization / compound once |
 | Ask temperature | cold / warm / hot |
 | Last 5 desk beats | Context for the next agent/session |
+| **FORWARD LOOK** | What the feed/avatar/distribution needs *next* (not only what worked) |
 
-**Hormozi litmus:** right-avatar eng/replies/profile/URL > vanity impressions.  
-**So what:** PURPOSE + hook must acknowledge continuity (compound, contrast, or consciously break a spent theme). Ignoring last beats = restart here.
+### 0c · FORWARD LOOK (mandatory — next-slot thinking)
+Before locking PURPOSE, answer in continuity:
+
+**What does this timeline need next?**
+1. **Avatar** — what proof/education are they missing to take one step toward us?  
+2. **Balance** — which SPCL letter / condition is overfed vs starved this week? (Status flex vs Power say–do vs third-party Cred vs human Likeness vs ask)  
+3. **Hormozi economics** — enough free SPCL for an ask, or must we give? Varied show-me conditions?  
+4. **Distribution** — after last post’s job (flex / educate / ask / QT), what follow-on compounds instead of resets?  
+5. **Recommend 2–3 next slots** (ordered) + **NOT next** list  
+
+PURPOSE for *this* request should usually be slot #1 unless Dale’s spine overrides (Dale spine = law).  
+If Dale’s ask conflicts with forward look, shape his spine but note the tension in continuity.
 
 ### 1 · WHO
 One sentence: who is this for **right now**?  

@@ -46,5 +46,9 @@
 2. EVERY TIME WE WENT OVER 5u (updated stats)
 3. Looks even. It isn’t. / tickets vs printers
 
+## Forward look (see also messaging_continuity.md)
+**Feed needs next:** ship Dominic sized-OG proof (no ask) → live unfinished board beat → ask only after more give.  
+**Not next:** repeat +110u flex · immediate second printer ask · critic-diary spear alone.
+
 ## Litmus
 Eng/replies/profile/URL from bettors we’d trial > raw impressions.
