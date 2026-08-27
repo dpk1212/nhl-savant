@@ -7,7 +7,7 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-08-27 eve — QT Dominic +EV matchup · for/against (no signup) |
+| Last updated | 2026-08-27 eve — Dominic +EV QT hook obsess (16.8× open) |
 | CSV window | Aug 21–27, 2026 |
 | Ask temperature | **cool** — engagement-only; no Upgrade/DM on this beat |
 | Account arc | Nats print · tool matchup Cred · **for/against mechanism** |
@@ -17,7 +17,7 @@
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 8/27 eve | QT Dominic +EV | $12.9K COL vs $12.7K Nats — looks even, wasn’t — for/against | C + P | eng RT only | **Staged** — capitalize win · no signup |
+| 8/27 eve | QT Dominic +EV | 16.8× COL vs 1.5× Nats · looks even · 7-1 in open · for/against | C + P | eng RT | **Hook B staged** — Dale: obsess lines 1–5 |
 | 8/27 eve | QT own Nats | Pressed→cashed 13-1→$12.7K→7-1 + Upgrade | P + S | yes close | Staged (separate) |
 | 8/27 PM | Hero Action SOC | $381K soccer · NFL foreshadow | S + C | none | Staged |
 | 8/27 PM | QT Trent FCS | Nats 13-1 size-up deep | S + C | none | Shipped |
