@@ -1,62 +1,75 @@
-# Twitter — 2026-08-27 · Action tab SOC volume → NFL foreshadow
+# Twitter — 2026-08-27 · QT own Nats post → 7-1 cash → Upgrade ask
 **Pathway run**
 
 | | |
 |--|--|
-| **WHO** | Bettors who’s been living MLB-sized printer $ (~$10–15K clips) and doesn’t feel soccer/football gravity yet |
-| **PURPOSE** | **Give / educate** — show Action-tab scale; plant NFL anticipation. No ask. |
-| **ONE** | Soccer printers move money that makes MLB look small — and NFL’s about to look like this. |
-| **SPCL** | **S + C** — $381.3K · 6.0× press · L30 +$183K · 9-2/82% · Madrid $163.7K press cashed · Action stack |
-| **Timeline** | Dale spine overrides Nats-follow slot — new give on scale; Nats Power trail still owed separately |
-| **Ask** | **none** · single tweet |
+| **WHO** | Bettors who saw the early Nats steam post (or scroll into the cash) and want the data without tipster pricing |
+| **PURPOSE** | **Ask** — Power say–do close on unfinished Nats stake → Upgrade 25% life + DM onboard today |
+| **ONE** | We posted Nats sized after the 13-1 — they won 7-1 / 5.0u cashed — Upgrade and get sharp plays like this |
+| **SPCL** | **P + S** — say–do trail (parent QT) · 7-1 · 5.0u · then ask |
+| **Timeline** | Forward look owed Power close → Dale spine converts on the cash (ask temp override: earned) |
+| **Ask** | **yes** — Upgrade 25% off for life · DM Dale today for onboard (Dale spine; in-QT not SR) |
 
-**Stuff:** Action tab · SOC · Athletic Club @ Barcelona · Barça ML · **$381.3K** @ −376 · 6.0× press · steam +11.8% open · L30 +$183K · 9-2 · +56% ROI · 82% WR · beat close 61% · Madrid Aug 26 **$163.7K** 2.6× press W · also Action stack $62.5K + $13.8K same side · MLB lived contrast ~$12.7K Nats / summer $10–15K clips · Dale: sheer soccer $ vs MLB · feeling NFL looks like this
+**Parent:** Own earlier QT/hero — Nats rocked 13-1 / Tier A sized / $12.7K @ 1.5× / steam −116→−138 (QT Trent FCS)
 
-**Hook QA:** `$381K on one soccer ticket.` → so what = not baseball money / NFL coming. Passes S in line 1.  
-**Kill:** Tier B/D leak · GOLD/AGS · tipster lock · ask · soft “soccer is big” without $ · +110u echo · pretend every SOC card is a heater (bottom card −$100K L30 — omit or don’t fake)
+**Stuff:** Nats won **7-1** · board **5.0u** · posted after 13-1 blowout · lead L30 +$108K · 17-4 81% · $12.7K 1.5× · Dale convert: dunno what people pay for data · mine won’t break bank · all data to look sharp · **Upgrade 25% off for life** · put on sharp plays like this · sign up today → **DM me** · onboard + questions
+
+**Hook QA:** `NATS WON 7-1.` → so what = the early post cashed / 5u. Parent carries before-receipts. Passes P screenshot.  
+**Kill:** re-dump full heater stats (parent has them) · tipster “lock hit” swagger · GOLD/AGS · soft diary · bury the ask · +110u echo
+
+**Note:** Brand default = soft ask in SR. Dale spine puts Upgrade + DM in the QT — staged as authored.
 
 ---
 
-## HERO — single tweet
+## QT — own Nats steam post (ASK)
 
-**Attach:** Action tab SOC (Barça $381K card visible) + optional Their Action chart
+**Action:** Quote-tweet your earlier Nats post (the 13-1 / sizing UP one)  
+**Attach:** none required (parent has boards) — optional final score graphic if you have one
 
 ### Copy this ↓
 
 ```
-$381K on one soccer ticket.
+NATS WON 7-1.
 
-Barcelona ML.
-6.0× his usual.
-L30 +$183K · 9-2 · 82% WR.
+5.0u.
+Posted when they got rocked 13-1 the night before.
+Sharps sized up early. We said watch it.
 
-Yesterday this same printer pressed Madrid for $163.7K — and cashed.
+It cashed.
 
-We've been tracking MLB printers all summer at $12K–$15K clips.
-This is a different planet.
+I don't know what people are using for their data — or what they're paying.
+I know mine isn't going to break your bank.
+And you're going to get everything you need to look sharp.
 
-Action tab. Same wallets. Same process.
-Just… soccer money.
+Upgrade for 25% off for life.
+Let us put you on sharp plays like this.
 
-I've got a feeling NFL is going to look like this.
+Signing up today? DM me.
+I'll onboard you and answer anything.
 ```
 
 ---
 
-## Hook alts (if Dale wants harder MLB contrast in line 1)
+## Alt — proof in QT / hard ask in SR (if you want brand-default split)
 
-**#2**
+**QT**
 ```
-We've been watching $12K baseball printers all summer.
-This one just dropped $381K on Barcelona.
-```
-→ then body from “6.0× his usual…”
+NATS WON 7-1.
 
-**#3 (Action stack)**
+5.0u.
+Posted after they got rocked 13-1.
+Sharps sized up early. We said watch it.
+
+It cashed.
+
+I don't know what people are paying for their data.
+Mine won't break your bank — and you'll get everything you need to look sharp.
 ```
-$381K.
-Then $62K.
-Then $14K.
-Same side. Barcelona. Action tab.
+
+**SR**
 ```
-→ then lead heater + MLB + NFL close
+Upgrade for 25% off for life.
+We'll put you on sharp plays like this.
+
+Signing up today? DM me — I'll onboard you and answer anything.
+```
