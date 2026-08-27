@@ -37,30 +37,32 @@ const TRIAL_DAYS = {
   pro: 10,
 };
 
-// 72h flash — mirrors frontend PAYWALL_PROMO / PROMO_CODES.SUMMER.
+// 72h flash — mirrors frontend PAYWALL_PROMO / PROMO_CODES.UPGRADE.
 // Auto-applied at Checkout for monthly/weekly only. Keep Stripe coupon
 // restricted to scout + elite price IDs (duration: forever).
 const FLASH_PROMO = {
-  code: 'SUMMER',
+  code: 'Upgrade',
+  codeAliases: ['Upgrade', 'UPGRADE', 'upgrade'],
   tiers: new Set(['scout', 'elite']),
-  endMs: Date.parse('2026-08-15T21:58:00Z'), // Sat Aug 15, 5:58pm ET
+  endMs: Date.parse('2026-08-30T10:00:00Z'), // Sun Aug 30, 6:00am ET
 };
 
 async function resolveFlashPromoId(stripeClient, tier) {
   if (!FLASH_PROMO.tiers.has(tier)) return null;
   if (!Number.isFinite(FLASH_PROMO.endMs) || Date.now() > FLASH_PROMO.endMs) return null;
+  const codes = [...new Set(FLASH_PROMO.codeAliases || [FLASH_PROMO.code])];
   try {
-    const list = await stripeClient.promotionCodes.list({
-      code: FLASH_PROMO.code,
-      active: true,
-      limit: 1,
-    });
-    const promo = list.data[0];
-    if (!promo?.id) {
-      console.warn(`Flash promo ${FLASH_PROMO.code} not found or inactive in Stripe`);
-      return null;
+    for (const code of codes) {
+      const list = await stripeClient.promotionCodes.list({
+        code,
+        active: true,
+        limit: 1,
+      });
+      const promo = list.data[0];
+      if (promo?.id) return promo.id;
     }
-    return promo.id;
+    console.warn(`Flash promo ${FLASH_PROMO.code} not found or inactive in Stripe`);
+    return null;
   } catch (err) {
     console.warn(`Flash promo lookup failed: ${err.message}`);
     return null;
@@ -216,7 +218,7 @@ exports.createCheckoutSession = functions.https.onCall(async (data, context) => 
       },
     };
 
-    // Flash: auto-apply SUMMER on monthly/weekly so users don't miss the code.
+    // Flash: auto-apply Upgrade on monthly/weekly so users don't miss the code.
     // Stripe forbids discounts + allow_promotion_codes together.
     const flashPromoId = await resolveFlashPromoId(stripeClient, tier);
     if (flashPromoId) {

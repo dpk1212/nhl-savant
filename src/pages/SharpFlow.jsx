@@ -1042,14 +1042,14 @@ function computeRecentWindowStats(picks, daysBack = 7) {
   return { ready: true, w, l, pu, total, profit, record: `${w}-${l}${pu ? `-${pu}` : ''}` };
 }
 
-// Sharp Flow paywall — 72h flash (mirrors Pricing.jsx PROMO_CODES.SUMMER).
-// SUMMER is monthly/weekly only — annual stays full price (Stripe coupon
+// Sharp Flow paywall — 72h flash (mirrors Pricing.jsx PROMO_CODES.UPGRADE).
+// Upgrade is monthly/weekly only — annual stays full price (Stripe coupon
 // must also be restricted to scout/elite price IDs).
 const PAYWALL_PROMO = {
-  code: 'SUMMER',
-  discount: 0.33,
+  code: 'Upgrade',
+  discount: 0.25,
   label: '72-Hour Flash',
-  endMs: new Date('2026-08-15T21:58:00Z').getTime(), // Sat Aug 15, 5:58pm ET
+  endMs: new Date('2026-08-30T10:00:00Z').getTime(), // Sun Aug 30, 6:00am ET
   tiers: ['elite', 'scout'], // monthly + weekly
 };
 
@@ -1064,13 +1064,13 @@ const PAYWALL_PLANS = [
     badge: 'MOST POPULAR',
     badgePromo: 'FLASH SALE',
     save: null,
-    savePromo: 'SAVE 33%',
+    savePromo: 'SAVE 25%',
     promoEligible: true,
-    heroFull: '$25.99', heroPromo: '$17.41', heroPer: '/mo',
+    heroFull: '$25.99', heroPromo: '$19.49', heroPer: '/mo',
     billFull: null, billPromo: null,
-    chargeFull: '$25.99/mo', chargePromo: '$17.41/mo',
+    chargeFull: '$25.99/mo', chargePromo: '$19.49/mo',
     sub: 'One blown $20 parlay costs more',
-    subPromo: '33% off for life with code SUMMER',
+    subPromo: '25% off for life with code Upgrade',
     winMath: 'One 1u win (+$91 at $100/unit) covers your next 5 months',
   },
   {
@@ -1078,15 +1078,15 @@ const PAYWALL_PLANS = [
     name: 'Weekly',
     trialDays: 5,
     badge: null,
-    badgePromo: null,
+    badgePromo: 'THIS WEEK',
     save: null,
-    savePromo: 'SAVE 33%',
+    savePromo: 'SAVE 25%',
     promoEligible: true,
-    heroFull: '$7.99', heroPromo: '$5.35', heroPer: '/wk',
+    heroFull: '$7.99', heroPromo: '$5.99', heroPer: '/wk',
     billFull: null, billPromo: null,
-    chargeFull: '$7.99/wk', chargePromo: '$5.35/wk',
+    chargeFull: '$7.99/wk', chargePromo: '$5.99/wk',
     sub: 'Less than one stadium beer',
-    subPromo: '33% off for life with code SUMMER',
+    subPromo: '25% off for life with code Upgrade',
     winMath: 'One 1u win (+$91 at $100/unit) covers 4 months of access',
   },
   {
@@ -3742,7 +3742,7 @@ function SharpFlowInfo({ isMobile }) {
                   <span style={{ fontSize: '0.813rem', fontWeight: 700, color: B.gold }}>Market</span>
                 </div>
                 <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, margin: 0 }}>
-                  The live money map — both sides of the action, how hard capital is pressing, and where the tape is contested. Cards show the <strong style={{ color: B.gold }}>sharp money picture</strong> from verified public exchange data, not tipster chatter.
+                  The homepage — today&rsquo;s locked picks, the tickets that crossed the conviction threshold. Flip to Live Positions for the full money map: both sides of the action, how hard capital is pressing, and where the tape is contested.
                 </p>
               </div>
 
@@ -8809,9 +8809,9 @@ export default function SharpFlow() {
   };
   const [gameSort, setGameSort] = useState('time');
   const [signalType, setSignalType] = useState('upcoming');
-  // View/sort selection survives refresh — landing on Locked Picks
-  // every reload (regardless of where the user was) was a UX bug.
-  // First-time visitors still default to 'locked'.
+  // Market (/) is the conversion homepage: Sharp Intel + Locked Picks.
+  // Other views still persist across refresh via sf_view_v1, but hitting
+  // `/` always re-lands on locked so first-time visitors see the paywall.
   const [sortBy, setSortBy] = useState(() => {
     try { return localStorage.getItem('sf_view_v1') || 'locked'; } catch { return 'locked'; }
   });
@@ -8846,8 +8846,7 @@ export default function SharpFlow() {
       });
     } else if (p === '/' || p === '/sharp-flow' || p === '/board' || p === '/market') {
       setViewMode('whaleSignals');
-      // Market = live tape; Engine owns locked picks.
-      setSortBy((prev) => (prev === 'locked' ? 'stars' : prev));
+      setSortBy('locked');
       setShowAgsuPerf(false);
     }
   }, [location.pathname]);
@@ -13851,7 +13850,8 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
   const [paywallSeen, setPaywallSeen] = useState(false);
   const [ctaVisible, setCtaVisible] = useState(false);
 
-  const { endMs, code: promoCode, label: promoLabel } = PAYWALL_PROMO;
+  const { endMs, code: promoCode, label: promoLabel, discount: promoDiscount } = PAYWALL_PROMO;
+  const promoPct = Math.round((promoDiscount || 0) * 100);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -13993,7 +13993,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
           letterSpacing: '0.06em',
         }}>
           <span style={{ fontSize: '0.72rem', fontWeight: 900, color: '#0B1120', textTransform: 'uppercase' }}>
-            {promoLabel.toUpperCase()} · CODE {promoCode} · 33% OFF FOR LIFE · MONTHLY & WEEKLY ONLY
+            {promoLabel.toUpperCase()} · CODE {promoCode} · {promoPct}% OFF FOR LIFE · MONTHLY & WEEKLY ONLY
           </span>
         </div>
       )}
@@ -14333,7 +14333,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
               }}>
                 <Flame size={13} color={B.gold} />
                 <span style={{ ...T.micro, color: B.gold, fontWeight: 900, letterSpacing: '0.12em', textTransform: 'uppercase', fontSize: '0.68rem' }}>
-                  MONTHLY & WEEKLY · 33% OFF FOR LIFE — ENDS IN
+                  MONTHLY & WEEKLY · {promoPct}% OFF FOR LIFE — ENDS IN
                 </span>
                 <Flame size={13} color={B.gold} />
               </div>
@@ -14410,11 +14410,19 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
                     borderRadius: '13px', position: 'relative', overflow: 'visible',
                     background: isSelected
                       ? 'linear-gradient(140deg, rgba(212,175,55,0.20) 0%, rgba(212,175,55,0.06) 45%, rgba(15,23,42,0.65) 100%)'
-                      : 'linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(15,23,42,0.5) 100%)',
-                    border: isSelected ? `2px solid ${B.gold}` : `1px solid ${B.borderSubtle}`,
+                      : planOnSale
+                        ? 'linear-gradient(180deg, rgba(16,185,129,0.10) 0%, rgba(15,23,42,0.5) 100%)'
+                        : 'linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(15,23,42,0.5) 100%)',
+                    border: isSelected
+                      ? `2px solid ${B.gold}`
+                      : planOnSale
+                        ? '1.5px solid rgba(16,185,129,0.50)'
+                        : `1px solid ${B.borderSubtle}`,
                     boxShadow: isSelected
                       ? '0 0 0 3px rgba(212,175,55,0.14), 0 8px 28px -8px rgba(212,175,55,0.45), inset 0 1px 0 rgba(255,255,255,0.06)'
-                      : 'inset 0 1px 0 rgba(255,255,255,0.02)',
+                      : planOnSale
+                        ? '0 0 0 1px rgba(16,185,129,0.12), inset 0 1px 0 rgba(255,255,255,0.04)'
+                        : 'inset 0 1px 0 rgba(255,255,255,0.02)',
                     transform: isSelected && !isMobile ? 'scale(1.015)' : 'scale(1)',
                     transition: 'border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease',
                     opacity: promoActive && isAnnual ? 0.82 : 1,
@@ -14560,7 +14568,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
                           fontWeight: 900, color: B.gold, letterSpacing: '0.06em',
                           padding: '0.1rem 0.4rem', borderRadius: '4px', background: 'rgba(212,175,55,0.16)',
                         }}>{promoCode}</span>
-                        <span style={{ color: B.green, fontWeight: 800 }}> locks 33% off for life</span>
+                        <span style={{ color: B.green, fontWeight: 800 }}> locks {promoPct}% off for life</span>
                       </>
                     )}
                     {promoActive && !plan.promoEligible && (
@@ -14672,7 +14680,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
                     {plan.trialDays} days free · $0 today
                   </div>
                   <div style={{ fontSize: '0.6rem', fontWeight: 600, color: 'rgba(241,245,249,0.55)', marginTop: '0.1rem', fontFeatureSettings: "'tnum'" }}>
-                    then {charge}{planOnSale ? ' · 33% off locked for life' : ''}
+                    then {charge}{planOnSale ? ` · ${promoPct}% off locked for life` : ''}
                   </div>
                 </div>
                 <button

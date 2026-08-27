@@ -26,13 +26,13 @@ const logEvent = (eventName, params) => {
 
 const PROMO_CODES = {
   // 72h flash — monthly (elite) + weekly (scout) only. Annual (pro) excluded.
-  // Stripe coupon SUMMER must also be limited to those two price IDs.
-  SUMMER: {
-    code: 'SUMMER',
-    discount: 33,
+  // Stripe promotion code `Upgrade` must also be limited to those two price IDs.
+  UPGRADE: {
+    code: 'Upgrade',
+    discount: 25,
     label: '72-Hour Flash Sale',
     forLife: true,
-    expires: new Date('2026-08-15T21:58:00Z'), // Sat Aug 15, 5:58pm ET
+    expires: new Date('2026-08-30T10:00:00Z'), // Sun Aug 30, 6:00am ET
     tiers: ['scout', 'elite'],
   },
 };
@@ -51,10 +51,10 @@ const Pricing = () => {
   const [copied, setCopied] = useState(false);
   const [promoApplied, setPromoApplied] = useState(false);
 
-  // Check for promo code in URL query params — also auto-apply live SUMMER flash
+  // Check for promo code in URL query params — also auto-apply live Upgrade flash
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const promo = (params.get('promo') || 'SUMMER')?.toUpperCase();
+    const promo = (params.get('promo') || 'Upgrade')?.toUpperCase();
     if (promo && PROMO_CODES[promo]) {
       const p = PROMO_CODES[promo];
       if (p.expires && new Date() > p.expires) return;
@@ -203,7 +203,7 @@ const Pricing = () => {
     && activeDiscount?.tiers?.length
     && (!activeDiscount.expires || new Date() <= activeDiscount.expires));
 
-  // During flash: Monthly first + highlighted. Annual demoted (no SUMMER discount).
+  // During flash: Monthly + Weekly highlighted. Annual demoted (no Upgrade discount).
   const tiers = [
     {
       id: 'elite',
@@ -216,10 +216,10 @@ const Pricing = () => {
       popular: true,
       popularLabel: flashLive ? 'Flash Sale' : 'Most Popular',
       priceAnchor: flashLive
-        ? '33% off for life with code SUMMER'
+        ? '25% off for life with code Upgrade'
         : 'One blown $20 parlay costs more than this',
       pricePerDay: '87¢/day',
-      savings: flashLive ? 'Save 33% for life' : 'Save $9/month vs weekly',
+      savings: flashLive ? 'Save 25% for life' : 'Save $9/month vs weekly',
       cta: 'Start 7-Day Trial',
       highlight: flashLive ? 'Flash sale — monthly & weekly only' : 'Most popular with serious bettors'
     },
@@ -231,13 +231,15 @@ const Pricing = () => {
       period: 'week',
       trial: '5-day free trial',
       description: 'Follow the sharps, week to week',
+      featured: flashLive,
+      featuredLabel: 'Weekly Flash',
       priceAnchor: flashLive
-        ? '33% off for life with code SUMMER'
+        ? '25% off for life with code Upgrade'
         : 'Less than one stadium beer',
       pricePerDay: '$1.14/day',
-      savings: flashLive ? 'Save 33% for life' : null,
+      savings: flashLive ? 'Save 25% for life' : null,
       cta: 'Start 5-Day Trial',
-      highlight: 'No commitment — cancel any week'
+      highlight: flashLive ? 'Same 25% off for life — try a week' : 'No commitment — cancel any week'
     },
     {
       id: 'pro',
@@ -277,7 +279,7 @@ const Pricing = () => {
         maxWidth: '1200px',
         margin: '0 auto'
       }}>
-        {/* For-life promo banner (SUMMER) */}
+        {/* For-life promo banner (Upgrade) */}
         {activeDiscount?.forLife && (
           <div style={{
             background: 'linear-gradient(135deg, rgba(212,175,55,0.15) 0%, rgba(16,185,129,0.1) 100%)',
@@ -290,7 +292,7 @@ const Pricing = () => {
             <div style={{
               fontSize: window.innerWidth < 640 ? '1.5rem' : '1.75rem',
               marginBottom: '0.4rem',
-            }}>☀️</div>
+            }}>🔥</div>
             <div style={{
               fontSize: window.innerWidth < 640 ? '1.1rem' : '1.3rem',
               fontWeight: 900,
@@ -829,22 +831,29 @@ const Pricing = () => {
             const Icon = tierInfo.icon;
             const isCurrentTier = currentTier === tierInfo.id;
             const onSale = tierGetsPromo(tierInfo.id);
+            const isHighlight = !!(tierInfo.popular || tierInfo.featured);
+            const highlightGold = !!tierInfo.popular;
             
             return (
               <div
                 key={tierInfo.id}
                 style={{
-                  background: tierInfo.popular 
-                    ? 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%)'
+                  background: isHighlight
+                    ? highlightGold
+                      ? 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%)'
+                      : 'linear-gradient(135deg, rgba(16, 185, 129, 0.16) 0%, rgba(30, 41, 59, 0.6) 100%)'
                     : 'rgba(30, 41, 59, 0.6)',
                   backdropFilter: 'blur(20px)',
-                  border: tierInfo.popular 
-                    ? '2px solid rgba(212, 175, 55, 0.5)'
+                  border: isHighlight
+                    ? highlightGold
+                      ? '2px solid rgba(212, 175, 55, 0.5)'
+                      : '2px solid rgba(16, 185, 129, 0.5)'
                     : '1px solid rgba(148, 163, 184, 0.2)',
                   borderRadius: window.innerWidth < 640 ? '16px' : '20px',
                   padding: window.innerWidth < 640 ? '1.75rem' : '2.5rem',
                   position: 'relative',
                   transition: 'all 0.3s ease',
+                  opacity: flashLive && tierInfo.id === 'pro' ? 0.82 : 1,
                   transform: window.innerWidth < 640 
                     ? 'scale(1)' 
                     : tierInfo.popular ? 'scale(1.05)' : 'scale(1)'
@@ -852,24 +861,34 @@ const Pricing = () => {
                 onMouseEnter={(e) => {
                   if (window.innerWidth >= 640) {
                     e.currentTarget.style.transform = tierInfo.popular ? 'scale(1.08)' : 'scale(1.03)';
-                    e.currentTarget.style.borderColor = tierInfo.popular ? 'rgba(212, 175, 55, 0.7)' : 'rgba(148, 163, 184, 0.4)';
+                    e.currentTarget.style.borderColor = highlightGold
+                      ? 'rgba(212, 175, 55, 0.7)'
+                      : tierInfo.featured
+                        ? 'rgba(16, 185, 129, 0.7)'
+                        : 'rgba(148, 163, 184, 0.4)';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (window.innerWidth >= 640) {
                     e.currentTarget.style.transform = tierInfo.popular ? 'scale(1.05)' : 'scale(1)';
-                    e.currentTarget.style.borderColor = tierInfo.popular ? 'rgba(212, 175, 55, 0.5)' : 'rgba(148, 163, 184, 0.2)';
+                    e.currentTarget.style.borderColor = highlightGold
+                      ? 'rgba(212, 175, 55, 0.5)'
+                      : tierInfo.featured
+                        ? 'rgba(16, 185, 129, 0.5)'
+                        : 'rgba(148, 163, 184, 0.2)';
                   }
                 }}
               >
-                {/* Popular Badge */}
-                {tierInfo.popular && (
+                {/* Popular / weekly-flash badge */}
+                {isHighlight && (
                   <div style={{
                     position: 'absolute',
                     top: '-14px',
                     left: '50%',
                     transform: 'translateX(-50%)',
-                    background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 100%)',
+                    background: highlightGold
+                      ? 'linear-gradient(135deg, #D4AF37 0%, #FFD700 100%)'
+                      : 'linear-gradient(135deg, #10B981 0%, #34D399 100%)',
                     color: '#0A0E27',
                     padding: '0.5rem 1.5rem',
                     borderRadius: '100px',
@@ -877,9 +896,11 @@ const Pricing = () => {
                     fontWeight: '700',
                     textTransform: 'uppercase',
                     letterSpacing: '0.05em',
-                    boxShadow: '0 4px 14px rgba(212, 175, 55, 0.4)'
+                    boxShadow: highlightGold
+                      ? '0 4px 14px rgba(212, 175, 55, 0.4)'
+                      : '0 4px 14px rgba(16, 185, 129, 0.4)'
                   }}>
-                    {tierInfo.popularLabel || 'Most Popular'}
+                    {tierInfo.popularLabel || tierInfo.featuredLabel || 'Most Popular'}
                   </div>
                 )}
 
@@ -954,7 +975,7 @@ const Pricing = () => {
                   {tierInfo.description}
                 </p>
 
-                {/* Price — SUMMER flash only discounts monthly/weekly */}
+                {/* Price — Upgrade flash only discounts monthly/weekly */}
                 <div style={{ marginBottom: '1rem' }}>
                   {onSale ? (
                     <>
