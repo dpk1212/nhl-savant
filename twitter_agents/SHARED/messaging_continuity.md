@@ -7,57 +7,39 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-08-27 eve — Dominic +EV QT hook obsess (16.8× open) |
+| Last updated | 2026-08-27 eve — Dominic +EV QT PIVOT (Dale: isn’t it at all) |
 | CSV window | Aug 21–27, 2026 |
-| Ask temperature | **cool** — engagement-only; no Upgrade/DM on this beat |
-| Account arc | Nats print · tool matchup Cred · **for/against mechanism** |
+| Ask temperature | **cool** — engagement RT only |
+| Account arc | Nats print · tool matchup · **own-frame for/against** |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 8/27 eve | QT Dominic +EV | 16.8× COL vs 1.5× Nats · looks even · 7-1 in open · for/against | C + P | eng RT | **Hook B staged** — Dale: obsess lines 1–5 |
-| 8/27 eve | QT own Nats | Pressed→cashed 13-1→$12.7K→7-1 + Upgrade | P + S | yes close | Staged (separate) |
-| 8/27 PM | Hero Action SOC | $381K soccer · NFL foreshadow | S + C | none | Staged |
-| 8/27 PM | QT Trent FCS | Nats 13-1 size-up deep | S + C | none | Shipped |
-| 8/27 PM | QT Dominic OG | Don’t become a sharp · +5.37u | C + P | none | Still pending if unused |
+| 8/27 eve | QT Dominic +EV | WE POSTED NATS / +EV NUKED ROCKIES / 7-1 — for/against | P + C | eng RT | **Pivoted** — killed looks-even + leading their 16.8× |
+| 8/27 eve | QT own Nats | Pressed→cashed + Upgrade | P + S | yes | Staged separate |
+| 8/27 PM | Hero Action SOC | $381K soccer | S + C | none | Staged |
+| 8/27 PM | QT Trent FCS | Nats size-up deep | S + C | none | Shipped |
+| 8/27 PM | QT Dominic OG | Don’t become sharp | C + P | none | Pending |
 
 ---
 
-## What’s working
-1. Looks even. It isn’t. — **C** contrast ← this beat  
-2. Pressed… IT CASHED — **P**  
-3. Deep stuff · Hook QA · ask-first killed  
-4. Mechanism educate without signup  
-
-**Cold:** skinny CTA · dunk parent · restate “who to trust” · signup on cool temp  
+## Process scar (Dale tonight)
+Silhouette-cloning + leading with competitor nuke = **not it**.  
+Next: own-frame Power open → our receipts → their nuke as contrast → mechanism → RT.
 
 ---
 
-## Themes SPENT / OPEN
-**Spent:** +110u · ask-first · Who-to-trust restatement  
-**Open:** for/against mechanism · SOC→NFL · Upgrade offer (other beat) · Dominic OG QT  
-
-## Unfinished
-- Nats Power/Upgrade QT — if not shipped  
-- Dominic OG don’t-become-sharp — still available  
-- This matchup QT — staged  
-
----
-
-## FORWARD LOOK — after this matchup QT
-1. Let Cred breathe (no ask)  
-2. Ship SOC or Dominic OG give if pending  
-3. Ask only after more free SPCL  
-
-**NOT:** Upgrade stacked on this · OddsJam dunk thread · +110u echo  
+## FORWARD LOOK
+1. Dale still may reject — listen if still wrong  
+2. After ship: give / cool asks  
+3. NOT: another looks-even clone · Upgrade on this beat  
 
 ---
 
 ## Agent close-out
-- [x] Full pathway  
-- [x] Angle = incomplete nuke vs for/against  
-- [x] Hook = looks even silhouette  
-- [x] No signup — engagement RT  
-- [x] QT law: answer Dominic, don’t restate  
+- [x] Named failure  
+- [x] Reframed ONE + hook  
+- [x] No signup  
+- [x] Own-frame open staged  
