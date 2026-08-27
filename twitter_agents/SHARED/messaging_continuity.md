@@ -7,77 +7,78 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-08-27 eve — Nats cash single-tweet ask (refined) |
+| Last updated | 2026-08-27 eve — Nats cash DEEP 1-tweet restage (Qual bar) |
 | CSV window | Aug 21–27, 2026 |
-| Ask temperature | **hot when shipped** — then cool |
-| Account arc | Nats → **7-1/5.0u Power close** → Upgrade ask (1 tweet Dale) |
+| Ask temperature | **hot when shipped** — then cool hard |
+| Account arc | Nats unfinished → **deep Power close + Upgrade ask** |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 8/27 eve | QT own Nats | 7-1 / 5.0u → desire → Upgrade 25% + DM (single tweet) | P + S | **yes in-tweet** | **Staged refined** — Dale: 1 tweet, better craft |
+| 8/27 eve | QT own Nats | 7-1/5.0u + full morning receipt stack → Upgrade/DM | P + S | **yes in-tweet** | **Restaged DEEP** — Dale: prior drafts failed Qual bar |
 | 8/27 PM | Hero Action SOC | $381K soccer · MLB contrast · NFL foreshadow | S + C | none | Staged |
-| 8/27 PM | QT Trent FCS | Nats 13-1 → printers sizing (deep) | S + C | none | **Shipped** (parent) |
-| 8/27 PM | QT Dominic | Don’t become a sharp — size SharpFlow; OG +5.37u | C + P | none | Pending if not posted |
-| 8/27 AM | Hero +110u / >5u | 47–16 · +89.93u over 5u | S + C | none | Prefer human version |
+| 8/27 PM | QT Trent FCS | Nats 13-1 → printers sizing (deep) | S + C | none | **Shipped** (parent) · quality bar |
+| 8/27 PM | QT Dominic | Don’t become a sharp — OG +5.37u | C + P | none | Pending |
+| 8/27 AM | Hero +110u / >5u | 47–16 · +89.93u over 5u | S + C | none | Prefer human |
 
 ---
 
 ## What’s working (this window)
-1. Pressed… IT CASHED / heater return — **P**
-2. Deep receipt + Hook QA — Dale validated
-3. Unfinished stake → grade/cash — Power trail
-4. Ask in SR after free SPCL — full Hormozi
+1. Deep receipt body (morning Nats / SOC $381K) — **Qual bar Dale named**
+2. Hook QA kill soft opens
+3. Pressed… IT CASHED / say–do — **P**
+4. Unfinished stake → grade
 
-**Hot letters:** P say–do cash; S+$ opens  
-**Cold:** ask in hero · calendar opens · ask without free SPCL
+**Hot letters:** S+C opens with $; P on say–do; depth over CTA polish  
+**Cold:** skinny ask drafts · calendar opens · starving stuff for “tighter”
 
-**Process lock:** Prefer PURPOSE=Ask → desire+proof in QT · request in SR. Dale may force **1 tweet** — then keep Hook QA + stuff-first, compress ask to one close.
+**Process failure → fix (Dale 8/27 eve):** Cash/ask drafts majored in ask packaging and fell below morning quality. **Law:** even on PURPOSE=Ask / 1-tweet, run full pathway and keep **stuff density** of a give post; ask is the close, not the meal.
 
 ---
 
 ## Themes SPENT
 - +110u flex
 - Printer/$476K ask
-- Nats early unfinished (closes on this ship)
-- In-QT hard ask (rejected for full Hormozi)
+- Skinny CTA-first Nats cash drafts (killed)
 
 ## Themes OPEN / compound
-- Upgrade 25% life — live on this SR only; don’t re-pitch same hour
+- Upgrade 25% life — this beat only when shipped
 - SOC → NFL foreshadow
 - Dominic QT — Cred give next
 
 ## Unfinished stakes
-- Nats — **closes when this QT+SR ships**
-- Dominic QT — pending
+- Nats — closes when deep cash QT ships
+- Dominic — pending
 - Guardians — cooled
 
 ---
 
-## FORWARD LOOK — after this cash ask
+## FORWARD LOOK — after deep cash ask ships
 ### Balance
 | Need | Status | So what |
 |------|--------|---------|
-| Power say–do | Closing | Good |
-| Ask | Firing (SR) | Cool hard after |
-| Cred | Dominic pending | Next non-ask |
-| Status $ | Fed | No mega-flex next |
+| Power say–do | Closing deep | Good |
+| Ask | Firing | Cool hard — next = give |
+| Cred | Dominic pending | Ideal next |
+| Qual bar | Re-asserted | Never starve stuff again |
 
 ### Recommended next slots
-1. Give — Dominic or SOC if unshipped  
-2. NFL/SOC compound when earned  
+1. Give — Dominic or SOC  
+2. NFL/SOC when earned  
 3. Ask only after fresh free SPCL  
 
 ### NOT next
-- Second ask next morning  
-- Hard CTA inside next hero  
+- Another ask tomorrow  
+- Skinny CTA refine passes  
 - +110u echo  
 
 ---
 
 ## Agent close-out
-- [x] Restaged full Hormozi (ask SR-only)  
-- [x] Ask temperature noted hot→cool after ship  
+- [x] Full pathway re-run  
+- [x] Stuff restored to morning density  
+- [x] Dale convert spine kept full  
+- [x] Qual failure named in continuity  
 - [x] FORWARD LOOK refreshed  

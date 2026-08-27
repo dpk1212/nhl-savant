@@ -142,7 +142,8 @@ Line 1–3 must pass:
 5. **QT law** — parent already owns its open; **do not restate the parent’s hook**. Ours must be *our* scarce contrast. Calendar/“everyone’s moving on” opens fail unless $ or absurd proof is in the same breath.
 
 If hook fails, **rewrite hook before touching body**.  
-**(Dale 8/27):** Deep body + Hook QA kill on soft calendar open → blowout/scarce-$ rewrite = validated pathway. Keep that order.
+**(Dale 8/27):** Deep body + Hook QA kill on soft calendar open → blowout/scarce-$ rewrite = validated pathway. Keep that order.  
+**(Dale 8/27 eve):** Ask/cash posts still need **give-post stuff density**. Do not starve receipts to “tighten” a CTA. Ask is the close — pudding is the meal. 1-tweet asks keep Dale’s convert words; they do not delete the board.
 
 ### 7 · Draft (human)
 - Dale dinner-table — not tipster, not brochure, not CAPS spam unless $ contrast earns it  
