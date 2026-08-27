@@ -4,10 +4,13 @@
 Those systems are **retired**. Do not resurrect them.
 
 **Canon (read every run):**
-1. `twitter_agents/researcher/knowledge/hormozi_rule_of_one.md` — Rule of One (one big idea; no toss salad)
-2. `twitter_agents/researcher/knowledge/hormozi_spcl.md` — Status · Power · Credibility · Likeness
-3. `twitter_agents/researcher/knowledge/hormozi_qual_algorithm.md` — Qual · Algorithm · Trust economy
-4. `twitter_agents/SHARED/brand_seed.md` — product voice / bans (still binding)
+1. `twitter_agents/researcher/knowledge/hormozi_tweet_process.md` — **mandatory pathway** before any draft
+2. `twitter_agents/researcher/knowledge/hormozi_rule_of_one.md` — Rule of One (one big idea; no toss salad)
+3. `twitter_agents/researcher/knowledge/hormozi_spcl.md` — Status · Power · Credibility · Likeness
+4. `twitter_agents/researcher/knowledge/hormozi_qual_algorithm.md` — Qual · Algorithm · Trust economy
+5. `twitter_agents/SHARED/brand_seed.md` — product voice / bans (still binding)
+
+**When present:** `hormozi_value_equation.md` · `hormozi_diagnostic_sale.md`
 
 **North star:** free trials started (influence → compliance).  
 Followers/subs are lagging indicators. Vanity views are not the scoreboard.
@@ -75,18 +78,23 @@ Full canon: `hormozi_rule_of_one.md`.
 
 ## The only loop (every run)
 
+Full checklist: `hormozi_tweet_process.md`. Compressed:
+
 ```
-1. SPINE   — Dale dump / live board moment (scarce, true, on-avatar)
-2. ONE     — name the one big idea (Rule of One: understand / believe / unique)
-3. SPCL    — name which letters prove THAT idea + the ask we’re training
-4. STUFF   — receipts from THIS run’s files/UI (no invented numbers)
-5. CRAFT   — CAPS/confrontation line 1 when $ contrast exists; bullets; forced take
-6. ASK     — soft trial + link in SELF-REPLY only
-7. QUAL    — delete fluff; kill toss salad; ship 95%; don’t major in minors
-8. STAGE   — save COPY_PASTE; Dale posts; never auto-publish
+1. SPINE    — Dale dump / assets (law)
+2. WHO      — who is this for right now
+3. PURPOSE  — one job: give / educate / buzz / ask
+4. ONE      — big idea (understand / believe / unique)
+5. SPCL     — own 1–2 letters only that prove THAT idea
+6. STUFF    — live receipts; whole truth; stuff > container
+7. HOOK QA  — what/how/so what; S/C screenshot test; fix hook before body
+8. DRAFT    — Dale human voice; not brochure
+9. ASK      — default none; soft trial in SR only if PURPOSE=ask
+10. QUAL    — question → delete → simplify → ship 95%
+11. STAGE   — COPY_PASTE with WHO/PURPOSE/ONE/SPCL/Ask header
 ```
 
-Optional feedback (not blockers): pulse / analytics CSV when X auth exists — to learn which SPCL stamps complied, not to rebuild the old gate religion.
+Optional feedback (not blockers): analytics CSV when present — learn which hooks complied, not old gate religion.
 
 **Dale spine = law.** Shape his thought. Don’t invent a competing feeling.
 
@@ -130,9 +138,11 @@ Measure IRL: replies/trials from people we’d want as customers.
 
 There is **one desk**: Hormozi X for Sharp Flow.
 
-- Immerse in SPCL + Qual + Algorithm + Trust + **Rule of One** before drafting.
-- Name the one big idea first; kill toss salad.
+- Run `hormozi_tweet_process.md` before every draft — never jump to copy.
+- Lock WHO + PURPOSE + ONE idea first; own 1–2 SPCL letters only.
+- Stuff > container (Qual). Hook must pass what/how/so what.
 - Prefer deletion and speed over process theater.
+- Ask is a conscious choice (often none); soft trial in SR only when PURPOSE=ask.
 - Parent may draft when Dale dumps a spine; no requirement to launch four Task agents.
 - If subagents are used, they only exist to stamp SPCL / raise Qual / enforce Rule of One — model: Grok per Dale — and must not revive retired gates.
 
