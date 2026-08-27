@@ -7,39 +7,45 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-08-27 eve — Dominic QT on best-metrics template |
+| Last updated | 2026-08-27 night — Braves back-to-well (2cbcf8 serialize) |
 | CSV window | Aug 21–27, 2026 |
-| Ask temperature | **cool** — RT only (no SUMMER/Upgrade on this beat) |
-| Account arc | Don’t-become-sharp dream · graded vs +EV nuke tonight |
+| Ask temperature | **cool** — give only; no Upgrade |
+| Account arc | Nats heater print → **same printer 2.0× Braves** · Power compound |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 8/27 eve | QT Dominic +EV | Most people try to become sharp → +EV nuke path vs for/against · Nats 7-1 | C+L+P pud | RT only | **Staged on eng#2 template** — Dale best-metrics drop |
-| 8/27 eve | QT own Nats | Pressed→cashed + Upgrade | P + S | yes | Staged separate |
-| 8/27 PM | Hero Action SOC | $381K soccer | S + C | none | Staged |
+| 8/27 night | Hero Braves ML | Same Nats printer · 2.0× Braves · back to well · hard LAD fade | P + S | none | **Staged** — momentum give |
+| 8/27 eve | QT Dominic +EV | Become-sharp template vs +EV nuke · Nats 7-1 | C+L+P | RT | Staged |
+| 8/27 eve | QT own Nats | Pressed→cashed + Upgrade | P + S | yes | Staged |
 | 8/27 PM | QT Trent FCS | Nats size-up deep | S + C | none | Shipped |
-| 8/27 AM | Hero become-sharp | Most people try to become sharp… SUMMER | C+L | yes | **Template source** · best metrics |
+| 8/27 PM | Hero Action SOC | $381K soccer | S + C | none | Staged |
 
 ---
 
-## Template lock
-Dale named eng#2 / become-sharp post as **best metrics + messaging**.  
-Transplant architecture for educate beats that fit the dream — don’t silhouette-clone pressed/cashed or looks-even when diagnostic path is the job.
+## Angle lock (this beat)
+**Perfect angle:** Power serialization — …2cbcf8 Nats → Braves 2.0× — not a fresh diagnostic.  
+Whole truth: winners $ on LAD stays in copy (“isn’t easy”). Support = $104K lead + 12 proven — not fake winners-on-Braves.
 
 ---
 
-## FORWARD LOOK
-1. Ship this Cred/educate if open feels right  
-2. Cool hard asks  
-3. NOT: SUMMER stacked here · tool-fight opens  
+## FORWARD LOOK — after Braves post
+1. Grade Braves (Power close) when final  
+2. Keep asks cool  
+3. Dominic/+EV or SOC if still unshipped  
+**NOT:** second ask · ignore contested LAD winners  
 
 ---
+
+## Unfinished
+- Braves 3.0u locked — grade later  
+- Nats Upgrade / Dominic QT — ship status TBD  
 
 ## Agent close-out
-- [x] Mapped winner beat-for-beat  
-- [x] Tonight pudding swapped in  
-- [x] Ask → RT (Dale no signup)  
-- [x] Continuity updated  
+- [x] Full pathway  
+- [x] Angle = serialize heater  
+- [x] Whole truth LAD winners  
+- [x] No ask  
+- [x] FORWARD LOOK refreshed  

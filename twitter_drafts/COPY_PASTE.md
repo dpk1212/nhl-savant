@@ -1,88 +1,100 @@
-# Twitter — 2026-08-27 · QT Dominic +EV · BEST-METRICS TEMPLATE
+# Twitter — 2026-08-27 · Braves ML · back to the well
 **Pathway — FULL**
 
-### Template (Dale drop — best metrics this week)
-`Most people try to become sharp…` architecture:
-1. Diagnostic hook  
-2. Current path (steps)  
-3. That can work / cost of path  
-4. The other path is shorter  
-5. Our mechanism  
-6. One tonight (pudding)  
-7. Confirmed winners / losers (for AND against)  
-8. Close — winner used SUMMER ask; **this beat = RT only** (Dale: no signup)
+### 0 · Spine (Dale)
+- On Braves yesterday · sharps going back to the well
+- Fading Dodgers isn’t easy
+- This sharp has been hot · joined by a lot of support
+- Keep momentum · pick perfect angle · (no signup implied)
 
-### 0 · Spine
-QT Dominic +EV P.E. · Rockies via +EV/OddsJam-style nuke · we had Nats for/against · 7-1 capitalize · engagement spread · no signup
+### 0b–0c · Continuity / forward look
+- Ask temp **cool** — this = **give / Power compound** (perfect next slot)
+- Best angle = serialize today’s heater (…2cbcf8 Nats print) → Braves 2.0× press
+- NOT: Upgrade · become-sharp rehash · tool-fight
 
 ### 1 · WHO
-Bettors grinding +EV nukes / subscriptions to “become sharp”
+Followers who rode (or watched) today’s Nats heater / Braves yesterday — need the next say–do beat
 
 ### 2 · PURPOSE
-**Educate + buzz** — same dream path as eng #2 · graded live tonight · RT spread
+**Give / buzz** — unfinished→live Power trail · no ask
 
 ### 3 · ONE
-Becoming sharp via one-ticket +EV nukes costs you the other side of the board — we tracked for/against on Nats, +EV nuked Rockies, Nats won 7-1
+Same lights-out printer who just hit Nats is pressing Braves at 2.0× with real support — going back to the well even though fading LAD is hard
 
 ### 4 · SPCL
-**C + L** (diagnostic dream) with **P** pudding — same stack as the winner (dream + live receipt)
+**P + S** — say–do serialization + scarce $ / size-up  
+(Whole-truth C rides in “fading Dodgers isn’t easy”)
 
 ### 5 · STUFF
-+EV: 16.8× · $12.9K COL nuke  
-Us: after 13-1 · +$108K L30 · 17-4 · $12.7K @ 1.5× · winners 93% Nats · losers $35K COL / $0 Nats · **7-1 · 5.0u**  
-No invented lock-book (June numbers may be stale — omit)
+- LAD @ ATL · Braves ML · **LOCKED** · **3.0u** · flagged −110 / ticket −108–−113
+- Lead **…2cbcf8** (same Nats heater): **$17.3K @ 2.0×** (usual $8.7K) · L30 **+$108K** · **17-4 · 81%** · beat close 68% · L10 8-2
+- Support lead **…705ba1**: **$104K @ 1.7×** · L30 **+$380K** · 95-87 · +11 proven
+- Contested · 12 proven on side · Dale: were on Braves yesterday · back to the well
+- Hard fade honesty: confirmed winners **$1.58M / 93% Dodgers** · other side **~$1.8M** · full split Dodgers 63%
+- Losing wallets heavy on Braves ($738K) — don’t spin as clean; “isn’t easy” covers it
 
-### 6 · HOOK QA
-`Most people try to become sharp.` — window eng #2 · fits ONE · so-what = path cost then shorter path.  
-Not tool-fight open. Not their 16.8× line 1. Not looks-even clone.
+### 6 · HOOK QA ★
+Angle winner = **Power serialization** (eng#1 DNA), not diagnostic rehash.
+
+```
+SAME PRINTER THAT HIT THE NATS 7-1.
+NOW 2.0× ON THE BRAVES.
+```
+
+What/how/so what in 2 lines. Compounds today’s momentum.  
+Alts below if Nats cash wasn’t public yet.
 
 ### Kill
-Upgrade/SUMMER on this beat · dunk Dominic · fake lock-book · leading competitor nuke · brochure without path
+Ask/Upgrade · GOLD/AGS leak · fake “winners on Braves” · ignore LAD winners stack · become-sharp clone · skinny CTA
 
 ---
 
-## QT — Dominic matchup (template transplant)
+## HERO — single tweet
 
-**Action:** Quote Dominic’s tool-matchup tweet  
-**Attach:** optional for/against board
+**Attach:** lead …2cbcf8 card ($17.3K / 2.0×) + lock/battle board (shows contested / support)
 
 ### Copy this ↓
 
 ```
-Most people try to become sharp.
+SAME PRINTER THAT HIT THE NATS 7-1.
+NOW 2.0× ON THE BRAVES.
 
-Buy the +EV tool.
-Wait for a nuke.
-Ride 16.8× conviction off one ticket.
-Pray that sharp was clean.
+$17.3K at 2.0× his usual.
+L30 +$108K.
+17-4 · 81% WR.
+Beats close 68%.
 
-That can work.
-It also puts you on one side of the board
-with no read on who's fading it —
-or whether the losers are loading with you.
+We were on Atlanta yesterday.
+Sharps are going back to the well.
 
-The other path is shorter.
+Fading the Dodgers isn't easy —
+confirmed winners are stacked the other way
+($1.58M · 93% LAD).
 
-We track wallets that already printed for months.
-When they size up, you see it.
-When losing money piles the other way, you see that too.
-You grade what we grade — for AND against.
+But he's not alone:
+another lead just dropped $104K at 1.7×
+(L30 +$380K).
+12 proven wallets on this side with him.
 
-Tonight:
+Locked. 3.0u.
+Hard fade. Hot printer. Back to the well.
+```
 
-+EV nuked the Rockies — 16.8× · $12.9K on COL.
+---
 
-Our board had the Nats after a 13-1 beatdown:
-+$108K last 30 days.
-17-4 · $12.7K at 1.5× his usual.
+## Hook alts
 
-Confirmed winners: 93% on the Nationals.
-Losers: $35K on the Rockies — $0 on the Nats.
+**If Nats cash isn’t in feed yet**
+```
+WE WERE ON THE BRAVES YESTERDAY.
+SHARPS ARE GOING BACK TO THE WELL.
 
-Final: Nats 7-1.
-5.0u.
+Lead just pressed 2.0× — $17.3K.
+L30 +$108K · 17-4.
+```
 
-You've been eating free receipts.
-If you want more nights graded like this in public — RT it.
-Spread the board that shows both sides.
+**Size-first**
+```
+$17.3K AT 2.0× ON THE BRAVES.
+SAME HEATER THAT JUST PRINTED THE NATS.
 ```
