@@ -1070,7 +1070,7 @@ const PAYWALL_PLANS = [
     billFull: null, billPromo: null,
     chargeFull: '$25.99/mo', chargePromo: '$19.49/mo',
     sub: 'One blown $20 parlay costs more',
-    subPromo: "Tonight's tickets, sized, before lock",
+    subPromo: 'Locked, sized, sent to your phone',
     winMath: 'One 1u win (+$91 at $100/unit) covers your next 5 months',
   },
   {
@@ -1086,7 +1086,7 @@ const PAYWALL_PLANS = [
     billFull: null, billPromo: null,
     chargeFull: '$7.99/wk', chargePromo: '$5.99/wk',
     sub: 'Less than one stadium beer',
-    subPromo: 'Same side as the printers — try a week',
+    subPromo: 'Same side as proven sharps — try a week',
     winMath: 'One 1u win (+$91 at $100/unit) covers 4 months of access',
   },
   {
@@ -1102,7 +1102,7 @@ const PAYWALL_PLANS = [
     billFull: 'billed $150/yr', billPromo: 'billed $150/yr',
     chargeFull: '$150/yr', chargePromo: '$150/yr',
     sub: 'Cheaper per month than Netflix',
-    subPromo: 'Flash sale is monthly & weekly only',
+    subPromo: 'Full year at $12.50/mo — flash is weekly & monthly',
     winMath: 'One 1u win (+$91 at $100/unit) covers 90% of your entire year',
   },
 ];
@@ -13909,42 +13909,42 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
   const recent7 = computeRecentWindowStats(pnlData?.picks || [], 7);
   const showHotStreak = recent7.ready && recent7.profit > 0;
 
-  // Three bullets, one idea: we put you on the printers' tickets.
-  // Extra product claims (Pinnacle, RLM, 200+ wallets) live on /pricing.
+  // Value stack under the one idea (Hormozi: raise likelihood, cut time + effort).
+  // Hero already has the public ledger — don't repeat the W-L here.
   const features = [
     {
-      label: 'Same side as the wallets that print',
-      sub: 'Proven money, sized — you ride their tickets, not the public pile',
+      label: 'Stop decoding. Get the ticket.',
+      sub: 'Other sites dump trends and make you decide — with no tracker. We lock the play, size it, and send it to your phone.',
     },
     {
-      label: 'Sized and locked before the market moves',
-      sub: 'Exact side, odds, and units. No decoding. No hunting.',
+      label: 'Proven sharps. Real press.',
+      sub: 'Sharp action and relative bet size — you see when a proven wallet is actually pressing, not when the public is loud.',
     },
-    v12Proof.ready
-      ? {
-          label: `${v12Proof.record} — graded in public. We can't hide an L`,
-          sub: `${v12Proof.totalGraded} picks auto-graded nightly against the close`,
-        }
-      : {
-          label: 'Graded in public. We can\'t hide an L',
-          sub: 'Auto-graded nightly against closing lines — losses included',
-        },
+    {
+      label: 'Pinnacle maxes and the number.',
+      sub: 'Fair value, max-limit tells, and the best retail price. You know if the line is still good.',
+    },
+    {
+      label: 'Hits your phone before lock.',
+      sub: 'Side, odds, units — a notification when it crosses. No hunting. No Discord archaeology.',
+    },
   ];
 
   const featuresGrid = (
     <div style={{
-      display: 'grid', gridTemplateColumns: '1fr',
-      gap: '0.45rem', marginBottom: isMobile ? 0 : '1.4rem',
+      marginBottom: isMobile ? 0 : '1.4rem',
       marginTop: isMobile ? '1.5rem' : 0,
-      maxWidth: '480px', marginLeft: 'auto', marginRight: 'auto',
+      maxWidth: '600px', marginLeft: 'auto', marginRight: 'auto',
     }}>
-      {isMobile && (
-        <div style={{ textAlign: 'center', marginBottom: '0.2rem' }}>
-          <span style={{ ...T.micro, color: B.gold, fontWeight: 900, letterSpacing: '0.12em', fontSize: '0.58rem' }}>
-            ◆ WHAT YOU GET
-          </span>
-        </div>
-      )}
+      <div style={{ textAlign: 'center', marginBottom: '0.7rem' }}>
+        <span style={{ ...T.micro, color: B.gold, fontWeight: 900, letterSpacing: '0.12em', fontSize: '0.58rem' }}>
+          ◆ THE DIFFERENCE
+        </span>
+      </div>
+      <div style={{
+        display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+        gap: isMobile ? '0.7rem' : '0.85rem 1.35rem',
+      }}>
       {features.map((f, i) => (
         <div key={i} style={{
           display: 'flex', alignItems: 'flex-start', gap: '0.55rem',
@@ -13969,6 +13969,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
           </div>
         </div>
       ))}
+      </div>
     </div>
   );
 
@@ -14379,10 +14380,10 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
             }}>
               <Flame size={13} color={B.green} />
               <span style={{ fontSize: '0.72rem', fontWeight: 800, color: B.text, letterSpacing: '0.02em', fontFeatureSettings: "'tnum'" }}>
-                LAST 7 DAYS: <span style={{ color: B.green }}>{recent7.record} · +{recent7.profit.toFixed(1)}u already printed</span>
+                LAST 7 DAYS: <span style={{ color: B.green }}>{recent7.record} · +{recent7.profit.toFixed(1)}u</span>
               </span>
               <span style={{ ...T.micro, color: B.textSec, fontSize: '0.64rem' }}>
-                — members had the tickets. you didn&rsquo;t.
+                — those tickets hit members&rsquo; phones before lock
               </span>
             </div>
           )}
@@ -14529,8 +14530,8 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
                   border: `1px solid ${B.borderSubtle}`,
                 }}>
                   {[
-                    { day: 'TODAY', text: 'Full access — every lock, every sport, $0 due', active: true },
-                    { day: `DAYS 1–${plan.trialDays}`, text: 'Bet alongside the locks. Not winning? Cancel in 2 clicks', active: false },
+                    { day: 'TODAY', text: 'Locks, sizing, and alerts — every sport, $0 due', active: true },
+                    { day: `DAYS 1–${plan.trialDays}`, text: 'Bet the tickets. Not working? Cancel in 2 clicks', active: false },
                     { day: `DAY ${plan.trialDays}`, text: `First charge (${charge}) — only if you stay`, active: false },
                   ].map((step, i, arr) => (
                     <div key={step.day} style={{ display: 'flex', gap: '0.7rem', alignItems: 'stretch' }}>
@@ -14574,7 +14575,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
                     )}
                     {promoActive && !plan.promoEligible && (
                       <span style={{ color: B.textMuted, fontWeight: 600 }}>
-                        {' · flash sale is monthly & weekly only'}
+                        {' · 25% for life is on weekly and monthly'}
                       </span>
                     )}
                   </span>
