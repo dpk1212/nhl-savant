@@ -7,17 +7,17 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-08-27 eve — Nats cash FULL HORMOZI (ask in SR) |
+| Last updated | 2026-08-27 eve — Nats cash single-tweet ask (refined) |
 | CSV window | Aug 21–27, 2026 |
-| Ask temperature | **hot when shipped** — then cool; give before next ask |
-| Account arc | Nats unfinished → **Power close 7-1/5.0u** → Upgrade ask (SR) |
+| Ask temperature | **hot when shipped** — then cool |
+| Account arc | Nats → **7-1/5.0u Power close** → Upgrade ask (1 tweet Dale) |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 8/27 eve | QT own Nats + SR | 7-1 / 5.0u cash → desire → Upgrade 25% life DM | P + S free; ask SR | **yes SR** | **Staged FULL HORMOZI** — Dale: optimal / pathway-strict |
+| 8/27 eve | QT own Nats | 7-1 / 5.0u → desire → Upgrade 25% + DM (single tweet) | P + S | **yes in-tweet** | **Staged refined** — Dale: 1 tweet, better craft |
 | 8/27 PM | Hero Action SOC | $381K soccer · MLB contrast · NFL foreshadow | S + C | none | Staged |
 | 8/27 PM | QT Trent FCS | Nats 13-1 → printers sizing (deep) | S + C | none | **Shipped** (parent) |
 | 8/27 PM | QT Dominic | Don’t become a sharp — size SharpFlow; OG +5.37u | C + P | none | Pending if not posted |
@@ -34,7 +34,7 @@
 **Hot letters:** P say–do cash; S+$ opens  
 **Cold:** ask in hero · calendar opens · ask without free SPCL
 
-**Process lock:** PURPOSE=Ask → desire+proof in QT · request in SR only. Dale chose optimal over in-QT pitch.
+**Process lock:** Prefer PURPOSE=Ask → desire+proof in QT · request in SR. Dale may force **1 tweet** — then keep Hook QA + stuff-first, compress ask to one close.
 
 ---
 
