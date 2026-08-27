@@ -7,58 +7,57 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-08-27 eve — Nats cash FULL REWRITE (pressed→cashed) |
+| Last updated | 2026-08-27 eve — QT Dominic +EV matchup · for/against (no signup) |
 | CSV window | Aug 21–27, 2026 |
-| Ask temperature | **hot when shipped** — cool hard after |
-| Account arc | Nats size-up → **pressed→cashed Power close + Upgrade** |
+| Ask temperature | **cool** — engagement-only; no Upgrade/DM on this beat |
+| Account arc | Nats print · tool matchup Cred · **for/against mechanism** |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 8/27 eve | QT own Nats | SIZED UP AFTER 13-1 · $12.7K @ 1.5× · IT CASHED → deep → Upgrade | P + S | yes close | **Full rewrite staged** — Dale: do better |
-| 8/27 PM | Hero Action SOC | $381K soccer · MLB → NFL | S + C | none | Staged |
-| 8/27 PM | QT Trent FCS | Nats 13-1 size-up deep | S + C | none | **Shipped** (parent) |
-| 8/27 PM | QT Dominic | Don’t become a sharp · OG +5.37u | C + P | none | Pending |
-| 8/27 AM | Hero +110u / >5u | 47–16 · +89.93u | S + C | none | Prefer human |
+| 8/27 eve | QT Dominic +EV | $12.9K COL vs $12.7K Nats — looks even, wasn’t — for/against | C + P | eng RT only | **Staged** — capitalize win · no signup |
+| 8/27 eve | QT own Nats | Pressed→cashed 13-1→$12.7K→7-1 + Upgrade | P + S | yes close | Staged (separate) |
+| 8/27 PM | Hero Action SOC | $381K soccer · NFL foreshadow | S + C | none | Staged |
+| 8/27 PM | QT Trent FCS | Nats 13-1 size-up deep | S + C | none | Shipped |
+| 8/27 PM | QT Dominic OG | Don’t become a sharp · +5.37u | C + P | none | Still pending if unused |
 
 ---
 
-## What’s working (this window)
-1. `PRESSED… IT CASHED` silhouette — eng leader → rebuilt on Nats cash  
-2. Deep receipt bodies (morning Qual bar)  
-3. Hook QA · ask-first killed  
-4. Stuff > CTA polish  
+## What’s working
+1. Looks even. It isn’t. — **C** contrast ← this beat  
+2. Pressed… IT CASHED — **P**  
+3. Deep stuff · Hook QA · ask-first killed  
+4. Mechanism educate without signup  
 
-**Cold:** skinny ask drafts · calendar opens · ask-first · dashboard-only voice
-
-**Hard law (Dale tonight):** Rewrite until open matches eng-leader DNA + body matches morning depth + convert spine intact.
+**Cold:** skinny CTA · dunk parent · restate “who to trust” · signup on cool temp  
 
 ---
 
 ## Themes SPENT / OPEN
-**Spent:** +110u · $476K ask · skinny Nats cash drafts · ask-first  
-**Open:** Upgrade offer (this beat) · SOC→NFL · Dominic Cred  
+**Spent:** +110u · ask-first · Who-to-trust restatement  
+**Open:** for/against mechanism · SOC→NFL · Upgrade offer (other beat) · Dominic OG QT  
 
 ## Unfinished
-- Nats closes on ship of this QT  
-- Dominic pending  
+- Nats Power/Upgrade QT — if not shipped  
+- Dominic OG don’t-become-sharp — still available  
+- This matchup QT — staged  
 
 ---
 
-## FORWARD LOOK — after ship
-1. Give (Dominic / SOC)  
-2. Cool asks  
-3. NFL/SOC when board earns  
+## FORWARD LOOK — after this matchup QT
+1. Let Cred breathe (no ask)  
+2. Ship SOC or Dominic OG give if pending  
+3. Ask only after more free SPCL  
 
-**NOT:** second ask · skinny refine · +110u echo  
+**NOT:** Upgrade stacked on this · OddsJam dunk thread · +110u echo  
 
 ---
 
 ## Agent close-out
-- [x] Full pathway rewrite  
-- [x] Hook = pressed→cashed DNA  
-- [x] Body = morning depth + baseball-leave compound  
-- [x] Dale convert full at close  
-- [x] Ask-first rejected again  
+- [x] Full pathway  
+- [x] Angle = incomplete nuke vs for/against  
+- [x] Hook = looks even silhouette  
+- [x] No signup — engagement RT  
+- [x] QT law: answer Dominic, don’t restate  

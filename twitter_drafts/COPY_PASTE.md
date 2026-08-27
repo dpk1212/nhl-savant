@@ -1,85 +1,106 @@
-# Twitter — 2026-08-27 · Nats 7-1 → Upgrade · FULL REWRITE
-**Pathway — complete run (Dale: do better)**
+# Twitter — 2026-08-27 · QT Dominic +EV matchup · for/against win
+**Pathway — FULL**
 
-### 0 · Spine (law)
-QT earlier Nats post · won 7-1 · 5.0u capitalize · data won’t break bank · look sharp · Upgrade 25% off for life · DM onboard today · **1 tweet**
+### 0 · Spine (Dale law)
+- QT **+EV P.E. / Dominic** bit in the thread (“prediction market tool matchup… Who to Trust?!”)
+- Someone took **Rockies** off OddsJam-style / +EV nuke (16.8× · $12.9K COL)
+- We had **Nats** — detailed · transparent · **for AND against**
+- Capitalize on **7-1 / 5.0u** print
+- **No signup ask** — engagement / spread the word only
 
-### 0b · Continuity
-Unfinished Nats → Power close owed · parent already shipped deep size-up · this tweet must *meet or beat* that Qual bar · ask is close not meal
-
-### 0c · Forward look → PURPOSE
-Avatar missing: proof the early call printed (say–do). Balance: Power starved until this. Economics: free SPCL in open+body earns Upgrade ask. Distribution: QT compounds parent.
+### 0b–0c · Continuity / forward look
+- Ask temp hot from Upgrade cash → **cool** — this beat = give/educate + buzz (perfect)
+- Cred slot open (Dominic tagged us) — ride third-party without dunking him
+- Avatar gap: “which tool?” → show mechanism (for/against), not a CTA
+- QT law: parent already owns “Who to Trust?!” — **answer with receipts, don’t restate**
 
 ### 1 · WHO
-Bettors who scroll past tipster CTAs but will pay when they see a full say–do trail with receipts
+Bettors picking between +EV scrapers / single-nuke tools and a board that shows both sides
 
 ### 2 · PURPOSE
-**Ask** — Upgrade 25% life + DM today  
-(earned only after pressed→cashed pudding)
+**Educate + buzz** — product mechanism (for/against) proved live · engagement to spread  
+**Ask:** engagement only (RT / forced take) — **no** Upgrade / DM / trial
 
 ### 3 · ONE
-We showed printers sizing Nats after a 13-1 beatdown — it printed 7-1 / 5.0u — get this data and look sharp
+Same game, almost the same dollars, opposite sides — +EV nuked Rockies; our printers + against-tape had Nats — Nats won 7-1 because we read **for and against**
 
-Masterson: understand ✓ · believe (receipts) ✓ · unique (13-1→size-up→7-1 trail) ✓
+Masterson: understand ✓ · believe (both $ live) ✓ · unique (tool matchup graded) ✓
 
-### 4 · SPCL
-**P + S** only — say–do cash + scarce $ / heater  
-Ask rides that stack. No brochure four-letter.
+### 4 · SPCL (1–2)
+**C + P** — public tool matchup graded · say–do printed  
+(S rides in the $ contrast; not a third pillar)
 
 ### 5 · STUFF
-13-1 last night · $12.7K @ 1.5× this morning · 7-1 / 5.0u tonight · L30 +$108K · 17-4 · 81% · beat close 68% · losing $35K Rockies / $0 Nats · winners 93% Nats · Pin −116→−138 · watch all day · Dale convert block verbatim-shaped · Upgrade 25% life · DM onboard
+- +EV / OddsJam-style: Rockies ML · **16.8×** · **$12.9K** COL · “NoVig NUKE”
+- Us: Nats ML · lead **$12.7K @ 1.5×** · L30 **+$108K** · **17-4 / 81%**
+- Against: losing **$35K Rockies / $0 Nats** · winners **93% Nats** · steam **−116→−138**
+- Final: **Nats 7-1** · **5.0u**
+- Mechanism: for AND against · detailed · transparent
+- Engagement: RT / spread — no signup
 
-### 6 · HOOK QA ★
-Open must = window eng #1 silhouette (`PRESSED… $… IT CASHED`) rebuilt on this board.  
-**Ask-first = killed.** Soft diary = killed. Win-only open = too weak (so-what delayed).
+### 6 · HOOK QA
+**Kill ask-first. Kill restating “Who to Trust.”**  
+★ Silhouette = window #4: `Looks even. It isn’t.` rebuilt on dual $:
 
-Winner open:
-`SIZED UP AFTER A 13-1 BEATDOWN.` → `$12.7K AT 1.5×.` → `IT CASHED. 7-1. 5.0u.`
+`$12.9K ON THE ROCKIES (+EV).`  
+`$12.7K ON THE NATS (US).`  
+`Looks even. It wasn’t.`
 
-### 7 · Draft standard
-Morning depth · dinner-table · stuff > container · convert spine full · one ask close
+### Angle (perfect capitalize)
+Not “we’re smarter.”  
+**Incomplete signal vs full board.** One sharp nuke ≠ the side. For/against is the product. Tonight graded it.
 
 ### Kill
-Skinny CTA drafts · dashboard voice · GOLD/AGS · tipster “lock hit” · restating parent hook word-for-word · ask in line 1 · +110u echo
+Signup / Upgrade / DM · dunk Dominic · restate his question · tipster swagger · GOLD/AGS · skinny CTA · fake “zero against” on Rockies printers (they had a real 16.8× — name it, then show why against mattered)
 
 ---
 
-## QT — single tweet
+## QT — Dominic +EV P.E. matchup line
 
-**Action:** Quote-tweet your earlier Nats post (the size-up after 13-1)
+**Action:** Quote-tweet Dominic’s “tool matchup / Who to Trust” tweet in the thread  
+**Attach:** optional — your Nats for/against board (battle bars) if it reads clean next to parent
 
 ### Copy this ↓
 
 ```
-SIZED UP AFTER A 13-1 BEATDOWN.
-$12.7K AT 1.5× HIS USUAL.
-IT CASHED.
+$12.9K ON THE ROCKIES (+EV).
+$12.7K ON THE NATS (US).
 
-Nats won 7-1.
-5.0u.
+Looks even.
+It wasn't.
 
-Everyone was ready to leave baseball.
-The printers we track weren't.
++EV nuked COL — 16.8× size · $12.9K on the Rockies.
+Our board had Tier A printers on the Nats:
+L30 +$108K · 17-4 · 81% WR · $12.7K at 1.5×.
 
-Lead wallet on this side:
-L30 +$108K.
-17-4 · 81% WR.
-Beats close 68% of the time.
-
+The against is why:
 Losing wallets: $35K on the Rockies — $0 on the Nats.
 Confirmed winners: 93% Nationals.
-Steam Pin −116 → −138 before first pitch.
+Steam Pin −116 → −138.
 
-We said jump early. Monitor all day.
-It printed.
+Final: Nats 7-1.
+5.0u.
 
-I don't know what people are using for their data — or what they're paying.
-I know mine isn't going to break your bank.
-And you're going to get all the data you need to look sharp.
+We're not here to scrape one "sharp" ticket and call it a nuke.
+We try to put people on winners by reading for AND against —
+detailed, transparent, both sides of the board.
 
-Upgrade for 25% off for life.
-Let us put you on sharp plays like this.
+If that difference matters — RT this.
+Help more people see what both sides look like before they bet.
+```
 
-Signing up today? DM me.
-I'll onboard you and answer any questions you have.
+---
+
+## Engagement-close alts (swap last 2 lines only)
+
+**Forced take (NFL plant)**
+```
+Heading into NFL — which board are you trusting:
+one-nuke +EV, or for-and-against?
+```
+
+**Softer spread**
+```
+No signup pitch.
+Just RT if you want more graded tool matchups like this.
 ```
