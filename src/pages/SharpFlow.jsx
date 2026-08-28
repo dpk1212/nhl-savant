@@ -13430,11 +13430,11 @@ export default function SharpFlow() {
                                   }}>
                                     <span style={{
                                       ...T.micro, fontWeight: 800, letterSpacing: '0.12em',
-                                      color: '#6B7280', fontSize: '0.6rem',
-                                    }}>MONITORING</span>
+                                      color: '#D4C4A8', fontSize: '0.6rem',
+                                    }}>NO PLAY</span>
                                     <span style={{
                                       ...T.tiny, color: B.textSubtle, fontSize: '0.55rem',
-                                    }}>tracked, not staked · {monitoringCards.length}</span>
+                                    }}>didn’t meet the size bar · {monitoringCards.length}</span>
                                     <div style={{ flex: 1, height: '1px', background: B.borderSubtle }} />
                                   </div>
                                   <div className="sf-stagger" style={{

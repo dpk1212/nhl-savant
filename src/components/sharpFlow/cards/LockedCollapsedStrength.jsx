@@ -53,8 +53,9 @@ function boardContext(f) {
   const unopposed = againstUsd < 50 && againstProven === 0;
   const contested = againstProven >= 1 || againstUsd >= 500;
 
-  if (muted && !(units > 0)) {
-    return { tone: 'warn', label: 'Muted', detail: 'No ticket', tip: 'System stood down' };
+  const noStake = !(units > 0);
+  if (muted && noStake) {
+    return { tone: 'warn', label: 'Muted', detail: null, tip: 'System stood down' };
   }
   if (contested) {
     const ours = sideUsd > 0 ? fmtUsd(sideUsd) : null;
@@ -68,7 +69,7 @@ function boardContext(f) {
   }
   if (unopposed) {
     return {
-      tone: 'trust',
+      tone: noStake ? 'neutral' : 'trust',
       label: 'Unopposed',
       detail: sideUsd > 0 ? fmtUsd(sideUsd) : (proven >= 1 ? `${proven} proven` : null),
       tip: 'No qualified sharp $ against — Full split under the chart can still show other flow',
@@ -100,6 +101,7 @@ export default function LockedCollapsedStrength({ f }) {
   const lead = pickLeadWallet(f);
   const trust = lead?.trust || null;
   const board = boardContext(f);
+  const noStake = !(Number(f.units) > 0);
   const provenExtra = Math.max(0, (Number(f.confirmedOnSide) || 0) - (lead?.proven ? 1 : 0));
   const sr = Number(lead?.displaySizeRatio ?? lead?.sizeRatio);
   const sizeBit = Number.isFinite(sr) && sr > 0
@@ -109,9 +111,11 @@ export default function LockedCollapsedStrength({ f }) {
 
   if (!lead && !board) return null;
 
-  const bar = board
-    ? (TONE[board.tone] || C.textSec)
-    : (trust?.banger ? (TONE[trust.banger.tone] || GREEN) : GOLD_HI);
+  const bar = noStake
+    ? (board?.tone === 'warn' ? VS : C.textSec)
+    : (board
+      ? (TONE[board.tone] || C.textSec)
+      : (trust?.banger ? (TONE[trust.banger.tone] || GREEN) : GOLD_HI));
 
   const sport = f.sport || lead?.sport || '';
 
@@ -149,7 +153,7 @@ export default function LockedCollapsedStrength({ f }) {
                   {lead.proven && (
                     <span style={{
                       fontSize: 9, fontWeight: 800, letterSpacing: '0.08em',
-                      color: GREEN, textTransform: 'uppercase',
+                      color: noStake ? C.textMuted : GREEN, textTransform: 'uppercase',
                     }}>
                       Proven
                     </span>
@@ -163,7 +167,7 @@ export default function LockedCollapsedStrength({ f }) {
                 {trust?.banger && (
                   <span style={{
                     fontSize: 15, fontWeight: 750, letterSpacing: '-0.02em',
-                    color: TONE[trust.banger.tone] || GREEN,
+                    color: noStake ? C.textSec : (TONE[trust.banger.tone] || GREEN),
                     fontFeatureSettings: "'tnum'",
                   }}>
                     {trust.banger.label}

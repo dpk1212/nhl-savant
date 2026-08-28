@@ -516,7 +516,7 @@ function SizePath({
           SIZE PATH
         </span>
         <span style={{ fontSize: 10, fontWeight: 600, color: C.textSec, letterSpacing: '0.02em' }}>
-          {tracked ? 'No ticket' : activeLabel}
+          {tracked ? 'No play' : activeLabel}
         </span>
       </div>
 
@@ -1031,7 +1031,8 @@ function bestProvenForDefault(wallets) {
  * @param {object} props.f — locked card fixture
  * @param {() => void} props.onCollapse
  * @param {boolean} props.tracked
- * @param {React.ReactNode} props.statusSlot — TRACKED / graded / tier + freeze pills
+ * @param {string} [props.noPlayReason] — subscriber why this is not a lock
+ * @param {React.ReactNode} props.statusSlot — NO PLAY / graded / freeze pills
  * @param {boolean} props.ticketFrozen
  * @param {string} props.accent
  */
@@ -1039,6 +1040,7 @@ export default function LockedClarityExpanded({
   f,
   onCollapse,
   tracked,
+  noPlayReason,
   statusSlot,
   ticketFrozen,
   accent,
@@ -1238,7 +1240,9 @@ export default function LockedClarityExpanded({
             </span>
           )}
           {tracked && (
-            <span style={{ fontSize: 12, fontWeight: 600, color: C.textMuted }}>No ticket</span>
+            <span style={{ fontSize: 12, fontWeight: 600, color: '#D4C4A8' }}>
+              {noPlayReason || "Didn't meet the size bar"}
+            </span>
           )}
           {ticketFrozen && !tracked && !f.graded && (
             <span style={{
@@ -1262,7 +1266,7 @@ export default function LockedClarityExpanded({
           {oursUsd > 0 && (
             <span style={{
               fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
-              color: unopposed ? GREEN : C.textSec,
+              color: unopposed && !tracked ? GREEN : C.textSec,
             }}>
               {unopposed ? 'UNOPPOSED' : `${boardSharePct}% OF BOARD`}
             </span>
@@ -1329,7 +1333,7 @@ export default function LockedClarityExpanded({
                   Against ({againstN})
                 </span>
               ) : (
-                <span style={{ color: GREEN, fontWeight: 700 }}>Unopposed</span>
+                <span style={{ color: tracked ? C.textSec : GREEN, fontWeight: 700 }}>Unopposed</span>
               )}
               <span style={{ color: C.textFaint }}>· size = $</span>
               <span style={{ color: C.textFaint, marginLeft: 'auto' }}>
@@ -1550,10 +1554,10 @@ export default function LockedClarityExpanded({
           {/* OTHER SIDE */}
           <div style={{
             borderTop: unopposed
-              ? '1px solid rgba(52,211,153,0.22)'
+              ? (tracked ? '1px solid rgba(148,163,184,0.16)' : '1px solid rgba(52,211,153,0.22)')
               : '1px solid rgba(240,113,103,0.22)',
             background: unopposed
-              ? 'rgba(52,211,153,0.06)'
+              ? (tracked ? 'rgba(148,163,184,0.05)' : 'rgba(52,211,153,0.06)')
               : 'rgba(240,113,103,0.05)',
             padding: '8px 12px 9px',
           }}>
@@ -1563,12 +1567,16 @@ export default function LockedClarityExpanded({
               }}>
                 <div>
                   <div style={{
-                    fontFamily: MONO, fontSize: 8, fontWeight: 700, letterSpacing: '0.12em', color: GREEN,
+                    fontFamily: MONO, fontSize: 8, fontWeight: 700, letterSpacing: '0.12em',
+                    color: tracked ? C.textSec : GREEN,
                     marginBottom: 4,
                   }}>
                     ② OTHER SIDE · {against.abbr || '—'}
                   </div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: GREEN, letterSpacing: '-0.01em' }}>
+                  <div style={{
+                    fontSize: 13, fontWeight: 700, letterSpacing: '-0.01em',
+                    color: tracked ? C.textSec : GREEN,
+                  }}>
                     Unopposed
                   </div>
                   <div style={{ marginTop: 2, fontSize: 11, fontWeight: 500, color: C.textSec, lineHeight: 1.35 }}>
@@ -1576,7 +1584,8 @@ export default function LockedClarityExpanded({
                   </div>
                 </div>
                 <span style={{
-                  fontSize: 14, fontWeight: 700, color: GREEN, fontFeatureSettings: "'tnum'", flexShrink: 0,
+                  fontSize: 14, fontWeight: 700, fontFeatureSettings: "'tnum'", flexShrink: 0,
+                  color: tracked ? C.textMuted : GREEN,
                 }}>
                   $0
                 </span>

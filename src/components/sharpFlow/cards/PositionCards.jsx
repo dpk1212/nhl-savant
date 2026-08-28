@@ -25,7 +25,7 @@ function formatLockCountdown(ms) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
-/** Human reason a 0u / TRACKED card is not a ticket — audit + tooltip. */
+/** Audit tooltip for a 0u / NO PLAY card — technical mute reason. */
 function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFailOpen, unitsPreMaxSrSub4, unitsPreNoConfirmed, stakePath } = {}) {
   const preU = Number.isFinite(unitsPreNoConfirmed) && unitsPreNoConfirmed > 0
     ? unitsPreNoConfirmed
@@ -56,8 +56,30 @@ function trackedMuteLabel({ mutedBy, tapeAction, unitsPreTape, unitsPreFlinchFai
   if (stakePath === 'FADE') return 'FADE tier — no ticket';
   if (stakePath === 'MONITORING') return 'Monitoring — never sized';
   if (mutedBy) return String(mutedBy).replace(/-/g, ' ');
-  return 'Tracked — no ticket';
+  return "Didn't meet the size bar — no ticket";
 }
+
+/** Subscriber line under NO PLAY — why this is not a lock. */
+function noPlayReason({ mutedBy, tapeAction, stakePath } = {}) {
+  if (mutedBy === 'tape-weak' || tapeAction === 'mute' || tapeAction === 'MUTE') {
+    return 'Muted on tape';
+  }
+  if (mutedBy === 'no-confirmed') return 'No confirmed money on our side';
+  if (stakePath === 'FADE') return "Didn't meet the size bar";
+  return "Didn't meet the size bar";
+}
+
+const NO_PLAY_INK = '#D4C4A8';
+const NO_PLAY_PILL = {
+  fontSize: 9,
+  fontWeight: 800,
+  letterSpacing: '0.1em',
+  padding: '5px 10px',
+  borderRadius: 999,
+  color: NO_PLAY_INK,
+  background: 'rgba(180,150,100,0.12)',
+  border: '1px solid rgba(180,150,100,0.38)',
+};
 
 /** Same 5-band labels as the Tier Performance scoreboard (MAX / TOP / SHARP / STRONG / LEAN). */
 function displayTierFromPath(stakePath) {
@@ -2370,8 +2392,8 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
   const resultPnl = graded
     ? (Number.isFinite(f.profit) ? f.profit : (isWin ? f.toWin : isPush ? 0 : -(f.units || 0)))
     : null;
-  // Champagne accents stay even on tracked picks; only the pill goes gray.
-  // Graded tickets tint the accent to the result so the list reads at a glance.
+  // Tracked (0u) cards keep the gold frame; the pill reads NO PLAY so they
+  // are not mistaken for locks. Graded tickets tint the accent to the result.
   const accent = graded && resultColor ? resultColor : B.gold;
   // Gold aura: staked live tickets (countdown or fully LOCKED) with EDGE ≥ 11.
   const edgeAura = !tracked && !graded && Number.isFinite(f.edge) && f.edge >= EDGE_AURA_MIN;
@@ -2382,7 +2404,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
       : edgeAura
         ? EDGE_AURA_BORDER
         : 'rgba(212,175,55,0.28)';
-  const muteTip = trackedMuteLabel({
+  const muteArgs = {
     mutedBy: f.mutedBy,
     tapeAction: f.tapeAction,
     unitsPreTape: f.unitsPreTape,
@@ -2390,7 +2412,9 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
     unitsPreMaxSrSub4: f.unitsPreMaxSrSub4,
     unitsPreNoConfirmed: f.unitsPreNoConfirmed,
     stakePath: f.stakePath,
-  });
+  };
+  const muteTip = trackedMuteLabel(muteArgs);
+  const playReason = noPlayReason(muteArgs);
   const ticketFrozen = Number.isFinite(f.commenceMs)
     && Date.now() >= (f.commenceMs - LOCK_LEAD_MS);
   const heroPx = Number.isFinite(f.heroOdds)
@@ -2399,7 +2423,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
 
   if (!expanded) {
     const stakeLabel = tracked
-      ? 'No ticket'
+      ? playReason
       : `${Number(f.units).toFixed(1)}u`;
     const payoutLabel = tracked
       ? null
@@ -2475,15 +2499,8 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
           </div>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
             {tracked ? (
-              <span
-                title={muteTip}
-                style={{
-                  fontSize: 8, fontWeight: 800, letterSpacing: '0.1em',
-                  padding: '4px 9px', borderRadius: 999, color: '#aeb8cb',
-                  background: 'rgba(139,150,171,0.08)', border: '1px solid rgba(139,150,171,0.2)',
-                }}
-              >
-                TRACKED
+              <span title={muteTip} style={NO_PLAY_PILL}>
+                NO PLAY
               </span>
             ) : graded ? (
               <GradedResultPill
@@ -2574,11 +2591,15 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
                 STAKE
               </span>
             )}
-            <span style={{
-              fontSize: tracked ? 13 : 18, fontWeight: 750,
-              fontFeatureSettings: "'tnum'", letterSpacing: '-0.03em',
-              color: tracked ? C.textMuted : graded ? C.text : B.goldHi, lineHeight: 1,
-            }}>
+            <span
+              title={tracked ? muteTip : undefined}
+              style={{
+                fontSize: tracked ? 12 : 18, fontWeight: tracked ? 650 : 750,
+                fontFeatureSettings: "'tnum'", letterSpacing: tracked ? '0.01em' : '-0.03em',
+                color: tracked ? C.textMuted : graded ? C.text : B.goldHi, lineHeight: 1.3,
+                textAlign: 'right', maxWidth: tracked ? 148 : undefined,
+              }}
+            >
               {stakeLabel}
             </span>
             {payoutLabel && (
@@ -2630,15 +2651,8 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
   // Expanded = V27 clarity story (map → lead wallet → other side → price).
   // Collapsed chrome above is unchanged.
   const statusSlot = tracked ? (
-    <span
-      title={muteTip}
-      style={{
-        fontSize: 8, fontWeight: 800, letterSpacing: '0.08em',
-        padding: '4px 8px', borderRadius: 6, color: '#aeb8cb',
-        background: 'rgba(139,150,171,0.10)', border: '1px solid rgba(139,150,171,0.26)',
-      }}
-    >
-      TRACKED
+    <span title={muteTip} style={NO_PLAY_PILL}>
+      NO PLAY
     </span>
   ) : graded ? (
     <GradedResultPill
@@ -2657,6 +2671,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
       f={f}
       onCollapse={() => setExpanded(false)}
       tracked={tracked}
+      noPlayReason={playReason}
       statusSlot={statusSlot}
       ticketFrozen={ticketFrozen}
       accent={accent}
