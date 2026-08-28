@@ -1,100 +1,99 @@
-# Twitter — 2026-08-27 · Braves ML · back to the well
+# Twitter — 2026-08-28 · V12 ATH · where the edge is
 **Pathway — FULL**
 
-### 0 · Spine (Dale)
-- On Braves yesterday · sharps going back to the well
-- Fading Dodgers isn’t easy
-- This sharp has been hot · joined by a lot of support
-- Keep momentum · pick perfect angle · (no signup implied)
+### 0 · Spine (Dale law)
+- V12 new ATH · ~3 months  
+- Open with data / where the edge is  
+- June/July prepping for August move  
+- Notice **3u+ / size** difference · transformed the board  
+- Neglected small-unit plays · updates launched to clean up  
+- **Efficient deployment of capital** to games we actually want  
+- Thanks new folks · especially OGs (stars era = real ones)  
+- Lab every morning · drop a chat  
 
 ### 0b–0c · Continuity / forward look
-- Ask temp **cool** — this = **give / Power compound** (perfect next slot)
-- Best angle = serialize today’s heater (…2cbcf8 Nats print) → Braves 2.0× press
-- NOT: Upgrade · become-sharp rehash · tool-fight
+- Ask temp **cool** → **Give / connect** (perfect)  
+- +110u naked flex = spent · this beat ≠ another flex — it’s **where the edge lives**  
+- Avatar missing: size/filter education with whole truth (leak + fix)  
+- NOT: Upgrade · become-sharp rehash · Braves re-litigate  
 
 ### 1 · WHO
-Followers who rode (or watched) today’s Nats heater / Braves yesterday — need the next say–do beat
+New subs + OGs watching the book — need the honest August story, not a victory lap
 
 ### 2 · PURPOSE
-**Give / buzz** — unfinished→live Power trail · no ask
+**Give / connect** — open ledger · thank the room · lab invite  
+**Ask:** none (chat invite = Likeness door, not Upgrade)
 
 ### 3 · ONE
-Same lights-out printer who just hit Nats is pressing Braves at 2.0× with real support — going back to the well even though fading LAD is hard
+June/July prepped the size; August deployed capital on the plays that matter — V12 hit ATH because of efficient size, not a hotter hit rate; small units leaked and we’re cleaning them
 
-### 4 · SPCL
-**P + S** — say–do serialization + scarce $ / size-up  
-(Whole-truth C rides in “fading Dodgers isn’t easy”)
+### 4 · SPCL ★ pick
+**C + P** (best fit)
+- **C** Credibility — public rung ledger · WR down / units up · leak named  
+- **P** Power — prep → size month → ATH say–do  
+Not **S** alone (naked ATH = spent +110u energy). L only in close (OGs / lab).
 
 ### 5 · STUFF
-- LAD @ ATL · Braves ML · **LOCKED** · **3.0u** · flagged −110 / ticket −108–−113
-- Lead **…2cbcf8** (same Nats heater): **$17.3K @ 2.0×** (usual $8.7K) · L30 **+$108K** · **17-4 · 81%** · beat close 68% · L10 8-2
-- Support lead **…705ba1**: **$104K @ 1.7×** · L30 **+$380K** · 95-87 · +11 proven
-- Contested · 12 proven on side · Dale: were on Braves yesterday · back to the well
-- Hard fade honesty: confirmed winners **$1.58M / 93% Dodgers** · other side **~$1.8M** · full split Dodgers 63%
-- Losing wallets heavy on Braves ($738K) — don’t spin as clean; “isn’t easy” covers it
+- V12 since June 1: **473–389–7 · 54.9% · +121.57u** · 89d · 869 graded · +5.1% ROI · **ATH**
+- June **+47.0u** (hit rate) · July **+17.0u** (grind) · Aug **+57.6u** thru 27 (size month) · 47.4% of V12 profit
+- Fair race d27: Jun **+26.6u** · Jul **+14.2u** · Aug **+57.6u**
+- WR eased **56.1% → 55.2% → 53.5%** · avg night **+1.6u → +0.6u → +2.1u**
+- Aug **4u+: +80.7u @ 70%** · under 4u **−23u** leak  
+- **>5u: +91.2u on 64 tickets @ 75%** · ~¾ of all V12 profit  
+- Small-unit neglect · updates launched · OGs stars era · lab mornings · drop a chat  
 
-### 6 · HOOK QA ★
-Angle winner = **Power serialization** (eng#1 DNA), not diagnostic rehash.
+### 6 · HOOK QA
+Lead with **edge contrast** (C), not ATH flex.
 
 ```
-SAME PRINTER THAT HIT THE NATS 7-1.
-NOW 2.0× ON THE BRAVES.
+4u+ IN AUGUST: +80.7u AT 70%.
+UNDER 4u: −23u.
 ```
 
-What/how/so what in 2 lines. Compounds today’s momentum.  
-Alts below if Nats cash wasn’t public yet.
+So-what in line 3–4 = capital deployment / not hit rate.  
+Silhouette kin to over-5u filter winner — earned, not cloned.
 
 ### Kill
-Ask/Upgrade · GOLD/AGS leak · fake “winners on Braves” · ignore LAD winners stack · become-sharp clone · skinny CTA
+AGS-U leak · naked “ATH flex” open · Upgrade/SUMMER · hide the −23u leak · tipster swagger · all-four SPCL brochure
 
 ---
 
 ## HERO — single tweet
 
-**Attach:** lead …2cbcf8 card ($17.3K / 2.0×) + lock/battle board (shows contested / support)
+**Attach:** ATH equity chart + “where the units came from” rung chart (4u+ vs under 4u)
 
 ### Copy this ↓
 
 ```
-SAME PRINTER THAT HIT THE NATS 7-1.
-NOW 2.0× ON THE BRAVES.
+4u+ IN AUGUST: +80.7u AT 70%.
+UNDER 4u: −23u.
 
-$17.3K at 2.0× his usual.
-L30 +$108K.
-17-4 · 81% WR.
-Beats close 68%.
+That's not a hotter hit rate.
+That's efficient deployment of capital —
+to the games we actually want it on.
 
-We were on Atlanta yesterday.
-Sharps are going back to the well.
+June / July we prepped for this move.
+August we sized.
 
-Fading the Dodgers isn't easy —
-confirmed winners are stacked the other way
-($1.58M · 93% LAD).
+V12 just hit an all-time high.
++121.57u since June 1.
+473–389–7 · 54.9% · 89 days · 869 graded.
 
-But he's not alone:
-another lead just dropped $104K at 1.7×
-(L30 +$380K).
-12 proven wallets on this side with him.
+Win rate eased month to month.
+Average night did the opposite
+(+1.6u → +0.6u → +2.1u).
 
-Locked. 3.0u.
-Hard fade. Hot printer. Back to the well.
-```
+Above 5u: +91.2u on 64 tickets at 75%.
+Three-quarters of the whole book.
 
----
+We transformed how the board gets loaded.
+Neglected the small-unit rungs — that's on us —
+and we already shipped updates to clean that leak.
 
-## Hook alts
+Thank you to every new person who walked in.
+And especially the OGs —
+if you remember the era with stars, you're a real one.
 
-**If Nats cash isn’t in feed yet**
-```
-WE WERE ON THE BRAVES YESTERDAY.
-SHARPS ARE GOING BACK TO THE WELL.
-
-Lead just pressed 2.0× — $17.3K.
-L30 +$108K · 17-4.
-```
-
-**Size-first**
-```
-$17.3K AT 2.0× ON THE BRAVES.
-SAME HEATER THAT JUST PRINTED THE NATS.
+I'm in the lab every morning.
+Stop by. Drop a chat.
 ```
