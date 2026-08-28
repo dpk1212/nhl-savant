@@ -7,40 +7,51 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-08-28 — V12 ATH hero + SR soft switch |
-| CSV window | Aug 21–27, 2026 |
-| Ask temperature | **hot when SR ships** — then cool |
-| Account arc | −76u → V12 ATH give · **SR switch desire** |
+| Last updated | 2026-08-28 PM — CSV ingest + onboarding FAQ midday |
+| CSV window | **Aug 22–28, 2026** (new file) |
+| Ask temperature | **cool** — convert just fired; this beat = reply farm give |
+| Account arc | Valley ATH shipped · onboarding FAQ · help-me-help-you |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 8/28 | Hero V12 ATH + SR | DOWN 76u → ATH give · SR: quantify tier edge / why not switch | P+C · ask SR | **yes SR** | **Staged** — hero locked; SR refined to process |
-| 8/27 night | Hero Braves ML | Same Nats printer · 2.0× Braves | P + S | none | Staged |
+| 8/28 PM | Hero onboarding FAQ | Lost on site = on me · building guide · drop FAQs | P + L | eng only | **Staged** — midday |
+| 8/28 | Hero V12 ATH + SR | DOWN 76u → ATH · SR soft switch | P+C · ask SR | yes SR | Shipped (111 eng / 7 replies) |
+| 8/27 night | Hero Braves ML | Same Nats printer · 2.0× Braves | P + S | none | Staged/shipped mix |
 | 8/27 eve | QT Dominic +EV | Become-sharp vs +EV nuke | C+L+P | RT | Staged |
-| 8/27 eve | QT own Nats | Pressed→cashed + Upgrade | P + S | yes | Staged |
-| 8/27 PM | QT Trent FCS | Nats size-up deep | S + C | none | Shipped |
+| 8/27 eve | QT own Nats / Trent | Nats 13-1 size-up | S + C | none | Shipped (213 eng / #4) |
 
 ---
 
-## Hook law (this beat)
-Valley (−76u) beats WR-paradox and ledger-first. Costly Power open → size Cred body → OG Likeness close.
+## CSV so-what (Aug 22–28)
+**Hot:** pressed→cashed · become-sharp · looks even · Nats blowout · valley ATH (reply magnet)  
+**Cold:** orphan switch SR (4 eng) · empty OG · soft green lap  
+**Next:** reply-open loops · live board · no second convert
 
 ---
 
-## FORWARD LOOK — after ship
-1. Live/grade board  
-2. Small-rung cleanup receipt when live  
-3. Ask only after more give  
-**NOT:** Upgrade on ATH post · hide the valley next time  
+## Themes SPENT / OPEN
+**Spent:** +110u naked · back-to-back switch asks · orphan SR  
+**Open:** onboarding FAQ answers (serialize once they reply) · small-rung cleanup receipt · live locks  
+
+## Unfinished
+- Onboarding build — collect FAQ replies → ship guide follow  
+- Small-unit cleanup receipt when ready  
+
+---
+
+## FORWARD LOOK — after FAQ post
+1. Reply to FAQ threads · ship onboarding when built  
+2. Live lock / grade beat  
+3. Ask only after more free SPCL  
+**NOT:** Upgrade stacked on FAQ · second “why haven’t you switched”  
 
 ---
 
 ## Agent close-out
-- [x] −76u locked into hook  
-- [x] ALL TIME chart = primary attach  
-- [x] Size edge + leak retained  
-- [x] OGs “sat the valley”  
-- [x] No ask  
+- [x] CSV ingest → `recent_timeline_latest.md`  
+- [x] Midday FAQ staged  
+- [x] Ask = engagement only  
+- [x] FORWARD LOOK refreshed  

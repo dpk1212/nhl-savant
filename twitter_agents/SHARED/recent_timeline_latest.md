@@ -1,54 +1,61 @@
 # Recent timeline — latest review
 
-**Updated:** 2026-08-27  
-**Sources:** CSV `account_analytics_content_2026-08-21_2026-08-27_8727.csv` + desk session posts  
+**Updated:** 2026-08-28  
+**Sources:** CSV `account_analytics_content_2026-08-22_2026-08-28_676a.csv`  
 **Living state:** also read/write `SHARED/messaging_continuity.md` every run
 
 ## Window
-- Dates: 2026-08-21 → 2026-08-27
-- Posts reviewed (n): 49 CSV rows (+ desk drafts)
+- Dates: 2026-08-22 → 2026-08-28
+- Posts reviewed (n): 75 rows (26 heroes · 49 replies)
 
-## Top by engagement (right-avatar signal first)
-| Rank | Open / hook (first line) | Imp | Eng | Replies | SPCL owned (1–2) | Why it worked |
-|------|--------------------------|-----|-----|---------|------------------|---------------|
-| 1 | YESTERDAY HE PRESSED THE RED SOX AT 4.2×. $249,100. IT CASHED. | 3324 | 354 | — | P (+ S/C $) | Say–do cash + unfinished return |
-| 2 | Most people try to become sharp… | 2324 | 251 | — | Diagnostic dream / L+C | Current→desired path; product dream |
-| 3 | THE EDGE CAN BE PREDICTABLE. THE SCOREBOARD IS NOT. | 2861 | 243 | — | P + C | Whole truth soft day |
-| 4 | $21K ON THE SOX. $20K ON THE MARLINS. Looks even. It isn’t. | 3439 | 224 | — | C (+ S) | Contrast interrupt |
-| 5 | IF YOUR SITE DOESN'T HAVE A TRACKER, YOU'RE THE PRODUCT. | 2657 | 206 | — | C confront | Category interrupt |
+## Top by engagement (heroes only)
+| Rank | Open / hook (first line) | Imp | Eng | Replies | PV | SPCL | Why |
+|------|--------------------------|-----|-----|---------|----|------|-----|
+| 1 | YESTERDAY HE PRESSED THE RED SOX AT 4.2×… IT CASHED | 3358 | 369 | 3 | 84 | P+S | Say–do return |
+| 2 | Most people try to become sharp… | 4121 | 264 | 3 | 54 | C+L | Diagnostic dream |
+| 3 | $21K SOX / $20K MARLINS. Looks even. It isn’t. | 3480 | 226 | 1 | 45 | C+S | Contrast |
+| 4 | NATS GOT ROCKED 13-1 YESTERDAY… | 4494 | 213 | 1 | 27 | S+C | Blowout→size |
+| 5 | +42.06u OVER THE LAST 30 DAYS… smoked… lab | 2455 | 210 | 2 | 33 | P+C | Soft-day honesty |
+| 6 | IF YOUR SITE DOESN'T HAVE A TRACKER… | 2680 | 206 | 3 | 31 | C | Category confront |
+| 7 | UP +$14K THIS MONTH. WNBA ONLY… | 3398 | 185 | 2 | 26 | S | Scarce $ |
+| 8 | BETMGM IS SHOWING TOP TICKETS… | 3197 | 173 | 1 | 24 | C+S | Tickets vs printers |
+| 9 | Most people try to become sharp. Buy the +EV tool… | 1969 | 169 | 0 | 30 | C+L | Dream path (0 replies) |
+| 10 | MOST BET IS A POPULARITY CONTEST… | 2904 | 168 | 2 | 26 | C | Proof vs popularity |
+
+## Also notable (this desk arc)
+| Open | Imp | Eng | Replies | Note |
+|------|-----|-----|---------|------|
+| DOWN 76 UNITS. THEN V12 WENT LIVE… | 1215 | 111 | **7** | Valley ATH — reply magnet |
+| SAME PRINTER… NATS… 2.0× BRAVES | 2998 | 120 | 1 | Serialize Power |
+| Chris Sale legacy… Braves ✅ | 2290 | 108 | 0 | Grade reach, no replies |
+| SR: I don't know what you're using… | 177 | 4 | 0 | Soft switch — weak alone |
 
 ## Top by impressions
-| Open | Imp | Note |
-|------|-----|------|
-| 40–11. +82 UNITS. EVERY TIME WE WENT OVER 5u. | 4048 | Update live nums → **47–16 · +89.93u**; S+C filter |
+1. Nats 13-1 (4494) · 2. Become sharp (4121) · 3. Over 5u / wedding (4089)
 
-## Soft / failed opens (do not repeat)
+## Soft / failed opens
 | Open | Problem |
 |------|---------|
-| Soft diary / “people tell me stupid” as spear alone | Weak S/C; Dale-centered |
-| OG testimonial caption without mechanism | No so-what; Hormozi-disgust risk |
-| All-four SPCL brochure / CAPS ad stack | Container > stuff |
+| Become-sharp OG variant (1569 imp / 0 replies) | Empty OG without mechanism |
+| Focusing on top unit plays… Happy to see green (2183/46) | Soft victory-lap |
+| Soft switch SR alone (4 eng) | Needs hero pudding under it — don’t orphan |
 
 ## SPCL mix this window
-| Letter | How often in winners | Notes |
-|--------|----------------------|-------|
-| S | High on imp leaders | Scarce $ / over-5u / printer $ |
-| P | High on eng leaders | Cash then return / soft-day honesty |
-| C | High | Splits, tracker confront, public grade |
-| L | Medium | Voice + become-sharp diagnostic |
+| Letter | Heat |
+|--------|------|
+| S | Hot — $ / size / presses |
+| P | Hottest eng — cash return · valley→ATH · lab honesty |
+| C | Hot — contrast · tracker · tickets vs printers |
+| L | Works inside diagnostic dream · weak as orphan testimonial |
 
-## Messaging continuity
-- See `messaging_continuity.md` for spent/open themes, last beats, ask temp
-- Live arc: +110u sized book ↔ OG sized SharpFlow ↔ don’t become a sharp
+**Hot silhouettes:** pressed→cashed · become-sharp path · looks even · blowout→size · valley→ATH  
+**Cold:** orphan ask SR · soft green lap · empty OG caption
 
-## Silhouettes to prefer next (if they fit ONE idea)
-1. Most people try to become sharp → OG/path proof
-2. EVERY TIME WE WENT OVER 5u (updated stats)
-3. Looks even. It isn’t. / tickets vs printers
+## Ask temperature
+**Warm-cool** — V12 ATH + switch SR just fired (111 eng / 7 replies on hero). Next = **give / engagement**, not another convert.
 
-## Forward look (see also messaging_continuity.md)
-**Feed needs next:** ship Dominic sized-OG proof (no ask) → live unfinished board beat → ask only after more give.  
-**Not next:** repeat +110u flex · immediate second printer ask · critic-diary spear alone.
-
-## Litmus
-Eng/replies/profile/URL from bettors we’d trial > raw impressions.
+## Forward look (hand to continuity)
+1. Midday give that farms **replies** (FAQ/onboarding — Dale spine)  
+2. Live board / grade beats  
+3. Ask only after more free SPCL  
+**NOT:** second switch ask · orphan SR · +110u echo  

@@ -1,98 +1,71 @@
-# Twitter — 2026-08-28 · V12 ATH + SR switch desire
-**Pathway — FULL**
+# Twitter — 2026-08-28 · midday onboarding FAQ
+**Pathway — FULL (CSV ingested first)**
 
-### Hero (locked — Dale: phenomenal)
-| | |
-|--|--|
-| **WHO** | Bleed survivors · new green-only folks · OGs |
-| **PURPOSE** | **Give** — free P+C (valley→ATH · size edge · leak) |
-| **ONE** | −76u → V12 → sized August → ATH because capital got honest |
-| **SPCL** | **P + C** |
-| **Ask** | none in hero (lab chat = door only) |
+### 0 · Spine (Dale)
+- Building onboarding tools — site clarity · where to look · locked plays  
+- New or old — don’t want to miss anything  
+- What questions / FAQs need addressing  
+- Help me help you  
 
-### Self-reply (Dale spine → process)
-| | |
-|--|--|
-| **PURPOSE** | **Ask** — soft switch / compliance after free SPCL |
-| **ONE** | If you can’t quantify low-tier vs high-tier edge — or you’re paying without metrics like this — look at switching; we exist to put you on more winners |
-| **SPCL** | **C** (tie hero ledger) + desire · Likeness voice |
-| **Ask** | soft — “why haven’t you looked at switching?” · no hard price spam · no tipster guarantee |
+### 0b–0c · Continuity + CSV
+- Window Aug 22–28: P/S/C hot · valley ATH just shipped (111 eng / **7 replies**)  
+- Ask temp: cool convert · **farm replies** next  
+- Silhouette kin: tracker confront + open-loop (not soft “thoughts?”)  
+- PURPOSE fits forward look slot #1  
 
-**Hormozi architecture:** Hero = free pudding · SR = request  
-**Refine vs Dale raw:** open ties to hero’s 4u+/under split (quantify edge) · cut brochure · dinner-table · goal line earns the ask
+### 1 · WHO
+New subs lost on the site + OGs who still have unspoken FAQ gaps
 
-**Kill:** Upgrade % dump unless Dale adds · dunk other tools by name · “best model” swagger · hide that we named our own leak in hero
+### 2 · PURPOSE
+**Buzz / give** — Power (building for you) · reply farm for onboarding map  
+**Ask:** engagement only — questions/FAQs · **no** Upgrade/switch
+
+### 3 · ONE
+I’m building onboarding so nobody gets lost on locks / boards / where to look — tell me what I still haven’t answered
+
+### 4 · SPCL
+**P + L** — say–do of building the guide · Dale in the lab with the room  
+(C only if we list concrete surfaces — locks, printers, boards)
+
+### 5 · STUFF
+- Onboarding tools in build  
+- Surfaces: site map · where to look · **locked plays** · what each board means  
+- Audience: new + old / stars-era OGs  
+- Output wanted: questions · FAQs  
+- CSV: reply magnets = open loops with stakes (valley got 7 replies)
+
+### 6 · HOOK QA
+Not “I’m building onboarding…” soft diary first.  
+Confront + ownership:
+
+```
+IF YOU'RE LOST ON THE SITE — THAT'S ON ME.
+```
+
+So-what = I’m fixing it · you tell me what’s missing. Passes.  
+Kill: Upgrade · switch ask echo · empty “thoughts?” · tipster FAQ brochure
 
 ---
 
-## HERO — single tweet
+## HERO — midday single tweet
 
-**Attach:** ALL TIME chart (valley→ATH) · rung chart second
+**Attach:** none required (or a simple site/locks screenshot if it teaches)
 
 ### Copy this ↓
 
 ```
-DOWN 76 UNITS.
-THEN V12 WENT LIVE.
+IF YOU'RE LOST ON THE SITE — THAT'S ON ME.
 
-89 days later — all-time high.
-+121.57u since June 1.
+I'm building onboarding tools right now
+so everybody knows what's going on —
+where to look,
+what each board means,
+where the locked plays live.
 
-June / July we prepped for this move.
-August we sized.
+New or OG.
+I don't want to miss what you actually need.
 
-Win rate didn't even go up.
-We just stopped deploying capital like we were guessing
-and put it on the games we actually wanted.
-
-4u+ in August: +80.7u at 70%.
-Under 4u: −23u.
-That's the edge — and the leak.
-We neglected the small rungs. That's on us.
-Updates already shipped to clean it up.
-
-Above 5u: +91.2u on 64 tickets at 75%.
-Three-quarters of the whole V12 book.
-
-Same 27 days, three months:
-June +26.6u · July +14.2u · August +57.6u.
-
-The book isn't greener because we got luckier.
-It's greener because sizing got honest.
-
-Thank you to every new person who walked in.
-And especially the OGs —
-if you remember the era with stars, you're a real one.
-You sat the valley with us.
-
-I'm in the lab every morning.
-Stop by. Drop a chat.
-```
-
----
-
-## SELF-REPLY — soft switch ask
-
-**When:** Reply 1 under hero — post right after  
-**Attach:** optional — zoom of under-4u vs 4u+ rung chart (the “quantify” proof)
-
-### Copy this ↓
-
-```
-I don't know what you're using for your data or model right now.
-
-But if you can't quantify the edge between low-tier plays and high-tier plays —
-you're guessing with better branding.
-
-And if you're paying real money without access to underlying metrics like this —
-the size rungs, the 4u+ vs under-4u split, the printers behind the units —
-why haven't you looked at switching?
-
-My number one goal is simple:
-get people on more winners.
-
-The data and the process are built for that.
-Nothing else.
-
-Lab's open. Come grade it yourself.
+What questions do I still need to answer?
+Drop FAQs.
+Help me help you.
 ```
