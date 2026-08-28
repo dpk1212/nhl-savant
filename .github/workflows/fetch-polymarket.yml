@@ -17,6 +17,9 @@ name: Fetch Market Data (Polymarket + Kalshi)
 # concurrency cancel-in-progress:false → queued safety/cron waits; no kill.
 # Inner loop: 12 × ~4 min target; work was ~150–180s/cycle (2026-07-09),
 # but heavy daytime books regularly overrun (2026-07-29: 324–425s/cycle).
+# Kalshi is supplemental (board flow overlay). Wallet/odds scan does not
+# read it. Run fetchKalshiData only every 5th cycle so 4/5 cycles stay on
+# the Poly+scan cadence; skip cycles keep the last kalshi_data.json.
 #
 # Odds API budget: ~12 cycles × ~17 waking hours ≈ ~200 cycles/day × ~1–2
 # calls — still well under the 50K/mo quota.
@@ -133,8 +136,19 @@ jobs:
             echo "--- fetchPolymarketData ---"
             node scripts/fetchPolymarketData.js || echo "polymarket failed (cycle $i)"
 
-            echo "--- fetchKalshiData ---"
-            node scripts/fetchKalshiData.js || echo "kalshi failed (cycle $i)"
+            # Every 5th cycle (5, 10, …): full Kalshi. Other cycles leave
+            # public/kalshi_data.json as-is (stashed across git reset below).
+            if [ $((i % 5)) -eq 0 ]; then
+              echo "--- fetchKalshiData (cycle $i — every 5th) ---"
+              node scripts/fetchKalshiData.js || echo "kalshi failed (cycle $i)"
+            else
+              next_k=$(( ((i + 4) / 5) * 5 ))
+              if [ "$next_k" -gt "$cycles" ]; then
+                echo "--- fetchKalshiData skipped (cycle $i; next full Kalshi is cycle 5 of the next job) ---"
+              else
+                echo "--- fetchKalshiData skipped (cycle $i; next full Kalshi on cycle ${next_k}) ---"
+              fi
+            fi
 
             echo "--- snapshotPinnacle ---"
             node scripts/snapshotPinnacle.js || echo "pinnacle failed (cycle $i)"
