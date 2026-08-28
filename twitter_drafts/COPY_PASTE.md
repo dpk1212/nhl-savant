@@ -1,87 +1,96 @@
-# Twitter — 2026-08-28 · QT Sports folder dream
+# Twitter — 2026-08-28 · evening Over 7.5 · slow day
 **Pathway — FULL**
 
 ### 0 · Spine (Dale)
-- QT AnomalyXRP Sports-folder post (impressions)  
-- Attach Dale photo: lonely **NHL Savant** home screen  
-- Dream: one day **Savant + Sharp Flow** in that folder/group  
-- Nail SPCL  
+- Slow day · sharps golfing  
+- Waiting on lock · likes the look  
+- Limits moving up · odds slightly our way  
+- Pretty big loser on our side (whole truth)  
+- Proven wallets + this heater on a tear · pressed up again  
+- Chat context: locks + unit size vs EV-burden tools (desire plant only — no ask)
 
-### 0b–0c · Continuity
-- Ask temp cool — **buzz / Likeness give** (Dale spine overrides FAQ-follow slot)  
-- QT under ~10K-view parent = distribution  
-- QT law: parent owns “miss BeeBettor” — **do not restate**  
-- NOT: Upgrade · OddsJam dunk · tipster “we’re coming”
+### 0b–0c · Continuity / forward look
+- Ask cool · live unfinished = perfect give slot  
+- Angle: soft-day honesty + **serialize …2cbcf8** (Nats W · Braves press W · Over today)  
+- Chat = product contrast desire, not Upgrade dump  
 
 ### 1 · WHO
-Bettors who live in that Sports folder — and anyone who only knows the big icons
+Followers of the Nats/Braves heater · soft-day doubters who think quiet board = no edge
 
 ### 2 · PURPOSE
-**Buzz + connect** — plant the dream · human Likeness  
-**Ask:** none
+**Give / buzz** — unfinished lock · whole truth  
+**Ask:** none (desire plant OK)
 
 ### 3 · ONE
-Right now Savant sits alone on the home screen — the dream is earning a seat in that Sports folder next to every book and tool, by building (not hoping)
+Slow board, but same tear printer is pressed on PIT/STL Over 7.5 — we like it into the lock even with a real loser on our side, because proven + limits/odds are moving our way
 
 ### 4 · SPCL ★
-**L + P**
-- **L** Likeness — lonely icon · honest dream · lab identity  
-- **P** Power — building every morning toward that folder (say–do implied)  
-Not naked **S** (we’re not in the folder yet — claiming Status would be tipster). Image carries the scarcity.
+**P + C**
+- **P** — same wallet say–do trail (Nats → Braves → here) · unfinished watch  
+- **C** — loser on side named · winners 94% · limits/odds observables  
+S rides in $11.1K / 1.2× — not the pillar
 
 ### 5 · STUFF
-- Parent: Sports folder grid (books + OddsJam/Outlier/Novig/etc.)  
-- Our media: single **NHL Savant** icon · empty home screen  
-- Names: Savant · Sharp Flow  
-- Stance: dream · build · no ask  
+- PIT @ STL · **Over 7.5** · ticket **+102** · **3.0u** · ~3h to lock  
+- …**2cbcf8**: **$11.1K @ 1.2×** · L30 **+$134K** · **19-4 · 83%** · beat close 68% · totals 11-2 +$67K  
+- Trail: Aug 27 **Braves ML 1.9× $17.3K W** · **Nats ML $12.7K W**  
+- Also lead …705ba1 **$38K** · L30 +$436K (0.6×)  
+- Winners: **$17K / 94% Over** · Under $1.1K  
+- Losers: **$31K / 85% on Over** — Dale’s “pretty big loser”  
+- Public/full: Under heavy ($689K vs $159K)  
+- Contested $53K vs $6K · **+2.2% vs close** · limits up · EDGE tape  
+- Desire (chat): burden = locks + units · not 500 EV tickets / $500 tools  
 
 ### 6 · HOOK QA
+Dale golfing line = authorship — land scarce so-what by line 3–4:
+
 ```
-RIGHT NOW IT'S JUST US.
+SHARPS MUST BE OUT GOLFING.
+
+Still like this one.
+Same printer that hit Nats and Braves —
+pressed up again.
 ```
-→ so what = one day that folder (line 2–4). Photo proves line 1.  
-Kill: BeeBettor nostalgia echo · “one day we’ll be huge” empty · ask · dunk
+
+Kill: Upgrade · OddsJam dunk by name · hide the $31K loser · GOLD/AGS · tipster lock-of-day
 
 ---
 
-## QT — AnomalyXRP Sports folder
+## HERO — single tweet
 
-**Action:** Quote-tweet the Sports folder post  
-**Attach:** Dale’s NHL Savant home-screen photo (the lonely icon)
+**Attach:** …2cbcf8 tear card + lock board (splits visible — winners AND losers)
 
 ### Copy this ↓
 
 ```
-RIGHT NOW IT'S JUST US.
+SHARPS MUST BE OUT GOLFING.
 
-One day Savant and Sharp Flow
-are sitting in that Sports folder —
-next to every book and tool on the phone.
+Slow board.
+Still like this one while we wait on the lock.
 
-Not hoping.
-Building.
-Every morning.
-```
+PIT @ STL Over 7.5 · +102 · 3.0u.
 
----
+Same printer that hit the Nats
+and pressed the Braves yesterday —
+on a tear this month
+and pressed up again today.
 
-## Hook alts
+$11.1K at 1.2× his usual.
+L30 +$134K · 19-4 · 83% WR.
 
-**A2 — dream-first**
-```
-ONE DAY WE'RE IN THAT FOLDER.
+Proven wallets all over this side.
+Confirmed winners: 94% Over.
 
-Savant + Sharp Flow.
-Until then — one icon on the home screen.
-```
+Whole truth: we've got a pretty big loser on our side too
+($31K losing money on the Over).
+Not hiding that.
 
-**A3 — longer Likeness**
-```
-HOME SCREEN'S A LITTLE LONELY.
+Limits keep climbing.
+Odds drifting slightly our way.
++2.2% vs close.
 
-That's fine.
-One day Savant and Sharp Flow earn a seat
-in that Sports folder for real.
+Not 500 tickets to babysit.
+Locks. Units. Watch it in.
 
-Lab doesn't stop until they do.
+We'll know at first pitch.
 ```
