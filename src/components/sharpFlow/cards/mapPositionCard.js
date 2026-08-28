@@ -25,12 +25,11 @@ import {
 } from '../../../lib/pinnacleMain.js';
 import {
   americanFromPolyPrice,
+  coherentTicket,
   resolveInstrument,
-  ticketAmerican,
 } from '../../../lib/ticketInstrument.js';
 import {
   inheritSpreadMarketHints,
-  isSpreadPolarityFlip,
   signedSpreadEntryLine,
 } from '../../../lib/spreadLineSign.js';
 import {
@@ -1096,8 +1095,8 @@ export function mapLockedPickToCardFixture(pick, {
   const alreadyGraded = pick.status === 'COMPLETED'
     && !!(pick.outcome || pick.result?.outcome);
 
-  // Ticket stamps = sharp receipt instrument (vault / Poly). Playable reco =
-  // live MAIN (or freeze-time MAIN). Never confuse the two.
+  // Hero = grade line + pay odds (peak/lock). Vault/sharp on another
+  // number is display-only underneath ("flagged at"). ML has no line.
   const T15_MS = 15 * 60 * 1000;
   const commenceMsForFreeze = parseCommenceMs(
     pick.commenceMs ?? pick.gameTime ?? pick.commenceTime ?? null,
@@ -1160,19 +1159,18 @@ export function mapLockedPickToCardFixture(pick, {
     awayName: pick.away || pinnGamePeek?.awayTeam || null,
     homeName: pick.home || pinnGamePeek?.homeTeam || null,
   });
-  if (Number.isFinite(inst.ticket.american)) {
+  // Settlement ticket = Firestore peak/lock (same pair the grader uses).
+  // Live vault is NOT the hero — if sharps are on another number, that
+  // line is the "flagged at" subtitle under the grade/pay ticket.
+  const bound = coherentTicket(inst, { stampedLine: ticketLine, stampedOdds: ticketOdds });
+  if (Number.isFinite(inst.ticket?.american)) {
     polyEntryOdds = inst.ticket.american;
-    ticketOdds = ticketAmerican(inst, ticketOdds);
   }
-  if (Number.isFinite(inst.line) && (isSpread || isTotal) && !ticketFrozen) {
-    ticketLine = inst.line;
-  } else if (
-    isSpread
-    && Number.isFinite(inst.line)
-    && isSpreadPolarityFlip(inst.line, ticketLine)
-  ) {
-    // Same |line|, opposite sign — stored favorite/dog was inverted.
-    ticketLine = inst.line;
+  if (!Number.isFinite(ticketOdds) && Number.isFinite(bound.odds)) {
+    ticketOdds = bound.odds;
+  }
+  if (!Number.isFinite(ticketLine) && (isSpread || isTotal) && Number.isFinite(bound.line)) {
+    ticketLine = bound.line;
   }
   const awayPickEarly = String(pick.side || pick.pickSide || '').toLowerCase() === 'away'
     || String(pick.team || '').toLowerCase().includes(
@@ -1199,17 +1197,24 @@ export function mapLockedPickToCardFixture(pick, {
   }
   if (!Number.isFinite(playableLine)) playableLine = ticketLine;
 
-  if (isTotal && !ticketFrozen && pinnGamePeek) {
-    const stampJunk = Number.isFinite(ticketLine) && ticketLine < 1.5;
-    const stampMissing = !Number.isFinite(ticketLine) || stampJunk;
-    const oddsMissing = !Number.isFinite(ticketOdds) || ticketOdds === 0;
-    if (stampMissing && Number.isFinite(playableLine)) ticketLine = playableLine;
-    if (oddsMissing && Number.isFinite(ticketLine)) {
-      const sideIsUnder = sideIsUnderEarly;
+  // Last-resort same-LINE book quote only — never copy MAIN onto a vault ticket.
+  if ((isTotal || isSpread) && pinnGamePeek && (!Number.isFinite(ticketOdds) || ticketOdds === 0)
+      && Number.isFinite(ticketLine)) {
+    if (isTotal) {
       const hist = Array.isArray(pinnGamePeek.totalHistory) ? pinnGamePeek.totalHistory : [];
       const match = [...hist].reverse().find((h) => linesClose(h.line, ticketLine));
       if (match) {
-        const o = sideIsUnder ? match.underOdds : match.overOdds;
+        const o = sideIsUnderEarly ? match.underOdds : match.overOdds;
+        if (Number.isFinite(o) && o !== 0) ticketOdds = o;
+      }
+    } else if (isSpread) {
+      const hist = Array.isArray(pinnGamePeek.spreadHistory) ? pinnGamePeek.spreadHistory : [];
+      const match = [...hist].reverse().find((h) => {
+        const ln = instSide === 'away' ? h.awayLine : h.homeLine;
+        return linesClose(ln, ticketLine);
+      });
+      if (match) {
+        const o = instSide === 'away' ? match.awayOdds : match.homeOdds;
         if (Number.isFinite(o) && o !== 0) ticketOdds = o;
       }
     }
@@ -1248,8 +1253,7 @@ export function mapLockedPickToCardFixture(pick, {
     : isDraw ? 'Draw'
       : (sideNorm === 'away' ? awayShort : homeShort);
 
-  // Hero is the ticket we lock and grade. Book MAIN only sits underneath
-  // when it is a different line (Under 10.5 ticket / Under 8.5 main).
+  // Hero = grade line + pay odds. Sharp on another number → "flagged at".
   const fmtSpreadLn = (ln) => (Number.isFinite(ln) ? `${ln > 0 ? '+' : ''}${ln}` : '');
   const fmtAm = (o) => {
     if (!Number.isFinite(o) || o === 0) return null;
@@ -1261,6 +1265,10 @@ export function mapLockedPickToCardFixture(pick, {
     return null;
   };
   const ticketHeroLine = Number.isFinite(ticketLine) ? ticketLine : null;
+  const sharpLine = (isSpread || isTotal) && Number.isFinite(inst.line) ? inst.line : null;
+  const sharpOdds = Number.isFinite(inst.ticket?.american) && inst.ticket.american !== 0
+    ? inst.ticket.american
+    : null;
   const entryLadderLabel = (isTotal || isSpread)
     ? formatEntryLadderLabel(entryLadder, { isTotal, isSpread, teamShort })
     : null;
@@ -1273,6 +1281,10 @@ export function mapLockedPickToCardFixture(pick, {
   const mlNowOdds = (!isTotal && !isSpread && Number.isFinite(inst.tape?.now))
     ? inst.tape.now
     : null;
+  const sharpOffTicket = (isTotal || isSpread)
+    && Number.isFinite(ticketHeroLine)
+    && Number.isFinite(sharpLine)
+    && !linesClose(ticketHeroLine, sharpLine);
   const ticketOffLine = (isTotal || isSpread)
     && Number.isFinite(playableLine)
     && Number.isFinite(ticketHeroLine)
@@ -1281,34 +1293,19 @@ export function mapLockedPickToCardFixture(pick, {
     && Number.isFinite(lockOdds)
     && Number.isFinite(mlNowOdds)
     && Math.round(lockOdds) !== Math.round(mlNowOdds);
-  const ticketOffMain = ticketOffLine || ticketOffMl;
-  const mainNowOdds = (() => {
-    if (!ticketOffLine || !pinnGamePeek) return null;
-    if (isSpread && mainSpread) {
-      const o = sideNorm === 'away' ? mainSpread.awayOdds : mainSpread.homeOdds;
-      return Number.isFinite(o) ? o : null;
-    }
-    if (isTotal && mainTotal) {
-      const o = sideNorm === 'away' ? mainTotal.underOdds : mainTotal.overOdds;
-      return Number.isFinite(o) ? o : null;
-    }
-    return null;
-  })();
+  const ticketOffMain = sharpOffTicket || ticketOffLine || ticketOffMl;
   const heroLine = Number.isFinite(ticketHeroLine) ? ticketHeroLine : playableLine;
   const pickLabel = fmtLineLabel(heroLine)
     || (isTotal ? (pick.team || 'Total')
       : isDraw ? 'Draw ML'
         : `${teamShort} ML`);
-  // ML hero is book NOW when we have tape (same instrument, juice only).
-  // Spread/total hero juice is the ticket we will grade.
-  const heroOdds = (!isTotal && !isSpread && Number.isFinite(mlNowOdds))
-    ? mlNowOdds
-    : lockOdds;
-  const flaggedAtLabel = ticketOffLine
-    ? `main ${fmtLineLabel(playableLine) || playableLine}${
-      fmtAm(mainNowOdds) ? ` · ${fmtAm(mainNowOdds)}` : ''
+  // Hero = what we grade (line) and pay (odds). ML has no line.
+  const heroOdds = lockOdds;
+  const flaggedAtLabel = sharpOffTicket
+    ? `flagged at ${fmtLineLabel(sharpLine) || sharpLine}${
+      fmtAm(sharpOdds) ? ` · ${fmtAm(sharpOdds)}` : ''
     }`
-    : (ticketOffMl && fmtAm(lockOdds) ? `flagged at ${fmtAm(lockOdds)}` : null);
+    : null;
   const mainNowLabel = flaggedAtLabel;
 
   const stakePath = pick.hcStakeTier || pick.lockTier || 'LOCK';
@@ -1576,12 +1573,12 @@ export function mapLockedPickToCardFixture(pick, {
     : [];
   const tapeOpen = pinPts[0]?.odds
     ?? (Number.isFinite(inst.tape?.open) ? inst.tape.open : null)
-    ?? (Number.isFinite(sma?.path?.openOdds) ? sma.path.openOdds : null);
+    ?? (ticketOffMain ? null : (Number.isFinite(sma?.path?.openOdds) ? sma.path.openOdds : null));
   const tapeNow = pinPts.length
     ? pinPts[pinPts.length - 1].odds
     : (Number.isFinite(inst.tape?.now) ? inst.tape.now : null)
-      ?? (Number.isFinite(sma?.path?.nowOdds) ? sma.path.nowOdds : null)
-      ?? (Number.isFinite(fairLine) ? fairLine : null);
+      ?? (ticketOffMain ? null : (Number.isFinite(sma?.path?.nowOdds) ? sma.path.nowOdds : null))
+      ?? (ticketOffMain ? null : (Number.isFinite(fairLine) ? fairLine : null));
 
   // Beating Close = ticket vs same-line NOW. Never MAIN closingOdds vs an alt.
   const closeForClv = Number.isFinite(tapeNow) ? tapeNow
@@ -1626,7 +1623,7 @@ export function mapLockedPickToCardFixture(pick, {
     homeShort,
     pickLabel,
     entryLadder: entryLadder.length ? entryLadder : null,
-    // Hero is the ticket. Book main, when different, is the subtitle.
+    // Hero is the grade/pay ticket. Sharp on another number is the subtitle.
     entryLadderLabel: entriesOffPlayable
       ? null
       : (entryLadder.length > 1 ? entryLadderLabel : null),
@@ -1710,8 +1707,7 @@ export function mapLockedPickToCardFixture(pick, {
     lockOdds,
     peakOdds,
     peakAt,
-    nowOdds: Number.isFinite(tapeNow) ? tapeNow
-      : (Number.isFinite(sma?.path?.nowOdds) ? sma.path.nowOdds : fairLine),
+    nowOdds: Number.isFinite(tapeNow) ? tapeNow : (ticketOffMain ? null : fairLine),
     clvPct,
     serial,
     record30d: record30d || null,
@@ -1749,7 +1745,7 @@ export function mapLockedPickToCardFixture(pick, {
     // PIN/NOW = same-line tape as the chart (pinPath), never SMA's mixed path.
     sharpEntryOdds: Number.isFinite(tapeOpen) ? tapeOpen : null,
     currentFairOdds: Number.isFinite(tapeNow) ? tapeNow
-      : (Number.isFinite(fairLine) ? fairLine : null),
+      : (ticketOffMain ? null : (Number.isFinite(fairLine) ? fairLine : null)),
     polyEntryOdds: Number.isFinite(polyEntryOdds) ? polyEntryOdds : null,
   };
 }

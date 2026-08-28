@@ -29,7 +29,7 @@ import {
   EDGE_PRIOR_AG_WR,
   NET_CLV_PRIOR_AG,
 } from '../components/sharpFlow/cards/mapPositionCard';
-import { vaultTicket, classifyFamily, vaultConsensusLine } from '../lib/ticketInstrument';
+import { vaultTicket, classifyFamily, vaultConsensusLine, resolveInstrument, coherentTicket, stampJuice, stampTape, tapeOnLine } from '../lib/ticketInstrument';
 import { signedSpreadEntryLine } from '../lib/spreadLineSign.js';
 import { shortTeamNick } from '../utils/teamIdentity.js';
 import VaultAlphaField from '../components/sharpVault/VaultAlphaField';
@@ -7495,12 +7495,34 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     ? pinnGame?.bestAwaySpread?.book : pinnGame?.bestHomeSpread?.book;
   const spreadMainLine = spreadConsensusSide === 'away'
     ? pinnGame?.spreadCurrent?.awayLine : pinnGame?.spreadCurrent?.homeLine;
+  const spreadLeadSide = (spreadConsensusSide === 'away' || spreadConsensusSide === 'home')
+    ? spreadConsensusSide
+    : ((spreadSummary?.awayInvested || 0) >= (spreadSummary?.homeInvested || 0) ? 'away' : 'home');
   const spreadVaultLine = vaultConsensusLine(
     spreadGameData?.positions || [],
-    spreadConsensusSide,
+    spreadLeadSide,
     'SPREAD',
   );
   const spreadLine = Number.isFinite(spreadVaultLine) ? spreadVaultLine : spreadMainLine;
+  const spreadInst = resolveInstrument({
+    family: 'SPREAD',
+    side: spreadLeadSide,
+    positions: spreadGameData?.positions || [],
+    pinnGame,
+    stampedLine: Number.isFinite(spreadLine) ? spreadLine : null,
+    sport: gd.sport,
+    polySpread: polyData?.[gd.sport]?.[gd.key]?.polySpread || null,
+    awayName: gd.away,
+    homeName: gd.home,
+  });
+  // stampedLine/odds are the BOOK MAIN quote — never pass vault line with MAIN juice.
+  const spreadBound = coherentTicket(spreadInst, {
+    stampedLine: spreadMainLine,
+    stampedOdds: spreadBestRetail || spreadPinnOdds,
+  });
+  const spreadTicketLine = Number.isFinite(spreadBound.line) ? spreadBound.line : spreadLine;
+  const spreadTicketOdds = spreadBound.odds;
+  const spreadTapeNow = Number.isFinite(spreadInst?.tape?.now) ? spreadInst.tape.now : null;
 
   const spreadPinnProb = impliedProb(spreadPinnOdds);
   const spreadRetailProb = impliedProb(spreadBestRetail);
@@ -7584,8 +7606,8 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     syncSpreadPickToFirebase({
       date, sport: gd.sport, gameKey: gd.key, away: gd.away, home: gd.home,
       commenceTime, side: spreadConsensusSide, team: spreadConsensuTeam,
-      line: spreadLine, odds: spreadBetOdds, book: spreadBestBook || 'Pinnacle',
-      pinnacleOdds: spreadPinnOdds, evEdge: spreadEvEdge,
+      line: spreadTicketLine, odds: stampJuice(spreadBound, spreadBetOdds), book: Number.isFinite(spreadInst?.ticket?.american) ? 'Polymarket' : (spreadBestBook || 'Pinnacle'),
+      pinnacleOdds: stampTape(spreadBound, spreadTapeNow, spreadPinnOdds), evEdge: spreadEvEdge,
       criteriaMet: spreadSharpFeatures ? (spreadSharpFeatures.conWalletCount >= 3 ? 1 : 0) + (spreadEvEdge > 0 ? 1 : 0) + (spreadPinnMovedWith ? 1 : 0) : 0,
       criteria: {
         sharps3Plus: spreadSharpFeatures?.conWalletCount >= 3,
@@ -7617,7 +7639,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       if (lockSpreadRawScoreRef.current == null) lockSpreadRawScoreRef.current = spreadSr.rawScore;
       if (lockSpreadWPSRef.current == null) lockSpreadWPSRef.current = spreadSr.walletPlayScore;
       if (action !== 'no_change') {
-        onPickSynced(docId, spreadConsensusSide, { odds: spreadBetOdds, book: spreadBestBook || 'Pinnacle', pinnacleOdds: spreadPinnOdds, line: spreadLine, criteriaMet: spreadSharpFeatures ? (spreadSharpFeatures.conWalletCount >= 3 ? 1 : 0) + (spreadEvEdge > 0 ? 1 : 0) + (spreadPinnMovedWith ? 1 : 0) : 0, criteria: { sharps3Plus: spreadSharpFeatures?.conWalletCount >= 3, plusEV: spreadEvEdge > 0, lineMovingWith: spreadPinnMovedWith }, sharpCount: spreadSharpFeatures?.conWalletCount || 0, totalInvested: spreadSharpFeatures?.conTotalInvested || 0, evEdge: spreadEvEdge, units: spreadUnits, unitTier: unitTier(spreadUnits).label, consensusStrength: { moneyPct: Math.round(spreadSharpFeatures?.conMoneyPct ?? 50), walletPct: Math.round(spreadSharpFeatures?.conWalletPct ?? 50), grade: spreadSharpFeatures?.consensusTier || 'LEAN' }, stars: spreadSr.stars, team: spreadConsensuTeam }, { sport: gd.sport, away: gd.away, home: gd.home, commenceTime, marketType: 'spread' }, action);
+        onPickSynced(docId, spreadConsensusSide, { odds: stampJuice(spreadBound, spreadBetOdds), book: Number.isFinite(spreadInst?.ticket?.american) ? 'Polymarket' : (spreadBestBook || 'Pinnacle'), pinnacleOdds: stampTape(spreadBound, spreadTapeNow, spreadPinnOdds), line: spreadTicketLine, criteriaMet: spreadSharpFeatures ? (spreadSharpFeatures.conWalletCount >= 3 ? 1 : 0) + (spreadEvEdge > 0 ? 1 : 0) + (spreadPinnMovedWith ? 1 : 0) : 0, criteria: { sharps3Plus: spreadSharpFeatures?.conWalletCount >= 3, plusEV: spreadEvEdge > 0, lineMovingWith: spreadPinnMovedWith }, sharpCount: spreadSharpFeatures?.conWalletCount || 0, totalInvested: spreadSharpFeatures?.conTotalInvested || 0, evEdge: spreadEvEdge, units: spreadUnits, unitTier: unitTier(spreadUnits).label, consensusStrength: { moneyPct: Math.round(spreadSharpFeatures?.conMoneyPct ?? 50), walletPct: Math.round(spreadSharpFeatures?.conWalletPct ?? 50), grade: spreadSharpFeatures?.consensusTier || 'LEAN' }, stars: spreadSr.stars, team: spreadConsensuTeam }, { sport: gd.sport, away: gd.away, home: gd.home, commenceTime, marketType: 'spread' }, action);
       }
     });
   }, [isSpreadLocked, isSpreadShadow, spreadSr?.stars]);
@@ -7673,6 +7695,30 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const totalBestBook = totalConsensusSide === 'over'
     ? pinnGame?.bestOverTotal?.book : pinnGame?.bestUnderTotal?.book;
   const totalLine = pinnGame?.totalCurrent?.line;
+  const totalLeadSide = (totalConsensusSide === 'over' || totalConsensusSide === 'under')
+    ? totalConsensusSide
+    : ((totalSummary?.overInvested || 0) >= (totalSummary?.underInvested || 0) ? 'over' : 'under');
+  const totalVaultLine = vaultConsensusLine(
+    totalGameData?.positions || [],
+    totalLeadSide,
+    'TOTAL',
+  );
+  const totalInst = resolveInstrument({
+    family: 'TOTAL',
+    side: totalLeadSide,
+    positions: totalGameData?.positions || [],
+    pinnGame,
+    stampedLine: Number.isFinite(totalVaultLine) ? totalVaultLine : (Number.isFinite(totalLine) ? totalLine : null),
+    sport: gd.sport,
+  });
+  // stampedLine/odds are the BOOK MAIN quote — never pass vault line with MAIN juice.
+  const totalBound = coherentTicket(totalInst, {
+    stampedLine: totalLine,
+    stampedOdds: totalBestRetail || totalPinnOdds,
+  });
+  const totalTicketLine = Number.isFinite(totalBound.line) ? totalBound.line : totalLine;
+  const totalTicketOdds = totalBound.odds;
+  const totalTapeNow = Number.isFinite(totalInst?.tape?.now) ? totalInst.tape.now : null;
 
   const totalPinnProb = impliedProb(totalPinnOdds);
   const totalRetailProb = impliedProb(totalBestRetail);
@@ -7760,9 +7806,9 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     syncTotalPickToFirebase({
       date, sport: gd.sport, gameKey: gd.key, away: gd.away, home: gd.home,
       commenceTime, side: totalConsensusSide,
-      team: totalConsensusSide === 'over' ? `Over ${totalLine}` : `Under ${totalLine}`,
-      line: totalLine, odds: totalBetOdds, book: totalBestBook || 'Pinnacle',
-      pinnacleOdds: totalPinnOdds, evEdge: totalEvEdge,
+      team: totalConsensusSide === 'over' ? `Over ${totalTicketLine}` : `Under ${totalTicketLine}`,
+      line: totalTicketLine, odds: stampJuice(totalBound, totalBetOdds), book: Number.isFinite(totalInst?.ticket?.american) ? 'Polymarket' : (totalBestBook || 'Pinnacle'),
+      pinnacleOdds: stampTape(totalBound, totalTapeNow, totalPinnOdds), evEdge: totalEvEdge,
       criteriaMet: totalSharpFeatures ? (totalSharpFeatures.conWalletCount >= 3 ? 1 : 0) + (totalEvEdge > 0 ? 1 : 0) + (totalPinnMovedWith ? 1 : 0) : 0,
       criteria: {
         sharps3Plus: totalSharpFeatures?.conWalletCount >= 3,
@@ -7794,8 +7840,8 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       if (lockTotalRawScoreRef.current == null) lockTotalRawScoreRef.current = totalSr.rawScore;
       if (lockTotalWPSRef.current == null) lockTotalWPSRef.current = totalSr.walletPlayScore;
       if (action !== 'no_change') {
-        const totalTeamLabel = totalConsensusSide === 'over' ? `Over ${totalLine}` : `Under ${totalLine}`;
-        onPickSynced(docId, totalConsensusSide, { odds: totalBetOdds, book: totalBestBook || 'Pinnacle', pinnacleOdds: totalPinnOdds, line: totalLine, criteriaMet: totalSharpFeatures ? (totalSharpFeatures.conWalletCount >= 3 ? 1 : 0) + (totalEvEdge > 0 ? 1 : 0) + (totalPinnMovedWith ? 1 : 0) : 0, criteria: { sharps3Plus: totalSharpFeatures?.conWalletCount >= 3, plusEV: totalEvEdge > 0, lineMovingWith: totalPinnMovedWith }, sharpCount: totalSharpFeatures?.conWalletCount || 0, totalInvested: totalSharpFeatures?.conTotalInvested || 0, evEdge: totalEvEdge, units: totalUnits, unitTier: unitTier(totalUnits).label, consensusStrength: { moneyPct: Math.round(totalSharpFeatures?.conMoneyPct ?? 50), walletPct: Math.round(totalSharpFeatures?.conWalletPct ?? 50), grade: totalSharpFeatures?.consensusTier || 'LEAN' }, stars: totalSr.stars, team: totalTeamLabel }, { sport: gd.sport, away: gd.away, home: gd.home, commenceTime, marketType: 'total' }, action);
+        const totalTeamLabel = totalConsensusSide === 'over' ? `Over ${totalTicketLine}` : `Under ${totalTicketLine}`;
+        onPickSynced(docId, totalConsensusSide, { odds: stampJuice(totalBound, totalBetOdds), book: Number.isFinite(totalInst?.ticket?.american) ? 'Polymarket' : (totalBestBook || 'Pinnacle'), pinnacleOdds: stampTape(totalBound, totalTapeNow, totalPinnOdds), line: totalTicketLine, criteriaMet: totalSharpFeatures ? (totalSharpFeatures.conWalletCount >= 3 ? 1 : 0) + (totalEvEdge > 0 ? 1 : 0) + (totalPinnMovedWith ? 1 : 0) : 0, criteria: { sharps3Plus: totalSharpFeatures?.conWalletCount >= 3, plusEV: totalEvEdge > 0, lineMovingWith: totalPinnMovedWith }, sharpCount: totalSharpFeatures?.conWalletCount || 0, totalInvested: totalSharpFeatures?.conTotalInvested || 0, evEdge: totalEvEdge, units: totalUnits, unitTier: unitTier(totalUnits).label, consensusStrength: { moneyPct: Math.round(totalSharpFeatures?.conMoneyPct ?? 50), walletPct: Math.round(totalSharpFeatures?.conWalletPct ?? 50), grade: totalSharpFeatures?.consensusTier || 'LEAN' }, stars: totalSr.stars, team: totalTeamLabel }, { sport: gd.sport, away: gd.away, home: gd.home, commenceTime, marketType: 'total' }, action);
       }
     });
   }, [isTotalLocked, isTotalShadow, totalSr?.stars]);
@@ -8292,11 +8338,14 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     displayState: (displaySpread.state === 'PREVIEW' ? 'MONITORING' : displaySpread.state) || 'MONITORING',
     stakePath: displaySpread.tier || spreadCronStakeTier || 'MONITORING',
     units: Number.isFinite(displaySpread.units) ? displaySpread.units : (spreadCronUnits ?? 0),
-    odds: spreadBestRetail ?? spreadPinnOdds,
-    book: spreadBestBook || 'Pinnacle',
-    fairOdds: spreadPinnOdds,
+    odds: stampJuice(spreadBound, spreadBestRetail ?? spreadPinnOdds),
+    book: Number.isFinite(spreadInst?.ticket?.american) ? 'Polymarket' : (spreadBestBook || 'Pinnacle'),
+    fairOdds: stampTape(spreadBound, spreadTapeNow, spreadPinnOdds),
     toWin: (displaySpread.units || spreadCronUnits || 0) > 0
-      ? profitFromOdds(spreadBestRetail ?? spreadPinnOdds, displaySpread.units ?? spreadCronUnits ?? 0)
+      ? profitFromOdds(
+        stampJuice(spreadBound, spreadBestRetail ?? spreadPinnOdds),
+        displaySpread.units ?? spreadCronUnits ?? 0,
+      )
       : 0,
     side: spreadPlaySide,
     gameTimeLabel: gameTimeFormatted ? `${gameTimeFormatted} ET` : gameTimeLabel,
@@ -8318,12 +8367,17 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       tickets: null,
       money: null,
     },
-    books: Number.isFinite(spreadPinnOdds) ? [{ name: 'Pinnacle', odds: spreadPinnOdds, sharp: true }] : [],
+    books: (() => {
+      const o = stampTape(spreadBound, spreadTapeNow, spreadPinnOdds);
+      return Number.isFinite(o) ? [{ name: 'Pinnacle', odds: o, sharp: true }] : [];
+    })(),
     wallets: spreadBoard.wallets,
     mapWallets: spreadBoard.mapWallets.length ? spreadBoard.mapWallets : mlMapWallets,
-    pickLabel: spreadLine != null
-      ? `${(spreadPlaySide === 'away' ? awayShort : homeShort)} ${spreadLine > 0 ? '+' : ''}${spreadLine}`
+    pickLabel: spreadTicketLine != null
+      ? `${(spreadPlaySide === 'away' ? awayShort : homeShort)} ${spreadTicketLine > 0 ? '+' : ''}${spreadTicketLine}`
       : 'Spread',
+    heroOdds: stampJuice(spreadBound, spreadTapeNow),
+    flaggedOdds: stampJuice(spreadBound, spreadTapeNow),
     mainNowLabel: (() => {
       if (!Number.isFinite(spreadVaultLine) || !Number.isFinite(spreadMainLine)) return null;
       if (Math.abs(spreadVaultLine - spreadMainLine) <= 0.051) return null;
@@ -8354,6 +8408,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   // Line for totals — vault entry first (matches Engine Open Positions);
   // Pinnacle MAIN only when no plausible wallet line. Reject entryLine=1 junk.
   const totalPlayLine = (() => {
+    if (Number.isFinite(totalTicketLine) && totalTicketLine >= 1.5) return totalTicketLine;
     const fromPos = (totalGameData?.positions || [])
       .filter((p) => p.side === totalPlaySide && Number.isFinite(p.entryLine) && p.entryLine > 1)
       .sort((a, b) => (b.invested || 0) - (a.invested || 0))[0];
@@ -8371,12 +8426,12 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     displayState: (displayTotal.state === 'PREVIEW' ? 'MONITORING' : displayTotal.state) || 'MONITORING',
     stakePath: displayTotal.tier || totalCronStakeTier || 'MONITORING',
     units: Number.isFinite(displayTotal.units) ? displayTotal.units : (totalCronUnits ?? 0),
-    odds: totalPlayBestRetail ?? totalPlayPinnOdds ?? totalBestRetail ?? totalPinnOdds,
-    book: totalPlayBestBook || totalBestBook || 'Pinnacle',
-    fairOdds: totalPlayPinnOdds ?? totalPinnOdds,
+    odds: stampJuice(totalBound, totalPlayBestRetail ?? totalPlayPinnOdds ?? totalBestRetail ?? totalPinnOdds),
+    book: Number.isFinite(totalInst?.ticket?.american) ? 'Polymarket' : (totalPlayBestBook || totalBestBook || 'Pinnacle'),
+    fairOdds: stampTape(totalBound, totalTapeNow, totalPlayPinnOdds ?? totalPinnOdds),
     toWin: (displayTotal.units || totalCronUnits || 0) > 0
       ? profitFromOdds(
-        totalPlayBestRetail ?? totalPlayPinnOdds ?? totalBestRetail ?? totalPinnOdds,
+        stampJuice(totalBound, totalPlayBestRetail ?? totalPlayPinnOdds ?? totalBestRetail ?? totalPinnOdds),
         displayTotal.units ?? totalCronUnits ?? 0,
       )
       : 0,
@@ -8400,12 +8455,15 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       tickets: null,
       money: null,
     },
-    books: Number.isFinite(totalPlayPinnOdds ?? totalPinnOdds)
-      ? [{ name: 'Pinnacle', odds: totalPlayPinnOdds ?? totalPinnOdds, sharp: true }]
-      : [],
+    books: (() => {
+      const o = stampTape(totalBound, totalTapeNow, totalPlayPinnOdds ?? totalPinnOdds);
+      return Number.isFinite(o) ? [{ name: 'Pinnacle', odds: o, sharp: true }] : [];
+    })(),
     wallets: totalBoard.wallets,
     mapWallets: totalBoard.mapWallets.length ? totalBoard.mapWallets : mlMapWallets,
     pickLabel: totalPickLabel,
+    heroOdds: stampJuice(totalBound, totalTapeNow),
+    flaggedOdds: stampJuice(totalBound, totalTapeNow),
     mainNowLabel: (() => {
       if (!Number.isFinite(totalPlayLine) || !Number.isFinite(totalLine)) return null;
       if (Math.abs(totalPlayLine - totalLine) <= 0.051) return null;
@@ -11613,11 +11671,27 @@ export default function SharpFlow() {
                                   spreadLine = p.side === 'away' ? pinnGame.spreadCurrent?.awayLine : pinnGame.spreadCurrent?.homeLine;
                                   bestRetail = p.side === 'away' ? pinnGame.bestAwaySpread?.odds : pinnGame.bestHomeSpread?.odds;
                                   bestBook = p.side === 'away' ? pinnGame.bestAwaySpread?.book : pinnGame.bestHomeSpread?.book;
+                                  const vaultLn = Number.isFinite(p.entryLine) ? p.entryLine : null;
+                                  if (Number.isFinite(vaultLn) && Number.isFinite(spreadLine)
+                                      && Math.abs(vaultLn - spreadLine) > 0.051) {
+                                    const tape = tapeOnLine(pinnGame, { family: 'SPREAD', side: p.side, line: vaultLn });
+                                    pinnOdds = Number.isFinite(tape?.now) ? tape.now : null;
+                                    bestRetail = null;
+                                    bestBook = null;
+                                  }
                                 } else {
                                   pinnOdds = p.side === 'over' ? pinnGame.totalCurrent?.overOdds : pinnGame.totalCurrent?.underOdds;
                                   totalLine = pinnGame.totalCurrent?.line;
                                   bestRetail = p.side === 'over' ? pinnGame.bestOverTotal?.odds : pinnGame.bestUnderTotal?.odds;
                                   bestBook = p.side === 'over' ? pinnGame.bestOverTotal?.book : pinnGame.bestUnderTotal?.book;
+                                  const vaultLn = Number.isFinite(p.entryLine) ? p.entryLine : null;
+                                  if (Number.isFinite(vaultLn) && Number.isFinite(totalLine)
+                                      && Math.abs(vaultLn - totalLine) > 0.051) {
+                                    const tape = tapeOnLine(pinnGame, { family: 'TOTAL', side: p.side, line: vaultLn });
+                                    pinnOdds = Number.isFinite(tape?.now) ? tape.now : null;
+                                    bestRetail = null;
+                                    bestBook = null;
+                                  }
                                 }
                                 if (!isLocked) {
                                   const pinnProb = impliedProb(pinnOdds);
@@ -11629,9 +11703,10 @@ export default function SharpFlow() {
                               const sharpEntryOdds = probToAmerican(p.avgPrice);
       
                               const mktLabel = p.marketType === 'SPREAD' ? 'Spread' : p.marketType === 'TOTAL' ? 'Total' : 'ML';
-                              const displayLine = spreadLine != null ? spreadLine : p.entryLine;
+                              const vaultLn = Number.isFinite(p.entryLine) ? p.entryLine : null;
+                              const displayLine = vaultLn != null ? vaultLn : spreadLine;
                               const lineStr = p.marketType === 'SPREAD' && displayLine != null ? ` ${displayLine > 0 ? '+' : ''}${displayLine}` : '';
-                              const totalDisplayLine = totalLine != null ? totalLine : p.entryLine;
+                              const totalDisplayLine = vaultLn != null ? vaultLn : totalLine;
                               const totalStr = p.marketType === 'TOTAL' && totalDisplayLine != null ? ` ${totalDisplayLine}` : '';
                               const teamDisplay = `${p.teamName}${lineStr}${totalStr}`;
                               const isHighConviction = p.betMultiplier >= 3;

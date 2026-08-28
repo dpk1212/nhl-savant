@@ -439,3 +439,56 @@ export function ticketAmerican(inst, stampedOdds = null) {
   if (Number.isFinite(stampedOdds) && stampedOdds !== 0) return stampedOdds;
   return null;
 }
+
+/**
+ * Line + juice from ONE instrument. Never pair vault Poly on 8.5 with
+ * book MAIN 9 (CIN@CHC 2026-08-28: hero “Under 9 +113”).
+ * Vault line wins over a stale MAIN stamp. Juice order:
+ *   1) vault Poly on that line
+ *   2) same-line book tape
+ *   3) stamped odds only when the stamp is on this same line
+ * MAIN juice is never glued onto an alt.
+ */
+export function coherentTicket(inst, { stampedLine = null, stampedOdds = null } = {}) {
+  const line = Number.isFinite(inst?.line)
+    ? inst.line
+    : (Number.isFinite(stampedLine) ? stampedLine : null);
+  const mainLine = Number.isFinite(inst?.mainLine) ? inst.mainLine : null;
+  const offMain = Number.isFinite(line) && Number.isFinite(mainLine)
+    && !linesClose(line, mainLine);
+  const stampOnThisLine = Number.isFinite(stampedLine) && Number.isFinite(line)
+    && linesClose(stampedLine, line);
+  const vaultJuice = Number.isFinite(inst?.ticket?.american) && inst.ticket.american !== 0
+    ? inst.ticket.american
+    : null;
+  const sameLineTape = Number.isFinite(inst?.tape?.now) && inst.tape.now !== 0
+    ? inst.tape.now
+    : null;
+  const stampJuice = Number.isFinite(stampedOdds) && stampedOdds !== 0
+    && (stampOnThisLine || (!offMain && !Number.isFinite(stampedLine)))
+    ? stampedOdds
+    : null;
+  const odds = vaultJuice
+    ?? (offMain ? (sameLineTape ?? stampJuice) : (stampJuice ?? sameLineTape));
+  return {
+    line,
+    odds: Number.isFinite(odds) && odds !== 0 ? odds : null,
+    variant: inst?.variant || null,
+    mainLine,
+    offMain,
+  };
+}
+
+/** Stamp / hero juice: ticket first; never MAIN when the ticket is off-main. */
+export function stampJuice(bound, mainOdds = null) {
+  if (Number.isFinite(bound?.odds) && bound.odds !== 0) return bound.odds;
+  if (bound?.offMain) return null;
+  return Number.isFinite(mainOdds) && mainOdds !== 0 ? mainOdds : null;
+}
+
+/** PIN/NOW tape: same-line first; never MAIN when the ticket is off-main. */
+export function stampTape(bound, tapeNow = null, mainOdds = null) {
+  if (Number.isFinite(tapeNow) && tapeNow !== 0) return tapeNow;
+  if (bound?.offMain) return null;
+  return Number.isFinite(mainOdds) && mainOdds !== 0 ? mainOdds : null;
+}

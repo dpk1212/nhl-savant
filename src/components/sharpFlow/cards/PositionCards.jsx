@@ -2569,7 +2569,7 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
             </div>
             {contextLine && (
               <div
-                title="Book main line — different from the ticket we lock and grade"
+                title="Sharp money on a different line than the ticket we grade and pay"
                 style={{
                   marginTop: 7, fontSize: 11, fontWeight: 500,
                   letterSpacing: '0.01em', color: C.textFaint, lineHeight: 1.3,

@@ -14,6 +14,9 @@ import {
   tapeFromMeta,
   resolveInstrument,
   ticketAmerican,
+  coherentTicket,
+  stampJuice,
+  stampTape,
 } from '../src/lib/ticketInstrument.js';
 
 assert.equal(americanFromPolyPrice(0.554), -124);
@@ -224,5 +227,60 @@ const feverLive = resolveInstrument({
 });
 assert.equal(feverLive.ticket.american, 122, 'Ottawa 31¢ / +223 is not a Fever ticket');
 assert.equal(americanFromPolyPrice(0.31), 223);
+
+// 6) CIN@CHC 2026-08-28 — vault Under 8.5 @ 0.47 vs MAIN O/U 9 −119.
+// Hero must be Under 8.5 +113, never Under 9 +113 or Under 8.5 −119.
+assert.equal(americanFromPolyPrice(0.47), 113);
+const cinChcPinn = {
+  fairTotalBook: 'pinnacle',
+  totalCurrent: { line: 9, overOdds: -101, underOdds: -119, isMain: true },
+  totalHistory: [
+    { t: 1, line: 9, overOdds: -102, underOdds: -118, isMain: true },
+    { t: 1, line: 8.5, overOdds: -128, underOdds: 108 },
+    { t: 2, line: 8.5, overOdds: -130, underOdds: 108 },
+  ],
+  totalLines: [
+    { line: 9, overOdds: -101, underOdds: -119, isMain: true },
+    { line: 8.5, overOdds: -130, underOdds: 108 },
+  ],
+};
+const cinChc = resolveInstrument({
+  family: 'TOTAL',
+  side: 'under',
+  positions: [{ side: 'under', entryLine: 8.5, avgPrice: 0.47, invested: 63000 }],
+  pinnGame: cinChcPinn,
+  stampedLine: 9,
+});
+assert.equal(cinChc.variant, 'ALT');
+assert.equal(cinChc.line, 8.5, 'vault 8.5 wins over stamped MAIN 9');
+assert.equal(cinChc.mainLine, 9);
+assert.equal(cinChc.ticket.american, 113);
+assert.equal(cinChc.tape.now, 108, 'PIN/NOW is 8.5 tape, not MAIN −119');
+const cinBound = coherentTicket(cinChc, { stampedLine: 9, stampedOdds: -119 });
+assert.equal(cinBound.line, 8.5);
+assert.equal(cinBound.odds, 113, 'vault Poly beats MAIN stamp juice');
+assert.equal(cinBound.offMain, true);
+assert.equal(stampJuice(cinBound, -119), 113);
+assert.equal(stampTape(cinBound, cinChc.tape.now, -119), 108);
+
+const cinNoPx = resolveInstrument({
+  family: 'TOTAL',
+  side: 'under',
+  positions: [{ side: 'under', entryLine: 8.5, invested: 63000 }],
+  pinnGame: cinChcPinn,
+  stampedLine: 9,
+});
+const cinNoPxBound = coherentTicket(cinNoPx, { stampedLine: 9, stampedOdds: -119 });
+assert.equal(cinNoPxBound.line, 8.5);
+assert.equal(cinNoPxBound.odds, 108, 'no Poly → same-line tape, never MAIN −119');
+assert.equal(stampJuice(cinNoPxBound, -119), 108);
+
+// Alt spread: vault −1.5 Poly must not take MAIN +1.5 juice.
+const altSpreadBound = coherentTicket(alt, { stampedLine: 1.5, stampedOdds: -158 });
+assert.equal(altSpreadBound.line, -1.5);
+assert.equal(altSpreadBound.odds, 203);
+assert.equal(altSpreadBound.offMain, true);
+assert.equal(stampJuice(altSpreadBound, -158), 203);
+assert.equal(stampTape(altSpreadBound, null, -158), null, 'no alt tape → do not borrow MAIN');
 
 console.log('testTicketInstrument: ok');

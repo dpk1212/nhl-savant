@@ -1223,7 +1223,7 @@ export default function LockedClarityExpanded({
           <SteamTag steam={f.steam} compact />
           {f.mainNowLabel && (
             <span
-              title="Vault flagged ticket — T-15 locks the main line above"
+              title="Sharp money is on this line — we grade and pay the ticket above"
               style={{
                 width: '100%', fontSize: 11, fontWeight: 600, color: C.textMuted, marginTop: 2,
               }}
