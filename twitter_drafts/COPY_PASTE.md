@@ -1,70 +1,90 @@
-# Twitter — 2026-08-28 · V12 ATH · HOOK OBSESS (best-ever bar)
-**Pathway — same beat · open only until it clears eng-leader DNA**
+# Twitter — 2026-08-28 · V12 ATH · valley→size→ATH (BEST BAR)
+**Pathway — FULL REWRITE with Dale −76u context**
 
-| | |
-|--|--|
-| **ONE** | ATH came from sizing the right games — not a hotter hit rate |
-| **SPCL** | **C + P** |
-| **Ask** | none · lab chat only |
+### 0 · Spine
+ATH · open data/edge · June/July prep · August size · 3u+ difference · small-unit leak + fixes · efficient capital · thanks new + OGs (stars) · lab chat  
+**NEW:** before V12 June 1 → **down 76u**
 
-### Why prior open wasn’t max
-`4u+ +80.7u / under −23u` = great **proof** · weak **scroll-stop**.  
-Reads like a chart caption. Stranger needs a paradox or scarce filter in ≤2 lines — then the ledger.
+### 1 · WHO
+Anyone who saw the bleed / new folks who only know the green · OGs who sat the valley
 
-### Hook scorecard (obsess)
+### 2 · PURPOSE
+**Give / connect** — costly Power + open edge ledger · no Upgrade
 
-| # | Lines 1–3 | DNA | Scroll-stop | Fit to ONE |
-|---|-----------|-----|-------------|------------|
-| A | 4u+ +80.7u / under −23u | over-5u ledger | Med | Strong proof, soft open |
-| B ★ | **WIN RATE WENT DOWN. / BOOK HIT ALL-TIME HIGH.** | eng#3 edge≠scoreboard | **Max** | Perfect paradox |
-| C | SAME 27 DAYS · Jun +26.6 · Jul +14.2 · Aug +57.6 | eng#4 contrast | High | Fair-race proof |
-| D | 64 TICKETS ABOVE 5u · +91.2u · 75% | imp#1 over-5u | High | Filter — slightly narrower than Dale “3+” |
-| E | ATH +121.57u first | naked S | Low | Spent +110u energy — **kill** |
+### 3 · ONE
+We were buried −76u before June 1 — V12 went live, we prepped then sized in August, book hit ATH because capital finally went to the games that matter
 
-**Recommended: B** — then land prep/size + rung ledger as how/so-what.
+### 4 · SPCL ★
+**P + C** — valley→ATH say–do is Power max; rung ledger is Cred  
+(L in OG/lab close only)
+
+### 5 · STUFF
+- Pre-V12 trough: **−76u** (Dale) · all-time chart valley May → June 1 turn
+- V12 since Jun 1: **+121.57u** · 473–389–7 · 54.9% · 89d · 869 graded · +5.1% ROI
+- All-time now: **+50.63u** ATH (1043–881–12 · 54.2% · 166d) — climb erased the hole
+- June +47.0u · July +17.0u grind · Aug +57.6u size month
+- Fair race d27: +26.6 / +14.2 / +57.6
+- WR 56.1→53.5 · avg night +1.6→+2.1
+- Aug 4u+ **+80.7u @ 70%** · under 4u **−23u**
+- >5u **+91.2u / 64 / 75%** · ~¾ of V12 profit
+- Updates for small-rung leak · OGs stars · lab chat
+
+### 6 · HOOK QA ★ absolute best
+Valley → live → ATH. Eng#1 violence + costly Power. Not a chart caption. Not naked flex.
+
+```
+DOWN 76 UNITS.
+THEN V12 WENT LIVE.
+
+89 DAYS LATER — ALL-TIME HIGH.
+```
+
+What/how/so what complete in 3 lines. Screenshot ends the argument.
+
+### Kill
+AGS-U · Upgrade · hide −76u or −23u · WR-paradox as primary now that valley exists · tipster “we’re back”
 
 ---
 
-## HERO — recommended (hook B)
+## HERO — single tweet
 
-**Attach:** ATH equity + under-4u vs 4u+ rung chart
+**Attach:** ALL TIME chart (valley→climb→ATH) as primary · rung “where units came from” as second
 
 ### Copy this ↓
 
 ```
-WIN RATE WENT DOWN.
-THE BOOK HIT AN ALL-TIME HIGH.
+DOWN 76 UNITS.
+THEN V12 WENT LIVE.
 
-That's August.
-That's the whole story.
+89 days later — all-time high.
++121.57u since June 1.
 
 June / July we prepped for this move.
-August we sized —
-efficient deployment of capital
-to the games we actually want it on.
+August we sized.
+
+Win rate didn't even go up.
+We just stopped deploying capital like we were guessing
+and put it on the games we actually wanted.
 
 4u+ in August: +80.7u at 70%.
 Under 4u: −23u.
-We transformed the board.
-We also neglected the small rungs — that's on us —
-and we already shipped updates to clean that leak.
+That's the edge — and the leak.
+We neglected the small rungs. That's on us.
+Updates already shipped to clean it up.
 
-V12 all-time high.
-+121.57u since June 1.
-473–389–7 · 54.9% · 89 days · 869 graded.
+Above 5u: +91.2u on 64 tickets at 75%.
+Three-quarters of the whole V12 book.
 
 Same 27 days, three months:
 June +26.6u · July +14.2u · August +57.6u.
 
-Hit rate eased (56.1% → 53.5%).
-Average night did the opposite (+1.6u → +2.1u).
-
-Above 5u: +91.2u on 64 tickets at 75%.
-Three-quarters of the entire book.
+The book isn't greener because we got luckier.
+It's greener because sizing got honest.
 
 Thank you to every new person who walked in.
 And especially the OGs —
 if you remember the era with stars, you're a real one.
+You sat the valley with us.
 
 I'm in the lab every morning.
 Stop by. Drop a chat.
@@ -72,29 +92,20 @@ Stop by. Drop a chat.
 
 ---
 
-## Open alts (swap lines 1–4 only)
+## Open alts (only if Dale wants different violence)
 
-**C — fair race**
+**Numbers stacked**
 ```
-SAME 27 DAYS.
-JUNE +26.6u.
-JULY +14.2u.
-AUGUST +57.6u.
-```
-
-**D — over-5u filter**
-```
-64 TICKETS ABOVE 5u.
-+91.2u AT 75%.
-
-Three-quarters of the entire book.
+BEFORE JUNE 1: −76u.
+SINCE JUNE 1: +121.57u.
+ALL-TIME HIGH.
 ```
 
-**A — keep ledger-first if Dale wants edge-in-line-1**
+**Valley + size**
 ```
-4u+ IN AUGUST: +80.7u AT 70%.
-UNDER 4u: −23u.
+DOWN 76u.
+THEN WE STOPPED NIBBLING.
 
-Win rate went down.
-The book hit an all-time high.
+August 4u+: +80.7u at 70%.
+All-time high.
 ```
