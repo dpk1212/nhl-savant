@@ -1,54 +1,33 @@
-# Twitter — 2026-08-28 · V12 ATH · valley→size→ATH (BEST BAR)
-**Pathway — FULL REWRITE with Dale −76u context**
+# Twitter — 2026-08-28 · V12 ATH + SR switch desire
+**Pathway — FULL**
 
-### 0 · Spine
-ATH · open data/edge · June/July prep · August size · 3u+ difference · small-unit leak + fixes · efficient capital · thanks new + OGs (stars) · lab chat  
-**NEW:** before V12 June 1 → **down 76u**
+### Hero (locked — Dale: phenomenal)
+| | |
+|--|--|
+| **WHO** | Bleed survivors · new green-only folks · OGs |
+| **PURPOSE** | **Give** — free P+C (valley→ATH · size edge · leak) |
+| **ONE** | −76u → V12 → sized August → ATH because capital got honest |
+| **SPCL** | **P + C** |
+| **Ask** | none in hero (lab chat = door only) |
 
-### 1 · WHO
-Anyone who saw the bleed / new folks who only know the green · OGs who sat the valley
+### Self-reply (Dale spine → process)
+| | |
+|--|--|
+| **PURPOSE** | **Ask** — soft switch / compliance after free SPCL |
+| **ONE** | If you can’t quantify low-tier vs high-tier edge — or you’re paying without metrics like this — look at switching; we exist to put you on more winners |
+| **SPCL** | **C** (tie hero ledger) + desire · Likeness voice |
+| **Ask** | soft — “why haven’t you looked at switching?” · no hard price spam · no tipster guarantee |
 
-### 2 · PURPOSE
-**Give / connect** — costly Power + open edge ledger · no Upgrade
+**Hormozi architecture:** Hero = free pudding · SR = request  
+**Refine vs Dale raw:** open ties to hero’s 4u+/under split (quantify edge) · cut brochure · dinner-table · goal line earns the ask
 
-### 3 · ONE
-We were buried −76u before June 1 — V12 went live, we prepped then sized in August, book hit ATH because capital finally went to the games that matter
-
-### 4 · SPCL ★
-**P + C** — valley→ATH say–do is Power max; rung ledger is Cred  
-(L in OG/lab close only)
-
-### 5 · STUFF
-- Pre-V12 trough: **−76u** (Dale) · all-time chart valley May → June 1 turn
-- V12 since Jun 1: **+121.57u** · 473–389–7 · 54.9% · 89d · 869 graded · +5.1% ROI
-- All-time now: **+50.63u** ATH (1043–881–12 · 54.2% · 166d) — climb erased the hole
-- June +47.0u · July +17.0u grind · Aug +57.6u size month
-- Fair race d27: +26.6 / +14.2 / +57.6
-- WR 56.1→53.5 · avg night +1.6→+2.1
-- Aug 4u+ **+80.7u @ 70%** · under 4u **−23u**
-- >5u **+91.2u / 64 / 75%** · ~¾ of V12 profit
-- Updates for small-rung leak · OGs stars · lab chat
-
-### 6 · HOOK QA ★ absolute best
-Valley → live → ATH. Eng#1 violence + costly Power. Not a chart caption. Not naked flex.
-
-```
-DOWN 76 UNITS.
-THEN V12 WENT LIVE.
-
-89 DAYS LATER — ALL-TIME HIGH.
-```
-
-What/how/so what complete in 3 lines. Screenshot ends the argument.
-
-### Kill
-AGS-U · Upgrade · hide −76u or −23u · WR-paradox as primary now that valley exists · tipster “we’re back”
+**Kill:** Upgrade % dump unless Dale adds · dunk other tools by name · “best model” swagger · hide that we named our own leak in hero
 
 ---
 
 ## HERO — single tweet
 
-**Attach:** ALL TIME chart (valley→climb→ATH) as primary · rung “where units came from” as second
+**Attach:** ALL TIME chart (valley→ATH) · rung chart second
 
 ### Copy this ↓
 
@@ -92,20 +71,28 @@ Stop by. Drop a chat.
 
 ---
 
-## Open alts (only if Dale wants different violence)
+## SELF-REPLY — soft switch ask
 
-**Numbers stacked**
-```
-BEFORE JUNE 1: −76u.
-SINCE JUNE 1: +121.57u.
-ALL-TIME HIGH.
-```
+**When:** Reply 1 under hero — post right after  
+**Attach:** optional — zoom of under-4u vs 4u+ rung chart (the “quantify” proof)
 
-**Valley + size**
-```
-DOWN 76u.
-THEN WE STOPPED NIBBLING.
+### Copy this ↓
 
-August 4u+: +80.7u at 70%.
-All-time high.
+```
+I don't know what you're using for your data or model right now.
+
+But if you can't quantify the edge between low-tier plays and high-tier plays —
+you're guessing with better branding.
+
+And if you're paying real money without access to underlying metrics like this —
+the size rungs, the 4u+ vs under-4u split, the printers behind the units —
+why haven't you looked at switching?
+
+My number one goal is simple:
+get people on more winners.
+
+The data and the process are built for that.
+Nothing else.
+
+Lab's open. Come grade it yourself.
 ```

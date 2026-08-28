@@ -7,17 +7,17 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-08-28 — V12 ATH valley hook (−76u → live → ATH) |
+| Last updated | 2026-08-28 — V12 ATH hero + SR soft switch |
 | CSV window | Aug 21–27, 2026 |
-| Ask temperature | **cool** — give + lab chat |
-| Account arc | **−76u pre-V12 → +121.57u → ATH** · August size edge |
+| Ask temperature | **hot when SR ships** — then cool |
+| Account arc | −76u → V12 ATH give · **SR switch desire** |
 
 ---
 
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 8/28 | Hero V12 ATH | DOWN 76u · V12 live · 89d ATH · August size edge | **P + C** | none | **Restaged** — Dale −76u context · best-ever bar |
+| 8/28 | Hero V12 ATH + SR | DOWN 76u → ATH give · SR: quantify tier edge / why not switch | P+C · ask SR | **yes SR** | **Staged** — hero locked; SR refined to process |
 | 8/27 night | Hero Braves ML | Same Nats printer · 2.0× Braves | P + S | none | Staged |
 | 8/27 eve | QT Dominic +EV | Become-sharp vs +EV nuke | C+L+P | RT | Staged |
 | 8/27 eve | QT own Nats | Pressed→cashed + Upgrade | P + S | yes | Staged |
