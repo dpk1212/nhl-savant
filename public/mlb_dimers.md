@@ -1,158 +1,192 @@
 # MLB Predictions
 
-MLB predictions for Thursday, August 27, 2026, powered by advanced data science. Compare win probabilities with the best available odds for the moneyline, run line, and total. On 8/27, the Nationals have the highest win probability at 56.1%.
+MLB predictions for Thursday, August 27, 2026, powered by advanced data science. Compare win probabilities with the best available odds for the moneyline, run line, and total. On 8/27, the Nationals have the highest win probability at 56.4%.
 
 [![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-left.svg) Get 6 months of Dimers Pro for just $99.99 ![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-right.svg)](https://www.dimers.com/subscription)
 
 Aug 27 2026
 
-[Aug 27, 1:05 PM ET\\
-\\
-![Rockies](https://cdn.ciphersports.io/images/MLB/official/COL.svg)\\
-\\
-Rockies  G. Hughes \\
-\\
-43.6% \\
-\\
-![DraftKings](https://cdn.ciphersports.io/images/bookmaker-logos/draftkings-icon.svg)\\
-\\
-+131\\
-\\
-![Nationals](https://cdn.ciphersports.io/images/MLB/official/WSH.svg)\\
-\\
-Nationals  J. Irvin \\
-\\
-56.4% \\
-\\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
-\\
--133\\
-\\
-STARTS\\
-\\
-33 mins \\
-\\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_156_wsh_col) [Aug 27, 7:05 PM ET\\
+[Aug 27, 7:05 PM ET\\
 \\
 ![Astros](https://cdn.ciphersports.io/images/MLB/official/HOU.svg)\\
 \\
-Astros  H. Wesneski \\
+Astros \\
 \\
-44.1% \\
+1 \\
 \\
-![Hard Rock Bet](https://cdn.ciphersports.io/images/bookmaker-logos/hardrock-icon.png)\\
-\\
-+145\\
+61.7% \\
 \\
 ![Yankees](https://cdn.ciphersports.io/images/MLB/official/NYY.svg)\\
 \\
-Yankees  G. Cole \\
+Yankees \\
 \\
-55.9% \\
+0 \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+38.3% \\
 \\
--144\\
+3 Out\\
 \\
-MLB \\
+LIVE\\
 \\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_156_nyy_hou) [Aug 27, 7:07 PM ET\\
+Bot 4th \\
+\\
+In-Play Predictions](https://www.dimers.com/mlb/predictions/2026_156_nyy_hou) [Aug 27, 7:07 PM ET\\
 \\
 ![Royals](https://cdn.ciphersports.io/images/MLB/official/KC.svg)\\
 \\
-Royals  N. Cameron \\
+Royals \\
 \\
-48.7% \\
+4 \\
 \\
-![Polymarket](https://cdn.ciphersports.io/images/polymarket-small.png)\\
-\\
--104\\
+90.5% \\
 \\
 ![Blue Jays](https://cdn.ciphersports.io/images/MLB/official/TOR.svg)\\
 \\
-Blue Jays  S. Arrighetti \\
+Blue Jays \\
 \\
-51.3% \\
+0 \\
 \\
-![Polymarket](https://cdn.ciphersports.io/images/polymarket-small.png)\\
+9.5% \\
 \\
-+100\\
+2 Out\\
 \\
-MLB \\
+LIVE\\
 \\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_156_tor_kc) [Aug 27, 7:10 PM ET\\
+Bot 4th \\
+\\
+In-Play Predictions](https://www.dimers.com/mlb/predictions/2026_156_tor_kc) [Aug 27, 7:10 PM ET\\
 \\
 ![Brewers](https://cdn.ciphersports.io/images/MLB/official/MIL.svg)\\
 \\
-Brewers  J. Misiorowski \\
+Brewers \\
 \\
-55.2% \\
+4 \\
 \\
-![FanDuel](https://cdn.ciphersports.io/images/bookmaker-logos/fanduel-icon.svg)\\
-\\
--186\\
+90.6% \\
 \\
 ![Mets](https://cdn.ciphersports.io/images/MLB/official/NYM.svg)\\
 \\
-Mets  S. Manaea \\
+Mets \\
 \\
-44.8% \\
+0 \\
 \\
-![bet365](https://cdn.ciphersports.io/images/bookmaker-logos/bet365-icon.svg)\\
+9.4% \\
 \\
-+195\\
+0 Out\\
 \\
-MLB \\
+LIVE\\
 \\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_156_nym_mil) [Aug 27, 7:15 PM ET\\
+Top 5th \\
+\\
+In-Play Predictions](https://www.dimers.com/mlb/predictions/2026_156_nym_mil) [Aug 27, 7:15 PM ET\\
 \\
 ![Dodgers](https://cdn.ciphersports.io/images/MLB/official/LAD.svg)\\
 \\
-Dodgers  Y. Yamamoto \\
+Dodgers \\
 \\
-43.9% \\
+0 \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
-\\
-+113\\
+29.1% \\
 \\
 ![Braves](https://cdn.ciphersports.io/images/MLB/official/ATL.svg)\\
 \\
-Braves  C. Sale \\
+Braves \\
 \\
-56.1% \\
+1 \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+70.9% \\
 \\
--117\\
+1 Out\\
 \\
-MLB \\
+LIVE\\
 \\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_156_atl_lad) [Aug 27, 9:45 PM ET\\
+Top 5th \\
+\\
+In-Play Predictions](https://www.dimers.com/mlb/predictions/2026_156_atl_lad) [Aug 27, 9:45 PM ET\\
 \\
 ![D-Backs](https://cdn.ciphersports.io/images/MLB/official/ARI.svg)\\
 \\
 D-Backs  J. Cabrera \\
 \\
-48.1% \\
+49.6% \\
 \\
-![FanDuel](https://cdn.ciphersports.io/images/bookmaker-logos/fanduel-icon.svg)\\
+![bet365](https://cdn.ciphersports.io/images/bookmaker-logos/bet365-icon.svg)\\
 \\
--104\\
+-105\\
 \\
 ![Giants](https://cdn.ciphersports.io/images/MLB/official/SF.svg)\\
 \\
 Giants  L. Roupp \\
 \\
-51.9% \\
+50.4% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-+102\\
++111\\
 \\
 MLB \\
 \\
-See Game Predictions](https://www.dimers.com/mlb/predictions/2026_156_sf_ari)
+See Game Predictions](https://www.dimers.com/mlb/predictions/2026_156_sf_ari) [Aug 27, 1:05 PM ET\\
+\\
+R\\
+\\
+H\\
+\\
+E\\
+\\
+![Rockies](https://cdn.ciphersports.io/images/MLB/official/COL.svg)\\
+\\
+Rockies \\
+\\
+1 \\
+\\
+5 \\
+\\
+0 \\
+\\
+![Nationals](https://cdn.ciphersports.io/images/MLB/official/WSH.svg)\\
+\\
+Nationals \\
+\\
+7 \\
+\\
+13 \\
+\\
+0 \\
+\\
+FINAL\\
+\\
+See Game Recap](https://www.dimers.com/mlb/predictions/2026_156_wsh_col) [Aug 27, 2:15 PM ET\\
+\\
+R\\
+\\
+H\\
+\\
+E\\
+\\
+![Orioles](https://cdn.ciphersports.io/images/MLB/official/BAL.svg)\\
+\\
+Orioles \\
+\\
+5 \\
+\\
+7 \\
+\\
+0 \\
+\\
+![Cardinals](https://cdn.ciphersports.io/images/MLB/official/STL.svg)\\
+\\
+Cardinals \\
+\\
+7 \\
+\\
+9 \\
+\\
+0 \\
+\\
+FINAL\\
+\\
+See Game Recap](https://www.dimers.com/mlb/predictions/2026_156_stl_bal)
 
 ![FanDuel logo](https://cdn.ciphersports.io/images/bookmaker-logos/fanduel-icon.svg)FanDuel
 
@@ -354,12 +388,12 @@ How to claim
 
 Dimers’ MLB predictions are powered by a simulation-based model that plays out each game thousands of times, inning by inning. From those simulations, we estimate each team’s chances of winning.
 
-On Thursday, the Nationals lead all win probabilities with a 56.1% chance of beating the Rockies at Nationals Park. The Yankees and Brewers also rank among the leading moneyline favorites.
+On Thursday, the Nationals lead all win probabilities with a 56.4% chance of beating the Rockies at Nationals Park. The Yankees and Brewers also rank among the leading moneyline favorites.
 
 | Team | Prob. | Opponent | First pitch (ET) |
 | --- | --- | --- | --- |
-| Nationals | 56.1% | vs. Rockies | 10:05am |
-| Yankees | 56.0% | vs. Astros | 4:05pm |
+| Nationals | 56.4% | vs. Rockies | 10:05am |
+| Yankees | 56.1% | vs. Astros | 4:05pm |
 | Brewers | 55.5% | @ Mets | 4:10pm |
 
 ## MLB predictions today: Data-driven outcomes for every game
