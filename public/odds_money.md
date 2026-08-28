@@ -99,7 +99,7 @@ NHLTue 09/29
 | THU 10/018:00 PM<br>![](https://logos.oddstrader.com/logos-original/a5a350db-3367-47d7-b9de-7d1d358eab99-original.PNG?d=100x100)<br>Minnesota<br>51-42<br>-<br>-147Bovada | - | - | - | -147 | - | - | - |
 | ![](https://logos.oddstrader.com/logos-original/5e8d35d8-0bed-4ae7-a56f-519fdfc050f0-original.PNG?d=100x100)<br>Nashville<br>38-44<br>-<br>+127Bovada | - | - | - | +127 | - | - | - |
 
-| THU 10/019:00 PM<br>![](https://logos.oddstrader.com/logos-original/57746aad-944c-4746-a88e-276959c6ed99-original.PNG?d=100x100)<br>Chicago<br>29-53<br>-<br>+168Bovada | - | - | - | +168 | - | - | - |
+| THU 10/019:30 PM<br>![](https://logos.oddstrader.com/logos-original/57746aad-944c-4746-a88e-276959c6ed99-original.PNG?d=100x100)<br>Chicago<br>29-53<br>-<br>+168Bovada | - | - | - | +168 | - | - | - |
 | ![](https://logos.oddstrader.com/logos-original/19ec02c9-dff7-443a-8718-e331870b55ef-original.png?d=100x100)<br>Utah<br>45-43<br>-<br>-198Bovada | - | - | - | -198 | - | - | - |
 
 | THU 10/0110:00 PM<br>![](https://logos.oddstrader.com/logos-original/9efd6fc1-bc83-444a-95e0-3482b7f33dab-original.PNG?d=100x100)<br>Florida<br>40-42<br>-<br>-140Bovada | - | - | - | -140 | - | - | - |
@@ -203,8 +203,6 @@ It depends on the matchup. If the favorite is strong but overpriced, puck line b
 Look for short answers to common questions like how the puck line works or how to track movement across sportsbooks.
 
 [![icon](https://otcdn.virginia.us-east-1.oddstrader.com/ot-app-icon.svg)Download the app](https://get-app.oddstrader.com/ot-app-link)
-
-What are the top NHL predictions for today?Generate
 
 ![BetStation](https://otcdn.virginia.us-east-1.oddstrader.com/otTurbo/assistant-logo.svg)
 
