@@ -7,7 +7,7 @@
 ## Snapshot
 | Field | Value |
 |-------|--------|
-| Last updated | 2026-08-28 — V12 ATH / size-edge give staged |
+| Last updated | 2026-08-28 — V12 ATH hook obsess (WR down / ATH up) |
 | CSV window | Aug 21–27, 2026 |
 | Ask temperature | **cool** — give + lab chat invite only |
 | Account arc | Size month truth · **V12 ATH +121.57u** · edge = 4u+/5u+ |
@@ -17,7 +17,7 @@
 ## Last 5 desk beats (newest first)
 | When | Type | ONE idea / hook | SPCL owned | Ask? | Status |
 |------|------|-----------------|------------|------|--------|
-| 8/28 | Hero V12 ATH | 4u+ +80.7u vs under −23u · June/July prep · Aug size · ATH | **C + P** | none (lab chat) | **Staged** — Dale spine |
+| 8/28 | Hero V12 ATH | WIN RATE WENT DOWN · BOOK HIT ATH · size edge ledger | C + P | none | **Hook B staged** — Dale: best-ever open bar |
 | 8/27 night | Hero Braves ML | Same Nats printer · 2.0× Braves · back to well | P + S | none | Staged |
 | 8/27 eve | QT Dominic +EV | Become-sharp vs +EV nuke | C+L+P | RT | Staged |
 | 8/27 eve | QT own Nats | Pressed→cashed + Upgrade | P + S | yes | Staged |
