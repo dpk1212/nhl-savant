@@ -778,9 +778,23 @@ async function run() {
 
   const eventsByKey = { CBB: {}, NHL: {}, NBA: {}, MLB: {}, NFL: {}, WNBA: {}, CFB: {} };
 
+  const validBySport = {
+    CBB: validCBB, NHL: validNHL, NBA: validNBA,
+    MLB: validMLB, NFL: validNFL, WNBA: validWNBA, CFB: validCFB,
+  };
+  const activeSports = new Set(
+    Object.entries(validBySport).filter(([, set]) => set.size > 0).map(([sport]) => sport),
+  );
+  const skippedSports = Object.keys(validBySport).filter((s) => !activeSports.has(s));
+  const seriesToFetch = seriesConfig.filter((s) => activeSports.has(s.sport));
+  console.log(
+    `Kalshi slate: ${[...activeSports].join(', ') || 'none'}`
+    + (skippedSports.length ? ` — skip ${skippedSports.join(', ')} (${seriesConfig.length - seriesToFetch.length} series)` : ''),
+  );
+
   let prevSport = '';
-  for (let si = 0; si < seriesConfig.length; si++) {
-    const { ticker, sport, type } = seriesConfig[si];
+  for (let si = 0; si < seriesToFetch.length; si++) {
+    const { ticker, sport, type } = seriesToFetch[si];
     if (si > 0 && sport !== prevSport) {
       console.log(`\n⏸️  Switching to ${sport} — pausing to avoid rate limits…`);
       await sleep(3000);

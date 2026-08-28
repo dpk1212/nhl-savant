@@ -49,10 +49,11 @@ const CLOB = 'https://clob.polymarket.com';
 const httpFetch = typeof globalThis.fetch === 'function' ? globalThis.fetch : (await import('node-fetch')).default;
 
 // Number of per-game enrichments (each = ~5 sequential Polymarket calls) kept
-// in flight at once. The data/gamma APIs tolerate modest parallelism; each
-// underlying request still throws on non-2xx and is caught per-game, so a slow
-// or failing game never blocks the others. Override via ENRICH_CONCURRENCY env.
-const ENRICH_CONCURRENCY = Number(process.env.ENRICH_CONCURRENCY) || 4;
+// in flight at once. Gamma/CLOB tolerate more parallelism than data-api
+// /positions (which 429s at SCAN_CONCURRENCY=4). 2026-08-28 logs: 112 games
+// at 4 ≈ 57s; 8 should cut that ~in half without touching the wallet scan.
+// Override via ENRICH_CONCURRENCY env.
+const ENRICH_CONCURRENCY = Number(process.env.ENRICH_CONCURRENCY) || 8;
 
 // Bounded-concurrency async map: runs `worker(item, idx)` for every item with
 // at most `concurrency` promises in flight. Used to parallelize the otherwise
