@@ -191,6 +191,12 @@ import {
   resolveTicketEvDrift,
   hoursUntilMs,
 } from '../src/lib/ticketTapeCapture.js';
+import {
+  SPORT_UNLOCK_GATE_FROM,
+  applySportConfirmedUnlockOverlay,
+  buildSportConfirmedCounts,
+  isSportUnlockGateLive,
+} from '../src/lib/sportConfirmedUnlock.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '../public');
@@ -631,6 +637,8 @@ function computeRankSlice(walletDetails, mySide, sport, walletProfiles) {
 // CONFIRMED-UNOPP / CONFIRMED-Q1 promote — see walletClvSkill.js
 /** Live flatDollar Q map (sport → wallet → Q); set once in main() after profiles load. */
 let FLAT_DOLLAR_Q_BY_SPORT = new Map();
+/** NFL/CFB Confirmed-n by sport — sport unlock CAP preload (Idea 1). */
+let SPORT_CONFIRMED_N_BY_SPORT = new Map();
 // (ALL live CONFIRMED × size≥0.5 × unopposed by CONFIRMED → 1u rescue).
 
 // ── SHARP-RESCUE / v12abc "c" ───────────────────────────────────────────────
@@ -1143,6 +1151,10 @@ function applySkillFeatureStamps(target, bundle, now, {
   firstEv = null,
   currentEv = null,
   dEv = null,
+  nSportConfirmed = null,
+  sportUnlockAction = null,
+  sportUnlockCap = null,
+  unitsPreSportUnlock = null,
   blendTier = null,
   pathBlendPriors = null,
   sideOdds = null,
@@ -1252,6 +1264,16 @@ function applySkillFeatureStamps(target, bundle, now, {
   if (unitsPreEvDrift != null && Number.isFinite(unitsPreEvDrift)) {
     target.v8_unitsPreEvDrift = unitsPreEvDrift;
   }
+  if (nSportConfirmed != null && Number.isFinite(Number(nSportConfirmed))) {
+    target.v8_sportConfirmedN = Number(nSportConfirmed);
+  }
+  if (sportUnlockAction != null) target.v8_sportUnlockAction = sportUnlockAction;
+  if (sportUnlockCap != null && Number.isFinite(Number(sportUnlockCap))) {
+    target.v8_sportUnlockCap = Number(sportUnlockCap);
+  }
+  if (unitsPreSportUnlock != null && Number.isFinite(unitsPreSportUnlock)) {
+    target.v8_unitsPreSportUnlock = unitsPreSportUnlock;
+  }
   // Path × EDGE expected WR (tracking only — no unit effect)
   const meanFor = wa?.meanFor ?? bundle.winnerAlign?.meanFor ?? null;
   const prior = resolvePathPriorWr(pathBlendPriors?.byTier, blendTier, {
@@ -1322,6 +1344,7 @@ function skillStampsDrifted(sd, bundle, {
   flinchFailOpenAction = null, maxSrSub4Action = null, noConfirmedAction = null,
   topCrowdedAction = null,
   evDriftAction = null,
+  sportUnlockAction = null,
   blendWr = null, expWin = null,
 } = {}) {
   if ((sd.v8_skillFeatureVersion || 0) !== SKILL_FEATURE_VERSION) return true;
@@ -1365,6 +1388,7 @@ function skillStampsDrifted(sd, bundle, {
   if (noConfirmedAction != null && (sd.v8_noConfirmedAction || null) !== noConfirmedAction) return true;
   if (topCrowdedAction != null && (sd.v8_topCrowdedAction || null) !== topCrowdedAction) return true;
   if (evDriftAction != null && (sd.v8_evDriftAction || null) !== evDriftAction) return true;
+  if (sportUnlockAction != null && (sd.v8_sportUnlockAction || null) !== sportUnlockAction) return true;
   return false;
 }
 
@@ -3124,6 +3148,22 @@ async function createMissingLockedPicks({
         peakUnitsApplied = evDriftPolicyCreate.units;
       }
 
+      // Sport Confirmed unlock CAP — absolute last after mutes. NFL/CFB only.
+      // Caps published units by sport-wide CONFIRMED count. Never mutes to 0.
+      let sportUnlockPolicyCreate = null;
+      const nSportConfirmedCreate = SPORT_CONFIRMED_N_BY_SPORT.get(String(sport).toUpperCase())
+        ?? SPORT_CONFIRMED_N_BY_SPORT.get(sport)
+        ?? null;
+      if (createV121Eligible && peakUnitsApplied > 0) {
+        sportUnlockPolicyCreate = applySportConfirmedUnlockOverlay({
+          units: peakUnitsApplied,
+          sport,
+          nSportConfirmed: nSportConfirmedCreate,
+          pickDate: TARGET_DATE,
+        });
+        peakUnitsApplied = sportUnlockPolicyCreate.units;
+      }
+
       // Determine team label for the side.
       //
       // For TOTAL picks: write the canonical "Over <line>" form ONLY when
@@ -3338,6 +3378,14 @@ async function createMissingLockedPicks({
           firstEv: evDriftCreate?.firstEv ?? null,
           currentEv: evDriftCreate?.currentEv ?? null,
           dEv: evDriftCreate?.dEv ?? null,
+          nSportConfirmed: nSportConfirmedCreate,
+          sportUnlockAction: sportUnlockPolicyCreate?.action ?? null,
+          sportUnlockCap: (sportUnlockPolicyCreate && sportUnlockPolicyCreate.maxUnits != null)
+            ? sportUnlockPolicyCreate.maxUnits
+            : null,
+          unitsPreSportUnlock: (sportUnlockPolicyCreate && Number.isFinite(sportUnlockPolicyCreate.unitsPrePolicy))
+            ? sportUnlockPolicyCreate.unitsPrePolicy
+            : null,
           blendTier: hcStakeTierCreate,
           pathBlendPriors,
           sideOdds: odds ?? null,
@@ -4562,6 +4610,23 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     finalUnitsApplied = evDriftPolicy.units;
   }
 
+  // ─── Sport Confirmed unlock CAP (absolute last after mutes) ──────────
+  // NFL/CFB only · caps by sport-wide CONFIRMED n · never mutes to 0 ·
+  // does not repath · manual stake exempt · date-gated inside overlay.
+  let sportUnlockPolicy = null;
+  const nSportConfirmedLive = SPORT_CONFIRMED_N_BY_SPORT.get(String(pick.sport).toUpperCase())
+    ?? SPORT_CONFIRMED_N_BY_SPORT.get(pick.sport)
+    ?? null;
+  if (v121Eligible && finalUnitsApplied > 0 && !skipManualFlinch) {
+    sportUnlockPolicy = applySportConfirmedUnlockOverlay({
+      units: finalUnitsApplied,
+      sport: pick.sport,
+      nSportConfirmed: nSportConfirmedLive,
+      pickDate,
+    });
+    finalUnitsApplied = sportUnlockPolicy.units;
+  }
+
   // ─── lockStage promote/demote — v12 gate ──────────────────────────────
   // Ship floor: v12 score > 0 (the mute boundary), OR a CONFIRMED-Q1 /
   // CONFIRMED-UNOPP rescue that forced through an AGS mute.
@@ -4623,6 +4688,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (noConfirmedPolicy?.reason && !reasons.includes(noConfirmedPolicy.reason)) reasons.push(noConfirmedPolicy.reason);
   if (topCrowdedPolicy?.reason && !reasons.includes(topCrowdedPolicy.reason)) reasons.push(topCrowdedPolicy.reason);
   if (evDriftPolicy?.reason && !reasons.includes(evDriftPolicy.reason)) reasons.push(evDriftPolicy.reason);
+  if (sportUnlockPolicy?.reason && !reasons.includes(sportUnlockPolicy.reason)) reasons.push(sportUnlockPolicy.reason);
   // Preserve diagnostic-only badge signals from prior cycles (they don't
   // change status but the UI uses them for chip rendering).
   if (sd.health?.reasons) {
@@ -4986,6 +5052,13 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       + `${evDriftPolicy.unitsPrePolicy}u → 0u (${hcStakeTier})`
     );
   }
+  if (sportUnlockPolicy?.action === 'CAP') {
+    changes.push(
+      `SPORT-UNLOCK-CAP: ${pick.sport} nConfirmed=${nSportConfirmedLive} `
+      + `max=${sportUnlockPolicy.maxUnits}u `
+      + `${sportUnlockPolicy.unitsPrePolicy}u → ${sportUnlockPolicy.units}u (${hcStakeTier})`
+    );
+  }
   if (rankRescued) {
     changes.push(`RANK-RESCUE: 2-for-0 slice promoted HC-muted pick → ${RANK_RESCUE_UNITS}u`);
   }
@@ -5087,6 +5160,14 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       firstEv: evDriftLive?.firstEv ?? null,
       currentEv: evDriftLive?.currentEv ?? null,
       dEv: evDriftLive?.dEv ?? null,
+      nSportConfirmed: nSportConfirmedLive,
+      sportUnlockAction: sportUnlockPolicy?.action ?? null,
+      sportUnlockCap: (sportUnlockPolicy && sportUnlockPolicy.maxUnits != null)
+        ? sportUnlockPolicy.maxUnits
+        : null,
+      unitsPreSportUnlock: (sportUnlockPolicy && Number.isFinite(sportUnlockPolicy.unitsPrePolicy))
+        ? sportUnlockPolicy.unitsPrePolicy
+        : null,
       blendTier: hcStakeTier,
       pathBlendPriors,
       sideOdds,
@@ -5110,6 +5191,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       noConfirmedAction: noConfirmedPolicy?.action ?? null,
       topCrowdedAction: topCrowdedPolicy?.action ?? null,
       evDriftAction: evDriftPolicy?.action ?? null,
+      sportUnlockAction: sportUnlockPolicy?.action ?? null,
     })
         || (edgeNetSizePolicy && (sd.v8_edgeNetSizeAction || null) !== edgeNetSizePolicy.action)
         || (edgeBandSizePolicy && (sd.v8_edgeBandAction || null) !== edgeBandSizePolicy.action)
@@ -5123,7 +5205,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         || (maxSrSub4Policy && (sd.v8_maxSrSub4Action || null) !== maxSrSub4Policy.action)
         || (noConfirmedPolicy && (sd.v8_noConfirmedAction || null) !== noConfirmedPolicy.action)
         || (topCrowdedPolicy && (sd.v8_topCrowdedAction || null) !== topCrowdedPolicy.action)
-        || (evDriftPolicy && (sd.v8_evDriftAction || null) !== evDriftPolicy.action)) {
+        || (evDriftPolicy && (sd.v8_evDriftAction || null) !== evDriftPolicy.action)
+        || (sportUnlockPolicy && (sd.v8_sportUnlockAction || null) !== sportUnlockPolicy.action)) {
       changes.push(
         `SKILL-FEATURES: E=${skillLive.edge == null ? '—' : Number(skillLive.edge).toFixed(1)} `
         + `net=${skillLive.netMeanPrior == null ? '—' : Number(skillLive.netMeanPrior).toFixed(1)} `
@@ -5132,6 +5215,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         + (edgeBandSizePolicy?.action ? ` band=${edgeBandSizePolicy.action}` : '')
         + (edgeNetSizePolicy?.action ? ` size=${edgeNetSizePolicy.action}` : '')
         + (qConvLive != null ? ` qConv=${Number(qConvLive).toFixed(1)}` : '')
+        + (sportUnlockPolicy?.action ? ` unlock=${sportUnlockPolicy.action}` : '')
         + (qConvPolicy?.action ? ` qConvAct=${qConvPolicy.action}` : '')
         + (bestForLive.tier ? ` bestFOR=${bestForLive.tier}` : '')
         + (foolsGoldPolicy?.action ? ` foolsAct=${foolsGoldPolicy.action}` : '')
@@ -5847,6 +5931,16 @@ async function main() {
       .map(([sp, m]) => `${sp}:${[...m.values()].filter((q) => q === 1).length}`)
       .join(' ');
     console.log(`flatDollar Q by sport (Q1 counts): ${q1n || '—'}`);
+  }
+  SPORT_CONFIRMED_N_BY_SPORT = buildSportConfirmedCounts(walletProfiles);
+  {
+    const unlockN = [...SPORT_CONFIRMED_N_BY_SPORT.entries()]
+      .map(([sp, c]) => `${sp}:${c}`)
+      .join(' ');
+    console.log(
+      `sport unlock Confirmed n (gate ${isSportUnlockGateLive(TARGET_DATE) ? 'LIVE' : 'off'} `
+      + `from ${SPORT_UNLOCK_GATE_FROM}): ${unlockN || '—'}`,
+    );
   }
   const sportWinnerBoards = buildSportWinnerBoards(walletProfiles, TARGET_DATE);
   console.log(
