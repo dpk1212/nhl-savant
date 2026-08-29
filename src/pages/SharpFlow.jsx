@@ -12860,8 +12860,18 @@ export default function SharpFlow() {
                         const pickFiniteOdds = (v) => (
                           Number.isFinite(v) && v !== 0 ? v : null
                         );
+                        // Past T-15: prefer same-line book (pinnacleOdds) when the
+                        // stamp is Poly soft juice — never paint +110 next to +2.5
+                        // while PIN/NOW sit at −108 (chi_ten 2026-08-29).
+                        const pinnPayOdds = pickFiniteOdds(peak.pinnacleOdds)
+                          || pickFiniteOdds(lock.pinnacleOdds)
+                          || null;
+                        const stampIsPoly = String(peak.oddsSource || lock.oddsSource || peak.book || lock.book || '')
+                          .toLowerCase().includes('poly');
                         const cardOddsRaw = pastT15Odds
-                          ? (pickFiniteOdds(peakOddsRaw)
+                          ? (
+                            (stampIsPoly && Number.isFinite(pinnPayOdds) ? pinnPayOdds : null)
+                            || pickFiniteOdds(peakOddsRaw)
                             || (lockOddsValid ? pickFiniteOdds(lockOddsRaw) : null)
                             || pickFiniteOdds(sd.closingOdds)
                             || null)
@@ -12870,7 +12880,8 @@ export default function SharpFlow() {
                             || pickFiniteOdds(lockOddsRaw)
                             || pickFiniteOdds(sd.closingOdds)
                             || null);
-                        // Ticket = vault Poly on this line whenever we have it.
+                        // Pre-T-15: live vault Poly is fine as a working number;
+                        // past T-15 cardOddsRaw already demoted Poly→book above.
                         const cardOdds = (!pastT15Odds
                           && (marketTypeKey === 'spread' || marketTypeKey === 'total' || marketTypeKey === 'ml')
                           && Number.isFinite(vaultPolyOdds))
@@ -13079,6 +13090,7 @@ export default function SharpFlow() {
                             ? (lock.book || peak.book || 'Fair')
                             : (peak.book || lock.book || (sd.closingOdds ? (lock.book || peak.book || 'Fair') : '')),
                           fairBook: lock.oddsSource || peak.oddsSource || lock.book || peak.book || null,
+                          oddsSource: peak.oddsSource || lock.oddsSource || null,
                           peakAt: peak.updatedAt || lock.lockedAt,
                           lockedAt: lock.lockedAt || null,
                           gameTime: doc.commenceTime,
