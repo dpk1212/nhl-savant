@@ -1,13 +1,13 @@
 {
-  "scannedAt": "2026-08-29T04:10:57.583Z",
+  "scannedAt": "2026-08-29T04:17:14.765Z",
   "elapsedSec": 35.3,
   "phase": "PHASE_2_MERGE_ENABLED",
-  "todayGamesCount": 155,
+  "todayGamesCount": 154,
   "summary": {
     "total": 274,
     "coveredByMain": 27,
     "recovered": 33,
-    "recoveredPositions": 97,
+    "recoveredPositions": 100,
     "noPositions": 214,
     "apiError": 0,
     "addressNotFound": 0,
@@ -16,7 +16,7 @@
       "ml": 24,
       "spread": 1,
       "total": 2,
-      "dropped_shadow_gate": 62,
+      "dropped_shadow_gate": 65,
       "dropped_excluded": 8,
       "dropped_duplicate": 0
     }
@@ -612,11 +612,11 @@
       "sports": "MLB,WNBA,NFL,UFC",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0x7e5972bfc25819775ee5a9d4f191919375487b8b",
-      "positionsCount": 5,
+      "positionsCount": 7,
       "statsSource": "fallback",
       "avgSportBet": 596,
       "willPassShadowGate": 1,
-      "willDropAtShadowGate": 4,
+      "willDropAtShadowGate": 6,
       "positions": [
         {
           "sport": "SOC",
@@ -626,6 +626,15 @@
           "invested": 293,
           "entryLine": null,
           "passesShadow": true
+        },
+        {
+          "sport": "WNBA",
+          "gameKey": "min_atl",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 35,
+          "entryLine": null,
+          "passesShadow": false
         },
         {
           "sport": "SOC",
@@ -661,6 +670,15 @@
           "side": "home",
           "invested": 10,
           "entryLine": -3.5,
+          "passesShadow": false
+        },
+        {
+          "sport": "WNBA",
+          "gameKey": "min_atl",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 12,
+          "entryLine": null,
           "passesShadow": false
         }
       ]
@@ -1901,11 +1919,11 @@
       "sports": "",
       "status": "RECOVERED_VIA_WHITELIST_SCAN",
       "addr": "0xeface9902242b0399856f981600b907dcc9bc9a1",
-      "positionsCount": 5,
+      "positionsCount": 6,
       "statsSource": "fallback",
       "avgSportBet": 1577,
       "willPassShadowGate": 0,
-      "willDropAtShadowGate": 5,
+      "willDropAtShadowGate": 6,
       "positions": [
         {
           "sport": "CFB",
@@ -1922,6 +1940,15 @@
           "marketType": "ml",
           "side": "home",
           "invested": 91,
+          "entryLine": null,
+          "passesShadow": false
+        },
+        {
+          "sport": "WNBA",
+          "gameKey": "min_atl",
+          "marketType": "ml",
+          "side": "away",
+          "invested": 38,
           "entryLine": null,
           "passesShadow": false
         },
