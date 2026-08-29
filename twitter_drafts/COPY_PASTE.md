@@ -1,96 +1,98 @@
-# Twitter — 2026-08-28 · evening Over 7.5 · slow day
-**Pathway — FULL**
+# Twitter — 2026-08-29 · night · Brewers ML 2u toe-dip
+**Pathway — FULL (Hormozi OS)**
 
-### 0 · Spine (Dale)
-- Slow day · sharps golfing  
-- Waiting on lock · likes the look  
-- Limits moving up · odds slightly our way  
-- Pretty big loser on our side (whole truth)  
-- Proven wallets + this heater on a tear · pressed up again  
-- Chat context: locks + unit size vs EV-burden tools (desire plant only — no ask)
+### 0 · Spine (Dale — law)
+- dipping my toe back in the water tonight after getting stomped yesterday
+- trusting this A tier sharp
+- some opposition so not a full play just 2u
+- pick the right angle · crush engagement
 
 ### 0b–0c · Continuity / forward look
-- Ask cool · live unfinished = perfect give slot  
-- Angle: soft-day honesty + **serialize …2cbcf8** (Nats W · Braves press W · Over today)  
-- Chat = product contrast desire, not Upgrade dump  
+- Ask temp warm-cool · feed needs live board with **S or P** (not philosophy / promo)
+- Hot window: **S+P** same-printer cash-return · **S+C** split · **L+C** when confession carries receipts
+- Soft diary alone = kill → land scarce $ by line 2–3
+- Dale spine overrides soft-open ban *if* pudding is immediate
+- Angle: stomped → 2u toe + **same printer** that pressed Sox 4.2× / Braves 1.7× · contested 3 = why not smash
+- **NOT:** promo · lecture · ✅ scoreboard · brochure all-four SPCL · hard ask
 
 ### 1 · WHO
-Followers of the Nats/Braves heater · soft-day doubters who think quiet board = no edge
+Bettors who just got stomped and want proof + discipline — not revenge sizing or tipster “lock of the day”
 
 ### 2 · PURPOSE
-**Give / buzz** — unfinished lock · whole truth  
-**Ask:** none (desire plant OK)
+**Give / buzz** — unfinished watch · sharp-vs-sharp tension · human toe-dip  
+**Ask:** none (desire plant only if anything — profile does the rest)
 
 ### 3 · ONE
-Slow board, but same tear printer is pressed on PIT/STL Over 7.5 — we like it into the lock even with a real loser on our side, because proven + limits/odds are moving our way
+Got stomped yesterday → dipping **2u** on Brewers ML behind an A-tier printer who’s **+$545K L30** — contested by 3 sharps so it’s a toe, not a smash
 
 ### 4 · SPCL ★
-**P + C**
-- **P** — same wallet say–do trail (Nats → Braves → here) · unfinished watch  
-- **C** — loser on side named · winners 94% · limits/odds observables  
-S rides in $11.1K / 1.2× — not the pillar
+**L + S** (P rides on same-wallet trail — not a third pillar)
+- **L** — Dale stomped → toe in water · 2u authorship (his words)
+- **S** — scarce control: +$545K L30 · $32.6K lead · A-tier board we track
+- Contested 3 + against −6.3% = whole-truth **C** seasoning for the 2u so-what — not owned as brochure letter
 
-### 5 · STUFF
-- PIT @ STL · **Over 7.5** · ticket **+102** · **3.0u** · ~3h to lock  
-- …**2cbcf8**: **$11.1K @ 1.2×** · L30 **+$134K** · **19-4 · 83%** · beat close 68% · totals 11-2 +$67K  
-- Trail: Aug 27 **Braves ML 1.9× $17.3K W** · **Nats ML $12.7K W**  
-- Also lead …705ba1 **$38K** · L30 +$436K (0.6×)  
-- Winners: **$17K / 94% Over** · Under $1.1K  
-- Losers: **$31K / 85% on Over** — Dale’s “pretty big loser”  
-- Public/full: Under heavy ($689K vs $159K)  
-- Contested $53K vs $6K · **+2.2% vs close** · limits up · EDGE tape  
-- Desire (chat): burden = locks + units · not 500 EV tickets / $500 tools  
+### 5 · STUFF (receipts only)
+- TEX @ MIL · **Brewers ML** · ticket **−164** · **2.0u** · LOCKED+SET
+- Lead wallet …07152f · **$32.6K** · **0.6× usual** (~$59.6K) · best on price 77%
+- Sharp Tier A · 0.5x Lean · **Sharp contested — 3**
+- L30 card: **+$545K** · **+57% ROI** · **12-4 · 75%** · Beat Close **77%**
+- MLB ML slice: **+$520K · 11-3 · 79%**
+- Board: **$33.9K** Brewers (85%) · Proven **79%** · Against **$6.4K** (48% WR · −6.3% ROI)
+- Same-printer trail (history on card): Aug 24 **Sox ML 4.2× $249.1K W** · Aug 28 **Braves ML 1.7× $102K W**
+- Do **not** mix “why we trust” +38% with L30 +57% in the same beat — use L30 card numbers
 
 ### 6 · HOOK QA
-Dale golfing line = authorship — land scarce so-what by line 3–4:
-
 ```
-SHARPS MUST BE OUT GOLFING.
+GOT STOMPED YESTERDAY.
 
-Still like this one.
-Same printer that hit Nats and Braves —
-pressed up again.
+Dipping a toe back in tonight —
+behind a wallet that's +$545K L30.
 ```
+- Screenshot test: scarce $ by line 3 ✓
+- What / how / so what ✓ (stomped → toe · printer · contested = 2u)
+- Not soft diary alone ✓
+- Silhouette: same-printer cash-return (window hero #1) ✓
+- Kill: promo · Upgrade · hide contested · invent units · tipster smash energy
 
-Kill: Upgrade · OddsJam dunk by name · hide the $31K loser · GOLD/AGS · tipster lock-of-day
+### 7–8 · Algorithm
+Delete until you’d add back · dinner-table Dale · no system-label leak without plain English · no ask
 
 ---
 
 ## HERO — single tweet
 
-**Attach:** …2cbcf8 tear card + lock board (splits visible — winners AND losers)
+**Attach:** (1) lead-wallet L30 tear card (+$545K curve + contested badge) · (2) Brewers ML lock board (Proven 79% / Against −6.3% visible)
 
 ### Copy this ↓
 
 ```
-SHARPS MUST BE OUT GOLFING.
+GOT STOMPED YESTERDAY.
 
-Slow board.
-Still like this one while we wait on the lock.
+Dipping a toe back in tonight —
+trusting this A-tier sharp.
 
-PIT @ STL Over 7.5 · +102 · 3.0u.
++$545K the last 30 days.
+12-4 · 75% · +57% ROI.
 
-Same printer that hit the Nats
-and pressed the Braves yesterday —
-on a tear this month
-and pressed up again today.
+TEX @ MIL · Brewers ML · 2.0u.
 
-$11.1K at 1.2× his usual.
-L30 +$134K · 19-4 · 83% WR.
+$32.6K on our side
+(0.6× his usual — even he's light).
 
-Proven wallets all over this side.
-Confirmed winners: 94% Over.
+Same wallet that pressed the Sox
+at 4.2× ($249K) and cashed.
+Pressed the Braves yesterday too.
 
-Whole truth: we've got a pretty big loser on our side too
-($31K losing money on the Over).
-Not hiding that.
+Some opposition.
+Three sharps fighting him.
+Their side: $6.4K of −6.3% ROI money.
 
-Limits keep climbing.
-Odds drifting slightly our way.
-+2.2% vs close.
-
-Not 500 tickets to babysit.
-Locks. Units. Watch it in.
-
-We'll know at first pitch.
+Not a full smash. Just 2u.
+Toe in the water.
 ```
+
+### Attach note
+Lead with the **+$545K L30 card** (contested-3 badge in frame). Second image = battle-bar board so strangers see Proven vs Against without us lecturing.
+
+### SR
+**None.** PURPOSE = give/buzz. Soft trial lives in profile / later ask after this free SPCL lands.
