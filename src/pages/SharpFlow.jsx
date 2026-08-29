@@ -9993,13 +9993,19 @@ export default function SharpFlow() {
             <div className="sf-stagger" style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: '0.625rem', marginBottom: '1.5rem',
+              gap: '0.625rem', marginBottom: '0.75rem',
             }}>
               <FlowStatCard icon={Eye} label="Sharp Bettors" value={sharpStats.trackedCount} rawValue={sharpStats.trackedCount} accent={B.gold}
                 hint={sharpStats.totalExcluded > 0 ? `${sharpStats.totalExcluded} non-sharp bettors filtered` : 'Verified sport bettors tracked'} />
               <FlowStatCard icon={DollarSign} label="Sharp Money Today" value={fmtVol(sharpStats.totalSharpInvested)} rawValue={sharpStats.totalSharpInvested} fmt={fmtVol} accent={B.green}
                 hint="Total verified sharp $ on today's games" />
             </div>
+
+            <ClimateStoplightStrip
+              climateBySport={climateBySportToday}
+              sportFilter={sportFilter}
+              isMobile={isMobile}
+            />
 
             {/* ─── AGS-U Performance Dashboard (primary, since 2026-05-14 cutover) ─── */}
             {(() => {
@@ -13849,7 +13855,8 @@ const FlowStatCard = memo(function FlowStatCard({ icon: Icon, label, value, acce
 
 /** Shared premium segmented control — same shell as Live Positions /
  *  Locked Picks / Watchlist. Optional horizontal scroll for dense rows.
- *  Optional `opt.climate` = { score 0–100, color } → tiny stoplight + %. */
+ *  Optional `opt.climate` = { score 0–100, color } → tiny stoplight dot only
+ *  (full climate readout lives under the Sharp Intel money counters). */
 function climateStoplightHue(score) {
   const s = Math.max(0, Math.min(100, Number(score) || 0));
   if (s <= 0) return B.red;
@@ -13864,6 +13871,109 @@ function climateStoplightHue(score) {
   };
   if (s < 50) return lerp(B.red.replace('#', ''), amber.replace('#', ''), s / 50);
   return lerp(amber.replace('#', ''), B.green.replace('#', ''), (s - 50) / 50);
+}
+
+function formatClimateLine(sport, climate) {
+  if (!climate) return null;
+  const hue = climateStoplightHue(climate.score);
+  const a = climate.activeA ?? 0;
+  const ab = climate.activeAB ?? 0;
+  let detail;
+  if (climate.color === 'RED' || a <= 0) {
+    detail = `need ≥1 Sharp A to leave RED (AB${ab} on FORs)`;
+  } else if (climate.color === 'GREEN' || climate.score >= 100) {
+    detail = `GREEN · A${a}/AB${ab}`;
+  } else {
+    detail = `${climate.score}% to green · A${a}/AB${ab}`;
+  }
+  return { sport, color: climate.color, score: climate.score, hue, detail, a, ab };
+}
+
+/** Climate readout under Sharp Bettors / Sharp Money — one sport or all on slate. */
+function ClimateStoplightStrip({ climateBySport, sportFilter, isMobile }) {
+  const entries = useMemo(() => {
+    if (!climateBySport || typeof climateBySport !== 'object') return [];
+    const keys = sportFilter && sportFilter !== 'All'
+      ? [sportFilter]
+      : Object.keys(climateBySport).sort();
+    return keys
+      .map((sp) => formatClimateLine(sp, climateBySport[sp]))
+      .filter(Boolean);
+  }, [climateBySport, sportFilter]);
+
+  if (!entries.length) return null;
+
+  return (
+    <div style={{
+      marginBottom: '1.5rem',
+      padding: isMobile ? '0.55rem 0.7rem' : '0.6rem 0.85rem',
+      borderRadius: '10px',
+      background: 'rgba(255,255,255,0.025)',
+      border: `1px solid ${B.border}`,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.35rem',
+    }}>
+      <div style={{
+        ...T.micro,
+        fontSize: '0.52rem',
+        fontWeight: 700,
+        letterSpacing: '0.08em',
+        textTransform: 'uppercase',
+        color: B.textMuted,
+      }}>
+        Sharp A/B climate
+      </div>
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: isMobile ? '0.4rem 0.75rem' : '0.45rem 1.1rem',
+        alignItems: 'center',
+      }}>
+        {entries.map((e) => (
+          <div
+            key={e.sport}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              minWidth: 0,
+            }}
+          >
+            <span style={{
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              background: e.hue,
+              boxShadow: `0 0 6px ${e.hue}99`,
+              flexShrink: 0,
+            }} />
+            <span style={{
+              ...T.micro,
+              fontSize: isMobile ? '0.62rem' : '0.68rem',
+              fontWeight: 800,
+              color: e.hue,
+              letterSpacing: '0.04em',
+            }}>
+              {e.sport}
+            </span>
+            <span style={{
+              ...T.micro,
+              fontSize: isMobile ? '0.58rem' : '0.64rem',
+              fontWeight: 700,
+              color: B.textSec,
+              fontFeatureSettings: "'tnum'",
+            }}>
+              {e.color}
+              {e.color !== 'RED' && e.score != null ? ` · ${e.score}%` : ''}
+              {' · '}
+              {e.detail}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function SfSegmented({ options, value, onChange, isMobile, scrollable = false }) {
@@ -13892,15 +14002,10 @@ function SfSegmented({ options, value, onChange, isMobile, scrollable = false })
         const Icon = opt.icon;
         const climate = opt.climate;
         const climateHue = climate ? climateStoplightHue(climate.score) : null;
-        const climateTitle = climate
-          ? `Sharp A/B climate ${climate.color} · ${climate.score}% to green`
-            + (climate.activeA != null ? ` (A${climate.activeA}/AB${climate.activeAB})` : '')
-          : undefined;
         return (
           <button
             key={opt.id}
             type="button"
-            title={climateTitle}
             onClick={() => onChange(opt.id)}
             style={{
               display: 'inline-flex',
@@ -13936,34 +14041,17 @@ function SfSegmented({ options, value, onChange, isMobile, scrollable = false })
             <span>{opt.label}</span>
             {climateHue != null && (
               <span
-                aria-label={climateTitle}
+                aria-hidden="true"
                 style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.2rem',
-                  marginLeft: '0.05rem',
-                }}
-              >
-                <span style={{
                   width: 6,
                   height: 6,
                   borderRadius: '50%',
                   background: climateHue,
                   boxShadow: `0 0 5px ${climateHue}99`,
                   flexShrink: 0,
-                }} />
-                <span style={{
-                  fontSize: isMobile ? '0.48rem' : '0.52rem',
-                  fontWeight: 800,
-                  fontFeatureSettings: "'tnum'",
-                  letterSpacing: '0.02em',
-                  color: climateHue,
-                  opacity: active ? 1 : 0.85,
-                  lineHeight: 1,
-                }}>
-                  {climate.score}
-                </span>
-              </span>
+                  marginLeft: '0.05rem',
+                }}
+              />
             )}
             {opt.count != null && (
               <span style={{
