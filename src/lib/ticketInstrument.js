@@ -8,10 +8,12 @@
  *   TOTAL MAIN    — book O/U (isMain)
  *   TOTAL ALT     — vault entryLine ≠ main
  *
- * Ticket (FLAGGED / toWin / Action cents) = vault Poly avgPrice on that
- * exact line. Tape (FAIR / PIN / NOW / chart) = sportsbook quotes on the
- * same line. Those two columns never overwrite each other. If books have
- * no quote on an alt, tape is empty — we do not borrow MAIN juice.
+ * Two venues, one card — the daily footgun:
+ *   • Book tape (FAIR / PIN / NOW / chart) = sportsbook quote on that line
+ *   • Poly receipt (PM / avgPrice) = vault fill cents on that line
+ * Hero/pay American MUST be the book quote for the hero line. Poly never
+ * sits next to "+2.5" as if it were juice (see resolvePayOdds / chi_ten).
+ * If books have no quote on an alt, tape is empty — we do not borrow MAIN.
  */
 import {
   linesClose,
@@ -468,8 +470,17 @@ export function coherentTicket(inst, { stampedLine = null, stampedOdds = null } 
     && (stampOnThisLine || (!offMain && !Number.isFinite(stampedLine)))
     ? stampedOdds
     : null;
-  const odds = vaultJuice
-    ?? (offMain ? (sameLineTape ?? stampJuice) : (stampJuice ?? sameLineTape));
+  // Spread: Poly avgPrice <50% → American +XXX, but books quote the same
+  // cover prob as −XXX (CHI@TEN 2026-08-29 Bears +2.5 Poly ~48%/+106 vs PIN −108).
+  // Pair hero/ticket juice with same-line book spread, not ML-style Poly American.
+  const spreadPolyBookSignClash = inst?.family === 'SPREAD'
+    && Number.isFinite(vaultJuice) && vaultJuice !== 0
+    && Number.isFinite(sameLineTape) && sameLineTape !== 0
+    && Math.sign(vaultJuice) !== Math.sign(sameLineTape);
+  const odds = spreadPolyBookSignClash
+    ? sameLineTape
+    : (vaultJuice
+      ?? (offMain ? (sameLineTape ?? stampJuice) : (stampJuice ?? sameLineTape)));
   return {
     line,
     odds: Number.isFinite(odds) && odds !== 0 ? odds : null,

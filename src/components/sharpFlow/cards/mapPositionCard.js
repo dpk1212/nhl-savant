@@ -28,6 +28,7 @@ import {
   coherentTicket,
   resolveInstrument,
 } from '../../../lib/ticketInstrument.js';
+import { resolvePayOdds } from '../../../lib/payOdds.js';
 import {
   inheritSpreadMarketHints,
   signedSpreadEntryLine,
@@ -1166,10 +1167,13 @@ export function mapLockedPickToCardFixture(pick, {
   if (Number.isFinite(inst.ticket?.american)) {
     polyEntryOdds = inst.ticket.american;
   }
-  if (!Number.isFinite(ticketOdds) && Number.isFinite(bound.odds)) {
+  // Hero / lock juice = coherent instrument (vault Poly unless spread Poly/book signs clash).
+  if (Number.isFinite(bound.odds)) {
     ticketOdds = bound.odds;
   }
-  if (!Number.isFinite(ticketLine) && (isSpread || isTotal) && Number.isFinite(bound.line)) {
+  if (Number.isFinite(bound.line) && (isSpread || isTotal)) {
+    ticketLine = bound.line;
+  } else if (!Number.isFinite(ticketLine) && (isSpread || isTotal) && Number.isFinite(bound.line)) {
     ticketLine = bound.line;
   }
   const awayPickEarly = String(pick.side || pick.pickSide || '').toLowerCase() === 'away'
@@ -1299,14 +1303,15 @@ export function mapLockedPickToCardFixture(pick, {
     || (isTotal ? (pick.team || 'Total')
       : isDraw ? 'Draw ML'
         : `${teamShort} ML`);
-  // Hero = what we grade (line) and pay (odds). ML has no line.
+  // Hero = grade line + book pay odds. Poly is a PM receipt underneath —
+  // never the American glued to "+2.5" when same-line tape disagrees.
   const heroOdds = lockOdds;
   const flaggedAtLabel = sharpOffTicket
     ? `flagged at ${fmtLineLabel(sharpLine) || sharpLine}${
       fmtAm(sharpOdds) ? ` · ${fmtAm(sharpOdds)}` : ''
     }`
     : null;
-  const mainNowLabel = flaggedAtLabel;
+  let mainNowLabel = flaggedAtLabel;
 
   const stakePath = pick.hcStakeTier || pick.lockTier || 'LOCK';
   const tapeAction = normTape(pick.tapeAction || pick.v8_tapeAction);
@@ -1580,10 +1585,31 @@ export function mapLockedPickToCardFixture(pick, {
       ?? (ticketOffMain ? null : (Number.isFinite(sma?.path?.nowOdds) ? sma.path.nowOdds : null))
       ?? (ticketOffMain ? null : (Number.isFinite(fairLine) ? fairLine : null));
 
+  // INVARIANT: hero American = sportsbook quote for hero line.
+  // Poly avgPrice is PM-only — chi_ten 2026-08-29 painted Bears +2.5 +110
+  // (poly) next to PIN/NOW −108 (book) and blew the line↔odds contract.
+  const bookOnLine = Number.isFinite(tapeNow) ? tapeNow
+    : (Number.isFinite(pick.lockPinnOdds) ? pick.lockPinnOdds
+      : (Number.isFinite(pick.pinnacleOdds) ? pick.pinnacleOdds : null));
+  const pay = resolvePayOdds({
+    stampedOdds: lockOdds,
+    bookOnLine,
+    polyReceipt: Number.isFinite(polyEntryOdds) ? polyEntryOdds : null,
+    bookLabel: pick.book,
+    oddsSource: pick.oddsSource,
+    fairBook: pick.fairBook,
+  });
+  if (Number.isFinite(pay.polyReceipt)) polyEntryOdds = pay.polyReceipt;
+  const payOdds = Number.isFinite(pay.payOdds) ? pay.payOdds : lockOdds;
+  if (pay.demotedPoly && Number.isFinite(polyEntryOdds) && !flaggedAtLabel) {
+    const pm = fmtAm(polyEntryOdds);
+    if (pm) mainNowLabel = `PM ${pm}`;
+  }
+
   // Beating Close = ticket vs same-line NOW. Never MAIN closingOdds vs an alt.
   const closeForClv = Number.isFinite(tapeNow) ? tapeNow
     : (ticketOffMain ? null : (Number.isFinite(pick.closingOdds) ? pick.closingOdds : null));
-  const lockProb = ip(lockOdds);
+  const lockProb = ip(payOdds);
   const closeProb = ip(closeForClv);
   let clvPct = null;
   if (lockProb != null && closeProb != null) {
@@ -1602,8 +1628,8 @@ export function mapLockedPickToCardFixture(pick, {
     clvPct: Number.isFinite(clvPct) ? clvPct : null,
   });
 
-  // Stake math / hero price = sealed ticket odds (not main-line reco juice).
-  const displayOdds = Number.isFinite(lockOdds) ? lockOdds
+  // Stake math / hero price = book juice on the ticket line (not poly soft).
+  const displayOdds = Number.isFinite(payOdds) ? payOdds
     : (Number.isFinite(recoOdds) ? recoOdds : null);
   const displayToWin = (() => {
     if (!Number.isFinite(displayOdds) || units <= 0) return 0;
@@ -1630,7 +1656,7 @@ export function mapLockedPickToCardFixture(pick, {
     mainNowLabel,
     flaggedAtLabel,
     ticketOffMain,
-    heroOdds,
+    heroOdds: Number.isFinite(payOdds) ? payOdds : heroOdds,
     chartLineLabel,
     // Always home|away|draw for board math (totals already mapped over→home).
     side: sideNorm,
@@ -1714,8 +1740,8 @@ export function mapLockedPickToCardFixture(pick, {
     lockChecks: lockChecks.length ? lockChecks : ['Locked ticket'],
     commenceMs,
     moneyPct,
-    // FLAGGED / PM = vault Poly receipt; FAIR / NOW / chart = same-line book tape.
-    gotOdds: lockOdds,
+    // FLAGGED / TICKET = book pay juice on the hero line. PM = poly receipt.
+    gotOdds: Number.isFinite(payOdds) ? payOdds : lockOdds,
     fairLine,
     fairBook: pick.fairBook || pick.oddsSource || pick.book || null,
     tierPerf: tierPerf || null,
