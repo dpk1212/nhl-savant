@@ -13875,6 +13875,8 @@ function climateStoplightHue(score) {
 const CLIMATE_HELP_COPY =
   'Sport-day stoplight for whether elite sharps showed up: red until a top-tier sharp appears, then a 0–100 climb toward green based on how many elite sharps are in versus our green thresholds.';
 
+const CLIMATE_AMBER = '#F59E0B';
+
 const CLIMATE_ZONE = {
   RED: { label: 'Quiet', sub: 'Waiting on a top-tier sharp' },
   YELLOW: { label: 'Building', sub: null },
@@ -13891,9 +13893,9 @@ function climateZoneMeta(climate) {
   const zone = CLIMATE_ZONE[color] || CLIMATE_ZONE.RED;
   let sub = zone.sub;
   if (color === 'YELLOW') {
-    sub = `${score}% of the way to green`;
+    sub = `${score}% to green`;
   } else if (color === 'RED' && ab > 0) {
-    sub = 'Lower-tier sharps in — still need a top-tier name';
+    sub = 'Need a top-tier sharp';
   }
   return {
     sport: climate.sport,
@@ -13907,7 +13909,7 @@ function climateZoneMeta(climate) {
   };
 }
 
-function ClimateHelpHint({ isMobile }) {
+function ClimateHelpHint({ isMobile, stopPropagation }) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
   useEffect(() => {
@@ -13919,22 +13921,29 @@ function ClimateHelpHint({ isMobile }) {
     return () => document.removeEventListener('pointerdown', onDoc);
   }, [open]);
   return (
-    <span ref={wrapRef} style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+    <span
+      ref={wrapRef}
+      style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}
+      onClick={stopPropagation ? (e) => e.stopPropagation() : undefined}
+    >
       <button
         type="button"
         aria-label="What is sharp climate?"
         aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
+        onClick={(e) => {
+          if (stopPropagation) e.stopPropagation();
+          setOpen((v) => !v);
+        }}
         style={{
           display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
-          width: 18,
-          height: 18,
+          width: 20,
+          height: 20,
           padding: 0,
           border: 'none',
           borderRadius: '50%',
-          background: 'transparent',
+          background: open ? 'rgba(255,255,255,0.06)' : 'transparent',
           color: B.textMuted,
           cursor: 'pointer',
         }}
@@ -13946,20 +13955,23 @@ function ClimateHelpHint({ isMobile }) {
           role="tooltip"
           style={{
             position: 'absolute',
-            top: '140%',
+            top: '130%',
             right: 0,
-            zIndex: 40,
-            width: isMobile ? 240 : 280,
-            padding: '0.65rem 0.75rem',
+            zIndex: 50,
+            width: isMobile ? 248 : 290,
+            padding: '0.7rem 0.8rem',
             borderRadius: '10px',
-            background: B.cardAlt || '#1A1F2E',
+            background: 'rgba(17,21,31,0.98)',
             border: `1px solid ${B.border}`,
-            boxShadow: '0 12px 32px rgba(0,0,0,0.45)',
+            boxShadow: '0 16px 40px rgba(0,0,0,0.55)',
             ...T.label,
-            fontSize: '0.72rem',
-            lineHeight: 1.45,
+            fontSize: '0.7rem',
+            lineHeight: 1.5,
             fontWeight: 500,
             color: B.textSec,
+            textAlign: 'left',
+            textTransform: 'none',
+            letterSpacing: '0.01em',
           }}
         >
           {CLIMATE_HELP_COPY}
@@ -13969,140 +13981,156 @@ function ClimateHelpHint({ isMobile }) {
   );
 }
 
-/** One sport: 3-zone thermometer (Quiet → Building → Live). */
-function ClimateThermoRow({ meta, isMobile, compact }) {
+/** Continuous red→amber→green track with marker. */
+function ClimateThermoTrack({ meta, height = 7 }) {
   const markerPct = Math.max(0, Math.min(100, meta.score));
-  const trackH = compact ? 6 : 8;
+  return (
+    <div style={{
+      position: 'relative',
+      height,
+      borderRadius: 999,
+      background: 'rgba(0,0,0,0.35)',
+      boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.45)',
+      overflow: 'visible',
+    }}>
+      {/* Full spectrum wash (always visible, dim) */}
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        borderRadius: 999,
+        overflow: 'hidden',
+        background: `linear-gradient(90deg, ${B.red} 0%, ${CLIMATE_AMBER} 50%, ${B.green} 100%)`,
+        opacity: 0.22,
+      }} />
+      {/* Progress fill to marker */}
+      <div style={{
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        bottom: 0,
+        width: `${Math.max(markerPct, meta.color === 'RED' ? 2 : markerPct)}%`,
+        borderRadius: 999,
+        overflow: 'hidden',
+        background: `linear-gradient(90deg, ${B.red} 0%, ${meta.hue} 100%)`,
+        opacity: 0.85,
+        boxShadow: meta.color !== 'RED' ? `0 0 12px ${meta.hue}44` : 'none',
+      }} />
+      {/* Soft zone ticks at 0 / mid / end */}
+      {[28, 72].map((pct) => (
+        <span
+          key={pct}
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            left: `${pct}%`,
+            top: 1,
+            bottom: 1,
+            width: 1,
+            background: 'rgba(0,0,0,0.35)',
+            pointerEvents: 'none',
+          }}
+        />
+      ))}
+      {/* Marker */}
+      <div style={{
+        position: 'absolute',
+        top: '50%',
+        left: `clamp(0px, calc(${markerPct}% - 6px), calc(100% - 12px))`,
+        width: 12,
+        height: 12,
+        marginTop: -6,
+        borderRadius: '50%',
+        background: meta.hue,
+        border: '2px solid rgba(11,15,31,0.95)',
+        boxShadow: `0 0 0 1px ${meta.hue}66, 0 0 14px ${meta.hue}99`,
+        pointerEvents: 'none',
+      }} />
+    </div>
+  );
+}
+
+function ClimateThermoRow({ meta, isMobile }) {
   return (
     <div style={{
       display: 'grid',
-      gridTemplateColumns: isMobile ? '42px 1fr' : '48px 1fr auto',
-      gap: isMobile ? '0.45rem 0.65rem' : '0.5rem 0.85rem',
+      gridTemplateColumns: isMobile ? '40px 1fr' : '44px minmax(0,1fr) 108px',
+      gap: isMobile ? '0.35rem 0.7rem' : '0.4rem 0.9rem',
       alignItems: 'center',
       minWidth: 0,
+      padding: isMobile ? '0.15rem 0' : '0.2rem 0',
     }}>
       <div style={{
         ...T.micro,
-        fontSize: isMobile ? '0.66rem' : '0.72rem',
+        fontSize: isMobile ? '0.64rem' : '0.7rem',
         fontWeight: 800,
-        letterSpacing: '0.06em',
+        letterSpacing: '0.07em',
         color: B.text,
       }}>
         {meta.sport}
       </div>
 
       <div style={{ minWidth: 0 }}>
+        <ClimateThermoTrack meta={meta} height={isMobile ? 6 : 7} />
         <div style={{
-          position: 'relative',
-          height: trackH,
-          borderRadius: 999,
-          overflow: 'visible',
-          background: 'rgba(255,255,255,0.04)',
-          boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.35)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          marginTop: '0.32rem',
+          ...T.micro,
+          fontSize: '0.46rem',
+          fontWeight: 700,
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          color: 'rgba(148,163,184,0.55)',
         }}>
-          <div style={{
-            position: 'absolute',
-            inset: 0,
-            borderRadius: 999,
-            overflow: 'hidden',
-            display: 'flex',
-          }}>
-            <div style={{
-              flex: '0 0 28%',
-              background: `linear-gradient(90deg, ${B.red}55 0%, ${B.red}88 100%)`,
-              opacity: meta.color === 'RED' ? 1 : 0.35,
-            }} />
-            <div style={{
-              flex: '1 1 auto',
-              background: 'linear-gradient(90deg, #F59E0B55 0%, #F59E0B99 100%)',
-              opacity: meta.color === 'YELLOW' ? 1 : 0.28,
-            }} />
-            <div style={{
-              flex: '0 0 28%',
-              background: `linear-gradient(90deg, ${B.green}55 0%, ${B.green}99 100%)`,
-              opacity: meta.color === 'GREEN' ? 1 : 0.28,
-            }} />
-          </div>
-          {markerPct > 0 && (
-            <div style={{
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: `${markerPct}%`,
-              borderRadius: 999,
-              background: `linear-gradient(90deg, ${B.red}33 0%, ${meta.hue}66 100%)`,
-              pointerEvents: 'none',
-            }} />
-          )}
-          <div style={{
-            position: 'absolute',
-            top: '50%',
-            left: `calc(${markerPct}% - 5px)`,
-            width: 10,
-            height: 10,
-            marginTop: -5,
-            borderRadius: '50%',
-            background: meta.hue,
-            border: `2px solid ${B.card || '#151923'}`,
-            boxShadow: `0 0 0 1px ${meta.hue}88, 0 0 10px ${meta.hue}aa`,
-            pointerEvents: 'none',
-          }} />
+          <span style={{ color: meta.color === 'RED' ? B.red : undefined, opacity: meta.color === 'RED' ? 1 : undefined }}>Quiet</span>
+          <span style={{ color: meta.color === 'YELLOW' ? CLIMATE_AMBER : undefined, opacity: meta.color === 'YELLOW' ? 1 : undefined }}>Building</span>
+          <span style={{ color: meta.color === 'GREEN' ? B.green : undefined, opacity: meta.color === 'GREEN' ? 1 : undefined }}>Live</span>
         </div>
-        {!compact && (
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            marginTop: '0.28rem',
-            ...T.micro,
-            fontSize: '0.48rem',
-            fontWeight: 700,
-            letterSpacing: '0.06em',
-            textTransform: 'uppercase',
-            color: B.textMuted,
-          }}>
-            <span style={{ color: meta.color === 'RED' ? B.red : undefined }}>Quiet</span>
-            <span style={{ color: meta.color === 'YELLOW' ? '#F59E0B' : undefined }}>Building</span>
-            <span style={{ color: meta.color === 'GREEN' ? B.green : undefined }}>Live</span>
-          </div>
-        )}
       </div>
 
       <div style={{
-        textAlign: isMobile ? 'left' : 'right',
+        justifySelf: isMobile ? 'start' : 'end',
         gridColumn: isMobile ? '2 / 3' : undefined,
-        minWidth: isMobile ? 0 : 118,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: isMobile ? 'flex-start' : 'flex-end',
+        gap: '0.15rem',
+        minWidth: 0,
       }}>
-        <div style={{
+        <span style={{
           ...T.micro,
-          fontSize: isMobile ? '0.62rem' : '0.68rem',
+          fontSize: '0.55rem',
           fontWeight: 800,
-          letterSpacing: '0.04em',
+          letterSpacing: '0.06em',
+          textTransform: 'uppercase',
+          padding: '0.12rem 0.42rem',
+          borderRadius: '4px',
           color: meta.hue,
+          background: `${meta.hue}18`,
+          border: `1px solid ${meta.hue}33`,
           fontFeatureSettings: "'tnum'",
         }}>
           {meta.label}
-          {(meta.color === 'YELLOW' || meta.color === 'GREEN')
-            ? <span style={{ opacity: 0.85 }}> · {meta.score}</span>
-            : null}
-        </div>
-        <div style={{
+          {(meta.color === 'YELLOW' || meta.color === 'GREEN') ? ` · ${meta.score}` : ''}
+        </span>
+        <span style={{
           ...T.micro,
-          fontSize: isMobile ? '0.52rem' : '0.56rem',
+          fontSize: '0.52rem',
           fontWeight: 500,
           color: B.textMuted,
-          marginTop: '0.1rem',
-          lineHeight: 1.3,
+          lineHeight: 1.25,
+          textAlign: isMobile ? 'left' : 'right',
         }}>
           {meta.sub}
-        </div>
+        </span>
       </div>
     </div>
   );
 }
 
-/** Climate readout under Sharp Bettors / Sharp Money — thermometer + plain labels. */
+/** Collapsed-by-default climate bar under Sharp Bettors / Sharp Money. */
 function ClimateStoplightStrip({ climateBySport, sportFilter, isMobile }) {
+  const [open, setOpen] = useState(false);
   const entries = useMemo(() => {
     if (!climateBySport || typeof climateBySport !== 'object') return [];
     const keys = sportFilter && sportFilter !== 'All'
@@ -14119,51 +14147,144 @@ function ClimateStoplightStrip({ climateBySport, sportFilter, isMobile }) {
 
   if (!entries.length) return null;
 
-  const single = entries.length === 1;
+  const liveN = entries.filter((e) => e.color === 'GREEN').length;
+  const buildingN = entries.filter((e) => e.color === 'YELLOW').length;
+  const quietN = entries.filter((e) => e.color === 'RED').length;
+  const summaryHue = liveN > 0
+    ? B.green
+    : buildingN > 0
+      ? CLIMATE_AMBER
+      : B.red;
+  const summaryLabel = liveN > 0
+    ? (liveN === entries.length ? 'All live' : `${liveN} live`)
+    : buildingN > 0
+      ? `${buildingN} building`
+      : 'Quiet slate';
 
   return (
-    <div style={{
-      marginBottom: '1.5rem',
-      padding: isMobile ? '0.7rem 0.75rem' : '0.8rem 1rem',
-      borderRadius: '12px',
-      background: 'linear-gradient(165deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.015) 100%)',
-      border: `1px solid ${B.border}`,
-      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
-    }}>
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '0.5rem',
-        marginBottom: single ? '0.7rem' : '0.65rem',
-      }}>
+    <div style={{ marginBottom: '1.5rem' }}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="sf-glass"
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '0.65rem',
+          padding: isMobile ? '0.7rem 0.85rem' : '0.75rem 1rem',
+          cursor: 'pointer',
+          border: `1px solid ${B.border}`,
+          borderRadius: open ? '12px 12px 0 0' : '12px',
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(17,21,31,0.72) 55%, rgba(11,15,31,0.78) 100%)',
+          boxShadow: open
+            ? 'inset 0 1px 0 rgba(255,255,255,0.04)'
+            : '0 6px 18px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.04)',
+          transition: 'box-shadow 0.22s ease, border-radius 0.22s ease',
+        }}
+      >
         <div style={{
-          ...T.micro,
-          fontSize: '0.52rem',
-          fontWeight: 700,
-          letterSpacing: '0.1em',
-          textTransform: 'uppercase',
-          color: B.textMuted,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.55rem',
+          flexWrap: 'wrap',
+          minWidth: 0,
         }}>
-          Sharp climate
+          <span style={{
+            width: 7,
+            height: 7,
+            borderRadius: '50%',
+            background: summaryHue,
+            boxShadow: `0 0 8px ${summaryHue}`,
+            flexShrink: 0,
+          }} />
+          <span style={{
+            ...T.micro,
+            fontWeight: 900,
+            fontSize: '0.66rem',
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            color: B.text,
+          }}>
+            Sharp climate
+          </span>
+          <span style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.28rem',
+          }}>
+            {entries.map((e) => (
+              <span
+                key={e.sport}
+                title={`${e.sport} · ${e.label}`}
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  background: e.hue,
+                  boxShadow: `0 0 5px ${e.hue}88`,
+                  opacity: 0.95,
+                }}
+              />
+            ))}
+          </span>
+          <span style={{
+            ...T.micro,
+            fontWeight: 800,
+            fontSize: '0.58rem',
+            padding: '0.12rem 0.42rem',
+            borderRadius: '4px',
+            color: summaryHue,
+            background: `${summaryHue}14`,
+            border: `1px solid ${summaryHue}30`,
+            letterSpacing: '0.04em',
+          }}>
+            {summaryLabel}
+          </span>
+          {!isMobile && (
+            <span style={{
+              ...T.micro,
+              fontSize: '0.52rem',
+              color: B.textMuted,
+              fontFeatureSettings: "'tnum'",
+            }}>
+              {[
+                quietN ? `${quietN} quiet` : null,
+                buildingN ? `${buildingN} building` : null,
+                liveN ? `${liveN} live` : null,
+              ].filter(Boolean).join(' · ')}
+            </span>
+          )}
         </div>
-        <ClimateHelpHint isMobile={isMobile} />
-      </div>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
+          <ClimateHelpHint isMobile={isMobile} stopPropagation />
+          {open
+            ? <ChevronUp size={14} color={B.textMuted} />
+            : <ChevronDown size={14} color={B.textMuted} />}
+        </div>
+      </button>
 
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: single ? '0.15rem' : (isMobile ? '0.85rem' : '0.75rem'),
-      }}>
-        {entries.map((meta) => (
-          <ClimateThermoRow
-            key={meta.sport}
-            meta={meta}
-            isMobile={isMobile}
-            compact={!single && entries.length > 3}
-          />
-        ))}
-      </div>
+      {open && (
+        <div
+          className="sf-glass"
+          style={{
+            padding: isMobile ? '0.85rem 0.85rem 0.95rem' : '0.95rem 1.05rem 1.05rem',
+            borderRadius: '0 0 12px 12px',
+            border: `1px solid ${B.border}`,
+            borderTop: 'none',
+            background: 'linear-gradient(180deg, rgba(21,25,35,0.72) 0%, rgba(11,15,31,0.82) 100%)',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: isMobile ? '0.85rem' : '0.8rem',
+          }}
+        >
+          {entries.map((meta) => (
+            <ClimateThermoRow key={meta.sport} meta={meta} isMobile={isMobile} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
