@@ -197,6 +197,15 @@ import {
   buildSportConfirmedCounts,
   isSportUnlockGateLive,
 } from '../src/lib/sportConfirmedUnlock.js';
+import {
+  CLIMATE_TURNOUT_GATE_FROM,
+  applyClimateTurnoutOverlay,
+  buildClimateBySport,
+  climateForSport,
+  isClimateTurnoutGateLive,
+  sideRowsFromPickDocs,
+  ticketAbFeatures,
+} from '../src/lib/climateTurnoutCap.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '../public');
@@ -639,6 +648,41 @@ function computeRankSlice(walletDetails, mySide, sport, walletProfiles) {
 let FLAT_DOLLAR_Q_BY_SPORT = new Map();
 /** NFL/CFB Confirmed-n by sport — sport unlock CAP preload (Idea 1). */
 let SPORT_CONFIRMED_N_BY_SPORT = new Map();
+/** sport → { color, activeA, activeAB, pctABRoster, … } for TARGET_DATE */
+let CLIMATE_BY_SPORT = new Map();
+
+/**
+ * Rebuild sport-day climate from live position groups + today's pick docs.
+ * RED = no Sharp A on any FOR side that sport-day → half exposure at size time.
+ */
+function refreshClimateBySport({ groups = null, pickDocs = null } = {}) {
+  const rows = [];
+  if (groups && typeof groups.entries === 'function') {
+    for (const [key, positions] of groups.entries()) {
+      const sport = String(key || '').split('|')[0];
+      if (!sport || !Array.isArray(positions) || !positions.length) continue;
+      const bySide = new Map();
+      for (const p of positions) {
+        const side = p?.side;
+        if (!side) continue;
+        if (!bySide.has(side)) bySide.set(side, []);
+        bySide.get(side).push(p);
+      }
+      for (const [side, posList] of bySide) {
+        rows.push({
+          sport,
+          side,
+          walletDetails: posList.map(positionToWalletDetail).filter(Boolean),
+        });
+      }
+    }
+  }
+  if (Array.isArray(pickDocs) && pickDocs.length) {
+    rows.push(...sideRowsFromPickDocs(pickDocs, { date: TARGET_DATE }));
+  }
+  CLIMATE_BY_SPORT = buildClimateBySport(rows, FLAT_DOLLAR_Q_BY_SPORT);
+  return CLIMATE_BY_SPORT;
+}
 // (ALL live CONFIRMED × size≥0.5 × unopposed by CONFIRMED → 1u rescue).
 
 // ── SHARP-RESCUE / v12abc "c" ───────────────────────────────────────────────
@@ -1070,7 +1114,7 @@ function edgeNetGateBucket(edge, net, eThr = SHARP_EDGE_THR, nThr = SHARP_NET_TH
 }
 
 /** Skill-feature stamp schema version — bump when fields/thresholds change. */
-const SKILL_FEATURE_VERSION = 16; // v16: ticket EV + steam lifecycle log (gates)
+const SKILL_FEATURE_VERSION = 17; // v17: climate turnout RED half-exposure + ticket A/B stamps
 
 /**
  * Full EDGE / netCLV / Tape bundle for analysis without rebuild.
@@ -1155,6 +1199,16 @@ function applySkillFeatureStamps(target, bundle, now, {
   sportUnlockAction = null,
   sportUnlockCap = null,
   unitsPreSportUnlock = null,
+  climateColor = null,
+  climateActiveA = null,
+  climateActiveAB = null,
+  climatePctABRoster = null,
+  climateAction = null,
+  unitsPreClimate = null,
+  ticketHasA = null,
+  ticketHasAB = null,
+  ticketNA = null,
+  ticketNAB = null,
   blendTier = null,
   pathBlendPriors = null,
   sideOdds = null,
@@ -1274,6 +1328,24 @@ function applySkillFeatureStamps(target, bundle, now, {
   if (unitsPreSportUnlock != null && Number.isFinite(unitsPreSportUnlock)) {
     target.v8_unitsPreSportUnlock = unitsPreSportUnlock;
   }
+  if (climateColor != null) target.v8_climateColor = climateColor;
+  if (climateActiveA != null && Number.isFinite(Number(climateActiveA))) {
+    target.v8_climateActiveA = Number(climateActiveA);
+  }
+  if (climateActiveAB != null && Number.isFinite(Number(climateActiveAB))) {
+    target.v8_climateActiveAB = Number(climateActiveAB);
+  }
+  if (climatePctABRoster != null && Number.isFinite(Number(climatePctABRoster))) {
+    target.v8_climatePctABRoster = Number(climatePctABRoster);
+  }
+  if (climateAction != null) target.v8_climateAction = climateAction;
+  if (unitsPreClimate != null && Number.isFinite(unitsPreClimate)) {
+    target.v8_unitsPreClimate = unitsPreClimate;
+  }
+  if (ticketHasA != null) target.v8_ticketHasA = !!ticketHasA;
+  if (ticketHasAB != null) target.v8_ticketHasAB = !!ticketHasAB;
+  if (ticketNA != null && Number.isFinite(Number(ticketNA))) target.v8_ticketNA = Number(ticketNA);
+  if (ticketNAB != null && Number.isFinite(Number(ticketNAB))) target.v8_ticketNAB = Number(ticketNAB);
   // Path × EDGE expected WR (tracking only — no unit effect)
   const meanFor = wa?.meanFor ?? bundle.winnerAlign?.meanFor ?? null;
   const prior = resolvePathPriorWr(pathBlendPriors?.byTier, blendTier, {
@@ -1345,6 +1417,7 @@ function skillStampsDrifted(sd, bundle, {
   topCrowdedAction = null,
   evDriftAction = null,
   sportUnlockAction = null,
+  climateAction = null,
   blendWr = null, expWin = null,
 } = {}) {
   if ((sd.v8_skillFeatureVersion || 0) !== SKILL_FEATURE_VERSION) return true;
@@ -1389,6 +1462,7 @@ function skillStampsDrifted(sd, bundle, {
   if (topCrowdedAction != null && (sd.v8_topCrowdedAction || null) !== topCrowdedAction) return true;
   if (evDriftAction != null && (sd.v8_evDriftAction || null) !== evDriftAction) return true;
   if (sportUnlockAction != null && (sd.v8_sportUnlockAction || null) !== sportUnlockAction) return true;
+  if (climateAction != null && (sd.v8_climateAction || null) !== climateAction) return true;
   return false;
 }
 
@@ -3148,6 +3222,25 @@ async function createMissingLockedPicks({
         peakUnitsApplied = evDriftPolicyCreate.units;
       }
 
+      // Climate turnout CAP — RED → half exposure. Before sport unlock so
+      // unlock remains absolute max on already-halved units. Never mutes to 0.
+      let climatePolicyCreate = null;
+      const climateCreate = climateForSport(CLIMATE_BY_SPORT, sport);
+      const ticketAbCreate = ticketAbFeatures({
+        walletDetails,
+        side,
+        sport,
+        qBySport: FLAT_DOLLAR_Q_BY_SPORT,
+      });
+      if (createV121Eligible && peakUnitsApplied > 0) {
+        climatePolicyCreate = applyClimateTurnoutOverlay({
+          units: peakUnitsApplied,
+          climateColor: climateCreate?.color ?? null,
+          pickDate: TARGET_DATE,
+        });
+        peakUnitsApplied = climatePolicyCreate.units;
+      }
+
       // Sport Confirmed unlock CAP — absolute last after mutes. NFL/CFB only.
       // Caps published units by sport-wide CONFIRMED count. Never mutes to 0.
       let sportUnlockPolicyCreate = null;
@@ -3386,6 +3479,18 @@ async function createMissingLockedPicks({
           unitsPreSportUnlock: (sportUnlockPolicyCreate && Number.isFinite(sportUnlockPolicyCreate.unitsPrePolicy))
             ? sportUnlockPolicyCreate.unitsPrePolicy
             : null,
+          climateColor: climateCreate?.color ?? null,
+          climateActiveA: climateCreate?.activeA ?? null,
+          climateActiveAB: climateCreate?.activeAB ?? null,
+          climatePctABRoster: climateCreate?.pctABRoster ?? null,
+          climateAction: climatePolicyCreate?.action ?? null,
+          unitsPreClimate: (climatePolicyCreate && Number.isFinite(climatePolicyCreate.unitsPrePolicy))
+            ? climatePolicyCreate.unitsPrePolicy
+            : null,
+          ticketHasA: ticketAbCreate.hasA,
+          ticketHasAB: ticketAbCreate.hasAB,
+          ticketNA: ticketAbCreate.nA,
+          ticketNAB: ticketAbCreate.nAB,
           blendTier: hcStakeTierCreate,
           pathBlendPriors,
           sideOdds: odds ?? null,
@@ -4610,6 +4715,26 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     finalUnitsApplied = evDriftPolicy.units;
   }
 
+  // ─── Climate turnout CAP (RED → half exposure) ───────────────────────
+  // After mutes, before sport unlock. Never mutes to 0. Manual stake exempt.
+  // Date-gated inside overlay. Stamps climate + ticket A/B always when live.
+  let climatePolicy = null;
+  const climateLive = climateForSport(CLIMATE_BY_SPORT, pick.sport);
+  const ticketAbLive = ticketAbFeatures({
+    walletDetails: wd,
+    side,
+    sport: pick.sport,
+    qBySport: FLAT_DOLLAR_Q_BY_SPORT,
+  });
+  if (v121Eligible && finalUnitsApplied > 0 && !skipManualFlinch) {
+    climatePolicy = applyClimateTurnoutOverlay({
+      units: finalUnitsApplied,
+      climateColor: climateLive?.color ?? null,
+      pickDate,
+    });
+    finalUnitsApplied = climatePolicy.units;
+  }
+
   // ─── Sport Confirmed unlock CAP (absolute last after mutes) ──────────
   // NFL/CFB only · caps by sport-wide CONFIRMED n · never mutes to 0 ·
   // does not repath · manual stake exempt · date-gated inside overlay.
@@ -4688,6 +4813,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
   if (noConfirmedPolicy?.reason && !reasons.includes(noConfirmedPolicy.reason)) reasons.push(noConfirmedPolicy.reason);
   if (topCrowdedPolicy?.reason && !reasons.includes(topCrowdedPolicy.reason)) reasons.push(topCrowdedPolicy.reason);
   if (evDriftPolicy?.reason && !reasons.includes(evDriftPolicy.reason)) reasons.push(evDriftPolicy.reason);
+  if (climatePolicy?.reason && !reasons.includes(climatePolicy.reason)) reasons.push(climatePolicy.reason);
   if (sportUnlockPolicy?.reason && !reasons.includes(sportUnlockPolicy.reason)) reasons.push(sportUnlockPolicy.reason);
   // Preserve diagnostic-only badge signals from prior cycles (they don't
   // change status but the UI uses them for chip rendering).
@@ -5052,6 +5178,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       + `${evDriftPolicy.unitsPrePolicy}u → 0u (${hcStakeTier})`
     );
   }
+  if (climatePolicy?.action === 'HALF') {
+    changes.push(
+      `CLIMATE-RED-HALF: ${pick.sport} activeA=${climateLive?.activeA ?? 0} `
+      + `${climatePolicy.unitsPrePolicy}u → ${climatePolicy.units}u (${hcStakeTier})`,
+    );
+  }
   if (sportUnlockPolicy?.action === 'CAP') {
     changes.push(
       `SPORT-UNLOCK-CAP: ${pick.sport} nConfirmed=${nSportConfirmedLive} `
@@ -5168,6 +5300,18 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       unitsPreSportUnlock: (sportUnlockPolicy && Number.isFinite(sportUnlockPolicy.unitsPrePolicy))
         ? sportUnlockPolicy.unitsPrePolicy
         : null,
+      climateColor: climateLive?.color ?? null,
+      climateActiveA: climateLive?.activeA ?? null,
+      climateActiveAB: climateLive?.activeAB ?? null,
+      climatePctABRoster: climateLive?.pctABRoster ?? null,
+      climateAction: climatePolicy?.action ?? null,
+      unitsPreClimate: (climatePolicy && Number.isFinite(climatePolicy.unitsPrePolicy))
+        ? climatePolicy.unitsPrePolicy
+        : null,
+      ticketHasA: ticketAbLive.hasA,
+      ticketHasAB: ticketAbLive.hasAB,
+      ticketNA: ticketAbLive.nA,
+      ticketNAB: ticketAbLive.nAB,
       blendTier: hcStakeTier,
       pathBlendPriors,
       sideOdds,
@@ -5192,6 +5336,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
       topCrowdedAction: topCrowdedPolicy?.action ?? null,
       evDriftAction: evDriftPolicy?.action ?? null,
       sportUnlockAction: sportUnlockPolicy?.action ?? null,
+      climateAction: climatePolicy?.action ?? null,
     })
         || (edgeNetSizePolicy && (sd.v8_edgeNetSizeAction || null) !== edgeNetSizePolicy.action)
         || (edgeBandSizePolicy && (sd.v8_edgeBandAction || null) !== edgeBandSizePolicy.action)
@@ -5206,7 +5351,8 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         || (noConfirmedPolicy && (sd.v8_noConfirmedAction || null) !== noConfirmedPolicy.action)
         || (topCrowdedPolicy && (sd.v8_topCrowdedAction || null) !== topCrowdedPolicy.action)
         || (evDriftPolicy && (sd.v8_evDriftAction || null) !== evDriftPolicy.action)
-        || (sportUnlockPolicy && (sd.v8_sportUnlockAction || null) !== sportUnlockPolicy.action)) {
+        || (sportUnlockPolicy && (sd.v8_sportUnlockAction || null) !== sportUnlockPolicy.action)
+        || (climatePolicy && (sd.v8_climateAction || null) !== climatePolicy.action)) {
       changes.push(
         `SKILL-FEATURES: E=${skillLive.edge == null ? '—' : Number(skillLive.edge).toFixed(1)} `
         + `net=${skillLive.netMeanPrior == null ? '—' : Number(skillLive.netMeanPrior).toFixed(1)} `
@@ -5216,6 +5362,7 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
         + (edgeNetSizePolicy?.action ? ` size=${edgeNetSizePolicy.action}` : '')
         + (qConvLive != null ? ` qConv=${Number(qConvLive).toFixed(1)}` : '')
         + (sportUnlockPolicy?.action ? ` unlock=${sportUnlockPolicy.action}` : '')
+        + (climatePolicy?.action ? ` climate=${climatePolicy.action}` : '')
         + (qConvPolicy?.action ? ` qConvAct=${qConvPolicy.action}` : '')
         + (bestForLive.tier ? ` bestFOR=${bestForLive.tier}` : '')
         + (foolsGoldPolicy?.action ? ` foolsAct=${foolsGoldPolicy.action}` : '')
@@ -6235,6 +6382,19 @@ async function main() {
     if (typeof val === 'string') return new Date(val).getTime();
     return null;
   };
+
+  // Sport-day climate (Sharp A/B turnout on FORs) — from live board groups.
+  // RED → half exposure at size time. Rebuild each cycle so color tracks board.
+  refreshClimateBySport({ groups });
+  {
+    const climateSummary = [...CLIMATE_BY_SPORT.entries()]
+      .map(([sp, c]) => `${sp}:${c.color}(A${c.activeA}/AB${c.activeAB})`)
+      .join(' ');
+    console.log(
+      `climate turnout (gate ${isClimateTurnoutGateLive(TARGET_DATE) ? 'LIVE' : 'off'} `
+      + `from ${CLIMATE_TURNOUT_GATE_FROM}; RED→×${0.5}): ${climateSummary || '—'}`,
+    );
+  }
 
   // Track docs that exist but have NO live (non-superseded) sides — "ghost"
   // docs. Without this guard, createMissingLockedPicks skips these docs
