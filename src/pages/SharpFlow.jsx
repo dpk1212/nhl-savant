@@ -13872,16 +13872,31 @@ function climateStoplightHue(score) {
   return lerp(amber.replace('#', ''), B.green.replace('#', ''), (s - 50) / 50);
 }
 
-const CLIMATE_HELP_COPY =
-  'Sport-day stoplight for whether elite sharps showed up: red until a top-tier sharp appears, then a 0–100 climb toward green based on how many elite sharps are in versus our green thresholds.';
-
 const CLIMATE_AMBER = '#F59E0B';
 
 const CLIMATE_ZONE = {
-  RED: { label: 'Quiet', sub: 'Waiting on a top-tier sharp' },
+  RED: { label: 'Quiet', sub: 'No top sharps yet' },
   YELLOW: { label: 'Building', sub: null },
-  GREEN: { label: 'Live', sub: 'Elite sharp turnout is on' },
+  GREEN: { label: 'Live', sub: 'Strong sharp turnout' },
 };
+
+const CLIMATE_HELP_ZONES = [
+  {
+    key: 'Quiet',
+    color: '#EF4444',
+    line: 'No top sharps on this sport yet today.',
+  },
+  {
+    key: 'Building',
+    color: CLIMATE_AMBER,
+    line: 'Top sharps are in — turnout is climbing.',
+  },
+  {
+    key: 'Live',
+    color: '#10B981',
+    line: 'Strong sharp turnout for this sport today.',
+  },
+];
 
 function climateZoneMeta(climate) {
   if (!climate) return null;
@@ -13958,23 +13973,90 @@ function ClimateHelpHint({ isMobile, stopPropagation }) {
             top: '130%',
             right: 0,
             zIndex: 50,
-            width: isMobile ? 248 : 290,
-            padding: '0.7rem 0.8rem',
-            borderRadius: '10px',
+            width: isMobile ? 268 : 304,
+            padding: '0.85rem 0.9rem',
+            borderRadius: '12px',
             background: 'rgba(17,21,31,0.98)',
             border: `1px solid ${B.border}`,
             boxShadow: '0 16px 40px rgba(0,0,0,0.55)',
-            ...T.label,
-            fontSize: '0.7rem',
-            lineHeight: 1.5,
-            fontWeight: 500,
-            color: B.textSec,
             textAlign: 'left',
             textTransform: 'none',
-            letterSpacing: '0.01em',
           }}
         >
-          {CLIMATE_HELP_COPY}
+          <div style={{
+            ...T.micro,
+            fontWeight: 800,
+            fontSize: '0.58rem',
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            color: B.textMuted,
+            marginBottom: '0.4rem',
+          }}>
+            Sharp climate
+          </div>
+          <div style={{
+            ...T.label,
+            fontSize: '0.78rem',
+            fontWeight: 600,
+            lineHeight: 1.4,
+            color: B.text,
+            marginBottom: '0.75rem',
+          }}>
+            Are the best sharps active in this sport today?
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+            {CLIMATE_HELP_ZONES.map((z) => (
+              <div
+                key={z.key}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '8px 64px 1fr',
+                  gap: '0.45rem',
+                  alignItems: 'start',
+                }}
+              >
+                <span style={{
+                  width: 7,
+                  height: 7,
+                  marginTop: 4,
+                  borderRadius: '50%',
+                  background: z.color,
+                  boxShadow: `0 0 6px ${z.color}99`,
+                }} />
+                <span style={{
+                  ...T.micro,
+                  fontSize: '0.62rem',
+                  fontWeight: 800,
+                  letterSpacing: '0.04em',
+                  color: z.color,
+                  paddingTop: '0.05rem',
+                }}>
+                  {z.key}
+                </span>
+                <span style={{
+                  ...T.label,
+                  fontSize: '0.68rem',
+                  fontWeight: 500,
+                  lineHeight: 1.35,
+                  color: B.textSec,
+                }}>
+                  {z.line}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div style={{
+            marginTop: '0.75rem',
+            paddingTop: '0.65rem',
+            borderTop: `1px solid ${B.border}`,
+            ...T.label,
+            fontSize: '0.65rem',
+            fontWeight: 500,
+            lineHeight: 1.4,
+            color: B.textMuted,
+          }}>
+            The meter climbs from 0 to 100 as more top sharps show up.
+          </div>
         </div>
       )}
     </span>
