@@ -1,14 +1,14 @@
 {
-  "scannedAt": "2026-08-29T21:03:36.494Z",
-  "elapsedSec": 30.8,
+  "scannedAt": "2026-08-29T21:09:48.014Z",
+  "elapsedSec": 30.2,
   "phase": "PHASE_2_MERGE_ENABLED",
-  "todayGamesCount": 147,
+  "todayGamesCount": 146,
   "summary": {
     "total": 289,
     "coveredByMain": 40,
-    "recovered": 15,
-    "recoveredPositions": 103,
-    "noPositions": 234,
+    "recovered": 16,
+    "recoveredPositions": 104,
+    "noPositions": 233,
     "apiError": 0,
     "addressNotFound": 0,
     "coveragePct": 100,
@@ -16,7 +16,7 @@
       "ml": 5,
       "spread": 2,
       "total": 2,
-      "dropped_shadow_gate": 54,
+      "dropped_shadow_gate": 55,
       "dropped_excluded": 40,
       "dropped_duplicate": 0
     }
@@ -681,6 +681,15 @@
           "passesShadow": false
         },
         {
+          "sport": "MLB",
+          "gameKey": "bos_nyy__2",
+          "marketType": "total",
+          "side": "under",
+          "invested": 167,
+          "entryLine": 7.5,
+          "passesShadow": false
+        },
+        {
           "sport": "CFB",
           "gameKey": "morg_ncat",
           "marketType": "spread",
@@ -688,15 +697,6 @@
           "invested": 177,
           "entryLine": 7.5,
           "passesShadow": true
-        },
-        {
-          "sport": "MLB",
-          "gameKey": "bos_nyy__2",
-          "marketType": "total",
-          "side": "under",
-          "invested": 150,
-          "entryLine": 7.5,
-          "passesShadow": false
         },
         {
           "sport": "WNBA",
@@ -955,8 +955,24 @@
       "tier": "CONFIRMED",
       "name": "sbsigner",
       "sports": "NHL",
-      "status": "SCANNED_NO_POSITIONS_TODAY",
-      "addr": "0x1b47e9b128e6b671edebfb2cac23dd3efc40d814"
+      "status": "RECOVERED_VIA_WHITELIST_SCAN",
+      "addr": "0x1b47e9b128e6b671edebfb2cac23dd3efc40d814",
+      "positionsCount": 1,
+      "statsSource": "profile.bySport.positions",
+      "avgSportBet": 1488,
+      "willPassShadowGate": 0,
+      "willDropAtShadowGate": 1,
+      "positions": [
+        {
+          "sport": "MLB",
+          "gameKey": "phi_laa",
+          "marketType": "ml",
+          "side": "home",
+          "invested": 3,
+          "entryLine": null,
+          "passesShadow": false
+        }
+      ]
     },
     {
       "walletShort": "411018",
@@ -2500,7 +2516,7 @@
           "gameKey": "sac_emu",
           "marketType": "ml",
           "side": "home",
-          "invested": 5834,
+          "invested": 6126,
           "entryLine": null,
           "passesShadow": true
         }
