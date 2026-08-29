@@ -13881,21 +13881,9 @@ const CLIMATE_ZONE = {
 };
 
 const CLIMATE_HELP_ZONES = [
-  {
-    key: 'Quiet',
-    color: '#EF4444',
-    line: 'No top sharps on this sport yet today.',
-  },
-  {
-    key: 'Building',
-    color: CLIMATE_AMBER,
-    line: 'Top sharps are in — turnout is climbing.',
-  },
-  {
-    key: 'Live',
-    color: '#10B981',
-    line: 'Strong sharp turnout for this sport today.',
-  },
+  { key: 'Quiet', color: '#EF4444', line: 'Not enough yet.' },
+  { key: 'Building', color: CLIMATE_AMBER, line: 'Getting there.' },
+  { key: 'Live', color: '#10B981', line: 'Yes — strong sharp support.' },
 ];
 
 function climateZoneMeta(climate) {
@@ -13990,35 +13978,34 @@ function ClimateHelpHint({ isMobile, stopPropagation }) {
             letterSpacing: '0.1em',
             textTransform: 'uppercase',
             color: B.textMuted,
-            marginBottom: '0.4rem',
+            marginBottom: '0.45rem',
           }}>
             Sharp climate
           </div>
           <div style={{
             ...T.label,
-            fontSize: '0.78rem',
+            fontSize: '0.8rem',
             fontWeight: 600,
-            lineHeight: 1.4,
+            lineHeight: 1.45,
             color: B.text,
-            marginBottom: '0.75rem',
+            marginBottom: '0.85rem',
           }}>
-            Are the best sharps active in this sport today?
+            Do we have enough top-tier sharps active today to have high conviction in our plays?
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {CLIMATE_HELP_ZONES.map((z) => (
               <div
                 key={z.key}
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '8px 64px 1fr',
-                  gap: '0.45rem',
-                  alignItems: 'start',
+                  gridTemplateColumns: '8px 62px 1fr',
+                  gap: '0.4rem',
+                  alignItems: 'center',
                 }}
               >
                 <span style={{
                   width: 7,
                   height: 7,
-                  marginTop: 4,
                   borderRadius: '50%',
                   background: z.color,
                   boxShadow: `0 0 6px ${z.color}99`,
@@ -14029,33 +14016,20 @@ function ClimateHelpHint({ isMobile, stopPropagation }) {
                   fontWeight: 800,
                   letterSpacing: '0.04em',
                   color: z.color,
-                  paddingTop: '0.05rem',
                 }}>
                   {z.key}
                 </span>
                 <span style={{
                   ...T.label,
-                  fontSize: '0.68rem',
+                  fontSize: '0.7rem',
                   fontWeight: 500,
-                  lineHeight: 1.35,
+                  lineHeight: 1.3,
                   color: B.textSec,
                 }}>
                   {z.line}
                 </span>
               </div>
             ))}
-          </div>
-          <div style={{
-            marginTop: '0.75rem',
-            paddingTop: '0.65rem',
-            borderTop: `1px solid ${B.border}`,
-            ...T.label,
-            fontSize: '0.65rem',
-            fontWeight: 500,
-            lineHeight: 1.4,
-            color: B.textMuted,
-          }}>
-            The meter climbs from 0 to 100 as more top sharps show up.
           </div>
         </div>
       )}
