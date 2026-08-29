@@ -50,4 +50,10 @@
 - [x] Whole truth loser  
 - [x] Heater serialize  
 - [x] No ask  
-- [x] FORWARD LOOK refreshed  
+- [x] FORWARD LOOK refreshed
+
+## Continuity bump — 2026-08-29 night
+- Fresh CSV Aug 23–29 ingested → `recent_timeline_latest.md`
+- Hot: P+S cash-return, S+C split, anti-sexy L+C
+- Cold: promo, lecture, soft diary, ✅ scoreboard heroes
+- Ask temp: warm-cool — give/live board before another convert
