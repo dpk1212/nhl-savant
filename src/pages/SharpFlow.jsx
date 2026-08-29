@@ -13324,13 +13324,20 @@ export default function SharpFlow() {
                     }
                     const sportFiltered = lockedSportFilter === 'All' ? allLockedArr : allLockedArr.filter(p => p.sport === lockedSportFilter);
                     const lockedArr = lockedMarketFilter === 'all' ? sportFiltered : sportFiltered.filter(p => (p.marketType || 'ml') === lockedMarketFilter);
+                    // Resolved = has W/L/PUSH outcome OR side marked COMPLETED.
+                    // Pending default hides those; All / Won / Lost still reach them.
+                    const isResolvedLocked = (p) => {
+                      const o = p?.outcome || p?.result?.outcome || null;
+                      if (o === 'WIN' || o === 'LOSS' || o === 'PUSH') return true;
+                      return String(p?.status || '').toUpperCase() === 'COMPLETED';
+                    };
                     const statusFiltered = lockedStatusFilter === 'all' ? lockedArr
-                      : lockedStatusFilter === 'pending' ? lockedArr.filter(p => !p.outcome)
+                      : lockedStatusFilter === 'pending' ? lockedArr.filter(p => !isResolvedLocked(p))
                       : lockedStatusFilter === 'won' ? lockedArr.filter(p => p.outcome === 'WIN')
                       : lockedArr.filter(p => p.outcome === 'LOSS');
-                    const cancelledCount = statusFiltered.filter(p => (p.health?.status || 'ACTIVE') === 'CANCELLED' && !p.outcome).length;
-                    const mutedCount = statusFiltered.filter(p => (p.health?.status || 'ACTIVE') === 'MUTED' && !p.outcome).length;
-                    const filteredLocked = showCancelled ? statusFiltered : statusFiltered.filter(p => (p.health?.status || 'ACTIVE') !== 'CANCELLED' || !!p.outcome);
+                    const cancelledCount = statusFiltered.filter(p => (p.health?.status || 'ACTIVE') === 'CANCELLED' && !isResolvedLocked(p)).length;
+                    const mutedCount = statusFiltered.filter(p => (p.health?.status || 'ACTIVE') === 'MUTED' && !isResolvedLocked(p)).length;
+                    const filteredLocked = showCancelled ? statusFiltered : statusFiltered.filter(p => (p.health?.status || 'ACTIVE') !== 'CANCELLED' || isResolvedLocked(p));
                     // Default ORDER is units: stake size is the conviction
                     // rank on the card (2.5u above 1u). Star rating and TOP
                     // PICK badges used to lead this sort and put a 1u STRONG
@@ -13340,7 +13347,7 @@ export default function SharpFlow() {
                     // shown for volume but never staked: they are excluded from
                     // the record / units / ROI ledger entirely.
                     const stakedLockedArr = lockedArr.filter(p => !p.isMonitoring);
-                    const pendingCount = stakedLockedArr.filter(p => !p.outcome).length;
+                    const pendingCount = stakedLockedArr.filter(p => !isResolvedLocked(p)).length;
                     const wonCount = stakedLockedArr.filter(p => p.outcome === 'WIN').length;
                     const lostCount = stakedLockedArr.filter(p => p.outcome === 'LOSS').length;
                     const sportCounts = {};
@@ -13362,7 +13369,7 @@ export default function SharpFlow() {
                     // Record / exposure / payout / realized, computed
                     // from the sport+market-filtered set so the numbers
                     // track the filters the user has applied.
-                    const ledgerPending = stakedLockedArr.filter(p => !p.outcome);
+                    const ledgerPending = stakedLockedArr.filter(p => !isResolvedLocked(p));
                     const ledgerUnitsAtRisk = ledgerPending.reduce((s, p) => s + (Number.isFinite(p.units) ? p.units : 0), 0);
                     const ledgerToWin = ledgerPending.reduce((s, p) => {
                       const u = Number.isFinite(p.units) ? p.units : 0;
@@ -13370,7 +13377,7 @@ export default function SharpFlow() {
                       if (!u || !Number.isFinite(o) || o === 0) return s;
                       return s + (o > 0 ? u * (o / 100) : u * (100 / Math.abs(o)));
                     }, 0);
-                    const ledgerRealized = stakedLockedArr.filter(p => p.outcome).reduce((s, p) => s + (p.profit || 0), 0);
+                    const ledgerRealized = stakedLockedArr.filter(p => isResolvedLocked(p)).reduce((s, p) => s + (p.profit || 0), 0);
                     const ledgerClvVals = stakedLockedArr.map(p => p.clv).filter(v => Number.isFinite(v));
                     const ledgerAvgClv = ledgerClvVals.length ? ledgerClvVals.reduce((s, v) => s + v, 0) / ledgerClvVals.length : null;
                     const ledgerCells = [

@@ -2583,12 +2583,12 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
             display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
             gap: 3, flexShrink: 0, paddingTop: 2,
           }}>
-            {!tracked && !graded && (
+            {!tracked && (
               <span style={{
                 fontFamily: MONO, fontSize: 8, fontWeight: 700,
                 letterSpacing: '0.14em', color: C.textFaint,
               }}>
-                STAKE
+                {graded ? 'RESULT' : 'STAKE'}
               </span>
             )}
             <span
@@ -2603,11 +2603,24 @@ export function LockedPositionCardView({ f, defaultExpanded = false }) {
               {stakeLabel}
             </span>
             {payoutLabel && (
-              <span style={{
-                fontSize: 12, fontWeight: 650, fontFeatureSettings: "'tnum'",
-                color: payoutColor, letterSpacing: '-0.01em',
-              }}>
-                {payoutLabel}
+              <span
+                title={graded ? 'Graded P&L' : 'To win at ticket odds — not graded yet'}
+                style={{
+                  fontSize: 12, fontWeight: 650, fontFeatureSettings: "'tnum'",
+                  color: payoutColor, letterSpacing: '-0.01em',
+                }}
+              >
+                {graded ? payoutLabel : (
+                  <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 5 }}>
+                    <span style={{
+                      fontFamily: MONO, fontSize: 7, fontWeight: 800,
+                      letterSpacing: '0.12em', color: C.textFaint,
+                    }}>
+                      TO WIN
+                    </span>
+                    {payoutLabel}
+                  </span>
+                )}
               </span>
             )}
           </div>
