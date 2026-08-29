@@ -1,61 +1,75 @@
-# Recent timeline — latest review
+# Recent timeline (analytics)
 
-**Updated:** 2026-08-28  
-**Sources:** CSV `account_analytics_content_2026-08-22_2026-08-28_676a.csv`  
-**Living state:** also read/write `SHARED/messaging_continuity.md` every run
+**Window:** 2026-08-23 → 2026-08-29  
+**Source:** `twitter_drafts/analytics/account_analytics_content_2026-08-23_2026-08-29.csv`  
+**Ingested:** 2026-08-29 (Hormozi desk — engagements > vanity)  
+**Heroes in window:** 32 · median impr 2184
 
-## Window
-- Dates: 2026-08-22 → 2026-08-28
-- Posts reviewed (n): 75 rows (26 heroes · 49 replies)
+## Top 10 by engagement (then replies / profile / URL)
 
-## Top by engagement (heroes only)
-| Rank | Open / hook (first line) | Imp | Eng | Replies | PV | SPCL | Why |
-|------|--------------------------|-----|-----|---------|----|------|-----|
-| 1 | YESTERDAY HE PRESSED THE RED SOX AT 4.2×… IT CASHED | 3358 | 369 | 3 | 84 | P+S | Say–do return |
-| 2 | Most people try to become sharp… | 4121 | 264 | 3 | 54 | C+L | Diagnostic dream |
-| 3 | $21K SOX / $20K MARLINS. Looks even. It isn’t. | 3480 | 226 | 1 | 45 | C+S | Contrast |
-| 4 | NATS GOT ROCKED 13-1 YESTERDAY… | 4494 | 213 | 1 | 27 | S+C | Blowout→size |
-| 5 | +42.06u OVER THE LAST 30 DAYS… smoked… lab | 2455 | 210 | 2 | 33 | P+C | Soft-day honesty |
-| 6 | IF YOUR SITE DOESN'T HAVE A TRACKER… | 2680 | 206 | 3 | 31 | C | Category confront |
-| 7 | UP +$14K THIS MONTH. WNBA ONLY… | 3398 | 185 | 2 | 26 | S | Scarce $ |
-| 8 | BETMGM IS SHOWING TOP TICKETS… | 3197 | 173 | 1 | 24 | C+S | Tickets vs printers |
-| 9 | Most people try to become sharp. Buy the +EV tool… | 1969 | 169 | 0 | 30 | C+L | Dream path (0 replies) |
-| 10 | MOST BET IS A POPULARITY CONTEST… | 2904 | 168 | 2 | 26 | C | Proof vs popularity |
+| # | Eng | Impr | R | PV | URL | Fol | SPCL | Open |
+|---|-----|------|---|----|-----|-----|------|------|
+| 1 | **409** | 3390 | 3 | 104 | 0 | 1 | **PS** | YESTERDAY HE PRESSED THE RED SOX AT 4.2×. $249,100. IT CASHED. TONIGHT THE SAME WALLET IS  |
+| 2 | **265** | 4174 | 3 | 54 | 0 | 3 | **LC** | Most people try to become sharp. Buy 3–4 subscriptions. Stand up a dataset. Grind EV top-d |
+| 3 | **226** | 3498 | 1 | 45 | 0 | 1 | **SC** | $21K ON THE SOX. $20K ON THE MARLINS. Looks even. It isn’t. Sox side: a +26% ROI wallet ju |
+| 4 | **220** | 3813 | 3 | 48 | 0 | 0 | **LC** | No sexy post here… but this dude hasn’t missed in preseason yet. https://t.co/sY7crDZ6Xg |
+| 5 | **217** | 4682 | 1 | 28 | 0 | 0 | **SP** | NATS GOT ROCKED 13-1 YESTERDAY. Everyone is moving off baseball. Sharps we track aren't fa |
+| 6 | **211** | 2477 | 2 | 33 | 0 | 0 | **SC** | +42.06u OVER THE LAST 30 DAYS. Yesterday's top plays got smoked. I went into the lab this  |
+| 7 | **206** | 2690 | 3 | 31 | 0 | 0 | **LC** | IF YOUR SITE DOESN'T HAVE A TRACKER, YOU'RE THE PRODUCT. Not the data. You. You can spend  |
+| 8 | **192** | 3289 | 3 | 26 | 0 | 0 | **SP** | SHARPS MUST BE OUT GOLFING. Slow board. Still like this one while we wait on the lock. PIT |
+| 9 | **185** | 3404 | 2 | 26 | 0 | 0 | **SC** | UP +$14K THIS MONTH. WNBA ONLY. TONIGHT HE PUT $5K ON ONE NUMBER. Storm @ Wings Under. • $ |
+| 10 | **181** | 2136 | 0 | 33 | 0 | 0 | **LC** | Most people try to become sharp. Buy the +EV tool. Pay a million bucks. Wait for a nuke. R |
 
-## Also notable (this desk arc)
-| Open | Imp | Eng | Replies | Note |
-|------|-----|-----|---------|------|
-| DOWN 76 UNITS. THEN V12 WENT LIVE… | 1215 | 111 | **7** | Valley ATH — reply magnet |
-| SAME PRINTER… NATS… 2.0× BRAVES | 2998 | 120 | 1 | Serialize Power |
-| Chris Sale legacy… Braves ✅ | 2290 | 108 | 0 | Grade reach, no replies |
-| SR: I don't know what you're using… | 177 | 4 | 0 | Soft switch — weak alone |
+## SPCL mix (top 10 — what’s hot)
 
-## Top by impressions
-1. Nats 13-1 (4494) · 2. Become sharp (4121) · 3. Over 5u / wedding (4089)
+- **C**: 7/10
+- **S**: 6/10
+- **L**: 4/10
+- **P**: 3/10
 
-## Soft / failed opens
-| Open | Problem |
-|------|---------|
-| Become-sharp OG variant (1569 imp / 0 replies) | Empty OG without mechanism |
-| Focusing on top unit plays… Happy to see green (2183/46) | Soft victory-lap |
-| Soft switch SR alone (4 eng) | Needs hero pudding under it — don’t orphan |
+**Hot letters this window:** **S + P** (size-press / same-printer / cash-then-back) and **S + C** (split contrast / loser money). **L** works when confession carries a receipt (anti-sexy, wedding, valley) — not as soft diary alone.
 
-## SPCL mix this window
-| Letter | Heat |
-|--------|------|
-| S | Hot — $ / size / presses |
-| P | Hottest eng — cash return · valley→ATH · lab honesty |
-| C | Hot — contrast · tracker · tickets vs printers |
-| L | Works inside diagnostic dream · weak as orphan testimonial |
+## Soft / spent / don’t echo
 
-**Hot silhouettes:** pressed→cashed · become-sharp path · looks even · blowout→size · valley→ATH  
-**Cold:** orphan ask SR · soft green lap · empty OG caption
+- eng 181 / 2136 impr — Most people try to become sharp. Buy the +EV tool. Pay a million bucks. Wait for a nuke. Ride 16.8× 
+- eng 135 / 3064 impr — Chris Sale legacy game. Braves ML ✅✅ Under 6.5 ✅✅ When we size up in v12 it continues to print. We b
+- eng 89 / 1605 impr — Most people try to become sharp. This long-time OG is doing something a little different. He embrace
+- eng 73 / 2105 impr — RIGHT NOW IT'S JUST US. One day Savant/Sharp Flow are sitting in that Sports folder.... next to ever
+- eng 13 / 213 impr — Start free PROMO CODE - SUMMER https://t.co/KmjsCyd8do
+- eng 10 / 310 impr — I think the one thing that is missed… is the time and energy saved.. you don’t have to do the math o
+- eng 4 / 324 impr — I don't know what you're using for your data or model right now. But if you can't quantify the edge 
+- eng 3 / 214 impr — After a long weekend traveling for a wedding. It’s nice to be back in the saddle. https://t.co/UJHHC
+- Kill: promo-code opens, abstract “your model” lectures, bare “Seems legit,” soft “nice to be back” with no scarce proof
+
+## Themes spent this window
+- Nats 13-1 → size-up → Braves run-it-back serialization
+- Sox $249K / 4.2× cash → same wallet back (Rays)
+- >5u book (40–11 / +82u) + wedding life-cost
+- “Most people try to become sharp” philosophy
+- Anti-sexy NFL preseason printer
+- Onboarding / “lost on the site” ask (strong replies, mid reach)
+- Costly rinse morning (“golfing / rinsed”) — honest L scene
+
+## Unfinished / serialization still open
+- Same-printer chase format (cash → “should we run it back”)
+- >5u filter as Status spear (update the book, don’t re-explain)
+- Onboarding FAQ thread energy — only if PURPOSE=educate/ask, not every hero
 
 ## Ask temperature
-**Warm-cool** — V12 ATH + switch SR just fired (111 eng / 7 replies on hero). Next = **give / engagement**, not another convert.
+- Hero gives SPCL; **SR-only** soft trial when PURPOSE=ask
+- Promo/SUMMER in hero = dead (213 eng-path)
+- URL clicks still ~7 on heroes — compliance is profile/reply more than link-in-hero
 
-## Forward look (hand to continuity)
-1. Midday give that farms **replies** (FAQ/onboarding — Dale spine)  
-2. Live board / grade beats  
-3. Ask only after more free SPCL  
-**NOT:** second switch ask · orphan SR · +110u echo  
+## FORWARD LOOK (what the feed needs next)
+1. **Live board moment** with **S or P** spear — size-press / same-wallet return — not another philosophy essay unless Dale dumps that spine
+2. Prefer **1–2 SPCL only** (S+P or S+C). Don’t brochure all four
+3. If tonight is a lock/cash: Power say–do. If pre-lock: scarce on-board Status only (lock discipline)
+4. Skip promo / lecture / soft diary opens
+
+## Silhouettes safe to reuse (if they fit ONE)
+- `$XK at Y× usual` + L30 / WR
+- “Looks even. It isn’t.” split
+- “No sexy post here…” + printer
+- Cash → same wallet back
+
+*Ready for Dale spine → WHO → PURPOSE → ONE → 1–2 SPCL → craft.*
