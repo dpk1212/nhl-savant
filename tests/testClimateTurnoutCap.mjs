@@ -13,6 +13,7 @@ import {
   applyClimateTurnoutOverlay,
   climateForSport,
   sharpLetterForWallet,
+  climateProgressScore,
 } from '../src/lib/climateTurnoutCap.js';
 
 let n = 0;
@@ -160,5 +161,20 @@ function half(args) {
   ok(climate.units === 2.7, 'climate first');
   // unlock would then min(2.7, 1) = 1 on thin NFL — call site order
 }
+
+// ── progress score (UI stoplight 0–100) ─────────────────────────────────
+ok(climateProgressScore({ color: 'RED', activeA: 0, activeAB: 2 }) === 0, 'RED → 0');
+ok(climateProgressScore({ activeA: 0, activeAB: 5, pctABRoster: 50 }) === 0, 'no A → 0');
+{
+  const s = climateProgressScore({ color: 'YELLOW', activeA: 1, activeAB: 3, pctABRoster: 10 });
+  ok(s === 50, `AB=3/6 → 50 (got ${s})`);
+}
+{
+  const s = climateProgressScore({ color: 'YELLOW', activeA: 1, activeAB: 1, pctABRoster: 20 });
+  // max(1/6*100≈17, 20/35*100≈57) → 57
+  ok(s === 57, `pct path → 57 (got ${s})`);
+}
+ok(climateProgressScore({ color: 'GREEN', activeA: 2, activeAB: 6, pctABRoster: 10 }) === 100, 'AB≥6 → 100');
+ok(climateProgressScore({ color: 'GREEN', activeA: 1, activeAB: 4, pctABRoster: 40 }) === 100, 'pct≥35 → 100');
 
 console.log(`ok ${n} climate turnout tests`);

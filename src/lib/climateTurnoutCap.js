@@ -276,3 +276,28 @@ export function climateForSport(climateBySport, sport) {
     || climateBySport.get(sport)
     || null;
 }
+
+/**
+ * 0–100 progress toward GREEN (for UI stoplights).
+ *
+ *   0     = RED (no Sharp A on FORs)
+ *   1–99  = YELLOW zone — have A, climbing toward green gates
+ *   100   = at/past GREEN (activeAB≥6 or pctABRoster≥35%)
+ *
+ * Score = max(activeAB/6, pctABRoster/35) × 100 once activeA≥1.
+ */
+export function climateProgressScore({
+  color = null,
+  activeA = 0,
+  activeAB = 0,
+  pctABRoster = 0,
+} = {}) {
+  const a = Math.max(0, Math.floor(Number(activeA) || 0));
+  const c = color == null ? null : String(color).toUpperCase();
+  if (c === 'RED' || a <= 0) return 0;
+  const ab = Math.max(0, Number(activeAB) || 0);
+  const pct = Math.max(0, Number(pctABRoster) || 0);
+  const byCount = (ab / CLIMATE_GREEN_ACTIVE_AB) * 100;
+  const byPct = (pct / CLIMATE_GREEN_PCT_AB_ROSTER) * 100;
+  return Math.max(0, Math.min(100, Math.round(Math.max(byCount, byPct))));
+}
