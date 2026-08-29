@@ -283,4 +283,42 @@ assert.equal(altSpreadBound.offMain, true);
 assert.equal(stampJuice(altSpreadBound, -158), 203);
 assert.equal(stampTape(altSpreadBound, null, -158), null, 'no alt tape → do not borrow MAIN');
 
+// 7) CHI@TEN 2026-08-29 — Bears +2.5 vault Poly ~48%/+106 vs PIN −108 on same line.
+// Hero must pair +2.5 with book spread juice, not ML-style Poly +106/+110.
+const chiTenPos = [
+  { side: 'away', entryLine: 2.5, avgPrice: 0.49, invested: 1960, title: 'Spread: TEN (-2.5)' },
+  { side: 'away', entryLine: 2.5, avgPrice: 0.479, invested: 2042, title: 'Spread: TEN (-2.5)' },
+];
+const chiTenPinn = {
+  fairSpreadBook: 'pinnacle',
+  spreadCurrent: { homeLine: -1, awayLine: 1, homeOdds: -104, awayOdds: -112, isMain: true },
+  spreadHistory: [
+    { t: 1, awayLine: 2.5, awayOdds: -105, homeLine: -2.5, homeOdds: -105, isMain: true },
+    { t: 2, awayLine: 2.5, awayOdds: -108, homeLine: -2.5, homeOdds: -108, isMain: true },
+    { t: 3, awayLine: 1, awayOdds: -112, homeLine: -1, homeOdds: -104, isMain: true },
+  ],
+  spreadLines: [
+    { homeLine: -1, awayLine: 1, homeOdds: -104, awayOdds: -112, isMain: true },
+  ],
+};
+const chiTen = resolveInstrument({
+  family: 'SPREAD',
+  side: 'away',
+  positions: chiTenPos,
+  pinnGame: chiTenPinn,
+  stampedLine: 2.5,
+  awayName: 'Bears',
+  homeName: 'Titans',
+});
+assert.equal(chiTen.line, 2.5);
+assert.equal(chiTen.mainLine, 1);
+assert.equal(chiTen.variant, 'ALT');
+assert.equal(chiTen.ticket.american, 106, 'Poly receipt stays +106 for PM cell');
+assert.equal(chiTen.tape.now, -108);
+const chiBound = coherentTicket(chiTen, { stampedLine: 2.5, stampedOdds: 110 });
+assert.equal(chiBound.line, 2.5);
+assert.equal(chiBound.odds, -108, 'spread hero pairs +2.5 with book −108, not Poly +110');
+assert.equal(chiBound.offMain, true);
+assert.equal(stampJuice(chiBound, 110), -108);
+
 console.log('testTicketInstrument: ok');
