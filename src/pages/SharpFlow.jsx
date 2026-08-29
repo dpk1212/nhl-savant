@@ -1671,6 +1671,49 @@ function todayET() {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 }
 
+/** UFC cards are event-based — hide from main sport rail after the card wraps. */
+const UFC_SLATE_ACTIVE_AFTER_COMMENCE_MS = 8 * 60 * 60 * 1000;
+
+/**
+ * True while UFC still belongs on the main view: upcoming/live fights on the
+ * board, or today's UFC locks still pending. Once the card is done and locks
+ * are graded, UFC drops off SportTabs / climate by default.
+ */
+function isUfcSlateActive({
+  allGames = [],
+  pinnacleHistory = null,
+  lockedPicks = {},
+  nowMs = Date.now(),
+} = {}) {
+  for (const g of allGames) {
+    if (g?.sport !== 'UFC') continue;
+    const raw = pinnacleHistory?.UFC?.[g.key]?.commence
+      || g.commence
+      || g.commenceTime
+      || null;
+    const ct = raw != null ? new Date(raw).getTime() : NaN;
+    if (!Number.isFinite(ct)) return true; // on board, clock unknown — keep visible
+    if (ct > nowMs - UFC_SLATE_ACTIVE_AFTER_COMMENCE_MS) return true;
+  }
+
+  const today = todayET();
+  for (const [docId, doc] of Object.entries(lockedPicks || {})) {
+    if (!docId.startsWith(today)) continue;
+    if (String(doc.sport || '').toUpperCase() !== 'UFC') continue;
+    for (const sd of Object.values(doc.sides || {})) {
+      if (!sd || sd.superseded) continue;
+      if (sd.status === 'COMPLETED' || sd.result?.outcome) continue;
+      const u = Number(sd.finalUnits);
+      if ((Number.isFinite(u) && u > 0) || sd.lockStage === 'LOCKED' || sd.lockStage === 'LEAN') {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+const MAIN_SPORT_TAB_ORDER = ['CBB', 'CFB', 'NHL', 'MLB', 'NBA', 'WNBA', 'NFL', 'SOC', 'UFC'];
+
 function gameDate(commenceTime) {
   if (!commenceTime) return todayET();
   return new Date(commenceTime).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
@@ -9150,6 +9193,28 @@ export default function SharpFlow() {
     return map;
   }, [lockedPicks]);
 
+  // UFC is event-based — hide from main sport rail / climate after the card
+  // finishes (no upcoming/live fights, no pending UFC locks today).
+  const ufcSlateActive = useMemo(
+    () => isUfcSlateActive({ allGames, pinnacleHistory, lockedPicks }),
+    [allGames, pinnacleHistory, lockedPicks],
+  );
+
+  const mainSportTabs = useMemo(
+    () => MAIN_SPORT_TAB_ORDER.filter((sp) => sp !== 'UFC' || ufcSlateActive),
+    [ufcSlateActive],
+  );
+
+  const climateBySportVisible = useMemo(() => {
+    if (ufcSlateActive || !climateBySportToday.UFC) return climateBySportToday;
+    const { UFC: _omit, ...rest } = climateBySportToday;
+    return rest;
+  }, [climateBySportToday, ufcSlateActive]);
+
+  useEffect(() => {
+    if (sportFilter === 'UFC' && !ufcSlateActive) setSportFilter('All');
+  }, [sportFilter, ufcSlateActive]);
+
   const gameFlowMap = useMemo(() => {
     const m = {};
     for (const g of allGames) m[`${g.sport}_${g.key}`] = g;
@@ -9718,7 +9783,7 @@ export default function SharpFlow() {
   if (filteredGames.length === 0) {
     return (
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
-        <PageHeader sportFilter={sportFilter} setSportFilter={setSportFilter} viewMode={viewMode} setViewMode={setViewMode} isMobile={isMobile} climateBySport={climateBySportToday} />
+        <PageHeader sportFilter={sportFilter} setSportFilter={setSportFilter} viewMode={viewMode} setViewMode={setViewMode} isMobile={isMobile} climateBySport={climateBySportVisible} sportTabs={mainSportTabs} />
         <div style={{
           textAlign: 'center', padding: '3rem', borderRadius: '12px',
           background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
@@ -9742,7 +9807,7 @@ export default function SharpFlow() {
           which is what sells the glassmorphism. pointer-events: none and
           z-index below content; honors prefers-reduced-motion via CSS. */}
       <div className="sf-aurora" aria-hidden="true" />
-      <PageHeader sportFilter={sportFilter} setSportFilter={setSportFilter} viewMode={viewMode} setViewMode={setViewMode} isMobile={isMobile} climateBySport={climateBySportToday} />
+      <PageHeader sportFilter={sportFilter} setSportFilter={setSportFilter} viewMode={viewMode} setViewMode={setViewMode} isMobile={isMobile} climateBySport={climateBySportVisible} sportTabs={mainSportTabs} />
 
       {/* ─── Orientation strip — free users, dismissible ───
           Layer-1 onboarding: answers "what is this and why trust it" in one
@@ -10002,7 +10067,7 @@ export default function SharpFlow() {
             </div>
 
             <ClimateStoplightStrip
-              climateBySport={climateBySportToday}
+              climateBySport={climateBySportVisible}
               sportFilter={sportFilter}
               isMobile={isMobile}
             />
@@ -14475,10 +14540,10 @@ function SfSegmented({ options, value, onChange, isMobile, scrollable = false })
   );
 }
 
-function SportTabs({ active, onChange, isMobile, climateBySport = null }) {
+function SportTabs({ active, onChange, isMobile, climateBySport = null, sports = MAIN_SPORT_TAB_ORDER }) {
   const options = [
     { id: 'All', label: 'All', emoji: '⚡', color: B.gold },
-    ...['CBB', 'CFB', 'NHL', 'MLB', 'NBA', 'WNBA', 'NFL', 'SOC', 'UFC'].map((key) => {
+    ...sports.map((key) => {
       const ss = sportStyle(key);
       const climate = climateBySport?.[key] || null;
       return {
@@ -15377,7 +15442,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
   );
 }
 
-function PageHeader({ sportFilter, setSportFilter, viewMode, setViewMode, isMobile, climateBySport = null }) {
+function PageHeader({ sportFilter, setSportFilter, viewMode, setViewMode, isMobile, climateBySport = null, sportTabs = MAIN_SPORT_TAB_ORDER }) {
   const pageViews = [
     { id: 'signals', label: 'Signals', icon: BarChart3, color: B.sky },
     { id: 'flow', label: 'Action', icon: Activity, color: B.green },
@@ -15422,7 +15487,7 @@ function PageHeader({ sportFilter, setSportFilter, viewMode, setViewMode, isMobi
             isMobile={isMobile}
             scrollable={isMobile}
           />
-          <SportTabs active={sportFilter} onChange={setSportFilter} isMobile={isMobile} climateBySport={climateBySport} />
+          <SportTabs active={sportFilter} onChange={setSportFilter} isMobile={isMobile} climateBySport={climateBySport} sports={sportTabs} />
         </div>
       </div>
     </div>
