@@ -13873,40 +13873,68 @@ function climateStoplightHue(score) {
 }
 
 const CLIMATE_AMBER = '#F59E0B';
+const CLIMATE_LIGHT_GREEN = '#34D399';
 
-const CLIMATE_ZONE = {
-  RED: { label: 'Quiet', sub: 'No top sharps yet' },
-  YELLOW: { label: 'Building', sub: null },
-  GREEN: { label: 'Live', sub: 'Strong sharp turnout' },
-};
+/** Product UI tiers (size policy still only halves on RED / Quiet). */
+function climateProductTier(score, policyColor, activeA) {
+  const s = Number.isFinite(score) ? score : 0;
+  const a = activeA ?? 0;
+  const c = String(policyColor || '').toUpperCase();
+  if (c === 'RED' || a <= 0 || s <= 0) {
+    return {
+      key: 'Quiet',
+      label: 'Quiet',
+      sub: 'Not enough top sharps yet',
+      hue: B.red,
+    };
+  }
+  if (c === 'GREEN' || s >= 100) {
+    return {
+      key: 'Live',
+      label: 'Live',
+      sub: 'Full sharp support',
+      hue: B.green,
+    };
+  }
+  if (s >= 50) {
+    return {
+      key: 'Strong',
+      label: 'Strong',
+      sub: `${s}% · solid turnout`,
+      hue: CLIMATE_LIGHT_GREEN,
+    };
+  }
+  return {
+    key: 'Building',
+    label: 'Building',
+    sub: `${s}% · warming up`,
+    hue: CLIMATE_AMBER,
+  };
+}
 
 const CLIMATE_HELP_ZONES = [
-  { key: 'Quiet', color: '#EF4444', line: 'Not enough yet.' },
-  { key: 'Building', color: CLIMATE_AMBER, line: 'Getting there.' },
-  { key: 'Live', color: '#10B981', line: 'Yes — strong sharp support.' },
+  { key: 'Quiet', color: B.red, line: 'Not enough yet — we size down.' },
+  { key: 'Building', color: CLIMATE_AMBER, line: 'Top sharps are in.' },
+  { key: 'Strong', color: CLIMATE_LIGHT_GREEN, line: 'Solid turnout — high conviction.' },
+  { key: 'Live', color: B.green, line: 'Full sharp support.' },
 ];
 
 function climateZoneMeta(climate) {
   if (!climate) return null;
   const color = String(climate.color || 'RED').toUpperCase();
-  const score = Number.isFinite(climate.score) ? climate.score : 0;
+  const rawScore = Number.isFinite(climate.score) ? climate.score : 0;
   const a = climate.activeA ?? 0;
   const ab = climate.activeAB ?? 0;
-  const hue = climateStoplightHue(color === 'RED' || a <= 0 ? 0 : score);
-  const zone = CLIMATE_ZONE[color] || CLIMATE_ZONE.RED;
-  let sub = zone.sub;
-  if (color === 'YELLOW') {
-    sub = `${score}% to Live`;
-  } else if (color === 'RED' && ab > 0) {
-    sub = 'Still need a top sharp';
-  }
+  const score = color === 'RED' || a <= 0 ? 0 : rawScore;
+  const tier = climateProductTier(score, color, a);
   return {
     sport: climate.sport,
-    color,
-    score: color === 'RED' || a <= 0 ? 0 : score,
-    hue,
-    label: zone.label,
-    sub,
+    color, // policy color RED/YELLOW/GREEN
+    tier: tier.key,
+    score,
+    hue: tier.hue,
+    label: tier.label,
+    sub: tier.sub,
     a,
     ab,
   };
@@ -13998,7 +14026,7 @@ function ClimateHelpHint({ isMobile, stopPropagation }) {
                 key={z.key}
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '8px 62px 1fr',
+                  gridTemplateColumns: '8px 70px 1fr',
                   gap: '0.4rem',
                   alignItems: 'center',
                 }}
@@ -14049,13 +14077,13 @@ function ClimateThermoTrack({ meta, height = 7 }) {
       boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.45)',
       overflow: 'visible',
     }}>
-      {/* Full spectrum wash (always visible, dim) */}
+      {/* Full spectrum: Quiet → Building → Strong → Live */}
       <div style={{
         position: 'absolute',
         inset: 0,
         borderRadius: 999,
         overflow: 'hidden',
-        background: `linear-gradient(90deg, ${B.red} 0%, ${CLIMATE_AMBER} 50%, ${B.green} 100%)`,
+        background: `linear-gradient(90deg, ${B.red} 0%, ${CLIMATE_AMBER} 35%, ${CLIMATE_LIGHT_GREEN} 70%, ${B.green} 100%)`,
         opacity: 0.22,
       }} />
       {/* Progress fill to marker */}
@@ -14064,15 +14092,15 @@ function ClimateThermoTrack({ meta, height = 7 }) {
         left: 0,
         top: 0,
         bottom: 0,
-        width: `${Math.max(markerPct, meta.color === 'RED' ? 2 : markerPct)}%`,
+        width: `${Math.max(markerPct, meta.tier === 'Quiet' ? 2 : markerPct)}%`,
         borderRadius: 999,
         overflow: 'hidden',
         background: `linear-gradient(90deg, ${B.red} 0%, ${meta.hue} 100%)`,
         opacity: 0.85,
-        boxShadow: meta.color !== 'RED' ? `0 0 12px ${meta.hue}44` : 'none',
+        boxShadow: meta.tier !== 'Quiet' ? `0 0 12px ${meta.hue}44` : 'none',
       }} />
-      {/* Soft zone ticks at 0 / mid / end */}
-      {[28, 72].map((pct) => (
+      {/* Soft zone ticks */}
+      {[25, 50, 75].map((pct) => (
         <span
           key={pct}
           aria-hidden="true"
@@ -14138,9 +14166,10 @@ function ClimateThermoRow({ meta, isMobile }) {
           textTransform: 'uppercase',
           color: 'rgba(148,163,184,0.55)',
         }}>
-          <span style={{ color: meta.color === 'RED' ? B.red : undefined, opacity: meta.color === 'RED' ? 1 : undefined }}>Quiet</span>
-          <span style={{ color: meta.color === 'YELLOW' ? CLIMATE_AMBER : undefined, opacity: meta.color === 'YELLOW' ? 1 : undefined }}>Building</span>
-          <span style={{ color: meta.color === 'GREEN' ? B.green : undefined, opacity: meta.color === 'GREEN' ? 1 : undefined }}>Live</span>
+          <span style={{ color: meta.tier === 'Quiet' ? B.red : undefined, opacity: meta.tier === 'Quiet' ? 1 : undefined }}>Quiet</span>
+          <span style={{ color: meta.tier === 'Building' ? CLIMATE_AMBER : undefined, opacity: meta.tier === 'Building' ? 1 : undefined }}>Building</span>
+          <span style={{ color: meta.tier === 'Strong' ? CLIMATE_LIGHT_GREEN : undefined, opacity: meta.tier === 'Strong' ? 1 : undefined }}>Strong</span>
+          <span style={{ color: meta.tier === 'Live' ? B.green : undefined, opacity: meta.tier === 'Live' ? 1 : undefined }}>Live</span>
         </div>
       </div>
 
@@ -14167,7 +14196,7 @@ function ClimateThermoRow({ meta, isMobile }) {
           fontFeatureSettings: "'tnum'",
         }}>
           {meta.label}
-          {(meta.color === 'YELLOW' || meta.color === 'GREEN') ? ` · ${meta.score}` : ''}
+          {meta.tier !== 'Quiet' && meta.score > 0 ? ` · ${meta.score}` : ''}
         </span>
         <span style={{
           ...T.micro,
@@ -14203,19 +14232,24 @@ function ClimateStoplightStrip({ climateBySport, sportFilter, isMobile }) {
 
   if (!entries.length) return null;
 
-  const liveN = entries.filter((e) => e.color === 'GREEN').length;
-  const buildingN = entries.filter((e) => e.color === 'YELLOW').length;
-  const quietN = entries.filter((e) => e.color === 'RED').length;
+  const quietN = entries.filter((e) => e.tier === 'Quiet').length;
+  const buildingN = entries.filter((e) => e.tier === 'Building').length;
+  const strongN = entries.filter((e) => e.tier === 'Strong').length;
+  const liveN = entries.filter((e) => e.tier === 'Live').length;
   const summaryHue = liveN > 0
     ? B.green
-    : buildingN > 0
-      ? CLIMATE_AMBER
-      : B.red;
+    : strongN > 0
+      ? CLIMATE_LIGHT_GREEN
+      : buildingN > 0
+        ? CLIMATE_AMBER
+        : B.red;
   const summaryLabel = liveN > 0
     ? (liveN === entries.length ? 'All live' : `${liveN} live`)
-    : buildingN > 0
-      ? `${buildingN} building`
-      : 'Quiet slate';
+    : strongN > 0
+      ? `${strongN} strong`
+      : buildingN > 0
+        ? `${buildingN} building`
+        : 'Quiet slate';
 
   return (
     <div style={{ marginBottom: '1.5rem' }}>
