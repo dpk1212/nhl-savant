@@ -6383,16 +6383,26 @@ async function main() {
     return null;
   };
 
-  // Sport-day climate (Sharp A/B turnout on FORs) — from live board groups.
-  // RED → half exposure at size time. Rebuild each cycle so color tracks board.
-  refreshClimateBySport({ groups });
+  // Sport-day climate — live PENDING ∪ Locked-card FORs (sticky through tip).
+  // Matches analysis: Sharp A on a 1pm lock counts for the whole sport-day.
+  const todayPickDocsForClimate = []; // { col, pick }
+  for (const col of collections) {
+    const snap = await db.collection(col).where('date', '==', TARGET_DATE).get();
+    for (const docSnap of snap.docs) {
+      todayPickDocsForClimate.push({ col, pick: { _id: docSnap.id, ...docSnap.data() } });
+    }
+  }
+  refreshClimateBySport({
+    groups,
+    pickDocs: todayPickDocsForClimate.map((x) => x.pick),
+  });
   {
     const climateSummary = [...CLIMATE_BY_SPORT.entries()]
-      .map(([sp, c]) => `${sp}:${c.color}(A${c.activeA}/AB${c.activeAB})`)
+      .map(([sp, c]) => `${sp}:${c.color}(A${c.activeA}/AB${c.activeAB}/${c.pctABRoster}%)`)
       .join(' ');
     console.log(
       `climate turnout (gate ${isClimateTurnoutGateLive(TARGET_DATE) ? 'LIVE' : 'off'} `
-      + `from ${CLIMATE_TURNOUT_GATE_FROM}; RED→×${0.5}): ${climateSummary || '—'}`,
+      + `from ${CLIMATE_TURNOUT_GATE_FROM}; RED→×${0.5}; live∪locked): ${climateSummary || '—'}`,
     );
   }
 
@@ -6403,10 +6413,7 @@ async function main() {
   // sides:{} after a writer race; the cron silently skipped it for hours
   // and the LOCKED pick disappeared from the dashboard right before tip.
   const ghostDocIds = new Set();
-  for (const col of collections) {
-    const snap = await db.collection(col).where('date', '==', TARGET_DATE).get();
-    for (const docSnap of snap.docs) {
-      const pick = { _id: docSnap.id, ...docSnap.data() };
+  for (const { col, pick } of todayPickDocsForClimate) {
       const mkt = col === 'sharpFlowSpreads' ? 'SPREAD' : col === 'sharpFlowTotals' ? 'TOTAL' : 'ML';
       const sides = pick.sides || {};
       // A doc is "ghost" if it has zero sides at all OR every side is
@@ -6565,7 +6572,6 @@ async function main() {
           });
         }
       }
-    }
   }
 
   // Print change log.

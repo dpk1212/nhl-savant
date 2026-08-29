@@ -60,6 +60,7 @@ import { sportBookForDisplay } from '../lib/walletSportBook.js';
 import { passesSizeSkillLiveGate } from '../lib/sizeSkillRescue.js';
 import { stakeSizeRatio } from '../lib/sizeRatioBands.js';
 import { compareLockedPicks } from '../lib/lockedPickSort.js';
+import { climateProgressScore } from '../lib/climateTurnoutCap.js';
 // Browser-side mirror of scripts/syncPickStateAuthoritative.js::buildWalletPriorStatsFn
 // — feeds aggregateSideV12 the per-sport prior stats (whitelist tier,
 // historical pick count, flat ROI) that the v12 quality calc weighs. Used
@@ -9114,6 +9115,41 @@ export default function SharpFlow() {
     return g;
   }, [allGames, sportFilter]);
 
+  // Sport-day climate stoplights (0–100 → red→green) from today's locked stamps.
+  // Cron stamps the same climate on every side of a sport-day; we take the
+  // richest activeAB stamp per sport so the tab rail matches size policy.
+  const climateBySportToday = useMemo(() => {
+    const today = todayET();
+    const map = {};
+    for (const [docId, doc] of Object.entries(lockedPicks || {})) {
+      if (!docId.startsWith(today)) continue;
+      const sport = String(doc.sport || '').toUpperCase();
+      if (!sport) continue;
+      for (const sd of Object.values(doc.sides || {})) {
+        if (!sd || sd.superseded) continue;
+        const color = sd.v8_climateColor;
+        if (!color) continue;
+        const activeA = Number(sd.v8_climateActiveA) || 0;
+        const activeAB = Number(sd.v8_climateActiveAB) || 0;
+        const pctABRoster = Number(sd.v8_climatePctABRoster) || 0;
+        const score = climateProgressScore({ color, activeA, activeAB, pctABRoster });
+        const prev = map[sport];
+        if (!prev
+          || activeAB > prev.activeAB
+          || (activeAB === prev.activeAB && score > prev.score)) {
+          map[sport] = {
+            color: String(color).toUpperCase(),
+            activeA,
+            activeAB,
+            pctABRoster,
+            score,
+          };
+        }
+      }
+    }
+    return map;
+  }, [lockedPicks]);
+
   const gameFlowMap = useMemo(() => {
     const m = {};
     for (const g of allGames) m[`${g.sport}_${g.key}`] = g;
@@ -9682,7 +9718,7 @@ export default function SharpFlow() {
   if (filteredGames.length === 0) {
     return (
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
-        <PageHeader sportFilter={sportFilter} setSportFilter={setSportFilter} viewMode={viewMode} setViewMode={setViewMode} isMobile={isMobile} />
+        <PageHeader sportFilter={sportFilter} setSportFilter={setSportFilter} viewMode={viewMode} setViewMode={setViewMode} isMobile={isMobile} climateBySport={climateBySportToday} />
         <div style={{
           textAlign: 'center', padding: '3rem', borderRadius: '12px',
           background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
@@ -9706,7 +9742,7 @@ export default function SharpFlow() {
           which is what sells the glassmorphism. pointer-events: none and
           z-index below content; honors prefers-reduced-motion via CSS. */}
       <div className="sf-aurora" aria-hidden="true" />
-      <PageHeader sportFilter={sportFilter} setSportFilter={setSportFilter} viewMode={viewMode} setViewMode={setViewMode} isMobile={isMobile} />
+      <PageHeader sportFilter={sportFilter} setSportFilter={setSportFilter} viewMode={viewMode} setViewMode={setViewMode} isMobile={isMobile} climateBySport={climateBySportToday} />
 
       {/* ─── Orientation strip — free users, dismissible ───
           Layer-1 onboarding: answers "what is this and why trust it" in one
@@ -13812,7 +13848,24 @@ const FlowStatCard = memo(function FlowStatCard({ icon: Icon, label, value, acce
 });
 
 /** Shared premium segmented control — same shell as Live Positions /
- *  Locked Picks / Watchlist. Optional horizontal scroll for dense rows. */
+ *  Locked Picks / Watchlist. Optional horizontal scroll for dense rows.
+ *  Optional `opt.climate` = { score 0–100, color } → tiny stoplight + %. */
+function climateStoplightHue(score) {
+  const s = Math.max(0, Math.min(100, Number(score) || 0));
+  if (s <= 0) return B.red;
+  if (s >= 100) return B.green;
+  // 0→50 red→amber, 50→100 amber→green
+  const amber = '#F59E0B';
+  const lerp = (a, b, t) => {
+    const ah = a.match(/\w\w/g).map((x) => parseInt(x, 16));
+    const bh = b.match(/\w\w/g).map((x) => parseInt(x, 16));
+    const hex = (n) => Math.round(n).toString(16).padStart(2, '0');
+    return `#${[0, 1, 2].map((i) => hex(ah[i] + (bh[i] - ah[i]) * t)).join('')}`;
+  };
+  if (s < 50) return lerp(B.red.replace('#', ''), amber.replace('#', ''), s / 50);
+  return lerp(amber.replace('#', ''), B.green.replace('#', ''), (s - 50) / 50);
+}
+
 function SfSegmented({ options, value, onChange, isMobile, scrollable = false }) {
   return (
     <div
@@ -13837,10 +13890,17 @@ function SfSegmented({ options, value, onChange, isMobile, scrollable = false })
         const active = value === opt.id;
         const color = opt.color || B.gold;
         const Icon = opt.icon;
+        const climate = opt.climate;
+        const climateHue = climate ? climateStoplightHue(climate.score) : null;
+        const climateTitle = climate
+          ? `Sharp A/B climate ${climate.color} · ${climate.score}% to green`
+            + (climate.activeA != null ? ` (A${climate.activeA}/AB${climate.activeAB})` : '')
+          : undefined;
         return (
           <button
             key={opt.id}
             type="button"
+            title={climateTitle}
             onClick={() => onChange(opt.id)}
             style={{
               display: 'inline-flex',
@@ -13874,6 +13934,37 @@ function SfSegmented({ options, value, onChange, isMobile, scrollable = false })
               </span>
             ) : null}
             <span>{opt.label}</span>
+            {climateHue != null && (
+              <span
+                aria-label={climateTitle}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.2rem',
+                  marginLeft: '0.05rem',
+                }}
+              >
+                <span style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  background: climateHue,
+                  boxShadow: `0 0 5px ${climateHue}99`,
+                  flexShrink: 0,
+                }} />
+                <span style={{
+                  fontSize: isMobile ? '0.48rem' : '0.52rem',
+                  fontWeight: 800,
+                  fontFeatureSettings: "'tnum'",
+                  letterSpacing: '0.02em',
+                  color: climateHue,
+                  opacity: active ? 1 : 0.85,
+                  lineHeight: 1,
+                }}>
+                  {climate.score}
+                </span>
+              </span>
+            )}
             {opt.count != null && (
               <span style={{
                 ...T.micro,
@@ -13893,12 +13984,19 @@ function SfSegmented({ options, value, onChange, isMobile, scrollable = false })
   );
 }
 
-function SportTabs({ active, onChange, isMobile }) {
+function SportTabs({ active, onChange, isMobile, climateBySport = null }) {
   const options = [
     { id: 'All', label: 'All', emoji: '⚡', color: B.gold },
     ...['CBB', 'CFB', 'NHL', 'MLB', 'NBA', 'WNBA', 'NFL', 'SOC', 'UFC'].map((key) => {
       const ss = sportStyle(key);
-      return { id: key, label: key, emoji: ss.icon, color: ss.color };
+      const climate = climateBySport?.[key] || null;
+      return {
+        id: key,
+        label: key,
+        emoji: ss.icon,
+        color: ss.color,
+        ...(climate ? { climate } : {}),
+      };
     }),
   ];
   return (
@@ -14788,7 +14886,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData, teaserGames }) {
   );
 }
 
-function PageHeader({ sportFilter, setSportFilter, viewMode, setViewMode, isMobile }) {
+function PageHeader({ sportFilter, setSportFilter, viewMode, setViewMode, isMobile, climateBySport = null }) {
   const pageViews = [
     { id: 'signals', label: 'Signals', icon: BarChart3, color: B.sky },
     { id: 'flow', label: 'Action', icon: Activity, color: B.green },
@@ -14833,7 +14931,7 @@ function PageHeader({ sportFilter, setSportFilter, viewMode, setViewMode, isMobi
             isMobile={isMobile}
             scrollable={isMobile}
           />
-          <SportTabs active={sportFilter} onChange={setSportFilter} isMobile={isMobile} />
+          <SportTabs active={sportFilter} onChange={setSportFilter} isMobile={isMobile} climateBySport={climateBySport} />
         </div>
       </div>
     </div>
