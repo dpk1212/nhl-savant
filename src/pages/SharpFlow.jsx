@@ -13908,9 +13908,9 @@ function climateZoneMeta(climate) {
   const zone = CLIMATE_ZONE[color] || CLIMATE_ZONE.RED;
   let sub = zone.sub;
   if (color === 'YELLOW') {
-    sub = `${score}% to green`;
+    sub = `${score}% to Live`;
   } else if (color === 'RED' && ab > 0) {
-    sub = 'Need a top-tier sharp';
+    sub = 'Still need a top sharp';
   }
   return {
     sport: climate.sport,
