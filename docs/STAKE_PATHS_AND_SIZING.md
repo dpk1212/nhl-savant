@@ -20,6 +20,7 @@ _Related: [`TAPE_SIZING.md`](./TAPE_SIZING.md) · [`SKILL_FEATURES.md`](./SKILL_
 | **qConv Q1 mute** | Near-final mute (2026-08-03+; Path A+RANK+UNOPP/Q1 exempt) | Path C SHARP* · `qConv <` expanding Q1 of prior staked → **0u** · fail-open if missing |
 | **FOOLS-gold mute** | Final mute (2026-08-05+) | Path A/B/C + CONFIRMED-UNOPP · best proven FOR = **FLAT** → **0u MUTED** · fail-open if bestFOR missing · DISSENT/manual exempt |
 | **Flinch / fail-open leftover mute** | Last mute (2026-08-19+) | Still **&lt;4u** AND (odds-capped native-4u path **or** tape BOOST **or** E≥10 **or** FAIL_OPEN) → **0u** · **4u+ never touched** · Q1/UNOPP floors cannot revive |
+| **Sport Confirmed unlock CAP** | Absolute last (2026-08-29+) | **NFL / CFB only** · sport-wide CONFIRMED n → max u (&lt;5→1 · 5–9→2 · 10–14→3 · ≥15→full) · CAP only · deep sports EXEMPT |
 | **T-15** | Freeze | No further rewrite |
 
 **Paths pick who. EDGE band sizes A/C. Tape dials size. qConv cuts the Path C Q1 tail (Path A + RANK + UNOPP/Q1 exempt). FOOLS cancels FLAT-led. Leftover mute cancels believed-then-cut stubs and sub-4 FAIL_OPEN. CONFIRMED-UNOPP fills sized unopposed CONFIRMED left at 0u, including after mutes — leftover mute still wins after that restore.**
@@ -77,6 +78,10 @@ Skill metrics (EDGE / netCLV / Tape / bucket) stamp every pre–T-15 cycle — s
      └─ 4u+ EXEMPT · unflagged tickets HOLD at exact incoming units
      └─ mutedBy=believed-cut | fail-open-sub4
 12. Odds cap + global 6u cap (already applied on path/tape; mute is 0u)
+12b. Sport Confirmed unlock CAP (2026-08-29+) — **NFL / CFB only**
+     └─ sport-wide CONFIRMED count gates max publishable units
+     └─ <5 → 1u · 5–9 → 2u · 10–14 → 3u · ≥15 → full ladder
+     └─ CAP only (never mute to 0) · after all mutes · MLB/deep sports EXEMPT
 13. T-15 → freeze
 ```
 
@@ -99,6 +104,7 @@ Rescues **never up-size** an already-staked Path A ticket — they only fill `0u
 | **2026-08-16** | **CONFIRMED-UNOPP hard floor after mutes** — tape/qConv/FOOLS cannot leave qualifying unopposed CONFIRMED at 0u · qConv no longer mutes UNOPP |
 | **2026-08-16** | **Stake size = sport-local volume** — Path A HC / mini-HC, Q1, and UNOPP use invested / this wallet's usual in that sport (same as locked-card "Size vs usual"). Model `v8_sizeRatio` is fallback only. AGS features stay on model size. |
 | **2026-08-19** | **Flinch / fail-open leftover mute** — still &lt;4u AND (odds-capped native RANK/TOP/SUPER **or** tape BOOST leftover **or** E≥10 leftover **or** tape FAIL_OPEN) → **0u**. 4u+ never touched. Native 3u RANK/TOP favorites without those flags stay. After Q1/UNOPP restore so those floors cannot revive a stub. |
+| **2026-08-29** | **Sport Confirmed unlock CAP** — NFL / CFB only. Sport-wide CONFIRMED count gates max units: &lt;5→1u · 5–9→2u · 10–14→3u · ≥15→full. Absolute last after mutes. CAP only (never mute). MLB / SOC / deep sports untouched. |
 | **2026-08-12** | **qConv Q1 mute** scoped to Path C only (Path A + RANK exempt; UNOPP later exempt 08-16) |
 | **2026-08-05** | **FOOLS-gold mute** — best proven FOR=FLAT → 0u (after qConv); briefly 1u clamp then restored |
 | **2026-08-08** | **CONFIRMED-UNOPP promote** — CONFIRMED × size≥0.5× × unopposed → 1u (after SHARP / before DISSENT) · FOOLS back to hard 0u cancel |
