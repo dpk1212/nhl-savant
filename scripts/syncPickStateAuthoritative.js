@@ -180,7 +180,7 @@ import {
 import { loadWalletProfilesMap } from './lib/loadWalletProfiles.js';
 import { acceptFullGameTotalPosition } from './lib/totalMarketFilter.js';
 import { passesSizeSkillLiveGate } from '../src/lib/sizeSkillRescue.js';
-import { resolveInstrument, ticketAmerican } from '../src/lib/ticketInstrument.js';
+import { resolveInstrument, ticketAmerican, coherentTicket } from '../src/lib/ticketInstrument.js';
 import {
   inheritSpreadMarketHints,
   signedSpreadEntryLine,
@@ -5690,9 +5690,12 @@ function reconcileSide({ sd, side, pick, mkt, group, walletProfiles, now, force,
     const inst = resolveInstrument({
       family: mkt, side, positions: group, meta: instMeta, stampedLine: stampedLn, sport,
     });
-    const ticket = ticketAmerican(inst, null);
     const lockOddsNow = Number.isFinite(patch.lock?.odds) ? patch.lock.odds
       : (Number.isFinite(sd.lock?.odds) ? sd.lock.odds : null);
+    const ticket = coherentTicket(inst, {
+      stampedLine: stampedLn,
+      stampedOdds: lockOddsNow,
+    }).odds ?? ticketAmerican(inst, lockOddsNow);
     if (Number.isFinite(ticket) && ticket !== 0) {
       const lineChanged = Number.isFinite(inst.line)
         && (stampedLn == null || Math.abs(stampedLn - inst.line) > 0.051);
