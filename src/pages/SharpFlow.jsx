@@ -61,6 +61,7 @@ import { passesSizeSkillLiveGate } from '../lib/sizeSkillRescue.js';
 import { stakeSizeRatio } from '../lib/sizeRatioBands.js';
 import { compareLockedPicks } from '../lib/lockedPickSort.js';
 import { climateProgressScore } from '../lib/climateTurnoutCap.js';
+import { isSportSlateActive } from '../lib/sportSlateActive.js';
 // Browser-side mirror of scripts/syncPickStateAuthoritative.js::buildWalletPriorStatsFn
 // — feeds aggregateSideV12 the per-sport prior stats (whitelist tier,
 // historical pick count, flat ROI) that the v12 quality calc weighs. Used
@@ -1669,47 +1670,6 @@ function computeLiveSizing({ peakStars, peakUnits, marketType, oddsForLadder,
 
 function todayET() {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-}
-
-/** UFC cards are event-based — hide from main sport rail after the card wraps. */
-const UFC_SLATE_ACTIVE_AFTER_COMMENCE_MS = 8 * 60 * 60 * 1000;
-
-/**
- * True while UFC still belongs on the main view: upcoming/live fights on the
- * board, or today's UFC locks still pending. Once the card is done and locks
- * are graded, UFC drops off SportTabs / climate by default.
- */
-function isUfcSlateActive({
-  allGames = [],
-  pinnacleHistory = null,
-  lockedPicks = {},
-  nowMs = Date.now(),
-} = {}) {
-  for (const g of allGames) {
-    if (g?.sport !== 'UFC') continue;
-    const raw = pinnacleHistory?.UFC?.[g.key]?.commence
-      || g.commence
-      || g.commenceTime
-      || null;
-    const ct = raw != null ? new Date(raw).getTime() : NaN;
-    if (!Number.isFinite(ct)) return true; // on board, clock unknown — keep visible
-    if (ct > nowMs - UFC_SLATE_ACTIVE_AFTER_COMMENCE_MS) return true;
-  }
-
-  const today = todayET();
-  for (const [docId, doc] of Object.entries(lockedPicks || {})) {
-    if (!docId.startsWith(today)) continue;
-    if (String(doc.sport || '').toUpperCase() !== 'UFC') continue;
-    for (const sd of Object.values(doc.sides || {})) {
-      if (!sd || sd.superseded) continue;
-      if (sd.status === 'COMPLETED' || sd.result?.outcome) continue;
-      const u = Number(sd.finalUnits);
-      if ((Number.isFinite(u) && u > 0) || sd.lockStage === 'LOCKED' || sd.lockStage === 'LEAN') {
-        return true;
-      }
-    }
-  }
-  return false;
 }
 
 const MAIN_SPORT_TAB_ORDER = ['CBB', 'CFB', 'NHL', 'MLB', 'NBA', 'WNBA', 'NFL', 'SOC', 'UFC'];
@@ -8967,7 +8927,8 @@ export default function SharpFlow() {
   const [showAgsuLedger, setShowAgsuLedger] = useState(false);
   const [showAgsuTiers, setShowAgsuTiers] = useState(false);
   const [lockedDay, setLockedDay] = useState('today');
-  const [lockedStatusFilter, setLockedStatusFilter] = useState('all');
+  // Default Pending — hide resolved (won/lost) locked plays until user opts in.
+  const [lockedStatusFilter, setLockedStatusFilter] = useState('pending');
   const [lockedSort, setLockedSort] = useState('units');
   const [lockedSportFilter, setLockedSportFilter] = useState('All');
   const [lockedMarketFilter, setLockedMarketFilter] = useState('all');
@@ -9193,27 +9154,28 @@ export default function SharpFlow() {
     return map;
   }, [lockedPicks]);
 
-  // UFC is event-based — hide from main sport rail / climate after the card
-  // finishes (no upcoming/live fights, no pending UFC locks today).
-  const ufcSlateActive = useMemo(
-    () => isUfcSlateActive({ allGames, pinnacleHistory, lockedPicks }),
+  // Hide finished sports from the main rail / climate once their slate is done
+  // and today's locks are graded (resolved plays stay in Locked Picks via chips).
+  const mainSportTabs = useMemo(
+    () => MAIN_SPORT_TAB_ORDER.filter((sp) => isSportSlateActive(sp, {
+      allGames, pinnacleHistory, lockedPicks,
+    })),
     [allGames, pinnacleHistory, lockedPicks],
   );
 
-  const mainSportTabs = useMemo(
-    () => MAIN_SPORT_TAB_ORDER.filter((sp) => sp !== 'UFC' || ufcSlateActive),
-    [ufcSlateActive],
-  );
-
   const climateBySportVisible = useMemo(() => {
-    if (ufcSlateActive || !climateBySportToday.UFC) return climateBySportToday;
-    const { UFC: _omit, ...rest } = climateBySportToday;
-    return rest;
-  }, [climateBySportToday, ufcSlateActive]);
+    const next = {};
+    for (const [sp, row] of Object.entries(climateBySportToday || {})) {
+      if (mainSportTabs.includes(sp)) next[sp] = row;
+    }
+    return next;
+  }, [climateBySportToday, mainSportTabs]);
 
   useEffect(() => {
-    if (sportFilter === 'UFC' && !ufcSlateActive) setSportFilter('All');
-  }, [sportFilter, ufcSlateActive]);
+    if (sportFilter !== 'All' && !mainSportTabs.includes(sportFilter)) {
+      setSportFilter('All');
+    }
+  }, [sportFilter, mainSportTabs]);
 
   const gameFlowMap = useMemo(() => {
     const m = {};
@@ -13374,13 +13336,20 @@ export default function SharpFlow() {
                     }
                     const sportFiltered = lockedSportFilter === 'All' ? allLockedArr : allLockedArr.filter(p => p.sport === lockedSportFilter);
                     const lockedArr = lockedMarketFilter === 'all' ? sportFiltered : sportFiltered.filter(p => (p.marketType || 'ml') === lockedMarketFilter);
+                    // Resolved = has W/L/PUSH outcome OR side marked COMPLETED.
+                    // Pending default hides those; All / Won / Lost still reach them.
+                    const isResolvedLocked = (p) => {
+                      const o = p?.outcome || p?.result?.outcome || null;
+                      if (o === 'WIN' || o === 'LOSS' || o === 'PUSH') return true;
+                      return String(p?.status || '').toUpperCase() === 'COMPLETED';
+                    };
                     const statusFiltered = lockedStatusFilter === 'all' ? lockedArr
-                      : lockedStatusFilter === 'pending' ? lockedArr.filter(p => !p.outcome)
+                      : lockedStatusFilter === 'pending' ? lockedArr.filter(p => !isResolvedLocked(p))
                       : lockedStatusFilter === 'won' ? lockedArr.filter(p => p.outcome === 'WIN')
                       : lockedArr.filter(p => p.outcome === 'LOSS');
-                    const cancelledCount = statusFiltered.filter(p => (p.health?.status || 'ACTIVE') === 'CANCELLED' && !p.outcome).length;
-                    const mutedCount = statusFiltered.filter(p => (p.health?.status || 'ACTIVE') === 'MUTED' && !p.outcome).length;
-                    const filteredLocked = showCancelled ? statusFiltered : statusFiltered.filter(p => (p.health?.status || 'ACTIVE') !== 'CANCELLED' || !!p.outcome);
+                    const cancelledCount = statusFiltered.filter(p => (p.health?.status || 'ACTIVE') === 'CANCELLED' && !isResolvedLocked(p)).length;
+                    const mutedCount = statusFiltered.filter(p => (p.health?.status || 'ACTIVE') === 'MUTED' && !isResolvedLocked(p)).length;
+                    const filteredLocked = showCancelled ? statusFiltered : statusFiltered.filter(p => (p.health?.status || 'ACTIVE') !== 'CANCELLED' || isResolvedLocked(p));
                     // Default ORDER is units: stake size is the conviction
                     // rank on the card (2.5u above 1u). Star rating and TOP
                     // PICK badges used to lead this sort and put a 1u STRONG
@@ -13390,7 +13359,7 @@ export default function SharpFlow() {
                     // shown for volume but never staked: they are excluded from
                     // the record / units / ROI ledger entirely.
                     const stakedLockedArr = lockedArr.filter(p => !p.isMonitoring);
-                    const pendingCount = stakedLockedArr.filter(p => !p.outcome).length;
+                    const pendingCount = stakedLockedArr.filter(p => !isResolvedLocked(p)).length;
                     const wonCount = stakedLockedArr.filter(p => p.outcome === 'WIN').length;
                     const lostCount = stakedLockedArr.filter(p => p.outcome === 'LOSS').length;
                     const sportCounts = {};
@@ -13412,7 +13381,7 @@ export default function SharpFlow() {
                     // Record / exposure / payout / realized, computed
                     // from the sport+market-filtered set so the numbers
                     // track the filters the user has applied.
-                    const ledgerPending = stakedLockedArr.filter(p => !p.outcome);
+                    const ledgerPending = stakedLockedArr.filter(p => !isResolvedLocked(p));
                     const ledgerUnitsAtRisk = ledgerPending.reduce((s, p) => s + (Number.isFinite(p.units) ? p.units : 0), 0);
                     const ledgerToWin = ledgerPending.reduce((s, p) => {
                       const u = Number.isFinite(p.units) ? p.units : 0;
@@ -13420,7 +13389,7 @@ export default function SharpFlow() {
                       if (!u || !Number.isFinite(o) || o === 0) return s;
                       return s + (o > 0 ? u * (o / 100) : u * (100 / Math.abs(o)));
                     }, 0);
-                    const ledgerRealized = stakedLockedArr.filter(p => p.outcome).reduce((s, p) => s + (p.profit || 0), 0);
+                    const ledgerRealized = stakedLockedArr.filter(p => isResolvedLocked(p)).reduce((s, p) => s + (p.profit || 0), 0);
                     const ledgerClvVals = stakedLockedArr.map(p => p.clv).filter(v => Number.isFinite(v));
                     const ledgerAvgClv = ledgerClvVals.length ? ledgerClvVals.reduce((s, v) => s + v, 0) / ledgerClvVals.length : null;
                     const ledgerCells = [
