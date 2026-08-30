@@ -177,4 +177,27 @@ ok(climateProgressScore({ activeA: 0, activeAB: 5, pctABRoster: 50 }) === 0, 'no
 ok(climateProgressScore({ color: 'GREEN', activeA: 2, activeAB: 6, pctABRoster: 10 }) === 100, 'AB≥6 → 100');
 ok(climateProgressScore({ color: 'GREEN', activeA: 1, activeAB: 4, pctABRoster: 40 }) === 100, 'pct≥35 → 100');
 
+// ── cron writer contract (2026-08-30 crash) ─────────────────────────────
+// refreshClimateBySport must take walletProfiles as an arg (it is local to
+// main, not module scope). PR #103 closed over it → ReferenceError → zero
+// shipped locks. Also fail-open: climate must not abort create/reconcile.
+{
+  const { readFileSync } = await import('fs');
+  const src = readFileSync(new URL('../scripts/syncPickStateAuthoritative.js', import.meta.url), 'utf8');
+  const fnMatch = src.match(/function refreshClimateBySport\(\{[\s\S]*?\n\}/);
+  ok(!!fnMatch, 'refreshClimateBySport is defined');
+  ok(
+    /walletProfiles\s*=\s*null/.test(fnMatch[0]),
+    'refreshClimateBySport destructures walletProfiles (not a free var)',
+  );
+  ok(
+    /refreshClimateBySport\(\{[\s\S]*?walletProfiles,/.test(src),
+    'main() passes walletProfiles into refreshClimateBySport',
+  );
+  ok(
+    /try \{[\s\S]*refreshClimateBySport\([\s\S]*\} catch/.test(src),
+    'climate refresh is fail-open so a climate bug cannot kill lock writes',
+  );
+}
+
 console.log(`ok ${n} climate turnout tests`);
